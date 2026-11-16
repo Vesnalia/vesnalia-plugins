@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { AUTOMATIC_REVIEW_BEFORE_PRECISION, VERIFICATION_PROMPT_BEFORE_OPEN_THREADS, automaticReviewPrompt, defaultPreferences, preferencesSchema, reReviewCheckPrompt, readKnobs } from "./preferences";
 import { defaultKnobs, type Knobs } from "../lib/knobs";
@@ -9,16 +9,16 @@ import { testSql, testStore } from "./test-store.test-support";
 const withoutSwitches = ({ reviewAgentActs: _agent, reviewChangesLine: _line, trackOwnPrs: _own, approveGuardTestsPace: _tests, approveGuardDocsPace: _docs, ...rest }: Knobs) => rest;
 
 async function host() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const sql = testSql(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const sql = testSql(alia);
   const row = async () => (await sql.get<{ value: string; revision: number; knobs: string | null }>(`SELECT value,revision,knobs FROM review_preferences WHERE id=1`))!;
-  return { bb, harness, sql, row, call: (method: string, input: unknown) => harness.behavior.callRpc(method, input) as Promise<any> };
+  return { alia, harness, sql, row, call: (method: string, input: unknown) => harness.behavior.callRpc(method, input) as Promise<any> };
 }
 
 test("a fresh store reads every setting and knob at its default, as fresh copies", async () => {
-  const { bb } = await host();
-  const { preferences, revision } = await testStore(bb).getPreferences();
+  const { alia } = await host();
+  const { preferences, revision } = await testStore(alia).getPreferences();
   expect(preferences).toEqual(defaultPreferences);
   expect(preferences.knobs).toEqual(defaultKnobs);
   expect(preferences.knobs).not.toBe(defaultKnobs);
@@ -26,12 +26,12 @@ test("a fresh store reads every setting and knob at its default, as fresh copies
 });
 
 test("knobs save and load through the RPC in their own column, and a stale edit is still rejected", async () => {
-  const { bb, call, row } = await host();
+  const { alia, call, row } = await host();
   const knobs = { ...defaultKnobs, singleKeyShortcuts: false, approveGuardPace: 800 };
   const saved = await call("savePreferences", { preferences: { ...defaultPreferences, guideDetail: "detailed", knobs }, revision: 0 });
   expect(saved).toEqual({ preferences: { ...defaultPreferences, guideDetail: "detailed", knobs }, revision: 1 });
   expect((await call("getPreferences", null)).preferences.knobs).toEqual(knobs);
-  expect((await testStore(bb).getPreferences()).preferences.knobs).toEqual(knobs);
+  expect((await testStore(alia).getPreferences()).preferences.knobs).toEqual(knobs);
   await expect(call("savePreferences", { preferences: { ...defaultPreferences, knobs }, revision: 0 })).rejects.toThrow(/changed/);
   // value stays what 0.6.0's strict schema reads.
   const value = JSON.parse((await row()).value);
@@ -41,28 +41,28 @@ test("knobs save and load through the RPC in their own column, and a stale edit 
 });
 
 test("settings saved before knobs still load unchanged, with every knob at its default", async () => {
-  const { bb, sql } = await host();
+  const { alia, sql } = await host();
   const { knobs: _none, ...older } = { ...defaultPreferences, guideDetail: "concise" as const, guideInstructions: "Explain migrations", diffLayout: "unified" as const,
     wakeOnReplies: "any" as const, pushChecks: "ready" as const, trackTeamRequests: true, autoStartRepos: ["acme/web", "acme/*"], unattendedAuthors: "anyone" as const,
     runRepoChecks: true, threadListReviews: false, rereviewShows: "all" as const, automaticReview: "", verificationPrompt: "Check it" };
   await sql.run(`INSERT INTO review_preferences (id,value,revision) VALUES (1,?,4)`, [JSON.stringify(older)]);
-  expect(await testStore(bb).getPreferences()).toEqual({ preferences: { ...older, knobs: defaultKnobs }, revision: 4 });
+  expect(await testStore(alia).getPreferences()).toEqual({ preferences: { ...older, knobs: defaultKnobs }, revision: 4 });
 });
 
 test("knobs survive a rollback to 0.6.0, whose save writes only value and revision", async () => {
-  const { bb, call, sql } = await host();
+  const { alia, call, sql } = await host();
   const knobs = { ...defaultKnobs, alertTurns: false };
   const saved = await call("savePreferences", { preferences: { ...defaultPreferences, knobs }, revision: 0 });
   await sql.run(`UPDATE review_preferences SET value=?,revision=revision+1 WHERE id=1 AND revision=?`, [JSON.stringify({ ...defaultPreferences, knobs: undefined, guideDetail: "detailed" }), saved.revision]);
-  expect((await testStore(bb).getPreferences()).preferences).toMatchObject({ guideDetail: "detailed", knobs });
+  expect((await testStore(alia).getPreferences()).preferences).toMatchObject({ guideDetail: "detailed", knobs });
 });
 
 test("missing and invalid knobs read at their defaults, and unknown ones are dropped", async () => {
-  const { bb, sql } = await host();
+  const { alia, sql } = await host();
   await sql.run(`INSERT INTO review_preferences (id,value,revision,knobs) VALUES (1,?,1,?)`, [JSON.stringify({}), JSON.stringify({ approveGuardPace: 99999, alertTurns: "yes", bogus: 1, codeOwners: false })]);
-  expect((await testStore(bb).getPreferences()).preferences.knobs).toEqual({ ...defaultKnobs, codeOwners: false });
+  expect((await testStore(alia).getPreferences()).preferences.knobs).toEqual({ ...defaultKnobs, codeOwners: false });
   await sql.run(`UPDATE review_preferences SET knobs=? WHERE id=1`, ["{not json"]);
-  expect((await testStore(bb).getPreferences()).preferences.knobs).toEqual(defaultKnobs);
+  expect((await testStore(alia).getPreferences()).preferences.knobs).toEqual(defaultKnobs);
   for (const saved of [null, undefined, "[]", "3", [], 3, { approveGuardPace: 150.5 }]) expect(readKnobs(saved)).toEqual(defaultKnobs);
   expect(readKnobs({ approveGuardPace: 100 }).approveGuardPace).toBe(100);
 });
@@ -118,20 +118,20 @@ test("the automatic review and re-review check prompts are blank when their knob
 });
 
 test("one invalid saved setting reads at its default, and the rest keep their saved values", async () => {
-  const { bb, sql } = await host();
+  const { alia, sql } = await host();
   await sql.run(`INSERT INTO review_preferences (id,value,revision) VALUES (1,?,1)`, [JSON.stringify({
     ...defaultPreferences, knobs: undefined, guideDetail: "verbose", guideInstructions: "Explain migrations", autoStartRepos: ["acme/web", "not a repo", 7, " Acme/* "], bogus: true,
     automaticReview: AUTOMATIC_REVIEW_BEFORE_PRECISION, verificationPrompt: VERIFICATION_PROMPT_BEFORE_OPEN_THREADS, assistantInstructions: "x".repeat(2500),
   })]);
-  const { preferences } = await testStore(bb).getPreferences();
+  const { preferences } = await testStore(alia).getPreferences();
   expect(preferences).toEqual({ ...defaultPreferences, guideInstructions: "Explain migrations", autoStartRepos: ["acme/web", "acme/*"], assistantInstructions: "x".repeat(2000) });
   expect(preferences).not.toHaveProperty("bogus");
   await sql.run(`UPDATE review_preferences SET value=?`, [JSON.stringify({ guideDetail: "concise", autoStartRepos: "acme/web", wakeOnReplies: null })]);
-  expect((await testStore(bb).getPreferences()).preferences).toEqual({ ...defaultPreferences, guideDetail: "concise" });
+  expect((await testStore(alia).getPreferences()).preferences).toEqual({ ...defaultPreferences, guideDetail: "concise" });
   for (const value of ["{not json", "[1]", "null", "3"]) {
     await sql.run(`UPDATE review_preferences SET value=?`, [value]);
-    expect((await testStore(bb).getPreferences()).preferences).toEqual(defaultPreferences);
+    expect((await testStore(alia).getPreferences()).preferences).toEqual(defaultPreferences);
   }
   // A fallback is a fresh copy, which a caller can't change for everyone.
-  expect((await testStore(bb).getPreferences()).preferences.autoStartRepos).not.toBe(defaultPreferences.autoStartRepos);
+  expect((await testStore(alia).getPreferences()).preferences.autoStartRepos).not.toBe(defaultPreferences.autoStartRepos);
 });

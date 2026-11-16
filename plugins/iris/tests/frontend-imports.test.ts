@@ -1,6 +1,6 @@
-// bb builds the frontend bundle at install time from a git install that skips
-// devDependencies, and supplies only "@get-bb/plugin-sdk/app" to it. A runtime
-// import of the SDK root from frontend code then fails to resolve, and bb
+// VesnALIA builds the frontend bundle at install time from a git install that skips
+// devDependencies, and supplies only "@vesnalia/plugin-sdk/app" to it. A runtime
+// import of the SDK root from frontend code then fails to resolve, and VesnALIA
 // refuses the install (Iris 1.10.0 shipped that way). Type-only imports are fine.
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -23,7 +23,7 @@ describe("frontend imports", () => {
     const offenders: string[] = [];
     for (const file of FRONTEND.flatMap(files).filter((f) => !SERVER_ONLY.has(f))) {
       const source = readFileSync(join(ROOT, file), "utf8");
-      for (const m of source.matchAll(/^\s*import\s+(?!type\b)[^;]*?from\s+["']@get-bb\/plugin-sdk["']/gm)) {
+      for (const m of source.matchAll(/^\s*import\s+(?!type\b)[^;]*?from\s+["']@get-alia\/plugin-sdk["']/gm)) {
         offenders.push(`${file}: ${m[0].trim()}`);
       }
     }

@@ -11,7 +11,7 @@ import { chmodSync, copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type Database from "better-sqlite3";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import type { CommentLocation } from "../src/draft";
 import { createStore } from "../src/store";
 import { queueStore, type AsyncStore } from "../src/store-queue";
@@ -232,17 +232,17 @@ export async function dumpDatabase(source: string): Promise<{ reads: string; che
   const sourceBytes = readFileSync(source);
   // An empty data dir, so the store finds no former install to import.
   const dataDir = mkdtempSync(join(tmpdir(), "crw-store-dump-"));
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", dataDir });
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", dataDir });
   try {
     // The fake host's database, in its own temp directory, replaced by the copy before the store opens it.
-    const empty = bb.storage.database();
+    const empty = alia.storage.database();
     empty.close();
     copyFileSync(source, empty.name);
     chmodSync(empty.name, 0o600);
-    const db = bb.storage.database();
+    const db = alia.storage.database();
     const before = tableChecksums(db);
     const entities = storeEntities(db);
-    const store = queueStore(createStore(bb));
+    const store = queueStore(createStore(alia));
     const reads = formatDump(await dumpStoreReads(store, entities));
     await store.dispose();
     const after = tableChecksums(db);

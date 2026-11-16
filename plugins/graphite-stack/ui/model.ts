@@ -141,12 +141,12 @@ export function statusCopy(status: StackStatus): { title: string; body: string }
     case "no-environment":
       return {
         title: "No environment",
-        body: "This thread has no BB environment. Open a thread that works in a Git checkout.",
+        body: "This thread has no VesnALIA environment. Open a thread that works in a Git checkout.",
       };
     case "environment-unavailable":
       return {
         title: "Environment unavailable",
-        body: "BB cannot reach this environment or its host. Start the host, then retry.",
+        body: "VesnALIA cannot reach this environment or its host. Start the host, then retry.",
       };
     case "no-git":
       return { title: "Git unavailable", body: "Git is not installed on the environment host." };

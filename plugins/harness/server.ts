@@ -1,15 +1,15 @@
-// bb-plugin-harness — five-phase arc + DAG plans for BB threads.
+// alia-plugin-harness — five-phase arc + DAG plans for VesnALIA threads.
 //
 // Explore → Plan → Worker → Critic → Promote. Spawn uses snapshotted execution
 // mode. Role routing is stored in plugin KV. Historical Milestone tables remain.
 //
-// Threat model: BB plugins are full-trust in-process code. Plugin RPC has no
+// Threat model: VesnALIA plugins are full-trust in-process code. Plugin RPC has no
 // authenticated caller distinct from the local user. These checks exist to make
 // accidental/stale cross-project or child-thread plan mutation impossible, not
 // to defend against a malicious local plugin. RPC is not a tenant security
 // boundary.
 import { randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   PHASES,
@@ -561,27 +561,27 @@ function tokensFromAttempt(row: AttemptRow): TokenCounters {
 function usage(): string {
   return [
     "Usage:",
-    "  bb harness status [--thread <id>] [--json]",
-    "  bb harness advance [--thread <id>] [--json]",
-    "  bb harness rewind [--thread <id>] [--json]",
-    "  bb harness set-phase <explore|plan|worker|critic|promote> [--thread <id>] [--json]",
-    "  bb harness start --task <text> [--harness <id>] [--thread <id>] [--json]",
-    "  bb harness stop [--thread <id>] [--json]",
-    "  bb harness plan list [--json]",
-    "  bb harness plan show <plan-id> [--json]",
-    "  bb harness plan create <name> [--seed] [--no-seed] [--thread <id>] [--json]",
-    "  bb harness plan add <plan-id> <title> [--phase <phase>] [--deps id,id] [--json]",
-    "  bb harness plan next <plan-id> [--json]",
-    "  bb harness plan start <plan-id> <node-id> [--json]",
-    "  bb harness plan complete <plan-id> <node-id> [--verdict APPROVE|REWORK|BLOCK] [--summary <text>] [--json]",
-    "  bb harness plan reset-block <plan-id> [--json]",
+    "  VesnALIA harness status [--thread <id>] [--json]",
+    "  VesnALIA harness advance [--thread <id>] [--json]",
+    "  VesnALIA harness rewind [--thread <id>] [--json]",
+    "  VesnALIA harness set-phase <explore|plan|worker|critic|promote> [--thread <id>] [--json]",
+    "  VesnALIA harness start --task <text> [--harness <id>] [--thread <id>] [--json]",
+    "  VesnALIA harness stop [--thread <id>] [--json]",
+    "  VesnALIA harness plan list [--json]",
+    "  VesnALIA harness plan show <plan-id> [--json]",
+    "  VesnALIA harness plan create <name> [--seed] [--no-seed] [--thread <id>] [--json]",
+    "  VesnALIA harness plan add <plan-id> <title> [--phase <phase>] [--deps id,id] [--json]",
+    "  VesnALIA harness plan next <plan-id> [--json]",
+    "  VesnALIA harness plan start <plan-id> <node-id> [--json]",
+    "  VesnALIA harness plan complete <plan-id> <node-id> [--verdict APPROVE|REWORK|BLOCK] [--summary <text>] [--json]",
+    "  VesnALIA harness plan reset-block <plan-id> [--json]",
   ].join("\n");
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
+export default async function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
   db.pragma("foreign_keys = ON");
-  bb.storage.migrate(db, [
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS arcs (
        thread_id TEXT PRIMARY KEY,
        project_id TEXT NOT NULL,
@@ -727,7 +727,7 @@ export default async function plugin(bb: BbPluginApi) {
     db.exec("ALTER TABLE arcs ADD COLUMN plan_id TEXT");
   }
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     frontierModel: {
       type: "string",
       label: "Frontier model label",
@@ -890,15 +890,15 @@ export default async function plugin(bb: BbPluginApi) {
 
   const ROUTING_KEY = "routing";
   let currentRouting: RoleRouting = parseRoleRouting(
-    await bb.storage.kv.get(ROUTING_KEY),
+    await alia.storage.kv.get(ROUTING_KEY),
   );
   let customHarnesses: HarnessDefinition[] = parseCustomHarnesses(
-    await bb.storage.kv.get(CUSTOM_HARNESSES_KEY),
+    await alia.storage.kv.get(CUSTOM_HARNESSES_KEY),
   );
 
   async function saveRouting(next: RoleRouting): Promise<RoleRouting> {
     currentRouting = next;
-    await bb.storage.kv.set(ROUTING_KEY, next);
+    await alia.storage.kv.set(ROUTING_KEY, next);
     publish();
     return next;
   }
@@ -907,7 +907,7 @@ export default async function plugin(bb: BbPluginApi) {
     next: HarnessDefinition[],
   ): Promise<HarnessDefinition[]> {
     assertCustomCatalogFits(next);
-    await bb.storage.kv.set(CUSTOM_HARNESSES_KEY, next);
+    await alia.storage.kv.set(CUSTOM_HARNESSES_KEY, next);
     customHarnesses = next;
     publish();
     return next;
@@ -934,7 +934,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function publish(): void {
-    bb.realtime.publish(REALTIME_CHANNEL, { at: Date.now() });
+    alia.realtime.publish(REALTIME_CHANNEL, { at: Date.now() });
   }
 
   function nodesOf(planId: string): PlanNode[] {
@@ -1052,7 +1052,7 @@ export default async function plugin(bb: BbPluginApi) {
         };
         if (!node.childThreadId) return base;
         try {
-          const thread = await bb.sdk.threads.get({ threadId: node.childThreadId });
+          const thread = await alia.sdk.threads.get({ threadId: node.childThreadId });
           return {
             ...base,
             child: {
@@ -1104,7 +1104,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (!threadId) {
       throw new Error("Plan operations require the owning parent thread.");
     }
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (claimedProjectId && claimedProjectId !== thread.projectId) {
       throw new Error(`projectId ${claimedProjectId} does not match thread ${threadId}.`);
     }
@@ -1161,7 +1161,7 @@ export default async function plugin(bb: BbPluginApi) {
     threadId: string,
     claimed?: string,
   ): Promise<string> {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (claimed && claimed !== thread.projectId) {
       throw new Error(
         `projectId ${claimed} does not match thread ${threadId}.`,
@@ -1177,7 +1177,7 @@ export default async function plugin(bb: BbPluginApi) {
   function requireLegacyArc(threadId: string): ArcRow {
     const existing = readArc(threadId);
     if (!existing) {
-      throw new Error("No active Harness run. Start one with bb harness start.");
+      throw new Error("No active Harness run. Start one with VesnALIA harness start.");
     }
     return existing;
   }
@@ -1311,7 +1311,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function readChildTokens(threadId: string): Promise<TokenCounters | null> {
     try {
-      const events = await bb.sdk.threads.events.list({
+      const events = await alia.sdk.threads.events.list({
         threadId,
         types: ["thread/tokenUsage/updated"],
         order: "desc",
@@ -1329,7 +1329,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function stopChildThread(threadId: string, label: string): Promise<void> {
     try {
-      await bb.sdk.threads.stop({ threadId });
+      await alia.sdk.threads.stop({ threadId });
       await closeAttemptForChild(threadId);
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
@@ -1372,11 +1372,11 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function resolveWorkspace(threadId: string) {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (!thread.environmentId) {
       throw new Error("This thread has no environment to initialize.");
     }
-    const environment = await bb.sdk.environments.get({
+    const environment = await alia.sdk.environments.get({
       environmentId: thread.environmentId,
     });
     if (!environment.path) {
@@ -1393,7 +1393,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function ensureArtifactDir(threadId: string, planId: string, required: boolean): Promise<void> {
     try {
       const { hostId, path } = await resolveWorkspace(threadId);
-      await bb.sdk.files.mkdir({
+      await alia.sdk.files.mkdir({
         hostId,
         path: `${path}/${artifactDirForPlan(planId)}`,
         rootPath: path,
@@ -1428,7 +1428,7 @@ export default async function plugin(bb: BbPluginApi) {
         totals: full.totals,
         updatedAt: Date.now(),
       };
-      await bb.sdk.files.write({
+      await alia.sdk.files.write({
         hostId,
         path: `${path}/${artifactManifestPath(planId)}`,
         rootPath: path,
@@ -1513,7 +1513,7 @@ export default async function plugin(bb: BbPluginApi) {
     source: string;
   }> {
     try {
-      const options = await bb.sdk.threads.defaultExecutionOptions({ threadId: parentThreadId });
+      const options = await alia.sdk.threads.defaultExecutionOptions({ threadId: parentThreadId });
       if (options?.model) {
         return {
           providerId: parentProviderId,
@@ -1596,7 +1596,7 @@ export default async function plugin(bb: BbPluginApi) {
 
     let spawnedId: string | null = null;
     try {
-      const parent = await bb.sdk.threads.get({ threadId: parentId });
+      const parent = await alia.sdk.threads.get({ threadId: parentId });
       if (!parent.environmentId) {
         recoverClaim();
         throw new Error("Parent thread has no environment; cannot spawn a child.");
@@ -1612,7 +1612,7 @@ export default async function plugin(bb: BbPluginApi) {
           }
         : await inheritedAttemptRouting(parent.id, parent.providerId);
       const title = `${PHASE_COPY[node.phase].label}: ${node.title}`.slice(0, 80);
-      const child = await bb.sdk.threads.spawn({
+      const child = await alia.sdk.threads.spawn({
         prompt: nodePrompt(node, node.phase),
         parentThreadId: parent.id,
         projectId: parent.projectId,
@@ -1671,7 +1671,7 @@ export default async function plugin(bb: BbPluginApi) {
       recoverClaim();
       if (spawnedId) {
         try {
-          await bb.sdk.threads.stop({ threadId: spawnedId });
+          await alia.sdk.threads.stop({ threadId: spawnedId });
         } catch (stopError) {
           const reason = stopError instanceof Error ? stopError.message : String(stopError);
           throw new Error(
@@ -1686,7 +1686,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function firstAvailableChoice(): Promise<ExecutionChoice> {
-    const catalog = await bb.sdk.providers.models();
+    const catalog = await alia.sdk.providers.models();
     const provider =
       catalog.providers.find((item) => item.available) ?? catalog.providers[0];
     if (!provider) {
@@ -2078,7 +2078,7 @@ export default async function plugin(bb: BbPluginApi) {
           "- Pick a provider/model per role in plugin settings, or override it on a DAG node.",
           "- Keep auditable outputs in `artifacts/`.",
           "",
-          "Commands: `bb harness status|advance|set-phase|start|plan …`",
+          "Commands: `alia harness status|advance|set-phase|start|plan …`",
           "",
         ].join("\n"),
       },
@@ -2094,14 +2094,14 @@ export default async function plugin(bb: BbPluginApi) {
           "DAG task lists live here when you export them. The Harness plugin",
           "also stores plans in its own database so the sidebar stays live.",
           "",
-          "Create one with `bb harness plan create \"Name\" --seed`.",
+          "Create one with `alia harness plan create \"Name\" --seed`.",
           "",
         ].join("\n"),
       },
     ];
     for (const relative of ["artifacts", "plans"]) {
       try {
-        await bb.sdk.files.mkdir({
+        await alia.sdk.files.mkdir({
           hostId,
           path: `${path}/${relative}`,
           rootPath: path,
@@ -2112,7 +2112,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
     }
     for (const file of files) {
-      const result = await bb.sdk.files.write({
+      const result = await alia.sdk.files.write({
         hostId,
         path: `${path}/${file.relative}`,
         rootPath: path,
@@ -2204,7 +2204,7 @@ export default async function plugin(bb: BbPluginApi) {
     for (const child of children) {
       if (!child.child_thread_id) continue;
       try {
-        await bb.sdk.threads.stop({ threadId: child.child_thread_id });
+        await alia.sdk.threads.stop({ threadId: child.child_thread_id });
       } catch {
         // Best-effort cleanup of leftover Milestone children.
       }
@@ -2247,7 +2247,7 @@ export default async function plugin(bb: BbPluginApi) {
             .map((node) => node.childThreadId!);
           for (const childId of childIds) {
             try {
-              await bb.sdk.threads.stop({ threadId: childId });
+              await alia.sdk.threads.stop({ threadId: childId });
             } catch (error) {
               const reason = error instanceof Error ? error.message : String(error);
               throw new Error(
@@ -2293,7 +2293,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (changed.changes === 1) publish();
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     getStatus: async ({ threadId, projectId }) =>
       statusPayload(threadId, await resolveProjectId(threadId, projectId)),
     setPhase: async ({ threadId, projectId, phase, note }) => {
@@ -2494,24 +2494,24 @@ export default async function plugin(bb: BbPluginApi) {
     return out;
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "harness",
     summary: "Drive the Explore → Plan → Worker → Critic → Promote harness arc",
     commands: [
-      { name: "status", summary: "Show the current thread's arc and next DAG node", usage: "bb harness status [--thread <id>] [--json]" },
-      { name: "advance", summary: "Move the arc one phase forward", usage: "bb harness advance [--thread <id>] [--json]" },
-      { name: "rewind", summary: "Move the arc one phase back", usage: "bb harness rewind [--thread <id>] [--json]" },
-      { name: "set-phase", summary: "Jump to a named phase", usage: "bb harness set-phase <phase> [--thread <id>] [--json]" },
-      { name: "init", summary: "Scaffold artifacts/, plans/, and HARNESS.md in the workspace", usage: "bb harness init [--thread <id>] [--json]" },
-      { name: "start", summary: "Start Standard Harness by default, or a named Harness", usage: "bb harness start --task <text> [--harness <id>] [--json]" },
-      { name: "stop", summary: "Cancel the active Harness run", usage: "bb harness stop [--thread <id>] [--json]" },
-      { name: "plan-list", summary: "List DAG plans for the current project", usage: "bb harness plan list [--json]" },
-      { name: "plan-show", summary: "Show a DAG plan", usage: "bb harness plan show <plan-id> [--json]" },
-      { name: "plan-create", summary: "Create a DAG plan (seeds the five-phase arc by default)", usage: "bb harness plan create <name> [--seed|--no-seed] [--json]" },
-      { name: "plan-add", summary: "Add a node to a plan", usage: "bb harness plan add <plan-id> <title> [--phase worker] [--deps id,id] [--json]" },
-      { name: "plan-next", summary: "Show the next unblocked node", usage: "bb harness plan next <plan-id> [--json]" },
-      { name: "plan-start", summary: "Start a node (only one in progress at a time)", usage: "bb harness plan start <plan-id> <node-id> [--json]" },
-      { name: "plan-complete", summary: "Mark a node done", usage: "bb harness plan complete <plan-id> <node-id> [--verdict APPROVE|REWORK|BLOCK] [--summary <text>] [--json]" },
+      { name: "status", summary: "Show the current thread's arc and next DAG node", usage: "alia harness status [--thread <id>] [--json]" },
+      { name: "advance", summary: "Move the arc one phase forward", usage: "alia harness advance [--thread <id>] [--json]" },
+      { name: "rewind", summary: "Move the arc one phase back", usage: "alia harness rewind [--thread <id>] [--json]" },
+      { name: "set-phase", summary: "Jump to a named phase", usage: "alia harness set-phase <phase> [--thread <id>] [--json]" },
+      { name: "init", summary: "Scaffold artifacts/, plans/, and HARNESS.md in the workspace", usage: "alia harness init [--thread <id>] [--json]" },
+      { name: "start", summary: "Start Standard Harness by default, or a named Harness", usage: "alia harness start --task <text> [--harness <id>] [--json]" },
+      { name: "stop", summary: "Cancel the active Harness run", usage: "alia harness stop [--thread <id>] [--json]" },
+      { name: "plan-list", summary: "List DAG plans for the current project", usage: "alia harness plan list [--json]" },
+      { name: "plan-show", summary: "Show a DAG plan", usage: "alia harness plan show <plan-id> [--json]" },
+      { name: "plan-create", summary: "Create a DAG plan (seeds the five-phase arc by default)", usage: "alia harness plan create <name> [--seed|--no-seed] [--json]" },
+      { name: "plan-add", summary: "Add a node to a plan", usage: "alia harness plan add <plan-id> <title> [--phase worker] [--deps id,id] [--json]" },
+      { name: "plan-next", summary: "Show the next unblocked node", usage: "alia harness plan next <plan-id> [--json]" },
+      { name: "plan-start", summary: "Start a node (only one in progress at a time)", usage: "alia harness plan start <plan-id> <node-id> [--json]" },
+      { name: "plan-complete", summary: "Mark a node done", usage: "alia harness plan complete <plan-id> <node-id> [--verdict APPROVE|REWORK|BLOCK] [--summary <text>] [--json]" },
     ],
     async run(argv, ctx) {
       const json = takeFlag(argv, "--json");
@@ -2523,7 +2523,7 @@ export default async function plugin(bb: BbPluginApi) {
       });
       const fail = (message: string) => ({ exitCode: 1, stderr: `${message}\n` });
       const needThread = () => {
-        if (!threadId) return fail("Pass --thread <id> or run this from a BB thread.");
+        if (!threadId) return fail("Pass --thread <id> or run this from a VesnALIA thread.");
         return null;
       };
       const needProject = () => {
@@ -2643,13 +2643,13 @@ export default async function plugin(bb: BbPluginApi) {
             const projectId = needProject();
             switch (sub) {
               case "list": {
-                if (!projectId) return fail("No project in context. Run this from a BB thread.");
+                if (!projectId) return fail("No project in context. Run this from a VesnALIA thread.");
                 const rows = selectPlans.all(projectId) as PlanRow[];
                 const plans = rows.map((row) => toMeta(row));
                 return reply(
                   plans,
                   plans.length === 0
-                    ? "No plans. Create one with bb harness plan create \"Name\" --seed"
+                    ? "No plans. Create one with VesnALIA harness plan create \"Name\" --seed"
                     : plans
                         .map(
                           (plan) =>
@@ -2676,7 +2676,7 @@ export default async function plugin(bb: BbPluginApi) {
                 return reply(plan, formatPlan(plan));
               }
               case "create": {
-                if (!projectId) return fail("No project in context. Run this from a BB thread.");
+                if (!projectId) return fail("No project in context. Run this from a VesnALIA thread.");
                 const name = rest.slice(1).join(" ").trim();
                 if (!name) return fail("plan create needs a name");
                 const now = Date.now();
@@ -2779,7 +2779,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "harness_get_arc",
     description:
       "Read this thread's harness arc (Explore/Plan/Worker/Critic/Promote), the active DAG plan, and the next node to work.",
@@ -2802,7 +2802,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "harness_advance",
     description:
       "Advance this thread's harness arc by one phase, or jump to a named phase.",
@@ -2834,7 +2834,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "harness_create_plan",
     description:
       "Create a DAG plan for this project. Seed the five-phase arc unless seedArc is false. Add extra nodes with titles and deps.",
@@ -2893,7 +2893,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "harness_next_node",
     description:
       "Start the next unblocked DAG node (only one node in progress). Pass planId from harness_get_arc or plan create.",
@@ -2927,7 +2927,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "harness_complete_node",
     description:
       "Mark a DAG node done. Critic nodes require verdict APPROVE, REWORK, or BLOCK plus a summary.",
@@ -3005,7 +3005,7 @@ export default async function plugin(bb: BbPluginApi) {
     ].join(" ");
   }
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const child = liveChildNode(context.thread.id);
     if (child) {
       return {
@@ -3032,7 +3032,7 @@ export default async function plugin(bb: BbPluginApi) {
     return { tools: [], skills: [] };
   });
 
-  bb.agents.contributeInstructions(({ threadId, projectId }) => {
+  alia.agents.contributeInstructions(({ threadId, projectId }) => {
     if (!threadId || !projectId) return null;
     const child = liveChildNode(threadId);
     if (child) return nodePrompt(child, child.phase);
@@ -3043,16 +3043,16 @@ export default async function plugin(bb: BbPluginApi) {
     const row = selectNodeByChild.get(thread.id) as NodeRow | undefined;
     if (row) publish();
   };
-  bb.events.on("thread.idle", (payload) => {
+  alia.events.on("thread.idle", (payload) => {
     void closeAttemptForChild(payload.thread.id);
     refreshChild(payload);
   });
-  bb.events.on("thread.active", refreshChild);
-  bb.events.on("thread.failed", (payload) => {
+  alia.events.on("thread.active", refreshChild);
+  alia.events.on("thread.failed", (payload) => {
     void reconcileFailedChild(payload.thread.id).then(() => refreshChild(payload));
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

@@ -4,7 +4,7 @@ import {
   experimental_useSidebarThreads as useSidebarThreads,
   type PluginSidebarThread,
   type PluginThreadHeaderActionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import { Disc } from "@/components/inbox/disc";
 import { StatusGlyph } from "@/components/inbox/status-glyph";
@@ -16,8 +16,8 @@ const MAX_DISCS = 3;
  * The home for child threads the flat list hides: a chip in the thread header
  * that opens the list of this thread's children.
  *
- * These are bb CHILD THREADS — forks, side chats, and plugin-spawned threads.
- * bb's in-turn subagents are activity counters on the parent, not threads, so
+ * These are VesnALIA CHILD THREADS — forks, side chats, and plugin-spawned threads.
+ * VesnALIA's in-turn subagents are activity counters on the parent, not threads, so
  * the label deliberately says "children".
  */
 export function SubagentsChip({

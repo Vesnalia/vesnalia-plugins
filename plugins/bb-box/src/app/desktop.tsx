@@ -2,11 +2,11 @@
 // bar for taking and handing back input (008). It shows in a thread panel
 // tab of its own for each box, and on the Boxes page for a browser tab.
 // Where the setting allows it, a Linux desktop shows as video instead,
-// through Selkies (selkies.ts, 056), when the round trip to BB's server is
+// through Selkies (selkies.ts, 056), when the round trip to VesnALIA's server is
 // slow or the person chose it.
 
 import RFB from "@novnc/novnc";
-import { experimental_Icon as Icon, experimental_usePluginId, UrlLink, useBbNavigate, useRpc, useSdk } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, experimental_usePluginId, UrlLink, useAliaNavigate, useRpc, useSdk } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -130,7 +130,7 @@ export const QUALITY_LEVEL = 2;
 export { PASTE_CHORD_DELAY_MS, SETTLE_MS };
 /** Where the tab keeps the person's choice of stream for a box, from the viewer's menu: VNC, or video again. */
 export function streamChoiceKey(boxId: string): string {
-  return `bb-box:stream:${boxId}`;
+  return `alia-box:stream:${boxId}`;
 }
 /** How long the note that video did not start stays, to be read. */
 const FALLBACK_NOTE_MS = 8_000;
@@ -165,7 +165,7 @@ const failedVideo = new Set<string>();
 type Shows = Screen;
 
 export function displayChoiceKey(boxId: string): string {
-  return `bb-box:display:${boxId}`;
+  return `alia-box:display:${boxId}`;
 }
 
 const lastDisplay = new Map<string, Shows>();
@@ -188,7 +188,7 @@ function storeDisplay(boxId: string, shows: Shows): void {
 }
 
 export function deviceViewKey(boxId: string): string {
-  return `bb-box:device-view:${boxId}`;
+  return `alia-box:device-view:${boxId}`;
 }
 
 function storedDeviceView(boxId: string): DeviceView {
@@ -301,7 +301,7 @@ class Viewer extends RFB {
     const mac = macBrowser();
     const key = boxKey(keysym, code, this.guestOs, mac, this.macKeys);
     const keys = mac && this.guestOs !== "macos" ? this.#option.keys(key, down) : [{ key, down }];
-    // A Mac's input and Windows' bb-box-stream type a character the box's layout lacks by the character, and know none
+    // A Mac's input and Windows' alia-box-stream type a character the box's layout lacks by the character, and know none
     // of X's own names for them.
     for (const each of keys) {
       const sent = this.guestOs === "macos" || this.guestOs === "windows" ? unicodeKeysym(each.key.keysym) : each.key.keysym;
@@ -368,7 +368,7 @@ export function pageHref(pluginId: string, threadId: string, boxId: string): str
   return `/plugins/${encodeURIComponent(pluginId)}/${DESKTOP_PAGE}/${encodeURIComponent(threadId)}/${encodeURIComponent(boxId)}`;
 }
 
-/** The same place as a full URL, for `openUrl`, which opens only http(s) URLs (by BB's browser preference) and returns false for a path. */
+/** The same place as a full URL, for `openUrl`, which opens only http(s) URLs (by VesnALIA's browser preference) and returns false for a path. */
 export function pageUrl(pluginId: string, threadId: string, boxId: string): string {
   return new URL(pageHref(pluginId, threadId, boxId), window.location.origin).href;
 }
@@ -400,7 +400,7 @@ function randomId(): string {
  * share one.
  */
 function tabViewerId(boxId: string): string {
-  const key = `bb-box:viewer:${boxId}`;
+  const key = `alia-box:viewer:${boxId}`;
   let stored: string | null = null;
   try {
     stored = window.sessionStorage.getItem(key);
@@ -456,14 +456,14 @@ export class DesktopSession implements Kept {
     if (value && this.#mine && this.#client && this.connection.state === "connected") this.#client._keyboard._allKeysUp();
   }
   /**
-   * The box's pointer drawn over the picture for a viewer without control, where bb-box sends where it is (060): on a
-   * Wayland desktop with bb-box-cursor the VNC picture has no pointer, and RFB has no place for where it is, so it comes on
+   * The box's pointer drawn over the picture for a viewer without control, where alia-box sends where it is (060): on a
+   * Wayland desktop with alia-box-cursor the VNC picture has no pointer, and RFB has no place for where it is, so it comes on
    * a stream of its own, which ends at once for a desktop without the helper.
    */
   readonly #boxPointer = new BoxPointer(this.element);
   readonly #agentPointer = new AgentPointer(this.element);
   #pointerStream: WebSocket | null = null;
-  /** The box's image has no bb-box-cursor: its pointer stream is not opened again. */
+  /** The box's image has no alia-box-cursor: its pointer stream is not opened again. */
   #pointerNone = false;
   onEnded?: () => void;
   connection: Connection = { state: "connecting" };
@@ -499,7 +499,7 @@ export class DesktopSession implements Kept {
   onPaste?: (text: string | null) => void;
   /** A paste the box did not take, with why. */
   onPasteFailed?: (error: unknown) => void;
-  /** Puts the viewer's text on the box's clipboard bb-box's own way, where the desktop's server moves none (#464); null leaves it to noVNC. */
+  /** Puts the viewer's text on the box's clipboard alia-box's own way, where the desktop's server moves none (#464); null leaves it to noVNC. */
   putClipboard?: (text: string) => Promise<unknown> | null;
   /** Whether the box takes a viewer's clipboard at all; where not, a Cmd+V is left to noVNC as it was. */
   pasteAllowed?: () => boolean;
@@ -655,7 +655,7 @@ export class DesktopSession implements Kept {
     stream.onclose = (event: CloseEvent) => {
       if (this.#pointerStream !== stream) return;
       this.#pointerStream = null;
-      this.#agentPointer.message("BB_AGENT,clear");
+      this.#agentPointer.message("ALIA_AGENT,clear");
       if (event.reason === POINTER_NONE) this.#pointerNone = true;
       this.#boxPointer.at("");
       this.#drawPointer();
@@ -665,7 +665,7 @@ export class DesktopSession implements Kept {
   #closePointer(): void {
     const stream = this.#pointerStream;
     this.#pointerStream = null;
-    this.#agentPointer.message("BB_AGENT,clear");
+    this.#agentPointer.message("ALIA_AGENT,clear");
     this.#drawPointer();
     stream?.close();
   }
@@ -889,7 +889,7 @@ function DisplayItems({
   const items = (
     <>
       {vnc ? (
-        // A glyph like the other items', so its words line up with theirs; BB's tick sits at the right.
+        // A glyph like the other items', so its words line up with theirs; VesnALIA's tick sits at the right.
         <DropdownMenuCheckboxItem className="gap-2" checked={vnc.checked} onCheckedChange={vnc.onChange}>
           <MonitorGlyph />
           Show as VNC
@@ -937,7 +937,7 @@ function HighResolutionItem({ checked, disabled, words, onChange }: { checked: b
           <HighResolutionGlyph />
           High resolution
           <TooltipTrigger asChild>
-            {/* The size of the menu's 12 px text and of BB Box's other inline info icons; the padding, taken back by the margin, keeps a 20 px target to point at. */}
+            {/* The size of the menu's 12 px text and of VesnALIA Box's other inline info icons; the padding, taken back by the margin, keeps a 20 px target to point at. */}
             <span data-testid="high-resolution-info" className="-m-1 inline-flex items-center p-1 text-muted-foreground" onPointerEnter={() => setOpen(true)} onPointerLeave={() => setOpen(false)}>
               <Icon name="Info" className="size-3" aria-hidden />
             </span>
@@ -1104,13 +1104,13 @@ export function DesktopViewer(props: DesktopViewerProps) {
 function DesktopViewerAs({ threadId, boxId, newTab, onBack, screen = null, openScreen, page, otherViews, openTerminal, openFiles, numbers, viewer }: DesktopViewerProps & { viewer: string }) {
   const rpc = useRpc<Contract>();
   const pluginId = experimental_usePluginId();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { value: state, error, refresh } = useLive<DesktopState>(`${threadId}/${boxId}`, () => rpc.call("desktop", { threadId, box: boxId }), forThread(threadId));
   const box = state?.box ?? null;
   /** The box's name as last seen, so a tab whose box was released still names it. */
   const lastName = useRef<string | null>(null);
   if (box) lastName.current = box.name;
-  /** The box is gone from bb-box's records, as once its thread or agent released it: the tab says so, and offers nothing that needs it. */
+  /** The box is gone from alia-box's records, as once its thread or agent released it: the tab says so, and offers nothing that needs it. */
   const released = state !== null && !box;
   const path = state?.desktopPath ?? null;
   const shown = `${boxId}:${viewer}`;
@@ -1145,7 +1145,7 @@ function DesktopViewerAs({ threadId, boxId, newTab, onBack, screen = null, openS
   const boxNow = useRef(box);
   boxNow.current = box;
   // The stream: video whenever the box may show as video (056) and this browser can decode it, unless the
-  // person chose VNC in the viewer's menu. Video that cannot start falls back to VNC. Through BB's server, video
+  // person chose VNC in the viewer's menu. Video that cannot start falls back to VNC. Through VesnALIA's server, video
   // drags and answers keys as quickly as VNC, in whole frames (056's comparison, corrected).
   const [stream, setStream] = useState<Stream | null>(() => lastStream.get(shown) ?? null);
   const [videoFailed, setVideoFailedNow] = useState(() => failedVideo.has(shown));
@@ -1177,7 +1177,7 @@ function DesktopViewerAs({ threadId, boxId, newTab, onBack, screen = null, openS
       if (video === true && !videoFailed && pageIsInsecure() && !insecurePageNoted.shown) {
         insecurePageNoted.shown = true;
         flashFor(
-          "This desktop shows over VNC: video needs a secure connection to BB.",
+          "This desktop shows over VNC: video needs a secure connection to VesnALIA.",
           <UrlLink href={VIDEO_GUIDE} className="underline underline-offset-2">
             Video, in the desktops guide
           </UrlLink>,
@@ -1264,12 +1264,12 @@ function DesktopViewerAs({ threadId, boxId, newTab, onBack, screen = null, openS
   const [boxClipboard, setBoxClipboard] = useState<string | Blob | null>(null);
   useEffect(() => setBoxClipboard(null), [deviceShown]);
   /**
-   * A note for a moment, as BB's own toast, so the toolbar keeps its height (the owner's note of 18 October 2026): a clipboard
+   * A note for a moment, as VesnALIA's own toast, so the toolbar keeps its height (the owner's note of 18 October 2026): a clipboard
    * outcome of the person's own paste or copy, "Pasted", "Copied" or why nothing went, or why video did not start. Never from an
    * automatic attempt, and never a lasting problem line, which is for failures that need action. One at a time for this tab, the
    * next in its place; a sentence stays a little longer, to be read.
    */
-  const flashId = `bb-box-desktop:${shown}`;
+  const flashId = `alia-box-desktop:${shown}`;
   /** A note, with a detail under it, for at least `ms`. */
   const flashFor = (words: string, detail?: ReactNode, ms = FLASH_MS) => {
     toast(words, { id: flashId, description: detail, duration: Math.max(ms, words.split(" ").length * 300), closeButton: true });
@@ -1333,7 +1333,7 @@ function DesktopViewerAs({ threadId, boxId, newTab, onBack, screen = null, openS
       if (pasted) flashFor("Pasted");
     };
     current.onPasteFailed = (error) => setProblem(message(error));
-    // A desktop whose server moves no clipboard, as Tart's macOS VMs: bb-box puts the text there itself, as UTF-8 (#464).
+    // A desktop whose server moves no clipboard, as Tart's macOS VMs: alia-box puts the text there itself, as UTF-8 (#464).
     current.onTypeText = () => setTyping((now) => now ?? "");
     current.setTyping(typingNow.current);
     current.putClipboard = (text) => (ownShows === "desktop" && boxNow.current?.display?.clipboard === "commands" ? rpc.call("desktopPaste", { threadId, box: boxId, viewer, text }) : null);
@@ -1437,7 +1437,7 @@ function DesktopViewerAs({ threadId, boxId, newTab, onBack, screen = null, openS
   useLayoutEffect(() => {
     if (session.current instanceof DesktopSession) session.current.setQuality(quality);
   }, [quality, connection]);
-  // RFB's own: video goes through bb-box's own input, which names them as most do.
+  // RFB's own: video goes through alia-box's own input, which names them as most do.
   const macKeys = box?.display?.macKeys ?? null;
   useLayoutEffect(() => {
     if (session.current instanceof DesktopSession) session.current.setMacKeys(macKeys);
@@ -1453,7 +1453,7 @@ function DesktopViewerAs({ threadId, boxId, newTab, onBack, screen = null, openS
   }, [state, key, streamHeld, connected, quiet, box?.state, shown]);
 
   // The box's clipboard comes back while this tab has control, when it
-  // changes there, as a macOS desktop's input reports it (#406), or as bb-box
+  // changes there, as a macOS desktop's input reports it (#406), or as alia-box
   // reads it in a desktop whose server moves none (#464).
   useEffect(() => {
     if (!mine || !connected) return;
@@ -2073,8 +2073,8 @@ function CopiedImage({ image }: { image: Blob }) {
 
 /**
  * Why a box's desktop moves no clipboard either way, or null where it does. A macOS VM on Tart (#464) and a Windows box
- * through QEMU's console (#461), whose servers move none, have it through bb-box's own commands in the box; a pool Mac
- * through its own input. A Windows box from before #461 is told so until bb-box's next start gives it the commands.
+ * through QEMU's console (#461), whose servers move none, have it through alia-box's own commands in the box; a pool Mac
+ * through its own input. A Windows box from before #461 is told so until alia-box's next start gives it the commands.
  */
 function noClipboardThroughServer(box: BoxView): string | null {
   if (box.os === "windows" && box.display?.clipboard !== "commands") return `${box.name}'s desktop does not report its clipboard to viewers, nor take theirs: Windows through QEMU's console moves it only with the SPICE guest agent, which the box does not have.`;
@@ -2107,7 +2107,7 @@ function screenNeighbours(state: PanelState | null | undefined): BoxView[] {
 }
 
 export function useOpenScreen(threadId: string): (box: BoxView, screen: Screen) => void {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const rpc = useRpc<Contract>();
   const compactViewport = useIsCompactViewport();
   return (box, screen) => {
@@ -2134,7 +2134,7 @@ export function DevicePanel({ threadId, params }: { threadId: string; params: un
 }
 
 /** A box as a row: its glyph, name, kind, state (and who has control, for a desktop), with its actions. */
-export function BoxLine({ box, meta, machine = false, actions }: { box: BoxView; meta?: string | null; /** The BB machine the thread runs on (036): its badge. */ machine?: boolean; actions?: React.ReactNode }) {
+export function BoxLine({ box, meta, machine = false, actions }: { box: BoxView; meta?: string | null; /** The VesnALIA machine the thread runs on (036): its badge. */ machine?: boolean; actions?: React.ReactNode }) {
   const status = statusOf(box, Date.now());
   const control = hasViewer(box) && box.state === "ready" && !controlWord(box, new Set()) ? "The agent has control" : null;
   return (
@@ -2153,12 +2153,12 @@ export function BoxLine({ box, meta, machine = false, actions }: { box: BoxView;
 /**
  * The bare Desktop or Device launcher tab, made a real shortcut (Task A): one box
  * opens straight away, several offer a chooser, and none sends you to the Box panel.
- * The SDK 0.5.29 has no way to hide the launcher row (see docs/bb-requests.md #14),
+ * The SDK 0.5.29 has no way to hide the launcher row (see docs/alia-requests.md #14),
  * so the shortcut lives here rather than in the action's run().
  */
 function ScreenChooser({ threadId, action }: { threadId: string; action: ScreenAction }) {
   const rpc = useRpc<Contract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const openScreen = useOpenScreen(threadId);
   const { value: state, error, refresh } = useLive<PanelState>(threadId, () => rpc.call("state", { threadId }), forThread(threadId));
   // The box this thread runs on counts too (the operator, 4 October 2026): listed first, and alone it opens straight away.
@@ -2210,7 +2210,7 @@ function ScreenChooser({ threadId, action }: { threadId: string; action: ScreenA
 }
 
 function useRetitleBareTabByWhatItShows(action: ScreenAction, title: string | null): void {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const given = useRef<string>(ACTION_TITLES[action]);
   useEffect(() => {
     if (title === null || title === given.current) return;
@@ -2383,7 +2383,7 @@ function useRecheckWhileShown(recheck: () => unknown): void {
 
 function BoxList({ opening }: { opening?: BoxesTab }) {
   const rpc = useRpc<Contract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const pluginId = experimental_usePluginId();
   const { value: all, error, refresh } = useLive<BoxEntry[]>(LIST_KEY, () => rpc.call("allBoxes").then((answer) => withBusyUntil(answer, Date.now())), () => true);
   // Your machines with the threads on each, as settings lists them: settings' rows, actions and warnings (the operator, 5 October 2026).
@@ -2493,7 +2493,7 @@ function BoxList({ opening }: { opening?: BoxesTab }) {
   );
   return (
     <div className="h-full min-h-0">
-      {/* BB's Automations page's frame and spacing (the operator, 8 October 2026): its width, a line under the title, the tabs
+      {/* VesnALIA's Automations page's frame and spacing (the operator, 8 October 2026): its width, a line under the title, the tabs
           with the actions at their right; the list scrolls under them. */}
       <div className="mx-auto box-border flex h-full min-h-0 w-full max-w-5xl flex-col gap-5 px-4 pb-4 pt-3 md:px-5 md:pt-4">
         <p className="text-sm leading-5 text-muted-foreground">Computers for your threads, and machines of your own.</p>
@@ -2507,11 +2507,11 @@ function BoxList({ opening }: { opening?: BoxesTab }) {
             selected={tab}
             onSelect={chooseTab}
           />
-          {/* The settings gear, then New box, where Automations has New automation: a plain button, as BB's new-thread screen
-              already offers a thread on a new box (the operator, 8 October 2026). The gear is a link: BB's openUrl does nothing
-              with an app path. BB offers no place beside the page's title for it (docs/bb-requests.md #18). */}
+          {/* The settings gear, then New box, where Automations has New automation: a plain button, as VesnALIA's new-thread screen
+              already offers a thread on a new box (the operator, 8 October 2026). The gear is a link: VesnALIA's openUrl does nothing
+              with an app path. VesnALIA offers no place beside the page's title for it (docs/alia-requests.md #18). */}
           <div className="flex shrink-0 items-center gap-1.5">
-            <IconLink label="BB Box settings" icon="Settings" href={SETTINGS_PATH} className="size-8" />
+            <IconLink label="VesnALIA Box settings" icon="Settings" href={SETTINGS_PATH} className="size-8" />
             {kinds.length ? <NewBox kinds={kinds} make={add} onDemand={onDemand} access={machinesState?.access ?? null} machine primary profile={(backend) => rpc.call("provider", { backend })} rooms={(kind, size) => rpc.call("rooms", { kind, ...(size ? { size } : {}) })} cards={(kind) => rpc.call("kind.cards", { kind })} /> : !machinesState && !machinesError ? <NewBoxButtonSpace /> : null}
           </div>
         </div>
@@ -2549,7 +2549,7 @@ function BoxList({ opening }: { opening?: BoxesTab }) {
                 <BoxListSkeleton threads={tab === "threads"} />
               </WhileLoading>
             ) : null}
-            {loaded && tab === "machines" && !machines.length ? <EmptyPanel>You have no machines. New box adds one: a box of your own that shows in BB's machine list.</EmptyPanel> : null}
+            {loaded && tab === "machines" && !machines.length ? <EmptyPanel>You have no machines. New box adds one: a box of your own that shows in VesnALIA's machine list.</EmptyPanel> : null}
             {loaded && tab === "threads" && !threads.length ? <EmptyPanel>No thread has a box.</EmptyPanel> : null}
             {narrowed && listed && !(tab === "machines" ? machineRows : threadRows).length ? <EmptyPanel>No boxes match.</EmptyPanel> : null}
             {tab === "machines" && machineRows.length ? (

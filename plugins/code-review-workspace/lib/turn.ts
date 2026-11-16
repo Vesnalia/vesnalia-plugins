@@ -15,7 +15,7 @@ export type TurnReason =
   | "waiting" | "draft" | "snoozed"
   | "approved" | "commented"
   | "own" | "new-comments"
-  // A local review whose folder is on another branch, or that bb removed (src/feature-review.ts).
+  // A local review whose folder is on another branch, or that VesnALIA removed (src/feature-review.ts).
   | "paused" | "folder-gone"
   // Merged into another review of its PR (src/merge.ts).
   | "merged-into"
@@ -62,7 +62,7 @@ export interface TurnSignals {
   /** A request for you or your team is pending on GitHub now. */
   requestPending?: boolean;
   isDraft?: boolean;
-  /** When bb first saw the current head commit. */
+  /** When VesnALIA first saw the current head commit. */
   headSeenAt?: number | null;
   /** expected: a required check that hasn't reported. */
   ci?: "pass" | "fail" | "pending" | "expected" | "none";
@@ -78,7 +78,7 @@ export interface TurnSignals {
   /** The latest comment on the PR, by someone else, that mentions you. */
   mentionAt?: number | null;
   mentionBy?: string | null;
-  /** When bb saw GitHub dismiss your latest review. */
+  /** When VesnALIA saw GitHub dismiss your latest review. */
   dismissedAt?: number | null;
   /** Your changes-requested is what's left: everyone else who reviewed approved. */
   blocking?: boolean;
@@ -136,7 +136,7 @@ export interface TurnInput {
   /** A turn that came from a passing state (feedback handled, looks ready); it holds until you act. */
   heldTurn?: { reason: TurnReason; label: string; signal: string; at: number } | null;
   /**
-   * A local review's folder: on another branch, which pauses it, or removed by bb, and how many of its files changed since
+   * A local review's folder: on another branch, which pauses it, or removed by VesnALIA, and how many of its files changed since
    * the review read it, as last checked (src/feature-review.ts).
    */
   feature?: { pausedOn?: string | null; folderGone?: boolean; changedFiles?: number | null } | null;
@@ -219,7 +219,7 @@ export function computeTurn(review: TurnInput, options: TurnOptions = defaultTur
 
   if (review.mergedInto) return make("archive", "merged-into", "Merged into another review", { at: review.mergedAt ?? review.archivedAt ?? null });
   if (review.prState === "MERGED") return make("archive", "merged", "Merged", { at: review.prMergedAt ?? review.archivedAt ?? null });
-  // A local review whose folder bb removed, with nothing left open or sent (src/feature-review.ts).
+  // A local review whose folder VesnALIA removed, with nothing left open or sent (src/feature-review.ts).
   if (review.kind === "ref" && review.archivedAt && review.feature?.folderGone) return make("archive", "folder-gone", "Folder removed", { at: review.archivedAt });
   if (review.prState === "CLOSED" || review.archivedAt) return make("archive", "closed", "Closed", { at: (review.prState === "CLOSED" ? review.prClosedAt : null) ?? review.archivedAt ?? null });
   // Deleted, or out of your reach for good; access refused (say, for SSO) may come back.
@@ -258,7 +258,7 @@ export function computeTurn(review: TurnInput, options: TurnOptions = defaultTur
   return review.status === "generating" ? { ...turn, label: "Generating" } : turn;
 
   function reviewerTurn(): Turn {
-    // Comments sent to the thread that fixes them come back to you once it reports them all, or runs bb review ready:
+    // Comments sent to the thread that fixes them come back to you once it reports them all, or runs VesnALIA review ready:
     // idle alone never means done. Archived or deleted first, it won't report the rest: they're back with you, with no
     // alert, as it's usually you who archived it. On a PR, until your next review there.
     const fixes = fixesState(review);

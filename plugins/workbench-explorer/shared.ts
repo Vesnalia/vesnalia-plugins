@@ -1,6 +1,6 @@
 /**
  * Schemas, types, and constants used by both server and frontend.
- * No BB SDK imports — this module is safe for the browser bundle.
+ * No VesnALIA SDK imports — this module is safe for the browser bundle.
  */
 import { z } from "zod";
 
@@ -139,7 +139,7 @@ export const fileReplaceOutcomeSchema = z.object({
 export type FileReplaceOutcome = z.infer<typeof fileReplaceOutcomeSchema>;
 
 /**
- * A chat link bb aimed at a file that is not there, and the file the same text
+ * A chat link VesnALIA aimed at a file that is not there, and the file the same text
  * really names. `text` and `href` identify the anchor the fix belongs to.
  */
 export const anchorFixSchema = z.object({

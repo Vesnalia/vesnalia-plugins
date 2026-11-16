@@ -3,8 +3,8 @@
 // The host entry runs on every enrolled host daemon: it is the only place that
 // can see that machine's Kimi Code CLI installation, its OAuth credentials and
 // its outbound network. The server entry turns those host answers into the
-// `provider-usage.v1.*` RPC resources that BB's Provider usage view reads.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+// `provider-usage.v1.*` RPC resources that VesnALIA's Provider usage view reads.
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const windowKindSchema = z.enum([

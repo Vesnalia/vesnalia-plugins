@@ -54,33 +54,33 @@ test('result directives preserve Markdown and require explicit implementation ev
   }
 });
 const item: WorkItem = {
-  bbProjectId: 'proj_test', source: 'gitlab', locator: 'gitlab.com/group/repo#12',
+  aliaProjectId: 'proj_test', source: 'gitlab', locator: 'gitlab.com/group/repo#12',
   key: '#12', title: 'Keep panel open', description: 'Show progress.', url: 'https://gitlab.com/group/repo/-/issues/12',
   status: 'Open', stateCategory: 'todo', priority: null, assignee: null,
   project: null, labels: [], updatedAt: new Date().toISOString()
 };
 test('factory policy defaults disabled and durable admission is idempotent and capacity bounded', () => {
   const store = createFactoryStore(new Database(':memory:'));
-  const initial = store.getProjectPolicy(item.bbProjectId, item.source);
+  const initial = store.getProjectPolicy(item.aliaProjectId, item.source);
   assert.equal(initial.enabled, false);
   const policy = store.saveProjectPolicy({ ...initial, enabled: true, maxConcurrent: 1 });
   const first = store.admit({
-    projectId: item.bbProjectId, source: item.source, locator: item.locator,
+    projectId: item.aliaProjectId, source: item.source, locator: item.locator,
     scopeDigest: 'scope-a'
   }, policy);
   assert.equal(first.kind, 'admitted');
   assert.equal(first.kind === 'admitted' && first.record.admission.kind, 'factory');
   const duplicate = store.admit({
-    projectId: item.bbProjectId, source: item.source, locator: item.locator,
+    projectId: item.aliaProjectId, source: item.source, locator: item.locator,
     scopeDigest: 'scope-a'
   }, policy);
   assert.equal(duplicate.kind, 'existing');
   const capacity = store.admit({
-    projectId: item.bbProjectId, source: item.source, locator: 'second',
+    projectId: item.aliaProjectId, source: item.source, locator: 'second',
     scopeDigest: 'scope-b'
   }, policy);
   assert.equal(capacity.kind, 'capacity');
-  assert.deepEqual(store.projectStatus(item.bbProjectId, item.source), {
+  assert.deepEqual(store.projectStatus(item.aliaProjectId, item.source), {
     kind: 'paused', policy, active: 1, queue: null, lastScan: null
   });
 });
@@ -90,19 +90,19 @@ test('explicit factory AI choice round-trips and changes the admission fingerpri
     providerId: 'claude', model: 'claude-sonnet', permissionMode: 'accept-edits' as const,
     reasoningLevel: 'high' as const, serviceTier: 'fast' as const
   };
-  const initial = store.getProjectPolicy(item.bbProjectId, item.source);
+  const initial = store.getProjectPolicy(item.aliaProjectId, item.source);
   assert.equal(initial.execution, null);
   const policy = store.saveProjectPolicy({ ...initial, enabled: true, maxConcurrent: 5, execution });
-  assert.deepEqual(store.getProjectPolicy(item.bbProjectId, item.source).execution, execution);
+  assert.deepEqual(store.getProjectPolicy(item.aliaProjectId, item.source).execution, execution);
   assert.equal(store.admit({
-    projectId: item.bbProjectId, source: item.source, locator: item.locator, scopeDigest: 'scope'
+    projectId: item.aliaProjectId, source: item.source, locator: item.locator, scopeDigest: 'scope'
   }, policy).kind, 'admitted');
   const changed = store.saveProjectPolicy({ ...policy, execution: { ...execution, model: 'claude-opus' } });
   assert.equal(store.admit({
-    projectId: item.bbProjectId, source: item.source, locator: 'second', scopeDigest: 'scope'
+    projectId: item.aliaProjectId, source: item.source, locator: 'second', scopeDigest: 'scope'
   }, policy).kind, 'disabled');
   assert.equal(store.admit({
-    projectId: item.bbProjectId, source: item.source, locator: 'third', scopeDigest: 'scope'
+    projectId: item.aliaProjectId, source: item.source, locator: 'third', scopeDigest: 'scope'
   }, changed).kind, 'admitted');
 });
 
@@ -114,7 +114,7 @@ test('saved factory AI reaches coordinator and stage spawns as explicit executio
     reasoningLevel: 'high' as const, serviceTier: 'fast' as const
   };
   f.store.saveProjectPolicy({
-    ...f.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true, execution
+    ...f.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true, execution
   });
   await f.service.startTask(item, null);
   assert.equal(f.spawnInputs.length, 2);
@@ -135,7 +135,7 @@ test('unset factory AI falls back to project defaults and both missing blocks di
     reasoningLevel: 'low', serviceTier: 'default'
   });
   fallback.store.saveProjectPolicy({
-    ...fallback.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true
+    ...fallback.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true
   });
   await fallback.service.startTask(item, null);
   assert.equal(fallback.spawnInputs.length, 2);
@@ -147,7 +147,7 @@ test('unset factory AI falls back to project defaults and both missing blocks di
   const missing = fixture();
   missing.projectDefaults(null);
   missing.store.saveProjectPolicy({
-    ...missing.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true
+    ...missing.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true
   });
   await assert.rejects(missing.service.startTask(item, null),
     /Choose a provider and model in factory settings before starting work/);
@@ -162,7 +162,7 @@ test('a task-scoped AI overrides the project policy for its coordinator and stag
     reasoningLevel: 'low' as const, serviceTier: 'default' as const
   };
   f.store.saveProjectPolicy({
-    ...f.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true, execution: policyExecution
+    ...f.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true, execution: policyExecution
   });
   const taskExecution = {
     providerId: 'claude', model: 'claude-sonnet', permissionMode: 'accept-edits' as const,
@@ -184,7 +184,7 @@ test('a null task choice falls back to the current thread execution', async () =
     model: 'thread-model', permissionMode: 'auto', reasoningLevel: 'high', serviceTier: 'default'
   });
   (f.sdk.threads as any).get = async ({ threadId }: { threadId: string }) => ({
-    id: threadId, status: 'idle', projectId: item.bbProjectId, environmentId: 'env_test',
+    id: threadId, status: 'idle', projectId: item.aliaProjectId, environmentId: 'env_test',
     providerId: 'claude', archivedAt: null, deletedAt: null, parentThreadId: null,
     title: null, createdAt: Date.now()
   });
@@ -203,9 +203,9 @@ test('two database connections preserve claims, capacity, and policy after reope
     const first = createFactoryStore(a);
     const second = createFactoryStore(b);
     const policy = first.saveProjectPolicy({
-      ...first.getProjectPolicy(item.bbProjectId, item.source), enabled: true
+      ...first.getProjectPolicy(item.aliaProjectId, item.source), enabled: true
     });
-    const identity = { projectId: item.bbProjectId, source: item.source, locator: item.locator, scopeDigest: 'scope' };
+    const identity = { projectId: item.aliaProjectId, source: item.source, locator: item.locator, scopeDigest: 'scope' };
     assert.equal(first.admit(identity, policy).kind, 'admitted');
     assert.equal(second.admit(identity, policy).kind, 'existing');
     assert.equal(second.admit({ ...identity, locator: 'another' }, policy).kind, 'capacity');
@@ -214,7 +214,7 @@ test('two database connections preserve claims, capacity, and policy after reope
     const reopened = new Database(path);
     try {
       const store = createFactoryStore(reopened);
-      assert.equal(store.getProjectPolicy(item.bbProjectId, item.source).enabled, true);
+      assert.equal(store.getProjectPolicy(item.aliaProjectId, item.source).enabled, true);
       assert.equal(store.admit(identity, policy).kind, 'existing');
       assert.equal(store.all().length, 1);
     } finally { reopened.close(); }
@@ -233,13 +233,13 @@ test('automatic scans revalidate tickets, suppress duplicate ticks, and stop sta
     liveItem: async () => live
   });
   const policy = f.store.saveProjectPolicy({
-    ...f.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true
+    ...f.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true
   });
   live = { ...item, stateCategory: 'done' };
   await f.service.scan();
   assert.equal(f.spawns(), 0);
   live = { ...item };
-  await Promise.all([f.service.scan(item.bbProjectId), f.service.scan(item.bbProjectId)]);
+  await Promise.all([f.service.scan(item.aliaProjectId), f.service.scan(item.aliaProjectId)]);
   assert.equal(f.spawns(), 1);
   assert.equal(f.store.all()[0]?.admission.kind, 'factory');
   f.complete();
@@ -253,7 +253,7 @@ test('automatic scans retain uncertain dispatch without spawning again', async (
   const f = fixture({
     provider: () => item.source, candidates: async () => [item], liveItem: async () => item
   });
-  f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true });
+  f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true });
   f.fail();
   await f.service.scan();
   await f.service.scan();
@@ -265,19 +265,19 @@ test('automatic scans retain uncertain dispatch without spawning again', async (
 
 test('factory admission fails closed for stale, disabled, and wrong-provider policy', () => {
   const store = createFactoryStore(new Database(':memory:'));
-  const disabled = store.getProjectPolicy(item.bbProjectId, item.source);
+  const disabled = store.getProjectPolicy(item.aliaProjectId, item.source);
   assert.equal(store.admit({
-    projectId: item.bbProjectId, source: item.source, locator: item.locator,
+    projectId: item.aliaProjectId, source: item.source, locator: item.locator,
     scopeDigest: 'scope'
   }, disabled).kind, 'disabled');
   const enabled = store.saveProjectPolicy({ ...disabled, enabled: true });
   store.saveProjectPolicy({ ...enabled, enabled: false });
   assert.equal(store.admit({
-    projectId: item.bbProjectId, source: item.source, locator: item.locator,
+    projectId: item.aliaProjectId, source: item.source, locator: item.locator,
     scopeDigest: 'scope'
   }, enabled).kind, 'disabled');
   assert.equal(store.admit({
-    projectId: item.bbProjectId, source: 'linear', locator: item.locator,
+    projectId: item.aliaProjectId, source: 'linear', locator: item.locator,
     scopeDigest: 'scope'
   }, enabled).kind, 'disabled');
 });
@@ -316,8 +316,8 @@ function fixture(queue?: Parameters<typeof createFactoryService>[4]) {
   let managed = true;
   let spawnInput: unknown;
   let currentThreadId = 'thr_native';
-  let threadProjectId = item.bbProjectId;
-  let environmentProjectId = item.bbProjectId;
+  let threadProjectId = item.aliaProjectId;
+  let environmentProjectId = item.aliaProjectId;
   const spawnInputs: { title: string; parentThreadId?: string; providerId?: string; model?: string;
     executionInputSources?: Record<string, string>; environment: { type: string; environmentId?: string } }[] = [];
   const parents = new Map<string, string | null>();
@@ -344,7 +344,7 @@ function fixture(queue?: Parameters<typeof createFactoryService>[4]) {
           threadEnvironments.set(id, 'env_test');
           onCoordinatorSpawn();
           if (coordinatorFailure === 'lost') throw new Error('Coordinator response lost');
-          return { id, environmentId: 'env_test', projectId: item.bbProjectId, status: 'idle' };
+          return { id, environmentId: 'env_test', projectId: item.aliaProjectId, status: 'idle' };
         }
         spawnInput = input;
         spawns++;
@@ -362,7 +362,7 @@ function fixture(queue?: Parameters<typeof createFactoryService>[4]) {
         parents.set(currentThreadId, request.parentThreadId ?? null);
         titles.set(currentThreadId, request.title);
         createdAt.set(currentThreadId, Date.now());
-        return { id: currentThreadId, environmentId, projectId: item.bbProjectId };
+        return { id: currentThreadId, environmentId, projectId: item.aliaProjectId };
       },
       get: async ({ threadId }: { threadId: string }) => ({
         id: threadId, status: threadStatuses.get(threadId) ?? threadStatus,
@@ -501,9 +501,9 @@ test('concurrent starts create one coordinator and parent every new stage withou
 test('lost coordinator response blocks workers and provider writes across restart until exact recovery', async () => {
   const f = fixture({ provider: () => item.source, candidates: async () => [item], liveItem: async () => item });
   try {
-    f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true });
+    f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true });
     f.coordinatorFailure('lost');
-    await f.service.scan(item.bbProjectId);
+    await f.service.scan(item.aliaProjectId);
     let record = f.store.all()[0];
     assert.equal(record.coordinator?.status, 'uncertain');
     assert.equal(f.coordinatorSpawns(), 1);
@@ -535,9 +535,9 @@ test('delayed coordinator environment allocation resumes exactly one child after
   const queue = { provider: () => item.source, candidates: async () => [item], liveItem: async () => item };
   const f = fixture(queue);
   try {
-    f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true });
+    f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true });
     f.onCoordinatorSpawn(() => f.threadEnvironments.set('thr_coordinator_1', null));
-    await f.service.scan(item.bbProjectId);
+    await f.service.scan(item.aliaProjectId);
     assert.equal(f.coordinatorSpawns(), 1);
     assert.equal(f.spawns(), 0);
     assert.equal(f.progressWrites(), 0);
@@ -767,16 +767,16 @@ test('coordinator initialization outcomes do not complete stages or release work
   for (const nativeStatus of ['idle', 'error'] as const) {
     const f = fixture({ provider: () => item.source, candidates: async () => [item], liveItem: async () => item });
     try {
-      f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true });
-      await f.service.scan(item.bbProjectId);
+      f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true });
+      await f.service.scan(item.aliaProjectId);
       const record = f.store.all()[0];
       if (record.coordinator?.status !== 'ready') throw new Error('Expected coordinator');
       f.threadStatus(nativeStatus, record.coordinator.threadId);
       const observed = await f.service.get(item);
       assert.equal(observed.runs[0].status, 'running');
       assert.equal(observed.stage, 'Triage');
-      assert.equal(f.store.projectStatus(item.bbProjectId, item.source).kind, 'running');
-      const status = f.store.projectStatus(item.bbProjectId, item.source);
+      assert.equal(f.store.projectStatus(item.aliaProjectId, item.source).kind, 'running');
+      const status = f.store.projectStatus(item.aliaProjectId, item.source);
       assert.equal('active' in status && status.active, 1);
       assert.equal(f.spawns(), 1);
       assert.equal(f.coordinatorSpawns(), 1);
@@ -800,20 +800,20 @@ test('claimed tickets before the bounded scan window do not starve a later eligi
     }
   });
   try {
-    f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true });
+    f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true });
     for (const candidate of candidates.slice(0, 500)) {
       const record = newRecord(candidate);
       record.admission = { kind: 'factory', claimedAt: new Date().toISOString() };
       record.stage = 'Done';
       f.store.save(record);
     }
-    await f.service.scan(item.bbProjectId);
+    await f.service.scan(item.aliaProjectId);
     assert.equal(excluded.length, 500);
     assert.deepEqual(liveReads, ['ticket-500', 'ticket-500']);
     assert.equal(f.spawns(), 1);
     assert.equal(f.coordinatorSpawns(), 1);
     assert.equal(f.store.all().find(record => record.locator === 'ticket-500')?.runs[0].status, 'running');
-    assert.equal(f.store.getScan(item.bbProjectId)?.pendingCandidates, 0);
+    assert.equal(f.store.getScan(item.aliaProjectId)?.pendingCandidates, 0);
   } finally { f.db.close(); }
 });
 
@@ -821,7 +821,7 @@ test('healthy scans preserve queue-owned coordinator, stage, and automation bloc
   for (const blocker of ['coordinator', 'stage', 'automation'] as const) {
     const f = fixture({ provider: () => item.source, candidates: async () => [], liveItem: async () => item });
     try {
-      f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true });
+      f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true });
       const record = newRecord(item);
       record.admission = { kind: 'factory', claimedAt: new Date().toISOString() };
       if (blocker === 'coordinator') record.coordinator = {
@@ -834,9 +834,9 @@ test('healthy scans preserve queue-owned coordinator, stage, and automation bloc
       }
       if (blocker === 'automation') record.automationError = 'Issue scope changed; inspect the updated ticket.';
       f.store.save(record);
-      await f.service.scan(item.bbProjectId);
-      assert.equal(f.store.getScan(item.bbProjectId)?.kind, 'success');
-      const status = f.store.projectStatus(item.bbProjectId, item.source);
+      await f.service.scan(item.aliaProjectId);
+      assert.equal(f.store.getScan(item.aliaProjectId)?.kind, 'success');
+      const status = f.store.projectStatus(item.aliaProjectId, item.source);
       assert.equal(status.kind, 'blocked');
       assert.match(status.kind === 'blocked' ? status.reason : '', new RegExp(blocker === 'automation' ? 'scope changed' : 'response lost'));
       assert.equal(f.spawns(), 0);
@@ -850,12 +850,12 @@ test('pausing or changing live eligibility during coordinator creation prevents 
     let live = { ...item };
     const f = fixture({ provider: () => item.source, candidates: async () => [item], liveItem: async () => live });
     try {
-      const policy = f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true });
+      const policy = f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true });
       f.onCoordinatorSpawn(() => {
         if (change === 'pause') f.store.saveProjectPolicy({ ...policy, enabled: false });
         else live = change === 'closed' ? { ...item, stateCategory: 'done' } : { ...item, description: 'Changed scope' };
       });
-      await f.service.scan(item.bbProjectId);
+      await f.service.scan(item.aliaProjectId);
       assert.equal(f.coordinatorSpawns(), 1);
       assert.equal(f.spawns(), 0);
       assert.equal(f.progressWrites(), 0);
@@ -874,7 +874,7 @@ test('background intake is throttled while explicit scans and native observation
     liveItem: async () => item
   });
   try {
-    f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true });
+    f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true });
     await f.service.scan();
     assert.equal(f.store.all()[0].runs[0].status, 'running');
     f.complete('Investigation findings');
@@ -883,7 +883,7 @@ test('background intake is throttled while explicit scans and native observation
     await f.service.poll(new AbortController().signal);
     assert.equal(scans, 1);
     assert.equal(f.store.all()[0].runs.at(-1)?.kind, 'plan');
-    await f.service.scan(item.bbProjectId);
+    await f.service.scan(item.aliaProjectId);
     assert.equal(scans, 2);
     t.mock.timers.tick(29_999);
     await f.service.scan();
@@ -891,7 +891,7 @@ test('background intake is throttled while explicit scans and native observation
     t.mock.timers.tick(1);
     await f.service.scan();
     assert.equal(scans, 3);
-    assert.equal(f.store.getScan(item.bbProjectId)?.kind, 'success');
+    assert.equal(f.store.getScan(item.aliaProjectId)?.kind, 'success');
   } finally { f.db.close(); }
 });
 
@@ -902,7 +902,7 @@ test('running and accepted-review observations do not re-read the provider or mu
     liveItem: async () => { reads++; return item; }
   });
   try {
-    f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true });
+    f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true });
     await f.service.scan();
     const admitted = f.store.all()[0];
     const observed = await f.service.get({ ...item, description: 'Outdated cached scope' });
@@ -939,7 +939,7 @@ test('factory polling revalidates uncached reservations and completed stages aga
       });
       try {
         const policy = f.store.saveProjectPolicy({
-          ...f.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true
+          ...f.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true
         });
         if (stage === 'reserved') f.store.admit(newRecord(item), policy);
         else {
@@ -994,7 +994,7 @@ test('factory stage advancement blocks live closure, scope drift, identity drift
       }
     });
     try {
-      f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true });
+      f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true });
       await f.service.scan();
       const originalScope = f.store.all()[0].scopeDigest;
       if (change === 'closed') live = { ...item, stateCategory: 'done' };
@@ -1022,12 +1022,12 @@ test('one unavailable provider does not stop another project scan or native comp
     liveItem: async () => item
   });
   try {
-    for (const projectId of ['proj_aaa_unavailable', item.bbProjectId]) {
+    for (const projectId of ['proj_aaa_unavailable', item.aliaProjectId]) {
       f.store.saveProjectPolicy({ ...f.store.getProjectPolicy(projectId, item.source), enabled: true });
     }
     await f.service.scan();
     assert.equal(f.store.getScan('proj_aaa_unavailable')?.kind, 'blocked');
-    assert.equal(f.store.getScan(item.bbProjectId)?.kind, 'success');
+    assert.equal(f.store.getScan(item.aliaProjectId)?.kind, 'success');
     assert.equal(f.store.all()[0].runs[0].status, 'running');
     f.complete('Investigation findings');
     await f.service.poll(new AbortController().signal);
@@ -1037,7 +1037,7 @@ test('one unavailable provider does not stop another project scan or native comp
 
 test('reserved-claim recovery validates all identity fields before dispatch', async () => {
   for (const live of [
-    { ...item, bbProjectId: 'proj_other' },
+    { ...item, aliaProjectId: 'proj_other' },
     { ...item, source: 'linear' as const },
     { ...item, locator: 'another-ticket' }
   ]) {
@@ -1046,7 +1046,7 @@ test('reserved-claim recovery validates all identity fields before dispatch', as
     });
     try {
       const policy = f.store.saveProjectPolicy({
-        ...f.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true
+        ...f.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true
       });
       const record = newRecord(item);
       f.store.admit({ ...record }, policy);
@@ -1065,7 +1065,7 @@ test('automatic repairs honor a pause during preflight while explicit continuati
     });
     try {
       const policy = f.store.saveProjectPolicy({
-        ...f.store.getProjectPolicy(item.bbProjectId, item.source), enabled: true
+        ...f.store.getProjectPolicy(item.aliaProjectId, item.source), enabled: true
       });
       const record = newRecord(item);
       savePlan(record, 'Implement current scope and run the relevant checks');
@@ -1113,9 +1113,9 @@ test('diff resolves only a recorded path in the linked project workspace', async
   f.store.save(record);
   const requests: unknown[] = [];
   const sdk = {
-    threads: { get: async () => ({ projectId: item.bbProjectId, environmentId: 'env_test' }) },
+    threads: { get: async () => ({ projectId: item.aliaProjectId, environmentId: 'env_test' }) },
     environments: {
-      get: async () => ({ projectId: item.bbProjectId, path: '/repo', mergeBaseBranch: 'main' }),
+      get: async () => ({ projectId: item.aliaProjectId, path: '/repo', mergeBaseBranch: 'main' }),
       diffPatch: async (input: unknown) => {
         requests.push(input);
         return { outcome: 'available', patches: [{ path: 'src/index.ts', patch: '@@ -1 +1 @@\n-old\n+new', truncated: false }] };
@@ -1145,9 +1145,9 @@ test('diff reports unavailable workspaces and bounds large patches', async () =>
   stored.runs[0]!.threadId = 'thr_native'; stored.runs[0]!.environmentId = 'env_test'; f.store.save(stored);
   let outcome: unknown = { outcome: 'unavailable', failure: { message: 'Host offline' } };
   const sdk = {
-    threads: { get: async () => ({ projectId: item.bbProjectId, environmentId: 'env_test' }) },
+    threads: { get: async () => ({ projectId: item.aliaProjectId, environmentId: 'env_test' }) },
     environments: {
-      get: async () => ({ projectId: item.bbProjectId, path: '/repo', mergeBaseBranch: null }),
+      get: async () => ({ projectId: item.aliaProjectId, path: '/repo', mergeBaseBranch: null }),
       diffPatch: async () => outcome
     }
   } as unknown as Parameters<typeof createFactoryService>[0];
@@ -1242,7 +1242,7 @@ test('a confirmed environment rejection is retryable and legacy records are repa
     const legacy = newRecord(legacyItem);
     const run = startRun(legacy, 'investigate', false);
     run.status = 'uncertain';
-    run.error = 'Native dispatch outcome uncertain: HTTP 400: hostId is required unless workspace.type is personal. Inspect recent BB threads; no automatic retry.';
+    run.error = 'Native dispatch outcome uncertain: HTTP 400: hostId is required unless workspace.type is personal. Inspect recent VesnALIA threads; no automatic retry.';
     f.store.save(legacy);
     const repaired = await f.service.get(legacyItem);
     assert.equal(repaired.runs[0].status, 'failed');
@@ -1256,7 +1256,7 @@ test('missing host source recovers as retryable without automatic dispatch', asy
     record.automatic = true;
     const run = startRun(record, 'investigate', false);
     run.status = 'uncertain';
-    run.error = 'Native dispatch outcome uncertain: HTTP 404: Project has no local-path source for host. Inspect recent BB threads; no automatic retry.';
+    run.error = 'Native dispatch outcome uncertain: HTTP 404: Project has no local-path source for host. Inspect recent VesnALIA threads; no automatic retry.';
     f.store.save(record);
     const repaired = await f.service.get(item);
     assert.equal(repaired.runs[0].status, 'failed');
@@ -1468,13 +1468,13 @@ test('Review requires approved, completed Build and never implies acceptance', (
 test('recovery rejects a different project thread', async () => {
   const f = fixture();
   try {
-    const record = newRecord({ ...item, bbProjectId: 'proj_other' });
+    const record = newRecord({ ...item, aliaProjectId: 'proj_other' });
     startRun(record, 'investigate', false);
     f.store.save(record);
     await f.service.recover();
     const recovered = f.store.all()[0];
     await assert.rejects(f.service.linkRecovered(
-      { ...item, bbProjectId: 'proj_other' }, recovered.version, 'thr_native'
+      { ...item, aliaProjectId: 'proj_other' }, recovered.version, 'thr_native'
     ), /project/);
     assert.equal(f.spawns(), 0);
   } finally { f.db.close(); }
@@ -1705,7 +1705,7 @@ test('a broken checkout is a confirmed retryable Build failure, including legacy
     assert.equal(f.spawns(), 3);
 
     record.runs.at(-1)!.status = 'uncertain';
-    record.runs.at(-1)!.error = 'Native dispatch outcome uncertain: HTTP 409: This project checkout has no usable git branch.. Inspect recent BB threads; no automatic retry.';
+    record.runs.at(-1)!.error = 'Native dispatch outcome uncertain: HTTP 409: This project checkout has no usable git branch.. Inspect recent VesnALIA threads; no automatic retry.';
     f.store.save(record);
     record = await f.service.get(item);
     assert.equal(record.runs.at(-1)?.status, 'failed');
@@ -2263,7 +2263,7 @@ test('retrying a rejected Build dispatch reuses the existing implementation work
     });
     const rejected = startRun(record, 'build', false);
     Object.assign(rejected, {
-      status: 'failed', error: 'BB rejected the environment before starting a session.',
+      status: 'failed', error: 'VesnALIA rejected the environment before starting a session.',
       activity: 'Native session was not started'
     });
     const saved = f.store.save(record);

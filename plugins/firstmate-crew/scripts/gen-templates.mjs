@@ -1,5 +1,5 @@
 // Bundles templates/ into server/templates.generated.ts, so the server half needs no file access to
-// find its templates: `bb plugin build` bundles one script and the plugin's own directory is not on
+// find its templates: `alia plugin build` bundles one script and the plugin's own directory is not on
 // offer at run time. Run with `npm run gen:templates` after any change under templates/.
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";

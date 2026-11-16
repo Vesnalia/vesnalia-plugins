@@ -5,8 +5,8 @@
 // kind of failure into one of the tab's own outcomes.
 //
 // Why: bend is the one implementation of "read and change a repository's
-// issues, whatever tracker holds them" (bead-bb-c9l.4, by the decision in
-// bead-bb-c9l.7): agents use it from a terminal, and the tab uses the very
+// issues, whatever tracker holds them" (bead-alia-c9l.4, by the decision in
+// bead-alia-c9l.7): agents use it from a terminal, and the tab uses the very
 // same program, so the two cannot drift apart. Before, the tab imported the
 // tracker code as TypeScript; that code is gone.
 //
@@ -18,7 +18,7 @@
 //   kind is what decides the tab's state, never the words.
 // - The tab is told the beads program it found (BEND_BD), so the plugin's
 //   "bd command" setting keeps working. It takes whatever tracker bend
-//   finds for the folder (bead-bb-c9l.6): bend answers reads from its copy,
+//   finds for the folder (bead-alia-c9l.6): bend answers reads from its copy,
 //   so a hosted tracker is as quick as beads.
 // - bend is asked what the folder has first; the beads program is needed
 //   only where the tracker is beads, so a repository on GitHub issues opens
@@ -26,7 +26,7 @@
 //   whether or not beads is installed: choosing the tracker comes first in
 //   setup, and installing beads only after beads was chosen.
 // - bend answers reads from a copy of the issues it keeps on this machine
-//   (bead-bb-c9l.14), so asking for the list is cheap and nothing is kept
+//   (bead-alia-c9l.14), so asking for the list is cheap and nothing is kept
 //   here. `list(true)` has bend reread that copy first.
 // - What was found for a folder is remembered. It is forgotten when a run
 //   reports a program missing, so installing or building one is picked up
@@ -38,7 +38,7 @@
 //   again, instead of failing on an option it does not know.
 //
 // Gotchas:
-// - No BB import here, so it can be tested with plain node; the plugin's
+// - No VesnALIA import here, so it can be tested with plain node; the plugin's
 //   log and its searches for the programs are handed in.
 // - A missing folder and a missing program look the same to the operating
 //   system; callers check the folder first (folders.folderFor).
@@ -219,7 +219,7 @@ export interface RunOptions {
    * The run is not somebody using bend: the plugin reads because it was
    * told the files changed, not because the owner looked or asked. bend
    * then does not count it as use, so the helper that syncs on a clock is
-   * neither started nor kept alive by it (bead-bb-c9l.16). Without this a
+   * neither started nor kept alive by it (bead-alia-c9l.16). Without this a
    * helper's own sync, which changes the files, would keep it alive for as
    * long as a tab is open.
    */
@@ -331,7 +331,7 @@ export interface Tracker {
   comment(id: string, text: string, author?: string): Promise<void>;
   close(id: string): Promise<void>;
   reopen(id: string): Promise<void>;
-  /** Puts an issue in Someday (bead-bb-26g). */
+  /** Puts an issue in Someday (bead-alia-26g). */
   defer(id: string): Promise<void>;
   /** Brings an issue back from Someday. */
   undefer(id: string): Promise<void>;
@@ -771,7 +771,7 @@ export function createTrackers({
   /**
    * The issues the folder has in beads, whichever tracker the repository
    * is on: for working out what a switch of tracker would copy
-   * (bead-bb-c9l.18), where both sides have to be seen at once.
+   * (bead-alia-c9l.18), where both sides have to be seen at once.
    *
    * @returns The issues; null when the folder has no beads database, or
    *   bend or beads could not be run.

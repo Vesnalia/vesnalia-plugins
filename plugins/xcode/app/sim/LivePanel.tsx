@@ -231,7 +231,7 @@ function LiveFrame({
   /**
    * The source ladder: best codec first, best route second — with the routes
    * this page can actually use. `currentViewerCanReachLoopback` answers the
-   * remote/mixed-content question from the page's own origin, so a remote bb
+   * remote/mixed-content question from the page's own origin, so a remote VesnALIA
    * panel no longer burns two doomed rungs finding out.
    *
    * Codec outranks route because the measurement says so: 24.9 fps at
@@ -353,7 +353,7 @@ function LiveFrame({
   /**
    * Presence, only while streaming directly.
    *
-   * Bytes now bypass the bb server, and the viewer-presence signal used to be a
+   * Bytes now bypass the VesnALIA server, and the viewer-presence signal used to be a
    * side effect of them passing through it. Without this the device session is
    * parked 15 seconds into being watched. Zero bytes; the open connection is
    * the entire message.
@@ -519,7 +519,7 @@ function LiveFrame({
    * The wheel, native and non-passive.
    *
    * React attaches wheel listeners passively, and a passive listener cannot
-   * `preventDefault()` — so a trackpad pinch also zoomed the whole bb window,
+   * `preventDefault()` — so a trackpad pinch also zoomed the whole VesnALIA window,
    * and a scroll bled into the page behind the panel. One native listener
    * owns both: `ctrlKey` wheels are the macOS pinch, everything else
    * accumulates per animation frame into a scroll anchored under the cursor.

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { rpcContract, type GoalAgent, type GoalItem, type GoalSnapshot, type GoalStatus } from "./contract.js";
 import {
@@ -298,8 +298,8 @@ let snapshotDefaults: GoalSettingDefaults = {
   shareWorktreeNodeModules: true,
 };
 
-export default function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     autoContinue: {
       type: "boolean",
       label: "Auto-continue when an UltraGoal is active",
@@ -479,11 +479,11 @@ export default function plugin(bb: BbPluginApi) {
     })();
   });
 
-  const store = createGoalStore(bb);
-  const items = createItemStore(bb);
-  const findings = createFindingStore(bb);
-  const decisions = createDecisionStore(bb);
-  const rootTransfers = createRootTransferStore(bb);
+  const store = createGoalStore(alia);
+  const items = createItemStore(alia);
+  const findings = createFindingStore(alia);
+  const decisions = createDecisionStore(alia);
+  const rootTransfers = createRootTransferStore(alia);
   const agentCache = new Map<string, GoalAgent[]>();
   /** Open native task calls per root, from the last fresh scan. */
   const liveTaskCounts = new Map<string, number>();
@@ -499,10 +499,10 @@ export default function plugin(bb: BbPluginApi) {
       .filter((finding) => finding.itemId === itemId);
   const linkedDefectBrief = (rootThreadId: string, itemId: string): string =>
     formatLinkedDefectBrief(linkedOpenFindings(rootThreadId, itemId));
-  const workerBriefs = createWorkerBriefStore(bb.storage.database());
-  const itemRequirements = createItemRequirementStore(bb.storage.database());
-  const staffingHolds = createStaffingHoldStore(bb.storage.database());
-  const invalidBaseSuppressions = createInvalidBaseSuppressionStore(bb.storage.database());
+  const workerBriefs = createWorkerBriefStore(alia.storage.database());
+  const itemRequirements = createItemRequirementStore(alia.storage.database());
+  const staffingHolds = createStaffingHoldStore(alia.storage.database());
+  const invalidBaseSuppressions = createInvalidBaseSuppressionStore(alia.storage.database());
 
   function invalidBaseStatus(rootThreadId: string) {
     return invalidBaseSuppressions.list(rootThreadId).map((entry) => ({
@@ -511,7 +511,7 @@ export default function plugin(bb: BbPluginApi) {
       requested_ref: entry.requestedRef,
       diagnostic: entry.diagnostic,
       suppressed_at: entry.suppressedAt,
-      corrective_action: `bb ultragoal revalidate ${entry.itemId} --thread ${rootThreadId}`,
+      corrective_action: `alia ultragoal revalidate ${entry.itemId} --thread ${rootThreadId}`,
     }));
   }
 
@@ -523,9 +523,9 @@ export default function plugin(bb: BbPluginApi) {
       ...entries.map((entry) => `- ${entry.item_id}: ${entry.diagnostic} Corrective action: ${entry.corrective_action}`),
     ].join("\n");
   }
-  const integrations = createIntegrationRecordStore(bb.storage.database());
+  const integrations = createIntegrationRecordStore(alia.storage.database());
 
-  const collab = createCollabStore(bb, {
+  const collab = createCollabStore(alia, {
     onChange: (rootThreadId) => {
       void publishFresh(rootThreadId);
     },
@@ -620,7 +620,7 @@ export default function plugin(bb: BbPluginApi) {
       };
     },
     releaseItem(rootThreadId, itemId, reason) {
-      // Same effect as `bb ultragoal release`, reachable by the orchestrator
+      // Same effect as `alia ultragoal release`, reachable by the orchestrator
       // that can actually see a worker is redundant.
       items.setStatus(rootThreadId, itemId, "pending");
       lastStaffTry.delete(itemId);
@@ -631,7 +631,7 @@ export default function plugin(bb: BbPluginApi) {
         ),
       );
       markGoalEvent(rootThreadId);
-      bb.log.info(`Orchestrator released ${itemId} on ${rootThreadId}: ${reason}`);
+      alia.log.info(`Orchestrator released ${itemId} on ${rootThreadId}: ${reason}`);
       void publishFresh(rootThreadId);
       void scheduleReady(rootThreadId);
     },
@@ -665,7 +665,7 @@ export default function plugin(bb: BbPluginApi) {
   }
 
   function publish(threadId: string, goal: GoalSnapshot | null): void {
-    bb.realtime.publish("ultragoal", { threadId, goal });
+    alia.realtime.publish("ultragoal", { threadId, goal });
   }
 
   function account(
@@ -673,7 +673,7 @@ export default function plugin(bb: BbPluginApi) {
     options?: { evenIfIdle?: boolean; busy?: boolean; force?: boolean; scan?: boolean },
   ) {
     const goal = store.get(threadId);
-    return accountGoalProgress(bb, store, threadId, {
+    return accountGoalProgress(alia, store, threadId, {
       ...options,
       allowLocalProviderData: goal
         ? view(goal).settings.readLocalProviderData
@@ -706,7 +706,7 @@ export default function plugin(bb: BbPluginApi) {
         const latest = store.get(threadId);
         if (latest) publish(threadId, await viewFresh(latest));
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `UltraGoal pane refresh failed on ${threadId}: ${
             error instanceof Error ? error.message : String(error)
           }`,
@@ -832,7 +832,7 @@ export default function plugin(bb: BbPluginApi) {
   //
   // Names come from the provider's own lifecycle store when it has one:
   // OpenCode records each task subagent as a child session (with its real
-  // title) the moment it starts. bb's pending tool-call event carries nothing,
+  // title) the moment it starts. VesnALIA's pending tool-call event carries nothing,
   // so a session created within the pairing window of the call's start is that
   // call's subagent. A named row also links to the open plan item whose step
   // matches its title exactly, so the same slice cannot render twice.
@@ -875,7 +875,7 @@ export default function plugin(bb: BbPluginApi) {
     return bestScore >= 0.8 && runnerUp < 0.8 ? bestId : null;
   }
 
-  // The provider store is the liveness authority for task calls. bb's own
+  // The provider store is the liveness authority for task calls. VesnALIA's own
   // completion events can carry a rewritten tool name (OpenCode retitles the
   // call with the subagent's title) and killed subagents may never emit one,
   // so calls are paired to the provider's part state by call id: a call whose
@@ -945,7 +945,7 @@ export default function plugin(bb: BbPluginApi) {
         if (agent.itemId && openIds.has(agent.itemId)) continue;
         collab.setMeta(agent.threadId, { itemId: item.id });
         agent.itemId = item.id;
-        bb.log.info(`Linked ${agent.nickname} to ${item.id} declared in its plan step`);
+        alia.log.info(`Linked ${agent.nickname} to ${item.id} declared in its plan step`);
       }
     }
   }
@@ -974,7 +974,7 @@ export default function plugin(bb: BbPluginApi) {
     const lines = [`SLICE (item_id=${item.id}): ${item.step}`];
     if (restaffed) {
       lines.push(
-        `The previous worker on this slice died mid-work. Its partial work may exist on a prior slice branch — run \`git branch -a | grep ${item.id.replace(/_/g, "-")}\` (bb names slice branches after the item id) and continue from the furthest branch by checking it out or cherry-picking, rather than redoing the work. Give your commits their own subjects describing what THEY add — never repeat a prior commit's subject.`,
+        `The previous worker on this slice died mid-work. Its partial work may exist on a prior slice branch — run \`git branch -a | grep ${item.id.replace(/_/g, "-")}\` (VesnALIA names slice branches after the item id) and continue from the furthest branch by checking it out or cherry-picking, rather than redoing the work. Give your commits their own subjects describing what THEY add — never repeat a prior commit's subject.`,
       );
     }
     if (item.files.length > 0) {
@@ -1002,7 +1002,7 @@ export default function plugin(bb: BbPluginApi) {
   }
 
   /** A plugin reload starts with an empty in-memory cache while durable
-   * collaboration rows and their BB threads remain alive. Scheduling must
+   * collaboration rows and their VesnALIA threads remain alive. Scheduling must
    * rebuild that ownership view before it calculates slots or decides an
    * in-progress item was abandoned. */
   async function hydrateSchedulerOwnership(rootThreadId: string): Promise<boolean> {
@@ -1018,7 +1018,7 @@ export default function plugin(bb: BbPluginApi) {
       agentCache.set(rootThreadId, assigned);
       return true;
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Scheduler ownership hydration failed on ${rootThreadId}; staffing held closed: ${
           error instanceof Error ? error.message : String(error)
         }`,
@@ -1034,9 +1034,9 @@ export default function plugin(bb: BbPluginApi) {
 
   async function resolveSchedulerBase(rootThreadId: string): Promise<SchedulerBase> {
     try {
-      const root = await bb.sdk.threads.get({ threadId: rootThreadId });
+      const root = await alia.sdk.threads.get({ threadId: rootThreadId });
       if (!root.environmentId) return { status: "operational_error", reason: "root thread has no environment" };
-      const environment = await bb.sdk.environments.get({ environmentId: root.environmentId });
+      const environment = await alia.sdk.environments.get({ environmentId: root.environmentId });
       const { hostId } = environment;
       const checkoutPath = environment.path;
       const requestedRef = environment.branchName ?? environment.mergeBaseBranch ?? "HEAD";
@@ -1160,7 +1160,7 @@ export default function plugin(bb: BbPluginApi) {
         }
         const effective = view(still).settings;
         const execution = await resolveAndValidateExecution(
-          bb,
+          alia,
           rootThreadId,
           {
             providerId: effective.workerProvider || undefined,
@@ -1173,14 +1173,14 @@ export default function plugin(bb: BbPluginApi) {
         );
         if ("error" in execution) {
           executionConfigurationErrors.set(rootThreadId, execution.error);
-          bb.log.warn(`Scheduler refused ${item.id} on ${rootThreadId}: ${execution.error}`);
+          alia.log.warn(`Scheduler refused ${item.id} on ${rootThreadId}: ${execution.error}`);
           void publishFresh(rootThreadId);
           continue;
         }
         executionConfigurationErrors.delete(rootThreadId);
         const base = await resolveSchedulerBase(rootThreadId);
         if (base.status === "operational_error") {
-          bb.log.warn(`Scheduler could not validate the base for ${item.id} on ${rootThreadId}; will retry: ${base.reason}`);
+          alia.log.warn(`Scheduler could not validate the base for ${item.id} on ${rootThreadId}; will retry: ${base.reason}`);
           continue;
         }
         if (invalidBaseSuppressions.get(rootThreadId, item.id, base.repository, base.requestedRef)) continue;
@@ -1188,7 +1188,7 @@ export default function plugin(bb: BbPluginApi) {
           const diagnostic = [
             `Base ref ${JSON.stringify(base.requestedRef)} is missing or does not peel to a commit in ${base.repository}.`,
             "The work item and goal remain open; no worker or worktree was allocated.",
-            `Correct the repository/ref tuple, or explicitly retry it with bb ultragoal revalidate ${item.id} --thread ${rootThreadId}.`,
+            `Correct the repository/ref tuple, or explicitly retry it with VesnALIA ultragoal revalidate ${item.id} --thread ${rootThreadId}.`,
           ].join(" ");
           invalidBaseSuppressions.suppress({
             rootThreadId,
@@ -1227,7 +1227,7 @@ export default function plugin(bb: BbPluginApi) {
           result = { error: error instanceof Error ? error.message : String(error) };
         }
         if ("error" in result) {
-          bb.log.warn(`Scheduler could not staff slice ${item.id} on ${rootThreadId}: ${result.error}`);
+          alia.log.warn(`Scheduler could not staff slice ${item.id} on ${rootThreadId}: ${result.error}`);
           // The spawn claims the slice before the thread exists; a failed
           // spawn must roll that claim back or the slice strands in_progress
           // until the stale window.
@@ -1239,7 +1239,7 @@ export default function plugin(bb: BbPluginApi) {
           if (result.itemId !== item.id || spawnedRow?.item_id !== item.id) {
             collab.forget(result.threadId);
             void releaseWorkerRuntime(result.threadId);
-            bb.log.warn(
+            alia.log.warn(
               `Scheduler rejected worker ${result.threadId}: intended ${item.id}, returned ${
                 result.itemId ?? "no item"
               }, persisted ${spawnedRow?.item_id ?? "no item"}`,
@@ -1251,7 +1251,7 @@ export default function plugin(bb: BbPluginApi) {
           staffed = true;
           markGoalEvent(rootThreadId);
           inFlightFiles.push(...item.files);
-          bb.log.info(
+          alia.log.info(
             `Scheduler staffed ${restaffed ? "abandoned" : "ready"} slice ${item.id} with ${result.nickname} (${result.threadId}) on ${rootThreadId}`,
           );
         }
@@ -1270,7 +1270,7 @@ export default function plugin(bb: BbPluginApi) {
   // squash-merged into the base branch, one merge at a time per goal;
   // conflicts escalate to the orchestrator. Remote publication is outside
   // this automation and requires direct user authorization.
-  const hostClient = bb.hosts.experimental_client({ contract: hostContract });
+  const hostClient = alia.hosts.experimental_client({ contract: hostContract });
 
   async function replaceActiveCrew(rootThreadId: string): Promise<{
     completed: boolean;
@@ -1295,7 +1295,7 @@ export default function plugin(bb: BbPluginApi) {
       }
       let thread;
       try {
-        thread = await bb.sdk.threads.get({ threadId: row.threadId });
+        thread = await alia.sdk.threads.get({ threadId: row.threadId });
       } catch {
         return { completed: false, replacements, paused: { threadId: row.threadId, itemId, risk: "worker state is unreadable; non-durable progress cannot be excluded" } };
       }
@@ -1305,9 +1305,9 @@ export default function plugin(bb: BbPluginApi) {
       if (!thread.environmentId) {
         return { completed: false, replacements, paused: { threadId: row.threadId, itemId, risk: "worker has no inspectable worktree" } };
       }
-      let environment: Awaited<ReturnType<typeof bb.sdk.environments.get>> | null = null;
+      let environment: Awaited<ReturnType<typeof alia.sdk.environments.get>> | null = null;
       try {
-        environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+        environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
       } catch {
         // Report the unreadable worktree as a replacement risk below.
       }
@@ -1334,7 +1334,7 @@ export default function plugin(bb: BbPluginApi) {
       const goal = store.get(rootThreadId);
       if (!goal) break;
       const effective = view(goal).settings;
-      const execution = await resolveAndValidateExecution(bb, rootThreadId, {
+      const execution = await resolveAndValidateExecution(alia, rootThreadId, {
         providerId: effective.workerProvider || undefined,
         model: effective.workerModel || undefined,
         reasoningLevel: effective.workerReasoning || undefined,
@@ -1371,12 +1371,12 @@ export default function plugin(bb: BbPluginApi) {
         return { completed: false, replacements, paused: { threadId: row.threadId, itemId, risk: `replacement spawn failed; original ownership restored: ${spawned.error}` } };
       }
       try {
-        await bb.sdk.threads.stop({ threadId: row.threadId });
+        await alia.sdk.threads.stop({ threadId: row.threadId });
       } catch {
         // The durable ownership handoff already succeeded.
       }
       try {
-        await bb.sdk.threads.archive({ threadId: row.threadId });
+        await alia.sdk.threads.archive({ threadId: row.threadId });
       } catch {
         // Archival is cleanup; the retired durable row still fences overlap.
       }
@@ -1402,7 +1402,7 @@ export default function plugin(bb: BbPluginApi) {
   }
 
   // Owner decisions render as native center-pane question cards
-  // (bb.ui.requestInput + the plugin's owner-decision renderer). Interactions
+  // (alia.ui.requestInput + the plugin's owner-decision renderer). Interactions
   // cap at one hour, so a keeper re-raises the card until the durable decision
   // record is answered; answering from the CLI aborts the live card.
   const decisionKeepers = new Set<string>();
@@ -1422,11 +1422,11 @@ export default function plugin(bb: BbPluginApi) {
     decisionAborts.get(decisionId)?.abort();
     const goal = store.get(rootThreadId);
     if (goal) publish(rootThreadId, view(goal));
-    bb.log.info(`Owner decision ${decisionId} answered on ${rootThreadId}: ${answer.slice(0, 80)}`);
+    alia.log.info(`Owner decision ${decisionId} answered on ${rootThreadId}: ${answer.slice(0, 80)}`);
     await sendSteering(
       rootThreadId,
       `OWNER DECISION ANSWERED (${decisionId}): "${resolved.question}" -> ${answer}. Act on this now and resolve any dependent work.`,
-      (await threadIsRunning(bb, rootThreadId)) ? "steer" : "start",
+      (await threadIsRunning(alia, rootThreadId)) ? "steer" : "start",
     );
     return true;
   }
@@ -1443,7 +1443,7 @@ export default function plugin(bb: BbPluginApi) {
           if (!current || current.status !== "open") return;
           const controller = new AbortController();
           decisionAborts.set(decisionId, controller);
-          let result: Awaited<ReturnType<typeof bb.ui.requestInput>>;
+          let result: Awaited<ReturnType<typeof alia.ui.requestInput>>;
           try {
             // The interaction title caps at 160 chars; the card body renders
             // the full question from the payload.
@@ -1451,7 +1451,7 @@ export default function plugin(bb: BbPluginApi) {
               current.question.length > 160
                 ? `${current.question.slice(0, 157)}...`
                 : current.question;
-            result = await bb.ui.requestInput(
+            result = await alia.ui.requestInput(
               {
                 threadId: rootThreadId,
                 rendererId: "owner-decision",
@@ -1469,7 +1469,7 @@ export default function plugin(bb: BbPluginApi) {
             );
           } catch (error) {
             decisionPromptBackoff.set(decisionId, Date.now());
-            bb.log.warn(
+            alia.log.warn(
               `Owner-decision prompt failed on ${rootThreadId}: ${
                 error instanceof Error ? error.message : String(error)
               } (backing off 10m)`,
@@ -1511,8 +1511,8 @@ export default function plugin(bb: BbPluginApi) {
 
   async function releaseWorkerRuntime(workerThreadId: string): Promise<void> {
     try {
-      await bb.sdk.threads.stop({ threadId: workerThreadId });
-      bb.log.info(`Released runtime of finished worker ${workerThreadId}`);
+      await alia.sdk.threads.stop({ threadId: workerThreadId });
+      alia.log.info(`Released runtime of finished worker ${workerThreadId}`);
     } catch {
       // Releasing is best-effort; an already-stopped thread is fine.
     }
@@ -1522,7 +1522,7 @@ export default function plugin(bb: BbPluginApi) {
     if (!itemId) return;
     const goal = store.get(rootThreadId);
     if (!goal || !view(goal).settings.autoIntegrateCompletedSlices) {
-      bb.log.info(
+      alia.log.info(
         `Kept completed slice ${itemId} on its managed branch: automatic repository integration is off for ${rootThreadId}`,
       );
       void releaseWorkerRuntime(workerThreadId);
@@ -1557,7 +1557,7 @@ export default function plugin(bb: BbPluginApi) {
     dryRun: boolean,
   ) {
             const report = await executeRootTransfer({
-              bb,
+              alia,
               store: rootTransfers,
               sourceThreadId,
               targetThreadId,
@@ -1635,7 +1635,7 @@ export default function plugin(bb: BbPluginApi) {
     const goal = store.get(rootThreadId);
     if (!goal || !view(goal).settings.reclaimMergedWorktrees) return;
     try {
-      const environment = await bb.sdk.environments.get({ environmentId });
+      const environment = await alia.sdk.environments.get({ environmentId });
       const checkoutPath = (environment as { path?: string | null }).path ?? null;
       const hostId = (environment as { hostId?: string | null }).hostId ?? null;
       if (!checkoutPath || !hostId) return;
@@ -1648,7 +1648,7 @@ export default function plugin(bb: BbPluginApi) {
           .call("shareNodeModules", { checkoutPath, seedIfEmpty: true }, { hostId })
           .catch(() => null);
         if (seeded?.seeded) {
-          bb.log.info(`Seeded the node_modules store from ${itemId} (${seeded.key})`);
+          alia.log.info(`Seeded the node_modules store from ${itemId} (${seeded.key})`);
         }
       }
 
@@ -1658,14 +1658,14 @@ export default function plugin(bb: BbPluginApi) {
         { hostId },
       );
       if (result.removed) {
-        bb.log.info(
+        alia.log.info(
           `Reclaimed the worktree for slice ${itemId}: ${Math.round(result.freedBytes / 1048576)}MB`,
         );
       } else if (result.reason) {
-        bb.log.info(`Kept the worktree for slice ${itemId}: ${result.reason}`);
+        alia.log.info(`Kept the worktree for slice ${itemId}: ${result.reason}`);
       }
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Worktree reclaim failed for slice ${itemId}: ${
           error instanceof Error ? error.message : String(error)
         }`,
@@ -1683,9 +1683,9 @@ export default function plugin(bb: BbPluginApi) {
     let integrationHostId: string | null = null;
     let integrationBase: string | null = null;
     try {
-      const worker = await bb.sdk.threads.get({ threadId: workerThreadId });
+      const worker = await alia.sdk.threads.get({ threadId: workerThreadId });
       if (!worker.environmentId) return;
-      const environment = await bb.sdk.environments.get({ environmentId: worker.environmentId });
+      const environment = await alia.sdk.environments.get({ environmentId: worker.environmentId });
       if (!environment.isWorktree || !environment.managed) return;
       strandedBranch = environment.branchName ?? null;
       integrationCheckout = (environment as { path?: string | null }).path ?? null;
@@ -1694,7 +1694,7 @@ export default function plugin(bb: BbPluginApi) {
         environment.mergeBaseBranch ?? environment.defaultBranch ?? environment.baseBranch;
       if (!base) return;
       integrationBase = base;
-      await bb.sdk.environments.squashMerge({
+      await alia.sdk.environments.squashMerge({
         environmentId: worker.environmentId,
         mergeBaseBranch: base,
       });
@@ -1713,7 +1713,7 @@ export default function plugin(bb: BbPluginApi) {
         },
         Date.now(),
       );
-      bb.log.info(
+      alia.log.info(
         `Integrated slice ${itemId}: squash-merged ${environment.branchName ?? worker.environmentId} into ${base} on ${rootThreadId}`,
       );
       // Completed, merged, and now the worktree is pure disk. The plugin made
@@ -1723,7 +1723,7 @@ export default function plugin(bb: BbPluginApi) {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       // Ask the REPOSITORY whether the branch still adds anything. Matching the
-      // error text cannot work: bb reports `HTTP 502: git merge --squash
+      // error text cannot work: VesnALIA reports `HTTP 502: git merge --squash
       // <branch> failed` and does not pass git's own words through, so 0.25.3's
       // message match was inert and 22 no-op merges in one hour were still
       // recorded as failures — and, after 0.26.0, would have reopened findings
@@ -1751,12 +1751,12 @@ export default function plugin(bb: BbPluginApi) {
           },
           Date.now(),
         );
-        bb.log.info(`Integration skipped for slice ${itemId} on ${rootThreadId}: already on the base branch`);
+        alia.log.info(`Integration skipped for slice ${itemId} on ${rootThreadId}: already on the base branch`);
         return;
       }
       if (/no changes|nothing to (merge|commit)|up.to.date|already|nothing to squash/i.test(message)) {
         // "Already up to date. (nothing to squash)" is git exiting non-zero
-        // because there was nothing to stage, and bb surfaces that as a 502.
+        // because there was nothing to stage, and VesnALIA surfaces that as a 502.
         // Recording it as a FAILED integration is worse than useless: it is the
         // provenance table saying work did not land when it demonstrably did,
         // in the one instrument built to answer that question. 15 of 17
@@ -1772,7 +1772,7 @@ export default function plugin(bb: BbPluginApi) {
           },
           Date.now(),
         );
-        bb.log.info(`Integration skipped for slice ${itemId} on ${rootThreadId}: ${message}`);
+        alia.log.info(`Integration skipped for slice ${itemId} on ${rootThreadId}: ${message}`);
         return;
       }
       // A finding is closed on the worker's report BEFORE this runs, so a failed
@@ -1806,11 +1806,11 @@ export default function plugin(bb: BbPluginApi) {
               : current.step,
           }], []);
         }
-        bb.log.warn(
+        alia.log.warn(
           `Reopened ${reopened} finding(s) and requeued ${itemId} on ${rootThreadId}: its fix is not on the base branch`,
         );
       }
-      bb.log.warn(`Integration failed for slice ${itemId} (${workerThreadId}) on ${rootThreadId}: ${message}`);
+      alia.log.warn(`Integration failed for slice ${itemId} (${workerThreadId}) on ${rootThreadId}: ${message}`);
       // One escalation per goal per cooldown window: twelve identical
       // dirty-checkout steers in ninety minutes is noise, not urgency.
       const lastSteer = integrationSteerAt.get(rootThreadId) ?? 0;
@@ -1882,7 +1882,7 @@ export default function plugin(bb: BbPluginApi) {
         // worker whenever a single host read failed transiently.
         let hostStatus: string | null = null;
         try {
-          hostStatus = (await bb.sdk.threads.get({ threadId: workerThreadId })).status ?? null;
+          hostStatus = (await alia.sdk.threads.get({ threadId: workerThreadId })).status ?? null;
         } catch {
           continue;
         }
@@ -1897,10 +1897,10 @@ export default function plugin(bb: BbPluginApi) {
         // correctly refusing to delete a live thread's directory — protect 135
         // worktrees that nothing would ever use again. A retired worker is
         // finished; saying so is what lets its disk be reclaimed.
-        void bb.sdk.threads
+        void alia.sdk.threads
           .archive({ threadId: workerThreadId })
           .catch(() => undefined);
-        bb.log.info(
+        alia.log.info(
           `Retired finished worker ${workerThreadId} on ${rootThreadId} (host ${hostStatus}): its slice is closed; released its scheduler slot`,
         );
       }
@@ -1939,7 +1939,7 @@ export default function plugin(bb: BbPluginApi) {
         if ((row?.nudge_count ?? 0) >= MAX_STALL_NUDGES) {
           collab.forget(agent.threadId);
           void releaseWorkerRuntime(agent.threadId);
-          bb.log.info(
+          alia.log.info(
             `Retired unresponsive worker ${agent.nickname} (${agent.threadId}) after ${row?.nudge_count} nudges on ${rootThreadId}; slice ${agent.itemId} returns to the scheduler`,
           );
           continue;
@@ -1955,9 +1955,9 @@ export default function plugin(bb: BbPluginApi) {
         if (now - (row?.last_nudge_at ?? 0) < STALL_NUDGE_COOLDOWN_MS) continue;
         // Declared out here: the send below needs this thread's status to pick
         // its mode, and a const inside the try block is not in scope there.
-        let workerThread: Awaited<ReturnType<typeof bb.sdk.threads.get>> | null = null;
+        let workerThread: Awaited<ReturnType<typeof alia.sdk.threads.get>> | null = null;
         try {
-          workerThread = await bb.sdk.threads.get({ threadId: agent.threadId });
+          workerThread = await alia.sdk.threads.get({ threadId: agent.threadId });
           if (!threadAcceptsSteer(workerThread)) continue;
         } catch {
           continue;
@@ -1967,7 +1967,7 @@ export default function plugin(bb: BbPluginApi) {
           const defectBrief = agent.itemId
             ? linkedDefectBrief(rootThreadId, agent.itemId)
             : "";
-          await bb.sdk.threads.send({
+          await alia.sdk.threads.send({
             threadId: agent.threadId,
             mode: (workerThread ? immediateSendMode(workerThread) : null) ?? "steer",
             permissionMode: view(goal).settings.workerPermissionMode,
@@ -1982,9 +1982,9 @@ export default function plugin(bb: BbPluginApi) {
               },
             ],
           });
-          bb.log.info(`Nudged stalled worker ${agent.nickname} (${agent.threadId}) on ${rootThreadId}`);
+          alia.log.info(`Nudged stalled worker ${agent.nickname} (${agent.threadId}) on ${rootThreadId}`);
         } catch (error) {
-          bb.log.warn(
+          alia.log.warn(
             `Could not nudge stalled worker ${agent.threadId}: ${
               error instanceof Error ? error.message : String(error)
             }`,
@@ -1994,7 +1994,7 @@ export default function plugin(bb: BbPluginApi) {
 
       await scheduleReady(rootThreadId);
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Goal heal pass failed on ${rootThreadId}: ${
           error instanceof Error ? error.message : String(error)
         }`,
@@ -2009,7 +2009,7 @@ export default function plugin(bb: BbPluginApi) {
       if (goal.status === "paused") {
         const parked = parkGoalSlices(goal.threadId);
         if (parked > 0) {
-          bb.log.info(`Paused goal ${goal.threadId}: parked ${parked} in-progress slice(s)`);
+          alia.log.info(`Paused goal ${goal.threadId}: parked ${parked} in-progress slice(s)`);
         }
       }
       const [listed, liveTasks, sessionId] = await Promise.all([
@@ -2022,8 +2022,8 @@ export default function plugin(bb: BbPluginApi) {
           refreshLimit: 24,
           refreshHolders: true,
         }),
-        listLiveNativeTasks(bb, goal.threadId),
-        sessionIdForThread(bb, goal.threadId),
+        listLiveNativeTasks(alia, goal.threadId),
+        sessionIdForThread(alia, goal.threadId),
       ]);
       const allowLocalProviderData = view(goal).settings.readLocalProviderData;
       const childSessions =
@@ -2063,11 +2063,11 @@ export default function plugin(bb: BbPluginApi) {
       agentCache.set(goal.threadId, [...assigned, ...native.agents]);
       const reclaimed = reclaimOrphanInProgress(goal.threadId);
       if (reclaimed > 0) {
-        bb.log.info(`Demoted ${reclaimed} unheld in_progress slice(s) on ${goal.threadId}`);
+        alia.log.info(`Demoted ${reclaimed} unheld in_progress slice(s) on ${goal.threadId}`);
       }
       void healStalls(goal.threadId);
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Could not list Goal agents on ${goal.threadId}: ${
           error instanceof Error ? error.message : String(error)
         }`,
@@ -2104,15 +2104,15 @@ export default function plugin(bb: BbPluginApi) {
         // duplicate scheduler slot. Only explicit terminal host states retire.
         if (agent.status !== "error" && agent.status !== "stopped") continue;
         collab.forget(agent.threadId);
-        bb.log.info(`Dropped errored Goal worker ${agent.nickname} (${agent.threadId}) on ${threadId}`);
+        alia.log.info(`Dropped errored Goal worker ${agent.nickname} (${agent.threadId}) on ${threadId}`);
         try {
-          await bb.sdk.threads.stop({ threadId: agent.threadId });
+          await alia.sdk.threads.stop({ threadId: agent.threadId });
         } catch {
           // Failed forks can be dropped from the Goal store even if stop is unavailable.
         }
       }
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Could not tidy Goal crew on ${threadId}: ${
           error instanceof Error ? error.message : String(error)
         }`,
@@ -2146,7 +2146,7 @@ export default function plugin(bb: BbPluginApi) {
     if (!verdict.retire) return false;
     const removed = items.patch(rootThreadId, [], [itemId]).removed > 0;
     if (removed) {
-      bb.log.info(`Retired remediation item ${itemId} on ${rootThreadId}: no linked finding is open and nobody is on it`);
+      alia.log.info(`Retired remediation item ${itemId} on ${rootThreadId}: no linked finding is open and nobody is on it`);
     }
     return removed;
   }
@@ -2160,7 +2160,7 @@ export default function plugin(bb: BbPluginApi) {
       items,
     });
     if (result.requeuedInvalid > 0 || result.requeuedMissing > 0) {
-      bb.log.warn(
+      alia.log.warn(
         `Completion guard on ${itemId}: detached ${result.requeuedInvalid} invalid and ${result.requeuedMissing} missing-item finding link(s) before closure`,
       );
     }
@@ -2186,7 +2186,7 @@ export default function plugin(bb: BbPluginApi) {
       items,
     });
     if (detached.requeuedInvalid > 0 || detached.requeuedMissing > 0) {
-      bb.log.warn(
+      alia.log.warn(
         `Evidence guard on ${itemId}: detached ${detached.requeuedInvalid} invalid and ${detached.requeuedMissing} missing-item defect link(s)`,
       );
       reconcileFindingBacklog(rootThreadId);
@@ -2211,9 +2211,9 @@ export default function plugin(bb: BbPluginApi) {
     let checkoutPath: string | null = repository?.trim() || null;
     let envHostId: string | null = null;
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       const env = thread.environmentId
-        ? await bb.sdk.environments.get({ environmentId: thread.environmentId })
+        ? await alia.sdk.environments.get({ environmentId: thread.environmentId })
         : null;
       envHostId = (env as { hostId?: string | null } | null)?.hostId ?? null;
       if (!checkoutPath) checkoutPath = (env as { path?: string | null } | null)?.path ?? null;
@@ -2296,7 +2296,7 @@ export default function plugin(bb: BbPluginApi) {
       findingEvidence,
     );
     if (missingFindingIds.length > 0) {
-      bb.log.warn(
+      alia.log.warn(
         `Rejected completion of ${itemId} on ${rootThreadId}: report omitted linked defect evidence for ${missingFindingIds.join(", ")}`,
       );
       // The same silence that stranded the deliverable floor, and with a worse
@@ -2327,7 +2327,7 @@ export default function plugin(bb: BbPluginApi) {
     if (required.length > 0) {
       const missingPaths = missingDeliverables(parseDeliverableEvidence(report), required);
       if (missingPaths.length > 0) {
-        bb.log.warn(
+        alia.log.warn(
           `Rejected completion of ${itemId} on ${rootThreadId}: report omitted deliverable evidence for ${missingPaths.join(", ")}`,
         );
         // Telling only the log is why four workers finished their work, had
@@ -2356,9 +2356,9 @@ export default function plugin(bb: BbPluginApi) {
     markGoalEvent(rootThreadId);
     const closed = closeItemFindings(rootThreadId, itemId, (report ?? "").trim().slice(-400));
     if (closed > 0) {
-      bb.log.info(`Closed ${closed} finding(s) fixed by slice ${itemId} on ${rootThreadId}`);
+      alia.log.info(`Closed ${closed} finding(s) fixed by slice ${itemId} on ${rootThreadId}`);
     }
-    bb.log.info(`Goal slice ${itemId} completed on ${rootThreadId} from worker report`);
+    alia.log.info(`Goal slice ${itemId} completed on ${rootThreadId} from worker report`);
     return true;
   }
 
@@ -2382,7 +2382,7 @@ export default function plugin(bb: BbPluginApi) {
       if (reconciledReports.has(key)) continue;
       reconciledReports.add(key);
       try {
-        const output = (await bb.sdk.threads.output({ threadId: agent.threadId })).output ?? null;
+        const output = (await alia.sdk.threads.output({ threadId: agent.threadId })).output ?? null;
         const claim = collab.reportOf(agent.threadId);
         if (
           completeItemFor(rootThreadId, agent.itemId, claim?.evidence ?? output, {
@@ -2414,7 +2414,7 @@ export default function plugin(bb: BbPluginApi) {
 
     let output = "";
     try {
-      output = (await bb.sdk.threads.output({ threadId: workerThreadId })).output?.trim() ?? "";
+      output = (await alia.sdk.threads.output({ threadId: workerThreadId })).output?.trim() ?? "";
     } catch {
       return;
     }
@@ -2429,7 +2429,7 @@ export default function plugin(bb: BbPluginApi) {
 
     for (const verifier of collab.verifiersFor(workerThreadId)) {
       try {
-        const thread = await bb.sdk.threads.get({ threadId: verifier.thread_id });
+        const thread = await alia.sdk.threads.get({ threadId: verifier.thread_id });
         if (thread.status === "active" || thread.status === "starting") return;
       } catch {
         // A missing verifier thread does not block a new one.
@@ -2439,7 +2439,7 @@ export default function plugin(bb: BbPluginApi) {
     verifying.add(workerThreadId);
     try {
       const verifierExecution = await resolveAndValidateExecution(
-        bb,
+        alia,
         row.root_thread_id,
         {
           providerId: resolved.verifyProvider,
@@ -2485,12 +2485,12 @@ export default function plugin(bb: BbPluginApi) {
       });
       if (spawned) {
         collab.setVerifyHash(workerThreadId, digest);
-        bb.log.info(
+        alia.log.info(
           `Goal verifier ${spawned.nickname} launched for ${workerThreadId} on ${resolved.verifyProvider}/${resolved.verifyModel}`,
         );
       }
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Could not spawn Goal verifier for ${workerThreadId}: ${
           error instanceof Error ? error.message : String(error)
         }`,
@@ -2509,7 +2509,7 @@ export default function plugin(bb: BbPluginApi) {
     if (!snapshotDefaults.autoApproveAgentRequests) return 0;
     let rows: Array<Record<string, unknown>> = [];
     try {
-      const listed = await bb.sdk.threads.interactions.list({ threadId });
+      const listed = await alia.sdk.threads.interactions.list({ threadId });
       rows = (Array.isArray(listed) ? listed : []) as Array<Record<string, unknown>>;
     } catch {
       return 0;
@@ -2528,14 +2528,14 @@ export default function plugin(bb: BbPluginApi) {
         ? ("allow_for_session" as const)
         : ("allow_once" as const);
       try {
-        await bb.sdk.threads.interactions.resolve({
+        await alia.sdk.threads.interactions.resolve({
           threadId,
           interactionId: id,
           resolution: { decision, grantedPermissions: null } as never,
         });
         approved += 1;
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `Could not auto-approve interaction ${id} on ${threadId}: ${
             error instanceof Error ? error.message : String(error)
           }`,
@@ -2543,7 +2543,7 @@ export default function plugin(bb: BbPluginApi) {
       }
     }
     if (approved > 0) {
-      bb.log.info(`Auto-approved ${approved} interaction(s) on ${threadId}`);
+      alia.log.info(`Auto-approved ${approved} interaction(s) on ${threadId}`);
     }
     return approved;
   }
@@ -2568,7 +2568,7 @@ export default function plugin(bb: BbPluginApi) {
       try {
         await approveGoalTree(threadId);
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `Goal approval pulse failed on ${threadId}: ${
             error instanceof Error ? error.message : String(error)
           }`,
@@ -2604,7 +2604,7 @@ export default function plugin(bb: BbPluginApi) {
       if (row.senderThreadId) continue;
       if (row.systemMessageKind && row.systemMessageKind !== "unlabeled") continue;
       const text = row.text?.trim() ?? "";
-      if (!text || text.startsWith("[bb ") || text.startsWith("[ultragoal]")) continue;
+      if (!text || text.startsWith("[alia ") || text.startsWith("[ultragoal]")) continue;
       latest = { id: String(row.id ?? ""), text };
     }
     if (!latest || !latest.id) return;
@@ -2634,9 +2634,9 @@ export default function plugin(bb: BbPluginApi) {
       ].join("\n\n"),
     });
     if ("error" in result) {
-      bb.log.warn(`Intake spawn failed on ${rootThreadId}: ${result.error}`);
+      alia.log.warn(`Intake spawn failed on ${rootThreadId}: ${result.error}`);
     } else {
-      bb.log.info(`Intake ${result.nickname} (${result.threadId}) triaging owner message on ${rootThreadId}`);
+      alia.log.info(`Intake ${result.nickname} (${result.threadId}) triaging owner message on ${rootThreadId}`);
     }
   }
 
@@ -2646,12 +2646,12 @@ export default function plugin(bb: BbPluginApi) {
     if (!goal || (goal.status !== "active" && goal.status !== "budget_limited")) return;
     if (!view(goal).settings.autoContinue) return;
     await ensureCrew(rootId);
-    if (await threadIsRunning(bb, rootId)) return;
+    if (await threadIsRunning(alia, rootId)) return;
     await continueIfIdle(rootId, store.get(rootId) ?? goal);
   }
 
   async function refreshRunning(threadId: string): Promise<boolean> {
-    const next = await threadIsRunning(bb, threadId);
+    const next = await threadIsRunning(alia, threadId);
     running.set(threadId, next);
     return next;
   }
@@ -2677,9 +2677,9 @@ export default function plugin(bb: BbPluginApi) {
   async function stopThread(threadId: string): Promise<void> {
     running.set(threadId, false);
     try {
-      await bb.sdk.threads.stop({ threadId });
+      await alia.sdk.threads.stop({ threadId });
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Could not stop thread ${threadId}: ${
           error instanceof Error ? error.message : String(error)
         }`,
@@ -2691,7 +2691,7 @@ export default function plugin(bb: BbPluginApi) {
     const ids = new Set(collab.threadIdsForRoot(rootId));
     for (const agent of agentCache.get(rootId) ?? []) ids.add(agent.threadId);
     try {
-      const listed = await bb.sdk.threads.list({
+      const listed = await alia.sdk.threads.list({
         parentThreadId: rootId,
         includeHidden: true,
         limit: 200,
@@ -2736,7 +2736,7 @@ export default function plugin(bb: BbPluginApi) {
     await stopCrew(threadId);
     const parked = parkGoalSlices(threadId);
     if (parked > 0) {
-      bb.log.info(`Paused ${threadId}: parked ${parked} in-progress slice(s) back to pending`);
+      alia.log.info(`Paused ${threadId}: parked ${parked} in-progress slice(s) back to pending`);
     }
     const latest = store.get(threadId);
     if (latest) publish(threadId, await viewFresh(latest));
@@ -2812,7 +2812,7 @@ export default function plugin(bb: BbPluginApi) {
       reclaimMergedWorktrees: null,
       readLocalProviderData: null,
     }, snapshotDefaults);
-    const workerCheck = await resolveAndValidateExecution(bb, threadId, {
+    const workerCheck = await resolveAndValidateExecution(alia, threadId, {
       providerId: candidate.workerProvider || undefined,
       model: candidate.workerModel || undefined,
       reasoningLevel: candidate.workerReasoning || undefined,
@@ -2820,7 +2820,7 @@ export default function plugin(bb: BbPluginApi) {
       permissionMode: candidate.workerPermissionMode,
     }, "worker");
     if ("error" in workerCheck) return workerCheck;
-    const verifierCheck = await resolveAndValidateExecution(bb, threadId, {
+    const verifierCheck = await resolveAndValidateExecution(alia, threadId, {
       providerId: candidate.verifyProvider,
       model: candidate.verifyModel,
       reasoningLevel: candidate.verifyReasoning,
@@ -2871,7 +2871,7 @@ export default function plugin(bb: BbPluginApi) {
             ...executionWrite,
           });
     if (!configured) return { error: "failed to set goal" };
-    const baseline = await readThreadTokens(bb, threadId);
+    const baseline = await readThreadTokens(alia, threadId);
     const next = store.update(threadId, {
       lastSeenTokens: baseline,
       lastAccountedAt: Date.now(),
@@ -2883,7 +2883,7 @@ export default function plugin(bb: BbPluginApi) {
   }
 
   async function threadStatus(threadId: string): Promise<string> {
-    return (await bb.sdk.threads.get({ threadId })).status ?? "";
+    return (await alia.sdk.threads.get({ threadId })).status ?? "";
   }
 
   async function waitUntilSettled(threadId: string, timeoutMs: number): Promise<boolean> {
@@ -2902,19 +2902,19 @@ export default function plugin(bb: BbPluginApi) {
     return false;
   }
 
-  // OpenCode ACP can keep a turn held after BB marks the thread error/stopped.
+  // OpenCode ACP can keep a turn held after VesnALIA marks the thread error/stopped.
   // compact and continue are both turn.submit, so a leftover turn makes every
   // recovery attempt fail with "A turn is already active".
   async function settleThreadForSubmit(threadId: string, timeoutMs = 30_000): Promise<boolean> {
     try {
-      await bb.sdk.threads.stop({ threadId });
+      await alia.sdk.threads.stop({ threadId });
     } catch {
       // Already stopped or the provider ignored a second stop.
     }
     running.set(threadId, false);
     const settled = await waitUntilSettled(threadId, timeoutMs);
     if (!settled) {
-      bb.log.warn(`Could not settle ghost turn on ${threadId} before submit`);
+      alia.log.warn(`Could not settle ghost turn on ${threadId} before submit`);
     }
     return settled;
   }
@@ -2924,7 +2924,7 @@ export default function plugin(bb: BbPluginApi) {
     text: string,
     mode: "start" | "steer",
   ): Promise<void> {
-    await bb.sdk.threads.send({
+    await alia.sdk.threads.send({
       threadId,
       mode,
       permissionMode: snapshotDefaults.workerPermissionMode,
@@ -2939,22 +2939,22 @@ export default function plugin(bb: BbPluginApi) {
   ): Promise<boolean> {
     if (inflight.has(threadId)) return false;
     if (mode === "start" && (starting.get(threadId) ?? 0) > Date.now()) {
-      bb.log.info(`Skipping Goal start on ${threadId}: another start is in flight`);
+      alia.log.info(`Skipping Goal start on ${threadId}: another start is in flight`);
       return false;
     }
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (mode === "start") {
         if (thread.status === "error") {
           await settleThreadForSubmit(threadId);
         }
-        const next = await bb.sdk.threads.get({ threadId });
+        const next = await alia.sdk.threads.get({ threadId });
         if (!threadAcceptsStart(next)) {
-          bb.log.info(`Skipping Goal start on ${threadId}: ${next.status ?? "unavailable"}`);
+          alia.log.info(`Skipping Goal start on ${threadId}: ${next.status ?? "unavailable"}`);
           return false;
         }
       } else if (!threadAcceptsSteer(thread)) {
-        bb.log.info(`Skipping Goal steer on ${threadId}: ${thread.status ?? "unavailable"}`);
+        alia.log.info(`Skipping Goal steer on ${threadId}: ${thread.status ?? "unavailable"}`);
         return false;
       }
     } catch {
@@ -2967,14 +2967,14 @@ export default function plugin(bb: BbPluginApi) {
       return true;
     } catch (error) {
       if (mode === "start" && isTurnAlreadyActiveError(error)) {
-        bb.log.warn(`Goal start hit an active turn on ${threadId} — settling and retrying`);
+        alia.log.warn(`Goal start hit an active turn on ${threadId} — settling and retrying`);
         if (await settleThreadForSubmit(threadId)) {
           try {
             await submitGoalTurn(threadId, text, mode);
             starting.set(threadId, Date.now() + 8_000);
             return true;
           } catch (retryError) {
-            bb.log.warn(
+            alia.log.warn(
               `Goal start retry failed on ${threadId}: ${
                 retryError instanceof Error ? retryError.message : String(retryError)
               }`,
@@ -2983,7 +2983,7 @@ export default function plugin(bb: BbPluginApi) {
           }
         }
       }
-      bb.log.warn(
+      alia.log.warn(
         `Goal steering failed on ${threadId}: ${
           error instanceof Error ? error.message : String(error)
         }`,
@@ -3004,7 +3004,7 @@ export default function plugin(bb: BbPluginApi) {
     // Steered input interrupts pending native Task subagents on Cursor and
     // orphans their tool calls; hold the check-in until they finish.
     if (hasPendingNativeTasks(threadId)) return false;
-    const runningNow = await threadIsRunning(bb, threadId);
+    const runningNow = await threadIsRunning(alia, threadId);
     const sent = await sendSteering(
       threadId,
       progressPrompt(snap),
@@ -3018,7 +3018,7 @@ export default function plugin(bb: BbPluginApi) {
     });
     const latest = store.get(threadId);
     if (latest) publish(threadId, view(latest));
-    bb.log.info(`Goal progress update requested on ${threadId}`);
+    alia.log.info(`Goal progress update requested on ${threadId}`);
     return true;
   }
 
@@ -3030,7 +3030,7 @@ export default function plugin(bb: BbPluginApi) {
   const rootActivity = new Map<string, { rowId: string; at: number }>();
 
   async function watchRootTurn(rootThreadId: string): Promise<boolean> {
-    if (!(await threadIsRunning(bb, rootThreadId))) {
+    if (!(await threadIsRunning(alia, rootThreadId))) {
       rootActivity.delete(rootThreadId);
       return false;
     }
@@ -3045,11 +3045,11 @@ export default function plugin(bb: BbPluginApi) {
     }
     if (now - seen.at < ROOT_WEDGE_MS) return false;
     rootActivity.delete(rootThreadId);
-    bb.log.warn(
+    alia.log.warn(
       `Root turn wedged on ${rootThreadId}: active with no timeline growth for ${Math.round((now - seen.at) / 60000)}m — stopping and continuing`,
     );
     try {
-      await bb.sdk.threads.stop({ threadId: rootThreadId });
+      await alia.sdk.threads.stop({ threadId: rootThreadId });
     } catch {
       return false;
     }
@@ -3096,7 +3096,7 @@ export default function plugin(bb: BbPluginApi) {
     if (now < state.nextAt) return;
     const backoff = Math.min(2 * 60_000 * 2 ** state.attempts, 30 * 60_000);
     rootReviveState.set(rootThreadId, { attempts: state.attempts + 1, nextAt: now + backoff });
-    // A leftover OpenCode turn survives BB error/stop. Clearing it first is
+    // A leftover OpenCode turn survives VesnALIA error/stop. Clearing it first is
     // what makes compact and continue actually land.
     if (status === "error" && !(await settleThreadForSubmit(rootThreadId))) return;
     // A root that keeps dying after a plain resume is usually drowning in its
@@ -3105,20 +3105,20 @@ export default function plugin(bb: BbPluginApi) {
     // collide with the compact turn.
     if (state.attempts >= 1) {
       try {
-        await bb.sdk.threads.compact({ threadId: rootThreadId });
-        bb.log.warn(`Requested context compaction for repeatedly-dying root ${rootThreadId}`);
+        await alia.sdk.threads.compact({ threadId: rootThreadId });
+        alia.log.warn(`Requested context compaction for repeatedly-dying root ${rootThreadId}`);
         if (!(await waitUntilSettled(rootThreadId, 10 * 60_000))) {
-          bb.log.warn(`Compact still running on ${rootThreadId}; deferring resume`);
+          alia.log.warn(`Compact still running on ${rootThreadId}; deferring resume`);
           return;
         }
       } catch (error) {
         if (isTurnAlreadyActiveError(error)) {
           await settleThreadForSubmit(rootThreadId);
-          bb.log.warn(`Compact skipped on ${rootThreadId}: turn still active after settle`);
+          alia.log.warn(`Compact skipped on ${rootThreadId}: turn still active after settle`);
         }
       }
     }
-    bb.log.warn(
+    alia.log.warn(
       `Root ${rootThreadId} is in error state — reviving (attempt ${state.attempts + 1}, next retry in ${Math.round(backoff / 60000)}m)`,
     );
     await resumeGoal(rootThreadId);
@@ -3133,7 +3133,7 @@ export default function plugin(bb: BbPluginApi) {
       const transientBlock = goal.status === "blocked" && isTransientTurnFailure(goal.reason);
       if (goal.status !== "active" && goal.status !== "budget_limited" && !transientBlock) continue;
       try {
-        const root = await bb.sdk.threads.get({ threadId }).catch(() => null);
+        const root = await alia.sdk.threads.get({ threadId }).catch(() => null);
         if (!root || root.archivedAt || root.deletedAt) continue;
         if (transientBlock) {
           await reviveErroredRoot(threadId);
@@ -3152,7 +3152,7 @@ export default function plugin(bb: BbPluginApi) {
           if (latest) publish(threadId, view(latest));
         }
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `Goal progress pulse failed on ${threadId}: ${
             error instanceof Error ? error.message : String(error)
           }`,
@@ -3183,7 +3183,7 @@ export default function plugin(bb: BbPluginApi) {
     if (!options?.force && !due && latestGoal.lastContinueAt != null) {
       const lastEvent = lastGoalEvent.get(threadId) ?? 0;
       if (lastEvent <= latestGoal.lastContinueAt) {
-        bb.log.info(`Goal continue skipped on ${threadId}: no new events; next turn on event or heartbeat`);
+        alia.log.info(`Goal continue skipped on ${threadId}: no new events; next turn on event or heartbeat`);
         return;
       }
     }
@@ -3201,14 +3201,14 @@ export default function plugin(bb: BbPluginApi) {
     });
     const latest = store.get(threadId);
     if (latest) publish(threadId, await viewFresh(latest));
-    bb.log.info(`Goal continue sent on ${threadId}`);
+    alia.log.info(`Goal continue sent on ${threadId}`);
   }
 
   async function editGoal(threadId: string, objective: string): Promise<StoredGoal | null> {
     const result = await userSetGoal(threadId, objective);
     if ("error" in result) return store.get(threadId);
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (thread.status === "active") {
         await sendSteering(
           threadId,
@@ -3230,10 +3230,10 @@ export default function plugin(bb: BbPluginApi) {
 
   async function readTimeline(threadId: string): Promise<readonly unknown[]> {
     try {
-      const timeline = await bb.sdk.threads.timeline({ threadId });
+      const timeline = await alia.sdk.threads.timeline({ threadId });
       return timeline.rows;
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Could not read timeline for ${threadId}: ${
           error instanceof Error ? error.message : String(error)
         }`,
@@ -3265,12 +3265,12 @@ export default function plugin(bb: BbPluginApi) {
     if (slash.kind !== "set" && slash.kind !== "edit") return true;
     const result = await userSetGoal(threadId, slash.objective);
     if ("error" in result) {
-      bb.log.warn(`Goal set failed on ${threadId}: ${result.error}`);
+      alia.log.warn(`Goal set failed on ${threadId}: ${result.error}`);
     }
     return true;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async start({ threadId, objective, tokenBudget, ...config }) {
       const result = await userSetGoal(threadId, objective, tokenBudget, config);
       if ("error" in result) throw new Error(result.error);
@@ -3308,7 +3308,7 @@ export default function plugin(bb: BbPluginApi) {
         status === "completed" &&
         missingCompletionFindingIds(threadId, itemId, []).length > 0
       ) {
-        bb.log.warn(
+        alia.log.warn(
           `Pane completion of remediation item ${itemId} was rejected: linked defects require per-id evidence from slice_done or verification.`,
         );
         const goal = store.get(threadId);
@@ -3354,12 +3354,12 @@ export default function plugin(bb: BbPluginApi) {
       }
       let source;
       try {
-        source = await bb.sdk.threads.get({ threadId });
+        source = await alia.sdk.threads.get({ threadId });
       } catch {
         return { rotated: false, targetThreadId: null, reason: "could not read the current root" };
       }
       try {
-        const spawned = await bb.sdk.threads.spawn({
+        const spawned = await alia.sdk.threads.spawn({
           projectId: source.projectId,
           providerId: source.providerId,
           executionInputSources: { providerId: "explicit" as const },
@@ -3380,14 +3380,14 @@ export default function plugin(bb: BbPluginApi) {
         if (!targetThreadId) {
           return { rotated: false, targetThreadId: null, reason: "spawned thread returned no id" };
         }
-        await bb.sdk.threads.wait({
+        await alia.sdk.threads.wait({
           threadId: targetThreadId,
           status: "idle",
           timeoutMs: 120_000,
           pollIntervalMs: 500,
         }).catch(() => undefined);
         await runRootTransfer(threadId, targetThreadId, false);
-        bb.log.info(`Rotated the orchestrator for ${threadId} onto ${targetThreadId}`);
+        alia.log.info(`Rotated the orchestrator for ${threadId} onto ${targetThreadId}`);
         return { rotated: true, targetThreadId, reason: null };
       } catch (error) {
         return {
@@ -3444,7 +3444,7 @@ export default function plugin(bb: BbPluginApi) {
           reclaimMergedWorktrees: existing.reclaimMergedWorktreesOverride,
           readLocalProviderData: existing.readLocalProviderDataOverride,
         }, snapshotDefaults);
-        const workerCheck = await resolveAndValidateExecution(bb, threadId, {
+        const workerCheck = await resolveAndValidateExecution(alia, threadId, {
           providerId: candidate.workerProvider || undefined,
           model: candidate.workerModel || undefined,
           reasoningLevel: candidate.workerReasoning || undefined,
@@ -3452,7 +3452,7 @@ export default function plugin(bb: BbPluginApi) {
           permissionMode: candidate.workerPermissionMode,
         }, "worker");
         if ("error" in workerCheck) throw new Error(workerCheck.error);
-        const verifierCheck = await resolveAndValidateExecution(bb, threadId, {
+        const verifierCheck = await resolveAndValidateExecution(alia, threadId, {
           providerId: candidate.verifyProvider,
           model: candidate.verifyModel,
           reasoningLevel: candidate.verifyReasoning,
@@ -3514,7 +3514,7 @@ export default function plugin(bb: BbPluginApi) {
       return { goal: snap };
     },
     async listModels({ threadId }) {
-      return { providers: await listExecutionCatalog(bb, threadId) };
+      return { providers: await listExecutionCatalog(alia, threadId) };
     },
     async replaceWorkers({ threadId }) {
       if (!store.get(threadId)) {
@@ -3534,7 +3534,7 @@ export default function plugin(bb: BbPluginApi) {
       let inTree = row?.root_thread_id === threadId;
       if (!inTree) {
         try {
-          const worker = await bb.sdk.threads.get({ threadId: workerThreadId });
+          const worker = await alia.sdk.threads.get({ threadId: workerThreadId });
           inTree = worker.parentThreadId === threadId;
         } catch {
           inTree = false;
@@ -3545,7 +3545,7 @@ export default function plugin(bb: BbPluginApi) {
       }
       let threadStatus = "unknown";
       try {
-        threadStatus = (await bb.sdk.threads.get({ threadId: workerThreadId })).status ?? "unknown";
+        threadStatus = (await alia.sdk.threads.get({ threadId: workerThreadId })).status ?? "unknown";
       } catch {
         // Status stays unknown; the timeline may still read.
       }
@@ -3625,7 +3625,7 @@ export default function plugin(bb: BbPluginApi) {
   });
 
   // Canonical provider-neutral UltraGoal controls on every provider.
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "ultragoal_start",
     description:
       "Start a durable UltraGoal only when explicitly requested by the user or system/developer instructions. Do not infer an UltraGoal from an ordinary task. Set token_budget only when explicitly requested. Fails while an unfinished UltraGoal exists.",
@@ -3688,7 +3688,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "ultragoal_state",
     description: "Read the durable UltraGoal and a bounded page of its work items.",
     parameters: z.object({
@@ -3712,7 +3712,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "ultragoal_patch",
     description: "Patch up to 200 new or changed work items in the durable UltraGoal. Omitted items are preserved.",
     parameters: z.object({
@@ -3802,7 +3802,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "ultragoal_finish",
     description: "Mark the durable UltraGoal complete or genuinely blocked. Completion requires a delivery summary and no open defects or owner decisions.",
     parameters: z.object({
@@ -3870,7 +3870,7 @@ export default function plugin(bb: BbPluginApi) {
         result.requeuedInvalid +
         result.requeuedCompleted;
       if (changed === 0) return;
-      bb.log.info(
+      alia.log.info(
         `Finding queue on ${rootThreadId}: ${result.minted} minted, ${result.linked} attached, ${result.healedDuplicates} duplicate singleton(s) healed, ${result.autoFixed} recovered from structured evidence, ${result.requeuedMissing} requeued missing, ${result.requeuedInvalid} requeued invalid, ${result.requeuedCompleted} requeued from unproven completed work; ${result.remediationWorkItems} remediation work item(s), ${result.awaitingAssignment} awaiting assignment`,
       );
       markGoalEvent(rootThreadId);
@@ -3953,7 +3953,7 @@ export default function plugin(bb: BbPluginApi) {
       };
     }
     if (!latest.itemId) {
-      bb.log.warn(
+      alia.log.warn(
         `Finding ${result.finding.id} awaits assignment on ${rootThreadId}: remediation capacity is full`,
       );
     }
@@ -3968,7 +3968,7 @@ export default function plugin(bb: BbPluginApi) {
     };
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "add_slice",
     description:
       "Add ONE new plan slice to the goal (feature request, follow-up work, or escalation that is not a defect — defects go through report_finding). The scheduler staffs it when its deps complete. Write the step as a self-contained brief; keep files the narrow real touched set or empty.",
@@ -4002,7 +4002,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "slice_done",
     description:
       "Formally report your assigned slice complete. Pass general evidence plus one structured finding_evidence entry (exact finding_id and nonempty affirmative proof) for every linked defect. Prose mentions never count. Then END YOUR TURN: the slice closes or verification starts when your turn ends.",
@@ -4064,7 +4064,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "slice_blocked",
     description:
       "Formally report your assigned slice blocked. Pass the specific blocker (what you need, from whom). Then END YOUR TURN - the orchestrator is woken to act. This tool call is the only blocked signal; prose claims do nothing.",
@@ -4089,7 +4089,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "report_finding",
     description:
       "Report ONE discrete defect the moment you confirm it during a hunt/audit/review — do not batch findings into a final report. Findings are fingerprint-deduplicated. Same-file defects coalesce; new files mint ready fix slices until the staffed remediation cap, then queue durably and backfill oldest-first. Open findings block goal completion.",
@@ -4159,10 +4159,10 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "request_decision",
     description:
-      "Escalate a decision only the OWNER (the human user) can make — irreversible actions (history rewrites, deletions, spending), scope changes, or preference calls. It renders in the UltraGoal pane's 'Needs you' section and blocks goal completion until answered (bb ultragoal decide <id> <answer>). Also post one short user-visible chat message stating the question. Never bury an owner decision inside a progress note, never re-ask an open one, and never proceed on an assumed answer.",
+      "Escalate a decision only the OWNER (the human user) can make — irreversible actions (history rewrites, deletions, spending), scope changes, or preference calls. It renders in the UltraGoal pane's 'Needs you' section and blocks goal completion until answered (VesnALIA ultragoal decide <id> <answer>). Also post one short user-visible chat message stating the question. Never bury an owner decision inside a progress note, never re-ask an open one, and never proceed on an assumed answer.",
     parameters: z.object({
       question: z.string().min(1).describe("The single decision the owner must make, phrased as a question."),
       context: z
@@ -4181,7 +4181,7 @@ export default function plugin(bb: BbPluginApi) {
         };
       }
       const decision = decisions.request(rootThreadId, { question, context, options });
-      bb.log.info(`Owner decision ${decision.id} requested on ${rootThreadId}: ${question.slice(0, 80)}`);
+      alia.log.info(`Owner decision ${decision.id} requested on ${rootThreadId}: ${question.slice(0, 80)}`);
       raiseDecisionPrompt(rootThreadId, decision.id);
       void publishFresh(rootThreadId);
       return {
@@ -4199,7 +4199,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "resolve_decision",
     description:
       "Close an open owner decision: pass the owner's answer verbatim when they gave one in chat, or withdraw a decision that became moot (with the reason). Never invent an answer the owner did not give.",
@@ -4228,7 +4228,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "resolve_finding",
     description:
       "Resolve an open finding that will not be closed by a fix slice: mark it not_a_defect with evidence, or fixed when the fix landed outside its own slice. Findings fixed by their auto-created fix slice close automatically — do not resolve those by hand.",
@@ -4319,7 +4319,7 @@ export default function plugin(bb: BbPluginApi) {
 
   collab.registerTools();
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const row = collab.rowOf(context.thread.id);
     const storedRoot = store.get(context.thread.id);
     // UltraGoal is provider-neutral. Registered workers get the same worker
@@ -4430,7 +4430,7 @@ export default function plugin(bb: BbPluginApi) {
       await publishFresh(parentRoot);
       void approveInteractions(thread.id);
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Could not register new child ${thread.id} on ${parentRoot}: ${
           error instanceof Error ? error.message : String(error)
         }`,
@@ -4438,7 +4438,7 @@ export default function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.events.on("thread.active", async ({ thread }) => {
+  alia.events.on("thread.active", async ({ thread }) => {
     running.set(thread.id, true);
     if (transferLocked(thread.id)) return;
     if (store.get(thread.id) || collab.rowOf(thread.id)) {
@@ -4455,7 +4455,7 @@ export default function plugin(bb: BbPluginApi) {
     ) {
       applyStatus(thread.id, "active", null);
       markGoalEvent(thread.id);
-      bb.log.info(
+      alia.log.info(
         `Goal auto-resumed on ${thread.id}: root thread active again (was ${recovering.status}: ${recovering.reason ?? "no reason"})`,
       );
     }
@@ -4472,7 +4472,7 @@ export default function plugin(bb: BbPluginApi) {
     void maybeIntakeUserMessage(thread.id, rows);
   });
 
-  bb.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
     if (transferLocked(thread.id)) {
       running.set(thread.id, false);
       return;
@@ -4555,7 +4555,7 @@ export default function plugin(bb: BbPluginApi) {
             collab.forget(thread.id);
             void releaseWorkerRuntime(thread.id);
             markGoalEvent(parentRoot);
-            bb.log.warn(
+            alia.log.warn(
               `Verifier ${thread.id} exhausted ${failures}/${MAX_VERIFY_FAILS} attempts on ${parentRoot} after ${protocolFailure.log}; leaving the open slice to the orchestrator`,
             );
             void publishFresh(parentRoot);
@@ -4563,7 +4563,7 @@ export default function plugin(bb: BbPluginApi) {
             return;
           }
           try {
-            await bb.sdk.threads.send({
+            await alia.sdk.threads.send({
               threadId: thread.id,
               mode: immediateSendMode(thread) ?? "start",
               permissionMode: "auto",
@@ -4577,14 +4577,14 @@ export default function plugin(bb: BbPluginApi) {
                 mentions: [],
               }],
             });
-            bb.log.warn(
+            alia.log.warn(
               `Retried verifier ${thread.id} ${failures}/${MAX_VERIFY_FAILS} on ${parentRoot} after ${protocolFailure.log}`,
             );
           } catch (error) {
             collab.forget(thread.id);
             void releaseWorkerRuntime(thread.id);
             await maybeVerifyWorker(sourceThreadId);
-            bb.log.warn(
+            alia.log.warn(
               `Could not retry verifier ${thread.id}; released it for replacement: ${
                 error instanceof Error ? error.message : String(error)
               }`,
@@ -4624,7 +4624,7 @@ export default function plugin(bb: BbPluginApi) {
           const fails = collab.bumpVerifyFails(child.source_thread_id);
           if (fails < MAX_VERIFY_FAILS) {
             try {
-              await bb.sdk.threads.send({
+              await alia.sdk.threads.send({
                 threadId: child.source_thread_id,
                 mode: "start",
                 permissionMode: store.get(parentRoot)
@@ -4642,11 +4642,11 @@ export default function plugin(bb: BbPluginApi) {
                   },
                 ],
               });
-              bb.log.info(
+              alia.log.info(
                 `Routed VERIFY_FAIL ${fails}/${MAX_VERIFY_FAILS} to worker ${child.source_thread_id} on ${parentRoot}`,
               );
             } catch (error) {
-              bb.log.warn(
+              alia.log.warn(
                 `Could not route VERIFY_FAIL to ${child.source_thread_id}: ${
                   error instanceof Error ? error.message : String(error)
                 }`,
@@ -4654,7 +4654,7 @@ export default function plugin(bb: BbPluginApi) {
             }
           } else {
             markGoalEvent(parentRoot);
-            bb.log.warn(
+            alia.log.warn(
               `Slice held by ${child.source_thread_id} failed verification ${fails}x on ${parentRoot}; leaving it to the orchestrator`,
             );
           }
@@ -4663,11 +4663,11 @@ export default function plugin(bb: BbPluginApi) {
       void publishFresh(parentRoot);
       void nudgeRoot(parentRoot);
     }
-    const pendingInteractions = await bb.sdk.threads.interactions
+    const pendingInteractions = await alia.sdk.threads.interactions
       .list({ threadId: thread.id })
       .catch(() => []);
     if (Array.isArray(pendingInteractions) && pendingInteractions.length > 0) {
-      bb.log.info(`Skipping Goal continue on ${thread.id}: pending interaction`);
+      alia.log.info(`Skipping Goal continue on ${thread.id}: pending interaction`);
       return;
     }
 
@@ -4697,7 +4697,7 @@ export default function plugin(bb: BbPluginApi) {
     const latest = store.get(thread.id);
     if (!latest || (latest.status !== "active" && latest.status !== "budget_limited")) return;
     if (!view(latest).settings.autoContinue) {
-      bb.log.info(`Skipping Goal continue on ${thread.id}: autoContinue disabled`);
+      alia.log.info(`Skipping Goal continue on ${thread.id}: autoContinue disabled`);
       return;
     }
     if (latest.status === "budget_limited") {
@@ -4714,13 +4714,13 @@ export default function plugin(bb: BbPluginApi) {
     await continueIfIdle(thread.id, latest);
   });
 
-  bb.events.on("thread.failed", async ({ thread, error }) => {
+  alia.events.on("thread.failed", async ({ thread, error }) => {
     if (transferLocked(thread.id)) return;
     // A rejected second submit is not a dead root. OpenCode still holds the
     // first turn; marking blocked here is what made compact/continue pile on
     // and left the openbooks goal stuck on "Command turn.submit failed".
     if (isTurnAlreadyActiveError(error) || /no active acp session/i.test(error ?? "")) {
-      bb.log.warn(`Ignoring recoverable submit failure on ${thread.id}: ${error}`);
+      alia.log.warn(`Ignoring recoverable submit failure on ${thread.id}: ${error}`);
       return;
     }
     running.set(thread.id, false);
@@ -4754,7 +4754,7 @@ export default function plugin(bb: BbPluginApi) {
     );
   });
 
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     if (transferLocked(thread.id)) return;
     running.delete(thread.id);
     forgetNativeScan(thread.id);
@@ -4795,7 +4795,7 @@ export default function plugin(bb: BbPluginApi) {
         if (ids.length !== 2) {
           return {
             exitCode: 1,
-            stderr: "Usage: bb ultragoal transfer-root <source-thread-id> <target-thread-id> [--dry-run]",
+            stderr: "Usage: VesnALIA ultragoal transfer-root <source-thread-id> <target-thread-id> [--dry-run]",
           };
         }
         const [sourceThreadId, targetThreadId] = ids as [string, string];
@@ -4805,7 +4805,7 @@ export default function plugin(bb: BbPluginApi) {
             exitCode: 0,
             stdout: JSON.stringify(
               {
-                command: `bb ultragoal transfer-root ${sourceThreadId} ${targetThreadId}`,
+                command: `alia ultragoal transfer-root ${sourceThreadId} ${targetThreadId}`,
                 phase: report.journal?.phase ?? null,
                 ...report,
               },
@@ -4907,7 +4907,7 @@ export default function plugin(bb: BbPluginApi) {
           objectiveParts.push(token);
         }
         const startObjective = objectiveParts.join(" ").trim();
-        if (!startObjective) return { exitCode: 1, stderr: "Usage: bb ultragoal set <objective> [execution options]" };
+        if (!startObjective) return { exitCode: 1, stderr: "Usage: VesnALIA ultragoal set <objective> [execution options]" };
         if (start.maxWorkers !== undefined && (!Number.isInteger(start.maxWorkers) || start.maxWorkers < 0 || start.maxWorkers > 16)) {
           return { exitCode: 1, stderr: "--workers must be an integer from 0 to 16" };
         }
@@ -4934,7 +4934,7 @@ export default function plugin(bb: BbPluginApi) {
       }
 
       if (action === "edit") {
-        if (!objective) return { exitCode: 1, stderr: "Usage: bb ultragoal edit <objective>" };
+        if (!objective) return { exitCode: 1, stderr: "Usage: VesnALIA ultragoal edit <objective>" };
         const goal = await editGoal(threadId, objective);
         return {
           exitCode: goal ? 0 : 1,
@@ -4947,7 +4947,7 @@ export default function plugin(bb: BbPluginApi) {
         const [decisionId, ...answerParts] = (objective ?? "").split(/\s+/);
         const answer = answerParts.join(" ").trim();
         if (!decisionId || !answer) {
-          return { exitCode: 1, stderr: "Usage: bb ultragoal decide <decision_id> <answer> [--thread <id>]" };
+          return { exitCode: 1, stderr: "Usage: VesnALIA ultragoal decide <decision_id> <answer> [--thread <id>]" };
         }
         const applied = await applyDecisionAnswer(threadId, decisionId, answer);
         if (!applied) return { exitCode: 1, stderr: `Decision not found: ${decisionId}` };
@@ -4979,7 +4979,7 @@ export default function plugin(bb: BbPluginApi) {
           return {
             exitCode: 1,
             stderr:
-              'Usage: bb ultragoal finding "<title>" --file <path[:line]> --evidence "<proof>" [--fix-files a,b] [--check <cmd>] [--own-slice] [--thread <id>]',
+              'Usage: VesnALIA ultragoal finding "<title>" --file <path[:line]> --evidence "<proof>" [--fix-files a,b] [--check <cmd>] [--own-slice] [--thread <id>]',
           };
         }
         const goal = store.get(threadId);
@@ -5000,7 +5000,7 @@ export default function plugin(bb: BbPluginApi) {
       if (action === "workers") {
         const parsed = Number.parseInt(objective ?? "", 10);
         if (!Number.isFinite(parsed) || parsed < 0 || parsed > 16) {
-          return { exitCode: 1, stderr: "Usage: bb ultragoal workers <0-16>" };
+          return { exitCode: 1, stderr: "Usage: VesnALIA ultragoal workers <0-16>" };
         }
         const goal = store.update(threadId, { maxWorkersOverride: parsed });
         if (!goal) return { exitCode: 1, stderr: "No UltraGoal is set on this thread." };
@@ -5010,7 +5010,7 @@ export default function plugin(bb: BbPluginApi) {
       }
 
       // An orchestrator that deliberately stops a worker had no supported way to
-      // get its slice back. `bb thread stop` leaves the host `idle`, not
+      // get its slice back. `alia thread stop` leaves the host `idle`, not
       // `stopped`, so ensureCrew never retires the durable row; the item stays
       // in_progress and held, reclaimOrphanInProgress refuses to demote a held
       // item, and the capacity fence keeps counting the row. The slot was gone
@@ -5022,7 +5022,7 @@ export default function plugin(bb: BbPluginApi) {
         if (!target) {
           return {
             exitCode: 1,
-            stderr: "Usage: bb ultragoal release <worker-thread-id|item-id> [--hold] [--thread <id>]",
+            stderr: "Usage: VesnALIA ultragoal release <worker-thread-id|item-id> [--hold] [--thread <id>]",
           };
         }
         const goal = store.get(threadId);
@@ -5056,7 +5056,7 @@ export default function plugin(bb: BbPluginApi) {
           }
           let hostStatus: string | null = null;
           try {
-            hostStatus = (await bb.sdk.threads.get({ threadId: workerId })).status ?? null;
+            hostStatus = (await alia.sdk.threads.get({ threadId: workerId })).status ?? null;
           } catch {
             // An unreadable host is not proof of life; releasing is still correct.
           }
@@ -5099,7 +5099,7 @@ export default function plugin(bb: BbPluginApi) {
         const parts = (objective ?? "").trim().split(/\s+/).filter(Boolean);
         const itemId = parts[0];
         if (!itemId) {
-          return { exitCode: 1, stderr: "Usage: bb ultragoal requires <item-id> <path,path> | <item-id> --clear" };
+          return { exitCode: 1, stderr: "Usage: VesnALIA ultragoal requires <item-id> <path,path> | <item-id> --clear" };
         }
         const item = items.list(threadId).find((row) => row.id === itemId);
         if (!item) return { exitCode: 1, stderr: `Unknown work item: ${itemId}` };
@@ -5186,7 +5186,7 @@ export default function plugin(bb: BbPluginApi) {
         if (!itemId) {
           return {
             exitCode: 1,
-            stderr: 'Usage: bb ultragoal item <item-id> [--step "<text>"] [--files a,b] [--check "<cmd>" | --no-check] [--remove]\n       bb ultragoal item --new --step "<text>" [--files a,b] [--check "<cmd>"]',
+            stderr: 'Usage: VesnALIA ultragoal item <item-id> [--step "<text>"] [--files a,b] [--check "<cmd>" | --no-check] [--remove]\n       VesnALIA ultragoal item --new --step "<text>" [--files a,b] [--check "<cmd>"]',
           };
         }
         const item = items.list(threadId).find((row) => row.id === itemId);
@@ -5295,7 +5295,7 @@ export default function plugin(bb: BbPluginApi) {
         if (!findingId || !resolution || !evidence) {
           return {
             exitCode: 1,
-            stderr: 'Usage: bb ultragoal resolve <finding-id> --as fixed|not-a-defect --evidence "<proof>"',
+            stderr: 'Usage: VesnALIA ultragoal resolve <finding-id> --as fixed|not-a-defect --evidence "<proof>"',
           };
         }
         const attribution = await attributionResolver(threadId, repository);
@@ -5340,7 +5340,7 @@ export default function plugin(bb: BbPluginApi) {
         const goal = store.get(threadId);
         if (!goal) return { exitCode: 1, stderr: "No UltraGoal is set on this thread." };
         const itemId = (objective ?? "").trim();
-        if (!itemId) return { exitCode: 1, stderr: "Usage: bb ultragoal revalidate <item-id> [--thread <id>]" };
+        if (!itemId) return { exitCode: 1, stderr: "Usage: VesnALIA ultragoal revalidate <item-id> [--thread <id>]" };
         if (!items.list(threadId).some((row) => row.id === itemId)) {
           return { exitCode: 1, stderr: `Unknown work item: ${itemId}` };
         }
@@ -5383,7 +5383,7 @@ export default function plugin(bb: BbPluginApi) {
           };
         }
         if (role !== "worker" && role !== "verifier") {
-          return { exitCode: 1, stderr: 'Usage: bb ultragoal exec | exec worker|verifier [--provider id --model id --reasoning level --tier default|fast] [--permission mode] [--clear] [--replace-active]' };
+          return { exitCode: 1, stderr: 'Usage: VesnALIA ultragoal exec | exec worker|verifier [--provider id --model id --reasoning level --tier default|fast] [--permission mode] [--clear] [--replace-active]' };
         }
         let clear = false;
         let replaceActive = false;
@@ -5428,7 +5428,7 @@ export default function plugin(bb: BbPluginApi) {
           return { exitCode: 1, stderr: "--clear cannot be combined with execution values" };
         }
         if (!clear && (!providerId || !model)) {
-          return { exitCode: 1, stderr: `Usage: bb ultragoal exec ${role} --provider <id> --model <id> [--reasoning <level>] [--tier default|fast]${role === "worker" ? " [--permission auto|accept-edits|full] [--replace-active]" : ""}` };
+          return { exitCode: 1, stderr: `Usage: VesnALIA ultragoal exec ${role} --provider <id> --model <id> [--reasoning <level>] [--tier default|fast]${role === "worker" ? " [--permission auto|accept-edits|full] [--replace-active]" : ""}` };
         }
         if (role === "verifier" && permissionMode && permissionMode !== "auto") {
           return { exitCode: 1, stderr: "Verifiers are fixed to auto permission mode so they cannot edit the work they judge." };
@@ -5440,7 +5440,7 @@ export default function plugin(bb: BbPluginApi) {
           const current = store.get(threadId);
           if (!current) return { exitCode: 1, stderr: "No UltraGoal is set on this thread." };
           if (!clear) {
-            const checked = await resolveAndValidateExecution(bb, threadId, {
+            const checked = await resolveAndValidateExecution(alia, threadId, {
             providerId,
             model,
             reasoningLevel: reasoningLevel ?? DEFAULT_REASONING_LEVEL,
@@ -5514,32 +5514,32 @@ export default function plugin(bb: BbPluginApi) {
       return { exitCode: 0, stdout: "UltraGoal cleared." };
   };
 
-  bb.cli.register({
+  alia.cli.register({
     name: "ultragoal",
     summary: "Set, inspect, pause, resume, or clear a durable UltraGoal",
     commands: [
-      { name: "status", summary: "Show the UltraGoal on a thread", usage: "bb ultragoal [status] [--thread <id>]" },
-      { name: "pane", summary: "Dump the sidebar projection as JSON", usage: "bb ultragoal pane [--thread <id>]" },
-      { name: "set", summary: "Set or replace the UltraGoal", usage: "bb ultragoal set <objective> [--thread <id>]" },
-      { name: "edit", summary: "Edit the UltraGoal objective", usage: "bb ultragoal edit <objective> [--thread <id>]" },
-      { name: "exec", summary: "Show or pin which provider and model workers and verifiers run on", usage: "bb ultragoal exec | exec worker <provider> <model> | exec verifier <provider> <model> [--thread <id>]" },
-      { name: "workers", summary: "Set the goal's concurrent worker slots", usage: "bb ultragoal workers <0-16> [--thread <id>]" },
-      { name: "decide", summary: "Answer an open owner decision", usage: "bb ultragoal decide <decision_id> <answer> [--thread <id>]" },
-      { name: "finding", summary: "File a defect finding from outside the goal (auditors, automations)", usage: "bb ultragoal finding \"<title>\" --file <path[:line]> --evidence \"<proof>\" [--fix-files a,b] [--check <cmd>] [--own-slice] [--thread <id>]" },
-      { name: "transfer-root", summary: "Atomically transfer an unfinished UltraGoal to an idle Codex root", usage: "bb ultragoal transfer-root <source-thread-id> <target-thread-id> [--dry-run]" },
-      { name: "release", summary: "Return a stopped worker's slice to the queue and free its slot", usage: "bb ultragoal release <worker-thread-id|item-id> [--hold] [--thread <id>]" },
-      { name: "requires", summary: "Declare output paths a work item cannot close without", usage: "bb ultragoal requires <item-id> <path,path> | <item-id> --clear [--thread <id>]" },
-      { name: "item", summary: "Edit a work item's brief, scope or check without staffing it", usage: "bb ultragoal item <item-id> [--step \"<text>\"] [--files a,b] [--check \"<cmd>\" | --no-check] [--remove] [--unhold] | bb ultragoal item --new --step \"<text>\" [--files a,b] [--check \"<cmd>\"] [--thread <id>]" },
-      { name: "revalidate", summary: "Explicitly retry an unchanged invalid base tuple", usage: "bb ultragoal revalidate <item-id> [--thread <id>]" },
-      { name: "resolve", summary: "Close a finding whose fix landed outside its own slice, or that is not a defect", usage: "bb ultragoal resolve <finding-id> --as fixed|not-a-defect --evidence \"<proof>\" [--repository <path>] [--thread <id>]" },
-      { name: "pause", summary: "Pause the UltraGoal", usage: "bb ultragoal pause [--thread <id>]" },
-      { name: "resume", summary: "Resume a paused UltraGoal", usage: "bb ultragoal resume [--thread <id>]" },
-      { name: "clear", summary: "Clear the UltraGoal", usage: "bb ultragoal clear [--thread <id>]" },
+      { name: "status", summary: "Show the UltraGoal on a thread", usage: "alia ultragoal [status] [--thread <id>]" },
+      { name: "pane", summary: "Dump the sidebar projection as JSON", usage: "alia ultragoal pane [--thread <id>]" },
+      { name: "set", summary: "Set or replace the UltraGoal", usage: "alia ultragoal set <objective> [--thread <id>]" },
+      { name: "edit", summary: "Edit the UltraGoal objective", usage: "alia ultragoal edit <objective> [--thread <id>]" },
+      { name: "exec", summary: "Show or pin which provider and model workers and verifiers run on", usage: "alia ultragoal exec | exec worker <provider> <model> | exec verifier <provider> <model> [--thread <id>]" },
+      { name: "workers", summary: "Set the goal's concurrent worker slots", usage: "alia ultragoal workers <0-16> [--thread <id>]" },
+      { name: "decide", summary: "Answer an open owner decision", usage: "alia ultragoal decide <decision_id> <answer> [--thread <id>]" },
+      { name: "finding", summary: "File a defect finding from outside the goal (auditors, automations)", usage: "alia ultragoal finding \"<title>\" --file <path[:line]> --evidence \"<proof>\" [--fix-files a,b] [--check <cmd>] [--own-slice] [--thread <id>]" },
+      { name: "transfer-root", summary: "Atomically transfer an unfinished UltraGoal to an idle Codex root", usage: "alia ultragoal transfer-root <source-thread-id> <target-thread-id> [--dry-run]" },
+      { name: "release", summary: "Return a stopped worker's slice to the queue and free its slot", usage: "alia ultragoal release <worker-thread-id|item-id> [--hold] [--thread <id>]" },
+      { name: "requires", summary: "Declare output paths a work item cannot close without", usage: "alia ultragoal requires <item-id> <path,path> | <item-id> --clear [--thread <id>]" },
+      { name: "item", summary: "Edit a work item's brief, scope or check without staffing it", usage: "alia ultragoal item <item-id> [--step \"<text>\"] [--files a,b] [--check \"<cmd>\" | --no-check] [--remove] [--unhold] | VesnALIA ultragoal item --new --step \"<text>\" [--files a,b] [--check \"<cmd>\"] [--thread <id>]" },
+      { name: "revalidate", summary: "Explicitly retry an unchanged invalid base tuple", usage: "alia ultragoal revalidate <item-id> [--thread <id>]" },
+      { name: "resolve", summary: "Close a finding whose fix landed outside its own slice, or that is not a defect", usage: "alia ultragoal resolve <finding-id> --as fixed|not-a-defect --evidence \"<proof>\" [--repository <path>] [--thread <id>]" },
+      { name: "pause", summary: "Pause the UltraGoal", usage: "alia ultragoal pause [--thread <id>]" },
+      { name: "resume", summary: "Resume a paused UltraGoal", usage: "alia ultragoal resume [--thread <id>]" },
+      { name: "clear", summary: "Clear the UltraGoal", usage: "alia ultragoal clear [--thread <id>]" },
     ],
     run: runCli,
   });
 
-  bb.background.service("progress-pulse", {
+  alia.background.service("progress-pulse", {
     async start(signal) {
       while (!signal.aborted) {
         await pulseStaleProgress();
@@ -5548,7 +5548,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.background.service("approval-pulse", {
+  alia.background.service("approval-pulse", {
     async start(signal) {
       while (!signal.aborted) {
         await approvalPulse();
@@ -5628,7 +5628,7 @@ function parseCli(
   return { action: "status", threadId, error: `Unknown goal command: ${action}` };
 }
 
-type ExecutionOptions = Awaited<ReturnType<BbPluginApi["sdk"]["system"]["executionOptions"]>>;
+type ExecutionOptions = Awaited<ReturnType<AliaPluginApi["sdk"]["system"]["executionOptions"]>>;
 type ExecutionProvider = NonNullable<ExecutionOptions["providers"]>[number];
 
 interface ResolvedExecution {
@@ -5640,22 +5640,22 @@ interface ResolvedExecution {
 }
 
 async function resolveAndValidateExecution(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
   requested: Partial<ResolvedExecution>,
   role: "worker" | "verifier",
 ): Promise<{ selection: ResolvedExecution } | { error: string }> {
-  const catalog = await listExecutionCatalog(bb, threadId);
+  const catalog = await listExecutionCatalog(alia, threadId);
   let rootProviderId = "";
   try {
-    rootProviderId = (await bb.sdk.threads.get({ threadId })).providerId;
+    rootProviderId = (await alia.sdk.threads.get({ threadId })).providerId;
   } catch {
     // Start remains usable in a newly-created/fake root; explicit settings or
     // the catalog default still produce a fully pinned configuration.
   }
-  let inherited: Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["defaultExecutionOptions"]>> | null = null;
+  let inherited: Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["defaultExecutionOptions"]>> | null = null;
   try {
-    inherited = await bb.sdk.threads.defaultExecutionOptions({ threadId });
+    inherited = await alia.sdk.threads.defaultExecutionOptions({ threadId });
   } catch {
     // Missing host state is handled by the catalog defaults below.
   }
@@ -5691,13 +5691,13 @@ async function resolveAndValidateExecution(
 }
 
 async function listExecutionCatalog(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId?: string,
 ): Promise<CatalogProvider[]> {
   let environmentId: string | undefined;
   if (threadId) {
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       environmentId = thread.environmentId ?? undefined;
     } catch {
       // Catalog still loads from the primary host.
@@ -5707,12 +5707,12 @@ async function listExecutionCatalog(
   const scope = environmentId ? { environmentId } : {};
   let providers: ExecutionProvider[] = [];
   try {
-    const options = await bb.sdk.system.executionOptions(scope);
+    const options = await alia.sdk.system.executionOptions(scope);
     providers = options.providers ?? [];
   } catch {
-    let listed: Awaited<ReturnType<BbPluginApi["sdk"]["providers"]["list"]>> = [];
+    let listed: Awaited<ReturnType<AliaPluginApi["sdk"]["providers"]["list"]>> = [];
     try {
-      listed = await bb.sdk.providers.list(scope);
+      listed = await alia.sdk.providers.list(scope);
     } catch {
       // Older hosts and minimal test harnesses may not expose provider APIs.
     }
@@ -5764,22 +5764,22 @@ async function listExecutionCatalog(
       supportsServiceTier: provider.capabilities?.supportsServiceTier === true,
       permissionModes: [...(provider.capabilities?.permissionModes ?? [])],
       ...(BRAND_PREFIX[provider.id] ? { brandPrefix: BRAND_PREFIX[provider.id] } : {}),
-      models: await listProviderModels(bb, provider.id, environmentId),
+      models: await listProviderModels(alia, provider.id, environmentId),
     })),
   );
 }
 
 async function listProviderModels(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   providerId: string,
   environmentId?: string,
 ): Promise<CatalogModel[]> {
   const args = environmentId ? { providerId, environmentId } : { providerId };
   try {
-    return modelsFromOptions(await bb.sdk.system.executionOptions(args), providerId);
+    return modelsFromOptions(await alia.sdk.system.executionOptions(args), providerId);
   } catch {
     try {
-      return modelsFromOptions(await bb.sdk.providers.models(args), providerId);
+      return modelsFromOptions(await alia.sdk.providers.models(args), providerId);
     } catch {
       return [];
     }

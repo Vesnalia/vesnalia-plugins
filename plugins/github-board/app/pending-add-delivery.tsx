@@ -8,7 +8,7 @@
  * even when its composer turns up before the timer fires.
  */
 import { useEffect, useSyncExternalStore } from "react";
-import { useComposers } from "@get-bb/plugin-sdk/app";
+import { useComposers } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import { addCardToComposer } from "./add-to-chat";

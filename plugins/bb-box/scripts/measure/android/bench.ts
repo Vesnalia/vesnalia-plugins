@@ -11,7 +11,7 @@ const { values: options, positionals } = parseArgs({
     grpc: { type: "string", default: "8554" },
     serial: { type: "string", default: "emulator-5554" },
     emulator: { type: "string", default: "" },
-    helper: { type: "string", default: `${process.env.HOME}/h264-x264/bin/bb-box-h264` },
+    helper: { type: "string", default: `${process.env.HOME}/h264-x264/bin/alia-box-h264` },
     encoder: { type: "string", default: "x264" },
     threads: { type: "string", default: "1" },
     bitrate: { type: "string", default: "8000" },
@@ -26,7 +26,7 @@ const { values: options, positionals } = parseArgs({
     "record-frames": { type: "string", default: "120" },
     file: { type: "string", default: "" },
     out: { type: "string", default: "" },
-    shm: { type: "string", default: "/dev/shm/bb-box-frames" },
+    shm: { type: "string", default: "/dev/shm/alia-box-frames" },
   },
 });
 

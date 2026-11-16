@@ -1,5 +1,5 @@
 /**
- * BB's thread page DOM, as found in bb-app 0.47.1. Undocumented: see AGENTS.md.
+ * VesnALIA's thread page DOM, as found in alia-app 0.47.1. Undocumented: see AGENTS.md.
  *
  * A thread page is a horizontal split: `#thread-detail-timeline-panel` (the chat
  * column) beside `#thread-detail-secondary-panel` (the right panel), both under
@@ -64,7 +64,7 @@ export function panelFor(root: HTMLElement): Panel | null {
   return findPanel(root.querySelector(PANEL) ?? root) ?? findShelf();
 }
 
-/** The drawer while it is open: closed, BB unmounts its aside, so there is nothing to dock into. */
+/** The drawer while it is open: closed, VesnALIA unmounts its aside, so there is nothing to dock into. */
 function findShelf(): Panel | null {
   const shelf = document.querySelector<HTMLElement>(SHELF);
   return shelf ? panelOf(shelf, shelf.querySelector<HTMLElement>("aside")) : null;
@@ -72,7 +72,7 @@ function findShelf(): Panel | null {
 
 /**
  * The right panel this element is in or holds, or null outside one. The column
- * is the aside's child that wraps the tab strip; while BB remounts the panel the
+ * is the aside's child that wraps the tab strip; while VesnALIA remounts the panel the
  * strip and the body sit flat under the aside for a frame or two, and then the
  * aside itself is the column, so a host appended to it still lands at the bottom.
  */
@@ -116,7 +116,7 @@ function columnOf(aside: HTMLElement, strip: Element): HTMLElement {
 }
 
 /**
- * Whether the right panel is collapsed: BB sizes the split panel to 0 and hides
+ * Whether the right panel is collapsed: VesnALIA sizes the split panel to 0 and hides
  * its aside from assistive technology; the drawer is made inert while closed.
  */
 export function panelHidden({ panel, aside }: Panel): boolean {
@@ -125,7 +125,7 @@ export function panelHidden({ panel, aside }: Panel): boolean {
 
 /**
  * Watches the whole page for what can change where a shell belongs: a chat
- * column or a panel column mounting or being replaced (a navigation, BB's
+ * column or a panel column mounting or being replaced (a navigation, VesnALIA's
  * remount of the aside's content after a plugin setting write, the drawer
  * mounting its aside), and the attributes that open or close a panel.
  * `onChange` runs in the observer's microtask, after the change and before a
@@ -207,11 +207,11 @@ export interface Dock {
  * Moves `shell` into `host`. A comment marks the shell's place in its column, so
  * the move survives siblings coming and going, and `restore` puts it back there;
  * `moveTo` takes it to another host and leaves the marker where it is. A marker
- * with no parent means BB tore the shell's home down (a navigation to another
+ * with no parent means VesnALIA tore the shell's home down (a navigation to another
  * thread unmounts the chat column but keeps the panel, so a docked shell is never
  * removed by React): the shell is stale, and is dropped instead.
  *
- * In the phone drawer, which is outside BB's React root, the shell goes into an
+ * In the phone drawer, which is outside VesnALIA's React root, the shell goes into an
  * overlay laid over the host instead (`overlay.ts`).
  */
 export function dockShell(shell: HTMLElement, host: HTMLElement, panel: Panel | null): Dock {
@@ -238,9 +238,9 @@ export function dockShell(shell: HTMLElement, host: HTMLElement, panel: Panel | 
 }
 
 /**
- * The composer shell `host` holds, or null (BB can rebuild the shell under a
+ * The composer shell `host` holds, or null (VesnALIA can rebuild the shell under a
  * thread, leaving the host empty). A drawer's host holds it in its overlay; one
- * whose drawer BB replaced counts as empty, so it is docked again over the new one.
+ * whose drawer VesnALIA replaced counts as empty, so it is docked again over the new one.
  */
 export function heldShell(host: HTMLElement): HTMLElement | null {
   const overlay = overlayOf(host);

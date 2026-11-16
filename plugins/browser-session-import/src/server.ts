@@ -1,8 +1,8 @@
 import type {
-  BbPluginApi,
+  AliaPluginApi,
   PluginAgentToolResult,
   PluginRpcHandlers,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   hostContract,
@@ -13,7 +13,7 @@ import {
   type Request,
 } from "./contracts.js";
 
-const toolName = "bb_browser_session_import";
+const toolName = "alia_browser_session_import";
 const currentKey = "current";
 
 function failure(error: unknown): PluginAgentToolResult {
@@ -35,13 +35,13 @@ type SharedTarget = {
   tabId: string;
 };
 
-export default function browserSessionImport(bb: BbPluginApi): void {
-  const host = bb.hosts.experimental_client({ contract: hostContract });
-  const desktop = bb.sdk.experimental_desktopBrowsers;
+export default function browserSessionImport(alia: AliaPluginApi): void {
+  const host = alia.hosts.experimental_client({ contract: hostContract });
+  const desktop = alia.sdk.experimental_desktopBrowsers;
   const active = new Set<string>();
 
   const connectedHost = async () => {
-    const hosts = await bb.sdk.hosts.list();
+    const hosts = await alia.sdk.hosts.list();
     const connected = hosts.find(
       (candidate) => candidate.status === "connected",
     );
@@ -53,7 +53,7 @@ export default function browserSessionImport(bb: BbPluginApi): void {
     const threads = new Map<string, string>();
     for (const archived of [false, true]) {
       for (let offset = 0; ; offset += 200) {
-        const page = await bb.sdk.threads.list({
+        const page = await alia.sdk.threads.list({
           archived,
           includeHidden: true,
           limit: 200,
@@ -129,7 +129,7 @@ export default function browserSessionImport(bb: BbPluginApi): void {
             leaseId,
           })
           .catch((error: unknown) =>
-            bb.log.warn(
+            alia.log.warn(
               `Could not release Browser import lease: ${error instanceof Error ? error.message : String(error)}`,
             ),
           );
@@ -143,10 +143,10 @@ export default function browserSessionImport(bb: BbPluginApi): void {
     hostId: string,
   ) => host.call("reload", { tabId: target.tabId, wsEndpoint }, { hostId });
   const storeCurrent = async (current: unknown) => {
-    await bb.storage.kv.set(currentKey, currentImportSchema.parse(current));
+    await alia.storage.kv.set(currentKey, currentImportSchema.parse(current));
   };
   const readCurrent = async () => {
-    const value = await bb.storage.kv.get<unknown>(currentKey);
+    const value = await alia.storage.kv.get<unknown>(currentKey);
     const parsed = currentImportSchema.safeParse(value);
     return parsed.success ? parsed.data : null;
   };
@@ -222,7 +222,7 @@ export default function browserSessionImport(bb: BbPluginApi): void {
         { hostId: input.hostId },
       );
       await reloadSharedTab(target, ws, input.hostId);
-      await bb.storage.kv.delete(currentKey);
+      await alia.storage.kv.delete(currentKey);
       return result.clearedCookies;
     });
     return { clearedCookies: cleared };
@@ -243,7 +243,7 @@ export default function browserSessionImport(bb: BbPluginApi): void {
       };
     },
   };
-  bb.rpc.register(rpcContract, handlers);
+  alia.rpc.register(rpcContract, handlers);
   const execute = async (request: Request) => {
     switch (request.operation) {
       case "list-sources":
@@ -258,10 +258,10 @@ export default function browserSessionImport(bb: BbPluginApi): void {
         return handlers.current({});
     }
   };
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: toolName,
     description:
-      "Import a native browser profile or normalized cookies into the shared BB Browser session so every ordinary Browser tab uses that session. This does not provide general browser automation. List sources before importing a native profile. Clear requires confirm:true.",
+      "Import a native browser profile or normalized cookies into the shared VesnALIA Browser session so every ordinary Browser tab uses that session. This does not provide general browser automation. List sources before importing a native profile. Clear requires confirm:true.",
     parameters: z.toJSONSchema(requestSchema, { io: "input" }),
     async execute(input) {
       try {
@@ -271,20 +271,20 @@ export default function browserSessionImport(bb: BbPluginApi): void {
       }
     },
   });
-  bb.cli.register({
+  alia.cli.register({
     name: "browser-session-import",
-    summary: "Import or clear the shared BB Browser session",
+    summary: "Import or clear the shared VesnALIA Browser session",
     commands: [
       {
         name: "run",
         summary: "Run one session import operation",
-        usage: "bb browser-session-import '<json>'",
+        usage: "alia browser-session-import '<json>'",
       },
     ],
     async run(argv) {
       try {
         if (argv.length !== 1)
-          throw new Error("Usage: bb browser-session-import '<json>'");
+          throw new Error("Usage: VesnALIA browser-session-import '<json>'");
         return {
           exitCode: 0,
           stdout: JSON.stringify(
@@ -301,7 +301,7 @@ export default function browserSessionImport(bb: BbPluginApi): void {
       }
     },
   });
-  bb.agents.configure(() => ({
+  alia.agents.configure(() => ({
     tools: [toolName],
     skills: ["browser-session-import"],
   }));

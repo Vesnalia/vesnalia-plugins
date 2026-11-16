@@ -21,13 +21,13 @@ sources:
 ---
 # Gotchas
 
-TL;DR: The sharp edges are tied to the physical device behind each section, asynchronous file moves, BB’s chat directory update support, and an experimental core hook for session-context filtering (`thread-move.ts:138-168`, `session-policy-server.ts:52-68`).
+TL;DR: The sharp edges are tied to the physical device behind each section, asynchronous file moves, VesnALIA’s chat directory update support, and an experimental core hook for session-context filtering (`thread-move.ts:138-168`, `session-policy-server.ts:52-68`).
 
 ## Critical
 
 ### A chat move can update the tree before its working directory changes
 
-**Problem:** If BB rejects its experimental directory update, the plugin asks the chat’s own agent to switch directories using an agent-only message. It files the chat immediately, then settles the move after the request turn; a provider without the directory tool leaves the chat working in its old folder (`thread-move.ts:138-168`, `thread-move.ts:216-269`).
+**Problem:** If VesnALIA rejects its experimental directory update, the plugin asks the chat’s own agent to switch directories using an agent-only message. It files the chat immediately, then settles the move after the request turn; a provider without the directory tool leaves the chat working in its old folder (`thread-move.ts:138-168`, `thread-move.ts:216-269`).
 
 **Risk:** The displayed destination and actual working directory can differ until the agent completes the requested move.
 
@@ -43,27 +43,27 @@ TL;DR: The sharp edges are tied to the physical device behind each section, asyn
 
 ## High
 
-### Raising `engines` locks older BB out of the install
+### Raising `engines` locks older VesnALIA out of the install
 
-**Problem:** BB installs a marketplace plugin by probing only the newest 10 release tags in the marketplace range. When every one of them asks for a newer BB in `engines`, the install fails with "no release … runs on this bb within the newest 10 releases" and never says which version is needed (`package.json:5-8`).
+**Problem:** VesnALIA installs a marketplace plugin by probing only the newest 10 release tags in the marketplace range. When every one of them asks for a newer VesnALIA in `engines`, the install fails with "no release … runs on this VesnALIA within the newest 10 releases" and never says which version is needed (`package.json:5-8`).
 
-**Risk:** A floor raised for one new BB API makes the whole plugin uninstallable on every older BB, even if older tags would run there.
+**Risk:** A floor raised for one new VesnALIA API makes the whole plugin uninstallable on every older VesnALIA, even if older tags would run there.
 
-**Mitigation:** Keep `engines` at BB `>=0.43.0` / SDK `>=0.4.84`, the first BB with the environment-provider API the plugin is built on. Feature-test a newer API instead, as `composer-compat.ts` does for the composer's `experimental_setSelection` and `experimental_onSubmitted` (BB 0.43.3). `composer-compat.test.ts` fails if the floor changes. To check the floor, typecheck against `@get-bb/plugin-sdk@0.4.84`: only calls behind those checks and the third `bb.rpc.register` argument (ignored by older BB) may fail.
+**Mitigation:** Keep `engines` at VesnALIA `>=0.43.0` / SDK `>=0.4.84`, the first VesnALIA with the environment-provider API the plugin is built on. Feature-test a newer API instead, as `composer-compat.ts` does for the composer's `experimental_setSelection` and `experimental_onSubmitted` (VesnALIA 0.43.3). `composer-compat.test.ts` fails if the floor changes. To check the floor, typecheck against `@vesnalia/plugin-sdk@0.4.84`: only calls behind those checks and the third `alia.rpc.register` argument (ignored by older VesnALIA) may fail.
 
-### Session context depends on an experimental BB extension
+### Session context depends on an experimental VesnALIA extension
 
-**Problem:** Rules are registered with BB only if `experimental_vkSessionPolicy` exists; without it the capability is false and no resolver is registered (`session-policy-server.ts:52-68`, `session-policy-server.ts:144-150`).
+**Problem:** Rules are registered with VesnALIA only if `experimental_vkSessionPolicy` exists; without it the capability is false and no resolver is registered (`session-policy-server.ts:52-68`, `session-policy-server.ts:144-150`).
 
-**Risk:** Persisted settings do not enforce session filtering on a BB build without this hook.
+**Risk:** Persisted settings do not enforce session filtering on a VesnALIA build without this hook.
 
-**Workaround:** Read `session_policy_capability`; its handler returns `sessionPolicies.available`, which reflects whether BB exposes the experimental hook (`server.ts:2197-2199`, `session-policy-server.ts:68`).
+**Workaround:** Read `session_policy_capability`; its handler returns `sessionPolicies.available`, which reflects whether VesnALIA exposes the experimental hook (`server.ts:2197-2199`, `session-policy-server.ts:68`).
 
 ### Required plugins and MCP servers cannot be excluded
 
-**Problem:** `environment-project-checkout`, `project-folders` and `bb-bridge` are fixed required session items (`session-policy.ts:32-47`). Normalization removes them from saved filters and conversion back to core retains them (`session-policy.ts:118-141`, `session-policy.ts:172-201`).
+**Problem:** `environment-project-checkout`, `project-folders` and `alia-bridge` are fixed required session items (`session-policy.ts:32-47`). Normalization removes them from saved filters and conversion back to core retains them (`session-policy.ts:118-141`, `session-policy.ts:172-201`).
 
-**Risk:** An allow/deny list cannot disable infrastructure required for BB threads or this plugin.
+**Risk:** An allow/deny list cannot disable infrastructure required for VesnALIA threads or this plugin.
 
 **Workaround:** Treat those entries as invariant when interpreting session-context results (`session-policy.ts:32-47`).
 
@@ -89,7 +89,7 @@ TL;DR: The sharp edges are tied to the physical device behind each section, asyn
 
 ### Reading a chat does not count as activity for recency sorting
 
-**Problem:** The activity calculation ignores `updatedAt` when it is within two seconds of `lastReadAt`, because BB updates both when a thread is opened/read (`chat-list.ts:180-199`).
+**Problem:** The activity calculation ignores `updatedAt` when it is within two seconds of `lastReadAt`, because VesnALIA updates both when a thread is opened/read (`chat-list.ts:180-199`).
 
 **Risk:** Opening a chat alone does not promote it by conversation activity.
 

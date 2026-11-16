@@ -3,7 +3,7 @@
  * whichever machine this module runs on. `gh` exits non-zero on any GraphQL
  * error, which is the behaviour `server/github.ts` relies on.
  */
-import { experimental_execHostFile } from "@get-bb/plugin-sdk/process";
+import { experimental_execHostFile } from "@vesnalia/plugin-sdk/process";
 
 import type { GraphQLVariables } from "./github";
 
@@ -56,14 +56,14 @@ export function isGhMissing(error: unknown): boolean {
 
 export function describeGhFailure(error: unknown): string {
   if (isGhMissing(error)) {
-    return "GitHub CLI (gh) was not found on the machine running bb. Install it (`brew install gh`) and run `gh auth login`.";
+    return "GitHub CLI (gh) was not found on the machine running VesnALIA. Install it (`brew install gh`) and run `gh auth login`.";
   }
   const stderr =
     typeof error === "object" && error !== null && "stderr" in error
       ? String((error as { stderr?: unknown }).stderr ?? "").trim()
       : "";
   if (stderr.includes("gh auth login") || stderr.toLowerCase().includes("authentication")) {
-    return "GitHub CLI is not authenticated. Run `gh auth login` on the machine running bb.";
+    return "GitHub CLI is not authenticated. Run `gh auth login` on the machine running VesnALIA.";
   }
   if (stderr !== "") return stderr;
   return error instanceof Error ? error.message : String(error);
@@ -82,7 +82,7 @@ export type ExecFile = (
 ) => Promise<{ stdout: string }>;
 
 /**
- * Runs `gh` through bb's host toolchain, which finds it the way bb finds its
+ * Runs `gh` through VesnALIA's host toolchain, which finds it the way VesnALIA finds its
  * own tools: the login shell's PATH, `~/.local/bin`, mise and asdf shims,
  * Volta and Homebrew. It is looked up on every call, and a miss refreshes
  * that lookup in the background, so a `gh` installed after the plugin loaded

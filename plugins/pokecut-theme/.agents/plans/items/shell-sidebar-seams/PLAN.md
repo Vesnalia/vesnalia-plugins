@@ -1,5 +1,5 @@
 ## Context
-0.5.6 (task shell-grid-fix-live) is live in the owner's BB desktop app. The top corner is mostly right, but three seams remain, all caused by the "tuck fill" being a `box-shadow: var(--pk-radius-panel) 0 0 0 var(--pk-panel)` on `[data-sidebar="sidebar"]` (a copy of the sidebar shape shifted 20px right) and by the sidebar surface not sharing the inset's bottom gutter.
+0.5.6 (task shell-grid-fix-live) is live in the owner's VesnALIA desktop app. The top corner is mostly right, but three seams remain, all caused by the "tuck fill" being a `box-shadow: var(--pk-radius-panel) 0 0 0 var(--pk-panel)` on `[data-sidebar="sidebar"]` (a copy of the sidebar shape shifted 20px right) and by the sidebar surface not sharing the inset's bottom gutter.
 
 Current rules (src/theme/base.css, desktop media query):
 ```
@@ -7,7 +7,7 @@ Current rules (src/theme/base.css, desktop media query):
 [data-variant="sidebar"][data-side="left"] [data-sidebar="sidebar"] { background-color:var(--pk-panel); border-radius:var(--pk-radius-panel) 0 0 var(--pk-radius-panel); box-shadow:var(--pk-radius-panel) 0 0 0 var(--pk-panel); overflow:visible }
 [data-sidebar="inset"] { position:relative; z-index:1; height:calc(100% - var(--pk-gap)); align-self:stretch; margin:0 var(--pk-gap) var(--pk-gap) 0; ... }
 ```
-BB markup facts (from BB's bundle): the desktop panel is `position:fixed; inset-y-0; height: var(--bb-shell-height); width: var(--sidebar-width)`; inside it `[data-sidebar="sidebar"]` is `flex h-full w-full flex-col`; the sidebar footer is `[data-sidebar="footer"]` with `flex flex-col gap-2 p-2`; a `[data-sidebar="gap"]` div reserves the sidebar width in the flow. The macOS app has a ~46–48px chrome row at the top (`--bb-app-chrome-row-height: 3rem`).
+VesnALIA markup facts (from VesnALIA's bundle): the desktop panel is `position:fixed; inset-y-0; height: var(--alia-shell-height); width: var(--sidebar-width)`; inside it `[data-sidebar="sidebar"]` is `flex h-full w-full flex-col`; the sidebar footer is `[data-sidebar="footer"]` with `flex flex-col gap-2 p-2`; a `[data-sidebar="gap"]` div reserves the sidebar width in the flow. The macOS app has a ~46–48px chrome row at the top (`--alia-app-chrome-row-height: 3rem`).
 
 ## What the owner's screenshots show
 1. Top-left join: the sidebar's lighter fill ends in a straight vertical edge right next to the inset's rounded top-left corner, and the pocket behind that corner is a different gray than the sidebar, so a seam and a faint ghost curve are visible.

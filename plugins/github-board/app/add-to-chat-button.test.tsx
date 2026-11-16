@@ -5,8 +5,8 @@
  * `AddToChatControl` with fake handles.
  */
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import type { PluginComposerApi, PluginComposerScope } from "@get-bb/plugin-sdk/app";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import type { PluginComposerApi, PluginComposerScope } from "@vesnalia/plugin-sdk/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { BoardItem, PromptSettings } from "../shared/board";

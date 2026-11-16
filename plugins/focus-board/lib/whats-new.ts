@@ -1,7 +1,7 @@
 /**
  * "What's new" — the board's in-plugin changelog surface.
  *
- * bb gives plugins no update notification to hook, so the board self-reports:
+ * VesnALIA gives plugins no update notification to hook, so the board self-reports:
  * the last-seen plugin version sits in localStorage; when the running build
  * is newer, the toolbar's gift button pulses and the modal lists what
  * changed. The button itself never disappears — dismissing only stops the

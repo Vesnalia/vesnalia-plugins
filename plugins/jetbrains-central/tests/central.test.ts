@@ -4,7 +4,7 @@ import {mkdtempSync,writeFileSync,readFileSync,rmSync,mkdirSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {spawnSync} from 'node:child_process';
-import {createFakePluginHost,experimental_scanPublicSdkOnly} from '@get-bb/plugin-sdk/testing';
+import {createFakePluginHost,experimental_scanPublicSdkOnly} from '@vesnalia/plugin-sdk/testing';
 import plugin from '../server.js';
 import {defaults,parseProfiles,centralArgs} from '../profiles.js';
 import {stripCentralProfile,codexWrapper,claudeWrapper,nativeLaunchEnv} from '../native.js';
@@ -17,8 +17,8 @@ test('package depends only on published SDK entrypoints',()=>{
 });
 
 test('registers separate work identities and never changes personal provider IDs',async()=>{
- const {bb,harness}=createFakePluginHost({pluginId:'jetbrains-central',experimental_hostEntry:true});
- await plugin(bb);
+ const {alia,harness}=createFakePluginHost({pluginId:'jetbrains-central',experimental_hostEntry:true});
+ await plugin(alia);
  const providers=harness.registrations.providerRegistrations;
  assert.deepEqual(providers.map(p=>p.id),['central-codex','central-claude-code','central-pi']);
  assert.ok(providers.every(p=>p.maintenance?.usage===false));
@@ -78,7 +78,7 @@ test('Pi rejects models outside providers overridden by Central',()=>{
  assert.equal(isWorkPiModel('local/model'),false);
 });
 
-test('Pi catalog loads extension models and returns complete BB picker entries',async()=>{
+test('Pi catalog loads extension models and returns complete VesnALIA picker entries',async()=>{
  const dir=mkdtempSync(join(tmpdir(),'central-pi-catalog-'));
  try{
   const fake=join(dir,'central');
@@ -103,8 +103,8 @@ createInterface({input:process.stdin}).on('line',line=>{
 });
 
 test('native launch overrides are isolated to the selected bridge',()=>{
- assert.deepEqual(nativeLaunchEnv(defaults[1],'central','/work/wrapper','/work/data'),{BB_CLAUDE_CODE_EXECUTABLE:'/work/wrapper'});
+ assert.deepEqual(nativeLaunchEnv(defaults[1],'central','/work/wrapper','/work/data'),{ALIA_CLAUDE_CODE_EXECUTABLE:'/work/wrapper'});
  const env=nativeLaunchEnv(defaults[0],'central','unused','/work/data');
  assert.equal(env.CODEX_HOME,'/work/data/codex');
- assert.deepEqual(JSON.parse(env.BB_CODEX_BRIDGE_APP_SERVER_ARGS!),['run','codex','--','app-server']);
+ assert.deepEqual(JSON.parse(env.ALIA_CODEX_BRIDGE_APP_SERVER_ARGS!),['run','codex','--','app-server']);
 });

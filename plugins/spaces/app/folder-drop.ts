@@ -1,7 +1,7 @@
 // Dropping folders from the file manager onto Spaces.
 //
 // The browser hides a dropped folder's full path (Electron removed File.path
-// and bb's preload does not expose webUtils), so we send the folder's name
+// and VesnALIA's preload does not expose webUtils), so we send the folder's name
 // and the server finds it on disk. When a path is available (older Electron,
 // or text paths dragged from an address bar) it is sent too.
 import { useCallback, useRef, useState, type DragEvent } from "react";

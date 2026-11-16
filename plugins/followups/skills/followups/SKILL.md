@@ -1,6 +1,6 @@
 ---
 name: followups
-description: Inspect or clear the Followups plugin's suggested follow-up prompts with the `bb followups` CLI. Use when the user asks what follow-ups were suggested for a thread, or wants them cleared.
+description: Inspect or clear the Followups plugin's suggested follow-up prompts with the `alia followups` CLI. Use when the user asks what follow-ups were suggested for a thread, or wants them cleared.
 ---
 
 # Follow-ups
@@ -17,13 +17,13 @@ These commands are for inspection and debugging only.
 
 | Command | Effect |
 | --- | --- |
-| `bb followups show <thread-id>` | Show the stored follow-ups for a thread, plus how long they took and how many tokens (cached and output) the drafting model used. |
-| `bb followups clear <thread-id>` | Clear the stored follow-ups for a thread. |
-| `bb followups on <thread-id>` / `off <thread-id>` | Turn follow-ups on or off for one thread (the user's button in the thread header does the same). Only on the user's request; `on` drafts right away for a finished thread, which spawns a worker. |
-| `bb followups model` | Show which model drafts follow-ups (saved pick or BB default). |
-| `bb followups cleanup --dry-run` | List the leftover hidden worker threads the plugin would delete. Workers are deleted automatically; run it without `--dry-run` only when the user asks. |
+| `alia followups show <thread-id>` | Show the stored follow-ups for a thread, plus how long they took and how many tokens (cached and output) the drafting model used. |
+| `alia followups clear <thread-id>` | Clear the stored follow-ups for a thread. |
+| `alia followups on <thread-id>` / `off <thread-id>` | Turn follow-ups on or off for one thread (the user's button in the thread header does the same). Only on the user's request; `on` drafts right away for a finished thread, which spawns a worker. |
+| `alia followups model` | Show which model drafts follow-ups (saved pick or VesnALIA default). |
+| `alia followups cleanup --dry-run` | List the leftover hidden worker threads the plugin would delete. Workers are deleted automatically; run it without `--dry-run` only when the user asks. |
 
-`bb followups regenerate` and `bb followups draft` each spawn a real model worker, so run them only when the user asks (for example to time the pipeline). `regenerate` only works on a thread that has finished, which includes having no child threads still running (a parent that is waiting on its children gets its follow-ups once they are done).
+`alia followups regenerate` and `alia followups draft` each spawn a real model worker, so run them only when the user asks (for example to time the pipeline). `regenerate` only works on a thread that has finished, which includes having no child threads still running (a parent that is waiting on its children gets its follow-ups once they are done).
 
 The drafting model is the user's choice under Settings → Follow-ups model.
 Never change it on your own; point the user there if they ask.
@@ -41,12 +41,12 @@ only when the user requests a model evaluation. The default is Codex with
 Use `docs/EVALUATING_PROMPTS.md` in the source checkout for repeated comparisons,
 quality checks, paired output review, timing, token usage, and tool telemetry.
 Report missing telemetry as unknown and distinguish native Codex timing from
-the full BB worker path. A clean sample is not a provider-wide execution guarantee.
+the full VesnALIA worker path. A clean sample is not a provider-wide execution guarantee.
 
 ## Historical Codex worker chats
 
-Old releases deleted BB worker records without archiving the provider chat.
-Those provider-only chats cannot be reached by `bb followups cleanup`. From the
+Old releases deleted VesnALIA worker records without archiving the provider chat.
+Those provider-only chats cannot be reached by `alia followups cleanup`. From the
 Followups source repository, preview them with
 `node scripts/archive-existing-codex-followups.mjs --dry-run --json`.
 `--apply` archives matched chats through Codex's API and never deletes them.

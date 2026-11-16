@@ -1,10 +1,10 @@
-// The chat list model: bb threads in messenger order, folders, and search.
+// The chat list model: VesnALIA threads in messenger order, folders, and search.
 //
 // One row is one task. With `foldChildren`, sub-agents and forks fold into
 // their root and lift its status, so a waiting sub-agent makes the parent
-// "needs you" too. Order is Telegram's: pinned on top in bb's manual order,
+// "needs you" too. Order is Telegram's: pinned on top in VesnALIA's manual order,
 // then by latest activity.
-import type { PluginSidebarProject, PluginSidebarSection, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarProject, PluginSidebarSection, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 import type { ColorId } from "./colors";
 import { hasFilters, linkedProjectId, type EntryKind, type FolderLayout, type FolderRule } from "./folders";
@@ -37,9 +37,9 @@ export interface Folder {
   kind: EntryKind;
   /** The user's name, or the project's or section's; null translates the built-in name. */
   name: string | null;
-  /** The project is bb's personal one: translate its name. */
+  /** The project is VesnALIA's personal one: translate its name. */
   personal: boolean;
-  /** A bb icon name; null for project folders, which draw their avatar. */
+  /** A VesnALIA icon name; null for project folders, which draw their avatar. */
   icon: string | null;
   color: ColorId | null;
   /** A custom folder about one project: it wears that project's colour. */
@@ -50,13 +50,13 @@ export interface Folder {
   lane: "attention" | "working" | null;
   /** Whether a chat belongs here. */
   matches: (row: Chat) => boolean;
-  /** Where "+" starts a chat from this folder; null opens bb's New thread as is. */
+  /** Where "+" starts a chat from this folder; null opens VesnALIA's New thread as is. */
   startIn: { projectId?: string; sectionId?: string } | null;
 }
 
 /**
- * What bb's `toCompose` takes for a folder's `startIn`: a section becomes the
- * new thread's placement, unpinned, as bb's own "New thread in section" does.
+ * What VesnALIA's `toCompose` takes for a folder's `startIn`: a section becomes the
+ * new thread's placement, unpinned, as VesnALIA's own "New thread in section" does.
  */
 export function composeTarget(startIn: { projectId?: string; sectionId?: string }): {
   projectId?: string;
@@ -86,7 +86,7 @@ function rootOf(thread: PluginSidebarThread, byId: ReadonlyMap<string, PluginSid
 }
 
 export function pinOrder(a: PluginSidebarThread, b: PluginSidebarThread): number {
-  // bb sorts pins with a manual key first, the rest by when they were pinned.
+  // VesnALIA sorts pins with a manual key first, the rest by when they were pinned.
   if (a.pinSortKey !== null && b.pinSortKey !== null) {
     return a.pinSortKey < b.pinSortKey ? -1 : a.pinSortKey > b.pinSortKey ? 1 : 0;
   }
@@ -422,7 +422,7 @@ export function groupByProject(rows: readonly Chat[], projects: readonly PluginS
     if (list !== undefined) groups.push({ key: project.id, project, chats: list });
     byProject.delete(project.id);
   }
-  // Threads whose project bb did not send land in one trailing group.
+  // Threads whose project VesnALIA did not send land in one trailing group.
   const orphans = [...byProject.values()].flat();
   if (orphans.length > 0) groups.push({ key: "", project: null, chats: orphans });
   return groups;

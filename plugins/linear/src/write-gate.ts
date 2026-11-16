@@ -19,7 +19,7 @@
  * Two deliberate scope decisions:
  *
  * - **Local state is never gated.** Thread↔issue links, project bindings,
- *   inbox seen/dismiss, sort preferences — bb's own tables, never Linear's.
+ *   inbox seen/dismiss, sort preferences — VesnALIA's own tables, never Linear's.
  *   Gating them would break reading workflows to protect nothing.
  * - **The gate fails closed.** A consent check that throws refuses the write.
  *   "The settings read broke, so the write went through" is not a sentence
@@ -34,7 +34,7 @@ import type { AgentWrites, LinearSettings } from "./settings.js";
 /** The one remedy sentence, written once so every surface quotes the same
  *  command and a test can pin it. */
 export const WRITE_CONSENT_REMEDY =
-  "Writes to Linear are off. Reads work; every change is refused until you allow it — turn on \"Allow changes to Linear\" in this plugin's settings, or run: bb plugin config linear set allowWrites true";
+  "Writes to Linear are off. Reads work; every change is refused until you allow it — turn on \"Allow changes to Linear\" in this plugin's settings, or run: VesnALIA plugin config linear set allowWrites true";
 
 /** True only for an explicit true. `undefined` (older install, unparseable
  *  row) reads as **no consent** — absence of an answer is not a yes. */

@@ -2,13 +2,13 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
 const out = process.env.LIVE_SHOTS ?? join(process.cwd(), "screens");
 const side = process.env.LIVE_SIDE ?? "linux";
 mkdirSync(out, { recursive: true });
 
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -28,7 +28,7 @@ async function resetLinux() {
       ...rest,
       backends: [
         { id: "docker", type: "docker", enabled: true, fields: {} },
-        { id: "proxmox-lxc", type: "proxmox-lxc", enabled: false, fields: { url: "https://127.0.0.1:9", "token-id": "bb-box@pve!made-up", "token-secret": "made-up-screens" } },
+        { id: "proxmox-lxc", type: "proxmox-lxc", enabled: false, fields: { url: "https://127.0.0.1:9", "token-id": "alia-box@pve!made-up", "token-secret": "made-up-screens" } },
       ],
     };
   });
@@ -54,13 +54,13 @@ async function shot(page, name) {
 }
 
 async function open(page, hash, title) {
-  await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   const skip = page.getByRole("button", { name: "Skip setup" });
   await Promise.race([skip.waitFor({ timeout: 4_000 }).catch(() => {}), page.locator("[data-settings-view]").waitFor({ timeout: 4_000 }).catch(() => {})]);
   if (await skip.count()) {
     await skip.click();
     await pause(500);
-    await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   }
   if (title) await page.locator("[data-page-heading]").filter({ hasText: new RegExp(`^${title}`) }).waitFor();
   else await page.locator("[data-settings-view]").waitFor();
@@ -105,7 +105,7 @@ async function linuxScreens() {
       await page.getByText(/^Not saved: fix the 2 fields marked/).waitFor();
       await page.locator('[data-setting-row="backends/docker/fields/host"]').scrollIntoViewIfNeeded();
       await shot(page, `docker-refused-${tag}`);
-      await page.getByRole("button", { name: "BB Box settings" }).click();
+      await page.getByRole("button", { name: "VesnALIA Box settings" }).click();
       await page.locator('[data-row-key="backend-docker"]').waitFor();
       await shot(page, `overview-unsaved-${tag}`);
       await page.goBack();
@@ -204,13 +204,13 @@ async function linuxKeys() {
   log.push(`Focus after the dialog: ${(await focusSummary(page)).name}`);
   log.push(`Animations running: ${await animations(page)}`);
   await page.getByRole("link", { name: "General", exact: true }).first().click();
-  await page.waitForURL((url) => !url.pathname.includes("/plugins/bb-box"));
-  const bbBack = page.getByRole("button", { name: /^(Back|Go back)$/ }).first();
-  const usedBbBack = (await bbBack.count()) > 0;
-  if (usedBbBack) await bbBack.click();
+  await page.waitForURL((url) => !url.pathname.includes("/plugins/alia-box"));
+  const aliaBack = page.getByRole("button", { name: /^(Back|Go back)$/ }).first();
+  const usedAliaBack = (await aliaBack.count()) > 0;
+  if (usedAliaBack) await aliaBack.click();
   else await page.goBack();
   await page.waitForFunction(() => document.activeElement?.hasAttribute("data-page-heading"), null, { timeout: 15_000 });
-  log.push(`Back through ${usedBbBack ? "BB's back button" : "the browser's back"} after BB's sidebar: focus on ${(await focusSummary(page)).name}`);
+  log.push(`Back through ${usedAliaBack ? "VesnALIA's back button" : "the browser's back"} after VesnALIA's sidebar: focus on ${(await focusSummary(page)).name}`);
   await context.close();
   return log;
 }

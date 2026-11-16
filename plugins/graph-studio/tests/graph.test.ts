@@ -960,7 +960,7 @@ describe("model per node", () => {
   });
 
   // Whitespace is not a selection. Without the trim a node could hold " " and
-  // pass the "both set" test while BB drops it.
+  // pass the "both set" test while VesnALIA drops it.
   it("treats blank strings as no selection at all", () => {
     const graph = withNode({ providerId: "  ", model: "  " });
     expect(nodeExecution(graph.nodes[0]!)).toBeNull();
@@ -1229,7 +1229,7 @@ describe("spawnExecution", () => {
 
   it("inherits the parent thread's provider when the node chooses none", () => {
     // The actual bug: without this the same graph ran once on claude-code
-    // and once on pi, depending on BB's default.
+    // and once on pi, depending on VesnALIA's default.
     expect(spawnExecution(null, "claude-code")).toEqual({
       providerId: "claude-code",
       model: null,
@@ -1239,7 +1239,7 @@ describe("spawnExecution", () => {
     });
   });
 
-  // Negative case: inherited is not chosen. With explicit: true here, BB would
+  // Negative case: inherited is not chosen. With explicit: true here, VesnALIA would
   // record a default as a deliberate decision.
   it("does not mark what was inherited as explicit", () => {
     expect(spawnExecution(null, "pi")?.explicit).toBe(false);

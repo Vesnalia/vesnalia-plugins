@@ -10,7 +10,7 @@ import {
   defaultElement,
 } from "../prototype/model.ts";
 
-export const SLIDES_FORMAT = "bb-slides" as const;
+export const SLIDES_FORMAT = "alia-slides" as const;
 export const SLIDES_VERSION = 1;
 export const SLIDE_WIDTH = 1280;
 export const SLIDE_HEIGHT = 720;

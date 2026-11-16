@@ -1,4 +1,4 @@
-// bb's hover cards (context ring, provider usage, ...) are buttons with
+// VesnALIA's hover cards (context ring, provider usage, ...) are buttons with
 // aria-haspopup="dialog" that open a popover on hover. Notion behaviour:
 // - hover: closes right after the pointer leaves the button and the card;
 // - click: pins the card open until a second click, a click outside or Esc.
@@ -55,13 +55,13 @@ export function mountHoverCards(signal: AbortSignal): () => void {
     const t = (e.target as Element | null)?.closest?.(TRIGGER) as HTMLElement | null;
     if (t && t === active && isOpen(t)) {
       if (!pinned && openedByHover) { e.preventDefault(); e.stopImmediatePropagation(); pinned = true; window.clearTimeout(closeTimer); return; }
-      if (pinned) { pinned = false; }  // let bb close it
+      if (pinned) { pinned = false; }  // let VesnALIA close it
       return;
     }
     if (pinned && active && !inside(e.target)) { const card = cardFor(active); if (card) closeCard(card); reset(); }
   };
-  // bb closes the card on its own timer once the pointer leaves the button, even
-  // on the way to the card. Hide those leaves from bb; onMove closes the card
+  // VesnALIA closes the card on its own timer once the pointer leaves the button, even
+  // on the way to the card. Hide those leaves from VesnALIA; onMove closes the card
   // itself, CLOSE_DELAY after the pointer is outside both (enough to cross the gap).
   const onLeave = (e: Event) => {
     if (active && (pinned || openedByHover) && inside(e.target)) e.stopImmediatePropagation();

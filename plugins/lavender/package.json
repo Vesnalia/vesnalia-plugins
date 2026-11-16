@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-lavender",
+  "name": "alia-plugin-lavender",
   "version": "0.1.0",
-  "description": "Soft lavender light and charcoal-violet dark themes for BB.",
+  "description": "Soft lavender light and charcoal-violet dark themes for VesnALIA.",
   "license": "MIT",
   "type": "module",
   "engines": {
-    "bb": ">=0.40",
-    "bbPluginSdk": ">=0.4.21"
+    "alia": ">=0.40",
+    "aliaPluginSdk": ">=0.4.21"
   },
-  "bb": {
+  "alia": {
     "name": "Lavender",
     "description": "A coordinated lavender palette for conversations and code, in light and dark.",
     "branding": {
@@ -39,20 +39,31 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "env -u BB_CLI bb plugin build .",
+    "build": "env -u ALIA_CLI alia plugin build .",
     "typecheck": "tsc --noEmit",
     "test": "node --test test/*.test.mjs",
     "check": "npm run typecheck && npm test && npm run build"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.21",
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
   },
   "author": "Mateo Cerquetella",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.21"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/lavender#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MateoCerquetella/bb-plugins.git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
     "directory": "plugins/lavender"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

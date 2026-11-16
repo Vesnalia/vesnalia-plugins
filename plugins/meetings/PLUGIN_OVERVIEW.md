@@ -2,7 +2,7 @@
 
 - A **Встречи** page in the sidebar: paste a Zoom, Google Meet, Telemost or Jitsi link, watch the bot's screen live, read the transcript as it grows, play the recording, rename speakers, search all meetings, and download md, txt, srt, vtt or json.
 - `meetings_*` agent tools, so an agent can send the bot from a link, report whether it got in, and write a summary with decisions and action items when the meeting ends.
-- A `bb meetings` command for the same work from a terminal, plus `doctor`, `setup` and `selftest`.
+- A `alia meetings` command for the same work from a terminal, plus `doctor`, `setup` and `selftest`.
 - Optional auto-join for every supported meeting in a Google, Outlook or Yandex calendar (secret ICS address).
 
 ## How it works
@@ -13,10 +13,10 @@ Recording and the default speech recognition run on the recording host. Transcri
 
 ## Templates and agent integrations
 
-Five built-in templates and editable custom rules produce structured summaries, tasks, risks, chapters, follow-up drafts and speech metrics. Applied rules are retained with each analysis. Ask grounded questions across meetings, connect external agents through MCP/REST, or receive HMAC-signed completion webhooks. The portable MCP stdio adapter uses your existing BB CLI access; HTTP clients also need access through BB's authentication boundary.
+Five built-in templates and editable custom rules produce structured summaries, tasks, risks, chapters, follow-up drafts and speech metrics. Applied rules are retained with each analysis. Ask grounded questions across meetings, connect external agents through MCP/REST, or receive HMAC-signed completion webhooks. The portable MCP stdio adapter uses your existing VesnALIA CLI access; HTTP clients also need access through VesnALIA's authentication boundary.
 
-By default the requesting BB agent performs analysis. An optional OpenAI-compatible API can perform it directly; keys stay on the server. Outgoing screen sharing is blocked while the avatar camera and microphone continue working.
+By default the requesting VesnALIA agent performs analysis. An optional OpenAI-compatible API can perform it directly; keys stay on the server. Outgoing screen sharing is blocked while the avatar camera and microphone continue working.
 
 ## Requirements
 
-Linux (x86-64 or arm64) with Google Chrome, Xvfb, PulseAudio and ffmpeg; `bb meetings setup` installs the rest. Speech recognition needs the `gigaam` plugin or another OpenAI-compatible transcription server. Russian only.
+Linux (x86-64 or arm64) with Google Chrome, Xvfb, PulseAudio and ffmpeg; `alia meetings setup` installs the rest. Speech recognition needs the `gigaam` plugin or another OpenAI-compatible transcription server. Russian only.

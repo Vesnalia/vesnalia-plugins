@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { rpcContract } from "../server";
 import {
   addTabCandidates,
@@ -92,7 +92,7 @@ describe("Favorite chats homepage", () => {
         state,
       });
       expect(
-        Array.from(slot.container.querySelectorAll(".bb-chat-tabs-homepage-pinned-title")).map(
+        Array.from(slot.container.querySelectorAll(".alia-chat-tabs-homepage-pinned-title")).map(
           (node) => node.textContent,
         ),
       ).toEqual(["A", "B", "C"]);
@@ -118,7 +118,7 @@ describe("Favorite chats homepage", () => {
         ).toBe(false),
       );
       expect(
-        Array.from(slot.container.querySelectorAll(".bb-chat-tabs-homepage-pinned-title")).map(
+        Array.from(slot.container.querySelectorAll(".alia-chat-tabs-homepage-pinned-title")).map(
           (node) => node.textContent,
         ),
       ).toEqual(["A", "B", "C"]);
@@ -140,7 +140,7 @@ describe("Favorite chats homepage", () => {
       const reopened = mount();
       await reopened.findByRole("button", { name: "B. Project: Project." });
       expect(
-        Array.from(reopened.container.querySelectorAll(".bb-chat-tabs-homepage-pinned-title")).map(
+        Array.from(reopened.container.querySelectorAll(".alia-chat-tabs-homepage-pinned-title")).map(
           (node) => node.textContent,
         ),
       ).toEqual(["B"]);

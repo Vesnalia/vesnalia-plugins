@@ -1,8 +1,8 @@
 # Third-party notices
 
-This repository includes UI components/helpers adapted from BB's plugin registry and shadcn/ui. These portions retain their upstream MIT notices:
+This repository includes UI components/helpers adapted from VesnALIA's plugin registry and shadcn/ui. These portions retain their upstream MIT notices:
 
-- BB-derived UI helpers in `components/ui/` and `lib/utils.ts`: Copyright (c) 2026 Michael Yong. Source: https://github.com/get-bb/bb
+- ALIA-derived UI helpers in `components/ui/` and `lib/utils.ts`: Copyright (c) 2026 Michael Yong. Source: https://github.com/get-bb/bb
 - shadcn/ui-derived Button, Checkbox and Input: Copyright (c) 2023 shadcn. Source: https://github.com/shadcn-ui/ui
 
 ## MIT License for the above portions

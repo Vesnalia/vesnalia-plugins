@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   thinkingTrailSignalScore,
   thinkingTrailTargetKey,
@@ -10,7 +10,7 @@ import {
   type ThinkingTrailTarget,
 } from "./thinking-trails.js";
 
-type TrailDatabase = ReturnType<BbPluginApi["storage"]["database"]>;
+type TrailDatabase = ReturnType<AliaPluginApi["storage"]["database"]>;
 
 interface TrailRow {
   id: number;

@@ -14,7 +14,7 @@
 // - The list refreshes when any save publishes the files-changed signal.
 
 import { useCallback, useEffect, useState } from "react";
-import { useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { cn, formatHomePathForDisplay } from "@/lib/utils";
@@ -46,7 +46,7 @@ function shortKey(key: string): string {
 /** The list. Side effects: RPC scan on mount and on refresh. */
 export function FileList({ threadId }: { threadId: string }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

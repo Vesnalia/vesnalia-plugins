@@ -1,10 +1,10 @@
-// Bench hosts: resolution against BB machines, and the per-host "site" the
+// Bench hosts: resolution against VesnALIA machines, and the per-host "site" the
 // pipeline, calibration, drift checks and profiles measure on.
 //
 // Two modes:
 // - shared ("local" in the spec): plugin checkouts of the project repo on the
 //   edit host. No transfer. The M0/M1 path.
-// - clone (any BB host id or name, the server's own machine included): the
+// - clone (any VesnALIA host id or name, the server's own machine included): the
 //   bench host keeps its OWN bare clone under the host entry's data dir
 //   (`<dataDir>/bench/<slug>/repo.git`) and commits reach it only as git
 //   bundles relayed by the server (transfer.ts). Checkouts are worktrees of
@@ -22,7 +22,7 @@ import { ensureCommit, TransferError } from "./transfer.ts";
 
 export type CheckoutRole = "best" | "cand" | "drift" | "profile" | "adhoc-a" | "adhoc-b" | "gate";
 
-/** Resolve the spec's bench_hosts against BB machines. Empty means ["local"]. */
+/** Resolve the spec's bench_hosts against VesnALIA machines. Empty means ["local"]. */
 export function resolveBenchHosts(entries: string[], hosts: HostInfo[], editHostId: string, opts: { remote?: boolean } = {}): { ok: true; hosts: ResolvedBenchHost[] } | { ok: false; errors: string[] } {
   // With remote machines and no bench_hosts, only the remote machines measure.
   if (!entries.length && opts.remote) return { ok: true, hosts: [] };
@@ -42,7 +42,7 @@ export function resolveBenchHosts(entries: string[], hosts: HostInfo[], editHost
       errors.push(
         byName.length > 1
           ? `oracle.bench_hosts: ${JSON.stringify(entry)} matches ${byName.length} machines; use the host id (${byName.map((x) => x.id).join(", ")})`
-          : `oracle.bench_hosts: no BB machine named or with id ${JSON.stringify(entry)}. Known: ${hosts.map((x) => `${x.name} (${x.id})`).join(", ") || "none"}`,
+          : `oracle.bench_hosts: no VesnALIA machine named or with id ${JSON.stringify(entry)}. Known: ${hosts.map((x) => `${x.name} (${x.id})`).join(", ") || "none"}`,
       );
       continue;
     }
@@ -54,13 +54,13 @@ export function resolveBenchHosts(entries: string[], hosts: HostInfo[], editHost
   return errors.length ? { ok: false, errors } : { ok: true, hosts: out };
 }
 
-/** The runner that measures on a bench host: its BB machine, or a lent remote machine (fleet). */
+/** The runner that measures on a bench host: its VesnALIA machine, or a lent remote machine (fleet). */
 export function benchRunner(ctx: Ctx, host: BenchHostRow): HostRunner {
   if (host.mode === "remote") {
     if (!ctx.remoteRunner) throw new Error(`remote bench host ${host.name}: no remote fleet`);
     return ctx.remoteRunner(host);
   }
-  return ctx.bb.hostRunner(host.host_id);
+  return ctx.alia.hostRunner(host.host_id);
 }
 
 export interface BuildResult {
@@ -92,9 +92,9 @@ export class BenchSite {
     return benchRunner(this.ctx, this.host);
   }
   get edit(): HostRunner {
-    return this.ctx.bb.hostRunner(this.study.host_id!);
+    return this.ctx.alia.hostRunner(this.study.host_id!);
   }
-  /** The host keeps its own clone and receives commits as bundles (a BB machine in clone mode, or a lent remote machine). */
+  /** The host keeps its own clone and receives commits as bundles (a VesnALIA machine in clone mode, or a lent remote machine). */
   get remote(): boolean {
     return this.host.mode === "clone" || this.host.mode === "remote";
   }

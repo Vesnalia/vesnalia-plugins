@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { Status, rpcContract } from "../lib/contract";
 import { LIVE, type LiveSignal, SAMPLED, type WatchReason } from "../lib/signals";
 

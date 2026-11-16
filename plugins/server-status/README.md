@@ -1,6 +1,6 @@
 # Server Status
 
-The health of the machine that runs bb, as a ring around a sidebar footer
+The health of the machine that runs VesnALIA, as a ring around a sidebar footer
 button.
 
 - **Ring** — RAM usage. Muted below 80%, amber from 80%, red above 90%.
@@ -21,13 +21,13 @@ in the footer and should read as one system.
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/xMinor-1/bb-plugins.git --plugin server-status
+alia plugin install git:https://github.com/xMinor-1/bb-plugins.git --plugin server-status
 ```
 
 ## Settings
 
 ```sh
-bb plugin config server-status set diskPath /
+alia plugin config server-status set diskPath /
 ```
 
 `diskPath` is the mount point the disk figures are read from. Defaults to `/`.
@@ -70,8 +70,8 @@ listeners, timers and observers are torn down by the content script's disposer.
 ```sh
 npm install
 npx tsc --noEmit
-bb plugin build .
-bb plugin dev .
+alia plugin build .
+alia plugin dev .
 ```
 
 ## License

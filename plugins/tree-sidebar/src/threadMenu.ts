@@ -1,20 +1,20 @@
-// A "Copy link" row in bb's own thread menu.
+// A "Copy link" row in VesnALIA's own thread menu.
 //
 // The sidebar's row menu is this plugin's, so adding an item there is a line of
 // JSX (see `RowContextMenu.tsx`). The menu behind the dots in the thread header
-// is bb's, and the plugin API has no slot for it: a plugin can add a button to
+// is VesnALIA's, and the plugin API has no slot for it: a plugin can add a button to
 // the header's action row, but not a row to that menu. So this is a content
 // script — trusted page code, the documented escape hatch — and, like
 // `projectMenu.ts`, it is written to stop working rather than to break.
 //
 // Every step is a check that can fail into doing nothing: the menu has to name
-// a trigger, the trigger has to carry bb's own "Thread actions" label, the
+// a trigger, the trigger has to carry VesnALIA's own "Thread actions" label, the
 // address bar has to be on a thread, and the menu has to hold an item to copy
 // styling from. Miss any of them and no row is added.
 //
 // The thread comes from the address bar rather than from the DOM, because the
 // pane header carries no thread id anywhere. It does not need to: focusing a
-// pane navigates to that pane's thread — bb replaces the URL as focus moves —
+// pane navigates to that pane's thread — VesnALIA replaces the URL as focus moves —
 // and opening the menu focuses the pane first. So by the time the menu exists,
 // the address bar is on the thread the menu belongs to. A menu opened from a
 // row that carries its own thread id is left alone for that reason: that id and
@@ -26,19 +26,19 @@ import { permalinkFromUrl } from "./permalink";
 /** Set on the row this script adds, so a menu is only ever given one. */
 const MARK = "data-tree-sidebar-copy-link";
 
-/** bb's accessible name for the dots button, and for the row context menu. */
+/** VesnALIA's accessible name for the dots button, and for the row context menu. */
 const THREAD_ACTIONS_LABEL = "Thread actions";
 
-/** bb's hook on a sidebar row, whose thread need not be the one in the URL. */
+/** VesnALIA's hook on a sidebar row, whose thread need not be the one in the URL. */
 const SIDEBAR_ROW = "[data-sidebar-thread-id]";
 
 /**
- * Set on this plugin's own row menu, which shares bb's label and already has
+ * Set on this plugin's own row menu, which shares VesnALIA's label and already has
  * a Copy link of its own.
  */
 const OWN_MENU = "[data-tree-sidebar-row-menu]";
 
-/** The row to sit under. bb's menu is English-only, as is the rest of it. */
+/** The row to sit under. VesnALIA's menu is English-only, as is the rest of it. */
 const ANCHOR_LABEL = "rename";
 
 const LABEL = "Copy link";
@@ -72,7 +72,7 @@ function menuItems(menu: Element): HTMLElement[] {
  * Rename, because it is the last of the menu's plain rows: sitting under it
  * puts the link beside the other things you do to a thread rather than beside
  * archive and delete. Its classes come along, which is what makes the added row
- * indistinguishable from bb's own — including in the drawer bb renders this
+ * indistinguishable from VesnALIA's own — including in the drawer VesnALIA renders this
  * menu as on a narrow window, where the items are buttons rather than divs.
  */
 function anchorItem(menu: Element): HTMLElement | null {
@@ -86,10 +86,10 @@ function anchorItem(menu: Element): HTMLElement | null {
 /**
  * A link glyph sized like the menu's own icons.
  *
- * bb sizes its menu icons through selectors on the item, like
+ * VesnALIA sizes its menu icons through selectors on the item, like
  * `[&_[data-icon-root]]:size-4`, and those have changed before. So the glyph
  * takes the class and `data-icon-root` marker of the model row's own icon,
- * which keeps it matching whatever selector bb uses this release.
+ * which keeps it matching whatever selector VesnALIA uses this release.
  */
 function linkIcon(model: HTMLElement): SVGSVGElement {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -125,12 +125,12 @@ function buildItem(model: HTMLElement, url: string): HTMLElement {
   item.className = model.className;
   // Out of the tab order and out of Radix's item collection: the roving focus
   // it manages only knows the items React rendered, so this row is reachable by
-  // pointer, and the keyboard walks past it to bb's own rows.
+  // pointer, and the keyboard walks past it to VesnALIA's own rows.
   item.tabIndex = -1;
   if (item instanceof HTMLButtonElement) item.type = "button";
   item.append(linkIcon(model), document.createTextNode(LABEL));
 
-  // bb highlights the last-hovered row through a `data-last-hovered` attribute
+  // VesnALIA highlights the last-hovered row through a `data-last-hovered` attribute
   // its own items set. The classes came from one of those items, so setting the
   // same attribute gets the same highlight rather than an approximation of it.
   item.addEventListener("pointerenter", () => {
@@ -154,7 +154,7 @@ function buildItem(model: HTMLElement, url: string): HTMLElement {
  *
  * Radix dismisses on Escape from a document listener, so an Escape from the row
  * closes the menu and restores focus to the dots button — the same as selecting
- * one of bb's own rows.
+ * one of VesnALIA's own rows.
  */
 function closeMenu(item: HTMLElement): void {
   item.dispatchEvent(
@@ -167,7 +167,7 @@ function closeMenu(item: HTMLElement): void {
 }
 
 /**
- * Whether bb's menu already offers a link. Newer bb ships "Copy thread link"
+ * Whether VesnALIA's menu already offers a link. Newer VesnALIA ships "Copy thread link"
  * in this menu itself, and a second row that does the same thing is clutter.
  */
 function hasOwnLink(menu: Element): boolean {

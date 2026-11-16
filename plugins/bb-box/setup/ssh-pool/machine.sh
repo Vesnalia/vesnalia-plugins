@@ -1,8 +1,8 @@
 #!/bin/sh
-# bb-box's helper on an SSH pool machine. bb-box's admin user runs it through
+# alia-box's helper on an SSH pool machine. alia-box's admin user runs it through
 # sudo, and runs nothing else as root: it claims the machine for a box,
 # resets the machine afterwards and reports its state. setup.sh installs it
-# as /usr/local/libexec/bb-box/machine.
+# as /usr/local/libexec/alia-box/machine.
 #
 #   machine status
 #   machine claim <generation> [docker]     stdin: install, box, thread, name, kind, created, key
@@ -12,7 +12,7 @@
 #   machine version
 #
 # Input on stdin is one name=value per line. The state lives in
-# /var/lib/bb-box, which a whole-machine reset must keep:
+# /var/lib/alia-box, which a whole-machine reset must keep:
 #
 #   generation  completed resets, written last by each reset
 #   owner       the box that holds the machine; made with ln, so one claim wins
@@ -30,7 +30,7 @@
 # linger, crontab, at jobs, SysV IPC objects, sudo rule, every file it owns
 # on a local filesystem, and the user. "machine" first runs the operator's
 # reset-machine command, which restores the whole machine. A hook that
-# restarts the machine to finish touches $BB_BOX_RESTARTING first.
+# restarts the machine to finish touches $ALIA_BOX_RESTARTING first.
 #
 # Exit codes: 0 done; 1 failed, with the reason on stderr; 2 usage; 3 another
 # box holds the machine; 4 not this box's, so release does nothing; 5 not
@@ -44,19 +44,19 @@ LC_ALL=C
 export PATH LC_ALL
 
 VERSION=1
-STATE=/var/lib/bb-box
-HOOK=/usr/local/libexec/bb-box/reset-machine
-SKEL=/etc/bb-box/skel
+STATE=/var/lib/alia-box
+HOOK=/usr/local/libexec/alia-box/reset-machine
+SKEL=/etc/alia-box/skel
 PREFIX=bbx-
 HOMES=/home
 SNAPSHOT_PROBE=1
-SNAPSHOT_HOOK=/usr/local/libexec/bb-box/snapshot-machine
+SNAPSHOT_HOOK=/usr/local/libexec/alia-box/snapshot-machine
 SNAPSHOT_HOOK_SECONDS=30
 SNAPSHOT_HOOK_GRACE_SECONDS=2
 SNAPSHOT_HOOK_OUT=$STATE/snapshot-hook.out.$$
 SNAPSHOT_HOOK_ERR=$STATE/snapshot-hook.err
 SNAPSHOT_REPORT=$STATE/snapshots
-SNAPSHOT_TRIALS=$HOMES/.bb-box-snapshot-trials
+SNAPSHOT_TRIALS=$HOMES/.alia-box-snapshot-trials
 SNAPSHOT_TRIAL=$SNAPSHOT_TRIALS/$$
 # Container storage is never swept: its files belong to the containers' users.
 SKIP="/proc /sys /var/lib/docker /var/lib/containerd /var/lib/containers /var/lib/lxc /var/lib/lxd /var/snap/lxd /var/lib/incus /var/lib/machines /var/lib/kubelet"
@@ -82,7 +82,7 @@ put() { cat >"$1.new.$$" && mv -f "$1.new.$$" "$1"; }
 lock() {
   mkdir -p "$STATE"
   exec 9>"$STATE/lock"
-  flock "$@" 9 || quit 3 "Another bb-box command holds the machine's lock."
+  flock "$@" 9 || quit 3 "Another alia-box command holds the machine's lock."
 }
 
 # True when the user namespace maps IDs $2 to $2 + $3 - 1 in map file $1, or the kernel has no maps.
@@ -209,7 +209,7 @@ status() {
   done
   command -v curl >/dev/null 2>&1 || command -v wget >/dev/null 2>&1 || missing="$missing curl-or-wget"
   echo "missing=${missing# }"
-  # What BB's installer and a box's GitHub access need: Node.js with npm, git and gh.
+  # What ALIA's installer and a box's GitHub access need: Node.js with npm, git and gh.
   echo "node=$(node --version 2>/dev/null | head -n 1)"
   lacks=''
   for tool in npm git gh; do
@@ -410,7 +410,7 @@ make_user() {
   skel=/etc/skel
   [ -d "$SKEL" ] && skel=$SKEL
   groupadd -g "$uid" "$user" || return 1
-  useradd -u "$uid" -g "$uid" -m -d "/home/$user" -k "$skel" -s "$shell" -c "bb-box box" "$user" || return 1
+  useradd -u "$uid" -g "$uid" -m -d "/home/$user" -k "$skel" -s "$shell" -c "alia-box box" "$user" || return 1
   # No password, but not locked: sshd refuses key logins to a locked account without PAM.
   usermod -p '*' "$user" || return 1
   chmod 700 "/home/$user" || return 1
@@ -425,7 +425,7 @@ make_user() {
     chmod 440 "/etc/sudoers.d/$user.new" && visudo -cqf "/etc/sudoers.d/$user.new" >/dev/null || return 1
     mv -f "/etc/sudoers.d/$user.new" "/etc/sudoers.d/$user" || return 1
   fi
-  # Linger keeps the user's services, BB's among them, running after its sessions end.
+  # Linger keeps the user's services, ALIA's among them, running after its sessions end.
   if [ -d /run/systemd/system ] && command -v loginctl >/dev/null 2>&1; then
     loginctl enable-linger "$user" || return 1
   fi
@@ -444,7 +444,7 @@ claim() {
   lock -n
   if [ -e "$STATE/owner" ] || [ -e "$STATE/resetting" ]; then quit 3 "Another box holds the machine."; fi
   current=$(generation)
-  number "$current" || quit 5 "The machine has no reset generation in $STATE. Run bb-box's setup.sh on it."
+  number "$current" || quit 5 "The machine has no reset generation in $STATE. Run alia-box's setup.sh on it."
   [ "$current" = "$expected" ] || quit 6 "The machine is at reset generation $current, not $expected."
   problem=$(dirt | head -n 1)
   [ -z "$problem" ] || quit 5 "An earlier box left $problem."
@@ -456,9 +456,9 @@ claim() {
   id_range
   uid=$((id_base + current % id_span))
   holder=$(getent passwd "$uid" | cut -d: -f1)
-  [ -z "$holder" ] || quit 5 "UID $uid belongs to $holder. bb-box's box users take UIDs $id_base to $((id_base + id_span - 1))."
+  [ -z "$holder" ] || quit 5 "UID $uid belongs to $holder. alia-box's box users take UIDs $id_base to $((id_base + id_span - 1))."
   holder=$(getent group "$uid" | cut -d: -f1)
-  [ -z "$holder" ] || quit 5 "GID $uid belongs to group $holder. bb-box's box users take GIDs $id_base to $((id_base + id_span - 1))."
+  [ -z "$holder" ] || quit 5 "GID $uid belongs to group $holder. alia-box's box users take GIDs $id_base to $((id_base + id_span - 1))."
   printf 'install=%s\nbox=%s\nthread=%s\nname=%s\nkind=%s\ncreated=%s\ngeneration=%s\nuser=%s\nuid=%s\n' \
     "$install" "$box" "$thread" "$name" "$kind" "$created" "$current" "$user" "$uid" >"$STATE/owner.new.$$"
   if ! ln "$STATE/owner.new.$$" "$STATE/owner" 2>/dev/null; then
@@ -540,7 +540,7 @@ restore_machine() {
     mkdir -p "$dir"
     boot_id | put "$dir/boot"
     # Detached, without the lock, as it may restart the machine.
-    BB_BOX_RESTARTING=$dir/restarting setsid sh -c '"$1" >"$2/log" 2>&1; echo $? >"$2/status.new" && mv -f "$2/status.new" "$2/status"' sh "$HOOK" "$dir" \
+    ALIA_BOX_RESTARTING=$dir/restarting setsid sh -c '"$1" >"$2/log" 2>&1; echo $? >"$2/status.new" && mv -f "$2/status.new" "$2/status"' sh "$HOOK" "$dir" \
       </dev/null >/dev/null 2>&1 9>&- &
     echo restore=started
     exit 10
@@ -608,14 +608,14 @@ release() {
     if number "$current" && [ "$current" -gt "$expected" ]; then echo released=already; else echo released=none; fi
     exit 0
   fi
-  [ "$(field "$marker" install)" = "$install" ] || quit 4 "Another bb-box install holds the machine."
+  [ "$(field "$marker" install)" = "$install" ] || quit 4 "Another alia-box install holds the machine."
   [ -z "$box" ] || [ "$(field "$marker" box)" = "$box" ] || quit 4 "Another box holds the machine."
   [ "$(field "$marker" generation)" = "$expected" ] || quit 4 "The machine has moved on to a later box."
   finish "$marker" "$mode"
 }
 
 # For a machine out of service: resets whatever is on it. It leaves alone a
-# machine a box holds, whoever asks, and from bb-box, a machine another
+# machine a box holds, whoever asks, and from alia-box, a machine another
 # install is resetting. An operator runs it with no input.
 reset() {
   mode=${1:-}
@@ -623,7 +623,7 @@ reset() {
   read_input optional
   lock -w 900
   if [ -e "$STATE/owner" ]; then
-    quit 4 "Box $(field "$STATE/owner" name) of bb-box install $(field "$STATE/owner" install) holds the machine. Release the box first."
+    quit 4 "Box $(field "$STATE/owner" name) of alia-box install $(field "$STATE/owner" install) holds the machine. Release the box first."
   elif [ -e "$STATE/resetting" ]; then
     marker=$STATE/resetting
   else
@@ -635,10 +635,10 @@ reset() {
   other=$(field "$marker" install)
   if [ -n "$install" ] && [ "$other" != "$install" ]; then
     [ -n "$other" ] || quit 4 "An operator's reset of the machine has not finished. Run it again on the machine."
-    quit 4 "Another bb-box install, $other, is resetting the machine."
+    quit 4 "Another alia-box install, $other, is resetting the machine."
   fi
   if [ -z "$install" ] && [ "$mode" = machine ]; then
-    # An operator waits here for the whole-machine reset; bb-box asks again instead.
+    # An operator waits here for the whole-machine reset; alia-box asks again instead.
     while :; do
       (restore_machine >/dev/null)
       code=$?

@@ -64,7 +64,7 @@ Check 'cargo, rustc and clang on PATH' {
 }
 # A program each way a build makes one: Rust with MSVC's linker, and C with clang.
 Check 'cargo builds and runs a program' {
-  $dir = Join-Path $env:TEMP "bb-box-check-$PID"
+  $dir = Join-Path $env:TEMP "alia-box-check-$PID"
   cargo new --vcs none --quiet $dir 2>&1 | Out-Null
   $sw = [Diagnostics.Stopwatch]::StartNew()
   $out = cargo run --quiet --offline --manifest-path "$dir\Cargo.toml" 2>&1
@@ -73,7 +73,7 @@ Check 'cargo builds and runs a program' {
   if ("$out" -notmatch 'Hello, world!') { throw "$out" }; "built and ran in $ms ms"
 }
 Check 'clang builds and runs a C program' {
-  $dir = Join-Path $env:TEMP "bb-box-check-c-$PID"
+  $dir = Join-Path $env:TEMP "alia-box-check-c-$PID"
   New-Item -ItemType Directory -Force $dir | Out-Null
   Set-Content "$dir\hello.c" '#include <stdio.h>
 int main(void) { puts("hello from clang"); return 0; }'
@@ -98,7 +98,7 @@ Check 'boot' {
   'up {0:N1} s; type 0x{1:X}; boot manager waited {2} ms; firmware order {3}' -f $up.TotalSeconds, $type, $waited, $order
 }
 Check 'address from the SMBIOS serial' {
-  $line = Get-Content C:\bb-box\boot.log -Tail 1
+  $line = Get-Content C:\alia-box\boot.log -Tail 1
   if ($line -notmatch ' address \d') { throw $line }; $line -replace '^\S+ ', ''
 }
 Check 'no BitLocker' { $s = (Get-BitLockerVolume -MountPoint C:).VolumeStatus; if ("$s" -ne 'FullyDecrypted') { throw "$s" }; "$s" }
@@ -135,11 +135,11 @@ Check 'Cua daemon in the desktop session' {
   $status = cua-driver status 2>&1 | Select-Object -First 1
   if ($LASTEXITCODE) { throw "$status" }; "session $($p.SessionId); $status"
 }
-# The desktop as video (060), as bb-box's relay reaches it: connect over SSH, which starts the server in the desktop
+# The desktop as video (060), as alia-box's relay reaches it: connect over SSH, which starts the server in the desktop
 # session through its task, an upgrade, START_VIDEO, then a key frame of the desktop.
-Check 'bb-box-stream: a key frame' {
-  $exe = 'C:\Program Files\bb-box-tools\bb-box-stream\bb-box-stream.exe'
-  if (-not (Get-ScheduledTask bb-box-stream -ErrorAction SilentlyContinue)) { throw 'no bb-box-stream task' }
+Check 'alia-box-stream: a key frame' {
+  $exe = 'C:\Program Files\alia-box-tools\alia-box-stream\alia-box-stream.exe'
+  if (-not (Get-ScheduledTask alia-box-stream -ErrorAction SilentlyContinue)) { throw 'no alia-box-stream task' }
   $start = New-Object Diagnostics.ProcessStartInfo $exe, 'connect'
   $start.UseShellExecute = $false; $start.RedirectStandardInput = $true; $start.RedirectStandardOutput = $true
   $process = [Diagnostics.Process]::Start($start)
@@ -167,7 +167,7 @@ Check 'bb-box-stream: a key frame' {
   } finally { if (-not $process.HasExited) { $process.Kill() }; Remove-Job $deadline -Force }
 }
 # The pointer out of the captured image (060), so the video can leave it out while a person holds control: the VirtIO
-# GPU's hardware cursor on (hardware-cursor.ps1), and bb-box-stream's pointer test saying so from the desktop session,
+# GPU's hardware cursor on (hardware-cursor.ps1), and alia-box-stream's pointer test saying so from the desktop session,
 # where a task of its own runs it as the stream's task runs the server.
 Check 'pointer out of the captured image' {
   $gpu = Get-PnpDevice -Class Display -PresentOnly | Where-Object { (Get-PnpDeviceProperty -InstanceId $_.InstanceId -KeyName DEVPKEY_Device_Service).Data -eq 'VioGpuDod' } | Select-Object -First 1
@@ -175,24 +175,24 @@ Check 'pointer out of the captured image' {
   $driver = (Get-PnpDeviceProperty -InstanceId $gpu.InstanceId -KeyName DEVPKEY_Device_Driver).Data
   $on = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Class\$driver").HWCursor
   if ($on -ne 1) { throw "HWCursor is $on" }
-  $exe = 'C:\Program Files\bb-box-tools\bb-box-stream\bb-box-stream.exe'
-  New-Item -ItemType Directory -Force "$env:LOCALAPPDATA\bb-box" | Out-Null
-  $out = "$env:LOCALAPPDATA\bb-box\pointer.txt"
+  $exe = 'C:\Program Files\alia-box-tools\alia-box-stream\alia-box-stream.exe'
+  New-Item -ItemType Directory -Force "$env:LOCALAPPDATA\alia-box" | Out-Null
+  $out = "$env:LOCALAPPDATA\alia-box\pointer.txt"
   Remove-Item $out -ErrorAction SilentlyContinue
   # A command line that starts with a quote loses its quotes through conhost, so it starts in the directory first.
-  $action = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\conhost.exe" -Argument "--headless cmd.exe /c `"cd /d %LOCALAPPDATA%\bb-box & `"$exe`" pointer > pointer.txt 2>&1`""
+  $action = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\conhost.exe" -Argument "--headless cmd.exe /c `"cd /d %LOCALAPPDATA%\alia-box & `"$exe`" pointer > pointer.txt 2>&1`""
   $principal = New-ScheduledTaskPrincipal -UserId "$env:COMPUTERNAME\box" -LogonType Interactive -RunLevel Limited
   $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 1) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-  Register-ScheduledTask -TaskName bb-box-pointer-check -Action $action -Principal $principal -Settings $settings -Force | Out-Null
+  Register-ScheduledTask -TaskName alia-box-pointer-check -Action $action -Principal $principal -Settings $settings -Force | Out-Null
   try {
-    Start-ScheduledTask -TaskName bb-box-pointer-check
+    Start-ScheduledTask -TaskName alia-box-pointer-check
     $clock = [Diagnostics.Stopwatch]::StartNew()
     # Done once its output is there and the task is no longer running.
-    do { Start-Sleep -Milliseconds 500 } while ((-not (Test-Path $out) -or (Get-ScheduledTask bb-box-pointer-check).State -ne 'Ready') -and $clock.Elapsed.TotalSeconds -lt 30)
+    do { Start-Sleep -Milliseconds 500 } while ((-not (Test-Path $out) -or (Get-ScheduledTask alia-box-pointer-check).State -ne 'Ready') -and $clock.Elapsed.TotalSeconds -lt 30)
     $said = ((Get-Content $out -ErrorAction SilentlyContinue) -join ' ').Trim()
-    if ($said -ne 'the pointer is out of the image') { throw "bb-box-stream pointer: $(if ($said) { $said } else { 'nothing' })" }
+    if ($said -ne 'the pointer is out of the image') { throw "alia-box-stream pointer: $(if ($said) { $said } else { 'nothing' })" }
     "HWCursor 1; $said"
-  } finally { Unregister-ScheduledTask -TaskName bb-box-pointer-check -Confirm:$false -ErrorAction SilentlyContinue }
+  } finally { Unregister-ScheduledTask -TaskName alia-box-pointer-check -Confirm:$false -ErrorAction SilentlyContinue }
 }
 Check 'Cua lists windows' { $w = @((Cua list_windows @{}).windows); if (-not $w.Count) { throw 'no windows' }; "$($w.Count) windows" }
 Check 'Edge page in the accessibility tree' {

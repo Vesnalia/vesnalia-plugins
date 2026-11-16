@@ -1,5 +1,5 @@
-// Draft comments as agents and `bb review comment` change them. Everything
-// here edits this bb's local draft; only the reviewer submits it to GitHub.
+// Draft comments as agents and `alia review comment` change them. Everything
+// here edits this VesnALIA's local draft; only the reviewer submits it to GitHub.
 import type { PreviousState, ReviewMeta } from "./store";
 import { isLocal, isSummary, linesOf, postedBody, rangeOf, sameLocation, severityOf, type CommentLocation, type DraftComment, type Severity } from "./draft";
 import { diffPositions, rangeProblem } from "./review-positions";
@@ -127,7 +127,7 @@ export async function addComment(store: AsyncStore, targetKey: string, input: Ne
     // New to you until you've seen it, as one added while it updates the summary is.
     await tx.updateSummary(targetKey, { unseen: [...draft.unseen ?? [], { file: at.file, line: at.line, side: at.side }] });
     await tx.noteDiscussionChange(targetKey, at, "added", { body: postedBody({ body, severity }), previous: null });
-    return { ok: true, text: `Added a draft comment on ${where({ ...at, ...range })}. It stays in bb until the reviewer submits the review.` };
+    return { ok: true, text: `Added a draft comment on ${where({ ...at, ...range })}. It stays in VesnALIA until the reviewer submits the review.` };
   });
 }
 
@@ -229,7 +229,7 @@ async function undoProblem(store: AsyncStore, targetKey: string, at: CommentLoca
     // Putting it back binds it to the current diff, so the line must still hold the code it was drafted on.
     const drafted = await tx.draftCommentCode(targetKey, at);
     if (code === undefined) return `${where(at)} isn't in the diff anymore, so the comment can't go back there.`;
-    if (drafted === undefined) return `bb didn't keep the code the comment on ${where(at)} was drafted on, so it can't go back there. Add it again instead.`;
+    if (drafted === undefined) return `alia didn't keep the code the comment on ${where(at)} was drafted on, so it can't go back there. Add it again instead.`;
     if (code !== drafted) return `The code at ${where(at)} changed since the comment was drafted, so it can't go back there.`;
     const start = change.previous?.startLine;
     if (start === undefined) return null;

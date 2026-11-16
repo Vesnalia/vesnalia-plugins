@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useRpc, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useRpc, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { cursorSidebarRpcContract } from "./server";
 
 export function useWorkspaces(threads: readonly PluginSidebarThread[]) {

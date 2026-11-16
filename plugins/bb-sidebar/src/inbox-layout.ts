@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import type { ChildStatusKind } from "./child-status";
 import type { OrderUnit } from "./pinned-order";
 import { visibleInboxThreads } from "./inbox";
@@ -122,7 +122,7 @@ export function sortActiveThreads(
   mode: ActiveSortMode,
 ): PluginSidebarThread[] {
   if (mode === "waiting") {
-    // bb moves `latestAttentionAt` when a turn finishes, not when the thread is
+    // VesnALIA moves `latestAttentionAt` when a turn finishes, not when the thread is
     // read, renamed, or pinned, so a thread joins the end once it has news and
     // then holds its place until it has more.
     return [...threads].sort(

@@ -1,6 +1,6 @@
 /**
  * The two RPCs, written against small ports so the tests can drive them with
- * fakes: `server.ts` binds the ports to `bb.sdk` and the host entry.
+ * fakes: `server.ts` binds the ports to `alia.sdk` and the host entry.
  *
  * Neither call takes a path, a provider or a directory from the app. A thread
  * id is resolved here to the thread's provider and environment; a skill id is
@@ -50,8 +50,8 @@ export function workspaceFrom(
   };
 }
 
-/** One of bb's own skills, as `bb.sdk.skills.list` describes it. */
-export interface BbSkill {
+/** One of VesnALIA's own skills, as `alia.sdk.skills.list` describes it. */
+export interface AliaSkill {
   id: string;
   name: string;
   description: string | null;
@@ -66,42 +66,42 @@ export interface SkillsPorts {
   workspaceOf(threadId: string): Promise<ThreadWorkspace>;
   discover(workspace: ThreadWorkspace): Promise<{ scanned: boolean; skills: SkillEntry[] }>;
   readDiscovered(workspace: ThreadWorkspace, skillId: string): Promise<SkillDocument>;
-  bbSkills(workspace: ThreadWorkspace): Promise<BbSkill[]>;
-  bbSkillContent(workspace: ThreadWorkspace, bbSkillId: string): Promise<string>;
+  aliaSkills(workspace: ThreadWorkspace): Promise<AliaSkill[]>;
+  aliaSkillContent(workspace: ThreadWorkspace, aliaSkillId: string): Promise<string>;
   commands(workspace: ThreadWorkspace): Promise<ReportedCommand[]>;
 }
 
-/** Marks an id taken from bb's skill list; its content is read through bb. */
-const BB_ID_PREFIX = "bb:";
+/** Marks an id taken from VesnALIA's skill list; its content is read through VesnALIA. */
+const ALIA_ID_PREFIX = "alia:";
 
-/** bb's own scopes: skills bb injects into every thread, whatever its provider. */
-const BB_SCOPES = new Set(["bb-builtin", "bb-user", "bb-project"]);
+/** VesnALIA's own scopes: skills VesnALIA injects into every thread, whatever its provider. */
+const ALIA_SCOPES = new Set(["alia-builtin", "alia-user", "alia-project"]);
 
 /**
- * What bb's skill list contributes for a thread on `provider`, as a source, or
- * null for a row this thread does not get from bb's list:
+ * What VesnALIA's skill list contributes for a thread on `provider`, as a source, or
+ * null for a row this thread does not get from VesnALIA's list:
  *
- * - bb's own skills — its plugins' (scope `plugin` with no provider),
- *   `~/.bb/skills` and the workspace's `.bb/skills` — which bb injects into
+ * - VesnALIA's own skills — its plugins' (scope `plugin` with no provider),
+ *   `~/.vesnalia/skills` and the workspace's `.vesnalia/skills` — which VesnALIA injects into
  *   every thread;
  * - the thread's own provider's plugin skills (scope `plugin` with that
- *   provider), which bb finds where no resolver here looks: Codex's plugins
+ *   provider), which VesnALIA finds where no resolver here looks: Codex's plugins
  *   under `~/.codex/plugins`.
  *
- * The rest of bb's list is every provider's own roots (`provider-*`,
+ * The rest of VesnALIA's list is every provider's own roots (`provider-*`,
  * `shared-*`) for every provider; discovery reads those for the one provider
  * whose thread this is, in its order.
  */
-function sourceFor(skill: BbSkill, provider: string): Pick<SkillSource, "kind" | "label"> | null {
+function sourceFor(skill: AliaSkill, provider: string): Pick<SkillSource, "kind" | "label"> | null {
   if (skill.scope === "plugin" && skill.provider === provider) {
     return { kind: "plugin", label: skill.pluginId ?? "Plugins" };
   }
   if (skill.provider !== null) return null;
-  if (skill.scope === "plugin") return { kind: "bb", label: skill.pluginId === null ? "bb plugins" : `bb plugin · ${skill.pluginId}` };
-  if (!BB_SCOPES.has(skill.scope)) return null;
-  if (skill.scope === "bb-project") return { kind: "bb", label: "bb project" };
-  if (skill.scope === "bb-user") return { kind: "bb", label: "bb personal" };
-  return { kind: "bb", label: "bb built-in" };
+  if (skill.scope === "plugin") return { kind: "alia", label: skill.pluginId === null ? "alia plugins" : `alia plugin · ${skill.pluginId}` };
+  if (!ALIA_SCOPES.has(skill.scope)) return null;
+  if (skill.scope === "alia-project") return { kind: "alia", label: "alia project" };
+  if (skill.scope === "alia-user") return { kind: "alia", label: "alia personal" };
+  return { kind: "alia", label: "alia built-in" };
 }
 
 /** `…/<skills dir>/<skill>/SKILL.md` → `…/<skills dir>`, whichever separator the host uses. */
@@ -110,13 +110,13 @@ function skillsDirOf(filePath: string): string {
   return filePath.split(separator).slice(0, -2).join(separator);
 }
 
-async function bbEntries(ports: SkillsPorts, workspace: ThreadWorkspace): Promise<SkillEntry[]> {
+async function aliaEntries(ports: SkillsPorts, workspace: ThreadWorkspace): Promise<SkillEntry[]> {
   const entries: SkillEntry[] = [];
-  for (const skill of await ports.bbSkills(workspace)) {
+  for (const skill of await ports.aliaSkills(workspace)) {
     const source = sourceFor(skill, workspace.provider);
     if (source === null) continue;
     entries.push({
-      id: `${BB_ID_PREFIX}${skill.id}`,
+      id: `${ALIA_ID_PREFIX}${skill.id}`,
       name: skill.name,
       description: skill.description ?? "",
       source: { ...source, dir: skillsDirOf(skill.filePath) },
@@ -125,12 +125,12 @@ async function bbEntries(ports: SkillsPorts, workspace: ThreadWorkspace): Promis
       status: "discovered",
     });
   }
-  // The provider's plugins rank above what bb injects, as in the browser.
+  // The provider's plugins rank above what VesnALIA injects, as in the browser.
   return entries.sort((a, b) => SOURCE_KINDS.indexOf(a.source.kind) - SOURCE_KINDS.indexOf(b.source.kind));
 }
 
 /**
- * Asks bb's provider what the thread can run. A failure here never fails the
+ * Asks VesnALIA's provider what the thread can run. A failure here never fails the
  * whole list: discovery already succeeded, and losing it because the provider
  * could not answer would be worse than a missing section. The error travels
  * with the section so the browser can say why it is empty.
@@ -150,10 +150,10 @@ async function loadReported(
 
 export async function listSkills(ports: SkillsPorts, threadId: string): Promise<SkillList> {
   const workspace = await ports.workspaceOf(threadId);
-  const [discovery, bb] = await Promise.all([ports.discover(workspace), bbEntries(ports, workspace)]);
+  const [discovery, alia] = await Promise.all([ports.discover(workspace), aliaEntries(ports, workspace)]);
   // Discovery's scopes come first, so a name both define is listed once, under
   // the copy the provider's own search path finds.
-  const skills = dedupeByName([...discovery.skills, ...bb]).sort((a, b) => a.name.localeCompare(b.name));
+  const skills = dedupeByName([...discovery.skills, ...alia]).sort((a, b) => a.name.localeCompare(b.name));
   return {
     provider: workspace.provider,
     scanned: discovery.scanned,
@@ -165,16 +165,16 @@ export async function listSkills(ports: SkillsPorts, threadId: string): Promise<
 
 /**
  * Takes a skill id, never a path, and reads only what discovery produced for
- * this thread: an id taken from bb's skill list must be one this thread gets
+ * this thread: an id taken from VesnALIA's skill list must be one this thread gets
  * from it again, and any other id is looked up by the host entry in a fresh
  * scan.
  */
 export async function readSkill(ports: SkillsPorts, threadId: string, skillId: string): Promise<SkillDocument> {
   const workspace = await ports.workspaceOf(threadId);
-  if (!skillId.startsWith(BB_ID_PREFIX)) return ports.readDiscovered(workspace, skillId);
+  if (!skillId.startsWith(ALIA_ID_PREFIX)) return ports.readDiscovered(workspace, skillId);
 
-  const entry = (await bbEntries(ports, workspace)).find((candidate) => candidate.id === skillId);
+  const entry = (await aliaEntries(ports, workspace)).find((candidate) => candidate.id === skillId);
   if (entry === undefined) throw new Error(`Skill not available: ${skillId}`);
-  const content = await ports.bbSkillContent(workspace, skillId.slice(BB_ID_PREFIX.length));
+  const content = await ports.aliaSkillContent(workspace, skillId.slice(ALIA_ID_PREFIX.length));
   return { name: entry.name, description: entry.description, path: entry.path, body: parseFrontmatter(content).body };
 }

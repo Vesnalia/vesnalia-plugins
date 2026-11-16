@@ -7,10 +7,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { z } from "zod";
 
-vi.mock("@bb/plugin-sdk", () => ({
+vi.mock("@vesnalia/plugin-sdk", () => ({
   defineRpcContract: <T>(contract: T) => contract,
 }));
 
@@ -32,13 +32,13 @@ function localDay(ts: number): string {
 // gzipped result in; not exported (they're a private wire format between
 // the generated host script and extractHostJsonScan), so the fixture
 // reproduces them rather than importing.
-const SCAN_BEGIN = "__BB_USAGE_SCAN_BEGIN__";
-const SCAN_END = "__BB_USAGE_SCAN_END__";
+const SCAN_BEGIN = "__ALIA_USAGE_SCAN_BEGIN__";
+const SCAN_END = "__ALIA_USAGE_SCAN_END__";
 
 function fakeHostScanOutput(agentId: string, rows: Array<Record<string, unknown>>) {
   const scan = { agentId, fileCount: 1, changedFileCount: 1, reusedFileCount: 0, failureCount: 0, error: null, rows };
   const encoded = gzipSync(Buffer.from(JSON.stringify(scan))).toString("base64");
-  return `${SCAN_BEGIN}\n${encoded}\n${SCAN_END}\n__BB_HOST_COMMAND_DONE__:0\n`;
+  return `${SCAN_BEGIN}\n${encoded}\n${SCAN_END}\n__ALIA_HOST_COMMAND_DONE__:0\n`;
 }
 
 // The command is a shell wrapper around `node -e eval(gunzip(base64(...)))`
@@ -146,10 +146,10 @@ describe("JSON agent roots", () => {
     ]);
   });
 
-  it("includes the bb pi provider bridge session directory by default", () => {
+  it("includes the VesnALIA pi provider bridge session directory by default", () => {
     expect(jsonAgentRoots("/home/user", "pi", { piSessionRoots: "", primeSessionRoots: "" })).toEqual([
       "/home/user/.pi/agent/sessions",
-      "/home/user/.bb/pi-bridge-sessions",
+      "/home/user/.vesnalia/pi-bridge-sessions",
     ]);
   });
 
@@ -159,7 +159,7 @@ describe("JSON agent roots", () => {
       primeSessionRoots: "/data/prime/sessions",
     })).toEqual([
       "/home/user/.pi/agent/sessions",
-      "/home/user/.bb/pi-bridge-sessions",
+      "/home/user/.vesnalia/pi-bridge-sessions",
       "/data/pi",
     ]);
   });
@@ -185,7 +185,7 @@ describe("Freebuff retirement upgrade", () => {
       mappings: db.prepare("SELECT * FROM usage_event_sources ORDER BY event_key, source_id").all(),
     });
     const activeStates = () => db.prepare("SELECT * FROM usage_sync_state WHERE provider_id <> 'freebuff' ORDER BY machine_id, provider_id").all();
-    const bb = {
+    const alia = {
       settings: { define: vi.fn() },
       storage: {
         database: () => db,
@@ -228,12 +228,12 @@ describe("Freebuff retirement upgrade", () => {
       rpc: { register: (_contract: unknown, registered: unknown) => { handlers = registered as typeof handlers; } },
       sdk: { hosts: { list: async () => machines } },
       background: { service: vi.fn() },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
     try {
       // Cleanup must work before a sync and remain correct on restart.
       for (let startup = 0; startup < 2; startup++) {
-        await plugin(bb);
+        await plugin(alia);
         const dashboard = await handlers!.dashboard();
         expect(dashboard.sources.map((source) => source.agentId)).toEqual(["codex-work", "kilocode"]);
         expect(activeStates()).toEqual(activeStatesBefore);
@@ -259,7 +259,7 @@ describe("sync RPC", () => {
     let handlers: { sync: () => unknown } | undefined;
     const collection = new Promise<never>(() => {});
     const db = { prepare: vi.fn(() => ({ get: vi.fn() })) };
-    const bb = {
+    const alia = {
       settings: { define: vi.fn() },
       storage: { database: vi.fn(() => db), migrate: vi.fn() },
       rpc: {
@@ -271,12 +271,12 @@ describe("sync RPC", () => {
       realtime: { publish: vi.fn() },
       background: { service: vi.fn() },
       log: { error: vi.fn() },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
-    await plugin(bb);
+    await plugin(alia);
 
     expect(handlers?.sync()).toEqual({ ok: true });
-    expect(bb.sdk.hosts.list).toHaveBeenCalledOnce();
+    expect(alia.sdk.hosts.list).toHaveBeenCalledOnce();
   });
 
   it.each(["antigravity", "copilot", "kilocode"])("dispatches %s through syncAll and stores its usage", async (targetAgent) => {
@@ -293,7 +293,7 @@ describe("sync RPC", () => {
     const commandsByTerminalId = new Map<string, string>();
     const stagedFiles = new Map<string, string>();
 
-    const bb = {
+    const alia = {
       settings: { define: vi.fn(() => ({ get: async () => ({ piSessionRoots: "", primeSessionRoots: "" }) })) },
       storage: {
         database: vi.fn(() => db),
@@ -340,9 +340,9 @@ describe("sync RPC", () => {
       realtime: { publish: vi.fn() },
       background: { service: vi.fn() },
       log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
-    await plugin(bb);
+    await plugin(alia);
     expect(handlers?.sync()).toEqual({ ok: true });
 
     await vi.waitFor(() => {
@@ -367,7 +367,7 @@ describe("sync RPC", () => {
       const sources = db.prepare(`SELECT machine_id machineId, status FROM usage_sync_state
         WHERE provider_id IN ('antigravity', 'copilot')`).all() as Array<{ machineId: string; status: string }>;
       expect(getSourceIssueMessage([{ id: "host-1", name: "Machine", status: "connected" }], sources)).toBeNull();
-      expect(bb.log.warn).not.toHaveBeenCalledWith(expect.stringContaining("/copilot:"));
+      expect(alia.log.warn).not.toHaveBeenCalledWith(expect.stringContaining("/copilot:"));
     }
 
     // The terminal contract caps start.command at 10,000 characters; every
@@ -389,7 +389,7 @@ describe("sync RPC", () => {
     const stagedFiles = new Map<string, string>();
     const write = hostFileWriteMock(stagedFiles);
 
-    const bb = {
+    const alia = {
       settings: {
         define: vi.fn(() => ({
           get: async () => ({ piSessionRoots: `/data/${randomBytes(6_000).toString("hex")}`, primeSessionRoots: "" }),
@@ -440,9 +440,9 @@ describe("sync RPC", () => {
       realtime: { publish: vi.fn() },
       background: { service: vi.fn() },
       log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
-    await plugin(bb);
+    await plugin(alia);
     expect(handlers?.sync()).toEqual({ ok: true });
 
     await vi.waitFor(() => {
@@ -455,7 +455,7 @@ describe("sync RPC", () => {
       expect(command.length).toBeLessThanOrEqual(10_000);
     }
     const stagedPaths = [...stagedFiles.keys()];
-    expect(stagedPaths.every((path) => path.startsWith("/home/user/.cache/bb-plugin-usage/host-command-"))).toBe(true);
+    expect(stagedPaths.every((path) => path.startsWith("/home/user/.cache/alia-plugin-usage/host-command-"))).toBe(true);
 
     const syncState = db.prepare(
       "SELECT status, record_count recordCount FROM usage_sync_state WHERE machine_id = 'host-1' AND provider_id = 'pi'",
@@ -473,7 +473,7 @@ describe("sync RPC", () => {
     const commandsByTerminalId = new Map<string, string>();
     const stagedFiles = new Map<string, string>();
 
-    const bb = {
+    const alia = {
       settings: { define: vi.fn(() => ({ get: async () => ({ piSessionRoots: "", primeSessionRoots: "" }) })) },
       storage: {
         database: vi.fn(() => db),
@@ -520,9 +520,9 @@ describe("sync RPC", () => {
       realtime: { publish: vi.fn() },
       background: { service: vi.fn() },
       log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
-    await plugin(bb);
+    await plugin(alia);
     expect(handlers?.sync()).toEqual({ ok: true });
 
     await vi.waitFor(() => {
@@ -576,7 +576,7 @@ describe("sync RPC", () => {
       outputTokens: 20,
     });
 
-    const bb = {
+    const alia = {
       settings: { define: vi.fn(() => ({ get: async () => ({ piSessionRoots: "", primeSessionRoots: "" }) })) },
       storage: {
         database: vi.fn(() => db),
@@ -614,9 +614,9 @@ describe("sync RPC", () => {
       realtime: { publish: vi.fn() },
       background: { service: vi.fn() },
       log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
-    await plugin(bb);
+    await plugin(alia);
     expect(handlers?.sync()).toEqual({ ok: true });
 
     await vi.waitFor(() => {
@@ -679,12 +679,12 @@ describe("provider limit loading", () => {
       signal.addEventListener("abort", () => reject(signal.reason), { once: true });
     }));
     const debug = vi.fn();
-    const bb = {
+    const alia = {
       sdk: { system: { usageLimits } },
       log: { debug },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
-    await expect(loadProviderLimits(bb, [
+    await expect(loadProviderLimits(alia, [
       { id: "host_1", name: "Slow machine", status: "connected" },
     ], emptyDb(), 10)).resolves.toEqual([]);
     expect(usageLimits).toHaveBeenCalledWith({ hostId: "host_1", signal: expect.any(AbortSignal) });
@@ -701,12 +701,12 @@ describe("provider limit loading", () => {
       claudeCode: { status: "unavailable", planLabel: null, windows: [] },
       cursor: { status: "unavailable", planLabel: null, windows: [] },
     }));
-    const bb = {
+    const alia = {
       sdk: { system: { usageLimits } },
       log: { debug: vi.fn() },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
-    await expect(loadProviderLimits(bb, [
+    await expect(loadProviderLimits(alia, [
       { id: "host_1", name: "Fast machine", status: "connected" },
     ], emptyDb(), 1_000)).resolves.toEqual([expect.objectContaining({
       machineId: "host_1",
@@ -737,12 +737,12 @@ describe("provider limit loading", () => {
         windows: [{ label: "Monthly", usedPercent: 40, resetsAt: null }],
       },
     }));
-    const bb = {
+    const alia = {
       sdk: { system: { usageLimits } },
       log: { debug: vi.fn() },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
-    await expect(loadProviderLimits(bb, [
+    await expect(loadProviderLimits(alia, [
       { id: "host_1", name: "Current machine", status: "connected" },
     ], emptyDb(), 1_000)).resolves.toEqual([
       expect.objectContaining({ providerId: "codex", status: "ok" }),
@@ -773,11 +773,11 @@ describe("provider limit loading", () => {
     const okEmpty = { status: "ok", planLabel: "Free", accountEmail: null, windows: [] };
 
     function load(usage: Record<string, unknown>) {
-      const bb = {
+      const alia = {
         sdk: { system: { usageLimits: vi.fn(async () => usage) } },
         log: { debug: vi.fn() },
-      } as unknown as BbPluginApi;
-      return loadProviderLimits(bb, [
+      } as unknown as AliaPluginApi;
+      return loadProviderLimits(alia, [
         { id: "host_1", name: "Current machine", status: "connected" },
       ], emptyDb(), 1_000);
     }
@@ -889,13 +889,13 @@ describe("provider limit loading", () => {
       }));
     }
 
-    function bbWith(usageLimits: ReturnType<typeof stalledUsageLimits>) {
-      return { sdk: { system: { usageLimits } }, log: { debug: vi.fn() } } as unknown as BbPluginApi;
+    function aliaWith(usageLimits: ReturnType<typeof stalledUsageLimits>) {
+      return { sdk: { system: { usageLimits } }, log: { debug: vi.fn() } } as unknown as AliaPluginApi;
     }
 
     it("retains quota responses that take more than five seconds", async () => {
       const timeout = fakeAbortSignalTimeout();
-      const result = loadProviderLimits(bbWith(stalledUsageLimits(6_000)), [
+      const result = loadProviderLimits(aliaWith(stalledUsageLimits(6_000)), [
         { id: "host_1", name: "Current machine", status: "connected" },
       ], emptyDb());
       await vi.advanceTimersByTimeAsync(6_000);
@@ -909,7 +909,7 @@ describe("provider limit loading", () => {
       fakeAbortSignalTimeout();
       const usageLimits = stalledUsageLimits();
       let settled = false;
-      const result = loadProviderLimits(bbWith(usageLimits), [
+      const result = loadProviderLimits(aliaWith(usageLimits), [
         { id: "host_1", name: "Current machine", status: "connected" },
       ], emptyDb()).finally(() => { settled = true; });
       const { signal } = usageLimits.mock.calls[0]![0];
@@ -931,12 +931,12 @@ describe("provider limit loading", () => {
       cursor: { status: "not_installed" },
     }));
     const debug = vi.fn();
-    const bb = {
+    const alia = {
       sdk: { system: { usageLimits } },
       log: { debug },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
-    await expect(loadProviderLimits(bb, [
+    await expect(loadProviderLimits(alia, [
       { id: "host_1", name: "Fast machine", status: "connected" },
     ], emptyDb(), 1_000)).resolves.toEqual([
       expect.objectContaining({ providerId: "codex", status: "ok" }),
@@ -947,10 +947,10 @@ describe("provider limit loading", () => {
   it("surfaces an error for providers with usage records when the whole limits call fails", async () => {
     const usageLimits = vi.fn(async () => { throw new Error("rate limited"); });
     const debug = vi.fn();
-    const bb = {
+    const alia = {
       sdk: { system: { usageLimits } },
       log: { debug },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
     const db = emptyDb();
     db.prepare("INSERT INTO usage_sources (source_id, machine_id, machine_name, provider_id) VALUES (?, ?, ?, ?)")
@@ -958,7 +958,7 @@ describe("provider limit loading", () => {
     db.prepare("INSERT INTO usage_event_sources (event_key, source_id) VALUES (?, ?)")
       .run("event-1", "claude-source");
 
-    await expect(loadProviderLimits(bb, [
+    await expect(loadProviderLimits(alia, [
       { id: "host_1", name: "Fast machine", status: "connected" },
     ], db, 1_000)).resolves.toEqual([expect.objectContaining({
       machineId: "host_1",
@@ -985,12 +985,12 @@ describe("provider limit loading", () => {
         },
       };
     });
-    const bb = {
+    const alia = {
       sdk: { system: { usageLimits } },
       log: { debug: vi.fn() },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
-    const sources = await loadProviderLimits(bb, [
+    const sources = await loadProviderLimits(alia, [
       { id: "host_1", name: "Studio", status: "connected" },
       { id: "host_2", name: "Air", status: "connected" },
     ], emptyDb(), 1_000);
@@ -1007,21 +1007,21 @@ describe("Codex reset account matching", () => {
     planLabel: "Pro", windows: [{ label: "Weekly", usedPercent: 95, resetsAt: null }],
     status: "ok", error: null, lastUpdatedAt: null,
   };
-  const bb = {
+  const alia = {
     sdk: { hosts: { directory: vi.fn(async () => ({ directory: "/home/user" })) } },
     log: { debug: vi.fn() },
-  } as unknown as BbPluginApi;
-  const output = (accountEmail: string, planType: string) => `__BB_CODEX_RESETS_BEGIN__\n${JSON.stringify({
+  } as unknown as AliaPluginApi;
+  const output = (accountEmail: string, planType: string) => `__ALIA_CODEX_RESETS_BEGIN__\n${JSON.stringify({
     accountEmail, planType, resetCredits: { availableCount: 1, credits: [{ expiresAt: null }] },
-  })}\n__BB_CODEX_RESETS_END__`;
+  })}\n__ALIA_CODEX_RESETS_END__`;
 
   it("attaches verified details to the matching account and serializes them through RPC", async () => {
     const execute = vi.fn(async () => output(" USER@EXAMPLE.COM ", "pro"));
-    const limits = await loadCodexResetCredits(bb, groupProviderLimits([base]), execute);
+    const limits = await loadCodexResetCredits(alia, groupProviderLimits([base]), execute);
     expect(limits[0]?.resetCredits).toEqual({ availableCount: 1, credits: [{ expiresAt: null }] });
     const wire = rpcContract.providerLimits.output.parse({ limits, accountPoolError: null });
     expect(wire.limits[0]?.resetCredits).toEqual(limits[0]?.resetCredits);
-    expect(execute).toHaveBeenCalledWith(bb, { id: "laptop", name: "Laptop" }, expect.any(String), expect.any(AbortSignal),
+    expect(execute).toHaveBeenCalledWith(alia, { id: "laptop", name: "Laptop" }, expect.any(String), expect.any(AbortSignal),
       expect.objectContaining({ title: "Usage: Codex reset credits", home: "/home/user" }));
   });
 
@@ -1032,13 +1032,13 @@ describe("Codex reset account matching", () => {
     { accountEmail: "user@example.com", planType: "pro", planLabel: null },
   ])("does not infer eligibility across accounts or workspace plans: %j", async ({ accountEmail, planType, planLabel }) => {
     const limits = groupProviderLimits([{ ...base, planLabel }]);
-    expect(await loadCodexResetCredits(bb, limits, async () => output(accountEmail, planType))).toEqual(limits);
+    expect(await loadCodexResetCredits(alia, limits, async () => output(accountEmail, planType))).toEqual(limits);
   });
 
   it("keeps quota cards when the CLI is absent, old, or fails", async () => {
     const limits = groupProviderLimits([base]);
-    expect(await loadCodexResetCredits(bb, limits, async () => "")).toEqual(limits);
-    expect(await loadCodexResetCredits(bb, limits, async () => { throw new Error("host unavailable"); })).toEqual(limits);
+    expect(await loadCodexResetCredits(alia, limits, async () => "")).toEqual(limits);
+    expect(await loadCodexResetCredits(alia, limits, async () => { throw new Error("host unavailable"); })).toEqual(limits);
   });
 
   it("skips unidentified accounts, errored providers, and other providers", async () => {
@@ -1046,20 +1046,20 @@ describe("Codex reset account matching", () => {
     for (const source of [
       { ...base, accountEmail: null }, { ...base, status: "error" as const },
       { ...base, providerId: "claude" },
-    ]) await loadCodexResetCredits(bb, groupProviderLimits([source]), execute);
+    ]) await loadCodexResetCredits(alia, groupProviderLimits([source]), execute);
     expect(execute).not.toHaveBeenCalled();
   });
 
   it("uses a responsive matching host without adding shared reset counts together", async () => {
     const limits = groupProviderLimits([base, { ...base, machineId: "desktop", machineName: "Desktop" }]);
-    const execute: typeof runHostCommand = async (_bb, machine) => machine.id === "desktop" ? "" : output("user@example.com", "pro");
-    expect((await loadCodexResetCredits(bb, limits, execute))[0]?.resetCredits?.availableCount).toBe(1);
+    const execute: typeof runHostCommand = async (_alia, machine) => machine.id === "desktop" ? "" : output("user@example.com", "pro");
+    expect((await loadCodexResetCredits(alia, limits, execute))[0]?.resetCredits?.availableCount).toBe(1);
   });
 });
 
 describe("host command output", () => {
   it("collects output while the terminal is still running, then closes it", async () => {
-    const text = "query result\n__BB_HOST_COMMAND_DONE__:0\n";
+    const text = "query result\n__ALIA_HOST_COMMAND_DONE__:0\n";
     const create = vi.fn(async (input: unknown) => ({ id: "terminal-1", status: "starting", input }));
     const get = vi.fn(async () => ({ id: "terminal-1", status: "running" }));
     const output = vi.fn(async () => ({
@@ -1067,10 +1067,10 @@ describe("host command output", () => {
       truncated: false,
     }));
     const close = vi.fn(async () => undefined);
-    const bb = { sdk: { terminals: { create, get, output, close } } } as unknown as BbPluginApi;
+    const alia = { sdk: { terminals: { create, get, output, close } } } as unknown as AliaPluginApi;
 
     await expect(runHostCommand(
-      bb,
+      alia,
       { id: "host-1", name: "Machine" },
       "printf result",
       new AbortController().signal,
@@ -1081,24 +1081,24 @@ describe("host command output", () => {
     expect(output).toHaveBeenCalledOnce();
     expect(close).toHaveBeenCalledWith({ terminalId: "terminal-1", mode: "force" });
     expect(create.mock.calls[0]?.[0]).toMatchObject({
-      start: { mode: "command", command: expect.stringContaining("__BB_HOST_COMMAND_DONE__") },
+      start: { mode: "command", command: expect.stringContaining("__ALIA_HOST_COMMAND_DONE__") },
     });
   });
 
   it("surfaces a command diagnostic before closing the held terminal", async () => {
-    const text = "__BB_USAGE_ERROR__:OpenCode query failed\n__BB_HOST_COMMAND_DONE__:1\n";
+    const text = "__ALIA_USAGE_ERROR__:OpenCode query failed\n__ALIA_HOST_COMMAND_DONE__:1\n";
     const close = vi.fn(async () => undefined);
-    const bb = {
+    const alia = {
       sdk: { terminals: {
         create: vi.fn(async () => ({ id: "terminal-1", status: "starting" })),
         get: vi.fn(async () => ({ id: "terminal-1", status: "running" })),
         output: vi.fn(async () => ({ chunks: [{ seq: 1, dataBase64: Buffer.from(text).toString("base64") }], truncated: false })),
         close,
       } },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
     await expect(runHostCommand(
-      bb,
+      alia,
       { id: "host-1", name: "Machine" },
       "exit 127",
       new AbortController().signal,
@@ -1108,18 +1108,18 @@ describe("host command output", () => {
   });
 
   it("surfaces bounded terminal output when a command has no structured diagnostic", async () => {
-    const text = "CLI compatibility error\n__BB_HOST_COMMAND_DONE__:1\n";
-    const bb = {
+    const text = "CLI compatibility error\n__ALIA_HOST_COMMAND_DONE__:1\n";
+    const alia = {
       sdk: { terminals: {
         create: vi.fn(async () => ({ id: "terminal-1", status: "starting" })),
         get: vi.fn(async () => ({ id: "terminal-1", status: "running" })),
         output: vi.fn(async () => ({ chunks: [{ seq: 1, dataBase64: Buffer.from(text).toString("base64") }], truncated: false })),
         close: vi.fn(async () => undefined),
       } },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
     await expect(runHostCommand(
-      bb,
+      alia,
       { id: "host-1", name: "Machine" },
       "exit 1",
       new AbortController().signal,
@@ -1129,17 +1129,17 @@ describe("host command output", () => {
 
   it("times out and closes a stalled machine terminal", async () => {
     const close = vi.fn(async () => undefined);
-    const bb = {
+    const alia = {
       sdk: { terminals: {
         create: vi.fn(async () => ({ id: "terminal-1", status: "starting" })),
         get: vi.fn(async () => ({ id: "terminal-1", status: "running" })),
         output: vi.fn(async () => ({ chunks: [], truncated: false })),
         close,
       } },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
     await expect(runHostCommand(
-      bb,
+      alia,
       { id: "host-1", name: "Stalled machine" },
       "opencode db query",
       new AbortController().signal,
@@ -1151,7 +1151,7 @@ describe("host command output", () => {
   function stagedRun(text: string, overrides: { write?: unknown; directory?: unknown } = {}) {
     const stagedFiles = new Map<string, string>();
     const create = vi.fn(async (input: { start: { command: string } }) => ({ id: "terminal-1", status: "starting", input }));
-    const bb = {
+    const alia = {
       sdk: {
         files: { write: overrides.write ?? hostFileWriteMock(stagedFiles) },
         hosts: { directory: overrides.directory ?? vi.fn(async () => ({ directory: "/resolved/home" })) },
@@ -1166,17 +1166,17 @@ describe("host command output", () => {
         },
       },
       log: { debug: vi.fn() },
-    } as unknown as BbPluginApi;
-    return { bb, create, stagedFiles };
+    } as unknown as AliaPluginApi;
+    return { alia, create, stagedFiles };
   }
 
   it("stages oversized commands on the host and runs them with sh", async () => {
     const command = `printf '%s' '${"x".repeat(11_000)}'`;
-    const text = "scan result\n__BB_HOST_COMMAND_DONE__:0\n";
-    const { bb, create, stagedFiles } = stagedRun(text);
+    const text = "scan result\n__ALIA_HOST_COMMAND_DONE__:0\n";
+    const { alia, create, stagedFiles } = stagedRun(text);
 
     await expect(runHostCommand(
-      bb,
+      alia,
       { id: "host-1", name: "Machine" },
       command,
       new AbortController().signal,
@@ -1185,30 +1185,30 @@ describe("host command output", () => {
 
     const startCommand = create.mock.calls[0]![0].start.command;
     expect(startCommand.length).toBeLessThanOrEqual(10_000);
-    expect(startCommand).toContain("__BB_HOST_COMMAND_DONE__");
+    expect(startCommand).toContain("__ALIA_HOST_COMMAND_DONE__");
 
     const stagedPaths = [...stagedFiles.keys()];
     expect(stagedPaths).toHaveLength(1);
-    expect(stagedPaths[0]).toMatch(/^\/home\/user\/\.cache\/bb-plugin-usage\/host-command-[0-9a-f]{64}\.sh$/);
+    expect(stagedPaths[0]).toMatch(/^\/home\/user\/\.cache\/alia-plugin-usage\/host-command-[0-9a-f]{64}\.sh$/);
     expect(stagedFiles.get(stagedPaths[0]!)).toBe(command);
     expect(startCommand).toContain(`sh '${stagedPaths[0]}'`);
-    expect(bb.sdk.files.write).toHaveBeenCalledWith(expect.objectContaining({
+    expect(alia.sdk.files.write).toHaveBeenCalledWith(expect.objectContaining({
       hostId: "host-1",
       path: stagedPaths[0],
       content: command,
       createParents: true,
     }));
-    expect(bb.sdk.hosts.directory).not.toHaveBeenCalled();
+    expect(alia.sdk.hosts.directory).not.toHaveBeenCalled();
   });
 
   it("reuses an identical staged script across concurrent runs without rewriting it", async () => {
     const command = `printf '%s' '${"x".repeat(11_000)}'`;
-    const text = "scan result\n__BB_HOST_COMMAND_DONE__:0\n";
-    const { bb, create, stagedFiles } = stagedRun(text);
+    const text = "scan result\n__ALIA_HOST_COMMAND_DONE__:0\n";
+    const { alia, create, stagedFiles } = stagedRun(text);
     const storeFile = vi.spyOn(stagedFiles, "set");
 
     const results = await Promise.all([0, 1].map(() => runHostCommand(
-      bb,
+      alia,
       { id: "host-1", name: "Machine" },
       command,
       new AbortController().signal,
@@ -1220,7 +1220,7 @@ describe("host command output", () => {
     expect(stagedFiles.size).toBe(1);
     expect(create).toHaveBeenCalledTimes(2);
     expect(create.mock.calls[0]![0].start.command).toBe(create.mock.calls[1]![0].start.command);
-    const writes = await Promise.all(vi.mocked(bb.sdk.files.write).mock.results.map((result) => result.value));
+    const writes = await Promise.all(vi.mocked(alia.sdk.files.write).mock.results.map((result) => result.value));
     expect(writes.map((result) => result.outcome)).toEqual(["written", "conflict"]);
   });
 
@@ -1233,10 +1233,10 @@ describe("host command output", () => {
       await new Promise<void>((resolve) => { finishWrite = resolve; });
       return { outcome: "written" as const, sha256: createHash("sha256").update(command).digest("hex") };
     });
-    const { bb, create } = stagedRun("unreachable\n__BB_HOST_COMMAND_DONE__:0\n", { write });
+    const { alia, create } = stagedRun("unreachable\n__ALIA_HOST_COMMAND_DONE__:0\n", { write });
 
     const result = runHostCommand(
-      bb,
+      alia,
       { id: "host-1", name: "Machine" },
       command,
       controller.signal,
@@ -1249,7 +1249,7 @@ describe("host command output", () => {
 
     await rejection;
     expect(create).not.toHaveBeenCalled();
-    expect(bb.sdk.terminals.close).not.toHaveBeenCalled();
+    expect(alia.sdk.terminals.close).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -1258,12 +1258,12 @@ describe("host command output", () => {
   ])("surfaces the staging error when the staged file cannot be verified (%s)", async (result) => {
     const command = `printf '%s' '${"x".repeat(11_000)}'`;
     const write = vi.fn(async () => result);
-    const { bb, create } = stagedRun("unreachable\n__BB_HOST_COMMAND_DONE__:0\n", { write });
+    const { alia, create } = stagedRun("unreachable\n__ALIA_HOST_COMMAND_DONE__:0\n", { write });
 
     // An oversized command cannot be submitted inline either, so the staging
     // failure is reported instead of creating a terminal the host must reject.
     await expect(runHostCommand(
-      bb,
+      alia,
       { id: "host-1", name: "Machine" },
       command,
       new AbortController().signal,
@@ -1276,10 +1276,10 @@ describe("host command output", () => {
   it("surfaces the staging error when the host file write throws", async () => {
     const command = `printf '%s' '${"x".repeat(11_000)}'`;
     const write = vi.fn(async () => { throw new Error("host.write_file unsupported"); });
-    const { bb, create } = stagedRun("unreachable\n__BB_HOST_COMMAND_DONE__:0\n", { write });
+    const { alia, create } = stagedRun("unreachable\n__ALIA_HOST_COMMAND_DONE__:0\n", { write });
 
     await expect(runHostCommand(
-      bb,
+      alia,
       { id: "host-1", name: "Machine" },
       command,
       new AbortController().signal,
@@ -1291,10 +1291,10 @@ describe("host command output", () => {
 
   it("surfaces staged command diagnostics and exit codes identically", async () => {
     const command = `printf '%s' '${"x".repeat(11_000)}'`;
-    const { bb } = stagedRun("__BB_USAGE_ERROR__:collector broke\n__BB_HOST_COMMAND_DONE__:1\n");
+    const { alia } = stagedRun("__ALIA_USAGE_ERROR__:collector broke\n__ALIA_HOST_COMMAND_DONE__:1\n");
 
     await expect(runHostCommand(
-      bb,
+      alia,
       { id: "host-1", name: "Machine" },
       command,
       new AbortController().signal,
@@ -1304,10 +1304,10 @@ describe("host command output", () => {
 
   it("keeps commands under the limit inline without touching the files API", async () => {
     const write = vi.fn();
-    const { bb } = stagedRun("small\n__BB_HOST_COMMAND_DONE__:0\n", { write });
+    const { alia } = stagedRun("small\n__ALIA_HOST_COMMAND_DONE__:0\n", { write });
 
     await expect(runHostCommand(
-      bb,
+      alia,
       { id: "host-1", name: "Machine" },
       "printf small",
       new AbortController().signal,
@@ -1353,7 +1353,7 @@ describe("Windows host command output", () => {
       polls += 1;
       return { id: "terminal-1", status };
     });
-    const bb = {
+    const alia = {
       sdk: {
         files: { write, read, remove },
         terminals: {
@@ -1366,15 +1366,15 @@ describe("Windows host command output", () => {
           close: vi.fn(async () => undefined),
         },
       },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
     const run = (command = "printf result") => runHostCommand(
-      bb,
+      alia,
       { id: "host-1", name: "Windows machine" },
       command,
       new AbortController().signal,
       { title: "Usage test", timeoutMs: 1_000, pollMs: 1, home: options.home ?? windowsHome },
     );
-    return { bb, files, run, runDirectory: () => runDirectory };
+    return { alia, files, run, runDirectory: () => runDirectory };
   }
 
   const finishWith = (output: string, status: string) => (runDirectory: string, files: Map<string, string>) => {
@@ -1383,28 +1383,28 @@ describe("Windows host command output", () => {
   };
 
   it("runs the command under sh through a file-backed launcher and cleans up", async () => {
-    const { bb, files, run, runDirectory } = windowsRun({ finish: finishWith("scan result\n", "0") });
+    const { alia, files, run, runDirectory } = windowsRun({ finish: finishWith("scan result\n", "0") });
 
     await expect(run("printf result")).resolves.toBe("scan result\n");
 
-    expect(runDirectory()).toMatch(/^C:\/Users\/me\/\.cache\/bb-plugin-usage\/runs\/[0-9a-f-]{36}$/);
-    const script = vi.mocked(bb.sdk.files.write).mock.calls[0]![0].content;
+    expect(runDirectory()).toMatch(/^C:\/Users\/me\/\.cache\/alia-plugin-usage\/runs\/[0-9a-f-]{36}$/);
+    const script = vi.mocked(alia.sdk.files.write).mock.calls[0]![0].content;
     expect(script.startsWith("HOME='C:/Users/me'; export HOME; ")).toBe(true);
     expect(script).toContain(`( printf result ) > '${runDirectory()}/output.txt' 2>&1`);
     expect(script).toContain(`mv -f '${runDirectory()}/status.tmp' '${runDirectory()}/status'`);
 
-    const launcher = vi.mocked(bb.sdk.terminals.create).mock.calls[0]![0].start;
+    const launcher = vi.mocked(alia.sdk.terminals.create).mock.calls[0]![0].start;
     expect(launcher).toMatchObject({ mode: "command" });
     const encoded = (launcher as { command: string }).command
       .match(/^powershell\.exe -NoLogo -NoProfile -NonInteractive -EncodedCommand ([A-Za-z0-9+/=]+)$/)?.[1];
     expect(encoded).toBeDefined();
     const decoded = Buffer.from(encoded!, "base64").toString("utf16le");
-    expect(decoded).toContain(`& $bbSh '${runDirectory()}/command.sh'`);
+    expect(decoded).toContain(`& $aliaSh '${runDirectory()}/command.sh'`);
     expect(decoded).toContain("exit $LASTEXITCODE");
 
-    expect(bb.sdk.terminals.output).not.toHaveBeenCalled();
-    expect(bb.sdk.terminals.close).toHaveBeenCalledWith({ terminalId: "terminal-1", mode: "force" });
-    expect(bb.sdk.files.remove).toHaveBeenCalledWith({ hostId: "host-1", path: runDirectory(), recursive: true });
+    expect(alia.sdk.terminals.output).not.toHaveBeenCalled();
+    expect(alia.sdk.terminals.close).toHaveBeenCalledWith({ terminalId: "terminal-1", mode: "force" });
+    expect(alia.sdk.files.remove).toHaveBeenCalledWith({ hostId: "host-1", path: runDirectory(), recursive: true });
     expect(files.size).toBe(0);
   });
 
@@ -1412,23 +1412,23 @@ describe("Windows host command output", () => {
     ["an ASCII apostrophe", "C:\\Users\\O'Brien Smith", "O''Brien Smith"],
     ["a curly apostrophe", "C:\\Users\\O\u2019Brien Smith", "O\u2019\u2019Brien Smith"],
   ])("quotes a home path with %s for PowerShell and sh", async (_label, home, escaped) => {
-    const { bb, run, runDirectory } = windowsRun({ home, finish: finishWith("ok\n", "0") });
+    const { alia, run, runDirectory } = windowsRun({ home, finish: finishWith("ok\n", "0") });
 
     await expect(run()).resolves.toBe("ok\n");
 
-    const launcher = (vi.mocked(bb.sdk.terminals.create).mock.calls[0]![0].start as { command: string }).command;
+    const launcher = (vi.mocked(alia.sdk.terminals.create).mock.calls[0]![0].start as { command: string }).command;
     const decoded = Buffer.from(launcher.split(" ").at(-1)!, "base64").toString("utf16le");
     const quotedDirectory = runDirectory().replace(/^C:\/Users\/[^/]+/, `C:/Users/${escaped}`);
-    expect(decoded).toContain(`& $bbSh '${quotedDirectory}/command.sh'`);
+    expect(decoded).toContain(`& $aliaSh '${quotedDirectory}/command.sh'`);
     expect(decoded).toContain(`-LiteralPath '${quotedDirectory}/status'`);
     // Native node and python receive $HOME paths verbatim, so HOME must be a
     // C:/ path rather than an MSYS /c/ path that conversion might skip.
-    const script = vi.mocked(bb.sdk.files.write).mock.calls[0]![0].content;
+    const script = vi.mocked(alia.sdk.files.write).mock.calls[0]![0].content;
     expect(script.startsWith(`HOME='${home.replace(/\\/g, "/").replace(/'/g, `'"'"'`)}'; export HOME; `)).toBe(true);
   });
 
   it("surfaces the collector diagnostic for a nonzero exit status", async () => {
-    const { run } = windowsRun({ finish: finishWith("__BB_USAGE_ERROR__:Node.js is required\n", "127") });
+    const { run } = windowsRun({ finish: finishWith("__ALIA_USAGE_ERROR__:Node.js is required\n", "127") });
 
     await expect(run()).rejects.toThrow("Node.js is required");
   });
@@ -1440,13 +1440,13 @@ describe("Windows host command output", () => {
   });
 
   it("reports the launcher's terminal output when it exits without a status", async () => {
-    const { bb, run } = windowsRun({
+    const { alia, run } = windowsRun({
       states: ["exited"],
       terminalText: "\x1b[31mpowershell.exe: The term is not recognized\x1b[0m\r\n",
     });
 
     await expect(run()).rejects.toThrow("Usage test stopped before its output could be collected: powershell.exe: The term is not recognized");
-    expect(bb.sdk.files.remove).toHaveBeenCalledOnce();
+    expect(alia.sdk.files.remove).toHaveBeenCalledOnce();
   });
 
   it("fails instead of returning empty output when the output file cannot be read", async () => {
@@ -1456,11 +1456,11 @@ describe("Windows host command output", () => {
   });
 
   it("does not launch a terminal when the command cannot be staged", async () => {
-    const { bb, run } = windowsRun();
-    vi.mocked(bb.sdk.files.write).mockRejectedValueOnce(new Error("disk full"));
+    const { alia, run } = windowsRun();
+    vi.mocked(alia.sdk.files.write).mockRejectedValueOnce(new Error("disk full"));
 
     await expect(run()).rejects.toThrow("Usage test could not stage its command on Windows machine: disk full");
-    expect(bb.sdk.terminals.create).not.toHaveBeenCalled();
+    expect(alia.sdk.terminals.create).not.toHaveBeenCalled();
   });
 });
 
@@ -1472,7 +1472,7 @@ describe("OpenCode query", () => {
     expect(command).toContain("session_message");
     expect(command).toContain("mode=ro");
     expect(command).toContain("--format json");
-    expect(command).toContain("bb_usage_query_status=$?");
+    expect(command).toContain("alia_usage_query_status=$?");
     expect(command).not.toMatch(/(?:^|; )status=\$\?/);
     expect(command).not.toContain("command -v sqlite3");
     expect(command).toContain("time_created >= CAST(strftime");
@@ -1577,7 +1577,7 @@ describe("OpenCode query", () => {
 
   it("rejects failed and incomplete OpenCode query output", () => {
     expect(() => extractOpenCodeJson("no markers")).toThrow("incomplete output");
-    expect(() => extractOpenCodeJson("__BB_USAGE_BEGIN__\n[]\n__BB_USAGE_END__:1")).toThrow("failed with code 1");
+    expect(() => extractOpenCodeJson("__ALIA_USAGE_BEGIN__\n[]\n__ALIA_USAGE_END__:1")).toThrow("failed with code 1");
   });
 
   it("retains prior usage and isolates a failed OpenCode query to its source state", async () => {
@@ -1599,11 +1599,11 @@ describe("OpenCode query", () => {
     `);
     const warn = vi.fn();
     const info = vi.fn();
-    const bb = { log: { warn, info } } as unknown as BbPluginApi;
+    const alia = { log: { warn, info } } as unknown as AliaPluginApi;
 
     await expect(syncOpenCode(
-      bb,
-      db as unknown as ReturnType<BbPluginApi["storage"]["database"]>,
+      alia,
+      db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>,
       { id: "host-1", name: "Machine" },
       "/home/user",
       new AbortController().signal,
@@ -1617,8 +1617,8 @@ describe("OpenCode query", () => {
     expect(warn).toHaveBeenCalledWith("Machine/opencode: query stalled");
 
     await expect(syncOpenCode(
-      bb,
-      db as unknown as ReturnType<BbPluginApi["storage"]["database"]>,
+      alia,
+      db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>,
       { id: "host-1", name: "Machine" },
       "/home/user",
       new AbortController().signal,
@@ -1633,12 +1633,12 @@ describe("OpenCode query", () => {
     expect(info).toHaveBeenCalledWith("Machine/opencode: skipped (no local OpenCode CLI)");
 
     await expect(syncOpenCode(
-      bb,
-      db as unknown as ReturnType<BbPluginApi["storage"]["database"]>,
+      alia,
+      db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>,
       { id: "host-1", name: "Machine" },
       "/home/user",
       new AbortController().signal,
-      async () => "__BB_USAGE_BEGIN__\n[{}]\n__BB_USAGE_END__:0\n__BB_HOST_COMMAND_DONE__:0\n",
+      async () => "__ALIA_USAGE_BEGIN__\n[{}]\n__ALIA_USAGE_END__:0\n__ALIA_HOST_COMMAND_DONE__:0\n",
     )).resolves.toBeUndefined();
 
     expect(db.prepare("SELECT COUNT(*) count FROM usage_events").get()).toEqual({ count: 1 });
@@ -1753,7 +1753,7 @@ describe("SQLite collector sync (Devin, Kilo Code)", () => {
   it("stores scanned Devin aggregates and reports ready", async () => {
     const db = usageDb();
     const info = vi.fn();
-    const bb = { log: { info, warn: vi.fn() } } as unknown as BbPluginApi;
+    const alia = { log: { info, warn: vi.fn() } } as unknown as AliaPluginApi;
     const output = fakeHostScanOutput("devin", [{
       day: new Date().toISOString().slice(0, 10),
       modelProviderId: "devin",
@@ -1767,8 +1767,8 @@ describe("SQLite collector sync (Devin, Kilo Code)", () => {
     }]);
 
     await syncDevin(
-      bb,
-      db as unknown as ReturnType<BbPluginApi["storage"]["database"]>,
+      alia,
+      db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>,
       { id: "host-1", name: "Machine" },
       "/home/user",
       new AbortController().signal,
@@ -1787,11 +1787,11 @@ describe("SQLite collector sync (Devin, Kilo Code)", () => {
 
   it("reports no-data when the host scan finds no Devin session database", async () => {
     const db = usageDb();
-    const bb = { log: { info: vi.fn(), warn: vi.fn() } } as unknown as BbPluginApi;
+    const alia = { log: { info: vi.fn(), warn: vi.fn() } } as unknown as AliaPluginApi;
 
     await syncDevin(
-      bb,
-      db as unknown as ReturnType<BbPluginApi["storage"]["database"]>,
+      alia,
+      db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>,
       { id: "host-1", name: "Machine" },
       "/home/user",
       new AbortController().signal,
@@ -1809,11 +1809,11 @@ describe("SQLite collector sync (Devin, Kilo Code)", () => {
     db.prepare("INSERT INTO usage_sources (source_id, machine_id, machine_name, provider_id, root_reference, content_sha, last_seen_generation, last_success_at) VALUES ('devin-source', 'host-1', 'Machine', 'devin', 'ref', 'sha', 'gen', '2026-08-09T00:00:00Z')").run();
     db.prepare("INSERT INTO usage_event_sources (event_key, source_id) VALUES ('devin-event', 'devin-source')").run();
     const warn = vi.fn();
-    const bb = { log: { info: vi.fn(), warn } } as unknown as BbPluginApi;
+    const alia = { log: { info: vi.fn(), warn } } as unknown as AliaPluginApi;
 
     await syncDevin(
-      bb,
-      db as unknown as ReturnType<BbPluginApi["storage"]["database"]>,
+      alia,
+      db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>,
       { id: "host-1", name: "Machine" },
       "/home/user",
       new AbortController().signal,
@@ -1835,7 +1835,7 @@ describe("SQLite collector sync (Devin, Kilo Code)", () => {
     let handlers: { sync: () => unknown } | undefined;
     const commandsByTerminalId = new Map<string, string>();
     const stagedFiles = new Map<string, string>();
-    const bb = {
+    const alia = {
       settings: { define: vi.fn(() => ({ get: async () => ({ piSessionRoots: "", primeSessionRoots: "" }) })) },
       storage: {
         database: vi.fn(() => db),
@@ -1882,9 +1882,9 @@ describe("SQLite collector sync (Devin, Kilo Code)", () => {
       realtime: { publish: vi.fn() },
       background: { service: vi.fn() },
       log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
-    await plugin(bb);
+    await plugin(alia);
     expect(handlers?.sync()).toEqual({ ok: true });
 
     await vi.waitFor(() => {
@@ -1914,7 +1914,7 @@ describe("SQLite collector sync (Devin, Kilo Code)", () => {
 
   it("stores scanned Kilo Code aggregates and reports ready", async () => {
     const db = usageDb();
-    const bb = { log: { info: vi.fn(), warn: vi.fn() } } as unknown as BbPluginApi;
+    const alia = { log: { info: vi.fn(), warn: vi.fn() } } as unknown as AliaPluginApi;
     const output = fakeHostScanOutput("kilocode", [{
       day: new Date().toISOString().slice(0, 10),
       modelProviderId: "kilo",
@@ -1928,8 +1928,8 @@ describe("SQLite collector sync (Devin, Kilo Code)", () => {
     }]);
 
     await syncKilocode(
-      bb,
-      db as unknown as ReturnType<BbPluginApi["storage"]["database"]>,
+      alia,
+      db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>,
       { id: "host-1", name: "Machine" },
       "/home/user",
       new AbortController().signal,
@@ -1948,11 +1948,11 @@ describe("SQLite collector sync (Devin, Kilo Code)", () => {
 
   it("reports no-data when the host has no Kilo Code session database", async () => {
     const db = usageDb();
-    const bb = { log: { info: vi.fn(), warn: vi.fn() } } as unknown as BbPluginApi;
+    const alia = { log: { info: vi.fn(), warn: vi.fn() } } as unknown as AliaPluginApi;
 
     await syncKilocode(
-      bb,
-      db as unknown as ReturnType<BbPluginApi["storage"]["database"]>,
+      alia,
+      db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>,
       { id: "host-1", name: "Machine" },
       "/home/user",
       new AbortController().signal,
@@ -1977,9 +1977,9 @@ describe("dashboard query", () => {
 
 describe("OpenCode Go limits", () => {
   const markedOutput = [
-    "__BB_USAGE_BEGIN__",
+    "__ALIA_USAGE_BEGIN__",
     JSON.stringify({ usage: { rolling: { status: "ok", percent: 4, resetsAt: "2026-08-21T22:54:37.384Z" } } }),
-    "__BB_USAGE_END__:0",
+    "__ALIA_USAGE_END__:0",
     "",
   ].join("\n");
 
@@ -1999,9 +1999,9 @@ describe("OpenCode Go limits", () => {
   it("persists a parsed snapshot from a successful host query", async () => {
     const db = goLimitsDb();
     const info = vi.fn();
-    const bb = { log: { info, warn: vi.fn(), debug: vi.fn() } } as unknown as BbPluginApi;
+    const alia = { log: { info, warn: vi.fn(), debug: vi.fn() } } as unknown as AliaPluginApi;
 
-    await syncOpenCodeGo(bb, db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => markedOutput);
+    await syncOpenCodeGo(alia, db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => markedOutput);
 
     const row = db.prepare("SELECT machine_id, machine_name, plan_label, windows_json FROM opencode_go_limits").get() as {
       machine_id: string; machine_name: string; plan_label: string; windows_json: string;
@@ -2019,28 +2019,28 @@ describe("OpenCode Go limits", () => {
 
   it("persists the credential fingerprint as the grouping identity", async () => {
     const db = goLimitsDb();
-    const bb = { log: { info: vi.fn(), warn: vi.fn(), debug: vi.fn() } } as unknown as BbPluginApi;
+    const alia = { log: { info: vi.fn(), warn: vi.fn(), debug: vi.fn() } } as unknown as AliaPluginApi;
     const output = [
-      `__BB_GO_FINGERPRINT__:${"a".repeat(64)}`,
-      "__BB_USAGE_BEGIN__",
+      `__ALIA_GO_FINGERPRINT__:${"a".repeat(64)}`,
+      "__ALIA_USAGE_BEGIN__",
       JSON.stringify({ usage: { rolling: { status: "ok", percent: 4, resetsAt: "2026-08-21T22:54:37.384Z" } } }),
-      "__BB_USAGE_END__:0",
+      "__ALIA_USAGE_END__:0",
       "",
     ].join("\n");
 
-    await syncOpenCodeGo(bb, db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => output);
+    await syncOpenCodeGo(alia, db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => output);
 
-    expect(loadStoredOpenCodeGoLimits(db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, new Set(["host-1"])))
+    expect(loadStoredOpenCodeGoLimits(db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>, new Set(["host-1"])))
       .toEqual([expect.objectContaining({ accountIdentity: "a".repeat(64) })]);
   });
 
   it("retains the previous snapshot when a later fetch fails generically", async () => {
     const db = goLimitsDb();
     const warn = vi.fn();
-    const bb = { log: { info: vi.fn(), warn, debug: vi.fn() } } as unknown as BbPluginApi;
-    await syncOpenCodeGo(bb, db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => markedOutput);
+    const alia = { log: { info: vi.fn(), warn, debug: vi.fn() } } as unknown as AliaPluginApi;
+    await syncOpenCodeGo(alia, db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => markedOutput);
 
-    await syncOpenCodeGo(bb, db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => {
+    await syncOpenCodeGo(alia, db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => {
       throw new Error("Usage: OpenCode Go limits timed out after 60 seconds.");
     });
 
@@ -2050,21 +2050,21 @@ describe("OpenCode Go limits", () => {
       status: "error",
       error: "Usage: OpenCode Go limits timed out after 60 seconds.",
     });
-    expect(loadStoredOpenCodeGoLimits(db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, new Set(["host-1"])))
+    expect(loadStoredOpenCodeGoLimits(db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>, new Set(["host-1"])))
       .toEqual([expect.objectContaining({ status: "error", windows: [expect.objectContaining({ label: "Rolling (5h)" })] })]);
   });
 
   it("retains the previous snapshot for diagnostics that only contain a sentinel", async () => {
     const db = goLimitsDb();
     const warn = vi.fn();
-    const bb = { log: { info: vi.fn(), warn, debug: vi.fn() } } as unknown as BbPluginApi;
-    await syncOpenCodeGo(bb, db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => markedOutput);
+    const alia = { log: { info: vi.fn(), warn, debug: vi.fn() } } as unknown as AliaPluginApi;
+    await syncOpenCodeGo(alia, db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => markedOutput);
 
     for (const diagnostic of [
       "collector failed near no-opencode-go-credential handling",
       "no-opencode-go-plan response was malformed",
     ]) {
-      await syncOpenCodeGo(bb, db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => {
+      await syncOpenCodeGo(alia, db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => {
         throw new Error(diagnostic);
       });
     }
@@ -2077,11 +2077,11 @@ describe("OpenCode Go limits", () => {
   it("drops the stored snapshot when the machine has no Go credential or plan", async () => {
     const db = goLimitsDb();
     const debug = vi.fn();
-    const bb = { log: { info: vi.fn(), warn: vi.fn(), debug } } as unknown as BbPluginApi;
-    await syncOpenCodeGo(bb, db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => markedOutput);
+    const alia = { log: { info: vi.fn(), warn: vi.fn(), debug } } as unknown as AliaPluginApi;
+    await syncOpenCodeGo(alia, db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => markedOutput);
 
     for (const diagnostic of ["no-opencode-go-credential", "no-opencode-go-plan"]) {
-      await syncOpenCodeGo(bb, db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => {
+      await syncOpenCodeGo(alia, db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => {
         throw new Error(diagnostic);
       });
     }
@@ -2103,7 +2103,7 @@ describe("OpenCode Go limits", () => {
     db.prepare("INSERT INTO opencode_go_limit_state (machine_id, machine_name, status, error, last_attempt_at, last_success_at) VALUES (?, ?, 'ok', NULL, ?, ?)")
       .run("host-2", "Broken", new Date().toISOString(), new Date().toISOString());
 
-    const limits = loadStoredOpenCodeGoLimits(db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, new Set(["host-1", "host-2"]));
+    const limits = loadStoredOpenCodeGoLimits(db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>, new Set(["host-1", "host-2"]));
     expect(limits.find((limit) => limit.machineId === "host-1")).toEqual(expect.objectContaining({
       machineId: "host-1",
       providerId: "opencode-go",
@@ -2143,15 +2143,15 @@ describe("Grok limit snapshots", () => {
     try {
       db.exec(grokLimitsMigration);
       const warn = vi.fn();
-      const bb = { log: { warn } } as unknown as BbPluginApi;
+      const alia = { log: { warn } } as unknown as AliaPluginApi;
       const machine = { id: "host-grok", name: "Grok machine" };
       const connected = new Set([machine.id]);
-      await syncGrokLimits(bb, db, machine, "/home/user", AbortSignal.timeout(1000), async () => { throw new Error("Node.js is required"); });
+      await syncGrokLimits(alia, db, machine, "/home/user", AbortSignal.timeout(1000), async () => { throw new Error("Node.js is required"); });
       expect(loadStoredGrokLimits(db, connected)).toEqual([]);
       expect(db.prepare("SELECT error FROM grok_limits").get()).toEqual({ error: "Node.js is required" });
       expect(warn).toHaveBeenCalled();
       const snapshot = { accountIdentity: "a".repeat(64), windows: [{ label: "Weekly credits", usedPercent: 0, resetsAt: null }] };
-      await syncGrokLimits(bb, db, machine, "/home/user", AbortSignal.timeout(1000), async () => `__BB_USAGE_BEGIN__\n${JSON.stringify(snapshot)}\n__BB_USAGE_END__:0`);
+      await syncGrokLimits(alia, db, machine, "/home/user", AbortSignal.timeout(1000), async () => `__ALIA_USAGE_BEGIN__\n${JSON.stringify(snapshot)}\n__ALIA_USAGE_END__:0`);
       expect(loadStoredGrokLimits(db, connected)).toEqual([expect.objectContaining({ status: "ok", error: null, windows: snapshot.windows })]);
     } finally { db.close(); }
   });
@@ -2159,15 +2159,15 @@ describe("Grok limit snapshots", () => {
   it("retains a successful snapshot on errors, hides offline machines, and clears on logout", async () => {
     const db = new Database(":memory:");
     db.exec(grokLimitsMigration);
-    const bb = { log: { warn: vi.fn() } } as unknown as BbPluginApi;
+    const alia = { log: { warn: vi.fn() } } as unknown as AliaPluginApi;
     const machine = { id: "host-grok", name: "Grok machine" };
     const snapshot = { accountIdentity: "a".repeat(64), windows: [{ label: "Weekly credits", usedPercent: 40, resetsAt: null }] };
-    await syncGrokLimits(bb, db, machine, "/home/user", AbortSignal.timeout(1000), async () => `__BB_USAGE_BEGIN__\n${JSON.stringify(snapshot)}\n__BB_USAGE_END__:0`);
+    await syncGrokLimits(alia, db, machine, "/home/user", AbortSignal.timeout(1000), async () => `__ALIA_USAGE_BEGIN__\n${JSON.stringify(snapshot)}\n__ALIA_USAGE_END__:0`);
     expect(loadStoredGrokLimits(db, new Set([machine.id]))).toEqual([expect.objectContaining({ status: "ok", windows: snapshot.windows, accountIdentity: snapshot.accountIdentity })]);
-    await syncGrokLimits(bb, db, machine, "/home/user", AbortSignal.timeout(1000), async () => { throw new Error("Request failed"); });
+    await syncGrokLimits(alia, db, machine, "/home/user", AbortSignal.timeout(1000), async () => { throw new Error("Request failed"); });
     expect(loadStoredGrokLimits(db, new Set([machine.id]))).toEqual([expect.objectContaining({ status: "error", windows: snapshot.windows, error: "Request failed" })]);
     expect(loadStoredGrokLimits(db, new Set())).toEqual([]);
-    await syncGrokLimits(bb, db, machine, "/home/user", AbortSignal.timeout(1000), async () => "__BB_USAGE_ERROR__:no-grok-credential");
+    await syncGrokLimits(alia, db, machine, "/home/user", AbortSignal.timeout(1000), async () => "__ALIA_USAGE_ERROR__:no-grok-credential");
     expect(loadStoredGrokLimits(db, new Set([machine.id]))).toEqual([]);
     db.close();
   });
@@ -2187,7 +2187,7 @@ describe("Account Pooler limits RPC integration", () => {
     }];
     const callRpc = vi.fn().mockResolvedValue(poolAccounts);
     const hosts = vi.fn().mockResolvedValue([]);
-    const bb = {
+    const alia = {
       settings: { define: vi.fn() },
       storage: {
         database: () => db,
@@ -2206,9 +2206,9 @@ describe("Account Pooler limits RPC integration", () => {
       },
       background: { service: vi.fn() },
       log: { debug: vi.fn(), warn: vi.fn() },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
     try {
-      await plugin(bb);
+      await plugin(alia);
       const first = rpcContract.providerLimits.output.parse(await read!());
       expect(first.accountPoolError).toBeNull();
       expect(first.limits).toHaveLength(1);
@@ -2266,7 +2266,7 @@ describe("provider limits after a reset", () => {
       }
       throw new Error(`Unexpected ${method}`);
     });
-    const bb = {
+    const alia = {
       settings: { define: vi.fn() },
       storage: {
         database: () => db,
@@ -2284,9 +2284,9 @@ describe("provider limits after a reset", () => {
       },
       background: { service: vi.fn() },
       log: { debug: vi.fn(), warn: vi.fn() },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
     return {
-      db, callRpc, stored, bb,
+      db, callRpc, stored, alia,
       setRefresh: (refresh: typeof refreshUpstream) => { refreshUpstream = refresh; },
       read: async (input?: { refreshPoolAccountId: string } | null) => {
         rpcContract.providerLimits.input.parse(input ?? null);
@@ -2296,10 +2296,10 @@ describe("provider limits after a reset", () => {
   }
 
   it("refreshes the reset account upstream so a cleared quota replaces the stored and local readings", async () => {
-    const { db, bb, callRpc, read } = setup();
+    const { db, alia, callRpc, read } = setup();
     const now = Date.parse("2026-09-15T12:00:00Z");
     try {
-      await plugin(bb);
+      await plugin(alia);
       const before = (await read()).limits;
       expect(before).toHaveLength(1);
       expect(before[0]!.windows).toEqual([{ label: "Weekly", usedPercent: 100, resetsAt }]);
@@ -2325,10 +2325,10 @@ describe("provider limits after a reset", () => {
       // account.refreshUsage resolves without a new observation when the read fails or is skipped.
       async () => {},
     ]) {
-      const { db, bb, read, setRefresh } = setup();
+      const { db, alia, read, setRefresh } = setup();
       setRefresh(refresh);
       try {
-        await plugin(bb);
+        await plugin(alia);
         const result = await read({ refreshPoolAccountId: poolAccountId });
         expect(result.accountPoolError).toContain("Showing the last reported values");
         expect(result.limits[0]).toMatchObject({ status: "error", windows: [{ label: "Weekly", usedPercent: 100 }] });
@@ -2340,9 +2340,9 @@ describe("provider limits after a reset", () => {
   });
 
   it("does not answer a reset refresh with a read that started before it", async () => {
-    const { db, bb, callRpc, read } = setup();
+    const { db, alia, callRpc, read } = setup();
     try {
-      await plugin(bb);
+      await plugin(alia);
       let releaseList!: () => void;
       const listStarted = new Promise<void>((resolve) => {
         callRpc.mockImplementationOnce(async () => {
@@ -2375,7 +2375,7 @@ describe("retained usage through the real sync path", () => {
   function fakeHostScanOutputWith(agentId: string, rows: Array<Record<string, unknown>>, failureCount: number) {
     const scan = { agentId, fileCount: 1, changedFileCount: 1, reusedFileCount: 0, failureCount, error: null, rows };
     const encoded = gzipSync(Buffer.from(JSON.stringify(scan))).toString("base64");
-    return `${SCAN_BEGIN}\n${encoded}\n${SCAN_END}\n__BB_HOST_COMMAND_DONE__:0\n`;
+    return `${SCAN_BEGIN}\n${encoded}\n${SCAN_END}\n__ALIA_HOST_COMMAND_DONE__:0\n`;
   }
 
   // Drives the unmodified plugin factory end-to-end through its public sync()
@@ -2386,7 +2386,7 @@ describe("retained usage through the real sync path", () => {
     let handlers: { sync: () => unknown; dashboard: () => Promise<{ sync: { running: boolean } }> } | undefined;
     const commandsByTerminalId = new Map<string, string>();
     const stagedFiles = new Map<string, string>();
-    const bb = {
+    const alia = {
       settings: { define: vi.fn(() => ({ get: async () => ({ codexHomes: state.codexHomes ?? "", piSessionRoots: "", primeSessionRoots: "" }) })) },
       storage: {
         database: vi.fn(() => db),
@@ -2424,9 +2424,9 @@ describe("retained usage through the real sync path", () => {
       realtime: { publish: vi.fn() },
       background: { service: vi.fn() },
       log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
-    await plugin(bb);
+    await plugin(alia);
     expect(handlers?.sync()).toEqual({ ok: true });
     await vi.waitFor(async () => expect((await handlers!.dashboard()).sync.running).toBe(false));
     return { db, syncAgain: async () => {

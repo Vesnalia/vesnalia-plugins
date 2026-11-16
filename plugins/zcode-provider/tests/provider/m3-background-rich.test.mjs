@@ -5,8 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { api, snapshot, inputs } from './helpers.mjs';
-import { threadDeltaSchema } from '@get-bb/plugin-sdk/provider-bridge';
-import { experimental_assembleCapturedThreadEvents as assemble } from '@get-bb/plugin-sdk/provider-bridge/testing';
+import { threadDeltaSchema } from '@vesnalia/plugin-sdk/provider-bridge';
+import { experimental_assembleCapturedThreadEvents as assemble } from '@vesnalia/plugin-sdk/provider-bridge/testing';
 // Native OSS29628c9 snapshot363/rows191/toolDisplay155, projection4226.
 // Installed adapter1384/1499: background progress/close use thread scope.
 const work = status => ({ workId: 'exec-own', kind: 'bash', title: 'own bounded command', status, anchorRowId: 2, startedAt: 10 });

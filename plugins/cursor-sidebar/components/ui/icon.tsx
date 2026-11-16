@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { experimental_Icon as HostIcon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as HostIcon } from "@vesnalia/plugin-sdk/app";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
   Alert02Icon,

@@ -28,7 +28,7 @@ function tokenResponse(access: string, refresh: string): Response {
 function identityResponse(): Response {
   return jsonResponse({
     sub: "42",
-    name: "bb User",
+    name: "VesnALIA User",
     email: "user@example.com",
     korey_user_id: 42,
     korey_organization_id: 7,
@@ -101,7 +101,7 @@ describe("KoreyOAuth", () => {
   it("registers a public loopback client", async () => {
     const { calls, fetch } = mockFetch([
       jsonResponse(
-        { client_id: "kc_client", client_name: "bb Korey plugin" },
+        { client_id: "kc_client", client_name: "VesnALIA Korey plugin" },
         201,
       ),
     ]);
@@ -110,7 +110,7 @@ describe("KoreyOAuth", () => {
     ).resolves.toEqual(client);
     expect(calls[0]?.url).toBe("https://api.korey.ai/oauth/register");
     expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({
-      client_name: "bb Korey plugin",
+      client_name: "VesnALIA Korey plugin",
       redirect_uris: [client.redirectUri],
       token_endpoint_auth_method: "none",
       grant_types: ["authorization_code", "refresh_token"],
@@ -335,7 +335,7 @@ describe("OAuthTokenSource", () => {
       rejected,
     });
     await expect(tokenOf(source)).rejects.toThrow(
-      "Korey sign-in expired or was revoked. Reconnect with `bb korey login`",
+      "Korey sign-in expired or was revoked. Reconnect with `alia korey login`",
     );
     expect(rejected).toHaveBeenCalledOnce();
     expect(saved).toHaveLength(0);
@@ -471,7 +471,7 @@ describe("KoreyClient with refreshable credentials", () => {
       state: "ready",
       is_private: true,
       archived: false,
-      owner: { id: "user-one", name: "bb User" },
+      owner: { id: "user-one", name: "VesnALIA User" },
       created_at: "2026-08-21T12:00:00.000Z",
       updated_at: "2026-08-21T12:00:00.000Z",
       app_url: "https://app.korey.ai/threads/thread-one",

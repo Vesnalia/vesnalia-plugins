@@ -24,7 +24,7 @@ const newTicket = (over: Partial<TicketSpec> = {}): TicketSpec => ({
   priority: 2,
   ...over,
 });
-const messageToPlanner = () => h.bb.callsTo("send").filter(([id]) => id === "thr_plan").map(([, message]) => message as { summary: string; detail: string });
+const messageToPlanner = () => h.alia.callsTo("send").filter(([id]) => id === "thr_plan").map(([, message]) => message as { summary: string; detail: string });
 
 describe("triage rounds", () => {
   it("batches every blocked ticket into one message and counts the round", async () => {
@@ -58,10 +58,10 @@ describe("triage rounds", () => {
   it("waits while the planner is busy, and sends once it is idle", async () => {
     await seedProject(h);
     await block("CSV-1", "No API key");
-    h.bb.threads.get("thr_plan")!.status = "active";
+    h.alia.threads.get("thr_plan")!.status = "active";
     expect(await round()).toBe(false);
     expect(project().triage_pending).toBe(1);
-    h.bb.threads.get("thr_plan")!.status = "idle";
+    h.alia.threads.get("thr_plan")!.status = "idle";
     expect(await round()).toBe(true);
   });
 
@@ -79,9 +79,9 @@ describe("triage rounds", () => {
     h = makeCtx();
     await seedProject(h);
     await block("CSV-1", "No API key");
-    h.bb.threads.delete("thr_plan");
+    h.alia.threads.delete("thr_plan");
     expect(await round()).toBe(false);
-    expect(h.bb.callsTo("send")).toEqual([]);
+    expect(h.alia.callsTo("send")).toEqual([]);
   });
 
   it("allows one round in flight, clears it when the planner goes idle, and gives up on a round older than 30 minutes", async () => {
@@ -112,7 +112,7 @@ describe("triage rounds", () => {
     h.store.updateProject(project().id, { triage_pending: 1 });
     expect(await round()).toBe(false);
     expect(project().triage_pending).toBe(0);
-    expect(h.bb.callsTo("send")).toEqual([]);
+    expect(h.alia.callsTo("send")).toEqual([]);
   });
 
   it("tells the planner why a project the plugin paused is paused", async () => {
@@ -127,7 +127,7 @@ describe("triage rounds", () => {
     h.store.updateProject(project().id, { triage_pending: 1, system_reason: "Reading the pull request of CSV-1 stopped: host plugin call exceeded its deadline" });
     expect(await round()).toBe(false);
     expect(project().triage_pending).toBe(0);
-    expect(h.bb.callsTo("send")).toEqual([]);
+    expect(h.alia.callsTo("send")).toEqual([]);
 
     await block("CSV-1", "No API key");
     expect(await round()).toBe(true);
@@ -219,7 +219,7 @@ describe("editTicket", () => {
   });
 
   it("sets and clears a ticket's environment inputs patch, and refuses one in a repo with no environment provider", async () => {
-    h.bb.environmentProviderList = [GIT_WORKTREE_PROVIDER, { ...GIT_WORKTREE_PROVIDER, id: "example-pool", pluginId: "example", acceptsEmptyInputs: false, inputs: { type: "object" } }];
+    h.alia.environmentProviderList = [GIT_WORKTREE_PROVIDER, { ...GIT_WORKTREE_PROVIDER, id: "example-pool", pluginId: "example", acceptsEmptyInputs: false, inputs: { type: "object" } }];
     await seedProject(h, (doc) => (doc.environment = { provider: "example-pool", inputs: { paths: ["a", "b"] } }));
     expect(editTicket(h.ctx, "CSV-2", { environment: { inputs: { paths: ["a"] } } }, "thr_plan").environment_json).toBe('{"paths":["a"]}');
     expect(editTicket(h.ctx, "CSV-2", { environment: { inputs: {} } }, "thr_plan").environment_json).toBeNull();
@@ -279,7 +279,7 @@ describe("cancelTicket", () => {
     const cancelled = await cancelTicket(h.ctx, "CSV-1", "Dropped", "human");
     expect(cancelled).toMatchObject({ state: "cancelled", worker_thread_id: null });
     expect(workerRows(h, "CSV-1")).toMatchObject([{ state: "ended", end_reason: "cancelled" }]);
-    expect(h.bb.callsTo("archive")).toEqual([["thr_w1"]]);
+    expect(h.alia.callsTo("archive")).toEqual([["thr_w1"]]);
     expect(h.store.posts(cancelled.id).at(-1)).toMatchObject({ author_kind: "human" });
   });
 
@@ -337,8 +337,8 @@ describe("repos on the board tools", () => {
   };
 
   beforeEach(() => {
-    h.bb.addBbProject("proj_web", { host_1: "/src/web" });
-    h.bb.addBbProject("proj_api", { host_1: "/src/api" });
+    h.alia.addAliaProject("proj_web", { host_1: "/src/web" });
+    h.alia.addAliaProject("proj_api", { host_1: "/src/api" });
   });
 
   describe("addTickets", () => {
@@ -440,8 +440,8 @@ describe("repos on the board tools", () => {
       expect(failure(() => editTicket(h.ctx, "CSV-2", { repo: "web", scope: ["config/x.ts"] }, "thr_plan")).message).toContain('"config/x.ts" falls under the protected path "config/**" of repo "web"');
 
       h = makeCtx();
-      h.bb.addBbProject("proj_web", { host_1: "/src/web" });
-      h.bb.addBbProject("proj_api", { host_1: "/src/api" });
+      h.alia.addAliaProject("proj_web", { host_1: "/src/web" });
+      h.alia.addAliaProject("proj_api", { host_1: "/src/api" });
       await seedMulti();
       expect(failure(() => editTicket(h.ctx, "CSV-1", { repo: "api" }, "thr_plan")).message).toContain('1. patch.verify: nothing would check this ticket, because it has no verify commands and the checks of repo "api", which replace checks.commands, are empty.');
       expect(editTicket(h.ctx, "CSV-1", { repo: "api", verify: ["npm run api-test"] }, "thr_plan")).toMatchObject({ repo: "api", verify_json: '["npm run api-test"]' });

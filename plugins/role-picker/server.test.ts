@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import plugin from './server.ts';
 import { route, matches, decorate } from './submit-bridge.ts';
 const role = {id:'r1', slug:'qa', name:'QA', description:'Checks', instructions:'Check the acceptance criteria.', color:'gray'};
@@ -9,7 +9,7 @@ function setup(companion = true) {
   const host = createFakePluginHost({ pluginId:'role-picker', sdk: { plugins: { list: () => ({plugins: companion ? [{id:'agent-roles',enabled:true,status:'running'}] : []}), callRpc: () => ({roles:[role]}) }, threads: {
     getPluginMetadata: args => args.pluginId === 'role-picker' ? {} : ({roleSlug:'qa'}), updatePluginMetadata: args => { writes.push(args); return args.set; },
   } } });
-  plugin(host.bb); return {...host, writes};
+  plugin(host.alia); return {...host, writes};
 }
 test('existing thread receives role metadata without creating or sending a thread', async () => {
   const {harness,writes} = setup(); try {
@@ -76,5 +76,5 @@ test('companion roles coexist with local presets without replacing their identit
 });
 test('an unhealthy companion does not hide the independent preset list',async()=>{
  const host=createFakePluginHost({pluginId:'role-picker',sdk:{plugins:{list:()=>({plugins:[{id:'agent-roles',enabled:true,status:'running'}]}),callRpc:()=>{throw new Error('Companion unavailable');}}}});
- try{plugin(host.bb);const result:any=await host.harness.callRpc('roles',null);assert.equal(result.roles.length,6);await assert.rejects(host.harness.callRpc('prepare',{roleSlug:'shared:qa',threadId:null}));}finally{await host.harness.dispose();}
+ try{plugin(host.alia);const result:any=await host.harness.callRpc('roles',null);assert.equal(result.roles.length,6);await assert.rejects(host.harness.callRpc('prepare',{roleSlug:'shared:qa',threadId:null}));}finally{await host.harness.dispose();}
 });

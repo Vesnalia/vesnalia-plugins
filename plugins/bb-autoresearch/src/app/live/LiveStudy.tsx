@@ -3,7 +3,7 @@
 // page's Live tab (wide) and the study thread's Live panel (compact).
 // Strictly read only: the only actions open things (a candidate, a worker's
 // transcript or thread, the Overview).
-import { ThreadChat, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { ThreadChat, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -466,7 +466,7 @@ function PhaseSteps({ phase }: { phase: LiveWorker["phase"] }) {
 }
 
 function Transcript({ t, gone, onClose, compact, replay }: { t: { key: number; threadId: string; title: string }; gone: boolean; onClose: () => void; compact: boolean; replay: boolean }) {
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   return (
     <section
       aria-label={`Transcript of the worker on idea ${t.title}`}

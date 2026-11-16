@@ -13,7 +13,7 @@ independent derivation by a blind Claude Opus 5.5 thread (`thr_zeyu4phivu`),
 whose ruleset this doc merges with the operator's rulings. Sources:
 `app.tsx`, `components/nesting.ts`, `components/group-boxes.ts`,
 `components/attention-freeze.ts`, `components/card-transport.ts`,
-`components/grouping.ts`, and [the nesting plan](plans/bb-sashay-parent-child-nested-cards-thr_aap36j6yz4.md)
+`components/grouping.ts`, and [the nesting plan](plans/alia-sashay-parent-child-nested-cards-thr_aap36j6yz4.md)
 (its Refinement round 3 records the superseded decisions).
 
 ## Vocabulary
@@ -32,7 +32,7 @@ whose ruleset this doc merges with the operator's rulings. Sources:
 flowchart TB
 
 subgraph paint["1. Paint: build the board"]
-  src["Live bb thread stream"] --> vis["Keep non-hidden threads; the family index drops archived members at the door"]
+  src["Live alia thread stream"] --> vis["Keep non-hidden threads; the family index drops archived members at the door"]
   vis --> idx["Build the family index: descendants flatten onto the root; missing parents, self-parents, and cycles make roots"]
   idx --> tog{"Nest children toggle"}
   tog -->|OFF| flat["Flat board: plain per-thread filtering through the one pass predicate; no rows, no chips, no projections"]

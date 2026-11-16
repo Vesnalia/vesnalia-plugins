@@ -1,17 +1,17 @@
-// bb-plugin-simple-sidebar-folders — group sidebar projects into folders.
+// alia-plugin-simple-sidebar-folders — group sidebar projects into folders.
 //
-// This does NOT replace bb's thread list. bb's own list keeps rendering every
+// This does NOT replace VesnALIA's thread list. VesnALIA's own list keeps rendering every
 // project and thread row exactly as shipped; this overlay only adds one level
-// above it. It finds the element that holds bb's project blocks, inserts a
+// above it. It finds the element that holds VesnALIA's project blocks, inserts a
 // header element per folder, and uses CSS `order` to sort each project under
 // its folder header. Projects in a folded folder get `display: none`.
 //
-// Because nothing is replaced, any thread-list provider that renders bb's
-// original list (bb-office, for one) keeps working alongside it.
+// Because nothing is replaced, any thread-list provider that renders VesnALIA's
+// original list (alia-office, for one) keeps working alongside it.
 //
-// The cost of that choice: it relies on two attributes on bb's sidebar DOM,
-// `data-sidebar-sticky-project-item` and `data-sidebar-project-id`. If a bb
-// update renames them, the folders silently stop appearing and bb's plain list
+// The cost of that choice: it relies on two attributes on VesnALIA's sidebar DOM,
+// `data-sidebar-sticky-project-item` and `data-sidebar-project-id`. If a VesnALIA
+// update renames them, the folders silently stop appearing and VesnALIA's plain list
 // shows through — it never breaks the sidebar.
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
@@ -19,23 +19,23 @@ import { createPortal } from "react-dom";
 import {
   definePluginApp,
   experimental_useSidebarThreads,
-  useBbContext,
+  useAliaContext,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { Folder, rpcContract } from "./server";
 import { Icon } from "@/components/ui/icon";
 import { usePortalScopeProps } from "@/lib/portal-scope";
 import { cn } from "@/lib/utils";
 
-declare const __BB_PLUGIN_ID__: string | undefined;
+declare const __ALIA_PLUGIN_ID__: string | undefined;
 
 const PROJECT_SELECTOR = "[data-sidebar-sticky-project-item][data-sidebar-project-id]";
-const COLLAPSED_KEY = "bb-plugin-simple-sidebar-folders:collapsed";
+const COLLAPSED_KEY = "alia-plugin-simple-sidebar-folders:collapsed";
 /** Marks every element this plugin inserted or restyled, for cleanup. */
 const MANAGED_ATTR = "data-simple-sidebar-folders";
-/** bb's project blocks use `space-y-4`; keep the same rhythm. */
+/** VesnALIA's project blocks use `space-y-4`; keep the same rhythm. */
 const PROJECT_GAP = "1rem";
 /** Pulls a folder's first project up under its header. */
 const HEADER_PULL = "-0.5rem";
@@ -123,7 +123,7 @@ function useRevealActiveProject(
   collapsed: ReadonlySet<string>,
   expand: (id: string) => void,
 ): void {
-  const { projectId } = useBbContext();
+  const { projectId } = useAliaContext();
   const revealed = useRef<string | null>(null);
   useEffect(() => {
     if (projectId === null || projectId === revealed.current) return;
@@ -145,10 +145,10 @@ interface ProjectBlock {
 }
 
 /**
- * bb's project list: the nearest element holding every project, plus, for
+ * VesnALIA's project list: the nearest element holding every project, plus, for
  * each project, the child of that element it lives in.
  *
- * The depth is found, not assumed. bb has wrapped each project in an extra
+ * The depth is found, not assumed. VesnALIA has wrapped each project in an extra
  * element before (`data-sidebar-visibility-group`), and a fixed "parent of
  * the project item" silently stopped matching when it did.
  */
@@ -166,7 +166,7 @@ function findProjectList(): { container: HTMLElement; blocks: ProjectBlock[] } |
     while (element.parentElement !== null && element.parentElement !== container) {
       element = element.parentElement;
     }
-    // Only one flat list is understood (bb's default "by project" layout):
+    // Only one flat list is understood (VesnALIA's default "by project" layout):
     // each child of the container holds exactly one project.
     if (element.querySelectorAll(PROJECT_SELECTOR).length !== 1) return null;
     blocks.push({ projectId: item.getAttribute("data-sidebar-project-id") ?? "", element });
@@ -174,7 +174,7 @@ function findProjectList(): { container: HTMLElement; blocks: ProjectBlock[] } |
   return { container, blocks };
 }
 
-/** The element holding bb's project blocks, or null if bb's list is absent. */
+/** The element holding VesnALIA's project blocks, or null if VesnALIA's list is absent. */
 function findContainer(): HTMLElement | null {
   return findProjectList()?.container ?? null;
 }
@@ -195,7 +195,7 @@ interface LayoutInput {
 }
 
 /**
- * Put folder headers into bb's container and sort projects under them.
+ * Put folder headers into VesnALIA's container and sort projects under them.
  * Idempotent and write-avoiding: it runs on every sidebar mutation.
  */
 function applyLayout(
@@ -216,7 +216,7 @@ function applyLayout(
   blocks.forEach(({ projectId, element: item }, domIndex) => {
     const index = folderIndex.get(projectId);
     const folder = index === undefined ? undefined : input.folders[index];
-    // Unfiled projects stay on top in bb's order; folders follow.
+    // Unfiled projects stay on top in VesnALIA's order; folders follow.
     const base = index === undefined ? 0 : (index + 1) * ORDER_STRIDE;
     item.setAttribute(MANAGED_ATTR, "project");
     setStyle(item, "order", String(base + 1 + domIndex));
@@ -225,7 +225,7 @@ function applyLayout(
   });
 
   // A hairline above each folder marks where a section starts — except above
-  // whatever sits first in the list, where bb's own divider already is.
+  // whatever sits first in the list, where VesnALIA's own divider already is.
   const hasUnfiled = blocks.some(({ projectId }) => !folderIndex.has(projectId));
   input.folders.forEach((folder, index) => {
     const header = input.headers.get(folder.id);
@@ -247,7 +247,7 @@ function applyLayout(
   setStyle(input.footer, "order", String((input.folders.length + 1) * ORDER_STRIDE));
 }
 
-/** Undo everything applyLayout did, leaving bb's list as shipped. */
+/** Undo everything applyLayout did, leaving VesnALIA's list as shipped. */
 function clearLayout(): void {
   document.querySelectorAll<HTMLElement>(`[${MANAGED_ATTR}]`).forEach((element) => {
     const role = element.getAttribute(MANAGED_ATTR);
@@ -265,9 +265,9 @@ function clearLayout(): void {
 function createHost(role: "header" | "footer"): HTMLElement {
   const host = document.createElement("div");
   host.setAttribute(MANAGED_ATTR, role);
-  // Plugin CSS is scoped to plugin roots; these hosts sit inside bb's tree.
-  host.setAttribute("data-bb-plugin-root", "");
-  if (typeof __BB_PLUGIN_ID__ === "string") host.setAttribute("data-bb-plugin", __BB_PLUGIN_ID__);
+  // Plugin CSS is scoped to plugin roots; these hosts sit inside VesnALIA's tree.
+  host.setAttribute("data-alia-plugin-root", "");
+  if (typeof __ALIA_PLUGIN_ID__ === "string") host.setAttribute("data-alia-plugin", __ALIA_PLUGIN_ID__);
   return host;
 }
 
@@ -295,12 +295,12 @@ function targetAt(y: number, headers: ReadonlyMap<string, HTMLElement>, folders:
 }
 
 /**
- * Follow bb's own project drag and report where it would land.
+ * Follow VesnALIA's own project drag and report where it would land.
  *
- * Filing rides on the gesture bb already has — grab a project by its name and
+ * Filing rides on the gesture VesnALIA already has — grab a project by its name and
  * drop it in a folder's band — rather than adding a second drag of this
  * plugin's own. This only watches: it listens on the document in the capture
- * phase and never calls preventDefault, so bb draws the drag and keeps its
+ * phase and never calls preventDefault, so VesnALIA draws the drag and keeps its
  * reorder, its click-to-collapse, and its keyboard handling.
  *
  * Returns the live drop target, or `undefined` when no drag is in flight.
@@ -327,10 +327,10 @@ function useSortableDragTarget(
 
     const onPointerMove = (event: PointerEvent) => {
       if (origin === null) return;
-      // Count it as a drag only once bb's sortable has actually picked the
+      // Count it as a drag only once VesnALIA's sortable has actually picked the
       // row up; dnd-kit marks it aria-pressed. That makes a click, a touch
-      // scroll, or a slide off one of bb's row buttons file nothing, and it
-      // follows bb's own touch long-press without guessing its timing.
+      // scroll, or a slide off one of VesnALIA's row buttons file nothing, and it
+      // follows VesnALIA's own touch long-press without guessing its timing.
       if (!origin.dragging) {
         if (origin.label.getAttribute("aria-pressed") !== "true") return;
         origin.dragging = true;
@@ -453,7 +453,7 @@ function FolderHeader({
 /**
  * The one-line name field, shared by renaming a folder and naming a new one.
  * Enter keeps it, Escape drops it, and clicking away keeps whatever was typed
- * — the same bargain bb's own inline rename makes.
+ * — the same bargain VesnALIA's own inline rename makes.
  */
 function NameInput({
   initial,
@@ -642,9 +642,9 @@ function FolderMenu({
  * Where the drop lands: one thin rule at the top of the band the project will
  * join — under a folder's header, or across the top of the list for unfiled.
  *
- * A rule rather than a box around the folder heading: bb draws its own drag,
+ * A rule rather than a box around the folder heading: VesnALIA draws its own drag,
  * so a second highlighted container fights it for attention. Fixed-position
- * and portaled, so marking the target never shifts bb's rows mid-drag.
+ * and portaled, so marking the target never shifts VesnALIA's rows mid-drag.
  */
 function DropIndicator({
   target,
@@ -696,7 +696,7 @@ function SidebarFolders() {
   const layout = useRef<LayoutInput | null>(null);
   layout.current = { folders, collapsed, headers, footer: footer.current };
 
-  // Re-apply whenever bb re-renders its list (a new project, a new thread,
+  // Re-apply whenever VesnALIA re-renders its list (a new project, a new thread,
   // a remount) and whenever folders or fold state change.
   const sync = useCallback(() => {
     const list = findProjectList();

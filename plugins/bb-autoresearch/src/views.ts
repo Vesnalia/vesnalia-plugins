@@ -47,7 +47,7 @@ import {
 
 export interface StudySummary {
   slug: string;
-  /** The BB project the study runs in (the new-study composer preselects the latest one). */
+  /** The VesnALIA project the study runs in (the new-study composer preselects the latest one). */
   projectId: string;
   state: string;
   pauseReason: string | null;
@@ -295,7 +295,7 @@ export function bestCi(engine: Engine, s: StudyRow): { lo: number; hi: number } 
 
 function workerPhase(engine: Engine, s: StudyRow, worker: ThreadRow): { phase: string; candidate: number | null; position: number | null } {
   const { store } = engine.ctx;
-  // Linked through the worker row (a row may have no BB thread id); the thread id is the fallback.
+  // Linked through the worker row (a row may have no VesnALIA thread id); the thread id is the fallback.
   const mine = store.workerCandidates(s.id, worker).find((c) => c.stage !== "decided" || c.reported_at === null);
   if (!mine && !worker.thread_id) return { phase: "spawning", candidate: null, position: null };
   if (!mine) return { phase: "thinking", candidate: null, position: null };
@@ -421,7 +421,7 @@ export function benchHostsView(engine: Engine, s: StudyRow) {
       sideRuns: h.side_runs,
       runSeconds: h.run_seconds,
       repoPath: h.mode === "clone" ? h.repo_path : null,
-      /** Remote machines: provider, slot, state, expiry and rotation (null for BB machines). */
+      /** Remote machines: provider, slot, state, expiry and rotation (null for VesnALIA machines). */
       remote: h.mode === "remote" ? remoteSummary(engine, s, h.host_id) : null,
       lastTransfer: t ? `${t.bytes} B (${t.purpose}, ${t.chunks} chunk${t.chunks === 1 ? "" : "s"})` : null,
       bundles: sent.length,
@@ -570,7 +570,7 @@ export async function candidateDetail(engine: Engine, s: StudyRow, n: number) {
   const to = c.prepared_sha ?? c.sha;
   if (s.host_id && s.repo_path) {
     try {
-      diff = { ...(await engine.ctx.bb.hostRunner(s.host_id).diffSummary(s.repo_path, from, to, 256 * 1024)), from, to };
+      diff = { ...(await engine.ctx.alia.hostRunner(s.host_id).diffSummary(s.repo_path, from, to, 256 * 1024)), from, to };
     } catch (e) {
       diffError = clip(e instanceof Error ? e.message : String(e), 300);
     }
@@ -816,7 +816,7 @@ export function oracleView(engine: Engine, s: StudyRow) {
       oracleHash: pendingRow.oracle_hash,
       changesOracle: changes,
       action: { kind: "approve_spec", version: pendingRow.version, changesOracle: changes } as const,
-      command: changes ? `bb study calibrate ${s.slug}` : `bb study approve ${s.slug}`,
+      command: changes ? `alia study calibrate ${s.slug}` : `alia study approve ${s.slug}`,
       toml: p.toml,
       diff: lineDiff(active!.toml, p.toml).slice(0, 2000),
     };
@@ -864,7 +864,7 @@ export function oracleView(engine: Engine, s: StudyRow) {
       /** The calibrated noise in one sentence for the class; "not measured" without an A/A floor. */
       noiseText: noiseFloorText(spec?.oracle.noise ?? "noisy", measuring.map((h) => finiteOrNull(h.noiseFloor)), spec?.oracle.protocol.tolerance ?? 0),
       /** The command that approves what's waiting, if anything (the page has the same action as a button). */
-      nextCommand: s.state === "draft" && s.calibration_status !== "running" ? `bb study calibrate ${s.slug}` : s.state === "calibrating" && s.calibration_status === "ready" && s.calibration_approved_at === null ? `bb study start ${s.slug}` : null,
+      nextCommand: s.state === "draft" && s.calibration_status !== "running" ? `alia study calibrate ${s.slug}` : s.state === "calibrating" && s.calibration_status === "ready" && s.calibration_approved_at === null ? `alia study start ${s.slug}` : null,
       /** The in-app action for what's waiting: approve the draft spec (and calibrate), or approve the calibration (and start). */
       action:
         s.state === "draft" && s.calibration_status !== "running"
@@ -1105,7 +1105,7 @@ function harvestSummary(engine: Engine, s: StudyRow) {
   return { id: h.id, seq: h.seq, state: h.state, detail: h.phase_detail, changesets: engine.ctx.store.changesets(h.id).length, startedAt: h.started_at, finishedAt: h.finished_at, publishState: h.publish_state, frozenRef: h.best_sha ? frozenRef(s.slug, h.seq) : null };
 }
 
-/** A `bb study measure` / `bb study gate` run, for the Harvest tab and the CLI. */
+/** A `alia study measure` / `alia study gate` run, for the Harvest tab and the CLI. */
 export function adhocRunView(r: AdhocRunRow) {
   const result = adhocResult(r);
   return {
@@ -1138,10 +1138,10 @@ export function harvestGuide(slug: string) {
   return {
     prompt: `Harvest the autoresearch study \`${slug}\` into pull requests with the study-harvest skill. Propose the grouping and stacks first; don't push or open PRs until I say so.`,
     commands: [
-      { command: `bb study evidence ${slug} --json`, what: "every candidate, commit message, verdict, measurement, finding and the frozen best, as stable JSON" },
-      { command: `bb study measure ${slug} <A> <B>`, what: "B against A with the study's protocol, guardrails and bench hosts (counts as bench time)" },
-      { command: `bb study gate ${slug} <ref>`, what: "the study's gates on any commit" },
-      { command: `bb study results ${slug}`, what: "the measurements and gates asked for so far" },
+      { command: `alia study evidence ${slug} --json`, what: "every candidate, commit message, verdict, measurement, finding and the frozen best, as stable JSON" },
+      { command: `alia study measure ${slug} <A> <B>`, what: "B against A with the study's protocol, guardrails and bench hosts (counts as bench time)" },
+      { command: `alia study gate ${slug} <ref>`, what: "the study's gates on any commit" },
+      { command: `alia study results ${slug}`, what: "the measurements and gates asked for so far" },
     ],
   };
 }
@@ -1159,7 +1159,7 @@ export function harvestView(engine: Engine, s: StudyRow, harvestId?: number) {
   const all = store.harvests(s.id);
   const latest: HarvestRow | undefined = all[0];
   const h: HarvestRow | undefined = harvestId !== undefined ? all.find((x) => x.id === harvestId) : latest;
-  // A study already frozen (or waiting to freeze) can't start another freeze from here: only `bb study harvest --refreeze`.
+  // A study already frozen (or waiting to freeze) can't start another freeze from here: only `alia study harvest --refreeze`.
   const current = currentHarvest(s, latest);
   const canStartState = ["running", "paused"].includes(s.state) || (s.state === "harvesting" && !current);
   const promotions = store.candidates(s.id, { stages: ["decided"] }).filter((c) => c.verdict === "win").length;
@@ -1180,12 +1180,12 @@ export function harvestView(engine: Engine, s: StudyRow, harvestId?: number) {
     promotions,
     canStart,
     cannotStartReason,
-    startCommand: `bb study harvest ${s.slug}`,
+    startCommand: `alia study harvest ${s.slug}`,
     /** The study is already frozen and freezing again would pin something new (best moved, or a pre-1.0 freeze with no frozen ref). */
     canRefreeze: current !== null && current.state !== "waiting" && refreezeRefusal(store, s, current) === null,
-    refreezeCommand: `bb study harvest ${s.slug} --refreeze`,
+    refreezeCommand: `alia study harvest ${s.slug} --refreeze`,
     history: all.map((x) => ({ id: x.id, seq: x.seq, state: x.state, startedAt: x.started_at, finishedAt: x.finished_at, publishState: x.publish_state, legacy: isLegacyHarvest(engine, x) })),
-    /** Measurements and gates agents asked for (`bb study measure|gate`), newest first. */
+    /** Measurements and gates agents asked for (`alia study measure|gate`), newest first. */
     runs,
     guide: harvestGuide(s.slug),
   };
@@ -1703,7 +1703,7 @@ export function needsYou(engine: Engine, s: StudyRow): NeedsYouItem[] {
         detail: "Review the spec on the Oracle tab. Approving runs the gates on the base commit, then A/A measurements to learn the noise floor.",
         tab: "oracle",
         action: { kind: "approve_spec", version: s.spec_version, changesOracle: false },
-        command: `bb study calibrate ${slug}`,
+        command: `alia study calibrate ${slug}`,
         at: store.specVersion(s.id, s.spec_version)?.created_at ?? null,
       });
     }
@@ -1718,7 +1718,7 @@ export function needsYou(engine: Engine, s: StudyRow): NeedsYouItem[] {
       detail: clip(report && "report" in report ? String((report as { report?: string }).report ?? "") : "", 400) || "See the calibration report on the Oracle tab.",
       tab: "oracle",
       action: { kind: "start" },
-      command: `bb study start ${slug}`,
+      command: `alia study start ${slug}`,
       at: report?.finishedAt ?? null,
     });
   }
@@ -1735,7 +1735,7 @@ export function needsYou(engine: Engine, s: StudyRow): NeedsYouItem[] {
         : `The oracle is unchanged: approving applies it without recalibration. The study keeps running on v${s.spec_version} until then.`,
       tab: "oracle",
       action: { kind: "approve_spec", version: s.pending_spec_version, changesOracle: Boolean(seg.pendingChangesOracle) },
-      command: seg.pendingChangesOracle ? `bb study calibrate ${slug}` : `bb study approve ${slug}`,
+      command: seg.pendingChangesOracle ? `alia study calibrate ${slug}` : `alia study approve ${slug}`,
       at: store.specVersion(s.id, s.pending_spec_version)?.created_at ?? null,
     });
   }
@@ -1743,15 +1743,15 @@ export function needsYou(engine: Engine, s: StudyRow): NeedsYouItem[] {
   if (s.state === "paused" && pause.system) {
     const reason = clip(s.pause_reason ?? "", 300);
     if (pause.kind === "budget") {
-      items.push({ id: "budget_exhausted", kind: "budget_exhausted", tone: "action", title: "Budget used up: harvest the wins", short: "harvest ready to start", detail: `${reason}. Harvest freezes best so an agent can turn the promotions into PRs (nothing is pushed unless you ask).`, tab: "harvest", action: { kind: "harvest" }, command: `bb study harvest ${slug}`, at: pause.at });
+      items.push({ id: "budget_exhausted", kind: "budget_exhausted", tone: "action", title: "Budget used up: harvest the wins", short: "harvest ready to start", detail: `${reason}. Harvest freezes best so an agent can turn the promotions into PRs (nothing is pushed unless you ask).`, tab: "harvest", action: { kind: "harvest" }, command: `alia study harvest ${slug}`, at: pause.at });
     } else if (pause.kind === "drift" && /^automatic recalibration failed/u.test(reason)) {
-      items.push({ id: "drift", kind: "drift", tone: "alert", title: "Paused: recalibrating on best's shorter runs failed", short: "recalibration failed", detail: `${reason}.`, tab: "oracle", action: { kind: "resume" }, command: `bb study resume ${slug}`, at: pause.at });
+      items.push({ id: "drift", kind: "drift", tone: "alert", title: "Paused: recalibrating on best's shorter runs failed", short: "recalibration failed", detail: `${reason}.`, tab: "oracle", action: { kind: "resume" }, command: `alia study resume ${slug}`, at: pause.at });
     } else if (pause.kind === "drift") {
-      items.push({ id: "drift", kind: "drift", tone: "alert", title: "Paused: the bench got noisier (drift check)", short: "drift alarm", detail: `${reason}. Check what else runs on the bench host, then resume; or ask the study thread for an oracle with more pairs.`, tab: "bench", action: { kind: "resume" }, command: `bb study resume ${slug}`, at: pause.at });
+      items.push({ id: "drift", kind: "drift", tone: "alert", title: "Paused: the bench got noisier (drift check)", short: "drift alarm", detail: `${reason}. Check what else runs on the bench host, then resume; or ask the study thread for an oracle with more pairs.`, tab: "bench", action: { kind: "resume" }, command: `alia study resume ${slug}`, at: pause.at });
     } else if (pause.kind === "oracle") {
-      items.push({ id: "oracle_broken", kind: "oracle_broken", tone: "alert", title: "Paused: the oracle is broken on best", short: "oracle broken", detail: `${reason}. Fix the environment or the spec, then resume.`, tab: "bench", action: { kind: "resume" }, command: `bb study resume ${slug}`, at: pause.at });
+      items.push({ id: "oracle_broken", kind: "oracle_broken", tone: "alert", title: "Paused: the oracle is broken on best", short: "oracle broken", detail: `${reason}. Fix the environment or the spec, then resume.`, tab: "bench", action: { kind: "resume" }, command: `alia study resume ${slug}`, at: pause.at });
     } else {
-      items.push({ id: "paused", kind: "paused", tone: "alert", title: "Paused by the system", short: "paused", detail: `${reason}.`, tab: "overview", action: { kind: "resume" }, command: `bb study resume ${slug}`, at: pause.at });
+      items.push({ id: "paused", kind: "paused", tone: "alert", title: "Paused by the system", short: "paused", detail: `${reason}.`, tab: "overview", action: { kind: "resume" }, command: `alia study resume ${slug}`, at: pause.at });
     }
   }
   if (["running", "paused", "calibrating", "harvesting"].includes(s.state)) {
@@ -1760,11 +1760,11 @@ export function needsYou(engine: Engine, s: StudyRow): NeedsYouItem[] {
     const graceMs = (spec?.oracle.health.notify_after_minutes ?? 15) * 60_000;
     for (const h of benchHostsView(engine, s)) {
       if (h.status === "offline" && h.offlineSince !== null && now - h.offlineSince > (spec?.oracle.offline_grace_minutes ?? 10) * 60_000) {
-        items.push({ id: `bench_offline:${h.hostId}`, kind: "bench_offline", tone: "alert", title: `Bench host ${h.name} is offline`, short: "bench offline", detail: `Offline since ${new Date(h.offlineSince).toISOString().slice(11, 16)} UTC. Measurements wait for it; workers keep editing until the queue fills.`, tab: "bench", action: { kind: "open_bench" }, command: `bb study bench ${slug}`, at: h.offlineSince });
+        items.push({ id: `bench_offline:${h.hostId}`, kind: "bench_offline", tone: "alert", title: `Bench host ${h.name} is offline`, short: "bench offline", detail: `Offline since ${new Date(h.offlineSince).toISOString().slice(11, 16)} UTC. Measurements wait for it; workers keep editing until the queue fills.`, tab: "bench", action: { kind: "open_bench" }, command: `alia study bench ${slug}`, at: h.offlineSince });
       } else if (h.healthOk === false && h.healthAt !== null) {
         const streak = unhealthySince(engine, s, h.hostId);
         if (streak !== null && now - streak > graceMs) {
-          items.push({ id: `bench_unhealthy:${h.hostId}`, kind: "bench_unhealthy", tone: "alert", title: `Bench host ${h.name} fails its health check`, short: "bench unhealthy", detail: `${h.problems.slice(0, 2).join("; ") || "see the Bench tab"}. Measurements are deferred until it passes.`, tab: "bench", action: { kind: "open_bench" }, command: `bb study bench ${slug}`, at: streak });
+          items.push({ id: `bench_unhealthy:${h.hostId}`, kind: "bench_unhealthy", tone: "alert", title: `Bench host ${h.name} fails its health check`, short: "bench unhealthy", detail: `${h.problems.slice(0, 2).join("; ") || "see the Bench tab"}. Measurements are deferred until it passes.`, tab: "bench", action: { kind: "open_bench" }, command: `alia study bench ${slug}`, at: streak });
         }
       }
     }
@@ -1783,7 +1783,7 @@ export function needsYou(engine: Engine, s: StudyRow): NeedsYouItem[] {
         detail: refused ? `${e.seed?.detail ?? "the credential scan matched files"}. Remove them from the seed, or list known test fixtures in seed_allow with a spec change.` : `${e.blocked}. Check the provider plugin and the entry's setup.`,
         tab: "bench",
         action: { kind: "open_bench" },
-        command: `bb study bench ${slug}`,
+        command: `alia study bench ${slug}`,
         at: engine.ctx.now(),
       });
     }
@@ -1802,11 +1802,11 @@ export function needsYou(engine: Engine, s: StudyRow): NeedsYouItem[] {
         detail: `${legacy ? `Its ${store.changesets(h.id).length} changeset(s) and PR drafts stay on the Harvest tab.` : `${(safeJson<Promotion[]>(h.promotions_json) ?? []).length} promotion(s) on best.`} Ask an agent (the study thread works) to harvest it with the study-harvest skill; it publishes only when you ask. Or keep exploring, or archive.`,
         tab: "harvest",
         action: { kind: "open_harvest" },
-        command: `bb study evidence ${slug}`,
+        command: `alia study evidence ${slug}`,
         at: h.finished_at,
       });
     } else if (h.state === "failed") {
-      items.push({ id: `harvest_failed:${h.id}`, kind: "harvest_failed", tone: "alert", title: `Harvest h${h.seq} failed`, short: "harvest failed", detail: clip(h.error ?? "", 300), tab: "harvest", action: { kind: "open_harvest" }, command: `bb study harvest ${slug}`, at: h.finished_at });
+      items.push({ id: `harvest_failed:${h.id}`, kind: "harvest_failed", tone: "alert", title: `Harvest h${h.seq} failed`, short: "harvest failed", detail: clip(h.error ?? "", 300), tab: "harvest", action: { kind: "open_harvest" }, command: `alia study harvest ${slug}`, at: h.finished_at });
     }
   }
   const order = { alert: 0, action: 1 } as const;
@@ -1882,25 +1882,25 @@ export function noticeAction(
   const known = s.state !== undefined;
   switch (kind) {
     case "calibration.ready":
-      if (known && !(s.state === "calibrating" && s.calibration_status === "ready" && !s.calibration_approved_at)) return { label: "See calibration", tab: "oracle", command: `bb study show ${slug}` };
-      return { label: "Review calibration and start", tab: "oracle", command: `bb study start ${slug}` };
+      if (known && !(s.state === "calibrating" && s.calibration_status === "ready" && !s.calibration_approved_at)) return { label: "See calibration", tab: "oracle", command: `alia study show ${slug}` };
+      return { label: "Review calibration and start", tab: "oracle", command: `alia study start ${slug}` };
     case "calibration.failed":
-      return { label: "See what failed", tab: "oracle", command: `bb study show ${slug}` };
+      return { label: "See what failed", tab: "oracle", command: `alia study show ${slug}` };
     case "segment.recalibrated":
-      return { label: "See calibration", tab: "oracle", command: `bb study bench ${slug}` };
+      return { label: "See calibration", tab: "oracle", command: `alia study bench ${slug}` };
     case "spec.proposed":
-      if (known && s.pending_spec_version === null) return { label: "See the spec", tab: "oracle", command: `bb study show ${slug}` };
-      return { label: "Review the pending spec", tab: "oracle", command: `bb study show ${slug}` };
+      if (known && s.pending_spec_version === null) return { label: "See the spec", tab: "oracle", command: `alia study show ${slug}` };
+      return { label: "Review the pending spec", tab: "oracle", command: `alia study show ${slug}` };
     case "best.new":
       return { label: "See candidates", tab: "candidates", command: null };
     case "budget.threshold":
-      return { label: "See budget", tab: "overview", command: `bb study show ${slug}` };
+      return { label: "See budget", tab: "overview", command: `alia study show ${slug}` };
     case "budget.exhausted":
       // Offer to start a harvest only while one can start (paused on the budget); once it runs or is ready, open it.
-      if (s.state === "harvesting") return { label: "Open Harvest", tab: "harvest", command: `bb study harvest ${slug}` };
-      if (s.state === "archived") return harvest ? { label: "Open Harvest", tab: "harvest", command: `bb study harvest ${slug}` } : null;
-      if (known && s.state !== "paused") return { label: "See budget", tab: "overview", command: `bb study show ${slug}` };
-      return { label: "Start harvest", tab: "harvest", command: `bb study harvest ${slug}` };
+      if (s.state === "harvesting") return { label: "Open Harvest", tab: "harvest", command: `alia study harvest ${slug}` };
+      if (s.state === "archived") return harvest ? { label: "Open Harvest", tab: "harvest", command: `alia study harvest ${slug}` } : null;
+      if (known && s.state !== "paused") return { label: "See budget", tab: "overview", command: `alia study show ${slug}` };
+      return { label: "Start harvest", tab: "harvest", command: `alia study harvest ${slug}` };
     case "oracle.broken":
     case "drift":
     case "bench.unhealthy":
@@ -1909,17 +1909,17 @@ export function noticeAction(
     case "bench.noisy_host":
     case "remote.failed":
     case "remote.seed_refused":
-      return { label: "Open Bench", tab: "bench", command: `bb study bench ${slug}` };
+      return { label: "Open Bench", tab: "bench", command: `alia study bench ${slug}` };
     case "stall":
-      return { label: "Steer the ideas", tab: "ideas", command: `bb study ideas add ${slug} "<idea>"` };
+      return { label: "Steer the ideas", tab: "ideas", command: `alia study ideas add ${slug} "<idea>"` };
     case "harvest.frozen":
     case "harvest.ready":
     case "harvest.failed":
-      return { label: "Open Harvest", tab: "harvest", command: `bb study harvest ${slug}` };
+      return { label: "Open Harvest", tab: "harvest", command: `alia study harvest ${slug}` };
     case "rate_limit":
     case "usage.tight":
     case "study.paused":
-      return { label: "See status", tab: "overview", command: `bb study show ${slug}` };
+      return { label: "See status", tab: "overview", command: `alia study show ${slug}` };
     default:
       return null;
   }

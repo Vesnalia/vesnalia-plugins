@@ -1,14 +1,14 @@
-// The review controls drawn inside a live page in bb's own browser. A Browser
-// tab is a native view over the bb window, so nothing the plugin renders in
-// bb can cover the page: the mode bar, the Comment button, the composer, the
+// The review controls drawn inside a live page in VesnALIA's own browser. A Browser
+// tab is a native view over the VesnALIA window, so nothing the plugin renders in
+// VesnALIA can cover the page: the mode bar, the Comment button, the composer, the
 // drawing bar, and the comment list live in the page itself, in a shadow root
 // of the plugin's isolated world, and talk to two parties:
 // - the bridge (src/html-bridge.ts), injected right after this script, which
 //   reports selections, picked elements, and drawings, and paints pins;
-// - the toolbar action in bb (ui/web-review.tsx), through `bb.postMessage`
+// - the toolbar action in VesnALIA (ui/web-review.tsx), through `alia.postMessage`
 //   one way and `__docReviewWeb.fromPlugin` the other.
 //
-// Plain ES2019 kept as a string, like the bridge. It expects `bb` in scope.
+// Plain ES2019 kept as a string, like the bridge. It expects `VesnALIA` in scope.
 
 /**
  * The controls' texts in English. The toolbar action passes the panel's
@@ -108,7 +108,7 @@ export const WEB_UI_SCRIPT = String.raw`(function () {
   var shadow = null;
   var theme = {};
 
-  function toPlugin(message) { try { bb.postMessage(message); } catch (error) { /* the tab went away */ } }
+  function toPlugin(message) { try { alia.postMessage(message); } catch (error) { /* the tab went away */ } }
   function ask(message, done) {
     requests += 1;
     message.req = requests;

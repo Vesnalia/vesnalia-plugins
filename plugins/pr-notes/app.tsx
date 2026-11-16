@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   definePluginApp,
-  useBbNavigate,
+  useAliaNavigate,
   experimental_usePluginId,
   type PluginNavPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { PrRef, InboxPr } from "./github";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
@@ -48,7 +48,7 @@ function parseUrl(value: string): PrRef | null {
   }
 }
 function InboxPage({ subPath }: PluginNavPanelProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const pluginId = experimental_usePluginId();
   const [filters, setFilters] = useState<InboxFilters>(() => {
     try {

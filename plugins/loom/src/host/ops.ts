@@ -6,7 +6,7 @@ import { appendFileSync, chmodSync, existsSync, mkdirSync, readdirSync, readFile
 import { lstat, open } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { experimental_runVcsProcess, type ExperimentalVcsProcessPriority } from "@get-bb/plugin-sdk/host";
+import { experimental_runVcsProcess, type ExperimentalVcsProcessPriority } from "@vesnalia/plugin-sdk/host";
 import { z } from "zod";
 import { GIT_INDEX_SETTING, GIT_INDEX_TIMEOUT_MS, GIT_NETWORK_TIMEOUT_MS } from "../git-network";
 import { BLOB_MAX_BYTES, githubPull, prNumber, REPLY_MARK, RETARGET_COMMAND_MS, REVIEW_DECISIONS, type HostInput, type HostOutput } from "../host-contract";
@@ -31,7 +31,7 @@ interface GitRun {
   stderr: string;
 }
 
-// git and gh wait for a turn in bb's VCS scheduler, which caps how many run at once in this process. Loom's engine work is
+// git and gh wait for a turn in VesnALIA's VCS scheduler, which caps how many run at once in this process. Loom's engine work is
 // background; the Changes tab's reads, which a person waits on, are interactive.
 type Priority = ExperimentalVcsProcessPriority;
 const INTERACTIVE: Priority = "interactive";
@@ -138,7 +138,7 @@ async function tryGit(cwd: string, args: readonly string[], signal?: AbortSignal
   return result.code === 0 ? result.stdout.trim() : null;
 }
 
-// A bb project's checkout can be a subdirectory of its repository. The paths Loom passes on are relative to the top level,
+// A VesnALIA project's checkout can be a subdirectory of its repository. The paths Loom passes on are relative to the top level,
 // as git diff names them and the carry writes them, so a git command that names paths from where it runs, such as
 // merge-tree, ls-files or a pathspec, runs there.
 const topLevel = (cwd: string, signal?: AbortSignal, priority?: Priority) => git(cwd, ["rev-parse", "--show-toplevel"], { signal, priority });

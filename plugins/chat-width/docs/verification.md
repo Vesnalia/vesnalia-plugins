@@ -2,11 +2,11 @@
 
 ## Automated checks
 
-The release candidate passes TypeScript, 12 state/layout/SDK lifecycle tests, the public-SDK import scanner, and `bb plugin build` with BB 0.47.1 / SDK 0.6.79. CI runs the same checks. A clean source copy also builds with only production dependencies installed (`npm ci --omit=dev --omit=optional --ignore-scripts` followed by `bb plugin build`).
+The release candidate passes TypeScript, 12 state/layout/SDK lifecycle tests, the public-SDK import scanner, and `alia plugin build` with VesnALIA 0.47.1 / SDK 0.6.79. CI runs the same checks. A clean source copy also builds with only production dependencies installed (`npm ci --omit=dev --omit=optional --ignore-scripts` followed by `alia plugin build`).
 
 Tests cover malformed storage, independent presets, bounded numeric values, local-storage fallback, pane isolation, scroll-history column detection, cleanup and ambient-listener lifetime. Independent mounted-SDK probes also checked responsive overlay switching and supported-to-unsupported navigation.
 
-## Live BB checks
+## Live VesnALIA checks
 
 Observed in Chromium on 2026-10-26:
 
@@ -23,4 +23,4 @@ One initial automated compact-to-desktop sequence appeared to need a reload. A l
 
 ## Scope
 
-Tested target: BB 0.47.1, SDK 0.6.79, Chromium. Other browser/desktop clients and custom themes are not claimed as verified. Internal layout selectors can change between BB versions.
+Tested target: VesnALIA 0.47.1, SDK 0.6.79, Chromium. Other browser/desktop clients and custom themes are not claimed as verified. Internal layout selectors can change between VesnALIA versions.

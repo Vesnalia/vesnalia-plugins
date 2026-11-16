@@ -7,12 +7,12 @@
 // on, and the tab keeps its workflow buttons to that issue while one is set.
 //
 // Design notes:
-// - It is a note kept by BB on the thread (plugin metadata), not in beads:
+// - It is a note kept by VesnALIA on the thread (plugin metadata), not in beads:
 //   setting it does not change the issue.
 // - "None" is stored as an explicit null rather than by removing the key.
 // - Every change goes through `store`, which tells listeners after the
 //   write; the conversation's title follows it that way
-//   (server/thread-titles.ts, bead-bb-du7).
+//   (server/thread-titles.ts, bead-alia-du7).
 //
 // Gotchas:
 // - The plugin used to have another id. A thread's choice from that time is
@@ -22,11 +22,11 @@
 // - Thread metadata can be written by anything with access to the thread,
 //   so a stored value is checked before it is believed.
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { BEAD_ID_PATTERN, CHANGED_CHANNEL } from "../shared/constants.ts";
 
 /**
- * The id this plugin had before it was renamed to "airbender". BB keeps a
+ * The id this plugin had before it was renamed to "airbender". VesnALIA keeps a
  * plugin's per-thread data under the plugin's id, so each thread's current
  * bead from before the rename is still stored under this one; it is read as
  * a fallback (see `read`) and never written.
@@ -42,7 +42,7 @@ const CURRENT_BEAD_KEY = "currentBead";
  * @returns `read`, `store` (record without telling anyone) and `write`
  *   (record and tell every open tab to reload).
  */
-export function createCurrentBead(bb: BbPluginApi) {
+export function createCurrentBead(alia: AliaPluginApi) {
   /**
    * Reads which issue a thread is working on.
    *
@@ -54,7 +54,7 @@ export function createCurrentBead(bb: BbPluginApi) {
     if (threadId === null) return null;
     const asBeadId = (value: unknown) =>
       typeof value === "string" && BEAD_ID_PATTERN.test(value) ? value : null;
-    const own = (await bb.sdk.threads.getPluginMetadata({
+    const own = (await alia.sdk.threads.getPluginMetadata({
       threadId,
     })) as Record<string, unknown>;
     // Anything stored under this plugin's own id decides, including a
@@ -64,7 +64,7 @@ export function createCurrentBead(bb: BbPluginApi) {
     // the plugin was renamed, stored under the old id. Reading it here is
     // what keeps that data across the rename. A failure to read it is not
     // worth failing the whole list for.
-    const legacy = (await bb.sdk.threads
+    const legacy = (await alia.sdk.threads
       .getPluginMetadata({ threadId, pluginId: LEGACY_PLUGIN_ID })
       .catch(() => ({}))) as Record<string, unknown>;
     return asBeadId(legacy[CURRENT_BEAD_KEY]);
@@ -82,17 +82,17 @@ export function createCurrentBead(bb: BbPluginApi) {
     // "None" is stored as an explicit null, not by removing the key: with
     // the key gone, `read` would fall back to what the thread had
     // under the plugin's old id, and a cleared choice would come back.
-    await bb.sdk.threads.updatePluginMetadata({
+    await alia.sdk.threads.updatePluginMetadata({
       threadId,
       set: { [CURRENT_BEAD_KEY]: beadId },
     });
     // Told after the write, and never awaited: a listener (the thread's
-    // title, bead-bb-du7) must not slow down or fail the change itself.
+    // title, bead-alia-du7) must not slow down or fail the change itself.
     for (const listener of listeners) {
       try {
         listener(threadId, beadId);
       } catch (cause) {
-        bb.log.warn(`a current-bead listener failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+        alia.log.warn(`a current-bead listener failed: ${cause instanceof Error ? cause.message : String(cause)}`);
       }
     }
   }
@@ -124,19 +124,19 @@ export function createCurrentBead(bb: BbPluginApi) {
    */
   async function write(threadId: string, beadId: string | null): Promise<void> {
     await store(threadId, beadId);
-    bb.realtime.publish(CHANGED_CHANNEL, { threadId });
+    alia.realtime.publish(CHANGED_CHANNEL, { threadId });
   }
 
   /**
    * Which of some issues are the current issue of a conversation, in any
-   * conversation of a project that is not archived (bead-bb-ty5.2: an epic
+   * conversation of a project that is not archived (bead-alia-ty5.2: an epic
    * is not given a branch while one of its issues is being worked on
    * somewhere).
    *
    * @param ids The issues asked about.
    * @returns Those of them that are current somewhere, each once, in the
    *   order found. A conversation whose note cannot be read is passed over.
-   * @throws When BB cannot list the project's conversations.
+   * @throws When VesnALIA cannot list the project's conversations.
    * Side effects: one or more list requests, and one read per conversation.
    */
   async function heldAmong(
@@ -149,7 +149,7 @@ export function createCurrentBead(bb: BbPluginApi) {
     // Bounded: a project with more open conversations than this is not
     // read to the end, and the check errs on the side of allowing.
     for (let offset = 0; offset < 20 * PAGE; offset += PAGE) {
-      const threads = await bb.sdk.threads.list({ projectId, limit: PAGE, offset });
+      const threads = await alia.sdk.threads.list({ projectId, limit: PAGE, offset });
       const found = await Promise.all(
         threads.map((thread) => read(thread.id).catch(() => null)),
       );

@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry, type ExperimentalHostWatchSubscription } from "@get-bb/plugin-sdk";
+import { experimental_defineHostEntry, type ExperimentalHostWatchSubscription } from "@vesnalia/plugin-sdk";
 import { hostContract, hostSignals } from "./src/contracts.js";
 import * as workspace from "./src/workspace.js";
 

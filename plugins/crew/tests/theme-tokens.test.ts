@@ -1,5 +1,5 @@
 // BBP-83: the human saw dark fragments in the light theme — surfaces with a
-// hard-coded dark hex. Every colour in the plugin's UI comes from the BB theme.
+// hard-coded dark hex. Every colour in the plugin's UI comes from the VesnALIA theme.
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -20,7 +20,7 @@ describe("theme tokens only (BBP-83)", () => {
 });
 
 describe("activity dots follow the theme (BBP-83, BBP-95)", () => {
-  // --warning / --warning-text are host theme tokens (bb-theme-authoring skill, "Status" row:
+  // --warning / --warning-text are host theme tokens (alia-theme-authoring skill, "Status" row:
   // --success --warning --warning-text --destructive --destructive-text), the amber counterpart
   // to --destructive / --destructive-text that the codebase already relies on.
   it("every activity tone is a theme variable; an error reason reads as destructive", async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin, { HELPER_TITLE } from "./server";
 
 const PLUGIN_ID = "retitle";
@@ -9,7 +9,7 @@ const HELPER_ID = "thr_helper";
 type Message = { role: "user" | "assistant"; preview: string };
 
 /**
- * A fake bb host with one thread to rename. The helper thread answers with
+ * A fake VesnALIA host with one thread to rename. The helper thread answers with
  * `answer`, or ends in `helperStatus`. `update` changes the stored title, so a
  * later `get` returns the new one, as on a real server.
  */
@@ -102,7 +102,7 @@ function createHost(
 }
 
 async function load(host: ReturnType<typeof createHost>) {
-  await plugin(host.bb);
+  await plugin(host.alia);
   return host;
 }
 
@@ -306,7 +306,7 @@ describe("renaming automatically", () => {
   });
 });
 
-describe("bb retitle", () => {
+describe("alia retitle", () => {
   it("renames the current thread", async () => {
     const host = await load(createHost());
 
@@ -335,7 +335,7 @@ describe("bb retitle", () => {
     const result = await host.harness.behavior.runCli([]);
 
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toMatch(/BB_THREAD_ID is not set/);
+    expect(result.stderr).toMatch(/ALIA_THREAD_ID is not set/);
   });
 
   it("prints the usage for --help", async () => {
@@ -344,7 +344,7 @@ describe("bb retitle", () => {
     const result = await host.harness.behavior.runCli(["--help"]);
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toMatch(/^Usage: bb retitle/);
+    expect(result.stdout).toMatch(/^Usage: alia retitle/);
   });
 
   it("reports a failed rename with exit code 1", async () => {

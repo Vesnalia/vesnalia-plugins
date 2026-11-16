@@ -1,18 +1,18 @@
 {
-  "name": "bb-plugin-typography",
+  "name": "alia-plugin-typography",
   "version": "0.1.1",
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "node --test",
     "typecheck": "tsc --noEmit"
   },
   "engines": {
-    "bb": ">=0.47",
-    "bbPluginSdk": ">=0.6.79"
+    "alia": ">=0.47",
+    "aliaPluginSdk": ">=0.6.79"
   },
-  "bb": {
+  "alia": {
     "name": "Typography",
     "description": "Set the interface and code font, size, line height, bold weight, and OpenType features.",
     "branding": {
@@ -22,13 +22,25 @@
     "app": "./app.tsx"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.79",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "typescript": "^5.7.0"
   },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.79"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/typography#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/n30g30/bb-plugin-typography.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/typography"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

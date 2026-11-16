@@ -38,13 +38,13 @@ describe("row context menu", () => {
     expect(screen.getByRole("menuitem", { name: "Regenerating title…" }).getAttribute("aria-disabled")).toBe("true");
     result.resolve({ title: "New title", changed: true });
     await waitFor(() =>
-      expect(toastMocks.success).toHaveBeenCalledWith("Thread title regenerated", { className: "bb-sidebar-toast" }),
+      expect(toastMocks.success).toHaveBeenCalledWith("Thread title regenerated", { className: "alia-sidebar-toast" }),
     );
     expect(screen.queryByRole("status", { name: "Generating title" })).toBeNull();
     expect(regenerateTitle).toHaveBeenCalledTimes(1);
   });
 
-  it("says when bb keeps the current title", async () => {
+  it("says when VesnALIA keeps the current title", async () => {
     renderSlot(inbox, listProps, {
       sidebarThreads: { status: "ready", threads: [thread({ title: "Original title" })], projects: [] },
       rpc: {
@@ -56,7 +56,7 @@ describe("row context menu", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "Regenerate title" }));
     await waitFor(() =>
       expect(toastMocks.success).toHaveBeenCalledWith("The current title still fits", {
-        className: "bb-sidebar-toast",
+        className: "alia-sidebar-toast",
       }),
     );
   });
@@ -75,7 +75,7 @@ describe("row context menu", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "Regenerate title" }));
     await waitFor(() =>
       expect(toastMocks.error).toHaveBeenCalledWith("Could not regenerate title", {
-        className: "bb-sidebar-toast",
+        className: "alia-sidebar-toast",
         description: "Title service unavailable",
       }),
     );
@@ -138,7 +138,7 @@ describe("row context menu", () => {
       thread({ id: "thr_mention", title: "Review @thread:thr_other", displayTitle: "Review Other thread" }),
     ]);
     const row = await screen.findByRole("link", { name: "Review Other thread" });
-    // bb's ThreadTitle draws the chips; the test runtime renders its plain text.
+    // VesnALIA's ThreadTitle draws the chips; the test runtime renders its plain text.
     expect(document.querySelector("[data-thread-title='thr_mention']")?.textContent).toBe("Review Other thread");
 
     fireEvent.doubleClick(row);
@@ -214,11 +214,11 @@ describe("row context menu", () => {
     writeText.mockRejectedValueOnce(new Error("Clipboard denied"));
     await copyLink();
     await waitFor(() =>
-      expect(toastMocks.error).toHaveBeenCalledWith("Failed to copy thread link", { className: "bb-sidebar-toast" }),
+      expect(toastMocks.error).toHaveBeenCalledWith("Failed to copy thread link", { className: "alia-sidebar-toast" }),
     );
   });
 
-  it("confirms deletion with the thread title, project and bb's delete cascade before deleting", async () => {
+  it("confirms deletion with the thread title, project and VesnALIA's delete cascade before deleting", async () => {
     const cascade = deferred<{ threads: Array<{ threadId: string; cascadeThreadIds: string[] }> }>();
     const listCascade = vi.fn((_input: unknown) => cascade.promise);
     const rendered = renderSlot(inbox, listProps, {
@@ -229,7 +229,7 @@ describe("row context menu", () => {
           thread({ id: "thr_child", title: "Child", parentThreadId: "thr_del" }),
           thread({ id: "thr_grandchild", title: "Grandchild", parentThreadId: "thr_child" }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       providers: { status: "ready", providers: defaultProviders },
       rpc: { listLifecycle: () => ({ rows: [] }), deleteThread: () => ({ ok: true }) },
@@ -241,10 +241,10 @@ describe("row context menu", () => {
 
     const dialog = await screen.findByRole("dialog", { name: "Delete thread?" });
     expect(within(dialog).getByText("Delete me")).toBeTruthy();
-    expect(within(dialog).getByText("bb")).toBeTruthy();
+    expect(within(dialog).getByText("alia")).toBeTruthy();
     expect(listCascade.mock.calls[0]?.[0]).toMatchObject({ threadIds: ["thr_del"], action: "delete" });
     expect(within(dialog).getByRole("button", { name: "Delete thread" }).hasAttribute("disabled")).toBe(true);
-    // The list holds two descendants; bb also deletes an archived child and a lifecycle dependent.
+    // The list holds two descendants; VesnALIA also deletes an archived child and a lifecycle dependent.
     cascade.resolve({
       threads: [
         { threadId: "thr_del", cascadeThreadIds: ["thr_child", "thr_grandchild", "thr_archived", "thr_dependent"] },
@@ -252,7 +252,7 @@ describe("row context menu", () => {
     });
     expect(await within(dialog).findByText(/its 4 child threads/)).toBeTruthy();
     expect(rendered.rpcCalls.filter((call) => call.method === "deleteThread")).toEqual([]);
-    expect(rendered.threadActionCalls).not.toContainEqual(expect.objectContaining({ key: "bb--core/delete" }));
+    expect(rendered.threadActionCalls).not.toContainEqual(expect.objectContaining({ key: "alia--core/delete" }));
 
     fireEvent.click(within(dialog).getByRole("button", { name: "Delete thread" }));
     await waitFor(() =>
@@ -272,7 +272,7 @@ describe("row context menu", () => {
         sidebarThreads: {
           status: "ready",
           threads: [thread({ id: "current", title: "Current" }), thread({ id: "other", title: "Other" })],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         },
         context: { threadId: "current", projectId: "proj_1" },
         rpc: { listLifecycle: () => ({ rows: [] }), deleteThread: () => ({ ok: true }) },
@@ -292,7 +292,7 @@ describe("row context menu", () => {
     );
   });
 
-  it("closes the delete confirmation when bb cannot count the threads it deletes", async () => {
+  it("closes the delete confirmation when VesnALIA cannot count the threads it deletes", async () => {
     const rendered = renderSlot(inbox, listProps, {
       sidebarThreads: {
         status: "ready",
@@ -308,7 +308,7 @@ describe("row context menu", () => {
 
     await waitFor(() =>
       expect(toastMocks.error).toHaveBeenCalledWith("Could not check which threads would be deleted", {
-        className: "bb-sidebar-toast",
+        className: "alia-sidebar-toast",
         description: "offline",
       }),
     );
@@ -333,14 +333,14 @@ describe("row context menu", () => {
       inactiveThreadsEnabled: false,
       ...{ snoozePresets: "15m, Lunch break=3h" },
     };
-    localStorage.setItem("bb-sidebar:settings-cache:v1", JSON.stringify(storedSettings));
+    localStorage.setItem("alia-sidebar:settings-cache:v1", JSON.stringify(storedSettings));
 
     let snoozed: { threadId: string; snoozedUntil: number } | null = null;
     renderSlot(inbox, listProps, {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "thr_snooze", title: "Snooze me" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         getSidebarSettings: () => storedSettings,

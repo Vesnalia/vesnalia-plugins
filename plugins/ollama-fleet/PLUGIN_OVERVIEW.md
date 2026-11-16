@@ -8,7 +8,7 @@ publishing raw prompts, answers, or reasoning.
 
 ## Requirements
 
-Requires BB and at least one reachable Ollama endpoint for inference. Agent Board
+Requires VesnALIA and at least one reachable Ollama endpoint for inference. Agent Board
 0.6.0 or newer is an optional dashboard companion; Fleet works independently.
 Use local-only routing when cloud-backed Ollama models must be excluded.
 The optional Ollama Cloud catalog/Pi configuration commands have separate

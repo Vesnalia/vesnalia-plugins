@@ -27,7 +27,7 @@ describe("tested snapshot", () => {
     expect(stale).toEqual([]);
   });
 
-  it("fits bb's limits: one kv value per machine, and every dedicated schema as an override", () => {
+  it("fits VesnALIA's limits: one kv value per machine, and every dedicated schema as an override", () => {
     const bytes = new TextEncoder().encode(JSON.stringify(SNAPSHOT_CATALOG)).byteLength;
     expect(bytes).toBeLessThan(256 * 1024);
     const dedicated = SNAPSHOT_CATALOG.tools.filter((entry) => resolveExposure(entry.name, entry, allGroups) === "tool");
@@ -113,7 +113,7 @@ describe("catalog", () => {
     expect(overridableSchema(onlySession)).toEqual({ type: "object", properties: {} });
   });
 
-  it("refuses an override bb would reject", () => {
+  it("refuses an override VesnALIA would reject", () => {
     expect(overridableSchema({ type: "object", properties: { node: { $ref: "#" } } })).toBeNull();
     expect(overridableSchema({ type: "object", properties: { pid: { type: "integer", description: "x".repeat(130 * 1024) } } })).toBeNull();
   });

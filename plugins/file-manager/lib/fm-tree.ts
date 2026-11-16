@@ -57,7 +57,7 @@ export const MAX_CACHED_NODES = 256;
 export const LOAD_CONCURRENCY = 4;
 /** Drag-hover dwell before a collapsed folder springs open. */
 export const AUTO_EXPAND_HOVER_MS = 700;
-export const EXPANDED_STORAGE_KEY = "bb-plugin-file-manager:expanded:v1";
+export const EXPANDED_STORAGE_KEY = "alia-plugin-file-manager:expanded:v1";
 export const EXPANDED_STORAGE_MAX_BYTES = 64 * 1024;
 
 /* ------------------------------------------------------------------ */

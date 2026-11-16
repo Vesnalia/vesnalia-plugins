@@ -53,8 +53,8 @@ export const STATE: Record<string, { text: string; cls: string }> = {
 /** States where the server's reason matters more than the label: it says what to do. */
 export const SHOW_REASON = new Set(["error", "locking", "installing", "unknown", "unexpected"]);
 
-/** The plugin's state in bb (SDK statuses and «not installed»). `alert` — a red frame around the card. */
-export const BB_STATE: Record<string, { text: string; cls: string; alert: boolean }> = {
+/** The plugin's state in VesnALIA (SDK statuses and «not installed»). `alert` — a red frame around the card. */
+export const ALIA_STATE: Record<string, { text: string; cls: string; alert: boolean }> = {
   running: { text: "running", cls: "text-emerald-600 dark:text-emerald-400", alert: false },
   "needs-configuration": { text: "needs configuration", cls: "text-amber-600 dark:text-amber-400", alert: false },
   degraded: { text: "degraded", cls: "text-amber-600 dark:text-amber-400", alert: false },
@@ -65,7 +65,7 @@ export const BB_STATE: Record<string, { text: string; cls: string; alert: boolea
   disabled: { text: "disabled", cls: "text-muted-foreground", alert: false },
   "not-installed": { text: "not installed", cls: "text-muted-foreground", alert: false },
 };
-export const bbState = (s: string) => BB_STATE[s] ?? { text: s, cls: "text-muted-foreground", alert: false };
+export const aliaState = (s: string) => ALIA_STATE[s] ?? { text: s, cls: "text-muted-foreground", alert: false };
 
 /** Stage titles — the server's own (stages.ts). */
 export const STAGE_TITLE: Record<number, string> = Object.fromEntries(STAGES.map((s) => [s.no, s.title]));

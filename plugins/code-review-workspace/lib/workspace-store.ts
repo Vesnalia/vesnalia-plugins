@@ -1,4 +1,4 @@
-// The open reviews' workspaces, by targetKey, for UI outside a workspace's React tree: BB renders the title bar's
+// The open reviews' workspaces, by targetKey, for UI outside a workspace's React tree: VesnALIA renders the title bar's
 // controls (navPanel headerContent) apart from the page, with only the subPath to say which review is open.
 import { useEffect, useSyncExternalStore } from "react";
 import type { WorkspaceApi } from "./workspace-context";
@@ -33,7 +33,7 @@ export function workspaceFor(targetKey: string): WorkspaceApi | null {
   return workspaces.get(targetKey) ?? null;
 }
 
-/** Whether the review's page is a narrow pane beside BB's side panel (lib/workspace-layout.ts), read alone. */
+/** Whether the review's page is a narrow pane beside VesnALIA's side panel (lib/workspace-layout.ts), read alone. */
 export function useNarrowPane(targetKey: string | null): boolean {
   return useSyncExternalStore(subscribe, () => (targetKey === null ? false : workspaces.get(targetKey)?.layout.narrowPane ?? false));
 }
@@ -43,11 +43,11 @@ export function useWorkspaceFor(targetKey: string | null): WorkspaceApi | null {
   return useSyncExternalStore(subscribe, () => (targetKey === null ? null : workspaces.get(targetKey) ?? null));
 }
 
-// How many of BB's title bars show each review's controls. A host without headerContent mounts none, so the
+// How many of VesnALIA's title bars show each review's controls. A host without headerContent mounts none, so the
 // workspace shows them in its own band instead.
 const titleBars = new Map<string, number>();
 
-/** BB's title bar is there for the review's controls; the returned function says it went. */
+/** VesnALIA's title bar is there for the review's controls; the returned function says it went. */
 export function mountTitleBar(targetKey: string): () => void {
   titleBars.set(targetKey, (titleBars.get(targetKey) ?? 0) + 1);
   notify();
@@ -59,7 +59,7 @@ export function mountTitleBar(targetKey: string): () => void {
   };
 }
 
-/** Whether a title bar of BB's is there for the review's controls. */
+/** Whether a title bar of VesnALIA's is there for the review's controls. */
 export function useTitleBarMounted(targetKey: string): boolean {
   return useSyncExternalStore(subscribe, () => titleBars.has(targetKey));
 }
@@ -111,10 +111,10 @@ export function useCurrentFile(targetKey: string): string | undefined {
   return useSyncExternalStore(subscribe, () => currentFiles.get(targetKey));
 }
 
-/** What BB's title bar and the window's title say of a review (lib/review-identity.ts). */
+/** What VesnALIA's title bar and the window's title say of a review (lib/review-identity.ts). */
 export type ReviewTitle = Pick<ReviewIdentity, "id" | "name" | "line">;
 
-// Each open review's title, which BB asks for apart from the page: published by the review's page whatever it shows,
+// Each open review's title, which VesnALIA asks for apart from the page: published by the review's page whatever it shows,
 // its guide or not. Each page that shows the review publishes it, as two panes may, and the latest one still showing it
 // is its title.
 const titles = new Map<string, Array<{ title: ReviewTitle }>>();
@@ -136,11 +136,11 @@ export function useReviewTitle(targetKey: string | null): ReviewTitle | null {
   return useSyncExternalStore(subscribe, () => (targetKey === null ? null : titles.get(targetKey)?.at(-1)?.title ?? null));
 }
 
-// How many of BB's title bars show each review's title (app.tsx), as a host with page titles does; the band then
+// How many of VesnALIA's title bars show each review's title (app.tsx), as a host with page titles does; the band then
 // leaves the review's name to it.
 const pageTitles = new Map<string, number>();
 
-/** BB's title bar shows the review's title; the returned function says it stopped. */
+/** VesnALIA's title bar shows the review's title; the returned function says it stopped. */
 export function showPageTitle(targetKey: string): () => void {
   pageTitles.set(targetKey, (pageTitles.get(targetKey) ?? 0) + 1);
   notify();
@@ -152,7 +152,7 @@ export function showPageTitle(targetKey: string): () => void {
   };
 }
 
-/** Whether a title bar of BB's shows the review's title. */
+/** Whether a title bar of VesnALIA's shows the review's title. */
 export function usePageTitleShown(targetKey: string): boolean {
   return useSyncExternalStore(subscribe, () => pageTitles.has(targetKey));
 }
@@ -166,13 +166,13 @@ export function panelPage(subPath: string): PanelPage {
   return first ? { kind: "review", targetKey: first } : { kind: "list" };
 }
 
-// Whether each review's tabs in BB's side panel show: they report it (experimental_useTabVisible), so the title bar
+// Whether each review's tabs in VesnALIA's side panel show: they report it (experimental_useTabVisible), so the title bar
 // can say Ask agent is pressed while the Review agent tab shows.
-// BB doesn't tell the panes of one window apart (each surface's panel controller is a new object for each slot), so a
+// VesnALIA doesn't tell the panes of one window apart (each surface's panel controller is a new object for each slot), so a
 // review in two panes says its tab shows in either.
 const shownTabs = new Map<string, number>();
 
-/** The review's `tab` shows in BB's side panel; the returned function says it stopped. */
+/** The review's `tab` shows in VesnALIA's side panel; the returned function says it stopped. */
 export function showTab(targetKey: string, tab: string): () => void {
   const key = `${targetKey}\0${tab}`;
   shownTabs.set(key, (shownTabs.get(key) ?? 0) + 1);
@@ -229,7 +229,7 @@ export function takeAskedNotPushed(targetKey: string) {
   if (askedNotPushed.delete(targetKey)) notify();
 }
 
-// The review you last worked in, while its page shows: the pane in focus, for a command, which BB tells only the thread
+// The review you last worked in, while its page shows: the pane in focus, for a command, which VesnALIA tells only the thread
 // in view. Of several panes, the one last clicked or typed in.
 let reviewInUse: string | null = null;
 

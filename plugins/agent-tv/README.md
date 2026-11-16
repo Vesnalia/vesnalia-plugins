@@ -4,13 +4,13 @@
 
 # Agent TV
 
-### See what every agent is doing, from anywhere in BB.
+### See what every agent is doing, from anywhere in VesnALIA.
 
 A live wall of your running threads, one hover away in the sidebar footer.<br>
 Tool calls, files, activity, context left, and who is waiting on you, at a glance.
 
 ![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)
-![bb ≥ 0.43](https://img.shields.io/badge/bb-%E2%89%A5%200.43-f43f5e)
+![VesnALIA ≥ 0.43](https://img.shields.io/badge/bb-%E2%89%A5%200.43-f43f5e)
 ![Plugin SDK ≥ 0.5.9](https://img.shields.io/badge/plugin%20sdk-%E2%89%A5%200.5.9-9f1239)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 
@@ -18,7 +18,7 @@ Tool calls, files, activity, context left, and who is waiting on you, at a glanc
 
 <br>
 
-<img src="docs/screenshots/wall.png" alt="Agent TV open in the BB sidebar footer, showing three live threads, one of them waiting for approval" width="900">
+<img src="docs/screenshots/wall.png" alt="Agent TV open in the VesnALIA sidebar footer, showing three live threads, one of them waiting for approval" width="900">
 
 </div>
 
@@ -33,7 +33,7 @@ Tool calls, files, activity, context left, and who is waiting on you, at a glanc
 You have six threads running. One is committing, one is fighting a type error,
 and one is waiting for an approval you did not know it needed.
 
-BB's timeline tells you everything about one thread. To know what all of them
+VesnALIA's timeline tells you everything about one thread. To know what all of them
 are doing, you have to open them one at a time.
 
 **Agent TV puts every running thread on one wall** at the foot of the sidebar,
@@ -46,7 +46,7 @@ so you can see which one needs you without leaving the page you are on.
 | Know which thread is close to compacting | ❌ | ✅ context runway |
 | See what a blocked thread is asking for | ❌ | ✅ "needs you: approval" |
 | Watch the fleet without leaving your page | ❌ | ✅ footer wall or pop-out |
-| Let an agent see what its siblings are doing | ❌ | ✅ `bb agent-tv status` |
+| Let an agent see what its siblings are doing | ❌ | ✅ `alia agent-tv status` |
 
 ## Features
 
@@ -56,7 +56,7 @@ so you can see which one needs you without leaving the page you are on.
 
 ### 📺 One wall, every thread
 
-Each running thread gets a tile: the tool call in flight in BB's own words and
+Each running thread gets a tile: the tool call in flight in VesnALIA's own words and
 icon, the files it touched in the last minute, and a typing indicator while the
 model streams.
 
@@ -95,7 +95,7 @@ per token.
 
 ### 🪟 Pop-out monitor
 
-Detach the wall into a monitor you can drag anywhere in BB, or move with the
+Detach the wall into a monitor you can drag anywhere in VesnALIA, or move with the
 arrow keys. It remembers where you left it.
 
 </td>
@@ -103,7 +103,7 @@ arrow keys. It remembers where you left it.
 
 ### 🤖 The same feed for agents
 
-`bb agent-tv status` prints the wall as text or JSON, so an orchestrating agent
+`alia agent-tv status` prints the wall as text or JSON, so an orchestrating agent
 can see which of its siblings is stuck, and a bundled skill tells it how.
 
 </td>
@@ -122,7 +122,7 @@ can see which of its siblings is stuck, and a bundled skill tells it how.
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/MacHatter1/bb-plugin-agent-tv --yes
+alia plugin install git:https://github.com/MacHatter1/bb-plugin-agent-tv --yes
 ```
 
 That's it. The **Agent TV** row appears in the sidebar footer, and nothing is
@@ -133,16 +133,16 @@ read until you open it.
 
 ```sh
 git clone https://github.com/MacHatter1/bb-plugin-agent-tv
-cd bb-plugin-agent-tv
-npm install && bb plugin build
-bb plugin install path:$PWD --yes
+cd alia-plugin-agent-tv
+npm install && alia plugin build
+alia plugin install path:$PWD --yes
 ```
 
 </details>
 
 **Requirements**
 
-- bb **0.43+** (Plugin SDK 0.5.9+)
+- VesnALIA **0.43+** (Plugin SDK 0.5.9+)
 - Nothing else: no account, API key or network access.
 
 ## Where to find it
@@ -153,21 +153,21 @@ bb plugin install path:$PWD --yes
 | **Fleet count** in the wall's header | Shows how many threads are working and waiting. Click it to show only live threads. |
 | **Pop-out button** in the wall's header | Detaches the wall into a monitor. Drag its header, or focus it and use the arrow keys (<kbd>Shift</kbd> for bigger steps). |
 | **Check mark** on a quiet tile | Dismisses the tile until its thread gets busy again. Remembered across reloads. |
-| **`bb agent-tv status`** | The same feed in a terminal, or for an agent. |
+| **`alia agent-tv status`** | The same feed in a terminal, or for an agent. |
 
 <details>
 <summary><b>What each piece of a tile means</b></summary>
 
 | Piece | Where it comes from |
 | --- | --- |
-| On-air light | The thread's lifecycle status **and** evidence of work, because BB leaves a thread `active` for hours after it stops |
-| Action line | The newest `item/started` / `item/completed` event, with BB's own verb (`presentation.label`), text and icon |
+| On-air light | The thread's lifecycle status **and** evidence of work, because VesnALIA leaves a thread `active` for hours after it stops |
+| Action line | The newest `item/started` / `item/completed` event, with VesnALIA's own verb (`presentation.label`), text and icon |
 | Typing indicator | Any `item/*/delta` or `*/progress` event in the last 3 s |
 | File chips | Paths written by `fileChange` items in the last 60 s, newest first |
 | Sparkline | 12 × 5 s buckets of event counts on an absolute log scale |
 | Context runway | The share of the context window spent, flagged at 80% or more; hidden when a provider does not report usage |
 | Needs you | The sidebar's own `hasPendingInteraction`, naming the ask (`question`, `approval`, `permission`) |
-| Agent mark | The provider's BB logo, with its name available to assistive technology |
+| Agent mark | The provider's VesnALIA logo, with its name available to assistive technology |
 | Model · effort | The model and reasoning effort selected for the latest turn, including any provider fallback |
 | Project | The project name, for project-backed threads |
 | Family badges | Parent/child links, including subagents the sidebar hides |
@@ -178,7 +178,7 @@ bb plugin install path:$PWD --yes
 
 ```mermaid
 flowchart LR
-  subgraph BB["BB server"]
+  subgraph ALIA["ALIA server"]
     LOG[("Thread event log")]
     SIDEBAR["Sidebar thread view"]
   end
@@ -195,10 +195,10 @@ flowchart LR
   CHANNEL --> WALL["Wall<br/>app.tsx"]
   SIDEBAR -- "titles, unread,<br/>needs-you" --> WALL
   WALL -. "20 s lease,<br/>renewed every 10 s" .-> PUMP
-  FOLD --> CLI["bb agent-tv status<br/>text · JSON"]
+  FOLD --> CLI["alia agent-tv status<br/>text · JSON"]
 ```
 
-- **BB's own events.** Tiles are folded from the durable thread event log, not
+- **VesnALIA's own events.** Tiles are folded from the durable thread event log, not
   scraped from provider output, so Codex, Claude Code, Pi and Cursor threads
   all read the same way.
 - **Reads only while you watch.** An open wall renews a 20-second lease. Close
@@ -223,12 +223,12 @@ flowchart LR
   following the log forward. A streaming thread appends faster than any bounded
   reader can keep up, and a feed replaying history makes a live thread look
   settled and quiet, which is worse than a gap.
-- If a page hits BB's response-size ceiling, that feed halves its page size and
+- If a page hits VesnALIA's response-size ceiling, that feed halves its page size and
   retries from the same cursor. An event too large to fetch even on its own is
   stepped over, because a cursor that cannot move leaves a feed that never
   updates again.
 - A read that fails backs off exponentially and gives up after five tries. If
-  BB reports a thread as deleted, the pump drops it rather than asking again.
+  VesnALIA reports a thread as deleted, the pump drops it rather than asking again.
 - The clock is left out of the change check, because `t` and `quietMs` move on
   their own, and the wall ages its own rows between frames.
 
@@ -241,9 +241,9 @@ flowchart LR
   recognisable key prefixes are replaced with `•••` where the action line is
   built, so the wall, the CLI and the realtime channel all get the same masked
   text.
-- 🔒 **Scoped for agents.** Run inside a thread, `bb agent-tv status` shows only
+- 🔒 **Scoped for agents.** Run inside a thread, `alia agent-tv status` shows only
   that thread's project. Widening it takes an explicit `--all-projects`.
-- 👻 **Keeps hidden threads hidden.** Threads BB marks as hidden never get a row
+- 👻 **Keeps hidden threads hidden.** Threads VesnALIA marks as hidden never get a row
   of their own; they are counted in their parent's family badge instead.
 - 🏠 **Stays on your machine.** No account, no external service and no network
   access.
@@ -251,10 +251,10 @@ flowchart LR
 ## CLI
 
 ```sh
-bb agent-tv status                # human-readable fleet feed
-bb agent-tv status --json         # the exact frame the wall renders
-bb agent-tv status --limit 3      # the busiest threads only
-bb agent-tv status --all-projects # every project, not just the caller's
+alia agent-tv status                # human-readable fleet feed
+alia agent-tv status --json         # the exact frame the wall renders
+alia agent-tv status --limit 3      # the busiest threads only
+alia agent-tv status --all-projects # every project, not just the caller's
 ```
 
 <details>
@@ -279,7 +279,7 @@ treat a `null` context as unknown rather than plentiful.
 
 ## Settings
 
-`bb plugin config agent-tv`, or **Settings → Installed plugins → Agent TV**.
+`alia plugin config agent-tv`, or **Settings → Installed plugins → Agent TV**.
 
 <details>
 <summary><b>All settings</b></summary>
@@ -298,11 +298,11 @@ Every setting applies live, with no reload.
 <summary><b>Turning it off</b></summary>
 
 ```sh
-bb plugin disable agent-tv
-bb plugin enable agent-tv
+alia plugin disable agent-tv
+alia plugin enable agent-tv
 ```
 
-`bb plugin remove agent-tv` removes the plugin and its settings.
+`alia plugin remove agent-tv` removes the plugin and its settings.
 
 </details>
 
@@ -312,31 +312,31 @@ bb plugin enable agent-tv
 npm install
 npm test                           # Vitest: the fold, the peek state machine, the pump, the wall
 npm run typecheck                  # tsc --noEmit, strict
-bb plugin build                    # dist/server.js, dist/app.js, dist/app.css
-bb plugin install path:$PWD --yes
-bb plugin dev                      # rebuild and reload on every save
+alia plugin build                    # dist/server.js, dist/app.js, dist/app.css
+alia plugin install path:$PWD --yes
+alia plugin dev                      # rebuild and reload on every save
 ```
 
 ```
-server.ts        fleet pump, realtime frame, `bb agent-tv` CLI
+server.ts        fleet pump, realtime frame, `alia agent-tv` CLI
 app.tsx          footer disclosure, tiles, hover peek, pop-out monitor
 lib/fleet.ts     pure event fold, heat buckets, frame budget, Zod wire schemas
 lib/peek.ts      hover-to-peek / click-to-keep state machine
 lib/popout.ts    keeps the detached monitor's header on screen
-components/ui/   vendored BB icon components (the shadcn model)
+components/ui/   vendored ALIA icon components (the shadcn model)
 skills/          the bundled agent skill
 docs/            logo and screenshots
 ```
 
 **Tests** run the pump against the official fake plugin host
-(`@get-bb/plugin-sdk/testing`) and render the real disclosure with
+(`@vesnalia/plugin-sdk/testing`) and render the real disclosure with
 `renderSlot`. They check, among other things, that no thread events are read
 while nobody is watching and that a malformed realtime frame cannot blank the
-wall. A guard test fails the build if anything imports BB internals rather than
+wall. A guard test fails the build if anything imports VesnALIA internals rather than
 the public Plugin SDK.
 
 `PLUGIN_OVERVIEW.md` is the store listing. Keep it in step with
-`bb.description` in `package.json`. See [CONTRIBUTING.md](CONTRIBUTING.md) for
+`alia.description` in `package.json`. See [CONTRIBUTING.md](CONTRIBUTING.md) for
 the release checklist.
 
 ## Licence

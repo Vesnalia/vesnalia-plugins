@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-lame-duck",
+  "name": "alia-plugin-lame-duck",
   "version": "0.1.0",
   "type": "module",
   "description": "Pause sends, drain active threads, and resume queued work after server maintenance",
   "engines": {
-    "bb": ">=0.42",
-    "bbPluginSdk": ">=0.4.84"
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.4.84"
   },
-  "bb": {
+  "alia": {
     "name": "Lame duck",
     "description": "Pause sends, drain active threads, and resume queued work after server maintenance",
     "branding": {
@@ -23,12 +23,12 @@
     ]
   },
   "keywords": [
-    "bb-plugin"
+    "alia-plugin"
   ],
   "scripts": {
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build ."
+    "build": "alia plugin build ."
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.3.2",
@@ -36,7 +36,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.84",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -51,9 +50,21 @@
     "vitest": "^4.1.1"
   },
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.84"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/lame-duck#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ymichael/bb-plugins.git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
     "directory": "plugins/lame-duck"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

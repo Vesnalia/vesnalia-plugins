@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
-import { createFakePluginHost, experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { listTreeInputSchema, rpcContract } from "./contracts";
 import { createServerData } from "./server-data";
@@ -52,7 +52,7 @@ function setup(options: {
     } },
   } });
   disposals.push(() => host.harness.lifecycle.dispose());
-  return { ...host, data: createServerData(host.bb) };
+  return { ...host, data: createServerData(host.alia) };
 }
 
 describe("direct environment directory data", () => {
@@ -84,7 +84,7 @@ describe("direct environment directory data", () => {
       includeFiles: true, includeDirectories: true,
     });
     expect(harness.inspection.sdk.callsTo("plugins.callRpc")[0]?.[0]).toMatchObject({
-      pluginId: "bb--git", method: "files", input: { environmentId: "env_1", target: { type: "uncommitted" }, ignoreWhitespace: false },
+      pluginId: "alia--git", method: "files", input: { environmentId: "env_1", target: { type: "uncommitted" }, ignoreWhitespace: false },
     });
   });
 
@@ -168,8 +168,8 @@ describe("direct environment directory data", () => {
   });
 
   it("registers the new root default and preserves the activity snapshot", async () => {
-    const { bb, harness } = setup();
-    await plugin(bb);
+    const { alia, harness } = setup();
+    await plugin(alia);
     expect(listTreeInputSchema.parse({ environmentId: " env_1 ", includeHidden: false })).toEqual({ environmentId: "env_1", path: "" });
     expect(await harness.behavior.callRpc("tree_list", { environmentId: "env_1" })).toMatchObject({ outcome: "available", directory: "", gitAvailable: "available" });
     expect(await harness.behavior.callRpc("activity_snapshot", { threadId: "thread_1" })).toEqual({ available: false, activities: [] });
@@ -186,14 +186,14 @@ it("uses only public SDK and declared package imports", () => {
 
 describe("bounded fallback preview", () => {
   it("exposes completed file changes for invalidation even when the pending row was missed", async () => {
-    const { bb, harness } = setup();
+    const { alia, harness } = setup();
     harness.sdk.stub("threads.timeline", async () => ({ rows: [{
       id: "turn", kind: "turn", status: "completed", children: [
         { id: "write_1", kind: "work", workKind: "file-change", status: "completed", change: { path: "src/new.ts" } },
         { id: "unsafe", kind: "work", workKind: "file-change", status: "completed", change: { path: "../secret" } },
       ],
     }] } as never));
-    await plugin(bb);
+    await plugin(alia);
     expect(await harness.behavior.callRpc("activity_snapshot", { threadId: "thread_1" })).toEqual({
       available: true, activities: [{ activityId: "write_1", path: "src/new.ts", kind: "write", status: "completed" }],
     });
@@ -203,24 +203,24 @@ describe("bounded fallback preview", () => {
     { workspace: null, reason: "no_workspace" },
     { environmentError: true, reason: "environment_unavailable" },
   ])("does not read fallback files without a workspace: $reason", async ({ reason, ...options }) => {
-    const { bb, harness } = setup(options);
-    await plugin(bb);
+    const { alia, harness } = setup(options);
+    await plugin(alia);
     expect(await harness.behavior.callRpc("file_preview", { environmentId: "env_1", path: "app.ts" })).toEqual({ outcome: "unavailable", reason });
     expect(harness.inspection.sdk.callsTo("files.read")).toHaveLength(0);
   });
 
   it("uses the remote Windows workspace syntax for fallback reads", async () => {
-    const { bb, harness } = setup({ workspace: "C:\\repo" });
+    const { alia, harness } = setup({ workspace: "C:\\repo" });
     harness.sdk.stub("files.read", async () => ({ path: "C:\\repo\\src\\app.ts", content: "test", contentEncoding: "utf8", sizeBytes: 4, sha256: "sha" }));
-    await plugin(bb);
+    await plugin(alia);
     expect(await harness.behavior.callRpc("file_preview", { environmentId: "env_1", path: "src/app.ts" })).toEqual({ outcome: "available", path: "src/app.ts", content: "test" });
     expect(harness.inspection.sdk.callsTo("files.read")[0]?.[0]).toEqual({ hostId: "remote_host", rootPath: "C:\\repo", path: "C:\\repo\\src\\app.ts" });
   });
 
   it("reads through the selected remote environment with explicit containment and returns text", async () => {
-    const { bb, harness } = setup();
+    const { alia, harness } = setup();
     harness.sdk.stub("files.read", async () => ({ path: "/workspace/project/.gitignore", content: "node_modules/", contentEncoding: "utf8", sizeBytes: 13, sha256: "sha" }));
-    await plugin(bb);
+    await plugin(alia);
     expect(await harness.behavior.callRpc("file_preview", { environmentId: "env_1", path: ".gitignore" })).toEqual({ outcome: "available", path: ".gitignore", content: "node_modules/" });
     expect(harness.inspection.sdk.callsTo("files.read")[0]?.[0]).toEqual({ hostId: "remote_host", rootPath: "/workspace/project", path: "/workspace/project/.gitignore" });
   });
@@ -232,15 +232,15 @@ describe("bounded fallback preview", () => {
     { content: "a\0b", contentEncoding: "utf8", sizeBytes: 3, reason: "unsupported" },
     { content: "<svg/>", contentEncoding: "utf8", sizeBytes: 6, mimeType: "image/svg+xml", reason: "unsupported" },
   ])("returns $reason without transporting unsupported or oversized content", async ({ reason, ...read }) => {
-    const { bb, harness } = setup();
+    const { alia, harness } = setup();
     harness.sdk.stub("files.read", async () => ({ ...read, contentEncoding: read.contentEncoding as "utf8" | "base64", path: "/workspace/project/file", sha256: "sha" }));
-    await plugin(bb);
+    await plugin(alia);
     expect(await harness.behavior.callRpc("file_preview", { environmentId: "env_1", path: "file" })).toEqual({ outcome: "unavailable", reason });
   });
 
   it.each(["../secret", "/absolute", "a\\b", "a/../secret"])("rejects %j without reading any file", async (path) => {
-    const { bb, harness } = setup();
-    await plugin(bb);
+    const { alia, harness } = setup();
+    await plugin(alia);
     expect(await harness.behavior.callRpc("file_preview", { environmentId: "env_1", path })).toEqual({ outcome: "unavailable", reason: "invalid_path" });
     expect(harness.inspection.sdk.callsTo("files.read")).toHaveLength(0);
   });
@@ -253,8 +253,8 @@ describe("bounded fallback preview", () => {
 
 describe("Git annotation refresh", () => {
   it("refreshes requested cached paths without listing directories", async () => {
-    const { bb, harness } = setup();
-    await plugin(bb);
+    const { alia, harness } = setup();
+    await plugin(alia);
     expect(await harness.behavior.callRpc("tree_git", { environmentId: "env_1", paths: ["src", "src/app.ts", ".gitignore", "clean.md"] })).toEqual({
       gitAvailable: "available", entries: [
         { path: "src", gitState: "modified" }, { path: "src/app.ts", gitState: "modified" },
@@ -266,11 +266,11 @@ describe("Git annotation refresh", () => {
   });
 
   it("returns Git line stats for targeted annotation refreshes", async () => {
-    const { bb, harness } = setup({ git: {
+    const { alia, harness } = setup({ git: {
       ...gitResult,
       files: [gitFile("src/app.ts", "modified", "tracked", 12, 4)],
     } });
-    await plugin(bb);
+    await plugin(alia);
     expect(await harness.behavior.callRpc("tree_git", { environmentId: "env_1", paths: ["src", "src/app.ts"] })).toEqual({
       gitAvailable: "available", entries: [
         { path: "src", gitState: "modified", additions: 12, deletions: 4 },

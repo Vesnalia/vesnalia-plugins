@@ -1,23 +1,23 @@
 # Projects & Sections
 
-Projects & Sections is a BB plugin that organizes project chats into sections backed by folders on connected devices. It also provides per-place rules and chat defaults, section archives, automatic archiving of quiet chats, history exports, appearance controls, optional session-context filtering and opt-in prompt-cache keepalive for pinned Claude chats.
+Projects & Sections is a VesnALIA plugin that organizes project chats into sections backed by folders on connected devices. It also provides per-place rules and chat defaults, section archives, automatic archiving of quiet chats, history exports, appearance controls, optional session-context filtering and opt-in prompt-cache keepalive for pinned Claude chats.
 
 ## Install
 
 ```sh
-bb plugin install https://github.com/VKirill/bb-plugin-project-folders.git --yes
+alia plugin install https://github.com/VKirill/bb-plugin-project-folders.git --yes
 ```
 
-In BB, choose Projects & Sections as the sidebar thread list if it is not selected automatically. Open the management page to create a project.
+In VesnALIA, choose Projects & Sections as the sidebar thread list if it is not selected automatically. Open the management page to create a project.
 
-Chats started from a project or section preserve the session options and service tier selected in BB’s native composer. Session-option controls depend on the BB version and provider; older BB versions can continue creating chats without them.
+Chats started from a project or section preserve the session options and service tier selected in VesnALIA’s native composer. Session-option controls depend on the VesnALIA version and provider; older VesnALIA versions can continue creating chats without them.
 
 Forks and child chats appear beneath their parent in the same project or section. Use the arrow to fold a branch; its hidden count and status markers keep unread replies, running work, input requests and failures visible. Recent activity and pinned chats promote the whole branch. Short lists count visible rows, with important chats and their parents kept reachable; **Show all** or an explicit branch expansion reveals more. Folding is remembered in this browser and never changes chat relationships.
 
 ## Documentation
 
 - [Overview](docs/overview.md) — purpose, stack and starting points.
-- [Architecture](docs/architecture.md) — runtime parts and BB integration.
+- [Architecture](docs/architecture.md) — runtime parts and VesnALIA integration.
 - [Features](docs/features/project-tree.md) — user-facing capabilities.
 - [Chat list](docs/features/chat-list.md) · [Starting chats in sections](docs/features/section-chats.md) · [Agent rules](docs/features/agent-rules.md)
 - [Execution defaults](docs/features/execution-settings.md) · [Session context](docs/features/session-context.md) · [Appearance](docs/features/appearance-settings.md)

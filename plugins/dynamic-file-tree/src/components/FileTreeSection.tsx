@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
-import { experimental_Icon as Icon, useBbNavigate, useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
-import type { ExperimentalThreadTabProps } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate, useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { ExperimentalThreadTabProps } from "@vesnalia/plugin-sdk/app";
 import { activeAncestorPaths, ancestorPaths } from "../activity-model";
 import { activityUpdatedSchema, liveActivityOutputSchema, rpcContract } from "../contracts";
 import type { ActivitySnapshotOutput, FilePreviewOutput, ListTreeOutput, TreeEntry, WorkspaceOutput } from "../contracts";
@@ -154,7 +154,7 @@ export function FileTreeView(props: ExperimentalThreadTabProps) {
 
 function ContextExplorer({ threadId, environmentId }: { threadId: string; environmentId: string }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const connectionState = useRealtimeConnectionState();
   const [state, setState] = useState<ExplorerState>(() => ({
     manualExpanded: new Set(),

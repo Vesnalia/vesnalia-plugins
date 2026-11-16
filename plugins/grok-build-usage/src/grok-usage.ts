@@ -6,7 +6,7 @@ import { promisify } from "node:util";
 import type {
   ProviderHealthResult,
   ProviderUsageResult,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 
 const execFile = promisify(execFileCallback);
 const BILLING_URL = "https://cli-chat-proxy.grok.com/v1/billing?format=credits";

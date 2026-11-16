@@ -14,7 +14,7 @@ import {
   experimental_readCliVersion as readCliVersion,
   experimental_resolveExecutablePath as resolveExecutablePath,
   experimental_versionFrom as versionFrom,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import { z } from "zod";
 
 const CLAUDE_NPM_PACKAGE = "@anthropic-ai/claude-code";
@@ -22,7 +22,7 @@ const CLAUDE_INSTALL_SCRIPT_URL = "https://claude.ai/install.sh";
 const CLAUDE_POWERSHELL_INSTALL_SCRIPT_URL = "https://claude.ai/install.ps1";
 
 async function claudeExecutable(): Promise<string> {
-  const explicit = process.env.BB_CLAUDE_CODE_EXECUTABLE?.trim();
+  const explicit = process.env.ALIA_CLAUDE_CODE_EXECUTABLE?.trim();
   if (explicit) return explicit;
   return (await resolveExecutablePath("claude")) ?? "claude";
 }
@@ -223,7 +223,7 @@ function buildClaudeProviderInstallationRun(
 }
 
 // polza: health asks only whether the Claude CLI is present. The sign-in
-// state lives on the bb server (the Polza key is a plugin secret) and is shown
+// state lives on the VesnALIA server (the Polza key is a plugin secret) and is shown
 // by the plugin's own settings page and sidebar disclosure; the bridge never
 // sees the key outside a session command.
 function healthResult(

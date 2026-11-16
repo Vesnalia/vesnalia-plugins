@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // [REDWORK] The pane on a squeezed panel: the pane's compact (cover-the-
-// board) behavior keys off the WINDOW media query only, so a desktop bb
-// window that squeezes the plugin panel itself (a narrowed bb panel, a
+// board) behavior keys off the WINDOW media query only, so a desktop VesnALIA
+// window that squeezes the plugin panel itself (a narrowed VesnALIA panel, a
 // docked window) keeps the side-by-side pane alive. The stored pane width
 // (default 480px) then overruns the panel: the board flexes away to
 // nothing and the pane's header paints past the panel's right edge (the
@@ -25,11 +25,11 @@ import { PANE_SHEET_MAX_PANEL_WIDTH } from "../components/thread-pane";
 
 const noop = () => {};
 
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   ThreadChat: () => null,
   useSdk: () => ({ threads: { get: async () => ({}) } }),
   useRpc: () => ({ call: async () => ({ existence: {} }) }),
-  useBbNavigate: () => ({ toThread: () => {} }),
+  useAliaNavigate: () => ({ toThread: () => {} }),
   useSettings: () => ({ values: undefined, isLoading: false }),
 }));
 

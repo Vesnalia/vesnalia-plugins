@@ -280,7 +280,7 @@
 }
 
 .fonts-options {
-  /* BB's compact layout puts the page inset at z-index 30, so a lower value
+  /* ALIA's compact layout puts the page inset at z-index 30, so a lower value
      paints the portaled list underneath the settings content. */
   z-index: 50;
   width: var(--radix-popover-trigger-width);

@@ -1,5 +1,5 @@
 // Machine Load — frontend. A sidebar page with time-series charts of every
-// bb machine's hardware load plus a card per machine with current values.
+// VesnALIA machine's hardware load plus a card per machine with current values.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import {
@@ -7,7 +7,7 @@ import {
   experimental_useCodeTheme as useCodeTheme,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   RANGES,
   RANGE_SECONDS,
@@ -465,7 +465,7 @@ function EmptyState({ children }: { children: ReactNode }) {
   );
 }
 
-const RANGE_STORAGE_KEY = "bb-plugin-machine-load:range";
+const RANGE_STORAGE_KEY = "alia-plugin-machine-load:range";
 
 function MachinesPage() {
   const [range, setRange] = useState<RangeKey>(() => {
@@ -514,7 +514,7 @@ function MachinesPage() {
       <div className="mx-auto box-border w-full max-w-6xl px-4 pb-6 pt-3 md:px-5 md:pt-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">
-            Hardware load of every bb machine
+            Hardware load of every VesnALIA machine
             {data ? ` · sampled every ${data.intervalSec}s · ${data.bucketSec}s buckets` : ""}
           </p>
           <RangePicker value={range} onChange={pickRange} />

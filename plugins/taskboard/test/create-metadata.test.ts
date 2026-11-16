@@ -1478,7 +1478,7 @@ test('GitHub lists only issues from project-scoped repositories', async () => {
   );
   await assert.rejects(
     adapter.get('other/repo#42'),
-    /outside this BB project's repository scope/u
+    /outside this ALIA project's repository scope/u
   );
 });
 

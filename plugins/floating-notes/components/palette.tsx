@@ -106,7 +106,7 @@ export function Palette({
   };
 
   return (
-    <div className="bb-fn-palette" onPointerDown={onClose}>
+    <div className="alia-fn-palette" onPointerDown={onClose}>
       <div
         className="w-full max-w-md overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl"
         onPointerDown={(event) => event.stopPropagation()}
@@ -118,9 +118,9 @@ export function Palette({
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Type a command or a note title…"
           aria-label="Command palette"
-          className="bb-fn-input h-10 rounded-none border-0 border-b border-border text-sm focus-visible:ring-0"
+          className="alia-fn-input h-10 rounded-none border-0 border-b border-border text-sm focus-visible:ring-0"
         />
-        <div className="bb-fn-quiet-scroll max-h-64 overflow-y-auto p-1">
+        <div className="alia-fn-quiet-scroll max-h-64 overflow-y-auto p-1">
           {rows.length === 0 ? (
             <p className="px-3 py-4 text-center text-xs text-muted-foreground">
               Nothing matches.

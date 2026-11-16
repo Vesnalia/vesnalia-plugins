@@ -1,23 +1,23 @@
 /**
- * Every icon name Herald draws must be one bb knows: a built-in, or one of
+ * Every icon name Herald draws must be one VesnALIA knows: a built-in, or one of
  * this plugin's own declared SVGs (`"<pluginId>/<name>"` from
- * `bb.branding.experimental_icons`). An unknown name does not fail anywhere —
- * bb draws its generic bolt instead — so this is where it fails.
+ * `alia.branding.experimental_icons`). An unknown name does not fail anywhere —
+ * VesnALIA draws its generic bolt instead — so this is where it fails.
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { HERALD_ICONS } from "./icons";
-import { BB_ICON_NAMES } from "./testing/bb-icon-names";
+import { ALIA_ICON_NAMES } from "./testing/alia-icon-names";
 
 const root = join(import.meta.dirname, "..");
 const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
   name: string;
-  bb: { branding: { icon: string; experimental_icons: Record<string, string> } };
+  alia: { branding: { icon: string; experimental_icons: Record<string, string> } };
 };
-const pluginId = manifest.name.split("/").pop()?.replace(/^bb-plugin-/, "") ?? "";
-const declared = manifest.bb.branding.experimental_icons;
+const pluginId = manifest.name.split("/").pop()?.replace(/^alia-plugin-/, "") ?? "";
+const declared = manifest.alia.branding.experimental_icons;
 
 const sources = [
   "app.tsx",
@@ -32,7 +32,7 @@ function literalNames(source: string): string[] {
 }
 
 function isKnown(name: string): boolean {
-  if (BB_ICON_NAMES.includes(name)) return true;
+  if (ALIA_ICON_NAMES.includes(name)) return true;
   const [owner, local, ...rest] = name.split("/");
   return rest.length === 0 && owner === pluginId && local !== undefined && declared[local] !== undefined;
 }
@@ -44,18 +44,18 @@ describe("icon names", () => {
     expect(used).toEqual(expect.arrayContaining(["Play", "Settings", "MessageQuestion", HERALD_ICONS.volume]));
   });
 
-  it.each(used)("%s is a bb built-in or one of Herald's declared icons", (name) => {
+  it.each(used)("%s is a VesnALIA built-in or one of Herald's declared icons", (name) => {
     expect(isKnown(name)).toBe(true);
   });
 
   it("names a real SVG file for the branding icon and every declared icon", () => {
-    for (const path of [manifest.bb.branding.icon, ...Object.values(declared)]) {
+    for (const path of [manifest.alia.branding.icon, ...Object.values(declared)]) {
       expect(path).toMatch(/^\.\/.*\.svg$/);
       expect(existsSync(join(root, path))).toBe(true);
     }
   });
 
-  it("rejects a name bb does not know", () => {
+  it("rejects a name VesnALIA does not know", () => {
     expect(isKnown("Volume2")).toBe(false);
     expect(isKnown("RefreshCw")).toBe(false);
     expect(isKnown("other-plugin/volume")).toBe(false);

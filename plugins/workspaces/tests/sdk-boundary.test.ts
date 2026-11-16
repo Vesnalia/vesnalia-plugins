@@ -1,8 +1,8 @@
-import { experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 
 describe("public SDK boundary", () => {
-  it("uses only the public BB plugin SDK and declared UI packages", () => {
+  it("uses only the public VesnALIA plugin SDK and declared UI packages", () => {
     const scan = experimental_scanPublicSdkOnly(".", {
       allow: [
         /^@\//,

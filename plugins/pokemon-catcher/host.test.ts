@@ -2,12 +2,12 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { describe, expect, it, vi } from "vitest";
 import hostEntry from "./host";
 
-vi.mock("@get-bb/plugin-sdk/host", async () => {
-	const sdk = await import("@get-bb/plugin-sdk");
+vi.mock("@vesnalia/plugin-sdk/host", async () => {
+	const sdk = await import("@vesnalia/plugin-sdk");
 	return { experimental_defineHostEntry: sdk.experimental_defineHostEntry };
 });
 

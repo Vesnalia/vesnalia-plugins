@@ -94,8 +94,8 @@
       ]
     },
     {
-      "id": "bb-provider-options-lifecycle",
-      "product": "bb",
+      "id": "alia-provider-options-lifecycle",
+      "product": "alia",
       "uses": "Single registration with mutable settings delivered per command, not static bridge identity",
       "anchors": [
         {
@@ -169,13 +169,13 @@
       ]
     },
     {
-      "id": "bb-user-cli-path",
-      "product": "bb",
-      "uses": "Embedded terminal provides bundled bb CLI for the local problem report; native tools receive bb's resolved thread/project/environment and CLI connection metadata after inherited-process sanitization.",
+      "id": "alia-user-cli-path",
+      "product": "alia",
+      "uses": "Embedded terminal provides bundled VesnALIA CLI for the local problem report; native tools receive VesnALIA's resolved thread/project/environment and CLI connection metadata after inherited-process sanitization.",
       "anchors": [
         {
           "file": "Contents/Resources/app.asar.unpacked/node_modules/bb-app/host-daemon/dist/bb",
-          "text": "BB_CLI",
+          "text": "ALIA_CLI",
           "strength": "weak",
           "reason": "Bundled entrypoint; embedded-terminal live execution is the behavioral proof."
         },
@@ -183,7 +183,7 @@
           "file": "Contents/Resources/app.asar.unpacked/node_modules/bb-app/host-daemon/dist/start-host-daemon.js.map",
           "text": "buildThreadShellEnvironment",
           "strength": "strong",
-          "reason": "bb 0.49.0 shared agent runtime builds explicit BB project/thread/environment/storage entries after base shell state. Explicit request env must be merged after inherited sanitization, as in the built-in provider process environment. Reviewed 7 November 2026."
+          "reason": "VesnALIA 0.49.0 shared agent runtime builds explicit VesnALIA project/thread/environment/storage entries after base shell state. Explicit request env must be merged after inherited sanitization, as in the built-in provider process environment. Reviewed 7 November 2026."
         }
       ],
       "code": [
@@ -194,7 +194,7 @@
         "src/runtime.ts",
         "src/process.ts"
       ],
-      "impact": "Users cannot produce a problem report without system CLI installation if embedded-terminal injection changes. Dropping explicit BB entries loses CLI project/environment/storage or server/daemon context even when the thread ID remains correct.",
+      "impact": "Users cannot produce a problem report without system CLI installation if embedded-terminal injection changes. Dropping explicit VesnALIA entries loses CLI project/environment/storage or server/daemon context even when the thread ID remains correct.",
       "milestones": [
         "M4.9.8",
         "M4.9.8c.1b",
@@ -207,9 +207,9 @@
       ]
     },
     {
-      "id": "bb-git-install-build",
-      "product": "bb",
-      "uses": "Git ref checkout, production dependency install, SDK engines validation and server/host bundling; plugin SDK subpaths bundle the plugin-locked zod (4.6.6 after M5.3a), independently of bb-owned zod M5.5a: package bb-plugin-zcode-provider derives plugin ID zcode-provider; explicit provider ID zcode-provider / ZCode Provider; fresh per-plugin state, no aliases or old-state migration.",
+      "id": "alia-git-install-build",
+      "product": "alia",
+      "uses": "Git ref checkout, production dependency install, SDK engines validation and server/host bundling; plugin SDK subpaths bundle the plugin-locked zod (4.6.6 after M5.3a), independently of alia-owned zod M5.5a: package alia-plugin-zcode-provider derives plugin ID zcode-provider; explicit provider ID zcode-provider / ZCode Provider; fresh per-plugin state, no aliases or old-state migration.",
       "anchors": [
         {
           "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
@@ -361,8 +361,8 @@
       ]
     },
     {
-      "id": "bb-version",
-      "product": "bb",
+      "id": "alia-version",
+      "product": "alia",
       "uses": "Running bundle package/version",
       "anchors": [
         {
@@ -376,7 +376,7 @@
         "src/applications.ts",
         "src/compatibility.ts"
       ],
-      "impact": "Unknown bb version and compatibility warning.",
+      "impact": "Unknown VesnALIA version and compatibility warning.",
       "milestones": [
         "M4.2",
         "M4.9.1",
@@ -389,9 +389,9 @@
       ]
     },
     {
-      "id": "bb-sdk-version",
-      "product": "bb",
-      "uses": "SDK carried by bb; exact SDK .79 CLI declarations and development public-SDK scanner, whose actual c/m-prefixed source extension coverage includes mjs verified explicitly in c-2.",
+      "id": "alia-sdk-version",
+      "product": "alia",
+      "uses": "SDK carried by VesnALIA; exact SDK .79 CLI declarations and development public-SDK scanner, whose actual c/m-prefixed source extension coverage includes mjs verified explicitly in c-2.",
       "anchors": [
         {
           "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
@@ -417,8 +417,8 @@
       ]
     },
     {
-      "id": "bb-host-node",
-      "product": "bb",
+      "id": "alia-host-node",
+      "product": "alia",
       "uses": "Node runtime selection and supported engines; target HostToolchain command/environment delivery checked at the M5.4 owner update checkpoint",
       "anchors": [
         {
@@ -621,8 +621,8 @@
       ]
     },
     {
-      "id": "bb-roots-cache",
-      "product": "bb",
+      "id": "alia-roots-cache",
+      "product": "alia",
       "uses": "Composer native roots RPC cache TTL",
       "anchors": [
         {
@@ -666,9 +666,9 @@
       ]
     },
     {
-      "id": "bb-artifact",
-      "product": "bb",
-      "uses": "Plugin build metadata/host registration M5.5a: package bb-plugin-zcode-provider derives plugin ID zcode-provider; explicit provider ID zcode-provider / ZCode Provider; fresh per-plugin state, no aliases or old-state migration.",
+      "id": "alia-artifact",
+      "product": "alia",
+      "uses": "Plugin build metadata/host registration M5.5a: package alia-plugin-zcode-provider derives plugin ID zcode-provider; explicit provider ID zcode-provider / ZCode Provider; fresh per-plugin state, no aliases or old-state migration.",
       "anchors": [
         {
           "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
@@ -707,9 +707,9 @@
       ]
     },
     {
-      "id": "bb-persistent-data",
+      "id": "alia-persistent-data",
       "product": "SDK",
-      "uses": "Bridge/host dataDir and plugin identity M5.5a: package bb-plugin-zcode-provider derives plugin ID zcode-provider; explicit provider ID zcode-provider / ZCode Provider; fresh per-plugin state, no aliases or old-state migration.",
+      "uses": "Bridge/host dataDir and plugin identity M5.5a: package alia-plugin-zcode-provider derives plugin ID zcode-provider; explicit provider ID zcode-provider / ZCode Provider; fresh per-plugin state, no aliases or old-state migration.",
       "anchors": [
         {
           "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
@@ -752,7 +752,7 @@
       ]
     },
     {
-      "id": "bb-secrets",
+      "id": "alia-secrets",
       "product": "SDK",
       "uses": "Protected settings secret root",
       "anchors": [
@@ -866,9 +866,9 @@
       ]
     },
     {
-      "id": "bb-settings",
+      "id": "alia-settings",
       "product": "SDK",
-      "uses": "Settings and CLI registration; c-2 declarative root zcode-provider-report: SDK .79 defineCli/cliCommand, metadata/help/JSON errors and combined output limit, with explicitly server-local report scope. M5.5a: package bb-plugin-zcode-provider derives plugin ID zcode-provider; explicit provider ID zcode-provider / ZCode Provider; fresh per-plugin state, no aliases or old-state migration.",
+      "uses": "Settings and CLI registration; c-2 declarative root zcode-provider-report: SDK .79 defineCli/cliCommand, metadata/help/JSON errors and combined output limit, with explicitly server-local report scope. M5.5a: package alia-plugin-zcode-provider derives plugin ID zcode-provider; explicit provider ID zcode-provider / ZCode Provider; fresh per-plugin state, no aliases or old-state migration.",
       "anchors": [
         {
           "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
@@ -1089,8 +1089,8 @@
       ]
     },
     {
-      "id": "bb-subagents-setting",
-      "product": "bb",
+      "id": "alia-subagents-setting",
+      "product": "alia",
       "uses": "Subagent disabled provider option",
       "anchors": [
         {
@@ -1155,8 +1155,8 @@
       ]
     },
     {
-      "id": "bb-retry",
-      "product": "bb",
+      "id": "alia-retry",
+      "product": "alia",
       "uses": "Native versus host retry ownership",
       "anchors": [
         {
@@ -1186,8 +1186,8 @@
       ]
     },
     {
-      "id": "bb-shutdown",
-      "product": "bb",
+      "id": "alia-shutdown",
+      "product": "alia",
       "uses": "Host process shutdown/output gate and Stop",
       "anchors": [
         {
@@ -1431,7 +1431,7 @@
     {
       "id": "zcode-env",
       "product": "ZCode",
-      "uses": "Separate bb session DB, sign-in overlay and logs with shared Desktop HOME/storage; no DATA_BASE_DIR override because native MCP OAuth credentials also use it",
+      "uses": "Separate VesnALIA session DB, sign-in overlay and logs with shared Desktop HOME/storage; no DATA_BASE_DIR override because native MCP OAuth credentials also use it",
       "anchors": [
         {
           "file": "Contents/Resources/glm/zcode.cjs",
@@ -2775,7 +2775,7 @@
     {
       "id": "zcode-mcp-ready",
       "product": "ZCode",
-      "uses": "Optional native MCP startup logs as diagnostics and bb zcode-provider-report input, without thread warnings; native protocol controls availability",
+      "uses": "Optional native MCP startup logs as diagnostics and VesnALIA zcode-provider-report input, without thread warnings; native protocol controls availability",
       "anchors": [
         {
           "file": "Contents/Resources/glm/zcode.cjs",
@@ -2822,19 +2822,19 @@
     {
       "id": "sdk-skills-configure",
       "product": "SDK",
-      "uses": "SDK .37 skills/configure roots, pending updates before first dispatch, frozen bb-only metadata after delivery",
+      "uses": "SDK .37 skills/configure roots, pending updates before first dispatch, frozen alia-only metadata after delivery",
       "anchors": [
         {
           "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js",
           "text": "skillsConfigureParamsSchema",
           "strength": "strong",
-          "reason": "SDK .37 configuration payload schema export in installed bb server; method independently inspected in built-in provider host."
+          "reason": "SDK .37 configuration payload schema export in installed VesnALIA server; method independently inspected in built-in provider host."
         }
       ],
       "code": [
         "src/bridge.ts"
       ],
-      "impact": "bb skills unavailable or configured roots cannot be interpreted.",
+      "impact": "alia skills unavailable or configured roots cannot be interpreted.",
       "milestones": [
         "M4.9.8c.1",
         "M4.9.8c.1b"
@@ -2846,7 +2846,7 @@
     {
       "id": "zcode-skill-instruction-format",
       "product": "ZCode",
-      "uses": "Full CLI discovery including bundled/plugin roots, canonical-path and effective-name subtraction; native-order bb winners and exact file metadata",
+      "uses": "Full CLI discovery including bundled/plugin roots, canonical-path and effective-name subtraction; native-order VesnALIA winners and exact file metadata",
       "anchors": [
         {
           "file": "Contents/Resources/glm/zcode.cjs",
@@ -2867,7 +2867,7 @@
         "src/bb-skills.ts",
         "src/native-roots.ts"
       ],
-      "impact": "Duplicate skill metadata or wrong winning file in bb session.",
+      "impact": "Duplicate skill metadata or wrong winning file in VesnALIA session.",
       "milestones": [
         "M4.9.8c.1",
         "M4.9.8c.1b"
@@ -2916,7 +2916,7 @@
         "src/session-knowledge.ts",
         "src/bridge.ts"
       ],
-      "impact": "Historical 12 October 2026 G4 live used one guide per boundary. Reviewed 3.17.2 drains eligible guides in batches, but still has no guide drain between autoCompactIfNeeded and the next request; the remainder-of-auto-compacted-turn instruction gap remains. No guide reinjection adopted; ordinary reconciliation restores the frozen block. The original bb-bearing real_user message cannot become a leading reminder, so M5.7 supplies native selection parity without a proven everyday redundant-delivery effect. A successful M5.7 manual compact removed the block and actual next requests each carried exactly one restored copy; live leading IDs and automatic-compaction success remain unproven.",
+      "impact": "Historical 12 October 2026 G4 live used one guide per boundary. Reviewed 3.17.2 drains eligible guides in batches, but still has no guide drain between autoCompactIfNeeded and the next request; the remainder-of-auto-compacted-turn instruction gap remains. No guide reinjection adopted; ordinary reconciliation restores the frozen block. The original alia-bearing real_user message cannot become a leading reminder, so M5.7 supplies native selection parity without a proven everyday redundant-delivery effect. A successful M5.7 manual compact removed the block and actual next requests each carried exactly one restored copy; live leading IDs and automatic-compaction success remain unproven.",
       "milestones": [
         "M4.9.8c.1",
         "M4.9.8c.1a",
@@ -2930,7 +2930,7 @@
     {
       "id": "zcode-installed-guide",
       "product": "ZCode",
-      "uses": "Distributed bb provider skill references installed ZCode guide files",
+      "uses": "Distributed VesnALIA provider skill references installed ZCode guide files",
       "anchors": [
         {
           "file": "Contents/Resources/glm/packages/zcode-guide-plugin/skills/zcode-configuration-guide/SKILL.md",
@@ -3017,7 +3017,7 @@
     {
       "id": "zcode-start-plan-auth",
       "product": "ZCode",
-      "uses": "M5.10 native Start account and fresh Desktop JWT runtime auth; M5.11 derives the plan from a distinct bb model ID, translating to unchanged native model/provider IDs. Ordinary switches and active-steer retention.",
+      "uses": "M5.10 native Start account and fresh Desktop JWT runtime auth; M5.11 derives the plan from a distinct VesnALIA model ID, translating to unchanged native model/provider IDs. Ordinary switches and active-steer retention.",
       "anchors": [
         {
           "file": "Contents/Resources/app.asar/out/host/index.js",
@@ -3184,9 +3184,9 @@
       ]
     },
     {
-      "id": "bb-maintenance-plan-selection",
-      "product": "bb",
-      "uses": "bb 0.48.1 maintenance does not call deriveProviderOptions. Explicit authMode needs contributed request env for the catalogue fingerprint and an own account-selection.json projection for health. M5.13 adds the independent checkStartPromotions boolean to that projection/fingerprint; missing or false disables promotion reads/notices. No plan field remains.",
+      "id": "alia-maintenance-plan-selection",
+      "product": "alia",
+      "uses": "VesnALIA 0.48.1 maintenance does not call deriveProviderOptions. Explicit authMode needs contributed request env for the catalogue fingerprint and an own account-selection.json projection for health. M5.13 adds the independent checkStartPromotions boolean to that projection/fingerprint; missing or false disables promotion reads/notices. No plan field remains.",
       "anchors": [
         {
           "file": "Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/start-server.js.map",
@@ -3267,15 +3267,15 @@
       ]
     },
     {
-      "id": "bb-provider-usage-window",
+      "id": "alia-provider-usage-window",
       "product": "SDK",
-      "uses": "M5.11 provider/usage response and native bb Usage surface: label, usedPercent, resetsAt, planLabel and expired status; token counts in label, no USD cost substitution. M5.12 explicitly tracks expiredHint consumers: Usage renders it for expired entitlement, whereas builtin providers define it for session expiry. Reinspect all consumers on bb updates; our health never returns expired.",
+      "uses": "M5.11 provider/usage response and native VesnALIA Usage surface: label, usedPercent, resetsAt, planLabel and expired status; token counts in label, no USD cost substitution. M5.12 explicitly tracks expiredHint consumers: Usage renders it for expired entitlement, whereas builtin providers define it for session expiry. Reinspect all consumers on VesnALIA updates; our health never returns expired.",
       "anchors": [
         {
           "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-usage/dist/app.js",
           "text": "usedPercent",
           "strength": "strong",
-          "reason": "Installed bb 0.48.1 Usage window renderer and schema; actual amount/date readability requires stand UI verification."
+          "reason": "Installed VesnALIA 0.48.1 Usage window renderer and schema; actual amount/date readability requires stand UI verification."
         },
         {
           "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-usage/dist/app.js",
@@ -3287,7 +3287,7 @@
           "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-usage/dist/app.js",
           "text": "expiredHint",
           "strength": "weak",
-          "reason": "Directly reviewed 6 November 2026: expired status renders provider expiredHint; error renders measurement.message. Field presence does not prove consumer semantics or detect additional consumers; inspect usages on each bb update."
+          "reason": "Directly reviewed 6 November 2026: expired status renders provider expiredHint; error renders measurement.message. Field presence does not prove consumer semantics or detect additional consumers; inspect usages on each VesnALIA update."
         },
         {
           "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js.map",
@@ -3312,9 +3312,9 @@
       ]
     },
     {
-      "id": "bb-usage-resource-discovery",
-      "product": "bb",
-      "uses": "bb 0.48.1 Usage discovers provider-usage.v1 resources. M5.14 lists two stable host/plan resources with null accountKey, avoiding account deduplication. Inventory reads metadata only; Start relays public sdk.system.usageLimits and Coding uses the owning host RPC. Error measurements are rejected by bb, which retains its last successful value and marks failed refresh; successful absence uses empty windows and explicit planLabel. Settings and compact collectors share underlying host reads.",
+      "id": "alia-usage-resource-discovery",
+      "product": "alia",
+      "uses": "VesnALIA 0.48.1 Usage discovers provider-usage.v1 resources. M5.14 lists two stable host/plan resources with null accountKey, avoiding account deduplication. Inventory reads metadata only; Start relays public sdk.system.usageLimits and Coding uses the owning host RPC. Error measurements are rejected by VesnALIA, which retains its last successful value and marks failed refresh; successful absence uses empty windows and explicit planLabel. Settings and compact collectors share underlying host reads.",
       "anchors": [
         {
           "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/builtin-plugins/provider-usage/dist/server.js",
@@ -3358,7 +3358,7 @@
     {
       "id": "zcode-coding-plan-usage",
       "product": "ZCode",
-      "uses": "Personal Z.ai Coding Usage: existing selected key or OAuth project-token resolver; raw authorization on api.z.ai subscription/list and quota/limit GETs. Successful subscription absence avoids an unnecessary quota read; unknown subscription does not hide valid quota. Demand-only 60s success and 30s failure sharing derive from Desktop access freshness and first backoff; bb does not expose manual refresh reasons. Native percentage/reset fields identify five-hour/weekly model limits and distinct monthly tools, never a duration-derived token total. No dashboard statistics or official-MCP reads.",
+      "uses": "Personal Z.ai Coding Usage: existing selected key or OAuth project-token resolver; raw authorization on api.z.ai subscription/list and quota/limit GETs. Successful subscription absence avoids an unnecessary quota read; unknown subscription does not hide valid quota. Demand-only 60s success and 30s failure sharing derive from Desktop access freshness and first backoff; VesnALIA does not expose manual refresh reasons. Native percentage/reset fields identify five-hour/weekly model limits and distinct monthly tools, never a duration-derived token total. No dashboard statistics or official-MCP reads.",
       "anchors": [
         {
           "file": "Contents/Resources/app.asar/out/host/index.js",
@@ -3406,8 +3406,8 @@
       ]
     },
     {
-      "id": "bb-coding-usage-host-rpc",
-      "product": "bb",
+      "id": "alia-coding-usage-host-rpc",
+      "product": "alia",
       "uses": "Public owning-plugin host client routes Coding collection to persistent plugin-scoped host-data, independent of Start maintenance. Existing host-data/bridge-data sibling layout resolves the same plugin secrets/backupKey as the bridge and its inert own-stand observer. No remote account identity is inferred. Standard Schema exports validate both ends.",
       "anchors": [
         {
@@ -3436,9 +3436,9 @@
       ]
     },
     {
-      "id": "bb-missing-model-recovery",
-      "product": "bb",
-      "uses": "M5.11 shared-catalogue expiry depends on bb catalogue refresh and composer recovery when a previously selected Start model disappears; plugin must not rewrite a directly requested unavailable ID.",
+      "id": "alia-missing-model-recovery",
+      "product": "alia",
+      "uses": "M5.11 shared-catalogue expiry depends on VesnALIA catalogue refresh and composer recovery when a previously selected Start model disappears; plugin must not rewrite a directly requested unavailable ID.",
       "anchors": [
         {
           "file": "Contents/Resources/app.asar/node_modules/bb-app/server/dist/start-server.js.map",
@@ -3453,7 +3453,7 @@
           ],
           "text": "isUnavailableModelRecovery",
           "strength": "weak",
-          "reason": "bb 0.48.1 renderer recovers a missing selection to default/first available. M5.11 controlled own-stand catalogue removal confirmed the composer change and subsequent Coding UI send. The bb 0.49.0 anchor moved to plugin-frontend; this remains a weak code-location check, not actual backend expiry."
+          "reason": "VesnALIA 0.48.1 renderer recovers a missing selection to default/first available. M5.11 controlled own-stand catalogue removal confirmed the composer change and subsequent Coding UI send. The VesnALIA 0.49.0 anchor moved to plugin-frontend; this remains a weak code-location check, not actual backend expiry."
         }
       ],
       "code": [

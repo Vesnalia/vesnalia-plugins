@@ -8,8 +8,8 @@ import { parseTartSettings, type TartConfig } from "../src/backends/tart/config.
 
 const GiB = 2 ** 30;
 export const FAKE_MAC = "192.0.2.20";
-export const FAKE_IMAGE = "bb-box-macos";
-export const FAKE_WINDOWS_IMAGE = "bb-box-windows";
+export const FAKE_IMAGE = "alia-box-macos";
+export const FAKE_WINDOWS_IMAGE = "alia-box-windows";
 /** The fake Mac's disk, whatever the test machine has free: 1 TiB, with 500 GiB free. */
 export const FAKE_DISK_GIB = { size: 1024, free: 500 };
 
@@ -42,7 +42,7 @@ export function fakeXcode(home: string): void {
 
 /**
  * Gives a fake Mac the Command Line Tools' swiftc, through xcrun, for the
- * build of bb-box-stream that Windows video runs (#865). What it builds is a
+ * build of alia-box-stream that Windows video runs (#865). What it builds is a
  * stand-in: `qemu <port> <socket> [<qmp socket>]` notes its arguments in
  * ~/.fake-stream-log and listens on the socket until it is ended, but with a
  * QMP socket exits 1 while ~/.fake-stream-no-dbus is there, as with a QEMU
@@ -92,7 +92,7 @@ export function fakeQemu(home: string): void {
   }
 }
 
-/** What a Windows image carries for its boxes to join BB and run threads (#539, #581). */
+/** What a Windows image carries for its boxes to join VesnALIA and run threads (#539, #581). */
 export const WINDOWS_TOOLS = { node: "24.21.0", "claude-code": "2.1.283", codex: "0.157.1", pi: "0.87.1", "password-never-expires": "1" };
 
 /** A fresh image record (049), as the prepare scripts write one. */
@@ -102,7 +102,7 @@ export function imageRecord(kind: string, changes: Record<string, unknown> = {})
 
 /** Puts a build of a Windows image in a fake Mac's home, its disk read-only, with its record, and makes it the current one. */
 export function addWindowsImage(home: string, build = "1", name = FAKE_WINDOWS_IMAGE): string {
-  const image = join(home, ".bb-box", "qemu", "images", name);
+  const image = join(home, ".alia-box", "qemu", "images", name);
   mkdirSync(join(image, build), { recursive: true });
   writeFileSync(join(image, build, "image.json"), `${imageRecord("windows-arm64-desktop", { tools: WINDOWS_TOOLS })}\n`);
   writeFileSync(join(image, build, "disk.qcow2"), "base disk");
@@ -118,8 +118,8 @@ export function addImage(home: string, name = FAKE_IMAGE, os = "darwin"): void {
   mkdirSync(join(home, ".tart", "vms", name), { recursive: true });
   writeFileSync(join(home, ".tart", "vms", name, "config.json"), JSON.stringify({ os, cpuCount: 4, memorySize: 8 * GiB, macAddress: "02:00:00:00:00:01" }));
   addVmFiles(join(home, ".tart", "vms", name));
-  mkdirSync(join(home, ".bb-box", "tart", "images"), { recursive: true });
-  writeFileSync(join(home, ".bb-box", "tart", "images", `${name}.json`), `${imageRecord(os === "darwin" ? "macos" : "linux-arm64")}\n`);
+  mkdirSync(join(home, ".alia-box", "tart", "images"), { recursive: true });
+  writeFileSync(join(home, ".alia-box", "tart", "images", `${name}.json`), `${imageRecord(os === "darwin" ? "macos" : "linux-arm64")}\n`);
 }
 
 export const FAKE_VM_DISK_BYTES = 64e9;
@@ -155,11 +155,11 @@ export function tartConfig(values: Record<string, unknown> = {}): TartConfig {
 }
 
 /**
- * Gives a Mac what BB Box's capability probe (065) reads, in `bin`: Xcode
+ * Gives a Mac what VesnALIA Box's capability probe (065) reads, in `bin`: Xcode
  * through xcode-select and xcodebuild, its iOS runtimes through `xcrun
  * simctl`, and a hardware check that `xcrun swiftc` builds, which says
  * `hardware` (yes, or no as VideoToolbox's -12903). Each xcrun call is noted
- * in the Mac's ~/.fake-xcrun-log. `software` puts a bb-box-h264 at that path.
+ * in the Mac's ~/.fake-xcrun-log. `software` puts a alia-box-h264 at that path.
  */
 export function fakeIosProbe(
   bin: string,

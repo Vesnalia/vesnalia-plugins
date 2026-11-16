@@ -2,13 +2,13 @@
  * Pure helpers over the host's sidebar thread view: titles, hierarchy, and
  * status aggregation. No React here.
  *
- * Derived from bb-plugin-thread-inbox (MIT, Copyright (c) 2026 Michael Yong);
+ * Derived from alia-plugin-thread-inbox (MIT, Copyright (c) 2026 Michael Yong);
  * see THIRD-PARTY-NOTICES.md at the repository root.
  */
 import type {
   PluginSidebarThread,
   PluginSidebarThreadIndicator,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 /**
  * A sidebar row. SDK 0.6 gives every thread a resolved `displayTitle`, so the

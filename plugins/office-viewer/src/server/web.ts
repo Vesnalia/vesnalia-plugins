@@ -1,6 +1,6 @@
 // Office Viewer — pages from the web for the site device viewer. The plugin
 // server fetches them, so sites that refuse to be framed still show, and the
-// page's own files reach the screenshot. The server sits next to BB's other
+// page's own files reach the screenshot. The server sits next to VesnALIA's other
 // services, so it never fetches loopback, private, link-local or otherwise
 // non-public addresses.
 //

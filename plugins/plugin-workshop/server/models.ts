@@ -69,7 +69,7 @@ type Catalog = { providers: Array<{ id: string; models: Array<{ id: string; labe
 const same = (a: AgentChoice, b: AgentChoice | undefined) => !!b && a.providerId === b.providerId && a.model === b.model && a.effort === b.effort;
 
 /**
- * Checks the choice when the work starts. Provider, model and effort — against the bb list; labels come from it too (not from the form). A choice
+ * Checks the choice when the work starts. Provider, model and effort — against the VesnALIA list; labels come from it too (not from the form). A choice
  * equal to the default passes even when its provider is not responding right now (login expired, timeout): the work depends on it no more
  * than before model choice existed. If the list did not arrive at all — only the defaults are allowed.
  */
@@ -78,14 +78,14 @@ export function checkModels(m: WorkModels, catalog: Catalog | null): { problems:
   if (subagentAlias(m.subagents) === null) problems.push("Implementation subagents — Claude models only (Opus, Sonnet, Haiku, Fable)");
   const fix = (what: string, c: AgentChoice, def: AgentChoice | undefined): AgentChoice => {
     if (!catalog) {
-      if (!same(c, def)) problems.push(`${what}: the bb model list did not arrive — only the default is allowed right now`);
+      if (!same(c, def)) problems.push(`${what}: the VesnALIA model list did not arrive — only the default is allowed right now`);
       return def ?? c;
     }
     const p = catalog.providers.find((x) => x.id === c.providerId);
     const model = p?.models.find((x) => x.id === c.model);
     if (!model) {
       if (same(c, def)) return def!;
-      problems.push(!p ? `${what}: bb has no provider ${c.providerId}` : p.error ? `${what}: ${p.id} is not returning models right now (${p.error})` : `${what}: ${c.providerId} has no model ${c.model}`);
+      problems.push(!p ? `${what}: VesnALIA has no provider ${c.providerId}` : p.error ? `${what}: ${p.id} is not returning models right now (${p.error})` : `${what}: ${c.providerId} has no model ${c.model}`);
       return c;
     }
     if (c.effort !== null && !model.efforts.includes(c.effort)) problems.push(`${what}: ${c.model} has no effort level ${c.effort}`);

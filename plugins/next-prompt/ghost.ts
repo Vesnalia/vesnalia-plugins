@@ -1,6 +1,6 @@
-// Paints a suggestion as grey text over bb's empty composer editor. The overlay
+// Paints a suggestion as grey text over VesnALIA's empty composer editor. The overlay
 // sits beside the editor, never inside it, so the draft stays empty until the
-// user accepts; bb's own placeholder is hidden while it shows.
+// user accepts; VesnALIA's own placeholder is hidden while it shows.
 
 const ACTIVE_ATTRIBUTE = "data-next-prompt-ghost";
 const STYLE_ID = "next-prompt-ghost-style";
@@ -60,7 +60,7 @@ export function paintGhost(editor: HTMLElement, text: string, lines: number): ()
 	editor.setAttribute(ACTIVE_ATTRIBUTE, "");
 
 	const form = editor.closest<HTMLElement>("form[data-promptbox]");
-	// Align with the first paragraph, where bb's own placeholder is drawn.
+	// Align with the first paragraph, where VesnALIA's own placeholder is drawn.
 	const update = () => {
 		const line = editor.querySelector<HTMLElement>("p") ?? editor;
 		const font = win.getComputedStyle(line);

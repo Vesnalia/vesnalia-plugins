@@ -6,12 +6,12 @@
 
 ### Keep working when one Claude Code account hits its limit.
 
-Every Claude Code account on your machine in bb's usage panel.<br>
+Every Claude Code account on your machine in VesnALIA's usage panel.<br>
 When a turn hits a subscription limit, the project moves to a free account and the turn runs again.
 
 [![check](https://github.com/Finolaina/bb-plugin-claude-switcher/actions/workflows/check.yml/badge.svg)](https://github.com/Finolaina/bb-plugin-claude-switcher/actions/workflows/check.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![bb ≥ 0.45](https://img.shields.io/badge/bb-%E2%89%A5%200.45-0d9488)](https://github.com/get-bb/bb)
+[![VesnALIA ≥ 0.45](https://img.shields.io/badge/bb-%E2%89%A5%200.45-0d9488)](https://github.com/get-bb/bb)
 [![Plugin SDK ≥ 0.6.15](https://img.shields.io/badge/plugin%20sdk-%E2%89%A5%200.6.15-2563eb)](https://www.npmjs.com/package/@get-bb/plugin-sdk)
 [![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Linux-lightgrey)](#install)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)](tsconfig.json)
@@ -32,7 +32,7 @@ You pay for more than one Claude Code subscription so that a limit doesn't
 stop you. Then a turn fails with a 5-hour or weekly limit in the middle of
 the work.
 
-bb shows the usage of the account it runs on and retries at the reset. It
+VesnALIA shows the usage of the account it runs on and retries at the reset. It
 doesn't know about your other accounts, so you log in to another one by
 hand, or wait hours for a reset while the other subscription sits idle.
 
@@ -65,7 +65,7 @@ first.
 ### 📊 Every account in one panel
 
 The 5-hour session, the weekly and the per-model weekly windows of each
-account appear in **Provider usage**, next to the usage bb already shows.
+account appear in **Provider usage**, next to the usage VesnALIA already shows.
 Refreshed in the background and on demand.
 
 </td>
@@ -88,10 +88,10 @@ When no account is free, the project moves to the account that frees
 first and the retry is queued for that reset, within a maximum wait you
 choose. If another account can run it sooner, the turn moves there.
 A thread left in error with nothing queued (every retry spent) is
-judged again on each refresh, from bb's log. A turn that outlived its
+judged again on each refresh, from VesnALIA's log. A turn that outlived its
 project's move is judged by the account it ran on, not the new one.
 When no account has the preferred model left and one can run Opus, the
-thread is told to switch to Opus in bb's picker, and where it will go.
+thread is told to switch to Opus in VesnALIA's picker, and where it will go.
 
 </td>
 <td valign="top">
@@ -100,7 +100,7 @@ thread is told to switch to Opus in bb's picker, and where it will go.
 
 Name one (for example `Fable`) and only accounts that can still run it are
 chosen. The three Claude Code limits are never treated as interchangeable.
-A thread you switch to another model in bb's picker is judged by that
+A thread you switch to another model in VesnALIA's picker is judged by that
 model instead.
 
 </td>
@@ -112,14 +112,14 @@ model instead.
 
 A **Claude Switcher** section in Settings with the account cards, a
 per-project account picker and a refresh button, the account in every
-thread's header and in the new-thread composer, plus a `bb claude-switcher` CLI.
+thread's header and in the new-thread composer, plus a `alia claude-switcher` CLI.
 
 </td>
 <td valign="top">
 
-### 🤝 Plays well with bb
+### 🤝 Plays well with VesnALIA
 
-It cooperates with bb's bundled **provider-retry** plugin, uses only
+It cooperates with VesnALIA's bundled **provider-retry** plugin, uses only
 public SDK surfaces, and never touches a `CLAUDE_CONFIG_DIR` it did not set.
 
 </td>
@@ -151,7 +151,7 @@ Whatever the percentages say, every refresh moves a project off an
 account out of the model of its latest turn (after a reload, for a
 project with none stored, the latest turn of its latest thread; the
 preferred model until one is seen) or without a login, to the best account with a free seat
-(bb greys out the composer of such a project, so no turn would get to
+(VesnALIA greys out the composer of such a project, so no turn would get to
 move it); with no seat free, it stays. A project working in Opus never
 goes to a Max account that keeps Fable this way.
 
@@ -160,7 +160,7 @@ goes to a Max account that keeps Fable this way.
 <tr>
 <td valign="top">
 
-### ➕ Add accounts from bb
+### ➕ Add accounts from VesnALIA
 
 **Add account** in Settings creates the account's directory, shares your
 transcripts and configuration with it and runs Claude Code's own login in
@@ -174,7 +174,7 @@ terminal.
 
 Every move of a project, automatic or by hand, with the time, the two
 accounts and the reason, and every thread told to switch to Opus. In
-Settings and with `bb claude-switcher history`.
+Settings and with `alia claude-switcher history`.
 
 </td>
 </tr>
@@ -183,7 +183,7 @@ Settings and with `bb claude-switcher history`.
 <div align="center">
 <table>
 <tr>
-<td align="center"><img src="docs/screenshots/provider-usage.png" alt="Every Claude Code account in bb's Provider usage panel" width="440"><br><sub><b>Every account in Provider usage</b></sub></td>
+<td align="center"><img src="docs/screenshots/provider-usage.png" alt="Every Claude Code account in VesnALIA's Provider usage panel" width="440"><br><sub><b>Every account in Provider usage</b></sub></td>
 <td align="center"><img src="docs/screenshots/settings-ultra-oscuro.png" alt="The Claude Switcher section in Settings, dark theme" width="440"><br><sub><b>What each account has spent, in the dark theme</b></sub></td>
 </tr>
 <tr>
@@ -195,34 +195,34 @@ Settings and with `bb claude-switcher history`.
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/Finolaina/bb-plugin-claude-switcher@^0.2.2
+alia plugin install git:https://github.com/Finolaina/bb-plugin-claude-switcher@^0.2.2
 ```
 
 Then open **Settings → Claude Switcher** (or run
-`bb plugin config claude-switcher`), point it at your accounts directory
+`alia plugin config claude-switcher`), point it at your accounts directory
 and set up the extra accounts as described [below](#setting-up-extra-accounts).
-Once the plugin is listed in bb's catalog you can also install it from
-**Plugins → Browse plugins**, or with `bb plugin install claude-switcher`.
+Once the plugin is listed in VesnALIA's catalog you can also install it from
+**Plugins → Browse plugins**, or with `alia plugin install claude-switcher`.
 
 <details>
 <summary><b>Install from a local clone</b></summary>
 
 ```sh
 git clone https://github.com/Finolaina/bb-plugin-claude-switcher.git
-cd bb-plugin-claude-switcher
+cd alia-plugin-claude-switcher
 npm install          # dependencies the settings section imports
-bb plugin install .  # bb builds the plugin at install time
+alia plugin install .  # alia builds the plugin at install time
 ```
 
 </details>
 
 **Requirements**
 
-- **bb 0.45 or later** (plugin SDK 0.6.15 or later) running on the machine
+- **VesnALIA 0.45 or later** (plugin SDK 0.6.15 or later) running on the machine
   that holds the Claude Code logins: macOS (keychain) or Linux
-  (credentials file). The plugin runs inside bb's server process.
+  (credentials file). The plugin runs inside VesnALIA's server process.
 - **Threads that run on that same machine.** `CLAUDE_CONFIG_DIR` is set as
-  a project **machine** environment variable holding a path on bb's
+  a project **machine** environment variable holding a path on VesnALIA's
   machine. A thread that runs on another host may get that path, which
   does not exist there; if you run threads on other hosts, turn
   `autoSwitch` off (it is global: there is no per-project opt-out).
@@ -310,10 +310,10 @@ starts on a fresh account runs without your settings, hooks and
 | **The new-thread composer**                          | The same control for the project picked there, before the first message, with the best account beside it when it is another one. A pick there before you send, even of the account shown, keeps a new project from moving to the best account after its first turn. With automatic switching on, the rules that move any project still apply: your preferred model when the thread is created, the model a message is sent with, limits and refusals. Send after the pick is saved: a message sent in that moment can start on the old account. On a phone it shows once the composer is open. It hides while another provider is picked. |
 | **Settings → Claude Switcher**                       | The ten settings, a sentence on who works and who is kept for you, a row per account with a thin bar per window it has (5 h, week, the preferred model; never a week on a Team seat) filled with what is spent, green, amber from 70 % and red from 90 %, its state and when it is back, **Add account** and **Log in**, the account each project runs on (with a picker), **Refresh usage**, and the history of moves.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | **Settings → Provider usage** (and its sidebar card) | Pick **Claude accounts** in the source menu to see every account's session, weekly and per-model windows (a Team seat that reports no weekly window shows none).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| **A thread's retry reason**                          | `Switched to account <name>`, `Waiting for <name>` or `Retrying on account <name>`, wherever bb shows why a turn was retried; a wait for the preferred model with no account left that has it may end with `Sin <model> en ninguna cuenta: pasa este hilo a Opus con el selector de modelo; irá a <name>`.                                                                                                                                                                                                                                                                                                                              |
+| **A thread's retry reason**                          | `Switched to account <name>`, `Waiting for <name>` or `Retrying on account <name>`, wherever VesnALIA shows why a turn was retried; a wait for the preferred model with no account left that has it may end with `Sin <model> en ninguna cuenta: pasa este hilo a Opus con el selector de modelo; irá a <name>`.                                                                                                                                                                                                                                                                                                                              |
 | **A thread's composer**                              | When a failed turn in the preferred model is left with nothing queued (beyond the maximum wait, or no account will free) and an account can run Opus: a banner saying `Sin <model> en ninguna cuenta: pasa este hilo a Opus con el selector de modelo; irá a <name>`. It only shows: the switch is yours.                                                                                                                                                                                                                                                                                                                               |
-| **`bb plugin logs claude-switcher`**                 | Every switch, wait and decline, with its reason.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| **`bb claude-switcher`**                             | The CLI: `list`, `refresh`, `history`, `use`, `release`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| **`alia plugin logs claude-switcher`**                 | Every switch, wait and decline, with its reason.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **`alia claude-switcher`**                             | The CLI: `list`, `refresh`, `history`, `use`, `release`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ## How it works
 
@@ -324,7 +324,7 @@ it decides between three outcomes:
 ```mermaid
 flowchart TD
   A[A Claude Code turn fails] --> B{"Subscription-window<br/>rate limit on Claude Code,<br/>or the account refused it?"}
-  B -- no --> Z[Do nothing: bb and its other plugins handle it]
+  B -- no --> Z[Do nothing: alia and its other plugins handle it]
   B -- yes --> C[Refresh the usage of every account]
   C --> X{"CLAUDE_CONFIG_DIR set<br/>outside the plugin?"}
   X -- yes --> H
@@ -338,7 +338,7 @@ flowchart TD
 - **When a thread is created.** A project created after the plugin first
   ran (for an update from 0.2.1, after the first start of 0.2.2), with no
   account of its own yet, goes to the best account before its first turn:
-  bb asks the plugin before it sends a thread's first message, and the
+  VesnALIA asks the plugin before it sends a thread's first message, and the
   plugin places the project then. While the accounts are measured for it,
   that message waits once, up to 5 s (`Choosing a Claude account for this
   new project`), and goes as soon as the project is placed. A project
@@ -351,12 +351,12 @@ flowchart TD
   pinned by hand (the default account included) stays put while its
   account works.
 - **Where the default account has no login.** The default account is
-  the `~/.claude` of the machine bb's server runs on; where nobody logged
+  the `~/.claude` of the machine VesnALIA's server runs on; where nobody logged
   in there (a server moved to a new machine), a turn on it fails with
   «Not logged in». Before such a turn, a project left on it moves to the
   best account that can run the turn, even one that keeps its weekly for
   the preferred model (`Moved to account <name> before the turn: <old> is
-  not logged in`), whatever model the message is sent with (one bb does
+  not logged in`), whatever model the message is sent with (one VesnALIA does
   not name as a Claude model is placed for the preferred one). While
   something that could give the project an account is under way or has
   failed (its placement, the write of its account, the first measure of
@@ -369,10 +369,10 @@ flowchart TD
   refresh failed): the project moves as if the default had no login. A
   usage query that fails after the login was read still counts as a login.
   A pick by hand saved while the first placement writes wins over it.
-  When no account can, bb
+  When no account can, VesnALIA
   refuses the message with
   `Claude Switcher: no account assigned to this project and the default
-  account (<name>) has no login. Assign one with: bb claude-switcher use
+  account (<name>) has no login. Assign one with: VesnALIA claude-switcher use
   <project id> <account>`, and nothing runs. A project with an account of
   its own is never refused for this, also when the accounts directory
   cannot be read: its turn runs on the variable it has, and the log says
@@ -380,7 +380,7 @@ flowchart TD
   CLAUDE_CONFIG_DIR`. The login is judged where the plugin
   runs: a thread on another machine, whose own `~/.claude` may have a
   login, is moved or refused the same way.
-- **Before every turn.** bb tells the plugin the model each message is
+- **Before every turn.** VesnALIA tells the plugin the model each message is
   sent with. When the project's account is measured unable to run that
   model and another account can, the project moves there before the turn
   starts, and a turn that fails on a limit is judged against that model
@@ -397,7 +397,7 @@ flowchart TD
   stays where it is; a pick by hand, also one that confirms the account,
   and `release` forget it too). When no account spares Fable the Opus
   turn waits, also in your own threads (Aitor's decision of 2026-11-03):
-  bb holds the message with `Waiting for Opus on <seat>, free from
+  VesnALIA holds the message with `Waiting for Opus on <seat>, free from
   <time>: <account> keeps its weekly for Fable` (or `Waiting for a free
   seat …`, or `Waiting for an account that spares Fable's weekly …` when
   none is in sight) and asks again within 5 minutes, so a seat that
@@ -418,7 +418,7 @@ flowchart TD
   out. This is
   decided on the measurements already there and never refuses a message
   (it delays it 3 seconds at most, or holds an Opus turn as above); the plugin never changes a thread's
-  model. bb does not ask for a Send now of a queued message nor for an
+  model. VesnALIA does not ask for a Send now of a queued message nor for an
   edited message sent again: those run where the project is.
 - **When a turn ends (opt-in).** With `switchAheadPercent` above 0 and
   `autoSwitch` on, the
@@ -452,17 +452,17 @@ flowchart TD
   too. A retry keeps the thread's model: the plugin changes which account
   runs a thread, never which model it runs. With no account left that has
   the preferred model, it tells you to switch the thread to Opus yourself.
-- **One retry per turn.** bb's bundled **provider-retry** plugin also
-  queues a retry at the reset the provider reported, and bb keeps a single
+- **One retry per turn.** VesnALIA's bundled **provider-retry** plugin also
+  queues a retry at the reset the provider reported, and VesnALIA keeps a single
   retry per turn. After switching, this plugin replaces the retry
-  provider-retry already queued by its own, which bb dispatches at once
+  provider-retry already queued by its own, which VesnALIA dispatches at once
   through the same checks as any message (where the turn is placed on the
   account the project is on by then); when it has to wait, it replaces
   that retry with its own timed one. If its own retry cannot be queued, the
   replaced one is queued again as it was and looked at again by the
-  refresh, like a wait bb did not take (released once its account is
+  refresh, like a wait VesnALIA did not take (released once its account is
   measured able to run the turn); if the replaced one cannot be removed,
-  bb keeps it: the turn is never left without a retry. A new thread of a
+  VesnALIA keeps it: the turn is never left without a retry. A new thread of a
   project on an excursion takes the way home like a turn does.
   Keep provider-retry enabled: disabling
   it is global and would also drop its retries for overloads and for other
@@ -511,7 +511,7 @@ A switch sets `CLAUDE_CONFIG_DIR` on the thread's **project** and retries
 the failed turn. A wait moves the project to the account that frees first
 (when that is another one; an exact tie stays on the current account, then
 goes by name) and retries with `sendAt` at that reset, plus a 15 s buffer
-and up to 30 s of jitter, like bb's own provider-retry plugin; both stop
+and up to 30 s of jitter, like VesnALIA's own provider-retry plugin; both stop
 after 5 attempts. The reasons this plugin writes are
 `Switched to account <name>[ (<model>)]`, `Waiting for [<model> on ]<name>`
 and `Retrying on account <name>`, plus two for moves made when a thread is
@@ -520,13 +520,13 @@ created or before a turn: `New project placed on account <name>[ (<model>)]` and
 `is out of usage` without a preferred model, `is not logged in`), one for a move after a
 turn: `Switched ahead of the limit to <name>: <old> at <n>% of <window>`,
 and `Picked by hand` for your own picks. Every one goes to
-`bb plugin logs claude-switcher`; every move of a project is also in
+`alia plugin logs claude-switcher`; every move of a project is also in
 **Settings → Claude Switcher** ("History", the last 100) and in
-`bb claude-switcher history`; the reason
-stored with a retry this plugin created is shown wherever bb shows a
+`alia claude-switcher history`; the reason
+stored with a retry this plugin created is shown wherever VesnALIA shows a
 retry's reason.
 
-When no account has the preferred model left, bb gives a plugin no way
+When no account has the preferred model left, VesnALIA gives a plugin no way
 to send the retry in another model, so the plugin tells you instead. The
 advice text is in Spanish (the plugin's owner reads Spanish); the rest
 of the plugin stays in English. It
@@ -552,7 +552,7 @@ failure path like any other Opus turn. Another thread of the
 project in the preferred model that follows the wait is told too, while
 the wait is still ahead, as the latest usage reads have it: nothing when
 one of them failed since. The history gets the text once per turn you
-sent, its retries included (bb's log names the first request of each
+sent, its retries included (VesnALIA's log names the first request of each
 retry chain), from the project's account to itself when nothing moved;
 the refreshes that judge it again add none, a new turn gets its own, and
 a retry whose wait moves the project records the move without the text
@@ -567,10 +567,10 @@ deleted and when the automatic choice is switched off. A judgment still
 reading or moving the project then puts back neither the banner nor the
 text in a history row or a queued retry: a move it still makes is
 recorded with its own reason, as is its queued retry, and the turn is
-told by a later judgment. The thread reads the advice again when bb's
+told by a later judgment. The thread reads the advice again when VesnALIA's
 connection comes back after a drop. After every usage refresh, one that
 failed included, the banner is asked again on the latest reads, as a
-later judgment would ask it, also while bb's provider-retry keeps a
+later judgment would ask it, also while VesnALIA's provider-retry keeps a
 retry of the turn queued (a thread with a retry queued is not judged
 again until it runs). It names the account an Opus turn would go to
 now. It goes when the preferred model is back, no account can run
@@ -581,10 +581,10 @@ that decides waits for it. It reads each project's account once, after
 the refresh, and not while a move of the project is being written (it
 reads it again once the move is over). What it is asked on is kept in
 the plugin's storage, so after a restart the usage refresh at start
-asks it again, if bb says the thread still waits on the turn it was
+asks it again, if VesnALIA says the thread still waits on the turn it was
 judged on (a later retry of that turn counts only when it was sent in
 the same model and failed on a limit or was refused). For that it reads
-the thread and its log in bb. What was kept is dropped, and the storage
+the thread and its log in VesnALIA. What was kept is dropped, and the storage
 written again, when it no longer holds, when it was first judged more
 than seven days before, or when five refreshes in a row could not check
 it. A thread whose
@@ -598,13 +598,13 @@ model, has no login, or refused a turn in the last six hours, and another
 account can run it, the project moves there
 (`Moved to account <name>, which can run the waiting turn now: <old> cannot run <model>`,
 or `is out of usage`, `is not logged in`, `refused a turn`) and the timed
-retry is replaced by one bb dispatches at once, through the same checks as
+retry is replaced by one VesnALIA dispatches at once, through the same checks as
 any message, other plugins' included. A wait queued before the project
 last changed account is retried the same way
 (`Retrying on account <name>, where the project is now`). Left as they
 are: a wait due within two minutes, one another plugin holds, a retry of
 an earlier turn, one of an archived or deleted thread, and one whose
-account may still run it. If bb does not take the retry, the wait is
+account may still run it. If VesnALIA does not take the retry, the wait is
 queued again as it was and looked at again in the next pass.
 
 A turn that started on the project's old account (the plugin notes the
@@ -636,19 +636,19 @@ allowed, and the project then runs on it as soon as you log in there.
 </details>
 
 <details>
-<summary><b>The bb surfaces it uses</b></summary>
+<summary><b>The VesnALIA surfaces it uses</b></summary>
 
-The plugin uses only public surfaces of the bb plugin SDK. Four are marked
+The plugin uses only public surfaces of the VesnALIA plugin SDK. Four are marked
 experimental and may change: the thread header slot, the `experimental_Icon`
 component, and the `experimental_discoverable` and `experimental_description`
 options of the Provider usage source. The thread header control is registered only when
-the host offers that slot, so a bb without it keeps the Settings section.
+the host offers that slot, so a VesnALIA without it keeps the Settings section.
 The new-thread control is registered only when the host offers
 `composer.customize`, and reads the composer through `useComposer`.
-Outside bb's SDK, a login you start from Settings runs the `claude`
-executable (`claude auth login`) as a child process of bb's server.
+Outside VesnALIA's SDK, a login you start from Settings runs the `claude`
+executable (`claude auth login`) as a child process of VesnALIA's server.
 
-| bb surface                                                       | What the plugin does with it                                                                                                                                                        |
+| VesnALIA surface                                                       | What the plugin does with it                                                                                                                                                        |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Provider usage source (the panel's RPC contract)                 | Publishes one resource per account, with its session, weekly and per-model windows.                                                                                                 |
 | `turn.failed` event                                              | Detects subscription-window rate limits of the Claude Code provider, and refused turns.                                                                                             |
@@ -658,12 +658,12 @@ executable (`claude auth login`) as a child process of bb's server.
 | Project machine environment variables                            | Sets `CLAUDE_CONFIG_DIR` on the project, with a note naming the account.                                                                                                            |
 | `threads.retry` and queued messages                              | Retries the failed turn now, or at a reset, and replaces the retry provider-retry queued.                                                                                             |
 | Settings and a settings section                                  | The ten settings, plus the per-project picker, the account cards, the login and the history.                                                                                       |
-| `experimental_threadHeaderAction` slot and `threads.get`         | The account control in a Claude Code thread's header. Experimental in bb: it may change.                                                                                            |
+| `experimental_threadHeaderAction` slot and `threads.get`         | The account control in a Claude Code thread's header. Experimental in VesnALIA: it may change.                                                                                            |
 | `composer.customize` (a new-thread action) and `useComposer`     | The account control in the new-thread composer, for the project picked there.                                                                                                       |
 | `composer.customize` (a thread's composer banner), an RPC and a realtime signal | The banner over a declined thread's composer telling it to switch to Opus (since 0.2.21), asked again after every usage refresh.                                                    |
 | `thread.archived` and `thread.deleted` events                    | The thread's banner and what it is asked on go; the model seen in it and a retry cancelled by hand are forgotten.                                                                   |
 | `message.cancelled` event                                        | Tells a queued retry the user cancelled by hand (the thread is left alone until a new turn of it) from the plugin's own replacements.                                               |
-| CLI registration                                                 | `bb claude-switcher list`, `refresh`, `history`, `use` and `release`.                                                                                                               |
+| CLI registration                                                 | `alia claude-switcher list`, `refresh`, `history`, `use` and `release`.                                                                                                               |
 | Background service, key-value storage, realtime signals, logging | Periodic usage refresh, the history of moves, the usage samples behind the forecast, the install time, the new projects already handled, what each declined thread's banner is asked on and the retries cancelled by hand, live updates of the section, and a log. |
 
 </details>
@@ -678,7 +678,7 @@ placement would move it or hold it, the tick is refused. Nothing is written or
 shown in the thread, and Calor tries again 5 minutes later, until the cache
 expires. The next real message is placed as usual.
 
-Known limits: a tick already in bb's queue is not refused (it would leave a
+Known limits: a tick already in VesnALIA's queue is not refused (it would leave a
 failed row), and may still move its project when it is retried. A tick that
 starts and fails for a limit still switches like any turn. If the background
 refresh moves the project off an account that cannot run its model, the cache
@@ -704,11 +704,11 @@ is lost anyway: Calor sees the new account and stops ticking.
   never sees a password, and the CLI writes the login to its own store.
 - 🛑 **Knows when to stop.** Failures that are neither a Claude Code
   subscription-window limit nor an account refusing the turn are left to
-  bb, a turn is tried at most five times, and a wait longer than your
+  VesnALIA, a turn is tried at most five times, and a wait longer than your
   maximum is declined.
 - 📝 **Everything is logged.** Every switch, wait and decline, and every
   placement or reason for leaving a project where it was, is written to
-  `bb plugin logs claude-switcher` with its reason.
+  `alia plugin logs claude-switcher` with its reason.
 
 <details>
 <summary><b>Privacy and security in detail</b></summary>
@@ -727,10 +727,10 @@ is lost anyway: Calor sees the new account and stops ticking.
   refresh token rotates and losing it logs the account out.
 - Known limit: refreshing rotates the refresh token. If a running
   `claude` session of the same account refreshes between the plugin's
-  read and its write, or bb stops while a rotated login is still only in
+  read and its write, or VesnALIA stops while a rotated login is still only in
   memory, that account can be logged out and needs `/login` again.
 - It does this in the background whether or not `autoSwitch` is on.
-- Before each message is sent, bb asks the plugin whether it may go and
+- Before each message is sent, VesnALIA asks the plugin whether it may go and
   hands it the message with the question. The plugin looks at the thread,
   its project and the model the turn is sent with; it neither reads,
   stores nor logs the text of the message.
@@ -749,7 +749,7 @@ is lost anyway: Calor sees the new account and stops ticking.
   login ends. What a failed login reports is its last line, with
   addresses and the pasted code blanked, control characters removed and
   cut at 200 characters. The login does not inherit an API key or OAuth token
-  from bb's environment (`ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`,
+  from VesnALIA's environment (`ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`,
   `CLAUDE_CODE_OAUTH_TOKEN`, `CLAUDE_CODE_OAUTH_REFRESH_TOKEN`).
   Anything typed in the code field goes to the CLI's standard input and
   nowhere else. One login at a time, given up after 10 minutes and
@@ -769,30 +769,30 @@ is lost anyway: Calor sees the new account and stops ticking.
   that account lacks are linked into its `projects/<project>/`: a hard
   link to each `<session>.jsonl` (a symbolic link when the accounts are
   on different filesystems) and a symbolic link to the session's folder,
-  for each path of the project on bb's server machine. Nothing is
+  for each path of the project on VesnALIA's server machine. Nothing is
   removed or overwritten, and accounts whose `projects` already is one
   directory are not touched.
-- Like every bb plugin, it is full-trust code running in bb's server
+- Like every VesnALIA plugin, it is full-trust code running in VesnALIA's server
   process. See [SECURITY.md](SECURITY.md) to report a vulnerability.
 
 </details>
 
 ## CLI
 
-`bb claude-switcher <command>`:
+`alia claude-switcher <command>`:
 
 ```sh
-bb claude-switcher list [--json]          # a line per account (ses, sem, preferred model, agotada hasta), projects by account; forecasts in --json
-bb claude-switcher refresh [--json]       # query the usage endpoint now
-bb claude-switcher history [--json]       # every move of a project, latest first, and why
-bb claude-switcher seats [--json]         # seats of every account, who waits, and each usage sample with the seats taken then
-bb claude-switcher health [--json]        # a stable read for other threads and scripts (version 1): plan, 5-hour window, weekly, models, the day's pace, seats, usable, threads stuck
-bb claude-switcher reserve <account> --id <x> --until <ISO with zone> [--json]   # hold a seat for a run outside bb (at most 12 h); fails with no free seat (exit 1), or with exit 75 while the seats are still being counted after a reload
-bb claude-switcher unreserve --id <x> [--json]   # end it; an id not held is no error
-bb claude-switcher unblock <account> [--json]   # take an account as back now: its refusal's veto, usage limits' marks and sessions lost go, and what waits is asked again
-bb claude-switcher use <project> <account | default>   # project id, or its name when unique
-bb claude-switcher rebalance [--apply] [--json]   # spread the projects with no thread at work over the usable Ultra accounts by their weekly (the plan; --apply moves them)
-bb claude-switcher release                # remove every CLAUDE_CONFIG_DIR this plugin set
+alia claude-switcher list [--json]          # a line per account (ses, sem, preferred model, agotada hasta), projects by account; forecasts in --json
+alia claude-switcher refresh [--json]       # query the usage endpoint now
+alia claude-switcher history [--json]       # every move of a project, latest first, and why
+alia claude-switcher seats [--json]         # seats of every account, who waits, and each usage sample with the seats taken then
+alia claude-switcher health [--json]        # a stable read for other threads and scripts (version 1): plan, 5-hour window, weekly, models, the day's pace, seats, usable, threads stuck
+alia claude-switcher reserve <account> --id <x> --until <ISO with zone> [--json]   # hold a seat for a run outside alia (at most 12 h); fails with no free seat (exit 1), or with exit 75 while the seats are still being counted after a reload
+alia claude-switcher unreserve --id <x> [--json]   # end it; an id not held is no error
+alia claude-switcher unblock <account> [--json]   # take an account as back now: its refusal's veto, usage limits' marks and sessions lost go, and what waits is asked again
+alia claude-switcher use <project> <account | default>   # project id, or its name when unique
+alia claude-switcher rebalance [--apply] [--json]   # spread the projects with no thread at work over the usable Ultra accounts by their weekly (the plan; --apply moves them)
+alia claude-switcher release                # remove every CLAUDE_CONFIG_DIR this plugin set
 ```
 
 `default` means the default account unless a subdirectory is actually
@@ -800,7 +800,7 @@ named `default`; the default account's own name always works.
 
 ## Settings
 
-`bb plugin config claude-switcher`, or **Settings → Claude Switcher**.
+`alia plugin config claude-switcher`, or **Settings → Claude Switcher**.
 
 <details>
 <summary><b>All settings</b></summary>
@@ -815,7 +815,7 @@ named `default`; the default account's own name always works.
 | `refreshMinutes`     | `5`                  | Background usage refresh interval (never below 1).                                                                                                                                                                  |
 | `switchAheadPercent` | `0` (off)            | Threads in the preferred model (every thread when none is set): when a turn ends with the project's account at or above this share of its session, weekly or preferred-model window, move the project to an account below it. Needs `autoSwitch`.                                   |
 | `switchAheadOtherPercent` | `0` (off) | The same for a thread sent with another model than `preferredModel`, measured on that model's windows; the project moves to the best account for that model (out of the preferred model first, then Team seats). Needs `autoSwitch`. |
-| `claudeCommand`      | `claude`             | The Claude Code executable used to log an account in from bb: a name looked up in the `PATH` of bb's server, or a full path.                                                                                        |
+| `claudeCommand`      | `claude`             | The Claude Code executable used to log an account in from VesnALIA: a name looked up in the `PATH` of VesnALIA's server, or a full path.                                                                                        |
 | `seatsMax`           | `4`                  | Threads at once on a Max account: a thread whose turn is about to start waits when the project's account already runs this many. 0 = no limit. See [Seats per account](#seats-per-account). |
 | `seatsTeam`          | `2`                  | The same for a Team account. |
 | `stuckMoveMinutes`   | `10`                 | A thread in another model than `preferredModel` that has waited this long for a seat moves its project to an account with a seat, other threads of it at work or not; a project asking for more seats than its account has moves at once to one with seats for all. 0 = never. See [Seats per account](#seats-per-account). |
@@ -835,28 +835,28 @@ appear at the next refresh.
 <details>
 <summary><b>Update, turn off and uninstall</b></summary>
 
-`bb plugin update claude-switcher` installs the newest release the range
-you installed with allows (`bb plugin outdated` previews it); `^0.2.2`
+`alia plugin update claude-switcher` installs the newest release the range
+you installed with allows (`alia plugin outdated` previews it); `^0.2.2`
 stays below 0.3.0. After an update from 0.2.1, only projects created after
-the first start of 0.2.2 count as new. bb refuses to reinstall an installed plugin with
+the first start of 0.2.2 count as new. VesnALIA refuses to reinstall an installed plugin with
 another source, so moving to 0.3 or later means noting your settings,
-running `bb plugin remove claude-switcher` (which deletes them) and
+running `alia plugin remove claude-switcher` (which deletes them) and
 installing again with the new range. The project variables it set stay in
 place and the reinstalled plugin recognises them by their note.
 
 ```sh
-bb plugin config claude-switcher set autoSwitch false   # keep the panel, stop switching
-bb plugin disable claude-switcher                       # stop the plugin; keeps its settings
-bb plugin enable claude-switcher
+alia plugin config claude-switcher set autoSwitch false   # keep the panel, stop switching
+alia plugin disable claude-switcher                       # stop the plugin; keeps its settings
+alia plugin enable claude-switcher
 ```
 
 Removing or disabling the plugin does not remove the `CLAUDE_CONFIG_DIR`
 variables it set on projects: they keep pointing at the account
 directories. Turn `autoSwitch` off (or the next limit or new thread
-would set one again), run `bb claude-switcher release` (projects return to the default
+would set one again), run `alia claude-switcher release` (projects return to the default
 account; external variables are left alone; a project it could not
 release is reported and the command exits 1), then
-`bb plugin remove claude-switcher`. Any left behind can be found by the
+`alia plugin remove claude-switcher`. Any left behind can be found by the
 note `Claude Code account "<name>" (set by the Claude Switcher plugin)` in
 a project's machine environment.
 
@@ -894,27 +894,27 @@ may run turns on it at once, `seatsMax` (default 4) on a Max account and
 - **Whose seats.** The seats are the login's (`oauthAccount.accountUuid`):
   two directories logged into the same account share them, and renaming
   the default account keeps the seats it has taken.
-- **Waiting.** Just before a thread's turn starts (bb's dispatch
+- **Waiting.** Just before a thread's turn starts (VesnALIA's dispatch
   checkpoint), the turn needs a seat on the account its project runs on.
-  With none free the message waits, bb shows «Waiting for a seat on
+  With none free the message waits, VesnALIA shows «Waiting for a seat on
   team1: 2/2 threads running, 1 ahead in the queue», and asks again every
   30 s. A turn queued on another account's seat says why («Waiting for a
   seat on team5 for Opus: main keeps its weekly for Fable; …»). A turn the
   project's account cannot run (out of its model or of usage) waits in the
   queue of an account that can, when another can; with none able, it starts
   and fails, and that failure is what tells the user. A pick by hand asks
-  bb again at once. A thread held 10 minutes with another account free is
+  VesnALIA again at once. A thread held 10 minutes with another account free is
   logged as `STUCK:` and listed in `atascos` (`health --json`, `seats
-  --json`; `null` when bb's queue could not be read). Every turn is checked, placed by the plugin or not (the automatic
-  choice off, a model bb does not name, a placement that failed): when the
+  --json`; `null` when VesnALIA's queue could not be read). Every turn is checked, placed by the plugin or not (the automatic
+  choice off, a model VesnALIA does not name, a placement that failed): when the
   project's account cannot be read, the message waits up to three times
   and then goes, with a warning in the log. When a turn ends (or fails,
-  or its thread is archived or deleted) its seat goes to the first in line, and bb is asked again at once:
+  or its thread is archived or deleted) its seat goes to the first in line, and VesnALIA is asked again at once:
   first come, first served. A seat reserved for a turn that does not start
   within 90 s is freed; a thread that stops asking (its message was
   removed) leaves the line.
-- **A canary from outside the plugin** (`scripts/canario-cola.mjs`, a `bb
-  automation` every 10 minutes on bb's server) warns of a message held 10
+- **A canary from outside the plugin** (`scripts/canario-cola.mjs`, a `VesnALIA
+  automation` every 10 minutes on VesnALIA's server) warns of a message held 10
   minutes with another account free in two looks in a row (a seat just
   freed is taken within 30 s), held 2 hours with none, or stopped by
   a failure 10 minutes, and of not being able to look for 30 minutes.
@@ -976,7 +976,7 @@ may run turns on it at once, `seatsMax` (default 4) on a Max account and
   cannot work, so with no seat free anywhere the project goes to the best
   of the others by quota and its threads wait for a seat there. A project
   picked by hand is no exception: a full account moves it too, as above.
-- **Spreading the projects** (`bb claude-switcher rebalance`, since
+- **Spreading the projects** (`alia claude-switcher rebalance`, since
   0.2.37; Aitor, 2026-11-03: siloeads held 25 projects for its 4
   seats). One pass over the usable Ultra accounts: each gets a share of
   the projects by the room left in its weekly (the fuller of the weekly
@@ -992,14 +992,14 @@ may run turns on it at once, `seatsMax` (default 4) on a Max account and
 - **Counted anyway.** A turn sent past the checkpoint (a queued message
   sent by hand) takes a seat as it starts, even over the limit (logged
   as «over capacity»). A turn that started keeps the seat its dispatch
-  reserved, even when its project moved before bb announced it. After a
-  reload, the threads bb reports active are counted on their project's
+  reserved, even when its project moved before VesnALIA announced it. After a
+  reload, the threads VesnALIA reports active are counted on their project's
   account before any turn starts: a message sent meanwhile waits («seats
   are being counted after a reload», asked again in 5 s). A read that
   fails is tried three times, 2 s apart; still failing, its threads are
   left uncounted (they count as they start) and the log says so. A thread
   that ends while it is counted is not counted.
-- **Where to see it.** `bb claude-switcher list` writes `seats 3/4` under
+- **Where to see it.** `alia claude-switcher list` writes `seats 3/4` under
   each account with a limit, and a final «Waiting for a seat:» section
   (account, place in line, thread id, title). Each card in Settings shows
   `seats 3/4 · 2 waiting`, updated as seats are taken and freed. The log
@@ -1008,7 +1008,7 @@ may run turns on it at once, `seatsMax` (default 4) on a Max account and
   account is measured, a sample whole in itself is stored (storage key
   `seat-samples`, a week of them, one per account and measurement, never
   rewritten): time, seats running and reserved at that moment, session %
-  and weekly %, and when each window resets. `bb claude-switcher seats`
+  and weekly %, and when each window resets. `alia claude-switcher seats`
   prints them with, per sample, the session % spent per hour and seat
   since the previous one (`—` across a reset), and per account the same
   over the week; `--json` gives the samples.
@@ -1048,14 +1048,14 @@ may run turns on it at once, `seatsMax` (default 4) on a Max account and
   cannot run, and the account the Opus advice in a declined thread's
   banner names. A hidden thread is never placed at all, as before.
 
-- **A wait can follow another account's limit report.** bb sends a
+- **A wait can follow another account's limit report.** VesnALIA sends a
   thread's latest limit report with each failure, whichever turn it came
   from. After a project moves from account A to account B, a failure on
   B that comes before B reported anything of its own carries A's report,
   and the plugin takes it for B's: B is waited for until A's reset (say
   A's weekly, three days away) although B's own numbers put its reset
   within the hour, or the wait is declined as beyond `maximumWaitHours`.
-  When bb's provider-retry plugin already queued that wait, it stays: a
+  When VesnALIA's provider-retry plugin already queued that wait, it stays: a
   thread with a retry queued is not judged again, and a queued wait is
   only released early on the project's own account when the project
   moved since it was queued. Send the turn again by hand (or pick the
@@ -1068,12 +1068,12 @@ may run turns on it at once, `seatsMax` (default 4) on a Max account and
   the failure path like any other Opus turn. The banner follows the same
   numbers: when those of the account the turn failed on show room for
   the preferred model again, it goes at the next usage refresh, while
-  bb's provider-retry still waits for that account's reset, and comes
+  VesnALIA's provider-retry still waits for that account's reset, and comes
   back with the turn's next failure or at the refresh whose reads show
   it out again.
 - **A banner after a restart comes from the plugin's storage.** What a
   declined thread's banner is asked on is written there, and the usage
-  refresh at start asks it again if bb says the thread still waits on
+  refresh at start asks it again if VesnALIA says the thread still waits on
   the turn it was judged on. When the store rejected that write (the log
   says so), the banner is back only with the thread's next judgment, and
   a thread with a retry queued is not judged again until it runs. The
@@ -1081,12 +1081,12 @@ may run turns on it at once, `seatsMax` (default 4) on a Max account and
   way, and then the log says nothing. What was read back is checked for
   seven days after its decline was first judged, and dropped after five
   refreshes in a row that could not check it (the thread could not be
-  read, or bb's log does not say yet how its retry failed).
+  read, or VesnALIA's log does not say yet how its retry failed).
 - **The account named for Opus is where a new Opus message would go,
   on the reads of that moment.** It holds for a message sent in Opus
-  through bb's dispatch checkpoint, where the placement before a turn
+  through VesnALIA's dispatch checkpoint, where the placement before a turn
   runs, on the same usage reads. **Send now** on a queued retry's card
-  skips that checkpoint (bb bypasses it for an explicit Send now, by
+  skips that checkpoint (VesnALIA bypasses it for an explicit Send now, by
   design): the retry runs where the project is, unplaced. The queued
   retry's card and the history's row keep the name as it was when they
   were written; the banner over the composer is asked again after every
@@ -1100,7 +1100,7 @@ may run turns on it at once, `seatsMax` (default 4) on a Max account and
 - **An account shows "Not logged in".** Press **Log in** on its card, or
   log in once with `CLAUDE_CONFIG_DIR=<exact path> claude`, using the same
   path the _accounts directory_ setting produces, without a trailing slash.
-- **A login from bb fails with "could not run claude".** bb's server does
+- **A login from VesnALIA fails with "could not run claude".** VesnALIA's server does
   not find the executable in its `PATH`. Set `claudeCommand` to its full
   path (`which claude` in a terminal shows it).
 - **The login window opened in the wrong browser profile, or signed in
@@ -1121,10 +1121,10 @@ may run turns on it at once, `seatsMax` (default 4) on a Max account and
   the global one) to let the plugin manage the project.
 - **`use` says "unknown account".** The name must be a subdirectory of the
   accounts directory that holds a `.claude.json` (or the default account's
-  name); `bb claude-switcher list` shows the names it found.
+  name); `alia claude-switcher list` shows the names it found.
 - **Nothing happens when a limit is hit.** Check that `autoSwitch` is on,
-  that the thread runs on the same machine as bb's server, and read
-  `bb plugin logs claude-switcher`: every declined switch is logged with
+  that the thread runs on the same machine as VesnALIA's server, and read
+  `alia plugin logs claude-switcher`: every declined switch is logged with
   its reason. Limits that are not Claude Code subscription-window limits
   and turns already on their fifth attempt are logged at debug level
   only, and nothing is logged while `autoSwitch` is off.
@@ -1133,14 +1133,14 @@ may run turns on it at once, `seatsMax` (default 4) on a Max account and
   turned subscription access off, or its login stopped working) is set
   aside for 6 hours, and the log
   names it. Fix the account (log in again, or ask the organization's
-  admin) and run `bb plugin reload claude-switcher` to use it at once.
+  admin) and run `alia plugin reload claude-switcher` to use it at once.
 - **A message is refused with "no account assigned to this project".**
   No account could take the turn and the default account has no login
-  on the machine bb's server runs on. Log in on one account (**Log in**
+  on the machine VesnALIA's server runs on. Log in on one account (**Log in**
   on its card) or pin one with the command the message gives, then send
   the message again.
 - **A new project did not move to the best account.** Read
-  `bb plugin logs claude-switcher`: each thread creation logs where the
+  `alia plugin logs claude-switcher`: each thread creation logs where the
   project was left and why. Projects created before the plugin first ran,
   pinned in a thread's header, in the new-thread composer, in Settings or
   with `use`, or given a thread while `autoSwitch`
@@ -1150,7 +1150,7 @@ may run turns on it at once, `seatsMax` (default 4) on a Max account and
 ## Disclaimer
 
 This is an independent, community project. It is not affiliated with,
-endorsed by or supported by Anthropic or by the bb project. "Claude" and
+endorsed by or supported by Anthropic or by the VesnALIA project. "Claude" and
 "Claude Code" are trademarks of Anthropic.
 
 To work, the plugin reads the OAuth token Claude Code stores for each
@@ -1175,18 +1175,18 @@ may use, copy, modify and redistribute it, for any purpose. It is provided
 ```sh
 npm install
 npm run check                    # typecheck, lint and tests
-bb plugin build                  # dist/server.js, dist/app.js
-bb plugin install . --yes
-bb plugin logs claude-switcher
+alia plugin build                  # dist/server.js, dist/app.js
+alia plugin install . --yes
+alia plugin logs claude-switcher
 ```
 
 ```
-server.ts        wires the plugin to bb: settings, usage source, thread.created, turn.failed, CLI, RPC
+server.ts        wires the plugin to alia: settings, usage source, thread.created, turn.failed, CLI, RPC
 app.tsx          the Claude Switcher section in Settings, the thread header control and
                  the same control in the new-thread composer
 src/             discovery, credentials, usage, the collector, the policy and the switch
 components/ lib/ the small UI kit the settings section and the thread
-                 header use (from bb's own component registry)
+                 header use (from alia's own component registry)
 assets/icon.svg  the plugin icon; docs/logo.svg is the README logo
 docs/            DESIGN.md and screenshots
 ```
@@ -1196,7 +1196,7 @@ cover and run the server through the SDK's fake plugin host. See [CONTRIBUTING.m
 full layout and the checks a change must pass, and
 [CHANGELOG.md](CHANGELOG.md) for the release history.
 `PLUGIN_OVERVIEW.md` is the catalog listing; keep it in step with
-`bb.description` in `package.json`.
+`alia.description` in `package.json`.
 
 The icon glyph is Lucide's `repeat` ([ISC License](https://lucide.dev/license)).
 
@@ -1204,5 +1204,5 @@ The icon glyph is Lucide's `repeat` ([ISC License](https://lucide.dev/license)).
 
 [MIT](LICENSE) © Aitor Mariscal. Free to use, modify and redistribute,
 for any purpose. The UI components in `components/` and `lib/` come from
-bb's component registry ([get-bb/bb](https://github.com/get-bb/bb), MIT);
+VesnALIA's component registry ([get-alia/alia](https://github.com/get-bb/bb), MIT);
 their license notice is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -1,6 +1,6 @@
 # Theme Toggle
 
-Theme switching one click away, in the bb sidebar footer.
+Theme switching one click away, in the VesnALIA sidebar footer.
 
 - **Click** — flip light ⇄ dark.
 - **Hover and wait (600 ms)** — the menu opens on its own, no click needed.
@@ -22,12 +22,12 @@ rings other footer plugins paint around their buttons.
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/xMinor-1/bb-plugins.git --plugin theme-toggle
+alia plugin install git:https://github.com/xMinor-1/bb-plugins.git --plugin theme-toggle
 ```
 
 ## How it works
 
-`server.ts` exposes two RPC methods over `bb.sdk.theme`:
+`server.ts` exposes two RPC methods over `alia.sdk.theme`:
 
 | Method | What it does |
 | --- | --- |
@@ -38,23 +38,23 @@ The two settings live in different places, so the plugin touches both:
 
 | Setting | Owner | How the plugin changes it |
 | --- | --- | --- |
-| Palette | bb server (`bb.sdk.theme`) | the RPC methods above |
-| Light / dark / system | browser (`localStorage` key `bb.theme`) | written client-side, with a synthetic `storage` event so bb re-renders |
+| Palette | VesnALIA server (`alia.sdk.theme`) | the RPC methods above |
+| Light / dark / system | browser (`localStorage` key `alia.theme`) | written client-side, with a synthetic `storage` event so VesnALIA re-renders |
 
 `sidebarFooterAction` is rendered by the host, so the hold gesture is attached
 by a content script to the host's button (matched by its stable `data-testid`),
 and the menu is plain DOM positioned next to that button. It styles itself from
 the app's CSS custom properties, so it follows whichever palette is active.
 
-The same content script paints the switch. bb renders `branding.icon` as a CSS
+The same content script paints the switch. VesnALIA renders `branding.icon` as a CSS
 mask over a span inside its own button, so the plugin swaps that one mask
 between the two faces and leaves the host's chrome alone; `icon.svg` is the
-night face and stays the still version bb shows in the plugin catalog. If the
+night face and stays the still version VesnALIA shows in the plugin catalog. If the
 markup ever moves, nothing is repainted and the button keeps that still icon.
 
 Three things the artwork depends on. A mask reads alpha, so the symbol on the
 filled half is cut out through an SVG `mask` rather than painted in a lighter
-colour. The drawing uses the whole canvas, since bb fits the entire viewBox
+colour. The drawing uses the whole canvas, since VesnALIA fits the entire viewBox
 into the icon box and empty margin in the file is size the icon loses. And the
 span is scaled with a transform rather than resized, so the bigger square never
 reflows the footer row around it.
@@ -64,8 +64,8 @@ reflows the footer row around it.
 ```sh
 npm install
 npx tsc --noEmit
-bb plugin build .
-bb plugin dev .
+alia plugin build .
+alia plugin dev .
 ```
 
 ## License

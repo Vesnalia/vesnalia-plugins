@@ -55,24 +55,24 @@ used or the prediction is discarded because the conversation moved on
 (the thread starts running, fails, is archived or deleted, queues or
 dispatches a message, is dismissed, or the 60-second timeout fires). A helper
 that is waiting for an approval is not subject to that timeout. It stays up
-until you answer or the conversation moves on. Stopping first matters: BB
+until you answer or the conversation moves on. Stopping first matters: VesnALIA
 forwards an archive to a provider that advertises
 `supportsThreadArchive` only once the helper is idle. Archiving a helper that
 is still running leaves the provider chat open. The archive runs in the
 background, so a slow provider does not delay the suggestion. A failed archive
 is logged and the helper stays tracked for another try on reload and on the
-next start. The BB thread stays available until its archive request succeeds.
+next start. The VesnALIA thread stays available until its archive request succeeds.
 
 Each helper records its source thread ID and the latest conversation event
 sequence in plugin metadata. When the source moves on, the helper becomes
 stale: after archive succeeds and its status is idle or failed, the plugin
-deletes it using BB's normal thread deletion. This covers source activity,
+deletes it using VesnALIA's normal thread deletion. This covers source activity,
 failure, archive, deletion, queued or dispatched messages, and pending
 interactions. Explicit regeneration and settings changes also invalidate
 older helpers. The invalidation is saved in metadata so a failed deletion can
 be retried after reload even if the conversation sequence has not changed.
 Current suggestions stay cached independently of their helper threads. This
-deletes the BB helper. BB forwards supported archive requests to the provider,
+deletes the VesnALIA helper. VesnALIA forwards supported archive requests to the provider,
 but its thread deletion does not request permanent provider-side deletion.
 Provider sessions can therefore remain in the provider's archive.
 
@@ -94,7 +94,7 @@ action and prefers abstention over repeating work already requested, promised,
 running or completed. Pending approvals, grounded clarifications and explicitly
 staged next steps remain eligible; unknown preferences and generic follow-ups
 do not. This is a model instruction, not a deterministic relevance filter. A
-BB-specific wrapper asks for JSON matching `{"suggestion": string | null}` and
+ALIA-specific wrapper asks for JSON matching `{"suggestion": string | null}` and
 treats the quoted conversation as data. The parser accepts exactly one
 `suggestion` field. A suggestion must be a single line of 1 to 240 characters;
 control characters and Unicode line or paragraph separators are rejected.
@@ -102,7 +102,7 @@ control characters and Unicode line or paragraph separators are rejected.
 
 ## Context
 
-The input is a chronological text reconstruction of up to 400 recent BB
+The input is a chronological text reconstruction of up to 400 recent VesnALIA
 events (four pages of 100): user inputs, completed assistant messages, and
 completed tool records, including command arguments and output, MCP arguments
 and results, and file-change records. Reasoning and binary payloads are
@@ -118,9 +118,9 @@ omitted, and `data:` URLs in tool records are replaced with a marker.
 When a record or the whole conversation is truncated, the first fifth and the
 latest four fifths are kept, joined by a `[content omitted]` marker.
 
-This is a BB event reconstruction, not a native provider session fork. The
+This is a VesnALIA event reconstruction, not a native provider session fork. The
 helper also receives the provider's usual environment and agent instructions.
-BB retains the helper's history, including the quoted conversation, as an
+VesnALIA retains the helper's history, including the quoted conversation, as an
 archived hidden thread until the helper becomes stale and is deleted.
 
 ## Tools and permissions
@@ -134,13 +134,13 @@ beside the conversation, and the suggestion waits until you answer. It is
 hidden again before it is archived. Full Access is never selected for a
 helper. The plugin selects no tools or skills of its own for the helper. The
 SDK's plugin-local `tools: []` does not
-remove BB's core tools or other plugins' tools, so this is not a tool-free
+remove VesnALIA's core tools or other plugins' tools, so this is not a tool-free
 provider sandbox.
 
 ## Persistent cache
 
-Completed predictions survive BB restarts and plugin reloads. Each entry is
-stored in the plugin's own BB-managed SQLite database: the suggestion, its
+Completed predictions survive VesnALIA restarts and plugin reloads. Each entry is
+stored in the plugin's own ALIA-managed SQLite database: the suggestion, its
 status (`ready`, `abstained` or `dismissed`), the generation ID, the model,
 the context length, and a fingerprint. The conversation text itself is not
 stored.
@@ -201,16 +201,16 @@ scrolling and pinch zoom are preserved. The overlay remains inert. Coarse
 primary pointers see a **Swipe →** hint; other pointers see **Tab / →**. The same
 acceptance path rechecks visibility and composer eligibility at release.
 
-BB has no first-class ghost-text slot yet, so placement relies on BB 0.46
+VesnALIA has no first-class ghost-text slot yet, so placement relies on VesnALIA 0.46
 composer DOM attributes (`data-promptbox-shell`, `data-promptbox-editor-content`,
 `data-promptbox`, `data-promptbox-voice-active`). If the editor cannot be
 matched uniquely to its own bridge, the overlay is removed and Tab is not
-captured. A change to BB's composer markup may need a plugin update. Unloading
+captured. A change to VesnALIA's composer markup may need a plugin update. Unloading
 the plugin removes overlays, key and touch listeners, styles and observers.
 
 ## Review records
 
-Each release was reviewed and verified against a live BB 0.46.1. The records
+Each release was reviewed and verified against a live VesnALIA 0.46.1. The records
 are in [reviews/](reviews/):
 
 - [0.1.0 verification](reviews/0.1.0-verification.md)

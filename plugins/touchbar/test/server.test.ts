@@ -1,17 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 
 type ThreadRecord = Awaited<
-  ReturnType<BbPluginApi["sdk"]["threads"]["list"]>
+  ReturnType<AliaPluginApi["sdk"]["threads"]["list"]>
 >[number];
 type ProjectRecord = Awaited<
-  ReturnType<BbPluginApi["sdk"]["projects"]["list"]>
+  ReturnType<AliaPluginApi["sdk"]["projects"]["list"]>
 >[number];
 
 function listThread(
@@ -63,7 +63,7 @@ function project(): ProjectRecord {
     gitRemoteUrl: null,
     id: "project-1",
     kind: "standard",
-    name: "bb-plugins",
+    name: "alia-plugins",
     sources: [],
     updatedAt: 1,
   };
@@ -86,7 +86,7 @@ test("snapshot returns bounded JSON and queries hidden rows explicitly", async (
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const result = await fake.harness.behavior.runCli(["snapshot"]);
   assert.equal(result.exitCode, 0);
@@ -135,7 +135,7 @@ test("snapshot includes bounded weekly subscription percentages", async (t) => {
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const result = await fake.harness.behavior.runCli(["snapshot"]);
   assert.equal(result.exitCode, 0);
@@ -170,7 +170,7 @@ test("snapshot includes bounded weekly subscription percentages", async (t) => {
 test("settings expose hidden-worker privacy and card count", async (t) => {
   const fake = createFakePluginHost({ pluginId: "touchbar" });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
   assert.deepEqual(fake.harness.inspection.registrations.settingsDescriptors, {
     cardLimit: {
       type: "string",
@@ -200,7 +200,7 @@ test("open resolves and opens exactly one eligible thread", async (t) => {
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const result = await fake.harness.behavior.runCli(["open", "thr-open"]);
   assert.equal(result.exitCode, 0);
@@ -225,7 +225,7 @@ test("stop rejects idle and unknown threads without mutation", async (t) => {
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const idle = await fake.harness.behavior.runCli(["stop", "thr-idle"]);
   assert.equal(idle.exitCode, 1);
@@ -247,7 +247,7 @@ test("stop mutates exactly one active thread and malformed commands fail", async
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const stopped = await fake.harness.behavior.runCli(["stop", "thr-active"]);
   assert.equal(stopped.exitCode, 0);
@@ -278,10 +278,10 @@ test("card and open-card share the same deterministic current slot", async (t) =
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const card = await fake.harness.behavior.runCli(["card", "0"]);
-  assert.equal(card.stdout, "● Build the monitor · bb-plugins");
+  assert.equal(card.stdout, "● Build the monitor · alia-plugins");
   const open = await fake.harness.behavior.runCli(["open-card", "0"]);
   assert.equal(open.exitCode, 0);
   assert.deepEqual(

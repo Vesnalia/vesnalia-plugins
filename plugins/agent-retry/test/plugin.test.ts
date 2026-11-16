@@ -4,7 +4,7 @@ import {
   makeQueueEntry,
   makeThreadResponse,
   makeTurnFailedEvent,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.js";
 import { MAX_DECISION_ROWS, openStore } from "../store.js";
 
@@ -117,8 +117,8 @@ async function fail(
 
 describe("turn.failed handling", () => {
   it("queues a retry for a failure with no structured error info", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     const before = Date.now();
 
     await harness.behavior.emitThreadEvent(
@@ -150,8 +150,8 @@ describe("turn.failed handling", () => {
   });
 
   it("declines a category that cannot succeed on retry", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
 
     await harness.behavior.emitThreadEvent(
       "turn.failed",
@@ -173,8 +173,8 @@ describe("turn.failed handling", () => {
   });
 
   it("stops at the configured attempt cap", async () => {
-    const { bb, harness } = makeHost({ settings: { maxAttempts: 2 } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ settings: { maxAttempts: 2 } });
+    await plugin(alia);
 
     await harness.behavior.emitThreadEvent(
       "turn.failed",
@@ -191,8 +191,8 @@ describe("turn.failed handling", () => {
   });
 
   it("records the decision without queueing when dry run is on", async () => {
-    const { bb, harness } = makeHost({ settings: { dryRun: true } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ settings: { dryRun: true } });
+    await plugin(alia);
 
     await harness.behavior.emitThreadEvent(
       "turn.failed",
@@ -209,11 +209,11 @@ describe("turn.failed handling", () => {
   });
 
   it("honours scope: a hidden thread is left alone when retryHidden is off", async () => {
-    const { bb, harness } = makeHost({
+    const { alia, harness } = makeHost({
       settings: { retryHidden: false },
       thread: { visibility: "hidden" },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.emitThreadEvent(
       "turn.failed",
@@ -230,7 +230,7 @@ describe("turn.failed handling", () => {
   });
 
   it("reads a door rejection's text from system/error so message rules can match", async () => {
-    const { bb, harness } = makeHost({
+    const { alia, harness } = makeHost({
       settings: {
         advancedJson: JSON.stringify({
           messageRules: [
@@ -259,7 +259,7 @@ describe("turn.failed handling", () => {
         },
       ],
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.emitThreadEvent(
       "turn.failed",
@@ -279,8 +279,8 @@ describe("turn.failed handling", () => {
   });
 
   it("keeps a chain's span clock across attempts and clears it when the thread goes idle", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
 
     await harness.behavior.emitThreadEvent(
       "turn.failed",
@@ -306,11 +306,11 @@ describe("turn.failed handling", () => {
   });
 
   it("records an error instead of throwing when core refuses the retry", async () => {
-    const { bb, harness } = makeHost();
+    const { alia, harness } = makeHost();
     harness.inspection.sdk.stub("threads.retry", async () => {
       throw new Error("Turn req_1 already has a retry waiting on thread thr_1.");
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const result = await harness.behavior.emitThreadEvent(
       "turn.failed",
@@ -330,8 +330,8 @@ describe("turn.failed handling", () => {
 
 describe("cli", () => {
   it("status reports the effective policy", async () => {
-    const { bb, harness } = makeHost({ settings: { maxAttempts: 12, baseDelayMs: 5_000 } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ settings: { maxAttempts: 12, baseDelayMs: 5_000 } });
+    await plugin(alia);
 
     const status = parseStdout<{
       policy: { defaults: { maxAttempts: number; baseDelayMs: number } };
@@ -348,8 +348,8 @@ describe("cli", () => {
   });
 
   it("simulate explains the decision for a failure shape", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
 
     const human = await harness.behavior.runCli([
       "simulate",
@@ -378,7 +378,7 @@ describe("cli", () => {
   });
 
   it("simulate honours advanced message rules", async () => {
-    const { bb, harness } = makeHost({
+    const { alia, harness } = makeHost({
       settings: {
         advancedJson: JSON.stringify({
           messageRules: [
@@ -394,7 +394,7 @@ describe("cli", () => {
         }),
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const result = parseStdout<{
       decision: { action: string; rule: string; delayMs: number; maxAttempts: number };
@@ -415,10 +415,10 @@ describe("cli", () => {
   });
 
   it("cancel deletes the retry this plugin queued", async () => {
-    const { bb, harness } = makeHost({
+    const { alia, harness } = makeHost({
       queued: [{ id: "q_1", payload: { kind: "retry" } }],
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.emitThreadEvent(
       "turn.failed",
@@ -437,8 +437,8 @@ describe("cli", () => {
   });
 
   it("cancel fails loudly when there is nothing to cancel", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
 
     const result = await harness.behavior.runCli(["cancel", "thr_none"]);
     expect(result.exitCode).not.toBe(0);
@@ -448,10 +448,10 @@ describe("cli", () => {
   });
 
   it("retry re-submits a failed thread on demand, and records it so cancel can drop it", async () => {
-    const { bb, harness } = makeHost({
+    const { alia, harness } = makeHost({
       queued: [{ id: "q_1", payload: { kind: "retry" } }],
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const result = await harness.behavior.runCli(["retry", "thr_1", "--send-at", "30m"]);
     expect(result.exitCode).toBe(0);
@@ -477,8 +477,8 @@ describe("cli", () => {
 
 describe("failure paths and degraded inputs", () => {
   it("still retries when the thread cannot be read, using the failure's own facts", async () => {
-    const { bb, harness } = makeHost({ getThrows: true });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ getThrows: true });
+    await plugin(alia);
     await fail(harness);
 
     const calls = retryCalls(harness);
@@ -492,8 +492,8 @@ describe("failure paths and degraded inputs", () => {
   });
 
   it("still retries when the error text cannot be read", async () => {
-    const { bb, harness } = makeHost({ eventsThrow: true });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ eventsThrow: true });
+    await plugin(alia);
     await fail(harness);
 
     expect(retryCalls(harness)).toHaveLength(1);
@@ -504,10 +504,10 @@ describe("failure paths and degraded inputs", () => {
   });
 
   it("queues the retry even when the decision log cannot be written", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     // Break the log the way a corrupted or read-only database would.
-    bb.storage.database().exec("DROP TABLE retry_decisions");
+    alia.storage.database().exec("DROP TABLE retry_decisions");
 
     const result = await fail(harness);
     expect(result.errors).toHaveLength(0);
@@ -521,10 +521,10 @@ describe("failure paths and degraded inputs", () => {
   });
 
   it("records an immediate retry that core sent rather than queued", async () => {
-    const { bb, harness } = makeHost({
+    const { alia, harness } = makeHost({
       retryResult: { ok: true, delivery: "sent", turnRequestId: "req_1", attempt: 2 },
     });
-    await plugin(bb);
+    await plugin(alia);
     await fail(harness);
 
     const rows = await decisions(harness);
@@ -539,8 +539,8 @@ describe("failure paths and degraded inputs", () => {
   });
 
   it("floors the wait at a reported rate-limit reset", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     const now = Date.now();
     await fail(harness, {
       errorInfo: { category: "rate-limit", providerCode: null, httpStatusCode: 429 },
@@ -566,10 +566,10 @@ describe("failure paths and degraded inputs", () => {
   });
 
   it("keeps two threads' chains apart", async () => {
-    const { bb, harness } = makeHost({
+    const { alia, harness } = makeHost({
       threads: { thr_2: { id: "thr_2", projectId: "proj_2" } },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await fail(harness, { threadId: "thr_1", requestId: "req_1" });
     await fail(harness, { threadId: "thr_2", requestId: "req_2", attemptNumber: 1 });
@@ -586,8 +586,8 @@ describe("failure paths and degraded inputs", () => {
 
 describe("chain lifecycle", () => {
   it("stops a chain that has outlived maxTotalSpanMs", async () => {
-    const { bb, harness } = makeHost({ settings: { maxTotalSpanMs: 1 } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ settings: { maxTotalSpanMs: 1 } });
+    await plugin(alia);
 
     await fail(harness, { attemptNumber: 1 });
     // The first failure writes the span clock; a millisecond later the second
@@ -605,8 +605,8 @@ describe("chain lifecycle", () => {
   it("clears a chain when the user cancels the retry this plugin queued", async () => {
     // The span cap is the observable: if the chain survived, the second
     // failure is declined.
-    const { bb, harness } = makeHost({ settings: { maxTotalSpanMs: 1 } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ settings: { maxTotalSpanMs: 1 } });
+    await plugin(alia);
     await fail(harness, { attemptNumber: 1 });
     await new Promise((resolve) => setTimeout(resolve, 5));
 
@@ -630,8 +630,8 @@ describe("chain lifecycle", () => {
   });
 
   it("keeps its chain when some other retrier's row is cancelled", async () => {
-    const { bb, harness } = makeHost({ settings: { maxTotalSpanMs: 1 } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ settings: { maxTotalSpanMs: 1 } });
+    await plugin(alia);
     await fail(harness, { attemptNumber: 1 });
     await new Promise((resolve) => setTimeout(resolve, 5));
 
@@ -655,8 +655,8 @@ describe("chain lifecycle", () => {
   });
 
   it("ignores the cancellation of a queued message that is not a retry", async () => {
-    const { bb, harness } = makeHost({ settings: { maxTotalSpanMs: 1 } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ settings: { maxTotalSpanMs: 1 } });
+    await plugin(alia);
     await fail(harness, { attemptNumber: 1 });
     await new Promise((resolve) => setTimeout(resolve, 5));
 
@@ -672,8 +672,8 @@ describe("chain lifecycle", () => {
 
   it("clears a chain when the thread is archived or deleted", async () => {
     for (const event of ["thread.archived", "thread.deleted"] as const) {
-      const { bb, harness } = makeHost({ settings: { maxTotalSpanMs: 1 } });
-      await plugin(bb);
+      const { alia, harness } = makeHost({ settings: { maxTotalSpanMs: 1 } });
+      await plugin(alia);
       await fail(harness, { attemptNumber: 1 });
       await harness.behavior.emitThreadEvent(event, {
         thread: makeThreadResponse({ id: "thr_1" }),
@@ -688,8 +688,8 @@ describe("chain lifecycle", () => {
 
 describe("settings that change behaviour", () => {
   it("records nothing at all while the plugin is disabled", async () => {
-    const { bb, harness } = makeHost({ settings: { enabled: false } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ settings: { enabled: false } });
+    await plugin(alia);
     await fail(harness);
 
     expect(retryCalls(harness)).toHaveLength(0);
@@ -698,8 +698,8 @@ describe("settings that change behaviour", () => {
   });
 
   it("records nothing but still decides while the decision log is off", async () => {
-    const { bb, harness } = makeHost({ settings: { logDecisions: false } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ settings: { logDecisions: false } });
+    await plugin(alia);
     await fail(harness);
 
     expect(retryCalls(harness)).toHaveLength(1);
@@ -708,8 +708,8 @@ describe("settings that change behaviour", () => {
   });
 
   it("applies a settings change to the next failure, without a reload", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     await fail(harness, { attemptNumber: 1 });
     expect(retryCalls(harness)).toHaveLength(1);
 
@@ -723,10 +723,10 @@ describe("settings that change behaviour", () => {
   });
 
   it("retries only what scope allows", async () => {
-    const { bb, harness } = makeHost({
+    const { alia, harness } = makeHost({
       settings: { scopeProjects: "proj_other" },
     });
-    await plugin(bb);
+    await plugin(alia);
     await fail(harness);
 
     expect(retryCalls(harness)).toHaveLength(0);
@@ -736,8 +736,8 @@ describe("settings that change behaviour", () => {
   });
 
   it("can refuse a request the provider never took", async () => {
-    const { bb, harness } = makeHost({ settings: { inputAccepted: "accepted" } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ settings: { inputAccepted: "accepted" } });
+    await plugin(alia);
     await fail(harness, { inputAccepted: false });
 
     expect(retryCalls(harness)).toHaveLength(0);
@@ -747,8 +747,8 @@ describe("settings that change behaviour", () => {
   });
 
   it("carries an unclassified failure's provider codes into the log", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     await fail(harness, {
       errorInfo: { category: "overloaded", providerCode: "server_busy", httpStatusCode: 503 },
     });
@@ -762,7 +762,7 @@ describe("settings that change behaviour", () => {
 describe("reload", () => {
   it("re-registers and keeps working, and its migrations re-run cleanly", async () => {
     const first = makeHost();
-    await plugin(first.bb);
+    await plugin(first.alia);
     await fail(first.harness, { attemptNumber: 1 });
     expect(retryCalls(first.harness)).toHaveLength(1);
 
@@ -785,7 +785,7 @@ describe("reload", () => {
 
   it("keeps a chain's span clock across a reload", async () => {
     const first = makeHost({ settings: { maxTotalSpanMs: 1 } });
-    await plugin(first.bb);
+    await plugin(first.alia);
     await fail(first.harness, { attemptNumber: 1 });
     await new Promise((resolve) => setTimeout(resolve, 5));
 
@@ -805,18 +805,18 @@ describe("reload", () => {
 
 describe("housekeeping", () => {
   it("registers a daily sweep", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     expect(harness.registrations.schedules.map((entry) => entry.name)).toContain("sweep");
     await harness.lifecycle.dispose();
   });
 
   it("sweeps chain state nothing will ask about again, and keeps a live chain", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     await fail(harness, { attemptNumber: 1 });
     // A leftover from a thread that settled while the plugin was unloaded.
-    await bb.storage.kv.set("chain:thr_abandoned", {
+    await alia.storage.kv.set("chain:thr_abandoned", {
       originalRequestId: "req_old",
       startedAt: 1,
       attempts: 3,
@@ -824,7 +824,7 @@ describe("housekeeping", () => {
     });
     // And one that is merely old, but not older than the sweep's horizon.
     const recent = Date.now() - 60_000;
-    await bb.storage.kv.set("chain:thr_recent", {
+    await alia.storage.kv.set("chain:thr_recent", {
       originalRequestId: "req_recent",
       startedAt: recent,
       attempts: 2,
@@ -833,7 +833,7 @@ describe("housekeeping", () => {
 
     await harness.behavior.runSchedule("sweep");
 
-    expect((await bb.storage.kv.list("chain:")).sort()).toEqual([
+    expect((await alia.storage.kv.list("chain:")).sort()).toEqual([
       "chain:thr_1",
       "chain:thr_recent",
     ]);
@@ -841,8 +841,8 @@ describe("housekeeping", () => {
   });
 
   it("bounds the decision log instead of growing forever", async () => {
-    const { bb, harness } = makeHost();
-    const store = openStore(bb);
+    const { alia, harness } = makeHost();
+    const store = openStore(alia);
     const base = {
       at: Date.now(),
       threadId: "thr_1",
@@ -867,7 +867,7 @@ describe("housekeeping", () => {
     }
 
     const count = (
-      bb.storage.database().prepare("SELECT COUNT(*) AS count FROM retry_decisions").get() as {
+      alia.storage.database().prepare("SELECT COUNT(*) AS count FROM retry_decisions").get() as {
         count: number;
       }
     ).count;

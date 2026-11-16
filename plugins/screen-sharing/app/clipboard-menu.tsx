@@ -20,7 +20,7 @@ export function useAutoSyncClipboard(): boolean {
 /** Whose clipboard on the Mac the menu reaches, before the Mac has said and after. */
 function accountNote(access: ClipboardAccess | null, hostName: string): string {
   const whose = access?.available === true ? `${access.account.userName}, the account` : "the macOS account";
-  return `Text only. It reaches the clipboard of ${whose} bb runs as on ${hostName}.`;
+  return `Text only. It reaches the clipboard of ${whose} VesnALIA runs as on ${hostName}.`;
 }
 
 /**

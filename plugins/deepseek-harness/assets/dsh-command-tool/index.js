@@ -2,7 +2,7 @@
 //
 // The harness keeps slash commands behind a UI adapter: `dsh-commands` can
 // parse and execute a line against an agent, but ACP automation never calls it,
-// so `/compact`, `/goal`, `/feedback` are unreachable from bb. This plugin adds
+// so `/compact`, `/goal`, `/feedback` are unreachable from VesnALIA. This plugin adds
 // a tool that calls the same registry, so the model can run a real harness
 // command instead of asking the user to switch to `dsh web`.
 //

@@ -1,21 +1,13 @@
 {
-  "name": "bb-plugin-command-code",
+  "name": "alia-plugin-command-code",
   "version": "0.1.2",
-  "description": "Run Command Code (cmd) as a first-class agent provider inside BB, over the Agent Client Protocol.",
+  "description": "Run Command Code (cmd) as a first-class agent provider inside VesnALIA, over the Agent Client Protocol.",
   "license": "MIT",
   "type": "module",
   "author": "Bukhori Muhammad Aqid",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/aqidd/bb-plugin-command-code.git"
-  },
-  "homepage": "https://github.com/aqidd/bb-plugin-command-code#readme",
-  "bugs": {
-    "url": "https://github.com/aqidd/bb-plugin-command-code/issues"
-  },
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "acp",
     "agent-client-protocol",
     "command-code",
@@ -23,8 +15,8 @@
   ],
   "engines": {
     "node": ">=22",
-    "bb": ">=0.42",
-    "bbPluginSdk": ">=0.4.47"
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.4.47"
   },
   "bin": {
     "command-code-acp": "./bin/command-code-acp.mjs"
@@ -37,9 +29,9 @@
     "server.ts",
     "host.ts"
   ],
-  "bb": {
+  "alia": {
     "name": "Command Code",
-    "description": "Run Command Code (cmd) as a BB agent provider over the Agent Client Protocol.",
+    "description": "Run Command Code (cmd) as a VesnALIA agent provider over the Agent Client Protocol.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -47,16 +39,25 @@
     "host": "./host.ts"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "node --test test/",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@agentclientprotocol/sdk": "^1.4.0",
-    "@get-bb/plugin-sdk": "0.4.47"
+    "@vesnalia/plugin-sdk": "^0.6.143"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/command-code#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/command-code"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

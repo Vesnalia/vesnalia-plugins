@@ -49,7 +49,7 @@ test("workspace key reports missing Git without inventing an identity", async ()
   }));
   assert.deepEqual(result, {
     key: null,
-    error: "The git CLI was not found on the BB server host.",
+    error: "The git CLI was not found on the VesnALIA server host.",
   });
 });
 
@@ -64,6 +64,6 @@ test("workspace key fails closed when Git names a missing common directory", asy
   }));
   assert.deepEqual(result, {
     key: null,
-    error: "Git's repository common directory does not exist on the BB server host.",
+    error: "Git's repository common directory does not exist on the VesnALIA server host.",
   });
 });

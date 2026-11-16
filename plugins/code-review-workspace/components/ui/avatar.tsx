@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { cn } from "../../lib/utils";
 
-// Terminal palette slots that read as soft color fields in every bb theme.
+// Terminal palette slots that read as soft color fields in every VesnALIA theme.
 const SLOTS = [1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14];
 
 function slotFor(login: string): number {

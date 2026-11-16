@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import plugin from '../server.ts';
 
 function thread(id, extra = {}) {
@@ -12,7 +12,7 @@ function thread(id, extra = {}) {
     updatedAt: 100, ...extra };
 }
 async function fixture(threads) {
-  const { bb, harness } = createFakePluginHost({ pluginId: 'inbox', sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: 'inbox', sdk: {
     projects: { list: async () => [{ id: 'p1', name: 'Personal' }] },
     threads: {
       list: async ({ archived, offset = 0, limit }) => threads.filter(t => (t.archivedAt !== null) === archived).slice(offset, offset + limit),
@@ -29,7 +29,7 @@ async function fixture(threads) {
       unarchive: async ({ threadId }) => { threads.find(t => t.id === threadId).archivedAt = null; return { ok: true }; },
     },
   } });
-  await plugin(bb);
+  await plugin(alia);
   return { harness, call: (method, input) => harness.behavior.callRpc(method, input) };
 }
 

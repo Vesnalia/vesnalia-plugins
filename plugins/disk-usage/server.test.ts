@@ -1,14 +1,14 @@
 import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import plugin, { scanSchema } from "./server";
 
 let root: string;
 
 beforeAll(async () => {
-  root = await mkdtemp(join(tmpdir(), "bb-disk-usage-"));
+  root = await mkdtemp(join(tmpdir(), "alia-disk-usage-"));
   await mkdir(join(root, "big"));
   await writeFile(join(root, "big", "blob.bin"), Buffer.alloc(256 * 1024, 1));
   await mkdir(join(root, "small"));
@@ -23,7 +23,7 @@ afterAll(async () => {
 
 async function loadPlugin() {
   const host = createFakePluginHost({ pluginId: "disk-usage" });
-  await plugin(host.bb);
+  await plugin(host.alia);
   return host;
 }
 

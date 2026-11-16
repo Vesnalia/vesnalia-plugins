@@ -5,7 +5,7 @@
 // move is to stash the follow-up without leaving the turn.
 
 import { z } from "zod";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { fillTokens, parseTokens } from "./template";
 import { parseWhen } from "./time";
 import type { Operations, Signal } from "./operations";
@@ -28,7 +28,7 @@ function line(prompt: Prompt): string {
 }
 
 export function registerAgentTools(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   deps: {
     store: Store;
     operations: Operations;
@@ -37,7 +37,7 @@ export function registerAgentTools(
 ): void {
   const { store, operations, notify } = deps;
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "prompts_queue",
     description:
       "Queue a follow-up prompt for later instead of acting on it now (Prompts plugin). " +
@@ -96,7 +96,7 @@ export function registerAgentTools(
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "prompts_list",
     description:
       "List the user's queued prompts (Prompts plugin) for this thread, this project, and the global queue.",
@@ -128,7 +128,7 @@ export function registerAgentTools(
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "prompts_snippets",
     description:
       "Search the user's saved prompt snippets (Prompts plugin). Returns ids, titles, and any {{fill-in}} tokens. Empty query lists the most used.",
@@ -159,7 +159,7 @@ export function registerAgentTools(
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "prompts_snippet_get",
     description:
       "Read one saved snippet's full body by id (Prompts plugin), optionally filling its {{tokens}}.",
@@ -185,7 +185,7 @@ export function registerAgentTools(
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "prompts_snippet_save",
     description:
       "Save a reusable prompt as a snippet (Prompts plugin). Use {{token}} for parts that change between uses.",

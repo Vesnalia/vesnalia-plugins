@@ -1,11 +1,11 @@
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import { findSpecies } from "./catalog";
 import { DEFAULT_LOOK } from "./look";
 import plugin, { catchResultSchema, fishBookSchema, profileSchema } from "./server";
 
 async function loadPlugin(host = createFakePluginHost({ pluginId: "gone-fishing" })) {
-  await plugin(host.bb);
+  await plugin(host.alia);
   return host;
 }
 
@@ -114,7 +114,7 @@ describe("Gone Fishing server", () => {
   it("leaves fish that left the catalog out of progress, like the fish book", async () => {
     const host = await loadPlugin();
     await catchOne(host, "bluegill");
-    host.bb.storage
+    host.alia.storage
       .database()
       .prepare(
         `INSERT INTO catches (species_id, length_cm, tier, mode, map_id, thread_id, caught_at)

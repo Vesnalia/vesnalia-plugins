@@ -25,9 +25,9 @@ updates:
           - "minor"
           - "patch"
     ignore:
-      # package.json engines pins bbPluginSdk to ">=0.6.104 <0.7".
+      # package.json engines pins aliaPluginSdk to ">=0.6.104 <0.7".
       # For 0.x packages a minor bump (0.6 -> 0.7) is breaking, so only allow patches.
-      - dependency-name: "@get-bb/plugin-sdk"
+      - dependency-name: "@vesnalia/plugin-sdk"
         update-types:
           - "version-update:semver-major"
           - "version-update:semver-minor"

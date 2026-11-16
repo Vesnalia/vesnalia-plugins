@@ -1,6 +1,6 @@
 // The spec review: a fresh reviewer agent judges each version the planner proposes, a draft or a version pending on an
 // approved project, against the human's request and for work the goal does not need, before the human is asked to approve
-// it. Its row lives in spec_reviews, not in threads, so the worker and ticket reviewer machinery never sees it. bb's thread
+// it. Its row lives in spec_reviews, not in threads, so the worker and ticket reviewer machinery never sees it. VesnALIA's thread
 // events and loom_propose drive it, not the tick.
 import { randomBytes } from "node:crypto";
 import type { ProjectRow, SpecReviewRow, SpecReviewSkip, Store } from "./db/store";
@@ -89,7 +89,7 @@ export function approvalRefusal(slug: string, status: SpecReviewStatus, pending 
     new LoomError(
       "loom_invalid_state",
       `${pending ? "Pending" : "Draft"} v${version} of ${slug} ${why}.`,
-      `Wait for the planner to hand it over, or approve it anyway with \`bb loom approve ${slug}${pending ? ` --version ${version}` : ""} --skip-review\`.`,
+      `Wait for the planner to hand it over, or approve it anyway with \`alia loom approve ${slug}${pending ? ` --version ${version}` : ""} --skip-review\`.`,
     );
   switch (status.kind) {
     case "reviewing":
@@ -202,8 +202,8 @@ async function spawnReviewer(ctx: EngineCtx, project: ProjectRow, row: SpecRevie
   const agent = spec.agents.reviewer;
   try {
     if (project.host_id === null) throw new Error("the project has no machine");
-    const spawned = await ctx.bb.spawnThread({
-      bbProjectId: settings.bbProjectId ?? project.bb_project_id,
+    const spawned = await ctx.alia.spawnThread({
+      aliaProjectId: settings.aliaProjectId ?? project.alia_project_id,
       hostId: project.host_id,
       baseBranch: `${settings.remote}/${settings.base}`,
       environment: spawnEnvironment(settings, { branch: threadBranch(project.slug, "spec", `review-${version}-${round}`), base: `${settings.remote}/${settings.base}` }, "reviewer"),
@@ -228,13 +228,13 @@ async function spawnReviewer(ctx: EngineCtx, project: ProjectRow, row: SpecRevie
 /**
  * A spec reviewer that did not start. It waits and tries again from the tick (retrySpecReviews), as a ticket's reviewer
  * does: an unavailable provider never fails the review, and any other failure does once it has happened START_GRACE
- * times in a row. bb refusing the reviewer fails it at once.
+ * times in a row. VesnALIA refusing the reviewer fails it at once.
  */
 async function reviewerStartFailed(ctx: EngineCtx, row: SpecReviewRow, problem: StartProblem, tell: boolean): Promise<SpecReviewStatus> {
   const { store } = ctx;
   const wait = problem.kind === "refused" || problem.kind === "broken" ? null : nextWait(waitOfReview(row), { role: "reviewer", row: null, problem, now: ctx.now() });
   if (wait === null || wait.counted || wait.expired) {
-    const reason = `bb could not start the reviewer: ${wait?.expired === true ? unavailableReason(wait) : problem.message}`;
+    const reason = `alia could not start the reviewer: ${wait?.expired === true ? unavailableReason(wait) : problem.message}`;
     if (tell) await fail(ctx, row, reason);
     else store.endSpecReview(row.id, "failed", { reason });
     return { kind: "failed", version: row.version, round: row.round, reason };
@@ -286,7 +286,7 @@ export async function onSpecReviewerIdle(ctx: EngineCtx, seen: SpecReviewRow): P
   if (row.state !== "reviewing") return endReviewerThread(ctx, row.thread_id);
   if (row.idle_count === 0) {
     ctx.store.updateSpecReview(row.id, { idle_count: 1 });
-    await ctx.bb.send(row.thread_id, specReviewNudgeText(row.version)).catch((error) => ctx.bb.log("warn", `Could not nudge ${row.thread_id}: ${errText(error)}`));
+    await ctx.alia.send(row.thread_id, specReviewNudgeText(row.version)).catch((error) => ctx.alia.log("warn", `Could not nudge ${row.thread_id}: ${errText(error)}`));
     return;
   }
   await fail(ctx, row, "the reviewer ended its turn twice without a verdict");
@@ -298,16 +298,16 @@ export async function onSpecReviewerGone(ctx: EngineCtx, seen: SpecReviewRow): P
 }
 
 /**
- * A rate limit retries the turn at the window's reset, as for ticket reviewers; bb's attempt number is the cap. A thread
- * whose environment bb could not provision is a reviewer that did not start. Anything else counts as an idle.
+ * A rate limit retries the turn at the window's reset, as for ticket reviewers; VesnALIA's attempt number is the cap. A thread
+ * whose environment VesnALIA could not provision is a reviewer that did not start. Anything else counts as an idle.
  */
 export async function onSpecReviewerTurnFailed(ctx: EngineCtx, row: SpecReviewRow, event: TurnFailure): Promise<void> {
   if (row.state === "reviewing" && event.errorInfo?.category === "rate-limit" && event.attemptNumber <= MAX_RATE_LIMIT_RETRIES) {
-    await ctx.bb.retryTurn(event.threadId, event.requestId, rateLimitRetryAt(ctx.now(), event));
+    await ctx.alia.retryTurn(event.threadId, event.requestId, rateLimitRetryAt(ctx.now(), event));
     return;
   }
   if (row.state === "reviewing" && event.errorInfo?.category !== "rate-limit") {
-    const failure = await ctx.bb.latestSystemError(event.threadId).catch(() => null);
+    const failure = await ctx.alia.latestSystemError(event.threadId).catch(() => null);
     if (failure?.code === "thread_provisioning_failed" && row.thread_id === event.threadId) {
       // Unbound first, so the archive's event does not read as the human archiving a running reviewer.
       await reviewerStartFailed(ctx, row, provisioningFailure(failure), true);
@@ -336,7 +336,7 @@ export async function reconcileSpecReviews(ctx: EngineCtx): Promise<void> {
       await fail(ctx, row, "Loom restarted before the reviewer started");
       continue;
     }
-    const thread = await ctx.bb.getThread(row.thread_id);
+    const thread = await ctx.alia.getThread(row.thread_id);
     if (thread === null || thread.archivedAt !== null || thread.deletedAt !== null) await onSpecReviewerGone(ctx, row);
     else if (thread.status === "idle") await onSpecReviewerIdle(ctx, row);
   }
@@ -356,17 +356,17 @@ async function fail(ctx: EngineCtx, row: SpecReviewRow, reason: string): Promise
 async function tellPlanner(ctx: EngineCtx, project: ProjectRow, text: string): Promise<void> {
   const planner = project.planner_thread_id;
   if (planner === null) return;
-  await ctx.bb.send(planner, text).catch((error) => ctx.bb.log("warn", `Could not tell the planner ${planner} about the spec review: ${errText(error)}`));
+  await ctx.alia.send(planner, text).catch((error) => ctx.alia.log("warn", `Could not tell the planner ${planner} about the spec review: ${errText(error)}`));
 }
 
 /** Stops the thread unless it is idle or in error, then archives it, as the record agent's ending does. Cleanup never throws. */
 async function endReviewerThread(ctx: EngineCtx, threadId: string): Promise<void> {
   try {
-    const thread = await ctx.bb.getThread(threadId);
+    const thread = await ctx.alia.getThread(threadId);
     if (thread === null || thread.archivedAt !== null || thread.deletedAt !== null) return;
-    if (thread.status !== "idle" && thread.status !== "error") await ctx.bb.stop(threadId);
-    await ctx.bb.archive(threadId);
+    if (thread.status !== "idle" && thread.status !== "error") await ctx.alia.stop(threadId);
+    await ctx.alia.archive(threadId);
   } catch (error) {
-    ctx.bb.log("warn", `Could not end the spec reviewer ${threadId}: ${errText(error)}`);
+    ctx.alia.log("warn", `Could not end the spec reviewer ${threadId}: ${errText(error)}`);
   }
 }

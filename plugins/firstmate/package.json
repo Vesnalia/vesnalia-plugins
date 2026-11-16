@@ -1,17 +1,17 @@
 {
-  "name": "bb-plugin-firstmate",
+  "name": "alia-plugin-firstmate",
   "version": "0.4.0",
   "type": "module",
   "scripts": {
     "test": "node --test --experimental-strip-types lib/policy.test.ts server.test.ts"
   },
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Firstmate",
-    "description": "Run firstmate-style agent crews inside BB: one captain thread dispatches crewmate child threads and brings back finished work.",
+    "description": "Run firstmate-style agent crews inside VesnALIA: one captain thread dispatches crewmate child threads and brings back finished work.",
     "branding": {
       "icon": "Ship"
     },
@@ -25,7 +25,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@types/node": "^22.0.0",
     "better-sqlite3": "^13.0.3",
     "cron-parser": "^5.10.1",
@@ -33,8 +32,21 @@
     "typescript": "^5.7.0"
   },
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/firstmate#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/amrtawfik160/bb-plugin-firstmate.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/firstmate"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

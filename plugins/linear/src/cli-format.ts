@@ -95,7 +95,7 @@ export function ok(stdout: string): CliResult {
  * A failure a person caused (a bad identifier, a missing flag) or a refusal
  * the plugin authored.
  *
- * Exit code 1 and the sentence on stderr — so `bb linear issue NOPE-1 --json |
+ * Exit code 1 and the sentence on stderr — so `alia linear issue NOPE-1 --json |
  * jq` fails rather than piping a human-readable apology into a JSON parser.
  */
 export function fail(message: string): CliResult {

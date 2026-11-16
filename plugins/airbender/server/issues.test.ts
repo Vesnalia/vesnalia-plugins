@@ -8,7 +8,7 @@
 // (in bend, run for real with a stand-in for bd) and then through the tab's
 // own step (server/issues.ts),
 // as they do in the running tab. The expectations are the ones from before
-// the tab was moved onto the core (bead-bb-c9l.2): they are what "the tab
+// the tab was moved onto the core (bead-alia-c9l.2): they are what "the tab
 // behaves as before" means for the rules below.
 //
 // Why: a wrong edge here silently regroups every issue in the tab, and the

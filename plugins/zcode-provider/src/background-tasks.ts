@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
-import { threadDeltaSchema } from '@get-bb/plugin-sdk/provider-bridge';
-import type { ThreadDelta } from '@get-bb/plugin-sdk/provider-bridge';
+import { threadDeltaSchema } from '@vesnalia/plugin-sdk/provider-bridge';
+import type { ThreadDelta } from '@vesnalia/plugin-sdk/provider-bridge';
 import type { Snapshot } from './native.ts';
 import { record, ProtocolError } from './errors.ts';
 import type { Warn } from './errors.ts';
@@ -113,7 +113,7 @@ export class BackgroundTasks {
     for (const t of this.tasks.values()) if (!t.closed) {
       t.closed = true;
       ds.push(threadDeltaSchema.parse({ kind: 'item.close', key: { providerItemId: t.key }, status: 'failed',
-        // bb sends release for Stop after foreground boundary. Both explicit
+        // VesnALIA sends release for Stop after foreground boundary. Both explicit
         // Stop intents terminate the command; crash alone is an unknown failure.
         item: this.shape(t, intent === 'crash' ? 'failed' : 'killed') }));
     }

@@ -1,12 +1,12 @@
-# Collapsible Navigation for BB
+# Collapsible Navigation for VesnALIA
 
-Reclaim sidebar space with an upward-folding collapsible navigation panel for BB.
+Reclaim sidebar space with an upward-folding collapsible navigation panel for VesnALIA.
 
 ## Features
 
 - **Upward Collapsible Panel**: Smoothly collapse the navigation controls into a slim 28px header, giving maximum vertical screen space to your thread list.
 - **Quick Actions in Collapsed State**: Access top visible actions with 1 click directly from the collapsed bar.
-- **Native BB Navigation Integration**: Full support for split-view drag-and-drop, shortcut keys, accessories, and customizable ordering.
+- **Native VesnALIA Navigation Integration**: Full support for split-view drag-and-drop, shortcut keys, accessories, and customizable ordering.
 - **Hidden Items Drawer**: Non-destructive access to hidden navigation items with one-click restore.
 - **Header Navigation Slot**: Optional slot to place navigation icons directly beside window controls in the top sidebar header.
 - **Persistent State**: Remembers collapsed/expanded state across restarts in `localStorage`.
@@ -21,10 +21,10 @@ Reclaim sidebar space with an upward-folding collapsible navigation panel for BB
 
 ## Installation
 
-Install via the BB Community Marketplace, or install directly using the BB CLI:
+Install via the VesnALIA Community Marketplace, or install directly using the VesnALIA CLI:
 
 ```bash
-bb plugin install git:https://github.com/VanDalkvist/bb-plugin-collapsible-navigation.git
+alia plugin install git:https://github.com/VanDalkvist/bb-plugin-collapsible-navigation.git
 ```
 
 ## How to Use

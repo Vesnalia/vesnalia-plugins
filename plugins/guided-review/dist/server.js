@@ -10,7 +10,7 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/classic/external.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/classic/external.js
 var external_exports = {};
 __export(external_exports, {
   $brand: () => $brand,
@@ -253,7 +253,7 @@ __export(external_exports, {
   xor: () => xor
 });
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/core/index.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/core/index.js
 var core_exports2 = {};
 __export(core_exports2, {
   $ZodAny: () => $ZodAny,
@@ -532,7 +532,7 @@ __export(core_exports2, {
   version: () => version
 });
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/core/core.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/core/core.js
 var _a;
 var NEVER = /* @__PURE__ */ Object.freeze({
   status: "aborted"
@@ -609,7 +609,7 @@ function config(newConfig) {
   return globalConfig;
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/core/util.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/core/util.js
 var util_exports = {};
 __export(util_exports, {
   BIGINT_FORMAT_RANGES: () => BIGINT_FORMAT_RANGES,
@@ -1305,7 +1305,7 @@ var Class = class {
   }
 };
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/core/errors.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/core/errors.js
 var initializer = (inst, def) => {
   inst.name = "$ZodError";
   Object.defineProperty(inst, "_zod", {
@@ -1444,7 +1444,7 @@ function prettifyError(error51) {
   return lines.join("\n");
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/core/parse.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/core/parse.js
 var _parse = (_Err) => (schema, value, _ctx, _params) => {
   const ctx = _ctx ? { ..._ctx, async: false } : { async: false };
   const result = schema._zod.run({ value, issues: [] }, ctx);
@@ -1532,7 +1532,7 @@ var _safeDecodeAsync = (_Err) => async (schema, value, _ctx) => {
 };
 var safeDecodeAsync = /* @__PURE__ */ _safeDecodeAsync($ZodRealError);
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/core/regexes.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/core/regexes.js
 var regexes_exports = {};
 __export(regexes_exports, {
   base64: () => base64,
@@ -1691,7 +1691,7 @@ var sha512_hex = /^[0-9a-fA-F]{128}$/;
 var sha512_base64 = /* @__PURE__ */ fixedBase64(86, "==");
 var sha512_base64url = /* @__PURE__ */ fixedBase64url(86);
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/core/checks.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/core/checks.js
 var $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
   var _a3;
   inst._zod ?? (inst._zod = {});
@@ -2239,7 +2239,7 @@ var $ZodCheckOverwrite = /* @__PURE__ */ $constructor("$ZodCheckOverwrite", (ins
   };
 });
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/core/doc.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/core/doc.js
 var Doc = class {
   constructor(args = []) {
     this.content = [];
@@ -2275,14 +2275,14 @@ var Doc = class {
   }
 };
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/core/versions.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/core/versions.js
 var version = {
   major: 4,
   minor: 4,
   patch: 3
 };
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/core/schemas.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/core/schemas.js
 var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
   var _a3;
   inst ?? (inst = {});
@@ -4375,7 +4375,7 @@ function handleRefineResult(result, payload, input, inst) {
   }
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/index.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/index.js
 var locales_exports = {};
 __export(locales_exports, {
   ar: () => ar_default,
@@ -4432,7 +4432,7 @@ __export(locales_exports, {
   zhTW: () => zh_TW_default
 });
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/ar.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/ar.js
 var error = () => {
   const Sizable = {
     string: { unit: "\u062D\u0631\u0641", verb: "\u0623\u0646 \u064A\u062D\u0648\u064A" },
@@ -4539,7 +4539,7 @@ function ar_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/az.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/az.js
 var error2 = () => {
   const Sizable = {
     string: { unit: "simvol", verb: "olmal\u0131d\u0131r" },
@@ -4645,7 +4645,7 @@ function az_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/be.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/be.js
 function getBelarusianPlural(count, one, few, many) {
   const absCount = Math.abs(count);
   const lastDigit = absCount % 10;
@@ -4802,7 +4802,7 @@ function be_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/bg.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/bg.js
 var error4 = () => {
   const Sizable = {
     string: { unit: "\u0441\u0438\u043C\u0432\u043E\u043B\u0430", verb: "\u0434\u0430 \u0441\u044A\u0434\u044A\u0440\u0436\u0430" },
@@ -4923,7 +4923,7 @@ function bg_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/ca.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/ca.js
 var error5 = () => {
   const Sizable = {
     string: { unit: "car\xE0cters", verb: "contenir" },
@@ -5032,7 +5032,7 @@ function ca_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/cs.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/cs.js
 var error6 = () => {
   const Sizable = {
     string: { unit: "znak\u016F", verb: "m\xEDt" },
@@ -5144,7 +5144,7 @@ function cs_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/da.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/da.js
 var error7 = () => {
   const Sizable = {
     string: { unit: "tegn", verb: "havde" },
@@ -5260,7 +5260,7 @@ function da_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/de.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/de.js
 var error8 = () => {
   const Sizable = {
     string: { unit: "Zeichen", verb: "zu haben" },
@@ -5369,7 +5369,7 @@ function de_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/el.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/el.js
 var error9 = () => {
   const Sizable = {
     string: { unit: "\u03C7\u03B1\u03C1\u03B1\u03BA\u03C4\u03AE\u03C1\u03B5\u03C2", verb: "\u03BD\u03B1 \u03AD\u03C7\u03B5\u03B9" },
@@ -5479,7 +5479,7 @@ function el_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/en.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/en.js
 var error10 = () => {
   const Sizable = {
     string: { unit: "characters", verb: "to have" },
@@ -5592,7 +5592,7 @@ function en_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/eo.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/eo.js
 var error11 = () => {
   const Sizable = {
     string: { unit: "karaktrojn", verb: "havi" },
@@ -5702,7 +5702,7 @@ function eo_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/es.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/es.js
 var error12 = () => {
   const Sizable = {
     string: { unit: "caracteres", verb: "tener" },
@@ -5835,7 +5835,7 @@ function es_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/fa.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/fa.js
 var error13 = () => {
   const Sizable = {
     string: { unit: "\u06A9\u0627\u0631\u0627\u06A9\u062A\u0631", verb: "\u062F\u0627\u0634\u062A\u0647 \u0628\u0627\u0634\u062F" },
@@ -5950,7 +5950,7 @@ function fa_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/fi.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/fi.js
 var error14 = () => {
   const Sizable = {
     string: { unit: "merkki\xE4", subject: "merkkijonon" },
@@ -6063,7 +6063,7 @@ function fi_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/fr.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/fr.js
 var error15 = () => {
   const Sizable = {
     string: { unit: "caract\xE8res", verb: "avoir" },
@@ -6189,7 +6189,7 @@ function fr_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/fr-CA.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/fr-CA.js
 var error16 = () => {
   const Sizable = {
     string: { unit: "caract\xE8res", verb: "avoir" },
@@ -6297,7 +6297,7 @@ function fr_CA_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/he.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/he.js
 var error17 = () => {
   const TypeNames = {
     string: { label: "\u05DE\u05D7\u05E8\u05D5\u05D6\u05EA", gender: "f" },
@@ -6492,7 +6492,7 @@ function he_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/hr.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/hr.js
 var error18 = () => {
   const Sizable = {
     string: { unit: "znakova", verb: "imati" },
@@ -6615,7 +6615,7 @@ function hr_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/hu.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/hu.js
 var error19 = () => {
   const Sizable = {
     string: { unit: "karakter", verb: "legyen" },
@@ -6724,7 +6724,7 @@ function hu_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/hy.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/hy.js
 function getArmenianPlural(count, one, many) {
   return Math.abs(count) === 1 ? one : many;
 }
@@ -6872,7 +6872,7 @@ function hy_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/id.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/id.js
 var error21 = () => {
   const Sizable = {
     string: { unit: "karakter", verb: "memiliki" },
@@ -6979,7 +6979,7 @@ function id_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/is.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/is.js
 var error22 = () => {
   const Sizable = {
     string: { unit: "stafi", verb: "a\xF0 hafa" },
@@ -7089,7 +7089,7 @@ function is_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/it.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/it.js
 var error23 = () => {
   const Sizable = {
     string: { unit: "caratteri", verb: "avere" },
@@ -7198,7 +7198,7 @@ function it_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/ja.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/ja.js
 var error24 = () => {
   const Sizable = {
     string: { unit: "\u6587\u5B57", verb: "\u3067\u3042\u308B" },
@@ -7306,7 +7306,7 @@ function ja_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/ka.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/ka.js
 var error25 = () => {
   const Sizable = {
     string: { unit: "\u10E1\u10D8\u10DB\u10D1\u10DD\u10DA\u10DD", verb: "\u10E3\u10DC\u10D3\u10D0 \u10E8\u10D4\u10D8\u10EA\u10D0\u10D5\u10D3\u10D4\u10E1" },
@@ -7419,7 +7419,7 @@ function ka_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/km.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/km.js
 var error26 = () => {
   const Sizable = {
     string: { unit: "\u178F\u17BD\u17A2\u1780\u17D2\u179F\u179A", verb: "\u1782\u17BD\u179A\u1798\u17B6\u1793" },
@@ -7530,12 +7530,12 @@ function km_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/kh.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/kh.js
 function kh_default() {
   return km_default();
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/ko.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/ko.js
 var error27 = () => {
   const Sizable = {
     string: { unit: "\uBB38\uC790", verb: "to have" },
@@ -7647,7 +7647,7 @@ function ko_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/lt.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/lt.js
 var capitalizeFirstCharacter = (text) => {
   return text.charAt(0).toUpperCase() + text.slice(1);
 };
@@ -7851,7 +7851,7 @@ function lt_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/mk.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/mk.js
 var error29 = () => {
   const Sizable = {
     string: { unit: "\u0437\u043D\u0430\u0446\u0438", verb: "\u0434\u0430 \u0438\u043C\u0430\u0430\u0442" },
@@ -7961,7 +7961,7 @@ function mk_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/ms.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/ms.js
 var error30 = () => {
   const Sizable = {
     string: { unit: "aksara", verb: "mempunyai" },
@@ -8069,7 +8069,7 @@ function ms_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/nl.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/nl.js
 var error31 = () => {
   const Sizable = {
     string: { unit: "tekens", verb: "heeft" },
@@ -8180,7 +8180,7 @@ function nl_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/no.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/no.js
 var error32 = () => {
   const Sizable = {
     string: { unit: "tegn", verb: "\xE5 ha" },
@@ -8289,7 +8289,7 @@ function no_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/ota.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/ota.js
 var error33 = () => {
   const Sizable = {
     string: { unit: "harf", verb: "olmal\u0131d\u0131r" },
@@ -8399,7 +8399,7 @@ function ota_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/ps.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/ps.js
 var error34 = () => {
   const Sizable = {
     string: { unit: "\u062A\u0648\u06A9\u064A", verb: "\u0648\u0644\u0631\u064A" },
@@ -8514,7 +8514,7 @@ function ps_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/pl.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/pl.js
 var error35 = () => {
   const Sizable = {
     string: { unit: "znak\xF3w", verb: "mie\u0107" },
@@ -8624,7 +8624,7 @@ function pl_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/pt.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/pt.js
 var error36 = () => {
   const Sizable = {
     string: { unit: "caracteres", verb: "ter" },
@@ -8733,7 +8733,7 @@ function pt_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/ro.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/ro.js
 var error37 = () => {
   const Sizable = {
     string: { unit: "caractere", verb: "s\u0103 aib\u0103" },
@@ -8853,7 +8853,7 @@ function ro_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/ru.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/ru.js
 function getRussianPlural(count, one, few, many) {
   const absCount = Math.abs(count);
   const lastDigit = absCount % 10;
@@ -9010,7 +9010,7 @@ function ru_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/sl.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/sl.js
 var error39 = () => {
   const Sizable = {
     string: { unit: "znakov", verb: "imeti" },
@@ -9120,7 +9120,7 @@ function sl_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/sv.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/sv.js
 var error40 = () => {
   const Sizable = {
     string: { unit: "tecken", verb: "att ha" },
@@ -9231,7 +9231,7 @@ function sv_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/ta.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/ta.js
 var error41 = () => {
   const Sizable = {
     string: { unit: "\u0B8E\u0BB4\u0BC1\u0BA4\u0BCD\u0BA4\u0BC1\u0B95\u0BCD\u0B95\u0BB3\u0BCD", verb: "\u0B95\u0BCA\u0BA3\u0BCD\u0B9F\u0BBF\u0BB0\u0BC1\u0B95\u0BCD\u0B95 \u0BB5\u0BC7\u0BA3\u0BCD\u0B9F\u0BC1\u0BAE\u0BCD" },
@@ -9342,7 +9342,7 @@ function ta_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/th.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/th.js
 var error42 = () => {
   const Sizable = {
     string: { unit: "\u0E15\u0E31\u0E27\u0E2D\u0E31\u0E01\u0E29\u0E23", verb: "\u0E04\u0E27\u0E23\u0E21\u0E35" },
@@ -9453,7 +9453,7 @@ function th_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/tr.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/tr.js
 var error43 = () => {
   const Sizable = {
     string: { unit: "karakter", verb: "olmal\u0131" },
@@ -9559,7 +9559,7 @@ function tr_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/uk.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/uk.js
 var error44 = () => {
   const Sizable = {
     string: { unit: "\u0441\u0438\u043C\u0432\u043E\u043B\u0456\u0432", verb: "\u043C\u0430\u0442\u0438\u043C\u0435" },
@@ -9668,12 +9668,12 @@ function uk_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/ua.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/ua.js
 function ua_default() {
   return uk_default();
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/ur.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/ur.js
 var error45 = () => {
   const Sizable = {
     string: { unit: "\u062D\u0631\u0648\u0641", verb: "\u06C1\u0648\u0646\u0627" },
@@ -9784,7 +9784,7 @@ function ur_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/uz.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/uz.js
 var error46 = () => {
   const Sizable = {
     string: { unit: "belgi", verb: "bo\u2018lishi kerak" },
@@ -9895,7 +9895,7 @@ function uz_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/vi.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/vi.js
 var error47 = () => {
   const Sizable = {
     string: { unit: "k\xFD t\u1EF1", verb: "c\xF3" },
@@ -10004,7 +10004,7 @@ function vi_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/zh-CN.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/zh-CN.js
 var error48 = () => {
   const Sizable = {
     string: { unit: "\u5B57\u7B26", verb: "\u5305\u542B" },
@@ -10114,7 +10114,7 @@ function zh_CN_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/zh-TW.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/zh-TW.js
 var error49 = () => {
   const Sizable = {
     string: { unit: "\u5B57\u5143", verb: "\u64C1\u6709" },
@@ -10222,7 +10222,7 @@ function zh_TW_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/locales/yo.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/locales/yo.js
 var error50 = () => {
   const Sizable = {
     string: { unit: "\xE0mi", verb: "n\xED" },
@@ -10330,7 +10330,7 @@ function yo_default() {
   };
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/core/registries.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/core/registries.js
 var _a2;
 var $output = /* @__PURE__ */ Symbol("ZodOutput");
 var $input = /* @__PURE__ */ Symbol("ZodInput");
@@ -10380,7 +10380,7 @@ function registry() {
 (_a2 = globalThis).__zod_globalRegistry ?? (_a2.__zod_globalRegistry = registry());
 var globalRegistry = globalThis.__zod_globalRegistry;
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/core/api.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/core/api.js
 // @__NO_SIDE_EFFECTS__
 function _string(Class2, params) {
   return new Class2({
@@ -11419,7 +11419,7 @@ function _stringFormat(Class2, format, fnOrRegex, _params = {}) {
   return inst;
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/core/to-json-schema.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/core/to-json-schema.js
 function initializeContext(params) {
   let target = params?.target ?? "draft-2020-12";
   if (target === "draft-4")
@@ -11778,7 +11778,7 @@ var createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params) =
   return finalize(ctx, schema);
 };
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/core/json-schema-processors.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/core/json-schema-processors.js
 var formatMap = {
   guid: "uuid",
   url: "uri",
@@ -12322,7 +12322,7 @@ function toJSONSchema(input, params) {
   return finalize(ctx, input);
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/core/json-schema-generator.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/core/json-schema-generator.js
 var JSONSchemaGenerator = class {
   /** @deprecated Access via ctx instead */
   get metadataRegistry() {
@@ -12397,10 +12397,10 @@ var JSONSchemaGenerator = class {
   }
 };
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/core/json-schema.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/core/json-schema.js
 var json_schema_exports = {};
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/classic/schemas.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/classic/schemas.js
 var schemas_exports2 = {};
 __export(schemas_exports2, {
   ZodAny: () => ZodAny,
@@ -12571,7 +12571,7 @@ __export(schemas_exports2, {
   xor: () => xor
 });
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/classic/checks.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/classic/checks.js
 var checks_exports2 = {};
 __export(checks_exports2, {
   endsWith: () => _endsWith,
@@ -12605,7 +12605,7 @@ __export(checks_exports2, {
   uppercase: () => _uppercase
 });
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/classic/iso.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/classic/iso.js
 var iso_exports = {};
 __export(iso_exports, {
   ZodISODate: () => ZodISODate,
@@ -12646,7 +12646,7 @@ function duration2(params) {
   return _isoDuration(ZodISODuration, params);
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/classic/errors.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/classic/errors.js
 var initializer2 = (inst, issues) => {
   $ZodError.init(inst, issues);
   inst.name = "ZodError";
@@ -12686,7 +12686,7 @@ var ZodRealError = /* @__PURE__ */ $constructor("ZodError", initializer2, {
   Parent: Error
 });
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/classic/parse.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/classic/parse.js
 var parse2 = /* @__PURE__ */ _parse(ZodRealError);
 var parseAsync2 = /* @__PURE__ */ _parseAsync(ZodRealError);
 var safeParse2 = /* @__PURE__ */ _safeParse(ZodRealError);
@@ -12700,7 +12700,7 @@ var safeDecode2 = /* @__PURE__ */ _safeDecode(ZodRealError);
 var safeEncodeAsync2 = /* @__PURE__ */ _safeEncodeAsync(ZodRealError);
 var safeDecodeAsync2 = /* @__PURE__ */ _safeDecodeAsync(ZodRealError);
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/classic/schemas.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/classic/schemas.js
 var _installedGroups = /* @__PURE__ */ new WeakMap();
 function _installLazyMethods(inst, group, methods) {
   const proto = Object.getPrototypeOf(inst);
@@ -13990,7 +13990,7 @@ function preprocess(fn, schema) {
   });
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/classic/compat.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/classic/compat.js
 var ZodIssueCode = {
   invalid_type: "invalid_type",
   too_big: "too_big",
@@ -14016,7 +14016,7 @@ var ZodFirstPartyTypeKind;
 /* @__PURE__ */ (function(ZodFirstPartyTypeKind2) {
 })(ZodFirstPartyTypeKind || (ZodFirstPartyTypeKind = {}));
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/classic/from-json-schema.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/classic/from-json-schema.js
 var z = {
   ...schemas_exports2,
   ...checks_exports2,
@@ -14496,7 +14496,7 @@ function fromJSONSchema(schema, params) {
   return convertSchema(normalized, ctx);
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/classic/coerce.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/classic/coerce.js
 var coerce_exports = {};
 __export(coerce_exports, {
   bigint: () => bigint3,
@@ -14521,23 +14521,23 @@ function date4(params) {
   return _coercedDate(ZodDate, params);
 }
 
-// ../../../../../personal/extensions/workflow/bb-plugin-guided-review/node_modules/zod/v4/classic/external.js
+// ../../../../../personal/extensions/workflow/alia-plugin-guided-review/node_modules/zod/v4/classic/external.js
 config(en_default());
 
 // src/rpc-contract.ts
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 
 // package.json
 var package_default = {
-  name: "bb-plugin-guided-review",
+  name: "alia-plugin-guided-review",
   version: "0.2.1",
   type: "module",
   engines: {
-    bb: ">=0.41.0",
-    bbPluginSdk: ">=0.4.34",
+    alia: ">=0.41.0",
+    aliaPluginSdk: ">=0.4.34",
     node: ">=24"
   },
-  bb: {
+  alia: {
     name: "Guided Review",
     description: "Turn a GitHub PR or local git ref into an agent-authored chaptered review, and submit it back to GitHub.",
     branding: {
@@ -14553,7 +14553,7 @@ var package_default = {
     zod: "^4.3.6"
   },
   devDependencies: {
-    "@get-bb/plugin-sdk": "0.4.34",
+    "@vesnalia/plugin-sdk": "0.4.34",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -14589,10 +14589,10 @@ var package_default = {
   scripts: {
     test: "vitest run",
     typecheck: "tsc --noEmit",
-    build: "bb plugin build",
-    check: "npm test && npm run typecheck && bb plugin types --check && npm run build"
+    build: "alia plugin build",
+    check: "npm test && npm run typecheck && VesnALIA plugin types --check && npm run build"
   },
-  description: "Chaptered pull-request reviews inside BB, with private notes and a review assistant.",
+  description: "Chaptered pull-request reviews inside VesnALIA, with private notes and a review assistant.",
   author: "Pritam Sharma",
   homepage: "https://notpritam.in/plugins/guided-review",
   repository: {
@@ -14622,8 +14622,8 @@ var releaseRpc = {
 };
 var HOUR = 36e5;
 var IDLE = 5 * 6e4;
-function createPluginUpdates(bb, backgroundBusy, now = Date.now) {
-  const db = bb.storage.database();
+function createPluginUpdates(alia, backgroundBusy, now = Date.now) {
+  const db = alia.storage.database();
   db.exec("CREATE TABLE IF NOT EXISTS plugin_updates (id INTEGER PRIMARY KEY CHECK(id=1), automatic INTEGER NOT NULL DEFAULT 0, next_attempt INTEGER NOT NULL DEFAULT 0)");
   db.prepare("INSERT OR IGNORE INTO plugin_updates (id) VALUES (1)").run();
   const read = () => db.prepare("SELECT automatic, next_attempt FROM plugin_updates WHERE id=1").get();
@@ -14670,7 +14670,7 @@ function createPluginUpdates(bb, backgroundBusy, now = Date.now) {
     if (checking) return checking;
     checking = (async () => {
       try {
-        const entry = (await bb.sdk.plugins.checkUpdates({ pluginId: bb.pluginId })).find((e) => e.id === bb.pluginId);
+        const entry = (await alia.sdk.plugins.checkUpdates({ pluginId: alia.pluginId })).find((e) => e.id === alia.pluginId);
         if (!entry) throw new Error("Missing result");
         current = {
           ...current,
@@ -14682,7 +14682,7 @@ function createPluginUpdates(bb, backgroundBusy, now = Date.now) {
         };
         return status();
       } catch {
-        current = { ...current, outcome: "unavailable", candidateVersion: null, latestVersion: null, checkedAt: now(), error: "Couldn\u2019t check for updates. Check the BB server\u2019s connection and try again." };
+        current = { ...current, outcome: "unavailable", candidateVersion: null, latestVersion: null, checkedAt: now(), error: "Couldn\u2019t check for updates. Check the VesnALIA server\u2019s connection and try again." };
         return status();
       } finally {
         checking = null;
@@ -14701,10 +14701,10 @@ function createPluginUpdates(bb, backgroundBusy, now = Date.now) {
         throw new Error(latest.error ?? "The available update changed or is blocked. Check for updates again.");
       }
       db.prepare("UPDATE plugin_updates SET next_attempt=? WHERE id=1").run(now() + HOUR);
-      const result = await bb.sdk.plugins.applyUpdate({ pluginId: bb.pluginId });
+      const result = await alia.sdk.plugins.applyUpdate({ pluginId: alia.pluginId });
       return { outcome: result.outcome, version: result.to?.display ?? null };
     } catch (error51) {
-      current.error = error51 instanceof Error ? error51.message : "BB couldn\u2019t complete the update. Check again before retrying.";
+      current.error = error51 instanceof Error ? error51.message : "VesnALIA couldn\u2019t complete the update. Check again before retrying.";
       throw error51;
     } finally {
       current.updating = false;
@@ -14884,9 +14884,9 @@ var rpcContract = defineRpcContract({
 
 // src/store.ts
 import { createHash, randomUUID } from "node:crypto";
-function createStore(bb) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+function createStore(alia) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS reviews (
       target_key TEXT PRIMARY KEY, kind TEXT NOT NULL, number INTEGER, repo TEXT,
       title TEXT, author TEXT, base TEXT, head TEXT, git_ref TEXT, url TEXT,
@@ -15219,15 +15219,15 @@ function targetKey2(t, scope) {
 var PREFIX = "needs-you:pending:";
 var MAX_AGE = 24 * 60 * 60 * 1e3;
 var managers = /* @__PURE__ */ new WeakMap();
-function completionNotifications(bb, store) {
-  let manager = managers.get(bb);
+function completionNotifications(alia, store) {
+  let manager = managers.get(alia);
   if (!manager) {
-    manager = createNotifications(bb, store);
-    managers.set(bb, manager);
+    manager = createNotifications(alia, store);
+    managers.set(alia, manager);
   }
   return manager;
 }
-function createNotifications(bb, store) {
+function createNotifications(alia, store) {
   let disposed = false;
   let flushing;
   let dirty = false;
@@ -15239,24 +15239,24 @@ function createNotifications(bb, store) {
     });
     return next;
   }
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
   });
   async function drain() {
-    const keys = await bb.storage.kv.list(PREFIX);
+    const keys = await alia.storage.kv.list(PREFIX);
     if (!keys.length || disposed) return;
     const liveKeys = [];
     await locked(async () => {
       for (const key of keys) {
         if (disposed) return;
-        const record2 = await bb.storage.kv.get(key);
+        const record2 = await alia.storage.kv.get(key);
         if (!record2) continue;
-        if (Date.now() - record2.occurredAt > MAX_AGE || !store.isCurrentGeneration(record2.targetKey, record2.generationId)) await bb.storage.kv.delete(key);
+        if (Date.now() - record2.occurredAt > MAX_AGE || !store.isCurrentGeneration(record2.targetKey, record2.generationId)) await alia.storage.kv.delete(key);
         else liveKeys.push(key);
       }
     });
     if (!liveKeys.length || disposed) return;
-    const capability = await bb.sdk.plugins.callRpc({
+    const capability = await alia.sdk.plugins.callRpc({
       pluginId: "inbox",
       method: "activityCapabilities",
       input: null,
@@ -15266,10 +15266,10 @@ function createNotifications(bb, store) {
     for (const key of liveKeys) {
       if (disposed) return;
       const record2 = await locked(async () => {
-        const pending = await bb.storage.kv.get(key);
+        const pending = await alia.storage.kv.get(key);
         if (!pending || disposed) return null;
         if (Date.now() - pending.occurredAt > MAX_AGE || !store.isCurrentGeneration(pending.targetKey, pending.generationId) || store.getReview(pending.targetKey)?.status !== pending.status) {
-          await bb.storage.kv.delete(key);
+          await alia.storage.kv.delete(key);
           return null;
         }
         return pending;
@@ -15278,7 +15278,7 @@ function createNotifications(bb, store) {
       const meta3 = store.getReview(record2.targetKey);
       if (!store.isCurrentGeneration(record2.targetKey, record2.generationId) || meta3?.status !== record2.status) continue;
       const title = (meta3.title || store.getGuide(record2.targetKey)?.title || "Review guide").slice(0, 240);
-      const result = await bb.sdk.plugins.callRpc({ pluginId: "inbox", method: "publishActivity", input: {
+      const result = await alia.sdk.plugins.callRpc({ pluginId: "inbox", method: "publishActivity", input: {
         sourceId: "guided-review",
         sourceName: "Guided Review",
         entityId: record2.targetKey,
@@ -15292,7 +15292,7 @@ function createNotifications(bb, store) {
       }, outputSchema: external_exports.object({ accepted: external_exports.literal(true), id: external_exports.string(), duplicate: external_exports.boolean() }) }).catch(() => null);
       if (disposed) return;
       if (result) await locked(async () => {
-        if ((await bb.storage.kv.get(key))?.generationId === record2.generationId) await bb.storage.kv.delete(key);
+        if ((await alia.storage.kv.get(key))?.generationId === record2.generationId) await alia.storage.kv.delete(key);
       });
     }
   }
@@ -15316,11 +15316,11 @@ function createNotifications(bb, store) {
       await locked(async () => {
         const key = `${PREFIX}${record2.targetKey}`;
         const clockKey = `needs-you:clock:${record2.targetKey}`;
-        const previous = await bb.storage.kv.get(clockKey);
+        const previous = await alia.storage.kv.get(clockKey);
         if (disposed || !store.isCurrentGeneration(record2.targetKey, record2.generationId)) return;
         const occurredAt = Math.max(Date.now(), (previous ?? 0) + 1);
-        await bb.storage.kv.set(clockKey, occurredAt);
-        await bb.storage.kv.set(key, { ...record2, occurredAt });
+        await alia.storage.kv.set(clockKey, occurredAt);
+        await alia.storage.kv.set(key, { ...record2, occurredAt });
         dirty = true;
       });
       await flush();
@@ -15330,11 +15330,11 @@ function createNotifications(bb, store) {
 
 // src/generate.ts
 var active = /* @__PURE__ */ new WeakMap();
-function hasGuideGenerations(bb) {
-  return (active.get(bb)?.size ?? 0) > 0;
+function hasGuideGenerations(alia) {
+  return (active.get(alia)?.size ?? 0) > 0;
 }
-function stopGuideGenerations(bb) {
-  for (const controller of active.get(bb) ?? []) controller.abort();
+function stopGuideGenerations(alia) {
+  for (const controller of active.get(alia) ?? []) controller.abort();
 }
 function buildGenerationPrompt(targetKey3, generationId, preferences = defaultPreferences) {
   return [
@@ -15346,17 +15346,17 @@ function buildGenerationPrompt(targetKey3, generationId, preferences = defaultPr
     guidePreferencesPrompt(preferences)
   ].join("\n");
 }
-async function generateGuide(bb, store, targetKey3, projectId) {
+async function generateGuide(alia, store, targetKey3, projectId) {
   let generationId;
   let workerId;
   let threads;
   const controller = new AbortController();
-  const runs = active.get(bb) ?? /* @__PURE__ */ new Set();
-  active.set(bb, runs);
+  const runs = active.get(alia) ?? /* @__PURE__ */ new Set();
+  active.set(alia, runs);
   runs.add(controller);
   try {
     generationId = store.beginGeneration(targetKey3);
-    threads = bb.sdk.threads;
+    threads = alia.sdk.threads;
     const worker = await threads.spawn({
       projectId,
       environment: { type: "project-default" },
@@ -15383,9 +15383,9 @@ async function generateGuide(bb, store, targetKey3, projectId) {
     if (!generationId || !store.isCurrentGeneration(targetKey3, generationId)) return;
     const ok = !controller.signal.aborted && store.getGuide(targetKey3) !== null;
     store.setStatus(targetKey3, ok ? "ready" : "error");
-    bb.realtime.publish(`review:${targetKey3}`, { status: ok ? "ready" : "error" });
-    bb.realtime.publish("reviews", { ts: Date.now() });
-    if (!controller.signal.aborted) await completionNotifications(bb, store).queue({
+    alia.realtime.publish(`review:${targetKey3}`, { status: ok ? "ready" : "error" });
+    alia.realtime.publish("reviews", { ts: Date.now() });
+    if (!controller.signal.aborted) await completionNotifications(alia, store).queue({
       targetKey: targetKey3,
       generationId,
       projectId,
@@ -15556,11 +15556,11 @@ async function runReviewCommand(deps, argv, ctx) {
       return { exitCode: 2, stderr: `Unexpected argument: ${value}` };
     } else input = value;
   }
-  if (!input) return { exitCode: 2, stderr: "usage: bb review <pr-url | pr-number | git-ref> [--base <ref>]" };
-  if (!ctx.projectId) return { exitCode: 2, stderr: "Run `bb review` inside a project thread." };
+  if (!input) return { exitCode: 2, stderr: "usage: VesnALIA review <pr-url | pr-number | git-ref> [--base <ref>]" };
+  if (!ctx.projectId) return { exitCode: 2, stderr: "Run `alia review` inside a project thread." };
   const target = parseTarget(input, base);
   if (target.kind === "pr" && base) return { exitCode: 2, stderr: "--base is only supported for local git refs." };
-  if ((target.kind === "ref" || !target.repo) && !ctx.cwd) return { exitCode: 2, stderr: "A local ref or PR number needs a working directory. Run `bb review` in the repository." };
+  if ((target.kind === "ref" || !target.repo) && !ctx.cwd) return { exitCode: 2, stderr: "A local ref or PR number needs a working directory. Run `alia review` in the repository." };
   const cwd = ctx.cwd ? resolve(ctx.cwd) : void 0;
   let key = targetKey2(target, cwd ? { projectId: ctx.projectId, cwd } : void 0);
   const now = Date.now();
@@ -15611,7 +15611,7 @@ async function runReviewCommand(deps, argv, ctx) {
   if (!patch.trim()) return { exitCode: 1, stderr: "No changes found for that target." };
   deps.store.saveReview(meta3);
   deps.store.savePatch(key, ensureGitHeaders(patch));
-  void generateGuide(deps.bb, deps.store, key, ctx.projectId);
+  void generateGuide(deps.alia, deps.store, key, ctx.projectId);
   return {
     exitCode: 0,
     stdout: `Guided Review started for ${key}. Open the Guided Review panel to watch it build and review.`
@@ -15624,7 +15624,7 @@ async function createPrReview(deps, args) {
   if (target.kind !== "pr" || !target.repo) {
     return {
       ok: false,
-      error: "Paste a full GitHub PR URL (github.com/owner/repo/pull/N). For a PR number or local ref, run `bb review` in a terminal."
+      error: "Paste a full GitHub PR URL (github.com/owner/repo/pull/N). For a PR number or local ref, run `alia review` in a terminal."
     };
   }
   let snapshot;
@@ -15653,7 +15653,7 @@ async function createPrReview(deps, args) {
     createdAt: now
   });
   deps.store.savePatch(key, ensureGitHeaders(patch));
-  void generateGuide(deps.bb, deps.store, key, args.projectId);
+  void generateGuide(deps.alia, deps.store, key, args.projectId);
   return { ok: true, targetKey: key };
 }
 
@@ -15664,11 +15664,11 @@ function isMissingThread(error51) {
 
 // src/agent-coordination.ts
 var work = /* @__PURE__ */ new WeakMap();
-function stateFor(bb, targetKey3) {
-  let reviews = work.get(bb);
+function stateFor(alia, targetKey3) {
+  let reviews = work.get(alia);
   if (!reviews) {
     reviews = /* @__PURE__ */ new Map();
-    work.set(bb, reviews);
+    work.set(alia, reviews);
   }
   let state = reviews.get(targetKey3);
   if (!state) {
@@ -15677,8 +15677,8 @@ function stateFor(bb, targetKey3) {
   }
   return { reviews, state };
 }
-async function withReviewAgentTurn(bb, targetKey3, run2) {
-  const { reviews, state } = stateFor(bb, targetKey3);
+async function withReviewAgentTurn(alia, targetKey3, run2) {
+  const { reviews, state } = stateFor(alia, targetKey3);
   if (state.turn) throw new Error("An answer is already in progress for this review.");
   state.turn = true;
   try {
@@ -15689,8 +15689,8 @@ async function withReviewAgentTurn(bb, targetKey3, run2) {
     if (!state.maintenance) reviews.delete(targetKey3);
   }
 }
-async function withReviewAgentMaintenance(bb, targetKey3, run2) {
-  const { reviews, state } = stateFor(bb, targetKey3);
+async function withReviewAgentMaintenance(alia, targetKey3, run2) {
+  const { reviews, state } = stateFor(alia, targetKey3);
   if (state.turn || state.maintenance) return;
   let release;
   state.maintenance = new Promise((resolve2) => {
@@ -15720,11 +15720,11 @@ function requireReviewRevision(store, targetKey3, revision) {
 
 // src/agent.ts
 var active2 = /* @__PURE__ */ new WeakMap();
-function stopReviewAgents(bb) {
-  for (const controller of active2.get(bb) ?? []) controller.abort();
+function stopReviewAgents(alia) {
+  for (const controller of active2.get(alia) ?? []) controller.abort();
 }
-function hasReviewAgents(bb) {
-  return (active2.get(bb)?.size ?? 0) > 0;
+function hasReviewAgents(alia) {
+  return (active2.get(alia)?.size ?? 0) > 0;
 }
 var MAX_FILE_DIFF = 4e4;
 function buildSeedPrompt(guide, targetKey3) {
@@ -15823,20 +15823,20 @@ function normalizeOutput(res) {
   const value = typeof res === "string" ? res : res && typeof res === "object" && "output" in res ? res.output : res;
   return typeof value === "string" ? value : String(value ?? "");
 }
-async function runAgentTurn(bb, store, args) {
+async function runAgentTurn(alia, store, args) {
   const controller = new AbortController();
-  const runs = active2.get(bb) ?? /* @__PURE__ */ new Set();
-  active2.set(bb, runs);
+  const runs = active2.get(alia) ?? /* @__PURE__ */ new Set();
+  active2.set(alia, runs);
   runs.add(controller);
   try {
-    return await withReviewAgentTurn(bb, args.targetKey, () => runTurn(bb, store, args, controller.signal));
+    return await withReviewAgentTurn(alia, args.targetKey, () => runTurn(alia, store, args, controller.signal));
   } finally {
     runs.delete(controller);
   }
 }
-async function runTurn(bb, store, args, signal) {
+async function runTurn(alia, store, args, signal) {
   signal.throwIfAborted();
-  const threads = bb.sdk.threads;
+  const threads = alia.sdk.threads;
   const revision = reviewRevision(store, args.targetKey);
   const guide = store.getGuide(args.targetKey);
   const patch = store.readPatch(args.targetKey, 0, 5e6).text;
@@ -15947,29 +15947,29 @@ var resultSchema = external_exports.object({ data: external_exports.object({
     reviews: external_exports.object({ nodes: external_exports.array(external_exports.object({ state: external_exports.string(), submittedAt: external_exports.string().nullable(), author: external_exports.object({ login: external_exports.string() }).nullable(), commit: external_exports.object({ oid: external_exports.string() }).nullable() })) })
   }) })
 }) });
-function createReviewSync(bb, store, run2) {
+function createReviewSync(alia, store, run2) {
   const pending = /* @__PURE__ */ new Map();
   const checked = /* @__PURE__ */ new Map();
   const hidden = /* @__PURE__ */ new Set();
   const archived = /* @__PURE__ */ new Set();
   let disposed = false;
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
   });
   async function maintainThread(targetKey3) {
-    await withReviewAgentMaintenance(bb, targetKey3, async () => {
+    await withReviewAgentMaintenance(alia, targetKey3, async () => {
       const threadId = store.getAgentThread(targetKey3);
       if (!threadId || disposed) return;
       try {
         if (!hidden.has(threadId)) {
-          await bb.sdk.threads.update({ threadId, visibility: "hidden" });
+          await alia.sdk.threads.update({ threadId, visibility: "hidden" });
           hidden.add(threadId);
         }
         if (store.getReview(targetKey3)?.archivedAt && !archived.has(threadId) && !disposed) {
           try {
-            await bb.sdk.threads.stop({ threadId });
+            await alia.sdk.threads.stop({ threadId });
           } finally {
-            if (!disposed) await bb.sdk.threads.archive({ threadId });
+            if (!disposed) await alia.sdk.threads.archive({ threadId });
           }
           archived.add(threadId);
         }
@@ -15977,7 +15977,7 @@ function createReviewSync(bb, store, run2) {
         if (disposed) return;
         if (isMissingThread(error51)) {
           if (store.getAgentThread(targetKey3) === threadId) store.clearAgentThread(targetKey3);
-        } else bb.log.warn(`Could not tidy review thread ${threadId}: ${String(error51)}`);
+        } else alia.log.warn(`Could not tidy review thread ${threadId}: ${String(error51)}`);
       }
     });
   }
@@ -16021,11 +16021,11 @@ function createReviewSync(bb, store, run2) {
         store.setLifecycle(targetKey3, state);
         await maintainThread(targetKey3);
         if (!disposed && JSON.stringify(current) !== JSON.stringify(store.getReview(targetKey3))) {
-          bb.realtime.publish(`review:${targetKey3}`, { ts: Date.now() });
-          bb.realtime.publish("reviews", { ts: Date.now() });
+          alia.realtime.publish(`review:${targetKey3}`, { ts: Date.now() });
+          alia.realtime.publish("reviews", { ts: Date.now() });
         }
       } catch (error51) {
-        if (!disposed) bb.log.warn(`Could not refresh ${targetKey3}: ${String(error51)}`);
+        if (!disposed) alia.log.warn(`Could not refresh ${targetKey3}: ${String(error51)}`);
       }
     })().finally(() => pending.delete(targetKey3));
     pending.set(targetKey3, task);
@@ -16047,7 +16047,7 @@ import { setTimeout as delay } from "node:timers/promises";
 async function bindGhAccount(run2, login) {
   if (!/^[A-Za-z0-9-]+$/.test(login)) throw new Error("Verify your GitHub account before submitting.");
   const token = await run2(["auth", "token", "--hostname", "github.com", "--user", login]);
-  if (token.code !== 0 || !token.stdout.trim()) throw new Error("Could not use this GitHub account. Check authentication on the BB server and try again. Your draft has been kept.");
+  if (token.code !== 0 || !token.stdout.trim()) throw new Error("Could not use this GitHub account. Check authentication on the VesnALIA server and try again. Your draft has been kept.");
   const authToken = token.stdout.trim();
   const bound = (args, opts) => run2(args, { ...opts, authToken });
   const identity = await bound(["api", "user", "--jq", ".login"]);
@@ -16224,7 +16224,7 @@ async function rerunReview(deps, targetKey3) {
       return { ok: false, error: error51 instanceof Error ? error51.message : "Could not load the PR." };
     }
   } else if (m.kind === "ref" && m.gitRef) {
-    if (!m.cwd) return { ok: false, error: "Local-ref re-review needs the original working dir; re-run `bb review` in the terminal." };
+    if (!m.cwd) return { ok: false, error: "Local-ref re-review needs the original working dir; re-run `alia review` in the terminal." };
     const diff = await deps.gh.runGit(gitDiffArgs(m.gitRef), { cwd: m.cwd });
     if (diff.code !== 0) return { ok: false, error: diff.stderr || "git diff failed" };
     patch = diff.stdout;
@@ -16234,7 +16234,7 @@ async function rerunReview(deps, targetKey3) {
   if (!patch.trim()) return { ok: false, error: "No changes found." };
   deps.store.savePatch(targetKey3, ensureGitHeaders(patch));
   deps.store.saveReview({ ...m, status: "generating" });
-  void generateGuide(deps.bb, deps.store, targetKey3, m.projectId);
+  void generateGuide(deps.alia, deps.store, targetKey3, m.projectId);
   return { ok: true };
 }
 
@@ -16272,7 +16272,7 @@ async function switchGhAccount(runGh2, login) {
     const actual = await runGh2(["api", "user", "--jq", ".login"]);
     const active3 = actual.code === 0 ? actual.stdout.trim() || null : null;
     if (active3?.toLowerCase() === login.toLowerCase()) return { ok: true, active: active3 };
-    return { ok: false, active: active3, error: "The active GitHub account did not change. Check whether GH_TOKEN or GITHUB_TOKEN overrides the saved account on the BB server." };
+    return { ok: false, active: active3, error: "The active GitHub account did not change. Check whether GH_TOKEN or GITHUB_TOKEN overrides the saved account on the VesnALIA server." };
   }
   return { ok: false, active: null, error: r.stderr || "switch failed" };
 }
@@ -16285,14 +16285,14 @@ async function checkRepoAccess(runGh2, repo) {
 }
 
 // server.ts
-async function plugin(bb) {
-  const store = createStore(bb);
+async function plugin(alia) {
+  const store = createStore(alia);
   store.interruptGenerations();
   const submitReview = createReviewSubmitter(store, runGh);
-  const sync = createReviewSync(bb, store, runGh);
-  const notifications = completionNotifications(bb, store);
-  const updates = createPluginUpdates(bb, () => hasGuideGenerations(bb) || hasReviewAgents(bb));
-  bb.background.service("plugin-updates", {
+  const sync = createReviewSync(alia, store, runGh);
+  const notifications = completionNotifications(alia, store);
+  const updates = createPluginUpdates(alia, () => hasGuideGenerations(alia) || hasReviewAgents(alia));
+  alia.background.service("plugin-updates", {
     async start(signal) {
       while (!signal.aborted) {
         await delay(6e4, void 0, { signal }).catch(() => {
@@ -16304,7 +16304,7 @@ async function plugin(bb) {
       }
     }
   });
-  bb.background.service("review-state", {
+  alia.background.service("review-state", {
     async start(signal) {
       while (!signal.aborted) {
         await updates.run(() => sync.all(), false).catch(() => {
@@ -16314,18 +16314,18 @@ async function plugin(bb) {
       }
     }
   });
-  bb.onDispose(() => {
-    stopGuideGenerations(bb);
-    stopReviewAgents(bb);
+  alia.onDispose(() => {
+    stopGuideGenerations(alia);
+    stopReviewAgents(alia);
   });
-  bb.log.info("guided-review loaded");
+  alia.log.info("guided-review loaded");
   const handlers = {
     async getSetupStatus() {
       const [cli, user, providers, projects] = await Promise.all([
         runGh(["--version"]),
         runGh(["api", "user", "--jq", ".login"]),
-        bb.sdk.providers.list().catch(() => null),
-        bb.sdk.projects.list({ includePersonal: true }).catch(() => null)
+        alia.sdk.providers.list().catch(() => null),
+        alia.sdk.projects.list({ includePersonal: true }).catch(() => null)
       ]);
       return { githubCli: cli.code === 0, account: user.code === 0 ? user.stdout.trim() || null : null, agentAvailable: providers ? providers.some((p) => p.available) : null, projectAvailable: projects ? projects.length > 0 : null };
     },
@@ -16342,7 +16342,7 @@ async function plugin(bb) {
     },
     savePreferences({ preferences, revision }) {
       const result = store.savePreferences(preferences, revision);
-      bb.realtime.publish("preferences", {});
+      alia.realtime.publish("preferences", {});
       return result;
     },
     getReviewerNotes({ targetKey: targetKey3 }) {
@@ -16360,14 +16360,14 @@ async function plugin(bb) {
     async startReview({ input }) {
       let projectId;
       try {
-        const projects = await bb.sdk.projects.list({ includePersonal: true });
+        const projects = await alia.sdk.projects.list({ includePersonal: true });
         const personal = projects.find((p) => p.kind === "personal");
         projectId = (personal ?? projects[0])?.id;
       } catch {
         return { ok: false, error: "Could not resolve a project to run generation." };
       }
       if (!projectId) return { ok: false, error: "No project available to run generation." };
-      return createPrReview({ bb, store, gh: { runGh, runGit } }, { input, projectId });
+      return createPrReview({ alia, store, gh: { runGh, runGit } }, { input, projectId });
     },
     // Task 10: read data plane
     listReviews() {
@@ -16446,7 +16446,7 @@ async function plugin(bb) {
     async rereview({ targetKey: targetKey3 }) {
       await sync.one(targetKey3, true);
       if (store.getReview(targetKey3)?.archivedAt) return { ok: false, error: "This PR is archived. Its guide and conversation are still available." };
-      return rerunReview({ bb, store, gh: { runGh, runGit } }, targetKey3);
+      return rerunReview({ alia, store, gh: { runGh, runGit } }, targetKey3);
     },
     // Task 11: draft + submit
     getDraft({ targetKey: targetKey3 }) {
@@ -16471,8 +16471,8 @@ async function plugin(bb) {
         return { ok: false, error: error51.message };
       }
       const result = await submitReview(targetKey3, revision, account);
-      bb.realtime.publish(`review:${targetKey3}`, { ts: Date.now() });
-      bb.realtime.publish("reviews", { ts: Date.now() });
+      alia.realtime.publish(`review:${targetKey3}`, { ts: Date.now() });
+      alia.realtime.publish("reviews", { ts: Date.now() });
       return result;
     },
     // Feature 1: per-file "Viewed" state (viewed/stale computed against the patch)
@@ -16499,10 +16499,10 @@ async function plugin(bb) {
     async askAgent({ targetKey: targetKey3, message, context }) {
       const m = store.getReview(targetKey3);
       if (!m?.projectId) {
-        return { answer: "This review has no associated project; re-run `bb review` inside a project." };
+        return { answer: "This review has no associated project; re-run `alia review` inside a project." };
       }
-      const res = await runAgentTurn(bb, store, { targetKey: targetKey3, message, context, projectId: m.projectId });
-      bb.realtime.publish(`agent:${targetKey3}`, { ts: Date.now() });
+      const res = await runAgentTurn(alia, store, { targetKey: targetKey3, message, context, projectId: m.projectId });
+      alia.realtime.publish(`agent:${targetKey3}`, { ts: Date.now() });
       return res;
     },
     // GitHub account indicator + switcher
@@ -16511,7 +16511,7 @@ async function plugin(bb) {
     },
     async switchGhAccount({ login }) {
       const r = await switchGhAccount(runGh, login);
-      if (r.ok) bb.realtime.publish("gh-account", { active: r.active });
+      if (r.ok) alia.realtime.publish("gh-account", { active: r.active });
       return r;
     },
     async checkRepoAccess({ targetKey: targetKey3 }) {
@@ -16520,7 +16520,7 @@ async function plugin(bb) {
     }
   };
   const guarded = Object.fromEntries(Object.entries(handlers).map(([name, handler]) => [name, (input) => updates.run(() => handler(input))]));
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     ...guarded,
     getReleaseStatus: () => updates.status(),
     checkPluginUpdates: () => updates.check(),
@@ -16528,7 +16528,7 @@ async function plugin(bb) {
     setReviewPresence: ({ clientId, open }) => updates.presence(clientId, open),
     applyPluginUpdate: ({ clientId, candidateVersion }) => updates.apply(clientId, candidateVersion)
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "read_review_patch",
     description: "Return the diff text for a Guided Review target (paginated).",
     parameters: external_exports.object({
@@ -16545,7 +16545,7 @@ async function plugin(bb) {
       return text + more;
     }
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "generate_review_guide",
     description: "Submit the authored guide. Validates shape and coverage.",
     parameters: external_exports.object({ targetKey: external_exports.string(), generationId: external_exports.string(), guide: external_exports.unknown() }),
@@ -16565,8 +16565,8 @@ async function plugin(bb) {
       return "Guide accepted.";
     }
   });
-  bb.agents.configure((context) => {
-    if (context.origin?.pluginId !== bb.pluginId) return { tools: [], skills: [] };
+  alia.agents.configure((context) => {
+    if (context.origin?.pluginId !== alia.pluginId) return { tools: [], skills: [] };
     const title = context.thread?.title ?? "";
     if (title.startsWith("Generate guide:")) {
       return { tools: ["read_review_patch", "generate_review_guide"], skills: ["guided-review-generate"] };
@@ -16576,12 +16576,12 @@ async function plugin(bb) {
     }
     return { tools: [], skills: [] };
   });
-  bb.cli.register({
+  alia.cli.register({
     name: "review",
     summary: "Open a Guided Review of a GitHub PR or local git ref",
-    commands: [{ name: "review", summary: "Review a PR or ref", usage: "bb review <pr-url | pr-number | git-ref> [--base <ref>]" }],
+    commands: [{ name: "review", summary: "Review a PR or ref", usage: "alia review <pr-url | pr-number | git-ref> [--base <ref>]" }],
     async run(argv, ctx) {
-      return updates.run(() => runReviewCommand({ bb, store, gh: { runGh, runGit } }, argv, ctx));
+      return updates.run(() => runReviewCommand({ alia, store, gh: { runGh, runGit } }, argv, ctx));
     }
   });
 }

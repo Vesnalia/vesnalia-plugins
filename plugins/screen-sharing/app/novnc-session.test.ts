@@ -13,7 +13,7 @@
  *   and a mouse button held over it — a touch drag or long press included —
  *   as RFB key-up and button-up messages to the Mac;
  * - a held button leaves no noVNC pointer capture (its full-window overlay)
- *   over bb once the screen leaves the page or the session ends;
+ *   over VesnALIA once the screen leaves the page or the session ends;
  * - with no cursor shape from the Mac, the pointer over the screen is the
  *   ordinary arrow, not noVNC's invisible cursor or its dot; a shape the Mac
  *   does send, an empty one included, is left as sent.
@@ -40,7 +40,7 @@ class FakeRelaySocket extends EventTarget {
   sent: Uint8Array[] = [];
   /** The page's own text frames: acks and pings. */
   texts: string[] = [];
-  /** Whether the relay answers pings; false is bb gone with this socket left open. */
+  /** Whether the relay answers pings; false is VesnALIA gone with this socket left open. */
   answering = true;
 
   send(data: string | ArrayBufferView | ArrayBuffer): void {
@@ -131,7 +131,7 @@ beforeAll(() => {
 
 let socket: FakeRelaySocket;
 let container: HTMLDivElement;
-/** The account bb runs as on the fake Mac, whose clipboard the Clipboard menu reaches. */
+/** The account VesnALIA runs as on the fake Mac, whose clipboard the Clipboard menu reaches. */
 let macAccount: { userName: string; fullName: string | null } = { userName: "alice", fullName: "Alice Example" };
 const macClipboard = {
   read: async () => ({ account: macAccount, changeCount: 1, text: null, tooLarge: false }),
@@ -348,7 +348,7 @@ describe("the session store with real noVNC", () => {
     });
   });
 
-  it("leaves no pointer capture over bb when the screen leaves the page with a button held", async () => {
+  it("leaves no pointer capture over VesnALIA when the screen leaves the page with a button held", async () => {
     await signIn();
     await acceptAndInit();
     const canvas = container.querySelector("canvas");
@@ -363,7 +363,7 @@ describe("the session store with real noVNC", () => {
     expect(capturedElement()).toBeNull();
     expect(captureOverlay()?.style.display).toBe("none");
 
-    // Mouse use elsewhere in bb no longer reaches the detached screen.
+    // Mouse use elsewhere in VesnALIA no longer reaches the detached screen.
     const elsewhere = socket.sent.length;
     const button = document.createElement("button");
     document.body.append(button);
@@ -376,7 +376,7 @@ describe("the session store with real noVNC", () => {
     button.remove();
   });
 
-  it("leaves no pointer capture over bb when the server ends a session with a button held", async () => {
+  it("leaves no pointer capture over VesnALIA when the server ends a session with a button held", async () => {
     await signIn();
     await acceptAndInit();
     const canvas = container.querySelector("canvas");
@@ -384,9 +384,9 @@ describe("the session store with real noVNC", () => {
     canvas.dispatchEvent(new MouseEvent("mousedown", { button: 0, buttons: 1, clientX: 3, clientY: 4, bubbles: true, cancelable: true }));
     expect(capturedElement()).toBe(canvas);
 
-    socket.close(4003, "closed from bb");
+    socket.close(4003, "closed from VesnALIA");
     await until(() => screenSession.getSnapshot().stage.kind === "idle", "the session to end");
-    expect(screenSession.getSnapshot().ended).toBe("Closed from bb with Close all.");
+    expect(screenSession.getSnapshot().ended).toBe("Closed from VesnALIA with Close all.");
     expect(capturedElement()).toBeNull();
     expect(captureOverlay()?.style.display).toBe("none");
   });
@@ -601,7 +601,7 @@ describe("Full screen", () => {
 
   it("ends when the server ends the session (Close all)", async () => {
     await goFullScreen();
-    socket.close(4003, "closed from bb");
+    socket.close(4003, "closed from VesnALIA");
     await until(() => screenSession.getSnapshot().stage.kind === "idle", "the session to end");
     expect(unlock).toHaveBeenCalled();
     expect(exitFullscreen).toHaveBeenCalled();
@@ -627,7 +627,7 @@ describe("Full screen", () => {
     { account: { userName: "captain", fullName: null }, matches: true },
     { account: { userName: "alice", fullName: "Captain" }, matches: true },
     { account: { userName: "alice", fullName: "Alice Example" }, matches: false },
-  ])("says whether the sign-in was the account bb runs as on the Mac ($account.userName, $account.fullName)", async ({ account, matches }) => {
+  ])("says whether the sign-in was the account VesnALIA runs as on the Mac ($account.userName, $account.fullName)", async ({ account, matches }) => {
     macAccount = account;
     await signIn();
     await acceptAndInit();
@@ -792,7 +792,7 @@ describe("the relay's liveness, with real noVNC", () => {
     }
   });
 
-  it("ends the session, saying so, when bb goes away and leaves the socket open", async () => {
+  it("ends the session, saying so, when VesnALIA goes away and leaves the socket open", async () => {
     vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
     try {
       await signIn();

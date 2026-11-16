@@ -28,7 +28,7 @@ export type PreparedSession = {
 
 export type SessionManifest = {
   schemaVersion: 2;
-  owner: "bb-plugin-workspaces";
+  owner: "alia-plugin-workspaces";
   sessionId: string;
   workspaceName: string;
   instructions: string;
@@ -176,7 +176,7 @@ function ownedPath(dataRoot: string, components: string[]): string {
   return join(declaredRoot, ...components);
 }
 
-/** Sessions created before bb 0.44 live in the plugin data dir, which bb no longer accepts as a thread workspace. */
+/** Sessions created before VesnALIA 0.44 live in the plugin data dir, which VesnALIA no longer accepts as a thread workspace. */
 export function resolveSessionDataRoot(pluginDataDir: string, sessionsDataRoot: string, sessionId: string): string {
   assertSafeSessionId(sessionId);
   return existsSync(join(pluginDataDir, "sessions", sessionId)) ? pluginDataDir : sessionsDataRoot;
@@ -210,7 +210,7 @@ function validatePreparedRepository(value: unknown, rootPath: string, sessionId:
   assertString(value.worktreePath, "repository worktreePath");
   const sourcePath = resolve(value.sourcePath);
   const expectedWorktreePath = join(rootPath, "repos", value.alias);
-  const expectedBranch = `bb-workspace/${sessionSlug(sessionId)}/${value.alias}`;
+  const expectedBranch = `alia-workspace/${sessionSlug(sessionId)}/${value.alias}`;
   if (value.sourcePath !== sourcePath) throw new Error("Session manifest repository source path is not canonical");
   if (value.worktreePath !== expectedWorktreePath || resolve(value.worktreePath) !== expectedWorktreePath) {
     throw new Error("Session manifest repository path is outside the owned session directory");
@@ -255,7 +255,7 @@ export function readSessionManifest(dataRoot: string, sessionId: string, legacyI
   if (raw.schemaVersion === 1) {
     return {
       schemaVersion: 2,
-      owner: "bb-plugin-workspaces",
+      owner: "alia-plugin-workspaces",
       sessionId,
       workspaceName: raw.workspaceName,
       instructions: legacyInstructions,
@@ -264,7 +264,7 @@ export function readSessionManifest(dataRoot: string, sessionId: string, legacyI
       operations: [],
     };
   }
-  if (raw.schemaVersion !== 2 || raw.owner !== "bb-plugin-workspaces") {
+  if (raw.schemaVersion !== 2 || raw.owner !== "alia-plugin-workspaces") {
     throw new Error("Session manifest ownership marker is invalid");
   }
   if (typeof raw.instructions !== "string" || typeof raw.revision !== "number" ||
@@ -286,7 +286,7 @@ export function readSessionManifest(dataRoot: string, sessionId: string, legacyI
   }
   return {
     schemaVersion: 2,
-    owner: "bb-plugin-workspaces",
+    owner: "alia-plugin-workspaces",
     sessionId,
     workspaceName: raw.workspaceName,
     instructions: raw.instructions,
@@ -310,10 +310,10 @@ export async function writeAtomic(path: string, contents: string): Promise<void>
 
 export async function ensureAnchor(dataRoot: string): Promise<{ path: string }> {
   let anchorPath = ownedPath(dataRoot, ["workspace-anchor"]);
-  const marker = `${JSON.stringify({ schemaVersion: 1, owner: "bb-plugin-workspaces" })}\n`;
+  const marker = `${JSON.stringify({ schemaVersion: 1, owner: "alia-plugin-workspaces" })}\n`;
   await mkdir(anchorPath, { recursive: true });
   anchorPath = ownedPath(dataRoot, ["workspace-anchor"]);
-  const ownedMarkerPath = join(anchorPath, ".bb-workspaces-anchor.json");
+  const ownedMarkerPath = join(anchorPath, ".alia-workspaces-anchor.json");
   try {
     await writeFile(ownedMarkerPath, marker, { encoding: "utf8", mode: 0o600, flag: "wx" });
   } catch (error) {
@@ -325,7 +325,7 @@ export async function ensureAnchor(dataRoot: string): Promise<{ path: string }> 
     } catch {
       throw new Error("Workspace anchor marker is invalid");
     }
-    if (!isRecord(existing) || existing.schemaVersion !== 1 || existing.owner !== "bb-plugin-workspaces") {
+    if (!isRecord(existing) || existing.schemaVersion !== 1 || existing.owner !== "alia-plugin-workspaces") {
       throw new Error("Workspace anchor marker is invalid");
     }
   }
@@ -334,7 +334,7 @@ export async function ensureAnchor(dataRoot: string): Promise<{ path: string }> 
 
 function rootAgents(workspaceName: string, instructions: string, repositories: PrepareRepository[]): string {
   const map = repositories.map((repository) =>
-    `- \`repos/${repository.alias}\` → BB project \`${repository.projectId}\``,
+    `- \`repos/${repository.alias}\` → VesnALIA project \`${repository.projectId}\``,
   ).join("\n");
   const guidance = instructions.trim() === "" ? "" : `\n## Workspace guidance\n\n${instructions.trim()}\n`;
   return `# ${workspaceName} multi-repository session\n\n` +
@@ -383,13 +383,13 @@ export async function prepareSession(input: {
       const sourcePath = resolve(repository.sourcePath);
       const base = await resolveBase(sourcePath, repository.baseRef);
       const worktreePath = join(reposRoot, repository.alias);
-      const branch = `bb-workspace/${sessionSlug(input.sessionId)}/${repository.alias}`;
+      const branch = `alia-workspace/${sessionSlug(input.sessionId)}/${repository.alias}`;
       await git(sourcePath, ["worktree", "add", "-b", branch, worktreePath, base.baseCommit]);
       prepared.push({ ...repository, sourcePath, ...base, branch, worktreePath });
     }
     const manifest: SessionManifest = {
       schemaVersion: 2,
-      owner: "bb-plugin-workspaces",
+      owner: "alia-plugin-workspaces",
       sessionId: input.sessionId,
       workspaceName: input.workspaceName,
       instructions: input.instructions,
@@ -505,7 +505,7 @@ export async function addRepository(input: {
     }
 
     const worktreePath = join(reposRoot, repository.alias);
-    const branch = `bb-workspace/${sessionSlug(input.sessionId)}/${repository.alias}`;
+    const branch = `alia-workspace/${sessionSlug(input.sessionId)}/${repository.alias}`;
     const base = await resolveBase(repository.sourcePath, repository.baseRef);
     if (await pathExists(worktreePath)) throw new Error(`Repository worktree path already exists: ${worktreePath}`);
     if (await branchExists(repository.sourcePath, branch)) throw new Error(`Repository branch already exists: ${branch}`);

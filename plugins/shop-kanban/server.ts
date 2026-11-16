@@ -1,7 +1,7 @@
-// Board server: every non-archived, visible, top-level BB thread is a card. Its column is derived from live thread
+// Board server: every non-archived, visible, top-level VesnALIA thread is a card. Its column is derived from live thread
 // state (deriveStatus in server/status.ts); agents report nothing.
 
-import type { BbPluginApi, PluginThreadEventName, PluginThreadEventPayloads } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginThreadEventName, PluginThreadEventPayloads } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   COLUMN_IDS,
@@ -37,8 +37,8 @@ const PARKED_KEY = "parked-v1";
 /** The same failure is logged at most once per this interval. */
 const LOG_REPEAT_MS = 60 * 60_000;
 /**
- * Queued-row states bb's Send now can still send; a claimed row is already on its way, a failed one isn't queued.
- * Indexed by a row's state, so a state bb adds fails the typecheck until it's listed here.
+ * Queued-row states VesnALIA's Send now can still send; a claimed row is already on its way, a failed one isn't queued.
+ * Indexed by a row's state, so a state VesnALIA adds fails the typecheck until it's listed here.
  */
 const SENDABLE_ROW_STATES = {
   queued: true,
@@ -72,27 +72,27 @@ function descendantsOf(children: Map<string, LiveThread[]>, id: string): LiveThr
   return out;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const labels = createLabeler(bb, publishBoardChanged);
-  const reader = createThreadReader(bb);
-  const sessions = createSessionInfo(bb, reader);
-  const search = createSearchIndex(bb, reader);
-  const reviews = createReviewQueue(bb, labels);
-  const work = createWorkLists(bb);
-  const wip = createWipLimit(bb, reader, publishBoardChanged);
-  const system = createSystemMonitor(bb);
-  const aiUsage = createAiUsage(bb);
-  const logOnce = throttledLog(bb, LOG_REPEAT_MS);
+  const labels = createLabeler(alia, publishBoardChanged);
+  const reader = createThreadReader(alia);
+  const sessions = createSessionInfo(alia, reader);
+  const search = createSearchIndex(alia, reader);
+  const reviews = createReviewQueue(alia, labels);
+  const work = createWorkLists(alia);
+  const wip = createWipLimit(alia, reader, publishBoardChanged);
+  const system = createSystemMonitor(alia);
+  const aiUsage = createAiUsage(alia);
+  const logOnce = throttledLog(alia, LOG_REPEAT_MS);
 
   function publishBoardChanged() {
-    bb.realtime.publish(BOARD_CHANGED, { at: Date.now() });
+    alia.realtime.publish(BOARD_CHANGED, { at: Date.now() });
   }
 
   /** The stored tasks KV row; entries that do not parse are dropped. */
   async function readTasks(): Promise<Record<string, StoredTask>> {
-    return parseRecord(await bb.storage.kv.get<unknown>(TASKS_KEY), storedTaskSchema);
+    return parseRecord(await alia.storage.kv.get<unknown>(TASKS_KEY), storedTaskSchema);
   }
 
   let kvWrite: Promise<unknown> = Promise.resolve();
@@ -115,7 +115,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (next) tasks[threadId] = next;
       else delete tasks[threadId];
       if (next || previous) {
-        await bb.storage.kv.set(TASKS_KEY, tasks);
+        await alia.storage.kv.set(TASKS_KEY, tasks);
         publishBoardChanged();
       }
       return previous;
@@ -124,7 +124,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   /** When each parked thread was parked (ms); entries that do not parse are dropped. */
   async function readParked(): Promise<Record<string, number>> {
-    return parseRecord(await bb.storage.kv.get<unknown>(PARKED_KEY), z.number());
+    return parseRecord(await alia.storage.kv.get<unknown>(PARKED_KEY), z.number());
   }
 
   /** Park a thread as of now, or forget that it was parked. */
@@ -134,15 +134,15 @@ export default async function plugin(bb: BbPluginApi) {
       if (!parked && !(threadId in all)) return;
       if (parked) all[threadId] = Date.now();
       else delete all[threadId];
-      await bb.storage.kv.set(PARKED_KEY, all);
+      await alia.storage.kv.set(PARKED_KEY, all);
       publishBoardChanged();
     });
   }
 
   async function defaultProjectId(): Promise<string> {
-    const projects = (await safe(() => bb.sdk.projects.list({ includePersonal: true }))) ?? [];
+    const projects = (await safe(() => alia.sdk.projects.list({ includePersonal: true }))) ?? [];
     const project = projects.find((entry) => entry.kind === "personal") ?? projects[0];
-    if (!project) throw new Error("No bb project to start the thread in: open or create a project in bb first.");
+    if (!project) throw new Error("No VesnALIA project to start the thread in: open or create a project in VesnALIA first.");
     return project.id;
   }
 
@@ -271,20 +271,20 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   /**
-   * Start a Queue card now: send its thread's next waiting message with bb's Send now, which skips the working limit (and
-   * any other dispatch hold) by bb's design, as the composer's Send now does. Returns its card.
+   * Start a Queue card now: send its thread's next waiting message with VesnALIA's Send now, which skips the working limit (and
+   * any other dispatch hold) by VesnALIA's design, as the composer's Send now does. Returns its card.
    */
   async function startTask(threadId: string): Promise<BoardTask> {
     const thread = await boardThread(threadId);
-    const rows = await bb.sdk.threads.queuedMessages.list({ threadId });
+    const rows = await alia.sdk.threads.queuedMessages.list({ threadId });
     const row = rows.find((entry) => SENDABLE_ROW_STATES[entry.state]);
     if (row) {
-      const sent = await bb.sdk.threads.queuedMessages.send({ threadId, queuedMessageId: row.id, mode: "auto" });
+      const sent = await alia.sdk.threads.queuedMessages.send({ threadId, queuedMessageId: row.id, mode: "auto" });
       if (sent.delivery === "queued") {
         const hold = sent.queuedMessage.waitingOn;
         const why =
           hold?.kind === "plugin" ? hold.reason : hold?.kind === "host-offline" ? `${hold.hostName} is offline` : hold?.kind.replace(/-/g, " ");
-        throw new Error(`bb couldn't send it yet${why ? `: ${why}` : ""}.`);
+        throw new Error(`alia couldn't send it yet${why ? `: ${why}` : ""}.`);
       }
     }
     const [live, descendants, stored, parkedAll] = await Promise.all([
@@ -301,7 +301,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function preferThreadNotifications(threadId: string) {
     await safe(() =>
-      bb.sdk.plugins.callRpc({
+      alia.sdk.plugins.callRpc({
         pluginId: "push-notifications",
         method: "threadNotifications.set",
         input: { threadId, level: "all" },
@@ -322,7 +322,7 @@ export default async function plugin(bb: BbPluginApi) {
       parentThreadId: input.parentThreadId ?? null,
       updatedAt: now,
     } satisfies Partial<StoredTask>;
-    const thread = await bb.sdk.threads.spawn({
+    const thread = await alia.sdk.threads.spawn({
       projectId,
       environment: { type: "project-default" },
       prompt: input.prompt.trim(),
@@ -348,13 +348,13 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function removeTask(threadId: string, archive = false): Promise<boolean> {
-    // Every BB thread is a card, so archiving works for threads the plugin never tracked.
-    const archived = archive && (await safe(() => bb.sdk.threads.archive({ threadId }))) !== null;
+    // Every VesnALIA thread is a card, so archiving works for threads the plugin never tracked.
+    const archived = archive && (await safe(() => alia.sdk.threads.archive({ threadId }))) !== null;
     const previous = await editTask(threadId, () => undefined);
     await setParked(threadId, false);
     if (previous) {
       await safe(() =>
-        bb.sdk.threads.updatePluginMetadata({
+        alia.sdk.threads.updatePluginMetadata({
           threadId,
           set: { boardTask: false, updatedAt: nowIso() },
           remove: ["shortName", "titleChain"],
@@ -367,12 +367,12 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function markRead(threadId: string, read: boolean) {
-    const ok = (await safe(() => (read ? bb.sdk.threads.markRead({ threadId }) : bb.sdk.threads.markUnread({ threadId })))) !== null;
+    const ok = (await safe(() => (read ? alia.sdk.threads.markRead({ threadId }) : alia.sdk.threads.markUnread({ threadId })))) !== null;
     publishBoardChanged();
     return { ok };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     board_list: listBoard,
     board_spawn_task: spawnTask,
     board_remove_task: async ({ threadId }) => ({ removed: await removeTask(threadId, true) }),
@@ -395,12 +395,12 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   const boardApi = { listBoard, spawnTask, removeTask, parkTask };
-  registerAgentTools(bb, boardApi);
-  registerCli(bb, boardApi);
+  registerAgentTools(alia, boardApi);
+  registerCli(alia, boardApi);
 
   /** No caller awaits an event handler: a failure (e.g. a KV write) is logged, at most once per interval. */
   function on<E extends PluginThreadEventName>(event: E, handler: (payload: PluginThreadEventPayloads[E]) => Promise<void>) {
-    bb.events.on(event, (payload) =>
+    alia.events.on(event, (payload) =>
       handler(payload).catch((error: unknown) => logOnce(`${event} handler failed: ${errorMessage(error)}`)),
     );
   }
@@ -432,7 +432,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // Settled, deleted, archived and restored threads change what the thread search index should hold.
   const searchSyncEvents: PluginThreadEventName[] = ["thread.idle", "thread.deleted", "thread.archived", "thread.unarchived"];
-  for (const event of searchSyncEvents) bb.events.on(event, () => search.scheduleSync());
+  for (const event of searchSyncEvents) alia.events.on(event, () => search.scheduleSync());
 
   const refreshEvents: PluginThreadEventName[] = [
     "thread.created",
@@ -447,15 +447,15 @@ export default async function plugin(bb: BbPluginApi) {
     "message.queued",
     "experimental_thread.parentChanged",
   ];
-  for (const event of refreshEvents) bb.events.on(event, publishBoardChanged);
+  for (const event of refreshEvents) alia.events.on(event, publishBoardChanged);
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     labels.dispose();
     search.dispose();
     reviews.dispose();
     work.dispose();
     wip.dispose();
     system.dispose();
-    bb.log.info("disposed");
+    alia.log.info("disposed");
   });
 }

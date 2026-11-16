@@ -1,24 +1,24 @@
 $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path -Parent $PSScriptRoot
 $taskWorkspace = Split-Path -Parent (Split-Path -Parent $taskRoot)
-$taskCli = Join-Path $taskWorkspace 'work\bb-build-tools\node_modules\bb-app\dist\bb.js'
-$taskData = Join-Path $taskWorkspace 'work\bb-dev-data'
+$taskCli = Join-Path $taskWorkspace 'work\alia-build-tools\node_modules\alia-app\dist\alia.js'
+$taskData = Join-Path $taskWorkspace 'work\alia-dev-data'
 if (-not (Test-Path -LiteralPath $taskCli -PathType Leaf)) {
-    throw 'Task-local BB build tool is missing. See docs/vnext-testing.md.'
+    throw 'Task-local ALIA build tool is missing. See docs/vnext-testing.md.'
 }
-$taskOldData = $env:BB_DATA_DIR
-$taskOldUrl = $env:BB_SERVER_URL
-$taskOldTelemetry = $env:BB_TELEMETRY
+$taskOldData = $env:ALIA_DATA_DIR
+$taskOldUrl = $env:ALIA_SERVER_URL
+$taskOldTelemetry = $env:ALIA_TELEMETRY
 Push-Location -LiteralPath $taskRoot
 try {
-    $env:BB_DATA_DIR = $taskData
-    $env:BB_SERVER_URL = 'http://127.0.0.1:49886'
-    $env:BB_TELEMETRY = 'false'
+    $env:ALIA_DATA_DIR = $taskData
+    $env:ALIA_SERVER_URL = 'http://127.0.0.1:49886'
+    $env:ALIA_TELEMETRY = 'false'
     node $taskCli plugin build
-    if ($LASTEXITCODE -ne 0) { throw "BB build failed ($LASTEXITCODE)." }
+    if ($LASTEXITCODE -ne 0) { throw "ALIA build failed ($LASTEXITCODE)." }
 } finally {
-    $env:BB_DATA_DIR = $taskOldData
-    $env:BB_SERVER_URL = $taskOldUrl
-    $env:BB_TELEMETRY = $taskOldTelemetry
+    $env:ALIA_DATA_DIR = $taskOldData
+    $env:ALIA_SERVER_URL = $taskOldUrl
+    $env:ALIA_TELEMETRY = $taskOldTelemetry
     Pop-Location
 }

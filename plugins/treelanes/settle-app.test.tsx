@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { fireEvent, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { STAGES } from "./workflow";
 
 function board(stage: "design" | "quality" | "review", settled = false) {
@@ -36,7 +36,7 @@ describe("Settle from the board", () => {
       expect(slot.inspection.rpcCalls.filter((call) => call.method === "settleThread")).toEqual([
         { method: "settleThread", input: { threadId: "thread-child" } },
       ]);
-      expect(slot.queryByTestId("bb-thread-chat")).toBeNull();
+      expect(slot.queryByTestId("alia-thread-chat")).toBeNull();
       expect(slot.inspection.navigateCalls).toHaveLength(0);
       finish();
       await waitFor(() => expect(slot.queryByText("settle-worktree")).toBeNull());
@@ -57,7 +57,7 @@ describe("Settle from the board", () => {
       expect((await slot.findByRole("alert")).textContent).toBe("Sidebar state unavailable");
       expect(slot.getByRole("button", { name: "Finished child" })).toBeTruthy();
       expect((slot.getByRole("button", { name: "Settle Finished child" }) as HTMLButtonElement).disabled).toBe(false);
-      expect(slot.queryByTestId("bb-thread-chat")).toBeNull();
+      expect(slot.queryByTestId("alia-thread-chat")).toBeNull();
     } finally { slot.lifecycle.unmount(); }
   });
 

@@ -1,5 +1,5 @@
 // The RPC contract between server.ts and the page. app.tsx imports types only.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   learnResultSchema,
@@ -32,7 +32,7 @@ const setupStatusSchema = z.object({
   installCommand: z.string().nullable(),
   /** The command to show when the button cannot run or fails. */
   manualCommand: z.string(),
-  /** The login bb saves and searches through; null until the CLI runs. */
+  /** The login VesnALIA saves and searches through; null until the CLI runs. */
   login: z
     .object({
       context: z.string().nullable(),
@@ -49,7 +49,7 @@ const setupStatusSchema = z.object({
     .nullable(),
   /** Every CLI context, the active one first; empty when the CLI cannot list them. */
   contexts: z.array(contextSchema),
-  /** bb started Lobu on this machine and it has not stopped. */
+  /** VesnALIA started Lobu on this machine and it has not stopped. */
   starting: z.boolean(),
 });
 export type SetupStatus = z.infer<typeof setupStatusSchema>;
@@ -92,7 +92,7 @@ export type PanelDevice = z.infer<typeof panelDeviceSchema>;
 export type PanelConnection = z.infer<typeof panelConnectionSchema>;
 
 export const rpcContract = defineRpcContract({
-  /** Whether bb can reach Lobu: the CLI and the login bb uses. */
+  /** Whether VesnALIA can reach Lobu: the CLI and the login VesnALIA uses. */
   setupStatus: {
     input: z.object({}),
     output: setupStatusSchema,
@@ -107,7 +107,7 @@ export const rpcContract = defineRpcContract({
     input: z.object({}),
     output: approvalSchema,
   },
-  /** Switches bb to an existing CLI context, signing it in when needed. Reuses rather than duplicates. */
+  /** Switches VesnALIA to an existing CLI context, signing it in when needed. Reuses rather than duplicates. */
   useLogin: {
     input: z.object({ name: z.string().trim().min(1).max(64) }),
     output: approvalSchema,
@@ -117,12 +117,12 @@ export const rpcContract = defineRpcContract({
     input: z.object({}),
     output: z.object({ error: z.string().nullable() }),
   },
-  /** Adds a CLI context, makes it the login bb uses, and starts its sign-in. */
+  /** Adds a CLI context, makes it the login VesnALIA uses, and starts its sign-in. */
   addLogin: {
     input: z.object({ name: z.string().trim().min(1).max(64), url: z.string().trim().min(1) }),
     output: approvalSchema,
   },
-  /** Lobu's events page filtered to what bb saved through the login it uses (null when nothing is saved there), and how many memories bb saved there. */
+  /** Lobu's events page filtered to what VesnALIA saved through the login it uses (null when nothing is saved there), and how many memories VesnALIA saved there. */
   savedLink: {
     input: z.object({}),
     output: z.object({ url: z.string().nullable(), count: z.number() }),
@@ -177,7 +177,7 @@ export const rpcContract = defineRpcContract({
       workspaces: z.array(z.object({ slug: z.string(), name: z.string() })),
     }),
   },
-  /** What bb saved, newest first, with the project it was learned in. */
+  /** What VesnALIA saved, newest first, with the project it was learned in. */
   savedMemories: {
     input: z.object({}),
     output: z.object({
@@ -237,7 +237,7 @@ export const rpcContract = defineRpcContract({
     input: z.object({ projectId: z.string(), text: z.string().trim().min(1).max(2000) }),
     output: projectMemorySchema,
   },
-  /** Links a bb project to a Lobu workspace, or unlinks it with null. */
+  /** Links a VesnALIA project to a Lobu workspace, or unlinks it with null. */
   linkProject: {
     input: z.object({ projectId: z.string(), workspace: z.string().min(1).nullable() }),
     output: projectMemorySchema,

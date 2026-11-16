@@ -2,7 +2,7 @@ import {expect,it,vi} from 'vitest';
 import {createVpnPolicy} from './vpn-policy.js';
 import {accountPoolConfigSchema} from './contracts.js';
 import {createGuardNetworkCheck,bindGuardNetworkDecision} from './guard-network.js';
-const direct={schema:'bb-vpn-guard/network-decision/2',hostId:'vm',allowed:true,reason:'direct'};
+const direct={schema:'alia-vpn-guard/network-decision/2',hostId:'vm',allowed:true,reason:'direct'};
 it('only a bound explicit direct grant bypasses local VPN evidence',async()=>{
  const payload=vi.fn(async()=>null);
  const read=async()=>bindGuardNetworkDecision(direct,'vm');
@@ -16,7 +16,7 @@ it('only a bound explicit direct grant bypasses local VPN evidence',async()=>{
 });
 it('mismatched host/legacy direct/manual block fail closed without fallback',async()=>{
  expect(()=>bindGuardNetworkDecision(direct,'mac')).toThrow();
- expect(()=>bindGuardNetworkDecision({...direct,schema:'bb-vpn-guard/network-decision/1'},'vm')).toThrow();
+ expect(()=>bindGuardNetworkDecision({...direct,schema:'alia-vpn-guard/network-decision/1'},'vm')).toThrow();
  const check=createGuardNetworkCheck(async()=>bindGuardNetworkDecision({...direct,allowed:false,reason:'manual_block'},'vm'));
  await expect(check('cursor')).rejects.toThrow('VPN_GUARD_BLOCKED');
 });

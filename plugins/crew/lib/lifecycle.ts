@@ -77,9 +77,9 @@ export function createLifecycle(deps: LifecycleDeps) {
 
   async function liveThread(member: MemberRow): Promise<ThreadInfo> {
     const binding = store.currentBinding(member.id);
-    if (!binding) throw new AddressError(`${member.address} has no thread; run bb crew apply.`);
+    if (!binding) throw new AddressError(`${member.address} has no thread; run alia crew apply.`);
     const thread = await port.get(binding.threadId);
-    if (!thread) throw new AddressError(`${member.address}'s thread ${binding.threadId} is gone; run bb crew apply.`);
+    if (!thread) throw new AddressError(`${member.address}'s thread ${binding.threadId} is gone; run alia crew apply.`);
     return thread;
   }
 
@@ -147,7 +147,7 @@ export function createLifecycle(deps: LifecycleDeps) {
         bindings.push({ ...entry, change: "same" });
         continue;
       }
-      // The thread bound later (a reset, a handover) loses its place, but stays in BB.
+      // The thread bound later (a reset, a handover) loses its place, but stays in VesnALIA.
       if (current && current.threadId !== entry.threadId) await port.setMetadata(current.threadId, { retired: true }).catch(() => undefined);
       store.restoreBinding(memberRow, entry.threadId, entry.shift);
       await port.setMetadata(entry.threadId, { shift: entry.shift, retired: false }).catch(() => undefined);

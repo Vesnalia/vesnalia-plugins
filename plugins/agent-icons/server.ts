@@ -1,11 +1,11 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { createCli } from "./src/server/cli";
 import { IconStore } from "./src/server/state";
 import { ICONS_TAG, iconsContract } from "./src/shared/contract";
 import { DEFAULT_LANGUAGE, LANGUAGE_LABELS, LANGUAGES, parseLanguage } from "./src/shared/i18n";
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     language: {
       type: "select",
       label: "Language",
@@ -15,7 +15,7 @@ export default async function plugin(bb: BbPluginApi) {
       default: DEFAULT_LANGUAGE,
     },
   });
-  const invalidate = () => bb.rpc.experimental_invalidate([ICONS_TAG]);
+  const invalidate = () => alia.rpc.experimental_invalidate([ICONS_TAG]);
   // Open settings pages re-read `state`, which carries the language.
   settings.onChange((next, prev) => {
     if (next.language !== prev.language) invalidate();
@@ -29,9 +29,9 @@ export default async function plugin(bb: BbPluginApi) {
       return DEFAULT_LANGUAGE;
     }
   };
-  const store = new IconStore(bb.storage.kv, invalidate, readLanguage);
+  const store = new IconStore(alia.storage.kv, invalidate, readLanguage);
 
-  bb.rpc.register(iconsContract, {
+  alia.rpc.register(iconsContract, {
     state: () => store.state(),
     setIcons: ({ setId }) => store.setIcons(setId),
     assign: ({ providerId, source, tint }) => store.assign(providerId, source, tint),
@@ -44,5 +44,5 @@ export default async function plugin(bb: BbPluginApi) {
     deleteSet: ({ setId }) => store.deleteSet(setId),
   });
 
-  bb.cli.register(createCli(store, () => bb.sdk.providers.list()));
+  alia.cli.register(createCli(store, () => alia.sdk.providers.list()));
 }

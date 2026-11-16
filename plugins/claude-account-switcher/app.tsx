@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { definePluginApp, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "./contract";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/tooltip";
 
 const LOGIN_CHANGED_MESSAGE =
-  "Claude sign-in finished, but BB could not verify that subscription for this session. The machine login may have changed; this session was not released.";
+  "Claude sign-in finished, but VesnALIA could not verify that subscription for this session. The machine login may have changed; this session was not released.";
 type CancellationResult = "cancelled" | "not-cancelled";
 type SwitchPhase = "cancellable" | "cancelling" | "committed";
 type SwitchMode = "current" | "login";
@@ -50,7 +50,7 @@ function admissionFailureMessage(
   }
   switch (admission.reason) {
     case "machine-unavailable":
-      return "BB could not identify this session's machine.";
+      return "VesnALIA could not identify this session's machine.";
     case "not-claude":
       return "This button only works in Claude Code sessions.";
     case "thread-not-idle":
@@ -63,7 +63,7 @@ function admissionFailureMessage(
 function progressMessage(step: SwitchStep, phase: SwitchPhase): string {
   if (phase === "cancelling") return "Cancelling Claude login…";
   if (phase === "committed") {
-    return "Claude login changed. BB is finishing the switch…";
+    return "Claude login changed. VesnALIA is finishing the switch…";
   }
   switch (step) {
     case "admitting":
@@ -159,7 +159,7 @@ function SwitchClaudeAccountAction({ threadId }: { threadId: string }) {
       })
       .catch((caught) => {
         if (isMounted.current) {
-          toast.error(`BB could not cancel the Claude login: ${messageFrom(caught)}`);
+          toast.error(`VesnALIA could not cancel the Claude login: ${messageFrom(caught)}`);
         }
         return "not-cancelled" as const;
       });

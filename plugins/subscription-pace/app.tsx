@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { definePluginApp, useRpc, useSettings } from '@get-bb/plugin-sdk/app';
+import { definePluginApp, useRpc, useSettings } from '@vesnalia/plugin-sdk/app';
 import { SlotSettingsSection } from './components/SlotSettings.js';
 import type { rpcContract } from './server.js';
 import type { SlotSnapshot, Snapshot } from './collector.js';
@@ -39,11 +39,11 @@ function SetupSteps() {
   const steps = [
     {
       title: 'Add your Vercel AI Gateway key',
-      detail: 'The vck_ key bb already calls the AI Gateway with. Read only: it asks for the credit balance and daily spend.',
+      detail: 'The vck_ key VesnALIA already calls the AI Gateway with. Read only: it asks for the credit balance and daily spend.',
     },
     {
       title: 'Add your OpenCode key',
-      detail: 'The oc_s_ key bb already calls OpenCode with. It is sent as a Bearer token; OpenCode rejects it in a header.',
+      detail: 'The oc_s_ key VesnALIA already calls OpenCode with. It is sent as a Bearer token; OpenCode rejects it in a header.',
     },
     {
       title: 'Check each allowance',
@@ -207,7 +207,7 @@ export default definePluginApp(app => {
   });
   // The host renders every declarative descriptor as one flat row, so per-slot
   // disclosure has to be ours. The two API keys stay declarative, above this
-  // section: the host owns their secret storage and `bb plugin config` keeps
+  // section: the host owns their secret storage and `alia plugin config` keeps
   // working on them, neither of which the slot fields need.
   app.slots.settingsSection({
     id: 'slots',

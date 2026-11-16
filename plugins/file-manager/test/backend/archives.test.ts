@@ -9,7 +9,7 @@ import { EventEmitter } from "node:events";
 import { chmod, mkdir, mkdtemp, readFile, readdir, realpath, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { Job } from "../../contract";
@@ -131,9 +131,9 @@ async function extractAndSettle(
   return settled;
 }
 
-/** Every `.bb-extract-*` directory left behind in `dir` (there must be none). */
+/** Every `.alia-extract-*` directory left behind in `dir` (there must be none). */
 async function stagingLeftovers(dir: string): Promise<string[]> {
-  return (await readdir(dir)).filter((name) => name.startsWith(".bb-extract-"));
+  return (await readdir(dir)).filter((name) => name.startsWith(".alia-extract-"));
 }
 
 class FakeChild extends EventEmitter {
@@ -151,8 +151,8 @@ beforeEach(async () => {
   root = await realpath(await mkdtemp(path.join(tmpdir(), "fm-archives-")));
   await initRoot(root);
   host = createFakePluginHost({ pluginId: "file-manager" });
-  jobs = createJobs(host.bb);
-  archives = await createArchives(host.bb, { jobs });
+  jobs = createJobs(host.alia);
+  archives = await createArchives(host.alia, { jobs });
 });
 
 afterEach(async () => {
@@ -395,7 +395,7 @@ describe("extractArchive", () => {
 describe("rar", () => {
   it("refuses up front when 7z cannot unpack RAR data", async () => {
     await writeFile(path.join(root, "scans.rar"), "Rar!");
-    const codecless = await createArchives(host.bb, {
+    const codecless = await createArchives(host.alia, {
       jobs,
       executables: { tar: "/usr/bin/tar", unzip: null, sevenZip: "/usr/bin/7z", sevenZipRar: false },
     });
@@ -413,7 +413,7 @@ describe("rar", () => {
   it("runs 7z's extraction plan when the codec is there", async () => {
     await writeFile(path.join(root, "scans.rar"), "Rar!");
     const seen: { command: string; args: readonly string[] }[] = [];
-    const withCodec = await createArchives(host.bb, {
+    const withCodec = await createArchives(host.alia, {
       jobs,
       executables: { tar: "/usr/bin/tar", unzip: null, sevenZip: "/opt/7zz", sevenZipRar: true },
       spawnExtractor: (command, args) => {
@@ -541,7 +541,7 @@ describe("cancellation and extractor failures", () => {
 
   it("kills the child process and reports canceled", async () => {
     const child = new FakeChild();
-    const canceling = await createArchives(host.bb, {
+    const canceling = await createArchives(host.alia, {
       jobs,
       spawnExtractor: () => child as unknown as ExtractorProcess,
     });
@@ -570,7 +570,7 @@ describe("cancellation and extractor failures", () => {
 
   it("stops in-flight extractions and drops their staging on dispose", async () => {
     const child = new FakeChild();
-    const disposing = await createArchives(host.bb, {
+    const disposing = await createArchives(host.alia, {
       jobs,
       spawnExtractor: () => child as unknown as ExtractorProcess,
     });
@@ -584,7 +584,7 @@ describe("cancellation and extractor failures", () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(await stagingLeftovers(root)).toHaveLength(1);
 
-    // A reload/shutdown must not orphan the child or leave `.bb-extract-*`
+    // A reload/shutdown must not orphan the child or leave `.alia-extract-*`
     // in the user's folder for ever — nothing else ever collects it.
     await host.harness.lifecycle.dispose();
     await disposing.idle();
@@ -595,7 +595,7 @@ describe("cancellation and extractor failures", () => {
   });
 
   it("reports archive_failed with the extractor's stderr when it exits non-zero", async () => {
-    const failing = await createArchives(host.bb, {
+    const failing = await createArchives(host.alia, {
       jobs,
       spawnExtractor: () => {
         const child = new FakeChild();
@@ -620,7 +620,7 @@ describe("cancellation and extractor failures", () => {
   });
 
   it("reports archive_failed when the extractor cannot be spawned", async () => {
-    const broken = await createArchives(host.bb, {
+    const broken = await createArchives(host.alia, {
       jobs,
       spawnExtractor: () => {
         throw Object.assign(new Error("spawn unzip ENOENT"), { code: "ENOENT" });

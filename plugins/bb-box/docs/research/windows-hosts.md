@@ -1,6 +1,6 @@
 # Windows hosts
 
-Which backends could run boxes on a Windows machine, driven from BB's server
+Which backends could run boxes on a Windows machine, driven from VesnALIA's server
 over OpenSSH and PowerShell as the Tart backend drives a Mac over SSH:
 Hyper-V, WSL2 and Docker Desktop. Issue #158.
 
@@ -12,7 +12,7 @@ no decision record.
 Status: recommendation confirmed by measurement on 1 October 2026, in a
 Windows 11 Pro VM on Proxmox with nested virtualisation (8 cores, 16 GiB).
 The first option is built: [setup/docker-wsl/](../../setup/docker-wsl/README.md)
-sets up a PC, and bb-box's conformance suite passes against it. See
+sets up a PC, and alia-box's conformance suite passes against it. See
 [What we measured](#what-we-measured) and
 [What the experiments changed](#what-the-experiments-changed).
 
@@ -24,7 +24,7 @@ sets up a PC, and bb-box's conformance suite passes against it. See
    port is on the Windows machine's own address, so the backend's host is
    `ssh://user@windows-pc:2222` and everything else is as on Linux: linux,
    linux-docker and linux-desktop-cpu boxes, desktops through `docker exec`
-   (031), and enrolment as BB machines. It works on Windows Home, and Docker
+   (031), and enrolment as VesnALIA machines. It works on Windows Home, and Docker
    Engine needs no subscription.
    Done: `setup/docker-wsl/setup.ps1` sets up a PC in about 75 s, and a box
    is ready 2 to 4 s after it is asked for.
@@ -51,7 +51,7 @@ sets up a PC, and bb-box's conformance suite passes against it. See
 
 On 1 October 2026, in Windows 11 Pro 26H2 (build 26300) as a Proxmox VM
 with nested virtualisation: 8 cores of an AMD Threadripper PRO 9975WX,
-16 GiB, and WSL 3.0.1 with its memory set to 12 GB. BB's server, on the
+16 GiB, and WSL 3.0.1 with its memory set to 12 GB. VesnALIA's server, on the
 same Proxmox host, reached the VM directly. The conformance suite and the
 image builds ran from another machine through an SSH jump host. Nested
 timings are a worst case.
@@ -64,14 +64,14 @@ Setting up the PC:
 | Download and install WSL's MSI (351 MB) | 6.6 s and 13.8 s, no restart |
 | `setup.ps1`, first run | 74 s: Ubuntu's image 19 s, import 12 s, Docker Engine and sshd 40 s |
 | `setup.ps1`, again | 7 to 29 s, with boxes still running |
-| Build bb-box's images over SSH | linux 328 s, linux-desktop 699 s |
+| Build alia-box's images over SSH | linux 328 s, linux-desktop 699 s |
 
-Docker Engine in WSL, through bb-box's Docker backend (steps 3 and 4):
+Docker Engine in WSL, through alia-box's Docker backend (steps 3 and 4):
 
 | Check | Result |
 | --- | --- |
-| `docker info` from BB's server | 0.31 s |
-| Conformance suite, linux, linux-docker and linux-desktop-cpu | 49 checks pass, none fail; 9 skipped, such as enrolment, which needs a live BB server |
+| `docker info` from VesnALIA's server | 0.31 s |
+| Conformance suite, linux, linux-docker and linux-desktop-cpu | 49 checks pass, none fail; 9 skipped, such as enrolment, which needs a live VesnALIA server |
 | Acquire until ready: linux, linux-docker, linux-desktop-cpu | 2.5 s, 3.2 s, 2.3 s; in the suite 2.9 s, 3.9 s, 3.2 s |
 | Copy 32 MiB in, then out | 4.0 to 4.2 s |
 | Stop, then start | 2.8 to 3.6 s |
@@ -139,7 +139,7 @@ said, and `setup/docker-wsl/` handles each:
 | Make a box | A container start: ready in 2 to 4 s | Differencing disk, then boot: SSH in 11 s; from saved, 4 s | `wsl --import`, 12 to 15 s |
 | Desktop | Ours, through exec | Linux: ours. Windows: see below | Ours, but ports clash |
 | Computer use | Cua, as on Linux | Cua; #46's helper on Windows | Cua, as on Linux |
-| Enrolment | Yes | Linux yes; Windows after BB request 1 | Yes |
+| Enrolment | Yes | Linux yes; Windows after VesnALIA request 1 | Yes |
 | Per-box limits | Docker's | Per VM | None: VM-wide only |
 
 ### Docker Engine in WSL2
@@ -211,13 +211,13 @@ Hyper-V enlightenments as QEMU `args` (`hv_passthrough` or a custom CPU
 model); WSL's first-run warning about nested virtualisation is harmless.
 
 1. Turn on OpenSSH Server, Hyper-V and the Virtual Machine Platform, with
-   PowerShell as SSH's shell. From BB's server, log in with a key.
+   PowerShell as SSH's shell. From VesnALIA's server, log in with a key.
 2. WSL: install WSL without a distribution, then import an Ubuntu root file
    system as `bbdocker`, with systemd, Docker Engine and sshd on 2222. Set
    mirrored networking, both idle timeouts to -1, and the firewall rule.
    Time the import.
-3. From BB's server, `DOCKER_HOST=ssh://user@<vm>:2222 docker info`. Then
-   point bb-box's Docker backend at it, acquire linux and linux-desktop-cpu
+3. From VesnALIA's server, `DOCKER_HOST=ssh://user@<vm>:2222 docker info`. Then
+   point alia-box's Docker backend at it, acquire linux and linux-desktop-cpu
    boxes, and check `box_run`, `box_copy`, the terminal, the desktop,
    computer use and enrolment. Time each acquire.
 4. Restart Windows with nobody logged in. Check that the scheduled task
@@ -225,7 +225,7 @@ model); WSL's first-run warning about nested virtualisation is harmless.
 5. Hyper-V: make a Linux guest from a differencing disk on the Default
    Switch. Time it until SSH answers through the host, and time `Save-VM`
    then `Start-VM`. Read its address with `Get-VMNetworkAdapter`.
-6. From BB's server, through an SSH tunnel to port 2179, open the guest's
+6. From VesnALIA's server, through an SSH tunnel to port 2179, open the guest's
    console with FreeRDP `/vmconnect:<VM ID>`.
 
 Nested timings are a worst case; a physical Windows PC is faster.

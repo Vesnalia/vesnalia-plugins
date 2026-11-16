@@ -4,7 +4,7 @@
 // - Validation runs in the browser on every keystroke with the same
 //   `validateCrew` the server uses (lib/spec.ts is pure).
 // - The preview is the server's `plan` for the text being edited, rendered
-//   with the same `formatPlan` as `bb crew plan` (lib/format.ts), so the two
+//   with the same `formatPlan` as `alia crew plan` (lib/format.ts), so the two
 //   cannot drift apart (§8.1 E4).
 // - Form edits go through the YAML document (`setIn`), so comments survive.
 import { useEffect, useMemo, useState } from "react";
@@ -13,7 +13,7 @@ import {
   // Aliased because JSX reads a lowercase tag as an intrinsic element.
   experimental_ProviderModelPicker as ProviderModelPicker,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { formatPlan, type PlanLine, type ProblemLine } from "../lib/format";
 import { PERMISSIONS, validateCrew } from "../lib/spec";
@@ -76,7 +76,7 @@ function formModel(text: string): { crew: Record<string, string>; members: FormM
 }
 
 /**
- * Write what BB's provider/model picker chose onto one member. Provider and
+ * Write what VesnALIA's provider/model picker chose onto one member. Provider and
  * model are always written; reasoning level and service tier only when the
  * picker returns them (a tier is dropped when the new provider has none).
  */
@@ -228,7 +228,7 @@ export function CrewFileEditor({ projectId, initialYaml, onApplied }: { projectI
                 ))}
               </div>
             )}
-            <p className="mt-2 text-[11px] text-muted-foreground">Same lines as bb crew plan.</p>
+            <p className="mt-2 text-[11px] text-muted-foreground">Same lines as VesnALIA crew plan.</p>
           </section>
           {error ? (
             <p role="alert" className="text-xs text-destructive">

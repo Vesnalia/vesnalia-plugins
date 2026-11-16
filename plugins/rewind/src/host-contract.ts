@@ -1,7 +1,7 @@
 // RPC between the server and the host entry (host.ts), which runs on the
 // machine that holds the thread's workspace. Every method names its workspace
 // by absolute path; the host keeps one shadow git repository per workspace.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { CHECKPOINT_ID_PATTERN } from "./ids";
 
@@ -271,7 +271,7 @@ export const hostContract = defineRpcContract({
         subject: z.string().max(500),
         compareTo: shaSchema.nullable(),
         limits: limitsSchema,
-        /** More directories to leave alone (bb thread storage inside the workspace). */
+        /** More directories to leave alone (VesnALIA thread storage inside the workspace). */
         excludePaths: z.array(absolutePathSchema).max(50).optional(),
         /** Re-measure a workspace previously marked unsupported. */
         force: z.boolean(),
@@ -292,7 +292,7 @@ export const hostContract = defineRpcContract({
         maxPatchBytesPerFile: z.number().int().min(1),
         maxPatchBytesTotal: z.number().int().min(1),
         limits: limitsSchema,
-        /** More directories to leave alone (bb thread storage inside the workspace). */
+        /** More directories to leave alone (VesnALIA thread storage inside the workspace). */
         excludePaths: z.array(absolutePathSchema).max(50).optional(),
       })
       .strict(),
@@ -317,7 +317,7 @@ export const hostContract = defineRpcContract({
         dryRun: z.boolean(),
         preRestore: z.object({ checkpointId: checkpointIdSchema, subject: z.string().max(500) }).strict().nullable(),
         limits: limitsSchema,
-        /** More directories to leave alone (bb thread storage inside the workspace). */
+        /** More directories to leave alone (VesnALIA thread storage inside the workspace). */
         excludePaths: z.array(absolutePathSchema).max(50).optional(),
         maxListed: z.number().int().min(1).max(5_000),
       })

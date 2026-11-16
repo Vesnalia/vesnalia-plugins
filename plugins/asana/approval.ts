@@ -1,5 +1,5 @@
 // The approval card an agent's Asana write waits on. The server sends this
-// payload with bb.ui.requestInput; app.tsx renders it in the thread. Task
+// payload with alia.ui.requestInput; app.tsx renders it in the thread. Task
 // names and comment text come from Asana and the agent, so the card shows
 // them as plain text only.
 import { z } from "zod";

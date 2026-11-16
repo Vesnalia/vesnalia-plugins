@@ -5,12 +5,12 @@ Date: 11 November 2026
 
 ## Context
 
-BB Box allowed one Namespace backend. Namespace's Developer plan allows 12
+VesnALIA Box allowed one Namespace backend. Namespace's Developer plan allows 12
 Mac cores at once per workspace, which is 2 Mac boxes of 6 vCPU. A person
 with more than one workspace could not add up their room ([#1455](https://github.com/ahkohd/bb-box/issues/1455)).
 
 Docker and microsandbox already allow several backends of their type, one
-per host ([042](042-a-docker-host-can-be-a-bb-machine.md)): each lists its guests on its
+per host ([042](042-a-docker-host-can-be-a-alia-machine.md)): each lists its guests on its
 own host, so no two may share one. Namespace has no host. A workspace is
 reached only through its token, and nothing in the configuration says which
 workspace a token belongs to, so two backends may point at one workspace.
@@ -48,11 +48,11 @@ under the same tag and unique tag.
 - Each backend keeps its shared iOS host's record in its own storage, with
   its ID, and the host's machine carries its label. Slots, hand-over, the
   last hour and cleanup go through that backend and its token.
-- Another backend's machines join the tailnet as `bb-box-nsb-`, the
+- Another backend's machines join the tailnet as `alia-box-nsb-`, the
   install's ID, the length of the backend's name, the name, then the box's
-  name, each followed by `-`, such as `bb-box-nsb-<install>-6-team-b-`.
+  name, each followed by `-`, such as `alia-box-nsb-<install>-6-team-b-`.
   The length says where the name ends, so no backend's prefix starts
-  another's tailnet name, and the first backend's, `bb-box-ns-`, starts
+  another's tailnet name, and the first backend's, `alia-box-ns-`, starts
   none of theirs. Each backend so removes only its own stale devices. A
   short hash of the ID could not promise that: `namespace:team-339` and
   `namespace:team-3245` share the first 6 hex digits of their SHA-256.
@@ -70,7 +70,7 @@ under the same tag and unique tag.
   driver's label and that name in brackets, such as Namespace (team-b).
   `on` tries a name whole before it drops what follows in brackets, one
   bracket at a time.
-- `bb box images list` lists the images a backend builds by itself,
+- `alia box images list` lists the images a backend builds by itself,
   through `Backend.ownImages`, after the standard images. Its `--json`
   stays the standard images alone.
 

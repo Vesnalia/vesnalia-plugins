@@ -64,8 +64,8 @@ test("extractRefs: qualified first, then ULIDs; bare ids only without either", (
   assert.deepEqual(extractRefs("look at the g8ex issue"), ["g8ex", "look", "the", "issue"]);
   assert.deepEqual(extractRefs("a b"), []);
   // Long prose: bare words are ignored, qualified refs still found.
-  const prose = `${"lorem ipsum dolor ".repeat(10)} bb-plugin-kata-scratch#tcz4 ${"sit amet ".repeat(10)}`;
-  assert.deepEqual(extractRefs(prose), ["bb-plugin-kata-scratch#tcz4"]);
+  const prose = `${"lorem ipsum dolor ".repeat(10)} alia-plugin-kata-scratch#tcz4 ${"sit amet ".repeat(10)}`;
+  assert.deepEqual(extractRefs(prose), ["alia-plugin-kata-scratch#tcz4"]);
   assert.deepEqual(extractRefs("no refs here at all, just words and #hashtags and more words to exceed"), []);
   assert.ok(extractRefs("x1y2 ".repeat(5)).length <= 10);
   assert.deepEqual(extractRefs(""), []);

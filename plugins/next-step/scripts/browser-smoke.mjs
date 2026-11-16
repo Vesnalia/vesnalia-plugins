@@ -2,10 +2,10 @@ import { chromium } from "playwright";
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 
-const server = process.env.BB_SERVER_URL;
-const threadId = process.env.NEXT_STEP_SMOKE_THREAD_ID ?? process.env.BB_THREAD_ID;
-const projectId = process.env.BB_PROJECT_ID;
-assert(server && threadId && projectId, "Set BB_SERVER_URL, BB_PROJECT_ID and NEXT_STEP_SMOKE_THREAD_ID (an idle Codex thread).");
+const server = process.env.ALIA_SERVER_URL;
+const threadId = process.env.NEXT_STEP_SMOKE_THREAD_ID ?? process.env.ALIA_THREAD_ID;
+const projectId = process.env.ALIA_PROJECT_ID;
+assert(server && threadId && projectId, "Set ALIA_SERVER_URL, ALIA_PROJECT_ID and NEXT_STEP_SMOKE_THREAD_ID (an idle Codex thread).");
 const suggestion = "Добавь переключатель подсказок в настройках.";
 const browser = await chromium.launch({ headless: true });
 await mkdir(new URL("../test-results/", import.meta.url), { recursive: true });
@@ -38,7 +38,7 @@ try {
     if (mobile) await ghost.locator("button").click();
     else { await editor.focus(); await page.keyboard.press("Tab"); }
     await page.waitForFunction((text) => document.querySelector('[data-promptbox-input-region] [contenteditable="true"]')?.textContent === text, suggestion);
-    // BB's native touch composer opens the keyboard only on an explicit tap in the editor.
+    // VesnALIA's native touch composer opens the keyboard only on an explicit tap in the editor.
     if (mobile) await editor.tap();
     await page.waitForFunction(() => document.activeElement?.getAttribute("contenteditable") === "true");
     assert.equal(await ghost.count(), 0);

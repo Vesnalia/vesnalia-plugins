@@ -4,7 +4,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 const CHROME = process.env.CHROME ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const PORT = Number(process.env.CDP_PORT ?? 9334);
 const HARNESS = process.env.HARNESS ?? "http://127.0.0.1:8770";
-const OUT = process.env.OUT ?? "/tmp/bb-box-panel";
+const OUT = process.env.OUT ?? "/tmp/alia-box-panel";
 const CHROME_PID = `${OUT}-chrome.pid`;
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -24,7 +24,7 @@ async function pageSocket(): Promise<string> {
     const page = (await targets()).find((target) => target.type === "page");
     if (page) return page.webSocketDebuggerUrl;
   } catch {}
-  const child = spawn(CHROME, ["--headless=new", `--remote-debugging-port=${PORT}`, "--user-data-dir=/tmp/bb-box-panel-chrome", "--no-first-run", "--force-renderer-accessibility", "about:blank"], { detached: true, stdio: "ignore" });
+  const child = spawn(CHROME, ["--headless=new", `--remote-debugging-port=${PORT}`, "--user-data-dir=/tmp/alia-box-panel-chrome", "--no-first-run", "--force-renderer-accessibility", "about:blank"], { detached: true, stdio: "ignore" });
   child.unref();
   writeFileSync(CHROME_PID, String(child.pid));
   for (let tries = 0; tries < 100; tries++) {

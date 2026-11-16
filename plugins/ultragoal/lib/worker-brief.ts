@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 /** A goal's standing worker brief: house rules every slice inherits. */
 export const MAX_WORKER_BRIEF_CHARS = 4000;
@@ -23,7 +23,7 @@ export interface StandingWorkerBrief {
  * Kept per goal, not global: house rules are about the repository being worked
  * on, and two goals on one machine can have different ones.
  */
-export function createWorkerBriefStore(db: ReturnType<BbPluginApi["storage"]["database"]>) {
+export function createWorkerBriefStore(db: ReturnType<AliaPluginApi["storage"]["database"]>) {
   // Owned here rather than in the shared migration list, which records progress
   // by array index and has silently skipped an appended statement before.
   db.exec(`

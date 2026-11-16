@@ -5,7 +5,7 @@
 // and whether the issue has open sub-issues of its own.
 //
 // Why: an epic can be given a branch or a work tree for all of its issues
-// (bead-bb-ty5.2). Its issues are then worked only in a folder on that
+// (bead-alia-ty5.2). Its issues are then worked only in a folder on that
 // branch (the user's rule), are only committed there, and cannot be given a
 // branch of their own; and on an issue with sub-issues the two "in a place
 // of its own" starts read and mean something else. The rows, the menu, the

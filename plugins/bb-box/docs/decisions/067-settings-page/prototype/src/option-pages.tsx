@@ -86,9 +86,9 @@ function BoxesOptions() {
             <DraftRow draft={draft} path="general/boxesPerThread" label="Boxes per thread" help="The most one thread may hold at once. 0 means no limit.">
               <NumberField draft={draft} path="general/boxesPerThread" label="Boxes per thread" />
             </DraftRow>
-            <SettingRow id="general/enrol" label="Boxes join BB as machines" help="Threads and terminals can then use a box, with the thread's credentials.">
+            <SettingRow id="general/enrol" label="Boxes join VesnALIA as machines" help="Threads and terminals can then use a box, with the thread's credentials.">
               <SavedTick show={instant.saved === "enrol"} />
-              <Switch aria-label="Boxes join BB as machines" checked={pending("enrol", general.enrol) as boolean} disabled={instant.pending === "enrol"} onCheckedChange={(enrol) => set("enrol", "general/enrol", enrol, "Joining BB")} />
+              <Switch aria-label="Boxes join VesnALIA as machines" checked={pending("enrol", general.enrol) as boolean} disabled={instant.pending === "enrol"} onCheckedChange={(enrol) => set("enrol", "general/enrol", enrol, "Joining VesnALIA")} />
             </SettingRow>
             <SettingRow id="general/video" label="Linux desktops as video" help="CPU-drawn X11 desktops stream as video, smooth on a slow connection. A viewer can switch to VNC in its menu.">
               <SavedTick show={instant.saved === "video"} />
@@ -207,7 +207,7 @@ function FilesSection() {
         description={
           <>
             <p>Boxes made from now on no longer get it. Boxes already made keep their copy.</p>
-            <p>Its content is deleted from BB Box and cannot be shown or got back; to use it again, paste it again.</p>
+            <p>Its content is deleted from VesnALIA Box and cannot be shown or got back; to use it again, paste it again.</p>
           </>
         }
         action="Remove file"
@@ -262,12 +262,12 @@ function ImagesOptions() {
   };
   return (
     <div className="space-y-6">
-      <PageHeader title="Images" description="What new boxes start from: BB Box's standard images, and your projects' own." />
+      <PageHeader title="Images" description="What new boxes start from: VesnALIA Box's standard images, and your projects' own." />
       <Refusal instant={instant} />
       <Section title="Standard images" description={`${plural(due.length, "image")} due, of ${images.length}. Last night's run: ${images.filter((image) => image.lastState === "refreshed").length} rebuilt, ${images.filter((image) => image.lastState === "waiting").length} waited for room, ${images.filter((image) => image.lastState === "failed").length} failed, ${images.filter((image) => image.lastState === "skipped").length} skipped.`}>
         <Card>
           <Rows>
-            <SettingRow id="general/nightlyImages" label="Rebuild each night" help="At 03:00 on BB's server, BB Box rebuilds the images that are due, and replaces each only when its trial box passes. After a BB update it refreshes the Linux images within the hour.">
+            <SettingRow id="general/nightlyImages" label="Rebuild each night" help="At 03:00 on VesnALIA's server, VesnALIA Box rebuilds the images that are due, and replaces each only when its trial box passes. After a VesnALIA update it refreshes the Linux images within the hour.">
               <SavedTick show={instant.saved === "nightly"} />
               <Switch aria-label="Rebuild each night" checked={(instant.pendingValue("nightly") ?? store.doc.general.nightlyImages) as boolean} disabled={instant.pending === "nightly"} onCheckedChange={(nightlyImages) => void instant.run("nightly", [["general/nightlyImages", nightlyImages]], "The nightly rebuild")} />
             </SettingRow>
@@ -299,7 +299,7 @@ function ImagesOptions() {
           <span className="text-xs text-subtle-foreground">{run !== null && run > due.length ? "Done: 1 rebuilt, 1 waits for room." : "One at a time; it goes on if you leave this page."}</span>
         </div>
       </Section>
-      <Section title="Project images" description="A script run on a standard image, for one project's boxes. Agents set them with bb box image set, from the project's .bb/box-setup.sh.">
+      <Section title="Project images" description="A script run on a standard image, for one project's boxes. Agents set them with VesnALIA box image set, from the project's .vesnalia/box-setup.sh.">
         {imageRefused ? (
           <p role="alert" className="text-xs text-destructive-text">
             {imageRefused}
@@ -472,16 +472,16 @@ function NetworkOptions() {
   const mode = draft.value("general/tailnet/mode");
   return (
     <div className="space-y-6" data-part={draft.part}>
-      <PageHeader title="Network" description="How machines BB Box makes reach BB." note={<SaveRule />} />
+      <PageHeader title="Network" description="How machines VesnALIA Box makes reach VesnALIA." note={<SaveRule />} />
       <RestoredNote draft={draft} />
-      <Section title="Tailnet" description="When BB is on a Tailscale tailnet, machines BB Box makes, such as cloud Macs, join it with a single-use key. These settings are saved together.">
+      <Section title="Tailnet" description="When VesnALIA is on a Tailscale tailnet, machines VesnALIA Box makes, such as cloud Macs, join it with a single-use key. These settings are saved together.">
         <Card>
           <Rows>
             <DraftRow draft={draft} path="general/tailnet/mode" label="Join machines to the tailnet">
               <span role="radiogroup" aria-label="Join machines to the tailnet" className="flex flex-col gap-1.5 text-xs text-foreground">
                 <label className="flex items-center gap-2">
                   <input type="radio" name="tailnet-mode" checked={mode === "off"} onChange={() => draft.set("general/tailnet/mode", "off")} className="size-3.5 accent-foreground" />
-                  No: BB is reached without one
+                  No: VesnALIA is reached without one
                 </label>
                 <label className="flex items-center gap-2">
                   <input type="radio" name="tailnet-mode" checked={mode === "oauth"} onChange={() => draft.set("general/tailnet/mode", "oauth")} className="size-3.5 accent-foreground" />
@@ -522,7 +522,7 @@ function MonitorOptions() {
   const on = pending("enabled", monitor.enabled) as boolean;
   return (
     <div className="space-y-6" data-part={draft.part}>
-      <PageHeader title="Monitor" description="Machine status in BB's sidebar footer, for BB's server, your machines and every box." note={<SaveRule />} />
+      <PageHeader title="Monitor" description="Machine status in VesnALIA's sidebar footer, for VesnALIA's server, your machines and every box." note={<SaveRule />} />
       <RestoredNote draft={draft} />
       <Refusal instant={instant} />
       <Card>
@@ -534,11 +534,11 @@ function MonitorOptions() {
           <DraftRow draft={draft} path="monitor/refreshIntervalSeconds" label="Refresh every" help="Seconds between readings while machine status is open, 2 to 60.">
             <NumberField draft={draft} path="monitor/refreshIntervalSeconds" label="Refresh every, in seconds" suffix="s" disabled={!on} />
           </DraftRow>
-          <SettingRow id="monitor/backgroundMonitoring" label="Background monitoring" help="Checks BB's server's CPU and memory every 30 s while nobody looks, and keeps logs for bb box monitor logs.">
+          <SettingRow id="monitor/backgroundMonitoring" label="Background monitoring" help="Checks VesnALIA's server's CPU and memory every 30 s while nobody looks, and keeps logs for VesnALIA box monitor logs.">
             <SavedTick show={instant.saved === "background"} />
             <Switch aria-label="Background monitoring" checked={pending("background", monitor.backgroundMonitoring) as boolean} disabled={!on || instant.pending === "background"} onCheckedChange={(value) => void instant.run("background", [["monitor/backgroundMonitoring", value]], "Background monitoring")} />
           </SettingRow>
-          <SettingRow id="monitor/pressureNotifications" label="Pressure notifications" help={monitor.backgroundMonitoring ? "A notice in BB when CPU or memory stays high for a minute, and when it recovers." : "Needs background monitoring."}>
+          <SettingRow id="monitor/pressureNotifications" label="Pressure notifications" help={monitor.backgroundMonitoring ? "A notice in VesnALIA when CPU or memory stays high for a minute, and when it recovers." : "Needs background monitoring."}>
             <SavedTick show={instant.saved === "pressure"} />
             <Switch aria-label="Pressure notifications" checked={pending("pressure", monitor.pressureNotifications) as boolean} disabled={!on || !monitor.backgroundMonitoring || instant.pending === "pressure"} onCheckedChange={(value) => void instant.run("pressure", [["monitor/pressureNotifications", value]], "Pressure notifications")} />
           </SettingRow>
@@ -590,7 +590,7 @@ function ConfigurationOptions() {
           <SettingRow label={`Revision ${store.doc.revision}`} help="Each save names the revision it was made from and carries a receipt. When someone saved first, the page checks your changes against theirs: changes to other settings are kept and yours go on top; a setting changed both ways asks you which to keep.">
             <span />
           </SettingRow>
-          <SettingRow id="configuration/export" label="Export" help="The whole configuration as JSON, with no secret in it. To set BB Box up again from it, paste the tokens, keys and file contents again: the export lists which.">
+          <SettingRow id="configuration/export" label="Export" help="The whole configuration as JSON, with no secret in it. To set VesnALIA Box up again from it, paste the tokens, keys and file contents again: the export lists which.">
             <Button
               type="button"
               variant="outline"
@@ -606,14 +606,14 @@ function ConfigurationOptions() {
               {copied ? "Copied" : "Copy as JSON"}
             </Button>
           </SettingRow>
-          <SettingRow id="configuration/import" label="Import" help="Apply a JSON file as the whole configuration. BB Box checks it and lists what it changes before anything is saved.">
+          <SettingRow id="configuration/import" label="Import" help="Apply a JSON file as the whole configuration. VesnALIA Box checks it and lists what it changes before anything is saved.">
             <Button type="button" variant="outline" size="sm" className="h-7" disabled={importing} onClick={() => draft.set("import/text", JSON.stringify({ ...store.doc, monitor: { ...store.doc.monitor, refreshIntervalSeconds: 15 } }, null, 2))}>
               <Icon name="Upload" aria-hidden />
               Paste a file…
             </Button>
           </SettingRow>
           {store.doc.migrated ? (
-            <SettingRow label="Settings moved from BB" help={`BB Box kept a copy of BB's own settings for it when it moved them here on ${store.doc.migrated}. Remove it once you no longer need it.`} problem={copyRefused}>
+            <SettingRow label="Settings moved from VesnALIA" help={`VesnALIA Box kept a copy of VesnALIA's own settings for it when it moved them here on ${store.doc.migrated}. Remove it once you no longer need it.`} problem={copyRefused}>
               <Button type="button" variant="ghost" size="sm" className="h-7 text-muted-foreground" onClick={() => setRemoveCopy(true)}>
                 Remove copy…
               </Button>
@@ -701,24 +701,24 @@ function ConfigurationOptions() {
         <Card className="px-4 py-3">
           <ul className="space-y-1.5 font-mono text-2xs leading-relaxed text-foreground">
             <li>
-              bb box config show --json <span className="font-sans text-subtle-foreground">· print it</span>
+              alia box config show --json <span className="font-sans text-subtle-foreground">· print it</span>
             </li>
             <li>
-              bb box config check file.json --test <span className="font-sans text-subtle-foreground">· check a file and its backends</span>
+              alia box config check file.json --test <span className="font-sans text-subtle-foreground">· check a file and its backends</span>
             </li>
             <li>
-              bb box config apply file.json <span className="font-sans text-subtle-foreground">· save it</span>
+              alia box config apply file.json <span className="font-sans text-subtle-foreground">· save it</span>
             </li>
             <li>
-              bb box doctor <span className="font-sans text-subtle-foreground">· check every backend</span>
+              alia box doctor <span className="font-sans text-subtle-foreground">· check every backend</span>
             </li>
           </ul>
         </Card>
       </Section>
       <Confirm
         open={removeCopy}
-        title="Remove the copy of BB's earlier settings?"
-        description={<p>BB Box no longer needs it: everything in it moved into this configuration. Once removed it cannot be got back.</p>}
+        title="Remove the copy of VesnALIA's earlier settings?"
+        description={<p>VesnALIA Box no longer needs it: everything in it moved into this configuration. Once removed it cannot be got back.</p>}
         action="Remove copy"
         onCancel={() => setRemoveCopy(false)}
         onConfirm={() => {

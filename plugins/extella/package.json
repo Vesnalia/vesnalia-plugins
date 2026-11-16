@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-extella",
+  "name": "alia-plugin-extella",
   "version": "0.1.0",
-  "description": "Give bb agents a shared library of saved programs: search by meaning, run on your own machines, save what worked.",
+  "description": "Give VesnALIA agents a shared library of saved programs: search by meaning, run on your own machines, save what worked.",
   "license": "MIT",
   "type": "module",
   "engines": {
-    "bb": ">=0.0",
-    "bbPluginSdk": ">=0.4.3"
+    "alia": ">=0.0",
+    "aliaPluginSdk": ">=0.4.3"
   },
-  "bb": {
+  "alia": {
     "name": "Extella",
     "description": "Search saved programs by meaning, run them on your devices, save new ones for the next thread.",
     "branding": {
@@ -20,7 +20,7 @@
     ]
   },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "extella",
     "agents",
     "tools"
@@ -32,12 +32,28 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.54",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "26.6.5",
     "better-sqlite3": "13.0.3",
     "cron-parser": "^5.10.2",
     "hono": "^4.13.13",
     "typescript": "7.0.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.54"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/extella#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/extella"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

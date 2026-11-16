@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { experimental_scanPublicSdkOnly } from '@get-bb/plugin-sdk/testing';
+import { experimental_scanPublicSdkOnly } from '@vesnalia/plugin-sdk/testing';
 it('uses only public SDK and declared package imports', () => {
   const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
   const allow = Object.keys({ ...pkg.dependencies, ...pkg.devDependencies }).map(name => new RegExp('^' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/.*)?$'));

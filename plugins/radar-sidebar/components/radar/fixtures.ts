@@ -2,7 +2,7 @@ import type {
   PluginSidebarProject,
   PluginSidebarSection,
   PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 /** Deterministic clock used across fixtures so grouping maths is stable. */
 export const NOW = 1_790_000_000_000;

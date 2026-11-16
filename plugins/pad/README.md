@@ -1,10 +1,10 @@
 # Pad
 
-A local outline notepad that stays beside your work in bb.
+A local outline notepad that stays beside your work in VesnALIA.
 
 ![Pad docked beside a conversation, with a fictional project outline](docs/screenshots/outline-light.jpg)
 
-Catch an idea while an agent is working. Keep it in one outline, add a few child notes, and carry on. Pad docks on the right of bb; on a phone, it opens as a full-screen sheet. Your notes live in a Markdown file you can open in any editor, with a local Git history.
+Catch an idea while an agent is working. Keep it in one outline, add a few child notes, and carry on. Pad docks on the right of VesnALIA; on a phone, it opens as a full-screen sheet. Your notes live in a Markdown file you can open in any editor, with a local Git history.
 
 When you want to sort the loose ends, turn on daily review. An agent proposes a task, a piece of knowledge, keep, or drop for each pending note. You approve the decisions before anything is routed.
 
@@ -13,16 +13,16 @@ When you want to sort the loose ends, turn on daily review. An agent proposes a 
 Install the release from Git:
 
 ```sh
-bb plugin install git:https://github.com/itsbariscan/bb-pad.git@^0.2.0
+alia plugin install git:https://github.com/itsbariscan/bb-pad.git@^0.2.0
 ```
 
-Once the marketplace listing is accepted, search for **Pad** in bb's plugin marketplace or run:
+Once the marketplace listing is accepted, search for **Pad** in VesnALIA's plugin marketplace or run:
 
 ```sh
-bb plugin install pad@bb-community
+alia plugin install pad@alia-community
 ```
 
-Requires **bb 0.49.0 or later** and **Git** on the machine running the bb server.
+Requires **VesnALIA 0.49.0 or later** and **Git** on the machine running the VesnALIA server.
 
 ## Write, fold, find
 
@@ -38,16 +38,16 @@ Click the Pad row in the sidebar footer to show or hide the panel. Click empty s
 | `⌘F` | Search notes |
 | `⌘⇧Y` | Open Pad and start a note |
 
-On Windows and Linux, use `Ctrl` in place of `⌘`. Rebind the global shortcut in bb's keyboard settings. Outside a note, `Esc` goes up from a zoomed topic.
+On Windows and Linux, use `Ctrl` in place of `⌘`. Rebind the global shortcut in VesnALIA's keyboard settings. Outside a note, `Esc` goes up from a zoomed topic.
 
 Capture or read notes from a terminal:
 
 ```sh
-bb pad add "Check the keyboard shortcut guide"
-bb pad today
-bb pad show --days 7
-bb pad search guide
-bb pad path
+alia pad add "Check the keyboard shortcut guide"
+alia pad today
+alia pad show --days 7
+alia pad search guide
+alia pad path
 ```
 
 When you ask an agent to save a note, it can use `pad_add`. A note records a thought; it does not authorize an agent to act on it.
@@ -56,20 +56,20 @@ When you ask an agent to save a note, it can use `pad_add`. A note records a tho
 
 ![A review proposing task, knowledge, keep, and drop for sample notes](docs/screenshots/review-light.jpg)
 
-Daily review is **off by default**. Choose a bb project for the conversation, then enable it. Pad checks two minutes after startup and every 30 minutes between **07:00 and 23:00**, in the server's local time. It opens or resumes a thread about pending notes before today.
+Daily review is **off by default**. Choose a VesnALIA project for the conversation, then enable it. Pad checks two minutes after startup and every 30 minutes between **07:00 and 23:00**, in the server's local time. It opens or resumes a thread about pending notes before today.
 
 The agent can route approved tasks to a project's tracker and save approved knowledge through that project's documented workflow. It asks where to save knowledge, and leaves the note pending if the project has no documented workflow. Unanswered notes remain pending; delivering a review does not resolve them.
 
 ```sh
-bb pad review --now --dry-run  # preview the review prompt
-bb pad review --now            # start or resume; include today's notes
+alia pad review --now --dry-run  # preview the review prompt
+alia pad review --now            # start or resume; include today's notes
 ```
 
 Open review threads are reused. Failed or deferred launches have a 30-minute cooldown and a limit of three attempts per local day.
 
 ## Configuration
 
-Open **Settings → Installed plugins → Pad**, or use `bb plugin config pad`.
+Open **Settings → Installed plugins → Pad**, or use `alia plugin config pad`.
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
@@ -78,10 +78,10 @@ Open **Settings → Installed plugins → Pad**, or use `bb plugin config pad`.
 | `reviewProject` | Unset | Project where review conversations run |
 
 ```sh
-bb plugin config pad set folder "~/Pad"
-bb plugin config pad set reviewProject <project-id>
-bb plugin config pad set review true
-bb plugin reload pad
+alia plugin config pad set folder "~/Pad"
+alia plugin config pad set reviewProject <project-id>
+alia plugin config pad set review true
+alia plugin reload pad
 ```
 
 Reload after changing settings. The review hours are fixed in this release. Changing `folder` opens the new location; it does not move existing notes.
@@ -101,9 +101,9 @@ Completed notes and marked notes are skipped in later reviews. Remove the marker
 
 ## Privacy
 
-Notes and their Git history stay on your bb server. Pad never pushes them. If you connect to a remote bb server, that is where the file lives.
+Notes and their Git history stay on your VesnALIA server. Pad never pushes them. If you connect to a remote VesnALIA server, that is where the file lives.
 
-Optional reviews send pending note text to the selected project's agent provider and use its normal quota or billing. Core note capture needs no external account. Pad runs with the same full trust as other bb plugins.
+Optional reviews send pending note text to the selected project's agent provider and use its normal quota or billing. Core note capture needs no external account. Pad runs with the same full trust as other VesnALIA plugins.
 
 ## Development
 
@@ -114,8 +114,8 @@ npm run typecheck
 npm run build
 ```
 
-Git installs build from source with bb's toolchain. Generated `dist/` files are not committed. The screenshots above use a test installation with sample notes.
+Git installs build from source with VesnALIA's toolchain. Generated `dist/` files are not committed. The screenshots above use a test installation with sample notes.
 
 ## License
 
-[MIT](LICENSE). Vendored bb scaffolding retains its [upstream notice](THIRD_PARTY_NOTICES.md).
+[MIT](LICENSE). Vendored VesnALIA scaffolding retains its [upstream notice](THIRD_PARTY_NOTICES.md).

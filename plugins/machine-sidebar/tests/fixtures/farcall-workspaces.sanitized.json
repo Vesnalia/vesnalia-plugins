@@ -1,5 +1,5 @@
 {
-  "source": "Synthetic neutral paths using the existing real bb tool-call event shape.",
+  "source": "Synthetic neutral paths using the existing real VesnALIA tool-call event shape.",
   "events": [
     {
       "id": "evt_workspace_1",

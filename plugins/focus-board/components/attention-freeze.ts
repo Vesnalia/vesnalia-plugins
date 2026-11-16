@@ -32,7 +32,7 @@
 // Pure module: no host, no SDK, no React. app.tsx captures at attention
 // events (mouse enter/leave, pane open/close) and calls compile the plan the
 // assembly consumes; the assembly applies lanes first, slots last.
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { BoardColumn, GroupBy } from "./grouping";
 import type { ParentLane } from "./parent-lanes";
 

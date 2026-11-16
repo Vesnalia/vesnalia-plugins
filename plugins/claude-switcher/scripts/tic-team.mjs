@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Tic a las Team: cada 5 minutos, en el servidor de bb (una `bb automation`),
+// Tic a las Team: cada 5 minutos, en el servidor de VesnALIA (una `alia automation`),
 // manda un «ok» con Haiku a cada cuenta Team cuya sesión de 5 horas ya se
 // renovó y nadie ha vuelto a abrir. La ventana empieza a contar con el primer
 // mensaje: abierta cuanto antes, se renueva antes cuando luego le damos caña
@@ -11,10 +11,10 @@
 // Haiku desde team3 abrió su ventana (vuelve null → 17:40) con la sesión al
 // 0 % y 0,0006 $ de coste de lista.
 //
-// No usa la lógica del plugin ni lo cambia: lee `bb claude-switcher health
+// No usa la lógica del plugin ni lo cambia: lee `alia claude-switcher health
 // --json` (la ventana de cada cuenta) y `list --json` (su carpeta y la hora de
 // su lectura). Una lectura o un tic que falla sale con código 1, visible en
-// `bb automation runs`.
+// `alia automation runs`.
 import { execFile } from "node:child_process";
 import { realpathSync } from "node:fs";
 import { appendFile, mkdir, open, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
@@ -31,7 +31,7 @@ export const VIEJO_MS = 30 * 60_000;
 export const PASADA_MS = Number(process.env.TIC_PASADA_MS ?? 10 * 60_000);
 /** Un cerrojo más viejo es de una pasada muerta: PASADA_MS más un último tic de CLAUDE_MS caben. */
 export const CERROJO_MS = 15 * 60_000;
-const BB_MS = 60_000;
+const ALIA_MS = 60_000;
 const CLAUDE_MS = 120_000;
 /**
  * Fuera del entorno de claude: lo que lo haría hijo de otra sesión y toda
@@ -104,15 +104,15 @@ export function elegir({ health, lista, estado, ahora }) {
 
 const run = promisify(execFile);
 
-async function bb(args) {
-  const candidatos = [process.env.BB_CLI, "bb", join(homedir(), ".local/bin/bb")].filter(Boolean);
+async function alia(args) {
+  const candidatos = [process.env.ALIA_CLI, "alia", join(homedir(), ".local/bin/alia")].filter(Boolean);
   let ultimo;
   for (const binario of candidatos) {
     try {
       return (
         await run(binario, args, {
           maxBuffer: 64 * 1024 * 1024,
-          timeout: BB_MS,
+          timeout: ALIA_MS,
           killSignal: "SIGKILL",
         })
       ).stdout;
@@ -186,8 +186,8 @@ export async function cerrar(ruta, ahora, reintento = false) {
 export async function main({ dir = process.cwd(), ahora = Date.now() } = {}) {
   // La lista antes que la salud: así la hora de la lectura de cada cuenta nunca
   // es más nueva que la ventana que enseña la salud (Codex r2).
-  const list = JSON.parse(await bb(["claude-switcher", "list", "--json"]));
-  const health = JSON.parse(await bb(["claude-switcher", "health", "--json"]));
+  const list = JSON.parse(await alia(["claude-switcher", "list", "--json"]));
+  const health = JSON.parse(await alia(["claude-switcher", "health", "--json"]));
   if (!Array.isArray(list.accounts)) throw new Error("la lista no tiene la forma esperada");
   const lista = Object.fromEntries(
     list.accounts.map((a) => [a.name, { configDir: a.configDir, observedAt: a.observedAt }]),
@@ -202,7 +202,7 @@ export async function main({ dir = process.cwd(), ahora = Date.now() } = {}) {
     const estado = await leerEstado(ruta);
     const { tics, saltadas } = elegir({ health, lista, estado, ahora });
     // En /tmp: claude busca CLAUDE.md hacia arriba desde su carpeta, y la del
-    // servidor de bb cuelga de la casa, que tiene uno (Codex r1).
+    // servidor de VesnALIA cuelga de la casa, que tiene uno (Codex r1).
     const vacia = join(tmpdir(), "tic-team-vacia");
     await mkdir(vacia, { recursive: true });
     const ultimo = { ...estado.ultimo };

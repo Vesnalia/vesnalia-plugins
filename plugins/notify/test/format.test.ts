@@ -15,7 +15,7 @@ import {
 } from "../format.ts";
 
 test("notification tags stay unique across turns from the same thread", () => {
-  assert.equal(notificationTag(41), "bb-notify-41");
+  assert.equal(notificationTag(41), "alia-notify-41");
   assert.notEqual(notificationTag(41), notificationTag(42));
 });
 
@@ -115,7 +115,7 @@ test("plainText survives the README's own example", () => {
   );
 });
 
-test("isThreadId accepts bb slugs and rejects anything that could escape", () => {
+test("isThreadId accepts VesnALIA slugs and rejects anything that could escape", () => {
   assert.ok(isThreadId("abc123"));
   assert.ok(isThreadId("a_b-c"));
   assert.ok(!isThreadId(""));
@@ -217,5 +217,5 @@ test("parseSendArgs demands a message", () => {
   assert.ok(!parseSendArgs(["   "]).ok);
   const parsed = parseSendArgs(["--title", "CI"]);
   assert.ok(!parsed.ok);
-  assert.match(parsed.error, /usage: bb notify send/);
+  assert.match(parsed.error, /usage: alia notify send/);
 });

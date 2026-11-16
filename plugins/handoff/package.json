@@ -1,5 +1,5 @@
 {
-  "name": "bb-plugin-handoff",
+  "name": "alia-plugin-handoff",
   "version": "0.8.1",
   "type": "module",
   "scripts": {
@@ -7,12 +7,12 @@
     "typecheck": "tsc --noEmit"
   },
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "Handoff",
-    "description": "Move a session between agents and machines, in both directions — hand off a bb thread to another provider (and optionally another enrolled machine, carrying uncommitted work), or adopt an outside Claude Code / Codex / Gemini CLI / OpenCode / Pi session, local or remote, as a bb thread.",
+    "description": "Move a session between agents and machines, in both directions — hand off a VesnALIA thread to another provider (and optionally another enrolled machine, carrying uncommitted work), or adopt an outside Claude Code / Codex / Gemini CLI / OpenCode / Pi session, local or remote, as a VesnALIA thread.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -35,7 +35,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@radix-ui/react-dialog": "^1.3.1",
     "@radix-ui/react-select": "^2.4.1",
     "@radix-ui/react-tooltip": "^1.4.1",
@@ -51,5 +50,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/handoff#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/handoff"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

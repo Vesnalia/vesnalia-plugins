@@ -1,11 +1,11 @@
-# Conductor Theme for bb
+# Conductor Theme for VesnALIA
 
-A Conductor-inspired dark and light palette for bb, featuring deep espresso charcoal surfaces, warm brown message cards, bone typography, and emerald green actions.
+A Conductor-inspired dark and light palette for VesnALIA, featuring deep espresso charcoal surfaces, warm brown message cards, bone typography, and emerald green actions.
 
 ## Installation
 
 ```sh
-bb plugin install conductor-theme
+alia plugin install conductor-theme
 ```
 
 ## Features

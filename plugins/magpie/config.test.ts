@@ -215,14 +215,14 @@ type Registration = {
 // Evaluate the actual ESM. The fake API only captures provider registration;
 // no model implementation or network dependency is mocked.
 async function register(extension: string, env: {
-  BB_MAGPIE_BASE_URL?: string;
-  BB_MAGPIE_TOKEN?: string;
+  ALIA_MAGPIE_BASE_URL?: string;
+  ALIA_MAGPIE_TOKEN?: string;
 } = {}) {
   const module = await import(`data:text/javascript;base64,${Buffer.from(extension).toString("base64")}`);
-  const previousRoot = process.env.BB_MAGPIE_BASE_URL;
-  const previousToken = process.env.BB_MAGPIE_TOKEN;
-  delete process.env.BB_MAGPIE_BASE_URL;
-  delete process.env.BB_MAGPIE_TOKEN;
+  const previousRoot = process.env.ALIA_MAGPIE_BASE_URL;
+  const previousToken = process.env.ALIA_MAGPIE_TOKEN;
+  delete process.env.ALIA_MAGPIE_BASE_URL;
+  delete process.env.ALIA_MAGPIE_TOKEN;
   Object.assign(process.env, env);
   const registrations: Registration[] = [];
   try {
@@ -232,10 +232,10 @@ async function register(extension: string, env: {
       },
     });
   } finally {
-    if (previousRoot === undefined) delete process.env.BB_MAGPIE_BASE_URL;
-    else process.env.BB_MAGPIE_BASE_URL = previousRoot;
-    if (previousToken === undefined) delete process.env.BB_MAGPIE_TOKEN;
-    else process.env.BB_MAGPIE_TOKEN = previousToken;
+    if (previousRoot === undefined) delete process.env.ALIA_MAGPIE_BASE_URL;
+    else process.env.ALIA_MAGPIE_BASE_URL = previousRoot;
+    if (previousToken === undefined) delete process.env.ALIA_MAGPIE_TOKEN;
+    else process.env.ALIA_MAGPIE_TOKEN = previousToken;
   }
   assert.equal(registrations.length, 1);
   return registrations[0];
@@ -262,8 +262,8 @@ test("standalone extension exposes the catalog without session environment", asy
 test("session environment sets proxy endpoints and literal token", async () => {
   const extension = renderExtension(parseMagpieConfig(fixture(), {}));
   const { config } = await register(extension, {
-    BB_MAGPIE_BASE_URL: "https://bb.invalid/plugins/magpie///",
-    BB_MAGPIE_TOKEN: "abC012_-proxy",
+    ALIA_MAGPIE_BASE_URL: "https://bb.invalid/plugins/magpie///",
+    ALIA_MAGPIE_TOKEN: "abC012_-proxy",
   });
   assert.equal(config.apiKey, "abC012_-proxy");
   assert.deepEqual(config.models.map((model) => model.baseUrl), [
@@ -281,21 +281,21 @@ test("partial environment and interpreted credentials fail without disclosing va
   const extension = renderExtension(parseMagpieConfig(fixture(), {}));
   for (
     const env of [
-      { BB_MAGPIE_BASE_URL: "https://bb.invalid" },
-      { BB_MAGPIE_TOKEN: "safe" },
+      { ALIA_MAGPIE_BASE_URL: "https://bb.invalid" },
+      { ALIA_MAGPIE_TOKEN: "safe" },
       ...["$SECRET", "${SECRET}", `!echo ${secret}`, "abc$SECRET"].map((token) => ({
-        BB_MAGPIE_BASE_URL: "https://bb.invalid",
-        BB_MAGPIE_TOKEN: token,
+        ALIA_MAGPIE_BASE_URL: "https://bb.invalid",
+        ALIA_MAGPIE_TOKEN: token,
       })),
       ...[
         "not-url",
         "file:///tmp/private",
-        `https://${secret}@bb.invalid`,
+        `https://${secret}@alia.invalid`,
         `https://bb.invalid?token=${secret}`,
         "https://bb.invalid/#fragment",
       ].map((url) => ({
-        BB_MAGPIE_BASE_URL: url,
-        BB_MAGPIE_TOKEN: "safe",
+        ALIA_MAGPIE_BASE_URL: url,
+        ALIA_MAGPIE_TOKEN: "safe",
       })),
     ]
   ) {

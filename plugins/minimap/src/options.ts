@@ -1,4 +1,4 @@
-import { useSettings } from "@get-bb/plugin-sdk/app";
+import { useSettings } from "@vesnalia/plugin-sdk/app";
 import { NUMBER_RANGES, SETTINGS, SETTING_KEYS, SHARE_KEYS, readNumber, type ColorKey, type NumberKey, type SettingKey } from "./shared";
 import type { Kind } from "./model.ts";
 import type { Options as StripOptions } from "./strip";

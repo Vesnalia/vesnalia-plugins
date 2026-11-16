@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
-import type { useComposer } from "@get-bb/plugin-sdk/app";
+import type { useComposer } from "@vesnalia/plugin-sdk/app";
 import {
   composerCanSetSelection,
   onComposerSubmitted,
@@ -9,7 +9,7 @@ import {
 type Composer = ReturnType<typeof useComposer>;
 const composer = (methods: Partial<Composer>) => methods as Composer;
 
-describe("a composer from BB before 0.43.3", () => {
+describe("a composer from VesnALIA before 0.43.3", () => {
   it("cannot set the pickers", () => {
     expect(composerCanSetSelection(composer({}))).toBe(false);
   });
@@ -21,7 +21,7 @@ describe("a composer from BB before 0.43.3", () => {
   });
 });
 
-describe("a composer from BB 0.43.3 or later", () => {
+describe("a composer from VesnALIA 0.43.3 or later", () => {
   it("sets the pickers", () => {
     const setSelection = vi.fn();
     expect(
@@ -46,16 +46,16 @@ describe("a composer from BB 0.43.3 or later", () => {
   });
 });
 
-// BB installs a marketplace plugin by probing only the newest 10 release tags.
-// Raising this floor locks every older BB out of the install with nothing but
-// "no release … runs on this bb", so a new BB API is feature-tested instead
-// (see composer-compat.ts). Below BB 0.43.0 the environment-provider API the
+// VesnALIA installs a marketplace plugin by probing only the newest 10 release tags.
+// Raising this floor locks every older VesnALIA out of the install with nothing but
+// "no release … runs on this VesnALIA", so a new VesnALIA API is feature-tested instead
+// (see composer-compat.ts). Below VesnALIA 0.43.0 the environment-provider API the
 // plugin is built on does not exist.
-describe("the BB versions the plugin installs on", () => {
-  it("stays at BB 0.43.0 and its plugin SDK 0.4.84", () => {
+describe("the VesnALIA versions the plugin installs on", () => {
+  it("stays at VesnALIA 0.43.0 and its plugin SDK 0.4.84", () => {
     const pkg = JSON.parse(
       readFileSync(new URL("./package.json", import.meta.url), "utf8"),
-    ) as { engines: { bb: string; bbPluginSdk: string } };
-    expect(pkg.engines).toEqual({ bb: ">=0.43.0", bbPluginSdk: ">=0.4.84" });
+    ) as { engines: { alia: string; aliaPluginSdk: string } };
+    expect(pkg.engines).toEqual({ alia: ">=0.43.0", aliaPluginSdk: ">=0.4.84" });
   });
 });

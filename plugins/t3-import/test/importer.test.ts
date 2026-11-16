@@ -30,7 +30,7 @@ test("preview leaves out settled threads and changes nothing", async () => {
   const open = plan.threads.find((thread) => thread.t3.id === "open")!;
   assert.equal(open.session.kind, "copy");
   assert.equal(open.providerId, "claude-code");
-  assert.equal(open.bbProject.id, null);
+  assert.equal(open.aliaProject.id, null);
   const old = plan.threads.find((thread) => thread.t3.id === "old")!;
   assert.deepEqual(old.session, { kind: "share", sessionId: "codex-thread-1" });
   assert.equal(old.providerId, "codex");
@@ -60,9 +60,9 @@ test("imports threads into one project checkout, resuming a copied session", asy
   assert.deepEqual(result.failed, []);
   assert.equal(result.imported.length, 2);
   assert.ok(result.backupPath && existsSync(result.backupPath));
-  assert.deepEqual(f.createdProjects, ["proj_1"], "creates the bb project once");
+  assert.deepEqual(f.createdProjects, ["proj_1"], "creates the VesnALIA project once");
 
-  const db = new Database(f.bbPath, { readonly: true });
+  const db = new Database(f.aliaPath, { readonly: true });
   assert.deepEqual(db.pragma("foreign_key_check"), []);
   const environments = db.prepare("SELECT * FROM environments").all() as Record<string, unknown>[];
   assert.equal(environments.length, 1, "both threads share one environment");
@@ -73,18 +73,18 @@ test("imports threads into one project checkout, resuming a copied session", asy
   assert.equal(environments[0]!.host_id, HOST_ID);
 
   const open = result.imported.find((thread) => thread.t3ThreadId === "open")!;
-  const row = db.prepare("SELECT * FROM threads WHERE id = ?").get(open.bbThreadId) as Record<string, unknown>;
+  const row = db.prepare("SELECT * FROM threads WHERE id = ?").get(open.aliaThreadId) as Record<string, unknown>;
   assert.equal(row.provider_id, "claude-code");
   assert.equal(row.status, "idle");
   assert.equal(row.title, "Open work");
   assert.equal(row.title_fallback, "question for open");
   assert.equal(row.archived_at, null);
   assert.equal(row.created_at, Date.parse("2026-09-20T10:00:00.000Z"));
-  const identity = db.prepare("SELECT provider_thread_id FROM events WHERE thread_id = ? AND type = 'thread/identity'").get(open.bbThreadId) as { provider_thread_id: string };
+  const identity = db.prepare("SELECT provider_thread_id FROM events WHERE thread_id = ? AND type = 'thread/identity'").get(open.aliaThreadId) as { provider_thread_id: string };
   assert.equal(identity.provider_thread_id, open.sessionId);
   assert.notEqual(open.sessionId, "sess-open");
   assert.ok(existsSync(join(f.claudeHome, "projects", projectSlug(f.repo), `${open.sessionId}.jsonl`)));
-  const segments = db.prepare("SELECT source_kind, text FROM thread_search_segments WHERE thread_id = ? ORDER BY source_kind").all(open.bbThreadId);
+  const segments = db.prepare("SELECT source_kind, text FROM thread_search_segments WHERE thread_id = ? ORDER BY source_kind").all(open.aliaThreadId);
   assert.deepEqual(segments, [
     { source_kind: "assistant_message", text: "answer for open" },
     { source_kind: "title", text: "Open work" },
@@ -94,13 +94,13 @@ test("imports threads into one project checkout, resuming a copied session", asy
   assert.equal(fts.n, 2, "search index triggers ran");
 
   const old = result.imported.find((thread) => thread.t3ThreadId === "old")!;
-  const oldRow = db.prepare("SELECT provider_id, archived_at FROM threads WHERE id = ?").get(old.bbThreadId) as Record<string, unknown>;
+  const oldRow = db.prepare("SELECT provider_id, archived_at FROM threads WHERE id = ?").get(old.aliaThreadId) as Record<string, unknown>;
   assert.equal(oldRow.provider_id, "codex");
   assert.equal(oldRow.archived_at, Date.parse("2026-09-22T00:00:00.000Z"));
   assert.equal(old.sessionId, "codex-thread-1");
   db.close();
 
-  assert.deepEqual(f.ledger.get("open")?.bbThreadId, open.bbThreadId);
+  assert.deepEqual(f.ledger.get("open")?.aliaThreadId, open.aliaThreadId);
 });
 
 test("a second run skips threads it already imported", async () => {
@@ -109,7 +109,7 @@ test("a second run skips threads it already imported", async () => {
   await runImport(f.deps, await planImport(f.deps, defaults, "copy"));
   const again = await planImport(f.deps, defaults, "copy");
   assert.ok(again.threads.every((thread) => thread.action === "skip" && /already imported/.test(thread.reason ?? "")));
-  assert.equal(again.threads[0]!.bbProject.id, "proj_1", "finds the project it created");
+  assert.equal(again.threads[0]!.aliaProject.id, "proj_1", "finds the project it created");
   const rerun = await runImport(f.deps, again);
   assert.deepEqual(rerun.imported, []);
   assert.equal(rerun.backupPath, null, "no backup when nothing is written");
@@ -138,13 +138,13 @@ test("imports history only when the Claude session file is gone", async () => {
   assert.equal(plan.threads[0]!.session.kind, "none");
   assert.match(plan.threads[0]!.warnings.join(" "), /session file is missing/);
   const result = await runImport(f.deps, plan);
-  const db = new Database(f.bbPath, { readonly: true });
-  const identities = db.prepare("SELECT count(*) AS n FROM events WHERE thread_id = ? AND type = 'thread/identity'").get(result.imported[0]!.bbThreadId) as { n: number };
+  const db = new Database(f.aliaPath, { readonly: true });
+  const identities = db.prepare("SELECT count(*) AS n FROM events WHERE thread_id = ? AND type = 'thread/identity'").get(result.imported[0]!.aliaThreadId) as { n: number };
   db.close();
   assert.equal(identities.n, 0);
 });
 
-test("a failed thread write removes its session copy and leaves bb unchanged", async () => {
+test("a failed thread write removes its session copy and leaves VesnALIA unchanged", async () => {
   const f = fixture();
   seedThree(f);
   const plan = await planImport(f.deps, { ...defaults, threads: ["open"] }, "copy");
@@ -154,7 +154,7 @@ test("a failed thread write removes its session copy and leaves bb unchanged", a
   assert.equal(result.imported.length, 0);
   assert.match(result.failed[0]!.error, /Project path does not exist/);
   assert.deepEqual(readdirSync(join(f.claudeHome, "projects", projectSlug(f.repo))).sort(), before);
-  const db = new Database(f.bbPath, { readonly: true });
+  const db = new Database(f.aliaPath, { readonly: true });
   assert.equal((db.prepare("SELECT count(*) AS n FROM threads").get() as { n: number }).n, 0);
   db.close();
 });
@@ -172,9 +172,9 @@ test("--archive-settled imports settled threads archived at their settle time", 
 
   const result = await runImport(f.deps, plan);
   assert.deepEqual(result.failed, []);
-  const db = new Database(f.bbPath, { readonly: true });
+  const db = new Database(f.aliaPath, { readonly: true });
   const archived = (id: string) => (db.prepare("SELECT archived_at FROM threads WHERE id = ?")
-    .get(result.imported.find((thread) => thread.t3ThreadId === id)!.bbThreadId) as { archived_at: number | null }).archived_at;
+    .get(result.imported.find((thread) => thread.t3ThreadId === id)!.aliaThreadId) as { archived_at: number | null }).archived_at;
   assert.equal(archived("done"), Date.parse("2026-09-21T11:00:00.000Z"));
   assert.equal(archived("open"), null);
   db.close();
@@ -190,7 +190,7 @@ test("--include-settled imports settled threads open", async () => {
   assert.equal(plan.threads[0]!.archivedAtMs, null);
 });
 
-test("--empty-projects creates bb projects for T3 projects with nothing to import", async () => {
+test("--empty-projects creates VesnALIA projects for T3 projects with nothing to import", async () => {
   const f = fixture();
   seedThread(f, { id: "settled-only", settled: true });
   const quiet = join(f.dir, "quiet");
@@ -212,8 +212,8 @@ test("--empty-projects creates bb projects for T3 projects with nothing to impor
   const result = await runImport(f.deps, plan);
   assert.deepEqual(result.failedProjects, []);
   assert.deepEqual(result.createdProjects.map((project) => project.workspaceRoot).sort(), [f.repo, quiet].sort());
-  assert.equal(result.backupPath, null, "creating projects through bb needs no backup");
-  assert.deepEqual((await planImport(f.deps, { ...defaults, emptyProjects: true }, "copy")).projects.map((project) => project.action), ["skip"], "existing bb projects are not listed again");
+  assert.equal(result.backupPath, null, "creating projects through VesnALIA needs no backup");
+  assert.deepEqual((await planImport(f.deps, { ...defaults, emptyProjects: true }, "copy")).projects.map((project) => project.action), ["skip"], "existing VesnALIA projects are not listed again");
 });
 
 test("--empty-projects leaves out projects that get threads", async () => {

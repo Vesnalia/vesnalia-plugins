@@ -133,7 +133,7 @@ async function main() {
     outbox.close();
   } else {
     let pollingFinished = false;
-    // "polling": false leaves getUpdates to the BB plugin; this service then only delivers SMS.
+    // "polling": false leaves getUpdates to the VesnALIA plugin; this service then only delivers SMS.
     const receive = cfg.polling !== false;
     if (!receive) console.log("Service bot started in SMS send-only mode");
     const polling = !receive

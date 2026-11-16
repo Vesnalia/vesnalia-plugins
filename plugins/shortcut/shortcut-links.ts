@@ -21,10 +21,10 @@ export function shortcutStoryPluginPath(pluginId: string, storyId: number): stri
   return `/plugins/${encodeURIComponent(pluginId)}/stories/${storyId}`;
 }
 
-export function openInBbFromRpcResponse(payload: unknown): boolean | null {
+export function openInAliaFromRpcResponse(payload: unknown): boolean | null {
   if (!payload || typeof payload !== "object") return null;
   const { ok, result } = payload as { ok?: unknown; result?: unknown };
   if (ok !== true || !result || typeof result !== "object") return null;
-  const { openInBb } = result as { openInBb?: unknown };
-  return typeof openInBb === "boolean" ? openInBb : null;
+  const { openInAlia } = result as { openInAlia?: unknown };
+  return typeof openInAlia === "boolean" ? openInAlia : null;
 }

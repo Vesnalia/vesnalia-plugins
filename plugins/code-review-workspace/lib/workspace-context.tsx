@@ -1,4 +1,4 @@
-// The review workspace's state and commands, for the views inside it (useWorkspace) and for BB's title bar outside it
+// The review workspace's state and commands, for the views inside it (useWorkspace) and for VesnALIA's title bar outside it
 // (useWorkspaceFor, through the store), so panels can mount anywhere without the workspace passing props down.
 import { createContext, useContext, useEffect, type ReactNode } from "react";
 import type { DockInjection } from "../components/AgentDock";
@@ -114,7 +114,7 @@ export interface WorkspaceApi {
   rebuild(): Promise<void>;
   /** Read the review, guide and diff again. */
   reload(): Promise<void>;
-  /** Reviews show in BB's thread list, so they can be pinned there. */
+  /** Reviews show in VesnALIA's thread list, so they can be pinned there. */
   pinnable: boolean;
   showShortcuts(): void;
   /** Single-key shortcuts are on (Settings → Reading). */
@@ -143,13 +143,13 @@ export const NOT_PUSHED_PAGE = "not-pushed";
 
 const WorkspaceContext = createContext<WorkspaceApi | null>(null);
 
-/** Gives the workspace's views its api, and BB's title bar too, through the store. */
+/** Gives the workspace's views its api, and VesnALIA's title bar too, through the store. */
 export function WorkspaceProvider({ api, children }: { api: WorkspaceApi; children: ReactNode }) {
   useEffect(() => publishWorkspace(api), [api]);
   return <WorkspaceContext.Provider value={api}>{children}</WorkspaceContext.Provider>;
 }
 
-/** Gives a view outside the workspace's tree, such as a tab in BB's side panel, the workspace's api from the store. */
+/** Gives a view outside the workspace's tree, such as a tab in VesnALIA's side panel, the workspace's api from the store. */
 export function WorkspaceView({ api, children }: { api: WorkspaceApi; children: ReactNode }) {
   return <WorkspaceContext.Provider value={api}>{children}</WorkspaceContext.Provider>;
 }

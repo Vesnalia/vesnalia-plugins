@@ -1,7 +1,7 @@
 import { grokLimitsCommand, grokLimitSnapshotSchema } from "./lib/grok-limits";
 import { Buffer } from "node:buffer";
 import { createHash, randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   parseHostUsageAggregates, parseOpenCode, repriceUsageRecord,
@@ -76,7 +76,7 @@ export const rpcContract = defineRpcContract({
   sync: { input: z.null(), output: z.object({ ok: z.literal(true) }) },
 });
 
-type Database = ReturnType<BbPluginApi["storage"]["database"]>;
+type Database = ReturnType<AliaPluginApi["storage"]["database"]>;
 type Machine = { id: string; name: string };
 type CollectorSettings = { codexHomes?: string; piSessionRoots: string; primeSessionRoots: string };
 
@@ -107,16 +107,16 @@ export const grokLimitsMigration = `CREATE TABLE IF NOT EXISTS grok_limits (
 );`;
 
 export async function syncGrokLimits(
-  bb: BbPluginApi, db: Database, machine: Machine, home: string, signal: AbortSignal,
+  alia: AliaPluginApi, db: Database, machine: Machine, home: string, signal: AbortSignal,
   executeHostCommand = runHostCommand,
 ) {
   try {
-    const output = await executeHostCommand(bb, machine, grokLimitsCommand(), signal, {
+    const output = await executeHostCommand(alia, machine, grokLimitsCommand(), signal, {
       title: "Usage: Grok Build limits", timeoutMs: 60_000, home,
     });
-    const diagnostic = output.match(/__BB_USAGE_ERROR__:([^\r\n]+)/)?.[1]?.trim();
+    const diagnostic = output.match(/__ALIA_USAGE_ERROR__:([^\r\n]+)/)?.[1]?.trim();
     if (diagnostic) throw new Error(diagnostic);
-    const json = output.match(/__BB_USAGE_BEGIN__\s*([\s\S]*?)\s*__BB_USAGE_END__:0/)?.[1];
+    const json = output.match(/__ALIA_USAGE_BEGIN__\s*([\s\S]*?)\s*__ALIA_USAGE_END__:0/)?.[1];
     if (!json) throw new Error("Grok billing query returned incomplete output.");
     const snapshot = grokLimitSnapshotSchema.parse(JSON.parse(json));
     if (!snapshot.windows.length) throw new Error("Grok billing response contained no limit windows.");
@@ -133,7 +133,7 @@ export async function syncGrokLimits(
     db.prepare(`INSERT INTO grok_limits (machine_id, machine_name, error) VALUES (?, ?, ?)
       ON CONFLICT(machine_id) DO UPDATE SET machine_name=excluded.machine_name, error=excluded.error`)
       .run(machine.id, machine.name, message);
-    bb.log.warn(`${machine.name}/grok: ${message}`);
+    alia.log.warn(`${machine.name}/grok: ${message}`);
   }
 }
 
@@ -178,7 +178,7 @@ function timeoutSignal(timeoutMs: number, parent?: AbortSignal) {
 }
 
 export async function loadProviderLimits(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   machines: Array<Machine & { status: string }>,
   db: Database,
   timeoutMs = PROVIDER_LIMITS_TIMEOUT_MS,
@@ -191,7 +191,7 @@ export async function loadProviderLimits(
       .all(machine.id, "codex", "claude", "cursor") as Array<{ agentId: string }>;
     const present = new Set(presentRows.map((row) => row.agentId));
     try {
-      const usage = await bb.sdk.system.usageLimits({ hostId: machine.id, signal: AbortSignal.timeout(timeoutMs) });
+      const usage = await alia.sdk.system.usageLimits({ hostId: machine.id, signal: AbortSignal.timeout(timeoutMs) });
       rows.push(...LIMIT_PROVIDERS.flatMap((provider): ProviderLimitSource[] => {
         // Aliases can report the same account (e.g. native Cursor and the Cursor SDK adapter).
         // Prefer a usable quota in key order, then fall back to the first error.
@@ -214,14 +214,14 @@ export async function loadProviderLimits(
           return [{ ...source, windows: limit.windows, status: "ok" as const, error: null, lastUpdatedAt: null }];
         }
         if (limit.status === "error") {
-          bb.log.debug(`Provider limits unavailable for ${provider.name} on ${machine.name}: ${limit.message}`);
+          alia.log.debug(`Provider limits unavailable for ${provider.name} on ${machine.name}: ${limit.message}`);
           return [{ ...source, windows: [], status: "error" as const, error: limit.message, lastUpdatedAt: null }];
         }
         return [];
       }));
     } catch (error) {
       const message = `Provider limits unavailable: ${errorMessage(error)}`;
-      bb.log.debug(`Provider limits unavailable for ${machine.name}: ${errorMessage(error)}`);
+      alia.log.debug(`Provider limits unavailable for ${machine.name}: ${errorMessage(error)}`);
       rows.push(...LIMIT_PROVIDERS
         .filter((provider) => present.has(provider.id))
         .map((provider): ProviderLimitSource => ({
@@ -246,7 +246,7 @@ export async function loadProviderLimits(
 }
 
 export async function loadCodexResetCredits(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   limits: UnifiedProviderLimit[],
   executeHostCommand = runHostCommand,
 ): Promise<UnifiedProviderLimit[]> {
@@ -255,17 +255,17 @@ export async function loadCodexResetCredits(
     const snapshots = await Promise.all(limit.machines.filter((machine) => machine.status === "ok").map(async (machine) => {
       try {
         const signal = AbortSignal.timeout(15_000);
-        const home = (await bb.sdk.hosts.directory({ hostId: machine.machineId, signal })).directory;
-        const output = await executeHostCommand(bb, { id: machine.machineId, name: machine.machineName }, codexResetsCommand(), signal, {
+        const home = (await alia.sdk.hosts.directory({ hostId: machine.machineId, signal })).directory;
+        const output = await executeHostCommand(alia, { id: machine.machineId, name: machine.machineName }, codexResetsCommand(), signal, {
           title: "Usage: Codex reset credits", timeoutMs: 12_000, home,
         });
         return parseCodexResetSnapshot(output);
       } catch {
-        bb.log.debug(`Codex reset details unavailable on ${machine.machineName}.`);
+        alia.log.debug(`Codex reset details unavailable on ${machine.machineName}.`);
         return null;
       }
     }));
-    // BB currently identifies subscriptions by email. Workspace accounts can
+    // VesnALIA currently identifies subscriptions by email. Workspace accounts can
     // share an email, so only attach verified details to personal subscriptions.
     const snapshot = snapshots.find((snapshot) => snapshot
       && ["free", "go", "plus", "pro", "prolite", "promax"].includes(snapshot.planType)
@@ -503,7 +503,7 @@ export function jsonAgentRoots(home: string, agentId: HostJsonAgentId, settings:
     : agentId === "antigravity" ? [`${home}/.antigravity-acp/usage.jsonl`]
     : agentId === "thaura" ? [`${home}/.thaura/usage.jsonl`]
     : agentId === "prime" ? resolvedPrimeRoots
-    : [`${home}/.pi/agent/sessions`, `${home}/.bb/pi-bridge-sessions`, ...configuredRoots(settings.piSessionRoots, home).filter((root) => {
+    : [`${home}/.pi/agent/sessions`, `${home}/.vesnalia/pi-bridge-sessions`, ...configuredRoots(settings.piSessionRoots, home).filter((root) => {
       const defaultPrimeAgentRoot = `${home}/.prime/agent`;
       return root !== defaultPrimeAgentRoot && !resolvedPrimeRoots.includes(root);
     })];
@@ -519,14 +519,14 @@ export function jsonAgentCommand(input: Parameters<typeof compressedHostJsonColl
   const script = compressedHostJsonCollectorScript(input);
   return [
     "if ! command -v node >/dev/null 2>&1",
-    "then printf '%s\\n' '__BB_USAGE_ERROR__:Node.js is required to scan agent usage logs.'; exit 127",
+    "then printf '%s\\n' '__ALIA_USAGE_ERROR__:Node.js is required to scan agent usage logs.'; exit 127",
     "fi",
     `node -e ${shellQuote(script)}`,
   ].join("; ");
 }
 
 async function syncJsonAgent(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   db: Database,
   machine: Machine,
   home: string,
@@ -537,13 +537,13 @@ async function syncJsonAgent(
   const generation = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   try {
     const roots = [...new Set(jsonAgentRoots(home, agentId, settings))];
-    const cachePath = `${home}/.cache/bb-plugin-usage/json-log-scan-v1/${agentId}.json`;
-    const output = await runHostCommand(bb, machine, jsonAgentCommand({
+    const cachePath = `${home}/.cache/alia-plugin-usage/json-log-scan-v1/${agentId}.json`;
+    const output = await runHostCommand(alia, machine, jsonAgentCommand({
       agentId,
       roots,
       cachePath,
       sinceDay: historyStartDay(),
-      // Extra Codex accounts (BB account-limits ACP providers) keep their
+      // Extra Codex accounts (VesnALIA account-limits ACP providers) keep their
       // CODEX_HOME under ~/.codex-profiles/<name>; the scan tags their rows
       // with the profile name so each account stays a distinct agent.
       accountRoot: agentId === "codex" ? `${home}/.codex-profiles` : undefined,
@@ -583,12 +583,12 @@ async function syncJsonAgent(
       ? `${scan.failureCount} source problem${scan.failureCount === 1 ? "" : "s"} prevented a complete scan${scan.error ? `: ${scan.error}` : "."}`
       : null;
     upsertState(db, machine.id, agentId, status, recordCount, error, complete);
-    bb.log.info(`${machine.name}/${agentId}: ${recordCount} records from ${scan.fileCount} files (${scan.changedFileCount} changed, ${scan.reusedFileCount} cached, ${status})`);
+    alia.log.info(`${machine.name}/${agentId}: ${recordCount} records from ${scan.fileCount} files (${scan.changedFileCount} changed, ${scan.reusedFileCount} cached, ${status})`);
   } catch (error) {
     const recordCount = countForMachine(db, machine.id, agentId);
     const message = `Usage scan failed: ${errorMessage(error)}`;
     upsertState(db, machine.id, agentId, "unavailable", recordCount, message, false);
-    bb.log.warn(`${machine.name}/${agentId}: ${message}`);
+    alia.log.warn(`${machine.name}/${agentId}: ${message}`);
   }
 }
 
@@ -603,14 +603,14 @@ export function devinCommand(home: string) {
   });
   return [
     "if ! command -v node >/dev/null 2>&1",
-    "then printf '%s\\n' '__BB_USAGE_ERROR__:Node.js is required to scan Devin usage.'; exit 127",
+    "then printf '%s\\n' '__ALIA_USAGE_ERROR__:Node.js is required to scan Devin usage.'; exit 127",
     "fi",
     `node -e ${shellQuote(script)}`,
   ].join("; ");
 }
 
 export async function syncDevin(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   db: Database,
   machine: Machine,
   home: string,
@@ -620,7 +620,7 @@ export async function syncDevin(
   const agentId: AgentId = "devin";
   const generation = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   try {
-    const output = await executeHostCommand(bb, machine, devinCommand(home), signal, {
+    const output = await executeHostCommand(alia, machine, devinCommand(home), signal, {
       title: "Usage: Devin scan",
       timeoutMs: DEVIN_SYNC_TIMEOUT_MS,
       home,
@@ -648,12 +648,12 @@ export async function syncDevin(
       ? `${scan.failureCount} source problem${scan.failureCount === 1 ? "" : "s"} prevented a complete scan${scan.error ? `: ${scan.error}` : "."}`
       : null;
     upsertState(db, machine.id, agentId, status, recordCount, error, complete);
-    bb.log.info(`${machine.name}/${agentId}: ${recordCount} records from Devin sessions.db (${status})`);
+    alia.log.info(`${machine.name}/${agentId}: ${recordCount} records from Devin sessions.db (${status})`);
   } catch (error) {
     const recordCount = countForMachine(db, machine.id, agentId);
     const message = `Usage scan failed: ${errorMessage(error)}`;
     upsertState(db, machine.id, agentId, "unavailable", recordCount, message, false);
-    bb.log.warn(`${machine.name}/${agentId}: ${message}`);
+    alia.log.warn(`${machine.name}/${agentId}: ${message}`);
   }
 }
 
@@ -668,14 +668,14 @@ export function kilocodeCommand(home: string) {
   });
   return [
     "if ! command -v node >/dev/null 2>&1",
-    "then printf '%s\\n' '__BB_USAGE_ERROR__:Node.js is required to scan Kilo Code usage.'; exit 127",
+    "then printf '%s\\n' '__ALIA_USAGE_ERROR__:Node.js is required to scan Kilo Code usage.'; exit 127",
     "fi",
     `node -e ${shellQuote(script)}`,
   ].join("; ");
 }
 
 export async function syncKilocode(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   db: Database,
   machine: Machine,
   home: string,
@@ -685,7 +685,7 @@ export async function syncKilocode(
   const agentId: AgentId = "kilocode";
   const generation = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   try {
-    const output = await executeHostCommand(bb, machine, kilocodeCommand(home), signal, {
+    const output = await executeHostCommand(alia, machine, kilocodeCommand(home), signal, {
       title: "Usage: Kilo Code scan",
       timeoutMs: KILOCODE_SYNC_TIMEOUT_MS,
       home,
@@ -713,12 +713,12 @@ export async function syncKilocode(
       ? `${scan.failureCount} source problem${scan.failureCount === 1 ? "" : "s"} prevented a complete scan${scan.error ? `: ${scan.error}` : "."}`
       : null;
     upsertState(db, machine.id, agentId, status, recordCount, error, complete);
-    bb.log.info(`${machine.name}/${agentId}: ${recordCount} records from Kilo Code's local session database (${status})`);
+    alia.log.info(`${machine.name}/${agentId}: ${recordCount} records from Kilo Code's local session database (${status})`);
   } catch (error) {
     const recordCount = countForMachine(db, machine.id, agentId);
     const message = `Usage scan failed: ${errorMessage(error)}`;
     upsertState(db, machine.id, agentId, "unavailable", recordCount, message, false);
-    bb.log.warn(`${machine.name}/${agentId}: ${message}`);
+    alia.log.warn(`${machine.name}/${agentId}: ${message}`);
   }
 }
 
@@ -731,7 +731,7 @@ function delay(ms: number) {
 type HostCommandOptions = { title: string; timeoutMs: number; pollMs?: number; home: string };
 
 function heldHostCommand(command: string) {
-  return `( ${command} ); bb_usage_status=$?; printf '\\n%s:%s\\n' '__BB_HOST_COMMAND_DONE__' "$bb_usage_status"; while :; do sleep 3600; done`;
+  return `( ${command} ); alia_usage_status=$?; printf '\\n%s:%s\\n' '__ALIA_HOST_COMMAND_DONE__' "$alia_usage_status"; while :; do sleep 3600; done`;
 }
 
 // createTerminalRequestSchema caps start.command at 10,000 characters, a
@@ -744,14 +744,14 @@ function heldHostCommand(command: string) {
 const HOST_COMMAND_MAX_CHARS = 10_000;
 
 async function stageHostCommand(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   machine: Machine,
   command: string,
   home: string,
 ) {
   const sha256 = createHash("sha256").update(command).digest("hex");
-  const path = `${home}/.cache/bb-plugin-usage/host-command-${sha256}.sh`;
-  const result = await bb.sdk.files.write({
+  const path = `${home}/.cache/alia-plugin-usage/host-command-${sha256}.sh`;
+  const result = await alia.sdk.files.write({
     hostId: machine.id,
     path,
     content: command,
@@ -765,15 +765,15 @@ async function stageHostCommand(
   return `sh ${shellQuote(path)}`;
 }
 
-function terminalOutputText(output: Awaited<ReturnType<BbPluginApi["sdk"]["terminals"]["output"]>>) {
+function terminalOutputText(output: Awaited<ReturnType<AliaPluginApi["sdk"]["terminals"]["output"]>>) {
   return output.chunks.sort((a, b) => a.seq - b.seq)
     .map((chunk) => Buffer.from(chunk.dataBase64, "base64").toString("utf8")).join("");
 }
 
 function completedHostCommandText(text: string, exitCode: number, title: string) {
   if (exitCode !== 0) {
-    const diagnostic = text.match(/__BB_USAGE_ERROR__:(.+)/)?.[1]?.trim()
-      ?? text.replace(/__BB_HOST_COMMAND_DONE__:\d+/g, "").trim().slice(-300);
+    const diagnostic = text.match(/__ALIA_USAGE_ERROR__:(.+)/)?.[1]?.trim()
+      ?? text.replace(/__ALIA_HOST_COMMAND_DONE__:\d+/g, "").trim().slice(-300);
     throw new Error(diagnostic || `${title} exited with code ${exitCode}.`);
   }
   return text;
@@ -796,26 +796,26 @@ function powerShellQuote(value: string) {
 // -EncodedCommand (base64 UTF-16LE) parses the same from PowerShell and cmd,
 // so the launcher needs no quoting for whichever shell the terminal opens.
 function windowsLauncher(scriptPath: string, outputPath: string, statusPath: string) {
-  const missing = "__BB_USAGE_ERROR__:Git for Windows (sh.exe) is required to collect usage on Windows.";
+  const missing = "__ALIA_USAGE_ERROR__:Git for Windows (sh.exe) is required to collect usage on Windows.";
   const script = [
-    String.raw`$bbRoots = @()`,
-    String.raw`$bbGit = Get-Command git.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1`,
-    String.raw`if ($bbGit) { $bbDir = Split-Path -Parent $bbGit.Source; $bbRoots += (Split-Path -Parent $bbDir); $bbRoots += (Split-Path -Parent (Split-Path -Parent $bbDir)) }`,
-    String.raw`$bbRoots += "$env:ProgramFiles\Git", "$env:LOCALAPPDATA\Programs\Git"`,
-    String.raw`$bbSh = $null; $bbBin = $null`,
-    String.raw`foreach ($bbRoot in $bbRoots) { if (-not $bbSh -and $bbRoot -and (Test-Path -LiteralPath "$bbRoot\usr\bin\sh.exe")) { $bbBin = "$bbRoot\usr\bin"; $bbSh = "$bbBin\sh.exe" } }`,
-    String.raw`if (-not $bbSh) { $bbCmd = Get-Command sh.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1; if ($bbCmd) { $bbSh = $bbCmd.Source; $bbBin = Split-Path -Parent $bbSh } }`,
-    `if (-not $bbSh) { Set-Content -LiteralPath ${powerShellQuote(outputPath)} -Value ${powerShellQuote(missing)}; Set-Content -LiteralPath ${powerShellQuote(statusPath)} -Value '127' -NoNewline; exit 127 }`,
-    String.raw`$env:PATH = "$bbBin;$env:PATH"`,
-    `& $bbSh ${powerShellQuote(scriptPath)}`,
+    String.raw`$aliaRoots = @()`,
+    String.raw`$aliaGit = Get-Command git.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1`,
+    String.raw`if ($aliaGit) { $aliaDir = Split-Path -Parent $aliaGit.Source; $aliaRoots += (Split-Path -Parent $aliaDir); $aliaRoots += (Split-Path -Parent (Split-Path -Parent $aliaDir)) }`,
+    String.raw`$aliaRoots += "$env:ProgramFiles\Git", "$env:LOCALAPPDATA\Programs\Git"`,
+    String.raw`$aliaSh = $null; $aliaBin = $null`,
+    String.raw`foreach ($aliaRoot in $aliaRoots) { if (-not $aliaSh -and $aliaRoot -and (Test-Path -LiteralPath "$aliaRoot\usr\bin\sh.exe")) { $aliaBin = "$aliaRoot\usr\bin"; $aliaSh = "$aliaBin\sh.exe" } }`,
+    String.raw`if (-not $aliaSh) { $aliaCmd = Get-Command sh.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1; if ($aliaCmd) { $aliaSh = $aliaCmd.Source; $aliaBin = Split-Path -Parent $aliaSh } }`,
+    `if (-not $aliaSh) { Set-Content -LiteralPath ${powerShellQuote(outputPath)} -Value ${powerShellQuote(missing)}; Set-Content -LiteralPath ${powerShellQuote(statusPath)} -Value '127' -NoNewline; exit 127 }`,
+    String.raw`$env:PATH = "$aliaBin;$env:PATH"`,
+    `& $aliaSh ${powerShellQuote(scriptPath)}`,
     String.raw`exit $LASTEXITCODE`,
   ].join("; ");
   return `powershell.exe -NoLogo -NoProfile -NonInteractive -EncodedCommand ${Buffer.from(script, "utf16le").toString("base64")}`;
 }
 
-async function readHostFile(bb: BbPluginApi, machine: Machine, path: string, signal: AbortSignal) {
+async function readHostFile(alia: AliaPluginApi, machine: Machine, path: string, signal: AbortSignal) {
   try {
-    const file = await bb.sdk.files.read({ hostId: machine.id, path, signal });
+    const file = await alia.sdk.files.read({ hostId: machine.id, path, signal });
     return { text: Buffer.from(file.content, file.contentEncoding).toString("utf8"), sizeBytes: file.sizeBytes };
   } catch {
     signal.throwIfAborted();
@@ -824,23 +824,23 @@ async function readHostFile(bb: BbPluginApi, machine: Machine, path: string, sig
 }
 
 async function runWindowsHostCommand(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   machine: Machine,
   command: string,
   signal: AbortSignal,
   options: HostCommandOptions,
 ) {
   const home = options.home.replace(/\\/g, "/").replace(/\/+$/, "");
-  const runDirectory = `${home}/.cache/bb-plugin-usage/runs/${randomUUID()}`;
+  const runDirectory = `${home}/.cache/alia-plugin-usage/runs/${randomUUID()}`;
   const scriptPath = `${runDirectory}/command.sh`;
   const outputPath = `${runDirectory}/output.txt`;
   const statusPath = `${runDirectory}/status`;
   // HOME in C:/ form keeps `$HOME/...` arguments valid for native node and
   // python; MSYS's /c/ conversion is skipped for paths containing quotes.
-  const script = `HOME=${shellQuote(home)}; export HOME; ( ${command} ) > ${shellQuote(outputPath)} 2>&1; bb_usage_status=$?; printf '%s' "$bb_usage_status" > ${shellQuote(`${statusPath}.tmp`)} && mv -f ${shellQuote(`${statusPath}.tmp`)} ${shellQuote(statusPath)}\n`;
+  const script = `HOME=${shellQuote(home)}; export HOME; ( ${command} ) > ${shellQuote(outputPath)} 2>&1; alia_usage_status=$?; printf '%s' "$alia_usage_status" > ${shellQuote(`${statusPath}.tmp`)} && mv -f ${shellQuote(`${statusPath}.tmp`)} ${shellQuote(statusPath)}\n`;
   let terminalId: string | null = null;
   try {
-    await bb.sdk.files.write({
+    await alia.sdk.files.write({
       hostId: machine.id,
       path: scriptPath,
       content: script,
@@ -852,7 +852,7 @@ async function runWindowsHostCommand(
       throw new Error(`${options.title} could not stage its command on ${machine.name}: ${errorMessage(error)}`);
     });
     signal.throwIfAborted();
-    const terminal = await bb.sdk.terminals.create({
+    const terminal = await alia.sdk.terminals.create({
       scope: { kind: "host_path", hostId: machine.id, cwd: null },
       cols: 120,
       rows: 24,
@@ -861,9 +861,9 @@ async function runWindowsHostCommand(
     });
     terminalId = terminal.id;
     const collect = async () => {
-      const status = await readHostFile(bb, machine, statusPath, signal);
+      const status = await readHostFile(alia, machine, statusPath, signal);
       if (!status || !/^\d+$/.test(status.text.trim())) return null;
-      const output = await readHostFile(bb, machine, outputPath, signal);
+      const output = await readHostFile(alia, machine, outputPath, signal);
       if (!output) throw new Error(`${options.title} finished but its output could not be read.`);
       if (output.sizeBytes > 900_000) throw new Error(`${options.title} exceeded the 900 KB output limit.`);
       return completedHostCommandText(output.text, Number(status.text.trim()), options.title);
@@ -872,13 +872,13 @@ async function runWindowsHostCommand(
     while (Date.now() < deadline) {
       const result = await collect();
       if (result !== null) return result;
-      const state = await bb.sdk.terminals.get({ terminalId: terminal.id, signal });
+      const state = await alia.sdk.terminals.get({ terminalId: terminal.id, signal });
       if (state.status !== "running" && state.status !== "starting" && state.status !== "disconnected") {
         // The status file is written just before the shell exits, so look once
         // more before reporting the launcher's own output as the failure.
         const late = await collect();
         if (late !== null) return late;
-        const output = await bb.sdk.terminals.output({ terminalId: terminal.id, tailBytes: 4000, limitChunks: 200, signal })
+        const output = await alia.sdk.terminals.output({ terminalId: terminal.id, tailBytes: 4000, limitChunks: 200, signal })
           .then(terminalOutputText).catch(() => "");
         const diagnostic = stripTerminalControls(output).replace(/\s+/g, " ").trim().slice(-300);
         throw new Error(`${options.title} stopped before its output could be collected${diagnostic ? `: ${diagnostic}` : "."}`);
@@ -888,9 +888,9 @@ async function runWindowsHostCommand(
     throw new Error(`${options.title} timed out after ${Math.ceil(options.timeoutMs / 1000)} seconds.`);
   } finally {
     if (terminalId) {
-      await bb.sdk.terminals.close({ terminalId, mode: "force" }).catch(() => { /* already closed by the host */ });
+      await alia.sdk.terminals.close({ terminalId, mode: "force" }).catch(() => { /* already closed by the host */ });
     }
-    await bb.sdk.files.remove({ hostId: machine.id, path: runDirectory, recursive: true }).catch(() => { /* best effort */ });
+    await alia.sdk.files.remove({ hostId: machine.id, path: runDirectory, recursive: true }).catch(() => { /* best effort */ });
   }
 }
 
@@ -902,26 +902,26 @@ function stripTerminalControls(text: string) {
 }
 
 export async function runHostCommand(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   machine: Machine,
   command: string,
   signal: AbortSignal,
   options: HostCommandOptions,
 ) {
-  if (isWindowsPath(options.home)) return runWindowsHostCommand(bb, machine, command, signal, options);
+  if (isWindowsPath(options.home)) return runWindowsHostCommand(alia, machine, command, signal, options);
   let startCommand = heldHostCommand(command);
   if (startCommand.length > HOST_COMMAND_MAX_CHARS) {
     // An oversized command can never be submitted, so a staging failure is
     // the real error; sending the inline command anyway would only reproduce
     // the contract's 10,000-character rejection.
-    const staged = await stageHostCommand(bb, machine, command, options.home)
+    const staged = await stageHostCommand(alia, machine, command, options.home)
       .catch((error) => {
         throw new Error(`${options.title} could not stage its command on ${machine.name}: ${errorMessage(error)}`);
       });
     startCommand = heldHostCommand(staged);
   }
   signal.throwIfAborted();
-  const terminal = await bb.sdk.terminals.create({
+  const terminal = await alia.sdk.terminals.create({
     scope: { kind: "host_path", hostId: machine.id, cwd: null },
     cols: 120,
     rows: 24,
@@ -931,9 +931,9 @@ export async function runHostCommand(
   try {
     const deadline = Date.now() + options.timeoutMs;
     while (Date.now() < deadline) {
-      const state = await bb.sdk.terminals.get({ terminalId: terminal.id, signal });
+      const state = await alia.sdk.terminals.get({ terminalId: terminal.id, signal });
       if (state.status === "running") {
-        const output = await bb.sdk.terminals.output({
+        const output = await alia.sdk.terminals.output({
           terminalId: terminal.id,
           tailBytes: 900_000,
           limitChunks: 4000,
@@ -941,7 +941,7 @@ export async function runHostCommand(
         });
         if (output.truncated) throw new Error(`${options.title} exceeded the 900 KB output limit.`);
         const text = terminalOutputText(output);
-        const completion = text.match(/__BB_HOST_COMMAND_DONE__:(\d+)/);
+        const completion = text.match(/__ALIA_HOST_COMMAND_DONE__:(\d+)/);
         if (completion) return completedHostCommandText(text, Number(completion[1]), options.title);
       } else if (state.status !== "starting" && state.status !== "disconnected") {
         throw new Error(`${options.title} stopped before its output could be collected.`);
@@ -950,7 +950,7 @@ export async function runHostCommand(
     }
     throw new Error(`${options.title} timed out after ${Math.ceil(options.timeoutMs / 1000)} seconds.`);
   } finally {
-    await bb.sdk.terminals.close({ terminalId: terminal.id, mode: "force" }).catch(() => { /* already closed by the host */ });
+    await alia.sdk.terminals.close({ terminalId: terminal.id, mode: "force" }).catch(() => { /* already closed by the host */ });
   }
 }
 
@@ -1012,25 +1012,25 @@ export function openCodeCommand() {
   ].join("\n");
   const v2Probe = "import sqlite3,sys; db=sqlite3.connect('file:'+sys.argv[1]+'?mode=ro',uri=True); sys.exit(0 if db.execute(\"select count(*) from sqlite_master where type='table' and name in ('session_message','session_v2')\").fetchone()[0] == 2 else 1)";
   return [
-    `if command -v python3 >/dev/null 2>&1 && [ -f "${database}" ] && python3 -c ${shellQuote(v2Probe)} "${database}" >/dev/null 2>&1; then result=$(python3 -c ${shellQuote(v2Query)} "${database}" 2>&1); bb_usage_query_status=$?; else if ! command -v opencode >/dev/null 2>&1; then printf '%s\\n' '__BB_USAGE_ERROR__:OpenCode CLI is required to collect OpenCode usage.'; exit 127; fi; result=$(opencode db ${shellQuote(sql)} --format json 2>&1); bb_usage_query_status=$?; fi`,
-    `if [ "$bb_usage_query_status" -ne 0 ]; then diagnostic=$(printf '%s' "$result" | tr '\\r\\n' ' ' | cut -c1-240); printf '%s%s\\n' '__BB_USAGE_ERROR__:OpenCode usage query failed' "\${diagnostic:+: $diagnostic}"; exit "$bb_usage_query_status"; fi`,
-    `printf '%s\\n' '__BB_USAGE_BEGIN__'`,
+    `if command -v python3 >/dev/null 2>&1 && [ -f "${database}" ] && python3 -c ${shellQuote(v2Probe)} "${database}" >/dev/null 2>&1; then result=$(python3 -c ${shellQuote(v2Query)} "${database}" 2>&1); alia_usage_query_status=$?; else if ! command -v opencode >/dev/null 2>&1; then printf '%s\\n' '__ALIA_USAGE_ERROR__:OpenCode CLI is required to collect OpenCode usage.'; exit 127; fi; result=$(opencode db ${shellQuote(sql)} --format json 2>&1); alia_usage_query_status=$?; fi`,
+    `if [ "$alia_usage_query_status" -ne 0 ]; then diagnostic=$(printf '%s' "$result" | tr '\\r\\n' ' ' | cut -c1-240); printf '%s%s\\n' '__ALIA_USAGE_ERROR__:OpenCode usage query failed' "\${diagnostic:+: $diagnostic}"; exit "$alia_usage_query_status"; fi`,
+    `printf '%s\\n' '__ALIA_USAGE_BEGIN__'`,
     `printf '%s\\n' "$result"`,
-    `printf '%s\\n' '__BB_USAGE_END__:0'`,
+    `printf '%s\\n' '__ALIA_USAGE_END__:0'`,
   ].join("; ");
 }
 
 export function extractOpenCodeJson(output: string) {
-  const start = output.indexOf("__BB_USAGE_BEGIN__");
-  const end = output.lastIndexOf("__BB_USAGE_END__:");
+  const start = output.indexOf("__ALIA_USAGE_BEGIN__");
+  const end = output.lastIndexOf("__ALIA_USAGE_END__:");
   if (start < 0 || end < 0 || end <= start) throw new Error("OpenCode metadata query returned incomplete output.");
-  const status = Number(output.slice(end).match(/__BB_USAGE_END__:(\d+)/)?.[1] ?? NaN);
+  const status = Number(output.slice(end).match(/__ALIA_USAGE_END__:(\d+)/)?.[1] ?? NaN);
   if (!Number.isFinite(status) || status !== 0) throw new Error(`OpenCode usage query failed with code ${Number.isFinite(status) ? status : "unknown"}.`);
-  return output.slice(start + "__BB_USAGE_BEGIN__".length, end).trim() || "[]";
+  return output.slice(start + "__ALIA_USAGE_BEGIN__".length, end).trim() || "[]";
 }
 
 export async function syncOpenCode(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   db: Database,
   machine: Machine,
   home: string,
@@ -1041,7 +1041,7 @@ export async function syncOpenCode(
   const generation = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const sourceId = opaqueId(machine.id, agentId, "opencode-cli-db-v1");
   try {
-    const output = await executeHostCommand(bb, machine, openCodeCommand(), signal, {
+    const output = await executeHostCommand(alia, machine, openCodeCommand(), signal, {
       title: "Usage: OpenCode scan",
       timeoutMs: OPENCODE_SYNC_TIMEOUT_MS,
       home,
@@ -1058,17 +1058,17 @@ export async function syncOpenCode(
     reconcileSources(db, machine.id, agentId, generation);
     const recordCount = countForMachine(db, machine.id, agentId);
     upsertState(db, machine.id, agentId, recordCount > 0 ? "ready" : "no-data", recordCount, null, true);
-    bb.log.info(`${machine.name}/opencode: ${recordCount} records`);
+    alia.log.info(`${machine.name}/opencode: ${recordCount} records`);
   } catch (error) {
     const recordCount = countForMachine(db, machine.id, agentId);
     const message = errorMessage(error);
     if (message.includes("OpenCode CLI is required")) {
       upsertState(db, machine.id, agentId, "skipped", recordCount,
         "OpenCode CLI is not installed; hosted OpenCode Go usage is already collected via Prime Agent sessions.", false);
-      bb.log.info(`${machine.name}/opencode: skipped (no local OpenCode CLI)`);
+      alia.log.info(`${machine.name}/opencode: skipped (no local OpenCode CLI)`);
     } else {
       upsertState(db, machine.id, agentId, "unavailable", recordCount, message, false);
-      bb.log.warn(`${machine.name}/opencode: ${message}`);
+      alia.log.warn(`${machine.name}/opencode: ${message}`);
     }
   }
 }
@@ -1083,7 +1083,7 @@ export function goLimitsHasFingerprintColumn(db: Database): boolean {
 }
 
 export async function syncOpenCodeGo(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   db: Database,
   machine: Machine,
   home: string,
@@ -1092,7 +1092,7 @@ export async function syncOpenCodeGo(
 ) {
   const attemptedAt = new Date().toISOString();
   try {
-    const output = await executeHostCommand(bb, machine, openCodeGoUsageCommand(), signal, {
+    const output = await executeHostCommand(alia, machine, openCodeGoUsageCommand(), signal, {
       title: "Usage: OpenCode Go limits",
       timeoutMs: OPENCODE_GO_SYNC_TIMEOUT_MS,
       home,
@@ -1121,7 +1121,7 @@ export async function syncOpenCodeGo(
         last_attempt_at=excluded.last_attempt_at, last_success_at=excluded.last_success_at`)
         .run(machine.id, machine.name, attemptedAt, attemptedAt);
     })();
-    bb.log.info(`${machine.name}/opencode-go: ${windows.length} limit windows`);
+    alia.log.info(`${machine.name}/opencode-go: ${windows.length} limit windows`);
   } catch (error) {
     const message = errorMessage(error);
     if (OPENCODE_GO_ABSENCE_ERRORS.has(message)) {
@@ -1129,7 +1129,7 @@ export async function syncOpenCodeGo(
         db.prepare("DELETE FROM opencode_go_limits WHERE machine_id=?").run(machine.id);
         db.prepare("DELETE FROM opencode_go_limit_state WHERE machine_id=?").run(machine.id);
       })();
-      bb.log.debug(`${machine.name}/opencode-go: not configured (${message})`);
+      alia.log.debug(`${machine.name}/opencode-go: not configured (${message})`);
       return;
     }
 
@@ -1140,7 +1140,7 @@ export async function syncOpenCodeGo(
       machine_name=excluded.machine_name, status='error', error=excluded.error,
       last_attempt_at=excluded.last_attempt_at`)
       .run(machine.id, machine.name, message, attemptedAt);
-    bb.log.warn(`${machine.name}/opencode-go: ${hasSnapshot ? "retaining previous snapshot; " : ""}${message}`);
+    alia.log.warn(`${machine.name}/opencode-go: ${hasSnapshot ? "retaining previous snapshot; " : ""}${message}`);
   }
 }
 
@@ -1229,8 +1229,8 @@ function abortableDelay(ms: number, signal: AbortSignal) {
   });
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     codexHomes: {
       type: "string",
       label: "Extra Codex homes",
@@ -1250,8 +1250,8 @@ export default async function plugin(bb: BbPluginApi) {
       default: "",
     },
   });
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [migration, pricingMigration, syncMetadataMigration, multiAgentMigration, pricingCatalogMigration, projectMigration, openCodeGoLimitsMigration, openCodeGoFingerprintMigration, grokLimitsMigration, freebuffRetirementMigration, scanRevisionMigration]);
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [migration, pricingMigration, syncMetadataMigration, multiAgentMigration, pricingCatalogMigration, projectMigration, openCodeGoLimitsMigration, openCodeGoFingerprintMigration, grokLimitsMigration, freebuffRetirementMigration, scanRevisionMigration]);
   activateCachedCatalog(db);
   const syncCoordinator = createSyncCoordinator({
     completedAt: readLastCompletedSyncAt(db),
@@ -1264,7 +1264,7 @@ export default async function plugin(bb: BbPluginApi) {
     const wasRunning = syncCoordinator.snapshot().running;
     const result = syncCoordinator.run(async () => {
       activateCachedCatalog(db);
-      const machines = await bb.sdk.hosts.list({ signal: timeoutSignal(SYNC_HOSTS_TIMEOUT_MS, serviceSignal) });
+      const machines = await alia.sdk.hosts.list({ signal: timeoutSignal(SYNC_HOSTS_TIMEOUT_MS, serviceSignal) });
       reconcileMachines(db, machines.map((machine) => machine.id));
       const collectorSettings = await settings.get();
       for (const machine of machines) {
@@ -1275,7 +1275,7 @@ export default async function plugin(bb: BbPluginApi) {
         }
         let home: string;
         try {
-          home = (await bb.sdk.hosts.directory({
+          home = (await alia.sdk.hosts.directory({
             hostId: machine.id,
             signal: timeoutSignal(HOST_DIRECTORY_TIMEOUT_MS, serviceSignal),
           })).directory;
@@ -1285,31 +1285,31 @@ export default async function plugin(bb: BbPluginApi) {
           continue;
         }
         await Promise.all([
-          syncJsonAgent(bb, db, machine, home, "codex", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
-          syncJsonAgent(bb, db, machine, home, "claude", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
-          syncJsonAgent(bb, db, machine, home, "copilot", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
-          syncJsonAgent(bb, db, machine, home, "dsh", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
-          syncJsonAgent(bb, db, machine, home, "fx", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
-          syncJsonAgent(bb, db, machine, home, "grok", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
-          syncJsonAgent(bb, db, machine, home, "pi", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
-          syncJsonAgent(bb, db, machine, home, "prime", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
-          syncJsonAgent(bb, db, machine, home, "antigravity", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
-          syncJsonAgent(bb, db, machine, home, "thaura", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
-          syncDevin(bb, db, machine, home, timeoutSignal(DEVIN_SYNC_TIMEOUT_MS, serviceSignal)),
-          syncKilocode(bb, db, machine, home, timeoutSignal(KILOCODE_SYNC_TIMEOUT_MS, serviceSignal)),
-          syncOpenCode(bb, db, machine, home, timeoutSignal(OPENCODE_SYNC_TIMEOUT_MS, serviceSignal)),
-          syncGrokLimits(bb, db, machine, home, timeoutSignal(60_000, serviceSignal)),
-          syncOpenCodeGo(bb, db, machine, home, timeoutSignal(OPENCODE_GO_SYNC_TIMEOUT_MS, serviceSignal)),
+          syncJsonAgent(alia, db, machine, home, "codex", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
+          syncJsonAgent(alia, db, machine, home, "claude", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
+          syncJsonAgent(alia, db, machine, home, "copilot", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
+          syncJsonAgent(alia, db, machine, home, "dsh", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
+          syncJsonAgent(alia, db, machine, home, "fx", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
+          syncJsonAgent(alia, db, machine, home, "grok", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
+          syncJsonAgent(alia, db, machine, home, "pi", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
+          syncJsonAgent(alia, db, machine, home, "prime", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
+          syncJsonAgent(alia, db, machine, home, "antigravity", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
+          syncJsonAgent(alia, db, machine, home, "thaura", collectorSettings, timeoutSignal(JSON_AGENT_SYNC_TIMEOUT_MS, serviceSignal)),
+          syncDevin(alia, db, machine, home, timeoutSignal(DEVIN_SYNC_TIMEOUT_MS, serviceSignal)),
+          syncKilocode(alia, db, machine, home, timeoutSignal(KILOCODE_SYNC_TIMEOUT_MS, serviceSignal)),
+          syncOpenCode(alia, db, machine, home, timeoutSignal(OPENCODE_SYNC_TIMEOUT_MS, serviceSignal)),
+          syncGrokLimits(alia, db, machine, home, timeoutSignal(60_000, serviceSignal)),
+          syncOpenCodeGo(alia, db, machine, home, timeoutSignal(OPENCODE_GO_SYNC_TIMEOUT_MS, serviceSignal)),
         ]);
       }
       return new Date().toISOString();
     });
 
     if (!wasRunning) {
-      bb.realtime.publish("usage-updated", { stage: "started" });
+      alia.realtime.publish("usage-updated", { stage: "started" });
       void result.then(
-        (completedAt) => bb.realtime.publish("usage-updated", { stage: "completed", completedAt }),
-        () => bb.realtime.publish("usage-updated", { stage: "failed" }),
+        (completedAt) => alia.realtime.publish("usage-updated", { stage: "completed", completedAt }),
+        () => alia.realtime.publish("usage-updated", { stage: "failed" }),
       );
     }
 
@@ -1318,17 +1318,17 @@ export default async function plugin(bb: BbPluginApi) {
 
   const loadMachines = async (): Promise<Array<Machine & { status: string }>> => {
     try {
-      return (await bb.sdk.hosts.list({ signal: AbortSignal.timeout(DASHBOARD_HOSTS_TIMEOUT_MS) }))
+      return (await alia.sdk.hosts.list({ signal: AbortSignal.timeout(DASHBOARD_HOSTS_TIMEOUT_MS) }))
         .map((host) => ({ id: host.id, name: host.name, status: host.status }));
     } catch (error) {
-      bb.log.warn(`Machine list unavailable: ${errorMessage(error)}`);
+      alia.log.warn(`Machine list unavailable: ${errorMessage(error)}`);
       return db.prepare(`SELECT machine_id id, MAX(machine_name) name, 'unavailable' status
         FROM usage_sources GROUP BY machine_id ORDER BY name`)
         .all() as Array<Machine & { status: string }>;
     }
   };
 
-  const loadAccountPoolLimits = createAccountPoolLimitsLoader(bb);
+  const loadAccountPoolLimits = createAccountPoolLimitsLoader(alia);
   let providerLimitsRequest: Promise<z.infer<typeof rpcContract.providerLimits.output>> | null = null;
   const readProviderLimits = async (input?: { refreshPoolAccountId: string } | null) => {
     const refreshAccountId = input?.refreshPoolAccountId;
@@ -1341,8 +1341,8 @@ export default async function plugin(bb: BbPluginApi) {
           const connectedMachineIds = new Set(
             machines.filter((machine) => machine.status === "connected").map((machine) => machine.id),
           );
-          return loadCodexResetCredits(bb, groupProviderLimits([
-            ...await loadProviderLimits(bb, machines, db),
+          return loadCodexResetCredits(alia, groupProviderLimits([
+            ...await loadProviderLimits(alia, machines, db),
             ...loadStoredOpenCodeGoLimits(db, connectedMachineIds),
             ...loadStoredGrokLimits(db, connectedMachineIds),
           ]));
@@ -1362,7 +1362,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   };
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async dashboard() {
       const machines = await loadMachines();
       const machineNames = new Map(machines.map((machine) => [machine.id, machine.name]));
@@ -1395,20 +1395,20 @@ export default async function plugin(bb: BbPluginApi) {
     },
     providerLimits: readProviderLimits,
     sync() {
-      void syncAll().catch((error) => bb.log.error(`Usage sync failed: ${errorMessage(error)}`));
+      void syncAll().catch((error) => alia.log.error(`Usage sync failed: ${errorMessage(error)}`));
       return { ok: true as const };
     },
   });
 
-  bb.background.service("usage-collector", {
+  alia.background.service("usage-collector", {
     async start(signal) {
       while (!signal.aborted) {
         // Refresh before collecting so newly listed models price on the first sync.
         try { await refreshCatalog(db); } catch (error) {
-          bb.log.warn(`models.dev catalog refresh failed: ${errorMessage(error)}`);
+          alia.log.warn(`models.dev catalog refresh failed: ${errorMessage(error)}`);
         }
         try { await syncAll(signal); } catch (error) {
-          if (!signal.aborted) bb.log.error(`Usage sync failed: ${errorMessage(error)}`);
+          if (!signal.aborted) alia.log.error(`Usage sync failed: ${errorMessage(error)}`);
         }
         if (signal.aborted) break;
         await abortableDelay(15 * 60_000, signal);

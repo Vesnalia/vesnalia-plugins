@@ -1,22 +1,22 @@
 {
-  "name": "bb-plugin-lego",
+  "name": "alia-plugin-lego",
   "version": "0.1.0",
   "description": "Plan a task as a Lego instruction book: parallel builder agents build the bags, a Master Builder assembles the model.",
   "license": "MIT",
   "keywords": [
-    "bb-plugin"
+    "alia-plugin"
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
-  "bb": {
+  "alia": {
     "name": "Lego",
     "description": "Plan a task as a Lego instruction book: builder agents build the bags in parallel and a Master Builder assembles the model.",
     "branding": {
@@ -36,7 +36,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -62,5 +61,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^4.1.12"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/lego#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/lego"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,15 +1,15 @@
-// BB machines that can host Docker boxes (042), for BB Box's settings: each
-// connected, persistent machine bb-box did not make, with Docker as it
-// answers through bb-box's relay, and the Docker backend the configuration
+// VesnALIA machines that can host Docker boxes (042), for VesnALIA Box's settings: each
+// connected, persistent machine alia-box did not make, with Docker as it
+// answers through alia-box's relay, and the Docker backend the configuration
 // has for it.
 //
-// Looking leaves the machine as it was. A machine BB shows offline is not
+// Looking leaves the machine as it was. A machine VesnALIA shows offline is not
 // called. Otherwise one host call asks whether Docker is there, holding no
 // lease and starting nothing; only where it is does the list open the relay,
 // and then it only reads: docker info, nothing pulled or started. That relay
 // closes on its idle timer unless a box uses it, and with it the worker's
 // lease. The operator turns each on: that adds a Docker backend whose
-// host is bb:<machine ID>, last in acquire order; off removes it, or, while
+// host is VesnALIA:<machine ID>, last in acquire order; off removes it, or, while
 // it still has boxes, turns it off so it takes no new ones.
 
 import { DOCKER_KEYS } from "../backends/docker/config.ts";
@@ -20,7 +20,7 @@ import type { DockerInfo } from "../backends/docker/cli.ts";
 import type { ImageBuild } from "./docker-images.ts";
 import type { DockerFix } from "./setup-offer.ts";
 
-/** BB's machines as the settings list reads them. */
+/** VesnALIA's machines as the settings list reads them. */
 export interface MachineRecord {
   readonly id: string;
   readonly name: string;
@@ -28,7 +28,7 @@ export interface MachineRecord {
   readonly type: string;
   readonly machineProviderId: string | null;
   readonly lifecycle: { readonly phase: string };
-  /** When BB last heard from the machine, in ms since the epoch. */
+  /** When VesnALIA last heard from the machine, in ms since the epoch. */
   readonly lastSeenAt?: number | null;
 }
 
@@ -50,8 +50,8 @@ export interface DockerHostView {
 }
 
 /**
- * How long BB may go without hearing from a machine it shows connected
- * before bb-box takes it as offline. BB hears from each about every 5 s, but
+ * How long VesnALIA may go without hearing from a machine it shows connected
+ * before alia-box takes it as offline. VesnALIA hears from each about every 5 s, but
  * showed a PC that restarted, which said nothing as it went, connected until
  * it was back (#233).
  */
@@ -59,29 +59,29 @@ export const SILENT_MS = 60_000;
 
 /**
  * Why the machine cannot be reached now, as the end of a sentence about it,
- * or null when BB shows it connected and has heard from it lately.
+ * or null when VesnALIA shows it connected and has heard from it lately.
  */
 export function machineOffline(machine: Pick<MachineRecord, "status" | "lastSeenAt">, now: number): string | null {
-  if (machine.status !== "connected") return "is offline in BB.";
+  if (machine.status !== "connected") return "is offline in VesnALIA.";
   const silent = machine.lastSeenAt == null ? 0 : now - machine.lastSeenAt;
   if (silent <= SILENT_MS) return null;
   const minutes = Math.max(1, Math.round(silent / 60_000));
-  return `is offline: BB has not heard from it for ${minutes} ${minutes === 1 ? "minute" : "minutes"}.`;
+  return `is offline: VesnALIA has not heard from it for ${minutes} ${minutes === 1 ? "minute" : "minutes"}.`;
 }
 
-/** The host field of a Docker backend on BB machine `hostId`. */
+/** The host field of a Docker backend on VesnALIA machine `hostId`. */
 export function machineHost(hostId: string): string {
-  return `bb:${hostId}`;
+  return `alia:${hostId}`;
 }
 
-/** The Docker backend on BB machine `hostId`, if the configuration has one. */
+/** The Docker backend on VesnALIA machine `hostId`, if the configuration has one. */
 export function backendOn(document: ConfigDocument, hostId: string): BackendConfig | null {
   return document.backends.find((backend) => backend.type === "docker" && backend.fields.host === machineHost(hostId)) ?? null;
 }
 
 /**
  * Machines that may host boxes: persistent and not being removed, and not
- * bb-box's own, since its own boxes, spares and your machines are BB machines
+ * alia-box's own, since its own boxes, spares and your machines are VesnALIA machines
  * with Docker too (041): neither made by its providers nor holding one of its
  * boxes, as a spare that joined through manual setup does. One the
  * configuration already uses stays listed whatever its state, so it can be
@@ -98,13 +98,13 @@ export function machineHosts(machines: readonly MachineRecord[], document: Confi
 export interface DockerHostsDeps {
   machines(): Promise<readonly MachineRecord[]>;
   document(): ConfigDocument;
-  /** bb-box's machine providers, whose machines are its own boxes. */
+  /** alia-box's machine providers, whose machines are its own boxes. */
   readonly providers: readonly string[];
   /** Whether Docker is on the machine, from the host entry with no lease and no relay; the reason when it is not. */
   found(hostId: string, signal: AbortSignal): Promise<string | null>;
   /** Docker's facts on the machine, through the relay: docker info, which only reads. */
   docker(hostId: string, signal: AbortSignal): Promise<DockerInfo>;
-  /** Boxes bb-box holds on each backend, by backend ID. */
+  /** Boxes alia-box holds on each backend, by backend ID. */
   boxes(): Promise<ReadonlyMap<string, number>>;
   boxMachines?(): Promise<ReadonlySet<string>>;
   /** The machine's last image build, or the one running. */
@@ -195,7 +195,7 @@ export class DockerHosts {
  * (041). Off removes it, or turns it off while it still has boxes.
  */
 /**
- * The configuration with BB machine `machine`'s Docker on or off. A new backend from first-run setup (`linuxOnly`) has no
+ * The configuration with VesnALIA machine `machine`'s Docker on or off. A new backend from first-run setup (`linuxOnly`) has no
  * desktop images, so turning it on builds the Linux image alone; a desktop's image builds when one is first asked for.
  */
 export function withDockerHost(document: ConfigDocument, machine: { readonly id: string; readonly name: string }, on: boolean, boxes: number, linuxOnly = false): ConfigDocument {
@@ -233,14 +233,14 @@ export interface DesktopOnDemand {
 }
 
 /**
- * The BB machines whose desktop image can be built when a desktop is first asked for: Docker there is on, its desktop
+ * The VesnALIA machines whose desktop image can be built when a desktop is first asked for: Docker there is on, its desktop
  * image is turned off, as first-run setup leaves it, and the desktop kind is on. An image set to another reference, or
  * left at its default, is not this: it is offered, or not, as configured.
  */
 export function desktopsOnDemand(document: ConfigDocument, audience: Audience = EVERYONE): DesktopOnDemand[] {
   const kinds = (Object.keys(DESKTOPS_ON_DEMAND) as DesktopOnDemandKind[]).filter((kind) => kindOn(document, kind));
   return document.backends.flatMap((backend) => {
-    const host = typeof backend.fields.host === "string" ? /^bb:(.+)$/.exec(backend.fields.host)?.[1] : undefined;
+    const host = typeof backend.fields.host === "string" ? /^alia:(.+)$/.exec(backend.fields.host)?.[1] : undefined;
     if (backend.type !== "docker" || !backend.enabled || !host || !servesAudience(backend.projects ?? [], audience)) return [];
     return kinds.filter((kind) => backend.fields[DESKTOPS_ON_DEMAND[kind]] === "").map((kind) => ({ hostId: host, backend: backend.id, kind }));
   });
@@ -267,7 +267,7 @@ export function withoutDesktopImage(document: ConfigDocument, id: string, kind: 
 const PLATFORMS_KEY = "machine-platforms";
 
 /**
- * Each BB machine's OS, as bb-box's host entry there last reported it, kept
+ * Each VesnALIA machine's OS, as alia-box's host entry there last reported it, kept
  * in storage so a restart knows a Windows PC before the entry has answered
  * again (the "Runs on" filter had lacked it for a minute after each deploy).
  */
@@ -301,8 +301,8 @@ export class MachinePlatforms {
 const NAMES_KEY = "machine-names";
 
 /**
- * Each BB machine's name as BB last gave it, kept in storage, so a restart
- * names a provider on a machine, "Docker on devpc", before bb-box has
+ * Each VesnALIA machine's name as VesnALIA last gave it, kept in storage, so a restart
+ * names a provider on a machine, "Docker on devpc", before alia-box has
  * reached it again: until then it named it by the machine's ID (#916).
  */
 export class MachineNames {
@@ -323,7 +323,7 @@ export class MachineNames {
     return this.#known.get(hostId) ?? null;
   }
 
-  /** Records the name BB gave, and keeps it when it is news. */
+  /** Records the name VesnALIA gave, and keeps it when it is news. */
   async learn(hostId: string, name: string): Promise<void> {
     if (!name || this.#known.get(hostId) === name) return;
     this.#known.set(hostId, name);

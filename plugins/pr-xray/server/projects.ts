@@ -1,5 +1,5 @@
-// Maps a PR's repository to the bb project that holds a checkout of it.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// Maps a PR's repository to the VesnALIA project that holds a checkout of it.
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { PrRef } from "../shared/schema";
 
 export interface ProjectMatch {
@@ -15,9 +15,9 @@ function normalizeRemote(url: string): string | null {
   return match === null ? null : `${match[1]}/${match[2]}`.toLowerCase();
 }
 
-export async function findProject(bb: BbPluginApi, ref: PrRef): Promise<ProjectMatch | null> {
+export async function findProject(alia: AliaPluginApi, ref: PrRef): Promise<ProjectMatch | null> {
   const wanted = `${ref.owner}/${ref.repo}`.toLowerCase();
-  const projects = (await bb.sdk.projects.list()) as ListedProject[];
+  const projects = (await alia.sdk.projects.list()) as ListedProject[];
   const project = projects.find((candidate) => candidate.gitRemoteUrl && normalizeRemote(candidate.gitRemoteUrl) === wanted);
   if (!project?.gitRemoteUrl) {
     return null;
@@ -46,8 +46,8 @@ function localPath(source: ProjectSource | undefined): string | null {
   return source.path ?? null;
 }
 
-export async function personalProjectId(bb: BbPluginApi): Promise<string> {
-  const projects = await bb.sdk.projects.list({ includePersonal: true });
+export async function personalProjectId(alia: AliaPluginApi): Promise<string> {
+  const projects = await alia.sdk.projects.list({ includePersonal: true });
   const personal = projects.find((project) => (project as { kind?: string }).kind === "personal");
   if (personal === undefined) throw new Error("No personal project to run the analysis in.");
   return personal.id;

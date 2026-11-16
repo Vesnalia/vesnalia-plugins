@@ -1,7 +1,7 @@
 # Architecture
 
-How bb-box works now: its parts, the backend interface, a box's life,
-commands and jobs, desktops and control, images, the relays through BB
+How alia-box works now: its parts, the backend interface, a box's life,
+commands and jobs, desktops and control, images, the relays through VesnALIA
 machines, the configuration, and each backend. It describes the current
 design only. Why each choice was made, and what came before, is in the
 [decisions](decisions/README.md). The exact tools, commands, settings and
@@ -9,7 +9,7 @@ checks are in the [reference](reference/README.md), made from the code.
 
 ## The rule
 
-bb-box's core does not care who the provider is
+alia-box's core does not care who the provider is
 ([001](decisions/001-provider-agnostic-core.md)). A hypervisor, a container
 host, a pool of physical machines or a cloud is a backend behind one
 interface, and one conformance suite tests every backend against it.
@@ -17,10 +17,10 @@ interface, and one conformance suite tests every backend against it.
 ## Parts
 
 ```
-BB app: Box panel, Boxes page, desktop and terminal tabs, settings      BB server
+ALIA app: Box panel, Boxes page, desktop and terminal tabs, settings      ALIA server
           |                                                                 |
           v                                                                 v
-+------------------------------ bb-box plugin, on BB's server -------------------------------+
++------------------------------ alia-box plugin, on ALIA's server -------------------------------+
 | Core: registry, lifecycle, sweep, agent tools, CLI, views, configuration, doctor,          |
 |       desktop relay, shared control, enrolment, computer use, images, in-box scripts       |
 |--------------------------------+-----------------------------------------------------------|
@@ -31,23 +31,23 @@ BB app: Box panel, Boxes page, desktop and terminal tabs, settings      BB serve
 +--------------------------------+-----------------------------------------------------------+
         |                                 |                                  |
         v                                 v                                  v
-  inside each box             each provider's API or CLI       bb-box's host entry on BB machines:
+  inside each box             each provider's API or CLI       alia-box's host entry on ALIA machines:
                                                                access, the Docker and msb relays, file streams
 ```
 
 | Part | Folder | Owns | Never |
 | --- | --- | --- | --- |
 | Core | `src/core/` | box records, lifecycle, sweep, computer use, the desktop relay's protocol work, images, in-box scripts | names a provider, hypervisor, container technology or transport |
-| Plugin | `src/plugin/` | what BB calls: tools, CLI, RPC, HTTP routes, setup, enrolment, the nightly rebuilds | |
+| Plugin | `src/plugin/` | what VesnALIA calls: tools, CLI, RPC, HTTP routes, setup, enrolment, the nightly rebuilds | |
 | App | `src/app/` | the panel, the Boxes page, the desktop and terminal tabs, the settings page | |
 | Transports | `src/transports/` | running commands, copying files, opening a route to a port in a box | knows which provider made the box |
 | Backends | `src/backends/<type>/` | acquire and release, capacity, ownership records, which transports and displays reach each box, images, `doctor` | runs anything in a box for the core |
-| Host entry | `src/host/` | what BB's daemon runs for bb-box on a BB machine | |
+| Host entry | `src/host/` | what VesnALIA's daemon runs for alia-box on a VesnALIA machine | |
 | Relays | `src/relay/` | the Docker and msb relays and file streams, as channels on one WebSocket | |
 
-- bb-box is a BB plugin with no service of its own
-  ([002](decisions/002-bb-is-the-coordinator.md)). It calls each
-  provider's API or CLI from BB's server.
+- alia-box is a VesnALIA plugin with no service of its own
+  ([002](decisions/002-alia-is-the-coordinator.md)). It calls each
+  provider's API or CLI from VesnALIA's server.
 - What runs inside a box is written once per guest OS and sent through the
   command transport: POSIX sh for Linux and macOS, PowerShell 7 for Windows.
   That covers enrolment, the thread's access, commands, file copies, jobs,
@@ -71,7 +71,7 @@ A backend declares its nature, virtual or real, and implements:
 | `release(guest, hooks)` | deletes a virtual guest, or resets a real machine and returns it to the pool. `hooks.scope` says what ends: `whole-box` when the box itself is released, so the backend may remove everything it holds for the box, or `this-guest-only` when a restore drops one guest while the box lives on in another. Without it, a backend removes only this guest where the box may have another |
 | `power(guest)` | `running`, `stopped` or `unknown` now, from the provider, not a listing that may lag; null when the guest is gone |
 | `start?`, `stop?` | only where the provider can; the panel and tools offer them only then |
-| `stopped?(guest)` | why a guest stopped when bb-box did not stop it |
+| `stopped?(guest)` | why a guest stopped when alia-box did not stop it |
 | `held()` | every guest this install holds, with the owner recorded at the provider |
 | `stamp?` | records this install on a guest from before install IDs |
 | `relabel?` | records a box's new owner or name on its guest, as when a spare is claimed |
@@ -184,11 +184,11 @@ backends, and the first with room takes the box.
 | `command` | `transport` (a name for people), `shell` (`sh` or `powershell`), `admin`, `inDesktopSession`, `streaming`; or none | offer commands and file copies |
 | `displays` | `{id, protocol, resizable}` for each display; none without a desktop | load the viewer client, and allow resizing |
 | `computerUse` | `{driver, version, socket}`, or none | offer the computer tools ([015](decisions/015-computer-use-through-cua-driver.md)) |
-| `enrol` | yes or no | make the box a BB machine |
+| `enrol` | yes or no | make the box a VesnALIA machine |
 
 - A kind enrols only when its shell is `sh` and its OS is Linux or macOS.
-  BB's host app does not run on Windows yet
-  ([BB requests](bb-requests.md#1-bbs-host-app-on-windows)).
+  VesnALIA's host app does not run on Windows yet
+  ([VesnALIA requests](alia-requests.md#1-bbs-host-app-on-windows)).
 - Computer use needs a command transport with `spawn`, which keeps a
   command running with its stdin and stdout as a byte channel.
 - A box records its kind's capabilities when it is made. When the plugin
@@ -201,13 +201,13 @@ backends, and the first with room takes the box.
 
 `transports(guest, kind)` returns the command transport, the displays, and
 `access`: how the thread's own machine reaches the box, by SSH or a Docker
-host, or null when only BB's server can.
+host, or null when only VesnALIA's server can.
 
 **Routes.** A route says how to reach one port inside a box, as data:
 
 | Route | Holds | For example |
 | --- | --- | --- |
-| `tcp` | host and port | a box on a network BB's server reaches |
+| `tcp` | host and port | a box on a network VesnALIA's server reaches |
 | `command` | a command whose stdin and stdout carry the bytes | `ssh -W 127.0.0.1:5900 <box>`, `docker exec -i <container> socat - TCP:127.0.0.1:5900` |
 | `websocket` | URL, headers, and a certificate fingerprint or CA | Proxmox's `vncwebsocket` with its one-time ticket |
 
@@ -229,7 +229,7 @@ password for Apple's authentication. A display may also have:
 - `input`, for a stream server that ignores a viewer's keys and pointer
   (#406): the relay sends the controlling viewer's input there instead;
 - `clipboard: "commands"`, for a server that does not move the clipboard:
-  bb-box moves it with commands in the desktop session (#464).
+  alia-box moves it with commands in the desktop session (#464).
 
 **SSH.** SSH access gives the host, port, user, host keys and an optional
 jump host: the Mac for Tart, a bastion for a pool
@@ -293,11 +293,11 @@ any state -> releasing -> released     (release, or the thread is archived or de
 4. **Ready.** The command transport answers. A box of a project's image
    that has no build on its backend runs the image's script now, before it
    is handed over (049).
-5. **Enrolled.** A box whose kind can enrol becomes a BB machine, and the
+5. **Enrolled.** A box whose kind can enrol becomes a VesnALIA machine, and the
    thread's access reaches it.
 6. **Released.** You or the agent release it, or its thread is archived or
-   deleted ([003](decisions/003-boxes-live-until-released.md)). bb-box
-   removes the machine from BB, then the backend releases the guest. A box
+   deleted ([003](decisions/003-boxes-live-until-released.md)). alia-box
+   removes the machine from VesnALIA, then the backend releases the guest. A box
    a thread is working on is released or stopped only when forced
    ([034](decisions/034-a-working-thread-holds-its-box.md)). Each release
    logs why.
@@ -315,7 +315,7 @@ timer: boxes do not expire.
 
 ### Warm guests and spares
 
-- **Warm guests** are ready guests of a kind that are not BB machines, so
+- **Warm guests** are ready guests of a kind that are not VesnALIA machines, so
   an acquire is only a claim ([004](decisions/004-acquire-and-release.md)).
   `ReadyPool` in [src/backends/pool.ts](../src/backends/pool.ts) picks a
   member that can serve the kind. The count is per backend and kind in the
@@ -330,9 +330,9 @@ timer: boxes do not expire.
   that no thread owns yet: up to 10 per kind
   ([032](decisions/032-spare-boxes-are-enrolled-ahead.md)). An acquire at
   the default size takes one, so the box has the thread's access at once.
-  BB lists a spare as "<name> (spare)". When no backend has room for a
-  thread's box, bb-box releases a spare to make room. A spare that a
-  thread starts on through BB's picker becomes your machine
+  VesnALIA lists a spare as "<name> (spare)". When no backend has room for a
+  thread's box, alia-box releases a spare to make room. A spare that a
+  thread starts on through VesnALIA's picker becomes your machine
   ([036](decisions/036-your-machines-are-boxes-you-own.md)). The upkeep
   replaces a spare, ready or waiting stopped, that its backend's
   `fromCurrentBuild` says comes from a build of the kind's image that a
@@ -356,7 +356,7 @@ timer: boxes do not expire.
   released and replaced: Tart's is `warm-max-hours`, as a saved macOS VM
   older than that may not restore (063 results, E4).
 - **Spares of projects' images.** Where a project's image is baked, on
-  Proxmox LXC or Docker, bb-box also keeps one spare of the build for each
+  Proxmox LXC or Docker, alia-box also keeps one spare of the build for each
   kind, while the image is in use: a box started from the build, or the
   build was made, within 14 days, or the image says `bake: always`. The
   image's boxes claim it, and a new build replaces it (#440).
@@ -365,60 +365,60 @@ timer: boxes do not expire.
 
 A box is a resource of its thread and gets what the thread's machine has.
 
-- **Enrolment.** bb-box is a BB machine provider. It creates a machine
-  keyed by the box ID, and the provider runs BB's `bootstrap` through the
+- **Enrolment.** alia-box is a VesnALIA machine provider. It creates a machine
+  keyed by the box ID, and the provider runs VesnALIA's `bootstrap` through the
   box's command transport
   ([014](decisions/014-enrol-through-machine-providers.md)). Images carry
-  BB's host app, so the installer skips its download; a box enrols about
+  VesnALIA's host app, so the installer skips its download; a box enrols about
   5 s after it is ready on Linux, and 8 to 11 s on a Mac
-  ([BB request 5](bb-requests.md#5-enrol-quickly-when-bb-app-is-installed)).
-  Images clear BB's daemon lock and PID file at boot
-  ([017](decisions/017-boxes-clear-bb-daemon-state-at-boot.md)). An
-  enrolment fails, rather than counting the box enrolled, when BB does not
+  ([VesnALIA request 5](alia-requests.md#5-enrol-quickly-when-alia-app-is-installed)).
+  Images clear VesnALIA's daemon lock and PID file at boot
+  ([017](decisions/017-boxes-clear-alia-daemon-state-at-boot.md)). An
+  enrolment fails, rather than counting the box enrolled, when VesnALIA does not
   show the machine connected within 30 s (#286). A join that failed for
   something that can pass, such as a DNS lookup that timed out, is tried
   again after 30 s, 2 min, 10 min and 30 min, then every 30 minutes, and
-  gives up 24 hours after the first failure (`src/core/join-tries.ts`). Its words blame BB's setup only
-  when no box on the same backend reaches BB. The sweep plans the same
+  gives up 24 hours after the first failure (`src/core/join-tries.ts`). Its words blame VesnALIA's setup only
+  when no box on the same backend reaches VesnALIA. The sweep plans the same
   tries for a box whose record says such a failure but has no tries, as
-  one that failed before bb-box retried them. `bb box enrol`, `box_enrol`
-  and the box page's Join BB again add a ready box to BB again. Each try,
-  these and the sweep's, first asks BB about the machine the record names:
-  one BB still has makes the box enrolled, and is never removed. Otherwise
-  they run BB's installer through the box's command transport, never the
-  backend's start, stop or resize, and stop only the BB daemon of a machine
-  BB no longer has. The sweep plans tries only for boxes bb-box enrols.
-- **Variables.** BB gives the thread's Git credentials and machine
-  variables to its daemon in the box. Each command bb-box runs, and each
+  one that failed before alia-box retried them. `alia box enrol`, `box_enrol`
+  and the box page's Join VesnALIA again add a ready box to VesnALIA again. Each try,
+  these and the sweep's, first asks VesnALIA about the machine the record names:
+  one VesnALIA still has makes the box enrolled, and is never removed. Otherwise
+  they run VesnALIA's installer through the box's command transport, never the
+  backend's start, stop or resize, and stop only the VesnALIA daemon of a machine
+  VesnALIA no longer has. The sweep plans tries only for boxes alia-box enrols.
+- **Variables.** VesnALIA gives the thread's Git credentials and machine
+  variables to its daemon in the box. Each command alia-box runs, and each
   SSH session through the box's `~/.bashrc` (`~/.zshenv` on macOS), takes
-  `GH_TOKEN`, the git identity and BB's machine variables from a process of
+  `GH_TOKEN`, the git identity and VesnALIA's machine variables from a process of
   that daemon as it starts: from `/proc` on Linux, from `ps -E` on macOS,
-  and through each process's PEB on Windows, on trial, for bb-box's own
+  and through each process's PEB on Windows, on trial, for alia-box's own
   commands only (#560;
-  [BB request 8](bb-requests.md#8-give-a-machines-own-commands-its-variables)).
-  The values never reach the disk. bb-box's host entry keeps a process
+  [VesnALIA request 8](alia-requests.md#8-give-a-machines-own-commands-its-variables)).
+  The values never reach the disk. alia-box's host entry keeps a process
   with the current values running in a worker of the daemon
   (`src/host/access.ts`), so commands always find one. A project's own
   variables reach a box only while a thread of the project runs there
-  ([BB request 11](bb-requests.md#11-give-a-machine-a-projects-variables-without-a-thread-there)).
+  ([VesnALIA request 11](alia-requests.md#11-give-a-machine-a-projects-variables-without-a-thread-there)).
   `git` takes GitHub credentials from `gh`, and fetches GitHub's SSH URLs
   over HTTPS.
 - **Child threads.** A child thread can run on an enrolled box
   (`box_thread`), with its parent's agent and model when the box has that
-  agent's CLI (#561). BB's new-thread screen can start a thread on a new
+  agent's CLI (#561). VesnALIA's new-thread screen can start a thread on a new
   box, which goes with the thread
   ([033](decisions/033-a-thread-can-start-on-a-new-box.md)).
-- **Your machines.** Boxes you own, kept as BB machines under names you
+- **Your machines.** Boxes you own, kept as VesnALIA machines under names you
   give, until you remove them
   ([036](decisions/036-your-machines-are-boxes-you-own.md)).
 - **Files for every box.** A short list of files, each a path under the box
   user's home and a secret content, written into each Linux and macOS box
-  as it joins BB, starts again or the list changes (#455). Windows boxes
+  as it joins VesnALIA, starts again or the list changes (#455). Windows boxes
   get none yet.
 - **Direct access.** The agent can reach its boxes itself, with
   `ssh <box name>` or `DOCKER_HOST`, where `access` allows.
-- **Windows** boxes enrol as machines of BB's manual provider, which
-  bb-box makes and removes with the box (#539), as BB enrols a provider's
+- **Windows** boxes enrol as machines of VesnALIA's manual provider, which
+  alia-box makes and removes with the box (#539), as VesnALIA enrols a provider's
   machine with its installer for Linux and macOS only. A switch on each
   backend with Windows boxes turns it off.
 
@@ -428,15 +428,15 @@ Nothing expires, so no box may be forgotten.
 
 - **Ownership is recorded at the provider**: Proxmox tags, Docker labels,
   an owner file per Tart VM, a marker file on a real machine. `held()`
-  reads it back, so the sweep works even when bb-box's storage is lost.
+  reads it back, so the sweep works even when alia-box's storage is lost.
 - **Each install records its ID** on every guest and acts only on its own.
   An install that lost its storage takes its old ID back with
-  `bb box install-id --set`
+  `alia box install-id --set`
   ([018](decisions/018-guests-name-their-install-and-box.md)).
 - **After a restart** the registry resumes acquires, repeats interrupted
   releases and checks the power of the rest.
 - **The sweep** runs at start and every 3 minutes. It records the install
-  on older guests (`stamp()`); releases the boxes of threads that BB says
+  on older guests (`stamp()`); releases the boxes of threads that VesnALIA says
   ended, at this sweep and the last, since one answer may be wrong
   ([019](decisions/019-lost-records-are-restored-from-guests.md)); finishes
   interrupted releases; restores the record of a guest whose thread is
@@ -445,11 +445,11 @@ Nothing expires, so no box may be forgotten.
   answers ([026](decisions/026-a-restored-box-enrols-once-it-answers.md)).
   It changes a box's state only when `power()` confirms it, and logs each
   guest it releases, restores or keeps.
-- **A guest deleted outside bb-box** shows as gone, and stays gone when
+- **A guest deleted outside alia-box** shows as gone, and stays gone when
   its reference is reused.
-- **A guest that stopped without bb-box's request** is recorded with what
+- **A guest that stopped without alia-box's request** is recorded with what
   `stopped()` says. When the guest did not choose it, as when its VM
-  crashed, bb-box starts the box again, unless it did so less than 10
+  crashed, alia-box starts the box again, unless it did so less than 10
   minutes before (#406).
 - **A release is done only when the backend confirms it** (069). The box
   log records "release asked" before the backend is called and "released"
@@ -458,15 +458,15 @@ Nothing expires, so no box may be forgotten.
   restart in between, the sweep first asks for the guest's power, and a
   guest that is gone finishes the release with no second call.
 - **A box whose backend is no longer in the settings** can be forgotten
-  (`bb box forget`): bb-box removes its record and deletes nothing.
+  (`alia box forget`): alia-box removes its record and deletes nothing.
 - **A box that does not answer** a command, a Live reading or a view is
   checked again by itself after 1 minute, 5 minutes, then every 15 minutes,
-  through BB's connection state for a BB machine and otherwise one command
+  through VesnALIA's connection state for a VesnALIA machine and otherwise one command
   with a 10 s timeout. The check never calls a backend's API; Check now
   reads the box's power, at most once a minute (069).
 - **A box that rebooted** starts its services again, and the sweep
-  bootstraps its BB machine again when BB shows it disconnected.
-- **If BB's server is down**, boxes keep running and nothing is released.
+  bootstraps its VesnALIA machine again when VesnALIA shows it disconnected.
+- **If VesnALIA's server is down**, boxes keep running and nothing is released.
 
 ## Commands and jobs
 
@@ -488,24 +488,24 @@ Nothing expires, so no box may be forgotten.
   and as an unelevated one-off scheduled task on Windows, whose output
   comes back when it exits
   ([039](decisions/039-windows-desktops-are-clones-of-a-template-that-is-not-generalized.md)).
-- **Jobs.** BB ends a tool call at about five minutes, so `box_run` returns
+- **Jobs.** VesnALIA ends a tool call at about five minutes, so `box_run` returns
   after 270 s, and a command still running goes on in the box as a job,
   which `box_job` reads. Each command runs as a job from the start, with
-  its output and exit status in files under `~/.local/state/bb-box/jobs/`,
-  so it also outlives a restart of bb-box (#405): bb-box's dispose hook
+  its output and exit status in files under `~/.local/state/alia-box/jobs/`,
+  so it also outlives a restart of alia-box (#405): alia-box's dispose hook
   waits up to 60 s for running commands, then leaves them to their jobs.
   On Windows a runner started with `Start-Detached` holds the job, outside
   the SSH session (#414). A Windows command in the desktop session has no
-  job, and stops at 270 s. A box's next command removes the jobs bb-box
+  job, and stops at 270 s. A box's next command removes the jobs alia-box
   has the result of, and those older than 7 days.
 - **Files.** `box_copy` moves one file between the thread's workspace or
-  storage folder and a box. A file up to 16 MiB goes through BB's file
-  API. A larger one streams through the [file relay](#relays-through-bb-machines),
-  and the box and bb-box's worker each check its SHA-256 before it
+  storage folder and a box. A file up to 16 MiB goes through VesnALIA's file
+  API. A larger one streams through the [file relay](#relays-through-alia-machines),
+  and the box and alia-box's worker each check its SHA-256 before it
   replaces the target (#492). In a box, file copies are scripts with the
   file's bytes as their stdin or stdout.
 - **The terminal.** A person's terminal is the box user's login shell over
-  the command transport, with its PTY on BB's server, on the plugin's
+  the command transport, with its PTY on VesnALIA's server, on the plugin's
   `/terminal` route ([035](decisions/035-a-terminal-has-its-pty-on-bbs-server.md)).
   It lives 10 minutes without a tab.
 
@@ -516,7 +516,7 @@ Nothing expires, so no box may be forgotten.
 The relay opens the display's route, does the box's RFB security
 handshake itself, VNC authentication with the box's password or Apple's
 (type 30) as a user, then offers the viewer RFB 3.8 with security type None
-only, as BB has authenticated the viewer. Passwords and tickets never reach
+only, as VesnALIA has authenticated the viewer. Passwords and tickets never reach
 the browser. It copies bytes both ways without decoding pixels, and always
 joins as a shared client. The viewer is noVNC.
 
@@ -525,7 +525,7 @@ over WebSockets from `127.0.0.1:5980` in the box
 ([056](decisions/056-linux-x11-desktops-add-a-selkies-stream-and-rfb-stays-for-the-rest-tuned.md)).
 A viewer asks for it with `&stream=selkies`. With the general setting
 `video` on, the panel shows such a desktop as video when its fastest of
-three round trips to BB's server takes 10 ms or more, and over RFB when it
+three round trips to VesnALIA's server takes 10 ms or more, and over RFB when it
 is quicker, as RFB answers keys faster on a LAN. The viewer's menu has
 "Show as video", and the tab keeps that choice for the box. Video needs
 WebCodecs, so a browser without it, or video that does not start, shows
@@ -548,34 +548,34 @@ route and carries messages, not bytes:
   goes to every viewer, and resumes from it. It asks on the input
   connection when that is open, as Selkies takes a viewer's request once a
   second, and again every 250 ms until one comes.
-- Every relay runs on the event loop of BB's server, whose process runs
-  bb-box, so code there that holds the loop holds every desktop's frames
-  and input, whether it is bb-box's, BB's or another plugin's. bb-box logs,
+- Every relay runs on the event loop of VesnALIA's server, whose process runs
+  alia-box, so code there that holds the loop holds every desktop's frames
+  and input, whether it is alia-box's, VesnALIA's or another plugin's. alia-box logs,
   at most once a minute, when the loop stood still for 250 ms or more, how
-  much of it was garbage collection, and how many processes bb-box started
+  much of it was garbage collection, and how many processes alia-box started
   then and how long their spawn calls took; and five minutes after a start,
   then once an hour, the server's memory, how many processes the helper
-  started, and which started the most, each by where bb-box started it and
+  started, and which started the most, each by where alia-box started it and
   the work it was for, such as "ssh command for sweep" or "docker image for
   tool box_acquire". Forking copies the parent's page tables on the loop's
-  thread, about 49 ms a spawn for a 3.5 GB server, so bb-box's commands,
+  thread, about 49 ms a spawn for a 3.5 GB server, so alia-box's commands,
   Docker's and msb's, and its ssh connections' masters, start from a small
   helper process, started once, which forks for them and passes their
   streams back over its IPC channel (`src/transports/forker.ts`); a spawn
   call then takes about 0.1 ms. Desktop routes and terminals, which live
-  long, still start directly. Should the helper end, bb-box spawns directly
-  for 30 s, then starts it again; when bb-box stops or reloads, the helper
-  ends with its children. `BB_BOX_DIRECT_SPAWN=1` turns it off. A CPU
+  long, still start directly. Should the helper end, alia-box spawns directly
+  for 30 s, then starts it again; when alia-box stops or reloads, the helper
+  ends with its children. `ALIA_BOX_DIRECT_SPAWN=1` turns it off. A CPU
   profile of the process, 1 to
-  60 s, one at a time, names the code (`bb plugin rpc call bb-box profile` with
+  60 s, one at a time, names the code (`alia plugin rpc call alia-box profile` with
   `{"seconds": 15}`), splits the busy time by whose code it ran under, notes
   each long garbage collection with the heap after it, and times starting a
   process. It logs only functions' names, files, lines and times. With
   `"keep": true` it keeps the profile, with `"allocations": true` it samples
   who allocates, and with `"snapshot": true` it writes a heap snapshot,
   which holds the server still while it is written and is refused without
-  the free memory for it; each goes to `profiles/` beside bb-box's own
-  database in BB's data, the last five. With `"collect": true`, after the
+  the free memory for it; each goes to `profiles/` beside alia-box's own
+  database in VesnALIA's data, the last five. With `"collect": true`, after the
   profile it has V8 collect all the garbage, and says how long that held
   the server and the heap's used size before and after, so the memory
   line that follows is what the process keeps, not garbage not yet
@@ -587,7 +587,7 @@ route and carries messages, not bytes:
 - A resize from the viewer with control goes through the RFB display, at a
   width of a multiple of 8 and an even height, as Selkies keeps them. Selkies
   follows a desktop that shrinks, but captures one that grows at its old
-  size, even for later viewers. So after each resize bb-box makes, and when
+  size, even for later viewers. So after each resize alia-box makes, and when
   a viewer's frames have another size than the desktop's, the input
   connection sends SETTINGS with the desktop's size as a manual resolution,
   which moves the capture at once, without a restart. A capture moved to a
@@ -612,7 +612,7 @@ route and carries messages, not bytes:
   right after a resize with no viewer has restarted it, until it crashes
   seconds later (#411, about 0.7% of such resizes). A display that can
   restart its server, as a Wayland desktop's can, gets 4 s for the
-  sign-in; then bb-box kills its wayvnc, the desktop starts the next, and
+  sign-in; then alia-box kills its wayvnc, the desktop starts the next, and
   the sign-in is tried again once, within the usual 20 s.
 - **The picture.** The viewer asks a display for JPEG quality 2, or the
   quality the display names, and keeps noVNC's compression level, 2
@@ -637,7 +637,7 @@ route and carries messages, not bytes:
   taking control or the focus (F-15). What the
   box copies comes back as ServerCutText, to the viewer with control only.
   TigerVNC and wayvnc move it both ways. For a display with `clipboard:
-  "commands"`, Tart's macOS desktop and both Windows desktops, bb-box moves
+  "commands"`, Tart's macOS desktop and both Windows desktops, alia-box moves
   it itself for the viewer with control: `pbcopy` and `pbpaste`, or
   PowerShell's `Set-Clipboard` and `Get-Clipboard`, in the desktop session.
   The viewer asks for the box's clipboard every 2 s while its tab has the
@@ -678,7 +678,7 @@ route and carries messages, not bytes:
   transport's `spawn`, and the plugin speaks MCP over it. It opens on first
   use and closes after 10 idle minutes, when a person takes control, and
   when the box is released.
-- **The tools** are bb-box's own, never Cua's: `computer_windows`,
+- **The tools** are alia-box's own, never Cua's: `computer_windows`,
   `computer_observe`, `computer_screenshot`, `computer_act`,
   `computer_type`, `computer_launch` and `computer_take_control` (see the
   [tools reference](reference/tools.md)).
@@ -711,23 +711,23 @@ The hidden workspace cache holds at most eight snapshots and 32 MiB of encoded d
 Each kind has a standard image per backend, built by the setup scripts and
 rebuilt each night. A project can add a script on top.
 
-- **The contract.** Every image has the box user with sudo, bb-box's key
-  where it is reached over SSH, bb-box's boot units, BB's host app, Docker
+- **The contract.** Every image has the box user with sudo, alia-box's key
+  where it is reached over SSH, alia-box's boot units, VesnALIA's host app, Docker
   on first use, the desktop and Cua for desktop kinds, nothing of one
-  machine, `bb-box-feature`, and its record. The kind's check
-  (`bb-box-check-headless`, `bb-box-check-desktop`) checks it.
-- **The record**, `/usr/share/bb-box/image.json` (`/usr/local/share` on
-  macOS, `C:\bb-box\image.json` on Windows), gives the build's ID and date,
-  the contract, the apt snapshot, the pins' digest, BB's app's digest, the
+  machine, `alia-box-feature`, and its record. The kind's check
+  (`alia-box-check-headless`, `alia-box-check-desktop`) checks it.
+- **The record**, `/usr/share/alia-box/image.json` (`/usr/local/share` on
+  macOS, `C:\alia-box\image.json` on Windows), gives the build's ID and date,
+  the contract, the apt snapshot, the pins' digest, VesnALIA's app's digest, the
   tools, and for a project's image its script's digest
   (`src/backends/images.ts`). A copy is readable without starting the
   image: in a template's description, a Docker label, or a file beside a
   Tart VM.
 - **Freshness.** The doctor fails an image with an older contract, or a
   GPU image whose NVIDIA userspace is not the host's, and warns when one is
-  older than twice its interval, or has another BB app or other pins.
-- **Nightly rebuilds** (`src/plugin/images.ts`). `bb box images refresh`,
-  run each night by a BB script automation, rebuilds due standard images
+  older than twice its interval, or has another VesnALIA app or other pins.
+- **Nightly rebuilds** (`src/plugin/images.ts`). `alia box images refresh`,
+  run each night by a VesnALIA script automation, rebuilds due standard images
   one at a time, most needed first, with the latest agent CLIs, gh and
   Chrome that publish checksums (`src/backends/versions.ts`). Linux images
   are due after 7 days and macOS images after 30. A Linux or Android
@@ -736,77 +736,77 @@ rebuilt each night. A project can add a script on top.
   `.DS_Store` and `._` files, and its backend's prepare script or, for Docker and microsandbox, every file
   `setup/docker/image-sources` lists (085). A run starts no image after
   4 hours. A trial box of the new build must pass the kind's check,
-  have BB's app and the record, answer no more than 5 s slower and have no
+  have VesnALIA's app and the record, answer no more than 5 s slower and have no
   older tool before the build takes the image's name. Windows images are
   not refreshed yet (#450).
 - **A project's image** (`src/core/project-images.ts`) is a script run as
   root on a kind's standard image, with an optional check run as the box
   user, kept in the configuration with the paths it came from in the
-  project's repository, usually `.bb/box-setup.sh` and `.bb/box-check.sh`.
-  The script gets `BB_BOX_IMAGE`, `BB_BOX_KIND`, `BB_BOX_BACKEND` and
-  `BB_BOX_ARCH`, and none of the project's secrets.
+  project's repository, usually `.vesnalia/box-setup.sh` and `.vesnalia/box-check.sh`.
+  The script gets `ALIA_BOX_IMAGE`, `ALIA_BOX_KIND`, `ALIA_BOX_BACKEND` and
+  `ALIA_BOX_ARCH`, and none of the project's secrets.
 - **At start, then baked** (`src/plugin/bakes.ts`). A box with no current
   build of its image runs the script as it starts. Once two of its boxes
   did so on a backend within 14 days, or at once with `bake: always`,
-  bb-box builds the image there: a box of the standard build, the script
+  alia-box builds the image there: a box of the standard build, the script
   and check, finalizing, a capture and a trial box. A changed script or a
   rebuilt standard image makes a build out of date. The nightly run
   rebuilds builds in use and removes those unused for 30 days. Proxmox
   LXC, Docker and Tart bake, Tart on the Mac of the boxes (#439); the SSH
   host pool and GPU desktops run the script at each start.
 - **Choosing.** A project's threads get its image for the kinds it covers.
-  `box_acquire`'s `image`, `bb box acquire --image` and New box can choose
+  `box_acquire`'s `image`, `alia box acquire --image` and New box can choose
   another project's image or `standard`.
 - **Written by an agent.** An agent drafts the script with
   `box_image_draft` from the project's own files (`src/core/draft.ts`),
   tries it with `box_image_try`, and registers it with `box_image_set`.
 
-## Relays through BB machines
+## Relays through VesnALIA machines
 
-A BB machine runs bb-box's host entry (`src/host/entry.ts`) in a worker of
-BB's daemon, called through BB. A call takes about 0.4 s, so calls set
+A VesnALIA machine runs alia-box's host entry (`src/host/entry.ts`) in a worker of
+VesnALIA's daemon, called through VesnALIA. A call takes about 0.4 s, so calls set
 things up and carry no commands
-([BB request 12](bb-requests.md#12-make-a-plugins-host-call-quick)).
-Bytes go over a WebSocket that the worker opens out to one of bb-box's
+([VesnALIA request 12](alia-requests.md#12-make-a-plugins-host-call-quick)).
+Bytes go over a WebSocket that the worker opens out to one of alia-box's
 routes with a one-time secret, carrying channels with credit-based flow
 control (`src/relay/mux.ts`).
 
 - **access** keeps the thread's variables at hand for commands in a box
   (see [Enrolment and the thread's access](#enrolment-and-the-threads-access)).
-- **The Docker relay** reaches a BB machine's Docker without SSH
-  ([042](decisions/042-a-docker-host-can-be-a-bb-machine.md)). The docker
-  CLI on BB's server uses a unix socket that bb-box listens on, and each
+- **The Docker relay** reaches a VesnALIA machine's Docker without SSH
+  ([042](decisions/042-a-docker-host-can-be-a-alia-machine.md)). The docker
+  CLI on VesnALIA's server uses a unix socket that alia-box listens on, and each
   connection to it is a channel on the `/docker-relay` route's WebSocket.
   It opens with the first `docker` command, in about 0.5 s, and closes
-  after 5 idle minutes when bb-box has no box on the machine.
-- **The msb relay** runs bb-box's msb on a BB machine
+  after 5 idle minutes when alia-box has no box on the machine.
+- **The msb relay** runs alia-box's msb on a VesnALIA machine
   ([053](decisions/053-microsandbox-runs-light-linux-boxes-as-microvms.md)).
   msb has no daemon or API socket to forward, so each run of it is a
   channel on the `/msb-relay` route's WebSocket, opened and kept as the
-  Docker relay is. bb-box's msb client (`src/relay/msb-client.mjs`), run by
-  node on BB's server, stands in for the msb CLI: it connects to the
+  Docker relay is. alia-box's msb client (`src/relay/msb-client.mjs`), run by
+  node on VesnALIA's server, stands in for the msb CLI: it connects to the
   machine's unix socket, sends the run's arguments, and carries its stdin,
   stdout, stderr and exit status, and for a terminal its size and resizes,
   as the frames of `src/relay/msb.ts`. On the machine, the host entry runs
-  only `bin/msb` in bb-box's msb folder, on a PTY of its own for a terminal,
-  and three scripts of bb-box's
+  only `bin/msb` in alia-box's msb folder, on a PTY of its own for a terminal,
+  and three scripts of alia-box's
   (`src/backends/microsandbox/release.ts`) through its `microsandbox`
   call: install the pinned msb after checking its SHA-256, report on the
   machine, and import an image from Docker there. The folder is
   `microsandbox` in the plugin's data folder on the machine, with msb's
   state and images in its `home`. msb's sockets need a home of at most 57
   bytes, so a longer one is reached through a link of the user's,
-  `/tmp/bb-box-msb-<uid>`. Through a link, such as that one or a path in a
+  `/tmp/alia-box-msb-<uid>`. Through a link, such as that one or a path in a
   Mac's `/tmp`, which is itself a link, msb indexes each snapshot under
-  both paths and refuses its ID, so bb-box names a snapshot by its group
+  both paths and refuses its ID, so alia-box names a snapshot by its group
   and member (`bbbox-<box>:<name>`), which works with or without a link.
-- **File streams** carry a `box_copy` larger than BB's file API takes, on
+- **File streams** carry a `box_copy` larger than VesnALIA's file API takes, on
   the `/file-relay` route, from the worker on the machine that holds the
   thread's workspace (#492).
 
 ## Configuration
 
-bb-box's configuration is one checked document in its plugin storage
+alia-box's configuration is one checked document in its plugin storage
 ([029](decisions/029-configuration-is-one-checked-document.md)), described
 field by field in the [configuration reference](reference/configuration.md).
 
@@ -815,7 +815,7 @@ field by field in the [configuration reference](reference/configuration.md).
   switch, presets, default, largest size and spares; the general settings;
   and projects' images.
 - Hosts set up alike are a list inside one backend. Docker has a backend
-  per Docker host, as each BB machine with Docker is one; two on one host
+  per Docker host, as each VesnALIA machine with Docker is one; two on one host
   are refused. Other types have one backend each.
 - Switches stop new boxes only: an off backend's boxes keep working.
 - A backend reads its switches, warm counts and kinds' sizes through its
@@ -823,7 +823,7 @@ field by field in the [configuration reference](reference/configuration.md).
   again. A driver may take a set of fields from another type's backend:
   Proxmox QEMU takes Proxmox LXC's connection and SSH key.
 - Secrets are kept apart from the document, and are write-only.
-- The settings page and `bb box config show | check | apply` use the same
+- The settings page and `alia box config show | check | apply` use the same
   RPC. Every write is checked, and a revision stops two people overwriting
   each other.
 
@@ -834,15 +834,15 @@ field by field in the [configuration reference](reference/configuration.md).
 | Box records: ID, thread, kind, backend, guest, state, timings | plugin storage | core | restored by the sweep from the guests if lost, while their threads are live |
 | Which guest belongs to which box and thread | the provider, or a marker on a real machine | backend | the plugin's storage being lost |
 | Warm pool membership | the backend's pool store | backend | as above, for tags; plugin storage otherwise |
-| The configuration | plugin storage | the operator | exported by `bb box config show --json`; deleted by `bb plugin remove` |
+| The configuration | plugin storage | the operator | exported by `alia box config show --json`; deleted by `alia plugin remove` |
 | Provider credentials, the files for every box | plugin storage, apart from the configuration | the operator | never in output, logs or errors, nor sent to the browser |
-| bb-box's SSH key | plugin storage; setup installs its public key | core | |
+| alia-box's SSH key | plugin storage; setup installs its public key | core | |
 | The install ID | plugin storage, and on every guest | core | the doctor shows the old ID, and an operator command restores it |
-| The thread's Git credentials and variables | BB | BB | read from BB's daemon in the box by each command, never written to disk |
+| The thread's Git credentials and variables | VesnALIA | VesnALIA | read from VesnALIA's daemon in the box by each command, never written to disk |
 | Work in a box | the box's disk | the thread | deleted on release, or the home recreated on a real machine; not backed up |
-| Standard images and builds of projects' images | the provider | the operator, and bb-box for rebuilds | rebuilt each night, or by the setup scripts |
+| Standard images and builds of projects' images | the provider | the operator, and alia-box for rebuilds | rebuilt each night, or by the setup scripts |
 | Who holds each desktop's input | plugin memory, and plugin storage while a person holds it | core | after a restart, the agent's unless the holder's viewer connects within 60 s |
-| The box log: each box's starts, stops, resizes and releases, who asked, and what bb-box saw after a failure (069) | `box-log.db` beside the plugin's `data.db`, attached to its handle, capped at 8 MB; inside `data.db` under a row cap where the handle refuses to attach it | core | a box's last 7 days and its latest event of each kind; a released or forgotten box's for 24 hours |
+| The box log: each box's starts, stops, resizes and releases, who asked, and what alia-box saw after a failure (069) | `box-log.db` beside the plugin's `data.db`, attached to its handle, capped at 8 MB; inside `data.db` under a row cap where the handle refuses to attach it | core | a box's last 7 days and its latest event of each kind; a released or forgotten box's for 24 hours |
 | Box history: each running box's light readings, a point a minute and a rollup an hour, its counters between readings, when it was off, and each hour's tallies of readings due, taken, skipped and failed (069) | `box-history.db`, attached the same way, capped at 64 MB; inside `data.db` under 200,000 minute points where the handle refuses to attach it | the plugin's reader (`src/monitor/box-history.ts`) | minute points 24 hours, hourly points and off times 7 days; a released or forgotten box's 24 hours after it; a full file stops history's writes alone, until pruning makes room |
 
 ## Backends
@@ -852,8 +852,8 @@ What runs where:
 | Host | Box | Form | Backend | Kinds |
 | --- | --- | --- | --- | --- |
 | Linux | Linux | container | Proxmox LXC | `linux`, `linux-desktop`, `linux-desktop-cpu`, `linux-desktop-wayland-cpu` |
-| Linux, Windows (WSL 2, Docker Desktop) | Linux | container | Docker, local, over `ssh://` or a BB machine's | `linux`, `linux-desktop`, `linux-desktop-cpu`, `linux-desktop-wayland-cpu` |
-| Linux | Linux | microVM | microsandbox, local, over `ssh://` or a BB machine's | `linux`, `linux-desktop-cpu` |
+| Linux, Windows (WSL 2, Docker Desktop) | Linux | container | Docker, local, over `ssh://` or a VesnALIA machine's | `linux`, `linux-desktop`, `linux-desktop-cpu`, `linux-desktop-wayland-cpu` |
+| Linux | Linux | microVM | microsandbox, local, over `ssh://` or a VesnALIA machine's | `linux`, `linux-desktop-cpu` |
 | Linux | Linux | physical | SSH host pool | `linux` |
 | Linux | Linux | VM | Proxmox QEMU | `linux` |
 | Linux | Windows | VM | Proxmox QEMU | `windows-desktop` |
@@ -888,7 +888,7 @@ the API client, ownership tags, TLS pin and settings. Set up by
   for Docker and `/dev/net/tun`. Root builds the templates; the API token
   only clones, configures, starts, stops and deletes in its pool.
 - An acquire clones, sets the address, cores and memory, writes the
-  description that names the install and box, then the tags (`bb-box`,
+  description that names the install and box, then the tags (`alia-box`,
   `install.<id>`, `box.<id>`, `kind.<kind>` and the rest), starts the box,
   grows its disk if asked, and waits for SSH. Boxes get static addresses
   from a range, round-robin, with no DHCP.
@@ -930,9 +930,9 @@ Proxmox LXC.
   linux` makes from Ubuntu 24.04's cloud image with Proxmox LXC's guest
   scripts
   ([057](decisions/057-linux-boxes-can-be-proxmox-vms-for-their-own-kernel.md)).
-  Its `bb-box-boot` unit reads the address from the SMBIOS serial before
+  Its `alia-box-boot` unit reads the address from the SMBIOS serial before
   the network starts, and grows the root over a larger disk. Commands run
-  in sh as `box`, and it joins BB as other Linux boxes do. It has no warm
+  in sh as `box`, and it joins VesnALIA as other Linux boxes do. It has no warm
   pool: its spares wait hibernated, as Windows' do. A stop hibernates it.
 
 ### Docker
@@ -941,9 +941,9 @@ Code in [src/backends/docker/](../src/backends/docker/). Set up by
 [setup/docker](../setup/docker/README.md), and on Windows by
 [setup/docker-wsl](../setup/docker-wsl/README.md) or Docker Desktop.
 
-- bb-box runs the `docker` CLI on BB's server, against a local daemon, one
-  over `ssh://`, or a BB machine's through the Docker relay. It reaches a
-  box only through `docker exec`, so BB's server needs no network path to
+- alia-box runs the `docker` CLI on VesnALIA's server, against a local daemon, one
+  over `ssh://`, or a VesnALIA machine's through the Docker relay. It reaches a
+  box only through `docker exec`, so VesnALIA's server needs no network path to
   a box ([031](decisions/031-docker-boxes-are-reached-through-docker-exec.md)).
 - A box is a container named `bbbox-<box ID>`, with labels set at creation
   that name the backend, install, box, thread, name and kind. Its size is
@@ -956,20 +956,20 @@ Code in [src/backends/docker/](../src/backends/docker/). Set up by
   is a named volume, `<container>-docker`, labelled
   `bbbox.volume-of` with the container's name and `bbbox.install` with
   the install, on the same engine as the container: a local daemon, one
-  over SSH, or a BB machine's Docker
+  over SSH, or a VesnALIA machine's Docker
   ([082](decisions/082-docker-snapshots.md)). A box made before that
   keeps its anonymous volume at `/var/lib/docker`. A release removes the
   named volume labelled as that container, and still removes an older
   box's anonymous volume with the container. Its start script listens on
   Docker's socket, so `dockerd` starts with the first `docker` command,
-  then writes `/run/bb-box/ready`, which BB Box waits for before it runs
-  BB's bootstrap.
+  then writes `/run/alia-box/ready`, which VesnALIA Box waits for before it runs
+  VesnALIA's bootstrap.
 - A GPU desktop gets one GPU through CDI. As it is privileged, it sees
   every GPU, so its start script points Xorg at the one placed, by its PCI
   bus ID (#283).
 - Images are built on the Docker host by `setup/docker/build.sh`, from the
-  Proxmox LXC template's guest scripts; bb-box never pulls one. On a BB
-  machine, bb-box builds what is missing or out of date itself.
+  Proxmox LXC template's guest scripts; alia-box never pulls one. On a VesnALIA
+  machine, alia-box builds what is missing or out of date itself.
 
 ### microsandbox
 
@@ -981,23 +981,23 @@ never the default: it stays last in the backend order, so a box gets a
 microVM only when it asks for this backend.
 
 
-- bb-box runs its own `msb` on one host: Linux with KVM, or a Mac with
-  Apple silicon on the Hypervisor framework; BB's server, one over `ssh://`,
-  or a BB machine through the msb relay. It installs the release it pins,
+- alia-box runs its own `msb` on one host: Linux with KVM, or a Mac with
+  Apple silicon on the Hypervisor framework; VesnALIA's server, one over `ssh://`,
+  or a VesnALIA machine through the msb relay. It installs the release it pins,
   0.7.7, checked by its SHA-256, in a folder of its own there, with `msb`'s
   state and images, the first time it needs it.
 - A host offers the kinds of its architecture, from its facts, kept in
   storage for the next start: `linux` and `linux-desktop-cpu` on x86_64,
   `linux-arm64` and `linux-arm64-desktop-cpu` (040) on arm64, as a Mac.
-- On a host without Docker to import an image from, as a Mac, bb-box builds
-  it there in a builder microVM, `bb-box-builder-<id>`, from `docker:dind`
+- On a host without Docker to import an image from, as a Mac, alia-box builds
+  it there in a builder microVM, `alia-box-builder-<id>`, from `docker:dind`
   pinned by digest, with `setup/docker/build.sh --arch` for the host's
   architecture, moves it into `msb` (`docker save` in the builder, `msb load`
   on the host), and removes the builder. One build runs at a time; a box of
   its kind is refused as `no_capacity` until it is done, so the registry
   tries the next offer, such as Tart.
 - On such a host the nightly refresh (049) rebuilds the images too: the
-  backend's `build` makes a new one in a builder with `--bb-url`, under
+  backend's `build` makes a new one in a builder with `--alia-url`, under
   `<image>:refresh-<time>`; a trial box of it, `bbbox-image-<id>`, runs
   Docker's check; and `replace` puts it under the image's name with
   `msb save` into `msb load`, as `msb` has no tag command, which share their
@@ -1010,13 +1010,13 @@ microVM only when it asks for this backend.
   changes the thread and name when the box changes hands. Its size is
   `--cpus`, `--memory` and `--root-disk`, a sparse disk of 32 GiB unless a
   size is asked for. `/run` is a tmpfs, and its network profiles are
-  `public,private`, which reach BB's server on a private or tailnet address.
+  `public,private`, which reach VesnALIA's server on a private or tailnet address.
 - With Docker on, as by default, `/var/lib/docker` is an ext4 disk of the
   box's own, as overlayfs cannot sit on `msb`'s root: `msb`'s own
   (`--mount-owned`), which `msb` captures in each snapshot and gives each
   box restored from one as a copy of its own
   ([070](decisions/070-snapshots.md#decided-during-unit-10)). A box made by
-  an earlier bb-box has a file of the host's instead, in the folder's
+  an earlier alia-box has a file of the host's instead, in the folder's
   `disks`, passed with `--mount-disk`; `msb` leaves such a disk out of a
   snapshot and cannot give it to a restored box, so such a box takes no
   snapshot. The file goes with its box, and the upkeep removes one no
@@ -1026,7 +1026,7 @@ microVM only when it asks for this backend.
   privilege on the host: each box has its own kernel.
 - `msb`'s agent runs the image's start script at the first boot only, so
   `start` runs it again through `msb exec` after `msb start`, then waits for
-  `/run/bb-box/ready`.
+  `/run/alia-box/ready`.
 - Snapshots ([070](decisions/070-snapshots.md#decided-during-unit-10)) are
   `msb snapshot create`, with `--full` for memory, in a group per box,
   `bbbox-<box ID>`, named `<install>-<snapshot ID>-r<identity reset
@@ -1034,14 +1034,14 @@ microVM only when it asks for this backend.
   snapshot's labels once taken, so a keep date is a file in the folder's
   `kept`. A snapshot outlives its microVM. A restore is `msb snapshot
   restore` into a new microVM, `bbbox-<box ID>-<token>`, which keeps none
-  of the old one's settings: bb-box sets the box's labels and environment on
+  of the old one's settings: alia-box sets the box's labels and environment on
   it with `msb modify`, and each start mounts `/run` in memory again and sets
   the box's hostname. A fork restores the snapshot's disk only, never its
   memory, under the fork's own name and identity value. Each snapshot's
   parent is the microVM's previous capture; `msb` refuses to delete a parent
-  without `--force`, though a child holds its own data, so bb-box passes it,
+  without `--force`, though a child holds its own data, so alia-box passes it,
   and moves a group's head to another member before deleting the head.
-  bb-box does all this only with the `msb` release whose snapshots it
+  alia-box does all this only with the `msb` release whose snapshots it
   measured.
 - Commands, copies and the desktop's stream go through `msb exec --stream`,
   which gives output as it comes. `msb exec` of a stopped box boots it for
@@ -1049,15 +1049,15 @@ microVM only when it asks for this backend.
   what a command leaves running survives its `msb exec` only with `nohup`
   and its output redirected.
 - Images come from Docker on the host, built by `setup/docker/build.sh`:
-  bb-box imports a kind's image with `docker save` and `msb load` at its
-  first box, and again when Docker's image ID changes; bb-box never pulls
+  alia-box imports a kind's image with `docker save` and `msb load` at its
+  first box, and again when Docker's image ID changes; alia-box never pulls
   one.
 - Capacity is the host's memory, less a reserve and the memory of the
-  running bb-box microVMs, its cores, and a most-boxes budget counting every
+  running alia-box microVMs, its cores, and a most-boxes budget counting every
   install's. `msb` reserves no memory and takes back what a guest frees.
   There is no warm pool yet.
 - A guest keeps its page cache in its own RAM, which the host cannot share
-  or take back, and enrolment fills it. At each boot bb-box sets the guest's
+  or take back, and enrolment fills it. At each boot alia-box sets the guest's
   `page_reporting_order` to 0, so it reports free memory to `msb` in pages
   rather than 2 MiB blocks, and each upkeep, every 3 minutes, has each
   running box whose load is under half its cores and with over 256 MiB
@@ -1068,13 +1068,13 @@ microVM only when it asks for this backend.
 
 Code in [src/backends/ssh-pool/](../src/backends/ssh-pool/). Set up by
 [setup/ssh-pool](../setup/ssh-pool/README.md), which installs the helper,
-`machine.sh` or `machine-mac.sh`, the only thing bb-box runs as root.
+`machine.sh` or `machine-mac.sh`, the only thing alia-box runs as root.
 
-- bb-box logs in as an admin user whose key is `restrict`ed and whose sudo
+- alia-box logs in as an admin user whose key is `restrict`ed and whose sudo
   rule allows only the helper. The helper reads and prints `key=value`
   lines, and holds a lock on the machine while it acts.
 - A box is a new user on the machine, `bbx-<generation>`. Ownership lives
-  on the machine, in `/var/lib/bb-box` (`/var/db/bb-box` on a Mac): the
+  on the machine, in `/var/lib/alia-box` (`/var/db/alia-box` on a Mac): the
   reset generation and an `owner` marker, written before the user is made.
   A release renames it to `resetting`, so a cut-short reset is finished.
 - A reset removes the user and everything it owns. With `reset=machine`,
@@ -1099,13 +1099,13 @@ Code in [src/backends/tart/](../src/backends/tart/): settings in
 `qemu.ts`, and the desktop holder in `vnc-holder.ts`. Set up by
 [setup/tart](../setup/tart/README.md).
 
-- bb-box reaches each Mac over SSH as a host user, with its host key
+- alia-box reaches each Mac over SSH as a host user, with its host key
   pinned, and each VM through the Mac as the jump host. VMs sit on the
   Mac's own NAT.
-- A box's VM is `bb-box-<box ID>`. Its owner file,
-  `~/.bb-box/tart/owners/<VM>`, is written with noclobber before the clone
+- A box's VM is `alia-box-<box ID>`. Its owner file,
+  `~/.alia-box/tart/owners/<VM>`, is written with noclobber before the clone
   and removed after the delete. `tart run` runs detached, with its exit
-  status in `~/.bb-box/tart/run/<VM>.exit`, which `stopped()` reads with
+  status in `~/.alia-box/tart/run/<VM>.exit`, which `stopped()` reads with
   macOS's crash report.
 - Capacity per Mac: at most two macOS VMs, counting every VM Tart runs
   there (Apple's licence and the Virtualization framework's limit; Linux
@@ -1130,7 +1130,7 @@ Code in [src/backends/tart/](../src/backends/tart/): settings in
 ### Hetzner Cloud
 
 Code in [src/backends/hetzner/](../src/backends/hetzner/): the API client
-in `api.ts`, host records and the sweep in `hosts.ts`, how bb-box reaches
+in `api.ts`, host records and the sweep in `hosts.ts`, how alia-box reaches
 a host in `reach.ts`, the host image in `host-image.ts`, first-boot data in
 `cloud-init.ts`, and the month's spend in `spend.ts`. Set up by
 [the Hetzner Cloud guide](guide/hetzner.md)
@@ -1145,9 +1145,9 @@ a host in `reach.ts`, the host image in `host-image.ts`, first-boot data in
   for. A host more than three quarters full makes the next one ahead. A
   host with no box for the idle time, 30 minutes by default, is deleted.
 - A new host starts from the host image, a snapshot with Docker, Tailscale
-  and the box images, which the backend rebuilds weekly and when BB's app
+  and the box images, which the backend rebuilds weekly and when VesnALIA's app
   or the image scripts change, keeping the 2 newest.
-- bb-box reaches each host's Docker over SSH with a key of its own: on the
+- alia-box reaches each host's Docker over SSH with a key of its own: on the
   tailnet, which the host joins at first boot with a one-off key minted for
   it, or else over the internet from the addresses in **SSH from** alone.
   The host's firewall lets in only Tailscale and ping, and boxes cannot
@@ -1174,39 +1174,39 @@ API client in `api.ts`, settings in `config.ts`, the backend in
   memory and disk. An acquire creates it with labels for the install, box,
   thread, name and kind, a unique tag from the install and box, so a
   create tried again finds the first, and a deadline an hour away.
-- Commands run over SSH through Namespace's gateway, with bb-box's own
+- Commands run over SSH through Namespace's gateway, with alia-box's own
   key, as `runner`, an administrator. A `macos-desktop` box is made ready
-  as it starts: `bb-box-stream` is built with the Mac's Xcode; Screen
+  as it starts: `alia-box-stream` is built with the Mac's Xcode; Screen
   Recording, Accessibility and event posting are granted in the system TCC
   database, as SIP is off; the screen-capture notice is put off; the
   display is kept awake; and Cua Driver is installed for computer use. The
   desktop is Screen Sharing through an SSH tunnel, signed in with the
-  password Namespace's API gives, and video from `bb-box-stream`.
-- With the tailnet on, the Mac joins it as `bb-box-ns-<install ID>-<box
+  password Namespace's API gives, and video from `alia-box-stream`.
+- With the tailnet on, the Mac joins it as `alia-box-ns-<install ID>-<box
   name>` with a one-off key given on its input, and leaves it at release.
 - Records and sweep: `held()` lists the install's instances by label with
   their owners, so the sweep releases a Mac whose box has gone. `maintain()`
   keeps the deadline of each Mac a box records an hour ahead, up to the
-  plan's longest life, so a Mac bb-box loses track of ends within the hour,
+  plan's longest life, so a Mac alia-box loses track of ends within the hour,
   and removes the install's tailnet devices that no Mac has.
 - Limits: most machines (2), counted across every install in the
   workspace; and the workspace's Mac cores and memory, and its largest
   Mac, read from Namespace's usage API before each Mac, or, for a token
   without that grant, from **Largest machine** or Namespace's last refusal.
 - **Linux** boxes (#997) are each a Linux instance of their own with a
-  container of bb-box's own image, made by a Docker backend whose CLI
+  container of alia-box's own image, made by a Docker backend whose CLI
   reaches the instance with `docker -H ssh://` through the gateway, with
-  bb-box's key and a shared SSH connection; the gateway forwards no Unix
+  alia-box's key and a shared SSH connection; the gateway forwards no Unix
   socket. The acquire creates the instance, waits for SSH, joins the
   tailnet, pulls the kind's image from the workspace's registry and tags
   it, and the Docker backend makes the container, with the instance's
   memory less a margin. Images are built in a Linux instance of their own
   with `setup/docker/build.sh` and pushed from it, as instances are
   signed in to the registry already; one is rebuilt, while boxes use it,
-  when the setup scripts or BB's app change, or weekly. A build instance
+  when the setup scripts or VesnALIA's app change, or weekly. A build instance
   has the label `bbbox-role=image-build`, is not a box's guest, and ends
   within the hour.
-- A Mac ends at the plan's longest life whatever bb-box does. Its guest
+- A Mac ends at the plan's longest life whatever alia-box does. Its guest
   says when, which the panel and `box_status` show, and the box's thread
   is told an hour before.
 
@@ -1217,9 +1217,9 @@ API client in `api.ts`, settings in `config.ts`, the backend in
   a box, opted in by kind, image or acquire, joins the operator's tailnet
   as an ephemeral node, with a one-off key from an OAuth client, and leaves
   it on release or stop. Built so far: Proxmox LXC templates have
-  `/dev/net/tun`, and the cloud machines bb-box rents, Hetzner Cloud's
+  `/dev/net/tun`, and the cloud machines alia-box rents, Hetzner Cloud's
   hosts and Namespace's Macs, join it through the Tailscale OAuth client in
-  BB Box's General settings ([the tailnet guide](guide/tailnet.md)): a
+  VesnALIA Box's General settings ([the tailnet guide](guide/tailnet.md)): a
   one-off, ephemeral, pre-approved, tagged key for each machine, and a
   sweep of the devices it no longer has.
 - **microsandbox**, next
@@ -1229,7 +1229,7 @@ API client in `api.ts`, settings in `config.ts`, the backend in
   desktop; and arm64 boxes on a Mac.
 - **Clouds**
   ([055](decisions/055-cloud-boxes-run-on-cloud-hosts-first-and-a-cloud-vm-per-box-later.md)):
-  a cloud VM that runs Linux works today as a Docker host, through BB, or
+  a cloud VM that runs Linux works today as a Docker host, through VesnALIA, or
   as a pool machine. Built: the Hetzner Cloud backend, which makes Docker
   hosts as boxes need them and places boxes on them, and the Namespace
   backend, a Mac or a Linux machine rented by the minute for each box.
@@ -1252,7 +1252,7 @@ API client in `api.ts`, settings in `config.ts`, the backend in
   lists them.
 - **The doctor** checks each backend end to end, and core's own parts,
   with a stable ID per check and what to do when one fails. It runs from
-  the settings page, the panel and `bb box doctor`, and never prints a
+  the settings page, the panel and `alia box doctor`, and never prints a
   credential. The checks are in the [reference](reference/checks.md).
 - **Each backend's setup** is a guide and the scripts it runs, which the
   settings page links, the guide first
@@ -1264,6 +1264,6 @@ API client in `api.ts`, settings in `config.ts`, the backend in
 | --- | --- |
 | Whether Cua's references survive a new proxy session; macOS 26's window-picker consent; driving the iOS Simulator; Cua's background input on real Xorg | the experiments in [computer use](research/computer-use.md) |
 | What a stand-in Mac could not show: that a person's Accessibility step lets the input helper post events with System Integrity Protection on, the reset's sweep with it on, the console's size with no display, Cua's first capture for a new user, and Xcode with the Simulator's first boot | the live check on a Mac set aside, in [047](decisions/047-a-physical-mac-is-an-ssh-pool-machine-lent-with-a-new-user-at-its-console.md#the-live-check) |
-| Whether BB's plugin WebSocket will give `bufferedAmount` | [BB request 2](bb-requests.md#2-send-backlog-on-plugin-websockets) |
+| Whether VesnALIA's plugin WebSocket will give `bufferedAmount` | [VesnALIA request 2](alia-requests.md#2-send-backlog-on-plugin-websockets) |
 | Selkies on a GPU desktop: NVENC and NvFBC in a box, and their GPU memory | step 3 of [056](decisions/056-linux-x11-desktops-add-a-selkies-stream-and-rfb-stays-for-the-rest-tuned.md#plan-of-prs) |
 | Whether a Docker host that is an LXC container passes TUN to privileged boxes, and how long a tailnet join takes | the first PRs of [050](decisions/050-a-box-can-join-the-operators-tailnet-as-an-ephemeral-node.md#to-verify-in-the-first-prs) |

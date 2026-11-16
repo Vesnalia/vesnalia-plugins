@@ -12,12 +12,12 @@
  */
 
 @media (prefers-reduced-motion: no-preference) {
-  .bb-sidebar-working-pulse {
-    animation: bb-sidebar-working-pulse 2s infinite;
+  .alia-sidebar-working-pulse {
+    animation: alia-sidebar-working-pulse 2s infinite;
   }
 }
 
-@keyframes bb-sidebar-working-pulse {
+@keyframes alia-sidebar-working-pulse {
   0%,
   40% {
     opacity: 1;

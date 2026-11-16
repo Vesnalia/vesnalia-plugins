@@ -128,7 +128,7 @@ test("Codex rate-limit response exposes credits, banked resets and spend control
   });
 });
 
-test("dashboard merges Codex additions without duplicating BB's weekly window", () => {
+test("dashboard merges Codex additions without duplicating VesnALIA's weekly window", () => {
   const supplement = normalizeCodexRateLimits(codexResponse());
   assert.ok(supplement);
   const dashboard = assembleDashboard({

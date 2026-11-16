@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import { makeQueueEntry, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { makeQueueEntry, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { createFakePluginHost, disposers, loadPlugin, type Environment } from "./test-server";
 import plugin from "./server";
 import { rateLimitDetails } from "./server-rate-limit-details";
 import { RATE_LIMITS_CHANNEL } from "./realtime-channels";
 import type { ThreadLimitState } from "./contract";
 
-type Event = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["events"]["list"]>>[number];
+type Event = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["events"]["list"]>>[number];
 const failedAt = Date.parse("2026-10-26T19:49:00Z");
 const resetsAt = Date.parse("2026-10-26T22:00:00Z");
 const message = "You've hit your session limit · resets 5pm (America/Chicago)";
@@ -45,7 +45,7 @@ async function setup() {
   harness.inspection.sdk.stub("threads.get", async () => makeThreadResponse({ id: "thr_1", status }));
   harness.inspection.sdk.stub("threads.events.list", async () => events);
   harness.inspection.sdk.stub("threads.queuedMessages.list", async () => queue);
-  harness.inspection.sdk.stub("threads.send", async (args: Parameters<BbPluginApi["sdk"]["threads"]["send"]>[0]) => {
+  harness.inspection.sdk.stub("threads.send", async (args: Parameters<AliaPluginApi["sdk"]["threads"]["send"]>[0]) => {
     const entry = makeQueueEntry({
       id: "continue_1",
       threadId: args.threadId,
@@ -199,8 +199,8 @@ describe("scheduled Continue RPC", () => {
         if (offline) throw new Error("Host offline");
         return { timeZone };
       });
-      const { bb, harness } = createFakePluginHost({
-        pluginId: "bb-sidebar",
+      const { alia, harness } = createFakePluginHost({
+        pluginId: "alia-sidebar",
         experimental_callHostRpc: hostCall,
         sdk: {
           threads: {
@@ -217,7 +217,7 @@ describe("scheduled Continue RPC", () => {
         },
       });
       disposers.push(() => harness.lifecycle.dispose());
-      await plugin(bb);
+      await plugin(alia);
       const result = (await harness.behavior.callRpc("getThreadLimits", { keys: ["thr_1"] })) as Record<
         string,
         ThreadLimitState | null
@@ -267,7 +267,7 @@ describe("scheduled Continue RPC", () => {
       input: [{ type: "text", text: "Continue", mentions: [] }],
       mode: "queue-if-active",
       sendAt: resetsAt + 30_000,
-      originPluginId: "bb-sidebar",
+      originPluginId: "alia-sidebar",
     });
     expect(
       ((await call("getThreadLimits", { keys: ["thr_1"] })) as Record<string, ThreadLimitState>).thr_1?.scheduled,
@@ -318,7 +318,7 @@ describe("scheduled Continue RPC", () => {
       makeQueueEntry({
         id: "already_scheduled",
         sendAt: resetsAt,
-        originPluginId: "bb-sidebar",
+        originPluginId: "alia-sidebar",
         content: [{ type: "text", text: "Continue", mentions: [] }],
         state: "scheduled",
       }),

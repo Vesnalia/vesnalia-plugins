@@ -1,6 +1,6 @@
 # Pokemon Catcher
 
-A BB plugin that rewards engineering milestones with Pokémon catches.
+A VesnALIA plugin that rewards engineering milestones with Pokémon catches.
 
 ## Collection experience
 
@@ -28,7 +28,7 @@ Collection settings.
 
 ## Automatic Git detection
 
-The plugin scans repositories registered as BB project sources or active environments every 15 seconds. Existing branches and worktrees are baselined without rewards. New branches and worktrees created in BB or a terminal receive one idempotent reward.
+The plugin scans repositories registered as VesnALIA project sources or active environments every 15 seconds. Existing branches and worktrees are baselined without rewards. New branches and worktrees created in VesnALIA or a terminal receive one idempotent reward.
 
 ## Settings and integrations
 
@@ -40,7 +40,7 @@ Open the collection panel and use the gear button in its header to configure int
 
 The GitHub event feed exposes at most the latest 100 events. If the saved cursor falls outside that window, the plugin safely re-baselines instead of awarding old activity.
 
-Local branch and worktree scanning remains limited to repositories known to BB. Remote activity is limited to the GitHub repositories explicitly selected in settings.
+Local branch and worktree scanning remains limited to repositories known to VesnALIA. Remote activity is limited to the GitHub repositories explicitly selected in settings.
 
 ## Third-party services and rights
 
@@ -57,10 +57,10 @@ for source and licensing details.
 ## Commands
 
 ```sh
-bb pokemon collection --json
-bb pokemon starter fennekin
-bb pokemon companion <capture-id>
-bb pokemon catch commit_created --source git --reference abc123 --title "Save progress"
+alia pokemon collection --json
+alia pokemon starter fennekin
+alia pokemon companion <capture-id>
+alia pokemon catch commit_created --source git --reference abc123 --title "Save progress"
 ```
 
 ## Development
@@ -69,5 +69,5 @@ bb pokemon catch commit_created --source git --reference abc123 --title "Save pr
 npm install --include=dev
 npm run typecheck
 npm test
-bb plugin build
+alia plugin build
 ```

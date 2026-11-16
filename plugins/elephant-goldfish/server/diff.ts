@@ -74,7 +74,7 @@ function edits(a: string[], b: string[]): Op[] {
   return ops;
 }
 
-/** Unified diff with a `diff --git` header so BB's diff component can render it. */
+/** Unified diff with a `diff --git` header so VesnALIA's diff component can render it. */
 export function unifiedDiff(path: string, before: string, after: string, contextLines = 3): string {
   const a = splitLines(before);
   const b = splitLines(after);

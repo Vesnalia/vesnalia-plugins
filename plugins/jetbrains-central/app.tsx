@@ -1,4 +1,4 @@
-import { definePluginApp, experimental_useThreadContextKind, useSettings } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, experimental_useThreadContextKind, useSettings } from "@vesnalia/plugin-sdk/app";
 import { CentralIcon, CentralProviderIcon } from "./provider-icon.js";
 import type { ProviderMark } from "./artwork.js";
 import { CentralUsageSummary, CentralUsageDetails, CentralUsageRow, useCentralThread } from "./usage-ui.js";

@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 // The pane claims clicks on the reference chips the decorator painted
 // (components/decorate-reference-mentions.ts) — issue #161. ThreadChat is
-// mocked to render the exact host shapes seen in live bb 0.46.0: raw
-// `@project:proj_…` text in an agent message, an empty `bb-thread-mention`
+// mocked to render the exact host shapes seen in live VesnALIA 0.46.0: raw
+// `@project:proj_…` text in an agent message, an empty `alia-thread-mention`
 // element (the renderer-less autolink), and untouched prose between them.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createElement, type ReactNode } from "react";
@@ -13,7 +13,7 @@ import type { ReferenceMentions } from "../components/decorate-reference-mention
 
 const onOpen = vi.fn();
 
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   ThreadChat: (): ReactNode =>
     createElement(
       "div",
@@ -27,13 +27,13 @@ vi.mock("@get-bb/plugin-sdk/app", () => ({
         "p",
         null,
         "Homelab thread ",
-        createElement("bb-thread-mention", { "data-thread-id": "thr_glyph_glue" }),
+        createElement("alia-thread-mention", { "data-thread-id": "thr_glyph_glue" }),
         " done.",
       ),
     ),
   useSdk: () => ({ threads: { get: async () => ({}) } }),
   useRpc: () => ({ call: async () => ({ existence: {} }) }),
-  useBbNavigate: () => ({ toThread: () => {}, toProject: () => {} }),
+  useAliaNavigate: () => ({ toThread: () => {}, toProject: () => {} }),
   useSettings: () => ({ values: undefined, isLoading: false }),
 }));
 

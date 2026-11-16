@@ -95,7 +95,7 @@ export const taskKindsOn = (events: Events) =>
   EVENT_KINDS.some((k) => !k.startsWith("thread_") && events[k].on);
 
 export type ThreadOutcome = "done" | "attention" | "stopped";
-// BB reports what happened in the thread; the current status decides whether the turn really ended.
+// VesnALIA reports what happened in the thread; the current status decides whether the turn really ended.
 // An error counts only as a fresh transition: restarts re-announce old failed threads otherwise.
 export function classifyThread(
   types: readonly string[],

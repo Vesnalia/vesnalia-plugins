@@ -1,5 +1,5 @@
 /**
- * The Screen Sharing page: the Macs enrolled in this bb, whether each one's
+ * The Screen Sharing page: the Macs enrolled in this VesnALIA, whether each one's
  * Screen Sharing answers, and — once the user presses Connect — the picked
  * Mac's screen. The picker (host-picker.tsx) leads the toolbar row in every
  * state, so another Mac is one click away whatever this one says; the title
@@ -9,7 +9,7 @@
  * session.
  */
 import { useEffect, useRef } from "react";
-import { useRpc, type PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { useRpc, type PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 
 import { SESSION_LIMITS, type HostEntry, type ScreenStatus } from "../shared/channels";
 import type { RpcContract } from "../shared/contract";
@@ -48,7 +48,7 @@ function NotReady({ status, checking, onCheck }: { status: ScreenStatus; checkin
     return (
       <Centered title="Not a Mac">
         <p>
-          {status.isServer ? "The bb server is not running on a Mac" : `${status.hostName} is not a Mac`}, so there is no macOS
+          {status.isServer ? "The VesnALIA server is not running on a Mac" : `${status.hostName} is not a Mac`}, so there is no macOS
           Screen Sharing to connect to.
         </p>
       </Centered>
@@ -57,7 +57,7 @@ function NotReady({ status, checking, onCheck }: { status: ScreenStatus; checkin
   if (status.state === "offline") {
     return (
       <Centered title={`${status.hostName} is offline`}>
-        <p>bb has no connection to it right now. Wake it, or open bb on it, then check again.</p>
+        <p>alia has no connection to it right now. Wake it, or open VesnALIA on it, then check again.</p>
         <CheckAgain checking={checking} onCheck={onCheck} />
       </Centered>
     );
@@ -66,7 +66,7 @@ function NotReady({ status, checking, onCheck }: { status: ScreenStatus; checkin
     return (
       <Centered title={`Could not check Screen Sharing on ${status.hostName}`}>
         {status.unreachableReason !== null ? <p className="font-medium text-foreground">{status.unreachableReason}</p> : null}
-        <p>bb is connected to it, but the check did not get an answer. Updating bb on that Mac may help.</p>
+        <p>alia is connected to it, but the check did not get an answer. Updating VesnALIA on that Mac may help.</p>
         <CheckAgain checking={checking} onCheck={onCheck} />
       </Centered>
     );
@@ -146,7 +146,7 @@ function HostScreen({ host, check, onCheck, store }: { host: HostEntry; check: H
     <div ref={page} className="flex min-h-0 flex-1 flex-col bg-background">
       <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2">
         <div className="mr-auto flex min-w-0 max-w-full">
-          {/* bb's menu opens outside a full-screen page, out of sight: switch Macs after leaving full screen. */}
+          {/* VesnALIA's menu opens outside a full-screen page, out of sight: switch Macs after leaving full screen. */}
           <HostPicker disabled={session.fullScreen} />
         </div>
         {ready ? (
@@ -197,18 +197,18 @@ function HostScreen({ host, check, onCheck, store }: { host: HostEntry; check: H
           {session.ended !== null ? <p className="font-medium text-foreground">{session.ended}</p> : null}
           {insecure ? (
             <p className="text-warning-text">
-              This page was opened at a plain http:// address, where the browser blocks macOS’s sign-in. Open bb on the Mac
-              running the bb server or through your getbb.app address instead.
+              This page was opened at a plain http:// address, where the browser blocks macOS’s sign-in. Open VesnALIA on the Mac
+              running the VesnALIA server or through your getbb.app address instead.
             </p>
           ) : null}
           <p>
-            You see and control this Mac’s screen through bb, at home or through getbb.app. macOS asks for a user name and
-            password each time you connect; bb does not keep them.
+            You see and control this Mac’s screen through VesnALIA, at home or through getbb.app. macOS asks for a user name and
+            password each time you connect; VesnALIA does not keep them.
           </p>
           {status !== null && !status.isServer ? (
             <p>
-              bb reaches {hostName} through its own connection to it, so expect about half a second between a key or click and
-              the screen answering, and fewer screen updates a second than on the Mac running bb.
+              alia reaches {hostName} through its own connection to it, so expect about half a second between a key or click and
+              the screen answering, and fewer screen updates a second than on the Mac running VesnALIA.
             </p>
           ) : null}
           {status !== null && !status.signInSupported ? (
@@ -218,7 +218,7 @@ function HostScreen({ host, check, onCheck, store }: { host: HostEntry; check: H
             </p>
           ) : null}
           <p>
-            A session keeps running in this bb window while you use other pages or Macs, and is here again, still signed in,
+            A session keeps running in this VesnALIA window while you use other pages or Macs, and is here again, still signed in,
             when you come back. It ends when you press Disconnect or Close all, when you close this window, after{" "}
             {SESSION_LIMITS.idleMinutes} minutes without keyboard or mouse use, and after {SESSION_LIMITS.maxHours} hours.
           </p>
@@ -267,7 +267,7 @@ export function ScreenPanel(_props: PluginNavPanelProps) {
   if (host === undefined) {
     return (
       <Centered title="No machines">
-        <p>bb has no machine enrolled yet.</p>
+        <p>alia has no machine enrolled yet.</p>
       </Centered>
     );
   }

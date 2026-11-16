@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../src/rpc-contract";
 import { reviewState, type ReviewItem } from "../lib/review-state";
@@ -78,7 +78,7 @@ export function useReviewActions(review: ReviewItem, onChanged?: () => void) {
  */
 export function ReviewActions({ review, items, afterRename, trailing, pinnable = false, onChanged, onMoved, onDeleted, describedBy, className }: {
   review: ReviewItem;
-  /** Offer Pin: Settings shows reviews in BB's thread list. */
+  /** Offer Pin: Settings shows reviews in VesnALIA's thread list. */
   pinnable?: boolean;
   /** Listed first, such as the workspace's Update guide. */
   items?: ReviewMenuItem[];
@@ -94,7 +94,7 @@ export function ReviewActions({ review, items, afterRename, trailing, pinnable =
   describedBy?: string;
   className?: string;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const actions = useReviewActions(review, onChanged);
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);

@@ -9,7 +9,7 @@ only on the VMIDs in BBBOX_VMIDS, and on snapshots BBBOX_INSTALL labelled.
       waits for a snapshot task on <vmid>, SIGKILLs that task's worker
       only, and exits: a take killed part way (gate G1)
   BBBOX_VMIDS="3240 3241" live-root.sh unlock <vmid>
-      thaws and unlocks <vmid>, as bb-box then asks
+      thaws and unlocks <vmid>, as alia-box then asks
   BBBOX_VMIDS="3240 3241" BBBOX_INSTALL=<id> live-root.sh keep-label <vmid> <snapshot> <yyyy-mm-dd>
       adds a keep date to the label of one of that install's snapshots (gate G3)
 TEXT
@@ -59,7 +59,7 @@ case $command in
     [[ $date =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || usage
     path=/nodes/$node/$type/$vmid/snapshot/$name/config
     label=$(pvesh get "$path" --output-format json | jq -r '.description // ""')
-    ours="^bb-box install ${BBBOX_INSTALL} box [^ ]+ snapshot sn[a-z2-7]{12}$"
+    ours="^alia-box install ${BBBOX_INSTALL} box [^ ]+ snapshot sn[a-z2-7]{12}$"
     [[ $label =~ $ours ]] || { echo "not a label of install $BBBOX_INSTALL: $label" >&2; exit 2; }
     pvesh set "$path" --description "$label kept $date"
     echo "labelled $vmid $name: $label kept $date"

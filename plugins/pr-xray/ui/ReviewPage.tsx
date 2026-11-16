@@ -1,7 +1,7 @@
 // One PR's review: header, analysis status, Diff/Explain tabs, focus mode.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -46,7 +46,7 @@ function FocusFrame({ focus, children }: { focus: boolean; children: ReactNode }
   return (
     <div ref={slot} className={PAGE_FRAME_CLASS}>
       {createPortal(
-        // One layer below bb's toaster (z-index 49), so toasts stay visible in focus mode.
+        // One layer below VesnALIA's toaster (z-index 49), so toasts stay visible in focus mode.
         <div {...scope} className={focus ? "fixed inset-0 z-[48] flex flex-col bg-background text-foreground" : PAGE_FRAME_CLASS}>
           {children}
         </div>,
@@ -58,7 +58,7 @@ function FocusFrame({ focus, children }: { focus: boolean; children: ReactNode }
 
 export function ReviewPage({ prRef }: { prRef: PrRef }) {
   const { rpc, data, error, refetch, refresh, newCommits } = useReview(prRef);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [tab, setTab] = useState<Tab>("diff");
   const [focus, setFocus] = useState(() => uiStore.get().focusOnOpen);
   const [view, setView] = useState<ViewMode>(() => (localStorage.getItem("pr-xray:view") as ViewMode) ?? "unified");

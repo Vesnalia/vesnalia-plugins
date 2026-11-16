@@ -27,7 +27,7 @@ test('O138 shared personal config remains untouched across resume and ordinary t
     const start = { threadId: 'm46', cwd: root, instructionMode: 'append', options, disallowedTools: [], dynamicTools: [] };
     const native = (await rpc('thread/start', start)).result.providerThreadId;
     const setup = await r.services.prepare(root, api.executionOptions(options), { threadId: 'm46', providerThreadId: native });
-    const binding = readFileSync(join(api.sessionDataDir(r.root(), root, 'm46'), 'bb-binding.json'));
+    const binding = readFileSync(join(api.sessionDataDir(r.root(), root, 'm46'), 'alia-binding.json'));
     assert.equal(setup.launch.env.ZCODE_STORAGE_DIR, undefined);
     assert.equal(setup.launch.env.ZCODE_RUNTIME_ENV, undefined, 'ordinary launch uses ZCode production default');
     assert.equal(setup.launch.env.ZCODE_HTTP_PROXY, undefined);
@@ -42,7 +42,7 @@ test('O138 shared personal config remains untouched across resume and ordinary t
       input: [{ type: 'text', text: 'ordinary', mentions: [] }] });
     for (let i = 0; i < 800 && !out.some(m => m.params?.deltas?.some(d => d.kind === 'turn.boundary')); i++) await delay(10);
     assert.ok(out.some(m => m.params?.deltas?.some(d => d.kind === 'turn.boundary')));
-    assert.deepEqual(readFileSync(join(api.sessionDataDir(r.root(), root, 'm46'), 'bb-binding.json')), binding);
+    assert.deepEqual(readFileSync(join(api.sessionDataDir(r.root(), root, 'm46'), 'alia-binding.json')), binding);
   }); } finally { await r.close(); rmSync(root, { recursive: true }); }
 });
 async function harness(r, fn) {
@@ -58,13 +58,13 @@ test('actual prepare canonical identity, same-cwd separation, stable resume and 
   const { root, r, counts, personalHome } = runtime(), cwd = root;
   try {
     for (const id of [undefined, { threadId: '' }, { threadId: ' ' }]) await assert.rejects(r.services.prepare(cwd, api.executionOptions(options), id), /identity/);
-    await assert.rejects(r.services.prepare(cwd, api.executionOptions({ ...options, envVars: { BB_THREAD_ID: 'b' } }), { threadId: 'a' }), /conflict/);
+    await assert.rejects(r.services.prepare(cwd, api.executionOptions({ ...options, envVars: { ALIA_THREAD_ID: 'b' } }), { threadId: 'a' }), /conflict/);
     assert.deepEqual(counts(), { reads: 0, discoveries: 0 }); assert.equal(existsSync(r.root()), false);
     const a = await r.services.prepare(cwd, api.executionOptions({ ...options, instructions: 'A_PRIVATE' }), { threadId: 'a' }); a.bindSession('native-a');
     const b = await r.services.prepare(cwd, api.executionOptions({ ...options, instructions: 'B_PRIVATE' }), { threadId: 'b' }); b.bindSession('native-b');
     assert.equal(a.launch.env.ZCODE_STORAGE_DIR, b.launch.env.ZCODE_STORAGE_DIR, 'historical decision shared storage; only plugin registration/data use per-thread mode stores');
     assert.notEqual(a.launch.env.ZCODE_SESSION_DB_PATH, b.launch.env.ZCODE_SESSION_DB_PATH);
-    assert.equal(a.launch.env.HOME, b.launch.env.HOME); assert.equal(a.launch.env.HOME, personalHome); assert.equal(a.launch.env.BB_THREAD_ID, 'a');
+    assert.equal(a.launch.env.HOME, b.launch.env.HOME); assert.equal(a.launch.env.HOME, personalHome); assert.equal(a.launch.env.ALIA_THREAD_ID, 'a');
     assert.equal(existsSync(join(personalHome, '.zcode/AGENTS.md')), false);
     const again = await r.services.prepare(cwd, api.executionOptions(options), { threadId: 'a', providerThreadId: 'native-a' });
     const alias = join(root, 'alias'); symlinkSync(root, alias);
@@ -93,9 +93,9 @@ test('binding/HOME faults expose recovery action before auth or native startup a
   try {
     const withHome = await r.services.prepare(root, api.executionOptions({ ...options, envVars: { HOME: '/manual' } }), { threadId: 'manual' });
     assert.equal(withHome.launch.env.HOME, join(root, 'personal'));
-    await assert.rejects(r.services.prepare(root, api.executionOptions(options)), /attach from the original bb thread/);
+    await assert.rejects(r.services.prepare(root, api.executionOptions(options)), /attach from the original alia thread/);
     const setup = await r.services.prepare(root, api.executionOptions(options), { threadId: 'own' });
-    setup.bindSession('native-own'); const file = join(api.sessionDataDir(r.root(), root, 'own'), 'bb-binding.json');
+    setup.bindSession('native-own'); const file = join(api.sessionDataDir(r.root(), root, 'own'), 'alia-binding.json');
     const before = counts(); writeFileSync(file, '{', 'utf8');
     await assert.rejects(r.services.prepare(root, api.executionOptions(options), { threadId: 'own', providerThreadId: 'native-own' }), /keep binding\/session\/history files.*reconcile/);
     assert.equal(readFileSync(file, 'utf8'), '{'); assert.deepEqual(counts(), before);
@@ -125,7 +125,7 @@ test('actual handleLine -> prepare: two threads; snapshot env clear/absent, inst
     const home = api.sessionDataDir(r.root(), root, 'a'); assert.equal(existsSync(join(home, '.zcode/AGENTS.md')), false);
     assert.equal(existsSync(join(api.sessionDataDir(r.root(), root, 'b'), '.zcode/AGENTS.md')), false);
     const stable = bridge.ownedPids(); await rpc('turn/start', turn('a', a, options)); assert.deepEqual(bridge.ownedPids(), stable);
-    const conflict = await rpc('turn/start', turn('a', a, { ...options, envVars: { BB_THREAD_ID: 'b' } }), true); assert.ok(conflict.error);
+    const conflict = await rpc('turn/start', turn('a', a, { ...options, envVars: { ALIA_THREAD_ID: 'b' } }), true); assert.ok(conflict.error);
     const missing = await rpc('thread/start', { ...start('c'), threadId: '' }, true); assert.ok(missing.error);
     assert.equal(bridge.ownedPids().length, 2); assert.ok(b);
   }); } finally { rmSync(root, { recursive: true }); }
@@ -153,7 +153,7 @@ test('F3 sanitizer preserves unknown fields/relationships and full generic envel
   const x = sanitizeEnvelope({ future: { x: 'private', repeated: 'private', empty: {}, list: [null, true, 12, 'private'] } });
   assert.equal(x.future.x, x.future.repeated); assert.equal(x.future.list[3], x.future.x); assert.deepEqual(x.future.empty, {});
   assert.equal(JSON.stringify(x).includes('private'), false); assert.throws(() => sanitizeEnvelope({ x: undefined }), /shape/);
-  const fs = JSON.parse(readFileSync(new URL('./fixtures/bb-real-inputs.json', import.meta.url), 'utf8')).fixtures;
+  const fs = JSON.parse(readFileSync(new URL('./fixtures/alia-real-inputs.json', import.meta.url), 'utf8')).fixtures;
   for (const f of fs) {
     assert.deepEqual(Object.keys(f.genericRequest.params), f.provenance.originalParamFields);
     assert.deepEqual(Object.keys(f.genericRequest.params.options), f.provenance.originalOptionFields);

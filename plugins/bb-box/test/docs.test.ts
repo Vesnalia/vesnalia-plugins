@@ -113,18 +113,18 @@ test("every link from one Markdown file to another leads to a file, and to a hea
 });
 
 test("the skill names every tool the agent gets", async () => {
-  const skill = readFileSync(join(root, "skills", "bb-box", "SKILL.md"), "utf8");
+  const skill = readFileSync(join(root, "skills", "alia-box", "SKILL.md"), "utf8");
   const missing = (await registered()).tools.map((tool) => tool.name).filter((name) => !new RegExp(`\\b${name}\\b`).test(skill));
-  assert.deepEqual(missing, [], "skills/bb-box/SKILL.md does not mention these tools");
+  assert.deepEqual(missing, [], "skills/alia-box/SKILL.md does not mention these tools");
 });
 
 test("the setup skill names every command that changes the configuration, and each backend type", async () => {
-  const skill = ["SKILL.md", ...readdirSync(join(root, "skills", "bb-box-setup", "references")).map((file) => join("references", file))].map((file) => readFileSync(join(root, "skills", "bb-box-setup", file), "utf8")).join("\n");
-  const commands = (await registered()).cli.commands.map((command) => command.usage.split(/ [<[]/)[0]!).filter((usage) => /^bb box (backend|kind|option) /.test(usage));
+  const skill = ["SKILL.md", ...readdirSync(join(root, "skills", "alia-box-setup", "references")).map((file) => join("references", file))].map((file) => readFileSync(join(root, "skills", "alia-box-setup", file), "utf8")).join("\n");
+  const commands = (await registered()).cli.commands.map((command) => command.usage.split(/ [<[]/)[0]!).filter((usage) => /^alia box (backend|kind|option) /.test(usage));
   assert.ok(commands.length >= 10);
-  const missing = commands.filter((usage) => !skill.includes(usage.replace(/^bb box backend host (add|set|remove)$/, "bb box backend host")));
-  assert.deepEqual(missing, [], "skills/bb-box-setup does not mention these commands");
-  assert.deepEqual(DRIVERS.map((driver) => driver.type).filter((type) => !new RegExp(`\`${type}\``).test(skill)), [], "skills/bb-box-setup does not name these backend types");
+  const missing = commands.filter((usage) => !skill.includes(usage.replace(/^alia box backend host (add|set|remove)$/, "alia box backend host")));
+  assert.deepEqual(missing, [], "skills/alia-box-setup does not mention these commands");
+  assert.deepEqual(DRIVERS.map((driver) => driver.type).filter((type) => !new RegExp(`\`${type}\``).test(skill)), [], "skills/alia-box-setup does not name these backend types");
 });
 
 test("the iOS guide gives the shared host's slot log folder, its last slot and UID, and that a failed lend removes the slot, as device-host.sh has them", () => {

@@ -224,8 +224,8 @@ async function readFromCommand(
         id: 1,
         params: {
           clientInfo: {
-            name: "bb-provider-usage",
-            title: "BB Provider Usage",
+            name: "alia-provider-usage",
+            title: "VesnALIA Provider Usage",
             version: "0.7.0",
           },
           capabilities: null,

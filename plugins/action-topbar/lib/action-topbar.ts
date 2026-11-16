@@ -1434,7 +1434,7 @@ export function mountActionTopbar(
     }
     const actionId = mirror.summary.relaunchActionId;
     if (actionId === null) {
-      announce("BB cannot move this file tab between thread panes.");
+      announce("VesnALIA cannot move this file tab between thread panes.");
       return;
     }
     const action = actions.find((candidate) => candidate.id === actionId) ?? {

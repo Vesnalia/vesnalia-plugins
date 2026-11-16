@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-// Opening a review reads what its agent did, as opening a thread does in BB, so the review's rows lose their dot.
+// Opening a review reads what its agent did, as opening a thread does in VesnALIA, so the review's rows lose their dot.
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { useAgentRead } from "../lib/use-agent-read";
 import { defaultPreferences } from "../src/preferences";
 import { patchReviewState } from "../lib/panel-state";

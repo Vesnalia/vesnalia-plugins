@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { Forge, ForgePr, ForgePrDetail } from "../contract";
 import {
@@ -88,8 +88,8 @@ function configuredSearches(values: { reviewSearchesMe: string; reviewSearchesTe
   return { searches, invalid, scopes };
 }
 
-export function createReviewQueue(bb: BbPluginApi, labeler: Labeler) {
-  const settings = bb.settings.define({
+export function createReviewQueue(alia: AliaPluginApi, labeler: Labeler) {
+  const settings = alia.settings.define({
     reviewSearchesMe: {
       type: "string",
       label: "Review queue: requested of you",
@@ -106,11 +106,11 @@ export function createReviewQueue(bb: BbPluginApi, labeler: Labeler) {
       experimental_multiline: true,
     },
   });
-  const host = hostClient(bb);
-  const store = marksStore(bb, MARKS_KEY, marksSchema);
+  const host = hostClient(alia);
+  const store = marksStore(alia, MARKS_KEY, marksSchema);
   const load = store.load;
-  const changed = coalesced(() => bb.realtime.publish("reviews-changed", { at: Date.now() }), 300);
-  const log = throttledLog(bb, LOG_REPEAT_MS);
+  const changed = coalesced(() => alia.realtime.publish("reviews-changed", { at: Date.now() }), 300);
+  const log = throttledLog(alia, LOG_REPEAT_MS);
   let entries: Entry[] = [];
   let sources: ReviewSource[] = [];
   const poller = createPoller(runRefresh, changed, 8_000);
@@ -190,7 +190,7 @@ export function createReviewQueue(bb: BbPluginApi, labeler: Labeler) {
       sources = invalid;
       return false;
     }
-    hostId = await indexHostId(bb, hostId);
+    hostId = await indexHostId(alia, hostId);
     const target = hostId;
     if (!target) {
       // Quiet like a missing CLI; the last list stays up until a host connects again.
@@ -366,7 +366,7 @@ export function createReviewQueue(bb: BbPluginApi, labeler: Labeler) {
   async function submit(id: string, verdict: "approve" | "request_changes", body: string) {
     const entry = find(id);
     if (verdict === "request_changes" && !body) throw new Error("Say what needs to change.");
-    hostId = await indexHostId(bb, hostId);
+    hostId = await indexHostId(alia, hostId);
     if (!hostId) throw new Error(NO_HOST);
     const result = await host.call(
       "pr_review",

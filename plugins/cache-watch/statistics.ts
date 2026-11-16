@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { collectTurnUsage, turnUsageSchema, requestMetadataSchema } from './turn-usage';
 import { costSchema, estimateTurnCost } from './cost';
 import { PING } from './core';
 
-type Event = Awaited<ReturnType<BbPluginApi['sdk']['threads']['events']['list']>>[number];
+type Event = Awaited<ReturnType<AliaPluginApi['sdk']['threads']['events']['list']>>[number];
 const eventTypes = ['thread/tokenUsage/updated', 'turn/started', 'turn/completed', 'client/turn/requested', 'client/turn/rejected', 'provider/modelFallback', 'thread/extensionState/updated'] as const;
 export const savedTurnSchema = z.object({
   providerId: z.string().default('codex'),
@@ -33,9 +33,9 @@ export type SessionStatistics = z.infer<typeof sessionStatisticsSchema>;
 // 7: price Claude Fable 5.2 and GPT-6 Sol, GPT-5.6 Terra/Luna.
 const REVISION = 7;
 
-export function createStatistics(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+export function createStatistics(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE cache_events (thread_id TEXT NOT NULL, seq INTEGER NOT NULL, body TEXT NOT NULL, PRIMARY KEY(thread_id, seq))`,
     `CREATE TABLE cache_cursors (thread_id TEXT PRIMARY KEY, seq INTEGER NOT NULL)`,
     `CREATE TABLE cache_turns (thread_id TEXT NOT NULL, turn_id TEXT NOT NULL, start_seq INTEGER NOT NULL, body TEXT NOT NULL, PRIMARY KEY(thread_id, turn_id))`,
@@ -43,7 +43,7 @@ export function createStatistics(bb: BbPluginApi) {
     `CREATE TABLE cache_statistics_versions (thread_id TEXT PRIMARY KEY, revision INTEGER NOT NULL)`,
   ]);
   let disposed = false;
-  bb.onDispose(() => { disposed = true; });
+  alia.onDispose(() => { disposed = true; });
   const pending = new Map<string, Promise<void>>();
   const getCursor = (threadId: string) => (db.prepare('SELECT seq FROM cache_cursors WHERE thread_id = ?').get(threadId) as { seq: number } | undefined)?.seq ?? 0;
   const load = (threadId: string): Event[] => (db.prepare('SELECT body FROM cache_events WHERE thread_id = ? ORDER BY seq').all(threadId) as { body: string }[]).map(row => JSON.parse(row.body));
@@ -84,7 +84,7 @@ export function createStatistics(bb: BbPluginApi) {
   }
   async function ingest(threadId: string, providerId?: string) {
     if (disposed) return;
-    const thread = providerId === undefined ? await bb.sdk.threads.get({ threadId }) : null;
+    const thread = providerId === undefined ? await alia.sdk.threads.get({ threadId }) : null;
     if (disposed || (thread && thread.deletedAt !== null)) return;
     const provider = providerId ?? thread!.providerId;
     const revision = db.prepare('SELECT revision FROM cache_statistics_versions WHERE thread_id = ?').get(threadId) as { revision: number } | undefined;
@@ -92,7 +92,7 @@ export function createStatistics(bb: BbPluginApi) {
     const initial = getCursor(threadId);
     let cursor = needsRebuild ? 0 : initial;
     while (!disposed) {
-      const batch = await bb.sdk.threads.events.list({ threadId, order: 'asc', limit: '100', afterSeq: String(cursor), types: eventTypes });
+      const batch = await alia.sdk.threads.events.list({ threadId, order: 'asc', limit: '100', afterSeq: String(cursor), types: eventTypes });
       if (disposed) return;
       const fresh = batch.filter(row => Number.isSafeInteger(row.seq) && row.seq > cursor).sort((a, b) => a.seq - b.seq);
       if (!fresh.length) break;
@@ -118,7 +118,7 @@ export function createStatistics(bb: BbPluginApi) {
       rebuild(threadId, provider, 0);
       db.prepare('INSERT INTO cache_statistics_versions VALUES (?, ?) ON CONFLICT(thread_id) DO UPDATE SET revision=excluded.revision').run(threadId, REVISION);
     })();
-    if (cursor > initial || needsRebuild) bb.realtime.publish('statistics-changed', { threadId });
+    if (cursor > initial || needsRebuild) alia.realtime.publish('statistics-changed', { threadId });
   }
   function sync(threadId: string, providerId?: string): Promise<void> {
     const task = (pending.get(threadId) ?? Promise.resolve()).catch(() => {}).then(() => ingest(threadId, providerId));
@@ -164,10 +164,10 @@ export function createStatistics(bb: BbPluginApi) {
     const row = db.prepare('SELECT body FROM cache_turns WHERE thread_id = ? AND turn_id = ?').get(threadId, turnId) as { body: string } | undefined;
     return row ? parseSaved(row.body) : null;
   }
-  bb.events.on('experimental_thread.events', ({ thread }) => thread.deletedAt === null ? sync(thread.id, thread.providerId) : undefined);
-  bb.events.on('thread.idle', ({ thread }) => thread.deletedAt === null ? sync(thread.id, thread.providerId) : undefined);
-  bb.events.on('thread.failed', ({ thread }) => thread.deletedAt === null ? sync(thread.id, thread.providerId) : undefined);
-  bb.events.on('thread.deleted', ({ thread }) => {
+  alia.events.on('experimental_thread.events', ({ thread }) => thread.deletedAt === null ? sync(thread.id, thread.providerId) : undefined);
+  alia.events.on('thread.idle', ({ thread }) => thread.deletedAt === null ? sync(thread.id, thread.providerId) : undefined);
+  alia.events.on('thread.failed', ({ thread }) => thread.deletedAt === null ? sync(thread.id, thread.providerId) : undefined);
+  alia.events.on('thread.deleted', ({ thread }) => {
     const task = (pending.get(thread.id) ?? Promise.resolve()).catch(() => {}).then(() => {
       if (disposed) return;
       db.transaction(() => { for (const table of ['cache_events', 'cache_turns', 'cache_cursors', 'cache_statistics_versions']) db.prepare(`DELETE FROM ${table} WHERE thread_id = ?`).run(thread.id); })();

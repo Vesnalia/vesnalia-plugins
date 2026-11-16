@@ -1,4 +1,4 @@
-import { experimental_Diff as Diff, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_Diff as Diff, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -134,7 +134,7 @@ function splitPatch(patch: string): Array<{ path: string; patch: string }> {
 }
 
 function CandidateDetail({ slug, n, metric, onClose }: { slug: string; n: number; metric: MetricInfo; onClose: () => void }) {
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const d = useLive((rpc) => rpc.call("study.candidate", { slug, n }), [slug, n], 15_000);
   const c: CandidateDetailView | null = d.data?.candidate ?? null;
   return (

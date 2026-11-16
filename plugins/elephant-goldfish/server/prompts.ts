@@ -84,7 +84,7 @@ export function presetStages(preset: PresetId, lenses: LensId[] | undefined, sta
 export type ContextFile = { path: string; content: string };
 
 const FORMAT = `
-## Output format for this review (adapted by the BB Elephant-Goldfish plugin)
+## Output format for this review (adapted by the VesnALIA Elephant-Goldfish plugin)
 
 You are running as a Goldfish: a fresh reviewer with no conversation history and no tools.
 You cannot open files, run commands or search code. Everything you may use is in this message.

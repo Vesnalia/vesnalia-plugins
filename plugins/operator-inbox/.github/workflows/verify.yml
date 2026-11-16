@@ -20,4 +20,4 @@ jobs:
           production_dir="$(mktemp -d)"
           git archive HEAD | tar -x -C "$production_dir"
           npm ci --prefix "$production_dir" --omit=dev --omit=optional --ignore-scripts --no-audit --no-fund
-          ./node_modules/.bin/bb plugin build "$production_dir"
+          ./node_modules/.bin/alia plugin build "$production_dir"

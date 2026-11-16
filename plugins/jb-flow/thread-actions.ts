@@ -1,12 +1,12 @@
-// The sidebar thread actions jb-flow's own list and menus use. BB's SDK 0.6
+// The sidebar thread actions jb-flow's own list and menus use. VesnALIA's SDK 0.6
 // dropped `experimental_useSidebarThreadActions`; this rebuilds the same shape
 // from the public navigate API and the thread SDK.
 import { useMemo } from "react";
-import { useBbNavigate, useSdk } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useSdk } from "@vesnalia/plugin-sdk/app";
 
 export function useSidebarThreadActions() {
   const sdk = useSdk();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return useMemo(
     () => ({
       open(threadId: string, options?: { split?: boolean }) {

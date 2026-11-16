@@ -3,7 +3,7 @@
 // behind a muted toggle so the thing to open is never hunted for.
 import { useCallback, useEffect, useState } from "react";
 import type { MouseEvent } from "react";
-import { useBbNavigate, useRealtime, useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime, useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import type { PortGroup, PortSnapshot, rpcContract } from "../../server";
 import { pillName } from "../labels";
 import { Icon } from "@/components/ui/icon";
@@ -34,7 +34,7 @@ export function useSnapshot() {
  * other thing, so the less-used target never needs a settings trip.
  */
 function useOpenPort() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { values } = useSettings();
   return useCallback(
     (url: string, event: MouseEvent) => {

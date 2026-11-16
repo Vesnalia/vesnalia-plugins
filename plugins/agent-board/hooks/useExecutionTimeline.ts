@@ -2,7 +2,7 @@
 // Timeline dialog opens, then follows existing Agent Board invalidations only
 // while the selected execution remains active. There is no timer or poll.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import {
   BOARD_CHANGED_CHANNEL,
   type ExecutionTimeline,
@@ -42,8 +42,8 @@ export function useExecutionTimeline(
   const pendingSignal = useRef(false);
   const requestId = useRef(0);
   const loadRef = useRef<() => void>(() => {});
-  const targetKey = input.source === "bb"
-    ? `bb:${input.executionKey}:${input.threadId}`
+  const targetKey = input.source === "alia"
+    ? `alia:${input.executionKey}:${input.threadId}`
     : input.source === "ollama-fleet" ? `ollama-fleet:${input.executionKey}:${input.jobId}` : `redteam:${input.executionKey}:${input.scanId}`;
 
   openRef.current = open;
@@ -60,8 +60,8 @@ export function useExecutionTimeline(
     const id = ++requestId.current;
     if (timelineRef.current === null) setLoading(true);
     else setRefreshing(true);
-    const rpcInput: ExecutionTimelineInput = input.source === "bb"
-      ? { source: "bb", executionKey: input.executionKey, threadId: input.threadId }
+    const rpcInput: ExecutionTimelineInput = input.source === "alia"
+      ? { source: "alia", executionKey: input.executionKey, threadId: input.threadId }
       : input.source === "ollama-fleet" ? { source: "ollama-fleet", executionKey: input.executionKey, jobId: input.jobId } : { source: "redteam", executionKey: input.executionKey, scanId: input.scanId };
     rpc.call("execution_timeline", rpcInput).then(
       (result) => {
@@ -95,10 +95,10 @@ export function useExecutionTimeline(
 
   const loadEarlier = useCallback(() => {
     const cursor = timelineRef.current?.olderCursor;
-    if (!openRef.current || input.source !== "bb" || !cursor || olderInflight.current || inflight.current) return;
+    if (!openRef.current || input.source !== "alia" || !cursor || olderInflight.current || inflight.current) return;
     const currentGeneration = generation.current;
     olderInflight.current = true; setLoadingEarlier(true); setEarlierError(null);
-    rpc.call("execution_timeline", { source: "bb", executionKey: input.executionKey, threadId: input.threadId, cursor }).then(result => {
+    rpc.call("execution_timeline", { source: "alia", executionKey: input.executionKey, threadId: input.threadId, cursor }).then(result => {
       if (generation.current !== currentGeneration || !openRef.current || !timelineRef.current) return;
       const current = timelineRef.current;
       const bridge = bridges.current.at(-1);

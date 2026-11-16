@@ -11,7 +11,7 @@ import {
 import {
   definePluginApp,
   experimental_ProviderModelPicker as ProviderModelPicker,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
@@ -21,8 +21,8 @@ import {
   type ExperimentalProviderModelPickerValue,
   type PluginNavPanelProps,
   type PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginRpcClient, PluginRpcResult } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcClient, PluginRpcResult } from "@vesnalia/plugin-sdk/app";
 import type { giteaRpcContract } from "./server.js";
 import { GITEA_BRANCH_ENVIRONMENT_PROVIDER_ID } from "./branch-inputs.js";
 import { GiteaBranchInputsControl } from "./environment-picker.js";
@@ -454,7 +454,7 @@ function DiffNotice({
 }) {
   return (
     <div
-      data-testid="bb-diff-notice"
+      data-testid="alia-diff-notice"
       className="flex flex-wrap items-center gap-2 px-3 py-2 text-xs text-muted-foreground"
     >
       <span>{children}</span>
@@ -589,7 +589,7 @@ function LineThread({
 }) {
   return (
     <div
-      data-testid="bb-line-thread"
+      data-testid="alia-line-thread"
       className="mx-2 my-1.5 space-y-2 rounded-md border border-border bg-card p-2 font-sans text-xs"
     >
       {comments.map((comment) => (
@@ -723,7 +723,7 @@ function PatchView({
       </pre>
     );
   return (
-    <div data-testid="bb-diff" data-path={path}>
+    <div data-testid="alia-diff" data-path={path}>
       <PierreFileDiff
         fileDiff={fileDiff}
         options={options}
@@ -1063,7 +1063,7 @@ function FreshnessNote({
   const time = new Date(freshness.fetchedAt).toLocaleTimeString();
   return (
     <span
-      data-testid="bb-freshness"
+      data-testid="alia-freshness"
       data-state={freshness.state}
       className="flex shrink-0 items-center gap-1"
       title={freshness.state === "stale-error" ? freshness.error : undefined}
@@ -1147,7 +1147,7 @@ function PullFilesPane({
 }) {
   if (files.state === "loading")
     return (
-      <div className="space-y-2" data-testid="bb-files-loading">
+      <div className="space-y-2" data-testid="alia-files-loading">
         <Skeleton className="h-8 w-full" />
         <Skeleton className="h-32 w-full" />
       </div>
@@ -1316,7 +1316,7 @@ function ChangedFiles({
   });
   return (
     <div
-      data-testid="bb-changed-files"
+      data-testid="alia-changed-files"
       className="@container flex h-full min-h-0 flex-col gap-2"
     >
       {view.filesTruncated && (
@@ -1370,7 +1370,7 @@ function ChangedFiles({
                   else cards.current.delete(file.path);
                 }}
                 aria-label={fileLabel(file)}
-                data-testid="bb-file-card"
+                data-testid="alia-file-card"
                 data-path={file.path}
                 className="overflow-hidden rounded-lg border border-border bg-card"
               >
@@ -1463,11 +1463,11 @@ const autoFixerLabels = {
 
 function autoFixerDetail(view: AutoFixerView) {
   if (view.status === "archived") return `PR ${view.outcome}. Auto-fixer archived.`;
-  if (view.status === "merged" || view.status === "closed") return `PR ${view.status}. BB cleanup pending; retrying automatically.`;
+  if (view.status === "merged" || view.status === "closed") return `PR ${view.status}. VesnALIA cleanup pending; retrying automatically.`;
   if (view.status === "failed") return view.error;
   if (view.status === "needs_you") return view.note;
   if (view.status === "stopped" && view.cleanupPending)
-    return "The auto-fixer thread has not been archived yet; BB keeps retrying.";
+    return "The auto-fixer thread has not been archived yet; VesnALIA keeps retrying.";
   return "";
 }
 
@@ -1485,7 +1485,7 @@ function AutoFixerControls({
   onChanged: () => void;
 }) {
   const rpc = useRpc<typeof giteaRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [busy, setBusy] = useState(false);
   const run = async (action: () => Promise<unknown>, done: string) => {
     setBusy(true);
@@ -1776,7 +1776,7 @@ function AutoFixerPreferencesControl() {
 
 function AutoFixerList() {
   const rpc = useRpc<typeof giteaRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [sessions, setSessions] = useState<Loadable<AutoFixerSessions>>(loading);
   const [showArchived, setShowArchived] = useState(false);
   const load = useCallback(() => {
@@ -1859,7 +1859,7 @@ const viewLabels: Record<View, string> = {
 
 function GiteaPanel({ subPath }: PluginNavPanelProps) {
   const rpc = useRpc<typeof giteaRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const route = useMemo(() => parseRoute(subPath), [subPath]);
   const [view, setView] = useState<View>(route?.kind === "list" ? route.view : panelMemory.filters.view);
   const listView = view === "auto-fixers" ? panelMemory.filters.view : view;
@@ -2032,7 +2032,7 @@ function GiteaPanel({ subPath }: PluginNavPanelProps) {
       });
       await refreshDetail();
       navigate.toThread(result.threadId);
-      toast.success("BB agent thread created");
+      toast.success("VesnALIA agent thread created");
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -2305,7 +2305,7 @@ function GiteaPanel({ subPath }: PluginNavPanelProps) {
                 className="h-auto px-1"
                 onClick={() => navigate.toThread(threadId)}
               >
-                Open linked BB thread
+                Open linked VesnALIA thread
               </Button>
             )}
           </div>
@@ -2634,7 +2634,7 @@ function GiteaPanel({ subPath }: PluginNavPanelProps) {
                 <div className="divide-y divide-border">
                   {list.state === "loading" ? (
                     <div
-                      data-testid="bb-list-loading"
+                      data-testid="alia-list-loading"
                       className="divide-y divide-border"
                     >
                       {Array.from({ length: 6 }, (_, index) => (
@@ -2716,7 +2716,7 @@ function GiteaPanel({ subPath }: PluginNavPanelProps) {
                             ? "No issues assigned to you in tracked repositories."
                           : repoOptions.length
                             ? "No matching items."
-                            : "Add repositories in settings or attach a Gitea checkout to a BB project."}
+                            : "Add repositories in settings or attach a Gitea checkout to a VesnALIA project."}
                     </div>
                   )}
                 </div>
@@ -3155,7 +3155,7 @@ function GiteaThreadPanel({ threadId }: PluginThreadPanelProps) {
         if (!current) return;
         setLinked(linked
           ? { state: "ready", value: linked }
-          : { state: "error", message: "This BB thread is not linked to a Gitea issue or pull request." });
+          : { state: "error", message: "This VesnALIA thread is not linked to a Gitea issue or pull request." });
       })
       .catch((reason: unknown) => {
         if (current)

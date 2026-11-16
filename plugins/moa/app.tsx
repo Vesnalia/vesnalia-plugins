@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Markdown, definePluginApp, useComposerView, useRealtime, useRealtimeConnectionState, useRpc, useBbNavigate,
-  experimental_ProviderModelPicker as ModelPicker } from "@get-bb/plugin-sdk/app";
+import { Markdown, definePluginApp, useComposerView, useRealtime, useRealtimeConnectionState, useRpc, useAliaNavigate,
+  experimental_ProviderModelPicker as ModelPicker } from "@vesnalia/plugin-sdk/app";
 import type { Config, RunView, Slot, rpcContract } from "./contract";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -27,7 +27,7 @@ function SlotEditor({ label, slot, onChange, environmentId }: {
 }
 function RunHistory({ runs, retry, view }: { runs: RunView[]; retry: (id: string) => void; view: (run: RunView) => void }) {
   useLocale();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const labels: Record<RunView["status"], string> = {
     waiting: t("waiting"), running: t("consulting"), ready: t("ready"),
     dispatched: t("delivered"), failed: t("failed"),
@@ -39,7 +39,7 @@ function RunHistory({ runs, retry, view }: { runs: RunView[]; retry: (id: string
       <summary className="cursor-pointer">{labels[run.status]} · {run.members?.map(m => m.advisor.model).join(" + ") ?? run.advisor.model} → {run.aggregator.model}</summary>
       <p className="mt-2 text-xs text-muted-foreground">{new Date(run.startedAt).toLocaleString()}</p>
       {run.status === "running" && run.progress && <p className="mt-2 text-xs text-muted-foreground">
-        {t("bbState")}: {run.progress.state} · {Math.floor((run.progress.observedAt - run.startedAt) / 1000)} {t("seconds")}.
+        {t("aliaState")}: {run.progress.state} · {Math.floor((run.progress.observedAt - run.startedAt) / 1000)} {t("seconds")}.
         {run.progress.lastEventAt && <> {t("latestEvent")}: {new Date(run.progress.lastEventAt).toLocaleTimeString()}.</>}
         {run.progress.overdue && <> {t("overdueHint")}</>}
       </p>}
@@ -181,7 +181,7 @@ export default definePluginApp(app => {
   app.contentScripts.register({ id: "message-history-visibility", mount: mountHistoryVisibility });
   app.contentScripts.register({ id: "hide-draft-marker", mount() {
     const style = document.createElement("style");
-    style.dataset.bbMoa = "draft-marker";
+    style.dataset.aliaMoa = "draft-marker";
     const chip = `[data-prompt-mention-resource*='"pluginId":"moa"'][data-prompt-mention-resource*='"itemId":"draft:']`;
     style.textContent = `${chip}, .node-mention:has(> ${chip}) { display: none !important; }`;
     document.head.append(style);

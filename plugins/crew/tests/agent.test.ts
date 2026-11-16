@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import type { PluginAgentConfigurationContext } from "@get-bb/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import type { PluginAgentConfigurationContext } from "@vesnalia/plugin-sdk";
 import { agentInstructions, configureFor, GRAPH_TOOL_NAME, identifyMember, LEAD_ADMIN_TOOL_NAMES, registerAgentTools, TOOL_NAMES, toolsFor, WORK_TOOL_NAMES, type Confirm } from "../lib/agent";
 import type { GraphRun, GraphsRpc } from "../lib/graphs";
 import { INSTRUCTION_LIMIT } from "../lib/spec";
@@ -21,8 +21,8 @@ function context(threadId: string, pluginMetadata: Record<string, unknown>): Plu
 async function withHost(options: { confirm?: Confirm; graphsRpc?: GraphsRpc | null; yaml?: string } = {}) {
   const env = setup({ graphsRpc: options.graphsRpc });
   const crew = await running(env.service, env.port, options.yaml);
-  const { bb, harness } = createFakePluginHost({ pluginId: "crew", agentSkillIds: ["crew"] });
-  registerAgentTools(bb, env.service, options);
+  const { alia, harness } = createFakePluginHost({ pluginId: "crew", agentSkillIds: ["crew"] });
+  registerAgentTools(alia, env.service, options);
   const meta = (key: string) => ({ ...env.port.threads.get(crew.threads[key]!)!.metadata });
   return { ...env, ...crew, harness, meta };
 }

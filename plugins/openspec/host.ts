@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostContract, hostSignals } from "./src/host-contract";
 import { WatchPool } from "./src/watch-pool";
 import { SourceResolver } from "./src/source-resolver";

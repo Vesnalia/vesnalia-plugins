@@ -3,8 +3,8 @@ import {
   experimental_useSidebarThreads as useSidebarThreads,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
-import type { bbSidebarRpcContract } from "./server";
+} from "@vesnalia/plugin-sdk/app";
+import type { aliaSidebarRpcContract } from "./server";
 import { LIFECYCLE_CHANNEL } from "./lifecycleStore";
 import { SETTINGS_CHANNEL } from "./layoutSets";
 import { DEFAULT_LIMITS } from "./decisionRules";
@@ -28,7 +28,7 @@ const TABS: { value: DecisionTab; label: string }[] = [
 ];
 
 export function DecisionSettings() {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const { config, setConfig } = useDecisionConfig();
   const [status, setStatus] = useState<Status | null>(null);
   const { threads } = useSidebarThreads();

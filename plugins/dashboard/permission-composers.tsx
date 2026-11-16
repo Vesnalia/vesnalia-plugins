@@ -4,7 +4,7 @@ import {
   experimental_usePluginId as usePluginId,
   experimental_NewThreadComposer as NewThreadComposer,
   type NewThreadComposerProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { readPermissionMode, rememberPermissionMode, rememberSubmittedPermission } from "./permission-memory";
 
 export function RememberThreadPermission({ threadId }: { threadId: string }) {

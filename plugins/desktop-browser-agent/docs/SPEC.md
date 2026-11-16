@@ -1,4 +1,4 @@
-# Specification: Desktop & Browser Agent for bb
+# Specification: Desktop & Browser Agent for VesnALIA
 
 Status: the original design, written as the v0.1 specification. It is not kept
 up to date. Tool selection, exposure, drift and installs changed in 0.3.0, and
@@ -8,7 +8,7 @@ what ships and is authoritative; [PLAN.md](PLAN.md) gives the reasons for the
 
 ## 1. Goal
 
-Give every bb agent thread the ability to observe and operate the desktop and
+Give every VesnALIA agent thread the ability to observe and operate the desktop and
 browser windows of the machine that runs the thread, using Cua Driver, while
 letting users decide per provider whether the harness's own computer use or
 Cua Driver is used.
@@ -22,11 +22,11 @@ Cua Driver is used.
   still approves them.
 - Replacing a harness's native computer use. "Native" means the plugin steps
   aside; it does not configure the harness.
-- Cloud sandboxes (Cua Cloud Fleet, Lume VMs). A remote bb machine with Cua
+- Cloud sandboxes (Cua Cloud Fleet, Lume VMs). A remote VesnALIA machine with Cua
   Driver installed already works through host RPC; provisioning is out of
   scope.
 - Reproducing all 60 upstream tools of the 0.36.0 snapshot
-  (`src/driver-snapshot.json`) as typed bb tools. A curated set is typed;
+  (`src/driver-snapshot.json`) as typed VesnALIA tools. A curated set is typed;
   the rest is reachable through `cua_call`.
 
 ## 3. Functional requirements
@@ -43,20 +43,20 @@ Cua Driver is used.
 | FR-8 | Return screenshots as image content the model can see; append `structuredContent` (element tokens) as text. | done |
 | FR-9 | `cua_status` and the settings UI report install, version, service, and macOS permission state per machine, with fix instructions. | done |
 | FR-10 | Inject the `desktop-browser-agent` skill and a readiness line into instructions when Cua tools are active. | done |
-| FR-11 | `bb cua` CLI for status, policy, mode, tool catalog, raw calls. | done |
+| FR-11 | `alia cua` CLI for status, policy, mode, tool catalog, raw calls. | done |
 | FR-12 | Settings UI: mode radio, provider table with override selects, machine readiness with "Check", install/permission help. | done |
 | FR-13 | Live schema refresh: narrow advertised parameter schemas from the machine's `tools/list`. | done |
 | FR-14 | Optional trajectory recording toggle per thread with a panel to review the MP4. | later |
-| FR-15 | Detect native computer use from a bb provider capability flag instead of a hardcoded table. | later (needs bb change) |
-| FR-16 | Opt-in installer: after a two-step confirm, download the tested release's installer files from its GitHub release into the worker temp dir, refuse any file whose sha256 differs from `src/driver-installer.json`, run them as the user, stream output lines to the UI via host signals, re-probe readiness. The newest release instead runs Cua's one-line script from cua.ai. CLI `bb cua install --yes`. | done |
-| FR-17 | macOS "Grant permissions" action running `cua-driver permissions grant`; CLI `bb cua grant`. | done |
+| FR-15 | Detect native computer use from a VesnALIA provider capability flag instead of a hardcoded table. | later (needs VesnALIA change) |
+| FR-16 | Opt-in installer: after a two-step confirm, download the tested release's installer files from its GitHub release into the worker temp dir, refuse any file whose sha256 differs from `src/driver-installer.json`, run them as the user, stream output lines to the UI via host signals, re-probe readiness. The newest release instead runs Cua's one-line script from cua.ai. CLI `alia cua install --yes`. | done |
+| FR-17 | macOS "Grant permissions" action running `cua-driver permissions grant`; CLI `alia cua grant`. | done |
 | FR-18 | Expandable setup checklist per machine, including install, service, Accessibility, Screen Recording, and direct-capture guidance. | done |
 | FR-19 | Preflight tool calls against recent readiness and convert permission failures into an actionable plugin-settings link. | done |
 
 ## 4. Settings model
 
-Declarative (`bb.settings.define`, editable via bb's form and
-`bb plugin config computer-use set <key> <value>`):
+Declarative (`alia.settings.define`, editable via VesnALIA's form and
+`alia plugin config computer-use set <key> <value>`):
 
 | Key | Type | Default |
 | --- | --- | --- |
@@ -64,21 +64,21 @@ Declarative (`bb.settings.define`, editable via bb's form and
 | `clipboardTools` | boolean | `true` |
 | `signedInBrowserProfiles` | boolean | `false` |
 | `confirmSensitiveTools` | boolean | `false` |
-| `sessionPrefix` | string | `bb` |
+| `sessionPrefix` | string | `alia` |
 
-Plugin storage (`bb.storage.kv`):
+Plugin storage (`alia.storage.kv`):
 
 | Key | Value |
 | --- | --- |
-| `routing-mode` | `"prefer-native" \| "cua-everywhere" \| "off"`; absent means `prefer-native`. Set by the Routing mode card and `bb cua mode`. |
+| `routing-mode` | `"prefer-native" \| "cua-everywhere" \| "off"`; absent means `prefer-native`. Set by the Routing mode card and `alia cua mode`. |
 | `policy-overrides` | `Record<providerId, "cua" \| "native" \| "off">` (inherit entries are removed) |
 | `driver-status:<hostId>` | last `DriverStatus` probe for that machine |
 | `catalog:<hostId>` | that machine's driver catalog and version |
 | `tool-exposure` | `Record<tool, "tool" \| "call" \| "off">` user overrides |
-| `browser-extension` | `true` when the user turned the optional browser extension's `browser_*` tools on; absent means off. Set by the Browser extension card and `bb cua browser on\|off`. |
+| `browser-extension` | `true` when the user turned the optional browser extension's `browser_*` tools on; absent means off. Set by the Browser extension card and `alia cua browser on\|off`. |
 
 Provider ids are dynamic (plugins add providers), so overrides live in kv and
-the UI lists whatever `bb.sdk.providers.list()` returns.
+the UI lists whatever `alia.sdk.providers.list()` returns.
 
 ## 5. Routing algorithm
 
@@ -106,10 +106,10 @@ only forwards it to tools whose live schema declares `session`.
 
 Result mapping: MCP `text` → text, `image` → image (base64 + mime), other →
 JSON text, `structuredContent` → `structuredContent:\n<json>` text capped at
-200 KB, empty → `(empty result)`. MCP `isError` maps to bb `isError`.
+200 KB, empty → `(empty result)`. MCP `isError` maps to VesnALIA `isError`.
 
 Browser extension tools (`browser_*`, optional) are not driver tools. Each
-maps to one method of the Browser Bridge for bb extension and runs through the
+maps to one method of the Browser Bridge for VesnALIA extension and runs through the
 host method `browserCall`: the host worker finds the browsers connected to
 its bridge (one Unix socket per browser, `<pid>.sock`, mode 0600), asks the
 one named by `browser` or the only one, and returns `{ok, browser, result}` or
@@ -120,7 +120,7 @@ settings page.
 
 ## 7. Host execution
 
-`host.ts` runs inside the bb host daemon on the target machine:
+`host.ts` runs inside the VesnALIA host daemon on the target machine:
 
 1. Resolve the binary: `CUA_DRIVER_PATH`, each `PATH` entry, then
    `~/.local/bin/cua-driver` (macOS/Linux) or
@@ -137,7 +137,7 @@ settings page.
 
 On macOS `cua-driver mcp` proxies to `CuaDriver.app`, which owns the TCC
 grants. On Windows and Linux the MCP process owns the runtime directly, so
-the bb daemon must run in the interactive desktop session.
+the VesnALIA daemon must run in the interactive desktop session.
 
 ## 8. Errors
 
@@ -152,7 +152,7 @@ the bb daemon must run in the interactive desktop session.
 
 ## 9. Security and privacy
 
-- Full-trust plugin like every bb plugin; runs only what the user installed.
+- Full-trust plugin like every VesnALIA plugin; runs only what the user installed.
 - The plugin passes `--grant existing-profile` to the driver only while
   **Signed-in browser profiles** is on. It never sends permission-mode or
   manifest changes, and never removes a grant itself.
@@ -165,20 +165,20 @@ the bb daemon must run in the interactive desktop session.
 
 ## 10. Compatibility
 
-- bb `>=0.39`, plugin SDK `>=0.4.16` (uses `bb.hosts.experimental_client`,
-  `bb.agents.configure`, `presentation.label` on tools).
+- VesnALIA `>=0.39`, plugin SDK `>=0.4.16` (uses `alia.hosts.experimental_client`,
+  `alia.agents.configure`, `presentation.label` on tools).
 - Tested against Cua Driver 0.36.0 on macOS, with live reads (`npm run
   test:live`); its tools are in `src/driver-snapshot.json`. Other driver
   releases are read when a machine connects, and any difference is reported
   as drift. The MCP wire format follows the MCP 2025-06-18 specification.
-- Providers verified to accept plugin tools in bb source: Claude Code, Codex,
-  Pi. ACP providers did not show dynamic-tool plumbing in the bb checkout
+- Providers verified to accept plugin tools in VesnALIA source: Claude Code, Codex,
+  Pi. ACP providers did not show dynamic-tool plumbing in the VesnALIA checkout
   used; treat ACP as untested.
 
 ## 11. Open questions
 
 1. Should `native` for Codex also suppress the skill? Today it does.
-2. Should bb expose `supportsNativeComputerUse` on `provider.capabilities` so
+2. Should VesnALIA expose `supportsNativeComputerUse` on `provider.capabilities` so
    the table in `src/policy.ts` disappears? Proposed upstream.
 3. Per-project overrides (for example, only allow computer use in certain
    projects) may be worth adding via the `project` setting type.

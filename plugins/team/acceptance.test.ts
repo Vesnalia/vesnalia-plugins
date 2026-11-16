@@ -1,4 +1,4 @@
-// Public CLI/RPC flow with real Git worktrees and the real bd CLI; BB threads
+// Public CLI/RPC flow with real Git worktrees and the real bd CLI; VesnALIA threads
 // are deterministic SDK fixtures, so this exercises no model/provider calls.
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -16,8 +16,8 @@ import { describe, it, expect } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+} from "@vesnalia/plugin-sdk/testing";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import plugin from "./server";
 import hostEntry from "./host";
 const run = promisify(execFile);
@@ -56,9 +56,9 @@ describe("standalone Team workflow (real Git and Beads, no AI)", () => {
         await git(["commit", "-qm", "Initial state"]);
         await git(["worktree", "add", "-q", "-b", "task/profile", worktree]);
         const originalHead = (await git(["rev-parse", "HEAD"])).stdout.trim();
-        await mkdir(join(checkout, ".bb", "teams"), { recursive: true });
+        await mkdir(join(checkout, ".vesnalia", "teams"), { recursive: true });
         await writeFile(
-          join(checkout, ".bb", "teams", "main.yaml"),
+          join(checkout, ".vesnalia", "teams", "main.yaml"),
           "version: 1\nroles:\n  - name: lead\n    lead: true\n    prompt: Coordinate the work.\n  - name: dev\n    prompt: Implement the package.\n",
         );
         await writeFile(
@@ -309,8 +309,8 @@ describe("standalone Team workflow (real Git and Beads, no AI)", () => {
           },
         });
         harness = fake.harness;
-        const recheck = fake.bb.experimental_hooks.recheck;
-        fake.bb.experimental_hooks.recheck = async (hook) => {
+        const recheck = fake.alia.experimental_hooks.recheck;
+        fake.alia.experimental_hooks.recheck = async (hook) => {
           await recheck(hook);
           for (const id of queued.keys()) {
             const decision = await harness!.inspection.registrations.hooks[
@@ -323,7 +323,7 @@ describe("standalone Team workflow (real Git and Beads, no AI)", () => {
             if (decision.action === "proceed") queued.delete(id);
           }
         };
-        await plugin(fake.bb);
+        await plugin(fake.alia);
         const cli = async (args: string[]) => {
           const r = await harness!.behavior.runCli([
             ...args,
@@ -422,7 +422,7 @@ describe("standalone Team workflow (real Git and Beads, no AI)", () => {
         // Saving a fresh checkpoint releases automatic continuation: no manual replace.
         const spawnsBeforeContinuation = spawnCount;
         await cli(checkpointArgs);
-        const nextSession = {newThreadId: await fake.bb.storage.kv.get<string>("active-session:proj_flow:main:dev") as string};
+        const nextSession = {newThreadId: await fake.alia.storage.kv.get<string>("active-session:proj_flow:main:dev") as string};
         expect(spawnCount).toBe(spawnsBeforeContinuation + 1);
         expect(nextSession.newThreadId).not.toBe(replacement.newThreadId);
         expect(
@@ -469,7 +469,7 @@ describe("standalone Team workflow (real Git and Beads, no AI)", () => {
         if (kind === "beads") {
           expect(typeof first.task.id).toBe("string");
           expect(
-            await fake.bb.storage.kv.get("tasks:proj_flow:main"),
+            await fake.alia.storage.kv.get("tasks:proj_flow:main"),
           ).toBeUndefined();
           // Remove no data: temporarily point the source at an absent database
           // through a separate fake project is covered by tracker unavailable tests.
@@ -487,7 +487,7 @@ describe("standalone Team workflow (real Git and Beads, no AI)", () => {
                 { cwd: checkout },
               )
             ).stdout,
-          )[0].metadata.bbTeamCheckpoint;
+          )[0].metadata.aliaTeamCheckpoint;
           expect(cp.environmentId).toBe("env_task");
           expect(cp.path).toBe(worktree);
           expect(cp.content.goal).toBe(content.goal);

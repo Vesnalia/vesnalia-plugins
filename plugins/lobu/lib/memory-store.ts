@@ -1,4 +1,4 @@
-// What the plugin keeps about memory in bb's plugin storage: memories it saved,
+// What the plugin keeps about memory in VesnALIA's plugin storage: memories it saved,
 // project links and pins, and per-thread logs of what agents were given. The
 // functions here are pure; server.ts owns reading and writing storage.
 import { z } from "zod";
@@ -34,7 +34,7 @@ const MAX_TITLE_CHARS = 200;
 const MAX_QUERY_CHARS = 200;
 /** Headroom under the 256KB limit, leaving room for the other KV keys' values. */
 const MAX_THREAD_LOG_BYTES = 200_000;
-/** bb truncates a plugin's thread instructions at 4096 characters; stay under it. */
+/** VesnALIA truncates a plugin's thread instructions at 4096 characters; stay under it. */
 const BRIEF_BUDGET = 3800;
 const ITEM_CHARS = 320;
 const MAX_LEARNED_IN_BRIEF = 8;
@@ -214,7 +214,7 @@ export interface Brief {
 
 /**
  * The section a new thread in this project starts with: pins first, then what
- * earlier threads here learned, within bb's instruction budget. Null when
+ * earlier threads here learned, within VesnALIA's instruction budget. Null when
  * there is nothing to give.
  */
 export function briefFor(input: {
@@ -405,7 +405,7 @@ function parseKnowledgeItems(result: unknown): RawKnowledgeItem[] {
  * - `checkedIds` + `chainResult`: follows supersede chains to their live head
  *   (updating edited memories in place) and prunes tombstoned or missing ids.
  * - `listResult`: hydrates live `platform === "lobu"` memories created outside
- *   this bb storage (teammates, other MCP clients, or a fresh bb install).
+ *   this VesnALIA storage (teammates, other MCP clients, or a fresh VesnALIA install).
  */
 export function reconcileWorkspaceMemories(input: {
   workspace: string;

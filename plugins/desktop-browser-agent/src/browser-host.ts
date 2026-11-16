@@ -66,11 +66,11 @@ function shellQuote(value: string): string {
   return `'${value.replaceAll("'", `'\\''`)}'`;
 }
 
-/** bb runs host workers on its own Electron binary; ELECTRON_RUN_AS_NODE makes it plain Node, and plain Node ignores it. */
+/** VesnALIA runs host workers on its own Electron binary; ELECTRON_RUN_AS_NODE makes it plain Node, and plain Node ignores it. */
 export function launcherScript(layout: BridgeLayout, runtime: string): string {
   return [
     "#!/bin/sh",
-    "# Browser Bridge for bb native host launcher, written by the Desktop & Browser Agent bb plugin.",
+    "# Browser Bridge for VesnALIA native host launcher, written by the Desktop & Browser Agent VesnALIA plugin.",
     `ELECTRON_RUN_AS_NODE=1 AGENT_BRIDGE_SOCKETS=${shellQuote(layout.sockets)} exec ${shellQuote(runtime)} ${shellQuote(layout.script)} "$@"`,
     "",
   ].join("\n");
@@ -80,7 +80,7 @@ function nativeManifest(layout: BridgeLayout): string {
   return `${JSON.stringify(
     {
       name: NATIVE_HOST_NAME,
-      description: "Browser Bridge for bb: lets bb agents work in your browser tabs.",
+      description: "Browser Bridge for VesnALIA: lets VesnALIA agents work in your browser tabs.",
       path: layout.launcher,
       type: "stdio",
       allowed_origins: EXTENSION_IDS.map((id) => `chrome-extension://${id}/`),
@@ -118,7 +118,7 @@ export async function uninstallBridge(layout: BridgeLayout): Promise<void> {
   await rm(layout.launcher, { force: true });
 }
 
-/** Rewrites the launcher when the runtime moved (for example after a bb update). */
+/** Rewrites the launcher when the runtime moved (for example after a VesnALIA update). */
 async function refreshLauncher(layout: BridgeLayout, runtime: string): Promise<void> {
   const expected = launcherScript(layout, runtime);
   const current = await readFile(layout.launcher, "utf8").catch(() => null);
@@ -237,7 +237,7 @@ export async function callBrowser(
   if (live.length === 0) {
     return fail(
       "not_connected",
-      "No browser with the Browser Bridge for bb extension is connected. The browser may be closed, or the extension not installed.",
+      "No browser with the Browser Bridge for VesnALIA extension is connected. The browser may be closed, or the extension not installed.",
     );
   }
   // A blank browser name counts as none given.

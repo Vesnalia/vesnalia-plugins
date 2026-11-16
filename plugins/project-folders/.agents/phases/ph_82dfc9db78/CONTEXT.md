@@ -18,12 +18,12 @@ Scope: small; recommendation: go_with_conditions; confidence: 92.
 - **L8** (locked): Drill-down navigation is an opt-in setting with nested tree as default (owner instruction); deferred to future phase.
 - **F1** (free): Exact dot size and position on provider icon; touch timer duration within 400-600 ms.
 - **D1** (deferred): Drill-down navigation design spec and implementation (deferred to future phase after design-lead spec).
-- **D2** (deferred): Pokecut theme project card border flattening on phones (handled in separate bb-plugin-pokecut-theme repo).
+- **D2** (deferred): Pokecut theme project card border flattening on phones (handled in separate alia-plugin-pokecut-theme repo).
 
 ## No-gos
 - No desktop (>= 768px) layout changes other than dropping the «Inactive» status pill.
 - No new colors, fonts or design tokens; reuse existing state tokens (--pk-info, --pk-warning, --pk-danger, --pk-success).
-- No server, RPC, host or BB core changes.
+- No server, RPC, host or VesnALIA core changes.
 - No shrinking of touch targets or row heights below 32px.
 - No removal of the ⋯ menu button on the active chat row.
 - No drill-down navigation in this phase (deferred to later phase as opt-in setting).

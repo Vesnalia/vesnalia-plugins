@@ -79,7 +79,7 @@ export async function runClaudeLogin(
   const sleep = options.sleep ?? defaultSleep;
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   if (signal?.aborted) {
-    throw new Error("Claude login was cancelled. This BB session was not changed.");
+    throw new Error("Claude login was cancelled. This VesnALIA session was not changed.");
   }
   const terminal = await client.create(threadId);
   const deadline = now() + timeoutMs;
@@ -109,12 +109,12 @@ export async function runClaudeLogin(
         try {
           output = await client.output(terminal.id, signal);
         } catch {
-          // BB may briefly reject output while the command starts. Retrying is safe.
+          // VesnALIA may briefly reject output while the command starts. Retrying is safe.
         }
         if (output !== undefined) {
           if (output.includes(LOGIN_BROWSER_FAILED_MARKER)) {
             outcomeError = new Error(
-              "BB could not open Chrome for Claude sign-in. This BB session was not changed.",
+              "VesnALIA could not open Chrome for Claude sign-in. This VesnALIA session was not changed.",
             );
             break;
           }
@@ -138,33 +138,33 @@ export async function runClaudeLogin(
           markCommitted();
         } else {
           outcomeError = new Error(
-            "Claude login did not finish successfully. This BB session was not changed.",
+            "Claude login did not finish successfully. This VesnALIA session was not changed.",
           );
         }
         break;
       }
       if (current.status === "disconnected") {
         outcomeError = new Error(
-          "Claude login was cancelled or its machine disconnected. This BB session was not changed.",
+          "Claude login was cancelled or its machine disconnected. This VesnALIA session was not changed.",
         );
         break;
       }
       if (signal?.aborted) {
         outcomeError = new Error(
-          "Claude login was cancelled. This BB session was not changed.",
+          "Claude login was cancelled. This VesnALIA session was not changed.",
         );
         break;
       }
       if (now() >= deadline) {
         outcomeError = new Error(
-          "Claude login timed out after 10 minutes. This BB session was not changed.",
+          "Claude login timed out after 10 minutes. This VesnALIA session was not changed.",
         );
         break;
       }
       await waitForNextPoll(sleep, pollMs, signal);
       if (signal?.aborted) {
         outcomeError = new Error(
-          "Claude login was cancelled. This BB session was not changed.",
+          "Claude login was cancelled. This VesnALIA session was not changed.",
         );
         break;
       }
@@ -237,7 +237,7 @@ export async function runClaudeAuthorizationReopen(
             ? new Error(
                 "Claude has not opened the authorization page yet. Wait a moment and try again.",
               )
-            : new Error("BB could not return to the pending Claude authorization.");
+            : new Error("VesnALIA could not return to the pending Claude authorization.");
         break;
       }
       if (current.status === "disconnected") {
@@ -263,7 +263,7 @@ export async function runClaudeAuthorizationReopen(
     outcomeError =
       error instanceof Error
         ? error
-        : new Error("BB could not return to the pending Claude authorization.");
+        : new Error("VesnALIA could not return to the pending Claude authorization.");
   }
 
   try {

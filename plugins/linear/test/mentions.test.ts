@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PluginMentionProviderRegistration } from "@get-bb/plugin-sdk";
+import type { PluginMentionProviderRegistration } from "@vesnalia/plugin-sdk";
 import { registerMentionProviders } from "../src/mentions.js";
 import { toolsFor, UNBOUND_INSTRUCTION } from "../src/tools.js";
 import { teamContextText } from "../src/tools-format.js";
@@ -38,7 +38,7 @@ function harness(bindings: readonly BindingRow[] = BINDINGS) {
   );
 
   let registration: PluginMentionProviderRegistration | undefined;
-  const bb = {
+  const alia = {
     ui: {
       registerMentionProvider(value: PluginMentionProviderRegistration) {
         registration = value;
@@ -46,7 +46,7 @@ function harness(bindings: readonly BindingRow[] = BINDINGS) {
     },
   } as never;
 
-  registerMentionProviders(bb, { store, bindings: () => bindings });
+  registerMentionProviders(alia, { store, bindings: () => bindings });
   if (registration === undefined) throw new Error("no provider registered");
   return { store, provider: registration };
 }
@@ -119,7 +119,7 @@ describe("the issue mention provider", () => {
     // loses the message they were writing.
     const { provider } = harness();
     const resolved = await provider.resolve("i_gone");
-    expect(resolved.context).toContain("no longer in bb's local copy");
+    expect(resolved.context).toContain("no longer in VesnALIA's local copy");
   });
 
   it("resolves a real item without promoting Linear-authored text into prompt context", async () => {

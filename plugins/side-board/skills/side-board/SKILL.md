@@ -5,7 +5,7 @@ description: How to keep this thread's side board — the panel listing open que
 
 # Side board
 
-Every bb thread has a side board: a panel beside the chat with the conversation's open
+Every VesnALIA thread has a side board: a panel beside the chat with the conversation's open
 questions, bugs and todos. The user reads it instead of scrolling the chat back, so it must
 never miss an item, and every item must be closed when it is resolved.
 

@@ -36,7 +36,7 @@ replaces the current build.
   installed version is not its pin. Edge updates itself meanwhile, and its
   update drops the flag that puts a page in the accessibility tree, so the
   script gives it again, as the first logon does. It then writes the new
-  image record, `C:\bb-box\image.json`, with the new build ID, and removes
+  image record, `C:\alia-box\image.json`, with the new build ID, and removes
   what the refresh left: its files, temporary files and the update
   downloads.
 - When an update needs a restart, the script exits 3010. The refresh
@@ -44,11 +44,11 @@ replaces the current build.
   up to 5 times.
 - `setup/windows/pins.json` pins each tool for x86_64 and arm64, with its
   URL and SHA-256: the build scripts' pins, which a test keeps equal. Both
-  add Node.js (#539), which BB's installer for Windows needs. The record's
+  add Node.js (#539), which VesnALIA's installer for Windows needs. The record's
   pins digest stays the build script's, so the doctor judges a refreshed
   build as it judges one from the ISO.
 - A replace keeps the template it replaces as a rollback: a template at
-  a free VMID of bb-box's range, made before anything changes, until the
+  a free VMID of alia-box's range, made before anything changes, until the
   next successful replace of that template removes it. Rebuilding a
   Windows template from the ISO takes about an hour as root on the host,
   and a rollback is a setting away: list its VMID as the Windows template.
@@ -57,7 +57,7 @@ replaces the current build.
 - The trial box runs `setup/windows/check.ps1`, the template's check,
   which prints `ok` or `FAIL` for each check. A backend may give its own.
 - The refresh does not follow upstream versions for Windows: the pins move
-  with bb-box's releases. Windows' updates are what change each month.
+  with alia-box's releases. Windows' updates are what change each month.
 
 A fresh install from the ISO stays a manual step, with the build scripts,
 for a new Windows release or a broken image.
@@ -71,5 +71,5 @@ for a new Windows release or a broken image.
   fresh install from the ISO starts that over.
 - The pins in `setup/windows/pins.json` and in the build scripts must
   agree until the build scripts read `pins.json` themselves.
-- Each Windows template takes one more VMID of bb-box's range, for its
+- Each Windows template takes one more VMID of alia-box's range, for its
   rollback, while it has one.

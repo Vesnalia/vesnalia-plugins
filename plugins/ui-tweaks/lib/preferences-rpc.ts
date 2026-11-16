@@ -1,4 +1,4 @@
-import { defineRpcContract, type StandardSchemaV1 } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type StandardSchemaV1 } from "@vesnalia/plugin-sdk";
 
 export const PREFERENCES_KV_KEY = "preferences";
 
@@ -15,7 +15,7 @@ function schema<T>(
   return {
     "~standard": {
       version: 1,
-      vendor: "bb-plugin-ui-tweaks",
+      vendor: "alia-plugin-ui-tweaks",
       validate: (value) =>
         accept(value) ? { value } : { issues: [{ message }] },
     },

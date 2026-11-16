@@ -16,17 +16,17 @@ sources:
 
 # Verification gotchas
 
-TL;DR: Automated coverage includes handoff state and binding cases, while the live BB results below cover the Claude Code, OpenCode, and Codex adapter paths.
+TL;DR: Automated coverage includes handoff state and binding cases, while the live VesnALIA results below cover the Claude Code, OpenCode, and Codex adapter paths.
 
 ## Critical
 
-### Handoff has automated coverage but no recorded live BB check
+### Handoff has automated coverage but no recorded live VesnALIA check
 
 **Problem:** Handoff label parsing, draft isolation, project lookup, and pending binding are exercised through unit tests (`tests/adapters.test.ts:208-245`, `tests/server.test.ts:291-389`).
 
-**Risk:** These tests do not exercise the actual BB handoff interface or a live submitted handoff (`tests/adapters.test.ts:208-245`, `tests/server.test.ts:291-389`).
+**Risk:** These tests do not exercise the actual VesnALIA handoff interface or a live submitted handoff (`tests/adapters.test.ts:208-245`, `tests/server.test.ts:291-389`).
 
-**Workaround:** Run a live handoff check on the deployed BB version before treating UI integration as verified.
+**Workaround:** Run a live handoff check on the deployed VesnALIA version before treating UI integration as verified.
 
 ## High
 
@@ -42,7 +42,7 @@ TL;DR: Automated coverage includes handoff state and binding cases, while the li
 
 ### Live checks cover specific recorded versions and paths
 
-**Problem:** Recorded live checks exercised Claude Code 2.1.269 and OpenCode 1.14.48 on BB 0.43.0 with an enrolled Linux host. Codex 0.154.0 instruction contribution was checked on macOS and enrolled Linux.
+**Problem:** Recorded live checks exercised Claude Code 2.1.269 and OpenCode 1.14.48 on VesnALIA 0.43.0 with an enrolled Linux host. Codex 0.154.0 instruction contribution was checked on macOS and enrolled Linux.
 
 **Risk:** These checks do not cover Windows, custom absolute-path OpenCode ACP configurations, or general permission-policy behavior.
 
@@ -51,6 +51,6 @@ TL;DR: Automated coverage includes handoff state and binding cases, while the li
 ## Live adapter checks
 
 - Claude Code 2.1.269: selected an installed plugin's namespaced agent through the graphical menu, sent a no-tools identity check through the ordinary composer, and received `CLI_AGENTS_OK — dev-orchestrator`. The bound identity was `lane-stack:dev-orchestrator`.
-- OpenCode 1.14.48 through the stock `acp-opencode` provider: selected `lane-reviewer`, started a BB session on the same remote checkout, and received `CLI_AGENTS_OK lane-reviewer`.
+- OpenCode 1.14.48 through the stock `acp-opencode` provider: selected `lane-reviewer`, started a VesnALIA session on the same remote checkout, and received `CLI_AGENTS_OK lane-reviewer`.
 - The verification conversations were stopped and archived after completion.
-- Codex 0.154.0: fresh BB conversations received developer instructions from selected file profiles on macOS and enrolled Linux. The macOS check returned a control phrase present only in the profile. This validates instruction-profile support; it does not claim that other profile settings are applied.
+- Codex 0.154.0: fresh VesnALIA conversations received developer instructions from selected file profiles on macOS and enrolled Linux. The macOS check returned a control phrase present only in the profile. This validates instruction-profile support; it does not claim that other profile settings are applied.

@@ -1,8 +1,8 @@
 /**
- * The app's reads and writes. Reads go through `experimental_useRpcQuery`, which bb refreshes when the
+ * The app's reads and writes. Reads go through `experimental_useRpcQuery`, which VesnALIA refreshes when the
  * server invalidates `LEARNING_TAG` (any change to an offer or a session); writes go through `useRpc`.
  */
-import { experimental_useRpcQuery, experimental_useSidebarThreads, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_useRpcQuery, experimental_useSidebarThreads, useRpc } from "@vesnalia/plugin-sdk/app";
 
 import { rpcContract, type RpcContract } from "../shared/contract";
 

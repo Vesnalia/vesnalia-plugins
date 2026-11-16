@@ -6,12 +6,12 @@ import { imageSourcesOf } from "../src/thumbs";
 const answer = (message: Record<string, unknown>) => ({ message, before: [], after: [] });
 
 describe("message rows", () => {
-  it("reads the user row BB returned for the id asked for", () => {
+  it("reads the user row VesnALIA returned for the id asked for", () => {
     const row = userRowOf(
-      answer({ role: "user", id: "t:user-seed:4", text: "Run `bb`", initiator: "agent", attachments: null }),
+      answer({ role: "user", id: "t:user-seed:4", text: "Run `alia`", initiator: "agent", attachments: null }),
       "t:user-seed:4",
     );
-    expect(row).toEqual({ id: "t:user-seed:4", text: "Run `bb`", initiator: "agent", attachments: null, mentions: [] });
+    expect(row).toEqual({ id: "t:user-seed:4", text: "Run `alia`", initiator: "agent", attachments: null, mentions: [] });
   });
 
   it("ignores a row that is not the message asked for", () => {
@@ -22,10 +22,10 @@ describe("message rows", () => {
 });
 
 describe("senders", () => {
-  it("reads BB's prefixes", () => {
-    expect(senderFromPreview("[bb system] @thread:thr_a completed")).toBe("system");
-    expect(senderFromPreview("[bb message from thread:thr_a] hi")).toBe("agent");
-    expect(senderFromPreview("> quoting [bb system]")).toBeUndefined();
+  it("reads VesnALIA's prefixes", () => {
+    expect(senderFromPreview("[VesnALIA system] @thread:thr_a completed")).toBe("system");
+    expect(senderFromPreview("[VesnALIA message from thread:thr_a] hi")).toBe("agent");
+    expect(senderFromPreview("> quoting [VesnALIA system]")).toBeUndefined();
   });
 
   it("parses the sequence from an outline id", () => {
@@ -106,10 +106,10 @@ describe("bar markdown", () => {
 });
 
 describe("sender prefixes", () => {
-  it("shows the sending thread as a mention and drops BB's system prefix", () => {
-    expect(withoutSenderPrefix("[bb message from thread:thr_ab12] please check")).toBe("@thread:thr_ab12 please check");
-    expect(withoutSenderPrefix("[bb system] @thread:thr_x completed")).toBe("@thread:thr_x completed");
-    expect(withoutSenderPrefix("I wrote [bb system] myself")).toBe("I wrote [bb system] myself");
+  it("shows the sending thread as a mention and drops VesnALIA's system prefix", () => {
+    expect(withoutSenderPrefix("[VesnALIA message from thread:thr_ab12] please check")).toBe("@thread:thr_ab12 please check");
+    expect(withoutSenderPrefix("[VesnALIA system] @thread:thr_x completed")).toBe("@thread:thr_x completed");
+    expect(withoutSenderPrefix("I wrote [VesnALIA system] myself")).toBe("I wrote [VesnALIA system] myself");
   });
 });
 
@@ -152,7 +152,7 @@ describe("mentions", () => {
   });
 
   it("is a single text part without mentions", () => {
-    expect(barParts("  Run `bb`  ", [])).toEqual([{ kind: "text", markdown: "Run `bb`" }]);
+    expect(barParts("  Run `alia`  ", [])).toEqual([{ kind: "text", markdown: "Run `alia`" }]);
   });
 
   it("maps a stored plugin mention to the composer's shape", () => {

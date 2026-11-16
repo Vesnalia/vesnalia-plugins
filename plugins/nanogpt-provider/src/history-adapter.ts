@@ -77,13 +77,13 @@ function userMessage(input: unknown): NanoGptMessage["content"] | null {
 }
 
 function toolCallId(itemId: string): string {
-  return `bb_${Buffer.from(itemId, "utf8").toString("hex")}`;
+  return `alia_${Buffer.from(itemId, "utf8").toString("hex")}`;
 }
 
 function orderedRows(rows: readonly unknown[]): HistoryEventRow[] {
   const parsed = rows.map((row) => {
     const result = historyEventRowSchema.safeParse(row);
-    if (!result.success) throw new Error("bb history contains a malformed event row.");
+    if (!result.success) throw new Error("alia history contains a malformed event row.");
     return result.data;
   });
   return parsed
@@ -224,11 +224,11 @@ export function restoreNanoGptHistory(
           ? `Tool failed: ${item.error}`
           : item.status === "interrupted" || item.status === "pending"
             ? "Tool was interrupted; its result was not recorded."
-            : "Tool result was not recorded in bb history.";
+            : "Tool result was not recorded in VesnALIA history.";
       const truncation = record(item.truncation);
       const content = truncation?.result === undefined
         ? result
-        : `${result}\n[bb retained only a preview of this historical tool result.]`;
+        : `${result}\n[VesnALIA retained only a preview of this historical tool result.]`;
       messages.push({ role: "tool", tool_call_id: callId, content: boundedHistoryText(content) });
     }
     if (terminal !== undefined && messages.length > turnStart) completedTurnEnds.push(messages.length);

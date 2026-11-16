@@ -9,7 +9,7 @@
 // column must not disarm the mode — only clicking away does.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Board, useSweepClickAway } from "../components/board";
 import { buildColumns } from "../components/grouping";
 import { armSweep } from "../lib/sweep";

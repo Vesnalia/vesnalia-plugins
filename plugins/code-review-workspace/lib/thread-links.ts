@@ -1,10 +1,10 @@
-// Which review a BB thread page shows (app.tsx): Review changes above a thread's message box, and the Review tab. One
+// Which review a VesnALIA thread page shows (app.tsx): Review changes above a thread's message box, and the Review tab. One
 // copy of the plugin's index of reviews by the threads and folders they're linked to, for every thread page at once,
-// read again when a review or the settings change; and the folder's git status as BB's Git plugin reads it for its
+// read again when a review or the settings change; and the folder's git status as VesnALIA's Git plugin reads it for its
 // own Changed files, never a diff.
 import { useEffect, useSyncExternalStore } from "react";
-import { experimental_useRpcKeyedQuery, useRealtime, useRealtimeConnectionState, useRpc, type PluginRpcClient } from "@get-bb/plugin-sdk/app";
-import type { PluginRpcResult, StandardSchemaV1 } from "@get-bb/plugin-sdk";
+import { experimental_useRpcKeyedQuery, useRealtime, useRealtimeConnectionState, useRpc, type PluginRpcClient } from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcResult, StandardSchemaV1 } from "@vesnalia/plugin-sdk";
 import type { rpcContract } from "../src/rpc-contract";
 
 type Rpc = PluginRpcClient<typeof rpcContract>;
@@ -49,7 +49,7 @@ export function threadLinksNow(): ThreadLinks | null {
   return links;
 }
 
-// The folder each thread page's thread works in, as BB's tabs and segments are told: a command is told only the thread.
+// The folder each thread page's thread works in, as VesnALIA's tabs and segments are told: a command is told only the thread.
 const environments = new Map<string, string | null>();
 
 /** Note the folder a thread page's thread works in, for threadEnvironment. */
@@ -90,8 +90,8 @@ export function threadReview(index: ThreadLinks, threadId: string, environmentId
   return threadReviewLink(index, threadId, environmentId) ?? (environmentId ? folderReview(index, environmentId, branch) : null);
 }
 
-/** BB's Git plugin, whose status of a folder its own Changed files reads. */
-const GIT_PLUGIN = "bb--git";
+/** VesnALIA's Git plugin, whose status of a folder its own Changed files reads. */
+const GIT_PLUGIN = "alia--git";
 /** As much of a status row as Review changes reads; the Git plugin checks it, so the page takes it as it comes. */
 interface GitStatusRow {
   outcome: string;
@@ -101,7 +101,7 @@ const asIs = <T,>(): StandardSchemaV1<T, T> => ({ "~standard": { version: 1, ven
 const git = { status: { input: asIs<{ keys: string[] }>(), output: asIs<Record<string, GitStatusRow>>() } };
 
 /**
- * The folder's git status, as BB's Changed files reads it, the same keyed read: whether it has changes, uncommitted or
+ * The folder's git status, as VesnALIA's Changed files reads it, the same keyed read: whether it has changes, uncommitted or
  * on its branch, and the branch it's on (null on none, undefined unsaid). Null until it's read, or where Git can't say;
  * not read for no folder.
  */

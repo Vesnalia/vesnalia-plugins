@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { toast } from "sonner";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { defaultKnobs } from "../lib/knobs";
 import { patchReviewState } from "../lib/panel-state";
@@ -38,7 +38,7 @@ function fakeSize(width: number, height: number) {
 const file = (path: string, hunks: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n${hunks}`;
 const patch = [
   file("src/a.ts", "@@ -1 +1 @@\n-a\n+aa\n"),
-  file("src/b.ts", "@@ -1 +1 @@\n-b\n+bb\n"),
+  file("src/b.ts", "@@ -1 +1 @@\n-b\n+alia\n"),
   file("src/c.ts", "@@ -1 +1 @@\n-c\n+cc\n"),
 ].join("");
 const guide = {
@@ -99,7 +99,7 @@ test("chapter ② is marked viewed from its ✓ in the chapters without opening 
   expect(rpc.setFilesViewed).toHaveBeenCalledWith({ targetKey: "pr-42", files: ["src/b.ts", "src/c.ts"] });
   // Still reading chapter 1: nothing opened.
   expect(currentChapter(slot)?.textContent).toContain("Parsing");
-  expect(slot.queryByText("bb")).toBeNull();
+  expect(slot.queryByText("alia")).toBeNull();
   await waitFor(() => expect(chapters(slot).getByText("2/3 files viewed")).toBeTruthy());
   expect(card(slot, "Housekeeping").textContent).toContain("2 of 2 viewed");
   // Done, it has no ✓ to offer.
@@ -127,7 +127,7 @@ test("Next unviewed in the chapters opens the next file not viewed yet, in any c
   const { slot } = await renderWorkspace();
   fireEvent.click(chapters(slot).getByRole("button", { name: "Mark chapter viewed" }));
   fireEvent.click(chapters(slot).getByRole("button", { name: "Next unviewed" }));
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   expect(currentChapter(slot)?.textContent).toContain("Housekeeping");
   slot.lifecycle.unmount();
 }, 15_000);
@@ -224,7 +224,7 @@ test("a views read that left before your next mark doesn't undo that mark on scr
   slot.lifecycle.unmount();
 }, 15_000);
 
-// bug bash PRF-3: the BB connection drops, or the server refuses, as you tick Viewed: the box stayed ticked, nothing
+// bug bash PRF-3: the VesnALIA connection drops, or the server refuses, as you tick Viewed: the box stayed ticked, nothing
 // said the mark wasn't saved, and the next load of the review showed it unticked.
 test("a Viewed mark the server didn't save goes back and says so, offline or refused", async () => {
   const { slot, rpc } = await renderWorkspace({ ...defaultKnobs, foldViewedFiles: false });

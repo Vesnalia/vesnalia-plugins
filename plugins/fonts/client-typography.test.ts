@@ -6,7 +6,7 @@ import { DEFAULT_CONFIG } from "./domain";
 describe("typography controller", () => {
   afterEach(() => {
     document.documentElement.removeAttribute("style");
-    document.head.querySelectorAll("[data-bb-fonts]").forEach((element) => element.remove());
+    document.head.querySelectorAll("[data-alia-fonts]").forEach((element) => element.remove());
   });
 
   it("applies independent font roles above theme CSS and restores prior values", () => {
@@ -21,8 +21,8 @@ describe("typography controller", () => {
       },
     });
     expect(document.documentElement.style.getPropertyValue("--font-sans")).toBe("Theme Sans");
-    expect(document.head.querySelector("[data-bb-fonts]")?.textContent).toContain('Avenir Next');
-    expect(document.head.querySelector("[data-bb-fonts]")?.textContent).toContain("font-size:13px!important");
+    expect(document.head.querySelector("[data-alia-fonts]")?.textContent).toContain('Avenir Next');
+    expect(document.head.querySelector("[data-alia-fonts]")?.textContent).toContain("font-size:13px!important");
     controller.restore();
     expect(document.documentElement.style.getPropertyValue("--font-sans")).toBe("Theme Sans");
   });

@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { lstat, mkdir, readFile, writeFile, symlink, realpath } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { createFakePluginHost, makeThreadResponse, makePluginAgentConfigurationContext } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse, makePluginAgentConfigurationContext } from "@vesnalia/plugin-sdk/testing";
 
 export const hash = (value) => createHash("sha256").update(value).digest("hex");
 const git = (root, args) => execFileSync("git", ["-C", root, ...args], { maxBuffer: 32 * 1024 * 1024 });
@@ -93,10 +93,10 @@ export async function captureCase(revisionDir, entry, config, { configureUnavail
       providers: { models: async () => ({ models: [model], providers: [{ id: "codex", serviceTiers: [] }] }) },
     },
   });
-  if (configureUnavailable) host.bb.agents.configure = () => { throw new Error("configuration unavailable"); };
+  if (configureUnavailable) host.alia.agents.configure = () => { throw new Error("configuration unavailable"); };
   let pending;
   try {
-    await plugin(host.bb);
+    await plugin(host.alia);
     if (entry.kind === "expand") pending = host.harness.callRpc("followups_expand", { threadId: "parent", id: "picked" }).catch(() => {});
     else await host.harness.emitThreadEvent("thread.idle", { thread: parent, lastAssistantText: entry.answer });
     const deadline = Date.now() + 5000;

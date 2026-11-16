@@ -1,4 +1,4 @@
-import type { BbPluginApi, ExperimentalHostClient } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, ExperimentalHostClient } from "@vesnalia/plugin-sdk";
 import { hostContract } from "../host-contract";
 import { resolveUnderRoot, toRelativePath } from "./paths";
 import { resolveRoot } from "./roots";
@@ -42,7 +42,7 @@ export function moveProblem(relativePath: string, destinationDirectory: string):
  * the destination is reported, not replaced.
  */
 export async function moveEntry(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   host: ExperimentalHostClient<typeof hostContract>,
   input: MoveEntryInput,
 ): Promise<MoveEntryResult> {
@@ -83,7 +83,7 @@ export async function moveEntry(
     if (listing.entries.some((entry) => entry.name === name)) {
       return { ok: false, message: `An item named ${name} already exists in the destination folder.` };
     }
-    await bb.sdk.files.move({
+    await alia.sdk.files.move({
       hostId: root.hostId,
       sourcePath: sourceAbsolute,
       destinationPath: destinationAbsolute,

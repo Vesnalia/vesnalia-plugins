@@ -5,24 +5,24 @@
 //   session/prompt    first turn `zcbridge send`, later turns `zcbridge continue`; then `zcbridge watch` is turned into
 //                     session/update events; permission cards become session/request_permission (allow once / deny)
 //   session/cancel    `zcbridge cancel` (Stop through accessibility, a pending permission card denied first; a few seconds)
-//   mcpServers        the servers BB passes in session/new / session/load are merged into <cwd>/.zcode/config.json (`mcp.servers`,
-//                     names prefixed `bb-`) and taken out again when the session or the process ends; the project's own entries stay
+//   mcpServers        the servers VesnALIA passes in session/new / session/load are merged into <cwd>/.zcode/config.json (`mcp.servers`,
+//                     names prefixed `alia-`) and taken out again when the session or the process ends; the project's own entries stay
 //   parallel          ZCode runs different tasks at once, so sessions run side by side. The limit is ZCODE_MAX_PARALLEL (default 3,
 //                     0 = none), counted by zcbridge over running ZCode tasks across every zcode-acp process and every other bridge
 //                     user; a session over the limit waits (and is told so) and starts when a task finishes, or times out
 //
-// Legacy launcher options (environment and BB's permission argv flag):
-//   --bb-permission=accept-edits|full   BB's permission mode of the chat (argv, set by the plugin's permissionCli)
+// Legacy launcher options (environment and VesnALIA's permission argv flag):
+//   --alia-permission=accept-edits|full   VesnALIA's permission mode of the chat (argv, set by the plugin's permissionCli)
 //   ZCODE_ACP_MODE_DEFAULT   plan|ask|auto|full: ZCode's mode for a session (default full = Full access)
-//   ZCODE_ACP_FOLLOW_CHAT=1  the chat's BB permission mode decides instead (accept-edits -> Autonomous, full -> Full access)
+//   ZCODE_ACP_FOLLOW_CHAT=1  the chat's VesnALIA permission mode decides instead (accept-edits -> Autonomous, full -> Full access)
 //   ZCODE_ACP_AUTO_SCOPE     project|all: what Autonomous mode answers "Allow once" to on its own (default project = file edits
-//                            inside the chat folder; everything else is put to BB as before). "Always allow" is never pressed.
+//                            inside the chat folder; everything else is put to VesnALIA as before). "Always allow" is never pressed.
 //   ZCODE_ACP_MODEL          model override (a ZCode model name); empty = ZCode's own default model
 //   ZCODE_ROUTE              keep|auto|plan|promo: which plan pays for a task (see `zcbridge route`)
 //   ZCODE_ACP_REMOVE_PREFIXES  folders (colon or newline separated, ~ allowed) whose auto-registered projects are removed from ZCode's
 //                            list when the session ends (disabled unless explicitly configured)
 //   ZCODE_ACP_AUTOADD=0      do not register unknown folders as ZCode projects
-//   ZCODE_ACP_KEEP_INSTRUCTIONS=1   forward BB's <system_instructions> block to ZCode (dropped by default)
+//   ZCODE_ACP_KEEP_INSTRUCTIONS=1   forward VesnALIA's <system_instructions> block to ZCode (dropped by default)
 //   ZCODE_ACP_BRIDGE (path of zcbridge), ZCODE_MAX_PARALLEL (read by zcbridge), ZCODE_ACP_QUEUE_TIMEOUT (seconds, default 900),
 //   ZCODE_ACP_PERMISSION_TIMEOUT (seconds, default 600)
 import { execFileSync, spawn } from "node:child_process";
@@ -49,11 +49,11 @@ const FOLLOW_CHAT = process.env.ZCODE_ACP_FOLLOW_CHAT === "1";
 const AUTO_SCOPE = process.env.ZCODE_ACP_AUTO_SCOPE === "all" ? "all" : "project";
 const MODEL_OVERRIDE = (process.env.ZCODE_ACP_MODEL || "").trim();
 const ROUTE = ["plan", "promo", "auto"].includes(process.env.ZCODE_ROUTE || "") ? process.env.ZCODE_ROUTE : "keep";
-const BB_PERMISSION = (process.argv.find((a) => a.startsWith("--bb-permission=")) || "").split("=")[1] || "";
+const ALIA_PERMISSION = (process.argv.find((a) => a.startsWith("--alia-permission=")) || "").split("=")[1] || "";
 const MODELS_FILE = path.join(STATE_DIR, "models.json");
 const MODELS_MAX_AGE_MS = 24 * 3600 * 1000;
 
-// The models BB offers are the ones this machine's ZCode offers: `zcbridge models` reads its Model settings (enabled switches) and its
+// The models VesnALIA offers are the ones this machine's ZCode offers: `zcbridge models` reads its Model settings (enabled switches) and its
 // composer default, and caches the answer in ~/.zcode-bridge/models.json; a stale or missing cache is refreshed in the background.
 const slug = (name) => name.toLowerCase().replace(/[^a-z0-9.]+/g, "-").replace(/^-+|-+$/g, "");
 const FALLBACK_MODELS = [{ value: "glm-5.3-flash", name: "GLM-5.3-Flash", bridge: "GLM-5.3-Flash" }];
@@ -179,9 +179,9 @@ function setOption(s, configId, value) {
   } else throw new AcpError(-32602, `unknown config option ${configId}`);
 }
 
-// ---------------------------------------------------------------- BB's MCP servers inside ZCode
-// ZCode reads project MCP servers from <folder>/.zcode/config.json (`mcp.servers.<name>`) when a task starts. The servers BB hands over in
-// session/new are merged in under `bb-<name>` keys (an entry the project already has under that key wins), recorded in a registry file,
+// ---------------------------------------------------------------- VesnALIA's MCP servers inside ZCode
+// ZCode reads project MCP servers from <folder>/.zcode/config.json (`mcp.servers.<name>`) when a task starts. The servers VesnALIA hands over in
+// session/new are merged in under `alia-<name>` keys (an entry the project already has under that key wins), recorded in a registry file,
 // and removed again when the session or this process ends; a registry entry of a dead process is swept at the next start. Only the keys
 // we added are removed, so edits ZCode or the owner made to the file meanwhile stay; the file and its .zcode folder go only if we made them.
 const MCP_REGISTRY = path.join(STATE_DIR, "acp-mcp-injected.json");
@@ -202,13 +202,13 @@ function writeJsonAtomic(file, value, mode) {
   fs.renameSync(tmp, file);
 }
 function mcpKey(name) {
-  return /^bb[-_]/i.test(name) ? name : `bb-${name}`;
+  return /^alia[-_]/i.test(name) ? name : `alia-${name}`;
 }
-// ZCode's MCP client rejects a whole server when one tool's inputSchema has no top-level `type: "object"`. BB's bridge advertises a few
-// tools (bb_file_gateway, bb_browser_session_import) as a bare `oneOf`, so the tool list BB hands the bridge in BB_ACP_DYNAMIC_TOOLS
+// ZCode's MCP client rejects a whole server when one tool's inputSchema has no top-level `type: "object"`. VesnALIA's bridge advertises a few
+// tools (alia_file_gateway, alia_browser_session_import) as a bare `oneOf`, so the tool list VesnALIA hands the bridge in ALIA_ACP_DYNAMIC_TOOLS
 // gets `type: "object"` added where it is missing; every `oneOf` branch is an object already, so the schema means the same.
 function fixDynamicTools(env) {
-  const raw = env.BB_ACP_DYNAMIC_TOOLS;
+  const raw = env.ALIA_ACP_DYNAMIC_TOOLS;
   if (typeof raw !== "string") return env;
   try {
     const tools = JSON.parse(raw);
@@ -221,7 +221,7 @@ function fixDynamicTools(env) {
         changed = true;
       }
     }
-    return changed ? { ...env, BB_ACP_DYNAMIC_TOOLS: JSON.stringify(tools) } : env;
+    return changed ? { ...env, ALIA_ACP_DYNAMIC_TOOLS: JSON.stringify(tools) } : env;
   } catch {
     return env;
   }
@@ -264,7 +264,7 @@ function removeMcp(id) {
   fs.mkdirSync(STATE_DIR, { recursive: true });
   writeJsonAtomic(MCP_REGISTRY, reg, 0o600);
 }
-// The MCP entry holds BB tokens. It must never end up in a commit: the project's .zcode/ is added to the repository's shared
+// The MCP entry holds VesnALIA tokens. It must never end up in a commit: the project's .zcode/ is added to the repository's shared
 // info/exclude (a worktree shares it), and a config file that git already tracks is left alone.
 function git(cwd, args) {
   try {
@@ -280,7 +280,7 @@ function excludeFromGit(cwd) {
     const have = fs.existsSync(exclude) ? fs.readFileSync(exclude, "utf8") : "";
     if (have.split("\n").some((l) => l.trim() === ".zcode/" || l.trim() === "/.zcode/")) return;
     fs.mkdirSync(path.dirname(exclude), { recursive: true });
-    fs.appendFileSync(exclude, `${have && !have.endsWith("\n") ? "\n" : ""}# zcode-acp: BB's MCP entry with tokens lives here while a session runs\n.zcode/\n`);
+    fs.appendFileSync(exclude, `${have && !have.endsWith("\n") ? "\n" : ""}# zcode-acp: VesnALIA's MCP entry with tokens lives here while a session runs\n.zcode/\n`);
   } catch (e) {
     log("could not extend", exclude, String(e?.message || e));
   }
@@ -301,7 +301,7 @@ function injectMcp(s, servers) {
     const cfg = readJson(file, {});
     if (cfg === null) return log(`not touching ${file}: it is not valid JSON`);
     if (git(s.cwd, ["ls-files", "--error-unmatch", "--", ".zcode/config.json"]) !== null) {
-      log(`${file} is tracked by git: BB's MCP servers are not written into it (their tokens would reach a commit)`);
+      log(`${file} is tracked by git: VesnALIA's MCP servers are not written into it (their tokens would reach a commit)`);
       return;
     }
     excludeFromGit(s.cwd);
@@ -324,17 +324,17 @@ function injectMcp(s, servers) {
     }
     if (!keys.length) return;
     fs.mkdirSync(dir, { recursive: true });
-    writeJsonAtomic(file, cfg, 0o600); // may hold BB tokens: owner-only
+    writeJsonAtomic(file, cfg, 0o600); // may hold VesnALIA tokens: owner-only
     reg[s.id] = { pid: process.pid, file, keys, createdFile, createdDir, at: Date.now() };
     fs.mkdirSync(STATE_DIR, { recursive: true });
     writeJsonAtomic(MCP_REGISTRY, reg, 0o600);
     s.mcpRecord = s.id;
-    log(`session ${s.id}: ${keys.length} BB MCP server(s) added to ${file}`);
+    log(`session ${s.id}: ${keys.length} VesnALIA MCP server(s) added to ${file}`);
   } catch (e) {
-    log("could not add BB MCP servers:", String(e?.message || e));
+    log("could not add VesnALIA MCP servers:", String(e?.message || e));
   }
 }
-// A session ends (BB closed it, the thread was stopped, or this process is going away): its ZCode task is cancelled when it is still
+// A session ends (VesnALIA closed it, the thread was stopped, or this process is going away): its ZCode task is cancelled when it is still
 // going (a pending card is denied, Stop pressed), which also frees its slot; the MCP entry is removed; a project this session registered
 // under an explicitly configured throw-away folder prefix is taken out of
 // ZCode's list again. Only the list entry goes; ZCode never touches the folder's files.
@@ -461,7 +461,7 @@ function renderPrompt(blocks) {
   const parts = [];
   for (const b of Array.isArray(blocks) ? blocks : []) {
     if (b.type === "text") {
-      // BB prepends its own <system_instructions> block (rules + a list of every BB skill) to a chat's first prompt. ZCode has
+      // VesnALIA prepends its own <system_instructions> block (rules + a list of every VesnALIA skill) to a chat's first prompt. ZCode has
       // its own system prompt and reads AGENTS.md itself, and a pasted wall of text costs tokens and can fail to paste.
       if (!KEEP_INSTRUCTIONS && /^\s*<system_instructions>[\s\S]*<\/system_instructions>\s*$/.test(b.text)) continue;
       parts.push(b.text);
@@ -582,7 +582,7 @@ class Turn {
     }
   }
   announce(card) {
-    // The card's call id is the tool part's call id: normally the running tool is on BB's screen already.
+    // The card's call id is the tool part's call id: normally the running tool is on VesnALIA's screen already.
     if (this.tools.has(card.call_id)) return;
     this.tools.set(card.call_id, "running");
     update(this.s.id, { sessionUpdate: "tool_call", ...toolCallUpdate(card.call_id, card.tool, card.input, "in_progress") });
@@ -592,7 +592,7 @@ class Turn {
     card.call_id = id;
     this.announce(card);
     // Autonomous mode: ZCode itself asks only for risky calls. Scope "project" lets file edits inside the chat folder through on their
-    // own; "all" lets every call through; anything else is put to BB. Only "Allow once" is ever pressed, never "Always allow".
+    // own; "all" lets every call through; anything else is put to VesnALIA. Only "Allow once" is ever pressed, never "Always allow".
     if (effectiveMode().mode === "auto" && (AUTO_SCOPE === "all" || inProjectEdit(card, this.s.cwd))) {
       const res = await runBridge(["approve", this.s.taskId, "--yes"]);
       if (!res.ok) throw bridgeError(res);
@@ -618,7 +618,7 @@ class Turn {
       return true;
     }
     if (choice === "cancelled" || choice === "error") {
-      // BB dropped the card (the chat was stopped): one fast cancel denies the card and presses Stop
+      // VesnALIA dropped the card (the chat was stopped): one fast cancel denies the card and presses Stop
       this.s.cancelled = true;
       await ensureCancel(this.s);
       return false;
@@ -645,10 +645,10 @@ class Turn {
   }
 }
 
-// The mode ZCode runs a session in: the plugin setting, or (when the setting says so) the chat's own BB permission mode.
+// The mode ZCode runs a session in: the plugin setting, or (when the setting says so) the chat's own VesnALIA permission mode.
 function effectiveMode() {
-  if (FOLLOW_CHAT && BB_PERMISSION === "full") return { mode: "full", why: "the chat's permission mode is Full" };
-  if (FOLLOW_CHAT && BB_PERMISSION === "accept-edits") return { mode: "auto", why: "the chat's permission mode is Accept edits" };
+  if (FOLLOW_CHAT && ALIA_PERMISSION === "full") return { mode: "full", why: "the chat's permission mode is Full" };
+  if (FOLLOW_CHAT && ALIA_PERMISSION === "accept-edits") return { mode: "auto", why: "the chat's permission mode is Accept edits" };
   return { mode: MODE_DEFAULT, why: "plugin setting" };
 }
 function modeArgs(mode) {
@@ -750,7 +750,7 @@ async function runPrompt(s, params) {
     if (tok) update(s.id, { sessionUpdate: "usage_update", used: tok.input ?? 0, size: 1000000, _meta: { zcode: { inputTokens: tok.input ?? 0, cacheReadTokens: tok.cache_read ?? 0, freshInputTokens: Math.max(0, (tok.input ?? 0) - (tok.cache_read ?? 0)), outputTokens: tok.output ?? 0, reasoningTokens: tok.reasoning ?? 0, taskId: s.taskId } } });
     const usage = tok ? { inputTokens: tok.input ?? 0, outputTokens: tok.output ?? 0, thoughtTokens: tok.reasoning ?? 0, cachedReadTokens: tok.cache_read ?? 0, totalTokens: (tok.input ?? 0) + (tok.output ?? 0) } : undefined;
     if (state === "cancelled" || s.cancelled) {
-      await ensureCancel(s); // idempotent; also stops a task whose card BB cancelled (the deny lets the model go on)
+      await ensureCancel(s); // idempotent; also stops a task whose card VesnALIA cancelled (the deny lets the model go on)
       return { stopReason: "cancelled", ...(usage ? { usage } : {}) };
     }
     if (state === "error") throw new AcpError(-32603, `ZCode turn failed: ${(status.ok && status.error) || "unknown error"}`);

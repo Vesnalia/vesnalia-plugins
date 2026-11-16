@@ -1,6 +1,6 @@
 # Prototype: Templates library — ready UI patterns and forms
 
-Owner: «стандартизированные формы сразу заложить». Axure ships «Sample UI patterns» (15) and «Sample form patterns» (48) — see `.bb/chats/thr_wdpmipwdxc/artifacts/axure-re/libraries.md` sections 4 and 5 for their names, structure and sizes (facts only; build ours from our own elements).
+Owner: «стандартизированные формы сразу заложить». Axure ships «Sample UI patterns» (15) and «Sample form patterns» (48) — see `.vesnalia/chats/thr_wdpmipwdxc/artifacts/axure-re/libraries.md` sections 4 and 5 for their names, structure and sizes (facts only; build ours from our own elements).
 
 1. Palette switch becomes «Элементы | Шаблоны | Иконки» (Elements | Templates | Icons).
 2. `src/studio/prototype/templates.ts`: a catalog of templates, each = name (RU/EN), group, pictogram/thumbnail rendering, and a function returning a list of our elements (relative coordinates) that is inserted as one **group** (uses the group model from prototype-canvas-axure) at the drop point / centre, selected after insert. All texts in Russian by default (owner's language), editable as usual.

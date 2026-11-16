@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { IDS_KEY } from "../src/app/registered-ids";
 import { planUpload } from "../src/app/settings/model";
@@ -80,11 +80,11 @@ afterEach(() => {
 });
 
 describe("settings page", () => {
-  it("lists bb providers and a Not in bb group for assignments of absent providers (R1, R6)", async () => {
+  it("lists VesnALIA providers and a Not in VesnALIA group for assignments of absent providers (R1, R6)", async () => {
     await renderSettings({ ...empty, assignments: { "acp-old": { source: { builtin: "Archive" } } } });
     await screen.findByText("Alpha");
     expect(screen.getByText("Beta")).toBeTruthy();
-    const absent = screen.getByRole("region", { name: "Not in bb" });
+    const absent = screen.getByRole("region", { name: "Not in VesnALIA" });
     expect(within(absent).getByText("acp-old")).toBeTruthy();
     expect(within(absent).getByRole("button", { name: "Reset: acp-old" })).toBeTruthy();
   });

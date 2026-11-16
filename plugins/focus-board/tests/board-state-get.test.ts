@@ -5,11 +5,11 @@
 //   can never disagree (the mount's shapes are built by the same projection
 //   helpers, and this suite pins that they stay that way);
 // - it costs ONE plugin-metadata read per thread. That is the whole point:
-//   six per-thread walks fired together serialize on bb's bridge, so the
+//   six per-thread walks fired together serialize on VesnALIA's bridge, so the
 //   mount fan-in cost the sum (~2s on a 358-thread workspace, measured live),
 //   which is what made the readiness gate's ceiling the active path.
 import { describe, expect, it } from "vitest";
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 import { setup } from "./helpers/done-fake-host";
 import { DONE_METADATA_KEY } from "../lib/done-metadata";
 import { PIN_PARK_METADATA_KEY } from "../lib/pin-park";
@@ -31,7 +31,7 @@ function seedBoard(meta: Map<string, JsonValue>): void {
     [LINK_METADATA_KEY]: [
       {
         tracker: "github",
-        repo: "cristoslc/bb-plugin-focus-board",
+        repo: "cristoslc/alia-plugin-focus-board",
         issue: 424,
         kind: "issue",
         href: "https://github.com/cristoslc/bb-plugin-focus-board/issues/424",

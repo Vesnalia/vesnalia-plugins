@@ -1,4 +1,4 @@
-// What bb draws beside "Lanes" in the shared title bar: upstream's summary of
+// What VesnALIA draws beside "Lanes" in the shared title bar: upstream's summary of
 // what is going on. It is the one place the pane counts running and waiting
 // threads; each count shows the lanes it counts. The window and its controls
 // live on the tray's bar below.

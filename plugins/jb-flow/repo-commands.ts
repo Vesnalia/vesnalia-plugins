@@ -1,17 +1,17 @@
 // Repo commands: per-project buttons in the thread side panel that start a
-// command in a BB terminal for the thread and, once its port answers, open
-// the app in a BB browser tab. A command can declare several "slots" (e.g.
+// command in a VesnALIA terminal for the thread and, once its port answers, open
+// the app in a VesnALIA browser tab. A command can declare several "slots" (e.g.
 // pnpm dev / dev:2 / dev:3) so parallel worktrees each get free ports.
 import { readLocalHostId } from "./machines";
 import { existsSync, readFileSync } from "node:fs";
 import { connect } from "node:net";
 import { join } from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const repoSlotSchema = z.object({
   command: z.string().min(1),
-  /** Opened in a BB browser tab once its port accepts connections. */
+  /** Opened in a VesnALIA browser tab once its port accepts connections. */
   url: z.string().url().nullable(),
   /** Ports this slot binds; a slot is free when none of them answer. */
   ports: z.array(z.number().int().min(1).max(65535)),
@@ -63,7 +63,7 @@ export const devRunSchema = z.object({
 export type DevRun = z.infer<typeof devRunSchema>;
 
 const READY_TIMEOUT_MS = 5 * 60_000;
-const REMOTE_UNSUPPORTED = "Scripts and dev servers only work for threads on the machine bb runs on, not on another machine yet.";
+const REMOTE_UNSUPPORTED = "Scripts and dev servers only work for threads on the machine VesnALIA runs on, not on another machine yet.";
 
 // Both stacks: Vite and other servers that bind "localhost" on macOS listen on ::1 only.
 async function portOpen(port: number): Promise<boolean> {
@@ -100,41 +100,41 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
 }
 
 /**
- * @param defaults Pinned commands keyed by BB project name, from local.config.json.
+ * @param defaults Pinned commands keyed by VesnALIA project name, from local.config.json.
  * Settings overrides (stored in plugin kv) win over these.
  */
 export function createRepoCommands(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   changed: () => void,
   defaults: Record<string, RepoCommand[]>,
 ) {
-  const localHostId = readLocalHostId(bb.server.experimental_dataDir);
+  const localHostId = readLocalHostId(alia.server.experimental_dataDir);
   const isRemote = (hostId: string | null | undefined) => localHostId !== null && hostId != null && hostId !== localHostId;
   const disposed = new AbortController();
-  bb.onDispose(() => disposed.abort());
+  alia.onDispose(() => disposed.abort());
 
   async function getOverrides(): Promise<Record<string, RepoCommand[]>> {
-    return (await bb.storage.kv.get<Record<string, RepoCommand[]>>("repoCommands")) ?? {};
+    return (await alia.storage.kv.get<Record<string, RepoCommand[]>>("repoCommands")) ?? {};
   }
   async function getRuns(): Promise<Record<string, DevRun>> {
-    return (await bb.storage.kv.get<Record<string, DevRun>>("devRuns")) ?? {};
+    return (await alia.storage.kv.get<Record<string, DevRun>>("devRuns")) ?? {};
   }
   async function saveRun(run: DevRun): Promise<void> {
     const runs = await getRuns();
-    await bb.storage.kv.set("devRuns", { ...runs, [`${run.threadId}:${run.commandId}`]: run });
+    await alia.storage.kv.set("devRuns", { ...runs, [`${run.threadId}:${run.commandId}`]: run });
     changed();
   }
 
   async function projectName(threadId: string): Promise<{ projectId: string; name: string }> {
-    const thread = await bb.sdk.threads.get({ threadId });
-    const project = await bb.sdk.projects.get({ projectId: thread.projectId });
+    const thread = await alia.sdk.threads.get({ threadId });
+    const project = await alia.sdk.projects.get({ projectId: thread.projectId });
     return { projectId: thread.projectId, name: project.name };
   }
 
   async function scriptsFor(threadId: string, pinned: RepoCommand[]) {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (thread.environmentId === null) return { scripts: [] as RepoScript[], scriptsError: "Thread has no environment yet." };
-    const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
     if (environment.path === null) return { scripts: [], scriptsError: "Environment has no path." };
     if (isRemote(environment.hostId)) return { scripts: [], scriptsError: REMOTE_UNSUPPORTED };
     let manifest: { scripts?: Record<string, string> };
@@ -192,11 +192,11 @@ export function createRepoCommands(
   /** Appends tabs to the thread's side panel, retrying once on a revision race. */
   async function addTabs(threadId: string, make: (existing: { id: string }[]) => unknown[]) {
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      const current = await bb.sdk.threads.tabs.get({ threadId });
+      const current = await alia.sdk.threads.tabs.get({ threadId });
       const extra = make(current.tabs);
       if (extra.length === 0) return;
       try {
-        await bb.sdk.threads.tabs.update({
+        await alia.sdk.threads.tabs.update({
           threadId,
           expectedRevision: current.revision,
           tabs: [...current.tabs, ...extra] as typeof current.tabs,
@@ -210,7 +210,7 @@ export function createRepoCommands(
 
   async function openBrowserTab(run: DevRun) {
     if (run.url === null) return;
-    const thread = await bb.sdk.threads.get({ threadId: run.threadId });
+    const thread = await alia.sdk.threads.get({ threadId: run.threadId });
     const tabId = `jb-flow-browser-${run.commandId}`;
     await addTabs(run.threadId, (existing) =>
       existing.some((tab) => tab.id === tabId)
@@ -222,7 +222,7 @@ export function createRepoCommands(
   async function waitForReady(run: DevRun, port: number) {
     const deadline = run.startedAt + READY_TIMEOUT_MS;
     while (!disposed.signal.aborted && Date.now() < deadline) {
-      const terminal = await bb.sdk.terminals.get({ terminalId: run.terminalId }).catch(() => null);
+      const terminal = await alia.sdk.terminals.get({ terminalId: run.terminalId }).catch(() => null);
       if (terminal === null || terminal.status === "exited" || terminal.status === "disconnected") {
         await saveRun({ ...run, status: "exited" });
         return;
@@ -230,7 +230,7 @@ export function createRepoCommands(
       if (await portOpen(port)) {
         // Give the dev server a moment to finish its first compile before loading.
         await sleep(1500, disposed.signal);
-        await openBrowserTab(run).catch((error) => bb.log.warn(`browser tab: ${String(error)}`));
+        await openBrowserTab(run).catch((error) => alia.log.warn(`browser tab: ${String(error)}`));
         await saveRun({ ...run, status: "ready" });
         return;
       }
@@ -240,10 +240,10 @@ export function createRepoCommands(
   }
 
   async function run(threadId: string, commandId: string): Promise<DevRun> {
-    // Port checks and package.json reads happen on the machine bb runs on.
-    const thread = await bb.sdk.threads.get({ threadId });
+    // Port checks and package.json reads happen on the machine VesnALIA runs on.
+    const thread = await alia.sdk.threads.get({ threadId });
     const environment = thread.environmentId
-      ? await bb.sdk.environments.get({ environmentId: thread.environmentId }).catch(() => null)
+      ? await alia.sdk.environments.get({ environmentId: thread.environmentId }).catch(() => null)
       : null;
     if (environment && isRemote(environment.hostId)) throw new Error(REMOTE_UNSUPPORTED);
     const command = await resolveCommand(threadId, commandId);
@@ -251,7 +251,7 @@ export function createRepoCommands(
     // Already running for this thread: just re-open its tabs.
     const existing = (await getRuns())[`${threadId}:${commandId}`];
     if (existing) {
-      const terminal = await bb.sdk.terminals.get({ terminalId: existing.terminalId }).catch(() => null);
+      const terminal = await alia.sdk.terminals.get({ terminalId: existing.terminalId }).catch(() => null);
       if (terminal !== null && (terminal.status === "running" || terminal.status === "starting")) {
         await addTabs(threadId, (tabs) =>
           tabs.some((tab) => tab.id === `jb-flow-term-${commandId}`)
@@ -275,7 +275,7 @@ export function createRepoCommands(
       throw new Error(`All ${command.slots.length} slot(s) for "${command.label}" are in use. Stop one first.`);
     }
     const chosen = command.slots[slot]!;
-    const terminal = await bb.sdk.terminals.create({
+    const terminal = await alia.sdk.terminals.create({
       cols: 120,
       rows: 32,
       scope: { kind: "thread", threadId },
@@ -305,9 +305,9 @@ export function createRepoCommands(
     const key = `${threadId}:${commandId}`;
     const existing = runs[key];
     if (existing === undefined) return false;
-    await bb.sdk.terminals.close({ terminalId: existing.terminalId, mode: "force" }).catch(() => undefined);
+    await alia.sdk.terminals.close({ terminalId: existing.terminalId, mode: "force" }).catch(() => undefined);
     delete runs[key];
-    await bb.storage.kv.set("devRuns", runs);
+    await alia.storage.kv.set("devRuns", runs);
     changed();
     return true;
   }
@@ -319,7 +319,7 @@ export function createRepoCommands(
     const live: DevRun[] = [];
     for (const [key, existing] of Object.entries(runs)) {
       if (!key.startsWith(`${threadId}:`)) continue;
-      const terminal = await bb.sdk.terminals.get({ terminalId: existing.terminalId }).catch(() => null);
+      const terminal = await alia.sdk.terminals.get({ terminalId: existing.terminalId }).catch(() => null);
       const alive = terminal !== null && (terminal.status === "running" || terminal.status === "starting");
       live.push(alive || existing.status !== "starting" ? existing : { ...existing, status: "exited" });
     }
@@ -330,7 +330,7 @@ export function createRepoCommands(
     const overrides = await getOverrides();
     if (commands === null) delete overrides[projectNameValue];
     else overrides[projectNameValue] = commands;
-    await bb.storage.kv.set("repoCommands", overrides);
+    await alia.storage.kv.set("repoCommands", overrides);
     changed();
   }
 

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { polzaRpcContract, type PolzaStatus } from "./src/polza/rpc";
 
 afterEach(() => {

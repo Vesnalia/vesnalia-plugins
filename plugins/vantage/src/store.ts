@@ -1,4 +1,4 @@
-import type { PluginBrowserBbSdk } from "@get-bb/plugin-sdk";
+import type { PluginBrowserAliaSdk } from "@vesnalia/plugin-sdk";
 import { FILE_EVENT_TYPES } from "./event-types";
 import type { Overview, OverviewInput, OverviewTarget, Scope, ShellInput } from "./contract";
 
@@ -58,7 +58,7 @@ interface StoreCalls { shell: ShellInput; overview: OverviewInput }
 
 export function createVantageStore(options: {
   rpc: { call<M extends keyof StoreCalls>(method: M, input: StoreCalls[M]): Promise<Overview> };
-  sdk: Pick<PluginBrowserBbSdk, "subscribe">;
+  sdk: Pick<PluginBrowserAliaSdk, "subscribe">;
   target: OverviewTarget;
   includeArchived: boolean;
   refreshDelayMs?: number;

@@ -35,7 +35,7 @@ describe("parking threads", () => {
       sidebarThreads: {
         status: "ready",
         threads: settledThreads,
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({
@@ -67,14 +67,14 @@ describe("parking threads", () => {
     expect(dialog.textContent).toContain("1 terminal closed · 1 port shutdown request sent");
   });
 
-  it("names a mention-titled workspace owner in a skip reason the way bb shows it", async () => {
+  it("names a mention-titled workspace owner in a skip reason the way VesnALIA shows it", async () => {
     const settled = thread({ id: "thr_settled", title: "Finished" });
     const owner = thread({ id: "thr_owner", title: "Review @thread:thr_x", displayTitle: "Review Login fix" });
     renderSlot(inbox, listProps, {
       sidebarThreads: {
         status: "ready",
         threads: [settled, owner],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({
@@ -102,8 +102,8 @@ describe("parking threads", () => {
 
   it("marks each project's rows with that project's own soft colour", async () => {
     const settled = [
-      thread({ id: "thr_a", title: "In bb" }),
-      thread({ id: "thr_b", title: "Also bb" }),
+      thread({ id: "thr_a", title: "In VesnALIA" }),
+      thread({ id: "thr_b", title: "Also VesnALIA" }),
       thread({ id: "thr_c", title: "In Git-Local", projectId: "proj_2" }),
     ];
     renderSlot(inbox, listProps, {
@@ -111,7 +111,7 @@ describe("parking threads", () => {
         status: "ready",
         threads: settled,
         projects: [
-          { id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" },
+          { id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" },
           { id: "proj_2", name: "Git-Local", isPersonal: false, href: "", settingsHref: "" },
         ],
       },
@@ -137,12 +137,12 @@ describe("parking threads", () => {
         .getAttribute("style");
     const colors = projectColorsById(["proj_1", "proj_2"], {});
     expect(colors.get("proj_1")).not.toBe(colors.get("proj_2"));
-    expect(await stripeOf("In bb")).toContain(colors.get("proj_1")!);
-    expect(await stripeOf("Also bb")).toContain(colors.get("proj_1")!);
+    expect(await stripeOf("In VesnALIA")).toContain(colors.get("proj_1")!);
+    expect(await stripeOf("Also VesnALIA")).toContain(colors.get("proj_1")!);
     expect(await stripeOf("In Git-Local")).toContain(colors.get("proj_2")!);
     const name = within((await within(shelf).findByText("In Git-Local")).closest("li")!).getByText("Git-Local");
-    expect(name.className).toContain("bb-sidebar-project-name");
-    expect(name.style.getPropertyValue("--bb-sidebar-project")).toBe(colors.get("proj_2"));
+    expect(name.className).toContain("alia-sidebar-project-name");
+    expect(name.style.getPropertyValue("--alia-sidebar-project")).toBe(colors.get("proj_2"));
   });
 
   it("shows an empty preview without a Clean confirmation button", async () => {
@@ -150,7 +150,7 @@ describe("parking threads", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "thr_empty", title: "Finished" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({
@@ -177,7 +177,7 @@ describe("parking threads", () => {
         sidebarThreads: {
           status: "ready",
           threads: [thread({ id: "thr_terminal", title: "Check this terminal" })],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         },
         rpc: {
           listLifecycle: () => ({
@@ -212,7 +212,7 @@ describe("parking threads", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "thr_terminal", title: "Check this terminal" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({
@@ -247,7 +247,7 @@ describe("parking threads", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "thr_terminal", title: "Last settled thread" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({

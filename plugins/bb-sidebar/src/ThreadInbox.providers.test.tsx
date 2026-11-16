@@ -10,13 +10,13 @@ await loadInboxApp();
 
 describe("ThreadInbox", () => {
   it.each(["full", "compact-working", "compact-all", "working-shelf"])(
-    "renders provider names, logos, and theme tints from bb's directory (%s)",
+    "renders provider names, logos, and theme tints from VesnALIA's directory (%s)",
     async (display) => {
       const view = renderSlot(inbox, listProps, {
         sidebarThreads: {
           status: "ready",
           threads: [thread({ providerId: "pi", title: "Pi thread", indicator: "runtime", indicatorLabel: "Working" })],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         },
         providers: {
           status: "ready",

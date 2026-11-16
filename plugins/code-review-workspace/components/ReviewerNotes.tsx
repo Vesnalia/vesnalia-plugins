@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
@@ -72,7 +72,7 @@ export function ReviewerNotes({ targetKey }: { targetKey: string }) {
     } catch { if (mounted.current) { setStatus("Couldn’t load the saved version. Your edits are still here."); setError(true); } }
   }
   return <section aria-label="Private notes" className="space-y-3 p-3">
-    <p className="flex items-start gap-2 rounded-lg border border-border bg-muted/25 px-3 py-2 text-xs leading-relaxed text-muted-foreground"><Icon name="Lock" className="mt-0.5 size-3.5 shrink-0 text-subtle-foreground" aria-hidden />Your scratchpad for questions, checks, and decisions. Saved in BB, never included in GitHub submissions or assistant prompts.</p>
+    <p className="flex items-start gap-2 rounded-lg border border-border bg-muted/25 px-3 py-2 text-xs leading-relaxed text-muted-foreground"><Icon name="Lock" className="mt-0.5 size-3.5 shrink-0 text-subtle-foreground" aria-hidden />Your scratchpad for questions, checks, and decisions. Saved in VesnALIA, never included in GitHub submissions or assistant prompts.</p>
     <Textarea aria-label="Private notes" rows={10} maxLength={100000} disabled={!loaded} value={body} placeholder="What do you want to verify before you finish?" className="rounded-lg bg-surface-raised font-mono text-[13px] leading-relaxed" onChange={(event) => {
       const value = event.target.value;
       setBody(value); state.current.body = value; state.current.dirty = true;

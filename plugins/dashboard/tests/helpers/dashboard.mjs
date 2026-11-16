@@ -19,7 +19,7 @@ export function mount({ connected = false, launcher = [], threads = [], hiddenId
     sidebarThreads: { status: threadStatus, projects, threads },
     providers,
     sidebarDraftThreadIds: draftThreadIds,
-    // Pages have no sidebar navigation context in BB. Only the bridge above does.
+    // Pages have no sidebar navigation context in VesnALIA. Only the bridge above does.
     sdk: { subscribe: () => () => {}, ...sdk },
     rpc: {
       snapshot: () => structuredClone(snapshot),

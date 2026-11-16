@@ -1,5 +1,5 @@
 // A fake Cua Driver for tests: `cua-driver mcp --socket <file>` speaks MCP on
-// stdin and stdout, like the real proxy, with the tools and results bb-box
+// stdin and stdout, like the real proxy, with the tools and results alia-box
 // uses. The desktop it drives lives in the JSON file named by --socket, so
 // every session of a box sees one desktop, and a test can change it between
 // calls. Element tokens hold a prefix of the process's own, so like Cua's
@@ -15,7 +15,7 @@
 // list and never becomes the active window: keys reach it only on the
 // desktop, where Escape closes it. With misreadPopups, a read of a menu gives
 // its window's elements instead, as Cua does for some popups. A window of
-// app "wide" is wider than the longest edge BB Box gives the agent. A click
+// app "wide" is wider than the longest edge VesnALIA Box gives the agent. A click
 // on the desktop works only in the foreground. Like Cua, it takes pixels of
 // the session's latest image of the desktop, or of the screen before one.
 //

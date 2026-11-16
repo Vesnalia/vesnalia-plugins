@@ -1,6 +1,6 @@
 // The SDK's ACP bridge answers `initialize` with a hardcoded
 // `fork: "tip"` capability without consulting the agent. kimi >= 2.3.0 locks
-// each session to its owning process, so bb's cross-process fork of a live
+// each session to its owning process, so VesnALIA's cross-process fork of a live
 // session always fails (knowledge/incidents/2026-10-22-kimi-23-session-lock-breaks-fork.md)
 // and the provider declaration says `fork: "none"`. Handshake capability facts
 // may only narrow the declaration, so until the SDK stops hardcoding the claim

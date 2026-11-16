@@ -185,7 +185,7 @@ export function threadLosses(preview: RestorePreview, boxName: string): Loss[] {
 export function otherLosses(preview: RestorePreview): Loss[] {
   const losses: Loss[] = [];
   if (preview.control) losses.push({ key: "control", words: "A person has control of its desktop." });
-  if (preview.terminals === null) losses.push({ key: "terminals", words: `${PRODUCT} could not tell whether a BB terminal is open on it.` });
+  if (preview.terminals === null) losses.push({ key: "terminals", words: `${PRODUCT} could not tell whether a VesnALIA terminal is open on it.` });
   else if (preview.terminals > 0) losses.push({ key: "terminals", words: preview.terminals === 1 ? "A terminal is open on it." : `${preview.terminals} terminals are open on it.` });
   return losses;
 }

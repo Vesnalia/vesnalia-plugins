@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { ReviewMeta } from "./store";
 import { parseTarget, prReviewKey, reviewNamed, targetKey } from "./targets";
 import { ensureGitHeaders } from "./patch";
@@ -21,28 +21,28 @@ import { identityIn, placeFacts, type PlaceFacts } from "./review-places";
 import { runFeatureCommand } from "./feature-review";
 
 interface Deps {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   store: AsyncStore;
   gh: { runGh: typeof import("./gh").runGh; runGit: typeof import("./gh").runGit };
 }
 interface Ctx { projectId?: string; threadId?: string; cwd?: string }
 
-/** The usage, with `bb review list` while Help agents in your threads use bb review is on. */
+/** The usage, with `alia review list` while Help agents in your threads use VesnALIA review is on. */
 const usage = (list: boolean) => [
-  "usage: bb review [<pr-url | owner/repo#n | pr-number | git-ref> [--base <ref>]] [--context <text>] [--name <text>]",
-  "       bb review comment <list | add | edit | delete> …   (see bb review comment --help)",
-  "       bb review summary <review> [--body <text>] …        (see bb review summary --help)",
-  ...list ? ["       bb review list [--json]                             (see bb review list --help)"] : [],
-  "       bb review ask <review> <text>                       (see bb review ask --help)",
-  "       bb review approve <review…> [--body <text>]         (see bb review approve --help)",
-  "       bb review storage <status | verify | migrate | export-sqlite>  (see bb review storage --help)",
+  "usage: VesnALIA review [<pr-url | owner/repo#n | pr-number | git-ref> [--base <ref>]] [--context <text>] [--name <text>]",
+  "       VesnALIA review comment <list | add | edit | delete> …   (see VesnALIA review comment --help)",
+  "       VesnALIA review summary <review> [--body <text>] …        (see VesnALIA review summary --help)",
+  ...list ? ["       VesnALIA review list [--json]                             (see VesnALIA review list --help)"] : [],
+  "       VesnALIA review ask <review> <text>                       (see VesnALIA review ask --help)",
+  "       VesnALIA review approve <review…> [--body <text>]         (see VesnALIA review approve --help)",
+  "       VesnALIA review storage <status | verify | migrate | export-sqlite>  (see VesnALIA review storage --help)",
   "",
   "  With no PR or ref, it reviews this thread's folder: its committed, uncommitted and new files on its branch, on any",
   "  machine. One review per folder and branch, addressed to the thread that started it; run again, it opens as it is.",
   "  A git ref named comment, summary, list, ask, approve or storage is given as refs/heads/<name>.",
   "  A review's id, as api:feat-x or web#12, or its key, opens that review as it is.",
   "  --context  text for the assistant's automatic review, such as the ticket the change implements. It's kept with the review; '' removes it.",
-  "  --name     your name for the review, shown in bb instead of the PR's title or the ref; '' puts that back. GitHub, and the agents, keep the PR's title.",
+  "  --name     your name for the review, shown in VesnALIA instead of the PR's title or the ref; '' puts that back. GitHub, and the agents, keep the PR's title.",
 ].join("\n");
 const CONTEXT_LIMIT = 12_000;
 
@@ -50,15 +50,15 @@ const CONTEXT_LIMIT = 12_000;
 export const NOT_OWN_REVIEW = "This agent can change only its own review.";
 
 /**
- * `bb review <id>`: the review an id or key names, opened as it is, back from your archive, with your name or context
+ * `alia review <id>`: the review an id or key names, opened as it is, back from your archive, with your name or context
  * for it if given. Nothing is read or rebuilt.
  */
 async function openNamed(deps: Deps, review: ReviewMeta, options: { context?: string; name?: string; inThreads: boolean }, ownReview?: string) {
-  const { store, bb } = deps;
+  const { store, alia } = deps;
   const key = review.targetKey;
   if (ownReview !== undefined && key !== ownReview) return { exitCode: 2, stderr: NOT_OWN_REVIEW };
   const { context, name } = options;
-  const facts = await placeFacts(bb, await store.listReviews());
+  const facts = await placeFacts(alia, await store.listReviews());
   const { identity, unnamed } = await store.exclusive(async (tx) => {
     const now = (await tx.getReview(key)) ?? review;
     if (now.userArchivedAt) await tx.setLifecycle(key, { userArchivedAt: null });
@@ -67,11 +67,11 @@ async function openNamed(deps: Deps, review: ReviewMeta, options: { context?: st
     return { identity: identityIn(facts, await tx.listReviews(), (await tx.getReview(key)) ?? now), unnamed: !!now.name && name === "" };
   });
   if (review.userArchivedAt || context !== undefined || name !== undefined) {
-    bb.realtime.publish(`review:${key}`, { ts: Date.now() });
-    bb.realtime.publish("reviews", { ts: Date.now() });
+    alia.realtime.publish(`review:${key}`, { ts: Date.now() });
+    alia.realtime.publish("reviews", { ts: Date.now() });
   }
-  const appUrl = options.inThreads ? bb.server.experimental_appUrl : null;
-  const open = appUrl ? `Open ${appUrl.replace(/\/+$/, "")}/plugins/${bb.pluginId}/review/${key}` : "Open the Code Review Workspace panel";
+  const appUrl = options.inThreads ? alia.server.experimental_appUrl : null;
+  const open = appUrl ? `Open ${appUrl.replace(/\/+$/, "")}/plugins/${alia.pluginId}/review/${key}` : "Open the Code Review Workspace panel";
   const which = `${identity.id}${identity.line === identity.id || identity.name === key ? "" : ` ${JSON.stringify(identity.name)}`} (${key})`;
   const lines = [`Opened the review of ${which}, as it was; nothing was rebuilt. ${open} to review it.`];
   if (unnamed) lines.push("Removed your name for the review.");
@@ -112,10 +112,10 @@ export async function runReviewCommand(deps: Deps, argv: string[], ctx: Ctx, own
   }
   // No PR or ref: the folder this thread works in. A blank one is a mistake.
   if (input === undefined) {
-    if (base) return { exitCode: 2, stderr: "--base goes with a git ref. With no ref, bb review compares this thread's folder with its own base." };
+    if (base) return { exitCode: 2, stderr: "--base goes with a git ref. With no ref, VesnALIA review compares this thread's folder with its own base." };
     const changed = (key: string) => {
-      deps.bb.realtime.publish(`review:${key}`, { ts: Date.now() });
-      deps.bb.realtime.publish("reviews", { ts: Date.now() });
+      deps.alia.realtime.publish(`review:${key}`, { ts: Date.now() });
+      deps.alia.realtime.publish("reviews", { ts: Date.now() });
     };
     return runFeatureCommand({ ...deps, changed }, { context, name, inThreads }, ctx, ownReview);
   }
@@ -125,25 +125,25 @@ export async function runReviewCommand(deps: Deps, argv: string[], ctx: Ctx, own
   // Your name for it is yours: a review's own agent read the PR's text.
   if (ownReview !== undefined && name !== undefined) return { exitCode: 2, stderr: "A review's own agent can't rename the review." };
   // A review's id or key, never a git ref: no branch has a colon in its name. One that became its PR's goes by its old id too.
-  const named = !base && parseTarget(input).kind === "ref" ? await reviewNamed(deps.store, deps.bb, input) : null;
+  const named = !base && parseTarget(input).kind === "ref" ? await reviewNamed(deps.store, deps.alia, input) : null;
   if (named && "ambiguous" in named) return { exitCode: 1, stderr: named.ambiguous };
   if (named) return openNamed(deps, named, { context, name, inThreads }, ownReview);
-  if (!ctx.projectId) return { exitCode: 2, stderr: "Run `bb review` inside a project thread." };
+  if (!ctx.projectId) return { exitCode: 2, stderr: "Run `alia review` inside a project thread." };
   const target = parseTarget(input, base);
   if (target.kind === "pr" && base) return { exitCode: 2, stderr: "--base is only supported for local git refs." };
   if (target.kind === "ref" && base && target.gitRef.includes("..")) return { exitCode: 2, stderr: "--base goes with a single ref, not a range." };
   if (target.kind === "ref" || !target.repo) {
-    if (!ctx.cwd) return { exitCode: 2, stderr: "A local ref or PR number needs a working directory. Run `bb review` in the repository." };
-    // The caller's directory may be on another machine; git and gh run on the bb server.
-    if (!existsSync(resolve(ctx.cwd))) return { exitCode: 2, stderr: `A local ref or PR number needs a checkout on the bb server, and ${ctx.cwd} isn't on it. Pass the PR's URL instead, or run \`bb review\` in a checkout on the server.` };
+    if (!ctx.cwd) return { exitCode: 2, stderr: "A local ref or PR number needs a working directory. Run `alia review` in the repository." };
+    // The caller's directory may be on another machine; git and gh run on the VesnALIA server.
+    if (!existsSync(resolve(ctx.cwd))) return { exitCode: 2, stderr: `A local ref or PR number needs a checkout on the VesnALIA server, and ${ctx.cwd} isn't on it. Pass the PR's URL instead, or run \`alia review\` in a checkout on the server.` };
   }
-  const unavailable = await guideWriterUnavailable(deps.bb, deps.store);
+  const unavailable = await guideWriterUnavailable(deps.alia, deps.store);
   if (unavailable) return { exitCode: 1, stderr: unavailable };
   const cwd = ctx.cwd ? resolve(ctx.cwd) : undefined;
   let key = targetKey(target, cwd ? { projectId: ctx.projectId, cwd } : undefined);
   if (ownReview !== undefined && target.kind === "ref" && key !== ownReview) return { exitCode: 2, stderr: NOT_OWN_REVIEW };
-  // Where local reviews' code is, for what the command says (src/review-places.ts): asked of bb before the store's lock.
-  const facts: PlaceFacts = await placeFacts(deps.bb, [target]);
+  // Where local reviews' code is, for what the command says (src/review-places.ts): asked of VesnALIA before the store's lock.
+  const facts: PlaceFacts = await placeFacts(deps.alia, [target]);
   const now = Date.now();
   let unattended = ownReview !== undefined;
 
@@ -185,12 +185,12 @@ export async function runReviewCommand(deps: Deps, argv: string[], ctx: Ctx, own
       await recordPrState(tx, key, prState);
       await tx.unignoreDiscovery(key);
       // The panel refetches on the realtime signal.
-      run = await beginGuide(deps.bb, tx, deps.store, key, ctx.projectId!, { unattended });
+      run = await beginGuide(deps.alia, tx, deps.store, key, ctx.projectId!, { unattended });
     }
 
-    // A link to the review where BB has an address for its app.
-    const appUrl = inThreads ? deps.bb.server.experimental_appUrl : null;
-    const open = appUrl ? `Open ${appUrl.replace(/\/+$/, "")}/plugins/${deps.bb.pluginId}/review/${key}` : "Open the Code Review Workspace panel";
+    // A link to the review where VesnALIA has an address for its app.
+    const appUrl = inThreads ? deps.alia.server.experimental_appUrl : null;
+    const open = appUrl ? `Open ${appUrl.replace(/\/+$/, "")}/plugins/${deps.alia.pluginId}/review/${key}` : "Open the Code Review Workspace panel";
     // What the automatic review goes by (src/agent.ts startAutomaticReview, src/generate.ts): no review runs on a merged
     // or closed PR, nor once you've reviewed it, and one skipped for your click runs when you click Run review.
     // No name, or the one it has anyway, goes back to the PR's title or ref, as Rename does.
@@ -290,8 +290,8 @@ export async function runReviewCommand(deps: Deps, argv: string[], ctx: Ctx, own
   }
   const { told, ...result } = done;
   if (told) {
-    deps.bb.realtime.publish(`review:${key}`, { ts: now });
-    deps.bb.realtime.publish("reviews", { ts: now });
+    deps.alia.realtime.publish(`review:${key}`, { ts: now });
+    deps.alia.realtime.publish("reviews", { ts: now });
   }
   return result;
 }

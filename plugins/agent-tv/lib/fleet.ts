@@ -1,8 +1,8 @@
-// bb-plugin-agent-tv — the fleet model, shared by the pump (server.ts) and the
+// alia-plugin-agent-tv — the fleet model, shared by the pump (server.ts) and the
 // wall (app.tsx).
 //
 // Everything here is pure: it takes thread-event rows and settings and returns
-// JSON-safe values, so it is testable without a running BB, and the frontend
+// JSON-safe values, so it is testable without a running VesnALIA, and the frontend
 // can reuse the same schemas to parse what the server sends it.
 import { z } from "zod";
 
@@ -111,10 +111,10 @@ export const fleetRowSchema = z.object({
   childCount: z.number().int().min(0).max(MAX_ROWS),
   /** What the agent is doing right now: "git commit -m …", "app.tsx", … */
   tool: z.string().max(LABEL_MAX).nullable(),
-  /** bb's own verb for it — "Running command" while pending, "Ran command"
+  /** VesnALIA's own verb for it — "Running command" while pending, "Ran command"
    * once the item completed. */
   verb: z.string().max(60).nullable(),
-  /** bb's own timeline glyph (a host icon name: Terminal, EditFile, Brain…). */
+  /** VesnALIA's own timeline glyph (a host icon name: Terminal, EditFile, Brain…). */
   glyph: z.string().max(48).nullable(),
   /** The tool finished and nothing newer has started. */
   settled: z.boolean(),
@@ -133,7 +133,7 @@ export const fleetRowSchema = z.object({
   /**
    * What this thread is blocked on if it is waiting for a person — "question",
    * "permission", … — and null when nothing is. Folded from the interaction
-   * lifecycle rows in the event log, so `bb agent-tv status` can answer "who
+   * lifecycle rows in the event log, so `alia agent-tv status` can answer "who
    * needs me" without the sidebar.
    */
   waiting: z.string().max(40).nullable(),
@@ -218,7 +218,7 @@ export function messageOf(error: unknown): string {
  * A tile's action line is whatever the provider called the item — most often
  * the command line itself. Command lines carry credentials: an inline
  * `PGPASSWORD=`, a bearer header, `-u user:pass`. That text is printed by
- * `bb agent-tv status` and broadcast on the realtime channel to every
+ * `alia agent-tv status` and broadcast on the realtime channel to every
  * connected client, so it is redacted once, here, at the only place the
  * action line is built.
  * ------------------------------------------------------------------ */
@@ -1041,7 +1041,7 @@ export type SnapshotCandidate = {
 };
 
 /**
- * Which threads one `bb agent-tv status` should spend its reads on.
+ * Which threads one `alia agent-tv status` should spend its reads on.
  *
  * `threads.list` comes back in no activity order at all — the first rows on a
  * busy machine are routinely idle threads from days ago — so slicing it
@@ -1065,7 +1065,7 @@ export function rankThreadsForSnapshot<T extends SnapshotCandidate>(
 }
 
 /* ------------------------------------------------------------------ *
- * Formatting (the wall and `bb agent-tv status` share these)
+ * Formatting (the wall and `alia agent-tv status` share these)
  * ------------------------------------------------------------------ */
 
 /** What a feed is blocked on, oldest ask first, or null when nothing. */

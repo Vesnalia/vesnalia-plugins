@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { ponytailModes, type PonytailMode } from "./lib/modes.ts";
 import { isPonytailSkill } from "./lib/ponytail-skill.ts";
@@ -16,33 +16,33 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(alia: AliaPluginApi) {
   const key = (threadId: string) => `mode:${threadId}`;
   const hasPonytail = async (threadId: string) => {
-    const thread = await bb.sdk.threads.get({ threadId });
-    const { skills } = await bb.sdk.skills.list({
+    const thread = await alia.sdk.threads.get({ threadId });
+    const { skills } = await alia.sdk.skills.list({
       projectId: thread.projectId,
       environmentId: thread.environmentId,
     });
     return skills.some(isPonytailSkill);
   };
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     get_mode: async ({ threadId }) => ({
-      mode: (await bb.storage.kv.get<PonytailMode>(key(threadId))) ?? "full",
+      mode: (await alia.storage.kv.get<PonytailMode>(key(threadId))) ?? "full",
       available: await hasPonytail(threadId),
     }),
     set_mode: async ({ threadId, mode }) => {
       if (!(await hasPonytail(threadId))) {
         throw new Error("Ponytail is required. Install and enable Ponytail before using Mane Control.");
       }
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.send({
         threadId,
         mode: "auto",
         input: [{ type: "text", text: `/ponytail ${mode}`, mentions: [] }],
       });
-      await bb.storage.kv.set(key(threadId), mode);
-      bb.realtime.publish("mode-changed", { threadId, mode });
+      await alia.storage.kv.set(key(threadId), mode);
+      alia.realtime.publish("mode-changed", { threadId, mode });
       return { mode };
     },
   });

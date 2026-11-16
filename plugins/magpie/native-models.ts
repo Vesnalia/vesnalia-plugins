@@ -36,7 +36,7 @@ export async function readNativeModels(
 ): Promise<NativeModel[]> {
   const agent = provider === "claude-code" ? "claude" : "codex";
   const response = await fetch(new URL("/v1/models", gatewayURL(config.gatewayUrl)), {
-    headers: { authorization: `Bearer ${config.gatewayKey || `magpie-${agent}`}`, "user-agent": `${agent}/bb-magpie` },
+    headers: { authorization: `Bearer ${config.gatewayKey || `magpie-${agent}`}`, "user-agent": `${agent}/alia-magpie` },
     signal: AbortSignal.any([signal, AbortSignal.timeout(10_000)]),
     redirect: "error",
   });
@@ -68,10 +68,10 @@ type CustomModel = ReturnType<typeof customModelEntries>[number];
 /** Replace Magpie-owned customModels entries. Entries from other sources stay in place. */
 export function replaceMagpieModels(config: unknown, entries: CustomModel[]) {
   if (config === null || typeof config !== "object" || Array.isArray(config)) {
-    throw new Error("BB config.json must be a JSON object.");
+    throw new Error("VesnALIA config.json must be a JSON object.");
   }
   const current: unknown = "customModels" in config ? config.customModels : [];
-  if (!Array.isArray(current)) throw new Error("BB config.json customModels must be an array.");
+  if (!Array.isArray(current)) throw new Error("VesnALIA config.json customModels must be an array.");
   const owned = (value: unknown) =>
     value !== null && typeof value === "object"
     && "displayName" in value && typeof value.displayName === "string" && value.displayName.startsWith(magpiePrefix);

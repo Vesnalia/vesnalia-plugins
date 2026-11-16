@@ -31,7 +31,7 @@ const GATES = {
     command: ["npx", "vitest", "run", "test/hygiene.test.ts"],
   },
   G6: { marker: "type surface compiles", command: ["npx", "tsc", "--noEmit"] },
-  G7: { marker: "server artifact built", command: ["bb", "plugin", "build"] },
+  G7: { marker: "server artifact built", command: ["alia", "plugin", "build"] },
 };
 
 const [gate, ...rest] = process.argv.slice(2);

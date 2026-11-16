@@ -5,7 +5,7 @@ import { defaultPrefs, parsePrefs } from "./preferences";
 import { t } from "./i18n";
 
 afterEach(() => { cleanup(); localStorage.clear(); document.documentElement.lang = "en"; });
-it("uses BB's language by default, with explicit plugin language taking precedence", () => {
+it("uses VesnALIA's language by default, with explicit plugin language taking precedence", () => {
   document.documentElement.lang = "ru-RU";
   expect(t("Работает")).toBe("Работает");
   document.documentElement.lang = "en";

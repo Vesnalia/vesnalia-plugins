@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { reanchorDraft } from "./store";
 import { toGithubReviewPayload } from "./draft";
 import { createReviewSubmitter } from "./submit-review";
@@ -17,8 +17,8 @@ vi.mock("./gh", async (orig) => ({ ...(await orig<typeof import("./gh")>()), run
 
 const patch = "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-old\n+new\n";
 async function setup() {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-test", kind: "pr", repo: "acme/web", number: 7, status: "ready", createdAt: 1, headSha: "sha1" });
   await store.savePatch("pr-test", patch);
   await store.upsertDraftComment("pr-test", { file: "a.ts", line: 1, side: "RIGHT", body: "Please explain this" });
@@ -58,7 +58,7 @@ test("a comment on a line only in the folder never goes to GitHub: not in the pa
   expect((await store.getDraft("pr-test")).comments.map((c) => c.body)).toEqual(["Not pushed yet"]);
 });
 
-test("how the agent checked a comment stays in BB: GitHub gets the comment without it", async () => {
+test("how the agent checked a comment stays in VesnALIA: GitHub gets the comment without it", async () => {
   const { store, run, submit, page } = await setup();
   await store.upsertDraftComment("pr-test", { file: "a.ts", line: 1, side: "RIGHT", author: "agent", severity: "should-fix", body: "Please explain this", evidence: "Read a.ts:1 and its callers." });
   expect(await submit("pr-test", undefined, undefined, ...await page())).toEqual({ ok: true });
@@ -319,9 +319,9 @@ test("submitReview without the comments, summary, and verdict the page shows is 
     : args.includes(".login") ? { code: 0, stderr: "", stdout: "me\n" }
     : args[0] === "pr" ? { code: 0, stderr: "", stdout: JSON.stringify({ headRefOid: "sha1", state: "OPEN" }) }
     : { code: 0, stderr: "", stdout: JSON.stringify({ id: 1, node_id: "R_1", html_url: "https://github.com/acme/web/pull/1#r1", user: { login: "me" } }) });
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1, headSha: "sha1" });
   await store.savePatch("pr-1", patch);
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "Text the reviewer never saw" });

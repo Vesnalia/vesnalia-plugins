@@ -1,7 +1,7 @@
 // Messaging (§3.4): addressing, routing, header, loop protection, delivery.
 //
 // `send` only writes rows — every message lands in `messages` first, refused
-// ones included (§3.9.6). `drain` hands pending rows to BB through the
+// ones included (§3.9.6). `drain` hands pending rows to VesnALIA through the
 // ThreadPort according to the recipient's state. The row carries the
 // obligation exactly once; the send itself is at-least-once, deduplicated by
 // `attempts` plus a look into the thread for the message id before any retry.
@@ -55,7 +55,7 @@ export function parseAddress(raw: string): Address {
   return { kind: "member", key, crew };
 }
 
-/** `plugin`: another BB plugin through the RPC contract (§4.8), e.g. Graph Studio; routed like the human. */
+/** `plugin`: another VesnALIA plugin through the RPC contract (§4.8), e.g. Graph Studio; routed like the human. */
 export type Sender =
   | { kind: "human" }
   | { kind: "system" }
@@ -381,7 +381,7 @@ export function createDelivery(deps: DeliveryDeps) {
       });
     }
     const binding = store.currentBinding(member.id);
-    if (!binding) return set({ status: "failed", reason: "the recipient has no thread (run bb crew apply)", hold: null });
+    if (!binding) return set({ status: "failed", reason: "the recipient has no thread (run alia crew apply)", hold: null });
     const thread = await port.get(binding.threadId);
     if (!thread) return set({ status: "failed", reason: `the recipient's thread ${binding.threadId} is gone`, hold: null });
     if (thread.archived) return set({ status: "failed", reason: `the recipient's thread ${thread.id} is archived`, hold: null });
@@ -423,7 +423,7 @@ export function createDelivery(deps: DeliveryDeps) {
     if (startsTurn && !message.forced && budget && budget.limit !== null && budget.running >= budget.limit) {
       return set({ status: "throttled", hold: null, reason: `thread limit ${budget.limit} reached (${budget.running} running); delivered when a slot frees` });
     }
-    // A previous attempt may have reached BB before the process died.
+    // A previous attempt may have reached VesnALIA before the process died.
     if (message.attempts > 0 && (await port.hasMarker(thread.id, `msg ${message.id}`).catch(() => false))) {
       return set({ status: "delivered", delivered: true, deliveryMode: mode, hold: null, reason: "found in the thread after an interrupted attempt" });
     }
@@ -508,7 +508,7 @@ export function createDelivery(deps: DeliveryDeps) {
       }
       return store.updateMessage(id, { status: "failed", hold: null, reason: "discarded by the human", answeredAt: now() });
     },
-    /** Human: nothing more on this chain is delivered. Rows already given to BB stay as they are. */
+    /** Human: nothing more on this chain is delivered. Rows already given to VesnALIA stay as they are. */
     stopChain(chainId: string): MessageRow[] {
       store.stopChain(chainId, "stopped by the human");
       const open = store.listMessages({ chainId, limit: 1000 }).filter((m) => m.status === "pending" || m.status === "on_hold" || m.status === "stopped_loop");

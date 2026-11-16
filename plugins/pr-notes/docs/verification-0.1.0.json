@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "bbVersion": "0.48.0",
+  "aliaVersion": "0.48.0",
   "sdkVersion": "0.6.94",
   "e2e": {
     "passed": 25,

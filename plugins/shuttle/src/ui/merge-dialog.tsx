@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { MERGE_METHODS, type MergeMethod, type PrView } from "../contract";
 import { BUTTON_GHOST, BUTTON_SUCCESS, Choice, Dialog, ErrorNote, FIELD, LABEL } from "./common";
 import { messageOf, useShuttleQuery } from "./data";

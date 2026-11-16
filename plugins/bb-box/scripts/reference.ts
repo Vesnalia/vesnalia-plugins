@@ -9,7 +9,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import ts from "typescript";
 import { DRIVERS } from "../src/backends/index.ts";
 import { KIND_INFO, kindAliases } from "../src/backends/kinds.ts";
@@ -80,14 +80,14 @@ interface JsonSchema {
   readonly default?: unknown;
 }
 
-/** The plugin's CLI and agent tools, as a fake BB host records them when the plugin starts. */
+/** The plugin's CLI and agent tools, as a fake VesnALIA host records them when the plugin starts. */
 export async function registered(): Promise<Registered> {
-  const { bb, harness } = createFakePluginHost({ pluginId: "bb-box" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "alia-box" });
+  await plugin(alia);
   const registrations = harness.inspection.registrations as unknown as { cli: Registered["cli"]; agentTools: Registered["tools"] };
   const help = new Map<string, string>();
   for (const command of registrations.cli.commands) {
-    const path = command.usage.replace(/^bb box /, "").split(" ").filter((word) => /^[a-z][a-z-]*$/.test(word));
+    const path = command.usage.replace(/^alia box /, "").split(" ").filter((word) => /^[a-z][a-z-]*$/.test(word));
     const words = [];
     for (const word of path) {
       if (words.join("-") === command.name) break;
@@ -106,7 +106,7 @@ function cliPage(found: Registered): string {
   const lines = [
     "# CLI reference",
     "",
-    `\`bb box\`: ${found.cli.summary} Each command's \`--help\` prints what is below.`,
+    `\`alia box\`: ${found.cli.summary} Each command's \`--help\` prints what is below.`,
     "",
     table(["Command", "What it does"], commands.map((command) => [`[\`${name(command)}\`](#${anchor(name(command))})`, flagsAsCode(command.summary)])),
   ];
@@ -131,7 +131,7 @@ function toolsPage(found: Registered): string {
   const lines = [
     "# Agent tools",
     "",
-    "The tools bb-box gives a thread's agent, with their parameters as the agent sees them.",
+    "The tools alia-box gives a thread's agent, with their parameters as the agent sees them.",
     "",
     table(["Tool", "What it does"], found.tools.map((tool) => [`[\`${tool.name}\`](#${anchor(tool.name)})`, tool.description.split(/(?<=\.)\s/)[0]])),
   ];
@@ -190,7 +190,7 @@ function configurationPage(): string {
   const lines = [
     "# Configuration reference",
     "",
-    "bb-box's configuration is one document (029): `bb box config show --json` prints it, and `bb box config apply <file>` saves one. BB Box's settings page edits the same document. A secret field reads `{ \"set\": true }` in an export, and takes a string to set it.",
+    "alia-box's configuration is one document (029): `alia box config show --json` prints it, and `alia box config apply <file>` saves one. VesnALIA Box's settings page edits the same document. A secret field reads `{ \"set\": true }` in an export, and takes a string to set it.",
     "",
     "## The document",
     "",
@@ -198,13 +198,13 @@ function configurationPage(): string {
     "",
     "## Secrets",
     "",
-    "A secret's value never leaves bb-box. Each secret field shows its state:",
+    "A secret's value never leaves alia-box. Each secret field shows its state:",
     "",
     memberTable("SecretState"),
     "",
     "## Saves from the settings page",
     "",
-    "The settings page saves with an operation ID it makes for each save, and the changes it froze for it. bb-box applies an ID at most once: the same ID again gets the first save's receipt, and the same ID with other changes is refused. The receipt is stored in the same write as the configuration, and config.get lists the receipts:",
+    "The settings page saves with an operation ID it makes for each save, and the changes it froze for it. alia-box applies an ID at most once: the same ID again gets the first save's receipt, and the same ID with other changes is refused. The receipt is stored in the same write as the configuration, and config.get lists the receipts:",
     "",
     memberTable("SaveReceipt"),
     "",
@@ -242,7 +242,7 @@ function configurationPage(): string {
     "",
     "## monitor",
     "",
-    "The Monitor (066): machine status in BB's sidebar footer for BB's server, your machines and every box, and background monitoring of BB's server.",
+    "The Monitor (066): machine status in VesnALIA's sidebar footer for VesnALIA's server, your machines and every box, and background monitoring of VesnALIA's server.",
     "",
     memberTable("MonitorSettings", MONITOR_DEFAULTS),
     "",
@@ -270,7 +270,7 @@ function kindsPage(): string {
   const lines = [
     "# Kinds and sizes",
     "",
-    "The kinds of box bb-box knows, the backends that can offer each, and each kind's sizes as shipped. The configuration's `kinds` section changes the sizes (see the [configuration reference](configuration.md)).",
+    "The kinds of box alia-box knows, the backends that can offer each, and each kind's sizes as shipped. The configuration's `kinds` section changes the sizes (see the [configuration reference](configuration.md)).",
     "",
     table(
       ["Kind", "What it is", "OS", "Architecture", "Desktop", "GPU", "Device", "Backends"],
@@ -282,7 +282,7 @@ function kindsPage(): string {
     "",
     "## Devices",
     "",
-    "The devices an `ios` or `android` box can boot (063), which `box_acquire`'s `device` and `bb box acquire --device` take by name. An image offers some of them, each with its runtime; the first an offer lists is the kind's default. The screen is in the device's own pixels, upright.",
+    "The devices an `ios` or `android` box can boot (063), which `box_acquire`'s `device` and `alia box acquire --device` take by name. An image offers some of them, each with its runtime; the first an offer lists is the kind's default. The screen is in the device's own pixels, upright.",
     "",
     table(
       ["Device", "Platform", "Form", "Screen", "Scale"],
@@ -316,10 +316,10 @@ function checksPage(): string {
   const lines = [
     "# Health checks",
     "",
-    "What `bb box doctor`, and each backend's check on the settings page, can report, by check ID. A part in angle brackets, such as `<vmid>`, stands for a value, such as a template's VMID. Each check is ok, a warning, a failure, or skipped when one before it failed; a warning leaves the doctor passing.",
+    "What `alia box doctor`, and each backend's check on the settings page, can report, by check ID. A part in angle brackets, such as `<vmid>`, stands for a value, such as a template's VMID. Each check is ok, a warning, a failure, or skipped when one before it failed; a warning leaves the doctor passing.",
   ];
   for (const source of sources) {
-    const label = source === "bb-box" ? "bb-box" : (DRIVERS.find((driver) => driver.type === source)?.label ?? source);
+    const label = source === "alia-box" ? "alia-box" : (DRIVERS.find((driver) => driver.type === source)?.label ?? source);
     lines.push("", `## ${label}`, "", table(["ID", "Name", "What it checks"], entries.filter(([, info]) => info.from.includes(source)).map(([id, info]) => [`\`${id}\``, info.name, info.what])));
   }
   return `${HEADER}${lines.join("\n")}\n`;
@@ -339,13 +339,13 @@ function indexPage(): string {
   return `${HEADER}${[
     "# Reference",
     "",
-    "Made from the code, so it says what this version of bb-box does.",
+    "Made from the code, so it says what this version of alia-box does.",
     "",
-    "- [CLI](cli.md): every `bb box` command, with its arguments and options.",
+    "- [CLI](cli.md): every `alia box` command, with its arguments and options.",
     "- [Agent tools](tools.md): every tool a thread's agent gets, with its parameters.",
     "- [Configuration](configuration.md): the configuration document, and each backend's fields.",
     "- [Kinds and sizes](kinds.md): the kinds, the backends that offer them, and their sizes.",
-    "- [Health checks](checks.md): every check `bb box doctor` can report.",
+    "- [Health checks](checks.md): every check `alia box doctor` can report.",
     "- [Files](files.md): the panel's calls for a box's own files.",
   ].join("\n")}\n`;
 }

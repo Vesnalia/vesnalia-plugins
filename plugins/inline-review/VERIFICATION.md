@@ -2,7 +2,7 @@
 
 ## Version 1.0.0
 
-Validated on 2026-09-17 against BB 0.43.1 and Plugin SDK 0.4.87.
+Validated on 2026-09-17 against VesnALIA 0.43.1 and Plugin SDK 0.4.87.
 
 ### Automated checks
 
@@ -37,11 +37,11 @@ The five marketplace screenshots use generic demonstration content, contain no
 account details or private project data, are at least 1,200 pixels wide, and
 remain below 2 MiB each. The repository contains no environment files,
 credentials, private keys, local absolute paths, internal planning artifacts,
-or BB thread, project, and environment identifiers.
+or VesnALIA thread, project, and environment identifiers.
 
 ### Known limits
 
-Version 1 annotates assistant-message text only. BB does not expose persistent
+Version 1 annotates assistant-message text only. VesnALIA does not expose persistent
 selection anchors, so highlight restoration requires one unique normalized
 text match in the visible assistant-message DOM. Ambiguous passages remain in
 the saved review without a decoration. Browsers without the CSS Custom

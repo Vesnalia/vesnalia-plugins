@@ -1,5 +1,5 @@
-import type { NewThreadRequest } from "@get-bb/plugin-sdk";
-import { makeTurnFailedEvent } from "@get-bb/plugin-sdk/testing";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk";
+import { makeTurnFailedEvent } from "@vesnalia/plugin-sdk/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { settleChecks, submit } from "../src/checks";
 import { holdMerge, settleMerges } from "../src/merge";
@@ -17,7 +17,7 @@ beforeEach(() => {
 });
 
 const project = () => h.store.projectBySlug("csv")!;
-const spawned = () => h.bb.callsTo("spawnThread").map(([args]) => (args as SpawnArgs).metadata.ticket);
+const spawned = () => h.alia.callsTo("spawnThread").map(([args]) => (args as SpawnArgs).metadata.ticket);
 const wide = (doc: Doc) => {
   withDocsTicket(doc);
   doc.agents = { max_workers: 3 };
@@ -30,18 +30,18 @@ describe("start", () => {
     expect(started.state).toBe("running");
     expect(h.host.callsTo("ensureBranch")).toEqual([{ repo: "/repo", branch: "loom/csv", from: "main" }]);
     expect(h.host.calls[0]!.hostId).toBe("host_1");
-    expect(h.bb.callsTo("projectCheckout")).toEqual([["proj_1", "host_1"]]);
+    expect(h.alia.callsTo("projectCheckout")).toEqual([["proj_1", "host_1"]]);
     expect(h.kick).toHaveBeenCalled();
     await h.engine.tick();
     expect(spawned()).toEqual(["CSV-1"]);
   });
 
-  it("is refused with loom_no_checkout when the bb project has no checkout on the host, and the project stays ready", async () => {
+  it("is refused with loom_no_checkout when the VesnALIA project has no checkout on the host, and the project stays ready", async () => {
     await seedProject(h, undefined, "ready");
-    h.bb.checkout = null;
+    h.alia.checkout = null;
     await expect(h.engine.start("csv", "human")).rejects.toMatchObject({
       code: "loom_no_checkout",
-      message: "The project's repository (bb project proj_1) has no checkout on the machine host_1 that this Loom project uses. Clone it there with `bb project source add proj_1 --clone --machine host_1`, then start the project again.",
+      message: "The project's repository (VesnALIA project proj_1) has no checkout on the machine host_1 that this Loom project uses. Clone it there with `alia project source add proj_1 --clone --machine host_1`, then start the project again.",
     });
     expect(project().state).toBe("ready");
     expect(h.host.calls).toEqual([]);
@@ -61,21 +61,21 @@ describe("start", () => {
 
   it("refuses to start a multi-repo project while a repo has no checkout, naming the repo and its clone command, and creates no branch", async () => {
     await seedRepoProject(h, undefined, "ready");
-    h.bb.checkouts.set("proj_api", {});
+    h.alia.checkouts.set("proj_api", {});
     await expect(h.engine.start("csv", "human")).rejects.toMatchObject({
       code: "loom_no_checkout",
-      message: 'Repo "api" (bb project proj_api) has no checkout on the machine host_1 that this Loom project uses. Clone it there with `bb project source add proj_api --clone --machine host_1`, then start the project again.',
+      message: 'Repo "api" (VesnALIA project proj_api) has no checkout on the machine host_1 that this Loom project uses. Clone it there with `alia project source add proj_api --clone --machine host_1`, then start the project again.',
     });
     expect(project().state).toBe("ready");
     expect(h.host.calls).toEqual([]);
 
-    h.bb.checkouts.set("proj_docs", {});
+    h.alia.checkouts.set("proj_docs", {});
     const both = await h.engine.start("csv", "human").catch((error: Error) => error.message);
     expect(String(both).split("\n")).toEqual([expect.stringContaining('Repo "api"'), expect.stringContaining('Repo "docs"')]);
     expect(project().state).toBe("ready");
 
-    h.bb.checkouts.set("proj_api", { host_1: "/src/api" });
-    h.bb.checkouts.set("proj_docs", { host_1: "/src/docs" });
+    h.alia.checkouts.set("proj_api", { host_1: "/src/api" });
+    h.alia.checkouts.set("proj_docs", { host_1: "/src/docs" });
     expect((await h.engine.start("csv", "human")).state).toBe("running");
   });
 
@@ -92,9 +92,9 @@ describe("start", () => {
 
   it("checks every repo's checkout on the pr strategy but creates no branch", async () => {
     await seedRepoProject(h, (doc) => (doc.merge = { strategy: "pr" }), "ready");
-    h.bb.checkouts.set("proj_web", {});
+    h.alia.checkouts.set("proj_web", {});
     await expect(h.engine.start("csv", "human")).rejects.toMatchObject({ code: "loom_no_checkout", message: expect.stringContaining('Repo "web"') });
-    h.bb.checkouts.set("proj_web", { host_1: "/src/web" });
+    h.alia.checkouts.set("proj_web", { host_1: "/src/web" });
     expect((await h.engine.start("csv", "human")).state).toBe("running");
     expect(h.host.callsTo("ensureBranch")).toEqual([]);
   });
@@ -121,7 +121,7 @@ describe("tick: spawning", () => {
     await seedProject(h, wide);
     await h.engine.tick();
     expect(spawned()).toEqual(["CSV-1", "CSV-3"]);
-    expect(h.bb.callsTo("spawnThread").every(([args]) => (args as SpawnArgs).sectionId === "sec_1")).toBe(true);
+    expect(h.alia.callsTo("spawnThread").every(([args]) => (args as SpawnArgs).sectionId === "sec_1")).toBe(true);
     expect(ticketOf(h, "CSV-2").state).toBe("queued");
     await h.engine.tick();
     expect(spawned()).toHaveLength(2);
@@ -129,8 +129,8 @@ describe("tick: spawning", () => {
 
   it("recomputes readiness before each reservation: a scope edit that lands during one spawn keeps the next ticket queued", async () => {
     await seedProject(h, (doc) => (doc.ticket[1].depends_on = []));
-    h.bb.afterSpawn = () => {
-      h.bb.afterSpawn = null;
+    h.alia.afterSpawn = () => {
+      h.alia.afterSpawn = null;
       editTicket(h.ctx, "CSV-2", { scope: ["src/model/**"] }, "thr_plan");
     };
     await h.engine.tick();
@@ -144,8 +144,8 @@ describe("tick: spawning", () => {
       withDocsTicket(doc);
       doc.ticket[1].depends_on = [];
     });
-    h.bb.afterSpawn = () => {
-      h.bb.afterSpawn = null;
+    h.alia.afterSpawn = () => {
+      h.alia.afterSpawn = null;
       h.store.setTicketState(ticketOf(h, "CSV-3").id, "working", "loom");
     };
     await h.engine.tick();
@@ -155,12 +155,12 @@ describe("tick: spawning", () => {
 
   it("tries a ticket whose spawn failed only once per pass", async () => {
     await seedProject(h, (doc) => (doc.budget = { max_attempts: 5 }));
-    h.bb.spawnError = () => new Error("provider down");
+    h.alia.spawnError = () => new Error("provider down");
     await h.engine.tick();
     expect(spawned()).toEqual(["CSV-1"]);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "queued", failures: 0 });
     // It waits for its retry time.
-    h.bb.spawnError = null;
+    h.alia.spawnError = null;
     await h.engine.tick();
     expect(spawned()).toEqual(["CSV-1"]);
     h.clock.advance(60_000);
@@ -185,22 +185,22 @@ describe("tick: spawning", () => {
     await settleChecks(h.ctx);
     expect(ticketOf(h, "CSV-1").state).toBe("review");
     await h.engine.tick();
-    const workers = h.bb.callsTo("spawnThread").filter(([args]) => (args as SpawnArgs).metadata.role === "worker");
+    const workers = h.alia.callsTo("spawnThread").filter(([args]) => (args as SpawnArgs).metadata.role === "worker");
     expect(workers.map(([args]) => (args as SpawnArgs).metadata.ticket)).toEqual(["CSV-1", "CSV-3"]);
   });
 
   it("repairs the project's section before it spawns", async () => {
     await seedProject(h);
-    h.bb.sections.clear();
+    h.alia.sections.clear();
     await h.engine.tick();
-    expect(h.bb.callsTo("spawnThread")[0]![0]).toMatchObject({ sectionId: "sec_2" });
+    expect(h.alia.callsTo("spawnThread")[0]![0]).toMatchObject({ sectionId: "sec_2" });
     expect(project().section_id).toBe("sec_2");
   });
 
   it("does not tick paused, ready or archived projects", async () => {
     await seedProject(h, undefined, "paused");
     await h.engine.tick();
-    expect(h.bb.callsTo("spawnThread")).toEqual([]);
+    expect(h.alia.callsTo("spawnThread")).toEqual([]);
     await h.engine.resume("csv", "human");
     await h.engine.tick();
     expect(spawned()).toEqual(["CSV-1"]);
@@ -210,7 +210,7 @@ describe("tick: spawning", () => {
     await seedProject(h);
     h.store.updateProject(project().id, { hold_until: h.clock.t + 60_000 });
     await h.engine.tick();
-    expect(h.bb.callsTo("spawnThread")).toEqual([]);
+    expect(h.alia.callsTo("spawnThread")).toEqual([]);
     h.clock.advance(61_000);
     await h.engine.tick();
     expect(spawned()).toEqual(["CSV-1"]);
@@ -227,7 +227,7 @@ describe("tick: spawning", () => {
     passes.mockClear();
     h.store.updateTicket(ticketOf(h, "CSV-2").id, { state: "queued" });
     let kicked = false;
-    h.bb.afterSpawn = () => {
+    h.alia.afterSpawn = () => {
       if (!kicked) h.engine.kick();
       kicked = true;
     };
@@ -241,7 +241,7 @@ describe("tick: spawning", () => {
     await seedProject(h);
     await h.engine.dispose();
     await h.engine.tick();
-    expect(h.bb.callsTo("spawnThread")).toEqual([]);
+    expect(h.alia.callsTo("spawnThread")).toEqual([]);
   });
 });
 
@@ -254,7 +254,7 @@ describe("pause and resume", () => {
     h.store.setTicketState(ticketOf(h, "CSV-1").id, "review", "loom");
     await h.engine.tick();
     expect(spawned()).toHaveLength(2);
-    expect(h.bb.callsTo("stop")).toEqual([]);
+    expect(h.alia.callsTo("stop")).toEqual([]);
   });
 
   it("pause --now stops every worker thread without ending its row, the idles from those stops send nothing, and resume sends each stopped worker a continue message", async () => {
@@ -262,20 +262,20 @@ describe("pause and resume", () => {
     await h.engine.tick();
     await h.engine.pause("csv", "human", true);
     expect(project()).toMatchObject({ state: "paused", system_reason: PAUSE_NOW_REASON });
-    expect(h.bb.callsTo("stop").map(([id]) => id).sort()).toEqual(["thr_w1", "thr_w2"]);
-    expect(h.bb.callsTo("archive")).toEqual([]);
+    expect(h.alia.callsTo("stop").map(([id]) => id).sort()).toEqual(["thr_w1", "thr_w2"]);
+    expect(h.alia.callsTo("archive")).toEqual([]);
     expect(workerRows(h, "CSV-1")[0]!.state).toBe("active");
 
     await h.engine.onThreadIdle("thr_w1");
     await h.engine.onThreadIdle("thr_w1");
     await h.engine.onThreadIdle("thr_w2");
-    expect(h.bb.sent("thr_w1")).toEqual([]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
     expect(workerRows(h, "CSV-1")[0]!.state).toBe("active");
 
     h.clock.advance(30 * 60_000);
     await h.engine.resume("csv", "human");
-    expect(h.bb.sent("thr_w1")).toEqual(["[loom] The project resumed; continue CSV-1."]);
-    expect(h.bb.sent("thr_w2")).toEqual(["[loom] The project resumed; continue CSV-3."]);
+    expect(h.alia.sent("thr_w1")).toEqual(["[loom] The project resumed; continue CSV-1."]);
+    expect(h.alia.sent("thr_w2")).toEqual(["[loom] The project resumed; continue CSV-3."]);
     expect(workerRows(h, "CSV-1")[0]).toMatchObject({ clock_at: h.clock.t, idle_count: 0 });
   });
 
@@ -285,13 +285,13 @@ describe("pause and resume", () => {
     await h.engine.pause("csv", "human", false);
     h.store.setTicketState(ticketOf(h, "CSV-3").id, "checking", "loom");
     await h.engine.resume("csv", "human");
-    expect(h.bb.sent("thr_w1")).toEqual([]);
-    expect(h.bb.sent("thr_w2")).toEqual([]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
+    expect(h.alia.sent("thr_w2")).toEqual([]);
 
     await h.engine.pause("csv", "human", false);
-    h.bb.threads.get("thr_w1")!.status = "idle";
+    h.alia.threads.get("thr_w1")!.status = "idle";
     await h.engine.resume("csv", "human");
-    expect(h.bb.sent("thr_w1")).toHaveLength(1);
+    expect(h.alia.sent("thr_w1")).toHaveLength(1);
   });
 
   it("a check result that finished while the project was paused --now is stored, not sent, and resume hands it to the stopped worker", async () => {
@@ -302,14 +302,14 @@ describe("pause and resume", () => {
     h.host.onExec = () => void h.store.setProjectState(project().id, "paused", "human", PAUSE_NOW_REASON);
     submit(h.ctx, "thr_w1", "done");
     await settleChecks(h.ctx);
-    h.bb.threads.get("thr_w1")!.status = "idle";
+    h.alia.threads.get("thr_w1")!.status = "idle";
 
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", check_failures: 1 });
-    expect(h.bb.sent("thr_w1")).toEqual([]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
 
     await h.engine.resume("csv", "human");
-    const [message] = h.bb.sent("thr_w1");
-    expect(h.bb.sent("thr_w1")).toHaveLength(1);
+    const [message] = h.alia.sent("thr_w1");
+    expect(h.alia.sent("thr_w1")).toHaveLength(1);
     expect(message).toContain("[loom] The project resumed; continue CSV-1.");
     expect(message).toContain("Checks failed");
     expect(message).toContain("src/a.ts: boom");
@@ -324,10 +324,10 @@ describe("pause and resume", () => {
     submit(h.ctx, "thr_w1", "done");
     h.store.setProjectState(project().id, "paused", "human", PAUSE_NOW_REASON);
     await settleChecks(h.ctx);
-    h.bb.threads.get("thr_w1")!.status = "idle";
+    h.alia.threads.get("thr_w1")!.status = "idle";
     await h.engine.resume("csv", "human");
-    expect(h.bb.sent("thr_w1")).toHaveLength(1);
-    expect(h.bb.sent("thr_w1")[0]).toContain("The checks could not run: host disconnected. Submit again.");
+    expect(h.alia.sent("thr_w1")).toHaveLength(1);
+    expect(h.alia.sent("thr_w1")[0]).toContain("The checks could not run: host disconnected. Submit again.");
 
     h.host.errors.exec = null;
     h.host.errors.commitAll = null;
@@ -338,14 +338,14 @@ describe("pause and resume", () => {
     h.store.setTicketState(ticketOf(h, "CSV-1").id, "working", "loom");
     await h.engine.pause("csv", "human", true);
     await h.engine.resume("csv", "human");
-    expect(h.bb.sent("thr_w1").at(-1)).toBe("[loom] The project resumed; continue CSV-1.");
+    expect(h.alia.sent("thr_w1").at(-1)).toBe("[loom] The project resumed; continue CSV-1.");
   });
 
   it("stops a worker that finishes spawning after pause --now", async () => {
     await seedProject(h);
-    h.bb.afterSpawn = () => void h.store.setProjectState(project().id, "paused", "human", PAUSE_NOW_REASON);
+    h.alia.afterSpawn = () => void h.store.setProjectState(project().id, "paused", "human", PAUSE_NOW_REASON);
     await h.engine.tick();
-    expect(h.bb.callsTo("stop")).toEqual([["thr_w1"]]);
+    expect(h.alia.callsTo("stop")).toEqual([["thr_w1"]]);
     expect(workerRows(h, "CSV-1")[0]!.state).toBe("active");
   });
 });
@@ -366,7 +366,7 @@ describe("timeouts", () => {
     await h.engine.tick();
     h.clock.advance(121 * 60_000);
     let paused = false;
-    h.bb.threadTokens = async () => {
+    h.alia.threadTokens = async () => {
       if (!paused) {
         paused = true;
         await h.engine.pause("csv", "human", false);
@@ -377,7 +377,7 @@ describe("timeouts", () => {
     expect(project().state).toBe("paused");
     expect(workerRows(h, "CSV-1")).toMatchObject([{ state: "active", end_reason: null }]);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", failures: 0 });
-    expect(h.bb.callsTo("stop")).toEqual([]);
+    expect(h.alia.callsTo("stop")).toEqual([]);
     expect(spawned()).toEqual(["CSV-1"]);
   });
 
@@ -385,9 +385,9 @@ describe("timeouts", () => {
     await seedProject(h, wide);
     await h.engine.tick();
     h.clock.advance(121 * 60_000);
-    const stop = h.bb.stop.bind(h.bb);
+    const stop = h.alia.stop.bind(h.alia);
     let paused = false;
-    h.bb.stop = async (threadId) => {
+    h.alia.stop = async (threadId) => {
       await stop(threadId);
       if (!paused) {
         paused = true;
@@ -410,7 +410,7 @@ describe("timeouts", () => {
     await h.engine.tick();
     expect(workerRows(h, "CSV-1")[0]!.state).toBe("active");
     expect(workerRows(h, "CSV-3")[0]!.state).toBe("active");
-    expect(h.bb.callsTo("stop")).toEqual([]);
+    expect(h.alia.callsTo("stop")).toEqual([]);
   });
 
   it("does not count paused time: a pause longer than the timeout followed by resume times nobody out", async () => {
@@ -449,12 +449,12 @@ describe("budgets", () => {
   it("pauses the project when the token budget is used up, flags triage, and tells the planner why", async () => {
     await seedProject(h, (doc) => (doc.budget = { max_tokens: 1000 }));
     await h.engine.tick();
-    h.bb.tokens.set("thr_w1", 1500);
+    h.alia.tokens.set("thr_w1", 1500);
     h.clock.advance(61_000);
     await h.engine.tick();
     expect(project()).toMatchObject({ state: "paused", system_reason: "The token budget is used up: 1500 of 1000 tokens.", triage_round: 1 });
     expect(workerRows(h, "CSV-1")[0]).toMatchObject({ tokens: 1500, state: "active" });
-    const sent = h.bb.callsTo("send").filter(([id]) => id === "thr_plan");
+    const sent = h.alia.callsTo("send").filter(([id]) => id === "thr_plan");
     expect(sent).toHaveLength(1);
     expect((sent[0]![1] as { detail: string }).detail).toContain("token budget is used up");
     await h.engine.tick();
@@ -465,20 +465,20 @@ describe("budgets", () => {
     await seedProject(h);
     await h.engine.tick();
     await h.engine.tick();
-    expect(h.bb.callsTo("threadTokens").filter(([id]) => id === "thr_w1")).toHaveLength(1);
+    expect(h.alia.callsTo("threadTokens").filter(([id]) => id === "thr_w1")).toHaveLength(1);
     h.clock.advance(59_000);
     await h.engine.tick();
-    expect(h.bb.callsTo("threadTokens").filter(([id]) => id === "thr_w1")).toHaveLength(1);
+    expect(h.alia.callsTo("threadTokens").filter(([id]) => id === "thr_w1")).toHaveLength(1);
     h.clock.advance(2_000);
     await h.engine.tick();
-    expect(h.bb.callsTo("threadTokens").filter(([id]) => id === "thr_w1")).toHaveLength(2);
+    expect(h.alia.callsTo("threadTokens").filter(([id]) => id === "thr_w1")).toHaveLength(2);
   });
 
   it("pauses at the deadline before it spawns anything", async () => {
     await seedProject(h, (doc) => (doc.budget = { deadline: "2020-01-01" }));
     await h.engine.tick();
     expect(project()).toMatchObject({ state: "paused", system_reason: "The deadline 2020-01-01 has passed." });
-    expect(h.bb.callsTo("spawnThread")).toEqual([]);
+    expect(h.alia.callsTo("spawnThread")).toEqual([]);
   });
 });
 
@@ -496,7 +496,7 @@ describe("rate limits and turn failures", () => {
         rateLimits: { kind: "subscription-window", overageReason: null, overageStatus: null, providerId: "claude", reachedReason: null, status: "blocked", windows: [{ label: "5h", providerKey: null, resetsAtMs: reset, status: "blocked" }] },
       }),
     );
-    expect(h.bb.callsTo("retryTurn")).toEqual([["thr_w2", "req_1", reset + 15_000]]);
+    expect(h.alia.callsTo("retryTurn")).toEqual([["thr_w2", "req_1", reset + 15_000]]);
     expect(project().hold_until).toBe(reset + 15_000);
     await h.engine.tick();
     expect(spawned()).toEqual(["CSV-1", "CSV-3"]);
@@ -511,7 +511,7 @@ describe("rate limits and turn failures", () => {
     await h.engine.onThreadFailed("thr_w1");
     await h.engine.onThreadFailed("thr_unknown");
     expect(workerRows(h, "CSV-1")[0]!.state).toBe("active");
-    expect(h.bb.sent("thr_w1")).toEqual([]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
   });
 });
 
@@ -528,7 +528,7 @@ describe("events", () => {
     await h.engine.tick();
     await h.engine.onThreadIdle("thr_unknown");
     await h.engine.onThreadIdle("thr_w1");
-    expect(h.bb.sent("thr_w1")).toHaveLength(1);
+    expect(h.alia.sent("thr_w1")).toHaveLength(1);
   });
 
   it("requeues the ticket of a worker the human archived, and ends the planner row of a deleted planner thread", async () => {
@@ -546,7 +546,7 @@ describe("events", () => {
 
 describe("spec review", () => {
   const draft = async () => {
-    await h.projects.propose({ toml: specToml(), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    await h.projects.propose({ toml: specToml(), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
     await ensureSpecReview(h.ctx, "csv");
   };
   const review = () => h.store.specReviews(project().id)[0]!;
@@ -555,19 +555,19 @@ describe("spec review", () => {
     await draft();
     const refused = await h.engine.approve("csv", "human").catch((error: unknown) => error as { message: string; hint?: string });
     expect(refused).toMatchObject({ message: "Draft v1 of csv is still in its spec review (round 1 of 3)." });
-    expect((refused as { hint?: string }).hint).toContain("bb loom approve csv --skip-review");
+    expect((refused as { hint?: string }).hint).toContain("alia loom approve csv --skip-review");
     expect(project().state).toBe("draft");
 
     const approved = await h.engine.approve("csv", "human", undefined, { skipReview: true });
     expect(approved).toMatchObject({ state: "ready", applied: "draft" });
     expect(review().state).toBe("superseded");
-    expect(h.bb.callsTo("archive")).toContainEqual(["thr_w1"]);
+    expect(h.alia.callsTo("archive")).toContainEqual(["thr_w1"]);
   });
 
   it("refuses to approve a pending version in review, and approves it with skipReview, superseding the review", async () => {
     await draft();
     await h.engine.approve("csv", "human", undefined, { skipReview: true });
-    await h.projects.propose({ toml: specToml((doc) => (doc.project.goal = "Let people export their orders as a CSV file, by date.")), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    await h.projects.propose({ toml: specToml((doc) => (doc.project.goal = "Let people export their orders as a CSV file, by date.")), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
     expect(await ensureSpecReview(h.ctx, "csv")).toEqual({ kind: "reviewing", version: 2, round: 1 });
     const refused = await h.engine.approve("csv", "human", 2).catch((error: unknown) => error as { message: string; hint?: string });
     expect(refused).toMatchObject({ message: "Pending v2 of csv is still in its spec review (round 1 of 3)." });
@@ -582,7 +582,7 @@ describe("spec review", () => {
     await draft();
     await specVerdict(h.ctx, "thr_w1", [], "Fits the request.");
     await h.engine.approve("csv", "human");
-    await h.projects.propose({ toml: specToml((doc) => (doc.agents.max_workers = 3)), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    await h.projects.propose({ toml: specToml((doc) => (doc.agents.max_workers = 3)), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
     expect(await ensureSpecReview(h.ctx, "csv")).toMatchObject({ kind: "skipped", version: 2, against: 1, paths: ["agents.max_workers"] });
     expect(await h.engine.approve("csv", "human", 2)).toMatchObject({ applied: "pending", version: 2 });
     expect(h.store.specReviews(project().id).at(-1)!.state).toBe("skipped");
@@ -597,7 +597,7 @@ describe("spec review", () => {
     await h.projects.propose({ toml: specToml((doc) => {
         doc.project.slug = "csv-two";
         doc.project.key = "CSVB";
-      }), threadId: "thr_plan2", bbProjectId: "proj_1", hostId: "host_1" });
+      }), threadId: "thr_plan2", aliaProjectId: "proj_1", hostId: "host_1" });
     await ensureSpecReview(h.ctx, "csv-two");
     const other = h.store.projectBySlug("csv-two")!;
     await h.engine.archive("csv-two", "human");
@@ -607,7 +607,7 @@ describe("spec review", () => {
   it("sends a spec reviewer's idle, archive and failed turn to the spec review, and reconcile fails one that never started", async () => {
     await draft();
     await h.engine.onThreadIdle("thr_w1");
-    expect(h.bb.sent("thr_w1")).toEqual([expect.stringContaining("Your turn ended without a verdict on spec v1")]);
+    expect(h.alia.sent("thr_w1")).toEqual([expect.stringContaining("Your turn ended without a verdict on spec v1")]);
     await h.engine.onTurnFailed(makeTurnFailedEvent({ threadId: "thr_w1" }));
     expect(review()).toMatchObject({ state: "failed", reason: "the reviewer ended its turn twice without a verdict" });
 
@@ -646,11 +646,11 @@ describe("planning conversations", () => {
     expect(open()).toEqual([]);
   });
 
-  it("reconcile ends the conversations whose thread bb no longer lists or lists as archived or deleted, and keeps the live ones", async () => {
+  it("reconcile ends the conversations whose thread VesnALIA no longer lists or lists as archived or deleted, and keeps the live ones", async () => {
     const [missing, archived, deleted, live] = [await start(), await start(), await start(), await start()];
-    h.bb.threads.delete(missing);
-    h.bb.threads.get(archived)!.archivedAt = 5;
-    h.bb.threads.get(deleted)!.deletedAt = 5;
+    h.alia.threads.delete(missing);
+    h.alia.threads.get(archived)!.archivedAt = 5;
+    h.alia.threads.get(deleted)!.deletedAt = 5;
     await h.engine.reconcile();
     expect(open()).toEqual([live]);
     for (const threadId of [missing, archived, deleted]) expect(h.store.planning(threadId)).toMatchObject({ end_reason: "gone" });
@@ -665,14 +665,14 @@ describe("approve", () => {
         doc.project.goal = "Let people export their orders as a CSV file, with filters.";
       }),
       threadId: "thr_plan",
-      bbProjectId: "proj_1",
+      aliaProjectId: "proj_1",
       hostId: "host_1",
     });
   const stuck = async () => {
     await seedProject(h, withDocsTicket);
-    h.bb.spawnError = (args) => (args.metadata.ticket === "CSV-1" ? new SpawnRefusedError(400, "HTTP 400: Provider pi only supports full permission mode.") : null);
+    h.alia.spawnError = (args) => (args.metadata.ticket === "CSV-1" ? new SpawnRefusedError(400, "HTTP 400: Provider pi only supports full permission mode.") : null);
     await h.engine.tick();
-    h.bb.spawnError = null;
+    h.alia.spawnError = null;
     await h.engine.block("CSV-3", "needs creds", "human");
     await proposeV2();
     h.kick.mockClear();
@@ -687,25 +687,25 @@ describe("approve", () => {
     expect(h.store.posts(ticketOf(h, "CSV-1").id).at(-1)).toMatchObject({
       kind: "reply",
       author_kind: "loom",
-      body: "Spec v2 is approved, so Loom queued this ticket again: bb never started its worker.",
+      body: "Spec v2 is approved, so Loom queued this ticket again: VesnALIA never started its worker.",
     });
     expect(ticketOf(h, "CSV-3").state).toBe("blocked");
     expect(h.kick).toHaveBeenCalled();
-    const message = h.bb.sent("thr_plan").at(-1)!;
+    const message = h.alia.sent("thr_plan").at(-1)!;
     expect(message).toContain("[loom] Spec v2 of csv is approved.");
-    expect(message).toContain("Loom queued CSV-1 again, because bb never started its worker. Its failure count starts over, and a worker picks it up by itself.");
+    expect(message).toContain("Loom queued CSV-1 again, because VesnALIA never started its worker. Its failure count starts over, and a worker picks it up by itself.");
     expect(message).toContain("Still blocked: CSV-3. Requeue one with loom_requeue when v2 fixes what blocked it.");
   });
 
-  it("approving a pending version sends a ticket whose reviewer bb refused back to review, in a new round for the same head", async () => {
+  it("approving a pending version sends a ticket whose reviewer VesnALIA refused back to review, in a new round for the same head", async () => {
     await seedProject(h, withDocsTicket);
     await reachReview(h);
-    h.bb.spawnError = (args) =>
+    h.alia.spawnError = (args) =>
       args.metadata.role === "reviewer" || args.metadata.ticket === "CSV-3" ? new SpawnRefusedError(400, "HTTP 400: Unsupported provider claude") : null;
     await h.engine.tick();
-    h.bb.spawnError = null;
+    h.alia.spawnError = null;
     const blocked = ticketOf(h, "CSV-1");
-    expect(blocked).toMatchObject({ state: "blocked", blocked_reason: "bb refused to start a reviewer: HTTP 400: Unsupported provider claude", review_round: 1 });
+    expect(blocked).toMatchObject({ state: "blocked", blocked_reason: "alia refused to start a reviewer: HTTP 400: Unsupported provider claude", review_round: 1 });
     expect(ticketOf(h, "CSV-3").state).toBe("blocked");
     await proposeV2();
     h.kick.mockClear();
@@ -717,18 +717,18 @@ describe("approve", () => {
     expect(h.store.posts(blocked.id).at(-1)).toMatchObject({
       kind: "reply",
       author_kind: "loom",
-      body: "Spec v2 is approved, so Loom sent this ticket back to review: bb refused to start its reviewer, and its work had already passed the checks.",
+      body: "Spec v2 is approved, so Loom sent this ticket back to review: VesnALIA refused to start its reviewer, and its work had already passed the checks.",
     });
     expect(ticketOf(h, "CSV-3").state).toBe("queued");
     expect(h.kick).toHaveBeenCalled();
-    const message = h.bb.sent("thr_plan").at(-1)!;
-    expect(message).toContain("Loom queued CSV-3 again, because bb never started its worker.");
-    expect(message).toContain("Loom sent CSV-1 back to review, because bb refused to start its reviewer; new reviewers start for the same commit.");
+    const message = h.alia.sent("thr_plan").at(-1)!;
+    expect(message).toContain("Loom queued CSV-3 again, because VesnALIA never started its worker.");
+    expect(message).toContain("Loom sent CSV-1 back to review, because VesnALIA refused to start its reviewer; new reviewers start for the same commit.");
     expect(message).not.toContain("Still blocked");
 
-    const before = h.bb.callsTo("spawnThread").length;
+    const before = h.alia.callsTo("spawnThread").length;
     await h.engine.tick();
-    const reviewers = h.bb.callsTo("spawnThread").slice(before).map(([args]) => (args as SpawnArgs).metadata).filter((metadata) => metadata.role === "reviewer");
+    const reviewers = h.alia.callsTo("spawnThread").slice(before).map(([args]) => (args as SpawnArgs).metadata).filter((metadata) => metadata.role === "reviewer");
     expect(reviewers).toEqual([expect.objectContaining({ ticket: "CSV-1", round: "2" })]);
     expect(ticketOf(h, "CSV-1").state).toBe("review");
   });
@@ -736,7 +736,7 @@ describe("approve", () => {
   it("leaves a ticket blocked when its reviewers ended without a verdict, even after approving a pending version", async () => {
     await seedProject(h);
     await reachReview(h);
-    h.bb.spawnError = (args) => (args.metadata.role === "reviewer" ? new Error("provider is down") : null);
+    h.alia.spawnError = (args) => (args.metadata.role === "reviewer" ? new Error("provider is down") : null);
     for (let pass = 0; pass < 7; pass++) {
       await h.engine.tick();
       h.clock.advance(15 * 60_000);
@@ -748,15 +748,15 @@ describe("approve", () => {
   });
 
   it("approving a draft requeues nothing and sends nothing", async () => {
-    await h.projects.propose({ toml: specToml(), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    await h.projects.propose({ toml: specToml(), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
     const result = await h.engine.approve("csv", "human");
     expect(result).toMatchObject({ applied: "draft", requeued: [], backToReview: [] });
-    expect(h.bb.callsTo("send")).toEqual([]);
+    expect(h.alia.callsTo("send")).toEqual([]);
   });
 
   it("still approves when the message to the planner fails", async () => {
     await stuck();
-    h.bb.sendError = new Error("thread is busy");
+    h.alia.sendError = new Error("thread is busy");
     expect(await h.engine.approve("csv", "human", 2)).toMatchObject({ applied: "pending", requeued: ["CSV-1"] });
     expect(project()).toMatchObject({ approved_version: 2, pending_version: null });
   });
@@ -771,7 +771,7 @@ describe("human ticket commands", () => {
     const cancelled = await h.engine.cancel("CSV-1", "Dropped", "human");
     expect(cancelled.state).toBe("cancelled");
     expect(workerRows(h, "CSV-1")[0]).toMatchObject({ state: "ended", end_reason: "cancelled" });
-    expect(h.bb.callsTo("archive")).toEqual([["thr_w1"]]);
+    expect(h.alia.callsTo("archive")).toEqual([["thr_w1"]]);
   });
 
   it("refuses to block or cancel a ticket while a merge runs, and a ticket that cannot move", async () => {
@@ -799,7 +799,7 @@ describe("human ticket commands", () => {
     expect(requeued.state).toBe("queued");
     await h.engine.tick();
     expect(spawned()).toEqual(["CSV-1", "CSV-1"]);
-    expect((h.bb.callsTo("spawnThread")[1]![0] as SpawnArgs).prompt).toContain("Use the other approach");
+    expect((h.alia.callsTo("spawnThread")[1]![0] as SpawnArgs).prompt).toContain("Use the other approach");
   });
 
   it("delivers a human reply to the live worker of a working ticket, and only then", async () => {
@@ -807,7 +807,7 @@ describe("human ticket commands", () => {
     await h.engine.tick();
     const post = await h.engine.humanPost("CSV-1", "Please use the v2 API", undefined);
     expect(post).toMatchObject({ kind: "reply", author_kind: "human", body: "Please use the v2 API" });
-    const sent = h.bb.callsTo("send").filter(([id]) => id === "thr_w1");
+    const sent = h.alia.callsTo("send").filter(([id]) => id === "thr_w1");
     expect(sent).toEqual([["thr_w1", { summary: "[loom] Reply on CSV-1 from the human", detail: "Please use the v2 API" }]]);
 
     const reply = await h.engine.humanPost("CSV-1", "And keep it small", post.id);
@@ -816,7 +816,7 @@ describe("human ticket commands", () => {
     h.store.setTicketState(ticketOf(h, "CSV-3").id, "checking", "loom");
     await h.engine.humanPost("CSV-3", "ok?", undefined);
     await h.engine.humanPost("CSV-2", "no worker yet", undefined);
-    expect(h.bb.callsTo("send").filter(([id]) => id === "thr_w2")).toEqual([]);
+    expect(h.alia.callsTo("send").filter(([id]) => id === "thr_w2")).toEqual([]);
     expect(h.store.posts(ticketOf(h, "CSV-2").id).at(-1)!.body).toBe("no worker yet");
   });
 
@@ -824,10 +824,10 @@ describe("human ticket commands", () => {
     await seedProject(h);
     await h.engine.tick();
     await h.engine.block("CSV-1", "Needs the API token", "human");
-    const before = h.bb.callsTo("send").length;
+    const before = h.alia.callsTo("send").length;
     const post = await h.engine.humanPost("CSV-1", "The token is in the vault under loom/csv", undefined);
     await h.engine.humanPost("CSV-1", "Use the read-only one", post.id);
-    expect(h.bb.callsTo("send").slice(before)).toEqual([
+    expect(h.alia.callsTo("send").slice(before)).toEqual([
       [
         "thr_plan",
         {
@@ -843,18 +843,18 @@ describe("human ticket commands", () => {
     await seedProject(h);
     await h.engine.tick();
     await h.engine.block("CSV-1", "Needs the API token", "human");
-    h.bb.sendError = new Error("planner is gone");
+    h.alia.sendError = new Error("planner is gone");
     expect((await h.engine.humanPost("CSV-1", "Here it is", undefined)).body).toBe("Here it is");
-    expect(h.bb.callsTo("log").some(([level, text]) => level === "warn" && String(text).includes("planner is gone"))).toBe(true);
+    expect(h.alia.callsTo("log").some(([level, text]) => level === "warn" && String(text).includes("planner is gone"))).toBe(true);
   });
 
   it("still records a reply when the worker cannot be messaged", async () => {
     await seedProject(h);
     await h.engine.tick();
-    h.bb.sendError = new Error("thread is archived");
+    h.alia.sendError = new Error("thread is archived");
     const post = await h.engine.humanPost("CSV-1", "hello", undefined);
     expect(post.body).toBe("hello");
-    expect(h.bb.callsTo("log").some(([level, text]) => level === "warn" && String(text).includes("thread is archived"))).toBe(true);
+    expect(h.alia.callsTo("log").some(([level, text]) => level === "warn" && String(text).includes("thread is archived"))).toBe(true);
   });
 
   it("archives a project: workers stop and archive, tickets are cancelled, the section goes", async () => {
@@ -863,21 +863,21 @@ describe("human ticket commands", () => {
     await h.engine.archive("csv", "human");
     expect(project().state).toBe("archived");
     expect(h.store.tickets(project().id).every((ticket) => ticket.state === "cancelled")).toBe(true);
-    expect(h.bb.callsTo("stop").map(([id]) => id).sort()).toEqual(["thr_w1", "thr_w2"]);
-    expect(h.bb.callsTo("archive").map(([id]) => id).sort()).toEqual(["thr_w1", "thr_w2"]);
+    expect(h.alia.callsTo("stop").map(([id]) => id).sort()).toEqual(["thr_w1", "thr_w2"]);
+    expect(h.alia.callsTo("archive").map(([id]) => id).sort()).toEqual(["thr_w1", "thr_w2"]);
     expect(workerRows(h, "CSV-1")[0]).toMatchObject({ state: "ended", end_reason: "cancelled" });
-    expect(h.bb.callsTo("deleteSection")).toEqual([["sec_1"]]);
+    expect(h.alia.callsTo("deleteSection")).toEqual([["sec_1"]]);
     await h.engine.tick();
     expect(spawned()).toHaveLength(2);
   });
 
   it("ends the thread of a spawn that was still in flight when its ticket was cancelled", async () => {
     await seedProject(h);
-    h.bb.afterSpawn = () => void h.store.setTicketState(ticketOf(h, "CSV-1").id, "cancelled", "human");
+    h.alia.afterSpawn = () => void h.store.setTicketState(ticketOf(h, "CSV-1").id, "cancelled", "human");
     await h.engine.tick();
     expect(workerRows(h, "CSV-1")[0]).toMatchObject({ state: "ended", end_reason: "cancelled" });
     expect(ticketOf(h, "CSV-1").state).toBe("cancelled");
-    expect(h.bb.callsTo("archive")).toEqual([["thr_w1"]]);
+    expect(h.alia.callsTo("archive")).toEqual([["thr_w1"]]);
   });
 });
 
@@ -896,7 +896,7 @@ describe("reconcile", () => {
     h.store.updateTicket(three.id, { attempt: 1 });
     const adopt = h.store.addThread({ spawn_token: "tok_adopt", project_id: project().id, ticket_id: one.id, role: "worker", state: "spawning" });
     h.store.addThread({ spawn_token: "tok_lost", project_id: project().id, ticket_id: three.id, role: "worker", state: "spawning" });
-    await h.bb.spawnThread({ bbProjectId: "proj_1", hostId: "host_1", baseBranch: "loom/csv", title: "t", prompt: "p", sectionId: null, metadata: { spawnToken: "tok_adopt" } });
+    await h.alia.spawnThread({ aliaProjectId: "proj_1", hostId: "host_1", baseBranch: "loom/csv", title: "t", prompt: "p", sectionId: null, metadata: { spawnToken: "tok_adopt" } });
 
     expect(await h.engine.reconcile()).toEqual({ adopted: 1, rolledBack: 1, rechecked: 0 });
     expect(h.store.thread(adopt.id)).toMatchObject({ state: "active", thread_id: "thr_w1", environment_id: "env_1" });
@@ -907,7 +907,7 @@ describe("reconcile", () => {
 
   it("ends an active row whose thread is gone or archived, and requeues its ticket without a failure", async () => {
     const row = await working();
-    h.bb.threads.get("thr_w1")!.archivedAt = 5;
+    h.alia.threads.get("thr_w1")!.archivedAt = 5;
     await h.engine.reconcile();
     expect(h.store.thread(row.id)).toMatchObject({ state: "ended", end_reason: "gone" });
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "queued", failures: 0 });
@@ -915,7 +915,7 @@ describe("reconcile", () => {
 
   it("ends a planner row whose thread was deleted while the plugin was down", async () => {
     await working();
-    h.bb.threads.delete("thr_plan");
+    h.alia.threads.delete("thr_plan");
     await h.engine.reconcile();
     expect(h.store.threadByThreadId("thr_plan")?.state).toBe("ended");
   });
@@ -952,12 +952,12 @@ describe("reconcile", () => {
     await seedProject(h);
     await h.engine.tick();
     const row = workerRows(h, "CSV-1")[0]!;
-    h.bb.stopConfirms = false;
+    h.alia.stopConfirms = false;
     h.clock.advance(121 * 60_000);
     await h.engine.tick();
     expect(h.store.thread(row.id)?.state).toBe("ending");
     expect(ticketOf(h, "CSV-1").state).toBe("working");
-    h.bb.stopConfirms = true;
+    h.alia.stopConfirms = true;
     await h.engine.tick();
     expect(h.store.thread(row.id)?.state).toBe("ended");
     expect(workerRows(h, "CSV-1")).toHaveLength(2);
@@ -966,7 +966,7 @@ describe("reconcile", () => {
 
 // ---------------------------------------------------------------- review and merge
 
-const roles = () => h.bb.callsTo("spawnThread").map(([args]) => `${(args as SpawnArgs).metadata.role}:${(args as SpawnArgs).metadata.ticket}`);
+const roles = () => h.alia.callsTo("spawnThread").map(([args]) => `${(args as SpawnArgs).metadata.role}:${(args as SpawnArgs).metadata.ticket}`);
 const reviewerRows = (key: string) => h.store.threads({ ticketId: ticketOf(h, key).id, role: "reviewer" });
 const prProject = (doc: Doc) => {
   withDocsTicket(doc);
@@ -1006,7 +1006,7 @@ describe("tick: review and merge", () => {
 
     await h.engine.tick();
     expect(roles()).toEqual(["worker:CSV-1", "reviewer:CSV-1", "worker:CSV-2"]);
-    expect((h.bb.callsTo("spawnThread")[2]![0] as SpawnArgs).baseBranch).toBe("loom/csv");
+    expect((h.alia.callsTo("spawnThread")[2]![0] as SpawnArgs).baseBranch).toBe("loom/csv");
   });
 
   it("starts no worker while a ticket is merging on the integration strategy, and starts it once the merge is over", async () => {
@@ -1171,33 +1171,33 @@ describe("tick: review and merge", () => {
     for (const key of ["CSV-1", "CSV-2"]) h.store.setTicketState(ticketOf(h, key).id, "cancelled", "human");
     await h.engine.tick();
     expect(project().state).toBe("done");
-    expect(h.bb.callsTo("deleteSection")).toEqual([["sec_1"]]);
+    expect(h.alia.callsTo("deleteSection")).toEqual([["sec_1"]]);
     expect(project().section_id).toBeNull();
   });
 
   it("removes a done project's section on the next pass, and a running project's never", async () => {
     await seedProject(h);
     await h.engine.tick();
-    expect(h.bb.callsTo("deleteSection")).toEqual([]);
+    expect(h.alia.callsTo("deleteSection")).toEqual([]);
     h.store.setProjectState(project().id, "done", "loom");
     await h.engine.tick();
-    expect(h.bb.callsTo("deleteSection")).toEqual([["sec_1"]]);
+    expect(h.alia.callsTo("deleteSection")).toEqual([["sec_1"]]);
     expect(project().section_id).toBeNull();
     await h.engine.tick();
-    expect(h.bb.callsTo("deleteSection")).toHaveLength(1);
+    expect(h.alia.callsTo("deleteSection")).toHaveLength(1);
   });
 
   it("tries a refused section deletion again on the next pass", async () => {
     await seedProject(h);
     h.store.setProjectState(project().id, "done", "loom");
-    h.bb.deleteSectionError = new Error("bb is down");
+    h.alia.deleteSectionError = new Error("alia is down");
     await h.engine.tick();
     expect(project().section_id).toBe("sec_1");
-    expect(h.bb.callsTo("log").some(([level, text]) => level === "warn" && String(text).includes("Could not delete the project's section"))).toBe(true);
-    h.bb.deleteSectionError = null;
+    expect(h.alia.callsTo("log").some(([level, text]) => level === "warn" && String(text).includes("Could not delete the project's section"))).toBe(true);
+    h.alia.deleteSectionError = null;
     await h.engine.tick();
     expect(project().section_id).toBeNull();
-    expect(h.bb.sections.has("sec_1")).toBe(false);
+    expect(h.alia.sections.has("sec_1")).toBe(false);
   });
 });
 
@@ -1212,7 +1212,7 @@ describe("reviewer events", () => {
   it("nudges an idle reviewer, then ends it, and the next tick starts a replacement", async () => {
     const row = await reviewing();
     await h.engine.onThreadIdle(row.thread_id!);
-    expect(h.bb.sent(row.thread_id!)[0]).toContain("without a verdict");
+    expect(h.alia.sent(row.thread_id!)[0]).toContain("without a verdict");
     await h.engine.onThreadIdle(row.thread_id!);
     expect(h.store.thread(row.id)).toMatchObject({ state: "ended", end_reason: "abandoned" });
     await h.engine.tick();
@@ -1230,10 +1230,10 @@ describe("reviewer events", () => {
   it("counts a failed turn as an idle, and retries a rate-limited one", async () => {
     const row = await reviewing();
     await h.engine.onTurnFailed(makeTurnFailedEvent({ threadId: row.thread_id!, requestId: "req_1", errorInfo: { category: "rate-limit", httpStatusCode: 429, providerCode: null } }));
-    expect(h.bb.callsTo("retryTurn")).toHaveLength(1);
+    expect(h.alia.callsTo("retryTurn")).toHaveLength(1);
     expect(h.store.thread(row.id)!.idle_count).toBe(0);
     await h.engine.onTurnFailed(makeTurnFailedEvent({ threadId: row.thread_id!, requestId: "req_2", errorInfo: { category: "internal", httpStatusCode: 500, providerCode: null } }));
-    expect(h.bb.sent(row.thread_id!)[0]).toContain("without a verdict");
+    expect(h.alia.sent(row.thread_id!)[0]).toContain("without a verdict");
     expect(h.store.thread(row.id)!.idle_count).toBe(1);
   });
 
@@ -1282,7 +1282,7 @@ describe("reconcile: review and merge", () => {
       h.store.updateThread(row.id, { review_round: ticket.review_round });
       h.store.addReview({ ticket_id: ticket.id, round: ticket.review_round, thread_row_id: row.id });
     }
-    await h.bb.spawnThread({ bbProjectId: "proj_1", hostId: "host_1", baseBranch: "b", title: "t", prompt: "p", sectionId: null, metadata: { spawnToken: "tok_adopt" } });
+    await h.alia.spawnThread({ aliaProjectId: "proj_1", hostId: "host_1", baseBranch: "b", title: "t", prompt: "p", sectionId: null, metadata: { spawnToken: "tok_adopt" } });
 
     expect(await h.engine.reconcile()).toEqual({ adopted: 1, rolledBack: 1, rechecked: 0 });
     expect(h.store.thread(adopt.id)).toMatchObject({ state: "active", thread_id: "thr_w2", environment_id: "env_2" });
@@ -1296,7 +1296,7 @@ describe("reconcile: review and merge", () => {
     await reachReview(h, "CSV-1");
     await h.engine.tick();
     const row = reviewerRows("CSV-1")[0]!;
-    h.bb.threads.get(row.thread_id!)!.archivedAt = 5;
+    h.alia.threads.get(row.thread_id!)!.archivedAt = 5;
     const commits = h.host.callsTo("commitAll").length;
     await h.engine.reconcile();
     expect(h.store.thread(row.id)).toMatchObject({ state: "ended", end_reason: "gone" });

@@ -3,7 +3,7 @@ import {
   experimental_Icon as Icon, experimental_ThreadContextCardRow as ContextRow,
   experimental_useRpcQuery, experimental_useSidebarThreads, useRpc,
   type ExperimentalThreadContextCardProps, type ExperimentalThreadContextSegmentProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { balanceLabel, credits, threadUsageContract, type CentralUsage } from "./usage-contract.js";
 
 export function useCentralThread(threadId: string): boolean {

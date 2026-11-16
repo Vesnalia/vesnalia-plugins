@@ -20,7 +20,7 @@ Scan for:
 
 Findings must point to skills, tools, or MCPs invoked in this transcript. Speculative routings to skills the parent never opened do not count. To check whether a skill was used, scan the transcript for:
 
-- `Read` tool calls against any `SKILL.md` file (the active catalog paths the harness exposes (for example a project `.agents/skills/` or `.bb/skills/`, or a user skills root such as `~/.agents/skills/`))
+- `Read` tool calls against any `SKILL.md` file (the active catalog paths the harness exposes (for example a project `.agents/skills/` or `.vesnalia/skills/`, or a user skills root such as `~/.agents/skills/`))
 - delegation prompts that name a skill path
 - Tool calls (Shell, Grep, MCP, etc.) that match a skill's documented commands
 

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import { describeTask, buildMap } from "./model";
 import { handoffDescription } from "./settlement";
@@ -106,7 +106,7 @@ async function setup(
       },
     },
   });
-  await plugin(fake.bb);
+  await plugin(fake.alia);
   const settle = (patch = {}) =>
     fake.harness.behavior.callRpc("settle", {
       id,
@@ -209,7 +209,7 @@ describe("settling user work", () => {
     ]);
     f.deleteTask();
     expect(await f.harness.behavior.callRpc("settledToday", null)).toEqual([]);
-    expect(await f.bb.storage.kv.get(`settled:${result.id}`)).toBeUndefined();
+    expect(await f.alia.storage.kv.get(`settled:${result.id}`)).toBeUndefined();
     await f.harness.lifecycle.dispose();
   });
   it("moves only the task and viewed session, preserves history, and restores them with Undo", async () => {
@@ -303,7 +303,7 @@ describe("settling user work", () => {
     await f.harness.lifecycle.dispose();
   });
   it.each([{ children: true }, { fork: true }])(
-    "keeps sessions open when BB archive would cascade: %s",
+    "keeps sessions open when VesnALIA archive would cascade: %s",
     async (options) => {
       const f = await setup(options);
       const result = await f.settle();
@@ -541,13 +541,13 @@ describe("fixing a slipped date", () => {
     const f = await setup();
     await f.settle({ action: "done", threadId: undefined });
     const key = `settled:${id}`;
-    const receipt = (await f.bb.storage.kv.get(key)) as {
+    const receipt = (await f.alia.storage.kv.get(key)) as {
       before: Record<string, unknown>;
       after: Record<string, unknown>;
     };
     delete receipt.before.dueDate;
     delete receipt.after.dueDate;
-    await f.bb.storage.kv.set(key, receipt);
+    await f.alia.storage.kv.set(key, receipt);
     await f.undo();
     expect(f.current()).toMatchObject({
       status: original.status,

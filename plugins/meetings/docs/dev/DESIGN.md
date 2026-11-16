@@ -1,4 +1,4 @@
-# bb-plugin-meetings — design and contracts
+# alia-plugin-meetings — design and contracts
 
 Status: implementation spec. Every component must follow the contracts here
 and in `src/shared/*.ts`. If a contract has to change, change it here and in
@@ -6,7 +6,7 @@ the shared module in the same edit, and say so in your final report.
 
 ## 1. What it does
 
-A Fireflies-style meeting notetaker for bb:
+A Fireflies-style meeting notetaker for VesnALIA:
 
 1. The user gives an agent (or the CLI, or the Meetings page) a Zoom link.
 2. A bot joins the meeting through the **Zoom web client** in a real Google
@@ -16,31 +16,31 @@ A Fireflies-style meeting notetaker for bb:
    **who is speaking** (the tile/participant whose speaking indicator lights up)
    and the participant roster.
 4. A transcriber transcribes the audio **live** with the local **GigaAM v3**
-   server (the `gigaam` bb plugin), splits speech with Silero VAD, assigns each
+   server (the `gigaam` VesnALIA plugin), splits speech with Silero VAD, assigns each
    segment to a speaker from the DOM timeline, and on finish refines speakers
    with acoustic speaker embeddings (sherpa-onnx) + clustering.
-5. Everything is visible on a **Meetings** page in bb (nav panel), searchable,
+5. Everything is visible on a **Meetings** page in VesnALIA (nav panel), searchable,
    downloadable, and agents can read transcripts and save summaries.
 6. Optional: Fireflies-like calendar auto-join from ICS feeds.
 
-Plugin id `meetings`, package `bb-plugin-meetings`, author `AiXenix`.
+Plugin id `meetings`, package `alia-plugin-meetings`, author `AiXenix`.
 UI language: **Russian**. Code, identifiers and comments: English.
 
 ## 2. Process model
 
 ```
-bb server process ──── server.ts (src/server/*)
-   │  SQLite registry, RPC for the page, CLI `bb meetings`, agent tools,
+alia server process ──── server.ts (src/server/*)
+   │  SQLite registry, RPC for the page, CLI `alia meetings`, agent tools,
    │  scheduler + reconcile loop, calendar sync, HTTP routes (audio/screenshot/downloads)
    │
    │ host RPC (src/shared/contract.ts: hostContract)
    ▼
-bb host worker (on the primary machine) ── host.ts (src/host/*)
+alia host worker (on the primary machine) ── host.ts (src/host/*)
    │  installs runtime (doctor/setup), spawns/stops/inspects DETACHED processes,
    │  reads files inside meeting dirs, discovers the GigaAM endpoint
    │
    ├── node bot-runner.mjs --meeting-dir <dir>      (detached, own process group;
-   │      │                                          bb's own Node, process.execPath)
+   │      │                                          alia's own Node, process.execPath)
    │      ├── Xvfb :<n> -screen 0 1280x864x24
    │      ├── google-chrome (playwright-core, headed on Xvfb,
    │      │     PULSE_SINK=mtg_<short>, PULSE_SOURCE=mtg_<short>_mic)
@@ -52,22 +52,22 @@ bb host worker (on the primary machine) ── host.ts (src/host/*)
           └── on finish: speaker embeddings + clustering → transcript.json/.md/.txt
 ```
 
-Why detached: a recording must survive plugin reloads, plugin updates and bb
+Why detached: a recording must survive plugin reloads, plugin updates and VesnALIA
 daemon restarts. The host worker is stateless: all runtime state lives in files
 in the meeting directory. Every host call re-reads files. Processes are found by
 pid recorded in `pids.json` (written by the host when it spawns them) and in
 their state files, and verified through `/proc/<pid>/cmdline` containing the
 meeting dir (PID reuse safe). A detached bot also outlives a plugin **removal**:
 nothing stops it until the meeting ends or a leave rule fires, so the user docs
-tell users to stop active meetings before `bb plugin remove meetings`.
+tell users to stop active meetings before `alia plugin remove meetings`.
 
-The bots run on the **primary host** (`bb.sdk.system.config().primaryHostId`).
+The bots run on the **primary host** (`alia.sdk.system.config().primaryHostId`).
 `host_id` is stored per meeting for later multi-host support.
 
 ## 3. Host data layout
 
 `<hostData>` = `context.experimental_paths.dataDir` of the host entry
-(on this machine `/home/bb/.bb/plugins/meetings/host-data`).
+(on this machine `/home/alia/.vesnalia/plugins/meetings/host-data`).
 
 ```
 <hostData>/
@@ -127,7 +127,7 @@ runner (plain JS) and the transcriber (Python) must produce exactly these shapes
 | `signals.jsonl` | bot | compact raw speaker signals (`{t, store, tile, tracks, …}`, ≤ 1 line/s) for offline tuning |
 | `chrome-profile/` | bot | the meeting's own Chrome profile (copy of `profiles/zoom` when signed in); deleted on exit |
 | `stop.request` | host | presence = stop requested (bot also handles SIGTERM) |
-| `debug.request` | host | presence = dump DOM + screenshot to `debug/` now (`bb meetings debug-dump`) |
+| `debug.request` | host | presence = dump DOM + screenshot to `debug/` now (`alia meetings debug-dump`) |
 | `viewer.json` | host | `{until}` epoch ms: a live viewer is watching, screenshot every 1 s until then |
 | `control/<seq>.json` | host | `ControlCommand` for remote control (§6.5) |
 | `control/ack.json` | bot | `{seq, t, ok, error?}` — the last executed command |
@@ -220,7 +220,7 @@ in the past tense.
 "recording_failed" | "unknown"` (`BOT_ERROR_CODES` in `src/shared/runtime-files.ts`).
 
 `recordingStartedAt` is `null` when there is no live recording timeline. An
-imported file (`bb meetings import`) has none and must write `null`, never `0`:
+imported file (`alia meetings import`) has none and must write `null`, never `0`:
 the server and the renderers treat any number as the meeting date.
 
 Terminal phases: `ended`, `failed`. A `failed` bot may still have audio (e.g.
@@ -462,7 +462,7 @@ URLs whose path contains `/mock-meeting`. `runtime/mock-meeting/` contains a
 static page that imitates the Zoom web-client DOM *classes the zoom adapter
 uses for speaker detection*, plays a scripted list of audio clips with the
 matching tile highlighted, and shows a "meeting ended" message at the end. It
-is used by the end-to-end test and by `bb meetings selftest`.
+is used by the end-to-end test and by `alia meetings selftest`.
 
 Mock query parameters for the deaf-bot guard (§6.8): `deaf=rejoin|reload|forever`
 (the speaking indicators work but every participant's gain is 0, so the WebRTC
@@ -773,7 +773,7 @@ the other products sharing this runtime take them byte-identical.
   toward fewer detections: a dark moment is never a speaker change, and no
   track sound is never capture evidence.
 
-## 7. Server registry (SQLite via `bb.storage.database()`)
+## 7. Server registry (SQLite via `alia.storage.database()`)
 
 See `src/server/db.ts`. Tables `meetings`, `segments`, `segments_fts`
 (FTS5, `unicode61 remove_diacritics 2`), `calendar_events`.
@@ -811,7 +811,7 @@ the host no longer has becomes `failed` ("lost").
 
 ## 8. Surfaces
 
-### 8.1 CLI `bb meetings …` (defineCli)
+### 8.1 CLI `alia meetings …` (defineCli)
 
 `join <url> [--title] [--name] [--at <ISO|HH:MM>] [--max-duration <dur>] [--no-notify] [--wait <dur, default 0>] [--json]`,
 `list [--status all|active|upcoming|past|<status>] [--limit 1-200] [--json]`,
@@ -830,11 +830,11 @@ Zoom). Every command takes `--json`. `src/server/cli.ts` is the source of truth.
 
 
 `api --request-stdin --json` is the single JSON entry point for agents outside
-bb (src/server/agent-api.ts): one line of JSON `{action, …}` in, `{ok, action,
+VesnALIA (src/server/agent-api.ts): one line of JSON `{action, …}` in, `{ok, action,
 …}` out; actions list, show, join, stop, cancel, delete (confirm + userRequest),
 transcript (paged by segment id), search, summary, save_summary,
 rename_speaker, retranscribe, logs, doctor, calendar. Used by agents that drive
-the bb CLI from another machine (e.g. an OpenClaw bot).
+the VesnALIA CLI from another machine (e.g. an OpenClaw bot).
 ### 8.2 Agent tools
 
 `meetings_status` shows the deaf-bot warning (§6.8) when there is one.
@@ -885,7 +885,7 @@ detail page header.
 
 When a meeting reaches `done` or `failed` and `requested_by_thread_id` is set
 and `notifyThread` is on, send one message to that thread with
-`bb.sdk.threads.send`: title, id, duration, speakers, how to read the
+`alia.sdk.threads.send`: title, id, duration, speakers, how to read the
 transcript, plus `autoSummaryPrompt` (default asks the agent to save a summary
 with `meetings_save_summary`). `notified_at` makes it exactly-once. While a
 meeting records, an escalated deaf-bot issue (§6.8) sends one more message
@@ -929,7 +929,7 @@ events in the window, deduped by `uid + occurrence start`. Cancelled
 | keepRawAudio | boolean | false | keep audio.pcm |
 | screenshotIntervalSec | number 0–300 | 10 | 0 = only on events |
 | silenceTimeoutMinutes | number 0–240 | 30 | leave after this long with no audio at all; 0 = never |
-| useZoomAccount | boolean | false | join with the signed-in Zoom profile (`bb meetings zoom-login`) |
+| useZoomAccount | boolean | false | join with the signed-in Zoom profile (`alia meetings zoom-login`) |
 | speakerSelectors | multiline JSON | `` | advanced override of `DEFAULT_SELECTORS` (selectors, `store`, `lagMs`, `fusion`) |
 | chromePath | string | `` | empty = auto-detect |
 | calendarIcsUrls | secret string | — | ICS feeds |
@@ -970,7 +970,7 @@ A second calendar source next to the ICS feeds (§10); both feed the same
   account as a test user (or published). Settings `googleClientId` (string)
   and `googleClientSecret` (secret) — editable from the Meetings page
   (`google.saveClient`), the secret never reaches the frontend.
-* **Redirect URI** = the bb origin the page runs on + `GOOGLE_CALLBACK_PATH`
+* **Redirect URI** = the VesnALIA origin the page runs on + `GOOGLE_CALLBACK_PATH`
   (`/api/v1/plugins/meetings/http/google/callback`). The page passes
   `window.location.origin` to `google.authStart`; the server accepts only
   `https://…` or `http://localhost|127.0.0.1[:port]` origins. The UI shows the
@@ -1046,7 +1046,7 @@ A second calendar source next to the ICS feeds (§10); both feed the same
   connected_at, selected and cached calendars, last sync and error.
 * RPC `calendar.setAutoJoin {autoJoin}` writes `calendarAutoJoin` (the page
   toggle). CLI: `google [status]`, `google sync`, `google disconnect`, `bot
-  [--name] [--show-avatar on|off] [--avatar <path on the bb server>]
+  [--name] [--show-avatar on|off] [--avatar <path on the VesnALIA server>]
   [--clear-avatar]`. The api `calendar` action adds a per-event `source` and a
   `google` summary.
 * HTTP: `GET /google/callback`, `GET /bot/avatar-preview?v=` (renders with the

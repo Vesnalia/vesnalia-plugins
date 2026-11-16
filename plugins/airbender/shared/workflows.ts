@@ -3,7 +3,7 @@
 // What: the list of choices ("Standard", "Simple"), which one a repository
 // uses when it has never chosen, and the state machine behind each.
 //
-// Why: the user wants to choose the workflow per repository (bead-bb-8j6):
+// Why: the user wants to choose the workflow per repository (bead-alia-8j6):
 // the standard one, where every issue goes through its steps, or none at
 // all, where an issue is only made current, released and closed by hand.
 // Until now one workflow was named in one file and imported everywhere; the

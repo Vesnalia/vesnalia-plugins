@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-chat-width",
+  "name": "alia-plugin-chat-width",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.47.1 <0.48.0",
-    "bbPluginSdk": ">=0.6.79"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.79"
   },
-  "bb": {
+  "alia": {
     "name": "Chat Width",
     "description": "Choose your chat width. Save two presets or fill the pane.",
     "branding": {
@@ -23,7 +23,6 @@
     "@radix-ui/react-slot": "^1.3.0"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.79",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -39,32 +38,40 @@
     "vitest": "^3.2.4",
     "jsdom": "^26.1.0",
     "@testing-library/react": "^16.3.0",
-    "@types/better-sqlite3": "^7.6.12",
-    "bb-app": "0.47.1"
+    "@types/better-sqlite3": "^7.6.12"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "check:sdk": "node scripts/check-sdk.mjs"
   },
   "description": "Choose your chat width. Save two presets or fill the pane.",
   "license": "MIT",
   "author": "werserk",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/werserk/bb-plugin-chat-width.git"
-  },
-  "homepage": "https://github.com/werserk/bb-plugin-chat-width#readme",
-  "bugs": {
-    "url": "https://github.com/werserk/bb-plugin-chat-width/issues"
-  },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "chat",
     "full-width",
     "readability",
     "layout",
     "customization"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.79"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/chat-width#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/chat-width"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

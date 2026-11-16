@@ -3,7 +3,7 @@ import {
   dynamicToolSchema,
   type DynamicTool,
   type PermissionMode,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import {
   inputRecord,
   isSubagentTool,
@@ -15,8 +15,8 @@ import {
 type RecordValue = OpenCodeRecord;
 
 // OpenCode's auto-approve client replies once so it does not persist a rule;
-// `always` does persist matching permission requests. BB full mode intentionally
-// uses that broader behavior, while accept-edits is resolved by BB's approval UI.
+// `always` does persist matching permission requests. VesnALIA full mode intentionally
+// uses that broader behavior, while accept-edits is resolved by VesnALIA's approval UI.
 export function automaticPermissionReply(
   permissionMode: PermissionMode | undefined,
   disableSubagents: boolean,
@@ -39,12 +39,12 @@ export function approvalPermissionReply(
 }
 
 export const PERMISSION_DENIED_MESSAGE =
-  "The user denied this request in BB. Do not retry it; continue without it or ask the user how to proceed.";
+  "The user denied this request in VesnALIA. Do not retry it; continue without it or ask the user how to proceed.";
 
 /**
  * `POST .../permission/{id}/reply` body. A bare reject makes OpenCode abort
  * the whole step; a reject with a message is returned to the model as the
- * tool result so the agent can continue, matching BB's deny semantics.
+ * tool result so the agent can continue, matching VesnALIA's deny semantics.
  */
 export function permissionReplyBody(decision: OpenCodePermissionReply) {
   return decision === "reject"
@@ -53,7 +53,7 @@ export function permissionReplyBody(decision: OpenCodePermissionReply) {
 }
 
 export const SUBAGENT_DISABLED_TOOL_ERROR =
-  "[bb] Native subagents (task tool) are disabled in this BB thread. Do all work directly in this session with your other tools instead of delegating.";
+  "[VesnALIA] Native subagents (task tool) are disabled in this VesnALIA thread. Do all work directly in this session with your other tools instead of delegating.";
 
 export function subagentDisabledToolError(underlying?: unknown): string {
   const detail =
@@ -132,8 +132,8 @@ export function promptBody(
           : undefined;
       if (!id || start === undefined || end === undefined || end < start)
         continue;
-      // BB offers two kinds of skill: its own configured roots, and the
-      // agent's native skills (OpenCode's own discovery, which BB lists
+      // VesnALIA offers two kinds of skill: its own configured roots, and the
+      // agent's native skills (OpenCode's own discovery, which VesnALIA lists
       // through resolveNativeRoots). Anything else is plain text.
       if (
         opts?.configuredSkillNames &&
@@ -147,7 +147,7 @@ export function promptBody(
         text: part.text.slice(start, end),
       };
       // OpenCode only accepts native skill IDs that its registry discovered.
-      // Injected BB roots outside that registry still need their instructions
+      // Injected VesnALIA roots outside that registry still need their instructions
       // attached through the same prompt API.
       if (opts?.nativeSkillNames && !opts.nativeSkillNames.has(id)) {
         const skillFile = opts.skillFiles?.get(id);
@@ -193,7 +193,7 @@ function dynamicToolKey(tool: DynamicTool) {
 }
 
 /**
- * BB re-sends session construction (resume) around turns even when nothing
+ * VesnALIA re-sends session construction (resume) around turns even when nothing
  * changed. Re-registering the MCP bridge each time makes OpenCode kill and
  * respawn the tool child per message and leaves dead "Connection closed"
  * entries behind when cleanup races. Only the visible tool catalog matters to

@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { startPlugin } from "./plugin-store.test-support";
 import { deleteComment, editComment, undoChange } from "./draft-comments";
 import { fixMessage } from "./fix-handoff";
@@ -17,8 +17,8 @@ const at = { file: "a.ts", line: 3, side: "RIGHT" as const };
 const comment = { ...at, author: "agent" as const, body: "Wrong docs", focus: "Docs", evidence: "a.ts:3" };
 
 async function setup() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = await startPlugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = await startPlugin(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1 });
   await store.savePatch("pr-1", patch);
   await store.upsertDraftComment("pr-1", comment);

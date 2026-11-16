@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { beforeAll, afterEach, expect, it } from "vitest";
 import { fireEvent, waitFor, cleanup } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { installTestMatchMedia, setCompactViewport } from "./test-match-media";
 let app: Awaited<ReturnType<typeof loadPluginApp>>;
 beforeAll(async () => {
@@ -215,7 +215,7 @@ it("starts inline rename on double-click", async () => {
   expect(await view.findByRole("textbox", { name: "Rename" })).toBeTruthy();
   view.lifecycle.unmount();
 });
-it("saves a renamed title through the native BB action", async () => {
+it("saves a renamed title through the native VesnALIA action", async () => {
   const view = mount();
   fireEvent.doubleClick(await view.findByText("Example chat"));
   const input = await view.findByRole("textbox", { name: "Rename" });

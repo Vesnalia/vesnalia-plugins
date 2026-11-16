@@ -1,4 +1,4 @@
-import type { ExperimentalTabReference } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalTabReference } from "@vesnalia/plugin-sdk/app";
 
 export const FLARES_TAB_ID = "flares";
 export const FLARE_ICON = "flare/flare";

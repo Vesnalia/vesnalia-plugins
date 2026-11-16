@@ -1,6 +1,6 @@
-// bb review ask and bb review approve, as another of your threads runs them, and Dismiss on a Ready to approve row.
+// VesnALIA review ask and VesnALIA review approve, as another of your threads runs them, and Dismiss on a Ready to approve row.
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 
 const runGh = vi.hoisted(() => vi.fn(async () => ({ stdout: "", stderr: "", code: 0 })));
 vi.mock("./gh", async (orig) => ({ ...(await orig<any>()), runGh, runGit: vi.fn(async () => ({ stdout: "", stderr: "", code: 0 })) }));
@@ -14,10 +14,10 @@ import { agentChat, MARK_PART } from "./agent-chat.test-support";
 
 async function setup() {
   const chat = agentChat("agent");
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: { get: async () => ({ archivedAt: null, deletedAt: null, status: "idle", title: "Review agent: pr-1" }), ...chat.sdk },
   } as any });
-  const store = await startPlugin(bb);
+  const store = await startPlugin(alia);
   const pr = async (number: number, extra: Record<string, unknown> = {}) => {
     await store.saveReview({ targetKey: `pr-${number}`, kind: "pr", repo: "acme/web", number, url: `https://github.com/acme/web/pull/${number}`, author: "alice", headSha: `sha${number}`, createdAt: 1, status: "ready", projectId: "p1" });
     await store.setLifecycle(`pr-${number}`, { prState: "OPEN", ownPr: false, ...extra });
@@ -26,7 +26,7 @@ async function setup() {
   return { store, chat, harness, pr, cli };
 }
 
-test("bb review approve says, a line each, what it lined up and what it couldn't, and why", async () => {
+test("alia review approve says, a line each, what it lined up and what it couldn't, and why", async () => {
   const { store, pr, cli } = await setup();
   await pr(1);
   await pr(2, { ownPr: true });
@@ -40,12 +40,12 @@ test("bb review approve says, a line each, what it lined up and what it couldn't
     "pr-404: no saved review. Pass its id, the PR's URL or the review's key.",
   ].join("\n") });
   expect((await store.getReview("pr-1"))?.readyToApprove).toMatchObject({ action: "approve", verdict: "APPROVE", body: "", headSha: "sha1", from: "thr_orchestrator" });
-  expect(await cli("approve")).toMatchObject({ exitCode: 2, stderr: expect.stringContaining("usage: bb review approve") });
+  expect(await cli("approve")).toMatchObject({ exitCode: 2, stderr: expect.stringContaining("usage: VesnALIA review approve") });
   expect(await cli("approve", "pr-1", "--body")).toMatchObject({ exitCode: 2, stderr: "--body needs text, given once." });
   expect(runGh).not.toHaveBeenCalledWith(expect.arrayContaining(["POST"]), expect.anything());
 });
 
-test("bb review ask relays the message to the review's agent, marked as from the thread that ran it, which it's told to answer", async () => {
+test("alia review ask relays the message to the review's agent, marked as from the thread that ran it, which it's told to answer", async () => {
   const { store, chat, pr, cli } = await setup();
   await pr(1);
   await store.setAssistantThread("pr-1", "agent");
@@ -53,14 +53,14 @@ test("bb review ask relays the message to the review's agent, marked as from the
   const request = chat.events.find((e) => e.type === "client/turn/requested")!;
   expect(request.data.input).toEqual([
     { type: "text", text: "is the retry safe?", mentions: [] },
-    { type: "text", text: "Relayed with bb review ask from thread thr_orchestrator, one of the reviewer's. Answer that thread with `bb thread tell thr_orchestrator`.", mentions: [], visibility: "agent-only" },
+    { type: "text", text: "Relayed with VesnALIA review ask from thread thr_orchestrator, one of the reviewer's. Answer that thread with `alia thread tell thr_orchestrator`.", mentions: [], visibility: "agent-only" },
     MARK_PART,
   ]);
-  expect(await cli("ask", "pr-1")).toMatchObject({ exitCode: 2, stderr: expect.stringContaining("usage: bb review ask") });
+  expect(await cli("ask", "pr-1")).toMatchObject({ exitCode: 2, stderr: expect.stringContaining("usage: VesnALIA review ask") });
   expect(await cli("ask", "pr-9", "hi")).toMatchObject({ exitCode: 1, stderr: "No saved review for pr-9. Pass its id, the PR's URL or the review's key." });
 });
 
-test("from a thread a review's agent started, or one whose start bb can't say, nothing is lined up or relayed", async () => {
+test("from a thread a review's agent started, or one whose start VesnALIA can't say, nothing is lined up or relayed", async () => {
   const { store, chat, pr, cli } = await setup();
   await pr(1);
   await store.setAssistantThread("pr-1", "agent");
@@ -68,7 +68,7 @@ test("from a thread a review's agent started, or one whose start bb can't say, n
   expect(await cli("approve", "pr-1")).toMatchObject({ exitCode: 2, stderr: "A review's own agent, or a thread it started, can't line up approvals." });
   expect(await cli("ask", "pr-1", "approve it")).toMatchObject({ exitCode: 2, stderr: "A review's own agent, or a thread it started, can't relay messages to a review's agent." });
   chat.ancestors.thr_orchestrator = null;
-  expect(await cli("approve", "pr-1")).toMatchObject({ exitCode: 1, stderr: "bb couldn't say which threads this one was started from, so nothing was done. Try again in a moment." });
+  expect(await cli("approve", "pr-1")).toMatchObject({ exitCode: 1, stderr: "alia couldn't say which threads this one was started from, so nothing was done. Try again in a moment." });
   expect((await store.getReview("pr-1"))?.readyToApprove).toBeFalsy();
   expect(chat.events).toEqual([]);
 });

@@ -1,12 +1,12 @@
 // The server's end of the Docker API relay (042), and of the msb relay
-// (053), which is the same with another route and host call. For each BB
-// machine that is a Docker host, bb-box listens on a unix socket that only
-// BB's user can use, and the docker CLI takes it as the host; for an msb
-// host, bb-box's msb client connects to it. Each connection to it is a
+// (053), which is the same with another route and host call. For each VesnALIA
+// machine that is a Docker host, alia-box listens on a unix socket that only
+// VesnALIA's user can use, and the docker CLI takes it as the host; for an msb
+// host, alia-box's msb client connects to it. Each connection to it is a
 // channel on one WebSocket for the machine, which the machine's worker opens
-// out to bb-box's route with a one-time secret that a host call gives it.
+// out to alia-box's route with a one-time secret that a host call gives it.
 // The relay opens when a connection needs it, and closes after IDLE_MS with
-// no channel open, unless bb-box still has a box on the machine.
+// no channel open, unless alia-box still has a box on the machine.
 
 import { randomBytes } from "node:crypto";
 import { chmodSync, rmSync } from "node:fs";
@@ -19,22 +19,22 @@ import { Mux, type Channel } from "./mux.ts";
 export const RELAY_ROUTE = "/docker-relay";
 /** How long a secret waits for the worker's socket. */
 export const ACCEPT_MS = 10_000;
-/** How long a relay with no channel stays open when bb-box has no box on the machine. */
+/** How long a relay with no channel stays open when alia-box has no box on the machine. */
 export const IDLE_MS = 5 * 60_000;
 /**
  * A relay that has heard nothing for this long, a ping and some, may be to a
- * machine that slept: a new connection asks BB about the machine first.
+ * machine that slept: a new connection asks VesnALIA about the machine first.
  */
 export const STALE_MS = 20_000;
 /**
- * How long after its relay was lost, or bb-box started, a machine's relay
- * counts as coming back (#415). At a deploy, BB stops the machine's worker,
- * and bb-box's relay with it, and the new instance's first relay opens once
- * BB has started the worker again: about 30 s (7 October 2026).
+ * How long after its relay was lost, or alia-box started, a machine's relay
+ * counts as coming back (#415). At a deploy, VesnALIA stops the machine's worker,
+ * and alia-box's relay with it, and the new instance's first relay opens once
+ * VesnALIA has started the worker again: about 30 s (7 October 2026).
  */
 export const REOPEN_MS = 2 * 60_000;
 
-/** The parts of BB's plugin WebSocket the hub uses. */
+/** The parts of VesnALIA's plugin WebSocket the hub uses. */
 export interface RelaySocket {
   send(data: Uint8Array): void;
   close(code?: number, reason?: string): void;
@@ -46,9 +46,9 @@ export interface RelayHubDeps {
    * entry's "relay" call. Resolves once the worker has started connecting.
    */
   open(hostId: string, secret: string, signal: AbortSignal): Promise<unknown>;
-  /** Whether bb-box needs the machine's relay with no channel open: it has a box there. */
+  /** Whether alia-box needs the machine's relay with no channel open: it has a box there. */
   keep(hostId: string): Promise<boolean>;
-  /** Why the machine is offline, as BB shows it now with no call to it, or null while it is connected. */
+  /** Why the machine is offline, as VesnALIA shows it now with no call to it, or null while it is connected. */
   offline?(hostId: string): Promise<string | null>;
   logError(operation: string, error: unknown): void;
   log?(message: string): void;
@@ -84,7 +84,7 @@ interface Machine {
 
 interface Pending {
   readonly hostId: string;
-  /** Whether bb-box took a socket for it, or stopped waiting. */
+  /** Whether alia-box took a socket for it, or stopped waiting. */
   settled: boolean;
   resolve(mux: Mux): void;
   reject(error: Error): void;
@@ -100,7 +100,7 @@ function message(error: unknown): string {
  * shows as "Error response from daemon".
  */
 function refuse(socket: Socket, reason: string): void {
-  const body = `bb-box could not reach Docker on the BB machine: ${reason}`;
+  const body = `alia-box could not reach Docker on the VesnALIA machine: ${reason}`;
   socket.end(`HTTP/1.1 503 Service Unavailable\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: ${Buffer.byteLength(body)}\r\nConnection: close\r\n\r\n${body}`);
 }
 
@@ -124,13 +124,13 @@ export class RelayHub {
     this.#what = deps.what ?? "Docker";
     this.#refuse = deps.refuse ?? refuse;
     this.#ownDir = !deps.dir;
-    this.#dir = deps.dir ?? makeTempFolderSync("bb-box-relay-");
+    this.#dir = deps.dir ?? makeTempFolderSync("alia-box-relay-");
     chmodSync(this.#dir, 0o700);
   }
 
   /** The docker CLI's host for machine `hostId`, the same each time. It listens once `endpoint` resolves. */
   address(hostId: string): string {
-    if (!/^[A-Za-z0-9_-]{1,64}$/.test(hostId)) throw new Error(`"${hostId}" is not a BB machine ID.`);
+    if (!/^[A-Za-z0-9_-]{1,64}$/.test(hostId)) throw new Error(`"${hostId}" is not a VesnALIA machine ID.`);
     return `unix://${join(this.#dir, `${hostId}.sock`)}`;
   }
 
@@ -166,7 +166,7 @@ export class RelayHub {
     return address;
   }
 
-  /** The handler for bb-box's WebSocket route, which the machine's worker connects to. */
+  /** The handler for alia-box's WebSocket route, which the machine's worker connects to. */
   route(url: URL) {
     const secret = url.searchParams.get("s") ?? "";
     const pending = this.#pending.get(secret);
@@ -178,9 +178,9 @@ export class RelayHub {
           socket.close(1008, "This relay secret is unknown or used.");
           return;
         }
-        // A socket that opens after bb-box stopped waiting would make a relay nothing uses, whose pings keep the worker's lease.
+        // A socket that opens after alia-box stopped waiting would make a relay nothing uses, whose pings keep the worker's lease.
         if (pending.settled) {
-          socket.close(1008, "bb-box stopped waiting for this relay.");
+          socket.close(1008, "alia-box stopped waiting for this relay.");
           return;
         }
         mux = new Mux(
@@ -201,7 +201,7 @@ export class RelayHub {
                 machine.relay = null;
                 this.#stopIdle(machine);
               }
-              this.#deps.log?.(`The ${this.#what} relay to BB machine ${pending.hostId} closed: ${reason}.`);
+              this.#deps.log?.(`The ${this.#what} relay to VesnALIA machine ${pending.hostId} closed: ${reason}.`);
             },
           },
         );
@@ -218,12 +218,12 @@ export class RelayHub {
   }
 
   /**
-   * Ends the machine's relay, as when BB says its worker exited, so the next
+   * Ends the machine's relay, as when VesnALIA says its worker exited, so the next
    * connection finds out at once rather than when the pings stop.
    */
   /**
    * Whether the relay to a machine is coming back (#415): none is open, and
-   * the last was lost or failed to open, or bb-box started with none yet, less
+   * the last was lost or failed to open, or alia-box started with none yet, less
    * than REOPEN_MS ago, as at a deploy. A box there that does not answer
    * then is to be waited for, not released.
    */
@@ -250,7 +250,7 @@ export class RelayHub {
     if (!machine) return;
     this.#machines.delete(hostId);
     this.#stopIdle(machine);
-    (await machine.relay?.catch(() => null))?.close(`bb-box no longer uses this machine for ${this.#what}`);
+    (await machine.relay?.catch(() => null))?.close(`alia-box no longer uses this machine for ${this.#what}`);
     for (const socket of machine.sockets) socket.destroy();
     await new Promise<void>((resolve) => machine.server.close(() => resolve()));
     rmSync(machine.path, { force: true });
@@ -291,7 +291,7 @@ export class RelayHub {
         channel.once("data", () => (answered = true));
         channel.on("error", (error) => {
           if (answered || socket.destroyed) return void socket.destroy();
-          this.#deps.log?.(`${this.#what} on BB machine ${machine.hostId} did not answer: ${error.message}`);
+          this.#deps.log?.(`${this.#what} on VesnALIA machine ${machine.hostId} did not answer: ${error.message}`);
           this.#refuse(socket, error.message);
         });
       },
@@ -301,7 +301,7 @@ export class RelayHub {
 
   /**
    * The machine's relay, checked first when it has gone quiet. One to a
-   * machine BB shows offline ends at once with the reason; a quiet one to a
+   * machine VesnALIA shows offline ends at once with the reason; a quiet one to a
    * connected machine is replaced, which costs one host call.
    */
   async #fresh(machine: Machine): Promise<Mux> {
@@ -331,7 +331,7 @@ export class RelayHub {
     const accepted = new Promise<Mux>((resolve, reject) => {
       const timer = setTimeout(() => {
         this.#pending.delete(secret);
-        pending.reject(new Error(`the machine's worker did not connect to bb-box within ${Math.round(this.#acceptMs / 1000)} s`));
+        pending.reject(new Error(`the machine's worker did not connect to alia-box within ${Math.round(this.#acceptMs / 1000)} s`));
       }, this.#acceptMs);
       timer.unref?.();
       const pending: Pending = {
@@ -358,7 +358,7 @@ export class RelayHub {
       this.#pending.delete(secret);
     }
     const mux = await accepted;
-    this.#deps.log?.(`Opened the ${this.#what} relay to BB machine ${hostId}.`);
+    this.#deps.log?.(`Opened the ${this.#what} relay to VesnALIA machine ${hostId}.`);
     return mux;
   }
 

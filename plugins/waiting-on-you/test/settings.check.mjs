@@ -1,11 +1,11 @@
 // Smoke check for the settings RPC against the built server bundle:
-//   bb plugin build && node test/settings.check.mjs
+//   VesnALIA plugin build && node test/settings.check.mjs
 import assert from "node:assert/strict";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../dist/server.js";
 
-const { bb, harness } = createFakePluginHost({ pluginId: "waiting-on-you" });
-await plugin(bb);
+const { alia, harness } = createFakePluginHost({ pluginId: "waiting-on-you" });
+await plugin(alia);
 const call = (method, input = null) => harness.behavior.callRpc(method, input);
 
 const initial = await call("settings_get");
@@ -34,7 +34,7 @@ await assert.rejects(call("settings_update", { categories: { done: { label: "x".
 assert.equal((await call("settings_get")).maxHeight, 40, "bad writes change nothing");
 
 // A stale stored value falls back field by field.
-await bb.storage.kv.set("settings", { rowMarker: "neon", title: "My block", categories: { done: { color: "pink", label: "ok" } } });
+await alia.storage.kv.set("settings", { rowMarker: "neon", title: "My block", categories: { done: { color: "pink", label: "ok" } } });
 const healed = await call("settings_get");
 assert.equal(healed.rowMarker, "dot");
 assert.equal(healed.title, "My block");
@@ -42,7 +42,7 @@ assert.equal(healed.categories.done.color, "sky");
 assert.equal(healed.categories.done.label, "ok");
 
 // Settings saved by older versions.
-await bb.storage.kv.set("settings", {
+await alia.storage.kv.set("settings", {
   headerCounts: false,
   showWorking: true,
   rowStyle: "tint",
@@ -59,12 +59,12 @@ assert.equal(migrated.projectPlace, "off");
 for (const old of ["headerCounts", "showWorking", "rowStyle", "showTime", "showProject", "showStatusGlyph"]) {
   assert.equal(old in migrated, false, `${old} is dropped`);
 }
-await bb.storage.kv.set("settings", { showStatusGlyph: true });
+await alia.storage.kv.set("settings", { showStatusGlyph: true });
 assert.equal((await call("settings_get")).rowMarker, "glyph", "glyph switch becomes the glyph marker");
 
 // Untouched Russian defaults from before the English UI follow the new
 // defaults; text the user typed survives.
-await bb.storage.kv.set("settings", {
+await alia.storage.kv.set("settings", {
   calmText: "Нигде не нужны",
   categories: { decision: { label: "ответ", color: "rose" }, failed: { label: "сломалось" } },
 });
@@ -99,7 +99,7 @@ await assert.rejects(call("settings_update", { maxItems: 2.5 }), "limit not whol
 await assert.rejects(call("settings_update", { overflow: "fade" }), "unknown overflow");
 
 // The empty state's divider starts from the list's and then lives apart.
-await bb.storage.kv.set("settings", { separator: false });
+await alia.storage.kv.set("settings", { separator: false });
 const split = await call("settings_get");
 assert.equal(split.separator, false);
 assert.equal(split.emptySeparator, false);
@@ -113,7 +113,7 @@ assert.equal((await call("settings_get")).emptySeparator, true, "stays apart aft
 await call("settings_reset");
 await call("settings_update", { rowMarker: "tag", categories: { failed: { color: "violet" } } });
 const exported = JSON.parse((await harness.behavior.runCli(["export"])).stdout);
-assert.equal(exported.format, "bb-plugin-waiting-on-you/settings");
+assert.equal(exported.format, "alia-plugin-waiting-on-you/settings");
 assert.equal(exported.settings.rowMarker, "tag");
 await call("settings_reset");
 const restored = await call("settings_import", exported);
@@ -136,7 +136,7 @@ assert.deepEqual(
   ["categories.done.icon", "categories.ghost", "rowMarker", "wat"],
 );
 // A file exported before the rename still imports.
-const legacy = await call("settings_import", { format: "bb-plugin-inbox/settings", version: 1, settings: { maxItems: 8 } });
+const legacy = await call("settings_import", { format: "alia-plugin-inbox/settings", version: 1, settings: { maxItems: 8 } });
 assert.equal(legacy.settings.maxItems, 8);
 const junk = await call("settings_import", [1, 2]);
 assert.deepEqual(junk.applied, []);

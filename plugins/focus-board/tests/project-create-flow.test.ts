@@ -1,5 +1,5 @@
 // The dialog's New project flows (lib/project-create-flow): the native
-// folder picker on the board's single connected persistent host — bb's
+// folder picker on the board's single connected persistent host — VesnALIA's
 // typical new-project flow, from picking to the create write's exact
 // payload — plus the honest refusals (no host, ambiguous hosts, a picked
 // root) that hand the dialog its inline name field with the reason.
@@ -58,7 +58,7 @@ describe("createProjectFromPickedFolder (the dialog's typical-flow create)", () 
     expect(result).toEqual({ id: "proj_picked" });
   });
 
-  it("the create carries bb's typical payload: the folder's own name and the local_path source", async () => {
+  it("the create carries VesnALIA's typical payload: the folder's own name and the local_path source", async () => {
     const { sdk, creates } = sdkWith({
       hosts: [{ id: "host_local", name: "MacBook Pro", status: "connected", type: "persistent" }],
       pickPath: "/Users/me/code/auth-rework/",
@@ -122,7 +122,7 @@ describe("createProjectFromPickedFolder (the dialog's typical-flow create)", () 
     );
   });
 
-  it("a picked filesystem root refuses the create with bb's own words", async () => {
+  it("a picked filesystem root refuses the create with VesnALIA's own words", async () => {
     const { sdk, creates } = sdkWith({
       hosts: [{ id: "host_local", name: "MacBook Pro", status: "connected", type: "persistent" }],
       pickPath: "/",

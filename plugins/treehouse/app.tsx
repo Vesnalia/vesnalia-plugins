@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   definePluginApp,
   experimental_useAppPanel,
-  useBbNavigate,
+  useAliaNavigate,
   type ExperimentalThreadTabProps,
   type PluginNewThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { DiffTab } from "./ui/DiffTab";
@@ -212,7 +212,7 @@ function Treehouse({ environmentId }: { environmentId: string }) {
     setBaseChoice(next);
   };
 
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const confirmClose = useCallback(
     (ids: string[]) => {
       const unsaved = ids.flatMap((id) =>

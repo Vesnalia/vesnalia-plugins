@@ -1,6 +1,6 @@
 # Standalone zcode-acp
 
-[zcode-acp](https://github.com/ichinya/zcode-acp) is a standalone **Rust executable**. It serves ACP over stdin/stdout and can be used by any compatible ACP client, without BB.
+[zcode-acp](https://github.com/ichinya/zcode-acp) is a standalone **Rust executable**. It serves ACP over stdin/stdout and can be used by any compatible ACP client, without VesnALIA.
 
 The adapter launches the installed ZCode `resources/glm/zcode.cjs` through **ZCode's own Electron/Node runtime**. A separate Node.js installation is not needed for a recognized ZCode bundle. Windows session ACL protection uses Windows PowerShell 5.1.
 
@@ -33,7 +33,7 @@ zcode-acp usage --plan start --json
 zcode-acp runtime-info --json
 ```
 
-The command without a subcommand serves ACP, not an interactive terminal chat. Default mode is `build`; `--permission=full` permits `yolo`. `--bb-permission` is a compatibility alias and takes precedence.
+The command without a subcommand serves ACP, not an interactive terminal chat. Default mode is `build`; `--permission=full` permits `yolo`. `--alia-permission` is a compatibility alias and takes precedence.
 
 Doctor checks the account and model catalog, without inference. Inventory and account-scope are local-only and do not start the engine. Each usage command collects exactly one plan, without starting an ACP session, sending a model prompt or claiming rewards. Treat the opaque account scope as a private cache key.
 
@@ -59,11 +59,11 @@ Runtime selection, in priority order:
 
 ACP uses protocol version 1 and newline-delimited JSON-RPC 2.0. Stdout contains protocol messages only. Inventory, account-scope and runtime-info return JSON with `schemaVersion: 1`. Usage returns the established quota object (`status`, `plan`, `accountEmail`, `planLabel`, and `windows` on success). No credentials are returned by these commands.
 
-The BB plugin invokes this process contract and has no npm dependency on the adapter. The provider launches the Rust executable directly, from PATH or the configured path. The adapter then selects the runtime as described above. The old JavaScript implementation remains in the source tree as a regression reference; it is not used by the Rust binary or the plugin.
+The VesnALIA plugin invokes this process contract and has no npm dependency on the adapter. The provider launches the Rust executable directly, from PATH or the configured path. The adapter then selects the runtime as described above. The old JavaScript implementation remains in the source tree as a regression reference; it is not used by the Rust binary or the plugin.
 
 ## Sessions and checks
 
-Sessions retain `bb-native-*` IDs and version-1 `binding.json` files in `~/.zcode-bridge/native-acp`. They use separate databases and logs, require the same canonical workspace on resume, and never attach to Desktop-owned tasks. A missing native history after attempted input causes an error; prompts are never automatically resent.
+Sessions retain `alia-native-*` IDs and version-1 `binding.json` files in `~/.zcode-bridge/native-acp`. They use separate databases and logs, require the same canonical workspace on resume, and never attach to Desktop-owned tasks. A missing native history after attempted input causes an error; prompts are never automatically resent.
 
 ```sh
 cargo fmt --check

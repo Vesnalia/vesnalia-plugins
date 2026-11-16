@@ -22,7 +22,7 @@ People watch box desktops and take control of them a lot (#49), so
 latency, picture quality, CPU in the box, and copy and paste matter. Every
 desktop streams RFB today: the relay signs in to the box's VNC server and
 copies bytes to noVNC in the panel, which asks for noVNC's defaults, JPEG
-quality 6 and compression 2. Every viewer's stream crosses BB's server
+quality 6 and compression 2. Every viewer's stream crosses VesnALIA's server
 (007).
 
 [The research](../research/desktop-streaming.md) of 30 September chose
@@ -40,10 +40,10 @@ tries KasmVNC, and decides which desktop gets which stream.
   resize off. noVNC 1.7.0 reached Xtigervnc through websockify in the box.
 - **The viewer**: a second box of the same kind on the same network,
   running headless Chrome 154 at 1920x1080 and decoding in software. It
-  reached the server through a TCP forward, not through BB.
+  reached the server through a TCP forward, not through VesnALIA.
 - **A constrained link**: 40 ms more round trip at the viewer (`netem`)
   and 20 Mbit/s out of the server (`tbf`), as from a home connection to a
-  BB server far away.
+  VesnALIA server far away.
 - **Workloads**: an idle page; a long page of text scrolling at 0.6 px a
   millisecond, about 10 px a frame; and a full-screen canvas drawing 40
   circles each frame.
@@ -124,7 +124,7 @@ Findings:
   viewer it captures at 60 frames a second: 19% of a core idle, against
   none for Xtigervnc. In motion it cost less than Xtigervnc's encoding:
   29 to 32% against 40 to 50%.
-- **BB's server carries every viewer's stream.** One viewer of scrolling
+- **VesnALIA's server carries every viewer's stream.** One viewer of scrolling
   text is 179 Mbit/s through it with RFB today, 77 tuned and 4 with
   Selkies.
 - **Selkies cannot stream Sway as it runs.** On Wayland Selkies runs its
@@ -138,7 +138,7 @@ Findings:
   connected at 1920x1080, but Chrome drew mostly black there and no key
   reached the page, from its client or from `xdotool`.
 - **Copy and paste**: Selkies moves text, images and formatted text both
-  ways. RFB moves text: TigerVNC and wayvnc in the stream, and bb-box with
+  ways. RFB moves text: TigerVNC and wayvnc in the stream, and alia-box with
   commands for Tart's macOS and Windows.
 
 ### The other desktops, from their code and documentation
@@ -146,9 +146,9 @@ Findings:
 - **Windows**, on Proxmox and on a Mac, is QEMU's VNC server. It answers
   each request as Xtigervnc does, but sends JPEG only with its `lossy=on`
   option, off by default (`ui/vnc.c`): without it, a viewer's JPEG
-  quality changes nothing, and only compression applies. bb-box writes
+  quality changes nothing, and only compression applies. alia-box writes
   QEMU's command line on a Mac; Proxmox writes its own. Not measured.
-- **macOS on Tart** goes through bb-box's holder, which asks Tart for raw
+- **macOS on Tart** goes through alia-box's holder, which asks Tart for raw
   pixels and sends every viewer Zlib at level 1 whatever the viewer asks.
   It sends each update as it comes and closes a viewer only when 64 MiB
   wait for it: on a 20 Mbit/s link, about 27 s of stale screen. The
@@ -178,7 +178,7 @@ The box's Selkies:
 
 - listens on 127.0.0.1 in the box, with its own sign-in off: the relay
   reaches it through the box's command transport, as it reaches VNC, and
-  BB has signed the viewer in;
+  VesnALIA has signed the viewer in;
 - runs with resize off, sharing on, H.264, and audio, file transfers,
   printing and gamepads off;
 - runs with the desktop if it costs nothing with no viewer, which its
@@ -193,7 +193,7 @@ agent's computer use does not change.
 
 **The relay carries Selkies message by message.** For a Selkies display:
 
-- The viewer connects to the same `/desktop` route. BB's plugin WebSocket
+- The viewer connects to the same `/desktop` route. VesnALIA's plugin WebSocket
   keeps text and binary messages apart (`string | Uint8Array`), which
   Selkies needs.
 - The relay opens the display's route and speaks WebSocket to Selkies over
@@ -206,7 +206,7 @@ agent's computer use does not change.
   acknowledgements, resyncing it from a key frame at most once a second,
   or from a reference frame with NVENC. Flow control stays end to end, so
   the relay needs no `bufferedAmount`
-  ([BB request 2](../bb-requests.md#2-send-backlog-on-plugin-websockets)),
+  ([VesnALIA request 2](../alia-requests.md#2-send-backlog-on-plugin-websockets)),
   and a slow viewer does not slow the others.
 - **Control.** With sharing on, Selkies lets every page drive input, so
   the relay decides. From a viewer without control it drops text messages
@@ -218,7 +218,7 @@ agent's computer use does not change.
   requests and statistics always pass. On hand-back it releases held keys
   and buttons, as for RFB.
 - **Resize.** Selkies, with resize on, sizes the display to its first
-  page; bb-box sizes it to the viewer with control instead. So Selkies
+  page; alia-box sizes it to the viewer with control instead. So Selkies
   runs with resize off, and the relay calls the display's `resize()`
   (021) with that viewer's size, `xrandr` on the X server, and sets the
   agent's size on hand-back. Other viewers scale.
@@ -255,7 +255,7 @@ with Sway nested in Selkies' compositor, checking Cua, resize and CPU.
   bundle the panel cannot import, it is GPL-2.0, it does not render on
   NVIDIA's driver (the research), and it neither installed cleanly nor
   drew the test page here. Its H.264 mode needs its client.
-- **WebRTC**, Selkies' or any: its media needs UDP or TURN, and BB's
+- **WebRTC**, Selkies' or any: its media needs UDP or TURN, and VesnALIA's
   plugin WebSocket carries TCP only. Selkies' WebSockets transport carries
   the same codecs.
 
@@ -264,7 +264,7 @@ with Sway nested in Selkies' compositor, checking Cua, resize and CPU.
 - On a slow link a person sees about 60 frames a second and about 0.1 s
   from key to screen on X11 desktops, against 6 to 13 frames and a quarter
   of a second with RFB.
-- BB's server carries 4 to 9 Mbit/s for each viewer of a moving X11
+- VesnALIA's server carries 4 to 9 Mbit/s for each viewer of a moving X11
   desktop, against up to 179 today.
 - Images and formatted text paste both ways on X11 desktops through
   Selkies.
@@ -282,11 +282,11 @@ with Sway nested in Selkies' compositor, checking Cua, resize and CPU.
 
 - **The GPU.** NVENC and NvFBC in an LXC box, their GPU memory, and
   several desktops on one GPU are not measured.
-- **Through BB.** Neither stream was measured through BB's server and the
-  relay, nor is the largest message BB's plugin WebSocket takes known; a
+- **Through VesnALIA.** Neither stream was measured through VesnALIA's server and the
+  relay, nor is the largest message VesnALIA's plugin WebSocket takes known; a
   key frame can be a few hundred KB.
 - **Picture quality** was not scored for either stream.
-- **Selkies 2.0 is new**, released on 23 September 2026. bb-box pins it
+- **Selkies 2.0 is new**, released on 23 September 2026. alia-box pins it
   and checks its input messages again at each update.
 - **The control filter** is now all that stops a viewer without control
   from driving a Selkies desktop. The conformance suite checks it.
@@ -308,7 +308,7 @@ with Sway nested in Selkies' compositor, checking Cua, resize and CPU.
 6. **The panel**: the vendored client, and the choice of stream.
 7. **Conformance**: a Selkies display's first frame, a key reaching the
    box, a resize, and input dropped from a viewer without control.
-8. **Through BB**: both streams measured through the relay on a live BB,
+8. **Through VesnALIA**: both streams measured through the relay on a live VesnALIA,
    on the same network and on a constrained link.
 9. **Docs**, with each PR.
 
@@ -317,15 +317,15 @@ better Windows stream.
 
 ## Amended, 10 October 2026: video for every viewer
 
-With video on in bb-box's settings, a Linux X11 desktop drawn by the CPU
-now shows as video to every viewer, whatever its round trip to BB's server.
+With video on in alia-box's settings, a Linux X11 desktop drawn by the CPU
+now shows as video to every viewer, whatever its round trip to VesnALIA's server.
 The rule that showed VNC under a 10 ms round trip is dropped. The viewer's
 menu keeps a way back: **Show as VNC**, which the tab remembers for that
 box. Video that cannot start falls back to VNC, as before. Video stays a
 setting, off by default for new installs.
 
 The operator found video better than VNC, and the numbers agree. Both were
-measured through BB's server on the same host: a viewer in headless Chrome
+measured through VesnALIA's server on the same host: a viewer in headless Chrome
 on a second box, with the panel's own video client, and noVNC at the
 panel's quality 2. The viewer dragged a 1354x814 window by its title bar,
 scrolled a terminal with the wheel, and pressed a key that a square on the
@@ -352,8 +352,8 @@ the same runs ([060 results](060-results.md#corrected-17-october-2026)).
 
 Video and VNC drag with the same lag at the median, about 20 to 25 ms, and
 answer keys about as quickly. VNC's 95th percentile is lower. Both
-streams' worst lags come from BB's server's event loop standing still, not
-from the box (request 25 in [What bb-box asks of BB](../bb-requests.md)).
+streams' worst lags come from VesnALIA's server's event loop standing still, not
+from the box (request 25 in [What alia-box asks of VesnALIA](../alia-requests.md)).
 At 30 fps, or with Selkies' streaming mode off, which costs nothing idle,
 the drag's lag was much the same: 22 to 29 ms at the median.
 

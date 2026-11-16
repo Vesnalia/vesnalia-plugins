@@ -1,6 +1,6 @@
 // Shared between server.ts (which orchestrates) and host.ts (which scans).
 // Every field crossing the host RPC boundary is validated by these schemas.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 /** One worktree the scanner should attribute listeners to. */

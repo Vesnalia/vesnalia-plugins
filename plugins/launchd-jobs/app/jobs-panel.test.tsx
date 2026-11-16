@@ -5,8 +5,8 @@
  * Follow reads only what a relayed change appended.
  */
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import type { PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
-import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@get-bb/plugin-sdk/testing/app";
+import type { PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
+import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { LOG_CHANGED } from "../shared/channels";

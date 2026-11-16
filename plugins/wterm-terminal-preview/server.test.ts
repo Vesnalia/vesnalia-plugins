@@ -79,7 +79,7 @@ function createPluginHarness() {
     }),
   );
   const write = vi.fn();
-  const bb = {
+  const alia = {
     http: { route },
     rpc: { register },
     storage: {
@@ -90,7 +90,7 @@ function createPluginHarness() {
     },
     sdk: { files: { write }, terminals: { get: vi.fn(), list } },
   } as never;
-  plugin(bb);
+  plugin(alia);
   const handlers = new Map(
     route.mock.calls.map(([method, path, handler]) => [
       `${String(method)} ${String(path)}`,
@@ -233,7 +233,7 @@ describe("Wterm server boundaries", () => {
     const restart = vi.fn();
     const kvGet = vi.fn().mockResolvedValue(undefined);
     const kvSet = vi.fn().mockResolvedValue(undefined);
-    const bb = {
+    const alia = {
       http: { route: vi.fn() },
       rpc: { register },
       storage: { kv: { get: kvGet, set: kvSet } },
@@ -244,7 +244,7 @@ describe("Wterm server boundaries", () => {
         terminals: { get: vi.fn(), list, create, restart },
       },
     } as never;
-    plugin(bb);
+    plugin(alia);
     const handlers = register.mock.calls[0]?.[1];
 
     await expect(
@@ -327,7 +327,7 @@ describe("Wterm server boundaries", () => {
       id: "term-replacement",
       updatedAt: 21,
     });
-    const bb = {
+    const alia = {
       http: { route: vi.fn() },
       rpc: { register },
       storage: { kv: { get: kvGet, set: kvSet } },
@@ -339,7 +339,7 @@ describe("Wterm server boundaries", () => {
         },
       },
     } as never;
-    plugin(bb);
+    plugin(alia);
     const handlers = register.mock.calls[0]?.[1];
 
     await expect(
@@ -363,7 +363,7 @@ describe("Wterm server boundaries", () => {
     const kvGet = vi.fn().mockResolvedValue(["term-environment"]);
     const kvSet = vi.fn().mockResolvedValue(undefined);
     const get = vi.fn().mockRejectedValue(new Error("host unavailable"));
-    const bb = {
+    const alia = {
       http: { route: vi.fn() },
       rpc: { register },
       storage: { kv: { get: kvGet, set: kvSet } },
@@ -374,7 +374,7 @@ describe("Wterm server boundaries", () => {
         },
       },
     } as never;
-    plugin(bb);
+    plugin(alia);
     const handlers = register.mock.calls[0]?.[1];
 
     await expect(
@@ -420,7 +420,7 @@ describe("Wterm server boundaries", () => {
       updatedAt: 11,
       lastUserInputAt: null,
     });
-    const bb = {
+    const alia = {
       http: { route: vi.fn() },
       rpc: { register },
       storage: {
@@ -440,7 +440,7 @@ describe("Wterm server boundaries", () => {
         },
       },
     } as never;
-    plugin(bb);
+    plugin(alia);
     const handlers = register.mock.calls[0]?.[1];
 
     const listing = handlers.listSessions({ threadId: "thread-1" });
@@ -485,7 +485,7 @@ describe("Wterm server boundaries", () => {
     const register = vi.fn();
     const route = vi.fn();
     const write = vi.fn();
-    const bb = {
+    const alia = {
       http: { route },
       rpc: { register },
       storage: {
@@ -502,7 +502,7 @@ describe("Wterm server boundaries", () => {
         },
       },
     } as never;
-    plugin(bb);
+    plugin(alia);
     const upload = route.mock.calls.find(
       ([method, path]) => method === "POST" && path === "/upload",
     )?.[2] as (context: unknown) => Promise<Response>;
@@ -546,7 +546,7 @@ describe("Wterm server boundaries", () => {
     expect(response.status).toBe(201);
     const result = (await response.json()) as { path: string; sha256: string };
     expect(result.path).toMatch(
-      /^\/workspace\/\.bb-wterm-uploads\/[a-f0-9-]+\.png$/u,
+      /^\/workspace\/\.alia-wterm-uploads\/[a-f0-9-]+\.png$/u,
     );
     expect(result.path).not.toContain("bad name");
     expect(result.sha256).toBe(sha256);
@@ -624,13 +624,13 @@ describe("Wterm server boundaries", () => {
   it("builds paths only below an absolute cwd and discards hostile basenames", () => {
     expect(buildUploadPath("/work", "../../evil.SH", "fixed-id")).toEqual({
       rootPath: "/work",
-      uploadPath: "/work/.bb-wterm-uploads/fixed-id.sh",
+      uploadPath: "/work/.alia-wterm-uploads/fixed-id.sh",
     });
     expect(
       buildUploadPath("/work", "archive.verylongextension", "fixed-id"),
     ).toEqual({
       rootPath: "/work",
-      uploadPath: "/work/.bb-wterm-uploads/fixed-id",
+      uploadPath: "/work/.alia-wterm-uploads/fixed-id",
     });
     expect(() => buildUploadPath("relative", "x.txt", "fixed-id")).toThrow(
       "absolute POSIX path",

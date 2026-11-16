@@ -8,11 +8,11 @@ import {
   type CSSProperties,
 } from "react";
 import {
-  useBbContext,
+  useAliaContext,
   useRealtime,
   useRpc,
   type ExperimentalAppOverlayProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../contract";
 import { reviewEditorStore } from "../lib/editor-store";
@@ -62,7 +62,7 @@ export function ReviewOverlay(_props: ExperimentalAppOverlayProps) {
     reviewEditorStore.getSnapshot,
   );
   const rpc = useRpc<typeof rpcContract>();
-  const { threadId: visibleThreadId } = useBbContext();
+  const { threadId: visibleThreadId } = useAliaContext();
   const visibleThreadRef = useRef(visibleThreadId);
   visibleThreadRef.current = visibleThreadId;
   const [busy, setBusy] = useState(false);

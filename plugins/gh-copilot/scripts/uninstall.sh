@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BB_DATA_DIR="${BB_DATA_DIR:-${HOME}/.bb}"
-CONFIG_PATH="$BB_DATA_DIR/config.json"
+ALIA_DATA_DIR="${ALIA_DATA_DIR:-${HOME}/.alia}"
+CONFIG_PATH="$ALIA_DATA_DIR/config.json"
 AGENT_ID="${1:-copilot}"
-LOGO_DST="$BB_DATA_DIR/copilot-logo.svg"
+LOGO_DST="$ALIA_DATA_DIR/copilot-logo.svg"
 
 if ! command -v jq >/dev/null 2>&1; then
   echo "error: jq is required (brew install jq)" >&2
@@ -29,7 +29,7 @@ else
     ' <<<"$CURRENT"
   )"
   umask 077
-  TMP="$(mktemp "${BB_DATA_DIR}/.config.json.XXXXXX")"
+  TMP="$(mktemp "${ALIA_DATA_DIR}/.config.json.XXXXXX")"
   printf '%s\n' "$(jq '.' <<<"$NEXT")" >"$TMP"
   mv "$TMP" "$CONFIG_PATH"
   chmod 600 "$CONFIG_PATH"
@@ -42,5 +42,5 @@ if [[ -f "$LOGO_DST" ]]; then
 fi
 
 echo "remaining custom agents: $(jq -r '[.customAcpAgents[]?.id] // [] | join(", ")' "$CONFIG_PATH" 2>/dev/null || echo '(none)')"
-echo "restart bb or run: bb-app config refresh"
+echo "restart alia or run: alia-app config refresh"
 

@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 import { api, plugin } from './helpers.mjs';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import { readDiscovery, peekDiscovery } from '../../src/discovery-cache.ts';
 import { startBalance } from '../../src/start-plan.ts';
 import { fetchStartOffer, marketingStartOffer, startOfferContext, startClaimGuidance } from '../../src/start-offer.ts';
@@ -150,9 +150,9 @@ test('claim offer HTTP uses native origin, fresh JWT/device/version, fixed Engli
 
 test('plugin promotion preference defaults off, projects changes and refreshes catalogue fingerprint without changing balance auth', async () => {
   const root=mkdtempSync(join(tmpdir(),'m513-preference-'));
-  const {bb,harness}=createFakePluginHost({pluginId:'own',dataDir:root});
+  const {alia,harness}=createFakePluginHost({pluginId:'own',dataDir:root});
   try {
-    await plugin(bb);
+    await plugin(alia);
     const file=join(root,'plugins/own/bridge-data/zcode/account-selection.json');
     assert.deepEqual(JSON.parse(readFileSync(file,'utf8')),{authMode:'desktop',checkStartPromotions:false});
     await harness.behavior.setSettings({checkStartPromotions:true});

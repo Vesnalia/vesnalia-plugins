@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createFakeSdk } from "@get-bb/plugin-sdk/testing";
+import { createFakeSdk } from "@vesnalia/plugin-sdk/testing";
 import { createWorkflowAgentsReader } from "./workflow-agents.server";
 
 describe("workflow agents reader", () => {

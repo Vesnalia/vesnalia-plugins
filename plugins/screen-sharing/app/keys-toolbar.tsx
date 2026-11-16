@@ -76,7 +76,7 @@ export function SendKeysMenu({ store, session }: { store: ScreenSessionStore; se
           ))}
           {!canGoFullScreen() ? (
             <ToolbarMenuNote>
-              This browser can’t hand its own shortcuts (⌘W, ⌘Q, ⌘T…) to the Mac either; Chrome, Edge and bb’s desktop app
+              This browser can’t hand its own shortcuts (⌘W, ⌘Q, ⌘T…) to the Mac either; Chrome, Edge and VesnALIA’s desktop app
               can, with Full screen.
             </ToolbarMenuNote>
           ) : null}

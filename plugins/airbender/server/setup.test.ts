@@ -11,7 +11,7 @@
 //
 // Gotchas:
 // - The second test needs `bd`, `git` and Go (to build bend); it is skipped
-//   where they are missing. The pieces of BB the setup is built with are a
+//   where they are missing. The pieces of VesnALIA the setup is built with are a
 //   few lines each.
 
 import assert from "node:assert/strict";
@@ -123,7 +123,7 @@ test("the steps whose words are bend's come through with what they run", () => {
   assert.deepEqual(fromBend(bendState(looked, { savedFacts: saved })).savedFacts, []);
 });
 
-test("where setup may not run, and committing its files, reach the tab (bead-bb-25p)", () => {
+test("where setup may not run, and committing its files, reach the tab (bead-alia-25p)", () => {
   const steps = [
     step("tracker", "done"),
     step("commit", "missing", { title: "Commit Airbender's files", runs: "git add -- AGENTS.md && git commit -m \"Set up Airbender: AGENTS.md\" -- AGENTS.md" }),
@@ -139,7 +139,7 @@ test("where setup may not run, and committing its files, reach the tab (bead-bb-
   assert.equal(away.commitStep, null);
 });
 
-test("someone else's project and the command that sets up beads reach the tab (bead-bb-dof)", () => {
+test("someone else's project and the command that sets up beads reach the tab (bead-alia-dof)", () => {
   const steps = [
     step("tracker", "missing"),
     step("program", "done"),
@@ -155,8 +155,8 @@ test("someone else's project and the command that sets up beads reach the tab (b
   assert.equal(fromBend(bendState(steps, { elsewhere: true })).elsewhere, true);
 });
 
-// --- The switch-over, in a real repository (bead-bb-c9l.8, now through
-// bend: bead-bb-c9l.9) ---
+// --- The switch-over, in a real repository (bead-alia-c9l.8, now through
+// bend: bead-alia-c9l.9) ---
 
 test("a repository set up the old way is switched over by the tab's actions", async (t) => {
   const { execFileSync } = await import("node:child_process");
@@ -189,7 +189,7 @@ test("a repository set up the old way is switched over by the tab's actions", as
 
     let published = 0;
     const setup = createSetup({
-      bb: { realtime: { publish: () => void (published += 1) }, log: { warn: () => {} } } as never,
+      alia: { realtime: { publish: () => void (published += 1) }, log: { warn: () => {} } } as never,
       folders: {
         resolveFolder: async () => ({ path: root }),
         findBd: async () => "bd",
@@ -236,7 +236,7 @@ test("a repository set up the old way is switched over by the tab's actions", as
     assert.doesNotMatch(after, /^@(AGENTS|FACTS)\.md$/mu);
     assert.ok(existsSync(join(root, "FACTS.md")));
     // Beads' settings file for Claude Code held nothing but its hook: it is
-    // gone, not left empty (bead-bb-cnv).
+    // gone, not left empty (bead-alia-cnv).
     assert.equal(existsSync(join(root, ".claude", "settings.json")), false);
     // What was kept about the folder was dropped: the answer follows at once.
     status = await setup.setupStatus(here);

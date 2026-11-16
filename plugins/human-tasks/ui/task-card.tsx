@@ -3,7 +3,7 @@
 // instructions, the reply box, and the agent's notes.
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { Markdown, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { Markdown, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { TodoView } from "../server";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,7 @@ function Callout({ tone, icon, children }: { tone: "danger" | "accent" | "neutra
 }
 
 export function TaskCard({ task, focused }: { task: TodoView; focused: boolean }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const preview = usePreview();
   const actions = useTaskActions(task.id);
   const [expanded, setExpanded] = useState(focused);

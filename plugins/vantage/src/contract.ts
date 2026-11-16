@@ -398,6 +398,6 @@ export const rpcContract = defineContract({
   },
   // The server marks the key's tag stale once the marks are saved.
   setReviewed: { input: setReviewedInputSchema, output: reviewMarksSchema },
-  // Shows one worktree's whole branch against the base bb asked for, or goes back to counting only its threads' work.
+  // Shows one worktree's whole branch against the base VesnALIA asked for, or goes back to counting only its threads' work.
   setWhole: { input: setWholeInputSchema, output: z.object({ ok: z.literal(true) }).strict() },
 });

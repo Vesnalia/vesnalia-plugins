@@ -1,11 +1,11 @@
 ---
 name: crew
-description: Build, reconcile and stop a persistent agent team (crew) from a crew.yaml with the `bb crew` CLI, and work inside one as a member (crew_send, crew_peers, …). Use when the user asks for a crew, a fixed team of agents, to message crew members, or to apply/stop/inspect one.
+description: Build, reconcile and stop a persistent agent team (crew) from a crew.yaml with the `alia crew` CLI, and work inside one as a member (crew_send, crew_peers, …). Use when the user asks for a crew, a fixed team of agents, to message crew members, or to apply/stop/inspect one.
 ---
 
 # Crew
 
-A crew is a persistent team of agent threads in one BB project. Each member
+A crew is a persistent team of agent threads in one VesnALIA project. Each member
 has a fixed address `{group}-{member}@{crew}` and at most one current thread.
 Exactly one member is the lead; every other member's thread nests under the
 lead's thread. The crew file (`crew.yaml`) is the declaration; `apply`
@@ -13,32 +13,32 @@ reconciles the threads with it.
 
 ## Commands
 
-All commands take `--project <id|name>`; inside a BB thread the thread's
+All commands take `--project <id|name>`; inside a VesnALIA thread the thread's
 project is the default.
 
 ```
-bb crew templates                         # bundled crew files: pair, trio, research
-bb crew plan <crew|template|file.yaml>    # read-only: one action per member
-bb crew apply <crew|template|file.yaml> [--fresh <member>…] [--confirm-full]
-bb crew list                              # crews of the project with status
-bb crew show <crew>                       # members, provider/model, thread, shift
-bb crew ps [<crew>]                       # same, for all crews when none is named
-bb crew stop <crew> [--archive]           # stop running turns; --archive archives
-bb crew delete <crew> [--threads archive|delete|keep] [--force]   # remove a stopped crew for good
-bb crew export <crew> > crew.yaml         # the stored crew file
-bb crew send <member@crew> <text…> [--subject s] [--urgent] [--reply-to msg]   # as the human
-bb crew broadcast <crew> [--group g] <text…>                                  # as the human
-bb crew log [--crew c] [--chain id] [--cross-crew] [--status s] [--limit n] [--full]
-bb crew needs                             # members that need you now, with the question
-bb crew whoami                            # inside a member thread: which member this is
-bb crew release <msg> | discard <msg>     # deliver or drop a held / loop-stopped message
-bb crew stop-chain <chain>                # nothing more on this chain is delivered
+alia crew templates                         # bundled crew files: pair, trio, research
+alia crew plan <crew|template|file.yaml>    # read-only: one action per member
+alia crew apply <crew|template|file.yaml> [--fresh <member>…] [--confirm-full]
+alia crew list                              # crews of the project with status
+alia crew show <crew>                       # members, provider/model, thread, shift
+alia crew ps [<crew>]                       # same, for all crews when none is named
+alia crew stop <crew> [--archive]           # stop running turns; --archive archives
+alia crew delete <crew> [--threads archive|delete|keep] [--force]   # remove a stopped crew for good
+alia crew export <crew> > crew.yaml         # the stored crew file
+alia crew send <member@crew> <text…> [--subject s] [--urgent] [--reply-to msg]   # as the human
+alia crew broadcast <crew> [--group g] <text…>                                  # as the human
+alia crew log [--crew c] [--chain id] [--cross-crew] [--status s] [--limit n] [--full]
+alia crew needs                             # members that need you now, with the question
+alia crew whoami                            # inside a member thread: which member this is
+alia crew release <msg> | discard <msg>     # deliver or drop a held / loop-stopped message
+alia crew stop-chain <chain>                # nothing more on this chain is delivered
 ```
 
 `<crew|template|file.yaml>`: anything ending in `.yaml`/`.yml` or containing
 a `/` is read as a file (relative to the current directory); otherwise a
 stored crew of the project, otherwise a template. To customise a template:
-`bb crew export` it after one apply, or write the file from scratch.
+`alia crew export` it after one apply, or write the file from scratch.
 
 ## Plan actions and apply results
 
@@ -92,14 +92,14 @@ members sharing one environment.
 worktree); writing members (`accept-edits`, `auto`, `full`) get their own
 managed worktree; reading members (`ask`) reuse the lead's environment.
 `reuse` puts everyone in the lead's environment, `worktree` gives every member
-its own. BB chooses the worktree branch names itself — the `crew/<crew>`
+its own. VesnALIA chooses the worktree branch names itself — the `crew/<crew>`
 branch names from the concept cannot be requested with SDK 0.5.29.
 
 ## Messaging
 
 Addresses: `dev-impl` (own crew), `dev-impl@crew`, `@group:dev`, `@crew`
 (suffix `@<crew>` for another crew), `human`. Every message is stored in the
-plugin DB first — refused ones too — and `bb crew log` shows all of them.
+plugin DB first — refused ones too — and `alia crew log` shows all of them.
 
 Inside a member thread the messaging tools are `crew_whoami`, `crew_peers`,
 `crew_send(to, subject?, body, priority?, reply_to?)`, `crew_broadcast` and
@@ -130,10 +130,10 @@ allows only linked pairs (either direction) plus the lead. Across crews the
 stricter `crossCrew` of the two crews applies: `leads` (default) lets only
 lead talk to lead, `open` anyone, `none` nobody. The human may always write,
 and anyone may write to `human`. `crew_send(to: "human", kind: …)`:
-`kind: "info"` for status reports — shown in the feed and `bb crew log` as
+`kind: "info"` for status reports — shown in the feed and `alia crew log` as
 info, no Needs you, nobody waits, not appended to a question; `kind:
 "question"` (default) only when you need an answer — one open question per
-member, further ones are appended; the human's answer (`bb crew send`) starts
+member, further ones are appended; the human's answer (`alia crew send`) starts
 a new chain. `kind: "info"` to a member is refused.
 
 Needs you (a state of the member, not a list): open approval/question, open
@@ -144,12 +144,12 @@ Needs you, running = working, success = unread result).
 ## Work queue, channel, several crews (E3)
 
 ```sh
-bb crew work list|create|claim|unclaim|handoff|done|fail … --crew <crew>
-bb crew channel <crew> [post <text…>] [--topic <t>] [--since <iso>]
-bb crew merges [--all] | approve <mr> | reject <mr> [note…]
-bb crew directory | deps [--crew <crew>]
-bb crew thread-limit [<n>|off]      # plugin-side limit; BB's own limit is never changed
-bb crew tick                        # run follow-ups and the dependency poll now
+alia crew work list|create|claim|unclaim|handoff|done|fail … --crew <crew>
+alia crew channel <crew> [post <text…>] [--topic <t>] [--since <iso>]
+alia crew merges [--all] | approve <mr> | reject <mr> [note…]
+alia crew directory | deps [--crew <crew>]
+alia crew thread-limit [<n>|off]      # plugin-side limit; ALIA's own limit is never changed
+alia crew tick                        # run follow-ups and the dependency poll now
 ```
 
 Agent tools: every member has `crew_channel_post/read`, `crew_work_create/
@@ -158,7 +158,7 @@ and `crew_directory` (all members under `crossCrew: open`); a member marked
 `integrator: true` (at most one per crew; the role text grants nothing) has
 `crew_merges` and `crew_merge`. Live
 sessions keep the tool set they started with; new tools arrive with the next
-session start (`bb crew apply --fresh <member>`).
+session start (`alia crew apply --fresh <member>`).
 
 - Work items are the record of work. Unclaimed (or claimed and overdue)
   items get follow-ups every minute, rung n after n tier periods (`followUps:
@@ -168,9 +168,9 @@ session start (`bb crew apply --fresh <member>`).
   (`follow-up`) and messages the lead. Each rung is logged once.
 - Channel posts wake nobody; `@member-key` becomes a message.
 - Integration: `crew_deliver` asks to merge the lead's worktree branch (the
-  branch BB picked, `bb/…`) into `baseBranch` (default `main`). Without an
+  branch VesnALIA picked, `alia/…`) into `baseBranch` (default `main`). Without an
   integrator the lead is on Needs you (`merge-request`) until the human runs
-  `bb crew approve|reject`. An integrator merges only when the crew file's
+  `alia crew approve|reject`. An integrator merges only when the crew file's
   `checks` command exits 0 in the crew worktree; red checks, a missing
   `checks` or a conflict return the request to the human. Every merge sends a
   non-waking "main moved" note to all running leads. `crew_rebase` aborts on
@@ -178,7 +178,7 @@ session start (`bb crew apply --fresh <member>`).
 - `waitsFor: [{task, until: merged|done|comment:<kw>}]`: polled every minute;
   on fulfilment the waiting lead gets exactly one waking message (for
   `merged`: with the rebase order). The waiting crew's own `task` gets the
-  label `wartet-auf:<KEY>` in BB Tasks (created if missing; skipped with a
+  label `wartet-auf:<KEY>` in VesnALIA Tasks (created if missing; skipped with a
   stored reason if that fails).
 - Lead relief: context from 60 % (members 80 %) shows "Handover suggested",
   a lead at 80 % is on Needs you (`context`). With `deputy:` a cross-crew
@@ -186,29 +186,29 @@ session start (`bb crew apply --fresh <member>`).
   the deputy.
 - Thread limit: a delivery that would start a turn while the limit is
   reached is `throttled`, leads and human messages go first. The limit is
-  read via `bb concurrency-limit status --json` (the SDK has no API for it).
+  read via `alia concurrency-limit status --json` (the SDK has no API for it).
 
 ## Lifecycle (E4)
 
 ```sh
-bb crew snapshot <crew> [--label <text>]    # bindings, open work, undelivered messages, channel cursor
-bb crew snapshots <crew>
-bb crew restore <snapshot>                  # same bindings, work and messages again, then apply
-bb crew reset <member@crew> [--mode clear|new]
-bb crew handover <member@crew> [--brief <text>] [--cancel]
-bb crew add-member <group>-<id> --crew <crew> [--role r] [--provider p] [--model m] [--permissions p] [--kickoff k] [--confirm-full]
-bb crew remove-member <member@crew>
-bb crew attach                              # unassigned threads of the project
-bb crew attach <threadId> --as <member@crew> [--replace]
-bb crew detach <member@crew>
-bb crew export <crew> > crew.yaml
-bb crew import crew.yaml                    # stores the file, prints the plan, applies nothing
+alia crew snapshot <crew> [--label <text>]    # bindings, open work, undelivered messages, channel cursor
+alia crew snapshots <crew>
+alia crew restore <snapshot>                  # same bindings, work and messages again, then apply
+alia crew reset <member@crew> [--mode clear|new]
+alia crew handover <member@crew> [--brief <text>] [--cancel]
+alia crew add-member <group>-<id> --crew <crew> [--role r] [--provider p] [--model m] [--permissions p] [--kickoff k] [--confirm-full]
+alia crew remove-member <member@crew>
+alia crew attach                              # unassigned threads of the project
+alia crew attach <threadId> --as <member@crew> [--replace]
+alia crew detach <member@crew>
+alia crew export <crew> > crew.yaml
+alia crew import crew.yaml                    # stores the file, prints the plan, applies nothing
 ```
 
 - Every new thread for an address is a new **shift** (`shift` in `whoami`).
   A thread that stops being the member's keeps its transcript: it is
   archived (or, after `detach`, left alone) with `retired: true` in its crew
-  metadata. Nothing is ever deleted — except by `bb crew delete`.
+  metadata. Nothing is ever deleted — except by `alia crew delete`.
 - `reset --mode clear`: same thread, context cleared, the kickoff brief is
   the first message of the new shift. `--mode new`: a fresh thread, the old
   one archived. A lead's new thread takes the members under it.
@@ -221,7 +221,7 @@ bb crew import crew.yaml                    # stores the file, prints the plan, 
 - `attach` binds an existing thread of the same project to a member without
   a new thread or restart: it sets the metadata, the title and the parent
   (the lead). Its role instruction applies from the next session start, so
-  the kickoff brief arrives as a normal crew message (BB runs it as the
+  the kickoff brief arrives as a normal crew message (VesnALIA runs it as the
   thread's next turn; the SDK cannot append without dispatching). Refused:
   a thread of another project, one already bound, an archived one, and a
   member that still has a live thread unless `--replace`.
@@ -230,12 +230,12 @@ bb crew import crew.yaml                    # stores the file, prints the plan, 
 - `delete` removes a crew and every row of it (file versions, members,
   bindings, journal, messages, channel, work, escalations, dependencies,
   merge requests, snapshots, handovers) in one transaction. Refused unless the
-  crew is `stopped` (run `bb crew stop <crew>` first), and while another crew
+  crew is `stopped` (run `alia crew stop <crew>` first), and while another crew
   has an open `waitsFor` on this crew's task or the crew has an `open` or
   `returned` merge request — the refusal names them, `--force` deletes anyway
   and prints each as a warning. `--threads archive` (default) archives every
   current and retired member thread; `delete` deletes them, sub-threads first
-  (BB does not delete them with the parent), the lead last; `keep` leaves them
+  (VesnALIA does not delete them with the parent), the lead last; `keep` leaves them
   as they are and only removes the crew keys from their plugin metadata.
   Threads that are already gone are reported as `missing`, not as errors. If a
   thread operation fails, no row is removed and the delete can be rerun. A
@@ -257,7 +257,7 @@ Detach.
 
 ## For other plugins (RPC contract, `contractVersion: 1`)
 
-`bb.sdk.plugins.callRpc({ pluginId: "crew", method, input })`:
+`alia.sdk.plugins.callRpc({ pluginId: "crew", method, input })`:
 
 - `resolveMember({projectId, address})` → `{member: {memberId, address, crew, key, lead, role, threadId, shift, activity} | null, error}`
 - `sendToMember({projectId, address, body, from, subject?, correlationId})` →
@@ -269,7 +269,7 @@ Detach.
 
 ## Limits to know
 
-- `ask` maps to BB's `accept-edits` mode: BB has no read-only permission mode.
+- `ask` maps to VesnALIA's `accept-edits` mode: VesnALIA has no read-only permission mode.
 - Stopping a crew does not archive unless `--archive` is given; a later apply
   unarchives and reports `unarchived`.
 - Never delete member threads by hand; remove the member from the file and

@@ -1,4 +1,4 @@
-// bb-kilocode — bb's sessionless maintenance answers.
+// alia-kilocode — VesnALIA's sessionless maintenance answers.
 //
 // The generic ACP dialect carries no maintenance hooks, so the published ACP
 // bridge would answer `provider/usage` with `{supported:false}` and
@@ -11,9 +11,9 @@
 // answers are unit-testable without a bridge in the loop.
 import { resolveKiloBin } from "./kilo-bin.mjs";
 
-/** Shown by bb wherever it labels a provider's plan. */
+/** Shown by VesnALIA wherever it labels a provider's plan. */
 export const PLAN_LABEL = "Kilo Code";
-/** What bb renders when a provider publishes no quota window. */
+/** What VesnALIA renders when a provider publishes no quota window. */
 export const USAGE_MESSAGE = "Kilo Code does not expose account quota.";
 export const NO_BIN_MESSAGE = "The Kilo Code CLI was not found on this machine.";
 
@@ -31,7 +31,7 @@ export function usageResult() {
 }
 
 /**
- * `provider/health`, shaped for bb's health schema. `installation:false` in
+ * `provider/health`, shaped for VesnALIA's health schema. `installation:false` in
  * the registration means this plugin ships no installer, so both install
  * affordances stay off whatever the machine looks like.
  */

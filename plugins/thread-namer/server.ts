@@ -1,10 +1,10 @@
-// bb-plugin-thread-namer — backend entry.
+// alia-plugin-thread-namer — backend entry.
 //
 // Names threads with an agent: automatically once a thread's first turn has
 // finished, and on demand from the button this plugin adds to the thread
 // header. The naming run itself happens in a throwaway hidden thread so the
 // conversation being named is left untouched.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   REASONING_LEVELS,
@@ -141,8 +141,8 @@ interface NamingTarget {
   environmentId: string | null;
 }
 
-export default function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     mode: {
       type: "select",
       label: "Automatic naming",
@@ -174,7 +174,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  const catalog = createCatalogCache(bb);
+  const catalog = createCatalogCache(alia);
   /** Threads being named right now, so two triggers cannot race on one name. */
   const inFlight = new Set<string>();
 
@@ -199,23 +199,23 @@ export default function plugin(bb: BbPluginApi) {
       const timeoutMs =
         TIMEOUT_OPTIONS[timeout] ?? TIMEOUT_OPTIONS[DEFAULT_TIMEOUT_OPTION]!;
 
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       const facts = toFacts(thread);
 
-      const outline = await bb.sdk.threads
+      const outline = await alia.sdk.threads
         .conversationOutline({ threadId })
         .catch(() => ({ items: [], maxSeq: 0 }));
 
       const record =
-        (await bb.storage.kv.get<NamingRecord>(`${RECORD_PREFIX}${threadId}`)) ??
+        (await alia.storage.kv.get<NamingRecord>(`${RECORD_PREFIX}${threadId}`)) ??
         null;
       const decision = force
-        ? isNameable(facts, bb.pluginId)
+        ? isNameable(facts, alia.pluginId)
         : shouldAutoRename(
             facts,
             record,
             namingMode,
-            bb.pluginId,
+            alia.pluginId,
             outline.maxSeq,
           );
       if (!decision.rename) {
@@ -231,55 +231,55 @@ export default function plugin(bb: BbPluginApi) {
       }
 
       const selection =
-        (await bb.storage.kv.get<AgentSelection>(SELECTION_KEY)) ?? null;
-      const target = await resolveTarget(bb, thread, selection);
+        (await alia.storage.kv.get<AgentSelection>(SELECTION_KEY)) ?? null;
+      const target = await resolveTarget(alia, thread, selection);
       const prompt = buildNamingPrompt(
         instruction.trim() || DEFAULT_INSTRUCTION,
         items,
         maxChars,
       );
 
-      const output = await runNamingThread(bb, target, prompt, timeoutMs);
+      const output = await runNamingThread(alia, target, prompt, timeoutMs);
       const title = cleanTitle(output ?? "", maxChars);
       if (title === "") {
         return { ok: false, error: "The agent returned an empty name." };
       }
 
-      await bb.sdk.threads.update({ threadId, title });
-      await bb.storage.kv.set(`${RECORD_PREFIX}${threadId}`, {
+      await alia.sdk.threads.update({ threadId, title });
+      await alia.storage.kv.set(`${RECORD_PREFIX}${threadId}`, {
         title,
         at: Date.now(),
         maxSeq: outline.maxSeq,
       });
-      bb.realtime.publish(RENAMED_CHANNEL, { threadId, title });
-      bb.log.info(`named ${threadId}: ${title}`);
+      alia.realtime.publish(RENAMED_CHANNEL, { threadId, title });
+      alia.log.info(`named ${threadId}: ${title}`);
       return { ok: true, title };
     } catch (error) {
       const message = describeError(error);
-      bb.log.warn(`could not name ${threadId}: ${message}`);
+      alia.log.warn(`could not name ${threadId}: ${message}`);
       return { ok: false, error: message };
     } finally {
       inFlight.delete(threadId);
     }
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     rename: ({ threadId }) => nameThread(threadId, true),
 
     async catalog({ refresh }) {
       const snapshot = await catalog.read(refresh);
       return {
         selection:
-          (await bb.storage.kv.get<AgentSelection>(SELECTION_KEY)) ?? null,
+          (await alia.storage.kv.get<AgentSelection>(SELECTION_KEY)) ?? null,
         ...snapshot,
       };
     },
 
     async selectAgent({ selection }) {
       if (selection === null) {
-        await bb.storage.kv.delete(SELECTION_KEY);
+        await alia.storage.kv.delete(SELECTION_KEY);
       } else {
-        await bb.storage.kv.set(SELECTION_KEY, selection);
+        await alia.storage.kv.set(SELECTION_KEY, selection);
       }
       return { selection };
     },
@@ -288,36 +288,36 @@ export default function plugin(bb: BbPluginApi) {
   // A thread reaches `idle` when its turn is over, which is the first moment
   // there is a conversation worth naming. Handlers are fire-and-forget, so the
   // naming run never delays the thread it names.
-  bb.events.on("thread.idle", ({ thread }) => {
+  alia.events.on("thread.idle", ({ thread }) => {
     // The naming worker is a thread too, so it reaches idle as well. Rule the
     // obvious cases out from the payload rather than reading state back for
-    // every turn in bb; `nameThread` re-checks against fresh state anyway.
-    const nameable = isNameable(toFacts(thread), bb.pluginId);
+    // every turn in VesnALIA; `nameThread` re-checks against fresh state anyway.
+    const nameable = isNameable(toFacts(thread), alia.pluginId);
     if (!nameable.rename) return;
     void nameThread(thread.id, false).then((result) => {
-      if (!result.ok) bb.log.debug(`${thread.id}: ${result.error}`);
+      if (!result.ok) alia.log.debug(`${thread.id}: ${result.error}`);
     });
   });
 
   // A deleted thread's remembered name is dead weight in kv.
-  bb.events.on("thread.deleted", ({ thread }) => {
-    void bb.storage.kv.delete(`${RECORD_PREFIX}${thread.id}`).catch(() => {});
+  alia.events.on("thread.deleted", ({ thread }) => {
+    void alia.storage.kv.delete(`${RECORD_PREFIX}${thread.id}`).catch(() => {});
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "thread-namer",
-    summary: "Name bb threads with an agent",
+    summary: "Name VesnALIA threads with an agent",
     commands: [
       {
         name: "rename",
         summary:
           "Name a thread now, ignoring the automatic-naming setting. Defaults to the calling thread.",
-        usage: "bb thread-namer rename [<threadId>]",
+        usage: "alia thread-namer rename [<threadId>]",
       },
       {
         name: "status",
         summary: "Show how naming is configured and which agent it uses.",
-        usage: "bb thread-namer status",
+        usage: "alia thread-namer status",
       },
     ],
     async run(argv, ctx) {
@@ -328,7 +328,7 @@ export default function plugin(bb: BbPluginApi) {
           return {
             exitCode: 2,
             stderr:
-              "No thread to name. Pass a thread id: bb thread-namer rename <threadId>\n",
+              "No thread to name. Pass a thread id: VesnALIA thread-namer rename <threadId>\n",
           };
         }
         const result = await nameThread(threadId, true);
@@ -340,7 +340,7 @@ export default function plugin(bb: BbPluginApi) {
       if (command === "status" || command === undefined) {
         const { mode, length, timeout } = await settings.get();
         const selection =
-          (await bb.storage.kv.get<AgentSelection>(SELECTION_KEY)) ?? null;
+          (await alia.storage.kv.get<AgentSelection>(SELECTION_KEY)) ?? null;
         const agent =
           selection === null
             ? "the thread's own agent"
@@ -393,7 +393,7 @@ function toFacts(thread: {
  * model and harness the named thread's own prompts run on.
  */
 async function resolveTarget(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   thread: { id: string; projectId: string; environmentId: string | null; providerId: string },
   selection: AgentSelection | null,
 ): Promise<NamingTarget> {
@@ -411,7 +411,7 @@ async function resolveTarget(
 
   // The thread's resolved execution options are what its prompts last ran
   // with — the "same model and harness" default.
-  const execution = await bb.sdk.threads
+  const execution = await alia.sdk.threads
     .defaultExecutionOptions({ threadId: thread.id })
     .catch(() => null);
   return {
@@ -429,11 +429,11 @@ async function resolveTarget(
  * implement, so the mode is narrowed per provider instead of hardcoded.
  */
 async function restrictedPermissionMode(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   providerId: string | undefined,
 ): Promise<PermissionMode | null> {
   if (providerId === undefined) return null;
-  const providers = await bb.sdk.providers.list().catch(() => []);
+  const providers = await alia.sdk.providers.list().catch(() => []);
   const supported = providers.find((provider) => provider.id === providerId)
     ?.capabilities.permissionModes;
   if (supported === undefined) return null;
@@ -448,13 +448,13 @@ async function restrictedPermissionMode(
  * a stray thread behind.
  */
 async function runNamingThread(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   target: NamingTarget,
   prompt: string,
   timeoutMs: number,
 ): Promise<string | null> {
-  const permissionMode = await restrictedPermissionMode(bb, target.providerId);
-  const worker = await bb.sdk.threads.spawn({
+  const permissionMode = await restrictedPermissionMode(alia, target.providerId);
+  const worker = await alia.sdk.threads.spawn({
     projectId: target.projectId,
     // Reuse the named thread's environment: a name needs no worktree of its own.
     environment:
@@ -483,13 +483,13 @@ async function runNamingThread(
     // safe whether the turn finishes before or after the wait starts.
     let completed;
     try {
-      completed = await bb.sdk.threads.wait({
+      completed = await alia.sdk.threads.wait({
         threadId: worker.id,
         event: "turn/completed",
         timeoutMs,
       });
     } catch (error) {
-      const state = await bb.sdk.threads
+      const state = await alia.sdk.threads
         .get({ threadId: worker.id })
         .catch(() => null);
       throw state?.status === "error"
@@ -513,21 +513,21 @@ async function runNamingThread(
       );
     }
 
-    const { output } = await bb.sdk.threads.output({ threadId: worker.id });
+    const { output } = await alia.sdk.threads.output({ threadId: worker.id });
     return output;
   } finally {
     // Release the agent runtime first, then drop the throwaway thread so a
     // busy day of naming does not leave a trail of hidden threads behind.
-    await bb.sdk.threads
+    await alia.sdk.threads
       .stop({ threadId: worker.id })
       .catch((error: unknown) =>
-        bb.log.warn(`could not stop ${worker.id}: ${describeError(error)}`),
+        alia.log.warn(`could not stop ${worker.id}: ${describeError(error)}`),
       );
-    await bb.sdk.threads
+    await alia.sdk.threads
       .delete({ threadId: worker.id, childThreadsConfirmed: true })
       .catch(async (error: unknown) => {
-        bb.log.warn(`could not delete ${worker.id}: ${describeError(error)}`);
-        await bb.sdk.threads.archive({ threadId: worker.id }).catch(() => {});
+        alia.log.warn(`could not delete ${worker.id}: ${describeError(error)}`);
+        await alia.sdk.threads.archive({ threadId: worker.id }).catch(() => {});
       });
   }
 }
@@ -548,7 +548,7 @@ interface CatalogSnapshot {
  * the background, and every partial result is published so the picker fills in
  * while discovery is still running.
  */
-function createCatalogCache(bb: BbPluginApi) {
+function createCatalogCache(alia: AliaPluginApi) {
   let snapshot: CatalogSnapshot | null = null;
   let discovery: Promise<void> | null = null;
   /** Readers waiting for the next snapshot, so a cold read can answer early. */
@@ -564,17 +564,17 @@ function createCatalogCache(bb: BbPluginApi) {
     snapshot = next;
     wake();
     try {
-      await bb.storage.kv.set(CATALOG_KEY, next);
-      bb.realtime.publish(CATALOG_CHANNEL, { pending: next.pending.length });
+      await alia.storage.kv.set(CATALOG_KEY, next);
+      alia.realtime.publish(CATALOG_CHANNEL, { pending: next.pending.length });
     } catch (error) {
       // A reload can invalidate the api handle mid-discovery, and the kv row
       // is only a cache: keep the in-memory snapshot and move on.
-      bb.log.debug(`could not store the catalogue: ${describeError(error)}`);
+      alia.log.debug(`could not store the catalogue: ${describeError(error)}`);
     }
   }
 
   function discover(): Promise<void> {
-    discovery ??= runDiscovery(bb, () => snapshot, publish).finally(() => {
+    discovery ??= runDiscovery(alia, () => snapshot, publish).finally(() => {
       discovery = null;
       wake();
     });
@@ -585,13 +585,13 @@ function createCatalogCache(bb: BbPluginApi) {
     async read(
       refresh: boolean,
     ): Promise<Omit<CatalogSnapshot, "at"> & { discovering: boolean }> {
-      snapshot ??= (await bb.storage.kv.get<CatalogSnapshot>(CATALOG_KEY)) ?? null;
+      snapshot ??= (await alia.storage.kv.get<CatalogSnapshot>(CATALOG_KEY)) ?? null;
       const stale =
         snapshot === null || Date.now() - snapshot.at > CATALOG_TTL_MS;
       if (refresh || stale) {
         const round = discover();
         round.catch((error: unknown) =>
-          bb.log.warn(`model discovery failed: ${describeError(error)}`),
+          alia.log.warn(`model discovery failed: ${describeError(error)}`),
         );
         // With nothing cached, answer as soon as discovery knows which agents
         // it is asking; their models then arrive over the realtime channel.
@@ -621,11 +621,11 @@ function createCatalogCache(bb: BbPluginApi) {
  * finishes, so a background refresh never blanks the list.
  */
 async function runDiscovery(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   current: () => CatalogSnapshot | null,
   publish: (next: CatalogSnapshot) => Promise<void>,
 ): Promise<void> {
-  const providers = (await bb.sdk.providers.list()).filter(
+  const providers = (await alia.sdk.providers.list()).filter(
     (provider) => provider.available,
   );
   const previous = current()?.choices ?? [];
@@ -648,7 +648,7 @@ async function runDiscovery(
   await publishRound();
   await Promise.all(
     providers.map(async (provider) => {
-      const choices = await providerChoices(bb, provider);
+      const choices = await providerChoices(alia, provider);
       if (choices === null) unavailable.push(provider.displayName);
       else answered.set(provider.id, choices);
       pending = pending.filter((name) => name !== provider.displayName);
@@ -659,14 +659,14 @@ async function runDiscovery(
 
 /** One agent's models, or null when it has no catalogue to report. */
 async function providerChoices(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   provider: { id: string; displayName: string },
 ): Promise<ModelChoice[] | null> {
   let options;
   try {
-    options = await bb.sdk.providers.models({ providerId: provider.id });
+    options = await alia.sdk.providers.models({ providerId: provider.id });
   } catch (error) {
-    bb.log.debug(`no models for ${provider.id}: ${describeError(error)}`);
+    alia.log.debug(`no models for ${provider.id}: ${describeError(error)}`);
     return null;
   }
   // An agent whose CLI is missing or unauthenticated reports its failure

@@ -6,11 +6,11 @@
 
 ### Get the thread context without re-reading the history.
 
-Read a short summary of a BB thread without scrolling back through the whole conversation. The recap stays separate from the thread's model context.<br>
+Read a short summary of a VesnALIA thread without scrolling back through the whole conversation. The recap stays separate from the thread's model context.<br>
 Generate one when you need it, or let Recap refresh it after a thread goes idle.
 
 ![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)
-![bb ≥ 0.40](https://img.shields.io/badge/bb-%E2%89%A5%200.40-0f766e)
+![VesnALIA ≥ 0.40](https://img.shields.io/badge/bb-%E2%89%A5%200.40-0f766e)
 ![Plugin SDK ≥ 0.4.29](https://img.shields.io/badge/plugin%20sdk-%E2%89%A5%200.4.29-2dd4bf)
 ![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 
@@ -25,7 +25,7 @@ Generate one when you need it, or let Recap refresh it after a thread goes idle.
 <br>
 
 > [!NOTE]
-> The screenshots are real BB captures populated with fictional Northstar launch-planning data.
+> The screenshots are real VesnALIA captures populated with fictional Northstar launch-planning data.
 
 ## The problem
 
@@ -88,7 +88,7 @@ Show a compact banner, a banner that opens expanded, a larger recap card, or no 
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/MacHatter1/bb-recap --yes
+alia plugin install git:https://github.com/MacHatter1/bb-recap --yes
 ```
 
 Open a thread and choose **Recap** from its header or the command palette.
@@ -98,15 +98,15 @@ Open a thread and choose **Recap** from its header or the command palette.
 
 ```sh
 git clone https://github.com/MacHatter1/bb-recap.git
-cd bb-recap
+cd alia-recap
 npm ci
-bb plugin build
-bb plugin install path:$PWD --yes
+alia plugin build
+alia plugin install path:$PWD --yes
 ```
 
 </details>
 
-**Requirements:** BB **0.40+**. The plugin is built with `@get-bb/plugin-sdk` 0.4.29; its declared minimum is 0.4.21.
+**Requirements:** VesnALIA **0.40+**. The plugin is built with `@vesnalia/plugin-sdk` 0.4.29; its declared minimum is 0.4.21.
 
 ## Where to find it
 
@@ -116,7 +116,7 @@ bb plugin install path:$PWD --yes
 | **Command palette** | Choose **Recap: generate for this thread**. |
 | **Composer** | Read the latest recap inline; choose **On demand** to keep it out of the composer. |
 | **Plugin settings** | In **Recap behavior**, choose a model and configure automatic generation, cleanup, prompt, and display. |
-| **CLI** | Generate, show, or list recaps with `bb recap`. |
+| **CLI** | Generate, show, or list recaps with `alia recap`. |
 
 Automatic generation and cleanup are on by default, and the inline display starts as a compact banner. The idle delay defaults to 30 seconds, the minimum is 3 user turns, and up to 2 recap workers may run at once. You can set the delay from 0–86,400 seconds, the minimum from 1–100 turns, and concurrency from 1–5 workers. The prompt accepts up to 8,000 characters; recap text is limited to 1,200 characters.
 
@@ -128,7 +128,7 @@ flowchart TD
     B --> C{"Previous recap and new turns?"}
     C -->|Yes| D["Combine previous recap with new turns"]
     C -->|No| E["Use the available transcript"]
-    D --> F["Run a hidden BB worker"]
+    D --> F["Run a hidden ALIA worker"]
     E --> F
     F --> G["Store recap separately"]
     G --> H["Show it in the panel, composer, or CLI"]
@@ -142,16 +142,16 @@ flowchart TD
 ## Safe by default
 
 - 🛡️ **Separate from the conversation.** Recaps are stored outside the original thread transcript and are not added to its model context.
-- 🌐 **Provider handling applies.** The bounded transcript goes to the provider selected in Recap or BB's default provider. That provider may process it remotely under its own policy; Recap has no separate account or API key.
-- ⚠️ **A hidden worker is still a worker.** BB currently offers `accept-edits` as the least-permissive mode for spawned threads; it is not read-only. Recap instructs the worker to return a recap only, then archives and stops it. The worker remains subject to BB's tools and permission model, so install only plugins you trust.
-- 🧹 **Cleanup stays in Recap's database.** When enabled, cleanup removes suppressed attempts, older invalidated recaps, and visible records beyond the newest 1,000. It never deletes BB threads, messages, files, or projects.
+- 🌐 **Provider handling applies.** The bounded transcript goes to the provider selected in Recap or VesnALIA's default provider. That provider may process it remotely under its own policy; Recap has no separate account or API key.
+- ⚠️ **A hidden worker is still a worker.** VesnALIA currently offers `accept-edits` as the least-permissive mode for spawned threads; it is not read-only. Recap instructs the worker to return a recap only, then archives and stops it. The worker remains subject to VesnALIA's tools and permission model, so install only plugins you trust.
+- 🧹 **Cleanup stays in Recap's database.** When enabled, cleanup removes suppressed attempts, older invalidated recaps, and visible records beyond the newest 1,000. It never deletes VesnALIA threads, messages, files, or projects.
 
 ## CLI
 
 ```sh
-bb recap recap                 # Generate for this thread
-bb recap show                  # Show this thread's latest recap
-bb recap list                  # List recent recaps
+alia recap recap                 # Generate for this thread
+alia recap show                  # Show this thread's latest recap
+alia recap list                  # List recent recaps
 ```
 
 <details>
@@ -159,14 +159,14 @@ bb recap list                  # List recent recaps
 
 | Command | Does |
 | --- | --- |
-| `bb recap recap [thread-id] [--json]` | Generate a recap. |
-| `bb recap summarize [thread-id] [--json]` | Alias for `recap`. |
-| `bb recap show [thread-id] [--json]` | Show the latest valid recap. |
-| `bb recap list [--limit N] [--json]` | List recaps; the default limit is 50 and the maximum is 100. |
+| `alia recap recap [thread-id] [--json]` | Generate a recap. |
+| `alia recap summarize [thread-id] [--json]` | Alias for `recap`. |
+| `alia recap show [thread-id] [--json]` | Show the latest valid recap. |
+| `alia recap list [--limit N] [--json]` | List recaps; the default limit is 50 and the maximum is 100. |
 
-Leave out `thread-id` in a thread-aware BB CLI context. Generation requires a visible, idle thread. A thread with a child thread still running is still active. Hidden worker threads are not eligible. Add `--json` to any command for JSON output.
+Leave out `thread-id` in a thread-aware VesnALIA CLI context. Generation requires a visible, idle thread. A thread with a child thread still running is still active. Hidden worker threads are not eligible. Add `--json` to any command for JSON output.
 
-The bundled [agent skill](skills/bb-recap/SKILL.md) explains when and how to use these commands.
+The bundled [agent skill](skills/alia-recap/SKILL.md) explains when and how to use these commands.
 
 </details>
 
@@ -176,20 +176,20 @@ The bundled [agent skill](skills/bb-recap/SKILL.md) explains when and how to use
 npm ci
 npm test
 npm run typecheck
-bb plugin build
+alia plugin build
 ```
 
 ```text
 src/server.ts       Settings, storage, RPC, CLI, scheduling, and thread events
 src/app.tsx          Thread, composer, command palette, and settings UI
 src/recap.ts         Transcript, prompt, settings, and storage helpers
-skills/bb-recap/     Bundled agent skill for the CLI
+skills/alia-recap/     Bundled agent skill for the CLI
 output/playwright/   Fictional-data showcase captures
 ```
 
 **Tests** cover transcript construction, prompt boundaries, settings and retry rules, concurrency, incremental recaps, and SQLite list/cleanup behaviour.
 
-`PLUGIN_OVERVIEW.md` is the store listing. Keep it in step with `bb.description` in `package.json`.
+`PLUGIN_OVERVIEW.md` is the store listing. Keep it in step with `alia.description` in `package.json`.
 
 ## Licence
 

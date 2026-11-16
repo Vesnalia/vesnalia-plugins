@@ -1,20 +1,20 @@
-# Tasks Kanban для BB
+# Tasks Kanban для VesnALIA
 
 [![CI](https://github.com/levkovalenko/bb-tasks-kanban/actions/workflows/ci.yml/badge.svg)](https://github.com/levkovalenko/bb-tasks-kanban/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/Лицензия-MIT-blue.svg)](./LICENSE)
 
 **English version: [README.md](./README.md)**
 
-BB умеет полноценный трекер задач (проекты, статусы, приоритеты, дедлайны,
+VesnALIA умеет полноценный трекер задач (проекты, статусы, приоритеты, дедлайны,
 лейблы, комментарии, `@`-упоминания в чате) — но посмотреть его как доску
 нельзя. **Tasks Kanban** добавляет недостающий слой: живой канбан для
-встроенных **BB Tasks** прямо в сайдбаре BB.
+встроенных **VesnALIA Tasks** прямо в сайдбаре VesnALIA.
 
 - **Все карточки, все столбцы.** Шесть статусов — Бэклог, К исполнению,
   В работе, На проверке, Готово, Отменено — отображаются колонками.
 - **Реальные перемещения, не копия.** Drag & drop вызывает тот же `boardMove`
   tasks-плагина. Карточка, которую вы двигаете, — это та же строка, что видят
-  `bb tasks`, сайдбар и ваши агенты — и наоборот: статус, изменённый из CLI
+  `alia tasks`, сайдбар и ваши агенты — и наоборот: статус, изменённый из CLI
   или агентом, сам появится на доске (realtime-обновление).
 - **Полное редактирование задач.** Клик по карточке — диалог: название,
   описание, статус, приоритет, дедлайн, лейблы, история комментариев
@@ -22,26 +22,26 @@ BB умеет полноценный трекер задач (проекты, с
 - **Создание и удаление.** Новые задачи создаются напрямую в выбранный
   трекер-проект; удаление — с подтверждением.
 - **Любой трекер-проект.** Переключатель проектов в тулбаре доски. Проект,
-  привязанный к текущему BB-проекту, выбирается автоматически.
-- **Двуязычный.** Интерфейс следует языку BB: русский и английский.
+  привязанный к текущему ALIA-проекту, выбирается автоматически.
+- **Двуязычный.** Интерфейс следует языку VesnALIA: русский и английский.
 - **Дружелюбен к агентам.** В комплекте скилл `board`: агент работает с
-  доской через `bb tasks`, а доска обновляется сама.
+  доской через `alia tasks`, а доска обновляется сама.
 
 ## Установка
 
-Нужен **BB 0.49+** со встроенным Tasks-плагином (ставится вместе с BB).
+Нужен **VesnALIA 0.49+** со встроенным Tasks-плагином (ставится вместе с VesnALIA).
 
 Через маркетплейс:
 
 ```sh
-bb marketplace add git:https://github.com/levkovalenko/bb-tasks-kanban.git@main
-bb plugin install tasks-kanban@levkovalenko-plugins
+alia marketplace add git:https://github.com/levkovalenko/bb-tasks-kanban.git@main
+alia plugin install tasks-kanban@levkovalenko-plugins
 ```
 
 Или напрямую из Git:
 
 ```sh
-bb plugin install git:https://github.com/levkovalenko/bb-tasks-kanban.git@v0.2.2
+alia plugin install git:https://github.com/levkovalenko/bb-tasks-kanban.git@v0.2.2
 ```
 
 Дальше откройте вкладку **«Доска задач»** (иконка SectionMove) в левом сайдбаре
@@ -50,7 +50,7 @@ bb plugin install git:https://github.com/levkovalenko/bb-tasks-kanban.git@v0.2.2
 ## Как это работает
 
 Плагин ничего не хранит. Его сервер проксирует каждое чтение и запись в
-RPC-поверхность встроенного плагина `tasks` через `bb.sdk.plugins.callRpc` —
+RPC-поверхность встроенного плагина `tasks` через `alia.sdk.plugins.callRpc` —
 единственный источник правды: база данных Tasks. После каждой записи плагин
 публикует realtime-канал (`tasks-kanban-changed`), и каждая открытая доска
 перечитывает данные — кнопка обновления не обязательна (но есть).
@@ -58,8 +58,8 @@ RPC-поверхность встроенного плагина `tasks` чер�
 ```
 app.tsx (канбан UI)
   └─> board_* RPC (этот плагин, server.ts, валидация zod)
-        └─> bb.sdk.plugins.callRpc({ pluginId: "tasks", … })
-              └─> встроенный tasks-плагин — та же БД, что у `bb tasks`
+        └─> alia.sdk.plugins.callRpc({ pluginId: "tasks", … })
+              └─> встроенный tasks-плагин — та же БД, что у `alia tasks`
 ```
 
 ## Настройки
@@ -80,9 +80,9 @@ app.tsx (канбан UI)
 > Две вещи не зависят от неё:
 >
 > - **Подписи страницы настроек** — вычисляются один раз по языку ОС, под
->   которой запущен процесс bb (в Node `navigator.language` — локаль ОС).
+>   которой запущен процесс VesnALIA (в Node `navigator.language` — локаль ОС).
 >   Перезагрузка плагина их не меняет; чтобы увидеть их на другом языке,
->   запустите bb под другой локалью, например `LANG=ru_RU.UTF-8 bb`.
+>   запустите VesnALIA под другой локалью, например `LANG=ru_RU.UTF-8 alia`.
 > - **Название вкладки в сайдбаре** — берётся из языка браузера при
 >   загрузке приложения (регистрация слота статична); смена языка браузера
 >   отражается после перезагрузки страницы.
@@ -91,13 +91,13 @@ app.tsx (канбан UI)
 
 ```sh
 npm ci
-bb plugin build .     # нужен CLI bb (npm i -g bb-app)
+alia plugin build .     # нужен CLI alia (npm i -g alia-app)
 node --test test/     # тесты сервера против собранного бандла
 node test/marketplace.test.mjs   # валидация marketplace.json
 ```
 
 Тесты импортируют собранный `dist/server.js` и гонят его фабрику с
-заглушкой `bb.sdk` — живой BB-сервер не нужен. Настройка разработки, правила
+заглушкой `alia.sdk` — живой ALIA-сервер не нужен. Настройка разработки, правила
 i18n и процесс релизов — в [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Лицензия

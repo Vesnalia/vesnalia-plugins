@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "bun:test";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 const DEFAULT_IGNORED_DIRS = [
   ".git",
   ".claude",
@@ -18,7 +18,7 @@ const DEFAULT_IGNORED_DIRS = [
 import { resolveInWorkspace, resolvePaths, type PathProbe } from "./reveal";
 test("chat reveal resolves on the source host when two hosts use the same root path", async () => {
   const rootPath = "/shared/project";
-  const bb = {
+  const alia = {
     sdk: {
       system: { config: async () => ({ primaryHostId: "host-a" }) },
       threads: { get: async () => ({ environmentId: "env-a", projectId: "project-a" }) },
@@ -32,7 +32,7 @@ test("chat reveal resolves on the source host when two hosts use the same root p
       ] },
     },
     log: { warn: () => undefined },
-  } as unknown as BbPluginApi;
+  } as unknown as AliaPluginApi;
   const probe: PathProbe = async (hostId, _rootPath, relativePath) => {
     if (hostId === "host-a" && relativePath === "throws.md") throw new Error("host path unavailable");
     if (hostId === "host-b" && relativePath === "throws.md") return { isDirectory: false };
@@ -43,7 +43,7 @@ test("chat reveal resolves on the source host when two hosts use the same root p
   };
   const searchRoots = async () => [];
 
-  const revealed = await resolveInWorkspace(bb, {
+  const revealed = await resolveInWorkspace(alia, {
     threadId: "thread-a",
     path: ".claude/handoffs/target.md",
   }, searchRoots, probe, new Set(DEFAULT_IGNORED_DIRS));
@@ -53,13 +53,13 @@ test("chat reveal resolves on the source host when two hosts use the same root p
     assert.equal(revealed.relativePath, ".claude/handoffs/target.md");
   }
 
-  const known = await resolvePaths(bb, {
+  const known = await resolvePaths(alia, {
     threadId: "thread-a",
     paths: ["throws.md", ".claude/handoffs/target.md", "Docs/missing.md", "Docs/foo.md"],
   }, searchRoots, probe, new Set(DEFAULT_IGNORED_DIRS));
   assert.deepEqual(known.known, ["throws.md", ".claude/handoffs/target.md"]);
 
-  const recovered = await resolveInWorkspace(bb, { threadId: "thread-a", path: "throws.md" }, searchRoots, probe, new Set(DEFAULT_IGNORED_DIRS));
+  const recovered = await resolveInWorkspace(alia, { threadId: "thread-a", path: "throws.md" }, searchRoots, probe, new Set(DEFAULT_IGNORED_DIRS));
   assert.equal(recovered.ok, true);
   if (recovered.ok) assert.equal(recovered.root?.hostId, "host-b");
 });

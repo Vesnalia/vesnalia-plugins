@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../server";
 import {
@@ -246,7 +246,7 @@ export function SoulTeamPanel({
   view: "team" | "history";
 }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { souls: rosterSouls } = useSouls();
   const [refresh, setRefresh] = useState(0);
   useSignal("souls-changed", () => setRefresh((value) => value + 1));

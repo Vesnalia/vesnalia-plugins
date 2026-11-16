@@ -1,11 +1,11 @@
-# BB Homepage
+# VesnALIA Homepage
 
-Adds a "Start in a project" section to BB's new-thread page. Click a project
+Adds a "Start in a project" section to VesnALIA's new-thread page. Click a project
 card to start a new chat in that project.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-dark.jpeg">
-  <img src="docs/screenshot-light.jpeg" alt="The BB new-thread page with the Start in a project launcher: a pinned section above a two-column grid of project cards showing icons, chat counts, relative activity times, and 14-day sparklines">
+  <img src="docs/screenshot-light.jpeg" alt="The VesnALIA new-thread page with the Start in a project launcher: a pinned section above a two-column grid of project cards showing icons, chat counts, relative activity times, and 14-day sparklines">
 </picture>
 
 ## Features
@@ -22,13 +22,13 @@ card to start a new chat in that project.
   Pins and groups sync across windows.
 - **Right-click menu** also opens the project in an installed app, renames it,
   or hides it.
-- **Project artwork** comes from `bb.branding.icon` in `package.json` or common
+- **Project artwork** comes from `alia.branding.icon` in `package.json` or common
   files such as `icon.png`, `favicon.ico`, and `logo.svg`. Other projects get a
-  colored letter tile, matching BB Sidebar. Personal keeps its folder icon.
+  colored letter tile, matching VesnALIA Sidebar. Personal keeps its folder icon.
   The icon endpoint only serves images up to 2 MB and rejects SVGs
   with scripts or external references.
 
-The plugin also hides BB's built-in recent-chats section on the new-thread page.
+The plugin also hides VesnALIA's built-in recent-chats section on the new-thread page.
 
 ## Settings
 
@@ -41,7 +41,7 @@ The plugin also hides BB's built-in recent-chats section on the new-thread page.
 
 ## Requirements
 
-- BB 0.40 or later
+- VesnALIA 0.40 or later
 - Plugin SDK 0.4.87 or later
 
 ## Development
@@ -50,14 +50,14 @@ The plugin also hides BB's built-in recent-chats section on the new-thread page.
 npm install --include=dev
 npm test
 npm run typecheck
-npm exec -- bb plugin types --check .
+npm exec -- alia plugin types --check .
 npm run build
 ```
 
-Install the working directory into BB with:
+Install the working directory into VesnALIA with:
 
 ```sh
-bb plugin install path:$PWD
+alia plugin install path:$PWD
 ```
 
-After changing an installed local copy, run `bb plugin reload homepage`.
+After changing an installed local copy, run `alia plugin reload homepage`.

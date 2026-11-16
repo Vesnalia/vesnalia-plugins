@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { resolveSiblingPath } from "./core/htmlParts";
 import type { FileSource } from "../contract";
 
@@ -105,7 +105,7 @@ function parentDirectory(path: string): string {
 }
 
 export async function resolveFileSource(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   source: FileSource,
   path: string,
 ): Promise<ResolvedFile> {
@@ -121,7 +121,7 @@ export async function resolveFileSource(
     // A host file inside the thread's workspace gets the workspace as its root,
     // so `htmlFile: "../partials/x.html"` works the same as it does there.
     const workspace = source.threadId
-      ? await resolveThreadWorkspace(bb, source.threadId).catch(() => null)
+      ? await resolveThreadWorkspace(alia, source.threadId).catch(() => null)
       : null;
     const rootPath =
       workspace &&
@@ -135,13 +135,13 @@ export async function resolveFileSource(
   if (source.kind === "workspace") {
     let environmentId = source.environmentId;
     if (!environmentId && source.threadId) {
-      const thread = await bb.sdk.threads.get({ threadId: source.threadId });
+      const thread = await alia.sdk.threads.get({ threadId: source.threadId });
       environmentId = thread.environmentId;
     }
     if (!environmentId) {
       throw new Error("This workspace file has no environment.");
     }
-    const env = await bb.sdk.environments.get({
+    const env = await alia.sdk.environments.get({
       environmentId,
     });
     if (!env.path) {
@@ -163,7 +163,7 @@ export async function resolveFileSource(
   if (!source.threadId) {
     throw new Error("This thread-storage file has no thread.");
   }
-  const location = await bb.sdk.threads.storageLocation({
+  const location = await alia.sdk.threads.storageLocation({
     threadId: source.threadId,
   });
   const absolutePath = isAbsoluteHostPath(path)
@@ -180,10 +180,10 @@ export async function resolveFileSource(
 }
 
 export async function readHostText(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   resolved: ResolvedFile,
 ): Promise<{ content: string; sha256: string; sizeBytes: number }> {
-  const file = await bb.sdk.files.read({
+  const file = await alia.sdk.files.read({
     hostId: resolved.hostId,
     path: resolved.absolutePath,
     rootPath: resolved.rootPath,
@@ -199,7 +199,7 @@ export async function readHostText(
 }
 
 export async function writeHostText(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   resolved: ResolvedFile,
   content: string,
   expectedSha256: string | null,
@@ -207,7 +207,7 @@ export async function writeHostText(
   | { outcome: "written"; sha256: string }
   | { outcome: "conflict"; currentSha256: string | null }
 > {
-  const saved = await bb.sdk.files.write({
+  const saved = await alia.sdk.files.write({
     hostId: resolved.hostId,
     path: resolved.absolutePath,
     rootPath: resolved.rootPath,
@@ -222,7 +222,7 @@ export async function writeHostText(
 }
 
 export async function readSiblingAssets(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   resolved: ResolvedFile,
   refs: string[],
 ): Promise<{ assets: Record<string, string>; errors: string[] }> {
@@ -244,7 +244,7 @@ export async function readSiblingAssets(
         return;
       }
       try {
-        const file = await bb.sdk.files.read({
+        const file = await alia.sdk.files.read({
           hostId: resolved.hostId,
           path: sibling,
           rootPath: resolved.rootPath,
@@ -265,14 +265,14 @@ export async function readSiblingAssets(
 }
 
 export async function resolveThreadWorkspace(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
 ): Promise<{ hostId: string; rootPath: string; environmentId: string }> {
-  const thread = await bb.sdk.threads.get({ threadId });
+  const thread = await alia.sdk.threads.get({ threadId });
   if (!thread.environmentId) {
     throw new Error("This thread has no workspace environment.");
   }
-  const env = await bb.sdk.environments.get({
+  const env = await alia.sdk.environments.get({
     environmentId: thread.environmentId,
   });
   if (!env.path) {
@@ -286,7 +286,7 @@ export async function resolveThreadWorkspace(
 }
 
 export async function resolveInvokingHostPath(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   rawPath: string,
   ctx: { cwd?: string; threadId?: string },
 ): Promise<ResolvedFile> {
@@ -299,7 +299,7 @@ export async function resolveInvokingHostPath(
   let rootPath: string | undefined;
   if (ctx.threadId) {
     try {
-      const workspace = await resolveThreadWorkspace(bb, ctx.threadId);
+      const workspace = await resolveThreadWorkspace(alia, ctx.threadId);
       hostId = workspace.hostId;
       rootPath = workspace.rootPath;
     } catch {
@@ -333,14 +333,14 @@ export async function resolveInvokingHostPath(
         : parentDirectory(normalized);
 
   return {
-    hostId: hostId ?? (await primaryHostId(bb)),
+    hostId: hostId ?? (await primaryHostId(alia)),
     absolutePath: normalized,
     rootPath: resolvedRoot,
   };
 }
 
-async function primaryHostId(bb: BbPluginApi): Promise<string> {
-  const hosts = await bb.sdk.hosts.list();
+async function primaryHostId(alia: AliaPluginApi): Promise<string> {
+  const hosts = await alia.sdk.hosts.list();
   const first = hosts[0];
   if (!first) {
     throw new Error("No connected machine is available.");

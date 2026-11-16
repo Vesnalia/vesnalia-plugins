@@ -13,7 +13,7 @@ Extraction runs on the machine that holds the thread's workspace, and agents pas
 
 The tool adds one line to every thread's instructions, telling agents to use it for binary documents instead of shell tools, and ships a short skill.
 
-The first extraction on a machine downloads a pinned release of [Xberg](https://github.com/xberg-io/xberg), an MIT-licensed document extraction tool, from GitHub. The plugin checks the download against a SHA-256 digest before unpacking it. To check a machine or install ahead of time, run `bb xberg status` or `bb xberg install`.
+The first extraction on a machine downloads a pinned release of [Xberg](https://github.com/xberg-io/xberg), an MIT-licensed document extraction tool, from GitHub. The plugin checks the download against a SHA-256 digest before unpacking it. To check a machine or install ahead of time, run `alia xberg status` or `alia xberg install`.
 
 ## Limits on what it reads
 
@@ -23,8 +23,8 @@ Each machine runs two extractions at a time, with a limit of 256 MiB per file. X
 
 ## Requirements and costs
 
-- Apple Silicon macOS, or Linux on x86-64 or arm64. Intel Macs and Windows aren't supported. The tool has been tested through BB on macOS. On Linux x86-64, Xberg has only been run directly, and Linux arm64 hasn't been tested.
-- Disk on each machine that runs extractions: about 120 MB for Xberg on macOS and 230 MB on Linux, plus its caches. Xberg 1.3.10's defaults keep extracted text for up to 30 days and 2 GB, and its OCR cache has no size limit. `bb xberg status` shows the size of the cached text, and `bb xberg cache clear` empties both caches. OCR language packs are downloaded the first time OCR runs and kept.
+- Apple Silicon macOS, or Linux on x86-64 or arm64. Intel Macs and Windows aren't supported. The tool has been tested through VesnALIA on macOS. On Linux x86-64, Xberg has only been run directly, and Linux arm64 hasn't been tested.
+- Disk on each machine that runs extractions: about 120 MB for Xberg on macOS and 230 MB on Linux, plus its caches. Xberg 1.3.10's defaults keep extracted text for up to 30 days and 2 GB, and its OCR cache has no size limit. `alia xberg status` shows the size of the cached text, and `alia xberg cache clear` empties both caches. OCR language packs are downloaded the first time OCR runs and kept.
 - `tar` on the machine, to unpack the download.
 - Network access for the first download, and the first time OCR runs, when Xberg fetches a language pack from the `tesseract-ocr/tessdata_fast` repository on GitHub. That file comes from the main branch, and the plugin doesn't pin or verify it. The plugin's own download ignores proxy settings.
 

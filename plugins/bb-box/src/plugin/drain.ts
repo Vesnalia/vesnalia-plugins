@@ -1,19 +1,19 @@
-// box_run's commands across a deploy (#405). When BB updates or reloads a
+// box_run's commands across a deploy (#405). When VesnALIA updates or reloads a
 // plugin, it aborts the plugin's tool calls with the reason
 // "plugin-disposed", then waits for the plugin's dispose hooks, and a call
 // that ends after the abort still gives the agent its result. So a command
-// does not stop on that abort: bb-box's first dispose hook takes no new
+// does not stop on that abort: alia-box's first dispose hook takes no new
 // commands, waits a while for those running, then stops the rest, which go
-// on in their boxes as jobs. BB unloads the old version before it loads the
+// on in their boxes as jobs. VesnALIA unloads the old version before it loads the
 // new one, so the wait is time in which agents have no box tools: a 60 s wait
 // kept them away for a minute at each deploy while commands ran (#916), so it
-// is 5 s, and a longer command's caller gets its job for box_job. BB stops bb-box's worker on BB machines, and
+// is 5 s, and a longer command's caller gets its job for box_job. VesnALIA stops alia-box's worker on VesnALIA machines, and
 // with it the relay to Docker there, before it aborts the calls, so a
-// command in a Docker box on a BB machine fails at once.
+// command in a Docker box on a VesnALIA machine fails at once.
 
 import { BoxError } from "../core/boxes.ts";
 
-/** BB's abort reason for a plugin's tool calls when it disposes the plugin. */
+/** VesnALIA's abort reason for a plugin's tool calls when it disposes the plugin. */
 import { PRODUCT } from "../brand.ts";
 export const PLUGIN_DISPOSED = "plugin-disposed";
 /** How long a deploy waits for commands still running. */
@@ -21,7 +21,7 @@ export const DRAIN_MS = 5_000;
 /** How long stopped commands get to end once the wait is over. */
 const STOP_MS = 5_000;
 
-/** A command that close() stopped, as bb-box was restarting. */
+/** A command that close() stopped, as alia-box was restarting. */
 export class Restarted extends Error {
   constructor() {
     super(`${PRODUCT} restarted while the command ran.`);
@@ -29,7 +29,7 @@ export class Restarted extends Error {
   }
 }
 
-/** A command box_run stopped waiting for, as BB ends a tool call at about five minutes (#486). */
+/** A command box_run stopped waiting for, as VesnALIA ends a tool call at about five minutes (#486). */
 export class Detached extends Error {
   constructor() {
     super("box_run stopped waiting for the command.");
@@ -41,14 +41,14 @@ export class Drain {
   readonly #running = new Map<Promise<unknown>, AbortController>();
   #closed = false;
 
-  /** True once bb-box is stopping. */
+  /** True once alia-box is stopping. */
   get closed(): boolean {
     return this.#closed;
   }
 
   /**
    * Runs `task` with a signal that follows `signal`, the tool call's, except
-   * for BB's abort for a deploy. Throws at once while bb-box is stopping,
+   * for VesnALIA's abort for a deploy. Throws at once while alia-box is stopping,
    * and Restarted when close() stopped the task. With `detachMs`, it stops
    * the task after that long as close() does, and throws Detached.
    */
@@ -78,9 +78,9 @@ export class Drain {
   }
 
   /**
-   * Whether bb-box starts stopping within `ms`: BB aborts `signal`, a tool
-   * call's, for a deploy, or the drain closes. BB stops bb-box's worker on a
-   * BB machine, and with it the relay to Docker there, before either, so a
+   * Whether alia-box starts stopping within `ms`: VesnALIA aborts `signal`, a tool
+   * call's, for a deploy, or the drain closes. VesnALIA stops alia-box's worker on a
+   * VesnALIA machine, and with it the relay to Docker there, before either, so a
    * command in a Docker box there loses its box first (#415).
    */
   stoppingWithin(signal: AbortSignal, ms: number): Promise<boolean> {

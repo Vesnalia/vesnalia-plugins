@@ -2,8 +2,8 @@ import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-// Glyph names that the installed BB host registers (core icon map plus
-// icon-extended, BB with plugin SDK 0.6.94). An unknown name renders the Zap
+// Glyph names that the installed VesnALIA host registers (core icon map plus
+// icon-extended, VesnALIA with plugin SDK 0.6.94). An unknown name renders the Zap
 // fallback, so every name in the UI source must be in this list.
 const HOST_ICONS = new Set([
   "AlertTriangle",
@@ -35,7 +35,7 @@ const root = path.resolve(import.meta.dirname, "..");
 const sources = [path.join(root, "app.tsx"), ...readdirSync(path.join(root, "ui")).filter((file) => file.endsWith(".tsx") && !file.includes(".test.")).map((file) => path.join(root, "ui", file))];
 
 describe("icons", () => {
-  it("uses only glyph names that the BB host registers", () => {
+  it("uses only glyph names that the VesnALIA host registers", () => {
     const used = new Set<string>();
     for (const file of sources) {
       const text = readFileSync(file, "utf8");

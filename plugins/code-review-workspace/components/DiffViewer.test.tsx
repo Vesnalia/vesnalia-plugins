@@ -17,11 +17,11 @@ vi.mock("@pierre/diffs/react", () => ({
   },
 }));
 
-import { installTestPluginRuntime } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime } from "@vesnalia/plugin-sdk/testing/app";
 import type { FileViewFlags } from "./DiffViewer";
 import type { InlineComposer, InlineDraft } from "./InlineDraft";
 
-// Comments render with bb's Markdown, which binds to the plugin runtime when its module loads.
+// Comments render with VesnALIA's Markdown, which binds to the plugin runtime when its module loads.
 installTestPluginRuntime();
 const { DiffViewer } = await import("./DiffViewer");
 const { InlineComposerContext, InlineDraftContext } = await import("./InlineDraft");

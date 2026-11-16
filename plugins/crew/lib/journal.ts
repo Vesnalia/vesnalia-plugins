@@ -1,5 +1,5 @@
 // The journal (`member_ops`): every thread-creating step writes its intent
-// before it calls BB and its result after. The SDK has no idempotency key for
+// before it calls VesnALIA and its result after. The SDK has no idempotency key for
 // `threads.spawn`, so a crash between the two would otherwise leave a thread
 // nobody knows about and the next apply would spawn a second one. The opId
 // travels into the thread's plugin metadata at spawn time, which is what lets
@@ -29,7 +29,7 @@ export function createJournal(store: Store, newId: () => string = randomUUID) {
     /**
      * Look for a thread spawned by one of the member's unfinished intents.
      * Found → the intent is closed as done with that thread. Not found → the
-     * intent is closed as failed, because the spawn never reached BB.
+     * intent is closed as failed, because the spawn never reached VesnALIA.
      */
     async recoverOrphan(
       memberRow: string,

@@ -1,21 +1,21 @@
-// bb-plugin-model-favicons — frontend entry.
+// alia-plugin-model-favicons — frontend entry.
 //
-// bb renders one icon per provider, never per model: `availableModelSchema`
+// VesnALIA renders one icon per provider, never per model: `availableModelSchema`
 // carries no icon field, so every model row in the picker inherits its
 // provider's logo. This plugin therefore draws a mark per provider id with
 // `app.slots.experimental_providerIcon` — the only supported way to replace a
 // provider's logo with inline React.
 //
-// A registered mark wins over the provider's own logo (bb renders the
+// A registered mark wins over the provider's own logo (VesnALIA renders the
 // registered component instead of the masked logo asset), and the provider's
-// `iconTint` still applies to it, so the mark follows the bb theme.
+// `iconTint` still applies to it, so the mark follows the VesnALIA theme.
 //
 // The registered component is stable and reads the current choice at render
-// time (lib/icon-store.tsx): bb collects registrations once and rejects a
+// time (lib/icon-store.tsx): VesnALIA collects registrations once and rejects a
 // second registration for the same (kind, provider id).
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -48,7 +48,7 @@ function useOverrides() {
     refetch();
   }, [refetch]);
   // server.ts publishes after every write — from this page, another window,
-  // or `bb model-favicons set` run by an agent — so the list never goes stale.
+  // or `alia model-favicons set` run by an agent — so the list never goes stale.
   useRealtime("icons-changed", refetch);
   return { rpc, overrides, error, report, refetch };
 }
@@ -58,7 +58,7 @@ function MarkPreview({ mark }: { mark: MarkId }) {
   return <Component className="size-4 text-foreground" />;
 }
 
-/** The dashed box BB's own list pages use for loading and empty states. */
+/** The dashed box VesnALIA's own list pages use for loading and empty states. */
 function EmptyState({ children }: { children: ReactNode }) {
   return (
     <div
@@ -101,9 +101,9 @@ function FaviconsPage() {
     <div className="h-full min-h-0 flex-1 overflow-y-auto">
       <div className="mx-auto box-border w-full max-w-3xl px-4 pb-4 pt-3 md:px-5 md:pt-4">
         <p className="text-sm text-muted-foreground">
-          bb draws one icon per provider, so an override changes the mark for every
+          alia draws one icon per provider, so an override changes the mark for every
           model that provider offers. Agents set one with{" "}
-          <code>bb model-favicons set &lt;provider-id&gt; &lt;mark&gt;</code>.
+          <code>alia model-favicons set &lt;provider-id&gt; &lt;mark&gt;</code>.
         </p>
 
         <form onSubmit={submit} className="mt-4 flex flex-wrap items-center gap-2">
@@ -143,7 +143,7 @@ function FaviconsPage() {
             <EmptyState>Loading icons…</EmptyState>
           ) : rows.length === 0 ? (
             <EmptyState>
-              No overrides. bb&apos;s own logos are in use — but a custom ACP agent
+              No overrides. VesnALIA&apos;s own logos are in use — but a custom ACP agent
               still shows the generic Toolbox mark.
             </EmptyState>
           ) : (
@@ -183,7 +183,7 @@ function FaviconsPage() {
 }
 
 export default definePluginApp((app) => {
-  // The icons themselves. One registration per provider id; bb keeps the first
+  // The icons themselves. One registration per provider id; VesnALIA keeps the first
   // registration for a (kind, id) pair and warns about later duplicates.
   for (const [providerId, defaultMark] of Object.entries(DEFAULT_MARKS)) {
     app.slots.experimental_providerIcon({

@@ -55,7 +55,7 @@ export const KEY_COMBOS: readonly KeyCombo[] = [
   { id: "cmd-w", label: "⌘W", description: "Close the window", keys: [Key.command, Key.w] },
   { id: "cmd-h", label: "⌘H", description: "Hide the app", keys: [Key.command, Key.h] },
   { id: "cmd-q", label: "⌘Q", description: "Quit the app", keys: [Key.command, Key.q] },
-  { id: "cmd-r", label: "⌘R", description: "Reload (bb's desktop app keeps ⌘R)", keys: [Key.command, Key.r] },
+  { id: "cmd-r", label: "⌘R", description: "Reload (VesnALIA's desktop app keeps ⌘R)", keys: [Key.command, Key.r] },
   { id: "force-quit", label: "⌥⌘Esc", description: "Force Quit", keys: [Key.option, Key.command, Key.escape] },
   { id: "escape", label: "Esc", description: "Escape, while full screen takes it", keys: [Key.escape] },
 ];

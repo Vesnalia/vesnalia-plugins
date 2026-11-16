@@ -47,7 +47,7 @@ class FakeLog {
 
 test("the device's log names an app's read of the pasteboard, but not the keyboard's or simctl's own, and the paste notice's hold on the keyboard (F-21)", () => {
   assert.deepEqual(pasteLogEvent(LISTENING), { is: "listening" });
-  assert.deepEqual(pasteLogEvent(READ_BY("dev.bb-box.probe")), { is: "read", reader: "dev.bb-box.probe" });
+  assert.deepEqual(pasteLogEvent(READ_BY("dev.alia-box.probe")), { is: "read", reader: "dev.alia-box.probe" });
   assert.deepEqual(pasteLogEvent(READ_BY("com.apple.mobilesafari")), { is: "read", reader: "com.apple.mobilesafari" });
   assert.equal(pasteLogEvent(READ_BY("com.apple.InputUI")), null, "the keyboard reads the pasteboard as it shows");
   assert.equal(pasteLogEvent(READ_BY("(null)")), null, "simctl's own pbpaste");
@@ -66,8 +66,8 @@ test("a paste's watch counts only what comes after the paste key: the app's read
   await wait(10);
   watch.pressed();
   log.say(READ_BY("com.apple.InputUI"));
-  setTimeout(() => log.say(READ_BY("dev.bb-box.probe")), 30);
-  assert.deepEqual(await watch.read(), { watched: true, reader: "dev.bb-box.probe" });
+  setTimeout(() => log.say(READ_BY("dev.alia-box.probe")), 30);
+  assert.deepEqual(await watch.read(), { watched: true, reader: "dev.alia-box.probe" });
   const gone = watch.noticeGone();
   let settled = false;
   void gone.then(() => (settled = true));
@@ -98,7 +98,7 @@ test("a paste's watch says when no app read, when no notice showed, when one out
   stuck.say(LISTENING);
   await shown.listening();
   shown.pressed();
-  stuck.say(READ_BY("dev.bb-box.probe"));
+  stuck.say(READ_BY("dev.alia-box.probe"));
   await shown.read();
   stuck.say(NOTICE_SHOWN);
   assert.equal(await shown.noticeGone(), "still shown");

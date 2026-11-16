@@ -69,7 +69,7 @@ describe("model and permission", () => {
     expect(modelLabel("gpt-6")).toBe("gpt-6");
   });
 
-  it("uses bb's own permission labels", () => {
+  it("uses VesnALIA's own permission labels", () => {
     expect(permissionLabel("accept-edits")).toBe("Accept Edits");
     expect(permissionLabel("auto")).toBe("Approve for me");
     expect(permissionLabel("full")).toBe("Full Access");

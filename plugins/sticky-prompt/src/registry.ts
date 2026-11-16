@@ -1,6 +1,6 @@
 // Shared state between the per-message anchors and the overlay.
 //
-// BB gives a plugin no thread id in the timeline DOM, so every rendered
+// VesnALIA gives a plugin no thread id in the timeline DOM, so every rendered
 // message reports itself here through the experimental_messageMetadata slot.
 // From its row we find the chat's scroll container, which becomes an "area"
 // the overlay draws a sticky bar for. Anchors also record each user

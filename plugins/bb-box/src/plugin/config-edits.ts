@@ -1,4 +1,4 @@
-import { PluginCliError } from "@get-bb/plugin-sdk";
+import { PluginCliError } from "@vesnalia/plugin-sdk";
 import type { FieldValue, GpuPart } from "../backends/types.ts";
 import { gpuWhenNotAsked } from "../core/gpu.ts";
 import { GENERAL_DEFAULTS, KINDS_WITH_GPU_DEFAULT, MONITOR_DEFAULTS, WHOLE_CARDS_BY_DEFAULT, kindGpuDefaults, MONITOR_REFRESH_SECONDS, SNAPSHOT_DEFAULTS, SNAPSHOT_LIMITS, isCents, sizeChanges, type BackendConfig, type ConfigDocument, type HostConfig, type KindConfig, type SecretState } from "../core/document.ts";
@@ -52,7 +52,7 @@ export function projectIdsOf(text: string, known: readonly ProjectChoice[]): str
         const byName = known.filter((project) => project.name.toLowerCase() === each.toLowerCase());
         if (byName.length === 1) return byName[0]!.id;
         if (byName.length > 1) throw invalid(`${byName.length} projects are called "${each}": ${byName.map((project) => project.id).join(", ")}. Give its ID.`);
-        throw invalid(`BB has no project by the ${ordinal(index + 1)} name or ID given. ${NOT_SHOWN}${names ? ` Its projects are: ${names}.` : ""}`, "Give names or IDs, separated by commas, or an empty list for every project.");
+        throw invalid(`VesnALIA has no project by the ${ordinal(index + 1)} name or ID given. ${NOT_SHOWN}${names ? ` Its projects are: ${names}.` : ""}`, "Give names or IDs, separated by commas, or an empty list for every project.");
       }),
     ),
   ];
@@ -126,7 +126,7 @@ function defaultWords(field: FieldView): string {
 
 function fieldNamed(fields: readonly FieldView[], key: string, owner: string, given: string): FieldView {
   const field = fields.find((candidate) => candidate.key === key);
-  if (!field) throw invalid(`${owner} has no field by the name ${given} gives. ${NOT_SHOWN} Its fields are ${fields.map((each) => each.key).join(", ") || "none"}.`, "bb box backend fields <type> lists them, with what each takes.");
+  if (!field) throw invalid(`${owner} has no field by the name ${given} gives. ${NOT_SHOWN} Its fields are ${fields.map((each) => each.key).join(", ") || "none"}.`, "alia box backend fields <type> lists them, with what each takes.");
   return field;
 }
 
@@ -137,7 +137,7 @@ const CEILINGS = "general.snapshots.ceilings.";
 function refuseUnknownCeiling(document: ConfigDocument, option: OptionInfo): void {
   const backend = option.name.startsWith(CEILINGS) ? option.name.slice(CEILINGS.length) : null;
   if (backend !== null && !document.backends.some((each) => each.id === backend)) {
-    throw invalid(`There is no backend by the ID a ceiling on paid snapshots names. ${NOT_SHOWN}`, "bb box config show lists the backends' IDs.");
+    throw invalid(`There is no backend by the ID a ceiling on paid snapshots names. ${NOT_SHOWN}`, "alia box config show lists the backends' IDs.");
   }
 }
 
@@ -278,14 +278,14 @@ export function findBackend(document: ConfigDocument, ref: string): BackendConfi
   const backend = document.backends.find((candidate) => candidate.id === ref) ?? (document.backends.filter((candidate) => candidate.type === ref).length === 1 ? document.backends.find((candidate) => candidate.type === ref) : undefined);
   if (!backend) {
     const ids = document.backends.map((candidate) => candidate.id);
-    throw new PluginCliError(`There is no backend by the ID or type given. ${NOT_SHOWN}${ids.length ? ` There are ${ids.join(", ")}.` : " There is none yet."}`, { code: "not_found", hint: "bb box backend list lists them, and bb box backend add <type> adds one." });
+    throw new PluginCliError(`There is no backend by the ID or type given. ${NOT_SHOWN}${ids.length ? ` There are ${ids.join(", ")}.` : " There is none yet."}`, { code: "not_found", hint: "alia box backend list lists them, and VesnALIA box backend add <type> adds one." });
   }
   return backend;
 }
 
 export function driverOf(drivers: readonly DriverShape[], type: string): DriverShape {
   const driver = drivers.find((candidate) => candidate.type === type);
-  if (!driver) throw invalid(`There is no backend type by the name given. ${NOT_SHOWN} The types are ${drivers.map((each) => each.type).join(", ")}.`, "bb box backend types lists them.");
+  if (!driver) throw invalid(`There is no backend type by the name given. ${NOT_SHOWN} The types are ${drivers.map((each) => each.type).join(", ")}.`, "alia box backend types lists them.");
   return driver;
 }
 
@@ -318,7 +318,7 @@ export function addBackend(document: ConfigDocument, drivers: readonly DriverSha
   const driver = driverOf(drivers, type);
   if (!id.startsWith(`${type}:`) && id !== type) throw invalid(`A ${type} backend's ID is "${type}", or "${type}:<name>".`);
   if (document.backends.some((backend) => backend.id === id)) {
-    throw new PluginCliError(`There is a backend ${id} already.`, { code: "invalid_input", hint: `bb box backend set ${id} changes it; --id <name> adds another ${type} backend beside it, where the type allows it.` });
+    throw new PluginCliError(`There is a backend ${id} already.`, { code: "invalid_input", hint: `alia box backend set ${id} changes it; --id <name> adds another ${type} backend beside it, where the type allows it.` });
   }
   const path = `backends.${id}`;
   const base: BackendConfig = { id, type, enabled: edit.enabled ?? true, fields: {} };
@@ -367,7 +367,7 @@ const HOST_NAME = /^[a-z0-9][a-z0-9-]{0,62}$/;
 function hostDriver(backend: BackendConfig, drivers: readonly DriverShape[]): DriverShape {
   const driver = driverOf(drivers, backend.type);
   if (!driver.hostFields.length) {
-    throw invalid(`${driver.label} has no hosts of its own.${driver.fields.some((field) => field.key === "machines") ? ` Its machines are lines of its machines field: bb box backend set ${backend.id} --add-line machines="<name> <address> <kinds>".` : ""}`);
+    throw invalid(`${driver.label} has no hosts of its own.${driver.fields.some((field) => field.key === "machines") ? ` Its machines are lines of its machines field: VesnALIA box backend set ${backend.id} --add-line machines="<name> <address> <kinds>".` : ""}`);
   }
   return driver;
 }
@@ -380,7 +380,7 @@ export function addHost(document: ConfigDocument, drivers: readonly DriverShape[
   const backend = findBackend(document, ref);
   const driver = hostDriver(backend, drivers);
   if (!HOST_NAME.test(name)) throw invalid(`Name the host with lower-case letters, digits and "-", such as mac-1. ${NOT_SHOWN}`);
-  if ((backend.hosts ?? []).some((host) => host.name === name)) throw invalid(`Backend ${backend.id} has a host ${name} already.`, `bb box backend host set ${backend.id} ${name} changes it.`);
+  if ((backend.hosts ?? []).some((host) => host.name === name)) throw invalid(`Backend ${backend.id} has a host ${name} already.`, `alia box backend host set ${backend.id} ${name} changes it.`);
   const path = `backends.${backend.id}.hosts.${name}`;
   const fields = editedFields({}, driver.hostFields, edit, `Host ${name} of backend ${backend.id}`, path, false);
   const host: HostConfig = { name, enabled: edit.enabled ?? true, fields: fields.fields as Record<string, FieldValue> };
@@ -447,7 +447,7 @@ export function setKind(document: ConfigDocument, knownKinds: readonly string[],
   if (edit.makeDefault && edit.enabled === false) throw invalid("The default kind stays on. Leave out --off, or choose another default.");
   const defaultKind = document.general.defaultKind ?? GENERAL_DEFAULTS.defaultKind;
   if (edit.enabled === false && !edit.makeDefault && kind === defaultKind) {
-    throw invalid(`${kind} is the default kind, which stays on, as on the settings page. Choose another default first: bb box kind set <kind> --make-default.`);
+    throw invalid(`${kind} is the default kind, which stays on, as on the settings page. Choose another default first: VesnALIA box kind set <kind> --make-default.`);
   }
   const before = document.kinds[kind] ?? {};
   let entry: KindConfig = edit.reset ? {} : { ...before };
@@ -509,7 +509,7 @@ export interface OptionInfo {
 export const OPTIONS: readonly OptionInfo[] = [
   { name: "general.defaultKind", type: { kind: "text" }, default: GENERAL_DEFAULTS.defaultKind, help: "The kind a thread gets when it asks for none. It must be on." },
   { name: "general.boxesPerThread", type: { kind: "whole", least: 0, most: 10_000 }, default: GENERAL_DEFAULTS.boxesPerThread, help: "The most boxes a thread may hold at once; 0 for no limit." },
-  { name: "general.enrol", type: { kind: "boolean" }, default: GENERAL_DEFAULTS.enrol, help: "Whether boxes join BB as machines, so threads and terminals can use them." },
+  { name: "general.enrol", type: { kind: "boolean" }, default: GENERAL_DEFAULTS.enrol, help: "Whether boxes join VesnALIA as machines, so threads and terminals can use them." },
   { name: "general.video", type: { kind: "boolean" }, default: GENERAL_DEFAULTS.video, help: "Whether Linux desktops drawn on the CPU show as video." },
   { name: "general.nightlyImages", type: { kind: "boolean" }, default: GENERAL_DEFAULTS.nightlyImages, help: `Whether ${PRODUCT} rebuilds the standard images that are due at 03:00 each night.` },
   { name: "general.identityResetBackends", type: { kind: "tags" }, default: "", help: "The backends whose new Linux and macOS boxes get an identity marker, so that a copy of one resets its identity (070), comma-separated backend IDs. None by default." },
@@ -526,9 +526,9 @@ export const OPTIONS: readonly OptionInfo[] = [
   { name: "general.snapshots.keepDays", type: { kind: "whole", ...SNAPSHOT_LIMITS.keepDays }, default: SNAPSHOT_DEFAULTS.keepDays, help: `How many days Keep keeps a snapshot from the day it is kept, or adds to a keep that has not ended, unless a date is given; ${PRODUCT} deletes it after.` },
   { name: "general.snapshots.agentsRestore", type: { kind: "boolean" }, default: SNAPSHOT_DEFAULTS.agentsRestore, help: "Whether an agent restores its thread's own boxes without asking, always with an undo; off, it asks for a yes in the thread through a form." },
   { name: "general.snapshots.agentsMemory", type: { kind: "boolean" }, default: SNAPSHOT_DEFAULTS.agentsMemory, help: "Whether an agent may restore a snapshot that holds a box's memory; off, only the person restores one." },
-  { name: "monitor.enabled", type: { kind: "boolean" }, default: MONITOR_DEFAULTS.enabled, help: "Whether the Monitor runs: machine status in BB's sidebar, its sampling, background monitoring and its notifications. The sidebar changes when BB next loads." },
+  { name: "monitor.enabled", type: { kind: "boolean" }, default: MONITOR_DEFAULTS.enabled, help: "Whether the Monitor runs: machine status in VesnALIA's sidebar, its sampling, background monitoring and its notifications. The sidebar changes when VesnALIA next loads." },
   { name: "monitor.refreshIntervalSeconds", type: { kind: "whole", least: MONITOR_REFRESH_SECONDS.least, most: MONITOR_REFRESH_SECONDS.most }, default: MONITOR_DEFAULTS.refreshIntervalSeconds, help: "Seconds between readings while machine status is open." },
-  { name: "monitor.backgroundMonitoring", type: { kind: "boolean" }, default: MONITOR_DEFAULTS.backgroundMonitoring, help: `Whether ${PRODUCT} checks BB's server's CPU and memory every 30 s while nobody looks.` },
+  { name: "monitor.backgroundMonitoring", type: { kind: "boolean" }, default: MONITOR_DEFAULTS.backgroundMonitoring, help: `Whether ${PRODUCT} checks VesnALIA's server's CPU and memory every 30 s while nobody looks.` },
   { name: "monitor.pressureNotifications", type: { kind: "boolean" }, default: MONITOR_DEFAULTS.pressureNotifications, help: "Whether background monitoring shows a toast when CPU or memory stays high." },
   { name: "monitor.boxHistory", type: { kind: "boolean" }, default: MONITOR_DEFAULTS.boxHistory, help: `Whether ${PRODUCT} keeps each box's history: a light reading of every running box once a minute, for the 1 h, 24 h and 7 d of a box's page.` },
 ];
@@ -563,7 +563,7 @@ export function optionNamed(name: string): OptionInfo {
   const ceiling = CEILING_OPTION.exec(full);
   if (ceiling) return ceilingOption(ceiling[1]!);
   const option = OPTIONS.find((candidate) => candidate.name === full);
-  if (!option) throw invalid(`There is no option by the name given. ${NOT_SHOWN} The options are ${OPTIONS.map((each) => each.name).join(", ")}.`, "bb box option list shows each with its value.");
+  if (!option) throw invalid(`There is no option by the name given. ${NOT_SHOWN} The options are ${OPTIONS.map((each) => each.name).join(", ")}.`, "alia box option list shows each with its value.");
   return option;
 }
 
@@ -582,7 +582,7 @@ function optionValue(option: OptionInfo, raw: string): unknown {
   }
   if (type.kind === "tags") return raw.split(",").map((tag) => tag.trim()).filter(Boolean);
   if (type.kind === "secret") throw invalid(`${option.name} is a secret, so it is never given on the command line, where other processes can read it.`, "Give it with --secret <option>=<VARIABLE> and --secrets-file <dotenv file> or --secrets-stdin.");
-  if (!raw.trim()) throw invalid(`Give ${option.name} a value, or unset it with bb box option unset ${option.name}.`);
+  if (!raw.trim()) throw invalid(`Give ${option.name} a value, or unset it with VesnALIA box option unset ${option.name}.`);
   return raw.trim();
 }
 
@@ -634,7 +634,7 @@ export function setOptions(
     const [part, key, sub] = option.name.split(".") as [string, string, string | undefined];
     const ceiling = key === "snapshots" && sub === "ceilings" ? option.name.slice("general.snapshots.ceilings.".length) : null;
     if (ceiling !== null && value !== undefined && !document.backends.some((backend) => backend.id === ceiling)) {
-      throw invalid(`There is no backend by the ID a ceiling on paid snapshots names. ${NOT_SHOWN}`, "bb box config show lists the backends' IDs.");
+      throw invalid(`There is no backend by the ID a ceiling on paid snapshots names. ${NOT_SHOWN}`, "alia box config show lists the backends' IDs.");
     }
     if (ceiling !== null) parts.snapshots.ceilings = { ...(parts.snapshots.ceilings as Record<string, number> | undefined) };
     const target = part === "monitor" ? parts.monitor : key === "tailnet" ? parts.tailnet : ceiling !== null ? (parts.snapshots.ceilings as Record<string, unknown>) : key === "snapshots" ? parts.snapshots : parts.general;
@@ -667,7 +667,7 @@ export function setOptions(
   for (const [name, value] of secrets) {
     const option = secretOptionNamed(name);
     if (option.type.kind !== "secret") throw invalid(`${option.name} is not a secret: give it as ${option.name}=<value>.`);
-    if (!value.trim()) throw invalid(`The value for ${option.name} is empty. To clear it, use bb box option unset ${option.name}.`);
+    if (!value.trim()) throw invalid(`The value for ${option.name} is empty. To clear it, use VesnALIA box option unset ${option.name}.`);
     put(option, value);
   }
   if (tailnetTouched && parts.tailnet.mode !== "oauth" && [...secrets.keys()].some((name) => optionNamed(name).name.startsWith("general.tailnet."))) {

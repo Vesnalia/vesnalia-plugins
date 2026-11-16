@@ -1,13 +1,13 @@
 /**
  * The Doctor section.
  *
- * Renders exactly the sentences `bb xcode sim doctor` prints — same source, same
+ * Renders exactly the sentences `alia xcode sim doctor` prints — same source, same
  * order, same wording. Someone who read one and then opens the other must not
  * have to learn a second vocabulary.
  */
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../../src/sim/wire";
 import { formatBytes } from "../../src/sim/format.js";
 

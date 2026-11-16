@@ -1,6 +1,6 @@
 /**
- * Where noVNC opens its WebSocket: the plugin's relay route on the bb server
- * the app was loaded from. bb serves the app from the server's own origin —
+ * Where noVNC opens its WebSocket: the plugin's relay route on the VesnALIA server
+ * the app was loaded from. VesnALIA serves the app from the server's own origin —
  * http://127.0.0.1 on this Mac, https://<handle>.getbb.app remotely — so the
  * page's origin is the server's, and the socket is same-origin, whichever Mac
  * it is for: the server relays to the others.

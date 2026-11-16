@@ -16,7 +16,7 @@ describe("relayUrl", () => {
   });
 
   it("names a protocol a relay from before liveness turns away, so its first ping cannot end the session", () => {
-    // 0.2.0's relay refused any flow but "ack" before redeeming the ticket, saying to reload bb;
+    // 0.2.0's relay refused any flow but "ack" before redeeming the ticket, saying to reload VesnALIA;
     // it accepted "ack" and then closed the session (1008) on the page's first ping.
     expect(new URL(relayUrl("https://me.getbb.app", "host_mini", "t0k")).searchParams.get("flow")).not.toBe("ack");
   });

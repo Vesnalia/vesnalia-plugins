@@ -1,4 +1,4 @@
-// Anonymous install counts for the BB Hooks Marketplace catalog, and only that
+// Anonymous install counts for the VesnALIA Hooks Marketplace catalog, and only that
 // catalog: installs from any other source are never reported. The user opts in
 // once through the `shareInstalls` setting. A report carries the template id and
 // its version, and nothing else: no hook settings, ids or thread data. Pure, so
@@ -10,9 +10,9 @@ export type ShareInstalls = (typeof SHARE_INSTALLS)[number];
 /** The one catalog whose installs are counted, and the counter it reports to. */
 export const COUNTED_CATALOG = {
   name: "community",
-  /** Where `MacHatter1/bb-hooks-marketplace` (at any ref) is fetched from. */
+  /** Where `MacHatter1/alia-hooks-marketplace` (at any ref) is fetched from. */
   sourcePrefix: "https://raw.githubusercontent.com/MacHatter1/bb-hooks-marketplace/",
-  label: "BB Hooks Marketplace",
+  label: "VesnALIA Hooks Marketplace",
   counter: "https://bb-hooks-stats.machatter1.workers.dev/v1/installs",
 } as const;
 

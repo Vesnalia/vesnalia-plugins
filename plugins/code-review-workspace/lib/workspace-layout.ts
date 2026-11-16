@@ -1,4 +1,4 @@
-// Where the review workspace puts its navigator and side panel, decided from the workspace's own size: BB's pane,
+// Where the review workspace puts its navigator and side panel, decided from the workspace's own size: VesnALIA's pane,
 // not the window, so a narrow pane on a wide screen lays out like a small screen.
 import { useLayoutEffect, useReducer, useRef, useState } from "react";
 import { carried, keep } from "./remount";
@@ -9,19 +9,19 @@ export const READER_MIN = 560;
 /** A workspace shorter than this is a phone held sideways (`short`). */
 export const SHORT_BELOW = 500;
 /**
- * A workspace narrower than this is a phone's (`phone`): the iPhone Duo unfolded and held sideways, beside BB's thread
+ * A workspace narrower than this is a phone's (`phone`): the iPhone Duo unfolded and held sideways, beside VesnALIA's thread
  * list, leaves 631, which is a tablet's.
  */
 export const PHONE_BELOW = 600;
 /**
- * On a bigger screen than a phone's, a desktop's or an iPad's, a workspace is a phone's only under this: beside BB's
- * side panel, at its default width in a 1440px window, the review is 560 wide, and keeps BB's title bar and its band.
+ * On a bigger screen than a phone's, a desktop's or an iPad's, a workspace is a phone's only under this: beside VesnALIA's
+ * side panel, at its default width in a 1440px window, the review is 560 wide, and keeps VesnALIA's title bar and its band.
  */
 export const NARROW_BELOW = 480;
 /**
  * A window whose shorter side is under this is a phone's, the iPhone Duo's inner screen's included: the smallest iPad's
  * screen is 744 on its shorter side. A phone's fold, unfold or rotation keeps what's open (`phoneResized`); an iPad's or
- * a desktop's window resizing is as BB's pane resizing.
+ * a desktop's window resizing is as VesnALIA's pane resizing.
  */
 export const PHONE_WINDOW_BELOW = 744;
 export const NAV_WIDTH = { initial: 288, min: 200, max: 560 };
@@ -63,9 +63,9 @@ export interface WorkspaceLayout {
   narrowReader: boolean;
   /** The pane is at least 1000px wide: room for the title bar's labeled controls. */
   widePane: boolean;
-  /** A tablet's pane under PHONE_BELOW, as beside BB's side panel on a desktop: the title bar keeps to icons. */
+  /** A tablet's pane under PHONE_BELOW, as beside VesnALIA's side panel on a desktop: the title bar keeps to icons. */
   narrowPane: boolean;
-  /** It came with a phone's window resizing (a fold, an unfold, a rotation) rather than BB's pane alone. Not compared. */
+  /** It came with a phone's window resizing (a fold, an unfold, a rotation) rather than VesnALIA's pane alone. Not compared. */
   phoneResized: boolean;
 }
 
@@ -103,7 +103,7 @@ export function workspaceLayout(width: number, height: number, state: LayoutStat
   const panelWidth = panelDockWidth(width, state.panelWidth);
   const panelCanDock = fits(width - panelWidth, previous?.panel === "docked");
   const carries = (side: "nav" | "panel") => phoneResized && (!state.typingIn || state.typingIn === side);
-  // Opened over the code and docked since by an unfold, they go back over it as it folds, not as BB's pane narrows.
+  // Opened over the code and docked since by an unfold, they go back over it as it folds, not as VesnALIA's pane narrows.
   // Docked on their own, they go over the code only with you typing in them.
   const navOver = (state.navOverlay && (previous?.nav !== "docked" || carries("nav"))) || (phoneResized && previous?.nav === "docked" && state.typingIn === "nav");
   // Over the code, it stays there until it closes or docks. One side at a time goes there: the chapters, if they do.
@@ -148,7 +148,7 @@ function roomOf(el: HTMLElement): { width: number; height: number } {
 
 type Size = { width: number; height: number };
 
-/** The window's size, which a fold, an unfold or a rotation changes, and BB's pane resizing doesn't. */
+/** The window's size, which a fold, an unfold or a rotation changes, and VesnALIA's pane resizing doesn't. */
 const windowNow = (): Size => ({ width: document.documentElement.clientWidth, height: document.documentElement.clientHeight });
 
 /** Whether a window, by default this one, is a phone's (PHONE_WINDOW_BELOW). */
@@ -156,7 +156,7 @@ export const phoneWindow = ({ width, height }: Size = windowNow()) => Math.min(w
 
 /**
  * A phone's screen, for the layout's modes: a phone's window on a touch screen. A short desktop or laptop window, as a
- * 1366×768 one, isn't: beside BB's side panel its review keeps the desktop layout.
+ * 1366×768 one, isn't: beside VesnALIA's side panel its review keeps the desktop layout.
  */
 const phoneScreenNow = (size: Size) => phoneWindow(size) && !!window.matchMedia?.("(pointer: coarse)").matches;
 
@@ -165,13 +165,13 @@ function phoneResize(was: Size, is: Size): boolean {
   return (was.width !== is.width || was.height !== is.height) && phoneWindow(was) && phoneWindow(is) && !!window.matchMedia?.("(pointer: coarse)").matches;
 }
 
-/** How long, once you're done typing, BB's pane may take to grow back as the keyboard goes away. */
+/** How long, once you're done typing, VesnALIA's pane may take to grow back as the keyboard goes away. */
 const KEYBOARD_GOING_MS = 1000;
 
 /**
  * The layout for `el`'s size as it resizes. It re-renders only when the layout changes, not on every frame of a pane
  * drag. It measures as `el` resizes, and as the window and its visual viewport do, then again a frame later: on a
- * phone the window's new size can arrive after the resize. With `carryKey`, a workspace that takes another's place (BB
+ * phone the window's new size can arrive after the resize. With `carryKey`, a workspace that takes another's place (VesnALIA
  * remounts its page: lib/remount.ts) starts from that one's size, window and layout, so the change between them is a
  * resize as in place: a phone's turn or fold carries what's open.
  */
@@ -207,9 +207,9 @@ export function useWorkspaceLayout(el: HTMLElement | null, state: LayoutState, c
     const measure = ({ width, height: measured }: Size) => {
       if (!(width > 0)) return;
       let height = Number.isFinite(measured) ? measured : windowSize().height;
-      // BB shrinks its pane to what shows above an on-screen keyboard: while you type, a pane that only got shorter
+      // VesnALIA shrinks its pane to what shows above an on-screen keyboard: while you type, a pane that only got shorter
       // keeps the height it had, so the keyboard doesn't turn a phone into a phone held sideways; and once you're done,
-      // until BB's pane grows back as the keyboard goes, for up to KEYBOARD_GOING_MS. A new width ends it at once.
+      // until VesnALIA's pane grows back as the keyboard goes, for up to KEYBOARD_GOING_MS. A new width ends it at once.
       const active = document.activeElement;
       const typing = active instanceof HTMLElement && (active.isContentEditable || !!active.closest(TEXT_FIELD));
       const shorter = !!size.current && size.current.width === width && height < size.current.height;
@@ -224,7 +224,7 @@ export function useWorkspaceLayout(el: HTMLElement | null, state: LayoutState, c
       // The first measurement replaces the window's guess outright, rather than keeping to it.
       if (!size.current) shown.current = undefined;
       else if (size.current.width === width && size.current.height === height) return;
-      // The window as the workspace last resized, rather than as last measured: BB's pane can follow a fold a frame late.
+      // The window as the workspace last resized, rather than as last measured: VesnALIA's pane can follow a fold a frame late.
       const windowIs = windowNow();
       const phoneResized = phoneResize(windowWas, windowIs);
       windowWas = windowIs;

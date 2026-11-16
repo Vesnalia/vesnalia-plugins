@@ -5,8 +5,8 @@ import {
   experimental_Icon as Icon,
   experimental_ProviderModelPicker as ProviderModelPicker,
   experimental_useProviders as useProviders,
-} from "@get-bb/plugin-sdk/app";
-import type { ExperimentalProviderModelPickerValue } from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk/app";
+import type { ExperimentalProviderModelPickerValue } from "@vesnalia/plugin-sdk";
 import { usePresets } from "../hooks/usePresets";
 import { EDIT_PRESETS_EVENT, MAX_PRESETS, effortLabel, parsePreset, tierLabel, type ModelPreset } from "../lib/presets";
 import { Button } from "./ui/button";

@@ -15,7 +15,7 @@
 #   bastion  port 2220  a jump host, whose user "jump" may forward only to
 #                       plain's sshd
 #
-# <dir> gets the key bb-box uses, settings.json with plain and systemd for
+# <dir> gets the key alia-box uses, settings.json with plain and systemd for
 # scripts/conformance.ts and scripts/smoke.ts, docker.json with systemd
 # alone, whose boxes have Docker, and via.json with plain reached through
 # the bastion. A pool's boxes have Docker only when every machine gives it
@@ -69,7 +69,7 @@ up() {
   dir=$1
   mkdir -p "$dir"
   dir=$(cd "$dir" && pwd)
-  [ -f "$dir/id_ed25519" ] || ssh-keygen -q -t ed25519 -N '' -C bb-box-rig -f "$dir/id_ed25519"
+  [ -f "$dir/id_ed25519" ] || ssh-keygen -q -t ed25519 -N '' -C alia-box-rig -f "$dir/id_ed25519"
   key=$(cat "$dir/id_ed25519.pub")
 
   docker build -q --target plain -t "$NAME:plain" "$here" >/dev/null

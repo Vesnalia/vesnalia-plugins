@@ -4,7 +4,7 @@ import {
   definePluginApp,
   experimental_Icon,
   useSdk,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 interface VoiceServiceItem {
   id: string;
@@ -30,7 +30,7 @@ interface AiServicesState {
   services: VoiceServiceItem[];
 }
 
-const MOUNT_ATTR = "data-bb-voice-provider-picker";
+const MOUNT_ATTR = "data-alia-voice-provider-picker";
 
 function serviceKey(pluginId: string, serviceId: string): string {
   return `${pluginId}:${serviceId}`;

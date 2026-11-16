@@ -92,7 +92,7 @@ function attention(box: BoxView, facts: RowFacts): RowItem[] {
   if (busy && box.state === "ready") items.push({ text: busyWords(busy, rowSpan), tone: "warn" });
   const control = controlWord(box, facts.viewers ?? new Set());
   if (control) items.push(control);
-  if (box.state === "ready" && box.enrol.state === "failed") items.push({ text: "Could not join BB", tone: "warn", reason: joinWords(box.enrol.error, joinAdvice(box)) });
+  if (box.state === "ready" && box.enrol.state === "failed") items.push({ text: "Could not join VesnALIA", tone: "warn", reason: joinWords(box.enrol.error, joinAdvice(box)) });
   const display = displayWord(box);
   if (display) items.push(display);
   if (box.stopped) items.push({ text: "Unexpected stop", tone: "warn", reason: box.stopped });
@@ -103,8 +103,8 @@ function attention(box: BoxView, facts: RowFacts): RowItem[] {
 
 function joiningItem(box: BoxView, now: number): RowItem {
   const tries = box.joinTries;
-  if (!tries) return { text: "Joining BB…" };
-  const text = `Joining BB, ${tryWords(tries.failed)}`;
+  if (!tries) return { text: "Joining VesnALIA…" };
+  const text = `Joining VesnALIA, ${tryWords(tries.failed)}`;
   if (tries.failed === 0) return { text };
   const words = joiningWords(tries, now);
   return { text, tone: "warn", reason: `${words.charAt(0).toUpperCase()}${words.slice(1)}.` };

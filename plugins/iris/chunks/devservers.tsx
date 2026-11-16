@@ -1,8 +1,8 @@
 // DevServers (chunk "codework"): the dev servers and ports an agent keeps in a
 // file, re-read every 2 s while on screen. Ports open in the browser; a log
-// opens in bb. In the gallery, with no thread, it shows a sample, marked so.
+// opens in VesnALIA. In the gallery, with no thread, it shows a sample, marked so.
 
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { Chip, Glyph, Shimmer, cn, str, useEnv } from "@iris/ui";
 import { useMemo, useRef } from "react";
 import { type Proc, type ProcStatus, normalizeProcesses, uptime } from "../core/devservers";
@@ -11,10 +11,10 @@ import type { ViewProps } from "../ui/render";
 import { Header, ICON_BTN, Problems, readFile, useNow } from "./codework-kit";
 
 const SAMPLE = (now: number) => [
-  { name: "web", pid: 48211, port: 3000, status: "running", command: "next dev --turbo", cpu: 3.2, mem: 412_000_000, started: now - 3 * 3600_000 - 12 * 60_000, log: "$BB_THREAD_STORAGE/web.log" },
+  { name: "web", pid: 48211, port: 3000, status: "running", command: "next dev --turbo", cpu: 3.2, mem: 412_000_000, started: now - 3 * 3600_000 - 12 * 60_000, log: "$ALIA_THREAD_STORAGE/web.log" },
   { name: "api", pid: 48230, ports: [8787, 9229], status: "running", command: "wrangler dev --inspect", cpu: 0.4, mem: 96_000_000, started: now - 3 * 3600_000 },
   { name: "storybook", pid: 48302, port: 6006, status: "starting", command: "storybook dev -p 6006", started: now - 14_000 },
-  { name: "worker", pid: 48177, status: "crashed", command: "tsx watch src/worker.ts", note: "Error: Cannot find module './queue'", log: "$BB_THREAD_STORAGE/worker.log" },
+  { name: "worker", pid: 48177, status: "crashed", command: "tsx watch src/worker.ts", note: "Error: Cannot find module './queue'", log: "$ALIA_THREAD_STORAGE/worker.log" },
 ];
 
 const LOCAL_URL = /^http:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?(\/|$)/;
@@ -37,7 +37,7 @@ function ago(ms: number): string {
 
 export function DevServersView({ props }: ViewProps) {
   const env = useEnv();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { palette } = env;
   const file = str(props.file);
   const inline = props.processes;
@@ -63,7 +63,7 @@ export function DevServersView({ props }: ViewProps) {
   const counts = (Object.keys(LABEL) as ProcStatus[]).map((s) => [s, items.filter((p) => p.status === s).length] as const).filter(([, n]) => n);
   const missing = state?.status === "missing";
   // Port links are plain http to this machine, which the card's openUrl action
-  // refuses, so they go to bb's browser directly; anything else still goes
+  // refuses, so they go to VesnALIA's browser directly; anything else still goes
   // through openUrl's https rule.
   const open = (url: string) => {
     if (LOCAL_URL.test(url)) navigate.openUrl(url);

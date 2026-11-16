@@ -15,7 +15,7 @@ describe("useHostColorMode (BBP-81)", () => {
     const view = render(<Probe bg="rgb(255, 255, 255)" />);
     const probe = view.container.firstElementChild as HTMLElement;
     expect(probe.dataset.mode).toBe("light");
-    // BB switches the theme by class on <html>; the tokens behind bg-background change with it.
+    // VesnALIA switches the theme by class on <html>; the tokens behind bg-background change with it.
     probe.style.backgroundColor = "rgb(0, 0, 0)";
     await act(async () => {
       document.documentElement.classList.add("dark");

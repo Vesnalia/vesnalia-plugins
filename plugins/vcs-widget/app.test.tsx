@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { loadPluginApp, renderSlot, type CapturedPluginApp } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot, type CapturedPluginApp } from "@vesnalia/plugin-sdk/testing/app";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
@@ -17,7 +17,7 @@ function advanceClock(ms: number): void {
   const real = Date.now.bind(Date);
   vi.spyOn(Date, "now").mockImplementation(() => real() + ms);
 }
-import type { PluginThreadPanelProps } from "@get-bb/plugin-sdk/app";
+import type { PluginThreadPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { ActionResult, ChangesResult, JobStart, LogCommit, Overview } from "./contracts";
 import type { JobKind } from "./shared/constants";
 import { unavailableOverview } from "./contracts";
@@ -149,7 +149,7 @@ function render(options: {
   checkout?: (input: unknown) => ActionResult;
   environment?: { id: string; branchName: string } | null;
   compact?: boolean;
-  /** The thread is hidden or archived: absent from bb's sidebar list. */
+  /** The thread is hidden or archived: absent from VesnALIA's sidebar list. */
   offSidebar?: boolean;
   rpc?: Partial<NonNullable<Rpc>>;
   favourites?: string[];
@@ -478,7 +478,7 @@ describe("BranchButton", () => {
     expect(within(popup).getByText("Remote")).toBeTruthy();
   });
 
-  it("reads the overview for a thread bb's sidebar does not list", async () => {
+  it("reads the overview for a thread VesnALIA's sidebar does not list", async () => {
     const slot = render({ offSidebar: true, overview: overview({ head: { kind: "branch", name: "hidden-branch", sha: "abc1234" } }) });
     await waitFor(() => expect(slot.getByTestId("vcs-branch-button").textContent).toContain("hidden-branch"));
   });
@@ -1246,7 +1246,7 @@ describe("settings sections", () => {
 
   it("names the read-only surfaces an agent can reach", () => {
     const slot = renderSettings("agent-access");
-    expect(slot.getByText("bb vcs-widget status")).toBeTruthy();
+    expect(slot.getByText("alia vcs-widget status")).toBeTruthy();
     expect(slot.getByText("vcs_widget_status")).toBeTruthy();
     expect(slot.container.textContent).toContain("Both only read");
   });

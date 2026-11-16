@@ -1,14 +1,14 @@
-/** Match BB's own runtime, never all descendants of a BB process. */
-export function isBbInternalListener(processName: string, command = ""): boolean {
-  // BB host/provider workers can run under node or the desktop executable.
-  if (/[/\\]bb-app[/\\](?:host-daemon|server)[/\\]dist[/\\]/.test(command)) return true;
-  if (/[/\\]bb-(?:provider-bridge|plugin-host)-worker\.mjs(?:\s|$)/.test(command)) return true;
+/** Match VesnALIA's own runtime, never all descendants of a VesnALIA process. */
+export function isAliaInternalListener(processName: string, command = ""): boolean {
+  // VesnALIA host/provider workers can run under node or the desktop executable.
+  if (/[/\\]alia-app[/\\](?:host-daemon|server)[/\\]dist[/\\]/.test(command)) return true;
+  if (/[/\\]alia-(?:provider-bridge|plugin-host)-worker\.mjs(?:\s|$)/.test(command)) return true;
 
-  const bbName = /^bb(?: nightly| beta| helper(?: \([^)]+\))?)?$/i.test(processName);
-  if (!bbName) return false;
+  const aliaName = /^alia(?: nightly| beta| helper(?: \([^)]+\))?)?$/i.test(processName);
+  if (!aliaName) return false;
   if (!command) return true;
-  // A BB executable running a workspace script is still a user server.
-  const executable = command.match(/^.*?[/\\]Contents[/\\]MacOS[/\\]bb(?: Nightly| Beta)?(?=\s|$)/i)?.[0];
+  // A VesnALIA executable running a workspace script is still a user server.
+  const executable = command.match(/^.*?[/\\]Contents[/\\]MacOS[/\\]alia(?: Nightly| Beta)?(?=\s|$)/i)?.[0];
   const args = executable ? command.slice(executable.length).trim() : command.replace(/^\S+\s*/, "").trim();
   return !args || args.startsWith("--type=");
 }

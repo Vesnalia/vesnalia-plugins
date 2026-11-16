@@ -8,12 +8,12 @@ const workDir = join(root, ".noted-e2e");
 const artifactPath = ".noted-e2e/plan.html";
 const producerShot = join(root, "e2e/producer.png");
 const viewerShot = join(root, "e2e/viewer.png");
-const serverUrl = requiredEnv("BB_SERVER_URL").replace(/\/$/, "");
-const projectId = requiredEnv("BB_PROJECT_ID");
-const environmentId = requiredEnv("BB_ENVIRONMENT_ID");
+const serverUrl = requiredEnv("ALIA_SERVER_URL").replace(/\/$/, "");
+const projectId = requiredEnv("ALIA_PROJECT_ID");
+const environmentId = requiredEnv("ALIA_ENVIRONMENT_ID");
 const spawnedThreads = [];
 const openedSessionIds = [];
-const bbOptions = { encoding: "utf8", env: process.env };
+const aliaOptions = { encoding: "utf8", env: process.env };
 
 let browser;
 let producerPage;
@@ -36,8 +36,8 @@ function quote(value) {
   return `'${String(value).replaceAll("'", `'"'"'`)}'`;
 }
 
-function bb(args) {
-  return execSync(args.map(quote).join(" "), bbOptions);
+function alia(args) {
+  return execSync(args.map(quote).join(" "), aliaOptions);
 }
 
 function report(step, ok, detail) {
@@ -74,11 +74,11 @@ function threadRoute(threadId) {
 }
 
 function waitForIdle(threadId) {
-  return bb(["bb", "thread", "wait", threadId, "--status", "idle", "--timeout", "180"]);
+  return alia(["alia", "thread", "wait", threadId, "--status", "idle", "--timeout", "180"]);
 }
 
 function threadLog(threadId) {
-  return bb(["bb", "thread", "log", threadId]);
+  return alia(["alia", "thread", "log", threadId]);
 }
 function assistantBlocks(log) {
   return log
@@ -95,7 +95,7 @@ async function waitForIdleAssistant(threadId) {
   const deadline = Date.now() + 180_000;
   let log = "";
   while (true) {
-    const state = JSON.parse(bb(["bb", "thread", "show", threadId, "--json"]));
+    const state = JSON.parse(alia(["alia", "thread", "show", threadId, "--json"]));
     log = threadLog(threadId);
     if (state.thread?.status === "idle" && lastTranscriptRole(log) === "Assistant") {
       return log;
@@ -147,8 +147,8 @@ async function waitForReply(threadId, marker, startAt = 0) {
 
 
 async function spawnThread(role) {
-  const output = bb([
-    "bb",
+  const output = alia([
+    "alia",
     "thread",
     "spawn",
     "--project",
@@ -257,12 +257,12 @@ async function cleanup() {
   }
   for (const threadId of spawnedThreads) {
     try {
-      bb(["bb", "thread", "stop", threadId]);
+      alia(["alia", "thread", "stop", threadId]);
     } catch (error) {
       failures.push(`stop ${threadId}: ${errorDetail(error)}`);
     }
     try {
-      bb(["bb", "thread", "archive", threadId]);
+      alia(["alia", "thread", "archive", threadId]);
     } catch (error) {
       failures.push(`archive ${threadId}: ${errorDetail(error)}`);
     }
@@ -356,7 +356,7 @@ try {
     const nextRevision = previousRevision + 1;
     const previousAssistantCount = assistantBlocks(idleLog).length;
     rewriteRevisedPlan();
-    bb(["bb", "thread", "tell", producerId, "Reply with exactly DONE"]);
+    alia(["alia", "thread", "tell", producerId, "Reply with exactly DONE"]);
     await waitForNewAssistant(
       producerId,
       previousAssistantCount,

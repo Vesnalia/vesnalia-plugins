@@ -16,4 +16,4 @@ Sound is off until you turn it on: moving water, a wind chime, the odd knock of 
 
 ## Data
 
-Your koi, garden, and catch counts are stored on your bb server. Nothing leaves it.
+Your koi, garden, and catch counts are stored on your VesnALIA server. Nothing leaves it.

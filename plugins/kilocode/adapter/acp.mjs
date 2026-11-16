@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// bb-kilocode — ACP adapter.
+// alia-kilocode — ACP adapter.
 //
-// Speaks the Agent Client Protocol over stdio (what BB's ACP provider bridge
+// Speaks the Agent Client Protocol over stdio (what VesnALIA's ACP provider bridge
 // launches) and drives the Kilo Code CLI's own `kilo acp` server as a child
 // process on stdio. Every JSON-RPC line is forwarded byte-for-byte in both
-// directions — Kilo Code's own capabilities reach BB unmodified.
+// directions — Kilo Code's own capabilities reach VesnALIA unmodified.
 //
-// On top of that pass-through sit bb's checkpoint duties (the registry and
+// On top of that pass-through sit VesnALIA's checkpoint duties (the registry and
 // its record shapes are documented in adapter/checkpoint.mjs):
 //
 //   publish   on `session/new` / `session/prompt` / `session/load` /
@@ -14,7 +14,7 @@
 //             Kilo's own store (`~/.local/share/kilo/kilo.db`) when it can
 //             confirm them, else from the registry, else as `seeded:false`
 //             — and write the record under both the session id and
-//             BB_THREAD_ID, so host.ts can stamp providerCheckpointIds onto
+//             ALIA_THREAD_ID, so host.ts can stamp providerCheckpointIds onto
 //             turn boundaries. The settled-turn recount runs *before* the
 //             prompt response is forwarded, i.e. before the bridge emits the
 //             boundary that carries it.
@@ -27,11 +27,11 @@
 //             untouched; a tip fork's new session is re-counted from the
 //             store on its response.
 //
-// Usage accounting lives in Kilo Code's own store (BB's usage plugin reads it
+// Usage accounting lives in Kilo Code's own store (VesnALIA's usage plugin reads it
 // from there), so this adapter writes no ledger of its own.
 //
 // Usage:
-//   node adapter/acp.mjs              ACP stdio server (launched by BB)
+//   node adapter/acp.mjs              ACP stdio server (launched by VesnALIA)
 //   node adapter/acp.mjs --version    print the Kilo CLI version and exit
 import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -49,7 +49,7 @@ import { resolveKiloBin } from "./kilo-bin.mjs";
 // ---------------------------------------------------------------------------
 const LOG_PATH =
   process.env.KILO_ADAPTER_LOG ||
-  path.join(os.tmpdir(), `bb-kilocode-${process.pid}.log`);
+  path.join(os.tmpdir(), `alia-kilocode-${process.pid}.log`);
 const log = (msg, extra) => {
   try {
     fs.appendFileSync(
@@ -61,7 +61,7 @@ const log = (msg, extra) => {
   } catch {}
 };
 
-// Free of digit.digit.digit patterns on purpose: BB's health probe reads
+// Free of digit.digit.digit patterns on purpose: VesnALIA's health probe reads
 // `--version` output for a semver, and a missing CLI must report no version
 // rather than a number lifted out of the error text.
 const KILO_MISSING =
@@ -96,14 +96,14 @@ if (kiloBin === null) {
 // checkpoint state — publish counts, resolve seeded sessions
 // ---------------------------------------------------------------------------
 const STATE_DIR = stateDirFrom(process.env);
-const BB_THREAD_ID = process.env.BB_THREAD_ID || null;
+const ALIA_THREAD_ID = process.env.ALIA_THREAD_ID || null;
 
 function publish(sessionId, { cwd = null, userCount, seeded }) {
   if (typeof sessionId !== "string") return;
   const record = {
     kind: "live",
     sessionId,
-    bbThreadId: BB_THREAD_ID,
+    aliaThreadId: ALIA_THREAD_ID,
     cwd,
     userCount,
     seeded: seeded !== false,
@@ -112,12 +112,12 @@ function publish(sessionId, { cwd = null, userCount, seeded }) {
   if (!writeState(STATE_DIR, sessionId, record)) {
     log("state write failed", { id: sessionId });
   }
-  if (BB_THREAD_ID !== null && !writeState(STATE_DIR, BB_THREAD_ID, record)) {
-    log("state write failed", { id: BB_THREAD_ID });
+  if (ALIA_THREAD_ID !== null && !writeState(STATE_DIR, ALIA_THREAD_ID, record)) {
+    log("state write failed", { id: ALIA_THREAD_ID });
   }
   log("state published", {
     sessionId,
-    bbThreadId: BB_THREAD_ID,
+    aliaThreadId: ALIA_THREAD_ID,
     userCount: record.userCount,
     seeded: record.seeded,
   });
@@ -566,8 +566,8 @@ child.stdout.on("data", (chunk) => {
 });
 child.stdout.on("error", () => {});
 
-// The CLI's own diagnostics: forwarded verbatim so BB's session error keeps
-// the agent's tail (BB already records the child's IO).
+// The CLI's own diagnostics: forwarded verbatim so VesnALIA's session error keeps
+// the agent's tail (VesnALIA already records the child's IO).
 child.stderr.on("data", (chunk) => {
   try {
     process.stderr.write(chunk);

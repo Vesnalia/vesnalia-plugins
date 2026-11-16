@@ -1,4 +1,4 @@
-// Diff paths: BB's diff file cards print a changed file's path as one string.
+// Diff paths: VesnALIA's diff file cards print a changed file's path as one string.
 // This splits it into a quiet folder part and a strong file name so a long list
 // of files in the same folder reads by name. Re-applied when React re-renders.
 const CARD = '.overflow-clip.rounded-lg.border:has(button[aria-label^="Copy path for"])';
@@ -11,7 +11,7 @@ export function splitPath(path: string): [string, string] {
   return cut < 0 ? ["", path] : [path.slice(0, cut + 1), path.slice(cut + 1)];
 }
 
-/** The element that actually holds the path text: BB may wrap it (link/button). */
+/** The element that actually holds the path text: VesnALIA may wrap it (link/button). */
 function leafOf(el: HTMLElement): HTMLElement {
   let leaf = el;
   while (leaf.childElementCount === 1 && !leaf.hasAttribute(DONE)) {

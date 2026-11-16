@@ -6,7 +6,7 @@
  * Being mounted with the composer, it also closes a leftover on-demand Learning tab once the thread
  * gets the fixed one (`useOneLearningTab`).
  */
-import { useComposer } from "@get-bb/plugin-sdk/app";
+import { useComposer } from "@vesnalia/plugin-sdk/app";
 
 import { useSidebarThread, useThreadView } from "./data";
 import { OfferCard } from "./offer-card";

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { fileUrl } from "./file-url";
-import type { PluginFileOpenerSource } from "@get-bb/plugin-sdk";
+import type { PluginFileOpenerSource } from "@vesnalia/plugin-sdk";
 
 const source: PluginFileOpenerSource = {
   kind: "workspace",

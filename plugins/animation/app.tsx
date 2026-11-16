@@ -2,12 +2,12 @@ import type { FormEvent } from "react";
 import { useState } from "react";
 import {
   definePluginApp,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
   type PluginFileOpenerProps,
   type PluginMessageDirectiveProps,
   type PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ import "./app.css";
 
 function NewAnimationPanel({ threadId }: PluginThreadPanelProps) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [relativePath, setRelativePath] = useState("explainer.scene.json");
   const [pending, setPending] = useState(false);
 
@@ -80,11 +80,11 @@ function SettingsSection() {
         <li>
           Create a starter file from a thread&apos;s Actions list, the command
           palette (<code>Animation: create .scene.json</code>), or{" "}
-          <code>bb animation new</code>.
+          <code>alia animation new</code>.
         </li>
         <li>
           Export a looping page with the editor&apos;s Export button,{" "}
-          <code>bb animation export</code>, or{" "}
+          <code>alia animation export</code>, or{" "}
           <code>animation_export_html</code>.
         </li>
         <li>

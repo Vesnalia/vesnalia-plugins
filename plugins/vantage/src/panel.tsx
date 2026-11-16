@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
-import { ThreadChat, experimental_Icon as Icon, useBbNavigate, useRealtime, type ExperimentalThreadActionTabProps } from "@get-bb/plugin-sdk/app";
+import { ThreadChat, experimental_Icon as Icon, useAliaNavigate, useRealtime, type ExperimentalThreadActionTabProps } from "@vesnalia/plugin-sdk/app";
 import { createArchivedPreference } from "./archived-preference";
 import { AllChanges } from "./changes";
 import { ICON_BUTTON } from "./file-card";
@@ -19,7 +19,7 @@ import { useRows } from "./use-rows";
 export type PanelView = "worktrees" | "changes";
 // "repositories" is what 0.5 and earlier stored for the view that is now All changes.
 export const panelView = createShared<PanelView>("worktrees", {
-  win: window, key: "bb-plugin-vantage:view",
+  win: window, key: "alia-plugin-vantage:view",
   parse: (raw) => (raw === "changes" || raw === "repositories" ? "changes" : raw === "worktrees" ? "worktrees" : null),
 });
 // Which worktree the composer segment or the Info section asked a thread's tab to open.
@@ -130,7 +130,7 @@ export function stripOrder(rows: readonly Row[], threadId: string): Row[] {
 }
 
 function PanelScreen({ threadId }: { threadId: string }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const loaders = useLoaders();
   const setReviewed = useSetReviewed();
   const setWhole = useSetWhole();

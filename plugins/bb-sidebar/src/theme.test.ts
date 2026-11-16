@@ -4,9 +4,9 @@ import { describe, expect, it } from "vitest";
 import { cn } from "./lib/utils";
 
 /**
- * `bb plugin build` hands Tailwind an input with no `@custom-variant dark`, so
+ * `alia plugin build` hands Tailwind an input with no `@custom-variant dark`, so
  * a `dark:` utility compiles to `@media (prefers-color-scheme: dark)` and
- * follows the OS while bb switches theme with a class on <html>. Every themed
+ * follows the OS while VesnALIA switches theme with a class on <html>. Every themed
  * colour therefore has to come from src/theme.css instead, and these tests
  * fail the moment one creeps back.
  */
@@ -52,7 +52,7 @@ describe("theme", () => {
     const used = new Set<string>();
     for (const path of SOURCES) {
       if (path.endsWith(".css")) continue;
-      for (const match of readFileSync(path, "utf8").matchAll(/var\((--bb-sidebar-[\w-]+)\)/g)) {
+      for (const match of readFileSync(path, "utf8").matchAll(/var\((--alia-sidebar-[\w-]+)\)/g)) {
         used.add(match[1]!);
       }
     }
@@ -63,7 +63,7 @@ describe("theme", () => {
     }
   });
 
-  it("keys the stylesheet off bb's theme class, never the OS", () => {
+  it("keys the stylesheet off VesnALIA's theme class, never the OS", () => {
     expect(THEME_RULES).not.toContain("prefers-color-scheme");
     expect(THEME_RULES).toContain(".dark {");
   });
@@ -71,9 +71,9 @@ describe("theme", () => {
   // A font-size utility and an arbitrary colour both start `text-`; the merge
   // has to keep both, which is why the colour carries an explicit `color:`.
   it("keeps a size utility beside an arbitrary tone utility", () => {
-    const merged = cn("max-w-full truncate text-2xs font-medium", "text-[color:var(--bb-sidebar-tone-error)]");
+    const merged = cn("max-w-full truncate text-2xs font-medium", "text-[color:var(--alia-sidebar-tone-error)]");
     expect(merged).toContain("text-2xs");
-    expect(merged).toContain("text-[color:var(--bb-sidebar-tone-error)]");
+    expect(merged).toContain("text-[color:var(--alia-sidebar-tone-error)]");
   });
 
   // Only meaningful after `npm run build`; `npm run check` builds afterwards,
@@ -83,7 +83,7 @@ describe("theme", () => {
     if (!existsSync(built)) return;
     const css = readFileSync(built, "utf8");
     expect(css).not.toContain("prefers-color-scheme");
-    expect(css).toContain(".dark .bb-sidebar-theme-light-only");
+    expect(css).toContain(".dark .alia-sidebar-theme-light-only");
     expect(css).toMatch(/\.dark\s*\{/);
   });
 });

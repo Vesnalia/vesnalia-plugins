@@ -132,7 +132,7 @@ describe("matchRow", () => {
   });
 });
 
-/** The markup bb's provider-usage card renders for one provider. */
+/** The markup VesnALIA's provider-usage card renders for one provider. */
 function renderCard(rows: { label: string; used: number }[]) {
   document.body.innerHTML = `
     <div class="flex max-h-80 flex-col">
@@ -212,7 +212,7 @@ describe("mountCardPace", () => {
 
   it("reads the card's own RPC", async () => {
     await mount([{ label: "Weekly limit", used: 42 }]);
-    expect(fetchMock.mock.calls[0]![0]).toBe("/api/v1/plugins/bb--provider-usage/rpc/getUsage");
+    expect(fetchMock.mock.calls[0]![0]).toBe("/api/v1/plugins/alia--provider-usage/rpc/getUsage");
     expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({
       force: false,
       machineIds: null,
@@ -308,10 +308,10 @@ describe("mountCardPace", () => {
     expect(document.querySelector("[data-usage-pace-detail]")).toBeNull();
   });
 
-  it("puts the delta under bb's reset line when the row is tapped open", async () => {
+  it("puts the delta under VesnALIA's reset line when the row is tapped open", async () => {
     const [row] = await mount([{ label: "Weekly limit", used: 42 }]);
 
-    // What bb does on a tap: aria-expanded, then its own reset line at the end.
+    // What VesnALIA does on a tap: aria-expanded, then its own reset line at the end.
     row!.setAttribute("aria-expanded", "true");
     const reset = document.createElement("span");
     reset.textContent = "Resets Tue 3:59 PM";
@@ -323,11 +323,11 @@ describe("mountCardPace", () => {
     expect(line.previousElementSibling).toBe(reset);
     expect(getComputedStyle(line).textAlign).toBe("right");
     expect(line.textContent).toMatch(/^15% ahead of pace/u);
-    // bb's own reset line repeats the row's reset time: it is hidden.
+    // VesnALIA's own reset line repeats the row's reset time: it is hidden.
     expect(getComputedStyle(reset).display).toBe("none");
     expect(getComputedStyle(row!.firstElementChild!).display).not.toBe("none");
 
-    // What bb does on the second tap.
+    // What VesnALIA does on the second tap.
     row!.setAttribute("aria-expanded", "false");
     reset.remove();
     await frame();
@@ -344,7 +344,7 @@ describe("mountCardPace", () => {
     expect(getComputedStyle(claude).display).not.toBe("none");
   });
 
-  it("names the failed provider under bb's failure message, and hides it on dismiss", async () => {
+  it("names the failed provider under VesnALIA's failure message, and hides it on dismiss", async () => {
     fetchMock.mockImplementation(async (url: string) =>
       new Response(
         JSON.stringify(
@@ -414,7 +414,7 @@ describe("hideTabs", () => {
       .map((name) => `<button role="tab" aria-label="${name}" aria-selected="${name === selected}"></button>`)
       .join("")}</div>`;
     const header = document.querySelector("[data-provider-usage-header]")!;
-    // What bb does when a tab is clicked.
+    // What VesnALIA does when a tab is clicked.
     for (const tab of header.querySelectorAll("[role=tab]")) {
       tab.addEventListener("click", () => {
         for (const other of header.querySelectorAll("[role=tab]")) other.setAttribute("aria-selected", String(other === tab));
@@ -452,7 +452,7 @@ describe("hideTabs", () => {
 });
 
 describe("hideSections", () => {
-  /** bb's All view: one wrapper div per provider section. */
+  /** VesnALIA's All view: one wrapper div per provider section. */
   function allView() {
     document.body.innerHTML = `<div class="card"><div data-provider-usage-header></div><div class="scroll">
       <div><section><div><span>charles@anduintransact.com</span><span>Team (5x)</span></div><button aria-expanded="false"></button></section></div>
@@ -483,7 +483,7 @@ describe("failure notice", () => {
   const REFRESH_FAILED = "Couldn\u2019t refresh usage. Showing the last available update.";
   const opencode = { provider: "opencode", machine: "MacBook Pro (7)", message: "OpenCode Go usage access was denied." };
 
-  /** bb's card with its status message; `selected` is the open tab. */
+  /** VesnALIA's card with its status message; `selected` is the open tab. */
   function card(message: string, selected = "opencode", tabs = ["Claude Code", "opencode", "Grok Build (usage)"]) {
     document.body.innerHTML = `
       <div class="card">
@@ -528,7 +528,7 @@ describe("failure notice", () => {
     expect(describeFailures([])).toBe("The provider that failed is not known.");
   });
 
-  it("adds the failed provider and a dismiss button after bb's text", () => {
+  it("adds the failed provider and a dismiss button after VesnALIA's text", () => {
     const header = card(REFRESH_FAILED);
     decorateFailure(header, [opencode], "MacBook Pro (7)", memory());
     const children = [...status().children];
@@ -596,7 +596,7 @@ describe("failure notice", () => {
     // mountCardPace's stylesheet hides a status with this attribute.
     expect(status().hasAttribute("data-usage-pace-dismissed")).toBe(true);
 
-    // bb renders the card again.
+    // VesnALIA renders the card again.
     const again = card(REFRESH_FAILED);
     decorateFailure(again, [opencode], "MacBook Pro (7)", storage);
     expect(status().hasAttribute("data-usage-pace-dismissed")).toBe(true);
@@ -619,13 +619,13 @@ describe("failure notice", () => {
     expect(button()).toBeNull();
   });
 
-  it("matches bb's shorter refresh text without the word usage", () => {
+  it("matches VesnALIA's shorter refresh text without the word usage", () => {
     const header = card("Couldn\u2019t refresh. Showing last update.");
     decorateFailure(header, [opencode], "MacBook Pro (7)", memory());
     expect(line()!.textContent).toBe("opencode: OpenCode Go usage access was denied.");
   });
 
-  it("removes its additions when bb's message is no longer a failure", () => {
+  it("removes its additions when VesnALIA's message is no longer a failure", () => {
     const header = card(REFRESH_FAILED);
     decorateFailure(header, [opencode], "MacBook Pro (7)", memory());
     status().querySelector(".text")!.textContent = "No usage limits reported for this plan.";

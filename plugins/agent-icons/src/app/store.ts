@@ -3,7 +3,7 @@
  * Only the overlay fetches; marks read this store and never load anything.
  */
 import { useSyncExternalStore } from "react";
-import type { experimental_useProviders } from "@get-bb/plugin-sdk/app";
+import type { experimental_useProviders } from "@vesnalia/plugin-sdk/app";
 import type { IconsState } from "../shared/contract";
 
 export type ProviderRecord = ReturnType<typeof experimental_useProviders>["providers"][number];

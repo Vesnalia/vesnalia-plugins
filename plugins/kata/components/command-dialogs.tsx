@@ -4,7 +4,7 @@
 // thread header's typeahead. Mounted once as an app overlay.
 import { useState, useSyncExternalStore } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { commandDialogStore, openIssue, targetOf, type CommandDialog } from "@/lib/issue-open";
 import type { KataIssue } from "@/lib/kata-types";
@@ -18,7 +18,7 @@ const errorText = (error: unknown) => (error instanceof Error ? error.message : 
 
 function OpenIssueForm({ dialog, onDone }: { dialog: Extract<CommandDialog, { kind: "open" }>; onDone: () => void }) {
   const rpc = useRpc<KataRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

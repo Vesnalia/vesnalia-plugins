@@ -1,12 +1,12 @@
 // Graphite Stack: server entry.
 //
-// The server resolves each request's BB environment to its host and path,
+// The server resolves each request's VesnALIA environment to its host and path,
 // calls this plugin's host entry on that host, and keeps plugin-owned state
 // (thread links, private notes, viewed files, pending reviews, operation
 // journal) in the plugin database. Graphite metadata stays owned by gt.
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   GRAPHITE_CHANGED,
@@ -41,10 +41,10 @@ const PR_CACHE_FRESH_MS = 60_000;
 const GT_TIMEOUT_MS = 5 * 60_000;
 const BUSY_STATUSES = new Set(["active", "starting", "pending", "stopping", "provisioning"]);
 
-type Environment = Awaited<ReturnType<BbPluginApi["sdk"]["environments"]["get"]>>;
+type Environment = Awaited<ReturnType<AliaPluginApi["sdk"]["environments"]["get"]>>;
 /** The thread fields the plugin reads; `threads.get` and `threads.list` rows both satisfy it. */
 type Thread = Pick<
-  Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["get"]>>,
+  Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["get"]>>,
   "id" | "title" | "titleFallback" | "runtime" | "status" | "environmentId" | "archivedAt" | "deletedAt" | "projectId"
 >;
 
@@ -81,8 +81,8 @@ function summarizeThread(thread: Thread): ThreadSummary {
   };
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     patchLimitKb: {
       type: "number",
       label: "Largest patch to load (KB)",
@@ -97,9 +97,9 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const host = bb.hosts.experimental_client({ contract: hostContract, experimental_signals: hostSignals });
-  const db = bb.storage.database() as unknown as Db;
-  bb.storage.migrate(db as never, MIGRATIONS);
+  const host = alia.hosts.experimental_client({ contract: hostContract, experimental_signals: hostSignals });
+  const db = alia.storage.database() as unknown as Db;
+  alia.storage.migrate(db as never, MIGRATIONS);
   const store = createStore(db);
 
   /** commonDir (per host) -> repoKey, for host signals. */
@@ -128,7 +128,7 @@ export default async function plugin(bb: BbPluginApi) {
   >();
   const worktreeCache = new Map<string, { at: number; paths: Set<string> }>();
 
-  const publish = (repoKey: string) => bb.realtime.publish(GRAPHITE_CHANGED, { repoKey });
+  const publish = (repoKey: string) => alia.realtime.publish(GRAPHITE_CHANGED, { repoKey });
 
   const unsubscribeSignal = host.experimental_onSignal("repoChanged", ({ hostId, payload }) => {
     const repoKey = repoKeysByCommonDir.get(`${hostId}\0${payload.commonDir}`);
@@ -141,7 +141,7 @@ export default async function plugin(bb: BbPluginApi) {
     // Watches died with the worker; the next stack read starts them again.
     for (const key of [...watchedRepos]) if (key.startsWith(`${hostId}\0`)) watchedRepos.delete(key);
   });
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     unsubscribeSignal();
     unsubscribeExit();
   });
@@ -153,7 +153,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function resolveAnchor(environmentId: string): Promise<Anchor | { status: StackStatus; message: string }> {
     let environment: Environment;
     try {
-      environment = await bb.sdk.environments.get({ environmentId });
+      environment = await alia.sdk.environments.get({ environmentId });
     } catch {
       return { status: "no-environment", message: "This environment does not exist." };
     }
@@ -202,7 +202,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function projectEnvironments(projectId: string, hostId?: string) {
-    const environments = await bb.sdk.environments.list({ projectId, ...(hostId ? { hostId } : {}), limit: 500 });
+    const environments = await alia.sdk.environments.list({ projectId, ...(hostId ? { hostId } : {}), limit: 500 });
     return environments.filter(
       (environment) =>
         environment.path !== null && environment.status === "ready" && environment.lifecycle.phase === "active",
@@ -211,7 +211,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function projectThreads(projectId: string): Promise<Thread[]> {
     try {
-      return await bb.sdk.threads.list({ projectId, limit: 500 });
+      return await alia.sdk.threads.list({ projectId, limit: 500 });
     } catch {
       return [];
     }
@@ -261,7 +261,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function runningEnvironments(hostId: string): Promise<{ environments: { id: string; path: string }[]; busy: Map<string, string[]> }> {
     let running;
     try {
-      running = await bb.sdk.threads.listRunning();
+      running = await alia.sdk.threads.listRunning();
     } catch (error) {
       throw new UserError(`Active agent state is unavailable (${message(error)}). The action is blocked.`);
     }
@@ -272,7 +272,7 @@ export default async function plugin(bb: BbPluginApi) {
       candidates.map(async (entry) => {
         let thread: Thread;
         try {
-          thread = await bb.sdk.threads.get({ threadId: entry.id });
+          thread = await alia.sdk.threads.get({ threadId: entry.id });
         } catch (error) {
           throw new UserError(`Active agent state is unavailable (${message(error)}). The action is blocked.`);
         }
@@ -282,7 +282,7 @@ export default async function plugin(bb: BbPluginApi) {
         busy.set(thread.environmentId, list);
         if (!environments.has(thread.environmentId)) {
           try {
-            const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+            const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
             if (environment.hostId === hostId && environment.path !== null) environments.set(environment.id, environment.path);
           } catch (error) {
             throw new UserError(`Active agent state is unavailable (${message(error)}). The action is blocked.`);
@@ -346,7 +346,7 @@ export default async function plugin(bb: BbPluginApi) {
     let thread = threadCache.get(row.threadId);
     if (thread === undefined) {
       try {
-        thread = await bb.sdk.threads.get({ threadId: row.threadId });
+        thread = await alia.sdk.threads.get({ threadId: row.threadId });
       } catch {
         thread = null;
       }
@@ -465,7 +465,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     let cached = prCache.get(ctx.repoKey);
     if (cached === undefined) {
-      const persisted = await bb.storage.kv.get<{ fetchedAt: number; prs: Record<string, PrSummary> }>(`prcache:${ctx.repoKey}`);
+      const persisted = await alia.storage.kv.get<{ fetchedAt: number; prs: Record<string, PrSummary> }>(`prcache:${ctx.repoKey}`);
       if (persisted !== null && persisted !== undefined) {
         cached = { ...persisted, status: "ok", message: null };
         prCache.set(ctx.repoKey, cached);
@@ -500,7 +500,7 @@ export default async function plugin(bb: BbPluginApi) {
     const entry = { fetchedAt: Date.now(), prs, status: "ok" as const, message: null };
     prCache.set(ctx.repoKey, entry);
     const serialized = JSON.stringify({ fetchedAt: entry.fetchedAt, prs });
-    if (serialized.length < 200_000) await bb.storage.kv.set(`prcache:${ctx.repoKey}`, { fetchedAt: entry.fetchedAt, prs });
+    if (serialized.length < 200_000) await alia.storage.kv.set(`prcache:${ctx.repoKey}`, { fetchedAt: entry.fetchedAt, prs });
     return { status: "ok" as const, message: null, fetchedAt: entry.fetchedAt, stale: false, prs };
   }
 
@@ -905,7 +905,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function validateThreadForRepo(ctx: RepoContext, threadId: string): Promise<Thread> {
     let thread: Thread;
     try {
-      thread = await bb.sdk.threads.get({ threadId });
+      thread = await alia.sdk.threads.get({ threadId });
     } catch {
       throw new UserError("Thread not found.");
     }
@@ -916,7 +916,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (thread.environmentId !== ctx.environment.id) {
       let environment: Environment;
       try {
-        environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+        environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
       } catch {
         throw new UserError("The thread's environment does not exist.");
       }
@@ -933,7 +933,7 @@ export default async function plugin(bb: BbPluginApi) {
   // RPC
   // -------------------------------------------------------------------------
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     stack: ({ environmentId, detailBranches }) => buildStack(environmentId, detailBranches),
 
     projectRepos: async ({ projectId }) => {
@@ -1117,7 +1117,7 @@ export default async function plugin(bb: BbPluginApi) {
         let owner = threadId ?? store.getLink(ctx.repoKey, branch)?.threadId ?? null;
         if (owner !== null) {
           try {
-            const thread = await bb.sdk.threads.get({ threadId: owner });
+            const thread = await alia.sdk.threads.get({ threadId: owner });
             if (thread.deletedAt !== null || thread.projectId !== ctx.projectId) owner = null;
           } catch {
             owner = null;
@@ -1158,7 +1158,7 @@ export default async function plugin(bb: BbPluginApi) {
         const delivery = store.getNoteDelivery(noteId);
         if (!delivery) throw new UserError("This draft has not been sent.");
         if (delivery.status === "sent") return { status: "sent" as const };
-        const result = await bb.sdk.threads.search({ query: delivery.batchId, limitPerGroup: "100" });
+        const result = await alia.sdk.threads.search({ query: delivery.batchId, limitPerGroup: "100" });
         const found = [...result.active.results, ...result.archived.results].some((item) => item.thread.id === delivery.threadId && item.matches.some((match) => match.sourceKind === "user_message" && match.text.includes(delivery.batchId)));
         if (found) { store.finishNoteDelivery(delivery.batchId, "sent"); publish(ctx.repoKey); return { status: "sent" as const }; }
         return { status: "unknown" as const };
@@ -1195,7 +1195,7 @@ export default async function plugin(bb: BbPluginApi) {
           store.beginNoteDelivery(noteIds, threadId, batchId);
           publish(ctx.repoKey);
           try {
-            const result = await bb.sdk.threads.send({ threadId, mode: "queue-if-active", input: [{ type: "text", text: body, mentions: [] }] });
+            const result = await alia.sdk.threads.send({ threadId, mode: "queue-if-active", input: [{ type: "text", text: body, mentions: [] }] });
             const status = result.delivery === "queued" ? "queued" : "sent";
             store.finishNoteDelivery(batchId, status);
             publish(ctx.repoKey);
@@ -1240,14 +1240,14 @@ export default async function plugin(bb: BbPluginApi) {
       }),
 
     draftGet: async ({ key }) => {
-      const value = await bb.storage.kv.get<string>(`draft:${createHash("sha256").update(key).digest("hex")}`);
+      const value = await alia.storage.kv.get<string>(`draft:${createHash("sha256").update(key).digest("hex")}`);
       return { value: typeof value === "string" ? value : null };
     },
 
     draftSet: async ({ key, value }) => {
       const kvKey = `draft:${createHash("sha256").update(key).digest("hex")}`;
-      if (value === null || value === "") await bb.storage.kv.delete(kvKey);
-      else await bb.storage.kv.set(kvKey, value);
+      if (value === null || value === "") await alia.storage.kv.delete(kvKey);
+      else await alia.storage.kv.set(kvKey, value);
       return { ok: true };
     },
 
@@ -1395,7 +1395,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (stale.length > 0) {
           return blocked(`${stale.length} pending comment(s) are outdated: ${stale.map((comment) => `${comment.path}:${comment.endLine}`).join(", ")}. Remove or re-add them.`);
         }
-        const marker = `bb-graphite-stack:review:${randomUUID()}`;
+        const marker = `alia-graphite-stack:review:${randomUUID()}`;
         store.setPendingSubmission(ctx.repoKey, branch, { marker, state: "in-flight", startedAt: Date.now(), event }, null);
         publish(ctx.repoKey);
         let result;
@@ -1411,7 +1411,7 @@ export default async function plugin(bb: BbPluginApi) {
               commitId: found.pr.headRefOid,
               event,
               body: `${state.body.trim()}${state.body.trim() ? "\n\n" : ""}<!-- ${marker} -->`,
-              // Only pending PR comments. Private BB notes are never part of this payload.
+              // Only pending PR comments. Private VesnALIA notes are never part of this payload.
               comments: state.comments.map((comment) => ({
                 path: comment.path,
                 side: comment.side === "old" ? ("LEFT" as const) : ("RIGHT" as const),
@@ -1571,15 +1571,15 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb graphite-stack stack <environment-id> [--json]",
-    "  bb graphite-stack notes <environment-id> <branch> [--json]",
+    "  VesnALIA graphite-stack stack <environment-id> [--json]",
+    "  VesnALIA graphite-stack notes <environment-id> <branch> [--json]",
   ].join("\n");
-  bb.cli.register({
+  alia.cli.register({
     name: "graphite-stack",
     summary: "Read local Graphite stacks and private review notes",
     commands: [
-      { name: "stack", summary: "Show the Graphite stack of an environment", usage: "bb graphite-stack stack <environment-id> [--json]" },
-      { name: "notes", summary: "List private notes on a branch", usage: "bb graphite-stack notes <environment-id> <branch> [--json]" },
+      { name: "stack", summary: "Show the Graphite stack of an environment", usage: "alia graphite-stack stack <environment-id> [--json]" },
+      { name: "notes", summary: "List private notes on a branch", usage: "alia graphite-stack notes <environment-id> <branch> [--json]" },
     ],
     async run(argv) {
       const json = argv.includes("--json");

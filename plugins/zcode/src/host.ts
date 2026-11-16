@@ -1,4 +1,4 @@
-import { experimental_defineProviderBridge } from "@get-bb/plugin-sdk/provider-bridge";
+import { experimental_defineProviderBridge } from "@vesnalia/plugin-sdk/provider-bridge";
 import { createBridge } from "./bridge.js";
 
 const bridge = createBridge(); // No child or I/O until a request arrives.

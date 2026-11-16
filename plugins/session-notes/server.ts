@@ -2,13 +2,13 @@
 //
 // These notes are a reading aid for the user, not input for the agent. That is
 // enforced by what this plugin deliberately does NOT register:
-//   - no `bb.agents` tool and no `contributeInstructions` (the only two APIs
+//   - no `alia.agents` tool and no `contributeInstructions` (the only two APIs
 //     that put plugin content into a model's context);
 //   - no `skills/` directory (a shipped skill IS agent context);
-//   - no `bb.cli` command (plugin commands are advertised to agents through
+//   - no `alia.cli` command (plugin commands are advertised to agents through
 //     the generated `plugin-commands` skill).
-// Note bodies live only in this plugin's own data.db, never in bb.db's events.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+// Note bodies live only in this plugin's own data.db, never in alia.db's events.
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { BODY_MAX, SIGNAL_CHANNEL } from "./shared";
 
@@ -105,14 +105,14 @@ function toNote(row: NoteRow) {
   };
 }
 
-export default function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+export default function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, MIGRATIONS);
 
   // Settings have no numeric type, so retention is a select of day counts.
   // Read inside handlers rather than at load, so changes take effect without
   // a reload.
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     sweepOnArchive: {
       type: "boolean",
       label: "Delete notes when a thread is archived",
@@ -146,7 +146,7 @@ export default function plugin(bb: BbPluginApi) {
   const deleteOlderThan = db.prepare(`DELETE FROM notes WHERE created_at < ?`);
 
   const signal = (threadId: string) => {
-    bb.realtime.publish(SIGNAL_CHANNEL, { threadId });
+    alia.realtime.publish(SIGNAL_CHANNEL, { threadId });
   };
 
   // The message action's `run` is a plain callback with no rpc client, so this
@@ -154,7 +154,7 @@ export default function plugin(bb: BbPluginApi) {
   // clicked; the panel picks it up and asks for the text.
   // The leading slash is required by the host, even though the authoring doc's
   // example omits it.
-  bb.http.route("POST", "/compose", async (context) => {
+  alia.http.route("POST", "/compose", async (context) => {
     const parsed = composeBodySchema.safeParse(await context.req.json());
     if (!parsed.success) {
       return context.json({ error: "invalid_compose_body" }, 400);
@@ -165,15 +165,15 @@ export default function plugin(bb: BbPluginApi) {
       messageRole,
       anchorPreview: clamp(anchorPreview, PREVIEW_MAX),
     };
-    await bb.storage.kv.set(draftKey(threadId), draft);
+    await alia.storage.kv.set(draftKey(threadId), draft);
     signal(threadId);
     return context.json({ ok: true });
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async list({ threadId }) {
       const rows = selectNotes.all(threadId) as NoteRow[];
-      const draft = await bb.storage.kv.get<Draft>(draftKey(threadId));
+      const draft = await alia.storage.kv.get<Draft>(draftKey(threadId));
       return { notes: rows.map(toNote), draft: draft ?? null };
     },
 
@@ -181,7 +181,7 @@ export default function plugin(bb: BbPluginApi) {
     // can only ever land on the message the user actually clicked.
     async create({ threadId, body }) {
       const text = body.trim();
-      const draft = await bb.storage.kv.get<Draft>(draftKey(threadId));
+      const draft = await alia.storage.kv.get<Draft>(draftKey(threadId));
       if (!draft || text.length === 0) return { created: false };
 
       insertNote.run(
@@ -193,12 +193,12 @@ export default function plugin(bb: BbPluginApi) {
         text.slice(0, BODY_MAX),
         Date.now(),
       );
-      await bb.storage.kv.delete(draftKey(threadId));
+      await alia.storage.kv.delete(draftKey(threadId));
       signal(threadId);
       return { created: true };
     },
 
-    // Editing is panel-only by design; `bb note` has no edit subcommand, so a
+    // Editing is panel-only by design; `alia note` has no edit subcommand, so a
     // script cannot rewrite a marker it dropped earlier.
     update({ threadId, id, body }) {
       const text = body.trim();
@@ -217,7 +217,7 @@ export default function plugin(bb: BbPluginApi) {
     },
 
     async discardDraft({ threadId }) {
-      await bb.storage.kv.delete(draftKey(threadId));
+      await alia.storage.kv.delete(draftKey(threadId));
       signal(threadId);
       return { discarded: true };
     },
@@ -225,35 +225,35 @@ export default function plugin(bb: BbPluginApi) {
 
   const sweepThread = (threadId: string, reason: string) => {
     const removed = deleteThreadNotes.run(threadId).changes;
-    void bb.storage.kv.delete(draftKey(threadId));
-    if (removed > 0) bb.log.info(`swept ${removed} note(s): ${reason} ${threadId}`);
+    void alia.storage.kv.delete(draftKey(threadId));
+    if (removed > 0) alia.log.info(`swept ${removed} note(s): ${reason} ${threadId}`);
   };
 
   // Notes are scoped to the thread and must not outlive it.
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     sweepThread(thread.id, "deleted thread");
   });
 
   // Archiving is the usual way a thread stops being live, so it clears notes
   // too — opt out in settings if you archive threads you still read back.
-  bb.events.on("thread.archived", async ({ thread }) => {
+  alia.events.on("thread.archived", async ({ thread }) => {
     const { sweepOnArchive } = await settings.get();
     if (sweepOnArchive) sweepThread(thread.id, "archived thread");
   });
 
   // Age-based sweep. Off by default: deleting notes the user never asked to
   // expire would be worse than keeping them.
-  bb.background.schedule("retention-sweep", "17 * * * *", async () => {
+  alia.background.schedule("retention-sweep", "17 * * * *", async () => {
     const { retentionDays } = await settings.get();
     if (retentionDays === "off") return;
     const days = Number(retentionDays);
     if (!Number.isFinite(days) || days <= 0) return;
     const removed = deleteOlderThan.run(Date.now() - days * 86_400_000).changes;
-    if (removed > 0) bb.log.info(`retention sweep removed ${removed} note(s) older than ${days}d`);
+    if (removed > 0) alia.log.info(`retention sweep removed ${removed} note(s) older than ${days}d`);
   });
 
   // ---------------------------------------------------------------------
-  // `bb note` — lets scripts and hooks drop markers.
+  // `alia note` — lets scripts and hooks drop markers.
   //
   // NOTE ON VISIBILITY: registering a CLI command makes it discoverable to
   // agents through the generated `plugin-commands` skill. Note *bodies* still
@@ -263,7 +263,7 @@ export default function plugin(bb: BbPluginApi) {
   // ---------------------------------------------------------------------
 
   const resolveAnchor = async (threadId: string, seq: number | null) => {
-    const { rows } = await bb.sdk.threads.timeline({ threadId });
+    const { rows } = await alia.sdk.threads.timeline({ threadId });
     if (rows.length === 0) return { sourceSeqEnd: seq ?? 0, anchorPreview: "" };
 
     // Default anchor is the end of the thread: "a marker here, now".
@@ -280,22 +280,22 @@ export default function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb note add <text> [--seq <n>]   Attach a note (default anchor: end of thread)",
-    "  bb note list                     List this thread's notes",
-    "  bb note rm <id>                  Delete a note",
+    "  VesnALIA note add <text> [--seq <n>]   Attach a note (default anchor: end of thread)",
+    "  VesnALIA note list                     List this thread's notes",
+    "  VesnALIA note rm <id>                  Delete a note",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "note",
     summary: "Attach private, thread-scoped notes to the timeline (never sent to the model)",
     commands: [
       {
         name: "add",
         summary: "Attach a note to this thread, optionally at a specific timeline sequence",
-        usage: "bb note add <text> [--seq <n>]",
+        usage: "alia note add <text> [--seq <n>]",
       },
-      { name: "list", summary: "List this thread's notes", usage: "bb note list" },
-      { name: "rm", summary: "Delete a note by id", usage: "bb note rm <id>" },
+      { name: "list", summary: "List this thread's notes", usage: "alia note list" },
+      { name: "rm", summary: "Delete a note by id", usage: "alia note rm <id>" },
     ],
     async run(argv, ctx) {
       const [subcommand, ...rest] = argv;
@@ -303,7 +303,7 @@ export default function plugin(bb: BbPluginApi) {
 
       const threadId = ctx.threadId;
       if (!threadId) {
-        return { exitCode: 2, stderr: "bb note needs a thread; run it inside one." };
+        return { exitCode: 2, stderr: "alia note needs a thread; run it inside one." };
       }
 
       if (subcommand === "add") {
@@ -353,7 +353,7 @@ export default function plugin(bb: BbPluginApi) {
 
       if (subcommand === "rm") {
         const id = rest[0];
-        if (!id) return { exitCode: 2, stderr: "bb note rm needs a note id." };
+        if (!id) return { exitCode: 2, stderr: "alia note rm needs a note id." };
         if (deleteNote.run(id, threadId).changes === 0) {
           return { exitCode: 1, stderr: `No note ${id} in this thread.` };
         }

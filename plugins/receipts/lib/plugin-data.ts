@@ -4,7 +4,7 @@ import * as NodePath from "node:path";
 /** On-disk cache root for the Receipts plugin. */
 export const RECEIPTS_DATA_DIR = NodePath.join(
   NodeOS.homedir(),
-  ".bb",
+  ".vesnalia",
   "plugins",
   "receipts",
 );

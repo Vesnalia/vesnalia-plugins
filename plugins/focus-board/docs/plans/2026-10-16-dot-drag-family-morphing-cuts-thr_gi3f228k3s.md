@@ -2,7 +2,7 @@
 
 *Origin: issue #249 (goals 1, 2, 5, 6), written 2026-10-16 by the worker
 thread thr_gi3f228k3s as the sequencing contract for the cuts the dot cut
-(branch `bb/dot-drag-family-thr_gi3f228k3s`) deliberately leaves out. The dot
+(branch `alia/dot-drag-family-thr_gi3f228k3s`) deliberately leaves out. The dot
 cut is commit c37f1bb there; this plan only describes what follows it, and the
 orchestrator reviews it before the morphing cut proceeds.*
 

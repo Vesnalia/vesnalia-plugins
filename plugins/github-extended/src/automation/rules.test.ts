@@ -32,7 +32,7 @@ const rule = (
   repos: [],
   filters,
   conditionGroups: [],
-  actions: ["bb.review"],
+  actions: ["alia.review"],
   actionParameters: {},
   approvalRequired: true,
   ...extra,

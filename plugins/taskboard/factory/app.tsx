@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Markdown, useBbContext, useBbNavigate, useRealtime, useRpc, useSettings } from '@get-bb/plugin-sdk/app';
+import { Markdown, useAliaContext, useAliaNavigate, useRealtime, useRpc, useSettings } from '@vesnalia/plugin-sdk/app';
 import type { TaskboardRpcContract, WorkItem } from '../contract.js';
 import type { FactoryExecution, FactoryProjectStatus, FactoryRecord, FactoryRun, FactoryRunKind } from './contract.js';
 import type { EmpiricalObservation } from '../empirical/contract.js';
@@ -24,7 +24,7 @@ function tone(run: FactoryRun) {
 }
 
 function OriginalTicket({ record }: { record: FactoryRecord }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return <Button type="button" size="sm" variant="outline" onClick={() =>
     navigate.toPluginPanel('tasks', { subPath: originalTicketPath(record) })
   }><Icon name="FileText" className="size-3.5" />Original ticket</Button>;
@@ -35,8 +35,8 @@ function ContinueTask({ record, onRecord, onError, label = 'Continue task', prim
   onError: (error: string | null) => void; label?: string; primary?: boolean;
 }) {
   const rpc = useRpc<TaskboardRpcContract>();
-  const navigate = useBbNavigate();
-  const context = useBbContext();
+  const navigate = useAliaNavigate();
+  const context = useAliaContext();
   const [continuing, setContinuing] = useState(false);
   const continuePending = useRef(false);
   async function continueTask() {
@@ -87,7 +87,7 @@ function FactoryWorkbench({ record, onRecord, actions, plan, item }: {
   item?: WorkItem;
 }) {
   const rpc = useRpc<TaskboardRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const identity = JSON.stringify([record.projectId, record.source, record.locator]);
   const [recovery, setRecovery] = useState({ identity, threadId: '' });
   const recoveryId = recovery.identity === identity ? recovery.threadId : '';
@@ -241,7 +241,7 @@ function FactoryWorkbench({ record, onRecord, actions, plan, item }: {
 
 function EmpiricalProgress({ record }: { record: FactoryRecord }) {
   const rpc = useRpc<TaskboardRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [observation, setObservation] = useState<EmpiricalObservation | null>(null);
   const [lastGood, setLastGood] = useState<Extract<EmpiricalObservation, { kind: 'observation' }> | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -423,8 +423,8 @@ export function StartTaskButton({ item, disabled = false }: {
   item: WorkItem; disabled?: boolean;
 }) {
   const rpc = useRpc<TaskboardRpcContract>();
-  const navigate = useBbNavigate();
-  const context = useBbContext();
+  const navigate = useAliaNavigate();
+  const context = useAliaContext();
   const [open, setOpen] = useState(false);
   const [execution, setExecution] = useState<FactoryExecution | null>(null);
   const [busy, setBusy] = useState(false);
@@ -434,7 +434,7 @@ export function StartTaskButton({ item, disabled = false }: {
   const openTask = () => {
     setOpen(false);
     navigate.toPluginPanel('tasks', { subPath: originalTicketPath({
-      projectId: item.bbProjectId, source: item.source, locator: item.locator
+      projectId: item.aliaProjectId, source: item.source, locator: item.locator
     }) });
   };
   async function start() {
@@ -442,9 +442,9 @@ export function StartTaskButton({ item, disabled = false }: {
     pending.current = true; setBusy(true); setError(null);
     try {
       const { record } = await rpc.call('factoryStartTask', {
-        projectId: item.bbProjectId, source: item.source, locator: item.locator,
-        contextThreadId: context.projectId === item.bbProjectId ? context.threadId : null,
-        // Only an explicit ticket choice is persisted. Avoiding BB's project
+        projectId: item.aliaProjectId, source: item.source, locator: item.locator,
+        contextThreadId: context.projectId === item.aliaProjectId ? context.threadId : null,
+        // Only an explicit ticket choice is persisted. Avoiding VesnALIA's project
         // default keeps Jev routing from overriding the factory settings AI.
         ...(execution ? { execution } : {})
       });
@@ -472,10 +472,10 @@ export function StartTaskButton({ item, disabled = false }: {
         <DialogTitle>Start task</DialogTitle>
         <DialogDescription>Choose the AI for this task before starting work.</DialogDescription>
         <ExecutionPicker
-          projectId={item.bbProjectId}
+          projectId={item.aliaProjectId}
           value={execution}
           onChange={setExecution}
-          threadId={context.projectId === item.bbProjectId ? context.threadId : null}
+          threadId={context.projectId === item.aliaProjectId ? context.threadId : null}
           disabled={busy}
           showSummary
           summaryTitle="AI for this task"
@@ -507,8 +507,8 @@ export function StartTaskButton({ item, disabled = false }: {
 }
 export function FactoryProgress({ item }: { item: WorkItem }) {
   const rpc = useRpc<TaskboardRpcContract>();
-  const navigate = useBbNavigate();
-  const context = useBbContext();
+  const navigate = useAliaNavigate();
+  const context = useAliaContext();
   const [record, setRecord] = useState<FactoryRecord | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -520,12 +520,12 @@ export function FactoryProgress({ item }: { item: WorkItem }) {
   const [editing, setEditing] = useState(false);
   const [recoveryId, setRecoveryId] = useState('');
   const epoch = useRef(0);
-  const identity = { projectId: item.bbProjectId, source: item.source, locator: item.locator };
+  const identity = { projectId: item.aliaProjectId, source: item.source, locator: item.locator };
   const load = useCallback(async () => {
     const ticket = epoch.current;
     try {
       const result = await rpc.call('factoryGet', {
-        projectId: item.bbProjectId, source: item.source, locator: item.locator
+        projectId: item.aliaProjectId, source: item.source, locator: item.locator
       });
       if (ticket !== epoch.current) return;
       setRecord(current => current && result.record && current.version > result.record.version ? current : result.record);
@@ -533,7 +533,7 @@ export function FactoryProgress({ item }: { item: WorkItem }) {
     } catch (e) {
       if (ticket === epoch.current) setError(e instanceof Error ? e.message : String(e));
     }
-  }, [rpc, item.bbProjectId, item.source, item.locator]);
+  }, [rpc, item.aliaProjectId, item.source, item.locator]);
   useEffect(() => {
     epoch.current++;
     setRecord(null); setLoaded(false); setError(null); setEditing(false); setBody(''); setBusy(false);
@@ -563,7 +563,7 @@ export function FactoryProgress({ item }: { item: WorkItem }) {
   }
   const start = (kind: FactoryRunKind, retry = false) => action(() => rpc.call('factoryStart', {
     ...identity, expectedVersion: record?.version ?? 0, kind, retry,
-    contextThreadId: context.projectId === item.bbProjectId ? context.threadId : null
+    contextThreadId: context.projectId === item.aliaProjectId ? context.threadId : null
   }), true);
   const primaryAction = state?.action ?? (!record ? 'start-task' : null);
   const actions = <>

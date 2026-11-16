@@ -128,4 +128,4 @@ the real code.
 Adapted from [Orient](https://github.com/DrCatHicks/learning-opportunities/tree/main/orient) by Dr. Michael
 Mullarkey and [Learning Opportunities](https://github.com/DrCatHicks/learning-opportunities) by Dr. Cat Hicks
 (CC BY 4.0),
-changed for bb by the Learning Exercises plugin. Not affiliated with or endorsed by the authors.
+changed for VesnALIA by the Learning Exercises plugin. Not affiliated with or endorsed by the authors.

@@ -3,7 +3,7 @@
 import { isVirtualTab } from "@/lib/editor-state";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { experimental_useCodeTheme, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_useCodeTheme, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Scope } from "../server";
 import { ancestorsOf, basename, buildTree, dirname, visibleRows, type TreeNode } from "@/lib/tree";
 import { decorateTree, type Decoration } from "@/lib/git-status";

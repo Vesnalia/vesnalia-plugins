@@ -2,7 +2,7 @@ import "@wy3z/bb-suite/tokens.css";
 import "@wy3z/bb-suite/project-icon.css";
 import "@wy3z/bb-suite/settings.css";
 import "./app.css";
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { CursorSidebar } from "./src/CursorSidebar";
 import {
   CompactNavigation,
@@ -25,7 +25,7 @@ export default definePluginApp((app) => {
     id: "cursor",
     title: "Cursor",
     description:
-      "Compact header, then BB's navigation destinations as rows like Cursor's New Chat, Automations and Customize.",
+      "Compact header, then VesnALIA's navigation destinations as rows like Cursor's New Chat, Automations and Customize.",
     placement: "list",
     component: CursorNavigation,
     headerComponent: CompactNavigationHeader,

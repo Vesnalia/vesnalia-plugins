@@ -1,10 +1,10 @@
-// bb-plugin-auto-answer — frontend entry.
+// alia-plugin-auto-answer — frontend entry.
 //
-// BB renders an agent's question (Claude Code's AskUserQuestion and the
+// VesnALIA renders an agent's question (Claude Code's AskUserQuestion and the
 // equivalent from other providers) as a widget in place of the composer: one
 // tab per question, a list of option buttons, and a "Next" / "Submit answer"
 // button. Answering a three-question set therefore costs three extra clicks on
-// "Next" after you have already told BB what you want.
+// "Next" after you have already told VesnALIA what you want.
 //
 // This overlay removes those clicks. The moment an option's selected state
 // changes it starts a countdown, right under the option you picked; when the
@@ -13,15 +13,15 @@
 // same one again) restarts the countdown, and a "Stop" button at the top of the
 // block cancels it.
 //
-// Everything here drives BB's real widget through the DOM — the host owns the
+// Everything here drives VesnALIA's real widget through the DOM — the host owns the
 // question state, so a fired countdown is exactly the click you would have
 // made yourself.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { definePluginApp, useSettings } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useSettings } from "@vesnalia/plugin-sdk/app";
 
 /** Marks the container we append to a question widget for our own UI. */
-const HOST_ATTRIBUTE = "data-bb-autoanswer-host";
+const HOST_ATTRIBUTE = "data-alia-autoanswer-host";
 /** The widget root's distinctive height class; see `findWidgetRoot`. */
 const WIDGET_ROOT_SELECTOR = 'div[class*="max-h-[calc(100dvh-6rem)]"]';
 /** Labels of the widget's primary button, in its two states. */
@@ -62,7 +62,7 @@ function findPrimaryButton(root: HTMLElement): HTMLButtonElement | null {
 
 /**
  * The widget root that owns `node`. The root carries a distinctive height
- * class, but a class is a detail of BB's markup, so we fall back to the
+ * class, but a class is a detail of VesnALIA's markup, so we fall back to the
  * nearest ancestor of the options `fieldset` that also owns a primary button.
  */
 function findWidgetRoot(node: Element): HTMLElement | null {
@@ -113,7 +113,7 @@ function canFire(root: HTMLElement): boolean {
 /**
  * Where the countdown block goes: directly under the option that armed it, so
  * Stop is next to the pointer that just picked — not a trip to the bottom of a
- * long list. BB wraps each option in its own element (the button plus its
+ * long list. VesnALIA wraps each option in its own element (the button plus its
  * optional preview), and that wrapper is the row we sit beneath.
  */
 function anchorFor(option: HTMLElement): Element {

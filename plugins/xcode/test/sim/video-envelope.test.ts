@@ -107,7 +107,7 @@ describe("the v2 media envelope", () => {
   });
 
   it("returns multiple records per chunk without losing u64 PTS, generation, or geometry", () => {
-    const parsed = createVideoEnvelopeParser("Application/Vnd.Bb.Sim-Avcc; version=2").push(wire);
+    const parsed = createVideoEnvelopeParser("Application/Vnd.Alia.Sim-Avcc; version=2").push(wire);
 
     expect(parsed).toHaveLength(5);
     expect(parsed[2]).toMatchObject({
@@ -269,6 +269,6 @@ describe("media type compatibility", () => {
 
   it("refuses to guess a framing protocol from an unknown media type", () => {
     expect(() => createVideoEnvelopeParser("video/h264")).toThrow(VideoEnvelopeParseError);
-    expect(() => createVideoEnvelopeParser("application/vnd.bb.sim-avcc;version=3")).toThrow(/content type/);
+    expect(() => createVideoEnvelopeParser("application/vnd.alia.sim-avcc;version=3")).toThrow(/content type/);
   });
 });

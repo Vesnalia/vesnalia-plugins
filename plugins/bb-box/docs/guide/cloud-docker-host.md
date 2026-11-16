@@ -1,8 +1,8 @@
 # A cloud server as a Docker host
 
-A server you rent from a cloud provider can host Docker boxes, as a PC with Docker can. You make the server, install Docker and BB's daemon on it, and turn it on in BB Box's settings. BB Box then makes boxes there, reaches them through BB, and builds its images there. Nothing on the server is open to the internet.
+A server you rent from a cloud provider can host Docker boxes, as a PC with Docker can. You make the server, install Docker and VesnALIA's daemon on it, and turn it on in VesnALIA Box's settings. VesnALIA Box then makes boxes there, reaches them through VesnALIA, and builds its images there. Nothing on the server is open to the internet.
 
-This page uses Hetzner Cloud, where it was first done on 22 October 2026. Any provider's Linux server works the same way. To have BB Box make Hetzner Cloud servers as boxes need them, and delete them when idle, see [Linux boxes on Hetzner Cloud](hetzner.md) instead.
+This page uses Hetzner Cloud, where it was first done on 22 October 2026. Any provider's Linux server works the same way. To have VesnALIA Box make Hetzner Cloud servers as boxes need them, and delete them when idle, see [Linux boxes on Hetzner Cloud](hetzner.md) instead.
 
 ## What it costs
 
@@ -10,7 +10,7 @@ You pay the provider for the server for every hour it exists, whether or not it 
 
 Hetzner's prices on 22 October 2026, with a public IPv4 address and excluding VAT:
 
-| Type | vCPU | Memory | Disk | An hour | A month | Holds, with BB Box's defaults |
+| Type | vCPU | Memory | Disk | An hour | A month | Holds, with VesnALIA Box's defaults |
 | --- | --- | --- | --- | --- | --- | --- |
 | CPX32 | 4 | 8 GB | 160 GB | EUR 0.0577 | EUR 35.99 | one small Linux box |
 | CPX42 | 8 | 16 GB | 320 GB | EUR 0.1122 | EUR 69.99 | a small desktop box, or 2 small Linux boxes |
@@ -27,9 +27,9 @@ Set a cost alert in the Hetzner Console. Hetzner does not stop spending by itsel
 You need:
 
 - a Hetzner Cloud project, and your SSH key in it
-- a way for the server to reach BB's server: if BB is on a tailnet, the server joins the tailnet; otherwise BB's server needs a URL the server can reach, such as bb connect's
-- 160 GB of disk on the server: BB Box's images need about 36 GB to build
-- 16 GB of memory for desktop boxes: a small desktop box takes 8 GB, and BB Box keeps some memory free
+- a way for the server to reach VesnALIA's server: if VesnALIA is on a tailnet, the server joins the tailnet; otherwise VesnALIA's server needs a URL the server can reach, such as VesnALIA connect's
+- 160 GB of disk on the server: VesnALIA Box's images need about 36 GB to build
+- 16 GB of memory for desktop boxes: a small desktop box takes 8 GB, and VesnALIA Box keeps some memory free
 
 ## Set up the server
 
@@ -38,7 +38,7 @@ You need:
 In the Hetzner Console, make a server with:
 
 - Ubuntu 26.04
-- a location near BB's server, such as Nuremberg or Falkenstein for one in western Europe
+- a location near VesnALIA's server, such as Nuremberg or Falkenstein for one in western Europe
 - a type from the table above
 - your SSH key
 
@@ -53,50 +53,50 @@ apt-get install -y nodejs
 node --version
 ```
 
-BB's daemon needs Node.js 22 or later. Ubuntu 26.04's own package is 22. Without Node.js, BB's command in step 5 stops with "sh: node: not found" and shows only its usage.
+VesnALIA's daemon needs Node.js 22 or later. Ubuntu 26.04's own package is 22. Without Node.js, VesnALIA's command in step 5 stops with "sh: node: not found" and shows only its usage.
 
 ### 3. Join the tailnet
 
-Skip this step if BB's server is reachable without a tailnet.
+Skip this step if VesnALIA's server is reachable without a tailnet.
 
 ```sh
 tailscale up
 ```
 
-Open the link it prints and approve the server. Or use an auth key, with `tailscale up --auth-key=<key>`, tagged as your tailnet's policy needs for machines that reach BB's server. [Joining cloud machines to your tailnet](tailnet.md) sets up the tag and policy BB Box's own cloud machines use, which suit this server too.
+Open the link it prints and approve the server. Or use an auth key, with `tailscale up --auth-key=<key>`, tagged as your tailnet's policy needs for machines that reach VesnALIA's server. [Joining cloud machines to your tailnet](tailnet.md) sets up the tag and policy VesnALIA Box's own cloud machines use, which suit this server too.
 
-### 4. Make a user for BB's daemon
+### 4. Make a user for VesnALIA's daemon
 
-BB's daemon runs as a user of its own, not as `root`. That user needs Docker, and keeps running when nobody is logged in:
+VesnALIA's daemon runs as a user of its own, not as `root`. That user needs Docker, and keeps running when nobody is logged in:
 
 ```sh
-useradd -m -s /bin/bash bb
-loginctl enable-linger bb
-usermod -aG docker bb
+useradd -m -s /bin/bash alia
+loginctl enable-linger alia
+usermod -aG docker alia
 ```
 
-### 5. Add the server to BB
+### 5. Add the server to VesnALIA
 
-In BB, go to Settings, then Machines, then **Add a machine**, and choose **Manual** setup. Copy the command. BB shows it once, and it expires in 15 minutes.
+In VesnALIA, go to Settings, then Machines, then **Add a machine**, and choose **Manual** setup. Copy the command. VesnALIA shows it once, and it expires in 15 minutes.
 
 On the server, run it as the user from step 4:
 
 ```sh
-sudo -iu bb
+sudo -iu alia
 ```
 
-Then paste the command. When it finishes, the server shows as connected in BB's Machines.
+Then paste the command. When it finishes, the server shows as connected in VesnALIA's Machines.
 
-Use the dialog, not `bb machine create --provider manual`: the command line does not show the command, and the machine it makes cannot be paired afterwards.
+Use the dialog, not `alia machine create --provider manual`: the command line does not show the command, and the machine it makes cannot be paired afterwards.
 
 ### 6. Close the server to the internet
 
-In the Hetzner Console, make a Cloud Firewall with no inbound rules, and apply it to the server. BB's daemon and Tailscale only make connections out, so they keep working. From now on, log in to the server over the tailnet, at its tailnet address. Without a tailnet, add one inbound rule for SSH from your own address alone, or you can no longer log in.
+In the Hetzner Console, make a Cloud Firewall with no inbound rules, and apply it to the server. VesnALIA's daemon and Tailscale only make connections out, so they keep working. From now on, log in to the server over the tailnet, at its tailnet address. Without a tailnet, add one inbound rule for SSH from your own address alone, or you can no longer log in.
 
-## Turn it on in BB Box
+## Turn it on in VesnALIA Box
 
-1. In BB Box's settings, select **Add backend**, and find the server under **Docker on your BB machines**. Its row shows Docker's version, cores and memory.
-2. Select **Add**. BB Box adds a Docker backend for it and builds its images there. This takes about 15 minutes. The backend's row under **Backends** shows the build until it ends.
+1. In VesnALIA Box's settings, select **Add backend**, and find the server under **Docker on your VesnALIA machines**. Its row shows Docker's version, cores and memory.
+2. Select **Add**. VesnALIA Box adds a Docker backend for it and builds its images there. This takes about 15 minutes. The backend's row under **Backends** shows the build until it ends.
 3. On a server with 8 GB of memory, such as a CPX32, open the new backend's page under **Backends** and set **Memory kept free (MiB)** to 1024. With the default of 4096 it has no room for a box.
 
 Boxes on the server are privileged containers by default, so each has Docker of its own (**Docker in boxes**). A box with Docker can take over the server: use it only for work you would run on the server yourself.
@@ -104,15 +104,15 @@ Boxes on the server are privileged containers by default, so each has Docker of 
 ## Check it works
 
 ```sh
-bb box doctor
+alia box doctor
 ```
 
-The doctor checks the new backend and its images. Then make a box on it from the Box panel, or ask an agent to. Once the images are there, a box should start in about a second and join BB a few seconds later, as on any Docker host.
+The doctor checks the new backend and its images. Then make a box on it from the Box panel, or ask an agent to. Once the images are there, a box should start in about a second and join VesnALIA a few seconds later, as on any Docker host.
 
 ## Remove it
 
 1. Release the boxes on it.
 2. Open its backend under **Backends**, and choose **Remove backend…** from its menu.
-3. Remove it in BB, under Settings, then Machines.
+3. Remove it in VesnALIA, under Settings, then Machines.
 4. Remove it from the tailnet.
 5. Delete the server in the Hetzner Console. Until you do, Hetzner keeps billing for it.

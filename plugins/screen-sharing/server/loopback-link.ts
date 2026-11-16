@@ -1,5 +1,5 @@
 /**
- * A session to the Mac running the bb server: one TCP connection to its
+ * A session to the Mac running the VesnALIA server: one TCP connection to its
  * Screen Sharing on 127.0.0.1:5900, bytes copied untouched. Reading pauses
  * while more than `windowBytes` has gone to the viewer unacknowledged.
  */

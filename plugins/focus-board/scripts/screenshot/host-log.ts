@@ -1,7 +1,7 @@
 /**
  * Cross-window delivery for the harness's mocked host.
  *
- * bb's second window learns about a write because the host pushes a realtime
+ * VesnALIA's second window learns about a write because the host pushes a realtime
  * signal and the window refetches. The harness has no host process: each page
  * owns its own mock. `?sharedHost=1` turns on this log, which gives the two
  * pages the missing channel over the one store two same-origin documents

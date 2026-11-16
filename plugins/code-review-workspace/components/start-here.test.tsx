@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
@@ -10,7 +10,7 @@ vi.mock("@pierre/diffs/react", () => ({ FileDiff: ({ fileDiff }: any) => <pre>{f
 afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear(); });
 
 const file = (path: string, hunks: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n${hunks}`;
-const patch = file("src/a.ts", "@@ -1 +1 @@\n-a\n+aa\n") + file("src/b.ts", "@@ -1,2 +1,2 @@\n x\n-b\n+bb\n");
+const patch = file("src/a.ts", "@@ -1 +1 @@\n-a\n+aa\n") + file("src/b.ts", "@@ -1,2 +1,2 @@\n x\n-b\n+alia\n");
 const guide = {
   title: "Guide", intent: "Parses rows.", unplacedFiles: [] as string[],
   sections: [
@@ -43,7 +43,7 @@ test("Start here on the Overview lists the guide's hotspots, each opening its li
   expect(start.getByText("tenant")).toBeTruthy();
   // Named by its line, described by why.
   fireEvent.click(start.getByRole("button", { name: "src/b.ts:2", description: /^The cache key ignores tenant/ }));
-  await slot.findByText(/bb/);
+  await slot.findByText(/alia/);
   const chapters = within(slot.getByRole("navigation", { name: "Chapters" }));
   await waitFor(() => expect(chapters.getAllByRole("button").find((b) => b.getAttribute("aria-current") === "step")?.textContent).toContain("Caching"));
   slot.lifecycle.unmount();

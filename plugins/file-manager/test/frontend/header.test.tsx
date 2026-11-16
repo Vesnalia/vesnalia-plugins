@@ -6,8 +6,8 @@
 // carries state one way and commands the other.
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@vesnalia/plugin-sdk/testing/app";
 
 import type { FileEntry, FileManagerContract } from "../../contract";
 

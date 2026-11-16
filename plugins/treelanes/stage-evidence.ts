@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { checkNameSchema, deliveryStagesSchema, stageChecksSchema } from "./delivery-plan";
 import { setupPlanSchema } from "./setup-plan";
@@ -94,7 +94,7 @@ export const WORKSPACE_CAPTURE_LIMITS = {
   maxDiffBytes: MAX_DIFF_BYTES,
 } as const;
 
-type Sdk = BbPluginApi["sdk"];
+type Sdk = AliaPluginApi["sdk"];
 type Hash = ReturnType<typeof createHash>;
 
 type DiffTarget = "branch_committed" | "uncommitted" | "all";
@@ -162,11 +162,11 @@ function assertAvailable<T extends { outcome: string }>(
   return result as Extract<T, { outcome: "available" }>;
 }
 
-// The bb--git plugin serves workspace status and diffs; a failed call fails the read.
+// The alia--git plugin serves workspace status and diffs; a failed call fails the read.
 function git<T>(sdk: Sdk, method: "workspaceStatus" | "diff", input: {
   environmentId: string; mergeBaseBranch?: string; target?: { type: DiffTarget; mergeBaseBranch?: string };
 }) {
-  return sdk.plugins.callRpc({ pluginId: "bb--git", method, input, outputSchema: z.custom<T>() });
+  return sdk.plugins.callRpc({ pluginId: "alia--git", method, input, outputSchema: z.custom<T>() });
 }
 
 async function readSdk<T>(label: string, operation: () => Promise<T>): Promise<T> {
@@ -725,7 +725,7 @@ async function frameFileContents(
 }
 
 export async function captureWorkspace(
-  sdk: BbPluginApi["sdk"],
+  sdk: AliaPluginApi["sdk"],
   environmentId: string,
 ): Promise<string> {
   const snapshot = await captureSnapshot(sdk, environmentId);

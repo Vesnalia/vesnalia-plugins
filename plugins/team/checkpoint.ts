@@ -1,4 +1,4 @@
-import { PluginCliError, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { PluginCliError, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { hostContract } from "./host-contract";
 import type { TaskId } from "./snapshot";
@@ -40,13 +40,13 @@ export const workCheckpointSchema = z
   );
 export type WorkCheckpoint = z.infer<typeof workCheckpointSchema>;
 
-export async function environmentState(bb: BbPluginApi, threadId: string) {
-  const thread = await bb.sdk.threads.get({ threadId });
+export async function environmentState(alia: AliaPluginApi, threadId: string) {
+  const thread = await alia.sdk.threads.get({ threadId });
   if (!thread.environmentId)
     throw new PluginCliError("Thread has no environment to preserve", {
       code: "environment_missing",
     });
-  const environment = await bb.sdk.environments.get({
+  const environment = await alia.sdk.environments.get({
     environmentId: thread.environmentId,
   });
   if (!environment.path || environment.status !== "ready") {
@@ -55,7 +55,7 @@ export async function environmentState(bb: BbPluginApi, threadId: string) {
       { code: "environment_unavailable" },
     );
   }
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   const state = await host.call(
     "gitState",
     { cwd: environment.path },
@@ -65,14 +65,14 @@ export async function environmentState(bb: BbPluginApi, threadId: string) {
 }
 
 export async function captureCheckpoint(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   taskId: TaskId,
   role: string,
   threadId: string,
   content: unknown,
 ): Promise<WorkCheckpoint> {
   const parsed = checkpointContentSchema.parse(content);
-  const { thread, environment, state } = await environmentState(bb, threadId);
+  const { thread, environment, state } = await environmentState(alia, threadId);
   return workCheckpointSchema.parse({
     version: 1,
     taskId,
@@ -88,11 +88,11 @@ export async function captureCheckpoint(
 }
 
 export async function verifyCheckpoint(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   checkpoint: WorkCheckpoint,
 ): Promise<void> {
   const { thread, environment, state } = await environmentState(
-    bb,
+    alia,
     checkpoint.threadId,
   );
   if (
@@ -116,8 +116,8 @@ export async function verifyCheckpoint(
  * work after the checkpoint. Never ask the exhausted model to fill this gap.
  */
 export async function verifyQuotaBoundary(
-  bb:BbPluginApi,
-  failure:import("@get-bb/plugin-sdk").PluginTurnFailedEvent,
+  alia:AliaPluginApi,
+  failure:import("@vesnalia/plugin-sdk").PluginTurnFailedEvent,
   checkpoint:WorkCheckpoint,
 ):Promise<void>{
   if(failure.inputAccepted)throw new PluginCliError("The failed turn accepted input; checkpoint coverage of its actions is uncertain. Inspect and checkpoint the work before manual recovery",{code:"quota_input_accepted"});
@@ -125,7 +125,7 @@ export async function verifyQuotaBoundary(
   let beforeSeq:string|undefined,complete=false;
   try{
     for(let page=0;page<20;page++){
-      const batch=await bb.sdk.threads.events.list({threadId:failure.threadId,order:"desc",limit:"100",...(beforeSeq?{beforeSeq}:{}),types:["client/turn/requested","turn/started","turn/completed","turn/input/accepted"]});
+      const batch=await alia.sdk.threads.events.list({threadId:failure.threadId,order:"desc",limit:"100",...(beforeSeq?{beforeSeq}:{}),types:["client/turn/requested","turn/started","turn/completed","turn/input/accepted"]});
       rows.push(...batch.map(row=>({seq:row.seq,createdAt:row.createdAt,type:row.type,data:row.data as unknown as Record<string,unknown>})));
       if(batch.length<100||batch.some(row=>row.createdAt<checkpoint.atMs)){complete=true;break;}
       beforeSeq=String(Math.min(...batch.map(row=>row.seq)));

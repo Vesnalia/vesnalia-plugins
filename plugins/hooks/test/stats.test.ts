@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import plugin from "../server.js";
 import { useTemplate, type ActionDeps } from "../src/actions.js";
@@ -162,7 +162,7 @@ describe("useTemplate install reports", () => {
 
 describe("install counts end to end", () => {
   const counter = fakeCounter();
-  const { bb, harness } = createFakePluginHost({ pluginId: "hooks", settings: { catalogs: "" } });
+  const { alia, harness } = createFakePluginHost({ pluginId: "hooks", settings: { catalogs: "" } });
   const realFetch = globalThis.fetch;
 
   beforeAll(async () => {
@@ -171,7 +171,7 @@ describe("install counts end to end", () => {
       if (String(url) === OFFICIAL_URL) return Response.json(catalog());
       return (await counter.handle(String(url), init)) ?? realFetch(url, init);
     });
-    await plugin(bb);
+    await plugin(alia);
   });
   afterAll(async () => {
     await harness.lifecycle.dispose();
@@ -183,7 +183,7 @@ describe("install counts end to end", () => {
   };
 
   it("asks first, then reports each new marketplace install once the user opts in", async () => {
-    expect((await harness.behavior.runCli(["marketplace", "add", "MacHatter1/bb-hooks-marketplace"])).exitCode).toBe(0);
+    expect((await harness.behavior.runCli(["marketplace", "add", "MacHatter1/alia-hooks-marketplace"])).exitCode).toBe(0);
 
     const first = await harness.behavior.runCli(["use", "community/ping", "--yes"]);
     expect(first.exitCode, first.stderr).toBe(0);

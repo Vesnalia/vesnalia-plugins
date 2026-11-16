@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-responsibilities",
+  "name": "alia-plugin-responsibilities",
   "version": "0.2.3",
   "type": "module",
   "engines": {
-    "bb": ">=0.47.1",
-    "bbPluginSdk": ">=0.6.79"
+    "alia": ">=0.47.1",
+    "aliaPluginSdk": ">=0.6.79"
   },
-  "bb": {
+  "alia": {
     "name": "Responsibilities",
     "description": "Shows which threads need you: failed, waiting for your answer, or holding an unread result. Highlights manager threads, filters the thread list, and adds New child thread to the thread actions.",
     "branding": {
@@ -19,27 +19,21 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.79",
     "@tailwindcss/node": "4.3.0",
     "@tailwindcss/oxide": "4.3.0",
     "@types/bun": "1.3.13",
     "@types/react": "19.2.7",
-    "bb-app": "0.47.1",
     "esbuild": "0.28.1",
     "tailwindcss": "4.3.0",
     "typescript": "5.9.3"
   },
   "scripts": {
-    "build": "BB_CLI= bb plugin build",
+    "build": "ALIA_CLI= alia plugin build",
     "check": "tsc --noEmit",
     "test": "bun test"
   },
-  "description": "Shows which threads need you, highlights manager threads, filters the BB thread list, and adds New child thread.",
+  "description": "Shows which threads need you, highlights manager threads, filters the VesnALIA thread list, and adds New child thread.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/neoromantic/bb-plugin-responsibilities.git"
-  },
   "files": [
     "app.tsx",
     "attention.ts",
@@ -64,5 +58,22 @@
     "assets/compact-theme-light.png",
     "assets/README.md",
     "THIRD_PARTY_NOTICES"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.79"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/responsibilities#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/responsibilities"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

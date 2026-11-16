@@ -1,14 +1,14 @@
-// bb-plugin-captains-deck — backend.
+// alia-plugin-captains-deck — backend.
 //
 // The deck is a projection of work the first mate charts and moves. Agents drive
-// it from a shell with `bb deck ...`; the board (app.tsx) reads it over RPC and
+// it from a shell with `alia deck ...`; the board (app.tsx) reads it over RPC and
 // only writes back a captain's answer to an open decision.
 //
-// One store in bb.storage.kv serves three surfaces: the Captain's Deck board,
-// the `bb deck` CLI, and the skill in skills/captains-deck/SKILL.md. Every
+// One store in alia.storage.kv serves three surfaces: the Captain's Deck board,
+// the `alia deck` CLI, and the skill in skills/captains-deck/SKILL.md. Every
 // write publishes a realtime signal so any open board refetches at once.
 import { randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const taskStateSchema = z.enum([
@@ -100,10 +100,10 @@ function normalizeTask(task: DeckTask): DeckTask {
   };
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("captains-deck loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("captains-deck loaded");
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     firstMateThreadId: {
       type: "string",
       label: "First mate thread",
@@ -115,14 +115,14 @@ export default async function plugin(bb: BbPluginApi) {
   const { firstMateThreadId } = await settings.get();
 
   async function readTasks(): Promise<DeckTask[]> {
-    const raw = (await bb.storage.kv.get<DeckTask[]>(TASKS_KEY)) ?? [];
+    const raw = (await alia.storage.kv.get<DeckTask[]>(TASKS_KEY)) ?? [];
     return raw.map(normalizeTask);
   }
 
   async function writeTasks(tasks: DeckTask[]): Promise<void> {
-    await bb.storage.kv.set(TASKS_KEY, tasks);
+    await alia.storage.kv.set(TASKS_KEY, tasks);
     // Ephemeral broadcast; every open board refetches.
-    bb.realtime.publish(DECK_CHANGED, { count: tasks.length });
+    alia.realtime.publish(DECK_CHANGED, { count: tasks.length });
   }
 
   const now = () => new Date().toISOString();
@@ -289,14 +289,14 @@ export default async function plugin(bb: BbPluginApi) {
         "The task is back in Underway on the board. Continue the work accordingly.",
       ].join("\n");
       try {
-        await bb.sdk.threads.send({
+        await alia.sdk.threads.send({
           threadId: firstMateThreadId,
           mode: "auto",
           input: [{ type: "text", text, mentions: [], visibility: "agent-only" }],
         });
       } catch (error) {
         // The answer is durable on the board; delivery is best effort.
-        bb.log.warn(
+        alia.log.warn(
           `could not deliver decision answer to ${firstMateThreadId}: ${
             error instanceof Error ? error.message : String(error)
           }`,
@@ -307,7 +307,7 @@ export default async function plugin(bb: BbPluginApi) {
     return answered;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     deck_board: async () => ({ tasks: await readTasks() }),
     deck_answer: async ({ taskId, optionId, note }) => ({
       task: await answerDecision(taskId, optionId, note),
@@ -318,20 +318,20 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb deck chart --title <title> [--brief <text>] [--kind ship|scout]",
+    "  VesnALIA deck chart --title <title> [--brief <text>] [--kind ship|scout]",
     "                [--project <project-id>] [--bot <name>] [--thread <thread-id>] [--json]",
-    "  bb deck start <task-id> [--thread <thread-id>] [--json]",
-    "  bb deck ask <task-id> --question <text> --option \"<label> :: <detail>\" [--option ...]",
+    "  VesnALIA deck start <task-id> [--thread <thread-id>] [--json]",
+    "  VesnALIA deck ask <task-id> --question <text> --option \"<label> :: <detail>\" [--option ...]",
     "                [--recommend <number|label>] [--context <text>] [--thread <thread-id>] [--json]",
-    "  bb deck note <task-id> --text <text> [--json]",
-    "  bb deck merge <task-id> [--pr <url>] [--json]",
-    "  bb deck land <task-id> [--json]",
-    "  bb deck fail <task-id> [--reason <text>] [--json]",
-    "  bb deck move <task-id> <charted|underway|decision|merge|landed|failed> [--json]",
-    "  bb deck list [--json]",
-    "  bb deck show <task-id> [--json]",
-    "  bb deck bearings [--json]",
-    "  bb deck remove <task-id> [--json]",
+    "  VesnALIA deck note <task-id> --text <text> [--json]",
+    "  VesnALIA deck merge <task-id> [--pr <url>] [--json]",
+    "  VesnALIA deck land <task-id> [--json]",
+    "  VesnALIA deck fail <task-id> [--reason <text>] [--json]",
+    "  VesnALIA deck move <task-id> <charted|underway|decision|merge|landed|failed> [--json]",
+    "  VesnALIA deck list [--json]",
+    "  VesnALIA deck show <task-id> [--json]",
+    "  VesnALIA deck bearings [--json]",
+    "  VesnALIA deck remove <task-id> [--json]",
   ].join("\n");
 
   function parseArgs(argv: string[]): {
@@ -412,22 +412,22 @@ export default async function plugin(bb: BbPluginApi) {
     ];
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "deck",
     summary: "Drive the Captain's Deck board: chart, start, ask, note, merge, and land tasks",
     commands: [
-      { name: "chart", summary: "Add a task to Charted Next", usage: "bb deck chart --title <title> [--brief <text>] [--kind ship|scout] [--project <id>] [--bot <name>] [--thread <id>]" },
-      { name: "start", summary: "Move a task to Underway", usage: "bb deck start <task-id> [--thread <thread-id>]" },
-      { name: "ask", summary: "Open a Captain's Call on a task", usage: "bb deck ask <task-id> --question <text> --option \"<label> :: <detail>\" [--option ...] [--recommend <number|label>] [--context <text>] [--thread <thread-id>]" },
-      { name: "note", summary: "Set the short status note on a task", usage: "bb deck note <task-id> --text <text>" },
-      { name: "merge", summary: "Move a task to Awaiting Merge", usage: "bb deck merge <task-id> [--pr <url>]" },
-      { name: "land", summary: "Move a task to Landed", usage: "bb deck land <task-id>" },
-      { name: "fail", summary: "Mark a task failed", usage: "bb deck fail <task-id> [--reason <text>]" },
-      { name: "move", summary: "Set a task's column", usage: "bb deck move <task-id> <charted|underway|decision|merge|landed|failed>" },
-      { name: "list", summary: "List deck tasks", usage: "bb deck list [--json]" },
-      { name: "show", summary: "Show one deck task", usage: "bb deck show <task-id> [--json]" },
-      { name: "bearings", summary: "Print the fleet digest", usage: "bb deck bearings [--json]" },
-      { name: "remove", summary: "Remove a deck task", usage: "bb deck remove <task-id> [--json]" },
+      { name: "chart", summary: "Add a task to Charted Next", usage: "alia deck chart --title <title> [--brief <text>] [--kind ship|scout] [--project <id>] [--bot <name>] [--thread <id>]" },
+      { name: "start", summary: "Move a task to Underway", usage: "alia deck start <task-id> [--thread <thread-id>]" },
+      { name: "ask", summary: "Open a Captain's Call on a task", usage: "alia deck ask <task-id> --question <text> --option \"<label> :: <detail>\" [--option ...] [--recommend <number|label>] [--context <text>] [--thread <thread-id>]" },
+      { name: "note", summary: "Set the short status note on a task", usage: "alia deck note <task-id> --text <text>" },
+      { name: "merge", summary: "Move a task to Awaiting Merge", usage: "alia deck merge <task-id> [--pr <url>]" },
+      { name: "land", summary: "Move a task to Landed", usage: "alia deck land <task-id>" },
+      { name: "fail", summary: "Mark a task failed", usage: "alia deck fail <task-id> [--reason <text>]" },
+      { name: "move", summary: "Set a task's column", usage: "alia deck move <task-id> <charted|underway|decision|merge|landed|failed>" },
+      { name: "list", summary: "List deck tasks", usage: "alia deck list [--json]" },
+      { name: "show", summary: "Show one deck task", usage: "alia deck show <task-id> [--json]" },
+      { name: "bearings", summary: "Print the fleet digest", usage: "alia deck bearings [--json]" },
+      { name: "remove", summary: "Remove a deck task", usage: "alia deck remove <task-id> [--json]" },
     ],
     async run(argv) {
       const json = argv.includes("--json");
@@ -645,7 +645,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("captains-deck disposed");
+  alia.onDispose(() => {
+    alia.log.info("captains-deck disposed");
   });
 }

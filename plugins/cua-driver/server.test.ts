@@ -1,5 +1,5 @@
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import type { PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import type { PluginAgentToolResult } from "@vesnalia/plugin-sdk";
 import { describe, expect, it, vi } from "vitest";
 import plugin from "./server.js";
 import type { DriverStatus, ToolCallResult } from "./src/contract.js";
@@ -51,7 +51,7 @@ async function load(options: {
   toolResult?: ToolCallResult;
 } = {}) {
   const hostCalls: Array<{ method: string; input: unknown; hostId: string }> = [];
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "cua-driver",
     settings: options.settings ?? {},
     agentSkillIds: ["cua-computer-use"],
@@ -84,8 +84,8 @@ async function load(options: {
       return { disconnected: false };
     },
   });
-  await plugin(bb);
-  return { bb, harness, hostCalls };
+  await plugin(alia);
+  return { alia, harness, hostCalls };
 }
 
 describe("cua-driver server", () => {
@@ -141,7 +141,7 @@ describe("cua-driver server", () => {
       input: { name: "click", arguments: { pid: 4, element_token: "s1:2" } },
       hostId: "host_9",
     });
-    expect((toolCalls[0]!.input as { session: string }).session).toMatch(/^bb-/);
+    expect((toolCalls[0]!.input as { session: string }).session).toMatch(/^alia-/);
 
     await harness.behavior.callAgentTool("cua_call", { tool: "start_recording", arguments: { output_dir: "/tmp/x" } });
     expect(hostCalls.filter((call) => call.method === "callTool")[1]!.input).toMatchObject({

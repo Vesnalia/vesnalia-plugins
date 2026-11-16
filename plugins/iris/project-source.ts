@@ -1,9 +1,9 @@
-// Reads a card's own thread's project state from bb for the live project
-// components. Git comes from the bundled Git plugin (bb--git) and pull
-// requests from GitHub PR Status (bb--github-pr-status), both through
+// Reads a card's own thread's project state from VesnALIA for the live project
+// components. Git comes from the bundled Git plugin (alia--git) and pull
+// requests from GitHub PR Status (alia--github-pr-status), both through
 // sdk.plugins.callRpc; threads and environments from the SDK. Every read acts
 // for one thread: it sees that thread's environment and its project only.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   MAX_ENVIRONMENTS,
@@ -30,7 +30,7 @@ import {
   type ThreadsResult,
 } from "./core/project";
 
-// ---------- the parts of bb--git and bb--github-pr-status Iris reads ----------
+// ---------- the parts of alia--git and alia--github-pr-status Iris reads ----------
 
 const gitFailure = z.union([
   z.object({ outcome: z.literal("not_applicable"), message: z.string() }),
@@ -140,10 +140,10 @@ function gitProblem(row: z.infer<typeof gitFailure>): ProjectFailure {
   if (row.outcome === "failed") return failure("unavailable", row.message);
   const code = row.failure.code;
   if (code === "not_git_repo" || code === "workspace_type_mismatch") return failure("not-git", "This thread's environment isn't a git checkout");
-  return failure("unavailable", row.failure.message || "bb couldn't read the checkout");
+  return failure("unavailable", row.failure.message || "alia couldn't read the checkout");
 }
 
-/** bb's patch key: the files read's environment, target, whitespace flag, path and revision. */
+/** VesnALIA's patch key: the files read's environment, target, whitespace flag, path and revision. */
 export function gitPatchKey(environmentId: string, target: GitTarget, path: string, revision: string): string {
   return JSON.stringify([environmentId, target, false, path, revision]);
 }
@@ -166,7 +166,7 @@ function baseName(ws: Workspace): string {
 /** Files the branch changed, committed or not, each counted once (what Changes lists). */
 export function changedFileCount(ws: { workingTree: { fileCount: number; files: { path: string }[] }; mergeBase: { fileCount: number; files: { path: string }[] } | null }): number {
   const committed = ws.mergeBase?.files ?? [];
-  // bb can stop listing paths before it stops counting; fall back to the larger count.
+  // VesnALIA can stop listing paths before it stops counting; fall back to the larger count.
   const listed = new Set([...ws.workingTree.files, ...committed].map((f) => f.path)).size;
   return Math.max(listed, ws.workingTree.fileCount, ws.mergeBase?.fileCount ?? 0);
 }
@@ -186,8 +186,8 @@ export interface ProjectSource {
   threads(threadId: string, ids: string[] | null): Promise<ThreadsResult>;
 }
 
-export function createProjectSource(bb: BbPluginApi): ProjectSource {
-  const sdk = bb.sdk;
+export function createProjectSource(alia: AliaPluginApi): ProjectSource {
+  const sdk = alia.sdk;
 
   async function thread(threadId: string) {
     try {
@@ -195,7 +195,7 @@ export function createProjectSource(bb: BbPluginApi): ProjectSource {
       if (t.deletedAt !== null) return failure("not-found", "This thread was deleted");
       return { ok: true as const, thread: t };
     } catch {
-      return failure("no-thread", "bb has no such thread");
+      return failure("no-thread", "alia has no such thread");
     }
   }
 
@@ -208,12 +208,12 @@ export function createProjectSource(bb: BbPluginApi): ProjectSource {
 
   async function status(environmentIds: string[]) {
     if (!environmentIds.length) return {};
-    return sdk.plugins.callRpc({ pluginId: "bb--git", method: "status", input: { keys: environmentIds }, outputSchema: statusOutput });
+    return sdk.plugins.callRpc({ pluginId: "alia--git", method: "status", input: { keys: environmentIds }, outputSchema: statusOutput });
   }
 
   async function workspaceOf(environmentId: string) {
     const row = (await status([environmentId]))[environmentId];
-    if (!row) return failure("unavailable", "bb returned no git status for this environment");
+    if (!row) return failure("unavailable", "alia returned no git status for this environment");
     if (row.outcome !== "available") return gitProblem(row);
     return { ok: true as const, workspace: row.workspace };
   }
@@ -226,7 +226,7 @@ export function createProjectSource(bb: BbPluginApi): ProjectSource {
       const known = ws.mergeBase?.commits.find((c) => c.sha.startsWith(target.sha)) ?? null;
       return { git: { type: "commit", sha: target.sha }, scope: { kind: "commit", branch, base, onBase: false, noBase: false, sha: known?.sha ?? target.sha, subject: known?.subject ?? null } };
     }
-    if (ws.checkout.kind === "unknown") return failure("unavailable", `bb can't tell what is checked out: ${ws.checkout.reason}`);
+    if (ws.checkout.kind === "unknown") return failure("unavailable", `alia can't tell what is checked out: ${ws.checkout.reason}`);
     const onBase = branch !== null && branch === base;
     if (target.kind === "uncommitted" || ws.checkout.kind === "unborn" || onBase || !ws.mergeBase) {
       const noBase = target.kind === "branch" && !onBase && ws.checkout.kind !== "unborn" && !ws.mergeBase;
@@ -247,7 +247,7 @@ export function createProjectSource(bb: BbPluginApi): ProjectSource {
 
   async function pullRequests(environmentIds: string[]) {
     if (!environmentIds.length) return {};
-    return sdk.plugins.callRpc({ pluginId: "bb--github-pr-status", method: "pullRequests", input: { keys: environmentIds }, outputSchema: prOutput });
+    return sdk.plugins.callRpc({ pluginId: "alia--github-pr-status", method: "pullRequests", input: { keys: environmentIds }, outputSchema: prOutput });
   }
 
   function threadInfo(t: {
@@ -284,7 +284,7 @@ export function createProjectSource(bb: BbPluginApi): ProjectSource {
       try {
         const r = await resolveFor(threadId, target);
         if (!r.ok) return r;
-        const answer = await sdk.plugins.callRpc({ pluginId: "bb--git", method: "files", input: { environmentId: r.environmentId, target: r.git, ignoreWhitespace: false }, outputSchema: filesOutput });
+        const answer = await sdk.plugins.callRpc({ pluginId: "alia--git", method: "files", input: { environmentId: r.environmentId, target: r.git, ignoreWhitespace: false }, outputSchema: filesOutput });
         if (answer.outcome !== "available") return gitProblem(answer);
         const all: ChangedFile[] = answer.files.map((f) => ({
           path: f.path,
@@ -303,7 +303,7 @@ export function createProjectSource(bb: BbPluginApi): ProjectSource {
         for (const p of answer.initialPatches) if (shown.has(p.path)) patches[p.path] = p;
         return { ok: true, environmentId: r.environmentId, scope: r.scope, files, totalFiles: all.length, truncated: answer.truncated, patches };
       } catch (cause) {
-        return failure("unavailable", `bb couldn't read the changes: ${message(cause)}`);
+        return failure("unavailable", `alia couldn't read the changes: ${message(cause)}`);
       }
     },
 
@@ -313,13 +313,13 @@ export function createProjectSource(bb: BbPluginApi): ProjectSource {
         const r = await resolveFor(threadId, target);
         if (!r.ok) return r;
         const key = gitPatchKey(r.environmentId, r.git, path, revision);
-        const answer = await sdk.plugins.callRpc({ pluginId: "bb--git", method: "patches", input: { keys: [key] }, outputSchema: patchesOutput });
+        const answer = await sdk.plugins.callRpc({ pluginId: "alia--git", method: "patches", input: { keys: [key] }, outputSchema: patchesOutput });
         const row = answer[key];
-        if (!row) return failure("unavailable", "bb returned no patch for this file");
+        if (!row) return failure("unavailable", "alia returned no patch for this file");
         if (row.outcome !== "available") return gitProblem(row);
         return { ok: true, patch: row.patch };
       } catch (cause) {
-        return failure("unavailable", `bb couldn't read the diff: ${message(cause)}`);
+        return failure("unavailable", `alia couldn't read the diff: ${message(cause)}`);
       }
     },
 
@@ -330,16 +330,16 @@ export function createProjectSource(bb: BbPluginApi): ProjectSource {
         const ws = await workspaceOf(env.environmentId);
         if (!ws.ok) return ws;
         const w = ws.workspace;
-        if (w.checkout.kind === "unknown") return failure("unavailable", `bb can't tell what is checked out: ${w.checkout.reason}`);
+        if (w.checkout.kind === "unknown") return failure("unavailable", `alia can't tell what is checked out: ${w.checkout.reason}`);
         const branch = branchOf(w);
         const base = baseName(w);
-        // bb lists the branch's commits oldest first; Commits shows newest first.
+        // VesnALIA lists the branch's commits oldest first; Commits shows newest first.
         const commits = (w.mergeBase?.commits ?? [])
           .map((c) => ({ sha: c.sha, shortSha: c.shortSha, subject: c.subject, author: c.authorName, authoredAt: epochMs(c.authoredAt) }))
           .reverse();
         return { ok: true, environmentId: env.environmentId, branch, base, onBase: branch === base, noBase: !w.mergeBase && branch !== base, ahead: w.mergeBase?.aheadCount ?? null, behind: w.mergeBase?.behindCount ?? null, commits, total: commits.length };
       } catch (cause) {
-        return failure("unavailable", `bb couldn't read the commits: ${message(cause)}`);
+        return failure("unavailable", `alia couldn't read the commits: ${message(cause)}`);
       }
     },
 
@@ -355,7 +355,7 @@ export function createProjectSource(bb: BbPluginApi): ProjectSource {
         if (row.outcome === "unavailable") return { ok: true, environmentId, branch, pullRequest: null, unavailable: row.message };
         return { ok: true, environmentId, branch, pullRequest: pullRequestInfo(row.pullRequest), unavailable: null };
       } catch (cause) {
-        return failure("unavailable", `bb couldn't read the pull request: ${message(cause)}`);
+        return failure("unavailable", `alia couldn't read the pull request: ${message(cause)}`);
       }
     },
 
@@ -411,7 +411,7 @@ export function createProjectSource(bb: BbPluginApi): ProjectSource {
         }
         return { ok: true, environments: shown, more: active.length - shown.length };
       } catch (cause) {
-        return failure("unavailable", `bb couldn't read the environments: ${message(cause)}`);
+        return failure("unavailable", `alia couldn't read the environments: ${message(cause)}`);
       }
     },
 
@@ -435,7 +435,7 @@ export function createProjectSource(bb: BbPluginApi): ProjectSource {
         });
         return { ok: true, mode: "ids", threads: rows, truncated: false };
       } catch (cause) {
-        return failure("unavailable", `bb couldn't read the threads: ${message(cause)}`);
+        return failure("unavailable", `alia couldn't read the threads: ${message(cause)}`);
       }
     },
   };

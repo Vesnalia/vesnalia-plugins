@@ -1,4 +1,4 @@
-// bb-plugin-agent-board — the RPC contract shared by server.ts and app.tsx.
+// alia-plugin-agent-board — the RPC contract shared by server.ts and app.tsx.
 //
 // Both schemas run at the wire boundary: handler input/output and the
 // frontend client are inferred from this one definition. Frontend hooks also
@@ -6,9 +6,9 @@
 // installs omit the development SDK package before building the frontend.
 //
 // The board DTO is intentionally source-agnostic: every card carries a
-// `source` discriminator. BB and optional public plugin adapters contribute
+// `source` discriminator. VesnALIA and optional public plugin adapters contribute
 // cards without leaking source DTOs into the UI.
-import type { PluginRpcContract } from "@get-bb/plugin-sdk";
+import type { PluginRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 /** Board card statuses, normalized across every source. */
@@ -29,8 +29,8 @@ export const boardColumnSchema = z.enum(["plan", "active", "output"]);
 export type BoardColumn = z.infer<typeof boardColumnSchema>;
 
 /**
- * Kinds of observable work the board renders. "thread" is a BB thread
- * (root or child); "workflow-agent" is one agent inside a BB workflow;
+ * Kinds of observable work the board renders. "thread" is a VesnALIA thread
+ * (root or child); "workflow-agent" is one agent inside a VesnALIA workflow;
  * "delegation" is a parent-thread delegation item without a resolvable
  * child-thread card; "plan-step" is an explicit todo/plan step; "queued-message"
  * is work waiting to start.
@@ -47,7 +47,7 @@ export const boardCardKindSchema = z.enum([
 export type BoardCardKind = z.infer<typeof boardCardKindSchema>;
 
 /** Which observable source produced the card. The extension seam for adapters. */
-export const boardCardSourceSchema = z.enum(["bb", "redteam", "ollama-fleet"]);
+export const boardCardSourceSchema = z.enum(["alia", "redteam", "ollama-fleet"]);
 export type BoardCardSource = z.infer<typeof boardCardSourceSchema>;
 
 /** Operational attention, derived only from explicit structured source state. */
@@ -109,7 +109,7 @@ export const boardCardSchema = z.object({
   subtitle: z.string().nullable(),
   status: boardCardStatusSchema,
   column: boardColumnSchema,
-  /** Underlying BB thread id when the card maps to one (for "Open thread"). */
+  /** Underlying VesnALIA thread id when the card maps to one (for "Open thread"). */
   threadId: z.string().nullable(),
   providerId: z.string().nullable(),
   providerLabel: z.string().nullable(),
@@ -138,7 +138,7 @@ export const boardCardSchema = z.object({
   }).optional(),
   reviewThreadId: z.string().nullable().optional(),
   interaction: z.object({ kind: z.enum(["question", "approval"]), at: z.number() }).optional(),
-  /** Native delegations belong to a BB thread; childRef need not be a BB ID. */
+  /** Native delegations belong to a VesnALIA thread; childRef need not be a VesnALIA ID. */
   ownerThreadId: z.string().optional(),
   /**
    * Latest user-visible assistant-authored text (bounded excerpt). Strictly
@@ -168,7 +168,7 @@ export const boardCardSchema = z.object({
   sequence: z.number().int().nonnegative().nullable().optional(),
   /** Step-group identity the card belongs to ("plan:<thread>", "redteam:<scan>", …). */
   groupKey: z.string().nullable().optional(),
-  /** Optional source-owned correlation metadata; never required for BB cards. */
+  /** Optional source-owned correlation metadata; never required for VesnALIA cards. */
   jobId: z.string().max(80).optional(),
   serverName: z.string().max(120).nullable().optional(),
   originThreadId: z.string().max(120).optional(),
@@ -303,7 +303,7 @@ export type TimelineEventStatus = z.infer<typeof timelineEventStatusSchema>;
 
 /**
  * One normalized, bounded event. `sourceMetadata` carries identity/sequence
- * only — never a raw BB/adapter row or tool payload.
+ * only — never a raw ALIA/adapter row or tool payload.
  */
 export const timelineEventSchema = z.object({
   id: z.string().min(1).max(320),
@@ -353,7 +353,7 @@ const executionTimelineInputSchema = z.discriminatedUnion("source", [
     limit: z.number().int().min(1).max(80).optional(),
   }),
   z.object({
-    source: z.literal("bb"),
+    source: z.literal("alia"),
     executionKey: z.string().min(1).max(240),
     threadId: z.string().min(1).max(240),
     limit: z.number().int().min(1).max(80).optional(),
@@ -447,7 +447,7 @@ export const rpcContract = {
     }),
     output: z.object({ entries: z.array(boardActivityEntrySchema) }),
   },
-  /** Lazily loaded bounded operational timeline for one BB/adapter execution. */
+  /** Lazily loaded bounded operational timeline for one ALIA/adapter execution. */
   execution_timeline: {
     input: executionTimelineInputSchema,
     output: executionTimelineSchema,
@@ -459,7 +459,7 @@ export const rpcContract = {
   },
   /**
    * Presentation-only: hide one attention item from the global dashboard.
-   * Never mutates the underlying BB thread / Redteam scan / source state; the
+   * Never mutates the underlying VesnALIA thread / Redteam scan / source state; the
    * item stays visible in Active/Recent sections until its condition changes.
    */
   dismiss_attention: {

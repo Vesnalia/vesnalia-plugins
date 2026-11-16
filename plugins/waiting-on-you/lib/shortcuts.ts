@@ -1,7 +1,7 @@
-// The default binding for "open the next thread that needs you". bb owns the
+// The default binding for "open the next thread that needs you". VesnALIA owns the
 // live binding: users rebind it in Settings → Keyboard, and a default that
 // clashes with another command stays unbound.
-import type { PluginCommandShortcut } from "@get-bb/plugin-sdk/app";
+import type { PluginCommandShortcut } from "@vesnalia/plugin-sdk/app";
 import type { JumpModifier } from "./settings.ts";
 
 export const NEXT_THREAD_SHORTCUT: PluginCommandShortcut = {
@@ -34,7 +34,7 @@ export function formatShortcut(shortcut: PluginCommandShortcut): string {
     .join("+");
 }
 
-/** Command ids as bb's keyboard settings know them. */
+/** Command ids as VesnALIA's keyboard settings know them. */
 export const COMMAND_IDS = {
   nextThread: "next-thread",
   toggleList: "toggle-list",
@@ -56,7 +56,7 @@ export const NO_KEYS: HeldKeys = { meta: false, control: false, alt: false, shif
 
 /** The exact modifiers a jump setting asks for on this platform. */
 export function jumpKeys(modifier: JumpModifier, mac: boolean): HeldKeys | null {
-  // "mod" is ⌘ on macOS and Ctrl elsewhere, like bb's own shortcuts.
+  // "mod" is ⌘ on macOS and Ctrl elsewhere, like VesnALIA's own shortcuts.
   const mod = mac ? { meta: true } : { control: true };
   switch (modifier) {
     case "off":

@@ -2,8 +2,8 @@ import { z } from "zod";
 
 /**
  * Plugin preferences shared by every device: the chat list, the tree view and
- * the appearance of projects and sections. Stored on the BB server, so the
- * sidebar, the management page and the BB settings page show the same values.
+ * the appearance of projects and sections. Stored on the VesnALIA server, so the
+ * sidebar, the management page and the VesnALIA settings page show the same values.
  */
 export const CHAT_SORTS = ["activity", "title", "created"] as const;
 export type ChatSort = (typeof CHAT_SORTS)[number];
@@ -320,7 +320,7 @@ export function resolveStyle(input: {
   return { ...out, level };
 }
 
-export const EXPORT_KIND = "bb-project-folders-preferences";
+export const EXPORT_KIND = "alia-project-folders-preferences";
 export function exportPayload(prefs: Prefs, items: ItemStyles) {
   return { kind: EXPORT_KIND, version: 1, prefs, items };
 }

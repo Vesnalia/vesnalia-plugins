@@ -3,7 +3,7 @@
 // plugin host. Run: npm test  (node:test + type stripping)
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 
 const UUID = "11111111-1111-1111-1111-111111111111";
@@ -77,7 +77,7 @@ async function setup() {
     outputText: null,
     transcriptRows: 1,
   };
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "omp-subagents",
     sdk: {
       threads: {
@@ -145,9 +145,9 @@ async function setup() {
       }
     },
   } as never);
-  await plugin(bb);
+  await plugin(alia);
   const calls = (method: string) => world.hostCalls.filter((call) => call.method === method);
-  return { bb, harness, world, calls };
+  return { alia, harness, world, calls };
 }
 
 describe("thread binding and artifacts dir", () => {
@@ -339,7 +339,7 @@ describe("agent_patch", () => {
   });
 });
 
-describe("bb omp-subagents CLI", () => {
+describe("alia omp-subagents CLI", () => {
   it("inject keeps a --json that is part of the message, and replies in plain text", async () => {
     const { harness, world } = await setup();
     const result = await harness.behavior.runCli(["inject", "th_1", "please", "print", "--json", "output"]);

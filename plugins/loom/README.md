@@ -1,13 +1,13 @@
 # Loom
 
-Loom is a bb plugin that runs a software project with agents. You describe a
+Loom is a VesnALIA plugin that runs a software project with agents. You describe a
 goal, and a planner agent turns it into a spec: tickets with acceptance
 criteria, the checks that must pass, a review policy and a merge plan. Once you
 approve it, worker agents build the tickets in their own git worktrees,
 separate reviewer agents approve the work or send it back, and approved work
 merges into an integration branch or opens as pull requests. You follow and
-steer the project from the Loom page in bb's left navigation, or with
-`bb loom`.
+steer the project from the Loom page in VesnALIA's left navigation, or with
+`alia loom`.
 
 The plugin, not an agent, owns every state change. Agents get narrow tools for
 their role, and only Loom's own code moves a ticket, runs checks, merges, or
@@ -19,8 +19,8 @@ several.
 ## Install
 
 ```sh
-bb marketplace add git:github.com/kalindudc/bb-marketplace@main
-bb plugin install loom@kalindudc
+alia marketplace add git:github.com/kalindudc/bb-marketplace@main
+alia plugin install loom@kalindudc
 ```
 
 Loom needs:
@@ -29,7 +29,7 @@ Loom needs:
 - `gh`, signed in, for pull requests on GitHub. Other servers work through
   commands you put in the spec (see
   [Servers other than GitHub](#servers-other-than-github)).
-- Provider usage. The planner, workers and reviewers are ordinary bb threads,
+- Provider usage. The planner, workers and reviewers are ordinary VesnALIA threads,
   so your providers' limits apply to them. A token budget or a deadline in the
   spec has Loom pause the project for you.
 
@@ -43,7 +43,7 @@ Loom needs:
    planner, or press Approve to create the tickets.
 4. Press Start. Workers pick up ready tickets by themselves; answer a blocked
    ticket when the board asks.
-5. Land the work: press Land (or run `bb loom land <slug>`) on the integration
+5. Land the work: press Land (or run `alia loom land <slug>`) on the integration
    strategy, or merge the pull requests Loom opened.
 
 ## How a project runs
@@ -60,7 +60,7 @@ Loom needs:
    version that only changes operational settings skips it (see
    [Operational versions](#operational-versions)).
 3. Approve. You read the spec and approve it, and the tickets appear on the
-   board. `bb loom approve <slug> --skip-review` approves a draft whose spec
+   board. `alia loom approve <slug> --skip-review` approves a draft whose spec
    review has not passed, and `--version N --skip-review` a pending version.
 4. Start. Loom starts a worker thread for each ready ticket: its dependencies
    are done (on the pull request strategy, open pull requests are enough), and
@@ -79,15 +79,15 @@ Loom needs:
    worker writes the pull request and Loom opens it and follows it through CI
    (see [Pull requests](#pull-requests)).
 9. Land. On the integration strategy you read what will land on the Changes
-   tab, then run `bb loom land <slug>` to push the branch and open one pull
-   request, or `bb loom land <slug> --direct` to merge in the remote's base
+   tab, then run `alia loom land <slug>` to push the branch and open one pull
+   request, or `alia loom land <slug> --direct` to merge in the remote's base
    branch when it moved, run the `after_merge` checks on the result, and push
    straight to the base branch.
 
 `skills/loom/references/spec.md` lists every key of the spec with its default.
-Each `provider` in `[agents.worker]` and `[agents.reviewer]` must be a bb
+Each `provider` in `[agents.worker]` and `[agents.reviewer]` must be a VesnALIA
 provider id, such as `claude-code`, `codex` or `pi`. `loom_propose` refuses an
-unknown one and names the ids bb has; when bb's list cannot be read, the spec
+unknown one and names the ids VesnALIA has; when VesnALIA's list cannot be read, the spec
 is accepted unchecked.
 
 ### How many agents run at once
@@ -117,7 +117,7 @@ round and answers with its board tools (`loom_board`, `loom_ticket`,
 ticket goes to the planner at once, as a message that names the ticket.
 
 When the work is right and only needs another look, such as after reviewers
-that ended without a verdict or a status no fix can clear, `bb loom requeue
+that ended without a verdict or a status no fix can clear, `alia loom requeue
 CSV-1 --review` (Review again as is on the ticket page, or the planner's
 `loom_requeue` with `review: true`) sends it back with no new worker. Loom
 reads the ticket's branch first. When its open pull request already has all
@@ -126,7 +126,7 @@ fix rounds counted afresh; when the branch is still the commit whose checks
 passed last, it goes back to review for that commit in a new round. On the
 pull request strategy its worker's thread stays the ticket's released worker,
 so a review's requested changes, a later fix round or a catch-up with a
-dependency brings it back, or a new worker from the branch when bb cannot
+dependency brings it back, or a new worker from the branch when VesnALIA cannot
 restore it. Anything else is refused
 with the reason, such as a stacked ticket whose worker's thread cannot come
 back, and a plain requeue is the way on.
@@ -145,8 +145,8 @@ a step off once it sees you take it: an approval, a requeue, a reply, a start,
 a resume, a land, or a live mark on the ticket or milestone a `live` step names.
 Mark done checks off any other step, such as one you did outside Loom.
 
-When bb refuses to start a worker or a reviewer with a client error (an HTTP
-4xx status other than 408, 409 and 429), the ticket blocks at once with bb's
+When VesnALIA refuses to start a worker or a reviewer with a client error (an HTTP
+4xx status other than 408, 409 and 429), the ticket blocks at once with VesnALIA's
 message as the reason, because the same request would fail again. Any other
 failed start waits and tries again: after 1 minute, then twice as long each
 time, up to every 15 minutes. When the environment provider says it cannot
@@ -160,7 +160,7 @@ reviewer, and its card says why and when Loom tries again; a retry keeps the
 worker's attempt number and its branch. Approving a pending spec version
 queues again every blocked ticket whose worker never started, resets its
 failure counts and tells the planner which tickets it requeued. A ticket
-blocked because bb refused its reviewer goes back to review instead, in a new
+blocked because VesnALIA refused its reviewer goes back to review instead, in a new
 round for the same commit: its work already passed the checks. On the pull
 request strategy it keeps its newest worker's thread, as Review again as is
 does, so requested changes, or a fix round or a catch-up once its pull request
@@ -210,16 +210,16 @@ or a command forge's `open`, `state` or `feedback` command.
 
 ## The page
 
-Loom adds a full-screen page to bb's left navigation. The Loom icon in the
+Loom adds a full-screen page to VesnALIA's left navigation. The Loom icon in the
 navigation rail counts what needs you: the Needs you items and Loom threads
 waiting on a question or an approval. The count is amber, and red while a
-ticket is blocked. While the page is open, bb's sidebar lists Loom instead of
+ticket is blocked. While the page is open, VesnALIA's sidebar lists Loom instead of
 your threads: Home, the planning conversations, every project with what needs
 you in it, the open project's tickets that are moving or stuck (blocked first),
-done and archived projects folded away, How Loom works and New project. bb's
+done and archived projects folded away, How Loom works and New project. VesnALIA's
 title bar names the page, such as `Loom / CSV export › CSV-3`, with the project
 linking back to it. The page updates within about a second of an event,
-without a reload, catches up by itself after bb reconnects, and reopens a view
+without a reload, catches up by itself after VesnALIA reconnects, and reopens a view
 seen before at once. It remembers where you left it on this device: the Loom
 icon in the rail reopens the page you were on, each project opens on the tab
 you left it on, each view scrolls back to where you were, and the sidebar keeps
@@ -236,7 +236,7 @@ numbers and the Timeline into one row, each opening its full view with one
 click and folding back with another, and the About strip keeps the summary's first lines, so the tabs show on the first
 screen. The next-step bar's button goes under its sentence. Home draws each
 project as a card with its name, summary, state, what needs you and progress,
-the Agents tab stacks each thread's facts, and bb's title bar names a ticket's
+the Agents tab stacks each thread's facts, and VesnALIA's title bar names a ticket's
 project by its key.
 
 ### Home
@@ -264,14 +264,14 @@ fold into a Finished group at the bottom.
 
 ### New project
 
-New project shows bb's own new-thread composer, with its project, worktree,
+New project shows VesnALIA's own new-thread composer, with its project, worktree,
 branch, model and permission pickers; the permission picker starts on full. You
 can also settle the merge plan, name a reviewer model, and pick the repos the
-work spans: the repo picker lists bb's standard projects, takes up to 10, and
+work spans: the repo picker lists VesnALIA's standard projects, takes up to 10, and
 marks a project with no checkout on any machine. The picked repos are a
 starting point, not a limit.
 
-Submitting starts an ordinary bb thread as the planner, with the `loom-plan`
+Submitting starts an ordinary VesnALIA thread as the planner, with the `loom-plan`
 skill, and opens its Planner page. When Loom's Planner instructions setting
 has text, Loom adds it after your goal, for the planner only (see Hooks). Once
 it proposes, the conversation becomes the project's Planner tab. Conversations that have not proposed yet stay on the
@@ -318,7 +318,7 @@ link to each, and says what clears it:
 | --- | --- | --- |
 | Board | Blocked tickets (red) | each ticket is requeued, by you or by the planner in a triage round, or cancelled |
 | Spec | A draft or a pending version waiting for you | you approve it; comments get you a new version instead |
-| Planner, "?" | bb's word that the planner's thread waits for an answer, such as a question or a tool approval | it is answered, under Needs you or in the thread, or the planner's turn is stopped; reading the thread does not clear it |
+| Planner, "?" | VesnALIA's word that the planner's thread waits for an answer, such as a question or a tool approval | it is answered, under Needs you or in the thread, or the planner's turn is stopped; reading the thread does not clear it |
 | Planner, a number | The steps of the planner's newest `loom_ask_human` ask that are not done | Loom sees you take each step, or you mark it done; Set aside hides the whole ask |
 | Changes | Files of a project ready to land you have not marked Viewed | you mark each one Viewed (kept in this browser) |
 | Merge order | Pull requests merged into another ticket's branch, so their change is not on the base (red) | the ticket whose branch each went into merges, or you acknowledge it |
@@ -431,7 +431,7 @@ which version, and lists the operational settings it changed.
 ##### Operational versions
 
 A version whose changes against the version before it touch only operational
-settings skips the spec review, and you still approve it: `bb loom approve`
+settings skips the spec review, and you still approve it: `alia loom approve`
 and the page's Approve need no `--skip-review`. Operational settings say how
 Loom runs the project, not what it builds: the forge (`merge.forge`, a repo's
 `forge`), environments (`environment`, a repo's or a ticket's), `agents`,
@@ -449,7 +449,7 @@ refresh_behind", with each setting listed behind a disclosure.
 
 #### Planner
 
-![The Planner page while the planner waits on three questions, shown one at a time under Needs you, with the conversation named in bb's title bar](../../screenshots/loom/planner.png)
+![The Planner page while the planner waits on three questions, shown one at a time under Needs you, with the conversation named in VesnALIA's title bar](../../screenshots/loom/planner.png)
 
 The planner's work as a page, with its chat one click away under Conversation.
 A strip says whether it is working (and on what), waits on you or is idle, and,
@@ -459,7 +459,7 @@ before approval, where planning stands.
   at a time with "Use the recommended answers for the rest"; the steps it asked
   for with `loom_ask_human`, each checked off when done, each with Mark done
   for a step Loom cannot see you take, and Set aside for the whole ask; or a
-  version ready for your review. When bb says the thread waits on something
+  version ready for your review. When VesnALIA says the thread waits on something
   the page cannot show, such as a tool approval, a card says so and opens the
   thread to answer it there.
 - What happened tells its work in chapters, one per spec version and one for
@@ -480,7 +480,7 @@ the commit in review, and a working ticket's worktree as it is now, read again
 every 10 seconds. On the pull request strategy each ticket is compared with the
 remote's base branch.
 
-Each file shows its status and line counts, and opens its patch in bb's own
+Each file shows its status and line counts, and opens its patch in VesnALIA's own
 diff viewer, unified or split. Viewed marks stay in your browser and clear when
 a file changes again. On the branch, a panel carries Land and "Land to <base>"
 with what each pushes. A done project still shows what it merged, from the
@@ -647,10 +647,10 @@ Cancel button. Each button calls the same engine method as the matching command
 and is logged as a `human.action` event. Sync pull requests and Sync now are
 the exception: they only read, so they take one click and log nothing, and a
 read that failed or still runs turns their toast into a warning. Archive sits
-in the ⋯ menu. A project control or a ticket action says in bb's toast what it
-did, such as "Project started" or "CSV-2 requeued"; the toasts stay in bb's
+in the ⋯ menu. A project control or a ticket action says in VesnALIA's toast what it
+did, such as "Project started" or "CSV-2 requeued"; the toasts stay in VesnALIA's
 notification center. A
-change Loom refuses shows in bb's own error toast, as every failed change in bb
+change Loom refuses shows in VesnALIA's own error toast, as every failed change in VesnALIA
 does, with Loom's reason. A reply, a message to the planner, spec comments and
 New project also keep their errors beside the text you wrote.
 
@@ -772,11 +772,11 @@ its own pull request.
   See [Keeping pull requests fresh](#keeping-pull-requests-fresh).
 - While the pull request waits, its idle worker does not hold an environment.
   Once the worker has nothing in flight and its worktree holds exactly the
-  reviewed commit, Loom archives its thread, and bb frees the environment. A
-  fix round or a catch-up brings the same thread back: bb restores its
+  reviewed commit, Loom archives its thread, and VesnALIA frees the environment. A
+  fix round or a catch-up brings the same thread back: VesnALIA restores its
   environment on the worker's branch and the worker keeps its whole
   conversation, with a note that files git ignores must be set up again. When
-  bb cannot restore it, a new worker takes over from the branch and can read
+  VesnALIA cannot restore it, a new worker takes over from the branch and can read
   the earlier worker's thread. `merge.release_workers = false` keeps every
   worker until its pull request merges; a spec version approved later may
   change it either way.
@@ -798,7 +798,7 @@ auto_merge = { method = "squash" }
   once a pull request is ready, Loom posts that it waits, and asks the forge to
   merge only after you confirm the exact commit, with Confirm merge on the
   ticket page or its board card, or with
-  `bb loom auto-merge <slug> confirm --ticket CSV-1 --pr <url> --sha <full sha>`
+  `alia loom auto-merge <slug> confirm --ticket CSV-1 --pr <url> --sha <full sha>`
   (without them it prints the pull request and commit it would confirm). A confirmation names the pull
   request and commit you saw, and Loom refuses it once either has changed, so a
   new push always needs a new confirmation. You may confirm before the pull
@@ -861,9 +861,9 @@ auto_merge = { method = "squash" }
   turned it away in a way the worker can fix, and exit 4 in a way it cannot,
   with the reason in the output; any other failure is read like other forge
   commands' failures. See the spec reference for the details.
-- `bb loom auto-merge <slug> off` stops Loom's merging for the project, and
+- `alia loom auto-merge <slug> off` stops Loom's merging for the project, and
   `--ticket CSV-1` for one ticket; `on` turns it back on, and for a ticket
-  counts its attempts afresh. `bb loom auto-merge <slug> retry --ticket CSV-1`
+  counts its attempts afresh. `alia loom auto-merge <slug> retry --ticket CSV-1`
   clears an attempt in flight whose outcome Loom cannot see, so it asks again.
   `confirm --ticket CSV-1 --pr <url> --sha <full sha>` confirms a manual merge of that pull request at that commit.
 
@@ -897,13 +897,13 @@ auto_merge = { method = "squash", final_review = {} }   # or { model = "…", re
   What it leaves out is counted exactly, and a brief that left out anything
   the reviewer needs says so at its top. A pass of such an incomplete brief
   is not a full sanity check: Loom holds the merge until you run
-  `bb loom auto-merge <slug> accept --ticket CSV-1`, or `retry` for a new
+  `alia loom auto-merge <slug> accept --ticket CSV-1`, or `retry` for a new
   review.
 - It runs as one thread in an empty scratch directory under Loom's data
   directory on the project's machine, with everything in its brief: no
   worktree, environment provider or machine to provision, and nothing of
   yours in its working directory. It never runs in the repo's checkout:
-  should bb refuse the scratch directory, the review does not run and the
+  should VesnALIA refuse the scratch directory, the review does not run and the
   merge holds with a post. It is told not to run commands or change files.
   The threat is an accident, such as a reviewer that wanders into the
   checkout, not an adversary, so the guard is a cheap one: Loom fingerprints
@@ -932,12 +932,12 @@ auto_merge = { method = "squash", final_review = {} }   # or { model = "…", re
 - A review that does not start, times out, or ends its turn twice without a
   verdict never merges: Loom tries again 5, then 10 minutes later, and after
   3 such runs for one commit it holds the merge with a post.
-  `bb loom auto-merge <slug> retry --ticket CSV-1` lets it try again.
+  `alia loom auto-merge <slug> retry --ticket CSV-1` lets it try again.
   Each run is recorded before its thread starts, so a restart neither runs a
   second review for the commit nor merges without its verdict.
 - The ticket's posts and the feed record each run and its verdict, the
   Merge order tab says "Waiting for final review", "Final review running" or
-  "Final review failed: …", and `bb loom metrics` counts them.
+  "Final review failed: …", and `alia loom metrics` counts them.
 
 ### Asking for reviews
 
@@ -1007,7 +1007,7 @@ read that failed: up to 30 minutes after server errors or timeouts, and the
 same for every pull request on a host it could not reach. When you know a pull
 request merged, closed or got a review, you do not have to wait for that.
 Press Sync pull requests in the project's header, or Sync now on the ticket,
-or run `bb loom sync <slug>` (`--ticket <KEY>` for one).
+or run `alia loom sync <slug>` (`--ticket <KEY>` for one).
 
 - The read happens in the engine's next pass, as an ordinary check, so a merge
   completes the ticket, a close blocks it and new feedback starts a fix round,
@@ -1146,7 +1146,7 @@ apart from the Rollout section of each pull request's description.
   changed while it ran. Loom keeps checking after the project is done, until
   you archive it.
   Anything else waits for you: Mark live on the Rollout tab, or
-  `bb loom live <slug> <KEY or milestone>`.
+  `alia loom live <slug> <KEY or milestone>`.
 - Each going live is a `rollout.live` event, and your undo a `rollout.unlive`
   event, so the feed shows them. A check's last result stays on its row; it
   writes no event.
@@ -1158,12 +1158,12 @@ apart from the Rollout section of each pull request's description.
   told not to write deploy order into the description, and reviewers not to
   ask for a draft or a deploy order description; a reviewer who thinks the
   order is wrong says so in a should-fix finding.
-- `bb loom rollout <slug>` prints the same view as the tab, as sentences.
+- `alia loom rollout <slug>` prints the same view as the tab, as sentences.
 
 ## Multi-repo projects
 
 A spec with `[[repo]]` tables spans several repositories. Each `[[repo]]` names
-a bb project with a checkout on the machine the planner runs on, where the
+a VesnALIA project with a checkout on the machine the planner runs on, where the
 workers run too, and can set its own base, remote, checks, `after_merge` checks,
 protected paths, `git_network_timeout_seconds` and `git_index_timeout_seconds`; what it leaves out comes from
 the top level. Every ticket
@@ -1171,9 +1171,9 @@ names one repo and changes only that repo, with its scope relative to the
 repo's root, so work that spans repos is split into one ticket per repo, linked
 with `depends_on`.
 
-- Planning: the planner finds the repos with `bb project list --json` and
-  `bb project discover`, and offers to clone a repo with no checkout on this
-  machine with `bb project source add <id> --clone --machine <host>`, which it
+- Planning: the planner finds the repos with `alia project list --json` and
+  `alia project discover`, and offers to clone a repo with no checkout on this
+  machine with `alia project source add <id> --clone --machine <host>`, which it
   runs only after you agree. `loom_propose` refuses a repo without a checkout
   and names the same command.
 - Workers: one worker per ticket, in a worktree of its ticket's repo. Its brief,
@@ -1181,11 +1181,11 @@ with `depends_on`.
   edit. Scopes collide
   only within one repo, so tickets in different repos run side by side. Checks
   and review use the ticket's repo's own checks and protected paths.
-- Merging: `bb loom start` creates an integration branch of the same name in
+- Merging: `alia loom start` creates an integration branch of the same name in
   every repo, from each repo's base. The merge queue still runs one merge at a
   time per project, across every repo. On the pull request strategy each pull
   request opens in its ticket's repo, on that repo's remote and base.
-- Landing: `bb loom land <slug>` lands every repo with merged work, each with
+- Landing: `alia loom land <slug>` lands every repo with merged work, each with
   its own pull request; `--repo <name>` lands one repo, and `--direct` pushes
   each repo to its own base. When one repo fails, the repos before it stay
   landed and the error says what to run next. The project is done when every
@@ -1199,17 +1199,17 @@ with `depends_on`.
   alone. A repo that cannot be read, such as one with no checkout on the
   project's machine, says why in its own section. The header links each repo's
   pull request, and the land buttons name the repos they land.
-- `bb loom show` lists each repo with its bb project, base, integration branch,
-  pull request and land, and `bb loom tickets` adds a repo column.
+- `alia loom show` lists each repo with its VesnALIA project, base, integration branch,
+  pull request and land, and `alia loom tickets` adds a repo column.
 - After approval, a new spec version may add repos, but cannot remove or rename
-  one or change its bb project, base or remote.
+  one or change its VesnALIA project, base or remote.
 
 ## Servers other than GitHub
 
 Loom opens pull requests with `gh` unless the spec says otherwise, and it
 knows no other server by name. Before proposing, the planner calls
 `loom_discover`, which reports for each repo its git remotes, whether `gh` can
-open pull requests where it pushes, the environment providers bb offers for it
+open pull requests where it pushes, the environment providers VesnALIA offers for it
 on this machine, and whether Loom can add its own integration worktree. Each
 choice is found or ask; the planner asks you the ask items in one round, and
 `loom_propose` refuses a spec that leaves one of them open.
@@ -1248,9 +1248,9 @@ choice is found or ask; the planner asks you the ask items in one round, and
   matches the whole name, case-sensitively: `*` matches any run of characters,
   `?` one character, and everything else is literal, such as
   `"Review Bot*"`. Use it for advisory statuses, such as a review bot's.
-  `bb loom forge check` lists what it drops.
+  `alia loom forge check` lists what it drops.
 - `[environment]` starts the threads Loom runs in a repository (workers,
-  reviewers, the spec reviewer and the summary agent) in a bb environment
+  reviewers, the spec reviewer and the summary agent) in a VesnALIA environment
   provider, such as one a plugin adds, with `inputs` in which Loom fills
   `{branch}` and `{base}` for each thread. Its `reviewer` table gives
   reviewers, the spec reviewer and the summary agent another provider, or a
@@ -1264,7 +1264,7 @@ choice is found or ask; the planner asks you the ask items in one round, and
 Every key, with the commands' variables and output, is in the loom skill's
 `references/spec.md`.
 
-`bb loom forge check <slug> <CSV-1 or pull request URL>` tests a repo's forge
+`alia loom forge check <slug> <CSV-1 or pull request URL>` tests a repo's forge
 against a live pull request. It runs the repo's own forge read on the
 project's machine, as a poll would (gh's read, or the spec's `feedback`
 command, else its `state` command), and prints what Loom reads: the state,
@@ -1279,11 +1279,11 @@ project. It changes nothing in Loom, so planners may run it too.
 ### Threads on new machines
 
 `machine = { provider, inputs }` in a repo's `[environment]` starts each of its
-workers and reviewers on a new machine of its own, from any bb machine
+workers and reviewers on a new machine of its own, from any VesnALIA machine
 provider, instead of on the machine with the project's checkout. Loom names no
 provider; it tells a thread on another machine by its environment's host, and
 reads the machine providers and the environments that make a new machine
-themselves from bb. `loom_discover` lists them under "New machine per thread",
+themselves from VesnALIA. `loom_discover` lists them under "New machine per thread",
 with the environments earlier approved projects chose for a repository with
 the same remote, and the planner proposes one on every project and confirms it
 with you.
@@ -1333,7 +1333,7 @@ with you.
   and say to stash them.
 - A machine provider that cannot start a machine now (`machine_provider_rejected`)
   makes the ticket wait as for an unavailable environment provider, and an
-  idle caused by bb moving a thread's machine does not count.
+  idle caused by VesnALIA moving a thread's machine does not count.
 - A spec version that adds or removes `machine` on a running project moves
   only new threads. A thread that runs keeps its machine: a worker's submits
   still come home from a machine or stay on the checkout, it keeps
@@ -1346,12 +1346,12 @@ with you.
 ### Environments with limited room
 
 Some environment providers can run only so many threads at once, for example a
-pool of prepared checkouts. Loom knows none of them by name; it reads what bb
+pool of prepared checkouts. Loom knows none of them by name; it reads what VesnALIA
 reports:
 
 - A provider whose availability check answers `unavailable` on the machine
-  makes bb refuse the new thread with `environment_provider_rejected`. Loom
-  waits and tries again, and the wait counts no attempt. So does any error bb
+  makes VesnALIA refuse the new thread with `environment_provider_rejected`. Loom
+  waits and tries again, and the wait counts no attempt. So does any error VesnALIA
   marks `retryable`. This is the contract for a provider with no room: answer
   `unavailable` until there is some. A ticket waits like this for at most an
   hour, then blocks with a reason that says so, so triage hears of it. The same
@@ -1365,7 +1365,7 @@ reports:
   (see [Pull requests](#pull-requests)), reviewers can use a lighter
   environment, and each ticket can ask for only what it touches.
 
-What bb would need for Loom to tell "no room" apart while provisioning: a
+What VesnALIA would need for Loom to tell "no room" apart while provisioning: a
 retryable failure from `create` and `restore`, such as
 `{ status: "failed", message, retry: { reason: "capacity", afterMs } }`,
 reported on the thread's provisioning error as a category (`capacity`) with
@@ -1375,32 +1375,32 @@ does for an unavailable provider.
 ## Commands
 
 ```sh
-bb loom list                                 # every project with its state and ticket count
-bb loom show <slug>                          # state, goal, merge setup, spec versions, ticket counts, next step
-bb loom spec <slug> [--version N]            # the spec as TOML
-bb loom tickets <slug> [--state s,s]         # the board
-bb loom ticket CSV-1                         # a ticket and its reply thread
-bb loom metrics <slug> [--days N] [--json]   # flow and agent metrics; --days sets the window (default 14)
-bb loom feed <slug> [--after <id>] [--json]  # the newest 200 events as sentences; --after pages forward from an id
-bb loom report <slug> [--send]               # the project's record as Markdown; --send runs the done hook again
-bb loom approve <slug> [--version N] [--skip-review]  # approve a draft (creates the tickets) or a pending version
-bb loom start <slug>                         # workers start by themselves
-bb loom pause <slug> [--now]                 # --now also stops the worker threads
-bb loom resume <slug>
-bb loom post CSV-1 "text" --reply-to <id>    # your reply; the ticket's worker gets it, or the planner when it is blocked
-bb loom block CSV-1 "reason"
-bb loom requeue CSV-1 --note "answer"        # a blocked ticket back to the queue
-bb loom requeue CSV-1 --review               # review again as is: back to review or to its open pull request, no new worker
-bb loom cancel CSV-1 "reason"
-bb loom land <slug> [--title t] [--ready]    # integration strategy: push the branch, open one pull request
-bb loom land <slug> --direct                 # integration strategy: merge in the remote's base, check, push to it
-bb loom land <slug> --repo <name>            # multi-repo project: land only this repo
-bb loom sync <slug> [--ticket CSV-1]         # pull request strategy: read the open pull requests now
-bb loom forge check <slug> CSV-1 [--version N]  # read a live pull request through the repo's forge, as a poll would
-bb loom rollout <slug>                       # the deploy order: next safe step, warnings, stages, milestones
-bb loom live <slug> CSV-1 [--note t] [--undo]  # mark a rollout step or milestone live, or take the mark back
-bb loom auto-merge <slug> off|on|retry|accept|confirm [--ticket CSV-1] [--pr <url> --sha <sha>]  # stop or resume Loom's merging; retry clears a ticket's attempt or held final review; accept merges on an incomplete one; confirm lets a manual merge go
-bb loom archive <slug>
+alia loom list                                 # every project with its state and ticket count
+alia loom show <slug>                          # state, goal, merge setup, spec versions, ticket counts, next step
+alia loom spec <slug> [--version N]            # the spec as TOML
+alia loom tickets <slug> [--state s,s]         # the board
+alia loom ticket CSV-1                         # a ticket and its reply thread
+alia loom metrics <slug> [--days N] [--json]   # flow and agent metrics; --days sets the window (default 14)
+alia loom feed <slug> [--after <id>] [--json]  # the newest 200 events as sentences; --after pages forward from an id
+alia loom report <slug> [--send]               # the project's record as Markdown; --send runs the done hook again
+alia loom approve <slug> [--version N] [--skip-review]  # approve a draft (creates the tickets) or a pending version
+alia loom start <slug>                         # workers start by themselves
+alia loom pause <slug> [--now]                 # --now also stops the worker threads
+alia loom resume <slug>
+alia loom post CSV-1 "text" --reply-to <id>    # your reply; the ticket's worker gets it, or the planner when it is blocked
+alia loom block CSV-1 "reason"
+alia loom requeue CSV-1 --note "answer"        # a blocked ticket back to the queue
+alia loom requeue CSV-1 --review               # review again as is: back to review or to its open pull request, no new worker
+alia loom cancel CSV-1 "reason"
+alia loom land <slug> [--title t] [--ready]    # integration strategy: push the branch, open one pull request
+alia loom land <slug> --direct                 # integration strategy: merge in the remote's base, check, push to it
+alia loom land <slug> --repo <name>            # multi-repo project: land only this repo
+alia loom sync <slug> [--ticket CSV-1]         # pull request strategy: read the open pull requests now
+alia loom forge check <slug> CSV-1 [--version N]  # read a live pull request through the repo's forge, as a poll would
+alia loom rollout <slug>                       # the deploy order: next safe step, warnings, stages, milestones
+alia loom live <slug> CSV-1 [--note t] [--undo]  # mark a rollout step or milestone live, or take the mark back
+alia loom auto-merge <slug> off|on|retry|accept|confirm [--ticket CSV-1] [--pr <url> --sha <sha>]  # stop or resume Loom's merging; retry clears a ticket's attempt or held final review; accept merges on an incomplete one; confirm lets a manual merge go
+alia loom archive <slug>
 ```
 
 Every command takes `--json`. Each project gets a sidebar section named
@@ -1423,7 +1423,7 @@ ready or paused, starting or resuming it makes the section again.
 ## Metrics
 
 Every metric is computed from the append-only event log and the plugin's
-tables, so it can be recomputed at any time. `bb loom metrics <slug>` prints
+tables, so it can be recomputed at any time. `alia loom metrics <slug>` prints
 them, and `--json` prints the same numbers for scripts and agents. `--days N`
 (1 to 90) sets the window for throughput and cumulative flow; every other
 metric covers the whole project. The page's [Insights](#insights) tab shows the
@@ -1456,25 +1456,25 @@ time it to done.
 
 ## When a project finishes
 
-`bb loom report <slug>` prints the project's record as Markdown, built from its
+`alia loom report <slug>` prints the project's record as Markdown, built from its
 board with no agent: the goal, where the code landed, and for each ticket its
 acceptance criteria, submit summaries, reviews, merge, blocks, and the
 planner's and your replies. Worker notes and check output are left out. On a
-multi-repo project it lists each repo with its bb project, base and integration
+multi-repo project it lists each repo with its VesnALIA project, base and integration
 branch, and gives one outcome line per repo. It works in any state, and
 `--json` prints `{ slug, markdown }`.
 
-Loom's done hook sends that record wherever you keep notes. Set it in bb's
+Loom's done hook sends that record wherever you keep notes. Set it in VesnALIA's
 settings for Loom, or from a terminal:
 
 ```sh
-bb plugin config loom set doneHook 'cat >> "$HOME/notes/loom-$LOOM_PROJECT_SLUG.md"'
-bb plugin config loom set doneRecord summary   # or full
+alia plugin config loom set doneHook 'cat >> "$HOME/notes/loom-$LOOM_PROJECT_SLUG.md"'
+alia plugin config loom set doneRecord summary   # or full
 ```
 
 - `doneHook` is a shell command that Loom runs once when a project moves to
   done, in the project's checkout on the project's machine, with a 2-minute
-  limit. Empty, the default, turns the hook off. It runs with the PATH of bb's
+  limit. Empty, the default, turns the hook off. It runs with the PATH of VesnALIA's
   host process, so give a tool's absolute path when it is not found.
 - The command reads the record on standard input and gets these variables:
   `LOOM_PROJECT_SLUG`, `LOOM_PROJECT_NAME`, `LOOM_PROJECT_KEY`,
@@ -1490,10 +1490,10 @@ bb plugin config loom set doneRecord summary   # or full
   problems and fixes, follow-ups and files. The agent starts only when a hook
   is set, and when it cannot start, fails or takes longer than 30 minutes, the
   hook reads the full record instead. With `full`, no agent runs.
-- `bb loom feed` and the Insights tab say when the record was sent, or why
+- `alia loom feed` and the Insights tab say when the record was sent, or why
   the hook failed. A project
   that finished before the hook was set is not sent;
-  `bb loom report <slug> --send` sends it, for a backfill or after a failure.
+  `alia loom report <slug> --send` sends it, for a backfill or after a failure.
 
 ## Hooks
 
@@ -1522,7 +1522,7 @@ conversation or in your standing instructions, and confirms the details with
 you. Loom delivers each hook once per event and only delivers it: it checks
 nothing a hook asks for and holds no ticket back for one. The feed and the
 Insights tab record each delivery and each failure. A command that failed or
-that a restart interrupted never runs again. A send to the planner that bb
+that a restart interrupted never runs again. A send to the planner that VesnALIA
 refuses is tried again on the next pass, three sends in all, before it fails.
 
 ```toml
@@ -1536,11 +1536,11 @@ tell = "Add this pull request to the project's Shuttle board, and create the boa
 ```
 
 Standing instructions make the planner write the same hooks for every
-project. Set them in bb's settings for Loom (Planner instructions), or from a
+project. Set them in VesnALIA's settings for Loom (Planner instructions), or from a
 terminal:
 
 ```sh
-bb plugin config loom set plannerInstructions 'Use Shuttle: when a project starts, create a PR board for it, and add every pull request Loom opens to that board.'
+alia plugin config loom set plannerInstructions 'Use Shuttle: when a project starts, create a PR board for it, and add every pull request Loom opens to that board.'
 ```
 
 `plannerInstructions` is up to 4,000 characters and empty by default. Loom
@@ -1553,13 +1553,13 @@ that applies to the project, or adds a hook nobody asked for.
 ## Settings
 
 Besides the done hook and the planner instructions, Loom has four settings for
-pull requests. Set them in bb's settings for Loom, or from a terminal:
+pull requests. Set them in VesnALIA's settings for Loom, or from a terminal:
 
 ```sh
-bb plugin config loom set checksSettleMinutes 45
-bb plugin config loom set checksQueuedMinutes 10
-bb plugin config loom set checksNearDonePercent 90
-bb plugin config loom set commentSignature '<sub>Posted by Loom</sub>'
+alia plugin config loom set checksSettleMinutes 45
+alia plugin config loom set checksQueuedMinutes 10
+alia plugin config loom set checksNearDonePercent 90
+alia plugin config loom set commentSignature '<sub>Posted by Loom</sub>'
 ```
 
 - `checksSettleMinutes` is the longest Loom waits for a pull request's
@@ -1591,10 +1591,10 @@ settings for that project.
   to review comments with the server's CLI, but never pushes, merges, closes,
   approves or edits the pull request; the plugin pushes, never with force, and
   you merge. On the integration strategy nothing is pushed until you run
-  `bb loom land`, and only `bb loom land --direct` pushes to the base branch,
+  `alia loom land`, and only `alia loom land --direct` pushes to the base branch,
   never with force and only after the `after_merge` checks pass on what it
   pushes.
-- Workers and reviewers run in bb's full permission mode unless the spec sets
+- Workers and reviewers run in VesnALIA's full permission mode unless the spec sets
   `permission_mode`, because some providers, such as pi, accept no other mode.
   An approved spec keeps the mode it was approved with.
 - The human's controls (`approve`, `start`, `pause`, `resume`, `archive`,
@@ -1602,16 +1602,16 @@ settings for that project.
   refuse Loom's own planner, worker and reviewer threads with the code
   `loom_human_only`.
 - The page's RPC changes state, and starts a planner thread, only when the call
-  carries `confirm: true`, and it refuses calls from other plugins. bb cannot
-  tell the page from an agent running `bb plugin rpc`, so the skill tells
+  carries `confirm: true`, and it refuses calls from other plugins. VesnALIA cannot
+  tell the page from an agent running `alia plugin rpc`, so the skill tells
   agents never to call Loom's RPC.
 - Loom's human-only controls rely on agents not impersonating the human. An
-  agent with a shell can call the page's RPC with `bb plugin rpc`, or run the
-  CLI with its bb thread identity stripped, for example
-  `env -u BB_THREAD_ID bb loom auto-merge <slug> confirm …`, and Loom then
+  agent with a shell can call the page's RPC with `alia plugin rpc`, or run the
+  CLI with its VesnALIA thread identity stripped, for example
+  `env -u ALIA_THREAD_ID alia loom auto-merge <slug> confirm …`, and Loom then
   records the call as the human's, a merge confirmation included. Loom refuses
   every call it can tell comes from its own threads, but it cannot tell these
-  apart from the human. Closing this needs bb to report where each call came
+  apart from the human. Closing this needs VesnALIA to report where each call came
   from.
 
 ## How it works
@@ -1626,21 +1626,21 @@ settings for that project.
   checkout on the project's machine.
 - `src/projects.ts` is the service: proposals, approval, lifecycle, the board's
   posts and the role lookup. `src/tools.ts` registers the agent tools per role,
-  `src/cli.ts` is `bb loom`, and `src/bb-port.ts` is the one adapter over
-  `bb.sdk`, faked in tests.
+  `src/cli.ts` is `alia loom`, and `src/alia-port.ts` is the one adapter over
+  `alia.sdk`, faked in tests.
 - `src/scheduler.ts` is pure: which tickets are ready, how many slots are free.
-  `src/slots.ts` hands work back to workers as slots free up, and asks bb which
+  `src/slots.ts` hands work back to workers as slots free up, and asks VesnALIA which
   threads wait for you.
   `src/workers.ts`, `src/checks.ts`, `src/triage.ts`, `src/review.ts` and
   `src/merge.ts` are the engine's parts, and `src/engine.ts` is the control
-  loop that ticks every 15 seconds, reconciles after a restart and handles bb's
+  loop that ticks every 15 seconds, reconciles after a restart and handles VesnALIA's
   thread events.
 - `host.ts` and `src/host/ops.ts` run on the machine that owns the checkout:
   git through argv, the repo's server for pull requests (`gh`, the spec's own
   commands, or none), and check commands in their own process group. Every git
-  and `gh` process waits for a turn in bb's VCS scheduler, which caps how many
+  and `gh` process waits for a turn in VesnALIA's VCS scheduler, which caps how many
   run at once: the Changes tab's reads go first, and Loom's own work runs in the
-  background. Check and forge shell commands do not wait. bb sends a quick local
+  background. Check and forge shell commands do not wait. VesnALIA sends a quick local
   git read (`worktreeState`, `diff`, `changedFiles`, `filePatch`, `remotes`)
   again when the machine's answer is lost; a fetch, a write or a forge read is
   never sent twice.
@@ -1648,7 +1648,7 @@ settings for that project.
   are pure; `src/reports.ts` reads them for the CLI, `src/insights.ts` builds
   the Insights tab, and `src/replay.ts` rewinds a project's rows to one event
   for the Timeline and for a rewound page. `src/rpc.ts` serves
-  the page. The page reads through bb's tagged query cache: each read carries
+  the page. The page reads through VesnALIA's tagged query cache: each read carries
   tags from `src/rpc-tags.ts` (`project:<slug>` for a live read of one project,
   `loom` for the rest; a rewound read carries none), and each change declares
   the tags it refreshes. After a project's events, and after any change that
@@ -1659,7 +1659,7 @@ settings for that project.
   plugin error.
 - `app.tsx` and `src/ui/` are the page. The app imports only types from
   `src/contract.ts`, so zod stays out of its bundle: `src/ui/contract-client.ts`
-  gives bb's query hooks the same methods and tags with schemas that pass every
+  gives VesnALIA's query hooks the same methods and tags with schemas that pass every
   value through, and the server checks them. Its charts are small SVG
   components. `src/spec-view.ts` serves one spec version to the page,
   parsed and compared with the one before, and `src/activity.ts` groups a
@@ -1668,10 +1668,10 @@ settings for that project.
 ## Credit
 
 The structure follows
-[bb-autoresearch](https://github.com/pascal-de-ladurantaye/bb-autoresearch)
+[alia-autoresearch](https://github.com/pascal-de-ladurantaye/bb-autoresearch)
 (MIT): role-scoped tools re-checked against the plugin's own table, an
 append-only events table with triggers, strict zod specs with reworded errors,
-and a `BbPort` adapter faked in tests. The claim, retry and reconcile ideas come
+and a `AliaPort` adapter faked in tests. The claim, retry and reconcile ideas come
 from OpenAI's Symphony `SPEC.md`.
 
 ## Develop
@@ -1680,9 +1680,9 @@ from OpenAI's Symphony `SPEC.md`.
 npm install --registry https://registry.npmjs.org
 npm test
 npm run typecheck
-bb plugin build
-bb plugin install ./plugins/loom   # from this repository's root, to try it
+alia plugin build
+alia plugin install ./plugins/loom   # from this repository's root, to try it
 ```
 
 The registry flag matters on machines whose configured package proxy cannot
-serve the `@get-bb/plugin-sdk` tarball.
+serve the `@vesnalia/plugin-sdk` tarball.

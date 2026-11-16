@@ -3,10 +3,10 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
-const executableName = process.platform === "win32" ? "bb.exe" : "bb";
+const executableName = process.platform === "win32" ? "alia.exe" : "alia";
 const candidates = [
-  process.env.BB_BIN,
-  join(homedir(), ".bb", "bin", executableName),
+  process.env.ALIA_BIN,
+  join(homedir(), ".vesnalia", "bin", executableName),
   executableName,
 ].filter(Boolean);
 
@@ -24,6 +24,6 @@ for (const candidate of candidates) {
   process.exit(result.status ?? 1);
 }
 
-console.error("BB CLI was not found. Install BB or set BB_BIN to the CLI executable.");
+console.error("VesnALIA CLI was not found. Install VesnALIA or set ALIA_BIN to the CLI executable.");
 if (lastError) console.error(lastError.message);
 process.exit(1);

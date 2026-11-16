@@ -3,14 +3,14 @@ import * as Dialog from "@radix-ui/react-dialog";
 import {
   definePluginApp,
   experimental_Icon as Icon,
-  useBbContext,
+  useAliaContext,
   type PluginCommandRegistration,
   type PluginThreadHeaderActionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { FocusReader, type FocusReaderState } from "./reader";
 import "./app.css";
 
-const OPEN_FOCUS = "bb-plugin-focus-mode:open";
+const OPEN_FOCUS = "alia-plugin-focus-mode:open";
 
 function openFocus(threadId: string) {
   window.dispatchEvent(new CustomEvent(OPEN_FOCUS, { detail: threadId }));
@@ -29,7 +29,7 @@ function FocusButton({ threadId }: PluginThreadHeaderActionProps) {
   return (
     <button
       type="button"
-      className="bb-focus-mode-button bb-focus-mode-trigger"
+      className="alia-focus-mode-button alia-focus-mode-trigger"
       aria-label="Enter focus mode"
       title="Focus mode"
       onClick={() => openFocus(threadId)}
@@ -40,7 +40,7 @@ function FocusButton({ threadId }: PluginThreadHeaderActionProps) {
 }
 
 function FocusOverlay() {
-  const route = useBbContext();
+  const route = useAliaContext();
   const [threadId, setThreadId] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
   const returnFocus = useRef<HTMLElement | null>(null);
@@ -68,9 +68,9 @@ function FocusOverlay() {
   return (
     <Dialog.Root open={threadId !== null} onOpenChange={() => setThreadId(null)}>
       <Dialog.Portal>
-        <Dialog.Overlay className="bb-focus-mode-backdrop" />
+        <Dialog.Overlay className="alia-focus-mode-backdrop" />
         <Dialog.Content
-          className="bb-focus-mode-reader"
+          className="alia-focus-mode-reader"
           onOpenAutoFocus={(event) => {
             if (!transcript.current) return;
             event.preventDefault();
@@ -81,19 +81,19 @@ function FocusOverlay() {
             if (returnFocus.current?.isConnected) returnFocus.current.focus();
           }}
         >
-          <Dialog.Title className="bb-focus-mode-sr-only">Focus mode</Dialog.Title>
-          <Dialog.Description className="bb-focus-mode-sr-only">
+          <Dialog.Title className="alia-focus-mode-sr-only">Focus mode</Dialog.Title>
+          <Dialog.Description className="alia-focus-mode-sr-only">
             Read the current conversation as text only, without tool output, the
             composer, or surrounding panels. Press Escape or Exit focus to return to your previous layout.
           </Dialog.Description>
-          <div className="bb-focus-mode-toolbar">
-            <Dialog.Close className="bb-focus-mode-button bb-focus-mode-exit">
+          <div className="alia-focus-mode-toolbar">
+            <Dialog.Close className="alia-focus-mode-button alia-focus-mode-exit">
               <Icon name="Minimize2" className="size-3.5" aria-hidden />
               Exit focus
               <kbd aria-hidden>Esc</kbd>
             </Dialog.Close>
             <span
-              className="bb-focus-mode-status"
+              className="alia-focus-mode-status"
               data-working={working ? "true" : "false"}
               role="status"
               aria-label={working ? "Agent is working" : "Agent is idle"}

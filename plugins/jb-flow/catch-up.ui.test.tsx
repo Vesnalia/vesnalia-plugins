@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { FlowState } from "./server";
 import type { WorkspaceState } from "./workspaces";
 import { selectWorkspace, setWorkspacesEnabled } from "./workspace-client";
@@ -196,7 +196,7 @@ describe("Catch up", () => {
   it("embeds the thread with its composer; r focuses it, and showing never marks read", async () => {
     const slot = await mount();
     await openDeck();
-    const chat = () => within(deck()).getByTestId("bb-thread-chat");
+    const chat = () => within(deck()).getByTestId("alia-thread-chat");
     expect(chat().getAttribute("data-thread-id")).toBe("a");
     expect(chat().getAttribute("data-variant")).toBe("compact");
     expect(chat().getAttribute("data-focus-request")).toBe("0");

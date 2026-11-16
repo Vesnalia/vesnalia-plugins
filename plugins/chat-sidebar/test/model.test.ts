@@ -42,7 +42,7 @@ describe("buildChats", () => {
     expect(ids(rows).sort()).toEqual(["child", "root"]);
   });
 
-  it("puts pins first in bb's manual order, then sorts by activity", () => {
+  it("puts pins first in VesnALIA's manual order, then sorts by activity", () => {
     const rows = buildChats(
       [
         thread("old", { updatedAt: NOW - 50_000 }),
@@ -276,7 +276,7 @@ describe("groupByProject", () => {
 });
 
 describe("pinNeighbors", () => {
-  it("returns the neighbours bb needs and the expected order", () => {
+  it("returns the neighbours VesnALIA needs and the expected order", () => {
     expect(pinNeighbors(["a", "b", "c"], "c", "a", "before")).toEqual({
       previousThreadId: null,
       nextThreadId: "a",

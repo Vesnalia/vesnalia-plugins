@@ -87,7 +87,7 @@ export function ThreadNotesPanel({ threadId }: { threadId: string }) {
             Captured from this thread
           </span>
         </div>
-        <div className="bb-fn-quiet-scroll min-h-0 flex-1 overflow-y-auto px-1.5 pb-1.5">
+        <div className="alia-fn-quiet-scroll min-h-0 flex-1 overflow-y-auto px-1.5 pb-1.5">
           {threadNotes.length === 0 ? (
             <p className="px-2 py-3 text-xs text-muted-foreground">
               Nothing captured yet — use “Save as note” on any message.

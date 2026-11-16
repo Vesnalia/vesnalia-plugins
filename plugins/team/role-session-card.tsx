@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type { SessionView } from "./session-view";
 import type { Language } from "./snapshot";
@@ -20,7 +20,7 @@ const COPY = {
     no_session: "У сотрудника пока нет рабочей сессии.", multiple_sessions: "У роли несколько тредов. Сначала определите актуальную сессию.", session_changed: "Сессия изменилась. Обновите карточку.",
     no_task: "С этой сессией не связана задача. Сначала назначьте и запустите задачу через Team; для руководителя — задачу координации. История старого треда не заменяет сохранённое состояние.",
     task_reassigned: "Задача назначена другой роли. Проверьте назначение в трекере.", tracker_unavailable: "Трекер недоступен. Восстановите доступ к задаче.", paused: "Автозапуск исполнителей приостановлен. Продолжите работу команды для передачи.",
-    failedReason: "Предыдущая передача завершилась ошибкой. Автоматический повтор отключён; проверьте действие восстановления в карточке сотрудника или bb team doctor.", replacement_pending: "Переключение уже начато. Повторный тред не создаётся; при ошибке требуется восстановление существующей передачи.",
+    failedReason: "Предыдущая передача завершилась ошибкой. Автоматический повтор отключён; проверьте действие восстановления в карточке сотрудника или VesnALIA team doctor.", replacement_pending: "Переключение уже начато. Повторный тред не создаётся; при ошибке требуется восстановление существующей передачи.",
   },
   en: {
     heading: "Work session", current: "Current thread", loading: "Loading session state…", refresh: "Refresh session state", failed: "Could not read session state", requestFailed: "Could not request handoff", task: "Linked task",
@@ -35,7 +35,7 @@ const COPY = {
     no_session: "This employee has no work session yet.", multiple_sessions: "This role has several threads. Resolve the current session first.", session_changed: "The session changed. Refresh the card.",
     no_task: "No task is linked to this session. Assign and start a task through Team first; a lead needs a coordination task. Old thread history is not saved handoff state.",
     task_reassigned: "The task belongs to another role. Check the tracker assignment.", tracker_unavailable: "The tracker is unavailable. Restore task access first.", paused: "Executor autostart is paused. Resume the team before handoff.",
-    failedReason: "The previous handoff failed. Automatic retry is disabled; inspect the recovery action in the employee card or bb team doctor.", replacement_pending: "A switch has already started. No duplicate thread will be created; a failed switch requires recovery.",
+    failedReason: "The previous handoff failed. Automatic retry is disabled; inspect the recovery action in the employee card or VesnALIA team doctor.", replacement_pending: "A switch has already started. No duplicate thread will be created; a failed switch requires recovery.",
   },
 } as const;
 

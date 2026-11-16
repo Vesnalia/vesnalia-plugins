@@ -5,12 +5,12 @@ import {
   definePluginApp,
   experimental_Icon as Icon,
   experimental_useCodeTheme,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
   type PluginThreadHeaderActionProps,
   type PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { z } from "zod";
 import type { DiffFile, DiffTarget, Location, rpcContract } from "./contract";
 
@@ -371,7 +371,7 @@ function DiffsPanel({ threadId }: PluginThreadPanelProps) {
 const OPEN_DIFFS = { actionId: "diffs" };
 
 function OpenDiffsButton(_: PluginThreadHeaderActionProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <button
       type="button"

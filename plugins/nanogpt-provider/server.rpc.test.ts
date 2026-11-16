@@ -1,4 +1,4 @@
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import nanoGptPlugin from "./server.js";
 import { NANO_GPT_API_KEY_ENV, NANO_GPT_PROVIDER_ID } from "./src/vocabulary.js";
@@ -22,7 +22,7 @@ function stubNanoGpt(status: number): { urls: string[]; keys: string[] } {
 
 function loadPlugin() {
   const host = createFakePluginHost({ pluginId: "nanogpt-provider" });
-  nanoGptPlugin(host.bb);
+  nanoGptPlugin(host.alia);
   return host;
 }
 
@@ -101,8 +101,8 @@ describe("the NanoGPT settings RPC", () => {
   it("reads a legacy null base URL without breaking status or provider env", async () => {
     stubNanoGpt(200);
     const host = createFakePluginHost({ pluginId: "nanogpt-provider" });
-    const define = vi.spyOn(host.bb.settings, "define");
-    nanoGptPlugin(host.bb);
+    const define = vi.spyOn(host.alia.settings, "define");
+    nanoGptPlugin(host.alia);
     const settings = define.mock.results[0].value;
     // Simulate an older store returning null instead of the string default.
     vi.spyOn(settings, "get").mockResolvedValue({
@@ -121,8 +121,8 @@ describe("the NanoGPT settings RPC", () => {
   it("stores an empty base URL as a string", async () => {
     stubNanoGpt(200);
     const host = createFakePluginHost({ pluginId: "nanogpt-provider" });
-    const define = vi.spyOn(host.bb.settings, "define");
-    nanoGptPlugin(host.bb);
+    const define = vi.spyOn(host.alia.settings, "define");
+    nanoGptPlugin(host.alia);
     const settings = define.mock.results[0].value;
     const save = vi.spyOn(settings, "experimental_set");
     await host.harness.behavior.callRpc("saveKey", {

@@ -13,7 +13,7 @@ const account = (email: string) => ({
 
 test("reads Codex resets on each connected machine and caches them", async () => {
   const calls: string[] = [];
-  const bb = {
+  const alia = {
     sdk: {
       hosts: {
         list: async () => [
@@ -48,7 +48,7 @@ test("reads Codex resets on each connected machine and caches them", async () =>
 
   // No Claude login here, so the Claude reader stays offline.
   process.env.CLAUDE_CONFIG_DIR = mkdtempSync(path.join(tmpdir(), "claude-"));
-  const sources = createResetSources(bb);
+  const sources = createResetSources(alia);
   const result = await sources.apply(snapshot);
   assert.deepEqual(
     result.providers[0]!.accounts?.map((row) => row.resetCredits),

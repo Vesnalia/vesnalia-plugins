@@ -10,7 +10,7 @@ import * as store from "../lib/store.mjs";
 
 type Fn = (...args: any[]) => any;
 
-function fakeBb(overrides: Record<string, unknown> = {}) {
+function fakeAlia(overrides: Record<string, unknown> = {}) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "pulse-server-"));
   const kv = new Map<string, unknown>();
   const rpc: Record<string, Fn> = {};
@@ -33,7 +33,7 @@ function fakeBb(overrides: Record<string, unknown> = {}) {
     output: () => ({ output: null }),
     ...(overrides as Record<string, Fn>),
   };
-  const bb = {
+  const alia = {
     settings: {
       define(desc: Record<string, { default?: unknown }>) {
         const defaults = Object.fromEntries(Object.entries(desc).map(([k, d]) => [k, d.default ?? ""]));
@@ -55,7 +55,7 @@ function fakeBb(overrides: Record<string, unknown> = {}) {
     events: { on: (name: string, f: Fn) => void (events[name] ??= []).push(f) },
     onDispose: (f: Fn) => void disposers.push(f),
   };
-  const loaded = { bb, home, kv, rpc, calls,
+  const loaded = { alia, home, kv, rpc, calls,
     count: (name: string) => calls[name]?.length ?? 0,
     emit: (name: string, payload: unknown) => events[name]?.forEach((f) => f(payload)),
     changeSettings: (next: Record<string, unknown>) => { values = { ...values, ...next }; onChange.forEach((f) => f({ ...values })); },
@@ -71,8 +71,8 @@ afterEach(async () => { while (live.length) await live.pop()!(); });
 const item = { id: "slack:1", source: "slack", kind: "reply", title: "Answer Sam" };
 
 test("a run whose cached thread was archived spawns and remembers a new one", async () => {
-  const f = fakeBb({ get: () => ({ id: "thr_old", archivedAt: 1, deletedAt: null }) });
-  await plugin(f.bb as never);
+  const f = fakeAlia({ get: () => ({ id: "thr_old", archivedAt: 1, deletedAt: null }) });
+  await plugin(f.alia as never);
   f.kv.set("thread:hourly", "thr_old");
   const res = await f.rpc.pulse_run_now!({ run: "hourly" });
   assert.equal(res.threadId, "thr_new");
@@ -82,8 +82,8 @@ test("a run whose cached thread was archived spawns and remembers a new one", as
 });
 
 test("a run thread that dies between probe and send is replaced, not wedged", async () => {
-  const f = fakeBb({ send: () => { throw new Error("409: thread is archived"); } });
-  await plugin(f.bb as never);
+  const f = fakeAlia({ send: () => { throw new Error("409: thread is archived"); } });
+  await plugin(f.alia as never);
   f.kv.set("thread:daily", "thr_old");
   const res = await f.rpc.pulse_run_now!({ run: "daily" });
   assert.equal(res.threadId, "thr_new");
@@ -92,13 +92,13 @@ test("a run thread that dies between probe and send is replaced, not wedged", as
 
 test("a pinned run thread whose send fails for good is skipped on later runs", async () => {
   const send = { ok: false };
-  const f = fakeBb({
+  const f = fakeAlia({
     send: ({ threadId }: { threadId: string }) => {
       if (threadId === "thr_pinned" && !send.ok) throw new Error("409: environment is unavailable");
       return {};
     },
   });
-  await plugin(f.bb as never);
+  await plugin(f.alia as never);
   f.changeSettings({ hourlyThread: "thr_pinned" });
   const first = await f.rpc.pulse_run_now!({ run: "hourly" });
   assert.equal(first.threadId, "thr_new");
@@ -118,11 +118,11 @@ test("a pinned run thread whose send fails for good is skipped on later runs", a
 });
 
 test("an action thread that can't be recorded is stopped and archived, and the click fails", async () => {
-  const f = fakeBb({
+  const f = fakeAlia({
     // The item disappears while the thread spawns, so recording the action fails.
     spawn: () => { fs.writeFileSync(path.join(f.home, "items.json"), JSON.stringify({ version: 1, items: {} })); return { id: "thr_orphan" }; },
   });
-  await plugin(f.bb as never);
+  await plugin(f.alia as never);
   store.upsert([item], "hourly", f.home);
   await assert.rejects(f.rpc.pulse_start_action!({ id: item.id }), /Couldn't record the agent thread/);
   assert.deepEqual(f.calls["threads.stop"]?.[0]?.[0], { threadId: "thr_orphan" });
@@ -130,8 +130,8 @@ test("an action thread that can't be recorded is stopped and archived, and the c
 });
 
 test("a finished action thread settles to ready with its Ready line", async () => {
-  const f = fakeBb({ spawn: () => ({ id: "thr_act" }) });
-  await plugin(f.bb as never);
+  const f = fakeAlia({ spawn: () => ({ id: "thr_act" }) });
+  await plugin(f.alia as never);
   store.upsert([item], "hourly", f.home);
   await f.rpc.pulse_start_action!({ id: item.id });
   f.emit("thread.idle", { thread: { id: "thr_act" }, lastAssistantText: "Drafted it.\n\n**Ready:** reply to Sam drafted" });
@@ -141,8 +141,8 @@ test("a finished action thread settles to ready with its Ready line", async () =
 });
 
 test("a changed schedule shows as pending reload, not paused, until reload", async () => {
-  const f = fakeBb();
-  await plugin(f.bb as never);
+  const f = fakeAlia();
+  await plugin(f.alia as never);
   f.changeSettings({ hourlyCron: "0 * * * *" });
   const snap = await f.rpc.pulse_snapshot!(null);
   const hourly = snap.automations.find((a: { run: string }) => a.run === "hourly");
@@ -153,8 +153,8 @@ test("a changed schedule shows as pending reload, not paused, until reload", asy
 });
 
 test("back-to-back snapshots reuse thread probes; a run still probes fresh", async () => {
-  const f = fakeBb();
-  await plugin(f.bb as never);
+  const f = fakeAlia();
+  await plugin(f.alia as never);
   for (const run of ["hourly", "daily", "weekly"]) f.kv.set(`thread:${run}`, `thr_${run}`);
   await f.rpc.pulse_snapshot!(null);
   const first = f.count("threads.get");

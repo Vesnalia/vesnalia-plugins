@@ -1,4 +1,4 @@
-// bb-plugin-souls — frontend.
+// alia-plugin-souls — frontend.
 //
 // Five surfaces, one data model:
 //   • navPanel  "Souls"      — the library: browse, hand-edit, delete, start an
@@ -12,7 +12,7 @@
 //                              confirmation `souls_delete` waits on.
 //   • messageDirective       — `::soul{id="…"}`, posted by an agent once it
 //                              has loaded its persona.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { SOUL_DIRECTIVE } from "./shared";
 import { SoulEmbed } from "./components/soul-embed";
 import {
@@ -35,7 +35,7 @@ export default definePluginApp((app) => {
   });
 
   // The AI-led interview ends here: `souls_propose` (and `souls_update` for a
-  // smaller edit) calls bb.ui.requestInput with rendererId "soul-review" and
+  // smaller edit) calls alia.ui.requestInput with rendererId "soul-review" and
   // waits for this card's submit.
   app.slots.pendingInteraction({ id: "soul-review", component: SoulReview });
   // `souls_delete` waits on this before it deletes anything.

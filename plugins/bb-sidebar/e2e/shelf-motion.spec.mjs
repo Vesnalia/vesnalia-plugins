@@ -28,7 +28,7 @@ test("docked Snoozed toggles do not animate stationary shelves below it", async 
         .slice([...section.parentElement.children].indexOf(section) + 1)
         .filter((node) => node.tagName === "SECTION");
       const before = below.map((node) => node.getBoundingClientRect().top);
-      const root = section.closest("[data-bb-sidebar-root]");
+      const root = section.closest("[data-alia-sidebar-root]");
       let sectionAnimations = 0;
       let rowAnimations = 0;
       const started = performance.now();
@@ -92,7 +92,7 @@ test("large settled shelves toggle without bulk or height animations", async ({ 
       for (let repeat = 0; repeat < 6; repeat++) {
         const sample = await settled.evaluate(async (section) => {
           const button = section.querySelector("button[aria-expanded]");
-          const root = section.closest("[data-bb-sidebar-root]");
+          const root = section.closest("[data-alia-sidebar-root]");
           const expanding = button.getAttribute("aria-expanded") === "false";
           const longTasks = [];
           const observer = new PerformanceObserver((entries) => {

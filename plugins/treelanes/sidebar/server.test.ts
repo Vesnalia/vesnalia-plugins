@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 
 const hosts: ReturnType<typeof createFakePluginHost>[] = [];
@@ -26,7 +26,7 @@ function lifecycleHost(childStatus = "idle") {
     } },
   });
   hosts.push(host);
-  plugin(host.bb);
+  plugin(host.alia);
   return host.harness;
 }
 
@@ -54,7 +54,7 @@ describe("manual thread order store", () => {
   it("saves and lists a complete order", async () => {
     const host = createFakePluginHost({ pluginId: "treelanes" });
     hosts.push(host);
-    plugin(host.bb);
+    plugin(host.alia);
 
     await host.harness.behavior.callRpc("saveOrder", {
       threadIds: ["thr_b", "thr_a"],
@@ -74,7 +74,7 @@ describe("manual thread order store", () => {
   it("rejects duplicate thread ids", async () => {
     const host = createFakePluginHost({ pluginId: "treelanes" });
     hosts.push(host);
-    plugin(host.bb);
+    plugin(host.alia);
     await expect(
       host.harness.behavior.callRpc("saveOrder", {
         threadIds: ["thr_a", "thr_a"],
@@ -85,7 +85,7 @@ describe("manual thread order store", () => {
   it("clears a deleted thread from the saved order", async () => {
     const host = createFakePluginHost({ pluginId: "treelanes" });
     hosts.push(host);
-    plugin(host.bb);
+    plugin(host.alia);
     await host.harness.behavior.callRpc("saveOrder", {
       threadIds: ["thr_a", "thr_b"],
     });

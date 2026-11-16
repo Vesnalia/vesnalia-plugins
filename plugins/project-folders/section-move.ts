@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Folder } from "./server";
 import { moveHostContract } from "./move-contract";
 import { within } from "./move-files";
@@ -23,10 +23,10 @@ type ArchiveManifest = {
 };
 
 /** Move a section to a new path on the same device, or re-point a section
- * whose directory was renamed outside BB: the old path becomes a
+ * whose directory was renamed outside VesnALIA: the old path becomes a
  * compatibility symlink so existing chat environments keep working. */
 export function makeSectionMoves(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   deps: {
     folders: () => Folder[];
     changed: () => void;
@@ -38,8 +38,8 @@ export function makeSectionMoves(
     detached?: (folder: Folder) => Promise<boolean>;
   },
 ) {
-  const db = bb.storage.database();
-  const host = bb.hosts.experimental_client({ contract: moveHostContract });
+  const db = alia.storage.database();
+  const host = alia.hosts.experimental_client({ contract: moveHostContract });
   const list = () =>
     (
       db.prepare("SELECT data FROM section_moves").all() as { data: string }[]
@@ -57,7 +57,7 @@ export function makeSectionMoves(
     let m: SectionMove | undefined;
     try {
       // Every row in the folders table is a real section; project roots are
-      // synthetic records over BB project sources and move via project_move.
+      // synthetic records over VesnALIA project sources and move via project_move.
       const folder = deps.folders().find((f) => f.id === input.folderId);
       if (!folder) throw new Error("Section not found.");
       if (deps.busyProjectMoves(folder.projectId))
@@ -146,7 +146,7 @@ export function makeSectionMoves(
             "Another section is inside the new path. Move it separately.",
           );
       }
-      const projects = await bb.sdk.projects.list();
+      const projects = await alia.sdk.projects.list();
       const free = (await deps.detached?.(folder)) ?? false;
       for (const p of projects)
         for (const s of p.sources) {
@@ -165,11 +165,11 @@ export function makeSectionMoves(
             within(s.path, destination)
           )
             throw new Error(
-              "Another BB project uses this path. Move the section within its own project folder.",
+              "Another VesnALIA project uses this path. Move the section within its own project folder.",
             );
         }
       const canonical = (p: string) => deps.canonical(folder.hostId, p);
-      const envs = await bb.sdk.environments.list();
+      const envs = await alia.sdk.environments.list();
       if (
         envs.some(
           (e) =>
@@ -194,7 +194,7 @@ export function makeSectionMoves(
           .map((e) => e.id),
       );
       const checkThreads = async (stop: boolean) => {
-        const current = await bb.sdk.environments.list();
+        const current = await alia.sdk.environments.list();
         const relevant = new Set(
           current
             .filter(
@@ -210,7 +210,7 @@ export function makeSectionMoves(
         );
         for (const archived of [false, true])
           for (let offset = 0; ; offset += 200) {
-            const threads = await bb.sdk.threads.list({
+            const threads = await alia.sdk.threads.list({
               projectId: folder.projectId,
               archived,
               includeHidden: true,
@@ -229,7 +229,7 @@ export function makeSectionMoves(
                 throw new Error(
                   "Finish the running chats in this section before changing its path.",
                 );
-              if (stop) await bb.sdk.threads.stop({ threadId: t.id });
+              if (stop) await alia.sdk.threads.stop({ threadId: t.id });
             }
             if (threads.length < 200) break;
           }
@@ -251,7 +251,7 @@ export function makeSectionMoves(
         return { destination, complete: true };
       }
       const existence = (
-        await bb.sdk.hosts.pathsExist({
+        await alia.sdk.hosts.pathsExist({
           hostId: folder.hostId,
           paths: [folder.path, destination],
         })

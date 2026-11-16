@@ -1,6 +1,6 @@
 import "./check-test-machine.mjs";
-// A person's characters over a Windows desktop's VNC (the desktop sweep): which keys go to bb-box-stream as their
-// character rather than to QEMU, and how they go, against a stand-in for the box's bb-box-stream.
+// A person's characters over a Windows desktop's VNC (the desktop sweep): which keys go to alia-box-stream as their
+// character rather than to QEMU, and how they go, against a stand-in for the box's alia-box-stream.
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -34,27 +34,27 @@ test("a key a layout types otherwise than a US keyboard goes as its character: F
   assert.deepEqual([typed("é"), typed("!"), typed("1", [SHIFT]), typed(0x1000436)], [true, true, true, true]);
 });
 
-test("characters go to bb-box-stream as cd and cu, each once it says it has typed it, where it answers BB_PING", async () => {
+test("characters go to alia-box-stream as cd and cu, each once it says it has typed it, where it answers ALIA_PING", async () => {
   const server = new FakeSelkies({});
   const input = windowsCharacterInput(async () => server.channel());
   const answering = (async () => {
     for (let answered = 0; answered < 3; ) {
-      await until("a ping", () => (server.pages[0]?.received.filter((message) => typeof message === "string" && message.startsWith("BB_PING,")).length ?? 0) > answered);
-      const ping = server.pages[0]!.received.filter((message): message is string => typeof message === "string" && message.startsWith("BB_PING,"))[answered]!;
-      await server.pages[0]!.send(`BB_PONG,${ping.slice(8)}`);
+      await until("a ping", () => (server.pages[0]?.received.filter((message) => typeof message === "string" && message.startsWith("ALIA_PING,")).length ?? 0) > answered);
+      const ping = server.pages[0]!.received.filter((message): message is string => typeof message === "string" && message.startsWith("ALIA_PING,"))[answered]!;
+      await server.pages[0]!.send(`ALIA_PONG,${ping.slice(8)}`);
       answered += 1;
     }
   })();
   await input.character!(true, 0xe9);
   await input.character!(false, 0xe9);
   await answering;
-  const sent = server.pages[0]!.received.filter((message): message is string => typeof message === "string" && /^(cd|cu|kd|ku|BB_PING),/.test(message));
-  assert.deepEqual(sent.map((message) => message.replace(/^BB_PING,\d+$/, "BB_PING")), ["BB_PING", "cd,233", "BB_PING", "cu,233", "BB_PING"]);
+  const sent = server.pages[0]!.received.filter((message): message is string => typeof message === "string" && /^(cd|cu|kd|ku|ALIA_PING),/.test(message));
+  assert.deepEqual(sent.map((message) => message.replace(/^ALIA_PING,\d+$/, "ALIA_PING")), ["ALIA_PING", "cd,233", "ALIA_PING", "cu,233", "ALIA_PING"]);
   await input.close();
   await server.close();
 });
 
-test("where bb-box-stream does not answer, as from an older image, characters go as Unicode keysyms' kd and ku, each with a short wait", async () => {
+test("where alia-box-stream does not answer, as from an older image, characters go as Unicode keysyms' kd and ku, each with a short wait", async () => {
   const server = new FakeSelkies({});
   const input = windowsCharacterInput(async () => server.channel());
   const started = Date.now();
@@ -67,7 +67,7 @@ test("where bb-box-stream does not answer, as from an older image, characters go
   await server.close();
 });
 
-test("a stream whose input connection takes long to open, as over SSH, is still taken for one that answers BB_PING", async () => {
+test("a stream whose input connection takes long to open, as over SSH, is still taken for one that answers ALIA_PING", async () => {
   const server = new FakeSelkies({});
   const input = windowsCharacterInput(async () => {
     await new Promise((resolve) => setTimeout(resolve, 1_500));
@@ -75,9 +75,9 @@ test("a stream whose input connection takes long to open, as over SSH, is still 
   });
   const answering = (async () => {
     for (let answered = 0; answered < 2; ) {
-      await until("a ping", () => (server.pages[0]?.received.filter((message) => typeof message === "string" && message.startsWith("BB_PING,")).length ?? 0) > answered);
-      const ping = server.pages[0]!.received.filter((message): message is string => typeof message === "string" && message.startsWith("BB_PING,"))[answered]!;
-      await server.pages[0]!.send(`BB_PONG,${ping.slice(8)}`);
+      await until("a ping", () => (server.pages[0]?.received.filter((message) => typeof message === "string" && message.startsWith("ALIA_PING,")).length ?? 0) > answered);
+      const ping = server.pages[0]!.received.filter((message): message is string => typeof message === "string" && message.startsWith("ALIA_PING,"))[answered]!;
+      await server.pages[0]!.send(`ALIA_PONG,${ping.slice(8)}`);
       answered += 1;
     }
   })();

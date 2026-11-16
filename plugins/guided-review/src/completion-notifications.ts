@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { Store } from "./store";
 
@@ -8,14 +8,14 @@ interface Pending {
   generationId: string; targetKey: string; occurredAt: number;
   status: "ready" | "error"; projectId: string;
 }
-const managers = new WeakMap<BbPluginApi, ReturnType<typeof createNotifications>>();
-export function completionNotifications(bb: BbPluginApi, store: Store) {
-  let manager = managers.get(bb);
-  if (!manager) { manager = createNotifications(bb, store); managers.set(bb, manager); }
+const managers = new WeakMap<AliaPluginApi, ReturnType<typeof createNotifications>>();
+export function completionNotifications(alia: AliaPluginApi, store: Store) {
+  let manager = managers.get(alia);
+  if (!manager) { manager = createNotifications(alia, store); managers.set(alia, manager); }
   return manager;
 }
 
-function createNotifications(bb: BbPluginApi, store: Store) {
+function createNotifications(alia: AliaPluginApi, store: Store) {
   let disposed = false;
   let flushing: Promise<void> | undefined;
   let dirty = false;
@@ -25,34 +25,34 @@ function createNotifications(bb: BbPluginApi, store: Store) {
     storageTail = next.then(() => {}, () => {});
     return next;
   }
-  bb.onDispose(() => { disposed = true; });
+  alia.onDispose(() => { disposed = true; });
 
   async function drain() {
-    const keys = await bb.storage.kv.list(PREFIX);
+    const keys = await alia.storage.kv.list(PREFIX);
     if (!keys.length || disposed) return;
     // Expire the outbox even when the optional recipient stays uninstalled.
     const liveKeys: string[] = [];
     await locked(async () => {
       for (const key of keys) {
         if (disposed) return;
-        const record = await bb.storage.kv.get<Pending>(key);
+        const record = await alia.storage.kv.get<Pending>(key);
         if (!record) continue;
-        if (Date.now() - record.occurredAt > MAX_AGE || !store.isCurrentGeneration(record.targetKey, record.generationId)) await bb.storage.kv.delete(key);
+        if (Date.now() - record.occurredAt > MAX_AGE || !store.isCurrentGeneration(record.targetKey, record.generationId)) await alia.storage.kv.delete(key);
         else liveKeys.push(key);
       }
     });
     if (!liveKeys.length || disposed) return;
     // Optional dependency. Older Needs You installs do not support durable activity.
-    const capability = await bb.sdk.plugins.callRpc({ pluginId: "inbox", method: "activityCapabilities", input: null,
+    const capability = await alia.sdk.plugins.callRpc({ pluginId: "inbox", method: "activityCapabilities", input: null,
       outputSchema: z.object({ version: z.literal(1) }) }).catch(() => null);
     if (!capability || disposed) return;
     for (const key of liveKeys) {
       if (disposed) return;
       const record = await locked(async () => {
-        const pending = await bb.storage.kv.get<Pending>(key);
+        const pending = await alia.storage.kv.get<Pending>(key);
         if (!pending || disposed) return null;
         if (Date.now() - pending.occurredAt > MAX_AGE || !store.isCurrentGeneration(pending.targetKey, pending.generationId) || store.getReview(pending.targetKey)?.status !== pending.status) {
-          await bb.storage.kv.delete(key);
+          await alia.storage.kv.delete(key);
           return null;
         }
         return pending;
@@ -63,7 +63,7 @@ function createNotifications(bb: BbPluginApi, store: Store) {
       // its read. Recheck immediately before dispatch, with no intervening await.
       if (!store.isCurrentGeneration(record.targetKey, record.generationId) || meta?.status !== record.status) continue;
       const title = (meta.title || store.getGuide(record.targetKey)?.title || "Review guide").slice(0, 240);
-      const result = await bb.sdk.plugins.callRpc({ pluginId: "inbox", method: "publishActivity", input: {
+      const result = await alia.sdk.plugins.callRpc({ pluginId: "inbox", method: "publishActivity", input: {
         sourceId: "guided-review", sourceName: "Guided Review", entityId: record.targetKey,
         eventId: record.generationId, occurredAt: record.occurredAt, projectId: record.projectId,
         title, status: record.status,
@@ -73,7 +73,7 @@ function createNotifications(bb: BbPluginApi, store: Store) {
       if (disposed) return;
       // A newer generation may have queued while this RPC was in flight.
       if (result) await locked(async () => {
-        if ((await bb.storage.kv.get<Pending>(key))?.generationId === record.generationId) await bb.storage.kv.delete(key);
+        if ((await alia.storage.kv.get<Pending>(key))?.generationId === record.generationId) await alia.storage.kv.delete(key);
       });
     }
   }
@@ -91,11 +91,11 @@ function createNotifications(bb: BbPluginApi, store: Store) {
       await locked(async () => {
         const key = `${PREFIX}${record.targetKey}`;
         const clockKey = `needs-you:clock:${record.targetKey}`;
-        const previous = await bb.storage.kv.get<number>(clockKey);
+        const previous = await alia.storage.kv.get<number>(clockKey);
         if (disposed || !store.isCurrentGeneration(record.targetKey, record.generationId)) return;
         const occurredAt = Math.max(Date.now(), (previous ?? 0) + 1);
-        await bb.storage.kv.set(clockKey, occurredAt);
-        await bb.storage.kv.set(key, { ...record, occurredAt });
+        await alia.storage.kv.set(clockKey, occurredAt);
+        await alia.storage.kv.set(key, { ...record, occurredAt });
         dirty = true;
       });
       await flush();

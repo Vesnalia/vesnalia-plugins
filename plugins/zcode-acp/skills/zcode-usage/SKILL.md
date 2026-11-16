@@ -1,12 +1,12 @@
 ---
 name: zcode-usage
-description: Inspect Coding Plan and Start Plan quotas shown in BB's provider usage panel.
+description: Inspect Coding Plan and Start Plan quotas shown in VesnALIA's provider usage panel.
 ---
 
-Open BB's usage panel and select the machine running ZCode. This plugin supplies
+Open VesnALIA's usage panel and select the machine running ZCode. This plugin supplies
 separate ZCode Coding Plan and ZCode Start Plan resources through the public
 provider-usage.v1 source RPC contract. The panel's Refresh button requests fresh
-quota for the selected rows. `bb settings usage --machine <id> --refresh --json`
+quota for the selected rows. `alia settings usage --machine <id> --refresh --json`
 also requests these rows through the normal panel API.
 
 To install or update Rust zcode-acp, open the ZCode plugin settings, choose the

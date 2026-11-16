@@ -28,7 +28,7 @@ async function chrome(): Promise<string> {
     await wait(1500);
     return opened.webSocketDebuggerUrl;
   } catch {}
-  const child = spawn(CHROME, ["--headless=new", `--remote-debugging-port=${PORT}`, "--user-data-dir=/tmp/bb-box-device-chrome", "--window-size=600,1100", "--no-first-run", PAGE], { detached: true, stdio: "ignore" });
+  const child = spawn(CHROME, ["--headless=new", `--remote-debugging-port=${PORT}`, "--user-data-dir=/tmp/alia-box-device-chrome", "--window-size=600,1100", "--no-first-run", PAGE], { detached: true, stdio: "ignore" });
   child.unref();
   for (let tries = 0; tries < 100; tries++) {
     await wait(100);
@@ -90,7 +90,7 @@ const IDB_HID_ORIENTATION: Readonly<Record<string, number>> = { upright: 0, "ups
 async function turnWithIdb(to: string): Promise<void> {
   const value = IDB_HID_ORIENTATION[to];
   if (value === undefined) throw new Error(`turn takes ${Object.keys(IDB_HID_ORIENTATION).join(", ")}`);
-  const client = new GrpcClient({ socket: join(homedir(), ".bb-box", "device", "idb.sock") });
+  const client = new GrpcClient({ socket: join(homedir(), ".alia-box", "device", "idb.sock") });
   try {
     for await (const _ of client.call(GRPC_METHODS.idb.hid, [encode(IDB_SCHEMA, "idb.HIDEvent", { orientation: { orientation: value } })])) void _;
   } finally {
@@ -99,7 +99,7 @@ async function turnWithIdb(to: string): Promise<void> {
 }
 
 const RECORD_FRAMES = `(() => {
-  const device = session.element.querySelector(".bb-device-stage > div > div");
+  const device = session.element.querySelector(".alia-device-stage > div > div");
   const veil = device.querySelectorAll("div")[0].querySelectorAll("div")[1];
   window.turnLog = [];
   const began = performance.now();
@@ -361,12 +361,12 @@ async function main(): Promise<void> {
         await turnFrames(cdp, rest[0]!, numbers[1] || 1500, rest[2] ?? rest[0]!);
         break;
       case "freehid": {
-        const pid = Number(readFileSync(join(homedir(), ".bb-box", "device", "server.pid"), "utf8").trim());
+        const pid = Number(readFileSync(join(homedir(), ".alia-box", "device", "server.pid"), "utf8").trim());
         await fetch(`${HARNESS}/api/owner?holder=agent`);
         await cdp.evaluate("control(false)");
         process.kill(pid, "SIGTERM");
         for (let tries = 0; tries < 100 && spawnSync("kill", ["-0", String(pid)]).status === 0; tries++) await wait(50);
-        spawnSync("launchctl", ["kickstart", `gui/${process.getuid!()}/app.bb-box.device`]);
+        spawnSync("launchctl", ["kickstart", `gui/${process.getuid!()}/app.alia-box.device`]);
         await wait(1500);
         await cdp.send("Page.reload");
         for (let tries = 0; tries < 150 && !(await cdp.evaluate<boolean>("typeof session !== 'undefined' && session.connection.state === 'connected' && window.drawn.length > 0").catch(() => false)); tries++) await wait(100);

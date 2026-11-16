@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, waitFor } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
-import { loadPluginApp, renderSlot } from '@get-bb/plugin-sdk/testing/app';
+import { loadPluginApp, renderSlot } from '@vesnalia/plugin-sdk/testing/app';
 
 const app=await loadPluginApp(()=>import('./app'));
 let active:ReturnType<typeof renderSlot>|null=null;

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type HTMLAttributes, type ReactNode, type Ref } from "react";
 import * as Popover from "@radix-ui/react-popover";
-import { useSdk, useSidebarThreadDraft, useSidebarThreadRowStatus, type PluginSidebarProject, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useSdk, useSidebarThreadDraft, useSidebarThreadRowStatus, type PluginSidebarProject, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { createPreviewLoader, type PreviewData } from "./previewData";
 import { ThreadPreviewCard } from "./ThreadPreviewCard";
 import { resolveThreadStatus } from "./threadStatus";

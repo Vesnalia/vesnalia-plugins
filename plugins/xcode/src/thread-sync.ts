@@ -1,5 +1,5 @@
 /**
- * Folding BB's background-command exits into the builds they launched.
+ * Folding VesnALIA's background-command exits into the builds they launched.
  *
  * This is the only verdict source for agent-launched shell and XcodeBuildMCP
  * builds, which never write an `.xcresult` of their own. The parsing lives in

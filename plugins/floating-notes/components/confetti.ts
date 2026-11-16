@@ -34,7 +34,7 @@ export function confettiBurst(x: number, y: number): void {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
   const canvas = document.createElement("canvas");
-  canvas.className = "bb-fn-confetti";
+  canvas.className = "alia-fn-confetti";
   canvas.width = window.innerWidth * window.devicePixelRatio;
   canvas.height = window.innerHeight * window.devicePixelRatio;
   const context = canvas.getContext("2d");

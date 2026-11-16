@@ -24,18 +24,18 @@ test("follows checkpoint cursors even when a page is shorter than the requested 
   assert.doesNotMatch(paths[1], /order=/);
 });
 
-test("persists the BB thread session mapping for stateless rewinds", async (t) => {
+test("persists the VesnALIA thread session mapping for stateless rewinds", async (t) => {
   const dataDir = await mkdtemp(join(tmpdir(), "opencode2-sessions-"));
   t.after(() => rm(dataDir, { recursive: true, force: true }));
 
   const server = new OpenCodeServer();
   server.setDataDir(dataDir);
-  await server.rememberSessionRegistration("bb-thread", {
+  await server.rememberSessionRegistration("alia-thread", {
     providerThreadId: "ses_123",
     cwd: "/repo",
     usage: { input: 1, output: 2, reasoning: 3, cacheRead: 4, cacheWrite: 5 },
   });
-  assert.deepEqual(await server.lookupSessionRegistration("bb-thread"), {
+  assert.deepEqual(await server.lookupSessionRegistration("alia-thread"), {
     providerThreadId: "ses_123",
     cwd: "/repo",
     usage: { input: 1, output: 2, reasoning: 3, cacheRead: 4, cacheWrite: 5 },
@@ -46,12 +46,12 @@ test("persists the BB thread session mapping for stateless rewinds", async (t) =
   const restarted = new OpenCodeServer();
   restarted.setDataDir(dataDir);
   assert.equal(
-    (await restarted.lookupSessionRegistration("bb-thread"))?.providerThreadId,
+    (await restarted.lookupSessionRegistration("alia-thread"))?.providerThreadId,
     "ses_123",
   );
-  await restarted.forgetSessionRegistration("bb-thread");
+  await restarted.forgetSessionRegistration("alia-thread");
   assert.equal(
-    await restarted.lookupSessionRegistration("bb-thread"),
+    await restarted.lookupSessionRegistration("alia-thread"),
     undefined,
   );
 });
@@ -63,7 +63,7 @@ test("serializes MCP registry mutations without dropping persisted entries", asy
   await writeFile(
     path,
     JSON.stringify({
-      existing: { serverName: "bb_existing", cwd: "/existing" },
+      existing: { serverName: "alia_existing", cwd: "/existing" },
     }),
   );
 
@@ -71,25 +71,25 @@ test("serializes MCP registry mutations without dropping persisted entries", asy
   server.setDataDir(dataDir);
   await Promise.all([
     server.rememberMcpRegistration("session-a", {
-      serverName: "bb_a",
+      serverName: "alia_a",
       cwd: "/a",
     }),
     server.rememberMcpRegistration("session-b", {
-      serverName: "bb_b",
+      serverName: "alia_b",
       cwd: "/b",
     }),
     server.rememberMcpRegistration("session-c", {
-      serverName: "bb_c",
+      serverName: "alia_c",
       cwd: "/c",
     }),
   ]);
 
   const stored = JSON.parse(await readFile(path, "utf8"));
   assert.deepEqual(stored, {
-    existing: { serverName: "bb_existing", cwd: "/existing" },
-    "session-a": { serverName: "bb_a", cwd: "/a" },
-    "session-b": { serverName: "bb_b", cwd: "/b" },
-    "session-c": { serverName: "bb_c", cwd: "/c" },
+    existing: { serverName: "alia_existing", cwd: "/existing" },
+    "session-a": { serverName: "alia_a", cwd: "/a" },
+    "session-b": { serverName: "alia_b", cwd: "/b" },
+    "session-c": { serverName: "alia_c", cwd: "/c" },
   });
 
   await Promise.all([
@@ -98,7 +98,7 @@ test("serializes MCP registry mutations without dropping persisted entries", asy
   ]);
   const remaining = JSON.parse(await readFile(path, "utf8"));
   assert.deepEqual(remaining, {
-    existing: { serverName: "bb_existing", cwd: "/existing" },
-    "session-c": { serverName: "bb_c", cwd: "/c" },
+    existing: { serverName: "alia_existing", cwd: "/existing" },
+    "session-c": { serverName: "alia_c", cwd: "/c" },
   });
 });

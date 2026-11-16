@@ -31,7 +31,7 @@ Suggest clickable follow-up prompts above the composer when a thread finishes.
 - Sending any message clears the banner: follow-ups belong to the answer
   they were drafted from. The ✕ dismisses it early, even while it's still
   looking.
-- A `bb followups` command: `show` and `clear` a thread's follow-ups, switch
+- A `alia followups` command: `show` and `clear` a thread's follow-ups, switch
   one thread `on` or `off`, check the `model`, and `cleanup` leftover workers.
 
 ## How it works
@@ -44,9 +44,9 @@ worker that writes the full first-person message with the conversation as
 context. Queued or dispatched messages and the thread going active again
 wipe the stored follow-ups, so the banner disappears.
 
-Choose the model under Settings → Follow-ups model: BB's native
+Choose the model under Settings → Follow-ups model: VesnALIA's native
 provider/model picker, saved per installation. With no saved choice,
-follow-ups use BB's primary default model.
+follow-ups use VesnALIA's primary default model.
 
 ## Cost and safety
 
@@ -64,4 +64,4 @@ not a sandbox.
 
 Agents do not write follow-ups: the banner is the user's surface. The bundled
 skill tells an agent to leave it alone and only inspect it with
-`bb followups show` when asked.
+`alia followups show` when asked.

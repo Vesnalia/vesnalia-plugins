@@ -106,7 +106,7 @@ describe("prompts", () => {
 
   it("hands the asking agent the panel line first, then the answers", () => {
     const started = askStartedText('::moa-advisors{id="x:0"}', "x:0");
-    expect(started).toContain('write this line in your reply, on its own. BB shows it as a live panel of their answers:\n::moa-advisors{id="x:0"}');
+    expect(started).toContain('write this line in your reply, on its own. VesnALIA shows it as a live panel of their answers:\n::moa-advisors{id="x:0"}');
     expect(started).toContain('call moa_answers with round "x:0"');
 
     const answers = askAnswersText([{ label: "Pi", text: "Use SQS.", error: null }], '::moa-advisors{id="x:0"}');

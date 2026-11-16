@@ -38,14 +38,14 @@ interface ImageFinder {
   photo(title: string): Promise<SearchedImage | null>;
 }
 
-/** Reads the reply's thread's state from BB for Changes, Commits, PullRequest, Threads and Environments. */
+/** Reads the reply's thread's state from VesnALIA for Changes, Commits, PullRequest, Threads and Environments. */
 export type ProjectReader = (request: ProjectRequest) => Promise<ProjectResult>;
 
 async function findAll(keys: readonly string[], find: (key: string) => Promise<SearchedImage | null>): Promise<Map<string, SearchedImage | null>> {
   return new Map(await Promise.all(keys.map(async (key) => [key, await find(key)] as const)));
 }
 
-/** `roots` as markdown, with image searches, Wikipedia photos and BB reads resolved. */
+/** `roots` as markdown, with image searches, Wikipedia photos and VesnALIA reads resolved. */
 async function rootsMarkdown(roots: readonly UiNode[], find: ImageFinder | undefined, project: ProjectReader | undefined): Promise<string> {
   const requests = project === undefined ? [] : projectRequests(roots);
   const [images, photos, answers] = await Promise.all([
@@ -89,7 +89,7 @@ function findFences(lines: readonly string[]): Fence[] {
 
 function appPointer(html: string): string {
   const title = /<title>([^<]{1,120})<\/title>/i.exec(html)?.[1]?.trim();
-  return `_Interactive app${title ? `: ${title}` : ""}. Open this reply in BB to use it._`;
+  return `_Interactive app${title ? `: ${title}` : ""}. Open this reply in VesnALIA to use it._`;
 }
 
 async function uiMarkdown(spec: string, load: Loader, find: ImageFinder | undefined, project: ProjectReader | undefined): Promise<string> {
@@ -205,7 +205,7 @@ async function imageProblems(
   visit(roots);
   return (await Promise.all([...paths].map(async (src) => {
     const result = await read(src);
-    return result.ok ? [] : [`${src}: ${result.error}. Copy the image into this thread's workspace, $BB_THREAD_STORAGE or /tmp and use that path.`];
+    return result.ok ? [] : [`${src}: ${result.error}. Copy the image into this thread's workspace, $ALIA_THREAD_STORAGE or /tmp and use that path.`];
   }))).flat();
 }
 

@@ -33,7 +33,7 @@ test('treats a different thread in the same project as new context', () => {
   );
 });
 
-test('reads the project and thread from a BB project route', () => {
+test('reads the project and thread from a VesnALIA project route', () => {
   assert.deepEqual(
     projectRouteContext(
       'https://bb.test/projects/proj_alpha/threads/thread_one',

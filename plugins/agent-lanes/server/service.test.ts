@@ -1,14 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { LANES_CHANGED, type LaneNeighbors, type LanesSnapshot } from "../shared/model";
 import { emptyIndex, foldEvents, INDEX_VERSION, type IndexEvent, type IndexThread } from "./indexer";
 import { LanesStorage } from "./storage";
 
-type Subscription = Parameters<BbPluginApi["sdk"]["subscribe"]>[0];
+type Subscription = Parameters<AliaPluginApi["sdk"]["subscribe"]>[0];
 type ThreadSubscription = Extract<Subscription, { event: "thread:changed" }>;
-type EventListArgs = Parameters<BbPluginApi["sdk"]["threads"]["events"]["list"]>[0];
+type EventListArgs = Parameters<AliaPluginApi["sdk"]["threads"]["events"]["list"]>[0];
 const hosts: ReturnType<typeof createFakePluginHost>[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) await host.harness.lifecycle.dispose();
@@ -39,7 +39,7 @@ function setup(initial: IndexEvent[] = []) {
   let subscription: ThreadSubscription | undefined;
   const unsubscribe = vi.fn();
   const list = vi.fn(async (args: EventListArgs) => {
-    // bb rejects pages over 100 events; the fake does the same so paging bugs surface here.
+    // VesnALIA rejects pages over 100 events; the fake does the same so paging bugs surface here.
     if (Number(args.limit ?? 100) > 100) throw new Error("HTTP 400: Thread event limit cannot exceed 100");
     return events.filter(event => event.seq > Number(args.afterSeq ?? 0)
     && (args.beforeSeq === undefined || event.seq < Number(args.beforeSeq))
@@ -58,7 +58,7 @@ function setup(initial: IndexEvent[] = []) {
     emit: (changes: ThreadSubscription extends { callback: (event: infer E) => void } ? E : never) => subscription!.callback(changes) };
 }
 async function boot(host: ReturnType<typeof setup>) {
-  await plugin(host.bb);
+  await plugin(host.alia);
   const service = host.harness.behavior.runService("lanes-indexer");
   await vi.waitFor(async () => {
     const window = await host.harness.behavior.callRpc("lanes_window", { since: 0 }) as LanesSnapshot;
@@ -70,8 +70,8 @@ async function boot(host: ReturnType<typeof setup>) {
 describe("lanes backend", () => {
   it("serves inclusive window overlaps and open blocks from SQLite without event reads", async () => {
     const host = setup();
-    await plugin(host.bb);
-    const storage = new LanesStorage(host.bb);
+    await plugin(host.alia);
+    const storage = new LanesStorage(host.alia);
     seed(storage, "old", 10, 50);
     seed(storage, "edge", 50, 100);
     seed(storage, "current", 150, 200);
@@ -86,8 +86,8 @@ describe("lanes backend", () => {
   });
   it("returns neighboring turns by latest end and earliest start, including older history", async () => {
     const host = setup();
-    await plugin(host.bb);
-    const storage = new LanesStorage(host.bb);
+    await plugin(host.alia);
+    const storage = new LanesStorage(host.alia);
     const day = 86400000;
     seedTurns(storage, "t", [["long", 1, 4 * day], ["short", 2 * day, 3 * day],
       ["visible", 6 * day, 7 * day], ["later", 12 * day, 13 * day], ["next", 10 * day, 11 * day]]);
@@ -99,8 +99,8 @@ describe("lanes backend", () => {
   });
   it("uses open turns' starts for previous neighbors and respects strict bounds", async () => {
     const host = setup();
-    await plugin(host.bb);
-    const storage = new LanesStorage(host.bb);
+    await plugin(host.alia);
+    const storage = new LanesStorage(host.alia);
     seedTurns(storage, "open", [["closed", 10, 40], ["running", 90, null]]);
     seedTurns(storage, "edges", [["ends-at-from", 10, 100], ["crosses-from", 90, 110],
       ["open-at-from", 100, null], ["starts-at-to", 200, 210], ["after-to", 201, null]]);
@@ -112,8 +112,8 @@ describe("lanes backend", () => {
   });
   it("omits threads with no outside turns and returns null for a missing side", async () => {
     const host = setup();
-    await plugin(host.bb);
-    const storage = new LanesStorage(host.bb);
+    await plugin(host.alia);
+    const storage = new LanesStorage(host.alia);
     seedTurns(storage, "inside", [["visible", 110, 120]]);
     seedTurns(storage, "before", [["prev", 10, 20]]);
     seedTurns(storage, "after", [["next", 210, 220]]);
@@ -129,8 +129,8 @@ describe("lanes backend", () => {
   });
   it("breaks neighboring turn ties consistently by start and then block id", async () => {
     const host = setup();
-    await plugin(host.bb);
-    const storage = new LanesStorage(host.bb);
+    await plugin(host.alia);
+    const storage = new LanesStorage(host.alia);
     seedTurns(storage, "t", [["earlier-start", 10, 90], ["prev-a", 20, 90], ["prev-z", 20, 90],
       ["next-z", 210, 220], ["next-a", 210, 230]]);
     const result = storage.neighbors(["t"], 100, 200).neighbors.t;
@@ -139,8 +139,8 @@ describe("lanes backend", () => {
   });
   it("queries neighbors for 200 threads through RPC in under 20ms without reading events", async () => {
     const host = setup();
-    await plugin(host.bb);
-    const storage = new LanesStorage(host.bb);
+    await plugin(host.alia);
+    const storage = new LanesStorage(host.alia);
     const threadIds = Array.from({ length: 200 }, (_, i) => `neighbor-${i}`);
     for (const threadId of threadIds) {
       seedTurns(storage, threadId, Array.from({ length: 20 }, (_, j) => [`${threadId}-${j}`, j * 1000, j * 1000 + 500]));
@@ -157,8 +157,8 @@ describe("lanes backend", () => {
   });
   it("includes handoffs whose target overlaps and resolves the sender turn independent of index order", async () => {
     const host = setup();
-    await plugin(host.bb);
-    const storage = new LanesStorage(host.bb);
+    await plugin(host.alia);
+    const storage = new LanesStorage(host.alia);
     seed(storage, "child", 30, 200, "parent");
     seed(storage, "parent", 1, 100);
     const snapshot = storage.window(150, false);
@@ -168,8 +168,8 @@ describe("lanes backend", () => {
   });
   it.each(["child-completed", "child-failed"])("resolves %s to the child's last turn ending before the report", async systemMessageKind => {
     const host = setup();
-    await plugin(host.bb);
-    const storage = new LanesStorage(host.bb);
+    await plugin(host.alia);
+    const storage = new LanesStorage(host.alia);
     const parent: IndexThread = { id: "parent", parentThreadId: null, status: "active", updatedAt: 130 };
     const report = event(1, "client/turn/requested", "", { requestId: "end", source: "tell", initiator: "system",
       systemMessageKind, systemMessageSubject: { kind: "thread", threadId: "worker", outcomes: [{ threadId: "worker", status: "completed" }] } }, 100);
@@ -191,8 +191,8 @@ describe("lanes backend", () => {
   });
   it("leaves end handoffs unbound when the child has no turn ending by the report time", async () => {
     const host = setup();
-    await plugin(host.bb);
-    const storage = new LanesStorage(host.bb);
+    await plugin(host.alia);
+    const storage = new LanesStorage(host.alia);
     const parent: IndexThread = { id: "parent", parentThreadId: null, status: "active", updatedAt: 200 };
     storage.save(parent, foldEvents(emptyIndex(), [event(1, "client/turn/requested", "", { source: "tell", initiator: "system",
       systemMessageKind: "child-completed", systemMessageSubject: { kind: "thread", threadId: "worker", outcomes: [] } }, 50),
@@ -209,15 +209,15 @@ describe("lanes backend", () => {
       id: "t", status: "active", originKind: "fork", sourceThreadId: "source", parentThreadId: null,
     }));
     await boot(host);
-    const storage = new LanesStorage(host.bb);
+    const storage = new LanesStorage(host.alia);
     seed(storage, "source", 10, null);
     const snapshot = await host.harness.behavior.callRpc("lanes_window", { since: 0 }) as LanesSnapshot;
     expect(snapshot.handoffs).toMatchObject([{ kind: "fork", fromThreadId: "source", fromBlockId: "turn-source", toBlockId: "fork-turn", at: 50 }]);
   });
   it("rebuilds persisted indexes created before the current folding version", async () => {
     const host = setup([event(1, "turn/started", "turn")]);
-    await plugin(host.bb);
-    const storage = new LanesStorage(host.bb);
+    await plugin(host.alia);
+    const storage = new LanesStorage(host.alia);
     const thread: IndexThread = { id: "t", status: "active", parentThreadId: null, updatedAt: Date.now() };
     const stale = foldEvents(emptyIndex(), [event(100, "turn/started", "stale")], thread);
     stale.version = INDEX_VERSION - 1;
@@ -306,7 +306,7 @@ describe("lanes backend", () => {
   });
   it("resolves supported approvals once, with the typed allow/deny payload", async () => {
     const host = setup();
-    await plugin(host.bb);
+    await plugin(host.alia);
     host.harness.inspection.sdk.stub("threads.interactions.get", async () => ({ status: "pending", payload: {
       kind: "approval", availableDecisions: ["allow_once", "deny"],
     } }));
@@ -324,7 +324,7 @@ describe("lanes backend", () => {
     [{ status: "pending", payload: { kind: "approval", availableDecisions: ["allow_for_session", "deny"] } }, "in the thread"],
   ])("returns expected approval failures without throwing", async (interaction, message) => {
     const host = setup();
-    await plugin(host.bb);
+    await plugin(host.alia);
     host.harness.inspection.sdk.stub("threads.interactions.get", async () => interaction);
     const result = await host.harness.behavior.callRpc("lanes_decide", { threadId: "t", interactionId: "a", decision: "approve" });
     expect(result).toEqual({ ok: false, message: expect.stringContaining(message) });
@@ -332,7 +332,7 @@ describe("lanes backend", () => {
   });
   it("handles a resolution race as an ordinary decision failure", async () => {
     const host = setup();
-    await plugin(host.bb);
+    await plugin(host.alia);
     host.harness.inspection.sdk.stub("threads.interactions.get", async () => { throw new Error("Interaction no longer exists"); });
     expect(await host.harness.behavior.callRpc("lanes_decide", { threadId: "t", interactionId: "gone", decision: "reject" }))
       .toEqual({ ok: false, message: "Interaction no longer exists" });
@@ -347,7 +347,7 @@ describe("lanes backend", () => {
   it("retries a thread whose history read fails without failing the backfill", async () => {
     const host = setup([event(1, "turn/started", "turn")]);
     host.list.mockRejectedValueOnce(new Error("Transient history read failure"));
-    await plugin(host.bb);
+    await plugin(host.alia);
     const service = host.harness.behavior.runService("lanes-indexer");
     await vi.waitFor(async () => {
       const snapshot = await host.harness.behavior.callRpc("lanes_window", { since: 0 }) as LanesSnapshot;
@@ -365,7 +365,7 @@ describe("lanes backend", () => {
       entered();
       args.signal!.addEventListener("abort", () => reject(new Error("Aborted")), { once: true });
     }));
-    await plugin(host.bb);
+    await plugin(host.alia);
     const service = host.harness.behavior.runService("lanes-indexer");
     await reading;
     service.controller.abort();
@@ -378,7 +378,7 @@ describe("lanes backend", () => {
     let release!: (events: IndexEvent[]) => void;
     const reading = new Promise<void>(resolve => { entered = resolve; });
     host.list.mockImplementationOnce(() => new Promise(resolve => { release = resolve; entered(); }));
-    await plugin(host.bb);
+    await plugin(host.alia);
     const service = host.harness.behavior.runService("lanes-indexer");
     await reading;
     host.emit({ type: "changed", entity: "thread", id: "t", changes: ["thread-deleted"] });
@@ -390,10 +390,10 @@ describe("lanes backend", () => {
   });
   it("prints help and bounds CLI rows while retaining the total needing a person", async () => {
     const host = setup();
-    await plugin(host.bb);
-    const storage = new LanesStorage(host.bb);
+    await plugin(host.alia);
+    const storage = new LanesStorage(host.alia);
     for (let i = 0; i < 55; i++) seed(storage, `t${i}`, i, null);
-    expect((await host.harness.behavior.runCli([])).stdout).toContain("bb lanes now");
+    expect((await host.harness.behavior.runCli([])).stdout).toContain("alia lanes now");
     const result = await host.harness.behavior.runCli(["now", "--json"]);
     expect(result.exitCode).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({ total: 55, needsYou: 0, threads: expect.any(Array) });
@@ -402,8 +402,8 @@ describe("lanes backend", () => {
   });
   it("queries a seven-day window across 200 threads without scanning events", async () => {
     const host = setup();
-    await plugin(host.bb);
-    const storage = new LanesStorage(host.bb);
+    await plugin(host.alia);
+    const storage = new LanesStorage(host.alia);
     const now = Date.now();
     for (let i = 0; i < 200; i++) {
       const thread: IndexThread = { id: `perf-${i}`, status: "idle", parentThreadId: null, updatedAt: now };

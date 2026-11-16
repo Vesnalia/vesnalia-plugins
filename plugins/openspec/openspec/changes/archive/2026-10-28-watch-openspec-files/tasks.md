@@ -8,7 +8,7 @@
 - [x] 2.1 Implement the index and incremental task updates; use tests to verify no reads during idle and reads only for the changed file.
 - [x] 2.2 Add a native watcher, sharing, subscription cleanup, and root recreation; use tests to verify lifecycle and rescanning.
 
-## 3. bb Integration
+## 3. VesnALIA Integration
 
 - [x] 3.1 Switch the backend/frontend to watched queries and targeted invalidation; verify file and thread events, panel closure, and reconnect.
 - [x] 3.2 Update the documentation, run tests/typecheck/build/OpenSpec validation, and verify the installed plugin with real data without changing praxis/lore.

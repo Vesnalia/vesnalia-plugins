@@ -13,7 +13,7 @@ You should receive a response within 48 hours.
 
 ## Scope
 
-This policy covers the `bb-plugin-qwen-cli` codebase:
+This policy covers the `alia-plugin-qwen-cli` codebase:
 
 - `server.ts` — plugin registration and settings
 - `host.ts` — ACP bridge that launches Qwen CLI
@@ -54,7 +54,7 @@ or rotate it immediately before attempting history cleanup.
 
 Dependencies are kept minimal:
 
-- `@get-bb/plugin-sdk` — BB Plugin SDK (runtime)
+- `@vesnalia/plugin-sdk` — VesnALIA Plugin SDK (runtime)
 - `zod` — schema validation (transitive)
 
 Dependabot is configured to keep dependencies up to date. All updates are reviewed before merging.

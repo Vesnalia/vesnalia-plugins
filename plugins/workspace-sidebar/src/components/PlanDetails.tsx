@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { useSidebar } from "./sidebar-context";
 import { ModeIcon } from "./ThreadModes";

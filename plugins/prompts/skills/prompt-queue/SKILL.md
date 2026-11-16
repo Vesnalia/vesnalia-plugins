@@ -17,7 +17,7 @@ The Prompts plugin keeps two stores the user manages from the composer:
   **group** can be queued together as a checklist.
 
 The Prompts panel (left sidebar) also proposes snippets on its own: it mines
-bb's prompt history for prompts the user keeps retyping and offers them, one
+VesnALIA's prompt history for prompts the user keeps retyping and offers them, one
 click to save. Proposals the user dismisses stay dismissed.
 
 Above each thread's composer the plugin shows **quick replies**: one-tap
@@ -31,7 +31,7 @@ settings (`quickReplies`, `quickReplyTap`, `quickRepliesAfterStop`,
 
 - The user mentions work to do *after* the current task ("later", "after this",
   "when you're done", "next up"): queue it instead of starting it now — the
-  `prompts_queue` tool, or `bb prompts add <text>`. Arm or schedule it **only**
+  `prompts_queue` tool, or `alia prompts add <text>`. Arm or schedule it **only**
   when they clearly asked for it to run on its own.
 - Work that outlives this thread ("next time we work on this", "for the next
   session"): queue it with `scope: "project"`.
@@ -40,11 +40,11 @@ settings (`quickReplies`, `quickReplyTap`, `quickRepliesAfterStop`,
   to remember. A scheduled prompt sends at its time even if the agent is busy,
   and needs a thread scope.
 - The user asks to save something reusable: `prompts_snippet_save`, or
-  `bb prompts snip-add --title <t> [--keywords <k>] [--group <g>] <body…>`.
+  `alia prompts snip-add --title <t> [--keywords <k>] [--group <g>] <body…>`.
 - You need a saved prompt's text: `prompts_snippets` to find it,
   `prompts_snippet_get` to read it (pass `fill` to resolve its tokens).
 - The user asks what is worth turning into a snippet, or which prompts they
-  repeat: `bb prompts suggest` — do not re-derive this by reading history
+  repeat: `alia prompts suggest` — do not re-derive this by reading history
   yourself. Suggest, then let them choose; only save if they say so.
 
 ## Tools
@@ -57,31 +57,31 @@ settings (`quickReplies`, `quickReplyTap`, `quickRepliesAfterStop`,
 ## Commands
 
 ```
-bb prompts list [--json]                 # thread + project + global
-bb prompts add [-p|-g] [--arm] [--at +5m|ISO] <text…>
-bb prompts send <id>                     # send a queued prompt to this thread now
-bb prompts push <id>                     # move it into bb's native queue (auto-delivers next turn)
-bb prompts stash                         # pull ALL of bb's queued messages into the stash
-bb prompts arm|disarm <id>               # toggle auto-send-on-idle
-bb prompts run                           # arm the whole thread queue (drains in order)
-bb prompts pause | resume                # gate auto-send for this thread
-bb prompts promote [<id>]                # keep for the project, past this thread
-bb prompts rm <id>
-bb prompts snips [query] [--json]
-bb prompts snip-add --title <t> [--keywords <k>] [--group <g>] [--project] <body…>
-bb prompts snip-show <id> [--set key=value …]
-bb prompts snip-rm <id>
-bb prompts group <name> [-p|-g]          # queue a whole group as a checklist
-bb prompts suggest [--refresh] [--json]  # snippets worth saving, mined from retyped prompts
+alia prompts list [--json]                 # thread + project + global
+alia prompts add [-p|-g] [--arm] [--at +5m|ISO] <text…>
+alia prompts send <id>                     # send a queued prompt to this thread now
+alia prompts push <id>                     # move it into alia's native queue (auto-delivers next turn)
+alia prompts stash                         # pull ALL of alia's queued messages into the stash
+alia prompts arm|disarm <id>               # toggle auto-send-on-idle
+alia prompts run                           # arm the whole thread queue (drains in order)
+alia prompts pause | resume                # gate auto-send for this thread
+alia prompts promote [<id>]                # keep for the project, past this thread
+alia prompts rm <id>
+alia prompts snips [query] [--json]
+alia prompts snip-add --title <t> [--keywords <k>] [--group <g>] [--project] <body…>
+alia prompts snip-show <id> [--set key=value …]
+alia prompts snip-rm <id>
+alia prompts group <name> [-p|-g]          # queue a whole group as a checklist
+alia prompts suggest [--refresh] [--json]  # snippets worth saving, mined from retyped prompts
 ```
 
-`--` ends option parsing: `bb prompts add -- -g is part of the text`.
+`--` ends option parsing: `alia prompts add -- -g is part of the text`.
 
-bb's built-in Prompt Library plugin (`bb--prompt-library`, off by default) also
-registers `bb prompts`. When it is enabled, `bb prompts` runs its commands
+VesnALIA's built-in Prompt Library plugin (`alia--prompt-library`, off by default) also
+registers `alia prompts`. When it is enabled, `alia prompts` runs its commands
 (`search`, `list`, `star`, `title`, `unstar`) instead of these. Reach this
-plugin with the explicit form, `bb plugin run prompts <command> …`, for example
-`bb plugin run prompts add <text>`. The `prompts_*` tools are not affected.
+plugin with the explicit form, `alia plugin run prompts <command> …`, for example
+`alia plugin run prompts add <text>`. The `prompts_*` tools are not affected.
 
 ## Notes
 

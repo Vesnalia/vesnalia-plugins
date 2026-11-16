@@ -16,7 +16,7 @@ const SCOPE: ThreadScope = {
   threadId: "th_app",
   projectId: "proj_app",
   environmentId: "env_app",
-  path: "/Users/me/.bb/worktrees/env_app/App",
+  path: "/Users/me/.vesnalia/worktrees/env_app/App",
   hostId: null,
   branch: "feature/security",
   active: true,
@@ -323,7 +323,7 @@ describe("agent Xcode surfaces fail closed to the invoking thread", () => {
     expect(build).toEqual({
       exitCode: 1,
       stderr:
-        "Tracked builds require a bb thread so the checkout security boundary can be enforced.\n",
+        "Tracked builds require a VesnALIA thread so the checkout security boundary can be enforced.\n",
     });
     expect((await cli.dispatch(["rescan"], {})).exitCode).toBe(1);
     expect(

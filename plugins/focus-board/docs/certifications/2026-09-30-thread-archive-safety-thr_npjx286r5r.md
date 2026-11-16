@@ -23,13 +23,13 @@ nothing automatic can archive it while it still matters. Evidence gathered
 
 | # | Check | Result | Evidence |
 |---|-------|--------|----------|
-| 1 | Work merged through the two-branch model | PASS | Branch `bb/keep-the-sole-dropdown-search-result-visible-thr_npjx286r5r` is an ancestor of `dev` (`git branch --merged dev`); the feature commit is `7a55e95`, the branch reconciled with dev (`b1e0b49` — clean, no conflicts; dev's Unreleased changelog and `generate-unreleased` embed joined the branch) and dev fast-forwarded to `326f2ba` |
+| 1 | Work merged through the two-branch model | PASS | Branch `alia/keep-the-sole-dropdown-search-result-visible-thr_npjx286r5r` is an ancestor of `dev` (`git branch --merged dev`); the feature commit is `7a55e95`, the branch reconciled with dev (`b1e0b49` — clean, no conflicts; dev's Unreleased changelog and `generate-unreleased` embed joined the branch) and dev fast-forwarded to `326f2ba` |
 | 2 | Changelog + generated embed committed on dev | PASS | `[Unreleased]` Changed bullet and the regenerated `lib/unreleased-changelog.generated.ts` in the same commit (`326f2ba`), per the release-spoke convention |
-| 3 | Work is live | PASS | Main checkout rebuilt (`npm run build`) and `bb plugin reload focus-board` run; `bb plugin list` shows `focus-board@0.6.0-dev running` from `path:/Users/cristos/Documents/code/bb-plugin-focus-board` — the `main`/tag step belongs to the next release cycle, not to this thread |
+| 3 | Work is live | PASS | Main checkout rebuilt (`npm run build`) and `alia plugin reload focus-board` run; `alia plugin list` shows `focus-board@0.6.0-dev running` from `path:/Users/cristos/Documents/code/alia-plugin-focus-board` — the `main`/tag step belongs to the next release cycle, not to this thread |
 | 4 | No uncommitted work in the thread's environment | PASS | `git status --porcelain` empty in the env worktree; dev pushed: `origin/dev` == `326f2ba` |
 | 5 | Thread knowledge persisted outside the thread | PASS | Coverage matrix row for the filter dropdown search bar now names the Enter-accepts-a-sole-match behavior (manual class — presentational, no DOM harness); CHANGELOG `[Unreleased]` bullet states the contract; the feature commit message spells out the 1-match / 2+-match / 0-match ladder; suite on dev at `326f2ba`: 593 tests across 40 files green, `tsc --noEmit` clean (pure-function module `tests/dropdown-search.test.ts` unchanged — the increment is component-level) |
-| 6 | No automatic archive path can claim the thread | PASS | Sweep dry-run (`bb focus-board sweep`) contains no `thr_npjx286r5r` (grep count 0); the thread is not Done-marked (`bb focus-board done list` grep count 0) — the sweep's own guards exclude it by state |
-| 7 | Archive is reversible | PASS | `bb thread archive` is operator-explicit; `bb thread unarchive` restores; no eligibility claim hangs on the thread by design |
+| 6 | No automatic archive path can claim the thread | PASS | Sweep dry-run (`alia focus-board sweep`) contains no `thr_npjx286r5r` (grep count 0); the thread is not Done-marked (`alia focus-board done list` grep count 0) — the sweep's own guards exclude it by state |
+| 7 | Archive is reversible | PASS | `alia thread archive` is operator-explicit; `alia thread unarchive` restores; no eligibility claim hangs on the thread by design |
 
 ## Residuals (do not block archiving)
 

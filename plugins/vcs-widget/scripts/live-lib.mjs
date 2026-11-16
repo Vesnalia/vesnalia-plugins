@@ -1,5 +1,5 @@
 // Shared helpers for the headless click-throughs (live-check.mjs and
-// live-check-m2.mjs): a Chromium session on the bb web UI, popup and dialog
+// live-check-m2.mjs): a Chromium session on the VesnALIA web UI, popup and dialog
 // accessors, and a PASS/FAIL recorder.
 import { execSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
@@ -44,7 +44,7 @@ export function recorder() {
 export function environment() {
   const THREAD = process.env.VCS_E2E_THREAD;
   const PROJECT = process.env.VCS_E2E_PROJECT;
-  const BASE = process.env.BB_SERVER_URL ?? "http://127.0.0.1:38886";
+  const BASE = process.env.ALIA_SERVER_URL ?? "http://127.0.0.1:38886";
   const CHROMIUM = process.env.CHROMIUM ?? "/usr/bin/chromium";
   if (!THREAD || !PROJECT) {
     console.error("set VCS_E2E_THREAD and VCS_E2E_PROJECT");

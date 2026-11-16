@@ -1,9 +1,9 @@
 import { useState, useRef } from "react";
 import {
-  useBbContext,
+  useAliaContext,
   type PluginFileOpenerProps,
   type PluginThreadPanelProps,
-} from "@bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,7 +54,7 @@ function isFileOpenerProps(
 }
 
 export function FilesPanel(props: FilesPanelProps) {
-  const context = useBbContext();
+  const context = useAliaContext();
   const opener = isFileOpenerProps(props);
   // The host context and server-side thread-environment resolution are the
   // authorization boundary. Opener and panel props are persisted input only.
@@ -259,7 +259,7 @@ function FilesPanelContent({ initialPath }: { initialPath: string | null }) {
   return (
     <div
       ref={containerRef}
-      className="bb-files-panel relative flex h-full min-h-0 min-w-0 overflow-hidden bg-background text-foreground"
+      className="alia-files-panel relative flex h-full min-h-0 min-w-0 overflow-hidden bg-background text-foreground"
     >
       {isNarrow ? (
         workspace.activePath === null ? (

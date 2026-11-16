@@ -1,6 +1,6 @@
 import type { ProjectThreadGroup } from "./inbox.ts";
 
-export const PROJECT_ORDER_STORAGE_KEY = "bb.dockside.project-order.v1";
+export const PROJECT_ORDER_STORAGE_KEY = "alia.dockside.project-order.v1";
 export const MAX_ORDERED_PROJECTS = 100;
 const MAX_ID_LENGTH = 200;
 const SAFE_ID = /^[^\u0000-\u001F\u007F]+$/;

@@ -1,6 +1,6 @@
 // Deriving an xterm theme from the host's live theme tokens.
 //
-// bb's palette is authored in oklch, which xterm's own colour parser does not
+// VesnALIA's palette is authored in oklch, which xterm's own colour parser does not
 // understand, so every token is round-tripped through a canvas to get plain
 // sRGB hex. That also means custom and plugin-contributed palettes work without
 // this file knowing anything about them.
@@ -42,11 +42,11 @@ function luminance(hex: string): number {
 }
 
 /**
- * bb publishes the full ANSI 16 as `--ansi-0` … `--ansi-15`, and every built-in
+ * VesnALIA publishes the full ANSI 16 as `--ansi-0` … `--ansi-15`, and every built-in
  * theme (nord, dracula, solarized, gruvbox, catppuccin) overrides them — so the
  * host tokens are read first and these pairs are only the fallback for a host
- * that does not define them. Matching bb's own terminal here is the whole point:
- * without it a themed bb shows one red in its terminal panel and another in this
+ * that does not define them. Matching VesnALIA's own terminal here is the whole point:
+ * without it a themed VesnALIA shows one red in its terminal panel and another in this
  * window.
  */
 const ANSI_TOKEN_NAMES = [
@@ -148,7 +148,7 @@ export function resolveTerminalTheme(scope: HTMLElement): ResolvedTheme {
       // 45% alpha keeps the glyphs readable through the selection in both modes.
       selectionBackground: `${token(scope, "--primary", "#5b8cff")}73`,
       // xterm 6's visible scrollbar is a VS Code slider painted from these,
-      // not from CSS — without them it ships VS Code grey into a bb window.
+      // not from CSS — without them it ships VS Code grey into a VesnALIA window.
       scrollbarSliderBackground: `${token(scope, "--muted-foreground", "#7a828e")}4d`,
       scrollbarSliderHoverBackground: `${token(scope, "--muted-foreground", "#7a828e")}80`,
       scrollbarSliderActiveBackground: `${token(scope, "--muted-foreground", "#7a828e")}a6`,
@@ -158,8 +158,8 @@ export function resolveTerminalTheme(scope: HTMLElement): ResolvedTheme {
 }
 
 /**
- * The same Nerd Font stack bb's own terminal asks for, so a powerline prompt or
- * a devicon renders here exactly as it does in bb's terminal panel rather than
+ * The same Nerd Font stack VesnALIA's own terminal asks for, so a powerline prompt or
+ * a devicon renders here exactly as it does in VesnALIA's terminal panel rather than
  * as tofu. These names only match if the fonts are installed; when they are not,
  * the host's `--font-mono` still gets its turn before the generic fallbacks.
  */
@@ -174,7 +174,7 @@ const GENERIC_MONO =
  * codepoints nothing else can — which on a device where no Nerd Font can be
  * installed is every icon a shell prints.
  */
-const BUNDLED_SYMBOLS = '"BB FT Nerd Symbols"';
+const BUNDLED_SYMBOLS = '"VesnALIA FT Nerd Symbols"';
 
 export function resolveMonoFont(scope: HTMLElement): string {
   const declared = getComputedStyle(scope).getPropertyValue("--font-mono").trim();

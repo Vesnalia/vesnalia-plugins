@@ -9,7 +9,7 @@ import {
   experimental_describePromptMention as describePromptMention,
   useSdk,
   type ExperimentalComposerMentionTarget,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   getInitiator,
   rowSelector,
@@ -63,16 +63,16 @@ const MAX_PREFETCH = 6;
 const USER_ROW = /:user-seed:\d+$/;
 const MAX_THUMBS = 3;
 const THUMB_SIZE = 32;
-/** BB cuts outline previews at this many characters, without an ellipsis. */
+/** VesnALIA cuts outline previews at this many characters, without an ellipsis. */
 const PREVIEW_MAX_LENGTH = 200;
-/** Two-frame steps a jump waits at the top for BB to load older rows. */
+/** Two-frame steps a jump waits at the top for VesnALIA to load older rows. */
 const JUMP_PATIENCE_STEPS = 90;
-/** Frames a jump spends correcting for rows BB measures as they mount. */
+/** Frames a jump spends correcting for rows VesnALIA measures as they mount. */
 const SETTLE_FRAMES = 20;
 const JUMP_MARGIN = 12;
 
-// BB's Markdown renders blocks; the bar has two lines. Run every block into
-// one line of text, keep inline styling (code, bold, links, mentions) as BB
+// VesnALIA's Markdown renders blocks; the bar has two lines. Run every block into
+// one line of text, keep inline styling (code, bold, links, mentions) as VesnALIA
 // draws it, and drop what cannot sit in a line.
 const T = "[data-sticky-prompt-text]";
 const FLATTEN_CSS = `
@@ -105,7 +105,7 @@ function labelFor(item: OutlineItem): string {
 }
 
 /**
- * BB keeps the chat where it was unless a scroll follows the user's own input
+ * VesnALIA keeps the chat where it was unless a scroll follows the user's own input
  * on the chat (a wheel, touch, pointer or key), and puts back any other. The
  * bar's scrolls start outside the chat, so each announces itself with an
  * empty wheel event first; listeners that must react only to real wheels
@@ -129,8 +129,8 @@ function findRowIn(list: Element, id: string): HTMLElement | null {
 }
 
 /**
- * Put the row at the top and hold it there while BB measures the rows that
- * mount around it. Instant steps: a smooth scroll fights BB's own scroll
+ * Put the row at the top and hold it there while VesnALIA measures the rows that
+ * mount around it. Instant steps: a smooth scroll fights VesnALIA's own scroll
  * corrections and jerks.
  */
 async function settle(scrollEl: HTMLElement, list: Element, id: string, signal: AbortSignal) {
@@ -151,8 +151,8 @@ async function settle(scrollEl: HTMLElement, list: Element, id: string, signal: 
 }
 
 /**
- * Scroll up until BB mounts the message, then bring it to the top. Keeps
- * going while BB loads older rows at the top; stops when nothing moves.
+ * Scroll up until VesnALIA mounts the message, then bring it to the top. Keeps
+ * going while VesnALIA loads older rows at the top; stops when nothing moves.
  */
 async function jumpTo(scrollEl: HTMLElement, id: string, signal: AbortSignal): Promise<void> {
   let idle = 0;
@@ -223,13 +223,13 @@ function holdPosition(parent: HTMLElement): () => void {
   };
 }
 
-// The classes BB 0.49 adds to the pill and its icon in a message bubble, on
+// The classes VesnALIA 0.49 adds to the pill and its icon in a message bubble, on
 // top of the pill class describePromptMention gives. Without the icon class
 // the icon is drawn at its default size and sits on the text's baseline.
 const CHIP_CLASS = "bg-surface-raised/50 font-normal no-underline cursor-default";
 const CHIP_ICON_CLASS = "size-3.5 shrink-0 self-center text-muted-foreground";
 
-/** A mention drawn the way BB draws it in the bubble, or as a plain pill. */
+/** A mention drawn the way VesnALIA draws it in the bubble, or as a plain pill. */
 function MentionChip({ part }: { part: Extract<BarPart, { kind: "mention" }> }) {
   const target = mentionTarget(part) as ExperimentalComposerMentionTarget;
   let className = "";
@@ -364,7 +364,7 @@ export function StickyBar({ area, includeOthers }: { area: Area; includeOthers: 
 
     // Outline refresh. A user row on screen that the outline lacks asks for
     // a fetch; so does relying on the last-turn guess after new rows arrived.
-    // At most one fetch per interval, retried with backoff while BB still
+    // At most one fetch per interval, retried with backoff while VesnALIA still
     // leaves a row out.
     let lastOutlineFetch = 0;
     let outlineInFlight = false;
@@ -723,8 +723,8 @@ export function StickyBar({ area, includeOthers }: { area: Area; includeOthers: 
     if (seq === undefined) return;
     let cancelled = false;
     const load = async () => {
-      // The full text, rendered by BB's own Markdown component. Until it
-      // arrives, or if BB answers with another row, the bar keeps the
+      // The full text, rendered by VesnALIA's own Markdown component. Until it
+      // arrives, or if VesnALIA answers with another row, the bar keeps the
       // outline's plain preview.
       const row = userRowOf(await fetchMessage(seq), shownId);
       if (cancelled || row === null) return;
@@ -848,7 +848,7 @@ export function StickyBar({ area, includeOthers }: { area: Area; includeOthers: 
           touchAction: "none",
           width: "100%",
           textAlign: "left",
-          // The same surface as BB's own user message bubble:
+          // The same surface as VesnALIA's own user message bubble:
           // rounded-xl border border-border-seam bg-surface-recessed px-4 py-2.5.
           // The strip behind it is opaque, so the translucent recessed surface
           // reads exactly as it does in the chat.
@@ -857,7 +857,7 @@ export function StickyBar({ area, includeOthers }: { area: Area; includeOthers: 
           background: "var(--surface-recessed)",
           color: "var(--foreground)",
           padding: "0.625rem 1rem",
-          // The prompt box's size: BB sets --text-sm per theme.
+          // The prompt box's size: VesnALIA sets --text-sm per theme.
           fontSize: "var(--text-sm)",
           lineHeight: "var(--text-sm--line-height)",
           fontFamily: "inherit",

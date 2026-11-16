@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 // M3 study page tabs (Findings, Oracle, Bench, Harvest) rendered against the
 // real RPC handlers, with extra state seeded straight into the store.
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { configure, fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createAutoresearchPlugin } from "../server.ts";
@@ -46,8 +46,8 @@ describe("frontend: M3 study tabs", () => {
     host.refs.set("main", host.commit("T0", null));
     host.metric.set("T0", 1000);
     port.addThread("thr_study");
-    const fake = createFakePluginHost({ pluginId: "bb-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
-    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0 }, onEngine: (e) => (engine = e) })(fake.bb);
+    const fake = createFakePluginHost({ pluginId: "alia-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
+    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0 }, onEngine: (e) => (engine = e) })(fake.alia);
     harness = fake.harness;
     await harness.behavior.callAgentTool("study_propose", { spec_toml: SPEC }, { threadId: "thr_study", projectId: "proj_1" });
     await harness.behavior.runCli(["calibrate", "toy-size", "--wait"]);
@@ -128,7 +128,7 @@ describe("frontend: M3 study tabs", () => {
     expect(active.textContent).toContain('slug = "toy-size"');
     expect(active.textContent).toContain("[oracle.holdout] is configured and hidden");
     await page.findByText("Pending spec v2");
-    expect(page.getByText("bb study approve toy-size")).toBeTruthy();
+    expect(page.getByText("alia study approve toy-size")).toBeTruthy();
     const diff = page.getByLabelText("Pending spec diff").textContent ?? "";
     expect(diff).toContain("+ objective = \"Make the output much smaller.\"");
     expect(diff).toContain("- objective = \"Make the toy program's output smaller.\"");
@@ -156,7 +156,7 @@ describe("frontend: M3 study tabs", () => {
   it("harvest: the empty state freezes best, then shows the promotions and how to ask an agent", async () => {
     const page = await open("toy-size/harvest");
     await page.findByText(/so an agent can turn it into pull requests/u);
-    expect(page.getByText("bb study harvest toy-size")).toBeTruthy();
+    expect(page.getByText("alia study harvest toy-size")).toBeTruthy();
     fireEvent.click(await page.findByRole("button", { name: "Freeze best for harvest…" }));
     // A deliberate step: the dialog says what happens, then the confirm button starts it.
     await page.findByText(/candidates in flight finish first/u);
@@ -171,7 +171,7 @@ describe("frontend: M3 study tabs", () => {
     expect(page.getByText("refs/studies/toy-size/harvest/h1")).toBeTruthy();
     expect((await page.findByTestId("harvest-prompt")).textContent).toContain("study-harvest skill");
     expect(page.getByRole("button", { name: "Ask in a new thread…" })).toBeTruthy();
-    expect(page.getAllByText(/bb study measure toy-size <A> <B>/u).length).toBeGreaterThan(0);
+    expect(page.getAllByText(/alia study measure toy-size <A> <B>/u).length).toBeGreaterThan(0);
     // No plugin-drafted PRs and no publish button any more.
     expect(page.queryByRole("button", { name: /Publish/u })).toBeNull();
   });

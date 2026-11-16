@@ -2,7 +2,7 @@
 // with 500 tool rows, measured), and a share reads it after every event of a thread someone is watching. The
 // server hands out a tag with every page, and a read that names the last tag gets only what changed since
 // (a few KB), which is applied to the page held here. Pure: the read itself is passed in, so
-// `src/delta.test.ts` runs it without BB.
+// `src/delta.test.ts` runs it without VesnALIA.
 
 /** How a delta lists the page's order: a `[from, to)` stretch of the rows already held, or the id of one row. */
 export type RowOrder = readonly (string | readonly [number, number])[];

@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { cleanup, within } from '@testing-library/react';
-import { loadPluginApp, renderSlot } from '@get-bb/plugin-sdk/testing/app';
+import { loadPluginApp, renderSlot } from '@vesnalia/plugin-sdk/testing/app';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Snapshot, SlotSnapshot } from './collector.js';
 
 /**
  * The panel is tested through the real registration rather than by rendering
- * `PacePage` directly: the app under test is the one bb would run, and the
+ * `PacePage` directly: the app under test is the one VesnALIA would run, and the
  * page's only inputs are the RPC it registers and the settings it reads.
  *
  * Everything is awaited through `findBy*` because the first paint is the empty

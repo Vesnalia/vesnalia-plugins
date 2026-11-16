@@ -5,7 +5,7 @@ import { HEAD, OLD, failureOf, harness, resultOf } from "./harness.js";
 describe("syns.repo", () => {
   it("returns owner, name and the head, built field by field, for exactly one CLI process (A11, S1.7, S1.10)", async () => {
     const h = harness({ repo: rec("repo.ok") });
-    expect(resultOf(await h.call("syns.repo"))).toEqual({ owner: "acme", name: "syns-bb-plugin-scratch", version: HEAD, role: "owner", visibility: "private", fileCount: 32 });
+    expect(resultOf(await h.call("syns.repo"))).toEqual({ owner: "acme", name: "syns-alia-plugin-scratch", version: HEAD, role: "owner", visibility: "private", fileCount: 32 });
     expect(h.runner.calls.map((call) => call.args)).toEqual([["repo", "--json"]]);
   });
   it("reports a repository with no commit yet as version null", async () => {
@@ -160,7 +160,7 @@ describe("syns.history", () => {
       message: "proto: rm",
       paths: ["notes/n29.md"],
       pathsTruncated: false,
-      by: { integration: "syns-bb-plugin", run: "thr_examplepage", trigger: "thread-page" },
+      by: { integration: "syns-alia-plugin", run: "thr_examplepage", trigger: "thread-page" },
     });
     expect(result.entries[1]).toMatchObject({ parent: null, by: { integration: null, run: null, trigger: null } });
     expect(h.runner.calls[0]!.args).toEqual(["history", "--limit=20", "--json"]);

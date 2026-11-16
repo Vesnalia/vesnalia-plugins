@@ -1,6 +1,6 @@
-# Extella for bb
+# Extella for VesnALIA
 
-Gives bb agents a shared library of saved programs. An agent searches it by meaning before writing a new script, runs a matching program on one of your machines, and saves new programs that worked so later threads reuse them instead of writing them again.
+Gives VesnALIA agents a shared library of saved programs. An agent searches it by meaning before writing a new script, runs a matching program on one of your machines, and saves new programs that worked so later threads reuse them instead of writing them again.
 
 ## Tools the agent gets
 
@@ -17,12 +17,12 @@ The `extella` skill tells the agent the order: search, reuse, and save only afte
 ## Install
 
 ```
-bb plugin install https://github.com/AnvarBakiyev/bb-plugin-extella
+alia plugin install https://github.com/AnvarBakiyev/bb-plugin-extella
 ```
 
-Then in bb settings → Plugins → Extella:
+Then in VesnALIA settings → Plugins → Extella:
 
-- **Extella API key** (required): from extella.ai. bb keeps it in a 0600 file and never sends it to the browser.
+- **Extella API key** (required): from extella.ai. VesnALIA keeps it in a 0600 file and never sends it to the browser.
 - **Extella agent id** (required): programs are searched and saved in this agent's scope.
 - **Default device id**: where programs run when the agent does not name one. Leave empty and ask the agent to call `extella_devices` to see the ids.
 
@@ -30,7 +30,7 @@ To run programs on your own computer, install Extella Desktop there and keep it 
 
 ## What to know before installing
 
-- bb plugins run with full trust inside the bb server process. This one only talks to the API address in its settings (`https://api.extella.ai` by default).
+- VesnALIA plugins run with full trust inside the VesnALIA server process. This one only talks to the API address in its settings (`https://api.extella.ai` by default).
 - A saved program runs on the device you choose with that device's file access. Read programs from other people before running them on a machine with sensitive files.
 - Don't put secrets into program code or parameters: they are stored in your Extella account.
 
@@ -38,7 +38,7 @@ To run programs on your own computer, install Extella Desktop there and keep it 
 
 ```
 npm install
-npm test                                   # fake bb host, no network
+npm test                                   # fake alia host, no network
 EXTELLA_API_KEY=... EXTELLA_AGENT=agent_... EXTELLA_DEVICE=... node --test test/live.mjs
 ```
 

@@ -4,7 +4,7 @@ import {
   useRealtime,
   useRpc,
   type ExperimentalSidebarFooterDisclosureProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowDown01Icon, RubberDuckIcon } from "@hugeicons/core-free-icons";
 import type { lameDuckContract, LameDuckStatus } from "./contract.js";

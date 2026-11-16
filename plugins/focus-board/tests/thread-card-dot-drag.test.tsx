@@ -7,7 +7,7 @@
 // the drag passes over.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, createEvent, fireEvent, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { ThreadCard } from "../components/thread-card";
 import { DOT_DRAG_TYPE, DRAG_ID_KEY } from "../lib/rank";
 import { thread } from "./thread-fixture";

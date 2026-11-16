@@ -17,7 +17,7 @@ export interface Viewport {
 
 // v2: the default position changed from a magic offset to a real anchor, so
 // previously saved geometry is deliberately discarded once.
-const STORAGE_KEY = "bb-plugin-floating-terminal:frame:v5";
+const STORAGE_KEY = "alia-plugin-floating-terminal:frame:v5";
 const MIN_WIDTH = 360;
 const MIN_HEIGHT = 180;
 /** One inset for every edge, so the corner reads as a corner. */
@@ -58,7 +58,7 @@ export function defaultFrame(viewport: Viewport = currentViewport()): Frame {
  * way a desktop OS lets a window slide off a monitor. Here that hid exactly the
  * controls that matter — hide, restart, maximize all live on the right of the
  * title bar — so a window placed on a wide screen came back on an iPad in
- * portrait, or a narrowed bb window, with no way to close it. The window is a
+ * portrait, or a narrowed VesnALIA window, with no way to close it. The window is a
  * panel inside the app, not an OS window, so it stays entirely inside it.
  */
 export function clampFrame(

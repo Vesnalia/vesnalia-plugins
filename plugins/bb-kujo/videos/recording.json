@@ -8,7 +8,7 @@
   "events": [
     {
       "seconds": 0.485,
-      "event": "Open bb"
+      "event": "Open VesnALIA"
     },
     {
       "seconds": 12.2,
@@ -16,7 +16,7 @@
     },
     {
       "seconds": 15.772,
-      "event": "Select bb-kujo project"
+      "event": "Select alia-kujo project"
     },
     {
       "seconds": 18.491,

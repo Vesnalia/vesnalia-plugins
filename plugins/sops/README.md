@@ -1,6 +1,6 @@
-# SOPS — a BB plugin
+# SOPS — a VesnALIA plugin
 
-An editor for SOPS-encrypted files in a BB thread's side panel. See
+An editor for SOPS-encrypted files in a VesnALIA thread's side panel. See
 PLUGIN_OVERVIEW.md for what it does and `skills/sops/SKILL.md` for what
 agents are told.
 
@@ -11,9 +11,9 @@ npm install
 npm test            # unit tests, plus end-to-end tests against real sops
                     # and age with a throwaway key (mise.toml pins them)
 npx tsc -p .        # type check
-bb plugin build     # dist/
-bb plugin install . # register this folder with BB (once)
-bb plugin dev       # rebuild and reload on every save
+alia plugin build     # dist/
+alia plugin install . # register this folder with ALIA (once)
+alia plugin dev       # rebuild and reload on every save
 ```
 
 ## Layout

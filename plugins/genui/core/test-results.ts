@@ -511,7 +511,7 @@ export function firstAppFrame(lines: readonly string[]): (StackFrame & { readonl
 // Paths
 
 /**
- * The workspace-relative path BB can open for a path from a report, or null:
+ * The workspace-relative path VesnALIA can open for a path from a report, or null:
  * `file://` and `./` dropped, absolute paths made relative to `root` (null
  * outside it or without a root), `..` refused.
  */

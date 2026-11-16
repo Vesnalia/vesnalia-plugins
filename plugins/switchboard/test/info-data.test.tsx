@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
-import type { PluginBrowserBbSdk } from "@get-bb/plugin-sdk/app";
+import type { PluginBrowserAliaSdk } from "@vesnalia/plugin-sdk/app";
 import { infoLoaders, loadCached, prefetchInfo, resetInfoCache, useCached, type Loader } from "../src/info-data";
 import { sidebarThread } from "./fixtures";
 
@@ -118,7 +118,7 @@ describe("infoLoaders", () => {
         conversationOutline: record("outline", { items: [], maxSeq: 0 }),
         interactions: { list: record("interactions", []) },
       },
-    } as unknown as PluginBrowserBbSdk;
+    } as unknown as PluginBrowserAliaSdk;
     return { sdk, calls };
   }
   const environment = { id: "e", name: null, branchName: "b", path: "/w", isWorktree: true, providerId: null, workspaceDisplayKind: null };
@@ -137,7 +137,7 @@ describe("infoLoaders", () => {
     expect(infoLoaders(sdk, sidebarThread(), "full").outline).not.toBeNull();
   });
 
-  it("leaves git status to bb's Git plugin and unwraps usage", async () => {
+  it("leaves git status to VesnALIA's Git plugin and unwraps usage", async () => {
     const { sdk, calls } = fakeSdk();
     const loaders = infoLoaders(sdk, sidebarThread({ id: "t", environment }), "glance");
     expect(Object.keys(loaders)).not.toContain("changes");

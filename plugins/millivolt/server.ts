@@ -1,19 +1,19 @@
-// bb-plugin-millivolt — backend entry.
+// alia-plugin-millivolt — backend entry.
 //
 // The plugin owns millivolt end to end:
 //   1. find an existing install (Docker labels, loopback probe, bounded disk
 //      scan) or create one from scratch, token included;
-//   2. keep it running with bb (start on load, health check, bounded restarts);
-//   3. keep it current (pull on bb start and on an interval, but never under a
+//   2. keep it running with VesnALIA (start on load, health check, bounded restarts);
+//   3. keep it current (pull on VesnALIA start and on an interval, but never under a
 //      stream that is in flight);
 //   4. expose typed, bounded reads of millivolt's metrics API to the sidebar;
-//   5. serve the real dashboard inside bb through a loopback proxy that injects
+//   5. serve the real dashboard inside VesnALIA through a loopback proxy that injects
 //      the operator credential, so no browser tab and no token entry is needed.
 //
 // The operator token never reaches the frontend: it lives in a secret setting
 // or the plugin's own storage and is used only by this process.
 import { createServer, request as httpRequest, type Server } from "node:http";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   compose,
@@ -321,10 +321,10 @@ const EMPTY_STATE: PersistedState = {
   rolledBackTo: null,
 };
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     deployDir: {
       type: "string",
       label: "Compose directory (blank = auto)",
@@ -339,7 +339,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     embedPort: {
       type: "number",
-      label: "In-bb dashboard proxy port",
+      label: "In-alia dashboard proxy port",
       default: 8472,
       experimental_schema: z.number().int().min(1).max(65_535),
     },
@@ -349,10 +349,10 @@ export default async function plugin(bb: BbPluginApi) {
       secret: true,
       default: "",
     },
-    autoStart: { type: "boolean", label: "Start millivolt with bb", default: true },
+    autoStart: { type: "boolean", label: "Start millivolt with VesnALIA", default: true },
     autoUpdate: {
       type: "boolean",
-      label: "Pull updates when bb starts",
+      label: "Pull updates when VesnALIA starts",
       default: true,
     },
     startDockerDesktop: {
@@ -370,11 +370,11 @@ export default async function plugin(bb: BbPluginApi) {
   const config = await settings.get();
   let state: PersistedState = {
     ...EMPTY_STATE,
-    ...((await bb.storage.kv.get<PersistedState>("state")) ?? {}),
+    ...((await alia.storage.kv.get<PersistedState>("state")) ?? {}),
   };
   const saveState = async (patch: Partial<PersistedState>): Promise<void> => {
     state = { ...state, ...patch };
-    await bb.storage.kv.set("state", state);
+    await alia.storage.kv.set("state", state);
   };
 
   // Settings win when set; otherwise the recorded install wins.
@@ -402,7 +402,7 @@ export default async function plugin(bb: BbPluginApi) {
   const configuredDeployDir = config.deployDir.trim();
 
   let desiredRunning =
-    (await bb.storage.kv.get<boolean>("desired-running")) ?? config.autoStart;
+    (await alia.storage.kv.get<boolean>("desired-running")) ?? config.autoStart;
   let restartAttempts = 0;
   let updateRunning = false;
 
@@ -429,7 +429,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   function publishState(patch: Partial<MillivoltStatus>): MillivoltStatus {
     runtime = { ...runtime, ...patch, checkedAt: new Date().toISOString() };
-    bb.realtime.publish(STATUS_CHANNEL, runtime);
+    alia.realtime.publish(STATUS_CHANNEL, runtime);
     return runtime;
   }
 
@@ -508,7 +508,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (await dockerDaemonUp()) return true;
     if (!config.startDockerDesktop) return false;
     launchDockerDesktop(config.dockerDesktopPath);
-    bb.log.info("launching Docker Desktop");
+    alia.log.info("launching Docker Desktop");
     return waitForDaemon(120_000, sleep);
   }
 
@@ -697,7 +697,7 @@ export default async function plugin(bb: BbPluginApi) {
       containerName: name,
       projectName,
       token,
-      log: (message) => bb.log.info(message),
+      log: (message) => alia.log.info(message),
     });
     if (!result.ok) {
       return publishState({
@@ -745,7 +745,7 @@ export default async function plugin(bb: BbPluginApi) {
       (entry) => entry.deployDir !== null && entry.port !== null,
     );
     if (usable?.deployDir !== null && usable?.deployDir !== undefined && usable.port !== null) {
-      bb.log.info(`adopting millivolt at ${usable.deployDir} (:${usable.port})`);
+      alia.log.info(`adopting millivolt at ${usable.deployDir} (:${usable.port})`);
       return adopt(usable.deployDir, usable.port, usable.token);
     }
     const onPort = found.candidates.find((entry) => entry.port !== null && entry.token !== null);
@@ -822,7 +822,7 @@ export default async function plugin(bb: BbPluginApi) {
         publishState({});
         return { changed: false, detail: null, checkedAt };
       }
-      bb.log.info("new millivolt image; recreating the container");
+      alia.log.info("new millivolt image; recreating the container");
       const up = await composeHere(["up", "-d"], 180_000);
       if (up.code !== 0) {
         const detail = lastLine(up.stderr) || "docker compose up failed";
@@ -929,7 +929,7 @@ export default async function plugin(bb: BbPluginApi) {
         steps.push("still not answering, so reverting to the previous image");
         desiredRunning = true;
         restartAttempts = 0;
-        await bb.storage.kv.set("desired-running", true);
+        await alia.storage.kv.set("desired-running", true);
         const reverted = await revertMillivolt();
         return publishState({
           state: reverted.state,
@@ -953,7 +953,7 @@ export default async function plugin(bb: BbPluginApi) {
     // Healthy again: clear the supervisor's give-up state.
     desiredRunning = true;
     restartAttempts = 0;
-    await bb.storage.kv.set("desired-running", true);
+    await alia.storage.kv.set("desired-running", true);
 
     if (steps.length === 0 && !wasHealthy) steps.push("started the deployment");
     const authed = await operatorFetch("/metrics/bootstrap");
@@ -961,7 +961,7 @@ export default async function plugin(bb: BbPluginApi) {
       steps.push("the operator token is rejected; set it in Settings");
     }
     refreshRuntimeFromState();
-    bb.log.info(`repair: ${steps.join("; ") || "nothing to change"}`);
+    alia.log.info(`repair: ${steps.join("; ") || "nothing to change"}`);
     return publishState({
       state: "running",
       healthy: true,
@@ -1054,7 +1054,7 @@ export default async function plugin(bb: BbPluginApi) {
       imageId: target,
       previousImageId: current ?? state.imageId,
     });
-    bb.log.info(`reverted to ${shortId(target) ?? "previous image"}`);
+    alia.log.info(`reverted to ${shortId(target) ?? "previous image"}`);
     refreshRuntimeFromState();
     return publishState({
       state: "running",
@@ -1112,7 +1112,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   // -------------------------------------------------------------------------
-  // RPC surface for the bb frontend
+  // RPC surface for the VesnALIA frontend
   // -------------------------------------------------------------------------
 
   async function readOverview(): Promise<MillivoltOverview> {
@@ -1209,18 +1209,18 @@ export default async function plugin(bb: BbPluginApi) {
     };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     status: async () => refreshStatus(),
     overview: () => readOverview(),
     requests: (input) => readRequests(input),
     control: async ({ action }) => {
       if (action === "stop") {
         desiredRunning = false;
-        await bb.storage.kv.set("desired-running", false);
+        await alia.storage.kv.set("desired-running", false);
         return stopMillivolt();
       }
       desiredRunning = true;
-      await bb.storage.kv.set("desired-running", true);
+      await alia.storage.kv.set("desired-running", true);
       if (action === "update") {
         await runUpdate("manual");
         return refreshStatus();
@@ -1267,7 +1267,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // -------------------------------------------------------------------------
-  // In-bb dashboard: loopback proxy that injects the operator credential.
+  // In-alia dashboard: loopback proxy that injects the operator credential.
   //
   // millivolt answers `frame-ancestors 'none'`, so the dashboard cannot be
   // framed directly; proxying from a second loopback port also means the page's
@@ -1359,7 +1359,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   function startEmbedProxy(): Server | null {
     if (operatorToken === "") {
-      bb.log.warn("operator token not set; the in-bb dashboard stays disabled");
+      alia.log.warn("operator token not set; the in-alia dashboard stays disabled");
       return null;
     }
     const server = createServer((request, response) => {
@@ -1369,7 +1369,7 @@ export default async function plugin(bb: BbPluginApi) {
         response.end("forbidden host");
         return;
       }
-      // The bb page that frames this proxy is loopback, so a loopback
+      // The VesnALIA page that frames this proxy is loopback, so a loopback
       // Origin/Referer is the trust signal that survives a cross-site iframe
       // (Sec-Fetch-Site reports "cross-site" for it). Anything arriving from a
       // real website is refused, even though it carries no credential of its
@@ -1405,15 +1405,15 @@ export default async function plugin(bb: BbPluginApi) {
       proxyRequest(request, response);
     });
     server.on("error", (error: Error) => {
-      bb.log.error(`dashboard proxy failed: ${error.message}`);
+      alia.log.error(`dashboard proxy failed: ${error.message}`);
       embedPort = null;
       runtime.embedUrl = null;
     });
     server.listen(config.embedPort, "127.0.0.1", () => {
       embedPort = config.embedPort;
       runtime.embedUrl = `http://127.0.0.1:${config.embedPort}/`;
-      bb.log.info(`dashboard proxy on ${runtime.embedUrl}`);
-      bb.realtime.publish(STATUS_CHANNEL, runtime);
+      alia.log.info(`dashboard proxy on ${runtime.embedUrl}`);
+      alia.realtime.publish(STATUS_CHANNEL, runtime);
     });
     return server;
   }
@@ -1426,16 +1426,16 @@ export default async function plugin(bb: BbPluginApi) {
     embedPort = null;
     runtime.embedUrl = null;
   }
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposeEmbedProxy();
-    bb.log.info("disposed");
+    alia.log.info("disposed");
   });
 
   // -------------------------------------------------------------------------
-  // Startup + supervision: bb loads, millivolt exists, runs, stays current.
+  // Startup + supervision: VesnALIA loads, millivolt exists, runs, stays current.
   // -------------------------------------------------------------------------
 
-  bb.background.service("supervisor", {
+  alia.background.service("supervisor", {
     async start(signal) {
       embedServer = startEmbedProxy();
       signal.addEventListener("abort", disposeEmbedProxy, { once: true });
@@ -1466,10 +1466,10 @@ export default async function plugin(bb: BbPluginApi) {
                   detail: "millivolt stayed down after three restart attempts",
                 });
                 desiredRunning = false;
-                await bb.storage.kv.set("desired-running", false);
+                await alia.storage.kv.set("desired-running", false);
               } else {
                 restartAttempts += 1;
-                bb.log.warn(`millivolt unhealthy; restart attempt ${restartAttempts}`);
+                alia.log.warn(`millivolt unhealthy; restart attempt ${restartAttempts}`);
                 await startMillivolt();
               }
             }
@@ -1488,40 +1488,40 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // -------------------------------------------------------------------------
-  // `bb millivolt …` for shells and agents.
+  // `alia millivolt …` for shells and agents.
   // -------------------------------------------------------------------------
 
   const usage = [
     "Usage:",
-    "  bb millivolt status [--json]",
-    "  bb millivolt setup [--dir PATH] [--port N] [--json]",
-    "  bb millivolt setup --adopt --dir PATH --port N [--token T]",
-    "  bb millivolt discover [--json]",
-    "  bb millivolt update [--json]",
-    "  bb millivolt repair [--json]   # diagnose and fix a stuck deployment",
-    "  bb millivolt revert [--json]   # pin the previous image",
-    "  bb millivolt resume [--json]   # track the published tag again",
-    "  bb millivolt start | stop | restart",
-    "  bb millivolt url",
-    "  bb millivolt requests [count] [--json]",
+    "  VesnALIA millivolt status [--json]",
+    "  VesnALIA millivolt setup [--dir PATH] [--port N] [--json]",
+    "  VesnALIA millivolt setup --adopt --dir PATH --port N [--token T]",
+    "  VesnALIA millivolt discover [--json]",
+    "  VesnALIA millivolt update [--json]",
+    "  VesnALIA millivolt repair [--json]   # diagnose and fix a stuck deployment",
+    "  VesnALIA millivolt revert [--json]   # pin the previous image",
+    "  VesnALIA millivolt resume [--json]   # track the published tag again",
+    "  VesnALIA millivolt start | stop | restart",
+    "  VesnALIA millivolt url",
+    "  VesnALIA millivolt requests [count] [--json]",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "millivolt",
     summary: "Install, update, and inspect the millivolt inference proxy",
     commands: [
-      { name: "status", summary: "Show install, container and traffic state", usage: "bb millivolt status [--json]" },
-      { name: "setup", summary: "Install millivolt, or adopt an existing one", usage: "bb millivolt setup [--dir PATH] [--port N] [--adopt]" },
-      { name: "discover", summary: "Find existing millivolt installs", usage: "bb millivolt discover [--json]" },
-      { name: "update", summary: "Pull the newest image and recreate if it changed", usage: "bb millivolt update [--json]" },
-      { name: "repair", summary: "Diagnose and fix a deployment that will not answer", usage: "bb millivolt repair [--json]" },
-      { name: "revert", summary: "Pin the previous image after a bad update", usage: "bb millivolt revert [--json]" },
-      { name: "resume", summary: "Stop pinning and track the published image again", usage: "bb millivolt resume [--json]" },
-      { name: "start", summary: "Start the container", usage: "bb millivolt start" },
-      { name: "stop", summary: "Stop the container", usage: "bb millivolt stop" },
-      { name: "restart", summary: "Restart the container", usage: "bb millivolt restart" },
-      { name: "url", summary: "Print the dashboard URL", usage: "bb millivolt url" },
-      { name: "requests", summary: "Show recent proxied requests", usage: "bb millivolt requests [count] [--json]" },
+      { name: "status", summary: "Show install, container and traffic state", usage: "alia millivolt status [--json]" },
+      { name: "setup", summary: "Install millivolt, or adopt an existing one", usage: "alia millivolt setup [--dir PATH] [--port N] [--adopt]" },
+      { name: "discover", summary: "Find existing millivolt installs", usage: "alia millivolt discover [--json]" },
+      { name: "update", summary: "Pull the newest image and recreate if it changed", usage: "alia millivolt update [--json]" },
+      { name: "repair", summary: "Diagnose and fix a deployment that will not answer", usage: "alia millivolt repair [--json]" },
+      { name: "revert", summary: "Pin the previous image after a bad update", usage: "alia millivolt revert [--json]" },
+      { name: "resume", summary: "Stop pinning and track the published image again", usage: "alia millivolt resume [--json]" },
+      { name: "start", summary: "Start the container", usage: "alia millivolt start" },
+      { name: "stop", summary: "Stop the container", usage: "alia millivolt stop" },
+      { name: "restart", summary: "Restart the container", usage: "alia millivolt restart" },
+      { name: "url", summary: "Print the dashboard URL", usage: "alia millivolt url" },
+      { name: "requests", summary: "Show recent proxied requests", usage: "alia millivolt requests [count] [--json]" },
     ],
     async run(argv) {
       const json = argv.includes("--json");
@@ -1647,7 +1647,7 @@ export default async function plugin(bb: BbPluginApi) {
         case "stop":
         case "restart": {
           desiredRunning = command !== "stop";
-          await bb.storage.kv.set("desired-running", desiredRunning);
+          await alia.storage.kv.set("desired-running", desiredRunning);
           const status =
             command === "stop"
               ? await stopMillivolt()

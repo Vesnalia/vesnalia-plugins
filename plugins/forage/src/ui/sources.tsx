@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { experimental_useRpcQuery as useQuery } from "@get-bb/plugin-sdk/app";
+import { experimental_useRpcQuery as useQuery } from "@vesnalia/plugin-sdk/app";
 import type { ResearchSourceView } from "../research/contract.ts";
 import type { SourceScope } from "../web/contracts.ts";
 import type { ThreadScope } from "../research/activity.ts";

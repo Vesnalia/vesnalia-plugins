@@ -12,7 +12,7 @@
 // - The Move to and Link boxes are drawn inside the opened issue, not
 //   floating, because the list clips anything that hangs outside it.
 
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -49,7 +49,7 @@ import { EnterEpicIcon } from "./epic-band.tsx";
 import type { RowAsk } from "./row-menu.tsx";
 
 /**
- * The links of an opened issue, as one line of chips (bead-bb-zty.4). It
+ * The links of an opened issue, as one line of chips (bead-alia-zty.4). It
  * replaced two separate lists, "Blocked by" and "Holds up", which showed
  * only blocking links to unfinished issues.
  *
@@ -145,7 +145,7 @@ export function IssueDetails({
    * Extra classes for the issue's text (description, sections, comments),
    * for a place that caps its height and lets it scroll. The buttons and
    * the Move to and Link boxes are outside it, so they stay in view however
-   * long the text is (the user's request, bead-bb-l3m).
+   * long the text is (the user's request, bead-alia-l3m).
    */
   bodyClassName?: string;
   issue: Issue;
@@ -265,7 +265,7 @@ export function IssueDetails({
         )}
       </div>
       {/* The opened issue's buttons are deliberately quiet (the user's
-          request, bead-bb-zty.1): short, small text, no border, a soft
+          request, bead-alia-zty.1): short, small text, no border, a soft
           background, so a row of them does not pull the eye away from the
           issue's text. Styled here once, for every button in the row. */}
       <div className="flex flex-wrap gap-1.5 [&>button]:h-6 [&>button]:gap-1 [&>button]:rounded [&>button]:border-0 [&>button]:bg-foreground/[0.06] [&>button]:px-2 [&>button]:text-xs [&>button]:font-normal [&>button]:text-muted-foreground [&>button]:shadow-none [&>button:hover]:bg-foreground/[0.12] [&>button:hover]:text-foreground [&>button_[data-icon-root]]:size-3.5">
@@ -409,7 +409,7 @@ export function IssueDetails({
             asks for confirmation first; reopening does not, since it only
             puts an issue back on the list. */}
         {closed ? null : (
-          // Someday, here as in the row's menu (bead-bb-26g).
+          // Someday, here as in the row's menu (bead-alia-26g).
           <Button
             variant="ghost"
             size="sm"
@@ -448,7 +448,7 @@ export function IssueDetails({
             Close
           </Button>
         )}
-        {/* When it was created and last changed (bead-bb-tj4), in the
+        {/* When it was created and last changed (bead-alia-tj4), in the
             bottom right corner, as the user asked: pushed to the end of
             the button row; on a narrow row it wraps and stays right. Only
             for a compact sub-issue: a full row has them in its card's

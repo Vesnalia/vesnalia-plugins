@@ -1,8 +1,8 @@
 import { Fragment, useMemo, type ReactElement, type ReactNode } from "react";
 import {
   ThreadTitle, experimental_useProviders,
-  experimental_useSidebarThreads, useSidebarThreadShortcut, type PluginBrowserBbSdk, type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+  experimental_useSidebarThreads, useSidebarThreadShortcut, type PluginBrowserAliaSdk, type PluginSidebarThread,
+} from "@vesnalia/plugin-sdk/app";
 import { useGitStatus } from "./git-status";
 import { infoLoaders, useCached, type Resource } from "./info-data";
 import * as format from "./info-format";
@@ -75,7 +75,7 @@ const joined = (words: Word[]) => words.map((word, index) =>
   <Fragment key={word.text}>{index > 0 && " · "}<span className={tone(word) || undefined}>{word.text}</span></Fragment>);
 
 export function InfoCardBody({ thread, state, projectName, stale, now, mode, sdk }: { thread: PluginSidebarThread; state: RowState;
-  projectName: string; stale: boolean; now: number; mode: Exclude<InfoCardMode, "off">; sdk: PluginBrowserBbSdk }): ReactElement {
+  projectName: string; stale: boolean; now: number; mode: Exclude<InfoCardMode, "off">; sdk: PluginBrowserAliaSdk }): ReactElement {
   const sidebar = experimental_useSidebarThreads();
   const { providers } = experimental_useProviders();
   const pullRequest = usePullRequest(thread.environment?.id);

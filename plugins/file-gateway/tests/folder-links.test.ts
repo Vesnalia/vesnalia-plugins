@@ -3,7 +3,7 @@ import {test} from 'node:test';
 import {assetUrl, crumbs, fileKind, folderLinkPath, joinPath} from '../folder-links.js';
 
 test('folder links: relative, absolute, trailing slash, file URL', () => {
-  assert.equal(folderLinkPath('.bb/chats/thr_qhrr8bn95r/artifacts/vk-post-autumn'), '.bb/chats/thr_qhrr8bn95r/artifacts/vk-post-autumn');
+  assert.equal(folderLinkPath('.vesnalia/chats/thr_qhrr8bn95r/artifacts/vk-post-autumn'), '.vesnalia/chats/thr_qhrr8bn95r/artifacts/vk-post-autumn');
   assert.equal(folderLinkPath('/home/ubuntu/apps/site/public/'), '/home/ubuntu/apps/site/public/');
   assert.equal(folderLinkPath('docs/Отчёты%20за%20сентябрь'), 'docs/Отчёты за сентябрь');
   assert.equal(folderLinkPath('file:///Users/me/Pictures'), '/Users/me/Pictures');

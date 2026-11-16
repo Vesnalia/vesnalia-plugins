@@ -1,15 +1,15 @@
-// bb-plugin-tree-sidebar backend.
+// alia-plugin-tree-sidebar backend.
 //
 // Two jobs, both of them things the frontend cannot answer on its own. The
 // sidebar hook gives a plugin each project's id and name but not where it
 // lives, and full-text thread search exists only on the server SDK.
-import { defineRpcContract, type BbPluginApi } from "@bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { PROJECTS_CHANNEL } from "./channels";
 import { reorderMoves } from "./reorder";
 import { baseName, isIndented } from "./names";
 
-/** Enough matches to fill a sidebar; bb's own search asks for a similar order. */
+/** Enough matches to fill a sidebar; VesnALIA's own search asks for a similar order. */
 const SEARCH_LIMIT = 50;
 
 /**
@@ -107,23 +107,23 @@ function bodySnippet(matches: readonly SearchMatch[]) {
   };
 }
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(alia: AliaPluginApi) {
   // Read in the app bundle through `useSettings`, not here: the tree is the
   // thing that acts on it, and the value is not secret.
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     hideEmptyProjects: {
       type: "boolean",
       label: "Hide empty projects",
       description:
         "Keep projects with no threads out of the tree. Their + button goes " +
-        "with them, so start the first thread from bb's new-thread screen.",
+        "with them, so start the first thread from VesnALIA's new-thread screen.",
       default: true,
     },
     syncProjectOrder: {
       type: "boolean",
-      label: "Sort bb's projects to match the tree",
+      label: "Sort VesnALIA's projects to match the tree",
       description:
-        "Rewrite bb's own project order — the order the new-thread project " +
+        "Rewrite VesnALIA's own project order — the order the new-thread project " +
         "picker uses — so it matches this sidebar. Off by default: that " +
         "order is yours to set by dragging, and this replaces it.",
       default: false,
@@ -134,13 +134,13 @@ export default function plugin(bb: BbPluginApi) {
       description:
         "Indent each project in the new-thread picker by its depth in the " +
         "tree, folder icon and all, and widen that menu to fit. Restyles one " +
-        "piece of bb's own interface; your project names are left alone.",
+        "piece of VesnALIA's own interface; your project names are left alone.",
       default: false,
     },
   });
 
   const readProjectPaths = async () => {
-    const projects = await bb.sdk.projects.list({ includePersonal: true });
+    const projects = await alia.sdk.projects.list({ includePersonal: true });
     return projects.map((project) => {
       const sources = project.sources.filter(
         (source) => source.type === "local_path",
@@ -155,12 +155,12 @@ export default function plugin(bb: BbPluginApi) {
     });
   };
 
-  bb.rpc.register(treeSidebarRpcContract, {
+  alia.rpc.register(treeSidebarRpcContract, {
     async listProjectPaths() {
       return { projects: await readProjectPaths() };
     },
 
-    // bb's project order is a manual, drag-set fractional key, and the
+    // VesnALIA's project order is a manual, drag-set fractional key, and the
     // new-thread picker renders it as-is. This writes the order the tree shows
     // into it, so the picker and the sidebar agree.
     //
@@ -173,7 +173,7 @@ export default function plugin(bb: BbPluginApi) {
 
       // Public projects only, in the server's own order. The personal project
       // has no place in this ordering, and the frontend leaves it out too.
-      const projects = await bb.sdk.projects.list();
+      const projects = await alia.sdk.projects.list();
       const moves = reorderMoves(
         projects.map((project) => project.id),
         projectIds,
@@ -183,11 +183,11 @@ export default function plugin(bb: BbPluginApi) {
       // between two neighbours that `reorderMoves` guarantees are adjacent by
       // the time it runs.
       for (const move of moves) {
-        await bb.sdk.projects.reorder(move);
+        await alia.sdk.projects.reorder(move);
       }
 
       if (moves.length > 0) {
-        bb.log.info(`Moved ${moves.length} project(s) to match the tree's order`);
+        alia.log.info(`Moved ${moves.length} project(s) to match the tree's order`);
       }
       return { moved: moves.length };
     },
@@ -197,11 +197,11 @@ export default function plugin(bb: BbPluginApi) {
     // undoes that: it is a migration, not a setting, and runs whichever way the
     // options are set. Names that never carried the padding are untouched.
     async unpadProjectNames() {
-      const projects = await bb.sdk.projects.list();
+      const projects = await alia.sdk.projects.list();
       let renamed = 0;
       for (const project of projects) {
         if (!isIndented(project.name)) continue;
-        await bb.sdk.projects.update({
+        await alia.sdk.projects.update({
           projectId: project.id,
           name: baseName(project.name),
         });
@@ -209,18 +209,18 @@ export default function plugin(bb: BbPluginApi) {
       }
 
       if (renamed > 0) {
-        bb.log.info(`Removed name padding from ${renamed} project(s)`);
+        alia.log.info(`Removed name padding from ${renamed} project(s)`);
       }
       return { renamed };
     },
 
     // The host's search box searches message bodies, not just titles, so a
     // sidebar that filters the thread list it already has finds a fraction of
-    // what bb's own does.
+    // what VesnALIA's own does.
     async searchThreads({ query }) {
       const trimmed = query.trim();
       if (trimmed.length === 0) return { active: [], archived: [] };
-      const found = await bb.sdk.threads.search({
+      const found = await alia.sdk.threads.search({
         query: trimmed,
         limitPerGroup: String(SEARCH_LIMIT),
       });
@@ -249,7 +249,7 @@ export default function plugin(bb: BbPluginApi) {
 
   // A new thread is the moment a new project first shows up in the sidebar, so
   // it is also the moment the frontend's cached paths can be one project short.
-  bb.events.on("thread.created", () => {
-    bb.realtime.publish(PROJECTS_CHANNEL, { reason: "thread.created" });
+  alia.events.on("thread.created", () => {
+    alia.realtime.publish(PROJECTS_CHANNEL, { reason: "thread.created" });
   });
 }

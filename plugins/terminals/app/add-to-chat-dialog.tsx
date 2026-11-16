@@ -10,7 +10,7 @@ import {
   useSdk,
   type PluginSidebarProject,
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -35,7 +35,7 @@ export interface AddToChatRequest {
   cwd: string | null;
 }
 
-/** The threads the selector offers: open, shown in bb's list, most recently active first. */
+/** The threads the selector offers: open, shown in VesnALIA's list, most recently active first. */
 export function listedThreads(threads: readonly PluginSidebarThread[]): PluginSidebarThread[] {
   return threads.filter((thread) => !thread.isArchived && !thread.isHidden).sort((a, b) => b.updatedAt - a.updatedAt);
 }
@@ -54,7 +54,7 @@ export function matchThreads(
   });
 }
 
-/** The directories bb knows for each project: its checkouts, and the worktrees its threads run in. */
+/** The directories VesnALIA knows for each project: its checkouts, and the worktrees its threads run in. */
 function usePlaces(open: boolean, threads: readonly PluginSidebarThread[]): ProjectPlace[] {
   const sdk = useSdk();
   const [sources, setSources] = useState<ProjectPlace[]>([]);

@@ -23,7 +23,7 @@ export const COLORS = [
 ] as const;
 export type ColorName = (typeof COLORS)[number];
 
-/** bb's built-in icon names that read well as a status. */
+/** VesnALIA's built-in icon names that read well as a status. */
 export const ICONS = [
   "CircleQuestion",
   "MessageQuestion",
@@ -134,7 +134,7 @@ export interface InboxSettings {
   timeFormat: TimeFormat;
   projectPlace: ProjectPlace;
   // Row layout
-  /** Dot, icon, or bb status before the title, or at the right. */
+  /** Dot, icon, or VesnALIA status before the title, or at the right. */
   markerSide: Side;
   /** A tag right after the title, or at the right. */
   tagPlace: TagPlace;
@@ -166,7 +166,7 @@ export interface InboxSettings {
   currentProjectOnly: boolean;
   /** Clicking the header folds the list away; counters stay visible. */
   collapsible: boolean;
-  /** Key pills while ⌘ is held, if bb's own hints are on too. */
+  /** Key pills while ⌘ is held, if VesnALIA's own hints are on too. */
   keyHints: boolean;
   /** The keys held with 1–9 to open the block's threads by number. */
   jumpModifier: JumpModifier;
@@ -395,7 +395,7 @@ export function migrateSettings(
 }
 
 /** Marks an exported file so an import can tell it apart from other JSON. */
-export const EXPORT_FORMAT = "bb-plugin-waiting-on-you/settings";
+export const EXPORT_FORMAT = "alia-plugin-waiting-on-you/settings";
 export const EXPORT_VERSION = 1;
 
 export interface SettingsExport {

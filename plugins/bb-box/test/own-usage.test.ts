@@ -147,7 +147,7 @@ test("a change between the Mac reader and ps starts a new baseline, never a spik
 });
 
 function macOutput(sections: Record<string, string>): string {
-  return Object.entries(sections).map(([name, text]) => `\n@@bb-box-monitor:${name}\n${text}`).join("");
+  return Object.entries(sections).map(([name, text]) => `\n@@alia-box-monitor:${name}\n${text}`).join("");
 }
 
 const MAC = {

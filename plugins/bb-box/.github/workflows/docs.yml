@@ -1,5 +1,5 @@
 # Publishes the docs site to GitHub Pages at https://bbbox.dev on each push to main.
-# It runs only in ahkohd/bb-box, where Pages is set up with GitHub Actions as its source.
+# It runs only in ahkohd/alia-box, where Pages is set up with GitHub Actions as its source.
 name: docs
 
 on:
@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.repository == 'ahkohd/bb-box'
+    if: github.repository == 'ahkohd/alia-box'
     runs-on: ubuntu-latest
     container:
       image: node:26-bookworm

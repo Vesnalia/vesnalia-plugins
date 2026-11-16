@@ -1,6 +1,6 @@
 # Re-phrase
 
-A [bb](https://getbb.app) plugin that adds a **Re-phrase** button to the prompt
+A [VesnALIA](https://getbb.app) plugin that adds a **Re-phrase** button to the prompt
 input. Click it and the draft you already typed is sent to an agent with the
 instruction to rewrite it; the improved prompt comes straight back into the
 composer.
@@ -13,19 +13,19 @@ composer.
 - The instruction sent with your draft is a setting too — rewrite it to match how
   you like prompts written.
 - Nothing is sent anywhere your agent does not already go: the rewrite runs
-  through bb, in a hidden thread that is stopped and deleted right after it
+  through VesnALIA, in a hidden thread that is stopped and deleted right after it
   answers.
 
 ## Install
 
 ```sh
-bb plugin install https://github.com/suiramdev/bb-plugin-rephrase
+alia plugin install https://github.com/suiramdev/bb-plugin-rephrase
 ```
 
-Or pin a release range and let `bb plugin update` follow it:
+Or pin a release range and let `alia plugin update` follow it:
 
 ```sh
-bb plugin install git:https://github.com/suiramdev/bb-plugin-rephrase.git@^0.2.0
+alia plugin install git:https://github.com/suiramdev/bb-plugin-rephrase.git@^0.2.0
 ```
 
 ## Use it
@@ -58,7 +58,7 @@ immediately; there is nothing to save.
 
 ### The rest
 
-Host-rendered settings, also reachable from `bb plugin config rephrase`:
+Host-rendered settings, also reachable from `alia plugin config rephrase`:
 
 | Setting                   | Default          | What it does                                                                                              |
 | ------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------- |
@@ -97,11 +97,11 @@ is the one place it is set.
 npm install
 npm test          # vitest: composer action, model picker, search rules
 npm run typecheck
-bb plugin install .
-bb plugin dev     # rebuild + reload on every save
+alia plugin install .
+alia plugin dev     # rebuild + reload on every save
 ```
 
-`bb plugin logs rephrase -f` follows the plugin's own log.
+`alia plugin logs rephrase -f` follows the plugin's own log.
 
 ## License
 

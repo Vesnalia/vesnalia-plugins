@@ -26,10 +26,10 @@ const poll = async () => {
   h.clock.advance(5 * 60_000);
   await pollPullRequests(h.ctx, project());
 };
-const spawns = () => h.bb.callsTo("spawnThread").map(([args]) => args as SpawnArgs);
+const spawns = () => h.alia.callsTo("spawnThread").map(([args]) => args as SpawnArgs);
 const outcomes = (key: string) => h.store.posts(ticketOf(h, key).id).flatMap((post) => (JSON.parse(post.data_json) as { outcome?: string }).outcome ?? []);
 const worktreeOf = (row: ThreadRow) => `/wt/${h.store.thread(row.id)!.environment_id}`;
-const onHost = (row: ThreadRow) => h.bb.environments.get(h.store.thread(row.id)!.environment_id!)!.hostId;
+const onHost = (row: ThreadRow) => h.alia.environments.get(h.store.thread(row.id)!.environment_id!)!.hostId;
 const callsOn = (hostId: string) => h.host.calls.filter((call) => call.hostId === hostId).map((call) => call.method);
 
 /** Every worker and reviewer on a new machine, stacking pull requests; CSV-1's pull request is open at sq1. */
@@ -122,7 +122,7 @@ describe("a stacked ticket on a machine of its own", () => {
 
     expect(ticketOf(h, "CSV-2")).toMatchObject({ state: "working", check_failures: 1 });
     expect(h.store.posts(ticketOf(h, "CSV-2").id).filter((post) => post.kind === "check").at(-1)!.body).toContain("FAIL scope check");
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("no longer has the commit Loom put first");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("no longer has the commit Loom put first");
     expect(h.host.callsTo("importCommit")).toEqual([]);
   });
 
@@ -147,7 +147,7 @@ describe("a stacked ticket on a machine of its own", () => {
 
   it("keeps its worker, and so its machine, while a dependency is open, and lets it go once every dependency merged", async () => {
     const worker = await stacked();
-    h.bb.threads.get(worker.thread_id!)!.status = "idle";
+    h.alia.threads.get(worker.thread_id!)!.status = "idle";
     await releaseIdleWorkers(h.ctx, project(), spec());
     expect(isReleased(h.store.thread(worker.id))).toBe(false);
 
@@ -189,7 +189,7 @@ describe("catching up with the dependency on a machine", () => {
     h.host.feedback.set(URL1, { checks: [{ key: "check:9", name: "integration tests", state: "failed", url: "https://ci/9" }] });
     await poll();
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", pr_rounds: 1 });
-    expect(h.bb.sent(first.thread_id!).at(-1)).toContain("integration tests");
+    expect(h.alia.sent(first.thread_id!).at(-1)).toContain("integration tests");
 
     dirty(first);
     await submitted(first);
@@ -232,7 +232,7 @@ describe("catching up with the dependency on a machine", () => {
     expect(stackOf(ticketOf(h, "CSV-2"))).toMatchObject({ deps: { "CSV-1": "sq7" }, base: "sq7", markers: ["src/export/a.ts"] });
     expect(h.host.callsTo("exportChanges").at(-1)).toMatchObject({ head: "cf1" });
     expect(h.host.callsTo("push")).toHaveLength(pushes);
-    const sent = h.bb.sent(worker.thread_id!).at(-1)!;
+    const sent = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(sent).toContain("conflict markers");
     expect(sent).toContain("src/export/a.ts");
     expect(sent).not.toContain("git merge");
@@ -291,7 +291,7 @@ describe("catching up with the dependency on a machine", () => {
 
     expect(ticketOf(h, "CSV-2")).toMatchObject({ state: "working", check_failures: 1 });
     expect(stackOf(ticketOf(h, "CSV-2"))).toMatchObject({ deps: { "CSV-1": "sq7" }, base: "sq7" });
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("Loom merged CSV-1's pull request into your branch, and then the check \"npm test\" exited with 1");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("Loom merged CSV-1's pull request into your branch, and then the check \"npm test\" exited with 1");
     expect(h.host.callsTo("push")).toHaveLength(pushes);
   });
 
@@ -304,7 +304,7 @@ describe("catching up with the dependency on a machine", () => {
 
     expect(ticketOf(h, "CSV-2")).toMatchObject({ state: "working", check_failures: 0 });
     expect(stackOf(ticketOf(h, "CSV-2"))).toMatchObject({ deps: { "CSV-1": "sq1" } });
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("notes.txt");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("notes.txt");
     expect(h.host.callsTo("push")).toHaveLength(pushes);
   });
 });

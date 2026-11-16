@@ -45,11 +45,11 @@ const VAGUE = new Set([
 ]);
 
 const OVERRIDES_SAFETY = [
-  /ignore\s+(bb'?s\s+)?rules/i,
+  /ignore\s+(alia'?s\s+)?rules/i,
   /ignore\s+(your\s+|the\s+)?(system\s+)?(instructions|system prompt)/i,
-  /override\s+(bb|safety|the rules)/i,
-  /disregard\s+(bb|safety|the rules|your instructions)/i,
-  /do not follow\s+(bb'?s\s+|the\s+)?(rules|safety)/i,
+  /override\s+(alia|safety|the rules)/i,
+  /disregard\s+(alia|safety|the rules|your instructions)/i,
+  /do not follow\s+(alia'?s\s+|the\s+)?(rules|safety)/i,
 ];
 
 function words(line: string): string {
@@ -178,7 +178,7 @@ export function evalSoul(soul: Soul): SoulEval {
     findings.push({
       severity: "fail",
       code: "overrides-safety",
-      message: `This persona asks the agent to drop BB's rules or safety ("${unsafe[0]}"). A soul cannot do that, and the line should come out.`,
+      message: `This persona asks the agent to drop VesnALIA's rules or safety ("${unsafe[0]}"). A soul cannot do that, and the line should come out.`,
     });
   }
 
@@ -267,15 +267,15 @@ export function formatEvalPlan(soul: Soul, report: SoulEval): string {
     ``,
     comparisonPrompt(soul),
     ``,
-    `bb souls eval ${soul.name} --run`,
-    `bb souls eval ${soul.name} --run --against <other>`,
+    `alia souls eval ${soul.name} --run`,
+    `alia souls eval ${soul.name} --run --against <other>`,
     ``,
     persona,
   ].join("\n");
 }
 
 export const delegationProbePrompt = [
-  "For this evaluation, you are explicitly authorized to spawn and coordinate exactly one BB child thread for this task. Do not use workflows or teams.",
+  "For this evaluation, you are explicitly authorized to spawn and coordinate exactly one VesnALIA child thread for this task. Do not use workflows or teams.",
   "Delegate calculation of 17 × 19 to that child using --parent-self. Wait for its result, then independently verify the multiplication yourself with a runnable calculation. Do not merely repeat the child's answer.",
   "Report the child thread id, the child's result, your independent verification command and its output. Do not edit repository files, deploy, or perform unrelated work. The child is not authorized to spawn further children.",
 ].join(" ");
@@ -326,7 +326,7 @@ export function formatEvalRun(run: EvalRun): string {
     ``,
     arms,
     ``,
-    `bb souls eval show ${run.id}`,
+    `alia souls eval show ${run.id}`,
     `The arms share the project workspace. A task that edits files will race.`,
   ].join("\n");
 }

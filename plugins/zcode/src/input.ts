@@ -1,6 +1,6 @@
 import { stat } from "node:fs/promises";
 import { basename, extname, resolve } from "node:path";
-import type { PromptInput } from "@get-bb/plugin-sdk/provider-bridge";
+import type { PromptInput } from "@vesnalia/plugin-sdk/provider-bridge";
 import { ProtocolError } from "./client.js";
 
 const MAX_INLINE_BYTES = 16 * 1024 * 1024;
@@ -32,7 +32,7 @@ export async function nativeInput(
       parts.push(item.text);
       if (item.mentions?.length)
         parts.push(
-          `<bb_references>\n${JSON.stringify(item.mentions.map((m) => m.resource))}\n</bb_references>`,
+          `<alia_references>\n${JSON.stringify(item.mentions.map((m) => m.resource))}\n</alia_references>`,
         );
       continue;
     }

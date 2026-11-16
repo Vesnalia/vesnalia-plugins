@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
-import { definePluginApp, experimental_Icon as Icon, experimental_FileLink as FileLink, experimental_BranchPicker as BranchPicker, useComposer } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, experimental_Icon as Icon, experimental_FileLink as FileLink, experimental_BranchPicker as BranchPicker, useComposer } from "@vesnalia/plugin-sdk/app";
 import { buildTree, filterFiles } from "../core/tree";
 import type { ChangedFile, Directory } from "../core/tree";
 import { useChanges } from "./hooks/use-changes";
@@ -87,8 +87,8 @@ function FileDiff({ snapshot, file, view, mention }: { snapshot: Snapshot; file:
       <button type="button" className="dt-action" title="Add file mention to chat" aria-label="Add file mention to chat" onClick={() => mention(file.path)}><ActionIcon kind="quote" /></button>
       {file.changeKind !== "deleted" && <FileLink target={{ kind: "workspace", environmentId: snapshot.environmentId, path: file.path }} className="dt-open" title={snapshot.target.type === "range" ? "Open working-copy file" : "Open file"} aria-label="Open file"><Icon name="ExternalLink" className="dt-icon" /></FileLink>}
     </header>
-    <div className="dt-diff-body" aria-busy={!showImage && loading}>{showImage ? <ImageDiff snapshot={snapshot} file={file} /> : file.binary ? <Notice>Binary file — no text diff available.</Notice> : file.loadMode === "too_large" ? <Notice>This file exceeds the BB diff limit. Open the file to view it.</Notice> : patch?.error ? <Notice error>{patch.error}</Notice> : patch?.patch === undefined ? <DiffLoading smooth={smoothTransitions} /> : <div key={transitionKey} className={`dt-diff-reveal${smoothTransitions ? " dt-diff-reveal-smooth" : ""}`}>
-      {patch.truncated && <Notice>Partial diff: the BB size limit was reached.</Notice>}
+    <div className="dt-diff-body" aria-busy={!showImage && loading}>{showImage ? <ImageDiff snapshot={snapshot} file={file} /> : file.binary ? <Notice>Binary file — no text diff available.</Notice> : file.loadMode === "too_large" ? <Notice>This file exceeds the VesnALIA diff limit. Open the file to view it.</Notice> : patch?.error ? <Notice error>{patch.error}</Notice> : patch?.patch === undefined ? <DiffLoading smooth={smoothTransitions} /> : <div key={transitionKey} className={`dt-diff-reveal${smoothTransitions ? " dt-diff-reveal-smooth" : ""}`}>
+      {patch.truncated && <Notice>Partial diff: the VesnALIA size limit was reached.</Notice>}
       {patch.patch ? <InteractiveDiff patch={patch.patch} path={file.path} oldPath={file.previousPath ?? undefined} revision={snapshot.target.type === "range" ? `${snapshot.label} (${snapshot.target.from}..${snapshot.target.to})` : snapshot.label} view={view} contents={patch.contents} contextError={patch.contextError} /> : <Notice>No text changes (empty file, rename, or permission change).</Notice>}
     </div>}</div>
   </section>;
@@ -136,7 +136,7 @@ function ChangesBrowser({ snapshot, environment, revision, state, update, browse
       {!showSource && (!selectedFile || !isImagePath(selectedFile.path) || isSvgPath(selectedFile.path)) && <div className="dt-segment" role="group" aria-label="Diff view"><button type="button" aria-pressed={view === "unified"} onClick={() => update({ view: "unified" })}>Unified</button><button type="button" aria-pressed={view === "split"} onClick={() => update({ view: "split" })}>Split</button></div>}
       {selectedFile && <div className="dt-segment" role="group" aria-label="File preview"><button type="button" disabled={!selectedFile.change || !snapshot} aria-pressed={!showSource} onClick={() => update({ preview: "diff" })}>Diff</button><button type="button" disabled={!worktreeMode && selectedFile.change?.changeKind === "deleted"} aria-pressed={showSource} onClick={() => update({ preview: "file" })}>File</button></div>}
       </div>
-    </div>{missingRequested ? <Notice><strong>{selected}</strong><p>No changes for this file in the selected comparison.</p><button type="button" className="dt-action dt-text-action" onClick={browseWorktree}>View in worktree</button><FileLink target={{ kind: "workspace", environmentId: environment.id, path: selected! }}>Open file in BB</FileLink></Notice> : showSource && selectedFile ? <FileSource environment={environment} path={selectedFile.path} revision={revision} mention={mention} /> : snapshot ? <FileDiff snapshot={snapshot} file={selectedFile?.change} view={view} mention={mention} /> : <Notice>Select a file in the tree.</Notice>}</div>
+    </div>{missingRequested ? <Notice><strong>{selected}</strong><p>No changes for this file in the selected comparison.</p><button type="button" className="dt-action dt-text-action" onClick={browseWorktree}>View in worktree</button><FileLink target={{ kind: "workspace", environmentId: environment.id, path: selected! }}>Open file in VesnALIA</FileLink></Notice> : showSource && selectedFile ? <FileSource environment={environment} path={selectedFile.path} revision={revision} mention={mention} /> : snapshot ? <FileDiff snapshot={snapshot} file={selectedFile?.change} view={view} mention={mention} /> : <Notice>Select a file in the tree.</Notice>}</div>
   </div>;
 }
 
@@ -208,7 +208,7 @@ function ThreadPanel({ threadId }: { threadId: string }) {
     {scope === "recent" && <p className="dt-context">Combined diff from the selected commit through HEAD, including the starting commit, along first-parent history. Working-copy changes are excluded.</p>}
     {historyScope && history.hasMore && <p className="dt-context">Showing the 200 most recent commits along first-parent history.</p>}
     {historyScope && history.error && <Notice error>{history.error}</Notice>}
-    {snapshot?.truncated && <Notice>The BB file limit was reached; some changed files may be missing.</Notice>}
+    {snapshot?.truncated && <Notice>The VesnALIA file limit was reached; some changed files may be missing.</Notice>}
     {error && worktreeMode && environment && <p className="dt-context" role="status">Comparison unavailable: {error}. Worktree files are still available.</p>}
     {environment && (worktreeMode || snapshot) ? <ChangesBrowser key={threadId} snapshot={snapshot} environment={environment} revision={revision} state={state} update={update} browseWorktree={() => update({ worktreeMode: true })} request={request} /> : error ? <Notice error>{error}</Notice> : <Notice>{historyScope ? history.loading ? "Loading commit history…" : history.error ? "Commit history is unavailable." : !history.commits.length ? "No commits yet. Use Uncommitted to view working-copy changes." : "Choose a commit to view its changes." : "Loading changes…"}</Notice>}
   </div>;

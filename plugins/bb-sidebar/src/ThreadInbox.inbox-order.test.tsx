@@ -18,7 +18,7 @@ describe("ThreadInbox", () => {
         inactiveAfterHours: 6,
       },
     };
-    localStorage.setItem("bb-sidebar:settings-cache:v1", JSON.stringify(storedSettings));
+    localStorage.setItem("alia-sidebar:settings-cache:v1", JSON.stringify(storedSettings));
 
     const now = Date.now();
     let storedIds = ["a", "b", "z"];
@@ -48,7 +48,7 @@ describe("ThreadInbox", () => {
             updatedAt: now - 7 * 60 * 60 * 1_000,
           }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         getSidebarSettings: () => storedSettings,
@@ -113,7 +113,7 @@ describe("ThreadInbox", () => {
           thread({ id: "a", title: "Pin A", isPinned: true }),
           thread({ id: "b", title: "Pin B", isPinned: true }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
@@ -133,7 +133,7 @@ describe("ThreadInbox", () => {
     pending.reject(new Error("order conflict"));
     await waitFor(() =>
       expect(toastMocks.error).toHaveBeenCalledWith("Could not reorder pinned thread", {
-        className: "bb-sidebar-toast",
+        className: "alia-sidebar-toast",
         description: "order conflict",
       }),
     );
@@ -148,7 +148,7 @@ describe("ThreadInbox", () => {
           thread({ id: "a", title: "Inbox A", createdAt: 2 }),
           thread({ id: "b", title: "Inbox B", createdAt: 1 }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
@@ -166,7 +166,7 @@ describe("ThreadInbox", () => {
         thread({ id: "a", title: "Inbox A", createdAt: 2 }),
         thread({ id: "b", title: "Inbox B", createdAt: 1 }),
       ],
-      projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+      projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
     };
     const settings = { ...defaultSidebarSettings, inactiveThreadsEnabled: shelf === "Inactive" };
     const first = renderSlot(inbox, listProps, {
@@ -226,7 +226,7 @@ describe("ThreadInbox", () => {
           thread({ id: "a", title: "Inbox A", createdAt: 2 }),
           thread({ id: "b", title: "Inbox B", createdAt: 1 }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
@@ -241,7 +241,7 @@ describe("ThreadInbox", () => {
     fireEvent.keyDown(await screen.findByRole("link", { name: "Inbox B" }), { key: "ArrowUp", altKey: true });
     await waitFor(() => expect(reorderInput).toEqual({ inboxThreadIds: ["b", "a"] }));
     expect(screen.getAllByRole("listitem")[0]!.textContent).toContain("Inbox B");
-    expect(JSON.parse(localStorage.getItem("bb-sidebar:inbox-order-cache:v1")!)).toEqual(["b", "a"]);
+    expect(JSON.parse(localStorage.getItem("alia-sidebar:inbox-order-cache:v1")!)).toEqual(["b", "a"]);
   });
 
   it("does not let a stale order refresh overwrite a successful reorder", async () => {
@@ -253,7 +253,7 @@ describe("ThreadInbox", () => {
           thread({ id: "a", title: "Inbox A", createdAt: 2 }),
           thread({ id: "b", title: "Inbox B", createdAt: 1 }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
@@ -269,7 +269,7 @@ describe("ThreadInbox", () => {
     await waitFor(() => expect(screen.getAllByRole("listitem")[0]!.textContent).toContain("Inbox B"));
 
     await act(async () => staleRead.resolve({ inboxThreadIds: ["a", "b"] }));
-    expect(JSON.parse(localStorage.getItem("bb-sidebar:inbox-order-cache:v1")!)).toEqual(["b", "a"]);
+    expect(JSON.parse(localStorage.getItem("alia-sidebar:inbox-order-cache:v1")!)).toEqual(["b", "a"]);
     expect(screen.getAllByRole("listitem")[0]!.textContent).toContain("Inbox B");
   });
 
@@ -282,7 +282,7 @@ describe("ThreadInbox", () => {
           thread({ id: "a", title: "Inbox A", createdAt: 2 }),
           thread({ id: "b", title: "Inbox B", createdAt: 1 }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
@@ -297,7 +297,7 @@ describe("ThreadInbox", () => {
     pending.reject(new Error("database busy"));
     await waitFor(() =>
       expect(toastMocks.error).toHaveBeenCalledWith("Could not reorder inbox thread", {
-        className: "bb-sidebar-toast",
+        className: "alia-sidebar-toast",
         description: "database busy",
       }),
     );

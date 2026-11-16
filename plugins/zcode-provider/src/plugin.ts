@@ -1,5 +1,5 @@
-import { reasoningLevelValues } from '@get-bb/plugin-sdk/provider-bridge';
-import type { BbPluginApi, PluginProviderDeclaration } from '@get-bb/plugin-sdk';
+import { reasoningLevelValues } from '@vesnalia/plugin-sdk/provider-bridge';
+import type { AliaPluginApi, PluginProviderDeclaration } from '@vesnalia/plugin-sdk';
 import { compactionItemSchema } from './compaction.ts';
 import { signInHint } from './applications.ts';
 import { join } from 'node:path';
@@ -9,9 +9,9 @@ import { mkdirSync, writeFileSync, renameSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { authMode } from './auth.ts';
 import { registerUsageSource } from './usage-source.ts';
-export default async function plugin(bb: BbPluginApi): Promise<void> {
-  bb.agents?.configure(() => ({ tools: [], skills: ['zcode-provider'] }));
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi): Promise<void> {
+  alia.agents?.configure(() => ({ tools: [], skills: ['zcode-provider'] }));
+  const settings = alia.settings.define({
     checkStartPromotions: { type: 'boolean', default: false, label: 'Check for Start Plan promotions',
       description: 'Reads promotion messages in English to notify you about Start Plan claim offers in ZCode Desktop. Claim eligibility is checked in Desktop. When off, no promotion requests or notices are made; quota already claimed is still detected.' },
     memoryEnabled: { type: 'boolean', default: true, label: 'ZCode memory fallback',
@@ -21,13 +21,13 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
     authMode: { type: 'select', label: 'ZCode sign-in source', options: ['desktop', 'coding-plan-key'], default: 'desktop',
       description: 'desktop uses your existing Desktop sign-in. coding-plan-key uses the backup key for the Coding Plan gateway.' },
     backupKey: { type: 'string', label: 'Backup Coding Plan key', secret: true,
-      description: 'Used only with coding-plan-key on this Mac. bb stores this secret in a protected file.' },
+      description: 'Used only with coding-plan-key on this Mac. VesnALIA stores this secret in a protected file.' },
   });
-  // Health in bb 0.48.1 has neither per-command settings nor contributed env.
+  // Health in VesnALIA 0.48.1 has neither per-command settings nor contributed env.
   // Project auth source and the promotion preference into this plugin's data, never native
   // credentials/config. Ordinary input and steering remain per-command.
-  if (bb.server?.experimental_dataDir && bb.pluginId) {
-    const root = join(bb.server.experimental_dataDir, 'plugins', bb.pluginId, 'bridge-data/zcode');
+  if (alia.server?.experimental_dataDir && alia.pluginId) {
+    const root = join(alia.server.experimental_dataDir, 'plugins', alia.pluginId, 'bridge-data/zcode');
     const projectSelection = (values: Record<string, unknown>) => {
       const selected = { authMode: authMode(values.authMode), checkStartPromotions: values.checkStartPromotions === true };
       mkdirSync(root, { recursive: true });
@@ -50,20 +50,20 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
     composerActions: [],
     extensionKinds: { compaction: { item: compactionItemSchema } },
   } satisfies PluginProviderDeclaration;
-  bb.providers.register(provider);
-  if (bb.rpc && bb.sdk) registerUsageSource(bb, provider.id, async () => authMode((await settings.get()).authMode));
-  // bb 0.48.1 maintenance uses launch options, without deriveProviderOptions.
+  alia.providers.register(provider);
+  if (alia.rpc && alia.sdk) registerUsageSource(alia, provider.id, async () => authMode((await settings.get()).authMode));
+  // VesnALIA 0.48.1 maintenance uses launch options, without deriveProviderOptions.
   // Its contributed-env fingerprint refreshes the host catalogue when these
   // non-secret selections change. Ordinary turns still use per-command options.
-  bb.providers.experimental_contributeEnv?.(provider.id, async () => {
+  alia.providers.experimental_contributeEnv?.(provider.id, async () => {
     const values = await settings.get();
     return [
-      { name: 'BB_ZCODE_AUTH_MODE', value: String(values.authMode ?? 'desktop'), reason: 'Selected ZCode sign-in source for maintenance' },
-      { name: 'BB_ZCODE_CHECK_START_PROMOTIONS', value: String(values.checkStartPromotions === true), reason: 'Refresh catalogue when promotion discovery preference changes' },
+      { name: 'ALIA_ZCODE_AUTH_MODE', value: String(values.authMode ?? 'desktop'), reason: 'Selected ZCode sign-in source for maintenance' },
+      { name: 'ALIA_ZCODE_CHECK_START_PROMOTIONS', value: String(values.checkStartPromotions === true), reason: 'Refresh catalogue when promotion discovery preference changes' },
     ];
   });
-  bb.cli?.register(reportCli(async () => {
-        const root = join(bb.server.experimental_dataDir, 'plugins', bb.pluginId, 'bridge-data/zcode');
+  alia.cli?.register(reportCli(async () => {
+        const root = join(alia.server.experimental_dataDir, 'plugins', alia.pluginId, 'bridge-data/zcode');
         return { local: localProblemReport(root), settings: await settings.get() };
     }));
 }

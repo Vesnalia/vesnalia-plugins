@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const MAX_NAME_LENGTH = 128;
@@ -32,7 +32,7 @@ export const stepExecutionSchema = z
 
 export type StepExecutionChoice = z.infer<typeof stepExecutionSchema>;
 
-type Sdk = BbPluginApi["sdk"];
+type Sdk = AliaPluginApi["sdk"];
 type ModelCatalog = Awaited<ReturnType<Sdk["providers"]["models"]>>;
 type ModelCatalogEntry = ModelCatalog["models"][number];
 type SkillList = Awaited<ReturnType<Sdk["skills"]["list"]>>;
@@ -205,7 +205,7 @@ function resolveSkills(
 }
 
 export async function resolveStepExecution(
-  sdk: BbPluginApi["sdk"],
+  sdk: AliaPluginApi["sdk"],
   routing: { environmentId: string; projectId: string },
   choice: StepExecutionChoice,
 ): Promise<ResolvedStepExecution> {

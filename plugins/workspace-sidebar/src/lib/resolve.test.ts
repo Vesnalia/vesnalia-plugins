@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { resolveTree, type ProjectGroup, type ResolvedTree } from "./resolve";
 import { buildSections, visibleThreadIds } from "./sections";
 import { statusBucket } from "./status";

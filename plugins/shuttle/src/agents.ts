@@ -88,7 +88,7 @@ export async function askAgent(ctx: Ctx, key: string, text: string): Promise<voi
 }
 
 /**
- * The bb thread that opened the PR: the one whose id is in its branch name, or one working on its
+ * The VesnALIA thread that opened the PR: the one whose id is in its branch name, or one working on its
  * branch, and in both cases in the project whose remote is exactly the PR's repository. A thread
  * elsewhere never becomes, or is offered as, the agent.
  */

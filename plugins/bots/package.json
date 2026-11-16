@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-bots",
+  "name": "alia-plugin-bots",
   "version": "1.3.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.48.1",
-    "bbPluginSdk": ">=0.4.8"
+    "alia": ">=0.48.1",
+    "aliaPluginSdk": ">=0.4.8"
   },
-  "bb": {
+  "alia": {
     "name": "Bots",
     "description": "Create custom bots with their own instructions and model, then chat with them.",
     "branding": {
@@ -27,7 +27,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.8",
     "@radix-ui/react-dialog": "^1.1.19",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
@@ -46,8 +45,25 @@
     "vitest": "^4.1.11"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.8"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/bots#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/bots"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

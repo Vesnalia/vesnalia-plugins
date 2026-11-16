@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Generates Iris's brand files from one shape: an iris of four blades whose
 // opening is a square window, the place where UI appears. One color always:
-// bb draws the mask icon in its own color, the logos come in a light and a
+// VesnALIA draws the mask icon in its own color, the logos come in a light and a
 // dark ink, and the in-app mark wears the theme's accent.
 // Run: node scripts/brand.mjs
 import fs from "node:fs";

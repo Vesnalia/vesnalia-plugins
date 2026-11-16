@@ -1,7 +1,7 @@
 # Final local validation record
 
 The final plugin checks pass: **110 tests across 14 files**, TypeScript,
-BB plugin build, and successful reload. Live checks cover explicit attachment
+VesnALIA plugin build, and successful reload. Live checks cover explicit attachment
 and persisted default selection, Home, Lock, full-cycle toolbar rotation,
 portrait/landscape frame and mask alignment, and foreground asymmetric-target
 taps. The persistent H.264 run decoded 546/546 frames without errors. Detailed
@@ -20,7 +20,7 @@ Marketplace validation with the final artifacts passes:
 - All 43 marketplace tests and upload retry tests.
 - v1 addition gate and diff whitespace.
 
-The clean temporary marketplace checkout is `/tmp/bb-ios-marketplace-review`,
+The clean temporary marketplace checkout is `/tmp/alia-ios-marketplace-review`,
 branch `submit-ios-simulator`, commit
 `8bb129d4190733ddf8fcdcc059f393450ee59d00`. Its net diff contains exactly the
 entry, content-hashed icon, unchanged overview, and approved screenshot.
@@ -34,7 +34,7 @@ From the plugin checkout, for implementation changes:
 ```sh
 npm run typecheck
 npm test
-bb plugin build
+alia plugin build
 git diff --check
 git status --short
 ```

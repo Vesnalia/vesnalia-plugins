@@ -30,7 +30,7 @@ export function lowestIndex(tiles: readonly { bottom: number; left: number }[]):
 }
 
 /**
- * Whether the right panel is collapsed: BB sizes the split panel to 0 (`data-panel-size`), makes the drawer inert
+ * Whether the right panel is collapsed: VesnALIA sizes the split panel to 0 (`data-panel-size`), makes the drawer inert
  * while closed, and hides the aside from assistive technology.
  */
 export function isShut({ size, inert, ariaHidden }: { size: string | undefined; inert: boolean; ariaHidden: string | null }): boolean {

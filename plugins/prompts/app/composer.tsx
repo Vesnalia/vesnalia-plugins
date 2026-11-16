@@ -8,7 +8,7 @@ import {
   useState,
   type ComponentPropsWithoutRef,
 } from "react";
-import { useBbNavigate, useComposer } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useComposer } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { describeQueue, type PillTone } from "./queue-state";
 import { QueueView } from "./queue-view";
@@ -59,7 +59,7 @@ const PILL_TONE: Record<PillTone, { pill: string; chip: string }> = {
  * buttons sitting side by side in the composer row have to read as a pair, not
  * as two plugins that happened to land next to each other.
  *
- * No outline: bb's own composer controls and the other plugins' actions are
+ * No outline: VesnALIA's own composer controls and the other plugins' actions are
  * ghost buttons, so a bordered pill was the one boxed control in the row.
  */
 export const ComposerPill = forwardRef<
@@ -96,7 +96,7 @@ export const ComposerPill = forwardRef<
       // the composer row's clamping can never clip it.
       //
       // 28px is a mouse target. On a touch composer it is the smallest control
-      // in the row — bb's own prompt-actions button is 40px tall there — and an
+      // in the row — VesnALIA's own prompt-actions button is 40px tall there — and an
       // icon-only pill would be a 28x28 tap target, under both the iOS (44pt)
       // and Android (48dp) minimums. Grow to 40px on a coarse pointer, matching
       // the host's own controls; the fine-pointer size is untouched.
@@ -159,7 +159,7 @@ function useInsertText(close: () => void) {
 }
 
 export function QueueButton() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const composer = useComposer();
   const threadId = useComposerThreadId();
   const projectId = useComposerProjectId();
@@ -237,7 +237,7 @@ export function QueueButton() {
  * One popover with a tab strip made every insert cost a tab hop first.
  */
 export function SnippetsButton() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const threadId = useComposerThreadId();
   const projectId = useComposerProjectId();
   const [open, setOpen] = useState(false);

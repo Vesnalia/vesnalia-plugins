@@ -38,9 +38,9 @@ Playback holds a few seconds of audio before it starts. That trades about a
 second of startup for not running dry mid-sentence when the network hiccups,
 which is what a phone on a slow link does.
 
-Voice and a default speaking rate are plugin settings. `bb read-aloud status`
+Voice and a default speaking rate are plugin settings. `alia read-aloud status`
 reports whether synthesis is reachable and which voice and client version are
-in use, and `bb read-aloud voices` lists what the service offers.
+in use, and `alia read-aloud voices` lists what the service offers.
 
 ## Requirements
 

@@ -7,7 +7,7 @@ export default defineConfig({
     exclude: ["node_modules/**", "dist/**"],
     server: {
       deps: {
-        external: [/^@get-bb\/plugin-sdk(?:\/.*)?$/],
+        external: [/^@get-alia\/plugin-sdk(?:\/.*)?$/],
       },
     },
   },

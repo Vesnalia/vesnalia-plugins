@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { test, expect, vi, afterEach, beforeEach } from "vitest";
 import { cleanup, screen, fireEvent } from "@testing-library/react";
-import { installTestPluginRuntime, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 installTestPluginRuntime();
 afterEach(cleanup);

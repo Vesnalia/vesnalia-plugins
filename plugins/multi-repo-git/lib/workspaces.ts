@@ -24,7 +24,7 @@ export function arrangeWorkspaceSectionOrder(
     children.sort((left, right) => left.position - right.position);
   }
 
-  // BB expands the legacy aggregate before explicit IDs, defeating workspace order.
+  // VesnALIA expands the legacy aggregate before explicit IDs, defeating workspace order.
   const withoutChildren = sectionOrder.filter(
     (key) => !childKeys.has(key) && (key !== "projects" || links.length === 0),
   );

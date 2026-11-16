@@ -90,7 +90,7 @@ import {
   TextSizeGlyph,
 } from "./glyphs.tsx";
 
-export const TOUCH_HINT_KEY = "bb-box:device-touch-hint-seen";
+export const TOUCH_HINT_KEY = "alia-box:device-touch-hint-seen";
 export const TOUCH_HINT_WORDS = "Using a control takes control from the agent.";
 const ROW_GAP_PX = 12;
 const EDGE_PX = 8;

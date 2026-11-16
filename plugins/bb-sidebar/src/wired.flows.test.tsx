@@ -119,7 +119,7 @@ it("pins from the menu and persists a keyboard manual reorder through server and
     ]),
   );
   await wired.flush();
-  expect(JSON.parse(localStorage.getItem("bb-sidebar:inbox-order-cache:v1")!)).toEqual(["b", "a"]);
+  expect(JSON.parse(localStorage.getItem("alia-sidebar:inbox-order-cache:v1")!)).toEqual(["b", "a"]);
   await waitFor(() =>
     expect(within(observer.getByRole("region", { name: "Active" })).getAllByRole("listitem")[0]!.textContent).toContain(
       "Work b",
@@ -133,7 +133,7 @@ it("pins from the menu and persists a keyboard manual reorder through server and
     "Work b",
   );
   wired.unmount(slot);
-  localStorage.removeItem("bb-sidebar:inbox-order-cache:v1");
+  localStorage.removeItem("alia-sidebar:inbox-order-cache:v1");
   wired.mount();
   await waitFor(() =>
     expect(within(screen.getByRole("region", { name: "Active" })).getAllByRole("listitem")[0]!.textContent).toContain(
@@ -165,17 +165,17 @@ it("publishes a custom project color to both stripe and name", async () => {
   await waitFor(() => expect(slot.rpcReplies).toContainEqual({ method: "getProjectColors", result: { colors: {} } }));
   await waitFor(() =>
     expect(
-      (row().querySelector("[data-project-stripe]") as HTMLElement).style.getPropertyValue("--bb-sidebar-project"),
+      (row().querySelector("[data-project-stripe]") as HTMLElement).style.getPropertyValue("--alia-sidebar-project"),
     ).toBe("#c398bf"),
   );
   await wired.call("setProjectColor", { projectId: "proj_1", color: "#123456" });
   await waitFor(() =>
     expect(
-      (row().querySelector("[data-project-stripe]") as HTMLElement).style.getPropertyValue("--bb-sidebar-project"),
+      (row().querySelector("[data-project-stripe]") as HTMLElement).style.getPropertyValue("--alia-sidebar-project"),
     ).toBe("#123456"),
   );
   expect(
-    (row().querySelector(".bb-sidebar-project-name") as HTMLElement).style.getPropertyValue("--bb-sidebar-project"),
+    (row().querySelector(".alia-sidebar-project-name") as HTMLElement).style.getPropertyValue("--alia-sidebar-project"),
   ).toBe("#123456");
   expect(wired.db.prepare("SELECT * FROM project_colors").all()).toEqual([{ project_id: "proj_1", color: "#123456" }]);
 });
@@ -232,9 +232,9 @@ it("thread.deleted clears lifecycle and order and publishes both channels to the
   await wired.event("thread.deleted", "a");
   expect(lifecycle(wired)).toBeUndefined();
   expect(wired.db.prepare("SELECT thread_id FROM inbox_order ORDER BY sort_index").all()).toEqual([{ thread_id: "b" }]);
-  await waitFor(() => expect(JSON.parse(localStorage.getItem("bb-sidebar:inbox-order-cache:v1")!)).toEqual(["b"]));
+  await waitFor(() => expect(JSON.parse(localStorage.getItem("alia-sidebar:inbox-order-cache:v1")!)).toEqual(["b"]));
   expect(
-    JSON.parse(localStorage.getItem("bb-sidebar:lifecycle-cache:v1")!).map((row: { threadId: string }) => row.threadId),
+    JSON.parse(localStorage.getItem("alia-sidebar:lifecycle-cache:v1")!).map((row: { threadId: string }) => row.threadId),
   ).toEqual(["b"]);
   const remaining = screen.getByRole("region", { name: "Parked" });
   expect(within(remaining).getByText("Work b")).toBeDefined();
@@ -251,14 +251,14 @@ it("pins a parked root through lifecycle policy, then unpins through the bound c
   await saved(wired, "settled_override", "active");
   expect(lifecycle(wired)).toMatchObject({ parked_at: null, snoozed_until: null, settled_at: null });
   expect(wired.harness.inspection.sdk.callsTo("threads.pin")).toEqual([[{ threadId: "a" }]]);
-  expect((await wired.bb.sdk.threads.get({ threadId: "a" })).pinnedAt).toEqual(expect.any(Number));
+  expect((await wired.alia.sdk.threads.get({ threadId: "a" })).pinnedAt).toEqual(expect.any(Number));
   wired.unmount(slot);
   slot = wired.mount();
   fireEvent.click(await screen.findByRole("button", { name: "Unpin Work a" }));
   await waitFor(() => expect(slot.sdkCalls).toContainEqual({ method: "threads.unpin", args: [{ threadId: "a" }] }));
-  expect(slot.threadActionCalls).toContainEqual({ key: "bb--core/pin", threadId: "a" });
+  expect(slot.threadActionCalls).toContainEqual({ key: "alia--core/pin", threadId: "a" });
   expect(wired.harness.inspection.sdk.callsTo("threads.unpin").at(-1)).toEqual([{ threadId: "a" }]);
-  expect((await wired.bb.sdk.threads.get({ threadId: "a" })).pinnedAt).toBeNull();
+  expect((await wired.alia.sdk.threads.get({ threadId: "a" })).pinnedAt).toBeNull();
 });
 
 it.each([false, true])("changes unread=%s through the bound read action and SDK", async (isUnread) => {
@@ -268,8 +268,8 @@ it.each([false, true])("changes unread=%s through the bound read action and SDK"
   fireEvent.click(await screen.findByRole("menuitem", { name: isUnread ? "Mark read" : "Mark unread" }));
   const method = isUnread ? "threads.markRead" : "threads.markUnread";
   await waitFor(() => expect(wired.harness.inspection.sdk.callsTo(method)).toEqual([[{ threadId: "a" }]]));
-  expect(slot.threadActionCalls).toContainEqual({ key: "bb--core/read", threadId: "a" });
-  const saved = await wired.bb.sdk.threads.get({ threadId: "a" });
+  expect(slot.threadActionCalls).toContainEqual({ key: "alia--core/read", threadId: "a" });
+  const saved = await wired.alia.sdk.threads.get({ threadId: "a" });
   expect(saved.lastReadAt).toEqual(isUnread ? expect.any(Number) : null);
 });
 
@@ -283,7 +283,7 @@ it("requests inline rename through the bound action and writes the title through
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
   expect(document.activeElement).toBe(input);
-  expect(slot.threadActionCalls).toContainEqual({ key: "bb--core/rename", threadId: "a" });
+  expect(slot.threadActionCalls).toContainEqual({ key: "alia--core/rename", threadId: "a" });
   expect(wired.harness.inspection.sdk.callsTo("threads.update")).toEqual([]);
   fireEvent.change(input, { target: { value: "Renamed work" } });
   fireEvent.keyDown(input, { key: "Enter" });
@@ -292,7 +292,7 @@ it("requests inline rename through the bound action and writes the title through
       [{ threadId: "a", title: "Renamed work" }],
     ]),
   );
-  expect((await wired.bb.sdk.threads.get({ threadId: "a" })).title).toBe("Renamed work");
+  expect((await wired.alia.sdk.threads.get({ threadId: "a" })).title).toBe("Renamed work");
 });
 
 it.each(["Title write unavailable", "HTTP 500: Title write unavailable"])(
@@ -314,12 +314,12 @@ it.each(["Title write unavailable", "HTTP 500: Title write unavailable"])(
     );
     await waitFor(() =>
       expect(toastMocks.error).toHaveBeenCalledWith("Failed to update thread", {
-        className: "bb-sidebar-toast",
+        className: "alia-sidebar-toast",
         description: "Title write unavailable",
       }),
     );
     expect(toastMocks.error).toHaveBeenCalledTimes(1);
-    expect((await wired.bb.sdk.threads.get({ threadId: "a" })).title).toBe("Work a");
+    expect((await wired.alia.sdk.threads.get({ threadId: "a" })).title).toBe("Work a");
   },
 );
 
@@ -334,16 +334,16 @@ it("hands a parent archive to the bound action, waits for child confirmation, an
   fireEvent.contextMenu(await screen.findByText("Work a"));
   fireEvent.click(await screen.findByRole("menuitem", { name: "Archive" }));
   await waitFor(() => expect(wired.archiveRequests).toHaveLength(1));
-  expect(slot.threadActionCalls).toContainEqual({ key: "bb--core/archive", threadId: "a" });
+  expect(slot.threadActionCalls).toContainEqual({ key: "alia--core/archive", threadId: "a" });
   expect(wired.harness.inspection.sdk.callsTo("threads.archive")).toEqual([]);
   await act(async () => {
     await wired.archiveRequests[0]!.confirm();
   });
   expect(wired.harness.inspection.sdk.callsTo("threads.archive")).toEqual([[{ threadId: "a" }]]);
   for (const threadId of ["a", "child", "grandchild"]) {
-    expect((await wired.bb.sdk.threads.get({ threadId })).archivedAt).toEqual(expect.any(Number));
+    expect((await wired.alia.sdk.threads.get({ threadId })).archivedAt).toEqual(expect.any(Number));
   }
-  expect((await wired.bb.sdk.threads.get({ threadId: "b" })).archivedAt).toBeNull();
+  expect((await wired.alia.sdk.threads.get({ threadId: "b" })).archivedAt).toBeNull();
   const archiveToasts = toastMocks.success.mock.calls.filter(([message]) => message === "Thread archived");
   expect(archiveToasts).toHaveLength(1);
   expect(archiveToasts[0]![1].action.label).toBe("Undo");
@@ -356,7 +356,7 @@ it("hands a parent archive to the bound action, waits for child confirmation, an
     [{ threadId: "grandchild" }],
   ]);
   for (const threadId of ["a", "child", "grandchild"]) {
-    expect((await wired.bb.sdk.threads.get({ threadId })).archivedAt).toBeNull();
+    expect((await wired.alia.sdk.threads.get({ threadId })).archivedAt).toBeNull();
   }
 });
 
@@ -391,6 +391,6 @@ it("keeps the named delete confirmation and sends its confirmed tree through the
     method: "deleteThread",
     input: { threadId: "a", childThreadsConfirmed: true },
   });
-  expect(slot.threadActionCalls.some((call) => call.key === "bb--core/delete")).toBe(false);
-  await expect(wired.bb.sdk.threads.get({ threadId: "child" })).rejects.toThrow("Unknown thread child");
+  expect(slot.threadActionCalls.some((call) => call.key === "alia--core/delete")).toBe(false);
+  await expect(wired.alia.sdk.threads.get({ threadId: "child" })).rejects.toThrow("Unknown thread child");
 });

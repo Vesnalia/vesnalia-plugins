@@ -8,7 +8,7 @@
 //
 // NAMESPACING (important). A plugin can register its own glyphs into that
 // registry with `app.experimental_icons.register()`, and the host resolves a
-// name in this order: a plugin-registered name first, THEN a built-in BB icon
+// name in this order: a plugin-registered name first, THEN a built-in VesnALIA icon
 // of the same name. So a registered name SHADOWS any built-in it collides
 // with — and the host's built-ins power surfaces outside this plugin (notably
 // the top-left sidebar). Registering a bare `"Zap"`, `"Star"`, `"Settings"`,

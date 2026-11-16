@@ -2,7 +2,7 @@
 //
 // What: checks that an issue of an epic with a branch is told apart from
 // any other, in a folder on that branch and in one that is not.
-// Why: this decides which buttons an issue shows (bead-bb-ty5.2).
+// Why: this decides which buttons an issue shows (bead-alia-ty5.2).
 
 import assert from "node:assert/strict";
 import { test } from "node:test";

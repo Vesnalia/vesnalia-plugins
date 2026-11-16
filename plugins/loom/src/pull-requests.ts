@@ -141,9 +141,9 @@ export async function askForPrTexts(ctx: EngineCtx, project: ProjectRow, spec: S
     });
     store.changed(project.id);
     try {
-      await ctx.bb.send(worker.row.thread_id, prAskText({ key: ticket.key, fix, round: ticket.pr_rounds, url: ticket.pr_url, limitMinutes: PR_TEXT_MINUTES, proposed: proposedFields(ticket), changes: fix && textPending(ctx, ticket) }));
+      await ctx.alia.send(worker.row.thread_id, prAskText({ key: ticket.key, fix, round: ticket.pr_rounds, url: ticket.pr_url, limitMinutes: PR_TEXT_MINUTES, proposed: proposedFields(ticket), changes: fix && textPending(ctx, ticket) }));
     } catch (error) {
-      ctx.bb.log("warn", `Could not ask ${worker.row.thread_id} for ${ticket.key}'s pull request: ${errText(error)}`);
+      ctx.alia.log("warn", `Could not ask ${worker.row.thread_id} for ${ticket.key}'s pull request: ${errText(error)}`);
       useTemplate(ctx, ticket, "Loom could not message the worker");
     }
   }
@@ -165,7 +165,7 @@ export async function onPrWriterIdle(ctx: EngineCtx, seen: ThreadRow): Promise<b
   }
   store.updateTicket(ticket.id, { pr_ask_json: JSON.stringify({ ...ask, nudged: true } satisfies PrAsk) });
   const proposed = proposedFields(ticket);
-  await ctx.bb.send(row.thread_id, prNudgeText(ticket.key, ask.fix || (proposed.title && proposed.body))).catch((error) => ctx.bb.log("warn", `Could not nudge ${row.thread_id}: ${errText(error)}`));
+  await ctx.alia.send(row.thread_id, prNudgeText(ticket.key, ask.fix || (proposed.title && proposed.body))).catch((error) => ctx.alia.log("warn", `Could not nudge ${row.thread_id}: ${errText(error)}`));
   return true;
 }
 
@@ -175,7 +175,7 @@ export async function resumePrAsks(ctx: EngineCtx, projectId: number): Promise<v
   for (const ticket of store.tickets(projectId, ["approved"])) {
     const ask = askOf(ticket);
     if (ask === null || ask.head !== ticket.head_sha || ticket.worker_thread_id === null) continue;
-    const thread = await ctx.bb.getThread(ticket.worker_thread_id).catch(() => null);
+    const thread = await ctx.alia.getThread(ticket.worker_thread_id).catch(() => null);
     const running = thread !== null && ["active", "starting", "pending"].includes(thread.status);
     store.updateTicket(ticket.id, { pr_ask_json: running ? JSON.stringify({ ...ask, at: ctx.now() } satisfies PrAsk) : null });
   }
@@ -461,7 +461,7 @@ export async function syncPrText(ctx: EngineCtx, project: ProjectRow, ticketId: 
     if (live.length === record.live.length && live.every((target, index) => target === record.live[index])) return;
     await refreshRollout(ctx, spec, ticket, await repoCheckout(ctx, project, spec, ticket.repo), record, live, current);
   } catch (error) {
-    ctx.bb.log("warn", `Keeping the text of ${ticket.key}'s pull request up to date stopped: ${errText(error)}`);
+    ctx.alia.log("warn", `Keeping the text of ${ticket.key}'s pull request up to date stopped: ${errText(error)}`);
   }
 }
 

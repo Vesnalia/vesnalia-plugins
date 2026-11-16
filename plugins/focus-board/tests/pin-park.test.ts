@@ -1,6 +1,6 @@
 // Pin-park record contract: parse is fail-loud, stamp is refresh-provenance.
 import { describe, expect, it } from "vitest";
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 import {
   parsePinParkRecord,
   pinStateChangeFromEvent,

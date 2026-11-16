@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, screen, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 vi.mock("sonner", () => ({
   toast: { error: vi.fn(), info: vi.fn(), success: vi.fn() },
@@ -176,14 +176,14 @@ it("ignores a stale banner load after navigating to another thread", async () =>
 });
 
 it("creates in the overlay, edits in place and sends from the composer banner", async () => {
-  const { createFakePluginHost } = await import("@get-bb/plugin-sdk/testing");
+  const { createFakePluginHost } = await import("@vesnalia/plugin-sdk/testing");
   const { default: plugin } = await import("../server");
   const { rpcContract } = await import("../contract");
   const { default: userEvent } = await import("@testing-library/user-event");
   const host = createFakePluginHost({
     sdk: { threads: { send: async () => ({ ok: true, delivery: "steered" }) } },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const rpc = Object.fromEntries(
     Object.keys(rpcContract).map((method) => [
       method,

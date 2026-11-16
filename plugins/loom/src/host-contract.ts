@@ -1,5 +1,5 @@
 // The calls the server makes on the machine that owns a project's checkout and worktrees.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { GIT_INDEX_TIMEOUT_SECONDS, GIT_NETWORK_TIMEOUT_SECONDS } from "./git-network";
 
@@ -152,14 +152,14 @@ const changedFile = z
   })
   .strict();
 
-// experimental_retryable marks the reads bb may cancel and send again when the host is slow to answer: they move no ref, change
-// no worktree and write no object. landedOn fetches, which writes objects, so it is not one. Nor are the forge reads: bb
+// experimental_retryable marks the reads VesnALIA may cancel and send again when the host is slow to answer: they move no ref, change
+// no worktree and write no object. landedOn fetches, which writes objects, so it is not one. Nor are the forge reads: VesnALIA
 // resends at half the call's timeout, which would cut a slow pull request read short at 75 of its 150 seconds.
 // Spread rather than written out: the SDK this pins (0.6.75, the newest the package proxy serves) predates the flag in its
-// types, and bb 0.6.79 reads it from the contract at runtime.
+// types, and VesnALIA 0.6.79 reads it from the contract at runtime.
 const RETRYABLE = { experimental_retryable: true } as const;
 
-/** The most bytes of a file one call carries: base64 makes it 5.6 MB, under bb's 8 MiB host payload. */
+/** The most bytes of a file one call carries: base64 makes it 5.6 MB, under VesnALIA's 8 MiB host payload. */
 export const CHUNK_BYTES = 4 * 1024 * 1024;
 /** The biggest file Loom carries between machines. */
 export const BLOB_MAX_BYTES = 100 * 1024 * 1024;

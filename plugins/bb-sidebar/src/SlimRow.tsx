@@ -1,5 +1,5 @@
 import { memo, useId, useState } from "react";
-import { useSidebarThreadShortcut, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useSidebarThreadShortcut, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./components/Icon";
 import { Tooltip } from "./components/Tooltip";
 import { ChildThreadBadge, ChildThreadList, collapsedChildThreads } from "./ChildThreadList";
@@ -11,7 +11,7 @@ import { threadDisplayTitle } from "./inbox";
 import { snoozeWakeLabel } from "./lifecycle";
 import { useProjectColor } from "./ProjectColors";
 import { OpenPortsIndicator } from "./OpenPorts";
-import { ShortcutHint } from "./bb-sdk";
+import { ShortcutHint } from "./alia-sdk";
 import { rowKeyshortcuts } from "./lib/keyshortcuts";
 import { useInboxActivity, useInboxEnvironment, useInboxActions } from "./InboxContext";
 import { useRowStatusRuns } from "./useLifecycle";

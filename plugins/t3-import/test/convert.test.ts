@@ -34,7 +34,7 @@ function convert(sessionId: string | null = "sess-1") {
 
 const parse = (data: string) => JSON.parse(data) as Record<string, any>;
 
-test("records the provider identity and replays turns in bb's event order", () => {
+test("records the provider identity and replays turns in VesnALIA's event order", () => {
   const history = convert();
   assert.deepEqual(history.events.map((event) => event.type), [
     "thread/started", "thread/identity",

@@ -1,16 +1,16 @@
 /* Herdr Lavender
-   A BB color theme: nearly black purple surfaces, lavender accent, thin
+   A ALIA color theme: nearly black purple surfaces, lavender accent, thin
    separators, compact monospace, pastel status colors.
 
    Inspiration: Herdr's dark workspace (nearly black purple panes, lavender
    active tab and pane outline, flat prompt) and the Catppuccin Mocha and
-   Latte palettes. The palette adapts that inspiration for BB.
+   Latte palettes. The palette adapts that inspiration for ALIA.
    Dark is the primary appearance, light is a deliberate paper
    variant, not an inversion.
 
    Palette-only. Two top-level blocks, custom properties only. Element-scoped
    rules belong to the plugin's integration layer, not this file.
-   Token names and derivation rules follow bb-app 0.43 base CSS.
+   Token names and derivation rules follow alia-app 0.43 base CSS.
    Font: "Herdr Mono" is bundled by the plugin; the rest of the stack is
    local fallback. No network fonts. */
 

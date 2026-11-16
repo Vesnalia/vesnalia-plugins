@@ -1,16 +1,16 @@
-// bb-plugin-kata — backend entry.
+// alia-plugin-kata — backend entry.
 //
-// Bridges the local kata daemon into bb: a typed client (lib/kata-client.ts),
+// Bridges the local kata daemon into VesnALIA: a typed client (lib/kata-client.ts),
 // a warm per-project cache of open issues tailing kata's event log
 // (lib/issue-store.ts), and the RPC contract the Kata panel reads
 // (lib/rpc-contract.ts). Which kata projects appear as tabs is the
 // `includedProjects` setting, editable here and from the panel's picker.
 //
-// Kata-aware threads (T3): lib/workspace.ts binds each bb project to a kata
+// Kata-aware threads (T3): lib/workspace.ts binds each VesnALIA project to a kata
 // project through `.kata.toml`, and this plugin's thread metadata can link a
 // thread to one issue. Both feed the thread header control, the "Kata issues"
-// thread panel, and `bb.agents.configure`.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// thread panel, and `alia.agents.configure`.
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { createKataClient, KataApiError } from "./lib/kata-client.ts";
 import { findProject } from "./lib/cli-core.ts";
@@ -56,8 +56,8 @@ function parseIncluded(value: string): string[] {
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     includedProjects: {
       type: "string",
       label: "Included kata projects",
@@ -77,21 +77,21 @@ export default async function plugin(bb: BbPluginApi) {
       type: "string",
       label: "Actor",
       description:
-        "Name recorded on kata changes made from bb. Empty uses $USER.",
+        "Name recorded on kata changes made from VesnALIA. Empty uses $USER.",
       default: "",
     },
   });
 
-  const publish = (signal: KataSignal) => bb.realtime.publish(KATA_CHANNEL, signal);
-  const client = createKataClient({ log: (message) => bb.log.info(message) });
+  const publish = (signal: KataSignal) => alia.realtime.publish(KATA_CHANNEL, signal);
+  const client = createKataClient({ log: (message) => alia.log.info(message) });
   const store = createIssueStore({
     client,
-    log: (level, message) => bb.log[level](message),
+    log: (level, message) => alia.log[level](message),
     onIssuesChanged: (projectUid) => publish({ type: "issues.changed", projectUid }),
     onAvailability: (available, message) =>
       publish({ type: "daemon.status", available, message }),
   });
-  bb.onDispose(() => store.dispose());
+  alia.onDispose(() => store.dispose());
 
   let included = parseIncluded((await settings.get()).includedProjects);
   store.setIncluded(included);
@@ -105,15 +105,15 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function resolveActor(): Promise<string> {
     const configured = (await settings.get()).actor.trim();
-    return configured || process.env.KATA_AUTHOR || process.env.USER || "bb";
+    return configured || process.env.KATA_AUTHOR || process.env.USER || "alia";
   }
 
   // ---- kata-aware threads ------------------------------------------------------
 
   const bindings = createBindingResolver({
-    sdk: () => bb.sdk,
+    sdk: () => alia.sdk,
     kataProjects: () => store.projects(),
-    log: (message) => bb.log.warn(message),
+    log: (message) => alia.log.warn(message),
     onChange: (projectId) => {
       store.setWatched(bindings.boundKataProjects());
       publish({ type: "binding.changed", projectId });
@@ -143,25 +143,25 @@ export default async function plugin(bb: BbPluginApi) {
       rememberTitle(link.issueUid, issue.title);
       return { ...base, title: issue.title, status: issue.status, priority: issue.priority ?? null };
     } catch (error) {
-      bb.log.warn(`hydrating ${link.qualifiedId} failed: ${String(error)}`);
+      alia.log.warn(`hydrating ${link.qualifiedId} failed: ${String(error)}`);
       return base;
     }
   }
 
   async function threadBinding(threadId: string): Promise<ThreadBinding> {
-    const [{ bbProjectId, binding }, metadata] = await Promise.all([
+    const [{ aliaProjectId, binding }, metadata] = await Promise.all([
       bindings.forThread(threadId),
-      bb.sdk.threads.getPluginMetadata({ threadId }),
+      alia.sdk.threads.getPluginMetadata({ threadId }),
     ]);
     const link = readThreadLink(metadata);
     return {
-      projectId: bbProjectId,
+      projectId: aliaProjectId,
       ...bindingOut(binding),
       link: link ? await hydrate(link) : null,
     };
   }
 
-  // ---- `bb kata` CLI and agent tools (T4) ------------------------------------
+  // ---- `alia kata` CLI and agent tools (T4) ------------------------------------
 
   async function setIncluded(projectUids: string[]): Promise<string[]> {
     const uids = [...new Set(projectUids)];
@@ -175,17 +175,17 @@ export default async function plugin(bb: BbPluginApi) {
     projects: () => store.projects(),
     bindings,
     actor: resolveActor,
-    bbProjects: async () => (await bb.sdk.projects.list()).map((p) => ({ id: p.id, name: p.name })),
+    aliaProjects: async () => (await alia.sdk.projects.list()).map((p) => ({ id: p.id, name: p.name })),
     included: { get: () => included, set: setIncluded },
     threadLink: {
-      get: (threadId) => bb.sdk.threads.getPluginMetadata({ threadId }),
+      get: (threadId) => alia.sdk.threads.getPluginMetadata({ threadId }),
       set: async (threadId, link, title) => {
         rememberTitle(link.issueUid, title);
-        await bb.sdk.threads.updatePluginMetadata({ threadId, set: { ...link } });
+        await alia.sdk.threads.updatePluginMetadata({ threadId, set: { ...link } });
         publish({ type: "thread.link", threadId });
       },
       remove: async (threadId) => {
-        await bb.sdk.threads.updatePluginMetadata({ threadId, remove: [...LINK_KEYS] });
+        await alia.sdk.threads.updatePluginMetadata({ threadId, remove: [...LINK_KEYS] });
         publish({ type: "thread.link", threadId });
       },
     },
@@ -193,28 +193,28 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   /**
-   * `--body-file` names a file on the machine that ran `bb kata`: the
+   * `--body-file` names a file on the machine that ran `alia kata`: the
    * thread's environment host, else the server machine. Read through
-   * bb.sdk.files, never node:fs.
+   * alia.sdk.files, never node:fs.
    */
   async function readInvokerFile(path: string, ctx: { cwd?: string; threadId?: string }): Promise<string> {
     const absolute = path.startsWith("/") ? path : ctx.cwd ? `${ctx.cwd.replace(/\/+$/u, "")}/${path}` : null;
     if (absolute === null) throw new Error(`relative path ${JSON.stringify(path)} needs a working directory; pass an absolute path`);
     let hostId: string | undefined;
     if (ctx.threadId) {
-      const thread = await bb.sdk.threads.get({ threadId: ctx.threadId });
-      if (thread.environmentId) hostId = (await bb.sdk.environments.get({ environmentId: thread.environmentId })).hostId;
+      const thread = await alia.sdk.threads.get({ threadId: ctx.threadId });
+      if (thread.environmentId) hostId = (await alia.sdk.environments.get({ environmentId: thread.environmentId })).hostId;
     }
-    const file = await bb.sdk.files.read({ ...(hostId ? { hostId } : {}), path: absolute });
+    const file = await alia.sdk.files.read({ ...(hostId ? { hostId } : {}), path: absolute });
     const text = file.contentEncoding === "base64" ? Buffer.from(file.content, "base64").toString("utf8") : file.content;
     if (text.length > 65_536) throw new Error(`${path} is over 64 KiB`);
     return text;
   }
 
-  bb.cli.register(buildKataCli({ service, readFile: readInvokerFile }));
-  registerKataTools(bb, service);
+  alia.cli.register(buildKataCli({ service, readFile: readInvokerFile }));
+  registerKataTools(alia, service);
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const binding = bindings.peekThread(context.project.id, context.environment.id);
     if (!binding?.kataProject) return { tools: [], skills: [] };
     const link = readThreadLink(context.pluginMetadata);
@@ -226,11 +226,11 @@ export default async function plugin(bb: BbPluginApi) {
     return { tools: [...KATA_TOOL_NAMES], skills: ["kata"], instructions };
   });
 
-  bb.background.service("bindings", {
+  alia.background.service("bindings", {
     // Resolve every project up front so the synchronous configure callback
     // has an answer on a thread's first turn, then follow lifecycle changes.
     start: async (signal) => {
-      const unsubscribe = bb.sdk.subscribe({
+      const unsubscribe = alia.sdk.subscribe({
         event: "project:changed",
         callback: (event) => {
           if (!event.changes.some((change) => REBIND_CHANGES.has(change))) return;
@@ -245,10 +245,10 @@ export default async function plugin(bb: BbPluginApi) {
       });
       signal.addEventListener("abort", unsubscribe, { once: true });
       try {
-        const projects = await bb.sdk.projects.list();
+        const projects = await alia.sdk.projects.list();
         await Promise.allSettled(projects.map((project) => bindings.forProject(project.id)));
       } catch (error) {
-        bb.log.warn(`warming kata bindings failed: ${String(error)}`);
+        alia.log.warn(`warming kata bindings failed: ${String(error)}`);
       }
       await new Promise<void>((resolve) => signal.addEventListener("abort", () => resolve(), { once: true }));
     },
@@ -333,7 +333,7 @@ export default async function plugin(bb: BbPluginApi) {
     return { issue: null, reason };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     "daemon.status": () => store.availability(),
     "projects.list": async () => ({ projects: await store.projects(true) }),
     "included.get": () => ({ projectUids: included }),
@@ -357,16 +357,16 @@ export default async function plugin(bb: BbPluginApi) {
       return threadBinding(threadId);
     },
     "thread.unlinkIssue": async ({ threadId }) => {
-      await bb.sdk.threads.updatePluginMetadata({ threadId, remove: [...LINK_KEYS] });
+      await alia.sdk.threads.updatePluginMetadata({ threadId, remove: [...LINK_KEYS] });
       publish({ type: "thread.link", threadId });
       return threadBinding(threadId);
     },
 
     "layout.get": async ({ surface }) => ({
-      listFraction: readFraction(await bb.storage.kv.get(splitKey(surface))),
+      listFraction: readFraction(await alia.storage.kv.get(splitKey(surface))),
     }),
     "layout.set": async ({ surface, listFraction }) => {
-      await bb.storage.kv.set(splitKey(surface), listFraction);
+      await alia.storage.kv.set(splitKey(surface), listFraction);
       return { listFraction };
     },
 
@@ -458,11 +458,11 @@ export default async function plugin(bb: BbPluginApi) {
     return toIssueDetail(await client.getIssue(project.id, issueUid), project.name);
   }
 
-  bb.background.service("event-tail", {
+  alia.background.service("event-tail", {
     start: (signal) => store.tail(signal),
   });
 
-  bb.log.info(
+  alia.log.info(
     `loaded; ${included.length} included project(s), actor ${await resolveActor()}`,
   );
 }

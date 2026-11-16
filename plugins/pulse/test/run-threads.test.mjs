@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import * as store from "../lib/store.mjs";
 
-// Run threads live outside plugin kv so a `bb plugin remove` cannot orphan them:
+// Run threads live outside plugin kv so a `alia plugin remove` cannot orphan them:
 // removal deletes kv, and a missing id spawns a fresh thread on the next run.
 const home = () => fs.mkdtempSync(path.join(os.tmpdir(), "pulse-rt-"));
 

@@ -5,8 +5,8 @@
  * Restart ends the first mate's conversation and starts a fresh one from the records; release lets go of
  * the thread without touching it, and the crew keeps running.
  */
-import { experimental_ProviderModelPicker as ProviderModelPicker, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
-import type { ExperimentalProviderModelPickerValue } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderModelPicker as ProviderModelPicker, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { ExperimentalProviderModelPickerValue } from "@vesnalia/plugin-sdk/app";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -23,7 +23,7 @@ type Asking = "restart" | "release" | null;
 
 export function SettingsSection() {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   // Not a tab: it is read whenever the settings page shows it.
   const { fleet, error, reload } = useFleet(true);
   const initial = useDefaultPick();

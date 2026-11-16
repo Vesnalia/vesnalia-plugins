@@ -1,10 +1,10 @@
 // Workspace-open plumbing for the thread pane header's open menu.
 //
-// bb's own thread header opens the workspace through the local host
+// VesnALIA's own thread header opens the workspace through the local host
 // daemon (127.0.0.1:<port>): it lists the installed apps that can open a
 // path ("workspace-open-targets") and asks the daemon to open one
 // ("open-in-target"). The plugin SDK exposes neither endpoint, but the
-// plugin server runs inside the bb server process on the same machine, so
+// plugin server runs inside the VesnALIA server process on the same machine, so
 // it can speak to the daemon over loopback itself and serve the pane over
 // the plugin RPC. Doing it server-side also keeps the feature working for
 // a remote browser session: the daemon opens apps where the workspace
@@ -132,7 +132,7 @@ function daemonError(
 
 /**
  * Probe the loopback daemon ports and return the first that answers
- * `/status` with a hostId. Null when none does (daemon down, or the bb
+ * `/status` with a hostId. Null when none does (daemon down, or the VesnALIA
  * server runs on a different machine than this plugin server — in which
  * case no local open is meaningful anyway).
  */

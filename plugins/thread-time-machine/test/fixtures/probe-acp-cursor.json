@@ -303,7 +303,7 @@
      "type": "commandExecution",
      "id": "daeca7ed57-i3",
      "command": "mkdir -p probe && printf 'alpha\\nbeta\\n' > probe/notes.md && printf 'alpha\\ngamma\\n' > probe/notes.md && cat probe/notes.md && ls probe; ls probe/does-not-exist",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_assh2bhzrc-1/bb-plugin-thread-time-machine",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_assh2bhzrc-1/alia-plugin-thread-time-machine",
      "status": "pending",
      "approvalStatus": null,
      "presentation": {
@@ -329,7 +329,7 @@
      "type": "commandExecution",
      "id": "daeca7ed57-i3",
      "command": "mkdir -p probe && printf 'alpha\\nbeta\\n' > probe/notes.md && printf 'alpha\\ngamma\\n' > probe/notes.md && cat probe/notes.md && ls probe; ls probe/does-not-exist",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_assh2bhzrc-1/bb-plugin-thread-time-machine",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_assh2bhzrc-1/alia-plugin-thread-time-machine",
      "status": "completed",
      "approvalStatus": null,
      "aggregatedOutput": "alpha\ngamma\nnotes.md\nls: probe/does-not-exist: No such file or directory\n",

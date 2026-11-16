@@ -2,7 +2,7 @@
 //
 // Two layers, because they answer different questions:
 //
-//   1. Flat settings (Settings → Installed plugins, `bb plugin config`) are
+//   1. Flat settings (Settings → Installed plugins, `alia plugin config`) are
 //      the base policy: one set of numbers that applies to every failure.
 //   2. `advancedJson` is the override layer: per-category rules, per-message
 //      rules, and scope. It wins over the flat layer wherever it speaks, and
@@ -12,7 +12,7 @@
 // `advancedJson` defaults to `{}`, so the two layers only disagree once the
 // operator opts in.
 import { z } from "zod";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   type BackoffStrategy,
   type CompiledMessageRule,
@@ -169,8 +169,8 @@ export const threadPatternsFieldSchema = z.string().superRefine((value, ctx) => 
   }
 });
 
-export function defineSettings(bb: BbPluginApi) {
-  return bb.settings.define({
+export function defineSettings(alia: AliaPluginApi) {
+  return alia.settings.define({
     enabled: {
       type: "boolean",
       label: "Enabled",
@@ -182,7 +182,7 @@ export function defineSettings(bb: BbPluginApi) {
       label: "Dry run",
       description:
         "Decide and log what would be retried, but never queue a retry. Use this " +
-        "first when tuning a new policy — `bb agent-retry log` shows the decisions.",
+        "first when tuning a new policy — `alia agent-retry log` shows the decisions.",
       default: false,
     },
     maxAttempts: {
@@ -357,7 +357,7 @@ export function defineSettings(bb: BbPluginApi) {
       label: "Keep a decision log",
       description:
         "Record every retry, skip, and failure in the plugin database for " +
-        "`bb agent-retry log`. Off means only the plugin log keeps them.",
+        "`alia agent-retry log`. Off means only the plugin log keeps them.",
       default: true,
     },
     advancedJson: {
@@ -469,7 +469,7 @@ export async function resolvePolicy(
     // The field is schema-validated on save, so this only fires when a stored
     // value predates the current schema. Fall back to the flat layer — losing
     // retries entirely would be worse — but say so, loudly enough that an
-    // operator reading `bb agent-retry explain` sees the override is not in
+    // operator reading `alia agent-retry explain` sees the override is not in
     // force.
     problems.push(
       `advancedJson was ignored: ${error instanceof Error ? error.message : String(error)}`,

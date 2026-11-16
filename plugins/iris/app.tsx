@@ -2,7 +2,7 @@
 // pickers agents open with iris_ask, the side-panel view of a card, and the
 // component gallery.
 import "./app.css";
-import { definePluginApp, type ExperimentalCodeFenceRendererProps, type PluginPendingInteractionProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, type ExperimentalCodeFenceRendererProps, type PluginPendingInteractionProps } from "@vesnalia/plugin-sdk/app";
 import { PLAYGROUND_URL } from "./shared/playground";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { AppFrame } from "./ui/app-frame";
@@ -42,11 +42,11 @@ function AskPicker({ interaction, submit, cancel }: PluginPendingInteractionProp
   );
   const box = useRef<HTMLDivElement>(null);
   // The Send row pins to the bottom edge only when the request panel scrolls, painted in the color of
-  // the bb panel around it (read live, so it matches every theme) rather than a guessed token.
+  // the VesnALIA panel around it (read live, so it matches every theme) rather than a guessed token.
   useLayoutEffect(() => {
     const el = box.current;
     if (!el) return;
-    // bb's request panel is the one scroller (a second one inside it hid Send below the fold).
+    // VesnALIA's request panel is the one scroller (a second one inside it hid Send below the fold).
     let scroller: HTMLElement = el;
     for (let up = el.parentElement; up; up = up.parentElement) {
       if (/auto|scroll/.test(getComputedStyle(up).overflowY)) {
@@ -56,7 +56,7 @@ function AskPicker({ interaction, submit, cancel }: PluginPendingInteractionProp
     }
     // Painted again on every resize and theme change, so the pinned row never shows a stale color.
     const paint = () => {
-      // bb's panels are often a translucent tint over the page: every layer down to the first opaque one.
+      // VesnALIA's panels are often a translucent tint over the page: every layer down to the first opaque one.
       const bg = surfaceBehind(el);
       if (bg) el.style.setProperty("--iris-picker-bg", bg);
       // The pinned row reaches through the panel's padding so nothing peeks out below or beside it.
@@ -106,15 +106,15 @@ function CardTab({ threadId, params }: { threadId: string; params: unknown }) {
   );
 }
 
-declare const __BB_PLUGIN_ID__: string | undefined;
-const PLUGIN_ID = typeof __BB_PLUGIN_ID__ === "string" ? __BB_PLUGIN_ID__ : "iris";
-/** A dev copy (bb-plugin-iris-dev-*) renders ```<its id> blocks so it never collides with the live Iris. */
+declare const __ALIA_PLUGIN_ID__: string | undefined;
+const PLUGIN_ID = typeof __ALIA_PLUGIN_ID__ === "string" ? __ALIA_PLUGIN_ID__ : "iris";
+/** A dev copy (alia-plugin-iris-dev-*) renders ```<its id> blocks so it never collides with the live Iris. */
 const LANG = PLUGIN_ID === "iris" ? "iris" : PLUGIN_ID;
 
 export default definePluginApp((app) => {
   app.slots.experimental_codeFenceRenderer({ id: "iris", languages: [LANG, `${LANG}-app`, `${LANG}-react`], component: Fence });
   app.slots.pendingInteraction({ id: "iris-ask", component: AskPicker });
-  // ::iris{file="$BB_THREAD_STORAGE/status.iris"}: a card that lives in a file, inline in the message, following the file.
+  // ::iris{file="$ALIA_THREAD_STORAGE/status.iris"}: a card that lives in a file, inline in the message, following the file.
   app.slots.messageDirective({ id: LANG, component: FileCardDirective });
   app.slots.experimental_tab({
     id: "iris-card",
@@ -125,14 +125,14 @@ export default definePluginApp((app) => {
     availability: "action",
     component: ({ threadId, params }) => <CardTab threadId={threadId} params={params} />,
   });
-  // A pinned card shows in the thread context card where bb has it on, and in the thread's Info tab everywhere.
+  // A pinned card shows in the thread context card where VesnALIA has it on, and in the thread's Info tab everywhere.
   app.slots.experimental_threadContextCardSection({ id: "iris-pinned", title: "Pinned cards", group: "iris", component: ({ threadId }) => <PinnedSection threadId={threadId} /> });
   app.slots.experimental_threadInfoSection({ id: "iris-pinned-info", group: "iris", component: ({ threadId }) => <PinnedInfoSection threadId={threadId} /> });
   // "2 pinned" above the composer: a click opens the pinned cards right there (the phone's quickest way to them).
   app.slots.experimental_threadContextSegment({ id: "iris-pinned-chip", title: "Pinned cards", group: "2_iris", summary: PinnedChip, details: PinnedChipDetails, useVisible: usePinnedChipVisible });
-  // A pin's alert turning true: a toast in every open bb window, a desktop notification where allowed.
+  // A pin's alert turning true: a toast in every open VesnALIA window, a desktop notification where allowed.
   app.slots.experimental_appOverlay({ id: "iris-pin-alerts", component: PinAlertOverlay });
-  // bb's home page: every thread's pinned cards, live, newest first; a thread's title opens it.
+  // VesnALIA's home page: every thread's pinned cards, live, newest first; a thread's title opens it.
   app.slots.homepageSection({ id: "iris-pinned-home", title: "Pinned cards", component: PinnedHome });
   // Prose you'd rather see as a card: one click puts the request in the composer, ready to send.
   app.slots.messageAction({

@@ -1,21 +1,12 @@
 {
-  "name": "bb-plugin-ui-tweaks",
+  "name": "alia-plugin-ui-tweaks",
   "version": "0.30.2",
-  "description": "Small, configurable interface improvements for BB.",
+  "description": "Small, configurable interface improvements for VesnALIA.",
   "author": {
     "name": "WYEZ",
     "url": "https://github.com/wy3z"
   },
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/wy3z/bb-cursor-suite.git",
-    "directory": "plugins/ui-tweaks"
-  },
-  "homepage": "https://github.com/wy3z/bb-cursor-suite/tree/main/plugins/ui-tweaks#readme",
-  "bugs": {
-    "url": "https://github.com/wy3z/bb-cursor-suite/issues"
-  },
   "type": "module",
   "files": [
     "README.md",
@@ -30,19 +21,19 @@
     "vendor"
   ],
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "check": "npm run test && npm run typecheck && npm run build",
     "test": "node --experimental-strip-types --test test/*.test.ts",
     "generate:icons": "node scripts/generate-icons.mjs",
     "typecheck": "tsc -p tsconfig.json"
   },
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132 <0.7"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132 <0.7"
   },
-  "bb": {
+  "alia": {
     "name": "UI Tweaks",
-    "description": "Small, configurable improvements to BB's interface.",
+    "description": "Small, configurable improvements to VesnALIA's interface.",
     "branding": {
       "icon": "SlidersHorizontal"
     },
@@ -50,10 +41,9 @@
     "app": "./app.tsx"
   },
   "dependencies": {
-    "@wy3z/bb-suite": "file:./vendor/bb-suite"
+    "@wy3z/bb-suite": "file:./vendor/alia-suite"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@iconify-json/iconoir": "1.2.12",
     "@iconify-json/lucide": "^1.2.150",
     "@iconify-json/tabler": "1.2.43",
@@ -72,12 +62,28 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "bb-app": "0.49.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.7.0",
     "typescript": "^5.7.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/ui-tweaks#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/ui-tweaks"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

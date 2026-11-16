@@ -1,5 +1,5 @@
-// Composes the bb marketplace and README screenshots (1600x1000, at 2x) from settings captures
-// in src/ (bb's web UI at 1440x900, 2x): node frame.mjs <chrome-headless-shell>
+// Composes the VesnALIA marketplace and README screenshots (1600x1000, at 2x) from settings captures
+// in src/ (VesnALIA's web UI at 1440x900, 2x): node frame.mjs <chrome-headless-shell>
 import { writeFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { join } from "node:path";
@@ -11,14 +11,14 @@ const icon = pathToFileURL(join(here, "../../browser-extension/static/icons/icon
 // Crop of the settings column, in CSS pixels of the 1440x900 capture.
 const shots = [
   { name: "1-overview", src: "s1-config", top: 64, height: 528,
-    title: "Desktop and browser control for bb agents",
+    title: "Desktop and browser control for VesnALIA agents",
     lead: "Agents click, type and read windows and web pages on the thread's machine through Cua Driver, in the background." },
   { name: "2-routing", src: "s2-routing", top: 60, height: 637,
     title: "Choose the tools for each provider",
     lead: "Use a provider's own computer use where it has one, or Cua Driver for every agent. Overrides apply per provider." },
   { name: "3-browser-extension", src: "s3-extension", top: 60, height: 350,
     title: "Work in your own browser tabs",
-    lead: "With the Browser Bridge for bb extension, agents use the browser you are signed in to, in background tabs. Pause them from the toolbar." },
+    lead: "With the Browser Bridge for VesnALIA extension, agents use the browser you are signed in to, in background tabs. Pause them from the toolbar." },
   { name: "4-agent-tools", src: "s4-tools", top: 60, height: 840,
     title: "Decide what agents are offered",
     lead: "Each Cua Driver tool is dedicated, reachable through cua_call, or off. Tools that run code or change the driver start off." },

@@ -1,8 +1,8 @@
-// The general settings bb-box declared in BB's settings before its
+// The general settings alia-box declared in VesnALIA's settings before its
 // configuration document (029). They are read once, when the settings move
 // into the document. Each backend's are with its driver under src/backends/.
 
-import type { PluginSettingDescriptor } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptor } from "@vesnalia/plugin-sdk";
 import { PRODUCT } from "../brand.ts";
 
 export type { GeneralConfig } from "./document.ts";
@@ -16,8 +16,8 @@ export const GENERAL_SETTINGS = {
   },
   "enrol-boxes": {
     type: "boolean",
-    label: "Enrol boxes as BB machines",
-    description: "Once a box answers, add it to BB as a machine so threads and terminals can use it.",
+    label: "Enrol boxes as VesnALIA machines",
+    description: "Once a box answers, add it to VesnALIA as a machine so threads and terminals can use it.",
     default: true,
   },
   "box-sizes": {

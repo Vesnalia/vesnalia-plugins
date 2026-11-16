@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "./lib/toast";
-import type { bbSidebarRpcContract } from "./contract";
+import type { aliaSidebarRpcContract } from "./contract";
 import { SIDEBAR_SETTINGS_CHANNEL } from "./realtime-channels";
 import {
   cachedSidebarSettings,
@@ -54,11 +54,11 @@ const validDays = (value: number) =>
   Number.isInteger(value) && value >= MIN_AUTO_SETTLE_AFTER_DAYS && value <= MAX_AUTO_SETTLE_AFTER_DAYS;
 
 /**
- * The plugin's settings page. Every change saves on its own, as bb's own
+ * The plugin's settings page. Every change saves on its own, as VesnALIA's own
  * settings do; a value that fails validation shows why and is not sent.
  */
 export function SidebarSettings() {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const loadRequestSeq = useRef(0);
   const initialSettings = cachedSidebarSettings(rpc);
   const [saved, setSaved] = useState<SidebarSettingsValues>(initialSettings ?? DEFAULT_SIDEBAR_SETTINGS);

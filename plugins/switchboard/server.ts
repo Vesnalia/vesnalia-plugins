@@ -1,14 +1,14 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { createLayoutStore } from "./src/layout-store";
 import { LAYOUT_CHANNEL } from "./src/layout";
 import { rpcContract } from "./src/rpc";
 import { SETTINGS_CHANNEL, SETTING_DESCRIPTORS } from "./src/settings";
 
-export default function switchboard(bb: BbPluginApi): void {
-  const settings = bb.settings.define(SETTING_DESCRIPTORS);
-  settings.onChange(() => bb.realtime.publish(SETTINGS_CHANNEL, {}));
-  const store = createLayoutStore(bb.storage.kv, (patch) => bb.realtime.publish(LAYOUT_CHANNEL, patch));
-  bb.rpc.register(rpcContract, {
+export default function switchboard(alia: AliaPluginApi): void {
+  const settings = alia.settings.define(SETTING_DESCRIPTORS);
+  settings.onChange(() => alia.realtime.publish(SETTINGS_CHANNEL, {}));
+  const store = createLayoutStore(alia.storage.kv, (patch) => alia.realtime.publish(LAYOUT_CHANNEL, patch));
+  alia.rpc.register(rpcContract, {
     getLayout: async () => {
       const layout = await store.read();
       return {
@@ -29,8 +29,8 @@ export default function switchboard(bb: BbPluginApi): void {
     snooze: async ({ threadIds, until }) => ({ snoozes: { ...await store.snooze(threadIds, until) } }),
     unsnooze: async ({ threadIds }) => ({ snoozes: { ...await store.unsnooze(threadIds) } }),
   });
-  bb.events.on("thread.deleted", async ({ thread }) => {
-    if (await bb.storage.kv.get(`snooze:${thread.id}`) !== undefined) await store.unsnooze([thread.id]);
+  alia.events.on("thread.deleted", async ({ thread }) => {
+    if (await alia.storage.kv.get(`snooze:${thread.id}`) !== undefined) await store.unsnooze([thread.id]);
   });
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }

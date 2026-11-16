@@ -7,7 +7,7 @@ description: "Explain the Focus mode plugin's text-only chat reader, shortcut, a
 
 Focus mode adds a header button and the palette command
 `Focus mode: read current chat`. No keyboard shortcut is bound by default;
-users can assign one in BB's Keyboard settings. Escape or Exit focus dismisses
+users can assign one in VesnALIA's Keyboard settings. Escape or Exit focus dismisses
 the reader.
 
 The reader shows only the user's own messages (as left-ruled quotes) and the
@@ -21,5 +21,5 @@ Exit before using the ordinary composer or execution controls.
 
 This plugin has no CLI command, RPC, agent tool, settings, backend service, or
 plugin-owned storage. Do not invent programmatic controls for it. It requires
-BB 0.47.1 and SDK 0.6.79 or compatible later 0.6 SDK versions. Its overlay
+VesnALIA 0.47.1 and SDK 0.6.79 or compatible later 0.6 SDK versions. Its overlay
 integration is experimental.

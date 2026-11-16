@@ -1,27 +1,23 @@
 {
-  "name": "bb-plugin-agent-icons",
+  "name": "alia-plugin-agent-icons",
   "version": "0.2.1",
-  "description": "Give each BB agent provider its own icon and colour: built-in glyphs or your own SVG sets, synced across devices.",
+  "description": "Give each VesnALIA agent provider its own icon and colour: built-in glyphs or your own SVG sets, synced across devices.",
   "private": true,
   "type": "module",
   "license": "MIT",
   "author": "ponomr",
-  "repository": {
-    "url": "https://github.com/ponomr/bb-plugin-agent-icons.git",
-    "type": "git"
-  },
   "engines": {
-    "bbPluginSdk": ">=0.6.132 <0.7.0",
-    "bb": ">=0.49.0 <1.0.0"
+    "aliaPluginSdk": ">=0.6.132 <0.7.0",
+    "alia": ">=0.49.0 <1.0.0"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
-  "bb": {
+  "alia": {
     "name": "Agent Icons",
-    "description": "Give each BB agent provider its own icon and colour: built-in glyphs or your own SVG sets, synced across devices.",
+    "description": "Give each VesnALIA agent provider its own icon and colour: built-in glyphs or your own SVG sets, synced across devices.",
     "branding": {
       "icon": "./assets/agent-icons.svg"
     },
@@ -29,9 +25,9 @@
     "app": "./app.tsx"
   },
   "dependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@radix-ui/react-slot": "^1.5.0",
-    "zod": "^4.6.5"
+    "zod": "^4.6.5",
+    "@vesnalia/plugin-sdk": "^0.6.132"
   },
   "devDependencies": {
     "@pierre/diffs": "~1.2.12",
@@ -61,5 +57,14 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^4.1.12"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/agent-icons#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/agent-icons"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

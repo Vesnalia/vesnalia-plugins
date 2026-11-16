@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../src/server.ts";
 import { ponytailMessageMode } from "../src/lib/mode-message.ts";
 import { isPonytailSkill } from "../src/lib/ponytail-skill.ts";
@@ -14,7 +14,7 @@ assert.equal(isPonytailSkill({ name: "commit", pluginId: null }), false);
 
 const runHost = async (skills: unknown[]) => {
   const sends: unknown[] = [];
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "mane-control",
     sdk: {
       threads: {
@@ -29,7 +29,7 @@ const runHost = async (skills: unknown[]) => {
       },
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   return { harness, sends };
 };
 
@@ -60,7 +60,7 @@ const runHost = async (skills: unknown[]) => {
       id: "skill_user",
       name: "ponytail",
       pluginId: null,
-      scope: "bb-user",
+      scope: "alia-user",
       registrySkillId: "dietrichgebert/ponytail/ponytail",
     },
   ]);

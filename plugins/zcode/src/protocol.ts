@@ -124,7 +124,7 @@ export function modelContextWindow(
     typeof window === "number" && Number.isFinite(window) && window > 0
       ? window
       : undefined;
-  // A budget variant can only shrink the window it reports to bb.
+  // A budget variant can only shrink the window it reports to VesnALIA.
   if (variant && valid) return Math.min(variant.window, valid);
   if (variant) return undefined;
   return valid;
@@ -138,8 +138,8 @@ export function formatContextWindow(window: number): string {
 }
 
 /**
- * Plugin-side context-budget variants: bb selector entries that run the base
- * native model but cap the window reported to bb. The native registry has no
+ * Plugin-side context-budget variants: VesnALIA selector entries that run the base
+ * native model but cap the window reported to VesnALIA. The native registry has no
  * separate model ids for smaller windows (it rejects `GLM-5.3-256K`), so the
  * variant exists only in the id suffix and in context reporting.
  */
@@ -176,7 +176,7 @@ export function contextBudgetVariants(snapshot: Snapshot) {
           modelIdentityKey({ providerId: model.ref.providerId, modelId: id }),
         );
       if (occupied(modelId)) {
-        const fallback = `${model.ref.modelId}-bb-context${budget.suffix}`;
+        const fallback = `${model.ref.modelId}-alia-context${budget.suffix}`;
         modelId = fallback;
         for (let index = 2; occupied(modelId); index++)
           modelId = `${fallback}-${index}`;

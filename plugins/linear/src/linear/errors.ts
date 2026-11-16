@@ -6,7 +6,7 @@
  * and it is also the thing whose *kind* decides whether the plugin retries,
  * backs off, re-authenticates or gives up. Getting the kind wrong is how a
  * poller tight-loops against a rate limit; getting the redaction wrong is how
- * an API key ends up in `bb plugin logs`.
+ * an API key ends up in `alia plugin logs`.
  */
 
 /**
@@ -240,7 +240,7 @@ const AUTHORIZATION_PATTERN = /((?:authorization|linear-signature)\s*[:=]\s*)([^
 const BEARER_PATTERN = /\bBearer\s+[A-Za-z0-9._~+/-]{8,}=*/gi;
 
 /**
- * Applied to every string that reaches `bb.log`, a tool result, an rpc error
+ * Applied to every string that reaches `alia.log`, a tool result, an rpc error
  * or the UI.
  *
  * Three passes, in this order and for three different threat models: the exact

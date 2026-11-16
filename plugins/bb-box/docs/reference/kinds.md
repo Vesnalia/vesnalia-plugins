@@ -2,7 +2,7 @@
 
 # Kinds and sizes
 
-The kinds of box bb-box knows, the backends that can offer each, and each kind's sizes as shipped. The configuration's `kinds` section changes the sizes (see the [configuration reference](configuration.md)).
+The kinds of box alia-box knows, the backends that can offer each, and each kind's sizes as shipped. The configuration's `kinds` section changes the sizes (see the [configuration reference](configuration.md)).
 
 | Kind | What it is | OS | Architecture | Desktop | GPU | Device | Backends |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -21,7 +21,7 @@ The kinds of box bb-box knows, the backends that can offer each, and each kind's
 
 ## Devices
 
-The devices an `ios` or `android` box can boot (063), which `box_acquire`'s `device` and `bb box acquire --device` take by name. An image offers some of them, each with its runtime; the first an offer lists is the kind's default. The screen is in the device's own pixels, upright.
+The devices an `ios` or `android` box can boot (063), which `box_acquire`'s `device` and `alia box acquire --device` take by name. An image offers some of them, each with its runtime; the first an offer lists is the kind's default. The screen is in the device's own pixels, upright.
 
 | Device | Platform | Form | Screen | Scale |
 | --- | --- | --- | --- | --- |

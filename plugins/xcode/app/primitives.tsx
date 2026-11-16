@@ -30,7 +30,7 @@ export function StatusGlyph({
       >
         <span
           className={cn(
-            "bb-xcode-ping absolute size-2.5 rounded-full",
+            "alia-xcode-ping absolute size-2.5 rounded-full",
             status === "running" ? "bg-primary/60" : "bg-muted-foreground/40",
           )}
         />
@@ -75,7 +75,7 @@ export function SweepBar({
         className,
       )}
     >
-      <div className="bb-xcode-indeterminate-bar h-full w-full rounded-full bg-primary/80" />
+      <div className="alia-xcode-indeterminate-bar h-full w-full rounded-full bg-primary/80" />
     </div>
   );
 }

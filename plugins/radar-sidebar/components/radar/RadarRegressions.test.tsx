@@ -2,12 +2,12 @@
 import { createElement } from "react";
 import { act, cleanup, fireEvent, renderHook, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import type { KeyboardCoordinateGetter, KeyboardSensorOptions } from "@dnd-kit/core";
-import type { PluginProvidersState } from "@get-bb/plugin-sdk/app";
+import type { PluginProvidersState } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { makeThread, makeProject, makeSection, NOW } from "./fixtures";
 import { useThreadGroups } from "./useThreadGroups";
 
@@ -17,8 +17,8 @@ const probes = vi.hoisted(() => ({
   onDragStart: null as ((event: unknown) => void) | null,
   onDragEnd: null as ((event: unknown) => void) | null,
 }));
-vi.mock("@get-bb/plugin-sdk/app", async importOriginal => {
-  const actual = await importOriginal<typeof import("@get-bb/plugin-sdk/app")>();
+vi.mock("@vesnalia/plugin-sdk/app", async importOriginal => {
+  const actual = await importOriginal<typeof import("@vesnalia/plugin-sdk/app")>();
   return {
     ...actual,
     useSidebarThreadDraft: (id: string) => {

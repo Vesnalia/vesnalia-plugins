@@ -2,7 +2,7 @@
 // refusals at save and start, and — the E5 criterion — that a resume after a
 // reload does not send the member the same task twice.
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, type FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, type FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import graphStudio from "../server";
 import { END_NODE, START_NODE, graphSchema, type Graph } from "../lib/graph";
 
@@ -81,7 +81,7 @@ function sdk(crew: ReturnType<typeof crewStub>, extra: Record<string, unknown> =
       events: { list: async () => [] },
       ...extra,
     },
-    // Shaped like BB's answer (BBP-21): without a providerId only the default
+    // Shaped like VesnALIA's answer (BBP-21): without a providerId only the default
     // provider's catalogue comes back, so a check that does not name the
     // provider never sees claude-code's models.
     providers: {
@@ -103,7 +103,7 @@ function sdk(crew: ReturnType<typeof crewStub>, extra: Record<string, unknown> =
 function load(crew: ReturnType<typeof crewStub>, extra?: Record<string, unknown>) {
   const host = createFakePluginHost({ pluginId: "graph-studio", sdk: sdk(crew, extra) as never });
   open.push(host);
-  graphStudio(host.bb);
+  graphStudio(host.alia);
   return host;
 }
 
@@ -304,7 +304,7 @@ describe("resume after a reload", () => {
     let answered = false;
     const crew = crewStub({ reply: () => (answered ? { status: "completed", text: "the member's answer" } : { status: "running", text: null }) });
     const host = createFakePluginHost({ pluginId: "graph-studio", sdk: sdk(crew) as never });
-    graphStudio(host.bb);
+    graphStudio(host.alia);
     await host.harness.behavior.callRpc("saveGraph", { graph: memberGraph("m-resume"), threadId: "thr_parent" });
     const runId = await run(host, "m-resume");
     await vi.waitFor(() => expect(crew.sent).toHaveLength(1));
@@ -386,7 +386,7 @@ describe("rerun from a checkpoint (BBP-15)", () => {
     let answered = false;
     const crew = crewStub({ reply: () => (answered ? { status: "completed", text: "late answer" } : { status: "running", text: null }) });
     const host = createFakePluginHost({ pluginId: "graph-studio", sdk: sdk(crew) as never });
-    graphStudio(host.bb);
+    graphStudio(host.alia);
     await host.harness.behavior.callRpc("saveGraph", { graph: memberGraph("m-gen-resume"), threadId: "thr_parent" });
     const runId = await run(host, "m-gen-resume");
     await vi.waitFor(() => expect(crew.sent).toHaveLength(1));

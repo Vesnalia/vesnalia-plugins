@@ -1,4 +1,4 @@
-import { experimental_DetailRow as DetailRow, experimental_Icon as Icon, useBbNavigate, type ExperimentalThreadInfoProps, type PluginThreadHeaderActionProps } from "@get-bb/plugin-sdk/app";
+import { experimental_DetailRow as DetailRow, experimental_Icon as Icon, useAliaNavigate, type ExperimentalThreadInfoProps, type PluginThreadHeaderActionProps } from "@vesnalia/plugin-sdk/app";
 import type { ThreadInfo } from "../contract";
 import { useLoom } from "./common";
 
@@ -9,7 +9,7 @@ const subPathOf = (info: ThreadInfo, threadId: string) => (info.slug === null ? 
 
 /** A worker, reviewer or planner thread's link to its ticket (or project) on the Loom page; a planning conversation without a spec links to itself there. Other threads show nothing. */
 export function TicketChip({ threadId, isCompactViewport }: PluginThreadHeaderActionProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   // Its state moves with the ticket; a thread that was not a Loom thread a moment ago may have become one.
   const info = useLoom("threadInfo", { threadId }, { enabled: !isCompactViewport }).data ?? null;
   if (isCompactViewport || info === null) return null;
@@ -29,7 +29,7 @@ export function TicketChip({ threadId, isCompactViewport }: PluginThreadHeaderAc
 
 /** The thread Info tab's Loom row: the ticket or project the thread works on, in what state, and the thread's role, linked to the Loom page. It shows on phones too, where the header has no chip. */
 export function LoomInfoRow({ threadId }: ExperimentalThreadInfoProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const info = useLoom("threadInfo", { threadId }).data ?? null;
   if (info === null) return null;
   const what = info.slug === null ? "Planning conversation" : info.key === null ? info.slug : info.key;

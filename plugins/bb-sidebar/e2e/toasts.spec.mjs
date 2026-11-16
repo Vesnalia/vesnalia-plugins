@@ -19,7 +19,7 @@ async function colors(toast) {
     probe.remove();
     const card = element.getAttribute("data-styled") === "false" ? element.firstElementChild : element;
     const action = [...element.querySelectorAll("button")].find((el) => el.textContent === "Undo");
-    // bb 0.47 draws every toast with its own component; older hosts used Sonner's markup.
+    // VesnALIA 0.47 draws every toast with its own component; older hosts used Sonner's markup.
     const description = element.querySelector('[data-testid="app-toast-description"], [data-description]');
     return {
       toast: read(card),
@@ -39,16 +39,16 @@ async function capture(page, toast, testInfo, theme, kind) {
   return result;
 }
 
-// The sidebar's toasts go through bb's Toaster with its own class, so they
-// should be indistinguishable from bb's native toasts. Compare against the
+// The sidebar's toasts go through VesnALIA's Toaster with its own class, so they
+// should be indistinguishable from VesnALIA's native toasts. Compare against the
 // native Archive toast instead of fixed tokens so host restyles are followed.
 for (const theme of ["dark", "light"]) {
-  test(`sidebar toast matches bb's native toast in ${theme}`, async ({ page, request }, testInfo) => {
+  test(`sidebar toast matches VesnALIA's native toast in ${theme}`, async ({ page, request }, testInfo) => {
     await reset(request);
     await open(page, { theme });
     const thread = fixture.threads[0];
     await (await menu(page, thread.title)).getByRole("menuitem", { name: "Settle", exact: true }).click();
-    const toast = page.locator("[data-sonner-toast].bb-sidebar-toast").filter({ hasText: "Thread settled" });
+    const toast = page.locator("[data-sonner-toast].alia-sidebar-toast").filter({ hasText: "Thread settled" });
     await expect(toast).toBeVisible();
     const settled = await capture(page, toast, testInfo, theme, "sidebar");
     const undo = toast.getByRole("button", { name: "Undo", exact: true });
@@ -57,11 +57,11 @@ for (const theme of ["dark", "light"]) {
     await undo.click();
     await expect(link(page, thread.title)).toBeVisible();
 
-    // This bound SDK action renders BB's custom Archive toast on the same Toaster.
+    // This bound SDK action renders VesnALIA's custom Archive toast on the same Toaster.
     await (await menu(page, thread.title)).getByRole("menuitem", { name: "Archive", exact: true }).click();
     const native = page.locator("[data-sonner-toast]").filter({ hasText: "Thread archived" });
     await expect(native).toBeVisible();
-    await expect(native).not.toHaveClass(/bb-sidebar-toast/);
+    await expect(native).not.toHaveClass(/alia-sidebar-toast/);
     const archived = await capture(page, native, testInfo, theme, "native");
     const nativeUndo = native.getByRole("button", { name: "Undo", exact: true });
     await nativeUndo.hover();

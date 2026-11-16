@@ -3,8 +3,8 @@
 // populated states, the Needs-you area and its confirmed actions, keyboard
 // tabs, secondary metrics and guardrail status, the nav badge, and the
 // publish dialog. Real RPC handlers unless a state needs a stub.
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { configure, fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createAutoresearchPlugin } from "../server.ts";
@@ -53,8 +53,8 @@ describe("frontend: human interface", () => {
     host.refs.set("main", host.commit("T0", null));
     host.metric.set("T0", 1000);
     port.addThread("thr_study");
-    const fake = createFakePluginHost({ pluginId: "bb-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
-    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0 }, onEngine: (e) => (engine = e) })(fake.bb);
+    const fake = createFakePluginHost({ pluginId: "alia-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
+    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0 }, onEngine: (e) => (engine = e) })(fake.alia);
     harness = fake.harness;
     await harness.behavior.callAgentTool("study_propose", { spec_toml: fakeHostSpec() }, { threadId: "thr_study", projectId: "proj_1" });
   });
@@ -94,7 +94,7 @@ describe("frontend: human interface", () => {
     expect(page.queryByText(/Workers \(/u)).toBeNull();
     fireEvent.click(page.getByRole("button", { name: "Approve and calibrate…" }));
     await page.findByText(/repeated A\/A measurements on 1 bench host/u);
-    expect(page.getAllByText("bb study calibrate toy-size").length).toBeGreaterThan(0);
+    expect(page.getAllByText("alia study calibrate toy-size").length).toBeGreaterThan(0);
     expect(page.inspection.rpcCalls.some((c) => c.method === "study.spec.approve")).toBe(false);
     fireEvent.click(page.getByRole("button", { name: "Approve and calibrate" }));
     await waitFor(() => expect(page.inspection.rpcCalls.find((c) => c.method === "study.spec.approve")?.input).toEqual({ slug: "toy-size", version: 1, confirm: true }));
@@ -255,7 +255,7 @@ describe("frontend: human interface", () => {
     const box = (await page.findByLabelText("Also archive the study thread")) as HTMLInputElement;
     expect(box.checked).toBe(true);
     expect(page.getByText("The study thread is archived too.")).toBeTruthy();
-    expect(page.getByText(/bb study archive toy-size --archive-thread/u)).toBeTruthy();
+    expect(page.getByText(/alia study archive toy-size --archive-thread/u)).toBeTruthy();
     fireEvent.click(box);
     expect(page.getByText("The study thread stays in the sidebar.")).toBeTruthy();
     fireEvent.click(box);
@@ -273,8 +273,8 @@ describe("frontend: human interface", () => {
     host.refs.set("main", host.commit("T0", null));
     host.metric.set("T0", 1000);
     port.addThread("thr_study");
-    const fake = createFakePluginHost({ pluginId: "bb-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
-    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0 }, onEngine: (e) => (engine = e) })(fake.bb);
+    const fake = createFakePluginHost({ pluginId: "alia-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
+    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0 }, onEngine: (e) => (engine = e) })(fake.alia);
     harness = fake.harness;
     const noGuardrail = fakeHostSpec().replace('[[guardrail]]\nname = "rss"\nmax_regression = "5%"\n', "");
     await harness.behavior.callAgentTool("study_propose", { spec_toml: noGuardrail }, { threadId: "thr_study", projectId: "proj_1" });
@@ -294,16 +294,16 @@ describe("frontend: human interface", () => {
     expect(list.getByRole("button", { name: "New study" })).toBeTruthy();
   });
 
-  it("New study opens bb's composer with the current project preselected, and opens the thread it creates", async () => {
+  it("New study opens VesnALIA's composer with the current project preselected, and opens the thread it creates", async () => {
     const app = await loadPluginApp(() => import("../app.tsx"));
     // No project in the route: the project of the latest study.
     const list = renderSlot(app.navPanels[0]!, { subPath: "" }, { rpc: rpc(), sdk: { threads: { spawn: async (args: unknown) => ({ id: "thr_new", ...(args as object) }) }, projects: { list: async () => [{ id: "proj_1" }] } } as never });
     pages.push(list);
     fireEvent.click(await list.findByRole("button", { name: "New study" }));
-    const composer = await list.findByTestId("bb-new-thread-composer");
+    const composer = await list.findByTestId("alia-new-thread-composer");
     expect(composer.getAttribute("data-default-project-id")).toBe("proj_1");
-    expect((list.getByTestId("bb-new-thread-composer-input") as HTMLTextAreaElement).value).toContain("Use the study-create skill");
-    fireEvent.click(list.getByTestId("bb-new-thread-composer-submit"));
+    expect((list.getByTestId("alia-new-thread-composer-input") as HTMLTextAreaElement).value).toContain("Use the study-create skill");
+    fireEvent.click(list.getByTestId("alia-new-thread-composer-submit"));
     await waitFor(() => expect(list.inspection.navigateCalls.at(-1)).toMatchObject({ method: "toThread" }));
     expect(list.inspection.sdkCalls.map((c) => c.method)).toContain("threads.spawn");
     expect(list.inspection.navigateCalls.some((c) => c.method === "toCompose")).toBe(false);
@@ -313,7 +313,7 @@ describe("frontend: human interface", () => {
     const inProject = renderSlot(app.navPanels[0]!, { subPath: "" }, { rpc: rpc(), context: { projectId: "proj_ctx" }, sdk: { projects: { list: async () => [{ id: "proj_1" }, { id: "proj_ctx" }] } } as never });
     pages.push(inProject);
     fireEvent.click(await inProject.findByRole("button", { name: "New study" }));
-    expect((await inProject.findByTestId("bb-new-thread-composer")).getAttribute("data-default-project-id")).toBe("proj_ctx");
+    expect((await inProject.findByTestId("alia-new-thread-composer")).getAttribute("data-default-project-id")).toBe("proj_ctx");
     inProject.lifecycle.unmount();
     pages.splice(pages.indexOf(inProject), 1);
     // No study and no project: nothing preselected (the human picks it).

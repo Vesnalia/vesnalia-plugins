@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createFakePluginHost as createSdkFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost as createSdkFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 // @ts-expect-error The build artifact intentionally has no declaration file.
 import plugin from "../dist/server.js";
 
@@ -125,7 +125,7 @@ async function beginAndAttach(
   });
 }
 
-test("the current-login RPC accepts BB 0.39 provider status and releases an idle runtime", async () => {
+test("the current-login RPC accepts VesnALIA 0.39 provider status and releases an idle runtime", async () => {
   const host = createFakePluginHost({
     pluginId: "claude-account-switcher",
     sdk: {
@@ -172,7 +172,7 @@ test("the current-login RPC accepts BB 0.39 provider status and releases an idle
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
 
   try {
     const admission = await host.harness.behavior.callRpc("beginSwitch", {
@@ -234,7 +234,7 @@ test("thread admission is claimed before the first thread read settles", async (
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const firstAdmission = host.harness.behavior.callRpc("beginSwitch", {
     operationId: DEFAULT_OPERATION_ID,
     mode: "current",
@@ -307,7 +307,7 @@ test("a rejected admission releases the exact thread claim", async () => {
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
 
   assert.deepEqual(
     await host.harness.behavior.callRpc("beginSwitch", {
@@ -380,7 +380,7 @@ test("a second thread on the same machine receives a typed host-busy admission",
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
 
   const firstAdmission = await host.harness.behavior.callRpc("beginSwitch", {
     mode: "current",
@@ -412,23 +412,23 @@ test("invalid durable terminal ownership fails plugin startup closed", async () 
   const host = createFakePluginHost({
     pluginId: "claude-account-switcher",
   });
-  await host.bb.storage.kv.set("unclean-login-terminals-v1", [
+  await host.alia.storage.kv.set("unclean-login-terminals-v1", [
     { hostId: "host_1", terminalId: "" },
   ]);
 
-  await assert.rejects(plugin(host.bb), /cleanup state is invalid/);
+  await assert.rejects(plugin(host.alia), /cleanup state is invalid/);
 });
 
 test("duplicate durable terminal ownership fails plugin startup closed", async () => {
   const host = createFakePluginHost({
     pluginId: "claude-account-switcher",
   });
-  await host.bb.storage.kv.set("unclean-login-terminals-v1", [
+  await host.alia.storage.kv.set("unclean-login-terminals-v1", [
     { hostId: "host_1", terminalId: "terminal_1" },
     { hostId: "host_2", terminalId: "terminal_1" },
   ]);
 
-  await assert.rejects(plugin(host.bb), /cleanup state is invalid/);
+  await assert.rejects(plugin(host.alia), /cleanup state is invalid/);
 });
 
 test("a helper is durably adopted before its terminal can be observed", async () => {
@@ -482,9 +482,9 @@ test("a helper is durably adopted before its terminal can be observed", async ()
       },
     },
   });
-  await plugin(host.bb);
-  const originalSet = host.bb.storage.kv.set.bind(host.bb.storage.kv);
-  Object.defineProperty(host.bb.storage.kv, "set", {
+  await plugin(host.alia);
+  const originalSet = host.alia.storage.kv.set.bind(host.alia.storage.kv);
+  Object.defineProperty(host.alia.storage.kv, "set", {
     configurable: true,
     value: async (key: string, value: unknown) => {
       events.push("persist");
@@ -571,7 +571,7 @@ test("authorization code delivery is gated, serialized, and retry-safe", async (
             chunks: [
               {
                 dataBase64: Buffer.from(
-                  "BB_CLAUDE_LOGIN_AUTHORIZATION_READY:/private/tmp/bb-claude-login.A1b2C3/open-chrome-incognito\nBB_CLAUDE_LOGIN_INPUT_READY\n",
+                  "ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:/private/tmp/alia-claude-login.A1b2C3/open-chrome-incognito\nBB_CLAUDE_LOGIN_INPUT_READY\n",
                 ).toString("base64"),
                 seq: 1,
               },
@@ -590,7 +590,7 @@ test("authorization code delivery is gated, serialized, and retry-safe", async (
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const switching = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
     mode: "login",
@@ -703,7 +703,7 @@ test("authorization code delivery is gated, serialized, and retry-safe", async (
 });
 
 test("authorization return reopens the pending URL on the same host and operation", async () => {
-  const launcherPath = "/private/tmp/bb-claude-login.A1b2C3/open-chrome-incognito";
+  const launcherPath = "/private/tmp/alia-claude-login.A1b2C3/open-chrome-incognito";
   let loginCreated!: () => void;
   const created = new Promise<void>((resolve) => {
     loginCreated = resolve;
@@ -742,7 +742,7 @@ test("authorization return reopens the pending URL on the same host and operatio
           chunks: [
             {
               dataBase64: Buffer.from(
-                `BB_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nBB_CLAUDE_LOGIN_INPUT_READY\n`,
+                `ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nBB_CLAUDE_LOGIN_INPUT_READY\n`,
               ).toString("base64"),
               seq: 1,
             },
@@ -760,7 +760,7 @@ test("authorization return reopens the pending URL on the same host and operatio
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const switching = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
     mode: "login",
@@ -793,7 +793,7 @@ test("authorization return reopens the pending URL on the same host and operatio
       readonly start?: { readonly command?: string };
     };
     assert.equal(reopen.scope?.hostId, "host_1");
-    assert.match(reopen.start?.command ?? "", /--bb-reopen-authorization/);
+    assert.match(reopen.start?.command ?? "", /--alia-reopen-authorization/);
     assert.match(reopen.start?.command ?? "", /open-chrome-incognito/);
     assert.doesNotMatch(reopen.start?.command ?? "", /https:\/\/|auth login/);
 
@@ -815,7 +815,7 @@ test("authorization return reopens the pending URL on the same host and operatio
 });
 
 test("authorization return settles before runtime release and keeps the host reservation", async () => {
-  const launcherPath = "/private/tmp/bb-claude-login.A1b2C3/open-chrome-incognito";
+  const launcherPath = "/private/tmp/alia-claude-login.A1b2C3/open-chrome-incognito";
   let loginCreated!: () => void;
   const created = new Promise<void>((resolve) => {
     loginCreated = resolve;
@@ -894,7 +894,7 @@ test("authorization return settles before runtime release and keeps the host res
             {
               dataBase64: Buffer.from(
                 terminalId === "login_terminal"
-                  ? `BB_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nBB_CLAUDE_LOGIN_INPUT_READY\n`
+                  ? `ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nBB_CLAUDE_LOGIN_INPUT_READY\n`
                   : "loggedIn=true\nauthMethod=claude.ai\napiProvider=firstParty\n",
               ).toString("base64"),
               seq: 1,
@@ -918,7 +918,7 @@ test("authorization return settles before runtime release and keeps the host res
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const switching = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
     mode: "login",
@@ -1004,7 +1004,7 @@ test("authorization return settles before runtime release and keeps the host res
 });
 
 test("cancellation waits for an already-started authorization return helper", async () => {
-  const launcherPath = "/private/tmp/bb-claude-login.A1b2C3/open-chrome-incognito";
+  const launcherPath = "/private/tmp/alia-claude-login.A1b2C3/open-chrome-incognito";
   let loginCreated!: () => void;
   const created = new Promise<void>((resolve) => {
     loginCreated = resolve;
@@ -1065,7 +1065,7 @@ test("cancellation waits for an already-started authorization return helper", as
           chunks: [
             {
               dataBase64: Buffer.from(
-                `BB_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nBB_CLAUDE_LOGIN_INPUT_READY\n`,
+                `ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nBB_CLAUDE_LOGIN_INPUT_READY\n`,
               ).toString("base64"),
               seq: 1,
             },
@@ -1083,7 +1083,7 @@ test("cancellation waits for an already-started authorization return helper", as
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const switching = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
     mode: "login",
@@ -1149,7 +1149,7 @@ test("cancellation waits for an already-started authorization return helper", as
 });
 
 test("authorization return creates no second helper until uncertain cleanup is reconciled", async () => {
-  const launcherPath = "/private/tmp/bb-claude-login.A1b2C3/open-chrome-incognito";
+  const launcherPath = "/private/tmp/alia-claude-login.A1b2C3/open-chrome-incognito";
   let loginCreated!: () => void;
   const created = new Promise<void>((resolve) => {
     loginCreated = resolve;
@@ -1202,7 +1202,7 @@ test("authorization return creates no second helper until uncertain cleanup is r
           chunks: [
             {
               dataBase64: Buffer.from(
-                `BB_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nBB_CLAUDE_LOGIN_INPUT_READY\n`,
+                `ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nBB_CLAUDE_LOGIN_INPUT_READY\n`,
               ).toString("base64"),
               seq: 1,
             },
@@ -1220,7 +1220,7 @@ test("authorization return creates no second helper until uncertain cleanup is r
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const switching = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
     mode: "login",
@@ -1336,7 +1336,7 @@ test("late code delivery cannot mutate a replacement switch", async () => {
           output: async () => ({
             chunks: [
               {
-                dataBase64: Buffer.from("BB_CLAUDE_LOGIN_INPUT_READY\n").toString(
+                dataBase64: Buffer.from("ALIA_CLAUDE_LOGIN_INPUT_READY\n").toString(
                   "base64",
                 ),
                 seq: 1,
@@ -1355,7 +1355,7 @@ test("late code delivery cannot mutate a replacement switch", async () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
     const waitForCode = async (operationId: string) => {
       for (let attempt = 0; attempt < 20; attempt += 1) {
         const inspected = (await host.harness.behavior.callRpc("inspectSwitch", {
@@ -1504,7 +1504,7 @@ test("a remounted client attaches to the active switch instead of starting anoth
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const first = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
     mode: "current",
@@ -1640,7 +1640,7 @@ test("an exact finished receipt survives a newer switch on the same thread", asy
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
 
   try {
     assert.deepEqual(
@@ -1732,7 +1732,7 @@ test("a helper opened on another machine is closed before the runtime can be rel
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
 
   try {
     await assert.rejects(
@@ -1796,7 +1796,7 @@ test("a mismatched helper reserves its actual machine until cleanup finishes", a
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const mismatchedSwitch = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
     mode: "current",
@@ -1885,7 +1885,7 @@ test("overlapping mismatched helpers retain independent actual-host reservations
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const firstSwitch = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
     mode: "current",
@@ -1970,10 +1970,10 @@ test("failed mismatch persistence still allows cleanup reconciliation", async ()
       },
     },
   });
-  await plugin(host.bb);
-  const originalSet = host.bb.storage.kv.set.bind(host.bb.storage.kv);
+  await plugin(host.alia);
+  const originalSet = host.alia.storage.kv.set.bind(host.alia.storage.kv);
   let persistenceAttempts = 0;
-  Object.defineProperty(host.bb.storage.kv, "set", {
+  Object.defineProperty(host.alia.storage.kv, "set", {
     configurable: true,
     value: async (key: string, value: unknown) => {
       persistenceAttempts += 1;
@@ -2008,7 +2008,7 @@ test("failed mismatch persistence still allows cleanup reconciliation", async ()
   }
 });
 
-test("valid Claude auth can release the runtime when BB usage lookup is unavailable", async () => {
+test("valid Claude auth can release the runtime when VesnALIA usage lookup is unavailable", async () => {
   const host = createFakePluginHost({
     pluginId: "claude-account-switcher",
     sdk: {
@@ -2053,7 +2053,7 @@ test("valid Claude auth can release the runtime when BB usage lookup is unavaila
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
 
   try {
     assert.deepEqual(
@@ -2111,7 +2111,7 @@ test("two sessions on one machine can rebind sequentially", async () => {
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
 
   try {
     for (const threadId of ["thread_1", "thread_2"]) {
@@ -2170,7 +2170,7 @@ test("current-login cancellation settles before releasing the runtime", async ()
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const switching = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
     mode: "current",
@@ -2256,7 +2256,7 @@ test("cancellation after login success reports that safe completion is in progre
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const switching = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
     mode: "login",
@@ -2321,7 +2321,7 @@ test("cancellation reports completing when atomic close observes login success",
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const switching = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
     mode: "login",
@@ -2384,7 +2384,7 @@ test("plugin disposal cancels and closes an active login helper", async () => {
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const switching = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
     mode: "login",
@@ -2448,7 +2448,7 @@ test("plugin reload keeps a disconnected login helper durably owned", async () =
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const switching = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
     mode: "login",
@@ -2512,10 +2512,10 @@ test("plugin disposal retries cleanup persistence after a completed login", asyn
       },
     },
   });
-  await plugin(host.bb);
-  const originalSet = host.bb.storage.kv.set.bind(host.bb.storage.kv);
+  await plugin(host.alia);
+  const originalSet = host.alia.storage.kv.set.bind(host.alia.storage.kv);
   let persistenceAttempts = 0;
-  Object.defineProperty(host.bb.storage.kv, "set", {
+  Object.defineProperty(host.alia.storage.kv, "set", {
     configurable: true,
     value: async (key: string, value: unknown) => {
       persistenceAttempts += 1;
@@ -2615,12 +2615,12 @@ test("an older persistence success cannot hide a newer failed adoption", async (
       },
     },
   });
-  await host.bb.storage.kv.set("unclean-login-terminals-v1", [
+  await host.alia.storage.kv.set("unclean-login-terminals-v1", [
     { hostId: "host_1", terminalId: "stale_terminal" },
   ]);
-  await plugin(host.bb);
-  const originalSet = host.bb.storage.kv.set.bind(host.bb.storage.kv);
-  const originalDelete = host.bb.storage.kv.delete.bind(host.bb.storage.kv);
+  await plugin(host.alia);
+  const originalSet = host.alia.storage.kv.set.bind(host.alia.storage.kv);
+  const originalDelete = host.alia.storage.kv.delete.bind(host.alia.storage.kv);
   let persistenceAttempts = 0;
   const persist = async (write: () => Promise<void>) => {
     persistenceAttempts += 1;
@@ -2635,11 +2635,11 @@ test("an older persistence success cannot hide a newer failed adoption", async (
     }
     await write();
   };
-  Object.defineProperty(host.bb.storage.kv, "set", {
+  Object.defineProperty(host.alia.storage.kv, "set", {
     configurable: true,
     value: (key: string, value: unknown) => persist(() => originalSet(key, value)),
   });
-  Object.defineProperty(host.bb.storage.kv, "delete", {
+  Object.defineProperty(host.alia.storage.kv, "delete", {
     configurable: true,
     value: (key: string) => persist(() => originalDelete(key)),
   });
@@ -2742,7 +2742,7 @@ test("a later switch reconciles failed login cleanup before it can start", async
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
 
   const firstSwitch = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
@@ -2826,7 +2826,7 @@ test("a later switch stays blocked while failed login cleanup is still unconfirm
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
 
   const firstSwitch = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
@@ -2893,7 +2893,7 @@ test("failed cleanup survives plugin reload and blocks the same machine", async 
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const firstSwitch = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
     mode: "login",
@@ -2971,7 +2971,7 @@ test("failed cleanup follows the helper terminal's actual machine", async () => 
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const firstSwitch = beginAndAttach(host, {
     operationId: DEFAULT_OPERATION_ID,
     mode: "login",

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   projectThread,
   projectsWith,
@@ -18,7 +18,7 @@ describe("release lifecycle safety", () => {
     harness.inspection.sdk.stub("projects.list", async () =>
       projectsWith(threads.filter((t) => t.visibility === "visible")),
     );
-    harness.inspection.sdk.stub("threads.list", async (args: Parameters<BbPluginApi["sdk"]["threads"]["list"]>[0]) => {
+    harness.inspection.sdk.stub("threads.list", async (args: Parameters<AliaPluginApi["sdk"]["threads"]["list"]>[0]) => {
       const { offset = 0, limit = 100, threadIds } = args ?? {};
       const matching = threadIds ? threads.filter((t) => threadIds.includes(t.id)) : threads;
       return matching.slice(offset, offset + limit);

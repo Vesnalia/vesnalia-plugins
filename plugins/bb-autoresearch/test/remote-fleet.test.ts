@@ -22,7 +22,7 @@ import { studyEvidence } from "../src/evidence.ts";
 import { Clock, localRunner, makeCtx, waitFor, type FakePort } from "./helpers.ts";
 
 const SLUG = "toy-remote";
-const CALLER = { experimental_caller: { kind: "plugin" as const, pluginId: "bb-autoresearch" } };
+const CALLER = { experimental_caller: { kind: "plugin" as const, pluginId: "alia-autoresearch" } };
 
 function sh(cwd: string, ...args: string[]): string {
   return execFileSync("git", args, { cwd, encoding: "utf8", env: { ...process.env, GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t" } }).trim();
@@ -160,7 +160,7 @@ describe("remote bench hosts (example provider, real git)", () => {
 
   /**
    * A plugin reload: the old instance is disposed (its store closes; the
-   * database stays, as BB keeps the file), and a new engine on the same
+   * database stays, as VesnALIA keeps the file), and a new engine on the same
    * database reconciles.
    */
   async function reload() {
@@ -259,11 +259,11 @@ describe("remote bench hosts (example provider, real git)", () => {
     expect(store.artifacts(s.id).filter((a) => a.kind === "seed" && a.state === "ok")).toHaveLength(1);
     for (const m of alive()) {
       expect(existsSync(join(m.home, "setup-ran"))).toBe(true);
-      expect(m.labels).toMatchObject({ owner: "bb-autoresearch", study: s.id });
+      expect(m.labels).toMatchObject({ owner: "alia-autoresearch", study: s.id });
       expect(m.cores).toBe(1);
     }
     expect(new Set(alive().map((m) => m.labels.slot))).toEqual(new Set(["0.1", "0.2"]));
-    // The views: the Bench tab's remote section, the Live strip, `bb study bench` lines.
+    // The views: the Bench tab's remote section, the Live strip, `alia study bench` lines.
     const bv = benchView(engine, s);
     expect(bv.remote.live).toBe(2);
     expect(bv.remote.entries[0]).toMatchObject({ provider: "bench-provider-local", hosts: 2, cores: 1, setup: true, seed: { state: "ok" } });
@@ -397,7 +397,7 @@ describe("remote bench hosts (example provider, real git)", () => {
     expect(store.remoteHost(a!.id)!.state).toBe("gone");
     expect(store.remoteHost(a!.id)!.left_reason).toMatch(/suspended/u);
     // An orphan: a machine with this plugin's labels that no row uses.
-    const orphan = await provider.handlers["benchProvider.create"]({ key: "orphan-1", cores: 1, lifetimeSeconds: 600, labels: { owner: "bb-autoresearch", study: sid, slot: "9.9" } }, CALLER);
+    const orphan = await provider.handlers["benchProvider.create"]({ key: "orphan-1", cores: 1, lifetimeSeconds: 600, labels: { owner: "alia-autoresearch", study: sid, slot: "9.9" } }, CALLER);
     expect(await engine.fleet.cleanupOrphans()).toBe(1);
     expect(provider.machines().find((m) => m.hostId === orphan.hostId)!.state).toBe("gone");
     // A load: rows that were not measuring yet are ended and their machines destroyed; a ready one is re-adopted.
@@ -480,7 +480,7 @@ describe("remote bench hosts (example provider, real git)", () => {
     // While no instance runs: a dies, b loses its bench repository.
     provider.kill(a!.remote_id!);
     const homeB = provider.machines().find((m) => m.hostId === b!.remote_id)!.home;
-    rmSync(join(homeB, "bb-autoresearch", "repo.git"), { recursive: true, force: true });
+    rmSync(join(homeB, "alia-autoresearch", "repo.git"), { recursive: true, force: true });
     await reload();
     expect(store.remoteHost(a!.id)!.state).toBe("gone");
     expect(store.remoteHost(b!.id)!.state).toBe("gone");
@@ -572,7 +572,7 @@ describe("remote bench hosts (example provider, real git)", () => {
     expect(k.startsWith(`${s.best_sha}:`)).toBe(true);
   });
 
-  it("seeds and base bundles no study uses are deleted on archive and at load, and \`bb study bench\` reports their size", async () => {
+  it("seeds and base bundles no study uses are deleted on archive and at load, and \`alia study bench\` reports their size", async () => {
     setup();
     await started();
     const sid = studyId();
@@ -585,7 +585,7 @@ describe("remote bench hosts (example provider, real git)", () => {
     writeFileSync(stale, "old");
     const old = new Date(Date.now() - 3_600_000);
     utimesSync(stale, old, old);
-    // `bb study bench`: the size line.
+    // `alia study bench`: the size line.
     const usage = await engine.fleet.artifactUsage(store.study(SLUG)!);
     expect(usage!.seeds.files).toBe(2);
     expect(usage!.bases.files).toBe(1);
@@ -712,7 +712,7 @@ describe("remote bench hosts (example provider, real git)", () => {
     expect(ok).toBe(true);
   }
 
-  it("1.0: a remote-only study paused at budget end has no machines; the freeze brings them up and `bb study measure` waits for them", async () => {
+  it("1.0: a remote-only study paused at budget end has no machines; the freeze brings them up and `alia study measure` waits for them", async () => {
     setup();
     await started();
     const sid = studyId();

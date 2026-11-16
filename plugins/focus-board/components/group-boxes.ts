@@ -40,7 +40,7 @@
 //
 // Pure module: no host, no SDK, no React. The board's drag layer and the
 // rank store read the runs; lib/rank carries the unit-move write.
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type {
   GroupBy,
   GroupingContext,

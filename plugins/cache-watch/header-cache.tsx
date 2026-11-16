@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useRealtime, useRpc, type PluginAppBuilder } from '@get-bb/plugin-sdk/app';
+import { useRealtime, useRpc, type PluginAppBuilder } from '@vesnalia/plugin-sdk/app';
 import type { CacheStatus, rpcContract } from './server';
 import { cacheIsVisible, ThreadCacheCard, useCacheDisplayThreshold, useCachePlacement } from './thread-cache';
 import { DEFAULT_STATUS_TEMPLATE, renderStatusTemplate, templateData } from './status-template';

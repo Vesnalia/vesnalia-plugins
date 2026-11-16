@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../../src/rpc-contract";
 import type { SyncHealth } from "../../src/review-lifecycle";
 import { forgetReviews } from "../../lib/panel-state";
@@ -80,11 +80,11 @@ function matchesFilter(review: ReviewItem, query: string): boolean {
 function syncProblem(health: SyncHealth | undefined): string | null {
   const error = health?.error;
   if (!error) return null;
-  const detail = error.kind === "auth" ? "GitHub CLI isn’t signed in. Run gh auth login on the BB server."
+  const detail = error.kind === "auth" ? "GitHub CLI isn’t signed in. Run gh auth login on the VesnALIA server."
     : error.kind === "rate-limit" ? `GitHub’s rate limit was reached. Reading again ${error.retryAt && error.retryAt > Date.now() ? `in ${Math.ceil((error.retryAt - Date.now()) / 60_000)}m` : "soon"}.`
     : error.kind === "partial" ? `Couldn’t read ${error.count === 1 ? "1 pull request" : `${error.count} pull requests`}.`
-    : error.kind === "teams" ? "Couldn’t read your teams, so team requests may be missing. Run gh auth refresh -s read:org on the BB server."
-    : error.kind === "gh-missing" ? "GitHub CLI isn’t on the BB server."
+    : error.kind === "teams" ? "Couldn’t read your teams, so team requests may be missing. Run gh auth refresh -s read:org on the VesnALIA server."
+    : error.kind === "gh-missing" ? "GitHub CLI isn’t on the VesnALIA server."
     : "Couldn’t reach GitHub.";
   const read = timeAgo(health?.lastReadAt);
   return `${read ? `GitHub last read ${read}` : "GitHub hasn’t been read yet"}: ${detail}`;
@@ -108,12 +108,12 @@ function useSize(element: HTMLElement | null): { width: number; height: number }
 /**
  * All reviews: one find-or-paste box, then the queue in sections instead of tabs, in the order you'll work it. Needs
  * review is open, in three parts (Back to you, New, Team requests); Waiting on author, Reviewed and Archive start
- * closed. Where the page is short of room (a phone), the box opens from BB's title bar. With no reviews yet, a first-run
+ * closed. Where the page is short of room (a phone), the box opens from VesnALIA's title bar. With no reviews yet, a first-run
  * panel takes the sections' place.
  */
 export function Inbox() {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const pinnable = useThreadListReviews() === true;
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -239,7 +239,7 @@ export function Inbox() {
   const phoneBox = !searchInline && (searchOpen || !!query || boxFocused);
   useEffect(() => publishInboxBar({ refreshing, health, searchInline, searchOpen: phoneBox, refresh: () => void refresh(), openSearch }),
     [refreshing, health, searchInline, phoneBox, refresh, openSearch]);
-  // Without BB's title bar (an older BB), the page shows the list's controls itself.
+  // Without VesnALIA's title bar (an older VesnALIA), the page shows the list's controls itself.
   const titleBar = useListTitleBarMounted();
   const [waited, setWaited] = useState(false);
   useEffect(() => {
@@ -312,7 +312,7 @@ export function Inbox() {
 
   return (
     <CompactViewportOverrideProvider isCompactViewport={compact}>
-    {/* BB clips a plugin page to the window, so the page scrolls itself. */}
+    {/* VesnALIA clips a plugin page to the window, so the page scrolls itself. */}
     <div ref={setPageEl} className="@container/inbox h-full min-h-0 overflow-y-auto" style={{ backgroundColor: "rgb(from var(--background) r g b / 1)" }}>
       <div className="mx-auto flex w-full min-w-0 max-w-5xl flex-col px-1.5 pb-8 @min-[640px]/inbox:px-6">
         {/* One element whether it's on the page or opened over it, so folding or unfolding a Duo keeps the box, its

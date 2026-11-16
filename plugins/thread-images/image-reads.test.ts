@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { imageReadOf } from "./image-reads.ts";
 
-// Each fixture is the `item` of an `item/completed` event as bb stores it for that provider.
+// Each fixture is the `item` of an `item/completed` event as VesnALIA stores it for that provider.
 const claudeCodeRead = {
   type: "fileRead",
   id: "toolu_01AbC",

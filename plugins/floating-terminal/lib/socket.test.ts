@@ -1,7 +1,7 @@
 // The push socket's wire handling.
 //
 // Every mistake here is silent in the UI: a misread chunk drops output, a
-// message an older bb does not know makes it close the socket, and a close
+// message an older VesnALIA does not know makes it close the socket, and a close
 // reported as "attached" keeps the pump retrying a socket it should have given
 // up on and polled instead.
 import { describe, expect, it, vi } from "vitest";
@@ -71,7 +71,7 @@ describe("terminalSocketUrl", () => {
     ).toBe("ws://localhost:3000/ws/terminals/t?sinceSeq=0");
   });
 
-  it("never asks for output acks, which bb before 0.46 rejects", () => {
+  it("never asks for output acks, which VesnALIA before 0.46 rejects", () => {
     expect(
       terminalSocketUrl({ protocol: "http:", host: "h" }, "t", 0),
     ).not.toContain("outputAcks");
@@ -170,7 +170,7 @@ describe("TerminalSocket", () => {
     expect(fake.closed).toBe(true);
   });
 
-  it("closes an attach that failed, which bb leaves open with nothing to stream", () => {
+  it("closes an attach that failed, which VesnALIA leaves open with nothing to stream", () => {
     for (const code of ["terminal_attach_timeout", "host_disconnected"]) {
       const { fake, handlers, socket } = setup();
       fake.open();
@@ -204,7 +204,7 @@ describe("TerminalSocket", () => {
     expect(socket.sendInput("eA==")).toBe(false);
   });
 
-  it("reports a bb 0.35 attach, which cannot resume, as having no replay start", () => {
+  it("reports a VesnALIA 0.35 attach, which cannot resume, as having no replay start", () => {
     const { fake, handlers } = setup();
     fake.open();
     fake.receive({ type: "attached", session, nextSeq: 12 });
@@ -215,7 +215,7 @@ describe("TerminalSocket", () => {
     });
   });
 
-  it("only ever sends messages bb 0.36 understands", () => {
+  it("only ever sends messages VesnALIA 0.36 understands", () => {
     vi.useFakeTimers();
     try {
       const { fake, socket } = setup();
@@ -232,7 +232,7 @@ describe("TerminalSocket", () => {
     }
   });
 
-  it("sends keystrokes and resizes in bb's wire format", () => {
+  it("sends keystrokes and resizes in VesnALIA's wire format", () => {
     const { fake, socket } = setup();
     fake.open();
     socket.sendInput("bHM=");

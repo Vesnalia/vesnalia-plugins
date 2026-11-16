@@ -36,11 +36,11 @@ test("raw HTML blocks and comments are preserved verbatim", () => {
 });
 
 test("paired HTML comment markers become a foldable region", () => {
-  const md = "<!-- bb-project-folders:agents:start -->\n# Section rules\n\nInside the **region**.\n<!-- bb-project-folders:agents:end -->";
-  assert.equal(htmlRegionBound("bb-project-folders:agents:start")?.key, "bb-project-folders:agents");
+  const md = "<!-- alia-project-folders:agents:start -->\n# Section rules\n\nInside the **region**.\n<!-- alia-project-folders:agents:end -->";
+  assert.equal(htmlRegionBound("alia-project-folders:agents:start")?.key, "alia-project-folders:agents");
   assert.equal(htmlRegionBound("BEGIN rules")?.role, "start");
   assert.ok(matchHtmlRegion(md));
-  assert.match(types(md), /"type":"htmlRegion","attrs":\{"key":"bb-project-folders:agents"/);
+  assert.match(types(md), /"type":"htmlRegion","attrs":\{"key":"alia-project-folders:agents"/);
   assert.equal(roundTrip(md), md);
   assert.equal(roundTrip("<!-- lonely start:start -->"), "<!-- lonely start:start -->");
   const nested = "<!-- wrap:start -->\n<!-- wrap:start -->\nInner.\n<!-- wrap:end -->\n<!-- wrap:end -->";

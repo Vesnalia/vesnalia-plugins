@@ -9,22 +9,22 @@ if (!overview.trim() || [...overview.trimEnd()].length > 4000) {
 // Catalog icons are either a host glyph name or { url } pointing at a plugin
 // asset; relative URLs resolve against this catalog document.
 const glyph = /^[A-Za-z][A-Za-z0-9]*$/;
-const icon = glyph.test(pkg.bb.branding.icon)
-  ? pkg.bb.branding.icon
-  : { url: pkg.bb.branding.icon };
+const icon = glyph.test(pkg.alia.branding.icon)
+  ? pkg.alia.branding.icon
+  : { url: pkg.alia.branding.icon };
 
 const catalog = {
   $schema: "https://getbb.app/schemas/marketplace-v2.schema.json",
   schemaVersion: 2,
-  name: "bb-zcode",
-  displayName: "ZCode for bb",
+  name: "alia-zcode",
+  displayName: "ZCode for VesnALIA",
   description:
-    "The independent ZCode provider for bb, maintained by Dmitry Polishuk.",
+    "The independent ZCode provider for VesnALIA, maintained by Dmitry Polishuk.",
   plugins: [
     {
       id: "zcode",
-      displayName: pkg.bb.name,
-      description: pkg.bb.description,
+      displayName: pkg.alia.name,
+      description: pkg.alia.description,
       icon,
       tags: ["coding", "provider", "zcode", "local"],
       author: {

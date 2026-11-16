@@ -1,5 +1,5 @@
 // Loom's host entry: runs on the machine that owns the project's checkout. Wiring only; the operations live in src/host/ops.ts.
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk";
 import { hostContract } from "./src/host-contract";
 import * as ops from "./src/host/ops";
 

@@ -2,11 +2,11 @@
 
 [![CI](https://github.com/kleinjm/bb-plugin-gh-projects-board/actions/workflows/ci.yml/badge.svg)](https://github.com/kleinjm/bb-plugin-gh-projects-board/actions/workflows/ci.yml)
 
-Your GitHub Projects v2 board inside BB: real columns from the project's own
+Your GitHub Projects v2 board inside VesnALIA: real columns from the project's own
 Status field, in the project's own order, with the filters your saved views
 already use.
 
-BB's existing GitHub integrations read issues and pull requests, but not
+VesnALIA's existing GitHub integrations read issues and pull requests, but not
 Projects. That means everything assigned to you lands in one undifferentiated
 column with no status and no priority — fine for noticing work, useless for
 managing it. This plugin reads the project itself.
@@ -26,7 +26,7 @@ managing it. This plugin reads the project itself.
 ## Requirements
 
 The [GitHub CLI](https://cli.github.com) must be installed and signed in on the
-machine running the BB server. The plugin shells out to your `gh` session and
+machine running the VesnALIA server. The plugin shells out to your `gh` session and
 **stores no token of its own**.
 
 Your token needs to be able to read Projects, which is fussier than it sounds:
@@ -45,7 +45,7 @@ SSO also need the token authorized against the org.
 ### When the server has the wrong token
 
 `gh` prefers `GH_TOKEN`/`GITHUB_TOKEN` from its environment over anything
-`gh auth login` stored. A BB server that inherited a token at startup — one
+`gh auth login` stored. A VesnALIA server that inherited a token at startup — one
 started before you re-authenticated, or running as a different user than the
 one who signed in — will keep using it, and restarting the server is not
 always convenient.
@@ -54,35 +54,35 @@ The optional **Token file** setting points at a file containing a token to use
 instead:
 
 ```bash
-bb plugin config gh-projects-board set tokenFile /path/to/token
+alia plugin config gh-projects-board set tokenFile /path/to/token
 ```
 
 The file holds the token and nothing else. It is read at call time and cached
 only until its contents change; the plugin never copies the token into its own
-storage, and `bb gh-projects-board status` prints the path but never the value.
+storage, and `alia gh-projects-board status` prints the path but never the value.
 
 This is a deliberate trade-off: it reintroduces a credential on disk that the
 plugin reads, which the default `gh`-session design avoids. Prefer fixing the
 server's environment when you can, and keep the file readable only by the
-account running BB (`chmod 600`).
+account running VesnALIA (`chmod 600`).
 
 ## Development
 
 ```bash
 npm install
 npx tsc --noEmit          # typecheck
-bb plugin build           # bundle
-bb plugin install .       # register this directory
-bb plugin dev             # rebuild and reload on save
+alia plugin build           # bundle
+alia plugin install .       # register this directory
+alia plugin dev             # rebuild and reload on save
 ```
 
-A standalone harness exercises the GraphQL layer without a running BB server:
+A standalone harness exercises the GraphQL layer without a running VesnALIA server:
 
 ```bash
 npm test                  # unit tests (node:test)
 ```
 
-A standalone harness exercises the GraphQL layer without a running BB server:
+A standalone harness exercises the GraphQL layer without a running VesnALIA server:
 
 ```bash
 npx tsx src/cli-check.ts <owner> <project-number> ["filter"]

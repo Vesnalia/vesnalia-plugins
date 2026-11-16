@@ -1,4 +1,4 @@
-// bb-plugin-team — UI: the Team panel and the template editor (Settings → Team).
+// alia-plugin-team — UI: the Team panel and the template editor (Settings → Team).
 //
 // Panel: team tabs per project, a creation wizard (template → editable roles
 // → create), live hierarchy, role cards with "message" / "package" actions,
@@ -9,11 +9,11 @@ import type { FormEvent, ReactNode } from "react";
 import {
   definePluginApp,
   experimental_Icon as Icon,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { RoleSessionCard } from "./role-session-card";
 import { ResourcePanel } from "./resource-panel";
@@ -29,7 +29,7 @@ import {
   type ExecutionPolicy,
 } from "./execution-policy";
 import { ExecutionModelPicker, useProjectModelRouting, type ExecutionModel, type ProjectModelRoutingState } from "./execution-picker";
-import type { ExperimentalProviderModelPickerRouting } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalProviderModelPickerRouting } from "@vesnalia/plugin-sdk/app";
 import { reportLabels } from "./report";
 import {
   TASK_STATUSES,
@@ -71,15 +71,15 @@ function recoveryAction(language: Language, role: string, state: RoleExecutionSt
   if (language !== "ru") return state.safeAction;
   if(state.errorCode==="resource_hold")return "Откройте ресурсы команды и укажите конкретное решение. Замена сессии не сбрасывает бюджет.";
   if (state.errorCode === "release_failed" || state.errorCode === "delivery_uncertain") {
-    return "Выполните bb team resume, чтобы продолжить доставку уже созданного запроса. Не отправляйте его повторно.";
+    return "Выполните VesnALIA team resume, чтобы продолжить доставку уже созданного запроса. Не отправляйте его повторно.";
   }
   if (state.errorCode === "spawn_uncertain") {
-    return `Проверьте, был ли создан новый тред: bb team replace ${role} --dry-run --json. Подтвердите найденный тред через --thread или отмените незавершённую замену через --abort.`;
+    return `Проверьте, был ли создан новый тред: VesnALIA team replace ${role} --dry-run --json. Подтвердите найденный тред через --thread или отмените незавершённую замену через --abort.`;
   }
   if (state.errorCode === "replacement_unfinished") {
-    return `Продолжите сохранённую передачу: bb team replace ${role}. До переключения её можно отменить через --abort.`;
+    return `Продолжите сохранённую передачу: VesnALIA team replace ${role}. До переключения её можно отменить через --abort.`;
   }
-  return `Проверьте причину ошибки и bb team doctor. После исправления проверьте план: bb team replace ${role} --dry-run. Автоматический повтор остановлен.`;
+  return `Проверьте причину ошибки и VesnALIA team doctor. После исправления проверьте план: VesnALIA team replace ${role} --dry-run. Автоматический повтор остановлен.`;
 }
 
 /* ──────────────────────── Labels ──────────────────────── */
@@ -110,7 +110,7 @@ const EN = {
   createDatabase: "Create database",
   databaseCreated: "Beads database created.",
   databaseReady: "Beads database already exists.",
-  tip: "Tip: bb team report draws this picture in chat; bb team doctor checks the setup.",
+  tip: "Tip: VesnALIA team report draws this picture in chat; VesnALIA team doctor checks the setup.",
   newTeam: "+ New team",
   createTeam: "Create team",
   creating: "Creating…",
@@ -128,8 +128,8 @@ const EN = {
   addRole: "+ Role",
   remove: "Remove",
   versioned: "Track in git",
-  versionBlocked: "The root .gitignore ignores .bb/ — versioning is impossible",
-  providerOff: (ids: string) => `Disabled or unknown providers: ${ids} — enable them (bb provider enable) or pick another`,
+  versionBlocked: "The root .gitignore ignores .vesnalia/ — versioning is impossible",
+  providerOff: (ids: string) => `Disabled or unknown providers: ${ids} — enable them (VesnALIA provider enable) or pick another`,
   nameTaken: "This team already exists",
   nameInvalid: "Name: lowercase letters, digits, hyphens",
   noTeams: "No team in this project yet — create one from a template.",
@@ -233,7 +233,7 @@ const RU: typeof EN = {
   createDatabase: "Создать базу",
   databaseCreated: "База Beads создана.",
   databaseReady: "База Beads уже есть.",
-  tip: "Подсказка: bb team report рисует эту картину в чате; bb team doctor проверяет настройку.",
+  tip: "Подсказка: VesnALIA team report рисует эту картину в чате; VesnALIA team doctor проверяет настройку.",
   newTeam: "+ Новая команда",
   createTeam: "Создать команду",
   creating: "Создаю…",
@@ -251,8 +251,8 @@ const RU: typeof EN = {
   addRole: "+ Роль",
   remove: "Убрать",
   versioned: "Хранить в git",
-  versionBlocked: "Корневой .gitignore игнорирует .bb/ — версионирование невозможно",
-  providerOff: (ids) => `Выключенные или неизвестные провайдеры: ${ids} — включите (bb provider enable) или выберите другой`,
+  versionBlocked: "Корневой .gitignore игнорирует .vesnalia/ — версионирование невозможно",
+  providerOff: (ids) => `Выключенные или неизвестные провайдеры: ${ids} — включите (VesnALIA provider enable) или выберите другой`,
   nameTaken: "Такая команда уже есть",
   nameInvalid: "Имя: строчные латинские буквы, цифры, дефис",
   noTeams: "В проекте ещё нет команды — создайте её из шаблона.",
@@ -1596,7 +1596,7 @@ function RoleDetails({
   onClose: () => void;
 }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const l = reportLabels(language);
   const [mode, setMode] = useState<"none" | "message" | "package">("none");
   const [editingPolicy,setEditingPolicy]=useState(false);
@@ -1908,8 +1908,8 @@ function ProjectTracker({projectId, language, onChanged}: {projectId:string;lang
 }
 
 function TeamPanel({ subPath }: { subPath: string }) {
-  const context = useBbContext();
-  const navigate = useBbNavigate();
+  const context = useAliaContext();
+  const navigate = useAliaNavigate();
   const rpc = useRpc<typeof rpcContract>();
   const parts = subPath ? subPath.split("/").map((part) => decodeURIComponent(part)) : [];
   const projectId = parts[0] || null;

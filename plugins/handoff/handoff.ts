@@ -1,7 +1,7 @@
 // Handoff delivery: render the captured session into a markdown handoff
 // document, upload it as a project attachment, and spawn the target-provider
 // thread seeded with it.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { CAPS, captureThread, type CapturedSession, type TranscriptEntry } from "./capture";
 import {
   captureWorkingState,
@@ -17,7 +17,7 @@ export { TransferError } from "./machines";
 export type { TransferPlan, WorkingState, WorkspaceMode } from "./machines";
 
 /**
- * Thinking effort for the target thread. Mirrors bb's `ReasoningLevel`, which
+ * Thinking effort for the target thread. Mirrors VesnALIA's `ReasoningLevel`, which
  * the SDK declares but does not export. One list, shared by the rpc schema and
  * both CLI surfaces, so a level cannot exist in one and be rejected by another.
  */
@@ -40,7 +40,7 @@ export interface HandoffRequest {
   model?: string;
   /**
    * Thinking effort for the new thread. Omit to let the target model use its
-   * own default — bb re-derives it, so omitting is not the same as "none".
+   * own default — VesnALIA re-derives it, so omitting is not the same as "none".
    */
   reasoningLevel?: ReasoningLevel;
   workspace: WorkspaceMode;
@@ -128,7 +128,7 @@ export function settleBriefing(threadId: string, text: string | null): void {
 
 /**
  * The source agent stopped to ask the user something — an approval it needs
- * granted, or a question. bb tracks this outside the thread's status: a
+ * granted, or a question. VesnALIA tracks this outside the thread's status: a
  * blocked run has not settled, so the thread sits at `active` and
  * `thread.idle` never arrives. Answering is the user's call, so this only
  * ends the wait; it never resolves or cancels the interaction.
@@ -141,7 +141,7 @@ export function blockBriefing(threadId: string): void {
  * Send the briefing prompt to the source thread and wait for its answer.
  * Only runs against an idle thread with nothing outstanding for the user — a
  * busy source is never steered off its in-flight turn (this also makes
- * agent-initiated `bb handoff --self` skip the briefing naturally, since that
+ * agent-initiated `alia handoff --self` skip the briefing naturally, since that
  * thread is mid-turn running the CLI), and one already waiting on an answer is
  * not handed a second question on top of the first.
  *
@@ -150,12 +150,12 @@ export function blockBriefing(threadId: string): void {
  * remaining timeout is dead time), or the timeout.
  */
 async function requestBriefing(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
 ): Promise<{ text: string | null; outcome: BriefingOutcome }> {
   try {
     // deno-lint-ignore no-explicit-any
-    const thread = (await bb.sdk.threads.get({ threadId })) as any;
+    const thread = (await alia.sdk.threads.get({ threadId })) as any;
     if (thread.status !== "idle") return { text: null, outcome: "skipped-busy" };
     if (thread.hasPendingInteraction) return { text: null, outcome: "skipped-blocked" };
   } catch {
@@ -170,7 +170,7 @@ async function requestBriefing(
   const timer = setTimeout(() => settle({ kind: "answered", text: null }), BRIEFING_TIMEOUT_MS);
 
   try {
-    await bb.sdk.threads.send({
+    await alia.sdk.threads.send({
       threadId,
       mode: "auto",
       input: [{ type: "text", text: BRIEFING_PROMPT, mentions: [] }],
@@ -205,7 +205,7 @@ const pendingVerifications = new Map<
  * Persists the outcome on the history record and announces it in realtime.
  */
 export async function settleVerification(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
   ok: boolean,
   firstReply?: string | null,
@@ -219,12 +219,12 @@ export async function settleVerification(
   pendingVerifications.delete(threadId);
   const verification: VerificationState = ok && Boolean(firstReply?.trim()) ? "confirmed" : "failed";
   try {
-    const record = await bb.storage.kv.get<HandoffRecord>(entry.kvKey);
-    if (record) await bb.storage.kv.set(entry.kvKey, { ...record, verification });
+    const record = await alia.storage.kv.get<HandoffRecord>(entry.kvKey);
+    if (record) await alia.storage.kv.set(entry.kvKey, { ...record, verification });
   } catch {
     // History pruning may have removed the record; the signal still goes out.
   }
-  bb.realtime.publish(VERIFY_CHANNEL, {
+  alia.realtime.publish(VERIFY_CHANNEL, {
     targetThreadId: threadId,
     sourceThreadId: entry.sourceThreadId,
     verification,
@@ -342,7 +342,7 @@ export function renderHandoff(
       : "Read the full transcript below before doing anything else.",
     ...(sameFamily
       ? [
-          "The transcript is YOUR OWN conversation history with this user, continued on a new bb thread. Continue seamlessly: do not re-introduce yourself and do not summarize back what you already know.",
+          "The transcript is YOUR OWN conversation history with this user, continued on a new VesnALIA thread. Continue seamlessly: do not re-introduce yourself and do not summarize back what you already know.",
         ]
       : []),
     crossMachine
@@ -360,7 +360,7 @@ export function renderHandoff(
               : "If you need raw detail the transcript truncated, the native session file above contains the source provider's full session (JSONL).",
           ]
       : []),
-    `The previous agent is still reachable in bb thread \`${captured.threadId}\`. If something essential is unclear, ask it directly: \`bb thread tell ${captured.threadId} "<your question>" --mode queue\`, then \`bb thread wait ${captured.threadId}\` and \`bb thread output ${captured.threadId}\` to read the answer. Ask at most once or twice, then continue on your own — that agent no longer owns this task.`,
+    `The previous agent is still reachable in VesnALIA thread \`${captured.threadId}\`. If something essential is unclear, ask it directly: \`alia thread tell ${captured.threadId} "<your question>" --mode queue\`, then \`alia thread wait ${captured.threadId}\` and \`alia thread output ${captured.threadId}\` to read the answer. Ask at most once or twice, then continue on your own — that agent no longer owns this task.`,
   ];
 
   const header = [
@@ -459,7 +459,7 @@ export function buildIntroPrompt(
   const transfer = context?.transfer ?? null;
   const lines = [
     sameFamily
-      ? "You are continuing YOUR OWN in-progress session on a new bb thread (same provider, new thread)."
+      ? "You are continuing YOUR OWN in-progress session on a new VesnALIA thread (same provider, new thread)."
       : `You are taking over an in-progress agent session handed off from ${captured.providerId}.`,
     ...(transfer?.crossMachine
       ? [
@@ -514,7 +514,7 @@ function resolveEnvironment(plan: TransferPlan, captured: CapturedSession): any 
 }
 
 /**
- * bb's built-in personal project. bb only creates personal workspaces inside
+ * VesnALIA's built-in personal project. VesnALIA only creates personal workspaces inside
  * it, and refuses one in any other project ("Personal workspaces are only
  * supported for the personal project").
  */
@@ -542,7 +542,7 @@ export interface HandoffResult {
  * Source threads with a handoff running right now. Nothing downstream of the
  * panel's `pending` flag says no to a second run, and that flag is local
  * component state: it does not survive the panel remounting, a reload, a second
- * bb window, or a `bb handoff` alongside the UI. A handoff is long (a briefing
+ * VesnALIA window, or a `alia handoff` alongside the UI. A handoff is long (a briefing
  * turn alone can take 90s) and not idempotent — it steers the source agent and
  * spawns a thread — so a second click during the first run produced a second
  * target thread, both seeded from the same session.
@@ -553,7 +553,7 @@ export interface HandoffResult {
  */
 const inFlightHandoffs = new Set<string>();
 
-export async function startHandoff(bb: BbPluginApi, request: HandoffRequest): Promise<HandoffResult> {
+export async function startHandoff(alia: AliaPluginApi, request: HandoffRequest): Promise<HandoffResult> {
   if (inFlightHandoffs.has(request.sourceThreadId)) {
     throw new TransferError(
       "A handoff of this thread is already running — wait for it to finish before starting another.",
@@ -561,9 +561,9 @@ export async function startHandoff(bb: BbPluginApi, request: HandoffRequest): Pr
   }
   inFlightHandoffs.add(request.sourceThreadId);
   const publish = (stage: string, extra?: Record<string, unknown>) =>
-    bb.realtime.publish(REALTIME_CHANNEL, { sourceThreadId: request.sourceThreadId, stage, ...extra });
+    alia.realtime.publish(REALTIME_CHANNEL, { sourceThreadId: request.sourceThreadId, stage, ...extra });
   try {
-    return await runHandoff(bb, request, publish);
+    return await runHandoff(alia, request, publish);
   } catch (error) {
     publish("failed", { message: error instanceof Error ? error.message : String(error) });
     throw error;
@@ -573,16 +573,16 @@ export async function startHandoff(bb: BbPluginApi, request: HandoffRequest): Pr
 }
 
 async function runHandoff(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   request: HandoffRequest,
   publish: (stage: string, extra?: Record<string, unknown>) => void,
 ): Promise<HandoffResult> {
   publish("capturing");
-  const captured = await captureThread(bb, request.sourceThreadId, { untilSeq: request.untilSeq });
+  const captured = await captureThread(alia, request.sourceThreadId, { untilSeq: request.untilSeq });
 
   // Decide where this lands before doing any expensive work, so an impossible
   // transfer fails fast instead of after a briefing round-trip and an upload.
-  const transfer = await planTransfer(bb, {
+  const transfer = await planTransfer(alia, {
     projectId: captured.projectId,
     sourceHostId: captured.hostId,
     sourceBranch: captured.branchName,
@@ -598,7 +598,7 @@ async function runHandoff(
   let briefingOutcome: BriefingOutcome = "off";
   if (request.briefing) {
     publish("briefing");
-    const result = await requestBriefing(bb, request.sourceThreadId);
+    const result = await requestBriefing(alia, request.sourceThreadId);
     briefing = result.text;
     briefingOutcome = result.outcome;
   }
@@ -609,9 +609,9 @@ async function runHandoff(
   let patchPath: string | null = null;
   if (transfer.crossMachine && captured.environmentId) {
     publish("working-state");
-    working = await captureWorkingState(bb, captured.environmentId);
+    working = await captureWorkingState(alia, captured.environmentId);
     if (working?.patch && transfer.hostId) {
-      patchPath = await deliverPatch(bb, {
+      patchPath = await deliverPatch(alia, {
         hostId: transfer.hostId,
         sourceThreadId: request.sourceThreadId,
         patch: working.patch,
@@ -637,7 +637,7 @@ async function runHandoff(
   // The new thread can only attach a document uploaded to its own project.
   const projectId = targetProjectId(transfer, captured);
   publish("uploading");
-  const uploaded = await bb.sdk.projects.attachments.upload({
+  const uploaded = await alia.sdk.projects.attachments.upload({
     projectId,
     clientFile: bytes,
     filename: `handoff-${captured.threadId}-${Date.now()}.md`,
@@ -645,7 +645,7 @@ async function runHandoff(
   });
 
   publish("spawning");
-  const thread = await bb.sdk.threads.spawn({
+  const thread = await alia.sdk.threads.spawn({
     projectId,
     providerId: request.providerId,
     ...(request.model ? { model: request.model } : {}),
@@ -681,8 +681,8 @@ async function runHandoff(
     targetMachine: transfer.crossMachine ? transfer.hostName : null,
   };
   const kvKey = `handoff:${record.at}:${thread.id}`;
-  await bb.storage.kv.set(kvKey, record);
-  await pruneHistory(bb);
+  await alia.storage.kv.set(kvKey, record);
+  await pruneHistory(alia);
   pendingVerifications.set(thread.id, {
     kvKey,
     sourceThreadId: request.sourceThreadId,
@@ -707,18 +707,18 @@ async function runHandoff(
  * millisecond timestamp (`handoff:<ms>:<threadId>`), so a lexicographic sort
  * is chronological.
  */
-async function pruneHistory(bb: BbPluginApi): Promise<void> {
-  const keys = await bb.storage.kv.list("handoff:");
+async function pruneHistory(alia: AliaPluginApi): Promise<void> {
+  const keys = await alia.storage.kv.list("handoff:");
   if (keys.length <= HISTORY_LIMIT) return;
   const excess = [...keys].sort().slice(0, keys.length - HISTORY_LIMIT);
-  for (const key of excess) await bb.storage.kv.delete(key);
+  for (const key of excess) await alia.storage.kv.delete(key);
 }
 
-export async function listHandoffs(bb: BbPluginApi): Promise<HandoffRecord[]> {
-  const keys = await bb.storage.kv.list("handoff:");
+export async function listHandoffs(alia: AliaPluginApi): Promise<HandoffRecord[]> {
+  const keys = await alia.storage.kv.list("handoff:");
   const records: HandoffRecord[] = [];
   for (const key of keys) {
-    const value = await bb.storage.kv.get<HandoffRecord>(key);
+    const value = await alia.storage.kv.get<HandoffRecord>(key);
     if (value?.targetThreadId) records.push(value);
   }
   records.sort((a, b) => b.at - a.at);

@@ -1,7 +1,7 @@
 // The pinned cards of each thread: read once, cached briefly, and announced to every card and pane.
-// A change from anywhere (a card's pin button, the agent's iris_pin, `bb iris pin`, another device)
+// A change from anywhere (a card's pin button, the agent's iris_pin, `alia iris pin`, another device)
 // arrives as a realtime signal; a window coming back into focus reads again too.
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { cardTitle, pinId, type Pin, type PinnedThread } from "../core/pins";
@@ -114,7 +114,7 @@ export function usePins(threadId: string | null): Pin[] | undefined {
   return pins;
 }
 
-// ---------- every thread's pins, for bb's home page ----------
+// ---------- every thread's pins, for VesnALIA's home page ----------
 
 /** Every open thread with pins, newest first, kept current by the same signals; undefined while the first read runs. */
 export function useAllPins(): PinnedThread[] | undefined {

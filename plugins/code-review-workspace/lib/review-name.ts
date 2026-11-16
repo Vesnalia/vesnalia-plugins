@@ -1,5 +1,5 @@
 // What a review is called: the name you gave it with Rename… in its menu, else its PR's title, or a local review's ref.
-// Your name stays in BB: GitHub, and the agents, keep the PR's title.
+// Your name stays in VesnALIA: GitHub, and the agents, keep the PR's title.
 import type { ReviewMeta } from "../src/store";
 
 type Named = Pick<ReviewMeta, "targetKey"> & Partial<Pick<ReviewMeta, "name" | "title" | "gitRef">>;

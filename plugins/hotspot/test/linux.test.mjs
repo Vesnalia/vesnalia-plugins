@@ -8,7 +8,7 @@ const LINUX_PS = [
   "    1     0  0.0  1000 /sbin/init",
   "  200     1 12.5  1000 /usr/bin/node /home/me/.local/bin/claude --verbose",
   "  300   200 80.0  1000 node /repo/node_modules/.bin/tsc PWD=/not/env",
-  "  400     1  9.0  1000 node /home/me/.bb/worktrees/thr_bbbbbbbbbb-2/app/server.js",
+  "  400     1  9.0  1000 node /home/me/.vesnalia/worktrees/thr_bbbbbbbbbb-2/app/server.js",
   "  500     1 30.0  1000 grep thr_cccccccccc",
 ].join("\n");
 
@@ -18,7 +18,7 @@ const STATS = {
 };
 
 const ENVIRONS = {
-  200: "HOME=/home/me\0PWD=/home/me/.bb/workspaces/thr_dddddddddd\0BB_THREAD_ID=thr_aaaaaaaaaa\0",
+  200: "HOME=/home/me\0PWD=/home/me/.vesnalia/workspaces/thr_dddddddddd\0BB_THREAD_ID=thr_aaaaaaaaaa\0",
 };
 
 /** Memory is read from a fixed /proc/meminfo, so no test depends on the host. */

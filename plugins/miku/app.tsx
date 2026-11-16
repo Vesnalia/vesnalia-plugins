@@ -8,13 +8,13 @@ import {
   definePluginApp,
   experimental_PermissionModePicker as PermissionModePicker,
   experimental_ProviderModelPicker as ProviderModelPicker,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRealtime,
   useRpc,
   useSettings,
   type ExperimentalProviderModelPickerValue,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { BrainSelection } from "./brain-contract";
 import type { brainRpcContract } from "./brain-contract";
 import {
@@ -50,8 +50,8 @@ const EDGE_INSET_PX = 12;
 const BUBBLE_SAFE_TOP_PX = 62;
 const BUBBLE_VIEWPORT_MARGIN_PX = 10;
 const BUBBLE_SPRITE_GAP_PX = 8;
-const STORAGE_KEY = "bb-plugin-miku:position-v2";
-const LEGACY_STORAGE_KEY = "bb-plugin-miku:position";
+const STORAGE_KEY = "alia-plugin-miku:position-v2";
+const LEGACY_STORAGE_KEY = "alia-plugin-miku:position";
 
 interface BrainThreadOption {
   id: string;
@@ -74,7 +74,7 @@ function errorMessage(error: unknown): string {
 function BrainSettings() {
   const rpc = useRpc<typeof brainRpcContract>();
   const settings = useSettings();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const projectId =
     typeof settings.values?.brainProject === "string"
       ? settings.values.brainProject
@@ -282,7 +282,7 @@ function BehaviorSettings() {
         onChange={(event) => setMikuVoice(event.currentTarget.checked)} />
       <span><strong>Speak aloud</strong><small>
         Bright &amp; musical voice (sample 05). Saved for this browser.
-        Click in BB once to allow audio. Muting keeps text bubbles.
+        Click in VesnALIA once to allow audio. Muting keeps text bubbles.
       </small></span>
     </label>
     </div>
@@ -383,7 +383,7 @@ function eventBelongsHere(event: MikuEvent, projectId: string | null): boolean {
 }
 
 function MikuOverlay() {
-  const { projectId } = useBbContext();
+  const { projectId } = useAliaContext();
   const [visible, setVisible] = useState(readMikuVisibility);
   const [walking, setWalking] = useState(readMikuWalking);
   const walkerRef = useRef<HTMLButtonElement>(null);

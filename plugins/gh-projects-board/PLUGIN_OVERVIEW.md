@@ -1,6 +1,6 @@
 # GitHub Projects Board
 
-Shows a GitHub Projects v2 board inside BB, with columns taken from the
+Shows a GitHub Projects v2 board inside VesnALIA, with columns taken from the
 project's own Status field in the project's own order, and GitHub's filter
 syntax for saved views such as `assignee:@me -status:Done!`.
 

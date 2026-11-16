@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { BoxDialog, DialogButton, useDialogAction } from "./box-dialog.tsx";
 import { Button } from "@/components/ui/button";
@@ -74,7 +74,7 @@ function failureItem(state: ConfigState, failure: ImageFailure, now: number): St
       tone: "warn",
       title: `The image ${failure.name} did not build for ${kind} on ${backend}`,
       detail: `Failed ${when}: ${failure.reason} Its boxes run its script as they start meanwhile.`,
-      fix: `Fix its script, then set the image again with bb box image set ${failure.name}.`,
+      fix: `Fix its script, then set the image again with VesnALIA box image set ${failure.name}.`,
       open: { page: "option", id: "images" },
     };
   }
@@ -83,7 +83,7 @@ function failureItem(state: ConfigState, failure: ImageFailure, now: number): St
     tone: "warn",
     title: `${kind ? `The ${kind} image` : `The image ${failure.name}`} on ${backend} did not rebuild`,
     detail: `Failed ${when}: ${failure.reason} New boxes start from its last build meanwhile.`,
-    fix: `Fix the cause, then Try again on the Images page, or run bb box images build ${failure.name}.`,
+    fix: `Fix the cause, then Try again on the Images page, or run alia box images build ${failure.name}.`,
     open: { page: "option", id: "images" },
   };
 }
@@ -294,7 +294,7 @@ function StandardImages({ nightly }: { nightly: ReactNode }) {
   const due = dueIn(rows);
   const needing = rows.filter(needsAttention);
   const upToDate = rows.filter((row) => !needsAttention(row));
-  const summary = list === null ? (problem ? undefined : "Reading the images…") : !rows.length ? "No backend that is on has images BB Box rebuilds." : [`${due} of ${plural(rows.length, "image")} due.`, lastRunWords(progress, now)].filter(Boolean).join(" ");
+  const summary = list === null ? (problem ? undefined : "Reading the images…") : !rows.length ? "No backend that is on has images VesnALIA Box rebuilds." : [`${due} of ${plural(rows.length, "image")} due.`, lastRunWords(progress, now)].filter(Boolean).join(" ");
   return (
     <Group title="Standard images" description={summary}>
       <Card>
@@ -521,7 +521,7 @@ function RemoveImageDialog({ name, image, view, onCancel, onConfirm }: { name: s
           New {kinds} boxes in {projects} start from the standard images again, without its script. Its builds are deleted.
         </p>
         <p>
-          Boxes already made keep what they have. An agent can set it again from the project's files with <code className="rounded-sm bg-muted px-1 py-0.5 font-mono text-xs text-foreground">bb box image set</code>.
+          Boxes already made keep what they have. An agent can set it again from the project's files with <code className="rounded-sm bg-muted px-1 py-0.5 font-mono text-xs text-foreground">alia box image set</code>.
         </p>
       </div>
     </BoxDialog>
@@ -557,7 +557,7 @@ function ProjectImages() {
         <h3 id="settings-project-images" tabIndex={-1} data-project-images-heading className="text-xs font-normal text-foreground outline-none">
           Projects' images
         </h3>
-        <p className="mt-0.5 text-xs leading-snug text-subtle-foreground">A script run as root on a kind's standard image, for the boxes of a project's threads. Agents set them with bb box image set, from the project's files.</p>
+        <p className="mt-0.5 text-xs leading-snug text-subtle-foreground">A script run as root on a kind's standard image, for the boxes of a project's threads. Agents set them with VesnALIA box image set, from the project's files.</p>
       </div>
       {names.length ? (
         <Card>
@@ -568,7 +568,7 @@ function ProjectImages() {
           </Rows>
         </Card>
       ) : (
-        <p className="rounded-lg border border-dashed border-border px-4 py-3 text-xs text-subtle-foreground">No project has an image of its own. An agent makes one from a project's files with bb box image set.</p>
+        <p className="rounded-lg border border-dashed border-border px-4 py-3 text-xs text-subtle-foreground">No project has an image of its own. An agent makes one from a project's files with VesnALIA box image set.</p>
       )}
       {removedNote ? (
         <p role="status" className="px-1 text-xs text-muted-foreground">

@@ -1,13 +1,13 @@
 // The answer sheet: every reply choice and Form edit in a thread's blocks is
 // staged here, and the sheet keeps one plain-text "answers block" in the
 // thread's composer draft in step with it. Nothing a user picks is sent on its
-// own: they send with BB's own send button, with whatever they type around
+// own: they send with VesnALIA's own send button, with whatever they type around
 // the block. Blocks are separate React roots (one per fence), so the sheet
 // is a module-level store per thread that each block subscribes to. The
 // pure rules (order, writing the block, following it through the user's
 // edits) are in core/answers.ts.
 import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
-import type { PluginComposerApi } from "@get-bb/plugin-sdk/app";
+import type { PluginComposerApi } from "@vesnalia/plugin-sdk/app";
 import { answersText, trackBlock, writeBlock, type StagedEntry, type WrittenBlock } from "../core/answers";
 
 /** What a question's control shows as picked: a button's key, a row's index, `true` for a touched Form or an approved Plan. */
@@ -144,14 +144,14 @@ export class AnswerSheet {
   /** The draft text the sheet last saw (or wrote) with its block in it. */
   private base: string | null = null;
   /**
-   * The draft emptied with the block in it, and BB wasn't (yet) seen
+   * The draft emptied with the block in it, and VesnALIA wasn't (yet) seen
    * submitting: the answers stay staged until the send is confirmed
    * (`onSubmitted`, or the reply superseded) or the user writes on, which
    * makes it a deletion.
    */
   private sending = false;
   private seq = 0;
-  /** Whether BB was submitting when the sheet last looked, so a send that starts is seen once, draft change or not. */
+  /** Whether VesnALIA was submitting when the sheet last looked, so a send that starts is seen once, draft change or not. */
   private submitting = false;
   private readonly sent = new Map<string, SentAnswer[] | null>();
   private readonly snapshots = new Map<string, BlockAnswers>();
@@ -255,7 +255,7 @@ export class AnswerSheet {
    * truth for what will be sent. Text typed beside the block moves it; an
    * edit inside it (or one that can't be told apart from the user's own
    * text) makes it the user's, and the next change writes a fresh block; a
-   * deletion withdraws its answers. A draft emptied while BB submits is the
+   * deletion withdraws its answers. A draft emptied while VesnALIA submits is the
    * send; emptied otherwise, it waits to see which it was. A send that
    * starts first writes any Form answer still waiting out its typing pause.
    */
@@ -400,7 +400,7 @@ export class AnswerSheet {
         return { text: result.text, mentions: result.mentions };
       });
     } catch {
-      // The draft is gone (BB says so by throwing): nothing to keep in step.
+      // The draft is gone (VesnALIA says so by throwing): nothing to keep in step.
     }
   }
 
@@ -417,7 +417,7 @@ const SHEETS = new Map<string, AnswerSheet>();
 export function sheetFor(threadId: string): AnswerSheet {
   let sheet = SHEETS.get(threadId);
   if (sheet === undefined) {
-    sheet = new AnswerSheet(`bb.genui.sheet:${threadId}`);
+    sheet = new AnswerSheet(`alia.genui.sheet:${threadId}`);
     SHEETS.set(threadId, sheet);
   }
   return sheet;
@@ -450,7 +450,7 @@ function release(run: () => void): void {
 
 /**
  * Registers `flush`, an answer waiting for a pause in the typing; returns
- * its release. While any is pending, Enter anywhere and any press (BB's
+ * its release. While any is pending, Enter anywhere and any press (VesnALIA's
  * send button) flush them first, in the capture phase, as does a field
  * losing focus (Form); with none pending, nothing listens.
  */
@@ -471,7 +471,7 @@ export function deferAnswer(flush: () => void): () => void {
  * Hands each thread composer on screen to its thread's sheet and lets the
  * sheet read every draft change. Call it where `composers` re-renders with
  * the drafts (useComposers, useComposer). A composer without `replace`
- * (BB before it) takes no answers: its blocks send at once.
+ * (VesnALIA before it) takes no answers: its blocks send at once.
  */
 export function useAnswerComposers(composers: readonly PluginComposerApi[]): void {
   const threads = composers.flatMap((composer) =>

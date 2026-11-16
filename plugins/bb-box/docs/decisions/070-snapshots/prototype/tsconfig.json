@@ -4,7 +4,7 @@
     "baseUrl": "../../../..",
     "types": ["node", "vite/client"],
     "paths": {
-      "@get-bb/plugin-sdk/app": ["docs/decisions/070-snapshots/prototype/src/sdk-stand-in.tsx"],
+      "@vesnalia/plugin-sdk/app": ["docs/decisions/070-snapshots/prototype/src/sdk-stand-in.tsx"],
       "@/*": ["./*"]
     }
   },

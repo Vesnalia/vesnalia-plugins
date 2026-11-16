@@ -1,11 +1,11 @@
-// bb-plugin-uptime — backend entry.
+// alia-plugin-uptime — backend entry.
 //
 // A background service pings every monitored site on an interval, keeps a
-// bounded check history per site in bb.storage.kv, and publishes a realtime
+// bounded check history per site in alia.storage.kv, and publishes a realtime
 // signal after each sweep so open pages refresh. RPC serves the page; the
-// `bb uptime` command serves agents and shells.
+// `alia uptime` command serves agents and shells.
 import { randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const checkSchema = z.object({
@@ -61,10 +61,10 @@ const SITES_CHANGED = "sites-changed";
 const HISTORY_LIMIT = 60;
 const DEFAULT_SITES: Array<{ name: string; url: string }> = [];
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     intervalSeconds: {
       type: "number",
       label: "Check interval (seconds)",
@@ -88,7 +88,7 @@ export default async function plugin(bb: BbPluginApi) {
   let lastSweepAt: number | null = null;
 
   async function readSites(): Promise<Site[]> {
-    const stored = await bb.storage.kv.get<Site[]>("sites");
+    const stored = await alia.storage.kv.get<Site[]>("sites");
     if (stored !== undefined) return stored;
     const seeded = DEFAULT_SITES.map((s) => ({
       id: randomUUID().slice(0, 8),
@@ -97,12 +97,12 @@ export default async function plugin(bb: BbPluginApi) {
       createdAt: Date.now(),
       checks: [],
     }));
-    await bb.storage.kv.set("sites", seeded);
+    await alia.storage.kv.set("sites", seeded);
     return seeded;
   }
   async function writeSites(sites: Site[]): Promise<void> {
-    await bb.storage.kv.set("sites", sites);
-    bb.realtime.publish(SITES_CHANGED, { count: sites.length });
+    await alia.storage.kv.set("sites", sites);
+    alia.realtime.publish(SITES_CHANGED, { count: sites.length });
   }
 
   async function ping(url: string, signal?: AbortSignal): Promise<Check> {
@@ -116,7 +116,7 @@ export default async function plugin(bb: BbPluginApi) {
         method: "GET",
         redirect: "follow",
         signal: controller.signal,
-        headers: { "user-agent": "bb-plugin-uptime/0.1" },
+        headers: { "user-agent": "alia-plugin-uptime/0.1" },
       });
       // Drain a little so keep-alive sockets are reusable; ignore the body.
       await res.body?.cancel().catch(() => undefined);
@@ -154,7 +154,7 @@ export default async function plugin(bb: BbPluginApi) {
     targets.forEach((site, i) => {
       site.checks = [...site.checks, results[i]!].slice(-HISTORY_LIMIT);
       if (!results[i]!.ok) {
-        bb.log.warn(`down: ${site.url} ${results[i]!.status ?? results[i]!.error}`);
+        alia.log.warn(`down: ${site.url} ${results[i]!.status ?? results[i]!.error}`);
       }
     });
     if (!onlyId) lastSweepAt = Date.now();
@@ -187,7 +187,7 @@ export default async function plugin(bb: BbPluginApi) {
     return true;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     sites_list: async () => ({
       sites: await readSites(),
       intervalSeconds: interval() / 1000,
@@ -198,13 +198,13 @@ export default async function plugin(bb: BbPluginApi) {
     sites_check: async ({ id }) => ({ sites: await sweep(id) }),
   });
 
-  bb.background.service("pinger", {
+  alia.background.service("pinger", {
     async start(signal) {
       while (!signal.aborted) {
         try {
           await sweep(undefined, signal);
         } catch (cause) {
-          bb.log.error(`sweep failed: ${String(cause)}`);
+          alia.log.error(`sweep failed: ${String(cause)}`);
         }
         await new Promise<void>((resolve) => {
           const timer = setTimeout(resolve, interval());
@@ -223,10 +223,10 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb uptime list [--json]",
-    "  bb uptime add <url> [name] [--json]",
-    "  bb uptime remove <site-id> [--json]",
-    "  bb uptime check [site-id] [--json]",
+    "  VesnALIA uptime list [--json]",
+    "  VesnALIA uptime add <url> [name] [--json]",
+    "  VesnALIA uptime remove <site-id> [--json]",
+    "  VesnALIA uptime check [site-id] [--json]",
   ].join("\n");
   function formatSite(site: Site): string {
     const last = site.checks.at(-1);
@@ -238,14 +238,14 @@ export default async function plugin(bb: BbPluginApi) {
     const pct = site.checks.length ? Math.round((100 * up) / site.checks.length) : 0;
     return `${state} ${site.id}  ${site.name.padEnd(24)} ${detail}  (${pct}% of last ${site.checks.length})`;
   }
-  bb.cli.register({
+  alia.cli.register({
     name: "uptime",
     summary: "Monitor website availability",
     commands: [
-      { name: "list", summary: "List sites and their status", usage: "bb uptime list [--json]" },
-      { name: "add", summary: "Add a site", usage: "bb uptime add <url> [name] [--json]" },
-      { name: "remove", summary: "Remove a site", usage: "bb uptime remove <site-id> [--json]" },
-      { name: "check", summary: "Ping now", usage: "bb uptime check [site-id] [--json]" },
+      { name: "list", summary: "List sites and their status", usage: "alia uptime list [--json]" },
+      { name: "add", summary: "Add a site", usage: "alia uptime add <url> [name] [--json]" },
+      { name: "remove", summary: "Remove a site", usage: "alia uptime remove <site-id> [--json]" },
+      { name: "check", summary: "Ping now", usage: "alia uptime check [site-id] [--json]" },
     ],
     async run(argv) {
       const json = argv.includes("--json");
@@ -286,7 +286,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

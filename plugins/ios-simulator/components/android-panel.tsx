@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent } from "rea
 import {
   experimental_usePluginId as usePluginId, useRealtime, useRpc,
   type PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { AndroidState, androidRpcContract } from "../server/android";
 import type { AndroidButton } from "../server/android-adb";

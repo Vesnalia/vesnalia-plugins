@@ -7,7 +7,7 @@
  * `<data.db>` must be a consistent single-file snapshot (VACUUM INTO or the backup API), not a live database with a WAL.
  * The checksums are of the copy's tables before the reads and after them, with the source file's SHA-256. A snapshot
  * from an older release gets the newer migrations when the store opens, stamped with the time, so its `after` checksum
- * of `_bb_migrations` differs from run to run.
+ * of `_alia_migrations` differs from run to run.
  */
 import { writeFileSync } from "node:fs";
 import { dumpDatabase } from "./store-reads";

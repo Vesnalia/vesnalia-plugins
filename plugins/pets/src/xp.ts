@@ -1,4 +1,4 @@
-// XP engine — pure functions, no bb imports, unit-testable in isolation.
+// XP engine — pure functions, no VesnALIA imports, unit-testable in isolation.
 
 export interface Stage {
   index: number;

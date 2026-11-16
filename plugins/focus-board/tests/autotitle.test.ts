@@ -49,7 +49,7 @@ describe("promptTextFromHistory", () => {
   });
 
   it("ignores entries after the first", () => {
-    // bb titles a thread from its originating prompt; later follow-ups
+    // VesnALIA titles a thread from its originating prompt; later follow-ups
     // carry refinements the original task should not be drowned by.
     expect(
       promptTextFromHistory([
@@ -105,7 +105,7 @@ describe("buildAutotitlePrompt", () => {
     );
   });
 
-  it("fits bb's aiServices bridge cap of 4000 chars, instructions included", () => {
+  it("fits VesnALIA's aiServices bridge cap of 4000 chars, instructions included", () => {
     // Live-proven cap: the bridge rejects prompt > 4000 with "Too big:
     // expected string to have <=4000 characters". The OLD build clamped the
     // task text to 4000 and THEN added the instruction block, so a
@@ -173,7 +173,7 @@ describe("resolveTitleSelection", () => {
     ).toEqual({ ok: true, pluginId: "openrouter-inference", serviceId: "default" });
   });
 
-  it("rejects automatic: bb resolves it internally and plugins cannot invoke it", () => {
+  it("rejects automatic: VesnALIA resolves it internally and plugins cannot invoke it", () => {
     const outcome = selection({ mode: "automatic" });
     expect(outcome.ok).toBe(false);
     if (!outcome.ok) {
@@ -201,11 +201,11 @@ describe("autotitleTargets", () => {
       tasks: ["thread-title", "commit-message"],
     },
     {
-      pluginId: "bb-ai",
+      pluginId: "alia-ai",
       id: "cloud",
-      displayName: "bb cloud",
+      displayName: "alia cloud",
       automaticRank: null,
-      status: { ready: false, message: "Sign in to bb" },
+      status: { ready: false, message: "Sign in to VesnALIA" },
       tasks: ["thread-title", "voice"],
     },
     {
@@ -228,11 +228,11 @@ describe("autotitleTargets", () => {
         message: null,
       },
       {
-        pluginId: "bb-ai",
+        pluginId: "alia-ai",
         serviceId: "cloud",
-        displayName: "bb cloud",
+        displayName: "alia cloud",
         ready: false,
-        message: "Sign in to bb",
+        message: "Sign in to VesnALIA",
       },
     ]);
   });
@@ -342,11 +342,11 @@ describe("resolveTitleTarget", () => {
 });
 
 describe("promptTextFromHistory newest-first arrival", () => {
-  // bb's prompt-history queries order rows newest-first (start-server.js
+  // VesnALIA's prompt-history queries order rows newest-first (start-server.js
   // desc createdAt/requestSequence/id — found live when the ✨ probe titled
   // the user's LATEST message instead of the thread's original task). The
   // thread's originating prompt is the chronologically FIRST entry.
-  it("takes the oldest entry when bb returns history newest-first", () => {
+  it("takes the oldest entry when VesnALIA returns history newest-first", () => {
     expect(
       promptTextFromHistory([
         { createdAt: 20, input: [{ type: "text", text: "Why is it still refused?" }] },

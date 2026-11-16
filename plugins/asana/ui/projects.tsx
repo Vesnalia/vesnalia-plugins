@@ -1,7 +1,7 @@
-// The Projects page: which bb project each Asana project's tasks open in.
+// The Projects page: which VesnALIA project each Asana project's tasks open in.
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, ProjectMapRow } from "../server";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -37,7 +37,7 @@ export function ProjectMapView({ onBack }: { onBack: () => void }) {
         Projects
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Start thread opens a task in the bb project mapped to its Asana project. Threads you start
+        Start thread opens a task in the VesnALIA project mapped to its Asana project. Threads you start
         from a task teach this automatically; suggestions apply once you confirm them.
       </p>
       {error === null ? null : (
@@ -73,26 +73,26 @@ export function ProjectMapView({ onBack }: { onBack: () => void }) {
                   )}
                   <select
                     id={selectId}
-                    value={row.bbProjectId ?? ""}
+                    value={row.aliaProjectId ?? ""}
                     onChange={(event) =>
                       void run(
                         rpc.call("project_map_set", {
                           asanaGid: row.asanaGid,
                           asanaName: row.asanaName,
-                          bbProjectId: event.target.value === "" ? null : event.target.value,
+                          aliaProjectId: event.target.value === "" ? null : event.target.value,
                         }),
                       )
                     }
                     className={cn(CONTROL_CLASS, "w-52")}
                   >
-                    <option value="">No bb project</option>
-                    {data.bbProjects.map((project) => (
+                    <option value="">No VesnALIA project</option>
+                    {data.aliaProjects.map((project) => (
                       <option key={project.id} value={project.id}>
                         {project.name}
                       </option>
                     ))}
                   </select>
-                  {row.source === "suggested" && row.bbProjectId !== null ? (
+                  {row.source === "suggested" && row.aliaProjectId !== null ? (
                     <Button
                       size="sm"
                       variant="outline"
@@ -101,7 +101,7 @@ export function ProjectMapView({ onBack }: { onBack: () => void }) {
                           rpc.call("project_map_set", {
                             asanaGid: row.asanaGid,
                             asanaName: row.asanaName,
-                            bbProjectId: row.bbProjectId,
+                            aliaProjectId: row.aliaProjectId,
                           }),
                         )
                       }

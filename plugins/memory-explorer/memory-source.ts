@@ -1,4 +1,4 @@
-// BB memory as this plugin sees it: reads and writes through the bundled Memory
+// VesnALIA memory as this plugin sees it: reads and writes through the bundled Memory
 // plugin's RPC (`listMemories`, `updateMemory`, `deleteMemory`). The Memory
 // plugin's output schemas are strict, ours are not: a field it adds later must
 // not break the page. Reads are cached for a few seconds; a write drops the

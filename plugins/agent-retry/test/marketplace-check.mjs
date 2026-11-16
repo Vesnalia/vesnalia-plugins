@@ -3,14 +3,14 @@
 // and check, with this plugin's entry, icon, screenshots and overview in it.
 //
 // Run against a clone of the marketplace repository:
-//   BB_MARKETPLACE_DIR=/path/to/marketplace node test/marketplace-check.mjs
+//   ALIA_MARKETPLACE_DIR=/path/to/marketplace node test/marketplace-check.mjs
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 const PLUGIN_ID = "agent-retry";
 const marketplaceDir =
-  process.env.BB_MARKETPLACE_DIR ?? "/tmp/bb-marketplace";
+  process.env.ALIA_MARKETPLACE_DIR ?? "/tmp/alia-marketplace";
 
 function fail(message) {
   process.stderr.write(`marketplace check failed: ${message}\n`);
@@ -27,7 +27,7 @@ function run(command, args) {
 
 if (!existsSync(path.join(marketplaceDir, "package.json"))) {
   fail(
-    `no marketplace repository at ${marketplaceDir}; clone get-bb/marketplace there or set BB_MARKETPLACE_DIR`,
+    `no marketplace repository at ${marketplaceDir}; clone get-alia/marketplace there or set ALIA_MARKETPLACE_DIR`,
   );
 }
 
@@ -54,15 +54,15 @@ if (!categories.includes(entry.category)) {
   fail(`category ${entry.category} is not one of ${categories.join(", ")}`);
 }
 
-// The icon is either a vendored, hashed file or a BB host icon name.
+// The icon is either a vendored, hashed file or a VesnALIA host icon name.
 const iconBytes = 0;
 if (typeof entry.icon === "string") {
   if (!/^[A-Za-z][A-Za-z0-9]*$/u.test(entry.icon)) {
-    fail(`icon name ${entry.icon} is not a BB host icon name`);
+    fail(`icon name ${entry.icon} is not a VesnALIA host icon name`);
   }
-  // "Do not invent a host icon name": check it against bb's own icon
-  // registry when a bb installation is reachable from here.
-  const assetsDir = "/Applications/bb Nightly.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/app/dist/assets";
+  // "Do not invent a host icon name": check it against VesnALIA's own icon
+  // registry when a VesnALIA installation is reachable from here.
+  const assetsDir = "/Applications/alia Nightly.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/app/dist/assets";
   const candidates = existsSync(assetsDir)
     ? readdirSync(assetsDir).filter((name) => name.startsWith("icon-extended-"))
     : [];
@@ -71,11 +71,11 @@ if (typeof entry.icon === "string") {
       .map((name) => readFileSync(path.join(assetsDir, name), "utf8"))
       .join("\n");
     if (!registry.includes(`${entry.icon}:`)) {
-      fail(`host icon ${entry.icon} is not in bb's icon registry`);
+      fail(`host icon ${entry.icon} is not in VesnALIA's icon registry`);
     }
   } else {
     process.stderr.write(
-      `note: no bb installation found to confirm the host icon ${entry.icon}\n`,
+      `note: no VesnALIA installation found to confirm the host icon ${entry.icon}\n`,
     );
   }
 } else {

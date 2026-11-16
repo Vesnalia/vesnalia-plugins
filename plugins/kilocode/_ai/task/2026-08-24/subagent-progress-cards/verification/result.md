@@ -2,7 +2,7 @@
 
 - Platform: `web`
 - Objective: prove a user can watch native child tool activity inside a running KiloCode Task card and see its final Output after completion.
-- Primary flow: spawn a real BB KiloCode thread, launch one general subagent, observe its live tool rows, wait for completion, and expand the Task Output.
+- Primary flow: spawn a real VesnALIA KiloCode thread, launch one general subagent, observe its live tool rows, wait for completion, and expand the Task Output.
 - Regression check: child prose stays out of nested activity; Task output appears once inside the Task card.
 - Verdict: `PASS`
 
@@ -21,8 +21,8 @@
 - Mechanical observation first exposed an orphaned-row bug: Task cards keyed by `callID`, while child `parentRef` preferred `id`.
 - `rememberTaskChild` now uses the same `callID ?? id` preference as Task mapping; the strengthened test uses distinct identifiers.
 - Code quality gate: `APPROVE_CODE`, 97/100.
-- Build reported an existing SDK patch-version notice: plugin pins 0.4.14 while local BB provides 0.4.15; build still succeeded.
-- BB native delegation remains the frontend; no custom chat component, RPC, polling, or dependency was added.
+- Build reported an existing SDK patch-version notice: plugin pins 0.4.14 while local VesnALIA provides 0.4.15; build still succeeded.
+- VesnALIA native delegation remains the frontend; no custom chat component, RPC, polling, or dependency was added.
 
 ### Next Action
 

@@ -26,7 +26,7 @@ async function panel(page, fn) {
   await toggle.click();
   await page.waitForTimeout(200);
 }
-const agent = (page) => panel(page, () => page.getByRole("button", { name: "An agent runs bb box config apply" }).click());
+const agent = (page) => panel(page, () => page.getByRole("button", { name: "An agent runs VesnALIA box config apply" }).click());
 const nextSave = (page, label) => panel(page, () => page.getByRole("button", { name: label, exact: true }).click());
 const bar = (page) => page.locator("[role=region][aria-label^=Save] [role=status]").first().innerText().catch(() => "(no bar)");
 const openRow = async (page, name) => { await page.getByRole("button", { name }).first().click(); await page.waitForTimeout(400); };
@@ -73,7 +73,7 @@ const tests = {
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await page.waitForTimeout(3500);
     const form = await bar(page);
-    await page.getByRole("button", { name: "BB Box settings" }).first().click();
+    await page.getByRole("button", { name: "VesnALIA Box settings" }).first().click();
     await page.waitForTimeout(300);
     await openRow(page, /^Monitor/);
     await panel(page, () => page.getByRole("button", { name: /Someone saves first, 3 times/ }).click());
@@ -97,7 +97,7 @@ const tests = {
     await page.getByRole("alertdialog").getByRole("button", { name: "Remove backend" }).click();
     await page.waitForTimeout(1200);
     const removal = await page.getByRole("alert").first().innerText().catch(() => "none");
-    await page.getByRole("button", { name: "BB Box settings" }).first().click();
+    await page.getByRole("button", { name: "VesnALIA Box settings" }).first().click();
     await openRow(page, /^Images/);
     await nextSave(page, "Is refused");
     step("images");
@@ -105,7 +105,7 @@ const tests = {
     await page.getByRole("option", { name: "Always built ahead" }).click();
     await page.waitForTimeout(1200);
     const image = await page.getByRole("alert").first().innerText().catch(() => "none");
-    await page.getByRole("button", { name: "BB Box settings" }).first().click();
+    await page.getByRole("button", { name: "VesnALIA Box settings" }).first().click();
     await openRow(page, /^Configuration/);
     step("import");
     await page.getByRole("button", { name: "Paste a file…" }).click();
@@ -114,7 +114,7 @@ const tests = {
     await page.getByRole("button", { name: /^Apply/ }).click();
     await page.waitForTimeout(1200);
     const imported = await page.getByRole("alert").first().innerText().catch(() => "none");
-    record("1d removal, image and import refusals are shown", /Namespace was not removed: BB Box refused/.test(removal) && /was not changed: BB Box refused/.test(image) && /Not imported: the configuration changed after you checked/.test(imported), { removal, image, imported });
+    record("1d removal, image and import refusals are shown", /Namespace was not removed: ALIA Box refused/.test(removal) && /was not changed: ALIA Box refused/.test(image) && /Not imported: the configuration changed after you checked/.test(imported), { removal, image, imported });
     await page.close();
   },
   async "2 newer secret and file typing survive a save"() {
@@ -131,7 +131,7 @@ const tests = {
     const secretBar = await bar(page);
     const secretValue = await secret.inputValue().catch(() => "gone");
     await shot(page, "r3-2-newer-secret");
-    await page.getByRole("button", { name: "BB Box settings" }).first().click();
+    await page.getByRole("button", { name: "VesnALIA Box settings" }).first().click();
     await openRow(page, /^Boxes/);
     await page.getByRole("button", { name: "Add file" }).click();
     await tb(page, "New file's path under the box user's home").fill(".cfg/new.json");
@@ -195,7 +195,7 @@ const tests = {
     await openRow(page, /^Tart/);
     await page.getByRole("button", { name: /^mac-1/ }).first().click();
     await tb(page, "Cores of a shared iOS host on mac-1").fill("8");
-    await page.getByRole("button", { name: "BB Box settings" }).first().click();
+    await page.getByRole("button", { name: "VesnALIA Box settings" }).first().click();
     await agent(page);
     await openRow(page, /^Tart/);
     await page.waitForTimeout(300);
@@ -224,12 +224,12 @@ const tests = {
     await page.getByText(/are back/).first().waitFor({ timeout: 5000 }).catch(() => {});
     const note = await page.getByText(/are back/).first().innerText().catch(() => "none");
     const path = await tb(page, "New file's path under the box user's home").inputValue().catch(() => "none");
-    await page.getByRole("button", { name: "BB Box settings" }).first().click();
+    await page.getByRole("button", { name: "VesnALIA Box settings" }).first().click();
     await openRow(page, /^Configuration/);
     await page.getByRole("button", { name: "Paste a file…" }).click();
     await page.getByRole("textbox", { name: "Configuration JSON" }).fill('{"monitor":{"refreshIntervalSeconds":20}}');
     await page.getByRole("button", { name: "General", exact: true }).click();
-    await page.getByRole("button", { name: "BB Box", exact: true }).click();
+    await page.getByRole("button", { name: "VesnALIA Box", exact: true }).click();
     await openRow(page, /^Configuration/);
     const afterLeave = await page.getByRole("textbox", { name: "Configuration JSON" }).inputValue().catch(() => "none");
     await page.reload();
@@ -269,10 +269,10 @@ const tests = {
       await page.waitForTimeout(950);
     }
     const allOff = await page.locator("section[aria-label=Status]").innerText().catch(() => "none");
-    const onboarding = await page.getByText("Set up BB Box").count();
+    const onboarding = await page.getByText("Set up VesnALIA Box").count();
     await shot(page, "r3-8-all-off");
     const first = await fresh({ scenario: "First run" });
-    await first.getByRole("button", { name: "Use Docker on bb-1" }).click();
+    await first.getByRole("button", { name: "Use Docker on alia-1" }).click();
     await first.waitForTimeout(6500);
     const warnings = await first.getByText(/Not offered now/).count();
     record("8 status words, established all-off, Linux-only Docker", /6 of 8 backends passed their last check/.test(headline) && /Every backend is off/.test(allOff) && onboarding === 0 && warnings === 0, { headline, allOff: allOff.slice(0, 120), onboarding, warnings });
@@ -293,7 +293,7 @@ const tests = {
     const wide = await fresh();
     await openRow(wide, /^Proxmox LXC/);
     const more = await wide.getByRole("button", { name: "More about TLS fingerprint" }).count();
-    await openRow(wide, /^BB Box settings/);
+    await openRow(wide, /^ALIA Box settings/);
     await openRow(wide, /^Tart/);
     await wide.getByRole("button", { name: /^mac-1/ }).first().click();
     const macField = await wide.getByRole("textbox", { name: "Address on mac-1" }).count();
@@ -304,7 +304,7 @@ const tests = {
     const page = await fresh();
     await openRow(page, /^Tart/);
     await page.getByRole("button", { name: /^mac-1/ }).first().click();
-    const estimate = await page.getByText(/Empty: 10 cores, bb-box's estimate for mac-1/).count();
+    const estimate = await page.getByText(/Empty: 10 cores, alia-box's estimate for mac-1/).count();
     const rule = await page.getByText("Switches, and menus that stand alone, act at once. Fields, checkboxes and radio choices wait for Save.").count();
     await page.getByRole("button", { name: "Machine status: its settings" }).click();
     await page.waitForTimeout(400);
@@ -313,7 +313,7 @@ const tests = {
     const gone = await invalid.getByText("This kind is not here").count();
     const first = await fresh({ scenario: "First run" });
     await panel(first, () => first.getByRole("button", { name: "Low disk", exact: true }).click());
-    const title = await first.getByText("Not enough disk on bb-1").count();
+    const title = await first.getByText("Not enough disk on alia-1").count();
     await first.getByRole("button", { name: /Choose another backend/ }).click();
     await first.getByRole("button", { name: /^Proxmox LXC/ }).first().click();
     await first.getByRole("button", { name: "Save, keep it off" }).click();

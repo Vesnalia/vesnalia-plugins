@@ -1,9 +1,9 @@
 // Runs Lobu on this machine the way the Lobu Mac app does: `lobu run` under
 // the `local` CLI context, reachable only from this machine. `lobu run` signs
 // that context in by itself. Lobu encrypts stored secrets with the project's
-// ENCRYPTION_KEY: bb's own project keeps it in its `.env`, which `lobu run`
+// ENCRYPTION_KEY: VesnALIA's own project keeps it in its `.env`, which `lobu run`
 // reads, while the Mac app's project (~/lobu) keeps it in the macOS Keychain,
-// so bb only ever starts its own.
+// so VesnALIA only ever starts its own.
 import type { ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -17,14 +17,14 @@ export const LOCAL_PORT = 8787;
 const HEALTH_TIMEOUT_MS = 2_000;
 
 export interface LocalFolders {
-  /** bb's own project. */
-  bb: string;
+  /** VesnALIA's own project. */
+  alia: string;
   /** The Mac app's project. */
   macApp: string;
 }
 
 export function localFolders(home: string): LocalFolders {
-  return { bb: join(home, "lobu-bb"), macApp: join(home, "lobu") };
+  return { alia: join(home, "lobu-alia"), macApp: join(home, "lobu") };
 }
 
 /** The port of the `local` context's URL when it is on this machine, else the Mac app's default. */
@@ -43,8 +43,8 @@ export async function isServing(origin: string): Promise<boolean> {
   }
 }
 
-/** Whether bb has set up its own project here before. */
-export const hasProject = (folders: LocalFolders) => existsSync(join(folders.bb, ".env"));
+/** Whether VesnALIA has set up its own project here before. */
+export const hasProject = (folders: LocalFolders) => existsSync(join(folders.alia, ".env"));
 
 /**
  * Whether the local Lobu here belongs to the Lobu Mac app (`~/lobu`), which
@@ -55,7 +55,7 @@ export const macAppOwnsLocal = (folders: LocalFolders) =>
   !hasProject(folders) && existsSync(join(folders.macApp, "data"));
 
 /**
- * Starts `lobu run` in bb's project, creating the project with a new
+ * Starts `lobu run` in VesnALIA's project, creating the project with a new
  * ENCRYPTION_KEY the first time. Throws when the only local Lobu here is the
  * Mac app's, which only the Mac app can start.
  */
@@ -68,17 +68,17 @@ export async function startLocal(
     if (macAppOwnsLocal(folders)) {
       throw new Error("Your Lobu on this machine belongs to the Lobu app. Open the Lobu app to start it, then try again.");
     }
-    mkdirSync(folders.bb, { recursive: true });
-    writeFileSync(join(folders.bb, ".env"), `ENCRYPTION_KEY=${randomBytes(32).toString("hex")}\n`, { mode: 0o600, flag: "wx" });
+    mkdirSync(folders.alia, { recursive: true });
+    writeFileSync(join(folders.alia, ".env"), `ENCRYPTION_KEY=${randomBytes(32).toString("hex")}\n`, { mode: 0o600, flag: "wx" });
   }
   return api.serve(["run", "--port", String(port)], {
-    cwd: folders.bb,
-    env: { DATABASE_URL: `file://${join(folders.bb, "data")}`, HOST: "127.0.0.1", LOBU_CONTEXT: LOCAL_CONTEXT },
+    cwd: folders.alia,
+    env: { DATABASE_URL: `file://${join(folders.alia, "data")}`, HOST: "127.0.0.1", LOBU_CONTEXT: LOCAL_CONTEXT },
     logFile: logFile(folders),
   });
 }
 
-export const logFile = (folders: LocalFolders) => join(folders.bb, "lobu.log");
+export const logFile = (folders: LocalFolders) => join(folders.alia, "lobu.log");
 
 /** The last line `lobu run` logged, to explain why it stopped. */
 export function lastLogLine(folders: LocalFolders): string {

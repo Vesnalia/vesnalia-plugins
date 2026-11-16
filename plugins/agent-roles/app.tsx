@@ -1,4 +1,4 @@
-// bb-plugin-agent-roles — frontend entry.
+// alia-plugin-agent-roles — frontend entry.
 //
 // One nav panel with three views: Roles (specialist profiles), Teams (staged
 // multi-agent templates) and Runs (live progress of team runs with each
@@ -14,11 +14,11 @@ import {
   definePluginApp,
   experimental_PermissionModePicker as PermissionModePicker,
   experimental_ProviderModelPicker as ProviderModelPicker,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { Role, RoleTask, Team, TeamRun, TeamRunWithSteps, rpcContract } from "./server";
 import { GraphCanvas } from "./graph-canvas";
@@ -211,7 +211,7 @@ function RoleEditor({ initial, onSave, onCancel, busy }: { initial: RoleDraft; o
         <Field label="Name">
           <Input className={softFieldCls} value={d.name} autoFocus onChange={(e) => { set("name", e.target.value); if (!slugTouched) set("slug", slugify(e.target.value)); }} />
         </Field>
-        <Field label="Slug" hint="Used in bb role spawn <slug>">
+        <Field label="Slug" hint="Used in VesnALIA role spawn <slug>">
           <Input value={d.slug} onChange={(e) => { setSlugTouched(true); set("slug", e.target.value); }} className={cn(softFieldCls, "font-mono", !SLUG_RE.test(d.slug) && d.slug !== "" && "border-destructive")} />
         </Field>
       </div>
@@ -271,8 +271,8 @@ function RoleEditor({ initial, onSave, onCancel, busy }: { initial: RoleDraft; o
 
 function SpawnBox({ role, onClose, onFiled }: { role: Role; onClose: () => void; onFiled: () => void }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
-  const ctx = useBbContext();
+  const navigate = useAliaNavigate();
+  const ctx = useAliaContext();
   const { busy, run } = useAsync();
   const [prompt, setPrompt] = useState("");
   const [projectId, setProjectId] = useState(ctx.projectId ?? "");
@@ -357,8 +357,8 @@ function ThreadRoleBadge({ threadId, isCompactViewport }: { threadId: string; pr
 
 function RoleJobs({ roles, refreshKey }: { roles: Role[]; refreshKey: number }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
-  const ctx = useBbContext();
+  const navigate = useAliaNavigate();
+  const ctx = useAliaContext();
   const { busy, run } = useAsync();
   const [tasks, setTasks] = useState<RoleTask[] | null>(null);
   const refetch = useCallback(() => { rpc.call("role_tasks_list").then((r) => setTasks(r.tasks)).catch(() => setTasks([])); }, [rpc]);
@@ -472,7 +472,7 @@ function RolesView() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-6">
-        <p className="text-sm leading-relaxed text-muted-foreground">Specialist profiles. Agents use them with <code>bb role spawn &lt;slug&gt;</code>.</p>
+        <p className="text-sm leading-relaxed text-muted-foreground">Specialist profiles. Agents use them with <code>alia role spawn &lt;slug&gt;</code>.</p>
         <Button variant="outline" size="sm" className="shrink-0" onClick={() => setEditing("new")} disabled={editing !== null}>
           <Icon name="Plus" className="size-4" /> New role
         </Button>
@@ -546,8 +546,8 @@ const emptyTeam = (firstRole: string): TeamDraft => ({
 });
 
 /**
- * Emit the same DAG as a builtin BB workflow script, so a team can also run
- * under `bb workflows run` (durable, resumable) instead of this plugin's
+ * Emit the same DAG as a builtin VesnALIA workflow script, so a team can also run
+ * under `alia workflows run` (durable, resumable) instead of this plugin's
  * scheduler. Nodes become `agent()` calls; independent nodes of one layer run
  * inside `parallel()`.
  */
@@ -711,7 +711,7 @@ function TeamEditor({ initial, roles, busy, onSave, onCancel }: { initial: TeamD
     <form className="flex min-h-0 flex-col gap-3" onSubmit={(e) => { e.preventDefault(); if (valid && !busy) onSave(d); }}>
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Name"><Input className={softFieldCls} value={d.name} autoFocus onChange={(e) => { setD((p) => ({ ...p, name: e.target.value })); if (!slugTouched) setD((p) => ({ ...p, slug: slugify(e.target.value) })); }} /></Field>
-        <Field label="Slug" hint="bb role run <slug>"><Input className={cn(softFieldCls, "font-mono")} value={d.slug} onChange={(e) => { setSlugTouched(true); setD((p) => ({ ...p, slug: e.target.value })); }} /></Field>
+        <Field label="Slug" hint="alia role run <slug>"><Input className={cn(softFieldCls, "font-mono")} value={d.slug} onChange={(e) => { setSlugTouched(true); setD((p) => ({ ...p, slug: e.target.value })); }} /></Field>
       </div>
       <Field label="Description"><Input className={softFieldCls} value={d.description} onChange={(e) => setD((p) => ({ ...p, description: e.target.value }))} maxLength={300} /></Field>
       <div className="grid min-h-0 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -730,7 +730,7 @@ function TeamEditor({ initial, roles, busy, onSave, onCancel }: { initial: TeamD
       </div>
       <div className={cn(editorFooterCls, "sticky bottom-0 z-10 flex-wrap bg-background pb-2")}>
         <Button type="button" variant="ghost" size="sm" onClick={() => setShowScript((v) => !v)} disabled={graphError !== null}>
-          <Icon name="Code" className="size-4" /> {showScript ? "Hide" : "Show"} as bb workflow script
+          <Icon name="Code" className="size-4" /> {showScript ? "Hide" : "Show"} as VesnALIA workflow script
         </Button>
         <ValidationHints problems={problems} />
         <span className="flex-1" />
@@ -741,7 +741,7 @@ function TeamEditor({ initial, roles, busy, onSave, onCancel }: { initial: TeamD
         <div className="relative">
           <pre className="max-h-96 overflow-auto rounded-md border border-border bg-muted/40 p-3 font-mono text-[11px] leading-snug">{script}</pre>
           <Button type="button" variant="outline" size="sm" className="absolute right-2 top-2"
-            onClick={() => { void navigator.clipboard.writeText(script).then(() => toast.success("Copied — save as .bb/workflows/<name>.js and run with bb workflows run")); }}>
+            onClick={() => { void navigator.clipboard.writeText(script).then(() => toast.success("Copied — save as .vesnalia/workflows/<name>.js and run with VesnALIA workflows run")); }}>
             <Icon name="Copy" className="size-3.5" /> Copy
           </Button>
         </div>
@@ -752,7 +752,7 @@ function TeamEditor({ initial, roles, busy, onSave, onCancel }: { initial: TeamD
 
 function RunBox({ team, onStarted, onClose }: { team: Team; onStarted: (run: TeamRun) => void; onClose: () => void }) {
   const rpc = useRpc<typeof rpcContract>();
-  const ctx = useBbContext();
+  const ctx = useAliaContext();
   const { busy, run } = useAsync();
   const [task, setTask] = useState("");
   const [hidden, setHidden] = useState(false);
@@ -823,7 +823,7 @@ function TeamsView({ onOpenRun }: { onOpenRun: (id: string) => void }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-6">
-        <p className="text-sm leading-relaxed text-muted-foreground">Pipelines of roles. Each node is one agent thread; arrows carry outputs into the next prompt, and nodes without pending inputs run in parallel. Agents: <code>bb role run &lt;slug&gt; --task …</code></p>
+        <p className="text-sm leading-relaxed text-muted-foreground">Pipelines of roles. Each node is one agent thread; arrows carry outputs into the next prompt, and nodes without pending inputs run in parallel. Agents: <code>alia role run &lt;slug&gt; --task …</code></p>
         <Button variant="outline" size="sm" className="shrink-0" onClick={() => setEditing("new")} disabled={editing !== null || roles.length === 0}><Icon name="Plus" className="size-4" /> New team</Button>
       </div>
       <Dialog open={editing !== null} onOpenChange={(open) => { if (!open && !busy) setEditing(null); }}>
@@ -910,7 +910,7 @@ function RunsView({ onOpen }: { onOpen: (id: string) => void }) {
 
 function RunDetail({ id, onBack }: { id: string; onBack: () => void }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [run, setRun] = useState<TeamRunWithSteps | null>(null);
   const [team, setTeam] = useState<Team | null>(null);
   const [error, setError] = useState<string | null>(null);

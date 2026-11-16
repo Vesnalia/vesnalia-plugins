@@ -17,7 +17,7 @@ const execFileAsync = promisify(execFile);
 const temporaryDirectories: string[] = [];
 
 async function temporaryDirectory() {
-  const directory = await mkdtemp(join(tmpdir(), "bb-usage-devin-scan-"));
+  const directory = await mkdtemp(join(tmpdir(), "alia-usage-devin-scan-"));
   temporaryDirectories.push(directory);
   return directory;
 }
@@ -112,7 +112,7 @@ describe("devin SQLite collector", () => {
       await expect(scan(dbPath)).rejects.toMatchObject({
         code: 1,
         stdout: "",
-        stderr: expect.stringContaining("__BB_USAGE_ERROR__:EACCES"),
+        stderr: expect.stringContaining("__ALIA_USAGE_ERROR__:EACCES"),
       });
     } finally {
       await chmod(directory, 0o700);

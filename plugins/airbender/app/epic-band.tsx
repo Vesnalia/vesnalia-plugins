@@ -4,7 +4,7 @@
 // back arrow, the word "Epic", the path of issues above the epic and the
 // epic itself; and the two small icons epic mode uses.
 //
-// Why: the user's layout (bead-bb-ha9): "between current and the header
+// Why: the user's layout (bead-alia-ha9): "between current and the header
 // with project path ... additional elements, like current epic ... And next
 // to the epic, there is a sign with an arrow back ... Similar how getting
 // out of the folder."
@@ -29,7 +29,7 @@
 //   request); a click keeps it open. It opens downwards: the band is near
 //   the top of the tab.
 // - The icons are Tabler Icons' "arrow-back-up" and "arrow-down-to-arc" (MIT, (c)
-//   Pawel Kuna), copied in as their paths: BB's icon set has neither, and
+//   Pawel Kuna), copied in as their paths: VesnALIA's icon set has neither, and
 //   the user asked for Tabler or Font Awesome over home-made drawings.
 
 import { Button } from "@/components/ui/button";
@@ -63,7 +63,7 @@ export function BackUpIcon({ className }: { className?: string }) {
 /**
  * An arrow going down into an open ring: go into this epic. The icon for
  * entering epic mode, everywhere it can be entered (the user's choice,
- * bead-bb-0ai, after a magnifier with a plus was used first). Tabler Icons'
+ * bead-alia-0ai, after a magnifier with a plus was used first). Tabler Icons'
  * "arrow-down-to-arc". Not a target, which is the icon for making an issue
  * current.
  */
@@ -105,12 +105,12 @@ export function EpicBand({
    */
   onClose?: () => void;
   /**
-   * The epic's issues were worked on a branch of its own (bead-bb-ty5.2):
+   * The epic's issues were worked on a branch of its own (bead-alia-ty5.2):
    * closing it also merges that branch, and the button says so.
    */
   merging?: boolean;
   /**
-   * Autopilot for this epic in this conversation (bead-bb-8ff); left out
+   * Autopilot for this epic in this conversation (bead-alia-8ff); left out
    * where there is none to offer (no conversation, the simple workflow).
    * `note` is the one line under the band: what the run is doing or
    * waiting for, or why it stopped; null for nothing to say.
@@ -193,7 +193,7 @@ export function EpicBand({
         </div>
       </div>
       {/* Everything under the epic is closed: nothing is left to do here
-          but close the epic itself (bead-bb-ty5.1). It asks first. */}
+          but close the epic itself (bead-alia-ty5.1). It asks first. */}
       {onClose === undefined ? null : (
         <Button
           variant="outline"
@@ -213,7 +213,7 @@ export function EpicBand({
       {/* Autopilot: the epic's issues are started one after another, each
           review still the owner's. A switch, lit while it is on. */}
       {autopilot === undefined ? null : (
-        // A switch, not a button (the user's choice, bead-bb-ty5.3): on
+        // A switch, not a button (the user's choice, bead-alia-ty5.3): on
         // or off is a state, and as a bordered button beside a bordered
         // tag it made the band look like a row of buttons. Drawn by hand:
         // a pill with a knob, the whole of it, word included, one target.
@@ -261,7 +261,7 @@ export function EpicBand({
 
 /**
  * The way back into the epic that was last left: one quiet line in the
- * band's place while the tab is on the whole list (bead-bb-fmg: "return to
+ * band's place while the tab is on the whole list (bead-alia-fmg: "return to
  * epic mode button - when you exited temporarily and want to go back
  * without scanning all epics").
  *

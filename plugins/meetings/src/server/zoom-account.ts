@@ -1,7 +1,7 @@
 // The bot's optional Zoom account (docs/dev/DESIGN.md §6.6): a "login" bot
 // run opens zoom.us/signin in the persistent profile and a human signs in
 // through the live view. The running session lives in kv; the profile on the host.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { CHANNEL_ZOOM_CHANGED, type ZoomStatus } from "../shared/rpc-contract.js";
 import { TERMINAL_BOT_PHASES, botConfigSchema, type BotConfig } from "../shared/runtime-files.js";
 import { newMeetingId } from "./db.js";
@@ -29,7 +29,7 @@ interface ZoomSession {
 
 export class ZoomAccount {
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly settings: SettingsHandle,
     private readonly service: MeetingsService,
     readonly platform: BrowserAccountPlatform = "zoom",
@@ -44,11 +44,11 @@ export class ZoomAccount {
   }
 
   private async stored(): Promise<ZoomSession | null> {
-    return (await this.bb.storage.kv.get<ZoomSession>(this.sessionKey)) ?? null;
+    return (await this.alia.storage.kv.get<ZoomSession>(this.sessionKey)) ?? null;
   }
 
   private changed(): void {
-    this.bb.realtime.publish(CHANNEL_ZOOM_CHANGED, {});
+    this.alia.realtime.publish(CHANNEL_ZOOM_CHANGED, {});
   }
 
   /** The host of the sign-in session with this id, or null when `id` is not the session. */
@@ -64,7 +64,7 @@ export class ZoomAccount {
     const now = this.service.now();
     if (session.finishedAt !== null) {
       if (now - session.finishedAt <= KEEP_FINISHED_MS) return session;
-      await this.bb.storage.kv.delete(this.sessionKey);
+      await this.alia.storage.kv.delete(this.sessionKey);
       await this.service.call("meeting.delete", { meetingId: session.id }, { hostId: session.hostId, signal }).catch(() => undefined);
       this.changed();
       return null;
@@ -94,7 +94,7 @@ export class ZoomAccount {
       if (TERMINAL_BOT_PHASES.has(bot.phase) || !snapshot.botAlive) next.finishedAt = now;
     }
     if (JSON.stringify(next) !== JSON.stringify(session)) {
-      await this.bb.storage.kv.set(this.sessionKey, next);
+      await this.alia.storage.kv.set(this.sessionKey, next);
       this.changed();
     }
     return next;
@@ -113,7 +113,7 @@ export class ZoomAccount {
       const result = await this.profile("status");
       profile = { exists: result.exists, signedIn: result.signedIn, updatedAt: result.updatedAt };
     } catch (error) {
-      this.bb.log.warn(`Could not read the Zoom profile: ${errorMessage(error)}`);
+      this.alia.log.warn(`Could not read the Zoom profile: ${errorMessage(error)}`);
     }
     const session = await this.refresh().catch(() => null);
     return {
@@ -127,7 +127,7 @@ export class ZoomAccount {
     const existing = await this.refresh();
     if (existing !== null && existing.finishedAt === null) return this.status();
     if (existing !== null) {
-      await this.bb.storage.kv.delete(this.sessionKey);
+      await this.alia.storage.kv.delete(this.sessionKey);
       await this.service.call("meeting.delete", { meetingId: existing.id }, { hostId: existing.hostId }).catch(() => undefined);
     }
     const settings = await this.settings.get();
@@ -163,7 +163,7 @@ export class ZoomAccount {
       createdAt: now,
     } satisfies BotConfig);
     await this.service.call("meeting.start", { config }, { hostId, timeoutMs: 60_000 });
-    await this.bb.storage.kv.set(this.sessionKey, {
+    await this.alia.storage.kv.set(this.sessionKey, {
       id,
       hostId,
       startedAt: now,
@@ -194,7 +194,7 @@ export class ZoomAccount {
         await this.service.call("meeting.stop", { meetingId: session.id }, { hostId: session.hostId }).catch(() => undefined);
       }
       await this.service.call("meeting.delete", { meetingId: session.id }, { hostId: session.hostId }).catch(() => undefined);
-      await this.bb.storage.kv.delete(this.sessionKey);
+      await this.alia.storage.kv.delete(this.sessionKey);
     }
     await this.profile("delete");
     this.changed();

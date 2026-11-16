@@ -1,4 +1,4 @@
-/* Notion palette for bb. Light: Notion's white page and warm grey text.
+/* Notion palette for alia. Light: Notion's white page and warm grey text.
    Dark: Notion's #191919 page. Fonts follow Notion's "Default" style. */
 :root,
 .light {
@@ -52,7 +52,7 @@
   --file-accent: #ff7369;
 }
 
-/* ---------- Notion shapes on top of bb's layout ----------
+/* ---------- Notion shapes on top of alia's layout ----------
    Hooks into stable data-* attributes and Radix parts only. */
 :root, .light {
   --notion-shadow: rgba(15,15,15,.05) 0 0 0 1px, rgba(15,15,15,.1) 0 3px 6px, rgba(15,15,15,.2) 0 9px 24px;
@@ -192,7 +192,7 @@ form[data-promptbox] {
   box-shadow: 0 4px 12px rgba(15,15,15,.05), 0 1px 2px rgba(15,15,15,.04);
 }
 .dark form[data-promptbox] { box-shadow: 0 4px 12px rgba(0,0,0,.3); }
-/* Expanded box: roomier text area. The compact one-line box keeps bb's centring. */
+/* Expanded box: roomier text area. The compact one-line box keeps alia's centring. */
 form[data-promptbox]:not([data-promptbox-compact]) [data-promptbox-editor-scroll] { padding: 14px 18px 6px; }
 form[data-promptbox]:not([data-promptbox-compact]) [data-promptbox-editor-content] { font-size: 15px; line-height: 1.6; }
 form[data-promptbox]:not([data-promptbox-compact]) [data-promptbox-action-row] { padding: 4px 10px 10px; }
@@ -205,7 +205,7 @@ form[data-promptbox][data-promptbox-compact] [data-promptbox-action-row] { paddi
   border-radius: 8px;
 }
 [data-promptbox-action-row] button:not([data-promptbox-submit-action]):hover { background: var(--state-hover); color: var(--foreground); }
-/* Send control, every state. bb wraps send + "Send options" chevron in
+/* Send control, every state. alia wraps send + "Send options" chevron in
    [data-promptbox-send-menu]; style that wrapper as one Notion pill:
    dark when sending is possible, light grey when not. Icon-only send is a
    32px circle; a labelled send ("New thread") grows to fit its text. */
@@ -305,7 +305,7 @@ form[data-promptbox] button[aria-label="Expand prompt box"]:hover {
 /* Footer row: small and quiet */
 [class*="@container/context-window"] > div > div:last-child { font-size: 12px; color: var(--subtle-foreground); }
 
-/* Hover cards fade out quickly once they close (bb's default is 150ms). */
+/* Hover cards fade out quickly once they close (alia's default is 150ms). */
 [data-radix-popper-content-wrapper] > [role="dialog"][data-state="closed"] { animation-duration: 60ms !important; }
 
 /* ---------- Model picker (provider tabs, search, models, reasoning) ---------- */
@@ -448,7 +448,7 @@ dl [data-info-section] li button, dl [data-info-section] li .text-subtle-foregro
 :is([data-radix-menu-content], [role="dialog"], [data-radix-select-content]) svg[data-icon="Check"] * { stroke-width: 2.6 !important; }
 
 /* ---------- New tab page (right panel, ⌘T): actions as big Notion cards ----------
-   One column on purpose: bb reorders these by dragging along a vertical list,
+   One column on purpose: alia reorders these by dragging along a vertical list,
    so a multi-column grid would break drag-and-drop. */
 div.flex-col:has(> div > div > button[data-panel-new-tab-item]) {
   gap: 6px !important;

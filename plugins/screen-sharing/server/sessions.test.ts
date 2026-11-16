@@ -119,7 +119,7 @@ describe("sessions", () => {
     const ends = [vi.fn(), vi.fn()];
     const sessions = ends.map((end) => registry.open("mini", end));
     expect(registry.closeAll()).toBe(2);
-    for (const end of ends) expect(end).toHaveBeenCalledWith(CloseCode.closedByUser, "closed from bb");
+    for (const end of ends) expect(end).toHaveBeenCalledWith(CloseCode.closedByUser, "closed from VesnALIA");
     // The relay reports the sockets closing afterwards; that changes nothing.
     for (const session of sessions) session.closed();
     expect(registry.closeAll()).toBe(0);

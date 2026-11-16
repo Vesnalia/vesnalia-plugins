@@ -1,4 +1,4 @@
-import type { PluginKvStorage } from "@get-bb/plugin-sdk";
+import type { PluginKvStorage } from "@vesnalia/plugin-sdk";
 import { accountRecordSchema, type AccountRecord, type ServiceId } from "./contract.ts";
 
 import { SERVICES } from "./service-catalog.ts";

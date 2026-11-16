@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { ReviewMeta } from "./store";
 import { isLocal, linesOf, postedBody, sameLocation, type CommentLocation, type DraftComment } from "./draft";
 import { runGh } from "./gh";
@@ -13,10 +13,10 @@ import { placeFacts, reviewPlaces } from "./review-places";
 /** A review with where its code is (src/review-places.ts), as its messages name it. */
 export type Placed = ReviewMeta & { place?: ReviewPlace | null };
 
-/** `review` with its place among your reviews; read outside the store's lock, as it asks bb. */
-export async function placed(bb: BbPluginApi, store: AsyncStore, review: ReviewMeta): Promise<Placed> {
+/** `review` with its place among your reviews; read outside the store's lock, as it asks VesnALIA. */
+export async function placed(alia: AliaPluginApi, store: AsyncStore, review: ReviewMeta): Promise<Placed> {
   const all = await store.listReviews();
-  return { ...review, place: reviewPlaces(await placeFacts(bb, all), all).get(review.targetKey) ?? null };
+  return { ...review, place: reviewPlaces(await placeFacts(alia, all), all).get(review.targetKey) ?? null };
 }
 
 const MAX_CODE_LINES = 40;
@@ -60,7 +60,7 @@ const quoted = (title: string) => JSON.stringify(title.replace(/\s+/g, " ").trim
 /**
  * Which review is talking, first, as the thread may hear from several: 'Review api#4512 "Fix login race", from Code
  * Review Workspace:', by the PR's title, which agents keep, not your name for it. A local review's adds its machine
- * and folder: a folder's review its own, a checkout's the bb server's.
+ * and folder: a folder's review its own, a checkout's the VesnALIA server's.
  */
 export function header(review: Placed): string {
   const machine = review.kind === "ref" && review.place?.machine;
@@ -116,9 +116,9 @@ export function fixMessage(review: Placed, comments: readonly FixComment[], patc
 }
 
 /** What a thread the plugin starts to fix comments runs on: the review agent's execution, or else the project's defaults. */
-export async function fixerExecution(bb: BbPluginApi, store: AsyncStore, projectId: string) {
+export async function fixerExecution(alia: AliaPluginApi, store: AsyncStore, projectId: string) {
   const agent = (await store.getPreferences()).preferences.assistantAgent;
-  if (!agent && !(await bb.sdk.projects.defaultExecutionOptions({ projectId }).catch(() => null))) throw new Error("bb has no default agent for the review's project. Choose an agent for the Review agent in Review settings.");
+  if (!agent && !(await alia.sdk.projects.defaultExecutionOptions({ projectId }).catch(() => null))) throw new Error("alia has no default agent for the review's project. Choose an agent for the Review agent in Review settings.");
   return spawnExecution(agent);
 }
 
@@ -142,11 +142,11 @@ export const onlyLocal = (kept: number, not: "sent" | "started", sendOn = true) 
  * not on GitHub yet stays out, as the thread checks out the PR's head, which hasn't its line (`keptLocal`). The draft
  * stays as it is.
  */
-export async function startFixThread(bb: BbPluginApi, store: AsyncStore, targetKey: string, picked: readonly CommentLocation[], force = false): Promise<{ ok: true; threadId: string; title: string; keptLocal?: number } | { ok: false; warning: string; offers: ["anyway"] }> {
+export async function startFixThread(alia: AliaPluginApi, store: AsyncStore, targetKey: string, picked: readonly CommentLocation[], force = false): Promise<{ ok: true; threadId: string; title: string; keptLocal?: number } | { ok: false; warning: string; offers: ["anyway"] }> {
   const review = await store.getReview(targetKey);
   if (!review) throw new Error("This review no longer exists.");
   if (!force && !(await isOwnChange(review))) return { ok: false, warning: `${theirPr(review)} Start a thread to fix it anyway?`, offers: ["anyway"] };
-  if (!review.projectId) throw new Error("This review has no associated project; re-run `bb review` inside a project.");
+  if (!review.projectId) throw new Error("This review has no associated project; re-run `alia review` inside a project.");
   // What the message says, read in one turn.
   const { chosen, patch, stale, preExistingFindings, sendOn, guideTitle } = await store.exclusive(async (tx) => {
     const { preferences } = await tx.getPreferences();
@@ -159,12 +159,12 @@ export async function startFixThread(bb: BbPluginApi, store: AsyncStore, targetK
   const comments = chosen.filter((comment) => !isLocal(comment));
   const keptLocal = chosen.length - comments.length;
   if (!comments.length) throw new Error(keptLocal ? onlyLocal(keptLocal, "started", sendOn) : "Those comments are no longer in the draft.");
-  const execution = await fixerExecution(bb, store, review.projectId);
-  const shown = await placed(bb, store, review);
+  const execution = await fixerExecution(alia, store, review.projectId);
+  const shown = await placed(alia, store, review);
   // Its message names the PR by its title.
   const title = fixerTitle(shown, guideTitle);
   try {
-    const thread = await bb.sdk.threads.spawn({
+    const thread = await alia.sdk.threads.spawn({
       projectId: review.projectId, environment: { type: "project-default" },
       prompt: fixMessage(shown, comments, patch, stale, preExistingFindings),
       title,

@@ -23,7 +23,7 @@ import {
   dynamicMcpRegistrationRequest,
   dynamicMcpServerName,
   dynamicMcpRemovalRequest,
-  resolveBbBinDir,
+  resolveAliaBinDir,
   sessionEnvironmentRequest,
   sessionEnvironmentVariables,
   sessionInstructionsRequest,
@@ -85,7 +85,7 @@ export function sessionFromParams(
   assertModelEnabled(model, enabledModels);
 
   return {
-    bbThreadId: String(params.threadId),
+    aliaThreadId: String(params.threadId),
     providerThreadId,
     cwd: String(params.cwd),
     permissionMode: parsePermissionMode(options.permissionMode),
@@ -107,7 +107,7 @@ export function sessionFromParams(
   };
 }
 
-/** The agent BB's `agent` session option carries, when it sent one. */
+/** The agent VesnALIA's `agent` session option carries, when it sent one. */
 function nativeAgentChoice(options: RecordValue) {
   return stringValue(inputRecord(options.sessionOptions)[AGENT_OPTION_ID]);
 }
@@ -125,17 +125,17 @@ async function installDynamicTools(session: SessionState) {
       arguments: toolArguments,
     }): Promise<DynamicToolCallResult> => {
       // Resolve the live session on every call so a reused proxy keeps
-      // working after BB re-sends construction (resume) for the same thread.
+      // working after VesnALIA re-sends construction (resume) for the same thread.
       const current =
         sessionId !== undefined
           ? sessionsByProviderId.get(sessionId)
           : undefined;
-      if (!current || current.bbThreadId !== session.bbThreadId) {
-        return { content: "BB thread session not found", isError: true };
+      if (!current || current.aliaThreadId !== session.aliaThreadId) {
+        return { content: "VesnALIA thread session not found", isError: true };
       }
       if (!current.active)
         return {
-          content: "No active BB turn for this tool call",
+          content: "No active VesnALIA turn for this tool call",
           isError: true,
         };
       if (!current.dynamicTools.some((tool) => tool.name === toolName)) {
@@ -145,14 +145,14 @@ async function installDynamicTools(session: SessionState) {
         arguments: toolArguments,
         providerThreadId: current.providerThreadId,
         scope: current.dynamicToolScope,
-        threadId: current.bbThreadId,
+        threadId: current.aliaThreadId,
         toolName,
       });
     },
   });
   session.dynamicToolProxy = proxy;
   try {
-    // `codemode: false` in the proxy config exposes each BB tool directly.
+    // `codemode: false` in the proxy config exposes each VesnALIA tool directly.
     const request = dynamicMcpRegistrationRequest(
       proxy.serverName,
       session.cwd,
@@ -160,7 +160,7 @@ async function installDynamicTools(session: SessionState) {
     );
     await openCodeServer.request(request.path, request.init);
     // OpenCode starts the MCP child asynchronously, so a turn sent right
-    // after setup would not see BB's tools. Wait until it can. This runs only
+    // after setup would not see VesnALIA's tools. Wait until it can. This runs only
     // when the server is (re)registered, not on every turn.
     await openCodeServer.waitForMcpServer(proxy.serverName, session.cwd);
     await openCodeServer.rememberMcpRegistration(session.providerThreadId, {
@@ -206,7 +206,7 @@ async function installSessionInstructions(session: SessionState) {
 }
 
 /**
- * Keep OpenCode's session ruleset in step with BB's permission mode. BB can
+ * Keep OpenCode's session ruleset in step with VesnALIA's permission mode. VesnALIA can
  * change the mode per turn, so callers pass the turn's mode; an unchanged
  * ruleset is not re-sent.
  */
@@ -232,13 +232,13 @@ export async function ensureSessionPermissions(
 }
 
 async function installSessionEnvironment(session: SessionState) {
-  // Best-effort: a session without the BB environment still runs, it just
-  // lacks `bb` on PATH for its shells. Never fail session setup for this.
+  // Best-effort: a session without the VesnALIA environment still runs, it just
+  // lacks `VesnALIA` on PATH for its shells. Never fail session setup for this.
   try {
     const variables = sessionEnvironmentVariables({
       hostEnv: process.env,
       bridgeEnvVars: session.bridgeEnvVars,
-      bbBinDir: await resolveBbBinDir(),
+      aliaBinDir: await resolveAliaBinDir(),
     });
     const request = sessionEnvironmentRequest(
       session.providerThreadId,
@@ -253,7 +253,7 @@ async function installSessionEnvironment(session: SessionState) {
 }
 
 export async function registerSession(session: SessionState) {
-  const previous = sessions.get(session.bbThreadId);
+  const previous = sessions.get(session.aliaThreadId);
   const reusableProxy =
     previous &&
     previous.providerThreadId === session.providerThreadId &&
@@ -270,14 +270,14 @@ export async function registerSession(session: SessionState) {
       // session object through live lookup.
       dynamicToolCallRouter.resolve(
         previous.dynamicToolScope,
-        "The BB thread session was replaced",
+        "The VesnALIA thread session was replaced",
       );
     } else {
-      await releaseDynamicTools(previous, "The BB thread session was replaced");
+      await releaseDynamicTools(previous, "The VesnALIA thread session was replaced");
     }
     sessionsByProviderId.delete(previous.providerThreadId);
   }
-  sessions.set(session.bbThreadId, session);
+  sessions.set(session.aliaThreadId, session);
   sessionsByProviderId.set(session.providerThreadId, session);
   if (reusableProxy) session.dynamicToolProxy = reusableProxy;
   try {
@@ -285,7 +285,7 @@ export async function registerSession(session: SessionState) {
     await ensureSessionPermissions(session);
     if (!reusableProxy) await installDynamicTools(session);
   } catch (error) {
-    sessions.delete(session.bbThreadId);
+    sessions.delete(session.aliaThreadId);
     sessionsByProviderId.delete(session.providerThreadId);
     await releaseDynamicTools(session, "OpenCode session setup failed");
     throw error;
@@ -295,7 +295,7 @@ export async function registerSession(session: SessionState) {
   // session even after a worker restart. A registry failure only degrades to
   // the old in-memory behavior.
   await openCodeServer
-    .rememberSessionRegistration(session.bbThreadId, {
+    .rememberSessionRegistration(session.aliaThreadId, {
       providerThreadId: session.providerThreadId,
       cwd: session.cwd,
       usage: { ...session.usage },
@@ -311,8 +311,8 @@ export async function unregisterSession(
   session: SessionState,
   reason: string,
 ): Promise<void> {
-  if (sessions.get(session.bbThreadId) === session) {
-    sessions.delete(session.bbThreadId);
+  if (sessions.get(session.aliaThreadId) === session) {
+    sessions.delete(session.aliaThreadId);
   }
   if (sessionsByProviderId.get(session.providerThreadId) === session) {
     sessionsByProviderId.delete(session.providerThreadId);
@@ -320,7 +320,7 @@ export async function unregisterSession(
   session.active?.abortController.abort();
   await releaseDynamicTools(session, reason);
   await openCodeServer
-    .forgetSessionRegistration(session.bbThreadId)
+    .forgetSessionRegistration(session.aliaThreadId)
     .catch(() => {});
 }
 
@@ -333,7 +333,7 @@ export async function ensureSessionModel(
   assertModelEnabled(desired, session.enabledModels);
   const entry = await openCodeServer.lookupModel(session.cwd, modelId(desired));
   if (entry) session.contextWindow = entry.contextWindow;
-  // BB levels the model lacks are not sent; compare what OpenCode receives.
+  // VesnALIA levels the model lacks are not sent; compare what OpenCode receives.
   const resolved = resolveModelVariant(desired, entry);
   if (!force && sameModelRef(session.model, resolved)) return;
   const request = modelSwitchRequest(session.providerThreadId, resolved);
@@ -380,7 +380,7 @@ export async function shutdownSessions(reason: string): Promise<void> {
 }
 
 /**
- * Switch the OpenCode agent to the one picked through BB's `agent` session
+ * Switch the OpenCode agent to the one picked through VesnALIA's `agent` session
  * option. Without a pick, an agent the user chose in OpenCode itself is left
  * alone.
  */
@@ -406,7 +406,7 @@ export async function ensureSessionAgent(
 }
 
 /**
- * Tell BB which agent this thread is on, so `bb thread options` and the
+ * Tell VesnALIA which agent this thread is on, so `alia thread options` and the
  * composer can show and change it after the thread exists. The model list only
  * offers the option before a thread does.
  */
@@ -420,17 +420,17 @@ export async function publishAgentOption(session: SessionState) {
   const serialized = JSON.stringify(options);
   if (session.publishedAgentOptions === serialized) return;
   session.publishedAgentOptions = serialized;
-  emit(session.bbThreadId, [
+  emit(session.aliaThreadId, [
     {
       kind: "extension.state",
-      extensionKind: "bb/session-options",
+      extensionKind: "alia/session-options",
       payload: { options },
     },
   ]);
 }
 
 /**
- * Bring the OpenCode session in line with this turn's BB options before
+ * Bring the OpenCode session in line with this turn's VesnALIA options before
  * prompting: plugin settings, permission mode, agent, and model.
  */
 export async function prepareTurn(session: SessionState, options: unknown) {
@@ -448,7 +448,7 @@ export async function prepareTurn(session: SessionState, options: unknown) {
     session,
     parsePermissionMode(opts.permissionMode) ?? session.permissionMode,
   );
-  // BB sends its native choice only when it changes, so keep it for later turns.
+  // VesnALIA sends its native choice only when it changes, so keep it for later turns.
   session.agentChoice = nativeAgentChoice(opts) ?? session.agentChoice;
   await ensureSessionAgent(session, session.agentChoice);
   void publishAgentOption(session);

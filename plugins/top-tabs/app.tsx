@@ -1,4 +1,4 @@
-// bb-plugin-top-tabs — Browser-style thread tabs across the top of bb.
+// alia-plugin-top-tabs — Browser-style thread tabs across the top of VesnALIA.
 //
 // The strip is an app-wide overlay portaled to document.body. While it is
 // mounted it injects a <style> that moves the app shell down by the strip's
@@ -13,15 +13,15 @@ import {
   experimental_ThreadStatusGlyph as ThreadStatusGlyph,
   experimental_THREAD_ACTION_GROUPS as THREAD_ACTION_GROUPS,
   experimental_useSidebarThreads as useSidebarThreads,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useSidebarThreadDraft,
   useSidebarThreadRowStatus,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 type SidebarThread = ReturnType<typeof useSidebarThreads>["threads"][number];
 
-const STORAGE_KEY = "bb-plugin-top-tabs:v1";
+const STORAGE_KEY = "alia-plugin-top-tabs:v1";
 const BAR_HEIGHT = 40;
 const MIN_WIDTH_PX = 640;
 
@@ -55,11 +55,11 @@ function toTime(value: unknown): number {
 }
 
 function isMacDesktop(): boolean {
-  const w = window as unknown as { bbDesktop?: unknown };
+  const w = window as unknown as { aliaDesktop?: unknown };
   const platform =
     (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData
       ?.platform ?? navigator.platform ?? "";
-  return typeof w.bbDesktop !== "undefined" && /mac/i.test(platform || navigator.userAgent);
+  return typeof w.aliaDesktop !== "undefined" && /mac/i.test(platform || navigator.userAgent);
 }
 
 type DesktopWindowState = { isFullScreen: boolean };
@@ -69,12 +69,12 @@ type DesktopWindowApi = {
 };
 
 // macOS hides the traffic lights in full screen, so the bar no longer needs
-// to leave room for them. Older bb builds lack these hooks; assume windowed.
+// to leave room for them. Older VesnALIA builds lack these hooks; assume windowed.
 function useFullScreen(enabled: boolean): boolean {
   const [fullScreen, setFullScreen] = useState(false);
   useEffect(() => {
     if (!enabled) return;
-    const desktop = (window as unknown as { bbDesktop?: DesktopWindowApi }).bbDesktop;
+    const desktop = (window as unknown as { aliaDesktop?: DesktopWindowApi }).aliaDesktop;
     let alive = true;
     const apply = (state: DesktopWindowState | undefined) => {
       if (alive && state) setFullScreen(state.isFullScreen);
@@ -164,8 +164,8 @@ function ThreadTabsOverlay() {
 }
 
 function ThreadTabsBar() {
-  const { threadId: activeThreadId } = useBbContext();
-  const navigate = useBbNavigate();
+  const { threadId: activeThreadId } = useAliaContext();
+  const navigate = useAliaNavigate();
   const { tabs, setIds, projectNames } = useTabList(activeThreadId);
   const [mac] = useState(isMacDesktop);
   const fullScreen = useFullScreen(mac);
@@ -224,7 +224,7 @@ function ThreadTabsBar() {
   }, [tabs, activeThreadId, navigate]);
 
   // Keep the active tab in view when the strip scrolls. Scroll the strip
-  // itself: scrollIntoView would also scroll the document, which bb resets.
+  // itself: scrollIntoView would also scroll the document, which VesnALIA resets.
   useEffect(() => {
     const strip = scrollRef.current;
     if (!activeThreadId || !strip) return;
@@ -453,31 +453,31 @@ function ThreadTab(props: ThreadTabProps) {
 }
 
 // ---------------------------------------------------------------------------
-// Styles. Plain CSS keyed to bb's theme tokens so light, dark and custom
+// Styles. Plain CSS keyed to VesnALIA's theme tokens so light, dark and custom
 // palettes follow automatically.
 
 function shellCss(mac: boolean, fullScreen: boolean): string {
   const h = `${BAR_HEIGHT}px`;
-  // bb publishes the space its own title bar keeps clear of the macOS traffic
-  // lights as --bb-macos-traffic-light-reserve (inset + button cluster +
-  // clearance, scaled for zoom), so the first tab starts where bb's controls
-  // do and follows bb when macOS changes the buttons. The strip's own 10px
-  // holds the active tab's curved corner. 89px is bb's value at 100% zoom.
+  // VesnALIA publishes the space its own title bar keeps clear of the macOS traffic
+  // lights as --alia-macos-traffic-light-reserve (inset + button cluster +
+  // clearance, scaled for zoom), so the first tab starts where VesnALIA's controls
+  // do and follows VesnALIA when macOS changes the buttons. The strip's own 10px
+  // holds the active tab's curved corner. 89px is VesnALIA's value at 100% zoom.
   // In full screen the traffic lights are hidden, so no inset is needed.
   const leading = !mac
     ? "8px"
     : fullScreen
       ? "0px"
-      : "calc(var(--bb-macos-traffic-light-reserve, 89px) - 10px)";
+      : "calc(var(--alia-macos-traffic-light-reserve, 89px) - 10px)";
   return `
-/* Only #root moves. html and body keep the full window height, because bb
+/* Only #root moves. html and body keep the full window height, because VesnALIA
    compares body.clientHeight with visualViewport.height to detect an
    on-screen keyboard; a shorter body makes it rewrite the shell height on
    every focus change (the app jumps and flickers). The transform makes #root
-   the containing block for bb's fixed-position sidebar. */
+   the containing block for VesnALIA's fixed-position sidebar. */
 @media (min-width: ${MIN_WIDTH_PX}px) {
-  body.bb-app-shell #root {
-    --bb-shell-height: calc(100dvh - ${h}) !important;
+  body.alia-app-shell #root {
+    --alia-shell-height: calc(100dvh - ${h}) !important;
     height: calc(100% - ${h}) !important;
     transform: translateY(${h});
   }
@@ -566,7 +566,7 @@ function shellCss(mac: boolean, fullScreen: boolean): string {
   background: var(--btt-hover);
   pointer-events: none;
 }
-/* In the desktop app bb frames the window (data-framed on the sidebar
+/* In the desktop app VesnALIA frames the window (data-framed on the sidebar
    wrapper), and the strip under the bar is that frame: bg-sidebar with a
    --surface-recessed layer on top. Paint the same two layers. */
 body:has([data-framed]) [data-top-tabs-bar] {

@@ -1,10 +1,10 @@
 /**
  * The whole server against the SDK's fake host, for the push notification
- * when a job starts failing: the setting, the call to bb's Push notifications
+ * when a job starts failing: the setting, the call to VesnALIA's Push notifications
  * plugin, and what a reload remembers. The host entry is a stub answering
- * `health`; nothing here talks to a running bb or sends a real notification.
+ * `health`; nothing here talks to a running VesnALIA or sends a real notification.
  */
-import { createFakePluginHost, makeHostResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeHostResponse } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 
 import plugin from "./server";
@@ -22,7 +22,7 @@ async function start(options: { pushFails?: boolean } = {}) {
   const state = { failing: [] as FailingJob[] };
   const pushes: unknown[] = [];
   // Given at creation rather than stubbed afterwards, so the instance a reload makes has them too.
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "launchd-jobs",
     sdk: {
       system: { config: async () => ({ primaryHostId: "mini" }) as never },
@@ -40,7 +40,7 @@ async function start(options: { pushFails?: boolean } = {}) {
       return { supported: true, jobCount: 2, failing: state.failing };
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   let current = harness;
   return {
     state,

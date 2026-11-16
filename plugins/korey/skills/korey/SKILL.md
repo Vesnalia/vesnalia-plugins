@@ -5,7 +5,7 @@ description: Ask Korey to research connected tools or carry out requested action
 
 # Ask Korey
 
-Korey provides shared access to its connectors across bb harnesses. Delegate the
+Korey provides shared access to its connectors across VesnALIA harnesses. Delegate the
 user’s desired outcome and relevant context to Korey, and let it handle the
 service-specific details using its connector access and workspace conventions.
 Connector setup, credentials, and reauthentication are managed in Korey. If Korey
@@ -24,7 +24,7 @@ Use `korey_ask` with `mode: "consult"` for research, questions, analysis, and
 drafts. This is the default when mode is omitted. Korey is instructed to return
 information without changing connected services for that request. Consultation
 and change modes are prompt instructions; connector permissions remain in Korey.
-The current bb thread gets a private Korey conversation on its first request
+The current VesnALIA thread gets a private Korey conversation on its first request
 if no conversation is linked.
 
 Use `korey_shortcut_change` when the user asks Korey to create or update a Shortcut
@@ -43,7 +43,7 @@ to inspect the outcome, and pending consultations do not block new requested cha
 
 Use `korey_status`, `korey_list_threads`, `korey_get_thread`, and
 `korey_link_thread` to inspect Korey and continue an existing private
-conversation. Use `korey_unlink_thread` to remove the current bb-thread mapping
+conversation. Use `korey_unlink_thread` to remove the current alia-thread mapping
 without changing the remote conversation. Follow pagination cursors when a
 result reports `has_more`.
 
@@ -84,9 +84,9 @@ Older consultations have no operation record. Inspect their original Korey
 conversation with `korey_get_thread` and follow pagination to retrieve the
 answer; do not send a replacement request.
 
-For equivalent CLI commands, use `bb korey --help`.
+For equivalent CLI commands, use `alia korey --help`.
 
 After the user has inspected Korey and the affected service and requests closeout, run
-`bb korey operation resolve <operation-id> "<inspection result>"`. bb requires
+`alia korey operation resolve <operation-id> "<inspection result>"`. VesnALIA requires
 the user's confirmation of the operation and note. `manually-resolved` records
 local closeout; it does not verify completion or cancel work in Korey.

@@ -1,5 +1,5 @@
 // The onboarding step another plugin reads: its states and which machine it asks.
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import type { ConnectionStatus } from "../contract";
 import plugin from "../server";
@@ -46,7 +46,7 @@ describe("setupFromStatus", () => {
 
 async function setup(options: { hosts?: string[]; offline?: string[]; primary?: string | null; lastHost?: string; hostAnswer?: () => ConnectionStatus } = {}) {
   const asked: string[] = [];
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "qlik-sense",
     settings: { allowedModels: "" },
     agentSkillIds: ["qlik-sense"],
@@ -66,13 +66,13 @@ async function setup(options: { hosts?: string[]; offline?: string[]; primary?: 
       return options.hostAnswer();
     },
   });
-  await plugin(bb);
-  if (options.lastHost) await bb.storage.kv.set("ui:lastHost", options.lastHost);
+  await plugin(alia);
+  if (options.lastHost) await alia.storage.kv.set("ui:lastHost", options.lastHost);
   return { harness, asked };
 }
 
 describe("setupStatus RPC", () => {
-  it("answers another plugin from bb's own machine", async () => {
+  it("answers another plugin from VesnALIA's own machine", async () => {
     const { harness, asked } = await setup({ hostAnswer: () => status({ catalogApps: 0 }) });
     expect(await harness.callRpc("setupStatus", { lang: "ru" }, asPlugin)).toEqual({
       state: "todo",
@@ -82,7 +82,7 @@ describe("setupStatus RPC", () => {
     expect(asked).toEqual(["host_mac"]);
   });
 
-  it("asks the machine the panel used last, the one named, or bb's machine when the last one is gone", async () => {
+  it("asks the machine the panel used last, the one named, or VesnALIA's machine when the last one is gone", async () => {
     const { harness, asked } = await setup({ hosts: ["host_mac", "host_win"], lastHost: "host_win", hostAnswer: () => status({}) });
     expect(await harness.callRpc("setupStatus", {}, asPlugin)).toMatchObject({ state: "done" });
     await harness.callRpc("setupStatus", { hostId: "host_mac" }, asPlugin);
@@ -118,9 +118,9 @@ describe("setupStatus RPC", () => {
     expect(await harness.callRpc("status", { hostId: "host_mac" })).toMatchObject({ url: "https://qlik.example.com/" });
   });
 
-  it("reports a bb without machines as a problem", async () => {
+  it("reports a VesnALIA without machines as a problem", async () => {
     const none = await setup({ hosts: [], primary: null });
-    expect(await none.harness.callRpc("setupStatus", {}, asPlugin)).toEqual({ state: "problem", summary: "No machine is connected to bb", path: SETUP_PATH });
+    expect(await none.harness.callRpc("setupStatus", {}, asPlugin)).toEqual({ state: "problem", summary: "No machine is connected to VesnALIA", path: SETUP_PATH });
     expect(none.asked).toEqual([]);
   });
 

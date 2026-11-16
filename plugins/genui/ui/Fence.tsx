@@ -1,8 +1,8 @@
 // One fenced block in an assistant reply: ```ui renders the spec language
-// through LiveUi, ```app renders a sandboxed HTML app. Both the BB fence slot
+// through LiveUi, ```app renders a sandboxed HTML app. Both the VesnALIA fence slot
 // and the DOM overlay mount this, so they behave the same.
 import { memo, useCallback, useMemo, useRef } from "react";
-import { useBbNavigate, useComposers, useSdk, type ExperimentalLiveFileTarget } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useComposers, useSdk, type ExperimentalLiveFileTarget } from "@vesnalia/plugin-sdk/app";
 import { compileStreaming } from "../core";
 import { fileOpenTarget, THREAD_STORAGE_PREFIX } from "../core/file-target";
 import { useAnswerComposers } from "./answerSheet";
@@ -28,7 +28,7 @@ export interface ThreadActions {
 export function useThreadActions(): ThreadActions {
   useAnswerComposers(useComposers());
   const sdk = useSdk();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const send = useCallback(
     async (threadId: string, text: string) => {
       await sdk.threads.send({ threadId, mode: "queue-if-active", input: [{ type: "text", text, mentions: [] }] });
@@ -41,7 +41,7 @@ export function useThreadActions(): ThreadActions {
       const open = (target: ExperimentalLiveFileTarget) => navigate.experimental_openFilePreview({ target, location });
       // An absolute path is placed by the thread's roots (core/file-target.ts),
       // the same ones data-source.ts reads Image(path) and Load(path) from; a
-      // `$BB_THREAD_STORAGE/` path needs neither the thread nor its roots.
+      // `$ALIA_THREAD_STORAGE/` path needs neither the thread nor its roots.
       const absolute = path.startsWith("/");
       const [thread, storage] = await Promise.all([
         path.startsWith(THREAD_STORAGE_PREFIX) ? null : sdk.threads.get({ threadId, include: "environment" }),
@@ -79,7 +79,7 @@ export const Fence = memo(function Fence({
   complete: boolean;
   stateKey: string;
   threadId: string;
-  /** The assistant message holding the block: BB's message id, which is also its timeline row id. */
+  /** The assistant message holding the block: VesnALIA's message id, which is also its timeline row id. */
   messageId: string;
   /** The block's index among the message's blocks of its language. */
   fence: number;
@@ -128,7 +128,7 @@ function AppFence({
 }) {
   const answers = useAnswerTarget(threadId, messageId, fence, actions);
   const superseded = useSuperseded(threadId, messageId);
-  // Null while BB's outline is read: an app's answers stay open until it says.
+  // Null while VesnALIA's outline is read: an app's answers stay open until it says.
   return <AppBlock html={code} ready={complete} stateKey={stateKey} answers={answers} superseded={superseded === true} />;
 }
 

@@ -172,7 +172,7 @@ export class AndroidAdb {
 
   async installAndLaunch(serial: string, apkPath: string, packageName: string, signal?: AbortSignal) {
     if (!isAbsolute(apkPath) || !apkPath.toLowerCase().endsWith(".apk") || apkPath.includes("\0"))
-      throw new Error("apkPath must be an absolute path to an APK on the BB server host.");
+      throw new Error("apkPath must be an absolute path to an APK on the VesnALIA server host.");
     validatePackage(packageName);
     await this.device(serial, ["install", "-r", apkPath], { signal, timeoutMs: 120_000 });
     await this.launch(serial, packageName, signal);

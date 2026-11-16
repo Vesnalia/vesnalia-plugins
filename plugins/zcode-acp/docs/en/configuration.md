@@ -2,7 +2,7 @@
 
 ## Select ZCode CLI
 
-Open the model picker in a new BB thread and select **ZCode CLI**. The provider ID is `acp-zcode-cli`.
+Open the model picker in a new VesnALIA thread and select **ZCode CLI**. The provider ID is `acp-zcode-cli`.
 
 ![ZCode CLI models grouped by their source prefixes](/screenshots/model-picker.png)
 
@@ -14,7 +14,7 @@ Open the model picker in a new BB thread and select **ZCode CLI**. The provider 
 | Start Plan · Z.ai / BigModel | Uses the Desktop sign-in and a verified, positive, unexpired model balance. It does not fall back to Coding Plan when unavailable. |
 | Personal API connection, such as B.AI | Uses the connection already configured in ZCode. Each source retains its own identity. |
 
-BB 0.49 displays a flat model list, so source names are included in row labels. Coding Plan and Start Plan appear first. Model availability comes from the native catalog and account service; an example screenshot is not a promise that the same models are available for every account.
+VesnALIA 0.49 displays a flat model list, so source names are included in row labels. Coding Plan and Start Plan appear first. Model availability comes from the native catalog and account service; an example screenshot is not a promise that the same models are available for every account.
 
 Reasoning choices, such as **Low**, **High** and **Max**, come from the selected model. Changing reasoning keeps its model ID stable.
 
@@ -23,8 +23,8 @@ Reasoning choices, such as **Low**, **High** and **Max**, come from the selected
 | Choice | Native mode |
 | --- | --- |
 | Standalone default | `build`: ask before changes. |
-| BB Accept edits | `edit`. It cannot be escalated to `yolo` by an environment override. |
-| BB Full | `yolo`. |
+| VesnALIA Accept edits | `edit`. It cannot be escalated to `yolo` by an environment override. |
+| VesnALIA Full | `yolo`. |
 | Explicit planning | `plan`, when selected through the adapter's configuration. |
 
 ACP tool permissions offer **allow once** and **deny**. Permanent grants are not forwarded.
@@ -76,7 +76,7 @@ zcode-acp --help
 | `ZCODE_STORAGE_DIR` | Explicit Desktop storage directory; otherwise `.zcode` under the configured data base/home is used. |
 | `ZCODE_DATA_BASE_DIR` | Base directory for the default `.zcode` storage location. |
 | `ZCODE_ACP_STATE_DIR` | Adapter session root; default `~/.zcode-bridge/native-acp`. |
-| `ZCODE_NATIVE_MODE` | `build`, `plan`, `edit` or `yolo`, within BB's permission limit. |
+| `ZCODE_NATIVE_MODE` | `build`, `plan`, `edit` or `yolo`, within VesnALIA's permission limit. |
 | `ZCODE_NATIVE_MEMORY` | `1` enables native memory for future sessions. Off by default to avoid background model requests. |
 
-Restart existing ACP sessions after changing their environment. Windows session folders use a current-user ACL; POSIX folders use mode 0700. ACP sessions use `bb-native-*` IDs and never resume Desktop-owned tasks.
+Restart existing ACP sessions after changing their environment. Windows session folders use a current-user ACL; POSIX folders use mode 0700. ACP sessions use `alia-native-*` IDs and never resume Desktop-owned tasks.

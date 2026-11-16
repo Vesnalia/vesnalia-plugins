@@ -1,4 +1,4 @@
-bb's usage card shows how much of each quota window you used, and when it
+VesnALIA's usage card shows how much of each quota window you used, and when it
 resets. It does not show if your rate lasts until then. With 42% used and five
 days to go, are you fine or not? Usage Pace answers that in the same card.
 
@@ -16,16 +16,16 @@ days to go, are you fine or not? Usage Pace answers that in the same card.
   left.
 - **The same on a touch screen.** Tap a row to show the lines. Tap again to
   hide them.
-- **Grok Build in the card.** bb's Grok provider reports no usage. Usage
+- **Grok Build in the card.** VesnALIA's Grok provider reports no usage. Usage
   Pace adds a Grok Build tab with the weekly or monthly credits and their
   pace.
-- **Which provider failed.** When one provider fails, bb shows "Couldn't
+- **Which provider failed.** When one provider fails, VesnALIA shows "Couldn't
   refresh usage" on every tab. Usage Pace shows it only on the failed
   provider's tab, with that provider's error, and puts a red dot on that
   tab. You can dismiss the message until the failure changes.
-- **Fewer tabs.** bb lists some providers, such as Cursor, on every
+- **Fewer tabs.** VesnALIA lists some providers, such as Cursor, on every
   machine. A setting hides the tabs you do not use.
-- **`bb usage-pace`** prints each window with its pace in a terminal, and
+- **`alia usage-pace`** prints each window with its pace in a terminal, and
   `--json` gives agents a `pace` object for each window.
 - **Grok login renewal.** The Grok access token lasts 6 hours. Every 15
   minutes the plugin checks each connected machine and, at 5 hours, refreshes
@@ -46,13 +46,13 @@ early to judge pace".
 
 ## Requirements and data
 
-The plugin reads the data that bb's built-in Provider usage card already has,
+The plugin reads the data that VesnALIA's built-in Provider usage card already has,
 from that card's cache, so it adds no provider requests. It only adds
-elements to bb's card. If a bb update changes the card, the tick and the
+elements to VesnALIA's card. If a VesnALIA update changes the card, the tick and the
 lines stop showing, and nothing else breaks.
 
 For Grok Build, it registers a companion provider, "Grok Build (usage)", so
-bb's provider picker shows it next to bb's own "Grok Build". It reads the
+VesnALIA's provider picker shows it next to VesnALIA's own "Grok Build". It reads the
 Grok CLI login from `grok login` and asks xAI's billing service for the
 credit window. A setting turns this off.
 

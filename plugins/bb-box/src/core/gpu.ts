@@ -189,8 +189,8 @@ export interface Provider {
 
 function turnWholeOn(provider: Provider | null): string {
   return provider
-    ? `turn Whole cards on in ${provider.label}'s GPUs section in BB Box's settings, or with bb box backend set ${provider.id} --field whole-cards=true`
-    : "turn Whole cards on in the backend's GPUs section in BB Box's settings, or with bb box backend set <backend> --field whole-cards=true";
+    ? `turn Whole cards on in ${provider.label}'s GPUs section in VesnALIA Box's settings, or with VesnALIA box backend set ${provider.id} --field whole-cards=true`
+    : "turn Whole cards on in the backend's GPUs section in VesnALIA Box's settings, or with VesnALIA box backend set <backend> --field whole-cards=true";
 }
 
 function offOn(provider: Provider | null): string {

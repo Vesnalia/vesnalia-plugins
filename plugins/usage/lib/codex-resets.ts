@@ -13,7 +13,7 @@ const snapshotSchema = z.object({
 });
 
 export function parseCodexResetSnapshot(output: string) {
-  const json = output.match(/__BB_CODEX_RESETS_BEGIN__\s*([^\r\n]+)\s*__BB_CODEX_RESETS_END__/)?.[1];
+  const json = output.match(/__ALIA_CODEX_RESETS_BEGIN__\s*([^\r\n]+)\s*__ALIA_CODEX_RESETS_END__/)?.[1];
   if (!json) return null;
   try { return snapshotSchema.parse(JSON.parse(json)); } catch { return null; }
 }
@@ -105,7 +105,7 @@ export async function codexResetCollector() {
     child.stdin.write(JSON.stringify({ id, method, params }) + "\n");
   });
   try {
-    await request("initialize", { clientInfo: { name: "bb-usage", version: "1.0.0" }, capabilities: { experimentalApi: true } });
+    await request("initialize", { clientInfo: { name: "alia-usage", version: "1.0.0" }, capabilities: { experimentalApi: true } });
     child.stdin.write(JSON.stringify({ method: "initialized", params: {} }) + "\n");
     const { account } = await request("account/read", { refreshToken: false });
     if (account?.type !== "chatgpt" || typeof account.email !== "string" || typeof account.planType !== "string") return;
@@ -135,9 +135,9 @@ export async function codexResetCollector() {
     if (otherTypes > 0 && availableCount <= 0) return;
     // A capped detail list must not be mistaken for the account's full count.
     const resetCredits = { availableCount: Math.max(0, availableCount), credits };
-    console.log("__BB_CODEX_RESETS_BEGIN__");
+    console.log("__ALIA_CODEX_RESETS_BEGIN__");
     console.log(JSON.stringify({ accountEmail: account.email, planType: account.planType, resetCredits }));
-    console.log("__BB_CODEX_RESETS_END__");
+    console.log("__ALIA_CODEX_RESETS_END__");
   } catch {
     // Old CLIs, unavailable details, and signed-out accounts are unknown, not zero.
   } finally {

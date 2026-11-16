@@ -1,6 +1,6 @@
-import type { PluginContentScriptContext } from "@get-bb/plugin-sdk/app";
+import type { PluginContentScriptContext } from "@vesnalia/plugin-sdk/app";
 
-/** BB updates its theme style element in head. Never inspect conversation text. */
+/** VesnALIA updates its theme style element in head. Never inspect conversation text. */
 export function mountChrome({ signal }: PluginContentScriptContext) {
   const root = document.documentElement;
   const sync = () => {

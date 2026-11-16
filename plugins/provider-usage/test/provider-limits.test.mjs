@@ -26,7 +26,7 @@ const healthy = (planLabel) => ({
   windows: [],
 });
 
-test("normalizes BB 0.41 provider-id usage keys", () => {
+test("normalizes VesnALIA 0.41 provider-id usage keys", () => {
   const normalized = normalizeProviderLimits({
     codex: healthy("Pro"),
     "claude-code": healthy("Max (20x)"),

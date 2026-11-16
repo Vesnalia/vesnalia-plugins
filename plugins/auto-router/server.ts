@@ -2,9 +2,9 @@ import {
   cliCommand,
   defineCli,
   defineRpcContract,
-  type BbPluginApi,
+  type AliaPluginApi,
   type JsonValue,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
 import {
@@ -132,10 +132,10 @@ export const rpcContract = defineRpcContract({
   },
 });
 export default async function plugin(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   dependencies: { ask?: JevAsk; helperPollMs?: number } = {},
 ) {
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     classifierProvider: {
       type: "string",
       label: "Classification provider",
@@ -148,12 +148,12 @@ export default async function plugin(
     },
     nativeClassifierProvider: {
       type: "string",
-      label: "BB classification provider",
+      label: "VesnALIA classification provider",
       default: "codex",
     },
     nativeClassifierEffort: {
       type: "string",
-      label: "BB classification effort",
+      label: "VesnALIA classification effort",
       default: "",
     },
     openaiApiKey: { type: "string", label: "OpenAI API key", secret: true },
@@ -173,11 +173,11 @@ export default async function plugin(
       label: "Auto tools on manually selected models",
       default: false,
     },
-    bbRoot: {
+    aliaRoot: {
       type: "string",
-      label: "BB application root",
+      label: "VesnALIA application root",
       default:
-        "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app",
+        "/Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app",
     },
   });
   let currentSettings = await settings.get();
@@ -190,8 +190,8 @@ export default async function plugin(
   };
   async function refreshNativeSettings() {
     const results = await Promise.allSettled([
-      bb.sdk.plugins.getSettings({ pluginId: "provider-codex" }),
-      bb.sdk.plugins.getSettings({ pluginId: "provider-claude-code" }),
+      alia.sdk.plugins.getSettings({ pluginId: "provider-codex" }),
+      alia.sdk.plugins.getSettings({ pluginId: "provider-claude-code" }),
     ]);
     const codex = results[0];
     if (codex.status === "fulfilled") {
@@ -216,16 +216,16 @@ export default async function plugin(
   }
   await refreshNativeSettings();
   const refreshTimer = setInterval(() => {
-    void refreshNativeSettings().catch((error) => bb.log.warn(message(error)));
+    void refreshNativeSettings().catch((error) => alia.log.warn(message(error)));
   }, 30_000);
   const lifetime = new AbortController();
   const jobs = new Set<Promise<unknown>>();
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     clearInterval(refreshTimer);
     lifetime.abort();
     await Promise.allSettled([...jobs]);
   });
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   function askOnHost(hostId: string, signal?: AbortSignal): JevAsk {
     return (
       dependencies.ask ??
@@ -241,15 +241,15 @@ export default async function plugin(
   }
   async function cliHostId(threadId?: string): Promise<string> {
     if (threadId) {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (thread.environmentId) {
-        const environment = await bb.sdk.environments.get({
+        const environment = await alia.sdk.environments.get({
           environmentId: thread.environmentId,
         });
         return environment.hostId;
       }
     }
-    const primaryHostId = (await bb.sdk.system.config()).primaryHostId;
+    const primaryHostId = (await alia.sdk.system.config()).primaryHostId;
     if (!primaryHostId)
       throw new Error(
         "No primary machine is connected. Run this command from a thread with an environment.",
@@ -312,7 +312,7 @@ export default async function plugin(
         configuration,
         key,
         onePasswordReference: next.onePasswordReference,
-        bbRoot: next.bbRoot,
+        aliaRoot: next.aliaRoot,
         ...(configuration.provider === "native"
           ? { nativeProviderOptions: native[configuration.nativeProvider] }
           : {}),
@@ -325,7 +325,7 @@ export default async function plugin(
     provisioned.delete(hostId);
   });
   async function localModels(hostId: string) {
-    const providers = await bb.sdk.providers.list({ hostId });
+    const providers = await alia.sdk.providers.list({ hostId });
     const models: NativeModel[] = [];
     const warnings: string[] = [];
     const supported = providers.filter(
@@ -338,18 +338,18 @@ export default async function plugin(
         !supported.includes(provider)
       )
         warnings.push(
-          `${provider.displayName} is available in BB, but this version supports classification through Codex and Claude Code only.`,
+          `${provider.displayName} is available in VesnALIA, but this version supports classification through Codex and Claude Code only.`,
         );
     }
     for (const provider of supported) {
       if (!provider.available) {
         warnings.push(
-          `${provider.displayName} is not connected. Sign in through BB to use its models.`,
+          `${provider.displayName} is not connected. Sign in through VesnALIA to use its models.`,
         );
         continue;
       }
       try {
-        const catalog = await bb.sdk.providers.models({
+        const catalog = await alia.sdk.providers.models({
           hostId,
           providerId: provider.id,
         });
@@ -376,7 +376,7 @@ export default async function plugin(
         }
       } catch {
         warnings.push(
-          `BB could not load models for ${provider.displayName}. Refresh after checking its connection.`,
+          `VesnALIA could not load models for ${provider.displayName}. Refresh after checking its connection.`,
         );
       }
     }
@@ -397,17 +397,17 @@ export default async function plugin(
       canValidate: status.configured,
     };
   }
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async dashboard(input) {
       const hostId = input.hostId ?? (await cliHostId());
       const [retained, setup, rows] = await Promise.all([
         host.call("listSessions", {}, { hostId }),
         setupStatus(hostId),
-        bb.storage.kv.list("plan-history:"),
+        alia.storage.kv.list("plan-history:"),
       ]);
       const plans = [];
       for (const key of rows) {
-        const row = await bb.storage.kv.get(key);
+        const row = await alia.storage.kv.get(key);
         const parsed = z
           .object({
             threadId: z.string(),
@@ -418,9 +418,9 @@ export default async function plugin(
         if (parsed.success && parsed.data.hostId === hostId)
           plans.push(parsed.data);
       }
-      const latest = await bb.storage.kv.list("plan-routing:");
+      const latest = await alia.storage.kv.list("plan-routing:");
       for (const key of latest) {
-        const row = await bb.storage.kv.get(key);
+        const row = await alia.storage.kv.get(key);
         const threadId = key.slice("plan-routing:".length);
         if (plans.some((p) => p.threadId === threadId)) continue;
         const parsed = z
@@ -428,9 +428,9 @@ export default async function plugin(
           .safeParse(row);
         if (!parsed.success) continue;
         try {
-          const thread = await bb.sdk.threads.get({ threadId });
+          const thread = await alia.sdk.threads.get({ threadId });
           if (!thread.environmentId) continue;
-          const env = await bb.sdk.environments.get({
+          const env = await alia.sdk.environments.get({
             environmentId: thread.environmentId,
           });
           if (env.hostId === hostId)
@@ -452,10 +452,10 @@ export default async function plugin(
         [...new Set(retained.sessions.map((s) => s.threadId))].map(
           async (threadId) => {
             try {
-              const t = await bb.sdk.threads.get({ threadId });
+              const t = await alia.sdk.threads.get({ threadId });
               titles.set(threadId, t.title ?? threadId);
               if (
-                t.originPluginId === bb.pluginId &&
+                t.originPluginId === alia.pluginId &&
                 t.visibility === "hidden"
               ) {
                 for (const saved of retained.sessions)
@@ -494,7 +494,7 @@ export default async function plugin(
           item.modelId === input.modelId,
       );
       if (!model)
-        throw new Error("Select a model available through BB on this machine.");
+        throw new Error("Select a model available through VesnALIA on this machine.");
       const candidate = classifierConfigSchema.parse({
         provider: "native",
         nativeProvider: model.providerId,
@@ -506,7 +506,7 @@ export default async function plugin(
         {
           candidate,
           onePasswordReference: "",
-          bbRoot: currentSettings.bbRoot,
+          aliaRoot: currentSettings.aliaRoot,
           nativeProviderOptions: native[model.providerId],
         },
         { hostId, timeoutMs: 90000 },
@@ -529,7 +529,7 @@ export default async function plugin(
       const { hostId: requestedHostId, ...raw } = input;
       const candidate = classifierSetupInputSchema.parse(raw);
       if (candidate.provider === "native")
-        throw new Error("Use the BB model connection form.");
+        throw new Error("Use the VesnALIA model connection form.");
       const hostId = requestedHostId ?? (await cliHostId());
       const next = await settings.get();
       const existingKey = settingKey(next, candidate.provider);
@@ -575,14 +575,14 @@ export default async function plugin(
       return host.call("validateKey", {}, { hostId, timeoutMs: 90000 });
     },
   });
-  bb.providers.register({
+  alia.providers.register({
     id: "auto",
     displayName: "Model Pilot",
     icon: "Sparkles",
     family: "auto",
     strings: {
       signInHint:
-        "Choose a connected BB model in Model Pilot. Sign in to Codex or Claude Code through BB.",
+        "Choose a connected VesnALIA model in Model Pilot. Sign in to Codex or Claude Code through VesnALIA.",
       expiredHint: "Sign in to the selected native provider again.",
       installUrl: "https://getbb.app",
       planModeCopy:
@@ -622,25 +622,25 @@ export default async function plugin(
     },
     env: {
       passthrough: [
-        "BB_CODEX_EXECUTABLE",
-        "BB_CLAUDE_CODE_EXECUTABLE",
+        "ALIA_CODEX_EXECUTABLE",
+        "ALIA_CLAUDE_CODE_EXECUTABLE",
         "CLAUDE_CODE_OAUTH_TOKEN",
         "JEV_API_KEY",
       ],
     },
     deriveProviderOptions(ctx) {
       return {
-        bbRoot: currentSettings.bbRoot,
+        aliaRoot: currentSettings.aliaRoot,
         nativeProviderOptions: native,
         promptMode: ctx.promptMode ?? null,
       };
     },
   });
-  bb.providers.experimental_contributeEnv("auto", async ({ hostId }) => {
+  alia.providers.experimental_contributeEnv("auto", async ({ hostId }) => {
     await provisionKey(hostId);
     return [];
   });
-  bb.agents.configure((context) => ({
+  alia.agents.configure((context) => ({
     tools:
       context.pluginMetadata.autoHelper !== true &&
       !context.provider.model.startsWith("auto-helper:") &&
@@ -663,7 +663,7 @@ export default async function plugin(
     revision = revisions.get(id) ?? "",
   ): Promise<Plan> => {
     const parsed = planSchema.safeParse(
-      await bb.storage.kv.get(planKey(id, revision)),
+      await alia.storage.kv.get(planKey(id, revision)),
     );
     return parsed.success ? parsed.data : [];
   };
@@ -679,7 +679,7 @@ export default async function plugin(
       .catch(() => {})
       .then(async () => {
         next = change(await readPlan(id, revision));
-        await bb.storage.kv.set(planKey(id, revision), next);
+        await alia.storage.kv.set(planKey(id, revision), next);
       });
     locks.set(id, operation);
     try {
@@ -690,12 +690,12 @@ export default async function plugin(
     }
   }
   async function session(threadId: string, signal?: AbortSignal) {
-    const thread = await bb.sdk.threads.get({ threadId, signal });
+    const thread = await alia.sdk.threads.get({ threadId, signal });
     if (thread.providerId !== "auto" && !currentSettings.toolsOnPickedThreads)
       throw new Error("Auto tools are disabled for this thread.");
     if (thread.environmentId === null)
       throw new Error("The thread has no environment.");
-    const environment = await bb.sdk.environments.get({
+    const environment = await alia.sdk.environments.get({
       environmentId: thread.environmentId,
     });
     const state =
@@ -708,7 +708,7 @@ export default async function plugin(
         : { route: null, delegation: null, revision: null, history: [] };
     const revision = state.revision ?? "";
     revisions.set(threadId, revision);
-    const execution = await bb.sdk.threads.defaultExecutionOptions({
+    const execution = await alia.sdk.threads.defaultExecutionOptions({
       threadId,
     });
     const route =
@@ -745,7 +745,7 @@ export default async function plugin(
   ) {
     const listed = await Promise.all(
       [false, true].map((archived) =>
-        bb.sdk.threads.list({
+        alia.sdk.threads.list({
           environmentId: environment.id,
           includeHidden: true,
           archived,
@@ -759,7 +759,7 @@ export default async function plugin(
       .filter(
         (thread) =>
           thread.lifecycleOwnerThreadId === threadId &&
-          thread.originPluginId === bb.pluginId,
+          thread.originPluginId === alia.pluginId,
       );
     const states = await Promise.all(
       helpers.map((thread) =>
@@ -772,7 +772,7 @@ export default async function plugin(
     );
     return states.flatMap((state) => state.history);
   }
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "auto_plan",
     description:
       "List the steps for this task. The classification model assigns each step to the main agent or a helper.",
@@ -814,7 +814,7 @@ export default async function plugin(
         route,
         execution?.permissionMode,
       );
-      await bb.storage.kv.set(planKey(ctx.threadId), plan);
+      await alia.storage.kv.set(planKey(ctx.threadId), plan);
       if (thread.providerId === "auto")
         await host
           .call(
@@ -823,20 +823,20 @@ export default async function plugin(
             { hostId: environment.hostId, signal: ctx.signal },
           )
           .catch((error) =>
-            bb.log.warn(
+            alia.log.warn(
               `Auto plan display failed in ${ctx.threadId}: ${message(error)}`,
             ),
           );
       const at = Date.now();
-      await bb.storage.kv.set(`plan-routing:${ctx.threadId}`, {
+      await alia.storage.kv.set(`plan-routing:${ctx.threadId}`, {
         jev,
         plan,
         at,
       });
       const previous = z
         .object({ history: z.array(z.unknown()) })
-        .safeParse(await bb.storage.kv.get(`plan-history:${ctx.threadId}`));
-      await bb.storage.kv.set(`plan-history:${ctx.threadId}`, {
+        .safeParse(await alia.storage.kv.get(`plan-history:${ctx.threadId}`));
+      await alia.storage.kv.set(`plan-history:${ctx.threadId}`, {
         threadId: ctx.threadId,
         hostId: environment.hostId,
         history: [
@@ -849,7 +849,7 @@ export default async function plugin(
         .replaceAll("delegate tool", "auto_delegate tool");
     },
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "auto_step_done",
     description:
       "Mark your own completed plan steps. Helpers mark their steps when they finish.",
@@ -904,7 +904,7 @@ export default async function plugin(
     const blocked = async (): Promise<never> => {
       for (;;) {
         await delay(dependencies.helperPollMs ?? HELPER_APPROVAL_POLL_MS, undefined, { signal: done.signal });
-        const pending = await bb.sdk.threads.interactions.list({ threadId, signal: done.signal });
+        const pending = await alia.sdk.threads.interactions.list({ threadId, signal: done.signal });
         if (pending.length > 0) {
           const asked = pending.map((interaction) => {
             const payload = interaction.payload as { kind?: string; subject?: { toolName?: string } };
@@ -918,7 +918,7 @@ export default async function plugin(
     };
     try {
       await Promise.race([
-        bb.sdk.threads.wait({ threadId, status: "idle", timeoutMs: 3_600_000, signal: done.signal }),
+        alia.sdk.threads.wait({ threadId, status: "idle", timeoutMs: 3_600_000, signal: done.signal }),
         blocked(),
       ]);
     } finally {
@@ -926,7 +926,7 @@ export default async function plugin(
       signal.removeEventListener("abort", stop);
     }
   }
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "auto_delegate",
     description:
       "Give a complete task brief to the selected helper, optionally for an assigned plan step.",
@@ -1010,7 +1010,7 @@ export default async function plugin(
       async function work() {
         try {
           controller.signal.throwIfAborted();
-          const child = await bb.sdk.threads.spawn({
+          const child = await alia.sdk.threads.spawn({
             projectId: parent.thread.projectId,
             environment: {
               type: "reuse",
@@ -1034,7 +1034,7 @@ export default async function plugin(
           childId = child.id;
           controller.signal.throwIfAborted();
           await idleOrBlocked(child.id, controller.signal);
-          const report = await bb.sdk.threads.output({ threadId: child.id });
+          const report = await alia.sdk.threads.output({ threadId: child.id });
           if (planned)
             await updatePlan(
               ctx.threadId,
@@ -1060,9 +1060,9 @@ export default async function plugin(
           ctx.signal.removeEventListener("abort", abort);
           if (childId) {
             try {
-              await bb.sdk.threads.archive({ threadId: childId });
+              await alia.sdk.threads.archive({ threadId: childId });
             } finally {
-              await bb.sdk.threads.stop({ threadId: childId });
+              await alia.sdk.threads.stop({ threadId: childId });
             }
           }
         }
@@ -1072,12 +1072,12 @@ export default async function plugin(
       void result.finally(() => jobs.delete(result)).catch(() => {});
       if (!background) return await result;
       void result.catch((error) =>
-        bb.log.warn(`Auto helper failed in ${ctx.threadId}: ${message(error)}`),
+        alia.log.warn(`Auto helper failed in ${ctx.threadId}: ${message(error)}`),
       );
-      return `Started background helper for step ${planned!.index} on ${selected.model}, ${selected.effort} effort. Continue your independent steps. BB delivers its final report to this thread.`;
+      return `Started background helper for step ${planned!.index} on ${selected.model}, ${selected.effort} effort. Continue your independent steps. VesnALIA delivers its final report to this thread.`;
     },
   });
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "auto",
       summary: "Inspect and try Model Pilot.",
@@ -1102,7 +1102,7 @@ export default async function plugin(
                 return reply;
               },
               record: async (threadId, record) => {
-                await bb.storage.kv.set(`preview:${threadId}`, record);
+                await alia.storage.kv.set(`preview:${threadId}`, record);
               },
               lastRoute: async () => undefined,
             });
@@ -1141,7 +1141,7 @@ export default async function plugin(
           options: {
             thread: {
               type: "string",
-              description: "BB thread whose route and usage to show.",
+              description: "VesnALIA thread whose route and usage to show.",
             },
           },
           async run(input, ctx) {
@@ -1160,7 +1160,7 @@ export default async function plugin(
                 )
               : [];
             const planRouting = threadId
-              ? await bb.storage.kv.get(`plan-routing:${threadId}`)
+              ? await alia.storage.kv.get(`plan-routing:${threadId}`)
               : null;
             const planRecord = z
               .object({ at: z.number(), jev: z.unknown() })
@@ -1184,7 +1184,7 @@ export default async function plugin(
                   provider: "auto",
                   settings: {
                     toolsOnPickedThreads: currentSettings.toolsOnPickedThreads,
-                    bbRoot: currentSettings.bbRoot,
+                    aliaRoot: currentSettings.aliaRoot,
                     jevKeyConfigured: Boolean(currentSettings.jevApiKey),
                   },
                   nativeProviderOptions: native,

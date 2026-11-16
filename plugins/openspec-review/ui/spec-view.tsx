@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import type { Strings } from "../src/i18n";
 import type { Block, Requirement } from "./spec-parse";
@@ -21,7 +21,7 @@ export function SpecToc({ blocks, root, t }: { blocks: Block[]; root: RefObject<
   const jump = (index: number) => {
     const target = root.current?.querySelector<HTMLDetailsElement>(`[data-requirement="${index}"]`); if (!target) return;
     target.open = true;
-    // scrollIntoView would also shift BB's overflow-hidden layout; scroll only our panel.
+    // scrollIntoView would also shift VesnALIA's overflow-hidden layout; scroll only our panel.
     const panel = target.closest(".openspec-workspace"); if (!panel) return;
     panel.scrollBy({ top: target.getBoundingClientRect().top - panel.getBoundingClientRect().top - 8 });
   };

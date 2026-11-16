@@ -43,7 +43,7 @@ function itemClassName(active: boolean, interactive: boolean) {
 }
 
 /**
- * A compact, single-choice control using BB's shared interactive-state colors.
+ * A compact, single-choice control using VesnALIA's shared interactive-state colors.
  */
 export function ToggleGroup<T extends string | number>({
   value,

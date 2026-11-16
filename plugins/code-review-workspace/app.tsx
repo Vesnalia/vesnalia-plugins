@@ -1,12 +1,12 @@
-// bb-plugin-code-review-workspace — frontend entry.
+// alia-plugin-code-review-workspace — frontend entry.
 //
 // Registers the "Code Review Workspace" navPanel (a sidebar entry + its own route).
 // The panel routes by subPath: "" renders the review list, anything else
 // renders the chapter/diff workspace for that target; an open review's commands
 // go in the panel's title bar. An app overlay adds Needs review and pinned
-// reviews to BB's thread list, which has no slot for them. A thread's page gets
+// reviews to VesnALIA's thread list, which has no slot for them. A thread's page gets
 // Review changes above its message box, and a Review tab while it's linked to one.
-import { definePluginApp, type ExperimentalThreadContextSegmentProps, type ExperimentalThreadTabProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, type ExperimentalThreadContextSegmentProps, type ExperimentalThreadTabProps } from "@vesnalia/plugin-sdk/app";
 import { ReviewPanel } from "./components/ReviewPanel";
 import { ReviewSettings } from "./components/ReviewSettings";
 import { NeedsReviewSidebar } from "./components/NeedsReviewSidebar";
@@ -22,7 +22,7 @@ import { useMediaQuery } from "./components/ui/hooks/use-media-query";
 import { MainThreadTab, REVIEW_TABS, ReviewAgentTab, useAgentTabVisible, useMainTabVisible } from "./components/PanelTabs";
 import { tabsRefused } from "./lib/app-panel";
 
-/** Needs review's rows in BB's own thread list: should they fail to draw, BB's list shows without them. */
+/** Needs review's rows in VesnALIA's own thread list: should they fail to draw, VesnALIA's list shows without them. */
 function SidebarOverlay() {
   return <ErrorBoundary fallback={() => null}><NeedsReviewSidebar /></ErrorBoundary>;
 }
@@ -32,7 +32,7 @@ function PostForm(props: Parameters<typeof PostPreview>[0]) {
   return <ErrorBoundary fallback={() => <p role="alert" className="p-3 text-sm text-muted-foreground">The Post form couldn’t show. Reply yes to post what the agent showed, or no.</p>}><PostPreview {...props} /></ErrorBoundary>;
 }
 
-/** Review changes, beside BB's Changed files: should it fail to draw, the row shows without it. */
+/** Review changes, beside VesnALIA's Changed files: should it fail to draw, the row shows without it. */
 function ReviewChanges(props: ExperimentalThreadContextSegmentProps) {
   return <ErrorBoundary resetKey={props.threadId} fallback={() => null}><ReviewChangesSegment {...props} /></ErrorBoundary>;
 }
@@ -46,18 +46,18 @@ function ThreadReview(props: ExperimentalThreadTabProps) {
 }
 
 /**
- * BB's title bar, after the panel's name, and the window's title: the open review's id and name, "api#4512 · Fix login
+ * VesnALIA's title bar, after the panel's name, and the window's title: the open review's id and name, "api#4512 · Fix login
  * race", which its page publishes; the panel's name alone on All reviews and Settings. Each pane asks for its own. The
- * id and the name are crumbs, where the window is at least 720px wide: BB cuts only the last one short. Narrower, the
- * whole line as one title, cut at its end: BB's crumbs run into each other in a tight bar (seen at 390 and 480px), and
+ * id and the name are crumbs, where the window is at least 720px wide: VesnALIA cuts only the last one short. Narrower, the
+ * whole line as one title, cut at its end: VesnALIA's crumbs run into each other in a tight bar (seen at 390 and 480px), and
  * it shares the bar between the panel's name and a title by their lengths, so the id alone would be cut to "api#4…".
- * So does a review narrower than a phone's beside BB's side panel.
+ * So does a review narrower than a phone's beside VesnALIA's side panel.
  */
 function usePageTitle({ subPath }: { subPath: string }) {
   const page = panelPage(subPath);
   const targetKey = page.kind === "review" ? page.targetKey : null;
   const title = useReviewTitle(targetKey);
-  // A narrow pane beside BB's side panel is as tight as a narrow window.
+  // A narrow pane beside VesnALIA's side panel is as tight as a narrow window.
   const narrowPane = useNarrowPane(targetKey);
   const narrow = useMediaQuery("(max-width: 719px)") || narrowPane;
   // Told while it shows the title, so the band leaves the review's name to it.
@@ -75,26 +75,26 @@ export default definePluginApp((app) => {
     path: "review",
     component: ReviewPanel,
     headerContent: TitleBarControls,
-    // BB hosts from before page titles ignore it, and the band's id chip still says which review it is.
+    // VesnALIA hosts from before page titles ignore it, and the band's id chip still says which review it is.
     experimental_usePageTitle: usePageTitle,
   });
-  // A review's page: Review agent, and Main thread with one, in BB's own side panel (components/PanelTabs.tsx).
+  // A review's page: Review agent, and Main thread with one, in VesnALIA's own side panel (components/PanelTabs.tsx).
   // A host that refuses a navigation page's tabs, as a client from before them may, loads the plugin without them: the
   // review's commands then open the agent's and the main thread's chats as threads (components/ReviewWorkspace.tsx).
   try {
     app.slots.experimental_tab?.({ ...REVIEW_TABS.agent, title: "Review agent", icon: "code-review-workspace/agent", layout: "flush", component: ReviewAgentTab, useVisible: useAgentTabVisible });
     app.slots.experimental_tab?.({ ...REVIEW_TABS.main, title: "Main thread", icon: "Code", layout: "flush", component: MainThreadTab, useVisible: useMainTabVisible });
   } catch { tabsRefused(); }
-  // Optional call: BB hosts from before app overlays skip it rather than fail to load the plugin.
+  // Optional call: VesnALIA hosts from before app overlays skip it rather than fail to load the plugin.
   app.slots.experimental_appOverlay?.({ id: "needs-review", component: SidebarOverlay });
   // The review agent's Post form (src/review-agent-tools.ts). A host without the slot shows none; "yes" in chat posts instead.
   app.slots.pendingInteraction?.({ id: POST_PREVIEW_RENDERER, component: PostForm });
-  // A thread's pages. Optional calls: hosts from before either slot, such as BB 0.47.1's desktop app without the segment,
+  // A thread's pages. Optional calls: hosts from before either slot, such as VesnALIA 0.47.1's desktop app without the segment,
   // skip it. Its group is Changed files', "3_git" (experimental_THREAD_CONTEXT_SEGMENT_GROUPS.git), written out: the
   // build takes that constant from the host, which those hosts lack, and reading it there would stop the plugin loading.
   app.slots.experimental_threadContextSegment?.({ id: "review-changes", title: "Review", group: "3_git", order: 20, summary: ReviewChanges, useVisible: useReviewChangesVisible });
   app.slots.experimental_tab?.({ context: { kind: "thread" }, availability: "fixed", id: "review", title: "Review", icon: "code-review-workspace/review", layout: "flush", component: ThreadReview, useVisible: useReviewTabVisible });
-  // BB's command palette, each rebindable; the overlay above handles them, so without it they aren't listed.
+  // VesnALIA's command palette, each rebindable; the overlay above handles them, so without it they aren't listed.
   app.commands.register({ id: "next-review", title: "Code Review Workspace: Next review that needs me", defaultShortcut: { key: "u", mod: true, shift: true },
     isAvailable: paletteCommandsAvailable, run: () => postPaletteCommand({ kind: "next" }) });
   app.commands.register({ id: "review-from-clipboard", title: "Code Review Workspace: Review PR from clipboard",

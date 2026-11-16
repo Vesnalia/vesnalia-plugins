@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import Database from "better-sqlite3";
 import pg from "pg";
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from "vitest";
@@ -10,11 +10,11 @@ import { migratePg, PG_MIGRATIONS } from "./pg-migrations";
 // SQLite's own store, for the migrations the Postgres ones mirror.
 vi.unmock("../store");
 
-/** The statements createStore hands bb.storage.migrate. */
+/** The statements createStore hands alia.storage.migrate. */
 function sqliteMigrations(): string[] {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const migrate = vi.spyOn(bb.storage, "migrate");
-  createStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const migrate = vi.spyOn(alia.storage, "migrate");
+  createStore(alia);
   return migrate.mock.calls[0]![1];
 }
 

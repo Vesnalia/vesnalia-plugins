@@ -20,7 +20,7 @@ const git = (...args: string[]) =>
       GIT_COMMITTER_EMAIL: "t@example.invalid",
     },
   });
-const leftovers = () => readdirSync(tmpdir()).filter((n) => n.startsWith("bb-plugin-updates-"));
+const leftovers = () => readdirSync(tmpdir()).filter((n) => n.startsWith("alia-plugin-updates-"));
 
 beforeAll(() => {
   root = mkdtempSync(join(tmpdir(), "git-test-"));
@@ -31,7 +31,7 @@ beforeAll(() => {
   git("config", "uploadpack.allowAnySHA1InWant", "true");
   writeFileSync(join(root, "package.json"), JSON.stringify({ version: "1.0.0" }));
   mkdirSync(join(root, "plugins/notes"), { recursive: true });
-  writeFileSync(join(root, "plugins/notes/package.json"), JSON.stringify({ engines: { bb: ">=0.47" } }));
+  writeFileSync(join(root, "plugins/notes/package.json"), JSON.stringify({ engines: { alia: ">=0.47" } }));
   git("add", ".");
   git("commit", "--quiet", "-m", "one");
   git("tag", "v1.0.0");
@@ -55,7 +55,7 @@ describe("readPackageJsonAt", () => {
   it("reads a subdirectory's package.json at an annotated, prefixed tag", async () => {
     const text = await readPackageJsonAt({ url, tag: "notes/v0.2.0", subdirectory: "./plugins/notes/" });
 
-    expect(JSON.parse(text)).toEqual({ engines: { bb: ">=0.47" } });
+    expect(JSON.parse(text)).toEqual({ engines: { alia: ">=0.47" } });
   });
 
   it("fails on a missing tag or file, and still cleans up", async () => {

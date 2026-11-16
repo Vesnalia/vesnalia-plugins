@@ -1,6 +1,6 @@
-// Runs on the machine that holds the workspace (BB's daemon starts it on demand).
+// Runs on the machine that holds the workspace (VesnALIA's daemon starts it on demand).
 // Phase 1: the symlink guard and a debounced file watcher per workspace root.
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostContract, hostSignals } from "./contract.js";
 import { checkRealPath } from "./lib/realpath-guard.js";
 import { toRelativeChange } from "./lib/watch.js";

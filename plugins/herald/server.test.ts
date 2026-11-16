@@ -1,9 +1,9 @@
 /**
  * The whole server against the SDK's fake host: a thread event becomes an
  * entry with its sentence, and the app hears about it. Nothing here talks to
- * a running bb.
+ * a running VesnALIA.
  */
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -51,13 +51,13 @@ const WORKER_THREAD = makeThreadResponse({
 const KNOWN_THREADS = [USER_THREAD, OTHER_THREAD, WORKER_THREAD];
 
 /**
- * Plugin metadata on the known threads, kept the way bb keeps it, for the
+ * Plugin metadata on the known threads, kept the way VesnALIA keeps it, for the
  * thread menu's choice: the batched read, the ancestors, and the update.
  */
 function metadataStubs() {
   const metadata = new Map<string, Record<string, unknown>>();
   /**
-   * Set `ancestors` to make bb's ancestor read fail, as a lost connection
+   * Set `ancestors` to make VesnALIA's ancestor read fail, as a lost connection
    * would; name threads in `updates` to make their metadata writes fail.
    */
   const failures = { ancestors: false, updates: new Set<string>() };
@@ -71,7 +71,7 @@ function metadataStubs() {
   };
   const stubs = {
     experimental_listAncestors: async ({ threadIds }: { threadIds: readonly string[] }) => {
-      if (failures.ancestors) throw new Error("bb is away");
+      if (failures.ancestors) throw new Error("alia is away");
       return {
         threads: threadIds
           .filter((id) => KNOWN_THREADS.some((known) => known.id === id))
@@ -118,7 +118,7 @@ async function load(settings: Record<string, string | number | boolean> = {}) {
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   live.push(host);
   return Object.assign(host, { metadata, failures });
 }
@@ -156,7 +156,7 @@ describe("herald server", () => {
     expect(harness.sdk.callsTo("threads.spawn")).toEqual([]);
   });
 
-  it("reaches bb for nothing while it loads", async () => {
+  it("reaches VesnALIA for nothing while it loads", async () => {
     const { harness } = await load();
     await settle();
     expect(harness.sdk.calls).toEqual([]);
@@ -408,7 +408,7 @@ describe("herald server", () => {
   });
 
   it("lists 20 by default, refuses a length out of bounds, and reads an unreadable one as the default", async () => {
-    const { bb, harness } = await load();
+    const { alia, harness } = await load();
     expect(await harness.callRpc("config.get", {})).toMatchObject({ recentHistoryLimit: 20 });
     await expect(harness.callRpc("config.set", { recentHistoryLimit: 0 })).rejects.toThrow();
     await expect(harness.callRpc("config.set", { recentHistoryLimit: 51 })).rejects.toThrow();
@@ -417,7 +417,7 @@ describe("herald server", () => {
     expect(await harness.callRpc("config.get", {})).toMatchObject({ recentHistoryLimit: 50 });
     // A configuration saved before the setting existed has none.
     const { recentHistoryLimit: _, ...older } = DEFAULT_STORED_CONFIG;
-    await bb.storage.kv.set("config", older);
+    await alia.storage.kv.set("config", older);
     expect(await harness.callRpc("config.get", {})).toEqual(DEFAULT_STORED_CONFIG);
   });
 
@@ -430,8 +430,8 @@ describe("herald server", () => {
     try {
       // The replacement's second read of storage — the one after the drain — fails.
       const reloaded = track(
-        await host.harness.lifecycle.reload((bb) => {
-          const kv = bb.storage.kv;
+        await host.harness.lifecycle.reload((alia) => {
+          const kv = alia.storage.kv;
           const list = kv.list.bind(kv);
           let reads = 0;
           kv.list = async (prefix?: string) => {
@@ -439,7 +439,7 @@ describe("herald server", () => {
             if (reads === 2) throw new Error("kv away");
             return list(prefix);
           };
-          return plugin(bb);
+          return plugin(alia);
         }),
       );
       await vi.advanceTimersByTimeAsync(0);
@@ -458,12 +458,12 @@ describe("herald server", () => {
   });
 
   it("does not give up on a sentence it is itself still writing when the instance before it drains", async () => {
-    const { harness, bb } = await load({ writeWithModel: true });
+    const { harness, alia } = await load({ writeWithModel: true });
     await harness.callRpc("config.set", { sentenceTool: "custom", sentenceCommand: SLOW_TOOL });
     await harness.emitThreadEvent("thread.idle", { thread: USER_THREAD, lastAssistantText: "Done." });
     await settle();
     expect(entriesOf(await harness.callRpc("list", {}))[0]?.summary.status).toBe("pending");
-    announceDrained(bb.pluginId, "the-instance-before");
+    announceDrained(alia.pluginId, "the-instance-before");
     await settle();
     expect(entriesOf(await harness.callRpc("list", {}))[0]?.summary.status).toBe("pending");
   });

@@ -1,12 +1,12 @@
-import type { useComposer } from "@get-bb/plugin-sdk/app";
+import type { useComposer } from "@vesnalia/plugin-sdk/app";
 
 type Composer = ReturnType<typeof useComposer>;
 
 /**
- * BB 0.43.0–0.43.2 ship a composer without `experimental_setSelection` and
- * `experimental_onSubmitted` (both arrived with BB 0.43.3). The plugin installs
+ * VesnALIA 0.43.0–0.43.2 ship a composer without `experimental_setSelection` and
+ * `experimental_onSubmitted` (both arrived with VesnALIA 0.43.3). The plugin installs
  * on those versions, so every call goes through these checks instead of
- * raising `engines.bb` and locking older BB out of the install.
+ * raising `engines.alia` and locking older VesnALIA out of the install.
  */
 export function composerCanSetSelection(composer: Composer): boolean {
   return (

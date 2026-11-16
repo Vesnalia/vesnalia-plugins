@@ -399,7 +399,7 @@ test("isolates an omitted provider response", () => {
     status: "error",
     accountEmail: null,
     planLabel: null,
-    message: "Cursor usage was not reported by bb.",
+    message: "Cursor usage was not reported by VesnALIA.",
     windows: [],
   });
 });
@@ -429,7 +429,7 @@ test("normalizes Grok and OpenCode and isolates an omitted new provider", () => 
   );
   assert.equal(
     snapshot.providers[4]?.message,
-    "OpenCode usage was not reported by bb.",
+    "OpenCode usage was not reported by VesnALIA.",
   );
 });
 

@@ -10,7 +10,7 @@ export const PALETTE = [
 ] as const;
 export const SURFACES = [
   { id: "threads", title: "Thread rows", description: "Project rows in the thread list." },
-  { id: "browser", title: "Browser tab", description: "The bb favicon and internal Browser tabs." },
+  { id: "browser", title: "Browser tab", description: "The VesnALIA favicon and internal Browser tabs." },
   { id: "background", title: "Background", description: "A subtle tint for the workspace and sidebar." },
 ] as const;
 export type SurfaceId = (typeof SURFACES)[number]["id"];
@@ -32,7 +32,7 @@ export function themeCss(themes: Themes, projectId: string | null): string {
     const row = `.group\\/thread-row:has(a[data-sidebar-thread-id][href^="/projects/${id}/threads/"])`;
     rules.push(`${row} { background-color: ${tint(theme.color, "var(--sidebar)", 12)} !important; }`);
     rules.push(`${row}:hover, ${row}:focus-within { background-color: ${tint(theme.color, "var(--sidebar-accent)", 22)} !important; }`);
-    rules.push(`${row}.bb-sidebar-selected-row { background: ${tint(theme.color, "var(--sidebar-accent)", 32)} !important; }`);
+    rules.push(`${row}.alia-sidebar-selected-row { background: ${tint(theme.color, "var(--sidebar-accent)", 32)} !important; }`);
   }
   const current = projectId ? themes[projectId] : undefined;
   if (current?.background && validColor(current.color)) {

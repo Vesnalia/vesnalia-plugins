@@ -43,7 +43,7 @@ function setup(values: Record<string, unknown> = {}) {
     made.push(backend);
     return backend;
   };
-  const owners = join(mac, ".bb-box", "tart", "owners");
+  const owners = join(mac, ".alia-box", "tart", "owners");
   return { ssh, mac, owners, context, make, backend: make() };
 }
 
@@ -110,7 +110,7 @@ test("offers macos and macos-desktop from the image, each only when it has one",
   assert.equal(desktop.arch, "arm64");
   assert.equal(desktop.gpu, false);
   assert.equal(desktop.command?.inDesktopSession, false);
-  // Tart's VNC server moves no clipboard, so BB Box does with commands in the box (#464), and takes Alt as Command.
+  // Tart's VNC server moves no clipboard, so VesnALIA Box does with commands in the box (#464), and takes Alt as Command.
   assert.deepEqual(desktop.displays, [{ id: "desktop", protocol: "rfb", resizable: false, clipboard: "commands", macKeys: "alt-command" }]);
   assert.equal(desktop.computerUse?.socket, "/Users/admin/Library/Caches/cua-driver/cua-driver.sock");
 });
@@ -118,9 +118,9 @@ test("offers macos and macos-desktop from the image, each only when it has one",
 test("the Mac's state fails when Tart's home or the QEMU folder links to a volume that is not mounted, so its boxes are kept (#632)", () => {
   const home = mkdtempSync(join(tmpdir(), "bbbox-volume-"));
   after(() => rmSync(home, { recursive: true, force: true }));
-  mkdirSync(join(home, ".bb-box", "tart", "owners"), { recursive: true });
+  mkdirSync(join(home, ".alia-box", "tart", "owners"), { recursive: true });
   const run = () => spawnSync("/bin/sh", ["-c", stateScript(true)], { encoding: "utf8", env: { HOME: home, PATH: "/usr/bin:/bin" } });
-  for (const [link, at] of [[join(home, ".tart"), join(home, "gone", "tart")], [join(home, ".bb-box", "qemu"), join(home, "gone", "qemu")]] as const) {
+  for (const [link, at] of [[join(home, ".tart"), join(home, "gone", "tart")], [join(home, ".alia-box", "qemu"), join(home, "gone", "qemu")]] as const) {
     symlinkSync(at, link);
     const missing = run();
     assert.notEqual(missing.status, 0);
@@ -137,13 +137,13 @@ test("reads the Mac's VMs, each with its state and its disk in GB where known, a
       "@version",
       "2.30.0",
       "@vms",
-      "bb-box-bx1 running ",
-      "bb-box-macos stopped 64",
+      "alia-box-bx1 running ",
+      "alia-box-macos stopped 64",
       "@configs",
-      "=bb-box-bx1",
+      "=alia-box-bx1",
       '{  "os" : "darwin",  "cpuCount" : 4,  "memorySize" : 8589934592}',
       "@owners",
-      "=bb-box-bx1",
+      "=alia-box-bx1",
       "install=k3v9q2m7xa",
       "box=bx1",
       "@memory",
@@ -157,11 +157,11 @@ test("reads the Mac's VMs, each with its state and its disk in GB where known, a
     ].join("\n"),
   );
   assert.deepEqual(state.vms, [
-    { name: "bb-box-bx1", state: "running", running: true, diskGB: null },
-    { name: "bb-box-macos", state: "stopped", running: false, diskGB: 64 },
+    { name: "alia-box-bx1", state: "running", running: true, diskGB: null },
+    { name: "alia-box-macos", state: "stopped", running: false, diskGB: 64 },
   ]);
-  assert.deepEqual(state.configs.get("bb-box-bx1"), { os: "darwin", macAddress: null, memoryMiB: 8192, cpus: 4 });
-  assert.deepEqual(state.owners.get("bb-box-bx1"), { install: "k3v9q2m7xa", box: "bx1" });
+  assert.deepEqual(state.configs.get("alia-box-bx1"), { os: "darwin", macAddress: null, memoryMiB: 8192, cpus: 4 });
+  assert.deepEqual(state.owners.get("alia-box-bx1"), { install: "k3v9q2m7xa", box: "bx1" });
   assert.equal(state.memoryMiB, 131072);
   assert.equal(state.disk.freeMiB, Math.floor(150000000 / 1024));
   assert.equal(state.disk.volume, "");
@@ -190,16 +190,16 @@ test("a macOS desktop is Tart's VNC through the run's holder, which starts with 
   // The holder connects as the run starts, before any viewer, however long python3 takes to start under load (#580).
   await tart.connected;
   const displays = (await backend.transports(guest, "macos-desktop")).displays;
-  assert.deepEqual(displays.map((one) => one.protocol), ["rfb"], "no video in a VM without bb-box-stream (060)");
+  assert.deepEqual(displays.map((one) => one.protocol), ["rfb"], "no video in a VM without alia-box-stream (060)");
   const [display] = displays;
   for (let open = 0; open < 3; open++) {
     const opened = await display!.open(signal());
     assert.deepEqual(opened.auth, { type: "none" }, "the holder's socket is the host user's alone");
     const argv = opened.route.type === "command" ? opened.route.argv : [];
-    assert.deepEqual(argv.slice(-3), [`bbbox-admin@${MAC}`, "--", `exec /usr/bin/python3 -c '${VNC_BRIDGE_PY}' "$HOME"/.bb-box/tart/run/'${guest.ref}.vnc'`]);
+    assert.deepEqual(argv.slice(-3), [`bbbox-admin@${MAC}`, "--", `exec /usr/bin/python3 -c '${VNC_BRIDGE_PY}' "$HOME"/.alia-box/tart/run/'${guest.ref}.vnc'`]);
   }
   // A viewer on the holder's socket, as the bridge gives it to the relay.
-  const viewer = new Viewer(join(mac, ".bb-box", "tart", "run", `${guest.ref}.vnc`));
+  const viewer = new Viewer(join(mac, ".alia-box", "tart", "run", `${guest.ref}.vnc`));
   await viewer.join();
   await viewer.update();
   viewer.close();
@@ -208,24 +208,24 @@ test("a macOS desktop is Tart's VNC through the run's holder, which starts with 
 
   // The run ends; its holder with it, and no viewer can open the desktop until a new run.
   tart.end();
-  await until(() => !existsSync(join(mac, ".bb-box", "tart", "run", `${guest.ref}.vnc`)));
-  await assert.rejects(display!.open(signal()), /The desktop's stream for this run of bb-box-\S+ has ended: Tart's VNC server closed the connection, as when the run ends\. Stop and start the box to show its desktop again\./);
+  await until(() => !existsSync(join(mac, ".alia-box", "tart", "run", `${guest.ref}.vnc`)));
+  await assert.rejects(display!.open(signal()), /The desktop's stream for this run of alia-box-\S+ has ended: Tart's VNC server closed the connection, as when the run ends\. Stop and start the box to show its desktop again\./);
   assert.equal(tart.connections, 1, "and it did not connect again");
 });
 
-test("a macOS desktop declares video while every Mac's image record lists bb-box-stream, by choice unless the video field makes it the default, and offers it in a VM that has it, through bb-box-stream connect in the desktop session (060)", async () => {
+test("a macOS desktop declares video while every Mac's image record lists alia-box-stream, by choice unless the video field makes it the default, and offers it in a VM that has it, through alia-box-stream connect in the desktop session (060)", async () => {
   const ssh = fakeSsh();
   const mac = ssh.home(MAC);
   fakeMacTools(mac);
   addImage(mac);
-  const stream = join(tempDir("stream"), "bb-box-stream");
+  const stream = join(tempDir("stream"), "alia-box-stream");
   const make = (video: boolean) => {
     const tart = new TartBackend(tartConfig({ "tart-video": video }), testContext(new MemoryStorage()), { ...FAKES, macStream: stream });
     made.push(tart);
     return tart;
   };
   const backend = make(true);
-  // Before a Mac answers, as just after BB Box starts, a macOS desktop keeps the video it has: its kind does not yet say.
+  // Before a Mac answers, as just after VesnALIA Box starts, a macOS desktop keeps the video it has: its kind does not yet say.
   const someGuest = { ref: "a-vm", data: {} } as unknown as Parameters<TartBackend["asOffered"]>[0];
   assert.equal(await backend.asOffered(someGuest, "macos-desktop"), false);
   assert.equal(await backend.asOffered(someGuest, "macos"), true);
@@ -236,9 +236,9 @@ test("a macOS desktop declares video while every Mac's image record lists bb-box
   const declared = () => declaredBy(backend);
   assert.deepEqual(await declared(), ["rfb"], "not while the image's record lacks it");
   assert.equal(await backend.asOffered(someGuest, "macos-desktop"), true, "once a Mac has answered, its kind says");
-  const record = join(mac, ".bb-box", "tart", "images", "bb-box-macos.json");
+  const record = join(mac, ".alia-box", "tart", "images", "alia-box-macos.json");
   const without = readFileSync(record, "utf8");
-  writeFileSync(record, `${JSON.stringify({ ...JSON.parse(without), tools: { "bb-box-stream": "0123456789ab" } })}\n`);
+  writeFileSync(record, `${JSON.stringify({ ...JSON.parse(without), tools: { "alia-box-stream": "0123456789ab" } })}\n`);
   assert.deepEqual(await declared(), ["rfb", "selkies"]);
   assert.deepEqual(await declaredBy(make(false)), ["rfb", "selkies by choice"], "and by choice while the video field is off, its default: the viewer opens VNC");
 
@@ -257,9 +257,9 @@ test("a macOS desktop declares video while every Mac's image record lists bb-box
   );
   const opened = await displays[1]!.open(signal());
   assert.deepEqual(opened.auth, { type: "none" });
-  assert.equal(opened.input, undefined, "bb-box-stream takes the viewer's input itself");
+  assert.equal(opened.input, undefined, "alia-box-stream takes the viewer's input itself");
   const remote = opened.route.type === "command" ? opened.route.argv.at(-1)! : "";
-  assert.match(remote, /exec \/usr\/local\/bin\/bb-box-stream connect/);
+  assert.match(remote, /exec \/usr\/local\/bin\/alia-box-stream connect/);
   assert.match(remote, /launchctl asuser/, "in the box user's desktop session");
 
   writeFileSync(record, without);
@@ -269,7 +269,7 @@ test("a macOS desktop declares video while every Mac's image record lists bb-box
 test("a macOS box grants its programs macOS permissions through the Mac helper in the VM, refusing while SIP is on, and lists its grants (058)", async () => {
   const { ssh, backend } = setup();
   const guest = await backend.acquire(identity("macos"), null, hooks().hooks, signal());
-  const flags = join(ssh.home(guest.address!), ".bb-box-state", "flags");
+  const flags = join(ssh.home(guest.address!), ".alia-box-state", "flags");
   const request = { program: "/Users/admin/Applications/Probe.app", permissions: ["accessibility", "screen-recording"] as const };
   await assert.rejects(backend.grant!(guest, request), (error: unknown) => error instanceof BackendError && error.code === "unsupported" && /^System Integrity Protection is on/.test(error.message));
   assert.deepEqual(await backend.grants!(guest), { blockedBy: "sip-on", signingIdentity: true, grants: [] });
@@ -288,7 +288,7 @@ test("acquire claims the VM before it writes anything, then clones, starts and r
   const guest = await backend.acquire(box, null, recorded.hooks, signal());
   assert.deepEqual(recorded.events, ["claim", "starting", "claim"]);
   assert.deepEqual(recorded.claimed.at(-1), guest, "claimed again with its address");
-  assert.equal(recorded.claimed[0]!.ref, `bb-box-${box.boxId}`);
+  assert.equal(recorded.claimed[0]!.ref, `alia-box-${box.boxId}`);
   assert.deepEqual(recorded.claimed[0]!.data, { box: box.boxId });
   // The name and the grants go side by side, so either may end first.
   assert.deepEqual(Object.keys(recorded.timings).slice(0, 6), ["place", "clone", "start", "network", "ssh", "identify"]);
@@ -305,7 +305,7 @@ test("acquire claims the VM before it writes anything, then clones, starts and r
   assert.equal(access?.ssh?.user, "admin");
   assert.equal(displays[0]!.minSize, undefined, "a viewer cannot resize a macOS desktop");
   // This Mac has no python3 for the VNC holder, so the desktop says how to give it one.
-  await assert.rejects(displays[0]!.open(), /mac1 could not start the desktop's stream for bb-box-\S+: The Mac has no python3 for BB Box's VNC holder: install Xcode's command line tools there \(xcode-select --install\)\./);
+  await assert.rejects(displays[0]!.open(), /mac1 could not start the desktop's stream for alia-box-\S+: The Mac has no python3 for ALIA Box's VNC holder: install Xcode's command line tools there \(xcode-select --install\)\./);
 
   // The VM's commands went to the VM, the rest to the Mac, and the VM is named after the box.
   const targets = new Set(ssh.log().map((entry) => entry.target));
@@ -346,8 +346,8 @@ const LINUX_SMALL: MachineSize = { cores: 2, memoryMiB: 4096, diskGiB: null };
 
 /** A fake Mac with the Linux image too, and linux-arm64 boxes on (040). */
 function linuxSetup(values: Record<string, unknown> = {}) {
-  const made = setup({ "tart-linux-image": "bb-box-linux", ...values });
-  addImage(made.mac, "bb-box-linux", "linux");
+  const made = setup({ "tart-linux-image": "alia-box-linux", ...values });
+  addImage(made.mac, "alia-box-linux", "linux");
   return made;
 }
 
@@ -358,7 +358,7 @@ function tartCalls(mac: string): string[][] {
 }
 
 test("offers linux-arm64 only with a Linux image, as arm64, with Docker (040, 041)", () => {
-  const kinds = new TartBackend(tartConfig({ "tart-linux-image": "bb-box-linux" }), testContext()).kinds();
+  const kinds = new TartBackend(tartConfig({ "tart-linux-image": "alia-box-linux" }), testContext()).kinds();
   assert.deepEqual(kinds.map((kind) => kind.id), ["macos", "macos-desktop", "linux-arm64"], "linux-arm64-docker is an alias of linux-arm64, not an offer");
   const linux = kinds.find((kind) => kind.id === "linux-arm64")!;
   assert.deepEqual([linux.capabilities.os, linux.capabilities.arch, linux.capabilities.displays.length, linux.capabilities.computerUse, linux.capabilities.enrol], ["linux", "arm64", 0, null, true]);
@@ -366,7 +366,7 @@ test("offers linux-arm64 only with a Linux image, as arm64, with Docker (040, 04
   assert.deepEqual([linux.requires, linux.capabilities.features], [[], ["docker"]]);
   // Off by default, and on alone.
   assert.deepEqual(new TartBackend(tartConfig(), testContext()).kinds().map((kind) => kind.id), ["macos", "macos-desktop"]);
-  const alone = tartConfig({ "tart-linux-image": "bb-box-linux", "tart-macos-image": "", "tart-macos-desktop-image": "" });
+  const alone = tartConfig({ "tart-linux-image": "alia-box-linux", "tart-macos-image": "", "tart-macos-desktop-image": "" });
   assert.deepEqual(new TartBackend(alone, testContext()).kinds().map((kind) => kind.id), ["linux-arm64"]);
   const none = parseTartSettings({ "tart-enabled": true, "tart-hosts": "mac1 a@b", "tart-host-keys": "b ssh-ed25519 AAAA", "tart-macos-image": "", "tart-macos-desktop-image": "" });
   assert.ok(none.enabled && !none.ok && none.problems.some((problem) => /an image for macOS, Linux or Windows boxes/.test(problem)));
@@ -432,10 +432,10 @@ test("each new instance, as after a restart, reaches a Linux box as box from its
 });
 
 test("a Linux desktop box waits for its desktop, and opens it through SSH to the VM's own VNC server (040)", async () => {
-  const off = new TartBackend(tartConfig({ "tart-linux-image": "bb-box-linux" }), testContext()).kinds();
+  const off = new TartBackend(tartConfig({ "tart-linux-image": "alia-box-linux" }), testContext()).kinds();
   assert.ok(!off.some((kind) => kind.id === "linux-arm64-desktop-cpu"), "off until it has an image of its own");
-  const { ssh, mac, backend, context } = linuxSetup({ "tart-linux-desktop-image": "bb-box-linux-desktop" });
-  addImage(mac, "bb-box-linux-desktop", "linux");
+  const { ssh, mac, backend, context } = linuxSetup({ "tart-linux-desktop-image": "alia-box-linux-desktop" });
+  addImage(mac, "alia-box-linux-desktop", "linux");
   const kind = backend.kinds().find((candidate) => candidate.id === "linux-arm64-desktop-cpu")!;
   // Selkies beside the VNC server, video by choice (060).
   assert.deepEqual(
@@ -447,8 +447,8 @@ test("a Linux desktop box waits for its desktop, and opens it through SSH to the
   const recorded = hooks();
   const guest = await backend.acquire(identity("linux-arm64-desktop-cpu", "thr_abc123", LINUX_SMALL), null, recorded.hooks, signal());
   assert.deepEqual(Object.keys(recorded.timings), ["place", "clone", "start", "network", "ssh", "desktop", "identify", "name"]);
-  assert.ok(tartCalls(mac).some((call) => call[1] === "clone" && call[2] === "bb-box-linux-desktop" && call[3] === guest.ref));
-  const waits = () => ssh.log().filter((entry) => entry.target === `box@${guest.address}` && entry.command.includes("systemctl is-active --quiet bb-box-display.service")).length;
+  assert.ok(tartCalls(mac).some((call) => call[1] === "clone" && call[2] === "alia-box-linux-desktop" && call[3] === guest.ref));
+  const waits = () => ssh.log().filter((entry) => entry.target === `box@${guest.address}` && entry.command.includes("systemctl is-active --quiet alia-box-display.service")).length;
   assert.equal(waits(), 1);
 
   const { displays } = await backend.transports(guest, "linux-arm64-desktop-cpu");
@@ -459,10 +459,10 @@ test("a Linux desktop box waits for its desktop, and opens it through SSH to the
   assert.deepEqual(argv.slice(-3), ["-W", "127.0.0.1:5900", `box@${guest.address}`], "to the VM's own VNC server, through the Mac");
   // The test machine has no desktop, so no password file.
   assert.deepEqual(auth, { type: "none" });
-  assert.ok(ssh.log().some((entry) => entry.target === `box@${guest.address}` && entry.command.includes("/var/lib/bb-box/vnc-password")));
+  assert.ok(ssh.log().some((entry) => entry.target === `box@${guest.address}` && entry.command.includes("/var/lib/alia-box/vnc-password")));
 
   // A box whose image has Selkies' launcher has video too, through SSH to Selkies on the VM's loopback (060).
-  const withSelkies = new TartBackend(tartConfig({ "tart-linux-image": "bb-box-linux", "tart-linux-desktop-image": "bb-box-linux-desktop" }), context, { ...FAKES, selkiesLauncher: "/bin/sh" });
+  const withSelkies = new TartBackend(tartConfig({ "tart-linux-image": "alia-box-linux", "tart-linux-desktop-image": "alia-box-linux-desktop" }), context, { ...FAKES, selkiesLauncher: "/bin/sh" });
   made.push(withSelkies);
   const video = (await withSelkies.transports(guest, "linux-arm64-desktop-cpu")).displays;
   assert.deepEqual(video.map((display) => [display.id, display.label, display.cursor ?? null]), [["desktop", "Desktop", null], ["selkies", "Desktop, as video", "selkies"]]);
@@ -518,10 +518,10 @@ test("the Mac's state is read from Tart's VM folders, never with tart list or ta
     mkdirSync(join(vms, name));
     for (const file of files) writeFileSync(join(vms, name, file), file === "config.json" ? JSON.stringify({ os: "darwin", cpuCount: 4, memorySize: 8 * GiB }) : "");
   };
-  half("bb-box-going", []);
-  half("bb-box-no-nvram", ["config.json", "disk.img"]);
-  half("bb-box-no-config", ["nvram.bin", "disk.img"]);
-  half("bb-box-no-disk", ["config.json", "nvram.bin"]);
+  half("alia-box-going", []);
+  half("alia-box-no-nvram", ["config.json", "disk.img"]);
+  half("alia-box-no-config", ["nvram.bin", "disk.img"]);
+  half("alia-box-no-disk", ["config.json", "nvram.bin"]);
   writeFileSync(join(mac, ".fake-tart-list-fails"), "");
   writeFileSync(join(mac, ".fake-tart-get-fails"), `${second.ref} Error: the disk is unreadable`);
   const before = tartCalls(mac).length;
@@ -548,7 +548,7 @@ test("VMs made and deleted while the Mac's state is read never fail the read (F-
   const { mac, backend } = setup();
   const running = await backend.acquire(identity(), null, hooks().hooks, signal());
   const vms = join(mac, ".tart", "vms");
-  const churn = spawn("/bin/sh", ["-c", `cd '${vms}' && while :; do for n in 1 2 3; do mkdir -p bb-box-churn-$n && echo '{}' > bb-box-churn-$n/config.json && : > bb-box-churn-$n/nvram.bin && : > bb-box-churn-$n/disk.img; done; rm -rf bb-box-churn-*; done`], { stdio: "ignore" });
+  const churn = spawn("/bin/sh", ["-c", `cd '${vms}' && while :; do for n in 1 2 3; do mkdir -p alia-box-churn-$n && echo '{}' > alia-box-churn-$n/config.json && : > alia-box-churn-$n/nvram.bin && : > alia-box-churn-$n/disk.img; done; rm -rf alia-box-churn-*; done`], { stdio: "ignore" });
   try {
     for (let read = 0; read < 25; read++) {
       const result = await readMacStateAsync(mac);
@@ -577,7 +577,7 @@ test("a VM runs while a process holds Tart's run lock on its config.json, and is
   assert.equal(stateOfImage(), "suspended");
 });
 
-test("an ASIF disk is sized from BB Box's note, which a clone takes from tart get of its image, once a build, never of a VM that may start (F-10)", async () => {
+test("an ASIF disk is sized from VesnALIA Box's note, which a clone takes from tart get of its image, once a build, never of a VM that may start (F-10)", async () => {
   const { mac, backend } = setup();
   const image = join(mac, ".tart", "vms", FAKE_IMAGE);
   writeFileSync(join(image, "config.json"), JSON.stringify({ ...JSON.parse(readFileSync(join(image, "config.json"), "utf8")), diskFormat: "asif" }));
@@ -603,7 +603,7 @@ test("a Mac takes two macOS VMs; the third is refused with what to release", asy
   assert.doesNotMatch(capacity.message!, new RegExp(first.ref));
   const third = identity();
   await assert.rejects(backend.acquire(third, null, hooks().hooks, signal()), (error: unknown) => error instanceof BackendError && error.code === "no_capacity");
-  assert.equal(existsSync(join(owners, `bb-box-${third.boxId}`)), false);
+  assert.equal(existsSync(join(owners, `alia-box-${third.boxId}`)), false);
   await backend.release(first, releasing);
   await backend.release(second, releasing);
 });
@@ -616,7 +616,7 @@ test("a run that fails at once with Virtualization's internal error, as when ano
   const guest = await backend.acquire(box, null, hooks().hooks, signal());
   assert.equal(await backend.power(guest), "running");
   assert.ok(
-    context.logs.some((line) => line.startsWith(`Tart's run of ${guest.ref} on mac1 failed at once, as when another process has its disk open at that moment, so bb-box ran it again 3 s later: Error Domain=VZErrorDomain Code=1 `)),
+    context.logs.some((line) => line.startsWith(`Tart's run of ${guest.ref} on mac1 failed at once, as when another process has its disk open at that moment, so alia-box ran it again 3 s later: Error Domain=VZErrorDomain Code=1 `)),
     context.logs.join("\n"),
   );
   const runs = readFileSync(join(mac, ".fake-tart-log"), "utf8").split("\n").filter((line) => line.startsWith(JSON.stringify(["tart", "run"]).slice(0, -1)) && line.includes(guest.ref));
@@ -624,7 +624,7 @@ test("a run that fails at once with Virtualization's internal error, as when ano
   await backend.release(guest, releasing);
 
   writeFileSync(fails, "2");
-  await assert.rejects(backend.acquire(identity(), null, hooks().hooks, signal()), /Tart could not start bb-box-\S+ on mac1: Error Domain=VZErrorDomain Code=1 /);
+  await assert.rejects(backend.acquire(identity(), null, hooks().hooks, signal()), /Tart could not start alia-box-\S+ on mac1: Error Domain=VZErrorDomain Code=1 /);
 });
 
 test("a VM the framework refuses to run, as when another app runs macOS VMs, is no_capacity and leaves nothing", async () => {
@@ -645,8 +645,8 @@ test("a VM the framework refuses to run, as when another app runs macOS VMs, is 
     assert.match(error.message, /exceeds the system limit/);
     return true;
   });
-  assert.equal(existsSync(join(owners, `bb-box-${box.boxId}`)), false);
-  assert.equal(existsSync(join(mac, ".tart", "vms", `bb-box-${box.boxId}`)), false);
+  assert.equal(existsSync(join(owners, `alia-box-${box.boxId}`)), false);
+  assert.equal(existsSync(join(mac, ".tart", "vms", `alia-box-${box.boxId}`)), false);
 });
 
 test("release deletes the VM, its output and last its owner file; again is fine; then the box is gone", async () => {
@@ -655,7 +655,7 @@ test("release deletes the VM, its output and last its owner file; again is fine;
   await backend.release(guest, releasing);
   assert.equal(existsSync(join(mac, ".tart", "vms", guest.ref)), false);
   assert.equal(existsSync(join(owners, guest.ref)), false);
-  assert.equal(existsSync(join(mac, ".bb-box", "tart", "run", `${guest.ref}.out`)), false);
+  assert.equal(existsSync(join(mac, ".alia-box", "tart", "run", `${guest.ref}.out`)), false);
   await backend.release(guest, releasing);
   assert.equal(await backend.power(guest), null);
   await assert.rejects(backend.start(guest), (error: unknown) => error instanceof BackendError && error.code === "gone");
@@ -692,7 +692,7 @@ async function until(done: () => boolean): Promise<void> {
 test("a VM whose tart run crashed says so, with macOS's crash report; one that shut down says that; a start keeps the run before (#406)", async () => {
   const { mac, backend } = setup();
   const guest = await backend.acquire(identity(), null, hooks().hooks, signal());
-  const run = join(mac, ".bb-box", "tart", "run");
+  const run = join(mac, ".alia-box", "tart", "run");
   const exit = join(run, `${guest.ref}.exit`);
   const pid = Number(readFileSync(join(mac, ".tart", "vms", guest.ref, "running"), "utf8"));
   assert.match(readFileSync(exit, "utf8"), new RegExp(`^pid=${pid}\nstarted=\\d+\n$`));
@@ -740,7 +740,7 @@ test("says why a run ended from what the Mac recorded (#406)", () => {
     crash: null,
   });
   assert.equal(parseEnded("gone\n"), null);
-  assert.equal(endReason(end({ pid: null }), "tart run"), null, "a run started before BB Box recorded them");
+  assert.equal(endReason(end({ pid: null }), "tart run"), null, "a run started before VesnALIA Box recorded them");
   assert.deepEqual(endReason(end({ status: 1, endedAt: 5, output: "Error: VM stopped" }), "tart run"), { reason: "tart run exited with status 1. Its last output: Error: VM stopped", crashed: true, at: 5 });
   assert.deepEqual(endReason(end({ bootedAt: 1_790_000_100_000 }), "tart run"), { reason: "The Mac restarted at 2026-09-21 14:15:00 UTC, which ended tart run.", crashed: true, at: 1_790_000_100_000 });
   assert.deepEqual(endReason(end({}), "QEMU"), { reason: "QEMU ended, but left no exit status.", crashed: false, at: null });
@@ -784,21 +784,21 @@ test("image operations on a Mac: an image box, its capture with its record besid
   const dir = join(mac, "..", `image-ops-${counter++}`);
   mkdirSync(dir, { recursive: true });
   const binary = join(dir, "ssh");
-  writeFileSync(binary, `#!/bin/sh\ncase "$*" in *"cat /usr/local/share/bb-box/image.json"*) echo '${record("build.20261003-030000-abcd")}'; exit 0;; esac\nexec "${FAKE_SSH_BINARY}" "$@"\n`, { mode: 0o755 });
+  writeFileSync(binary, `#!/bin/sh\ncase "$*" in *"cat /usr/local/share/alia-box/image.json"*) echo '${record("build.20261003-030000-abcd")}'; exit 0;; esac\nexec "${FAKE_SSH_BINARY}" "$@"\n`, { mode: 0o755 });
   const backend = new TartBackend(tartConfig({}), context, { ...FAKES, sshBinary: binary });
   made.push(backend);
   const images = backend.images;
 
   const listed = await images.list();
-  const standard = listed.builds.find((build) => build.ref === "mac1/bb-box-macos")!;
+  const standard = listed.builds.find((build) => build.ref === "mac1/alia-box-macos")!;
   assert.deepEqual([listed.builds.length, standard.image, standard.kind, standard.current, standard.record?.kind], [1, "standard", "macos", true, "macos"], "macOS kinds share their image");
   assert.deepEqual(listed.boxes, []);
 
   // An image box: a clone at the kind's default size, with an owner file that marks it, which no sweep takes.
   const box = await images.box(standard, "a small image", signal());
   const vm = box.ref.slice("mac1/".length);
-  assert.match(vm, /^bb-box-image-[0-9a-f]{12}$/);
-  const owner = readFileSync(join(mac, ".bb-box", "tart", "owners", vm), "utf8");
+  assert.match(vm, /^alia-box-image-[0-9a-f]{12}$/);
+  const owner = readFileSync(join(mac, ".alia-box", "tart", "owners", vm), "utf8");
   assert.match(owner, /^install=test\nkind=macos\nimage-box=a small image\n/);
   assert.equal((await box.command.run("echo in the box")).stdout, "in the box\n");
   assert.deepEqual(await backend.held(), [], "an image box is no box's");
@@ -806,35 +806,35 @@ test("image operations on a Mac: an image box, its capture with its record besid
 
   // Its capture: stopped, renamed, its record beside it, and an owner file that names its image.
   const captured = await images.capture(box, standard, "small", signal());
-  assert.deepEqual([captured.ref, captured.build, captured.current], ["mac1/bb-box-img-small-20261003-030000-abcd", "build.20261003-030000-abcd", false]);
-  assert.ok(existsSync(join(mac, ".tart", "vms", "bb-box-img-small-20261003-030000-abcd")));
+  assert.deepEqual([captured.ref, captured.build, captured.current], ["mac1/alia-box-img-small-20261003-030000-abcd", "build.20261003-030000-abcd", false]);
+  assert.ok(existsSync(join(mac, ".tart", "vms", "alia-box-img-small-20261003-030000-abcd")));
   assert.ok(!existsSync(join(mac, ".tart", "vms", vm)), "the box is the build now");
-  assert.equal(JSON.parse(readFileSync(join(mac, ".bb-box", "tart", "images", "bb-box-img-small-20261003-030000-abcd.json"), "utf8")).build, "build.20261003-030000-abcd");
-  assert.match(readFileSync(join(mac, ".bb-box", "tart", "owners", "bb-box-img-small-20261003-030000-abcd"), "utf8"), /^install=test\nkind=macos\nimage-build=small\n/);
+  assert.equal(JSON.parse(readFileSync(join(mac, ".alia-box", "tart", "images", "alia-box-img-small-20261003-030000-abcd.json"), "utf8")).build, "build.20261003-030000-abcd");
+  assert.match(readFileSync(join(mac, ".alia-box", "tart", "owners", "alia-box-img-small-20261003-030000-abcd"), "utf8"), /^install=test\nkind=macos\nimage-build=small\n/);
   assert.deepEqual(await backend.held(), [], "a captured build is no box's");
   assert.ok((await images.list()).builds.some((build) => build.ref === captured.ref && build.image === "small" && !build.current));
 
   // A project's box starts from the build, a clone of it (#439).
   assert.equal(images.startsFrom, true);
   const project = await backend.acquire({ ...identity(), from: captured.ref }, null, hooks().hooks, signal());
-  assert.ok(tartCalls(mac).some((call) => call[1] === "clone" && call[2] === "bb-box-img-small-20261003-030000-abcd" && call[3] === project.ref), JSON.stringify(tartCalls(mac).filter((call) => call[1] === "clone")));
+  assert.ok(tartCalls(mac).some((call) => call[1] === "clone" && call[2] === "alia-box-img-small-20261003-030000-abcd" && call[3] === project.ref), JSON.stringify(tartCalls(mac).filter((call) => call[1] === "clone")));
   await backend.release(project, releasing);
 
   // A trial box of it, then both removed; what is not an image's stays.
   const trial = await images.box(captured, "trial", signal());
   await images.remove(trial.ref, signal());
   await images.remove(captured.ref, signal());
-  assert.ok(!existsSync(join(mac, ".tart", "vms", "bb-box-img-small-20261003-030000-abcd")));
-  assert.ok(!existsSync(join(mac, ".bb-box", "tart", "images", "bb-box-img-small-20261003-030000-abcd.json")));
-  await assert.rejects(images.remove("mac1/bb-box-macos", signal()), /bb-box-macos on mac1 is not an image box or build of this install's/);
+  assert.ok(!existsSync(join(mac, ".tart", "vms", "alia-box-img-small-20261003-030000-abcd")));
+  assert.ok(!existsSync(join(mac, ".alia-box", "tart", "images", "alia-box-img-small-20261003-030000-abcd.json")));
+  await assert.rejects(images.remove("mac1/alia-box-macos", signal()), /alia-box-macos on mac1 is not an image box or build of this install's/);
   assert.deepEqual((await images.list()).boxes, []);
 
-  // A new build by the prepare script, from a copy of setup/ on the Mac, as the user BB Box logs in as.
+  // A new build by the prepare script, from a copy of setup/ on the Mac, as the user VesnALIA Box logs in as.
   const setupDir = join(dir, "setup");
   mkdirSync(join(setupDir, "tart"), { recursive: true });
   mkdirSync(join(setupDir, "proxmox-lxc"), { recursive: true });
   mkdirSync(join(setupDir, "ssh-pool"), { recursive: true });
-  writeFileSync(join(setupDir, "ssh-pool", "mac-stream.swift"), "// bb-box-stream\n");
+  writeFileSync(join(setupDir, "ssh-pool", "mac-stream.swift"), "// alia-box-stream\n");
   writeFileSync(join(setupDir, "ssh-pool", "mac-chrome.sh"), "# Chrome\n");
   writeFileSync(
     join(setupDir, "tart", "prepare-image.sh"),
@@ -842,51 +842,51 @@ test("image operations on a Mac: an image box, its capture with its record besid
       "#!/bin/sh",
       "set -eu",
       'printf "%s\\n" "$@" > "$HOME/prepare-args"',
-      // The image builds bb-box-stream from the pool Mac's source (060), which comes with the copy of setup/.
+      // The image builds alia-box-stream from the pool Mac's source (060), which comes with the copy of setup/.
       'test -f ../ssh-pool/mac-stream.swift',
       // And installs Chrome as a pool Mac's setup does, with the script beside it.
       'test -f ../ssh-pool/mac-chrome.sh',
       'while [ $# -gt 0 ]; do case $1 in --name) name=$2; shift 2 ;; *) shift ;; esac; done',
       'export PATH="$HOME/.nix-profile/bin:$PATH"',
-      'tart clone bb-box-macos "$name"',
-      'mkdir -p "$HOME/.bb-box/tart/images"',
-      `printf '%s\\n' '${record("build.20261003-090000-ef01")}' > "$HOME/.bb-box/tart/images/$name.json"`,
+      'tart clone alia-box-macos "$name"',
+      'mkdir -p "$HOME/.alia-box/tart/images"',
+      `printf '%s\\n' '${record("build.20261003-090000-ef01")}' > "$HOME/.alia-box/tart/images/$name.json"`,
       'echo "done: $name is ready to clone"',
     ].join("\n"),
     { mode: 0o755 },
   );
   const lines: string[] = [];
-  const built = await images.build!(standard, setupDir, { bbUrl: "https://bb.example.com", log: (line) => lines.push(line), signal: signal() });
-  assert.match(built.ref, /^mac1\/bb-box-img-refresh-[0-9a-z]+$/);
+  const built = await images.build!(standard, setupDir, { aliaUrl: "https://bb.example.com", log: (line) => lines.push(line), signal: signal() });
+  assert.match(built.ref, /^mac1\/alia-box-img-refresh-[0-9a-z]+$/);
   assert.deepEqual([built.build, built.current], ["build.20261003-090000-ef01", false]);
   const args = readFileSync(join(mac, "prepare-args"), "utf8").trim().split("\n");
-  assert.deepEqual(args.filter((arg) => arg.startsWith("--")), ["--key", "--name", "--bb-url"]);
-  assert.match(args[args.indexOf("--key") + 1]!, /^ssh-ed25519 \S+ bb-box$/);
+  assert.deepEqual(args.filter((arg) => arg.startsWith("--")), ["--key", "--name", "--alia-url"]);
+  assert.match(args[args.indexOf("--key") + 1]!, /^ssh-ed25519 \S+ alia-box$/);
   assert.deepEqual(lines, [`done: ${built.ref.slice(5)} is ready to clone`]);
-  assert.deepEqual(readdirSync(join(mac, ".bb-box", "tart")).filter((name) => name.startsWith("setup-")), [], "the copy of setup/ goes");
+  assert.deepEqual(readdirSync(join(mac, ".alia-box", "tart")).filter((name) => name.startsWith("setup-")), [], "the copy of setup/ goes");
   assert.deepEqual(await backend.held(), []);
 
   // The replace: the build takes the image's name, with its record, and the old image goes.
   const replaced = await images.replace(built, standard, signal());
-  assert.deepEqual([replaced.ref, replaced.current, replaced.build], ["mac1/bb-box-macos", true, "build.20261003-090000-ef01"]);
+  assert.deepEqual([replaced.ref, replaced.current, replaced.build], ["mac1/alia-box-macos", true, "build.20261003-090000-ef01"]);
   assert.ok(!existsSync(join(mac, ".tart", "vms", built.ref.slice(5))));
-  assert.deepEqual(readdirSync(join(mac, ".tart", "vms")).filter((name) => name.startsWith("bb-box-macos")), ["bb-box-macos"], "the old image is gone");
-  assert.equal(JSON.parse(readFileSync(join(mac, ".bb-box", "tart", "images", "bb-box-macos.json"), "utf8")).build, "build.20261003-090000-ef01");
-  assert.equal((await images.list()).builds.find((build) => build.ref === "mac1/bb-box-macos")?.build, "build.20261003-090000-ef01");
+  assert.deepEqual(readdirSync(join(mac, ".tart", "vms")).filter((name) => name.startsWith("alia-box-macos")), ["alia-box-macos"], "the old image is gone");
+  assert.equal(JSON.parse(readFileSync(join(mac, ".alia-box", "tart", "images", "alia-box-macos.json"), "utf8")).build, "build.20261003-090000-ef01");
+  assert.equal((await images.list()).builds.find((build) => build.ref === "mac1/alia-box-macos")?.build, "build.20261003-090000-ef01");
   assert.match(images.check!("macos"), /cua-driver/);
-  assert.equal(images.check!("linux-arm64"), "bb-box-check-headless");
+  assert.equal(images.check!("linux-arm64"), "alia-box-check-headless");
 });
 
-test("a standard image's prepare script runs detached on the Mac, so its build outlives a link that drops, and BB Box follows its log again (#707)", async () => {
+test("a standard image's prepare script runs detached on the Mac, so its build outlives a link that drops, and VesnALIA Box follows its log again (#707)", async () => {
   const { mac, context, ssh } = setup();
   const backend = new TartBackend(tartConfig({}), context, { ...FAKES, sleep: (ms) => new Promise((resolve) => setTimeout(resolve, Math.min(ms, 100))) });
   made.push(backend);
   const images = backend.images!;
-  const standard = (await images.list()).builds.find((build) => build.ref === "mac1/bb-box-macos")!;
+  const standard = (await images.list()).builds.find((build) => build.ref === "mac1/alia-box-macos")!;
   const record = JSON.stringify({ contract: 1, image: "standard", kind: "macos", arch: "arm64", build: "build.20261017-090000-ab12", built: new Date().toISOString(), os: "macOS 27.0", tools: {} });
   const setupDir = join(mac, "..", `detached-${counter++}`, "setup");
   for (const sub of ["tart", "proxmox-lxc", "ssh-pool"]) mkdirSync(join(setupDir, sub), { recursive: true });
-  writeFileSync(join(setupDir, "ssh-pool", "mac-stream.swift"), "// bb-box-stream\n");
+  writeFileSync(join(setupDir, "ssh-pool", "mac-stream.swift"), "// alia-box-stream\n");
   writeFileSync(join(setupDir, "ssh-pool", "mac-chrome.sh"), "# Chrome\n");
   // The Mac drops off the network for 2 s mid-build, as a Mac's link over Tailscale can.
   writeFileSync(
@@ -898,9 +898,9 @@ test("a standard image's prepare script runs detached on the Mac, so its build o
       'echo "before the drop: café"',
       'touch "$HOME/dropping"; sleep 3',
       'export PATH="$HOME/.nix-profile/bin:$PATH"',
-      'tart clone bb-box-macos "$name"',
-      'mkdir -p "$HOME/.bb-box/tart/images"',
-      `printf '%s\\n' '${record}' > "$HOME/.bb-box/tart/images/$name.json"`,
+      'tart clone alia-box-macos "$name"',
+      'mkdir -p "$HOME/.alia-box/tart/images"',
+      `printf '%s\\n' '${record}' > "$HOME/.alia-box/tart/images/$name.json"`,
       'echo "after the drop"',
     ].join("\n"),
     { mode: 0o755 },
@@ -914,13 +914,13 @@ test("a standard image's prepare script runs detached on the Mac, so its build o
     await new Promise((resolve) => setTimeout(resolve, 2_000));
     rmSync(join(ssh.dir, "down", MAC));
   })();
-  const built = await images.build!(standard, setupDir, { bbUrl: null, log: (line) => lines.push(line), signal: AbortSignal.timeout(60_000) });
+  const built = await images.build!(standard, setupDir, { aliaUrl: null, log: (line) => lines.push(line), signal: AbortSignal.timeout(60_000) });
   await drop;
   assert.ok(dropped);
   assert.equal(built.build, "build.20261017-090000-ab12");
   assert.deepEqual(lines, ["before the drop: café", "after the drop"], "each line once, whole, across the drop");
   assert.ok(!existsSync(join(ssh.dir, "down", MAC)));
-  assert.deepEqual(readdirSync(join(mac, ".bb-box", "tart")).filter((name) => name.startsWith("setup-")), [], "the build's directory, log and all, goes");
+  assert.deepEqual(readdirSync(join(mac, ".alia-box", "tart")).filter((name) => name.startsWith("setup-")), [], "the build's directory, log and all, goes");
 });
 
 test("the upkeep removes an image refresh's build VMs and image boxes of this install's left over hours ago, and leaves the rest (#707)", async () => {
@@ -935,27 +935,27 @@ test("the upkeep removes an image refresh's build VMs and image boxes of this in
   const old = stamp(hours(6));
   const recent = stamp(hours(1));
   const others = hours(7);
-  vm(`bb-box-img-refresh-${old}`, { install: "test", kind: "macos", "image-build": "standard", created: hours(6) });
-  vm(`bb-box-img-refresh-${old}-build`);
-  vm(`bb-box-img-refresh-${recent}`, { install: "test", kind: "macos", "image-build": "standard", created: hours(1) });
-  vm("bb-box-image-0123456789ab", { install: "test", kind: "macos", "image-box": "answer time of build.x", created: hours(5) });
-  vm("bb-box-image-ba9876543210", { install: "test", kind: "macos", "image-box": "trial of build.y", created: hours(1) });
-  vm(`bb-box-img-refresh-${stamp(others)}`, { install: "another", kind: "macos", "image-build": "standard", created: others });
-  vm("bb-box-img-myimage-20261001-000000-abcd", { install: "test", kind: "macos", "image-build": "myimage", created: hours(30) });
+  vm(`alia-box-img-refresh-${old}`, { install: "test", kind: "macos", "image-build": "standard", created: hours(6) });
+  vm(`alia-box-img-refresh-${old}-build`);
+  vm(`alia-box-img-refresh-${recent}`, { install: "test", kind: "macos", "image-build": "standard", created: hours(1) });
+  vm("alia-box-image-0123456789ab", { install: "test", kind: "macos", "image-box": "answer time of build.x", created: hours(5) });
+  vm("alia-box-image-ba9876543210", { install: "test", kind: "macos", "image-box": "trial of build.y", created: hours(1) });
+  vm(`alia-box-img-refresh-${stamp(others)}`, { install: "another", kind: "macos", "image-build": "standard", created: others });
+  vm("alia-box-img-myimage-20261001-000000-abcd", { install: "test", kind: "macos", "image-build": "myimage", created: hours(30) });
   await backend.maintain(AbortSignal.timeout(30_000));
-  const left = readdirSync(join(mac, ".tart", "vms")).filter((name) => name !== "bb-box-macos").sort();
+  const left = readdirSync(join(mac, ".tart", "vms")).filter((name) => name !== "alia-box-macos").sort();
   assert.deepEqual(left, [
-    `bb-box-img-refresh-${recent}`,
-    `bb-box-img-refresh-${stamp(others)}`,
-    "bb-box-image-ba9876543210",
-    "bb-box-img-myimage-20261001-000000-abcd",
+    `alia-box-img-refresh-${recent}`,
+    `alia-box-img-refresh-${stamp(others)}`,
+    "alia-box-image-ba9876543210",
+    "alia-box-img-myimage-20261001-000000-abcd",
   ].sort(), "a recent refresh or box, another install's, and a project's build stay");
-  assert.ok(!existsSync(join(owners, `bb-box-img-refresh-${old}`)));
-  assert.ok(!existsSync(join(owners, "bb-box-image-0123456789ab")));
+  assert.ok(!existsSync(join(owners, `alia-box-img-refresh-${old}`)));
+  assert.ok(!existsSync(join(owners, "alia-box-image-0123456789ab")));
 });
 
 test("a suspended macOS VM's saved state is read through once before Tart restores it, which reads it in small pieces (#707)", () => {
-  const script = startScript("bb-box-warm-0123456789ab", 60);
+  const script = startScript("alia-box-warm-0123456789ab", 60);
   const read = script.indexOf('cat "$h/vms/$vm/state.vzvmsave" > /dev/null');
   assert.ok(read > 0, "the read is there");
   assert.ok(read > script.indexOf("--suspendable") && read < script.indexOf("detach \"$out\""), "for a macOS VM, before its run starts");
@@ -966,38 +966,38 @@ test("the doctor judges each Tart image by the record beside it (049)", async ()
   const { mac, context, make } = linuxSetup();
   const day = 24 * 60 * 60 * 1000;
   const [linuxPins, macosPins, app] = ["l", "m", "a"].map((letter) => letter.repeat(64));
-  const images = { pins: async (set: string) => (set === "linux" ? linuxPins! : set === "macos" ? macosPins! : "x".repeat(64)), bbApp: async () => app! };
-  const records = join(mac, ".bb-box", "tart", "images");
+  const images = { pins: async (set: string) => (set === "linux" ? linuxPins! : set === "macos" ? macosPins! : "x".repeat(64)), aliaApp: async () => app! };
+  const records = join(mac, ".alia-box", "tart", "images");
   const xcode = { xcode: "27.0", "ios-simulator": "27.0", metal: "32023.598" };
-  writeFileSync(join(records, "bb-box-macos.json"), imageRecord("macos", { pins: macosPins, bbApp: app, tools: xcode }));
-  writeFileSync(join(records, "bb-box-linux.json"), imageRecord("linux-arm64", { pins: "o".repeat(64), bbApp: null, built: new Date(Date.now() - 15 * day).toISOString() }));
+  writeFileSync(join(records, "alia-box-macos.json"), imageRecord("macos", { pins: macosPins, aliaApp: app, tools: xcode }));
+  writeFileSync(join(records, "alia-box-linux.json"), imageRecord("linux-arm64", { pins: "o".repeat(64), aliaApp: null, built: new Date(Date.now() - 15 * day).toISOString() }));
   const backend = make({ ...context, images });
   let report = await backend.doctor();
   const check = (kind: string) => report.checks.find((candidate) => candidate.id === `image.mac1.${kind}`)!;
   for (const kind of ["macos", "macos-desktop"]) {
     assert.equal(check(kind).status, "ok", kind);
-    assert.match(check(kind).detail, /^bb-box-macos, 4 cores and 8 GiB as prepared\. Standard image build\.20261003-021500, built \d+ \w+ \(today\): fake OS, xcode 27\.0, ios-simulator 27\.0, metal 32023\.598\.$/);
+    assert.match(check(kind).detail, /^alia-box-macos, 4 cores and 8 GiB as prepared\. Standard image build\.20261003-021500, built \d+ \w+ \(today\): fake OS, xcode 27\.0, ios-simulator 27\.0, metal 32023\.598\.$/);
   }
   const linux = check("linux-arm64");
   assert.equal(linux.status, "warn");
-  assert.match(linux.detail, /It is 15 days old, more than 14, .* It has no build of BB's app, .* It was built with other pins than this BB Box's/);
-  assert.equal(linux.fix, "Build it again on mac1 with setup/tart/prepare-linux-image.sh --key '<BB Box's public key>' --name bb-box-linux --bb-url <BB's server URL> --replace.");
+  assert.match(linux.detail, /It is 15 days old, more than 14, .* It has no build of ALIA's app, .* It was built with other pins than this ALIA Box's/);
+  assert.equal(linux.fix, "Build it again on mac1 with setup/tart/prepare-linux-image.sh --key '<VesnALIA Box's public key>' --name alia-box-linux --alia-url <VesnALIA's server URL> --replace.");
 
   // A macOS image without Xcode warns (#475).
-  writeFileSync(join(records, "bb-box-macos.json"), imageRecord("macos", { pins: macosPins, bbApp: app }));
+  writeFileSync(join(records, "alia-box-macos.json"), imageRecord("macos", { pins: macosPins, aliaApp: app }));
   report = await backend.doctor();
   assert.equal(check("macos").status, "warn");
   assert.match(check("macos").detail, /It has no Xcode, so its boxes have no XCTest, Metal compiler or iOS Simulator \(#475\)\.$/);
 
-  rmSync(join(records, "bb-box-macos.json"));
+  rmSync(join(records, "alia-box-macos.json"));
   report = await backend.doctor();
   assert.equal(check("macos").status, "warn");
-  assert.match(check("macos").detail, /^bb-box-macos, 4 cores and 8 GiB as prepared\. It has no image record/);
-  assert.equal(check("macos").fix, "Build it again on mac1 with setup/tart/prepare-image.sh --key '<BB Box's public key>' --name bb-box-macos --bb-url <BB's server URL> --replace.");
+  assert.match(check("macos").detail, /^alia-box-macos, 4 cores and 8 GiB as prepared\. It has no image record/);
+  assert.equal(check("macos").fix, "Build it again on mac1 with setup/tart/prepare-image.sh --key '<VesnALIA Box's public key>' --name alia-box-macos --alia-url <VesnALIA's server URL> --replace.");
 });
 
 test("doctor says what is missing on the Mac", async () => {
-  const { ssh, backend, make } = setup({ "tart-macos-desktop-image": "bb-box-missing" });
+  const { ssh, backend, make } = setup({ "tart-macos-desktop-image": "alia-box-missing" });
   const report = await backend.doctor();
   assert.equal(report.ok, false);
   const image = report.checks.find((check) => check.id === "image.mac1.macos-desktop")!;
@@ -1053,7 +1053,7 @@ test("the doctor says when Spotlight indexes Tart's VMs, and its fix keeps Spotl
 });
 
 test("Spotlight's fix for a TART_HOME that is not a link makes it one, and on a volume of Tart's own offers mdutil too (F-12)", () => {
-  const dir = realpathSync(mkdtempSync(join(tmpdir(), "bb-box-spotlight-")));
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "alia-box-spotlight-")));
   const home = join(dir, "Tart");
   mkdirSync(join(home, "vms", "a"), { recursive: true });
   writeFileSync(join(home, "vms", "a", "config.json"), "{}");
@@ -1100,9 +1100,9 @@ test("a box's hostname comes from its name, and only a VM is renamed", () => {
   const script = nameScript("calm-otter-3");
   assert.match(script, /^if \[ "\$\(uname -s\)" = Linux \]; then\n {2}\[ "\$\(systemd-detect-virt --vm 2>\/dev\/null\)" = apple \] \|\| \{ echo "not a VM"; exit 0; \}\n/);
   // Shutting a Linux VM down is guarded the same way, and by the VM's own name.
-  const off = powerOffScript("bb-box-bx1");
+  const off = powerOffScript("alia-box-bx1");
   assert.match(off, /^\[ "\$\(systemd-detect-virt --vm 2>\/dev\/null\)" = apple \] \|\| \{ echo "not a VM"; exit 0; \}\n/);
-  assert.match(off, /\n\[ "\$\(cat "\$HOME\/\.config\/bb-box\/vm" 2>\/dev\/null\)" = 'bb-box-bx1' \] \|\| \{ echo "not bb-box-bx1"; exit 0; \}\nsync\nsudo -n systemctl poweroff --no-block/);
+  assert.match(off, /\n\[ "\$\(cat "\$HOME\/\.config\/alia-box\/vm" 2>\/dev\/null\)" = 'alia-box-bx1' \] \|\| \{ echo "not alia-box-bx1"; exit 0; \}\nsync\nsudo -n systemctl poweroff --no-block/);
   assert.match(script, /\ncase "\$\(sysctl -n hw\.model 2>\/dev\/null\)" in VirtualMac\*\) ;; \*\) echo "not a VM"; exit 0 ;; esac\n/);
   // A Linux desktop's X cookie answers for any hostname before the name changes, which needs no D-Bus.
   const linux = script.slice(0, script.indexOf("\nfi\n"));
@@ -1185,7 +1185,7 @@ test("a refresh's base is pulled when the registry has moved its tag, room allow
   assert.deepEqual(calls(), ["pull ghcr.io/acme/macos-xcode:27"]);
 
   mkdirSync(join(cache, "sha256:kept"), { recursive: true });
-  const bases = join(dir, ".bb-box", "tart", "bases");
+  const bases = join(dir, ".alia-box", "tart", "bases");
   mkdirSync(bases, { recursive: true });
   writeFileSync(join(bases, "other"), "sha256:old\n");
   const shared = run(pruneBaseScript("ghcr.io/acme/macos-xcode:27", "inst1"), "0");
@@ -1197,14 +1197,14 @@ test("a refresh's base is pulled when the registry has moved its tag, room allow
   const pruned = run(pruneBaseScript("ghcr.io/acme/macos-xcode:27", "inst1"), "0");
   assert.match(pruned.stdout, /base: removed the old cached ghcr\.io\/acme\/macos-xcode@sha256:old/);
   assert.deepEqual([existsSync(join(cache, "sha256:old")), existsSync(join(cache, "sha256:new")), existsSync(join(cache, "sha256:stray"))], [false, true, true]);
-  assert.equal(readFileSync(join(dir, ".bb-box", "tart", "base-used", "inst1"), "utf8"), "sha256:new\n");
-  assert.match(run(baseScript("bb-box-macos", 60, "inst1"), "0").stdout, /base: bb-box-macos is a local VM/);
+  assert.equal(readFileSync(join(dir, ".alia-box", "tart", "base-used", "inst1"), "utf8"), "sha256:new\n");
+  assert.match(run(baseScript("alia-box-macos", 60, "inst1"), "0").stdout, /base: alia-box-macos is a local VM/);
 
   mkdirSync(join(cache, "sha256:pinned"), { recursive: true });
   writeFileSync(join(bases, "inst2"), "sha256:pinned\n");
   const pinned = run(baseScript("ghcr.io/acme/macos-xcode@sha256:pinned", 60, "inst1"), "0");
   assert.match(pinned.stdout, /base: ghcr\.io\/acme\/macos-xcode@sha256:pinned is pinned by digest/);
-  assert.equal(readFileSync(join(dir, ".bb-box", "tart", "base-used", "inst1"), "utf8"), "sha256:pinned\n");
+  assert.equal(readFileSync(join(dir, ".alia-box", "tart", "base-used", "inst1"), "utf8"), "sha256:pinned\n");
   const kept = run(pruneBaseScript("ghcr.io/acme/macos-xcode:27", "inst2"), "0");
   assert.equal(kept.status, 0, kept.stderr);
   assert.equal(existsSync(join(cache, "sha256:pinned")), true, "another install uses this digest, pinned by @sha256");
@@ -1214,13 +1214,13 @@ test("prepare-image.sh's boot waits while macOS's two VM slots are taken, saying
   const home = mkdtempSync(join(tmpdir(), "bbbox-slot-"));
   after(() => rmSync(home, { recursive: true, force: true }));
   fakeMacTools(home);
-  addImage(home, "bb-box-macos-build");
+  addImage(home, "alia-box-macos-build");
   const source = readFileSync(new URL("../setup/tart/prepare-image.sh", import.meta.url), "utf8");
   const line = (pattern: RegExp) => source.match(pattern)![0];
   const start = source.indexOf("boot() {");
   const boot = source.slice(start, source.indexOf("\n}\n", start) + 2);
   const script = (minutes: number) =>
-    ["set -eu", line(/^die\(\).*$/m), line(/^step\(\).*$/m), `SLOT_WAIT_MINUTES=${minutes}`, "SLOT_POLL_SECONDS=1", boot, "build=bb-box-macos-build; work=$(mktemp -d)", "boot", "echo booted", 'tart stop "$build"'].join("\n");
+    ["set -eu", line(/^die\(\).*$/m), line(/^step\(\).*$/m), `SLOT_WAIT_MINUTES=${minutes}`, "SLOT_POLL_SECONDS=1", boot, "build=alia-box-macos-build; work=$(mktemp -d)", "boot", "echo booted", 'tart stop "$build"'].join("\n");
   const run = (minutes: number) =>
     new Promise<{ code: number | null; out: string; err: string }>((resolve) => {
       const child = spawn("/bin/sh", ["-c", script(minutes)], { env: { HOME: home, PATH: `${join(home, ".nix-profile", "bin")}:/usr/bin:/bin` } });
@@ -1236,13 +1236,13 @@ test("prepare-image.sh's boot waits while macOS's two VM slots are taken, saying
   rmSync(join(home, ".fake-other-macos-vms"));
   const booted = await waiting;
   assert.equal(booted.code, 0, booted.err);
-  assert.match(booted.out, /no macOS VM slot is free for bb-box-macos-build \(The number of VMs exceeds the system limit \(other running VMs: another app's\)\): waiting for one, up to 1 more minutes\n/);
+  assert.match(booted.out, /no macOS VM slot is free for alia-box-macos-build \(The number of VMs exceeds the system limit \(other running VMs: another app's\)\): waiting for one, up to 1 more minutes\n/);
   assert.match(booted.out, /booted\n$/);
   // No slot within the time: it stops, saying why.
   writeFileSync(join(home, ".fake-other-macos-vms"), "2");
   const stopped = await run(0);
   assert.equal(stopped.code, 1);
-  assert.match(stopped.err, /^prepare-image: no macOS VM slot was free for bb-box-macos-build within 0 minutes: The number of VMs exceeds the system limit/m);
+  assert.match(stopped.err, /^prepare-image: no macOS VM slot was free for alia-box-macos-build within 0 minutes: The number of VMs exceeds the system limit/m);
 });
 
 test("a macOS VM resizes its CPUs and memory with a restart: shut down, not suspended, tart set and booted, and keeps its disk (061)", async () => {
@@ -1328,11 +1328,11 @@ const IOS_DEVICES = [IOS_DEVICE("iPhone 18 Pro", "com.apple.CoreSimulator.SimDev
 
 test("prepare-ios-image.sh finds VMs by their folders, without tart list, so a VM deleted as it reads cannot fail it or pass for the macOS image missing (F-4, F-10)", async () => {
   const { mac } = setup();
-  addImage(mac, "bb-box-ios");
+  addImage(mac, "alia-box-ios");
   const script = join(import.meta.dirname, "..", "setup", "tart", "prepare-ios-image.sh");
   const prepare = (from: string) =>
     new Promise<{ code: number | null; stderr: string }>((resolve) => {
-      const child = spawn("/bin/sh", [script, "--from", from, "--name", "bb-box-ios"], { env: { HOME: mac, PATH: `${join(mac, ".nix-profile", "bin")}:/usr/bin:/bin` } });
+      const child = spawn("/bin/sh", [script, "--from", from, "--name", "alia-box-ios"], { env: { HOME: mac, PATH: `${join(mac, ".nix-profile", "bin")}:/usr/bin:/bin` } });
       let stderr = "";
       child.stderr.on("data", (chunk: Buffer) => (stderr += chunk));
       child.on("close", (code) => resolve({ code, stderr }));
@@ -1340,19 +1340,19 @@ test("prepare-ios-image.sh finds VMs by their folders, without tart list, so a V
   writeFileSync(join(mac, ".fake-tart-list-fails"), "");
   const raced = await prepare(FAKE_IMAGE);
   assert.equal(raced.code, 1);
-  assert.match(raced.stderr, /prepare-ios-image: bb-box-ios exists; give --replace to build it again\n$/, "it got past the macOS image's check");
-  const missing = await prepare("bb-box-not-there");
-  assert.match(missing.stderr, /there is no Tart VM bb-box-not-there/);
+  assert.match(raced.stderr, /prepare-ios-image: alia-box-ios exists; give --replace to build it again\n$/, "it got past the macOS image's check");
+  const missing = await prepare("alia-box-not-there");
+  assert.match(missing.stderr, /there is no Tart VM alia-box-not-there/);
   rmSync(join(mac, ".fake-tart-list-fails"));
   assert.deepEqual(askedTartToReadDisks(tartCalls(mac)), []);
 });
 
-test("grant-tcc.sh reads a VM's state from its folder and Tart's run lock, as BB Box does, without tart list, so it opens no disk (F-12)", async () => {
+test("grant-tcc.sh reads a VM's state from its folder and Tart's run lock, as VesnALIA Box does, without tart list, so it opens no disk (F-12)", async () => {
   const { mac } = setup();
   const script = join(import.meta.dirname, "..", "setup", "tart", "grant-tcc.sh");
   const text = readFileSync(script, "utf8");
-  assert.ok(text.includes(`run_lock_holders() { perl -e '${RUN_LOCK_HOLDERS_PL}' "$@"; }`), "it reads the run lock with BB Box's own perl");
-  assert.ok(text.includes(TART_LISTS_SH), "it lists a VM by its folder as BB Box does");
+  assert.ok(text.includes(`run_lock_holders() { perl -e '${RUN_LOCK_HOLDERS_PL}' "$@"; }`), "it reads the run lock with VesnALIA Box's own perl");
+  assert.ok(text.includes(TART_LISTS_SH), "it lists a VM by its folder as VesnALIA Box does");
   assert.doesNotMatch(text, /tart (list|get)/);
   const grant = (vm: string) =>
     new Promise<{ code: number | null; stderr: string }>((resolve) => {
@@ -1369,11 +1369,11 @@ test("grant-tcc.sh reads a VM's state from its folder and Tart's run lock, as BB
   assert.match(stopped.stderr, /grant-tcc: \S*Nothing\.app is not an app\n$/, "a stopped VM gets past the state check");
 
   writeFileSync(join(folder, "state.vzvmsave"), "");
-  assert.match((await grant(FAKE_IMAGE)).stderr, /grant-tcc: bb-box-macos must be stopped, not suspended\n$/);
+  assert.match((await grant(FAKE_IMAGE)).stderr, /grant-tcc: alia-box-macos must be stopped, not suspended\n$/);
   rmSync(join(folder, "state.vzvmsave"));
 
   await runVmElsewhere(folder);
-  assert.match((await grant(FAKE_IMAGE)).stderr, /grant-tcc: bb-box-macos must be stopped, not running\n$/);
+  assert.match((await grant(FAKE_IMAGE)).stderr, /grant-tcc: alia-box-macos must be stopped, not running\n$/);
   rmSync(join(folder, "running"));
   let afterRun = await grant(FAKE_IMAGE);
   for (let tries = 0; /not running/.test(afterRun.stderr) && tries < 50; tries++) afterRun = await grant(FAKE_IMAGE);
@@ -1382,21 +1382,21 @@ test("grant-tcc.sh reads a VM's state from its folder and Tart's run lock, as BB
   mkdirSync(join(mac, ".tart", "vms", "half"));
   writeFileSync(join(mac, ".tart", "vms", "half", "config.json"), "{}");
   assert.match((await grant("half")).stderr, /grant-tcc: no Tart VM half\n$/, "a folder Tart does not list is no VM");
-  assert.match((await grant("bb-box-not-there")).stderr, /grant-tcc: no Tart VM bb-box-not-there\n$/);
+  assert.match((await grant("alia-box-not-there")).stderr, /grant-tcc: no Tart VM alia-box-not-there\n$/);
   assert.deepEqual(tartCalls(mac).filter(([tool]) => tool === "tart"), [], "it runs no tart command");
 });
 
-test("the iOS image: listed when set, built by prepare-ios-image.sh on the macOS image, replaced without touching that image, checked by bb-box-check-ios, and judged by the doctor (063, 3.2)", async () => {
-  const { mac, context } = setup({ "tart-ios-image": "bb-box-ios" });
-  addImage(mac, "bb-box-ios");
+test("the iOS image: listed when set, built by prepare-ios-image.sh on the macOS image, replaced without touching that image, checked by alia-box-check-ios, and judged by the doctor (063, 3.2)", async () => {
+  const { mac, context } = setup({ "tart-ios-image": "alia-box-ios" });
+  addImage(mac, "alia-box-ios");
   const iosRecord = (build: string, base = "build.20261003-021500") => imageRecord("ios", { build, base, devices: IOS_DEVICES, tools: { idb_companion: "1.7.7" } });
-  writeFileSync(join(mac, ".bb-box", "tart", "images", "bb-box-ios.json"), `${iosRecord("build.20261003-040000-1111")}\n`);
-  const backend = new TartBackend(tartConfig({ "tart-ios-image": "bb-box-ios" }), context, FAKES);
+  writeFileSync(join(mac, ".alia-box", "tart", "images", "alia-box-ios.json"), `${iosRecord("build.20261003-040000-1111")}\n`);
+  const backend = new TartBackend(tartConfig({ "tart-ios-image": "alia-box-ios" }), context, FAKES);
   made.push(backend);
   const images = backend.images;
 
   const listed = await images.list();
-  const ios = listed.builds.find((build) => build.ref === "mac1/bb-box-ios")!;
+  const ios = listed.builds.find((build) => build.ref === "mac1/alia-box-ios")!;
   assert.deepEqual([ios.kind, ios.image, ios.current, ios.build], ["ios", "standard", true, "build.20261003-040000-1111"]);
   assert.equal(ios.record?.devices?.length, 2);
   const offered = backend.kinds().find((kind) => kind.id === "ios");
@@ -1404,28 +1404,28 @@ test("the iOS image: listed when set, built by prepare-ios-image.sh on the macOS
   assert.deepEqual(offered.capabilities.device, { platform: "ios", devices: IOS_DEVICES });
   assert.deepEqual(offered.capabilities.displays.map((display) => display.id), ["desktop", "device"]);
   assert.equal(offered.capabilities.computerUse, null);
-  assert.match(images.check!("ios"), /cua-driver[\s\S]*\/usr\/local\/bin\/bb-box-check-ios$/);
+  assert.match(images.check!("ios"), /cua-driver[\s\S]*\/usr\/local\/bin\/alia-box-check-ios$/);
 
   const iosCheck = async () => (await backend.doctor()).checks.find((check) => check.id === "image.mac1.ios")!;
   const healthy = await iosCheck();
   assert.equal(healthy.status, "ok", healthy.detail);
-  writeFileSync(join(mac, ".bb-box", "tart", "images", "bb-box-ios.json"), `${iosRecord("build.20261003-040000-1111", "build.20260901-000000")}\n`);
+  writeFileSync(join(mac, ".alia-box", "tart", "images", "alia-box-ios.json"), `${iosRecord("build.20261003-040000-1111", "build.20260901-000000")}\n`);
   const behind = await iosCheck();
   assert.equal(behind.status, "warn");
   assert.match(behind.detail, /It is built on build build\.20260901-000000 of the macOS image, which is now build\.20261003-021500/);
-  assert.match(behind.fix ?? "", /prepare-ios-image\.sh --from bb-box-macos --name bb-box-ios --replace/);
+  assert.match(behind.fix ?? "", /prepare-ios-image\.sh --from alia-box-macos --name alia-box-ios --replace/);
   writeFileSync(
-    join(mac, ".bb-box", "tart", "images", "bb-box-ios.json"),
+    join(mac, ".alia-box", "tart", "images", "alia-box-ios.json"),
     `${imageRecord("ios", { build: "b", base: "build.20261003-021500", devices: [{ ...IOS_DEVICES[0], runtime: { ...IOS_DEVICES[0]!.runtime, companion: "1.6.0" } }] })}\n`,
   );
   const untested = await iosCheck();
   assert.equal(untested.status, "fail");
   assert.match(untested.detail, /idb_companion 1\.6\.0 with Xcode 27\.0, a pairing no image check has passed/);
-  writeFileSync(join(mac, ".bb-box", "tart", "images", "bb-box-ios.json"), `${iosRecord("build.20261003-040000-1111")}\n`);
+  writeFileSync(join(mac, ".alia-box", "tart", "images", "alia-box-ios.json"), `${iosRecord("build.20261003-040000-1111")}\n`);
 
   const setupDir = join(mac, "..", `ios-image-${counter++}`, "setup");
   for (const sub of ["tart", "proxmox-lxc", "ssh-pool"]) mkdirSync(join(setupDir, sub), { recursive: true });
-  writeFileSync(join(setupDir, "ssh-pool", "mac-stream.swift"), "// bb-box-stream\n");
+  writeFileSync(join(setupDir, "ssh-pool", "mac-stream.swift"), "// alia-box-stream\n");
   writeFileSync(join(setupDir, "ssh-pool", "mac-chrome.sh"), "# Chrome\n");
   writeFileSync(
     join(setupDir, "tart", "prepare-ios-image.sh"),
@@ -1436,29 +1436,29 @@ test("the iOS image: listed when set, built by prepare-ios-image.sh on the macOS
       'while [ $# -gt 0 ]; do case $1 in --name) name=$2; shift 2 ;; --from) from=$2; shift 2 ;; *) shift ;; esac; done',
       'export PATH="$HOME/.nix-profile/bin:$PATH"',
       'tart clone "$from" "$name"',
-      'mkdir -p "$HOME/.bb-box/tart/images"',
-      `printf '%s\\n' '${iosRecord("build.20261004-040000-2222")}' > "$HOME/.bb-box/tart/images/$name.json"`,
+      'mkdir -p "$HOME/.alia-box/tart/images"',
+      `printf '%s\\n' '${iosRecord("build.20261004-040000-2222")}' > "$HOME/.alia-box/tart/images/$name.json"`,
       'echo "done: $name is ready to clone"',
     ].join("\n"),
     { mode: 0o755 },
   );
-  const built = await images.build!(ios, setupDir, { bbUrl: "https://bb.example.com", log: () => {}, signal: signal() });
+  const built = await images.build!(ios, setupDir, { aliaUrl: "https://bb.example.com", log: () => {}, signal: signal() });
   const args = readFileSync(join(mac, "prepare-ios-args"), "utf8").trim().split("\n");
-  assert.deepEqual(args, ["--from", "bb-box-macos", "--name", built.ref.slice(5)], "no key, no BB URL and no pull: it is a clone of the macOS image");
+  assert.deepEqual(args, ["--from", "alia-box-macos", "--name", built.ref.slice(5)], "no key, no VesnALIA URL and no pull: it is a clone of the macOS image");
   assert.deepEqual([built.kind, built.build], ["ios", "build.20261004-040000-2222"]);
 
   const replaced = await images.replace(built, ios, signal());
-  assert.deepEqual([replaced.ref, replaced.current, replaced.build], ["mac1/bb-box-ios", true, "build.20261004-040000-2222"]);
-  assert.ok(existsSync(join(mac, ".tart", "vms", "bb-box-macos")), "the macOS image it is built on stays");
-  assert.ok(!tartCalls(mac).some((call) => call[1] === "delete" && call[2] === "bb-box-macos"));
-  await assert.rejects(images.remove("mac1/bb-box-ios", signal()), /bb-box-ios on mac1 is not an image box or build of this install's/);
+  assert.deepEqual([replaced.ref, replaced.current, replaced.build], ["mac1/alia-box-ios", true, "build.20261004-040000-2222"]);
+  assert.ok(existsSync(join(mac, ".tart", "vms", "alia-box-macos")), "the macOS image it is built on stays");
+  assert.ok(!tartCalls(mac).some((call) => call[1] === "delete" && call[2] === "alia-box-macos"));
+  await assert.rejects(images.remove("mac1/alia-box-ios", signal()), /alia-box-ios on mac1 is not an image box or build of this install's/);
 });
 
 test("offers ios once a Mac's iOS image lists its devices: a box clones that image, keeps no warm VM, and opens only its desktop by RFB, as the device has a display of its own (063, 4.2)", async () => {
-  const { mac, context } = setup({ "tart-ios-image": "bb-box-ios" });
-  addImage(mac, "bb-box-ios");
-  writeFileSync(join(mac, ".bb-box", "tart", "images", "bb-box-ios.json"), `${imageRecord("ios", { build: "build.20261003-040000-1111", base: "build.20261003-021500", devices: IOS_DEVICES, tools: { idb_companion: "1.7.7" } })}\n`);
-  const backend = new TartBackend(tartConfig({ "tart-ios-image": "bb-box-ios" }), context, FAKES);
+  const { mac, context } = setup({ "tart-ios-image": "alia-box-ios" });
+  addImage(mac, "alia-box-ios");
+  writeFileSync(join(mac, ".alia-box", "tart", "images", "alia-box-ios.json"), `${imageRecord("ios", { build: "build.20261003-040000-1111", base: "build.20261003-021500", devices: IOS_DEVICES, tools: { idb_companion: "1.7.7" } })}\n`);
+  const backend = new TartBackend(tartConfig({ "tart-ios-image": "alia-box-ios" }), context, FAKES);
   made.push(backend);
   assert.ok(!backend.kinds().some((kind) => kind.id === "ios"), "not offered before a Mac has answered with the image's devices");
   const deadline = Date.now() + 10_000;
@@ -1469,19 +1469,19 @@ test("offers ios once a Mac's iOS image lists its devices: a box clones that ima
   assert.equal((await backend.capacity("ios", SMALL, [], signal())).warm?.target ?? 0, 0, "ios boxes keep no warm VM: their spares are 063 unit 7.5's");
 
   const guest = await backend.acquire(identity("ios"), null, hooks().hooks, signal());
-  assert.ok(tartCalls(mac).some((call) => call[1] === "clone" && call[2] === "bb-box-ios" && call[3] === guest.ref), "cloned from the iOS image");
+  assert.ok(tartCalls(mac).some((call) => call[1] === "clone" && call[2] === "alia-box-ios" && call[3] === guest.ref), "cloned from the iOS image");
   const { displays } = await backend.transports(guest, "ios");
   assert.deepEqual(displays.map((display) => [display.id, display.protocol]), [["desktop", "rfb"]]);
   await backend.release(guest, releasing);
 });
 
 test("ios, withheld until a Mac lists the iOS image's devices, is offered once withheldKinds has read the Macs, and otherwise withheld with why: a Mac that did not answer, or an image with no devices (063)", async () => {
-  const { mac, context } = setup({ "tart-ios-image": "bb-box-ios" });
-  addImage(mac, "bb-box-ios");
-  const records = join(mac, ".bb-box", "tart", "images", "bb-box-ios.json");
+  const { mac, context } = setup({ "tart-ios-image": "alia-box-ios" });
+  addImage(mac, "alia-box-ios");
+  const records = join(mac, ".alia-box", "tart", "images", "alia-box-ios.json");
   const record = (devices: typeof IOS_DEVICES | null) => `${imageRecord("ios", { build: "build.20261003-040000-1111", base: "build.20261003-021500", devices, tools: { idb_companion: "1.7.7" } })}\n`;
   const fresh = () => {
-    const backend = new TartBackend(tartConfig({ "tart-ios-image": "bb-box-ios" }), context, FAKES);
+    const backend = new TartBackend(tartConfig({ "tart-ios-image": "alia-box-ios" }), context, FAKES);
     made.push(backend);
     return backend;
   };
@@ -1494,7 +1494,7 @@ test("ios, withheld until a Mac lists the iOS image's devices, is offered once w
 
   writeFileSync(records, record(null));
   const bare = await fresh().withheldKinds("ios", signal());
-  assert.deepEqual(bare, [{ kind: "ios", passing: false, why: "the iOS image bb-box-ios on mac1 lists no iOS devices in its record, so there is none to boot. bb box doctor says why." }]);
+  assert.deepEqual(bare, [{ kind: "ios", passing: false, why: "the iOS image alia-box-ios on mac1 lists no iOS devices in its record, so there is none to boot. VesnALIA box doctor says why." }]);
 
   writeFileSync(records, record(IOS_DEVICES));
   const tart = join(mac, ".tart");
@@ -1503,7 +1503,7 @@ test("ios, withheld until a Mac lists the iOS image's devices, is offered once w
   try {
     const [silent] = await fresh().withheldKinds("ios", signal());
     assert.equal(silent?.passing, true);
-    assert.match(silent?.why ?? "", /^mac1 did not answer, so BB Box cannot read which devices its iOS image offers: .*is its volume mounted\?/s);
+    assert.match(silent?.why ?? "", /^mac1 did not answer, so ALIA Box cannot read which devices its iOS image offers: .*is its volume mounted\?/s);
   } finally {
     rmSync(tart);
     renameSync(`${tart}.away`, tart);
@@ -1515,24 +1515,24 @@ test("the iOS image setting is a Tart VM name of its own, and needs a macOS imag
     parseTartSettings({ "tart-enabled": true, "tart-hosts": `mac1 bbbox-admin@${FAKE_MAC}`, "tart-host-keys": `${FAKE_MAC} ssh-ed25519 AAAA`, ...values });
   const off = parse({});
   assert.ok(off.enabled && off.ok && off.config.iosImage === null, "off by default");
-  const on = parse({ "tart-ios-image": "bb-box-ios" });
-  assert.ok(on.enabled && on.ok && on.config.iosImage === "bb-box-ios");
+  const on = parse({ "tart-ios-image": "alia-box-ios" });
+  assert.ok(on.enabled && on.ok && on.config.iosImage === "alia-box-ios");
   const problems = (values: Record<string, unknown>) => {
     const parsed = parse(values);
     return parsed.enabled && !parsed.ok ? parsed.problems : [];
   };
-  assert.deepEqual(problems({ "tart-ios-image": "bb box ios" }), ["Tart: the iOS image is not a Tart VM name BB Box can use."]);
-  assert.deepEqual(problems({ "tart-ios-image": "bb-box-ios", "tart-macos-image": "", "tart-macos-desktop-image": "", "tart-linux-image": "bb-box-linux" }), [
+  assert.deepEqual(problems({ "tart-ios-image": "alia box ios" }), ["Tart: the iOS image is not a Tart VM name VesnALIA Box can use."]);
+  assert.deepEqual(problems({ "tart-ios-image": "alia-box-ios", "tart-macos-image": "", "tart-macos-desktop-image": "", "tart-linux-image": "alia-box-linux" }), [
     "Tart: the iOS image is built on the macOS image, so give a macOS image too.",
   ]);
-  assert.deepEqual(problems({ "tart-ios-image": "bb-box-macos" }), ["Tart: the iOS image is another kind's image; the iOS image is a VM of its own."]);
+  assert.deepEqual(problems({ "tart-ios-image": "alia-box-macos" }), ["Tart: the iOS image is another kind's image; the iOS image is a VM of its own."]);
 });
 
-test("what a Mac's empty shared iOS host sizes take is BB Box's estimate from the Mac it last read, read once when first asked, and open pages are told (067)", async () => {
+test("what a Mac's empty shared iOS host sizes take is VesnALIA Box's estimate from the Mac it last read, read once when first asked, and open pages are told (067)", async () => {
   const { make } = setup();
   let told = 0;
   const tart = make({ ...testContext(new MemoryStorage()), factsChanged: () => (told += 1) });
-  assert.deepEqual(tart.hostEstimates(), {}, "nothing is known before BB Box reads the Mac");
+  assert.deepEqual(tart.hostEstimates(), {}, "nothing is known before VesnALIA Box reads the Mac");
   for (let tries = 0; tries < 200 && !told; tries += 1) await new Promise((resolve) => setTimeout(resolve, 10));
   assert.equal(told, 1);
   const mac = tart.hostEstimates().mac1!;

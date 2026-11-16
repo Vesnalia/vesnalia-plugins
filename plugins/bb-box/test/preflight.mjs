@@ -9,7 +9,7 @@ import { GUARD_FOLDER_PREFIX, SYSTEM_PATH, firstOnPath } from "./host-stubs.mjs"
 export const MAY_BREAK_THIS_MACHINE = "BBBOX_TESTS_MAY_BREAK_THIS_MACHINE";
 export const MACHINE_CHECK = "BBBOX_TEST_MACHINE_CHECK";
 export const NO_EXEMPTIONS = "strict";
-export const BOX_MARKER = "/usr/share/bb-box/image.json";
+export const BOX_MARKER = "/usr/share/alia-box/image.json";
 
 export const SUDO_ANSWERS = { noPassword: "no-password", needsPassword: "needs-password", inconclusive: "inconclusive", absent: "absent" };
 
@@ -65,7 +65,7 @@ function risksOf(facts) {
   return [
     facts.root ? "the tests run as root" : null,
     facts.sudo === SUDO_ANSWERS.noPassword ? "this user can run sudo without a password" : null,
-    facts.sudo === SUDO_ANSWERS.inconclusive ? "BB Box could not tell whether this user can run sudo without a password, as sudo -n true did not answer in time or failed" : null,
+    facts.sudo === SUDO_ANSWERS.inconclusive ? "VesnALIA Box could not tell whether this user can run sudo without a password, as sudo -n true did not answer in time or failed" : null,
     facts.tailscale ? `Tailscale is installed, at ${facts.tailscale}` : null,
   ].filter((risk) => risk !== null);
 }
@@ -78,9 +78,9 @@ export function testMachineRefusal(facts) {
   const risks = risksOf(facts);
   if (risks.length === 0 || facts.override || disposable(facts)) return null;
   return [
-    `BB Box's tests will not run on this machine: ${risks.join(", and ")}.`,
+    `VesnALIA Box's tests will not run on this machine: ${risks.join(", and ")}.`,
     "A test that goes wrong could change this machine: one once logged a machine out of its tailnet.",
-    "Run the tests in a BB Box box or on GitHub Actions.",
+    "Run the tests in a VesnALIA Box box or on GitHub Actions.",
     `To run them here anyway, at the risk of changing this machine, set ${MAY_BREAK_THIS_MACHINE}=1.`,
   ].join(" ");
 }

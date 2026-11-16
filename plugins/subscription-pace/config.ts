@@ -11,7 +11,7 @@
  * for. Slots 3 to 5 take a kind from `CATALOG`, so the remaining three of the
  * "most popular five" are the user's choice without shipping twelve toggles.
  *
- * Both live sources are read with credentials bb already calls with — the
+ * Both live sources are read with credentials VesnALIA already calls with — the
  * Vercel AI Gateway key and the OpenCode key. Neither needs a second token, and
  * neither can be widened: the gateway key is a different credential class from
  * a Vercel account token and is refused by every platform billing path.
@@ -106,9 +106,9 @@ export const KIND_META: Record<SubscriptionKind, KindMeta> = {
   },
   codex: {
     label: 'ChatGPT / Codex',
-    // Measured, not typed, and measured by the provider itself: BB's Codex
+    // Measured, not typed, and measured by the provider itself: VesnALIA's Codex
     // provider reads the plan's own quota endpoint and reports the share of it
-    // already spent. The plugin asks BB rather than OpenAI, so no sign-in is
+    // already spent. The plugin asks VesnALIA rather than OpenAI, so no sign-in is
     // duplicated here.
     source: 'codex-usage',
     // The provider reports a percentage and no price, so there is no spend to

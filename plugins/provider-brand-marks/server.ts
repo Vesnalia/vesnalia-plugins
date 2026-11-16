@@ -1,7 +1,7 @@
-// The whole plugin is a frontend content script; bb requires a server entry,
+// The whole plugin is a frontend content script; VesnALIA requires a server entry,
 // so this one just announces itself.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("Provider brand marks registered");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("Provider brand marks registered");
 }

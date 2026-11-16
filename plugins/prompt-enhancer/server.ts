@@ -1,7 +1,7 @@
-// bb-plugin-prompt-enhancer — backend entry.
+// alia-plugin-prompt-enhancer — backend entry.
 //
 // Rewrites the composer's draft prompt into a clearer, more effective prompt
-// using a HIDDEN bb child thread with the same provider as the current thread
+// using a HIDDEN VesnALIA child thread with the same provider as the current thread
 // (or the project default on the new-thread composer). No external APIs — the
 // hidden thread IS the AI. Completion arrives via thread lifecycle events, so
 // no rpc or event handler ever blocks on an LLM turn. Child threads are
@@ -21,7 +21,7 @@
 // The user can pin an explicit provider+model for the enhancement thread on
 // the plugin's settings page; without an override the scope thread's provider
 // is inherited and the model stays at that provider's default.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { buildEnhancePrompt } from "./lib/enhance-prompt";
 import { adaptiveTimeoutMs } from "./lib/adaptive-timeout";
@@ -133,7 +133,7 @@ const modelCatalogSchema = z.object({
           model: z.string(),
           displayName: z.string(),
           isDefault: z.boolean(),
-          /** Reasoning levels this model supports, in bb's own order. */
+          /** Reasoning levels this model supports, in VesnALIA's own order. */
           reasoningLevels: z.array(reasoningLevelSchema),
           defaultReasoningLevel: reasoningLevelSchema.nullable(),
         }),
@@ -259,8 +259,8 @@ function toResumeRun(row: EnhancementRow): z.infer<typeof resumeRunSchema> {
 }
 
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     previewBeforeApply: {
       type: "boolean",
       label: "Review before applying",
@@ -275,8 +275,8 @@ export default async function plugin(bb: BbPluginApi) {
         "Extra instruction appended to every rewrite, e.g. \"keep prompts under 100 words\".",
     },
   });
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS enhancements (
       id TEXT PRIMARY KEY,
       scope_thread_id TEXT,
@@ -367,8 +367,8 @@ export default async function plugin(bb: BbPluginApi) {
     if (threadId === null) return;
     void (async () => {
       try {
-        await bb.sdk.threads.stop({ threadId }).catch(() => {});
-        await bb.sdk.threads.delete({ threadId, childThreadsConfirmed: true });
+        await alia.sdk.threads.stop({ threadId }).catch(() => {});
+        await alia.sdk.threads.delete({ threadId, childThreadsConfirmed: true });
       } catch {
         // Already gone, or the host is mid-reload — either way, done trying.
       }
@@ -376,7 +376,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function publish(id: string, status: "done" | "error") {
-    bb.realtime.publish(REALTIME_CHANNEL, { id, status });
+    alia.realtime.publish(REALTIME_CHANNEL, { id, status });
   }
 
   function fail(id: string, message: string) {
@@ -406,13 +406,13 @@ export default async function plugin(bb: BbPluginApi) {
     /** When the current child was spawned; a retried run is timed from it. */
     childStartedAt: number;
   };
-  type SpawnEnvironment = Parameters<typeof bb.sdk.threads.spawn>[0]["environment"];
+  type SpawnEnvironment = Parameters<typeof alia.sdk.threads.spawn>[0]["environment"];
   const spawnPlans = new Map<string, SpawnPlan>();
   /** Runs whose child has written output: a failure after that is real. */
   const producedOutput = new Set<string>();
   /** The first spawn plus retries; the last one may switch provider. */
   const MAX_START_ATTEMPTS = 3;
-  /** bb's system error when a thread's provider fails to start. */
+  /** VesnALIA's system error when a thread's provider fails to start. */
   const START_FAILURE_MESSAGE = "Command thread.start failed";
   /** A failure cause longer than this is cut, so the error stays readable. */
   const FAILURE_DETAIL_CAP = 300;
@@ -449,7 +449,7 @@ export default async function plugin(bb: BbPluginApi) {
         : null;
     if (fallbackProviderId !== null) setModelKey.run(`inherit:${fallbackProviderId}`, id);
     plan.childStartedAt = Date.now();
-    const child = await bb.sdk.threads.spawn({
+    const child = await alia.sdk.threads.spawn({
       projectId: plan.projectId,
       environment: plan.environment,
       // An explicit override wins. Otherwise inherit the scope thread's
@@ -491,7 +491,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   /**
-   * Why a child failed, from its latest error event. bb's `message` is often
+   * Why a child failed, from its latest error event. VesnALIA's `message` is often
    * a category ("Command thread.start failed", "Provider error") and the
    * cause is in `detail` ("pi did not answer get_state in time", "There's an
    * issue with the selected model"). Never throws.
@@ -502,9 +502,9 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<ChildFailure> {
     const fallback = reported ?? "The enhancement thread failed";
     try {
-      // Newest first: bb's default page is the OLDEST 100 events, and a
+      // Newest first: VesnALIA's default page is the OLDEST 100 events, and a
       // child that streamed a long rewrite before failing has more than that.
-      const events = await bb.sdk.threads.events.list({
+      const events = await alia.sdk.threads.events.list({
         threadId: childThreadId,
         order: "desc",
         limit: "50",
@@ -567,7 +567,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     if (plan.lastProviderId !== null) plan.failedProviders.add(plan.lastProviderId);
     setChildThread.run(null, id);
-    bb.log.warn(
+    alia.log.warn(
       `enhancement ${id}: child ${childThreadId} failed before writing (${describeFailure(failure)}); retrying`,
     );
     void spawnChild(id, plan).catch((error: unknown) => {
@@ -580,7 +580,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   // ---------------------------------------------------------------------
-  // Live progress: bb announces each advance of a thread's event sequence
+  // Live progress: VesnALIA announces each advance of a thread's event sequence
   // (experimental_thread.events, at most once a second per thread). Each
   // announcement for a pending child reads its assembled output and relays
   // growth to the composer. Completion and failure arrive as thread.idle and
@@ -598,7 +598,7 @@ export default async function plugin(bb: BbPluginApi) {
   };
   const watches = new Map<string, ProgressWatch>();
   let disposed = false;
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
     for (const id of [...watches.keys()]) stopProgress(id);
   });
@@ -671,10 +671,10 @@ export default async function plugin(bb: BbPluginApi) {
     // row for this child yet, so ask once where it stands.
     void (async () => {
       try {
-        const child = await bb.sdk.threads.get({ threadId: childThreadId });
+        const child = await alia.sdk.threads.get({ threadId: childThreadId });
         if (watches.get(id) !== watch) return;
         if (child.status === "idle") {
-          const { output } = await bb.sdk.threads.output({ threadId: childThreadId });
+          const { output } = await alia.sdk.threads.output({ threadId: childThreadId });
           finalize(id, childThreadId, output ?? "");
         } else if (child.status === "error") {
           stopProgress(id);
@@ -701,7 +701,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       do {
         watch.again = false;
-        const { output } = await bb.sdk.threads.output({
+        const { output } = await alia.sdk.threads.output({
           threadId: watch.childThreadId,
         });
         if (watches.get(id) !== watch) return;
@@ -711,7 +711,7 @@ export default async function plugin(bb: BbPluginApi) {
           // Monotonic: only growth is relayed, so the composer never sees
           // the text shrink or flicker between event-assembly states.
           watch.lastSeen = text;
-          bb.realtime.publish(REALTIME_CHANNEL, { id, status: "progress", text });
+          alia.realtime.publish(REALTIME_CHANNEL, { id, status: "progress", text });
         }
         // Optimistic finish: output is assembled from COMPLETED messages
         // only, so written output followed by a quiet event stream IS the
@@ -738,7 +738,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.events.on("experimental_thread.events", ({ thread }) => {
+  alia.events.on("experimental_thread.events", ({ thread }) => {
     try {
       const row = pendingByChild.get(thread.id) as EnhancementRow | undefined;
       if (row === undefined) return;
@@ -753,7 +753,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   /**
    * Rows left pending by a restart or a plugin reload. The hidden child thread
-   * is a real bb thread and does NOT stop when this plugin does, so failing
+   * is a real VesnALIA thread and does NOT stop when this plugin does, so failing
    * these outright threw away rewrites that were still being written — the
    * same loss the user sees on a thread switch, one layer down. Re-attach a
    * watch to every child that is still there; only fail the ones whose child
@@ -769,7 +769,7 @@ export default async function plugin(bb: BbPluginApi) {
           fail(orphan.id, "Interrupted by a restart");
           continue;
         }
-        const child = await bb.sdk.threads.get({
+        const child = await alia.sdk.threads.get({
           threadId: orphan.child_thread_id,
         });
         if (child.status === "error") {
@@ -782,7 +782,7 @@ export default async function plugin(bb: BbPluginApi) {
         }
         if (child.status === "idle") {
           // Finished while we were down: its thread.idle is not replayed.
-          const { output } = await bb.sdk.threads.output({
+          const { output } = await alia.sdk.threads.output({
             threadId: orphan.child_thread_id,
           });
           finalize(orphan.id, orphan.child_thread_id, output ?? "");
@@ -812,7 +812,7 @@ export default async function plugin(bb: BbPluginApi) {
     catalogInflight ??= (async () => {
       const available = (
         await withTimeout(
-          bb.sdk.providers.list({}),
+          alia.sdk.providers.list({}),
           PROVIDER_CALL_TIMEOUT_MS,
           "providers.list",
         )
@@ -824,7 +824,7 @@ export default async function plugin(bb: BbPluginApi) {
           provider,
         ): Promise<ModelCatalog["providers"][number]> => {
           const result = await withTimeout(
-            bb.sdk.providers.models({ providerId: provider.id }),
+            alia.sdk.providers.models({ providerId: provider.id }),
             PROVIDER_CALL_TIMEOUT_MS,
             `providers.models(${provider.id})`,
           );
@@ -858,7 +858,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (catalog.providers.length > 0) {
         // Persist so the next plugin load answers listModels from cache
         // instantly instead of re-running provider discovery in a handler.
-        void bb.storage.kv
+        void alia.storage.kv
           .set(CATALOG_CACHE_KEY, catalogCache)
           .catch(() => {});
       }
@@ -884,7 +884,7 @@ export default async function plugin(bb: BbPluginApi) {
   // instantly even right after a plugin reload (the fetch itself may take
   // seconds and previously ran inline in the first listModels call).
   try {
-    const persisted = await bb.storage.kv.get<{
+    const persisted = await alia.storage.kv.get<{
       at: number;
       catalog: unknown;
     }>(CATALOG_CACHE_KEY);
@@ -903,9 +903,9 @@ export default async function plugin(bb: BbPluginApi) {
   void refreshCatalog().catch(() => {});
 
   /**
-   * Detached kickoff. It MUST swallow every error itself: a stale bb handle or
+   * Detached kickoff. It MUST swallow every error itself: a stale VesnALIA handle or
    * a closed db after a plugin reload must never become an unhandled
-   * rejection (PluginContextStaleError can crash the whole bb server).
+   * rejection (PluginContextStaleError can crash the whole VesnALIA server).
    */
   async function runEnhance(
     id: string,
@@ -921,7 +921,7 @@ export default async function plugin(bb: BbPluginApi) {
       let threadTitle: string | null = null;
       let lastOutput: string | null = null;
       if (threadId !== null) {
-        const parent = await bb.sdk.threads.get({ threadId });
+        const parent = await alia.sdk.threads.get({ threadId });
         resolvedProjectId = parent.projectId;
         scopeEnvironmentId = parent.environmentId;
         providerId = parent.providerId;
@@ -930,7 +930,7 @@ export default async function plugin(bb: BbPluginApi) {
         // an output fetch failure must never sink the enhancement.
         try {
           const { output } = await withTimeout(
-            bb.sdk.threads.output({ threadId }),
+            alia.sdk.threads.output({ threadId }),
             PROVIDER_CALL_TIMEOUT_MS,
             "threads.output",
           );
@@ -951,8 +951,8 @@ export default async function plugin(bb: BbPluginApi) {
         // New-thread composer (or a scope thread without a workspace yet):
         // attach to the project's own checkout, which creates no worktree,
         // branch or directory. Projects without a checkout (the personal
-        // project) keep bb's default.
-        const projects = await bb.sdk.projects.list();
+        // project) keep VesnALIA's default.
+        const projects = await alia.sdk.projects.list();
         // An unresolved project falls back to the first ordinary project so
         // spawn still has a home.
         const project =
@@ -975,7 +975,7 @@ export default async function plugin(bb: BbPluginApi) {
         throw new Error("No project available to run the enhancement in");
       }
       const [override, settingsValues] = await Promise.all([
-        bb.storage.kv.get<ModelOverride>(OVERRIDE_KEY).then((v) => v ?? null),
+        alia.storage.kv.get<ModelOverride>(OVERRIDE_KEY).then((v) => v ?? null),
         settings.get(),
       ]);
       const customRaw = (settingsValues.customInstructions ?? "").trim();
@@ -1003,7 +1003,7 @@ export default async function plugin(bb: BbPluginApi) {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       try {
-        bb.log.warn(`enhancement ${id} failed to start: ${message}`);
+        alia.log.warn(`enhancement ${id} failed to start: ${message}`);
         fail(id, message);
       } catch {
         // Stale handle mid-reload — nothing safe left to do.
@@ -1011,7 +1011,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async startEnhance({
       text,
       scopeKey,
@@ -1027,7 +1027,7 @@ export default async function plugin(bb: BbPluginApi) {
       let modelKey = "inherit:default";
       try {
         const override =
-          (await bb.storage.kv.get<ModelOverride>(OVERRIDE_KEY)) ?? null;
+          (await alia.storage.kv.get<ModelOverride>(OVERRIDE_KEY)) ?? null;
         if (override !== null) {
           // Reasoning level changes latency materially, so it belongs in the
           // key the adaptive timeout learns from.
@@ -1035,7 +1035,7 @@ export default async function plugin(bb: BbPluginApi) {
             override.reasoningLevel ?? "default"
           }`;
         } else if (threadId !== null) {
-          const parent = await bb.sdk.threads.get({ threadId });
+          const parent = await alia.sdk.threads.get({ threadId });
           if (parent.providerId) modelKey = `inherit:${parent.providerId}`;
         }
       } catch {
@@ -1092,12 +1092,12 @@ export default async function plugin(bb: BbPluginApi) {
     },
     async getModelOverride() {
       const override =
-        (await bb.storage.kv.get<ModelOverride>(OVERRIDE_KEY)) ?? null;
+        (await alia.storage.kv.get<ModelOverride>(OVERRIDE_KEY)) ?? null;
       return { override };
     },
     async setModelOverride({ override }) {
       if (override === null) {
-        await bb.storage.kv.delete(OVERRIDE_KEY);
+        await alia.storage.kv.delete(OVERRIDE_KEY);
         return {};
       }
       // Validate against the cached catalog only — never await provider
@@ -1126,7 +1126,7 @@ export default async function plugin(bb: BbPluginApi) {
           );
         }
       }
-      await bb.storage.kv.set(OVERRIDE_KEY, override);
+      await alia.storage.kv.set(OVERRIDE_KEY, override);
       return {};
     },
     async getPrefs() {
@@ -1135,13 +1135,13 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) => {
     const row = pendingByChild.get(thread.id) as EnhancementRow | undefined;
     if (!row) return;
     finalize(row.id, thread.id, lastAssistantText ?? "");
   });
 
-  bb.events.on("thread.failed", async ({ thread, error }) => {
+  alia.events.on("thread.failed", async ({ thread, error }) => {
     try {
       const row = pendingByChild.get(thread.id) as EnhancementRow | undefined;
       if (!row) return;

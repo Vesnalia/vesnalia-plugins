@@ -1,11 +1,11 @@
 /**
- * A checkout bb knows by a symlinked path.
+ * A checkout VesnALIA knows by a symlinked path.
  *
- * bb hands a plugin command the invoking process's cwd, which the OS reports
+ * VesnALIA hands a plugin command the invoking process's cwd, which the OS reports
  * as the physical path. A project registered through a symlink (`/tmp/App`
  * on macOS, where `/tmp` is `/private/tmp`, or a symlinked `~/Git`) therefore
  * arrives as a cwd that is not textually under the thread's checkout, and
- * `bb xcode run` refused it as "does not match this thread". The comparison
+ * `alia xcode run` refused it as "does not match this thread". The comparison
  * has to happen between real paths.
  */
 
@@ -73,7 +73,7 @@ describe("a checkout registered through a symlink", () => {
     const alias = join(base, "alias");
     symlinkSync(join(base, "real"), alias);
 
-    // bb knows the checkout by the alias; the process reports the real path.
+    // VesnALIA knows the checkout by the alias; the process reports the real path.
     const { cli, confirmHostAction } = fixture(join(alias, "App"));
     const result = await cli.dispatch(
       ["run", "--", "xcodebuild", "-scheme", "App", "build"],

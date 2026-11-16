@@ -1,4 +1,4 @@
-# Working in bb-sidebar
+# Working in alia-sidebar
 
 Behavior-preserving refactors only unless the task says otherwise. Keep test
 meaning intact.
@@ -8,7 +8,7 @@ as contributors or add `Co-authored-by` commit trailers crediting them.
 
 Pull requests follow `.github/pull_request_template.md`, including when the body
 is passed to `gh pr create`. A PR that changes anything a user can see includes
-before and after screenshots; `npm run e2e` starts a scratch bb to take them.
+before and after screenshots; `npm run e2e` starts a scratch VesnALIA to take them.
 
 Inbox layout: `src/inbox-layout.ts`; shelves: `ThreadInboxShelves.tsx`.
 Inbox hooks use `src/use*.ts`; gesture helpers use `src/drag-*.ts`.
@@ -63,7 +63,7 @@ live again). Snoozed, Parked and Inactive-shelf threads stay live.
 - Browser `.ts` modules are `project-colors`, `title-generation-state`,
   `sidebar-settings`, `working-since`, `working-tree`, `drag-preview`,
   `drag-reorder`, `drag-reorder-geometry`, `drag-auto-scroll`,
-  `settled-port-prompt`, and `bb-sdk`. `project-colors.ts` uses React's
+  `settled-port-prompt`, and `alia-sdk`. `project-colors.ts` uses React's
   `CSSProperties` type and `title-generation-state.ts` uses
   `useSyncExternalStore` intentionally.
 - Shared modules are all other top-level `src/*.ts`, excluding `server-*.ts`,
@@ -78,38 +78,38 @@ live again). Snoozed, Parked and Inactive-shelf threads stay live.
   imports, app, shared, Node). A new browser `.ts` or Node module goes in its
   override's `includes` and in the shared override's exclusions.
 
-App experimental SDK hooks use stable names from `src/bb-sdk.ts`.
+App experimental SDK hooks use stable names from `src/alia-sdk.ts`.
 
-"Working" for display comes from bb's status resolver (`resolveThreadStatus`
-in `src/bb-sdk.ts`) through `isThreadWorkingForDisplay` in
+"Working" for display comes from VesnALIA's status resolver (`resolveThreadStatus`
+in `src/alia-sdk.ts`) through `isThreadWorkingForDisplay` in
 `src/working-tree.ts`, with each thread's own row status; the draft fold and
 row-status precedence in `StatusSlot.tsx` read the same resolver. Guards and
 shelf placement keep the shared lifecycle signals (`isThreadWorking`,
 `sidebarThreadSignals`) that the server mirrors. Another plugin's running row
 status blocks park, snooze and settle in the UI only (`useLifecycle.ts`).
-Pin to the SDK the latest stable bb-app ships (the bump pull request below
-does it); migrate experimental_* breaks through `src/bb-sdk.ts`. The minimum
-host is `engines.bb` with `engines.bbPluginSdk`, now bb 0.49.0 with SDK 0.6.132.
+Pin to the SDK the latest stable alia-app ships (the bump pull request below
+does it); migrate experimental_* breaks through `src/alia-sdk.ts`. The minimum
+host is `engines.alia` with `engines.aliaPluginSdk`, now VesnALIA 0.49.0 with SDK 0.6.132.
 Pull request data comes from the bundled GitHub PR Status plugin
 (`src/github-pr-status.ts`): rows through `useEnvironmentPullRequest` in
-`src/bb-sdk.ts`, and `plugins.callRpc` in `server-policy`. A failed or
+`src/alia-sdk.ts`, and `plugins.callRpc` in `server-policy`. A failed or
 `unavailable` lookup is `unknown` and never settles a thread.
 
 Keep the sidebar's own menus and named delete confirmation. Bound core actions
 own unpin, read state, rename requests, split, and thread-tree archive. Thread
-rows, child rows, and hover-card subthreads are links to `thread.href`, so bb
+rows, child rows, and hover-card subthreads are links to `thread.href`, so VesnALIA
 routes the click (Cmd/Ctrl opens a split); `navigate.toThread` would also turn
 off the thread's saved Full Screen. Rows still call `onNavigate`; only clicks
-that are not links use `useBbNavigate`. Title saves use the optimistic SDK client.
+that are not links use `useAliaNavigate`. Title saves use the optimistic SDK client.
 Root pinning keeps the lifecycle RPC's parent lock and atomic shelf clearing.
 Delete keeps `deleteThread` RPC after confirming the named tree. Parent, snooze,
-park, settle, project, and clean stay plugin-owned. Title generation is bb's
+park, settle, project, and clean stay plugin-owned. Title generation is VesnALIA's
 (`threads.experimental_regenerateTitle`); the sidebar owns only the menu item and
 automatic recovery of untitled threads. Do not add a sidebar title generator.
 Do not adopt the SDK's thread menu components for this sidebar.
 
 The sidebar RPC contract and its schemas live in shared `src/contract.ts` as
-`bbSidebarRpcContract`. App code imports its types with `import type`. The
+`aliaSidebarRpcContract`. App code imports its types with `import type`. The
 contract re-exports all six realtime channels from `src/realtime-channels.ts`;
 browser value imports use that pure module to avoid loading schemas. The host
 port contract lives in `src/port-scan-contract.ts`.
@@ -129,7 +129,7 @@ port contract lives in `src/port-scan-contract.ts`.
 - `server-rate-limits`: provider-limit reads and scheduled Continue queue actions.
 - `server-rate-limit-details`: failed-turn classification and provider reset times.
 - `server-handlers`: RPC handlers assembled from the modules.
-- `server-cli`: the `bb sidebar` agent command over those handlers. Keep it to
+- `server-cli`: the `alia sidebar` agent command over those handlers. Keep it to
   a few subcommands; each one adds a line to the `plugin-commands` skill.
 - `server.ts`: migrations, context, wiring, `auto-settle` schedule, HTTP, CLI,
   events.
@@ -170,40 +170,40 @@ access are checked by `src/storage-keys.test.ts`.
   `allowTypeImports`, so `scripts/check-import-boundaries.mjs` enforces the
   type-only, dynamic-import and Node built-in parts. It also checks the
   Node/shared TSX name lists for drift, requires named imports from
-  `@get-bb/plugin-sdk/app` with `experimental_*` only in `src/bb-sdk.ts`, and
+  `@vesnalia/plugin-sdk/app` with `experimental_*` only in `src/alia-sdk.ts`, and
   bans `import()` type annotations except in `ports-host.test.ts` (Vitest's
   `importOriginal`; regular imports there still need type-only syntax when
   used only as types).
 
-## bb versions: daily check and bump pull request
+## VesnALIA versions: daily check and bump pull request
 
-bb ships a stable release about weekly and a nightly daily. Two scheduled
-workflows follow it. Their logic is in `scripts/bb-compat/` (tested by
+VesnALIA ships a stable release about weekly and a nightly daily. Two scheduled
+workflows follow it. Their logic is in `scripts/alia-compat/` (tested by
 `npm run test:scripts`, part of `npm run check`); the YAML only calls it.
 
-- `bb-compat.yml` installs each channel's bb-app with the SDK it ships, in one
-  `npm install --no-save`. Floor is the minimum in `engines.bb`: tests, build,
+- `alia-compat.yml` installs each channel's alia-app with the SDK it ships, in one
+  `npm install --no-save`. Floor is the minimum in `engines.alia`: tests, build,
   bundle guard and `e2e:smoke`, no typecheck (code compiles against the pinned
-  SDK but must run on the floor). Stable (`bb-app@latest`) and nightly
-  (`bb-app@nightly`) also typecheck. A floor or stable failure opens or
-  updates one `bb-compat` issue; nightly only warns, in a `bb-compat-nightly`
-  issue. A passing run closes them. The summary and issues carry the "what bb
+  SDK but must run on the floor). Stable (`alia-app@latest`) and nightly
+  (`alia-app@nightly`) also typecheck. A floor or stable failure opens or
+  updates one `alia-compat` issue; nightly only warns, in a `alia-compat-nightly`
+  issue. A passing run closes them. The summary and issues carry the "what VesnALIA
   changed" report from `sdk-surface.mjs`; read its additions, since a
   typecheck cannot see a new status or a new required field.
-- `bb-bump.yml` runs when `bb-app@latest` is newer than the pin: it sets the
-  bb-app, SDK and shim pins on `bb-bump/bb-app-X.Y.Z`, updates the lockfile,
+- `alia-bump.yml` runs when `alia-app@latest` is newer than the pin: it sets the
+  alia-app, SDK and shim pins on `alia-bump/alia-app-X.Y.Z`, updates the lockfile,
   runs `npm run check` and `e2e:smoke`, and opens or updates a pull request
   with the results, as a DO NOT MERGE draft if anything failed. `pins.mjs`
   fails the job unless only `devDependencies` in package.json and
   package-lock.json changed. It never merges, approves, or pushes to main.
   Manual runs of either workflow default to `dry_run`.
-- Floor rule: the bot keeps the pins on the latest stable bb; `engines` moves
+- Floor rule: the bot keeps the pins on the latest stable VesnALIA; `engines` moves
   only by a human decision. The floor channel keeps that minimum honest.
-- New SDK features go through `src/bb-sdk.ts`. While the floor is older than
-  the bb that added one, guard it with an existence check: a missing SDK
+- New SDK features go through `src/alia-sdk.ts`. While the floor is older than
+  the VesnALIA that added one, guard it with an existence check: a missing SDK
   export is `undefined` at runtime, not a load error. Say in a comment at
-  which bb the fallback can be deleted, e.g. `// Fallback: delete when
-  engines.bb reaches >=0.50.0.`
+  which VesnALIA the fallback can be deleted, e.g. `// Fallback: delete when
+  engines.alia reaches >=0.50.0.`
 
 ## Checks
 
@@ -211,7 +211,7 @@ A fresh checkout or worktree must run `npm ci` before its first commit: it
 installs lefthook, and the pre-commit hook runs the local Biome binary.
 
 Run `npm run check` before and after changes; once before a commit is enough.
-CI runs it plus `npx --no-install bb plugin types --check`. `npm run format`
+CI runs it plus `npx --no-install alia plugin types --check`. `npm run format`
 writes formatting; `npm run lint`, `npm run format:check`, and `npm run knip`
 run individually.
 
@@ -223,7 +223,7 @@ Hooks (`lefthook.yml`) are installed into the common `.git/hooks` for every
 worktree; branches without `lefthook.yml` skip them. They check without
 applying fixes. Commit-msg runs `scripts/strip-ai-attribution.mjs`.
 
-Knip: if it says unused and bb plugin types did not pin it, remove it.
+Knip: if it says unused and VesnALIA plugin types did not pin it, remove it.
 `npm run knip` checks unused exports and exported types in every file, without
 per-file or issue-type exceptions. `knip.ts` preserves only SDK peer
 dependencies and the `tsc` binary ignore for the TypeScript alias.
@@ -255,7 +255,7 @@ dependencies and the `tsc` binary ignore for the TypeScript alias.
 ### Browser e2e
 
 Outside `npm run check`; see `e2e/README.md`. Full:
-`env -i PATH="$PATH" HOME="$HOME" npm run e2e`; quick: `e2e:smoke`; `bb sidebar`
+`env -i PATH="$PATH" HOME="$HOME" npm run e2e`; quick: `e2e:smoke`; `alia sidebar`
 CLI against the scratch server: `e2e:cli`. Only drive/install/seed on the
 runner's scratch server; never the live host. macOS snapshots:
 `npm run e2e -- --update-snapshots` with the same clean environment; review

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { expect, it, vi } from "vitest";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { renderSlot } from "./test-slot";
 import { inbox, thread, listProps, loadInboxApp, rowLinks } from "./test-inbox";
 
@@ -34,8 +34,8 @@ function setup({
   enabled?: boolean;
   activeThreadId?: string | null;
 } = {}) {
-  localStorage.setItem("bb-sidebar:active-sort:v1", "project");
-  if (enabled) localStorage.setItem("bb-sidebar:environment-grouping:v1", "true");
+  localStorage.setItem("alia-sidebar:active-sort:v1", "project");
+  if (enabled) localStorage.setItem("alia-sidebar:environment-grouping:v1", "true");
   let order = rows.filter((row) => !row.parentThreadId).map((row) => row.id);
   const save = vi.fn((input: unknown) => {
     order = (input as { inboxThreadIds: string[] }).inboxThreadIds;
@@ -80,7 +80,7 @@ it("shows environment grouping only inside the Project sort picker and remembers
   expect(screen.queryByRole("region", { name: "search worktree" })).toBeNull();
   fireEvent.click(toggle);
   expect(screen.getByRole("region", { name: "search worktree" })).toBeDefined();
-  expect(localStorage.getItem("bb-sidebar:environment-grouping:v1")).toBe("true");
+  expect(localStorage.getItem("alia-sidebar:environment-grouping:v1")).toBe("true");
   fireEvent.click(within(picker).getByRole("radio", { name: "Manual order" }), { detail: 1 });
   expect(screen.queryByRole("checkbox", { name: "Group by worktree" })).toBeNull();
   expect(screen.queryByRole("region", { name: "search worktree" })).toBeNull();
@@ -323,7 +323,7 @@ it("targets the containing project when dragging a project over a nested environ
   fireEvent.pointerMove(window, { buttons: 1, clientX: 20, clientY: 40, pointerId: 1 });
   fireEvent.pointerUp(window, { clientX: 20, clientY: 40, pointerId: 1 });
   await waitFor(() =>
-    expect(JSON.parse(localStorage.getItem("bb-sidebar:project-order:v1") ?? "null")).toEqual(["other", "proj_1"]),
+    expect(JSON.parse(localStorage.getItem("alia-sidebar:project-order:v1") ?? "null")).toEqual(["other", "proj_1"]),
   );
   expect(rendered.save).not.toHaveBeenCalled();
 });

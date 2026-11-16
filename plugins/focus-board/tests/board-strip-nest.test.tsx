@@ -7,7 +7,7 @@
 // Dot-marked drags keep their own home rules on the same surface.
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { cleanup, createEvent, fireEvent, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Board } from "../components/board";
 import { buildColumns } from "../components/grouping";
 import { childRankKey } from "../lib/rank";

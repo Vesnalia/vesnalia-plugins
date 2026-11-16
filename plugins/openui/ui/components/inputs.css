@@ -1,4 +1,4 @@
-/* Hallmark · shape: app screen · scope: Inputs and learning group · genre: modern-minimal · theme: BB (kit tokens) · states: 8 · v1.0.0 */
+/* Hallmark · shape: app screen · scope: Inputs and learning group · genre: modern-minimal · theme: ALIA (kit tokens) · states: 8 · v1.0.0 */
 /* Inputs and learning (inputs.tsx). Tokens from kit.css only; buttons are the kit's .bbui-btn. */
 
 .bbui-inputs-stack { display: grid; gap: var(--bbui-s2); min-width: 0; }

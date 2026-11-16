@@ -16,7 +16,7 @@ const BOUNDED_PROBE_MS = 15_000;
 const STUCK_PROBE_MS = 45_000;
 const VALID_DESCRIBE = '{"contract":1,"scope":"machine"}';
 const SYSTEM_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
-const LINUX_TRIALS = ".bb-box-snapshot-trials";
+const LINUX_TRIALS = ".alia-box-snapshot-trials";
 
 const ROOT_ID = `#!/bin/sh
 if [ "$*" = -u ]; then echo 0; else exec /usr/bin/id "$@"; fi
@@ -151,12 +151,12 @@ function macWithShortHookDeadline(): FakeMacos {
   const mac = fakeMacos({ settings: { SNAPSHOT_HOOK_SECONDS: String(HOOK_SECONDS) } });
   const init = mac.helper(["init"]);
   assert.equal(init.status, 0, init.stderr);
-  mkdirSync(join(mac.root, "usr/local/libexec/bb-box"), { recursive: true });
+  mkdirSync(join(mac.root, "usr/local/libexec/alia-box"), { recursive: true });
   return mac;
 }
 
-const macHook = (mac: FakeMacos) => join(mac.root, "usr/local/libexec/bb-box/snapshot-machine");
-const macState = (mac: FakeMacos) => realpathSync(join(mac.root, "var/db/bb-box"));
+const macHook = (mac: FakeMacos) => join(mac.root, "usr/local/libexec/alia-box/snapshot-machine");
+const macState = (mac: FakeMacos) => realpathSync(join(mac.root, "var/db/alia-box"));
 
 function cleanMacProbe(mac: FakeMacos): string[] {
   assert.deepEqual(reportOf(mac.helper(["snapshot", "probe"])).home, { is: "yes", what: { way: "apfs", dataset: null } });
@@ -257,8 +257,8 @@ describe("The Mac helper's clone trial leaves nothing behind (090)", () => {
   });
 });
 
-const ROOT_FILESYSTEMS = process.getuid?.() === 0 && process.env.BB_BOX_TEST_FILESYSTEMS === "1";
-const ROOT_FILESYSTEMS_SKIP = ROOT_FILESYSTEMS ? false : "needs root, btrfs-progs and BB_BOX_TEST_FILESYSTEMS=1, as it mounts real filesystems";
+const ROOT_FILESYSTEMS = process.getuid?.() === 0 && process.env.ALIA_BOX_TEST_FILESYSTEMS === "1";
+const ROOT_FILESYSTEMS_SKIP = ROOT_FILESYSTEMS ? false : "needs root, btrfs-progs and ALIA_BOX_TEST_FILESYSTEMS=1, as it mounts real filesystems";
 
 function sh(command: string): string {
   const result = spawnSync("/bin/sh", ["-c", command], { encoding: "utf8", env: { PATH: SYSTEM_PATH } });
@@ -377,7 +377,7 @@ describe("The Linux helper's btrfs trial on real btrfs leaves nothing behind, or
 describe("The Mac helper's clone trial on a full disk leaves nothing behind (090)", { skip: ROOT_FILESYSTEMS_SKIP }, () => {
   it("removes the trial file it could not write", () => {
     const mac = macWithShortHookDeadline();
-    const trials = realpathSync(join(mac.root, "var/db/bb-box"));
+    const trials = realpathSync(join(mac.root, "var/db/alia-box"));
     mkdirSync(join(trials, "snapshot-trials"));
     sh(`mount -t tmpfs -o size=4k,mode=700 tmpfs ${trials}/snapshot-trials`);
     try {

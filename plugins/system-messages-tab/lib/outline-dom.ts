@@ -1,8 +1,8 @@
-// Reading and adjusting BB's rendered thread outline.
+// Reading and adjusting VesnALIA's rendered thread outline.
 //
 // The Plugin SDK has no slot for the outline, so everything here depends on
-// the markup BB 0.48 renders. Each lookup returns null when the markup is not
-// what it expects, so a BB update leaves the outline untouched instead of
+// the markup VesnALIA 0.48 renders. Each lookup returns null when the markup is not
+// what it expects, so a VesnALIA update leaves the outline untouched instead of
 // breaking it.
 
 export const TOC_SELECTOR = "[data-thread-toc]";
@@ -15,7 +15,7 @@ const MAX_FIBER_DEPTH = 6;
 /** Marks the tab button this plugin adds. */
 export const TAB_ATTR = "data-smt-tab";
 
-// The classes BB's own outline tab button uses, so the added tab matches it.
+// The classes VesnALIA's own outline tab button uses, so the added tab matches it.
 const TAB_BASE =
   "flex h-7 flex-1 cursor-pointer items-center justify-center rounded-md text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 const TAB_ACTIVE = ["bg-state-hover", "text-foreground"];
@@ -51,7 +51,7 @@ export function isPressed(button: Element): boolean {
   return button.getAttribute("aria-pressed") === "true";
 }
 
-/** Gives a tab button BB's selected or unselected look. */
+/** Gives a tab button VesnALIA's selected or unselected look. */
 export function paintTab(button: HTMLElement, active: boolean): void {
   const add = active ? TAB_ACTIVE : TAB_INACTIVE;
   const remove = active ? TAB_INACTIVE : TAB_ACTIVE;
@@ -83,7 +83,7 @@ function fiberOf(element: Element): Fiber | null {
 
 /**
  * An outline entry's id and full label. The outline replaces a thread
- * message's "[bb message from thread:...]" header with a sender chip, so the
+ * message's "[VesnALIA message from thread:...]" header with a sender chip, so the
  * label comes from the props of the component that renders the entry; the
  * rendered text is the fallback.
  */
@@ -103,7 +103,7 @@ export function readEntry(item: Element): Entry {
   return { id: null, label: item.textContent ?? "" };
 }
 
-/** The text node of an entry's sender chip when BB shows its "Agent" fallback. */
+/** The text node of an entry's sender chip when VesnALIA shows its "Agent" fallback. */
 export function fallbackChipText(item: Element): Text | null {
   const chip = item.querySelector("button > span > span")?.firstElementChild;
   if (!chip || chip.textContent?.trim() !== FALLBACK_SENDER) return null;

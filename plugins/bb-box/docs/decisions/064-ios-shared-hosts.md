@@ -63,12 +63,12 @@ decisions 6 and 9; see
 | 4 | A slot's device is made by `simctl create` in its user, and made slim by seeding launchd_sim's store of disabled services before its first boot: 14.5 to 28.5 s in a VM, 10.4 to 12.4 s on the pool Mac, against 155 to 410 s for the list applied twice | M1 to M4, M13, POOL |
 | 5 | The ios image carries two slots in a UID range of their own, so a new host's first box waits for a cold boot, not a device's making | M13, M16 |
 | 6 | A slot is never lent twice. Release removes its user at once; queued sweeps remove every file its UID owns; UIDs come from ranges the image never uses | M6, M7, M17 |
-| 7 | The device server and BB's daemon in a slot are LaunchDaemons with `UserName`. A slot box enrols as a BB machine with `BB_INSTALL_SKIP_SERVICE=1` and the helper's daemon | M14, M15, M16 |
+| 7 | The device server and VesnALIA's daemon in a slot are LaunchDaemons with `UserName`. A slot box enrols as a VesnALIA machine with `ALIA_INSTALL_SKIP_SERVICE=1` and the helper's daemon | M14, M15, M16 |
 | 8 | Each slot has a port range, and the host holds the common dev ports, so a box cannot reach another's server by mistake | the research: every device reaches every box's 127.0.0.1 |
 | 9 | Streams are sent at a step of the device's size, the smallest that covers what the viewer draws; input is in the device's pixels; idb's stream runs only while wanted. Android keeps full size | M8, M9 |
 | 10 | The encoder is the Mac's, shared by every VM on it: about 320 full-size iPhone frames a second on the Tart Mac, 375 on the pool's. A ledger per Mac caps streams, counting measured rates, giving room first to the person in control; at most two at full size | E1, M8, M11, POOL |
 | 11 | `dedicated: true` asks for a VM of its own; a size, a project's ios image, a stop, a restart, a resize and the host's desktop need it. `shared: true` asks for a slot for a `macos` box | M12; review findings 11 and 12 |
-| 12 | Shared becomes the ios default only once the ledger exists and bb-box's own enrolment of a slot has passed | review findings 4 and 16 |
+| 12 | Shared becomes the ios default only once the ledger exists and alia-box's own enrolment of a slot has passed | review findings 4 and 16 |
 | 13 | A host that drains for a new image still lends while no host on the new image can start | review finding 7 |
 | 14 | Namespace hosts stay off: a Namespace Mac's VM has no H.264 encoder, so idb's stream sends nothing | M18 |
 
@@ -203,18 +203,18 @@ making -> ready -> held -> releasing -> resetting -> (removed)
 
 | Data | Lives in | Written by | Read by |
 | --- | --- | --- | --- |
-| A host's state, its slots and their claims | on the host, `/var/db/bb-box/host/`: a state file, a folder a slot, each claim a marker made with `ln`, all changed under the helper's `flock` | the host's helper, as root | its backend, through the helper's `status` |
-| A Tart host's VM, image build and settings snapshot | the Mac's owner file for the VM, `~/.bb-box/tart/owners/<vm>`, with `role=device-host`, as every Tart VM has one; its state there is a cache of the helper's | the Tart backend | the Tart backend at start and in each sweep; the doctor |
+| A host's state, its slots and their claims | on the host, `/var/db/alia-box/host/`: a state file, a folder a slot, each claim a marker made with `ln`, all changed under the helper's `flock` | the host's helper, as root | its backend, through the helper's `status` |
+| A Tart host's VM, image build and settings snapshot | the Mac's owner file for the VM, `~/.alia-box/tart/owners/<vm>`, with `role=device-host`, as every Tart VM has one; its state there is a cache of the helper's | the Tart backend | the Tart backend at start and in each sweep; the doctor |
 | A Namespace host | the instance's labels, as Namespace boxes have today, with `bbbox-role` `device-host` | the Namespace backend | the Namespace backend; the doctor |
-| A pool Mac's mode | the pool helper's state, `/var/db/bb-box`: its owner marker when lent whole, a `slots` marker while it has slots, each made with `ln`, so one wins | the pool's helper, as root | the pool backend, through the helper's `status` |
+| A pool Mac's mode | the pool helper's state, `/var/db/alia-box`: its owner marker when lent whole, a `slots` marker while it has slots, each made with `ln`, so one wins | the pool's helper, as root | the pool backend, through the helper's `status` |
 | Where a box is, and what it can do | the box record: `guest.data` (`host`, `generation`, `carried`) and `capabilities` | the registry, from the backend's acquire, once | every tool and the panel |
-| Hosts' settings | bb-box's configuration: each backend's `ios-hosts` ([below](#the-ios-hosts-setting)) | the operator | each backend |
+| Hosts' settings | alia-box's configuration: each backend's `ios-hosts` ([below](#the-ios-hosts-setting)) | the operator | each backend |
 | Device placement's lock | the plugin's memory: one lock for every ios placement, across backends | the registry | the registry |
 | The encoder's ledger | the plugin's memory, per Mac, rebuilt from viewers and recordings at start | the instance that holds the boxes' leases (063) | [the budget](#the-encoder-budget) |
 | A stream's step | the device server's memory: the viewers' wishes and the plugin's cap | each viewer; the plugin | the server, which alone opens idb's stream |
 
 Backend storage holds no host or slot state: each host holds its own, so a
-bb-box that lost its storage, or a second instance during a reload (045),
+alia-box that lost its storage, or a second instance during a reload (045),
 finds the same hosts and slots. Two instances that race on one host meet
 at its helper's lock.
 
@@ -266,12 +266,12 @@ interface SlotLender {
    `starting` with this box promised before it releases the lock. So the
    next acquire sees the starting host and joins it.
 2. **A lost race is asked again.** The helper's `ln` is the last word. A
-   `take` that loses it, as when another bb-box instance claimed the slot
+   `take` that loses it, as when another alia-box instance claimed the slot
    during a reload, or the host went to `deleting`, answers `lost` with
    its words, and the registry asks the lenders again, three times at
    most, then waits with words. A lost race never fails an acquire.
 3. **The order,** owner's decision 9, with what the box waits for. Times
-   are to the device's first frame and the box being a BB machine, on one
+   are to the device's first frame and the box being a VesnALIA machine, on one
    basis (M13, H3):
 
 | Order | Tier | Where | What the box waits for |
@@ -280,7 +280,7 @@ interface SlotLender {
 | 2 | ready | a `serving` Tart or Namespace host | the same |
 | 3 | join | a starting host, or a slot being made, with room | what is left of its start or making |
 | 4 | make | a pool Mac or running host with room in `most` | a slot made: 24 to 43 s on Tart, under 30 s on the pool Mac (M3, M13, POOL) |
-| 5 | new-host | Tart, on the Mac with a free VM slot and the fewest watched streams | about 50 to 60 s: the VM ready, 35 to 41 s; a carried slot's cold boot, 5 to 8 s; the first frame, 2 to 3 s; BB's daemon, 5 to 6 s (M13, H3). H1 measures a first box on a new host |
+| 5 | new-host | Tart, on the Mac with a free VM slot and the fewest watched streams | about 50 to 60 s: the VM ready, 35 to 41 s; a carried slot's cold boot, 5 to 8 s; the first frame, 2 to 3 s; VesnALIA's daemon, 5 to 6 s (M13, H3). H1 measures a first box on a new host |
 | 6 | new-host | Namespace, only once `on`, which it is not: its VMs cannot stream a device (M18) | the Mac ready in 29.7 s, idb_companion 0.6 s, a template's first boot 27.1 s (M18) |
 | 7 | own-vm | where a backend has room for one | the same basis: 35 to 41 s, a cold boot of 5 to 6 s, enrolment 8 to 10 s: about 50 to 57 s (M13) |
 | 8 | wait | | words per cause, below |
@@ -328,7 +328,7 @@ in a Tart VM at 8 cores and 32 GiB (M3):
 | 4. Slim | the runtime's `disabled.plist` copied to `/private/var/tmp/com.apple.CoreSimulator.SimDevice.<udid>/`, the user's, before the first boot | under 0.1 s |
 | 5. First boot | `simctl boot`, `bootstatus` | 14.5 to 28.5 s |
 | 6. The device server | its daemon loaded; it attaches to the booted device and starts its companion | listening in 0.3 s (M15); idb_companion's socket in 0.1 to 0.2 s, a first frame 1.8 to 2.6 s later (M13) |
-| 7. At the claim | the thread's SSH key; BB's command run with `BB_INSTALL_SKIP_SERVICE=1`, then the helper's `daemon` | the installer 5 s, then connected 0.5 to 0.7 s after the daemon loaded (M14) |
+| 7. At the claim | the thread's SSH key; VesnALIA's command run with `ALIA_INSTALL_SKIP_SERVICE=1`, then the helper's `daemon` | the installer 5 s, then connected 0.5 to 0.7 s after the daemon loaded (M14) |
 
 A slot took 24.1 to 26.1 s from a new user to its device's first frame in
 a VM just booted (M13), 38.7 s to a booted device in a VM that had run for
@@ -382,16 +382,16 @@ they never meet.
   stays the guard. If a later Xcode moves the store, the check finds the
   device stock and applies the list, as now, and making a slot takes about
   2 minutes longer. The image build keeps each runtime's `disabled.plist`
-  beside its list in `/usr/local/share/bb-box/ios/`.
+  beside its list in `/usr/local/share/alia-box/ios/`.
 
-### The device server, and BB's daemon, in a slot
+### The device server, and VesnALIA's daemon, in a slot
 
 Both are LaunchDaemons with `UserName` set to the slot's user, written and
 removed by the host's helper. A user with no console session has no `gui`
-domain, so a LaunchAgent cannot load (the research; M14 for BB's own).
+domain, so a LaunchAgent cannot load (the research; M14 for VesnALIA's own).
 
-- **The device server,** `/Library/LaunchDaemons/app.bb-box.device.<user>.plist`,
-  runs `bb-box-device.sh serve` from `~/.bb-box/device/current` in the
+- **The device server,** `/Library/LaunchDaemons/app.alia-box.device.<user>.plist`,
+  runs `alia-box-device.sh serve` from `~/.alia-box/device/current` in the
   slot's home, where 063's delivery puts each version, with `KeepAlive`
   and `ThrottleInterval` 1. Measured (M15): listening 0.3 s after the
   daemon loaded; it booted the slot's own seeded device (first boot 18.5
@@ -401,22 +401,22 @@ domain, so a LaunchAgent cannot load (the research; M14 for BB's own).
   new one listening in 1.67 s. So delivery works as 063's does, with the
   restart made by the server exiting, since the slot's user cannot
   kickstart a system daemon.
-- **`bb-box-device connect`** waits for the socket rather than starting
+- **`alia-box-device connect`** waits for the socket rather than starting
   the service. If none comes within 10 s it says so, and the panel shows
-  it: "The device server for this box has not started. bb-box has asked
+  it: "The device server for this box has not started. alia-box has asked
   the host to start it again."
-- **BB's daemon.** BB's installer puts its daemon in the `gui` domain, and
+- **VesnALIA's daemon.** VesnALIA's installer puts its daemon in the `gui` domain, and
   in a slot it fails: "launchctl: Bootstrap failed: 125: Domain does not
-  support specified action" (M14). With `BB_INSTALL_SKIP_SERVICE=1`, which
+  support specified action" (M14). With `ALIA_INSTALL_SKIP_SERVICE=1`, which
   the installer already honours, it enrols the machine and runs the daemon
-  under its own `--supervise`. bb-box's enrolment of a slot box runs BB's
+  under its own `--supervise`. alia-box's enrolment of a slot box runs VesnALIA's
   command so, then asks the helper `daemon <generation>`, which stops the
   installer's process and loads a LaunchDaemon with the same command, port
-  and data folder. Measured on a fresh BB in the host (M14): two slots
+  and data folder. Measured on a fresh VesnALIA in the host (M14): two slots
   enrolled, each on a port of its own the installer chose (38889, 38890),
-  each connected 0.5 to 0.7 s after its daemon loaded, and BB ran a
+  each connected 0.5 to 0.7 s after its daemon loaded, and VesnALIA ran a
   terminal on each as its own user. After a cold restart of the VM, both
-  daemons started with it and reconnected 10.9 s after BB's server came
+  daemons started with it and reconnected 10.9 s after VesnALIA's server came
   back (M16).
 - **Sockets** for both servers and idb's are in the user's home, which is
   `700`.
@@ -429,7 +429,7 @@ lock. Measured with three users in a Tart VM, each with a booted device
 
 | Step | What | Time |
 | --- | --- | --- |
-| 1. Stop | the BB machine removed, as every release does; the slot's daemons booted out; `launchctl bootout user/<uid>`; every process of the UID ended | 0.6 s |
+| 1. Stop | the VesnALIA machine removed, as every release does; the slot's daemons booted out; `launchctl bootout user/<uid>`; every process of the UID ended | 0.6 s |
 | 2. The user | `sysadminctl -deleteUser` and the home: device set, keychain, DerivedData, caches. The slot leaves `most` here | 0.2 to 0.8 s for homes of 193 to 513 MiB |
 | 3. Sweep, queued | every file and folder the UIDs in the queue own on the Data volume, in one `find -xdev` with one `-uid` each, at background priority, removed with the pool's `sweep`; the UIDs' System V IPC objects removed, as the pool does | one pass: 31.7 to 36.8 s for one UID, 31.8 s for three (M17) |
 
@@ -510,7 +510,7 @@ in one host, from the research's isolation run, with this note's changes:
 | Processes | seen by all, with command lines and device UDIDs; not signalled |
 | Loopback and ports | shared: a server on 127.0.0.1 is reached by every box and every device; a port held by one is refused to another. Each box has a range of its own ([below](#ports-a-range-for-each-box)) |
 | `/tmp`, `/Users/Shared` | shared: what a box leaves readable there, others can read, until its reset |
-| The host's own user | its home `700`, so no box reads bb-box's key or the host's state |
+| The host's own user | its home `700`, so no box reads alia-box's key or the host's state |
 | After a reset | nothing: no process, no file of the UID on the Data volume, no IPC object |
 
 H7, in unit 3, plants as one box: files in `/tmp`, `/Users/Shared`,
@@ -529,24 +529,24 @@ found every device's Safari reached a server another user ran on
 fail loudly: the second cannot bind, and its app loads the first box's
 bundle. A test that passes against another box's server is a false pass.
 
-- **Each slot has a range,** 100 ports from `BB_PORT_BASE` (20000 plus 100
-  times its place among the host's slots), in `BB_PORT_BASE` and
-  `BB_PORT_COUNT` in its environment, in box_status, and in the skill:
+- **Each slot has a range,** 100 ports from `ALIA_PORT_BASE` (20000 plus 100
+  times its place among the host's slots), in `ALIA_PORT_BASE` and
+  `ALIA_PORT_COUNT` in its environment, in box_status, and in the skill:
   "Servers on localhost in a shared iOS box are reachable from every box
-  on its host. Start yours on your box's ports, from BB_PORT_BASE: for
-  Metro, `--port $BB_PORT_BASE`."
+  on its host. Start yours on your box's ports, from ALIA_PORT_BASE: for
+  Metro, `--port $ALIA_PORT_BASE`."
 - **The common ports are held,** so a mistake is an error, not a wrong
   connection. The host's helper listens on 127.0.0.1 at 3000, 4200, 5000,
   5173, 8000, 8080, 8081 and 19000, and answers each request with HTTP 421
   and "This port is shared by every box on this iOS host. Use your box's
-  ports, from BB_PORT_BASE." A box that tries to bind one is refused with
+  ports, from ALIA_PORT_BASE." A box that tries to bind one is refused with
   "Address already in use". A dedicated box has none of this.
 
 ### What one box can take from the others
 
 macOS has no cgroups: nothing holds a box to a share of the cores or
 memory. On a VM of its own a runaway build hurts its own thread; on a host
-it hurts the others, so bb-box bounds what it can and shows the rest.
+it hurts the others, so alia-box bounds what it can and shows the rest.
 
 | | Bound | Shown |
 | --- | --- | --- |
@@ -554,7 +554,7 @@ it hurts the others, so bb-box bounds what it can and shows the rest.
 | Disk | the host lends no new slot below `disk-reserve-gib` free (40) | the helper's status gives free disk, and each slot's home size, read at background priority every 10 minutes |
 | Memory | the host lends no new slot while `memory_pressure` gives under 15% free | each slot's resident memory |
 | CPU | the helper's own work (making, sweeps) runs at background priority with `taskpolicy -b`; a box's own work does not | each slot's cores, from `ps` every 10 s |
-| The encoder | the ledger caps bb-box's own streams ([below](#the-encoder-budget)); a box's own `ffmpeg` or Xcode previews it cannot see | |
+| The encoder | the ledger caps alia-box's own streams ([below](#the-encoder-budget)); a box's own `ffmpeg` or Xcode previews it cannot see | |
 
 **What a person sees:** box_status for a box in a slot names whoever is
 using most, when it is not this box: "This host is busy: slot 5 is using 6
@@ -566,7 +566,7 @@ who needs the cores asks for `dedicated`.
 
 | | A box in a slot (default) | `dedicated: true` |
 | --- | --- | --- |
-| Ready | seconds from a ready slot; about 50 to 60 s on a new Tart host, as a BB machine (M13, M14) | about 50 to 57 s, as a BB machine (M13), or a spare (063) |
+| Ready | seconds from a ready slot; about 50 to 60 s on a new Tart host, as a VesnALIA machine (M13, M14) | about 50 to 57 s, as a VesnALIA machine (M13), or a spare (063) |
 | Its device, files, keychain, input | its own | its own |
 | sudo, `brew install`, system settings | no | yes |
 | Cores and memory | shared with the host's other boxes; a 49 s build took 95 s beside 4 streaming devices (the research) | its own, at a size it chooses |
@@ -577,7 +577,7 @@ who needs the cores asks for `dedicated`.
 | A restart of its host | stops every box in the host | its own only |
 | A project's ios image (049) | no: its script runs as root | yes |
 | `box_resize`, `box_grant` | no | yes |
-| Enrolment as a BB machine, `box_thread` | yes (M14) | yes |
+| Enrolment as a VesnALIA machine, `box_thread` | yes (M14) | yes |
 | On Namespace | ends with the host, at most the plan's longest life after the host was made, not after the box was | at most the plan's longest life after the box was made |
 
 What each box operation does for a box in a slot (review finding 12):
@@ -598,7 +598,7 @@ What each box operation does for a box in a slot (review finding 12):
 Mac or VM shared with other ios boxes, with its own device, files and
 keychain, but no sudo, and cores and processes shared. Servers on
 localhost are reachable from every box on the host: use your box's ports,
-from BB_PORT_BASE. Ask for dedicated for a VM of its own."
+from ALIA_PORT_BASE. Ask for dedicated for a VM of its own."
 
 **box_acquire** gains `dedicated`: "For an ios box: a macOS VM of its own,
 with sudo, brew install, its own cores, ports and desktop, instead of a
@@ -623,7 +623,7 @@ host's load when another slot is busy, or "A VM of its own."
 **The skill** says when to ask for `dedicated`: a build that needs the
 cores, `brew install` or sudo, an app that needs fixed ports, Xcode's
 window, or a project with its own ios image; and that a shared box's
-servers go on its own ports, from `BB_PORT_BASE`.
+servers go on its own ports, from `ALIA_PORT_BASE`.
 
 ## `macos` boxes in slots
 
@@ -684,7 +684,7 @@ the Mac's own encoder, shared with no VM (POOL).
   wants the Mac kept whole sets its `slots` to 0.
 - **Its helper,** `machine-mac.sh`, gains `slot make`, `claim`, `release`,
   `daemon` and `status`, and the pool's setup installs idb_companion from
-  its pin and bb-box's lists and seeds in `/usr/local/share/bb-box/ios/`. Slot users take UIDs from 80000, apart from the whole
+  its pin and alia-box's lists and seeds in `/usr/local/share/alia-box/ios/`. Slot users take UIDs from 80000, apart from the whole
   boxes' 70000 range; they are never at the console. The sweep is the
   pool's own, which removes protected folders where the Mac has Full Disk
   Access or SIP off (058).
@@ -703,11 +703,11 @@ the Mac's own encoder, shared with no VM (POOL).
 
 | What happens | The host | Its boxes |
 | --- | --- | --- |
-| An ios box finds no slot, and a Mac has a free VM slot | cloned from the ios image as `bb-box-host-<id>` and booted, `starting` with the box promised; the carried `bbd-i1` claimed for it, `bbd-i2` booted after as the ready slot; more made one at a time while it holds a box | the first waits about 50 to 60 s (M13, M14); boxes that came meanwhile join it |
+| An ios box finds no slot, and a Mac has a free VM slot | cloned from the ios image as `alia-box-host-<id>` and booted, `starting` with the box promised; the carried `bbd-i1` claimed for it, `bbd-i2` booted after as the ready slot; more made one at a time while it holds a box | the first waits about 50 to 60 s (M13, M14); boxes that came meanwhile join it |
 | Its last box is released | the helper writes `deleting`; the backend stops and deletes it; the Mac's VM slot is free again | |
 | A slot's device or CoreSimulatorService crashes | launchd starts that user's CoreSimulatorService again within 5 s (the research) | that box only: its server boots the device again, about 5 s (063); the others went on at 55.5 and 56.9 fps through it (the research) |
 | A slot's idb_companion dies | | that box only: a new companion in about 0.1 s, a stall under 1 s (063 results) |
-| A restart of its VM, by the operator or a crash | the helper's `resume`, every slot's device server and BB's daemon start with the VM, with no one signed in | every box stops, then comes back by itself: in M16 a slot's device server was up as the VM booted, its device booted cold in 7.7 s and streamed 25 s after, and BB's daemons reconnected 10.9 s after BB's server answered. With 8 slots, 8 cold boots took 62 s (the research). box_status says "The device's host restarted; back in about 2 minutes" |
+| A restart of its VM, by the operator or a crash | the helper's `resume`, every slot's device server and VesnALIA's daemon start with the VM, with no one signed in | every box stops, then comes back by itself: in M16 a slot's device server was up as the VM booted, its device booted cold in 7.7 s and streamed 25 s after, and VesnALIA's daemons reconnected 10.9 s after VesnALIA's server answered. With 8 slots, 8 cold boots took 62 s (the research). box_status says "The device's host restarted; back in about 2 minutes" |
 | The Mac restarts | `stopped`: its VM does not start by itself. The Tart backend starts it at its own start and at each sweep, as it starts a held box's VM | as a restart of the VM, from when the backend starts it. box_status says "The host is starting again" |
 | Full: `most` slots making, ready or held | lends no more | new boxes placed as [above](#placing-a-box) |
 | The ios image changes | drains, softly: it still lends its ready slots while no host on the new image can start on that Mac, and stops lending as soon as one can; it is deleted when its last box goes, as always | new boxes go to a host on the new image where one can start, and otherwise to the old host's slots, with box_status naming its build. The doctor says why a host on an old build still lends |
@@ -740,10 +740,10 @@ is different:
   Tart host or the pool Mac by waiting; a Namespace host is the last
   shared choice in the order for this reason.
 - **Its image is Namespace's:** macOS 26.3.1 on an M4 Pro, Xcode 26.1.1,
-  with iOS runtimes 17.5, 18.6 and 26.0 to 26.2 (M18), not bb-box's ios
+  with iOS runtimes 17.5, 18.6 and 26.0 to 26.2 (M18), not alia-box's ios
   image. At the host's start the helper installs idb_companion from 063's
-  pin, checked by SHA-256 (0.6 s, M18), and bb-box's lists and seeds in
-  `/usr/local/share/bb-box/ios/`, and 063's record names the runtime it
+  pin, checked by SHA-256 (0.6 s, M18), and alia-box's lists and seeds in
+  `/usr/local/share/alia-box/ios/`, and 063's record names the runtime it
   uses, so box_status says which iOS a Namespace box tests on.
 - **Slimming works there.** The iOS 27.0 list applied to an iPhone 17 Pro
   on iOS 26.2 turned off all 112 of its labels, and the store was where it
@@ -761,7 +761,7 @@ is different:
 
 **So Namespace hosts stay off** (`on: false`), and Namespace leaves the
 order until a device on it can stream: by 063's Android path, raw frames
-into `bb-box-h264`, if its CPU can afford it beside the devices, which M18
+into `alia-box-h264`, if its CPU can afford it beside the devices, which M18
 suggests it cannot for more than one or two; or by Namespace offering Macs
 whose VMs have the encoder. Unit 7 waits for one of them. The rest of this
 section stands for when it does.
@@ -773,12 +773,12 @@ section stands for when it does.
 - **The viewer says what it draws.** After `START_VIDEO`, and whenever what
   it draws changes and stays changed for 500 ms (a resize of the panel,
   zoom, Fit, Pixel for pixel, Show frame, a move to a screen of another
-  pixel ratio), the viewer sends `BB_DEVICE_VIEW {"width": w, "height": h}`
+  pixel ratio), the viewer sends `ALIA_DEVICE_VIEW {"width": w, "height": h}`
   on its viewer connection: the device screen's drawn size in the browser's
   device pixels, CSS size times `devicePixelRatio`, upright. A hidden tab
   sends `STOP_VIDEO`, as now.
 - **The relay passes it.** Its list of viewer verbs (`VIDEO_VERBS` in
-  `src/core/selkies.ts`) gains `BB_DEVICE_VIEW`; a server of an older
+  `src/core/selkies.ts`) gains `ALIA_DEVICE_VIEW`; a server of an older
   version ignores the verb, so it is never dropped as unknown.
 - **The server picks a step.** Its wish is the largest drawn size among the
   viewers watching, as a share of the device's own pixels. The step is the
@@ -800,7 +800,7 @@ version for the verb and the input's space. A viewer of
 an older protocol gets full-size video and sends video pixels, as now.
 
 **Android keeps full size** in this change. Its frames are encoded by
-`bb-box-h264` in its own VM, with no Mac encoder to share, so the steps
+`alia-box-h264` in its own VM, with no Mac encoder to share, so the steps
 would save that box's CPU only, a later decision. Its input moves to device
 pixels too, as the server is one program; with full-size video, device
 pixels and video pixels are the same, so nothing an Android viewer sends
@@ -812,7 +812,7 @@ frame's time, 50 to 106 ms (063 E5). H4 measures it.
 
 What the panel would draw, the iPhone 18 Pro fitted to the panel's height.
 These are estimates from the frame's fit rule (063 unit 6.1), not
-measurements; H4 measures the steps through BB:
+measurements; H4 measures the steps through VesnALIA:
 
 | Screen | Device drawn, in device pixels | Step |
 | --- | --- | --- |
@@ -884,7 +884,7 @@ three on each half, and 160 / 3 is 53. The pool Mac's encoder splits the
 same way, into halves of about 188 (POOL).
 
 So a half carries two full-size streams at 60 frames a second, and a third
-brings all three on it to 53. bb-box cannot choose the half. So **at most
+brings all three on it to 53. alia-box cannot choose the half. So **at most
 two streams on a Mac are at full size at once**; others are capped at two
 thirds, which a half carries four of at 60 (M8).
 
@@ -910,10 +910,10 @@ On the pool Mac, a full-size iPhone frame: 374 to 377 a second; a half:
   empty, so it neither takes the encoder from a stream nor reads low
   because of one; two encoders, not four, so the halves cannot split it
   one and three (M11). A Namespace Mac has no hardware encoder (M18).
-- **What it counts:** every stream bb-box makes on that Mac, each at its
+- **What it counts:** every stream alia-box makes on that Mac, each at its
   frames a second over the last 10 s, with a floor of 20, times its
   frame's cost from the table: watched devices, recordings, and the
-  desktops bb-box streams there, a macOS desktop from a Tart VM (060) and a
+  desktops alia-box streams there, a macOS desktop from a Tart VM (060) and a
   Windows desktop encoded on the Mac (046). So a panel open on a still
   device counts a third of a busy one's, and a device that becomes busy is
   counted as busy within 10 s.
@@ -962,7 +962,7 @@ Measured on 26 October 2026, on two Macs:
 Every device was an iPhone 18 Pro. Streams were read in the box from idb's
 socket, with the research's harness,
 [multi.ts](../research/ios-shared-hosts/multi.ts), and its decoded-pixel
-tap analysis, [analyse.py](../research/ios-shared-hosts/analyse.py): BB's
+tap analysis, [analyse.py](../research/ios-shared-hosts/analyse.py): VesnALIA's
 relay, the network and the browser are not in them. The encoder was loaded with `ffmpeg`'s `h264_videotoolbox`, hardware
 only, 8 Mbit/s, from a raw clip in memory, so nothing but the encoder
 limited it. The scripts and summaries are in
@@ -1143,26 +1143,26 @@ idb_companion started for each by a LaunchDaemon with `UserName`:
 
 Each had 112 labels off.
 
-### M14: a slot enrolled as a BB machine (H3)
+### M14: a slot enrolled as a VesnALIA machine (H3)
 
-A fresh BB, `npx bb-app` with no account, ran in the ios box's own user at
+A fresh VesnALIA, `npx alia-app` with no account, ran in the ios box's own user at
 127.0.0.1:4999, with its machines' server address set to that URL and its
-default access to `direct`. `bb machine create --provider manual` gave a
+default access to `direct`. `alia machine create --provider manual` gave a
 one-time enrolment command for each slot, which the slot's user ran over
-SSH, as bb-box's enrolment runs BB's command in a box. Both slot users were
+SSH, as alia-box's enrolment runs VesnALIA's command in a box. Both slot users were
 made as in M13, UIDs 80001 and 80002, with no console session.
 
-| | Slot 1, as BB's command is | Slot 2, with `BB_INSTALL_SKIP_SERVICE=1` |
+| | Slot 1, as VesnALIA's command is | Slot 2, with `ALIA_INSTALL_SKIP_SERVICE=1` |
 | --- | --- | --- |
-| The installer | downloaded and installed the server's bb-app, 5 s; enrolled the machine; then failed: "Could not register the bb host-daemon launch agent … launchctl: Bootstrap failed: 125: Domain does not support specified action" | the same, then ran the daemon under its own `--supervise`; connected |
+| The installer | downloaded and installed the server's alia-app, 5 s; enrolled the machine; then failed: "Could not register the VesnALIA host-daemon launch agent … launchctl: Bootstrap failed: 125: Domain does not support specified action" | the same, then ran the daemon under its own `--supervise`; connected |
 | The daemon's port, chosen by the installer | 38889 | 38890 (the VM's own user's daemon had 38888) |
 | Then | its LaunchAgent's plist copied to `/Library/LaunchDaemons` with `UserName` added, and loaded: connected 0.7 s after | the installer's process stopped, and a LaunchDaemon written with the same command, port and data folder: connected 0.5 s after |
-| A terminal made through BB on the machine | ran as `bbd-1`, UID 80001, and `simctl` saw its own devices | ran as `bbd-2`, UID 80002 |
+| A terminal made through VesnALIA on the machine | ran as `bbd-1`, UID 80001, and `simctl` saw its own devices | ran as `bbd-2`, UID 80002 |
 
 ### M15: the device server under a LaunchDaemon
 
 The device server's version 13, as the plugin had delivered it to the VM's
-own user, copied to `~/.bb-box/device/server/13` in slot 1's home, owned by
+own user, copied to `~/.alia-box/device/server/13` in slot 1's home, owned by
 the slot's user, with `current` pointing at it, and run by a LaunchDaemon
 with `UserName`, `KeepAlive` and `ThrottleInterval` 1:
 
@@ -1178,10 +1178,10 @@ with `UserName`, `KeepAlive` and `ThrottleInterval` 1:
 
 The VM restarted by a resize with restart, which took 69.2 s, with slots 1
 and 2 enrolled and slot 1's device server loaded. Nobody signed in. As the
-VM came up, both slots' BB daemons and slot 1's device server were running.
+VM came up, both slots' VesnALIA daemons and slot 1's device server were running.
 The device server booted its device cold in 7.7 s and had its companion
 listening and the device booted 25 s after launchd started it. The fresh
-BB, which ran as the VM's own user by hand and so did not restart, was
+VesnALIA, which ran as the VM's own user by hand and so did not restart, was
 started again; both slots' machines were connected 10.9 s after it
 answered.
 
@@ -1269,25 +1269,25 @@ size at 42.7 to 43.4 fps, 74 ms, 95th percentile 404 ms.
 
 Each unit is one builder's PR, built and checked on a Mac box: a dedicated
 ios box where it needs root in the VM, the pool's Mac where it changes the
-pool. Each ends in a live check through BB, on a separate BB in a box with
-bb-box from the unit's branch, with what it measured. Each brings the
+pool. Each ends in a live check through VesnALIA, on a separate VesnALIA in a box with
+alia-box from the unit's branch, with what it measured. Each brings the
 reference, the skill's text, settings keys, doctor checks, conformance
 cases and guides for what it adds.
 
 | Unit | Builds | Live check | After |
 | --- | --- | --- | --- |
-| 1. Streams at the viewer's size, and only while wanted | `BB_DEVICE_VIEW` from the viewer, added to the relay's `VIDEO_VERBS`; the server's steps, wishes and cap; input in device pixels, iOS and Android; a step change that keeps the generation; idb's stream opened only for a viewer, a recording or a tool's wait, closed 10 s after; a recording at two thirds; Android at full size; the server's new version and protocol | on a dedicated ios box and an android box: the panel at three sizes and Pixel for pixel, the step following within 2 s; a tap at each step landing where drawn; 063's E8 cases on both; an agent's element reference still good after a person resizes the panel; no frames encoded 10 s after the last viewer leaves; a recording's clip at 1,600 px; H4 | |
-| 2. The data model, `dedicated` and `shared` | `src/core/device-host.ts` with its validators and the compile-time cases that must fail; `capabilities` and the placement in `guest.data` on the box record, read by every tool; `dedicated` for ios and `shared` for macos on box_acquire and `bb box acquire`; the refusals of [box operations](#what-a-box-gives-up-in-a-slot); box_list's and box_status's words; the New box form's choice, Shared off with "No shared iOS host is set up" until unit 4; the skill's text | `dedicated: true` gives today's box; a size without it refused in its words; box_list and box_status read back; the form at 360 px and by keyboard | |
-| 3. The host's helper | `device-host`: make, claim, promise, release (with `last` and `deleting` under its lock), reset with its sweep queue, daemon, resume and status, each re-runnable from its recorded step; UIDs and users derived from the generation; devices by `simctl create`, seeded; the device server's and BB's daemons; homes `700`; the port range and the held common ports; the per-slot device bound and load in status. The ios image gains it, its two carried slots, each runtime's `disabled.plist`, and its UID check. Tested first on Linux with stub macOS tools, as `machine-mac.sh` is | in a dedicated ios box, as root: 8 slots made, each timed; a slot enrolled with bb-box's own enrolment and a terminal run on it (H3 through the plugin, after M14 on a fresh BB); a new device server version delivered to a slot and listening within 2 s (M15); a cold restart with slots held (M16); H7; a CoreSimulatorService killed in one slot while three others stream; a `release` cut short and run again | |
-| 4. Tart hosts, shared still opt-in | the `ios-hosts` setting; `SlotLender` on the Tart backend; the registry's device placement lock and tiers; hosts made for a box, joinable while `starting`, deleted at the helper's `last`; carried slots; soft draining; `stopped` and the start of a held host's VM; the upkeep's rows for `starting`, `deleting` and `failed`; transports as the slot's user through the Mac; every slot stream capped at two thirds until unit 6; the doctor's page of hosts, slots, their load and the Mac's ledger; conformance cases | on a separate BB, with `shared: true` asked for: three ios boxes acquired at once make one host, not three; 8 boxes, each its own device, streamed and tapped; a ninth placed with its words; a release racing a claim, the claim placed again; the last release deleting the host and freeing the VM slot; H1 for a ready slot and for a first box on a new host; H5, H6, H9 | 2, 3 |
+| 1. Streams at the viewer's size, and only while wanted | `ALIA_DEVICE_VIEW` from the viewer, added to the relay's `VIDEO_VERBS`; the server's steps, wishes and cap; input in device pixels, iOS and Android; a step change that keeps the generation; idb's stream opened only for a viewer, a recording or a tool's wait, closed 10 s after; a recording at two thirds; Android at full size; the server's new version and protocol | on a dedicated ios box and an android box: the panel at three sizes and Pixel for pixel, the step following within 2 s; a tap at each step landing where drawn; 063's E8 cases on both; an agent's element reference still good after a person resizes the panel; no frames encoded 10 s after the last viewer leaves; a recording's clip at 1,600 px; H4 | |
+| 2. The data model, `dedicated` and `shared` | `src/core/device-host.ts` with its validators and the compile-time cases that must fail; `capabilities` and the placement in `guest.data` on the box record, read by every tool; `dedicated` for ios and `shared` for macos on box_acquire and `alia box acquire`; the refusals of [box operations](#what-a-box-gives-up-in-a-slot); box_list's and box_status's words; the New box form's choice, Shared off with "No shared iOS host is set up" until unit 4; the skill's text | `dedicated: true` gives today's box; a size without it refused in its words; box_list and box_status read back; the form at 360 px and by keyboard | |
+| 3. The host's helper | `device-host`: make, claim, promise, release (with `last` and `deleting` under its lock), reset with its sweep queue, daemon, resume and status, each re-runnable from its recorded step; UIDs and users derived from the generation; devices by `simctl create`, seeded; the device server's and VesnALIA's daemons; homes `700`; the port range and the held common ports; the per-slot device bound and load in status. The ios image gains it, its two carried slots, each runtime's `disabled.plist`, and its UID check. Tested first on Linux with stub macOS tools, as `machine-mac.sh` is | in a dedicated ios box, as root: 8 slots made, each timed; a slot enrolled with alia-box's own enrolment and a terminal run on it (H3 through the plugin, after M14 on a fresh VesnALIA); a new device server version delivered to a slot and listening within 2 s (M15); a cold restart with slots held (M16); H7; a CoreSimulatorService killed in one slot while three others stream; a `release` cut short and run again | |
+| 4. Tart hosts, shared still opt-in | the `ios-hosts` setting; `SlotLender` on the Tart backend; the registry's device placement lock and tiers; hosts made for a box, joinable while `starting`, deleted at the helper's `last`; carried slots; soft draining; `stopped` and the start of a held host's VM; the upkeep's rows for `starting`, `deleting` and `failed`; transports as the slot's user through the Mac; every slot stream capped at two thirds until unit 6; the doctor's page of hosts, slots, their load and the Mac's ledger; conformance cases | on a separate VesnALIA, with `shared: true` asked for: three ios boxes acquired at once make one host, not three; 8 boxes, each its own device, streamed and tapped; a ninth placed with its words; a release racing a claim, the claim placed again; the last release deleting the host and freeing the VM slot; H1 for a ready slot and for a first box on a new host; H5, H6, H9 | 2, 3 |
 | 5. Pool Mac slots | `machine-mac.sh`'s slot commands; `free`, `whole`, `resetting-whole` and `slots`; a whole claim refused while slots are held, with words; `SlotLender` on the pool backend; setup installs idb_companion, the lists and seeds; the pool's guide; conformance cases | on the pool's Mac: 12 slots made and held; a `macos-desktop` box for the pool refused with its words, then lent whole once they end; a reset leaves nothing; H1, H11 | 2, 3 |
 | 6. The encoder ledger, then shared by default | the per-Mac ledger in the plugin with measured rates and a floor; budgets by chip, the probe only on an empty ledger; the order of who gets room; caps sent to each server; at most two at full size; the words naming boxes; new hosts placed on the Mac with the fewest streams, and the warning while one starts. Then the ios kind's default becomes shared | 10 watched devices across a host and a dedicated ios box on one Mac: caps step down passive viewers first, the person in control keeps Pixel for pixel, every stream at 55 fps or more, the words seen; H8; then an ios box acquired with no options lands in a slot | 1, 4, 5 |
-| 7. Namespace hosts, when a device can stream there | `SlotLender` on the Namespace backend; a Namespace Mac made as a host, idb_companion, lists and seeds installed from their pins, its runtime checked and named; `ending` an hour before the plan's longest life; a stream that does not need VideoToolbox, by 063's Android path, or Namespace Macs with an encoder; the Namespace guide's note that a host takes the workspace's only Mac | a Namespace host streaming 2 devices through BB, their frame rate and its CPU; then `on` | 4 |
+| 7. Namespace hosts, when a device can stream there | `SlotLender` on the Namespace backend; a Namespace Mac made as a host, idb_companion, lists and seeds installed from their pins, its runtime checked and named; `ending` an hour before the plan's longest life; a stream that does not need VideoToolbox, by 063's Android path, or Namespace Macs with an encoder; the Namespace guide's note that a host takes the workspace's only Mac | a Namespace host streaming 2 devices through VesnALIA, their frame rate and its CPU; then `on` | 4 |
 | 8. `macos` boxes in slots | `shared: true` on a `macos` acquire takes a slot, its device deleted at the claim; the New box form's choice for `macos` | a `macos` box with `shared: true` placed in a slot in seconds, its words read back; one without it waits for a VM with its words | 4 |
 
 Units 1, 2 and 3 run side by side; then 4 and 5; then 6, which makes
 shared the default, and 7 and 8. Shared becomes the default only in unit 6:
-after bb-box's own enrolment of a slot passes in unit 3 (review finding 4)
+after alia-box's own enrolment of a slot passes in unit 3 (review finding 4)
 and the ledger exists (finding 16). Until then a box in a slot is opt-in,
 with `shared: true`, and its streams are capped at two thirds.
 
@@ -1300,20 +1300,20 @@ grant with words; two acquires at once share one new host.
 
 | | What | Settles | Unit |
 | --- | --- | --- | --- |
-| H1 | Ten claims of a ready slot through BB, and five first boxes on a new host: box_acquire to the device's first frame in the panel and to a connected BB machine | the ready times in [Placing a box](#placing-a-box) | 4, 5 |
-| H3 | bb-box's own enrolment of a slot, through the plugin | a slot box as a BB machine, which M14 showed on a fresh BB | 3 |
-| H4 | Tap to screen through BB at each step, 100 taps, and the stall when the step changes | the steps' cost to a person | 1 |
-| H5 | A Tart host restarted with 8 held slots: time until every device streams and every BB machine is connected | the restart row of [Tart hosts](#tart-hosts) | 4 |
+| H1 | Ten claims of a ready slot through VesnALIA, and five first boxes on a new host: box_acquire to the device's first frame in the panel and to a connected VesnALIA machine | the ready times in [Placing a box](#placing-a-box) | 4, 5 |
+| H3 | alia-box's own enrolment of a slot, through the plugin | a slot box as a VesnALIA machine, which M14 showed on a fresh VesnALIA | 3 |
+| H4 | Tap to screen through VesnALIA at each step, 100 taps, and the stall when the step changes | the steps' cost to a person | 1 |
+| H5 | A Tart host restarted with 8 held slots: time until every device streams and every VesnALIA machine is connected | the restart row of [Tart hosts](#tart-hosts) | 4 |
 | H6 | An image change with 3 slots held: the old host lends while no new one can start, then stops lending and is deleted at its last release | soft draining | 4 |
 | H7 | The plant-and-check of [what can pass between boxes](#what-can-pass-between-boxes-and-how-it-is-checked), with the held ports | isolation and reset | 3 |
 | H8 | 10 watched devices on one Mac, in a host and a dedicated box, with the ledger on and off, and another VM starting meanwhile | the ledger, and what a VM's start costs streams (E1) | 6 |
-| H9 | 8 held slots idle, each with its device, server and BB's daemon: the host's CPU and memory | the Tart host's size | 4 |
+| H9 | 8 held slots idle, each with its device, server and VesnALIA's daemon: the host's CPU and memory | the Tart host's size | 4 |
 | H10 | Done (M18): a Namespace Mac's start, Xcode and runtimes, slimming, and its encoder: none in hardware, and idb's stream fails | Namespace stays off | 7 |
 | H11 | A slot's reset on the pool's Mac, with its Full Disk Access: the sweep's time, and what is left | the pool Mac's reset | 5 |
 
 M12 did what the first draft's H2 asked: a slot's user builds an iOS app
 and passes an XCUITest on its own device. M14 to M16 did the review's
-asks of H3 and finding 4 on a fresh BB: enrolment, the device server's
+asks of H3 and finding 4 on a fresh VesnALIA: enrolment, the device server's
 delivery and restart under a daemon, and a cold restart.
 
 ## Where this differs from the brief
@@ -1332,7 +1332,7 @@ delivery and restart under a daemon, and a cold restart.
   every new ios box on that Mac wait. They still wait, with words, when
   nothing in the order can be had.
 - **Shared becomes the default later** (decision 1): in unit 6, after
-  bb-box's own enrolment of a slot passes and the ledger exists, not when
+  alia-box's own enrolment of a slot passes and the ledger exists, not when
   hosts first work (review findings 4 and 16).
 - **Streams follow the viewer's size by steps** (decision 2): a third, a
   half, two thirds or full, so a panel resized by a few pixels does not
@@ -1446,8 +1446,8 @@ default:
   encoder for idb's stream (M18).
 - Slimming rests on an undocumented store; the device server's boot check
   stays the guard, at the cost of about 2 minutes to make a slot if a later
-  Xcode moves it. Enrolment rests on BB's installer honouring
-  `BB_INSTALL_SKIP_SERVICE` on macOS, which it does today.
+  Xcode moves it. Enrolment rests on VesnALIA's installer honouring
+  `ALIA_INSTALL_SKIP_SERVICE` on macOS, which it does today.
 - The ios image grows by two slots' first-boot data, about 3.2 GiB, once
   on the Mac's disk.
 - The device server's protocol gains the viewer's size and input in device
@@ -1463,7 +1463,7 @@ build after changes. Every finding changed the note.
 | 1 | The order cannot be run by the registry; a starting host cannot be joined; bursts make several hosts | Changed. Each lender answers with a graded `SlotTier`; the registry chooses under one lock for device placement and holds it until the claim, promise or `starting` record is written; `starting` has `promised`, `making` has `for`; a lost `ln` race is asked again, three times: [Placing a box](#placing-a-box). Unit 4's live check acquires three at once and wants one host |
 | 2 | The last release's delete races a claim; two writers of host state | Changed. The helper's `release` decides `last` under its lock and writes `deleting`, which refuses every later claim; the backend deletes after; the owner file is a cache; the upkeep finishes a `deleting` host: [The last release deletes the host](#the-last-release-deletes-the-host) |
 | 3 | The image's carried slots break its own UID check; both boot at every start | Changed. Carried slots are `bbd-i1` and `bbd-i2`, UIDs 79991 and 79992, exempted by name and UID; nothing boots at the host's start; the first claim boots one, then the other boots as the ready slot: [Slots in the image](#slots-in-the-image) |
-| 4 | Shared becomes the default before enrolment and the server-as-daemon are proven | Measured, and the flip moved. M14: two slots enrolled on a fresh BB and ran terminals through it; M15: the delivered server under a daemon, restarted in 0.3 to 1.3 s and from a new version in 1.7 s; M16: both back after a cold restart. The default flips in unit 6, after bb-box's own enrolment passes in unit 3; `connect`'s words when no server comes |
+| 4 | Shared becomes the default before enrolment and the server-as-daemon are proven | Measured, and the flip moved. M14: two slots enrolled on a fresh VesnALIA and ran terminals through it; M15: the delivered server under a daemon, restarted in 0.3 to 1.3 s and from a new version in 1.7 s; M16: both back after a cold restart. The default flips in unit 6, after alia-box's own enrolment passes in unit 3; `connect`'s words when no server comes |
 | 5 | Nothing bounds one box's load or shows whose it is | Changed. A booted-device bound, a disk reserve, a memory floor for lending, background priority for the helper's work, and each slot's cores, memory and disk in the helper's status; box_status names the busiest slot: [What one box can take from the others](#what-one-box-can-take-from-the-others). The encoder used by a box's own tools stays unseen, and the note says so |
 | 6 | Shared loopback gives false passes against another box's server | Changed. A port range per slot in its environment, box_status and the skill; the common dev ports held by the helper with words: [Ports](#ports-a-range-for-each-box). Holding them is open question 3 |
 | 7 | Draining is too strict; a Mac restart has no rule | Changed. Soft draining; `stopped`, with the backend starting a held host's VM as it does a box's; the restart measured (M16): [Tart hosts](#tart-hosts) |
@@ -1473,7 +1473,7 @@ build after changes. Every finding changed the note.
 | 11 | `macos` in a slot as a silent fallback; capabilities per box | Changed. `shared: true` only; `capabilities` on the box record, read by every tool: [`macos` boxes in slots](#macos-boxes-in-slots), [The data shape](#slots) |
 | 12 | Box operations undefined for a slot box | Changed. A table, each refusal in words naming `dedicated`: [What a box gives up in a slot](#what-a-box-gives-up-in-a-slot) |
 | 13 | Illegal states in the shape | Changed. One placement, in `guest.data`; user and UID derived from the generation; `promised` and `for`; `stopped`; `resetting-whole` on the pool Mac and `slots` until the last slot is gone; settings as a snapshot; box_status reads a Namespace host's `endsAt` |
-| 14 | Row 4 and row 6 on different bases | Changed. Both to the first frame and a connected BB machine: about 50 to 60 s and 50 to 57 s; "about as long", not "as long"; H1 measures first boxes on new hosts |
+| 14 | Row 4 and row 6 on different bases | Changed. Both to the first frame and a connected VesnALIA machine: about 50 to 60 s and 50 to 57 s; "about as long", not "as long"; H1 measures first boxes on new hosts |
 | 15 | Unit 1 changes Android's protocol unsaid | Changed. Android keeps full size; its input moves to device pixels with no change in effect; unit 1 runs E8 on Android |
 | 16 | Phases: the relay's verbs, conformance, the setting's shape, the flip before the ledger, a page for a person, docs | Changed. `VIDEO_VERBS` gains the verb; conformance cases listed; [`ios-hosts`](#the-ios-hosts-setting) has keys and defaults; slot streams capped at two thirds until unit 6, which flips the default; the doctor's page of hosts in unit 4; the pool's and Namespace guides in units 5 and 7 |
 

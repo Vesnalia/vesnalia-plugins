@@ -4,12 +4,12 @@ import {mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,existsSync} from
 import {join,resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import { api, plugin, snapshot, inputs } from './helpers.mjs';
-import { experimental_createDeltaAssembler } from '@get-bb/plugin-sdk/provider-bridge/testing';
+import { experimental_createDeltaAssembler } from '@vesnalia/plugin-sdk/provider-bridge/testing';
 const options={permissionMode:'full',permissionScope:'full',approvalReviewer:null,permissionEscalation:null};
 const header={rowId:1,kind:'turnHeader',turnId:'turn1',state:'running'};
 const anchor={rowId:2,kind:'toolCall',turnId:'turn1',toolCallId:'agent-call',toolName:'Agent',status:'running',input:{subagent_type:'general-purpose'}};
 const child={rowId:3,kind:'subagent',turnId:'turn1',parentToolCallId:'agent-call',childSessionId:'native-child',subagentType:'general-purpose',status:'running',summaryText:''};
-test('M48 strict providerOptions, enabled default/signature and real bb derive',async()=>{
+test('M48 strict providerOptions, enabled default/signature and real VesnALIA derive',async()=>{
   const enabled=api.executionOptions(options),off=api.executionOptions({...options,providerOptions:{providerSubagentsEnabled:false}});
   assert.equal(enabled.providerSubagentsEnabled,true);assert.equal(off.providerSubagentsEnabled,false);assert.notEqual(enabled.signature,off.signature);
   for(const v of [null,0,'false',{},[]])assert.throws(()=>api.executionOptions({...options,providerOptions:{providerSubagentsEnabled:v}}),/Invalid subagent/);

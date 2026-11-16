@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-android-emulator",
+  "name": "alia-plugin-android-emulator",
   "version": "0.1.3",
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49"
   },
-  "bb": {
+  "alia": {
     "name": "Android Emulator",
-    "description": "See and control Android emulators on your bb hosts from a thread panel, with agent commands for the same device.",
+    "description": "See and control Android emulators on your VesnALIA hosts from a thread panel, with agent commands for the same device.",
     "branding": {
       "icon": "Smartphone"
     },
@@ -26,7 +26,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -36,19 +35,28 @@
     "typescript": "^5.7.0"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "check": "tsc --noEmit",
     "test": "node --test test/*.test.ts && node i18n.test.mjs",
     "embed:scrcpy-server": "node scripts/embed-scrcpy-server.mjs",
     "notices": "node scripts/third-party-notices.mjs"
   },
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/android-emulator#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nicolay-i/bb-plugin-android-emulator.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/android-emulator"
   },
   "bugs": {
-    "url": "https://github.com/nicolay-i/bb-plugin-android-emulator/issues"
-  },
-  "homepage": "https://github.com/nicolay-i/bb-plugin-android-emulator#readme",
-  "license": "MIT"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

@@ -1,10 +1,10 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRpc, useRealtime, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useRpc, useRealtime, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { SelectedLineRange } from "@pierre/diffs";
 import type { rpcContract } from "../src/rpc-contract";
 import { cn } from "../lib/utils";
-import { experimental_useCodeTheme } from "@get-bb/plugin-sdk/app";
+import { experimental_useCodeTheme } from "@vesnalia/plugin-sdk/app";
 import { useMediaQuery } from "./ui/hooks/use-media-query";
 import { getReviewState, patchReviewState, setLastReview } from "../lib/panel-state";
 import { Button } from "./ui/button";
@@ -24,7 +24,7 @@ const SIDEBAR_MAX = 560;
 
 export const ReviewWorkspace = memo(function ReviewWorkspace({ targetKey }: { targetKey: string }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const codeTheme = experimental_useCodeTheme();
   const compact = useMediaQuery("(max-width: 767px)");
   const [mobileChapters, setMobileChapters] = useState(false);

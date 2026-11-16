@@ -48,8 +48,8 @@ describe("the SSH host pool's Mac lends iOS slots (064 unit 5)", { timeout: 300_
     const transports = await backend.transports(guest, "ios");
     assert.equal(transports.access?.ssh?.user, "bbd-1");
     assert.equal(transports.displays.length, 0);
-    assert.deepEqual(transports.daemonKeptByHost?.installerEnvironment, { BB_INSTALL_SKIP_SERVICE: "1" });
-    assert.equal(transports.daemonKeptByHost?.daemonPort, 38900, "each slot's BB daemon has its own port, from its place on the Mac");
+    assert.deepEqual(transports.daemonKeptByHost?.installerEnvironment, { ALIA_INSTALL_SKIP_SERVICE: "1" });
+    assert.equal(transports.daemonKeptByHost?.daemonPort, 38900, "each slot's VesnALIA daemon has its own port, from its place on the Mac");
 
     const whole = await backend.capacity("macos-desktop", sizeOf("macos-desktop"), [], wait());
     assert.equal(whole.ok, false);
@@ -82,14 +82,14 @@ describe("the SSH host pool's Mac lends iOS slots (064 unit 5)", { timeout: 300_
     const { hooks } = recordingHooks();
     const guest = await backend.acquire(box, null, hooks, wait());
     assert.equal(guest.ref, "mac-1");
-    assert.match(pool.mac.file("/var/db/bb-box/host/closed") ?? "", /^since=/);
+    assert.match(pool.mac.file("/var/db/alia-box/host/closed") ?? "", /^since=/);
     const offer = await backend.slots!.offer("ios", null, wait());
     assert.deepEqual(offer, { tier: "wait", words: "The pool's Mac mac-1 is lent whole to a box, so it lends no iOS slot until that box is released." });
     await backend.maintain(wait());
-    assert.match(pool.mac.file("/var/db/bb-box/host/closed") ?? "", /^since=/, "the upkeep leaves a Mac lent whole closed");
+    assert.match(pool.mac.file("/var/db/alia-box/host/closed") ?? "", /^since=/, "the upkeep leaves a Mac lent whole closed");
     await backend.release(guest, releaseHooks().hooks, wait());
     await backend.maintain(wait());
-    assert.equal(pool.mac.file("/var/db/bb-box/host/closed"), null);
+    assert.equal(pool.mac.file("/var/db/alia-box/host/closed"), null);
     assert.ok(backend.context.logs.some((line) => /The pool's Mac mac-1 lends iOS slots again/.test(line)), backend.context.logs.join("\n"));
   });
 
@@ -138,7 +138,7 @@ describe("a pool Mac whose line does not list ios", { timeout: 120_000 }, () => 
     const backend = pool.backend();
     assert.equal(backend.slots.lends("ios"), false);
     await backend.maintain(wait());
-    assert.match(pool.mac.file("/var/db/bb-box/host/closed") ?? "", /^since=/);
+    assert.match(pool.mac.file("/var/db/alia-box/host/closed") ?? "", /^since=/);
   });
 });
 
@@ -165,7 +165,7 @@ describe("the SSH host pool's Mac lends iOS slots only where it can stream a dev
     assert.equal(refused.tier, "wait");
     assert.match(
       "words" in refused ? refused.words : "",
-      /The pool's Mac mac-1 lends no iOS slot: It cannot stream a device's screen: VideoToolbox could not make a hardware session \(-12903\), and bb-box-h264 is not installed\./,
+      /The pool's Mac mac-1 lends no iOS slot: It cannot stream a device's screen: VideoToolbox could not make a hardware session \(-12903\), and alia-box-h264 is not installed\./,
     );
     const warned = (await refusing.doctor(wait())).checks.find((each) => each.id === "devices.mac-1");
     assert.equal(warned?.status, "warn");

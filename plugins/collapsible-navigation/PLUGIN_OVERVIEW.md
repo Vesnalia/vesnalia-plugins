@@ -8,6 +8,6 @@ Reclaim sidebar space with a collapsible navigation panel that folds upward.
 
 ## How to use
 
-1. Install the plugin in BB.
+1. Install the plugin in VesnALIA.
 2. In Settings → Appearance → Navigation, ensure **Collapsible Navigation** is active (or Automatic).
 3. Click the **Navigation** header or the chevron icon in the sidebar to collapse upward or expand.

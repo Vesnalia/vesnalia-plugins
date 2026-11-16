@@ -1,4 +1,4 @@
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import type { IconsState, UploadResult } from "../src/shared/contract";
 
@@ -20,15 +20,15 @@ export async function setup(
   providers: { id: string; displayName: string }[] = [],
   settings?: Record<string, string>,
 ) {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "agent-icons",
     sdk: { providers: { list: async () => providers } },
     settings,
   });
-  await plugin(bb);
+  await plugin(alia);
   const call = <T>(method: string, input: unknown = null) => harness.behavior.callRpc(method, input) as Promise<T>;
   return {
-    bb,
+    alia,
     harness,
     call,
     state: () => call<IconsState>("state"),

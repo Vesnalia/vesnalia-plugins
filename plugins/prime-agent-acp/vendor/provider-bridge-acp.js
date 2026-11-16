@@ -1,6 +1,6 @@
 // ============================================================================
 // VENDORED FILE -- DO NOT EDIT BY HAND.
-// Source: @get-bb/plugin-sdk@0.4.84 dist/provider-bridge-acp.js
+// Source: @vesnalia/plugin-sdk@0.4.84 dist/provider-bridge-acp.js
 //         + prime-agent ACP dialect injected by scripts/apply-dialect.py
 // Generated: 2026-09-17
 // Re-generate after an SDK bump: see the header in scripts/apply-dialect.py
@@ -459,7 +459,7 @@ var providerNativeRootInputSchema = z4.union([
     /**
      * A file, relative to a skill directory under this root, that marks the
      * directory as a vendor plugin rather than a skill (Claude's
-     * `.claude-plugin/plugin.json`): bb skips such a directory. The plugin
+     * `.claude-plugin/plugin.json`): VesnALIA skips such a directory. The plugin
      * that knows the vendor layout declares it; core names no vendor path.
      */
     skipIfManifest: nativeRootManifestPathSchema.optional()
@@ -3298,7 +3298,7 @@ function runBridgeRequest(args) {
 import { closeSync, mkdirSync, openSync, writeSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { StringDecoder } from "node:string_decoder";
-var PROVIDER_BRIDGE_RECORD_DIR_ENV = "BB_PROVIDER_BRIDGE_RECORD_DIR";
+var PROVIDER_BRIDGE_RECORD_DIR_ENV = "ALIA_PROVIDER_BRIDGE_RECORD_DIR";
 var BRIDGE_RECORDING_PROCESS_SCOPE = "_process";
 function bridgeRecordingFileName(direction) {
   return `${direction}.ndjson`;
@@ -3475,7 +3475,7 @@ function createBridgeRecorder(args) {
     }
   };
 }
-var RECORDER_GLOBAL_KEY = /* @__PURE__ */ Symbol.for("bb.providerBridgeRecorder");
+var RECORDER_GLOBAL_KEY = /* @__PURE__ */ Symbol.for("alia.providerBridgeRecorder");
 function globalSlot() {
   const holder = globalThis;
   const existing = holder[RECORDER_GLOBAL_KEY];
@@ -4550,7 +4550,7 @@ function fetchDashboard(method, accessToken) {
       "Content-Type": "application/json",
       "Connect-Protocol-Version": "1",
       "x-cursor-client-type": "cli",
-      "x-cursor-client-version": "cli-bb-provider-acp"
+      "x-cursor-client-version": "cli-alia-provider-acp"
     },
     body: "{}",
     signal: AbortSignal.timeout(USAGE_FETCH_TIMEOUT_MS)
@@ -4961,12 +4961,12 @@ var OPENCODE_ACP_DIALECT = {
 //
 // (see prime-agent dist/modes/acp/acp-events.js; namespace from acp-meta.js)
 //
-// The dialect maps them onto bb deltas:
+// The dialect maps them onto VesnALIA deltas:
 //   subagents    -> delegation items (like the grok dialect's spawn_subagent)
 //   compaction   -> context.compacted
 //   goal         -> extension.state "provider-codex/goal" (the app's goal UI
 //                   reads exactly this kind; native goal delta is an upstream
-//                   bb conversation)
+//                   VesnALIA conversation)
 //   refinement   -> extension item "prime-agent-acp/refinement"
 //   agentMessage -> extension item "prime-agent-acp/agent-message"
 //   autonomous   -> extension.state "prime-agent-acp/autonomous" plus an item
@@ -4977,9 +4977,9 @@ var OPENCODE_ACP_DIALECT = {
 //   cwd          -> session/new response meta stashed per thread, flushed as a
 //                   one-shot "prime-agent-acp/cwd" item on the first in-turn
 //                   session info update
-//   heartbeatsChanged -> no-op, bb has no provider-agnostic heartbeat surface
+//   heartbeatsChanged -> no-op, VesnALIA has no provider-agnostic heartbeat surface
 //
-// Intentionally ignored prime-agent meta fields (no bb surface, no action):
+// Intentionally ignored prime-agent meta fields (no VesnALIA surface, no action):
 //   terminalQuiescenceExpected: transient prompt-boundary marker tied to
 //                   turn settlement; the completion update already puts the
 //                   quiescence counters into the autonomous payload.
@@ -4996,7 +4996,7 @@ var PRIME_AGENT_META_NAMESPACE = "ai.primeintellect.prime-agent";
 // the plugin that registered it (extensionOwnershipProblem). So the native
 // banner is unreachable for this plugin by design; we emit our own kind (the
 // state is stored thread-scoped, latest-wins) plus visible transition items.
-// A generalized goal kind is an upstream bb conversation.
+// A generalized goal kind is an upstream VesnALIA conversation.
 var PRIME_AGENT_GOAL_EXTENSION_KIND = "prime-agent-acp/goal";
 var PRIME_AGENT_SUBAGENT_CHILD_REF_PREFIX = "prime-agent:";
 var PRIME_AGENT_SUBAGENT_ITEM_KEY_PREFIX = "prime-agent-subagent-";
@@ -5337,7 +5337,7 @@ function primeAgentSessionInfoActions(update, context) {
 // optional on-disk path, decoded byte length) and applied-diff counts as
 // namespaced `_meta` on the ipython tool_call_update. ACP has no rich-output
 // channel for tool results, so surface them as readable lines appended to the
-// cell's aggregated output in bb (full image rendering would need an
+// cell's aggregated output in VesnALIA (full image rendering would need an
 // imageView-capable dialect hook, which the SDK bridge does not offer yet).
 function primeAgentFormatBytes(bytes) {
   if (bytes < 1024) {
@@ -5431,7 +5431,7 @@ var DIALECT_IDS_BY_COMMAND = {
   opencode: OPENCODE_ACP_DIALECT.id,
   "prime-agent": PRIME_AGENT_ACP_DIALECT.id,
   "prime-agent-acp-launch": PRIME_AGENT_ACP_DIALECT.id,
-  "bb-prime-launch.mjs": PRIME_AGENT_ACP_DIALECT.id
+  "alia-prime-launch.mjs": PRIME_AGENT_ACP_DIALECT.id
 };
 function resolveAcpDialect(launch) {
   if (launch.dialectId !== void 0) {
@@ -5540,7 +5540,7 @@ function resolveAcpFileChangeWriteScope(paths) {
 }
 
 // ../provider-bridge-acp/src/tool-classification.ts
-var BB_TOOL_SERVER = "bb";
+var ALIA_TOOL_SERVER = "alia";
 function isInjectedToolCandidate(event) {
   if (event.kind !== void 0 && event.kind !== "other") {
     return false;
@@ -5859,12 +5859,12 @@ function genericToolItem(event, title) {
     presentation: toolKindPresentation({ kind: event.kind, name, title })
   };
 }
-function bbToolItem(event, injected) {
+function aliaToolItem(event, injected) {
   return {
     item: {
       type: "tool",
       tool: injected.name,
-      server: BB_TOOL_SERVER,
+      server: ALIA_TOOL_SERVER,
       ...genericToolFields(event)
     },
     presentation: injected.presentation ?? toolPresentation(injected.name)
@@ -5872,7 +5872,7 @@ function bbToolItem(event, injected) {
 }
 function classifyAcpToolCall2(event, injected, options) {
   if (injected !== void 0 && isInjectedToolCandidate(event)) {
-    return bbToolItem(event, injected);
+    return aliaToolItem(event, injected);
   }
   const operation = classifyAcpToolCall(event, options);
   if (operation.kind === "command") {
@@ -7428,9 +7428,9 @@ function buildAcpSkillsInstructions(skillRoots) {
     return void 0;
   }
   return [
-    "bb skills are reusable instruction folders. When the current task matches a listed skill description, read that skill's SKILL.md at the absolute path before proceeding; you may read supporting files in the same skill directory that SKILL.md references. If a listed path does not exist, the list is stale and should be ignored.",
+    "alia skills are reusable instruction folders. When the current task matches a listed skill description, read that skill's SKILL.md at the absolute path before proceeding; you may read supporting files in the same skill directory that SKILL.md references. If a listed path does not exist, the list is stale and should be ignored.",
     "",
-    "Available bb skills:",
+    "Available VesnALIA skills:",
     ...skillLines
   ].join("\n");
 }
@@ -7836,13 +7836,13 @@ import { basename as basename2, dirname, join as join2, resolve as resolve2 } fr
 import { createConnection } from "node:net";
 import { createInterface as createInterface2 } from "node:readline";
 import { z as z39 } from "zod";
-var ACP_BRIDGE_MCP_SERVER_NAME = "bb-bridge";
-var ENV_HOST = "BB_ACP_DYNAMIC_TOOL_HOST";
-var ENV_PORT = "BB_ACP_DYNAMIC_TOOL_PORT";
-var ENV_TOKEN = "BB_ACP_DYNAMIC_TOOL_TOKEN";
-var ENV_THREAD_ID = "BB_ACP_DYNAMIC_TOOL_THREAD_ID";
-var ENV_TOOLS = "BB_ACP_DYNAMIC_TOOLS";
-var ENV_PROGRESS_INTERVAL_MS = "BB_ACP_DYNAMIC_TOOL_PROGRESS_INTERVAL_MS";
+var ACP_BRIDGE_MCP_SERVER_NAME = "alia-bridge";
+var ENV_HOST = "ALIA_ACP_DYNAMIC_TOOL_HOST";
+var ENV_PORT = "ALIA_ACP_DYNAMIC_TOOL_PORT";
+var ENV_TOKEN = "ALIA_ACP_DYNAMIC_TOOL_TOKEN";
+var ENV_THREAD_ID = "ALIA_ACP_DYNAMIC_TOOL_THREAD_ID";
+var ENV_TOOLS = "ALIA_ACP_DYNAMIC_TOOLS";
+var ENV_PROGRESS_INTERVAL_MS = "ALIA_ACP_DYNAMIC_TOOL_PROGRESS_INTERVAL_MS";
 var bridgeToolCallResponseSchema = z39.union([
   z39.object({
     ok: z39.literal(true),
@@ -7989,7 +7989,7 @@ async function handleRequest(env, message) {
         toolCount: env.tools.length
       }).catch((error) => {
         process.stderr.write(
-          `bb-bridge MCP: failed to report initialize: ${error instanceof Error ? error.message : String(error)}
+          `alia-bridge MCP: failed to report initialize: ${error instanceof Error ? error.message : String(error)}
 `
         );
       });
@@ -8146,7 +8146,7 @@ async function readApprovals(path5) {
 }
 async function writeApprovals(path5, approvals) {
   await mkdir(dirname(path5), { recursive: true });
-  const tempPath = `${path5}.bb-${process.pid}-${randomBytes(6).toString("hex")}.tmp`;
+  const tempPath = `${path5}.alia-${process.pid}-${randomBytes(6).toString("hex")}.tmp`;
   try {
     await writeFile(tempPath, `${JSON.stringify(approvals, null, 2)}
 `, {
@@ -8160,7 +8160,7 @@ async function writeApprovals(path5, approvals) {
   }
 }
 async function acquireApprovalLock(path5) {
-  const lockPath = `${path5}.bb-lock`;
+  const lockPath = `${path5}.alia-lock`;
   const deadline = Date.now() + CURSOR_APPROVAL_LOCK_TIMEOUT_MS;
   await mkdir(dirname(path5), { recursive: true });
   for (; ; ) {
@@ -8220,18 +8220,18 @@ async function approveCursorSessionMcpServer(args) {
     config: args.config,
     projectRoot
   });
-  let installedByBb = false;
+  let installedByAlia = false;
   await mutateApprovals(path5, (approvals) => {
     if (approvals.includes(approval)) {
       return approvals;
     }
-    installedByBb = true;
+    installedByAlia = true;
     return [...approvals, approval];
   });
-  return { approval, installedByBb, path: path5 };
+  return { approval, installedByAlia, path: path5 };
 }
 async function revokeCursorSessionMcpServer(approval) {
-  if (!approval.installedByBb) {
+  if (!approval.installedByAlia) {
     return;
   }
   await mutateApprovals(
@@ -8241,8 +8241,8 @@ async function revokeCursorSessionMcpServer(approval) {
 }
 
 // ../provider-bridge-acp/src/bridge/bridge.ts
-var sessionsByBbThreadId = /* @__PURE__ */ new Map();
-var bbThreadIdByProviderThreadId = /* @__PURE__ */ new Map();
+var sessionsByAliaThreadId = /* @__PURE__ */ new Map();
+var aliaThreadIdByProviderThreadId = /* @__PURE__ */ new Map();
 var pendingRuntimeRequests = /* @__PURE__ */ new Map();
 var runtimeRequestIdCounter = 0;
 var dynamicToolBridgePromise = null;
@@ -8287,22 +8287,22 @@ function sendThreadDeltas(threadId, deltas) {
 }
 function emitForSession(session, method, params) {
   sendThreadDeltas(
-    session.bbThreadId,
+    session.aliaThreadId,
     session.translator.translateAcpEvent(
       { jsonrpc: "2.0", method, params },
-      { threadId: session.bbThreadId }
+      { threadId: session.aliaThreadId }
     )
   );
 }
 function emitSessionError(session, message) {
   if (session.activePromptKind !== null) {
     emitForSession(session, "error", {
-      threadId: session.bbThreadId,
+      threadId: session.aliaThreadId,
       message
     });
   }
   sendNotification(BRIDGE_NOTIFICATION_METHODS.error, {
-    threadId: session.bbThreadId,
+    threadId: session.aliaThreadId,
     ...session.providerThreadId !== "" ? { providerThreadId: session.providerThreadId } : {},
     message
   });
@@ -8318,15 +8318,15 @@ function resolveBridgeProcessEnvForMcpServer() {
   return [{ name: "ELECTRON_RUN_AS_NODE", value: electronRunAsNode }];
 }
 async function forwardDynamicToolCall(args) {
-  const session = sessionsByBbThreadId.get(args.threadId);
+  const session = sessionsByAliaThreadId.get(args.threadId);
   if (!session || !session.providerThreadId || session.stopping) {
     return { ok: false, error: "No active ACP session for dynamic tool call." };
   }
-  session.translator.noteInjectedToolCall(session.bbThreadId, args.tool);
+  session.translator.noteInjectedToolCall(session.aliaThreadId, args.tool);
   try {
     const result = await sendRuntimeRequest("item/tool/call", {
       providerThreadId: session.providerThreadId,
-      threadId: session.bbThreadId,
+      threadId: session.aliaThreadId,
       turnId: null,
       callId: args.callId,
       tool: args.tool,
@@ -8700,7 +8700,7 @@ async function loadSessionDiscoveredModels(agent, reasoningProbePriorityModelIds
           method: "initialize",
           params: {
             protocolVersion: ACP_PROTOCOL_VERSION,
-            clientInfo: { name: "bb", version: "1.0.0" },
+            clientInfo: { name: "alia", version: "1.0.0" },
             clientCapabilities: acpClientCapabilities(parameterizedModelPicker)
           },
           resultSchema: acpInitializeResultSchema
@@ -9116,7 +9116,7 @@ function handlePermissionRequest(session, params, responder) {
     return;
   }
   const toolCall = parsed.data.toolCall;
-  const bound = toolCall?.toolCallId !== void 0 ? session.translator.notePermissionToolCall(session.bbThreadId, {
+  const bound = toolCall?.toolCallId !== void 0 ? session.translator.notePermissionToolCall(session.aliaThreadId, {
     toolCallId: toolCall.toolCallId,
     ...toolCall.title !== void 0 ? { title: toolCall.title } : {},
     ...toolCall.kind !== void 0 ? { kind: toolCall.kind } : {},
@@ -9144,7 +9144,7 @@ function handlePermissionRequest(session, params, responder) {
     ...toolCall.locations !== void 0 ? { locations: toolCall.locations } : {},
     startedToolCall: bound.event,
     injectedTool: session.translator.getInjectedToolBinding(
-      session.bbThreadId,
+      session.aliaThreadId,
       bound.toolCallId
     )
   } : void 0;
@@ -9157,7 +9157,7 @@ function handlePermissionRequest(session, params, responder) {
     });
     void sendRuntimeRequest(BRIDGE_INBOUND_REQUEST_METHODS.interactionRequest, {
       providerThreadId: session.providerThreadId,
-      threadId: session.bbThreadId,
+      threadId: session.aliaThreadId,
       turnId: null,
       payload
     }).then((result) => {
@@ -9221,7 +9221,7 @@ async function handleFsWriteTextFile(session, params, responder) {
   if (session.policy.permissionMode === "accept-edits" && !isPathInsideRoots(parsed.data.path, session.policy.workspaceWriteRoots)) {
     responder.error(
       -32e3,
-      `File writes outside the workspace are denied by BB's accept-edits permission mode: ${parsed.data.path}`
+      `File writes outside the workspace are denied by VesnALIA's accept-edits permission mode: ${parsed.data.path}`
     );
     return;
   }
@@ -9235,7 +9235,7 @@ async function handleFsWriteTextFile(session, params, responder) {
     await fs2.mkdir(dirname2(parsed.data.path), { recursive: true });
     await fs2.writeFile(parsed.data.path, parsed.data.content, "utf8");
     emitForSession(session, ACP_FS_WRITE_METHOD, {
-      threadId: session.bbThreadId,
+      threadId: session.aliaThreadId,
       path: parsed.data.path,
       kind: oldText === void 0 ? "add" : "update",
       ...oldText === void 0 ? {} : { oldText },
@@ -9249,19 +9249,19 @@ async function handleFsWriteTextFile(session, params, responder) {
     );
   }
 }
-function liveSessionForThread(bbThreadId) {
-  const session = sessionsByBbThreadId.get(bbThreadId);
+function liveSessionForThread(aliaThreadId) {
+  const session = sessionsByAliaThreadId.get(aliaThreadId);
   if (!session || session.stopping || session.providerThreadId === "") {
     return void 0;
   }
   return session;
 }
 function removeSession(session) {
-  if (sessionsByBbThreadId.get(session.bbThreadId) === session) {
-    sessionsByBbThreadId.delete(session.bbThreadId);
+  if (sessionsByAliaThreadId.get(session.aliaThreadId) === session) {
+    sessionsByAliaThreadId.delete(session.aliaThreadId);
   }
-  if (bbThreadIdByProviderThreadId.get(session.providerThreadId) === session.bbThreadId) {
-    bbThreadIdByProviderThreadId.delete(session.providerThreadId);
+  if (aliaThreadIdByProviderThreadId.get(session.providerThreadId) === session.aliaThreadId) {
+    aliaThreadIdByProviderThreadId.delete(session.providerThreadId);
   }
 }
 async function releaseCursorMcpApproval(session) {
@@ -9274,14 +9274,14 @@ async function releaseCursorMcpApproval(session) {
     await revokeCursorSessionMcpServer(approval);
   } catch (error) {
     process.stderr.write(
-      `acp bridge: failed to remove Cursor session MCP approval for thread "${session.bbThreadId}": ${error instanceof Error ? error.message : String(error)}
+      `acp bridge: failed to remove Cursor session MCP approval for thread "${session.aliaThreadId}": ${error instanceof Error ? error.message : String(error)}
 `
     );
   }
 }
 function getSessionByProviderThreadId(providerThreadId) {
-  const bbThreadId = bbThreadIdByProviderThreadId.get(providerThreadId);
-  return bbThreadId ? sessionsByBbThreadId.get(bbThreadId) : void 0;
+  const aliaThreadId = aliaThreadIdByProviderThreadId.get(providerThreadId);
+  return aliaThreadId ? sessionsByAliaThreadId.get(aliaThreadId) : void 0;
 }
 // ============================================================================
 // PRIME_AGENT_KEEP_ALIVE (injected by scripts/apply-dialect.py)
@@ -9366,7 +9366,7 @@ async function interruptSession(session) {
 
 setInterval(() => {
   const now = Date.now();
-  for (const keptSession of [...sessionsByBbThreadId.values()]) {
+  for (const keptSession of [...sessionsByAliaThreadId.values()]) {
     if (keptSession.primeAgentIdleKeptAt === void 0) {
       continue;
     }
@@ -9383,8 +9383,8 @@ setInterval(() => {
 
 async function startAgentSession(request) {
   const params = request.params;
-  const bbThreadId = params.threadId;
-  const existing = sessionsByBbThreadId.get(bbThreadId);
+  const aliaThreadId = params.threadId;
+  const existing = sessionsByAliaThreadId.get(aliaThreadId);
   if (
     existing &&
     request.kind === "resume" &&
@@ -9398,7 +9398,7 @@ async function startAgentSession(request) {
   ) {
     existing.primeAgentIdleKeptAt = void 0;
     sendNotification(BRIDGE_NOTIFICATION_METHODS.threadIdentity, {
-      threadId: bbThreadId,
+      threadId: aliaThreadId,
       providerThreadId: existing.providerThreadId,
       sessionRestorable: existing.supportsLoadSession
     });
@@ -9428,7 +9428,7 @@ async function startAgentSession(request) {
   const launch = await resolveAgentLaunchArgs(params);
   if (launch.warning) {
     emitStartNotification(ACP_WARNING_METHOD, {
-      threadId: bbThreadId,
+      threadId: aliaThreadId,
       summary: launch.warning
     });
   }
@@ -9443,11 +9443,11 @@ async function startAgentSession(request) {
     args: launch.args,
     cwd: params.cwd,
     env: childEnv,
-    recordThreadId: bbThreadId,
+    recordThreadId: aliaThreadId,
     onNotification: (method, notificationParams) => handleAgentNotification(session, method, notificationParams),
     onRequest: (method, requestParams, responder) => handleAgentRequest(session, method, requestParams, responder),
     onExit: (info) => {
-      const wasCurrent = sessionsByBbThreadId.get(bbThreadId) === session;
+      const wasCurrent = sessionsByAliaThreadId.get(aliaThreadId) === session;
       cancelPendingPermissions(session);
       removeSession(session);
       if (!wasCurrent || session.stopping || session.providerThreadId === "") {
@@ -9461,7 +9461,7 @@ async function startAgentSession(request) {
     }
   });
   session = {
-    bbThreadId,
+    aliaThreadId,
     construction: params,
     providerThreadId: "",
     cwd: params.cwd,
@@ -9489,13 +9489,13 @@ async function startAgentSession(request) {
     cursorMcpApproval: void 0,
     deferStartEmit: emitStartNotification
   };
-  sessionsByBbThreadId.set(bbThreadId, session);
+  sessionsByAliaThreadId.set(aliaThreadId, session);
   try {
     const initializeResult = await connection.request({
       method: "initialize",
       params: {
         protocolVersion: ACP_PROTOCOL_VERSION,
-        clientInfo: { name: "bb", version: "1.0.0" },
+        clientInfo: { name: "alia", version: "1.0.0" },
         clientCapabilities: acpClientCapabilities(
           params.parameterizedModelPicker,
           true
@@ -9513,8 +9513,8 @@ async function startAgentSession(request) {
     const primeAgentAgentVersion = primeAgentIsRecord(primeAgentAgentInfo) && typeof primeAgentAgentInfo.version === "string" ? primeAgentAgentInfo.version : void 0;
     if (primeAgentVersionUnsupported(primeAgentAgentVersion)) {
       emitStartNotification(ACP_WARNING_METHOD, {
-        threadId: bbThreadId,
-        summary: `Prime Agent ${primeAgentAgentVersion} is older than the minimum supported ${PRIME_AGENT_MIN_SUPPORTED_VERSION}; update with \`bb prime-agent install --yes\`.`
+        threadId: aliaThreadId,
+        summary: `Prime Agent ${primeAgentAgentVersion} is older than the minimum supported ${PRIME_AGENT_MIN_SUPPORTED_VERSION}; update with \`alia prime-agent install --yes\`.`
       });
     }
     const supportsLoadSession = initializeResult.agentCapabilities?.loadSession ?? false;
@@ -9534,9 +9534,9 @@ async function startAgentSession(request) {
         cwd: params.cwd,
         env: childEnv
       });
-      if (session.cursorMcpApproval?.installedByBb) {
+      if (session.cursorMcpApproval?.installedByAlia) {
         process.stderr.write(
-          `acp bridge: installed Cursor session MCP approval for thread "${bbThreadId}"
+          `acp bridge: installed Cursor session MCP approval for thread "${aliaThreadId}"
 `
         );
       }
@@ -9598,7 +9598,7 @@ async function startAgentSession(request) {
       sessionId = newSession.sessionId;
       const primeAgentSessionNewMeta = newSession._meta;
       if (primeAgentIsRecord(primeAgentSessionNewMeta)) {
-        dialect.sessionNew?.(primeAgentSessionNewMeta, { threadId: bbThreadId });
+        dialect.sessionNew?.(primeAgentSessionNewMeta, { threadId: aliaThreadId });
       }
       await selectAcpNativeModel({
         connection,
@@ -9610,7 +9610,7 @@ async function startAgentSession(request) {
       });
       if (request.kind === "resume") {
         emitStartNotification(ACP_WARNING_METHOD, {
-          threadId: bbThreadId,
+          threadId: aliaThreadId,
           summary: `${agentLabel} could not restore the previous session; continuing in a fresh session without in-agent history.`
         });
       }
@@ -9629,24 +9629,24 @@ async function startAgentSession(request) {
       session.pendingLoadUsageUpdate = void 0;
       if (loadUsageUpdate) {
         emitStartNotification(ACP_UPDATE_METHOD, {
-          threadId: session.bbThreadId,
+          threadId: session.aliaThreadId,
           update: loadUsageUpdate
         });
       }
     }
     if (session.stopping) {
       throw new Error(
-        `ACP session for thread "${bbThreadId}" was released during construction`
+        `ACP session for thread "${aliaThreadId}" was released during construction`
       );
     }
     session.providerThreadId = sessionId;
-    bbThreadIdByProviderThreadId.set(sessionId, bbThreadId);
+    aliaThreadIdByProviderThreadId.set(sessionId, aliaThreadId);
     sendNotification(BRIDGE_NOTIFICATION_METHODS.threadIdentity, {
-      threadId: bbThreadId,
+      threadId: aliaThreadId,
       providerThreadId: sessionId,
       sessionRestorable: session.supportsLoadSession
     });
-    sendThreadDeltas(bbThreadId, [{ kind: "session.reset" }]);
+    sendThreadDeltas(aliaThreadId, [{ kind: "session.reset" }]);
     session.deferStartEmit = void 0;
     for (const deferred of deferredEmits) {
       if (deferred.sessionId !== void 0 && deferred.sessionId !== sessionId) {
@@ -9730,12 +9730,12 @@ function requestSteerCancel(session) {
   });
 }
 function acceptTurnInput(session, pending) {
-  sendThreadDeltas(session.bbThreadId, [
+  sendThreadDeltas(session.aliaThreadId, [
     { kind: "input.accepted", clientRequestId: pending.clientRequestId }
   ]);
   const requestId = takeTurnInputRequestId(pending);
   if (requestId !== null) {
-    sendResult(requestId, { threadId: session.bbThreadId });
+    sendResult(requestId, { threadId: session.aliaThreadId });
   }
 }
 function dropTurnInput(pending, reason) {
@@ -9763,14 +9763,14 @@ function finishTurn(session, stopReason) {
   session.promptRequestPending = false;
   session.cancelRequested = false;
   emitForSession(session, ACP_TURN_COMPLETED_METHOD, {
-    threadId: session.bbThreadId,
+    threadId: session.aliaThreadId,
     stopReason
   });
 }
 function runTurn(session, firstInput) {
   session.activePromptKind = "turn";
   emitForSession(session, ACP_TURN_STARTED_METHOD, {
-    threadId: session.bbThreadId
+    threadId: session.aliaThreadId
   });
   session.turnSettled = (async () => {
     let pending = firstInput;
@@ -9832,7 +9832,7 @@ function startCompaction(session, pending) {
   session.activePromptKind = "compaction";
   session.compactionAgentMessage = "";
   emitForSession(session, ACP_COMPACTION_STARTED_METHOD, {
-    threadId: session.bbThreadId
+    threadId: session.aliaThreadId
   });
   const finish = (outcome) => {
     finishCompaction(session, outcome);
@@ -9868,7 +9868,7 @@ function finishCompaction(session, outcome) {
     return;
   }
   emitForSession(session, ACP_COMPACTION_COMPLETED_METHOD, {
-    threadId: session.bbThreadId,
+    threadId: session.aliaThreadId,
     ...outcome
   });
   session.activePromptKind = null;
@@ -9897,9 +9897,9 @@ function handleDialectRequest(session, method, params, responder) {
   }
   if (outcome.delegation !== void 0) {
     sendThreadDeltas(
-      session.bbThreadId,
+      session.aliaThreadId,
       session.translator.noteDelegationReport(
-        session.bbThreadId,
+        session.aliaThreadId,
         outcome.delegation
       )
     );
@@ -9927,7 +9927,7 @@ function handleAgentNotification(session, method, params) {
     return;
   }
   const update = {
-    threadId: session.bbThreadId,
+    threadId: session.aliaThreadId,
     update: parsed.data.update
   };
   if (session.providerThreadId === "") {
@@ -10273,7 +10273,7 @@ async function handleRequest2(request) {
       return;
     }
     case "thread/stop": {
-      const session = sessionsByBbThreadId.get(request.params.threadId);
+      const session = sessionsByAliaThreadId.get(request.params.threadId);
       if (session) {
         if (request.params.intent === "release") {
           await releaseSession(session);
@@ -10343,7 +10343,7 @@ function handleParsedMessage(parsed) {
 var handleLine = createBridgeLineHandler({ handleParsedMessage });
 async function stopAllSessions() {
   await Promise.all(
-    Array.from(sessionsByBbThreadId.values()).map(
+    Array.from(sessionsByAliaThreadId.values()).map(
       (session) => stopSession(session)
     )
   );
@@ -10390,7 +10390,7 @@ async function probeAcpAgent(request) {
       onNotification: () => {
       },
       onRequest: (_method, _params, responder) => {
-        responder.error(-32601, "bb is probing this agent's capabilities");
+        responder.error(-32601, "alia is probing this agent's capabilities");
       },
       onExit: () => {
       }
@@ -10415,7 +10415,7 @@ async function probeAcpAgent(request) {
         method: "initialize",
         params: {
           protocolVersion: ACP_PROTOCOL_VERSION,
-          clientInfo: { name: "bb", version: "1.0.0" },
+          clientInfo: { name: "alia", version: "1.0.0" },
           clientCapabilities: {
             fs: { readTextFile: true, writeTextFile: true },
             terminal: false

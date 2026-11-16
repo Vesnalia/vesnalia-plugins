@@ -11,12 +11,12 @@ import { createBridge } from "../src/bridge.js";
 import { smokeCodingPlan } from "./smoke-coding-plan.js";
 
 // Opt-in real CLI test against a deterministic loopback model, with no credentials.
-const root = mkdtempSync(join(tmpdir(), "bb-zcode-live-"));
+const root = mkdtempSync(join(tmpdir(), "alia-zcode-live-"));
 const cwd = join(root, "workspace");
 mkdirSync(cwd);
 let modelRequests = 0;
 let imageRequests = 0;
-let bbToolCalls = 0;
+let aliaToolCalls = 0;
 let skillReads = 0;
 let bashResults = 0;
 let childQuestions = 0;
@@ -26,16 +26,16 @@ let installedSkillReads = 0;
 let automaticBackgroundModelRequests = 0;
 let installedForkContextVerified = false;
 let installedRewindContextVerified = false;
-const skillRoot = join(root, "bb-skills");
+const skillRoot = join(root, "alia-skills");
 const skillPath = join(skillRoot, "fixture-skill", "SKILL.md");
 mkdirSync(join(skillRoot, "fixture-skill", "references"), { recursive: true });
 writeFileSync(
   skillPath,
-  "# BB_FIXTURE_SKILL_CONTENT\nRead references/check.md\n",
+  "# ALIA_FIXTURE_SKILL_CONTENT\nRead references/check.md\n",
 );
 writeFileSync(
   join(skillRoot, "fixture-skill", "references", "check.md"),
-  "BB_FIXTURE_SKILL_REFERENCE\n",
+  "ALIA_FIXTURE_SKILL_REFERENCE\n",
 );
 const receivedEfforts: string[] = [];
 const modelServer = createServer(async (request, response) => {
@@ -62,93 +62,93 @@ const modelServer = createServer(async (request, response) => {
     lastMessage.includes("Continue this checkpoint fork with a short greeting.")
   ) {
     if (
-      !allModelText.includes("BB_FIXTURE_DELAY") ||
-      allModelText.includes("BB_FIXTURE_INSTALLED_SKILL")
+      !allModelText.includes("ALIA_FIXTURE_DELAY") ||
+      allModelText.includes("ALIA_FIXTURE_INSTALLED_SKILL")
     )
       throw new Error(
         "Installed fork inference retained the wrong history window.",
       );
     installedForkContextVerified = true;
   }
-  if (lastMessage.includes("Replacement greeting after native bb rewind.")) {
+  if (lastMessage.includes("Replacement greeting after native VesnALIA rewind.")) {
     if (
-      !allModelText.includes("BB_FIXTURE_INSTALLED_SKILL") ||
-      allModelText.includes("BB_FIXTURE_INSTALLED_AGENT")
+      !allModelText.includes("ALIA_FIXTURE_INSTALLED_SKILL") ||
+      allModelText.includes("ALIA_FIXTURE_INSTALLED_AGENT")
     )
       throw new Error("Installed rewind inference retained the replaced turn.");
     installedRewindContextVerified = true;
   }
   if (
     lastMessage.includes('"tool_result"') &&
-    lastMessage.includes("BB_INSTALLED_TOOL_RESULT")
+    lastMessage.includes("ALIA_INSTALLED_TOOL_RESULT")
   )
     installedToolResults++;
   if (
     lastMessage.includes('"tool_result"') &&
-    lastMessage.includes("BB_INSTALLED_SKILL_CONTENT")
+    lastMessage.includes("ALIA_INSTALLED_SKILL_CONTENT")
   )
     installedSkillReads++;
   if (
     lastMessage.includes('"tool_result"') &&
-    lastMessage.includes("BB_FIXTURE_BASH_RESULT")
+    lastMessage.includes("ALIA_FIXTURE_BASH_RESULT")
   )
     bashResults++;
   const callMcp =
     !!fixtureTool &&
-    lastMessage.includes("BB_FIXTURE_MCP_TOOL") &&
+    lastMessage.includes("ALIA_FIXTURE_MCP_TOOL") &&
     !lastMessage.includes('"tool_result"');
-  if (JSON.stringify(body.system).includes("BB_FIXTURE_CUSTOM_AGENT"))
+  if (JSON.stringify(body.system).includes("ALIA_FIXTURE_CUSTOM_AGENT"))
     customAgentRequests++;
   let toolCall: { name: string; input: unknown } | undefined = callMcp
     ? { name: String(fixtureTool!.name), input: { text: "hello" } }
     : undefined;
   if (!lastMessage.includes('"tool_result"')) {
-    if (lastMessage.includes("BB_FIXTURE_BB_TOOL")) {
+    if (lastMessage.includes("ALIA_FIXTURE_ALIA_TOOL")) {
       const tool = tools.find((t) =>
         String(t.description).includes("fixture.echo"),
       );
       if (!tool)
-        throw new Error("Injected bb tool missing from model tool catalog.");
-      toolCall = { name: String(tool.name), input: { text: "bb echo" } };
-    } else if (lastMessage.includes("BB_FIXTURE_SKILL_READ")) {
+        throw new Error("Injected VesnALIA tool missing from model tool catalog.");
+      toolCall = { name: String(tool.name), input: { text: "alia echo" } };
+    } else if (lastMessage.includes("ALIA_FIXTURE_SKILL_READ")) {
       if (!lastMessage.includes(skillPath))
-        throw new Error("bb skill catalog did not reach the model.");
+        throw new Error("alia skill catalog did not reach the model.");
       toolCall = { name: "Read", input: { file_path: skillPath } };
-    } else if (lastMessage.includes("BB_FIXTURE_INSTALLED_SKILL")) {
+    } else if (lastMessage.includes("ALIA_FIXTURE_INSTALLED_SKILL")) {
       const match = allModelText.match(
         /"path":"([^"\n]*fixture-installed-skill\/SKILL\.md)"/,
       );
       if (!match)
-        throw new Error("Installed bb skill catalog did not reach the model.");
+        throw new Error("Installed VesnALIA skill catalog did not reach the model.");
       toolCall = { name: "Read", input: { file_path: match[1] } };
     } else if (
-      lastMessage.includes("BB_FIXTURE_WRITE_ONE") ||
-      lastMessage.includes("BB_FIXTURE_WRITE_TWO")
+      lastMessage.includes("ALIA_FIXTURE_WRITE_ONE") ||
+      lastMessage.includes("ALIA_FIXTURE_WRITE_TWO")
     ) {
       toolCall = {
         name: "Write",
         input: {
           file_path: join(cwd, "rewind-fixture.txt"),
-          content: lastMessage.includes("BB_FIXTURE_WRITE_ONE")
+          content: lastMessage.includes("ALIA_FIXTURE_WRITE_ONE")
             ? "before rewind\n"
             : "after rewind\n",
         },
       };
-    } else if (lastMessage.includes("BB_FIXTURE_BACKGROUND")) {
+    } else if (lastMessage.includes("ALIA_FIXTURE_BACKGROUND")) {
       toolCall = {
         name: "Bash",
         input: {
           command:
-            "printf BB_BACKGROUND_READY; sleep 15; printf BB_BACKGROUND_DONE",
+            "printf ALIA_BACKGROUND_READY; sleep 15; printf ALIA_BACKGROUND_DONE",
           run_in_background: true,
         },
       };
-    } else if (lastMessage.includes("BB_FIXTURE_BASH")) {
+    } else if (lastMessage.includes("ALIA_FIXTURE_BASH")) {
       toolCall = {
         name: "Bash",
-        input: { command: "printf BB_FIXTURE_BASH_RESULT" },
+        input: { command: "printf ALIA_FIXTURE_BASH_RESULT" },
       };
-    } else if (lastMessage.includes("BB_FIXTURE_INSTALLED_AGENT")) {
+    } else if (lastMessage.includes("ALIA_FIXTURE_INSTALLED_AGENT")) {
       toolCall = {
         name: "Agent",
         input: {
@@ -157,16 +157,16 @@ const modelServer = createServer(async (request, response) => {
           prompt: "Say a short greeting.",
         },
       };
-    } else if (lastMessage.includes("BB_FIXTURE_AGENT")) {
+    } else if (lastMessage.includes("ALIA_FIXTURE_AGENT")) {
       toolCall = {
         name: "Agent",
         input: {
           description: "Fixture reviewer",
           subagent_type: "fixture-reviewer",
-          prompt: "BB_FIXTURE_CHILD Ask the fixture question.",
+          prompt: "ALIA_FIXTURE_CHILD Ask the fixture question.",
         },
       };
-    } else if (lastMessage.includes("BB_FIXTURE_CHILD")) {
+    } else if (lastMessage.includes("ALIA_FIXTURE_CHILD")) {
       toolCall = {
         name: "AskUserQuestion",
         input: {
@@ -186,7 +186,7 @@ const modelServer = createServer(async (request, response) => {
     }
   }
   if (
-    lastMessage.includes("BB_FIXTURE_SKILL_CONTENT") &&
+    lastMessage.includes("ALIA_FIXTURE_SKILL_CONTENT") &&
     lastMessage.includes('"tool_result"')
   )
     skillReads++;
@@ -195,7 +195,7 @@ const modelServer = createServer(async (request, response) => {
   if (typeof effort === "string") receivedEfforts.push(effort);
   modelRequests++;
   await new Promise((resolve) =>
-    setTimeout(resolve, lastMessage.includes("BB_FIXTURE_DELAY") ? 1500 : 100),
+    setTimeout(resolve, lastMessage.includes("ALIA_FIXTURE_DELAY") ? 1500 : 100),
   );
   response.writeHead(200, { "content-type": "text/event-stream" });
   const event = (type: string, data: unknown) =>
@@ -278,7 +278,7 @@ writeFileSync(
         providerRules: [],
         templateRules: [
           {
-            templateId: "bb-fixture",
+            templateId: "alia-fixture",
             templateNameMap: { "en-US": "Local fixture" },
             config: {
               access: { type: "api-key" },
@@ -298,7 +298,7 @@ writeFileSync(
         builtinProviderModelRules: [],
         templateModelRules: [
           {
-            templateId: "bb-fixture",
+            templateId: "alia-fixture",
             modelId: "fixture",
             config: {
               enabled: true,
@@ -336,7 +336,7 @@ writeFileSync(
   }),
 );
 const model = {
-  providerId: "bb-smoke",
+  providerId: "alia-smoke",
   modelId: "fixture",
   options: { reasoningLevel: "disabled" },
 };
@@ -348,9 +348,9 @@ writeFileSync(
       providerConfigRules: {
         providerRules: [
           {
-            providerId: "bb-smoke",
+            providerId: "alia-smoke",
             providerName: "Local fixture",
-            templateId: "bb-fixture",
+            templateId: "alia-fixture",
             config: {
               group: "standard-personal",
               access: { type: "api-key", apiKey: "local-fixture-no-secret" },
@@ -449,7 +449,7 @@ try {
   const dynamicTools = [
     {
       name: "fixture.echo",
-      description: "bb fixture echo",
+      description: "alia fixture echo",
       inputSchema: {
         type: "object",
         properties: { text: { type: "string" } },
@@ -466,16 +466,16 @@ try {
     write: (message) => {
       messages.push(message);
       if (message.method === "item/tool/call") {
-        bbToolCalls++;
+        aliaToolCalls++;
         if (record(message.params).tool !== "fixture.echo")
-          throw new Error("Wrong bb fixture tool.");
+          throw new Error("Wrong VesnALIA fixture tool.");
         bridge.handleLine(
           JSON.stringify({
             jsonrpc: "2.0",
             id: message.id,
             result: {
               success: true,
-              contentItems: [{ type: "inputText", text: "bb echo" }],
+              contentItems: [{ type: "inputText", text: "alia echo" }],
             },
           }),
         );
@@ -527,10 +527,10 @@ try {
     permissionScope: "full",
     approvalReviewer: null,
     permissionEscalation: null,
-    model: "bb-smoke/fixture-256k",
+    model: "alia-smoke/fixture-256k",
     reasoningLevel: "high",
     providerOptions: {
-      bbToolsEnabled: true,
+      aliaToolsEnabled: true,
       subagents: JSON.stringify({
         kind: "ready",
         profiles: [
@@ -539,7 +539,7 @@ try {
             description: "Fixture reviewer",
             source: "user",
             systemPrompt:
-              "BB_FIXTURE_CUSTOM_AGENT. Follow the user's fixture prompt.",
+              "ALIA_FIXTURE_CUSTOM_AGENT. Follow the user's fixture prompt.",
             tools: ["Read", "AskUserQuestion"],
             maxTurns: 3,
           },
@@ -554,7 +554,7 @@ try {
           args: [resolve("tests/fixtures/mcp-server.mjs")],
           env: [
             {
-              name: "BB_MCP_FIXTURE_LOG",
+              name: "ALIA_MCP_FIXTURE_LOG",
               value: join(root, "mcp-methods.jsonl"),
             },
           ],
@@ -574,7 +574,7 @@ try {
     });
     const catalog = await rpc("model/list", { cwd });
     const discovered = (catalog.models as Array<Record<string, unknown>>).find(
-      (entry) => entry.model === "bb-smoke/fixture",
+      (entry) => entry.model === "alia-smoke/fixture",
     );
     if (
       !(catalog.models as Array<Record<string, unknown>>).some(
@@ -678,7 +678,7 @@ try {
         { type: "localFile", path: note },
       ],
     });
-    // Direct bridge smoke bypasses bb's assembler and its expected-turn check.
+    // Direct bridge smoke bypasses VesnALIA's assembler and its expected-turn check.
     const queuedTurnId = "assembler-owned-turn";
     for (const [suffix, prompt] of [
       ["abcdefghjn", "First queued greeting."],
@@ -738,7 +738,7 @@ try {
       input: [
         {
           type: "text",
-          text: "BB_FIXTURE_MCP_TOOL Call fixture_echo with text hello.",
+          text: "ALIA_FIXTURE_MCP_TOOL Call fixture_echo with text hello.",
           mentions: [],
         },
       ],
@@ -755,9 +755,9 @@ try {
         "The native runtime did not execute the configured MCP tool.",
       );
     for (const [index, prompt] of [
-      "BB_FIXTURE_BB_TOOL Call the bb tool.",
-      "BB_FIXTURE_AGENT Delegate to fixture-reviewer.",
-      "BB_FIXTURE_BASH Run the deterministic echo command.",
+      "ALIA_FIXTURE_ALIA_TOOL Call the VesnALIA tool.",
+      "ALIA_FIXTURE_AGENT Delegate to fixture-reviewer.",
+      "ALIA_FIXTURE_BASH Run the deterministic echo command.",
     ].entries()) {
       await rpc("turn/start", {
         threadId: "live-smoke",
@@ -785,16 +785,16 @@ try {
           d.kind === "item.close" &&
           record(d.item).type === "command" &&
           String(record(d.item).aggregatedOutput).includes(
-            "BB_FIXTURE_BASH_RESULT",
+            "ALIA_FIXTURE_BASH_RESULT",
           ),
       )
     )
       throw new Error(
-        "Native command output was not retained in bb command rows.",
+        "Native command output was not retained in VesnALIA command rows.",
       );
-    if (bbToolCalls !== 1 || !childQuestions || !customAgentRequests)
+    if (aliaToolCalls !== 1 || !childQuestions || !customAgentRequests)
       throw new Error(
-        `Extension fixture incomplete: ${JSON.stringify({ bbToolCalls, childQuestions, customAgentRequests })}`,
+        `Extension fixture incomplete: ${JSON.stringify({ aliaToolCalls, childQuestions, customAgentRequests })}`,
       );
     await rpc("thread/stop", {
       threadId: "live-smoke",
@@ -826,7 +826,7 @@ try {
       input: [
         {
           type: "text",
-          text: "BB_FIXTURE_SKILL_READ Read the bb fixture skill.",
+          text: "ALIA_FIXTURE_SKILL_READ Read the VesnALIA fixture skill.",
           mentions: [],
         },
       ],
@@ -847,8 +847,8 @@ try {
         )
         .flatMap((m) => record(m.params).deltas as Record<string, unknown>[]);
     for (const [i, marker] of [
-      "BB_FIXTURE_WRITE_ONE",
-      "BB_FIXTURE_WRITE_TWO",
+      "ALIA_FIXTURE_WRITE_ONE",
+      "ALIA_FIXTURE_WRITE_TWO",
     ].entries()) {
       const before = parentOnly().filter(
         (d) => d.kind === "turn.boundary",
@@ -972,7 +972,7 @@ try {
       input: [
         {
           type: "text",
-          text: "BB_FIXTURE_BACKGROUND Start a background Bash fixture.",
+          text: "ALIA_FIXTURE_BACKGROUND Start a background Bash fixture.",
           mentions: [],
         },
       ],
@@ -1050,7 +1050,7 @@ try {
       !parentDeltas().some(
         (d) =>
           d.kind === "item.textClose" &&
-          String(d.text).includes("BB_BACKGROUND_READY"),
+          String(d.text).includes("ALIA_BACKGROUND_READY"),
       )
     )
       throw new Error("Native background output was not returned.");
@@ -1082,12 +1082,12 @@ try {
   const codingPlan = await smokeCodingPlan(builtinFile, env);
   if (receivedEfforts.at(-1) !== "high")
     throw new Error("Coding Plan effort did not reach the model API.");
-  let bbThreadVerified = false;
-  // Point this ONLY at a disposable bb instance. Ordinary runs do not install or reconfigure bb.
-  if (process.env.BB_SMOKE_SERVER_URL) {
-    if (!process.env.BB_SMOKE_DATA_DIR)
+  let aliaThreadVerified = false;
+  // Point this ONLY at a disposable VesnALIA instance. Ordinary runs do not install or reconfigure VesnALIA.
+  if (process.env.ALIA_SMOKE_SERVER_URL) {
+    if (!process.env.ALIA_SMOKE_DATA_DIR)
       throw new Error(
-        "BB_SMOKE_DATA_DIR is required for the disposable bb check.",
+        "ALIA_SMOKE_DATA_DIR is required for the disposable VesnALIA check.",
       );
     const wrapper = join(root, "launch-zcode.mjs");
     const fixtureEnv = Object.fromEntries(
@@ -1106,14 +1106,14 @@ try {
     const cli = async (...args: string[]) => {
       const { stdout } = await promisify(execFile)(
         process.execPath,
-        ["scripts/bb.mjs", ...args],
+        ["scripts/alia.mjs", ...args],
         {
           cwd: process.cwd(),
           env: {
             ...process.env,
-            BB_SERVER_URL: process.env.BB_SMOKE_SERVER_URL,
-            BB_DATA_DIR: process.env.BB_SMOKE_DATA_DIR,
-            BB_TELEMETRY: "false",
+            ALIA_SERVER_URL: process.env.ALIA_SMOKE_SERVER_URL,
+            ALIA_DATA_DIR: process.env.ALIA_SMOKE_DATA_DIR,
+            ALIA_TELEMETRY: "false",
           },
           timeout: 45_000,
           maxBuffer: 2 * 1024 * 1024,
@@ -1124,13 +1124,13 @@ try {
     const plugins = await cli("plugin", "list", "--json");
     // Path installs also execute immutable built artifacts. Reinstall explicitly
     // so a build in the development checkout cannot masquerade as installed proof.
-    if (process.env.BB_SMOKE_PLUGIN_SOURCE) {
+    if (process.env.ALIA_SMOKE_PLUGIN_SOURCE) {
       if (Array.isArray(plugins) && plugins.some((p) => p.id === "zcode"))
         await cli("plugin", "remove", "zcode", "--json");
       await cli(
         "plugin",
         "install",
-        process.env.BB_SMOKE_PLUGIN_SOURCE,
+        process.env.ALIA_SMOKE_PLUGIN_SOURCE,
         "--yes",
         "--json",
       );
@@ -1141,7 +1141,7 @@ try {
     await cli(
       "plugin",
       "install",
-      resolve("tests/fixtures/bb-extension-plugin"),
+      resolve("tests/fixtures/alia-extension-plugin"),
       "--yes",
       "--json",
     );
@@ -1168,7 +1168,7 @@ try {
       "config",
       "zcode",
       "set",
-      "bbToolsEnabled",
+      "aliaToolsEnabled",
       "true",
       "--json",
     );
@@ -1177,14 +1177,14 @@ try {
       !Array.isArray(models) ||
       !models.some(
         (m) =>
-          m.model === "bb-smoke/fixture" &&
+          m.model === "alia-smoke/fixture" &&
           m.supportedReasoningEfforts.some(
             (level: { reasoningEffort: string }) =>
               level.reasoningEffort === "low",
           ),
       )
     )
-      throw new Error("bb did not receive the native model catalog.");
+      throw new Error("alia did not receive the native model catalog.");
     const project = await cli(
       "project",
       "create",
@@ -1202,7 +1202,7 @@ try {
       "--provider",
       "zcode",
       "--model",
-      "bb-smoke/fixture",
+      "alia-smoke/fixture",
       "--reasoning-level",
       "low",
       "--environment",
@@ -1210,7 +1210,7 @@ try {
       "--permission-mode",
       "full",
       "--prompt",
-      "BB_FIXTURE_DELAY Reply with a short greeting. Do not call tools.",
+      "ALIA_FIXTURE_DELAY Reply with a short greeting. Do not call tools.",
       "--title",
       "ZCode isolated integration smoke",
       "--json",
@@ -1247,13 +1247,13 @@ try {
     }
     if (completedEvents.filter((e) => e.type === "turn/completed").length !== 2)
       throw new Error(
-        "Installed bb did not settle both the running turn and its queued follow-up.",
+        "Installed VesnALIA did not settle both the running turn and its queued follow-up.",
       );
     const accepted = completedEvents.filter(
       (e) => e.type === "turn/input/accepted",
     );
     if (accepted.length !== 2)
-      throw new Error("Installed bb did not correlate both accepted inputs.");
+      throw new Error("Installed VesnALIA did not correlate both accepted inputs.");
     await cli(
       "thread",
       "wait",
@@ -1267,10 +1267,10 @@ try {
     const output = await cli("thread", "output", threadId, "--json");
     if (output.output !== "Hello from the local fixture.")
       throw new Error(
-        `bb did not retain the fixture output: ${JSON.stringify(output)}`,
+        `alia did not retain the fixture output: ${JSON.stringify(output)}`,
       );
     if (receivedEfforts.at(-1) !== "low")
-      throw new Error("bb's selected low effort did not reach the model API.");
+      throw new Error("VesnALIA's selected low effort did not reach the model API.");
     const beforeInstalledImage = imageRequests;
     await cli(
       "thread",
@@ -1299,7 +1299,7 @@ try {
     }
     if (imageRequests <= beforeInstalledImage)
       throw new Error(
-        "Installed bb image upload did not reach native model input.",
+        "Installed VesnALIA image upload did not reach native model input.",
       );
     await cli("thread", "compact", threadId, "--json");
     await cli(
@@ -1315,13 +1315,13 @@ try {
     const context = await cli("thread", "context", threadId, "--json");
     if (!JSON.stringify(context).includes("1000000"))
       throw new Error(
-        "Installed bb context meter did not receive the native model window.",
+        "Installed VesnALIA context meter did not receive the native model window.",
       );
     const beforeInstalledAgent = customAgentRequests;
     for (const prompt of [
-      "BB_FIXTURE_BB_TOOL Call the installed bb tool.",
-      "BB_FIXTURE_INSTALLED_SKILL Read the installed fixture skill.",
-      "BB_FIXTURE_INSTALLED_AGENT Delegate a greeting to fixture-reviewer.",
+      "ALIA_FIXTURE_ALIA_TOOL Call the installed VesnALIA tool.",
+      "ALIA_FIXTURE_INSTALLED_SKILL Read the installed fixture skill.",
+      "ALIA_FIXTURE_INSTALLED_AGENT Delegate a greeting to fixture-reviewer.",
     ]) {
       const beforeEvents: Array<Record<string, unknown>> = await cli(
         "thread",
@@ -1418,7 +1418,7 @@ try {
       "edit-message",
       threadId,
       "--message",
-      "Replacement greeting after native bb rewind.",
+      "Replacement greeting after native VesnALIA rewind.",
       "--json",
     );
     // Rewind prunes the edited turn, then appends its replacement.
@@ -1435,7 +1435,7 @@ try {
       if (
         log.some((e) =>
           JSON.stringify(e).includes(
-            "Replacement greeting after native bb rewind.",
+            "Replacement greeting after native VesnALIA rewind.",
           ),
         ) &&
         log.filter((e) => e.type === "turn/completed").length >= beforeEdit
@@ -1445,7 +1445,7 @@ try {
       }
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
-    if (!edited) throw new Error("Installed bb edit/rewind did not complete.");
+    if (!edited) throw new Error("Installed VesnALIA edit/rewind did not complete.");
     let completed = (
       (await cli("thread", "log", threadId, "--all", "--json")) as Array<
         Record<string, unknown>
@@ -1455,7 +1455,7 @@ try {
       "thread",
       "tell",
       threadId,
-      "BB_FIXTURE_BACKGROUND Start native background Bash.",
+      "ALIA_FIXTURE_BACKGROUND Start native background Bash.",
       "--json",
     );
     let backgroundLog = await installedWait(threadId, completed);
@@ -1516,7 +1516,7 @@ try {
       );
     if (!installedForkContextVerified || !installedRewindContextVerified)
       throw new Error("Installed history inference checks were not exercised.");
-    bbThreadVerified = true;
+    aliaThreadVerified = true;
   }
   console.log(
     JSON.stringify(
@@ -1538,7 +1538,7 @@ try {
           "native effort catalog",
           "selected high effort reaches model API",
           "256K reporting budget through cold resume and native background follow-up",
-          "bb streamed deltas",
+          "alia streamed deltas",
           "empty-session durability",
           "stable checkpoints, native fork continuation and cold checkpoint fork",
           "native background Bash list/output/cancel and automatic native follow-up",
@@ -1554,11 +1554,11 @@ try {
         automaticBackgroundModelRequests,
         receivedEfforts,
         codingPlan,
-        bbThreadVerified,
+        aliaThreadVerified,
         installedForkContextVerified,
         installedRewindContextVerified,
         extensions: {
-          bbToolCalls,
+          aliaToolCalls,
           skillReads,
           bashResults,
           childQuestions,
@@ -1582,6 +1582,6 @@ try {
 
 function textForId(value: unknown): string {
   if (typeof value !== "string" || !value)
-    throw new Error("bb did not return a thread id.");
+    throw new Error("alia did not return a thread id.");
   return value;
 }

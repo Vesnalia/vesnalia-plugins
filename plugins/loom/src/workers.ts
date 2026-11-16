@@ -188,11 +188,11 @@ export async function spawnWorker(ctx: EngineCtx, project: ProjectRow, spec: Spe
   const resume = (row.attempt ?? 1) > 1;
   const agent = spec.agents.worker;
   let spawned;
-  // Until bb is asked, a failure is Loom's own, such as a ticket whose repo the spec no longer lists: no wait helps it.
+  // Until VesnALIA is asked, a failure is Loom's own, such as a ticket whose repo the spec no longer lists: no wait helps it.
   let asked = false;
   try {
     const repo = ticketRepo(spec, ticket);
-    // A worker on a machine of its own starts at the fresh base, which bb can make there, and carries in what earlier workers left with loom_resume.
+    // A worker on a machine of its own starts at the fresh base, which VesnALIA can make there, and carries in what earlier workers left with loom_resume.
     const onMachine = usesNewMachine(repo, "worker");
     let earlier: EarlierWork | null = null;
     if (onMachine || resume) {
@@ -208,12 +208,12 @@ export async function spawnWorker(ctx: EngineCtx, project: ProjectRow, spec: Spe
     const pending: Resume | null = !onMachine ? null : earlier !== null ? { sha: earlier.sha, tree: earlier.tree } : stacked;
     if (onMachine) store.updateThread(row.id, { resume_json: pending === null ? null : JSON.stringify(pending) });
     const checkouts = onMachine ? new Map<string, string>() : await otherCheckouts(ctx, project, spec, ticket);
-    // A thread bb never gave an environment never ran, so it has no conversation to read.
+    // A thread VesnALIA never gave an environment never ran, so it has no conversation to read.
     const earlierThreads = store.threads({ ticketId: ticket.id, role: "worker" }).flatMap((other) => (other.id !== row.id && other.thread_id !== null && (other.environment_id !== null || other.released_at !== null) ? [other.thread_id] : []));
     const brief = workerBrief({ project, spec, ticket: store.ticket(ticket.id)!, posts: store.posts(ticket.id), resume, checkouts, tickets: store.tickets(project.id), signature: signatureOf(ctx), earlierThreads, remote: onMachine, resumePending: pending !== null });
     const spawn = (baseBranch: string) =>
-      ctx.bb.spawnThread({
-        bbProjectId: repo.bbProjectId ?? project.bb_project_id,
+      ctx.alia.spawnThread({
+        aliaProjectId: repo.aliaProjectId ?? project.alia_project_id,
         hostId: project.host_id!,
         baseBranch,
         environment: spawnEnvironment(repo, { branch: threadBranch(project.slug, ticket.key, String(row.attempt)), base: baseBranch }, "worker", ticketInputsOf(ticket)),
@@ -254,7 +254,7 @@ export async function spawnWorker(ctx: EngineCtx, project: ProjectRow, spec: Spe
   if (now.ticket.state !== "working" || now.project.state === "archived") {
     await endThread(ctx, active, "cancelled", { commit: false, move: null });
   } else if (now.project.state === "paused" && now.project.system_reason === PAUSE_NOW_REASON) {
-    await ctx.bb.stop(spawned.threadId).catch((error) => ctx.bb.log("warn", `Could not stop ${spawned.threadId} after pause --now: ${errText(error)}`));
+    await ctx.alia.stop(spawned.threadId).catch((error) => ctx.alia.log("warn", `Could not stop ${spawned.threadId} after pause --now: ${errText(error)}`));
   }
 }
 
@@ -307,11 +307,11 @@ async function stackStart(ctx: EngineCtx, project: ProjectRow, spec: Spec, ticke
       ...gitIndex(settings),
     });
   } catch (error) {
-    ctx.bb.log("warn", `${ticket.key} cannot start on its dependencies' pull requests yet: ${errText(error)}`);
+    ctx.alia.log("warn", `${ticket.key} cannot start on its dependencies' pull requests yet: ${errText(error)}`);
     return null;
   }
   if (built.outcome === "unavailable") {
-    ctx.bb.log("warn", `${ticket.key} cannot start on its dependencies' pull requests yet: ${built.message}`);
+    ctx.alia.log("warn", `${ticket.key} cannot start on its dependencies' pull requests yet: ${built.message}`);
     return null;
   }
   if (built.outcome === "conflict") {
@@ -336,7 +336,7 @@ export async function otherCheckouts(ctx: EngineCtx, project: ProjectRow, spec: 
       try {
         return [name, (await repoCheckout(ctx, project, spec, name)).path] as const;
       } catch (error) {
-        ctx.bb.log("warn", `${ticket.key}'s brief lists the repo "${name}" without a checkout path: ${errText(error)}`);
+        ctx.alia.log("warn", `${ticket.key}'s brief lists the repo "${name}" without a checkout path: ${errText(error)}`);
         return null;
       }
     }),
@@ -345,15 +345,15 @@ export async function otherCheckouts(ctx: EngineCtx, project: ProjectRow, spec: 
 }
 
 /**
- * A worker that never started. The thread, when there is one, is archived. A ticket bb refused blocks at once. Any other
- * failed start waits and tries again (StartWait): one that bb or the provider says cannot happen now counts nothing, and
+ * A worker that never started. The thread, when there is one, is archived. A ticket VesnALIA refused blocks at once. Any other
+ * failed start waits and tries again (StartWait): one that VesnALIA or the provider says cannot happen now counts nothing, and
  * a failure counts as a failed attempt only once it has happened START_GRACE times in a row. A ticket resumed from a
- * branch bb could not find loses the branch and counts no failure, so the next try starts from the fresh base; a ticket
+ * branch VesnALIA could not find loses the branch and counts no failure, so the next try starts from the fresh base; a ticket
  * whose pull request is open always keeps its branch, which has the pull request's work.
  */
 export async function failSpawn(ctx: EngineCtx, row: ThreadRow, problem: StartProblem, opts: { archive?: boolean } = {}): Promise<void> {
   const { store } = ctx;
-  if (opts.archive === true && row.thread_id !== null) await ctx.bb.archive(row.thread_id).catch((e) => ctx.bb.log("warn", `Could not archive ${row.thread_id}: ${errText(e)}`));
+  if (opts.archive === true && row.thread_id !== null) await ctx.alia.archive(row.thread_id).catch((e) => ctx.alia.log("warn", `Could not archive ${row.thread_id}: ${errText(e)}`));
   const error = problem.message;
   store.tx(() => {
     store.updateThread(row.id, { state: "ended", ended_at: ctx.now(), end_reason: "failed" });
@@ -363,7 +363,7 @@ export async function failSpawn(ctx: EngineCtx, row: ThreadRow, problem: StartPr
     const post = (body: string) => store.addPost({ project_id: ticket.project_id, ticket_id: ticket.id, parent_id: null, author_kind: "loom", author_thread_id: null, kind: "system", body });
     if (problem.kind === "refused") {
       post(`Could not start a worker: ${error}`);
-      applyMove(ctx, ticket, { to: "blocked", patch: { ...released, failures: ticket.failures + 1, blocked_reason: `bb refused to start a worker: ${error}`, start_wait_json: null } }, LOOM_ACTOR, { reason: START_REFUSED });
+      applyMove(ctx, ticket, { to: "blocked", patch: { ...released, failures: ticket.failures + 1, blocked_reason: `alia refused to start a worker: ${error}`, start_wait_json: null } }, LOOM_ACTOR, { reason: START_REFUSED });
       return;
     }
     if (problem.kind === "broken") {
@@ -406,7 +406,7 @@ export const RELEASED_TEXT =
   "Loom archived the idle worker's thread to free its environment while the pull request waits. When the pull request needs a fix, or its branch must catch up with a dependency, Loom brings the same thread back with a new environment on its branch, so the worker keeps its conversation.";
 
 export const START_FAILED = "the worker could not start";
-export const START_REFUSED = "bb refused to start the worker";
+export const START_REFUSED = "alia refused to start the worker";
 export const START_WAITS = "the environment provider cannot start a worker now";
 export const START_UNAVAILABLE = "the environment provider stayed unavailable";
 
@@ -430,16 +430,16 @@ export function blockedAtStart(store: Store, ticket: TicketRow): boolean {
 // ---------------------------------------------------------------- branch and WIP commit
 
 /**
- * The environment of a worker row. bb may attach it after `spawn` returned, so a row without one asks bb for the
+ * The environment of a worker row. VesnALIA may attach it after `spawn` returned, so a row without one asks VesnALIA for the
  * thread's environment and keeps what it finds on the row and on the ticket the worker holds. It reads the row again,
- * because callers often hold an older snapshot. Null while bb has no environment for the thread.
+ * because callers often hold an older snapshot. Null while VesnALIA has no environment for the thread.
  */
 export async function resolveEnvironment(ctx: EngineCtx, seen: ThreadRow): Promise<EnvironmentInfo | null> {
   const { store } = ctx;
   const row = store.thread(seen.id) ?? seen;
   let environmentId = row.environment_id;
   if (environmentId === null && row.thread_id !== null) {
-    const found = (await ctx.bb.getThread(row.thread_id))?.environmentId ?? null;
+    const found = (await ctx.alia.getThread(row.thread_id))?.environmentId ?? null;
     if (found !== null) {
       store.tx(() => {
         store.updateThread(row.id, { environment_id: found });
@@ -449,7 +449,7 @@ export async function resolveEnvironment(ctx: EngineCtx, seen: ThreadRow): Promi
       environmentId = found;
     }
   }
-  return environmentId === null ? null : ctx.bb.getEnvironment(environmentId);
+  return environmentId === null ? null : ctx.alia.getEnvironment(environmentId);
 }
 
 /**
@@ -509,7 +509,7 @@ export async function commitWip(ctx: EngineCtx, row: ThreadRow, ticket: TicketRo
   const project = ctx.store.project(row.project_id)!;
   if (!isRemote(project, environment)) return;
   if (resumeOf(row) !== null) {
-    ctx.bb.log("info", `${ticket.key}'s worker ended before loom_resume, so Loom kept the work brought home as it was; the worker's own changes stay committed on its machine.`);
+    ctx.alia.log("info", `${ticket.key}'s worker ended before loom_resume, so Loom kept the work brought home as it was; the worker's own changes stay committed on its machine.`);
     return;
   }
   try {
@@ -559,12 +559,12 @@ async function finishEnding(ctx: EngineCtx, row: ThreadRow, reason: EndReason, o
         await commitWip(ctx, row, ticket, `WIP ${ticket.key} (attempt ${ticket.attempt})`);
       } catch (error) {
         if (!(error instanceof NotBroughtHome)) {
-          ctx.bb.log("warn", `Could not save ${ticket.key}'s work before ending its thread: ${errText(error)}`);
+          ctx.alia.log("warn", `Could not save ${ticket.key}'s work before ending its thread: ${errText(error)}`);
         } else if (!force) {
-          // Archived, the thread no longer holds its machine, and bb removes it with the only copy; the tick tries again.
+          // Archived, the thread no longer holds its machine, and VesnALIA removes it with the only copy; the tick tries again.
           const retry = retriesOf(store).ending.failed(row.id, ctx.now(), errText(error));
-          if (retry.changed) ctx.bb.log("warn", `Could not bring ${ticket.key}'s work home before ending its thread, so Loom keeps the thread and its machine and tries again: ${errText(error)}`);
-          if (row.thread_id !== null) await ctx.bb.stop(row.thread_id).catch((stopError) => ctx.bb.log("warn", `Could not stop ${row.thread_id}: ${errText(stopError)}`));
+          if (retry.changed) ctx.alia.log("warn", `Could not bring ${ticket.key}'s work home before ending its thread, so Loom keeps the thread and its machine and tries again: ${errText(error)}`);
+          if (row.thread_id !== null) await ctx.alia.stop(row.thread_id).catch((stopError) => ctx.alia.log("warn", `Could not stop ${row.thread_id}: ${errText(stopError)}`));
           return;
         } else {
           const body = `Loom could not bring the worker's work home from its machine, so the next worker starts without the changes it made since it last submitted or saved: ${errText(error)}. Loom tried for ${ENDING_LIMIT_MS / 60_000} minutes before it ended the thread.`;
@@ -601,24 +601,24 @@ async function finishEnding(ctx: EngineCtx, row: ThreadRow, reason: EndReason, o
 async function stopAndArchive(ctx: EngineCtx, row: ThreadRow, force: boolean): Promise<boolean> {
   const threadId = row.thread_id;
   if (threadId === null) return true;
-  const tokens = await ctx.bb.threadTokens(threadId).catch(() => null);
+  const tokens = await ctx.alia.threadTokens(threadId).catch(() => null);
   if (tokens !== null) ctx.store.updateThread(row.id, { tokens, tokens_at: ctx.now() });
-  await ctx.bb.stop(threadId).catch((error) => ctx.bb.log("warn", `Could not stop ${threadId}: ${errText(error)}`));
-  const thread = await ctx.bb.getThread(threadId).catch(() => undefined);
+  await ctx.alia.stop(threadId).catch((error) => ctx.alia.log("warn", `Could not stop ${threadId}: ${errText(error)}`));
+  const thread = await ctx.alia.getThread(threadId).catch(() => undefined);
   if (thread === null || (thread?.deletedAt ?? null) !== null) return true;
   const stopped = thread !== undefined && thread.status !== "active" && thread.status !== "stopping";
   if (!stopped) {
     if (!force) return false;
-    ctx.bb.log("warn", `Thread ${threadId} did not stop within ${ENDING_LIMIT_MS / 60_000} minutes; archiving it anyway.`);
+    ctx.alia.log("warn", `Thread ${threadId} did not stop within ${ENDING_LIMIT_MS / 60_000} minutes; archiving it anyway.`);
   }
-  await ctx.bb.archive(threadId).catch((error) => ctx.bb.log("warn", `Could not archive ${threadId}: ${errText(error)}`));
+  await ctx.alia.archive(threadId).catch((error) => ctx.alia.log("warn", `Could not archive ${threadId}: ${errText(error)}`));
   return true;
 }
 
 // ---------------------------------------------------------------- idle, failed turns, vanished threads
 
 /**
- * Whether this idle is the one bb caused by moving the thread's machine, which it reports as a machine_maintenance
+ * Whether this idle is the one VesnALIA caused by moving the thread's machine, which it reports as a machine_maintenance
  * error. The event is consumed, so the next idle counts. Only threads on machines of their own are asked about, by
  * their environment, since an approved spec version may have moved new threads elsewhere since this one started.
  */
@@ -628,7 +628,7 @@ export async function machineMoved(ctx: EngineCtx, row: ThreadRow): Promise<bool
   if (row.thread_id === null || project === null || row.ticket_id === null || row.role === "planner") return false;
   const environment = await resolveEnvironment(ctx, row).catch(() => null);
   if (environment === null || !isRemote(project, environment)) return false;
-  const error = await ctx.bb.latestSystemError(row.thread_id).catch(() => null);
+  const error = await ctx.alia.latestSystemError(row.thread_id).catch(() => null);
   if (error?.code !== "machine_maintenance" || error.seq <= row.maintenance_seq) return false;
   store.updateThread(row.id, { maintenance_seq: error.seq });
   return true;
@@ -646,7 +646,7 @@ export async function onWorkerIdle(ctx: EngineCtx, seen: ThreadRow, reason: EndR
   if (await machineMoved(ctx, row)) return;
   if (idleAction(row.idle_count) === "nudge") {
     ctx.store.updateThread(row.id, { idle_count: row.idle_count + 1 });
-    await ctx.bb.send(row.thread_id, nudgeText(ticket.key, latestChangesRequested(ctx.store.posts(ticket.id))));
+    await ctx.alia.send(row.thread_id, nudgeText(ticket.key, latestChangesRequested(ctx.store.posts(ticket.id))));
   } else {
     await endThread(ctx, row, reason, { commit: true });
   }
@@ -675,7 +675,7 @@ export async function onTurnFailed(ctx: EngineCtx, event: TurnFailure): Promise<
   if (row.role !== "worker") return;
 
   if (event.errorInfo?.category !== "rate-limit") {
-    const failure = await ctx.bb.latestSystemError(event.threadId).catch(() => null);
+    const failure = await ctx.alia.latestSystemError(event.threadId).catch(() => null);
     if (failure?.code === "thread_provisioning_failed") {
       if (ctx.store.claimThread(row.id, "failed")) await failSpawn(ctx, ctx.store.thread(row.id)!, provisioningFailure(failure), { archive: true });
       return;
@@ -696,11 +696,11 @@ export function rateLimitRetryAt(now: number, event: TurnFailure): number {
 // True when a retry was queued; false when the row used up its retries and the failure should be handled like any other.
 export async function retryRateLimited(ctx: EngineCtx, row: ThreadRow, project: ProjectRow, event: TurnFailure): Promise<boolean> {
   if (row.rate_limit_retries >= MAX_RATE_LIMIT_RETRIES || event.attemptNumber > MAX_RATE_LIMIT_RETRIES) {
-    ctx.bb.log("warn", `Thread ${event.threadId} stayed rate limited after ${row.rate_limit_retries} retries.`);
+    ctx.alia.log("warn", `Thread ${event.threadId} stayed rate limited after ${row.rate_limit_retries} retries.`);
     return false;
   }
   const sendAt = rateLimitRetryAt(ctx.now(), event);
-  await ctx.bb.retryTurn(event.threadId, event.requestId, sendAt);
+  await ctx.alia.retryTurn(event.threadId, event.requestId, sendAt);
   ctx.store.updateThread(row.id, { rate_limit_retries: row.rate_limit_retries + 1 });
   ctx.store.updateProject(project.id, { hold_until: Math.max(project.hold_until ?? 0, sendAt) });
   ctx.store.event(project.id, row.ticket_id, "turn.retry", LOOM_ACTOR, { thread: event.threadId, attempt: event.attemptNumber, sendAt });
@@ -761,7 +761,7 @@ export async function endLiveRows(ctx: EngineCtx, ticket: TicketRow, reason: "bl
  */
 export async function requeueTicket(ctx: EngineCtx, key: string, a: { note: string; actor: string; author: AuthorKind; threadId?: string; review?: boolean }): Promise<TicketRow> {
   const ticket = ctx.store.ticketByKey(key);
-  if (ticket === null) throw new LoomError("loom_not_found", `No ticket ${key}.`, "Run `bb loom tickets <slug>` to see the ticket keys.");
+  if (ticket === null) throw new LoomError("loom_not_found", `No ticket ${key}.`, "Run `alia loom tickets <slug>` to see the ticket keys.");
   if (ticket.state !== "blocked") throw new LoomError("loom_invalid_state", `${key} is ${ticket.state}; only a blocked ticket can be requeued.`);
   if (a.review === true) return reviewAgain(ctx, ticket, a);
   const note = a.note.trim();
@@ -801,7 +801,7 @@ const short = (sha: string) => sha.slice(0, 12);
 /**
  * The worker thread a ticket sent back as it is, or back to review, keeps, on the pull request strategy: its newest
  * worker that ran, when Loom ended it for the block or a release. It is the ticket's released worker again, so a fix round or a catch-up
- * brings the same thread back, or hands the ticket to a new worker from its branch when bb cannot (release.ts). A thread
+ * brings the same thread back, or hands the ticket to a new worker from its branch when VesnALIA cannot (release.ts). A thread
  * the human archived, or one that ended for failing, stays ended. "ending" while its stop is not confirmed yet.
  */
 export function keptWorker(store: Store, ticket: TicketRow): ThreadRow | "ending" | null {
@@ -823,7 +823,7 @@ async function reviewAgain(ctx: EngineCtx, ticket: TicketRow, a: { note: string;
   const { store } = ctx;
   const { key } = ticket;
   const can = reviewAgainOf(ticket, store.posts(ticket.id));
-  const refuse = (why: string) => new LoomError("loom_invalid_state", `${why}, so it cannot go back as it is. A plain requeue starts a new worker from its branch instead.`, `Run \`bb loom requeue ${key}\` without --review, with a note for the next worker.`);
+  const refuse = (why: string) => new LoomError("loom_invalid_state", `${why}, so it cannot go back as it is. A plain requeue starts a new worker from its branch instead.`, `Run \`alia loom requeue ${key}\` without --review, with a note for the next worker.`);
   if (!can.pr && !can.review) throw refuse(ticket.head_sha === null ? `${key} has no commit that passed its checks` : `The last checks on ${key} did not pass on the commit it was submitted at`);
 
   const project = store.project(ticket.project_id)!;

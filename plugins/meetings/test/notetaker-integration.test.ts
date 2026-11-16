@@ -211,8 +211,8 @@ describe("finalization, completion and recording options", () => {
     await pending;
     expect(requests.filter((url) => url.includes("receiver.example"))).toEqual([]);
     expect(await f.service.notetaker.analysis.get(id)).toBeNull();
-    expect(await f.bb.storage.kv.get("meeting-completion.v1." + id)).toBeUndefined();
-    expect(await f.bb.storage.kv.get("requested-analysis.v1." + id)).toBeUndefined();
+    expect(await f.alia.storage.kv.get("meeting-completion.v1." + id)).toBeUndefined();
+    expect(await f.alia.storage.kv.get("requested-analysis.v1." + id)).toBeUndefined();
   });
 
   it("deleting while an agent result is saving rejects that result and removes any late persisted analysis", async () => {
@@ -233,7 +233,7 @@ describe("finalization, completion and recording options", () => {
     release();
     await rejected;
     expect(await f.service.notetaker.analysis.get(id)).toBeNull();
-    expect(await f.bb.storage.kv.get("meeting-completion.v1." + id)).toBeUndefined();
+    expect(await f.alia.storage.kv.get("meeting-completion.v1." + id)).toBeUndefined();
   });
 });
 

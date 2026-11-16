@@ -1,5 +1,5 @@
 #!/bin/bash
-# The bb-box plugin's Proxmox identity: a pool, a user with no password, an
+# The alia-box plugin's Proxmox identity: a pool, a user with no password, an
 # API token with privilege separation, a role with only what the plugin uses,
 # and ACLs on the pool, the storage and the box bridge. Writes the token to
 # BBBOX_TOKEN_FILE (0600) and never prints the secret.
@@ -15,7 +15,7 @@ command -v jq >/dev/null || die "jq is required (apt install jq)"
 tokenid="$BBBOX_API_USER!$BBBOX_API_TOKEN"
 
 pveum pool list --output-format json | jq -e --arg p "$BBBOX_POOL" '.[] | select(.poolid == $p)' >/dev/null ||
-  pveum pool add "$BBBOX_POOL" --comment "bb-box: CT templates and boxes"
+  pveum pool add "$BBBOX_POOL" --comment "alia-box: CT templates and boxes"
 
 # What the plugin does with boxes in the pool: linked-clone a template, set
 # cores, memory, disk size, the network, description and tags, clear the
@@ -38,18 +38,18 @@ else
 fi
 
 pveum user list --output-format json | jq -e --arg u "$BBBOX_API_USER" '.[] | select(.userid == $u)' >/dev/null ||
-  pveum user add "$BBBOX_API_USER" --comment "bb-box plugin; API token only, no password"
+  pveum user add "$BBBOX_API_USER" --comment "alia-box plugin; API token only, no password"
 
 if ! pveum user token list "$BBBOX_API_USER" --output-format json |
   jq -e --arg t "$BBBOX_API_TOKEN" '.[] | select(.tokenid == $t)' >/dev/null; then
   secret=$(pveum user token add "$BBBOX_API_USER" "$BBBOX_API_TOKEN" --privsep 1 \
-    --comment "bb-box plugin: boxes in pool $BBBOX_POOL" --output-format json | jq -er .value)
+    --comment "alia-box plugin: boxes in pool $BBBOX_POOL" --output-format json | jq -er .value)
   fingerprint=$(openssl x509 -in /etc/pve/local/pve-ssl.pem -noout -fingerprint -sha256 | cut -d= -f2)
   address=$(ip -o -4 route get 1.1.1.1 | sed -n 's/.* src \([0-9.]*\).*/\1/p')
   install -d -m 0700 "$(dirname "$BBBOX_TOKEN_FILE")"
   umask 077
   cat >"$BBBOX_TOKEN_FILE.tmp" <<EOF
-# bb-box plugin: Proxmox API access. Secret: keep 0600.
+# alia-box plugin: Proxmox API access. Secret: keep 0600.
 # Header: Authorization: PVEAPIToken=\${PROXMOX_TOKEN_ID}=\${PROXMOX_TOKEN_SECRET}
 PROXMOX_API_URL=https://$address:8006/api2/json
 PROXMOX_NODE=$BBBOX_NODE

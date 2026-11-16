@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
-import type { PluginCommandContext, PluginCommandRegistration } from "@get-bb/plugin-sdk/app";
+import type { PluginCommandContext, PluginCommandRegistration } from "@vesnalia/plugin-sdk/app";
 import { renderSlot } from "./test-slot";
 import { inbox, thread, listProps, toastMocks, loadInboxApp } from "./test-inbox";
 import { registerSnoozeCommands, type SnoozeCommandRequest } from "./lib/snooze-commands";
@@ -31,7 +31,7 @@ function renderInbox(threads: ReturnType<typeof thread>[], rpc: Record<string, (
     sidebarThreads: {
       status: "ready",
       threads,
-      projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+      projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
     },
     rpc: { listLifecycle: () => ({ rows: [] }), ...rpc },
   });
@@ -44,12 +44,12 @@ afterEach(() => {
 describe("palette snooze commands", () => {
   it("lists one self-identifying command per default preset and an unsnooze", () => {
     expect(paletteCommands().titles()).toEqual([
-      "BB Sidebar: Snooze this thread for 1 hour",
-      "BB Sidebar: Snooze this thread for 5 hours",
-      "BB Sidebar: Snooze this thread until this evening",
-      "BB Sidebar: Snooze this thread until tomorrow morning",
-      "BB Sidebar: Snooze this thread until next week",
-      "BB Sidebar: Unsnooze this thread",
+      "VesnALIA Sidebar: Snooze this thread for 1 hour",
+      "VesnALIA Sidebar: Snooze this thread for 5 hours",
+      "VesnALIA Sidebar: Snooze this thread until this evening",
+      "VesnALIA Sidebar: Snooze this thread until tomorrow morning",
+      "VesnALIA Sidebar: Snooze this thread until next week",
+      "VesnALIA Sidebar: Unsnooze this thread",
     ]);
   });
 
@@ -133,7 +133,7 @@ describe("palette snooze commands", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "ci", title: "CI work" }), thread({ id: "free", title: "Free work" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       sidebarRowStatuses: { ci: { icon: "Loading", label: "Waiting for CI", tone: "running" } },
       rpc: { listLifecycle: () => ({ rows: [] }), snooze },
@@ -214,7 +214,7 @@ describe("palette snooze commands", () => {
     const commands = paletteCommands();
 
     commands.run("snooze-1h", "parent");
-    expect(toastMocks.error).toHaveBeenCalledWith("This thread is not in the BB Sidebar", expect.anything());
+    expect(toastMocks.error).toHaveBeenCalledWith("This thread is not in the VesnALIA Sidebar", expect.anything());
     commands.run("snooze-1h", "child");
     await waitFor(() => expect(snooze).toHaveBeenCalledTimes(1));
     expect(snooze.mock.calls[0]![0]).toMatchObject({ threadId: "child" });
@@ -267,6 +267,6 @@ describe("palette snooze commands", () => {
 
   it("tells the user to open the sidebar when no inbox is mounted", () => {
     paletteCommands().run("snooze-1h", "thr_1");
-    expect(toastMocks.error).toHaveBeenCalledWith("Open the BB Sidebar to snooze threads", expect.anything());
+    expect(toastMocks.error).toHaveBeenCalledWith("Open the VesnALIA Sidebar to snooze threads", expect.anything());
   });
 });

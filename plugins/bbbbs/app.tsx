@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { definePluginApp, experimental_usePluginId, useRealtime, useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, experimental_usePluginId, useRealtime, useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import { Terminal } from "@xterm/xterm";
 import type { rpcContract } from "./server";
 import type { BrowserEvent } from "./src/bridge";
@@ -19,13 +19,13 @@ import "./src/app.css";
 const recoverErrors = {
   "invalid-handle": `That handle isn't valid. ${HANDLE_RULE}`,
   "invalid-password": `That recovery password isn't valid. ${PASSWORD_RULE}`,
-  "unsaved-account": "This bb's new account hasn't had its recovery password saved. If you switch now, that new account becomes unreachable for good.",
-  "caller-not-allowed": "Account recovery is only available from bbBBS itself.",
+  "unsaved-account": "This VesnALIA's new account hasn't had its recovery password saved. If you switch now, that new account becomes unreachable for good.",
+  "caller-not-allowed": "Account recovery is only available from aliaBBS itself.",
 } as const;
 
 // Sent by the backend on the terminal socket; proves an account replacement comes from a person in this app.
 let confirmToken: string | undefined;
-const OPEN_TERMINAL_TO_CONFIRM = "Open bbBBS in a pane to confirm replacing this bb's new account.";
+const OPEN_TERMINAL_TO_CONFIRM = "Open aliaBBS in a pane to confirm replacing this VesnALIA's new account.";
 
 /** The stored recovery password, on request, so the user can always get back in elsewhere. */
 function YourRecoveryPassword() {
@@ -37,7 +37,7 @@ function YourRecoveryPassword() {
     try {
       const result = await rpc.call("recoveryPassword", null);
       if (result.ok) setShown(result);
-      else setMessage(result.error === "no-account" ? "No account yet. Open bbBBS to register." : recoverErrors["caller-not-allowed"]);
+      else setMessage(result.error === "no-account" ? "No account yet. Open aliaBBS to register." : recoverErrors["caller-not-allowed"]);
     } catch { setMessage("Could not load the recovery password. Try again."); }
   };
   const copy = async () => {
@@ -46,7 +46,7 @@ function YourRecoveryPassword() {
   return <div className="bbs-recovery-form">
     <strong>Your recovery password</strong>
     {shown ? <>
-      <p>{shown.handle ? <>For <strong>{shown.handle}</strong>. </> : null}Use it with ‘{HAVE_ACCOUNT}’ to log in from another bb.</p>
+      <p>{shown.handle ? <>For <strong>{shown.handle}</strong>. </> : null}Use it with ‘{HAVE_ACCOUNT}’ to log in from another VesnALIA.</p>
       <input aria-label="Your recovery password" readOnly value={shown.password} onFocus={(event) => event.target.select()} autoComplete="off" spellCheck={false} />
       <button type="button" onClick={() => void copy()}>Copy</button>
       {" "}<button type="button" onClick={() => { setShown(null); setMessage(""); }}>Hide</button>
@@ -55,7 +55,7 @@ function YourRecoveryPassword() {
   </div>;
 }
 
-/** Settings section: see this bb's password, or switch to an existing account. */
+/** Settings section: see this VesnALIA's password, or switch to an existing account. */
 function AccountRecovery({ expanded = false }: { expanded?: boolean }) {
   return <><YourRecoveryPassword /><RecoveryForm expanded={expanded} /></>;
 }
@@ -96,7 +96,7 @@ function RecoveryForm({ expanded = false }: { expanded?: boolean }) {
   </details>;
 }
 
-/** Way out of an interrupted registration: forget this bb's credentials and register afresh. */
+/** Way out of an interrupted registration: forget this VesnALIA's credentials and register afresh. */
 function StartNewAccount({ onStarted }: { onStarted: () => void }) {
   const rpc = useRpc<typeof rpcContract>();
   const [confirming, setConfirming] = useState(false);
@@ -170,7 +170,7 @@ function useAppearance() {
 
 function BbsAbout() {
   return <div className="bbs-about">
-    <p>bbBBS · A personal community BBS for bb users. Caps Lock kicked in halfway through the name; we kept it.</p>
+    <p>aliaBBS · A personal community BBS for VesnALIA users. Caps Lock kicked in halfway through the name; we kept it.</p>
     {THEME_CREDITS.map((credit) => <p key={credit.asset}>
       {credit.asset} by <a href={credit.url} target="_blank" rel="noreferrer">{credit.author}</a>.
       {" "}Licensed under <a href={credit.licenseUrl} target="_blank" rel="noreferrer">{credit.license}</a>; bundled unmodified.
@@ -567,7 +567,7 @@ export function BbsTerminal() {
     };
   }, [pluginId]);
 
-  // ---- terminal-only zoom, independent of bb's app zoom ----------------------
+  // ---- terminal-only zoom, independent of VesnALIA's app zoom ----------------------
   const zoomTo = (next: ZoomSetting) => {
     zoomRef.current = next;
     fitRef.current();
@@ -582,7 +582,7 @@ export function BbsTerminal() {
   useEffect(() => { fitRef.current(); }, [appearance.zoom]);
 
   useEffect(() => {
-    // bb's desktop app binds Cmd/Ctrl +/−/0 to app zoom as menu accelerators,
+    // VesnALIA's desktop app binds Cmd/Ctrl +/−/0 to app zoom as menu accelerators,
     // which only fire for key events the page leaves unhandled. Claim them in
     // the capture phase while focus is inside the terminal frame.
     const onKey = (event: KeyboardEvent) => {
@@ -646,7 +646,7 @@ export function BbsTerminal() {
   const zoomLabel = `${Math.round((fontSize / 16) * 100)}%`;
   const zoomControls = <>
     <button type="button" className="bbbbs-switch" onClick={() => zoomCommand("out")} title={`Smaller text (${shortcuts.out}, or ${shortcuts.wheel})`} aria-label="Smaller terminal text">A−</button>
-    <span className="bbbbs-zoom-readout" aria-live="polite" title={zoomSetting === "fit" ? "Terminal zoom: fitted to the pane (only the terminal, not bb)" : "Terminal zoom (only the terminal, not bb)"}>{zoomLabel}</span>
+    <span className="bbbbs-zoom-readout" aria-live="polite" title={zoomSetting === "fit" ? "Terminal zoom: fitted to the pane (only the terminal, not VesnALIA)" : "Terminal zoom (only the terminal, not VesnALIA)"}>{zoomLabel}</span>
     <button type="button" className="bbbbs-switch" onClick={() => zoomCommand("in")} title={`Bigger text (${shortcuts.in}, or ${shortcuts.wheel})`} aria-label="Bigger terminal text">A+</button>
     <button type="button" className="bbbbs-switch" aria-pressed={zoomSetting === "fit"} onClick={() => zoomCommand("fit")} title={`Fit the pane (${shortcuts.fit})`}>Fit</button>
     <button type="button" className="bbbbs-switch" aria-pressed={fullscreen} onClick={toggleFullscreen} title={fullscreen ? "Leave BBS mode (Esc)" : "BBS mode: fullscreen terminal (Esc to leave)"}>BBS mode</button>
@@ -661,7 +661,7 @@ export function BbsTerminal() {
   const statusText = dialing ? "Dialing… · press any key to skip" : state.status === "registering" ? "New caller · 2400 baud" : state.status === "ready" ? `Online · 2400 baud${state.node ? ` · node ${state.node}` : ""}${state.handle ? ` · ${state.handle}` : ""}` : state.message ?? state.status;
   return <div className="bbs-terminal-page">
     <div className="bbs-terminal-toolbar">
-      <span>bbBBS · 80 × 25</span>
+      <span>aliaBBS · 80 × 25</span>
       <div>
         <button onClick={() => setRecovering(true)} title="See your recovery password, or log in with an account from another installation">Account</button>
         <button onClick={() => reconnectRef.current()}>Redial</button>
@@ -698,7 +698,7 @@ export function BbsTerminal() {
       <div className="bbs-recovery-card">
         <h2 id="bbs-recovery-title">Save your recovery password</h2>
         <p>{recovery.handle
-          ? <>Keep this password for <strong>{recovery.handle}</strong>. It lets you return from another bb installation.</>
+          ? <>Keep this password for <strong>{recovery.handle}</strong>. It lets you return from another VesnALIA installation.</>
           : REGISTRATION_INTERRUPTED_MESSAGE}</p>
         <input aria-label="Your recovery password" readOnly value={recovery.password} onFocus={(event) => event.target.select()} autoComplete="off" spellCheck={false} />
         <label><input type="checkbox" checked={saved} onChange={(event) => setSaved(event.target.checked)} /> I saved it somewhere safe.</label>
@@ -712,7 +712,7 @@ export function BbsTerminal() {
 export default definePluginApp((app) => {
   // The terminal is the page: it opens straight into the main area, where it
   // has the most room. Account recovery lives in its toolbar and settings.
-  app.slots.navPanel({ id: "bbs", title: "bbBBS", icon: "Terminal", path: "bbbbs", component: BbsTerminal });
+  app.slots.navPanel({ id: "bbs", title: "aliaBBS", icon: "Terminal", path: "bbbbs", component: BbsTerminal });
   app.slots.settingsSection({ id: "recovery", title: "Account recovery", component: AccountRecovery });
-  app.slots.settingsSection({ id: "about", title: "About bbBBS", component: BbsAbout });
+  app.slots.settingsSection({ id: "about", title: "About aliaBBS", component: BbsAbout });
 });

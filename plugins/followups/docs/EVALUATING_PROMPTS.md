@@ -96,7 +96,7 @@ the report so you can compare them with the candidate.
 
 Interpret wall time as native Codex process latency, including startup. The
 runner replays the plugin-controlled prompt and session instruction in a fresh
-scratch directory. It does not reproduce BB's full instructions, integrations,
+scratch directory. It does not reproduce VesnALIA's full instructions, integrations,
 or environment startup. Keep that distinction in any performance claim.
 
 The runner uses a read-only sandbox, disables apps and native delegation, rejects

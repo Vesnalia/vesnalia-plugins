@@ -1,8 +1,8 @@
-// bb-plugin-hooks — the Hooks page in the BB sidebar and a composer entry.
+// alia-plugin-hooks — the Hooks page in the VesnALIA sidebar and a composer entry.
 //
-// Compiled by `bb plugin build` into dist/app.js + dist/app.css. React and
-// @get-bb/plugin-sdk/app are provided by the BB app at load time.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+// Compiled by `alia plugin build` into dist/app.js + dist/app.css. React and
+// @vesnalia/plugin-sdk/app are provided by the VesnALIA app at load time.
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { HeaderActions, HooksPage, PANEL_PATH } from "./src/ui/page";
 import { SettingsSection } from "./src/ui/settings-section";
 import { NEW_HOOK_PROMPT } from "./src/ui/shared";

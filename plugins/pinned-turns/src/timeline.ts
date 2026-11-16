@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSdk } from "@get-bb/plugin-sdk/app";
+import { useSdk } from "@vesnalia/plugin-sdk/app";
 import { indexOf, outlineOf, type Outline, type TimelineIndex, type Titles } from "./rows";
 import { watchTimeline, type Debug, type Watch } from "./watch";
 
@@ -48,7 +48,7 @@ export function useTimeline(threadId: string, debug: Debug, active: boolean) {
 }
 
 /**
- * The thread's user messages in order, for the turn counter. BB's
+ * The thread's user messages in order, for the turn counter. VesnALIA's
  * `conversationOutline` lists every one of them by the timeline's row id in one small response
  * (a few KB, against ~100KB a timeline page), so the counter does not need the
  * older pages fetched. It is fetched again when the newest user message changes,

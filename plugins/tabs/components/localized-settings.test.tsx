@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { rpcContract } from "../server";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { defaultTabAppearance, updateTabAppearance } from "../lib/tab-appearance";
 import { LANGUAGE_OPTIONS } from "../lib/languages";
 import { resolvePluginLocale, translate } from "../lib/plugin-locale";
@@ -429,7 +429,7 @@ describe("Localized settings", () => {
     expect(appearance.projects.p?.alias).toBe("BACK");
   });
 
-  it("follows live BB language changes in Auto mode without saving settings", async () => {
+  it("follows live VesnALIA language changes in Auto mode without saving settings", async () => {
     document.documentElement.lang = "ru";
     const update = vi.fn(() => ({ values: { language: "Auto" } }));
     const slot = renderSlot<{}, Pick<typeof rpcContract, "tabs_settings_update">>(

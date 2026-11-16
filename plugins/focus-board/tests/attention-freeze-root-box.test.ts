@@ -5,7 +5,7 @@
 // not a defect: the attended card holds its own placement while the group's
 // other members re-place freely.
 import { describe, expect, it } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import {
   captureColumnAttention,
   type AttentionSlot,

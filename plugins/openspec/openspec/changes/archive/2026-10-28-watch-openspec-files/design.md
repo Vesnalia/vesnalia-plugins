@@ -15,7 +15,7 @@ See proposal.md. SDK 0.6.79 provides host native watch, host → server signals,
 - Host native watch coalesces save events; the index stores the file list, parsed tasks, and summaries only while there are watchers. When a known tasks file changes, only that file is reread; structural changes rescan names while retaining results for unchanged tasks.
 - Markdown document content continues to be read with rootPath confinement; the watcher invalidates only the changed document. Signals without a full list of paths trigger a rescan.
 - If openspec is absent, watch its parent while excluding its other existing entries; when the directory appears, switch the watcher to it. This also covers deletion and recreation of the root.
-- Thread statuses are invalidated through bb events. Metadata changes on linking are published explicitly. Worker exit/host reconnect restores only existing live subscriptions.
+- Thread statuses are invalidated through VesnALIA events. Metadata changes on linking are published explicitly. Worker exit/host reconnect restores only existing live subscriptions.
 - Compare the CLI as an external process with telemetry disabled. Initial measurements: about 340–350 ms per call; status does not support archived changes. Therefore direct reads remain the only production reader, with no fallback CLI path or new dependency.
 
 ## Risks / Trade-offs

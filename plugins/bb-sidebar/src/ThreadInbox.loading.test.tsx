@@ -14,7 +14,7 @@ describe("thread list loading state", () => {
       sidebarThreads: {
         status,
         threads: status === "ready" ? [thread({ title: "Loaded thread" })] : [],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: { listLifecycle: () => ({ rows: [] }) },
     });

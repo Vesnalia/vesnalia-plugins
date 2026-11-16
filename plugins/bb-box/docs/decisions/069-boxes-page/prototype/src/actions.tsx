@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -67,7 +67,7 @@ export function useReleaseDialog(box: FakeBox): { ask: () => void; dialog: React
           <AlertDialogTitle>{forget ? `Forget ${view.name}?` : yours ? `Remove ${view.name}?` : `Release ${view.name}?`}</AlertDialogTitle>
           <AlertDialogDescription>
             {forget
-              ? `bb-box removes its record only. Its backend is not in settings, so bb-box cannot delete the box: if it still runs on ${view.backendLabel.replace(/^.* on /, "")}, it keeps running there.`
+              ? `alia-box removes its record only. Its backend is not in settings, so alia-box cannot delete the box: if it still runs on ${view.backendLabel.replace(/^.* on /, "")}, it keeps running there.`
               : view.nature === "real"
                 ? "The machine will be reset and returned to its pool. Anything in the box user's home will be deleted."
                 : "Its disk and everything on it will be deleted. Copy out anything you want to keep first."}

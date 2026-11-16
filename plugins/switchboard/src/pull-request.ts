@@ -1,4 +1,4 @@
-import { experimental_useRpcKeyedQuery, type PluginRpcContract } from "@get-bb/plugin-sdk/app";
+import { experimental_useRpcKeyedQuery, type PluginRpcContract } from "@vesnalia/plugin-sdk/app";
 import { z } from "zod";
 
 const pullRequestSchema = z.object({
@@ -8,7 +8,7 @@ const pullRequestSchema = z.object({
 });
 export type PullRequest = z.infer<typeof pullRequestSchema>;
 
-// Read-only subset of bb--github-pr-status's environment-keyed contract; extra provider fields are ignored.
+// Read-only subset of alia--github-pr-status's environment-keyed contract; extra provider fields are ignored.
 export const pullRequestContract = {
   pullRequests: {
     input: z.object({ keys: z.array(z.string().min(1)).min(1).max(200) }),
@@ -23,7 +23,7 @@ export const pullRequestContract = {
 
 export function usePullRequest(environmentId: string | null | undefined): PullRequest | null {
   const { data, error } = experimental_useRpcKeyedQuery({
-    contract: pullRequestContract, pluginId: "bb--github-pr-status", method: "pullRequests",
+    contract: pullRequestContract, pluginId: "alia--github-pr-status", method: "pullRequests",
     keys: environmentId ? [environmentId] : [],
   });
   const result = environmentId ? data?.[environmentId] : undefined;

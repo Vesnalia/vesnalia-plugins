@@ -1,12 +1,12 @@
 ## What you get
 
-Agents in any bb thread can open, read and operate the apps on the machine
+Agents in any VesnALIA thread can open, read and operate the apps on the machine
 that runs the thread: native windows, Electron apps and Chrome, Edge or Brave
 windows. They act in the background through the accessibility tree, so your
 pointer and keyboard stay yours, and they check the result before they
 report.
 
-With the optional **Browser Bridge for bb** extension, agents also work in
+With the optional **Browser Bridge for VesnALIA** extension, agents also work in
 the tabs of the browser you are signed in to: Brave, Chrome or Edge. Tabs
 they open go into a purple **Agent** group, a cursor shows where they click,
 and **Pause agents** in the toolbar stops them at once. They fill whole forms
@@ -38,11 +38,11 @@ Recording. Remote machines work the same way. When Cua Driver adds tools,
 agents get them without a plugin update, and the settings page lists what
 changed.
 
-Everything is also available from the terminal with `bb cua`.
+Everything is also available from the terminal with `alia cua`.
 
 ## Requirements
 
-- bb 0.39 or later.
+- VesnALIA 0.39 or later.
 - Cua Driver from Cua AI, open source under the MIT license, on each machine
   agents should drive. Nothing installs until you click install. It sends
   content-free telemetry to Cua by default; `cua-driver telemetry disable`
@@ -53,6 +53,6 @@ Everything is also available from the terminal with `bb cua`.
   It is tested on macOS; its Linux setup is untested, and it does not run on
   Windows.
 
-A community plugin, not affiliated with Cua AI or the bb team. Source,
+A community plugin, not affiliated with Cua AI or the VesnALIA team. Source,
 reference and changelog:
 https://github.com/qwadrox/bb-plugin-desktop-browser-agent

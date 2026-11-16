@@ -4,7 +4,7 @@
  * Two constraints shape everything here, and both are load-bearing rather than
  * stylistic.
  *
- * **Colour comes from host theme tokens, never a literal.** bb ships
+ * **Colour comes from host theme tokens, never a literal.** alia ships
  * user-swappable palettes and the plugin build's Tailwind pass emits
  * default-theme utilities only, so a hand-written `oklch()` or a hardcoded
  * green survives exactly one theme. Every value below resolves through a

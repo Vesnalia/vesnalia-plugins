@@ -1,4 +1,4 @@
-import { type BbPluginApi } from "@get-bb/plugin-sdk";
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { PoolManagementLocked } from './management-access.js';
 import type { AccountSummary, PoolProvider } from "./contracts.js";
 import type { AccountPoolHub } from "./hub.js";
@@ -44,7 +44,7 @@ function accountKey(account: AccountSummary): string | null {
       : null;
 }
 
-//: Which BB provider each pooled subscription shows up as on the usage surface. Kimi
+//: Which VesnALIA provider each pooled subscription shows up as on the usage surface. Kimi
 //: serves two agent entries from one subscription, so the primary one stands for both.
 export const USAGE_PROVIDER_IDS: Record<PoolProvider, string> = {
   claude: "claude-code",
@@ -76,8 +76,8 @@ function reportsUsage(account: Pick<AccountSummary, "provider">): boolean {
   return account.provider !== "devin" && account.provider !== "neuraldeep" && account.provider !== "agy";
 }
 
-export function registerUsageSource(bb: BbPluginApi, hub: AccountPoolHub, privateInventory = true) {
-  bb.rpc.register(
+export function registerUsageSource(alia: AliaPluginApi, hub: AccountPoolHub, privateInventory = true) {
+  alia.rpc.register(
     usageSourceRpcContract,
     {
       async [usageListMethod]() {

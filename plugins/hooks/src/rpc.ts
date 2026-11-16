@@ -1,6 +1,6 @@
 // The RPC contract between server.ts and the marketplace page (app.tsx).
 // app.tsx imports only its type; the schemas run on the server boundary.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { catalogSchema } from "./catalog.js";
 import { HOOK_EVENTS, hookSchema } from "./definitions.js";

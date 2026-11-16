@@ -2,14 +2,14 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
 const shots = process.env.LIVE_SHOTS ?? join(process.cwd(), "shots");
 const runs = Number(process.env.LIVE_RUNS ?? 3);
 const chosen = process.argv.slice(2);
 mkdirSync(shots, { recursive: true });
 
-const APPLY = "**/api/v1/plugins/bb-box/rpc/config.apply";
-const GET = "**/api/v1/plugins/bb-box/rpc/config.get";
+const APPLY = "**/api/v1/plugins/alia-box/rpc/config.apply";
+const GET = "**/api/v1/plugins/alia-box/rpc/config.get";
 const STAYS_ON = "The default kind stays on. Choose another default to turn it off.";
 
 function expect(condition, message) {
@@ -27,7 +27,7 @@ function gate() {
 }
 
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -53,7 +53,7 @@ async function reset(run) {
     general: {},
     backends: [
       { id: "docker", type: "docker", enabled: true, fields: {} },
-      { id: "proxmox-lxc", type: "proxmox-lxc", enabled: false, fields: { url: "https://127.0.0.1:9", "token-id": "bb-box@pve!made-up", "token-secret": `made-up-secret-${run}` } },
+      { id: "proxmox-lxc", type: "proxmox-lxc", enabled: false, fields: { url: "https://127.0.0.1:9", "token-id": "alia-box@pve!made-up", "token-secret": `made-up-secret-${run}` } },
       { id: "tart", type: "tart", enabled: false, fields: {} },
       { id: "ssh-pool", type: "ssh-pool", enabled: false, fields: {} },
       { id: "namespace", type: "namespace", enabled: false, fields: {} },
@@ -96,7 +96,7 @@ let onboardingSkipped = false;
 const heading = (page, title) => page.locator("[data-page-heading]").filter({ hasText: new RegExp(`^${title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`) });
 
 async function open(page, hash, title) {
-  const url = `${base}/settings/plugins/bb-box${hash}`;
+  const url = `${base}/settings/plugins/alia-box${hash}`;
   await page.goto(url, { waitUntil: "domcontentloaded" });
   if (!onboardingSkipped) {
     const skip = page.getByRole("button", { name: "Skip setup" });
@@ -145,7 +145,7 @@ async function snap(page, run, name) {
 
 async function leaveBySidebar(page) {
   await page.getByRole("link", { name: "General", exact: true }).first().click();
-  await page.waitForURL((url) => !url.pathname.includes("/plugins/bb-box"));
+  await page.waitForURL((url) => !url.pathname.includes("/plugins/alia-box"));
   await page.locator("[data-settings-view]").waitFor({ state: "detached" });
 }
 
@@ -249,12 +249,12 @@ const checks = {
     await cpuRow.click();
     await heading(page, "Linux desktop").waitFor();
     await page.getByText("Off: no new boxes").first().waitFor();
-    await page.getByRole("button", { name: "BB Box settings" }).click();
+    await page.getByRole("button", { name: "VesnALIA Box settings" }).click();
     await page.getByRole("button", { name: "Linux desktop on Wayland", exact: true }).click();
     await heading(page, "Linux desktop on Wayland").waitFor();
     await page.getByRole("switch", { name: "Linux desktop on Wayland: offered to threads" }).click();
     await waitFor(async () => (await stored()).document.kinds["linux-desktop-wayland-cpu"]?.enabled === false, "the second kind stored off");
-    await page.getByRole("button", { name: "BB Box settings" }).click();
+    await page.getByRole("button", { name: "VesnALIA Box settings" }).click();
     await page.locator("[data-settings-view='#']").waitFor();
     expect(await page.getByRole("button", { name: cpu, exact: true }).count(), "the first kind is still in place");
     expect(await page.getByRole("button", { name: "Linux desktop on Wayland", exact: true }).count(), "the kind turned off on its page is in place too");

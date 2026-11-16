@@ -7,7 +7,7 @@ export const shareImage = {
   path: "og.png",
   width: 1200,
   height: 630,
-  alt: "BB Box: computers for BB threads. Beside the words, a thread's Box panel lists two Linux boxes, each ready in under 2 seconds.",
+  alt: "VesnALIA Box: computers for VesnALIA threads. Beside the words, a thread's Box panel lists two Linux boxes, each ready in under 2 seconds.",
 };
 
 export const icons = {

@@ -92,8 +92,8 @@ test("only argv[0] itself may be an app bundle with spaces, cut at its executabl
   assert.equal(friendlyName("/Applications/Foo.app/Contents/MacOS/Foo hunter2"), "Foo");
   assert.equal(friendlyName("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome hunter2 --type=gpu"), "Google Chrome");
   assert.equal(
-    friendlyName("/Applications/bb.app/Contents/Frameworks/bb Helper (Renderer).app/Contents/MacOS/bb Helper (Renderer) --type=renderer"),
-    "bb Helper",
+    friendlyName("/Applications/alia.app/Contents/Frameworks/alia Helper (Renderer).app/Contents/MacOS/alia Helper (Renderer) --type=renderer"),
+    "VesnALIA Helper",
   );
   assert.equal(friendlyName("mytool hunter2"), "mytool");
   assert.equal(friendlyName("-zsh"), "zsh");

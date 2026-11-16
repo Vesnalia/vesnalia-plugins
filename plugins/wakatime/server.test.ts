@@ -1,10 +1,10 @@
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import plugin from "./server.js";
 
 describe("plugin integration", () => {
   it("loads the additive schema and returns an honest empty summary", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "wakatime",
       sdk: {
         threads: {
@@ -12,7 +12,7 @@ describe("plugin integration", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     await expect(harness.behavior.callRpc("getActivityStatus", null)).resolves.toEqual({ active: false });
     const summary = await harness.behavior.callRpc("getSummary", {
       range: "today",
@@ -40,7 +40,7 @@ describe("plugin integration", () => {
     expect(cli.stdout).toContain("working time (union): 0m");
     expect(cli.stdout).toContain("agent runtime (sum): 0m");
 
-    const db = bb.storage.database();
+    const db = alia.storage.database();
     const now = Date.now();
     const session = db.prepare(`INSERT INTO sessions
       (thread_id, project_name, machine_name, started_at, ended_at)
@@ -89,7 +89,7 @@ describe("plugin integration", () => {
         data: { interaction: { id: "approval-1", status: "pending" } },
       },
     ];
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "wakatime",
       sdk: {
         threads: {
@@ -98,12 +98,12 @@ describe("plugin integration", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.emitThreadEvent("thread.active", {
       thread: makeThreadResponse({ id: "thread-waiting", status: "active" }),
     });
-    const db = bb.storage.database();
+    const db = alia.storage.database();
     await expect.poll(() => db.prepare(
       `SELECT ended_at FROM turns WHERE thread_id = 'thread-waiting'`,
     ).get()).toEqual({ ended_at: pendingAt });
@@ -148,7 +148,7 @@ describe("plugin integration", () => {
         data: {},
       },
     ];
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "wakatime",
       sdk: {
         threads: {
@@ -157,12 +157,12 @@ describe("plugin integration", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.emitThreadEvent("thread.active", {
       thread: makeThreadResponse({ id: "thread-existing", status: "active" }),
     });
-    const db = bb.storage.database();
+    const db = alia.storage.database();
     await expect.poll(() => db.prepare(
       `SELECT started_at, ended_at FROM sessions WHERE thread_id = 'thread-existing'`,
     ).get()).toEqual({ started_at: historicalStart, ended_at: historicalStart + 60_000 });
@@ -178,11 +178,11 @@ describe("plugin integration", () => {
   });
 
   it("falls back to the server timezone instead of failing on an unusable one", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "wakatime",
       sdk: { threads: { list: async () => [] } },
     });
-    await plugin(bb);
+    await plugin(alia);
     const system = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     // A browser may report a zone this server's ICU does not know. That must

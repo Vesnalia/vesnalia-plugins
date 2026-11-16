@@ -1,5 +1,5 @@
 import { Fragment, type CSSProperties, type ReactNode } from "react";
-import { UrlLink } from "@get-bb/plugin-sdk/app";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
 
 /**
  * Task text rendered as Markdown through React elements only: headings,

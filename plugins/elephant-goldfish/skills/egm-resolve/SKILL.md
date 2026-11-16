@@ -8,7 +8,7 @@ description: >-
   when the human asks you to work on review findings.
 ---
 
-# EGM Resolve (BB adaptation)
+# EGM Resolve (VesnALIA adaptation)
 
 Adapted from google/elephant-goldfish-model @ 3d0b348 (Apache-2.0; see `LICENSE`).
 

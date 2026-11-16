@@ -58,11 +58,11 @@ export function serverNameFor(installId: string, hostId: string): string {
 }
 
 export function serverNamePrefix(installId: string): string {
-  return `bb-box-hz-${installId.replace(/-+$/, "")}-`;
+  return `alia-box-hz-${installId.replace(/-+$/, "")}-`;
 }
 
 export function serverNamePrefixBeforeHz(installId: string): string {
-  return `bb-box-${installId.replace(/-+$/, "")}-`;
+  return `alia-box-${installId.replace(/-+$/, "")}-`;
 }
 
 export class HetznerHosts {

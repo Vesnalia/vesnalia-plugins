@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { FILTER_PRESET_LIMIT, type FilterPreset, type WorkItem } from '../contract.js';
 import { createWorkItemStore, type WorkItemStore } from '../store.js';
 
@@ -10,11 +10,11 @@ const OTHER = 'proj_beta';
 let db: Database.Database;
 let store: WorkItemStore;
 
-// Mirrors the real bb.storage.migrate contract: each migration in the array
+// Mirrors the real alia.storage.migrate contract: each migration in the array
 // runs at most once per database, tracked by index, so re-creating a store
 // against an already-migrated database only applies the migrations it hasn't
 // seen yet.
-function fakeBb(handle: Database.Database): BbPluginApi {
+function fakeAlia(handle: Database.Database): AliaPluginApi {
   return {
     storage: {
       database: () => handle,
@@ -37,7 +37,7 @@ function fakeBb(handle: Database.Database): BbPluginApi {
         });
       }
     }
-  } as unknown as BbPluginApi;
+  } as unknown as AliaPluginApi;
 }
 
 /** Marks migration index 0 as already applied, for a database that was built
@@ -52,7 +52,7 @@ function markLegacyMigrationApplied(target: Database.Database): void {
 
 function item(overrides: Partial<WorkItem> = {}): WorkItem {
   return {
-    bbProjectId: PROJECT,
+    aliaProjectId: PROJECT,
     locator: '1',
     key: '#1',
     title: 'Ship the board',
@@ -93,7 +93,7 @@ function presetState(query = ''): FilterPreset['state'] {
 
 beforeEach(() => {
   db = new Database(':memory:');
-  store = createWorkItemStore(fakeBb(db));
+  store = createWorkItemStore(fakeAlia(db));
 });
 
 describe('work item cache', () => {
@@ -103,7 +103,7 @@ describe('work item cache', () => {
       [item({ locator: '1' }), item({ locator: '2', key: '#2' })],
       '2026-01-01T10:00:00.000Z'
     );
-    store.replaceAll(OTHER, [item({ bbProjectId: OTHER, locator: '9' })], 'x');
+    store.replaceAll(OTHER, [item({ aliaProjectId: OTHER, locator: '9' })], 'x');
 
     store.replaceAll(
       PROJECT,
@@ -124,11 +124,11 @@ describe('work item cache', () => {
     expect(status.available).toBe(true);
   });
 
-  it('rejects items from another bb project', () => {
+  it('rejects items from another VesnALIA project', () => {
     expect(() =>
-      store.replaceAll(PROJECT, [item({ bbProjectId: OTHER })], 'now')
+      store.replaceAll(PROJECT, [item({ aliaProjectId: OTHER })], 'now')
     ).toThrow();
-    expect(() => store.upsert(PROJECT, item({ bbProjectId: OTHER }))).toThrow();
+    expect(() => store.upsert(PROJECT, item({ aliaProjectId: OTHER }))).toThrow();
   });
 
   it('upsert refreshes a single cached row', () => {
@@ -345,7 +345,7 @@ describe('folder columns', () => {
     const legacyDb = new Database(':memory:');
     legacyDb.exec(`
       CREATE TABLE work_items (
-        bb_project_id TEXT NOT NULL,
+        alia_project_id TEXT NOT NULL,
         locator TEXT NOT NULL,
         item_key TEXT NOT NULL,
         title TEXT NOT NULL,
@@ -365,18 +365,18 @@ describe('folder columns', () => {
         labels_json TEXT NOT NULL,
         due_date TEXT,
         updated_at TEXT NOT NULL,
-        PRIMARY KEY (bb_project_id, locator)
+        PRIMARY KEY (alia_project_id, locator)
       );
       CREATE INDEX idx_work_items_project
-        ON work_items(bb_project_id, updated_at DESC, locator);
+        ON work_items(alia_project_id, updated_at DESC, locator);
       CREATE TABLE project_sync (
-        bb_project_id TEXT PRIMARY KEY,
+        alia_project_id TEXT PRIMARY KEY,
         last_synced_at TEXT,
         error TEXT,
         item_count INTEGER NOT NULL DEFAULT 0 CHECK (item_count >= 0)
       );
       CREATE TABLE project_scope (
-        bb_project_id TEXT PRIMARY KEY,
+        alia_project_id TEXT PRIMARY KEY,
         productive_project_id TEXT NOT NULL,
         task_list_id TEXT NOT NULL,
         assigned_to_me_only INTEGER NOT NULL CHECK (
@@ -386,7 +386,7 @@ describe('folder columns', () => {
         updated_at TEXT NOT NULL
       );
       CREATE TABLE project_board_settings (
-        bb_project_id TEXT PRIMARY KEY,
+        alia_project_id TEXT PRIMARY KEY,
         default_view TEXT NOT NULL,
         enabled_filters_json TEXT NOT NULL,
         status_order_json TEXT NOT NULL,
@@ -395,10 +395,10 @@ describe('folder columns', () => {
       CREATE TABLE project_filter_presets (
         id TEXT NOT NULL PRIMARY KEY
           CHECK (length(id) BETWEEN 1 AND 100),
-        bb_project_id TEXT NOT NULL
+        alia_project_id TEXT NOT NULL
           CHECK (
-            substr(bb_project_id, 1, 5) = 'proj_' AND
-            length(bb_project_id) BETWEEN 6 AND 500
+            substr(alia_project_id, 1, 5) = 'proj_' AND
+            length(alia_project_id) BETWEEN 6 AND 500
           ),
         name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 60),
         name_normalized TEXT NOT NULL
@@ -408,15 +408,15 @@ describe('folder columns', () => {
         position INTEGER NOT NULL CHECK (position >= 0 AND position < 50),
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
-        UNIQUE (bb_project_id, name_normalized)
+        UNIQUE (alia_project_id, name_normalized)
       );
       CREATE INDEX idx_filter_presets_project
-        ON project_filter_presets(bb_project_id, position, created_at, id);
+        ON project_filter_presets(alia_project_id, position, created_at, id);
     `);
     legacyDb
       .prepare(
         `INSERT INTO work_items (
-          bb_project_id, locator, item_key, title, description, url, status,
+          alia_project_id, locator, item_key, title, description, url, status,
           status_id, state_category, assignee, assignee_id, project,
           productive_project_id, task_list, task_list_id, labels_json,
           due_date, updated_at
@@ -445,14 +445,14 @@ describe('folder columns', () => {
     legacyDb
       .prepare(
         `INSERT INTO project_scope (
-          bb_project_id, productive_project_id, task_list_id,
+          alia_project_id, productive_project_id, task_list_id,
           assigned_to_me_only, include_closed, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?)`
       )
       .run(PROJECT, '500', '700', 0, 0, '2026-01-01T00:00:00.000Z');
     markLegacyMigrationApplied(legacyDb);
 
-    const migratedStore = createWorkItemStore(fakeBb(legacyDb));
+    const migratedStore = createWorkItemStore(fakeAlia(legacyDb));
 
     const migratedItem = migratedStore.get(PROJECT, '1');
     expect(migratedItem).toMatchObject({

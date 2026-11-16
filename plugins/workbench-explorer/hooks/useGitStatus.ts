@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { indexStatuses, type GitFileStatus } from "@/lib/git-status";
 import type { rpcContract } from "../contract";
 import type { GitStatusResult } from "../shared";

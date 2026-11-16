@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { startPlugin } from "./plugin-store.test-support";
 import { startFocusRun } from "./focus-run";
 import { defaultPreferences } from "./preferences";
@@ -11,8 +11,8 @@ vi.mock("./store-queue", async (original) => {
 });
 const patch = "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1,2 +1,2 @@\n-old\n+new\n next\n";
 async function setup() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = await startPlugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = await startPlugin(alia);
   await store.saveReview({ targetKey: "r", kind: "pr", status: "ready", headSha: "head", createdAt: 1 });
   await store.savePatch("r", patch);
   await store.setAssistantThread("r", "assistant");
@@ -23,7 +23,7 @@ async function setup() {
     const run = (await store.getReview("r"))!.focusRun!;
     await store.setLifecycle("r", { focusRun: { ...run, state: "merging" } });
   };
-  return { bb, harness, store, call, merge };
+  return { alia, harness, store, call, merge };
 }
 const finding = { file: "a.ts", line: 1, code: "new", severity: "should-fix", body: "Wrong comment", evidence: "a.ts:1 contradicts a.ts:2" };
 
@@ -118,7 +118,7 @@ test("the five-Nit cap uses the merge agent's severity, including folds", async 
 
 test.each(["no submit", "rejected submit"])("%s: idle twice nudges once, then fails stopped without reporting", async (report) => {
   const idles: Array<() => void> = [];
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: {
       spawn: async () => ({ id: "focus" }), get: async () => ({ status: "active" }),
       wait: async ({ signal }: any) => new Promise<void>((resolve, reject) => { idles.push(resolve); signal.addEventListener("abort", () => reject(new Error("aborted")), { once: true }); }),
@@ -129,13 +129,13 @@ test.each(["no submit", "rejected submit"])("%s: idle twice nudges once, then fa
     providers: { list: async () => [{ id: "codex", capabilities: { permissionModes: ["auto"] } }] },
     projects: { defaultExecutionOptions: async () => ({ providerId: "codex" }) },
   } });
-  const store = await startPlugin(bb);
+  const store = await startPlugin(alia);
   await store.savePreferences({ ...defaultPreferences, focuses: { ...defaultPreferences.focuses, enabled: true } }, 0);
   await store.saveReview({ targetKey: "r", kind: "pr", status: "ready", headSha: "head", createdAt: 1, projectId: "p" });
   await store.setLifecycle("r", { ownPr: true });
   await store.setAssistantThread("r", "assistant");
   await store.savePatch("r", patch);
-  await startFocusRun(bb, store, "r");
+  await startFocusRun(alia, store, "r");
   await vi.waitFor(() => expect(idles).toHaveLength(1));
   if (report === "rejected submit") expect(await harness.behavior.callAgentTool("submit_focus_findings", { findings: [{ ...finding, line: 9 }], unchecked: [] }, { threadId: "focus" })).toMatchObject({ isError: true });
   expect(harness.inspection.sdk.callsTo("threads.send")).toEqual([]);

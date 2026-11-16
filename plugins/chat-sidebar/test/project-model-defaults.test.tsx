@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { act, cleanup, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useComposer, type ComposerSelection, type PluginComposerApi } from "@get-bb/plugin-sdk/app";
-import { loadPluginApp, renderSlot, type RenderSlotOptions } from "@get-bb/plugin-sdk/testing/app";
+import { useComposer, type ComposerSelection, type PluginComposerApi } from "@vesnalia/plugin-sdk/app";
+import { loadPluginApp, renderSlot, type RenderSlotOptions } from "@vesnalia/plugin-sdk/testing/app";
 
 import app from "../app";
 

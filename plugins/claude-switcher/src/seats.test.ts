@@ -208,7 +208,7 @@ describe("Seats", () => {
   });
 });
 
-describe("Seats: external holds (a `claude -p` run outside bb, 2026-10-30)", () => {
+describe("Seats: external holds (a `claude -p` run outside VesnALIA, 2026-10-30)", () => {
   const H = 3_600_000;
   function clocked(caps: Record<string, number> = { team: 2, free: 0 }) {
     let now = T0;

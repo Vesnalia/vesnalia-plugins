@@ -2,7 +2,7 @@
  * How a graph reads as text.
  *
  * There are two audiences with the same need: a person typing
- * `bb graph-studio show`, and a model that was handed a thread and has to
+ * `alia graph-studio show`, and a model that was handed a thread and has to
  * answer "what does this graph do?". Both get the same rendering on purpose —
  * a second, prettier description for one of them would drift, and then the
  * answer depends on who asked.
@@ -55,7 +55,7 @@ export function describeCost(run: {
 }
 
 /**
- * One attempt as a line of `bb graph-studio status`.
+ * One attempt as a line of `alia graph-studio status`.
  *
  * A running attempt and a finished one answer different questions. A finished
  * one is judged by what it cost, which `describeCost` says. A running one is
@@ -245,7 +245,7 @@ export function runCommand(
   // argument: `run my-graph ""` is a line that runs and starts a graph with
   // no task, which is worse than a line that visibly wants filling in.
   const text = (task ?? "").trim() || graph.example.trim() || "<task>";
-  return `bb graph-studio run ${graph.id || "<graph-id>"} ${shellQuote(text)}`;
+  return `alia graph-studio run ${graph.id || "<graph-id>"} ${shellQuote(text)}`;
 }
 
 /**

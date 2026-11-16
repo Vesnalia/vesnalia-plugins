@@ -1,25 +1,25 @@
 {
-  "name": "bb-plugin-rephrase",
+  "name": "alia-plugin-rephrase",
   "version": "0.2.1",
-  "description": "Re-phrase button in the bb prompt input: rewrites your draft into a clearer prompt with an agent.",
+  "description": "Re-phrase button in the VesnALIA prompt input: rewrites your draft into a clearer prompt with an agent.",
   "license": "MIT",
   "type": "module",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "prompt",
     "composer"
   ],
   "engines": {
-    "bb": ">=0.38",
-    "bbPluginSdk": ">=0.4.6"
+    "alia": ">=0.38",
+    "aliaPluginSdk": ">=0.4.6"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "bb": {
+  "alia": {
     "name": "Re-phrase",
     "description": "Adds a Re-phrase button to the prompt input that rewrites your draft into a clearer, more effective prompt.",
     "branding": {
@@ -39,7 +39,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.6",
     "@radix-ui/react-tooltip": "^1.2.16",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
@@ -54,5 +53,22 @@
     "sonner": "^2.0.8",
     "typescript": "^5.7.0",
     "vitest": "^3.2.7"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.6"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/rephrase#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/rephrase"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

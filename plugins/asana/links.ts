@@ -1,11 +1,11 @@
-// Links between bb threads and Asana tasks.
+// Links between VesnALIA threads and Asana tasks.
 //
 // A link lives in this plugin's metadata namespace on the thread
 // ({ taskGid, taskName, taskUrl, linkedAt }), with a reverse index in kv
 // (`task-threads:<gid>` → thread ids) so a task can list its threads.
 // Metadata is writable by any client or agent, so it is parsed as untrusted
 // input and only ever used as data.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const threadLinkSchema = z.object({
@@ -45,13 +45,13 @@ const summarySchema = z.object({
 /** The first message the "Start thread" button writes; see resolvePrompt in app.tsx. */
 // Current format: the ticket name, its URL, then "Resolve this Asana task."
 // Older threads began "Resolve this Asana task: <name>".
-const RESOLVE_PROMPT = /(?:^Resolve this Asana task:|\nResolve this Asana task\.)[\s\S]*?`bb asana task (\d+)`/;
+const RESOLVE_PROMPT = /(?:^Resolve this Asana task:|\nResolve this Asana task\.)[\s\S]*?`alia asana task (\d+)`/;
 
 /** Longest thread title set from a ticket name. */
 const MAX_TITLE_CHARS = 120;
 
 /**
- * A thread's title from its bb project and ticket: "Harbor: Nightly export".
+ * A thread's title from its VesnALIA project and ticket: "Harbor: Nightly export".
  * Slug-style project names ("crescent-harbor-films") are title-cased;
  * names with capitals are kept as written. No project: just the ticket.
  */
@@ -96,45 +96,45 @@ function indexKey(taskGid: string): string {
 type LinkedTask = { gid: string; name: string; url: string; projects: { gid: string; name: string }[] };
 
 export function createThreadLinks(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   lookupTask: (gid: string) => Promise<LinkedTask | null>,
-  /** Called after a link is made, with the thread's bb project, so callers can learn from it. */
-  onLinked?: (link: { threadId: string; bbProjectId: string | null; task: LinkedTask }) => Promise<void>,
+  /** Called after a link is made, with the thread's VesnALIA project, so callers can learn from it. */
+  onLinked?: (link: { threadId: string; aliaProjectId: string | null; task: LinkedTask }) => Promise<void>,
 ) {
   async function readIndex(taskGid: string): Promise<string[]> {
-    const ids = await bb.storage.kv.get<unknown>(indexKey(taskGid));
+    const ids = await alia.storage.kv.get<unknown>(indexKey(taskGid));
     return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : [];
   }
 
   async function writeIndex(taskGid: string, ids: string[]): Promise<void> {
-    if (ids.length === 0) await bb.storage.kv.delete(indexKey(taskGid));
-    else await bb.storage.kv.set(indexKey(taskGid), ids);
+    if (ids.length === 0) await alia.storage.kv.delete(indexKey(taskGid));
+    else await alia.storage.kv.set(indexKey(taskGid), ids);
   }
 
   async function get(threadId: string): Promise<ThreadLink | null> {
-    const metadata = await bb.sdk.threads.getPluginMetadata({ threadId });
+    const metadata = await alia.sdk.threads.getPluginMetadata({ threadId });
     const parsed = threadLinkSchema.safeParse(metadata);
     return parsed.success ? parsed.data : null;
   }
 
   async function unlink(threadId: string): Promise<ThreadLink | null> {
     const existing = await get(threadId);
-    await bb.sdk.threads.updatePluginMetadata({ threadId, remove: [...LINK_KEYS] });
+    await alia.sdk.threads.updatePluginMetadata({ threadId, remove: [...LINK_KEYS] });
     if (existing !== null) {
       const ids = await readIndex(existing.taskGid);
       await writeIndex(existing.taskGid, ids.filter((id) => id !== threadId));
-      bb.realtime.publish(LINKS_CHANGED, { threadId, taskGid: existing.taskGid });
+      alia.realtime.publish(LINKS_CHANGED, { threadId, taskGid: existing.taskGid });
     }
     return existing;
   }
 
   /** Links a thread to a task, replacing any earlier link. Names come from Asana. */
   async function link(threadId: string, taskGid: string): Promise<ThreadLink> {
-    let bbProjectId: string | null;
+    let aliaProjectId: string | null;
     try {
-      bbProjectId = (await bb.sdk.threads.get({ threadId })).projectId ?? null;
+      aliaProjectId = (await alia.sdk.threads.get({ threadId })).projectId ?? null;
     } catch {
-      throw new Error(`No bb thread ${threadId}.`);
+      throw new Error(`No VesnALIA thread ${threadId}.`);
     }
     const task = await lookupTask(taskGid);
     if (task === null) throw new Error("No Asana access token is set.");
@@ -146,13 +146,13 @@ export function createThreadLinks(
       taskUrl: task.url,
       linkedAt: existing?.taskGid === task.gid ? existing.linkedAt : Date.now(),
     };
-    await bb.sdk.threads.updatePluginMetadata({ threadId, set: next });
+    await alia.sdk.threads.updatePluginMetadata({ threadId, set: next });
     const ids = await readIndex(task.gid);
     if (!ids.includes(threadId)) await writeIndex(task.gid, [...ids, threadId]);
-    bb.realtime.publish(LINKS_CHANGED, { threadId, taskGid: task.gid });
+    alia.realtime.publish(LINKS_CHANGED, { threadId, taskGid: task.gid });
     // Learning is a bonus; a failure there must not fail the link.
-    await onLinked?.({ threadId, bbProjectId, task }).catch((cause: unknown) =>
-      bb.log.warn(`after linking ${threadId}: ${String(cause)}`),
+    await onLinked?.({ threadId, aliaProjectId, task }).catch((cause: unknown) =>
+      alia.log.warn(`after linking ${threadId}: ${String(cause)}`),
     );
     return next;
   }
@@ -164,13 +164,13 @@ export function createThreadLinks(
     const live: string[] = [];
     for (const threadId of ids) {
       try {
-        const thread = await bb.sdk.threads.get({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         if (thread.deletedAt !== null) continue;
         // The link may have moved to another task without the index noticing.
         if ((await get(threadId))?.taskGid !== taskGid) continue;
         live.push(threadId);
         const summary = summarySchema.safeParse(
-          await bb.sdk.threads.getPluginMetadata({ threadId }),
+          await alia.sdk.threads.getPluginMetadata({ threadId }),
         );
         found.push({
           threadId,
@@ -200,7 +200,7 @@ export function createThreadLinks(
     if (checked.has(threadId)) return;
     checked.add(threadId);
     if ((await get(threadId)) !== null) return;
-    const [first] = await bb.sdk.threads.events.list({
+    const [first] = await alia.sdk.threads.events.list({
       threadId,
       types: ["client/turn/requested"],
       order: "asc",
@@ -209,16 +209,16 @@ export function createThreadLinks(
     const taskGid = taskGidFromFirstTurn(first);
     if (taskGid === null) return;
     const linked = await link(threadId, taskGid);
-    // Name the thread "<bb project>: <ticket>". Only here, for threads the
+    // Name the thread "<VesnALIA project>: <ticket>". Only here, for threads the
     // Start thread button began, so titles people chose are left alone.
-    const projectId = (await bb.sdk.threads.get({ threadId })).projectId ?? null;
+    const projectId = (await alia.sdk.threads.get({ threadId })).projectId ?? null;
     const project =
       projectId === null
         ? undefined
-        : (await bb.sdk.projects.list()).find((candidate) => candidate.id === projectId && candidate.kind === "standard");
+        : (await alia.sdk.projects.list()).find((candidate) => candidate.id === projectId && candidate.kind === "standard");
     const title = threadTitle(project?.name ?? null, linked.taskName);
-    if (title !== "") await bb.sdk.threads.update({ threadId, title });
-    bb.log.info(`linked thread ${threadId} to task ${taskGid} from its first message`);
+    if (title !== "") await alia.sdk.threads.update({ threadId, title });
+    alia.log.info(`linked thread ${threadId} to task ${taskGid} from its first message`);
   }
 
   /** Threads linked to any of these tasks, keyed by task GID; tasks without threads are left out. */
@@ -233,27 +233,27 @@ export function createThreadLinks(
     return result;
   }
 
-  bb.events.on("thread.active", async ({ thread }) => {
+  alia.events.on("thread.active", async ({ thread }) => {
     await autoLink(thread.id);
     // The list shows which linked threads are working.
     const link = await get(thread.id);
-    if (link !== null) bb.realtime.publish(LINKS_CHANGED, { threadId: thread.id, taskGid: link.taskGid });
+    if (link !== null) alia.realtime.publish(LINKS_CHANGED, { threadId: thread.id, taskGid: link.taskGid });
   });
   // Wrap-up: keep a linked thread's final message so the task view can offer
   // it as a comment draft. Nothing is posted to Asana from here.
-  bb.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
     const link = await get(thread.id);
     if (link === null) return;
     const text = lastAssistantText?.trim() ?? "";
     if (text !== "") {
-      await bb.sdk.threads.updatePluginMetadata({
+      await alia.sdk.threads.updatePluginMetadata({
         threadId: thread.id,
         set: { lastSummary: text.slice(0, MAX_SUMMARY_CHARS), lastIdleAt: Date.now() },
       });
     }
-    bb.realtime.publish(LINKS_CHANGED, { threadId: thread.id, taskGid: link.taskGid });
+    alia.realtime.publish(LINKS_CHANGED, { threadId: thread.id, taskGid: link.taskGid });
   });
-  bb.events.on("thread.deleted", async ({ thread }) => {
+  alia.events.on("thread.deleted", async ({ thread }) => {
     if ((await get(thread.id).catch(() => null)) !== null) await unlink(thread.id);
   });
 

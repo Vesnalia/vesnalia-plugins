@@ -53,9 +53,9 @@ const TIMED_OUT = { outcome: "unavailable", message: "The forge's merge command 
 
 /** Runs `during` inside the second projectCheckout of the next poll: the first is the poll's own read, the second auto-merge's. */
 function duringMergeLookup(during: () => void): void {
-  const real = h.bb.projectCheckout.bind(h.bb);
+  const real = h.alia.projectCheckout.bind(h.alia);
   let calls = 0;
-  h.bb.projectCheckout = async (id: string, host: string) => {
+  h.alia.projectCheckout = async (id: string, host: string) => {
     calls += 1;
     if (calls === 2) during();
     return real(id, host);
@@ -395,7 +395,7 @@ describe("re-review 3: a comment or command attempt a restart left with no answe
     expect(merges()).toEqual([]);
     const unknown = dataOf("auto_merge_unknown");
     expect(unknown).toHaveLength(1);
-    expect(unknown[0]!.post.body).toContain("bb loom auto-merge csv retry --ticket CSV-1");
+    expect(unknown[0]!.post.body).toContain("alia loom auto-merge csv retry --ticket CSV-1");
   });
 
   it("posts nothing extra for an attempt whose answer this process recorded", async () => {

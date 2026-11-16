@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
  */
 export default defineConfig({
   // The Simulators half's suite drives the plugin factory itself, so it needs
-  // the SDK's two *value* entry points resolved to stubs: bb supplies those
+  // the SDK's two *value* entry points resolved to stubs: VesnALIA supplies those
   // in-process, so the npm package ships declarations with no runtime behind
   // them.
   //
@@ -18,33 +18,33 @@ export default defineConfig({
   // checks our tool registrations against that genuine host validator.
   //
   // The array form is load-bearing. Aliases match on exact-or-`/` prefix and
-  // are tried in order, so the bare `@get-bb/plugin-sdk` entry would otherwise
+  // are tried in order, so the bare `@vesnalia/plugin-sdk` entry would otherwise
   // swallow every subpath and rewrite it to `<stub>.ts/<subpath>`. Most
   // specific first.
   resolve: {
     alias: [
       {
-        find: "@get-bb/plugin-sdk/internal/host-policy",
+        find: "@vesnalia/plugin-sdk/internal/host-policy",
         replacement: fileURLToPath(
-          new URL("./node_modules/@get-bb/plugin-sdk/dist/internal/host-policy.js", import.meta.url),
+          new URL("./node_modules/@vesnalia/plugin-sdk/dist/internal/host-policy.js", import.meta.url),
         ),
       },
       {
         // The host-entry harness is real code, like host-policy: it applies the
         // contract schemas and JSON round-trips exactly as the daemon does.
-        find: "@get-bb/plugin-sdk/testing/host",
+        find: "@vesnalia/plugin-sdk/testing/host",
         replacement: fileURLToPath(
-          new URL("./node_modules/@get-bb/plugin-sdk/dist/testing/host.js", import.meta.url),
+          new URL("./node_modules/@vesnalia/plugin-sdk/dist/testing/host.js", import.meta.url),
         ),
       },
       {
-        find: "@get-bb/plugin-sdk/app",
+        find: "@vesnalia/plugin-sdk/app",
         replacement: fileURLToPath(
           new URL("./test/sim/stubs/plugin-sdk-app.ts", import.meta.url),
         ),
       },
       {
-        find: "@get-bb/plugin-sdk",
+        find: "@vesnalia/plugin-sdk",
         replacement: fileURLToPath(new URL("./test/sim/stubs/plugin-sdk.ts", import.meta.url)),
       },
       { find: "@", replacement: fileURLToPath(new URL("./", import.meta.url)) },

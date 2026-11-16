@@ -8,7 +8,7 @@ whether the pass runs out before it renews.
 A sidebar navigation panel with the full chart, and an SDK experimental sidebar-footer
 disclosure with the compact glance (percentage, a bar, and the day the pass is projected to
 run out). Both resolve the glyph `token-pass-pace/pace`, declared in
-`bb.branding.experimental_icons` from `assets/pace.svg`; `bb.branding.icon` points at the
+`alia.branding.experimental_icons` from `assets/pace.svg`; `alia.branding.icon` points at the
 same SVG for the Tools listing.
 
 An unknown icon name silently renders as the generic `Zap` bolt, so the plugin spends its own
@@ -102,5 +102,5 @@ All reads are demand driven: no intervals, no inference requests, no routing cha
 npm install --ignore-scripts
 npm run typecheck
 npm test
-bb plugin build
+alia plugin build
 ```

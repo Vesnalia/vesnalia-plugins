@@ -2,7 +2,7 @@
 import { afterEach, expect, it } from "vitest";
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { useState } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { useCollapseChildrenOnSettle } from "./useCollapseChildrenOnSettle";
 
 afterEach(cleanup);

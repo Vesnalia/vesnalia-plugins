@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { doneRecordOf, setup } from "./helpers/done-fake-host";
 import { DONE_METADATA_KEY } from "../lib/done-metadata";
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 
 const LEGACY_KV_KEY = "done-thread-ids";
 

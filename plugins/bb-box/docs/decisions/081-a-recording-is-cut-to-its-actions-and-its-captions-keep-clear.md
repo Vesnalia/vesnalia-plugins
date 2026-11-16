@@ -2,7 +2,7 @@
 
 Status: accepted, 9 November 2026.
 Extends [073](073-recordings-draw-the-pointer-keys-and-zooms-from-the-event-log.md), and supersedes its
-cutting only still stretches where bb-box draws the pointer, captions that
+cutting only still stretches where alia-box draws the pointer, captions that
 keep their places, the 1.5 seconds out before typing into a field just
 clicked, and a zoom that holds until a change elsewhere happens. Supersedes parts of [080](080-a-window-is-zoomed-once-it-has-painted-and-a-result-fades.md):
 a result that fades after 2.5 seconds, and a zoom left out when its window
@@ -24,7 +24,7 @@ calls. A result then stayed held for up to 2.5 seconds of reading time.
 
 ### Idle stretches are cut
 
-Where bb-box draws the pointer from its samples and the stop's analysis
+Where alia-box draws the pointer from its samples and the stop's analysis
 ran, a stretch is idle when nothing happens in it for more than a second:
 no caption, no click, scroll, key or typing, no pointer movement, and no
 change on the screen larger than 0.3% of it. A blinking caret, a clock or

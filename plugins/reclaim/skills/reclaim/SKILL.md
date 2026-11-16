@@ -20,7 +20,7 @@ a full Chrome.app) and small here, because those copies share one data stream.
 If an old index still ranks that folder in the hundreds of GB, rescan; do not
 treat `du` of that path as unique used space.
 
-If the index is stale or missing, `bb reclaim scan --wait` rebuilds it. A full
+If the index is stale or missing, `alia reclaim scan --wait` rebuilds it. A full
 scan of a 500GB volume takes a few minutes; do not run one inside a loop.
 
 ## Then plan, preview, apply
@@ -89,13 +89,13 @@ deliberately did not touch and why.
 ## CLI
 
 ```
-bb reclaim status               # capacity, pressure, index state
-bb reclaim top --limit 20       # largest directories and files
-bb reclaim tree <path>          # one directory, by size
-bb reclaim scan [--wait]        # rebuild the index
-bb reclaim plan [--refresh]     # candidates with ids
-bb reclaim clean --yes          # apply the preselected set (dry run without --yes)
-bb reclaim clean --group docker --yes
+alia reclaim status               # capacity, pressure, index state
+alia reclaim top --limit 20       # largest directories and files
+alia reclaim tree <path>          # one directory, by size
+alia reclaim scan [--wait]        # rebuild the index
+alia reclaim plan [--refresh]     # candidates with ids
+alia reclaim clean --yes          # apply the preselected set (dry run without --yes)
+alia reclaim clean --group docker --yes
 ```
 
 Every command takes `--json`.

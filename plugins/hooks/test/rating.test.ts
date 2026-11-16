@@ -3,7 +3,7 @@ import { letterGrade, rateTemplate } from "../src/rating.js";
 
 const local = { kind: "observe" as const, events: ["thread.idle"], command: "osascript -e 'display notification'", params: [] };
 const webhook = { kind: "observe" as const, events: ["thread.idle"], url: "https://hooks.example.test/abc", params: [{ key: "webhookUrl", secret: true }] };
-const followUp = { kind: "observe" as const, events: ["thread.idle"], command: 'bb thread spawn --prompt "$prompt"\nbb thread output', timeoutMs: 120_000, params: [] };
+const followUp = { kind: "observe" as const, events: ["thread.idle"], command: 'alia thread spawn --prompt "$prompt"\nbb thread output', timeoutMs: 120_000, params: [] };
 
 describe("letter grades", () => {
   it("uses the usual scale", () => {

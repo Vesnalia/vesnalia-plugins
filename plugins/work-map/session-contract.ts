@@ -1,4 +1,4 @@
-import type { NewThreadRequest } from "@get-bb/plugin-sdk";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 // The host validates the complete native request again at threads.spawn.
@@ -56,7 +56,7 @@ export const sessionRequestSchema = z
     projectId: z.string().min(1),
     providerId: z.string().min(1),
     model: z.string().min(1),
-    // BB owns valid execution choices, including values added after this SDK version.
+    // VesnALIA owns valid execution choices, including values added after this SDK version.
     reasoningLevel: z.string().min(1),
     permissionMode: z.string().min(1),
     serviceTier: z.string().min(1).optional(),

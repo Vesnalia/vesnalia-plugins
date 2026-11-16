@@ -1,7 +1,7 @@
 // Pure event → frame normalisation. No SDK calls here, so every provider's
 // recorded shapes can be tested against captured fixtures.
 //
-// Every provider BB ships (codex, claude-code, pi, the ACP agents, muse-code)
+// Every provider VesnALIA ships (codex, claude-code, pi, the ACP agents, muse-code)
 // records agent work as item lifecycle events: `item/started`, zero or more
 // `item/<kind>/<delta>` events, then `item/completed` (or, for background
 // tasks and delegations, `item/backgroundTask/completed` and
@@ -402,7 +402,7 @@ function itemFrame(state: ItemState, turnEnded: boolean): TimeMachineFrame {
     case "contextCompaction":
       return { ...base, kind: "compact", label: "Context compacted", text: text(item.summary, OUTPUT_CAP) };
     default:
-      // A kind added after this plugin shipped: show what BB itself would.
+      // A kind added after this plugin shipped: show what VesnALIA itself would.
       return {
         ...base,
         kind: "tool",

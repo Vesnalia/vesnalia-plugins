@@ -1,15 +1,15 @@
 import { cp, lstat, mkdir, mkdtemp, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { measureBbTree, SKILL_TAR_EXCLUDES, isSkillJunk } from "./skill-tree.ts";
+import { measureAliaTree, SKILL_TAR_EXCLUDES, isSkillJunk } from "./skill-tree.ts";
 import { execFileOutput } from "./skills-sync.ts";
 import { parseSkillMeta, treeProblems, type SkillProblem } from "./skill-meta.ts";
 
 /**
- * The skills canon on the hub: `<BB data dir>/skills` of the BB server, the
- * folder BB registers user skills from and stages into every session. The
+ * The skills canon on the hub: `<VesnALIA data dir>/skills` of the VesnALIA server, the
+ * folder VesnALIA registers user skills from and stages into every session. The
  * folder is a git working copy of the skills repository; every change the
- * plugin makes is committed and pushed. Runs in the BB server process.
+ * plugin makes is committed and pushed. Runs in the VesnALIA server process.
  */
 
 export type HubSkill = {
@@ -81,7 +81,7 @@ async function describe(root: string, name: string): Promise<HubSkill> {
   const dir = path.join(root, name);
   const content = await readText(path.join(dir, "SKILL.md"));
   const meta = parseSkillMeta(content, name);
-  const tree = await measureBbTree(dir);
+  const tree = await measureAliaTree(dir);
   return {
     name,
     description: meta.description,
@@ -92,7 +92,7 @@ async function describe(root: string, name: string): Promise<HubSkill> {
   };
 }
 
-/** Every skill folder on the hub, with what BB would reject. */
+/** Every skill folder on the hub, with what VesnALIA would reject. */
 export async function listHubSkills(root: string): Promise<HubSkill[]> {
   const names = (await readdir(root).catch(() => [] as string[])).filter((name) => !name.startsWith(".")).sort();
   const result: HubSkill[] = [];
@@ -271,7 +271,7 @@ export type PublishResult = {
 /**
  * Publishes a skill archive (one top-level folder) to the hub. The archive is
  * unpacked and checked in a temp dir first; the hub copy changes only when
- * BB would accept the result.
+ * VesnALIA would accept the result.
  */
 export async function publishArchive(
   root: string,
@@ -298,7 +298,7 @@ export async function publishArchive(
     const staged = await describe(out, name);
     const blocking = staged.problems.filter((problem) => problem.blocking);
     if (blocking.length > 0) {
-      return { ok: false, name, replaced: false, problems: staged.problems, commit: null, error: "BB would reject this skill" };
+      return { ok: false, name, replaced: false, problems: staged.problems, commit: null, error: "VesnALIA would reject this skill" };
     }
     const dest = path.join(root, name);
     const existed = (await stat(dest).catch(() => null)) !== null;

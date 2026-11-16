@@ -22,7 +22,7 @@ The hub's machine scan counts CLI skill-home entries and returns one importable 
 ## How it works
 
 1. `countSkillHomes` walks the ordered `MACHINE_SKILL_HOMES` list. It skips hidden names and each location's `keep` entries, counts real directories separately from symlinks, and omits homes with zero entries (`host-skills.ts:14-25`, `host-skills.ts:101-123`).
-2. `listMachineSkills` resolves each configured home entry to its real path. It skips `bb-cli`, unresolved links, and paths inside CLI or BB-owned roots (`host-skills.ts:132-154`).
+2. `listMachineSkills` resolves each configured home entry to its real path. It skips `alia-cli`, unresolved links, and paths inside CLI or ALIA-owned roots (`host-skills.ts:132-154`).
 3. It requires a regular `SKILL.md` file, records its rounded modification time, and keeps the newest candidate per name. Equal timestamps keep the earlier candidate encountered in `MACHINE_SKILL_HOMES` (`host-skills.ts:149-160`).
 4. It sorts the selected records by name and returns `{name, path, home, mtime}`. The host RPC returns these alongside home counts (`host-skills.ts:125-163`, `host.ts:1216`).
 5. The hub refresh calls every enrolled host, stores success or a clipped error per host, and import selects discovered names still absent from the hub (`skills-hub-service.ts:444-475`, `skills-hub-service.ts:593-609`).
@@ -30,7 +30,7 @@ The hub's machine scan counts CLI skill-home entries and returns one importable 
 | Candidate condition | Discovery outcome |
 |---|---|
 | Hidden entry or location-specific `keep` name | Not visited (`host-skills.ts:101-104`, `host-skills.ts:149-151`). |
-| Name is `bb-cli` | Skipped as BB-owned (`host-skills.ts:141-143`, `host-skills.ts:151-152`). |
+| Name is `alia-cli` | Skipped as ALIA-owned (`host-skills.ts:141-143`, `host-skills.ts:151-152`). |
 | Real path cannot be resolved or is within an owned root | Skipped (`host-skills.ts:146-154`). |
 | `SKILL.md` is absent, unreadable, or not a regular file | Skipped (`host-skills.ts:155-156`). |
 | Same name occurs in more than one home | Keep the candidate with greater `SKILL.md` mtime; equal mtime leaves the prior candidate (`host-skills.ts:157-160`). |

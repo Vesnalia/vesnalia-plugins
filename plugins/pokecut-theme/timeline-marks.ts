@@ -1,4 +1,4 @@
-// Timeline marks: BB prints "1 error" / "2 errors" as a small mono label next to
+// Timeline marks: VesnALIA prints "1 error" / "2 errors" as a small mono label next to
 // a row's label or duration, with no attribute of its own, so CSS cannot find it. This marks those labels (and the
 // rows that carry them) so the theme can draw a red chip and a red status dot.
 const LABEL = '[data-timeline-row-list] [data-timeline-row-id] span:is(.tabular-nums, .font-mono)';

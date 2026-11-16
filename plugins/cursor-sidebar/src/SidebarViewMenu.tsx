@@ -265,7 +265,7 @@ export function SidebarViewSyncNotice({
 /**
  * The compact view menu. It groups the controls as submenus (Grouping,
  * Ordering, Threads per group, Show, Filters) over the one persisted
- * SidebarView, using BB's theme tokens. Grouping is one radio: Projects, Updated, Status,
+ * SidebarView, using VesnALIA's theme tokens. Grouping is one radio: Projects, Updated, Status,
  * Environment or None — selecting one replaces the current extra grouping; they
  * never stack. Ordering chooses how conversations, projects and group sections
  * are sorted; None has no sections, so it offers only the conversation order. Radix menu primitives supply real arrow-key navigation, roving focus

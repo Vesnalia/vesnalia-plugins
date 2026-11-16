@@ -18,9 +18,9 @@ TL;DR: Agents read, save and delete entries at once; the journal is the passive 
 
 ## What is recorded
 
-One row per agent action: `env_get` tool and `bb env-catalog get` (`issued`), `env_set` / `bb env-catalog set` (`saved`), `env_delete` / `bb env-catalog delete` (`deleted`). Columns: time, name, outcome, how (`tool` / `cli`), thread id and title, project id and name, the agent's optional `purpose`. A row is written in the background after the call returned, so a slow thread lookup never delays the value. An unknown name writes nothing.
+One row per agent action: `env_get` tool and `alia env-catalog get` (`issued`), `env_set` / `alia env-catalog set` (`saved`), `env_delete` / `alia env-catalog delete` (`deleted`). Columns: time, name, outcome, how (`tool` / `cli`), thread id and title, project id and name, the agent's optional `purpose`. A row is written in the background after the call returned, so a slow thread lookup never delays the value. An unknown name writes nothing.
 
-Not recorded: the owner's page (`env_get_value`, `env_save`, ...) and another plugin's `env_get_value` call. Stock BB does not tell the plugin who is calling an RPC, so those cannot be told from each other.
+Not recorded: the owner's page (`env_get_value`, `env_save`, ...) and another plugin's `env_get_value` call. Stock VesnALIA does not tell the plugin who is calling an RPC, so those cannot be told from each other.
 
 ## Page and RPC
 

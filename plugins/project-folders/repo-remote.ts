@@ -129,7 +129,7 @@ function visibilityRequest(
   if (!repoPath) return null;
   const init = {
     method: "GET",
-    headers: { "User-Agent": "bb-plugin-project-folders" },
+    headers: { "User-Agent": "alia-plugin-project-folders" },
     signal: signal
       ? AbortSignal.any([signal, AbortSignal.timeout(4000)])
       : AbortSignal.timeout(4000),

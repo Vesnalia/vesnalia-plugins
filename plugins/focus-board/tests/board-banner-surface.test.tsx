@@ -16,7 +16,7 @@
 // opaque pair present, the translucent token gone.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, createEvent, fireEvent, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Board } from "../components/board";
 import { assembleBoard } from "../components/nesting";
 import { buildColumns, type LaneHideOutcome } from "../components/grouping";

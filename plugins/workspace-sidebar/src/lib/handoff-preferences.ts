@@ -1,4 +1,4 @@
-const KEY = "bb-workspace-sidebar:handoff-model-usage:v1";
+const KEY = "alia-workspace-sidebar:handoff-model-usage:v1";
 const MAX_ENTRIES = 200;
 
 interface UsageEntry {
@@ -9,7 +9,7 @@ interface UsageEntry {
 }
 
 // Validated by hand: pulling zod into the frontend bundle costs ~450 KB, which
-// delays the sidebar replacing bb's list on every load.
+// delays the sidebar replacing VesnALIA's list on every load.
 function parseEntry(value: unknown): UsageEntry | null {
   if (typeof value !== "object" || value === null) return null;
   const { providerId, model, count, lastUsed } = value as Record<string, unknown>;

@@ -1,6 +1,6 @@
 ---
 name: autoresearch
-description: "How the autoresearch plugin works: the `bb study` commands, the study lifecycle, verdicts, the strategist role in a study thread, and the rules agents must follow. Use when the user asks about a study's status, wants to pause, resume, or add ideas, or when you receive an [autoresearch] strategist round."
+description: "How the autoresearch plugin works: the `alia study` commands, the study lifecycle, verdicts, the strategist role in a study thread, and the rules agents must follow. Use when the user asks about a study's status, wants to pause, resume, or add ideas, or when you receive an [autoresearch] strategist round."
 ---
 
 # Autoresearch plugin
@@ -9,7 +9,7 @@ A **study** improves one metric of a codebase over hours or days. The plugin run
 
 ## Start with the current task
 
-- **Status:** read `bb study needs [slug]`, then `bb study show <slug> --json` if detail is needed. Reply with the outcome and what needs the human; do not repeat the full output. For watching or replay, point to Studies → the study → Live.
+- **Status:** read `alia study needs [slug]`, then `alia study show <slug> --json` if detail is needed. Reply with the outcome and what needs the human; do not repeat the full output. For watching or replay, point to Studies → the study → Live.
 - **Strategist round:** follow the instructions below. Keep the idea queue useful; do not take study controls.
 - **Create:** read the `study-create` skill.
 - **Harvest:** read the `study-harvest` skill before branching, measuring or preparing PRs.
@@ -20,7 +20,7 @@ A **study** improves one metric of a codebase over hours or days. The plugin run
 
 Agents propose; the plugin measures and decides verdicts. The human controls approval, starting, pausing, resuming, concurrency, drift checks, freezing and archiving. Study workers and the strategist must ask the human to take those actions. An ordinary thread may run a control only when the human asks. Showing an existing frozen harvest is read-only; freezing one is not.
 
-The strategist or an ordinary thread may request `bb study measure` and `bb study gate`; a study’s workers may not. Every measurement uses the plugin’s protocol and bench budget. Read the harvest skill for busy-bench and remote-host constraints. Never publish unless asked.
+The strategist or an ordinary thread may request `alia study measure` and `alia study gate`; a study’s workers may not. Every measurement uses the plugin’s protocol and bench budget. Read the harvest skill for busy-bench and remote-host constraints. Never publish unless asked.
 
 Write measured improvements with their metric and reference: better is positive ("12% lower p99 vs previous best"). Label worker explanations as hypotheses, not plugin measurements. Do not hide an inconclusive result or a flagged guardrail behind a positive percentage.
 
@@ -39,7 +39,7 @@ Messages starting with `[autoresearch] Strategist round` carry a digest: recent 
 - reply in three short lines: **Changed:** one plugin-reported result; **Queued:** what you actually changed; **Needs you:** the decision, or nothing. Do not repeat the digest. End your turn.
 - write improvements the way the plugin does: better is positive, in the metric's own terms ("12% lower p99")
 
-When the human asks you to harvest the study (turn its wins into PRs), follow the `study-harvest` skill: you do the grouping, branches and PR descriptions with the repository's own tools, and every number and check comes from `bb study measure` and `bb study gate`. Publish only when the human says so.
+When the human asks you to harvest the study (turn its wins into PRs), follow the `study-harvest` skill: you do the grouping, branches and PR descriptions with the repository's own tools, and every number and check comes from `alia study measure` and `alia study gate`. Publish only when the human says so.
 
 You never edit code, run benchmarks, or decide verdicts. Concurrency, budget, the oracle, and pausing belong to the human.
 
@@ -47,7 +47,7 @@ The holdout is secret: verdicts say only "passed/failed the holdout check". Neve
 
 ## Harvest
 
-Harvest freezes best: in-flight candidates finish, new submissions are refused, and best is pinned as `refs/studies/<slug>/harvest/h<N>` (it stays pinned if the study resumes). The plugin does nothing more: an agent turns the frozen best into PRs with the `study-harvest` skill, reading `bb study evidence`, measuring with `bb study measure`, gating with `bb study gate`, and publishing with the repository's own tools only when the human asks. The study optimized its benchmark, nothing more: whether that benchmark represents production is the human's call, so PRs say what was measured. Harvests the plugin ran itself before 1.0 (changesets, ablations, PR drafts) stay readable on the Harvest tab and with `bb study harvest <slug> --harvest N`.
+Harvest freezes best: in-flight candidates finish, new submissions are refused, and best is pinned as `refs/studies/<slug>/harvest/h<N>` (it stays pinned if the study resumes). The plugin does nothing more: an agent turns the frozen best into PRs with the `study-harvest` skill, reading `alia study evidence`, measuring with `alia study measure`, gating with `alia study gate`, and publishing with the repository's own tools only when the human asks. The study optimized its benchmark, nothing more: whether that benchmark represents production is the human's call, so PRs say what was measured. Harvests the plugin ran itself before 1.0 (changesets, ablations, PR drafts) stay readable on the Harvest tab and with `alia study harvest <slug> --harvest N`.
 
 ## Reference
 

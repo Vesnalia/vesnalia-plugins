@@ -13,7 +13,7 @@
  * has told the user something false.
  */
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { useBbContext, useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaContext, useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../../src/sim/wire";
 import type { LiveStreamSample } from "../../src/sim/contract.js";
 import type { Step } from "../../src/sim/steps.js";
@@ -250,7 +250,7 @@ export interface LiveApi extends Snapshot {
 
 export function useLive(): LiveApi {
   const client = useRpc<typeof rpcContract>();
-  const { threadId, projectId } = useBbContext();
+  const { threadId, projectId } = useAliaContext();
   rpc = client;
 
   const value = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);

@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { analyzeEvents, readSharedContext, relevantSkills } from '../src/shared.ts';
-type Event = Awaited<ReturnType<BbPluginApi['sdk']['threads']['events']['list']>>[number];
+type Event = Awaited<ReturnType<AliaPluginApi['sdk']['threads']['events']['list']>>[number];
 type Item = Extract<Event, { type: 'item/completed' }>['data']['item'];
 function completed(seq: number, item: Item, turnId = 'turn-1'): Event {
   return { id: `e${seq}`, seq, threadId: 'thr_test', scope: { kind: 'turn', turnId }, createdAt: seq, type: 'item/completed', data: { item, providerThreadId: 'session' } };
@@ -36,21 +36,21 @@ test('bounded pagination pins its sequence and respects latest compaction', asyn
     calls.push(input);
     if (calls.length === 1) return [{ id: 'b', seq: 10, threadId: 'thr_test', createdAt: 0, scope: {kind: 'thread'}, type: 'thread/compacted', data: { providerThreadId: 'session' } }];
     return [completed(11, {id: 'new', type: 'agentMessage', text: 'after'})];
-  } } } } as unknown as BbPluginApi['sdk'];
+  } } } } as unknown as AliaPluginApi['sdk'];
   const result = await readSharedContext(sdk, 'thr_test', 20, 5);
   assert.equal(calls[1].afterSeq, '10');
   assert.equal(calls[1].beforeSeq, '21');
   assert.equal(result.compacted, true);
   assert.equal(result.entries[0].preview, 'after');
 });
-test('event pages stay within the BB list limit and still cover 1,000 events', async () => {
+test('event pages stay within the VesnALIA list limit and still cover 1,000 events', async () => {
   const calls: Array<Record<string, unknown>> = [];
   let seq = 5000;
   const sdk = { threads: { events: { async list(input: Record<string, unknown>) {
     calls.push(input);
     if (calls.length === 1) return [];
     return Array.from({ length: Number(input.limit) }, () => { seq--; return completed(seq, {id: `m${seq}`, type: 'agentMessage', text: 'x'}); });
-  } } } } as unknown as BbPluginApi['sdk'];
+  } } } } as unknown as AliaPluginApi['sdk'];
   const result = await readSharedContext(sdk, 'thr_test', 5000, null);
   for (const call of calls) assert.ok(Number(call.limit) <= 100, `limit ${call.limit} exceeds 100`);
   assert.equal(5000 - seq, 1000);

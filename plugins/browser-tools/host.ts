@@ -2,7 +2,7 @@ import {
   experimental_defineHostEntry,
   type ExperimentalHostRpcContext,
   type ExperimentalHostWorkerLease,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import {
   BrowserToolError,
   hostContract,

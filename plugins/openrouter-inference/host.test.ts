@@ -1,7 +1,7 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import hostEntry from "./host.js";
 
@@ -55,13 +55,13 @@ function sentBody(fetchMock: ReturnType<typeof stubFetch>): unknown {
 
 describe("ai.voice.transcribe", () => {
   it("transcribes with the configured model", async () => {
-    const fetchMock = stubFetch({ text: " Hello from BB." });
+    const fetchMock = stubFetch({ text: " Hello from VesnALIA." });
     const host = createHost();
     await host.experimental_call("configure", { config });
     expect(await host.experimental_call("ai.voice.transcribe", voiceInput)).toEqual({
       ok: true,
       model: "openai/whisper-large-v3-turbo",
-      text: "Hello from BB.",
+      text: "Hello from VesnALIA.",
     });
     expect(sentBody(fetchMock)).toMatchObject({
       model: "openai/whisper-large-v3-turbo",
@@ -89,12 +89,12 @@ describe("ai.voice.transcribe", () => {
 
 describe("test", () => {
   it("transcribes the built-in clip as ogg", async () => {
-    const fetchMock = stubFetch({ text: "Testing voice transcription in BB." });
+    const fetchMock = stubFetch({ text: "Testing voice transcription in VesnALIA." });
     const host = createHost();
     await host.experimental_call("configure", { config });
     expect(await host.experimental_call("test", { kind: "voice" })).toMatchObject({
       ok: true,
-      text: "Testing voice transcription in BB.",
+      text: "Testing voice transcription in VesnALIA.",
       model: "openai/whisper-large-v3-turbo",
     });
     expect(sentBody(fetchMock)).toMatchObject({ input_audio: { format: "ogg" } });

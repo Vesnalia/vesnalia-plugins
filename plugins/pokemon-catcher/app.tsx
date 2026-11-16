@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   definePluginApp,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { PokemonSettings, rpcContract } from "./server";
 import { starters } from "./pokemon";
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,7 @@ function ConnectionBadge({ connection }: { connection: PokemonSettings["connecti
 
 function SettingsPage() {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [settings, setSettings] = useState<PokemonSettings | null>(null);
   const [watchedRepositories, setWatchedRepositories] = useState<string[]>([]);
   const [projectManagementTool, setProjectManagementTool] = useState<PokemonSettings["projectManagementTool"]>("shortcut");
@@ -396,7 +396,7 @@ function CollectionPage() {
         <section className="mt-7">
           <div className="mb-3 flex items-end justify-between gap-3">
             <div><p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Field guide</p><h2 className="text-lg font-semibold">Ways to earn a catch</h2></div>
-            <code className="hidden text-xs text-muted-foreground sm:block">bb pokemon collection</code>
+            <code className="hidden text-xs text-muted-foreground sm:block">alia pokemon collection</code>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {Object.entries(milestoneLabels).map(([kind, label]) => (
@@ -465,7 +465,7 @@ function CollectionPanel({ subPath }: { subPath: string }) {
 }
 
 function CollectionHeaderActions() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <Button variant="ghost" size="icon" aria-label="Pokemon Collection settings" onClick={() => navigate.toPluginPanel("collection", { subPath: "settings" })}>
       <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

@@ -12,9 +12,9 @@ build.env, and android/ beside this script's files.
 
 It installs the Android SDK's command-line tools, emulator, platform-tools
 and system image into /opt/android-sdk from setup/android/pins.json, each
-checked by its SHA-256; bb-box-h264, with x264 when build.env says
+checked by its SHA-256; alia-box-h264, with x264 when build.env says
 ANDROID_X264=yes or the image's helper has it already; the device's firewall
-and its unit; and bb-box-emulator. It then makes each device's AVD and its
+and its unit; and alia-box-emulator. It then makes each device's AVD and its
 snapshot as the box user (prepare-avds.sh), and clears what each box makes
 for itself. Java, which avdmanager needs, is installed for the build and
 removed after it.
@@ -34,7 +34,7 @@ here=$(cd "$(dirname "$0")" && pwd)
 pins=$here/pins.json
 sdk=/opt/android-sdk
 box=${BOX_USER:-box}
-cache=/var/cache/bb-box/android
+cache=/var/cache/alia-box/android
 log() { echo "$(date -u +%H:%M:%S) customize-android: $*"; }
 started=$(date +%s)
 
@@ -55,8 +55,8 @@ printf '\n%s' "$accepted" >"$licence"
 
 packages=(libpulse0 libnss3 libxcomposite1 libxcursor1 libxdamage1 libxi6 libxtst6 libgl1 libegl1 libxkbfile1 nftables unzip bzip2 curl jq)
 x264=${ANDROID_X264:-}
-if [ -z "$x264" ] && [ -x /usr/local/bin/bb-box-h264 ]; then
-  case "$(/usr/local/bin/bb-box-h264 --version 2>/dev/null)" in x264*) x264=yes ;; esac
+if [ -z "$x264" ] && [ -x /usr/local/bin/alia-box-h264 ]; then
+  case "$(/usr/local/bin/alia-box-h264 --version 2>/dev/null)" in x264*) x264=yes ;; esac
 fi
 [ "$x264" != yes ] || packages+=(nasm make)
 log "packages: ${packages[*]}"
@@ -82,7 +82,7 @@ install -d -m 0755 "$sdk"
 count=$(jq '.sdk | length' "$pins")
 for i in $(seq 0 $((count - 1))); do
   read -r name version url sha256 top path < <(jq -r ".sdk[$i] | [.name, .version, .url, .sha256, .top, .path] | @tsv" "$pins")
-  marker=$sdk/$path/.bb-box-pin
+  marker=$sdk/$path/.alia-box-pin
   if [ "$(cat "$marker" 2>/dev/null)" = "$sha256" ]; then
     log "$name $version: installed already"
     continue
@@ -108,7 +108,7 @@ install -d -m 0755 "$sdk/licenses"
 install -m 0644 "$licence" "$sdk/licenses/$licence_id"
 rm -f "$licence"
 chmod -R a+rX "$sdk"
-cat >/etc/profile.d/bb-box-android.sh <<EOF
+cat >/etc/profile.d/alia-box-android.sh <<EOF
 export ANDROID_HOME=$sdk
 export ANDROID_SDK_ROOT=$sdk
 case ":\$PATH:" in *":$sdk/platform-tools:"*) ;; *) PATH="$sdk/platform-tools:$sdk/emulator:$sdk/cmdline-tools/latest/bin:\$PATH" ;; esac
@@ -119,22 +119,22 @@ for tool in adb emulator; do
   ln -sf "$sdk/$dir/$tool" "/usr/local/bin/$tool"
 done
 
-log "bb-box-h264$([ "$x264" = yes ] && echo ", with x264 built from source" || echo ", with Cisco's OpenH264")"
+log "alia-box-h264$([ "$x264" = yes ] && echo ", with x264 built from source" || echo ", with Cisco's OpenH264")"
 if [ "$x264" = yes ]; then bash "$here/build-h264.sh" /usr/local --with-x264; else bash "$here/build-h264.sh" /usr/local; fi
 
-install -d -m 0755 /etc/bb-box
-install -m 0644 "$here/device-firewall.nft" /etc/bb-box/device-firewall.nft
-install -m 0755 "$here/bb-box-device-firewall" /usr/local/sbin/bb-box-device-firewall
-ln -sf /usr/local/sbin/bb-box-device-firewall /usr/local/bin/bb-box-device-firewall
-install -m 0755 "$here/bb-box-emulator" /usr/local/bin/bb-box-emulator
-install -m 0755 "$here/check-android.sh" /usr/local/bin/bb-box-check-android
-install -m 0755 "$here/clear-device-state.sh" /usr/local/sbin/bb-box-clear-device-state
-install -d -m 0755 /usr/share/bb-box
-install -m 0644 "$pins" /usr/share/bb-box/android-pins.json
+install -d -m 0755 /etc/alia-box
+install -m 0644 "$here/device-firewall.nft" /etc/alia-box/device-firewall.nft
+install -m 0755 "$here/alia-box-device-firewall" /usr/local/sbin/alia-box-device-firewall
+ln -sf /usr/local/sbin/alia-box-device-firewall /usr/local/bin/alia-box-device-firewall
+install -m 0755 "$here/alia-box-emulator" /usr/local/bin/alia-box-emulator
+install -m 0755 "$here/check-android.sh" /usr/local/bin/alia-box-check-android
+install -m 0755 "$here/clear-device-state.sh" /usr/local/sbin/alia-box-clear-device-state
+install -d -m 0755 /usr/share/alia-box
+install -m 0644 "$pins" /usr/share/alia-box/android-pins.json
 install -m 0644 "$pins" "$build/android-pins.json"
-cat >/etc/systemd/system/bb-box-device-firewall.service <<'EOF'
+cat >/etc/systemd/system/alia-box-device-firewall.service <<'EOF'
 [Unit]
-Description=bb-box: the device's ports closed to every interface but loopback
+Description=alia-box: the device's ports closed to every interface but loopback
 DefaultDependencies=no
 Before=network-pre.target
 Wants=network-pre.target
@@ -143,16 +143,16 @@ After=local-fs.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/local/sbin/bb-box-device-firewall load
-ExecReload=/usr/local/sbin/bb-box-device-firewall load
+ExecStart=/usr/local/sbin/alia-box-device-firewall load
+ExecReload=/usr/local/sbin/alia-box-device-firewall load
 
 [Install]
 WantedBy=multi-user.target
 EOF
 systemctl daemon-reload
-systemctl enable bb-box-device-firewall.service >/dev/null
-systemctl restart bb-box-device-firewall.service
-bb-box-device-firewall check
+systemctl enable alia-box-device-firewall.service >/dev/null
+systemctl restart alia-box-device-firewall.service
+alia-box-device-firewall check
 usermod -aG kvm "$box"
 
 home=$(getent passwd "$box" | cut -d: -f6)
@@ -161,20 +161,20 @@ made=$(mktemp -d)
 install -m 0644 "$here/prepare-avds.sh" "$made/prepare-avds.sh"
 chown "$box:$box" "$made"
 runuser -u "$box" -- env HOME="$home" ANDROID_HOME="$sdk" PATH="/usr/local/bin:/usr/bin:/bin" \
-  bash "$made/prepare-avds.sh" /usr/share/bb-box/android-pins.json "$made/devices.json" </dev/null
+  bash "$made/prepare-avds.sh" /usr/share/alia-box/android-pins.json "$made/devices.json" </dev/null
 install -m 0644 "$made/devices.json" "$build/android-devices.json"
-install -m 0644 "$made/devices.json" /usr/share/bb-box/android-devices.json
+install -m 0644 "$made/devices.json" /usr/share/alia-box/android-devices.json
 rm -rf "$made"
 
 log "removing Java, which only avdmanager needed"
 [ "${#java_packages[@]}" -eq 0 ] || DEBIAN_FRONTEND=noninteractive apt-get purge -y -q "${java_packages[@]}" >/dev/null
 rm -f "$before_java"
 
-bb-box-clear-device-state "$box"
+alia-box-clear-device-state "$box"
 rm -rf "$cache"
 
 {
   for i in $(seq 0 $((count - 1))); do jq -r ".sdk[$i] | \"android=\(.name) \(.version) \(.sha256)\"" "$pins"; done
-  echo "android_encoder=$(/usr/local/bin/bb-box-h264 --version)"
+  echo "android_encoder=$(/usr/local/bin/alia-box-h264 --version)"
 } >"$build/extra-release"
 log "done in $(($(date +%s) - started)) s"

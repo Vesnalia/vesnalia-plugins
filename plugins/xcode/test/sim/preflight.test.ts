@@ -13,18 +13,18 @@ import {
 } from "../../src/sim/preflight.js";
 
 /**
- * `bb xcode sim doctor`, the panel's Doctor section and the empty state render
+ * `alia xcode sim doctor`, the panel's Doctor section and the empty state render
  * **the same sentences**. Each assertion here is on the sentence, not on the
  * state token, because the sentence is the contract.
  */
 describe("the platform probe", () => {
   it("is the first thing checked, and names the platform it found", () => {
-    // bb supports a Linux server with enrolled Macs. Without this check that
+    // VesnALIA supports a Linux server with enrolled Macs. Without this check that
     // topology gets told to run `xcode-select --install`.
     const probe = platformProbe("linux");
     expect(probe.state).toBe("blocked");
     expect(probe.detail).toBe(
-      "Xcode Simulators drives Xcode and the iOS simulator, so it only works when the bb server itself runs on macOS. This server runs on Linux.",
+      "Xcode Simulators drives Xcode and the iOS simulator, so it only works when the VesnALIA server itself runs on macOS. This server runs on Linux.",
     );
   });
 
@@ -103,7 +103,7 @@ describe("the capture addon probe", () => {
     // be a dead end.
     const probe = addonProbe(false, "missing");
     expect(probe.detail).not.toContain("npm rebuild");
-    expect(probe.detail).toContain("bb plugin update xcode");
+    expect(probe.detail).toContain("alia plugin update xcode");
     expect(probe.detail).toContain("node_modules/serve-sim/dist/native/");
   });
 });

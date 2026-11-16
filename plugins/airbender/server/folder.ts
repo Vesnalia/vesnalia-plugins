@@ -21,10 +21,10 @@
 // - A missing folder and a missing program look the same to the operating
 //   system, so `folderFor` checks the folder first; without that a missing
 //   folder would be reported as "bd not found".
-// - The BB server may have a shorter PATH than a shell, which is why a list
+// - The VesnALIA server may have a shorter PATH than a shell, which is why a list
 //   of candidate locations is tried.
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readGit, runBd } from "./bd.ts";
@@ -37,22 +37,22 @@ import { findBendAmong } from "./bend.ts";
  * Side effects: none until one of them is called.
  */
 export function createFolders({
-  bb,
+  alia,
   bdCandidates,
   bendCandidates,
 }: {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   bdCandidates: string[];
   /** Program names or paths to try for bend, in order. */
   bendCandidates: string[];
 }) {
   const BD_NOT_FOUND_MESSAGE =
-    "BB could not find the bd command. Install beads, or set its full path under this plugin's settings (bd command) and reload the plugin.";
+    "VesnALIA could not find the bd command. Install beads, or set its full path under this plugin's settings (bd command) and reload the plugin.";
 
   /** What the tab says when there is no bend program, or only an old one. */
   const BEND_MESSAGES = {
     missing:
-      "BB could not find the bend command, which Airbender reads and changes issues with. Install it with the bend setup step, or set its full path under this plugin's settings (bend command) and reload the plugin.",
+      "VesnALIA could not find the bend command, which Airbender reads and changes issues with. Install it with the bend setup step, or set its full path under this plugin's settings (bend command) and reload the plugin.",
     old: "The bend command on this machine is older than this version of Airbender needs. Update it with the bend setup step.",
   };
 
@@ -63,7 +63,7 @@ export function createFolders({
   const findBend = (cwd: string) => findBendAmong(bendCandidates, cwd);
 
   /**
-   * Finds the folder on the BB server machine that a thread or project works
+   * Finds the folder on the VesnALIA server machine that a thread or project works
    * in.
    *
    * A thread's own checkout wins (it may be a worktree); otherwise the
@@ -76,19 +76,19 @@ export function createFolders({
     threadId: string | null;
     projectId: string | null;
   }): Promise<{ path: string } | { reason: string }> {
-    const { primaryHostId } = await bb.sdk.system.config();
+    const { primaryHostId } = await alia.sdk.system.config();
     let projectId = input.projectId;
     if (input.threadId !== null) {
-      const thread = await bb.sdk.threads.get({ threadId: input.threadId });
+      const thread = await alia.sdk.threads.get({ threadId: input.threadId });
       projectId = thread.projectId;
       if (thread.environmentId !== null) {
-        const environment = await bb.sdk.environments.get({
+        const environment = await alia.sdk.environments.get({
           environmentId: thread.environmentId,
         });
         if (environment.hostId !== primaryHostId) {
           return {
             reason:
-              "This thread works on another machine. The Airbender tab can only read folders on the machine BB itself runs on.",
+              "This thread works on another machine. The Airbender tab can only read folders on the machine VesnALIA itself runs on.",
           };
         }
         if (environment.path !== null) return { path: environment.path };
@@ -97,7 +97,7 @@ export function createFolders({
     if (projectId === null) {
       return { reason: "Pick a project to see its issues." };
     }
-    const project = await bb.sdk.projects.get({ projectId });
+    const project = await alia.sdk.projects.get({ projectId });
     const local = project.sources.filter(
       (source) => source.hostId === primaryHostId,
     );
@@ -105,7 +105,7 @@ export function createFolders({
     if (source === undefined) {
       return {
         reason:
-          "This project has no folder on the machine BB itself runs on, so there is nowhere to look for issues.",
+          "This project has no folder on the machine VesnALIA itself runs on, so there is nowhere to look for issues.",
       };
     }
     return { path: source.path };
@@ -126,7 +126,7 @@ export function createFolders({
     if ("reason" in folder) return { message: folder.reason, path: null };
     if (!existsSync(folder.path)) {
       return {
-        message: `The folder ${folder.path} does not exist on the machine BB runs on.`,
+        message: `The folder ${folder.path} does not exist on the machine VesnALIA runs on.`,
         path: folder.path,
       };
     }

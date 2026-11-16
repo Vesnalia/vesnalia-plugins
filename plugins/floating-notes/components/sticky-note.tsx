@@ -59,7 +59,7 @@ function BarButton({
       aria-label={label}
       onClick={onClick}
       className={cn(
-        "bb-fn-bar-button flex size-5 shrink-0 items-center justify-center rounded transition-colors hover:bg-foreground/10",
+        "alia-fn-bar-button flex size-5 shrink-0 items-center justify-center rounded transition-colors hover:bg-foreground/10",
         className,
       )}
     >
@@ -68,7 +68,7 @@ function BarButton({
   );
 }
 
-const GHOST_KEY_PREFIX = "bb-plugin-notes:ghost:";
+const GHOST_KEY_PREFIX = "alia-plugin-notes:ghost:";
 
 export function StickyNote({ note, index }: { note: ListedNote; index: number }) {
   const { rootRef, handleRef, resizeEdges } = useFloatingFrame({
@@ -128,7 +128,7 @@ export function StickyNote({ note, index }: { note: ListedNote; index: number })
   };
 
   return (
-    // role="region", not "dialog": bb treats any [role="dialog"][data-state="open"]
+    // role="region", not "dialog": VesnALIA treats any [role="dialog"][data-state="open"]
     // on the page as an open modal and turns its keyboard shortcuts off, and a
     // sticky stays on screen for as long as its thread is open.
     <div
@@ -139,15 +139,15 @@ export function StickyNote({ note, index }: { note: ListedNote; index: number })
       data-collapsed={note.collapsed ? "true" : "false"}
       data-scope={scope.kind}
       // Escape stays with the sticky. As a region it no longer reads as a
-      // modal, so bb would take an Escape typed here as its "Back to app"
+      // modal, so VesnALIA would take an Escape typed here as its "Back to app"
       // shortcut and leave Settings. The editor still sees it first.
       onKeyDown={(event) => {
         if (event.key === "Escape") event.stopPropagation();
       }}
       className={cn(
-        "bb-fn-sticky fixed flex flex-col overflow-hidden rounded-lg border border-border text-card-foreground shadow-xl",
-        note.color !== null ? `bb-fn-tint-${note.color}` : "",
-        ghost && !note.collapsed ? "bb-fn-ghost" : "",
+        "alia-fn-sticky fixed flex flex-col overflow-hidden rounded-lg border border-border text-card-foreground shadow-xl",
+        note.color !== null ? `alia-fn-tint-${note.color}` : "",
+        ghost && !note.collapsed ? "alia-fn-ghost" : "",
       )}
     >
       <div
@@ -160,7 +160,7 @@ export function StickyNote({ note, index }: { note: ListedNote; index: number })
           }
           void notesStore.updateNote({ id: note.id, collapsed: !note.collapsed });
         }}
-        className="bb-fn-sticky-bar group/bar flex shrink-0 cursor-grab items-center gap-1.5 border-b border-border/60 px-2 py-1.5 active:cursor-grabbing"
+        className="alia-fn-sticky-bar group/bar flex shrink-0 cursor-grab items-center gap-1.5 border-b border-border/60 px-2 py-1.5 active:cursor-grabbing"
       >
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -169,12 +169,12 @@ export function StickyNote({ note, index }: { note: ListedNote; index: number })
               data-no-drag=""
               title={note.color === null ? "Set a colour" : "Change colour"}
               aria-label="Sticky color"
-              className="bb-fn-bar-button flex size-5 shrink-0 items-center justify-center rounded transition-colors hover:bg-foreground/10"
+              className="alia-fn-bar-button flex size-5 shrink-0 items-center justify-center rounded transition-colors hover:bg-foreground/10"
             >
               {note.color === null ? (
                 <Icon name="Palette" className="size-3.5" aria-hidden />
               ) : (
-                <span className={cn("bb-fn-swatch", `bb-fn-tint-${note.color}`)} aria-hidden />
+                <span className={cn("alia-fn-swatch", `alia-fn-tint-${note.color}`)} aria-hidden />
               )}
             </button>
           </DropdownMenuTrigger>
@@ -186,7 +186,7 @@ export function StickyNote({ note, index }: { note: ListedNote; index: number })
                 key={color}
                 onSelect={() => void notesStore.updateNote({ id: note.id, color })}
               >
-                <span className={cn("bb-fn-swatch", `bb-fn-tint-${color}`)} aria-hidden />
+                <span className={cn("alia-fn-swatch", `alia-fn-tint-${color}`)} aria-hidden />
                 {COLOR_LABEL[color]}
                 {note.color === color ? (
                   <Icon name="Check" className="ml-auto size-3.5" aria-hidden />
@@ -300,7 +300,7 @@ export function StickyNote({ note, index }: { note: ListedNote; index: number })
         />
       </div>
 
-      <div className="bb-fn-sticky-body flex min-h-0 flex-1 flex-col">
+      <div className="alia-fn-sticky-body flex min-h-0 flex-1 flex-col">
         <NoteEditor note={note} placeholder="Jot…" />
       </div>
 

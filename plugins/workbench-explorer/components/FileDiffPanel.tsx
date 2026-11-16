@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { experimental_Diff as Diff, useRpc, type JsonValue } from "@get-bb/plugin-sdk/app";
+import { experimental_Diff as Diff, useRpc, type JsonValue } from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import type { rpcContract } from "../contract";
 

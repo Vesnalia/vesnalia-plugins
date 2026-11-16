@@ -195,7 +195,7 @@ async function withTimeoutMessage<T>(
   } catch (error) {
     if (timeout.aborted) {
       throw new Error(
-        `Installing Xberg from ${url} took longer than the limit and was stopped. Try again with \`bb xberg install\`.`,
+        `Installing Xberg from ${url} took longer than the limit and was stopped. Try again with \`alia xberg install\`.`,
       );
     }
     throw error;

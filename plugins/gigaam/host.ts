@@ -1,6 +1,6 @@
-// bb-plugin-gigaam host entry: runs on the machine that does the recognition
-// (the bb server's own machine) and owns the GigaAM install and process.
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk";
+// alia-plugin-gigaam host entry: runs on the machine that does the recognition
+// (the VesnALIA server's own machine) and owns the GigaAM install and process.
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk";
 import { hostContract } from "./src/contract.js";
 import { Supervisor } from "./src/supervisor.js";
 

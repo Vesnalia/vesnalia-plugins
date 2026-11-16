@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ANTIGRAVITY_SUBAGENT_TOOLS, BB_SUBAGENT_DELEGATION_INSTRUCTIONS as instructions, isNativeSubagentTool, resolveProviderSubagentsEnabled, mergeSubagentInstructions, createSubagentController } from '../subagents.ts';
+import { ANTIGRAVITY_SUBAGENT_TOOLS, ALIA_SUBAGENT_DELEGATION_INSTRUCTIONS as instructions, isNativeSubagentTool, resolveProviderSubagentsEnabled, mergeSubagentInstructions, createSubagentController } from '../subagents.ts';
 
 const request = (method, threadId, options = {}) => JSON.stringify({ jsonrpc: '2.0', method, params: { threadId, options } });
 const approval = (threadId, subject = { kind: 'tool_use', tool: 'invoke_subagent' }, decisions = ['allow_once', 'deny']) => ({ jsonrpc: '2.0', id: 7, method: 'interaction/request', params: { threadId, payload: { kind: 'approval', subject, availableDecisions: decisions } } });

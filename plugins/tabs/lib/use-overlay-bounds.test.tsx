@@ -6,7 +6,7 @@ import { useOverlayBounds } from "./use-overlay-bounds";
 function Overlay({ enabled = true }: { enabled?: boolean }) {
   return (
     <aside
-      id="bb-chat-tabs-overlay"
+      id="alia-chat-tabs-overlay"
       data-testid="overlay"
       data-docked={String(enabled)}
       data-row-count="1"
@@ -16,7 +16,7 @@ function Overlay({ enabled = true }: { enabled?: boolean }) {
   );
 }
 function layout() {
-  return document.body.getAttribute("data-bb-chat-tabs-layout")?.split(" ") ?? [];
+  return document.body.getAttribute("data-alia-chat-tabs-layout")?.split(" ") ?? [];
 }
 afterEach(() => {
   cleanup();
@@ -52,7 +52,7 @@ describe("Shared overlay layout", () => {
       await act(async () => {});
       expect(layout()).toEqual(["no-overflow"]);
       first.unmount();
-      expect(document.body.hasAttribute("data-bb-chat-tabs-layout")).toBe(false);
+      expect(document.body.hasAttribute("data-alia-chat-tabs-layout")).toBe(false);
     },
   );
 
@@ -118,7 +118,7 @@ describe("Shared overlay layout", () => {
     await act(async () => {
       container.remove();
     });
-    expect(document.body.hasAttribute("data-bb-chat-tabs-layout")).toBe(false);
+    expect(document.body.hasAttribute("data-alia-chat-tabs-layout")).toBe(false);
   });
 
   it("shares one observer, ignores its own writes, and disconnects only after the last consumer", async () => {
@@ -144,7 +144,7 @@ describe("Shared overlay layout", () => {
     const second = render(<Overlay />);
     expect(observe).toHaveBeenCalledTimes(1);
     const writes = () =>
-      set.mock.calls.filter(([name]) => name === "data-bb-chat-tabs-layout").length;
+      set.mock.calls.filter(([name]) => name === "data-alia-chat-tabs-layout").length;
     const before = writes();
     await act(async () => {
       document.body.append(document.createElement("div"));

@@ -1,9 +1,9 @@
-// bb-plugin-floating-terminal — backend.
+// alia-plugin-floating-terminal — backend.
 //
-// A tab manager in front of `bb.sdk.terminals`. The floating window's
+// A tab manager in front of `alia.sdk.terminals`. The floating window's
 // navigation is a tab strip; each tab maps to one real PTY session on some
 // host. The open-tab list and the active tab are kv-persisted, so closing the
-// window, reloading the app, or restarting bb reattaches every surviving shell
+// window, reloading the app, or restarting VesnALIA reattaches every surviving shell
 // instead of losing them.
 //
 // Two rules make the client/server dance safe, and both matter much more on a
@@ -19,7 +19,7 @@
 //     The client applies a snapshot only if it is newer than the last one it
 //     applied, so a slow `init` can never resurrect a closed tab or drop a
 //     freshly opened one just because it started earlier.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { worktreeLabel } from "./lib/scopes";
 import { meaningfulShellTitle } from "./lib/terminal-io";
 import { z } from "zod";
@@ -56,8 +56,8 @@ const tabSchema = z.object({
   exitCode: z.number().int().nullable(),
   /**
    * A title the shell set over OSC, or null while the session still wears the
-   * one `createSession` stamped. Lives on the bb session rather than in plugin
-   * storage, so `bb terminal list` and bb's own UI show the same name.
+   * one `createSession` stamped. Lives on the VesnALIA session rather than in plugin
+   * storage, so `alia terminal list` and VesnALIA's own UI show the same name.
    */
   shellTitle: z.string().nullable(),
   /** A name the user gave the tab. Stored with the tab, so it survives restarts. */
@@ -270,8 +270,8 @@ function isLiveStatus(status: string): boolean {
   return status === "running" || status === "starting";
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     fontSize: {
       type: "select",
       label: "Font size",
@@ -313,8 +313,8 @@ export default async function plugin(bb: BbPluginApi) {
     let hosts, projects;
     try {
       [hosts, projects] = await Promise.all([
-        withTimeout(bb.sdk.hosts.list(), SDK_TIMEOUT_MS, "hosts.list"),
-        withTimeout(bb.sdk.projects.list(), SDK_TIMEOUT_MS, "projects.list"),
+        withTimeout(alia.sdk.hosts.list(), SDK_TIMEOUT_MS, "hosts.list"),
+        withTimeout(alia.sdk.projects.list(), SDK_TIMEOUT_MS, "projects.list"),
       ]);
     } catch (error) {
       // Serve stale scopes rather than block the handler behind a slow call.
@@ -372,7 +372,7 @@ export default async function plugin(bb: BbPluginApi) {
       return cached.environmentId;
     }
     const result = (await withTimeout(
-      bb.sdk.threads.get({ threadId }),
+      alia.sdk.threads.get({ threadId }),
       SDK_TIMEOUT_MS,
       "threads.get",
     )) as { environmentId?: string | null; thread?: { environmentId?: string | null } };
@@ -394,7 +394,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     const [environment, scopes] = await Promise.all([
       withTimeout(
-        bb.sdk.environments.get({ environmentId }),
+        alia.sdk.environments.get({ environmentId }),
         SDK_TIMEOUT_MS,
         "environments.get",
       ),
@@ -430,11 +430,11 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function readStoredTabs(): Promise<StoredTab[]> {
-    return (await bb.storage.kv.get<StoredTab[]>(TABS_KEY)) ?? [];
+    return (await alia.storage.kv.get<StoredTab[]>(TABS_KEY)) ?? [];
   }
 
   async function readRecent(): Promise<string[]> {
-    return (await bb.storage.kv.get<string[]>(RECENT_KEY)) ?? [];
+    return (await alia.storage.kv.get<string[]>(RECENT_KEY)) ?? [];
   }
 
   /**
@@ -444,12 +444,12 @@ export default async function plugin(bb: BbPluginApi) {
   async function rememberRecent(scopeKey: string): Promise<void> {
     if (scopeKey.startsWith("env:")) return;
     const next = [scopeKey, ...(await readRecent()).filter((k) => k !== scopeKey)];
-    await bb.storage.kv.set(RECENT_KEY, next.slice(0, RECENT_LIMIT));
+    await alia.storage.kv.set(RECENT_KEY, next.slice(0, RECENT_LIMIT));
   }
 
   async function bumpRevision(): Promise<number> {
-    const next = ((await bb.storage.kv.get<number>(REVISION_KEY)) ?? 0) + 1;
-    await bb.storage.kv.set(REVISION_KEY, next);
+    const next = ((await alia.storage.kv.get<number>(REVISION_KEY)) ?? 0) + 1;
+    await alia.storage.kv.set(REVISION_KEY, next);
     return next;
   }
 
@@ -525,8 +525,8 @@ export default async function plugin(bb: BbPluginApi) {
       stored.every((entry) => lastKnownTabs.has(entry.terminalId))
     ) {
       const [revision, storedActive] = await Promise.all([
-        bb.storage.kv.get<number>(REVISION_KEY),
-        bb.storage.kv.get<string>(ACTIVE_TAB_KEY),
+        alia.storage.kv.get<number>(REVISION_KEY),
+        alia.storage.kv.get<string>(ACTIVE_TAB_KEY),
       ]);
       return finishSnapshot(
         stored.map((entry) => withStored(lastKnownTabs.get(entry.terminalId)!, entry)),
@@ -540,7 +540,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function verifiedSnapshot(stored: StoredTab[]): Promise<Snapshot> {
     const [scopes, storedActive] = await Promise.all([
       listScopes(),
-      bb.storage.kv.get<string>(ACTIVE_TAB_KEY),
+      alia.storage.kv.get<string>(ACTIVE_TAB_KEY),
     ]);
 
     let sawTimeout = false;
@@ -551,7 +551,7 @@ export default async function plugin(bb: BbPluginApi) {
       stored.map(async (entry) => {
         try {
           const session = await withTimeout(
-            bb.sdk.terminals.get({ terminalId: entry.terminalId }),
+            alia.sdk.terminals.get({ terminalId: entry.terminalId }),
             SDK_TIMEOUT_MS,
             "terminals.get",
           );
@@ -595,11 +595,11 @@ export default async function plugin(bb: BbPluginApi) {
     );
     const tabs: Tab[] = resolved.filter((tab): tab is Tab => tab !== null);
 
-    let revision = (await bb.storage.kv.get<number>(REVISION_KEY)) ?? 0;
+    let revision = (await alia.storage.kv.get<number>(REVISION_KEY)) ?? 0;
     if (tabs.length !== stored.length && !sawTimeout) {
       // Pruning is itself a change, so it earns a new revision.
       const kept = new Set(tabs.map((tab) => tab.terminalId));
-      await bb.storage.kv.set(
+      await alia.storage.kv.set(
         TABS_KEY,
         stored.filter((entry) => kept.has(entry.terminalId)),
       );
@@ -631,17 +631,17 @@ export default async function plugin(bb: BbPluginApi) {
     rows: number,
   ): Promise<Tab> {
     const created = await withTimeout(
-      bb.sdk.terminals.create({
+      alia.sdk.terminals.create({
         cols,
         rows,
         scope: { kind: "host_path", hostId: scope.hostId, cwd: scope.cwd },
-        // `bb terminal list` has no grouping to lean on, so name the machine here.
+        // `alia terminal list` has no grouping to lean on, so name the machine here.
         title: defaultTitle(scope.label, scope.hostName),
       }),
       CREATE_TIMEOUT_MS,
       "terminals.create",
     );
-    bb.log.info(`opened ${created.id} in ${created.initialCwd}`);
+    alia.log.info(`opened ${created.id} in ${created.initialCwd}`);
     return {
       terminalId: created.id,
       scopeKey: scope.key,
@@ -667,7 +667,7 @@ export default async function plugin(bb: BbPluginApi) {
       : { terminalId: tab.terminalId, scopeKey: tab.scopeKey };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async init() {
       const [snap, scopes, recentScopeKeys, values] = await Promise.all([
         serialize(snapshot),
@@ -720,8 +720,8 @@ export default async function plugin(bb: BbPluginApi) {
       return serialize(async () => {
         const stored = await readStoredTabs();
         stored.push(storedEntry(opened, scope));
-        await bb.storage.kv.set(TABS_KEY, stored);
-        await bb.storage.kv.set(ACTIVE_TAB_KEY, opened.terminalId);
+        await alia.storage.kv.set(TABS_KEY, stored);
+        await alia.storage.kv.set(ACTIVE_TAB_KEY, opened.terminalId);
         await rememberRecent(opened.scopeKey);
         await bumpRevision();
         lastKnownTabs.set(opened.terminalId, opened);
@@ -735,7 +735,7 @@ export default async function plugin(bb: BbPluginApi) {
       // confirm the close blocked every other handler for the full timeout.
       try {
         await withTimeout(
-          bb.sdk.terminals.close({ terminalId, mode: "force" }),
+          alia.sdk.terminals.close({ terminalId, mode: "force" }),
           SDK_TIMEOUT_MS,
           "terminals.close",
         );
@@ -747,13 +747,13 @@ export default async function plugin(bb: BbPluginApi) {
         const remaining = (await readStoredTabs()).filter(
           (entry) => entry.terminalId !== terminalId,
         );
-        await bb.storage.kv.set(TABS_KEY, remaining);
+        await alia.storage.kv.set(TABS_KEY, remaining);
 
-        const storedActive = await bb.storage.kv.get<string>(ACTIVE_TAB_KEY);
+        const storedActive = await alia.storage.kv.get<string>(ACTIVE_TAB_KEY);
         if (storedActive === terminalId) {
           const next = remaining[remaining.length - 1]?.terminalId;
-          if (next === undefined) await bb.storage.kv.delete(ACTIVE_TAB_KEY);
-          else await bb.storage.kv.set(ACTIVE_TAB_KEY, next);
+          if (next === undefined) await alia.storage.kv.delete(ACTIVE_TAB_KEY);
+          else await alia.storage.kv.set(ACTIVE_TAB_KEY, next);
         }
         forgetTab(terminalId);
         await bumpRevision();
@@ -762,7 +762,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
 
     async setActiveTab({ terminalId }) {
-      await bb.storage.kv.set(ACTIVE_TAB_KEY, terminalId);
+      await alia.storage.kv.set(ACTIVE_TAB_KEY, terminalId);
       return { ok: true };
     },
 
@@ -792,7 +792,7 @@ export default async function plugin(bb: BbPluginApi) {
 
       try {
         await withTimeout(
-          bb.sdk.terminals.rename({ terminalId, title: next }),
+          alia.sdk.terminals.rename({ terminalId, title: next }),
           SDK_TIMEOUT_MS,
           "terminals.rename",
         );
@@ -826,16 +826,16 @@ export default async function plugin(bb: BbPluginApi) {
         const index = stored.findIndex((entry) => entry.terminalId === terminalId);
         if (index === -1) throw new Error("That tab is no longer open.");
         stored[index] = { ...stored[index]!, name: next };
-        await bb.storage.kv.set(TABS_KEY, stored);
+        await alia.storage.kv.set(TABS_KEY, stored);
         await bumpRevision();
         return { snapshot: await snapshot() };
       });
-      // bb's own terminal list shows the same name; cosmetic, so best-effort
+      // VesnALIA's own terminal list shows the same name; cosmetic, so best-effort
       // and after the reply is settled.
       const known = lastKnownTabs.get(terminalId);
       if (known !== undefined) {
         withTimeout(
-          bb.sdk.terminals.rename({
+          alia.sdk.terminals.rename({
             terminalId,
             title: next ?? known.shellTitle ?? defaultTitle(known.label, known.hostName),
           }),
@@ -853,7 +853,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (from !== -1) {
           const [entry] = stored.splice(from, 1);
           stored.splice(Math.min(toIndex, stored.length), 0, entry!);
-          await bb.storage.kv.set(TABS_KEY, stored);
+          await alia.storage.kv.set(TABS_KEY, stored);
           await bumpRevision();
         }
         return { snapshot: await snapshot() };
@@ -872,7 +872,7 @@ export default async function plugin(bb: BbPluginApi) {
       const scope = await requireScope(found.scopeKey);
       try {
         await withTimeout(
-          bb.sdk.terminals.close({ terminalId, mode: "force" }),
+          alia.sdk.terminals.close({ terminalId, mode: "force" }),
           SDK_TIMEOUT_MS,
           "terminals.close",
         );
@@ -890,7 +890,7 @@ export default async function plugin(bb: BbPluginApi) {
           // The tab was closed while the new shell was spawning. Do not leak
           // the session a strip will never show; best-effort, detached.
           withTimeout(
-            bb.sdk.terminals.close({
+            alia.sdk.terminals.close({
               terminalId: restarted.terminalId,
               mode: "force",
             }),
@@ -901,10 +901,10 @@ export default async function plugin(bb: BbPluginApi) {
         }
         // Replace in place so the tab keeps its position — and its name.
         stored[index] = { ...stored[index]!, terminalId: restarted.terminalId };
-        await bb.storage.kv.set(TABS_KEY, stored);
-        const storedActive = await bb.storage.kv.get<string>(ACTIVE_TAB_KEY);
+        await alia.storage.kv.set(TABS_KEY, stored);
+        const storedActive = await alia.storage.kv.get<string>(ACTIVE_TAB_KEY);
         if (storedActive === terminalId) {
-          await bb.storage.kv.set(ACTIVE_TAB_KEY, restarted.terminalId);
+          await alia.storage.kv.set(ACTIVE_TAB_KEY, restarted.terminalId);
         }
         forgetTab(terminalId);
         lastKnownTabs.set(restarted.terminalId, {
@@ -921,7 +921,7 @@ export default async function plugin(bb: BbPluginApi) {
     async read({ terminalId, sinceSeq, replay }) {
       try {
         const output = await withTimeout(
-          bb.sdk.terminals.output({
+          alia.sdk.terminals.output({
             terminalId,
             sinceSeq,
             ...(replay === true ? { tailBytes: REPLAY_TAIL_BYTES } : {}),
@@ -942,7 +942,7 @@ export default async function plugin(bb: BbPluginApi) {
           return { ...output, status: cached.status, exitCode: cached.exitCode };
         }
         const session = await withTimeout(
-          bb.sdk.terminals.get({ terminalId }),
+          alia.sdk.terminals.get({ terminalId }),
           SDK_TIMEOUT_MS,
           "terminals.get",
         );
@@ -984,7 +984,7 @@ export default async function plugin(bb: BbPluginApi) {
 
     async write({ terminalId, dataBase64 }) {
       await withTimeout(
-        bb.sdk.terminals.input({ terminalId, dataBase64 }),
+        alia.sdk.terminals.input({ terminalId, dataBase64 }),
         SDK_TIMEOUT_MS,
         "terminals.input",
       );
@@ -993,7 +993,7 @@ export default async function plugin(bb: BbPluginApi) {
 
     async resize({ terminalId, cols, rows }) {
       await withTimeout(
-        bb.sdk.terminals.resize({ terminalId, cols, rows }),
+        alia.sdk.terminals.resize({ terminalId, cols, rows }),
         SDK_TIMEOUT_MS,
         "terminals.resize",
       );

@@ -11,7 +11,7 @@ import {
   experimental_webFetchPresentation as webFetchPresentation,
   experimental_webSearchPresentation as webSearchPresentation,
   type DynamicTool,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import {
   firstInputString,
   inputRecord,
@@ -146,7 +146,7 @@ function directoryRow(path: string) {
 function fileReadRow(path: string) {
   return {
     item: { type: "fileRead", path },
-    // BB's native file row supplies the path title itself. Keep the action
+    // VesnALIA's native file row supplies the path title itself. Keep the action
     // label as "Read", matching Pi, instead of "Read file".
     presentation: {
       ...nativeFileReadPresentation(path),
@@ -233,8 +233,8 @@ export function touchedPaths(name: string, rawInput: unknown): string[] {
 }
 
 /**
- * OpenCode names MCP tools `<server>_<tool>`. Calls to the per-session BB
- * tool server render as the BB tool, with the presentation BB supplied.
+ * OpenCode names MCP tools `<server>_<tool>`. Calls to the per-session VesnALIA
+ * tool server render as the VesnALIA tool, with the presentation VesnALIA supplied.
  */
 export function dynamicToolRow(
   serverName: string,
@@ -371,7 +371,7 @@ export function toolRow(name: string, rawInput: unknown, cwd: string) {
   }
 
   if (isSubagentTool(name)) {
-    // Rendered as BB's native delegation row. The router fills in the child
+    // Rendered as VesnALIA's native delegation row. The router fills in the child
     // session once OpenCode reports it; until then the call ID stands in.
     const agent = firstInputString(input, ["agent", "subagent_type"]);
     const description = firstInputString(input, [
@@ -459,7 +459,7 @@ export function toolRow(name: string, rawInput: unknown, cwd: string) {
 
   // OpenCode Code Mode: the model runs code against `tools.<server>.<tool>`.
   // The title names the tools it calls. Those calls are not separate rows:
-  // BB renders any nested item as a subagent's work.
+  // VesnALIA renders any nested item as a subagent's work.
   if (tool === "execute" && typeof input.code === "string") {
     const calls = [
       ...new Set(

@@ -12,7 +12,7 @@
  *  - **Route.** Direct needs the viewer to be a loopback `http:` page —
  *    `viewerCanReachLoopback`, a fact about this page's own origin. An
  *    `https:` page blocks cleartext loopback as mixed content, and a page on
- *    another host (every remote bb panel) has the wrong `127.0.0.1`
+ *    another host (every remote VesnALIA panel) has the wrong `127.0.0.1`
  *    entirely. Both used to be discovered per stream, per generation, two
  *    doomed fetches at a time.
  *

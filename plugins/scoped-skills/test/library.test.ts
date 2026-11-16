@@ -22,7 +22,7 @@ function makeSkill(root: string, name: string, description = `${name} does a thi
   return dir;
 }
 
-test("parseFrontmatter rejects an unquoted ': ' the way BB's strict parser does", () => {
+test("parseFrontmatter rejects an unquoted ': ' the way VesnALIA's strict parser does", () => {
   assert.throws(
     () => parseFrontmatter("---\nname: x\ndescription: use when motion: adding states\n---\n"),
     SkillImportError,

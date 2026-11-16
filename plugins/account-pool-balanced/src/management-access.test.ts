@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, expect, it, vi } from 'vitest';
-import type { BbPluginApi, PluginRpcHandlers } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi, PluginRpcHandlers } from '@vesnalia/plugin-sdk';
 import { ManagementAccess, PoolManagementLocked } from './management-access.js';
 import { managementCli, managementInvoke, registerManagementRpc } from './management-boundary.js';
 import { accountPoolRpcContract } from './rpc.js';
@@ -84,9 +84,9 @@ function handlerFixture(overrides: Partial<PluginRpcHandlers<typeof accountPoolR
 it('permits owner UI RPCs while refusing untrusted plugin dispatch', async () => {
   const { access } = await setup();
   const registrations: Array<{ contract: unknown; handlers: Record<string, (input: unknown, context?: unknown) => unknown> }> = [];
-  const bb = { rpc: { register: (contract: unknown, handlers: Record<string, (input: unknown, context?: unknown) => unknown>) => registrations.push({ contract, handlers }) } } as unknown as Pick<BbPluginApi, 'rpc'>;
+  const alia = { rpc: { register: (contract: unknown, handlers: Record<string, (input: unknown, context?: unknown) => unknown>) => registrations.push({ contract, handlers }) } } as unknown as Pick<AliaPluginApi, 'rpc'>;
   const handlers = handlerFixture();
-  registerManagementRpc(bb, access, handlers);
+  registerManagementRpc(alia, access, handlers);
   const legacy = registrations[0]!.handlers;
   for (const [method, handler] of Object.entries(legacy)) {
     if(['egress.scopeAccept','egress.scopeRevoke'].includes(method)){
@@ -134,8 +134,8 @@ it('closes CLI inventory and mutation paths including forged identities and help
   const { access, key } = await setup();
   let run!: (argv: string[], context: { threadId?: string; projectId?: string }) => Promise<{ exitCode: number; stdout?: string; stderr?: string }>;
   const actual = vi.fn(async () => ({ exitCode: 0, stdout: 'operator-result' }));
-  const bb = { pluginId: 'test', server: {}, cli: { register: (registration: { run: typeof run }) => { run = registration.run; } } } as unknown as Pick<BbPluginApi, 'cli' | 'server' | 'pluginId'>;
-  managementCli(bb, access).cli.register({ name: 'pool', summary: 'test', commands: [], run: actual });
+  const alia = { pluginId: 'test', server: {}, cli: { register: (registration: { run: typeof run }) => { run = registration.run; } } } as unknown as Pick<AliaPluginApi, 'cli' | 'server' | 'pluginId'>;
+  managementCli(alia, access).cli.register({ name: 'pool', summary: 'test', commands: [], run: actual });
   for (const argv of [['egress', 'status', '--json'], ['account', 'list'], ['config', 'set', 'vpnGuardEnabled', 'false'], ['maintenance', 'release'], ['client', 'add', 'attacker']]) {
     expect((await run(argv, { threadId: 'owner', projectId: 'owner-project' })).exitCode).toBe(1);
   }
@@ -154,7 +154,7 @@ it('closes CLI inventory and mutation paths including forged identities and help
 it('does not leak resource names through the separate quota RPC registration', async () => {
   const handlers: Record<string, (input?: unknown) => Promise<unknown>> = {};
   const status = vi.fn(), refreshUsage = vi.fn();
-  registerUsageSource({ rpc: { register: (_contract: unknown, value: typeof handlers) => Object.assign(handlers, value) } } as unknown as BbPluginApi,
+  registerUsageSource({ rpc: { register: (_contract: unknown, value: typeof handlers) => Object.assign(handlers, value) } } as unknown as AliaPluginApi,
     { status, refreshUsage } as never, true);
   await expect(handlers[usageListMethod]!()).resolves.toEqual({ label: 'Provider access', resources: [] });
   await expect(handlers[usageFetchMethod]!({ resourceId: 'known-account', refresh: true })).rejects.toThrow(PoolManagementLocked);
@@ -164,8 +164,8 @@ it('does not leak resource names through the separate quota RPC registration', a
 it('issues CLI grants only into new private server files and never into command output', async () => {
   const { access, directory, key } = await setup();
   let run!: (argv: string[], context: object) => Promise<{ exitCode: number; stdout?: string; stderr?: string }>;
-  const bb = { pluginId: 'test', server: {}, cli: { register: (registration: { run: typeof run }) => { run = registration.run; } } } as unknown as Pick<BbPluginApi, 'cli' | 'server' | 'pluginId'>;
-  managementCli(bb, access).cli.register({ name: 'pool', summary: 'test', commands: [], run: async () => ({ exitCode: 0 }) });
+  const alia = { pluginId: 'test', server: {}, cli: { register: (registration: { run: typeof run }) => { run = registration.run; } } } as unknown as Pick<AliaPluginApi, 'cli' | 'server' | 'pluginId'>;
+  managementCli(alia, access).cli.register({ name: 'pool', summary: 'test', commands: [], run: async () => ({ exitCode: 0 }) });
   const output = path.join(directory, 'read-grant.json');
   const argv = ['management', 'unlock', '--request', JSON.stringify({ key, scope: 'read', ttlSeconds: 60, output })];
   const result = await run(argv, {});

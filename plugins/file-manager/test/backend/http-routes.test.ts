@@ -9,7 +9,7 @@ import { randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, readFile, realpath, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import yauzl from "yauzl";
 
@@ -43,8 +43,8 @@ beforeEach(async () => {
   root = await realpath(await mkdtemp(path.join(tmpdir(), "fm-http-")));
   await initRoot(root);
   host = createFakePluginHost({ pluginId: "file-manager" });
-  uploads = await createUploads(host.bb, { settings: { chunkSizeBytes: () => 4 * 1024 * 1024 } });
-  registerHttpRoutes(host.bb, { uploads });
+  uploads = await createUploads(host.alia, { settings: { chunkSizeBytes: () => 4 * 1024 * 1024 } });
+  registerHttpRoutes(host.alia, { uploads });
 });
 
 afterEach(async () => {

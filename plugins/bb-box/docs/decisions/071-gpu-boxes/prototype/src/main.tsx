@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import "./theme.css";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -105,7 +105,7 @@ function ToastView() {
 function Chrome({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-full min-h-0 bg-background">
-      <nav aria-label="BB" className="flex w-11 shrink-0 flex-col items-center gap-3 bg-rail py-3 text-muted-foreground max-sm:hidden">
+      <nav aria-label="ALIA" className="flex w-11 shrink-0 flex-col items-center gap-3 bg-rail py-3 text-muted-foreground max-sm:hidden">
         <button type="button" aria-label="New box" className="rounded-md p-1.5 hover:bg-state-hover" onClick={() => go({ page: "new" })}>
           <Icon name="Plus" className="size-4" aria-hidden />
         </button>

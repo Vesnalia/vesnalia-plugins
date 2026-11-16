@@ -1,18 +1,18 @@
-import { PluginCliError, cliCommand, type PluginCliContext, type PluginCliResult } from "@get-bb/plugin-sdk";
+import { PluginCliError, cliCommand, type PluginCliContext, type PluginCliResult } from "@vesnalia/plugin-sdk";
 import { BoxError, OPERATOR, describeError, type BoxRecord, type UserspaceUpdateAnswer } from "../core/boxes.ts";
 import { BY_COMMAND } from "../core/box-log.ts";
 import { fromOf } from "../core/gpu-userspace.ts";
 import type { Caller } from "../core/snapshot.ts";
 import type { ThreadOnBox } from "./contract.ts";
 import type { GpuMarkGuest, GpuMarking } from "../backends/types.ts";
-import type { BbBox } from "./setup.ts";
+import type { AliaBox } from "./setup.ts";
 import { PRODUCT } from "../brand.ts";
 
 const ANSWER_WORDS: Readonly<Record<string, (guest: GpuMarkGuest) => string>> = {
   granted: () => "The GPU helper granted it.",
   refused: (guest) => `The GPU helper refused it, as ${guest.answerWhy}.`,
   would: (guest) => `In its dry run, ${guest.answerWhy}.`,
-  unanswered: () => "The GPU helper had not answered within 10 s: run bb box doctor in a minute.",
+  unanswered: () => "The GPU helper had not answered within 10 s: run alia box doctor in a minute.",
   released: () => "The GPU helper cleared its claim; its device lines stay as they are.",
 };
 
@@ -44,7 +44,7 @@ export function guestLine(guest: GpuMarkGuest): string {
 
 const UNDO_LEAVES =
   "Each claim is cleared by the GPU helper first, through a gpu.release marker, which then comes off: the guest keeps its device lines, and the helper no longer writes them. " +
-  `A box ${PRODUCT} makes from now on is marked as it is made; these guests stay unmarked until bb box gpu mark marks them again.`;
+  `A box ${PRODUCT} makes from now on is marked as it is made; these guests stay unmarked until VesnALIA box gpu mark marks them again.`;
 
 function count(n: number, one: string, many = `${one}s`): string {
   return `${n} ${n === 1 ? one : many}`;
@@ -103,7 +103,7 @@ const COMMAND: Caller = { is: "command" };
 function ownerOf(options: { readonly machine?: boolean; readonly thread?: string }, ctx: PluginCliContext): string {
   if (options.machine) return OPERATOR;
   const threadId = options.thread ?? ctx.threadId;
-  if (!threadId) throw new PluginCliError("No thread.", { code: "missing_required", hint: "Run this in a BB thread, or pass --thread <id> or --machine." });
+  if (!threadId) throw new PluginCliError("No thread.", { code: "missing_required", hint: "Run this in a VesnALIA thread, or pass --thread <id> or --machine." });
   return threadId;
 }
 
@@ -115,27 +115,27 @@ function workingWords(threads: readonly ThreadOnBox[]): string | null {
   return `${working.length === 1 ? "A thread is" : `${working.length} threads are`} working on it, ${list}: the restart ends ${working.length === 1 ? "its" : "their"} work, so ${PRODUCT} refuses it unless --force.`;
 }
 
-function snapshotOffered(app: BbBox, box: BoxRecord): boolean {
+function snapshotOffered(app: AliaBox, box: BoxRecord): boolean {
   return app.snapshots.offerFor(app.snapshots.backendOf(box.backend), box.kind) !== null;
 }
 
-async function checkWords(app: BbBox, box: BoxRecord, answer: UserspaceUpdateAnswer): Promise<string> {
+async function checkWords(app: AliaBox, box: BoxRecord, answer: UserspaceUpdateAnswer): Promise<string> {
   if (!answer.needed) return answer.words;
   const working = workingWords(await app.threadsOn(box).catch(() => []));
   const snapshot = snapshotOffered(app, box) ? "--snapshot takes a snapshot of it first, so you can restore it." : null;
   return [answer.words, working, snapshot, "Changes nothing (--check)."].filter(Boolean).join(" ");
 }
 
-export function gpuCommands(app: BbBox) {
+export function gpuCommands(app: AliaBox) {
   return {
     "gpu update": cliCommand({
       summary:
         `Update NVIDIA's userspace in a running box with a GPU to the host's driver, after that driver changed (071). ${PRODUCT} checks the box first: ${PRODUCT}'s own Linux image on x86_64, 2 GiB free, and no NVIDIA or CUDA packages from apt. It then downloads NVIDIA's installer for exactly the host's driver, checks it against NVIDIA's SHA-256, installs it with no kernel modules, restarts the box, and checks that nvidia-smi lists the box's card and CUDA's driver initialises, and for a desktop that it draws and encodes its video on the GPU. ` +
-        `Everything running in the box stops. It is refused while a person holds control of the box's desktop, and while threads are working on it unless --force. Several boxes are updated one at a time. ${PRODUCT} never updates a box's userspace by itself; bb box doctor names the boxes that need it.`,
+        `Everything running in the box stops. It is refused while a person holds control of the box's desktop, and while threads are working on it unless --force. Several boxes are updated one at a time. ${PRODUCT} never updates a box's userspace by itself; VesnALIA box doctor names the boxes that need it.`,
       positionals: [{ name: "box", description: "The box's name or ID. Several, with spaces between, are updated one at a time.", required: true, variadic: true }],
       options: {
         thread: { type: "string", description: "The thread whose boxes to use. Defaults to the thread this runs in." },
-        machine: { type: "boolean", description: "The boxes are your machines, from bb box machines, not a thread's." },
+        machine: { type: "boolean", description: "The boxes are your machines, from VesnALIA box machines, not a thread's." },
         check: { type: "boolean", description: "Only say what it would do, and what stops; it changes nothing." },
         force: { type: "boolean", description: "Restart it even while threads are working on it, which ends their work." },
         snapshot: { type: "boolean", description: "Take a snapshot of the box first, where its provider takes snapshots, so it can be restored." },
@@ -159,7 +159,7 @@ export function gpuCommands(app: BbBox) {
                 continue;
               }
               await app.checkRestart(plan.box, options.force === true);
-              const taken = options.snapshot ? await app.snapshots.take(COMMAND, plan.box, { box: { id: plan.box.id, threadId: plan.box.threadId }, runsOn: false }, { note: `Taken by bb box gpu update before it installed NVIDIA's userspace ${plan.to} over ${fromOf(plan.from)}.` }) : null;
+              const taken = options.snapshot ? await app.snapshots.take(COMMAND, plan.box, { box: { id: plan.box.id, threadId: plan.box.threadId }, runsOn: false }, { note: `Taken by VesnALIA box gpu update before it installed NVIDIA's userspace ${plan.to} over ${fromOf(plan.from)}.` }) : null;
               const done = await app.boxes.updateUserspace(owner, box.id, { who: BY_COMMAND, checkRestart: (found) => app.checkRestart(found, options.force === true).then(() => undefined), signal: ctx.signal });
               const before = taken?.snapshot ? `Took snapshot "${taken.snapshot.name}" first. ` : "";
               results.push({ box: done.box.name, ok: true, words: `${before}${done.words}` });
@@ -181,7 +181,7 @@ export function gpuCommands(app: BbBox) {
         "It leaves, and names, a guest the helper would refuse or whose lines it would rewrite, one that is locked or has another marker, and checks each again from the config it reads just before it writes. It counts a guest granted only from the helper's own answer to that marker. It waits up to 10 s for the answers, and exits 1 when it leaves a guest or the helper does not grant one. --undo clears each claim the helper holds for this install's guests, through a gpu.release marker the helper answers, then takes that marker off: device lines stay as they are, and the helper no longer writes them.",
       options: {
         check: { type: "boolean", description: "Only say what it would mark, or with --undo take off, and why; it changes nothing." },
-        undo: { type: "boolean", description: "Clear the claims the GPU helper holds for this install's guests, and take their shared and whole markers off. Device lines and other gpu tags stay. Needs bb-box-gpu 0.3.0 or later." },
+        undo: { type: "boolean", description: "Clear the claims the GPU helper holds for this install's guests, and take their shared and whole markers off. Device lines and other gpu tags stay. Needs alia-box-gpu 0.3.0 or later." },
         on: { type: "string", description: "Only this backend, by its ID, such as proxmox-lxc. Every Proxmox LXC backend that is on by default." },
         json: { type: "boolean", description: "Print JSON." },
       },

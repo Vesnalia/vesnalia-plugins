@@ -1,7 +1,7 @@
-// Native agent tools mirroring `bb kata` (same service, same project
-// resolution from the calling thread), selected by `bb.agents.configure`
+// Native agent tools mirroring `alia kata` (same service, same project
+// resolution from the calling thread), selected by `alia.agents.configure`
 // only for kata-bound threads.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   boundText,
@@ -27,7 +27,7 @@ export const KATA_TOOL_NAMES = [
   "kata_link_thread",
 ] as const;
 
-/** Tool results stay small; the model can page with `limit` or use `bb kata`. */
+/** Tool results stay small; the model can page with `limit` or use `alia kata`. */
 const TOOL_MAX_BYTES = 64 * 1024;
 
 const ref = z.string().min(1).max(200).describe("Issue ref: abc4, project#abc4, or the issue ULID");
@@ -58,7 +58,7 @@ function failure(error: unknown): ToolResult {
 
 const changed = (d: KataIssueDetail) => `${d.issue.qualified_id}  ${issueLine(d.issue)}`;
 
-export function registerKataTools(bb: BbPluginApi, service: KataService) {
+export function registerKataTools(alia: AliaPluginApi, service: KataService) {
   const scope = (p: string | undefined, ctx: { threadId: string; projectId: string }, usage: string): Scope => ({
     project: p,
     threadId: ctx.threadId,
@@ -73,7 +73,7 @@ export function registerKataTools(bb: BbPluginApi, service: KataService) {
     }
   };
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kata_list",
     description:
       "List kata issues for this thread's kata project (or `project`), sorted by priority then last update. One line per issue: `P2 abc4  title  [labels] @owner`. Use `ready: true` for open issues with no open blockers, or `query` to search titles, bodies and comments (open and closed).",
@@ -120,7 +120,7 @@ export function registerKataTools(bb: BbPluginApi, service: KataService) {
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kata_show",
     description: "Show one kata issue: fields, markdown body, parent/children/blocks/blocked_by/related, and the last 20 comments.",
     presentation: { label: { pending: "Reading kata issue", completed: "Read kata issue" } },
@@ -132,7 +132,7 @@ export function registerKataTools(bb: BbPluginApi, service: KataService) {
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kata_create",
     description:
       "Create a kata issue and return its qualified id. Search first (kata_list with `query`) so you do not file a duplicate.",
@@ -166,7 +166,7 @@ export function registerKataTools(bb: BbPluginApi, service: KataService) {
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kata_update",
     description:
       "Update a kata issue: priority (0-4, null clears), title, body (replaces it), add_labels / remove_labels, parent (ref, or null to detach). Pass only the fields to change.",
@@ -197,7 +197,7 @@ export function registerKataTools(bb: BbPluginApi, service: KataService) {
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kata_comment",
     description: "Add a markdown comment to a kata issue (progress notes, what remains, review findings).",
     presentation: { label: { pending: "Commenting on kata issue", completed: "Commented on kata issue" } },
@@ -209,7 +209,7 @@ export function registerKataTools(bb: BbPluginApi, service: KataService) {
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kata_close",
     description:
       "Close a kata issue. Only close verified work. done: message of 40+ characters and at least one evidence item (commit:<sha>, pr:<url>, test:<cmd>, reviewed-paths:<a,b>, external:<account>). wontfix: 60+ characters. duplicate / superseded: 20+ characters and `target`. If the work is not verified, do not close; add the needs-review label (kata_update) and comment what remains. `dry_run` validates without closing.",
@@ -239,10 +239,10 @@ export function registerKataTools(bb: BbPluginApi, service: KataService) {
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kata_link_thread",
     description:
-      "Link this thread to a kata issue (shown in the thread header; bb links it for the next session). Pass `ref: null` to unlink.",
+      "Link this thread to a kata issue (shown in the thread header; VesnALIA links it for the next session). Pass `ref: null` to unlink.",
     presentation: { label: { pending: "Linking kata issue", completed: "Linked kata issue" } },
     parameters: z.object({ ref: ref.nullable(), project }).strict(),
     execute: (params, ctx) =>

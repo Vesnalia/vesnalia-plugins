@@ -3,7 +3,7 @@ import {
   experimental_SidebarNavigationIcon as SidebarNavigationIcon,
   experimental_useSidebarNavigation as useSidebarNavigation,
   type ExperimentalSidebarNavigationItem,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import { NavigationNotice } from "./NavigationNotice";
 

@@ -22,7 +22,7 @@ import {
   touchedPaths,
 } from "./support/host-api.js";
 
-test("bounds multi-megabyte tool input and output before serializing a BB timeline delta", () => {
+test("bounds multi-megabyte tool input and output before serializing a VesnALIA timeline delta", () => {
   const huge = `start-${"x".repeat(4 * 1024 * 1024)}-end`;
   const [delta] = timelineDeltasForEmission([
     {
@@ -49,8 +49,8 @@ test("bounds multi-megabyte tool input and output before serializing a BB timeli
   const item = delta.item as { args: { content: string }; result: string };
 
   assert.ok(Buffer.byteLength(serialized) <= MAX_TIMELINE_DELTA_BYTES);
-  assert.match(item.args.content, /BB truncated/);
-  assert.match(item.result, /BB truncated/);
+  assert.match(item.args.content, /ALIA truncated/);
+  assert.match(item.result, /ALIA truncated/);
   assert.match(item.result, /start-/);
   assert.match(item.result, /-end/);
 });
@@ -112,18 +112,18 @@ test("projects provider failures as a visible error followed by a failed turn bo
   );
 });
 
-test("maps OpenCode file reads to BB's native read row", () => {
+test("maps OpenCode file reads to VesnALIA's native read row", () => {
   assert.equal(
     toolRow("read", { filePath: "README.md" }, "/repo").item.type,
     "fileRead",
   );
 });
 
-test("maps a read of a directory to BB's native file-list row", () => {
+test("maps a read of a directory to VesnALIA's native file-list row", () => {
   assert.equal(toolRow("read", { filePath: "." }, "/tmp").item.type, "search");
 });
 
-test("maps OpenCode searches and commands to native BB rows", () => {
+test("maps OpenCode searches and commands to native VesnALIA rows", () => {
   assert.equal(
     toolRow("grep", { pattern: "needle" }, "/repo").item.type,
     "search",
@@ -179,7 +179,7 @@ test("leaves prompts unchanged and surfaces the subagent warning on failure", ()
   assert.equal(toolFailureError("task", false, "boom"), "boom");
 });
 
-test("maps every BB permission mode to the matching OpenCode reply behavior", () => {
+test("maps every VesnALIA permission mode to the matching OpenCode reply behavior", () => {
   assert.equal(
     automaticPermissionReply("accept-edits", false, "bash"),
     undefined,
@@ -204,7 +204,7 @@ test("rejects native subagent permission requests before every automatic mode", 
   }
 });
 
-test("forwards BB skill mentions to OpenCode's native skill API shape", () => {
+test("forwards VesnALIA skill mentions to OpenCode's native skill API shape", () => {
   const body = promptBody([
     {
       type: "text",
@@ -231,7 +231,7 @@ test("forwards BB skill mentions to OpenCode's native skill API shape", () => {
   ]);
 });
 
-test("falls back to the configured BB skill file when OpenCode has not discovered it", () => {
+test("falls back to the configured VesnALIA skill file when OpenCode has not discovered it", () => {
   const body = promptBody(
     [
       {
@@ -256,16 +256,16 @@ test("falls back to the configured BB skill file when OpenCode has not discovere
     ],
     {
       nativeSkillNames: new Set(["other"]),
-      skillFiles: new Map([["review", "/tmp/bb-skills/review/SKILL.md"]]),
+      skillFiles: new Map([["review", "/tmp/alia-skills/review/SKILL.md"]]),
     },
   );
   assert.deepEqual(body.files, [
-    { uri: "file:///tmp/bb-skills/review/SKILL.md", name: "review/SKILL.md" },
+    { uri: "file:///tmp/alia-skills/review/SKILL.md", name: "review/SKILL.md" },
   ]);
   assert.equal(body.skills, undefined);
 });
 
-test("recognizes only BB's standalone built-in compact command", () => {
+test("recognizes only VesnALIA's standalone built-in compact command", () => {
   const standalone = [
     {
       type: "text",
@@ -301,7 +301,7 @@ test("recognizes only BB's standalone built-in compact command", () => {
   );
 });
 
-test("constructs a steered OpenCode compaction request and a complete BB compaction turn", () => {
+test("constructs a steered OpenCode compaction request and a complete VesnALIA compaction turn", () => {
   assert.deepEqual(manualCompactionRequest("ses_123", "msg_456"), {
     path: "/api/session/ses_123/compact",
     body: { id: "msg_456", delivery: "steer" },
@@ -372,7 +372,7 @@ test("retains through a checkpoint by acting on the following turn", () => {
   assert.equal(revertTargetRetainingThrough(turnMessages, "msg_u2"), undefined);
 });
 
-test("confirms steered input so BB clears Steer pending", () => {
+test("confirms steered input so VesnALIA clears Steer pending", () => {
   assert.deepEqual(steerAcceptedDelta("client_1", "turn_1"), {
     kind: "input.accepted",
     clientRequestId: "client_1",

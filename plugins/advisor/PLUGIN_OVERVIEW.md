@@ -12,13 +12,13 @@ Use the switch in an existing thread's composer to override the global default. 
 
 Set **Findings language** in Settings → Extensions → Advisor to choose the language of finding titles, explanations and suggestions. Leave it empty to keep the current behavior. Plugin UI stays unchanged. Set **Additional instructions** there to append your own review guidance after the result format; it is fenced, limited to 4000 characters, and cannot change the result block. Empty adds nothing.
 
-By default only substantive completed turns are reviewed: a turn with no tool calls or edits and a short answer is skipped, and the next review covers it. Each later review sends only what is new since the reviewer last looked. Threads other plugins start, such as bot coordinators and workers, are reviewed too unless you turn **Review plugin-created threads** off. Every review run, with its tokens and time, is recorded and shown by `bb advisor reviews`.
+By default only substantive completed turns are reviewed: a turn with no tool calls or edits and a short answer is skipped, and the next review covers it. Each later review sends only what is new since the reviewer last looked. Threads other plugins start, such as bot coordinators and workers, are reviewed too unless you turn **Review plugin-created threads** off. Every review run, with its tokens and time, is recorded and shown by `alia advisor reviews`.
 
 Choose a reviewer model and reasoning level for each connected machine, or follow the primary thread's model. The reviewer can use the same provider or another configured provider that supports its required permission mode.
 
 ## Requirements and usage
 
-Requires BB 0.49.0 or later, plugin SDK 0.6.132 or later, and a configured agent provider capable of running a reviewer in Accept Edits mode. Reviews use your existing provider account and consume additional model usage under that account's billing or subscription limits. No separate Advisor service or account is required.
+Requires VesnALIA 0.49.0 or later, plugin SDK 0.6.132 or later, and a configured agent provider capable of running a reviewer in Accept Edits mode. Reviews use your existing provider account and consume additional model usage under that account's billing or subscription limits. No separate Advisor service or account is required.
 
 The reviewer is instructed to inspect without editing, but Accept Edits does permit workspace writes. If Claude Code asks the hidden reviewer for a command approval, Advisor never approves it: it stops the review at once and reports it as unavailable with the command, and **Show the reviewer's work** in the panel shows the request. An existing Codex session needs a fresh model session to gain a newly enabled review tool; **Review now** works immediately.
 

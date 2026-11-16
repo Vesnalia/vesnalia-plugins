@@ -3,7 +3,7 @@
  * OFF by default: only create one when the user has turned sound on.
  *
  * Browsers only allow audio after a user gesture. If the context starts
- * suspended (e.g. bb opened the page on its own) everything here quietly
+ * suspended (e.g. VesnALIA opened the page on its own) everything here quietly
  * plays nothing; it never throws.
  */
 export interface ModemSound {

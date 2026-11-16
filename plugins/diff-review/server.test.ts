@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
-import { createFakePluginHost, experimental_scanPublicSdkOnly, makePluginAgentConfigurationContext, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import type { ProviderInfo } from "@get-bb/plugin-sdk";
+import { createFakePluginHost, experimental_scanPublicSdkOnly, makePluginAgentConfigurationContext, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import type { ProviderInfo } from "@vesnalia/plugin-sdk";
 import { describe, expect, it, vi } from "vitest";
 
 import plugin, { diffReviewPlugin } from "./server";
@@ -54,7 +54,7 @@ interface Setup {
   diffityignore?: string;
   /** More files the host can read, by absolute path; `/work/repo/.git` is a directory unless listed. */
   files?: Record<string, string>;
-  /** Awaited before answering `threads.get` for that thread, or `threads.spawn`: a test holds bb mid-call. */
+  /** Awaited before answering `threads.get` for that thread, or `threads.spawn`: a test holds VesnALIA mid-call. */
   holdThreadGet?: (threadId: string) => Promise<void>;
   holdSpawn?: () => Promise<void>;
   /** Awaited before answering `providers.list` (a run's start looks up the provider's modes). */
@@ -62,19 +62,19 @@ interface Setup {
   /** Awaited before answering `environments.get` and `threads.events.list`. */
   holdEnvironmentGet?: () => Promise<void>;
   holdEvents?: (threadId: string) => Promise<void>;
-  /** Runs once bb has made a spawned thread but before `spawn` answers: the child acting early. */
+  /** Runs once VesnALIA has made a spawned thread but before `spawn` answers: the child acting early. */
   duringSpawn?: (threadId: string) => Promise<void>;
-  /** More fields in bb's status answer, as a later bb may add (a time stamp, say). */
+  /** More fields in VesnALIA's status answer, as a later VesnALIA may add (a time stamp, say). */
   statusExtra?: () => Record<string, unknown>;
   /** The host entry's revert refuses with this message. */
   hostRevertRefuses?: string;
   /** The GitHub CLI, for the pull request view. */
   gh?: (args: readonly string[], stdin?: string, signal?: AbortSignal) => Promise<string>;
-  /** What bb's GitHub PR Status says the workspace's branch has. */
+  /** What VesnALIA's GitHub PR Status says the workspace's branch has. */
   branchPull?: { url: string; title: string };
   /** Awaited before the Git plugin answers a `patches` call, with the call's signal. */
   holdPatches?: (signal: AbortSignal | undefined) => Promise<void>;
-  /** Called before a write lands: a string is what someone else wrote meanwhile (bb answers a conflict). */
+  /** Called before a write lands: a string is what someone else wrote meanwhile (VesnALIA answers a conflict). */
   beforeWrite?: (path: string) => string | undefined;
   /** Files as committed at HEAD, by absolute path, for `files.read` with `ref`. */
   headFiles?: Record<string, string>;
@@ -90,18 +90,18 @@ async function setup(options: Setup = {}) {
   const reads: string[] = [];
   // What the workspace holds; a test edits it to play a run that changes files.
   const workspace = { extraFile: false, head: "abc", bigVersion: 1 };
-  // What bb would hold for spawned threads: their origin plugin and metadata.
+  // What VesnALIA would hold for spawned threads: their origin plugin and metadata.
   const spawnedMetadata: Record<string, Record<string, unknown>> = {};
   let spawned = 0;
   // The workspace's files the host can read and write, by absolute path.
   const files: Record<string, string> = { ...options.files };
   const writes: string[] = [];
   const hostCalls: { method: string; input: unknown; hostId: string }[] = [];
-  const bbEvents: { event: string; callback: (event: unknown) => void }[] = [];
+  const aliaEvents: { event: string; callback: (event: unknown) => void }[] = [];
   // What the host says is staged; a test changes it to play `git add`.
   const index = { key: "index-1" };
-  // bb's Git plugin: on unless a test turns it off; Viewed marks by path; every call it got, and
-  // whether bb's plugin list was asked about it. `prStatusSignals`: what each PR status read was given.
+  // VesnALIA's Git plugin: on unless a test turns it off; Viewed marks by path; every call it got, and
+  // whether VesnALIA's plugin list was asked about it. `prStatusSignals`: what each PR status read was given.
   const git = {
     enabled: true,
     viewed: {} as Record<string, string>,
@@ -157,7 +157,7 @@ async function setup(options: Setup = {}) {
         return Object.fromEntries(
           (input.keys as string[]).map((key) => {
             const [, , , path, revision] = JSON.parse(key) as [string, unknown, boolean, string, string];
-            // A revision that is no longer the file's is still answered, as bb's Git plugin does.
+            // A revision that is no longer the file's is still answered, as VesnALIA's Git plugin does.
             return [key, { outcome: "available" as const, patch: { path, patch: `patch of ${path}, version ${workspace.bigVersion} at ${revision}`, truncated: false } }];
           }),
         );
@@ -173,7 +173,7 @@ async function setup(options: Setup = {}) {
         throw new Error(`the fake Git plugin has no ${method}`);
     }
   };
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "diff-review",
     // The plugin's host entry: git on the workspace's machine, for staged, unstaged and ranges.
     experimental_callHostRpc: (call) => {
@@ -195,14 +195,14 @@ async function setup(options: Setup = {}) {
         headSha: spec.kind === "range" ? "head5678" : null,
       };
     },
-    // The skill bb imports from `skills/diff-review`, which `configure` names.
+    // The skill VesnALIA imports from `skills/diff-review`, which `configure` names.
     agentSkillIds: ["diff-review"],
     sdk: {
-      // bb's own realtime events, which a test emits through `bbEvents`.
+      // VesnALIA's own realtime events, which a test emits through `aliaEvents`.
       subscribe: ((args: { event: string; callback: (event: unknown) => void }) => {
-        bbEvents.push(args);
+        aliaEvents.push(args);
         return () => {
-          bbEvents.splice(bbEvents.indexOf(args), 1);
+          aliaEvents.splice(aliaEvents.indexOf(args), 1);
         };
       }) as never,
       threads: {
@@ -256,15 +256,15 @@ async function setup(options: Setup = {}) {
       plugins: {
         list: async () => {
           git.listed += 1;
-          return { plugins: [{ id: "bb--git", enabled: git.enabled }] } as never;
+          return { plugins: [{ id: "alia--git", enabled: git.enabled }] } as never;
         },
-        // bb's Git plugin, as `bb.sdk.plugins.callRpc` reaches it; `git.calls` records each call.
+        // VesnALIA's Git plugin, as `alia.sdk.plugins.callRpc` reaches it; `git.calls` records each call.
         callRpc: async ({ pluginId, method, input, outputSchema, signal }: { pluginId: string; method: string; input?: unknown; outputSchema: { parse: (value: unknown) => unknown }; signal?: AbortSignal }) => {
-          if (pluginId === "bb--github-pr-status") git.prStatusSignals.push(signal);
-          if (pluginId === "bb--github-pr-status" && options.branchPull !== undefined) {
+          if (pluginId === "alia--github-pr-status") git.prStatusSignals.push(signal);
+          if (pluginId === "alia--github-pr-status" && options.branchPull !== undefined) {
             return outputSchema.parse({ [(input as { keys: string[] }).keys[0]!]: { outcome: "available", pullRequest: options.branchPull } }) as never;
           }
-          if (pluginId !== "bb--git") throw new Error(`no plugin ${pluginId}`);
+          if (pluginId !== "alia--git") throw new Error(`no plugin ${pluginId}`);
           git.calls.push({ method, input, ...(signal === undefined ? {} : { signal }) });
           if (method === "patches") await options.holdPatches?.(signal);
           if (!git.enabled) throw new Error("Plugin RPC failed");
@@ -288,7 +288,7 @@ async function setup(options: Setup = {}) {
       files: {
         write: async ({ path, content, expectedSha256 }: { path: string; content: string; expectedSha256?: string | null }) => {
           const current = files[path];
-          // bb answers a write whose file changed since it was read with a conflict, not an error.
+          // VesnALIA answers a write whose file changed since it was read with a conflict, not an error.
           if (expectedSha256 !== undefined && expectedSha256 !== null && (current === undefined || sha(current) !== expectedSha256)) return { outcome: "conflict", currentSha256: current === undefined ? null : sha(current) } as never;
           if (options.beforeWrite !== undefined) {
             const raced = options.beforeWrite(path);
@@ -330,7 +330,7 @@ async function setup(options: Setup = {}) {
       },
     },
   });
-  await (options.gh === undefined ? plugin(bb) : diffReviewPlugin({ gh: options.gh })(bb));
+  await (options.gh === undefined ? plugin(alia) : diffReviewPlugin({ gh: options.gh })(alia));
   const rpc = harness.behavior.callRpc.bind(harness.behavior) as (method: string, input?: unknown) => Promise<unknown>;
   const view = async (target: unknown = { kind: "uncommitted" }) => (await rpc("getReview", { threadId: THREAD, target })) as Extract<ReviewView, { ok: true }>;
   const comment = async (sessionId: string, body = "Why 3?") =>
@@ -346,9 +346,9 @@ async function setup(options: Setup = {}) {
       body,
     })) as { thread: ReviewThread }).thread;
   const emitEnvironmentChanged = (changes: string[] = ["work-status-changed"]) => {
-    for (const listener of bbEvents.filter((entry) => entry.event === "environment:changed")) listener.callback({ type: "changed", entity: "environment", id: ENV, changes });
+    for (const listener of aliaEvents.filter((entry) => entry.event === "environment:changed")) listener.callback({ type: "changed", entity: "environment", id: ENV, changes });
   };
-  return { bb, harness, rpc, view, comment, threads, turnStarts, workspace, reads, git, files, writes, hostCalls, emitEnvironmentChanged, index };
+  return { alia, harness, rpc, view, comment, threads, turnStarts, workspace, reads, git, files, writes, hostCalls, emitEnvironmentChanged, index };
 }
 
 describe("the Review tab's view", () => {
@@ -459,7 +459,7 @@ describe("the Review tab's view", () => {
     expect(git.calls.filter((entry) => entry.method === "patches").map((entry) => entry.input)).toEqual([{ keys: [JSON.stringify([ENV, { type: "uncommitted" }, false, "big.txt", "rev-big-1"])] }]);
   });
 
-  it("reads every diff through bb's Git plugin, hiding whitespace when asked", async () => {
+  it("reads every diff through VesnALIA's Git plugin, hiding whitespace when asked", async () => {
     const { rpc, git } = await setup();
     await rpc("getReview", { threadId: THREAD, target: { kind: "branch" }, ignoreWhitespace: true });
     expect(git.calls.find((entry) => entry.method === "files" && (entry.input as { ignoreWhitespace: boolean }).ignoreWhitespace)?.input).toEqual({
@@ -471,14 +471,14 @@ describe("the Review tab's view", () => {
     expect(git.calls.at(-1)!.input).toEqual({ keys: [JSON.stringify([ENV, { type: "commit", sha: "abcdef1" }, true, "big.txt", "r"])] });
   });
 
-  it("says so when bb's Git plugin is turned off", async () => {
+  it("says so when VesnALIA's Git plugin is turned off", async () => {
     const { view, git } = await setup();
     git.enabled = false;
     const result = (await view()) as unknown as { ok: false; message: string };
-    expect(result).toEqual({ ok: false, message: expect.stringContaining("bb's Git plugin is turned off") });
+    expect(result).toEqual({ ok: false, message: expect.stringContaining("VesnALIA's Git plugin is turned off") });
   });
 
-  it("marks and clears Viewed through bb's Git plugin, at the revision the tab showed", async () => {
+  it("marks and clears Viewed through VesnALIA's Git plugin, at the revision the tab showed", async () => {
     const { rpc, view, git } = await setup();
     await rpc("setViewed", { threadId: THREAD, target: { kind: "uncommitted" }, path: "src/a.ts", revision: "rev-src/a.ts", viewed: true });
     expect(git.calls.at(-1)).toEqual({ method: "markViewed", input: { environmentId: ENV, target: { type: "uncommitted" }, path: "src/a.ts", revision: "rev-src/a.ts" } });
@@ -505,7 +505,7 @@ describe("the Review tab's view", () => {
     expect((await view()).threads[0]!.fileRevision).toBe("rev-src/a.ts");
   });
 
-  it("shows bb's Viewed marks, and which files changed since they were viewed", async () => {
+  it("shows VesnALIA's Viewed marks, and which files changed since they were viewed", async () => {
     const { view, git } = await setup();
     git.viewed["src/a.ts"] = "rev-src/a.ts";
     git.viewed["big.txt"] = "rev-big-0";
@@ -554,7 +554,7 @@ describe("changing the workspace from the tab", () => {
     expect((await view()).threads[0]!.status).toBe("open");
   });
 
-  it("reverts on the workspace's machine, sending the reviewed revision and patch, never writing through bb's files", async () => {
+  it("reverts on the workspace's machine, sending the reviewed revision and patch, never writing through VesnALIA's files", async () => {
     const { rpc, hostCalls, writes } = await setup();
     await expect(rpc("revertChanges", { threadId: THREAD, path: "src/a.ts", revision: "stale", hunks: [0] })).rejects.toMatchObject({ code: "conflict" });
     await rpc("revertChanges", { threadId: THREAD, path: "src/a.ts", revision: "rev-src/a.ts", hunks: [0] });
@@ -1353,14 +1353,14 @@ describe("reviewing a GitHub pull request", () => {
     expect(harness.inspection.realtimeSignals.at(-1)).toEqual({ channel: "open-review", payload: { threadId: THREAD, target: PULL, file: null } });
   });
 
-  it("offers the review of the branch's pull request, from bb's GitHub PR Status", async () => {
+  it("offers the review of the branch's pull request, from VesnALIA's GitHub PR Status", async () => {
     const { view } = await setup({ branchPull: { url: "https://github.com/o/r/pull/7", title: "Add b" } });
     expect((await view()).branchPullRequest).toEqual({ owner: "o", repo: "r", number: 7, title: "Add b" });
   });
 });
 
 describe("a caller that stops waiting", () => {
-  // A call whose signal fires rejects (bb's `callRpc` stops waiting, though bb 0.48.1's Git plugin finishes
+  // A call whose signal fires rejects (VesnALIA's `callRpc` stops waiting, though VesnALIA 0.48.1's Git plugin finishes
   // its own work); this one answers nothing until then. These tests cover this plugin's side only.
   const abandoned = (signal: AbortSignal | undefined) =>
     new Promise<void>((_resolve, reject) => {
@@ -1422,7 +1422,7 @@ describe("a caller that stops waiting", () => {
   });
 });
 
-describe("bb diff-review open", () => {
+describe("alia diff-review open", () => {
   it("asks the windows to open the thread's review on a view and file, and prints the page", async () => {
     const { harness } = await setup();
     const out = await harness.behavior.runCli(["open", "src/a.ts", "--view", "branch"], { threadId: THREAD });
@@ -1449,7 +1449,7 @@ describe("changes made outside a turn", () => {
   const settle = () => new Promise((resolve) => setTimeout(resolve, 600));
   const watch = (rpc: (method: string, input?: unknown) => Promise<unknown>, active: boolean, view = "uncommitted", tab = "tab1") => rpc("watchWorkspace", { threadId: THREAD, tab, view, active });
 
-  it("reloads a showing tab when bb sees an edit that keeps every line count, and not again for nothing", async () => {
+  it("reloads a showing tab when VesnALIA sees an edit that keeps every line count, and not again for nothing", async () => {
     const { view, rpc, harness, workspace, emitEnvironmentChanged } = await setup();
     await view();
     await watch(rpc, true);
@@ -1459,11 +1459,11 @@ describe("changes made outside a turn", () => {
     emitEnvironmentChanged();
     await settle();
     expect(diffSignals(harness)).toBe(1);
-    // bb says something changed, but nothing did: no reload, so the check cannot loop.
+    // VesnALIA says something changed, but nothing did: no reload, so the check cannot loop.
     emitEnvironmentChanged();
     await settle();
     expect(diffSignals(harness)).toBe(1);
-    // Changes bb sends that are not about files are ignored.
+    // Changes VesnALIA sends that are not about files are ignored.
     workspace.bigVersion = 3;
     emitEnvironmentChanged(["metadata-changed"]);
     await settle();
@@ -1538,7 +1538,7 @@ describe("changes made outside a turn", () => {
 });
 
 describe("refusals", () => {
-  it("answers a caller's mistake as bb's expected refusal, not a handler crash", async () => {
+  it("answers a caller's mistake as VesnALIA's expected refusal, not a handler crash", async () => {
     const { rpc } = await setup();
     await expect(rpc("setStatus", { reviewThreadId: "nonexistent01", status: "resolved" })).rejects.toMatchObject({ code: "not_found", message: expect.stringContaining("nonexistent01") });
   });
@@ -1596,9 +1596,9 @@ describe("the Reviews page", () => {
     // Every thread archived, but the workspace is still there: not an orphan.
     archived(harness);
     expect(await rpc("orphanReviews", {})).toEqual({ reviews: [] });
-    // A workspace bb cannot answer for is not taken for gone.
+    // A workspace VesnALIA cannot answer for is not taken for gone.
     harness.sdk.stub("environments.get", async () => {
-      throw new Error("bb is busy");
+      throw new Error("alia is busy");
     });
     expect(await rpc("orphanReviews", {})).toEqual({ reviews: [] });
     harness.sdk.stub("environments.get", async () => environment({ status: "destroyed", path: null }) as never);
@@ -1615,7 +1615,7 @@ describe("the Reviews page", () => {
     expect(harness.inspection.realtimeSignals.filter((event) => event.channel === "reviews").at(-1)!.payload).toEqual({ kind: "threads", sessionId });
   });
 
-  /** A gate a fake bb call waits at: `reached` resolves when the call gets there, `open()` lets it on. */
+  /** A gate a fake VesnALIA call waits at: `reached` resolves when the call gets there, `open()` lets it on. */
   function gate() {
     let arrive = () => undefined as void;
     let open = () => undefined as void;
@@ -1731,7 +1731,7 @@ describe("the Reviews page", () => {
       await context.rpc("saveViewState", { threadId: THREAD, sessionId, state: { drafts: {}, collapsed: {}, scroll: null, savedAt: 1 } });
       if (failure === "before spawn") {
         context.harness.sdk.stub("environments.get", async () => {
-          throw new Error("bb is restarting");
+          throw new Error("alia is restarting");
         });
       }
       const { run } = (await context.rpc("fixInNewThread", { sessionId, threadId: THREAD, reviewThreadIds: await threadIdsOf(context.rpc, sessionId), note: "", execution })) as { run: { status: string; threadId: string | null } };
@@ -1867,7 +1867,7 @@ describe("sending to the agent and its answers", () => {
     expect(text).toContain(`### Thread \`${thread.id}\` — src/a.ts:2 (new side) · question`);
     expect(text).toContain("> Why 3?");
     expect(text).toContain("## Review summary\n\nKeep it small.");
-    expect(text).toContain("bb diff-review reply <thread-id> --text-base64-stdin");
+    expect(text).toContain("alia diff-review reply <thread-id> --text-base64-stdin");
   });
 
   it("marks the threads as sent to that thread", async () => {
@@ -1876,7 +1876,7 @@ describe("sending to the agent and its answers", () => {
     expect(thread!.delivery).toMatchObject({ state: "sent", threadId: THREAD });
   });
 
-  it("forgets a send bb refused", async () => {
+  it("forgets a send VesnALIA refused", async () => {
     const context = await setup({ sendFails: true });
     const { sessionId } = await context.view();
     const thread = await context.comment(sessionId);
@@ -1923,7 +1923,7 @@ describe("sending to the agent and its answers", () => {
     expect(other.stderr).toContain("was not sent to this thread");
     const outside = await harness.behavior.runCli(["reply", thread.id, "hi"]);
     expect(outside.exitCode).not.toBe(0);
-    expect(outside.stderr).toContain("Run this inside the bb thread");
+    expect(outside.stderr).toContain("Run this inside the VesnALIA thread");
     const bad = await harness.behavior.runCli(["reply", thread.id, "--text-base64", "not base64!"], { threadId: THREAD });
     expect(bad.stderr).toContain("not valid base64");
   });
@@ -1968,7 +1968,7 @@ describe("sending to the agent and its answers", () => {
     expect(harness.inspection.logEntries.some((entry) => entry.level === "debug" && /ended; env_1 changed from \(head abc.*\) to \(head def/.test(entry.message))).toBe(true);
   });
 
-  it("signals once for turns that end together, and ignores fields of bb's status it does not use", async () => {
+  it("signals once for turns that end together, and ignores fields of VesnALIA's status it does not use", async () => {
     const { harness, view, workspace } = await setup({ statusExtra: () => ({ checkedAt: Date.now() + Math.random() }) });
     await view();
     const diffSignals = () => harness.inspection.realtimeSignals.filter((signal) => (signal.payload as { kind: string }).kind === "diff").length;
@@ -2021,7 +2021,7 @@ describe("AI runs", () => {
     expect(spawn.visibility).toBeUndefined();
     expect(spawn.prompt).toContain("- Focus: Security, Tests");
     expect(spawn.prompt).toContain("Check the auth path.");
-    // Its final message, which bb posts to the parent, says it is a report.
+    // Its final message, which VesnALIA posts to the parent, says it is a report.
     expect(spawn.prompt).toContain(`Start your final message with this line, exactly: "${REPORT_LINE}"`);
     expect((await view()).runs.map((row) => row.id)).toEqual([run.id]);
   });
@@ -2359,7 +2359,7 @@ describe("AI runs", () => {
     expect(isError(await tool(harness, "diff_review_general_comment", { body: "Late." }, review.threadId!))).toBe(true);
     expect(isError(await tool(harness, "diff_review_resolve", { threadId: fix.id, text: "Fixed." }, fixRun.threadId!))).toBe(true);
     expect((await sessionState(rpc, sessionId)).threads).toEqual([]);
-    // The parent keeps the notice instructions: bb may still report the archived runs to it.
+    // The parent keeps the notice instructions: VesnALIA may still report the archived runs to it.
     expect(harness.inspection.registrations.instructionProvider!({ threadId: THREAD, projectId: "proj_1" })).toContain("are status reports");
 
     // The tab starts fresh: new comments and runs work as before.
@@ -2382,7 +2382,7 @@ describe("AI runs", () => {
     expect((await sessionState(rpc, sessionId)).threads).toEqual([]);
   });
 
-  it("archives a run's thread that bb started after the run was closed, and sends it nothing", async () => {
+  it("archives a run's thread that VesnALIA started after the run was closed, and sends it nothing", async () => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => (release = resolve));
     const { harness, rpc, view, comment } = await setup({ holdSpawn: () => gate });
@@ -2414,7 +2414,7 @@ describe("AI runs", () => {
     expect(diffSignals()).toBe(1);
   });
 
-  it("2: refuses an answer whose send moved to another thread while bb looked up the author, leaving every row as it was", async () => {
+  it("2: refuses an answer whose send moved to another thread while VesnALIA looked up the author, leaving every row as it was", async () => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => (release = resolve));
     let armed = false;
@@ -2469,7 +2469,7 @@ describe("AI runs", () => {
     const { harness, rpc, view, comment } = await setup({ holdEnvironmentGet: () => (armed ? gate : Promise.resolve()) });
     const { sessionId } = await view();
     armed = true;
-    // An AI review held on its first read of bb.
+    // An AI review held on its first read of VesnALIA.
     const review = rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution });
     await new Promise((resolve) => setTimeout(resolve, 10));
     expect(await rpc("clearReview", { sessionId })).toEqual({ deletedThreads: 0, closedRuns: 1 });
@@ -2510,7 +2510,7 @@ describe("AI runs", () => {
     expect(await sessionState(rpc, sessionId)).toEqual({ threads: [], runs: [], aliases: {} });
   });
 
-  it("4: a fix run's thread can answer, and end its turn, before bb has answered its start", async () => {
+  it("4: a fix run's thread can answer, and end its turn, before VesnALIA has answered its start", async () => {
     let early: { answered: boolean; listed: string } | null = null;
     const context: { harness?: Awaited<ReturnType<typeof setup>>["harness"] } = {};
     const { harness, rpc, view, comment } = await setup({
@@ -2532,7 +2532,7 @@ describe("AI runs", () => {
     expect((await sessionState(rpc, sessionId)).threads[0]).toMatchObject({ status: "resolved", delivery: { state: "answered", threadId: "thr_run_1" } });
   });
 
-  it("4: a review run's thread can comment before bb has answered its start", async () => {
+  it("4: a review run's thread can comment before VesnALIA has answered its start", async () => {
     const context: { harness?: Awaited<ReturnType<typeof setup>>["harness"]; result?: unknown } = {};
     const { harness, rpc, view } = await setup({
       duringSpawn: async (threadId) => {
@@ -2704,7 +2704,7 @@ describe("AI runs", () => {
     const { sessionId } = await view();
     const thread = await comment(sessionId, "Rename b");
     await rpc("send", { sessionId, threadId: THREAD, reviewThreadIds: [thread.id], note: "" });
-    // THREAD's turn that took the send ends without answering; its close-out is held on bb.
+    // THREAD's turn that took the send ends without answering; its close-out is held on VesnALIA.
     turnStarts.splice(0, turnStarts.length, Date.now() + 60_000);
     armed = true;
     const ended = harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: THREAD, environmentId: ENV }), lastAssistantText: "done" });

@@ -1,4 +1,4 @@
-// bb-plugin-graph-studio — backend.
+// alia-plugin-graph-studio — backend.
 //
 // Owns: the graph library, run execution, and durability. The graph model,
 // layout, runtime and checkpointer live in lib/ so they stay testable without
@@ -6,7 +6,7 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { Command } from "@langchain/langgraph";
 import {
@@ -349,9 +349,9 @@ export function fromGraphFile(json: string): Graph {
   return graph.data;
 }
 
-export default function graphStudio(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+export default function graphStudio(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, MIGRATIONS);
   const store = createStore(db);
   const checkpointer = new SqliteCheckpointer(db);
 
@@ -374,7 +374,7 @@ export default function graphStudio(bb: BbPluginApi) {
     // themselves. Not resolved silently in either direction: the row still
     // wins, and the log says so.
     if (stored && TEMPLATES.some((entry) => entry.id === id)) {
-      bb.log.warn(
+      alia.log.warn(
         `Graph "${id}" exists as a saved row AND as a template; the saved one wins. Delete it to use the template again.`,
       );
     }
@@ -387,7 +387,7 @@ export default function graphStudio(bb: BbPluginApi) {
     // at the node instead of at import.
     const renamed = RENAMED_TEMPLATES[id];
     if (!renamed) return null;
-    bb.log.warn(
+    alia.log.warn(
       `Graph "${id}" was renamed to "${renamed}"; resolving the new one. Update the reference to keep it working.`,
     );
     return store.getGraph(renamed) ?? TEMPLATES.find((e) => e.id === renamed) ?? null;
@@ -398,10 +398,10 @@ export default function graphStudio(bb: BbPluginApi) {
     return [...store.listGraphs(), ...TEMPLATES];
   }
 
-  const publish = () => bb.realtime.publish("graph-studio", {});
+  const publish = () => alia.realtime.publish("graph-studio", {});
 
   const crew = createCrewClient(((args) =>
-    bb.sdk.plugins.callRpc(args as never)) as CallRpc);
+    alia.sdk.plugins.callRpc(args as never)) as CallRpc);
 
   /** Member node ids of a graph and the graphs it embeds. */
   const memberIdsOf = (graph: Graph): Set<string> =>
@@ -411,7 +411,7 @@ export default function graphStudio(bb: BbPluginApi) {
   async function projectOfThread(threadId: string | null): Promise<string | null> {
     if (!threadId) return null;
     try {
-      return (await bb.sdk.threads.get({ threadId })).projectId ?? null;
+      return (await alia.sdk.threads.get({ threadId })).projectId ?? null;
     } catch {
       return null;
     }
@@ -504,7 +504,7 @@ export default function graphStudio(bb: BbPluginApi) {
   /** Stop driving without touching the run's status. */
   function abandon(runId: string, why: string) {
     if (!driving.has(runId) || lost.has(runId)) return;
-    bb.log.warn(`[run ${runId}] Driver ${driverId} stops driving: ${why}.`);
+    alia.log.warn(`[run ${runId}] Driver ${driverId} stops driving: ${why}.`);
     lost.add(runId);
     const timer = driving.get(runId);
     if (timer) clearInterval(timer);
@@ -548,9 +548,9 @@ export default function graphStudio(bb: BbPluginApi) {
     try {
       // `queue-if-active`: the starting thread may still be in the turn that
       // started the run, and a steer would cut that turn short.
-      await bb.sdk.threads.send({ threadId, mode: "queue-if-active", input });
+      await alia.sdk.threads.send({ threadId, mode: "queue-if-active", input });
     } catch (cause) {
-      bb.log.warn(
+      alia.log.warn(
         `[run ${runId}] Could not post to thread ${threadId}: ${
           cause instanceof Error ? cause.message : String(cause)
         }`,
@@ -639,7 +639,7 @@ export default function graphStudio(bb: BbPluginApi) {
     await Promise.all(
       running.map(async (row) => {
         try {
-          const events = await bb.sdk.threads.events.list({
+          const events = await alia.sdk.threads.events.list({
             threadId: row.childThreadId!,
             types: ACTIVITY_EVENT_TYPES,
             order: "desc",
@@ -655,7 +655,7 @@ export default function graphStudio(bb: BbPluginApi) {
           // A nicety must never disturb a run. One line at debug level,
           // because a worker that is being archived will fail this call and
           // that is not worth a warning every three seconds.
-          bb.log.debug(
+          alia.log.debug(
             `Activity of ${row.childThreadId} unreadable: ${
               cause instanceof Error ? cause.message : String(cause)
             }`,
@@ -702,7 +702,7 @@ export default function graphStudio(bb: BbPluginApi) {
   }
 
   /**
-   * What a worker thread consumed, from BB's own accounting.
+   * What a worker thread consumed, from VesnALIA's own accounting.
    *
    * Returns nulls rather than zeros whenever the answer is not knowable — no
    * thread, no usage event, a provider that does not report. A zero would
@@ -717,7 +717,7 @@ export default function graphStudio(bb: BbPluginApi) {
     try {
       // Descending, limit 1: the last event carries the running total for the
       // whole thread, so earlier ones would double-count if summed.
-      const events = await bb.sdk.threads.events.list({
+      const events = await alia.sdk.threads.events.list({
         threadId,
         types: ["thread/tokenUsage/updated"],
         order: "desc",
@@ -737,7 +737,7 @@ export default function graphStudio(bb: BbPluginApi) {
       };
     } catch (cause) {
       // Accounting must never fail a node that did its work.
-      bb.log.warn(
+      alia.log.warn(
         `Usage of ${threadId} unreadable: ${
           cause instanceof Error ? cause.message : String(cause)
         }`,
@@ -759,7 +759,7 @@ export default function graphStudio(bb: BbPluginApi) {
         }
         // Reuse the parent's environment so workers land in the same
         // worktree the user is looking at, not a fresh checkout.
-        const parent = await bb.sdk.threads.get({ threadId: parentThreadId });
+        const parent = await alia.sdk.threads.get({ threadId: parentThreadId });
         if (!parent.environmentId) {
           throw new Error(
             `Parent thread ${parentThreadId} has no environment a worker could inherit.`,
@@ -770,10 +770,10 @@ export default function graphStudio(bb: BbPluginApi) {
         const environmentId = parent.environmentId;
         const projectIdForChild = projectId ?? parent.projectId;
         // A node without its own selection inherits the parent's provider. It
-        // has to be named explicitly — omitting it makes BB reach for project
+        // has to be named explicitly — omitting it makes VesnALIA reach for project
         // and catalog defaults instead. See `spawnExecution`.
         const chosen = spawnExecution(execution, parent.providerId);
-        // BB does not accept a model without its provider, and provenance only
+        // VesnALIA does not accept a model without its provider, and provenance only
         // describes what the graph actually decided.
         const executionArgs =
           chosen === null
@@ -802,13 +802,13 @@ export default function graphStudio(bb: BbPluginApi) {
                     }
                   : {}),
               };
-        // BB releases the previous worker's hold on the environment a moment
+        // VesnALIA releases the previous worker's hold on the environment a moment
         // after that thread reports `idle`, so a node that spawns the next
         // worker right away is refused with 409 `workspace_busy`. Wait that gap
         // out instead of failing the node — see lib/workspace.ts.
         const child = await whileWorkspaceBusy(
           () =>
-            bb.sdk.threads.spawn({
+            alia.sdk.threads.spawn({
               prompt,
               title,
               visibility: "visible",
@@ -820,7 +820,7 @@ export default function graphStudio(bb: BbPluginApi) {
             }),
           {
             onWait: (attempt, waitedMs) =>
-              bb.log.info(
+              alia.log.info(
                 `Working copy still busy, waiting for it to free up (attempt ${attempt}, ${waitedMs} ms).`,
               ),
           },
@@ -839,7 +839,7 @@ export default function graphStudio(bb: BbPluginApi) {
         const controller = trackStop(runId);
         let output: string;
         try {
-          await bb.sdk.threads.wait({
+          await alia.sdk.threads.wait({
             threadId,
             status: "idle",
             timeoutMs: 1000 * 60 * 60 * 6,
@@ -849,7 +849,7 @@ export default function graphStudio(bb: BbPluginApi) {
           // is idle with a half-finished answer. Say the stop rather than
           // collect that as a result.
           if (halted(runId)) throw new GuardStop("The run was stopped.");
-          output = (await bb.sdk.threads.output({ threadId })).output ?? "";
+          output = (await alia.sdk.threads.output({ threadId })).output ?? "";
         } catch (cause) {
           // An abort surfaces as whatever the transport makes of it; what
           // matters is that we asked for it, not how it reads.
@@ -867,7 +867,7 @@ export default function graphStudio(bb: BbPluginApi) {
       },
       async sendMessage(threadId: string, text: string) {
         if (halted(runId)) throw new GuardStop("The run was stopped.");
-        await bb.sdk.threads.send({
+        await alia.sdk.threads.send({
           threadId,
           mode: "start",
           input: [{ type: "text", text, mentions: [] }],
@@ -878,13 +878,13 @@ export default function graphStudio(bb: BbPluginApi) {
         // the turn to start closes that window. A timeout here is not fatal:
         // the answer check downstream catches a thread that never moved.
         try {
-          await bb.sdk.threads.wait({
+          await alia.sdk.threads.wait({
             threadId,
             status: "active",
             timeoutMs: 1000 * 60 * 2,
           });
         } catch {
-          bb.log.info(`[run ${runId}] Thread ${threadId} never became active.`);
+          alia.log.info(`[run ${runId}] Thread ${threadId} never became active.`);
         }
       },
       async sendToMember({ nodeId, visit, attempt, address, body }) {
@@ -911,7 +911,7 @@ export default function graphStudio(bb: BbPluginApi) {
         if (known) {
           // A resume after a crash: the message is out, the answer is what is
           // missing. Sending again would give the member the task twice.
-          bb.log.info(
+          alia.log.info(
             `[run ${runId}] ${nodeId} gen ${key.gen} visit ${visit} attempt ${attempt}: message ${known.messageId} was already sent to ${address}; waiting for its answer.`,
           );
           return { messageId: known.messageId, threadId: found.member.threadId };
@@ -964,7 +964,7 @@ export default function graphStudio(bb: BbPluginApi) {
             }
             if (reply.status === "held" && !heldSaid) {
               heldSaid = true;
-              bb.log.info(
+              alia.log.info(
                 `[run ${runId}] Message ${messageId} is held by Crew${reply.text ? ` (${reply.text})` : ""}; waiting.`,
               );
             }
@@ -1024,7 +1024,7 @@ export default function graphStudio(bb: BbPluginApi) {
         const kept = waiting?.shift();
         if (kept) {
           adopted.set(kept.nodeRunId, kept.threadId);
-          bb.log.info(
+          alia.log.info(
             `[run ${runId}] ${nodeId}: re-attached to worker ${kept.threadId}; waiting for its result.`,
           );
           return kept.nodeRunId;
@@ -1088,7 +1088,7 @@ export default function graphStudio(bb: BbPluginApi) {
         );
         publish();
       },
-      log: (message) => bb.log.info(`[run ${runId}] ${message}`),
+      log: (message) => alia.log.info(`[run ${runId}] ${message}`),
     };
   }
 
@@ -1115,9 +1115,9 @@ export default function graphStudio(bb: BbPluginApi) {
     try {
       // Workers spawn into the parent thread's environment, so that is the
       // machine whose catalogue counts — a remote host may offer other models.
-      environmentId = (await bb.sdk.threads.get({ threadId: parentThreadId })).environmentId ?? null;
+      environmentId = (await alia.sdk.threads.get({ threadId: parentThreadId })).environmentId ?? null;
     } catch (cause) {
-      bb.log.warn(
+      alia.log.warn(
         `Parent thread unreadable, model check skipped: ${
           cause instanceof Error ? cause.message : String(cause)
         }`,
@@ -1127,12 +1127,12 @@ export default function graphStudio(bb: BbPluginApi) {
     if (!environmentId) return [];
     const envId = environmentId;
 
-    // One request per provider: without `providerId` BB answers with the
+    // One request per provider: without `providerId` VesnALIA answers with the
     // default provider's catalogue only (BBP-21).
     const { problems, warnings } = await checkModels(wanted, (providerId) =>
-      bb.sdk.providers.models({ environmentId: envId, providerId }),
+      alia.sdk.providers.models({ environmentId: envId, providerId }),
     );
-    for (const warning of warnings) bb.log.warn(`Model check: ${warning}`);
+    for (const warning of warnings) alia.log.warn(`Model check: ${warning}`);
     return problems;
   }
 
@@ -1152,7 +1152,7 @@ export default function graphStudio(bb: BbPluginApi) {
       const holder = store.getDriver(runId)?.driverId;
       // Debug, not info: the orphan sweep asks every few seconds, and a run
       // that is in good hands elsewhere is the normal case.
-      bb.log.debug(
+      alia.log.debug(
         `[run ${runId}] Not driven by ${driverId}: ${
           driving.has(runId) ? "already driving it" : `claimed by ${holder ?? "another driver"}`
         }.`,
@@ -1160,7 +1160,7 @@ export default function graphStudio(bb: BbPluginApi) {
       return false;
     }
     if (claimedNote) {
-      bb.log.info(`${claimedNote} (driver ${driverId})`);
+      alia.log.info(`${claimedNote} (driver ${driverId})`);
       await settleAbandonedAttempts(row);
     }
     try {
@@ -1228,7 +1228,7 @@ export default function graphStudio(bb: BbPluginApi) {
   async function whyWorkerLost(threadId: string): Promise<string | null> {
     let thread: { status?: string; archivedAt?: number | null; deletedAt?: number | null };
     try {
-      thread = (await bb.sdk.threads.get({ threadId })) as typeof thread;
+      thread = (await alia.sdk.threads.get({ threadId })) as typeof thread;
     } catch (cause) {
       return `worker ${threadId} is missing: ${cause instanceof Error ? cause.message : String(cause)}`;
     }
@@ -1243,7 +1243,7 @@ export default function graphStudio(bb: BbPluginApi) {
         // Finished while nobody was waiting: worth taking only if it left an
         // answer — an empty one would just fail the adopted attempt instead.
         try {
-          const { output } = await bb.sdk.threads.output({ threadId });
+          const { output } = await alia.sdk.threads.output({ threadId });
           return (output ?? "").trim() === "" ? `worker ${threadId} is idle without a result` : null;
         } catch {
           return `worker ${threadId} has no readable result`;
@@ -1256,10 +1256,10 @@ export default function graphStudio(bb: BbPluginApi) {
 
   async function stopWorker(runId: string, threadId: string) {
     try {
-      await bb.sdk.threads.stop({ threadId });
-      bb.log.info(`[run ${runId}] Interrupted abandoned worker ${threadId}.`);
+      await alia.sdk.threads.stop({ threadId });
+      alia.log.info(`[run ${runId}] Interrupted abandoned worker ${threadId}.`);
     } catch (cause) {
-      bb.log.warn(
+      alia.log.warn(
         `[run ${runId}] Could not interrupt abandoned worker ${threadId}: ${
           cause instanceof Error ? cause.message : String(cause)
         }`,
@@ -1300,7 +1300,7 @@ export default function graphStudio(bb: BbPluginApi) {
 
     // Models are named in the graph but resolved on the machine that runs it.
     // A graph imported from elsewhere — or one authored while another provider
-    // was installed — can name a model this host does not have, and BB would
+    // was installed — can name a model this host does not have, and VesnALIA would
     // quietly fall back to the inherited one. A silent downgrade is the worst
     // outcome here: the run looks right and costs or capability differ.
     const unknown = await unknownModels(row.graph, row.threadId);
@@ -1400,7 +1400,7 @@ export default function graphStudio(bb: BbPluginApi) {
         { status, state: current?.state ?? {}, error: message },
         Date.now(),
       );
-      bb.log.warn(`Run ${runId} ended: ${message}`);
+      alia.log.warn(`Run ${runId} ended: ${message}`);
       await farewellWorkers(runId, status, message);
     } finally {
       unwatchActivity(runId);
@@ -1605,10 +1605,10 @@ export default function graphStudio(bb: BbPluginApi) {
     await Promise.all(
       interruptibleWorkers(store.listNodeRuns(runId), membersOfRun(runId)).map(async (threadId) => {
         try {
-          await bb.sdk.threads.stop({ threadId });
-          bb.log.info(`[run ${runId}] Interrupted worker ${threadId}.`);
+          await alia.sdk.threads.stop({ threadId });
+          alia.log.info(`[run ${runId}] Interrupted worker ${threadId}.`);
         } catch (cause) {
-          bb.log.warn(
+          alia.log.warn(
             `[run ${runId}] Could not interrupt worker ${threadId}: ${
               cause instanceof Error ? cause.message : String(cause)
             }`,
@@ -1643,15 +1643,15 @@ export default function graphStudio(bb: BbPluginApi) {
     await Promise.all(
       threads.map(async (threadId) => {
         try {
-          await bb.sdk.threads.send({
+          await alia.sdk.threads.send({
             threadId,
             mode: "steer-if-active",
             input: [{ type: "text", text, mentions: [] }],
           });
-          bb.log.info(`[run ${runId}] Told worker ${threadId} that the run ended.`);
+          alia.log.info(`[run ${runId}] Told worker ${threadId} that the run ended.`);
         } catch (cause) {
           const message = cause instanceof Error ? cause.message : String(cause);
-          bb.log.warn(
+          alia.log.warn(
             `[run ${runId}] Could not tell worker ${threadId} that the run ended: ${message}`,
           );
         }
@@ -1659,7 +1659,7 @@ export default function graphStudio(bb: BbPluginApi) {
     );
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     listGraphs: () => ({
       graphs: [...store.listGraphs(), ...TEMPLATES],
       templates: TEMPLATES,
@@ -1720,8 +1720,8 @@ export default function graphStudio(bb: BbPluginApi) {
       // the user type a skill id by hand.
       if (!threadId) return { skills: [], error: "No thread selected." };
       try {
-        const thread = await bb.sdk.threads.get({ threadId });
-        const { skills } = await bb.sdk.skills.list({
+        const thread = await alia.sdk.threads.get({ threadId });
+        const { skills } = await alia.sdk.skills.list({
           projectId: thread.projectId,
           environmentId: thread.environmentId ?? null,
         });
@@ -1797,60 +1797,60 @@ export default function graphStudio(bb: BbPluginApi) {
       {
         name: "graphs",
         summary: "List graphs, optionally filtered",
-        usage: "bb graph-studio graphs [search]",
+        usage: "alia graph-studio graphs [search]",
       },
       {
         name: "show",
         summary: "Show a graph and what the check says",
-        usage: "bb graph-studio show <graph-id>",
+        usage: "alia graph-studio show <graph-id>",
       },
       {
         name: "run",
         summary: "Start a run",
-        usage: 'bb graph-studio run <graph-id> "<task>"',
+        usage: 'alia graph-studio run <graph-id> "<task>"',
       },
-      { name: "runs", summary: "List runs", usage: "bb graph-studio runs" },
+      { name: "runs", summary: "List runs", usage: "alia graph-studio runs" },
       {
         name: "status",
         summary: "Show one run in detail",
-        usage: "bb graph-studio status <run-id>",
+        usage: "alia graph-studio status <run-id>",
       },
       {
         name: "answer",
         summary: "Answer a waiting approval",
-        usage: 'bb graph-studio answer <run-id> "<answer>"',
+        usage: 'alia graph-studio answer <run-id> "<answer>"',
       },
-      { name: "stop", summary: "Stop a run", usage: "bb graph-studio stop <run-id>" },
+      { name: "stop", summary: "Stop a run", usage: "alia graph-studio stop <run-id>" },
       {
         name: "checkpoints",
         summary: "Show a run's checkpoints",
-        usage: "bb graph-studio checkpoints <run-id>",
+        usage: "alia graph-studio checkpoints <run-id>",
       },
       {
         name: "rerun",
         summary: "Resume a run from a checkpoint",
-        usage: "bb graph-studio rerun <run-id> <checkpoint-id>",
+        usage: "alia graph-studio rerun <run-id> <checkpoint-id>",
       },
       {
         name: "delete",
         summary: "Delete a graph of your own (templates stay)",
-        usage: "bb graph-studio delete <graph-id>",
+        usage: "alia graph-studio delete <graph-id>",
       },
       {
         name: "export",
         summary: "Write a graph as JSON to stdout",
-        usage: "bb graph-studio export <graph-id> > my-graph.graph.json",
+        usage: "alia graph-studio export <graph-id> > my-graph.graph.json",
       },
       {
         name: "import",
         summary: "Read a graph from a JSON file",
-        usage: "bb graph-studio import <file.json> [--overwrite]",
+        usage: "alia graph-studio import <file.json> [--overwrite]",
       },
   ];
 
   /** The command list as text — what `help` prints and what a wrong command earns. */
   const usageText = [
-    "bb graph-studio <command>",
+    "alia graph-studio <command>",
     "",
     ...CLI_COMMANDS.map((entry) => `  ${entry.usage.padEnd(56)} ${entry.summary}`),
     "",
@@ -1872,7 +1872,7 @@ export default function graphStudio(bb: BbPluginApi) {
     "                and asks me before merging",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "graph-studio",
     summary: "Build graphs and steer runs (cycles, routing, approvals)",
     commands: CLI_COMMANDS,
@@ -1908,7 +1908,7 @@ export default function graphStudio(bb: BbPluginApi) {
         case "run": {
           const [graphId, ...task] = rest;
           if (!graphId || task.length === 0) {
-            return fail('Usage: bb graph-studio run <graph-id> "<task>"');
+            return fail('Usage: VesnALIA graph-studio run <graph-id> "<task>"');
           }
           let runIdStarted: string;
           try {
@@ -1953,7 +1953,7 @@ export default function graphStudio(bb: BbPluginApi) {
         }
         case "answer": {
           const [runId, ...answer] = rest;
-          if (!runId) return fail("Usage: bb graph-studio answer <run-id> <answer>");
+          if (!runId) return fail("Usage: VesnALIA graph-studio answer <run-id> <answer>");
           const row = store.getRun(runId);
           try {
             answerHuman(runId, answer.join(" "), {
@@ -1965,13 +1965,13 @@ export default function graphStudio(bb: BbPluginApi) {
           return ok("Answer taken.");
         }
         case "stop": {
-          if (!rest[0]) return fail("Usage: bb graph-studio stop <run-id>");
+          if (!rest[0]) return fail("Usage: VesnALIA graph-studio stop <run-id>");
           requestStop(rest[0]);
           return ok("Stopping the run.");
         }
         case "checkpoints": {
           const runId = rest[0];
-          if (!runId) return fail("Usage: bb graph-studio checkpoints <run-id>");
+          if (!runId) return fail("Usage: VesnALIA graph-studio checkpoints <run-id>");
           const row = store.getRun(runId);
           if (!row) return fail("Run not found.");
           const { checkpoints } = await listCheckpointsFor(row);
@@ -1990,7 +1990,7 @@ export default function graphStudio(bb: BbPluginApi) {
         case "rerun": {
           const [runId, checkpointId] = rest;
           if (!runId || !checkpointId) {
-            return fail("Usage: bb graph-studio rerun <run-id> <checkpoint-id>");
+            return fail("Usage: VesnALIA graph-studio rerun <run-id> <checkpoint-id>");
           }
           try {
             rerunFrom(runId, checkpointId);
@@ -2001,7 +2001,7 @@ export default function graphStudio(bb: BbPluginApi) {
         }
         case "delete": {
           const id = rest[0];
-          if (!id) return fail("Usage: bb graph-studio delete <graph-id>");
+          if (!id) return fail("Usage: VesnALIA graph-studio delete <graph-id>");
           if (TEMPLATES.some((entry) => entry.id === id)) {
             return fail(`"${id}" is a shipped template and stays.`);
           }
@@ -2019,7 +2019,7 @@ export default function graphStudio(bb: BbPluginApi) {
         case "import": {
           const file = rest.find((arg) => !arg.startsWith("--"));
           if (!file) {
-            return fail("Usage: bb graph-studio import <file.json> [--overwrite]");
+            return fail("Usage: VesnALIA graph-studio import <file.json> [--overwrite]");
           }
           let json: string;
           try {
@@ -2049,12 +2049,12 @@ export default function graphStudio(bb: BbPluginApi) {
           }
         }
         default:
-          // "bb graph-studio build me a flow that …" is a sentence, not a
+          // "alia graph-studio build me a flow that …" is a sentence, not a
           // command. The CLI cannot write a graph — an agent can, so the
           // answer points there instead of at the command list.
           if (argv.length > 2) {
             return fail(
-              `"${argv.join(" ")}" reads like a request, not a command.\nDesign flows in a chat:\n\n  /graph-studio ${argv.join(" ")}\n\nCommands: bb graph-studio --help`,
+              `"${argv.join(" ")}" reads like a request, not a command.\nDesign flows in a chat:\n\n  /graph-studio ${argv.join(" ")}\n\nCommands: VesnALIA graph-studio --help`,
             );
           }
           return fail(`Unknown command "${command}".\n\n${usageText}`);
@@ -2065,7 +2065,7 @@ export default function graphStudio(bb: BbPluginApi) {
   // Reading tools. Without them a model can start a graph whose id it already
   // knows, but cannot find out which graphs exist or what one does — the
   // description sits in the CLI, reachable only by whoever knows the CLI.
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "graph_studio_graphs",
     description:
       "List the Graph Studio library: one line per graph with its id, node count and name. Use this before graph_studio_describe or graph_studio_run.",
@@ -2073,7 +2073,7 @@ export default function graphStudio(bb: BbPluginApi) {
     execute: async () => describeLibrary(libraryGraphs()),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "graph_studio_describe",
     description:
       "Describe one Graph Studio graph: purpose, nodes with their kind, skills and declared fields, all edges with their routing conditions, and the validator's findings. Use this to talk about what a graph does before running it.",
@@ -2089,7 +2089,7 @@ export default function graphStudio(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "graph_studio_run",
     /**
      * The description is the only thing the calling model reads, so it says
@@ -2100,7 +2100,7 @@ export default function graphStudio(bb: BbPluginApi) {
      * to pass through here.
      */
     description:
-      "Start a Graph Studio run: executes a stored graph whose nodes spawn BB threads (member nodes use a Crew member's existing thread instead). Supports cycles, conditional routing and human approval nodes.\n\nIMPORTANT: `input` is the only context the run gets. Its workers are fresh threads with no sight of this conversation, its attachments, or anything decided in it — and every node after the first reads only what the first one produced. So do not pass the user's last sentence: write out what the run needs to know. State the task, the constraints agreed here, what was already ruled out and why, and the paths of any files that matter (attachments included — quote what is relevant, workers cannot open them). Up to 8000 characters, and using them is usually right.",
+      "Start a Graph Studio run: executes a stored graph whose nodes spawn VesnALIA threads (member nodes use a Crew member's existing thread instead). Supports cycles, conditional routing and human approval nodes.\n\nIMPORTANT: `input` is the only context the run gets. Its workers are fresh threads with no sight of this conversation, its attachments, or anything decided in it — and every node after the first reads only what the first one produced. So do not pass the user's last sentence: write out what the run needs to know. State the task, the constraints agreed here, what was already ruled out and why, and the paths of any files that matter (attachments included — quote what is relevant, workers cannot open them). Up to 8000 characters, and using them is usually right.",
     parameters: z.object({
       graphId: z.string(),
       input: z.string().min(1).max(8000),
@@ -2130,7 +2130,7 @@ export default function graphStudio(bb: BbPluginApi) {
     and saving it through here. The validator's findings come back in the
     result, so the agent fixes its own mistakes before the user sees them.
   */
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "graph_studio_get",
     description:
       "Return one Graph Studio graph as JSON (the same format graph_studio_save accepts). Read a similar graph or template first when writing a new one, and read the current graph before changing it — save replaces the whole graph.",
@@ -2144,7 +2144,7 @@ export default function graphStudio(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "graph_studio_save",
     description: [
       "Create or replace a Graph Studio graph from JSON, then report the validator's findings. Fix every error and save again before telling the user it is done.",
@@ -2211,7 +2211,7 @@ export default function graphStudio(bb: BbPluginApi) {
 
   // "#" in the composer lists the graphs; a picked one reaches the agent as
   // its description, so "#review-flow run it on the auth change" needs no id.
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: "graphs",
     label: "Graph Studio",
     triggers: ["#"],
@@ -2242,7 +2242,7 @@ export default function graphStudio(bb: BbPluginApi) {
   // The chat's way to answer an approval the run posted into it. Without a
   // tool the agent would have to know the CLI, and a guessed command is how
   // an answer ends up nowhere.
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "graph_studio_answer",
     description:
       "Answer a Graph Studio run that is waiting at a human approval node, and let it continue. Use it only with what the user decided — never approve or answer on your own. Pass the runId and nodeId from the approval message and the user's answer in their own words. If the approval was already answered elsewhere, the tool says so; tell the user instead of retrying.",
@@ -2266,7 +2266,7 @@ export default function graphStudio(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "graph_studio_status",
     description: "Read the state of a Graph Studio run, including per-node results.",
     parameters: z.object({ runId: z.string() }),
@@ -2296,7 +2296,7 @@ export default function graphStudio(bb: BbPluginApi) {
   // — the wish is honoured by settling them as `stopped` and interrupting
   // whatever of their workers survived the reload. The checkpoint stays, so
   // `rerunFrom` remains possible afterwards.
-  bb.background.service("resume-orphans", {
+  alia.background.service("resume-orphans", {
     // Sweeps once on load, then every heartbeat until the host aborts. The
     // repeat is what lets a run whose claim is still held by a dying driver
     // — a reload's predecessor, a crashed process — be taken over once that
@@ -2309,7 +2309,7 @@ export default function graphStudio(bb: BbPluginApi) {
         for (const row of store.listRunsByStatus("stopping")) {
           if (!store.claimRun(row.id, driverId, Date.now(), CLAIM_EXPIRY_MS)) continue;
           if (driving.has(row.id)) continue;
-          bb.log.info(`Settling stopped run ${row.id} after reload.`);
+          alia.log.info(`Settling stopped run ${row.id} after reload.`);
           store.updateRun(
             row.id,
             { status: "stopped", state: row.state, error: row.error },
@@ -2344,7 +2344,7 @@ export default function graphStudio(bb: BbPluginApi) {
   // they keep walking their runs next to the successor — the double resume
   // of BBP-16. Give every claim back now, so the successor's sweep takes the
   // runs over at once instead of after the expiry.
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
     for (const timer of watchers.values()) clearInterval(timer);
     watchers.clear();

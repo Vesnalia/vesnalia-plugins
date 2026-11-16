@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { translate, type Language } from "./locale";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { randomBytes } from "node:crypto";
 import {
@@ -19,10 +19,10 @@ import {
 } from "./model";
 
 type PendingInteraction = Awaited<
-  ReturnType<BbPluginApi["sdk"]["threads"]["interactions"]["get"]>
+  ReturnType<AliaPluginApi["sdk"]["threads"]["interactions"]["get"]>
 >;
 type CreateThreadEnvironmentArgs = Parameters<
-  BbPluginApi["sdk"]["threads"]["spawn"]
+  AliaPluginApi["sdk"]["threads"]["spawn"]
 >[0]["environment"];
 export const inputSchema = z.object({
   updateId: z.number().int().nonnegative(),
@@ -141,7 +141,7 @@ export class ChatBridge {
   constructor(
     private d: {
       store: Store;
-      sdk: BbPluginApi["sdk"];
+      sdk: AliaPluginApi["sdk"];
       tg: Telegram;
       /** The paired Telegram user; input from anyone else is refused. */
       owner: () => number | undefined;
@@ -206,7 +206,7 @@ export class ChatBridge {
       extra,
       expires: Date.now() + 86400_000,
     } satisfies Action);
-    return { text, callback_data: "bb:" + id };
+    return { text, callback_data: "alia:" + id };
   }
   /** One tap on an agent report connects that thread to the report's topic. */
   connectButton(topicId: number, threadId: string): Key | undefined {
@@ -287,7 +287,7 @@ export class ChatBridge {
   }
   private link(threadId: string): Key {
     return {
-      text: this.tr("Открыть чат в BB"),
+      text: this.tr("Открыть чат в ALIA"),
       url:
         this.d.baseUrl +
         "/projects/" +
@@ -339,7 +339,7 @@ export class ChatBridge {
         this.enqueue(
           r.input.topicId,
           this.tr(
-            "⚠️ BB был перезапущен во время обработки сообщения. Исход действия не подтверждён. Открой /chats и проверь чат перед повторной отправкой.",
+            "⚠️ ALIA был перезапущен во время обработки сообщения. Исход действия не подтверждён. Открой /chats и проверь чат перед повторной отправкой.",
           ),
           undefined,
           "recovery:" + r.input.updateId,
@@ -371,7 +371,7 @@ export class ChatBridge {
           this.enqueue(
             r.input.topicId,
             this.tr(
-              "⚠️ Не удалось подтвердить действие. Проверь /status и /chats перед повтором; подробности доступны в BB.",
+              "⚠️ Не удалось подтвердить действие. Проверь /status и /chats перед повтором; подробности доступны в ALIA.",
             ),
             undefined,
             "error:" + r.input.updateId,
@@ -482,7 +482,7 @@ export class ChatBridge {
                   environmentId: t.environmentId,
                 })
               ).path
-            : null) ?? this.tr("окружение BB"),
+            : null) ?? this.tr("окружение ALIA"),
         ) +
         this.tr(
           "\n\nСообщение здесь продолжит этот чат. Другие чаты проекта не пересылаются.",
@@ -492,15 +492,15 @@ export class ChatBridge {
       const provider =
         providers.find((p) => p.id === b.providerId)?.displayName ??
         b.providerId ??
-        this.tr("По умолчанию BB");
+        this.tr("По умолчанию ALIA");
       const hostId = await this.selectedHost(b);
-      let hostName = hostId ?? this.tr("По умолчанию BB");
+      let hostName = hostId ?? this.tr("По умолчанию ALIA");
       if (hostId) {
         try {
           hostName = (await this.d.sdk.hosts.get({ hostId })).name;
         } catch {}
       }
-      let model = b.model ?? this.tr("По умолчанию BB");
+      let model = b.model ?? this.tr("По умолчанию ALIA");
       if (b.providerId && b.model) {
         try {
           const c = await this.d.sdk.providers.models({
@@ -532,7 +532,7 @@ export class ChatBridge {
         model +
         "\n" +
         this.tr("🎭 Профиль: ") +
-        (b.profileId ?? this.tr("По умолчанию BB")) +
+        (b.profileId ?? this.tr("По умолчанию ALIA")) +
         "\n" +
         this.tr("📁 Раздел: ") +
         folder +
@@ -747,7 +747,7 @@ export class ChatBridge {
     }
     const providers = await this.d.sdk.providers.list(await this.routing(b));
     const choices = [
-      this.button(b, "provider", this.tr("По умолчанию BB"), ""),
+      this.button(b, "provider", this.tr("По умолчанию ALIA"), ""),
       ...providers
         .filter((p) => p.available)
         .map((p) => this.button(b, "provider", label(p.displayName), p.id)),
@@ -757,7 +757,7 @@ export class ChatBridge {
       rows.push(choices.slice(i, i + 2));
     this.enqueue(
       b.topicId,
-      this.tr("🤖 Агент для нового чата. Его модели берутся из настроек BB."),
+      this.tr("🤖 Агент для нового чата. Его модели берутся из настроек ALIA."),
       [...rows, [this.button(b, "menu", this.tr("В меню"))]],
     );
   }
@@ -854,7 +854,7 @@ export class ChatBridge {
       const keys: Key[][] = [];
       for (let i = 0; i < choices.length; i += 2)
         keys.push(choices.slice(i, i + 2));
-      keys.push([this.button(b, "profile", this.tr("По умолчанию BB"), "")]);
+      keys.push([this.button(b, "profile", this.tr("По умолчанию ALIA"), "")]);
       const pages: Key[] = [];
       if (offset > 0)
         pages.push(
@@ -886,7 +886,7 @@ export class ChatBridge {
         ),
         [
           [this.button(b, "profiles", this.tr("Повторить"))],
-          [this.button(b, "profile", this.tr("По умолчанию BB"), "")],
+          [this.button(b, "profile", this.tr("По умолчанию ALIA"), "")],
         ],
       );
     }
@@ -935,7 +935,7 @@ export class ChatBridge {
     );
   }
   async handle(input: ChatInput) {
-    const a = input.callback?.startsWith("bb:")
+    const a = input.callback?.startsWith("alia:")
       ? this.s.get<Action>("chat:button:" + input.callback.slice(3))
       : undefined;
     const menus = [
@@ -970,7 +970,7 @@ export class ChatBridge {
   private async handleInput(input: ChatInput) {
     let b = this.binding(input.topicId);
     if (input.callback) {
-      const id = input.callback.replace(/^bb:/, "");
+      const id = input.callback.replace(/^alia:/, "");
       const a = this.s.get<Action>("chat:button:" + id);
       if (
         !a ||
@@ -1105,7 +1105,7 @@ export class ChatBridge {
         this.enqueue(
           input.topicId,
           this.tr(
-            "Не удалось распознать голос. Отправь текст или проверь транскрибацию в настройках BB. Ограничение: 10 минут и 15 МБ.",
+            "Не удалось распознать голос. Отправь текст или проверь транскрибацию в настройках ALIA. Ограничение: 10 минут и 15 МБ.",
           ),
         );
         return;
@@ -1119,7 +1119,7 @@ export class ChatBridge {
       this.enqueue(
         input.topicId,
         this.tr(
-          "Отправь текст или голосовое сообщение. Вложения пока открывай в BB.",
+          "Отправь текст или голосовое сообщение. Вложения пока открывай в ALIA.",
         ),
       );
       return;
@@ -1144,7 +1144,7 @@ export class ChatBridge {
         this.enqueue(
           input.topicId,
           this.tr(
-            "В чате есть вопрос. Ответь через кнопку или ответом на его карточку. Если форма сложная — открой BB.",
+            "В чате есть вопрос. Ответь через кнопку или ответом на его карточку. Если форма сложная — открой ALIA.",
           ),
           [[this.link(b.threadId)]],
         );
@@ -1198,7 +1198,7 @@ export class ChatBridge {
     this.enqueue(
       input.topicId,
       this.tr(
-        "📨 Сообщение принято BB. Ответ придёт сюда.\n/stop — остановить, /menu — текущий чат.",
+        "📨 Сообщение принято ALIA. Ответ придёт сюда.\n/stop — остановить, /menu — текущий чат.",
       ),
       [[this.link(b.threadId!)]],
       "accepted:" + input.updateId,
@@ -1219,7 +1219,7 @@ export class ChatBridge {
           this.enqueue(
             b.topicId,
             this.tr(
-              "Для этой машины ещё не настроена папка проекта в BB. Добавь источник проекта и повтори выбор сервера.",
+              "Для этой машины ещё не настроена папка проекта в ALIA. Добавь источник проекта и повтори выбор сервера.",
             ),
             [[this.button(b, "hosts", this.tr("🖥 Сервер"))]],
           );
@@ -1262,7 +1262,7 @@ export class ChatBridge {
                       environmentId: t.environmentId,
                     })
                   ).path
-                : null) ?? "BB",
+                : null) ?? "ALIA",
             ) +
             this.tr(
               "\n\nПодключение будет пересылать новые ответы и вопросы этого чата в текущую тему.",
@@ -1482,7 +1482,7 @@ export class ChatBridge {
         await this.d.sdk.threads.stop({ threadId: b.threadId! });
         this.enqueue(
           b.topicId,
-          this.tr("Команда остановки отправлена BB."),
+          this.tr("Команда остановки отправлена ALIA."),
           this.nav(b),
         );
         return;
@@ -1497,7 +1497,7 @@ export class ChatBridge {
       interactionId: a.arg!,
     });
     if (interaction.status !== "pending") {
-      this.enqueue(b.topicId, this.tr("Этот вопрос уже закрыт в BB."));
+      this.enqueue(b.topicId, this.tr("Этот вопрос уже закрыт в ALIA."));
       return;
     }
     const payload = interaction.payload;
@@ -1536,7 +1536,7 @@ export class ChatBridge {
         },
       });
     } else throw Error("unsupported_question");
-    this.enqueue(b.topicId, this.tr("Ответ передан BB."));
+    this.enqueue(b.topicId, this.tr("Ответ передан ALIA."));
   }
   private async answerText(
     b: Binding,
@@ -1565,7 +1565,7 @@ export class ChatBridge {
     ) {
       this.enqueue(
         b.topicId,
-        this.tr("Для этого вопроса выбери кнопку или открой BB."),
+        this.tr("Для этого вопроса выбери кнопку или открой ALIA."),
       );
       return;
     }
@@ -1578,12 +1578,12 @@ export class ChatBridge {
         answers: { [question.id]: { selected: [], freeText: text } },
       },
     });
-    this.enqueue(b.topicId, this.tr("Ответ передан BB."));
+    this.enqueue(b.topicId, this.tr("Ответ передан ALIA."));
   }
   private question(b: Binding, i: PendingInteraction) {
     const id = "question:" + b.revision + ":" + i.id;
     if (this.s.get("chat:out:" + id)) return;
-    let text = this.tr("❓ BB ждёт ответа\n");
+    let text = this.tr("❓ ALIA ждёт ответа\n");
     const keys: Key[][] = [];
     if (i.payload.kind === "approval") {
       const p = i.payload;
@@ -1621,8 +1621,8 @@ export class ChatBridge {
           text += this.tr(
             "\n\nМожно ответить текстом через «Ответить» на это сообщение.",
           );
-      } else text += this.tr("\n\nНесколько вопросов: открой форму в BB.");
-    } else text += this.tr("Эта форма открывается в BB.");
+      } else text += this.tr("\n\nНесколько вопросов: открой форму в ALIA.");
+    } else text += this.tr("Эта форма открывается в ALIA.");
     keys.push([this.link(b.threadId!)]);
     this.enqueue(b.topicId, text, keys, id);
     this.s.put("chat:question-out:" + id, {
@@ -1716,7 +1716,7 @@ export class ChatBridge {
             this.enqueue(
               b.topicId,
               event.data.status === "failed"
-                ? this.tr("⚠️ Запуск завершился ошибкой. Подробности в BB.")
+                ? this.tr("⚠️ Запуск завершился ошибкой. Подробности в ALIA.")
                 : this.tr("⏹ Запуск остановлен."),
               [[this.link(b.threadId)]],
               "end:" + b.revision + ":" + event.seq,
@@ -1741,7 +1741,7 @@ export class ChatBridge {
           this.enqueue(
             b.topicId,
             "📍 " +
-              label(t.title ?? t.titleFallback ?? this.tr("Чат BB"), 75) +
+              label(t.title ?? t.titleFallback ?? this.tr("Чат ALIA"), 75) +
               "\n" +
               status,
             [

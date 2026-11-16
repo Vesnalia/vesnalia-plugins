@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type Database from "better-sqlite3";
 import { z } from "zod";
 import {
@@ -55,9 +55,9 @@ function getMessage(db: Database.Database, projectId: string, messageId: number)
   return toMessage(row);
 }
 
-export default function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+export default function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       project_id TEXT NOT NULL,
@@ -76,7 +76,7 @@ export default function plugin(bb: BbPluginApi) {
     CREATE INDEX messages_project_unread ON messages(project_id, read_at_ms, archived_at_ms);`,
   ]);
 
-  const publishChange = (projectId: string) => bb.realtime.publish(INBOX_CHANGED_CHANNEL, { projectId });
+  const publishChange = (projectId: string) => alia.realtime.publish(INBOX_CHANGED_CHANNEL, { projectId });
   const updateTimestamp = (column: "read_at_ms" | "archived_at_ms", projectId: string, messageId: number) => {
     db.prepare(`UPDATE messages SET ${column} = COALESCE(${column}, ?) WHERE project_id = ? AND id = ?`).run(Date.now(), projectId, messageId);
     const message = getMessage(db, projectId, messageId);
@@ -85,7 +85,7 @@ export default function plugin(bb: BbPluginApi) {
   };
   const replies = new Map<string, Promise<Message>>();
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "send_operator_inbox_message",
     description: "Store a message for the human operator in this thread's project-scoped Operator Inbox.",
     instructions: `Use this only when the human operator should see a durable message. Choose routine, urgent, or needs-decision severity. ${messageBodyGuidance}`,
@@ -94,7 +94,7 @@ export default function plugin(bb: BbPluginApi) {
     async execute({ severity, text }, { projectId, threadId }) {
       let senderTitle: string | null = null;
       try {
-        const thread = await bb.sdk.threads.get({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         senderTitle = typeof thread.title === "string" && thread.title.trim() ? thread.title : null;
       } catch {
         // The durable thread id is enough for navigation when title lookup is unavailable.
@@ -107,16 +107,16 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async messageFileContext({ projectId, messageId }) {
       const message = getMessage(db, projectId, messageId);
       try {
-        const thread = await bb.sdk.threads.get({ threadId: message.senderThreadId, include: "environment" });
+        const thread = await alia.sdk.threads.get({ threadId: message.senderThreadId, include: "environment" });
         const environment = "environment" in thread ? thread.environment : null;
         if (thread.id !== message.senderThreadId || thread.projectId !== projectId || thread.deletedAt !== null
           || !environment || environment.id !== thread.environmentId || environment.projectId !== projectId
           || environment.status !== "ready") return null;
-        const storage = await bb.sdk.threads.storageLocation({ threadId: thread.id });
+        const storage = await alia.sdk.threads.storageLocation({ threadId: thread.id });
         if (storage.hostId !== environment.hostId) return null;
         const context = fileContextSchema.safeParse({
           hostId: environment.hostId, environmentId: environment.id, workspacePath: environment.path,
@@ -154,7 +154,7 @@ export default function plugin(bb: BbPluginApi) {
       const operation = (async () => {
         const message = getMessage(db, input.projectId, input.messageId);
         if (message.replyAcceptedAtMs !== null) return message;
-        const accepted = await bb.sdk.threads.send({
+        const accepted = await alia.sdk.threads.send({
           threadId: message.senderThreadId,
           mode: "auto",
           input: [{ type: "text", text: `Operator reply to Inbox message #${message.messageId}:\n\n${input.text}`, mentions: [] }],

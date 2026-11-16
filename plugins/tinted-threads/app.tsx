@@ -9,7 +9,7 @@ import {
   useRpc,
   type PluginSidebarThread,
   type PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import type { rpcContract } from "./server";
 import { HermesIcon } from "./hermes-icon";

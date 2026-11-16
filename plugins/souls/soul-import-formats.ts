@@ -70,13 +70,13 @@ function convertAgent(document: unknown, prompt: unknown, filename: string, form
   if (agent.model === "inherit")
     warnings.push("Model 'inherit' keeps the thread's current model; no model id was imported.");
   if (model !== undefined || reasoning !== undefined)
-    warnings.push("Model preferences are harness-specific. Review the BB provider, model and reasoning level before saving.");
+    warnings.push("Model preferences are harness-specific. Review the VesnALIA provider, model and reasoning level before saving.");
   const description = agent.description ?? "";
   return {
     draft: soulDraftSchema.parse({
       name, role: description, tagline: description.length <= 160 ? description : "",
       personality: body,
-      // Model vendors/names do not identify a BB harness. Never guess one.
+      // Model vendors/names do not identify a VesnALIA harness. Never guess one.
       model: model === undefined && reasoning === undefined ? null
         : { providerId: null, model: model ?? null, reasoningLevel: reasoning ?? null },
     }),

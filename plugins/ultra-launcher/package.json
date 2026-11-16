@@ -1,15 +1,15 @@
 {
-  "name": "bb-plugin-ultra-launcher",
+  "name": "alia-plugin-ultra-launcher",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.37"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.37"
   },
-  "bb": {
+  "alia": {
     "name": "Ultra Launcher",
-    "description": "Start a BB thread from any screen with Cmd/Ctrl+N, using saved model presets, and keep working where you are.",
+    "description": "Start a VesnALIA thread from any screen with Cmd/Ctrl+N, using saved model presets, and keep working where you are.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -27,7 +27,6 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.37",
     "@radix-ui/react-dialog": "^1.1.19",
     "@radix-ui/react-popover": "^1.1.19",
     "@testing-library/react": "^16.3.3",
@@ -48,7 +47,7 @@
     "vitest": "^5.0.4"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },
@@ -63,13 +62,22 @@
     "!**/*.test.ts",
     "!**/*.test.tsx"
   ],
-  "description": "Start a BB thread from any screen with Cmd/Ctrl+N, using saved model presets, and keep working where you are.",
+  "description": "Start a VesnALIA thread from any screen with Cmd/Ctrl+N, using saved model presets, and keep working where you are.",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/ultra-launcher#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dillionverma/bb-plugin-ultra-launcher.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/ultra-launcher"
   },
-  "homepage": "https://github.com/dillionverma/bb-plugin-ultra-launcher#readme",
   "bugs": {
-    "url": "https://github.com/dillionverma/bb-plugin-ultra-launcher/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -199,7 +199,7 @@ export function parseLifecycle(raw: unknown): PullLifecycle | null {
 export function parseMarker(text: string | null): Marker | null {
   const found = [
     ...(text ?? "").matchAll(
-      /BB_GITEA_AUTO_FIX:\s*(MERGED|CLOSED|NEEDS_YOU|FAILED)\b/g,
+      /ALIA_GITEA_AUTO_FIX:\s*(MERGED|CLOSED|NEEDS_YOU|FAILED)\b/g,
     ),
   ].map((match) => match[1]!.toLowerCase() as Marker);
   return new Set(found).size === 1 ? found[0]! : null;
@@ -245,7 +245,7 @@ export type StartRejection = "merged" | "closed" | "no-project";
 
 export function startError(key: string, reason: StartRejection): string {
   return reason === "no-project"
-    ? `Cannot auto-fix ${key}: no BB project has a checkout of this repository.`
+    ? `Cannot auto-fix ${key}: no VesnALIA project has a checkout of this repository.`
     : `Cannot auto-fix ${key}: the pull request is ${reason}.`;
 }
 
@@ -604,12 +604,12 @@ export function buildAutoFixerPrompt(input: {
   const ref = `${input.repo}#${input.number}`;
   const flags = `--login ${input.login} --repo ${input.repo}`;
   const api = `tea api --login ${input.login} /api/v1/repos/${input.repo}`;
-  const watch = `bb gitea pr-watch ${input.repo} ${input.number} --since <token>`;
+  const watch = `alia gitea pr-watch ${input.repo} ${input.number} --since <token>`;
   return [
     `You are the Gitea PR auto-fixer for ${ref}: ${input.title}`,
     `Gitea instance: ${input.baseUrl}`,
     "",
-    "Use the existing checkout. Do not clone the repository or create a BB project.",
+    "Use the existing checkout. Do not clone the repository or create a VesnALIA project.",
     `Use the tea CLI with the explicit login profile \`${input.login}\` on every command. Do not use gh or GitHub-specific tooling.`,
     "Before you act, read the full PR, diff, conversation, reviews, review comments, and commit statuses:",
     `- \`tea pulls ${flags} --comments ${input.number}\``,
@@ -630,10 +630,10 @@ export function buildAutoFixerPrompt(input: {
     "Stay in this turn until the PR is merged, closed, manually stopped, or requires a human.",
     "",
     "Your final response must contain exactly one of these markers:",
-    "BB_GITEA_AUTO_FIX: MERGED",
-    "BB_GITEA_AUTO_FIX: CLOSED",
-    "BB_GITEA_AUTO_FIX: NEEDS_YOU",
-    "BB_GITEA_AUTO_FIX: FAILED",
+    "ALIA_GITEA_AUTO_FIX: MERGED",
+    "ALIA_GITEA_AUTO_FIX: CLOSED",
+    "ALIA_GITEA_AUTO_FIX: NEEDS_YOU",
+    "ALIA_GITEA_AUTO_FIX: FAILED",
     "Use FAILED only for an execution failure.",
     "",
     `Start by running: tea pulls ${flags} --comments ${input.number}`,

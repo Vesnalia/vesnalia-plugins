@@ -1,10 +1,10 @@
-// Quick buttons on a row, the way bb's own rows have them: up to three thread
-// actions, picked by the user from everything bb's thread menu offers (bb's
+// Quick buttons on a row, the way VesnALIA's own rows have them: up to three thread
+// actions, picked by the user from everything VesnALIA's thread menu offers (VesnALIA's
 // own actions and other plugins'), shown at the row's right edge on hover.
 // None are picked to begin with, so rows look as before until the user picks.
 // The pick syncs across devices through the backend and arrives live.
 //
-// An action with choices (bb's per-thread notifications, a project's colour)
+// An action with choices (VesnALIA's per-thread notifications, a project's colour)
 // opens its choices as a small menu under the button.
 import {
   createContext,
@@ -26,7 +26,7 @@ import {
   useRpc,
   type PluginSidebarThread,
   type PluginThreadActionEntry,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 import {
   ContextMenu,
@@ -189,7 +189,7 @@ function ChoicesButton({ entry }: { entry: PluginThreadActionEntry }) {
   const choices = action.choices!;
   const label = action.detail === undefined ? action.label : `${action.label}: ${action.detail}`;
   // The menu is a context menu opened at the button: the package already
-  // ships it, and it places and dismisses itself like bb's menus.
+  // ships it, and it places and dismisses itself like VesnALIA's menus.
   const open = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();

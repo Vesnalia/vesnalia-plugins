@@ -3,8 +3,8 @@
  *
  * SnapshotPreviews reads `SNAPSHOTS_ALL_IMAGE_NAMES_FILE` (manifest pass) and
  * `SNAPSHOTS_EXPORT_DIR` (render pass) from the **test runner's process
- * environment**. `bb xcode run` accepts only argv and spawns the wrapped build
- * with the bb server's own environment, so a delegated build cannot carry them:
+ * environment**. `alia xcode run` accepts only argv and spawns the wrapped build
+ * with the VesnALIA server's own environment, so a delegated build cannot carry them:
  * the manifest pass would write nothing, the render pass would attach PNGs to
  * the `.xcresult` instead of exporting, and the failure would look like an
  * empty export directory — the exact silent-empty state this plugin exists to

@@ -4,7 +4,7 @@ import {
   Markdown,
   experimental_FilePreview as FilePreview,
   type ExperimentalFilePreviewFile,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { usePortalScopeProps } from "@/lib/portal-scope";
 import { cn } from "@/lib/utils";
@@ -144,7 +144,7 @@ export const TAB_DRAG_TYPE = "application/x-treehouse-tab";
 /** Set by the file tree when a file is dragged, so the Files tab strip can open it. */
 export const PATH_DRAG_TYPE = "application/x-treehouse-path";
 
-// The tab strip on screen, for bb commands (next tab, close tab, …). Only one
+// The tab strip on screen, for VesnALIA commands (next tab, close tab, …). Only one
 // Treehouse view shows at a time; the most recently mounted one wins.
 const mounted: Array<{ current: Tabs }> = [];
 export function visibleTabs(): Tabs | null {
@@ -156,7 +156,7 @@ export interface TabInfo {
   label: string;
   path: string;
   badge?: string;
-  /** A bb icon name; file tabs leave it out and get the file type's icon. */
+  /** A VesnALIA icon name; file tabs leave it out and get the file type's icon. */
   icon?: string;
   /** Unsaved edits: the close button shows a dot until hovered. */
   dirty?: boolean;
@@ -397,7 +397,7 @@ export function SplitLayout({
 }
 
 const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/u.test(navigator.platform);
-/** Default bindings of the tab commands registered in app.tsx; users can rebind them in bb. */
+/** Default bindings of the tab commands registered in app.tsx; users can rebind them in VesnALIA. */
 export const TAB_SHORTCUTS = {
   next: { key: "ArrowRight", mod: true, alt: true },
   previous: { key: "ArrowLeft", mod: true, alt: true },
@@ -503,7 +503,7 @@ function TabStrip({
       {tabs.active === null ? null : (
         <button
           type="button"
-          title="Open in a bb tab"
+          title="Open in a VesnALIA tab"
           onClick={() => tabs.active !== null && onPopOut(tabs.active)}
           className={cn(iconButton, "my-auto")}
         >
@@ -685,7 +685,7 @@ function Tab({
             Reopen Closed Tab
           </TabMenuItem>
           <Menu.Separator className="-mx-1 my-1 h-px bg-border" />
-          <TabMenuItem onSelect={() => onPopOut(id)}>Open in a bb Tab</TabMenuItem>
+          <TabMenuItem onSelect={() => onPopOut(id)}>Open in a VesnALIA Tab</TabMenuItem>
         </Menu.Content>
       </Menu.Portal>
     </Menu.Root>
@@ -716,7 +716,7 @@ function TabMenuItem({
 }
 
 function TabPanel({ active, children }: { active: boolean; children: ReactNode }) {
-  // Inactive tabs stay mounted and laid out, only invisible: bb's code viewer
+  // Inactive tabs stay mounted and laid out, only invisible: VesnALIA's code viewer
   // measures its size once, so display:none would leave it blank on return.
   // Staying mounted also keeps each tab's scroll position.
   return (
@@ -731,7 +731,7 @@ function TabPanel({ active, children }: { active: boolean; children: ReactNode }
   );
 }
 
-/** A file tab's body: bb's preview, or Treehouse's editor (see {@link FileModeToggle}). */
+/** A file tab's body: VesnALIA's preview, or Treehouse's editor (see {@link FileModeToggle}). */
 export function FileTabBody({ environmentId, path, active }: { environmentId: string; path: string; active: boolean }) {
   useEditorStore();
   const mode = modeOf(environmentId, path);
@@ -778,7 +778,7 @@ export function FileModeToggle({ environmentId, path }: { environmentId: string;
           role="radio"
           aria-checked={mode === value}
           aria-label={value === "preview" ? "Preview" : "Edit"}
-          title={value === "preview" ? "Preview: bb's view of the file" : "Edit the file (Ctrl/⌘+S saves)"}
+          title={value === "preview" ? "Preview: VesnALIA's view of the file" : "Edit the file (Ctrl/⌘+S saves)"}
           onClick={() => setMode(environmentId, path, value)}
           className={cn(
             "flex h-5 w-6 items-center justify-center rounded",

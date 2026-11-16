@@ -1,6 +1,6 @@
 // The eleven accounts of the author's machine as the panel's State carries
 // them, for the panel's tests and its screenshots (docs/screenshots/
-// settings-ultra-*.png). Usage and seats: `bb claude-switcher list --json`
+// settings-ultra-*.png). Usage and seats: `alia claude-switcher list --json`
 // of 2026-10-30 22:46 CET (plugin 0.2.31, read with the plan this version
 // adds: aitor is the Ultra without the 5-hour window that 0.2.31 called
 // locked). The day's pace: our own count at 21:55 in Optimizador

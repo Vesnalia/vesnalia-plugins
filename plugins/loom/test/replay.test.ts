@@ -70,7 +70,7 @@ describe("rewind", () => {
 
   it("follows the project from draft to ready to running, and shows a pending version only once one is proposed", async () => {
     const h = makeCtx();
-    await h.projects.propose({ toml: specToml(), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    await h.projects.propose({ toml: specToml(), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
     const drafted = lastEvent(h).id;
     h.clock.advance(MINUTE);
     await h.projects.approve("csv", "human");
@@ -79,7 +79,7 @@ describe("rewind", () => {
     h.store.setProjectState(projectOf(h).id, "running", "human");
     const started = lastEvent(h).id;
     h.clock.advance(MINUTE);
-    await h.projects.propose({ toml: specToml((doc) => (doc.project.goal = "Export orders, with filters.")), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    await h.projects.propose({ toml: specToml((doc) => (doc.project.goal = "Export orders, with filters.")), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
     const revised = lastEvent(h).id;
 
     const at = (id: number) => {

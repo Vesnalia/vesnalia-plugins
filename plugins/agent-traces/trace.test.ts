@@ -184,14 +184,14 @@ describe("TraceBuilder", () => {
       id: "i1",
       type: "toolCall",
       tool: "WebSearch",
-      presentation: { title: "bb plugins", label: {}, icon: {} },
+      presentation: { title: "alia plugins", label: {}, icon: {} },
     });
 
     const [turn] = build(l.events);
     expect(turn).toMatchObject({ end: null, status: "running" });
     expect(turn.spans[0]).toMatchObject({
       name: "WebSearch",
-      detail: "bb plugins",
+      detail: "alia plugins",
       end: null,
       status: "running",
     });
@@ -316,25 +316,25 @@ describe("TraceBuilder", () => {
     expect(first.spans[0].end).toBe(T0 + 5_000);
   });
 
-  it("marks bb's own notices", () => {
+  it("marks VesnALIA's own notices", () => {
     const l = log();
-    l.request(0, "creq_1", "[bb system] @thread:thr_child completed: Opened a draft pull request");
+    l.request(0, "creq_1", "[VesnALIA system] @thread:thr_child completed: Opened a draft pull request");
     l.turn(1, "t1");
     l.accept(1, "t1", "creq_1");
 
     const [turn] = build(l.events);
     expect(turn).toMatchObject({
       prompt: "@thread:thr_child completed: Opened a draft pull request",
-      sender: "bb",
+      sender: "alia",
     });
   });
 
-  it("shows prompts from other threads without bb's prefix", () => {
+  it("shows prompts from other threads without VesnALIA's prefix", () => {
     const l = log();
     l.raw(0, "client/turn/requested", {
       requestId: "creq_1",
       senderThreadId: "thr_parent",
-      input: [{ type: "text", text: "[bb message from thread:thr_parent]\n\nFix the flaky test" }],
+      input: [{ type: "text", text: "[VesnALIA message from thread:thr_parent]\n\nFix the flaky test" }],
     });
     l.turn(1, "t1");
     l.accept(1, "t1", "creq_1");

@@ -1,22 +1,14 @@
 {
-  "name": "bb-plugin-vscode-server",
+  "name": "alia-plugin-vscode-server",
   "version": "0.1.18",
   "type": "module",
-  "description": "Embeds a configured code-server or VS Code Server instance in BB right-panel tabs.",
+  "description": "Embeds a configured code-server or VS Code Server instance in VesnALIA right-panel tabs.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/GantisStorm/bb-plugin-vscode-server.git"
-  },
-  "bugs": {
-    "url": "https://github.com/GantisStorm/bb-plugin-vscode-server/issues"
-  },
-  "homepage": "https://github.com/GantisStorm/bb-plugin-vscode-server#readme",
   "engines": {
-    "bb": ">=0.41",
-    "bbPluginSdk": ">=0.4.35"
+    "alia": ">=0.41",
+    "aliaPluginSdk": ">=0.4.35"
   },
-  "bb": {
+  "alia": {
     "name": "VS Code Server",
     "description": "Embeds a self-hosted code-server or VS Code Server in a thread's right panel, opened at that thread's workspace, with optional desktop profile and extension import.",
     "branding": {
@@ -29,7 +21,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "file:../packages/plugin-sdk/get-bb-plugin-sdk-0.4.35.tgz",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -56,6 +47,23 @@
     "vitest": "^4.1.0"
   },
   "scripts": {
-    "build": "bb plugin build"
+    "build": "alia plugin build"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.143"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/vscode-server#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/vscode-server"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

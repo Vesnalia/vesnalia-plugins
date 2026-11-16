@@ -5,7 +5,7 @@ description: How Ultra Sidebar's back/forward thread shortcuts work and how to r
 
 # Thread history
 
-Ultra Sidebar remembers the threads opened in each BB window, in the order they
+Ultra Sidebar remembers the threads opened in each VesnALIA window, in the order they
 were opened, and moves through that list like browser history:
 
 - `Mod+[` — back to the thread opened before this one
@@ -22,12 +22,12 @@ threads.
 - The keys are bound by Ultra Sidebar itself, not through Settings → Keyboard, so
   they cannot be rebound there. The two palette commands are ordinary plugin
   commands, so they can be given shortcuts of their own under Settings →
-  Keyboard. BB's own `thread.previous` / `thread.next`
-  commands must not share the keys: check `bb settings keyboard list` and use
-  `bb settings keyboard reset thread.previous` (and `thread.next`) if they were
+  Keyboard. VesnALIA's own `thread.previous` / `thread.next`
+  commands must not share the keys: check `alia settings keyboard list` and use
+  `alia settings keyboard reset thread.previous` (and `thread.next`) if they were
   overridden to `Mod+[` / `Mod+]`.
 - Nothing happens when there is no earlier or later thread; the keystroke then
-  falls through to BB and the browser.
+  falls through to VesnALIA and the browser.
 - There are no settings, CLI commands, or server-side state for history.
 - The standalone Thread History plugin must stay disabled. With both enabled, each shortcut is handled twice and the palette lists each action twice.
-- Reload after changes with `bb plugin reload workspace-sidebar`.
+- Reload after changes with `alia plugin reload workspace-sidebar`.

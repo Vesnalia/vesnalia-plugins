@@ -85,7 +85,7 @@ export async function discoverWorkspace(deps: BackfillDeps): Promise<{ teams: nu
  *
  * One request, separable from the issue backfill because the two go stale on
  * completely different clocks. Replacing the API key changes which workspace's
- * columns these *are*; it does not necessarily change a single issue. `bb
+ * columns these *are*; it does not necessarily change a single issue. `VesnALIA
  * linear refresh` wants this and not the several hundred requests a full
  * backfill can be.
  */

@@ -5,7 +5,7 @@ import { task } from "./fixtures";
 import type { TaskComment } from "./server";
 import type { WorkItem } from "./model";
 
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   UrlLink: (props: Record<string, unknown>) => <a {...props} />,
   useRpc: () => ({ call: vi.fn() }),
 }));
@@ -64,7 +64,7 @@ function item(overrides: Partial<WorkItem> = {}): WorkItem {
     children: [],
     scope: "Test project",
     issue: false,
-    bbProjectId: null,
+    aliaProjectId: null,
     ...overrides,
   };
 }
@@ -367,7 +367,7 @@ describe("the side column and the bar", () => {
   });
   it("puts Agent decides in the lead, never Done, and says why it cannot", () => {
     const onAct = vi.fn();
-    const work = item({ bbProjectId: "proj_bb" });
+    const work = item({ aliaProjectId: "proj_alia" });
     const { container } = render(
       <BarActs item={work} disabled={false} busy={null} context={{ now: NOW, handedOver: {} }} onAct={onAct} />,
     );

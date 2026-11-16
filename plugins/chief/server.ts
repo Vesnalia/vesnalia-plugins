@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import {
   defineRpcContract,
-  type BbPluginApi,
+  type AliaPluginApi,
   type PluginCliContext,
   type PluginCliResult,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const SECTION_NAME = "Chief";
@@ -171,8 +171,8 @@ function bullets(values?: string[]) {
   return values?.length ? values.map((value) => `- ${value}`).join("\n") : "- None stated.";
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     chiefProject: { type: "project", label: "Default Chief project" },
     chiefProvider: { type: "string", label: "Chief provider", default: "" },
     chiefModel: { type: "string", label: "Chief model", default: "" },
@@ -186,8 +186,8 @@ export default async function plugin(bb: BbPluginApi) {
     stallMinutes: { type: "string", label: "Stall threshold (minutes)", default: "30" },
   });
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS plugin_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS managed_threads (
       thread_id TEXT PRIMARY KEY,
@@ -296,9 +296,9 @@ export default async function plugin(bb: BbPluginApi) {
   async function ensureSection(): Promise<string> {
     if (sectionEnsuring) return sectionEnsuring;
     sectionEnsuring = (async () => {
-      const sections = await bb.sdk.threadSections.list();
+      const sections = await alia.sdk.threadSections.list();
       let section = sections.find((candidate) => candidate.name === SECTION_NAME);
-      if (!section) section = await bb.sdk.threadSections.create({ name: SECTION_NAME });
+      if (!section) section = await alia.sdk.threadSections.create({ name: SECTION_NAME });
       db.prepare(`INSERT INTO plugin_meta (key, value) VALUES ('section_id', ?)
         ON CONFLICT(key) DO UPDATE SET value=excluded.value`).run(section.id);
       return section.id;
@@ -316,7 +316,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function readRules(projectId: string) {
     try {
-      const file = await bb.sdk.projects.fileContent({ projectId, path: RULES_FILE });
+      const file = await alia.sdk.projects.fileContent({ projectId, path: RULES_FILE });
       const content = file.contentEncoding === "base64"
         ? Buffer.from(file.content, "base64").toString("utf8")
         : file.content;
@@ -330,7 +330,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function projectName(projectId: string) {
-    try { return (await bb.sdk.projects.get({ projectId })).name; }
+    try { return (await alia.sdk.projects.get({ projectId })).name; }
     catch { return projectId; }
   }
 
@@ -346,9 +346,9 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function defaultHostId() {
-    const hosts = await bb.sdk.hosts.list();
+    const hosts = await alia.sdk.hosts.list();
     const host = hosts.find((candidate) => candidate.status === "connected") ?? hosts[0];
-    if (!host) throw new Error("No BB host is registered; a host is required for a managed worktree.");
+    if (!host) throw new Error("No VesnALIA host is registered; a host is required for a managed worktree.");
     return host.id;
   }
 
@@ -364,14 +364,14 @@ export default async function plugin(bb: BbPluginApi) {
     const count = (chiefCountForProject.get(target) as { count: number }).count;
     const title = count === 0 ? `Chief · ${name}` : `Chief · ${name} · ${count + 1}`;
     const prompt = [
-      `You are Chief for ${name}. You supervise the ordinary BB threads in the Chief sidebar section.`,
+      `You are Chief for ${name}. You supervise the ordinary VesnALIA threads in the Chief sidebar section.`,
       "",
       "Use chief_delegate for implementation work. Inspect reports and live thread evidence with chief_inspect, continue safe work, start independent reviews when warranted, and mark work complete only after verification.",
       "Lifecycle alerts are prompts to decide: continue, review, complete, or escalate. Escalate genuine product, scope, permission, credential, or irreversible decisions here to the user with your recommendation.",
       "", "## Project rules", rules,
       "", "Acknowledge the operating rules briefly, inspect the roster, and wait for work.",
     ].join("\n");
-    const thread = await bb.sdk.threads.spawn({
+    const thread = await alia.sdk.threads.spawn({
       projectId: target,
       environment: { type: "project-default" },
       sectionId,
@@ -404,7 +404,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function ensureChief(projectId?: string) {
     const values = await settings.get();
     const target = projectId ?? values.chiefProject;
-    if (!target) throw new Error("Configure a default Chief project first: bb plugin config chief set chiefProject <proj-id>");
+    if (!target) throw new Error("Configure a default Chief project first: VesnALIA plugin config chief set chiefProject <proj-id>");
     const inFlight = chiefStarts.get(target);
     if (inFlight) return inFlight;
     const start = (async () => {
@@ -449,7 +449,7 @@ export default async function plugin(bb: BbPluginApi) {
       "- A blocked report must include the blocker and your recommended decision or next action.",
       "- Do not ask the user directly from this thread. Chief decides whether a question needs escalation.",
     ].join("\n");
-    const thread = await bb.sdk.threads.spawn({
+    const thread = await alia.sdk.threads.spawn({
       projectId,
       environment: {
         type: "host",
@@ -472,7 +472,7 @@ export default async function plugin(bb: BbPluginApi) {
     const text = row.role === "reviewer"
       ? `${allowEdits ? "Chief explicitly authorizes a repair pass: edits are allowed for this instruction only." : "Remain review-only: do not modify files."}\n\n${instruction}`
       : instruction;
-    await bb.sdk.threads.send({
+    await alia.sdk.threads.send({
       threadId,
       mode: "queue-if-active",
       input: [{ type: "text", text: clip(text, MAX_RESULT_LENGTH), mentions: [] }],
@@ -494,7 +494,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (!worker || worker.role !== "worker") throw new Error(`No managed worker ${workerThreadId}.`);
       const duplicate = existingReview.get(workerThreadId) as ManagedRow | undefined;
       if (duplicate) return { threadId: duplicate.thread_id, title: duplicate.title, workerThreadId, created: false };
-      const live = await bb.sdk.threads.get({ threadId: workerThreadId });
+      const live = await alia.sdk.threads.get({ threadId: workerThreadId });
       if (BUSY_STATUSES.has(live.status)) throw new Error(`Worker ${workerThreadId} is ${live.status}; wait until it is idle before starting a review.`);
       if (live.deletedAt !== null || live.archivedAt !== null) throw new Error(`Worker ${workerThreadId} is not reviewable.`);
       if (!live.environmentId) throw new Error(`Worker ${workerThreadId} has no reusable environment.`);
@@ -511,7 +511,7 @@ export default async function plugin(bb: BbPluginApi) {
         "Do not broaden scope or make product decisions. Recommend escalation when a real decision is required.",
         "", "## Project rules", rules,
       ].join("\n");
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         projectId: worker.project_id,
         environment: { type: "reuse", environmentId: live.environmentId },
         sectionId,
@@ -534,7 +534,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function markComplete(threadId: string, result?: string) {
     const row = roles.get(threadId);
     if (!row || row.role === "chief") throw new Error(`No managed worker or reviewer ${threadId}.`);
-    const live = await bb.sdk.threads.get({ threadId });
+    const live = await alia.sdk.threads.get({ threadId });
     if (BUSY_STATUSES.has(live.status)) throw new Error(`Cannot complete ${threadId} while it is ${live.status}.`);
     if (live.deletedAt !== null || live.archivedAt !== null) throw new Error(`Cannot complete ${threadId} because it is not a live thread.`);
     db.prepare(`UPDATE managed_threads SET state='complete', status=?, result=COALESCE(?, result),
@@ -563,7 +563,7 @@ export default async function plugin(bb: BbPluginApi) {
       const alert = db.prepare<[string]>(`SELECT * FROM alert_outbox WHERE dedupe_key=?`).get(key) as AlertRow | undefined;
       if (!alert || alert.delivered_at !== null) return true;
       try {
-        await bb.sdk.threads.send({
+        await alia.sdk.threads.send({
           threadId: alert.target_thread_id,
           mode: "queue-if-active",
           input: [{ type: "text", text: clip(alert.message), mentions: [] }],
@@ -573,7 +573,7 @@ export default async function plugin(bb: BbPluginApi) {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         db.prepare(`UPDATE alert_outbox SET attempts=attempts+1, last_error=? WHERE dedupe_key=?`).run(clip(message, 1_000), key);
-        bb.log.warn(`Could not deliver Chief alert ${key}: ${message}`);
+        alia.log.warn(`Could not deliver Chief alert ${key}: ${message}`);
         return false;
       }
     })();
@@ -632,9 +632,9 @@ export default async function plugin(bb: BbPluginApi) {
   async function reconcileThread(row: ManagedRow, sectionId: string) {
     let thread;
     try {
-      thread = await bb.sdk.threads.get({ threadId: row.thread_id });
+      thread = await alia.sdk.threads.get({ threadId: row.thread_id });
     } catch (error) {
-      bb.log.warn(`Transient thread read failure for ${row.thread_id}; will retry: ${String(error)}`);
+      alia.log.warn(`Transient thread read failure for ${row.thread_id}; will retry: ${String(error)}`);
       return false;
     }
     const now = Date.now();
@@ -650,9 +650,9 @@ export default async function plugin(bb: BbPluginApi) {
     }
     if (thread.sectionId !== sectionId || thread.visibility !== "visible") {
       try {
-        await bb.sdk.threads.update({ threadId: row.thread_id, sectionId, visibility: "visible" });
+        await alia.sdk.threads.update({ threadId: row.thread_id, sectionId, visibility: "visible" });
       } catch (error) {
-        bb.log.warn(`Transient thread filing failure for ${row.thread_id}; will retry: ${String(error)}`);
+        alia.log.warn(`Transient thread filing failure for ${row.thread_id}; will retry: ${String(error)}`);
       }
     }
     const nextState = stateFromLive(row, thread.status) as ManagedRow["state"];
@@ -719,13 +719,13 @@ export default async function plugin(bb: BbPluginApi) {
     ].join("\n"));
   }
 
-  bb.events.on("thread.active", ({ thread }) => lifecycle("active", thread));
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) => lifecycle("idle", thread, lastAssistantText));
-  bb.events.on("thread.failed", ({ thread, error }) => lifecycle("failed", thread, error));
-  bb.events.on("thread.archived", ({ thread }) => lifecycle("archived", thread));
-  bb.events.on("thread.deleted", ({ thread }) => lifecycle("deleted", thread));
+  alia.events.on("thread.active", ({ thread }) => lifecycle("active", thread));
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) => lifecycle("idle", thread, lastAssistantText));
+  alia.events.on("thread.failed", ({ thread, error }) => lifecycle("failed", thread, error));
+  alia.events.on("thread.archived", ({ thread }) => lifecycle("archived", thread));
+  alia.events.on("thread.deleted", ({ thread }) => lifecycle("deleted", thread));
 
-  bb.background.service("supervisor", {
+  alia.background.service("supervisor", {
     async start(signal) {
       const wake = () => new Promise<void>((resolve) => {
         if (signal.aborted) return resolve();
@@ -762,7 +762,7 @@ export default async function plugin(bb: BbPluginApi) {
           // pending delivery is attempted.
           await retryAlerts();
         } catch (error) {
-          bb.log.warn(`Supervisor reconciliation failed: ${String(error)}`);
+          alia.log.warn(`Supervisor reconciliation failed: ${String(error)}`);
         }
         await wake();
       }
@@ -771,7 +771,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   settings.onChange((next, previous) => {
     if (next.chiefProject && next.chiefProject !== previous.chiefProject) {
-      void ensureChief(next.chiefProject).catch((error) => bb.log.warn(`Could not auto-start Chief: ${String(error)}`));
+      void ensureChief(next.chiefProject).catch((error) => alia.log.warn(`Could not auto-start Chief: ${String(error)}`));
     }
   });
 
@@ -794,16 +794,16 @@ export default async function plugin(bb: BbPluginApi) {
     if (!row || row.project_id !== projectId) throw new Error(`No managed thread ${threadId} for this Chief project.`);
     let liveStatus = row.status;
     try {
-      const live = await bb.sdk.threads.get({ threadId });
+      const live = await alia.sdk.threads.get({ threadId });
       liveStatus = live.deletedAt !== null ? "deleted" : live.archivedAt !== null ? "archived" : live.status;
     } catch (error) {
-      bb.log.warn(`Could not inspect live status for ${threadId}: ${String(error)}`);
+      alia.log.warn(`Could not inspect live status for ${threadId}: ${String(error)}`);
     }
     let output: string | null = null;
     try {
-      output = (await bb.sdk.threads.output({ threadId })).output;
+      output = (await alia.sdk.threads.output({ threadId })).output;
     } catch (error) {
-      bb.log.warn(`Could not inspect output for ${threadId}: ${String(error)}`);
+      alia.log.warn(`Could not inspect output for ${threadId}: ${String(error)}`);
     }
     return [
       `Thread: ${row.title} (${threadId})`,
@@ -817,7 +817,7 @@ export default async function plugin(bb: BbPluginApi) {
     ].join("\n");
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "chief_delegate",
     description: "Delegate one clearly titled unit of implementation work to a visible worker in its own managed worktree.",
     parameters: delegateParams,
@@ -830,7 +830,7 @@ export default async function plugin(bb: BbPluginApi) {
       return `Started worker “${result.title}” in thread ${result.threadId}. Track it with chief_roster.`;
     },
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "chief_roster",
     description: "Inspect this project's managed threads and their bounded persisted status, result, blocker, and recommendation.",
     parameters: z.object({ includeComplete: z.boolean().optional() }),
@@ -846,7 +846,7 @@ export default async function plugin(bb: BbPluginApi) {
       ].join("\n  ")).join("\n") : "No managed threads for this project.";
     },
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "chief_inspect",
     description: "Inspect one managed thread's live status, persisted report, and bounded last assistant output before deciding what to do.",
     parameters: z.object({ threadId: z.string() }),
@@ -859,7 +859,7 @@ export default async function plugin(bb: BbPluginApi) {
       return inspect(threadId, caller.project_id);
     },
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "chief_continue",
     description: "Send or queue a concrete next instruction to a managed worker or reviewer. Reviewer edits require allowEdits=true.",
     parameters: z.object({
@@ -877,7 +877,7 @@ export default async function plugin(bb: BbPluginApi) {
       return `Continued ${threadId}${allowEdits ? " with explicit repair authorization" : ""}.`;
     },
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "chief_review",
     description: "Start or return an independent read-only review in an idle worker's existing worktree.",
     parameters: z.object({ workerThreadId: z.string(), focus: z.string().trim().max(4_000).optional() }),
@@ -891,7 +891,7 @@ export default async function plugin(bb: BbPluginApi) {
       return `${review.created ? "Started" : "Using existing"} “${review.title}” in thread ${review.threadId}.`;
     },
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "chief_complete",
     description: "Mark an idle managed worker or reviewer complete after Chief has inspected sufficient evidence.",
     parameters: z.object({ threadId: z.string(), result: z.string().trim().max(MAX_RESULT_LENGTH).optional() }),
@@ -905,7 +905,7 @@ export default async function plugin(bb: BbPluginApi) {
       return `Marked “${row.title}” complete.`;
     },
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "chief_report",
     description: "Report managed work state and evidence to Chief. Use ready, not complete; blocked requires blocker and recommendation.",
     parameters: reportParams,
@@ -916,7 +916,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const row = roles.get(context.thread.id);
     if (!row || ["complete", "archived", "deleted"].includes(row.state)) return { tools: [], skills: [] };
     const rules = rulesCache.get(row.project_id) ?? BUILT_IN_RULES;
@@ -924,7 +924,7 @@ export default async function plugin(bb: BbPluginApi) {
       return {
         tools: ["chief_delegate", "chief_roster", "chief_inspect", "chief_continue", "chief_review", "chief_complete"],
         skills: ["chief"],
-        instructions: `You are the registered Chief supervisor for ${context.project.name}. Use ordinary visible BB threads and drive managed work through completion.\n\n${rules}`,
+        instructions: `You are the registered Chief supervisor for ${context.project.name}. Use ordinary visible VesnALIA threads and drive managed work through completion.\n\n${rules}`,
       };
     }
     return {
@@ -934,7 +934,7 @@ export default async function plugin(bb: BbPluginApi) {
     };
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     status: () => ({ sectionId: storedSectionId(), threads: [...roles.values()].map(toManaged) }),
     start: ({ projectId }) => ensureChief(projectId ?? undefined),
     create: ({ projectId }) => createChief(projectId),
@@ -942,30 +942,30 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb chief status [--project proj_id] [--json]",
-    "  bb chief start [--project proj_id] [--json]",
-    "  bb chief create [--project proj_id] [--json]",
-    "  bb chief adopt --thread thr_id [--json]",
-    "  bb chief delegate --title \"…\" --mission \"…\" [--criteria \"…\"]... [--constraint \"…\"]... [--context \"…\"] [--json]",
-    "  bb chief inspect <thread-id>",
-    "  bb chief continue <thread-id> --instruction \"…\" [--allow-edits] [--json]",
-    "  bb chief review <worker-thread-id> [--focus \"…\"] [--json]",
-    "  bb chief complete <thread-id> [--result \"…\"] [--json]",
+    "  VesnALIA chief status [--project proj_id] [--json]",
+    "  VesnALIA chief start [--project proj_id] [--json]",
+    "  VesnALIA chief create [--project proj_id] [--json]",
+    "  VesnALIA chief adopt --thread thr_id [--json]",
+    "  VesnALIA chief delegate --title \"…\" --mission \"…\" [--criteria \"…\"]... [--constraint \"…\"]... [--context \"…\"] [--json]",
+    "  VesnALIA chief inspect <thread-id>",
+    "  VesnALIA chief continue <thread-id> --instruction \"…\" [--allow-edits] [--json]",
+    "  VesnALIA chief review <worker-thread-id> [--focus \"…\"] [--json]",
+    "  VesnALIA chief complete <thread-id> [--result \"…\"] [--json]",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "chief",
-    summary: "Supervise visible BB worker and review threads through completion",
+    summary: "Supervise visible VesnALIA worker and review threads through completion",
     commands: [
-      { name: "status", summary: "Show a project's Chief-managed roster", usage: "bb chief status [--project proj_id] [--json]" },
-      { name: "start", summary: "Start or return the latest Chief for a project", usage: "bb chief start [--project proj_id] [--json]" },
-      { name: "create", summary: "Create another Chief for a project", usage: "bb chief create [--project proj_id] [--json]" },
-      { name: "adopt", summary: "Adopt an existing ordinary thread as its project's Chief", usage: "bb chief adopt --thread thr_id [--json]" },
-      { name: "delegate", summary: "Start a clearly titled worker in a managed worktree", usage: "bb chief delegate --title \"…\" --mission \"…\" [--json]" },
-      { name: "inspect", summary: "Inspect a managed thread's live and reported evidence", usage: "bb chief inspect <thread-id>" },
-      { name: "continue", summary: "Continue a managed worker or reviewer", usage: "bb chief continue <thread-id> --instruction \"…\" [--allow-edits] [--json]" },
-      { name: "review", summary: "Start or return a read-only review for an idle worker", usage: "bb chief review <worker-thread-id> [--focus \"…\"] [--json]" },
-      { name: "complete", summary: "Mark verified, non-running managed work complete", usage: "bb chief complete <thread-id> [--result \"…\"] [--json]" },
+      { name: "status", summary: "Show a project's Chief-managed roster", usage: "alia chief status [--project proj_id] [--json]" },
+      { name: "start", summary: "Start or return the latest Chief for a project", usage: "alia chief start [--project proj_id] [--json]" },
+      { name: "create", summary: "Create another Chief for a project", usage: "alia chief create [--project proj_id] [--json]" },
+      { name: "adopt", summary: "Adopt an existing ordinary thread as its project's Chief", usage: "alia chief adopt --thread thr_id [--json]" },
+      { name: "delegate", summary: "Start a clearly titled worker in a managed worktree", usage: "alia chief delegate --title \"…\" --mission \"…\" [--json]" },
+      { name: "inspect", summary: "Inspect a managed thread's live and reported evidence", usage: "alia chief inspect <thread-id>" },
+      { name: "continue", summary: "Continue a managed worker or reviewer", usage: "alia chief continue <thread-id> --instruction \"…\" [--allow-edits] [--json]" },
+      { name: "review", summary: "Start or return a read-only review for an idle worker", usage: "alia chief review <worker-thread-id> [--focus \"…\"] [--json]" },
+      { name: "complete", summary: "Mark verified, non-running managed work complete", usage: "alia chief complete <thread-id> [--result \"…\"] [--json]" },
     ],
     async run(argv: string[], context: PluginCliContext): Promise<PluginCliResult> {
       const [command, ...rest] = argv;
@@ -994,10 +994,10 @@ export default async function plugin(bb: BbPluginApi) {
         if (command === "adopt") {
           const threadId = args.one("thread") ?? args.positional[0];
           if (!threadId) return fail("adopt requires --thread <thread-id>");
-          const thread = await bb.sdk.threads.get({ threadId });
+          const thread = await alia.sdk.threads.get({ threadId });
           const sectionId = await ensureSection();
           const title = `Chief · ${await projectName(thread.projectId)}`;
-          await bb.sdk.threads.update({ threadId, sectionId, visibility: "visible", title });
+          await alia.sdk.threads.update({ threadId, sectionId, visibility: "visible", title });
           const previous = chiefForProject(thread.projectId);
           if (previous && previous.thread_id !== threadId) {
             const now = Date.now();
@@ -1056,11 +1056,11 @@ export default async function plugin(bb: BbPluginApi) {
   try {
     await reconcile();
   } catch (error) {
-    bb.log.warn(`Initial reconciliation deferred: ${String(error)}`);
+    alia.log.warn(`Initial reconciliation deferred: ${String(error)}`);
   }
   const initial = await settings.get();
   if (initial.chiefProject) {
-    void ensureChief(initial.chiefProject).catch((error) => bb.log.warn(`Could not auto-start Chief: ${String(error)}`));
+    void ensureChief(initial.chiefProject).catch((error) => alia.log.warn(`Could not auto-start Chief: ${String(error)}`));
   }
-  bb.log.info("Chief supervisor loaded");
+  alia.log.info("Chief supervisor loaded");
 }

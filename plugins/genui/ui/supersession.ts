@@ -1,7 +1,7 @@
 // Pure rules behind useSuperseded: whether a reply has been answered, and
 // which thread changes can change that. No React, no DOM, no SDK.
 
-/** One message of BB's conversation outline (`sdk.threads.conversationOutline`), in thread order. */
+/** One message of VesnALIA's conversation outline (`sdk.threads.conversationOutline`), in thread order. */
 export interface OutlineItem {
   readonly id: string;
   readonly role: "assistant" | "user";
@@ -20,7 +20,7 @@ function userSeq(id: string): number | null {
  * outline no longer lists.
  *
  * A user row whose sequence is below one already seen is out of place, not a
- * reply: BB's outline can list a rejected steer, sent long before, at its end.
+ * reply: VesnALIA's outline can list a rejected steer, sent long before, at its end.
  */
 export function hasLaterUserMessage(items: readonly OutlineItem[] | null, anchorId: string): boolean | null {
   if (items === null) return null;
@@ -37,7 +37,7 @@ export function hasLaterUserMessage(items: readonly OutlineItem[] | null, anchor
   return false;
 }
 
-/** The part of BB's `thread:changed` realtime event this module reads. */
+/** The part of VesnALIA's `thread:changed` realtime event this module reads. */
 export interface ThreadChange {
   readonly changes: readonly string[];
   readonly metadata?: { readonly eventTypes?: readonly string[] };

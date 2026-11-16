@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { GitState, TreeEntry } from "./tree-model";
-import type { PluginTimelineRowStatus } from "@get-bb/plugin-sdk";
+import type { PluginTimelineRowStatus } from "@vesnalia/plugin-sdk";
 
 const activityStatusSchema: z.ZodType<PluginTimelineRowStatus> = z.enum([
   "completed",

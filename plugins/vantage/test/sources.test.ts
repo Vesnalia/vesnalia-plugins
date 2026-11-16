@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { PluginBbSdk } from "@get-bb/plugin-sdk";
+import type { PluginAliaSdk } from "@vesnalia/plugin-sdk";
 import type { CollectDeps, HostCall, RepoPlan, Touched } from "../src/collect";
 import type { GitFile, HostOutput, PatchInput, RepoRef } from "../src/contract";
 import type { EditRecord } from "../src/edits";
@@ -19,7 +19,7 @@ function deps(overrides: { host?: unknown; status?: unknown } = {}) {
   const host = vi.fn(async (method: string, ..._args: unknown[]) => (method === "checkoutStatus" ? (overrides.status ?? checkoutStatus()) : (overrides.host ?? {
     outcome: "available", branch: null, base: null, aheadCount: null, behindCount: null, commits: [], files: [], truncated: false,
   })));
-  return { deps: { sdk: {} as PluginBbSdk, host: host as unknown as HostCall, edits: {} as CollectDeps["edits"] }, host };
+  return { deps: { sdk: {} as PluginAliaSdk, host: host as unknown as HostCall, edits: {} as CollectDeps["edits"] }, host };
 }
 
 const planOf = (ref: RepoRef, touched: Map<string, Touched> = new Map()): RepoPlan => ({

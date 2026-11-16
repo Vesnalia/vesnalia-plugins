@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { releaseRpc } from "./plugin-updates";
 import { COMMENT_STATES, SEVERITIES, SUBMIT_WARNINGS } from "./draft";
@@ -127,7 +127,7 @@ export const rpcContract = defineRpcContract({
   // mode it runs at on them (src/generate.ts guideWriterMode); without one, the project's own.
   getAgentDefaults: { input: z.null(), output: z.object({ defaults: agentExecutionSchema.nullable(), guideWriterMode: z.enum(["accept-edits", "auto"]).optional() }) },
   // A machine's providers and the permission modes each runs in, so Settings can say when an agent can't be restricted.
-  // The bb server's without a hostId; none when they can't be read.
+  // The VesnALIA server's without a hostId; none when they can't be read.
   getProviderModes: {
     input: z.object({ hostId: z.string().optional() }).strict(),
     output: z.object({ providers: z.array(z.object({ id: z.string(), name: z.string(), permissionModes: z.array(z.string()) })) }),
@@ -361,7 +361,7 @@ export const rpcContract = defineRpcContract({
     output: z.object({ ok: z.boolean(), fineAt: epochMs.optional() }),
   },
 
-  // Review assistant: one hidden bb thread per review, shown with ThreadChat
+  // Review assistant: one hidden VesnALIA thread per review, shown with ThreadChat
   getConversation: {
     input: targetKey,
     output: z.object({
@@ -387,7 +387,7 @@ export const rpcContract = defineRpcContract({
     input: z.object({ targetKey: z.string(), comments: z.array(z.object(location).strict()).min(1), force: z.boolean().optional() }).strict(),
     output: z.union([z.object({ ok: z.literal(true), threadId: z.string(), title: z.string(), keptLocal: z.number().int().optional() }), sendWarning]),
   },
-  // The review's main thread, which its Sends go to (src/loop.ts): the thread that started it in its folder, or the thread `bb review`
+  // The review's main thread, which its Sends go to (src/loop.ts): the thread that started it in its folder, or the thread `alia review`
   // ran in, and the machine it works on when that's known.
   getSourceThread: {
     input: targetKey,
@@ -558,7 +558,7 @@ export const rpcContract = defineRpcContract({
   /** Not this one: the PR held isn't this review's, and it stops asking. */
   dismissPendingPr: { input: targetKey, output: z.object({ ok: z.boolean() }) },
 
-  // BB's thread pages (src/thread-surfaces.ts): Review changes above a thread's message box, and the Review tab. Review
+  // VesnALIA's thread pages (src/thread-surfaces.ts): Review changes above a thread's message box, and the Review tab. Review
   // changes starts a review with reviewThreadChanges, which other plugins call too (src/public-contract.ts).
   /** The reviews not archived, by the threads and the folder each is linked to; whether Review changes is on; the plugin's own agents' threads. */
   threadLinks: {
@@ -618,7 +618,7 @@ export const rpcContract = defineRpcContract({
   },
   /** The reviewer opened the review: clear its Needs You alert. */
   markSeen: { input: targetKey, output: z.object({ ok: z.boolean() }) },
-  /** The review's page shows: mark its agent's thread read in BB, as opening a thread does (src/agent-status.ts). */
+  /** The review's page shows: mark its agent's thread read in VesnALIA, as opening a thread does (src/agent-status.ts). */
   readAgent: { input: targetKey, output: z.object({ ok: z.boolean() }) },
   /** Generate the guide for a review found on GitHub (status "tracked"). */
   startTrackedReview: { input: targetKey, output: z.object({ ok: z.boolean(), error: z.string().optional() }) },

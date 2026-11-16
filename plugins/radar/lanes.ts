@@ -166,7 +166,7 @@ function withCategory(value: Record<string, unknown>): Record<string, unknown> {
 }
 
 /**
- * A category someone asked for (the drafting model, `bb radar put`) → the lane's
+ * A category someone asked for (the drafting model, `alia radar put`) → the lane's
  * category fields. It is pinned only when it differs from what the query implies
  * and from the lane's current category, so a lane JSON round-tripped with a new
  * query is re-inferred rather than frozen. Invalid or missing → inferred.
@@ -794,7 +794,7 @@ export function reviewTitle(item: Item): string {
 }
 
 /**
- * First message for a bb thread started from a Radar row.
+ * First message for a VesnALIA thread started from a Radar row.
  *
  * The title, author and URL come from whoever opened the PR or issue. They are
  * flattened to one line each and fenced off as data after the instructions, so
@@ -841,7 +841,7 @@ export function reviewPrompt(item: Item): string {
   ].join("\n");
 }
 
-/** The bb thread section Radar files review threads under, matched by name (trimmed, case-insensitive). */
+/** The VesnALIA thread section Radar files review threads under, matched by name (trimmed, case-insensitive). */
 export function findSection(sections: ReadonlyArray<{ id: string; name: string }>, name: string): string | null {
   const wanted = name.trim().toLowerCase();
   if (wanted === "") return null;

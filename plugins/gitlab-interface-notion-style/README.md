@@ -1,10 +1,10 @@
 # GitLab Interface (Notion style)
 
-GitLab issues and merge requests inside [BB](https://getbb.app), with one-click
+GitLab issues and merge requests inside [VesnALIA](https://getbb.app), with one-click
 agent dispatch. Self-managed instances are first-class: every host `glab` is
 logged into is a host this plugin can reach.
 
-A Notion-style panel for GitLab, with a `bb gitlab-ui` CLI for agents and terminals.
+A Notion-style panel for GitLab, with a `alia gitlab-ui` CLI for agents and terminals.
 
 
 ![Merge request page](docs/screenshots/merge-request.png)
@@ -99,7 +99,7 @@ Not here yet: ahead/behind counts and a dedicated page per branch.
 
 ## Settings
 
-Open BB → Settings → Plugins → GitLab Interface (Notion style).
+Open VesnALIA → Settings → Plugins → GitLab Interface (Notion style).
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -113,27 +113,27 @@ Open BB → Settings → Plugins → GitLab Interface (Notion style).
 | New-thread dashboard: hide empty groups | off | Drop groups with nothing in them. |
 | New-thread page: composer at the bottom | off | Pins the message box to the bottom of the New thread page and centres the dashboard above it. |
 | New-thread dashboard: groups collapsed by default | `waiting` | Sections layout only. |
-| Extra projects / Default GitLab host / Default BB project | | See "Which projects are tracked". |
+| Extra projects / Default GitLab host / Default VesnALIA project | | See "Which projects are tracked". |
 
 ## Install
 
-The plugin id is `gitlab-interface-notion-style` and its command is `bb gitlab-ui`.
+The plugin id is `gitlab-interface-notion-style` and its command is `alia gitlab-ui`.
 
 ```sh
-bb plugin install git:https://github.com/KosachMax/bb-plugin-gitlab-interface-notion-style.git
+alia plugin install git:https://github.com/KosachMax/bb-plugin-gitlab-interface-notion-style.git
 ```
 
 or from a local checkout, which is what you want while hacking on it:
 
 ```sh
 git clone https://github.com/KosachMax/bb-plugin-gitlab-interface-notion-style.git
-cd bb-plugin-gitlab-interface-notion-style && npm install --include=dev && bb plugin build
-bb plugin install "$PWD"
+cd alia-plugin-gitlab-interface-notion-style && npm install --include=dev && alia plugin build
+alia plugin install "$PWD"
 ```
 
 ## License
 
-MIT. The code started from Marius Nouchet's MIT-licensed GitLab plugin for BB, so the original copyright notice stays in `LICENSE`.
+MIT. The code started from Marius Nouchet's MIT-licensed GitLab plugin for VesnALIA, so the original copyright notice stays in `LICENSE`.
 
 ## What it does
 
@@ -151,16 +151,16 @@ MIT. The code started from Marius Nouchet's MIT-licensed GitLab plugin for BB, s
 - **Merge-request page**: source → target branch, mergeability, pipeline,
   approvals, reviewers, and comments as properties, then Pipeline, Discussions,
   and Changes as toggle sections with per-file diffs rendered by the same syntax-highlighting engine as the rest of
-  BB, following the host's code theme. Deep-linkable as
+  VesnALIA, following the host's code theme. Deep-linkable as
   `#/merge_requests/<host>/<namespace/path>/<iid>`.
-- **Send agent / Review with agent**: spawns a BB worker thread on the issue (or
-  a review thread on the merge request) in the matching BB project. The item
+- **Send agent / Review with agent**: spawns a VesnALIA worker thread on the issue (or
+  a review thread on the merge request) in the matching VesnALIA project. The item
   then shows a ⚡ pill linking to the thread.
 - **Homepage section**: recent open issues with the same Send agent buttons.
 - **Mentions**: `#` completes GitLab issues, `!` completes merge requests (`@`
   does both); the selected item's title, state, and description are attached as
   agent context at send time.
-- **`bb gitlab-ui` CLI**, also discoverable by agents through the plugin-commands
+- **`alia gitlab-ui` CLI**, also discoverable by agents through the plugin-commands
   skill, alongside the bundled `gitlab` skill that teaches `glab` conventions:
   - `projects`, `sync`
   - `issues` / `mrs [project]` with `--state open|closed|merged|all`, `--mine`,
@@ -176,7 +176,7 @@ MIT. The code started from Marius Nouchet's MIT-licensed GitLab plugin for BB, s
 
   An item is `host/group/app#7`, `host/group/app!12` (single-quote refs in a shell), or its
   web URL. A target may also be a project or a pipeline/job URL; omitted, it is
-  the GitLab project of the BB project the command runs in.
+  the GitLab project of the VesnALIA project the command runs in.
 
 ## Auth and any GitLab domain
 
@@ -188,7 +188,7 @@ tokens are stored by the plugin.
 
 ```sh
 glab auth login --hostname gitlab.example.dev
-bb plugin reload gitlab
+alia plugin reload gitlab
 ```
 
 A host's own glab config describes how it is reached, and the plugin reads that
@@ -213,25 +213,25 @@ A project is addressed by its **host-qualified ref**:
 `gitlab.example.dev/group/subgroup/app`. The host is the first segment; the rest
 is the namespace path, which may have any number of segments.
 
-- Every BB project whose git remote points at an authenticated GitLab host —
+- Every VesnALIA project whose git remote points at an authenticated GitLab host —
   including remotes that use that host's `ssh_host`, `api_host`, or subfolder
-  form. That mapping is also how "Send agent" picks the BB project to spawn in.
-  The remote comes from BB's own project record, so a checkout on an enrolled
+  form. That mapping is also how "Send agent" picks the VesnALIA project to spawn in.
+  The remote comes from VesnALIA's own project record, so a checkout on an enrolled
   remote host resolves exactly like a local one. A remote on a GitLab host glab
-  is not logged into is reported in `bb plugin logs gitlab`.
+  is not logged into is reported in `alia plugin logs gitlab`.
 - Plus the `extraProjects` setting: a comma-separated list of refs, normalized
   for you — a scheme, mixed case, a port, a subfolder, or a trailing slash are
   all accepted, and a bare `group/app` uses `defaultHost`.
-- `defaultProject`: where threads spawn for GitLab projects with no BB project.
+- `defaultProject`: where threads spawn for GitLab projects with no VesnALIA project.
 
 ```sh
-bb plugin config gitlab set extraProjects "https://Code.Example.dev:8443/gitlab/group/app, other/app"
-bb plugin config gitlab set defaultHost gitlab.example.dev
-bb plugin reload gitlab
+alia plugin config gitlab set extraProjects "https://Code.Example.dev:8443/gitlab/group/app, other/app"
+alia plugin config gitlab set defaultHost gitlab.example.dev
+alia plugin reload gitlab
 ```
 
 A background service refreshes the issue/MR cache every 5 minutes; the panel's
-Refresh button (or `bb gitlab-ui sync`) forces it. The cache holds open items plus
+Refresh button (or `alia gitlab-ui sync`) forces it. The cache holds open items plus
 a page of recently closed and merged ones, and the panel filters that cache in
 the browser, so `is:closed` or `is:merged` costs nothing. Detail views,
 mutations, and mention resolution always go live through `glab api`.
@@ -242,11 +242,11 @@ mutations, and mention resolution always go live through `glab api`.
 npm install --include=dev   # once
 npm run typecheck
 npm test
-bb plugin build             # dist/server.js + dist/app.js + dist/app.css
-bb plugin reload gitlab
+alia plugin build             # dist/server.js + dist/app.js + dist/app.css
+alia plugin reload gitlab
 ```
 
 UI changes follow the [design guide](docs/design/DESIGN.md): tokens, components and per-screen rules, with a visual [mockup](docs/design/mockup.html).
 
-`bb plugin dev` watches and reloads on every save. Plugin logs:
-`bb plugin logs gitlab -f`.
+`alia plugin dev` watches and reloads on every save. Plugin logs:
+`alia plugin logs gitlab -f`.

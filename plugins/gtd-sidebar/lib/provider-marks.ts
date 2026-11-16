@@ -1,18 +1,18 @@
 /**
- * Brand marks for the agents BB knows, as geometry.
+ * Brand marks for the agents VesnALIA knows, as geometry.
  *
- * BB draws these from React components compiled into its own bundle, and its
+ * VesnALIA draws these from React components compiled into its own bundle, and its
  * provider API reports `logoUrl: null` for all of them — only a plugin-supplied
  * ACP agent, such as Amp, gets a URL. So a replaced sidebar that wants more
  * than a neutral dot has to carry its own copy, exactly as the upstream example
  * does for Codex and Claude.
  *
  * Kept as geometry rather than components so one table serves every glyph size
- * and a new provider is one entry. If BB ever publishes marks for its built-in
+ * and a new provider is one entry. If VesnALIA ever publishes marks for its built-in
  * providers, `ProviderGlyph` already prefers the host `logoUrl`, so this table
  * becomes dead weight rather than a conflict.
  *
- * Lifted from `apps/app/src/components/icons/` in get-bb/bb (MIT).
+ * Lifted from `apps/app/src/components/icons/` in get-alia/alia (MIT).
  */
 export interface ProviderMarkPath {
   readonly d: string;
@@ -115,7 +115,7 @@ const PROVIDER_MARKS: Readonly<Record<string, ProviderMark>> = {
   },
 };
 
-/** The mark BB draws for this provider, or undefined when it ships none. */
+/** The mark VesnALIA draws for this provider, or undefined when it ships none. */
 export function providerMark(providerId: string): ProviderMark | undefined {
   return PROVIDER_MARKS[providerId];
 }

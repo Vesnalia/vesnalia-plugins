@@ -15,15 +15,15 @@ automatically once usage reaches a configurable percentage (default 80%).
   or above the threshold.
 - A 15-minute per-thread cooldown prevents repeated compactions when usage
   stays high.
-- Compaction only ever runs on idle or failed threads, which is when BB
+- Compaction only ever runs on idle or failed threads, which is when VesnALIA
   allows it. Active threads are never interrupted.
 
 ## CLI
 
 ```sh
-bb auto-compact status [--json]
-bb auto-compact check [thread-id] [--json]
-bb auto-compact now [thread-id] [--json]
+alia auto-compact status [--json]
+alia auto-compact check [thread-id] [--json]
+alia auto-compact now [thread-id] [--json]
 ```
 
 - `status` prints whether auto-compact is enabled, the threshold percent,
@@ -56,8 +56,8 @@ checks skip quietly instead of retrying on every idle event.
 Configure under Extensions → Plugins → Auto Compact, or via:
 
 ```sh
-bb plugin config auto-compact set enabled false
-bb plugin config auto-compact set thresholdPercent 90
+alia plugin config auto-compact set enabled false
+alia plugin config auto-compact set thresholdPercent 90
 ```
 
 - `enabled` (boolean, default `true`) — master switch.

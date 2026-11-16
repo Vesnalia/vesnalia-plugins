@@ -3,7 +3,7 @@
 - A **GigaAM v3** service in Settings → AI services → Voice input.
 - Punctuated, normalized Russian text, about 1 s for a short phrase on a modern CPU.
 - Long voice notes: recordings over 20 seconds are split at pauses, so multi-minute dictation works.
-- A `bb gigaam` command to check status, read logs, restart, or reinstall.
+- A `alia gigaam` command to check status, read logs, restart, or reinstall.
 
 ## How it works
 

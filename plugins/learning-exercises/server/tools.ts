@@ -1,11 +1,11 @@
 /**
- * The session tools: `learning_ask`, `learning_feedback`, `learning_finish`. `bb.agents.configure`
+ * The session tools: `learning_ask`, `learning_feedback`, `learning_finish`. `alia.agents.configure`
  * offers them only to a thread whose plugin metadata names an open session (`server.ts`), so a thread
  * that never accepted a session never sees their schemas. Every call is then checked against the store
- * by the calling thread's id, which bb supplies: metadata the agent could write itself unlocks nothing.
+ * by the calling thread's id, which VesnALIA supplies: metadata the agent could write itself unlocks nothing.
  * Refusals come back as tool errors the agent can act on.
  */
-import type { BbPluginApi, PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginAgentToolResult } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { AnswerFormSchema } from "../shared/answer-form";
@@ -25,8 +25,8 @@ async function guarded(work: () => Promise<string>): Promise<PluginAgentToolResu
 
 const concepts = z.array(z.string().min(1).max(80)).max(20).optional().describe("Concepts the question exercised, a few words each");
 
-export function registerTools(bb: BbPluginApi, sessions: SessionService): void {
-  bb.agents.registerTool({
+export function registerTools(alia: AliaPluginApi, sessions: SessionService): void {
+  alia.agents.registerTool({
     name: "learning_ask",
     description:
       "Show the learner one exercise question in a card and wait for their answer, which comes back as this tool's result. Ask exactly one question per call, then end your turn and add nothing. The question must stand on its own: the card is all the learner sees while answering.",
@@ -50,7 +50,7 @@ export function registerTools(bb: BbPluginApi, sessions: SessionService): void {
     execute: ({ type, question, files, form }, ctx) => guarded(() => sessions.ask(ctx.threadId, { type, question, files: files ?? [], form }, "tool", ctx.signal)),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "learning_feedback",
     description:
       "Give the learner your feedback on their last answer and record your verdict, the gap you saw, and the concepts involved. Put the feedback itself in `feedback`, not in a message: the plugin shows it in the chat as a card with the verdict, above the next question, and in the session's history. Then ask the next question or finish the session.",
@@ -70,7 +70,7 @@ export function registerTools(bb: BbPluginApi, sessions: SessionService): void {
     execute: ({ verdict, feedback, gap, concepts: named }, ctx) => guarded(() => sessions.feedback(ctx.threadId, { verdict, feedback: feedback ?? null, gap: gap ?? null, concepts: named ?? [] })),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "learning_finish",
     description: "End the learning session with a two-sentence summary of what was covered and how it went.",
     presentation: { label: { pending: "Finishing the learning session", completed: "Finished the learning session" }, icon: { glyph: "Brain" } },

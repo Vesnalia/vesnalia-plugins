@@ -107,7 +107,7 @@ describe("createHooks", () => {
     });
   });
 
-  it("takes the turn's text as bb assembled it, without adding spaces", async () => {
+  it("takes the turn's text as VesnALIA assembled it, without adding spaces", async () => {
     const { hooks, store } = setup();
     await hooks.idle(thread(), "Understood: no age cutoff, just drop closed sessions.\n");
     expect(store.get("t1")?.detail).toBe("Understood: no age cutoff, just drop closed sessions.");
@@ -250,7 +250,7 @@ describe("createHooks", () => {
   });
 
   it("follows Herald's settings when the choice cannot be read, and says so", async () => {
-    const { hooks, store, log } = setup({ choiceOf: () => Promise.reject(new Error("bb is away")) });
+    const { hooks, store, log } = setup({ choiceOf: () => Promise.reject(new Error("alia is away")) });
     await hooks.idle(thread(), "Done.");
     expect(store.get("t1")?.summary.status).toBe("ready");
     expect(log.lines).toContainEqual(expect.stringContaining("Could not read what t1 is set to announce"));
@@ -297,7 +297,7 @@ describe("createHooks", () => {
     expect(spoken.length).toBeLessThan(500);
   });
 
-  it("logs a handler that fails instead of rejecting into the bb server", async () => {
+  it("logs a handler that fails instead of rejecting into the VesnALIA server", async () => {
     const { hooks, log } = setup({
       readConfig: async () => {
         throw new Error("settings unreadable");

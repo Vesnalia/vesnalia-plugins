@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import switchboard from "../server";
 import { EMPTY_LAYOUT } from "../src/layout";
 
 function setup() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "switchboard" });
-  switchboard(bb);
-  return { bb, harness };
+  const { alia, harness } = createFakePluginHost({ pluginId: "switchboard" });
+  switchboard(alia);
+  return { alia, harness };
 }
 
 describe("Switchboard server", () => {
@@ -16,10 +16,10 @@ describe("Switchboard server", () => {
   });
 
   it("persists collapsed keys and signals each change", async () => {
-    const { bb, harness } = setup();
+    const { alia, harness } = setup();
     expect(await harness.behavior.callRpc("setCollapsed", { key: "section:review", collapsed: true }))
       .toEqual({ collapsed: ["section:review"] });
-    expect(await bb.storage.kv.get("collapsed")).toEqual(["section:review"]);
+    expect(await alia.storage.kv.get("collapsed")).toEqual(["section:review"]);
     expect(await harness.behavior.callRpc("setCollapsed", { key: "section:review", collapsed: false }))
       .toEqual({ collapsed: [] });
     expect(harness.realtimeSignals).toEqual([
@@ -29,10 +29,10 @@ describe("Switchboard server", () => {
   });
 
   it("loads ordered containers and drops malformed stored entries", async () => {
-    const { bb, harness } = setup();
-    await bb.storage.kv.set("order:loose", ["a", "b"]);
-    await bb.storage.kv.set("section-hues", { review: "violet", broken: "rainbow" });
-    await bb.storage.kv.set("section-order", ["review"]);
+    const { alia, harness } = setup();
+    await alia.storage.kv.set("order:loose", ["a", "b"]);
+    await alia.storage.kv.set("section-hues", { review: "violet", broken: "rainbow" });
+    await alia.storage.kv.set("section-order", ["review"]);
     expect(await harness.behavior.callRpc("getLayout")).toEqual({
       sectionOrder: ["review"], sectionHues: { review: "violet" }, collapsed: [], order: { loose: ["a", "b"] },
       sectionSort: {}, snoozes: {}, sectionProjects: {},
@@ -40,13 +40,13 @@ describe("Switchboard server", () => {
   });
 
   it("persists deduplicated thread and section orders and broadcasts each change", async () => {
-    const { bb, harness } = setup();
+    const { alia, harness } = setup();
     expect(await harness.behavior.callRpc("setOrder", { container: "section:review", ids: ["b", "a", "b"] }))
       .toEqual({ ids: ["b", "a"] });
-    expect(await bb.storage.kv.get("order:section:review")).toEqual(["b", "a"]);
+    expect(await alia.storage.kv.get("order:section:review")).toEqual(["b", "a"]);
     expect(await harness.behavior.callRpc("setSectionOrder", { ids: ["review", "triage", "review"] }))
       .toEqual({ ids: ["review", "triage"] });
-    expect(await bb.storage.kv.get("section-order")).toEqual(["review", "triage"]);
+    expect(await alia.storage.kv.get("section-order")).toEqual(["review", "triage"]);
     expect(await harness.behavior.callRpc("getLayout")).toMatchObject({
       sectionOrder: ["review", "triage"], order: { "section:review": ["b", "a"] },
     });
@@ -57,12 +57,12 @@ describe("Switchboard server", () => {
   });
 
   it("removes an emptied order key without disturbing another container", async () => {
-    const { bb, harness } = setup();
+    const { alia, harness } = setup();
     await harness.behavior.callRpc("setOrder", { container: "loose", ids: ["a"] });
     await harness.behavior.callRpc("setOrder", { container: "section:test", ids: ["x"] });
     expect(await harness.behavior.callRpc("setOrder", { container: "section:test", ids: [] }))
       .toEqual({ ids: [] });
-    expect(await bb.storage.kv.get("order:section:test")).toBeUndefined();
+    expect(await alia.storage.kv.get("order:section:test")).toBeUndefined();
     expect(await harness.behavior.callRpc("getLayout")).toEqual({ ...EMPTY_LAYOUT, order: { loose: ["a"] } });
     expect(harness.realtimeSignals.at(-1)).toEqual({ channel: "layout", payload: {
       key: "order:section:test", value: [],
@@ -70,28 +70,28 @@ describe("Switchboard server", () => {
   });
 
   it("sets and clears a section hue, broadcasting the entire map", async () => {
-    const { bb, harness } = setup();
+    const { alia, harness } = setup();
     expect(await harness.behavior.callRpc("setSectionHue", { sectionId: "review", hue: "violet" }))
       .toEqual({ sectionHues: { review: "violet" } });
     expect(await harness.behavior.callRpc("setSectionHue", { sectionId: "triage", hue: "teal" }))
       .toEqual({ sectionHues: { review: "violet", triage: "teal" } });
     expect(await harness.behavior.callRpc("setSectionHue", { sectionId: "review", hue: null }))
       .toEqual({ sectionHues: { triage: "teal" } });
-    expect(await bb.storage.kv.get("section-hues")).toEqual({ triage: "teal" });
+    expect(await alia.storage.kv.get("section-hues")).toEqual({ triage: "teal" });
     expect(await harness.behavior.callRpc("getLayout")).toMatchObject({ sectionHues: { triage: "teal" } });
     expect(harness.realtimeSignals).toHaveLength(3);
     expect(harness.realtimeSignals[2]).toEqual({ channel: "layout", payload: { key: "section-hues", value: { triage: "teal" } } });
   });
 
   it("stores section sort, clears manual mode and publishes the full map", async () => {
-    const { bb, harness } = setup();
+    const { alia, harness } = setup();
     expect(await harness.behavior.callRpc("setSectionSort", { container: "section:review", mode: "recent" }))
       .toEqual({ sectionSort: { "section:review": "recent" } });
     expect(await harness.behavior.callRpc("setSectionSort", { container: "loose", mode: "status" }))
       .toEqual({ sectionSort: { "section:review": "recent", loose: "status" } });
     expect(await harness.behavior.callRpc("setSectionSort", { container: "section:review", mode: "manual" }))
       .toEqual({ sectionSort: { loose: "status" } });
-    expect(await bb.storage.kv.get("section-sort")).toEqual({ loose: "status" });
+    expect(await alia.storage.kv.get("section-sort")).toEqual({ loose: "status" });
     expect(await harness.behavior.callRpc("getLayout")).toMatchObject({ sectionSort: { loose: "status" } });
     expect(harness.realtimeSignals.at(-1)).toEqual({ channel: "layout", payload: {
       key: "section-sort", value: { loose: "status" },
@@ -99,14 +99,14 @@ describe("Switchboard server", () => {
   });
 
   it("stores and clears a section's default project and publishes the full map", async () => {
-    const { bb, harness } = setup();
+    const { alia, harness } = setup();
     expect(await harness.behavior.callRpc("setSectionProject", { container: "section:review", projectId: "p" }))
       .toEqual({ sectionProjects: { "section:review": "p" } });
     expect(await harness.behavior.callRpc("setSectionProject", { container: "loose", projectId: "q" }))
       .toEqual({ sectionProjects: { "section:review": "p", loose: "q" } });
     expect(await harness.behavior.callRpc("setSectionProject", { container: "section:review", projectId: null }))
       .toEqual({ sectionProjects: { loose: "q" } });
-    expect(await bb.storage.kv.get("section-projects")).toEqual({ loose: "q" });
+    expect(await alia.storage.kv.get("section-projects")).toEqual({ loose: "q" });
     expect(await harness.behavior.callRpc("getLayout")).toMatchObject({ sectionProjects: { loose: "q" } });
     expect(harness.realtimeSignals.at(-1)).toEqual({ channel: "layout", payload: {
       key: "section-projects", value: { loose: "q" },
@@ -114,17 +114,17 @@ describe("Switchboard server", () => {
   });
 
   it("stores snoozes, publishes whole maps, clears entries on deletion and rejects over 500 IDs", async () => {
-    const { bb, harness } = setup();
+    const { alia, harness } = setup();
     const before = Date.now();
     expect(await harness.behavior.callRpc("snooze", { threadIds: ["t", "t", "u"], until: before + 86_400_000 }))
       .toMatchObject({ snoozes: { t: { until: before + 86_400_000 }, u: { until: before + 86_400_000 } } });
-    const stored = await bb.storage.kv.get("snooze:t") as { at: number; until: number };
+    const stored = await alia.storage.kv.get("snooze:t") as { at: number; until: number };
     expect(stored.at).toBeGreaterThanOrEqual(before);
     expect(await harness.behavior.callRpc("getLayout")).toMatchObject({ snoozes: { t: stored } });
     expect(await harness.behavior.callRpc("unsnooze", { threadIds: ["u"] })).toEqual({ snoozes: { t: stored } });
-    expect(await bb.storage.kv.get("snooze:u")).toBeUndefined();
+    expect(await alia.storage.kv.get("snooze:u")).toBeUndefined();
     await harness.behavior.emitThreadEvent("thread.deleted", { thread: makeThreadResponse({ id: "t" }) });
-    expect(await bb.storage.kv.get("snooze:t")).toBeUndefined();
+    expect(await alia.storage.kv.get("snooze:t")).toBeUndefined();
     expect(await harness.behavior.callRpc("getLayout")).toMatchObject({ snoozes: {} });
     expect(harness.realtimeSignals.at(-1)).toEqual({ channel: "layout", payload: { key: "snoozes", value: {} } });
     await expect(harness.behavior.callRpc("snooze", {

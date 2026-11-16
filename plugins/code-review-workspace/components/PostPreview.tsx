@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import type { PluginPendingInteractionProps } from "@get-bb/plugin-sdk/app";
+import type { PluginPendingInteractionProps } from "@vesnalia/plugin-sdk/app";
 import type { PostButton, PostShown } from "../src/post-preview";
 import { usePortalScopeProps } from "../lib/portal-scope";
 import { cn } from "../lib/utils";
@@ -35,7 +35,7 @@ function isShown(payload: unknown): payload is PostShown {
  */
 export function PostPreview({ interaction, submit, cancel }: PluginPendingInteractionProps) {
   const titleId = useId();
-  // BB draws the form in its own composer, outside the plugin's mount: it carries its own scope for the plugin's styles.
+  // VesnALIA draws the form in its own composer, outside the plugin's mount: it carries its own scope for the plugin's styles.
   const scope = usePortalScopeProps();
   const [busy, setBusy] = useState<"post" | "cancel" | null>(null);
   const [error, setError] = useState<string | null>(null);

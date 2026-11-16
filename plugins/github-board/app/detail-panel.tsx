@@ -9,7 +9,7 @@
  * compact it is the whole body and Close is the way back.
  */
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { UrlLink } from "@get-bb/plugin-sdk/app";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
 
 import type { BoardItem, ColumnId, ItemComment, ItemDetails } from "../shared/board";
 import { Button } from "@/components/ui/button";

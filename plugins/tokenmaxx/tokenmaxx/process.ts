@@ -3,7 +3,7 @@ import { accessSync, constants } from "node:fs";
 import { homedir } from "node:os";
 import { delimiter, join } from "node:path";
 
-// The bb server inherits a login-shell PATH in most setups, but a desktop
+// The VesnALIA server inherits a login-shell PATH in most setups, but a desktop
 // launch can miss the directories bun and the provider CLIs install into, and
 // `tokenmaxx doctor`/`install` shell out to codex, claude, and security.
 const EXTRA_PATHS = [

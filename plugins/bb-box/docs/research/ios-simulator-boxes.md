@@ -1,7 +1,7 @@
 # iOS Simulator boxes
 
-How bb-box could give a thread an iOS Simulator as a box: its screen
-streamed into BB's panel inside a device frame, device controls beside it,
+How alia-box could give a thread an iOS Simulator as a box: its screen
+streamed into VesnALIA's panel inside a device frame, device controls beside it,
 control shared between a person and the agent, and computer use on the
 device.
 
@@ -39,7 +39,7 @@ run in a device box (see [Input](#2-input)).
 1. **Stream:** read the simulator's framebuffer, not a window. Use
    idb_companion (Meta, MIT) in the box as the device's server first. It
    gives video, input, screenshots and the accessibility tree over one
-   gRPC socket, which can be a unix socket as 060 asks. A bb-box adapter
+   gRPC socket, which can be a unix socket as 060 asks. A alia-box adapter
    turns its H.264 into 060's protocol. Write our own server on the same
    private frameworks only if idb_companion falls behind Xcode.
 2. **Input:** one HID stream held open per viewer, through the same
@@ -72,14 +72,14 @@ raw results:
   each 10 s, as a share of one core. Memory is its resident size.
 - [window-stream.swift](ios-simulator-boxes/window-stream.swift) captures
   Device Hub's window with ScreenCaptureKit, cropped to the device, and
-  encodes it as `bb-box-stream` does.
+  encodes it as `alia-box-stream` does.
 - [input.py](ios-simulator-boxes/input.py) drags, long-presses, pastes and
   times what an agent reads.
 
 Tap to frame is measured on the Mac: from the HID event leaving the client
-to the encoded frame arriving from the server. It leaves out BB's relay,
+to the encoded frame arriving from the server. It leaves out VesnALIA's relay,
 the network and the browser's decoding, which are the same as for any
-desktop's video: about 25 ms at the median through BB's server
+desktop's video: about 25 ms at the median through VesnALIA's server
 ([060](../decisions/060-every-desktop-streams-as-video-through-one-viewer.md)).
 
 Hosts:
@@ -132,13 +132,13 @@ Notes on the table:
   session is not tested.
 
 **Recommendation:** the framebuffer, through idb_companion, adapted to
-060's protocol by bb-box. It sends the device's own pixels as whole
+060's protocol by alia-box. It sends the device's own pixels as whole
 frames, with no tearing, at 60 fps, for a tenth of a core.
 
 It will not meet 060's bar for desktops, under 50 ms at the median through
-BB. On the Mac alone a tap takes 54 to 64 ms to reach an encoded frame, and
+VesnALIA. On the Mac alone a tap takes 54 to 64 ms to reach an encoded frame, and
 encoding is 1 to 2 ms of that, so most of it is the simulator's own time
-from touch to drawing. With BB's relay, expect about 80 to 90 ms. No other
+from touch to drawing. With VesnALIA's relay, expect about 80 to 90 ms. No other
 way measured here is quicker.
 
 This also answers one of 060's open questions: VideoToolbox's hardware
@@ -151,13 +151,13 @@ encoder works inside a Tart macOS VM.
   them. Version 1.7.7, built on 22 October 2026, works with Xcode 27.0.
 - It is 115 MB, from Meta's Homebrew tap, under the MIT licence. Homebrew
   asks for the tap to be trusted first (`brew trust facebook/fb`).
-- Its gRPC client is Python (fb-idb). bb-box would speak its gRPC from
+- Its gRPC client is Python (fb-idb). alia-box would speak its gRPC from
   TypeScript, or through a small client of our own, not through fb-idb.
 
 Writing our own server instead would mean the same private frameworks,
 with idb's MIT source as the guide: framebuffer IOSurface callbacks for
 frames, and SimulatorKit's Indigo HID messages for input. It is a few
-hundred lines more than `bb-box-stream`, and the work of following each
+hundred lines more than `alia-box-stream`, and the work of following each
 Xcode is ours.
 
 ## 2. Input
@@ -193,10 +193,10 @@ What was seen:
   "SimulatorTrampoline.xpc", a macOS prompt over the desktop.
 
 **Recommendation:** each viewer with control holds one HID stream to the
-server, as `bb-box-stream` holds input today. Pointer down, move and up map
+server, as `alia-box-stream` holds input today. Pointer down, move and up map
 to touch down at each point and touch up, in the device's points: the
 viewer scales from the video's pixels by the device's scale (3 for an
-iPhone 18 Pro). Keys go as HID usages. BB's **Type text** field, and any
+iPhone 18 Pro). Keys go as HID usages. VesnALIA's **Type text** field, and any
 character with no US key, go as `pbcopy` and Cmd+V. The agent's commands
 use the same server, so they wait for the same control rule as desktops.
 
@@ -312,7 +312,7 @@ same tools the agent knows, with the device as the only window.
 
 ## A device box's data, a sketch
 
-For the design note. Names follow bb-box's own where they exist.
+For the design note. Names follow alia-box's own where they exist.
 
 ```ts
 type DeviceBox = {
@@ -372,7 +372,7 @@ side buttons, or Apple's artwork in the box's Xcode
 1. **idb_companion or our own server?** idb_companion works today and
    gives everything at once, but is Meta's, 115 MB, and on private APIs.
    Our own is smaller and ours to keep up with Xcode.
-2. **Whose device frame?** Our own drawing ships with bb-box. Apple's
+2. **Whose device frame?** Our own drawing ships with alia-box. Apple's
    artwork is in every box's Xcode, but is Apple's: reading it from the
    box at run time, not keeping it in the repository, still needs a
    licence call.

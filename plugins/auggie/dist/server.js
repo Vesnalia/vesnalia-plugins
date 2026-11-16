@@ -35,9 +35,9 @@ var PROFILE = {
     user: [".augment/skills", ".claude/skills", ".agents/skills"],
     project: [".augment/skills", ".claude/skills", ".agents/skills"]
   },
-  // bb's permission modes as Auggie `--permission tool:policy` flags. There is
+  // VesnALIA's permission modes as Auggie `--permission tool:policy` flags. There is
   // no allow-everything switch (`--allow-all` is rejected). Accept-edits maps
-  // to auto-approving Auggie's file-mutation tools; shell still asks. bb's
+  // to auto-approving Auggie's file-mutation tools; shell still asks. VesnALIA's
   // default "auto" mode adds nothing, so every request comes through ACP.
   permissionCli: {
     workspaceWrite: [
@@ -47,7 +47,7 @@ var PROFILE = {
       "--permission=remove-files:allow"
     ]
   },
-  installHint: "Install Auggie with `npm install -g @augmentcode/auggie`, authenticate it, then run `bb plugin reload auggie`."
+  installHint: "Install Auggie with `npm install -g @augmentcode/auggie`, authenticate it, then run `alia plugin reload auggie`."
 };
 function isObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -173,22 +173,22 @@ function writeLegacyAgents(dataDir, agents) {
   writeAtomic(configPath, config);
   return true;
 }
-function plugin(bb) {
+function plugin(alia) {
   async function dataDir() {
     try {
-      const config = await bb.sdk.system.config();
+      const config = await alia.sdk.system.config();
       if (config.dataDir.length > 0) return config.dataDir;
     } catch (error) {
-      bb.log.warn(`Could not resolve bb data directory through the SDK: ${String(error)}`);
+      alia.log.warn(`Could not resolve VesnALIA data directory through the SDK: ${String(error)}`);
     }
-    return process.env.BB_DATA_DIR ?? join(homedir(), ".bb");
+    return process.env.ALIA_DATA_DIR ?? join(homedir(), ".vesnalia");
   }
   async function readSettingAgents() {
     try {
-      const settings = await bb.sdk.plugins.getSettings({ pluginId: ACP_PLUGIN_ID });
+      const settings = await alia.sdk.plugins.getSettings({ pluginId: ACP_PLUGIN_ID });
       return parseCustomAgents(settings.values.customAgents);
     } catch (error) {
-      bb.log.warn(`Could not read ${ACP_PLUGIN_ID} customAgents: ${String(error)}`);
+      alia.log.warn(`Could not read ${ACP_PLUGIN_ID} customAgents: ${String(error)}`);
       return null;
     }
   }
@@ -202,7 +202,7 @@ function plugin(bb) {
   }
   async function writeSettingAgents(agents) {
     const serialized = agents.length === 0 ? "" : stringifyCustomAgents(agents);
-    await bb.sdk.plugins.updateSettings({
+    await alia.sdk.plugins.updateSettings({
       pluginId: ACP_PLUGIN_ID,
       values: { customAgents: serialized }
     });
@@ -226,14 +226,14 @@ function plugin(bb) {
     } else {
       const next = upsertAgent(legacyAgents, managed);
       if (next.changed && writeLegacyAgents(root, next.agents)) {
-        await bb.sdk.system.reloadConfig();
+        await alia.sdk.system.reloadConfig();
         changed = true;
       }
       return { changed, binary };
     }
     const stripped = removeAgent(legacyAgents);
     if (stripped.changed && writeLegacyAgents(root, stripped.agents)) {
-      await bb.sdk.system.reloadConfig();
+      await alia.sdk.system.reloadConfig();
       changed = true;
     }
     return { changed, binary };
@@ -251,30 +251,30 @@ function plugin(bb) {
     }
     const stripped = removeAgent(readLegacyAgents(root));
     if (stripped.changed && writeLegacyAgents(root, stripped.agents)) {
-      await bb.sdk.system.reloadConfig();
+      await alia.sdk.system.reloadConfig();
       changed = true;
     }
     return changed;
   }
-  bb.background.service("provision", {
+  alia.background.service("provision", {
     async start() {
       try {
         const result = await provision(true);
-        bb.log.info(
+        alia.log.info(
           result.changed ? `registered ${PROFILE.providerId} with ${result.binary}` : `${PROFILE.providerId} is already configured`
         );
       } catch (error) {
         const message = String(error);
-        bb.log.error(message);
-        bb.status.needsConfiguration(message);
+        alia.log.error(message);
+        alia.status.needsConfiguration(message);
       }
     }
   });
-  bb.cli.register({
+  alia.cli.register({
     name: PROFILE.id,
     summary: `Manage the ${PROFILE.displayName} ACP provider.`,
     commands: [
-      { name: "status", summary: "Check the CLI and bb provider registration", usage: `${PROFILE.id} status` },
+      { name: "status", summary: "Check the CLI and VesnALIA provider registration", usage: `${PROFILE.id} status` },
       { name: "repair", summary: "Rewrite and reload the managed ACP configuration", usage: `${PROFILE.id} repair` },
       { name: "unregister", summary: "Remove this plugin's managed ACP configuration", usage: `${PROFILE.id} unregister` }
     ],
@@ -309,7 +309,7 @@ CLI: ${result.binary}
         const binary = findBinary(entry);
         let registered = false;
         try {
-          registered = (await bb.sdk.providers.list()).some((provider) => provider.id === PROFILE.providerId);
+          registered = (await alia.sdk.providers.list()).some((provider) => provider.id === PROFILE.providerId);
         } catch {
         }
         const setting = settingAgents?.some(isOwnAgent) ? "present" : "missing";
@@ -320,11 +320,11 @@ CLI: ${result.binary}
             `CLI: ${binary ?? "NOT FOUND"}`,
             `ACP customAgents entry: ${setting}`,
             `legacy config.json entry: ${legacy}`,
-            `bb provider ${PROFILE.providerId}: ${registered ? "registered" : "NOT registered"}`
+            `alia provider ${PROFILE.providerId}: ${registered ? "registered" : "NOT registered"}`
           ].join("\n") + "\n"
         };
       }
-      return { exitCode: 2, stderr: `Unknown subcommand "${command}". Use "bb ${PROFILE.id} status".
+      return { exitCode: 2, stderr: `Unknown subcommand "${command}". Use "VesnALIA ${PROFILE.id} status".
 ` };
     }
   });

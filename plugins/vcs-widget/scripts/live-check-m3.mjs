@@ -1,5 +1,5 @@
 // Headless click-through of the milestone 3 commit dialog against a running
-// bb: the Commit quick action and palette row, the file list with staged
+// VesnALIA: the Commit quick action and palette row, the file list with staged
 // checkboxes, the diff preview with its Staged / Unstaged switch, commit,
 // amend, discard per category, Commit and Push, hooks as a background job,
 // and live refresh after a terminal `git add`.

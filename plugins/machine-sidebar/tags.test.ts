@@ -39,7 +39,7 @@ test("automatic colors are stable, case-insensitive, and never gray", () => {
   assert.equal(autoColorId("TEST"), autoColorId("test"));
   // The tags in use today stay distinguishable.
   assert.equal(new Set(["TEST", "Coding", "Running"].map(autoColorId)).size, 3);
-  for (const tag of ["a", "bb", "Bug", "WIP", "Review", "Plugin", "x".repeat(24)]) {
+  for (const tag of ["a", "alia", "Bug", "WIP", "Review", "Plugin", "x".repeat(24)]) {
     assert.notEqual(autoColorId(tag), "gray");
   }
 });

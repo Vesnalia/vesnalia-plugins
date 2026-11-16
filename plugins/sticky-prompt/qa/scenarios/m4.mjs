@@ -17,13 +17,13 @@ export default async (page) => {
   const c = await center(page);
   await page.mouse.click(c.x, c.y); await page.waitForTimeout(2500);
   let g = await geo(page, U(240)); await page.waitForTimeout(800); const g2 = await geo(page, U(240));
-  check("S13 jump to a message BB had unloaded", unmounted && b.text?.startsWith("Walk through the tools again") && g.rowTop !== null && Math.abs(g.rowTop - 12) <= 2 && Math.abs(g2.rowTop - 12) <= 2, { unmounted, text: b.text, g, g2 });
+  check("S13 jump to a message VesnALIA had unloaded", unmounted && b.text?.startsWith("Walk through the tools again") && g.rowTop !== null && Math.abs(g.rowTop - 12) <= 2 && Math.abs(g2.rowTop - 12) <= 2, { unmounted, text: b.text, g, g2 });
 
   await scrollToRow(page, U(209), -10); await page.waitForTimeout(1500);
   b = await bar(page);
   check("S9 agent message skipped by default", b.visible && b.text?.startsWith("One last huge question"), b.text);
   await scrollToRow(page, U(181), -10); await page.waitForTimeout(1500);
   b = await bar(page);
-  check("S10 BB system notice skipped", b.visible && b.text?.startsWith("Message from the release notes"), b.text);
+  check("S10 VesnALIA system notice skipped", b.visible && b.text?.startsWith("Message from the release notes"), b.text);
   return results;
 };

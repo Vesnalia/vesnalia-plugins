@@ -22,7 +22,7 @@ async function script(body: string): Promise<{ dir: string; path: string }> {
 const LIMITS = { timeoutMs: 10_000, maxOutputBytes: 64_000, maxErrorBytes: 4000 };
 
 describe("runWatchScript", () => {
-  it("runs the script with bb's toolchain PATH: the given one first, then the places bb looks for tools", async () => {
+  it("runs the script with VesnALIA's toolchain PATH: the given one first, then the places VesnALIA looks for tools", async () => {
     const { dir, path } = await script('printf %s "$PATH"');
     const result = await runWatchScript(path, { cwd: dir, env: { HOME: dir, PATH: "/nowhere" }, ...LIMITS });
     expect(result).toMatchObject({ code: 0, spawnError: null });

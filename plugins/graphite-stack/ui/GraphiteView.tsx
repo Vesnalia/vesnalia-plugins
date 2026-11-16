@@ -1,8 +1,8 @@
-// The Graphite review workspace for one BB environment: stack rail, layer
+// The Graphite review workspace for one VesnALIA environment: stack rail, layer
 // header, changed files, inline diff, comments, and stack actions.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { UrlLink } from "@get-bb/plugin-sdk/app";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
 import type { LayerView, OperationRequest, OperationResult, StackView } from "../contract";
 import type { ChangedFile, UncommittedFile } from "../lib/model";
 import { Button } from "@/components/ui/button";
@@ -1007,7 +1007,7 @@ function FileNav({
         {loading ? <Spinner label="Loading files…" /> : null}
         <ul>{renderTree(tree)}</ul>
         {query && filtered.length === 0 ? <p className="gs-side-note">No matching files.</p> : null}
-        {truncated ? <p className="gs-side-note">More files changed than BB lists.</p> : null}
+        {truncated ? <p className="gs-side-note">More files changed than VesnALIA lists.</p> : null}
         {worktreePath && (uncommitted?.length || uncommittedError) ? (
           <>
             <SectionLabel trailing={<span>{uncommitted?.length ?? 0}</span>}>Uncommitted</SectionLabel>

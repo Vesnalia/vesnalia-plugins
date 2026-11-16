@@ -33,7 +33,7 @@ build = "make release"           # optional
 gate = ["make test-parser"]
 measure = "bench/parse.sh"
 noise = "noisy"                  # deterministic | noisy | expensive
-bench_hosts = ["local"]          # or BB machine names/ids: own clone, git bundles
+bench_hosts = ["local"]          # or ALIA machine names/ids: own clone, git bundles
 timeout_minutes = 20             # per command (runs as a host job; up to 1440)
 max_bundle_mib = 256             # optional: largest git bundle sent to a bench host
 offline_grace_minutes = 10       # optional: notify when a bench host stays offline
@@ -92,7 +92,7 @@ max_workers = 3                  # W adapts up to this: min(max, ceil(think/eval
 max_candidates = 50
 max_bench_hours = 8
 deadline = "2026-12-31"          # optional
-max_tokens = 5000000             # optional: tokens across the study's threads (as BB reports them)
+max_tokens = 5000000             # optional: tokens across the study's threads (as ALIA reports them)
 notify_at = [50, 80]             # budget shares (%) that raise a notice once
 
 [agents]

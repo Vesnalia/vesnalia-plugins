@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { Preset } from "../config";
 import type { NextAction, PrView } from "../contract";
 import { BUTTON, BUTTON_PRIMARY, Tip } from "./common";

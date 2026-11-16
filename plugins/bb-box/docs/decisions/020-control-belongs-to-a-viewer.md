@@ -22,7 +22,7 @@ places where the decisions said too little:
 
 | Point | What the build found |
 | --- | --- |
-| Who holds control | BB authenticates the person, but the relay sees connections. You can open one box in a panel tab and a browser tab at once, and a panel tab remounts when you switch threads. |
+| Who holds control | VesnALIA authenticates the person, but the relay sees connections. You can open one box in a panel tab and a browser tab at once, and a panel tab remounts when you switch threads. |
 | A box that ends the connection | When the box's desktop restarts, the viewer cannot come back to the same session, so waiting 60 s for it holds input for nobody. |
 | The size to return to | 008 returns the desktop to "its default size" on hand-back. The relay does not know a template's default, and TigerVNC answers SetDesktopSize only from a client that asked for the ExtendedDesktopSize encoding. |
 | Retrying on another GPU | An acquire must finish within its kind's `readyTimeoutMs` (30 s on Proxmox LXC). A GPU whose desktop fell back to the CPU usually does so for the next box too. |
@@ -65,4 +65,4 @@ places where the decisions said too little:
 - `start` of a stopped desktop does not check its display mode again, so its
   facts can be out of date until it is released.
 - The smoke script opens a desktop box's desktop as the relay does, so a
-  backend's VNC password and route are checked without BB.
+  backend's VNC password and route are checked without VesnALIA.

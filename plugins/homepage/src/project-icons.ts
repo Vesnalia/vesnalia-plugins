@@ -230,7 +230,7 @@ async function listProjectImageCandidates(
 function isDiscoverableProjectIcon(path: string): boolean {
   // File search is fuzzy: its results can include screenshots and other assets.
   // Only infer artwork from conventional filenames. Arbitrary filenames can
-  // still be selected explicitly through bb.branding in package.json.
+  // still be selected explicitly through alia.branding in package.json.
   const name = path.split("/").at(-1) ?? path;
   return /^(?:favicon|icon|logo|apple-touch-icon)(?:[-_.](?:\d+(?:x\d+)?|dark|light|maskable|monochrome|precomposed))*\.(?:svg|png|webp|jpe?g|ico)$/i.test(name);
 }
@@ -250,9 +250,9 @@ async function readManifestArtwork(
     }
 
     const manifest = JSON.parse(file.content) as {
-      bb?: { branding?: { icon?: unknown; logo?: { light?: unknown } } };
+      alia?: { branding?: { icon?: unknown; logo?: { light?: unknown } } };
     };
-    const declaredIcon = manifest.bb?.branding?.icon;
+    const declaredIcon = manifest.alia?.branding?.icon;
     if (typeof declaredIcon === "string") {
       const path = normalizeProjectIconPath(declaredIcon);
       if (path !== null) return { glyph: null, path };
@@ -261,7 +261,7 @@ async function readManifestArtwork(
       if (glyph !== null) return { glyph, path: null };
     }
 
-    const declaredLogo = manifest.bb?.branding?.logo?.light;
+    const declaredLogo = manifest.alia?.branding?.logo?.light;
     return {
       glyph: null,
       path:

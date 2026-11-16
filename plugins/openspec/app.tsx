@@ -10,8 +10,8 @@ import {
 } from "react";
 import {
   definePluginApp,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRpc,
   experimental_useRpcQuery as useRpcQuery,
   Markdown,
@@ -19,7 +19,7 @@ import {
   experimental_PermissionModePicker as PermissionModePicker,
   type ExperimentalProviderModelPickerValue,
   type PluginNavPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Icon } from "@/components/ui/icon";
@@ -289,7 +289,7 @@ function LaunchDialog({
                 setExecution({ providerId: "", model: "", reasoningLevel: "" });
             }}
           >
-            {custom ? t("customAgentSettings") : t("bbDefaults")}
+            {custom ? t("customAgentSettings") : t("aliaDefaults")}
           </Button>
           {custom && execution && (
             <div className="os-pickers">
@@ -504,7 +504,7 @@ function ChangeDetail({
   onRefresh: () => void;
 }) {
   const { t, number, specCount, taskCount, locale } = useI18n();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [view, setView] = useState<View>(VIEW.TASKS);
   const [documentPath, setDocumentPath] = useState<string>();
   const [dialog, setDialog] = useState<"launch" | "attach">();
@@ -825,7 +825,7 @@ function OpenSpecPage({
   specifications?: boolean;
 }) {
   const { t, number, taskCount, locale } = useI18n();
-  const context = useBbContext();
+  const context = useAliaContext();
   const rpc = useRpc<typeof rpcContract>();
   const [routeEnvironment, ...routeChangeParts] = subPath.split("/");
   const routeChange = routeChangeParts.join("/");

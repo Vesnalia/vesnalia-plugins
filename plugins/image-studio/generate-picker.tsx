@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { PluginPendingInteractionProps } from "@get-bb/plugin-sdk/app";
+import type { PluginPendingInteractionProps } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { cn } from "./lib/utils";
 import { detectLocale, t } from "./i18n";

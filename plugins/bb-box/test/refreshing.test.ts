@@ -18,7 +18,7 @@ test("a value is fetched once, then refreshed in the background once stale, whil
       loads.push(key);
       const value = `${key}${++version}`;
       if (version > 1) await new Promise<void>((resolve) => (release = resolve));
-      if (fail) throw new Error("BB is down");
+      if (fail) throw new Error("VesnALIA is down");
       return value;
     },
   });
@@ -58,11 +58,11 @@ test("a first fetch that fails reaches its callers, and the next get tries again
     freshMs: 60_000,
     onError: () => assert.fail("only background refreshes are reported"),
     async load() {
-      if (++calls === 1) throw new Error("BB is busy");
+      if (++calls === 1) throw new Error("VesnALIA is busy");
       return calls;
     },
   });
-  await assert.rejects(cache.get("system"), /BB is busy/);
+  await assert.rejects(cache.get("system"), /ALIA is busy/);
   assert.equal(await cache.get("system"), 2);
   assert.equal(await cache.get("system"), 2);
 });

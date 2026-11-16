@@ -1,5 +1,5 @@
 {"inputs":{
-"node_modules/@get-bb/plugin-sdk/dist/app.js":{"bytes":5955,"format":"esm"},
+"node_modules/@vesnalia/plugin-sdk/dist/app.js":{"bytes":5955,"format":"esm"},
 "node_modules/react/cjs/react.production.js":{"bytes":18040,"format":"cjs"},
 "node_modules/react/index.js":{"bytes":186,"format":"cjs"},
 "node_modules/react-dom/cjs/react-dom.production.js":{"bytes":7326,"format":"cjs"},
@@ -158,7 +158,7 @@
 "node_modules/react-dom/index.js":{"bytesInOutput":253},
 "node_modules/react/cjs/react-jsx-runtime.production.js":{"bytesInOutput":364},
 "node_modules/react/jsx-runtime.js":{"bytesInOutput":50},
-"node_modules/@get-bb/plugin-sdk/dist/app.js":{"bytesInOutput":2312},
+"node_modules/@vesnalia/plugin-sdk/dist/app.js":{"bytesInOutput":2312},
 "ui/FenceOverlay.tsx":{"bytesInOutput":2366},
 "ui/Fence.tsx":{"bytesInOutput":1899},
 "core/catalog.ts":{"bytesInOutput":13719},

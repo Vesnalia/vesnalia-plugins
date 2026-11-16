@@ -127,7 +127,7 @@ describe("M2 remote bench (fake hosts)", () => {
 
   it("resolves bench hosts by name or id and rejects unknown machines", async () => {
     const bad = await engine.proposeStudy("thr_study", "proj_1", m2Spec({ benchHosts: ["bench-x86-01"] })).catch((e: Error) => e.message);
-    expect(bad).toContain('no BB machine named or with id "bench-x86-01"');
+    expect(bad).toContain('no VesnALIA machine named or with id "bench-x86-01"');
     expect(bad).toContain("bench-a (host_a)");
     const ok = await engine.proposeStudy("thr_study", "proj_1", m2Spec({ benchHosts: ["bench-a", "host_b"] }));
     expect(ok).toContain("bench bench-a (own clone, git bundles), bench-b (own clone, git bundles)");
@@ -339,7 +339,7 @@ describe("M2 remote bench (fake hosts)", () => {
     expect(store.study(id)!.segment).toBe(1);
     // A budget-only change needs no recalibration.
     const budgetOnly = await engine.proposeStudy("thr_study", "proj_1", m2Spec().replace("max_candidates = 20", "max_candidates = 25"));
-    expect(budgetOnly).toContain("bb study approve");
+    expect(budgetOnly).toContain("alia study approve");
     expect(store.study(id)!.pending_spec_version).toBe(2);
     expect(engine.approve(SLUG, "human")).toContain("oracle unchanged");
     expect(store.spec(store.study(id)!).budget.max_candidates).toBe(25);

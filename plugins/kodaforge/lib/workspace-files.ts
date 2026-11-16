@@ -8,7 +8,7 @@ export interface Target {
   hostId: string;
 }
 
-/** The slice of bb.sdk.files this module uses, so tests can fake it. */
+/** The slice of alia.sdk.files this module uses, so tests can fake it. */
 export interface FilesApi {
   read(args: { hostId: string; path: string; rootPath: string }): Promise<{
     content: string;
@@ -110,7 +110,7 @@ export function createWorkspaceFiles(files: FilesApi, checkPath: CheckPath) {
       await files.mkdir({ hostId: target.hostId, path, rootPath: target.root, recursive: true });
     },
 
-    /** Rename or move; BB refuses to replace an existing destination. */
+    /** Rename or move; VesnALIA refuses to replace an existing destination. */
     async move(target: Target, from: string, to: string): Promise<void> {
       const sourcePath = await guardEntry(target, from);
       const destinationPath = await guardEntry(target, to);

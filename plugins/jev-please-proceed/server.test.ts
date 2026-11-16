@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fileURLToPath } from "node:url";
-import { createFakePluginHost, experimental_scanPublicSdkOnly, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, experimental_scanPublicSdkOnly, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin, {
   askJev,
   buildConversation,
@@ -176,8 +176,8 @@ describe("idle continuation", () => {
   }
 
   it("sends one agent-only please proceed above the threshold and blocks an identical repeated stop", async () => {
-    const { bb, harness, idleThread, fetchMock } = createHost(0.951);
-    await plugin(bb);
+    const { alia, harness, idleThread, fetchMock } = createHost(0.951);
+    await plugin(alia);
 
     await harness.behavior.emitThreadEvent("thread.idle", {
       thread: idleThread,
@@ -198,8 +198,8 @@ describe("idle continuation", () => {
   });
 
   it("does not continue when yes probability equals the strict threshold", async () => {
-    const { bb, harness, idleThread } = createHost(CONTINUE_THRESHOLD);
-    await plugin(bb);
+    const { alia, harness, idleThread } = createHost(CONTINUE_THRESHOLD);
+    await plugin(alia);
     await harness.behavior.emitThreadEvent("thread.idle", {
       thread: idleThread,
       lastAssistantText: "Would you like me to continue?",

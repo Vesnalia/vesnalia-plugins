@@ -26,13 +26,13 @@ cleanup() {
 trap cleanup EXIT
 
 if [ "$SERVER" = find ]; then
-  SERVER=$(api GET "/servers?per_page=50" | python3 -c "import json,sys; s=[x for x in json.load(sys.stdin)['servers'] if x['name'].startswith('bb-box-hz-') and x['labels'].get('bbbox-role')!='image-build']; print(s[0]['id'] if len(s)==1 else '')")
-  [ -n "$SERVER" ] || { echo "Not exactly one bb-box host; give its server ID." >&2; exit 1; }
+  SERVER=$(api GET "/servers?per_page=50" | python3 -c "import json,sys; s=[x for x in json.load(sys.stdin)['servers'] if x['name'].startswith('alia-box-hz-') and x['labels'].get('bbbox-role')!='image-build']; print(s[0]['id'] if len(s)==1 else '')")
+  [ -n "$SERVER" ] || { echo "Not exactly one alia-box host; give its server ID." >&2; exit 1; }
   echo "server id: $SERVER"
 fi
 api GET "/servers/$SERVER" > "$WORK/server.json"
 NAME=$(py "d['server']['name']" < "$WORK/server.json")
-case "$NAME" in bb-box-hz-*) ;; *) echo "Server $SERVER ($NAME) is not a bb-box host; stopping." >&2; exit 1 ;; esac
+case "$NAME" in alia-box-hz-*) ;; *) echo "Server $SERVER ($NAME) is not a alia-box host; stopping." >&2; exit 1 ;; esac
 TYPE=$(py "d['server']['server_type']['name']" < "$WORK/server.json")
 LOCATION=$(py "(d['server'].get('location') or (d['server'].get('datacenter') or {}).get('location') or {}).get('name','')" < "$WORK/server.json")
 [ -n "$LOCATION" ] || { echo "Server $SERVER has no location in its answer; stopping." >&2; exit 1; }

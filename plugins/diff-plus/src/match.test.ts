@@ -8,7 +8,7 @@ const match = (value: string) => {
   return found && [...found].sort();
 };
 
-test("filterMatches follows BB's path search", () => {
+test("filterMatches follows VesnALIA's path search", () => {
   assert.equal(match(""), null);
   assert.equal(match(" , ! "), null);
   assert.deepEqual(match("src/**"), ["src/a.ts", "src/deep/b.tsx"]);

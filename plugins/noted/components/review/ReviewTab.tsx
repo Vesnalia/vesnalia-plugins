@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { experimental_FileLink as FileLink, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginThreadPanelProps } from "@get-bb/plugin-sdk/app";
+import { experimental_FileLink as FileLink, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginThreadPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { z } from "zod";
 
 import { useArtifactBridge } from "../../hooks/useArtifactBridge";
@@ -21,7 +21,7 @@ type ReviewState =
 type RetryState = { input: SendInput; message: string };
 type MarkdownDraft = { content: string; sha256: string };
 
-// A panel can remount as the user moves through BB. Drafts are keyed by their
+// A panel can remount as the user moves through VesnALIA. Drafts are keyed by their
 // review session so they cannot be saved into another file.
 const draftsBySession = new Map<string, MarkdownDraft>();
 const windowsBySession = new Map<string, Window>();

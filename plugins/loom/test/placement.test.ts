@@ -14,13 +14,13 @@ import { BOXES, GIT_WORKTREE_PROVIDER, checkOutHead, makeCtx, reachApproved, rea
 let h: EngineHarness;
 beforeEach(() => {
   h = makeCtx();
-  h.bb.machineProviderList = [BOXES];
-  h.bb.compositionList = [{ ...GIT_WORKTREE_PROVIDER, id: "boxed-trees", displayName: "Trees on boxes", pluginId: "boxes", machineProviderId: "boxes" }];
+  h.alia.machineProviderList = [BOXES];
+  h.alia.compositionList = [{ ...GIT_WORKTREE_PROVIDER, id: "boxed-trees", displayName: "Trees on boxes", pluginId: "boxes", machineProviderId: "boxes" }];
 });
 
 const project = () => h.store.projectBySlug("csv")!;
 const spec = () => specOf(h.store, project());
-const spawns = () => h.bb.callsTo("spawnThread").map(([args]) => args as SpawnArgs);
+const spawns = () => h.alia.callsTo("spawnThread").map(([args]) => args as SpawnArgs);
 const workerSpawns = () => spawns().filter((args) => args.metadata.role === "worker");
 const queue = async () => {
   await runMergeQueue(h.ctx, project(), spec());
@@ -42,7 +42,7 @@ const submitted = async (row: ThreadRow) => {
   submit(h.ctx, row.thread_id!, "Done");
   await settleChecks(h.ctx);
 };
-const moved = (row: ThreadRow, seq: number) => h.bb.systemErrors.set(row.thread_id!, { code: "machine_maintenance", message: "Machine preservation is interrupting this turn.", seq, at: 0 });
+const moved = (row: ThreadRow, seq: number) => h.alia.systemErrors.set(row.thread_id!, { code: "machine_maintenance", message: "Machine preservation is interrupting this turn.", seq, at: 0 });
 
 const pr = (doc: Doc) => (doc.merge = { strategy: "pr", describe: "loom" });
 const onMachines = (doc: Doc) => {
@@ -57,7 +57,7 @@ const workersOnMachines = (doc: Doc) => {
 
 /** Proposes the spec with `edit` as a revision of the running project, and approves it. */
 async function moveTo(edit: (doc: Doc) => void): Promise<void> {
-  await h.projects.propose({ toml: specToml(edit), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+  await h.projects.propose({ toml: specToml(edit), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
   await h.projects.approve("csv", "human");
   expect(project().pending_version).toBeNull();
 }
@@ -88,10 +88,10 @@ async function releasedFirst(seed: () => Promise<unknown>): Promise<ThreadRow> {
   const worker = await reachApproved(h);
   await queue();
   expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "pr_open", pr_url: URL1 });
-  h.bb.threads.get(worker.thread_id!)!.status = "idle";
+  h.alia.threads.get(worker.thread_id!)!.status = "idle";
   await releaseIdleWorkers(h.ctx, project(), spec());
   expect(isReleased(h.store.thread(worker.id))).toBe(true);
-  h.bb.environments.get(worker.environment_id!)!.status = "destroyed";
+  h.alia.environments.get(worker.environment_id!)!.status = "destroyed";
   return h.store.thread(worker.id)!;
 }
 
@@ -162,24 +162,24 @@ describe("a ticket in working or checking, after a move", () => {
 });
 
 describe("an open pull request, after a move", () => {
-  it("onto machines: a released worker comes back for a fix round on the project's machine, where bb restores it", async () => {
+  it("onto machines: a released worker comes back for a fix round on the project's machine, where VesnALIA restores it", async () => {
     const worker = await releasedFirst(() => seedProject(h, pr));
     await moveTo(onMachines);
     h.host.feedback.set(URL1, changesRequested);
     await poll();
-    expect(h.bb.callsTo("restoreEnvironment")).toEqual([[worker.thread_id]]);
+    expect(h.alia.callsTo("restoreEnvironment")).toEqual([[worker.thread_id]]);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", worker_thread_id: worker.thread_id });
     expect(workerSpawns()).toHaveLength(1);
   });
 
   it("off machines: a released worker, whose machine is gone, is taken over on the project's machine from the home branch", async () => {
     await releasedFirst(() => seedMachineProject(h, onMachines));
-    h.bb.restorable = false;
+    h.alia.restorable = false;
     await moveTo(pr);
     h.host.feedback.set(URL1, changesRequested);
     await poll();
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "queued", worker_thread_id: null });
-    expect(h.store.posts(ticketOf(h, "CSV-1").id).at(-1)!.body).toBe("The worker's thread cannot come back with an environment (bb cannot restore its environment), so a new worker takes over from the work Loom brought home; it can read the earlier worker's conversation.");
+    expect(h.store.posts(ticketOf(h, "CSV-1").id).at(-1)!.body).toBe("The worker's thread cannot come back with an environment (VesnALIA cannot restore its environment), so a new worker takes over from the work Loom brought home; it can read the earlier worker's conversation.");
     await startWorker(h);
     expect(workerSpawns().at(-1)).toMatchObject({ baseBranch: "loom/csv/csv-1-home", environment: undefined });
   });

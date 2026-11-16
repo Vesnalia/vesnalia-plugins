@@ -235,7 +235,7 @@ export function SidebarInteractions({
       if (!target || root.current?.contains(target)) return;
       // Menus and responsive sheets portal outside the sidebar. Keep the
       // selection available while choosing an action or dismissing its sheet.
-      if (target.closest('[data-bb-portaled-overlay],[role="dialog"],[role="menu"]')) return;
+      if (target.closest('[data-alia-portaled-overlay],[role="dialog"],[role="menu"]')) return;
       exit();
     };
     document.addEventListener("pointerdown", dismissOutside);
@@ -463,7 +463,7 @@ export function SidebarInteractions({
         ref={root}
         tabIndex={-1}
         aria-label="Sidebar threads"
-        className={cn("bb-workspace-sidebar relative flex h-full min-h-0 flex-col", active && "bb-ws-selecting")}
+        className={cn("alia-workspace-sidebar relative flex h-full min-h-0 flex-col", active && "alia-ws-selecting")}
       >
         {history.pending > 0 && (
           <span role="status" className="sr-only">

@@ -2,13 +2,13 @@
 //
 // Menus, the phone drawer, dialogs and tooltips render at the end of <body>,
 // outside the window, so their z-index competes with the window's own. When
-// the window went to z-55 and they stayed at bb's default z-50, the + menu
+// the window went to z-55 and they stayed at VesnALIA's default z-50, the + menu
 // opened invisibly behind it (#1). A browser cannot catch that by hit-testing:
 // a modal menu turns pointer events off on the rest of the page, so
 // elementFromPoint looks straight through the window. The numbers can.
 //
 // This reads the sources rather than a rendered page, so a component added
-// later from bb's registry, which arrives at z-50, fails here first.
+// later from VesnALIA's registry, which arrives at z-50, fails here first.
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -16,7 +16,7 @@ import { describe, expect, it } from "vitest";
 const root = join(import.meta.dirname, "..");
 const css = readFileSync(join(root, "styles.css"), "utf8");
 
-/** The z-index declared in a rule's own block, e.g. `.bb-ft-window { ... }`. */
+/** The z-index declared in a rule's own block, e.g. `.alia-ft-window { ... }`. */
 function ruleZ(selector: string): number {
   const block = css.match(new RegExp(`^${selector.replace(".", "\\.")} \\{([^}]*)\\}`, "m"));
   const z = block?.[1].match(/z-index:\s*(\d+)/);
@@ -37,11 +37,11 @@ function zUtilities(source: string): number[] {
   );
 }
 
-// bb keeps its dialogs and toasts at 70; nothing of ours may climb over them.
-const BB_TOP_LAYER = 70;
+// VesnALIA keeps its dialogs and toasts at 70; nothing of ours may climb over them.
+const ALIA_TOP_LAYER = 70;
 
 describe("overlay stacking", () => {
-  const windowZ = ruleZ(".bb-ft-window");
+  const windowZ = ruleZ(".alia-ft-window");
 
   it("finds the portaled overlays to check", () => {
     expect(portaled.map(({ name }) => name)).toEqual(
@@ -50,12 +50,12 @@ describe("overlay stacking", () => {
   });
 
   for (const { name, source } of portaled) {
-    it(`stacks ${name} above the window and under bb's top layer`, () => {
+    it(`stacks ${name} above the window and under VesnALIA's top layer`, () => {
       const layers = zUtilities(source);
       expect(layers.length, `${name} sets no z-index`).toBeGreaterThan(0);
       for (const z of layers) {
         expect(z, `${name} has z-${z}, at or under the window's ${windowZ}`).toBeGreaterThan(windowZ);
-        expect(z).toBeLessThan(BB_TOP_LAYER);
+        expect(z).toBeLessThan(ALIA_TOP_LAYER);
       }
     });
   }

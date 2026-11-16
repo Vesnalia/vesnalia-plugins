@@ -34,7 +34,7 @@ const END_DELIMITER = '--- END UNTRUSTED EXTERNAL TRACKER DATA ---';
 
 function workItem(overrides: Partial<WorkItem> = {}): WorkItem {
   return {
-    bbProjectId: 'proj_taskboard',
+    aliaProjectId: 'proj_taskboard',
     source: 'linear',
     locator: 'TASK-42',
     key: 'TASK-42',
@@ -68,7 +68,7 @@ test('delimits useful issue facts as untrusted external tracker data', () => {
   assert.match(context.slice(start, end), /> - Status: In Progress/u);
   assert.match(context.slice(start, end), /> - Priority: High/u);
   assert.match(context.slice(start, end), /> - Assignee: Mateo/u);
-  assert.match(context.slice(start, end), /> - BB project: proj_taskboard/u);
+  assert.match(context.slice(start, end), /> - ALIA project: proj_taskboard/u);
   assert.match(context.slice(start, end), /> - Tracker project: Taskboard/u);
   assert.match(context.slice(start, end), /> - Labels: security, agent-context/u);
   assert.match(

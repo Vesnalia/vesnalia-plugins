@@ -18,7 +18,7 @@ the numbers that decide the choice side by side.
 ## Where the prices come from
 
 Anthropic, OpenAI and Fireworks AI publish no pricing API, so those three and Ollama Cloud are read
-from the community catalog at https://models.dev, and OpenRouter from its own public list. The bb
+from the community catalog at https://models.dev, and OpenRouter from its own public list. The VesnALIA
 server fetches them, keeps them for twelve hours, and refreshes on request; an unchanged catalog costs
 one round trip. If a source cannot be reached, its last prices stay on screen with a note saying how
 old they are.
@@ -33,7 +33,7 @@ old they are.
 ## What it needs
 
 - No account, key or login: only public price lists are read.
-- Network access from the machine running the bb server to models.dev and openrouter.ai.
+- Network access from the machine running the VesnALIA server to models.dev and openrouter.ai.
 
 ## Limits
 

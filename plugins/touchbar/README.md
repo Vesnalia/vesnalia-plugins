@@ -1,16 +1,16 @@
-# BB Touch Bar Agent Monitor
+# VesnALIA Touch Bar Agent Monitor
 
-An open-source native macOS companion that keeps BB agent activity available on
+An open-source native macOS companion that keeps VesnALIA agent activity available on
 the Touch Bar across every application.
 
-The BB plugin owns the bounded thread snapshot and guarded commands. A small
+The VesnALIA plugin owns the bounded thread snapshot and guarded commands. A small
 Swift/AppKit background app owns the physical Touch Bar:
 
-- an always-present BB badge in the Control Strip;
+- an always-present VesnALIA badge in the Control Strip;
 - tap the badge to expand a fullscreen, horizontally finger-scrollable agent panel;
 - one outlined two-line card per thread with provider, project, status colour,
   badge and activity spinner;
-- tap a card to open that exact BB thread;
+- tap a card to open that exact VesnALIA thread;
 - optional right-side circular ChatGPT, Claude Code, and Cursor icons with usage
   progress rings instead of percentage text;
 - an optional icon-only Host Monitor button that swaps the thread lane for bounded
@@ -26,7 +26,7 @@ companion is required. The source builds and ad-hoc signs locally.
 
 ### Agent threads
 
-![Finger-scrollable BB agent threads on an Intel MacBook Pro Touch Bar](../../docs/media/touchbar-threads.png)
+![Finger-scrollable VesnALIA agent threads on an Intel MacBook Pro Touch Bar](../../docs/media/touchbar-threads.png)
 
 ### Host Monitor
 
@@ -38,11 +38,11 @@ companion is required. The source builds and ad-hoc signs locally.
 
 ### Running on an Intel MacBook Pro
 
-![BB Touch Bar companion running on an Intel MacBook Pro](../../docs/media/touchbar-intel-macbook-pro.jpg)
+![VesnALIA Touch Bar companion running on an Intel MacBook Pro](../../docs/media/touchbar-intel-macbook-pro.jpg)
 
 ## Requirements
 
-- BB 0.40 or newer.
+- VesnALIA 0.40 or newer.
 - A MacBook Pro with Touch Bar, Intel or Apple silicon.
 - macOS 11 or newer.
 - Xcode Command Line Tools (`xcode-select --install`).
@@ -64,26 +64,26 @@ chmod +x companion/*.sh
 ```
 
 Approve **Compile & Load** in BetterTouchTool, then open **All Apps → Touch
-Bar** and add one **BB Agent Monitor** plugin widget. To import the text-only
+Bar** and add one **VesnALIA Agent Monitor** plugin widget. To import the text-only
 fallback preset directly, run `./companion/install.sh --preset`. The BTT path
 keeps the monitor visible across applications without linking DFRFoundation;
 it requires BetterTouchTool and Xcode Command Line Tools on the Intel Mac.
 
-## Install the BB plugin
+## Install the VesnALIA plugin
 
-Install this package on the machine running the BB server—not from a remote
+Install this package on the machine running the VesnALIA server—not from a remote
 Mac filesystem path:
 
 ```sh
-bb plugin install ./plugins/touchbar
-bb plugin reload touchbar
-bb touchbar snapshot --pretty
+alia plugin install ./plugins/touchbar
+alia plugin reload touchbar
+alia touchbar snapshot --pretty
 ```
 
 The managed Git form after a tagged release is:
 
 ```sh
-bb plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.1.0 --subdirectory plugins/touchbar --tag-prefix touchbar/
+alia plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.1.0 --subdirectory plugins/touchbar --tag-prefix touchbar/
 ```
 
 ## Install the native app
@@ -94,19 +94,19 @@ After a `touchbar/vX.Y.Z` release is published with its universal archive, add
 this repository as a tap and install the macOS app:
 
 ```sh
-brew tap mateocerquetella/bb-plugins \
+brew tap mateocerquetella/alia-plugins \
   https://github.com/MateoCerquetella/bb-plugins.git
-brew install --cask mateocerquetella/bb-plugins/bb-touch-bar
+brew install --cask mateocerquetella/alia-plugins/alia-touch-bar
 ```
 
-Homebrew installs `BB Touch Bar.app` in `/Applications`, records the active
-`bb` CLI path, installs the per-user LaunchAgent, and starts the accessory app.
-Upgrades preserve Touch Bar preferences. `brew uninstall --cask bb-touch-bar`
+Homebrew installs `ALIA Touch Bar.app` in `/Applications`, records the active
+`alia` CLI path, installs the per-user LaunchAgent, and starts the accessory app.
+Upgrades preserve Touch Bar preferences. `brew uninstall --cask alia-touch-bar`
 removes the app and login job; add `--zap` to remove its support data, log, and
 preferences too.
 
 The Cask keeps the archive in Homebrew's Caskroom, moves the `.app` into
-`/Applications`, records the `bb` CLI path, and creates the per-user
+`/Applications`, records the `alia` CLI path, and creates the per-user
 `app.getbb.touchbar.native` LaunchAgent with `RunAtLoad`. The app therefore
 starts after login without a Dock icon. **Open at Login** in the menu-bar
 settings can remove or recreate that next-login registration.
@@ -131,13 +131,13 @@ The installer:
 2. emits Intel and Apple-silicon slices when the local toolchain supports them;
 3. links the private Touch Bar framework and ad-hoc signs the real app bundle;
 4. installs it at `~/Applications/BBTouchBar.app`;
-5. pins the current `bb` executable path in owner-only configuration;
+5. pins the current `alia` executable path in owner-only configuration;
 6. installs a user LaunchAgent for login startup;
 7. launches the app and waits for its readiness file.
 
-The app has no Dock icon. Its BB badge appears in the Touch Bar's Control Strip.
+The app has no Dock icon. Its VesnALIA badge appears in the Touch Bar's Control Strip.
 Install and enable the repository's `host-monitor` plugin to populate the host
-cards; subscription usage comes directly from BB's provider usage API.
+cards; subscription usage comes directly from VesnALIA's provider usage API.
 
 Tap the slider button for grouped FILTERS, SUBSCRIPTIONS, and HOST MONITOR
 cards directly inside the Touch Bar. Section labels sit at the left so every
@@ -150,7 +150,7 @@ second settings entry point. Toggle Usage and Host Monitor, choose Codex,
 Claude Code, and/or Cursor, and select the thread layout. These preferences
 persist per macOS user. Tap the computer icon to switch between threads and
 the compact inline host metrics lane. Tap an individual host card to open that
-host's detail page inside the BB desktop app.
+host's detail page inside the VesnALIA desktop app.
 
 Settings, Host Monitor, and X use fixed 34-point native controls to preserve
 space for cards while retaining explicit touch dispatch.
@@ -167,7 +167,7 @@ gauge colors on the next sample; download remains red and upload blue.
 Swipe directly across the card or settings lane to move it horizontally. The
 scroll container leaves hit-testing to its native child controls, so a short tap
 opens a thread or setting while a drag scrolls; no paging arrows consume space.
-Errors whose BB attention has already been read stay available in BB but are
+Errors whose VesnALIA attention has already been read stay available in VesnALIA but are
 removed from the compact lane, so old failures do not remain pinned as new red
 alerts.
 
@@ -182,16 +182,16 @@ alerts.
 ```
 
 `open` and `close` signal the running app, exercising the same panel path as a
-physical tap. Logs are written to `~/Library/Logs/bb-touchbar.log`.
+physical tap. Logs are written to `~/Library/Logs/alia-touchbar.log`.
 
-## BB commands
+## VesnALIA commands
 
 ```sh
-bb touchbar snapshot [--pretty]
-bb touchbar card <summary|0|1|2|3|4|5>
-bb touchbar open <thread-id>
-bb touchbar open-card <0|1|2|3|4|5>
-bb touchbar stop <thread-id>
+alia touchbar snapshot [--pretty]
+alia touchbar card <summary|0|1|2|3|4|5>
+alia touchbar open <thread-id>
+alia touchbar open-card <0|1|2|3|4|5>
+alia touchbar stop <thread-id>
 ```
 
 The native app uses `snapshot` and exact-id `open`. `stop` is deliberately not
@@ -203,11 +203,11 @@ small attention enum, plus compact provider usage percentages. It never exposes 
 credentials, or filesystem paths. Hidden worker threads are excluded by
 default.
 
-Configure card count and hidden-worker visibility through BB:
+Configure card count and hidden-worker visibility through VesnALIA:
 
 ```sh
-bb plugin config touchbar set cardLimit 24
-bb plugin config touchbar set includeHidden false
+alia plugin config touchbar set cardLimit 24
+alia plugin config touchbar set includeHidden false
 ```
 
 ## Remove
@@ -215,12 +215,12 @@ bb plugin config touchbar set includeHidden false
 ```sh
 cd ~/Downloads/touchbar
 ./native/uninstall.sh
-bb plugin remove touchbar
+alia plugin remove touchbar
 ```
 
 The native uninstaller first collapses/dismisses the modal Touch Bar, then
 stops the process, unloads its user LaunchAgent, and removes only the installed
-app and launch plist. BB plugin removal is separate because the server may live
+app and launch plist. VesnALIA plugin removal is separate because the server may live
 on another machine.
 
 ## Development and verification
@@ -229,14 +229,14 @@ From the repository root:
 
 ```sh
 npm install
-npm run check --workspace bb-plugin-touchbar
+npm run check --workspace alia-plugin-touchbar
 ```
 
 On a Touch Bar Mac:
 
 ```sh
 ./plugins/touchbar/native/build.sh
-BB_TOUCHBAR_APP="$PWD/plugins/touchbar/native/build/BBTouchBar.app" \
+ALIA_TOUCHBAR_APP="$PWD/plugins/touchbar/native/build/BBTouchBar.app" \
   ./plugins/touchbar/native/run.sh start
 ```
 
@@ -253,13 +253,13 @@ Create the universal ZIP and matching Cask checksum on a Mac:
 For a public release, sign and notarize with Keychain-managed credentials:
 
 ```sh
-BB_TOUCHBAR_SIGN_IDENTITY="Developer ID Application: Example (TEAMID)" \
-BB_TOUCHBAR_NOTARY_PROFILE="bb-touchbar" \
+ALIA_TOUCHBAR_SIGN_IDENTITY="Developer ID Application: Example (TEAMID)" \
+ALIA_TOUCHBAR_NOTARY_PROFILE="alia-touchbar" \
   ./plugins/touchbar/native/package.sh 0.1.2
 ```
 
 `package.sh` prints the archive path and SHA-256. Put that exact SHA in
-[`Casks/bb-touch-bar.rb`](../../Casks/bb-touch-bar.rb), commit it, create the
+[`Casks/alia-touch-bar.rb`](../../Casks/alia-touch-bar.rb), commit it, create the
 matching `touchbar/v0.1.2` tag, and attach the unchanged ZIP as
 `BBTouchBar-0.1.2-universal.zip`. Publishing the tag/release remains a separate
 remote action.

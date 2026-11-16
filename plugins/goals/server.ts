@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 const scope = z.literal("global");
 const fields = z.object({ course: z.string().max(800), priorities: z.string().max(400), constraints: z.string().max(400) });
@@ -13,9 +13,9 @@ export const rpcContract = defineRpcContract({
   read: { input: z.object({ scope }), output: document },
   save: { input: document.omit({ updatedAt: true }), output: document },
 });
-export default function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [`CREATE TABLE goals (scope TEXT PRIMARY KEY, course TEXT NOT NULL, priorities TEXT NOT NULL, constraints TEXT NOT NULL, revision INTEGER NOT NULL, updatedAt INTEGER NOT NULL)`]);
+export default function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [`CREATE TABLE goals (scope TEXT PRIMARY KEY, course TEXT NOT NULL, priorities TEXT NOT NULL, constraints TEXT NOT NULL, revision INTEGER NOT NULL, updatedAt INTEGER NOT NULL)`]);
   const read = (scope: "global"): GoalDocument => (db.prepare('SELECT * FROM goals WHERE scope = ?').get(scope) as GoalDocument | undefined) ?? { scope, course: '', priorities: '', constraints: '', revision: 0, updatedAt: 0 };
   const save = db.transaction((input: Omit<GoalDocument, 'updatedAt'>) => {
     if (read(input.scope).revision !== input.revision) throw new Error('Goals changed in another tab. Copy your draft and load the latest version.');
@@ -41,7 +41,7 @@ export default function plugin(bb: BbPluginApi) {
     const sections = current.items.filter(i => !i.done).map((i, index) => `${index + 1}. ${i.text}`);
     return ['Personal goals, in priority order. Use them to evaluate an answer, idea or plan when the user asks:', ...sections].join('\n\n');
   };
-  bb.rpc.register(rpcContract, { boardRead: () => readBoard(), boardSave: input => { const next = saveBoard(input); bb.realtime.publish('changed', {}); return next; }, read: ({ scope }) => read(scope), save: input => { const next = save(input); bb.realtime.publish('changed', { scope: next.scope }); return next; } });
-  bb.agents.configure(() => ({ tools: [], skills: [], instructions: "The user keeps personal goals in the Goals sidebar. When the user asks to compare, align or evaluate an answer, idea, decision or plan against their goals, run `bb goals show` for the current list. Explain which goals the proposal supports, relevant tradeoffs and how to improve alignment. These are the user's personal goals, not agent tasks. Do not routinely check or apply them to unrelated requests, start work toward them, or edit/complete them without the user's request. If the list is empty, ask the user for their goals instead of inventing them." }));
-  bb.cli.register({ name: 'goals', summary: 'Read personal goals when the user asks for alignment', commands: [{ name: 'show', summary: 'Read the user’s personal goals', usage: 'bb goals show' }], run: async (argv) => argv.length === 0 || (argv.length === 1 && argv[0] === 'show') ? { exitCode: 0, stdout: context() } : { exitCode: 1, stderr: 'Usage: bb goals show' } });
+  alia.rpc.register(rpcContract, { boardRead: () => readBoard(), boardSave: input => { const next = saveBoard(input); alia.realtime.publish('changed', {}); return next; }, read: ({ scope }) => read(scope), save: input => { const next = save(input); alia.realtime.publish('changed', { scope: next.scope }); return next; } });
+  alia.agents.configure(() => ({ tools: [], skills: [], instructions: "The user keeps personal goals in the Goals sidebar. When the user asks to compare, align or evaluate an answer, idea, decision or plan against their goals, run `alia goals show` for the current list. Explain which goals the proposal supports, relevant tradeoffs and how to improve alignment. These are the user's personal goals, not agent tasks. Do not routinely check or apply them to unrelated requests, start work toward them, or edit/complete them without the user's request. If the list is empty, ask the user for their goals instead of inventing them." }));
+  alia.cli.register({ name: 'goals', summary: 'Read personal goals when the user asks for alignment', commands: [{ name: 'show', summary: 'Read the user’s personal goals', usage: 'alia goals show' }], run: async (argv) => argv.length === 0 || (argv.length === 1 && argv[0] === 'show') ? { exitCode: 0, stdout: context() } : { exitCode: 1, stderr: 'Usage: VesnALIA goals show' } });
 }

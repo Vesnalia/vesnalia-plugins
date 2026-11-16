@@ -30,7 +30,7 @@ import {
 } from "@/components/preferences";
 
 /**
- * The plugin detail page's configuration section (bb renders it beside the
+ * The plugin detail page's configuration section (VesnALIA renders it beside the
  * declared settings): the modal Appearance tab's rows re-rendered with the
  * component itself holding state, because the configuration page has no
  * board instance to lean on. Same controls, same tolerance, same

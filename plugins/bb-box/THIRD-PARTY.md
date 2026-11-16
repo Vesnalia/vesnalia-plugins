@@ -1,6 +1,6 @@
 # Third-party software
 
-bb-box's own code is in this repository. This page lists the software of others that it uses:
+alia-box's own code is in this repository. This page lists the software of others that it uses:
 
 - what the plugin bundles
 - what the documentation site serves
@@ -8,19 +8,19 @@ bb-box's own code is in this repository. This page lists the software of others 
 - what it fetches into a box to make a recording's clip
 - what its setup scripts put in box images
 
-bb-box does not redistribute the software it installs on hosts or puts in images. Each piece is downloaded from its publisher when you set up a host or build an image, and most are checked against a SHA-256 pinned in this repository. Each is under its own licence, which applies to whoever builds the image.
+alia-box does not redistribute the software it installs on hosts or puts in images. Each piece is downloaded from its publisher when you set up a host or build an image, and most are checked against a SHA-256 pinned in this repository. Each is under its own licence, which applies to whoever builds the image.
 
 ## In the plugin
 
 | Software | Licence | Notes |
 | --- | --- | --- |
-| [noVNC](https://github.com/novnc/noVNC) 1.7.0, from npm (`@novnc/novnc`) | Mozilla Public License 2.0; the pako code it includes is under the MIT licence | The desktop viewer, unchanged. Its source and licence texts are in `node_modules/@novnc/novnc` after `npm install`. The video viewer is bb-box's own code, which uses noVNC's keyboard handling. |
+| [noVNC](https://github.com/novnc/noVNC) 1.7.0, from npm (`@novnc/novnc`) | Mozilla Public License 2.0; the pako code it includes is under the MIT licence | The desktop viewer, unchanged. Its source and licence texts are in `node_modules/@novnc/novnc` after `npm install`. The video viewer is alia-box's own code, which uses noVNC's keyboard handling. |
 | [xterm.js](https://github.com/xtermjs/xterm.js) and its fit add-on (`@xterm/xterm`, `@xterm/addon-fit`) | MIT | The terminal. `src/app/xterm-css.ts` is a copy of xterm.js's stylesheet, with its notice. |
 | `zod`, `undici`, `@radix-ui/react-slot` | MIT | |
 | [Hugeicons](https://github.com/hugeicons/hugeicons-react)' free icons and React component (`@hugeicons/core-free-icons`, `@hugeicons/react`) | MIT | The Monitor's icons (066). |
-| [bb-plugin-files-editor](https://github.com/abdoutelb/bb-plugin-files-editor) | MIT | The files view is this plugin's explorer, tabs, editor, search, go to file and find bar, ported into the panel. bb-box reads and writes the box user's files. The notice is below. |
+| [alia-plugin-files-editor](https://github.com/abdoutelb/bb-plugin-files-editor) | MIT | The files view is this plugin's explorer, tabs, editor, search, go to file and find bar, ported into the panel. alia-box reads and writes the box user's files. The notice is below. |
 
-### bb-plugin-files-editor
+### alia-plugin-files-editor
 
 Copyright (c) 2026 AbdElrahman Telb
 
@@ -30,9 +30,9 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-React, Radix's menus and dialogs, and the other packages BB shares with plugins come from BB at runtime. bb-box does not bundle them. The licence texts of everything bundled are in its package in `node_modules` after `npm install`.
+React, Radix's menus and dialogs, and the other packages VesnALIA shares with plugins come from VesnALIA at runtime. alia-box does not bundle them. The licence texts of everything bundled are in its package in `node_modules` after `npm install`.
 
-`components/ui` is BB's own components, vendored into this repository. The files carry no separate licence notice.
+`components/ui` is VesnALIA's own components, vendored into this repository. The files carry no separate licence notice.
 
 ## In the documentation site
 
@@ -63,7 +63,7 @@ The site in `site/` is built from these packages. Its pages carry their code, st
 
 ## Fetched into boxes
 
-`box_record` fetches one of these into a box whose own ffmpeg cannot make a clip, at the box's first recording (099). The box downloads it from its publisher and checks it against a SHA-256 pinned in `src/core/record-ffmpeg.ts`. bb-box does not redistribute it.
+`box_record` fetches one of these into a box whose own ffmpeg cannot make a clip, at the box's first recording (099). The box downloads it from its publisher and checks it against a SHA-256 pinned in `src/core/record-ffmpeg.ts`. alia-box does not redistribute it.
 
 | Software | Licence | For |
 | --- | --- | --- |

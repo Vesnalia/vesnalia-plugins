@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseShared } from "./share";
 
 const base = {
-  format: "bb-doc-review",
+  format: "alia-doc-review",
   version: 1,
   file: { name: "deck.pptx", kind: "presentation", pages: 2 },
   exportedBy: "Фома",

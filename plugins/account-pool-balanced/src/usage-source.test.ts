@@ -32,7 +32,7 @@ describe("usage presentation labels", () => {
 });
 
 describe("pooled providers on the usage surface", () => {
-  it("names a BB provider for every pooled subscription", () => {
+  it("names a VesnALIA provider for every pooled subscription", () => {
     // The map is exhaustive by type, but the values are ours: a wrong id puts the
     // subscription's windows under someone else's card, or under none at all.
     expect(USAGE_PROVIDER_IDS).toEqual({

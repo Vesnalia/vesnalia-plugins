@@ -1,6 +1,6 @@
 # Contributing
 
-`bb-plugin-variaq` must remain a thin BB-to-VariaQ integration layer. Quantum
+`alia-plugin-variaq` must remain a thin ALIA-to-VariaQ integration layer. Quantum
 algorithms, solver implementations, backend math, and experiment persistence
 belong in the standalone VariaQ project and must not be duplicated here.
 
@@ -10,7 +10,7 @@ belong in the standalone VariaQ project and must not be duplicated here.
 npm ci
 npm run typecheck
 npm run test:unit
-bb plugin types --check
+alia plugin types --check
 npm run build
 npm pack --dry-run
 ```
@@ -58,11 +58,11 @@ belong in the plugin's required CI.
 
 ## Pull-request expectations
 
-- Use only the public `@get-bb/plugin-sdk` surface.
+- Use only the public `@vesnalia/plugin-sdk` surface.
 - Keep all subprocess execution shell-free, bounded, and schema-driven.
 - Add fake-CLI regression coverage when changing VariaQ output handling.
 - Update the explicit compatibility contract when changing supported VariaQ,
-  BB, or Plugin SDK versions.
+  VesnALIA, or Plugin SDK versions.
 - Do not commit local settings, experiment databases, generated problems,
   credentials, dependency directories, coverage, logs, or build output.
 

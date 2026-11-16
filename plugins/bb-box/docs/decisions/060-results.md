@@ -11,7 +11,7 @@ With the harness in [scripts/measure](../../scripts/measure/README.md), on
 
 - The desktop box shows `scene.html` full screen in its own browser, and
   its lossless screenshot is the reference for sharpness.
-- The viewer is headless Chrome on a Linux desktop box, through BB's
+- The viewer is headless Chrome on a Linux desktop box, through VesnALIA's
   server, as the panel's own client: noVNC with the box's display quality
   and lossless refresh, or the panel's video client. It takes control as
   the panel does.
@@ -57,11 +57,11 @@ What they show:
 
 ## Pool Mac: video against VNC, 17 October 2026
 
-The pool Mac at 2x (3840x2160), through BB's server, after #759 gave it
-bb-box-stream. Same harness, one run each; the Mac's CPU is the whole
+The pool Mac at 2x (3840x2160), through VesnALIA's server, after #759 gave it
+alia-box-stream. Same harness, one run each; the Mac's CPU is the whole
 Mac's.
 
-| | VNC (Screen Sharing) | Video (bb-box-stream) |
+| | VNC (Screen Sharing) | Video (alia-box-stream) |
 | --- | --- | --- |
 | Drag fps | 12 | 49 |
 | Drag lag p50 / p95 | 101 / 142 ms | 58 / 71 ms |
@@ -101,10 +101,10 @@ as VNC in the Display menu.
 ## Windows on Proxmox: video against VNC, 17 October 2026
 
 A windows-desktop box at 1280x800 of build.20261017-150621-a96f, the first
-with bb-box-stream.exe, through BB's server; VNC is QEMU's. Video is as
+with alia-box-stream.exe, through VesnALIA's server; VNC is QEMU's. Video is as
 this PR leaves it: OpenH264 at most QP 26, and standard font smoothing.
 
-| | VNC (QEMU) | Video (bb-box-stream.exe) |
+| | VNC (QEMU) | Video (alia-box-stream.exe) |
 | --- | --- | --- |
 | Drag fps | 22 | 45 |
 | Drag lag p50 / p95 | 77 / 115 ms | 47 / 79 ms |
@@ -134,11 +134,11 @@ this PR leaves it: OpenH264 at most QP 26, and standard font smoothing.
 ## Tart Mac: video against VNC, 17 October 2026
 
 A small macos-desktop box (4 cores) of build.20261017-171050-80c3, the
-first with bb-box-stream, at 2048x1536, through BB's server. VNC is the
-Virtualization framework's, through bb-box's holder. Same harness, one run
+first with alia-box-stream, at 2048x1536, through VesnALIA's server. VNC is the
+Virtualization framework's, through alia-box's holder. Same harness, one run
 each, with Chrome showing the scene at 50% page zoom.
 
-| | VNC | Video (bb-box-stream) |
+| | VNC | Video (alia-box-stream) |
 | --- | --- | --- |
 | Drag fps | 55 | 56 |
 | Drag lag p50 / p95 | 40 / 44 ms | 50 / 63 ms |
@@ -167,7 +167,7 @@ each, with Chrome showing the scene at 50% page zoom.
 
 ## Tart Mac: Chrome's keys on video, 17 October 2026
 
-bb-box-stream now takes a tiny screenshot, in a VM only, while a viewer
+alia-box-stream now takes a tiny screenshot, in a VM only, while a viewer
 watches: every 30 ms for 200 ms after input, unless the stream sent a frame
 in the last 30 ms, as in a drag, and every 250 ms otherwise. Measured with
 the harness on a medium box (6 cores) with the server built in it and
@@ -197,12 +197,12 @@ Selkies 2.0 can capture an existing wlroots compositor
 and pointer protocols for input. So it streams the box's own Sway, and
 048's floating windows stay as they are. A linux-desktop-wayland-cpu box
 (4 cores, 1920x1080) ran the X11 image's Selkies 2.0.0 package with the
-X11 wrapper's flags and that option. wayvnc was measured through BB's
+X11 wrapper's flags and that option. wayvnc was measured through VesnALIA's
 server with viewer refresh, as the panel uses it. Selkies was measured
 directly, as the Wayland kind does not offer it, through a forwarder that
-drops the browser's Origin, as bb-box's relay does. Two runs of video.
+drops the browser's Origin, as alia-box's relay does. Two runs of video.
 
-| | wayvnc via BB | Selkies on Sway, run 1 | Run 2 |
+| | wayvnc via VesnALIA | Selkies on Sway, run 1 | Run 2 |
 | --- | --- | --- | --- |
 | Drag fps | 118 | 61 | 61 |
 | Drag lag p50 / p95 | 36 / 57 ms | 32 / 45 ms | 32 / 45 ms |
@@ -219,12 +219,12 @@ drops the browser's Origin, as bb-box's relay does. Two runs of video.
   60 frames a second; wayvnc's count is higher as it sends rectangles as
   they change.
 - **Text** was 4:2:0 at CRF 25: Selkies ignores the full-colour message
-  that bb-box's relay acts on, so through the relay it would be sharper.
+  that alia-box's relay acts on, so through the relay it would be sharper.
 - **Resize defect:** in host-capture mode, Selkies takes the desktop's
   size from its own view, which starts at 1024x768 and does not follow
   Sway, so each new viewer set Sway to 1024x768, even with
   `--enable-resize=false`. `--manual-width` and `--manual-height` hold one
-  size, but each viewer then sets Sway back to it, undoing bb-box's own
+  size, but each viewer then sets Sway back to it, undoing alia-box's own
   sizing (021, 048). It needs Selkies or pixelflux to read the host's
   output size.
 - Selkies admits one main client, so a second page evicts the first; the
@@ -237,7 +237,7 @@ The owner saw video tear on Windows while scrolling. The harness now finds
 a scroll's torn frames too: the list's rows are 20 pixels in two colours,
 so in a whole frame they change colour at one place in 20 down a blank
 column, and in a torn frame at two. A windows-desktop box of
-build.20261017-191915-c934 at 1280x800, through BB's server, with the
+build.20261017-191915-c934 at 1280x800, through VesnALIA's server, with the
 scene in Edge.
 
 | | Video before, 4 runs | Video after, 2 runs | VNC |
@@ -253,10 +253,10 @@ scene in Edge.
   duplicated frame was torn now and then while Edge scrolled with the
   wheel, though the image did not change while it was copied, and GDI's
   copies of the screen at the same time never were (0 of 807). So it is
-  not Edge or DWM, nor bb-box-stream's copy, encoder or the viewer.
+  not Edge or DWM, nor alia-box-stream's copy, encoder or the viewer.
 - **Fix:** on that adapter the duplicated frame now only says the screen
   changed, and GDI copies the screen once it is released.
-  `BB_STREAM_CAPTURE=map` copies the duplicated image as before.
+  `ALIA_STREAM_CAPTURE=map` copies the duplicated image as before.
 - **Cost:** GDI's copy takes about 20 ms a frame at 1280x800, against
   0.9 ms to map and copy the duplicated image, so a scroll shows about 24
   frames a second where it showed about 35: still above VNC's 13. Encoding
@@ -296,7 +296,7 @@ the panel, with one tab in control and one watching:
 - The pool Mac and Linux drawn by the CPU follow it in both tabs: no
   pointer in the video while the person holds control, and the pointer in
   it with "Show the box's pointer" on or while the agent holds control.
-- Windows does not. bb-box-stream.exe leaves the pointer out when told,
+- Windows does not. alia-box-stream.exe leaves the pointer out when told,
   but the pointer is already in the image Desktop Duplication returns. The
   VM's display adapter is the VirtIO GPU's display-only driver, which has
   no hardware cursor, so Windows draws the pointer into the desktop image.
@@ -318,7 +318,7 @@ the panel, with one tab in control and one watching:
 ## Windows on a Mac: video against VNC, 18 October 2026
 
 A windows-arm64-desktop box (4 cores, 1280x800) of a build with
-bb-box-stream.exe and Cisco's arm64 OpenH264 2.6.0, through BB's server,
+alia-box-stream.exe and Cisco's arm64 OpenH264 2.6.0, through VesnALIA's server,
 3 runs each, against QEMU's VNC on the same kind (p50 / p95).
 
 | | VNC, LAN | Video, LAN | VNC, 20 Mbit/s, 40 ms | Video, 20 Mbit/s, 40 ms |
@@ -342,7 +342,7 @@ bb-box-stream.exe and Cisco's arm64 OpenH264 2.6.0, through BB's server,
   framebuffer from the host, about 50 updates a second.
 - **Parked: a host-side bridge.** A program on the Mac that reads QEMU's
   VNC framebuffer on loopback, as the VNC display does, and encodes it
-  with VideoToolbox, as bb-box-stream does for macOS desktops, served to
+  with VideoToolbox, as alia-box-stream does for macOS desktops, served to
   the panel's video client. It would not need Windows' capture and would
   keep the encoder off the guest's cores. Copying only Duplication's
   dirty rectangles was considered and dropped: Duplication's own signal
@@ -352,7 +352,7 @@ bb-box-stream.exe and Cisco's arm64 OpenH264 2.6.0, through BB's server,
 
 The Wayland images (Proxmox LXC and Docker) moved from Ubuntu 24.04 to
 26.04, for the box's pointer. On 24.04's Sway 1.9 neither stream could
-send it: Sway paints the pointer into every frame, so bb-box hid it with
+send it: Sway paints the pointer into every frame, so alia-box hid it with
 a blank cursor theme while a person held control (#707), and the person's
 own pointer was a plain arrow whatever the box's shape. Sway 1.11 on
 26.04 (wlroots 0.19) has ext-image-copy-capture, whose pointer cursor
@@ -367,27 +367,27 @@ What changed:
   (`SET_NATIVE_CURSOR_RENDERING,1`) logged `cursor=painted` and painted
   nothing in host-capture mode. #808's and #819's patches apply as they
   are.
-- **bb-box-cursor** (#828), in the image, opens a pointer cursor session
-  and writes each change as a line. bb-box sends its shape to video viewers
-  as Selkies' own cursor message, and its position as `BB_POINTER` (#834).
+- **alia-box-cursor** (#828), in the image, opens a pointer cursor session
+  and writes each change as a line. alia-box sends its shape to video viewers
+  as Selkies' own cursor message, and its position as `ALIA_POINTER` (#834).
   The panel shows the person in control the box's shape, and draws the
   pointer over the picture for people watching, over video (#836) and
   over VNC, on a pointer stream of its own (#844).
 - **The blank theme** stays for an image without the helper, as every 24.04
   box (#829).
-- **Coreutils and sudo** are uutils and sudo-rs on 26.04. The forms bb-box
+- **Coreutils and sudo** are uutils and sudo-rs on 26.04. The forms alia-box
   runs in a box behave alike, except that `timeout -s KILL` exits 124, not
-  137, and sudo-rs ignores `sudo -E`; bb-box relies on neither (#826).
+  137, and sudo-rs ignores `sudo -E`; alia-box relies on neither (#826).
 - **wayvnc 0.9.1 still crashes** in neatvnc when a client connects after
   Sway was resized with no client (#394). The display script's restart of
   wayvnc after such a resize covers it, as on 24.04.
 
-Checked through BB on fresh boxes of each backend, 1920x1080, with the
+Checked through VesnALIA on fresh boxes of each backend, 1920x1080, with the
 panel's own clients:
 
 | | Proxmox LXC (CT 9809) | Docker |
 | --- | --- | --- |
-| bb-box-check-desktop | every line ok | every line ok or skipped (no TUN, no units) |
+| alia-box-check-desktop | every line ok | every line ok or skipped (no TUN, no units) |
 | Shape for the person in control, video and VNC | arrow, I-beam (Chrome and Mousepad, GTK3's own), hand, resize arrows | the same images |
 | Pointer drawn for a watcher, as the agent clicks | at the click less its hotspot, video and VNC | the same, video and VNC |
 | 5 resizes after a hidden tab | 0.31-0.38 s, no black frame | 0.31-0.36 s, no black frame |
@@ -401,7 +401,7 @@ panel's own clients:
 
 The two arm64 Linux desktop kinds, microsandbox and Tart, offer video by
 choice since #848, from the Selkies their X11 images already run. Each box
-had 4 cores and 8 GiB, at 1920x1080, through BB's server, with the same
+had 4 cores and 8 GiB, at 1920x1080, through VesnALIA's server, with the same
 harness. The slow link is 20 ms more each way and 20 Mbit/s from the box.
 Two runs each on the LAN, one on the slow link (p50 / p95).
 
@@ -447,16 +447,16 @@ still, black on white and coloured: 0.9999 and 0.9998 over VNC, 0.998 and
 ## Windows on a Mac: video from QEMU, 19 October 2026
 
 Windows' own capture on the Mac's VirtIO GPU gave video a few frames a
-second (above). bb-box-stream gained a mode for the Mac itself (#865): it
+second (above). alia-box-stream gained a mode for the Mac itself (#865): it
 reads the VM's QEMU VNC server on the Mac's loopback, raw pixels, and
 encodes them with VideoToolbox, as the macOS stream does. The Tart backend
 builds it on each Mac from mac-stream.swift with the Command Line Tools'
 swiftc. The person's pointer goes to QEMU's tablet through it, as the VNC
 display gives it; keys, typing and the clipboard go to the guest's
-bb-box-stream.exe, which also says where the pointer is for people
+alia-box-stream.exe, which also says where the pointer is for people
 watching.
 
-Measured through BB, on a Tart Windows box (4 cores, 1280x800, image
+Measured through VesnALIA, on a Tart Windows box (4 cores, 1280x800, image
 build.20261019-190106-a539) and a Linux viewer box, three runs of each,
 interleaved, each run closing its viewer before the next (p50, p95 in
 brackets). Frame rates count only the frames in which the dragged block
@@ -494,7 +494,7 @@ moved, as both streams send frames that change nothing (below).
   video viewer that joined as a VNC viewer joined got its video in 18 of 19
   tries.
 - **People watching see the agent's pointer**, over video and over VNC:
-  bb-box-stream.exe says where it is to a client that asks, and bb-box
+  alia-box-stream.exe says where it is to a client that asks, and alia-box
   draws it, as on Wayland. Neither stream has it in the picture, as
   Windows puts it on the GPU's cursor plane.
 
@@ -521,7 +521,7 @@ runs below:
   the box's screenshot. Drawn in greyscale, by `/etc/fonts/local.conf`, it
   scores 0.9995. The setting is in every Proxmox LXC X11 desktop image.
 
-Each box had 4 cores and 8 GiB, at 1920x1080, through BB's server, with
+Each box had 4 cores and 8 GiB, at 1920x1080, through VesnALIA's server, with
 the same harness, beside a CPU desktop for comparison, whose video is x264
 at 4:4:4. The slow link is 20 ms more each way and 20 Mbit/s from the box.
 Two runs each on the LAN, one on the slow link (p50 / p95).

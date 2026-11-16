@@ -2,14 +2,14 @@
 // produced an event. The sidebar shows elapsed time and flags runs that have
 // been silent for a long time ("stuck?"), which history shows do happen
 // (171 turns over an hour, one over four days).
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 export type Running = { since: number; lastEventAt: number };
 
 /** Silence after which a running thread is flagged as possibly stuck. */
 export const STUCK_AFTER_MS = 15 * 60_000;
 
-export function createActivity(bb: BbPluginApi, changed: () => void) {
+export function createActivity(alia: AliaPluginApi, changed: () => void) {
   const running = new Map<string, Running>();
   let publishTimer: ReturnType<typeof setTimeout> | null = null;
   // Event bursts are frequent; the UI only needs minute-level freshness.
@@ -19,15 +19,15 @@ export function createActivity(bb: BbPluginApi, changed: () => void) {
       changed();
     }, 5_000);
   };
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     if (publishTimer) clearTimeout(publishTimer);
   });
 
-  bb.events.on("thread.active", ({ thread }) => {
+  alia.events.on("thread.active", ({ thread }) => {
     if (!running.has(thread.id)) running.set(thread.id, { since: Date.now(), lastEventAt: Date.now() });
     changed();
   });
-  bb.events.on("experimental_thread.events", ({ thread }) => {
+  alia.events.on("experimental_thread.events", ({ thread }) => {
     const entry = running.get(thread.id);
     if (entry) {
       const wasStuck = Date.now() - entry.lastEventAt > STUCK_AFTER_MS;
@@ -39,12 +39,12 @@ export function createActivity(bb: BbPluginApi, changed: () => void) {
   const stop = ({ thread }: { thread: { id: string } }) => {
     if (running.delete(thread.id)) changed();
   };
-  bb.events.on("thread.idle", stop);
-  bb.events.on("thread.failed", stop);
-  bb.events.on("thread.archived", stop);
+  alia.events.on("thread.idle", stop);
+  alia.events.on("thread.failed", stop);
+  alia.events.on("thread.archived", stop);
 
   // Threads already running when the plugin loads: best-effort start times.
-  void bb.sdk.threads
+  void alia.sdk.threads
     .list({ limit: 500 })
     .then((threads) => {
       for (const thread of threads) {

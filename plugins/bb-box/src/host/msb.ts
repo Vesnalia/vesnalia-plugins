@@ -1,11 +1,11 @@
-// The machine's end of the msb relay (053), in bb-box's host entry.
-// "msbRelay" opens a WebSocket out to bb-box's route, as "relay" does for
+// The machine's end of the msb relay (053), in alia-box's host entry.
+// "msbRelay" opens a WebSocket out to alia-box's route, as "relay" does for
 // Docker (src/host/relay.ts), and each channel the server opens is one run
-// of bb-box's msb here, with the frames of src/relay/msb.ts. "microsandbox"
-// runs one of bb-box's own scripts here (src/backends/microsandbox/release.ts):
+// of alia-box's msb here, with the frames of src/relay/msb.ts. "microsandbox"
+// runs one of alia-box's own scripts here (src/backends/microsandbox/release.ts):
 // install the pinned msb, report on the machine, or import an image from
-// Docker. The entry runs nothing else: msb's arguments come from bb-box,
-// but the binary is always bin/msb in bb-box's own msb folder.
+// Docker. The entry runs nothing else: msb's arguments come from alia-box,
+// but the binary is always bin/msb in alia-box's own msb folder.
 //
 // That folder is in the plugin's data folder on this machine, with msb's
 // state and images, so removing the plugin's data removes them too.
@@ -13,7 +13,7 @@
 import { execFile, spawn, type ChildProcess } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import type { ExperimentalHostRpcContext, ExperimentalHostWorkerLease } from "@get-bb/plugin-sdk/host";
+import type { ExperimentalHostRpcContext, ExperimentalHostWorkerLease } from "@vesnalia/plugin-sdk/host";
 import { Capture, quote } from "../transports/process.ts";
 import { killsOnlyOnceStarted } from "../transports/spawns.ts";
 import { HANG_UP, ptyArgv } from "../transports/terminal.ts";
@@ -23,7 +23,7 @@ import { DATA_BYTES, FRAME, FrameReader, clamp, frame, parseRequest, type TtySiz
 import { dial, type RelayWebSocket } from "./relay.ts";
 
 export interface MsbOptions {
-  /** bb-box's msb folder here; by default `microsandbox` in the plugin's data folder. */
+  /** alia-box's msb folder here; by default `microsandbox` in the plugin's data folder. */
   readonly dir?: string;
   readonly connect?: (url: string) => RelayWebSocket;
   readonly pingMs?: number;
@@ -32,7 +32,7 @@ export interface MsbOptions {
 
 /** How long each script may take: an install downloads about 30 MB, and an import moves a desktop image of about 1.7 GB. */
 const SCRIPT_MS: Readonly<Record<string, number>> = { install: 10 * 60_000, status: 60_000, images: 60_000, import: 30 * 60_000, disk: 30_000, undisk: 60_000, disks: 30_000, memory: 30_000, oom: 30_000, transfer: 30 * 60_000, retag: 30 * 60_000 };
-/** How long a run that bb-box stopped waiting for has, after SIGTERM, before SIGKILL. */
+/** How long a run that alia-box stopped waiting for has, after SIGTERM, before SIGKILL. */
 const KILL_MS = 2_000;
 const OUTPUT_BYTES = 256 * 1024;
 
@@ -80,7 +80,7 @@ function serve(channel: Channel, binary: string): void {
   channel.on("close", stop);
 
   const start = (args: readonly string[], tty: TtySize | undefined) => {
-    if (!existsSync(binary)) return failed(`msb is not installed here (${binary}). bb-box installs it with its doctor's fix, or when it first needs it.`);
+    if (!existsSync(binary)) return failed(`msb is not installed here (${binary}). alia-box installs it with its doctor's fix, or when it first needs it.`);
     const [program, ...rest] = tty ? scriptArgv(binary, args, tty) : [binary, ...args];
     const spawned = killsOnlyOnceStarted(spawn(program!, rest, { stdio: ["pipe", "pipe", "pipe"], env: { ...process.env, ...(tty ? { TERM: "xterm-256color" } : {}) } }));
     child = spawned;
@@ -140,13 +140,13 @@ function serve(channel: Channel, binary: string): void {
   });
 }
 
-/** Runs one of bb-box's scripts with `args`, in `dir`, and gives its output. */
+/** Runs one of alia-box's scripts with `args`, in `dir`, and gives its output. */
 function runScript(dir: string, name: string, args: readonly string[], signal: AbortSignal): Promise<{ exitCode: number | null; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
-    if (!scriptArgsOk(name, args)) return resolve({ exitCode: 2, stdout: "", stderr: `bb-box's host entry runs no script ${name} with those arguments.` });
+    if (!scriptArgsOk(name, args)) return resolve({ exitCode: 2, stdout: "", stderr: `alia-box's host entry runs no script ${name} with those arguments.` });
     const stdout = new Capture(OUTPUT_BYTES);
     const stderr = new Capture(OUTPUT_BYTES);
-    const child = killsOnlyOnceStarted(spawn("sh", ["-c", msbScript(name), "bb-box-msb", ...args], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, BBBOX_MSB_DIR: dir } }));
+    const child = killsOnlyOnceStarted(spawn("sh", ["-c", msbScript(name), "alia-box-msb", ...args], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, BBBOX_MSB_DIR: dir } }));
     const timer = setTimeout(() => child.kill("SIGKILL"), SCRIPT_MS[name] ?? 60_000);
     const kill = () => child.kill("SIGKILL");
     signal.addEventListener("abort", kill, { once: true });
@@ -177,7 +177,7 @@ export function msbHandlers(options: MsbOptions = {}) {
       },
       msbRelay: async ({ secret, path }: { secret: string; path: string }, context: ExperimentalHostRpcContext) => {
         const dir = dirOf(context);
-        if (!process.env.BB_SERVER_URL) throw new Error("BB_SERVER_URL is not set in the worker, so it cannot reach bb-box.");
+        if (!process.env.ALIA_SERVER_URL) throw new Error("ALIA_SERVER_URL is not set in the worker, so it cannot reach alia-box.");
         const lease = context.experimental_retainWorker();
         leases.add(lease);
         const binary = join(dir, "bin", "msb");

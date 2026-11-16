@@ -22,14 +22,14 @@ describe("thread_autotitle contract", () => {
 });
 
 describe("thread_autotitle against the selected AI service", () => {
-  it("routes the thread's first prompt through bb's thread-title service", async () => {
+  it("routes the thread's first prompt through VesnALIA's thread-title service", async () => {
     const { callRpc, lastServiceCall } = await setup({});
     const out = (await callRpc("thread_autotitle", { threadId: "thr_x" })) as {
       title: string;
     };
     expect(out).toEqual({ title: "Login redirect loop fix" });
     const call = lastServiceCall();
-    // The follow-bb contract: serve whatever service bb's thread-title task
+    // The follow-alia contract: serve whatever service VesnALIA's thread-title task
     // is set to, through the generic cross-plugin RPC bridge.
     expect(call).not.toBeNull();
     expect(call!.pluginId).toBe("openrouter-inference");
@@ -46,7 +46,7 @@ describe("thread_autotitle against the selected AI service", () => {
     });
   });
 
-  it("fails loud on an automatic selection (bb resolves it internally; plugins cannot invoke it)", async () => {
+  it("fails loud on an automatic selection (VesnALIA resolves it internally; plugins cannot invoke it)", async () => {
     const { callRpc } = await setup({ selection: { mode: "automatic" } });
     await expect(callRpc("thread_autotitle", { threadId: "thr_x" })).rejects.toThrow(
       /ai services/i,
@@ -137,11 +137,11 @@ describe("thread_autotitle_services against the fake host", () => {
           tasks: ["voice"],
         },
         {
-          pluginId: "bb-ai",
+          pluginId: "alia-ai",
           id: "cloud",
-          displayName: "bb cloud",
+          displayName: "alia cloud",
           automaticRank: null,
-          status: { ready: false, message: "Sign in to your bb account" },
+          status: { ready: false, message: "Sign in to your VesnALIA account" },
           tasks: ["thread-title"],
         },
       ],
@@ -166,10 +166,10 @@ describe("thread_autotitle_services against the fake host", () => {
     });
     expect(out.services).toEqual([
       // The ready OpenRouter row gets bridge-verified via the invalid-input
-      // probe (fake host answers → true); the not-ready bb cloud row skips
+      // probe (fake host answers → true); the not-ready VesnALIA cloud row skips
       // the probe and reports bridge:false with its own message carrying.
       { pluginId: "openrouter-inference", serviceId: "default", displayName: "OpenRouter", ready: true, message: null, bridge: true, bridgeReason: null },
-      { pluginId: "bb-ai", serviceId: "cloud", displayName: "bb cloud", ready: false, message: "Sign in to your bb account", bridge: false, bridgeReason: null },
+      { pluginId: "alia-ai", serviceId: "cloud", displayName: "alia cloud", ready: false, message: "Sign in to your VesnALIA account", bridge: false, bridgeReason: null },
     ]);
   });
 
@@ -293,8 +293,8 @@ describe("thread_autotitle via the thread's own model (hidden probe thread)", ()
     expect(spawn!["projectId"]).toBe("proj_1");
     // Reuse the source thread's environment: the probe never runs elsewhere.
     expect(spawn!["environment"]).toEqual({ type: "reuse", environmentId: "env_1" });
-    // Hidden, explicitly titled (so bb's own title task never runs), and the
-    // model/pair pinned explicit — bb drops requested models without provenance.
+    // Hidden, explicitly titled (so VesnALIA's own title task never runs), and the
+    // model/pair pinned explicit — VesnALIA drops requested models without provenance.
     expect(spawn!["visibility"]).toBe("hidden");
     expect(spawn!["title"]).toMatch(/probe/i);
     expect(spawn!["providerId"]).toBe("claude-code");
@@ -313,10 +313,10 @@ describe("thread_autotitle via the thread's own model (hidden probe thread)", ()
     expect(stoppedProbes()).toEqual([]);
   });
 
-  it("falls back to spawning without a provider/model when bb does not resolve a pair", async () => {
-    // bb's defaultExecutionOptions can return null live (empty-input
+  it("falls back to spawning without a provider/model when VesnALIA does not resolve a pair", async () => {
+    // VesnALIA's defaultExecutionOptions can return null live (empty-input
     // capability validation) even for threads that run fine; a hidden child
-    // without a provider/model override inherits bb's own spawn default
+    // without a provider/model override inherits VesnALIA's own spawn default
     // chain (project remembered default → global), exactly what a new
     // thread in the project would get.
     const { callRpc, lastSpawn, lastServiceCall, deletedProbes } = await setup({
@@ -357,7 +357,7 @@ describe("thread_autotitle via the thread's own model (hidden probe thread)", ()
   });
 
   it("refuses with the named environment blocker before any spawn (issue #378)", async () => {
-    // The defensive hard-line under the menu's gate: bb's raw
+    // The defensive hard-line under the menu's gate: VesnALIA's raw
     // `HTTP 409: Environment unavailable` must not be reachable from the
     // modal's advertised row when the environment is torn down.
     const { callRpc, lastSpawn, deletedProbes } = await setup({
@@ -378,7 +378,7 @@ describe("thread_autotitle via the thread's own model (hidden probe thread)", ()
 
 describe("thread-model spawn fallback chain", () => {
   it("pairs the 0.48 model-only execution response with the source thread's own providerId", async () => {
-    // bb 0.48.x dropped providerId from threads.defaultExecutionOptions: it
+    // VesnALIA 0.48.x dropped providerId from threads.defaultExecutionOptions: it
     // returns exactly the resolved execution — {model, permissionMode,
     // reasoningLevel, serviceTier, source} — so the old "providerId AND
     // model" check never ran and every probe fell to the inherit chain,
@@ -420,7 +420,7 @@ describe("thread-model spawn fallback chain", () => {
   });
 
   it("falls back to the inherit chain when the model-only response lacks a provider on both the response and the source row", async () => {
-    // A model id bb serves without a resolvable provider anywhere: the
+    // A model id VesnALIA serves without a resolvable provider anywhere: the
     // probe cannot pin a pair, so it degrades to the inherit chain (still
     // generative) instead of refusing.
     const { callRpc, lastSpawn } = await setup({
@@ -450,12 +450,12 @@ describe("thread-model spawn fallback chain", () => {
     expect(spawn && "model" in spawn).toBe(false);
   });
 
-  it("spawns by inheriting bb's default chain when no pair resolves, even with a provider on record", async () => {
-    // A provider-only clone lets bb resolve the model against the
+  it("spawns by inheriting VesnALIA's default chain when no pair resolves, even with a provider on record", async () => {
+    // A provider-only clone lets VesnALIA resolve the model against the
     // provider's own catalog default. On this machine that catalog default
     // is an openrouter model — the exact metered fall-through the metered
     // gate had to reject live (HTTP 409 on a title probe, 2026-10-05). The
-    // inherit spawn instead rides bb's own spawn default chain (project
+    // inherit spawn instead rides VesnALIA's own spawn default chain (project
     // remembered default → global), exactly what a new thread in the
     // project gets: core-resolved and inside what the gate admits.
     const { callRpc, lastSpawn, deletedProbes } = await setup({
@@ -540,7 +540,7 @@ describe("thread_autotitle_services thread-model availability", () => {
 
   it("reports the inherit chain as available even when no pair resolves", async () => {
     // The old behavior refused here; a hidden child without a provider/
-    // model override legitimately inherits bb's spawn default chain, and a
+    // model override legitimately inherits VesnALIA's spawn default chain, and a
     // failing spawn names itself in the probe error.
     const { callRpc } = await setup({ executionOptions: null });
     const out = (await callRpc("thread_autotitle_services", {
@@ -573,7 +573,7 @@ describe("thread_autotitle_services thread-model availability", () => {
     expect(out.threadModel.reason).not.toBeNull();
   });
 
-  // Issue #378: the environment must be spawnable, not merely an id. bb's
+  // Issue #378: the environment must be spawnable, not merely an id. VesnALIA's
   // spawn into a torn-down environment answers raw
   // `HTTP 409: Environment unavailable`, so the services menu has to read
   // the environment row itself and read every non-ready verdict from it.
@@ -755,7 +755,7 @@ describe("promptHistory paging", () => {
   it("requests a large limit so the thread's oldest rows survive page truncation", async () => {
     const { callRpc, lastPromptHistoryArgs } = await setup({});
     await callRpc("thread_autotitle", { threadId: "thr_x" });
-    // bb pages prompt history newest-first; a default-sized page drops the
+    // VesnALIA pages prompt history newest-first; a default-sized page drops the
     // originating prompt on long threads (found live: the oldest visible
     // row was mid-thread). Ask big, sort oldest-first locally.
     expect(lastPromptHistoryArgs()).toMatchObject({ threadId: "thr_x", limit: "200" });
@@ -763,8 +763,8 @@ describe("promptHistory paging", () => {
 });
 
 describe("the probe titles from the thread's originating prompt", () => {
-  // bb's prompt history misses spawn inputs entirely (composer turns only,
-  // found live via `bb thread history`), so the originating prompt is read
+  // VesnALIA's prompt history misses spawn inputs entirely (composer turns only,
+  // found live via `alia thread history`), so the originating prompt is read
   // from the source thread's timeline first; history is the fallback.
   it("reads the source thread's first user timeline row", async () => {
     const { callRpc, lastSpawn } = await setup({
@@ -806,7 +806,7 @@ describe("the probe titles from the thread's originating prompt", () => {
 });
 
 describe("the originating-prompt read pages the timeline from the beginning", () => {
-  // The default (no-afterSequence) timeline call serves bb's LATEST-rows
+  // The default (no-afterSequence) timeline call serves VesnALIA's LATEST-rows
   // cache — live it returned only seq 9066-10188 of a 10k-sequence thread,
   // so the "first" user row was the newest message. The read must anchor
   // at the sequence floor: afterSequence 0 (events strictly above 0).
@@ -837,7 +837,7 @@ describe("the originating-prompt read pages the timeline from the beginning", ()
 });
 
 describe("the originating-prompt walk covers long threads", () => {
-  // bb serves the timeline in segment windows (user rows anchor segments);
+  // VesnALIA serves the timeline in segment windows (user rows anchor segments);
   // one call returns only the newest window. The read must walk older pages
   // and may only use the result when the walk reached the thread's
   // beginning — otherwise the paged prompt history wins.

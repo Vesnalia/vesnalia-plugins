@@ -169,8 +169,8 @@ describe("wrapSelectionWith", () => {
 
 describe("markdownLinkSnippet", () => {
   it("wraps a selection and selects the url placeholder", () => {
-    const snippet = markdownLinkSnippet("bb docs");
-    expect(snippet.text).toBe("[bb docs](url)");
+    const snippet = markdownLinkSnippet("alia docs");
+    expect(snippet.text).toBe("[VesnALIA docs](url)");
     expect(snippet.text.slice(snippet.anchor, snippet.head)).toBe("url");
   });
 

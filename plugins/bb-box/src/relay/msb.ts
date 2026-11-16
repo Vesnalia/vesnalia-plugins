@@ -1,7 +1,7 @@
 // The msb relay's channels (053). msb has no daemon or API socket for the
-// Docker relay (042) to forward, so bb-box's host entry runs msb on the
-// machine, and each run is one channel on a relay of its own. bb-box's msb
-// client (msb-client.mjs) stands in for the msb CLI on BB's server: it
+// Docker relay (042) to forward, so alia-box's host entry runs msb on the
+// machine, and each run is one channel on a relay of its own. alia-box's msb
+// client (msb-client.mjs) stands in for the msb CLI on VesnALIA's server: it
 // connects to the machine's socket from RelayHub, sends the run's request,
 // carries its stdin, and gives back its stdout, stderr and exit status, so
 // the backend's transports use plain command lines, as Docker's do (031).
@@ -39,7 +39,7 @@ export interface TtySize {
   readonly rows: number;
 }
 
-/** A run of the host's bb-box msb, with these arguments; on a PTY on the machine at `tty`'s size when given. */
+/** A run of the host's alia-box msb, with these arguments; on a PTY on the machine at `tty`'s size when given. */
 export interface MsbRequest {
   readonly args: readonly string[];
   readonly tty?: TtySize;

@@ -20,7 +20,7 @@
 // not thread ids, and reading per-thread metadata would mean an N+1 scan
 // (`threads.list({})` then one `getPluginMetadata` per row) on every window
 // load and every refetch, the shape `link_list`/`error_acks_list` pay for
-// genuinely per-thread facts. The tradeoff (bb plugin storage rather than the
+// genuinely per-thread facts. The tradeoff (VesnALIA plugin storage rather than the
 // `threads.*PluginMetadata` surface by name, and a whole-row rewrite that
 // serializes through the server's KV write lock) is recorded in the pull
 // request.

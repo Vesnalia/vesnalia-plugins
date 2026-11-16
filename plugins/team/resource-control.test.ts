@@ -1,22 +1,22 @@
 import {describe,it,expect} from "vitest";
-import {createFakePluginHost,makeThreadResponse} from "@get-bb/plugin-sdk/testing";
-import type {MessageDispatchHookContext,PluginTurnFailedEvent,ThreadEventRow} from "@get-bb/plugin-sdk";
+import {createFakePluginHost,makeThreadResponse} from "@vesnalia/plugin-sdk/testing";
+import type {MessageDispatchHookContext,PluginTurnFailedEvent,ThreadEventRow} from "@vesnalia/plugin-sdk";
 import {verifyQuotaBoundary,type WorkCheckpoint} from "./checkpoint";
 import {ResourceControl,DEFAULT_RESOURCE_POLICY,type ResourceOwner} from "./resource-control";
 function fixture(){
  let now=1000;const events=new Map<string,ThreadEventRow[]>();const owners=new Map<string,ResourceOwner>();
  const base={projectId:"p",team:"main",role:"dev",taskId:"task-1",ownerThreadId:"dev",hostId:"host"};
  for(const id of ["dev","helper","fresh","other","lead"]){owners.set(id,{...base,ownerThreadId:id==="helper"?"dev":id,role:id==="lead"?"lead":"dev",taskId:id==="lead"?null:id==="other"?"task-2":"task-1"});}
- const {bb}=createFakePluginHost({pluginId:"resource-test",sdk:{threads:{
+ const {alia}=createFakePluginHost({pluginId:"resource-test",sdk:{threads:{
    get:async({threadId})=>makeThreadResponse({id:threadId,projectId:"p",providerId:"pi",status:"idle"}),
    events:{list:async({threadId,afterSeq})=>(events.get(threadId)??[]).filter(r=>r.seq>Number(afterSeq??0))},
  }}});
  const owner=async(id:string)=>owners.get(id)??null;
- const create=()=>new ResourceControl(bb,owner,()=>{},()=>now);
+ const create=()=>new ResourceControl(alia,owner,()=>{},()=>now);
  let control=create();let seq=0;
  const event=(id:string,type:string,data:unknown)=>{const row={id:`e${++seq}`,threadId:id,scope:"thread",seq,createdAt:now,type,data} as ThreadEventRow;events.set(id,[...(events.get(id)??[]),row]);};
  const ctx=(id="dev",request="1",initiator="agent")=>({thread:makeThreadResponse({id,projectId:"p",providerId:"pi",status:"idle",updatedAt:now}),attempt:"start-turn",queuedMessages:[{id:request}],input:{text:request,blocks:[]},requestedExecution:{providerId:"pi",model:"ollama/model",reasoningLevel:null,serviceTier:null,permissionMode:null},initiator} as unknown as MessageDispatchHookContext);
- return {bb,owners,event,ctx,owner,scope:base,get control(){return control;},restart(){control=create();},tick(){now+=1000;},fail:(patch:Partial<PluginTurnFailedEvent>={})=>({threadId:"dev",requestId:"req-1",turnId:null,inputAccepted:false,errorInfo:{category:"budget-exceeded",httpStatusCode:429,providerCode:"quota"},rateLimits:null,attemptNumber:1,originPluginId:"team",...patch} as PluginTurnFailedEvent)};
+ return {alia,owners,event,ctx,owner,scope:base,get control(){return control;},restart(){control=create();},tick(){now+=1000;},fail:(patch:Partial<PluginTurnFailedEvent>={})=>({threadId:"dev",requestId:"req-1",turnId:null,inputAccepted:false,errorInfo:{category:"budget-exceeded",httpStatusCode:429,providerCode:"quota"},rateLimits:null,attemptNumber:1,originPluginId:"team",...patch} as PluginTurnFailedEvent)};
 }
 describe("durable Team resource admission",()=>{
  it("counts one admission across queue re-evaluation, event replay and reload",async()=>{
@@ -101,7 +101,7 @@ it("failure replay after a deliberate repair does not re-block the task",async()
  await f.control.failed(failed,[]);await f.control.decide(f.scope,"Reduce the input",undefined,"task-1");f.restart();await f.control.failed(failed,[]);
  f.tick();expect((await f.control.admit(f.ctx("dev","fixed"))).action).toBe("proceed");
 });
-it("observes explicit BB overrides and preserves the cumulative baseline from before accounting",async()=>{
+it("observes explicit VesnALIA overrides and preserves the cumulative baseline from before accounting",async()=>{
  const f=fixture();
  f.event("dev","turn/started",{});f.event("dev","thread/tokenUsage/updated",{tokenUsage:{total:{totalTokens:12}}});f.event("dev","turn/completed",{status:"completed"});
  await f.control.watch("dev");const s=await f.control.inspect(f.scope);expect(s.starts).toBe(1);expect(s.attempts[0]?.initiator).toBe("override/observed");expect(s.reportedTokens).toBe(12);
@@ -134,6 +134,6 @@ it("a core retry queued before turn.failed is not mistaken for the old reservati
 });
 
 it("unavailable request history explicitly stops automatic quota recovery",async()=>{
- const {bb}=createFakePluginHost({pluginId:"history-test",sdk:{threads:{events:{list:async()=>{throw new Error("Unavailable");}}}}});
- const f=fixture();await expect(verifyQuotaBoundary(bb,f.fail(),{atMs:1000} as WorkCheckpoint)).rejects.toMatchObject({code:"checkpoint_history_unavailable"});
+ const {alia}=createFakePluginHost({pluginId:"history-test",sdk:{threads:{events:{list:async()=>{throw new Error("Unavailable");}}}}});
+ const f=fixture();await expect(verifyQuotaBoundary(alia,f.fail(),{atMs:1000} as WorkCheckpoint)).rejects.toMatchObject({code:"checkpoint_history_unavailable"});
 });

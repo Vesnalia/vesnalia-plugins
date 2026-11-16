@@ -2,8 +2,8 @@ import {
   PluginCliError,
   cliCommand,
   defineCli,
-  type BbPluginApi,
-} from "@get-bb/plugin-sdk";
+  type AliaPluginApi,
+} from "@vesnalia/plugin-sdk";
 import {
   drmanhattanHostContract,
   drmanhattanRpcContract,
@@ -28,7 +28,7 @@ const RETRY_MS = 30_000;
 /** The installer downloads a release; the host call gets longer than its 30 s default. */
 const SETUP_TIMEOUT_MS = 5 * 60_000;
 
-/** What bb's agents are told when their machine has drmanhattan. */
+/** What VesnALIA's agents are told when their machine has drmanhattan. */
 export const AGENT_INSTRUCTIONS = `## Running commands through drmanhattan
 This machine runs drmanhattan, a local queue for heavy commands. Run builds, tests and
 other long or heavy commands through it:
@@ -39,7 +39,7 @@ Long commands wait for a free slot, so they never overlap with other threads' bu
 commands that usually finish in seconds here start at once. It prints the output and exits
 with the command's exit code. If your own tool times out while waiting, don't submit again:
 the run carries on, and \`manhattan follow <name>\` (the name after \`as\` in the line
-\`submit\` printed) prints its output and exits with its exit code. \`bb drmanhattan runs\`
+\`submit\` printed) prints its output and exits with its exit code. \`alia drmanhattan runs\`
 lists this thread's runs; \`manhattan status\` shows the whole queue.
 
 Start dev servers and databases as services, never with \`--wait\`:
@@ -58,7 +58,7 @@ function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-/** One run as a line of `bb drmanhattan` output. */
+/** One run as a line of `alia drmanhattan` output. */
 export function describeRun(run: Run): string {
   const state = isActive(run) ? run.state : "";
   const line = [run.runId, state, runDetail(run), run.label].filter((part) => part !== "").join("  ");
@@ -87,9 +87,9 @@ function describeQueue(queue: Queue, heading: string): string {
 }
 
 export default async function drmanhattanPlugin(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
 ): Promise<void> {
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     agentInstructions: {
       type: "boolean",
       label: "Tell agents to run heavy commands through drmanhattan",
@@ -113,7 +113,7 @@ export default async function drmanhattanPlugin(
     stopOnArchive = next.stopServicesOnArchive;
   });
 
-  const host = bb.hosts.experimental_client({
+  const host = alia.hosts.experimental_client({
     contract: drmanhattanHostContract,
   });
   const availability = new Map<string, Availability>();
@@ -134,9 +134,9 @@ export default async function drmanhattanPlugin(
   }
 
   async function hostOfThread(threadId: string): Promise<string | null> {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (!thread.environmentId) return null;
-    const environment = await bb.sdk.environments.get({
+    const environment = await alia.sdk.environments.get({
       environmentId: thread.environmentId,
     });
     return environment.hostId ?? null;
@@ -190,7 +190,7 @@ export default async function drmanhattanPlugin(
 
   /** Each connected machine's whole queue, for the drmanhattan page. */
   async function machines(): Promise<{ machines: MachineQueue[] }> {
-    const hosts = (await bb.sdk.hosts.list()).filter(
+    const hosts = (await alia.sdk.hosts.list()).filter(
       (candidate) => candidate.status === "connected",
     );
     return {
@@ -243,11 +243,11 @@ export default async function drmanhattanPlugin(
       result = { ok: false, message: errorText(error) };
     }
     await hostStatus(hostId, null, 0).catch(() => null);
-    bb.log.info(`drmanhattan ${action} on ${hostId}: ${result.message}`);
+    alia.log.info(`drmanhattan ${action} on ${hostId}: ${result.message}`);
     return result;
   }
 
-  bb.rpc.register(drmanhattanRpcContract, {
+  alia.rpc.register(drmanhattanRpcContract, {
     threadRuns: ({ threadId }) => threadRuns(threadId, PANEL_FINISHED),
     cancelRun: ({ threadId, runId }) => cancelThreadRun(threadId, runId),
     machines: () => machines(),
@@ -262,7 +262,7 @@ export default async function drmanhattanPlugin(
    */
   async function stopThreadServices(threadId: string): Promise<void> {
     if (!stopOnArchive || !SESSION_PATTERN.test(threadId)) return;
-    const hosts = (await bb.sdk.hosts.list()).filter(
+    const hosts = (await alia.sdk.hosts.list()).filter(
       (candidate) =>
         candidate.status === "connected" && availability.get(candidate.id) !== "missing",
     );
@@ -271,20 +271,20 @@ export default async function drmanhattanPlugin(
         try {
           const result = await host.call("stopServices", { session: threadId }, { hostId: candidate.id });
           if (result.stopped.length > 0) {
-            bb.log.info(`Stopped thread ${threadId}'s services on ${candidate.id}: ${result.stopped.join(", ")}`);
+            alia.log.info(`Stopped thread ${threadId}'s services on ${candidate.id}: ${result.stopped.join(", ")}`);
           }
-          if (!result.ok) bb.log.warn(`Thread ${threadId} on ${candidate.id}: ${result.message}`);
+          if (!result.ok) alia.log.warn(`Thread ${threadId} on ${candidate.id}: ${result.message}`);
         } catch (error) {
-          bb.log.warn(`Could not stop thread ${threadId}'s services on ${candidate.id}: ${errorText(error)}`);
+          alia.log.warn(`Could not stop thread ${threadId}'s services on ${candidate.id}: ${errorText(error)}`);
         }
       }),
     );
   }
 
-  bb.events.on("thread.archived", ({ thread }) => stopThreadServices(thread.id));
-  bb.events.on("thread.deleted", ({ thread }) => stopThreadServices(thread.id));
+  alia.events.on("thread.archived", ({ thread }) => stopThreadServices(thread.id));
+  alia.events.on("thread.deleted", ({ thread }) => stopThreadServices(thread.id));
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const state = availability.get(context.host.id);
     if (state === undefined) requestProbe(context.host.id);
     if (state !== "installed") return { tools: [], skills: [] };
@@ -322,7 +322,7 @@ export default async function drmanhattanPlugin(
       const hostId = await hostOfThread(threadId);
       if (hostId !== null) return hostId;
     }
-    const connected = (await bb.sdk.hosts.list()).filter(
+    const connected = (await alia.sdk.hosts.list()).filter(
       (candidate) => candidate.status === "connected",
     );
     if (connected.length === 1 && connected[0] !== undefined) {
@@ -330,7 +330,7 @@ export default async function drmanhattanPlugin(
     }
     throw new PluginCliError("Which machine? Several are connected.", {
       code: "machine_required",
-      hint: "Add --machine <host-id>; `bb machine list` prints the ids.",
+      hint: "Add --machine <host-id>; `alia machine list` prints the ids.",
     });
   }
 
@@ -345,7 +345,7 @@ export default async function drmanhattanPlugin(
     });
   }
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "drmanhattan",
       summary: "The drmanhattan job queue: this thread's runs and the whole queue",
@@ -386,7 +386,7 @@ export default async function drmanhattanPlugin(
             machine: {
               type: "string",
               description:
-                "Host id, as `bb machine list` prints it (default: this thread's machine, or the only connected one)",
+                "Host id, as `alia machine list` prints it (default: this thread's machine, or the only connected one)",
             },
             json,
           },
@@ -407,7 +407,7 @@ export default async function drmanhattanPlugin(
           positionals: [
             {
               name: "run-id",
-              description: "The run id, as `bb drmanhattan runs` prints it",
+              description: "The run id, as `alia drmanhattan runs` prints it",
               required: true,
             },
           ],
@@ -460,7 +460,7 @@ export default async function drmanhattanPlugin(
   async function probe(signal: AbortSignal): Promise<boolean> {
     let failed = false;
     try {
-      const hosts = await bb.sdk.hosts.list({ signal });
+      const hosts = await alia.sdk.hosts.list({ signal });
       const all = probeAll;
       const wanted = new Set(probeHosts);
       probeAll = false;
@@ -478,7 +478,7 @@ export default async function drmanhattanPlugin(
             } catch (error) {
               if (signal.aborted) return;
               failed = true;
-              bb.log.warn(
+              alia.log.warn(
                 `Could not look for drmanhattan on ${candidate.id}: ${errorText(error)}`,
               );
             }
@@ -487,7 +487,7 @@ export default async function drmanhattanPlugin(
     } catch (error) {
       if (!signal.aborted) {
         failed = true;
-        bb.log.warn(`Could not list machines: ${errorText(error)}`);
+        alia.log.warn(`Could not list machines: ${errorText(error)}`);
       }
     }
     return failed;
@@ -511,9 +511,9 @@ export default async function drmanhattanPlugin(
     });
   }
 
-  bb.background.service("probe", {
+  alia.background.service("probe", {
     async start(signal) {
-      const unsubscribe = bb.sdk.subscribe({
+      const unsubscribe = alia.sdk.subscribe({
         event: "host:changed",
         callback: (event) => {
           if (event.changes.includes("host-connected")) requestProbe(event.id);

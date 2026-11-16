@@ -13,7 +13,7 @@ and the API token, below.
 The operator dogfoods a project that shares a keyboard and mouse between
 machines over a tailnet. Its threads need X11 desktop boxes that are nodes
 of the operator's tailnet, so the app in a box can reach the operator's
-machines and other boxes, and be reached from them. Nothing in bb-box
+machines and other boxes, and be reached from them. Nothing in alia-box
 joins a tailnet today, and an image must hold no node of its own (049).
 
 Measured in a `linux` box on Proxmox LXC and one on Docker, whose host was
@@ -50,7 +50,7 @@ No box joins unless asked. The narrowest setting wins:
   box of the kind joins.
 - **An image** (049): `tailnet: true`, so a project's threads join when
   their boxes use the project's image. The example project sets this.
-- **A box**: `box_acquire` and `bb box acquire` take `tailnet` (true or
+- **A box**: `box_acquire` and `alia box acquire` take `tailnet` (true or
   false), and New box has "Join the tailnet", ticked when the kind or the
   image says so.
 
@@ -61,36 +61,36 @@ Spares and warm guests never join: a spare joins when a thread takes it.
 ### The key
 
 The configuration has a `tailnet` part: the key, a secret kept write-only
-like the providers' credentials, and the tags, `tag:bb-box` by default.
-bb-box tells the two forms apart by their prefix.
+like the providers' credentials, and the tags, `tag:alia-box` by default.
+alia-box tells the two forms apart by their prefix.
 
 - **An OAuth client (recommended)**, with the `auth_keys` scope, the tags,
-  and `devices:core`. For each join, bb-box gets an access token (good for
+  and `devices:core`. For each join, alia-box gets an access token (good for
   an hour) and creates a one-off, ephemeral, pre-approved key with the
   tags that expires in 5 minutes. The box only ever holds a key that
   cannot be used again, the secret does not expire, and `devices:core`
-  lets bb-box remove a node whose box could not log out.
+  lets alia-box remove a node whose box could not log out.
 - **An auth key**: reusable, ephemeral, pre-approved and tagged. It goes
   into the box for the join, and it lasts at most 90 days, so the doctor
   says when to replace it.
 
 ### Joining
 
-A box joins once it is ready, at the same time as BB enrolment, and is
+A box joins once it is ready, at the same time as VesnALIA enrolment, and is
 handed over when both are done.
 
-1. bb-box creates a key, or takes the auth key.
+1. alia-box creates a key, or takes the auth key.
 2. Through the command transport, it writes the key on standard input to
    a file in `/run` that only root can read, and runs a guest script,
-   `bb-box-tailnet up`. The script starts tailscaled, runs the line below
+   `alia-box-tailnet up`. The script starts tailscaled, runs the line below
    and removes the file.
-3. bb-box records the node's ID, addresses and MagicDNS name from
+3. alia-box records the node's ID, addresses and MagicDNS name from
    `tailscale status --json`. The box's details and `box_acquire`'s result
    show them, such as "Tailnet: calm-heron, 100.64.0.7".
 
 ```
-tailscale up --auth-key=file:/run/bb-box/tailnet-key \
-  --advertise-tags=tag:bb-box --hostname=<box name> \
+tailscale up --auth-key=file:/run/alia-box/tailnet-key \
+  --advertise-tags=tag:alia-box --hostname=<box name> \
   --accept-dns=<true where systemd-resolved runs> --timeout=30s
 ```
 
@@ -99,9 +99,9 @@ tailscale up --auth-key=file:/run/bb-box/tailnet-key \
   finds the usual causes first.
 - **tailscaled starts on demand**, not at boot: with systemd where there is
   one, and on Docker, which has none, in a loop that restarts it, as
-  `bb-box-start` keeps its other services.
+  `alia-box-start` keeps its other services.
 - **Nothing else.** Boxes do not advertise or accept routes, are not exit
-  nodes, and do not run Tailscale SSH. bb-box reaches boxes through its own
+  nodes, and do not run Tailscale SSH. alia-box reaches boxes through its own
   transports, never over the tailnet.
 - **In the images.** Standard Linux images carry Tailscale from its apt
   repository, stopped. Finalizing removes `/var/lib/tailscale`, which holds
@@ -111,13 +111,13 @@ tailscale up --auth-key=file:/run/bb-box/tailnet-key \
 
 ### Leaving
 
-- **On release or stop**, before bb-box removes the box from BB or stops
-  it, it runs `bb-box-tailnet down`, which runs `tailscale logout`, with a
+- **On release or stop**, before alia-box removes the box from VesnALIA or stops
+  it, it runs `alia-box-tailnet down`, which runs `tailscale logout`, with a
   10 s limit. An ephemeral node that logs out is removed at once, so its
   name is free for the next box. A box started again joins again with a
   new key.
 - **When the box cannot log out**, because it is gone or does not answer,
-  bb-box removes the node through the API by its recorded ID, and the
+  alia-box removes the node through the API by its recorded ID, and the
   sweep retries until it is gone. This needs `devices:core`. Without it,
   Tailscale removes the node 30 to 60 minutes after it went offline.
 
@@ -154,22 +154,22 @@ and the doctor says how to give the host TUN.
 
 ### The tailnet's policy
 
-bb-box assumes only:
+alia-box assumes only:
 
 - `tagOwners` lets the OAuth client or the key's owner give the tags, and
   the OAuth client was created with them.
 - Tailnet Lock is off, or the key is an auth key signed in advance with
-  `tailscale lock sign`. bb-box cannot sign the keys it creates.
+  `tailscale lock sign`. alia-box cannot sign the keys it creates.
 
 Who may reach boxes, and what boxes may reach, is the project's to grant.
 For the example project, people's devices and boxes reach each other and
 boxes reach each other; narrow `ip` to the ports the project uses:
 
 ```json
-"tagOwners": {"tag:bb-box": ["autogroup:admin"]},
+"tagOwners": {"tag:alia-box": ["autogroup:admin"]},
 "grants": [
-  {"src": ["autogroup:member"], "dst": ["tag:bb-box"], "ip": ["*"]},
-  {"src": ["tag:bb-box"], "dst": ["autogroup:member", "tag:bb-box"], "ip": ["*"]}
+  {"src": ["autogroup:member"], "dst": ["tag:alia-box"], "ip": ["*"]},
+  {"src": ["tag:alia-box"], "dst": ["autogroup:member", "tag:alia-box"], "ip": ["*"]}
 ]
 ```
 
@@ -198,7 +198,7 @@ is gone within 10 s.
   root@pam".
 - That a privileged Docker box sees `/dev/net/tun` once its LXC Docker
   host has the device.
-- The time to join, expected to be under 3 s and hidden by BB enrolment.
+- The time to join, expected to be under 3 s and hidden by VesnALIA enrolment.
 
 ## Consequences
 
@@ -207,18 +207,18 @@ is gone within 10 s.
   hand.
 - One secret to set once. With an OAuth client, none to replace.
 - Proxmox LXC templates need `build.sh` once more, as root, for TUN.
-- A box on the tailnet is reachable by whatever the policy allows. bb-box
+- A box on the tailnet is reachable by whatever the policy allows. alia-box
   is not a boundary between the agent in a box and the tailnet.
-- MagicDNS is off in Docker boxes: use the addresses bb-box shows.
+- MagicDNS is off in Docker boxes: use the addresses alia-box shows.
 
 ## Plan of PRs
 
 1. The `tailnet` part of the configuration and its secret, the settings
    page's section, and the doctor's checks.
-2. Tailscale in standard Linux images, the `bb-box-tailnet` guest script,
+2. Tailscale in standard Linux images, the `alia-box-tailnet` guest script,
    the device in `build.sh`, and Docker's arguments.
 3. Joining and leaving in core: the options for kinds, images,
-   `box_acquire`, `bb box acquire` and New box, the box's record and
+   `box_acquire`, `alia box acquire` and New box, the box's record and
    details, the sweep, and the conformance test.
 4. The setup guide's tailnet page: the policy, the OAuth client, and
    `build.sh` again.

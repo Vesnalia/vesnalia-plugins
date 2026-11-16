@@ -6,7 +6,7 @@
 // Why: these used to be copied by hand into both entry files, on the belief
 // that the frontend could not import values at all. It cannot import from
 // the backend's modules (that would pull Node-only code into the browser
-// bundle), but `bb plugin build` bundles each entry point separately and
+// bundle), but `alia plugin build` bundles each entry point separately and
 // follows ordinary imports, so a file with no imports of its own is safe on
 // both sides. One copy means a new link kind or issue type is one edit.
 //
@@ -33,7 +33,7 @@ export const CLOSED_STATUS = "closed";
 /**
  * The status of an issue set aside for later, shown as "Someday": beads'
  * own deferred status, and on GitHub issues the label someday, read by bend
- * as this status (bead-bb-26g).
+ * as this status (bead-alia-26g).
  */
 export const DEFERRED_STATUS = "deferred";
 
@@ -50,7 +50,7 @@ export const BEAD_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 export const CHANGED_CHANNEL = "beads-changed";
 
 /**
- * The link kinds the tab lets the user add (bead-bb-zty.4): beads' own
+ * The link kinds the tab lets the user add (bead-alia-zty.4): beads' own
  * dependency types, under beads' own names, and nothing else (the user:
  * "standard bead to bead rels semantics, nothing additional").
  *
@@ -72,7 +72,7 @@ export const LINK_KINDS = [
 export type LinkKind = (typeof LINK_KINDS)[number];
 
 /**
- * The message the quick-reply button sends (bead-bb-lit). It exists so the
+ * The message the quick-reply button sends (bead-alia-lit). It exists so the
  * user does not have to type "yes, go ahead" after every plan or question.
  * One is left, "Agree & continue". There was a plain "Go" as well; it went
  * when the message box got buttons for the real workflow moves, because it
@@ -80,10 +80,10 @@ export type LinkKind = (typeof LINK_KINDS)[number];
  * frontend shows the same text in the buttons' tooltips.
  */
 export const QUICK_REPLIES = {
-  // The user's wording (bead-bb-ahs), with "your" added and the
+  // The user's wording (bead-alia-ahs), with "your" added and the
   // exclamation mark dropped. "Recommendations" makes it an answer to an
   // agent's question that came with a recommendation, which the previous
-  // "Sounds good. Please proceed." (bead-bb-7jd) was not; "LGTM" makes it
+  // "Sounds good. Please proceed." (bead-alia-7jd) was not; "LGTM" makes it
   // read as approval at a review step. Earlier tries: "I agree with your
   // recommendations. Go ahead.", "Confirmed. Go ahead.", "Recommendations
   // confirmed. Go ahead."
@@ -91,27 +91,27 @@ export const QUICK_REPLIES = {
 } as const;
 
 /**
- * The things that get a folder ready for Airbender (bead-bb-80e), in the
+ * The things that get a folder ready for Airbender (bead-alia-80e), in the
  * order they make sense: the beads program on the machine, beads set up in
  * the folder (or its issues fetched), Airbender's instructions for agents,
  * the saved facts carried over, and the issues given somewhere to sync to.
- * Beads' own setup for a coding agent was one of them until bead-bb-c9l.8:
+ * Beads' own setup for a coding agent was one of them until bead-alia-c9l.8:
  * its instructions contradict the workflow, and Airbender's replace them.
  */
 export const SETUP_ACTIONS = [
   // Choose where the issues are kept: beads or GitHub issues
-  // (bead-bb-c9l.9). The option is the tracker's name.
+  // (bead-alia-c9l.9). The option is the tracker's name.
   "tracker",
   "install",
   // Install a verified bend release, or build from the included source
-  // (bead-bb-c9l.4, bead-bb-bk2).
+  // (bead-alia-c9l.4, bead-alia-bk2).
   "bend",
   "init",
   // Get the issues of a repository that already has them on its remote
   // (a fresh clone), in place of "init".
   "fetch",
   // Airbender's instructions for agents in place of beads' own
-  // (bead-bb-c9l.8): writes the rules, and takes beads' generated blocks
+  // (bead-alia-c9l.8): writes the rules, and takes beads' generated blocks
   // and hooks out.
   "rules",
   // Carry facts saved in beads over to the facts file; the option is the
@@ -120,13 +120,13 @@ export const SETUP_ACTIONS = [
   // Give the folder's issues a remote and sync them for the first time.
   "sync",
   // Commit the files setup wrote (.bend.json, AGENTS.md, CLAUDE.md,
-  // FACTS.md), and nothing else (bead-bb-25p).
+  // FACTS.md), and nothing else (bead-alia-25p).
   "commit",
 ] as const;
 export type SetupAction = (typeof SETUP_ACTIONS)[number];
 
 /**
- * The coding agents BB runs, which beads has a setup of its own for. That
+ * The coding agents VesnALIA runs, which beads has a setup of its own for. That
  * setup is no longer offered (see SETUP_ACTIONS); the list is what beads'
  * hooks are looked for, and removed, by.
  */

@@ -8,9 +8,9 @@ const panelOnly = { ...closed, panelOpen: true };
 const both = { ...closed, navOpen: true, panelOpen: true };
 const reader = (width: number, height: number, state: LayoutState) => readerWidth(width, state, workspaceLayout(width, height, state));
 
-// The spec's pane widths (BB's title bar takes 48px of the height), with the navigator only, the panel only, and both wanted.
+// The spec's pane widths (VesnALIA's title bar takes 48px of the height), with the navigator only, the panel only, and both wanted.
 describe.each([
-  { pane: "desktop 1440, BB's thread list open", width: 1120, height: 852, nav: 832, panel: 720, both: { nav: "suppressed", reader: 720 } },
+  { pane: "desktop 1440, VesnALIA's thread list open", width: 1120, height: 852, nav: 832, panel: 720, both: { nav: "suppressed", reader: 720 } },
   { pane: "desktop 1440, thread list collapsed", width: 1388, height: 852, nav: 1100, panel: 988, both: { nav: "docked", reader: 700 } },
   { pane: "iPad landscape, thread list open", width: 1056, height: 984, nav: 768, panel: 656, both: { nav: "suppressed", reader: 656 } },
   { pane: "iPad landscape, thread list collapsed", width: 1322, height: 984, nav: 1034, panel: 922, both: { nav: "docked", reader: 634 } },
@@ -30,7 +30,7 @@ describe.each([
   });
 });
 
-test("iPad portrait with BB's thread list open (712): neither side docks, and each opens only over the code", () => {
+test("iPad portrait with VesnALIA's thread list open (712): neither side docks, and each opens only over the code", () => {
   expect(workspaceLayout(712, 1328, both)).toMatchObject({ mode: "tablet", nav: "closed", panel: "closed", navCanDock: false, panelCanDock: false });
   expect(workspaceLayout(712, 1328, { ...both, navOverlay: true })).toMatchObject({ nav: "overlay", panel: "closed" });
   expect(workspaceLayout(712, 1328, { ...both, panelOverlay: true })).toMatchObject({ nav: "closed", panel: "overlay" });
@@ -47,7 +47,7 @@ test("a phone (390 × 796) gets phone mode, where an open side is the sheet", ()
   expect(workspaceLayout(390, 796, { ...both, panelOverlay: true })).toMatchObject({ mode: "phone", panel: "overlay" });
 });
 
-// The user's phones (lanes/00-devices.md): Safari's page, less BB's 48px title bar.
+// The user's phones (lanes/00-devices.md): Safari's page, less VesnALIA's 48px title bar.
 const DEVICES = {
   "pm-portrait": { width: 430, height: 727 },
   "pm-landscape": { width: 932, height: 382 },
@@ -121,7 +121,7 @@ describe("the user's phones", () => {
     }
   });
 
-  test("folded while docked, Comments becomes the sheet; BB's pane narrowing instead hides it until there's room", () => {
+  test("folded while docked, Comments becomes the sheet; VesnALIA's pane narrowing instead hides it until there's room", () => {
     const docked = at("duo-inner-landscape", panelOnly);
     expect(docked.panel).toBe("docked");
     expect(at("duo-outer", panelOnly, docked, true)).toMatchObject({ mode: "phone", panel: "overlay" });
@@ -145,7 +145,7 @@ describe("the user's phones", () => {
     expect(at("duo-outer", { ...panelOnly, typingIn: "panel" }, docked, true).panel).toBe("overlay");
   });
 
-  test("chapters opened over the code and docked by an unfold go back over it as it folds; BB's pane narrowing, or typing elsewhere, hides them", () => {
+  test("chapters opened over the code and docked by an unfold go back over it as it folds; VesnALIA's pane narrowing, or typing elsewhere, hides them", () => {
     const opened = { ...navOnly, navOverlay: true };
     const docked = at("duo-inner-landscape", opened, at("duo-outer", opened), true);
     expect(docked.nav).toBe("docked");
@@ -171,7 +171,7 @@ test("modes switch at 600 wide and 500 tall, and only 16px past that once decide
   expect(workspaceLayout(1200, 510, closed, short).mode).toBe("short");
   expect(workspaceLayout(1200, 516, closed, short).mode).toBe("tablet");
   expect(workspaceLayout(1200, 490, closed, tablet).mode).toBe("tablet");
-  // The unfolded Duo held sideways beside BB's thread list is a tablet, whatever it was before; the phones stay phones,
+  // The unfolded Duo held sideways beside VesnALIA's thread list is a tablet, whatever it was before; the phones stay phones,
   // and held sideways, short.
   expect(workspaceLayout(631, 541, closed).mode).toBe("tablet");
   expect(workspaceLayout(631, 541, closed, phone).mode).toBe("tablet");
@@ -180,8 +180,8 @@ test("modes switch at 600 wide and 500 tall, and only 16px past that once decide
   expect(workspaceLayout(612, 382, closed).mode).toBe("short");
 });
 
-test("on a desktop's or an iPad's screen, a review beside BB's side panel keeps the tablet layout down to 480 wide", () => {
-  // A 1440px window, BB's thread list and its side panel at its default width: the review is 560 wide.
+test("on a desktop's or an iPad's screen, a review beside VesnALIA's side panel keeps the tablet layout down to 480 wide", () => {
+  // A 1440px window, VesnALIA's thread list and its side panel at its default width: the review is 560 wide.
   expect(workspaceLayout(560, 952, closed, undefined, false, false)).toMatchObject({ mode: "tablet", navCanDock: false, panelCanDock: false });
   expect(workspaceLayout(560, 952, { ...both, panelOverlay: true }, undefined, false, false)).toMatchObject({ mode: "tablet", panel: "overlay" });
   expect(workspaceLayout(480, 952, closed, undefined, false, false).mode).toBe("tablet");
@@ -206,8 +206,8 @@ test("the panel docks narrower, down to 320, rather than squeeze the code under 
 
 // Where §3.1 opens a panel saved wider than its room over the code, it docks narrower: code at 560 beats an overlay.
 test.each([
-  { pane: "iPad landscape, BB's thread list open", width: 1056, height: 984, panelWidth: 640, docked: 496 },
-  { pane: "desktop 1440, BB's thread list open", width: 1120, height: 852, panelWidth: 640, docked: 560 },
+  { pane: "iPad landscape, VesnALIA's thread list open", width: 1056, height: 984, panelWidth: 640, docked: 496 },
+  { pane: "desktop 1440, VesnALIA's thread list open", width: 1120, height: 852, panelWidth: 640, docked: 560 },
   { pane: "iPad portrait, thread list collapsed", width: 978, height: 1328, panelWidth: 640, docked: 418 },
 ])("$pane ($width) with a panel saved at $panelWidth: it docks at $docked beside 560px of code, the chapters suppressed", ({ width, height, panelWidth, docked }) => {
   const state = { ...both, panelWidth };
@@ -225,7 +225,7 @@ test("a docked side stays docked until the code is 16px under 560, and docks aga
   const squeezed = workspaceLayout(865, 800, panelOnly, narrowed);
   expect(squeezed.panel).toBe("docked");
   expect(readerWidth(865, panelOnly, squeezed)).toBe(545);
-  // Out of room, a panel that was docked closes rather than covering the code: BB's pane narrowed, not the window.
+  // Out of room, a panel that was docked closes rather than covering the code: VesnALIA's pane narrowed, not the window.
   const out = workspaceLayout(863, 800, panelOnly, squeezed);
   expect(out).toMatchObject({ panel: "closed", panelCanDock: false });
   expect(workspaceLayout(879, 800, panelOnly, out).panel).toBe("closed");
@@ -339,7 +339,7 @@ describe("useWorkspaceLayout", () => {
     expect(result.current.mode).toBe("phone");
   });
 
-  test("BB's pane shrunk above a phone's keyboard while you type stays a phone; a pane shorter otherwise is short", () => {
+  test("VesnALIA's pane shrunk above a phone's keyboard while you type stays a phone; a pane shorter otherwise is short", () => {
     const resize = stubResizeObserver({ width: 390, height: 796 });
     const el = document.body.appendChild(document.createElement("div"));
     const box = el.appendChild(document.createElement("textarea"));
@@ -347,7 +347,7 @@ describe("useWorkspaceLayout", () => {
     const { result } = renderHook(() => useWorkspaceLayout(el, both));
     expect(result.current.mode).toBe("phone");
     act(() => box.focus());
-    // BB resizes its pane to the 508px above a 336px keyboard: 460 tall.
+    // VesnALIA resizes its pane to the 508px above a 336px keyboard: 460 tall.
     act(() => resize({ width: 390, height: 460 }));
     expect(result.current.mode).toBe("phone");
     act(() => box.blur());
@@ -358,7 +358,7 @@ describe("useWorkspaceLayout", () => {
     expect(result.current.mode).toBe("short");
   });
 
-  test("done typing, a phone stays a phone while BB's pane grows back as the keyboard goes, for up to a second; a turn ends that at once", () => {
+  test("done typing, a phone stays a phone while VesnALIA's pane grows back as the keyboard goes, for up to a second; a turn ends that at once", () => {
     vi.useFakeTimers();
     restores.push(() => vi.useRealTimers());
     const resize = stubResizeObserver({ width: 390, height: 796 });
@@ -370,14 +370,14 @@ describe("useWorkspaceLayout", () => {
       act(() => box.focus());
       act(() => resize({ width: 390, height: 460 }));
       act(() => box.blur());
-      // The keyboard goes: the visual viewport resizes before BB's pane follows it.
+      // The keyboard goes: the visual viewport resizes before VesnALIA's pane follows it.
       act(() => resize({ width: 390, height: 460 }));
     };
     typeThenDone();
     expect(result.current.mode).toBe("phone");
     act(() => resize({ width: 390, height: 796 }));
     expect(result.current.mode).toBe("phone");
-    // BB's pane still short a second on: it's a phone held sideways' after all.
+    // VesnALIA's pane still short a second on: it's a phone held sideways' after all.
     typeThenDone();
     el.getBoundingClientRect = () => new DOMRect(0, 48, 390, 460);
     act(() => { vi.advanceTimersByTime(1000); });
@@ -395,7 +395,7 @@ describe("useWorkspaceLayout", () => {
     restores.push(() => media.mockRestore());
   }
 
-  test("folded with Comments docked, the window resizes and Comments becomes the sheet; BB's pane narrowing hides it", () => {
+  test("folded with Comments docked, the window resizes and Comments becomes the sheet; VesnALIA's pane narrowing hides it", () => {
     stubPointer("coarse");
     const resize = stubResizeObserver({ width: 951, height: 541 });
     const window = stubWindow(951, 589);
@@ -417,7 +417,7 @@ describe("useWorkspaceLayout", () => {
     { resize: "a desktop's window snapping to a phone's size", pointer: "fine", from: { width: 951, height: 589 }, to: { width: 382, height: 598 } },
     { resize: "an iPad turning", pointer: "coarse", from: { width: 1376, height: 1032 }, to: { width: 1032, height: 1376 } },
     { resize: "an iPad going to half its screen in Split View", pointer: "coarse", from: { width: 1376, height: 1032 }, to: { width: 678, height: 1032 } },
-  ] as const)("$resize hides docked Comments, as BB's pane narrowing does, rather than open it over the code", ({ pointer, from, to }) => {
+  ] as const)("$resize hides docked Comments, as VesnALIA's pane narrowing does, rather than open it over the code", ({ pointer, from, to }) => {
     stubPointer(pointer);
     const resize = stubResizeObserver({ width: 1056, height: 984 });
     const window = stubWindow(from.width, from.height);
@@ -438,7 +438,7 @@ describe("useWorkspaceLayout", () => {
     el.getBoundingClientRect = () => new DOMRect(0, 48, size.width, size.height);
     const { result } = renderHook(() => useWorkspaceLayout(el, panelOnly));
     expect(result.current.panel).toBe("docked");
-    // The window has folded, and is measured as it reports so, while BB's pane is still the size it was.
+    // The window has folded, and is measured as it reports so, while VesnALIA's pane is still the size it was.
     window({ width: 382, height: 598 });
     act(() => { globalThis.window.dispatchEvent(new Event("resize")); });
     expect(result.current.panel).toBe("docked");

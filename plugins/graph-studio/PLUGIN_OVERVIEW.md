@@ -6,7 +6,7 @@ back. A back edge is a normal edge here, not a special case.
 
 ## A node is a thread, not a model call
 
-Each node spawns a BB thread, waits for it to go idle, and puts its last
+Each node spawns a VesnALIA thread, waits for it to go idle, and puts its last
 message into the graph's state. Your workers therefore show up in the sidebar
 where you can open them, they inherit the parent thread's environment and
 worktree, and they run on the provider subscriptions you already have. There
@@ -70,25 +70,25 @@ Graphs live centrally and are available in every project. To version or
 share one, export and import it:
 
 ```sh
-bb graph-studio export my-graph > .bb/graphs/my-graph.graph.json
-bb graph-studio import .bb/graphs/my-graph.graph.json
+alia graph-studio export my-graph > .vesnalia/graphs/my-graph.graph.json
+alia graph-studio import .vesnalia/graphs/my-graph.graph.json
 ```
 
 ## Drive it from the command line or from an agent
 
 ```sh
-bb graph-studio graphs [search]
-bb graph-studio run evaluator-optimizer "Write the onboarding text"
-bb graph-studio status <run-id>
+alia graph-studio graphs [search]
+alia graph-studio run evaluator-optimizer "Write the onboarding text"
+alia graph-studio status <run-id>
 ```
 
-An agent inside a BB thread can drive it too, through the `graph_studio_*`
+An agent inside a VesnALIA thread can drive it too, through the `graph_studio_*`
 tools.
 
 ## Requirements
 
-Requires BB 0.42+ and Plugin SDK 0.5.29+. No extra service, account or API
-key — runs use the providers BB already has.
+Requires VesnALIA 0.42+ and Plugin SDK 0.5.29+. No extra service, account or API
+key — runs use the providers VesnALIA already has.
 
 The Work templates run their steps on
 [Matt Pocock's skills](https://github.com/mattpocock/skills). Install them

@@ -20,7 +20,7 @@ export function validateRegistry(value) {
   for (const p of value.touchpoints) {
     exact(p, fields, p?.id ?? 'point');
     if (!text(p.id) || !/^[a-z][a-z0-9-]+$/.test(p.id) || ids.has(p.id)) fail('duplicate/invalid id'); ids.add(p.id);
-    if (!['bb', 'SDK', 'ZCode'].includes(p.product) || !text(p.uses) || !text(p.impact)) fail(p.id + ' product/description');
+    if (!['alia', 'SDK', 'ZCode'].includes(p.product) || !text(p.uses) || !text(p.impact)) fail(p.id + ' product/description');
     for (const name of ['code', 'milestones', 'sources']) if (!Array.isArray(p[name]) || !p[name].length || !p[name].every(text) || new Set(p[name]).size !== p[name].length) fail(p.id + ' ' + name);
     if (!p.code.every(safePath) || !p.sources.every(safePath) || !p.milestones.every(v => /^M\d[\d.a-z]*$/.test(v))) fail(p.id + ' paths/milestones');
     if (!Array.isArray(p.anchors) || !p.anchors.length) fail(p.id + ' anchors');
@@ -77,13 +77,13 @@ export function bundleReader(bundle) {
     const result = data.toString('latin1'); cache.set(file, result); return result;
   };
 }
-export function inspectCompatibility(registry, { bb = '/Applications/bb.app', zcode = '/Applications/ZCode.app' } = {}) {
+export function inspectCompatibility(registry, { alia = '/Applications/alia.app', zcode = '/Applications/ZCode.app' } = {}) {
   const start = performance.now(); validateRegistry(registry);
-  const readers = { bb: bundleReader(bb), ZCode: bundleReader(zcode) };
+  const readers = { alia: bundleReader(alia), ZCode: bundleReader(zcode) };
   const points = registry.touchpoints.map(p => {
     const anchors = p.anchors.map(a => {
       const attempts = [a.file, ...(a.alternativeFiles ?? [])].map(file => {
-        try { return { file, found: readers[p.product === 'SDK' ? 'bb' : p.product](file).includes(a.text), error: null }; }
+        try { return { file, found: readers[p.product === 'SDK' ? 'alia' : p.product](file).includes(a.text), error: null }; }
         catch (e) { return { file, found: false, error: e.code ?? e.message }; }
       });
       const match = attempts.find(attempt => attempt.found), found = !!match;
@@ -94,18 +94,18 @@ export function inspectCompatibility(registry, { bb = '/Applications/bb.app', zc
       status: anchors.some(a => a.status === 'not-found') ? 'not-found' : anchors.some(a => a.strength === 'weak') ? 'weak-anchor' : 'found' };
   });
   return { level: 0, elapsedMs: Math.round((performance.now() - start) * 100) / 100,
-    bundles: { bb: resolve(bb), ZCode: resolve(zcode) },
+    bundles: { alia: resolve(alia), ZCode: resolve(zcode) },
     summary: { points: points.length, found: points.filter(p => p.status === 'found').length,
       notFound: points.filter(p => p.status === 'not-found').length, weakAnchors: points.flatMap(p => p.anchors).filter(a => a.strength === 'weak').length,
-      products: Object.fromEntries(['bb', 'SDK', 'ZCode'].map(k => [k, points.filter(p => p.product === k).length])) },
+      products: Object.fromEntries(['alia', 'SDK', 'ZCode'].map(k => [k, points.filter(p => p.product === k).length])) },
     affected: points.filter(p => p.status !== 'found').map(p => ({ id: p.id, status: p.status, functions: p.code, impact: p.impact })), points,
     limits: 'Text anchors flag dependencies for review. Presence does not prove behavior, safety, or live compatibility. Weak anchors always require manual review.' };
 }
 function main(args) {
   const options = {};
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--help') { console.log('Usage: node scripts/provider/compat-level0.mjs [--bb /path/bb.app] [--zcode /path/ZCode.app] [--registry path.json]\nRead-only level 0; JSON on stdout; exit 0: all strong anchors found, 1: missing strong anchor, 2: invalid input.'); return; }
-    if (!['--bb', '--zcode', '--registry'].includes(args[i]) || !args[i + 1] || args[i + 1].startsWith('--')) throw Error('Unknown option or missing value: ' + args[i]);
+    if (args[i] === '--help') { console.log('Usage: node scripts/provider/compat-level0.mjs [--alia /path/alia.app] [--zcode /path/ZCode.app] [--registry path.json]\nRead-only level 0; JSON on stdout; exit 0: all strong anchors found, 1: missing strong anchor, 2: invalid input.'); return; }
+    if (!['--alia', '--zcode', '--registry'].includes(args[i]) || !args[i + 1] || args[i + 1].startsWith('--')) throw Error('Unknown option or missing value: ' + args[i]);
     options[args[i].slice(2)] = args[++i];
   }
   const registry = JSON.parse(readFileSync(options.registry ?? join(repo, 'compat/touchpoints.json'), 'utf8'));

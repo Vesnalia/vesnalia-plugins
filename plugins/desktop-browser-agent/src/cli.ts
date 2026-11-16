@@ -1,4 +1,4 @@
-import type { PluginCliRegistration } from "@get-bb/plugin-sdk";
+import type { PluginCliRegistration } from "@vesnalia/plugin-sdk";
 import { BROWSER_TOOLS, BROWSER_TOOL_NAMES, type BrowserTool } from "./browser-tools.js";
 import { driverToolName, forwardableArguments } from "./catalog.js";
 import type { BrowserBridgeState, DriverStatus, InstallState, ToolCallResult } from "./contract.js";
@@ -11,29 +11,29 @@ import { TESTED_DRIVER_VERSION } from "./snapshot.js";
 import type { CallOptions, IndexedCatalog, State, ToolView } from "../server.js";
 
 /**
- * The `bb cua` command. It parses argv and formats output; each action is a
+ * The `alia cua` command. It parses argv and formats output; each action is a
  * plugin function passed in as `deps`, so the CLI shares its gates with the
  * agent tools.
  */
 
 const USAGE = [
   "Usage:",
-  "  bb cua status [--host <id>] [--json]          Driver readiness, tested version, and drift",
-  "  bb cua drift [--host <id>] [--json]           Re-read the machine's tools and compare them with the tested driver",
-  "  bb cua tools [--host <id>] [--json]           Every driver tool and how agents reach it",
-  "  bb cua expose <tool> <tool|call|off|default>  Change how agents reach one tool",
-  "  bb cua call <tool> [<json-args>] [--host <id>]",
-  "  bb cua policy [<providerId> <cua|native|off|inherit>] [--json]",
-  "  bb cua mode <prefer-native|cua-everywhere|off>",
-  `  bb cua install --yes [--latest] [--host <id>] Install Cua Driver ${TESTED_DRIVER_VERSION} (or the newest release)`,
-  `  bb cua update --yes [--latest] [--host <id>]  Move to Cua Driver ${TESTED_DRIVER_VERSION} (or the newest release)`,
-  "  bb cua grant [--host <id>]                    Request macOS Accessibility + Screen Recording",
-  "  bb cua browser [status|install|uninstall|on|off] [--host <id>] [--json]  The optional browser extension and its bridge",
-  "  bb cua browser call <tool> [<json-args>] [--host <id>]  Call a browser_* tool (same rules as agents)",
+  "  VesnALIA cua status [--host <id>] [--json]          Driver readiness, tested version, and drift",
+  "  VesnALIA cua drift [--host <id>] [--json]           Re-read the machine's tools and compare them with the tested driver",
+  "  VesnALIA cua tools [--host <id>] [--json]           Every driver tool and how agents reach it",
+  "  VesnALIA cua expose <tool> <tool|call|off|default>  Change how agents reach one tool",
+  "  VesnALIA cua call <tool> [<json-args>] [--host <id>]",
+  "  VesnALIA cua policy [<providerId> <cua|native|off|inherit>] [--json]",
+  "  VesnALIA cua mode <prefer-native|cua-everywhere|off>",
+  `  VesnALIA cua install --yes [--latest] [--host <id>] Install Cua Driver ${TESTED_DRIVER_VERSION} (or the newest release)`,
+  `  VesnALIA cua update --yes [--latest] [--host <id>]  Move to Cua Driver ${TESTED_DRIVER_VERSION} (or the newest release)`,
+  "  VesnALIA cua grant [--host <id>]                    Request macOS Accessibility + Screen Recording",
+  "  VesnALIA cua browser [status|install|uninstall|on|off] [--host <id>] [--json]  The optional browser extension and its bridge",
+  "  VesnALIA cua browser call <tool> [<json-args>] [--host <id>]  Call a browser_* tool (same rules as agents)",
 ].join("\n");
 
 
-/** The plugin functions the `bb cua` command runs. server.ts supplies them. */
+/** The plugin functions the `alia cua` command runs. server.ts supplies them. */
 export interface CuaCliDeps {
   readCatalog(hostId: string): Promise<{ drift: DriftReport }>;
   hasCatalog(hostId: string): boolean;
@@ -105,20 +105,20 @@ export function cuaCli(deps: CuaCliDeps): PluginCliRegistration {
     name: "cua",
     summary: "Desktop & Browser Agent: Cua Driver readiness, tool exposure, routing policy, and raw tool calls",
     commands: [
-      { name: "status", summary: "Show Cua Driver readiness, tested version, and drift for a machine", usage: "bb cua status [--host <id>] [--json]" },
-      { name: "drift", summary: "Compare a machine's driver tools with the version this plugin was tested with", usage: "bb cua drift [--host <id>] [--json]" },
-      { name: "tools", summary: "List every Cua Driver tool and how agents reach it", usage: "bb cua tools [--host <id>] [--json]" },
-      { name: "expose", summary: "Offer a tool as a dedicated tool, through cua_call, or not at all", usage: "bb cua expose <tool> <tool|call|off|default>" },
-      { name: "call", summary: "Call a Cua Driver tool with JSON arguments (same exposure rules as agents)", usage: "bb cua call <tool> [<json-args>] [--host <id>]" },
-      { name: "policy", summary: "Show or set per-provider routing overrides", usage: "bb cua policy [<providerId> <cua|native|off|inherit>] [--json]" },
-      { name: "mode", summary: "Set the routing mode", usage: "bb cua mode <prefer-native|cua-everywhere|off>" },
-      { name: "install", summary: `Install Cua Driver ${TESTED_DRIVER_VERSION} with Cua's official installer (requires --yes)`, usage: "bb cua install --yes [--latest] [--host <id>]" },
-      { name: "update", summary: `Move Cua Driver to ${TESTED_DRIVER_VERSION}, or the newest release with --latest (requires --yes)`, usage: "bb cua update --yes [--latest] [--host <id>]" },
-      { name: "grant", summary: "Request macOS Accessibility and Screen Recording for CuaDriver.app", usage: "bb cua grant [--host <id>]" },
+      { name: "status", summary: "Show Cua Driver readiness, tested version, and drift for a machine", usage: "alia cua status [--host <id>] [--json]" },
+      { name: "drift", summary: "Compare a machine's driver tools with the version this plugin was tested with", usage: "alia cua drift [--host <id>] [--json]" },
+      { name: "tools", summary: "List every Cua Driver tool and how agents reach it", usage: "alia cua tools [--host <id>] [--json]" },
+      { name: "expose", summary: "Offer a tool as a dedicated tool, through cua_call, or not at all", usage: "alia cua expose <tool> <tool|call|off|default>" },
+      { name: "call", summary: "Call a Cua Driver tool with JSON arguments (same exposure rules as agents)", usage: "alia cua call <tool> [<json-args>] [--host <id>]" },
+      { name: "policy", summary: "Show or set per-provider routing overrides", usage: "alia cua policy [<providerId> <cua|native|off|inherit>] [--json]" },
+      { name: "mode", summary: "Set the routing mode", usage: "alia cua mode <prefer-native|cua-everywhere|off>" },
+      { name: "install", summary: `Install Cua Driver ${TESTED_DRIVER_VERSION} with Cua's official installer (requires --yes)`, usage: "alia cua install --yes [--latest] [--host <id>]" },
+      { name: "update", summary: `Move Cua Driver to ${TESTED_DRIVER_VERSION}, or the newest release with --latest (requires --yes)`, usage: "alia cua update --yes [--latest] [--host <id>]" },
+      { name: "grant", summary: "Request macOS Accessibility and Screen Recording for CuaDriver.app", usage: "alia cua grant [--host <id>]" },
       {
         name: "browser",
-        summary: "Set up the optional Browser Bridge for bb extension, or call its browser_* tools",
-        usage: "bb cua browser [status|install|uninstall|on|off|call <tool> [<json-args>]] [--host <id>] [--json]",
+        summary: "Set up the optional Browser Bridge for VesnALIA extension, or call its browser_* tools",
+        usage: "alia cua browser [status|install|uninstall|on|off|call <tool> [<json-args>]] [--host <id>] [--json]",
       },
     ],
     async run(argv, ctx) {
@@ -181,7 +181,7 @@ export function cuaCli(deps: CuaCliDeps): PluginCliRegistration {
         if (command === "expose") {
           const [tool, exposure] = rest;
           if (tool === undefined || exposure === undefined || ![...EXPOSURES, "default"].includes(exposure)) {
-            return { exitCode: 1, stderr: "Usage: bb cua expose <tool> <tool|call|off|default>" };
+            return { exitCode: 1, stderr: "Usage: VesnALIA cua expose <tool> <tool|call|off|default>" };
           }
           await saveExposure(tool, exposure as Exposure | "default");
           const name = driverToolName(tool);
@@ -231,7 +231,7 @@ export function cuaCli(deps: CuaCliDeps): PluginCliRegistration {
           if (!forwarded.ok) return { exitCode: 1, stderr: forwarded.error };
           const result = await callConfiguredDriver(await targetHost(), driverToolName(tool), forwarded.value, ctx);
           const text = contentText(result);
-          // bb caps CLI output at 1 MiB; a screenshot alone can exceed it.
+          // VesnALIA caps CLI output at 1 MiB; a screenshot alone can exceed it.
           const printable = {
             ...result,
             content: result.content.map((part) =>
@@ -246,7 +246,7 @@ export function cuaCli(deps: CuaCliDeps): PluginCliRegistration {
           const targetLabel = target === null ? "the newest Cua Driver release (untested with this plugin)" : `Cua Driver ${target}`;
           if (command === "update") {
             const status = await refreshStatus(hostId, true);
-            if (!status.installed) return { exitCode: 1, stderr: "Cua Driver is not installed on that machine; run `bb cua install --yes` first." };
+            if (!status.installed) return { exitCode: 1, stderr: "Cua Driver is not installed on that machine; run `alia cua install --yes` first." };
             if (target !== null && status.version === target) {
               return { exitCode: 0, stdout: `Cua Driver ${target} is already installed (the version this plugin was tested with).` };
             }
@@ -272,7 +272,7 @@ export function cuaCli(deps: CuaCliDeps): PluginCliRegistration {
           }
           if (!state.running) await refreshHost(hostId).catch(() => null);
           const summary = state.running
-            ? "Installer still running after 15 minutes; check `bb cua status` later."
+            ? "Installer still running after 15 minutes; check `alia cua status` later."
             : state.ok
               ? "Install finished."
               : "Install failed.";

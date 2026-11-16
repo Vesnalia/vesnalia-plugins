@@ -1,4 +1,4 @@
-// The Qlik Sense mark: a pie chart with one slice pulled out. bb's own icon set
+// The Qlik Sense mark: a pie chart with one slice pulled out. VesnALIA's own icon set
 // has no pie chart, and its column chart is taken by another plugin.
 export const ICON = "QlikChartPie";
 

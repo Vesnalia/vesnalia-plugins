@@ -200,7 +200,7 @@ test("a swipe cannot accept a changed, hidden, read-only, composing or detached 
   }
 });
 
-// BB's sidebar checks these exclusions during document capture for both event
+// VesnALIA's sidebar checks these exclusions during document capture for both event
 // families, so stopping propagation in an editor handler would be too late.
 test("padded text area reserves touch and pointer gestures before sidebar capture", () => {
   const f = fixture(); let sidebarStarts = 0;

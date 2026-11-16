@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import type { PluginNavPanelProps, PluginThreadPanelProps } from "@get-bb/plugin-sdk/app";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import type { PluginNavPanelProps, PluginThreadPanelProps } from "@vesnalia/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { LANES_CHANGED, type LanesSnapshot } from "../../shared/model";
 import type { rpcContract } from "../../shared/rpc";
@@ -23,7 +23,7 @@ const threads = [
 const sidebarThreads = {
   status: "ready" as const,
   threads,
-  projects: [makeProject({ id: "proj_a", name: "bb-lanes" }), makeProject({ id: "proj_b", name: "chillidonut" })],
+  projects: [makeProject({ id: "proj_a", name: "alia-lanes" }), makeProject({ id: "proj_b", name: "chillidonut" })],
   sections: [],
 };
 
@@ -130,7 +130,7 @@ describe("Lanes nav panel", () => {
     } finally { slot.lifecycle.unmount(); }
   });
 
-  it("restores the waiting turn when bb refuses an inline approval", async () => {
+  it("restores the waiting turn when VesnALIA refuses an inline approval", async () => {
     const app = await loadApp();
     const waiting = makeBlock({ id: "approval", threadId: "asks", start: NOW - 60_000, status: "waiting", title: "Review deployment", ask: {
       interactionId: "approval-id", kind: "approval", prompt: "Allow deployment?", canDecideInline: true,
@@ -231,13 +231,13 @@ describe("Lanes nav panel", () => {
     });
     await slot.findByText("Spec the pane");
     // Active is the default: the ancient idle lane with no turn in the window is hidden.
-    expect(screen.getByText("bb-lanes")).toBeTruthy();
+    expect(screen.getByText("alia-lanes")).toBeTruthy();
     expect(screen.getByText("chillidonut")).toBeTruthy();
     expect(screen.queryByText("Old experiment")).toBeNull();
     expect(screen.getByText("Write the migration")).toBeTruthy();
     // Group headers summarise in upstream's words, hiding parts that are zero.
-    const group = screen.getByRole("button", { name: /^bb-lanes,/ });
-    expect(group.getAttribute("aria-label")).toBe("bb-lanes, 2 running, 1 need you, 3 lanes");
+    const group = screen.getByRole("button", { name: /^alia-lanes,/ });
+    expect(group.getAttribute("aria-label")).toBe("alia-lanes, 2 running, 1 need you, 3 lanes");
     expect(within(group).getByText("1 need you")).toBeTruthy();
     expect(within(group).queryByText(/failed/)).toBeNull();
     expect(screen.getByRole("button", { name: /^chillidonut,/ }).getAttribute("aria-label")).toBe("chillidonut, 1 lane");

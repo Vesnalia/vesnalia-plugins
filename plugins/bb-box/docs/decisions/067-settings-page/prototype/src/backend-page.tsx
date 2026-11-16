@@ -18,7 +18,7 @@ export const REPOSITORY = "https://github.com/ahkohd/bb-box/blob/main";
 
 export const GROUPS: readonly { readonly id: string; readonly title: string; readonly description?: string; readonly folded?: boolean }[] = [
   { id: "connection", title: "Connection" },
-  { id: "credentials", title: "Credentials", description: "Kept secret: BB Box never shows them again, only whether each is set." },
+  { id: "credentials", title: "Credentials", description: "Kept secret: VesnALIA Box never shows them again, only whether each is set." },
   { id: "boxes", title: "Boxes", description: "What new boxes start from, and what they may do." },
   { id: "ios-hosts", title: "Shared iOS hosts", description: "ios boxes as macOS users on a shared Mac or VM, ready in seconds.", folded: true },
   { id: "advanced", title: "Advanced", folded: true },
@@ -49,7 +49,7 @@ export function effectiveOf(field: FieldView, backends: readonly BackendConfig[]
   const inherited = inheritedValue(field, backends);
   if (inherited) return { value: inherited, source: `from ${field.inherits!.label}` };
   if (field.default !== undefined && field.default !== "") return { value: String(field.default), source: "the default" };
-  if (field.key.startsWith("ios-hosts-")) return { value: "estimated", source: "for each Mac by bb-box" };
+  if (field.key.startsWith("ios-hosts-")) return { value: "estimated", source: "for each Mac by alia-box" };
   return undefined;
 }
 
@@ -305,11 +305,11 @@ export function MacsSection({ draft, backend, driver, saved }: { draft: Draft; b
                       {main.map((field) => fieldRow(field))}
                       <div className="px-4 pb-1 pt-3">
                         <p className="text-xs font-medium text-foreground">Its own shared iOS host size</p>
-                        <p className="text-xs text-subtle-foreground">Empty takes Tart's setting above, or bb-box's estimate for this Mac. A change reaches the next shared host made on it; one running now keeps its size.</p>
+                        <p className="text-xs text-subtle-foreground">Empty takes Tart's setting above, or alia-box's estimate for this Mac. A change reaches the next shared host made on it; one running now keeps its size.</p>
                       </div>
                       {own.map((field) => {
                         const fromTart = backendValue(field.key);
-                        const effective = fromTart !== undefined && fromTart !== "" ? `${String(fromTart)}, Tart's setting` : `${MAC_ESTIMATES[field.key] ?? "estimated"}, bb-box's estimate for ${name}`;
+                        const effective = fromTart !== undefined && fromTart !== "" ? `${String(fromTart)}, Tart's setting` : `${MAC_ESTIMATES[field.key] ?? "estimated"}, alia-box's estimate for ${name}`;
                         return fieldRow(field, fromTart !== undefined && fromTart !== "" ? String(fromTart) : (MAC_ESTIMATES[field.key] ?? "").split(" ")[0], effective);
                       })}
                       <div className="flex justify-end px-4 py-2.5">
@@ -332,7 +332,7 @@ export function MacsSection({ draft, backend, driver, saved }: { draft: Draft; b
         description={
           <>
             <p>New boxes stop going to {removing}. Its shared iOS host is deleted when its last box goes, and its warm VMs are released.</p>
-            <p>Boxes on it keep working until they are released. BB Box refuses to remove a Mac while boxes are on it: turn its switch off and release them first.</p>
+            <p>Boxes on it keep working until they are released. VesnALIA Box refuses to remove a Mac while boxes are on it: turn its switch off and release them first.</p>
           </>
         }
         action="Remove when I save"
@@ -412,7 +412,7 @@ function Facts({ backend }: { backend: BackendConfig }) {
       ),
     },
   ];
-  if (live?.bbMachine) rows.unshift({ label: "BB machine", value: `${live.bbMachine.name} · ${live.bbMachine.connected ? live.bbMachine.facts : "offline in BB"}` });
+  if (live?.aliaMachine) rows.unshift({ label: "VesnALIA machine", value: `${live.aliaMachine.name} · ${live.aliaMachine.connected ? live.aliaMachine.facts : "offline in VesnALIA"}` });
   return (
     <Card>
       <Rows>
@@ -433,7 +433,7 @@ export function GonePage({ what }: { what: string }) {
     <div className="space-y-3">
       <PageHeader title={`${what} is not here`} description="It was removed, here or elsewhere, or the link is wrong." />
       <Button type="button" variant="outline" size="sm" className="h-7" onClick={nav.toOverview}>
-        Go to BB Box settings
+        Go to VesnALIA Box settings
       </Button>
     </div>
   );
@@ -502,7 +502,7 @@ function BackendEditor({ backend }: { backend: BackendConfig }) {
         chips={
           <>
             {qualifier ? <Badge>{qualifier}</Badge> : null}
-            {live?.bbMachine ? <Badge>BB machine</Badge> : null}
+            {live?.aliaMachine ? <Badge>VesnALIA machine</Badge> : null}
           </>
         }
         description={driver.description}
@@ -579,7 +579,7 @@ function BackendEditor({ backend }: { backend: BackendConfig }) {
         title={`Remove ${title}?`}
         description={
           <>
-            <p>Its settings are deleted{secrets.length ? `, with its ${secrets.join(" and ")}, which BB Box cannot show or get back` : ""}. Its warm boxes are released.</p>
+            <p>Its settings are deleted{secrets.length ? `, with its ${secrets.join(" and ")}, which VesnALIA Box cannot show or get back` : ""}. Its warm boxes are released.</p>
             <p>Threads can no longer get boxes from it. To use it again you set it up again. There is no undo.</p>
           </>
         }
@@ -598,7 +598,7 @@ function BackendEditor({ backend }: { backend: BackendConfig }) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Rename {title}</AlertDialogTitle>
-            <AlertDialogDescription>The name BB Box shows for it. Its ID, {backend.id}, stays as it is, so nothing that uses it changes.</AlertDialogDescription>
+            <AlertDialogDescription>The name VesnALIA Box shows for it. Its ID, {backend.id}, stays as it is, so nothing that uses it changes.</AlertDialogDescription>
           </AlertDialogHeader>
           <Input aria-label="Name" className="h-8 text-sm" value={renaming ?? ""} placeholder={driver.label} onChange={(event) => setRenaming(event.target.value)} />
           <AlertDialogFooter>

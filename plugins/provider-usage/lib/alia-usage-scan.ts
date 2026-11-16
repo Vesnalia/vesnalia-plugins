@@ -1,0 +1,193 @@
+import { addBucket, dayKey, emptyBucket, type TokenBucket } from "./tokens";
+
+/**
+ * Providers with a dedicated transcript scanner. Those read the agent's own
+ * files, so they get full history and exact per-day attribution; VesnALIA's event
+ * stream only starts at whatever VesnALIA itself has driven. Anything NOT in this
+ * set falls back to the events below, which is what makes a provider VesnALIA has
+ * never heard of before still show up in the chart.
+ */
+export const SCANNED_PROVIDERS: ReadonlySet<string> = new Set([
+  "codex",
+  "claude-code",
+  "cursor",
+  "opencode",
+  "muse",
+]);
+
+export interface AliaThreadRef {
+  id: string;
+  providerId: string;
+  updatedAt: number;
+  hostId?: string | null;
+}
+
+export interface AliaUsageTotal {
+  totalTokens?: number;
+  inputTokens?: number;
+  cachedInputTokens?: number;
+  outputTokens?: number;
+  reasoningOutputTokens?: number;
+}
+
+export interface AliaUsageEvent {
+  seq: number;
+  createdAt: number;
+  total: AliaUsageTotal;
+  /**
+   * The step's own usage, when the provider reports one. Where `total` is the
+   * thread's running sum, this is just the latest call — the only usable figure
+   * when there is no earlier total to difference against.
+   */
+  last?: AliaUsageTotal;
+}
+
+/** VesnALIA namespaces every ACP agent as `acp-<agent>`; the chart wants the agent. */
+export function normalizeProviderId(providerId: string): string {
+  const trimmed = providerId.trim();
+  if (!trimmed) return "unknown";
+  return trimmed.startsWith("acp-") ? trimmed.slice(4) : trimmed;
+}
+
+function asNumber(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+/**
+ * `thread/tokenUsage/updated` carries the thread's running total, not the
+ * turn's, so consecutive events are differenced. A total that goes backwards
+ * means the thread was compacted or restarted upstream, and the new total is
+ * itself the delta rather than a negative one.
+ */
+function delta(current: number, previous: number): number {
+  if (current < previous) return Math.max(0, current);
+  return current - previous;
+}
+
+export function bucketFromTotals(
+  current: AliaUsageTotal,
+  previous: AliaUsageTotal,
+): TokenBucket | null {
+  const rawInput = delta(
+    asNumber(current.inputTokens),
+    asNumber(previous.inputTokens),
+  );
+  const output = delta(asNumber(current.outputTokens), asNumber(previous.outputTokens));
+  const reasoning = delta(
+    asNumber(current.reasoningOutputTokens),
+    asNumber(previous.reasoningOutputTokens),
+  );
+  const cached = delta(
+    asNumber(current.cachedInputTokens),
+    asNumber(previous.cachedInputTokens),
+  );
+  const input = Math.max(0, rawInput - cached);
+  const reportedTotal = delta(
+    asNumber(current.totalTokens),
+    asNumber(previous.totalTokens),
+  );
+  // Provider-bridge totals already include cached input, and reasoning may be
+  // a subset of output. Fall back to the disjoint input/output fields only
+  // for providers that omit totalTokens.
+  const tokens = reportedTotal > 0 ? reportedTotal : rawInput + output;
+  if (tokens <= 0 && cached <= 0) return null;
+  return { tokens, input, output, cached, reasoning, turns: 1 };
+}
+
+export interface AliaUsageScanResult {
+  daily: Record<string, Record<string, TokenBucket>>;
+  providers: string[];
+  threadsScanned: number;
+}
+
+/** Read every usage event, keeping individual SDK requests under the 100-row cap. */
+export async function readAllUsageEvents<T extends { seq: number }>(
+  readPage: (args: { afterSeq?: number; order: "asc"; limit: number }) => Promise<T[]>,
+): Promise<T[]> {
+  const events: T[] = [];
+  let afterSeq: number | undefined;
+  while (true) {
+    const page = await readPage({ order: "asc", limit: 100, ...(afterSeq === undefined ? {} : { afterSeq }) });
+    if (page.length === 0) break;
+    const nextSeq = Math.max(...page.map((row) => row.seq));
+    if (afterSeq !== undefined && nextSeq <= afterSeq) throw new Error("Usage event page did not advance.");
+    events.push(...page.filter((row) => afterSeq === undefined || row.seq > afterSeq));
+    afterSeq = nextSeq;
+    if (page.length < 100) break;
+  }
+  return events;
+}
+
+export async function scanAliaThreadUsage(deps: {
+  listThreads: () => Promise<AliaThreadRef[]>;
+  listEvents: (threadId: string) => Promise<AliaUsageEvent[]>;
+  nowMs?: number;
+  covered?: ReadonlySet<string>;
+  localHostId?: string | null;
+  onError?: (error: unknown) => void;
+}): Promise<AliaUsageScanResult> {
+  const nowMs = deps.nowMs ?? Date.now();
+  const cutoff = nowMs - 90 * 24 * 60 * 60 * 1000;
+  const covered = deps.covered ?? SCANNED_PROVIDERS;
+  const daily: Record<string, Record<string, TokenBucket>> = {};
+  const providers = new Set<string>();
+  let threadsScanned = 0;
+
+  let threads: AliaThreadRef[];
+  try {
+    threads = await deps.listThreads();
+  } catch (error) {
+    deps.onError?.(error);
+    return { daily, providers: [], threadsScanned: 0 };
+  }
+
+  for (const thread of threads) {
+    const providerId = normalizeProviderId(thread.providerId);
+    const remote = Boolean(deps.localHostId && thread.hostId && thread.hostId !== deps.localHostId);
+    if (!remote && covered.has(providerId)) continue;
+    if (thread.updatedAt > 0 && thread.updatedAt < cutoff) continue;
+
+    let events: AliaUsageEvent[];
+    try {
+      events = await deps.listEvents(thread.id);
+    } catch (error) {
+      deps.onError?.(error);
+      continue;
+    }
+    if (events.length === 0) continue;
+    threadsScanned += 1;
+
+    let previous: AliaUsageTotal = {};
+    for (const event of [...events].sort((a, b) => a.seq - b.seq)) {
+      const bucket = bucketFromTotals(event.total, previous);
+      previous = event.total;
+      if (!bucket) continue;
+      if (!Number.isFinite(event.createdAt) || event.createdAt <= 0) continue;
+      if (event.createdAt < cutoff) continue;
+      providers.add(providerId);
+      const key = dayKey(event.createdAt);
+      const row = daily[key] ?? {};
+      const current = row[providerId] ?? emptyBucket();
+      addBucket(current, bucket);
+      row[providerId] = current;
+      daily[key] = row;
+    }
+  }
+
+  return { daily, providers: [...providers], threadsScanned };
+}
+
+export function mergeDaily(
+  target: Record<string, Record<string, TokenBucket>>,
+  source: Record<string, Record<string, TokenBucket>>,
+): void {
+  for (const [day, row] of Object.entries(source)) {
+    const into = target[day] ?? {};
+    for (const [provider, bucket] of Object.entries(row)) {
+      const current = into[provider] ?? emptyBucket();
+      addBucket(current, bucket);
+      into[provider] = current;
+    }
+    target[day] = into;
+  }
+}

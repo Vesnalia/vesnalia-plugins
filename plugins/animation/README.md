@@ -7,10 +7,10 @@
 ### Explain how a system behaves, one beat at a time.
 
 Turn a technical diagram into a short, looping explainer that you or an agent write as plain JSON.<br>
-Play it in BB, embed it in chat, or export one HTML page to share.
+Play it in VesnALIA, embed it in chat, or export one HTML page to share.
 
 ![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)
-![bb ≥ 0.43](https://img.shields.io/badge/bb-%E2%89%A5%200.43-3b82f6)
+![VesnALIA ≥ 0.43](https://img.shields.io/badge/bb-%E2%89%A5%200.43-3b82f6)
 ![Plugin SDK ≥ 0.4.88](https://img.shields.io/badge/plugin%20sdk-%E2%89%A5%200.4.88-1e3a8a)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 
@@ -32,16 +32,16 @@ happen in. A screen recording shows the order, but no one can review it in a
 diff or ask an agent to fix step four.
 
 With Animation, the explainer is a small `.scene.json` file in your repo. Each
-step says what is true at that beat, and BB plays the steps in order. You or an
+step says what is true at that beat, and VesnALIA plays the steps in order. You or an
 agent edit it like any other file.
 
 |  | Without Animation | With Animation |
 | --- | :---: | :---: |
-| Play a diagram beat by beat in BB | ❌ | ✅ scrub, retime, loop |
+| Play a diagram beat by beat in VesnALIA | ❌ | ✅ scrub, retime, loop |
 | Keep it as a reviewable file in the repo | ❌ | ✅ canonical `.scene.json` |
 | Have an agent check its own draft | ❌ | ✅ `animation_validate` |
 | Show it inline in a chat reply | ❌ | ✅ `::scene` embed |
-| Share it with someone outside BB | ❌ | ✅ one looping HTML file |
+| Share it with someone outside VesnALIA | ❌ | ✅ one looping HTML file |
 
 ## Features
 
@@ -116,7 +116,7 @@ dark palette as the fallback.
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/MacHatter1/bb-plugin-animation --yes
+alia plugin install git:https://github.com/MacHatter1/bb-plugin-animation --yes
 ```
 
 That's it. Open any `.scene.json` file, or create one from a thread's
@@ -127,26 +127,26 @@ That's it. Open any `.scene.json` file, or create one from a thread's
 
 ```sh
 git clone https://github.com/MacHatter1/bb-plugin-animation
-cd bb-plugin-animation
-npm install && bb plugin build
-bb plugin install path:$PWD --yes
+cd alia-plugin-animation
+npm install && alia plugin build
+alia plugin install path:$PWD --yes
 ```
 
 </details>
 
 **Requirements**
 
-- bb **0.43+** (Plugin SDK 0.4.88+)
+- VesnALIA **0.43+** (Plugin SDK 0.4.88+)
 
 ## Where to find it
 
 | Where | What |
 | --- | --- |
-| **File preview** | Open a `*.scene.json` or `*.anim.json` file to get the Animation editor. Other JSON files keep BB's usual preview. |
+| **File preview** | Open a `*.scene.json` or `*.anim.json` file to get the Animation editor. Other JSON files keep VesnALIA's usual preview. |
 | **Thread Actions → New animation** | Creates a starter `.scene.json` in the thread's workspace and opens it. |
 | **Command palette** | `Animation: create .scene.json` opens the same panel when a thread is open. |
 | **Composer + menu** | **Embed scene** inserts a `::scene{file="…"}` directive. |
-| **Chat messages** | `::scene{file="…"}` plays inline. An optional height of 160 to 900 pixels goes after a space: `::scene{file="…" height=480}`. A comma between the two stops BB reading the line as a directive. |
+| **Chat messages** | `::scene{file="…"}` plays inline. An optional height of 160 to 900 pixels goes after a space: `::scene{file="…" height=480}`. A comma between the two stops VesnALIA reading the line as a directive. |
 | **Settings → Installed plugins → Animation** | A short how-to. There is nothing to configure. If another JSON viewer wins, pin this one under **Settings → File openers**. |
 
 ## How it works
@@ -156,8 +156,8 @@ flowchart LR
   A["You or an agent"] -->|"Write / Edit"| F[".scene.json"]
   F --> P["parseDocument"]
   P --> E["Animation editor"]
-  P --> V["bb animation validate<br>animation_validate"]
-  P --> X["Export HTML<br>bb animation export<br>animation_export_html"]
+  P --> V["alia animation validate<br>animation_validate"]
+  P --> X["Export HTML<br>alia animation export<br>animation_export_html"]
   P --> C["::scene chat embed"]
   E -->|"save, sha256 checked"| F
   X --> H["looping .html"]
@@ -171,7 +171,7 @@ flowchart LR
   and export.
 - **Canonical saves.** The editor writes a fixed key order, so saving an
   unchanged document gives identical bytes.
-- **Same render inside and outside BB.** Export uses the editor's renderer and
+- **Same render inside and outside VesnALIA.** Export uses the editor's renderer and
   stage CSS, with the `stage.theme` palette or a fixed dark fallback.
 - **What it will not do.** It has no GIF or MP4 export, no motion paths and no
   text that changes between steps. Parts appear, disappear and change colour.
@@ -182,7 +182,7 @@ flowchart LR
 - 💾 **Saves never clobber.** The editor saves only if the file still has the
   hash it loaded, and only one save runs at a time. If the file changed on
   disk, nothing is written until you choose: **Reload** takes the version on
-  disk, **Keep mine** overwrites it. `bb animation new` refuses to overwrite an
+  disk, **Keep mine** overwrites it. `alia animation new` refuses to overwrite an
   existing file.
 - 🧼 **Markup is sanitised.** `html` parts lose scripts, event handlers,
   `<style>` and any `url()` that is not `https:` or an inline image. The stage
@@ -192,7 +192,7 @@ flowchart LR
   `htmlFile` must be relative and stay inside the workspace. Outside a
   workspace, the limit is the directory the CLI ran in, or the scene's own
   folder.
-- 🌐 **No network calls.** The plugin reads and writes files through BB and
+- 🌐 **No network calls.** The plugin reads and writes files through VesnALIA and
   nothing else. An exported page loads remote content only if your own markup
   names an `https:` image.
 - 📝 **Export only replaces its own output.** Exporting again overwrites an
@@ -202,10 +202,10 @@ flowchart LR
 ## CLI
 
 ```sh
-bb animation new docs/cache-read.scene.json         # create a starter scene
-bb animation validate docs/cache-read.scene.json    # parse it and report problems
-bb animation export docs/cache-read.scene.json      # write docs/cache-read.html
-bb animation export docs/cache-read.scene.json --out site/cache.html --json
+alia animation new docs/cache-read.scene.json         # create a starter scene
+alia animation validate docs/cache-read.scene.json    # parse it and report problems
+alia animation export docs/cache-read.scene.json      # write docs/cache-read.html
+alia animation export docs/cache-read.scene.json --out site/cache.html --json
 ```
 
 <details>
@@ -234,9 +234,9 @@ choice.
 npm install
 npm test
 npm run typecheck
-bb plugin build
-bb plugin install path:$PWD --yes
-bb plugin dev                      # rebuild and reload on every save
+alia plugin build
+alia plugin install path:$PWD --yes
+alia plugin dev                      # rebuild and reload on every save
 ```
 
 ```
@@ -246,7 +246,7 @@ contract.ts      RPC schema shared by server and app
 src/core/        parser, serialiser, timeline and HTML sanitiser
 src/render/      scene SVG, stage CSS and the standalone export
 src/components/  editor, stage frame and step strip
-components/ui/   vendored BB UI primitives
+components/ui/   vendored ALIA UI primitives
 samples/         demo.scene.json, a cache-aside scene
 skills/          the bundled agent skill
 docs/            logo
@@ -259,7 +259,7 @@ also drives the CLI and agent tools end to end: create, validate, export,
 refusing parse errors, and `.anim.json` files.
 
 `PLUGIN_OVERVIEW.md` is the store listing. Keep it in step with
-`bb.description` in `package.json`.
+`alia.description` in `package.json`.
 
 ## Licence
 

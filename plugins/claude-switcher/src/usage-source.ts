@@ -1,4 +1,4 @@
-// Shapes this plugin's accounts and measurements the way bb's provider-usage
+// Shapes this plugin's accounts and measurements the way VesnALIA's provider-usage
 // panel expects them (usage-source-contract.ts).
 import { planOf, type Account } from "./accounts.js";
 import type { Measurement } from "./collector.js";
@@ -63,7 +63,7 @@ export function toMeasurement(
   // The panel heads each card with the email and shows planLabel as a small
   // badge; the account name goes there so two cards are never ambiguous,
   // with the plan's short text beside it (the same as the plugin's own
-  // views). `plan` stays null: bb's panel (provider-usage, bb 0.46) puts its
+  // views). `plan` stays null: VesnALIA's panel (provider-usage, VesnALIA 0.46) puts its
   // own word ("Max", "Team") in place of planLabel for a plan id it knows,
   // and the name would be lost (Codex ULTRA-R05).
   const info = planOf(account, measurement?.usage ?? null);

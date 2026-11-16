@@ -1,7 +1,7 @@
 // What the page and the backend both read. No imports here: the page bundle must not pull in the backend's libraries.
 
 /**
- * `label` and `description` are what the settings API and the `bb` CLI show. The thread menu says `short` when there is
+ * `label` and `description` are what the settings API and the `VesnALIA` CLI show. The thread menu says `short` when there is
  * one (its label is shorter there), and the label otherwise.
  */
 type BoolDef = { type: "boolean"; label: string; short?: string; description: string; default: boolean };
@@ -33,7 +33,7 @@ export const SETTINGS = {
   debugLog: {
     type: "boolean",
     label: "Debug log",
-    description: "Write dock and undock events to the plugin log (`bb plugin logs chat-dock`).",
+    description: "Write dock and undock events to the plugin log (`alia plugin logs chat-dock`).",
     default: false,
   },
 } as const satisfies Record<string, BoolDef>;
@@ -49,7 +49,7 @@ export const DEFAULTS = Object.fromEntries(SETTING_KEYS.map((key) => [key, SETTI
 /** What the thread menu calls a setting. */
 export const menuLabel = (key: SettingKey): string => (SETTINGS[key] as BoolDef).short ?? SETTINGS[key].label;
 
-/** The definitions the backend hands BB: the list less what is only the page's. */
+/** The definitions the backend hands VesnALIA: the list less what is only the page's. */
 export function definitions(): Record<SettingKey, Omit<BoolDef, "short">> {
   return Object.fromEntries(
     SETTING_KEYS.map((key) => {

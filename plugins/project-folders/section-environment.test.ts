@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import { SECTION_ENVIRONMENT_ID } from "./section-tree";
 
@@ -30,7 +30,7 @@ async function server() {
       environments: { list: async () => [] },
     },
   });
-  await plugin(h.bb);
+  await plugin(h.alia);
   const created = (await h.harness.behavior.callRpc("create", {
     projectId: "p1",
     folderId: null,
@@ -49,7 +49,7 @@ const context = (folderId: string, hostId = "h1", projectId = "p1") =>
     inputs: { folderId },
   }) as never;
 
-describe("the section as a place BB can run a chat in", () => {
+describe("the section as a place VesnALIA can run a chat in", () => {
   it("offers a project section and points it at the section folder", async () => {
     const x = await server();
     try {

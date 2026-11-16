@@ -5,7 +5,7 @@ description: "Set up and troubleshoot the NanoGPT provider plugin: API key, base
 
 # NanoGPT provider
 
-The NanoGPT provider runs bb threads on models served by NanoGPT's
+The NanoGPT provider runs VesnALIA threads on models served by NanoGPT's
 OpenAI-compatible API. It has no CLI command of its own. It is configured with
 plugin settings.
 
@@ -26,17 +26,17 @@ to it first; the commands below are the alternative.
   base URL are rejected, as are authenticated redirects.
 - `disallowedTools`: exact tool names separated by commas or whitespace. The
   provider-options channel carries these denials on every submitted turn, so
-  they work even when bb omits the native session denylist. No wildcards.
+  they work even when VesnALIA omits the native session denylist. No wildcards.
 - `confirmToolCalls`: boolean, false by default. Enable under Tool controls in the
-  popup, or through `bb plugin config`, for one-time manual tool approvals.
+  popup, or through `alia plugin config`, for one-time manual tool approvals.
 
 Read or change them with the core plugin commands:
 
 ```
-bb plugin config nanogpt-provider
-bb plugin config nanogpt-provider set apiKey <key>
-bb plugin config nanogpt-provider set baseUrl <url>
-bb plugin reload nanogpt-provider
+alia plugin config nanogpt-provider
+alia plugin config nanogpt-provider set apiKey <key>
+alia plugin config nanogpt-provider set baseUrl <url>
+alia plugin reload nanogpt-provider
 ```
 
 Never print the API key or paste it into a thread. Ask the user to save it in
@@ -44,16 +44,16 @@ the plugin settings.
 
 ## When NanoGPT shows no models
 
-1. Check that `apiKey` is set: `bb plugin config nanogpt-provider`.
+1. Check that `apiKey` is set: `alia plugin config nanogpt-provider`.
 2. A key that NanoGPT rejects (HTTP 401 or 403) gives no models. Ask the user to
    create a new key at https://nano-gpt.com/api.
-3. After changing settings, run `bb plugin reload nanogpt-provider`.
-4. Read the plugin log with `bb plugin logs nanogpt-provider`.
+3. After changing settings, run `alia plugin reload nanogpt-provider`.
+4. Read the plugin log with `alia plugin logs nanogpt-provider`.
 
 ## Files and attachments
 
-In bb 0.49.0 a NanoGPT thread has no file or shell tools of its own, unlike
-providers that bring their own. It only has the tools bb offers every provider.
+In VesnALIA 0.49.0 a NanoGPT thread has no file or shell tools of its own, unlike
+providers that bring their own. It only has the tools VesnALIA offers every provider.
 If the user wants the model to read a file, ask them to attach it with the
 paperclip or add-file button. Text files are sent to the model inline, up to
 100000 bytes, read asynchronously with safe UTF-8 truncation. Binary/unreadable
@@ -65,8 +65,8 @@ permission denied. Local PNG/JPEG/GIF/WebP images are sent as data URLs: up to
 
 Use `/plan` for a planning turn. The bridge sends a planning instruction and no
 tool definitions, and also rejects unexpected tool calls in the response. A
-subsequent ordinary turn can use the tools registered by bb again. Unknown tool
-names are never forwarded to bb. Reasoning defaults to Provider default. The
+subsequent ordinary turn can use the tools registered by VesnALIA again. Unknown tool
+names are never forwarded to VesnALIA. Reasoning defaults to Provider default. The
 live catalog exposes Low, Medium, or High only when NanoGPT declares that
 effort for the selected model. Explicit selections are validated before the
 request and sent as `reasoning_effort`; Provider default omits the field. Old
@@ -98,13 +98,13 @@ deadline. See `docs/REASONING_EFFORT.md` for the complete behavior and open chec
 - "does not declare ... reasoning effort": choose Provider default or an offered
   level, or refresh the catalog. Support depends on the model, endpoint and key.
 - A history-restoration error: the resumed turn stops before generation. Check
-  plugin logs and the bb event API; do not describe the turn as having resumed
+  plugin logs and the VesnALIA event API; do not describe the turn as having resumed
   with complete context when restoration failed.
 
 ## Constraints
 
 - Only the full permission mode is offered.
-- bb's four permission-policy fields are retained in immutable per-request
+- VesnALIA's four permission-policy fields are retained in immutable per-request
   snapshots. `accept-edits` and `auto` are rejected before execution; do not claim
   workspace isolation or automatic approval review support. Registered dynamic
   tools work in full mode. Exact `disallowedTools` entries are enforced when
@@ -121,7 +121,7 @@ deadline. See `docs/REASONING_EFFORT.md` for the complete behavior and open chec
 - The provider has no fork, archive, rename, manual compaction or service tier.
   It uses whole-turn context trimming rather than automatic summarization.
 - Active model context lives in the bridge process. After `thread/resume`, the
-  first active turn reads bounded saved bb events through a hidden tool before
+  first active turn reads bounded saved VesnALIA events through a hidden tool before
   generation. Accepted prompts, assistant text, URL images and normalized tool
   interactions are reconstructed; historical tools are never executed again.
   Local historical attachments become filename placeholders. Retrieval failure

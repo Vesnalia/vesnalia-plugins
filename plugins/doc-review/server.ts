@@ -1,4 +1,4 @@
-// bb-plugin-doc-review — backend entry.
+// alia-plugin-doc-review — backend entry.
 //
 // View and comment on Markdown, PDF, Word, PowerPoint, Excel, and HTML files
 // in a panel tab, then hand the comments to an agent in one message. Viewing
@@ -7,13 +7,13 @@
 // are served into a sandboxed frame with the bridge from src/html-bridge.ts.
 // Comments live
 // in this plugin's SQLite database; the reviewed file is never modified by
-// the plugin. Agents report back with the `bb doc-review` command, and every
+// the plugin. Agents report back with the `alia doc-review` command, and every
 // change reaches open panels through a realtime signal.
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { isSupportedPath } from "./lib/formats.js";
 import { rpcContract, type Capture, type RecentDocument } from "./src/contract.js";
 import { reviewCli } from "./src/cli.js";
@@ -106,12 +106,12 @@ function docName(doc: DocRow): string {
   return doc.kind === "web" ? doc.absPath.replace(/^https?:\/\//, "") : path.posix.basename(doc.absPath);
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const database = bb.storage.database();
-  bb.storage.migrate(database, MIGRATIONS);
+export default async function plugin(alia: AliaPluginApi) {
+  const database = alia.storage.database();
+  alia.storage.migrate(database, MIGRATIONS);
   const store = new ReviewStore(database as unknown as Db);
   const dataDir = path.dirname(database.name);
-  const files = new DocFiles(bb, dataDir);
+  const files = new DocFiles(alia, dataDir);
   // Reopening a page, or the panel reloading it, skips reading the file and
   // preparing it again; a page is served from here for at most half of its
   // folder lease, so the links and images on it outlive any review session
@@ -121,10 +121,10 @@ export default async function plugin(bb: BbPluginApi) {
     maxBytes: 8 * 1024 * 1024,
     minLeaseLeftMs: PREVIEW_LEASE_MS / 2,
   });
-  bb.onDispose(() => htmlPages.clear());
+  alia.onDispose(() => htmlPages.clear());
   const renderer = new Renderer(dataDir);
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     rememberRecents: {
       type: "boolean",
       label: "Remember recently opened documents",
@@ -134,14 +134,14 @@ export default async function plugin(bb: BbPluginApi) {
       type: "string",
       label: "LibreOffice executable",
       description:
-        "Word and PowerPoint files are converted with LibreOffice on the machine bb runs on. Leave empty to find it automatically; set the full path to soffice if it lives somewhere unusual.",
+        "Word and PowerPoint files are converted with LibreOffice on the machine VesnALIA runs on. Leave empty to find it automatically; set the full path to soffice if it lives somewhere unusual.",
       default: "",
     },
     chromePath: {
       type: "string",
       label: "Chrome executable",
       description:
-        "A drawing on an HTML page reaches the agent as a picture of the page taken by headless Chrome or Chromium on the machine bb runs on. Leave empty to find it automatically; without it the agent gets the elements the drawing touches.",
+        "A drawing on an HTML page reaches the agent as a picture of the page taken by headless Chrome or Chromium on the machine VesnALIA runs on. Leave empty to find it automatically; without it the agent gets the elements the drawing touches.",
       default: "",
     },
   });
@@ -173,7 +173,7 @@ export default async function plugin(bb: BbPluginApi) {
   /** A comment as the panel gets it: drawings with a picture carry its URL. */
   function present(comment: ReviewComment): ReviewComment {
     if (!isDrawing(comment.anchor) || !drawingFile(comment.id)) return comment;
-    return { ...comment, imageUrl: `/api/v1/plugins/${bb.pluginId}/http${DRAWING_ROUTE}?c=${comment.id}` };
+    return { ...comment, imageUrl: `/api/v1/plugins/${alia.pluginId}/http${DRAWING_ROUTE}?c=${comment.id}` };
   }
 
   /** Makes and keeps the picture of a new drawing; a drawing without one still works. */
@@ -200,7 +200,7 @@ export default async function plugin(bb: BbPluginApi) {
     await mkdir(drawingsDir, { recursive: true });
     await writeFile(path.join(drawingsDir, `${comment.id}.${type.ext}`), bytes);
   }
-  const viewer = createViewer(bb, {
+  const viewer = createViewer(alia, {
     dataDir,
     localHostId: () => files.localHostId(),
     libreOfficePath: async () => (await settings.get()).libreOfficePath,
@@ -211,7 +211,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function publish(docIds: string[]): void {
-    if (docIds.length > 0) bb.realtime.publish(CHANGED, { docIds });
+    if (docIds.length > 0) alia.realtime.publish(CHANGED, { docIds });
   }
 
   function requireDoc(docId: string): DocRow {
@@ -257,16 +257,16 @@ export default async function plugin(bb: BbPluginApi) {
     dataDir,
     pdfFor,
     currentVersion,
-    log: (message) => bb.log.warn(message),
+    log: (message) => alia.log.warn(message),
   });
-  const attachments = createAttachments({ bb, files });
+  const attachments = createAttachments({ alia, files });
 
   async function readSigner(): Promise<string | null> {
-    return (await bb.storage.kv.get<string>(SIGNER_KEY)) || null;
+    return (await alia.storage.kv.get<string>(SIGNER_KEY)) || null;
   }
 
   async function readRecents(): Promise<RecentDocument[]> {
-    return (await bb.storage.kv.get<RecentDocument[]>(RECENTS_KEY)) ?? [];
+    return (await alia.storage.kv.get<RecentDocument[]>(RECENTS_KEY)) ?? [];
   }
 
   async function rememberDocument(doc: DocRow): Promise<void> {
@@ -276,20 +276,20 @@ export default async function plugin(bb: BbPluginApi) {
       { path: doc.absPath, name: path.posix.basename(doc.absPath), hostId, openedAtMs: Date.now() },
       ...(await readRecents()).filter((entry) => entry.path !== doc.absPath || entry.hostId !== hostId),
     ].slice(0, RECENTS_LIMIT);
-    await bb.storage.kv.set(RECENTS_KEY, next);
+    await alia.storage.kv.set(RECENTS_KEY, next);
   }
 
   /** The host the Doc Review page browses when the user has not picked one. */
   async function defaultHostId(): Promise<string> {
     const local = await files.localHostId();
     if (local) return local;
-    const hosts = await bb.sdk.hosts.list();
+    const hosts = await alia.sdk.hosts.list();
     const host = hosts.find((candidate) => candidate.status === "connected") ?? hosts[0];
     if (!host) throw new Error("No host is available to browse.");
     return host.id;
   }
 
-  bb.http.route("GET", PAGE_ROUTE, async (context) => {
+  alia.http.route("GET", PAGE_ROUTE, async (context) => {
     const docId = context.req.query("doc") ?? "";
     const wanted = context.req.query("v") ?? "";
     const n = Number.parseInt(context.req.query("n") ?? "", 10);
@@ -317,15 +317,15 @@ export default async function plugin(bb: BbPluginApi) {
         },
       });
     } catch (error) {
-      bb.log.warn(`page ${n} of ${doc.absPath}: ${String(error)}`);
+      alia.log.warn(`page ${n} of ${doc.absPath}: ${String(error)}`);
       return context.text("Render failed", 500);
     }
   });
 
   // An HTML page for the review frame: the file with a <base> next to it and
-  // the bridge script. The CSP sandbox keeps the page's scripts away from bb
+  // the bridge script. The CSP sandbox keeps the page's scripts away from VesnALIA
   // even if this URL is opened on its own.
-  bb.http.route("GET", HTML_ROUTE, async (context) => {
+  alia.http.route("GET", HTML_ROUTE, async (context) => {
     const docId = context.req.query("doc") ?? "";
     const wanted = context.req.query("v") ?? "";
     const doc = store.getDoc(docId);
@@ -363,12 +363,12 @@ export default async function plugin(bb: BbPluginApi) {
         },
       });
     } catch (error) {
-      bb.log.warn(`html page ${doc.absPath}: ${String(error)}`);
+      alia.log.warn(`html page ${doc.absPath}: ${String(error)}`);
       return context.text("Could not open this page.", 500);
     }
   });
 
-  bb.http.route("GET", DRAWING_ROUTE, async (context) => {
+  alia.http.route("GET", DRAWING_ROUTE, async (context) => {
     const id = context.req.query("c") ?? "";
     if (!/^c_[a-z0-9]+$/.test(id)) return context.text("Not found", 404);
     const file = drawingFile(id);
@@ -399,7 +399,7 @@ export default async function plugin(bb: BbPluginApi) {
         try {
           images.set(comment.id, await renderer.crop(pdf, anchor.page, size, anchor.rect));
         } catch (error) {
-          bb.log.warn(`crop for ${comment.id}: ${String(error)}`);
+          alia.log.warn(`crop for ${comment.id}: ${String(error)}`);
         }
       }
     }
@@ -435,7 +435,7 @@ export default async function plugin(bb: BbPluginApi) {
     return chosen;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async "doc.open"({ path: rawPath, source, remember }) {
       const kind = docKindFor(rawPath);
       if (!kind) {
@@ -475,7 +475,7 @@ export default async function plugin(bb: BbPluginApi) {
     async "web.capture"({ threadId, tabId }) {
       // The toolbar knows its thread and tab; the desktop app holding the
       // tab is found by asking each connected machine's browser instances.
-      const browsers = bb.sdk.experimental_desktopBrowsers;
+      const browsers = alia.sdk.experimental_desktopBrowsers;
       const key = `${threadId}\n${tabId}`;
       const take = async (place: { hostId: string; instanceId: string; generation: string }) => {
         const shot = await browsers.captureTab({ ...place, threadId, tabId });
@@ -489,7 +489,7 @@ export default async function plugin(bb: BbPluginApi) {
           tabPlaces.delete(key);
         }
       }
-      const hosts = (await bb.sdk.hosts.list()).filter((host) => host.status === "connected");
+      const hosts = (await alia.sdk.hosts.list()).filter((host) => host.status === "connected");
       for (const host of hosts) {
         const listed = await browsers.listInstances({ hostId: host.id }).catch(() => null);
         for (const instance of listed?.instances ?? []) {
@@ -536,7 +536,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (doc.kind !== "html") throw new Error("Not an HTML file.");
       const version = await currentVersion(doc);
       const v = encodeURIComponent(version);
-      return { version, url: `/api/v1/plugins/${bb.pluginId}/http${HTML_ROUTE}?doc=${doc.id}&v=${v}` };
+      return { version, url: `/api/v1/plugins/${alia.pluginId}/http${HTML_ROUTE}?doc=${doc.id}&v=${v}` };
     },
 
     async "doc.pages"({ docId }) {
@@ -554,7 +554,7 @@ export default async function plugin(bb: BbPluginApi) {
       // A PDF exported with comments: its closing list pages repeat what the panel shows.
       const shared = await exchange.sharedIn(doc);
       const sizes = (await renderer.pageSizes(doc.id, version, pdf)).slice(0, shared?.file.pages);
-      const base = `/api/v1/plugins/${bb.pluginId}/http${PAGE_ROUTE}`;
+      const base = `/api/v1/plugins/${alia.pluginId}/http${PAGE_ROUTE}`;
       const v = encodeURIComponent(version);
       return {
         status: "ready" as const,
@@ -613,13 +613,13 @@ export default async function plugin(bb: BbPluginApi) {
     },
 
     async hosts() {
-      const hosts = await bb.sdk.hosts.list();
+      const hosts = await alia.sdk.hosts.list();
       return { hosts: hosts.map((host) => ({ id: host.id, name: host.name, status: host.status })) };
     },
 
     async browse({ hostId, path: directory }) {
       const targetHost = hostId ?? (await defaultHostId());
-      const listing = await bb.sdk.hosts.directory({
+      const listing = await alia.sdk.hosts.directory({
         hostId: targetHost,
         ...(directory ? { path: directory } : {}),
       });
@@ -643,7 +643,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
 
     async "recents.clear"() {
-      await bb.storage.kv.set(RECENTS_KEY, []);
+      await alia.storage.kv.set(RECENTS_KEY, []);
       return { recents: [] };
     },
 
@@ -657,7 +657,7 @@ export default async function plugin(bb: BbPluginApi) {
       const comment = store.createComment({ docId, anchor, body, docVersion });
       if (capture && isDrawing(anchor)) {
         await saveDrawing(doc, comment, capture).catch((error: unknown) =>
-          bb.log.warn(`picture for drawing ${comment.id}: ${String(error)}`),
+          alia.log.warn(`picture for drawing ${comment.id}: ${String(error)}`),
         );
       }
       publish([docId]);
@@ -716,19 +716,19 @@ export default async function plugin(bb: BbPluginApi) {
       let projectId: string | null = null;
       let sourceThreadId: string | null = null;
       if (target.kind === "thread") {
-        const thread = await bb.sdk.threads.get({ threadId: target.threadId });
+        const thread = await alia.sdk.threads.get({ threadId: target.threadId });
         projectId = thread.projectId;
       } else {
         sourceThreadId = target.sourceThreadId;
         projectId = target.projectId;
         if (!projectId && sourceThreadId) {
-          projectId = (await bb.sdk.threads.get({ threadId: sourceThreadId })).projectId;
+          projectId = (await alia.sdk.threads.get({ threadId: sourceThreadId })).projectId;
         }
         if (!projectId) throw new Error(NO_PROJECT);
       }
 
       // Area comments carry a crop of the page and drawings their picture.
-      // Attach them as images when bb accepts the upload; otherwise point the
+      // Attach them as images when VesnALIA accepts the upload; otherwise point the
       // agent at a saved file.
       const crops = await commentImages(doc, comments);
       const imageNumbers = new Map<string, number>();
@@ -739,7 +739,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (!bytes) continue;
         const type = imageType(bytes) ?? { ext: "png", mime: "image/png" };
         try {
-          const uploaded = await bb.sdk.projects.attachments.upload({
+          const uploaded = await alia.sdk.projects.attachments.upload({
             projectId,
             clientFile: new Uint8Array(bytes),
             filename: `${comment.id}.${type.ext}`,
@@ -748,7 +748,7 @@ export default async function plugin(bb: BbPluginApi) {
           imageInputs.push({ type: "localImage", path: uploaded.path });
           imageNumbers.set(comment.id, imageInputs.length);
         } catch (error) {
-          bb.log.warn(`attachment upload for ${comment.id}: ${String(error)}`);
+          alia.log.warn(`attachment upload for ${comment.id}: ${String(error)}`);
           unattached.set(comment.id, bytes);
         }
       }
@@ -765,20 +765,20 @@ export default async function plugin(bb: BbPluginApi) {
 
       let threadId: string;
       if (target.kind === "thread") {
-        await bb.sdk.threads.send({ threadId: target.threadId, mode: target.mode ?? "auto", input });
+        await alia.sdk.threads.send({ threadId: target.threadId, mode: target.mode ?? "auto", input });
         threadId = target.threadId;
       } else {
         // Reuse the model and workspace of the thread the panel was opened in.
-        type SpawnArgs = Parameters<typeof bb.sdk.threads.spawn>[0];
+        type SpawnArgs = Parameters<typeof alia.sdk.threads.spawn>[0];
         const execution: Partial<
           Pick<SpawnArgs, "providerId" | "model" | "reasoningLevel" | "permissionMode">
         > = {};
         let environmentId = target.environmentId;
         if (sourceThreadId) {
-          const source = await bb.sdk.threads.get({ threadId: sourceThreadId });
+          const source = await alia.sdk.threads.get({ threadId: sourceThreadId });
           environmentId ??= source.environmentId;
           execution.providerId = source.providerId;
-          const options = await bb.sdk.threads
+          const options = await alia.sdk.threads
             .defaultExecutionOptions({ threadId: sourceThreadId })
             .catch(() => null);
           if (options) {
@@ -787,7 +787,7 @@ export default async function plugin(bb: BbPluginApi) {
             execution.permissionMode = options.permissionMode;
           }
         }
-        const created = await bb.sdk.threads.spawn({
+        const created = await alia.sdk.threads.spawn({
           projectId,
           environment: environmentId
             ? { type: "reuse", environmentId }
@@ -828,7 +828,7 @@ export default async function plugin(bb: BbPluginApi) {
     async "doc.export"({ docId, signer, lang }) {
       const doc = requireDoc(docId);
       const name = signer?.trim() || null;
-      await bb.storage.kv.set(SIGNER_KEY, name ?? "");
+      await alia.storage.kv.set(SIGNER_KEY, name ?? "");
       const exported = await exchange.exportPdf(doc, name, lang ?? "en");
       const file = await exchange.saveExport(exported.bytes);
       const link = await viewer.mintOwnFile({ path: file, name: exported.name, contentType: "application/pdf" });
@@ -865,9 +865,9 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.cli.register(
+  alia.cli.register(
     reviewCli({
-      bb,
+      alia,
       store,
       onChanged: publish,
       exchange,

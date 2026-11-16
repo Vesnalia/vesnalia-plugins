@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin, { type Preset } from "./server";
 
 const fields = {
@@ -36,9 +36,9 @@ function configureContext(threadId: string, model = fields.model) {
 }
 
 async function load() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "model-presets" });
-  await plugin(bb);
-  return { bb, harness };
+  const { alia, harness } = createFakePluginHost({ pluginId: "model-presets" });
+  await plugin(alia);
+  return { alia, harness };
 }
 
 describe("presets rpc", () => {

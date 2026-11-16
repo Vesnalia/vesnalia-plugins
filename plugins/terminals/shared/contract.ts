@@ -3,13 +3,13 @@
  * as a type only: it imports `defineRpcContract` from the SDK root, which only
  * the server bundle has (see app/imports.test.ts).
  */
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { HostChoiceSchema, TabViewSchema } from "./tabs";
 
 const Empty = z.object({});
-/** The bounds bb's own terminal endpoint accepts. */
+/** The bounds VesnALIA's own terminal endpoint accepts. */
 const Cols = z.number().int().min(1).max(500);
 const Rows = z.number().int().min(1).max(200);
 

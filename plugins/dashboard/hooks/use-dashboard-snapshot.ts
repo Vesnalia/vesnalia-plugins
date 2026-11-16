@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRpc, useRealtime, useRealtimeConnectionState } from "@get-bb/plugin-sdk/app";
+import { useRpc, useRealtime, useRealtimeConnectionState } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, DashboardConfig, DashboardSnapshot } from "../contracts";
 import type { MessageKey } from "../i18n";
 

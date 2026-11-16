@@ -1,13 +1,13 @@
-# Usage Forecast for BB
+# Usage Forecast for VesnALIA
 
-A [BB](https://getbb.app) plugin that shows how much of each agent provider's
+A [VesnALIA](https://getbb.app) plugin that shows how much of each agent provider's
 usage limits is spent, forecasts where each window ends up at its reset, shows
 how full the current thread's context window is and can compact a thread
 before it overflows.
 
 > [!NOTE]
-> Version 0.4.3, tested with bb 0.49.0 and Plugin SDK 0.6.132. Limits appear
-> only for providers that report them to bb (Claude Code and Codex today).
+> Version 0.4.3, tested with VesnALIA 0.49.0 and Plugin SDK 0.6.132. Limits appear
+> only for providers that report them to VesnALIA (Claude Code and Codex today).
 
 ## Screenshots
 
@@ -75,9 +75,9 @@ the context breakdown and one line per other provider.
   auto-compact threshold are measured against a limit in tokens, not against
   the model window. The limit follows the provider: a thread's own limit,
   else a per-provider limit (Claude Code, Codex), else the point where the
-  provider compacts on its own when bb reports it, else a global limit
+  provider compacts on its own when VesnALIA reports it, else a global limit
   (150 000 by default). A model window smaller than the limit caps it. The
-  context card and `bb usage-forecast thread` name which of these applied.
+  context card and `alia usage-forecast thread` name which of these applied.
   An estimated fill (Codex between turns) is shown with `~`.
 - **Context and auto-compact.** On the Mac a section «Context & auto
   compact» in the thread context card shows the fill in tokens, its
@@ -89,18 +89,18 @@ the context breakdown and one line per other provider.
   the switch on asks whether to compact now or after the next reply. On the phone the context panel is in the expanded band.
 - **Server-side work.** Limits are polled on the server, so history and
   auto-compact work with every client closed.
-- **Every bb host.** Each connected host (the server and, for example, a Mac
-  enrolled in the same bb) is polled on its own, with its own history and
+- **Every VesnALIA host.** Each connected host (the server and, for example, a Mac
+  enrolled in the same VesnALIA) is polled on its own, with its own history and
   forecast, and a slow or failing host does not hold up the others. A thread
   shows only the limits of the host it runs on. When that host is
   disconnected or its last poll failed, the band keeps its last values with
   «Host unavailable, data from …» and no forecast; when the thread's host is
-  not known, the band says so instead of showing another host. `bb
+  not known, the band says so instead of showing another host. `VesnALIA
   usage-forecast status` lists every host; hosts signed in to one account
   show as one entry naming all of them, and get one push, whose title names
   the hosts when there is more than one. History collected before 0.4.6
-  belongs to bb's primary host.
-- **Ring in the sidebar footer.** A small ring next to bb's own footer
+  belongs to VesnALIA's primary host.
+- **Ring in the sidebar footer.** A small ring next to VesnALIA's own footer
   buttons shows the worst limit window across every host: filled to its used
   percent and coloured by its pace state. The worst window is the one with
   the worst state (a window without a state counts as calm), then the higher
@@ -113,38 +113,38 @@ the context breakdown and one line per other provider.
   host the hosts are tabs and the card shows one host at a time, first the
   host of the ring's worst window; an account shared by several hosts is in
   each of their tabs («also laptop»).
-- **Plan multiplier.** When bb reports a plan multiplier above 1 (the
+- **Plan multiplier.** When VesnALIA reports a plan multiplier above 1 (the
   host's `plan.multiplier`), the band, the sidebar card and the CLI show it
   after the plan name: «Claude Code · Max 5×». A label that already names a
-  multiplier is left as it is. On bb 0.49.0 no provider sent one yet, so the
+  multiplier is left as it is. On VesnALIA 0.49.0 no provider sent one yet, so the
   plan name shows alone.
 - **Hide providers you do not use.** The «Hidden providers» setting lists
   provider ids (`acp-opencode, codex`). A hidden provider drops out of the
   band's other providers, the sidebar ring and its card, limit pushes and
-  `bb usage-forecast headroom`; a thread's own provider is always shown.
+  `alia usage-forecast headroom`; a thread's own provider is always shown.
   Each other provider in the expanded band has a Hide button that adds it
   to the setting; to show it again, remove the id in the settings. Limits
-  are still polled, and `bb usage-forecast status` lists every provider,
+  are still polled, and `alia usage-forecast status` lists every provider,
   hidden ones marked `[hidden]`.
 - **Push before a limit runs out.** After each poll the server checks every
   limit window. When one reaches the threshold (90 % by default) it sends one
-  push through bb's `push-notifications` plugin («Claude Code: 5 Hour limit at
+  push through VesnALIA's `push-notifications` plugin («Claude Code: 5 Hour limit at
   91%», «The limit resets in 2h.»), and one more when the window reaches
   100 %. A window stays quiet until it resets or drops below the threshold;
   what was sent is kept across restarts. The push carries the provider, the
-  window and percents, no account data, and opens bb on tap. Without the
+  window and percents, no account data, and opens VesnALIA on tap. Without the
   `push-notifications` plugin, or with no device registered, the plugin only
   logs that the push was not delivered.
-- **Token totals.** The server counts the tokens of every BB thread from
-  bb's own token-usage events: per thread, and per provider for the local day
+- **Token totals.** The server counts the tokens of every VesnALIA thread from
+  VesnALIA's own token-usage events: per thread, and per provider for the local day
   and month. The expanded band has one line below the limit windows,
   «Tokens: thread 86k · today 310k · month 4.2M», where today and month are
-  the thread's provider across all its BB threads; the tooltip gives the full
+  the thread's provider across all its VesnALIA threads; the tooltip gives the full
   sums with cache reads. The sidebar card adds today's and the month's sum
   («310k · 4.2M») to the heading of each provider that has any. The main number leaves cache reads out (they
   dominate long threads); the number in brackets is the provider's
-  `totalTokens`. Only BB threads are counted: use of the same account outside
-  BB is not, and Hermes ACP agents write no token events. After the first
+  `totalTokens`. Only VesnALIA threads are counted: use of the same account outside
+  VesnALIA is not, and Hermes ACP agents write no token events. After the first
   start the server walks every thread once (archived and hidden included)
   and from then on counts each thread when it goes idle.
 - **Live context.** The server listens to the thread's context events
@@ -153,51 +153,51 @@ the context breakdown and one line per other provider.
 
 ## Install
 
-From the BB Community marketplace, once the entry is listed:
+From the VesnALIA Community marketplace, once the entry is listed:
 
 ```sh
-bb plugin install usage-forecast
+alia plugin install usage-forecast
 ```
 
-From this repository, tracking compatible releases (`bb plugin update` picks
+From this repository, tracking compatible releases (`alia plugin update` picks
 them up):
 
 ```sh
-bb plugin install git:https://github.com/ponomr/bb-plugin-usage-forecast.git@^0.4.0
+alia plugin install git:https://github.com/ponomr/bb-plugin-usage-forecast.git@^0.4.0
 ```
 
-From a checkout, on the machine that runs the bb server:
+From a checkout, on the machine that runs the VesnALIA server:
 
 ```sh
 git clone https://github.com/ponomr/bb-plugin-usage-forecast.git
-cd bb-plugin-usage-forecast
+cd alia-plugin-usage-forecast
 npm ci && npm run build
-bb plugin install "$PWD" --yes
-bb plugin list   # usage-forecast … running
+alia plugin install "$PWD" --yes
+alia plugin list   # usage-forecast … running
 ```
 
-Update: `git pull && npm ci && npm run build && bb plugin install "$PWD" --yes`.
+Update: `git pull && npm ci && npm run build && alia plugin install "$PWD" --yes`.
 
 ## Settings
 
-Settings → Plugins → Usage Forecast, or `bb plugin config usage-forecast`.
+Settings → Plugins → Usage Forecast, or `alia plugin config usage-forecast`.
 
 | Setting | Default | Range | Meaning |
 | --- | --- | --- | --- |
 | Context limit, tokens | 150 000 | 10 000–2 000 000 | The global working limit: used when neither a provider limit nor the provider's own compaction point applies; a smaller model window caps it |
-| Claude Code context limit, tokens | 0 (auto) | 0, 10 000–2 000 000 | Working limit for Claude Code threads; auto uses the point where Claude Code compacts on its own, as bb reports it |
-| Codex context limit, tokens | 0 (auto) | 0, 10 000–2 000 000 | Working limit for Codex threads; bb reports no compaction point for Codex, so auto uses the global limit. Set it to your `model_auto_compact_token_limit` to measure against where Codex compacts |
+| Claude Code context limit, tokens | 0 (auto) | 0, 10 000–2 000 000 | Working limit for Claude Code threads; auto uses the point where Claude Code compacts on its own, as VesnALIA reports it |
+| Codex context limit, tokens | 0 (auto) | 0, 10 000–2 000 000 | Working limit for Codex threads; VesnALIA reports no compaction point for Codex, so auto uses the global limit. Set it to your `model_auto_compact_token_limit` to measure against where Codex compacts |
 | Auto-compact | off | — | Compact a thread when it goes idle with its context at or above the threshold |
 | Auto-compact threshold, % | 80 | 50–95 | Fill of the context limit that triggers it |
 | Summarise and clear when a provider cannot compact | off | — | For a provider without compaction (custom ACP agents such as Hermes), Compact and auto-compact ask the agent for a summary, clear the context and send the summary back |
 | Limit push notifications | on | — | Push through the `push-notifications` plugin when a limit window reaches the threshold below, and again when it runs out |
 | Limit push threshold, % | 90 | 50–100 | Usage of a limit window that sends the push |
-| Limits poll interval, minutes | 2 | 1–10 | How often the server asks bb for limits |
+| Limits poll interval, minutes | 2 | 1–10 | How often the server asks VesnALIA for limits |
 | Language | English | English, Русский | Language of the plugin UI |
 | Limits show | Used | Used, Remaining | Each limit window as the percent used or the percent left, in its bar, number, pace tick and note; the context bar always shows what is used. A press on a percent in the band switches it |
 | Reset shows | Countdown | Countdown, Exact time | When a limit window resets: the time left until it, or the local time of the reset (the short weekday when not today). A press on a reset time in the band switches it |
 | Band above the composer | on | on, off | The limits and context band above the message field. Off: the band and its Compact button are gone; the context card, the sidebar ring, pushes and auto-compact work as before |
-| Hidden providers | empty | provider ids, separated by commas or spaces | Providers left out of the band's other providers, the sidebar ring and card, limit pushes and `headroom`; a thread's own provider stays. Case does not matter; an unknown id is ignored. `bb usage-forecast status` prints the ids |
+| Hidden providers | empty | provider ids, separated by commas or spaces | Providers left out of the band's other providers, the sidebar ring and card, limit pushes and `headroom`; a thread's own provider stays. Case does not matter; an unknown id is ignored. `alia usage-forecast status` prints the ids |
 
 Auto-compact rules:
 
@@ -222,7 +222,7 @@ Auto-compact rules:
   cannot compact» on, Compact and auto-compact do this instead: ask the agent
   for a summary that starts with `[context-summary]` (no tools, no file
   changes), wait for that turn (at most 10 minutes), check the answer is a
-  summary, clear the thread's context (bb keeps the history visible) and send
+  summary, clear the thread's context (VesnALIA keeps the history visible) and send
   the summary back as the next message. Nothing is cleared without a summary,
   and a turn the user starts meanwhile cancels the run. The log marks such an
   entry «summary and clear». Clearing keeps less than a provider's own
@@ -236,12 +236,12 @@ Auto-compact rules:
 ## CLI
 
 ```sh
-bb usage-forecast status [--refresh] [--json]
-bb usage-forecast headroom [--refresh] [--json] [--host <id or name> | --thread <threadId>]
-bb usage-forecast thread <threadId> [--json]
-bb usage-forecast compact <threadId>
-bb usage-forecast override <threadId> inherit|off|on [--threshold 50-95] [--limit <tokens>|0]
-bb usage-forecast tokens [--json]
+alia usage-forecast status [--refresh] [--json]
+alia usage-forecast headroom [--refresh] [--json] [--host <id or name> | --thread <threadId>]
+alia usage-forecast thread <threadId> [--json]
+alia usage-forecast compact <threadId>
+alia usage-forecast override <threadId> inherit|off|on [--threshold 50-95] [--limit <tokens>|0]
+alia usage-forecast tokens [--json]
 ```
 
 `status` puts the state after the percent, for example
@@ -276,7 +276,7 @@ cache reads and, in brackets, with them, then the ten most recently counted
 threads:
 
 ```text
-Tokens in BB threads without cache reads (with them in brackets); day and month in UTC.
+Tokens in ALIA threads without cache reads (with them in brackets); day and month in UTC.
   claude-code: today 310k (2.5M), month 4.2M (31M)
   codex: today 5k (9k), month 7k (12k)
 Recent threads:
@@ -286,41 +286,41 @@ Recent threads:
 Until the first collection has read every thread it adds a line with its
 progress. `--json` gives the same numbers in full.
 
-Agents in bb threads get the same reference from
+Agents in VesnALIA threads get the same reference from
 [skills/usage-forecast/SKILL.md](skills/usage-forecast/SKILL.md).
 
 ## Where the numbers come from
 
-Only from BB itself (`bb.sdk.system.usageLimits` and `bb.sdk.threads.context`).
+Only from VesnALIA itself (`alia.sdk.system.usageLimits` and `alia.sdk.threads.context`).
 The plugin never calls a provider API and never reads provider credentials.
 Account e-mail and account keys are dropped before anything is stored, and
 e-mail addresses in error texts are masked.
 
 ## Limits
 
-- Providers that bb does not report limits for (ACP agents, Cursor when it is
+- Providers that VesnALIA does not report limits for (ACP agents, Cursor when it is
   not installed) are shown by status only.
 - Summary and clear sends two messages into the thread on the user's behalf
   (the request and the summary), and both turns use the provider's limits.
 - The learned forecast appears after the server has seen a window close
   (five hours for a session window, a week for a weekly one) and uses the last
   eight. The current-pace forecast waits until 5 % of the window has passed.
-- A window without a known length (a label bb has not used before, no `kind`)
+- A window without a known length (a label VesnALIA has not used before, no `kind`)
   has no forecast.
 - Codex reports no context breakdown, only the total.
 - Compacting an almost empty thread can make it larger; the log shows both
   numbers as they are.
 - Poll back-off: 5 minutes after one failed poll, 15 after two in a row,
-  counted per host; the last error is on the `poll-limits` row of `bb plugin
-  list`. A poll fails only when bb's call fails, the host does not answer
+  counted per host; the last error is on the `poll-limits` row of `alia plugin
+  list`. A poll fails only when VesnALIA's call fails, the host does not answer
   within 30 s, or every provider reports an error; one provider's error stays
   on its own row.
-- Two hosts count as one account for a provider only when bb reports the same
+- Two hosts count as one account for a provider only when VesnALIA reports the same
   account for both in one poll; the account itself is compared in memory and
   never stored.
 - When a provider answers that it cannot compact, the plugin stops trying it
   for 24 hours; a successful manual compact lifts the mark earlier.
-- Token totals are approximate. bb keeps only a thread's newest token-usage
+- Token totals are approximate. VesnALIA keeps only a thread's newest token-usage
   event, so the first collection books each thread's last known total in the
   hour of its last turn: the day and month of the first collection also hold
   what a long-running thread spent before them. For Claude Code that total
@@ -332,14 +332,14 @@ e-mail addresses in error texts are masked.
 
 ## Built-in provider usage
 
-BB ships its own provider-usage plugin (`bb--provider-usage`). This plugin
-does not touch it, and both can run side by side: they read the same bb data.
+VesnALIA ships its own provider-usage plugin (`alia--provider-usage`). This plugin
+does not touch it, and both can run side by side: they read the same VesnALIA data.
 If two limit displays are too much, disable the built-in one in Settings →
 Plugins.
 
 ## Turning it off
 
-`bb plugin disable usage-forecast` removes the banner and stops polling and
+`alia plugin disable usage-forecast` removes the banner and stops polling and
 auto-compact. Threads and providers stay unchanged, and the stored history is
 kept for when the plugin is enabled again.
 
@@ -347,7 +347,7 @@ To hide only the band above the composer, switch off «Band above the
 composer» in the plugin settings.
 
 To hide only the ring, open More in the sidebar footer → Customize footer →
-«Remove Usage limits from footer»; it moves into the More menu. bb has no
+«Remove Usage limits from footer»; it moves into the More menu. VesnALIA has no
 plugin setting for this: a footer item cannot follow a setting.
 
 ## Development

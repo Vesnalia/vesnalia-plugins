@@ -170,13 +170,13 @@ export const hookSchema = z
   .strict();
 
 const PROVIDER_ID = /^[a-z0-9][a-z0-9._-]{0,99}$/;
-const providerId = z.string().regex(PROVIDER_ID, "must be a bb environment provider id, such as git-worktree");
+const providerId = z.string().regex(PROVIDER_ID, "must be a VesnALIA environment provider id, such as git-worktree");
 const inputsSchema = z.record(z.string(), z.unknown());
 
-// A bb machine provider that gives each thread a new machine, with inputs that may hold the same placeholders.
-export const machineSchema = z.object({ provider: z.string().regex(PROVIDER_ID, "must be a bb machine provider id"), inputs: inputsSchema.optional() }).strict();
+// A VesnALIA machine provider that gives each thread a new machine, with inputs that may hold the same placeholders.
+export const machineSchema = z.object({ provider: z.string().regex(PROVIDER_ID, "must be a VesnALIA machine provider id"), inputs: inputsSchema.optional() }).strict();
 
-// A bb environment provider for workers and reviewers, with inputs that may hold the {branch} and {base} placeholders,
+// A VesnALIA environment provider for workers and reviewers, with inputs that may hold the {branch} and {base} placeholders,
 // and optionally a new machine per thread. `reviewer` lets reviewers, the spec reviewer and the summary agent start in
 // another provider, or in the same one with a merge patch over the inputs, and on a machine of their own.
 export const environmentSchema = z
@@ -194,7 +194,7 @@ export const ticketEnvironmentSchema = z.object({ inputs: inputsSchema }).strict
 // A command, or a plugin's CLI command, that prepares the integration worktree and prints its path last.
 export const worktreeSchema = z
   .object({
-    plugin: z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/, "must be a bb plugin id, such as example-trees").optional(),
+    plugin: z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/, "must be a VesnALIA plugin id, such as example-trees").optional(),
     command,
   })
   .strict();
@@ -573,7 +573,7 @@ export function validateSemantics(spec: Spec, rawToml: string): { errors: string
     else errors.push(`repo[${index}].name: "${repo.name}" is also the name of repo[${sameName}]. Give every repo a unique name.`);
     const sameProject = projectIndex.get(repo.project);
     if (sameProject === undefined) projectIndex.set(repo.project, index);
-    else errors.push(`repo[${index}].project: "${repo.project}" is also the project of repo[${sameProject}]. List each bb project in one [[repo]] table only.`);
+    else errors.push(`repo[${index}].project: "${repo.project}" is also the project of repo[${sameProject}]. List each VesnALIA project in one [[repo]] table only.`);
   });
   const repoNames = [...repoIndex.keys()].join(", ");
 

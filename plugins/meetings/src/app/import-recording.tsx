@@ -36,7 +36,7 @@ export function ImportRecording({ nav, onImported }: { nav: MeetingsNav; onImpor
   return <Dialog open={open} onOpenChange={next => { if (!importing.pending) { setOpen(next); setValidation(null); importing.setError(null); } }}>
     <DialogTrigger asChild><Button type="button" variant="outline" size="sm">Импорт записи</Button></DialogTrigger>
     <DialogContent className="max-w-md">
-      <DialogHeader><DialogTitle>Импорт аудио или видео</DialogTitle><DialogDescription>Укажите абсолютный путь к существующему файлу на основной машине записи BB. Браузер не загружает файл с вашего устройства; сначала разместите запись на машине записи.</DialogDescription></DialogHeader>
+      <DialogHeader><DialogTitle>Импорт аудио или видео</DialogTitle><DialogDescription>Укажите абсолютный путь к существующему файлу на основной машине записи VesnALIA. Браузер не загружает файл с вашего устройства; сначала разместите запись на машине записи.</DialogDescription></DialogHeader>
       <form onSubmit={submit} className="min-w-0 space-y-3">
         <Field label="Путь к файлу на машине записи"><Input value={sourcePath} maxLength={4096} autoFocus spellCheck={false} disabled={importing.pending} placeholder="/путь/к/записи.mp4" onChange={event => { setSourcePath(event.target.value); setValidation(null); }} /></Field>
         <Field label="Название записи (необязательно)"><Input value={title} maxLength={200} disabled={importing.pending} onChange={event => setTitle(event.target.value)} /></Field>

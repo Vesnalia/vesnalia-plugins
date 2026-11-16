@@ -6,9 +6,9 @@ description: Inspect AI traffic and the millivolt proxy (requests, errors, token
 # millivolt
 
 The millivolt plugin runs a self-hosted inference proxy on loopback and keeps it
-in step with bb: it installs millivolt when it is missing, adopts an existing
-install, starts it with bb, health-checks every 20 seconds, and pulls updates on
-each bb start.
+in step with VesnALIA: it installs millivolt when it is missing, adopts an existing
+install, starts it with VesnALIA, health-checks every 20 seconds, and pulls updates on
+each VesnALIA start.
 
 Default listener: `http://127.0.0.1:8471` (Settings → millivolt). The operator
 token is a secret setting and is never available to this skill.
@@ -16,20 +16,20 @@ token is a secret setting and is never available to this skill.
 ## Commands
 
 ```sh
-bb millivolt status             # install, container and headline metrics
-bb millivolt status --json
-bb millivolt requests 20        # most recent proxied requests
-bb millivolt requests 20 --json
-bb millivolt discover           # find existing installs before creating one
-bb millivolt setup              # install into ~/millivolt on port 8471
-bb millivolt setup --dir PATH --port N
-bb millivolt setup --adopt --dir PATH --port N
-bb millivolt update             # pull the newest image, recreate if it changed
-bb millivolt repair             # diagnose and fix a deployment that stopped answering
-bb millivolt revert             # pin the previous image after a bad update
-bb millivolt resume             # stop pinning, track the published tag again
-bb millivolt start|stop|restart
-bb millivolt url
+alia millivolt status             # install, container and headline metrics
+alia millivolt status --json
+alia millivolt requests 20        # most recent proxied requests
+alia millivolt requests 20 --json
+alia millivolt discover           # find existing installs before creating one
+alia millivolt setup              # install into ~/millivolt on port 8471
+alia millivolt setup --dir PATH --port N
+alia millivolt setup --adopt --dir PATH --port N
+alia millivolt update             # pull the newest image, recreate if it changed
+alia millivolt repair             # diagnose and fix a deployment that stopped answering
+alia millivolt revert             # pin the previous image after a bad update
+alia millivolt resume             # stop pinning, track the published tag again
+alia millivolt start|stop|restart
+alia millivolt url
 ```
 
 ## Reading traffic
@@ -38,7 +38,7 @@ bb millivolt url
   requests, errors, in-flight count, cost and token totals.
 - `requests` prints one line per call: timestamp, status, provider/model, client,
   duration, tokens, and the error type when a call failed.
-- The same data lives in bb's sidebar under **Millivolt** (Overview, Requests,
+- The same data lives in VesnALIA's sidebar under **Millivolt** (Overview, Requests,
   and the full dashboard), which is also where to change providers, holds and
   rate limits.
 
@@ -49,7 +49,7 @@ bb millivolt url
 - `setup` without `--adopt` writes a compose deployment and starts it. It refuses
   to overwrite a compose file the plugin did not create.
 - `stop` is sticky: the supervisor will not bring millivolt back on its own until
-  `bb millivolt start`.
+  `alia millivolt start`.
 - Updates skip while a request is in flight; a dropped stream is not a failed
   update.
 - After `revert`, automatic updates are paused until `resume`. The pin lives in

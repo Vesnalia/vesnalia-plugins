@@ -57,13 +57,13 @@ export async function runBrowser(
       try {
         loadPlaywright();
       } catch {
-        throw new Error("Playwright runtime is unavailable. Reinstall BB Surf.");
+        throw new Error("Playwright runtime is unavailable. Reinstall VesnALIA Surf.");
       }
     }
   }, signal);
   if (selected.engine === "playwright" && request.goal) {
     return { ...selected, status: "agent-handoff", cdpUrl: binding.cdpUrl,
-      message: "No browser action has run. Use bb surf inspect/click/fill/press on this project, including when CDP is on another host." };
+      message: "No browser action has run. Use VesnALIA surf inspect/click/fill/press on this project, including when CDP is on another host." };
   }
   const versionResponse = await fetch(new URL("/json/version", binding.cdpUrl), {
     signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(8000)]) : AbortSignal.timeout(8000),

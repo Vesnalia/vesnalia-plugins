@@ -1,7 +1,7 @@
-# Shortcut for bb
+# Shortcut for VesnALIA
 
 An independent community plugin that brings assigned Shortcut stories into
-[bb](https://github.com/get-bb/bb).
+[VesnALIA](https://github.com/get-bb/bb).
 
 ## Features
 
@@ -9,19 +9,19 @@ An independent community plugin that brings assigned Shortcut stories into
 - Workflow tabs, search, completed-story filtering, and story details in a modal that keeps your place on the board.
 - Manual story ordering with drag-and-drop and edge auto-scrolling.
 - Card actions for viewing details, copying an ID, opening Shortcut, and
-  starting work in bb.
-- **Start work in bb** moves the story to `In Development` in its current
+  starting work in VesnALIA.
+- **Start work in VesnALIA** moves the story to `In Development` in its current
   workflow before creating an agent thread.
 - Shortcut story URLs in chat open inside the plugin or on the Shortcut
-  website, controlled by the **Open story links in bb** setting (on by
+  website, controlled by the **Open story links in VesnALIA** setting (on by
   default); explicit **Open in Shortcut** actions always open the Shortcut
   website.
-- `bb shortcut status|list|show` commands, native agent tools, and `#`/`@`
+- `alia shortcut status|list|show` commands, native agent tools, and `#`/`@`
   story mentions.
 
 ## Requirements
 
-- bb 0.35 or newer.
+- VesnALIA 0.35 or newer.
 - A Shortcut API token.
 - Node.js and npm when installing directly from Git.
 
@@ -30,15 +30,15 @@ An independent community plugin that brings assigned Shortcut stories into
 Install the latest version from the public Git repository:
 
 ```sh
-bb plugin install git:https://github.com/andreasmcdermott/bb-plugin-shortcut.git@main
+alia plugin install git:https://github.com/andreasmcdermott/bb-plugin-shortcut.git@main
 ```
 
 Open **Settings → Plugins → Shortcut**, add a Shortcut API token, and choose a
-default bb project. Create a token in Shortcut under **Settings → API Tokens**.
-Toggle **Open story links in bb** to choose whether Shortcut story links from
-chat open inside bb or on the Shortcut website.
+default VesnALIA project. Create a token in Shortcut under **Settings → API Tokens**.
+Toggle **Open story links in VesnALIA** to choose whether Shortcut story links from
+chat open inside VesnALIA or on the Shortcut website.
 
-The token is stored through bb's secret-settings facility and is never sent to
+The token is stored through VesnALIA's secret-settings facility and is never sent to
 the plugin frontend.
 
 ## Permissions and behavior
@@ -48,7 +48,7 @@ The plugin uses Shortcut REST API v3 to:
 - Read the authenticated member, workflows, and assigned stories.
 - Update a story's manual position when you reorder a card.
 - Move a story to the matching `In Development` state when you choose
-  **Start work in bb**.
+  **Start work in VesnALIA**.
 
 The plugin only performs Shortcut mutations in response to those explicit UI
 actions. A workflow without an `In Development` state produces an error instead
@@ -59,8 +59,8 @@ of choosing a state from another workflow.
 Check for and install newer commits from the tracked `main` branch:
 
 ```sh
-bb plugin outdated
-bb plugin update shortcut
+alia plugin outdated
+alia plugin update shortcut
 ```
 
 ## Local development
@@ -68,17 +68,17 @@ bb plugin update shortcut
 ```sh
 npm install
 npm run check
-bb plugin install .
+alia plugin install .
 ```
 
 After changing source files, rebuild and reload the installed path plugin:
 
 ```sh
 npm run build
-bb plugin reload shortcut
+alia plugin reload shortcut
 ```
 
-`components/ui/` contains vendored, version-matched bb components. The full
+`components/ui/` contains vendored, version-matched VesnALIA components. The full
 plugin API declarations are in `types/` and mapped through `tsconfig.json`.
 
 ## Distribution

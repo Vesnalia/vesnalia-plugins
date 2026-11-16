@@ -32,7 +32,7 @@ emulator_version=$(emulator -version 2>/dev/null | sed -n 's/^Android emulator v
 [ -n "$emulator_version" ] || { echo "prepare-avds: the emulator does not say its version" >&2; exit 1; }
 cpu=$(sed -n 's/^model name[[:space:]]*: //p' /proc/cpuinfo | head -1)
 log() { echo "$(date -u +%H:%M:%S) prepare-avds: $*"; }
-trap 'bb-box-emulator stop >/dev/null 2>&1 || true' EXIT
+trap 'alia-box-emulator stop >/dev/null 2>&1 || true' EXIT
 
 shell() { adb -s "$serial" shell "$@" </dev/null; }
 
@@ -122,7 +122,7 @@ for i in $(seq 0 $((count - 1))); do
   set_config "$config" fastboot.forceColdBoot no
   set_config "$config" fastboot.forceFastBoot yes
 
-  booted=$(bb-box-emulator start "$avd" --cold)
+  booted=$(alia-box-emulator start "$avd" --cold)
   log "$model: $booted"
   for attempt in $(seq 1 10); do
     apply_defaults
@@ -131,22 +131,22 @@ for i in $(seq 0 $((count - 1))); do
     [ "$attempt" -lt 10 ] || check_defaults
   done
   wait_wifi_written "$model"
-  status=$(bb-box-emulator grpc setClipboard)
+  status=$(alia-box-emulator grpc setClipboard)
   [ "$status" = 0 ] || { echo "prepare-avds: setClipboard answered gRPC status ${status:-none}" >&2; exit 1; }
   shell logcat -c
   sleep 2
   started=$(date +%s%N)
-  bb-box-emulator stop
+  alia-box-emulator stop
   log "$model: stopped and saved its snapshot in $((($(date +%s%N) - started) / 1000000)) ms"
   made=$(date -u +%Y-%m-%dT%H:%M:%SZ)
   [ -f "$HOME/.android/avd/$avd.avd/snapshots/default_boot/ram.bin" ] || { echo "prepare-avds: $avd has no snapshot after it stopped" >&2; exit 1; }
 
-  booted=$(bb-box-emulator start "$avd" --no-save)
+  booted=$(alia-box-emulator start "$avd" --no-save)
   log "$model: from its snapshot: $booted"
   case "$booted" in *snapshot=loaded*) ;; *) echo "prepare-avds: $avd did not boot from its snapshot" >&2; exit 1 ;; esac
   check_defaults
   wifi_written || { echo "prepare-avds: $avd's snapshot has no AndroidWifi in its Wi-Fi store" >&2; exit 1; }
-  bb-box-emulator stop
+  alia-box-emulator stop
 
   devices=$(jq -c --arg model "$model" --arg avd "$avd" --arg emulator "$emulator_version" --arg cpu "$cpu" --arg made "$made" \
     --argjson image "$(jq -c .systemImage "$pins")" \

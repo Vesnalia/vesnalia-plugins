@@ -1,11 +1,11 @@
-// Wiring of the Plugin Workshop into bb: settings, one instance each of the store, catalog, engine, creation and Rollout, panel calls,
+// Wiring of the Plugin Workshop into VesnALIA: settings, one instance each of the store, catalog, engine, creation and Rollout, panel calls,
 // the per-minute reconcile, events, agent instructions, CLI. No logic lives here — it is in server/*.ts; here only ordering and failure handling.
 import { mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { z } from "zod";
 import { dirname } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
-import type { BbPluginApi, ExperimentalPluginRpcHandlerContext, ExperimentalPluginRpcHandlersWithContext } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, ExperimentalPluginRpcHandlerContext, ExperimentalPluginRpcHandlersWithContext } from "@vesnalia/plugin-sdk";
 import { workshopContract } from "../contract";
 import { Api } from "./api";
 import { runCli } from "./cli";
@@ -33,7 +33,7 @@ const CANCEL_SUPPORTED = true;
 export const DEFAULT_TASKS_PROJECT = "";
 const TICK_MS = 60_000;
 /**
- * After the service is stopped, its loop waits for the running pass no longer than this: bb 0.46 waits 5 s for a service to stop,
+ * After the service is stopped, its loop waits for the running pass no longer than this: VesnALIA 0.46 waits 5 s for a service to stop,
  * after that the service counts as hung and the plugin reload discards the new instance. The next reconcile finishes whatever is
  * left, from the intent and attempt records.
  */
@@ -42,7 +42,7 @@ const CATALOG_EVERY_MS = 5 * 60_000;
 /** Reconcile with GitHub: fetch of every working copy — one at a time, decoupled from the tick. */
 const GITHUB_EVERY_MS = 15 * 60_000;
 const MIN_EVENT_SYNC_GAP_MS = 10_000;
-/** `system:changed` changes after which the catalog is reconciled with bb (`event.changes`). */
+/** `system:changed` changes after which the catalog is reconciled with VesnALIA (`event.changes`). */
 const SYNC_ON: ReadonlySet<string> = new Set(["plugins-changed", "plugin-install-jobs-changed", "plugin-update-jobs-changed"]);
 /** Changes that trigger an immediate rollout attempt pass: an install job changed state, the plugin list changed. */
 const ADVANCE_ON: ReadonlySet<string> = new Set(["plugins-changed", "plugin-install-jobs-changed"]);
@@ -54,13 +54,13 @@ export const READ_ONLY_RPC: ReadonlySet<string> = new Set(["board", "plugin", "w
 
 /**
  * A changing RPC call from another plugin is refused. The host verifies a plugin caller (`experimental_caller` is set from a per-load token
- * only the server knows), so another plugin cannot press the owner's buttons through `bb.sdk.plugins.callRpc`. Every other caller — the
- * panel, the `bb` CLI, an agent with access to bb — is a `client`: bb does not tell a person's click from an agent's call, so within the
+ * only the server knows), so another plugin cannot press the owner's buttons through `alia.sdk.plugins.callRpc`. Every other caller — the
+ * panel, the `VesnALIA` CLI, an agent with access to VesnALIA — is a `client`: VesnALIA does not tell a person's click from an agent's call, so within the
  * Workshop every client is the owner (README, «Security»).
  */
 export function refuseOtherPlugin(method: string, ctx: ExperimentalPluginRpcHandlerContext | undefined): void {
   const c = ctx?.experimental_caller;
-  if (c?.kind === "plugin" && c.pluginId !== SELF_ID) throw new Error(`plugin ${c.pluginId} may not call ${method}: Plugin Workshop actions are taken only from the owner's panel (or the bb CLI)`);
+  if (c?.kind === "plugin" && c.pluginId !== SELF_ID) throw new Error(`plugin ${c.pluginId} may not call ${method}: Plugin Workshop actions are taken only from the owner's panel (or the VesnALIA CLI)`);
 }
 
 type Handlers = ExperimentalPluginRpcHandlersWithContext<typeof workshopContract>;
@@ -81,7 +81,7 @@ function ownerOnly(handlers: Handlers): Handlers {
 
 export interface WireDeps {
   /** Outbound ports; by default the real ones on top of the SDK. `onChange` — "a work changed": refreshes the board cache and notifies the UI. */
-  ports?: (bb: BbPluginApi, onChange: (workId: string) => void) => Ports;
+  ports?: (alia: AliaPluginApi, onChange: (workId: string) => void) => Ports;
   /** Folders created at startup: the lock request folder and the build lock folder. */
   lockDirs?: string[];
   /** Pause within which consecutive `system:changed` events merge into one catalog reconcile, ms. */
@@ -104,25 +104,25 @@ export interface Wiring {
    * runs detached and the tick does not wait for it — the scaffold may wait for the build lock up to 15 minutes.
    */
   tick(): Promise<void>;
-  /** Reconcile the catalog with bb; a burst of requests merges into one or two passes. Does not throw. */
+  /** Reconcile the catalog with VesnALIA; a burst of requests merges into one or two passes. Does not throw. */
   syncCatalog(): Promise<void>;
 }
 
-export async function wire(bb: BbPluginApi, deps: WireDeps = {}): Promise<Wiring> {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+export async function wire(alia: AliaPluginApi, deps: WireDeps = {}): Promise<Wiring> {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, MIGRATIONS);
   const store = new Store(db);
   // The log throws after the plugin is unloaded; a late failure there is no reason to crash.
   const warn = (m: string) => {
     try {
-      bb.log.warn(redact(m));
+      alia.log.warn(redact(m));
     } catch {
       /* plugin already unloaded */
     }
   };
 
   // --- settings: values are read through getters and updated by onChange ---
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     maxBuilding: {
       type: "number",
       label: "Max works in Building",
@@ -150,7 +150,7 @@ export async function wire(bb: BbPluginApi, deps: WireDeps = {}): Promise<Wiring
     githubOwner: {
       type: "string",
       label: "GitHub repository owner",
-      description: "The plugin repository is <owner>/bb-plugin-<id>, private. Empty — GitHub is not used. Sign-in — gh on the bb server.",
+      description: "The plugin repository is <owner>/alia-plugin-<id>, private. Empty — GitHub is not used. Sign-in — gh on the VesnALIA server.",
       default: "",
     },
     allowPublicRepos: {
@@ -162,19 +162,19 @@ export async function wire(bb: BbPluginApi, deps: WireDeps = {}): Promise<Wiring
     pluginsRoot: {
       type: "string",
       label: "Plugins folder",
-      description: "Where the plugin working copies live (<folder>/bb-plugin-<id>) and where the Workshop creates new ones. Empty — ~/plugins. An absolute path of letters, digits and . _ / @ + - only; anything else is ignored (the plugin status says why). Change it only with no open works; takes effect after a plugin restart.",
+      description: "Where the plugin working copies live (<folder>/alia-plugin-<id>) and where the Workshop creates new ones. Empty — ~/plugins. An absolute path of letters, digits and . _ / @ + - only; anything else is ignored (the plugin status says why). Change it only with no open works; takes effect after a plugin restart.",
       default: "",
     },
     buildLock: {
       type: "string",
       label: "Build lock",
-      description: "flock file under which heavy commands run (npm, tsc, tests, install). Empty — ~/.bb/locks/build.lock. An absolute path of letters, digits and . _ / @ + - only; anything else is ignored (the plugin status says why). Takes effect after a plugin restart.",
+      description: "flock file under which heavy commands run (npm, tsc, tests, install). Empty — ~/.vesnalia/locks/build.lock. An absolute path of letters, digits and . _ / @ + - only; anything else is ignored (the plugin status says why). Takes effect after a plugin restart.",
       default: "",
     },
     tasksProject: {
       type: "string",
       label: "Tracker project for work tasks",
-      description: "Id of the tracker project where the Workshop creates a task for every work. There is no default: until a project is selected, new works are refused (project ids: `bb tasks project list`).",
+      description: "Id of the tracker project where the Workshop creates a task for every work. There is no default: until a project is selected, new works are refused (project ids: `alia tasks project list`).",
       default: DEFAULT_TASKS_PROJECT,
     },
   });
@@ -213,7 +213,7 @@ export async function wire(bb: BbPluginApi, deps: WireDeps = {}): Promise<Wiring
   if (pathProblems.length > 0) {
     for (const m of pathProblems) warn(m);
     try {
-      bb.status.needsConfiguration(`${pathProblems.join("; ")}. Fix the setting and reload the plugin.`);
+      alia.status.needsConfiguration(`${pathProblems.join("; ")}. Fix the setting and reload the plugin.`);
     } catch (e) {
       warn(`status: ${errText(e)}`);
     }
@@ -225,15 +225,15 @@ export async function wire(bb: BbPluginApi, deps: WireDeps = {}): Promise<Wiring
   // --- signals to the UI and the board cache ---
   const signal = (workId: string | null, pluginId: string | null) => {
     try {
-      bb.realtime.publish(CHANNEL, { workId, pluginId });
+      alia.realtime.publish(CHANNEL, { workId, pluginId });
     } catch (e) {
       warn(`realtime: ${errText(e)}`);
     }
   };
   /**
-   * A work changed (including by a step or the outcome of a rollout attempt): its plugin alone is reconciled with bb — state in the
+   * A work changed (including by a step or the outcome of a rollout attempt): its plugin alone is reconciled with VesnALIA — state in the
    * list and git into the board cache — and only then is the UI notified; otherwise it would fetch stale data (the column and the
-   * state in bb come from this reconcile).
+   * state in VesnALIA come from this reconcile).
    */
   const onChange = (workId: string) => {
     let pluginId: string | null = null;
@@ -247,7 +247,7 @@ export async function wire(bb: BbPluginApi, deps: WireDeps = {}): Promise<Wiring
       .finally(() => signal(workId, pluginId));
   };
 
-  const ports = (deps.ports ?? ((b, c) => sdkPorts(b, c)))(bb, onChange);
+  const ports = (deps.ports ?? ((b, c) => sdkPorts(b, c)))(alia, onChange);
   // Stop signal for the short attempt polls: aborted when the service stops and when the plugin is unloaded; a new service start
   // (if the plugin is not unloaded) begins with a fresh one.
   let disposed = false;
@@ -294,13 +294,13 @@ export async function wire(bb: BbPluginApi, deps: WireDeps = {}): Promise<Wiring
     })();
     return syncing;
   };
-  /** The bb event changes what the catalog sees: the plugin list, install or update jobs. Other system events do not. */
+  /** The VesnALIA event changes what the catalog sees: the plugin list, install or update jobs. Other system events do not. */
   const aboutPlugins = (event: { changes?: readonly string[] } | undefined): boolean =>
     Array.isArray(event?.changes) && event.changes.some((c) => SYNC_ON.has(c));
   const aboutAttempts = (event: { changes?: readonly string[] } | undefined): boolean =>
     Array.isArray(event?.changes) && event.changes.some((c) => ADVANCE_ON.has(c));
 
-  // --- rollout attempt pass: the per-minute reconcile and bb events about install jobs ---
+  // --- rollout attempt pass: the per-minute reconcile and VesnALIA events about install jobs ---
   let rolling: Promise<void> | null = null;
   let rollAgain = false;
   /** One pass at a time; a request during a pass means one more after it (the event may have arrived after a step had already read the job). */
@@ -341,7 +341,7 @@ export async function wire(bb: BbPluginApi, deps: WireDeps = {}): Promise<Wiring
       warn(`unsubscribe from system:changed: ${errText(e)}`);
     }
   };
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
     halt.abort();
     if (timer) clearTimeout(timer);
@@ -391,7 +391,7 @@ export async function wire(bb: BbPluginApi, deps: WireDeps = {}): Promise<Wiring
   };
   // Events only speed up the reconcile of the work whose thread changed.
   for (const ev of ["thread.idle", "thread.failed", "thread.active"] as const) {
-    bb.events.on(ev, ({ thread }) => {
+    alia.events.on(ev, ({ thread }) => {
       const run = store.run(thread.id);
       if (run)
         void engine
@@ -421,17 +421,17 @@ export async function wire(bb: BbPluginApi, deps: WireDeps = {}): Promise<Wiring
       if (onAbort) abort.removeEventListener("abort", onAbort);
     }
   };
-  bb.background.service("reconcile", {
+  alia.background.service("reconcile", {
     async start(abort) {
       if (!disposed && halt.signal.aborted) halt = new AbortController();
       const mine = halt;
       const stopPolls = () => mine.abort();
       if (abort.aborted) stopPolls();
       else abort.addEventListener("abort", stopPolls, { once: true });
-      // `bb.sdk` is available only after the server starts — so the subscription and the first catalog reconcile are here, not at load.
+      // `alia.sdk` is available only after the server starts — so the subscription and the first catalog reconcile are here, not at load.
       unsubscribeAll();
       try {
-        unsubscribe = bb.sdk.subscribe({
+        unsubscribe = alia.sdk.subscribe({
           event: "system:changed",
           callback: (event) => {
             if (aboutPlugins(event)) syncSoon();
@@ -465,7 +465,7 @@ export async function wire(bb: BbPluginApi, deps: WireDeps = {}): Promise<Wiring
 
   // --- panel calls ---
   /**
-   * An owner action on a plugin: after it — also when it was refused — the plugin alone is reconciled with bb (state in the list, git of
+   * An owner action on a plugin: after it — also when it was refused — the plugin alone is reconciled with VesnALIA (state in the list, git of
    * the copy), then the UI is notified. Otherwise, until the full catalog reconcile, the card would show the old column and state.
    */
   const touched = async <T>(pluginId: string, run: () => Promise<T>): Promise<T> => {
@@ -501,7 +501,7 @@ export async function wire(bb: BbPluginApi, deps: WireDeps = {}): Promise<Wiring
     if (open) await pilot.ownerActed(open.id, what).catch((e) => warn(`pilot pause: ${errText(e)}`));
     return run();
   };
-  bb.rpc.register(workshopContract, ownerOnly({
+  alia.rpc.register(workshopContract, ownerOnly({
     board: () => api.board(),
     plugin: ({ pluginId }) => api.plugin(pluginId),
     work: ({ workId }) => api.work(workId),
@@ -568,7 +568,7 @@ export async function wire(bb: BbPluginApi, deps: WireDeps = {}): Promise<Wiring
     async hidePlugin({ pluginId }) {
       const row = store.plugin(pluginId);
       if (!row) throw new Error("plugin is not on the board");
-      if (row.gone_reason === null) throw new Error("the plugin is not gone (it is in bb or its folder exists) — only a gone plugin can be hidden from the board; first «Disable» it and remove the folder");
+      if (row.gone_reason === null) throw new Error("the plugin is not gone (it is in VesnALIA or its folder exists) — only a gone plugin can be hidden from the board; first «Disable» it and remove the folder");
       if (store.openWorkOf(pluginId)) throw new Error("a work is open on the plugin — cancel it first");
       store.hidePlugin(pluginId, Date.now());
       signal(null, pluginId);
@@ -594,13 +594,13 @@ export async function wire(bb: BbPluginApi, deps: WireDeps = {}): Promise<Wiring
 
   // The autopilot orchestrator: the Workshop tools are given only to its thread; Pilot re-checks the thread on every call.
   const failed = (e: unknown) => ({ content: [{ type: "text" as const, text: `Not done: ${errText(e)}` }], isError: true });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: PILOT_TOOLS[0],
     description: "Plugin Workshop autopilot: the work's status packet — stage, state, gates, owner items, stage files, the agent's last reply, available actions.",
     parameters: z.object({}).strict(),
     execute: (_p, ctx) => pilot.statusTool(ctx.threadId).catch(failed),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: PILOT_TOOLS[1],
     description:
       `Plugin Workshop autopilot: one action on the owner's behalf. answer {text} — reply to the stage agent; forward {force?, text?} — hand over the stage (on Mockup — approve the mockup); report_back — return to Implementation by the red report; back {toStage, text, fixForward?, force?}; enter {force?, text?} — roll out from Verification; accept {text?, force?} — accept on Rollout; rollback {text}; reinstall; restart; review; stop_reviews; wait {text}; stop {text} — stop and call the owner; report {text} — the final report. force lifts gate warnings only and needs a reason of at least ${MIN_FORCE_REASON} characters in text; hard stops (IMPOSSIBLE verdict, open or missing owner.md before Implementation, with GitHub on anything but a clean publication check of the current commit, a red live check) are not lifted by force and stop the autopilot.`,
@@ -615,7 +615,7 @@ export async function wire(bb: BbPluginApi, deps: WireDeps = {}): Promise<Wiring
       .strict(),
     execute: (p, ctx) => pilot.actTool(ctx.threadId, p).catch(failed),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: PILOT_TOOLS[2],
     description: "Plugin Workshop autopilot: a work file by its path from the status packet (documents, reports, mockup); images come back as images.",
     parameters: z.object({ path: z.string().min(1).max(500) }).strict(),
@@ -626,23 +626,23 @@ export async function wire(bb: BbPluginApi, deps: WireDeps = {}): Promise<Wiring
         .catch(failed),
   });
   // Every work thread knows who it is — from its row or from the spawn metadata; other threads get no instructions.
-  bb.agents.configure((ctx) => {
+  alia.agents.configure((ctx) => {
     const pilotText = pilot.identity(ctx.thread.id, ctx.pluginMetadata);
     if (pilotText) return { tools: [...PILOT_TOOLS], skills: [], instructions: pilotText };
     const text = engine.identityOf(ctx.thread.id, ctx.pluginMetadata);
     return text ? { tools: [], skills: [], instructions: text } : { tools: [], skills: [] };
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: SELF_ID,
     summary: "Plugin Workshop: board and works (read-only)",
     commands: [
-      { name: "list", summary: "Plugins: column, state in bb, work", usage: "bb plugin-workshop list [--json]" },
-      { name: "show", summary: "A plugin (by id) or a work (by task key or work id)", usage: "bb plugin-workshop show <id|KEY> [--json]" },
+      { name: "list", summary: "Plugins: column, state in VesnALIA, work", usage: "alia plugin-workshop list [--json]" },
+      { name: "show", summary: "A plugin (by id) or a work (by task key or work id)", usage: "alia plugin-workshop show <id|KEY> [--json]" },
     ],
     run: (argv) => runCli(argv, { api, store }),
   });
 
-  bb.log.info(`workshop plugin loaded (${store.unsettledWorks().length} works under reconcile, ${store.creatingWorks().length} being created)`);
+  alia.log.info(`workshop plugin loaded (${store.unsettledWorks().length} works under reconcile, ${store.creatingWorks().length} being created)`);
   return wiring;
 }

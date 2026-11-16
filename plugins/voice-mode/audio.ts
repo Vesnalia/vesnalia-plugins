@@ -105,7 +105,7 @@ export async function startMic(sampleRate: number, isMuted: () => boolean, onChu
   });
   const ctx = new AudioContext({ sampleRate });
   const source = ctx.createMediaStreamSource(stream);
-  // ScriptProcessor avoids loading a worklet module under bb's CSP; 1024
+  // ScriptProcessor avoids loading a worklet module under VesnALIA's CSP; 1024
   // frames at 24 kHz is a ~43 ms chunk.
   const processor = ctx.createScriptProcessor(1024, 1, 1);
   processor.onaudioprocess = (event) => {

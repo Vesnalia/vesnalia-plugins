@@ -5,7 +5,7 @@
 // and that an issue may only become current when it is an open issue of a
 // folder whose issues can be read.
 //
-// Why: the tools are offered to every thread, in any folder (bead-bb-8fm).
+// Why: the tools are offered to every thread, in any folder (bead-alia-8fm).
 // Instructions that claimed "this repository tracks work in beads" would be
 // false in most folders, and a tool that stored an id where there is no
 // beads would show the user a current issue that does not exist.
@@ -100,9 +100,9 @@ test("a switch of workflow is told as a note that asks for nothing", () => {
   assert.match(switchNote("simple"), /do not call airbender_workflow_move/u);
 });
 
-test("the step tool's standing instructions fit the limit BB sets", () => {
-  // BB refuses to load a plugin whose tool instructions exceed 4096
-  // characters (found when the epic's step was added, bead-bb-ty5.2).
+test("the step tool's standing instructions fit the limit VesnALIA sets", () => {
+  // VesnALIA refuses to load a plugin whose tool instructions exceed 4096
+  // characters (found when the epic's step was added, bead-alia-ty5.2).
   assert.ok(
     moveToolInstructions(standardWorkflow.describeForAgents()).length <= 4096,
   );

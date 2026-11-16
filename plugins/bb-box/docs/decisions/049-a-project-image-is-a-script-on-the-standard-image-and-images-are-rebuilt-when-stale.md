@@ -5,7 +5,7 @@ Status: accepted, 2 October 2026. Extends
 holds images; [033](033-a-thread-can-start-on-a-new-box.md): a new box
 takes its project's image; [032](032-spare-boxes-are-enrolled-ahead.md):
 spares can be of an image; and
-[042](042-a-docker-host-can-be-a-bb-machine.md): Docker images are rebuilt
+[042](042-a-docker-host-can-be-a-alia-machine.md): Docker images are rebuilt
 through the same relay. Extended by
 [050](050-a-box-can-join-the-operators-tailnet-as-an-ephemeral-node.md):
 standard Linux images carry Tailscale, stopped and with no state, and by
@@ -14,7 +14,7 @@ Linux or Android image is also due when a file in its guest folder, or one
 its backend builds it from, changes.
 Amended before it was built, 3 October 2026: a person never writes the
 script. It lives in the project's repository, and an agent writes it from
-a draft that bb-box makes from the project's files.
+a draft that alia-box makes from the project's files.
 
 ## Context
 
@@ -37,22 +37,22 @@ What exists:
   (`customize-base.sh`, then `customize-desktop.sh` for a desktop), the
   kind's check as the box user, then `finalize.sh`. Docker images come from
   `setup/docker/build.sh`, which runs the same guest scripts, and which
-  bb-box runs itself for a Docker host that is a BB machine (042). Tart's
+  alia-box runs itself for a Docker host that is a VesnALIA machine (042). Tart's
   images come from `prepare-image.sh`, `prepare-linux-image.sh` (the same
   guest scripts) and `prepare-windows-image.sh`, run on the Mac.
-- **Records.** `finalize.sh` writes `/usr/share/bb-box/template-release`
+- **Records.** `finalize.sh` writes `/usr/share/alia-box/template-release`
   (kind, date, apt snapshot, and each tool's version and SHA-256),
   `template-pins.json` and `template-packages.tsv`. LXC templates carry a
   build ID tag, which warm guests copy. Docker images carry labels with the
-  layout version and the digest of BB's host app. Tart's builds are told
+  layout version and the digest of VesnALIA's host app. Tart's builds are told
   apart by the disk's inode and time; Windows images have a `build.json`.
 - **What is checked.** Warm guests are retired when their template's build
   ID changes, or Tart's image, Tart or macOS does. The Docker doctor says
   when an image is missing, from another layout or has another build of
-  BB's app. A GPU desktop compares its NVIDIA userspace with the host's
+  VesnALIA's app. A GPU desktop compares its NVIDIA userspace with the host's
   driver at each start.
 - **Pins.** `pins.json` and `desktop-pins.tsv` pin each tool and the apt
-  snapshot by hand. A rebuild with the same pins changes only BB's app and
+  snapshot by hand. A rebuild with the same pins changes only VesnALIA's app and
   the apt lists.
 
 A layer like the example project's, in a `linux` box on Proxmox LXC:
@@ -72,18 +72,18 @@ dependencies takes minutes.
 
 ### The contract
 
-Any image bb-box starts a box from, its own or a project's, must keep this
+Any image alia-box starts a box from, its own or a project's, must keep this
 contract. The kind's check, which every build already runs, checks it.
 
 1. **The box user.** `box`, with sudo without a password. On backends
-   reached over SSH (Proxmox LXC, Tart, QEMU), bb-box's public key in its
+   reached over SSH (Proxmox LXC, Tart, QEMU), alia-box's public key in its
    `authorized_keys` and `sshd` at boot. Docker boxes are reached through
    `docker exec` (031) and need neither.
-2. **bb-box's boot units.** Clearing BB's daemon state at boot (017) and
+2. **alia-box's boot units.** Clearing VesnALIA's daemon state at boot (017) and
    reading the names the backend gives the guest (018). The image itself
    names no install or box.
-3. **BB's host app** with its digest file, so a box enrols in about 2 s
-   rather than 5. Not on Windows, where BB's app does not run.
+3. **VesnALIA's host app** with its digest file, so a box enrols in about 2 s
+   rather than 5. Not on Windows, where VesnALIA's app does not run.
 4. **Docker**, started on first use (041), on Linux.
 5. **For desktop kinds**, the kind's desktop and its units (Xorg or
    Xtigervnc with XFCE, or Sway with wayvnc
@@ -91,12 +91,12 @@ contract. The kind's check, which every build already runs, checks it.
    the display script that resizes (021), Chrome, and Cua Driver with its
    unit (015).
 6. **Nothing of one machine.** No SSH host keys, machine ID, logs, caches,
-   Docker state, BB daemon state or other per-machine keys, so each box
+   Docker state, VesnALIA daemon state or other per-machine keys, so each box
    makes its own.
 7. **Its record**, below.
 
 The contract has a version, in the record. The doctor fails an image whose
-version is older than bb-box needs, as it does now for Docker's layout
+version is older than alia-box needs, as it does now for Docker's layout
 version, which this replaces.
 
 ### A project's image
@@ -109,22 +109,22 @@ each backend that offers the kind.
   in PowerShell and macOS later), an optional check run as the box user,
   how it is baked (below), the projects it belongs to, and where the
   script came from in the project's repository.
-- **Set by an agent, the CLI or the page.** `box_image_set`, or `bb box
+- **Set by an agent, the CLI or the page.** `box_image_set`, or `alia box
   image set <name> --kinds linux,linux-desktop-cpu --script-file
-  .bb/box-setup.sh [--check-file .bb/box-check.sh] --project <id>`, keeps
-  a copy of the files, as BB's script automations do.
+  .vesnalia/box-setup.sh [--check-file .vesnalia/box-check.sh] --project <id>`, keeps
+  a copy of the files, as VesnALIA's script automations do.
   The settings page lists each image with its builds per backend, their
   dates, sizes and states, and the last build's output.
 - **One script for every Linux backend.** It runs in a booted box with the
   network, on Proxmox LXC, Docker and Tart, x86_64 and arm64. It can read
-  `BB_BOX_IMAGE`, `BB_BOX_KIND`, `BB_BOX_BACKEND` and `BB_BOX_ARCH` where it
+  `ALIA_BOX_IMAGE`, `ALIA_BOX_KIND`, `ALIA_BOX_BACKEND` and `ALIA_BOX_ARCH` where it
   must differ. It removes any per-machine state it makes; finalizing
-  removes only what bb-box knows of.
-- **No secrets.** The build box is not a BB machine, so it has none of the
+  removes only what alia-box knows of.
+- **No secrets.** The build box is not a VesnALIA machine, so it has none of the
   project's variables, and what an image holds every box from it gets.
   Joining a tailnet is done per box, at start (050).
 
-The example project's `.bb/box-setup.sh`:
+The example project's `.vesnalia/box-setup.sh`:
 
     #!/bin/bash
     set -euo pipefail
@@ -141,44 +141,44 @@ The example project's `.bb/box-setup.sh`:
 ### Writing the script
 
 A person never writes the script. It is still what is stored and built,
-but an agent writes it on request, from a draft bb-box makes from what the
+but an agent writes it on request, from a draft alia-box makes from what the
 project already has.
 
-- **In the repository.** The script is `.bb/box-setup.sh` in the project's
-  repository by default, beside an optional `.bb/box-check.sh`, so it is
+- **In the repository.** The script is `.vesnalia/box-setup.sh` in the project's
+  repository by default, beside an optional `.vesnalia/box-check.sh`, so it is
   reviewed and changed with the code that needs it. Registering it copies
   it into the configuration with its path, and builds use that copy. A
   change in the repository counts once it is registered again.
 - **On request.** A person asks in a thread, such as "make a box image for
   this project". When a project has no image, New box offers "Ask an agent
   to make one", which starts a thread with that request.
-- **The flow**, in the bb-box skill:
+- **The flow**, in the alia-box skill:
   1. `box_image_draft` reads the project's files from the thread's
      workspace and returns a draft, each part commented with the file it
      came from, and a list of what it could not translate.
-  2. The agent fills the gaps and writes `.bb/box-setup.sh`, and a check
+  2. The agent fills the gaps and writes `.vesnalia/box-setup.sh`, and a check
      of what the project needs, such as `cargo --version`, in
-     `.bb/box-check.sh`.
+     `.vesnalia/box-check.sh`.
   3. `box_image_try` runs the script as a build does: in a new box of the
      base kind from the current standard image, as root with the
-     `BB_BOX_*` variables, then finalizing, the kind's check and the
+     `ALIA_BOX_*` variables, then finalizing, the kind's check and the
      image's check. It returns the time, the last 200 lines and each
      check's result, then releases the box, or keeps it with `keep: true`
      so the agent can look inside. The agent repeats until the checks
      pass, from a clean base each time, as the build will be.
   4. The agent commits the files and registers them with `box_image_set`.
      Registering changes every new box in the project's threads, so the
-     agent asks the person first unless they asked for that. bb-box then
+     agent asks the person first unless they asked for that. alia-box then
      runs the script at start or bakes it, as below.
 - **No repository at build time.** The build box has no checkout, so the
   script cannot read the repository. What needs it, such as `npm ci` or
   `cargo fetch`, stays in the thread, and the draft says so.
 
-What bb-box drafts from:
+What alia-box drafts from:
 
 | The project has | The draft | Left to the agent |
 | --- | --- | --- |
-| `devcontainer.json` features | nothing for what standard images have, such as Docker in Docker, the GitHub CLI and common utilities; mise for languages; other features through `bb-box-feature`, which fetches the feature and runs its `install.sh` with its options, as the Dev Container spec says | features for another OS family |
+| `devcontainer.json` features | nothing for what standard images have, such as Docker in Docker, the GitHub CLI and common utilities; mise for languages; other features through `alia-box-feature`, which fetches the feature and runs its `install.sh` with its options, as the Dev Container spec says | features for another OS family |
 | `devcontainer.json` `containerEnv`, `onCreateCommand`, `postCreateCommand` | the variables in `/etc/profile.d`; the commands, commented out | which commands need no workspace |
 | A Dockerfile from Ubuntu or Debian | `RUN` lines in order, `ENV` and `ARG` as variables, and a `USER` other than root as the box user | `COPY` and `ADD`, other bases and multi-stage builds |
 | `.tool-versions`, `mise.toml`, `.nvmrc`, `.python-version` | mise for the box user, with each tool at its version | tools mise does not have |
@@ -193,7 +193,7 @@ the stored form:
 - It cannot be built again on a fresh standard image, so nightly rebuilds
   and contract changes would leave it behind.
 - It keeps whatever happened in the box: caches, shell history, the
-  thread's files, BB's enrolment, secrets typed in.
+  thread's files, VesnALIA's enrolment, secrets typed in.
 - A capture serves one backend. A script serves Proxmox LXC, Docker and
   Tart.
 - No one can review or change it in a pull request.
@@ -205,7 +205,7 @@ box user's home, for the agent to turn into a script.
 
 ### Building an image: a box, the script, a check, a capture
 
-bb-box builds a project's image with the access it already has: the
+alia-box builds a project's image with the access it already has: the
 Proxmox API token, the `docker` CLI and SSH to the Mac. No backend needs
 root on its host for it.
 
@@ -215,7 +215,7 @@ root on its host for it.
    as independent as a copy, and a full clone elsewhere, so the standard
    template can still be replaced.
 2. **The script**, as root, with a time limit of 30 minutes by default.
-   bb-box keeps its last 200 lines of output.
+   alia-box keeps its last 200 lines of output.
 3. **Finalizing**, as `finalize.sh` does, and the record.
 4. **The capture**, with the box stopped:
    - Proxmox LXC: the container becomes a template through the API, with
@@ -246,7 +246,7 @@ pile up layers.
   script as root before it is handed over. Acquire's progress says
   "Running rust-tools's script". If the script fails, the box is released
   and the acquire fails with the script's last 20 lines.
-- **Baked when used.** bb-box bakes an image on a backend once two of its
+- **Baked when used.** alia-box bakes an image on a backend once two of its
   boxes started there within 14 days. The build runs in the background, and
   the next box after it starts as fast as a standard one. An image can say
   `always`, to keep a build on every backend that offers its kinds, or
@@ -264,10 +264,10 @@ pile up layers.
 
 - **A project's image is its default.** A thread in a project the image
   belongs to gets it for the kinds it covers: from New box, `box_acquire`,
-  `bb box acquire`, and a thread started on a new box (033).
+  `alia box acquire`, and a thread started on a new box (033).
 - **New box has an Image choice** when an image covers the chosen kind:
   the project's image first, marked "this project's", then Standard, then
-  other images. BB's new-thread inputs have the same choice.
+  other images. VesnALIA's new-thread inputs have the same choice.
 - **The agent's tools.** `box_acquire` takes `image` (a name or
   `standard`), and `box_list` shows each kind's images for the thread's
   project.
@@ -276,7 +276,7 @@ pile up layers.
 
 ### The record
 
-Every image, standard or a project's, has `/usr/share/bb-box/image.json`,
+Every image, standard or a project's, has `/usr/share/alia-box/image.json`,
 and a copy that can be read without starting it: the LXC template's
 description, a Docker label, or a file beside the image on the Mac.
 `template-release` and the packages list stay, for people.
@@ -292,7 +292,7 @@ description, a Docker label, or a file beside the image on the Mac.
       "os": "Ubuntu 24.04.3 LTS",
       "aptSnapshot": "20260926T060000Z",
       "pins": "<SHA-256 of the pins it was built with>",
-      "bbApp": "<SHA-256 of BB's host app>",
+      "aliaApp": "<SHA-256 of VesnALIA's host app>",
       "tools": { "node": "24.21.0", "claude-code": "2.1.283", "codex": "0.157.1",
                  "pi": "0.87.1", "gh": "2.101.0", "chrome": "154.0.8037.92",
                  "cua-driver": "0.28.3" },
@@ -311,12 +311,12 @@ The doctor has a check for each image a backend uses.
 
 | Finding | Status | What it costs |
 | --- | --- | --- |
-| The contract is older than bb-box needs | fail | its boxes may not work |
+| The contract is older than alia-box needs | fail | its boxes may not work |
 | The NVIDIA userspace is not the host driver's version, as the last GPU box saw it | fail | GPU desktops do not start (006) |
 | No record: built before this decision | warn | nothing can be said of it |
 | Older than twice its interval: 14 days for Linux, 60 for Windows and macOS | warn | tools and packages are behind |
-| BB's app is not the server's | warn | each box downloads it as it enrols, 2 to 5 s more; spares hide it |
-| Built with other pins than this bb-box's | warn | it lacks what a bb-box update brought |
+| VesnALIA's app is not the server's | warn | each box downloads it as it enrols, 2 to 5 s more; spares hide it |
+| Built with other pins than this alia-box's | warn | it lacks what a alia-box update brought |
 | A project's image is on an older standard build, or its script changed | warn | rebuilt next |
 | Its last rebuild failed | warn | with the reason and the output |
 
@@ -324,33 +324,33 @@ A check named "Nightly rebuilds" warns when none has run for 8 days.
 
 ### Rebuilding at night
 
-- **The job.** `bb box images refresh` rebuilds stale images one at a time,
+- **The job.** `alia box images refresh` rebuilds stale images one at a time,
   most needed first, and starts none after its time limit, 4 hours by
   default. It ends with a line per image, and exits 1 if any failed.
-- **Run by a BB automation**, which the setup guide gives:
+- **Run by a VesnALIA automation**, which the setup guide gives:
 
-      bb automation create --project <project> --name "bb-box images" \
+      VesnALIA automation create --project <project> --name "alia-box images" \
         --cron "0 2 * * *" --timezone <zone> \
-        --script "bb box images refresh" --timeout 4h
+        --script "alia box images refresh" --timeout 4h
 
-  BB lists its runs and output, and the operator can pause it, move it or
-  run it now. If a script automation cannot run `bb box`, bb-box schedules
+  VesnALIA lists its runs and output, and the operator can pause it, move it or
+  run it now. If a script automation cannot run `alia box`, alia-box schedules
   the same job with the plugin SDK's `schedule()` instead.
 - **What is due**, in this order:
   1. images that fail the doctor;
   2. standard images past their interval: 7 days for Linux on any backend,
      30 days for Windows and macOS;
   3. project images whose standard image was rebuilt;
-  4. Linux images with another build of BB's app (a Docker rebuild
+  4. Linux images with another build of VesnALIA's app (a Docker rebuild
      changes only its last layer);
   5. images built with other pins.
 - **How a standard image is rebuilt.**
-  - Docker: `setup/docker/build.sh`, as bb-box runs it now (042).
-  - Tart: its prepare script, run on the Mac over SSH as the user bb-box
-    logs in as, from a copy of bb-box's setup directory.
-  - Proxmox LXC: `build.sh` needs root on the host, which bb-box does not
-    have, so bb-box refreshes the template from a box of it. The guest
-    scripts run again with the current pins and BB's app, a GPU template
+  - Docker: `setup/docker/build.sh`, as alia-box runs it now (042).
+  - Tart: its prepare script, run on the Mac over SSH as the user alia-box
+    logs in as, from a copy of alia-box's setup directory.
+  - Proxmox LXC: `build.sh` needs root on the host, which alia-box does not
+    have, so alia-box refreshes the template from a box of it. The guest
+    scripts run again with the current pins and VesnALIA's app, a GPU template
     gets the NVIDIA userspace for the host's driver from NVIDIA's site,
     checked against NVIDIA's SHA-256, then finalizing, a capture, and the
     template is replaced in place, keeping its VMID, as `build.sh
@@ -358,11 +358,11 @@ A check named "Nightly rebuilds" warns when none has run for 8 days.
     changes, which the doctor asks for.
   - Windows (039, 046): later, with PowerShell scripts.
 - **Versions.** A rebuild takes the latest stable release of the tools
-  that change often and that bb-box does not depend on: Claude Code,
+  that change often and that alia-box does not depend on: Claude Code,
   Codex, pi, gh and Chrome, and an apt snapshot of that day. Each is
   checked against its upstream's published SHA-256 or signature and
   recorded. Node, Cua Driver, the desktop stack and NVIDIA's userspace stay
-  pinned, and change with bb-box releases. `--pinned` builds from the
+  pinned, and change with alia-box releases. `--pinned` builds from the
   repository's pins alone.
 - **Room.** A build starts only if its host keeps its disk reserve
   (`reserve-disk-gib` on Proxmox LXC and Tart) with the build box, the
@@ -373,7 +373,7 @@ A check named "Nightly rebuilds" warns when none has run for 8 days.
 - **Checks before replacing.** All must pass on a trial box from the new
   build:
   1. the kind's check and the image's check, as the box user;
-  2. the box answers within its kind's ready time, with BB's app at the
+  2. the box answers within its kind's ready time, with VesnALIA's app at the
      recorded digest, and Docker answers on first use;
   3. for a desktop, the stream's first frame, and a screenshot through Cua
      that is not blank;
@@ -385,7 +385,7 @@ A check named "Nightly rebuilds" warns when none has run for 8 days.
   boxes are copies on write and do not need the old one. Warm guests of
   the old build are retired as now, and idle spares are replaced.
 - **A failure** keeps the old build and the output, and the image is not
-  tried again until something it depends on changes or a person runs `bb
+  tried again until something it depends on changes or a person runs `VesnALIA
   box images build <name>`.
 
 ### To verify in the first PRs
@@ -395,9 +395,9 @@ A check named "Nightly rebuilds" warns when none has run for 8 days.
   the pool), and that a description holds the record.
 - That `customize-base.sh` and `customize-desktop.sh` give the same
   packages and files when run again on a built template.
-- That a BB script automation can run `bb box`.
+- That a VesnALIA script automation can run `alia box`.
 - Whether the token can create a container from Ubuntu's container
-  template with nesting. If so, bb-box can build headless and CPU desktop
+  template with nesting. If so, alia-box can build headless and CPU desktop
   templates from nothing, without drift; GPU templates' device lines need
   root, so they stay refreshes.
 
@@ -424,19 +424,19 @@ A check named "Nightly rebuilds" warns when none has run for 8 days.
 
 1. **The record**: `image.json` from `finalize.sh` and the Docker and Tart
    builds, the copies outside the image, and the doctor's checks of
-   contract, age, BB's app, pins and the NVIDIA version.
+   contract, age, VesnALIA's app, pins and the NVIDIA version.
 2. **Versions**: the resolver for the tools that follow upstream, with
    their checksums.
 3. **Image operations** on Proxmox LXC, Docker and Tart, the build box and
    the trial box, and their conformance test.
-4. **The nightly job**: `bb box images refresh` and `build`, the order,
+4. **The nightly job**: `alia box images refresh` and `build`, the order,
    the room check, the output, the "Nightly rebuilds" check, and the setup
    guide's automation.
-5. **Project images**: the configuration, `box_image_set`, `bb box image
+5. **Project images**: the configuration, `box_image_set`, `alia box image
    set` and `remove`, the script at start, baking when used and removing
    when unused.
 6. **Writing the script**: `box_image_try`, `box_image_draft` from files
-   and from a box, `bb-box-feature` in standard Linux images, the skill's
+   and from a box, `alia-box-feature` in standard Linux images, the skill's
    flow, and New box's offer for a project with no image.
 7. **Choosing**: New box's Image choice, `box_acquire`'s `image`,
    `box_list`, and the box's record and details.

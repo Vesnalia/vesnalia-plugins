@@ -466,7 +466,7 @@ test("a Push under way waits on the thread committing and pushing it, until some
   expect(turn({ ...own, signals: { newComments: { count: 1, at: t(1), by: "dana" } } })).toMatchObject({ group: "needs", reason: "new-comments" });
 });
 
-test("a local review whose folder bb removed waits on no one, but for comments that came back to you or whose thread stopped short", () => {
+test("a local review whose folder VesnALIA removed waits on no one, but for comments that came back to you or whose thread stopped short", () => {
   const gone = (extra: Partial<TurnInput> = {}): TurnInput => ({ targetKey: "br-1", kind: "ref", status: "ready", createdAt: t(9), feature: { folderGone: true }, ...extra });
   expect(turn(gone())).toMatchObject({ group: "waiting", reason: "folder-gone", label: "Folder removed" });
   const sends = [{ n: 1, at: t(4), threadId: "coder", ids: ["c1", "c2"] }];

@@ -1,5 +1,5 @@
 /**
- * The phone drawer's dock. BB portals the drawer to `body`, outside its React
+ * The phone drawer's dock. VesnALIA portals the drawer to `body`, outside its React
  * root, and React ignores every event whose target is outside the root it
  * rendered into: a shell moved into the drawer takes typing (the editor listens
  * natively) but none of its buttons, and never expands on a tap, so its footer
@@ -9,17 +9,17 @@
  * does on the desktop.
  *
  * The layer copies the drawer's box (and its z-index plus one) whenever the
- * drawer resizes: opening (BB 0.49 grows its width; it does not slide), a
- * rotation, and the on-screen keyboard, which BB answers by shrinking the
- * drawer to the visual viewport (`--bb-shell-height` on `body`). A
+ * drawer resizes: opening (VesnALIA 0.49 grows its width; it does not slide), a
+ * rotation, and the on-screen keyboard, which VesnALIA answers by shrinking the
+ * drawer to the visual viewport (`--alia-shell-height` on `body`). A
  * `ResizeObserver` is delivered after layout and before paint, so the frame
  * moves in the same frame as the drawer. Nothing runs on a scroll, a tap or a drag.
  */
 
 export interface Overlay {
-  /** Where the shell goes: a child of BB's React root, laid over the host. */
+  /** Where the shell goes: a child of VesnALIA's React root, laid over the host. */
   frame: HTMLElement;
-  /** False once BB has replaced the drawer the overlay lies over. */
+  /** False once VesnALIA has replaced the drawer the overlay lies over. */
   live(): boolean;
   dispose(): void;
 }
@@ -75,7 +75,7 @@ export function createOverlay(host: HTMLElement, drawer: HTMLElement): Overlay {
   });
   sized.observe(drawer);
   sized.observe(frame);
-  // Should a later BB slide the drawer rather than size it, the layer catches up when the slide ends.
+  // Should a later VesnALIA slide the drawer rather than size it, the layer catches up when the slide ends.
   const settled = (event: TransitionEvent) => {
     if (event.target === drawer) place();
   };

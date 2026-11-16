@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { experimental_useSidebarThreads, ThreadTitle, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_useSidebarThreads, ThreadTitle, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../src/rpc-contract";
 import { linesOf, type DraftComment } from "../src/draft";
@@ -24,7 +24,7 @@ const plural = (n: number) => `${n} comment${n === 1 ? "" : "s"}`;
 /** A thread working now, whose Send waits for its turn to end. */
 const BUSY = new Set(["starting", "active", "stopping"]);
 
-/** A thread's title as BB's thread list shows it, or as it was read, where the list doesn't have it. */
+/** A thread's title as VesnALIA's thread list shows it, or as it was read, where the list doesn't have it. */
 export function ThreadName({ threadId, title, wrap = false }: { threadId: string; title: string | null; wrap?: boolean }) {
   const listed = experimental_useSidebarThreads().threads.some((thread) => thread.id === threadId);
   return <span className={cn("inline-block min-w-0 max-w-full align-bottom font-medium text-foreground", wrap ? "line-clamp-2 break-words" : "truncate")}>{listed ? <ThreadTitle threadId={threadId} /> : title ?? "Main thread"}</span>;
@@ -39,10 +39,10 @@ export function ThreadName({ threadId, title, wrap = false }: { threadId: string
  */
 export function FixHandoff({ targetKey, comments, revision }: { targetKey: string; comments: readonly DraftComment[]; revision: string }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const sendOn = useKnob("sendToThread");
   const { panel, layout } = useWorkspace();
-  // refresh: a Send makes its comments sent, which the draft says at once, as BB's realtime would.
+  // refresh: a Send makes its comments sent, which the draft says at once, as VesnALIA's realtime would.
   const { review, draft, refresh, isLocal, ownPr } = useDraft();
   // With no Submit, on a local review, the form's Send is the way on: it stays filled beside Finish review.
   const fill = useFill();
@@ -138,7 +138,7 @@ export function FixHandoff({ targetKey, comments, revision }: { targetKey: strin
   return <section aria-label={to ? "Send to the main thread" : "Fix in a new thread"} className="space-y-2">
     {/* A part of Finish, as Open a PR after it is. */}
     <h3 aria-hidden className="px-0.5 text-[11px] font-semibold uppercase tracking-wider text-subtle-foreground">{to ? "Main thread" : "Fix in a new thread"}</h3>
-    {/* Watch shows the thread beside the review; a phone, where BB's panel covers it, has the thread's page only. */}
+    {/* Watch shows the thread beside the review; a phone, where VesnALIA's panel covers it, has the thread's page only. */}
     {told && <p role="status" className="min-w-0 text-xs text-muted-foreground">{told.note} · {layout.mode === "tablet" && <><button type="button" className={LINK} onClick={() => panel.open("main")}>Watch</button> · </>}<button type="button" className={LINK} onClick={() => navigate.toThread(told.threadId)}>Main thread<span aria-hidden> ↗</span></button></p>}
     {started && <p role="status" className="text-xs text-muted-foreground">Started a thread: <button type="button" className={LINK} onClick={() => navigate.toThread(started.threadId)}>{started.title}<span aria-hidden> ↗</span></button>{started.keptLocal ? `.${keptLocalNote(started.keptLocal, sendOn)}` : ""}</p>}
     {error && <p role="alert" className="text-xs text-destructive-text">{error}</p>}
@@ -174,7 +174,7 @@ export function FixHandoff({ targetKey, comments, revision }: { targetKey: strin
       </div>}
       <p className="text-xs text-muted-foreground">{picking !== "fix" && to
         ? <>Sends {what} {target}{picking === "send" ? <>, each with an id it reports on. {letPush ? "It may push when it’s done." : "It won’t push until you say."}</> : "."} Nothing goes to GitHub{posts ? ", and your draft stays as it is" : ""}.</>
-        : `Starts a BB thread in this project to fix them.${posts ? " Your draft stays as it is." : ""}`}</p>
+        : `Starts a VesnALIA thread in this project to fix them.${posts ? " Your draft stays as it is." : ""}`}</p>
       {/* With a warning up, its choices are the only way on. */}
       {!warned && <div className="flex flex-wrap gap-2">
         {picking === "approve" && to

@@ -19,7 +19,7 @@ Nothing else about pinning changes. Unpinning works exactly as it did, from
 the same place in the sidebar, and the plugin will not pin that thread again.
 Pin state stays yours to edit.
 
-If BB ever refuses a pin, the plugin logs a warning rather than failing
+If VesnALIA ever refuses a pin, the plugin logs a warning rather than failing
 quietly, so a thread that did not get pinned leaves something to look at.
 
 ## Requirements

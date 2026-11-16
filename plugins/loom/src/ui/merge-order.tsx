@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { MergeEntry, MergeOrderView } from "../contract";
 import { BUTTON, HEADING, RepoChip, listText, plural } from "./common";
 
@@ -497,7 +497,7 @@ function GraphView({ order, onTicket, onOpen }: { order: MergeOrderView } & Acti
 }
 
 export function MergeOrderTab({ order, onTicket }: { order: MergeOrderView | null; onTicket(key: string): void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [layout, setLayout] = useState<"steps" | "graph">("steps");
   if (order === null) return <p className="p-4 text-sm text-muted-foreground">The merge order shows the project as it is now. Go back to now to read it.</p>;
   const onOpen = (url: string) => navigate.openUrl(url);

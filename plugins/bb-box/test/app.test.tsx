@@ -8,9 +8,9 @@ import { useState, type ComponentType } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { toast } from "sonner";
 import { afterEach, expect, test, vi } from "vitest";
-import { useRpc } from "@get-bb/plugin-sdk/app";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@get-bb/plugin-sdk/testing/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@vesnalia/plugin-sdk/testing/app";
 import type { ImageOptionView } from "../src/plugin/views.ts";
 import type { ApplyResult, BoxEntry, BulkCheck, MonitorReach, MonitorSnapshot, BoxPageState, BoxResult, BoxSnapshotsView, CheckResult, ConfigState, Contract, DesktopState, KeepPreview, MachineEntry, PanelState, ForkPreview, ForkStarted, ResizeResult, RestorePreview, SnapshotChange, SnapshotRowView, SnapshotsTabView, TakeCheck, ThreadOnBox } from "../src/plugin/contract.ts";
 import type { EndedBox } from "../src/core/box-log.ts";
@@ -64,7 +64,7 @@ import { FIND_SHOWN, pathFor, searchSettings, settingsIndex, type FindEntry } fr
 import { problemPath } from "../src/app/settings-paths.ts";
 import { LOADING_SHOWN_AFTER_MS } from "../src/app/loading-states.tsx";
 import { forgetFormChecks } from "../src/app/settings-checks.ts";
-import { hostChip, onBbMachine } from "../src/app/settings-status.ts";
+import { hostChip, onAliaMachine } from "../src/app/settings-status.ts";
 import { SavedTick } from "../src/app/settings-parts.tsx";
 import { CheckRow } from "../src/app/settings-backend-page.tsx";
 import type { BackendConfig } from "../src/core/document.ts";
@@ -312,7 +312,7 @@ function observerOf(client: { target: HTMLElement }): FakeObserver {
 }
 
 /**
- * BB's toaster, which the host gives plugins as sonner's `toast`: each toast in a polite live region, under its id, so the next with
+ * VesnALIA's toaster, which the host gives plugins as sonner's `toast`: each toast in a polite live region, under its id, so the next with
  * that id takes its place, with its description under it, until its duration has passed or it is dismissed.
  */
 vi.mock("sonner", () => {
@@ -359,8 +359,8 @@ function toasts(): string[] {
 }
 
 const THREAD = "thr_panel";
-const DESKTOP_PATH = "/api/v1/plugins/bb-box/http/desktop";
-const TERMINAL_PATH = "/api/v1/plugins/bb-box/http/terminal";
+const DESKTOP_PATH = "/api/v1/plugins/alia-box/http/desktop";
+const TERMINAL_PATH = "/api/v1/plugins/alia-box/http/terminal";
 const app = await loadPluginApp(() => import("../app.tsx"));
 afterEach(() => {
   forgetMonitorReadings();
@@ -591,7 +591,7 @@ function server(initial: BoxView[], options: { projects?: { id: string; name: st
     const found = find(ref);
     if (found) ended.set(found.id, { box: found.id, thread: THREAD, name: found.name, how, at: Date.now(), by: { is: "person" }, backend: found.backendLabel, state: found.state });
   };
-  /** A box's clipboard where BB Box moves it with commands (#464): as the viewer pasted, or as the box copied. */
+  /** A box's clipboard where VesnALIA Box moves it with commands (#464): as the viewer pasted, or as the box copied. */
   let boxClipboard: { text: string; serial: number } | null = null;
   const copyInBox = (text: string) => (boxClipboard = { text, serial: (boxClipboard?.serial ?? 0) + 1 });
   const handlers: PluginRpcTestHandlers<Contract> = {
@@ -806,7 +806,7 @@ function server(initial: BoxView[], options: { projects?: { id: string; name: st
               { id: "proxmox.api", name: "API", status: "fail", detail: "No answer from the API.", fix: "Check the URL." },
               { id: "proxmox.memory", name: "Disk", status: "ok", detail: "120 GiB free.", fix: null },
             ],
-            notes: ["Install this public key in the templates: ssh-ed25519 AAAA bb-box"],
+            notes: ["Install this public key in the templates: ssh-ed25519 AAAA alia-box"],
           },
         },
       ],
@@ -828,7 +828,7 @@ function server(initial: BoxView[], options: { projects?: { id: string; name: st
       return { ok: true, state: configState({ ...options.config, document: applied, revision: next, receipts: [...receipts] }), problems: options.savedWith ?? [], ...(receipt ? { receipt } : {}) };
     },
     "config.migrated.remove": () => ({ removed: true, state: configState({ ...options.config, migrated: null }) }),
-    // BB machines that can host Docker boxes (042), switched as the tests ask.
+    // VesnALIA machines that can host Docker boxes (042), switched as the tests ask.
     "docker.hosts": () => ({ hosts: dockerHosts }),
     "docker.host.set": ({ hostId, enabled, operation }) => {
       changes.push(`docker.host.set ${hostId} ${enabled}`);
@@ -836,9 +836,9 @@ function server(initial: BoxView[], options: { projects?: { id: string; name: st
       dockerHosts = dockerHosts.map((host) => (host.hostId === hostId ? { ...host, backend: enabled ? { id: `docker:${host.name}`, enabled: true, boxes: 0 } : null } : host));
       const named = dockerHosts.find((host) => host.hostId === hostId)?.name ?? hostId;
       if (applied) {
-        const others = applied.backends.filter((backend) => backend.fields.host !== `bb:${hostId}`);
-        const existing = applied.backends.find((backend) => backend.fields.host === `bb:${hostId}`);
-        const backend = existing ? { ...existing, enabled } : { id: `docker:${named}`, type: "docker", label: `Docker on ${named}`, enabled: true, fields: { host: `bb:${hostId}`, privileged: true } };
+        const others = applied.backends.filter((backend) => backend.fields.host !== `alia:${hostId}`);
+        const existing = applied.backends.find((backend) => backend.fields.host === `alia:${hostId}`);
+        const backend = existing ? { ...existing, enabled } : { id: `docker:${named}`, type: "docker", label: `Docker on ${named}`, enabled: true, fields: { host: `alia:${hostId}`, privileged: true } };
         applied = { ...applied, revision: applied.revision + 1, backends: enabled || existing ? [...others, backend] : others };
       }
       return { result: { ok: true, state: configState(options.config ?? {}), problems: [] }, hosts: dockerHosts };
@@ -968,7 +968,7 @@ function configState(overrides: Partial<ConfigState> & { document?: ConfigDocume
 
 function panel(handlers: PluginRpcTestHandlers<Contract>) {
   const [action] = app.threadPanelActions;
-  return renderSlot(action!, { threadId: THREAD, params: null }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  return renderSlot(action!, { threadId: THREAD, params: null }, { rpc: handlers, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
 }
 
 function stateCalls(slot: ReturnType<typeof panel>): number {
@@ -1024,13 +1024,13 @@ test("the app registers the Boxes panel, a desktop tab, a device tab with a phon
     ["terminal", "Terminal"],
     ["files", "Files"],
   ]);
-  expect(app.threadPanelActions.find((action) => action.id === "device")!.icon).toBe("bb-box/phone");
+  expect(app.threadPanelActions.find((action) => action.id === "device")!.icon).toBe("alia-box/phone");
   expect(app.navPanels.map((page) => [page.id, page.title, page.path])).toEqual([["boxes", "Boxes", "desktop"]]);
   expect(app.settingsSections.map((section) => section.id)).toEqual(["configuration"]);
-  // BB resolves a plugin's icons by the names it declares: the Boxes page's is the cube, and every plugin icon used is declared.
-  expect(app.navPanels[0]!.icon).toBe("bb-box/box");
-  const declared = Object.keys((packageJson as { bb: { branding: { experimental_icons: Record<string, string> } } }).bb.branding.experimental_icons);
-  const used = [...app.navPanels, ...app.threadPanelActions].flatMap((slot) => (typeof slot.icon === "string" && slot.icon.startsWith("bb-box/") ? [slot.icon.slice("bb-box/".length)] : []));
+  // VesnALIA resolves a plugin's icons by the names it declares: the Boxes page's is the cube, and every plugin icon used is declared.
+  expect(app.navPanels[0]!.icon).toBe("alia-box/box");
+  const declared = Object.keys((packageJson as { alia: { branding: { experimental_icons: Record<string, string> } } }).alia.branding.experimental_icons);
+  const used = [...app.navPanels, ...app.threadPanelActions].flatMap((slot) => (typeof slot.icon === "string" && slot.icon.startsWith("alia-box/") ? [slot.icon.slice("alia-box/".length)] : []));
   expect(used.filter((name) => !declared.includes(name))).toEqual([]);
   expect(declared).toContain("box");
 });
@@ -1048,7 +1048,7 @@ test("a row keeps its name and kind on one line, the name whole first (F-22b), a
   const line = slot.getByText("Ready in 2.1 s").closest<HTMLElement>("[data-status-line]")!;
   expect(line.className).toContain("overflow-hidden");
   expect(line.className).toContain("h-[1.375em]");
-  expect(line.textContent).toBe("Ready in 2.1 s·Another viewer has control·BB machine in 5.3 s·2 cores · 4 GiB");
+  expect(line.textContent).toBe("Ready in 2.1 s·Another viewer has control·VesnALIA machine in 5.3 s·2 cores · 4 GiB");
   // A line that shows all of it has no tooltip on hover; one that lost an item shows the whole of it.
   fireEvent.pointerMove(line);
   await new Promise((resolve) => setTimeout(resolve, 400));
@@ -1057,7 +1057,7 @@ test("a row keeps its name and kind on one line, the name whole first (F-22b), a
   Object.defineProperty(line, "scrollHeight", { configurable: true, value: 33 });
   Object.defineProperty(line, "clientHeight", { configurable: true, value: 16 });
   fireEvent.pointerMove(line);
-  expect((await screen.findByRole("tooltip")).textContent).toBe("Ready in 2.1 s · Another viewer has control · BB machine in 5.3 s · 2 cores · 4 GiB");
+  expect((await screen.findByRole("tooltip")).textContent).toBe("Ready in 2.1 s · Another viewer has control · VesnALIA machine in 5.3 s · 2 cores · 4 GiB");
 });
 
 test("a list of items separated by dots never starts a line with a dot: each item's dot sits before it, and the one that starts a line is clipped", () => {
@@ -1073,31 +1073,31 @@ test("a list of items separated by dots never starts a line with a dot: each ite
   for (const item of items) expect(item.firstElementChild!.className).toContain("w-[1.25em]");
 });
 
-test("the status line says the state, then what to act on, then BB enrolment and the size", () => {
+test("the status line says the state, then what to act on, then VesnALIA enrolment and the size", () => {
   const now = Date.now();
-  expect(statusOf(box(), now).items.map((item) => item.text)).toEqual(["Ready in 2.1 s", "BB machine in 5.3 s", "2 cores · 4 GiB"]);
-  expect(statusOf(box({ enrol: { state: "enrolling", hostId: null, error: null } }), now).items.map((item) => item.text)).toEqual(["Ready in 2.1 s", "Joining BB…", "2 cores · 4 GiB"]);
-  // A claimed spare that waited stopped says how long its BB machine took to reconnect with the thread's access, as a new box says
-  // how long it took to join (#539); one that ran has no such time, and says "BB machine".
+  expect(statusOf(box(), now).items.map((item) => item.text)).toEqual(["Ready in 2.1 s", "VesnALIA machine in 5.3 s", "2 cores · 4 GiB"]);
+  expect(statusOf(box({ enrol: { state: "enrolling", hostId: null, error: null } }), now).items.map((item) => item.text)).toEqual(["Ready in 2.1 s", "Joining VesnALIA…", "2 cores · 4 GiB"]);
+  // A claimed spare that waited stopped says how long its VesnALIA machine took to reconnect with the thread's access, as a new box says
+  // how long it took to join (#539); one that ran has no such time, and says "VesnALIA machine".
   const resumed = box({ timings: { spare: 3, spareResume: 4100, total: 4100, spareReconnect: 17_200 } });
-  expect(statusOf(resumed, now).items.map((item) => item.text)).toEqual(["Ready in 4.1 s", "BB machine in 17.2 s", "2 cores · 4 GiB"]);
-  expect(timingWords(resumed)).toBe("claiming a spare\u00a03\u00a0ms · resuming it\u00a04.1\u00a0s · total\u00a04.1\u00a0s · BB machine reconnecting\u00a017.2\u00a0s");
-  expect(statusOf(box({ timings: { spare: 3, total: 3 } }), now).items.map((item) => item.text)).toEqual(["Ready in 3 ms", "BB machine", "2 cores · 4 GiB"]);
-  expect(statusOf(box({ enrol: { state: "failed", hostId: null, error: "no route" } }), now).items[1]).toEqual({ text: "Could not join BB", tone: "warn" });
-  const tries = { failed: 1, of: 5, next: now + 30_000, words: "This box could not look up BB's address in time.", setup: false };
-  expect(statusOf(box({ enrol: { state: "enrolling", hostId: null, error: null }, joinTries: tries }), now).items.map((item) => item.text)).toEqual(["Ready in 2.1 s", "Joining BB, try 2 of 5", "2 cores · 4 GiB"]);
-  expect(statusOf(box({ enrol: { state: "enrolling", hostId: null, error: null }, joinTries: { ...tries, failed: 6 } }), now).items[1]?.text).toBe("Joining BB, try 7");
+  expect(statusOf(resumed, now).items.map((item) => item.text)).toEqual(["Ready in 4.1 s", "VesnALIA machine in 17.2 s", "2 cores · 4 GiB"]);
+  expect(timingWords(resumed)).toBe("claiming a spare\u00a03\u00a0ms · resuming it\u00a04.1\u00a0s · total\u00a04.1\u00a0s · VesnALIA machine reconnecting\u00a017.2\u00a0s");
+  expect(statusOf(box({ timings: { spare: 3, total: 3 } }), now).items.map((item) => item.text)).toEqual(["Ready in 3 ms", "VesnALIA machine", "2 cores · 4 GiB"]);
+  expect(statusOf(box({ enrol: { state: "failed", hostId: null, error: "no route" } }), now).items[1]).toEqual({ text: "Could not join VesnALIA", tone: "warn" });
+  const tries = { failed: 1, of: 5, next: now + 30_000, words: "This box could not look up VesnALIA's address in time.", setup: false };
+  expect(statusOf(box({ enrol: { state: "enrolling", hostId: null, error: null }, joinTries: tries }), now).items.map((item) => item.text)).toEqual(["Ready in 2.1 s", "Joining VesnALIA, try 2 of 5", "2 cores · 4 GiB"]);
+  expect(statusOf(box({ enrol: { state: "enrolling", hostId: null, error: null }, joinTries: { ...tries, failed: 6 } }), now).items[1]?.text).toBe("Joining VesnALIA, try 7");
   expect(statusOf(box({ enrol: { state: "off", hostId: null, error: null }, timings: {}, size: null }), now).items.map((item) => item.text)).toEqual(["Ready"]);
   expect(statusOf(box({ state: "acquiring", createdAt: now - 1400 }), now)).toEqual({ tone: "busy", items: [{ text: "Starting" }, { text: "1.4 s" }, { text: "2 cores · 4 GiB" }] });
   expect(statusOf(box({ state: "stopped", size: "8 cores, 16 GiB memory, 64 GiB disk" }), now)).toEqual({ tone: "off", items: [{ text: "Stopped" }, { text: "8 cores · 16 GiB · 64 GiB" }] });
   expect(statusOf(box({ state: "failed", error: "No GPU is left." }), now).items).toEqual([{ text: "Failed", tone: "danger" }]);
-  expect(statusOf(box({ state: "gone" }), now).items.map((item) => item.text)).toEqual(["Gone", "deleted outside BB Box"]);
-  expect(statusOf(desktopBox(), now).items.map((item) => item.text)).toEqual(["Ready in 2.1 s", "BB machine in 5.3 s", "2 cores · 4 GiB"]);
+  expect(statusOf(box({ state: "gone" }), now).items.map((item) => item.text)).toEqual(["Gone", "deleted outside VesnALIA Box"]);
+  expect(statusOf(desktopBox(), now).items.map((item) => item.text)).toEqual(["Ready in 2.1 s", "VesnALIA machine in 5.3 s", "2 cores · 4 GiB"]);
   // What to act on comes straight after the state, so a narrow row, which cuts the line from its end, keeps it.
   expect(statusOf(desktopBox({ facts: [{ label: "Display mode", value: "cpu" }] }), now).items[1]).toEqual({ text: "Display on the CPU", tone: "warn" });
   const held = desktopBox({ control: { owner: "human", holder: "viewer-1" } });
   expect(statusOf(held, now, new Set(["viewer-1"])).items[1]).toEqual({ text: "You have control", tone: "fg" });
-  expect(statusOf(held, now, new Set()).items.map((item) => item.text)).toEqual(["Ready in 2.1 s", "Another viewer has control", "BB machine in 5.3 s", "2 cores · 4 GiB"]);
+  expect(statusOf(held, now, new Set()).items.map((item) => item.text)).toEqual(["Ready in 2.1 s", "Another viewer has control", "VesnALIA machine in 5.3 s", "2 cores · 4 GiB"]);
 });
 
 test("the panel lists the thread's boxes as rows, opens a row's details, and opens a desktop", async () => {
@@ -1108,7 +1108,7 @@ test("the panel lists the thread's boxes as rows, opens a row's details, and ope
   expect(slot.queryByText(/^\d+ box(es)?$/)).toBeNull();
   expect(slot.getByText("bold-heron")).toBeTruthy();
   expect(slot.getAllByText("Ready in 2.1 s")).toHaveLength(2);
-  expect(slot.getAllByText("BB machine in 5.3 s")).toHaveLength(2);
+  expect(slot.getAllByText("VesnALIA machine in 5.3 s")).toHaveLength(2);
   expect(slot.getByText("GPU")).toBeTruthy();
   expect(slot.getAllByText("No Docker")).toHaveLength(1);
   expect(slot.getAllByText("LXC")).toHaveLength(2);
@@ -1120,7 +1120,7 @@ test("the panel lists the thread's boxes as rows, opens a row's details, and ope
   expect(slot.getByText("2 cores, 4 GiB memory")).toBeTruthy();
   expect(slot.getByText("Fake host")).toBeTruthy();
   expect(slot.getByText("Linux x86_64, with docker")).toBeTruthy();
-  expect(slot.getByText("clone 0.7 s · total 2.1 s · BB enrolment 5.3 s")).toBeTruthy();
+  expect(slot.getByText("clone 0.7 s · total 2.1 s · VesnALIA enrolment 5.3 s")).toBeTruthy();
   expect(slot.getByText("resume 4.1 s · ssh 1.2 s · setting the clock 0.6 s · total 6.0 s")).toBeTruthy();
   expect(slot.getByText("Last start")).toBeTruthy();
   expect(slot.getByText("12 min ago")).toBeTruthy();
@@ -1147,8 +1147,8 @@ test("the panel lists the thread's boxes as rows, opens a row's details, and ope
   expect(slot.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_2" } });
   menu = await openMenu(slot.getByRole("button", { name: "bold-heron actions" }));
   fireEvent.click(within(menu).getByRole("menuitem", { name: "Open in browser" }));
-  // A full URL: BB's openUrl opens only http(s) URLs, by the person's browser preference, and returns false for a path.
-  expect(slot.inspection.navigateCalls.at(-1)).toEqual({ method: "openUrl", url: new URL("/plugins/bb-box/desktop/thr_panel/box_2", window.location.origin).href });
+  // A full URL: VesnALIA's openUrl opens only http(s) URLs, by the person's browser preference, and returns false for a path.
+  expect(slot.inspection.navigateCalls.at(-1)).toEqual({ method: "openUrl", url: new URL("/plugins/alia-box/desktop/thr_panel/box_2", window.location.origin).href });
 });
 
 test("a device box's row names its device beside its system, then its form as a desktop's row does (F-22), and its details have a Device line, for android and ios", async () => {
@@ -1199,7 +1199,7 @@ test("the panel makes a box by steps, System, Architecture, Type and Resources, 
   expect(await slot.findByText("new-box")).toBeTruthy();
   expect(changes).toEqual(['acquire linux-desktop {"preset":"large"}']);
   expect(slot.getByText("Starting")).toBeTruthy();
-  expect(JSON.parse(window.localStorage.getItem("bb-box:new-box") ?? "{}")).toEqual({ kind: "linux-desktop", size: "large" });
+  expect(JSON.parse(window.localStorage.getItem("alia-box:new-box") ?? "{}")).toEqual({ kind: "linux-desktop", size: "large" });
   await waitFor(() => expect(screen.queryByRole("radiogroup")).toBeNull());
 
   // The form opens on the remembered kind; the default preset sends no size at all.
@@ -1212,7 +1212,7 @@ test("the panel makes a box by steps, System, Architecture, Type and Resources, 
 
 test("New box offers a desktop whose image is not built yet: it says it builds first and how long, and Create builds it, then the box follows", async () => {
   const desktop: KindView = { ...KINDS[1]!, id: "linux-desktop-cpu", gpu: false, windowing: "x11" };
-  const { handlers, changes } = server([], { kinds: [KINDS[0]!], desktopOnDemand: { hostId: "host_bb", name: "devpc", kinds: [{ kind: desktop, took: null }] } });
+  const { handlers, changes } = server([], { kinds: [KINDS[0]!], desktopOnDemand: { hostId: "host_alia", name: "devpc", kinds: [{ kind: desktop, took: null }] } });
   const slot = panel(handlers);
   fireEvent.click(await slot.findByRole("button", { name: "New box" }));
   const types = await screen.findByRole("radiogroup", { name: "Type" });
@@ -1220,26 +1220,26 @@ test("New box offers a desktop whose image is not built yet: it says it builds f
   // A server is made as ever.
   expect(screen.getByRole("button", { name: "Create box" })).toBeTruthy();
   fireEvent.click(within(types).getByRole("radio", { name: /^Desktop/ }));
-  expect(screen.getByText("BB Box builds the desktop image on devpc first, usually 4 to 10 min, then makes the box.")).toBeTruthy();
+  expect(screen.getByText("VesnALIA Box builds the desktop image on devpc first, usually 4 to 10 min, then makes the box.")).toBeTruthy();
   fireEvent.click(within(screen.getByRole("radiogroup", { name: "Size" })).getByRole("radio", { name: /^Large/ }));
   fireEvent.click(screen.getByRole("button", { name: "Build and create" }));
-  await waitFor(() => expect(changes).toEqual(['setup.desktop host_bb {"preset":"large"}']));
+  await waitFor(() => expect(changes).toEqual(['setup.desktop host_alia {"preset":"large"}']));
   await waitFor(() => expect(screen.queryByRole("radiogroup")).toBeNull());
 });
 
 test("New box offers the Wayland desktop beside the X11 one where both build first, under Display, and builds the one chosen", async () => {
   const x11: KindView = { ...KINDS[1]!, id: "linux-desktop-cpu", gpu: false, windowing: "x11" };
   const wayland: KindView = { ...KINDS[1]!, id: "linux-desktop-wayland-cpu", gpu: false, windowing: "wayland" };
-  const { handlers, changes } = server([], { kinds: [KINDS[0]!], desktopOnDemand: { hostId: "host_bb", name: "devpc", kinds: [{ kind: x11, took: null }, { kind: wayland, took: 360_000 }] } });
+  const { handlers, changes } = server([], { kinds: [KINDS[0]!], desktopOnDemand: { hostId: "host_alia", name: "devpc", kinds: [{ kind: x11, took: null }, { kind: wayland, took: 360_000 }] } });
   const slot = panel(handlers);
   fireEvent.click(await slot.findByRole("button", { name: "New box" }));
   fireEvent.click(within(await screen.findByRole("radiogroup", { name: "Type" })).getByRole("radio", { name: /^Desktop/ }));
   expect((await screen.findByRole("combobox", { name: "Display" })).textContent).toBe("X11");
-  expect(screen.getByText("BB Box builds the desktop image on devpc first, usually 4 to 10 min, then makes the box.")).toBeTruthy();
+  expect(screen.getByText("VesnALIA Box builds the desktop image on devpc first, usually 4 to 10 min, then makes the box.")).toBeTruthy();
   await choose("Display", "Wayland");
-  expect(screen.getByText("BB Box builds the Wayland desktop image on devpc first, about 6 min, then makes the box.")).toBeTruthy();
+  expect(screen.getByText("VesnALIA Box builds the Wayland desktop image on devpc first, about 6 min, then makes the box.")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Build and create" }));
-  await waitFor(() => expect(changes).toEqual(["setup.desktop host_bb linux-desktop-wayland-cpu"]));
+  await waitFor(() => expect(changes).toEqual(["setup.desktop host_alia linux-desktop-wayland-cpu"]));
 });
 
 test("a host that has built an image before gives its own last time as the estimate, in the offer, the form and the build's card", async () => {
@@ -1251,7 +1251,7 @@ test("a host that has built an image before gives its own last time as the estim
   expect(await card.findByText(/It took 8 min last time here, and goes on if you close this panel\./)).toBeTruthy();
   cleanup();
   const desktop: KindView = { ...KINDS[1]!, id: "linux-desktop-cpu", gpu: false, windowing: "x11" };
-  const form = panel(server([], { kinds: [KINDS[0]!], desktopOnDemand: { hostId: "host_bb", name: "devpc", kinds: [{ kind: desktop, took: 480_000 }] } }).handlers);
+  const form = panel(server([], { kinds: [KINDS[0]!], desktopOnDemand: { hostId: "host_alia", name: "devpc", kinds: [{ kind: desktop, took: 480_000 }] } }).handlers);
   fireEvent.click(await form.findByRole("button", { name: "New box" }));
   expect(within(await screen.findByRole("radiogroup", { name: "Type" })).getByRole("radio", { name: /^Desktop/ }).textContent).toBe("DesktopBuilds first, about 8 min");
 });
@@ -1269,7 +1269,7 @@ test("while a desktop's image builds, the panel says so with its step and time; 
   expect(slot.getByText("Step 3 of 9")).toBeTruthy();
   expect(slot.getByText("Started 2 min ago. It usually takes 4 to 10 min, and goes on if you close this panel. The desktop box that was asked for follows.")).toBeTruthy();
   cleanup();
-  // Built from bb box docker-build, with no box asked for, and both desktop images in one build.
+  // Built from VesnALIA box docker-build, with no box asked for, and both desktop images in one build.
   const both = setup({ state: "on", build: { state: "building", targets: ["desktop", "desktop-wayland"], detail: null, step: { at: 3, of: 9 }, startedAt: Date.now() - 125_000, endedAt: null } });
   const unasked = panel(server([box()], { setups: [both] }).handlers);
   expect(await unasked.findByText("Started 2 min ago. It usually takes 8 to 16 min, and goes on if you close this panel.")).toBeTruthy();
@@ -1317,8 +1317,8 @@ test("New box offers to ask an agent to make the project a box image when it has
   // One dim link in the footer, no sentence (the operator's note of 3 October 2026).
   expect(screen.queryByText(/standard tools/)).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Make a box image for this project" }));
-  expect(IMAGE_REQUEST).toContain("with BB Box:");
-  expect(IMAGE_REQUEST).not.toMatch(/with bb-box:/);
+  expect(IMAGE_REQUEST).toContain("with VesnALIA Box:");
+  expect(IMAGE_REQUEST).not.toMatch(/with alia-box:/);
   await waitFor(() => expect(slot.inspection.navigateCalls.at(-1)).toEqual({ method: "toCompose", options: { initialPrompt: IMAGE_REQUEST, focusPrompt: true } }));
   await waitFor(() => expect(screen.queryByRole("radiogroup")).toBeNull());
 
@@ -1351,7 +1351,7 @@ test("a desktop whose system has a GPU desktop and a CPU one takes the GPU from 
 });
 
 test("071 unit 11: the New box form keeps the Docker reach sentence for a chosen GPU on the chosen provider, or the only one with room", async () => {
-  const reach = "On docker-1, every box with Docker in it can open every card, with a GPU or without. None and Whole card are what BB Box places, not what a box can reach.";
+  const reach = "On docker-1, every box with Docker in it can open every card, with a GPU or without. None and Whole card are what VesnALIA Box places, not what a box can reach.";
   const card = (host: string): GpuRoom => ({
     readings: [],
     fullUntil: null,
@@ -1376,7 +1376,7 @@ test("071 unit 11: the New box form keeps the Docker reach sentence for a chosen
 
   await open([offered(linuxBase, [docker, proxmox])]);
   expect(screen.queryByText(reach)).toBeNull();
-  expect(screen.queryByText(/BB Box places/)).toBeNull();
+  expect(screen.queryByText(/ALIA Box places/)).toBeNull();
   await choose("GPU", "Shared");
   expect(screen.queryByText(reach)).toBeNull();
   pickProvider("docker-1");
@@ -1963,11 +1963,11 @@ test("a custom size starts from the preset in view, sends only its filled fields
 
   fireEvent.click(screen.getByRole("button", { name: "Create box" }));
   await waitFor(() => expect(changes).toEqual(['acquire linux {"cores":6,"memoryGiB":12}']));
-  expect(JSON.parse(window.localStorage.getItem("bb-box:new-box") ?? "{}")).toEqual({ kind: "linux", size: "custom", custom: { linux: { cores: "6", memoryGiB: "12", diskGiB: "" } } });
+  expect(JSON.parse(window.localStorage.getItem("alia-box:new-box") ?? "{}")).toEqual({ kind: "linux", size: "custom", custom: { linux: { cores: "6", memoryGiB: "12", diskGiB: "" } } });
 });
 
 test("New box's custom size says, under its fields, when a part is at or past the kind's largest, names the kind, and links to the kind's sizes in settings; its slot is kept, and the server's settings hint stays out of the form", async () => {
-  const { handlers } = server([], { failWith: "A linux box can be at most 16 cores, 32 GiB memory, 256 GiB disk, not 16 cores, 40 GiB memory. Its presets are small. To allow more, raise the kind's largest size in BB Box settings, under Kinds, Linux, Sizes, or run bb box kind set linux --largest-memory-gib <GiB>." });
+  const { handlers } = server([], { failWith: "A linux box can be at most 16 cores, 32 GiB memory, 256 GiB disk, not 16 cores, 40 GiB memory. Its presets are small. To allow more, raise the kind's largest size in VesnALIA Box settings, under Kinds, Linux, Sizes, or run alia box kind set linux --largest-memory-gib <GiB>." });
   const slot = panel(handlers);
   await slot.findByText("No boxes yet");
   fireEvent.click(slot.getByRole("button", { name: "New box" }));
@@ -1984,7 +1984,7 @@ test("New box's custom size says, under its fields, when a part is at or past th
   expect(shown()).toBe("Up to 16 cores, the largest for Linux boxes. Change it in Settings");
   fireEvent.change(screen.getByLabelText(/^Memory, GiB/), { target: { value: "40" } });
   expect(shown()).toBe("Up to 16 cores and 32 GiB of memory, the largest for Linux boxes. Change it in Settings");
-  expect(within(line).getByRole("link", { name: "Change it in Settings" }).getAttribute("href")).toBe("/settings/plugins/bb-box#kind/linux");
+  expect(within(line).getByRole("link", { name: "Change it in Settings" }).getAttribute("href")).toBe("/settings/plugins/alia-box#kind/linux");
   fireEvent.click(screen.getByRole("button", { name: "Create box" }));
   expect(await screen.findByText("A linux box can be at most 16 cores, 32 GiB memory, 256 GiB disk, not 16 cores, 40 GiB memory. Its presets are small.")).toBeTruthy();
   fireEvent.click(within(line).getByRole("link", { name: "Change it in Settings" }));
@@ -2035,7 +2035,7 @@ function fakeResizer(now: { cores: number; memoryGiB: number; diskGiB: number | 
     if (input.check) return { ...base, plan };
     if (options.full) return { ...base, plan: null, error: options.full };
     if (options.inUseGiB !== undefined && to.memoryGiB < current.memoryGiB && to.memoryGiB - 0.5 < options.inUseGiB) {
-      return { ...base, plan: null, error: `Box calm-otter uses ${options.inUseGiB} GiB of memory now, so ${to.memoryGiB} GiB would leave less than 512 MiB free, and the kernel could end its processes. Give it at least ${Math.ceil(options.inUseGiB + 0.5)} GiB, or free memory in it first. BB Box changed nothing.` };
+      return { ...base, plan: null, error: `Box calm-otter uses ${options.inUseGiB} GiB of memory now, so ${to.memoryGiB} GiB would leave less than 512 MiB free, and the kernel could end its processes. Give it at least ${Math.ceil(options.inUseGiB + 0.5)} GiB, or free memory in it first. VesnALIA Box changed nothing.` };
     }
     if (restart && !input.restart) return { ...base, plan: null, needsRestart: true, error: "Resizing box calm-otter needs a restart." };
     if (restart && options.threads?.length && !input.force) return { ...base, plan: null, threads: options.threads };
@@ -2111,10 +2111,10 @@ test("Resize's custom size says, under its fields, when a part it can change is 
   expect(shown()).toBe("Up to 32 GiB of memory, the largest for Linux boxes. Change it in Settings");
   fireEvent.change(within(dialog).getByRole("textbox", { name: "Memory, GiB" }), { target: { value: "48" } });
   expect(shown()).toBe("Up to 32 GiB of memory, the largest for Linux boxes. Change it in Settings");
-  expect(within(line).getByRole("link", { name: "Change it in Settings" }).getAttribute("href")).toBe("/settings/plugins/bb-box#kind/linux");
+  expect(within(line).getByRole("link", { name: "Change it in Settings" }).getAttribute("href")).toBe("/settings/plugins/alia-box#kind/linux");
   fireEvent.change(within(dialog).getByRole("textbox", { name: "Memory, GiB" }), { target: { value: "8" } });
   expect(shown()).toBe("");
-  expect(checkWords("A linux box can be at most 16 cores, 32 GiB memory, 256 GiB disk, not 2 cores, 48 GiB memory. Its presets are small. To allow more, raise the kind's largest size in BB Box settings, under Kinds, Linux, Sizes, or run bb box kind set linux --largest-memory-gib <GiB>.")).toBe(
+  expect(checkWords("A linux box can be at most 16 cores, 32 GiB memory, 256 GiB disk, not 2 cores, 48 GiB memory. Its presets are small. To allow more, raise the kind's largest size in VesnALIA Box settings, under Kinds, Linux, Sizes, or run alia box kind set linux --largest-memory-gib <GiB>.")).toBe(
     "A linux box can be at most 16 cores, 32 GiB memory, 256 GiB disk, not 2 cores, 48 GiB memory. Its presets are small.",
   );
 });
@@ -2131,7 +2131,7 @@ test("a row says how a resize that ended in the last two minutes went, for a pan
   const ways = { cores: "restart", memory: "restart", disk: "restart", shrinks: false } as const;
   const boxes = [
     box({ sizeNow: size(4, 8, 64), resizing: ways, lastResize: ended(0.5, "done") }),
-    box({ id: "box_2", name: "quiet-heron", sizeNow: size(2, 4, 64), resizing: ways, lastResize: ended(1, "failed", "The Mac has 2 GiB of memory left. BB Box changed nothing.") }),
+    box({ id: "box_2", name: "quiet-heron", sizeNow: size(2, 4, 64), resizing: ways, lastResize: ended(1, "failed", "The Mac has 2 GiB of memory left. VesnALIA Box changed nothing.") }),
     box({ id: "box_3", name: "old-wren", sizeNow: size(4, 8, 64), resizing: ways, lastResize: ended(5, "done") }),
     box({ id: "box_4", name: "busy-finch", sizeNow: size(2, 4, 64), resizing: ways, lastResize: { ...ended(0, "done"), state: "resizing", ms: null } }),
   ];
@@ -2142,7 +2142,7 @@ test("a row says how a resize that ended in the last two minutes went, for a pan
   expect(slot.getAllByText(/^(Not r|R)esized to/)).toHaveLength(2);
   slot.unmount();
 
-  // BB's panel can mount a row again: it says it again, within the two minutes (a row said it, was mounted again, and kept quiet).
+  // VesnALIA's panel can mount a row again: it says it again, within the two minutes (a row said it, was mounted again, and kept quiet).
   slot = panel(server(boxes).handlers);
   expect(await slot.findByText("Resized to 4 cores · 8 GiB · 64 GiB disk after a restart, in 15 s.")).toBeTruthy();
   expect(slot.getAllByText(/^(Not r|R)esized to/)).toHaveLength(2);
@@ -2197,7 +2197,7 @@ test("Resize shows refusals plainly: no room, memory below use, and a disk that 
   fireEvent.click(within(dialog).getByRole("button", { name: "Resize" }));
   // The answer to Resize, headed as one: the plan's "changes at once" goes, as nothing changed.
   expect((await within(dialog).findByRole("alert")).textContent).toBe(
-    "Not resizedBox calm-otter uses 3.6 GiB of memory now, so 4 GiB would leave less than 512 MiB free, and the kernel could end its processes. Give it at least 5 GiB, or free memory in it first. BB Box changed nothing.",
+    "Not resizedBox calm-otter uses 3.6 GiB of memory now, so 4 GiB would leave less than 512 MiB free, and the kernel could end its processes. Give it at least 5 GiB, or free memory in it first. VesnALIA Box changed nothing.",
   );
   expect(within(dialog).queryByText("Changes at once. Everything running in calm-otter carries on.")).toBeNull();
   expect(within(dialog).getByText("Resize calm-otter")).toBeTruthy();
@@ -2205,8 +2205,8 @@ test("Resize shows refusals plainly: no room, memory below use, and a disk that 
   expect(within(dialog).getByRole("button", { name: "Resize" }).hasAttribute("disabled")).toBe(true);
 });
 
-test("a refusal while the person chooses never says BB Box changed nothing: nothing was tried (061)", () => {
-  expect(checkWords("Resizing box calm-otter needs a restart for its memory. BB Box changed nothing.")).toBe("Resizing box calm-otter needs a restart for its memory.");
+test("a refusal while the person chooses never says VesnALIA Box changed nothing: nothing was tried (061)", () => {
+  expect(checkWords("Resizing box calm-otter needs a restart for its memory. VesnALIA Box changed nothing.")).toBe("Resizing box calm-otter needs a restart for its memory.");
   expect(checkWords("A box's disk only grows, and this box's is 20 GiB, more than the 10 GiB asked for.")).toBe("A box's disk only grows, and this box's is 20 GiB, more than the 10 GiB asked for.");
 });
 
@@ -2236,7 +2236,7 @@ test("releasing a box asks first", async () => {
   const dialog = await screen.findByRole("alertdialog");
   expect(within(dialog).getByText("Release calm-otter?")).toBeTruthy();
   expect(within(dialog).getByText("Its disk and everything on it will be deleted. Copy out anything you want to keep first.")).toBeTruthy();
-  // It moves as BB's own dialogs do: a fade and a slight scale from the centre, no shadcn diagonal slide, none under reduced motion.
+  // It moves as VesnALIA's own dialogs do: a fade and a slight scale from the centre, no shadcn diagonal slide, none under reduced motion.
   expect(dialog.className).toContain("data-[state=open]:zoom-in-95");
   expect(dialog.className).toContain("duration-200");
   expect(dialog.className).not.toMatch(/slide-in-from|slide-out-to/);
@@ -2343,14 +2343,14 @@ test("a row starts a child thread on its box, and opens it", async () => {
   await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
 });
 
-test("a box that is not a BB machine offers no thread", async () => {
+test("a box that is not a VesnALIA machine offers no thread", async () => {
   const slot = panel(server([box({ enrol: { state: "off", hostId: null, error: null } })]).handlers);
   await slot.findByText("calm-otter");
   const menu = await openMenu(slot.getByRole("button", { name: "calm-otter actions" }));
   expect(within(menu).queryByRole("menuitem", { name: "New thread…" })).toBeNull();
 });
 
-test("a Windows box, whose kind cannot enrol, says its BB machine is not for this kind", async () => {
+test("a Windows box, whose kind cannot enrol, says its VesnALIA machine is not for this kind", async () => {
   const slot = panel(server([box({ kind: "windows-desktop", kindLabel: "Windows desktop", os: "windows", enrols: false, enrol: { state: "off", hostId: null, error: null } })]).handlers);
   await slot.findByText("calm-otter");
   fireEvent.click(slot.getByRole("button", { name: "calm-otter: details" }));
@@ -2369,23 +2369,23 @@ test("the panel shows why a change failed", async () => {
 
 test("the panel says so when no backend is on, and links the settings", async () => {
   const slot = panel(server([], { kinds: [] }).handlers);
-  expect(await slot.findByText("BB Box is not set up yet")).toBeTruthy();
+  expect(await slot.findByText("VesnALIA Box is not set up yet")).toBeTruthy();
   expect(slot.queryByRole("button", { name: "New box" })).toBeNull();
-  expect(slot.getByRole("link", { name: /Open BB Box settings/ }).getAttribute("href")).toBe("/settings/plugins/bb-box");
+  expect(slot.getByRole("link", { name: /Open ALIA Box settings/ }).getAttribute("href")).toBe("/settings/plugins/alia-box");
 });
 
 function setup(overrides: Partial<MachineSetup> = {}): MachineSetup {
-  return { hostId: "host_bb", name: "bb", here: true, state: "ready", docker: "29.8.1", problem: null, fix: null, restart: null, kvm: "ok", freeGb: 120, build: null, took: {}, ...overrides };
+  return { hostId: "host_alia", name: "alia", here: true, state: "ready", docker: "29.8.1", problem: null, fix: null, restart: null, kvm: "ok", freeGb: 120, build: null, took: {}, ...overrides };
 }
 
-test("first run: the panel offers Docker on the machine that runs BB, and one click turns it on and shows the Linux image's build", async () => {
+test("first run: the panel offers Docker on the machine that runs VesnALIA, and one click turns it on and shows the Linux image's build", async () => {
   const { handlers, changes } = server([], { kinds: [], setups: [setup({ hostId: "host_far", name: "far", here: false }), setup()] });
   const slot = panel(handlers);
-  expect(await slot.findByText("This machine has Docker 29.8.1. BB Box can make Linux boxes there.")).toBeTruthy();
+  expect(await slot.findByText("This machine has Docker 29.8.1. VesnALIA Box can make Linux boxes there.")).toBeTruthy();
   expect(slot.getByText("Builds the Linux image first, usually 5 to 12 min.")).toBeTruthy();
-  expect(slot.getByRole("link", { name: "Other backends" }).getAttribute("href")).toBe("/settings/plugins/bb-box");
+  expect(slot.getByRole("link", { name: "Other backends" }).getAttribute("href")).toBe("/settings/plugins/alia-box");
   fireEvent.click(slot.getByRole("button", { name: "Use Docker on this machine" }));
-  await waitFor(() => expect(changes).toEqual(["setup.docker host_bb"]));
+  await waitFor(() => expect(changes).toEqual(["setup.docker host_alia"]));
   expect(await slot.findByText("Setting up Docker on this machine")).toBeTruthy();
   // The step is the one the build kept, not its last line; the time is what it usually takes, as it varies with the host.
   expect(slot.getByText("Building the Linux image · Step 7 of 12")).toBeTruthy();
@@ -2393,82 +2393,82 @@ test("first run: the panel offers Docker on the machine that runs BB, and one cl
   expect(slot.getByRole("progressbar", { name: "Building the Linux image" })).toBeTruthy();
 });
 
-test("first run: where BB's user cannot use Docker, the panel gives that machine's own fix and restart lines, says a restart ends turns, and checks again", async () => {
-  const fix = setup({ state: "fix", problem: "Docker is on bb, but BB's user, dev, cannot use it. Add dev to the docker group, then restart BB's daemon there.", fix: "sudo usermod -aG docker dev", restart: "sudo systemctl restart user@1000.service" });
+test("first run: where VesnALIA's user cannot use Docker, the panel gives that machine's own fix and restart lines, says a restart ends turns, and checks again", async () => {
+  const fix = setup({ state: "fix", problem: "Docker is on VesnALIA, but VesnALIA's user, dev, cannot use it. Add dev to the docker group, then restart VesnALIA's daemon there.", fix: "sudo usermod -aG docker dev", restart: "sudo systemctl restart user@1000.service" });
   const { handlers } = server([], { kinds: [], setups: [fix] });
   const slot = panel(handlers);
-  expect(await slot.findByText(/^Docker is on bb, but BB's user, dev, cannot use it\./)).toBeTruthy();
+  expect(await slot.findByText(/^Docker is on alia, but ALIA's user, dev, cannot use it\./)).toBeTruthy();
   expect(slot.getByText("sudo usermod -aG docker dev")).toBeTruthy();
   expect(slot.getByText("sudo systemctl restart user@1000.service")).toBeTruthy();
-  expect(slot.getByText(/^The second line restarts all of that user's services, BB's daemon among them\. That ends the turns of threads running there and, if the user has a desktop there, its audio, notifications and other services too\. Logging out and in again, or rebooting, does the same more gently\.$/)).toBeTruthy();
+  expect(slot.getByText(/^The second line restarts all of that user's services, ALIA's daemon among them\. That ends the turns of threads running there and, if the user has a desktop there, its audio, notifications and other services too\. Logging out and in again, or rebooting, does the same more gently\.$/)).toBeTruthy();
   fireEvent.click(slot.getByRole("button", { name: "Check again" }));
   await waitFor(() => expect(slot.inspection.rpcCalls.filter((call) => call.method === "setup.offer").length).toBeGreaterThan(1));
   cleanup();
-  // Where BB Box cannot tell how BB runs, it says so in words, with the usermod line alone.
+  // Where VesnALIA Box cannot tell how VesnALIA runs, it says so in words, with the usermod line alone.
   const words = panel(server([], { kinds: [], setups: [{ ...fix, restart: null }] }).handlers);
-  expect(await words.findByText("Then restart BB there, or log out and in again, or reboot. That ends the turns of threads running there.")).toBeTruthy();
+  expect(await words.findByText("Then restart VesnALIA there, or log out and in again, or reboot. That ends the turns of threads running there.")).toBeTruthy();
   expect(words.queryByText(/systemctl/)).toBeNull();
 });
 
-test("a box that could not join BB says why in its row; for bb connect without a sign-in, in words with the two ways out and the guide", async () => {
-  const signIn = "Enrolling box calm-otter failed: Sign in to your bb account to use bb connect";
+test("a box that could not join VesnALIA says why in its row; for VesnALIA connect without a sign-in, in words with the two ways out and the guide", async () => {
+  const signIn = "Enrolling box calm-otter failed: Sign in to your VesnALIA account to use VesnALIA connect";
   const slot = panel(server([box({ enrol: { state: "failed", hostId: null, error: signIn } })]).handlers);
-  expect(await slot.findByText(/^BB's machine access, bb connect, needs you signed in to your bb account\. Sign in to it in BB, or set Machine access to Manual/)).toBeTruthy();
-  expect(slot.getByRole("link", { name: "How boxes join BB" }).getAttribute("href")).toMatch(/docs\/guide\/boxes\.md#when-a-box-does-not-join-bb$/);
+  expect(await slot.findByText(/^ALIA's machine access, alia connect, needs you signed in to your alia account\. Sign in to it in ALIA, or set Machine access to Manual/)).toBeTruthy();
+  expect(slot.getByRole("link", { name: "How boxes join VesnALIA" }).getAttribute("href")).toMatch(/docs\/guide\/boxes\.md#when-a-box-does-not-join-alia$/);
   cleanup();
-  // Any other reason is BB's own words.
-  const other = panel(server([box({ enrol: { state: "failed", hostId: null, error: "BB removed the machine before it connected" } })]).handlers);
-  expect(await other.findByText(/^BB removed the machine before it connected\. See Machine access in BB's settings, under Machines\./)).toBeTruthy();
+  // Any other reason is VesnALIA's own words.
+  const other = panel(server([box({ enrol: { state: "failed", hostId: null, error: "VesnALIA removed the machine before it connected" } })]).handlers);
+  expect(await other.findByText(/^ALIA removed the machine before it connected\. See Machine access in ALIA's settings, under Machines\./)).toBeTruthy();
   cleanup();
-  const alone = "This box could not look up BB's address in time. It failed 5 tries. Other boxes on Fake host joined BB, so BB's setup is fine: the fault is in this box's network.";
+  const alone = "This box could not look up VesnALIA's address in time. It failed 5 tries. Other boxes on Fake host joined VesnALIA, so VesnALIA's setup is fine: the fault is in this box's network.";
   const confined = panel(server([box({ enrol: { state: "failed", hostId: null, error: alone }, joinTries: { failed: 5, of: 5, next: Date.now() + 1_800_000, words: "x", setup: false } })]).handlers);
-  const line = await confined.findByText(/^This box could not look up BB's address in time/);
+  const line = await confined.findByText(/^This box could not look up ALIA's address in time/);
   expect(line.textContent).not.toMatch(/Machine access|tailnet/);
 });
 
-test("first run: where BB's machine access will not let boxes join, the offer says so up front", async () => {
-  const slot = panel(server([], { kinds: [], setups: [setup()], access: { provider: "bb connect", message: "Sign in to your bb account to use bb connect" } }).handlers);
-  expect(await slot.findByText(/^Boxes will not join BB yet\. BB's machine access, bb connect, needs you signed in to your bb account\./)).toBeTruthy();
+test("first run: where VesnALIA's machine access will not let boxes join, the offer says so up front", async () => {
+  const slot = panel(server([], { kinds: [], setups: [setup()], access: { provider: "alia connect", message: "Sign in to your VesnALIA account to use VesnALIA connect" } }).handlers);
+  expect(await slot.findByText(/^Boxes will not join ALIA yet\. ALIA's machine access, alia connect, needs you signed in to your alia account\./)).toBeTruthy();
   cleanup();
   const fine = panel(server([], { kinds: [], setups: [setup()] }).handlers);
   await fine.findByRole("button", { name: "Use Docker on this machine" });
-  expect(fine.queryByText(/Boxes will not join BB yet/)).toBeNull();
+  expect(fine.queryByText(/Boxes will not join ALIA yet/)).toBeNull();
 });
 
-test("New box says before making a box that it will not join BB, in the offer's words with both ways out and the guide, and still makes it", async () => {
-  const access = { provider: "bb connect", message: "Sign in to your bb account to use bb connect" };
+test("New box says before making a box that it will not join VesnALIA, in the offer's words with both ways out and the guide, and still makes it", async () => {
+  const access = { provider: "alia connect", message: "Sign in to your VesnALIA account to use VesnALIA connect" };
   const { handlers, changes } = server([], { access });
   const slot = panel(handlers);
   fireEvent.click(await slot.findByRole("button", { name: "New box" }));
   const note = await screen.findByRole("note");
   expect(note.textContent).toBe(
-    "Boxes will not join BB yet. BB's machine access, bb connect, needs you signed in to your bb account. Sign in to it in BB, or set Machine access to Manual in BB's settings, under Machines, with an address boxes can reach, and have BB listen there: started with npx bb-app, add --server-bind-host 0.0.0.0. How boxes join BB",
+    "Boxes will not join VesnALIA yet. VesnALIA's machine access, VesnALIA connect, needs you signed in to your VesnALIA account. Sign in to it in VesnALIA, or set Machine access to Manual in VesnALIA's settings, under Machines, with an address boxes can reach, and have VesnALIA listen there: started with npx alia-app, add --server-bind-host 0.0.0.0. How boxes join VesnALIA",
   );
-  expect(within(note).getByRole("link", { name: "How boxes join BB" }).getAttribute("href")).toMatch(/docs\/guide\/boxes\.md#when-a-box-does-not-join-bb$/);
+  expect(within(note).getByRole("link", { name: "How boxes join VesnALIA" }).getAttribute("href")).toMatch(/docs\/guide\/boxes\.md#when-a-box-does-not-join-alia$/);
   fireEvent.click(screen.getByRole("button", { name: "Create box" }));
   await waitFor(() => expect(changes.some((change) => change.startsWith("acquire"))).toBe(true));
   cleanup();
   const fine = panel(server([]).handlers);
   fireEvent.click(await fine.findByRole("button", { name: "New box" }));
   await screen.findByRole("button", { name: "Create box" });
-  expect(screen.queryByText(/Boxes will not join BB yet/)).toBeNull();
+  expect(screen.queryByText(/Boxes will not join ALIA yet/)).toBeNull();
 });
 
 test("first run in settings leads until a backend that is on makes a kind: Use Docker on this machine, then the build, with Kinds and Options for later; once setup is done it never comes back, every backend off included (067 unit 7)", async () => {
   const empty: ConfigDocument = { schema: 1, revision: 1, backends: [], kinds: {}, general: {} };
   const { handlers, changes } = server([], { setups: [setup()], config: { document: empty } });
   const none = settings(handlers);
-  expect(await none.findByRole("heading", { name: "Set up BB Box" })).toBeTruthy();
+  expect(await none.findByRole("heading", { name: "Set up VesnALIA Box" })).toBeTruthy();
   expect(await none.findByText("Use Docker on this machine")).toBeTruthy();
-  expect(none.getByText("bb, where BB runs, has Docker 29.8.1. BB Box builds its Linux image there, usually 5 to 12 min, then makes Linux boxes in seconds.")).toBeTruthy();
+  expect(none.getByText("VesnALIA, where VesnALIA runs, has Docker 29.8.1. VesnALIA Box builds its Linux image there, usually 5 to 12 min, then makes Linux boxes in seconds.")).toBeTruthy();
   expect(none.queryByRole("link", { name: "Other backends" })).toBeNull();
   expect(none.queryByText("Kinds")).toBeNull();
   expect(none.queryByText("Every backend is off")).toBeNull();
   fireEvent.click(none.getByRole("button", { name: /^Sizes and options: kinds, images, devices, network, Monitor and the configuration file, for later/ }));
   expect(await none.findByText("Kinds")).toBeTruthy();
   expect(none.getByText("Options")).toBeTruthy();
-  fireEvent.click(none.getByRole("button", { name: "Use Docker on bb" }));
-  await waitFor(() => expect(changes).toContain("setup.docker host_bb"));
+  fireEvent.click(none.getByRole("button", { name: "Use Docker on VesnALIA" }));
+  await waitFor(() => expect(changes).toContain("setup.docker host_alia"));
   expect(await none.findByText("Setting up Docker on this machine")).toBeTruthy();
   expect(none.queryByRole("button", { name: /Choose another backend/ })).toBeNull();
   cleanup();
@@ -2487,38 +2487,38 @@ test("first run in settings leads until a backend that is on makes a kind: Use D
   fireEvent.click(within(callout).getByRole("button", { name: "Show the backends' switches" }));
   expect(document.activeElement).toBe(established.getByRole("switch", { name: "Fake host: takes new boxes" }));
   expect(window.location.hash).toBe("");
-  expect(established.queryByRole("heading", { name: "Set up BB Box" })).toBeNull();
+  expect(established.queryByRole("heading", { name: "Set up VesnALIA Box" })).toBeNull();
   expect(established.queryByText("Use Docker on this machine")).toBeNull();
   expect(established.getByText("Kinds")).toBeTruthy();
 });
 
-test("first run says what stands in the way, titled for it: no Docker with its install line and a BB machine that has Docker, BB's user outside the docker group, too little disk; Check again asks Docker again (067 unit 7)", async () => {
+test("first run says what stands in the way, titled for it: no Docker with its install line and a VesnALIA machine that has Docker, VesnALIA's user outside the docker group, too little disk; Check again asks Docker again (067 unit 7)", async () => {
   const empty: ConfigDocument = { schema: 1, revision: 1, backends: [], kinds: {}, general: {} };
   const missing = server([], { setups: [setup({ state: "none", docker: null }), setup({ hostId: "host_pc", name: "pc-1", here: false })], config: { document: empty } });
   const slot = settings(missing.handlers);
-  expect(await slot.findByText("bb has no Docker")).toBeTruthy();
+  expect(await slot.findByText("alia has no Docker")).toBeTruthy();
   expect(slot.getByText("curl -fsSL https://get.docker.com | sudo sh")).toBeTruthy();
   expect(slot.getByRole("button", { name: "Copy the command: curl -fsSL https://get.docker.com | sudo sh" })).toBeTruthy();
-  expect(slot.getByText("Or use a BB machine that has Docker: pc-1 has Docker 29.8.1.")).toBeTruthy();
-  fireEvent.click(slot.getByRole("button", { name: "Check bb for Docker again" }));
-  await waitFor(() => expect(slot.inspection.rpcCalls.some((call) => call.method === "docker.hosts" && (call.input as { recheck?: string } | null)?.recheck === "host_bb")).toBe(true));
+  expect(slot.getByText("Or use a VesnALIA machine that has Docker: pc-1 has Docker 29.8.1.")).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Check VesnALIA for Docker again" }));
+  await waitFor(() => expect(slot.inspection.rpcCalls.some((call) => call.method === "docker.hosts" && (call.input as { recheck?: string } | null)?.recheck === "host_alia")).toBe(true));
   await waitFor(() => expect(slot.inspection.rpcCalls.filter((call) => call.method === "setup.offer").length).toBeGreaterThan(1));
   fireEvent.click(slot.getByRole("button", { name: "Use Docker on pc-1" }));
   await waitFor(() => expect(missing.changes).toContain("setup.docker host_pc"));
   cleanup();
 
-  const fix = setup({ state: "fix", problem: "Docker is on this machine, but BB's user, dev, cannot use it. Add dev to the docker group, then restart BB's daemon there.", fix: "sudo usermod -aG docker dev", restart: "sudo systemctl restart user@1000.service" });
+  const fix = setup({ state: "fix", problem: "Docker is on this machine, but VesnALIA's user, dev, cannot use it. Add dev to the docker group, then restart VesnALIA's daemon there.", fix: "sudo usermod -aG docker dev", restart: "sudo systemctl restart user@1000.service" });
   const access = settings(server([], { setups: [fix], config: { document: empty } }).handlers);
-  expect(await access.findByText("BB cannot use Docker on bb")).toBeTruthy();
+  expect(await access.findByText("VesnALIA cannot use Docker on VesnALIA")).toBeTruthy();
   expect(access.getByText("sudo usermod -aG docker dev")).toBeTruthy();
   expect(access.getByText("sudo systemctl restart user@1000.service")).toBeTruthy();
   expect(access.getByText(/^The second line restarts all of that user's services/)).toBeTruthy();
   cleanup();
 
   const disk = settings(server([], { setups: [setup({ state: "fix", freeGb: 6, problem: "The Linux image needs about 10 GB free to build, and this machine has 6 GB. Free some, for example with docker builder prune, then check again." })], config: { document: empty } }).handlers);
-  expect(await disk.findByText("Not enough disk on bb")).toBeTruthy();
+  expect(await disk.findByText("Not enough disk on VesnALIA")).toBeTruthy();
   expect(disk.getByText(/^The Linux image needs about 10 GB free to build, and this machine has 6 GB\./)).toBeTruthy();
-  expect(disk.getByRole("button", { name: "Check Docker on bb again" })).toBeTruthy();
+  expect(disk.getByRole("button", { name: "Check Docker on VesnALIA again" })).toBeTruthy();
 });
 
 test("a backend saved off and not finished stays in first run as Finish setting up, which opens its page (067 unit 7)", async () => {
@@ -2544,9 +2544,9 @@ test("once the Linux image is built, the panel says it is ready until the thread
   expect(withBox.queryByText("The Linux image is ready")).toBeNull();
 });
 
-test("first run: with no machine to set up, the panel says BB Box is not set up yet, as before", async () => {
+test("first run: with no machine to set up, the panel says VesnALIA Box is not set up yet, as before", async () => {
   const slot = panel(server([], { kinds: [], setups: [setup({ state: "none", docker: null })] }).handlers);
-  expect(await slot.findByText("BB Box is not set up yet")).toBeTruthy();
+  expect(await slot.findByText("VesnALIA Box is not set up yet")).toBeTruthy();
 });
 
 test("a build's time reads in whole seconds under a minute and minutes after, and its place reads as its image and that image's step, with a bar that only grows", () => {
@@ -2590,9 +2590,9 @@ function settings(handlers: PluginRpcTestHandlers<Contract>, hash = "", { keepDr
     forgetStandardImages();
     window.sessionStorage.clear();
   }
-  window.history.replaceState(null, "", `/settings/plugins/bb-box${hash}`);
+  window.history.replaceState(null, "", `/settings/plugins/alia-box${hash}`);
   const [section] = app.settingsSections;
-  return renderSlot(section!, {}, { rpc: handlers, pluginId: "bb-box" });
+  return renderSlot(section!, {}, { rpc: handlers, pluginId: "alia-box" });
 }
 
 test("the settings overview shows an honest status, each backend with its state and switch, the kinds in groups, and the options", async () => {
@@ -2617,12 +2617,12 @@ test("the settings overview shows an honest status, each backend with its state 
 
   expect(slot.getByRole("button", { name: "Boxes", description: "Linux by default · no limit per thread · 0 files" })).toBeTruthy();
   expect(slot.getByRole("button", { name: "Configuration", description: "Revision 3" })).toBeTruthy();
-  expect(slot.getByRole("switch", { name: "Monitor: machine status in BB's sidebar" }).getAttribute("aria-checked")).toBe("true");
+  expect(slot.getByRole("switch", { name: "Monitor: machine status in VesnALIA's sidebar" }).getAttribute("aria-checked")).toBe("true");
   fireEvent.click(slot.getByRole("button", { name: /^Your machines/ }));
   expect(slot.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "machines" } });
 });
 
-test("a backend's page lists BB's projects by name, saves the IDs of those it is kept for at once, and warns when none of them is still in BB (#1458)", async () => {
+test("a backend's page lists VesnALIA's projects by name, saves the IDs of those it is kept for at once, and warns when none of them is still in VesnALIA (#1458)", async () => {
   const projects = [{ id: "proj_work", name: "Work" }, { id: "proj_home", name: "Home" }];
   const { handlers, changes } = server([], { projects });
   const slot = settings(handlers, "#backend/fake");
@@ -2639,8 +2639,8 @@ test("a backend's page lists BB's projects by name, saves the IDs of those it is
 
   const document: ConfigDocument = { schema: 1, revision: 3, backends: [{ id: "fake", type: "fake", enabled: true, fields: { token: { set: true } }, projects: ["proj_gone"] }], kinds: {}, general: {} };
   const gone = settings(server([], { projects, config: { document } }).handlers, "#backend/fake");
-  expect(await gone.findByText("No project: none of its projects is still in BB")).toBeTruthy();
-  expect(gone.getByText("A project no longer in BB")).toBeTruthy();
+  expect(await gone.findByText("No project: none of its projects is still in VesnALIA")).toBeTruthy();
+  expect(gone.getByText("A project no longer in VesnALIA")).toBeTruthy();
   expect(gone.queryByText("proj_gone")).toBeNull();
 });
 
@@ -2693,11 +2693,11 @@ test("a switch saves at once and says Saved; a refusal, three refusals in a row 
   const lost = server([]);
   const silent = settings({ ...lost.handlers, "config.apply": () => { throw new Error("The connection closed."); } });
   fireEvent.click(await silent.findByRole("switch", { name: "Fake host: takes new boxes" }));
-  expect(await silent.findByText("Not confirmed: BB Box did not reply (The connection closed), and has no receipt for this change. Fake host is on now, at revision 3.")).toBeTruthy();
+  expect(await silent.findByText("Not confirmed: VesnALIA Box did not reply (The connection closed), and has no receipt for this change. Fake host is on now, at revision 3.")).toBeTruthy();
   expect(silent.queryByText("Saved")).toBeNull();
 });
 
-test("opening a backend by its address focuses the heading, as BB's back button does when it returns to the page", async () => {
+test("opening a backend by its address focuses the heading, as VesnALIA's back button does when it returns to the page", async () => {
   const slot = settings(server([]).handlers, "#backend/fake");
   const heading = await slot.findByRole("heading", { name: "Fake host" });
   await waitFor(() => expect(document.activeElement).toBe(heading));
@@ -2768,7 +2768,7 @@ test("each row opens its part's page by the hash with focus on its heading, back
   expect(window.location.hash).toBe("#backend/fake");
   const heading = await slot.findByRole("heading", { name: "Fake host" });
   await waitFor(() => expect(document.activeElement).toBe(heading));
-  expect(slot.getByRole("navigation", { name: "Where you are" }).textContent).toContain("BB Box settings›Fake host");
+  expect(slot.getByRole("navigation", { name: "Where you are" }).textContent).toContain("VesnALIA Box settings›Fake host");
   expect(slot.getByRole("link", { name: "Fake host setup guide" })).toBeTruthy();
   act(() => window.history.back());
   await waitFor(() => expect(window.location.hash).toBe(""));
@@ -2785,8 +2785,8 @@ test("each row opens its part's page by the hash with focus on its heading, back
   for (const [hash, words] of [["#kind/no-such-kind", "This kind is not here"], ["#backend/gone", "This backend is not here"], ["#option/nothing", "This page is not here"], ["#setup/nothing", "This kind of backend is not here"]] as const) {
     const missing = settings(server([]).handlers, hash);
     expect(await missing.findByRole("heading", { name: words })).toBeTruthy();
-    fireEvent.click(missing.getByRole("button", { name: "Go to BB Box settings" }));
-    expect(await missing.findByRole("heading", { name: "BB Box settings" })).toBeTruthy();
+    fireEvent.click(missing.getByRole("button", { name: "Go to VesnALIA Box settings" }));
+    expect(await missing.findByRole("heading", { name: "VesnALIA Box settings" })).toBeTruthy();
     cleanup();
   }
 });
@@ -2884,12 +2884,12 @@ test("an empty field another backend fills says where its value comes from, unti
 });
 
 test("a refused save shows each problem at its field and the rest in the bar, and keeps the draft", async () => {
-  const { handlers } = server([], { applyWith: { ok: false, reason: "problems", problems: [{ path: "backends.fake.url", message: "Use an https URL." }, { path: "backends.fake", message: "BB Box runs one Fake host backend for now." }] } });
+  const { handlers } = server([], { applyWith: { ok: false, reason: "problems", problems: [{ path: "backends.fake.url", message: "Use an https URL." }, { path: "backends.fake", message: "VesnALIA Box runs one Fake host backend for now." }] } });
   const slot = settings(handlers, "#backend/fake");
   fireEvent.change(await slot.findByRole("textbox", { name: "API URL" }), { target: { value: "http://192.0.2.10:8006" } });
   fireEvent.click(slot.getByRole("button", { name: "Save" }));
   expect(await slot.findByText("Use an https URL.")).toBeTruthy();
-  expect(slot.getByText("BB Box runs one Fake host backend for now.")).toBeTruthy();
+  expect(slot.getByText("VesnALIA Box runs one Fake host backend for now.")).toBeTruthy();
   expect(slot.getByText(/^Not saved: fix the 2 fields marked\. Your changes are still here\./)).toBeTruthy();
   expect(slot.getByRole("textbox", { name: "API URL" }).getAttribute("aria-invalid")).toBe("true");
   expect((slot.getByRole("textbox", { name: "API URL" }) as HTMLInputElement).value).toBe("http://192.0.2.10:8006");
@@ -2948,7 +2948,7 @@ test("a Tart backend's Macs: each switch acts at once, each Mac opens to its fie
   fireEvent.click(within(macs).getByRole("button", { name: /^mac-1/ }));
   const cores = within(macs).getByRole("textbox", { name: "Cores of a shared iOS host on mac-1" }) as HTMLInputElement;
   expect(cores.placeholder).toBe("10");
-  expect(within(macs).getByText(spanSaying("Empty: 10 cores, BB Box's estimate for mac-1"))).toBeTruthy();
+  expect(within(macs).getByText(spanSaying("Empty: 10 cores, VesnALIA Box's estimate for mac-1"))).toBeTruthy();
   fireEvent.click(slot.getByRole("button", { name: "Show Shared iOS hosts: 2 settings" }));
   fireEvent.change(slot.getByRole("textbox", { name: "Cores of a shared iOS host" }), { target: { value: "8" } });
   expect(within(macs).getByText(spanSaying("Empty: 8 cores, Tart's setting"))).toBeTruthy();
@@ -3018,7 +3018,7 @@ test("the backend's menu renames at once, copies nothing secret, and removes onl
   const refused = settings(refusing.handlers, "#backend/fake");
   menu = await openMenu(await refused.findByRole("button", { name: "More for Fake host" }));
   fireEvent.click(within(menu).getByRole("menuitem", { name: "Remove backend…" }));
-  expect(await screen.findByText(/with the SSH key, which BB Box cannot show or get back/)).toBeTruthy();
+  expect(await screen.findByText(/with the SSH key, which ALIA Box cannot show or get back/)).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Remove backend" }));
   expect(await refused.findByText("Fake host was not removed: Backend fake has 1 box, so it cannot be removed or renamed. Turn it off and release them first.")).toBeTruthy();
   expect(window.location.hash).toBe("#backend/fake");
@@ -3071,7 +3071,7 @@ test("the overview's backend row says Saving while a save is out and Unsaved cha
   const slot = settings(held, "#backend/fake");
   fireEvent.change(await slot.findByRole("textbox", { name: "API URL" }), { target: { value: "https://192.0.2.12:8006" } });
   fireEvent.click(slot.getByRole("button", { name: "Save" }));
-  fireEvent.click(await slot.findByRole("button", { name: "BB Box settings" }));
+  fireEvent.click(await slot.findByRole("button", { name: "VesnALIA Box settings" }));
   expect(await slot.findByRole("button", { name: "Fake host", description: /Saving…/ })).toBeTruthy();
   await act(async () => release());
   await waitFor(() => expect(slot.queryByText("Saving…")).toBeNull());
@@ -3085,13 +3085,13 @@ test("the overview's backend row says Saving while a save is out and Unsaved cha
   expect(hostChip(backend("docker", { host: "ssh://admin@docker-1.example" }), "Docker")).toBe("docker-1.example");
   expect(hostChip(backend("docker", {}), "Docker")).toBe("this machine");
   expect(hostChip(backend("docker", {}), "Docker", ["docker-1"])).toBe("docker-1");
-  expect(hostChip(backend("microsandbox", { host: "bb:host_abc" }), "microsandbox")).toBeNull();
-  expect(hostChip(backend("microsandbox", { host: "bb:host_abc" }), "microsandbox", ["build-1"])).toBe("build-1");
+  expect(hostChip(backend("microsandbox", { host: "alia:host_abc" }), "microsandbox")).toBeNull();
+  expect(hostChip(backend("microsandbox", { host: "alia:host_abc" }), "microsandbox", ["build-1"])).toBe("build-1");
   expect(hostChip(backend("tart", {}, [{ name: "mac-1", enabled: true, fields: {} }, { name: "mac-2", enabled: true, fields: {} }]), "Tart", ["mac-1", "mac-2"])).toBe("2 Macs");
-  expect(onBbMachine(backend("microsandbox", { host: "bb:host_abc" }))).toBe(true);
-  expect(onBbMachine(backend("docker", { host: "bb:host_abc" }))).toBe(true);
-  expect(onBbMachine(backend("docker", { host: "ssh://admin@docker-1.example" }))).toBe(false);
-  expect(hostChip({ ...backend("docker", { host: "bb:host_abc" }), id: "docker:bb-1" }, "Docker on bb-1")).toBeNull();
+  expect(onAliaMachine(backend("microsandbox", { host: "alia:host_abc" }))).toBe(true);
+  expect(onAliaMachine(backend("docker", { host: "alia:host_abc" }))).toBe(true);
+  expect(onAliaMachine(backend("docker", { host: "ssh://admin@docker-1.example" }))).toBe(false);
+  expect(hostChip({ ...backend("docker", { host: "alia:host_abc" }), id: "docker:alia-1" }, "Docker on alia-1")).toBeNull();
   expect(hostChip(backend("microsandbox", { host: "ssh://msb-1:2222" }), "microsandbox")).toBe("msb-1");
   expect(hostChip(backend("ssh-pool", { machines: "a admin@192.0.2.1\n# b\nc admin@192.0.2.3" }), "SSH host pool")).toBe("2 machines");
   expect(hostChip(backend("hetzner", {}), "Hetzner Cloud")).toBeNull();
@@ -3140,11 +3140,11 @@ test("Add backend groups every driver by where boxes run, with what it makes and
   cleanup();
   applied = null;
 
-  const refused = server([], { applyWith: { ok: false, reason: "problems", problems: [{ path: "backends.other.machines", message: "Add a machine." }, { path: "backends.other", message: "BB Box runs one Other pool backend for now." }] } });
+  const refused = server([], { applyWith: { ok: false, reason: "problems", problems: [{ path: "backends.other.machines", message: "Add a machine." }, { path: "backends.other", message: "VesnALIA Box runs one Other pool backend for now." }] } });
   const again = settings(refused.handlers, "#setup/other");
   fireEvent.click(await again.findByRole("button", { name: "Save and turn on" }));
   expect(await again.findByText("Add a machine.")).toBeTruthy();
-  expect(again.getByText("BB Box runs one Other pool backend for now.")).toBeTruthy();
+  expect(again.getByText("VesnALIA Box runs one Other pool backend for now.")).toBeTruthy();
   expect(again.getByText(/^Not saved: it cannot be on without the 2 fields marked\. Fix it, or save it off to finish later\./)).toBeTruthy();
   expect(window.location.hash).toBe("#setup/other");
   fireEvent.click(again.getByRole("button", { name: "Save, keep it off" }));
@@ -3302,7 +3302,7 @@ test("the default kind's switch stays on, on the overview and its page, says why
   fireEvent.click(slot.getByRole("button", { name: "Choose another default" }));
   expect(window.location.hash).toBe("#option/boxes");
   await waitFor(() => expect(document.activeElement).toBe(slot.getByRole("combobox", { name: "Default kind" })));
-  fireEvent.click(slot.getByRole("button", { name: "BB Box settings" }));
+  fireEvent.click(slot.getByRole("button", { name: "VesnALIA Box settings" }));
   const row = await slot.findByRole("switch", { name: "Linux: offered to threads" });
   expect(row.getAttribute("aria-disabled")).toBe("true");
   expect(row.getAttribute("aria-describedby")!.split(" ").map((id) => document.getElementById(id)!.textContent).join(" ")).toContain("The default kind stays on. Choose another default to turn it off.");
@@ -3340,7 +3340,7 @@ test("a kind turned off on its page or the overview stays in its place, dimmed, 
   const slot = settings(handlers, "#kind/linux-desktop");
   fireEvent.click(await slot.findByRole("switch", { name: "Linux desktop: offered to threads" }));
   expect(await slot.findByText("Off: no new boxes")).toBeTruthy();
-  fireEvent.click(slot.getByRole("button", { name: "BB Box settings" }));
+  fireEvent.click(slot.getByRole("button", { name: "VesnALIA Box settings" }));
   const row = await slot.findByRole("button", { name: "Linux desktop" });
   expect(row.getAttribute("aria-describedby") && document.getElementById(row.getAttribute("aria-describedby")!)!.textContent).toBe("Off: no new boxes");
   expect(slot.queryByText(/1 kind off/)).toBeNull();
@@ -3365,7 +3365,7 @@ test("the Boxes and Images options: a field waits for Save, which Enter gives, a
   expect(JSON.parse(changes[0]!.slice(changes[0]!.indexOf("{"))).general).toEqual({ boxesPerThread: 3 });
   expect(await slot.findByText("Saved.")).toBeTruthy();
   expect(slot.queryByText("Changed")).toBeNull();
-  fireEvent.click(slot.getByRole("switch", { name: "Boxes join BB as machines" }));
+  fireEvent.click(slot.getByRole("switch", { name: "Boxes join VesnALIA as machines" }));
   await waitFor(() => expect(changes).toHaveLength(2));
   expect(JSON.parse(changes[1]!.slice(changes[1]!.indexOf("{"))).general).toEqual({ boxesPerThread: 3, enrol: false });
   expect(operations).toHaveLength(2);
@@ -3425,7 +3425,7 @@ test("a standard image whose last rebuild failed has Try again on its row, which
   const busy = settings(server([], { rebuildable: images, progress }).handlers, "#option/images");
   expect(((await busy.findByRole("button", { name: "Try the Linux image on Fake host again" })) as HTMLButtonElement).disabled).toBe(true);
   cleanup();
-  const skipped: ImagesStatus["progress"] = { started: Date.now() - 60_000, ended: Date.now() - 30_000, only: null, images: [{ name: "fake/old", kind: "linux", state: "skipped", detail: "its last rebuild failed and nothing it is built from has changed; bb box images build fake/old tries again" }] };
+  const skipped: ImagesStatus["progress"] = { started: Date.now() - 60_000, ended: Date.now() - 30_000, only: null, images: [{ name: "fake/old", kind: "linux", state: "skipped", detail: "its last rebuild failed and nothing it is built from has changed; VesnALIA box images build fake/old tries again" }] };
   const after = settings(server([], { rebuildable: images, progress: skipped }).handlers, "#option/images");
   expect(await after.findByText(/^Skipped: its last rebuild failed/)).toBeTruthy();
   expect(((await after.findByRole("button", { name: "Try the Linux image on Fake host again" })) as HTMLButtonElement).disabled).toBe(false);
@@ -3605,7 +3605,7 @@ test("a backend with no standard images has no Images group on its page", async 
   expect(document.querySelector("[data-image-row]")).toBeNull();
 });
 
-const PROJECT_IMAGE = { kinds: ["linux", "linux-desktop"], script: "apt-get install -y ripgrep\n", check: "rg --version\n", projects: ["proj_1"], source: { script: ".bb/box-setup.sh", check: ".bb/box-check.sh" }, updated: new Date(Date.now() - 3 * 86_400_000).toISOString() };
+const PROJECT_IMAGE = { kinds: ["linux", "linux-desktop"], script: "apt-get install -y ripgrep\n", check: "rg --version\n", projects: ["proj_1"], source: { script: ".vesnalia/box-setup.sh", check: ".vesnalia/box-check.sh" }, updated: new Date(Date.now() - 3 * 86_400_000).toISOString() };
 
 function withProjectImages(): void {
   applied = {
@@ -3635,7 +3635,7 @@ test("projects' images: each with its projects, kinds and builds, its script and
   expect(rust.getAttribute("aria-expanded")).toBe("false");
   fireEvent.click(rust);
   expect(rust.getAttribute("aria-expanded")).toBe("true");
-  expect(slot.getByText("From .bb/box-setup.sh and .bb/box-check.sh in the project's repository, set 3 d ago.")).toBeTruthy();
+  expect(slot.getByText("From .vesnalia/box-setup.sh and .vesnalia/box-check.sh in the project's repository, set 3 d ago.")).toBeTruthy();
   expect(slot.getByText("Built for Linux on Fake host")).toBeTruthy();
   expect(slot.getByText("Its build for Linux desktop on Fake host failed 1 h ago: its check failed: exit code 127: rg: not found")).toBeTruthy();
   expect(slot.getByLabelText("Script of rust-tools, run as root").textContent).toBe("apt-get install -y ripgrep");
@@ -3664,7 +3664,7 @@ test("until the projects' images' builds and project names arrive, a row says it
   expect(slot.queryByText(/^Not built yet/)).toBeNull();
   cleanup();
   withProjectImages();
-  const failing = settings({ ...handlers, images: () => Promise.reject(new Error("BB did not answer.")) }, "#option/images");
+  const failing = settings({ ...handlers, images: () => Promise.reject(new Error("VesnALIA did not answer.")) }, "#option/images");
   expect(await failing.findByText("proj_1")).toBeTruthy();
   expect(failing.queryByText("Reading its builds…")).toBeNull();
 });
@@ -3738,9 +3738,9 @@ test("a failed rebuild and a project image's failed build are in the overview's 
   const things = within(await slot.findByRole("region", { name: "Things that need you" }));
   expect(await things.findByText("The Linux image on Fake host did not rebuild")).toBeTruthy();
   expect(things.getByText("Failed 1 h ago: the trial box did not answer. New boxes start from its last build meanwhile.")).toBeTruthy();
-  expect(things.getByText("Fix: Fix the cause, then Try again on the Images page, or run bb box images build fake/9100.")).toBeTruthy();
+  expect(things.getByText("Fix: Fix the cause, then Try again on the Images page, or run alia box images build fake/9100.")).toBeTruthy();
   expect(things.getByText("The image rust-tools did not build for Linux desktop on Fake host")).toBeTruthy();
-  expect(things.getByText("Fix: Fix its script, then set the image again with bb box image set rust-tools.")).toBeTruthy();
+  expect(things.getByText("Fix: Fix its script, then set the image again with VesnALIA box image set rust-tools.")).toBeTruthy();
   expect(things.getByText("5 things need you")).toBeTruthy();
   expect(document.getElementById("settings-option-images")!.textContent).toContain("2 failed");
   fireEvent.click(things.getByRole("button", { name: "Open The Linux image on Fake host did not rebuild" }));
@@ -3759,7 +3759,7 @@ test("files for every box show each path and whether it is set, never a content;
   fireEvent.change(slot.getByRole("textbox", { name: "New file's path under the box user's home" }), { target: { value: " .config/tool/config.toml " } });
   fireEvent.change(slot.getByRole("textbox", { name: "Content of ~/.config/tool/config.toml" }), { target: { value: "key = 1" } });
   expect(slot.getByRole("region", { name: "Save files for every box" }).textContent).toContain("1 change to files for every box not saved");
-  expect(window.sessionStorage.getItem("bb-box.settings.draft.files")).not.toContain("key = 1");
+  expect(window.sessionStorage.getItem("alia-box.settings.draft.files")).not.toContain("key = 1");
   fireEvent.click(slot.getByRole("button", { name: "Save files" }));
   await waitFor(() => expect(changes).toHaveLength(1));
   expect(sent(0)).toEqual([{ path: ".pi/agent/models.json" }, { path: ".config/tool/config.toml", content: "key = 1" }]);
@@ -3844,7 +3844,7 @@ test("a draft waits when the page is left, the overview marks its row, a reload 
   const { handlers } = server([], { config: { setupDone: { at: 1_790_000_000_000, revision: 1 } } });
   const slot = settings(handlers, "#option/monitor");
   fireEvent.change(await slot.findByRole("textbox", { name: "Refresh every, in seconds" }), { target: { value: "12" } });
-  fireEvent.click(slot.getByRole("button", { name: "BB Box settings" }));
+  fireEvent.click(slot.getByRole("button", { name: "VesnALIA Box settings" }));
   expect(await slot.findByRole("button", { name: "Monitor", description: /^Unsaved changes/ })).toBeTruthy();
   expect(slot.getByRole("button", { name: "Boxes" }).getAttribute("aria-describedby")!.split(" ")).toHaveLength(1);
   cleanup();
@@ -3884,7 +3884,7 @@ test("a save whose request never arrived is not confirmed, and Save again resend
   const refresh = await slot.findByRole("textbox", { name: "Refresh every, in seconds" });
   fireEvent.change(refresh, { target: { value: "12" } });
   fireEvent.keyDown(refresh, { key: "Enter" });
-  expect(await slot.findByText("Save not confirmed: BB Box has no receipt for it yet. Your changes are still here. Saving again resends the same request, which BB Box applies at most once.")).toBeTruthy();
+  expect(await slot.findByText("Save not confirmed: VesnALIA Box has no receipt for it yet. Your changes are still here. Saving again resends the same request, which VesnALIA Box applies at most once.")).toBeTruthy();
   expect(slot.queryByText("Saved.")).toBeNull();
   fireEvent.change(refresh, { target: { value: "15" } });
   fireEvent.click(slot.getByRole("button", { name: "Save again" }));
@@ -3897,12 +3897,12 @@ test("a save whose request never arrived is not confirmed, and Save again resend
 
 function desktopTab(handlers: PluginRpcTestHandlers<Contract>, boxId = "box_2") {
   const action = app.threadPanelActions.find((candidate) => candidate.id === "desktop");
-  return renderSlot(action!, { threadId: THREAD, params: { box: boxId } }, { rpc: handlers, pluginId: "bb-box" });
+  return renderSlot(action!, { threadId: THREAD, params: { box: boxId } }, { rpc: handlers, pluginId: "alia-box" });
 }
 
 function deviceTab(handlers: PluginRpcTestHandlers<Contract>, boxId = "box_2") {
   const action = app.threadPanelActions.find((candidate) => candidate.id === "device");
-  return renderSlot(action!, { threadId: THREAD, params: { box: boxId } }, { rpc: handlers, pluginId: "bb-box" });
+  return renderSlot(action!, { threadId: THREAD, params: { box: boxId } }, { rpc: handlers, pluginId: "alia-box" });
 }
 
 test("a desktop that cannot be resized says you have control, and noVNC does not resize it", async () => {
@@ -4312,7 +4312,7 @@ test("what the box copies reaches this computer's clipboard quietly; the menu's 
   // Nothing yet: Copy says to copy in the box first.
   let menu = await openMenu(slot.getByRole("button", { name: "Desktop actions" }));
   fireEvent.click(within(menu).getByRole("menuitem", { name: "Copy to this computer" }));
-  // A toast, BB's own, so the toolbar keeps its height (the owner's note of 18 October 2026).
+  // A toast, VesnALIA's own, so the toolbar keeps its height (the owner's note of 18 October 2026).
   expect((await slot.findByText("Nothing has come from the box's clipboard yet. Copy something in the box first.")).closest("[aria-live=polite]")).not.toBeNull();
   // The box's cut text, as noVNC gives it to the viewer with control: it can come with no copy of the person's, so no note.
   act(() => void client.dispatchEvent(new CustomEvent("clipboard", { detail: { text: "from the box" } })));
@@ -4377,7 +4377,7 @@ test("clipboard outcomes are toolbar notes that go after about 3 s, never from t
   expect(slot.queryByRole("alert")).toBeNull();
 });
 
-test("a macOS VM on Tart, whose VNC server moves no clipboard, has it through bb-box: Paste and Cmd+V send the text as UTF-8 by RPC, then press Cmd+V, and Copy reads the box's (#464)", async () => {
+test("a macOS VM on Tart, whose VNC server moves no clipboard, has it through alia-box: Paste and Cmd+V send the text as UTF-8 by RPC, then press Cmd+V, and Copy reads the box's (#464)", async () => {
   const platform = vi.spyOn(Navigator.prototype, "platform", "get").mockReturnValue("MacIntel");
   const { writeText } = fakeClipboard(() => Promise.resolve("héllo, wörld ✓ 日本"));
   try {
@@ -4396,7 +4396,7 @@ test("a macOS VM on Tart, whose VNC server moves no clipboard, has it through bb
     // Tart's VNC server takes Alt as Command and Meta as Option: Cmd goes as Alt, Option as Meta, and the paste chord is Alt+V.
     client._handleKeyEvent(0xffe9, "MetaLeft", true, null, null);
     client._handleKeyEvent(0xff7e, "AltLeft", true, null, null);
-    // € goes as its Unicode keysym, which BB Box's input in the Mac types as the character.
+    // € goes as its Unicode keysym, which VesnALIA Box's input in the Mac types as the character.
     client._handleKeyEvent(0x20ac, "KeyE", true, null, null);
     expect(client.keyEvents).toEqual([
       { keysym: 0xffe9, code: "AltLeft", down: true },
@@ -4471,7 +4471,7 @@ test("a Mac's first copy reaches this computer when its clipboard was empty as t
   }
 });
 
-test("a Windows box, whose QEMU console moves no clipboard, has it through bb-box: Cmd+V from a Mac and the menu's Paste send UTF-8 by RPC, then press the box's Ctrl+V, and Copy reads the box's (#461)", async () => {
+test("a Windows box, whose QEMU console moves no clipboard, has it through alia-box: Cmd+V from a Mac and the menu's Paste send UTF-8 by RPC, then press the box's Ctrl+V, and Copy reads the box's (#461)", async () => {
   const platform = vi.spyOn(Navigator.prototype, "platform", "get").mockReturnValue("MacIntel");
   const { writeText } = fakeClipboard(() => Promise.resolve("from the Mac ✓"));
   try {
@@ -4798,7 +4798,7 @@ function videoSocket(): FakeSocket {
   return socket;
 }
 
-test("with the setting on, a desktop shows as video whatever the round trip to BB's server, and over VNC with the setting off (056)", async () => {
+test("with the setting on, a desktop shows as video whatever the round trip to VesnALIA's server, and over VNC with the setting off (056)", async () => {
   const undo = withVideo();
   try {
     // The setting off: VNC.
@@ -4812,7 +4812,7 @@ test("with the setting on, a desktop shows as video whatever the round trip to B
     novnc.FakeRfb.made = [];
     FakeSocket.made = [];
 
-    // On: video, through the relay, with no round trips timed, however quick BB's server answers.
+    // On: video, through the relay, with no round trips timed, however quick VesnALIA's server answers.
     const on = server([desktopBox()], { video: true });
     const slot = desktopTab(on.handlers);
     await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
@@ -4887,24 +4887,24 @@ test("on a device, an input method's committed text, an emoji and Type text each
     act(() => device.open());
     act(() => void device.onmessage?.({ data: "MODE websockets" }));
     act(() => void device.onmessage?.({ data: videoFrame(1, true, 360, 800) }));
-    act(() => void device.onmessage?.({ data: `BB_DEVICE_STATE ${JSON.stringify({ state: PIXEL_8_STATE })}` }));
+    act(() => void device.onmessage?.({ data: `ALIA_DEVICE_STATE ${JSON.stringify({ state: PIXEL_8_STATE })}` }));
     expect(await slot.findByText("The agent has control.")).toBeTruthy();
     const screen = slot.getByTestId("desktop-screen");
     const circles = () => screen.querySelectorAll('[aria-hidden="true"] > div').length;
     const sized = (name: "clientWidth" | "clientHeight", value: number) => vi.spyOn(HTMLElement.prototype, name, "get").mockReturnValue(value);
     const spies = [sized("clientWidth", 360), sized("clientHeight", 800)];
-    act(() => void device.onmessage?.({ data: `BB_DEVICE_TOUCH ${JSON.stringify({ contacts: [{ id: 0, x: 180, y: 400 }], by: "agent", generation: 1 })}` }));
+    act(() => void device.onmessage?.({ data: `ALIA_DEVICE_TOUCH ${JSON.stringify({ contacts: [{ id: 0, x: 180, y: 400 }], by: "agent", generation: 1 })}` }));
     expect(circles()).toBe(1);
     const circle = screen.querySelector<HTMLElement>('[aria-hidden="true"] > div')!;
     expect(circle.style.width).toBe("36px");
 
     fireEvent.click(slot.getByRole("button", { name: "Take control" }));
     await slot.findByText(/You have control/);
-    act(() => void device.onmessage?.({ data: `BB_DEVICE_TOUCH ${JSON.stringify({ contacts: [{ id: 0, x: 10, y: 10 }], by: "person", generation: 1 })}` }));
+    act(() => void device.onmessage?.({ data: `ALIA_DEVICE_TOUCH ${JSON.stringify({ contacts: [{ id: 0, x: 10, y: 10 }], by: "person", generation: 1 })}` }));
     expect(circles()).toBe(1);
     for (const spy of spies) spy.mockRestore();
     const strings = () => device.sent.filter((sent): sent is string => typeof sent === "string");
-    const texts = () => strings().filter((sent) => sent.startsWith("BB_DEVICE ")).map((sent) => JSON.parse(sent.slice("BB_DEVICE ".length)) as { type: string; text?: string });
+    const texts = () => strings().filter((sent) => sent.startsWith("ALIA_DEVICE ")).map((sent) => JSON.parse(sent.slice("ALIA_DEVICE ".length)) as { type: string; text?: string });
     const keys = slot.getByLabelText("Keyboard input for the device");
     expect(document.activeElement).toBe(keys);
     fireEvent.keyDown(keys, { key: "Process", code: "KeyN", keyCode: 229, isComposing: true });
@@ -4937,11 +4937,11 @@ const PIXEL_8_STATE = {
   power: { is: "booted", awake: true },
   geometry: { generation: 1, physical: "upright", content: "upright", video: { width: 360, height: 800 } },
   settings: {
-    appearance: { known: true, value: "light", at: 1, by: "bb-box" },
-    fontScale: { known: true, value: 1, at: 1, by: "bb-box" },
-    location: { known: true, value: null, at: 1, by: "bb-box" },
-    battery: { known: true, value: { level: 100, charging: true }, at: 1, by: "bb-box" },
-    network: { known: true, value: "online", at: 1, by: "bb-box" },
+    appearance: { known: true, value: "light", at: 1, by: "alia-box" },
+    fontScale: { known: true, value: 1, at: 1, by: "alia-box" },
+    location: { known: true, value: null, at: 1, by: "alia-box" },
+    battery: { known: true, value: { level: 100, charging: true }, at: 1, by: "alia-box" },
+    network: { known: true, value: "online", at: 1, by: "alia-box" },
     statusBar: { set: null, at: null },
   },
   at: 1,
@@ -4953,8 +4953,8 @@ const IPHONE_STATE = {
   power: { is: "booted", awake: true },
   geometry: { generation: 1, physical: "upright", content: "upright", video: { width: 1206, height: 2622 } },
   settings: {
-    appearance: { known: true, value: "light", at: 1, by: "bb-box" },
-    textSize: { known: true, value: "large", at: 1, by: "bb-box" },
+    appearance: { known: true, value: "light", at: 1, by: "alia-box" },
+    textSize: { known: true, value: "large", at: 1, by: "alia-box" },
     location: { set: null, at: null },
     statusBar: { set: null, at: null },
   },
@@ -4965,7 +4965,7 @@ const IOS_RUNTIME = { platform: "ios", os: "27.0", build: "25A1", xcode: "27.0",
 
 function iosHello(bootedHere?: readonly string[]) {
   const devices = ["iPhone 18 Pro", "iPhone 17", "iPad Pro 13-inch (M5)"].map((model) => ({ model, native: model, runtime: IOS_RUNTIME }));
-  return `BB_DEVICE_HELLO ${JSON.stringify({ protocol: 1, version: 10, platform: "ios", devices, state: IPHONE_STATE, lease: false, ...(bootedHere ? { bootedHere } : {}) })}`;
+  return `ALIA_DEVICE_HELLO ${JSON.stringify({ protocol: 1, version: 10, platform: "ios", devices, state: IPHONE_STATE, lease: false, ...(bootedHere ? { bootedHere } : {}) })}`;
 }
 
 function sizedPanel(width: number, height: number) {
@@ -4986,14 +4986,14 @@ async function deviceShown(model: string, state: object, hello?: string, deviceC
   const video = (state as { geometry: { video: { width: number; height: number } } }).geometry.video;
   act(() => void device.onmessage?.({ data: videoFrame(1, true, video.width, video.height) }));
   if (hello) act(() => void device.onmessage?.({ data: hello }));
-  act(() => void device.onmessage?.({ data: `BB_DEVICE_STATE ${JSON.stringify({ state })}` }));
+  act(() => void device.onmessage?.({ data: `ALIA_DEVICE_STATE ${JSON.stringify({ state })}` }));
   await slot.findByRole("toolbar");
   const requests = () =>
     device.sent
-      .filter((sent): sent is string => typeof sent === "string" && sent.startsWith("BB_DEVICE "))
-      .map((sent) => JSON.parse(sent.slice("BB_DEVICE ".length)) as { id: string; type: string; control?: { action: string }; url?: string });
+      .filter((sent): sent is string => typeof sent === "string" && sent.startsWith("ALIA_DEVICE "))
+      .map((sent) => JSON.parse(sent.slice("ALIA_DEVICE ".length)) as { id: string; type: string; control?: { action: string }; url?: string });
   const answer = (id: string, ok = true, words = "") =>
-    act(() => void device.onmessage?.({ data: `BB_DEVICE_ANSWER ${JSON.stringify(ok ? { id, ok, ms: 412, state, result: { type: "done" } } : { id, ok, error: { code: "busy", words }, state })}` }));
+    act(() => void device.onmessage?.({ data: `ALIA_DEVICE_ANSWER ${JSON.stringify(ok ? { id, ok, ms: 412, state, result: { type: "done" } } : { id, ok, error: { code: "busy", words }, state })}` }));
   return { slot, device, changes, requests, answer };
 }
 
@@ -5150,7 +5150,7 @@ test("More holds Show frame and Pixel for pixel, kept per box, and settings with
     const menu = await more();
     expect(within(menu).getByRole("menuitemcheckbox", { name: "Show frame" }).getAttribute("aria-checked")).toBe("true");
     fireEvent.click(within(menu).getByRole("menuitemcheckbox", { name: "Pixel for pixel" }));
-    const viewKey = Object.keys(window.localStorage).find((key) => key.startsWith("bb-box:device-view:"))!;
+    const viewKey = Object.keys(window.localStorage).find((key) => key.startsWith("alia-box:device-view:"))!;
     expect(JSON.parse(window.localStorage.getItem(viewKey)!)).toEqual({ frame: true, pixelForPixel: true });
     window.localStorage.removeItem(viewKey);
     const again = await more();
@@ -5208,7 +5208,7 @@ test("the device picker lists the box's models, warns of one not started in this
   }
 });
 
-test("Screenshot asks BB Box for the device's own pixels without taking control, and copies them as a PNG (063)", async () => {
+test("Screenshot asks VesnALIA Box for the device's own pixels without taking control, and copies them as a PNG (063)", async () => {
   const undo = withVideo();
   const unsize = sizedPanel(900, 800);
   const write = vi.fn<(items: unknown[]) => Promise<void>>().mockResolvedValue(undefined);
@@ -5278,8 +5278,8 @@ test("the toolbar moves by arrow keys as one tab stop, and the device's changes 
     expect(document.activeElement).toBe(buttons[1]);
     fireEvent.keyDown(buttons[1]!, { key: "End" });
     expect(document.activeElement).toBe(buttons.at(-1));
-    const dark = { ...IPHONE_STATE, settings: { ...IPHONE_STATE.settings, appearance: { known: true, value: "dark", at: 2, by: "bb-box" } }, geometry: { ...IPHONE_STATE.geometry, generation: 2, physical: "turned-left" } };
-    act(() => void device.onmessage?.({ data: `BB_DEVICE_STATE ${JSON.stringify({ state: dark })}` }));
+    const dark = { ...IPHONE_STATE, settings: { ...IPHONE_STATE.settings, appearance: { known: true, value: "dark", at: 2, by: "alia-box" } }, geometry: { ...IPHONE_STATE.geometry, generation: 2, physical: "turned-left" } };
+    act(() => void device.onmessage?.({ data: `ALIA_DEVICE_STATE ${JSON.stringify({ state: dark })}` }));
     await waitFor(() => expect(slot.getByTestId("device-announcer").textContent).toBe("Turned left. Dark appearance."));
     expect(within(toolbar).getByRole("button", { name: "Dark appearance" }).getAttribute("aria-pressed")).toBe("true");
   } finally {
@@ -5292,7 +5292,7 @@ test("a tab from before the device tab, for a box with a device and a desktop, o
   const undo = withVideo();
   try {
     window.sessionStorage.clear();
-    window.sessionStorage.setItem("bb-box:display:box_2", "device");
+    window.sessionStorage.setItem("alia-box:display:box_2", "device");
     const { handlers, changes } = server([desktopBox({ device: { platform: "android", model: "Pixel 8", simulatorHost: false } })], { video: true });
     const slot = desktopTab(handlers);
     await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("display=device"))).toBe(true));
@@ -5327,7 +5327,7 @@ test("a tab from before the device tab, for a box with a device and a desktop, o
     await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
     expect(slot.queryByRole("button", { name: "Desktop" })).toBeNull();
     const desktop = videoSocket();
-    expect(window.sessionStorage.getItem("bb-box:display:box_2")).toBe("desktop");
+    expect(window.sessionStorage.getItem("alia-box:display:box_2")).toBe("desktop");
     expect(device.readyState).toBe(1);
     expect(device.sent.at(-1)).toBe("STOP_VIDEO");
     act(() => desktop.open());
@@ -5342,7 +5342,7 @@ test("a tab from before the device tab, for a box with a device and a desktop, o
     fireEvent.keyDown(desktopCanvas, { key: "v", code: "KeyV", ctrlKey: true });
     act(() => void document.dispatchEvent(pasteEvent("for the desktop")));
     await waitFor(() => expect(desktop.sent).toContain(`cw,${btoa("for the desktop")}`));
-    expect(device.sent.filter((sent) => typeof sent === "string" && sent.startsWith("BB_DEVICE "))).toEqual([]);
+    expect(device.sent.filter((sent) => typeof sent === "string" && sent.startsWith("ALIA_DEVICE "))).toEqual([]);
 
     vi.useFakeTimers();
     fireEvent.click(slot.getByRole("button", { name: "Emulator" }));
@@ -5370,11 +5370,11 @@ test("where the browser has no WebCodecs, the device shows stills over its own c
     await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("display=device"))).toBe(true));
     const device = deviceSocket();
     act(() => device.open());
-    expect(device.sent).toEqual(['BB_DEVICE_STILLS {"on":true}', "START_VIDEO"]);
-    act(() => void device.onmessage?.({ data: `BB_DEVICE_HELLO ${JSON.stringify({ protocol: 1, version: 2, platform: "android", devices: [{ model: "Pixel 8", native: "bb-box-test-device", runtime: { platform: "android", api: 35, image: "google_apis", revision: 1, abi: "x86_64", emulator: "BB Box test driver", snapshot: null } }], state: { ...PIXEL_8_STATE, power: { is: "booting", since: 1 } }, lease: false })}` }));
+    expect(device.sent).toEqual(['ALIA_DEVICE_STILLS {"on":true}', "START_VIDEO"]);
+    act(() => void device.onmessage?.({ data: `ALIA_DEVICE_HELLO ${JSON.stringify({ protocol: 1, version: 2, platform: "android", devices: [{ model: "Pixel 8", native: "alia-box-test-device", runtime: { platform: "android", api: 35, image: "google_apis", revision: 1, abi: "x86_64", emulator: "VesnALIA Box test driver", snapshot: null } }], state: { ...PIXEL_8_STATE, power: { is: "booting", since: 1 } }, lease: false })}` }));
     expect(await slot.findByText("Booting")).toBeTruthy();
-    act(() => void device.onmessage?.({ data: `BB_DEVICE_STATE ${JSON.stringify({ state: PIXEL_8_STATE })}` }));
-    act(() => void device.onmessage?.({ data: `BB_DEVICE_STILL ${JSON.stringify({ png: "iVBORw0KGgo=", generation: 1 })}` }));
+    act(() => void device.onmessage?.({ data: `ALIA_DEVICE_STATE ${JSON.stringify({ state: PIXEL_8_STATE })}` }));
+    act(() => void device.onmessage?.({ data: `ALIA_DEVICE_STILL ${JSON.stringify({ png: "iVBORw0KGgo=", generation: 1 })}` }));
     expect(await slot.findByText("This browser cannot play the device's video, so it shows a picture a few times a second.")).toBeTruthy();
     expect(slot.getByText("The agent has control.")).toBeTruthy();
     expect(novnc.FakeRfb.made).toHaveLength(0);
@@ -5400,7 +5400,7 @@ test("a device whose first frame does not decode within 3 s asks for stills inst
     act(() => void device.onmessage?.({ data: videoFrame(1, true, 360, 800) }));
     await vi.advanceTimersByTimeAsync(3_050);
     vi.useRealTimers();
-    expect(device.sent).toContain('BB_DEVICE_STILLS {"on":true}');
+    expect(device.sent).toContain('ALIA_DEVICE_STILLS {"on":true}');
     expect(FakeSocket.made.filter((made) => made.url.includes("display=device"))).toHaveLength(1);
     expect(novnc.FakeRfb.made).toHaveLength(0);
   } finally {
@@ -5419,24 +5419,24 @@ test("a device whose first frame came too late for its stills tries its video ag
     await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("display=device"))).toBe(true));
     const device = deviceSocket();
     act(() => device.open());
-    act(() => void device.onmessage?.({ data: `BB_DEVICE_STATE ${JSON.stringify({ state: PIXEL_8_STATE })}` }));
+    act(() => void device.onmessage?.({ data: `ALIA_DEVICE_STATE ${JSON.stringify({ state: PIXEL_8_STATE })}` }));
     vi.useFakeTimers();
     act(() => void device.onmessage?.({ data: videoFrame(1, true, 360, 800) }));
     await vi.advanceTimersByTimeAsync(3_050);
-    expect(device.sent).toContain('BB_DEVICE_STILLS {"on":true}');
-    act(() => void device.onmessage?.({ data: `BB_DEVICE_STILL ${JSON.stringify({ png: "iVBORw0KGgo=", generation: 1 })}` }));
+    expect(device.sent).toContain('ALIA_DEVICE_STILLS {"on":true}');
+    act(() => void device.onmessage?.({ data: `ALIA_DEVICE_STILL ${JSON.stringify({ png: "iVBORw0KGgo=", generation: 1 })}` }));
     await vi.advanceTimersByTimeAsync(50);
     expect(slot.getByText(SLOW_VIDEO_STILLS_WORDS)).toBeTruthy();
     expect(slot.queryByText(STILLS_WORDS)).toBeNull();
 
     FakeDecoder.silent = false;
     await act(async () => void (await vi.advanceTimersByTimeAsync(SLOW_VIDEO_RETRY_MS)));
-    expect(device.sent.at(-1)).toBe('BB_DEVICE_STILLS {"on":false}');
+    expect(device.sent.at(-1)).toBe('ALIA_DEVICE_STILLS {"on":false}');
     expect(slot.queryByText(SLOW_VIDEO_STILLS_WORDS)).toBeNull();
     act(() => void device.onmessage?.({ data: videoFrame(2, true, 360, 800) }));
     await vi.advanceTimersByTimeAsync(5_000);
     vi.useRealTimers();
-    expect(device.sent.filter((sent) => sent === 'BB_DEVICE_STILLS {"on":true}')).toHaveLength(1);
+    expect(device.sent.filter((sent) => sent === 'ALIA_DEVICE_STILLS {"on":true}')).toHaveLength(1);
     expect(FakeDecoder.made.at(-1)!.chunks.map((chunk) => chunk.timestamp)).toEqual([2]);
     expect(FakeSocket.made.filter((made) => made.url.includes("display=device"))).toHaveLength(1);
   } finally {
@@ -5538,7 +5538,7 @@ test("a video viewer says how large a frame its browser decodes, and waits for a
     await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
     const socket = videoSocket();
     act(() => socket.open());
-    await waitFor(() => expect(socket.sent).toContain("BB_DECODES,34560"));
+    await waitFor(() => expect(socket.sent).toContain("ALIA_DECODES,34560"));
     act(() => void socket.onmessage?.({ data: "MODE websockets" }));
     act(() => void socket.onmessage?.({ data: videoFrame(5, true, 1920, 1080) }));
     await slot.findByText("The agent has control.");
@@ -5573,7 +5573,7 @@ test("a video viewer whose browser decodes level 6.1 says so (#864)", async () =
     await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
     const socket = videoSocket();
     act(() => socket.open());
-    await waitFor(() => expect(socket.sent).toContain("BB_DECODES,139264"));
+    await waitFor(() => expect(socket.sent).toContain("ALIA_DECODES,139264"));
   } finally {
     undo();
     window.sessionStorage.clear();
@@ -5704,11 +5704,11 @@ test("a paste on its way as the stream switches to VNC is pressed before the vid
   }
 });
 
-test("with localStorage bb-box-keylog set to 1, the video viewer logs each key it sends and asks the relay to log them too; without it, neither (a diagnostic)", async () => {
+test("with localStorage alia-box-keylog set to 1, the video viewer logs each key it sends and asks the relay to log them too; without it, neither (a diagnostic)", async () => {
   const undo = withVideo();
   const logged = vi.spyOn(console, "log").mockImplementation(() => undefined);
   try {
-    window.localStorage.setItem("bb-box-keylog", "1");
+    window.localStorage.setItem("alia-box-keylog", "1");
     window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
     const { handlers } = server([desktopBox()], { video: true });
     const slot = desktopTab(handlers);
@@ -5722,13 +5722,13 @@ test("with localStorage bb-box-keylog set to 1, the video viewer logs each key i
     await slot.findByText(/You have control/);
     const canvas = slot.getByTestId("desktop-screen").querySelector("canvas")!;
     fireEvent.keyDown(canvas, { key: "a", code: "KeyA" });
-    expect(logged.mock.calls.some(([line]) => /^bb-box key video: down 0x61 'a', held \[97\]|^bb-box key video: down 0x61 'a', held \[0x61\]/.test(String(line)))).toBe(true);
-    window.localStorage.removeItem("bb-box-keylog");
+    expect(logged.mock.calls.some(([line]) => /^alia-box key video: down 0x61 'a', held \[97\]|^alia-box key video: down 0x61 'a', held \[0x61\]/.test(String(line)))).toBe(true);
+    window.localStorage.removeItem("alia-box-keylog");
     logged.mockClear();
     fireEvent.keyUp(canvas, { key: "a", code: "KeyA" });
     expect(logged).not.toHaveBeenCalled();
   } finally {
-    window.localStorage.removeItem("bb-box-keylog");
+    window.localStorage.removeItem("alia-box-keylog");
     logged.mockRestore();
     undo();
     window.sessionStorage.clear();
@@ -5837,7 +5837,7 @@ test("a desktop that would show as video on a page that is not secure shows over
     await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
     expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(false);
     await waitFor(() => expect(toasts()).toHaveLength(1));
-    expect(toasts()[0]).toMatch(/^This desktop shows over VNC: video needs a secure connection to BB\./);
+    expect(toasts()[0]).toMatch(/^This desktop shows over VNC: video needs a secure connection to ALIA\./);
     const link = (globalThis as { lastToastDescription?: { props?: { href?: string; children?: unknown } } }).lastToastDescription;
     expect(link?.props?.href).toMatch(/docs\/guide\/desktops\.md#video$/);
     expect(link?.props?.children).toBe("Video, in the desktops guide");
@@ -5852,7 +5852,7 @@ test("a desktop that would show as video on a page that is not secure shows over
   }
 });
 
-test("a desktop's notes are BB's toasts, one at a time, with their reason under them, and the toolbar keeps its height (the owner's note of 18 October 2026)", async () => {
+test("a desktop's notes are VesnALIA's toasts, one at a time, with their reason under them, and the toolbar keeps its height (the owner's note of 18 October 2026)", async () => {
   const undo = withVideo();
   vi.useFakeTimers({ shouldAdvanceTime: true });
   try {
@@ -6101,7 +6101,7 @@ test("a video desktop's Display holds Show as VNC, and no choice of the box's po
     await slot.findByText(/You have control/);
     const display = within(await openDisplay(slot.getByRole("button", { name: "Desktop actions" })));
     expect(display.getAllByRole("menuitemcheckbox").map((item) => item.textContent?.trim())).toEqual(["Show as VNC"]);
-    expect(socket.sent.some((sent) => String(sent).startsWith("BB_SHOWPOINTER"))).toBe(false);
+    expect(socket.sent.some((sent) => String(sent).startsWith("ALIA_SHOWPOINTER"))).toBe(false);
   } finally {
     undo();
     window.sessionStorage.clear();
@@ -6276,7 +6276,7 @@ test("as a desktop in your control takes the tab's new size, the video holds its
   }
 });
 
-test("a person watching a Wayland desktop with bb-box-cursor sees the box's pointer drawn over the video, where BB Box says it is, scaled with the picture; the person in control does not (060)", async () => {
+test("a person watching a Wayland desktop with alia-box-cursor sees the box's pointer drawn over the video, where VesnALIA Box says it is, scaled with the picture; the person in control does not (060)", async () => {
   const undo = withVideo();
   const size = FakeDecoder.size;
   try {
@@ -6299,23 +6299,23 @@ test("a person watching a Wayland desktop with bb-box-cursor sees the box's poin
     // The box's cursor, a PNG of 2 by 1 with its hotspot at (1, 0), then where the pointer is.
     const png = rgbaPng(2, 1, Uint8Array.from([255, 0, 0, 255, 0, 0, 0, 0])).toString("base64");
     act(() => void socket.onmessage?.({ data: `cursor,${JSON.stringify({ curdata: png, hotx: 1, hoty: 0 })}` }));
-    act(() => void socket.onmessage?.({ data: "BB_POINTER,640,360" }));
+    act(() => void socket.onmessage?.({ data: "ALIA_POINTER,640,360" }));
     await waitFor(() => expect(drawn()?.style.display).toBe("block"));
     const style = drawn()!.style;
     expect([style.left, style.top, style.width, style.height]).toEqual(["319.5px", "180px", "1px", "0.5px"]);
     expect(drawn()!.getAttribute("src")).toBe(`data:image/png;base64,${png}`);
     // It moves as the box's pointer does, and goes when it leaves the desktop.
-    act(() => void socket.onmessage?.({ data: "BB_POINTER,1001,1" }));
+    act(() => void socket.onmessage?.({ data: "ALIA_POINTER,1001,1" }));
     expect([drawn()!.style.left, drawn()!.style.top]).toEqual(["500px", "0.5px"]);
-    act(() => void socket.onmessage?.({ data: "BB_POINTER," }));
+    act(() => void socket.onmessage?.({ data: "ALIA_POINTER," }));
     expect(drawn()!.style.display).toBe("none");
     // The person in control has their own pointer, in the box's shape: none is drawn for them.
-    act(() => void socket.onmessage?.({ data: "BB_POINTER,640,360" }));
+    act(() => void socket.onmessage?.({ data: "ALIA_POINTER,640,360" }));
     expect(drawn()!.style.display).toBe("block");
     fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
     await slot.findByText(/You have control/);
     await waitFor(() => expect(drawn()!.style.display).toBe("none"));
-    act(() => void socket.onmessage?.({ data: "BB_POINTER,700,360" }));
+    act(() => void socket.onmessage?.({ data: "ALIA_POINTER,700,360" }));
     expect(drawn()!.style.display).toBe("none");
   } finally {
     FakeDecoder.size = size;
@@ -6324,7 +6324,7 @@ test("a person watching a Wayland desktop with bb-box-cursor sees the box's poin
   }
 });
 
-test("a person watching a Wayland desktop with bb-box-cursor over VNC sees the box's pointer drawn over the picture, from a pointer stream of its own, which a desktop without the helper ends for good (060)", async () => {
+test("a person watching a Wayland desktop with alia-box-cursor over VNC sees the box's pointer drawn over the picture, from a pointer stream of its own, which a desktop without the helper ends for good (060)", async () => {
   const { handlers } = server([desktopBox()]);
   const slot = desktopTab(handlers);
   await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
@@ -6347,7 +6347,7 @@ test("a person watching a Wayland desktop with bb-box-cursor over VNC sees the b
   act(() => stream.open());
   const png = rgbaPng(2, 1, Uint8Array.from([255, 0, 0, 255, 0, 0, 0, 0])).toString("base64");
   act(() => void stream.onmessage?.({ data: `cursor,${JSON.stringify({ curdata: png, hotx: 1, hoty: 0 })}` }));
-  act(() => void stream.onmessage?.({ data: "BB_POINTER,640,360" }));
+  act(() => void stream.onmessage?.({ data: "ALIA_POINTER,640,360" }));
   const drawn = () => rfb.target.querySelector("img");
   await waitFor(() => expect(drawn()?.style.display).toBe("block"));
   expect([drawn()!.style.left, drawn()!.style.top, drawn()!.style.width, drawn()!.style.height]).toEqual(["319.5px", "240px", "1px", "0.5px"]);
@@ -6386,14 +6386,14 @@ test("a person watching a Linux desktop sees the agent's pointer where it clicks
   act(() => stream.open());
   const agent = () => rfb.target.querySelector<HTMLElement>("[data-testid=agent-pointer]");
   const rings = () => rfb.target.querySelectorAll("[data-testid=agent-ring]").length;
-  act(() => void stream.onmessage?.({ data: "BB_AGENT,at,100,100" }));
+  act(() => void stream.onmessage?.({ data: "ALIA_AGENT,at,100,100" }));
   await waitFor(() => expect(agent()?.style.display).toBe("block"));
   expect([agent()!.style.left, agent()!.style.top]).toEqual(["50px", "110px"]);
   expect(rings()).toBe(0);
-  act(() => void stream.onmessage?.({ data: "BB_AGENT,click,640,360" }));
+  act(() => void stream.onmessage?.({ data: "ALIA_AGENT,click,640,360" }));
   expect([agent()!.style.left, agent()!.style.top]).toEqual(["320px", "240px"]);
   expect(rings()).toBe(1);
-  act(() => void stream.onmessage?.({ data: "BB_AGENT,click,x,y" }));
+  act(() => void stream.onmessage?.({ data: "ALIA_AGENT,click,x,y" }));
   expect([agent()!.style.left, agent()!.style.top]).toEqual(["320px", "240px"]);
   fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
   await slot.findByText(/You have control/);
@@ -6420,20 +6420,20 @@ test("a person watching a Linux desktop as video sees the agent's pointer where 
     const agent = () => video.querySelector<HTMLElement>("[data-testid=agent-pointer]");
     const png = rgbaPng(2, 1, Uint8Array.from([255, 0, 0, 255, 0, 0, 0, 0])).toString("base64");
     act(() => void socket.onmessage?.({ data: `cursor,${JSON.stringify({ curdata: png, hotx: 0, hoty: 0 })}` }));
-    act(() => void socket.onmessage?.({ data: "BB_POINTER,640,360" }));
-    act(() => void socket.onmessage?.({ data: "BB_AGENT,click,640,360" }));
+    act(() => void socket.onmessage?.({ data: "ALIA_POINTER,640,360" }));
+    act(() => void socket.onmessage?.({ data: "ALIA_AGENT,click,640,360" }));
     await waitFor(() => expect(agent()?.style.display).toBe("block"));
     expect([agent()!.style.left, agent()!.style.top]).toEqual(["320px", "180px"]);
     expect(video.querySelectorAll("[data-testid=agent-ring]").length).toBe(1);
     const boxPointer = video.querySelector<HTMLElement>("img");
     expect(boxPointer?.style.display).toBe("none");
-    act(() => void socket.onmessage?.({ data: "BB_AGENT,clear" }));
+    act(() => void socket.onmessage?.({ data: "ALIA_AGENT,clear" }));
     expect(agent()?.style.display).toBe("none");
     expect(boxPointer?.style.display).toBe("block");
-    act(() => void socket.onmessage?.({ data: "BB_AGENT,click,640,360" }));
+    act(() => void socket.onmessage?.({ data: "ALIA_AGENT,click,640,360" }));
     fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
     await slot.findByText(/You have control/);
-    act(() => void socket.onmessage?.({ data: "BB_AGENT,clear" }));
+    act(() => void socket.onmessage?.({ data: "ALIA_AGENT,clear" }));
     expect(boxPointer?.style.display).toBe("none");
     fireEvent.click(slot.getByRole("button", { name: "Hand back to the agent" }));
     await slot.findByText("The agent has control.");
@@ -6480,9 +6480,9 @@ for (const transport of ["video", "VNC"] as const) {
       const agent = () => session.element.querySelector<HTMLElement>("[data-testid=agent-pointer]");
       const tell = (data: string) => socket.onmessage?.({ data });
       tell(`cursor,${JSON.stringify({ curdata: png, hotx: 0, hoty: 0 })}`);
-      tell("BB_POINTER,640,360");
-      tell("BB_AGENT,click,640,360");
-      tell("BB_AGENT,shape,640,360,ibeam");
+      tell("ALIA_POINTER,640,360");
+      tell("ALIA_AGENT,click,640,360");
+      tell("ALIA_AGENT,shape,640,360,ibeam");
       expect(agent()?.style.display).toBe("block");
       expect(boxPointer()?.style.display).toBe("none");
       expect(session.element.querySelectorAll("[data-testid=agent-ring]")).toHaveLength(1);
@@ -6494,20 +6494,20 @@ for (const transport of ["video", "VNC"] as const) {
       socket = connect();
       await decodesMacroblocks();
       tell(`cursor,${JSON.stringify({ curdata: png, hotx: 0, hoty: 0 })}`);
-      tell("BB_POINTER,700,400");
+      tell("ALIA_POINTER,700,400");
       expect(agent()?.style.display).toBe("none");
       expect(session.element.querySelectorAll("[data-testid=agent-ring]")).toHaveLength(0);
       expect(boxPointer()?.style.display).toBe("block");
-      tell("BB_AGENT,at,700,400");
+      tell("ALIA_AGENT,at,700,400");
       expect(agent()?.getAttribute("data-shape")).toBe("arrow");
-      tell("BB_AGENT,click,700,400");
+      tell("ALIA_AGENT,click,700,400");
       const replaced = socket;
       session.reconnect();
       socket = connect();
       await decodesMacroblocks();
-      replaced.onmessage?.({ data: "BB_AGENT,click,640,360" });
+      replaced.onmessage?.({ data: "ALIA_AGENT,click,640,360" });
       tell(`cursor,${JSON.stringify({ curdata: png, hotx: 0, hoty: 0 })}`);
-      tell("BB_POINTER,700,400");
+      tell("ALIA_POINTER,700,400");
       expect(agent()?.style.display).toBe("none");
       expect(session.element.querySelectorAll("[data-testid=agent-ring]")).toHaveLength(0);
       expect(boxPointer()?.style.display).toBe("block");
@@ -6857,7 +6857,7 @@ test("a desktop tab keeps its viewer ID when it remounts, and two tabs never sha
   expect(new URL(novnc.FakeRfb.made[1]!.url).searchParams.get("viewer")).toBe(b);
 });
 
-test("a desktop tab that BB moves to another place in one commit, as at the phone breakpoint, keeps its viewer, its connection and its control", async () => {
+test("a desktop tab that VesnALIA moves to another place in one commit, as at the phone breakpoint, keeps its viewer, its connection and its control", async () => {
   const { handlers, changes } = server([desktopBox()]);
   const Desktop = app.threadPanelActions.find((candidate) => candidate.id === "desktop")!.component as ComponentType<{ threadId: string; params: { box: string } }>;
   let turn!: () => void;
@@ -6874,7 +6874,7 @@ test("a desktop tab that BB moves to another place in one commit, as at the phon
       </section>
     );
   }
-  const slot = renderSlot({ component: Layout }, { threadId: THREAD, params: { box: "box_2" } }, { rpc: handlers, pluginId: "bb-box" });
+  const slot = renderSlot({ component: Layout }, { threadId: THREAD, params: { box: "box_2" } }, { rpc: handlers, pluginId: "alia-box" });
   await slot.findByText("Connecting to the desktop…");
   const [client] = novnc.FakeRfb.made;
   act(() => void client!.dispatchEvent(new Event("connect")));
@@ -7132,12 +7132,12 @@ test("a desktop tab whose box is gone or failed says so, with no Take control an
 test("the Desktop tab opened bare opens the thread's one desktop, lists several, and offers the Box panel with none", async () => {
   const action = app.threadPanelActions.find((candidate) => candidate.id === "desktop");
   // One desktop (next to a server): the desktop opens straight away, a shortcut, not a chooser.
-  const one = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([box(), desktopBox()]).handlers, pluginId: "bb-box" });
+  const one = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([box(), desktopBox()]).handlers, pluginId: "alia-box" });
   expect(await one.findByText("Connecting to the desktop…")).toBeTruthy();
   cleanup();
 
   // Two desktops: a chooser with an Open button each.
-  const many = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([desktopBox(), desktopBox({ id: "box_9", name: "wild-cove" })]).handlers, pluginId: "bb-box" });
+  const many = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([desktopBox(), desktopBox({ id: "box_9", name: "wild-cove" })]).handlers, pluginId: "alia-box" });
   expect(await many.findByText("bold-heron")).toBeTruthy();
   expect(many.getByText("wild-cove")).toBeTruthy();
   fireEvent.click(many.getAllByRole("button", { name: "Open" })[0]!);
@@ -7145,7 +7145,7 @@ test("the Desktop tab opened bare opens the thread's one desktop, lists several,
   cleanup();
 
   // No desktop: a button to the Box panel.
-  const none = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([box()]).handlers, pluginId: "bb-box" });
+  const none = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([box()]).handlers, pluginId: "alia-box" });
   expect(await none.findByText("No desktop box")).toBeTruthy();
   fireEvent.click(none.getByRole("button", { name: "Open the Box panel" }));
   expect(none.inspection.navigateCalls).toEqual([{ method: "openThreadPanel", options: { actionId: "boxes", title: "Box" } }]);
@@ -7158,7 +7158,7 @@ test("a thread card says Thread until its title loads", async () => {
   });
   const { handlers } = server([box()]);
   const [page] = app.navPanels;
-  const list = renderSlot(page!, { subPath: "" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: () => pending } } });
+  const list = renderSlot(page!, { subPath: "" }, { rpc: handlers, pluginId: "alia-box", sdk: { threads: { get: () => pending } } });
   const card = await list.findByRole("region", { name: "Thread" });
   expect(within(card).getByRole("button", { name: (name) => name === "Thread" }).textContent).toBe("Thread");
   give(makeThreadResponse({ title: "UI thread" }));
@@ -7169,7 +7169,7 @@ test("a thread card says Thread until its title loads", async () => {
 test("the Boxes page lists every box under its thread, servers as well as desktops, and shows one desktop for a browser tab", async () => {
   const { handlers } = server([box(), desktopBox()]);
   const [page] = app.navPanels;
-  const list = renderSlot(page!, { subPath: "" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  const list = renderSlot(page!, { subPath: "" }, { rpc: handlers, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
   expect(await list.findByText("bold-heron")).toBeTruthy();
   expect(list.getByText("calm-otter")).toBeTruthy(); // a server box, not only desktops
   expect(list.getByText("Desktop")).toBeTruthy();
@@ -7196,13 +7196,13 @@ test("the Boxes page lists every box under its thread, servers as well as deskto
   expect(list.inspection.navigateCalls.at(-1)).toEqual({ method: "toThread", threadId: THREAD });
   cleanup();
 
-  const one = renderSlot(page!, { subPath: "thr_panel/box_2" }, { rpc: handlers, pluginId: "bb-box" });
+  const one = renderSlot(page!, { subPath: "thr_panel/box_2" }, { rpc: handlers, pluginId: "alia-box" });
   expect(await one.findByText("Connecting to the desktop…")).toBeTruthy();
   fireEvent.click(await one.findByRole("button", { name: "Back to bold-heron" }));
   expect(one.inspection.navigateCalls).toEqual([{ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_2", replace: true } }]);
   cleanup();
 
-  const listed = renderSlot(page!, { subPath: "box/box_2/desktop/from-list" }, { rpc: handlers, pluginId: "bb-box" });
+  const listed = renderSlot(page!, { subPath: "box/box_2/desktop/from-list" }, { rpc: handlers, pluginId: "alia-box" });
   expect(await listed.findByText("Connecting to the desktop…")).toBeTruthy();
   fireEvent.click(listed.getByRole("button", { name: "Back to boxes" }));
   expect(listed.inspection.navigateCalls).toEqual([{ method: "toPluginPanel", path: "desktop", options: { subPath: "", replace: true } }]);
@@ -7210,7 +7210,7 @@ test("the Boxes page lists every box under its thread, servers as well as deskto
 
   await handlers.release!({ threadId: "thr_panel", box: "box_2" } as never);
   for (const subPath of ["thr_panel/box_2", "thr_panel/box_2/terminal"]) {
-    const gone = renderSlot(page!, { subPath }, { rpc: handlers, pluginId: "bb-box" });
+    const gone = renderSlot(page!, { subPath }, { rpc: handlers, pluginId: "alia-box" });
     expect(await gone.findByText("bold-heron was released")).toBeTruthy();
     expect(gone.queryByText("Close this tab when you are done with it.")).toBeNull();
     const backs = gone.getAllByRole("button", { name: "Back to boxes" });
@@ -7223,7 +7223,7 @@ test("the Boxes page lists every box under its thread, servers as well as deskto
 
 function terminalTab(handlers: PluginRpcTestHandlers<Contract>, boxId = "box_1") {
   const action = app.threadPanelActions.find((candidate) => candidate.id === "terminal");
-  return renderSlot(action!, { threadId: THREAD, params: { box: boxId } }, { rpc: handlers, pluginId: "bb-box" });
+  return renderSlot(action!, { threadId: THREAD, params: { box: boxId } }, { rpc: handlers, pluginId: "alia-box" });
 }
 
 test("a terminal tab whose box is released while it is open names the box and says to close the tab, as the desktop's does (#916)", async () => {
@@ -7254,13 +7254,13 @@ test("a row opens a box's terminal tab, named after the box", async () => {
 test("the Terminal tab opened bare opens the thread's one terminal, lists several, and offers the Box panel with none", async () => {
   const action = app.threadPanelActions.find((candidate) => candidate.id === "terminal");
   // One box with a terminal: its terminal opens straight away, a shortcut, not a chooser.
-  const one = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([box()]).handlers, pluginId: "bb-box" });
+  const one = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([box()]).handlers, pluginId: "alia-box" });
   expect(await one.findByText("Connecting…")).toBeTruthy();
   await waitFor(() => expect(new URL(FakeSocket.made.at(-1)!.url).searchParams.get("box")).toBe("box_1"));
   cleanup();
 
   // Two boxes with a terminal: a chooser with an Open button each.
-  const many = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([box(), box({ id: "box_6", name: "swift-fox" })]).handlers, pluginId: "bb-box" });
+  const many = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([box(), box({ id: "box_6", name: "swift-fox" })]).handlers, pluginId: "alia-box" });
   expect(await many.findByText("calm-otter")).toBeTruthy();
   expect(many.getByText("swift-fox")).toBeTruthy();
   fireEvent.click(many.getAllByRole("button", { name: "Open" })[0]!);
@@ -7268,7 +7268,7 @@ test("the Terminal tab opened bare opens the thread's one terminal, lists severa
   cleanup();
 
   // No box with a terminal: a button to the Box panel.
-  const none = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([box({ terminal: false })]).handlers, pluginId: "bb-box" });
+  const none = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([box({ terminal: false })]).handlers, pluginId: "alia-box" });
   expect(await none.findByText("No box with a terminal")).toBeTruthy();
   fireEvent.click(none.getByRole("button", { name: "Open the Box panel" }));
   expect(none.inspection.navigateCalls).toEqual([{ method: "openThreadPanel", options: { actionId: "boxes", title: "Box" } }]);
@@ -7287,7 +7287,7 @@ test("the terminal tab streams the shell over the plugin's socket, sends what is
   expect(url.searchParams.get("rows")).toBe("24");
   const session = url.searchParams.get("session")!;
   expect(session).toMatch(/^[0-9a-f]{24}$/);
-  expect(window.sessionStorage.getItem("bb-box:terminal:box_1")).toBe(session);
+  expect(window.sessionStorage.getItem("alia-box:terminal:box_1")).toBe(session);
   expect(slot.getByText("Connecting…")).toBeTruthy();
 
   act(() => socket!.open());
@@ -7317,7 +7317,7 @@ test("the terminal tab streams the shell over the plugin's socket, sends what is
   await waitFor(() => expect(FakeSocket.made).toHaveLength(2));
   const next = new URL(FakeSocket.made[1]!.url).searchParams.get("session")!;
   expect(next).not.toBe(session);
-  expect(window.sessionStorage.getItem("bb-box:terminal:box_1")).toBe(next);
+  expect(window.sessionStorage.getItem("alia-box:terminal:box_1")).toBe(next);
 });
 
 test("a terminal tab for a box the panel lists as ready connects at once, without waiting for the box's state (#916)", async () => {
@@ -7415,13 +7415,13 @@ function machine(overrides: Partial<BoxView> = {}, threads: ThreadOnBox[] = [{ i
 test("the Boxes page opens on its Machines tab from settings, and New box takes a kind, a size and a name it checks as you type", async () => {
   const { handlers, changes } = server([box()]);
   const [page] = app.navPanels;
-  const list = renderSlot(page!, { subPath: "machines" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  const list = renderSlot(page!, { subPath: "machines" }, { rpc: handlers, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
   expect(await list.findByText(/You have no machines\. New box adds one/)).toBeTruthy();
   expect(list.getByRole("tab", { name: /^Machines/ }).getAttribute("aria-selected")).toBe("true");
   fireEvent.click(list.getByRole("button", { name: "New box" }));
-  expect(await screen.findByText("Of the kinds whose boxes join BB.")).toBeTruthy();
+  expect(await screen.findByText("Of the kinds whose boxes join VesnALIA.")).toBeTruthy();
   const name = screen.getByRole("textbox", { name: "Name" });
-  expect(name.getAttribute("placeholder")).toBe("Optional: BB Box picks a name like calm-tundra");
+  expect(name.getAttribute("placeholder")).toBe("Optional: VesnALIA Box picks a name like calm-tundra");
   fireEvent.change(name, { target: { value: "Build 1" } });
   expect(screen.getByText("Lowercase letters, digits and hyphens, starting with a letter, up to 32 characters.")).toBeTruthy();
   expect(submitButton().disabled).toBe(true);
@@ -7438,13 +7438,13 @@ test("the Boxes page's New box adds one of your machines with settings' Add mach
   const yours = () => (handlers["machines.list"] as (input: null) => { machines: MachineEntry[] })(null).machines.map((entry) => ({ threadId: "operator", box: entry.box, owner: "yours" as const }));
   const withMine: PluginRpcTestHandlers<Contract> = { ...handlers, allBoxes: () => [...yours(), ...(handlers.allBoxes as () => BoxEntryLike[])()] };
   const [page] = app.navPanels;
-  const list = renderSlot(page!, { subPath: "" }, { rpc: withMine, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  const list = renderSlot(page!, { subPath: "" }, { rpc: withMine, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
   expect(await list.findByText("build-1")).toBeTruthy();
   expect(list.queryByText(/^\d+ box(es)?$/)).toBeNull();
-  expect(list.queryByText("BB machine")).toBeNull();
+  expect(list.queryByText("VesnALIA machine")).toBeNull();
   // New box at the top right, as Automations' New automation: settings' Add machine form, machine mode, with the Name step (the operator, 4 October 2026).
   fireEvent.click(list.getByRole("button", { name: "New box" }));
-  expect(await screen.findByText("Of the kinds whose boxes join BB.")).toBeTruthy();
+  expect(await screen.findByText("Of the kinds whose boxes join VesnALIA.")).toBeTruthy();
   const name = screen.getByRole("textbox", { name: "Name" });
   fireEvent.change(name, { target: { value: "build-2" } });
   expect(submitButton().textContent).toBe("Create box");
@@ -7458,7 +7458,7 @@ test("the Boxes page's New box adds one of your machines with settings' Add mach
 
 test("the Boxes page's New box offers a desktop whose image is not built yet, as the Box panel does, and builds it for a machine with its name", async () => {
   const desktop: KindView = { ...KINDS[1]!, id: "linux-desktop-cpu", gpu: false, windowing: "x11" };
-  const onDemand = { hostId: "host_bb", name: "devpc", kinds: [{ kind: desktop, took: null }] };
+  const onDemand = { hostId: "host_alia", name: "devpc", kinds: [{ kind: desktop, took: null }] };
   for (const [where, open, submit] of [
     ["the Boxes page", (handlers: PluginRpcTestHandlers<Contract>) => boxesPage(handlers).findByRole("button", { name: "New box" }), "Build and create"],
   ] as const) {
@@ -7466,10 +7466,10 @@ test("the Boxes page's New box offers a desktop whose image is not built yet, as
     fireEvent.click(await open(handlers));
     const types = await screen.findByRole("radiogroup", { name: "Type" });
     fireEvent.click(within(types).getByRole("radio", { name: /^Desktop/ }));
-    expect(screen.getByText("BB Box builds the desktop image on devpc first, usually 4 to 10 min, then makes the box."), where).toBeTruthy();
+    expect(screen.getByText("VesnALIA Box builds the desktop image on devpc first, usually 4 to 10 min, then makes the box."), where).toBeTruthy();
     fireEvent.change(screen.getByRole("textbox", { name: "Name" }), { target: { value: "desk-1" } });
     fireEvent.click(screen.getByRole("button", { name: submit }));
-    await waitFor(() => expect(changes, where).toEqual(["setup.desktop host_bb for operator named desk-1"]));
+    await waitFor(() => expect(changes, where).toEqual(["setup.desktop host_alia for operator named desk-1"]));
     cleanup();
   }
 });
@@ -7493,7 +7493,7 @@ function listedRowNames(): string[] {
 /** The Boxes page, with thread titles from the SDK. */
 function boxesPage(handlers: PluginRpcTestHandlers<Contract>) {
   const [page] = app.navPanels;
-  return renderSlot(page!, { subPath: "" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  return renderSlot(page!, { subPath: "" }, { rpc: handlers, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
 }
 
 test("the Boxes page manages a thread's boxes with the Box panel's menu: Stop, Start, Release with its question, as that thread", async () => {
@@ -7536,7 +7536,7 @@ test("on the Boxes page, a box another thread is working on is released only aft
 });
 
 test("the Boxes page's Machines resize one of your machines through machines.resize (061)", async () => {
-  const resize = fakeResizer({ cores: 2, memoryGiB: 4, diskGiB: 20 }, { ways: { cores: "live", memory: "live", disk: "live" }, machine: "BB's daemon on machine build-1 is restarting, so BB counts its 4 processors." });
+  const resize = fakeResizer({ cores: 2, memoryGiB: 4, diskGiB: 20 }, { ways: { cores: "live", memory: "live", disk: "live" }, machine: "VesnALIA's daemon on machine build-1 is restarting, so VesnALIA counts its 4 processors." });
   const { handlers, changes } = server([], { machines: [machine({ sizeNow: size(2, 4, 20), resizing: { cores: "live", memory: "live", disk: "live", shrinks: true } }, [])], resize });
   const slot = boxesPage(handlers);
   const menu = await openMenu(await slot.findByRole("button", { name: "build-1 actions" }));
@@ -7546,7 +7546,7 @@ test("the Boxes page's Machines resize one of your machines through machines.res
   fireEvent.change(within(dialog).getByRole("textbox", { name: "Cores" }), { target: { value: "4" } });
   await within(dialog).findByRole("list", { name: "What changes" });
   fireEvent.click(within(dialog).getByRole("button", { name: "Resize" }));
-  expect(await within(dialog).findByText("BB's daemon on machine build-1 is restarting, so BB counts its 4 processors.")).toBeTruthy();
+  expect(await within(dialog).findByText("VesnALIA's daemon on machine build-1 is restarting, so VesnALIA counts its 4 processors.")).toBeTruthy();
   expect(changes.filter((change) => !change.includes('"check":true'))).toEqual(['machines.resize box_m1 {"size":{"cores":4}}']);
 });
 
@@ -7595,7 +7595,7 @@ test("the Boxes page's Machines have settings' rows and warnings: Stop, Start an
   fireEvent.click(within(menu).getByRole("menuitem", { name: "Remove…" }));
   let dialog = await screen.findByRole("alertdialog");
   expect(within(dialog).getByText("Remove build-1?")).toBeTruthy();
-  expect(within(dialog).getByText(/Its machine leaves BB, and its disk and everything on it will be deleted/)).toBeTruthy();
+  expect(within(dialog).getByText(/Its machine leaves ALIA, and its disk and everything on it will be deleted/)).toBeTruthy();
   fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
   dialog = await screen.findByRole("alertdialog", { name: "Remove build-1 anyway?" });
   fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
@@ -7616,16 +7616,16 @@ test("the Boxes page's Machines have settings' rows and warnings: Stop, Start an
   await waitFor(() => expect(changes.at(-1)).toBe("machines.remove box_m2"));
 });
 
-test("the Boxes page's tab row has the settings gear, then New box at the far right, a plain button where Automations has New automation; the gear is a link to Settings > BB Box", async () => {
+test("the Boxes page's tab row has the settings gear, then New box at the far right, a plain button where Automations has New automation; the gear is a link to Settings > VesnALIA Box", async () => {
   const [page] = app.navPanels;
   expect(page!.headerContent).toBeUndefined();
   const list = boxesPage(server([box()]).handlers);
   await list.findByText("calm-otter");
   expect(list.getByText("Computers for your threads, and machines of your own.")).toBeTruthy();
-  const gear = list.getByRole("link", { name: "BB Box settings" });
-  expect(gear.getAttribute("href")).toBe("/settings/plugins/bb-box");
+  const gear = list.getByRole("link", { name: "VesnALIA Box settings" });
+  expect(gear.getAttribute("href")).toBe("/settings/plugins/alia-box");
   expect(gear.textContent).toBe("");
-  // A pair at the tab row's end: the gear first, then New box, a plain button with no menu, as BB's new-thread screen offers New box.
+  // A pair at the tab row's end: the gear first, then New box, a plain button with no menu, as VesnALIA's new-thread screen offers New box.
   const newBox = list.getByRole("button", { name: "New box" });
   const pair = gear.closest("div.flex")!;
   expect(pair.contains(newBox)).toBe(true);
@@ -7711,7 +7711,7 @@ test("on the Boxes page a row's click and its name open the box's page from the 
   const { handlers, changes } = server([box(), desktopBox()]);
   const list = boxesPage(handlers);
   const name = await list.findByRole("link", { name: "calm-otter" });
-  expect(name.getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_1/from-list");
+  expect(name.getAttribute("href")).toBe("/plugins/alia-box/desktop/box/box_1/from-list");
   expect(list.queryByRole("button", { name: /: details$/ })).toBeNull();
   const toPage = { method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_1/from-list" } };
   fireEvent.click(name);
@@ -7799,7 +7799,7 @@ test("a machine's row opens its page, and a thread chip on it records the row, s
   const { handlers } = server([], { machines: [machine(), machine({ id: "box_m2", name: "scratch", desktop: false, display: null, state: "stopped" }, [])] });
   let list = boxesPage(handlers);
   const name = await list.findByRole("link", { name: "build-1" });
-  expect(name.getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_m1/from-list");
+  expect(name.getAttribute("href")).toBe("/plugins/alia-box/desktop/box/box_m1/from-list");
   fireEvent.click(rowOf(list, "scratch").firstElementChild!);
   expect(list.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_m2/from-list" } });
   fireEvent.click(within(rowOf(list, "build-1")).getByRole("button", { name: /Fix the login form/ }));
@@ -7989,7 +7989,7 @@ test("the Boxes page has a Machines tab and a Threads tab with counts, opens on 
   const mine = { threadId: "operator", box: desktopBox({ id: "box_m1", name: "build-1" }), owner: "yours" as const };
   const withMine: PluginRpcTestHandlers<Contract> = { ...handlers, allBoxes: () => [...(handlers.allBoxes as () => BoxEntryLike[])(), mine] };
   const [page] = app.navPanels;
-  const render = () => renderSlot(page!, { subPath: "" }, { rpc: withMine, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  const render = () => renderSlot(page!, { subPath: "" }, { rpc: withMine, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
   // Your machines first, without Open thread.
   let list = render();
   expect(await list.findByText("build-1")).toBeTruthy();
@@ -8013,20 +8013,20 @@ test("the Boxes page has a Machines tab and a Threads tab with counts, opens on 
   expect(list.getByRole("tab", { name: "Threads 1" }).getAttribute("aria-selected")).toBe("true");
   cleanup();
 
-  const terminal = renderSlot(page!, { subPath: "operator/box_m1/terminal/from-settings" }, { rpc: withMine, pluginId: "bb-box" });
+  const terminal = renderSlot(page!, { subPath: "operator/box_m1/terminal/from-settings" }, { rpc: withMine, pluginId: "alia-box" });
   // Back to settings is a link to the app's settings page, for the same reason.
-  expect((await terminal.findByRole("link", { name: "Back to BB Box settings" })).getAttribute("href")).toBe("/settings/plugins/bb-box");
+  expect((await terminal.findByRole("link", { name: "Back to VesnALIA Box settings" })).getAttribute("href")).toBe("/settings/plugins/alia-box");
   await waitFor(() => expect(FakeSocket.made.at(-1)?.url).toContain("box=box_m1"));
 });
 
-test("the panel lists the box this thread runs on first in the one list with a BB machine badge, no heading and no count, without Release or Stop, and says where they are", async () => {
+test("the panel lists the box this thread runs on first in the one list with a VesnALIA machine badge, no heading and no count, without Release or Stop, and says where they are", async () => {
   const yours = desktopBox({ id: "box_m1", name: "build-1" });
   const { handlers } = server([box()], { runsOn: { box: yours, owner: "yours", threadId: null } });
   const slot = panel(handlers);
   expect(await slot.findByText("build-1")).toBeTruthy();
-  // No heading, no card of its own and no count (the operator, 4 October 2026): one list, the machine first, its badge "BB machine" among the others.
+  // No heading, no card of its own and no count (the operator, 4 October 2026): one list, the machine first, its badge "VesnALIA machine" among the others.
   expect(slot.queryByText("This thread runs on it")).toBeNull();
-  expect(slot.getByText("BB machine")).toBeTruthy();
+  expect(slot.getByText("VesnALIA machine")).toBeTruthy();
   expect(slot.queryByText("Yours")).toBeNull();
   expect(slot.getByText(/Remove or stop it on the/)).toBeTruthy();
   expect(slot.getByRole("button", { name: "Boxes page, under Machines" })).toBeTruthy();
@@ -8052,7 +8052,7 @@ test("the panel lists the box this thread runs on first in the one list with a B
   const theirs = panel(server([], { runsOn: { box: yours, owner: "thread", threadId: "thr_other" } }).handlers);
   expect(await theirs.findByText(/Held by/)).toBeTruthy();
   expect(await theirs.findByRole("button", { name: "UI thread" })).toBeTruthy();
-  expect(theirs.getByText("BB machine")).toBeTruthy();
+  expect(theirs.getByText("VesnALIA machine")).toBeTruthy();
   expect(theirs.queryByText("No boxes yet")).toBeNull();
 });
 
@@ -8061,28 +8061,28 @@ test("the bare Desktop and Terminal tabs count the box this thread runs on: alon
   const desktopAction = app.threadPanelActions.find((candidate) => candidate.id === "desktop");
   const terminalAction = app.threadPanelActions.find((candidate) => candidate.id === "terminal");
   // Alone: the thread's own boxes have no desktop, so the machine's desktop opens straight away.
-  const alone = renderSlot(desktopAction!, { threadId: THREAD, params: null }, { rpc: server([box()], { runsOn: { box: yours, owner: "yours", threadId: null } }).handlers, pluginId: "bb-box" });
+  const alone = renderSlot(desktopAction!, { threadId: THREAD, params: null }, { rpc: server([box()], { runsOn: { box: yours, owner: "yours", threadId: null } }).handlers, pluginId: "alia-box" });
   expect(await alone.findByText("Connecting to the desktop…")).toBeTruthy();
   await waitFor(() => expect(new URL(novnc.FakeRfb.made.at(-1)!.url).searchParams.get("box")).toBe("box_m1"));
   cleanup();
   // With a desktop of the thread's own: a chooser, the machine first.
-  const many = renderSlot(desktopAction!, { threadId: THREAD, params: null }, { rpc: server([desktopBox()], { runsOn: { box: yours, owner: "yours", threadId: null } }).handlers, pluginId: "bb-box" });
+  const many = renderSlot(desktopAction!, { threadId: THREAD, params: null }, { rpc: server([desktopBox()], { runsOn: { box: yours, owner: "yours", threadId: null } }).handlers, pluginId: "alia-box" });
   expect(await many.findByText("build-1")).toBeTruthy();
   expect(many.getByText("bold-heron")).toBeTruthy();
-  expect(many.getByText("BB machine")).toBeTruthy();
+  expect(many.getByText("VesnALIA machine")).toBeTruthy();
   expect(many.getAllByRole("button", { name: "Open" })).toHaveLength(2);
   fireEvent.click(many.getAllByRole("button", { name: "Open" })[0]!);
   expect(many.inspection.navigateCalls).toEqual([{ method: "openThreadPanel", options: { actionId: "desktop", title: "Desktop · build-1", params: { box: "box_m1" } } }]);
   cleanup();
   // The Terminal tab: alone, the machine's terminal opens straight away.
-  const terminal = renderSlot(terminalAction!, { threadId: THREAD, params: null }, { rpc: server([box({ terminal: false })], { runsOn: { box: yours, owner: "yours", threadId: null } }).handlers, pluginId: "bb-box" });
+  const terminal = renderSlot(terminalAction!, { threadId: THREAD, params: null }, { rpc: server([box({ terminal: false })], { runsOn: { box: yours, owner: "yours", threadId: null } }).handlers, pluginId: "alia-box" });
   expect(await terminal.findByText("Connecting…")).toBeTruthy();
   await waitFor(() => expect(new URL(FakeSocket.made.at(-1)!.url).searchParams.get("box")).toBe("box_m1"));
   cleanup();
   // With a box of the thread's own: a chooser, the machine first.
-  const both = renderSlot(terminalAction!, { threadId: THREAD, params: null }, { rpc: server([box()], { runsOn: { box: yours, owner: "yours", threadId: null } }).handlers, pluginId: "bb-box" });
+  const both = renderSlot(terminalAction!, { threadId: THREAD, params: null }, { rpc: server([box()], { runsOn: { box: yours, owner: "yours", threadId: null } }).handlers, pluginId: "alia-box" });
   expect(await both.findByText("build-1")).toBeTruthy();
-  expect(both.getByText("BB machine")).toBeTruthy();
+  expect(both.getByText("VesnALIA machine")).toBeTruthy();
   fireEvent.click(both.getAllByRole("button", { name: "Open" })[0]!);
   expect(both.inspection.navigateCalls).toEqual([{ method: "openThreadPanel", options: { actionId: "terminal", title: "Terminal: build-1", params: { box: "box_m1" } } }]);
 });
@@ -8179,7 +8179,7 @@ test("a provider that cannot take the box now is greyed, after the ones that can
   const pool = { ...POOLED.offers[1]!, free: 0 };
   const cloud = { ...KINDS[0]!.offers[0]!, backend: "namespace", name: "Namespace", type: "namespace", label: "Namespace", hosts: [], form: "VM" as const, typicalReadyMs: null };
   const crowded: KindView = { ...POOLED, offers: [pool, KINDS[0]!.offers[0]!, cloud], forms: ["Physical", "LXC", "VM"] };
-  const { handlers, changes } = server([], { kinds: [crowded, KINDS[1]!], rooms: { "ssh-pool": "In use by swift-fox", namespace: "Namespace has 3 of the 3 machines BB Box may have at once" } });
+  const { handlers, changes } = server([], { kinds: [crowded, KINDS[1]!], rooms: { "ssh-pool": "In use by swift-fox", namespace: "Namespace has 3 of the 3 machines VesnALIA Box may have at once" } });
   const slot = panel(handlers);
   await slot.findByText("No boxes yet");
   fireEvent.click(slot.getByRole("button", { name: "New box" }));
@@ -8189,7 +8189,7 @@ test("a provider that cannot take the box now is greyed, after the ones that can
       "First with roomThe one below:-",
       "pveContainer · usually ~2.2 s:-",
       "SSH host poolPhysical · In use by swift-fox:true",
-      "NamespaceVM · Namespace has 3 of the 3 machines BB Box may have at once:true",
+      "NamespaceVM · Namespace has 3 of the 3 machines VesnALIA Box may have at once:true",
     ]),
   );
   fireEvent.click(within(providers).getByRole("radio", { name: /^SSH host pool/ }));
@@ -8368,7 +8368,7 @@ test("New box's new-thread inputs offer the Image group with the project's image
   const values: unknown[] = [];
   const onChange = (next: { status: string; value?: unknown }) => values.push(next.status === "ready" ? next.value : next.status);
   // In a project: its image is the choice at first, and it goes in the value.
-  renderSlot(inputs!, { value: null, onChange }, { rpc: server([], { images: IMAGES }).handlers, pluginId: "bb-box", context: { projectId: "proj_1" } });
+  renderSlot(inputs!, { value: null, onChange }, { rpc: server([], { images: IMAGES }).handlers, pluginId: "alia-box", context: { projectId: "proj_1" } });
   await waitFor(() => expect(values.at(-1)).toEqual({ kind: "linux", size: "small", image: "rust-tools" }));
   const trigger = screen.getByRole("button", { name: "New box options" });
   expect(trigger.textContent).toContain("rust-tools");
@@ -8382,7 +8382,7 @@ test("New box's new-thread inputs offer the Image group with the project's image
   // Outside a project: no image is this project's, nothing is chosen, and no image goes in the value until the person picks one.
   const outside: unknown[] = [];
   const nobody = IMAGES.map((image) => ({ ...image, mine: false }));
-  renderSlot(inputs!, { value: null, onChange: (next: { status: string; value?: unknown }) => outside.push(next.status === "ready" ? next.value : next.status) }, { rpc: server([], { images: nobody }).handlers, pluginId: "bb-box", context: { projectId: null } });
+  renderSlot(inputs!, { value: null, onChange: (next: { status: string; value?: unknown }) => outside.push(next.status === "ready" ? next.value : next.status) }, { rpc: server([], { images: nobody }).handlers, pluginId: "alia-box", context: { projectId: null } });
   await waitFor(() => expect(outside.at(-1)).toEqual({ kind: "linux", size: "small" }));
   fireEvent.keyDown(screen.getByRole("button", { name: "New box options" }), { key: "ArrowDown" });
   fireEvent.click((await screen.findAllByRole("menuitemradio")).find((item) => item.textContent === "go-tools · Another project")!);
@@ -8392,12 +8392,12 @@ test("New box's new-thread inputs offer the Image group with the project's image
 test("New box's new-thread inputs stay off when no kind can run a thread", async () => {
   const [inputs] = app.machineProviderInputs;
   const values: { status: string; reason?: string }[] = [];
-  renderSlot(inputs!, { value: null, onChange: (next: { status: string; reason?: string }) => values.push(next) }, { rpc: server([], { kinds: [] }).handlers, pluginId: "bb-box", context: { projectId: "proj_1" } });
+  renderSlot(inputs!, { value: null, onChange: (next: { status: string; reason?: string }) => values.push(next) }, { rpc: server([], { kinds: [] }).handlers, pluginId: "alia-box", context: { projectId: "proj_1" } });
   const trigger = await screen.findByRole("button", { name: "New box options" });
   await waitFor(() => expect((trigger as HTMLButtonElement).disabled).toBe(true));
   expect(trigger.textContent).toContain("No box to offer");
   expect(trigger.textContent).not.toContain("Loading");
-  expect(screen.getByText("BB Box offers no kind that a thread can run on. Set a backend up in BB Box's settings and turn it on.")).toBeTruthy();
+  expect(screen.getByText("VesnALIA Box offers no kind that a thread can run on. Set a backend up in VesnALIA Box's settings and turn it on.")).toBeTruthy();
   expect(values.at(-1)?.status).toBe("blocked");
 });
 
@@ -8413,7 +8413,7 @@ test("the form's words: a provider's title, the systems' hosts, the nearest choi
   expect(providerTitle(offer)).toBe("pve");
   expect(providerTitle({ ...offer, type: "tart", hosts: ["mac-mini", "studio"] })).toBe("2 Macs");
   expect(providerTitle({ ...offer, hosts: ["pve1", "pve2", "pve3"] })).toBe("3 hosts");
-  // A Docker machine BB has not named yet is never shown by its ID (the operator's rule).
+  // A Docker machine VesnALIA has not named yet is never shown by its ID (the operator's rule).
   expect(providerTitle({ ...offer, type: "docker", label: "Docker", hosts: [] })).toBe("an unnamed machine");
   expect(providerTitle({ ...offer, type: "ssh-pool", label: "SSH host pool", hosts: [] })).toBe("SSH host pool");
   // Docker and microsandbox on one host: each says which it is; a host of its own needs no more (053).
@@ -8503,12 +8503,12 @@ function dockerMachine(hostId: string, name: string, more: Partial<DockerHostVie
 
 const NO_GROUP: Partial<DockerHostView> = {
   docker: null,
-  problem: "Docker did not answer: Docker's socket refused BB's daemon.",
-  fix: { problem: "Docker is on lab, but BB's user, bb, cannot use it. Add bb to the docker group, then restart BB's daemon there.", command: "sudo usermod -aG docker bb", restart: "sudo systemctl restart user@1000.service" },
+  problem: "Docker did not answer: Docker's socket refused VesnALIA's daemon.",
+  fix: { problem: "Docker is on lab, but VesnALIA's user, VesnALIA, cannot use it. Add VesnALIA to the docker group, then restart VesnALIA's daemon there.", command: "sudo usermod -aG docker VesnALIA", restart: "sudo systemctl restart user@1000.service" },
 };
 
 function machineBackend(hostId: string, name: string, enabled = true): BackendConfig {
-  return { id: `docker:${name}`, type: "docker", label: `Docker on ${name}`, enabled, fields: { host: `bb:${hostId}`, privileged: true } };
+  return { id: `docker:${name}`, type: "docker", label: `Docker on ${name}`, enabled, fields: { host: `alia:${hostId}`, privileged: true } };
 }
 
 function machinesServer(hosts: DockerHostView[], backends: BackendConfig[]) {
@@ -8519,29 +8519,29 @@ function machinesServer(hosts: DockerHostView[], backends: BackendConfig[]) {
   return server([], { dockerHosts: hosts, config: { drivers: [...base.drivers, DOCKER_DRIVER], backends: live, problems: [] } });
 }
 
-test("Add backend offers Docker on your BB machines first: Add for those that can host boxes, Cannot host boxes with its fix and Check again, those added, and one line for machines with no Docker", async () => {
+test("Add backend offers Docker on your VesnALIA machines first: Add for those that can host boxes, Cannot host boxes with its fix and Check again, those added, and one line for machines with no Docker", async () => {
   const hosts = [
     dockerMachine("host_b", "devpc"),
     dockerMachine("host_n", "lab", NO_GROUP),
     dockerMachine("host_p", "plain", { docker: null, absent: true }),
     dockerMachine("host_q", "quiet", { docker: null, absent: true }),
-    dockerMachine("host_o", "sleepy", { connected: false, docker: null, problem: "The machine is offline in BB." }),
+    dockerMachine("host_o", "sleepy", { connected: false, docker: null, problem: "The machine is offline in VesnALIA." }),
     dockerMachine("host_g", "builder", { backend: { id: "docker:builder", enabled: true, boxes: 0 }, images: { state: "building", targets: ["linux"], detail: "#5 [linux 2/9] RUN apt-get install", startedAt: 0, endedAt: null } }),
   ];
   const { handlers, changes, operations } = machinesServer(hosts, [machineBackend("host_g", "builder")]);
   const slot = settings(handlers, "#add");
-  const group = (await slot.findByRole("heading", { name: "Docker on your BB machines" })).closest("section") as HTMLElement;
+  const group = (await slot.findByRole("heading", { name: "Docker on your VesnALIA machines" })).closest("section") as HTMLElement;
   const headings = slot.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
-  expect(headings.indexOf("Docker on your BB machines")).toBeLessThan(headings.indexOf("On BB's server or a machine you have"));
+  expect(headings.indexOf("Docker on your VesnALIA machines")).toBeLessThan(headings.indexOf("On VesnALIA's server or a machine you have"));
   const row = (name: string) => within(group).getByText(name, { selector: "p, span" }).closest("div.flex, button") as HTMLElement;
   await within(group).findByText("devpc", { selector: "p, span" });
   expect(within(row("devpc")).getByText("Can host boxes")).toBeTruthy();
   expect(within(row("devpc")).getByText("16 cores")).toBeTruthy();
   expect(within(row("lab")).getByText("Cannot host boxes")).toBeTruthy();
-  expect(within(row("lab")).getByText(/BB's user, bb, cannot use it/)).toBeTruthy();
-  expect(within(row("lab")).getByText("sudo usermod -aG docker bb")).toBeTruthy();
+  expect(within(row("lab")).getByText(/ALIA's user, alia, cannot use it/)).toBeTruthy();
+  expect(within(row("lab")).getByText("sudo usermod -aG docker VesnALIA")).toBeTruthy();
   expect(within(row("lab")).getByText("sudo systemctl restart user@1000.service")).toBeTruthy();
-  expect(within(row("sleepy")).getByText("Offline in BB")).toBeTruthy();
+  expect(within(row("sleepy")).getByText("Offline in VesnALIA")).toBeTruthy();
   expect(within(row("builder")).getByText("Added: open it")).toBeTruthy();
   expect(within(row("builder")).getByText("Building linux images: #5 [linux 2/9] RUN apt-get install")).toBeTruthy();
   expect(within(group).getByText("No Docker on plain and quiet.")).toBeTruthy();
@@ -8558,7 +8558,7 @@ test("Add backend offers Docker on your BB machines first: Add for those that ca
   expect(within(added).getByText("Added: open it")).toBeTruthy();
 });
 
-test("a BB machine's Docker in use is a backend row like the others: its build on the row, Cannot host boxes on the row and in Status with its fix, and the machines that could host boxes in one line", async () => {
+test("a VesnALIA machine's Docker in use is a backend row like the others: its build on the row, Cannot host boxes on the row and in Status with its fix, and the machines that could host boxes in one line", async () => {
   const hosts = [
     dockerMachine("host_g", "builder", { backend: { id: "docker:builder", enabled: true, boxes: 0 }, images: { state: "building", targets: ["linux", "desktop", "desktop-wayland"], detail: "#5 [linux 2/9] RUN apt-get install", image: { at: 1, of: 3 }, step: { at: 2, of: 9 }, startedAt: 0, endedAt: null } }),
     dockerMachine("host_n", "lab", { ...NO_GROUP, backend: { id: "docker:lab", enabled: true, boxes: 0 } }),
@@ -8570,42 +8570,42 @@ test("a BB machine's Docker in use is a backend row like the others: its build o
   const backends = (await slot.findByRole("heading", { name: "Backends" })).closest("section") as HTMLElement;
   const rowOf = (name: string) => within(backends).getByRole("button", { name }).parentElement as HTMLElement;
   await waitFor(() => expect(within(rowOf("Docker on lab")).getByText("Cannot host boxes")).toBeTruthy());
-  expect(within(rowOf("Docker on lab")).getAllByText("BB machine").length).toBe(1);
+  expect(within(rowOf("Docker on lab")).getAllByText("VesnALIA machine").length).toBe(1);
   expect(within(rowOf("Docker on builder")).getByText("Building linux, desktop and desktop-wayland images · Image 1 of 3, step 2 of 9")).toBeTruthy();
   const callout = slot.getByRole("region", { name: "Things that need you" });
   expect(within(callout).getByText("Docker on lab")).toBeTruthy();
-  expect(within(callout).getByText("Fix: On lab, run sudo usermod -aG docker bb, then sudo systemctl restart user@1000.service. Then check again.")).toBeTruthy();
+  expect(within(callout).getByText("Fix: On lab, run sudo usermod -aG docker VesnALIA, then sudo systemctl restart user@1000.service. Then check again.")).toBeTruthy();
   expect(within(backends).getByText(/devpc has Docker and could host boxes\. Docker on attic cannot host boxes now\./)).toBeTruthy();
   fireEvent.click(within(backends).getByRole("button", { name: "See them under Add backend" }));
   expect(await slot.findByRole("heading", { name: "Add a backend" })).toBeTruthy();
 });
 
-test("Status says a BB machine's Docker is offline in BB, not that it is not working", async () => {
-  const offline: Partial<DockerHostView> = { connected: false, docker: null, problem: "The machine is offline in BB.", backend: { id: "docker:attic", enabled: true, boxes: 0 } };
+test("Status says a VesnALIA machine's Docker is offline in VesnALIA, not that it is not working", async () => {
+  const offline: Partial<DockerHostView> = { connected: false, docker: null, problem: "The machine is offline in VesnALIA.", backend: { id: "docker:attic", enabled: true, boxes: 0 } };
   const alone = settings(machinesServer([dockerMachine("host_a", "attic", offline)], [machineBackend("host_a", "attic")]).handlers);
-  expect(await alone.findByText("Docker on attic is offline in BB")).toBeTruthy();
+  expect(await alone.findByText("Docker on attic is offline in VesnALIA")).toBeTruthy();
   expect(alone.queryByText(/is not working/)).toBeNull();
   cleanup();
   const hosts = [dockerMachine("host_a", "attic", offline), dockerMachine("host_b", "devpc", { backend: { id: "docker:devpc", enabled: true, boxes: 0 } })];
   const two = settings(machinesServer(hosts, [machineBackend("host_a", "attic"), machineBackend("host_b", "devpc")]).handlers);
   const status = (await two.findByText(/of 2 backends/)).closest("p") as HTMLElement;
-  await waitFor(() => expect(status.textContent).toContain(" · 1 offline in BB"));
+  await waitFor(() => expect(status.textContent).toContain(" · 1 offline in VesnALIA"));
 });
 
-test("a BB machine's Docker page: the machine, Docker's facts and its fix, off keeps the backend and on goes through docker.host.set", async () => {
+test("a VesnALIA machine's Docker page: the machine, Docker's facts and its fix, off keeps the backend and on goes through docker.host.set", async () => {
   const hosts = [dockerMachine("host_n", "lab", { ...NO_GROUP, backend: { id: "docker:lab", enabled: true, boxes: 0 } })];
   const { handlers, changes, operations } = machinesServer(hosts, [machineBackend("host_n", "lab")]);
   const slot = settings(handlers, "#backend/docker:lab");
   expect(await slot.findByRole("heading", { name: /^Docker on lab/ })).toBeTruthy();
-  const card = (await slot.findByRole("heading", { name: "BB machine" })).closest("section") as HTMLElement;
+  const card = (await slot.findByRole("heading", { name: "VesnALIA machine" })).closest("section") as HTMLElement;
   await waitFor(() => expect(within(card).getByText("Cannot host boxes")).toBeTruthy());
-  expect(within(card).getByText("sudo usermod -aG docker bb")).toBeTruthy();
-  expect(within(card).getByRole("button", { name: "Copy the command: sudo usermod -aG docker bb" })).toBeTruthy();
+  expect(within(card).getByText("sudo usermod -aG docker VesnALIA")).toBeTruthy();
+  expect(within(card).getByRole("button", { name: "Copy the command: sudo usermod -aG docker VesnALIA" })).toBeTruthy();
   fireEvent.click(within(card).getByRole("button", { name: "Check Docker on lab again" }));
   await waitFor(() => expect(changes.some((change) => change.startsWith("check docker:lab "))).toBe(true));
   await waitFor(() => expect(slot.inspection.rpcCalls.some((call) => call.method === "docker.hosts" && (call.input as { recheck?: string } | null)?.recheck === "host_n")).toBe(true));
   expect(slot.queryByRole("textbox", { name: "Host" })).toBeNull();
-  expect(slot.queryByText("Docker on BB machines")).toBeNull();
+  expect(slot.queryByText("Docker on VesnALIA machines")).toBeNull();
 
   const takes = slot.getByRole("switch", { name: "Docker on lab: takes new boxes" });
   fireEvent.click(takes);
@@ -8728,7 +8728,7 @@ test.each(KEYBOARD_MODES.flatMap((mode) => BROWSERS.map((browser) => ({ mode, br
     try {
       const { handlers, changes } = server([desktopBox(mode.box as Partial<BoxView>)]);
       const slot = desktopTab(handlers);
-      // The text is on its way once noVNC or BB Box's RPC has it.
+      // The text is on its way once noVNC or VesnALIA Box's RPC has it.
       const textSent = () => client.pasted.length + changes.filter((change) => change.startsWith("desktopPaste")).length;
       await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
       const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
@@ -8789,7 +8789,7 @@ test.each(KEYBOARD_MODES.flatMap((mode) => BROWSERS.map((browser) => ({ mode, br
       const keys = () => socket.sent.filter((sent): sent is string => typeof sent === "string" && /^k[du],/.test(sent));
       const menuPaste = async () => fireEvent.click(within(await openMenu(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitem", { name: "Paste from this computer" }));
       const textSent = () => socket.sent.filter((sent) => typeof sent === "string" && /^c[bw]/.test(sent)).length + changes.filter((change) => change.startsWith("desktopPaste")).length;
-      // BB Box's own Mac input for video takes Meta as Command.
+      // VesnALIA Box's own Mac input for video takes Meta as Command.
       const command = (mode.box as Partial<BoxView>).os === "macos" ? 65511 : 65507;
 
       fireEvent.keyDown(canvas, { key: "Shift", code: "ShiftLeft", shiftKey: true });
@@ -8957,15 +8957,15 @@ test("the tailnet's choice, tags and OAuth client save together with one operati
   applied = { ...TAILNET_SET, general: {} };
   const fresh = server([]);
   const slot = settings(fresh.handlers, "#option/network");
-  const no = (await slot.findByRole("radio", { name: "No: BB is reached without one" })) as HTMLInputElement;
+  const no = (await slot.findByRole("radio", { name: "No: VesnALIA is reached without one" })) as HTMLInputElement;
   expect(no.checked).toBe(true);
   expect(slot.getByText("Switches, and menus that stand alone, act at once. Fields, checkboxes and radio choices wait for Save.")).toBeTruthy();
   expect(slot.queryByRole("textbox", { name: "Tags" })).toBeNull();
   fireEvent.click(slot.getByRole("radio", { name: "Yes, with a Tailscale OAuth client" }));
   expect(slot.getByRole("region", { name: "Save the tailnet" }).textContent).toContain("1 change to the tailnet not saved");
-  expect((slot.getByRole("textbox", { name: "Tags" }) as HTMLInputElement).placeholder).toBe("tag:bb-box");
-  expect(slot.getByText(/the default/).textContent).toContain("Empty: tag:bb-box, the default");
-  fireEvent.change(slot.getByRole("textbox", { name: "Tags" }), { target: { value: "tag:bb-box tag:bb-box-mac" } });
+  expect((slot.getByRole("textbox", { name: "Tags" }) as HTMLInputElement).placeholder).toBe("tag:alia-box");
+  expect(slot.getByText(/the default/).textContent).toContain("Empty: tag:alia-box, the default");
+  fireEvent.change(slot.getByRole("textbox", { name: "Tags" }), { target: { value: "tag:alia-box tag:alia-box-mac" } });
   fireEvent.click(slot.getByRole("button", { name: "Set the OAuth client ID" }));
   fireEvent.change(slot.getByLabelText("OAuth client ID"), { target: { value: "kMADEUPid" } });
   fireEvent.click(slot.getByRole("button", { name: "Set the OAuth client secret" }));
@@ -8975,7 +8975,7 @@ test("the tailnet's choice, tags and OAuth client save together with one operati
   fireEvent.click(slot.getByRole("button", { name: "Save" }));
   await waitFor(() => expect(fresh.changes).toHaveLength(1));
   expect(fresh.operations).toHaveLength(1);
-  expect(sentTailnet(fresh.changes, 0)).toEqual({ mode: "oauth", tags: ["tag:bb-box", "tag:bb-box-mac"], clientId: "kMADEUPid", clientSecret: "tskey-client-MADEUP" });
+  expect(sentTailnet(fresh.changes, 0)).toEqual({ mode: "oauth", tags: ["tag:alia-box", "tag:alia-box-mac"], clientId: "kMADEUPid", clientSecret: "tskey-client-MADEUP" });
   expect(await slot.findByText("Saved.")).toBeTruthy();
   expect(slot.getAllByText("Set")).toHaveLength(2);
   expect(slot.queryByDisplayValue(/MADEUP/)).toBeNull();
@@ -8988,7 +8988,7 @@ test("the tailnet's choice, tags and OAuth client save together with one operati
   fireEvent.keyDown(again.getByRole("textbox", { name: "Tags" }), { key: "Enter" });
   await waitFor(() => expect(stored.changes).toHaveLength(1));
   expect(sentTailnet(stored.changes, 0)).toEqual({ mode: "oauth", tags: ["tag:ci"], clientId: { set: true, version: 2 }, clientSecret: { set: true, version: 2 } });
-  fireEvent.click(again.getByRole("radio", { name: "No: BB is reached without one" }));
+  fireEvent.click(again.getByRole("radio", { name: "No: VesnALIA is reached without one" }));
   expect(again.getByText("Saving No deletes the saved OAuth client ID and secret.")).toBeTruthy();
   expect(again.queryByRole("textbox", { name: "Tags" })).toBeNull();
   fireEvent.click(again.getByRole("button", { name: "Save" }));
@@ -9037,7 +9037,7 @@ test("Devices: iOS video encoding acts at once as a menu, encoder sharing and th
   const { handlers, changes, operations } = server([], { config: { kinds: [...configState({}).kinds, deviceKind("ios", "iOS Simulator", "ios"), deviceKind("android", "Android emulator", "android")] } });
   const slot = settings(handlers, "#option/devices");
   await slot.findByRole("combobox", { name: "iOS video encoding" });
-  expect(slot.queryByText(/bb box config apply/)).toBeNull();
+  expect(slot.queryByText(/alia box config apply/)).toBeNull();
   await choose("iOS video encoding", "Software only");
   await waitFor(() => expect(changes).toHaveLength(1));
   expect(JSON.parse(changes[0]!.slice(changes[0]!.indexOf("{"))).general.iosEncoder).toBe("software");
@@ -9299,21 +9299,21 @@ test("F-19: a dedicated iOS box's Simulator tab has a Desktop button that opens 
   const handlers = server([DEDICATED_IOS, SHARED_IOS, LINUX_DESKTOP]).handlers;
   const device = app.threadPanelActions.find((candidate) => candidate.id === "device")!;
   const desktop = app.threadPanelActions.find((candidate) => candidate.id === "desktop")!;
-  const simulator = renderSlot(device, { threadId: THREAD, params: { box: "box_di" } }, { rpc: handlers, pluginId: "bb-box" });
+  const simulator = renderSlot(device, { threadId: THREAD, params: { box: "box_di" } }, { rpc: handlers, pluginId: "alia-box" });
   fireEvent.click(await simulator.findByRole("button", { name: "Desktop" }));
   await waitFor(() => expect(simulator.inspection.navigateCalls.at(-1)).toEqual({ method: "openThreadPanel", options: { actionId: "desktop", title: "Desktop · tall-ridge", params: { box: "box_di", shows: "desktop" } } }));
   expect(simulator.queryByRole("button", { name: "Simulator" })).toBeNull();
   cleanup();
-  const ownDesktop = renderSlot(desktop, { threadId: THREAD, params: { box: "box_di", shows: "desktop" } }, { rpc: handlers, pluginId: "bb-box" });
+  const ownDesktop = renderSlot(desktop, { threadId: THREAD, params: { box: "box_di", shows: "desktop" } }, { rpc: handlers, pluginId: "alia-box" });
   expect(await ownDesktop.findByText("Connecting to the desktop…")).toBeTruthy();
   fireEvent.click(ownDesktop.getByRole("button", { name: "Simulator" }));
   await waitFor(() => expect(ownDesktop.inspection.navigateCalls.at(-1)).toEqual({ method: "openThreadPanel", options: { actionId: "device", title: "Simulator · tall-ridge", params: { box: "box_di" } } }));
   cleanup();
-  const shared = renderSlot(device, { threadId: THREAD, params: { box: "box_si" } }, { rpc: handlers, pluginId: "bb-box" });
+  const shared = renderSlot(device, { threadId: THREAD, params: { box: "box_si" } }, { rpc: handlers, pluginId: "alia-box" });
   await shared.findByText("brisk-wren");
   expect(shared.queryByRole("button", { name: "Desktop" })).toBeNull();
   cleanup();
-  const linux = renderSlot(desktop, { threadId: THREAD, params: { box: "box_2" } }, { rpc: handlers, pluginId: "bb-box" });
+  const linux = renderSlot(desktop, { threadId: THREAD, params: { box: "box_2" } }, { rpc: handlers, pluginId: "alia-box" });
   expect(await linux.findByText("Connecting to the desktop…")).toBeTruthy();
   expect(linux.queryByRole("button", { name: /^(Simulator|Emulator)$/ })).toBeNull();
 });
@@ -9321,22 +9321,22 @@ test("F-19: a dedicated iOS box's Simulator tab has a Desktop button that opens 
 test("F-19: a bare Desktop tab whose one box is a shared iOS box shows its device and retitles itself Simulator; a bare Device tab with an Android box retitles itself Emulator; a bare Desktop tab with a dedicated iOS box shows its desktop and keeps its title", async () => {
   const desktop = app.threadPanelActions.find((candidate) => candidate.id === "desktop")!;
   const device = app.threadPanelActions.find((candidate) => candidate.id === "device")!;
-  const shared = renderSlot(desktop, { threadId: THREAD, params: null }, { rpc: server([box(), SHARED_IOS]).handlers, pluginId: "bb-box" });
+  const shared = renderSlot(desktop, { threadId: THREAD, params: null }, { rpc: server([box(), SHARED_IOS]).handlers, pluginId: "alia-box" });
   await waitFor(() => expect(shared.inspection.navigateCalls).toEqual([{ method: "openThreadPanel", options: { actionId: "desktop", title: "Simulator" } }]));
   expect(await shared.findByText("brisk-wren")).toBeTruthy();
   cleanup();
   forgetLive();
-  const android = renderSlot(device, { threadId: THREAD, params: null }, { rpc: server([ANDROID, LINUX_DESKTOP]).handlers, pluginId: "bb-box" });
+  const android = renderSlot(device, { threadId: THREAD, params: null }, { rpc: server([ANDROID, LINUX_DESKTOP]).handlers, pluginId: "alia-box" });
   await waitFor(() => expect(android.inspection.navigateCalls).toEqual([{ method: "openThreadPanel", options: { actionId: "device", title: "Emulator" } }]));
   cleanup();
   forgetLive();
-  const dedicated = renderSlot(desktop, { threadId: THREAD, params: null }, { rpc: server([DEDICATED_IOS]).handlers, pluginId: "bb-box" });
+  const dedicated = renderSlot(desktop, { threadId: THREAD, params: null }, { rpc: server([DEDICATED_IOS]).handlers, pluginId: "alia-box" });
   expect(await dedicated.findByText("Connecting to the desktop…")).toBeTruthy();
   expect(dedicated.getByRole("button", { name: "Simulator" })).toBeTruthy();
   expect(dedicated.inspection.navigateCalls).toEqual([]);
   cleanup();
   forgetLive();
-  const none = renderSlot(device, { threadId: THREAD, params: null }, { rpc: server([LINUX_DESKTOP]).handlers, pluginId: "bb-box" });
+  const none = renderSlot(device, { threadId: THREAD, params: null }, { rpc: server([LINUX_DESKTOP]).handlers, pluginId: "alia-box" });
   expect(await none.findByText("No device box")).toBeTruthy();
   expect(none.inspection.navigateCalls).toEqual([]);
 });
@@ -9346,14 +9346,14 @@ test("F-19: moving from a box's Desktop tab with control to its Simulator tab ke
   const { handlers, changes } = server([both]);
   const desktop = app.threadPanelActions.find((candidate) => candidate.id === "desktop")!;
   const device = app.threadPanelActions.find((candidate) => candidate.id === "device")!;
-  const ownDesktop = renderSlot(desktop, { threadId: THREAD, params: { box: "box_2", shows: "desktop" } }, { rpc: handlers, pluginId: "bb-box" });
+  const ownDesktop = renderSlot(desktop, { threadId: THREAD, params: { box: "box_2", shows: "desktop" } }, { rpc: handlers, pluginId: "alia-box" });
   await ownDesktop.findByText("Connecting to the desktop…");
   act(() => void novnc.FakeRfb.made[0]!.dispatchEvent(new Event("connect")));
   fireEvent.click(ownDesktop.getByRole("button", { name: "Take control" }));
   await ownDesktop.findByText("You have control.");
   vi.useFakeTimers({ shouldAdvanceTime: true });
   ownDesktop.unmount();
-  const simulator = renderSlot(device, { threadId: THREAD, params: { box: "box_2" } }, { rpc: handlers, pluginId: "bb-box" });
+  const simulator = renderSlot(device, { threadId: THREAD, params: { box: "box_2" } }, { rpc: handlers, pluginId: "alia-box" });
   expect(await simulator.findByRole("button", { name: "Hand back to the agent" })).toBeTruthy();
   await vi.advanceTimersByTimeAsync(HAND_BACK_MS + 50);
   expect(changes).toEqual(["takeControl box_2"]);
@@ -9396,7 +9396,7 @@ test("F-22: the Boxes page's rows and the bare tabs' choosers badge a device box
   }
 });
 
-test("F-22: where BB's viewport is compact, a tab that would name its box says the box's name alone, as its icon says what it shows; a terminal's tab too", () => {
+test("F-22: where VesnALIA's viewport is compact, a tab that would name its box says the box's name alone, as its icon says what it shows; a terminal's tab too", () => {
   expect(screenTitle(SHARED_IOS, "device", [SHARED_IOS, DEDICATED_IOS], true)).toBe("brisk-wren");
   expect(screenTitle(DEDICATED_IOS, "desktop", [DEDICATED_IOS, LINUX_DESKTOP], true)).toBe("tall-ridge");
   expect(screenTitle(SHARED_IOS, "device", [SHARED_IOS, ANDROID], true)).toBe("Simulator");
@@ -9439,15 +9439,15 @@ test("F-22: at 360 px the panel's rows open tabs titled by the box's name where 
   }
 });
 
-test("F-22: each panel tab has an icon of its own: a monitor for Desktop, a phone for Device, a terminal for Terminal, each a name BB Box declares, and the Box tab keeps BB's default", () => {
+test("F-22: each panel tab has an icon of its own: a monitor for Desktop, a phone for Device, a terminal for Terminal, each a name VesnALIA Box declares, and the Box tab keeps VesnALIA's default", () => {
   expect(app.threadPanelActions.map((action) => [action.id, action.icon ?? null])).toEqual([
     ["boxes", null],
-    ["desktop", "bb-box/monitor"],
-    ["device", "bb-box/phone"],
-    ["terminal", "bb-box/terminal"],
-    ["files", "bb-box/folder"],
+    ["desktop", "alia-box/monitor"],
+    ["device", "alia-box/phone"],
+    ["terminal", "alia-box/terminal"],
+    ["files", "alia-box/folder"],
   ]);
-  const declared = (packageJson as { bb: { branding: { experimental_icons: Record<string, string> } } }).bb.branding.experimental_icons;
+  const declared = (packageJson as { alia: { branding: { experimental_icons: Record<string, string> } } }).alia.branding.experimental_icons;
   expect([declared.monitor, declared.phone, declared.terminal, declared.folder]).toEqual(["./assets/monitor.svg", "./assets/phone.svg", "./assets/terminal.svg", "./assets/folder.svg"]);
 });
 
@@ -9535,7 +9535,7 @@ test("F-22c: a row's badges rank its device's word first, then Shared, then its 
   expect(ranks(SHARED_IOS)).toEqual(["Simulator 0", "Shared 1"]);
   expect(ranks(DEDICATED_IOS)).toEqual(["Simulator 0", "Desktop 3", "VM 2"]);
   expect(ranks(ANDROID)).toEqual(["Emulator 0", "VM 2"]);
-  expect(ranks(LINUX_DESKTOP, true)).toEqual(["Desktop 3", "GPU 4", "LXC 2", "BB machine 2"]);
+  expect(ranks(LINUX_DESKTOP, true)).toEqual(["Desktop 3", "GPU 4", "LXC 2", "VesnALIA machine 2"]);
 });
 
 test("F-22c: at 360 px an android row shows Emulator before VM, and a shared ios row Simulator, then Shared, before anything else", async () => {
@@ -9629,7 +9629,7 @@ test("the Configuration page exports with no secret in it and says which to give
   expect(await slot.findByText("Revision 3")).toBeTruthy();
   expect(slot.getByText("Fake host: the SSH key")).toBeTruthy();
   expect(slot.getByRole("button", { name: "Copy as JSON" })).toBeTruthy();
-  expect(slot.getByText("bb box config show --json", { selector: "code" }).className).toContain("whitespace-nowrap");
+  expect(slot.getByText("alia box config show --json", { selector: "code" }).className).toContain("whitespace-nowrap");
 
   fireEvent.click(slot.getByRole("button", { name: "Import…" }));
   const text = await slot.findByRole("textbox", { name: "Import a configuration" });
@@ -9670,7 +9670,7 @@ test("the Configuration page exports with no secret in it and says which to give
   expect(slot.getByText("Check it to see what it changes. Nothing is applied until you choose Apply.")).toBeTruthy();
 });
 
-test("the copy of BB's earlier settings is removed only after Remove copy is confirmed, and the page says so once BB Box has removed it (067 unit 10)", async () => {
+test("the copy of VesnALIA's earlier settings is removed only after Remove copy is confirmed, and the page says so once VesnALIA Box has removed it (067 unit 10)", async () => {
   applied = null;
   const fake = server([]);
   let removed = false;
@@ -9684,19 +9684,19 @@ test("the copy of BB's earlier settings is removed only after Remove copy is con
     },
   };
   const slot = settings(handlers, "#option/configuration");
-  expect(await slot.findByText("Settings moved from BB")).toBeTruthy();
+  expect(await slot.findByText("Settings moved from VesnALIA")).toBeTruthy();
   fireEvent.click(slot.getByRole("button", { name: "Remove copy…" }));
-  const dialog = await screen.findByRole("alertdialog", { name: "Remove the copy of BB's earlier settings?" });
+  const dialog = await screen.findByRole("alertdialog", { name: "Remove the copy of VesnALIA's earlier settings?" });
   expect(dialog.textContent).toContain("Once removed it cannot be got back.");
   fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
   await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
   expect(removed).toBe(false);
   fireEvent.click(slot.getByRole("button", { name: "Remove copy…" }));
   fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Remove copy" }));
-  expect(await slot.findByText("Removed the copy of BB's earlier settings.")).toBeTruthy();
+  expect(await slot.findByText("Removed the copy of VesnALIA's earlier settings.")).toBeTruthy();
   expect(removed).toBe(true);
-  await waitFor(() => expect(slot.queryByText("Settings moved from BB")).toBeNull());
-  await waitFor(() => expect(document.activeElement?.textContent).toBe("Removed the copy of BB's earlier settings."));
+  await waitFor(() => expect(slot.queryByText("Settings moved from VesnALIA")).toBeNull());
+  await waitFor(() => expect(document.activeElement?.textContent).toBe("Removed the copy of VesnALIA's earlier settings."));
 });
 
 function stateOf(handlers: PluginRpcTestHandlers<Contract>): ConfigState {
@@ -9757,7 +9757,7 @@ test("Find's index holds every field of every backend, each Mac's own fields, ea
   expect(entries.find((entry) => entry.label === "Tags")).toMatchObject({ value: "Used with Yes", opens: { path: "general/tailnet/mode" } });
 
   const tart = settingsIndex(stateOf(tartPage().handlers));
-  expect(foundBy(tart, "backends/tart/hosts/mac-1/fields/ios-hosts-cores")).toMatchObject({ label: "Cores of a shared iOS host on mac-1", where: "Tart on mac-1 › Macs › mac-1", value: "Empty: 10 cores, BB Box's estimate" });
+  expect(foundBy(tart, "backends/tart/hosts/mac-1/fields/ios-hosts-cores")).toMatchObject({ label: "Cores of a shared iOS host on mac-1", where: "Tart on mac-1 › Macs › mac-1", value: "Empty: 10 cores, VesnALIA Box's estimate" });
   expect(foundBy(tart, "backends/tart/hosts/mac-1/fields/address")?.value).toBe("192.0.2.20");
   expect(foundBy(tart, "backends/tart/hosts/mac-1/enabled")).toMatchObject({ label: "mac-1", where: "Tart on mac-1 › Macs", value: "On" });
 });
@@ -9820,7 +9820,7 @@ test("Find from the overview opens a folded field on its backend's page, on scre
   expect((found as HTMLInputElement).placeholder).toBe("4096");
   expect(slot.queryByRole("listbox")).toBeNull();
   expect(findField(slot).value).toBe("reserve");
-  fireEvent.click(slot.getByRole("button", { name: "BB Box settings" }));
+  fireEvent.click(slot.getByRole("button", { name: "VesnALIA Box settings" }));
   await waitFor(() => expect(window.location.hash).toBe(""));
   await waitFor(() => expect(document.activeElement).toBe(findField(slot)));
   expect(findField(slot).value).toBe("reserve");
@@ -9912,7 +9912,7 @@ test("Find's arrow keys stay within the results shown, Escape clears, and no mat
 });
 
 test("every setting with a control on an option page is in Find's index, and every option Find opens is on its page (067 unit 11)", async () => {
-  const document_: ConfigDocument = { schema: 1, revision: 3, backends: [{ id: "fake", type: "fake", enabled: true, fields: { url: "https://192.0.2.10:8006", token: { set: true }, key: { set: true } } }], kinds: {}, general: { tailnet: { mode: "oauth", tags: ["tag:bb-box"], clientId: { set: true }, clientSecret: { set: true } }, files: [{ path: ".npmrc", content: { set: true } }] }, images: { "web-app": { kinds: ["linux"], projects: ["proj_1"], script: "true", bake: "auto" } } };
+  const document_: ConfigDocument = { schema: 1, revision: 3, backends: [{ id: "fake", type: "fake", enabled: true, fields: { url: "https://192.0.2.10:8006", token: { set: true }, key: { set: true } } }], kinds: {}, general: { tailnet: { mode: "oauth", tags: ["tag:alia-box"], clientId: { set: true }, clientSecret: { set: true } }, files: [{ path: ".npmrc", content: { set: true } }] }, images: { "web-app": { kinds: ["linux"], projects: ["proj_1"], script: "true", bake: "auto" } } };
   applied = document_;
   const { handlers } = server([]);
   const entries = settingsIndex(stateOf(handlers));
@@ -9930,7 +9930,7 @@ test("every setting with a control on an option page is in Find's index, and eve
 
 function boxPageAt(handlers: PluginRpcTestHandlers<Contract>, subPath: string) {
   const [page] = app.navPanels;
-  return renderSlot(page!, { subPath }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  return renderSlot(page!, { subPath }, { rpc: handlers, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
 }
 
 test("a box's page, at box/<boxId>: the trail, its name with focus, its state, ID and link, its thread, its views as links, Stop, the menu, the facts, other threads and how it started (069)", async () => {
@@ -9947,8 +9947,8 @@ test("a box's page, at box/<boxId>: the trail, its name with focus, its state, I
   expect(slot.getByText("working now")).toBeTruthy();
   expect(slot.getByRole("button", { name: /Fix the sign-in flow/ })).toBeTruthy();
   const desktop = slot.getByRole("link", { name: "Desktop" });
-  expect(desktop.getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_2/desktop/from-box");
-  expect(slot.getByRole("link", { name: "Terminal" }).getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_2/terminal/from-box");
+  expect(desktop.getAttribute("href")).toBe("/plugins/alia-box/desktop/box/box_2/desktop/from-box");
+  expect(slot.getByRole("link", { name: "Terminal" }).getAttribute("href")).toBe("/plugins/alia-box/desktop/box/box_2/terminal/from-box");
   fireEvent.click(desktop);
   expect(slot.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_2/desktop/from-box" } });
   fireEvent.click(desktop, { metaKey: true });
@@ -9964,7 +9964,7 @@ test("a box's page, at box/<boxId>: the trail, its name with focus, its state, I
   expect(slot.getByRole("button", { name: "Run the tests" })).toBeTruthy();
   expect(slot.getByText("Ready in 3.6 s")).toBeTruthy();
   expect(slot.getByRole("img", { name: /^The time each step took: Took a warm box 0\.3 s, Clone 1\.1 s/ })).toBeTruthy();
-  expect(slot.getByText(/^And 3 quicker steps\. It joined BB 2\.4 s later\. Made (today at|yesterday at) \d{2}:\d{2}/)).toBeTruthy();
+  expect(slot.getByText(/^And 3 quicker steps\. It joined ALIA 2\.4 s later\. Made (today at|yesterday at) \d{2}:\d{2}/)).toBeTruthy();
   const menu = await openMenu(slot.getByRole("button", { name: "bold-heron actions" }));
   expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["Copy address", "New thread…", "Check now", "Release…"]);
   fireEvent.keyDown(menu, { key: "Escape" });
@@ -9975,30 +9975,30 @@ test("a box's page, at box/<boxId>: the trail, its name with focus, its state, I
 test("a view's way back goes back in history when the panel itself made the move, and otherwise replaces with the origin its path names (G8)", async () => {
   const { handlers } = server([desktopBox()]);
   const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
-  window.history.pushState(null, "", "/plugins/bb-box/desktop/box/box_2");
+  window.history.pushState(null, "", "/plugins/alia-box/desktop/box/box_2");
   const page = boxPageAt(handlers, "box/box_2");
   fireEvent.click(await page.findByRole("link", { name: "Desktop" }));
   cleanup();
-  window.history.pushState(null, "", "/plugins/bb-box/desktop/box/box_2/desktop/from-box");
+  window.history.pushState(null, "", "/plugins/alia-box/desktop/box/box_2/desktop/from-box");
   const view = boxPageAt(handlers, "box/box_2/desktop/from-box");
   fireEvent.click(await view.findByRole("button", { name: "Back to bold-heron" }));
   expect(back).toHaveBeenCalledTimes(1);
   expect(view.inspection.navigateCalls).toEqual([]);
   cleanup();
   const reloaded = boxPageAt(handlers, "box/box_2/desktop/from-box");
-  window.history.pushState(null, "", "/plugins/bb-box/desktop/box/box_2/terminal/from-box");
+  window.history.pushState(null, "", "/plugins/alia-box/desktop/box/box_2/terminal/from-box");
   fireEvent.click(await reloaded.findByRole("button", { name: "Back to bold-heron" }));
   expect(back).toHaveBeenCalledTimes(1);
   expect(reloaded.inspection.navigateCalls).toEqual([{ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_2", replace: true } }]);
-  expect(reloaded.getByRole("link", { name: "bold-heron" }).getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_2");
+  expect(reloaded.getByRole("link", { name: "bold-heron" }).getAttribute("href")).toBe("/plugins/alia-box/desktop/box/box_2");
   cleanup();
   const settings = boxPageAt(handlers, "box/box_2/desktop/from-box/from-settings");
   fireEvent.click(await settings.findByRole("button", { name: "Back to bold-heron" }));
   expect(settings.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_2/from-settings", replace: true } });
   cleanup();
   const settingsPage = boxPageAt(handlers, "box/box_2/from-settings");
-  expect((await settingsPage.findByRole("link", { name: "Back to BB Box settings" })).getAttribute("href")).toBe("/settings/plugins/bb-box");
-  expect(settingsPage.getByRole("link", { name: "Desktop" }).getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_2/desktop/from-box/from-settings");
+  expect((await settingsPage.findByRole("link", { name: "Back to VesnALIA Box settings" })).getAttribute("href")).toBe("/settings/plugins/alia-box");
+  expect(settingsPage.getByRole("link", { name: "Desktop" }).getAttribute("href")).toBe("/plugins/alia-box/desktop/box/box_2/desktop/from-box/from-settings");
   back.mockRestore();
   window.history.pushState(null, "", "/");
 });
@@ -10036,7 +10036,7 @@ test("a view's bar has the box's other screens as buttons, a screen's menu opens
   expect(old.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_2/terminal/from-settings", replace: true } });
   cleanup();
   const boxPage = boxPageAt(handlers, "box/box_2");
-  expect((await boxPage.findByRole("link", { name: "Files" })).getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_2/files/from-box");
+  expect((await boxPage.findByRole("link", { name: "Files" })).getAttribute("href")).toBe("/plugins/alia-box/desktop/box/box_2/files/from-box");
   cleanup();
   const shell = boxPageAt(handlers, "box/box_2/terminal");
   expect(await shell.findByRole("button", { name: "Files" })).toBeTruthy();
@@ -10074,7 +10074,7 @@ test("a reading that fails after one worked keeps the bar's numbers, says which 
   const quiet = boxPageAt(silent.handlers, "box/box_2/terminal/from-list");
   const notAnswering = await quiet.findByRole("link", { name: "Can't reach bold-heron. Open bold-heron's page" });
   expect(notAnswering.textContent).toBe("Not answering");
-  expect(notAnswering.getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_2/from-list");
+  expect(notAnswering.getAttribute("href")).toBe("/plugins/alia-box/desktop/box/box_2/from-list");
   cleanup();
   unstubTheMonitor(silent.done);
 }, 15_000);
@@ -10152,7 +10152,7 @@ test("a terminal sized while hidden does not fit, and refits once it has a size 
 
 test("Ctrl+Shift+Up from a terminal tab with no other view lands on Leave the terminal", async () => {
   const terminalAction = app.threadPanelActions.find((candidate) => candidate.id === "terminal");
-  renderSlot(terminalAction!, { threadId: THREAD, params: { box: "box_2" } }, { rpc: server([desktopBox()]).handlers, pluginId: "bb-box" });
+  renderSlot(terminalAction!, { threadId: THREAD, params: { box: "box_2" } }, { rpc: server([desktopBox()]).handlers, pluginId: "alia-box" });
   const fake = await waitFor(() => {
     const made = xterm.FakeTerminal.made.at(-1);
     if (!made?.keys) throw new Error("no terminal yet");
@@ -10343,15 +10343,15 @@ test("a desktop or terminal of a box that does not answer does not connect, and 
 test("after a switch, the way back still goes back in history to where the view was opened from, as the switch replaced its entry (G8, unit 5)", async () => {
   const { handlers } = server([desktopBox()]);
   const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
-  window.history.pushState(null, "", "/plugins/bb-box/desktop/box/box_2");
+  window.history.pushState(null, "", "/plugins/alia-box/desktop/box/box_2");
   const page = boxPageAt(handlers, "box/box_2");
   fireEvent.click(await page.findByRole("link", { name: "Desktop" }));
   cleanup();
-  window.history.pushState(null, "", "/plugins/bb-box/desktop/box/box_2/desktop/from-box");
+  window.history.pushState(null, "", "/plugins/alia-box/desktop/box/box_2/desktop/from-box");
   const view = boxPageAt(handlers, "box/box_2/desktop/from-box");
   fireEvent.click(within(await openMenu(await view.findByRole("button", { name: "Desktop actions" }))).getByRole("menuitem", { name: "Open terminal" }));
   cleanup();
-  window.history.replaceState(null, "", "/plugins/bb-box/desktop/box/box_2/terminal/from-box");
+  window.history.replaceState(null, "", "/plugins/alia-box/desktop/box/box_2/terminal/from-box");
   const switched = boxPageAt(handlers, "box/box_2/terminal/from-box");
   fireEvent.click(await switched.findByRole("button", { name: "Back to bold-heron" }));
   expect(back).toHaveBeenCalledTimes(1);
@@ -10407,7 +10407,7 @@ test("a terminal's bar has the box's CPU and memory now, from the same reading a
   const slot = boxPageAt(handlers, "box/box_2/terminal/from-list");
   const numbers = await slot.findByRole("link", { name: "bold-heron: CPU 31%, memory 58%. Open bold-heron's page" });
   expect(numbers.textContent).toBe("CPU 31%Memory 58%");
-  expect(numbers.getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_2/from-list");
+  expect(numbers.getAttribute("href")).toBe("/plugins/alia-box/desktop/box/box_2/from-list");
   expect(numbers.closest("[data-bar-numbers]")!.className).toContain("max-sm:hidden");
   fireEvent.click(numbers);
   expect(slot.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_2/from-list" } });
@@ -10498,8 +10498,8 @@ test("a backend not in settings or not answering turns off Stop, Start, Resize a
   const maple = boxPageAt(handlers, "box/box_7");
   expect(await maple.findByText("Not checked")).toBeTruthy();
   const notice = maple.getByRole("region", { name: "Its backend is not in settings" });
-  expect(within(notice).getByText(/^Fake host was removed from BB Box's settings, so BB Box cannot check, stop or release maple-row/)).toBeTruthy();
-  expect(within(notice).getByRole("link", { name: "Open BB Box settings" }).getAttribute("href")).toBe("/settings/plugins/bb-box");
+  expect(within(notice).getByText(/^Fake host was removed from ALIA Box's settings, so ALIA Box cannot check, stop or release maple-row/)).toBeTruthy();
+  expect(within(notice).getByRole("link", { name: "Open VesnALIA Box settings" }).getAttribute("href")).toBe("/settings/plugins/alia-box");
   expect((maple.getByRole("button", { name: "Stop" }) as HTMLButtonElement).disabled).toBe(true);
   expect((maple.getByRole("button", { name: "Terminal" }) as HTMLButtonElement).disabled).toBe(true);
   const reasons = maple.getByText("Terminal, Files and Stop are off: its backend is not in settings.");
@@ -10509,12 +10509,12 @@ test("a backend not in settings or not answering turns off Stop, Start, Resize a
   fireEvent.click(within(menu).getByRole("menuitem", { name: "Forget…" }));
   const dialog = await screen.findByRole("alertdialog");
   expect(within(dialog).getByText("Forget maple-row?")).toBeTruthy();
-  expect(within(dialog).getByText(/^BB Box removes its record of maple-row, and nothing else\. Its box is not deleted/)).toBeTruthy();
-  expect(within(dialog).getByText(/If its backend comes back, BB Box takes the box back into its records, because a running box left untracked costs money and cannot be released\./)).toBeTruthy();
+  expect(within(dialog).getByText(/^ALIA Box removes its record of maple-row, and nothing else\. Its box is not deleted/)).toBeTruthy();
+  expect(within(dialog).getByText(/If its backend comes back, ALIA Box takes the box back into its records, because a running box left untracked costs money and cannot be released\./)).toBeTruthy();
   fireEvent.click(within(dialog).getByRole("button", { name: "Forget" }));
   await waitFor(() => expect(changes).toEqual(["forget box_7"]));
   expect(await maple.findByText("maple-row was forgotten")).toBeTruthy();
-  expect(maple.getByText(/^BB Box removed its record\. Its box was not deleted and may still run on Fake host\. Forgotten just now, today at \d{2}:\d{2}, by you\.$/)).toBeTruthy();
+  expect(maple.getByText(/^ALIA Box removed its record\. Its box was not deleted and may still run on Fake host\. Forgotten just now, today at \d{2}:\d{2}, by you\.$/)).toBeTruthy();
   cleanup();
 
   const reed = boxPageAt(handlers, "box/box_9");
@@ -10531,8 +10531,8 @@ test("a backend not in settings or not answering turns off Stop, Start, Resize a
   const fern = boxPageAt(handlers, "box/box_8");
   expect(await fern.findByText("Not answering")).toBeTruthy();
   const reach = fern.getByRole("region", { name: "fern-hollow does not answer" });
-  expect(within(reach).getByText(/^It did not answer a command\. Since .+, BB Box cannot reach it on pve-3, so it cannot read it or run commands in it\. You can still stop, start or release it: those go through Fake host\.$/)).toBeTruthy();
-  expect(within(reach).getByText("BB Box checks again in 4 min.")).toBeTruthy();
+  expect(within(reach).getByText(/^It did not answer a command\. Since .+, ALIA Box cannot reach it on pve-3, so it cannot read it or run commands in it\. You can still stop, start or release it: those go through Fake host\.$/)).toBeTruthy();
+  expect(within(reach).getByText("VesnALIA Box checks again in 4 min.")).toBeTruthy();
   expect((fern.getByRole("button", { name: "Stop" }) as HTMLButtonElement).disabled).toBe(false);
   expect(fern.getByText("Terminal and Files are off: fern-hollow does not answer.")).toBeTruthy();
   fireEvent.click(within(reach).getByRole("button", { name: "Check now" }));
@@ -10554,12 +10554,12 @@ test("a backend not in settings or not answering turns off Stop, Start, Resize a
 
 test("a box whose release did not finish says so on its page and its row, with Release again, never a spinner without end", async () => {
   const failed = { operation: "release" as const, at: Date.now() - 60_000, words: "Proxmox refused: the container is locked by a backup.", observed: { state: "running" as const, at: Date.now() - 60_000, from: "Proxmox LXC on pve-1" }, parts: [] };
-  const stuck = box({ state: "releasing", backendLabel: "Proxmox LXC on pve-1", error: "Proxmox refused: the container is locked by a backup. BB Box tries again in a few minutes.", log: { lastStart: null, lastStop: null, lastFailed: failed } });
+  const stuck = box({ state: "releasing", backendLabel: "Proxmox LXC on pve-1", error: "Proxmox refused: the container is locked by a backup. VesnALIA Box tries again in a few minutes.", log: { lastStart: null, lastStop: null, lastFailed: failed } });
   const { handlers, changes } = server([stuck]);
   const page = boxPageAt(handlers, "box/box_1");
   expect(await page.findByText("Release did not finish")).toBeTruthy();
   const notice = page.getByRole("region", { name: "Release did not finish 1 min ago" });
-  expect(within(notice).getByText("Proxmox refused: the container is locked by a backup. The box may still run on pve-1; BB Box keeps its record until a release is confirmed.")).toBeTruthy();
+  expect(within(notice).getByText("Proxmox refused: the container is locked by a backup. The box may still run on pve-1; VesnALIA Box keeps its record until a release is confirmed.")).toBeTruthy();
   expect(document.querySelector('[aria-label="Starting"]')).toBeNull();
   fireEvent.click(within(notice).getByRole("button", { name: "Release again…" }));
   const dialog = await screen.findByRole("alertdialog");
@@ -10567,7 +10567,7 @@ test("a box whose release did not finish says so on its page and its row, with R
   fireEvent.click(within(dialog).getByRole("button", { name: "Release" }));
   await waitFor(() => expect(changes).toEqual(["release box_1"]));
   expect(await page.findByText("calm-otter was released")).toBeTruthy();
-  expect(page.getByText(/^Released just now, today at \d{2}:\d{2}, by you\. BB Box remembers a released box for 24 hours\.$/)).toBeTruthy();
+  expect(page.getByText(/^Released just now, today at \d{2}:\d{2}, by you\. ALIA Box remembers a released box for 24 hours\.$/)).toBeTruthy();
   cleanup();
 
   const row = server([stuck]);
@@ -10612,7 +10612,7 @@ test("a machine of yours has its page too: no line to describe it, Threads on th
 test("Cmd or Ctrl click on an app link is left to the browser", async () => {
   const removed = box({ id: "box_7", name: "maple-row", canStopStart: false, reach: { is: "not-in-settings", backend: "Fake host", lastAnswered: null } });
   const slot = boxPageAt(server([removed]).handlers, "box/box_7");
-  const link = await slot.findByRole("link", { name: "Open BB Box settings" });
+  const link = await slot.findByRole("link", { name: "Open VesnALIA Box settings" });
   let bubbled = 0;
   const hear = () => {
     bubbled += 1;
@@ -10651,39 +10651,39 @@ test("a box's page while it starts: its steps so far and what it waits on, from 
   expect(restart.getByText(/^· for [23] s$/)).toBeTruthy();
 });
 
-test("a box's page says a device did not boot, a join that failed, a box deleted outside BB Box, and one that did not start, each with its way on (069 section 7)", async () => {
+test("a box's page says a device did not boot, a join that failed, a box deleted outside VesnALIA Box, and one that did not start, each with its way on (069 section 7)", async () => {
   const phone = box({ id: "box_p", name: "keen-iris", device: { platform: "ios", model: "iPhone 17 Pro", simulatorHost: true } });
   const device = server([phone], { deviceFailed: { model: "iPhone 17 Pro", words: "The simulator runtime is missing." } });
   let slot = boxPageAt(device.handlers, "box/box_p");
   const notice = await slot.findByRole("region", { name: "Its iPhone 17 Pro did not boot" });
   expect(within(notice).getByText("The simulator runtime is missing.")).toBeTruthy();
   expect(within(notice).getByRole("button", { name: "Check now" })).toBeTruthy();
-  expect(slot.getByRole("link", { name: "Simulator" }).getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_p/device/from-box");
+  expect(slot.getByRole("link", { name: "Simulator" }).getAttribute("href")).toBe("/plugins/alia-box/desktop/box/box_p/device/from-box");
   cleanup();
 
-  const unjoined = server([box({ enrol: { state: "failed", hostId: null, error: "BB at http://127.0.0.1:7801 is not reachable from the box." } })]);
+  const unjoined = server([box({ enrol: { state: "failed", hostId: null, error: "VesnALIA at http://127.0.0.1:7801 is not reachable from the box." } })]);
   slot = boxPageAt(unjoined.handlers, "box/box_1");
-  expect(await slot.findByText("· Could not join BB")).toBeTruthy();
-  expect(slot.getByRole("region", { name: "It could not join BB" }).textContent).toContain("is not reachable from the box");
-  expect(slot.getByText("None. It is not a BB machine, so no thread can run on it.")).toBeTruthy();
-  fireEvent.click(within(slot.getByRole("region", { name: "It could not join BB" })).getByRole("button", { name: "Join BB again" }));
+  expect(await slot.findByText("· Could not join VesnALIA")).toBeTruthy();
+  expect(slot.getByRole("region", { name: "It could not join VesnALIA" }).textContent).toContain("is not reachable from the box");
+  expect(slot.getByText("None. It is not a VesnALIA machine, so no thread can run on it.")).toBeTruthy();
+  fireEvent.click(within(slot.getByRole("region", { name: "It could not join VesnALIA" })).getByRole("button", { name: "Join VesnALIA again" }));
   await waitFor(() => expect(unjoined.changes).toContain("enrol box_1"));
   expect(await slot.findByText("Joining, try 1 of 5")).toBeTruthy();
-  expect(slot.queryByRole("region", { name: "It could not join BB" })).toBeNull();
+  expect(slot.queryByRole("region", { name: "It could not join VesnALIA" })).toBeNull();
   expect(unjoined.changes.filter((each) => !each.startsWith("enrol")), "joining again neither starts, stops nor restarts the box").toEqual([]);
   cleanup();
 
-  const waiting = server([box({ enrol: { state: "enrolling", hostId: null, error: null }, joinTries: { failed: 1, next: Date.now() + 30_000, words: "This box could not look up BB's address in time (curl: (28) Resolving timed out after 10001 milliseconds).", of: 5, setup: false } })]);
+  const waiting = server([box({ enrol: { state: "enrolling", hostId: null, error: null }, joinTries: { failed: 1, next: Date.now() + 30_000, words: "This box could not look up VesnALIA's address in time (curl: (28) Resolving timed out after 10001 milliseconds).", of: 5, setup: false } })]);
   slot = boxPageAt(waiting.handlers, "box/box_1");
-  const pending = await slot.findByRole("region", { name: "It has not joined BB yet" });
-  expect(pending.textContent).toContain("Try 1 failed: This box could not look up BB's address in time");
-  fireEvent.click(within(pending).getByRole("button", { name: "Join BB again" }));
+  const pending = await slot.findByRole("region", { name: "It has not joined VesnALIA yet" });
+  expect(pending.textContent).toContain("Try 1 failed: This box could not look up VesnALIA's address in time");
+  fireEvent.click(within(pending).getByRole("button", { name: "Join VesnALIA again" }));
   await waitFor(() => expect(waiting.changes).toContain("enrol box_1"));
   cleanup();
 
   const gone = server([box({ state: "gone", address: null, terminal: false })]);
   slot = boxPageAt(gone.handlers, "box/box_1");
-  expect(await slot.findByText("· deleted outside BB Box")).toBeTruthy();
+  expect(await slot.findByText("· deleted outside VesnALIA Box")).toBeTruthy();
   expect(slot.getByRole("region", { name: "Facts" })).toBeTruthy();
   expect(slot.queryByRole("button", { name: "Stop" })).toBeNull();
   const menu = await openMenu(slot.getByRole("button", { name: "calm-otter actions" }));
@@ -10709,14 +10709,14 @@ test("notices are not live regions: one polite announcer says a new notice once,
   vi.useFakeTimers({ shouldAdvanceTime: true });
   try {
     const failure = () => ({ lastStart: null, lastStop: null, lastFailed: { operation: "stop" as const, at: Date.now() - 1_000, words: "Docker refused", observed: { state: "running" as const, at: Date.now() - 1_000, from: "Fake host" }, parts: [] } });
-    const opened = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: pageWith(() => box({ log: failure() })), pluginId: "bb-box" });
+    const opened = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: pageWith(() => box({ log: failure() })), pluginId: "alia-box" });
     await opened.findByRole("region", { name: /^Stop failed / });
     expect(document.querySelector("[data-announcer]")!.textContent, "a failure from before the page opened is not announced").toBe("");
     expect(document.querySelectorAll("[data-notice][role], [data-notice] [role=alert], [data-notice] [role=status], [data-notice] [aria-live]")).toHaveLength(0);
     cleanup();
 
     let current = box();
-    const slot = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: pageWith(() => current), pluginId: "bb-box" });
+    const slot = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: pageWith(() => current), pluginId: "alia-box" });
     await slot.findByRole("heading", { level: 1 });
     const announcer = document.querySelector("[data-announcer]")!;
     expect(announcer.getAttribute("aria-live")).toBe("polite");
@@ -10738,7 +10738,7 @@ test("notices are not live regions: one polite announcer says a new notice once,
 
 test("starting again shows no step of the last start, and no Total, only what it waits on (review 4)", async () => {
   const again = box({ state: "starting", createdAt: Date.now() - 3 * 3_600_000, timings: { clone: 700, total: 2100, "start.boot": 1400, "start.ssh": 500, "start.total": 1900 }, log: { lastStart: { askedAt: Date.now() - 2_000, readyAt: null, failedAt: null, by: { is: "person" }, first: false }, lastStop: null, lastFailed: null } });
-  const slot = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: pageWith(() => again), pluginId: "bb-box" });
+  const slot = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: pageWith(() => again), pluginId: "alia-box" });
   const card = await slot.findByRole("region", { name: "Starting" });
   expect(Array.from(card.querySelectorAll("li"), (item) => item.textContent)).toEqual(["Waiting for it to boot and answer"]);
 });
@@ -10747,7 +10747,7 @@ test("an open page asks again every 15 s while it is shown, so Working now and t
   vi.useFakeTimers({ shouldAdvanceTime: true });
   Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "visible" });
   try {
-    const slot = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: pageWith(() => box(), { id: THREAD, title: "UI thread", running: true }), pluginId: "bb-box" });
+    const slot = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: pageWith(() => box(), { id: THREAD, title: "UI thread", running: true }), pluginId: "alia-box" });
     await slot.findByText("working now");
     expect(slot.getAllByLabelText("Working")[0]!.getAttribute("class")).toContain("motion-reduce:animate-none");
     const asked = () => slot.inspection.rpcCalls.filter((call) => call.method === "boxPage").length;
@@ -10765,7 +10765,7 @@ test("an open page asks again every 15 s while it is shown, so Working now and t
 test("a view opened by box ID has its way back while it loads, and when its box cannot be read (review 11)", async () => {
   const { handlers } = server([desktopBox()]);
   const pending: PluginRpcTestHandlers<Contract> = { ...handlers, boxPage: () => new Promise<never>(() => undefined) };
-  const waiting = renderSlot(app.navPanels[0]!, { subPath: "box/box_2/desktop/from-list" }, { rpc: pending, pluginId: "bb-box" });
+  const waiting = renderSlot(app.navPanels[0]!, { subPath: "box/box_2/desktop/from-list" }, { rpc: pending, pluginId: "alia-box" });
   const back = await waiting.findByRole("button", { name: "Back to boxes" });
   fireEvent.click(back);
   expect(waiting.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "", replace: true } });
@@ -10773,32 +10773,32 @@ test("a view opened by box ID has its way back while it loads, and when its box 
   const broken: PluginRpcTestHandlers<Contract> = {
     ...handlers,
     boxPage: () => {
-      throw new Error("BB's server did not answer.");
+      throw new Error("VesnALIA's server did not answer.");
     },
   };
-  const failing = renderSlot(app.navPanels[0]!, { subPath: "box/box_2/terminal/from-box/from-settings" }, { rpc: broken, pluginId: "bb-box" });
-  expect(await failing.findByText("BB's server did not answer.")).toBeTruthy();
+  const failing = renderSlot(app.navPanels[0]!, { subPath: "box/box_2/terminal/from-box/from-settings" }, { rpc: broken, pluginId: "alia-box" });
+  expect(await failing.findByText("VesnALIA's server did not answer.")).toBeTruthy();
   expect(failing.getByRole("button", { name: "Back to the box" })).toBeTruthy();
 });
 
-test("when BB cannot say whether the box's thread works, Stop asks and says so (review 2)", async () => {
+test("when VesnALIA cannot say whether the box's thread works, Stop asks and says so (review 2)", async () => {
   const { handlers, changes } = server([box()], { inUse: [{ id: THREAD, title: null, running: false, unchecked: true }] });
   const slot = boxPageAt(handlers, "box/box_1");
   fireEvent.click(await slot.findByRole("button", { name: "Stop" }));
   const dialog = await screen.findByRole("alertdialog");
-  expect(within(dialog).getByText("BB Box could not ask BB whether its thread is working on calm-otter.")).toBeTruthy();
+  expect(within(dialog).getByText("VesnALIA Box could not ask VesnALIA whether its thread is working on calm-otter.")).toBeTruthy();
   expect(changes).toEqual([]);
   fireEvent.click(within(dialog).getByRole("button", { name: "Stop anyway" }));
   await waitFor(() => expect(changes).toEqual(["stop (forced) box_1"]));
 });
 
 test("a release whose failure the log lost still says it did not finish, with Release again, not Releasing for ever (review 7)", async () => {
-  const stuck = box({ state: "releasing", backendLabel: "Proxmox LXC on pve-1", error: "Releasing the box failed: the host refused. BB Box tries again in a few minutes." });
+  const stuck = box({ state: "releasing", backendLabel: "Proxmox LXC on pve-1", error: "Releasing the box failed: the host refused. VesnALIA Box tries again in a few minutes." });
   const { handlers, changes } = server([stuck]);
   const page = boxPageAt(handlers, "box/box_1");
   expect(await page.findByText("Release did not finish", { selector: "span" })).toBeTruthy();
   const notice = page.getByRole("region", { name: "Release did not finish" });
-  expect(within(notice).getByText("Releasing the box failed: the host refused. BB Box tries again in a few minutes. The box may still run on pve-1; BB Box keeps its record until a release is confirmed.")).toBeTruthy();
+  expect(within(notice).getByText("Releasing the box failed: the host refused. VesnALIA Box tries again in a few minutes. The box may still run on pve-1; VesnALIA Box keeps its record until a release is confirmed.")).toBeTruthy();
   expect(page.queryByText("Releasing…")).toBeNull();
   const menu = await openMenu(page.getByRole("button", { name: "calm-otter actions" }));
   expect(items(menu).at(-1)).toBe("Release again…");
@@ -10832,13 +10832,13 @@ test("070 unit 4: Settings' Snapshots page saves the limit, the room and each pa
   expect([perBox.value, room.value, ceiling.value]).toEqual(["5", "85", "5"]);
   expect(ceiling.getAttribute("inputmode")).toBe("decimal");
   expect(slot.getByText(/\$0\.056 a day for each snapshot\. Held now: 2 snapshots, about \$3\.36 a month\. Spent this month so far, deleted ones included: \$0\.39\./)).toBeTruthy();
-  expect(slot.getByText(/A new snapshot is refused past this, or past 80% of a thin pool's metadata\. Past 92%, BB Box deletes agents' snapshots/)).toBeTruthy();
+  expect(slot.getByText(/A new snapshot is refused past this, or past 80% of a thin pool's metadata\. Past 92%, ALIA Box deletes agents' snapshots/)).toBeTruthy();
   expect(slot.getByText("Its disk, or its disk and memory, while it runs · $0.056 a day each")).toBeTruthy();
   expect(slot.getByText("fast (LVM-thin) restores any snapshot.")).toBeTruthy();
   expect(slot.getByText("Fix: Watch the pool's metadata on the host.").className).toContain("text-warning-text");
   expect(slot.getAllByRole("switch").map((each) => each.getAttribute("aria-label"))).toEqual(["Agents may restore their own boxes", "Agents may restore memory snapshots", "Keep a picture of the screen with each snapshot"]);
   expect((slot.getByRole("textbox", { name: "Keep keeps a snapshot for, in days" }) as HTMLInputElement).value).toBe("30");
-  expect(slot.getByText(/A kept snapshot is yours, outlives its box's release, and BB Box deletes it after its date\. Only you keep one\. Keeping it again adds these days to its date\. 1 to 365\./)).toBeTruthy();
+  expect(slot.getByText(/A kept snapshot is yours, outlives its box's release, and ALIA Box deletes it after its date\. Only you keep one\. Keeping it again adds these days to its date\. 1 to 365\./)).toBeTruthy();
 
   fireEvent.change(room, { target: { value: "60" } });
   expect(slot.getByText(/or past 55% of a thin pool's metadata\. Past 67%/)).toBeTruthy();
@@ -10856,7 +10856,7 @@ test("070 unit 4: with no backend that charges the page says so, a ceiling past 
   expect(free.queryByRole("textbox", { name: /dollars a month/ })).toBeNull();
   cleanup();
   const past = settings(snapshotServer({ past: true, ceiling: 3 }).handlers, "#option/snapshots");
-  expect(await past.findByText(/The rate held is past this ceiling: BB Box refuses new paid snapshots, undos, Keep and renewals there until you raise it or delete some\. It deletes none by itself\./)).toBeTruthy();
+  expect(await past.findByText(/The rate held is past this ceiling: ALIA Box refuses new paid snapshots, undos, Keep and renewals there until you raise it or delete some\. It deletes none by itself\./)).toBeTruthy();
   cleanup();
   const overview = settings(snapshotServer({ past: true, ceiling: 3 }).handlers);
   const row = await overview.findByRole("button", { name: "Snapshots" });
@@ -10957,8 +10957,8 @@ test("070 unit 5: the restore form says what goes, that an undo is always taken 
   expect(screen.getByText(/Everything on its disk since then goes: files, installed apps and settings\. dev-desk restarts, so every process in it ends\./)).toBeTruthy();
   expect(screen.getByText(payload.losses[0]!)).toBeTruthy();
   expect(screen.getByText("This thread runs on dev-desk: its session there goes back too, and its next turn starts on the restored box.")).toBeTruthy();
-  expect(screen.getByText(/BB Box always takes an undo first: a snapshot of dev-desk once stopped, named "before the restore at 11:02"/)).toBeTruthy();
-  expect(screen.getByText("BB Box records an answer here as a yes given in this thread: it cannot tell who gives it.")).toBeTruthy();
+  expect(screen.getByText(/ALIA Box always takes an undo first: a snapshot of dev-desk once stopped, named "before the restore at 11:02"/)).toBeTruthy();
+  expect(screen.getByText("VesnALIA Box records an answer here as a yes given in this thread: it cannot tell who gives it.")).toBeTruthy();
   expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancel" }));
   const anyway = screen.getByRole("button", { name: "Restore dev-desk anyway" });
   expect(anyway.className).not.toMatch(/bg-destructive/);
@@ -11089,8 +11089,8 @@ test("070 unit 7: Fork opens a dialog with the new box's name, where it goes, it
   const dialog = await slot.findByRole("alertdialog", { name: 'Fork "before the migration" of calm-otter' });
   const name = within(dialog).getByRole("textbox", { name: "Name of the new box" });
   expect(document.activeElement).toBe(name);
-  expect(await within(dialog).findByText(/^A new box with calm-otter's files as they were today at \d\d:\d\d\. It gets its own BB machine, address and keys, and never acts as calm-otter\. Everything else on its disk comes with it: project secrets, signed-in browsers and keychains\. It starts fresh: no apps are running\.$/)).toBeTruthy();
-  expect(within(dialog).getByText("2 cores, 4 GiB memory, 16 GiB disk, as the snapshot holds. The copy takes up to about 38 s and 17 GB on pve-1's local-lvm, then it starts, and BB Box checks that it reset its identity before handing it over.")).toBeTruthy();
+  expect(await within(dialog).findByText(/^A new box with calm-otter's files as they were today at \d\d:\d\d\. It gets its own ALIA machine, address and keys, and never acts as calm-otter\. Everything else on its disk comes with it: project secrets, signed-in browsers and keychains\. It starts fresh: no apps are running\.$/)).toBeTruthy();
+  expect(within(dialog).getByText("2 cores, 4 GiB memory, 16 GiB disk, as the snapshot holds. The copy takes up to about 38 s and 17 GB on pve-1's local-lvm, then it starts, and VesnALIA Box checks that it reset its identity before handing it over.")).toBeTruthy();
   expect((within(dialog).getByRole("radio", { name: /^In / }) as HTMLInputElement).checked).toBe(true);
   expect((within(dialog).getByRole("radio", { name: "None" }) as HTMLInputElement).checked).toBe(true);
   expect(within(dialog).queryByRole("radio", { name: "Whole" })).toBeNull();
@@ -11264,7 +11264,7 @@ test("070 unit 6: a box whose plan refuses a take says why in the card with Take
 
 test("070 unit 6: a guarded restore names every thread, the control and a terminal; a box threads run on is not restored, saying why", async () => {
   const preview = restorePreviewOf({
-    refusal: "Box calm-otter is a box threads run on: \"Fix the sign-in flow\" (working) and \"Write the API guide\" (idle) run on it. A restore would take their worktrees, uncommitted files and sessions there with it, and BB Box does not restore such a box yet: that stays off until BB Box can hold every turn on it while it restores. Move those threads off it, or archive them, first. BB Box changed nothing.",
+    refusal: "Box calm-otter is a box threads run on: \"Fix the sign-in flow\" (working) and \"Write the API guide\" (idle) run on it. A restore would take their worktrees, uncommitted files and sessions there with it, and VesnALIA Box does not restore such a box yet: that stays off until VesnALIA Box can hold every turn on it while it restores. Move those threads off it, or archive them, first. VesnALIA Box changed nothing.",
     threads: [{ id: "thr_a", title: "Fix the sign-in flow", running: true }, { id: "thr_b", title: "Write the API guide", running: false }],
     control: true,
     terminals: 1,
@@ -11277,7 +11277,7 @@ test("070 unit 6: a guarded restore names every thread, the control and a termin
   restore.focus();
   fireEvent.click(restore);
   const dialog = await slot.findByRole("alertdialog", { name: "Cannot restore calm-otter" });
-  await within(dialog).findByText(/BB Box does not restore such a box yet/);
+  await within(dialog).findByText(/ALIA Box does not restore such a box yet/);
   const listed = within(dialog).getAllByRole("listitem").map((item) => item.textContent);
   expect(listed).toEqual([
     "\"Fix the sign-in flow\" is working on calm-otter: its worktree, uncommitted files and session there would go.",
@@ -11308,7 +11308,7 @@ test("070 unit 9: where the backend suspends the box, the restore dialog says it
 
 test("070 unit 6: the person restores anyway past a control and a terminal, keeps or unticks the undo, and the button says so", async () => {
   clockAtLocalNoon();
-  const losses = ["a person holds control of its desktop", "a BB terminal is open on it"];
+  const losses = ["a person holds control of its desktop", "a VesnALIA terminal is open on it"];
   const preview = restorePreviewOf({ control: true, terminals: 1, check: { ...restorePreviewOf().check!, anyway: losses, from: { cores: 8, memoryMiB: 16384, diskGiB: 32 }, to: { cores: 4, memoryMiB: 8192, diskGiB: 32 } } });
   const { handlers, changes } = server([box()], { snapshots: snapshotsView(), restorePreview: preview });
   const slot = boxPageAt(handlers, "box/box_1");
@@ -11353,9 +11353,9 @@ test("070 unit 6: the restored notice says when, to what and by whom, and its Un
   expect((slot.getByRole("button", { name: "Restore: not now, as calm-otter is being restored" }) as HTMLButtonElement).disabled).toBe(true);
   cleanup();
 
-  const unsure = server([box()], { snapshots: snapshotsView({ unconfirmed: { to: "before the migration", words: "It was at the rollback when BB Box restarted." } }) });
+  const unsure = server([box()], { snapshots: snapshotsView({ unconfirmed: { to: "before the migration", words: "It was at the rollback when VesnALIA Box restarted." } }) });
   slot = boxPageAt(unsure.handlers, "box/box_1");
-  expect(await slot.findByText('BB Box could not confirm the restore of calm-otter to "before the migration"')).toBeTruthy();
+  expect(await slot.findByText('VesnALIA Box could not confirm the restore of calm-otter to "before the migration"')).toBeTruthy();
   fireEvent.click(slot.getByRole("button", { name: "Check now" }));
   await waitFor(() => expect(unsure.changes).toContain("snapshot.settle box_1"));
 });
@@ -11408,8 +11408,8 @@ test("070 unit 6: the pictures switch saves at once, and Find finds it", async (
 
 test("070 unit 6 review: the restore is bound to what the dialog showed; when it changed the dialog reads it again, and a failed flush is asked about before anything stops", async () => {
   const shown = restorePreviewOf({ control: true, check: { ...restorePreviewOf().check!, anyway: ["a person holds control of its desktop"] } });
-  const fresh = restorePreviewOf({ control: true, terminals: 2, token: "tokentwo", check: { ...restorePreviewOf().check!, anyway: ["a person holds control of its desktop", "2 BB terminals are open on it"] } });
-  const flushWords = "BB Box could not flush box calm-otter's writes to its disk before stopping it (sync: Input/output error), so its undo could miss what was written in the last seconds before the restore. BB Box changed nothing.";
+  const fresh = restorePreviewOf({ control: true, terminals: 2, token: "tokentwo", check: { ...restorePreviewOf().check!, anyway: ["a person holds control of its desktop", "2 VesnALIA terminals are open on it"] } });
+  const flushWords = "VesnALIA Box could not flush box calm-otter's writes to its disk before stopping it (sync: Input/output error), so its undo could miss what was written in the last seconds before the restore. VesnALIA Box changed nothing.";
   const { handlers, changes } = server([box()], {
     snapshots: snapshotsView(),
     restorePreview: shown,
@@ -11430,7 +11430,7 @@ test("070 unit 6 review: the restore is bound to what the dialog showed; when it
   expect(within(dialog).getByText(/changed since this dialog read it/)).toBeTruthy();
   fireEvent.click(within(dialog).getByRole("button", { name: "Restore calm-otter anyway" }));
   await waitFor(() => expect(changes.filter((change) => change.startsWith("snapshot.restore "))).toHaveLength(2));
-  expect(changes.at(-1)).toContain('"accept":["a person holds control of its desktop","2 BB terminals are open on it"],"token":"tokentwo"');
+  expect(changes.at(-1)).toContain('"accept":["a person holds control of its desktop","2 VesnALIA terminals are open on it"],"token":"tokentwo"');
   expect((await within(dialog).findByRole("alert")).textContent).toBe(flushWords);
   fireEvent.click(within(dialog).getByRole("button", { name: "Restore anyway, its undo may miss the last writes" }));
   await waitFor(() => expect(changes.filter((change) => change.startsWith("snapshot.restore "))).toHaveLength(3));
@@ -11444,13 +11444,13 @@ test("070 unit 6 review: notices say an undo may miss the last writes and a rest
     restorePreview: restorePreviewOf({ snapshot: snapshotRow({ id: "snundo", name: "before the restore at 11:02" }), undoUnflushed: "sync: Input/output error" }),
   });
   let slot = boxPageAt(unflushed.handlers, "box/box_1");
-  expect(await slot.findByText(/Its undo may miss what was written in the last seconds before the restore: BB Box could not flush the box's writes to its disk before stopping it \(sync: Input\/output error\)\./)).toBeTruthy();
+  expect(await slot.findByText(/Its undo may miss what was written in the last seconds before the restore: ALIA Box could not flush the box's writes to its disk before stopping it \(sync: Input\/output error\)\./)).toBeTruthy();
   fireEvent.click(slot.getByRole("button", { name: "Undo…" }));
   const dialog = await slot.findByRole("alertdialog");
   expect(await within(dialog).findByText(/This undo may miss what was written in the last seconds before its restore/)).toBeTruthy();
   cleanup();
 
-  const failed = server([box()], { snapshots: snapshotsView({ failed: { operation: "opfail", at, to: "one", error: "Proxmox refused the stop: the guest would not stop. BB Box started it again as it was." } }) });
+  const failed = server([box()], { snapshots: snapshotsView({ failed: { operation: "opfail", at, to: "one", error: "Proxmox refused the stop: the guest would not stop. VesnALIA Box started it again as it was." } }) });
   slot = boxPageAt(failed.handlers, "box/box_1");
   expect(await slot.findByText(/^The restore of calm-otter to "one" failed at /)).toBeTruthy();
   expect(document.querySelector('[data-notice="bad"]')?.textContent).toMatch(/the guest would not stop/);
@@ -11514,17 +11514,17 @@ test("a row's second line says how the box is now: the state, what needs attenti
   expect(rowReasons(stopLine)[0]).toMatch(/^Stop failed: Timed out waiting for the container to stop\. It is still running \(checked .+\)\.$/);
   expect(words(box({ reach: { is: "not-in-settings", backend: "Proxmox LXC on pve-old", lastAnswered: now - 2 * 24 * 60 * MIN } }))).toBe("Last seen ready · Its backend is not in settings · 2 d ago");
   expect(words(box({ reach: { is: "not-answering", since: now - 12 * MIN, lastAnswered: now - 12 * MIN, nextCheckAt: now + 4 * MIN, checking: false, attempts: 2, error: "It did not answer a command.", host: "pve-3" } }))).toBe("Last seen ready · pve-3 does not answer · 12 min ago");
-  const unjoined = rowLine(box({ readyAt: now - 12_000, enrol: { state: "failed", hostId: null, error: "BB's server is not reachable from Proxmox LXC: turn the tailnet on" } }), { now });
-  expect(rowWords(unjoined)).toBe("Ready · Could not join BB · up 12 s · 2 cores · 4 GiB memory");
-  expect(rowReasons(unjoined)).toEqual(["Could not join BB: BB's server is not reachable from Proxmox LXC: turn the tailnet on. See Machine access in BB's settings, under Machines."]);
+  const unjoined = rowLine(box({ readyAt: now - 12_000, enrol: { state: "failed", hostId: null, error: "VesnALIA's server is not reachable from Proxmox LXC: turn the tailnet on" } }), { now });
+  expect(rowWords(unjoined)).toBe("Ready · Could not join VesnALIA · up 12 s · 2 cores · 4 GiB memory");
+  expect(rowReasons(unjoined)).toEqual(["Could not join VesnALIA: VesnALIA's server is not reachable from Proxmox LXC: turn the tailnet on. See Machine access in VesnALIA's settings, under Machines."]);
   const passing = rowLine(box({ readyAt: now - 12_000, enrol: { state: "failed", hostId: null, error: "Enrolling box calm-otter failed: Machine bootstrap command failed:\n\ncurl: (28) Resolving timed out after 10001 milliseconds" } }), { now });
-  expect(rowReasons(passing)[0], "a failure that can pass gives no settings advice, even before BB Box plans its tries").not.toContain("Machine access");
-  const retrying = rowLine(box({ readyAt: now - 3 * MIN, enrol: { state: "enrolling", hostId: null, error: null }, joinTries: { failed: 2, next: now + 10 * MIN, words: "This box could not reach BB's address in time: the connection timed out (curl: (28) Connection timed out).", of: 5, setup: false } }), { now });
-  expect(rowWords(retrying)).toBe("Ready · Joining BB, try 3 of 5 · up 3 min · 2 cores · 4 GiB memory");
-  expect(rowReasons(retrying)).toEqual(["Joining BB, try 3 of 5: Joining BB: try 3 of 5 starts in 10 min. Try 2 failed: This box could not reach BB's address in time: the connection timed out (curl: (28) Connection timed out)."]);
-  expect(words(box({ readyAt: now - 30_000, enrol: { state: "enrolling", hostId: null, error: null }, joinTries: { failed: 0, next: null, words: "", of: 5, setup: false } }))).toBe("Ready · Joining BB, try 1 of 5 · up 30 s · 2 cores · 4 GiB memory");
-  const gaveUp = rowLine(box({ enrol: { state: "failed", hostId: null, error: "This box has no network route to BB's address (No route to host)." }, joinTries: { failed: 5, next: null, words: "", of: 5, setup: false } }), { now });
-  expect(rowReasons(gaveUp), "a problem that is not BB's setup gives no settings advice").toEqual(["Could not join BB: This box has no network route to BB's address (No route to host)."]);
+  expect(rowReasons(passing)[0], "a failure that can pass gives no settings advice, even before VesnALIA Box plans its tries").not.toContain("Machine access");
+  const retrying = rowLine(box({ readyAt: now - 3 * MIN, enrol: { state: "enrolling", hostId: null, error: null }, joinTries: { failed: 2, next: now + 10 * MIN, words: "This box could not reach VesnALIA's address in time: the connection timed out (curl: (28) Connection timed out).", of: 5, setup: false } }), { now });
+  expect(rowWords(retrying)).toBe("Ready · Joining VesnALIA, try 3 of 5 · up 3 min · 2 cores · 4 GiB memory");
+  expect(rowReasons(retrying)).toEqual(["Joining VesnALIA, try 3 of 5: Joining VesnALIA: try 3 of 5 starts in 10 min. Try 2 failed: This box could not reach VesnALIA's address in time: the connection timed out (curl: (28) Connection timed out)."]);
+  expect(words(box({ readyAt: now - 30_000, enrol: { state: "enrolling", hostId: null, error: null }, joinTries: { failed: 0, next: null, words: "", of: 5, setup: false } }))).toBe("Ready · Joining VesnALIA, try 1 of 5 · up 30 s · 2 cores · 4 GiB memory");
+  const gaveUp = rowLine(box({ enrol: { state: "failed", hostId: null, error: "This box has no network route to VesnALIA's address (No route to host)." }, joinTries: { failed: 5, next: null, words: "", of: 5, setup: false } }), { now });
+  expect(rowReasons(gaveUp), "a problem that is not VesnALIA's setup gives no settings advice").toEqual(["Could not join VesnALIA: This box has no network route to VesnALIA's address (No route to host)."]);
   expect(words(box({ state: "starting", createdAt: now - 7_000, log: null }))).toBe("Starting · 7 s");
   expect(words(box({ state: "stopped", log: { lastStart: null, lastStop: { at: now - 3 * 60 * MIN - 5 * MIN, by: { is: "person" }, asked: true }, lastFailed: null } } as Partial<BoxView>))).toBe("Stopped · 3 h ago · 2 cores · 4 GiB memory");
   const failed = rowLine(box({ state: "failed", error: "No GPU is left.", log: { lastStart: { askedAt: now - 53 * MIN, readyAt: null, failedAt: now - 52 * MIN, by: null, first: true }, lastStop: null, lastFailed: null } }), { now });
@@ -11534,7 +11534,7 @@ test("a row's second line says how the box is now: the state, what needs attenti
     desktopBox({ readyAt: now - 46 * MIN, control: { owner: "human", holder: "viewer-1" }, enrol: { state: "failed", hostId: null, error: "no route" }, log: failedStop.log }),
     { now, busy: shownBusy("memory", 93, 6), viewers: new Set(["viewer-1"]) },
   );
-  expect(everything.items.slice(1, 5).map((item) => item.text), "a failed operation, busy, a person's control, a failed join").toEqual(["Stop failed", "Busy: memory 93% for 6 min", "You have control", "Could not join BB"]);
+  expect(everything.items.slice(1, 5).map((item) => item.text), "a failed operation, busy, a person's control, a failed join").toEqual(["Stop failed", "Busy: memory 93% for 6 min", "You have control", "Could not join VesnALIA"]);
   const failedThenGone = rowLine(box({ readyAt: now - 2 * 60 * MIN, log: failedStop.log, reach: { is: "not-in-settings", backend: "Proxmox LXC on pve-old", lastAnswered: now - 2 * 24 * 60 * MIN } }), { now });
   expect(rowWords(failedThenGone), "a failed stop, then its backend left settings: both, the failure first (review)").toBe("Last seen ready · Stop failed · Its backend is not in settings · 2 d ago");
   expect(rowReasons(failedThenGone).map((reason) => reason.split(":")[0])).toEqual(["Stop failed", "Its backend is not in settings"]);
@@ -11564,19 +11564,19 @@ test("busy words give the reason in the measure a person reads first: CPU, memor
 });
 
 test("a long reason sits behind a warning mark on the second line, in its tooltip and the name's description, not as a paragraph under the row (069 unit 4)", async () => {
-  const reason = "BB's server is not reachable from Proxmox LXC: turn the tailnet on, or set Machine access to Manual. curl: (28) Resolving timed out after 5000 milliseconds";
+  const reason = "VesnALIA's server is not reachable from Proxmox LXC: turn the tailnet on, or set Machine access to Manual. curl: (28) Resolving timed out after 5000 milliseconds";
   const { handlers } = server([box({ enrol: { state: "failed", hostId: null, error: reason } })]);
   const list = boxesPage(handlers);
   const name = await list.findByRole("link", { name: "calm-otter" });
   const row = rowOf(list, "calm-otter");
   expect(row.querySelectorAll("p")).toHaveLength(0);
-  expect(within(row).queryByRole("link", { name: "How boxes join BB" })).toBeNull();
+  expect(within(row).queryByRole("link", { name: "How boxes join VesnALIA" })).toBeNull();
   const line = row.querySelector<HTMLElement>("[data-row-line]")!;
   expect(line.className).toContain("max-h-[2.75em]");
-  expect(line.textContent).toContain("Could not join BB");
+  expect(line.textContent).toContain("Could not join VesnALIA");
   expect(line.querySelector("[data-reason-mark]")).not.toBeNull();
   const described = (name.getAttribute("aria-describedby") ?? "").split(" ").map((id) => document.getElementById(id)?.textContent ?? "").join(" ");
-  expect(described).toContain("Could not join BB");
+  expect(described).toContain("Could not join VesnALIA");
   expect(described).toContain("curl: (28) Resolving timed out");
   fireEvent.pointerMove(line);
   expect((await screen.findByRole("tooltip")).textContent).toContain("curl: (28) Resolving timed out");
@@ -11659,7 +11659,7 @@ test("removing one subscriber of a live key leaves the other's load", async () =
       </>
     );
   }
-  const slot = renderSlot({ component: Pair }, { threadId: THREAD, params: null }, { rpc: handlers, pluginId: "bb-box" });
+  const slot = renderSlot({ component: Pair }, { threadId: THREAD, params: null }, { rpc: handlers, pluginId: "alia-box" });
   await waitFor(async () => {
     const before = pending.length;
     expect(before).toBeGreaterThanOrEqual(2);
@@ -11690,11 +11690,11 @@ test("Last active sorts the boxes used most recently first, and boxes nobody use
 
 test("the box's page says busy in its header, as a link to its processes when it reads them, and nothing when it is not busy (069 unit 4)", async () => {
   const { handlers } = server([box()], { busy: busyFor("cpu", 96, 9) });
-  const slot = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: handlers, pluginId: "bb-box" });
+  const slot = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: handlers, pluginId: "alia-box" });
   expect((await slot.findByText("Busy: CPU 96% for 9 min")).closest("[data-busy]")).not.toBeNull();
   cleanup();
   const calm = server([box()]);
-  const page = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: calm.handlers, pluginId: "bb-box" });
+  const page = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: calm.handlers, pluginId: "alia-box" });
   await page.findByRole("heading", { level: 1 });
   expect(page.container.querySelector("[data-busy]")).toBeNull();
 });
@@ -11706,8 +11706,8 @@ test("a row's and a page's busy words go at their deadline when refreshes fail, 
     const { handlers } = server([box()], { busy: busyFor("cpu", 96, 9), entries: () => ({ busy: busyFor("cpu", 96, 9) }) });
     const flaky: typeof handlers = {
       ...handlers,
-      allBoxes: (input) => (failing ? Promise.reject(new Error("BB is restarting")) : handlers.allBoxes!(input)),
-      boxPage: (input) => (failing ? Promise.reject(new Error("BB is restarting")) : handlers.boxPage!(input)),
+      allBoxes: (input) => (failing ? Promise.reject(new Error("VesnALIA is restarting")) : handlers.allBoxes!(input)),
+      boxPage: (input) => (failing ? Promise.reject(new Error("VesnALIA is restarting")) : handlers.boxPage!(input)),
     };
     const list = boxesPage(flaky);
     await list.findByRole("link", { name: "calm-otter" });
@@ -11718,12 +11718,12 @@ test("a row's and a page's busy words go at their deadline when refreshes fail, 
     cleanup();
 
     failing = false;
-    const page = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: flaky, pluginId: "bb-box" });
+    const page = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: flaky, pluginId: "alia-box" });
     await page.findByText("Busy: CPU 96% for 9 min");
     cleanup();
     failing = true;
     await act(async () => void vi.advanceTimersByTime(101_000));
-    const again = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: flaky, pluginId: "bb-box" });
+    const again = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: flaky, pluginId: "alia-box" });
     await again.findByRole("heading", { level: 1 });
     await act(async () => void vi.advanceTimersByTime(1000));
     expect(again.container.querySelector("[data-busy]"), "the page kept from before says nothing past the deadline").toBeNull();
@@ -11767,11 +11767,11 @@ test("the list asks once at a time: a slow answer is applied, and a recheck that
 function keepPreviewOf(until: number, overrides: Partial<NonNullable<KeepPreview["check"]>> = {}): KeepPreview {
   return {
     refusal: null,
-    check: { keptUntil: until, current: null, renews: false, shortens: false, gone: false, cost: "If calm-otter is released, BB Box first copies this snapshot in full into a template that cannot start: up to about 38 s, and about 2.1 GB on pve-1's fast until 2026-11-29, at no charge.", warning: null, unflushed: null, defaultDays: 30, ...overrides },
+    check: { keptUntil: until, current: null, renews: false, shortens: false, gone: false, cost: "If calm-otter is released, VesnALIA Box first copies this snapshot in full into a template that cannot start: up to about 38 s, and about 2.1 GB on pve-1's fast until 2026-11-29, at no charge.", warning: null, unflushed: null, defaultDays: 30, ...overrides },
   };
 }
 
-test("070 unit 8: Keep… opens on the date BB Box plans, says what keeping costs, keeps until the date chosen, and returns focus to the menu's button", async () => {
+test("070 unit 8: Keep… opens on the date VesnALIA Box plans, says what keeping costs, keeps until the date chosen, and returns focus to the menu's button", async () => {
   const until = Date.UTC(2026, 10, 29, 23, 59, 59, 999);
   const asked: { days?: number; until?: string }[] = [];
   const { handlers, changes } = server([box()], {
@@ -11918,7 +11918,7 @@ test("070 unit 8: the Snapshots tab: its count, the line under the tabs, a card 
     },
   });
   const [page] = app.navPanels;
-  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
   const tab = await list.findByRole("tab", { name: "Snapshots 2" });
   expect(tab.getAttribute("aria-selected")).toBe("true");
   expect(await list.findByText("2 snapshots, 1 by agents · 2.4 GB on pve-1")).toBeTruthy();
@@ -11946,7 +11946,7 @@ test("070 unit 8: the Snapshots tab: its count, the line under the tabs, a card 
 });
 
 test("070 unit 8: a release that stopped for a snapshot you kept offers Release again, and Release and delete what you kept", async () => {
-  const stopped = box({ state: "releasing", error: 'Release did not finish: BB Box could not copy "kept one", which you kept: pve-1\'s storage fast has 6 GB free. BB Box tries again in a few minutes.', releaseHeldForKept: true });
+  const stopped = box({ state: "releasing", error: 'Release did not finish: VesnALIA Box could not copy "kept one", which you kept: pve-1\'s storage fast has 6 GB free. VesnALIA Box tries again in a few minutes.', releaseHeldForKept: true });
   const { handlers } = server([stopped]);
   const slot = boxPageAt(handlers, "box/box_1");
   const menu = await openMenu(await slot.findByRole("button", { name: "calm-otter actions" }));
@@ -11963,7 +11963,7 @@ test("070 unit 8 review 7: a held copy found again with no known thread says so 
   const view: SnapshotsTabView = { ...base, groups: [{ ...found, box: { ...found.box, id: "box_found", name: "found-box", yours: false, threadId: null } }] };
   const { handlers } = server([box()], { tab: () => view });
   const [page] = app.navPanels;
-  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
   const card = await list.findByRole("region", { name: "found-box's snapshots" });
   expect(within(card).getByText("Found again on its host; its thread is not known")).toBeTruthy();
   expect(within(card).queryByRole("button", { name: /unknown/ })).toBeNull();
@@ -11973,7 +11973,7 @@ test("070 unit 8 review 7: a held copy found again with no known thread says so 
 test("an empty Snapshots tab shows one empty state: no count line, and only where to take one", async () => {
   const { handlers } = server([box()]);
   const [page] = app.navPanels;
-  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
   const empty = await list.findByText("No snapshots yet. Take one from a box's page.");
   expect(empty).toBeTruthy();
   expect(list.queryByText(/^0 snapshots/)).toBeNull();
@@ -11984,7 +11984,7 @@ test("070 unit 8 review: the Snapshots tab says it is reading them until its ans
   let answer!: (view: SnapshotsTabView) => void;
   const { handlers } = server([box()], { tab: () => new Promise<SnapshotsTabView>((resolve) => (answer = resolve)) });
   const [page] = app.navPanels;
-  const reading = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  const reading = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
   expect((await reading.findByText("Reading the snapshots…")).closest('[role="status"]')).toBeTruthy();
   answer(tabView());
   await waitFor(() => expect(reading.queryByText("Reading the snapshots…")).toBeNull());
@@ -11993,16 +11993,16 @@ test("070 unit 8 review: the Snapshots tab says it is reading them until its ans
   forgetLive();
   const { handlers: failing } = server([box()], {
     tab: () => {
-      throw new Error("BB Box cannot read snapshots.db.");
+      throw new Error("VesnALIA Box cannot read snapshots.db.");
     },
   });
-  const failed = renderSlot(page!, { subPath: "snapshots" }, { rpc: failing, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
-  await waitFor(() => expect(failed.getAllByRole("alert").some((each) => /BB Box cannot read snapshots\.db/.test(each.textContent ?? ""))).toBe(true));
+  const failed = renderSlot(page!, { subPath: "snapshots" }, { rpc: failing, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  await waitFor(() => expect(failed.getAllByRole("alert").some((each) => /ALIA Box cannot read snapshots\.db/.test(each.textContent ?? ""))).toBe(true));
   expect(failed.queryByText("Reading the snapshots…")).toBeNull();
 });
 
 test("070 unit 8 review: Release and delete what you kept, then Release anyway for the threads on it, keeps the choice", async () => {
-  const stopped = box({ state: "releasing", error: "Release did not finish: BB Box could not copy \"kept one\", which you kept.", releaseHeldForKept: true });
+  const stopped = box({ state: "releasing", error: "Release did not finish: VesnALIA Box could not copy \"kept one\", which you kept.", releaseHeldForKept: true });
   const { handlers } = server([stopped], { inUse: [{ id: "thr_other", title: "Run the tests", running: true }] });
   const slot = boxPageAt(handlers, "box/box_1");
   const menu = await openMenu(await slot.findByRole("button", { name: "calm-otter actions" }));
@@ -12027,7 +12027,7 @@ test("070 unit 8 review: the bulk dialog checks the snapshots chosen when it ope
     },
   });
   const [page] = app.navPanels;
-  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
   fireEvent.click(await list.findByRole("button", { name: "Select" }));
   expect(list.getByRole("button", { name: "Select" }).getAttribute("aria-pressed")).toBe("true");
   fireEvent.click(list.getByRole("checkbox", { name: "Select release candidate of grey-ridge" }));
@@ -12204,7 +12204,7 @@ test("071 unit 15: a kind's GPU when not asked for is a menu on its page that ac
   const gpu = await slot.findByRole("region", { name: "GPU" });
   const menu = within(gpu).getByRole("combobox", { name: "GPU when not asked for" });
   expect(menu.textContent).toBe("None");
-  expect(within(gpu).getByText(/None is BB Box's own default for linux\./)).toBeTruthy();
+  expect(within(gpu).getByText(/None is ALIA Box's own default for linux\./)).toBeTruthy();
   fireEvent.keyDown(menu, { key: "ArrowDown" });
   expect((await screen.findAllByRole("option")).map((option) => option.textContent)).toEqual(["None", "Shared"]);
   fireEvent.click(screen.getAllByRole("option").find((option) => option.textContent === "Shared")!);
@@ -12382,7 +12382,7 @@ test("polish P1: the Snapshots tab shows skeleton snapshot rows after 150 ms, sa
       return tabView();
     },
   });
-  const list = renderSlot(app.navPanels[0]!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  const list = renderSlot(app.navPanels[0]!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
   await passTime(LOADING_SHOWN_AFTER_MS - 1);
   expect(loadingShown()).toBe(false);
   await passTime(1);
@@ -12410,7 +12410,7 @@ test("polish P1: an empty list after its skeleton keeps the empty-state words it
   expect(skeletonRows().length).toBeGreaterThanOrEqual(3);
   await act(async () => lists.open());
   await passTime(LOADING_SHOWN_AFTER_MS);
-  expect(list.getByText("You have no machines. New box adds one: a box of your own that shows in BB's machine list.")).toBeTruthy();
+  expect(list.getByText("You have no machines. New box adds one: a box of your own that shows in VesnALIA's machine list.")).toBeTruthy();
   expect(skeletonRows()).toHaveLength(0);
   fireEvent.click(list.getByRole("tab", { name: "Threads" }));
   expect(list.getByText("No thread has a box.")).toBeTruthy();
@@ -12427,18 +12427,18 @@ test("polish P1: a Boxes page list that does not load says so with Try again, wh
   const flaky: PluginRpcTestHandlers<Contract> = {
     ...handlers,
     "machines.list": (input) => {
-      if (machinesFailures-- > 0) throw new Error("BB's server did not answer.");
+      if (machinesFailures-- > 0) throw new Error("VesnALIA's server did not answer.");
       return handlers["machines.list"]!(input);
     },
   };
   const list = boxesPage(flaky);
   const alert = await list.findByRole("alert");
   expect(within(alert).getByText("The boxes did not load.")).toBeTruthy();
-  expect(within(alert).getByText("BB's server did not answer.")).toBeTruthy();
+  expect(within(alert).getByText("VesnALIA's server did not answer.")).toBeTruthy();
   await waitRealTime(LOADING_SHOWN_AFTER_MS + 50);
   expect(skeletonRows()).toHaveLength(0);
   fireEvent.click(within(alert).getByRole("button", { name: "Try again" }));
-  expect(await list.findByText("You have no machines. New box adds one: a box of your own that shows in BB's machine list.")).toBeTruthy();
+  expect(await list.findByText("You have no machines. New box adds one: a box of your own that shows in VesnALIA's machine list.")).toBeTruthy();
   expect(list.queryByRole("alert")).toBeNull();
   cleanup();
   forgetLive();
@@ -12446,14 +12446,14 @@ test("polish P1: a Boxes page list that does not load says so with Try again, wh
   let tabFailures = 1;
   const snapshots = server([box()], {
     tab: () => {
-      if (tabFailures-- > 0) throw new Error("BB Box cannot read snapshots.db.");
+      if (tabFailures-- > 0) throw new Error("VesnALIA Box cannot read snapshots.db.");
       return tabView();
     },
   });
-  const tab = renderSlot(app.navPanels[0]!, { subPath: "snapshots" }, { rpc: snapshots.handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  const tab = renderSlot(app.navPanels[0]!, { subPath: "snapshots" }, { rpc: snapshots.handlers, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
   const failed = await tab.findByRole("alert");
   expect(within(failed).getByText("The snapshots did not load.")).toBeTruthy();
-  expect(within(failed).getByText("BB Box cannot read snapshots.db.")).toBeTruthy();
+  expect(within(failed).getByText("VesnALIA Box cannot read snapshots.db.")).toBeTruthy();
   fireEvent.click(within(failed).getByRole("button", { name: "Try again" }));
   expect(await tab.findByRole("button", { name: "Select" })).toBeTruthy();
   expect(tab.queryByRole("alert")).toBeNull();
@@ -12488,7 +12488,7 @@ test("polish P1: a box's page shows a skeleton of its header after 150 ms while 
   const flaky: PluginRpcTestHandlers<Contract> = {
     ...handlers,
     boxPage: (input) => {
-      if (failures-- > 0) throw new Error("BB's server did not answer.");
+      if (failures-- > 0) throw new Error("VesnALIA's server did not answer.");
       return handlers.boxPage!(input);
     },
   };
@@ -12499,7 +12499,7 @@ test("polish P1: a box's page shows a skeleton of its header after 150 ms while 
   expect((await again.findByRole("heading", { level: 1 })).textContent).toContain("calm-otter");
 });
 
-test("polish P1: BB Box's settings show skeleton rows after 150 ms while the configuration loads, and Try again when it does not load", async () => {
+test("polish P1: VesnALIA Box's settings show skeleton rows after 150 ms while the configuration loads, and Try again when it does not load", async () => {
   vi.useFakeTimers();
   const answer = gate();
   const { handlers } = server([]);
@@ -12513,7 +12513,7 @@ test("polish P1: BB Box's settings show skeleton rows after 150 ms while the con
   await passTime(LOADING_SHOWN_AFTER_MS - 1);
   expect(loadingShown()).toBe(false);
   await passTime(1);
-  expect(slot.getByText("Reading BB Box's settings…").closest('[role="status"]')).toBeTruthy();
+  expect(slot.getByText("Reading VesnALIA Box's settings…").closest('[role="status"]')).toBeTruthy();
   expect(skeletonRows().length).toBeGreaterThanOrEqual(3);
   await act(async () => answer.open());
   await passTime(10);
@@ -12527,12 +12527,12 @@ test("polish P1: BB Box's settings show skeleton rows after 150 ms while the con
   const flaky = settings({
     ...handlers,
     "config.get": (input) => {
-      if (failures-- > 0) throw new Error("BB's server did not answer.");
+      if (failures-- > 0) throw new Error("VesnALIA's server did not answer.");
       return handlers["config.get"]!(input);
     },
   });
   const alert = await flaky.findByRole("alert");
-  expect(within(alert).getByText("BB Box's settings did not load.")).toBeTruthy();
+  expect(within(alert).getByText("VesnALIA Box's settings did not load.")).toBeTruthy();
   fireEvent.click(within(alert).getByRole("button", { name: "Try again" }));
   expect(await flaky.findByText("Fake host is not working")).toBeTruthy();
 });
@@ -12560,13 +12560,13 @@ test("polish P1: the Images page shows skeleton rows under Standard images while
   const flaky = settings({
     ...handlers,
     "images.list": (input) => {
-      if (failures-- > 0) throw new Error("BB Box could not list the images.");
+      if (failures-- > 0) throw new Error("VesnALIA Box could not list the images.");
       return handlers["images.list"]!(input);
     },
   }, "#option/images");
   const alert = await flaky.findByRole("alert");
   expect(within(alert).getByText("The standard images did not load.")).toBeTruthy();
-  expect(within(alert).getByText("BB Box could not list the images.")).toBeTruthy();
+  expect(within(alert).getByText("VesnALIA Box could not list the images.")).toBeTruthy();
   fireEvent.click(within(alert).getByRole("button", { name: "Try again" }));
   expect(await flaky.findByText("1 of 1 image due.", { exact: false })).toBeTruthy();
   expect(flaky.queryByRole("alert")).toBeNull();
@@ -12574,7 +12574,7 @@ test("polish P1: the Images page shows skeleton rows under Standard images while
 
 test("a side-label field and a stacked field put the error directly under the control", () => {
   render(
-    <SideLabelField label="Host" htmlFor="host" problem="Write a host." problemId="host-problem" help="The host BB Box reaches.">
+    <SideLabelField label="Host" htmlFor="host" problem="Write a host." problemId="host-problem" help="The host VesnALIA Box reaches.">
       <input id="host" aria-describedby="host-problem" />
     </SideLabelField>,
   );
@@ -12604,17 +12604,17 @@ test("a side-label field and a stacked field put the error directly under the co
   expect(port.parentElement?.nextElementSibling).toBe(portAlert);
   cleanup();
   render(
-    <SettingRow label="Export" description={<>The whole configuration, as <code>bb box config show --json</code> prints it.</>}>
+    <SettingRow label="Export" description={<>The whole configuration, as <code>alia box config show --json</code> prints it.</>}>
       <button type="button">Copy</button>
     </SettingRow>,
   );
-  const command = screen.getByText("bb box config show --json");
+  const command = screen.getByText("alia box config show --json");
   const help = command.closest("p");
   expect(help?.className).toContain("text-xs");
   expect(help?.className).toContain("text-subtle-foreground");
 });
 
-test("dialog buttons keep BB's own weight, and a closed dialog clears its refusal", async () => {
+test("dialog buttons keep VesnALIA's own weight, and a closed dialog clears its refusal", async () => {
   function Probe() {
     const [open, setOpen] = useState(true);
     const [refused, setRefused] = useState<string | null>("No.");
@@ -12701,7 +12701,7 @@ test("Enter in bulk Keep does nothing when the check failed, and Try again asks 
     },
   });
   const [page] = app.navPanels;
-  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
   await list.findByRole("tab", { name: "Snapshots 2" });
   fireEvent.click(list.getByRole("button", { name: "Select" }));
   fireEvent.click(list.getByRole("checkbox", { name: "Select before the migration of calm-otter" }));
@@ -12724,7 +12724,7 @@ test("Fork leaves an untitled thread unquoted", async () => {
   });
   const { handlers } = server([box()], { snapshots: snapshotsView({ offer: { holds: ["disk"], scope: "box", whileRunning: "live", restore: "in-place", fork: "copy", keeps: true, excludes: null, price: null } }), forkPreview: preview });
   const [page] = app.navPanels;
-  const slot = renderSlot(page!, { subPath: "box/box_1" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: null, titleFallback: null }) } } });
+  const slot = renderSlot(page!, { subPath: "box/box_1" }, { rpc: handlers, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: null, titleFallback: null }) } } });
   const card = await slot.findByRole("region", { name: "Snapshots" });
   fireEvent.click(within(card).getByRole("button", { name: "Fork before the migration into a new box" }));
   const dialog = await slot.findByRole("alertdialog", { name: 'Fork "before the migration" of calm-otter' });
@@ -12736,7 +12736,7 @@ test("a snapshot group with no thread title says Untitled thread", async () => {
   forgetThreadTitles();
   const { handlers } = server([box()], { tab: tabView });
   const [page] = app.navPanels;
-  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: null, titleFallback: null }) } } });
+  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: null, titleFallback: null }) } } });
   expect(await list.findByRole("button", { name: "Untitled thread" })).toBeTruthy();
   expect(list.queryByRole("button", { name: "this box's thread" })).toBeNull();
   cleanup();
@@ -12745,7 +12745,7 @@ test("a snapshot group with no thread title says Untitled thread", async () => {
 test("a thread with no title is headed Untitled thread", async () => {
   forgetThreadTitles();
   const [page] = app.navPanels;
-  const list = renderSlot(page!, { subPath: "" }, { rpc: server([box()]).handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: null, titleFallback: null }) } } });
+  const list = renderSlot(page!, { subPath: "" }, { rpc: server([box()]).handlers, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: null, titleFallback: null }) } } });
   expect(await list.findByRole("button", { name: "Untitled thread" })).toBeTruthy();
   expect(threadGroupHeading(undefined)).toBe("Thread");
   expect(threadGroupHeading(null)).toBe("Untitled thread");
@@ -12762,7 +12762,7 @@ test("an open link error sits under the field", async () => {
     geometry: null,
     at: 1,
     settings: {
-      appearance: { known: true, value: "light", at: 1, by: "bb-box" },
+      appearance: { known: true, value: "light", at: 1, by: "alia-box" },
       textSize: { known: false, why: "not read" },
       location: { set: null, at: null },
       statusBar: { set: null, at: null },
@@ -12813,9 +12813,9 @@ test("removing the old settings copy stays open when it fails", async () => {
   const slot = settings(handlers, "#option/configuration");
   fireEvent.click(await slot.findByRole("button", { name: "Remove copy…" }));
   fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Remove copy" }));
-  const dialog = await screen.findByRole("alertdialog", { name: "Remove the copy of BB's earlier settings?" });
+  const dialog = await screen.findByRole("alertdialog", { name: "Remove the copy of VesnALIA's earlier settings?" });
   expect((await within(dialog).findByRole("alert")).textContent).toContain("The copy was not removed: the configuration is locked.");
-  expect(screen.getByRole("alertdialog", { name: "Remove the copy of BB's earlier settings?" })).toBeTruthy();
+  expect(screen.getByRole("alertdialog", { name: "Remove the copy of VesnALIA's earlier settings?" })).toBeTruthy();
 });
 
 test("removing the old settings copy keeps its last time while the dialog closes", async () => {
@@ -12838,7 +12838,7 @@ test("removing the old settings copy keeps its last time while the dialog closes
   };
   const slot = settings(handlers, "#option/configuration");
   fireEvent.click(await slot.findByRole("button", { name: "Remove copy…" }));
-  const dialog = await screen.findByRole("alertdialog", { name: "Remove the copy of BB's earlier settings?" });
+  const dialog = await screen.findByRole("alertdialog", { name: "Remove the copy of VesnALIA's earlier settings?" });
   expect(dialog.textContent).toMatch(/made it \d+ h ago, when/);
   fireEvent.click(within(dialog).getByRole("button", { name: "Remove copy" }));
   await waitFor(() => expect(reads).toBeGreaterThan(1));

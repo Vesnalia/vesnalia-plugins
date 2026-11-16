@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import "./preview.css";
-import "../themes/bb-monokai.css";
+import "../themes/alia-monokai.css";
 
 const withMonokai = (Story: () => ReactNode) => (
   <main className="dark sb-catalog">

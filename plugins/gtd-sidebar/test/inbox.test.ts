@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import {
   activeSectionFor,
   childrenOf,
@@ -264,7 +264,7 @@ describe("filtering", () => {
     );
   });
 
-  // Settling archives the thread in bb, so the archive flag alone would empty
+  // Settling archives the thread in VesnALIA, so the archive flag alone would empty
   // the settled shelf the moment anything landed on it.
   it("keeps an archived thread the plugin parked", () => {
     const threads = [thread({ id: "a", isArchived: true }), thread({ id: "b", isArchived: true })];

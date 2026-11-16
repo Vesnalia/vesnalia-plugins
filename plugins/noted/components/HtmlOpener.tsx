@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginFileOpenerProps } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginFileOpenerProps } from "@vesnalia/plugin-sdk/app";
 
 import type { rpcContract } from "../lib/rpc";
 import ReviewTab from "./review/ReviewTab";
 
 export default function HtmlOpener({ path, source, Original }: PluginFileOpenerProps) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [opening, setOpening] = useState(false);
   const [inlineSessionId, setInlineSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +45,7 @@ export default function HtmlOpener({ path, source, Original }: PluginFileOpenerP
         <button
           type="button"
           disabled={disabled || opening}
-          title={disabled ? `Run bb noted open ${path} from the thread` : undefined}
+          title={disabled ? `Run alia noted open ${path} from the thread` : undefined}
           onClick={() => {
             const threadId = source.threadId;
             if (threadId === null) {

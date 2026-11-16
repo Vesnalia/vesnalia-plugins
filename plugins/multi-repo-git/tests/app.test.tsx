@@ -7,13 +7,13 @@ import {
   loadPluginApp,
   mountPluginContentScripts,
   renderSlot,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 
 afterEach(() => {
   cleanup();
   document.body.replaceChildren();
   document.head
-    .querySelectorAll('link[data-bb-plugin-css="multi-repo-git"]')
+    .querySelectorAll('link[data-alia-plugin-css="multi-repo-git"]')
     .forEach((element) => element.remove());
   localStorage.clear();
 });
@@ -83,7 +83,7 @@ function createNativeProjectRow({
   heading.dataset.sidebar = "group-label";
   heading.dataset.sidebarStickyTier = "label";
   heading.className =
-    "native-heading bb-sidebar-hover-actions-row text-xs font-normal leading-5 text-subtle-foreground/75 pl-2 rounded-md pr-0 transition-colors";
+    "native-heading alia-sidebar-hover-actions-row text-xs font-normal leading-5 text-subtle-foreground/75 pl-2 rounded-md pr-0 transition-colors";
 
   const leading = document.createElement("span");
   leading.className =
@@ -98,7 +98,7 @@ function createNativeProjectRow({
   collapseControl.type = "button";
   collapseControl.setAttribute("aria-expanded", "true");
   collapseControl.className =
-    "native-collapse bb-sidebar-hover-actions relative z-20 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-subtle-foreground";
+    "native-collapse alia-sidebar-hover-actions relative z-20 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-subtle-foreground";
   const chevron = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "svg",
@@ -135,7 +135,7 @@ function createNativeProjectRow({
     threadRow.className = "native-thread-row";
     threadRow.style.fontSize = "13px";
     const threadName = document.createElement("span");
-    threadName.className = "bb-sidebar-thread-title";
+    threadName.className = "alia-sidebar-thread-title";
     threadName.textContent = threadTitle;
     threadRow.append(threadName);
     content.append(threadRow);
@@ -187,7 +187,7 @@ describe("plugin stylesheet lifecycle", () => {
   it("keeps stylesheet disabled for the native sidebar and enables it for Source Control", async () => {
     const stylesheet = document.createElement("link");
     stylesheet.rel = "stylesheet";
-    stylesheet.dataset.bbPluginCss = "multi-repo-git";
+    stylesheet.dataset.aliaPluginCss = "multi-repo-git";
     document.head.append(stylesheet);
 
     const app = await loadPluginApp(() => import("../app.js"));
@@ -306,7 +306,7 @@ describe("workspace project menu augmentation", () => {
     const workspace = menu.querySelector<HTMLElement>("[data-multi-repo-edit-workspace]")!;
     const settings = view.getByRole("menuitem", { name: "Project settings" });
     const rename = view.getByRole("menuitem", { name: "Rename" });
-    // BB's MenuHoverProvider keeps this attribute after Radix focus leaves.
+    // VesnALIA's MenuHoverProvider keeps this attribute after Radix focus leaves.
     const hoverStyle = document.createElement("style");
     hoverStyle.textContent = '[data-last-hovered] { background-color: rgb(238, 238, 238); }';
     document.head.append(hoverStyle);
@@ -566,9 +566,9 @@ describe("project chat pagination", () => {
     const root = createNativeProjectRow({ projectId: "persist-root", name: "root" });
     const child = createNativeProjectRow({ projectId: "persist-child", name: "child" });
     document.body.append(root.row, child.row);
-    // Native BB owns these values; plugin mount/unmount must not rewrite them.
-    localStorage.setItem("bb.sidebar.collapsedProjects", JSON.stringify(["persist-child"]));
-    localStorage.setItem("bb.sidebar.collapsedThreads", JSON.stringify(["parent", "subthread"]));
+    // Native VesnALIA owns these values; plugin mount/unmount must not rewrite them.
+    localStorage.setItem("alia.sidebar.collapsedProjects", JSON.stringify(["persist-child"]));
+    localStorage.setItem("alia.sidebar.collapsedThreads", JSON.stringify(["parent", "subthread"]));
     child.collapseControl.setAttribute("aria-expanded", "false");
     const links = [{ parentProjectId: "persist-root", childProjectId: "persist-child", relativePath: "child", position: 0 }];
     let releaseWorkspace = mountWorkspaceProjectMenu();
@@ -587,8 +587,8 @@ describe("project chat pagination", () => {
       expect(root.content.style.display).toBe("none");
     });
     expect(child.collapseControl.getAttribute("aria-expanded")).toBe("false");
-    expect(JSON.parse(localStorage.getItem("bb.sidebar.collapsedProjects")!)).toEqual(["persist-child"]);
-    expect(JSON.parse(localStorage.getItem("bb.sidebar.collapsedThreads")!)).toEqual(["parent", "subthread"]);
+    expect(JSON.parse(localStorage.getItem("alia.sidebar.collapsedProjects")!)).toEqual(["persist-child"]);
+    expect(JSON.parse(localStorage.getItem("alia.sidebar.collapsedThreads")!)).toEqual(["parent", "subthread"]);
     releasePagination();
     releaseWorkspace();
   });
@@ -1205,7 +1205,7 @@ describe("Source Control thread panel", () => {
       }) } },
     );
     await slot.findByText("Repository unavailable in this environment");
-    expect(slot.getByText(/\.bb-env-setup\.sh/)).toBeTruthy();
+    expect(slot.getByText(/\.alia-env-setup\.sh/)).toBeTruthy();
     expect(slot.queryByText("Commit staged changes")).toBeNull();
     expect(slot.queryByRole("button", { name: /Push/ })).toBeNull();
     slot.lifecycle.unmount();
@@ -1237,7 +1237,7 @@ describe("Source Control thread panel", () => {
     fireEvent.click(await slot.findByText("Legacy unmanaged worktrees (1)"));
     await slot.findByText("set-legacy");
     await slot.findByText("/legacy/worktrees/root");
-    expect(slot.getByText(/BB will not clean them up/)).toBeTruthy();
+    expect(slot.getByText(/ALIA will not clean them up/)).toBeTruthy();
     expect(slot.queryByRole("button", { name: /Remove worktree/i })).toBeNull();
     slot.lifecycle.unmount();
   });

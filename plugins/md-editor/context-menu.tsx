@@ -258,7 +258,7 @@ export function EditorContextMenu({ state, editor, actions, onClose }: { state: 
   const items = withRestore(buildContextItems(editor, state, { ...actions, startComment: () => setCommenting(true) }));
 
   return (
-    <div ref={box} data-bb-ru-skip="" className={cn("mdpro-ctx-root", pos.left + 560 > window.innerWidth && "mdpro-ctx-flip")} style={{ left: pos.left, top: pos.top }}>
+    <div ref={box} data-alia-ru-skip="" className={cn("mdpro-ctx-root", pos.left + 560 > window.innerWidth && "mdpro-ctx-flip")} style={{ left: pos.left, top: pos.top }}>
       {commenting ? (
         <form
           className="mdpro-menu mdpro-ctx mdpro-ctx-comment"

@@ -1,5 +1,5 @@
 // Дерево папки скилла на диске: что считается мусором, как копировать без него
-// и как его видит host-daemon BB. BB переносит скилл в сессию целиком (ничего
+// и как его видит host-daemon VesnALIA. VesnALIA переносит скилл в сессию целиком (ничего
 // не пропуская) и отказывает всему скиллу, если дерево больше лимитов, — так
 // `node_modules` внутри одного скилла ломает старт любого чата.
 import { cp, lstat, readdir } from "node:fs/promises";
@@ -7,7 +7,7 @@ import path from "node:path";
 
 /**
  * Мусор, который не считается содержимым скилла: зависимости, следы сборки и
- * редактора. Не копируется ни в один дом, не пакуется в архив для сервера BB.
+ * редактора. Не копируется ни в один дом, не пакуется в архив для сервера VesnALIA.
  */
 export function isSkillJunk(name: string): boolean {
   if (SKILL_JUNK_DIRS.includes(name)) return true;
@@ -20,7 +20,7 @@ export const SKILL_JUNK_DIRS = ["node_modules", ".git", "__pycache__", ".venv", 
 /** Шаблоны для `tar --exclude` — тот же список, что и isSkillJunk. */
 export const SKILL_TAR_EXCLUDES = [...SKILL_JUNK_DIRS, ".DS_Store", ".backup.json", "*.pyc", "*.bak", "*.tmp"];
 
-/** Копия скилла без мусора; симлинки разворачиваются в файлы (BB их не принимает). */
+/** Копия скилла без мусора; симлинки разворачиваются в файлы (VesnALIA их не принимает). */
 export async function copySkillTree(source: string, dest: string): Promise<void> {
   await cp(source, dest, {
     recursive: true,
@@ -29,8 +29,8 @@ export async function copySkillTree(source: string, dest: string): Promise<void>
   });
 }
 
-export interface BbTreeMeasure {
-  /** Байты всех файлов, как их считает BB (мусор тоже). */
+export interface AliaTreeMeasure {
+  /** Байты всех файлов, как их считает VesnALIA (мусор тоже). */
   bytes: number;
   files: number;
   depth: number;
@@ -40,9 +40,9 @@ export interface BbTreeMeasure {
   junk: string[];
 }
 
-/** Замер дерева скилла по правилам host-daemon BB; обход обрывается далеко за лимитами. */
-export async function measureBbTree(dir: string): Promise<BbTreeMeasure> {
-  const result: BbTreeMeasure = { bytes: 0, files: 0, depth: 0, symlinks: [], junk: [] };
+/** Замер дерева скилла по правилам host-daemon VesnALIA; обход обрывается далеко за лимитами. */
+export async function measureAliaTree(dir: string): Promise<AliaTreeMeasure> {
+  const result: AliaTreeMeasure = { bytes: 0, files: 0, depth: 0, symlinks: [], junk: [] };
   const stopAt = { files: 20_000, bytes: 1024 * 1024 * 1024 };
   const walk = async (current: string, rel: string, depth: number): Promise<void> => {
     if (result.files > stopAt.files || result.bytes > stopAt.bytes) return;

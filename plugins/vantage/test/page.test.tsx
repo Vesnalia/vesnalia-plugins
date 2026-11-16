@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { Overview, PatchRequest, rpcContract } from "../src/contract";
 import { clearLoadedCache } from "../src/loaded";
 import { disposeSessions } from "../src/session";
@@ -16,7 +16,7 @@ const ROOT = worktree({
   uncommitted: [fileChange({ path: "README.md", additions: 4, deletions: 0 })],
 });
 const CHILD = worktree({
-  key: "host_1:/work/child", threadIds: ["thr_child"], root: "/work/child", branch: "bb/pricing", label: "Shop",
+  key: "host_1:/work/child", threadIds: ["thr_child"], root: "/work/child", branch: "alia/pricing", label: "Shop",
   ref: { kind: "workspace", environmentId: "env_child", base: "origin/main" },
   uncommitted: [fileChange({ path: "src/money.js", additions: 6, deletions: 0 })],
   committed: [fileChange({ path: "README.md", additions: 2, deletions: 0 })],
@@ -213,7 +213,7 @@ describe("the page", () => {
   });
 
   it("shows All changes when the kept choice is empty now, but not when it was just picked", async () => {
-    window.localStorage.setItem("bb-plugin-vantage:review-scopes", JSON.stringify([[CHILD.key, "uncommitted"]]));
+    window.localStorage.setItem("alia-plugin-vantage:review-scopes", JSON.stringify([[CHILD.key, "uncommitted"]]));
     reloadUiState();
     const committedOnly = worktree({ ...CHILD, uncommitted: [] });
     const { slot } = await mount(`tree/thr_root/worktree/${key(CHILD.key)}`, { overview: tree({ worktrees: [ROOT, committedOnly, QUIET] }) });
@@ -242,11 +242,11 @@ describe("the page", () => {
 
   it("wraps long lines in every diff with the button or W, and remembers it", async () => {
     const { slot } = await mount(`tree/thr_root/worktree/${key(CHILD.key)}`);
-    const overflow = () => [...slot.container.querySelectorAll("[data-testid='bb-diff']")].map((diff) => diff.getAttribute("data-overflow"));
+    const overflow = () => [...slot.container.querySelectorAll("[data-testid='alia-diff']")].map((diff) => diff.getAttribute("data-overflow"));
     await waitFor(() => expect(overflow()).toEqual(["scroll", "scroll"]));
     fireEvent.click(within(slot.container).getByRole("button", { name: "Wrap long lines" }));
     expect(overflow()).toEqual(["wrap", "wrap"]);
-    expect(window.localStorage.getItem("bb-plugin-vantage:diff-wrap")).toBe("true");
+    expect(window.localStorage.getItem("alia-plugin-vantage:diff-wrap")).toBe("true");
     fireEvent.keyDown(slot.container.querySelector("[data-review]")!, { key: "w" });
     expect(overflow()).toEqual(["scroll", "scroll"]);
   });
@@ -389,7 +389,7 @@ describe("the page", () => {
     expect(comments.get(CHILD.key)[0]).toMatchObject({ path: "README.md", part: "committed" });
   });
 
-  it("says which base it compared with when it picked a closer one, and offers the one bb records", async () => {
+  it("says which base it compared with when it picked a closer one, and offers the one VesnALIA records", async () => {
     const picked = tree({ worktrees: [ROOT, { ...CHILD, base: "origin/main", skippedBase: { name: "master", aheadCount: 2794 }, aheadCount: 1, behindCount: 0 }, QUIET] });
     const { slot, calls } = await mount(`tree/thr_root/worktree/${key(CHILD.key)}`, { overview: picked });
     const view = within(slot.container);

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 
 const request = {
@@ -134,8 +134,8 @@ function host({
 
 describe("Companion Chat backend", () => {
   it("defaults a new companion to the source thread's project and environment", async () => {
-    const { bb, harness } = host();
-    await plugin(bb);
+    const { alia, harness } = host();
+    await plugin(alia);
 
     await expect(
       harness.behavior.callRpc("getCompanion", {
@@ -150,8 +150,8 @@ describe("Companion Chat backend", () => {
   });
 
   it("preserves the selected provider when the composer omits its input source", async () => {
-    const { bb, harness } = host();
-    await plugin(bb);
+    const { alia, harness } = host();
+    await plugin(alia);
 
     await harness.behavior.callRpc("createCompanion", {
       sourceThreadId: "source-1",
@@ -195,8 +195,8 @@ describe("Companion Chat backend", () => {
   });
 
   it("preserves fast service tier for providers that support it", async () => {
-    const { bb, harness } = host({ supportsServiceTier: true });
-    await plugin(bb);
+    const { alia, harness } = host({ supportsServiceTier: true });
+    await plugin(alia);
 
     await harness.behavior.callRpc("createCompanion", {
       sourceThreadId: "source-1",
@@ -218,8 +218,8 @@ describe("Companion Chat backend", () => {
   });
 
   it("rejects an unavailable model that the user selected explicitly", async () => {
-    const { bb, harness } = host();
-    await plugin(bb);
+    const { alia, harness } = host();
+    await plugin(alia);
 
     await expect(
       harness.behavior.callRpc("createCompanion", {
@@ -233,8 +233,8 @@ describe("Companion Chat backend", () => {
   });
 
   it("rejects an unsupported reasoning level that the user selected explicitly", async () => {
-    const { bb, harness } = host();
-    await plugin(bb);
+    const { alia, harness } = host();
+    await plugin(alia);
 
     await expect(
       harness.behavior.callRpc("createCompanion", {
@@ -248,8 +248,8 @@ describe("Companion Chat backend", () => {
   });
 
   it("rejects permission modes above the environment ceiling", async () => {
-    const { bb, harness } = host({ permissionCeiling: "auto" });
-    await plugin(bb);
+    const { alia, harness } = host({ permissionCeiling: "auto" });
+    await plugin(alia);
 
     await expect(
       harness.behavior.callRpc("createCompanion", {
@@ -263,8 +263,8 @@ describe("Companion Chat backend", () => {
   });
 
   it("creates one hidden fresh thread and remembers it for the panel", async () => {
-    const { bb, harness } = host();
-    await plugin(bb);
+    const { alia, harness } = host();
+    await plugin(alia);
 
     const input = {
       sourceThreadId: "source-1",
@@ -302,12 +302,12 @@ describe("Companion Chat backend", () => {
   });
 
   it("preserves a user's decision to make a companion visible", async () => {
-    const { bb, harness } = host({ companionVisibility: "visible" });
-    await bb.storage.kv.set("companion:instance-1", {
+    const { alia, harness } = host({ companionVisibility: "visible" });
+    await alia.storage.kv.set("companion:instance-1", {
       sourceThreadId: "source-1",
       companionThreadId: "companion-1",
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await expect(
       harness.behavior.callRpc("getCompanion", {
@@ -320,8 +320,8 @@ describe("Companion Chat backend", () => {
   });
 
   it("refuses to open before the source thread has a ready environment", async () => {
-    const { bb, harness } = host({ environmentId: null });
-    await plugin(bb);
+    const { alia, harness } = host({ environmentId: null });
+    await plugin(alia);
 
     await expect(
       harness.behavior.callRpc("getCompanion", {
@@ -332,12 +332,12 @@ describe("Companion Chat backend", () => {
   });
 
   it("forgets a deleted companion so the panel can create another", async () => {
-    const { bb, harness } = host({ companionDeletedAt: Date.now() });
-    await bb.storage.kv.set("companion:instance-1", {
+    const { alia, harness } = host({ companionDeletedAt: Date.now() });
+    await alia.storage.kv.set("companion:instance-1", {
       sourceThreadId: "source-1",
       companionThreadId: "companion-1",
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await expect(
       harness.behavior.callRpc("getCompanion", {

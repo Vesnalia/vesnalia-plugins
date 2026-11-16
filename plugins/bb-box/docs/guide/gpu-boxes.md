@@ -6,18 +6,18 @@ A Linux box can have an NVIDIA card. Use a server for training and inference, or
 
 A box has one card at most. You choose how it has it:
 
-- **None**: BB Box gives the box no card.
+- **None**: VesnALIA Box gives the box no card.
 - **Shared**: the box shares a card with other boxes, up to the backend's boxes per card, 4 unless you change it. Boxes on a card share its memory and its time.
-- **Whole card**: BB Box places no other box on the card while your box holds it. Use it for a long training run.
+- **Whole card**: VesnALIA Box places no other box on the card while your box holds it. Use it for a long training run.
 
 You can choose a GPU for a Linux server, `linux`, or a Linux desktop on X11, `linux-desktop`, on x86_64. The box's backend needs NVIDIA cards:
 
-- Proxmox LXC, on a host with NVIDIA's driver and BB Box's GPU helper
+- Proxmox LXC, on a host with NVIDIA's driver and VesnALIA Box's GPU helper
 - Docker, with NVIDIA's Container Toolkit and **GPU boxes** turned on
 
-Whole cards are off until you turn them on for a backend, in its GPUs section in BB Box's settings. Until then you can choose None or Shared.
+Whole cards are off until you turn them on for a backend, in its GPUs section in VesnALIA Box's settings. Until then you can choose None or Shared.
 
-If you leave the GPU out, a desktop gets a shared GPU and a server gets none. Each kind's page in BB Box's settings can change that.
+If you leave the GPU out, a desktop gets a shared GPU and a server gets none. Each kind's page in VesnALIA Box's settings can change that.
 
 In the box you have:
 
@@ -29,7 +29,7 @@ The box does not have the CUDA toolkit, such as `nvcc`, cuBLAS or cuDNN. Most fr
 
 ## Make a box with a GPU
 
-In BB, select **New box**, then:
+In VesnALIA, select **New box**, then:
 
 1. Choose **Linux**, then **Server** or **Desktop**.
 2. Under **Resources**, choose a size, then a **GPU**: None, Shared or Whole card. Whole card is listed only where a provider allows it.
@@ -41,10 +41,10 @@ If no card can take the box, the line says so and **Create box** stays off. Each
 An agent asks with `box_acquire`, for example with `kind: linux` and `gpu: shared`. From the command line:
 
 ```sh
-bb box acquire linux --gpu shared
+alia box acquire linux --gpu shared
 ```
 
-When no card can take it, BB Box names the boxes on each card and makes nothing.
+When no card can take it, VesnALIA Box names the boxes on each card and makes nothing.
 
 ## Check the card
 
@@ -60,9 +60,9 @@ On Proxmox LXC this lists the box's own card, as `GPU 0`. On Docker it lists eve
 nvidia-smi -i "$NVIDIA_VISIBLE_DEVICES"
 ```
 
-On a shared card, `nvidia-smi` shows the whole card's memory and use, other boxes' included. It may not list their processes. The box's page in BB shows the same card, with your box's own processes and memory marked.
+On a shared card, `nvidia-smi` shows the whole card's memory and use, other boxes' included. It may not list their processes. The box's page in VesnALIA shows the same card, with your box's own processes and memory marked.
 
-CUDA sees the box's card as device 0. On Docker, BB Box sets `CUDA_VISIBLE_DEVICES` to the box's card in the box's environment and in `/etc/environment`, so terminals, `box_run` and services all get it.
+CUDA sees the box's card as device 0. On Docker, VesnALIA Box sets `CUDA_VISIBLE_DEVICES` to the box's card in the box's environment and in `/etc/environment`, so terminals, `box_run` and services all get it.
 
 To check that CUDA's driver starts, with nothing to install:
 
@@ -82,7 +82,7 @@ python3 -m venv ~/torch
 
 It prints the card's name and a number. PyTorch's wheels bring their own CUDA libraries. They download about 3 GB and take about 5 GB of disk, and pip keeps the download in its cache, so leave about 8 GB free. A PyTorch process takes about 650 MiB of the card's memory before it allocates anything, and this example under 900 MiB in all.
 
-If you need the CUDA toolkit itself, install it from NVIDIA's package repository for Ubuntu 24.04. Choose a CUDA version your host's driver supports: `nvidia-smi` shows the highest, top right. Do not install NVIDIA's driver packages, `nvidia-driver-*` or `cuda-drivers`, from apt. The box already has the driver's libraries, and BB Box cannot update them while those packages are there.
+If you need the CUDA toolkit itself, install it from NVIDIA's package repository for Ubuntu 24.04. Choose a CUDA version your host's driver supports: `nvidia-smi` shows the highest, top right. Do not install NVIDIA's driver packages, `nvidia-driver-*` or `cuda-drivers`, from apt. The box already has the driver's libraries, and VesnALIA Box cannot update them while those packages are there.
 
 To have the toolkit in every box of a project, install it in the project's image. See [images](images.md).
 
@@ -95,21 +95,21 @@ On Proxmox LXC:
 | Change | What happens |
 | --- | --- |
 | Shared to whole card, with no other box running on the card | At once. Nothing in the box stops |
-| Shared to whole card, with other boxes running on the card | BB Box offers to move the box to a free card. That restarts the box, and everything running in it stops. If no card is free, it names the boxes on each card |
+| Shared to whole card, with other boxes running on the card | VesnALIA Box offers to move the box to a free card. That restarts the box, and everything running in it stops. If no card is free, it names the boxes on each card |
 | Whole card to shared | At once. Other boxes can then be placed on the card |
 | None to a GPU, or a GPU to none | A restart. Everything running in the box stops |
 
 A stopped box stays stopped, and has its new GPU from its next start.
 
-If the box has no NVIDIA userspace for the host's driver, adding a GPU installs it in the same restart, which takes about a minute more. A desktop is then drawn by the GPU. BB Box says first if it cannot install it, for example when the box has NVIDIA's packages from apt.
+If the box has no NVIDIA userspace for the host's driver, adding a GPU installs it in the same restart, which takes about a minute more. A desktop is then drawn by the GPU. VesnALIA Box says first if it cannot install it, for example when the box has NVIDIA's packages from apt.
 
 On Docker, shared to whole card and back happen at once. A box's card cannot be added, taken away or moved, because a container's devices are fixed when it is made. Make a new box instead.
 
 An agent asks with `box_resize`, with `check: true` first to see what would change, and `restart: true` for a change that needs a restart. Left out, the GPU stays as it is. From the command line:
 
 ```sh
-bb box resize <box> --gpu whole --check
-bb box resize <box> --gpu whole --restart
+alia box resize <box> --gpu whole --check
+alia box resize <box> --gpu whole --restart
 ```
 
 ## When a box is stopped
@@ -120,13 +120,13 @@ On Docker, a stopped box keeps its card, shared or whole.
 
 ## After the host's driver changes
 
-After the host's NVIDIA driver is upgraded, `nvidia-smi` fails in a box made before, with 'Driver/library version mismatch'. BB Box's doctor names these boxes, and the box's page shows a notice.
+After the host's NVIDIA driver is upgraded, `nvidia-smi` fails in a box made before, with 'Driver/library version mismatch'. VesnALIA Box's doctor names these boxes, and the box's page shows a notice.
 
-BB Box never updates a box's userspace by itself. To update it, from the command line:
+VesnALIA Box never updates a box's userspace by itself. To update it, from the command line:
 
 ```sh
-bb box gpu update <box> --check
-bb box gpu update <box>
+alia box gpu update <box> --check
+alia box gpu update <box>
 ```
 
 The update downloads NVIDIA's installer for exactly the host's driver, checks it, installs it with no kernel modules and restarts the box. Everything running in the box stops. Add `--snapshot` to take a snapshot first, where the backend takes snapshots.
@@ -139,9 +139,9 @@ The update downloads NVIDIA's installer for exactly the host's driver, checks it
 
 ## Docker GPU boxes
 
-On a Docker host, each box with a GPU gets one card through the Container Device Interface (CDI). BB Box places boxes on cards, and says how many boxes each card has.
+On a Docker host, each box with a GPU gets one card through the Container Device Interface (CDI). VesnALIA Box places boxes on cards, and says how many boxes each card has.
 
-- With **Docker in boxes** on, every box is a privileged container, which can open every card on the host, with a GPU or without. There, None and Whole card are where BB Box places boxes, not what a box can reach. BB Box points CUDA at the box's own card, but a program can still open another.
+- With **Docker in boxes** on, every box is a privileged container, which can open every card on the host, with a GPU or without. There, None and Whole card are where VesnALIA Box places boxes, not what a box can reach. VesnALIA Box points CUDA at the box's own card, but a program can still open another.
 - In WSL, Docker gives every card as one device, so every box with a GPU has every card.
 - Boxes per card on Docker counts boxes running or stopped, of every install that uses the host.
 
@@ -149,7 +149,7 @@ To set it up, see [GPU boxes in the Docker setup guide](../../setup/docker/READM
 
 ## Settings
 
-Each backend with cards has a **GPUs** section on its page in BB Box's settings. These set limits and defaults only. No setting changes a box's own GPU.
+Each backend with cards has a **GPUs** section on its page in VesnALIA Box's settings. These set limits and defaults only. No setting changes a box's own GPU.
 
 - **Boxes per card**: the most boxes on one card, desktops and servers together, 4 unless you change it. On Proxmox LXC it counts this install's boxes that run, and 0 means no limit. On Docker it counts every install's boxes, running or stopped.
 - **Whole cards**: whether a box may have a card to itself. It is a switch, and saves at once. When it is not set on the backend, it follows the install-wide option `general.wholeCards`, which is off unless set. Turned off, no box is given a whole card or changes to one, and boxes that have one keep it until they change or are released.
@@ -162,14 +162,14 @@ The `linux` and `linux-desktop` kinds' pages have **GPU when not asked for**: wh
 From the command line:
 
 ```sh
-bb box backend set <backend> --field boxes-per-card=2
-bb box backend set <backend> --field whole-cards=true
-bb box kind set linux --gpu shared
+alia box backend set <backend> --field boxes-per-card=2
+alia box backend set <backend> --field whole-cards=true
+alia box kind set linux --gpu shared
 ```
 
 ## Limits
 
-- **Free memory is a reading.** The memory shown as free is what the card had when it was last read, with how long ago. BB Box checks it as a box starts, but does not reserve it. Another box or program can take it after.
+- **Free memory is a reading.** The memory shown as free is what the card had when it was last read, with how long ago. VesnALIA Box checks it as a box starts, but does not reserve it. Another box or program can take it after.
 - **A shared card has no memory limit per box.** One box can take all of the card's memory, and programs in the other boxes then fail to allocate memory. For work that needs the card's memory, choose a whole card.
 - **A whole card is fenced from other boxes on Proxmox LXC only.** There, no other box can open the card. Programs on the host itself can still use it.
 - **One card per box.** A box cannot have two cards yet.
@@ -180,4 +180,4 @@ bb box kind set linux --gpu shared
 - **Proxmox LXC**: follow [the GPU helper's steps in the Proxmox LXC setup guide](../../setup/proxmox-lxc/README.md#the-gpu-helper). The helper runs as root on the host and gives each box its card. Without it, only desktops can have a card, and only the one their template names.
 - **Docker**: install NVIDIA's Container Toolkit, generate its CDI spec, then turn on **GPU boxes** in the backend's GPUs section. See [GPU boxes in the Docker setup guide](../../setup/docker/README.md#gpu-boxes).
 
-See [agent tools](../reference/tools.md#box_acquire), the [command-line reference](../reference/cli.md#bb-box-resize) and [kinds and sizes](../reference/kinds.md).
+See [agent tools](../reference/tools.md#box_acquire), the [command-line reference](../reference/cli.md#alia-box-resize) and [kinds and sizes](../reference/kinds.md).

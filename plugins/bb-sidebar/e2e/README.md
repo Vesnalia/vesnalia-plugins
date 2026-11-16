@@ -10,7 +10,7 @@ npx --no-install playwright install --with-deps chromium
 
 env -i PATH="$PATH" HOME="$HOME" npm run e2e
 env -i PATH="$PATH" HOME="$HOME" npm run e2e:smoke
-# Drive every `bb sidebar` subcommand against the scratch server (no browser):
+# Drive every `alia sidebar` subcommand against the scratch server (no browser):
 env -i PATH="$PATH" HOME="$HOME" npm run e2e:cli
 # Run a focused flow through the same scratch launcher:
 env -i PATH="$PATH" HOME="$HOME" npm run e2e -- --grep 'settle moves'
@@ -22,37 +22,37 @@ env -i PATH="$PATH" HOME="$HOME" npm run e2e -- --grep 'toggle sequence'
 
 `@playwright/test` supplies role locators, retrying assertions, PNG comparisons,
 and failure screenshots/traces. `e2e:cli` seeds three idle threads and runs each
-`bb sidebar` subcommand through the scratch CLI, checking the result with
-`bb sidebar list --json` and the plugin RPC; its command transcript is saved to
+`alia sidebar` subcommand through the scratch CLI, checking the result with
+`alia sidebar list --json` and the plugin RPC; its command transcript is saved to
 `e2e-artifacts/cli-transcript.log`. All three commands use `scripts/e2e/server.mjs` and
-the pinned bb-app (`devDependencies.bb-app`). Neither runs as part of
+the pinned alia-app (`devDependencies.alia-app`). Neither runs as part of
 `npm run check`. Run e2e separately from Vitest; the scratch server and
 Chromium compete with the unit suite for CPU.
 Before releases on macOS: `npm run e2e`; CI: `gh workflow run "Browser e2e"`.
 
 ## Isolation and fixtures
 
-The launcher creates its own `/tmp/bb-sidebar-smoke-*` data directory, two free
+The launcher creates its own `/tmp/alia-sidebar-smoke-*` data directory, two free
 loopback ports, and a Git repository on branch `main`. It strips inherited
-`BB_*` values through the original environment allowlist, rejects an inherited
-`BB_SERVER_URL` on port 38886 before starting anything, and also rejects either
+`ALIA_*` values through the original environment allowlist, rejects an inherited
+`ALIA_SERVER_URL` on port 38886 before starting anything, and also rejects either
 allocated port if it is 38886. Plugin installation, sidebar selection, project
 creation, thread creation, RPC calls, and browser navigation target that server.
 The launcher owns one server for the entire run, including test failures. It
 stops detached process groups with TERM followed by KILL and deletes scratch
 data on completion or SIGINT/SIGTERM. The CLI and server use the same pinned
-bb-app package. The runtime and plugin are staged under scratch so even mapped
-code stays outside the real `~/.bb` tree. `--app-dir <absolute-path>` can select another local bb-app for
+alia-app package. The runtime and plugin are staged under scratch so even mapped
+code stays outside the real `~/.vesnalia` tree. `--app-dir <absolute-path>` can select another local alia-app for
 compatibility checks; it does not select a running server or data directory.
 
-The server and every BB CLI call receive a new `HOME=<scratch>/home`, plus
+The server and every VesnALIA CLI call receive a new `HOME=<scratch>/home`, plus
 `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME`,
 `CODEX_HOME`, and `CLAUDE_CONFIG_DIR` beneath it. `TMPDIR=<scratch>/tmp` keeps
 host-worker temporary directories inside teardown. Only the build and
-Playwright processes retain the real HOME; the build's BB data/toolchain cache
+Playwright processes retain the real HOME; the build's VesnALIA data/toolchain cache
 still targets scratch. The community marketplace is an empty loopback fixture.
 On macOS the launcher creates an unlocked throwaway keychain in scratch HOME
-before starting bb-app, sets it as the only user search-list/default keychain,
+before starting alia-app, sets it as the only user search-list/default keychain,
 and aliases the login keychain to it. All three lookups are verified before
 providers can start. Chromium also receives `--use-mock-keychain` in both
 launchers. Teardown removes the scratch keychain with the scratch home.
@@ -63,7 +63,7 @@ using keys from the [OpenAI configuration reference](https://learn.chatgpt.com/d
 The credential guard starts after readiness and samples the scratch process
 tree throughout the run. It rejects visible HOME/CODEX_HOME/CLAUDE_CONFIG_DIR
 values outside scratch and any open file under the real `~/.codex`, `~/.claude`,
-`~/.cursor`, `~/.config`, or `~/.bb`, with no workspace exception. macOS helpers
+`~/.cursor`, `~/.config`, or `~/.vesnalia`, with no workspace exception. macOS helpers
 that replace their process title can hide their environment from `ps`; those
 samples are marked `environmentVisible: false`, and their open files are still
 checked. Raw environments are never logged. Evidence is retained in
@@ -116,7 +116,7 @@ cover park/resume across reload, project filtering, custom project name/stripe
 colors through computed styles across reload, child-chip expansion/collapse,
 and the Settled Clean preview. Server assertions check core pin/idle/parent
 state and plugin lifecycle/order/settings/color state. No production test IDs
-were added. The visual capture uses the existing `data-bb-sidebar-root` marker
+were added. The visual capture uses the existing `data-alia-sidebar-root` marker
 because the whole plugin container has no accessible role.
 
 `seeds.mjs` creates a separate scratch Git checkout and project with one idle
@@ -141,7 +141,7 @@ terminal, and lifecycle state. It does not exercise closing a real terminal.
 Three populated captures cover light, dark, and a 280 px wide plugin sidebar.
 A fourth capture shows empty Active after all threads have been settled.
 The wide captures are 320 px. The host's persisted width includes a 49 px
-navigation rail/border on bb 0.47, so the browser fixture adds that amount and
+navigation rail/border on VesnALIA 0.47, so the browser fixture adds that amount and
 asserts the actual plugin width. Update the offset in `open()` when a host
 release changes it. The populated images contain Pinned, Active, Snoozed, and Settled.
 Titles, project name, branch, order, locale, and timezone are fixed. A capture

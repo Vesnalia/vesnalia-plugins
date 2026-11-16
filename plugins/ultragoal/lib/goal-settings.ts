@@ -57,7 +57,7 @@ export interface ResolvedGoalSettings {
   readLocalProviderData: boolean;
 }
 
-/** The three permission modes bb exposes for a spawned thread. */
+/** The three permission modes VesnALIA exposes for a spawned thread. */
 export type AgentPermissionMode = "auto" | "accept-edits" | "full";
 
 /**

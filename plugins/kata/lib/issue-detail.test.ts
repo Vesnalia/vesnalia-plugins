@@ -81,7 +81,7 @@ test("comments are capped, newest kept", () => {
   assert.equal(detail.comments.at(-1)?.uid, "c149");
 });
 
-test("no key is undefined (bb RPC results must be strict JSON)", () => {
+test("no key is undefined (VesnALIA RPC results must be strict JSON)", () => {
   const detail = toIssueDetail(show(), "proj");
   const undefinedKeys = Object.entries(detail.issue)
     .filter(([, value]) => value === undefined)

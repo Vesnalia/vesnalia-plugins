@@ -1,6 +1,6 @@
 // Web lookups for Map and ImageSearch: place names to coordinates (Photon),
 // map tiles (OpenStreetMap), photo search and Wikipedia lead photos
-// (Wikimedia Commons). Everything is fetched here, in the BB server, and sent
+// (Wikimedia Commons). Everything is fetched here, in the VesnALIA server, and sent
 // to the page as data URLs, so the `webLookups` setting is a real switch and
 // the page never contacts these hosts. Only fixed https hosts are reachable,
 // requests time out and bodies are capped; answers are cached in memory.
@@ -12,13 +12,13 @@ export const WEB_SETTING = {
     type: "boolean",
     label: "Web lookups",
     description:
-      "Lets Map and ImageSearch blocks fetch from the web, through this BB server. Map sends place names that come without coordinates to Photon (photon.komoot.io) and loads map tiles from OpenStreetMap (tile.openstreetmap.org). ImageSearch sends its search words to Wikimedia Commons (commons.wikimedia.org); Map sends the Wikipedia article names of its places to Wikipedia (en.wikipedia.org) and Commons; the photos load from upload.wikimedia.org. These services see this machine's IP address and the request itself, with a User-Agent naming this plugin; no cookies, chat text or account details are sent. Answers are kept in memory until the plugin restarts. Off: nothing is fetched and those blocks say so.",
+      "Lets Map and ImageSearch blocks fetch from the web, through this VesnALIA server. Map sends place names that come without coordinates to Photon (photon.komoot.io) and loads map tiles from OpenStreetMap (tile.openstreetmap.org). ImageSearch sends its search words to Wikimedia Commons (commons.wikimedia.org); Map sends the Wikipedia article names of its places to Wikipedia (en.wikipedia.org) and Commons; the photos load from upload.wikimedia.org. These services see this machine's IP address and the request itself, with a User-Agent naming this plugin; no cookies, chat text or account details are sent. Answers are kept in memory until the plugin restarts. Off: nothing is fetched and those blocks say so.",
     default: true,
   },
 } as const;
 
 /** Names the plugin, as the services' usage policies ask; nothing about the user. */
-export const USER_AGENT = "bb-plugin-openui/0.1 (OpenUI inline UI plugin for BB)";
+export const USER_AGENT = "alia-plugin-openui/0.1 (OpenUI inline UI plugin for VesnALIA)";
 export const ALLOWED_HOSTS = new Set(["photon.komoot.io", "tile.openstreetmap.org", "commons.wikimedia.org", "en.wikipedia.org", "upload.wikimedia.org"]);
 export const MAX_TILE_ZOOM = 19;
 const DAY = 86_400_000;

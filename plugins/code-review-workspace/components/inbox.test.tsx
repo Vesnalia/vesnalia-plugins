@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { toast } from "sonner";
 import { defaultPreferences } from "../src/preferences";
 import { defaultKnobs } from "../lib/knobs";
@@ -204,7 +204,7 @@ test("a row says a guide waits for its writer's machine while it does, in the st
   slot.lifecycle.unmount();
 });
 
-test("a row shows its review agent's status with BB's glyph before its age; a guide being built spins in its status line alone", async () => {
+test("a row shows its review agent's status with VesnALIA's glyph before its age; a guide being built spins in its status line alone", async () => {
   const yours = turn("needs", "requested", "Review requested", { at: now - 3_600_000 });
   const { slot } = await inbox([
     { targetKey: "pr-7", kind: "pr", number: 7, repo: "acme/app", title: "Change working", status: "ready", agentStatus: { indicator: "runtime", unread: false }, turn: yours },
@@ -239,14 +239,14 @@ test("an author's turn shows its last activity; a request how long it's been you
 
 test("the sync's problems show above the list, saying when GitHub was last read", async () => {
   const { slot } = await inbox([], { listReviews: () => ({ reviews: [], sync: { lastReadAt: now - 14 * 60_000, error: { kind: "auth", at: now } } }) });
-  expect((await slot.findByText(/^GitHub last read/)).textContent).toBe("GitHub last read 14m ago: GitHub CLI isn’t signed in. Run gh auth login on the BB server.");
+  expect((await slot.findByText(/^GitHub last read/)).textContent).toBe("GitHub last read 14m ago: GitHub CLI isn’t signed in. Run gh auth login on the VesnALIA server.");
   slot.lifecycle.unmount();
 });
 
-// gh missing on the BB server isn't GitHub being unreachable (bug bash PRF-4).
-test("the sync says when GitHub CLI isn't on the BB server", async () => {
+// gh missing on the VesnALIA server isn't GitHub being unreachable (bug bash PRF-4).
+test("the sync says when GitHub CLI isn't on the VesnALIA server", async () => {
   const { slot } = await inbox([], { listReviews: () => ({ reviews: [], sync: { lastReadAt: null, error: { kind: "gh-missing", at: now } } }) });
-  expect((await slot.findByText(/^GitHub hasn’t been read/)).textContent).toBe("GitHub hasn’t been read yet: GitHub CLI isn’t on the BB server.");
+  expect((await slot.findByText(/^GitHub hasn’t been read/)).textContent).toBe("GitHub hasn’t been read yet: GitHub CLI isn’t on the VesnALIA server.");
   slot.lifecycle.unmount();
 });
 
@@ -256,7 +256,7 @@ test("focusing the window runs a normal pass; only Refresh forces a full read", 
   await slot.findByText("A change");
   fireEvent(window, new Event("focus"));
   await waitFor(() => expect(refreshes()).toEqual([{ force: false }]));
-  // Without BB's title bar, the page has the list's Refresh.
+  // Without VesnALIA's title bar, the page has the list's Refresh.
   fireEvent.click(await slot.findByRole("button", { name: "Refresh" }));
   await waitFor(() => expect(refreshes()).toEqual([{ force: false }, { force: true }]));
   slot.lifecycle.unmount();
@@ -548,7 +548,7 @@ test("focused and empty, the box says how to review a local branch; / focuses it
   fireEvent.keyDown(document.body, { key: "/" });
   expect(document.activeElement).toBe(find);
   fireEvent.focus(find);
-  expect(slot.getByText(/For a local branch, run/).textContent).toBe("For a local branch, run bb review in a BB thread.");
+  expect(slot.getByText(/For a local branch, run/).textContent).toBe("For a local branch, run alia review in a VesnALIA thread.");
   slot.lifecycle.unmount();
 });
 
@@ -739,14 +739,14 @@ test("with no reviews yet, a first-run panel says what a review needs and how to
   const { slot } = await inbox([], { getSetupStatus: () => ({ account: null, githubCli: true, agentAvailable: true, projectAvailable: true }) });
   const panel = await slot.findByRole("region", { name: "Review your first pull request" });
   const needs = within(await within(panel).findByRole("list", { name: "What a review needs" }));
-  expect(await needs.findByText("GitHub CLI on the BB server")).toBeTruthy();
-  expect(needs.getByText("Sign in to GitHub on the BB server")).toBeTruthy();
+  expect(await needs.findByText("GitHub CLI on the VesnALIA server")).toBeTruthy();
+  expect(needs.getByText("Sign in to GitHub on the VesnALIA server")).toBeTruthy();
   expect(needs.getByText("gh auth login --hostname github.com")).toBeTruthy();
-  expect(needs.getByText("A BB agent to write guides")).toBeTruthy();
+  expect(needs.getByText("A VesnALIA agent to write guides")).toBeTruthy();
   expect(slot.getByRole("searchbox", { name: "Find a review, or paste a PR link" }).getAttribute("placeholder")).toBe("Paste a GitHub PR link to review it");
-  expect(within(panel).getByText(/in any BB thread/).textContent).toBe("Paste a PR link above, or run bb review <pr> in any BB thread.");
+  expect(within(panel).getByText(/in any ALIA thread/).textContent).toBe("Paste a PR link above, or run alia review <pr> in any VesnALIA thread.");
   // A reply and a resolve post at once, too.
-  expect(within(panel).getByText(/^Guides use/).textContent).toBe("Guides use your BB agent’s usual allowance. Nothing reaches GitHub until you submit, send a reply, or resolve a thread.");
+  expect(within(panel).getByText(/^Guides use/).textContent).toBe("Guides use your VesnALIA agent’s usual allowance. Nothing reaches GitHub until you submit, send a reply, or resolve a thread.");
   expect(slot.queryByRole("heading", { name: /^Needs review/ })).toBeNull();
   slot.lifecycle.unmount();
 });
@@ -757,7 +757,7 @@ test("while the first run checks the setup, its checklist says so", async () => 
   const needs = within(await slot.findByRole("list", { name: "What a review needs" }));
   expect(needs.getByText("Checking setup…")).toBeTruthy();
   answer({ account: "me", githubCli: true, agentAvailable: true, projectAvailable: true });
-  await needs.findByText("GitHub CLI on the BB server");
+  await needs.findByText("GitHub CLI on the VesnALIA server");
   expect(needs.queryByText("Checking setup…")).toBeNull();
   slot.lifecycle.unmount();
 });
@@ -784,7 +784,7 @@ test("each section's rows are a list, so a screen reader says how many it holds"
   slot.lifecycle.unmount();
 });
 
-test("the page scrolls itself, since BB clips a plugin page to the window", async () => {
+test("the page scrolls itself, since VesnALIA clips a plugin page to the window", async () => {
   const { slot } = await inbox([{ targetKey: "a", title: "A change", status: "ready" }]);
   const section = await slot.findByRole("region", { name: "Needs review" });
   const page = slot.container.firstElementChild as HTMLElement;
@@ -901,7 +901,7 @@ test("your own PR with comments waiting for your reply is back to you in Needs r
   slot.lifecycle.unmount();
 });
 
-test.each(["finding", "merging"])("All reviews keeps BB's working glyph while focuses are %s, even after General finishes", async (state) => {
+test.each(["finding", "merging"])("All reviews keeps VesnALIA's working glyph while focuses are %s, even after General finishes", async (state) => {
   const { slot } = await inbox([
     { targetKey: "r", kind: "pr", number: 7, repo: "acme/app", title: "Change focuses", status: "ready", agentStatus: { indicator: "unread-success", unread: true }, focusRun: { state }, turn: turn("needs", "requested", "Review requested") },
   ]);

@@ -14,21 +14,21 @@ ordinary draft you can edit. Nothing is ever sent for you.
 - **Your choice of model.** By default it uses the conversation's own provider
   and model at low reasoning effort. In **Settings → Plugins → Composer
   Predictions**, pick a separate provider, model, effort and service tier with
-  BB's native picker.
+  VesnALIA's native picker.
 - **Survives restarts.** Suggestions, abstentions and dismissals are saved and
   checked against the current conversation before they are shown again.
 - **Silent when unsure.** The model can suggest nothing when there is no clear
   next move.
-- `bb composer-predictions show|regenerate|dismiss <thread-id>` and a bundled
+- `alia composer-predictions show|regenerate|dismiss <thread-id>` and a bundled
   agent skill for checking why a suggestion is or isn't showing.
 
 ## Safety and cost
 
-Tab, → or a right swipe only fills an empty draft through BB's public composer
+Tab, → or a right swipe only fills an empty draft through VesnALIA's public composer
 API, and the plugin never submits a message. Each prediction is one request in a hidden helper
 thread, never in your conversation, stopped and then archived as soon as its
 answer is used or the conversation moves on. Providers that support archive
-get that chat archived too. BB helpers are deleted when the conversation moves
+get that chat archived too. VesnALIA helpers are deleted when the conversation moves
 on or you regenerate the prediction. Provider sessions can remain archived;
 the plugin does not permanently delete them. Failed cleanup is retried on reload.
 Normal provider usage applies. Once you open a thread with an empty message
@@ -40,7 +40,7 @@ once, and an unchanged conversation reuses its saved result.
 Each request carries up to 48,000 characters of recent messages and tool
 output by default. A separate prediction model's provider receives that too.
 The plugin's database stores the suggestion, its status and a fingerprint,
-not your conversation. BB keeps each helper's history as an archived hidden
+not your conversation. VesnALIA keeps each helper's history as an archived hidden
 thread until it becomes stale and the plugin deletes it. The helper is told
 not to use tools. A provider that can approve
 automatically runs it in `auto` permission mode, and the helper is stopped if
@@ -53,12 +53,12 @@ sandbox.
 The plugin rebuilds up to 400 recent events (your messages, the agent's
 replies and completed tool records), capped at a character budget of 48,000
 by default. A fingerprint of the conversation, prompt, model and budget
-decides whether a saved result can be reused. BB has no ghost-text slot yet,
-so the overlay relies on BB 0.46 composer markup; if it cannot find its own
+decides whether a saved result can be reused. VesnALIA has no ghost-text slot yet,
+so the overlay relies on VesnALIA 0.46 composer markup; if it cannot find its own
 composer, it shows nothing and leaves Tab alone.
 
 ## Requirements
 
-bb 0.46 or later, with the prediction model available on the conversation's
+VesnALIA 0.46 or later, with the prediction model available on the conversation's
 machine. The provider must be able to approve automatically or ask for
 approval. Full Access is not used.

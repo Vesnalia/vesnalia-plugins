@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
-import { useBbContext, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginRpcClient } from "@get-bb/plugin-sdk/app";
+import { useAliaContext, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcClient } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { FileTypeIcon, FolderTypeIcon } from "@/components/FileTypeIcon";
 import { STATUS_BADGE, STATUS_LABEL, STATUS_TEXT } from "@/lib/git-status";
@@ -56,7 +56,7 @@ function makeCopyPathToClipboard(
 }
 
 /** Rows dragged inside the tree carry this type; anything else dropped here is ignored. */
-const TREE_DRAG_TYPE = "application/x-bb-file-explorer";
+const TREE_DRAG_TYPE = "application/x-alia-file-explorer";
 
 /** The dragged paths, if the drag came from this same tree. */
 function readTreeDrag(transfer: DataTransfer, rootId: string): string[] | null {
@@ -97,12 +97,12 @@ function targetLabel(
 }
 
 /**
- * Create a file and open it in BB's editor, as VS Code opens a file it just
+ * Create a file and open it in VesnALIA's editor, as VS Code opens a file it just
  * created. False keeps the name field open so the user can fix the name.
  */
 async function createAndOpenFile(args: {
   rpc: ReturnType<typeof useRpc<typeof rpcContract>>;
-  navigate: ReturnType<typeof useBbNavigate> | null;
+  navigate: ReturnType<typeof useAliaNavigate> | null;
   workspace: Workspace;
   directoryRelativePath: string;
   name: string;
@@ -251,7 +251,7 @@ function CreateRow({
   tree: TreeModel;
 }) {
   const rpc = useRpc<typeof rpcContract>();
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const [draft, setDraft] = useState("");
   const onCommit = async (name: string) => {
     const args = { rpc, workspace, directoryRelativePath: editing.parent, name, showCreated: tree.showCreated };
@@ -295,8 +295,8 @@ function TreeRow({
   chatTargets: readonly ChatTarget[];
   activeThreadId: string | null;
 }) {
-  const overlayNavigate = useBbNavigate();
-  const { threadId } = useBbContext();
+  const overlayNavigate = useAliaNavigate();
+  const { threadId } = useAliaContext();
   const rpc = useRpc<typeof rpcContract>();
   const isDir = entry.kind === "directory";
   const isOpen = isDir && tree.expanded.has(entry.relativePath);
@@ -714,7 +714,7 @@ function TreeRow({
 export function FileExplorerBody({ tree }: { tree: TreeModel }) {
   const keepFocusAfterMenu = useRef(false);
   const rpc = useRpc<typeof rpcContract>();
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const chatTargets = useSyncExternalStore(
     subscribeChatTargets,
     getChatTargets,

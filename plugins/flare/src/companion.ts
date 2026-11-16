@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { threadTag } from "./contract";
 import { MODEL_ID, PROVIDER_ID, REASONING_LEVEL, renderPrompt } from "./provider";
@@ -6,7 +6,7 @@ import type { FlareRow, FlareStore } from "./store";
 
 // Each thread whose Flares tab shows a flare (its own thread and every thread above it) has one companion: a hidden
 // child thread on Flare's renderer. A flare reaches it as an agent-only prompt and comes back as an assistant message,
-// which bb draws with every installed renderer. The companion reuses the viewer's environment, so nothing is
+// which VesnALIA draws with every installed renderer. The companion reuses the viewer's environment, so nothing is
 // provisioned and workspace paths mean the same thing; it tells nobody when its turns end, and Flare deletes it with
 // the thread it belongs to.
 
@@ -37,14 +37,14 @@ export function companionMessage(flare: Pick<FlareRow, "title" | "body">): strin
 }
 
 const PATH = "[A-Za-z0-9._~@+=-][A-Za-z0-9._~@+=/-]*";
-const STORAGE_TOKEN = new RegExp(`\\$\\{?BB_THREAD_STORAGE\\}?/(${PATH})`, "g");
+const STORAGE_TOKEN = new RegExp(`\\$\\{?ALIA_THREAD_STORAGE\\}?/(${PATH})`, "g");
 const clean = (path: string): string | null => {
   const trimmed = path.replace(/[.,;:]+$/, "");
   return trimmed === "" || trimmed.split("/").some((part) => part === ".." || part === "" || part === ".") ? null : trimmed;
 };
 
 /**
- * Thread-storage files the body names, as `$BB_THREAD_STORAGE/<path>` or as an absolute path under the sender's
+ * Thread-storage files the body names, as `$ALIA_THREAD_STORAGE/<path>` or as an absolute path under the sender's
  * storage. A view resolves such a path against its own message's thread, which for a companion is the companion.
  */
 export function storageReferences(body: string, storageRoot: string | null): string[] {
@@ -65,7 +65,7 @@ export function rewriteReferences(body: string, storageRoot: string | null, copi
   // The captured path may carry a sentence's closing punctuation, which stays after the rewritten path.
   const target = (path: string, whole: string) => {
     const relative = clean(path);
-    return relative !== null && copied.has(relative) ? `$BB_THREAD_STORAGE/${folder}/${relative}${path.slice(relative.length)}` : whole;
+    return relative !== null && copied.has(relative) ? `$ALIA_THREAD_STORAGE/${folder}/${relative}${path.slice(relative.length)}` : whole;
   };
   let text = body.replace(STORAGE_TOKEN, (whole, path: string) => target(path, whole));
   if (storageRoot !== null && storageRoot !== "") {
@@ -94,7 +94,7 @@ export class Companions {
   private readonly chains = new Map<string, Promise<void>>();
 
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly store: FlareStore,
     private readonly now: () => number = Date.now,
   ) {}
@@ -106,7 +106,7 @@ export class Companions {
 
   private enqueue(viewerId: string, work: () => Promise<void>): Promise<void> {
     const previous = this.chains.get(viewerId) ?? Promise.resolve();
-    const next = previous.then(work, work).catch((error: unknown) => this.bb.log.warn(`Could not show flares for ${viewerId}: ${message(error)}`));
+    const next = previous.then(work, work).catch((error: unknown) => this.alia.log.warn(`Could not show flares for ${viewerId}: ${message(error)}`));
     this.chains.set(viewerId, next);
     void next.finally(() => {
       if (this.chains.get(viewerId) === next) this.chains.delete(viewerId);
@@ -143,7 +143,7 @@ export class Companions {
         return;
       }
       this.store.markShown(flare.id, viewerId, this.now());
-      this.bb.rpc.experimental_invalidate([threadTag(viewerId)]);
+      this.alia.rpc.experimental_invalidate([threadTag(viewerId)]);
     }
   }
 
@@ -157,12 +157,12 @@ export class Companions {
     if (source !== null) {
       for (const path of candidates) {
         try {
-          const file = await this.bb.sdk.files.read({ hostId: source.hostId, rootPath: source.root, path: `${source.root}/${path}` });
+          const file = await this.alia.sdk.files.read({ hostId: source.hostId, rootPath: source.root, path: `${source.root}/${path}` });
           if (file.sizeBytes > MAX_COPY_BYTES || bytes + file.sizeBytes > MAX_TOTAL_BYTES) continue;
           files.push({ path, content: file.content, encoding: file.contentEncoding });
           bytes += file.sizeBytes;
         } catch (error) {
-          this.bb.log.debug(`Did not copy ${path} for ${flare.id}: ${message(error)}`);
+          this.alia.log.debug(`Did not copy ${path} for ${flare.id}: ${message(error)}`);
         }
       }
     }
@@ -176,19 +176,19 @@ export class Companions {
     const copied = await this.writeFiles(companion, prepared).then(
       () => true,
       (error: unknown) => {
-        this.bb.log.info(`Could not copy files for ${prepared.flare.id} into ${companion}: ${message(error)}`);
+        this.alia.log.info(`Could not copy files for ${prepared.flare.id} into ${companion}: ${message(error)}`);
         return false;
       },
     );
     try {
-      await this.bb.sdk.threads.send({
+      await this.alia.sdk.threads.send({
         threadId: companion,
         mode: "queue-if-active",
         input: [{ type: "text", text: copied ? prepared.text : prepared.original, mentions: [], visibility: "agent-only" }],
       });
       return true;
     } catch (error) {
-      this.bb.log.info(`Companion ${companion} of ${viewerId} did not take flare ${prepared.flare.id}: ${message(error)}`);
+      this.alia.log.info(`Companion ${companion} of ${viewerId} did not take flare ${prepared.flare.id}: ${message(error)}`);
       return false;
     }
   }
@@ -196,7 +196,7 @@ export class Companions {
   /** Whether a companion is really gone: deleted, archived or unknown. A failure to tell counts as not gone. */
   private async gone(companion: string): Promise<boolean> {
     try {
-      const thread = (await this.bb.sdk.threads.get({ threadId: companion })) as { deletedAt?: number | null; archivedAt?: number | null };
+      const thread = (await this.alia.sdk.threads.get({ threadId: companion })) as { deletedAt?: number | null; archivedAt?: number | null };
       return thread.deletedAt != null || thread.archivedAt != null;
     } catch (error) {
       return isNotFound(error);
@@ -204,16 +204,16 @@ export class Companions {
   }
 
   private async create(viewerId: string, first: Prepared): Promise<string | null> {
-    const viewer = viewerSchema.parse(await this.bb.sdk.threads.get({ threadId: viewerId }));
+    const viewer = viewerSchema.parse(await this.alia.sdk.threads.get({ threadId: viewerId }));
     // A thread with no environment yet has nowhere for the renderer to run; its Flares tab shows plain cards.
     if (viewer.environmentId === null) return null;
     const name = viewer.title?.trim() || viewer.titleFallback?.trim() || "a thread";
-    const spawned = await this.bb.sdk.threads.spawn({
+    const spawned = await this.alia.sdk.threads.spawn({
       projectId: viewer.projectId,
       environment: { type: "reuse", environmentId: viewer.environmentId },
       providerId: PROVIDER_ID,
       model: MODEL_ID,
-      // The renderer has one level; without it bb would carry over the project's remembered one and refuse.
+      // The renderer has one level; without it VesnALIA would carry over the project's remembered one and refuse.
       reasoningLevel: REASONING_LEVEL,
       title: `Flares: ${name}`.slice(0, 120),
       visibility: "hidden",
@@ -226,13 +226,13 @@ export class Companions {
       sendAt: this.now() + HOLD_MS,
     });
     const companion = (spawned as { id?: string }).id;
-    if (typeof companion !== "string") throw new Error("bb did not return the companion thread's id");
+    if (typeof companion !== "string") throw new Error("alia did not return the companion thread's id");
     this.store.setCompanion(viewerId, companion, this.now());
     await this.quiet(companion);
     const copied = await this.writeFiles(companion, first).then(
       () => true,
       (error: unknown) => {
-        this.bb.log.info(`Could not copy files into ${companion}: ${message(error)}`);
+        this.alia.log.info(`Could not copy files into ${companion}: ${message(error)}`);
         return false;
       },
     );
@@ -243,26 +243,26 @@ export class Companions {
 
   private async release(companion: string, replacement: string | null): Promise<void> {
     try {
-      for (const row of await this.bb.sdk.threads.queuedMessages.list({ threadId: companion })) {
+      for (const row of await this.alia.sdk.threads.queuedMessages.list({ threadId: companion })) {
         if (replacement !== null) {
-          await this.bb.sdk.threads.queuedMessages.update({
+          await this.alia.sdk.threads.queuedMessages.update({
             threadId: companion,
             queuedMessageId: row.id,
             expectedUpdatedAt: row.updatedAt,
             input: [{ type: "text", text: replacement, mentions: [], visibility: "agent-only" }],
           });
         }
-        await this.bb.sdk.threads.queuedMessages.send({ threadId: companion, queuedMessageId: row.id, mode: "auto" });
+        await this.alia.sdk.threads.queuedMessages.send({ threadId: companion, queuedMessageId: row.id, mode: "auto" });
       }
     } catch (error) {
-      this.bb.log.info(`Could not release ${companion}'s first flare early; it goes on its own: ${message(error)}`);
+      this.alia.log.info(`Could not release ${companion}'s first flare early; it goes on its own: ${message(error)}`);
     }
   }
 
-  /** Mutes the companion in bb's push notifications when that plugin is on; without it there is nothing to mute. */
+  /** Mutes the companion in VesnALIA's push notifications when that plugin is on; without it there is nothing to mute. */
   private async quiet(companion: string): Promise<void> {
     try {
-      await this.bb.sdk.plugins.callRpc({
+      await this.alia.sdk.plugins.callRpc({
         pluginId: PUSH_PLUGIN,
         method: "threadNotifications.set",
         input: { threadId: companion, level: "muted" },
@@ -275,10 +275,10 @@ export class Companions {
 
   private async storageRoot(threadId: string): Promise<{ hostId: string; root: string } | null> {
     try {
-      const location = await this.bb.sdk.threads.storageLocation({ threadId });
+      const location = await this.alia.sdk.threads.storageLocation({ threadId });
       return { hostId: location.hostId, root: location.storageRootPath.replace(/\/+$/, "") };
     } catch (error) {
-      this.bb.log.info(`No thread storage for ${threadId}: ${message(error)}`);
+      this.alia.log.info(`No thread storage for ${threadId}: ${message(error)}`);
       return null;
     }
   }
@@ -291,19 +291,19 @@ export class Companions {
     for (const file of prepared.files) {
       const path = `${folder}/${file.path}`;
       // A new thread's storage folder may not exist yet, and a write under it cannot create its own parents there.
-      await this.bb.sdk.files.mkdir({ hostId: target.hostId, path: path.slice(0, path.lastIndexOf("/")), recursive: true });
-      await this.bb.sdk.files.write({ hostId: target.hostId, rootPath: target.root, path, content: file.content, contentEncoding: file.encoding, createParents: true });
+      await this.alia.sdk.files.mkdir({ hostId: target.hostId, path: path.slice(0, path.lastIndexOf("/")), recursive: true });
+      await this.alia.sdk.files.write({ hostId: target.hostId, rootPath: target.root, path, content: file.content, contentEncoding: file.encoding, createParents: true });
     }
   }
 
   /** Deletes a companion and forgets it; its copied files go with its storage. */
   async discard(viewerId: string, companion: string): Promise<void> {
     this.store.forgetCompanion(viewerId);
-    this.bb.rpc.experimental_invalidate([threadTag(viewerId)]);
+    this.alia.rpc.experimental_invalidate([threadTag(viewerId)]);
     try {
-      await this.bb.sdk.threads.delete({ threadId: companion, childThreadsConfirmed: true });
+      await this.alia.sdk.threads.delete({ threadId: companion, childThreadsConfirmed: true });
     } catch (error) {
-      if (!isNotFound(error)) this.bb.log.info(`Could not delete companion ${companion}: ${message(error)}`);
+      if (!isNotFound(error)) this.alia.log.info(`Could not delete companion ${companion}: ${message(error)}`);
     }
   }
 

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { RpcContract } from "../src/rpc";
 import { useLayout } from "../src/use-layout";
 import { layoutWriteFakes } from "./fixtures";

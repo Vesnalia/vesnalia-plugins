@@ -5,11 +5,11 @@ import { ProjectFavicon } from "./ProjectFavicon";
 
 /** The status the icon route answers when the sidebar asks why an image failed. */
 let iconStatus: number | "offline" = 503;
-/** Whether a 404 carries the server's "no icon" mark, or is bb's own 404 for a route not loaded yet. */
+/** Whether a 404 carries the server's "no icon" mark, or is VesnALIA's own 404 for a route not loaded yet. */
 let markedMissing = true;
 const fetchIcon = vi.fn(async () => {
   if (iconStatus === "offline") throw new TypeError("Failed to fetch");
-  const headers = new Headers(iconStatus === 404 && markedMissing ? { "x-bb-sidebar-icon-missing": "1" } : {});
+  const headers = new Headers(iconStatus === 404 && markedMissing ? { "x-alia-sidebar-icon-missing": "1" } : {});
   return { status: iconStatus, headers, body: null };
 });
 
@@ -65,8 +65,8 @@ describe("ProjectFavicon", () => {
   });
 
   it("shows the project's letter tile while the icon loads and after it fails", () => {
-    const view = render(<ProjectFavicon src="/project-icon?projectId=proj_tile&revision=0" name="bb-sidebar" />);
-    const tile = () => view.container.querySelector(".bb-sidebar-monogram");
+    const view = render(<ProjectFavicon src="/project-icon?projectId=proj_tile&revision=0" name="alia-sidebar" />);
+    const tile = () => view.container.querySelector(".alia-sidebar-monogram");
     expect(tile()?.getAttribute("data-letter")).toBe("S");
     // Drawn by CSS, so the letter never joins the row's text.
     expect(view.container.textContent).toBe("");

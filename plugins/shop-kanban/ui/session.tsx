@@ -1,9 +1,9 @@
 import { useLayoutEffect, useRef, type RefObject } from "react";
-import { experimental_Icon as Icon, experimental_ProviderIcon as ProviderIcon, type PluginProvidersState } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, experimental_ProviderIcon as ProviderIcon, type PluginProvidersState } from "@vesnalia/plugin-sdk/app";
 import { ACCENT_TEXT, type BoardSession } from "./model";
 import { TYPE } from "./primitives";
 
-/** An agent provider from bb's roster (`experimental_useProviders`), the same record the sidebar draws. */
+/** An agent provider from VesnALIA's roster (`experimental_useProviders`), the same record the sidebar draws. */
 export type AgentProvider = PluginProvidersState["providers"][number];
 
 const VIEWPORT_MARGIN = 8;
@@ -18,7 +18,7 @@ const CRITICAL_TONE = { ring: ACCENT_TEXT.rose, bar: "bg-rose-500" };
 const PIE_RADIUS = 5.5;
 const WEDGE_CIRCUMFERENCE = Math.PI * PIE_RADIUS;
 /**
- * bb wraps provider artwork in a `min-w-max` span, and the artwork's SVG is `size-full` with no width or
+ * VesnALIA wraps provider artwork in a `min-w-max` span, and the artwork's SVG is `size-full` with no width or
  * height, so Safari sizes it at the 300px SVG default and every card overflows its column by ~270px.
  * A definite size on the SVG itself (`.x > svg` outranks its `.size-full`) keeps the icon 14px everywhere.
  */

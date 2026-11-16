@@ -1,11 +1,11 @@
 import { pluginError } from "./plugin-error";
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Workspace } from "./model";
 import { safeRelative } from "./change-paths";
 import { LIMITS } from "./limits";
 
-type Sdk = BbPluginApi["sdk"];
+type Sdk = AliaPluginApi["sdk"];
 
 export async function workspace(
   sdk: Sdk,

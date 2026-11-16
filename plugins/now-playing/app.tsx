@@ -1,11 +1,11 @@
-// bb-plugin-now-playing — a small Spotify or Apple Music player in the
+// alia-plugin-now-playing — a small Spotify or Apple Music player in the
 // sidebar footer, in one of several styles.
 //
-// Compiled by `bb plugin build` into dist/app.js + dist/app.css. React and
-// @get-bb/plugin-sdk/app come from the BB app at load time.
+// Compiled by `alia plugin build` into dist/app.js + dist/app.css. React and
+// @vesnalia/plugin-sdk/app come from the VesnALIA app at load time.
 import "./styles.css";
 import type { ReactNode } from "react";
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { hasAccent } from "./shared";
 import { Button } from "@/components/ui/button";
 import { PlayGlyph } from "./ui/glyphs";
@@ -57,14 +57,14 @@ function NowPlayingPanel() {
   const { player, error, send } = usePlayer();
   const { appearance } = useAppearance();
   let body: ReactNode;
-  // Styles that draw their own case fill the panel without bb's frame.
+  // Styles that draw their own case fill the panel without VesnALIA's frame.
   let frameless = false;
   if (player === null) {
     body = error === null ? <Notice>Connecting…</Notice> : null;
   } else if (player.status === "unsupported") {
-    body = <Notice>{player.reason ?? "Now Playing needs a bb server on macOS, Linux, or Windows."}</Notice>;
+    body = <Notice>{player.reason ?? "Now Playing needs a VesnALIA server on macOS, Linux, or Windows."}</Notice>;
   } else if (player.status === "not-installed") {
-    body = <Notice>{APP_NAMES[player.app]} is not installed on the bb server.</Notice>;
+    body = <Notice>{APP_NAMES[player.app]} is not installed on the VesnALIA server.</Notice>;
   } else if (player.status === "not-running") {
     const { launchApp } = player;
     body = (
@@ -78,7 +78,7 @@ function NowPlayingPanel() {
           )
         }
       >
-        {launchApp === null ? "Start a song in any music player on the bb server." : "No music app is running."}
+        {launchApp === null ? "Start a song in any music player on the VesnALIA server." : "No music app is running."}
       </Notice>
     );
   } else if (appearance === null) {
@@ -111,7 +111,7 @@ export default definePluginApp((app) => {
   app.slots.settingsSection({
     id: "player-style",
     title: "Player style",
-    description: "Pick how the Now Playing panel looks. The change shows at once in every bb window.",
+    description: "Pick how the Now Playing panel looks. The change shows at once in every VesnALIA window.",
     component: PlayerStyleSettings,
   });
 });

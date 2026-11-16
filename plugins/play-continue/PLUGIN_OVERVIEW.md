@@ -1,6 +1,6 @@
 ## What you get
 
-- **Double Escape to stop.** Press Escape twice within 400 ms and the running thread stops through BB's own Stop button, the same as clicking it. After the first press the Stop icon shows `Esc`, so you can see the shortcut is armed. A single press, a held key or a press with a modifier never stops anything.
+- **Double Escape to stop.** Press Escape twice within 400 ms and the running thread stops through VesnALIA's own Stop button, the same as clicking it. After the first press the Stop icon shows `Esc`, so you can see the shortcut is armed. A single press, a held key or a press with a modifier never stops anything.
 - **Play to continue.** After a turn was stopped, failed or was cut off by a restart, a Play button takes the place of the disabled Send button. One click sends a visible message asking the agent to continue from where it stopped and to check the current state before repeating any action whose outcome is uncertain.
 
 ## How it works

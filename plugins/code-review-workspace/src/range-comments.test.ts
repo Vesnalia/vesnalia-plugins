@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { reanchorDraft } from "./store";
 import { createReviewSubmitter } from "./submit-review";
@@ -56,8 +56,8 @@ test("the GitHub payload sends a range's start line and side; single-line commen
 });
 
 async function storeWith(text = patch) {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 7, status: "ready", createdAt: 1, headSha: "sha1" });
   await store.savePatch("pr-1", text);
   return store;
@@ -100,9 +100,9 @@ test("a re-review moves both ends of a range; one whose either end is gone is on
 });
 
 async function host() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 7, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1" });
   await store.savePatch("pr-1", patch);
   await store.setAssistantThread("pr-1", "assistant");
@@ -117,12 +117,12 @@ async function host() {
 test("the assistant comments on a range, checking its code's first and last line, and can change the range", async () => {
   const { store, call } = await host();
   expect(await call("add_draft_comment", { file: "a.ts", startLine: 2, line: 4, code: "two();\nthree();\nfour", body: "Merge these." }))
-    .toBe("Added a draft comment on a.ts:2–4. It stays in bb until the reviewer submits the review.");
+    .toBe("Added a draft comment on a.ts:2–4. It stays in VesnALIA until the reviewer submits the review.");
   expect(await call("add_draft_comment", { file: "a.ts", startLine: 1, line: 3, code: "two();\nthree();", body: "x" }))
     .toBe("error: Line 1 on the RIGHT side of a.ts is `one`, not the first line of the code you sent. Nothing was added.");
   expect(await call("add_draft_comment", { file: "a.ts", startLine: 4, line: 22, code: "four\nfive\ntwenty\nmore", body: "x" }))
     .toBe("error: Lines 4 and 22 of a.ts are in different hunks of the diff. GitHub takes a range within one hunk. Nothing was added.");
-  expect(await call("add_draft_comment", { file: "a.ts", startLine: 2, startSide: "LEFT", line: 3, code: "two\ntwo();\nthree();", body: "Old and new." })).toBe("Added a draft comment on a.ts:2–3. It stays in bb until the reviewer submits the review.");
+  expect(await call("add_draft_comment", { file: "a.ts", startLine: 2, startSide: "LEFT", line: 3, code: "two\ntwo();\nthree();", body: "Old and new." })).toBe("Added a draft comment on a.ts:2–3. It stays in VesnALIA until the reviewer submits the review.");
   expect((await store.getDraft("pr-1")).comments).toEqual([
     { file: "a.ts", line: 4, side: "RIGHT", startLine: 2, author: "agent", body: "Merge these." },
     { file: "a.ts", line: 3, side: "RIGHT", startLine: 2, startSide: "LEFT", author: "agent", body: "Old and new." },
@@ -134,9 +134,9 @@ test("the assistant comments on a range, checking its code's first and last line
   expect(await call("list_draft_comments", {})).toContain("a.ts:3–4 RIGHT · added by an agent\n  Just these.");
 });
 
-test("bb review comment adds a range as <file>:<start>-<end>, and lists it", async () => {
+test("alia review comment adds a range as <file>:<start>-<end>, and lists it", async () => {
   const { store, cli } = await host();
-  expect(await cli("add", "pr-1", "a.ts:2-4", "--code", "two();\nthree();\nfour", "--body", "Merge these.")).toMatchObject({ exitCode: 0, stdout: "Added a draft comment on a.ts:2–4. It stays in bb until the reviewer submits the review." });
+  expect(await cli("add", "pr-1", "a.ts:2-4", "--code", "two();\nthree();\nfour", "--body", "Merge these.")).toMatchObject({ exitCode: 0, stdout: "Added a draft comment on a.ts:2–4. It stays in VesnALIA until the reviewer submits the review." });
   // Written last line first, it's the same range.
   expect(await cli("add", "pr-1", "a.ts:23-21", "--code", "twenty\nmore\nend", "--body", "Tail.")).toMatchObject({ exitCode: 0, stdout: expect.stringContaining("on a.ts:21–23.") });
   expect(await cli("add", "pr-1", "a.ts:2-x", "--code", "x", "--body", "x")).toMatchObject({ exitCode: 2, stderr: expect.stringContaining("a.ts:2-x isn't a <file>:<line> or <file>:<start>-<end>.") });

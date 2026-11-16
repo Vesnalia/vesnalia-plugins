@@ -11,7 +11,7 @@ import { access, constants as fsConstants, lstat, mkdir, open, readdir, readFile
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 import {
-  BB_CHAT_DIR,
+  ALIA_CHAT_DIR,
   EMPTY_TREE,
   MAX_LISTED_SKIPPED,
   MAX_STORED_CHANGES,
@@ -106,7 +106,7 @@ export interface ShadowState {
   symlinks: boolean;
   unsupported: { reason: string; until: number; fileCount: number | null; totalBytes: number | null } | null;
   /**
-   * bb thread storage directories inside the workspace, relative and
+   * VesnALIA thread storage directories inside the workspace, relative and
    * "/"-separated. Remembered, so a call made for one thread still leaves
    * another thread's storage alone.
    */
@@ -297,7 +297,7 @@ export class Shadow {
   private state: ShadowState | null = null;
 
   /** Workspace-relative directories never captured, diffed, or restored. */
-  private readonly skipDirs: string[] = [BB_CHAT_DIR];
+  private readonly skipDirs: string[] = [ALIA_CHAT_DIR];
   private readonly absoluteSkipPaths: string[] = [];
 
   constructor(
@@ -531,7 +531,7 @@ export class Shadow {
     }
   }
 
-  /** Also leave alone these directories when inside the workspace (bb thread storage). */
+  /** Also leave alone these directories when inside the workspace (VesnALIA thread storage). */
   skipPaths(absolute: readonly string[]): this {
     const root = path.resolve(this.workspace);
     for (const dir of absolute) {
@@ -577,7 +577,7 @@ export class Shadow {
       this.absoluteSkipPaths.length = 0;
     }
     const known = new Set(state.skipPaths);
-    const fresh = this.skipDirs.map(toDisplay).filter((dir) => dir !== BB_CHAT_DIR && !known.has(dir));
+    const fresh = this.skipDirs.map(toDisplay).filter((dir) => dir !== ALIA_CHAT_DIR && !known.has(dir));
     for (const dir of state.skipPaths) {
       const internal = fromDisplay(dir);
       if (!this.skipDirs.includes(internal)) this.skipDirs.push(internal);
@@ -1300,7 +1300,7 @@ export class Shadow {
     }
 
     const allChanges = await this.diffTrees(currentTree, targetTree);
-    // bb's chat copies stay exactly as they are, even against an older
+    // VesnALIA's chat copies stay exactly as they are, even against an older
     // checkpoint that still holds them: never written, never deleted.
     const leftAlone = allChanges.filter((change) => this.skipped(change.path));
     const changes = this.visible(allChanges);

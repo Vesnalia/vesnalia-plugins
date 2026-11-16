@@ -4,17 +4,17 @@ import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
-const dataDir = process.env.LIVE_BB_DATA ?? join(process.env.HOME ?? "", "bbdata");
-const cli = process.env.LIVE_BB_CLI ?? join(process.env.HOME ?? "", "bbc.sh");
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
+const dataDir = process.env.LIVE_ALIA_DATA ?? join(process.env.HOME ?? "", "bbdata");
+const cli = process.env.LIVE_ALIA_CLI ?? join(process.env.HOME ?? "", "bbc.sh");
 const shots = process.env.LIVE_SHOTS ?? join(process.cwd(), "shots");
 const runs = Number(process.env.LIVE_RUNS ?? 3);
 const chosen = process.argv.slice(2);
 mkdirSync(shots, { recursive: true });
 
-const APPLY = "**/api/v1/plugins/bb-box/rpc/config.apply";
-const GET = "**/api/v1/plugins/bb-box/rpc/config.get";
-const COPY_KEY = "config/migrated-from-bb-settings";
+const APPLY = "**/api/v1/plugins/alia-box/rpc/config.apply";
+const GET = "**/api/v1/plugins/alia-box/rpc/config.get";
+const COPY_KEY = "config/migrated-from-alia-settings";
 const FILE = ".cfg/live-import.json";
 
 function expect(condition, message) {
@@ -32,7 +32,7 @@ function gate() {
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -50,18 +50,18 @@ async function elsewhere(change) {
   throw new Error("the save made elsewhere could not be made");
 }
 
-function bb(...args) {
+function alia(...args) {
   return execFileSync(cli, args, { encoding: "utf8" });
 }
 
 function database(write = false) {
-  return new DatabaseSync(join(dataDir, "bb.db"), { readOnly: !write });
+  return new DatabaseSync(join(dataDir, "alia.db"), { readOnly: !write });
 }
 
 function storedSecrets() {
   const db = database();
   try {
-    const row = db.prepare("select value from plugin_kv where plugin_id = 'bb-box' and key = 'config/secrets'").get();
+    const row = db.prepare("select value from plugin_kv where plugin_id = 'alia-box' and key = 'config/secrets'").get();
     return row ? JSON.parse(row.value) : {};
   } finally {
     db.close();
@@ -76,7 +76,7 @@ function keepCopy(at) {
     const now = Date.now();
     const extra = columns.filter((name) => !["plugin_id", "key", "value"].includes(name));
     const names = ["plugin_id", "key", "value", ...extra];
-    const values = ["bb-box", COPY_KEY, value, ...extra.map((name) => (/at$/i.test(name) ? now : null))];
+    const values = ["alia-box", COPY_KEY, value, ...extra.map((name) => (/at$/i.test(name) ? now : null))];
     db.prepare(`insert or replace into plugin_kv (${names.join(", ")}) values (${names.map(() => "?").join(", ")})`).run(...values);
   } finally {
     db.close();
@@ -136,7 +136,7 @@ let onboardingSkipped = false;
 const heading = (page, title) => page.locator("[data-page-heading]").filter({ hasText: new RegExp(`^${title}`) });
 
 async function open(page, hash = "#option/configuration", title = "Configuration") {
-  const url = `${base}/settings/plugins/bb-box${hash}`;
+  const url = `${base}/settings/plugins/alia-box${hash}`;
   await page.goto(url, { waitUntil: "domcontentloaded" });
   if (!onboardingSkipped) {
     const skip = page.getByRole("button", { name: "Skip setup" });
@@ -216,10 +216,10 @@ const checks = {
     const { page, holdReads } = await tab();
     await open(page);
     const exported = await exportedFile(page);
-    const shown = bb("box", "config", "show", "--json");
-    expect(exported.text.trim() === shown.trim(), "the download is what bb box config show --json prints");
+    const shown = alia("box", "config", "show", "--json");
+    expect(exported.text.trim() === shown.trim(), "the download is what VesnALIA box config show --json prints");
     expect(!exported.text.includes(words.token) && !exported.text.includes(words.content), "the export has no secret in it");
-    const give = (await page.getByText(/^To set BB Box up from it, give/).locator("..").textContent()).trim();
+    const give = (await page.getByText(/^To set ALIA Box up from it, give/).locator("..").textContent()).trim();
     expect(give.includes("Hetzner Cloud: the API token") && give.includes(`Files for every box: the content of ~/${FILE}`), `the export says which secrets to give again: ${give}`);
 
     const file = JSON.parse(exported.text);
@@ -253,7 +253,7 @@ const checks = {
     await snap(page, run, "live-import-applied");
 
     await startImport(page);
-    const next = JSON.parse(bb("box", "config", "show", "--json"));
+    const next = JSON.parse(alia("box", "config", "show", "--json"));
     next.monitor.refreshIntervalSeconds = 30;
     await check(page, JSON.stringify(next));
     await changeList(page).waitFor();
@@ -274,7 +274,7 @@ const checks = {
   async "G8 import-newer-typing"({ run }) {
     const { page, holdApplies } = await tab();
     await open(page);
-    const file = JSON.parse(bb("box", "config", "show", "--json"));
+    const file = JSON.parse(alia("box", "config", "show", "--json"));
     file.monitor = { ...file.monitor, refreshIntervalSeconds: 15 };
     const text = JSON.stringify(file, null, 2);
     await startImport(page);
@@ -303,7 +303,7 @@ const checks = {
     const words = secretWords(run);
     const { page } = await tab();
     await open(page);
-    const file = JSON.parse(bb("box", "config", "show", "--json"));
+    const file = JSON.parse(alia("box", "config", "show", "--json"));
     file.backends[0].fields.token = words.newToken;
     file.backends.push({ id: "hetzner:second", type: "hetzner", enabled: false, fields: { token: words.token, "ssh-from": words.key } });
     file.general.files[0].content = words.newContent;
@@ -344,12 +344,12 @@ const checks = {
 
   async "the kept copy removed after its confirmation"({ run }) {
     keepCopy(Date.now() - 86_400_000 * (3 + run));
-    expect(/moved these BB settings/.test(bb("box", "config", "migrated")), "bb box config migrated shows the copy");
+    expect(/moved these ALIA settings/.test(alia("box", "config", "migrated")), "alia box config migrated shows the copy");
     const { page } = await tab();
     await open(page);
-    await page.getByText("Settings moved from BB").waitFor();
+    await page.getByText("Settings moved from VesnALIA").waitFor();
     await page.getByRole("button", { name: "Remove copy…" }).click();
-    const dialog = page.getByRole("alertdialog", { name: "Remove the copy of BB's earlier settings?" });
+    const dialog = page.getByRole("alertdialog", { name: "Remove the copy of VesnALIA's earlier settings?" });
     await dialog.waitFor();
     await snap(page, run, "live-copy-confirm");
     await dialog.getByRole("button", { name: "Cancel" }).click();
@@ -357,12 +357,12 @@ const checks = {
     expect((await stored()).migrated !== null, "Cancel keeps the copy");
     await page.getByRole("button", { name: "Remove copy…" }).click();
     await dialog.getByRole("button", { name: "Remove copy" }).click();
-    await page.getByText("Removed the copy of BB's earlier settings.").waitFor();
-    await waitFor(async () => !(await page.getByText("Settings moved from BB").count()), "the row to go");
+    await page.getByText("Removed the copy of VesnALIA's earlier settings.").waitFor();
+    await waitFor(async () => !(await page.getByText("Settings moved from VesnALIA").count()), "the row to go");
     expect((await stored()).migrated === null, "the copy is gone");
-    expect(/There is no copy/.test(bb("box", "config", "migrated")), "bb box config migrated says there is no copy");
+    expect(/There is no copy/.test(alia("box", "config", "migrated")), "alia box config migrated says there is no copy");
     const focused = await page.evaluate(() => document.activeElement?.textContent);
-    expect(focused === "Removed the copy of BB's earlier settings.", `focus on the result: ${focused}`);
+    expect(focused === "Removed the copy of VesnALIA's earlier settings.", `focus on the result: ${focused}`);
     await snap(page, run, "live-copy-removed");
     await page.context().close();
     return { focused };

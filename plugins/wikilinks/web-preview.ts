@@ -265,7 +265,7 @@ export async function fetchWebPreview(
         headers: {
           accept:
             "text/html,application/xhtml+xml,text/markdown,text/plain;q=0.9,*/*;q=0.1",
-          "user-agent": "BB-Wikilinks-Preview/0.1",
+          "user-agent": "ALIA-Wikilinks-Preview/0.1",
         },
       });
       if (response.status < 300 || response.status >= 400) break;

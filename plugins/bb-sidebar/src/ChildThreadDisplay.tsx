@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Disc } from "./Disc";
 import { ProviderGlyph, type SidebarProvider } from "./ProviderGlyph";
 import {

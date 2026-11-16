@@ -1,6 +1,6 @@
-// A private copy of a PR's commit for one agent. bb runs a branch's .bb-env-setup.sh in any
-// worktree it creates (seen in a live test), so a bb worktree of an unreviewed branch would run its code.
-// bb runs no hooks in a folder it is only pointed at, and this copy shares nothing with the
+// A private copy of a PR's commit for one agent. VesnALIA runs a branch's .alia-env-setup.sh in any
+// worktree it creates (seen in a live test), so a VesnALIA worktree of an unreviewed branch would run its code.
+// VesnALIA runs no hooks in a folder it is only pointed at, and this copy shares nothing with the
 // user's repository: no hardlinks, config or hooks. Their checkout and other agents are untouched.
 import { execFile } from "node:child_process";
 import { join } from "node:path";

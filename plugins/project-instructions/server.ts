@@ -1,18 +1,18 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const KEY_PREFIX = "instructions:";
 
-// bb truncates a contribution above this length without reporting it, so the
+// VesnALIA truncates a contribution above this length without reporting it, so the
 // limit is enforced at every write instead of losing the tail silently.
 const MAX_LENGTH = 4096;
 
 const usage = [
   "Usage:",
-  "  bb project-instructions get [--project <id>]",
-  "  bb project-instructions set <text...> [--project <id>]",
-  "  bb project-instructions clear [--project <id>]",
-  "  bb project-instructions list",
+  "  VesnALIA project-instructions get [--project <id>]",
+  "  VesnALIA project-instructions set <text...> [--project <id>]",
+  "  VesnALIA project-instructions clear [--project <id>]",
+  "  VesnALIA project-instructions list",
   "",
   "--project defaults to the project of the calling thread.",
   `Instructions are limited to ${MAX_LENGTH} characters.`,
@@ -58,13 +58,13 @@ function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   // contributeInstructions is synchronous, so the kv rows are mirrored here
   // and the mirror is the only thing the thread-start path touches.
   const byProject = new Map<string, string>();
 
-  for (const key of await bb.storage.kv.list(KEY_PREFIX)) {
-    const text = await bb.storage.kv.get<string>(key);
+  for (const key of await alia.storage.kv.list(KEY_PREFIX)) {
+    const text = await alia.storage.kv.get<string>(key);
     if (text) byProject.set(key.slice(KEY_PREFIX.length), text);
   }
 
@@ -90,20 +90,20 @@ export default async function plugin(bb: BbPluginApi) {
 
     const key = `${KEY_PREFIX}${projectId}`;
     if (trimmed) {
-      await bb.storage.kv.set(key, trimmed);
+      await alia.storage.kv.set(key, trimmed);
       byProject.set(projectId, trimmed);
     } else {
-      await bb.storage.kv.delete(key);
+      await alia.storage.kv.delete(key);
       byProject.delete(projectId);
     }
-    bb.realtime.publish("changed", { projectId });
+    alia.realtime.publish("changed", { projectId });
   }
 
-  bb.agents.contributeInstructions(({ projectId }) => byProject.get(projectId) ?? null);
+  alia.agents.contributeInstructions(({ projectId }) => byProject.get(projectId) ?? null);
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async listProjects() {
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       return {
         maxLength: MAX_LENGTH,
         projects: projects.map((project) => ({
@@ -119,29 +119,29 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "project-instructions",
     summary: "Per-project instructions injected into each thread's system prompt",
     commands: [
       {
         name: "get",
         summary: "Show this project's instructions",
-        usage: "bb project-instructions get [--project <id>]",
+        usage: "alia project-instructions get [--project <id>]",
       },
       {
         name: "set",
         summary: "Replace this project's instructions",
-        usage: "bb project-instructions set <text...> [--project <id>]",
+        usage: "alia project-instructions set <text...> [--project <id>]",
       },
       {
         name: "clear",
         summary: "Remove this project's instructions",
-        usage: "bb project-instructions clear [--project <id>]",
+        usage: "alia project-instructions clear [--project <id>]",
       },
       {
         name: "list",
         summary: "List every project with instructions",
-        usage: "bb project-instructions list",
+        usage: "alia project-instructions list",
       },
     ],
     async run(argv, ctx) {

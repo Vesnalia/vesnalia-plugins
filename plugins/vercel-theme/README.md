@@ -1,13 +1,13 @@
-# Vercel Theme for bb
+# Vercel Theme for VesnALIA
 
-A polished Vercel-inspired theme for [bb](https://getbb.app): true-black dark
+A polished Vercel-inspired theme for [VesnALIA](https://getbb.app): true-black dark
 surfaces, crisp neutral borders, Geist typography, restrained blue accents,
 and matching syntax, diff, file-tree, and terminal colors.
 
 > This is an independent community theme. It is not affiliated with or
 > endorsed by Vercel.
 
-![Vercel Theme in bb dark mode](assets/screenshots/vercel-dark.png)
+![Vercel Theme in VesnALIA dark mode](assets/screenshots/vercel-dark.png)
 
 ## Highlights
 
@@ -25,24 +25,24 @@ and matching syntax, diff, file-tree, and terminal colors.
 ## Install
 
 Install the Git release directly (and, once its community listing is merged,
-search for **Vercel Theme** in the BB Community marketplace):
+search for **Vercel Theme** in the VesnALIA Community marketplace):
 
 ```sh
-bb plugin install git:https://github.com/divyesh-puri/bb-plugin-vercel-theme.git@^0.1.0
+alia plugin install git:https://github.com/divyesh-puri/bb-plugin-vercel-theme.git@^0.1.0
 ```
 
 Then select **Vercel** under **Settings → Appearance**, or run:
 
 ```sh
-bb theme set plugin:vercel-theme:vercel
+alia theme set plugin:vercel-theme:vercel
 ```
 
-Light/dark mode remains a per-client BB setting. The palette supports both.
+Light/dark mode remains a per-client VesnALIA setting. The palette supports both.
 
 <details>
 <summary>Light mode preview</summary>
 
-![Vercel Theme in bb light mode](assets/screenshots/vercel-light.png)
+![Vercel Theme in VesnALIA light mode](assets/screenshots/vercel-light.png)
 
 </details>
 
@@ -52,13 +52,13 @@ Light/dark mode remains a per-client BB setting. The palette supports both.
 npm install
 npm run check
 npm run build
-bb plugin install .
-bb theme set plugin:vercel-theme:vercel
+alia plugin install .
+alia theme set plugin:vercel-theme:vercel
 ```
 
 ## Design map
 
-| BB surface | Vercel treatment |
+| VesnALIA surface | Vercel treatment |
 | --- | --- |
 | Main canvas | `#000000` dark / `#ffffff` light |
 | Sidebar and cards | `#0a0a0a` dark / `#fafafa` light |

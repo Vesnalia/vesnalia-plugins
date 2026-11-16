@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { experimental_useRpcQuery, useSdk } from "@get-bb/plugin-sdk/app";
+import { experimental_useRpcQuery, useSdk } from "@vesnalia/plugin-sdk/app";
 import { PROJECTS_PLUGIN, TASKS_PLUGIN, projectsContract, tasksContract } from "./suite-contracts";
 import { serializeProjectIcon, type ProjectIcon } from "./project-icons";
 import { boardIconLookup } from "./board-icon-lookup";
@@ -9,7 +9,7 @@ export interface ProjectBoard {
   id: string;
   name: string;
   prefix: string;
-  bbProjectId: string | null;
+  aliaProjectId: string | null;
   leadThreadId: string | null;
   focus: string | null;
 }
@@ -28,7 +28,7 @@ export function useProjectBoards(): { boards: ProjectBoard[]; leadIds: ReadonlyS
           id: project.id,
           name: project.name,
           prefix: project.prefix,
-          bbProjectId: project.linkedBbProjectId,
+          aliaProjectId: project.linkedAliaProjectId,
           leadThreadId: lead.threadId,
           focus: lead.focus,
         },

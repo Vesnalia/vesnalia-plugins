@@ -76,11 +76,11 @@ export class BrowserVoiceTransport implements VoiceTransport {
       body: JSON.stringify({ text }), signal,
     });
     if (!response.ok) {
-      throw new Error("Miku's voice is unavailable. Check FFmpeg support on the BB server; bubbles still work.");
+      throw new Error("Miku's voice is unavailable. Check FFmpeg support on the VesnALIA server; bubbles still work.");
     }
     const buffer = await context.decodeAudioData(await response.arrayBuffer());
     if (signal.aborted) return;
-    if (context.state !== "running") throw new Error("Click in BB to resume Miku's audio.");
+    if (context.state !== "running") throw new Error("Click in VesnALIA to resume Miku's audio.");
     const source = context.createBufferSource();
     const gain = context.createGain();
     source.buffer = buffer;

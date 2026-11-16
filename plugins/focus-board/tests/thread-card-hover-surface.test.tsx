@@ -23,7 +23,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import type { ComponentProps } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import {
   CARD_SPOTLIGHT_RULE,
   CARD_SPOTLIGHT_STYLE_ID,

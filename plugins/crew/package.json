@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-crew",
+  "name": "alia-plugin-crew",
   "version": "0.1.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.44",
-    "bbPluginSdk": ">=0.5.29"
+    "alia": ">=0.44",
+    "aliaPluginSdk": ">=0.5.29"
   },
-  "bb": {
+  "alia": {
     "name": "Crew",
     "description": "Build a persistent agent team (crew) from a crew.yaml: members with fixed addresses nested under a lead, reconciled with apply/stop.",
     "branding": {
@@ -26,7 +26,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.29",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -59,13 +58,8 @@
   },
   "description": "A persistent agent team from a crew file: members with fixed addresses, apply/stop, sync and journal.",
   "author": "sajov",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sajov/bb-plugins.git",
-    "directory": "bb-plugin-crew"
-  },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "agents",
     "team",
     "multi-agent",
@@ -74,8 +68,25 @@
   ],
   "license": "MIT",
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.29"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/crew#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/crew"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 
 /** Register before mounting editors; release only after the open request settles. */

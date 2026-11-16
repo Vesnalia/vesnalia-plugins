@@ -40,7 +40,7 @@ import {
   createGenerationLimiter,
 } from "../src/recap.ts";
 
-test("builds a bounded BB transcript and preserves the latest context", () => {
+test("builds a bounded VesnALIA transcript and preserves the latest context", () => {
   const rows = [
     {
       kind: "conversation",
@@ -515,7 +515,7 @@ test("finds the script of the prose and ignores identifiers", () => {
   assert.equal(dominantScript("Почему страница настроек не скроллится?"), "Cyrillic");
   assert.equal(dominantScript("Why did the settings page stop scrolling?"), "Latin");
   assert.equal(
-    dominantScript("Мы перевели bb-plugin-next-prompt на next-prompt-core в `src/app.tsx`, https://github.com/a/b"),
+    dominantScript("Мы перевели alia-plugin-next-prompt на next-prompt-core в `src/app.tsx`, https://github.com/a/b"),
     "Cyrillic",
   );
   assert.equal(dominantScript("設定ページがスクロールしない理由を調べました"), "CJK");

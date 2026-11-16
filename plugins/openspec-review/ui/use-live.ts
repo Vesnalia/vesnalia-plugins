@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRealtimeConnectionState } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState } from "@vesnalia/plugin-sdk/app";
 import { liveRequest } from "./live-request";
 
 // Last result per key for this app session: reopening a tab or card paints at once while the read refreshes.

@@ -1,9 +1,9 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Factory } from "./server";
 
 /** KV is only a fixed-size locator. Histories grow as rows, never as KV values
  * (or as a task-sized JSON blob). Array positions preserve the original order. */
-export function createFactoryStorage(storage: BbPluginApi["storage"], parse: (value: unknown) => Factory) {
+export function createFactoryStorage(storage: AliaPluginApi["storage"], parse: (value: unknown) => Factory) {
   const db = storage.database();
   storage.migrate(db, [
     `CREATE TABLE factory_metadata (prefix TEXT PRIMARY KEY, payload TEXT NOT NULL);

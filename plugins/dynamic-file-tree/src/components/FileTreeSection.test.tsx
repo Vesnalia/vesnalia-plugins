@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import type { PluginRealtimeConnectionState } from "@get-bb/plugin-sdk/app";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers } from "@get-bb/plugin-sdk/testing/app";
+import type { PluginRealtimeConnectionState } from "@vesnalia/plugin-sdk/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers } from "@vesnalia/plugin-sdk/testing/app";
 import { DynamicFileTreeTab } from "../../app";
 import { fileIconColor } from "./FileTreeSection";
 import { collectActiveActivities } from "../activity-model";

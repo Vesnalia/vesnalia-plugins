@@ -63,8 +63,8 @@ async function deliver(home: string, version: number): Promise<void> {
 
 test("a slot's device server runs under the host's daemon: delivered, it starts by itself, and a new version answers within 8 s", { skip: process.platform === "win32" }, async () => {
   const home = tempDir("slot-home");
-  mkdirSync(join(home, ".bb-box/device"), { recursive: true });
-  writeFileSync(join(home, ".bb-box/device/host-managed"), "1\n");
+  mkdirSync(join(home, ".alia-box/device"), { recursive: true });
+  writeFileSync(join(home, ".alia-box/device/host-managed"), "1\n");
   const keepAlive = spawn("/bin/sh", ["-c", `while :; do /bin/sh -c '${DEVICE_SERVER_WAIT.replaceAll("'", `'\\''`)}'; sleep 1; done`], {
     env: { ...process.env, HOME: home },
     stdio: "ignore",
@@ -79,7 +79,7 @@ test("a slot's device server runs under the host's daemon: delivered, it starts 
     version = await runningVersion(home);
   }
   assert.equal(version, 41, "the waiting daemon started the delivered server");
-  assert.equal(readFileSync(join(home, ".bb-box/device/manager"), "utf8"), "host\n");
+  assert.equal(readFileSync(join(home, ".alia-box/device/manager"), "utf8"), "host\n");
 
   const began = Date.now();
   await deliver(home, 42);
@@ -88,10 +88,10 @@ test("a slot's device server runs under the host's daemon: delivered, it starts 
   assert.equal(version, 42);
   assert.ok(tookMs < 8_000, `the new version answered in ${tookMs} ms, within 8 s`);
 
-  const restart = await run(home, `sh "$HOME/.bb-box/device/current/src/device/bb-box-device.sh" restart; sh "$HOME/.bb-box/device/current/src/device/bb-box-device.sh" start`);
+  const restart = await run(home, `sh "$HOME/.alia-box/device/current/src/device/alia-box-device.sh" restart; sh "$HOME/.alia-box/device/current/src/device/alia-box-device.sh" start`);
   assert.equal(restart.code, 0, restart.stderr);
   for (version = null; version !== 42; ) version = await runningVersion(home);
-  const log = readFileSync(join(home, ".bb-box/device/server.log"), "utf8");
-  assert.ok((log.match(/^bb-box-device: start .* by host$/gm)?.length ?? 0) >= 2, log);
+  const log = readFileSync(join(home, ".alia-box/device/server.log"), "utf8");
+  assert.ok((log.match(/^alia-box-device: start .* by host$/gm)?.length ?? 0) >= 2, log);
   assert.doesNotMatch(log, / by (launchd|systemd|supervisor)$/m, "started by the host's daemon, never by launchctl, systemd or a supervisor");
 });

@@ -1,9 +1,9 @@
 /**
- * BB's framed desktop window: a recessed backdrop with a chrome row on top and
- * a lip around the inset content card. BB declares both sizes as CSS custom
+ * VesnALIA's framed desktop window: a recessed backdrop with a chrome row on top and
+ * a lip around the inset content card. VesnALIA declares both sizes as CSS custom
  * properties on its `[data-framed]` wrapper, so the rail reads them there and
  * sits on the same backdrop as a card of its own. Without the wrapper (web,
- * compact viewport, older BB) the window is not framed and the rail stays
+ * compact viewport, older VesnALIA) the window is not framed and the rail stays
  * flush with the window edge.
  */
 import { useEffect, useState } from "react";
@@ -22,8 +22,8 @@ function readFrame(): WindowFrame | null {
   const wrapper = document.querySelector("[data-framed]");
   if (wrapper === null) return null;
   const style = getComputedStyle(wrapper);
-  const top = style.getPropertyValue("--bb-window-frame-top").trim();
-  const lip = style.getPropertyValue("--bb-window-frame-lip").trim();
+  const top = style.getPropertyValue("--alia-window-frame-top").trim();
+  const lip = style.getPropertyValue("--alia-window-frame-lip").trim();
   return top === "" || lip === "" ? null : { top, lip };
 }
 
@@ -51,7 +51,7 @@ export function subscribeWindowFrame(listener: (frame: WindowFrame | null) => vo
 }
 
 /**
- * BB toggles the wrapper's `data-framed` with the viewport and full screen,
+ * VesnALIA toggles the wrapper's `data-framed` with the viewport and full screen,
  * so both resize and the attribute are watched. Child-list changes are not:
  * the shell is mounted before plugin overlays, and streaming chat would
  * otherwise force a style read on every token.

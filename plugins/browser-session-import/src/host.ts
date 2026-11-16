@@ -11,7 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { z } from "zod";
 import { hostContract, type Cookie } from "./contracts.js";
 
@@ -217,7 +217,7 @@ function sources() {
   return [...grouped.values()];
 }
 function snapshot(path: string) {
-  const directory = mkdtempSync(join(tmpdir(), "bb-browser-cookies-"));
+  const directory = mkdtempSync(join(tmpdir(), "alia-browser-cookies-"));
   try {
     const target = join(directory, "cookies.sqlite");
     copyFileSync(path, target);

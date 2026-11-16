@@ -46,8 +46,8 @@ change types to checks and records the evidence boundaries.
 | Everything, before opening a PR                       | `npm run check` and `npm run format:check`                          |
 
 `npm run check` = `marketplace:check` + `typecheck` + `test` + `build`. The
-build step needs bb's CLI; on a machine without the desktop app install the
-pinned builder with `npm install --no-save --ignore-scripts bb-app@0.46.1`.
+build step needs VesnALIA's CLI; on a machine without the desktop app install the
+pinned builder with `npm install --no-save --ignore-scripts alia-app@0.46.1`.
 
 Mocked-client tests still pass through launch resolution before their client
 factory is called. Supply `providerOptions.executable: process.execPath` for
@@ -60,19 +60,19 @@ their stated dates.
 
 [ci.yml](../../.github/workflows/ci.yml) (Ubuntu, Node 24) runs, in order:
 `npm ci --ignore-scripts`, `format:check`, `marketplace:check`, `typecheck`,
-`test`, then installs `bb-app@0.46.1` and `build`. Hosted CI **does not** run
+`test`, then installs `alia-app@0.46.1` and `build`. Hosted CI **does not** run
 the live CLI smoke.
 
-## Live and installed-bb checks
+## Live and installed-alia checks
 
 - `npm run test:live` starts the installed ZCode CLI with an isolated `HOME`,
   synthetic provider configuration, and a deterministic loopback model server.
   It never uses real model credentials and is optional for documentation-only
   changes.
-- The full bb smoke additionally needs a **disposable bb instance**
-  (`BB_SMOKE_SERVER_URL`, `BB_SMOKE_DATA_DIR`, optionally
-  `BB_HOST_DAEMON_PORT`). It changes that instance's ZCode executable setting;
-  never target a normal bb profile. The invocation template is in
+- The full VesnALIA smoke additionally needs a **disposable VesnALIA instance**
+  (`ALIA_SMOKE_SERVER_URL`, `ALIA_SMOKE_DATA_DIR`, optionally
+  `ALIA_HOST_DAEMON_PORT`). It changes that instance's ZCode executable setting;
+  never target a normal VesnALIA profile. The invocation template is in
   [docs/validation.md](../../docs/validation.md).
 
 ## Verification boundaries
@@ -102,11 +102,11 @@ bundle 0.17.0** (auto-updated after the v0.5.0 validation): `npm run
 test:live` reported `RUNTIME_VERIFIED` with exit 0, protocol "ZCode Protocol"
 version 1, 27 synthetic model requests, all direct-CLI, bridge,
 checkpoint/fork, background-work, file-rollback, Coding Plan, and
-tool/skill/subagent checks passing. `bbThreadVerified` was false only because
-the opt-in disposable-bb environment variables were not set.
+tool/skill/subagent checks passing. `aliaThreadVerified` was false only because
+the opt-in disposable-alia environment variables were not set.
 
 v0.6.0 (rich tool rows, 2026-10-20): `npm run check` passed end to end on
-this machine for the first time (the desktop bb CLI supplies the builder) -
+this machine for the first time (the desktop VesnALIA CLI supplies the builder) -
 **144 tests in 11 files**, marketplace consistency, typecheck, formatting,
 and the plugin build; `npm run test:live` again reported `RUNTIME_VERIFIED`
 with exit 0 against CLI 0.17.0.
@@ -120,8 +120,8 @@ v0.7.0 (provider usage and `/zcode-check`, 2026-10-20): **148 tests in 11
 files**, marketplace consistency, typecheck, formatting and the plugin build
 all green; the live smoke stays `RUNTIME_VERIFIED` against CLI 0.17.0.
 
-v0.8.0 (bb-local archive/rename and goal clearing, 2026-10-20): **151 tests
-in 11 files**, full `npm run check` and the live smoke green. The bb 0.46.1
+v0.8.0 (alia-local archive/rename and goal clearing, 2026-10-20): **151 tests
+in 11 files**, full `npm run check` and the live smoke green. The VesnALIA 0.46.1
 runtime asar was inspected to confirm it does not yet send
 `thread/archive|unarchive|name/set|goal/clear` requests.
 
@@ -132,5 +132,5 @@ v0.9.1 (actionable host-service errors, 2026-10-20): **156 tests in 11
 files**, full `npm run check` and the live smoke green.
 
 v0.9.2 (custom provider icon, 2026-10-20): **156 tests in 11 files**, full
-`npm run check` and the live smoke green; the icon follows bb's bundled-plugin
+`npm run check` and the live smoke green; the icon follows VesnALIA's bundled-plugin
 `icons/*.svg` convention and the catalog uses the schema's `{url}` form.

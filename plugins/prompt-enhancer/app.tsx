@@ -1,7 +1,7 @@
-// bb-plugin-prompt-enhancer — frontend entry.
+// alia-plugin-prompt-enhancer — frontend entry.
 //
 // Adds an "Enhance prompt" button to every composer: it rewrites the draft via
-// the backend (a hidden bb thread). While an enhancement runs the button
+// the backend (a hidden VesnALIA thread). While an enhancement runs the button
 // shimmers, the draft gets an animated text effect, and the button doubles as
 // a cancel control. The rewrite then streams into the composer, settles with a
 // one-shot accent sweep, and offers Undo via the success toast. All motion
@@ -19,7 +19,7 @@ import {
   useComposer,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "./server";
 import { Icon } from "@/components/ui/icon";
@@ -816,9 +816,9 @@ function EnhanceButton() {
       className="flex items-center"
     >
       {/* Same idiom as the Prompts plugin's composer button, so the row
-          reads as one family: borderless 28px ghost button like bb's own
+          reads as one family: borderless 28px ghost button like VesnALIA's own
           composer controls, muted-to-foreground on hover, size-4 icon. On a coarse pointer it grows to 36x40 — the
-          size BB's own composer actions (expand, prompt actions, voice)
+          size VesnALIA's own composer actions (expand, prompt actions, voice)
           take there, so the row stays one family on touch too instead of
           leaving this the one 28px target among 40px neighbours. */}
       <button
@@ -978,7 +978,7 @@ function ModelSettingsSection() {
   /**
    * Model and reasoning level are one combined choice, so the list stays put
    * across selections and both can be set in a single visit (same behavior as
-   * bb's own model picker). The toast reuses one id so a run of selections
+   * VesnALIA's own model picker). The toast reuses one id so a run of selections
    * updates a single toast instead of stacking.
    */
   async function selectOverride(next: ModelOverride | null): Promise<void> {
@@ -1042,7 +1042,7 @@ function ModelSettingsSection() {
                 </span>
               </CommandItem>
             </CommandGroup>
-            {/* Reasoning section, mirroring bb's own model picker: the
+            {/* Reasoning section, mirroring VesnALIA's own model picker: the
                 pinned model's levels in their own group rather than nested
                 under a row, so the choice is visible without hunting. */}
             {selectedModel === null ? (

@@ -1,5 +1,5 @@
 import { WORK_ACTIONS, type WorkAction } from "./store/thread-work.js";
-import type { PluginCliCommandInfo, PluginCliContext, PluginCliResult } from "@get-bb/plugin-sdk";
+import type { PluginCliCommandInfo, PluginCliContext, PluginCliResult } from "@vesnalia/plugin-sdk";
 import { flagBoolean, parseArgs, type ParsedArgs } from "./cli-args.js";
 import { fail, json, ok, table } from "./cli-format.js";
 import { describeError } from "./linear/errors.js";
@@ -11,23 +11,23 @@ import type { BindingRole, TeamRow } from "./store/rows.js";
 import { flagString } from "./cli-args.js";
 
 /**
- * `bb linear`.
+ * `alia linear`.
  *
  * Every subcommand carries a real `summary` and `usage`, because agents
- * discover plugin commands through bb's generated `plugin-commands` skill and
+ * discover plugin commands through VesnALIA's generated `plugin-commands` skill and
  * those two strings are the entire description they get. A command documented
  * as "Linear stuff" is a command a model will use wrongly and then explain
  * confidently.
  *
  * The runner is a pure dispatch over an injected environment, so every command
- * is testable without a bb server: the tests drive `createCliRunner` with
+ * is testable without a VesnALIA server: the tests drive `createCliRunner` with
  * hand-built reports and assert on the text.
  *
  * **The multi-machine rule applies here.** `run` executes on the *server*, so
  * a path or "current branch" argument names something on the *invoking*
  * machine. Anything host-local resolves through
  * `ctx.threadId → threads.get → environmentId → environments.get().hostId` and
- * then goes through `bb.sdk.files` / `bb.sdk.environments` with that explicit
+ * then goes through `alia.sdk.files` / `alia.sdk.environments` with that explicit
  * host. `node:fs` is used only for this plugin's own data directory.
  */
 
@@ -135,155 +135,155 @@ export interface CliEnvironment {
 
 export const CLI_COMMANDS: readonly PluginCliCommandInfo[] = [
   { name: "work", summary: "Read or update this thread's current, active and previous Linear work",
-    usage: "bb linear work [start|add|focus|finish|remove|clear] [ENG-123] [--thread <id>] [--revision <n>]" },
+    usage: "alia linear work [start|add|focus|finish|remove|clear] [ENG-123] [--thread <id>] [--revision <n>]" },
   {
     name: "status",
-    summary: "Which workspace this bb is connected to, and what it has cached",
-    usage: "bb linear status [--json]",
+    summary: "Which workspace this VesnALIA is connected to, and what it has cached",
+    usage: "alia linear status [--json]",
   },
   {
     name: "doctor",
     summary: "Check every precondition and name the ones that are not met",
-    usage: "bb linear doctor [--json]",
+    usage: "alia linear doctor [--json]",
   },
   {
     name: "budget",
     summary: "How much of Linear's hourly request budget is left",
-    usage: "bb linear budget [--json]",
+    usage: "alia linear budget [--json]",
   },
   {
     name: "teams",
     summary: "Every Linear team this API key can see, and which are bound",
-    usage: "bb linear teams [--json]",
+    usage: "alia linear teams [--json]",
   },
   {
     name: "bind",
-    summary: "Bind a bb project to a Linear team",
-    usage: "bb linear bind <TEAM-KEY> [--project <id>] [--role primary|write|read]",
+    summary: "Bind a VesnALIA project to a Linear team",
+    usage: "alia linear bind <TEAM-KEY> [--project <id>] [--role primary|write|read]",
   },
   {
     name: "unbind",
-    summary: "Remove a bb project's binding to a Linear team",
-    usage: "bb linear unbind <TEAM-KEY> [--project <id>]",
+    summary: "Remove a VesnALIA project's binding to a Linear team",
+    usage: "alia linear unbind <TEAM-KEY> [--project <id>]",
   },
   {
     name: "refresh",
     summary: "Re-read the workspace: which teams exist, and each team's own states, labels and people",
-    usage: "bb linear refresh",
+    usage: "alia linear refresh",
   },
   {
     name: "sync",
     summary: "Read the bound teams' open issues into the local copy now",
-    usage: "bb linear sync [--full]",
+    usage: "alia linear sync [--full]",
   },
   {
     name: "issue",
     summary: "Read one issue in full",
-    usage: "bb linear issue <ENG-123> [--comments]",
+    usage: "alia linear issue <ENG-123> [--comments]",
   },
   {
     name: "create",
     summary: "Create an issue in the bound team",
     usage:
-      "bb linear create <title…> [--description <text>] [--team <KEY>] [--assignee me] [--priority 0-4]",
+      "alia linear create <title…> [--description <text>] [--team <KEY>] [--assignee me] [--priority 0-4]",
   },
   {
     name: "issues",
     summary: "List the bound teams' issues, filtered",
     usage:
-      "bb linear issues [--state <type|name>] [--assignee me|none|@name] [--team <KEY>] [--limit <n>] [--json]",
+      "alia linear issues [--state <type|name>] [--assignee me|none|@name] [--team <KEY>] [--limit <n>] [--json]",
   },
   {
     name: "attach",
     summary: "Attach a link to an issue",
-    usage: "bb linear attach <ENG-123> <url> [--title <text>]",
+    usage: "alia linear attach <ENG-123> <url> [--title <text>]",
   },
   {
     name: "archive",
     summary: "Archive an issue — reversible in Linear, and never a delete",
-    usage: "bb linear archive <ENG-123> --yes",
+    usage: "alia linear archive <ENG-123> --yes",
   },
   {
     name: "move",
     summary: "Move an issue to one of its team's states",
-    usage: "bb linear move <ENG-123> <state-name|state-type>",
+    usage: "alia linear move <ENG-123> <state-name|state-type>",
   },
   {
     name: "assign",
     summary: "Assign an issue to yourself, to someone else, or to nobody",
-    usage: "bb linear assign <ENG-123> <me|@name|none>",
+    usage: "alia linear assign <ENG-123> <me|@name|none>",
   },
   {
     name: "set",
     summary: "Change an issue's priority, estimate, due date, project, cycle, title or labels",
     usage:
-      "bb linear set <ENG-123> [--priority 0-4] [--estimate <n>] [--due YYYY-MM-DD|none] [--project <name|none>] [--cycle <name|none>] [--title <text>] [--label +name|-name] [--bb-project <id>]",
+      "alia linear set <ENG-123> [--priority 0-4] [--estimate <n>] [--due YYYY-MM-DD|none] [--project <name|none>] [--cycle <name|none>] [--title <text>] [--label +name|-name] [--alia-project <id>]",
   },
   {
     name: "comment",
     summary: "Comment on an issue",
-    usage: "bb linear comment <ENG-123> <text…>",
+    usage: "alia linear comment <ENG-123> <text…>",
   },
   {
     name: "forget",
     summary: "Delete the local copy of your Linear workspace from this machine",
-    usage: "bb linear forget --yes",
+    usage: "alia linear forget --yes",
   },
   {
     name: "webhook",
     summary: "Whether webhooks are delivering, and how to turn them off",
-    usage: "bb linear webhook status | enable <url> | disable",
+    usage: "alia linear webhook status | enable <url> | disable",
   },
   {
     name: "inbox",
     summary: "What Linear wants you for, and dismiss what you have handled",
-    usage: "bb linear inbox [--all] | bb linear inbox dismiss <key|--all>",
+    usage: "alia linear inbox [--all] | VesnALIA linear inbox dismiss <key|--all>",
   },
   {
     name: "start",
-    summary: "Start a bb thread from an issue, with its context and status move",
-    usage: "bb linear start <ENG-123> [--project <id>] [--no-move]",
+    summary: "Start a VesnALIA thread from an issue, with its context and status move",
+    usage: "alia linear start <ENG-123> [--project <id>] [--no-move]",
   },
   {
     name: "link",
     summary: "Link this thread to an issue",
-    usage: "bb linear link <ENG-123> [--thread <id>]",
+    usage: "alia linear link <ENG-123> [--thread <id>]",
   },
   {
     name: "unlink",
     summary: "Remove this thread's link to an issue",
-    usage: "bb linear unlink [--thread <id>]",
+    usage: "alia linear unlink [--thread <id>]",
   },
 ];
 
-const USAGE = `bb linear — Linear issues, and the bb threads and pull requests attached to them.
+const USAGE = `alia linear — Linear issues, and the VesnALIA threads and pull requests attached to them.
 
-  bb linear status              Which workspace this bb is connected to
-  bb linear doctor              Check every precondition and name what is missing
-  bb linear budget              How much of Linear's hourly request budget is left
+  VesnALIA linear status              Which workspace this VesnALIA is connected to
+  VesnALIA linear doctor              Check every precondition and name what is missing
+  VesnALIA linear budget              How much of Linear's hourly request budget is left
 
-  bb linear teams               Every team this key can see, and which are bound
-  bb linear bind <TEAM-KEY>     Bind a bb project to a Linear team
-  bb linear unbind <TEAM-KEY>   Remove a binding
-  bb linear refresh             Re-read the workspace after changing the key
-  bb linear sync [--full]       Read the bound teams' open issues now
+  VesnALIA linear teams               Every team this key can see, and which are bound
+  VesnALIA linear bind <TEAM-KEY>     Bind a VesnALIA project to a Linear team
+  VesnALIA linear unbind <TEAM-KEY>   Remove a binding
+  VesnALIA linear refresh             Re-read the workspace after changing the key
+  VesnALIA linear sync [--full]       Read the bound teams' open issues now
 
-  bb linear create <title…>     Create an issue in the bound team
-  bb linear issues              List the bound teams' issues, filtered
-  bb linear issue <ENG-123>     Read one issue in full
-  bb linear move <ENG-123> <s>  Move it to one of its team's states
-  bb linear assign <ENG-123> me Assign it
-  bb linear set <ENG-123> --priority 1   Change anything else about it
-  bb linear comment <ENG-123> … Comment on it
-  bb linear attach <ENG-123> <url>  Attach a link to it
-  bb linear archive <ENG-123> --yes Archive it (reversible in Linear)
-  bb linear webhook             Whether webhooks are delivering
-  bb linear forget --yes        Delete the local copy from this machine
-  bb linear inbox               What Linear wants you for
-  bb linear start <ENG-123>     Start a bb thread from it
-  bb linear link <ENG-123>      Link this thread to it
-  bb linear unlink              Finish all work here, keeping history
-  bb linear work [action] [ENG-123]  Current, active and previous work
+  VesnALIA linear create <title…>     Create an issue in the bound team
+  VesnALIA linear issues              List the bound teams' issues, filtered
+  VesnALIA linear issue <ENG-123>     Read one issue in full
+  VesnALIA linear move <ENG-123> <s>  Move it to one of its team's states
+  VesnALIA linear assign <ENG-123> me Assign it
+  VesnALIA linear set <ENG-123> --priority 1   Change anything else about it
+  VesnALIA linear comment <ENG-123> … Comment on it
+  VesnALIA linear attach <ENG-123> <url>  Attach a link to it
+  VesnALIA linear archive <ENG-123> --yes Archive it (reversible in Linear)
+  VesnALIA linear webhook             Whether webhooks are delivering
+  VesnALIA linear forget --yes        Delete the local copy from this machine
+  VesnALIA linear inbox               What Linear wants you for
+  VesnALIA linear start <ENG-123>     Start a VesnALIA thread from it
+  VesnALIA linear link <ENG-123>      Link this thread to it
+  VesnALIA linear unlink              Finish all work here, keeping history
+  VesnALIA linear work [action] [ENG-123]  Current, active and previous work
 
 Run any read command with --json for machine output.`;
 
@@ -310,12 +310,12 @@ function readLimit(value: string | undefined, fallback = 30): number {
 }
 
 /**
- * Which bb project a command is scoped to.
+ * Which VesnALIA project a command is scoped to.
  *
- * `--project` wins, then the project the command was **run from** — bb passes
+ * `--project` wins, then the project the command was **run from** — VesnALIA passes
  * it, and until this existed every project-scoped command fell through to "the
- * only project", which does not exist in a bb with fifteen of them. The
- * symptom was `bb linear issues` answering "no bb project is bound to a Linear
+ * only project", which does not exist in a VesnALIA with fifteen of them. The
+ * symptom was `alia linear issues` answering "no VesnALIA project is bound to a Linear
  * team" from inside a bound project, which reads as a broken binding rather
  * than a missing flag.
  */
@@ -389,7 +389,7 @@ export function createCliRunner(env: CliEnvironment): CliRunner {
         case "bind": {
           const teamKey = args.positional[1];
           if (teamKey === undefined) {
-            return fail("Which team? bb linear bind <TEAM-KEY> [--project <id>]");
+            return fail("Which team? VesnALIA linear bind <TEAM-KEY> [--project <id>]");
           }
           const role = readRole(flagString(args, "role"));
           if (role === null) {
@@ -406,7 +406,7 @@ export function createCliRunner(env: CliEnvironment): CliRunner {
         case "unbind": {
           const teamKey = args.positional[1];
           if (teamKey === undefined) {
-            return fail("Which team? bb linear unbind <TEAM-KEY> [--project <id>]");
+            return fail("Which team? VesnALIA linear unbind <TEAM-KEY> [--project <id>]");
           }
           const result = await env.unbind({
             teamKey,
@@ -426,7 +426,7 @@ export function createCliRunner(env: CliEnvironment): CliRunner {
           // two-second budget, so it runs in the background and this says so
           // rather than inventing a count it never saw.
           if (issues < 0) {
-            return ok("Reading from Linear — `bb linear status` shows the result.\n");
+            return ok("Reading from Linear — `alia linear status` shows the result.\n");
           }
           return ok(
             issues === 0
@@ -438,7 +438,7 @@ export function createCliRunner(env: CliEnvironment): CliRunner {
         case "create": {
           const title = args.positional.slice(1).join(" ") || args.rest.join(" ");
           if (title === "") {
-            return fail("What should it be called? bb linear create <title…>");
+            return fail("What should it be called? VesnALIA linear create <title…>");
           }
           const priority = flagString(args, "priority");
           const result = await env.create({
@@ -474,7 +474,7 @@ export function createCliRunner(env: CliEnvironment): CliRunner {
           const identifier = args.positional[1];
           const url = args.positional[2];
           if (identifier === undefined || url === undefined) {
-            return fail("bb linear attach <ENG-123> <url> [--title <text>]");
+            return fail("alia linear attach <ENG-123> <url> [--title <text>]");
           }
           const result = await env.attach({
             identifier,
@@ -488,7 +488,7 @@ export function createCliRunner(env: CliEnvironment): CliRunner {
         case "archive": {
           const identifier = args.positional[1];
           if (identifier === undefined) {
-            return fail("Which issue? bb linear archive <ENG-123> --yes");
+            return fail("Which issue? VesnALIA linear archive <ENG-123> --yes");
           }
           // The confirmation is required rather than prompted for: a plugin
           // command has no tty it can trust, and the flag is the same
@@ -503,7 +503,7 @@ export function createCliRunner(env: CliEnvironment): CliRunner {
 
         case "issue": {
           const identifier = args.positional[1];
-          if (identifier === undefined) return fail("Which issue? bb linear issue <ENG-123>");
+          if (identifier === undefined) return fail("Which issue? VesnALIA linear issue <ENG-123>");
           const result = await env.issue({
             identifier,
             comments: flagBoolean(args, "comments"),
@@ -515,7 +515,7 @@ export function createCliRunner(env: CliEnvironment): CliRunner {
           const identifier = args.positional[1];
           const state = args.positional.slice(2).join(" ") || args.rest.join(" ");
           if (identifier === undefined || state === "") {
-            return fail("bb linear move <ENG-123> <state-name|state-type>");
+            return fail("alia linear move <ENG-123> <state-name|state-type>");
           }
           const result = await env.move({
             identifier,
@@ -529,7 +529,7 @@ export function createCliRunner(env: CliEnvironment): CliRunner {
           const identifier = args.positional[1];
           const who = args.positional[2];
           if (identifier === undefined || who === undefined) {
-            return fail("bb linear assign <ENG-123> <me|@name|none>");
+            return fail("alia linear assign <ENG-123> <me|@name|none>");
           }
           const result = await env.assign({
             identifier,
@@ -542,7 +542,7 @@ export function createCliRunner(env: CliEnvironment): CliRunner {
         case "set": {
           const identifier = args.positional[1];
           if (identifier === undefined) {
-            return fail("Which issue? bb linear set <ENG-123> --priority 1");
+            return fail("Which issue? VesnALIA linear set <ENG-123> --priority 1");
           }
           const result = await env.set({
             identifier,
@@ -555,12 +555,12 @@ export function createCliRunner(env: CliEnvironment): CliRunner {
             addLabel: flagString(args, "label"),
             removeLabel: flagString(args, "unlabel"),
             // `--project` here is the Linear project to move the issue into,
-            // so it cannot also name the bb project. Reading it twice scoped
-            // the lookup to a bb project called e.g. "Q4 Roadmap", which has
+            // so it cannot also name the VesnALIA project. Reading it twice scoped
+            // the lookup to a VesnALIA project called e.g. "Q4 Roadmap", which has
             // no team binding, and every `--project` came back "No issue".
-            // `--bb-project` names the bb project when there is no folder or
+            // `--alia-project` names the VesnALIA project when there is no folder or
             // thread to infer it from.
-            projectId: flagString(args, "bb-project") ?? ctx.projectId,
+            projectId: flagString(args, "alia-project") ?? ctx.projectId,
           });
           return result.ok ? ok(`${result.message}\n`) : fail(`${result.message}\n`);
         }
@@ -572,7 +572,7 @@ export function createCliRunner(env: CliEnvironment): CliRunner {
           // otherwise read as a flag.
           const body = [...args.positional.slice(2), ...args.rest].join(" ");
           if (identifier === undefined || body.trim() === "") {
-            return fail("bb linear comment <ENG-123> <text…>");
+            return fail("alia linear comment <ENG-123> <text…>");
           }
           const result = await env.comment({
             identifier,
@@ -608,7 +608,7 @@ export function createCliRunner(env: CliEnvironment): CliRunner {
 
         case "start": {
           const identifier = args.positional[1];
-          if (identifier === undefined) return fail("Which issue? bb linear start <ENG-123>");
+          if (identifier === undefined) return fail("Which issue? VesnALIA linear start <ENG-123>");
           const result = await env.start({
             identifier,
             projectId: projectId(args, ctx),
@@ -623,7 +623,7 @@ export function createCliRunner(env: CliEnvironment): CliRunner {
             return fail(`Unknown work action. Use ${WORK_ACTIONS.join(", ")}.`);
           }
           const identifier = args.positional[2];
-          if (action && action !== "clear" && !identifier) return fail("Choose an issue: bb linear work " + action + " ENG-123");
+          if (action && action !== "clear" && !identifier) return fail("Choose an issue: VesnALIA linear work " + action + " ENG-123");
           const rawRevision = flagString(args, "revision");
           const revision = rawRevision === undefined ? undefined : Number(rawRevision);
           if (revision !== undefined && (!Number.isSafeInteger(revision) || revision < 0)) return fail("Revision must be a nonnegative integer.");
@@ -633,7 +633,7 @@ export function createCliRunner(env: CliEnvironment): CliRunner {
         }
         case "link": {
           const identifier = args.positional[1];
-          if (identifier === undefined) return fail("Which issue? bb linear link <ENG-123>");
+          if (identifier === undefined) return fail("Which issue? VesnALIA linear link <ENG-123>");
           const result = await env.link({
             identifier,
             threadId: flagString(args, "thread") ?? ctx.threadId,

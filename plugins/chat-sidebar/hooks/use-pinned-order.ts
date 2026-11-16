@@ -1,9 +1,9 @@
-// Pinned chats in bb's manual order, reorderable by drag. The order is
-// global across folders, so neighbours come from all pins; until bb sends the
+// Pinned chats in VesnALIA's manual order, reorderable by drag. The order is
+// global across folders, so neighbours come from all pins; until VesnALIA sends the
 // new order back, the list shows the one we asked for.
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useSdk } from "@get-bb/plugin-sdk/app";
+import { useSdk } from "@vesnalia/plugin-sdk/app";
 
 import { pinNeighbors, type Chat } from "@/lib/model";
 

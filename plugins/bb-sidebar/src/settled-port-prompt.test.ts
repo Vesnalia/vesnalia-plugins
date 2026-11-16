@@ -52,7 +52,7 @@ describe("settled port prompt", () => {
     await promptToCloseSettledPorts("thr_a", getPorts, close, current);
     await toast.message.mock.calls[0][1].action.onClick();
     expect(toast.error).toHaveBeenCalledWith("Some port processes could not be stopped", {
-      className: "bb-sidebar-toast",
+      className: "alia-sidebar-toast",
       description: ":3000",
     });
     expect(toast.success).not.toHaveBeenCalled();

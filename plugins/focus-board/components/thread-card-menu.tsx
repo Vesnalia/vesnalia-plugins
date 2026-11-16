@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { MenuPopover, MenuPopoverEntry } from "@/components/menu-popover";
 import { touchDragArmed } from "@/components/touch-hold-drag";
 import { Icon } from "@/components/ui/icon";

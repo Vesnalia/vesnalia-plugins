@@ -3,7 +3,7 @@ import type {
   PluginSidebarProject,
   PluginSidebarSection,
   PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   TIME_GROUP_LABELS,
   TIME_GROUP_ORDER,

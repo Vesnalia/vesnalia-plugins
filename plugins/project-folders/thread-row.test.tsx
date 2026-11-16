@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { defaultPrefs } from "./preferences";
 import { installTestMatchMedia } from "./test-match-media";
 const state = vi.hoisted(() => ({ display: "classic", limit: 10 }));

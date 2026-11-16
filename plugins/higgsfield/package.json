@@ -1,30 +1,25 @@
 {
-  "name": "bb-plugin-higgsfield",
+  "name": "alia-plugin-higgsfield",
   "version": "0.1.0",
-  "description": "Higgsfield credits, reset forecast, and per-model consumption dashboard for BB.",
+  "description": "Higgsfield credits, reset forecast, and per-model consumption dashboard for VesnALIA.",
   "license": "MIT",
   "author": "VladPolet",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/VladPolet/bb-plugin-higgsfield.git"
-  },
-  "homepage": "https://github.com/VladPolet/bb-plugin-higgsfield#readme",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "higgsfield",
     "credits",
     "usage"
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.44",
-    "bbPluginSdk": ">=0.5.29"
+    "alia": ">=0.44",
+    "aliaPluginSdk": ">=0.5.29"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test normalize.test.ts"
   },
-  "bb": {
+  "alia": {
     "name": "Higgsfield Credits",
     "description": "See your Higgsfield credits, when they reset, what will expire, and which models used them.",
     "branding": {
@@ -43,7 +38,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.29",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -68,5 +62,22 @@
     "tailwind-merge": "^3.4.0",
     "typescript": "^5.7.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.29"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/higgsfield#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/higgsfield"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

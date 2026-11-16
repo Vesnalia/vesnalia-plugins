@@ -1,5 +1,5 @@
 import { test, expect, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { testStore } from "./test-store.test-support";
 
 const runGh = vi.hoisted(() => vi.fn());
@@ -13,9 +13,9 @@ const page = (ids: string[], endCursor: string | null) =>
 
 async function setup() {
   runGh.mockReset();
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  await testStore(bb).saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, createdAt: 1, status: "ready" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  await testStore(alia).saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, createdAt: 1, status: "ready" });
   return (input: unknown) => harness.behavior.callRpc("getReviewThreads", input) as Promise<any>;
 }
 
@@ -81,9 +81,9 @@ test("getReviewThreads still reads a response without those fields, as before", 
 
 test("re-reading your threads writes nothing for a review deleted while GitHub answered", async () => {
   runGh.mockReset();
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, createdAt: 1, status: "ready" });
   await store.setLifecycle("pr-1", { submittedVerdict: "COMMENT", submittedAt: 5, signals: { lastReviewAt: 5 } });
   runGh.mockImplementation(async (args: string[]) => {
@@ -101,9 +101,9 @@ test("re-reading your threads writes nothing for a review deleted while GitHub a
 
 test("re-reading your threads tells open review pages only when they changed", async () => {
   runGh.mockReset();
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, createdAt: 1, status: "ready" });
   await store.setLifecycle("pr-1", { submittedVerdict: "COMMENT", submittedAt: 5, signals: { lastReviewAt: 5 } });
   let body = "Fix";

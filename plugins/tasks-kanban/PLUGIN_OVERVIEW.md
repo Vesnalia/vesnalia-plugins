@@ -1,6 +1,6 @@
 ## What you get
 
-A Kanban board for BB's built-in Tasks, in the sidebar, available from any
+A Kanban board for VesnALIA's built-in Tasks, in the sidebar, available from any
 project and any thread. All six statuses render as lanes — Backlog, To Do,
 In Progress, In Review, Done, Canceled — and every card in the selected
 tracker project is on the board, with its key, priority badge, due date, and
@@ -16,7 +16,7 @@ Deleting a task asks for confirmation first.
 
 Tasks Kanban does not keep a copy of your tasks. The board proxies every read
 and write into the built-in Tasks plugin, the same database behind the
-`bb tasks` CLI. Drag a card to another lane and the underlying task changes
+`alia tasks` CLI. Drag a card to another lane and the underlying task changes
 status; change a status from the CLI or let an agent update a task and the
 board refreshes itself through a realtime signal. The two surfaces are the
 same data, so nothing can drift.
@@ -28,21 +28,21 @@ stays in step with the board.
 
 ## Languages
 
-The interface follows your BB language. English and Russian are built in;
+The interface follows your VesnALIA language. English and Russian are built in;
 the strings live in one file (`lib/i18n.ts`), so a community translation is a
 small pull request.
 
 ## Requirements
 
-- BB 0.49 or newer.
-- The built-in Tasks plugin (shipped with BB; no extra setup).
+- VesnALIA 0.49 or newer.
+- The built-in Tasks plugin (shipped with VesnALIA; no extra setup).
 - No external services, accounts, or configuration.
 
 ## Working with agents
 
 The plugin ships a `board` skill. You can mention a task in a message with
 @ (the Tasks plugin provides the search) and ask your agent to move, finish,
-or create tasks; the agent works through `bb tasks` and the board reflects
+or create tasks; the agent works through `alia tasks` and the board reflects
 the result without a refresh.
 
 ## Limitations

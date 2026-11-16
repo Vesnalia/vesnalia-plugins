@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { isMissingThread } from "./thread-errors";
 
-test("a thread BB no longer has is missing, by its 404 status or its message", () => {
+test("a thread VesnALIA no longer has is missing, by its 404 status or its message", () => {
   expect(isMissingThread(Object.assign(new Error("Not found"), { status: 404 }))).toBe(true);
   expect(isMissingThread(new Error("HTTP 404: Thread not found"))).toBe(true);
   expect(isMissingThread("HTTP 404: Thread not found")).toBe(true);

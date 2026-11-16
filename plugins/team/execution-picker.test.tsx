@@ -2,9 +2,9 @@
 import { describe, it, expect, vi } from "vitest";
 import { useState } from "react";
 import { fireEvent } from "@testing-library/react";
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
-import type { PluginBrowserBbSdk } from "@get-bb/plugin-sdk/app";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
+import type { PluginBrowserAliaSdk } from "@vesnalia/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { ExecutionModelPicker, resolveExecutionDraft, useProjectModelRouting } from "./execution-picker";
 
 const catalog = (available = true, empty = false) => ({
@@ -14,9 +14,9 @@ const catalog = (available = true, empty = false) => ({
 });
 
 describe("picker catalog adapter", () => {
-  it("Pi upstream route is not a BB provider ID; defaults stay local until a selection", async () => {
+  it("Pi upstream route is not a VesnALIA provider ID; defaults stay local until a selection", async () => {
     const models = vi.fn(async (_args?: unknown) => catalog());
-    const sdk = { providers: { models } } as unknown as PluginBrowserBbSdk;
+    const sdk = { providers: { models } } as unknown as PluginBrowserAliaSdk;
     const stored = Object.freeze({ providerId: "pi" });
     const draft = await resolveExecutionDraft(sdk, stored, { kind: "host", hostId: "remote" });
     expect(draft).toEqual({ providerId: "pi", model: "ollama-cloud/kimi-k2.7-code", reasoningLevel: "medium" });
@@ -25,11 +25,11 @@ describe("picker catalog adapter", () => {
     expect(draft.serviceTier).toBeUndefined();
   });
   it("does not replace a stored unavailable provider/model with an unrelated default", async () => {
-    const sdk = { providers: { models: async () => catalog(false) } } as unknown as PluginBrowserBbSdk;
+    const sdk = { providers: { models: async () => catalog(false) } } as unknown as PluginBrowserAliaSdk;
     await expect(resolveExecutionDraft(sdk, { providerId: "pi" }, undefined)).rejects.toThrow("Provider unavailable");
-    const sdk2 = { providers: { models: async () => catalog() } } as unknown as PluginBrowserBbSdk;
+    const sdk2 = { providers: { models: async () => catalog() } } as unknown as PluginBrowserAliaSdk;
     await expect(resolveExecutionDraft(sdk2, { providerId: "pi", model: "removed" }, undefined)).rejects.toThrow("Model unavailable");
-    const sdk3 = { providers: { models: async () => catalog(true, true) } } as unknown as PluginBrowserBbSdk;
+    const sdk3 = { providers: { models: async () => catalog(true, true) } } as unknown as PluginBrowserAliaSdk;
     await expect(resolveExecutionDraft(sdk3, { providerId: "pi" }, undefined)).rejects.toThrow("empty");
   });
   it("hides the old project's picker while the new route is loading or failed", async () => {
@@ -83,7 +83,7 @@ it("never mounts the native picker with an unavailable complete saved selection"
 });
 
 it("preserves unsupported saved reasoning and tier instead of mounting a normalizing picker",async()=>{
- const sdk={providers:{models:async()=>catalog()}} as unknown as PluginBrowserBbSdk;
+ const sdk={providers:{models:async()=>catalog()}} as unknown as PluginBrowserAliaSdk;
  const saved={providerId:"pi",model:"ollama-cloud/kimi-k2.7-code",reasoningLevel:"future-reasoning",serviceTier:"future-tier"};
  await expect(resolveExecutionDraft(sdk,saved,undefined)).rejects.toThrow("Reasoning unavailable");
  await expect(resolveExecutionDraft(sdk,{...saved,reasoningLevel:"medium"},undefined)).rejects.toThrow("Service tier unavailable");

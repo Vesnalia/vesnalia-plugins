@@ -103,21 +103,21 @@ const DEFAULT_TASK_STATE_MAX_AGE_MS = 3 * 24 * 60 * 60 * 1000;
 /**
  * Stable per-host location for the persisted background-task state file.
  *
- * Why `~/.bb/plugin-data/bb-plugin-antigravity/background-tasks.json`:
+ * Why `~/.vesnalia/plugin-data/alia-plugin-antigravity/background-tasks.json`:
  * - The plugin host process must be able to write it and it must survive host restarts, so a
  *   fixed per-user path beats anything under a thread workspace (which may not exist or be
  *   writable when the tracker starts, and is not unique per plugin host).
- * - Unlike an OS temp dir, which cleanup tools may wipe, the user's `.bb` area is persistent
- *   across reboots; namespacing it by plugin name avoids collisions with other BB plugins (the
+ * - Unlike an OS temp dir, which cleanup tools may wipe, the user's `.vesnalia` area is persistent
+ *   across reboots; namespacing it by plugin name avoids collisions with other VesnALIA plugins (the
  *   file itself is versioned for the same reason).
  * - Concurrent plugin hosts on the same machine share this one file; records are keyed by
  *   thread id and writes merge with the current on-disk state, so hosts never clobber each
  *   other's threads.
- * `BB_ANTIGRAVITY_TASK_STATE_DIR` overrides the directory; tests inject a temp path instead.
+ * `ALIA_ANTIGRAVITY_TASK_STATE_DIR` overrides the directory; tests inject a temp path instead.
  */
 export function defaultBackgroundTaskStatePath(): string {
-  const override = process.env.BB_ANTIGRAVITY_TASK_STATE_DIR?.trim();
-  const dir = override || join(homedir(), '.bb', 'plugin-data', 'bb-plugin-antigravity');
+  const override = process.env.ALIA_ANTIGRAVITY_TASK_STATE_DIR?.trim();
+  const dir = override || join(homedir(), '.vesnalia', 'plugin-data', 'alia-plugin-antigravity');
   return join(dir, 'background-tasks.json');
 }
 
@@ -185,7 +185,7 @@ export function createBackgroundTaskTracker(options: {
   let lastWritten = '';
   const taskKey = (task: Pick<BackgroundTask, 'taskType' | 'taskId'>) => `${task.taskType === 'local_subagent' ? 'subagent' : 'task'}:${task.taskId}`;
   // Silent-turn detection state (issue: turn ends with no agent message after a failed
-  // command with empty output, so BB records "No final output was recorded").
+  // command with empty output, so VesnALIA records "No final output was recorded").
   const silentTurns = new Map<string, { agentText: boolean; emptyFailedCommand: boolean; streak: number }>();
   function silentState(thread: string): { agentText: boolean; emptyFailedCommand: boolean; streak: number } {
     let state = silentTurns.get(thread);
@@ -268,7 +268,7 @@ export function createBackgroundTaskTracker(options: {
   }
   /**
    * Restart reconciliation: `clearThread`-shaped `interrupted` closes for persisted tasks of a
-   * resumed thread that were never settled in this process, then drops those records so BB and
+   * resumed thread that were never settled in this process, then drops those records so VesnALIA and
    * the resumed agent learn the tasks died with the previous host.
    */
   function reconcilePersisted(thread: string): BackgroundTaskDelta[] {
@@ -514,7 +514,7 @@ export function createBackgroundTaskTracker(options: {
       const message = request as { method?: string; params?: { threadId?: string } } | null;
       if (!message || typeof message.params?.threadId !== 'string') return [];
       if (/^(thread\/stop|thread\/discard)$/.test(message.method ?? '')) return clearThread(message.params.threadId, true);
-      // Restart reconciliation hook: BB re-issues `thread/resume` (and a `turn/start` for the
+      // Restart reconciliation hook: VesnALIA re-issues `thread/resume` (and a `turn/start` for the
       // resumed turn) to every connected host, so this runs exactly once per resumed thread and
       // before the CLI sees the resume. Cleaner than keying off processStdoutLine activity,
       // which also arrives mid-turn for cases that are not resumes at all.

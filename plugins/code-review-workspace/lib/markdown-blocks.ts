@@ -6,7 +6,7 @@ import type { RootContent } from "mdast";
 /**
  * A Markdown document's top-level block: its kind (mdast's node type, or `frontmatter`), its first and last line
  * (1-based), and its source lines; a list is a `listItem` block for each of its top-level items. A rendered review draws
- * each block through BB's Markdown and anchors comments to its lines.
+ * each block through VesnALIA's Markdown and anchors comments to its lines.
  */
 export interface MarkdownBlock {
   kind: string;
@@ -44,7 +44,7 @@ export const parseMarkdown = (text: string) => fromMarkdown(text, { extensions: 
 /** `text` read as Markdown: without a byte order mark, its line endings `\n`. Line numbers stay as they were. */
 const normalMarkdown = (text: string) => text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
 
-/** Whether a file is Markdown that renders: `.md` and `.markdown`. MDX has components BB's Markdown can't run. */
+/** Whether a file is Markdown that renders: `.md` and `.markdown`. MDX has components VesnALIA's Markdown can't run. */
 export const isMarkdownPath = (path: string) => /\.(md|markdown)$/i.test(path);
 
 /**
@@ -121,7 +121,7 @@ export function blockHolding(blocks: MarkdownBlock[], line: number): MarkdownBlo
 export const withNumber = (source: string, number: number) => source.replace(LIST_MARKER, (marker, indent: string, bullet?: string, _n?: string, end?: string) => (bullet ? marker : `${indent}${number}${end}`));
 
 /**
- * A block as BB's Markdown draws it alone: with the document's definitions it may use, frontmatter as a table, and an
+ * A block as VesnALIA's Markdown draws it alone: with the document's definitions it may use, frontmatter as a table, and an
  * ordered list's item with its number in the list.
  */
 export function blockMarkdown(block: MarkdownBlock, definitions: string): string {

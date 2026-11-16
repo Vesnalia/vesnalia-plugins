@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { experimental_usePluginId, useRealtime, useSdk } from "@get-bb/plugin-sdk/app";
+import { experimental_usePluginId, useRealtime, useSdk } from "@vesnalia/plugin-sdk/app";
 import { DEFAULT_SETTINGS, SETTINGS_CHANNEL, parseSettings, type SessionLogSettings } from "./settings";
 
 const sameSettings = (left: SessionLogSettings, right: SessionLogSettings) =>

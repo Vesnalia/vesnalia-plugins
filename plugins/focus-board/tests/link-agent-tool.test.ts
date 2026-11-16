@@ -1,7 +1,7 @@
 // Unit C: the focus_board_link_issue agent tool (the AGENTS.md-style
 // nudge surface). Red-first against the unregistered tool, then green.
 import { describe, expect, it } from "vitest";
-import type { FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { setup, linksOf } from "./helpers/link-fake-host";
 
 function registered(host: FakePluginHost) {
@@ -78,14 +78,14 @@ describe("focus_board_link_issue registration", () => {
   });
 
   // Copilot CLI (gh-copilot) sessions accept ACP session/new's mcpServers but
-  // never register the bb-bridge tools, so the tool call itself fails there
+  // never register the alia-bridge tools, so the tool call itself fails there
   // with the agent's own "tool isn't available in this session" message. The
   // instructions must hand those sessions a working fallback instead.
-  it("nudge teaches the bb focus-board link set CLI fallback for sessions without the tool", async () => {
+  it("nudge teaches the VesnALIA focus-board link set CLI fallback for sessions without the tool", async () => {
     const { host } = await setup();
     const instructions = registered(host)[0].instructions!;
     expect(instructions).toMatch(/focus-board link set/);
-    expect(instructions).toMatch(/BB_THREAD_ID/);
+    expect(instructions).toMatch(/ALIA_THREAD_ID/);
   });
 });
 
@@ -98,7 +98,7 @@ describe("focus_board_link_issue execution (url form)", () => {
     const links = linksOf(meta, "thread-test");
     expect(links).toHaveLength(1);
     expect(links![0]).toMatchObject({
-      repo: "cristoslc/bb-plugin-focus-board",
+      repo: "cristoslc/alia-plugin-focus-board",
       issue: 12,
       kind: "issue",
       source: "agent",

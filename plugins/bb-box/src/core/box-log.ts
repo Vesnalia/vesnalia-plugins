@@ -4,7 +4,7 @@ export type Actor =
   | { readonly is: "person" }
   | { readonly is: "agent"; readonly threadId: string }
   | { readonly is: "command" }
-  | { readonly is: "bb-box"; readonly why: string }
+  | { readonly is: "alia-box"; readonly why: string }
   | { readonly is: "outside" }
   | { readonly is: "unknown" };
 
@@ -17,8 +17,8 @@ export function byAgent(threadId: string): Actor {
   return { is: "agent", threadId };
 }
 
-export function byBbBox(why: string): Actor {
-  return { is: "bb-box", why };
+export function byAliaBox(why: string): Actor {
+  return { is: "alia-box", why };
 }
 
 export const BOX_EVENT_KINDS = [

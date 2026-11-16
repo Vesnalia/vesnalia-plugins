@@ -1,8 +1,8 @@
-// bb-plugin-rephrase — backend entry.
+// alia-plugin-rephrase — backend entry.
 //
 // The composer action posts the current draft here; this file runs it through
 // an agent in a throwaway hidden thread and returns the rewritten prompt.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   stripModelBrandPrefix,
@@ -138,8 +138,8 @@ interface RephraseTarget {
   environmentId: string | null;
 }
 
-export default function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     instruction: {
       type: "string",
       label: "Re-phrase instruction",
@@ -155,26 +155,26 @@ export default function plugin(bb: BbPluginApi) {
       default: DEFAULT_TIMEOUT_OPTION,
     },
   });
-  const catalog = createCatalogCache(bb);
+  const catalog = createCatalogCache(alia);
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async rephrase({ text, scope }): Promise<RephraseResult> {
       const { instruction, timeout } = await settings.get();
       const timeoutMs =
         TIMEOUT_OPTIONS[timeout] ?? TIMEOUT_OPTIONS[DEFAULT_TIMEOUT_OPTION]!;
       const selection =
-        (await bb.storage.kv.get<AgentSelection>(SELECTION_KEY)) ?? null;
+        (await alia.storage.kv.get<AgentSelection>(SELECTION_KEY)) ?? null;
 
       let target: RephraseTarget;
       try {
-        target = await resolveTarget(bb, scope, selection);
+        target = await resolveTarget(alia, scope, selection);
       } catch (error) {
         return { ok: false, error: describeError(error) };
       }
 
       const prompt = buildPrompt(instruction.trim() || DEFAULT_INSTRUCTION, text);
       try {
-        const output = await runRephraseThread(bb, target, prompt, timeoutMs);
+        const output = await runRephraseThread(alia, target, prompt, timeoutMs);
         const rewritten = cleanAgentOutput(output ?? "");
         if (rewritten === "") {
           return { ok: false, error: "The agent returned an empty answer." };
@@ -182,7 +182,7 @@ export default function plugin(bb: BbPluginApi) {
         return { ok: true, text: rewritten };
       } catch (error) {
         const message = describeError(error);
-        bb.log.warn(`re-phrase failed: ${message}`);
+        alia.log.warn(`re-phrase failed: ${message}`);
         return { ok: false, error: message };
       }
     },
@@ -190,16 +190,16 @@ export default function plugin(bb: BbPluginApi) {
     async catalog({ refresh }) {
       const snapshot = await catalog.read(refresh);
       return {
-        selection: (await bb.storage.kv.get<AgentSelection>(SELECTION_KEY)) ?? null,
+        selection: (await alia.storage.kv.get<AgentSelection>(SELECTION_KEY)) ?? null,
         ...snapshot,
       };
     },
 
     async selectAgent({ selection }) {
       if (selection === null) {
-        await bb.storage.kv.delete(SELECTION_KEY);
+        await alia.storage.kv.delete(SELECTION_KEY);
       } else {
-        await bb.storage.kv.set(SELECTION_KEY, selection);
+        await alia.storage.kv.set(SELECTION_KEY, selection);
       }
       return { selection };
     },
@@ -223,7 +223,7 @@ interface CatalogSnapshot {
  * background, and every partial result is published so the picker fills in
  * while discovery is still running.
  */
-function createCatalogCache(bb: BbPluginApi) {
+function createCatalogCache(alia: AliaPluginApi) {
   let snapshot: CatalogSnapshot | null = null;
   let discovery: Promise<void> | null = null;
   /** Readers waiting for the next snapshot, so a cold read can answer early. */
@@ -239,17 +239,17 @@ function createCatalogCache(bb: BbPluginApi) {
     snapshot = next;
     wake();
     try {
-      await bb.storage.kv.set(CATALOG_KEY, next);
-      bb.realtime.publish(CATALOG_CHANNEL, { pending: next.pending.length });
+      await alia.storage.kv.set(CATALOG_KEY, next);
+      alia.realtime.publish(CATALOG_CHANNEL, { pending: next.pending.length });
     } catch (error) {
       // A reload can invalidate the api handle mid-discovery, and the kv row
       // is only a cache: keep the in-memory snapshot and move on.
-      bb.log.debug(`could not store the catalogue: ${describeError(error)}`);
+      alia.log.debug(`could not store the catalogue: ${describeError(error)}`);
     }
   }
 
   function discover(): Promise<void> {
-    discovery ??= runDiscovery(bb, () => snapshot, publish).finally(() => {
+    discovery ??= runDiscovery(alia, () => snapshot, publish).finally(() => {
       discovery = null;
       wake();
     });
@@ -260,13 +260,13 @@ function createCatalogCache(bb: BbPluginApi) {
     async read(
       refresh: boolean,
     ): Promise<Omit<CatalogSnapshot, "at"> & { discovering: boolean }> {
-      snapshot ??= (await bb.storage.kv.get<CatalogSnapshot>(CATALOG_KEY)) ?? null;
+      snapshot ??= (await alia.storage.kv.get<CatalogSnapshot>(CATALOG_KEY)) ?? null;
       const stale =
         snapshot === null || Date.now() - snapshot.at > CATALOG_TTL_MS;
       if (refresh || stale) {
         const round = discover();
         round.catch((error: unknown) =>
-          bb.log.warn(`model discovery failed: ${describeError(error)}`),
+          alia.log.warn(`model discovery failed: ${describeError(error)}`),
         );
         // With nothing cached, answer as soon as discovery knows which agents
         // it is asking; their models then arrive over the realtime channel.
@@ -296,11 +296,11 @@ function createCatalogCache(bb: BbPluginApi) {
  * finishes, so a background refresh never blanks the list.
  */
 async function runDiscovery(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   current: () => CatalogSnapshot | null,
   publish: (next: CatalogSnapshot) => Promise<void>,
 ): Promise<void> {
-  const providers = (await bb.sdk.providers.list()).filter(
+  const providers = (await alia.sdk.providers.list()).filter(
     (provider) => provider.available,
   );
   const previous = current()?.choices ?? [];
@@ -323,7 +323,7 @@ async function runDiscovery(
   await publishRound();
   await Promise.all(
     providers.map(async (provider) => {
-      const choices = await providerChoices(bb, provider);
+      const choices = await providerChoices(alia, provider);
       if (choices === null) unavailable.push(provider.displayName);
       else answered.set(provider.id, choices);
       pending = pending.filter((name) => name !== provider.displayName);
@@ -334,14 +334,14 @@ async function runDiscovery(
 
 /** One agent's models, or null when it has no catalogue to report. */
 async function providerChoices(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   provider: { id: string; displayName: string },
 ): Promise<ModelChoice[] | null> {
   let options;
   try {
-    options = await bb.sdk.providers.models({ providerId: provider.id });
+    options = await alia.sdk.providers.models({ providerId: provider.id });
   } catch (error) {
-    bb.log.debug(`no models for ${provider.id}: ${describeError(error)}`);
+    alia.log.debug(`no models for ${provider.id}: ${describeError(error)}`);
     return null;
   }
   // An agent whose CLI is missing or unauthenticated reports its failure
@@ -377,7 +377,7 @@ async function providerChoices(
  * defaults for the root compose screen.
  */
 async function resolveTarget(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   scope: ComposerScope,
   selection: AgentSelection | null,
 ): Promise<RephraseTarget> {
@@ -389,12 +389,12 @@ async function resolveTarget(
     // The root composer's own picker is not readable from a plugin, so the
     // project's remembered defaults — what that picker is seeded with — stand
     // in for "the agent currently selected".
-    const defaults = await bb.sdk.projects
+    const defaults = await alia.sdk.projects
       .defaultExecutionOptions({ projectId })
       .catch(() => null);
     return {
       projectId,
-      environmentId: await latestEnvironmentId(bb, projectId),
+      environmentId: await latestEnvironmentId(alia, projectId),
       ...(selection ??
         (defaults
           ? { providerId: defaults.providerId, model: defaults.model }
@@ -404,8 +404,8 @@ async function resolveTarget(
 
   const threadId =
     scope.kind === "side-chat" ? scope.parentThreadId : scope.threadId;
-  const thread = await bb.sdk.threads.get({ threadId });
-  const execution = await bb.sdk.threads
+  const thread = await alia.sdk.threads.get({ threadId });
+  const execution = await alia.sdk.threads
     .defaultExecutionOptions({ threadId })
     .catch(() => null);
   return {
@@ -423,10 +423,10 @@ async function resolveTarget(
  * from the root composer does not create a worktree of its own.
  */
 async function latestEnvironmentId(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   projectId: string,
 ): Promise<string | null> {
-  const threads = await bb.sdk.threads
+  const threads = await alia.sdk.threads
     .list({ projectId, limit: 20 })
     .catch(() => []);
   return threads.find((thread) => thread.environmentId)?.environmentId ?? null;
@@ -438,11 +438,11 @@ async function latestEnvironmentId(
  * implement, so the mode is narrowed per provider instead of hardcoded.
  */
 async function restrictedPermissionMode(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   providerId: string | undefined,
 ): Promise<PermissionMode | null> {
   if (providerId === undefined) return null;
-  const providers = await bb.sdk.providers.list().catch(() => []);
+  const providers = await alia.sdk.providers.list().catch(() => []);
   const supported = providers.find((provider) => provider.id === providerId)
     ?.capabilities.supportedPermissionModes;
   if (supported === undefined) return null;
@@ -467,13 +467,13 @@ function buildPrompt(instruction: string, text: string): string {
  * runtime behind.
  */
 async function runRephraseThread(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   target: RephraseTarget,
   prompt: string,
   timeoutMs: number,
 ): Promise<string | null> {
-  const permissionMode = await restrictedPermissionMode(bb, target.providerId);
-  const worker = await bb.sdk.threads.spawn({
+  const permissionMode = await restrictedPermissionMode(alia, target.providerId);
+  const worker = await alia.sdk.threads.spawn({
     projectId: target.projectId,
     environment:
       target.environmentId === null
@@ -499,13 +499,13 @@ async function runRephraseThread(
     // safe whether the turn finishes before or after the wait starts.
     let completed;
     try {
-      completed = await bb.sdk.threads.wait({
+      completed = await alia.sdk.threads.wait({
         threadId: worker.id,
         event: "turn/completed",
         timeoutMs,
       });
     } catch (error) {
-      const thread = await bb.sdk.threads
+      const thread = await alia.sdk.threads
         .get({ threadId: worker.id })
         .catch(() => null);
       throw thread?.status === "error"
@@ -529,21 +529,21 @@ async function runRephraseThread(
       );
     }
 
-    const { output } = await bb.sdk.threads.output({ threadId: worker.id });
+    const { output } = await alia.sdk.threads.output({ threadId: worker.id });
     return output;
   } finally {
     // Release the agent runtime first, then drop the throwaway thread so a
     // busy composer does not leave a trail of hidden threads behind.
-    await bb.sdk.threads
+    await alia.sdk.threads
       .stop({ threadId: worker.id })
       .catch((error: unknown) =>
-        bb.log.warn(`could not stop ${worker.id}: ${describeError(error)}`),
+        alia.log.warn(`could not stop ${worker.id}: ${describeError(error)}`),
       );
-    await bb.sdk.threads
+    await alia.sdk.threads
       .delete({ threadId: worker.id, childThreadsConfirmed: true })
       .catch(async (error: unknown) => {
-        bb.log.warn(`could not delete ${worker.id}: ${describeError(error)}`);
-        await bb.sdk.threads.archive({ threadId: worker.id }).catch(() => {});
+        alia.log.warn(`could not delete ${worker.id}: ${describeError(error)}`);
+        await alia.sdk.threads.archive({ threadId: worker.id }).catch(() => {});
       });
   }
 }

@@ -17,7 +17,7 @@ export interface HeldRow {
 /** One message of a thread this plugin has held for at least STUCK_WAIT_MS. */
 export interface HeldLong {
   threadId: string;
-  /** As bb names it; null when the row names none. */
+  /** As VesnALIA names it; null when the row names none. */
   model: string | null;
   since: number;
 }
@@ -43,7 +43,7 @@ export interface Atasco {
   proyectoOcupado: boolean;
 }
 
-/** Whether bb's row is held by `pluginId` and still alive: the row of an archived thread waits for nothing; one whose attempt failed still does (code-reviewer r2). */
+/** Whether VesnALIA's row is held by `pluginId` and still alive: the row of an archived thread waits for nothing; one whose attempt failed still does (code-reviewer r2). */
 export function heldBy(row: HeldRow, pluginId: string): boolean {
   return (
     row.waitingOn?.kind === "plugin" &&

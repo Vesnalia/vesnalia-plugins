@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createHotspot } from "../server.ts";
 import { findMonitor, openMonitor } from "../lib/monitor.ts";
 
@@ -68,8 +68,8 @@ test("a failed launch comes back as a message, never a throw", async () => {
 });
 
 async function load(runner) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "hotspot" });
-  await createHotspot(bb, {
+  const { alia, harness } = createFakePluginHost({ pluginId: "hotspot" });
+  await createHotspot(alia, {
     takeReading: async (at) => ({ live: { at, thermal: 0, cpu: 10, load: 0.1, threads: [], procs: [] }, stored: null }),
     monitor: runner,
   });

@@ -1,8 +1,8 @@
 /**
- * What server code logs through. It is bb's plugin logger (`bb.log`), passed in, so a failure reaches
- * `bb plugin logs firstmate-crew` — `console` output does not — and a test can read what was logged.
+ * What server code logs through. It is VesnALIA's plugin logger (`alia.log`), passed in, so a failure reaches
+ * `alia plugin logs firstmate-crew` — `console` output does not — and a test can read what was logged.
  */
-import type { PluginLogger } from "@get-bb/plugin-sdk";
+import type { PluginLogger } from "@vesnalia/plugin-sdk";
 
 export type Log = Pick<PluginLogger, "info" | "warn" | "error">;
 

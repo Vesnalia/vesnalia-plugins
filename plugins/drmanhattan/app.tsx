@@ -8,12 +8,12 @@ import {
   experimental_THREAD_INFO_SECTION_GROUPS as INFO_SECTION_GROUPS,
   experimental_useRpcMutation as useRpcMutation,
   experimental_useRpcQuery as useRpcQuery,
-  useBbNavigate,
+  useAliaNavigate,
   type PluginNavPanelProps,
   type ExperimentalThreadContextSegmentInput,
   type ExperimentalThreadContextSegmentProps,
   type ExperimentalThreadInfoProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   drmanhattanRpcContract,
   INSTALL_COMMAND,
@@ -29,7 +29,7 @@ import { isActive, runDetail, runUrl } from "./format.js";
 const BUSY_POLL_MS = 3_000;
 const IDLE_POLL_MS = 20_000;
 const SEGMENT_GROUP = "4_drmanhattan";
-/** The plugin's atom, declared in package.json's `bb.branding.experimental_icons`. */
+/** The plugin's atom, declared in package.json's `alia.branding.experimental_icons`. */
 export const ATOM = "drmanhattan/atom";
 export const PAGE_PATH = "queue";
 
@@ -144,7 +144,7 @@ function CancelButton({
 
 export function SegmentDetails({ threadId, isExpanded }: ExperimentalThreadContextSegmentProps) {
   const { queue, refetch } = useThreadRuns(threadId);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const cancel = useRpcMutation({ contract: drmanhattanRpcContract, method: "cancelRun" });
   if (!isExpanded || queue === null) return null;
   const dashboard = queue.dashboardUrl;
@@ -195,7 +195,7 @@ export function SegmentDetails({ threadId, isExpanded }: ExperimentalThreadConte
 
 export function InfoRuns({ threadId }: ExperimentalThreadInfoProps) {
   const { queue, result } = useThreadRuns(threadId);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   if (result?.kind === "outdated") {
     return (
       <InfoSection label="drmanhattan">
@@ -264,7 +264,7 @@ function PageRun({
   dashboard: string | null;
   onChanged: () => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const cancel = useRpcMutation({ contract: drmanhattanRpcContract, method: "cancelMachineRun" });
   const icon = stateIcon(run);
   return (
@@ -396,7 +396,7 @@ function CopyButton({ text }: { text: string }) {
  * that does it, or the commands to run by hand.
  */
 function SetupCard({ machine, single, onChanged }: { machine: MachineQueue; single: boolean; onChanged: () => void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const commands = `${INSTALL_COMMAND}\n${START_COMMAND}`;
   return (
     <section className="space-y-3 rounded-lg border border-border p-4" aria-label={`Set up drmanhattan on ${machine.name}`}>
@@ -405,7 +405,7 @@ function SetupCard({ machine, single, onChanged }: { machine: MachineQueue; sing
         <h2 className="text-sm font-semibold">Set up drmanhattan {single ? "on this machine" : `on ${machine.name}`}</h2>
       </div>
       <p className="text-xs leading-relaxed text-muted-foreground">
-        drmanhattan is a free, open-source queue for builds and tests. With it, bb's agents take turns on heavy
+        drmanhattan is a free, open-source queue for builds and tests. With it, VesnALIA's agents take turns on heavy
         commands instead of all compiling at once, and this page shows what each machine is running. It is not
         installed {single ? "here" : `on ${machine.name}`} yet.
       </p>
@@ -433,7 +433,7 @@ function SetupCard({ machine, single, onChanged }: { machine: MachineQueue; sing
 }
 
 function MachineSection({ machine, single, onChanged }: { machine: MachineQueue; single: boolean; onChanged: () => void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { status } = machine;
   const heading = single ? "This machine" : machine.name;
   if (status.kind !== "ok") {
@@ -482,7 +482,7 @@ function MachineSection({ machine, single, onChanged }: { machine: MachineQueue;
   );
 }
 
-/** The drmanhattan page in bb's navigation: the queue on every connected machine. */
+/** The drmanhattan page in VesnALIA's navigation: the queue on every connected machine. */
 export function QueuePage(_props: PluginNavPanelProps) {
   const { machines, error, refetch } = useMachines();
   const onChanged = () => void refetch();
@@ -499,7 +499,7 @@ export function QueuePage(_props: PluginNavPanelProps) {
         </header>
         {error ? <p role="alert" className="text-xs text-destructive">{error.message}</p> : null}
         {machines !== null && machines.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No machine is connected to bb.</p>
+          <p className="text-sm text-muted-foreground">No machine is connected to VesnALIA.</p>
         ) : null}
         {installed.map((machine) => (
           <MachineSection key={machine.hostId} machine={machine} single={(machines ?? []).length === 1} onChanged={onChanged} />

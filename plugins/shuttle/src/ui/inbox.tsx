@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { experimental_Icon as Icon, useSettings } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useSettings } from "@vesnalia/plugin-sdk/app";
 import type { InboxRule, InboxRuleKind, InboxView as InboxData, NextKind, NextTone, PrView } from "../contract";
 import { INBOX_ORDER, REVIEW_QUIET_MS, ruleMatches } from "../next";
 import { NextButton, useActions } from "./actions";
@@ -703,7 +703,7 @@ function ReviewingList({ data, layout, keywords }: { data: InboxData; layout: Ro
         <Tip text={waiting ? `\u201c${run.title}\u201d asked you something` : `Open \u201c${run.title}\u201d`}>
           <button type="button" className={BUTTON} onClick={() => actions.openThread(run.threadId)}>{waiting ? "Answer in the thread" : "Open the thread"}</button>
         </Tip>
-        <Tip text={`Stop this review: bb stops \u201c${run.title}\u201d and the threads at work under it`}>
+        <Tip text={`Stop this review: VesnALIA stops \u201c${run.title}\u201d and the threads at work under it`}>
           <button type="button" aria-label={`Stop the AI review of ${tinyKey(pr)}`} className={BUTTON_GHOST} onClick={() => void actions.writes.stopReviews([pr])}>Stop</button>
         </Tip>
       </span>
@@ -785,7 +785,7 @@ function StopAllDialog({ count, queued, paused, onClose, onStop }: { count: numb
     }
   };
   return (
-    <Dialog title={`Stop ${plural(count, "AI review")}?`} subtitle="bb stops each review thread and the threads at work under it, such as critics. Auto review does not start a stopped review again on the same commit, nor on a new one unless Again on new commits is on. A review you start yourself always runs."
+    <Dialog title={`Stop ${plural(count, "AI review")}?`} subtitle="alia stops each review thread and the threads at work under it, such as critics. Auto review does not start a stopped review again on the same commit, nor on a new one unless Again on new commits is on. A review you start yourself always runs."
       onClose={() => { if (!busy) onClose(); }}
       footer={(
         <>

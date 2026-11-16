@@ -4,9 +4,9 @@ import type { Ran, Runner } from "./simctl.ts";
 
 export const LAUNCHCTL = "/bin/launchctl";
 export const PASTEBOARD_SERVER = "/usr/libexec/pboard";
-export const PASTEBOARD_SERVER_LABEL = "app.bb-box.pboard";
+export const PASTEBOARD_SERVER_LABEL = "app.alia-box.pboard";
 export const PASTEBOARD_SERVICES = ["com.apple.pasteboard.1", "com.apple.coreservices.uauseractivitypasteboardclient.xpc"] as const;
-export const SESSION_JOB_LABEL = "app.bb-box.session-job";
+export const SESSION_JOB_LABEL = "app.alia-box.session-job";
 const JOB_EXIT_POLL_MS = 20;
 const LAUNCHCTL_MS = 10_000;
 const KEPT_ENVIRONMENT = ["HOME", "USER", "LOGNAME", "PATH", "TMPDIR"] as const;

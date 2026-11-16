@@ -71,7 +71,7 @@ export const QUIET_TO_COLD_MS = 1_800_000;
 export const PANEL_VISIBLE_WINDOW_MS = 45_000;
 
 /** And how recently *any* frontend must have asked, for the plugin to believe
- *  somebody has bb open at all. */
+ *  somebody has VesnALIA open at all. */
 export const FRONTEND_WINDOW_MS = 300_000;
 
 export interface TierInput {
@@ -160,7 +160,7 @@ export function nextInterval(
 /**
  * ±10 % on every interval.
  *
- * Two bb hosts signed into one Linear account would otherwise align their
+ * Two VesnALIA hosts signed into one Linear account would otherwise align their
  * polls forever — they start within seconds of each other and share a fixed
  * period — and spend the whole budget in synchronised bursts rather than
  * spread out.

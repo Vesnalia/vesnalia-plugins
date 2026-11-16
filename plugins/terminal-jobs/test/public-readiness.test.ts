@@ -1,5 +1,5 @@
-import type { PluginCliContext } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, type FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { PluginCliContext } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, type FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import plugin from "../server.js";
 import { RUNNER_ARGUMENT } from "../src/host-contract.js";
@@ -63,7 +63,7 @@ async function load(options: {
       },
     } as never,
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   return host;
 }
 
@@ -101,7 +101,7 @@ async function watch(host: FakePluginHost, name: string) {
 }
 
 function settle(host: FakePluginHost, jobId: string, ageDays = 2): void {
-  host.bb.storage.database().prepare(
+  host.alia.storage.database().prepare(
     `UPDATE jobs SET terminal_state = 'exited', outcome_state = CASE source WHEN 'watch' THEN 'not-applicable' ELSE 'missing' END,
        delivery_state = 'delivered', accepted_delivery_kind = 'sent', delivered_at = 1,
        reservation_token = NULL, next_attempt_at = NULL, updated_at = ? WHERE job_id = ?`,
@@ -109,7 +109,7 @@ function settle(host: FakePluginHost, jobId: string, ageDays = 2): void {
 }
 
 function rowCount(host: FakePluginHost): number {
-  return (host.bb.storage.database().prepare("SELECT COUNT(*) AS count FROM jobs").get() as { count: number }).count;
+  return (host.alia.storage.database().prepare("SELECT COUNT(*) AS count FROM jobs").get() as { count: number }).count;
 }
 
 describe("host runner readiness", () => {
@@ -181,7 +181,7 @@ describe("bounded list", () => {
     const second = await run(host);
     const firstId = JSON.parse(first.stdout).jobId as string;
     const secondId = JSON.parse(second.stdout).jobId as string;
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare("UPDATE jobs SET created_at = 1, scope_json = '{}' WHERE job_id = ?").run(firstId);
     db.prepare("UPDATE jobs SET created_at = 2 WHERE job_id = ?").run(secondId);
 
@@ -265,7 +265,7 @@ describe("explicit prune", () => {
     const active = JSON.parse((await run(host)).stdout).jobId as string;
     const unsettled = JSON.parse((await run(host)).stdout).jobId as string;
     const tooNew = JSON.parse((await run(host)).stdout).jobId as string;
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare("UPDATE jobs SET updated_at = ? WHERE job_id = ?").run(Date.now() - 2 * 86_400_000, active);
     settle(host, unsettled);
     db.prepare("UPDATE jobs SET outcome_state = 'unchecked' WHERE job_id = ?").run(unsettled);
@@ -284,7 +284,7 @@ describe("explicit prune", () => {
     const priorToken = "generation_prior:prune_prior";
     const host = await load({
       remove: () => {
-        const store = new JobStore(host.bb.storage.database());
+        const store = new JobStore(host.alia.storage.database());
         expect(store.get(jobId)?.pruneClaimToken).not.toBeNull();
         expect(store.get(jobId)?.pruneClaimToken).not.toBe(priorToken);
         expect(store.retry(jobId, Date.now())).toBeNull();
@@ -293,7 +293,7 @@ describe("explicit prune", () => {
     });
     jobId = JSON.parse((await run(host)).stdout).jobId as string;
     settle(host, jobId);
-    host.bb.storage.database().prepare(
+    host.alia.storage.database().prepare(
       "UPDATE jobs SET delivery_state = 'abandoned', accepted_delivery_kind = NULL, delivered_at = NULL, prune_claim_token = ? WHERE job_id = ?",
     ).run(priorToken, jobId);
 
@@ -314,7 +314,7 @@ describe("explicit prune", () => {
     });
     const jobId = JSON.parse((await run(host)).stdout).jobId as string;
     settle(host, jobId);
-    host.bb.storage.database().prepare(
+    host.alia.storage.database().prepare(
       "UPDATE jobs SET delivery_state = 'abandoned', accepted_delivery_kind = NULL, delivered_at = NULL, prune_claim_token = ? WHERE job_id = ?",
     ).run(priorToken, jobId);
 
@@ -324,7 +324,7 @@ describe("explicit prune", () => {
     expect(JSON.parse(result.stdout).results).toEqual([
       { jobId, action: "kept", error: "permission denied" },
     ]);
-    const stored = new JobStore(host.bb.storage.database()).get(jobId);
+    const stored = new JobStore(host.alia.storage.database()).get(jobId);
     expect(stored?.pruneClaimToken).toBe(priorToken);
     expect(stored?.deliveryState).toBe("abandoned");
     const retry = await host.harness.behavior.runCli(["retry-notification", jobId]);
@@ -347,7 +347,7 @@ describe("explicit prune", () => {
     const created = await run(host);
     const jobId = JSON.parse(created.stdout).jobId as string;
     settle(host, jobId);
-    host.bb.storage.database().prepare(
+    host.alia.storage.database().prepare(
       "UPDATE jobs SET delivery_state = 'abandoned', accepted_delivery_kind = NULL, delivered_at = NULL WHERE job_id = ?",
     ).run(jobId);
 
@@ -385,7 +385,7 @@ describe("explicit prune", () => {
     const created = await run(host);
     const jobId = JSON.parse(created.stdout).jobId as string;
     settle(host, jobId);
-    host.bb.storage.database().prepare(`UPDATE jobs SET ${column} = ? WHERE job_id = ?`).run(badValue, jobId);
+    host.alia.storage.database().prepare(`UPDATE jobs SET ${column} = ? WHERE job_id = ?`).run(badValue, jobId);
     const result = await host.harness.behavior.runCli([
       "prune", "--older-than-days", "1", "--delete", "--json",
     ]);
@@ -408,7 +408,7 @@ describe("explicit prune", () => {
     const missing = JSON.parse((await run(host)).stdout).jobId as string;
     settle(host, missing);
     await host.harness.behavior.runCli(["prune", "--older-than-days", "1", "--delete"]);
-    expect(new JobStore(host.bb.storage.database()).get(missing)).toBeNull();
+    expect(new JobStore(host.alia.storage.database()).get(missing)).toBeNull();
 
     mode = "denied";
     const denied = JSON.parse((await run(host)).stdout).jobId as string;
@@ -419,7 +419,7 @@ describe("explicit prune", () => {
     expect(JSON.parse(result.stdout).results).toEqual([
       { jobId: denied, action: "kept", error: "permission denied" },
     ]);
-    expect(new JobStore(host.bb.storage.database()).get(denied)?.pruneClaimToken).toBeNull();
+    expect(new JobStore(host.alia.storage.database()).get(denied)?.pruneClaimToken).toBeNull();
     await host.harness.lifecycle.dispose();
   });
 
@@ -428,7 +428,7 @@ describe("explicit prune", () => {
     const created = await run(host);
     const jobId = JSON.parse(created.stdout).jobId as string;
     settle(host, jobId);
-    host.bb.storage.database().prepare("UPDATE jobs SET scope_json = '{}' WHERE job_id = ?").run(jobId);
+    host.alia.storage.database().prepare("UPDATE jobs SET scope_json = '{}' WHERE job_id = ?").run(jobId);
     const result = await host.harness.behavior.runCli([
       "prune", "--older-than-days", "1", "--delete", "--json",
     ]);
@@ -436,7 +436,7 @@ describe("explicit prune", () => {
       results: [],
       skipped: [{ jobId, error: "invalid stored scope" }],
     });
-    expect(host.bb.storage.database().prepare("SELECT scope_json FROM jobs WHERE job_id = ?").get(jobId)).toEqual({ scope_json: "{}" });
+    expect(host.alia.storage.database().prepare("SELECT scope_json FROM jobs WHERE job_id = ?").get(jobId)).toEqual({ scope_json: "{}" });
     await host.harness.lifecycle.dispose();
   });
 

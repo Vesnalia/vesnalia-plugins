@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { EFFORTS } from "./agent-models";
 
@@ -133,7 +133,7 @@ export const workModelsSchema = z
   })
   .strict();
 export type WorkModels = z.infer<typeof workModelsSchema>;
-/** What can be chosen: bb providers and their models with reasoning levels (as when starting a thread). */
+/** What can be chosen: VesnALIA providers and their models with reasoning levels (as when starting a thread). */
 export const modelCatalogSchema = z
   .object({
     providers: z.array(
@@ -190,16 +190,16 @@ export type FileView = z.infer<typeof fileViewSchema>;
 // --- board and plugin card ---
 
 const column = z.enum(["context", "tech", "tz", "mockup", "build", "live", "off"]);
-const bbState = z.enum(["running", "needs-configuration", "degraded", "error", "incompatible", "missing", "disabled", "starting", "not-installed"]);
+const aliaState = z.enum(["running", "needs-configuration", "degraded", "error", "incompatible", "missing", "disabled", "starting", "not-installed"]);
 
 export const pluginCardSchema = z
   .object({
     id: z.string(),
     name: z.string(),
     column,
-    /** The plugin's state in bb per the last confirmed list; `not-installed` — not installed. */
-    bbState,
-    /** The last plugin list failed to load: `bbState` is the last confirmed one. */
+    /** The plugin's state in VesnALIA per the last confirmed list; `not-installed` — not installed. */
+    aliaState,
+    /** The last plugin list failed to load: `aliaState` is the last confirmed one. */
     stateStale: z.boolean(),
     labels: z.array(z.string()),
     /** Why «Rework» is unavailable; empty — available. */
@@ -298,7 +298,7 @@ export const workshopContract = defineRpcContract({
     output: handOverResult,
   },
   rollback: { input: z.object({ pluginId: id, reason: z.string().min(1).max(2000) }).strict(), output: z.null() },
-  /** «Hide from board» a gone plugin (neither in bb nor a working copy folder) without an open work. */
+  /** «Hide from board» a gone plugin (neither in VesnALIA nor a working copy folder) without an open work. */
   hidePlugin: { input: pluginId, output: z.null() },
   /** «Adopt as rolled out»: install the current main branch under the lock and record the previous rolled-out commit as the rollback point. */
   adopt: { input: z.object({ pluginId: id, note: z.string().min(1).max(2000) }).strict(), output: z.null() },

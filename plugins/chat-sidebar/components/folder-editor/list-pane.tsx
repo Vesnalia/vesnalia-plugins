@@ -3,7 +3,7 @@
 // the reset, which asks first.
 import { useState } from "react";
 import { toast } from "sonner";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { DndContext } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
@@ -170,7 +170,7 @@ function FolderLook() {
   const t = useT();
   const { settings } = useChat();
   const rpc = useRpc<typeof rpcContract>();
-  // Shown at once; bb's settings catch up a moment later.
+  // Shown at once; VesnALIA's settings catch up a moment later.
   const [pending, setPending] = useState<LookPatch>({});
   const shown = { ...settings, ...pending };
   const set = (patch: LookPatch) => {

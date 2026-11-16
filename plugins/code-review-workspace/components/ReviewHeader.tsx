@@ -1,5 +1,5 @@
 import { memo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { UrlLink, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../src/rpc-contract";
 import type { CheckItem } from "../src/threads";
@@ -67,7 +67,7 @@ function RoundTimeline({ rounds }: { rounds: ReviewRound[] }) {
 /** "Stack · 2 of 3", "Stacked on #2645", and "#2648 builds on this": each opens that review, starting a tracked one's guide, or a review of a PR not in your list. */
 export function StackLinks({ stack }: { stack: StackPlace }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [busy, setBusy] = useState(false);
   async function open(member: StackMember) {
     setBusy(true);

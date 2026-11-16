@@ -5,7 +5,7 @@
 <h1 align="center">Ultra Sidebar</h1>
 
 <p align="center">
-  <strong>A BB sidebar for running many threads at once.</strong>
+  <strong>A VesnALIA sidebar for running many threads at once.</strong>
 </p>
 
 <p align="center">
@@ -19,7 +19,7 @@
 <img src="assets/readme/demo.gif" alt="Dark-mode Cap recording of Ultra Sidebar grouped by status: completed threads, a pull request ready for review, moving an active thread to Done, and pinning another thread. Framed against the macOS Golden Gate wallpaper; all projects and threads shown are demo data." width="1000" />
 </p>
 
-Ultra Sidebar replaces BB's thread list. It groups threads by project or by status, keeps pinned work on top, nests subagents under the thread that started them, and puts each thread's pull request, branch and agent activity on its row.
+Ultra Sidebar replaces VesnALIA's thread list. It groups threads by project or by status, keeps pinned work on top, nests subagents under the thread that started them, and puts each thread's pull request, branch and agent activity on its row.
 
 ## Highlights
 
@@ -29,7 +29,7 @@ Ultra Sidebar replaces BB's thread list. It groups threads by project or by stat
 - 🔀 **Pull requests on every row.** Open, merged and closed pull requests show on the row, even after the thread's checkout is gone.
 - ✅ **Act on many threads at once.** Select with ⌘-click or Shift-click, then move, finish or snooze them together. Undo and redo cover every change.
 - ⌨️ **Keyboard first.** Alt+↑/↓ moves a row, and ⌘[ and ⌘] step back and forward through the threads you opened.
-- 🤖 **Scriptable.** `bb sidebar` lists, files, snoozes and orders threads from a terminal.
+- 🤖 **Scriptable.** `alia sidebar` lists, files, snoozes and orders threads from a terminal.
 
 ## Screenshots
 
@@ -41,24 +41,24 @@ Ultra Sidebar replaces BB's thread list. It groups threads by project or by stat
 ## Installation
 
 ```sh
-bb plugin install https://github.com/dillionverma/bb-plugin-ultra-sidebar
+alia plugin install https://github.com/dillionverma/bb-plugin-ultra-sidebar
 ```
 
-If BB keeps its own list, choose **Ultra Sidebar** in **Settings → Appearance → Sidebar**. Only one plugin can replace the thread list at a time.
+If VesnALIA keeps its own list, choose **Ultra Sidebar** in **Settings → Appearance → Sidebar**. Only one plugin can replace the thread list at a time.
 
-Requires BB 0.46 or later. The [guide](GUIDE.md) covers statuses, bulk actions, undo, row details and every keyboard shortcut.
+Requires VesnALIA 0.46 or later. The [guide](GUIDE.md) covers statuses, bulk actions, undo, row details and every keyboard shortcut.
 
 ## Development
 
 ```sh
 git clone https://github.com/dillionverma/bb-plugin-ultra-sidebar.git
-cd bb-plugin-ultra-sidebar
+cd alia-plugin-ultra-sidebar
 npm ci
-bb plugin install .
-bb plugin dev
+alia plugin install .
+alia plugin dev
 ```
 
-Run `npm test`, `npm run typecheck` and `bb plugin build` before submitting changes.
+Run `npm test`, `npm run typecheck` and `alia plugin build` before submitting changes.
 
 ## License
 

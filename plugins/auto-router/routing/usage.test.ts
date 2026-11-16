@@ -8,7 +8,7 @@ import type { Question } from "./core.js";
 import type { JevAsk, JevReply } from "./jev.js";
 import { makeThreadRouter } from "./router.js";
 import { withUsage, type ProviderUsage } from "./usage.js";
-import { bbUsage, codexUsage, makeUsageReader, readCodexLimits, recordUsage } from "./usage-sources.js";
+import { aliaUsage, codexUsage, makeUsageReader, readCodexLimits, recordUsage } from "./usage-sources.js";
 
 const NOW = Date.parse("2026-10-16T12:00:00Z");
 const DAY = 86_400_000;
@@ -131,17 +131,17 @@ test("Codex's own report: 80% of a window used is near the limit", () => {
   assert.equal(room.status, "allowed");
 });
 
-test("BB's Claude Code reports become usage", () => {
+test("VesnALIA's Claude Code reports become usage", () => {
   const window = { label: "Five-hour limit", status: "blocked" as const, resetsAtMs: NOW + 3_600_000 };
   assert.deepEqual(
-    bbUsage({ providerId: "claude-code", status: "blocked", kind: "subscription-window", windows: [window], reachedReason: null }, NOW),
+    aliaUsage({ providerId: "claude-code", status: "blocked", kind: "subscription-window", windows: [window], reachedReason: null }, NOW),
     { provider: "claude", status: "blocked", reason: "the five-hour limit is reached", resetsAtMs: NOW + 3_600_000, checkedAtMs: NOW },
   );
   assert.equal(
-    bbUsage({ providerId: "claude-code", status: "allowed", kind: "subscription-window", windows: [{ ...window, status: "allowed" }], reachedReason: null }, NOW)?.status,
+    aliaUsage({ providerId: "claude-code", status: "allowed", kind: "subscription-window", windows: [{ ...window, status: "allowed" }], reachedReason: null }, NOW)?.status,
     "allowed",
   );
-  assert.equal(bbUsage({ providerId: "pi", status: "blocked", kind: "credits", windows: [], reachedReason: null }, NOW), null);
+  assert.equal(aliaUsage({ providerId: "pi", status: "blocked", kind: "credits", windows: [], reachedReason: null }, NOW), null);
 });
 
 test("the usage reader asks Codex at most every two minutes and reads Claude's last report", async () => {

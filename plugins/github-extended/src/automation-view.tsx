@@ -10,11 +10,11 @@ import {
 } from "react";
 import {
   experimental_Icon as Icon,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
   type PluginMessageDirectiveProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { githubRpcContract } from "./server.js";
 import {
@@ -496,7 +496,7 @@ function CreateAutomation({
 
 function AgentActivity({ repo }: { repo: string }) {
   const rpc = useRpc<typeof githubRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [links, setLinks] = useState<
     Array<{
       threadId: string;
@@ -711,7 +711,7 @@ function RepositoryRow({
             ? "Polling for issue and pull-request events"
             : "Automation off"}
           {" · "}
-          {repository.projectId !== null ? "BB project" : "added manually"}
+          {repository.projectId !== null ? "VesnALIA project" : "added manually"}
           {" · "}
           {repository.checkoutPath !== null
             ? "local checkout"
@@ -899,7 +899,7 @@ function SetupPage({
         </div>
         {data.repositories.length === 0 ? (
           <p className="px-4 py-3 text-sm text-muted-foreground">
-            No repositories are tracked yet. Attach a BB project with a GitHub
+            No repositories are tracked yet. Attach a VesnALIA project with a GitHub
             origin or add one from the repositories drawer.
           </p>
         ) : (
@@ -932,7 +932,7 @@ function blankRule(order: number): AutomationRule {
     repos: [],
     filters: {},
     conditionGroups: [],
-    actions: ["bb.review"],
+    actions: ["alia.review"],
     actionParameters: {},
     approvalRequired: true,
   };
@@ -1303,7 +1303,7 @@ function AdvancedRuleEditor({
         >
           {ACTION_KINDS.filter(
             (action) =>
-              action !== "bb.agent" &&
+              action !== "alia.agent" &&
               !rule.actions.includes(action) &&
               (!hasIssueTriggers || supportsIssueEvents(action)),
           ).map((action) => (
@@ -1315,13 +1315,13 @@ function AdvancedRuleEditor({
               onToggle={() => onChange({ actions: [...rule.actions, action] })}
             />
           ))}
-          {!rule.actions.includes("bb.agent") ? (
+          {!rule.actions.includes("alia.agent") ? (
             <Button
               variant="outline"
               size="sm"
               className="h-7 text-xs"
               onClick={() =>
-                onChange({ actions: [...rule.actions, "bb.agent"] })
+                onChange({ actions: [...rule.actions, "alia.agent"] })
               }
             >
               Something else?
@@ -1375,7 +1375,7 @@ function AdvancedRuleEditor({
           <Input
             className="h-8 max-w-64 font-mono text-xs"
             value={parameters.label ?? ""}
-            placeholder="Label (bb-automation when blank)"
+            placeholder="Label (alia-automation when blank)"
             aria-label="Label"
             onChange={(event) => setParameter("label", event.target.value)}
           />
@@ -1643,7 +1643,7 @@ function RuleEditor({
                         supportsIssueEvents(action),
                     ).map((action) => (
                       <option key={action} value={action}>
-                        {action === "bb.agent"
+                        {action === "alia.agent"
                           ? "Ask agent (something else…)"
                           : ACTION_LABELS[action].label}
                       </option>
@@ -2935,7 +2935,7 @@ const DIRECTIVE_ACCENT: Record<
 export function AutomationDirective({
   attributes,
 }: PluginMessageDirectiveProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const rawStatus = attributes.status?.trim();
   const status =
     rawStatus === "success" || rawStatus === "warning" || rawStatus === "error"

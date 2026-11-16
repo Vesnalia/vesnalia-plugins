@@ -1,5 +1,5 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { useBbNavigate, experimental_useSidebarThreads } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, experimental_useSidebarThreads } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -73,7 +73,7 @@ function indicatorStyle(indicator: string, status: string): { label: string; cla
 export function BotRail({ selectedBotId, selectedThreadId = null }: { selectedBotId: string | null; selectedThreadId?: string | null }) {
   useRelativeClock();
   const rpc = useBotsRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const live = experimental_useSidebarThreads();
   const [expanded, setExpanded] = useState<string[]>(readExpanded);
   function toggleExpanded(id: string) {
@@ -262,7 +262,7 @@ export function BotRail({ selectedBotId, selectedThreadId = null }: { selectedBo
       </div>
 
       <Dialog open={deleteTarget !== null} onOpenChange={open => { if (!open && !deleting) setDeleteTarget(null); }}>
-        <DialogContent><DialogHeader><DialogTitle>Delete {deleteTarget?.name}?</DialogTitle><DialogDescription>Its chats stay in BB but stop following these instructions.</DialogDescription></DialogHeader>
+        <DialogContent><DialogHeader><DialogTitle>Delete {deleteTarget?.name}?</DialogTitle><DialogDescription>Its chats stay in VesnALIA but stop following these instructions.</DialogDescription></DialogHeader>
           <DialogFooter><DialogClose asChild><Button variant="outline" disabled={deleting}>Cancel</Button></DialogClose><Button variant="destructive" disabled={deleting} onClick={() => void deleteBot()}>{deleting ? "Deleting…" : "Delete"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>

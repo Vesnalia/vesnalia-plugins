@@ -1,9 +1,9 @@
-// Mac Watch page: the health of the Mac that runs BB.
+// Mac Watch page: the health of the Mac that runs VesnALIA.
 // Visual language follows a native macOS system panel: dense rows, thin bars,
 // live line charts with a dashed 100% guide, real app icons. Phone first.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
-import { definePluginApp, useBbNavigate, useRealtime, useRpc, type ExperimentalSidebarFooterDisclosureProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate, useRealtime, useRpc, type ExperimentalSidebarFooterDisclosureProps } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import {
   awakeVerdict, formatBytes, formatDuration, formatMinutes, formatRate, ru,
@@ -804,7 +804,7 @@ function ConfirmSheet({ action, s, power, onClose, onDone }: {
         <h2 id="mw-sheet-title">{action === "sleep" ? "Усыпить Мак?" : "Выключить Мак?"}</h2>
         {action === "sleep" ? (
           <>
-            <p>BB станет недоступен. Удалённо Мак не разбудить: только открыть крышку, нажать клавишу или поставить таймер.</p>
+            <p>VesnALIA станет недоступен. Удалённо Мак не разбудить: только открыть крышку, нажать клавишу или поставить таймер.</p>
             <Segmented label="Проснуться через" value={wake} onChange={setWake} options={[...WAKE_OPTIONS]} />
             {s.sleep?.sleepDisabled && p.toggleSleep && (
               <p className="mw-sheet-note">Сейчас сон запрещён системно. На время сна плагин снимет запрет, а после настоящего пробуждения вернёт его, если приложение всё ещё держит Мак бодрым.</p>
@@ -856,7 +856,7 @@ function PowerMenu({ s, onClose, onNote }: { s: Snapshot; onClose: () => void; o
         </button>
         <button type="button" className="mw-menu-item" disabled={!power} onClick={() => setConfirm("sleep")}>
           <span className="mw-menu-icon"><Glyph name="moon" size={18} /></span>
-          <span><strong>Усыпить…</strong><small>BB станет недоступен</small></span>
+          <span><strong>Усыпить…</strong><small>VesnALIA станет недоступен</small></span>
         </button>
         <button type="button" className="mw-menu-item mw-menu-danger" disabled={!power} onClick={() => setConfirm("shutdown")}>
           <span className="mw-menu-icon"><Glyph name="power" size={18} /></span>
@@ -994,7 +994,7 @@ function FooterRow({ label, value, bar, color, tone }: { label: string; value: R
 
 function MacWatchFooter({ dismiss }: ExperimentalSidebarFooterDisclosureProps) {
   const status = useStatusOnly();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const now = useNow(5000);
   const s = status?.snapshot ?? null;
   const alerts = status?.alerts ?? [];

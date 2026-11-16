@@ -1,7 +1,7 @@
-// bb-plugin-linear — frontend entry. Registration only; views live in app/.
+// alia-plugin-linear — frontend entry. Registration only; views live in app/.
 import "./app.css";
 import { useCallback } from "react";
-import { definePluginApp, useBbNavigate, useRealtime } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate, useRealtime } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
@@ -16,7 +16,7 @@ import { identifiersInText } from "./src/select/identifiers.js";
 
 function ConnectionCard() {
   const rpc = useLinearRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const state = useAsync(
     useCallback(async () => rpc.call("status"), [rpc]),
     [],
@@ -36,7 +36,7 @@ function ConnectionCard() {
           ) : !state.value.configured ? (
             <p>
               No API key yet — add one in this plugin&apos;s settings, or run{" "}
-              <code className="text-foreground">bb plugin config linear set apiKey &lt;key&gt;</code>.
+              <code className="text-foreground">alia plugin config linear set apiKey &lt;key&gt;</code>.
             </p>
           ) : (
             state.value.accounts.map((account) => (
@@ -87,7 +87,7 @@ export default definePluginApp((app) => {
 
   /*
    * Which issue this thread works on, in the context row above the composer:
-   * the row where bb already shows the parent thread, the changed files and
+   * the row where VesnALIA already shows the parent thread, the changed files and
    * the pull request. The issue belongs beside its pull request. A header
    * button would share one split button with the Git plugin's Commit, which
    * hides it whenever the thread has uncommitted changes.
@@ -98,7 +98,7 @@ export default definePluginApp((app) => {
     group: "2_linear",
     summary: ThreadChip,
     // Hidden when the chip has nothing to say: a visible segment that renders
-    // nothing still makes bb draw an empty card above the composer.
+    // nothing still makes VesnALIA draw an empty card above the composer.
     useVisible: useThreadChipVisible,
   });
 

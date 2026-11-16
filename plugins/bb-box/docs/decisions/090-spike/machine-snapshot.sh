@@ -5,8 +5,8 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 LC_ALL=C
 export PATH LC_ALL
 
-STATE=${BBBOX_STATE:-/var/lib/bb-box}
-HOOK=${BBBOX_SNAPSHOT_HOOK:-/usr/local/libexec/bb-box/snapshot-machine}
+STATE=${BBBOX_STATE:-/var/lib/alia-box}
+HOOK=${BBBOX_SNAPSHOT_HOOK:-/usr/local/libexec/alia-box/snapshot-machine}
 OPERATIONS=$STATE/snapshot-operations
 MOST_LAUNCHES=3
 EXIT_USAGE=2
@@ -28,7 +28,7 @@ launch() {
   boot_id | put "$dir/boot"
   launches=$(($(cat "$dir/launches" 2>/dev/null || echo 0) + 1))
   echo "$launches" | put "$dir/launches"
-  BB_BOX_RESTARTING=$dir/restarting setsid sh -c '"$@" >"$0/out" 2>"$0/log"; echo $? >"$0/status.new" && mv -f "$0/status.new" "$0/status"' "$dir" "$HOOK" "$@" \
+  ALIA_BOX_RESTARTING=$dir/restarting setsid sh -c '"$@" >"$0/out" 2>"$0/log"; echo $? >"$0/status.new" && mv -f "$0/status.new" "$0/status"' "$dir" "$HOOK" "$@" \
     </dev/null >/dev/null 2>&1 &
   echo $! | put "$dir/pid"
 }

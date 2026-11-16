@@ -1,6 +1,6 @@
 # pstack
 
-> **Upstream README, kept verbatim.** This is the README from the original pstack plugin, `cursor/plugins` at commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`, path `pstack/README.md`. MIT, Copyright (c) 2026 Lauren Tan. Cursor-specific references here (the install command, `/loop`, model examples, plugin paths) describe the environment the author wrote it for, not this plugin. See `README.md` for the bb plugin and `MANIFEST.md` for every adaptation.
+> **Upstream README, kept verbatim.** This is the README from the original pstack plugin, `cursor/plugins` at commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`, path `pstack/README.md`. MIT, Copyright (c) 2026 Lauren Tan. Cursor-specific references here (the install command, `/loop`, model examples, plugin paths) describe the environment the author wrote it for, not this plugin. See `README.md` for the VesnALIA plugin and `MANIFEST.md` for every adaptation.
 
 i'm [poteto](https://x.com/poteto). i'm not a president or ceo, but i've worked with millions of lines of code at Meta, Netflix, and Cursor. i'm also on the react core team where i help build and maintain react compiler.
 

@@ -1,10 +1,10 @@
 /**
- * The host half of a relay to a Mac that is not the bb server's own: one TCP
+ * The host half of a relay to a Mac that is not the VesnALIA server's own: one TCP
  * connection to this Mac's Screen Sharing on 127.0.0.1:5900 per session,
- * driven by the server over bb's host link. Bytes are copied, never read.
+ * driven by the server over VesnALIA's host link. Bytes are copied, never read.
  *
  * - Up: the server's `write` calls, numbered from 0, written to the socket in
- *   that order. bb does not keep concurrent host calls in order (its server
+ *   that order. VesnALIA does not keep concurrent host calls in order (its server
  *   awaits per call before sending each one), so a write that arrives early
  *   waits here for the ones before it — at most `MAX_WRITES_AHEAD` of them. A
  *   repeated number, or one too far ahead, ends the session: what reaches
@@ -264,7 +264,7 @@ export class HostRelay {
     } finally {
       this.opening.delete(sessionId);
     }
-    // Closed while connecting — by the server, by bb cancelling the call, or by the worker stopping.
+    // Closed while connecting — by the server, by VesnALIA cancelling the call, or by the worker stopping.
     const cancelled = this.cancelled.delete(sessionId);
     if (cancelled || this.stopped || signal?.aborted === true) {
       socket.destroy();
@@ -309,7 +309,7 @@ export class HostRelay {
   sweep(): void {
     const now = this.options.now();
     for (const session of [...this.sessions.values()]) {
-      if (now - session.lastHeard >= this.options.silenceMs) session.end("the bb server stopped asking for it", true, true);
+      if (now - session.lastHeard >= this.options.silenceMs) session.end("the VesnALIA server stopped asking for it", true, true);
     }
   }
 

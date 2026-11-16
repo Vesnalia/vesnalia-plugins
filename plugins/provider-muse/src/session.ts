@@ -4,7 +4,7 @@ import type {
   PendingInteractionApprovalDecision,
   PromptInput,
   ThreadDelta,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import type { MspConnection } from "./msp/connection.js";
 import { MuseTranslator } from "./translate.js";
 import type { MspApprovalRequestParams, MspUserInputRequestParams } from "./msp/schemas.js";
@@ -12,7 +12,7 @@ import type { MspApprovalRequestParams, MspUserInputRequestParams } from "./msp/
 /**
  * The bridge keeps the same two-layer shape the first-party bridges keep.
  *
- * An **attachment** is what bb owns: one per thread, durable for as long as bb
+ * An **attachment** is what VesnALIA owns: one per thread, durable for as long as VesnALIA
  * holds the thread, carrying the provider session id, the construction inputs,
  * and the reason a rebuild is owed. A **runtime** is the live `muse serve`
  * process and the loaded session inside it — disposable, replaced whenever the
@@ -34,7 +34,7 @@ export interface SessionConstruction {
   posture: HostPosture;
   approvalMode: string;
   /**
-   * What bb wants done when the agent asks to go beyond its permission scope:
+   * What VesnALIA wants done when the agent asks to go beyond its permission scope:
    * `ask` puts it to the user, `deny` refuses it, `null` is `full`, which has
    * no scope to leave. It is policy, not session shape, so it stays out of
    * `constructionSignature` — changing it must not cost a session rebuild.
@@ -59,10 +59,10 @@ export interface MuseRuntime {
   turnSettledWaiters: Map<string, Array<() => void>>;
   pendingApprovals: Map<string, MspApprovalRequestParams>;
   /**
-   * The decision bb already collected for an approval, kept until Muse reports
+   * The decision VesnALIA already collected for an approval, kept until Muse reports
    * that approval terminal. An approval spans as many stages as the command has
    * unresolved argv fragments, and every one of them needs its own
-   * `approval/decide`; re-asking the user per fragment would be bb prompting
+   * `approval/decide`; re-asking the user per fragment would be VesnALIA prompting
    * about a command it has already been answered on.
    */
   approvalDecisions: Map<string, PendingInteractionApprovalDecision>;
@@ -81,10 +81,10 @@ export interface MuseRuntime {
   reconciling: boolean;
   /** A dropped stream is worth saying once per runtime, not once per recovery. */
   reportedViewGap: boolean;
-  /** Likewise a read bb could not make; the turn keeps running either way. */
+  /** Likewise a read VesnALIA could not make; the turn keeps running either way. */
   reportedViewReadFailure: boolean;
   /**
-   * The highest source sequence bb has folded, from push or from a page. View
+   * The highest source sequence VesnALIA has folded, from push or from a page. View
    * cursors are opaque and cannot be compared, but every sourced view event
    * carries the source record it came from — which is ordered, and is what
    * makes a re-read from the start of the view safe to run.
@@ -98,7 +98,7 @@ export interface MuseRuntime {
   /**
    * How many turns this runtime has ever opened. A prompt that opens none is a
    * prompt the provider answered without working; anything else is a turn, and
-   * whether bb heard about it over push or by reading the view back is not a
+   * whether VesnALIA heard about it over push or by reading the view back is not a
    * difference the settlement may depend on.
    */
   turnsOpened: number;
@@ -108,11 +108,11 @@ export interface MuseRuntime {
 /**
  * The prompt whose turn is on the wire, held until that turn settles.
  *
- * Muse fails a turn for conditions bb already knows how to clear — a route its
+ * Muse fails a turn for conditions VesnALIA already knows how to clear — a route its
  * reasoning history cannot survive, an expired login, a child that died — and a
  * client that only records the failure has thrown the user's prompt away. What
  * they type next then lands on the rebuilt session as the prompt, so the answer
- * they get is to the wrong question. bb owns the rerun instead.
+ * they get is to the wrong question. VesnALIA owns the rerun instead.
  */
 export interface InFlightTurn {
   commandId: string;
@@ -201,7 +201,7 @@ export function createRuntime(args: {
 
 /**
  * Waits for a turn to reach its terminal, the way an interrupt has to before
- * `thread/stop` answers: after the stop is answered bb detaches the thread, so
+ * `thread/stop` answers: after the stop is answered VesnALIA detaches the thread, so
  * anything still owed must already be on the wire.
  */
 export function waitForTurnSettlement(

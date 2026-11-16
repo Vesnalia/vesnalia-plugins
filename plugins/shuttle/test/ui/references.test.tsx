@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, waitFor, within } from "@testing-library/react";
-import type { ExperimentalThreadActionTabProps } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalThreadActionTabProps } from "@vesnalia/plugin-sdk/app";
 import { BUTTON, BUTTON_PRIMARY, Dialog } from "../../src/ui/common";
 import { clearReferenceHighlights, setReferenceHighlights } from "../../src/ui/links/reference-highlights";
 import { keywordFilters, rememberPanelReference } from "../../src/ui/prefs";

@@ -1,5 +1,5 @@
 import { useCallback, useSyncExternalStore } from "react";
-import { experimental_useAppPanel } from "@get-bb/plugin-sdk/app";
+import { experimental_useAppPanel } from "@vesnalia/plugin-sdk/app";
 import type { SourceScope } from "../web/contracts.ts";
 
 export const RESEARCH_TAB_ID = "sources";
@@ -11,7 +11,7 @@ export type ResearchRequest =
  | { view: "check"; text: string }
  | { view: "search" };
 
-// The Research tab is a fixed tab, which bb opens without a target, so the target waits here for the tab to read.
+// The Research tab is a fixed tab, which VesnALIA opens without a target, so the target waits here for the tab to read.
 const pending = new Map<string, { request: ResearchRequest; seq: number }>();
 const listeners = new Set<() => void>();
 let seq = 0;

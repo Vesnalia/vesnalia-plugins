@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin, { rpcContract } from "./server.ts";
 import { z } from "zod";
 // Starts the plugin on a fake host with an in-memory root thread, attachments and spawn/fork; returns an RPC caller.
@@ -10,7 +10,7 @@ async function setup() {
     const rows = [{id:"user",kind:"conversation",role:"user",text:"Explain git worktrees",sourceSeqStart:1,sourceSeqEnd:1},{id:"assistant",kind:"conversation",role:"assistant",text:"Worktrees share one repository.",sourceSeqStart:2,sourceSeqEnd:17},{id:"later",kind:"conversation",role:"assistant",text:"Later message",sourceSeqStart:18,sourceSeqEnd:20}];
     const metadata = new Map<string, Record<string, unknown>>();
     let sequence = 0;
-    const { bb, harness } = createFakePluginHost({ pluginId: "thread-tabs", sdk: { projects: { attachments: {
+    const { alia, harness } = createFakePluginHost({ pluginId: "thread-tabs", sdk: { projects: { attachments: {
         upload: async args => { const path = `/attachments/${uploads.size}.md`; const source = args.clientFile; const bytes = source instanceof Uint8Array ? source : source instanceof ArrayBuffer ? new Uint8Array(source) : new Uint8Array(await source.arrayBuffer()); uploads.set(path, bytes); return {type:"localFile",name:args.filename,path,sizeBytes:bytes.byteLength,mimeType:"text/markdown",sourceProjectId:args.projectId}; },
         read: async ({path}) => ({bytes:uploads.get(path)!,mimeType:"text/markdown",sizeBytes:uploads.get(path)!.length}),
     } }, threads: {
@@ -37,11 +37,11 @@ async function setup() {
                 archive: async ({ threadId }) => { const thread = threads.get(threadId)!; thread.archivedAt = 1; return thread; },
                 unarchive: async ({ threadId }) => { const thread = threads.get(threadId)!; thread.archivedAt = null; return thread; },
             } } });
-    await plugin(bb);
+    await plugin(alia);
     async function callRpc<K extends keyof typeof rpcContract>(method: K, input: unknown): Promise<z.output<(typeof rpcContract)[K]["output"]>> {
         return rpcContract[method].output.parse(await harness.behavior.callRpc(method, input)) as z.output<(typeof rpcContract)[K]["output"]>;
     }
-    return { bb, harness, callRpc, threads, uploads, rows };
+    return { alia, harness, callRpc, threads, uploads, rows };
 }
 const selection = { providerId: "claude-code", model: "chosen-model", reasoningLevel: "high" };
 test("new tabs save a blank draft and model without running an agent", async (t) => {
@@ -57,7 +57,7 @@ test("new tabs save a blank draft and model without running an agent", async (t)
 // Creates a draft, spawns its hidden session as the host would, and attaches it.
 async function startDraft(context: Awaited<ReturnType<typeof setup>>) {
     const draft = await context.callRpc("create", { threadId: "root", kind: "new", selection });
-    const thread = await context.bb.sdk.threads.spawn({ projectId: "project", environment: { type: "reuse", environmentId: "workspace" }, ...selection, visibility: "hidden", lifecycleOwnerThreadId: "root", pluginMetadata: { rootThreadId: "root", draftId: draft.threadId }, prompt: "Test" });
+    const thread = await context.alia.sdk.threads.spawn({ projectId: "project", environment: { type: "reuse", environmentId: "workspace" }, ...selection, visibility: "hidden", lifecycleOwnerThreadId: "root", pluginMetadata: { rootThreadId: "root", draftId: draft.threadId }, prompt: "Test" });
     await context.callRpc("attach", { rootThreadId: "root", draftId: draft.threadId, threadId: thread.id });
     return { ...thread, draftId: draft.threadId };
 }
@@ -118,7 +118,7 @@ test("creation failure preserves the tab list; changed workspaces and archived r
     await assert.rejects(callRpc("create", { threadId: "root", kind: "new", selection }), /Restore the main thread/);
 });
 
-test("automatic tab names follow BB's first-message summary", async t => {
+test("automatic tab names follow VesnALIA's first-message summary", async t => {
     const context = await setup();
     t.after(() => context.harness.lifecycle.dispose());
     const thread = await startDraft(context);
@@ -130,12 +130,12 @@ test("automatic tab names follow BB's first-message summary", async t => {
 
 test("manual draft names survive session creation, reload and later automatic titles", async t => {
     const context = await setup();
-    const { bb, harness, callRpc, threads } = context;
+    const { alia, harness, callRpc, threads } = context;
     t.after(() => harness.lifecycle.dispose());
     const draft = await callRpc("create", { threadId: "root", kind: "new", selection });
     const title = "A deliberately long custom title that must never be automatically replaced";
     await callRpc("rename", { rootThreadId: "root", threadId: draft.threadId, title });
-    const thread = await bb.sdk.threads.spawn({ projectId: "project", environment: { type: "reuse", environmentId: "workspace" }, ...selection, visibility: "hidden", lifecycleOwnerThreadId: "root", pluginMetadata: { rootThreadId: "root", draftId: draft.threadId }, prompt: "First message" });
+    const thread = await alia.sdk.threads.spawn({ projectId: "project", environment: { type: "reuse", environmentId: "workspace" }, ...selection, visibility: "hidden", lifecycleOwnerThreadId: "root", pluginMetadata: { rootThreadId: "root", draftId: draft.threadId }, prompt: "First message" });
     await callRpc("attach", { rootThreadId: "root", draftId: draft.threadId, threadId: thread.id });
     assert.equal(threads.get(thread.id)!.title, title);
     threads.get(thread.id)!.title = "Late generated title";
@@ -172,7 +172,7 @@ test("unread and close-others affect only the selected group and preserve Main",
 
 test("transcript export pages through older nested rows and distinguishes concise from full", async t => {
     const context=await setup(); const {harness,callRpc}=context; t.after(()=>harness.lifecycle.dispose());
-    harness.sdk.stub("threads.timeline",async (...[args]: Parameters<typeof context.bb.sdk.threads.timeline>) => args.beforeAnchorId ? {maxSeq:50,rows:[{id:"first",kind:"conversation",role:"user",text:"First request",sourceSeqStart:1,sourceSeqEnd:1}],timelinePage:{olderCursor:null}} : {maxSeq:30,rows:[{id:"turn",kind:"turn",sourceSeqStart:2,sourceSeqEnd:30,children:[{id:"tool",kind:"work",sourceSeqStart:2,sourceSeqEnd:3,command:"pwd",output:"/workspace"},{id:"answer",kind:"conversation",role:"assistant",sourceSeqStart:4,sourceSeqEnd:20,text:"Final answer"}]}],timelinePage:{olderCursor:{anchorId:"turn",anchorSeq:2}}});
+    harness.sdk.stub("threads.timeline",async (...[args]: Parameters<typeof context.alia.sdk.threads.timeline>) => args.beforeAnchorId ? {maxSeq:50,rows:[{id:"first",kind:"conversation",role:"user",text:"First request",sourceSeqStart:1,sourceSeqEnd:1}],timelinePage:{olderCursor:null}} : {maxSeq:30,rows:[{id:"turn",kind:"turn",sourceSeqStart:2,sourceSeqEnd:30,children:[{id:"tool",kind:"work",sourceSeqStart:2,sourceSeqEnd:3,command:"pwd",output:"/workspace"},{id:"answer",kind:"conversation",role:"assistant",sourceSeqStart:4,sourceSeqEnd:20,text:"Final answer"}]}],timelinePage:{olderCursor:{anchorId:"turn",anchorSeq:2}}});
     const concise=await callRpc("transcript",{threadId:"root",full:false});
     assert.ok(concise.text.indexOf("First request")<concise.text.indexOf("Final answer"));
     assert.doesNotMatch(concise.text,/pwd/);
@@ -190,9 +190,9 @@ test("transcript failure leaves the group unchanged and rejects non-advancing pa
 });
 
 test("a fork of a transcript-based chat retains its earlier inherited context", async t => {
-    const context=await setup(); const {harness,callRpc,bb}=context; t.after(()=>harness.lifecycle.dispose());
+    const context=await setup(); const {harness,callRpc,alia}=context; t.after(()=>harness.lifecycle.dispose());
     const first=await callRpc("create",{threadId:"root",kind:"fork",sourceSeqEnd:17});
-    const thread=await bb.sdk.threads.spawn({projectId:"project",environment:{type:"reuse",environmentId:"workspace"},...selection,visibility:"hidden",lifecycleOwnerThreadId:"root",pluginMetadata:{rootThreadId:"root",draftId:first.threadId},prompt:"Follow up"});
+    const thread=await alia.sdk.threads.spawn({projectId:"project",environment:{type:"reuse",environmentId:"workspace"},...selection,visibility:"hidden",lifecycleOwnerThreadId:"root",pluginMetadata:{rootThreadId:"root",draftId:first.threadId},prompt:"Follow up"});
     await callRpc("attach",{rootThreadId:"root",draftId:first.threadId,threadId:thread.id});
     harness.sdk.stub("threads.timeline",async()=>({maxSeq:5,rows:[{id:"followup",kind:"conversation",role:"user",text:"Follow-up task",sourceSeqStart:1,sourceSeqEnd:1}],timelinePage:{olderCursor:null}}));
     const next=await callRpc("create",{threadId:thread.id,kind:"fork"});
@@ -211,7 +211,7 @@ test("a draft closed during startup attaches as an archived session and can be r
     const context = await setup(); t.after(() => context.harness.lifecycle.dispose());
     const draft = await context.callRpc("create", {threadId:"root",kind:"new"});
     await context.callRpc("close", {rootThreadId:"root",threadId:draft.threadId});
-    const child = await context.bb.sdk.threads.spawn({projectId:"project",environment:{type:"reuse",environmentId:"workspace"},...selection,visibility:"hidden",lifecycleOwnerThreadId:"root",pluginMetadata:{rootThreadId:"root",draftId:draft.threadId},prompt:"Test"});
+    const child = await context.alia.sdk.threads.spawn({projectId:"project",environment:{type:"reuse",environmentId:"workspace"},...selection,visibility:"hidden",lifecycleOwnerThreadId:"root",pluginMetadata:{rootThreadId:"root",draftId:draft.threadId},prompt:"Test"});
     const group = await context.callRpc("attach", {rootThreadId:"root",draftId:draft.threadId,threadId:child.id});
     assert.equal(group.tabs[1].closed, true);
     assert.equal(context.threads.get(child.id)!.archivedAt, 1);
@@ -222,7 +222,7 @@ test("a draft closed during startup attaches as an archived session and can be r
 test("a second client attaching the same draft archives the duplicate session", async t => {
     const context = await setup(); t.after(() => context.harness.lifecycle.dispose());
     const first = await startDraft(context);
-    const second = await context.bb.sdk.threads.spawn({projectId:"project",environment:{type:"reuse",environmentId:"workspace"},...selection,visibility:"hidden",lifecycleOwnerThreadId:"root",pluginMetadata:{rootThreadId:"root",draftId:first.draftId},prompt:"Test"});
+    const second = await context.alia.sdk.threads.spawn({projectId:"project",environment:{type:"reuse",environmentId:"workspace"},...selection,visibility:"hidden",lifecycleOwnerThreadId:"root",pluginMetadata:{rootThreadId:"root",draftId:first.draftId},prompt:"Test"});
     const group = await context.callRpc("attach", {rootThreadId:"root",draftId:first.draftId,threadId:second.id});
     assert.equal(group.tabs[1].id, first.id);
     assert.equal(context.threads.get(second.id)!.archivedAt, 1);

@@ -1,21 +1,13 @@
 {
-  "name": "bb-plugin-hex",
+  "name": "alia-plugin-hex",
   "version": "0.1.1",
-  "description": "Local on-device voice transcription for BB powered by Hex and macOS Apple Speech.",
+  "description": "Local on-device voice transcription for VesnALIA powered by Hex and macOS Apple Speech.",
   "license": "MIT",
   "author": "Braedon Saunders",
   "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/braedonsaunders/bb-plugin-hex.git"
-  },
-  "bugs": {
-    "url": "https://github.com/braedonsaunders/bb-plugin-hex/issues"
-  },
-  "homepage": "https://github.com/braedonsaunders/bb-plugin-hex#readme",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "voice",
     "dictation",
     "transcription",
@@ -24,7 +16,7 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "files": [
     "app.tsx",
@@ -35,12 +27,12 @@
     "LICENSE"
   ],
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.94"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.94"
   },
-  "bb": {
+  "alia": {
     "name": "Hex Voice",
-    "description": "On-device voice dictation for BB using Hex and Apple Speech (macOS 26 SpeechTranscriber) or local GGUF models.",
+    "description": "On-device voice dictation for VesnALIA using Hex and Apple Speech (macOS 26 SpeechTranscriber) or local GGUF models.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -51,9 +43,25 @@
     ]
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.94",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.94"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/hex#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/hex"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

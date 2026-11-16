@@ -1,15 +1,15 @@
 # Marketplace listing benchmark
 
-Focus Board competes for installs inside the bb community marketplace, so its listing copy competes with every other community plugin's. This document benchmarks our store copy against the top installed community entries, reports where our structure and style diverge, and proposes a tightened short `description` and a rewritten `PLUGIN_OVERVIEW.md`.
+Focus Board competes for installs inside the VesnALIA community marketplace, so its listing copy competes with every other community plugin's. This document benchmarks our store copy against the top installed community entries, reports where our structure and style diverge, and proposes a tightened short `description` and a rewritten `PLUGIN_OVERVIEW.md`.
 
-Gathered 2026-10-28 against the live catalog served by `bb plugin search` on bb 0.47.1. The listing has two author-owned pieces:
+Gathered 2026-10-28 against the live catalog served by `alia plugin search` on VesnALIA 0.47.1. The listing has two author-owned pieces:
 
-- The short `description` is a frozen-v1 field in `entries/focus-board.json` in the [get-bb/marketplace](https://github.com/get-bb/marketplace) repo. It can only be changed by a marketplace pull request carrying the `v1-change` label, so the replacement proposed below lives in this document until the operator opens that separate pull request.
+- The short `description` is a frozen-v1 field in `entries/focus-board.json` in the [get-alia/marketplace](https://github.com/get-bb/marketplace) repo. It can only be changed by a marketplace pull request carrying the `v1-change` label, so the replacement proposed below lives in this document until the operator opens that separate pull request.
 - The long `overview` is this repo's root `PLUGIN_OVERVIEW.md`, copied verbatim to `overview/focus-board.md` in the marketplace repo. A rewritten copy lands here and ships to the store through the same marketplace pull request.
 
 ## How the numbers were gathered
 
-`bb plugin search <query> --json` returns each listed plugin with `installs`, `description`, `overview`, `screenshots`, and `category`. A single broad query does not surface every community entry, so the script below sweeps single characters and common bigrams, merges by `entryId`, keeps entries whose `marketplace` is `bb-community`, and sorts by installs. It reached 442 community entries, which matches the count a single wide `bb plugin search e --json` returns. Run it from a machine with `bb` on `PATH`. It reads no network beyond bb's own store.
+`alia plugin search <query> --json` returns each listed plugin with `installs`, `description`, `overview`, `screenshots`, and `category`. A single broad query does not surface every community entry, so the script below sweeps single characters and common bigrams, merges by `entryId`, keeps entries whose `marketplace` is `alia-community`, and sorts by installs. It reached 442 community entries, which matches the count a single wide `alia plugin search e --json` returns. Run it from a machine with `alia` on `PATH`. It reads no network beyond VesnALIA's own store.
 
 ```js
 // node gather-marketplace.mjs > community.json
@@ -18,18 +18,18 @@ import { execFileSync } from "node:child_process";
 const queries = [
   ..."abcdefghijklmnopqrstuvwxyz".split(""),
   ..."0123456789".split(""),
-  "bb", "th", "er", "in", "on", "an", "re", "st", "ce", "de", "ll", "la",
+  "alia", "th", "er", "in", "on", "an", "re", "st", "ce", "de", "ll", "la",
   "se", "te", "to", "tt", "ss", "pp", "rr", "oo", "ee", "aa", "ii",
 ];
 
 const byId = new Map();
 for (const q of queries) {
-  const arr = JSON.parse(execFileSync("bb", ["plugin", "search", q, "--json"], {
+  const arr = JSON.parse(execFileSync("alia", ["plugin", "search", q, "--json"], {
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
   }));
   for (const e of arr) {
-    if (e.marketplace !== "bb-community") continue;
+    if (e.marketplace !== "alia-community") continue;
     byId.set(e.entryId, e);
   }
 }
@@ -43,7 +43,7 @@ Character counts are JavaScript string lengths. Sentence counts split on `[.!?]`
 
 | Rank | Entry                  | Installs | Desc chars | Desc sentences | Has overview | Overview chars | Screenshots | Category               |
 |------|------------------------|----------|------------|----------------|--------------|----------------|-------------|------------------------|
-| 1    | bb-sidebar             | 709      | 121        | 1              | no           | 0              | 2           | Thread Management      |
+| 1    | alia-sidebar             | 709      | 121        | 1              | no           | 0              | 2           | Thread Management      |
 | 2    | usage-tracker          | 552      | 191        | 2              | no           | 0              | 1           | Token Usage & Limits   |
 | 3    | file-manager           | 530      | 631        | 6              | yes          | 2615           | 3           | File Viewers & Editors |
 | 4    | genui                  | 396      | 800        | 5              | yes          | 2443           | 3           | Thread Content         |
@@ -85,9 +85,9 @@ Length is a symptom, not the rule. The common property across the top entries is
 **One value sentence leads.** The strongest leads name what the thing is and immediately say what it is for, often with a named differentiator or a contrast against the default:
 
 - context-meter (116 chars): "Keeps threads in the smart zone, by tracking context against a limit you set rather than the provider's full window."
-- bb-sidebar (121 chars): "A sidebar inspired by T3 Code that adds manual and automatic thread sorting, collapsible shelves, and bulk actions to bb."
-- notify (129 chars): "Sends a native macOS notification when a bb thread finishes or fails, and adds a notify_user agent tool plus a bb notify command."
-- agent-graph (188 chars): "Shows your bb agents as a live node graph of threads, turns, tool calls, subagents and workflow agents, color-coded by type or status, so you can see what every agent is doing at a glance."
+- alia-sidebar (121 chars): "A sidebar inspired by T3 Code that adds manual and automatic thread sorting, collapsible shelves, and bulk actions to VesnALIA."
+- notify (129 chars): "Sends a native macOS notification when a VesnALIA thread finishes or fails, and adds a notify_user agent tool plus a VesnALIA notify command."
+- agent-graph (188 chars): "Shows your VesnALIA agents as a live node graph of threads, turns, tool calls, subagents and workflow agents, color-coded by type or status, so you can see what every agent is doing at a glance."
 
 **Feature enumeration is rare and earns its place.** Only the three longest outliers (file-manager 631, genui 800, files-editor 1080) list several capabilities, and each spends the words on concrete, specific behavior rather than a tour of every control. Meanwhile usage-tracker (191) enumerates providers because the provider list is the product ("Track Codex, Claude Code, Cursor, Grok, OpenCode, Antigravity, and DeepSeek"). Enumeration is not banned. A long flat inventory of every button is what reads as unfocused.
 
@@ -97,7 +97,7 @@ Length is a symptom, not the rule. The common property across the top entries is
 
 ## Where our lead already works
 
-"A kanban of your bb threads, focused on what needs you first." (61 chars) is a single sentence with a named value and a concrete frame, in the register of bb-sidebar and context-meter. It is the strongest line on the page, it is the lead the marketplace already ships, and it stays verbatim in the proposal below. The opening is fine. The problem is everything the description keeps going after it.
+"A kanban of your VesnALIA threads, focused on what needs you first." (61 chars) is a single sentence with a named value and a concrete frame, in the register of alia-sidebar and context-meter. It is the strongest line on the page, it is the lead the marketplace already ships, and it stays verbatim in the proposal below. The opening is fine. The problem is everything the description keeps going after it.
 
 ## Where ours breaks the pattern
 
@@ -113,16 +113,16 @@ The product's one-line value statement appears on four surfaces, and all four di
 
 | Surface | Lead text | Chars |
 |---|---|---|
-| Marketplace `description` (live) | "A kanban of your bb threads, focused on what needs you first." | 61 |
-| `PLUGIN_OVERVIEW.md` (line 1) | "Focus Board is a nav panel in the bb sidebar that shows all your threads as a kanban board." | 91 |
-| `package.json` `bb.description` | "A kanban board of your threads, focused on what needs you first." | 64 |
-| `README.md` (line 4) | "A kanban board for your bb threads, grouped by what needs your attention." | 73 |
+| Marketplace `description` (live) | "A kanban of your VesnALIA threads, focused on what needs you first." | 61 |
+| `PLUGIN_OVERVIEW.md` (line 1) | "Focus Board is a nav panel in the VesnALIA sidebar that shows all your threads as a kanban board." | 91 |
+| `package.json` `alia.description` | "A kanban board of your threads, focused on what needs you first." | 64 |
+| `README.md` (line 4) | "A kanban board for your VesnALIA threads, grouped by what needs your attention." | 73 |
 
 The drift, item by item:
 
 - **Noun form.** Marketplace says "A kanban", package.json and README say "A kanban board", and the overview calls it a "nav panel" until it reaches "kanban board" mid-sentence.
-- **Preposition.** Marketplace and package.json say "of your threads", while README says "for your bb threads".
-- **Scope word.** Marketplace and README say "bb threads", while package.json says plain "threads".
+- **Preposition.** Marketplace and package.json say "of your threads", while README says "for your VesnALIA threads".
+- **Scope word.** Marketplace and README say "alia threads", while package.json says plain "threads".
 - **Value clause.** Marketplace and package.json say "focused on what needs you first", while README says "grouped by what needs your attention".
 - **Depth.** The marketplace description runs to 463 chars with a feature walkthrough, while the other three are one line each. The marketplace copy is also the only surface that names "pending-interaction badge", a term that appears nowhere else.
 
@@ -132,9 +132,9 @@ None of this is required to change in this pull request, and the marketplace sur
 
 Proposed replacement, to be pasted into the marketplace entry when the operator opens the `v1-change` pull request. It keeps the strongest lead verbatim, drops the feature enumeration, and adds one concrete differentiator.
 
-> A kanban of your bb threads, focused on what needs you first, where you act on a thread by dragging its card instead of opening a menu.
+> A kanban of your VesnALIA threads, focused on what needs you first, where you act on a thread by dragging its card instead of opening a menu.
 
-135 characters. One sentence. Zero semicolons, zero em dashes. It keeps the 61-char lead, names the board's one distinctive interaction (acting on a thread is a drag, not a menu), and drops the group/drag/sweep/snooze/search tour and the card-contents inventory. It sits between bb-sidebar (121) and context-meter (116) in the pack rather than chasing the median, because the pack's median is pulled up by four long outliers and the mode is one idea in roughly 120 to 190 chars.
+135 characters. One sentence. Zero semicolons, zero em dashes. It keeps the 61-char lead, names the board's one distinctive interaction (acting on a thread is a drag, not a menu), and drops the group/drag/sweep/snooze/search tour and the card-contents inventory. It sits between alia-sidebar (121) and context-meter (116) in the pack rather than chasing the median, because the pack's median is pulled up by four long outliers and the mode is one idea in roughly 120 to 190 chars.
 
 ## Proposed `PLUGIN_OVERVIEW.md`
 
@@ -151,4 +151,4 @@ The rewrite stays well under the marketplace's hard 4000-character overview cap.
 
 ## What this pull request does not do
 
-It does not touch the get-bb/marketplace repo, does not push a branch there, and does not open a pull request there. The short `description` is a frozen-v1 field that needs the `v1-change` label, which a submitter cannot self-apply, so the store submission is the operator's call. Shipping the new copy to the marketplace needs that separate pull request, which should carry this repo's `PLUGIN_OVERVIEW.md` verbatim as `overview/focus-board.md` and the proposed `description` above. Aligning `package.json`'s `bb.description` and the README opening with the same lead belongs in that follow-up.
+It does not touch the get-alia/marketplace repo, does not push a branch there, and does not open a pull request there. The short `description` is a frozen-v1 field that needs the `v1-change` label, which a submitter cannot self-apply, so the store submission is the operator's call. Shipping the new copy to the marketplace needs that separate pull request, which should carry this repo's `PLUGIN_OVERVIEW.md` verbatim as `overview/focus-board.md` and the proposed `description` above. Aligning `package.json`'s `alia.description` and the README opening with the same lead belongs in that follow-up.

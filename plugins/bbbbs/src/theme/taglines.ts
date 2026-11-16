@@ -1,6 +1,6 @@
 /**
  * One of these is shown in the dial-up header. Short (<= 60 columns), silly,
- * and about bb, agents, or 1994. Add more freely; keep them kind.
+ * and about VesnALIA, agents, or 1994. Add more freely; keep them kind.
  */
 export const TAGLINES: readonly string[] = [
   "640K ought to be enough for any agent.",

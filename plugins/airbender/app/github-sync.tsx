@@ -1,12 +1,12 @@
 // app/github-sync.tsx — the "Import / export GitHub issues" window (it
-// was called "Sync with GitHub" until bead-bb-c9l.21).
+// was called "Sync with GitHub" until bead-alia-c9l.21).
 //
 // What: a window in which the owner ticks GitHub issues to bring into beads
 // and beads issues to send to GitHub, previews what that would do, and then
 // has it done.
 //
 // Why: the user asked for a dialog to sync with GitHub issues, both ways,
-// with issues chosen and the result previewed first (bead-bb-rh3). The
+// with issues chosen and the result previewed first (bead-alia-rh3). The
 // syncing itself is beads' own command, run by the server
 // (server/github.ts); this file only chooses, shows and confirms.
 //
@@ -702,7 +702,7 @@ export function GithubSync({
                 </select>
               </label>
               {/* Comments of GitHub issues come along only if asked for:
-                  the sync itself does not carry them (bead-bb-apc). */}
+                  the sync itself does not carry them (bead-alia-apc). */}
               <label
                 className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground"
                 title="Also copy the comments of the GitHub issues that are brought in (From GitHub and Linked) into the issues here, each under its author's name with a link to the original. One more request to GitHub per issue. Nothing is written to GitHub."

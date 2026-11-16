@@ -1,7 +1,7 @@
-// bb-plugin-machine-sidebar — frontend entry.
+// alia-plugin-machine-sidebar — frontend entry.
 //
-// Replaces bb's sidebar thread list with a machine → project → thread tree.
-// Grouping lives in tree.ts; this file draws it and wires bb's actions.
+// Replaces VesnALIA's sidebar thread list with a machine → project → thread tree.
+// Grouping lives in tree.ts; this file draws it and wires VesnALIA's actions.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent, ReactNode } from "react";
 import {
@@ -16,7 +16,7 @@ import {
   useSidebarThreadShortcut,
   useSettings,
   type PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { useInactiveMarks, type SetInactive } from "./inactive";
@@ -89,7 +89,7 @@ function useCollapsed() {
 type Attention = "waiting" | "failed" | "done" | null;
 
 /**
- * The agent itself is working on a turn. These are the runtime states bb's own
+ * The agent itself is working on a turn. These are the runtime states VesnALIA's own
  * list treats as busy; a background command such as a dev server does not
  * count, so it never keeps the spinner going.
  */
@@ -181,7 +181,7 @@ function StatusGlyph({
   return null;
 }
 
-/** Background work bb reports per thread, drawn calmly next to the status. */
+/** Background work VesnALIA reports per thread, drawn calmly next to the status. */
 const ACTIVITY = [
   { key: "backgroundAgents", icon: "UserRoundPlus", fallback: "Users" },
   { key: "backgroundCommands", icon: "Terminal", fallback: "Code" },
@@ -342,7 +342,7 @@ function ProviderGlyph({ providerId }: { providerId: string }) {
 
 /**
  * The thread title with leading "[Tag]" prefixes drawn as colored pills.
- * Titles without tags use bb's ThreadTitle, which also renders @mentions.
+ * Titles without tags use VesnALIA's ThreadTitle, which also renders @mentions.
  */
 function TitleLine({ thread }: { thread: SidebarThread }) {
   const tagColor = useTagColor();

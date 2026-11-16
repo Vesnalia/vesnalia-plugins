@@ -101,7 +101,7 @@ import {
   type SlotKind,
 } from "./device-host.ts";
 import { chooseResize, chooseSize, defaultSize, describeSize, formatMiB, kindSizes, sameMachineSize, sameSize, type SizeRequest } from "./sizes.ts";
-import { BY_OUTSIDE, EVENT_WORDS_BYTES, UNKNOWN_ACTOR, byBbBox, openStop, utf8Prefix, type Actor, type BoxEvent, type BoxEventKind, type BoxLog, type Observation } from "./box-log.ts";
+import { BY_OUTSIDE, EVENT_WORDS_BYTES, UNKNOWN_ACTOR, byAliaBox, openStop, utf8Prefix, type Actor, type BoxEvent, type BoxEventKind, type BoxLog, type Observation } from "./box-log.ts";
 import { POWER_CHECK_GAP_MS } from "./reach.ts";
 import { forkCapacityWords } from "./snapshot-refusals.ts";
 import { EVERYONE, NONE_SERVES_THREAD, inAcquireOrder, isShared, keptForOthersWords, reservedRank, servesAudience, threadAudience, tiersFor, type Audience } from "./reserved.ts";
@@ -153,11 +153,11 @@ export type BoxState =
   | "stopped"
   /** The acquire failed. The backend released what it had claimed. */
   | "failed"
-  /** The guest was deleted outside BB Box. */
+  /** The guest was deleted outside VesnALIA Box. */
   | "gone"
   | "releasing";
 
-/** "box" is acquired by a tool or the panel; "machine" is a thread's own BB machine. */
+/** "box" is acquired by a tool or the panel; "machine" is a thread's own VesnALIA machine. */
 export type BoxRole = "box" | "machine";
 export type EnrolState = "off" | "enrolling" | "enrolled" | "failed";
 
@@ -208,7 +208,7 @@ const IMAGE_CHECK_MS = 10 * 60_000;
 /** Lines of a failed script's output an acquire's error gives (049). */
 const IMAGE_LINES = 20;
 /** Where an image's files go in the box while they run. */
-const IMAGE_DIR = ".bb-box-image";
+const IMAGE_DIR = ".alia-box-image";
 
 export interface BoxRecord {
   readonly id: string;
@@ -250,7 +250,7 @@ export interface BoxRecord {
   /**
    * When the sweep restored the box's lost record from its guest, until the
    * box starts enrolling again. A box restored stopped, or whose guest did
-   * not answer, enrols when bb-box starts it or the sweep finds it answering (026).
+   * not answer, enrols when alia-box starts it or the sweep finds it answering (026).
    */
   readonly restoredAt?: number | null;
   /** Milliseconds per acquire step, "total" from request to ready, and "release.<step>" after a failed release. */
@@ -263,7 +263,7 @@ export interface BoxRecord {
   readonly identityMarkedAt?: number | null;
   /** Its project's image (049), whose script runs as root as the box starts, before it is handed over. */
   readonly image?: BoxImage | null;
-  /** The last time the box's guest stopped without bb-box's request (#406). A stop bb-box makes forgets it. */
+  /** The last time the box's guest stopped without alia-box's request (#406). A stop alia-box makes forgets it. */
   readonly unrequestedStop?: UnrequestedStop | null;
   /** The box's last resize (061), recorded before it changes anything. */
   readonly resize?: ResizeRecord | null;
@@ -335,8 +335,8 @@ function isRunResult(value: unknown): value is RunResult {
 
 function updateCommandFor(box: BoxRecord): string {
   const owner = box.threadId === OPERATOR ? " --machine" : ` --thread ${box.threadId}`;
-  if (!holdsCard(recordedGpu(box))) return `bb box resize ${box.name} --gpu ${gpuPartToRetry(box.resize)} --restart${owner}`;
-  return `bb box gpu update ${box.name}${owner}`;
+  if (!holdsCard(recordedGpu(box))) return `alia box resize ${box.name} --gpu ${gpuPartToRetry(box.resize)} --restart${owner}`;
+  return `alia box gpu update ${box.name}${owner}`;
 }
 
 function userspaceCheck(box: BoxRecord, state: UserspaceState, unread: string | null, hostUnknown: string | null, notReadNow: string | null): DoctorCheck {
@@ -347,12 +347,12 @@ function userspaceCheck(box: BoxRecord, state: UserspaceState, unread: string | 
   const fixWhenRunning = (fix: string) => (stopped ? `Start ${box.name}, then ${fix}` : `${fix.charAt(0).toUpperCase()}${fix.slice(1)}`);
   const read = box.userspaceRead;
   const asRead = stopped && read ? ` It is stopped: this is as ${PRODUCT} read it at ${new Date(read.at).toISOString().slice(0, 16).replace("T", " ")} UTC.` : "";
-  if (unread) return { id, name, status: "warn", detail: `${unread.replace(/\.$/, "")}.`, fix: "Run bb box doctor again; if it lasts, look at the box with bb box status." };
+  if (unread) return { id, name, status: "warn", detail: `${unread.replace(/\.$/, "")}.`, fix: "Run alia box doctor again; if it lasts, look at the box with VesnALIA box status." };
   switch (state.is) {
     case "updating":
       return { id, name, status: "ok", detail: `${PRODUCT} is updating NVIDIA's userspace in ${box.name} to ${state.update.to} now, at its ${state.update.step} step.`, fix: null };
     case "running":
-      return { id, name, status: "warn", detail: `${stillRunningWords(box.name)}.`, fix: "Wait for it to end, then run bb box doctor again." };
+      return { id, name, status: "warn", detail: `${stillRunningWords(box.name)}.`, fix: "Wait for it to end, then run alia box doctor again." };
     case "unfinished":
       return holdsCard(recordedGpu(box))
         ? { id, name, status: "warn", detail: `${updateLeftWords(box.name, state.update)} nvidia-smi and CUDA may fail in it.`, fix: fixWhenRunning(`update it again: ${update}`) }
@@ -372,7 +372,7 @@ function userspaceCheck(box: BoxRecord, state: UserspaceState, unread: string | 
         ? { id, name, status: "ok", detail: `Box ${box.name} is stopped, and ${PRODUCT} has not read its NVIDIA userspace yet: it does when ${box.name} next starts.`, fix: null }
         : { id, name, status: "ok", detail: `${PRODUCT} has not read NVIDIA's userspace in box ${box.name} yet, and did not now, as ${notReadNow ?? `the box is ${box.state}`}: the doctor reads it at its next run.`, fix: null };
     case "driver-unknown":
-      return { id, name, status: "warn", detail: `Box ${box.name} has ${state.version === "none" ? "no NVIDIA userspace" : `NVIDIA's userspace ${state.version}`}, and ${PRODUCT} cannot tell the host's driver: ${hostUnknown ?? "its backend does not say"}`, fix: "Run bb box doctor again once the host's driver is known." };
+      return { id, name, status: "warn", detail: `Box ${box.name} has ${state.version === "none" ? "no NVIDIA userspace" : `NVIDIA's userspace ${state.version}`}, and ${PRODUCT} cannot tell the host's driver: ${hostUnknown ?? "its backend does not say"}`, fix: "Run alia box doctor again once the host's driver is known." };
     case "matches":
       return { id, name, status: "ok", detail: `Box ${box.name} has NVIDIA's userspace ${state.version}, the host's driver.`, fix: null };
   }
@@ -432,7 +432,7 @@ function gpuFixedWords(box: BoxRecord): [string, string] {
 
 function noGpuDesktopWords(box: BoxRecord, kind: string): [string, string] {
   const said = `${box.backendLabel} offers no ${kind} box with a GPU, so box ${box.name}, a desktop drawn by the CPU, cannot become a GPU desktop there`;
-  return [`Not resized: ${said}. List a GPU desktop template in BB Box's settings, or make a new ${kind} box with a GPU. ${PRODUCT} changed nothing.`, `Not resized: ${said}. Acquire a ${kind} box with the GPU it needs, or ask the user. ${PRODUCT} changed nothing.`];
+  return [`Not resized: ${said}. List a GPU desktop template in VesnALIA Box's settings, or make a new ${kind} box with a GPU. ${PRODUCT} changed nothing.`, `Not resized: ${said}. Acquire a ${kind} box with the GPU it needs, or ask the user. ${PRODUCT} changed nothing.`];
 }
 
 function sizeAndGpuWords(size: BoxSize, withGpuPart: boolean): string {
@@ -478,37 +478,37 @@ export function restartSeconds(box: BoxRecord, resumes: boolean): number | null 
 export const RESIZE_MEMORY_MARGIN_MIB = 512;
 
 export function restoringWords(box: Pick<BoxRecord, "name">, mark: RestoringMark): string {
-  return `Box ${box.name} is being restored to snapshot "${mark.name}", or ${PRODUCT} could not confirm that restore. Check its status in a few seconds; if it stays so, bb box doctor says why, and bb box sweep checks again now.`;
+  return `Box ${box.name} is being restored to snapshot "${mark.name}", or ${PRODUCT} could not confirm that restore. Check its status in a few seconds; if it stays so, VesnALIA box doctor says why, and VesnALIA box sweep checks again now.`;
 }
 
-/** A stop bb-box did not make, why, and what bb-box did about it (#406). */
+/** A stop alia-box did not make, why, and what alia-box did about it (#406). */
 export interface UnrequestedStop {
-  /** When the guest stopped, or when bb-box found it stopped. */
+  /** When the guest stopped, or when alia-box found it stopped. */
   readonly at: number;
   /** The backend's words, or null when it cannot tell. */
   readonly reason: string | null;
   /** The guest did not choose it, as when its VM crashed. */
   readonly crashed: boolean;
-  /** When bb-box started the box again, and the error when that failed. */
+  /** When alia-box started the box again, and the error when that failed. */
   readonly restart: { readonly at: number; readonly error: string | null } | null;
 }
 
 /**
- * bb-box starts a box whose VM crashed again (#406), unless it did so for
+ * alia-box starts a box whose VM crashed again (#406), unless it did so for
  * the stop before less than this long before, so a VM that keeps crashing
  * stays stopped.
  */
 export const RESTART_GAP_MS = 10 * 60_000;
 
 function threadMachineWords(box: BoxRecord): string {
-  return `It is the machine of thread ${box.threadId}, and ${PRODUCT} removes no thread's machine, which would release the box with the thread's worktree, so it keeps the box as it is, no longer a BB machine that connects.`;
+  return `It is the machine of thread ${box.threadId}, and ${PRODUCT} removes no thread's machine, which would release the box with the thread's worktree, so it keeps the box as it is, no longer a VesnALIA machine that connects.`;
 }
 
 function utc(ms: number): string {
   return `${new Date(ms).toISOString().slice(0, 19).replace("T", " ")} UTC`;
 }
 
-/** Why the box last stopped without bb-box's request, and what bb-box did, in words (#406); empty when it has not. */
+/** Why the box last stopped without alia-box's request, and what alia-box did, in words (#406); empty when it has not. */
 export function stopWords(box: BoxRecord): string {
   const stop = box.unrequestedStop;
   if (!stop) return "";
@@ -519,28 +519,28 @@ export function stopWords(box: BoxRecord): string {
   return words.join(" ");
 }
 
-/** Whether bb-box is starting the box again after a stop it did not make (#406). */
+/** Whether alia-box is starting the box again after a stop it did not make (#406). */
 function restarting(box: BoxRecord): boolean {
   return !!box.unrequestedStop?.restart && !box.unrequestedStop.restart.error;
 }
 
 /**
- * What BB says of a thread: "ended" when it returns the thread archived or
+ * What VesnALIA says of a thread: "ended" when it returns the thread archived or
  * deleted, "missing" when it says there is no such thread, and "unknown" on
  * any other error.
  */
 export type ThreadLiveness = "live" | "ended" | "missing" | "unknown";
 
-/** BB's answer for a thread, with what it said as it came, for the log. */
+/** VesnALIA's answer for a thread, with what it said as it came, for the log. */
 export interface ThreadAnswer {
   readonly state: ThreadLiveness;
   readonly said: string;
 }
 
-/** The thread of spare boxes, which no thread owns yet (032). BB's thread IDs never take this form. */
+/** The thread of spare boxes, which no thread owns yet (032). VesnALIA's thread IDs never take this form. */
 export const SPARES = "spare";
 
-/** The thread of your machines: boxes you own, kept as BB machines (036). BB's thread IDs never take this form either. */
+/** The thread of your machines: boxes you own, kept as VesnALIA machines (036). VesnALIA's thread IDs never take this form either. */
 export const OPERATOR = "operator";
 
 /** Whether boxes of `threadId` belong to a thread, as opposed to the spares or your machines. */
@@ -548,7 +548,7 @@ export function ownedByThread(threadId: string): boolean {
   return threadId !== SPARES && threadId !== OPERATOR;
 }
 
-/** A name for one of your machines: a hostname label, as it is also its BB machine's name (036). */
+/** A name for one of your machines: a hostname label, as it is also its VesnALIA machine's name (036). */
 
 export { isMachineName };
 
@@ -557,8 +557,8 @@ export function forkNameProblem(name: string): string | null {
 }
 
 /**
- * The name of a box's BB machine. A spare's says it is one, and one that
- * waits stopped says so too, as BB shows its machine offline meanwhile (#539).
+ * The name of a box's VesnALIA machine. A spare's says it is one, and one that
+ * waits stopped says so too, as VesnALIA shows its machine offline meanwhile (#539).
  */
 export function machineName(box: Pick<BoxRecord, "name" | "threadId" | "state">): string {
   if (box.threadId !== SPARES) return box.name;
@@ -585,8 +585,8 @@ export interface BoxesDeps {
   /** A current baked build of an image for a kind on a backend whose images start boxes from builds (049), or null. */
   baked?(name: string, backend: string, kind: string): Promise<{ readonly ref: string; readonly build: string | null } | null>;
   /**
-   * Commands an image's script may call, as this bb-box has them, put first
-   * on its PATH at start: bb-box-feature, for boxes of images built before
+   * Commands an image's script may call, as this alia-box has them, put first
+   * on its PATH at start: alia-box-feature, for boxes of images built before
    * standard images had it (049).
    */
   readonly imageTools?: Readonly<Record<string, string>>;
@@ -609,55 +609,55 @@ export interface BoxesDeps {
   leftoverReleased?(backendId: string, guestRef: string, boxId: string | null, why: string): void;
   beforeRelease?(box: BoxRecord, who: Actor): Promise<void>;
   /**
-   * Whether a thread still exists and is not archived, as BB says. The sweep
-   * releases the thread's boxes and guests once BB says at two sweeps running
+   * Whether a thread still exists and is not archived, as VesnALIA says. The sweep
+   * releases the thread's boxes and guests once VesnALIA says at two sweeps running
    * that it ended or that there is no such thread.
    */
   thread(threadId: string): Promise<ThreadAnswer>;
   /** A thread's project, for a box the sweep restores from its guest. */
   projectOf?(threadId: string): Promise<string | null>;
   /**
-   * The ID of BB's machine that a box is for its thread, as a "New box"
+   * The ID of VesnALIA's machine that a box is for its thread, as a "New box"
    * (033), or null when it is none. The sweep asks it for a box it restores.
    */
   machineOf?(boxId: string): Promise<string | null>;
   /**
-   * Enrols a ready box as a BB machine, with the box ID as the key. With
-   * `restored`, the sweep restored the box and bb-box has just found it
+   * Enrols a ready box as a VesnALIA machine, with the box ID as the key. With
+   * `restored`, the sweep restored the box and alia-box has just found it
    * answering, so its enrolment counts from now. Called without awaiting.
    */
   enrol?(box: BoxRecord, options?: { restored?: boolean }): Promise<void>;
-  /** Removes a box's BB machine. Awaited before the backend releases the box. */
+  /** Removes a box's VesnALIA machine. Awaited before the backend releases the box. */
   unenrol?(box: BoxRecord): Promise<void>;
   /**
-   * Starts an enrolled box's BB daemon again after bb-box started the box:
-   * BB's bootstrap with the box ID as the key. Commands wait for it a while.
+   * Starts an enrolled box's VesnALIA daemon again after alia-box started the box:
+   * VesnALIA's bootstrap with the box ID as the key. Commands wait for it a while.
    */
   reconnect?(box: BoxRecord): Promise<void>;
   tryingToJoin?(boxId: string): boolean;
   /**
-   * A thread, neither archived nor deleted, on a spare's BB machine, or
+   * A thread, neither archived nor deleted, on a spare's VesnALIA machine, or
    * null. A claim skips such a spare, and the spare upkeep makes it yours
-   * (036): someone started a thread on it from BB's picker.
+   * (036): someone started a thread on it from VesnALIA's picker.
    */
   spareThread?(box: BoxRecord): Promise<string | null>;
   /**
-   * Gives a claimed spare's BB machine the box's name, and says whether BB
+   * Gives a claimed spare's VesnALIA machine the box's name, and says whether VesnALIA
    * shows it disconnected, so it must reconnect. Commands wait a while only
    * for that reconnect, as after a start.
    */
   claimed?(box: BoxRecord): Promise<boolean>;
-  /** Names the box's BB machine as `machineName` says, as after a spare stops to wait (#539). */
+  /** Names the box's VesnALIA machine as `machineName` says, as after a spare stops to wait (#539). */
   renameMachine?(box: BoxRecord): Promise<void>;
   spareSettled?(box: BoxRecord): Promise<SpareSettling>;
   spareClaimed?(box: BoxRecord): void;
   /**
-   * Which of BB's variables commands in a box enrolled as a BB machine take
+   * Which of VesnALIA's variables commands in a box enrolled as a VesnALIA machine take
    * from its daemon, so they have the thread's access. Null for none.
    */
   access?(box: BoxRecord): Promise<Access | null>;
   /**
-   * Why a box that does not answer is to be waited for, not released: bb-box
+   * Why a box that does not answer is to be waited for, not released: alia-box
    * is reconnecting to the machine it runs on, as after an update (#415).
    * Null when it is not.
    */
@@ -724,7 +724,7 @@ export type BoxErrorCode =
   | "backend_off"
   | "released"
   | "unreachable"
-  /** A thread runs on the box's BB machine. */
+  /** A thread runs on the box's VesnALIA machine. */
   | "in_use"
   /** A resize needs a restart of the box, which the caller did not allow (061). */
   | "needs_restart"
@@ -735,9 +735,9 @@ export type BoxErrorCode =
   | "unknown_device"
   /** The box this thread runs on belongs to another owner, who releases or stops it (036). */
   | "not_owner"
-  /** bb-box is stopping, as for an update, and takes no new commands (#405). */
+  /** alia-box is stopping, as for an update, and takes no new commands (#405). */
   | "restarting"
-  /** The box does not answer while bb-box reconnects to the machine it runs on, as after an update (#415). */
+  /** The box does not answer while alia-box reconnects to the machine it runs on, as after an update (#415). */
   | "reconnecting"
   | "locked"
   | "failed"
@@ -747,7 +747,7 @@ export type BoxErrorCode =
   | "invalid_value"
   | "needs_yes";
 
-/** A job a box_run command left running when bb-box restarted (#405). */
+/** A job a box_run command left running when alia-box restarted (#405). */
 export type JobResult =
   | { readonly state: "ended"; readonly exitCode: number; readonly stdout: string; readonly stderr: string; readonly truncated: boolean }
   | { readonly state: "running"; readonly stdout: string; readonly stderr: string };
@@ -853,7 +853,7 @@ export function identity(box: BoxRecord, size: MachineSize): BoxIdentity {
   return { boxId: box.id, threadId: box.threadId, name: box.name, kind: box.kind, createdAt: box.createdAt, size: withGpu(size, recordedGpu(box)), ...(box.image?.from ? { from: box.image.from } : {}) };
 }
 
-/** The message a user sees for an error: bb-box's and backends' own messages as they are. */
+/** The message a user sees for an error: alia-box's and backends' own messages as they are. */
 export function describeError(error: unknown, action: string): string {
   if (error instanceof BoxError || error instanceof BackendError || error instanceof TransportError) return error.message;
   const message = error instanceof Error ? error.message : String(error);
@@ -910,7 +910,7 @@ const UNKNOWN_KIND: KindCapabilities = {
   device: null,
 };
 
-/** How much longer than the timeout in the box bb-box waits before it stops the command itself. */
+/** How much longer than the timeout in the box alia-box waits before it stops the command itself. */
 const LOCAL_TIMEOUT_GRACE_MS = 10_000;
 const ENROL_POLL_MS = 250;
 /** Long enough for a Mac box's enrolment, which takes 8 to 10 s from ready. */
@@ -1076,9 +1076,9 @@ export interface SweepReport {
   readonly leftovers: number;
   /** Records restored from guests whose record was lost. */
   readonly adopted: number;
-  /** Guests with no record whose thread BB did not confirm, kept for the next sweep. */
+  /** Guests with no record whose thread VesnALIA did not confirm, kept for the next sweep. */
   readonly kept: number;
-  /** Boxes and guests whose thread BB said ended at this sweep but not the last, kept for the next. */
+  /** Boxes and guests whose thread VesnALIA said ended at this sweep but not the last, kept for the next. */
   readonly ending: number;
   /** Acquires and releases a restart interrupted, carried on. */
   readonly resumed: number;
@@ -1098,16 +1098,16 @@ export class Boxes {
   readonly #acquiring = new Map<string, AbortController>();
   readonly #updating = new Map<string, AbortController>();
   readonly #resizing = new Map<string, AbortController>();
-  /** Reconnects of BB machines after a start or a claim in this process, while they run. */
+  /** Reconnects of VesnALIA machines after a start or a claim in this process, while they run. */
   readonly #reconnects = new Map<string, Promise<void>>();
-  /** By box, the jobs whose results bb-box has, which its next command removes, and whether a command has pruned old ones since this process started (#405). */
+  /** By box, the jobs whose results alia-box has, which its next command removes, and whether a command has pruned old ones since this process started (#405). */
   readonly #jobs = new Map<string, { readonly received: Set<string>; pruned: boolean }>();
   /** The run of keepSpares in progress, and whether a call asked for another after it. */
   #keeping: Promise<void> | null = null;
   #keepAgain = false;
   readonly #spareShortfalls = new Map<string, string>();
   readonly #spareSettleFailedAt = new Map<string, number>();
-  /** The threads BB said had ended at the last sweep. */
+  /** The threads VesnALIA said had ended at the last sweep. */
   #ending = new Set<string>();
   readonly #powerCheckedAt = new Map<string, number>();
   readonly #silentBackends = new Map<string, BackendSilence>();
@@ -1222,7 +1222,7 @@ export class Boxes {
   /**
    * The names a new name must avoid: `taken`, and every live box's in this
    * install, whatever its thread. A spare's name is a claimed box's, so a
-   * new spare named only against the spares could share a name, and a BB
+   * new spare named only against the spares could share a name, and a VesnALIA
    * machine's, with a box a thread just claimed (#539).
    */
   async #liveNames(taken: ReadonlySet<string>): Promise<Set<string>> {
@@ -1319,9 +1319,9 @@ export class Boxes {
 
   async audienceNow(threadId: string, toldProject: string | null = null): Promise<Audience> {
     if (!ownedByThread(threadId)) return EVERYONE;
-    const askBb = this.#deps.projectOf;
-    if (!askBb) return threadAudience(toldProject);
-    return threadAudience(await askBb(threadId).catch(() => null));
+    const askAlia = this.#deps.projectOf;
+    if (!askAlia) return threadAudience(toldProject);
+    return threadAudience(await askAlia(threadId).catch(() => null));
   }
 
   async keptFromThread(owner: { readonly threadId: string; readonly backend: string; readonly backendLabel: string }, cannot: string): Promise<BoxError | null> {
@@ -1489,7 +1489,7 @@ export class Boxes {
         "unknown_kind",
         kinds.length
           ? `There is no "${input.kind}" kind. The kinds are: ${kinds.join(", ")}.`
-          : "No backend is set up, so there are no boxes to acquire. With the user's go-ahead, bb box setup docker sets up Docker on the machine that runs BB, as the Box panel's first run does; or the user sets a backend up in BB Box's settings.",
+          : "No backend is set up, so there are no boxes to acquire. With the user's go-ahead, VesnALIA box setup docker sets up Docker on the machine that runs VesnALIA, as the Box panel's first run does; or the user sets a backend up in VesnALIA Box's settings.",
       );
     }
     if (!everywhere.length) {
@@ -1526,7 +1526,7 @@ export class Boxes {
         throw new BoxError("invalid_name", `Name a machine with a lower-case letter first, then letters, digits and "-", up to 32 characters, not ending in "-". "${input.name}" is not one.`);
       }
       const kind = withDevice[0]!.kind;
-      if (!kind.capabilities.enrol) throw new BoxError("unsupported", `A ${kind.label} box cannot become a BB machine, so it cannot be one of your machines.`);
+      if (!kind.capabilities.enrol) throw new BoxError("unsupported", `A ${kind.label} box cannot become a VesnALIA machine, so it cannot be one of your machines.`);
     }
     // Spares and your machines are outside the per-thread limit.
     const owned = role === "box" && ownedByThread(input.threadId);
@@ -1579,7 +1579,7 @@ export class Boxes {
                 const ownVmOffered = offered.some(({ kind }) => kind.id === "ios" && !kind.slotsOnly);
                 this.#deps.log?.(
                   ownVmOffered
-                    ? `Box ${name} found no slot on a shared iOS host, so bb-box looks for a VM of its own: ${error.message}`
+                    ? `Box ${name} found no slot on a shared iOS host, so alia-box looks for a VM of its own: ${error.message}`
                     : `Box ${name} found no slot on a shared iOS host, and no VM of its own is offered where it was asked, so it is refused: ${error.message}`,
                 );
                 return null;
@@ -1649,7 +1649,7 @@ export class Boxes {
           const spareResume = timings["start.total"] ?? 0;
           return { timings: { spare, spareResume, total: spare + spareResume, ...rest } };
         });
-        // The start reconnects its machine. How long that took from the claim, until BB shows the
+        // The start reconnects its machine. How long that took from the claim, until VesnALIA shows the
         // machine connected with the thread's access, is a step of its own, as a new box's enrolment is.
         const reconnect = this.#reconnects.get(box.id);
         if (reconnect) {
@@ -1694,7 +1694,7 @@ export class Boxes {
     if (yours && request.name !== undefined && !isMachineName(request.name)) {
       throw new BoxError("invalid_name", `Name a machine with a lower-case letter first, then letters, digits and "-", up to 32 characters, not ending in "-". "${request.name}" is not one.`);
     }
-    if (yours && !kind.capabilities.enrol) throw new BoxError("unsupported", `A ${kind.label} box cannot become a BB machine, so a fork of it cannot be one of your machines.`);
+    if (yours && !kind.capabilities.enrol) throw new BoxError("unsupported", `A ${kind.label} box cannot become a VesnALIA machine, so a fork of it cannot be one of your machines.`);
     const size = request.size ?? defaultSize(kindSizes(kind.id, (await this.#deps.general()).sizes));
     const gpu = request.gpu ?? "none";
     if (gpu === "whole" && !(await this.wholeCards())) throw new BoxError("unsupported", WHOLE_CARDS_OFF_FOR_FORK.person, WHOLE_CARDS_OFF_FOR_FORK.agent);
@@ -1802,7 +1802,7 @@ export class Boxes {
           }
           try {
             if (this.#deps.spareThread && (await this.#deps.spareThread(spare)) !== null) {
-              this.#deps.log?.(`Skipped spare box ${spare.name}: a thread uses its BB machine.`);
+              this.#deps.log?.(`Skipped spare box ${spare.name}: a thread uses its VesnALIA machine.`);
               continue;
             }
           } catch (error) {
@@ -1912,7 +1912,7 @@ export class Boxes {
         name: `Spare of ${name} for ${kind} on ${backend}`,
         status: "warn",
         detail: `A spare from its build ${failed.ref} failed to start at ${when(failed.at)} UTC, so ${PRODUCT} keeps none of that build until ${when(failed.at + SPARE_RETRY_MS)} UTC. Its boxes start from the build meanwhile.`,
-        fix: "The failed box's error is in bb box list --all. A new build of the image, as a changed script or the nightly rebuild makes, is tried at once.",
+        fix: "The failed box's error is in VesnALIA box list --all. A new build of the image, as a changed script or the nightly rebuild makes, is tried at once.",
       });
     }
     return checks;
@@ -1931,9 +1931,9 @@ export class Boxes {
   }
 
   /**
-   * Whether a spare waits stopped (#539): it is a BB machine, on a backend
+   * Whether a spare waits stopped (#539): it is a VesnALIA machine, on a backend
    * whose stop keeps its session, so it holds no memory while it waits and
-   * a start resumes it, BB's daemon included, in a few seconds.
+   * a start resumes it, VesnALIA's daemon included, in a few seconds.
    */
   #waitsStopped(spare: BoxRecord): boolean {
     return spare.enrol.state === "enrolled" && !!this.#deps.backends.get(spare.backend)?.keepsSession?.(spare.kind);
@@ -1970,11 +1970,11 @@ export class Boxes {
         : {},
     );
     if (!marked || marked.identityReset?.foundAt !== foundAt) return null;
-    const next = marked.role === "machine" ? threadMachineWords(marked) : `so ${PRODUCT} enrols the box again as a new BB machine, and keeps it.`;
-    this.#event(marked, "identity-reset", byBbBox("its BB machine went with its identity reset"), {
-      words: `Box ${marked.name} reset its identity at ${utc(reset.at)}, as ${reset.why}. BB's machine ${reset.machine} went with it, ${next}`,
+    const next = marked.role === "machine" ? threadMachineWords(marked) : `so ${PRODUCT} enrols the box again as a new VesnALIA machine, and keeps it.`;
+    this.#event(marked, "identity-reset", byAliaBox("its VesnALIA machine went with its identity reset"), {
+      words: `Box ${marked.name} reset its identity at ${utc(reset.at)}, as ${reset.why}. VesnALIA's machine ${reset.machine} went with it, ${next}`,
     });
-    this.#deps.log?.(`Box ${marked.name} reset its identity at ${utc(reset.at)}, as ${reset.why}, removing BB's machine ${reset.machine}: ${next}`);
+    this.#deps.log?.(`Box ${marked.name} reset its identity at ${utc(reset.at)}, as ${reset.why}, removing VesnALIA's machine ${reset.machine}: ${next}`);
     return marked;
   }
 
@@ -1999,8 +1999,8 @@ export class Boxes {
       const backend = this.#deps.backends.get(updated.backend);
       if (backend) await this.#markIdentity(updated, updated.guest, backend, {}, AbortSignal.timeout(MARKER_WRITE_MS * 2));
     }
-    this.#event(updated, "enrolled-again", byBbBox("its BB machine went with its identity reset"), {
-      words: `Box ${updated.name} joined BB again as machine ${machine}, in place of ${reset.machine}, ${Math.max(1, Math.round((now - reset.foundAt) / 1000))} s after ${PRODUCT} found its identity reset.`,
+    this.#event(updated, "enrolled-again", byAliaBox("its VesnALIA machine went with its identity reset"), {
+      words: `Box ${updated.name} joined VesnALIA again as machine ${machine}, in place of ${reset.machine}, ${Math.max(1, Math.round((now - reset.foundAt) / 1000))} s after ${PRODUCT} found its identity reset.`,
     });
     return updated;
   }
@@ -2012,29 +2012,29 @@ export class Boxes {
         ? { enrol: current.enrol.hostId === machine ? { state: current.enrol.state === "failed" ? "failed" : "off", hostId: null, error: current.enrol.state === "failed" ? current.enrol.error : null } : current.enrol, removedMachineToCheck: { machine, at, why } }
         : {},
     );
-    if (updated?.removedMachineToCheck?.at === at) this.#deps.log?.(`BB no longer has machine ${machine} of box ${updated.name}, and bb-box could not read whether the box's identity reset (${why}), so it keeps the box and reads again at each sweep.`);
+    if (updated?.removedMachineToCheck?.at === at) this.#deps.log?.(`VesnALIA no longer has machine ${machine} of box ${updated.name}, and alia-box could not read whether the box's identity reset (${why}), so it keeps the box and reads again at each sweep.`);
     return updated;
   }
 
   async identityResetChecks(): Promise<DoctorCheck[]> {
     return (await this.all()).flatMap((box): DoctorCheck[] => {
       const checks: DoctorCheck[] = [];
-      const look = "A box that is not a copy of another should never reset: see /var/lib/bb-box/identity-resets and journalctl -u bb-box-identity in the box.";
+      const look = "A box that is not a copy of another should never reset: see /var/lib/alia-box/identity-resets and journalctl -u alia-box-identity in the box.";
       const reset = box.identityReset;
       if (reset) {
-        const what = `Box ${box.name} reset its identity at ${utc(reset.at)}, as ${reset.why}, and BB's machine ${reset.machine} went with it.`;
+        const what = `Box ${box.name} reset its identity at ${utc(reset.at)}, as ${reset.why}, and VesnALIA's machine ${reset.machine} went with it.`;
         if (box.role === "machine") {
           checks.push({
             id: `identity-reset.${box.name}`,
             name: `Identity reset of ${box.name}`,
             status: "fail",
             detail: `${what} ${threadMachineWords(box)}`,
-            fix: `Copy what thread ${box.threadId} needs from the box with bb box run or box_copy, then end the thread or remove machine ${reset.machine} in BB, which releases the box. ${look}`,
+            fix: `Copy what thread ${box.threadId} needs from the box with VesnALIA box run or box_copy, then end the thread or remove machine ${reset.machine} in VesnALIA, which releases the box. ${look}`,
           });
         } else if (reset.enrolledAgainAt !== null) {
-          checks.push({ id: `identity-reset.${box.name}`, name: `Identity reset of ${box.name}`, status: "warn", detail: `${what} ${PRODUCT} kept the box and enrolled it again, at ${utc(reset.enrolledAgainAt)}, as BB machine ${reset.machineAgain}.`, fix: look });
+          checks.push({ id: `identity-reset.${box.name}`, name: `Identity reset of ${box.name}`, status: "warn", detail: `${what} ${PRODUCT} kept the box and enrolled it again, at ${utc(reset.enrolledAgainAt)}, as VesnALIA machine ${reset.machineAgain}.`, fix: look });
         } else {
-          const step = reset.retiredAt === null ? `BB has not yet confirmed the removal of machine ${reset.machine}, which ${PRODUCT} asks for again at each sweep` : `${PRODUCT} has not yet enrolled it again as a BB machine`;
+          const step = reset.retiredAt === null ? `VesnALIA has not yet confirmed the removal of machine ${reset.machine}, which ${PRODUCT} asks for again at each sweep` : `${PRODUCT} has not yet enrolled it again as a VesnALIA machine`;
           const why = box.enrol.state === "failed" && box.enrol.error ? ` Its last try failed: ${box.enrol.error}` : "";
           checks.push({ id: `identity-reset.${box.name}`, name: `Identity reset of ${box.name}`, status: "fail", detail: `${what} ${PRODUCT} kept the box; ${step}.${why}`, fix: `${PRODUCT} tries again at each sweep. ${look}` });
         }
@@ -2045,8 +2045,8 @@ export class Boxes {
           id: `identity-reset.${box.name}`,
           name: `Identity reset of ${box.name}`,
           status: "warn",
-          detail: `BB no longer has machine ${check.machine} of box ${box.name}, since ${utc(check.at)}, and ${PRODUCT} could not read whether the box's identity reset (${check.why}), so it keeps the box.`,
-          fix: `${PRODUCT} reads the box's /var/lib/bb-box/identity-resets again at each sweep, once the box answers. If you removed the machine in BB on purpose, release the box in ${PRODUCT}.`,
+          detail: `VesnALIA no longer has machine ${check.machine} of box ${box.name}, since ${utc(check.at)}, and ${PRODUCT} could not read whether the box's identity reset (${check.why}), so it keeps the box.`,
+          fix: `${PRODUCT} reads the box's /var/lib/alia-box/identity-resets again at each sweep, once the box answers. If you removed the machine in VesnALIA on purpose, release the box in ${PRODUCT}.`,
         });
       }
       return checks;
@@ -2087,7 +2087,7 @@ export class Boxes {
   }
 
   /**
-   * After a claim: renames the box's BB machine, and makes another spare.
+   * After a claim: renames the box's VesnALIA machine, and makes another spare.
    * Its commands wait only when its machine must reconnect (#128).
    */
   #claimed(box: BoxRecord, from: string): void {
@@ -2193,7 +2193,7 @@ export class Boxes {
         await this.#forget(spare);
         continue;
       }
-      // No claim takes these: stopped, unless it waits so, or not enrolled when it should be, as when its machine was removed in BB.
+      // No claim takes these: stopped, unless it waits so, or not enrolled when it should be, as when its machine was removed in VesnALIA.
       const failed =
         spare.state === "gone" ||
         (spare.state === "stopped" && !this.#waitsStopped(spare)) ||
@@ -2230,8 +2230,8 @@ export class Boxes {
         continue;
       }
       kept.set(slot, count + 1);
-      // A spare that can wait stopped does, so it holds no memory until a claim starts it (#539). Its BB machine's name then says
-      // it is stopped, as BB shows the machine offline.
+      // A spare that can wait stopped does, so it holds no memory until a claim starts it (#539). Its VesnALIA machine's name then says
+      // it is stopped, as VesnALIA shows the machine offline.
       if (spare.state === "ready" && this.#waitsStopped(spare) && !this.#work.has(spare.id)) {
         const settling = await this.#spareSettling(spare);
         if (settling.is === "failed") {
@@ -2241,7 +2241,7 @@ export class Boxes {
           continue;
         }
         if (settling.is === "settling") continue;
-        const stopped = await this.stop(SPARES, spare.id, undefined, byBbBox("a spare waits stopped until a thread claims it")).catch((error) => {
+        const stopped = await this.stop(SPARES, spare.id, undefined, byAliaBox("a spare waits stopped until a thread claims it")).catch((error) => {
           this.#deps.logError("stop a spare", error);
           return null;
         });
@@ -2257,11 +2257,11 @@ export class Boxes {
       if (count >= wanted) this.#spareShortfalls.delete(kind);
       for (; count < wanted && !this.#disposed; count++) {
         try {
-          await this.acquire({ threadId: SPARES, projectId: null, kind, who: byBbBox(`${PRODUCT} keeps ${wanted} spare ${kind} ${wanted === 1 ? "box" : "boxes"}`) });
+          await this.acquire({ threadId: SPARES, projectId: null, kind, who: byAliaBox(`${PRODUCT} keeps ${wanted} spare ${kind} ${wanted === 1 ? "box" : "boxes"}`) });
           this.#spareShortfalls.delete(kind);
         } catch (error) {
           if (error instanceof BoxError) {
-            this.#deps.log?.(`bb-box keeps ${count} of ${wanted} spare ${kind} boxes for now: ${error.message}`);
+            this.#deps.log?.(`alia-box keeps ${count} of ${wanted} spare ${kind} boxes for now: ${error.message}`);
             this.#spareShortfalls.set(kind, error.message);
           } else this.#deps.logError("spares", error);
           break;
@@ -2273,7 +2273,7 @@ export class Boxes {
       const failed = await this.#deps.kv.get<{ ref: string; at: number }>(spareFailedKey(want.name, want.backend, want.kind));
       if (failed && failed.ref === want.ref && this.#now() - failed.at < SPARE_RETRY_MS) continue;
       try {
-        const made = await this.acquire({ threadId: SPARES, projectId: null, kind: want.kind, image: want.name, on: want.backend, who: byBbBox(`${PRODUCT} keeps a spare of image ${want.name}`) });
+        const made = await this.acquire({ threadId: SPARES, projectId: null, kind: want.kind, image: want.name, on: want.backend, who: byAliaBox(`${PRODUCT} keeps a spare of image ${want.name}`) });
         // The build changed as it was made: it would run the script at start, so it goes, and waits a day.
         if (made.image?.state !== "baked" || made.image.from !== want.ref) {
           await this.#spareFailed(want.name, want.backend, want.kind, want.ref);
@@ -2281,7 +2281,7 @@ export class Boxes {
         }
       } catch (error) {
         const why = error instanceof Error ? error.message : String(error);
-        this.#deps.log?.(`bb-box keeps no spare ${want.name} ${want.kind} box on ${want.backend} for now: ${why}`);
+        this.#deps.log?.(`alia-box keeps no spare ${want.name} ${want.kind} box on ${want.backend} for now: ${why}`);
         // No room is not a failure of the build: the next upkeep tries again.
         if (!(error instanceof BoxError && error.code === "no_capacity")) await this.#spareFailed(want.name, want.backend, want.kind, want.ref);
       }
@@ -2311,7 +2311,7 @@ export class Boxes {
   }
 
   /**
-   * Makes a spare yours when a thread started on its BB machine from BB's
+   * Makes a spare yours when a thread started on its VesnALIA machine from VesnALIA's
    * picker (036): it moves to OPERATOR under the spares' lock, as a claim
    * does, its machine drops "(spare)", and the upkeep makes another spare.
    * A stopped one is yours too, not released as failed, and stays stopped
@@ -2343,10 +2343,10 @@ export class Boxes {
     );
     if (!moved) return false;
     const { box, from } = moved;
-    this.#deps.log?.(`Spare box ${box.name} is now yours: thread ${threadId} started on it from BB's picker.`);
+    this.#deps.log?.(`Spare box ${box.name} is now yours: thread ${threadId} started on it from VesnALIA's picker.`);
     this.#deps.notify(SPARES);
     if (box.state === "stopped" && this.#waitsStopped(box)) {
-      void this.#chain(box.id, () => this.#start(box, undefined, false, byBbBox("a thread started on its BB machine from BB's picker"))).then(
+      void this.#chain(box.id, () => this.#start(box, undefined, false, byAliaBox("a thread started on its VesnALIA machine from VesnALIA's picker"))).then(
         (started) => this.#renamed(started, from),
         (error) => this.#deps.logError("start a spare that is yours", error),
       );
@@ -2356,8 +2356,8 @@ export class Boxes {
 
   /**
    * After a spare changed owner, and perhaps name (`from` was its name): the
-   * backend records them on the guest and names it inside, BB's machine is
-   * renamed, and reconnected if BB shows it disconnected and the box is
+   * backend records them on the guest and names it inside, VesnALIA's machine is
+   * renamed, and reconnected if VesnALIA shows it disconnected and the box is
    * running; a stopped one reconnects when it starts. Commands wait for
    * the guest's new name only when it changed (#128), so a claim's total
    * then counts the relabel too (#186).
@@ -2449,8 +2449,8 @@ export class Boxes {
     const instead = gpu === "none" ? (kind === "linux-desktop" ? "Ask for linux-desktop-cpu for a desktop drawn by the CPU" : "Leave gpu out") : shared ? "Ask for gpu shared" : asked ? "Ask for gpu none" : `Ask for gpu none, or for another kind`;
     const setting = fromSetting ? `, the GPU the user set for ${kind} boxes that do not ask for one` : "";
     if (forAgent) throw new BoxError("unsupported", `Not made: no provider here gives ${kind} boxes ${gpuPartWords(gpu)}${setting}: ${why}. ${instead}, or ask the user. ${PRODUCT} changed nothing.`);
-    const change = fromSetting ? `, or change ${kind}'s GPU when not asked for in BB Box's settings, or with bb box kind set ${kind} --gpu <none|shared|whole>` : "";
-    throw new BoxError("unsupported", `No provider gives ${kind} boxes ${gpuPartWords(gpu)}${fromSetting ? `, ${kind}'s GPU when not asked for in BB Box's settings` : ""}: ${why}. ${instead}${change}.`);
+    const change = fromSetting ? `, or change ${kind}'s GPU when not asked for in VesnALIA Box's settings, or with VesnALIA box kind set ${kind} --gpu <none|shared|whole>` : "";
+    throw new BoxError("unsupported", `No provider gives ${kind} boxes ${gpuPartWords(gpu)}${fromSetting ? `, ${kind}'s GPU when not asked for in VesnALIA Box's settings` : ""}: ${why}. ${instead}${change}.`);
   }
 
   /**
@@ -2489,7 +2489,7 @@ export class Boxes {
     for (const backend of chosen.values()) {
       ids.add(backend.id);
       if (this.#deps.backends.on && !this.#deps.backends.on().some((candidate) => candidate.id === backend.id)) {
-        out.push(`${this.#providerName(backend)} is off; turn it on in BB Box's settings.`);
+        out.push(`${this.#providerName(backend)} is off; turn it on in VesnALIA Box's settings.`);
         continue;
       }
       if (!offered.some((candidate) => candidate.backend.id === backend.id)) {
@@ -2701,7 +2701,7 @@ export class Boxes {
     try {
       await backend.release(guest, QUIET);
     } catch (error) {
-      this.#deps.log?.(`Could not delete guest ${guest.ref} of fork ${current.name} yet: ${describeError(error, "Deleting it")} bb-box tries again at its next sweep.`);
+      this.#deps.log?.(`Could not delete guest ${guest.ref} of fork ${current.name} yet: ${describeError(error, "Deleting it")} alia-box tries again at its next sweep.`);
       return;
     }
     const updated = await this.update(current, (latest) => {
@@ -2709,7 +2709,7 @@ export class Boxes {
       const error = `${latest.forkFailure ?? "The fork failed."} ${forkReleasedWords(latest)}`;
       return { guest: null, error, agentError: { of: error, words: `${latest.agentForkFailure ?? latest.forkFailure ?? "The fork failed."} ${forkReleasedWords(latest)}` } };
     });
-    this.#deps.log?.(`Deleted guest ${guest.ref} of fork ${current.name}, which bb-box could not delete when the fork failed.`);
+    this.#deps.log?.(`Deleted guest ${guest.ref} of fork ${current.name}, which alia-box could not delete when the fork failed.`);
     if (updated) this.#deps.forked?.(updated);
   }
 
@@ -2884,8 +2884,8 @@ export class Boxes {
   }
 
   /**
-   * Runs the box's project's image's script as root, with BB_BOX_IMAGE,
-   * BB_BOX_KIND, BB_BOX_BACKEND and BB_BOX_ARCH, then its check as the box
+   * Runs the box's project's image's script as root, with ALIA_BOX_IMAGE,
+   * ALIA_BOX_KIND, ALIA_BOX_BACKEND and ALIA_BOX_ARCH, then its check as the box
    * user (049). Throws with the output's last lines when either fails. An
    * image removed since the box was asked for runs nothing.
    */
@@ -2906,7 +2906,7 @@ export class Boxes {
     const tools = Object.entries(this.#deps.imageTools ?? {});
     for (const [tool, body] of tools) await command.writeFile(`${IMAGE_DIR}/bin/${tool}`, text.encode(body), { mode: "0755", signal });
     const path = tools.length ? `PATH="$HOME/${IMAGE_DIR}/bin:$PATH" ` : "";
-    const env = Object.entries({ BB_BOX_IMAGE: name, BB_BOX_KIND: box.kind, BB_BOX_BACKEND: backend.id, BB_BOX_ARCH: box.capabilities.arch })
+    const env = Object.entries({ ALIA_BOX_IMAGE: name, ALIA_BOX_KIND: box.kind, ALIA_BOX_BACKEND: backend.id, ALIA_BOX_ARCH: box.capabilities.arch })
       .map(([key, value]) => `${key}=${quote(value)}`)
       .join(" ");
     const failed = (what: string, ran: RunResult, limitMs: number) => {
@@ -2963,7 +2963,7 @@ export class Boxes {
     }
   }
 
-  /** Starts enrolling a ready box as a BB machine, when it can enrol. */
+  /** Starts enrolling a ready box as a VesnALIA machine, when it can enrol. */
   async #enrol(box: BoxRecord, options: { restored?: boolean } = {}): Promise<void> {
     if (!(await this.#enrols(box))) return;
     const enrolling = await this.update(box, (current) => ({
@@ -2975,7 +2975,7 @@ export class Boxes {
       void this.#deps.enrol!(enrolling, options)
         .catch((error) => this.#deps.logError("enrol", error))
         .then(async () => {
-          // A spare that can wait stopped does so as soon as it is a BB machine (#539). Any other waits for the next upkeep.
+          // A spare that can wait stopped does so as soon as it is a VesnALIA machine (#539). Any other waits for the next upkeep.
           if (enrolling.threadId !== SPARES || this.#disposed) return;
           const now = await this.#read(SPARES, enrolling.id);
           if (now?.state === "ready" && this.#waitsStopped(now)) void this.keepSpares();
@@ -2986,14 +2986,14 @@ export class Boxes {
     }
   }
 
-  /** Whether a box can enrol as a BB machine: its kind can and bb-box enrols boxes. */
+  /** Whether a box can enrol as a VesnALIA machine: its kind can and alia-box enrols boxes. */
   /** A thread's own box (role "machine") is enrolled by the machine provider that made it, with the thread's key. */
   async enrols(box: BoxRecord): Promise<boolean> {
     return this.#enrols(box);
   }
 
   async #enrols(box: BoxRecord): Promise<boolean> {
-    // Your machines are BB machines whatever the general setting says (036).
+    // Your machines are VesnALIA machines whatever the general setting says (036).
     return box.role !== "machine" && box.capabilities.enrol && !!this.#deps.enrol && (box.threadId === OPERATOR || (await this.#deps.general()).enrol);
   }
 
@@ -3023,7 +3023,7 @@ export class Boxes {
   }
 
   /**
-   * Releases a box: its BB machine is removed, then the backend deletes the
+   * Releases a box: its VesnALIA machine is removed, then the backend deletes the
    * guest or resets and returns the machine. Resolves when that is done, with
    * null, or with the box still releasing and the error when it failed; the
    * sweep then tries again. A spare released this way is replaced then, not
@@ -3036,8 +3036,8 @@ export class Boxes {
     return left;
   }
 
-  /** Every release starts here, and logs why: who asked, or what bb-box needed. */
-  async #release(box: BoxRecord, why: string, who: Actor = byBbBox(why)): Promise<BoxRecord | null> {
+  /** Every release starts here, and logs why: who asked, or what alia-box needed. */
+  async #release(box: BoxRecord, why: string, who: Actor = byAliaBox(why)): Promise<BoxRecord | null> {
     this.#resizing.get(box.id)?.abort(new BoxError("released", `Box ${box.name} was released.`));
     this.#updating.get(box.id)?.abort(new BoxError("released", `Box ${box.name} was released.`));
     const marked = await this.update(box, (current) => ({
@@ -3076,18 +3076,18 @@ export class Boxes {
         return this.update(box, () => ({ error: `${words} ${next}` }));
       }
     }
-    // A thread's own box (role "machine") has a BB machine that BB owns and removes itself; deleting it
-    // from here would wait on BB's removal, which waits on this release.
+    // A thread's own box (role "machine") has a VesnALIA machine that VesnALIA owns and removes itself; deleting it
+    // from here would wait on VesnALIA's removal, which waits on this release.
     if (box.enrol.hostId && this.#deps.unenrol && box.role !== "machine") {
       try {
         await this.#deps.unenrol(box);
       } catch (error) {
-        // The machine stays in BB as offline; releasing the box matters more.
+        // The machine stays in VesnALIA as offline; releasing the box matters more.
         this.#deps.logError("unenrol", error);
       }
     }
     if (guestGone) {
-      this.#deps.log?.(`${describeBox(box)}: its guest is gone, so its release, which a restart of bb-box interrupted, is done.`);
+      this.#deps.log?.(`${describeBox(box)}: its guest is gone, so its release, which a restart of alia-box interrupted, is done.`);
       this.#event(box, "released", who, { backend: box.backendLabel, words: `${PRODUCT} found its guest gone after a restart.` });
       await this.#forget(box);
       return null;
@@ -3136,13 +3136,13 @@ export class Boxes {
       this.#acquiring.get(current.id)?.abort(new BoxError("released", `Box ${current.name} was forgotten.`));
       this.#event(current, "forgotten", who, { backend: current.backendLabel, state: current.state });
       await this.#forget(current, "forgotten");
-      this.#deps.log?.(`Forgot ${describeBox(current)}: bb-box removed its record. Nothing was deleted: its guest on ${current.backendLabel}, if it still runs, keeps running.`);
+      this.#deps.log?.(`Forgot ${describeBox(current)}: alia-box removed its record. Nothing was deleted: its guest on ${current.backendLabel}, if it still runs, keeps running.`);
     });
   }
 
   /**
-   * Releases every box of a thread that BB said was archived or deleted.
-   * Resolves with how many it released. BB is asked again first, and the
+   * Releases every box of a thread that VesnALIA said was archived or deleted.
+   * Resolves with how many it released. VesnALIA is asked again first, and the
    * boxes go now only when it returns the thread archived or deleted. When it
    * finds no such thread, the next sweep releases them if it still finds
    * none; while it says the thread is live, or cannot say, they stay.
@@ -3152,20 +3152,20 @@ export class Boxes {
     if (!boxes.length) return 0;
     const { state, said } = await this.#ask(threadId);
     if (state !== "ended") {
-      // BB's answer now counts as its first for the next sweep.
+      // VesnALIA's answer now counts as its first for the next sweep.
       if (state === "missing") this.#ending.add(threadId);
       const now =
         state === "live" ? "says now that it is live" :
-        state === "missing" ? "finds no such thread now, and the next sweep releases them if BB still finds none" :
+        state === "missing" ? "finds no such thread now, and the next sweep releases them if VesnALIA still finds none" :
         "cannot say now whether it ended, and the sweep decides";
-      this.#deps.log?.(`Kept the boxes of thread ${threadId}: BB said it was ${ended}, but ${now}. BB's answer: ${said}.`);
+      this.#deps.log?.(`Kept the boxes of thread ${threadId}: VesnALIA said it was ${ended}, but ${now}. VesnALIA's answer: ${said}.`);
       return 0;
     }
     let count = 0;
     for (const box of boxes) {
       try {
         if (this.#holdsNothing(box)) await this.#forget(box);
-        else if ((await this.#release(box, `its thread was ${ended}. BB's answer: ${said}`)) === null) count++;
+        else if ((await this.#release(box, `its thread was ${ended}. VesnALIA's answer: ${said}`)) === null) count++;
       } catch (error) {
         this.#deps.logError("release", error);
       }
@@ -3173,9 +3173,9 @@ export class Boxes {
     return count;
   }
 
-  /** BB's answer for a thread; an error asking it is no answer. */
+  /** VesnALIA's answer for a thread; an error asking it is no answer. */
   #ask(threadId: string): Promise<ThreadAnswer> {
-    return this.#deps.thread(threadId).catch((error: unknown) => ({ state: "unknown" as const, said: describeError(error, "Asking BB") }));
+    return this.#deps.thread(threadId).catch((error: unknown) => ({ state: "unknown" as const, said: describeError(error, "Asking VesnALIA") }));
   }
 
   /** A failed box with no guest: nothing to release, only the record to forget. */
@@ -3235,7 +3235,7 @@ export class Boxes {
       return mark ? { ...reading, mark } : null;
     } catch (error) {
       if (signal?.aborted) throw error;
-      this.#deps.log?.(`Could not mark box ${box.name}'s guest as bb-box stopped it, so a snapshot of it taken while it is stopped is not fork-safe: ${describeError(error, "Marking it")}`);
+      this.#deps.log?.(`Could not mark box ${box.name}'s guest as alia-box stopped it, so a snapshot of it taken while it is stopped is not fork-safe: ${describeError(error, "Marking it")}`);
       return null;
     }
   }
@@ -3257,7 +3257,7 @@ export class Boxes {
 
   /**
    * Starts a stopped box, waits until its command transport answers, and
-   * reconnects its BB machine, or enrols it when the sweep restored it.
+   * reconnects its VesnALIA machine, or enrols it when the sweep restored it.
    */
   async start(threadId: string, ref: string, signal?: AbortSignal, who: Actor = UNKNOWN_ACTOR): Promise<BoxRecord> {
     const box = await this.get(threadId, ref);
@@ -3293,7 +3293,7 @@ export class Boxes {
       await this.#enrol(started, { restored: true }).catch((error) => this.#deps.logError("enrol", error));
       return (await this.#read(started.threadId, started.id)) ?? started;
     }
-    // A hard stop ends BB's daemon, and nothing in the box starts it again (017).
+    // A hard stop ends VesnALIA's daemon, and nothing in the box starts it again (017).
     if (started.state === "ready" && started.enrol.state === "enrolled" && this.#deps.reconnect) {
       this.#waitFor(started.id, this.#deps.reconnect(started).catch((error) => this.#deps.logError("reconnect", error)));
     }
@@ -3476,7 +3476,7 @@ export class Boxes {
         const installed = steps ? await this.#checkInstalled(done ?? current, steps, installs!, working) : null;
         if (installed) done = (await this.#read(current.threadId, current.id)) ?? done;
         else if (gpuRestarts && running && done) done = await this.#readUserspaceOrLog(done, options.signal, true);
-        // The restart ended BB's daemon, as a stop does (017).
+        // The restart ended VesnALIA's daemon, as a stop does (017).
         if (restart && done?.state === "ready" && done.enrol.state === "enrolled" && this.#deps.reconnect) {
           const reconnecting = done;
           this.#waitFor(reconnecting.id, this.#deps.reconnect(reconnecting).catch((error) => this.#deps.logError("reconnect", error)));
@@ -3663,7 +3663,7 @@ export class Boxes {
     }
   }
 
-  /** A resize bb-box stopped in the middle of, as for an update: the box has the size its guest says now (061). */
+  /** A resize alia-box stopped in the middle of, as for an update: the box has the size its guest says now (061). */
   async #settledResize(backend: Backend, box: BoxRecord, signal?: AbortSignal): Promise<BoxRecord> {
     await this.#resizeCutShort(backend, box, box.guest?.size, signal);
     const settled = (await this.#read(box.threadId, box.id)) ?? box;
@@ -3681,7 +3681,7 @@ export class Boxes {
       try {
         held = await backend.readGpuClaim(box.guest, signal);
       } catch (cause) {
-        this.#deps.log?.(`${describeBox(box)}: ${error} bb-box could not read which GPU its backend holds for it, so it reads it again at the next sweep: ${describeError(cause, "Reading its claim")}`);
+        this.#deps.log?.(`${describeBox(box)}: ${error} alia-box could not read which GPU its backend holds for it, so it reads it again at the next sweep: ${describeError(cause, "Reading its claim")}`);
         return;
       }
     }
@@ -3772,7 +3772,7 @@ export class Boxes {
     if (host.refused) throw new BoxError("unsupported", `Not changed: ${host.refused.why.replace(/\.$/, "")}.${host.refused.fix ? ` ${host.refused.fix}` : ""}`);
     const driver = host.driver;
     const before = await this.#readingIn(current, driver, options.signal);
-    if (before.running) throw new BoxError("try_again", `Not changed: ${stillRunningWords(name).replace(/^A/, "a")}. Run this again once it has ended: bb box doctor says when it has.`);
+    if (before.running) throw new BoxError("try_again", `Not changed: ${stillRunningWords(name).replace(/^A/, "a")}. Run this again once it has ended: VesnALIA box doctor says when it has.`);
     current = before.box;
     const reading = before.reading;
     if (userspaceState(reading, current.userspaceUpdate, driver).is === "matches") {
@@ -3795,7 +3795,7 @@ export class Boxes {
       }
       if (failed) {
         const after = await steps.ended("install", failed.why, true);
-        const now = after ? ` It has ${readingWords(after)} now${halfInstalled(after) ? `: run bb box gpu update ${name} again` : ""}.` : "";
+        const now = after ? ` It has ${readingWords(after)} now${halfInstalled(after) ? `: run alia box gpu update ${name} again` : ""}.` : "";
         throw new BoxError("failed", `${PRODUCT} could not install NVIDIA's userspace ${driver} in box ${name}: ${failed.why.replace(/\.$/, "")}.${now} It goes on running, and was not restarted.`);
       }
       await steps.stepTo("restart");
@@ -3805,7 +3805,7 @@ export class Boxes {
         await steps.ended("restart", describeError(error, "Checking the restart"), false);
         throw new BoxError(
           error instanceof BoxError ? error.code : "failed",
-          `${PRODUCT} installed NVIDIA's userspace ${driver} in box ${name}, but did not restart it: ${describeError(error, "Checking the restart").replace(/\.$/, "")}. Its programs keep the old libraries until it restarts. Run bb box gpu update ${name} again once it can restart.`,
+          `${PRODUCT} installed NVIDIA's userspace ${driver} in box ${name}, but did not restart it: ${describeError(error, "Checking the restart").replace(/\.$/, "")}. Its programs keep the old libraries until it restarts. Run alia box gpu update ${name} again once it can restart.`,
         );
       }
       try {
@@ -3814,13 +3814,13 @@ export class Boxes {
       } catch (error) {
         await steps.ended("restart", describeError(error, "Restarting the box"), false);
         const now = (await this.#read(current.threadId, current.id)) ?? current;
-        throw new BoxError("failed", `${PRODUCT} installed NVIDIA's userspace ${driver} in box ${name}, but could not restart it: ${describeError(error, "Restarting the box").replace(/\.$/, "")}. It is ${now.state} now, with the new userspace on its disk. Run bb box gpu update ${name} again once it runs.`);
+        throw new BoxError("failed", `${PRODUCT} installed NVIDIA's userspace ${driver} in box ${name}, but could not restart it: ${describeError(error, "Restarting the box").replace(/\.$/, "")}. It is ${now.state} now, with the new userspace on its disk. Run alia box gpu update ${name} again once it runs.`);
       }
       await steps.stepTo("check");
       const problem = await this.#checkUpdated(current, driver, steps.signal).catch((error: unknown) => describeError(error, "Checking the box"));
       if (problem) {
         await steps.ended("check", problem, true);
-        throw new BoxError("failed", `${PRODUCT} installed NVIDIA's userspace ${driver} in box ${name} and restarted it, but its check after the restart failed: ${problem.replace(/\.$/, "")}. It goes on running. Run bb box gpu update ${name} again, or bb box doctor.`);
+        throw new BoxError("failed", `${PRODUCT} installed NVIDIA's userspace ${driver} in box ${name} and restarted it, but its check after the restart failed: ${problem.replace(/\.$/, "")}. It goes on running. Run alia box gpu update ${name} again, or VesnALIA box doctor.`);
       }
       const ms = await steps.done();
       current = (await this.#read(current.threadId, current.id)) ?? current;
@@ -3948,9 +3948,9 @@ export class Boxes {
   }
 
   /**
-   * Records why a box's guest stopped when bb-box did not stop it, as its
+   * Records why a box's guest stopped when alia-box did not stop it, as its
    * backend says (#406), and starts it again in the background when its VM
-   * crashed, unless bb-box started it again after the stop before less than
+   * crashed, unless alia-box started it again after the stop before less than
    * RESTART_GAP_MS before.
    */
   async #stoppedUnrequested(box: BoxRecord, signal?: AbortSignal, asked: BoxEvent | null = null): Promise<BoxRecord> {
@@ -3973,7 +3973,7 @@ export class Boxes {
     this.#deps.log?.(`${describeBox(box)}: ${stopWords(updated)}`);
     this.#event(updated, "stopped-unasked", BY_OUTSIDE, { at: stop.at, words: stop.reason });
     if (restart && updated.unrequestedStop === stop) {
-      const restarter = byBbBox(`its VM crashed, and ${PRODUCT} starts such a box again`);
+      const restarter = byAliaBox(`its VM crashed, and ${PRODUCT} starts such a box again`);
       void this.#chain(box.id, () => this.#start(updated, undefined, inSlot(updated), restarter)).catch(async (error) => {
         this.#deps.logError("restart", error);
         const message = describeError(error, "The start");
@@ -4199,7 +4199,7 @@ export class Boxes {
       waitForEnrolment?: boolean;
       /** Called once the env file's contents are worked out, as the command goes to the box. */
       onSend?: () => void;
-      /** A job ID: the command leaves its result in the box, for job(), if it outlives bb-box (#405). */
+      /** A job ID: the command leaves its result in the box, for job(), if it outlives alia-box (#405). */
       job?: string;
     } = {},
   ): Promise<{ box: BoxRecord; result: RunResult }> {
@@ -4216,7 +4216,7 @@ export class Boxes {
     const jobs = options.job && !(capabilities.os === "windows" && session === "desktop") ? this.#jobsOf(box.id) : null;
     const job = jobs && options.job ? { id: options.job, forget: [...jobs.received], prune: !jobs.pruned } : undefined;
     options.onSend?.();
-    // Every box stops a command at its timeout itself; bb-box's own comes a moment later.
+    // Every box stops a command at its timeout itself; alia-box's own comes a moment later.
     const inBox = options.timeoutMs;
     const result = await this.#reach(
       box,
@@ -4245,7 +4245,7 @@ export class Boxes {
   }
 
   /**
-   * Runs a short script of bb-box's own in the box, as for a desktop's
+   * Runs a short script of alia-box's own in the box, as for a desktop's
    * clipboard (#464): with no wait for enrolment and without writing the
    * thread's environment first, so it takes one round trip. "desktop" runs
    * it in the box's logged-in desktop session.
@@ -4280,7 +4280,7 @@ export class Boxes {
   }
 
   /**
-   * Job `id` in a box, which a command left when bb-box
+   * Job `id` in a box, which a command left when alia-box
    * restarted (#405): once it has ended, its exit code and output, which the
    * box's next command then removes; while it runs, the end of its output
    * so far; null when the box has no such job.
@@ -4329,7 +4329,7 @@ export class Boxes {
   }
 
   /**
-   * Waits a while for a box that is enrolling to finish, or for its BB
+   * Waits a while for a box that is enrolling to finish, or for its VesnALIA
    * machine to reconnect after a start, and returns it as it is then.
    */
   #joinUnsettled(box: BoxRecord): boolean {
@@ -4351,20 +4351,20 @@ export class Boxes {
   }
 
   /**
-   * The env file for a box: who it is, and once BB knows it as a machine,
+   * The env file for a box: who it is, and once VesnALIA knows it as a machine,
    * where to take the thread's access from. Undefined leaves the file as it
    * is, when the access cannot be worked out.
    */
   async #envFile(box: BoxRecord): Promise<string | undefined> {
     const variables: Record<string, string> = {
-      BB_BOX_ID: box.id,
-      BB_BOX_NAME: box.name,
-      BB_BOX_KIND: box.kind,
-      BB_THREAD_ID: box.threadId,
+      ALIA_BOX_ID: box.id,
+      ALIA_BOX_NAME: box.name,
+      ALIA_BOX_KIND: box.kind,
+      ALIA_THREAD_ID: box.threadId,
     };
     const hostId = box.enrol.hostId;
     if (!hostId) return envScript(box.capabilities.os, variables);
-    variables.BB_HOST_ID = hostId;
+    variables.ALIA_HOST_ID = hostId;
     try {
       return envScript(box.capabilities.os, variables, await this.access(box));
     } catch (error) {
@@ -4409,7 +4409,7 @@ export class Boxes {
    * acquires, restores the records of guests whose record was lost, releases
    * guests no box can own, checks power, keeps the spares, and lets each
    * backend do its upkeep. Nothing is released for age or idleness, and no
-   * guest because its record is missing: only when BB says its thread was
+   * guest because its record is missing: only when VesnALIA says its thread was
    * archived or deleted, at this sweep and the last. One answer is not
    * enough to take a live thread's boxes. Spares belong to no thread, so
    * their thread lives.
@@ -4428,8 +4428,8 @@ export class Boxes {
       }
       return answer;
     };
-    // "ended" once BB has said so at two sweeps running, "ending" at the first.
-    // A thread BB returns archived or deleted and one it does not find count alike.
+    // "ended" once VesnALIA has said so at two sweeps running, "ending" at the first.
+    // A thread VesnALIA returns archived or deleted and one it does not find count alike.
     const before = this.#ending;
     const ending = (this.#ending = new Set<string>());
     const verdict = async (threadId: string): Promise<{ state: "live" | "unknown" | "ending" | "ended"; said: string }> => {
@@ -4468,12 +4468,12 @@ export class Boxes {
         const { state, said } = await verdict(box.threadId);
         if (state === "ended") {
           if (this.#holdsNothing(box)) await this.#forget(box);
-          else if ((await this.#release(box, `BB says its thread ended, at this sweep and the last. BB's answer: ${said}`)) === null) released++;
+          else if ((await this.#release(box, `VesnALIA says its thread ended, at this sweep and the last. VesnALIA's answer: ${said}`)) === null) released++;
           continue;
         }
         if (state === "ending") {
           waiting++;
-          this.#deps.log?.(`Kept ${describeBox(box)}: BB says its thread ended, and the next sweep releases it if BB says so again. BB's answer: ${said}.`);
+          this.#deps.log?.(`Kept ${describeBox(box)}: VesnALIA says its thread ended, and the next sweep releases it if VesnALIA says so again. VesnALIA's answer: ${said}.`);
         }
         if (box.state === "failed" && box.fork && box.guest) {
           await this.#chain(box.id, () => this.#retryForkCleanup(box));
@@ -4515,7 +4515,7 @@ export class Boxes {
             if (record.resize?.state === "resizing" && !this.#work.has(record.id)) await this.#resizeCutShort(backend, record, guest.size, signal);
             if ((record.userspaceUpdate?.state === "updating" || record.userspaceUpdate?.state === "unknown") && !this.#work.has(record.id)) await this.#userspaceUpdateCutShort(record, signal);
             if (!this.#work.has(record.id)) await this.#observe(record, { signal, power: guest.power });
-            // A ready box whose guest still has what its start lowered, as when bb-box restarted while it started (#888).
+            // A ready box whose guest still has what its start lowered, as when alia-box restarted while it started (#888).
             // A spare keeps it until a box takes it.
             if (guest.settling && record.readyAt !== null && record.threadId !== SPARES && !this.#work.has(record.id)) {
               await backend.settle?.(guest, signal).catch((error) => this.#deps.logError("put a box's CPU weight back", error));
@@ -4537,19 +4537,19 @@ export class Boxes {
             else guarded++;
             continue;
           }
-          // Its record was lost, as when bb-box lost its storage. The guest
+          // Its record was lost, as when alia-box lost its storage. The guest
           // names its box and thread, so it goes only when the thread ended.
           const { state, said } = await verdict(owner.threadId);
           if (state === "live") {
             if (await this.#restore(backend, guest, signal)) adopted++;
           } else if (state === "ended") {
-            if (await this.#releaseLeftover(backend, guest, `its box's thread ${owner.threadId} ended, as BB says at this sweep and the last. BB's answer: ${said}`, signal, true)) leftovers++;
+            if (await this.#releaseLeftover(backend, guest, `its box's thread ${owner.threadId} ended, as VesnALIA says at this sweep and the last. VesnALIA's answer: ${said}`, signal, true)) leftovers++;
             else guarded++;
           } else if (state === "ending") {
-            this.#deps.log?.(`Kept guest ${guest.ref} of box ${owner.boxId} without a record: BB says thread ${owner.threadId} ended, and the next sweep releases the guest if BB says so again. BB's answer: ${said}.`);
+            this.#deps.log?.(`Kept guest ${guest.ref} of box ${owner.boxId} without a record: VesnALIA says thread ${owner.threadId} ended, and the next sweep releases the guest if VesnALIA says so again. VesnALIA's answer: ${said}.`);
             waiting++;
           } else {
-            this.#deps.log?.(`Kept guest ${guest.ref} of box ${owner.boxId} without a record: BB did not say whether thread ${owner.threadId} still exists. BB's answer: ${said}.`);
+            this.#deps.log?.(`Kept guest ${guest.ref} of box ${owner.boxId} without a record: VesnALIA did not say whether thread ${owner.threadId} still exists. VesnALIA's answer: ${said}.`);
             kept++;
           }
         } catch (error) {
@@ -4632,9 +4632,9 @@ export class Boxes {
    * Rebuilds the record of a live thread's guest, for example after storage
    * was lost, from what the guest names: its box, thread, name, kind and
    * creation, with its reference, address and data. A running guest is ready
-   * when its command transport answers, and enrols again as a BB machine with
-   * the same key, so BB gives back the machine it still has (025). Any other
-   * enrols later, once it runs and answers (026). A box that is BB's machine
+   * when its command transport answers, and enrols again as a VesnALIA machine with
+   * the same key, so VesnALIA gives back the machine it still has (025). Any other
+   * enrols later, once it runs and answers (026). A box that is VesnALIA's machine
    * for its thread, as a "New box", is that machine again and never enrols.
    */
   async #restore(backend: Backend, held: HeldGuest, signal?: AbortSignal): Promise<boolean> {
@@ -4646,8 +4646,8 @@ export class Boxes {
     const answers = power === "stopped" ? false : await this.#answers(backend, guest, kindId, signal);
     const yours = owner.threadId === OPERATOR;
     const projectId = yours ? null : ((await this.#deps.projectOf?.(owner.threadId).catch(() => null)) ?? null);
-    // A thread's own box is BB's machine for the thread still, and must not
-    // enrol as another (#127). When BB does not say, the guest waits for the next sweep.
+    // A thread's own box is VesnALIA's machine for the thread still, and must not
+    // enrol as another (#127). When VesnALIA does not say, the guest waits for the next sweep.
     const machine = yours ? null : ((await this.#deps.machineOf?.(owner.boxId)) ?? null);
     const restored = await this.#locked(owner.threadId, async () => {
       if (await this.#read(owner.threadId, owner.boxId)) return null;
@@ -4701,7 +4701,7 @@ export class Boxes {
     }
   }
 
-  /** True once dispose() has begun, as bb-box restarts. */
+  /** True once dispose() has begun, as alia-box restarts. */
   get stopping(): boolean {
     return this.#disposed;
   }

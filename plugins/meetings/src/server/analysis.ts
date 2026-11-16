@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   analysisDocumentSchema, askResultSchema, meetingAnalysisSchema, structuredInsightsInputSchema, templateSnapshotSchema,
@@ -281,10 +281,10 @@ const ASK_SYSTEM_PROMPT = [
   'Верни строго JSON: {"answer":"ответ с ссылками","citations":[{"meetingId":"id встречи","segmentId":0,"quote":"точный фрагмент реплики"}]}',
 ].join("\n");
 
-export function createAnalysisService(bb: Pick<BbPluginApi, "storage">, options: { fetch?: typeof fetch; now?: () => number; templates?: SummaryTemplateStore; timeoutMs?: number; signal?: AbortSignal } = {}): AnalysisService {
-  const kv = bb.storage.kv;
+export function createAnalysisService(alia: Pick<AliaPluginApi, "storage">, options: { fetch?: typeof fetch; now?: () => number; templates?: SummaryTemplateStore; timeoutMs?: number; signal?: AbortSignal } = {}): AnalysisService {
+  const kv = alia.storage.kv;
   const now = options.now ?? Date.now;
-  const templates = options.templates ?? createSummaryTemplateStore(bb, { now });
+  const templates = options.templates ?? createSummaryTemplateStore(alia, { now });
   const fetcher = options.fetch ?? fetch;
   const timeoutMs = Math.max(1, Math.min(API_TIMEOUT_MS, options.timeoutMs ?? API_TIMEOUT_MS));
   const checkLifetime = (requestSignal?: AbortSignal) => { if (options.signal?.aborted || requestSignal?.aborted) throw cancelledError(); };

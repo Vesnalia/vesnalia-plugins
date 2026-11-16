@@ -74,7 +74,7 @@ async function setup(t: test.TestContext) {
   };
 }
 
-test("the pinned release covers the machines bb runs on, with real digests", () => {
+test("the pinned release covers the machines VesnALIA runs on, with real digests", () => {
   assert.deepEqual(Object.keys(XBERG_RELEASE.assets).sort(), [
     "darwin-arm64",
     "linux-arm64",

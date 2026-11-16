@@ -1,7 +1,7 @@
 import { quote } from "./process.ts";
 import type { ByteChannel, CommandTransport, RunOptions, RunResult, StreamOptions } from "./types.ts";
 
-const READ_MARK = "bb-box-read:";
+const READ_MARK = "alia-box-read:";
 
 export function asSlotUser(user: string, script: string): string {
   const inUsersLaunchdSession = `sudo -n launchctl asuser "$(id -u ${quote(user)})"`;

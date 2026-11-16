@@ -7,7 +7,7 @@
 // list shows at once, then reconciles with the issue its RPC returns; a
 // failure drops the patch, which rolls it back. `lists[uid]` is always the
 // reconciled view; the raw server lists stay private here.
-import type { PluginRpcClient } from "@get-bb/plugin-sdk/app";
+import type { PluginRpcClient } from "@vesnalia/plugin-sdk/app";
 import type { CloseReason } from "./close-rules";
 import type { KataRpcContract } from "./rpc-contract";
 import type { KataIssue, KataIssueDetail, KataLinkPeer, KataProject } from "./kata-types";

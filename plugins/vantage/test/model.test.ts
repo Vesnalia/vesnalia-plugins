@@ -33,7 +33,7 @@ describe("buildRows", () => {
     expect(rows[0]).toMatchObject({ additions: 3, deletions: 1, progress: { reviewed: 0, total: 1 } });
   });
 
-  it("files a thread that waits for you under Needs you, as bb's sidebar marks it", () => {
+  it("files a thread that waits for you under Needs you, as VesnALIA's sidebar marks it", () => {
     expect(buildRows(input({}))[0]!.bucket).toBe("needs");
     const failed = new Map([["thr_1", sidebarThread({ id: "thr_1", indicator: "unread-error" })]]);
     expect(buildRows(input({}, { live: failed }))[0]!.bucket).toBe("needs");

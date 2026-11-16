@@ -49,15 +49,15 @@ export function cardsView(notes: string | null, seen: ReportSeen): CardsView {
   if (verdict.status === "fail") return { is: "blocked", why: verdict.detail, fix: verdict.fix };
   const lines = parseHelperLines(notes);
   if (lines.ledgerUnknown) {
-    return { is: "blocked", why: `The GPU helper on ${seen.node} reports its ledger as unknown, as while it waits to rebuild a lost ledger from a full reading of every card, so ${PRODUCT} cannot see its claims.`, fix: `Read why in VM ${seen.vmid}'s error lines, or with journalctl -u bb-box-gpu on ${seen.node}.` };
+    return { is: "blocked", why: `The GPU helper on ${seen.node} reports its ledger as unknown, as while it waits to rebuild a lost ledger from a full reading of every card, so ${PRODUCT} cannot see its claims.`, fix: `Read why in VM ${seen.vmid}'s error lines, or with journalctl -u alia-box-gpu on ${seen.node}.` };
   }
   if (!lines.ledgerReported) {
-    return { is: "blocked", why: `bb-box-gpu ${helper.version} on ${seen.node} does not report its ledger, which ${PRODUCT} reads to claim a card.`, fix: `Run host/setup-gpu.sh from this BB Box's setup guide, as root on ${seen.node}.` };
+    return { is: "blocked", why: `alia-box-gpu ${helper.version} on ${seen.node} does not report its ledger, which ${PRODUCT} reads to claim a card.`, fix: `Run host/setup-gpu.sh from this VesnALIA Box's setup guide, as root on ${seen.node}.` };
   }
   if (lines.omitted.length) {
-    return { is: "blocked", why: `VM ${seen.vmid}'s report leaves lines out (${lines.omitted.join("; ")}), so ${PRODUCT} cannot see every guest that holds a card on ${seen.node}.`, fix: `Read what the helper says with journalctl -u bb-box-gpu on ${seen.node}.` };
+    return { is: "blocked", why: `VM ${seen.vmid}'s report leaves lines out (${lines.omitted.join("; ")}), so ${PRODUCT} cannot see every guest that holds a card on ${seen.node}.`, fix: `Read what the helper says with journalctl -u alia-box-gpu on ${seen.node}.` };
   }
-  if (!lines.cards.length) return { is: "blocked", why: `The GPU helper on ${seen.node} lists no card in VM ${seen.vmid}'s report.`, fix: `Run systemctl status bb-box-gpu and nvidia-smi as root on ${seen.node}.` };
+  if (!lines.cards.length) return { is: "blocked", why: `The GPU helper on ${seen.node} lists no card in VM ${seen.vmid}'s report.`, fix: `Run systemctl status alia-box-gpu and nvidia-smi as root on ${seen.node}.` };
   const unmapped = lines.cards.filter((card) => card.minor === null || card.drmCard === null || card.drmRender === null);
   if (unmapped.length) {
     return {
@@ -351,8 +351,8 @@ export async function waitForAnswer(answering: Answering, vmid: number, marker: 
 }
 
 export function notAnsweredWords(node: string, answer: MarkAnswer, waitMs = ANSWER_WAIT_MS): string {
-  if (answer.is === "would") return `The host's GPU helper on ${node} has writes off, and ${answer.why}. Run bb box doctor.`;
-  return `The host's GPU helper on ${node} did not answer within ${Math.round(waitMs / 1000)} s. Run bb box doctor.`;
+  if (answer.is === "would") return `The host's GPU helper on ${node} has writes off, and ${answer.why}. Run alia box doctor.`;
+  return `The host's GPU helper on ${node} did not answer within ${Math.round(waitMs / 1000)} s. Run alia box doctor.`;
 }
 
 export async function settleOutstanding(answering: Answering, ours: () => Promise<readonly OwnGuest[]>, waitMs = SETTLE_WAIT_MS, pollMs = SETTLE_POLL_MS): Promise<{ readonly vmid: number; readonly marker: string }[]> {

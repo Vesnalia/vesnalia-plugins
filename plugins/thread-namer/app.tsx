@@ -1,4 +1,4 @@
-// bb-plugin-thread-namer — frontend entry.
+// alia-plugin-thread-namer — frontend entry.
 //
 // Two surfaces: a button in the thread header that names the open thread on
 // demand, and a settings section for choosing which agent writes the names.
@@ -7,7 +7,7 @@ import {
   definePluginApp,
   useRpc,
   type PluginThreadHeaderActionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "./server";
 import { ModelPicker } from "@/components/ModelPicker";

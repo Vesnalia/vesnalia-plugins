@@ -108,8 +108,8 @@ test("a job in the user's own session gets its input, gives back its output and 
   const launchd = new FakeLaunchd();
   const dir = join(tempDir("session"), "session");
   const jobs = new SessionJobs({ route: ownRoute, dir, run: launchd.run, pollMs: 5 });
-  process.env.BB_BOX_TEST_SECRET = "not for the plist";
-  t.after(() => delete process.env.BB_BOX_TEST_SECRET);
+  process.env.ALIA_BOX_TEST_SECRET = "not for the plist";
+  t.after(() => delete process.env.ALIA_BOX_TEST_SECRET);
 
   const first = await jobs.run("/bin/sh", ["-c", 'cat; printf " in %s" "$LC_ALL"; echo oops >&2; exit 3'], { timeoutMs: 10_000, input: "bbtest ✓ é", env: { LC_ALL: "en_US.UTF-8" } });
   assert.deepEqual(first, { code: 3, stdout: "bbtest ✓ é in en_US.UTF-8", stderr: "oops\n" });
@@ -126,7 +126,7 @@ test("a job in the user's own session gets its input, gives back its output and 
   const seen = launchd.bootstrapped[1]!;
   assert.equal(plistString(seen, "LimitLoadToSessionType"), "Background");
   assert.equal(plistEnvironment(seen).LC_ALL, "en_US.UTF-8");
-  assert.ok(!seen.includes("BB_BOX_TEST_SECRET"), "the server's own environment is not written to a plist");
+  assert.ok(!seen.includes("ALIA_BOX_TEST_SECRET"), "the server's own environment is not written to a plist");
 });
 
 test("a job that does not end in time is stopped and booted out, and a pasteboard server launchd will not load says why (F-17)", async () => {

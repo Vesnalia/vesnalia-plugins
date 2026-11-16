@@ -11,9 +11,9 @@
  *    picker no longer knows seeds nothing (its original guard), EXCEPT the
  *    personal project: a filter naming personal seeds deliberately, because
  *    a filter is the operator's explicit non-child intent and the seeded id
- *    is exactly the state bb's picker renders ("No project"); the composer's
- *    unseeded default also lands personal, but only by bb's own fallback
- *    (get-bb/bb#5340), which a deliberate seed must not depend on. The
+ *    is exactly the state VesnALIA's picker renders ("No project"); the composer's
+ *    unseeded default also lands personal, but only by VesnALIA's own fallback
+ *    (get-alia/alia#5340), which a deliberate seed must not depend on. The
  *    sidebar's live view lists the personal row (`isPersonal`), so the
  *    membership guard is normally how it passes; the explicit personal
  *    acceptance below keeps the seeding working when the list excludes it;
@@ -26,24 +26,24 @@
  * loaded and lacks the id: a slow project query (or an error) treats the
  * list as unloaded, so memory is never wiped by absent data — the composer
  * re-seeds on prop change anyway, and a later-loaded list heals the pick.
- * Rungs 3 and 4 never seed bb's personal project ("No project",
- * `BB_PERSONAL_PROJECT_ID`, also excluded by sidebar `isPersonal`): the
+ * Rungs 3 and 4 never seed VesnALIA's personal project ("No project",
+ * `ALIA_PERSONAL_PROJECT_ID`, also excluded by sidebar `isPersonal`): the
  * operator's EXPLICIT personal intent — the filter rung — seeds above; a
  * derived or remembered personal pick would re-seed "No project" without
  * the operator pointing at it, and the composer's unseeded default already
- * lands personal by bb's own fallback, so leaving these rungs silent keeps
- * bb's default in charge (issue #25's policy decision, deliberate in both
+ * lands personal by VesnALIA's own fallback, so leaving these rungs silent keeps
+ * VesnALIA's default in charge (issue #25's policy decision, deliberate in both
  * directions — tests pin it).
  * Residual inherited from #24, not made moot by the filter policy: when NO
  * rung applies at all the board seeds nothing, and the plugin composer then
- * lands on personal by bb's fallback while the maximize hand-off defers to
- * bb's remembered pick — a divergence between the two exits that only bb
- * core can settle (get-bb/bb#5340); not changed here.
+ * lands on personal by VesnALIA's fallback while the maximize hand-off defers to
+ * VesnALIA's remembered pick — a divergence between the two exits that only VesnALIA
+ * core can settle (get-alia/alia#5340); not changed here.
  * An unresolvable parent (its row left the board while the dialog is open)
  * falls down the ladder the same way — the spawn still carries
  * `parentThreadId` (the preset is about the parent, not the project).
  */
-import type { NewThreadRequest } from "@get-bb/plugin-sdk/app";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk/app";
 export function newThreadSeedProjectId({
   parentProjectId,
   filterProjectId,
@@ -87,19 +87,19 @@ export function newThreadSeedProjectId({
   return undefined;
 }
 
-/** bb's personal project id (bb domain's `PERSONAL_PROJECT_ID`): the picking
+/** VesnALIA's personal project id (VesnALIA domain's `PERSONAL_PROJECT_ID`): the picking
  *  state the composer renders as "No project". A seed from the filter rung
  *  on purpose (issue #25, the operator's stated state); never a seed from
  *  the derived or remembered rungs. */
-export const BB_PERSONAL_PROJECT_ID = "proj_personal";
+export const ALIA_PERSONAL_PROJECT_ID = "proj_personal";
 
-/** True for the personal-project picking state: bb's well-known id, or the
+/** True for the personal-project picking state: VesnALIA's well-known id, or the
  *  sidebar-declared id (`isPersonal`) when the list has the row. */
 export function isPersonalProjectId(
   projectId: string,
   personalProjectId?: string,
 ): boolean {
-  return projectId === BB_PERSONAL_PROJECT_ID || projectId === personalProjectId;
+  return projectId === ALIA_PERSONAL_PROJECT_ID || projectId === personalProjectId;
 }
 
 /**

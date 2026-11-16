@@ -24,9 +24,9 @@ Detailed RPC and page overview: [Plugin RPC and Skills page runtime](api-runtime
 
 ### How it works
 
-1. Read `lang` from BB KV; keep `ru` or `en`, otherwise choose English, then set the shared language (`server.ts:484-490`).
+1. Read `lang` from VesnALIA KV; keep `ru` or `en`, otherwise choose English, then set the shared language (`server.ts:484-490`).
 2. Define MetaMCP and skill-classifier settings. `readConfig` calls `settings.get()` on demand; the legacy machine-canon options are constants rather than settings (`server.ts:492-548`).
-3. Create the host RPC client and skills-hub service with a live settings reader and a saver using `settings.experimental_set` (`server.ts:545-561`). Blank provider uses `claude-code`; blank model is omitted when spawning a thread so BB selects its default (`server.ts:550-561`, `skills-hub-service.ts:350-365`).
+3. Create the host RPC client and skills-hub service with a live settings reader and a saver using `settings.experimental_set` (`server.ts:545-561`). Blank provider uses `claude-code`; blank model is omitted when spawning a thread so VesnALIA selects its default (`server.ts:550-561`, `skills-hub-service.ts:350-365`).
 4. Register agent configuration. A thread carrying classifier role metadata gets the category tools and instructions; other threads receive the `agent-tools` skill (`server.ts:564-568`, `skills-hub-service.ts:435-442`).
 5. Define catalogue readers and state defaults, then register the RPC contract with hub handlers and main handlers (`server.ts:571-589`, `server.ts:2088-2115`).
 
@@ -69,7 +69,7 @@ The plugin entry has no catch around language read, settings definition, host-cl
 |---|---|
 | Cached list is younger than 15 seconds and no fresh read requested | Return cached skill summaries (`skills-hub-service.ts:272-281`). |
 | Hub root is absent | View sets `available:false` and uses an empty skill list while still reading stores (`skills-hub-service.ts:479-488`). |
-| No configured classifier project and no BB projects exist | Project selection throws; the classifier run records its failure state (`skills-hub-service.ts:316-324`, `classifier.ts:256-261`). |
+| No configured classifier project and no VesnALIA projects exist | Project selection throws; the classifier run records its failure state (`skills-hub-service.ts:316-324`, `classifier.ts:256-261`). |
 | A host machine-count call rejects | Save a per-host error row and continue refreshing other hosts (`skills-hub-service.ts:444-475`). |
 | KV update rejects | The current request rejects; `storeLock` recovers for the next update (`skills-hub-service.ts:292-309`). |
 
@@ -128,14 +128,14 @@ The plugin entry has no catch around language read, settings definition, host-cl
 ### How it works
 
 1. Create a temporary directory, decode the base64 archive to a tar file, and extract while excluding recognized skill junk (`hub-skills.ts:276-290`).
-2. Require exactly one visible top-level folder and a safe skill name. Describe its contents and reject blocking BB validation problems (`hub-skills.ts:290-302`).
+2. Require exactly one visible top-level folder and a safe skill name. Describe its contents and reject blocking VesnALIA validation problems (`hub-skills.ts:290-302`).
 3. For dry run, return validity and whether the destination exists without replacing it or committing (`hub-skills.ts:303-307`).
 4. For a real publish, back up and remove an existing skill, install the staged folder by rename with copy fallback, then commit/push unless Git ignores that name (`hub-skills.ts:308-319`).
 5. Return caught failures as `ok:false`; always remove the temporary directory (`hub-skills.ts:320-331`).
 
 | Condition | Result or failure |
 |---|---|
-| Archive has zero or multiple top-level folders; name unsafe; BB validation blocks | Return structured rejection without replacing the destination (`hub-skills.ts:290-302`). |
+| Archive has zero or multiple top-level folders; name unsafe; VesnALIA validation blocks | Return structured rejection without replacing the destination (`hub-skills.ts:290-302`). |
 | Dry run passes validation | Return `ok:true`, replacement status and problems; no hub/Git write (`hub-skills.ts:303-307`). |
 | Backup, extraction, install, or commit throws | Return `ok:false` with a clipped error; temporary data is removed, but a destination already removed before a later error is not restored by this function (`hub-skills.ts:308-331`). |
 | Git ignores the skill path | Install it but skip commit/push (`hub-skills.ts:316-319`). |

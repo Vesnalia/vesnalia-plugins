@@ -11,13 +11,13 @@ import { ThreadPane } from "../components/thread-pane";
 import { CompactViewportOverrideProvider } from "../components/ui/hooks/use-compact-viewport";
 import { snoozeMenuActions } from "../lib/snooze";
 
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   // The pane's embedded chat is only imported for render; the actions menu
   // under test does not involve it.
   ThreadChat: (): ReactNode => null,
   useSdk: () => ({ threads: { get: async () => ({}) } }),
   useRpc: () => ({ call: async () => ({ existence: {} }) }),
-  useBbNavigate: () => ({ toThread: () => {} }),
+  useAliaNavigate: () => ({ toThread: () => {} }),
   useSettings: () => ({ values: undefined, isLoading: false }),
 }));
 

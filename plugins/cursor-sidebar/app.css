@@ -375,7 +375,7 @@ html.dark {
   0%, 100% { opacity: 0.45; transform: scale(0.92); }
   50% { opacity: 1; transform: scale(1.06); }
 }
-:is([data-cursor-sidebar-root], [data-bb-plugin="cursor-sidebar"]) .animate-shine-icon {
+:is([data-cursor-sidebar-root], [data-alia-plugin="cursor-sidebar"]) .animate-shine-icon {
   animation: cs-shine-icon 1.6s ease-in-out infinite;
 }
 
@@ -394,7 +394,7 @@ html.dark {
   opacity: 0.6 !important;
 }
 
-/* BB's own sidebar chrome — the nav rows and the top-bar controls (toggle,
+/* ALIA's own sidebar chrome — the nav rows and the top-bar controls (toggle,
    back/forward) — is not rendered here, but it shares the column and should
    shade like our rows. The colours derive from the theme's sidebar foreground,
    never a literal, so they follow the active theme. Tune the two percentages
@@ -419,7 +419,7 @@ html.dark {
 }
 
 /* Heading icon buttons (view menu, new project, new thread, the date "+"):
-   BB's own chrome shows a state-hover square, sized to the row rather than the
+   ALIA's own chrome shows a state-hover square, sized to the row rather than the
    glyph. The surface is a pseudo so it can sit larger than the 16px slot
    without moving the heading; an unlayered reset beats our Tailwind layer, so
    these colours are declared unlayered. */
@@ -458,7 +458,7 @@ html.dark {
   mask-image: linear-gradient(to bottom, #000 calc(100% - 2rem), transparent);
 }
 
-/* While BB's keybind guide is up, a row shows the digit that opens it, in the
+/* While ALIA's keybind guide is up, a row shows the digit that opens it, in the
    host's own chip shape. */
 .cs-shortcut-key {
   display: inline-flex;
@@ -495,7 +495,7 @@ html.dark {
     animation: none !important;
     transition: none !important;
   }
-  :is([data-cursor-sidebar-root], [data-bb-plugin="cursor-sidebar"]) .animate-shine-icon {
+  :is([data-cursor-sidebar-root], [data-alia-plugin="cursor-sidebar"]) .animate-shine-icon {
     animation: none !important;
   }
   .cs-drag-ghost {
@@ -510,7 +510,7 @@ html.dark {
 }
 
 /* The composer's project label and New thread project button draw the
-   sidebar's project icon (src/ComposerProjectIcons.tsx); hide BB's folder
+   sidebar's project icon (src/ComposerProjectIcons.tsx); hide ALIA's folder
    beside it. */
 [data-cs-has-project-icon] [data-icon="Folder"]:not([data-cs-composer-project-icon] *) {
   display: none !important;

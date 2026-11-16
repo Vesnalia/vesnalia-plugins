@@ -1,6 +1,6 @@
 ## What you get
 
-Markdown PRO opens every `.md`, `.markdown` and `.mdx` file in BB as a formatted document you edit in place, from chat links, the file picker, Tasks and `bb thread open`.
+Markdown PRO opens every `.md`, `.markdown` and `.mdx` file in VesnALIA as a formatted document you edit in place, from chat links, the file picker, Tasks and `alia thread open`.
 
 - **Style toolbar** — bold, italic, strikethrough, highlight, inline code, headings, links, bulleted, numbered and task lists, quotes, code blocks and tables, plus an Insert menu and a Contents menu built from your headings.
 - **Agent Markdown that survives saving** — GitHub callouts (`> [!NOTE]`, `> [!WARNING]`, collapsible `[!TIP]-`), `<details>` blocks, footnotes, `<kbd>`, `<sub>`, `<sup>`, `==highlight==`, emoji shortcodes, raw HTML, and HTML comments — including foldable `<!-- name:start -->` … `<!-- name:end -->` regions. Opening a file never rewrites it, and an edit changes only the lines you touched.
@@ -10,7 +10,7 @@ Markdown PRO opens every `.md`, `.markdown` and `.mdx` file in BB as a formatted
 - **Directory trees** written with `├──` and `└──` render as a folder tree with comments.
 - **ASCII box maps** (`┌─┐` … `└─┘`, arrows like `↓`) render as a stack of cards, whether fenced or written as a bare block. They are not shown as a directory tree.
 - **YAML front matter** collapses to one Properties line and expands into a card with title, status badge, owner, dates and tags; Edit YAML opens the source.
-- **Status badges and links** — PASS, FAIL, DONE, TODO, ✅ and ❌ become colored badges. BB thread ids open the thread and task keys like `ABC-12` open the task.
+- **Status badges and links** — PASS, FAIL, DONE, TODO, ✅ and ❌ become colored badges. VesnALIA thread ids open the thread and task keys like `ABC-12` open the task.
 
 ## Quote to chat
 
@@ -30,8 +30,8 @@ The plugin ships a `markdown-pro` skill that tells agents which callouts, diagra
 
 ## Also included
 
-A right-click menu on BB's side-panel tabs: close, close other tabs, close tabs to the left or right, close all, and pin a tab so bulk closing skips it.
+A right-click menu on VesnALIA's side-panel tabs: close, close other tabs, close tabs to the left or right, close all, and pin a tab so bulk closing skips it.
 
 ## Requirements
 
-BB 0.43 or later. No account, API key or external service. The interface follows BB's language (English or Russian).
+VesnALIA 0.43 or later. No account, API key or external service. The interface follows VesnALIA's language (English or Russian).

@@ -2,7 +2,7 @@
  * The contract between the server and the host entry (`host.ts`), which runs git in the workspace's
  * checkout on whichever machine holds it. Imports the SDK root: never import it from the app.
  */
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { hostDiffSpecSchema, hostRangeSpecSchema, revisionSchema } from "./git-spec";
@@ -44,7 +44,7 @@ export const hostContract = defineRpcContract({
   },
   /**
    * Reverts an uncommitted change in the checkout, only while the file still is the version the tab
-   * showed (`revision`, as bb's Git plugin lists it); see `host/revert.ts`.
+   * showed (`revision`, as VesnALIA's Git plugin lists it); see `host/revert.ts`.
    */
   revert: {
     input: z

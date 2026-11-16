@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { UsageBadge } from "../src/UsageBadge";
 import { emptyUsage, USAGE_CHANGED } from "../src/model";
 import { liveUsage, threadId } from "./fixtures";

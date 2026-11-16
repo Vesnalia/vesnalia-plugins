@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { Markdown, definePluginApp, experimental_SourceCode as SourceCode, experimental_usePluginId, useSettings } from "@get-bb/plugin-sdk/app";
+import { Markdown, definePluginApp, experimental_SourceCode as SourceCode, experimental_usePluginId, useSettings } from "@vesnalia/plugin-sdk/app";
 import { COARSE_QUERY, LEADING_TOKENS, TEXT_TOKENS, buildCss, type TypographySettings } from "./css.ts";
 
 const TEXT_KEYS = ["uiFont", "uiFeatures", "codeFont", "codeFeatures"] as const;

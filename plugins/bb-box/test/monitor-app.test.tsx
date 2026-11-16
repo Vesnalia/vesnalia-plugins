@@ -1,8 +1,8 @@
 import "./check-test-machine.mjs";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
-import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@get-bb/plugin-sdk/testing/app";
-import type { ExperimentalSidebarFooterDisclosureProps, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@vesnalia/plugin-sdk/testing/app";
+import type { ExperimentalSidebarFooterDisclosureProps, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { ComponentType } from "react";
 import type { BoxEntry, Contract, Machine, MachinesState, MonitorSnapshot, ThreadOnBox } from "../src/plugin/contract.ts";
 import type { BoxView } from "../src/plugin/views.ts";
@@ -31,7 +31,7 @@ function snapshot(patch: Partial<MonitorSnapshot> = {}): MonitorSnapshot {
 }
 
 const MACHINES: Machine[] = [
-  { id: SERVER_HOST, name: "bb", connected: true, isServer: true, isBox: false, boxId: null },
+  { id: SERVER_HOST, name: "alia", connected: true, isServer: true, isBox: false, boxId: null },
   { id: "host_build", name: "build-server", connected: true, isServer: false, isBox: false, boxId: null },
   { id: "host_lxc", name: "glad-coral", connected: true, isServer: false, isBox: true, boxId: "bx_lxc" },
   { id: "host_slot", name: "keen-iris", connected: true, isServer: false, isBox: true, boxId: "bx_slot" },
@@ -141,33 +141,33 @@ afterEach(() => {
   localStorage.clear();
 });
 
-test("the footer keeps Beacon's entry: Machine status, with the server icon under a name of BB Box's own", async () => {
+test("the footer keeps Beacon's entry: Machine status, with the server icon under a name of VesnALIA Box's own", async () => {
   expect(footer?.label).toBe("Machine status");
-  expect(footer?.icon).toBe("bb-box-machine-status");
+  expect(footer?.icon).toBe("alia-box-machine-status");
   const app = await loadPluginApp(() => import("../app.tsx"));
-  expect(app.icons.map((icon) => icon.name)).toContain("bb-box-machine-status");
+  expect(app.icons.map((icon) => icon.name)).toContain("alia-box-machine-status");
   expect(app.icons.map((icon) => icon.name)).not.toContain("Server");
   expect(app.appOverlays.some((overlay) => overlay.id === "monitor")).toBe(true);
 });
 
 test("a container box shows its own pressure where the host's load was, and no load", async () => {
-  localStorage.setItem("bb-box:monitor:machine", "host_lxc");
+  localStorage.setItem("alia-box:monitor:machine", "host_lxc");
   const lxc = snapshot({ host: { ...snapshot().host, container: true }, cpu: { ...snapshot().cpu, loadAverage: null, stallPercent: [0.17, 0.35, 0.1] } });
-  renderSlot(footer!, { dismiss: vi.fn() }, { rpc: handlers({ host_lxc: lxc }), pluginId: "bb-box" });
+  renderSlot(footer!, { dismiss: vi.fn() }, { rpc: handlers({ host_lxc: lxc }), pluginId: "alia-box" });
   expect(await screen.findByText("pressure 0%")).toBeTruthy();
   expect(screen.queryByText(/^load /)).toBeNull();
   expect(screen.getByText("Healthy")).toBeTruthy();
 });
 
 test("a machine of its own keeps Beacon's load pill", async () => {
-  renderSlot(footer!, { dismiss: vi.fn() }, { rpc: handlers({}), pluginId: "bb-box" });
+  renderSlot(footer!, { dismiss: vi.fn() }, { rpc: handlers({}), pluginId: "alia-box" });
   expect(await screen.findByText("load 0.50")).toBeTruthy();
 });
 
 test("a shared slot shows its host's load, the host it is on and the Mac's encoder room", async () => {
-  localStorage.setItem("bb-box:monitor:machine", "host_slot");
+  localStorage.setItem("alia-box:monitor:machine", "host_slot");
   const slot = snapshot({ host: { ...snapshot().host, platform: "darwin", arch: "arm64" }, cpu: { ...snapshot().cpu, cores: 8, loadAverage: [3.1, 2.8, 2.5] }, slot: { host: "ios-host-1", encoder: { usedPercent: 40, words: "On this Mac: 2 of about 5 full-size streams' room in use." } } });
-  renderSlot(footer!, { dismiss: vi.fn() }, { rpc: handlers({ host_slot: slot }), pluginId: "bb-box" });
+  renderSlot(footer!, { dismiss: vi.fn() }, { rpc: handlers({ host_slot: slot }), pluginId: "alia-box" });
   expect(await screen.findByText("host load 3.10")).toBeTruthy();
   expect(screen.getByText("on ios-host-1")).toBeTruthy();
   expect(screen.getByText("encoder 40%")).toBeTruthy();
@@ -179,9 +179,9 @@ test("long names and addresses truncate in the middle, keeping both ends, with t
     return { width, height: 16, x: 0, y: 0, top: 0, left: 0, right: width, bottom: 16, toJSON: () => ({}) } as DOMRect;
   });
   try {
-    localStorage.setItem("bb-box:monitor:machine", "host_long");
+    localStorage.setItem("alia-box:monitor:machine", "host_long");
     const tailscale = { dnsName: "a-shared-ios-box.example-net.ts.net", ipv4: "100.64.0.7", ipv6: "fd7a:115c:a1e0::403a:fd53", tags: [] };
-    renderSlot(footer!, { dismiss: vi.fn() }, { rpc: handlers({ host_long: snapshot({ tailscale }) }), pluginId: "bb-box" });
+    renderSlot(footer!, { dismiss: vi.fn() }, { rpc: handlers({ host_long: snapshot({ tailscale }) }), pluginId: "alia-box" });
     await screen.findByText("Tailscale");
     expect(screen.getByText("a-sha…name-1234")).toBeTruthy();
     expect(screen.getAllByText("a-shared-ios-box-with-a-very-long-name-1234").length).toBeGreaterThan(0);
@@ -194,8 +194,8 @@ test("long names and addresses truncate in the middle, keeping both ends, with t
   }
 });
 
-test("with the Monitor off, BB's next load of BB Box's app has no machine status in the footer", async () => {
-  localStorage.setItem("bb-box:monitor:on", "off");
+test("with the Monitor off, VesnALIA's next load of VesnALIA Box's app has no machine status in the footer", async () => {
+  localStorage.setItem("alia-box:monitor:on", "off");
   const app = await loadPluginApp(() => import("../app.tsx"));
   expect(app.experimentalSidebarFooterItems.some((item) => item.id === "status")).toBe(false);
   expect(app.appOverlays.some((overlay) => overlay.id === "monitor")).toBe(true);
@@ -205,8 +205,8 @@ test("the overlay remembers the server's switch for the next load", async () => 
   const app = await loadPluginApp(() => import("../app.tsx"));
   const overlay = app.appOverlays.find((entry) => entry.id === "monitor")!;
   const off = { ...handlers({}), "monitor.state": () => ({ enabled: false, backgroundMonitoring: false, pressureNotifications: true, boxHistory: true, historyFull: null }) } as unknown as PluginRpcTestHandlers<Contract>;
-  renderSlot(overlay, {} as never, { rpc: off, pluginId: "bb-box" });
-  await waitFor(() => expect(localStorage.getItem("bb-box:monitor:on")).toBe("off"));
+  renderSlot(overlay, {} as never, { rpc: off, pluginId: "alia-box" });
+  await waitFor(() => expect(localStorage.getItem("alia-box:monitor:on")).toBe("off"));
 });
 
 const PORT_TOP = 100;
@@ -226,8 +226,8 @@ function pause(ms: number) {
 async function scrolledHud() {
   const geometry = { scrollTop: 0 };
   const rects = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
-    if (this.querySelector(":scope > [data-bb-box-monitor-shell]")) return rect(PORT_TOP, PORT_BOTTOM);
-    if (this.hasAttribute("data-bb-box-monitor-header")) return rect(PORT_TOP, HEADER_BOTTOM);
+    if (this.querySelector(":scope > [data-alia-box-monitor-shell]")) return rect(PORT_TOP, PORT_BOTTOM);
+    if (this.hasAttribute("data-alia-box-monitor-header")) return rect(PORT_TOP, HEADER_BOTTOM);
     if (this.getAttribute("aria-label") === "CPU") {
       const top = CPU_TOP_UNSCROLLED - geometry.scrollTop;
       return rect(top, top + CPU_HEIGHT);
@@ -236,9 +236,9 @@ async function scrolledHud() {
   });
   const viewportWidth = vi.spyOn(document.documentElement, "clientWidth", "get").mockReturnValue(1280);
   const viewportHeight = vi.spyOn(document.documentElement, "clientHeight", "get").mockReturnValue(800);
-  renderSlot(footer!, { dismiss: vi.fn() }, { rpc: handlers({}), pluginId: "bb-box" });
+  renderSlot(footer!, { dismiss: vi.fn() }, { rpc: handlers({}), pluginId: "alia-box" });
   await screen.findByText("load 0.50");
-  const port = document.querySelector("[data-bb-box-monitor-shell]")!.parentElement!;
+  const port = document.querySelector("[data-alia-box-monitor-shell]")!.parentElement!;
   port.style.overflowY = "auto";
   const cpu = screen.getByRole("region", { name: "CPU" });
   const scrollTo = (scrollTop: number) => {
@@ -307,12 +307,12 @@ test("F-24: a section's tooltip does not show while its section has scrolled out
 });
 
 function openMonitor(machineId: string | null, threads: readonly PluginSidebarThread[] = []) {
-  if (machineId) localStorage.setItem("bb-box:monitor:machine", machineId);
-  return renderSlot(footer!, { dismiss: vi.fn() }, { rpc: handlers({}), pluginId: "bb-box", sidebarThreads: { threads } });
+  if (machineId) localStorage.setItem("alia-box:monitor:machine", machineId);
+  return renderSlot(footer!, { dismiss: vi.fn() }, { rpc: handlers({}), pluginId: "alia-box", sidebarThreads: { threads } });
 }
 
 function header(): HTMLElement {
-  return document.querySelector<HTMLElement>("[data-bb-box-monitor-header]")!;
+  return document.querySelector<HTMLElement>("[data-alia-box-monitor-header]")!;
 }
 
 async function openButton(name = "Open"): Promise<HTMLElement> {
@@ -343,7 +343,7 @@ test("a desktop box's Open menu offers its page first, then its desktop and term
   await openViews();
   fireEvent.click(screen.getByRole("menuitem", { name: "Open details" }));
   expect(monitor.inspection.navigateCalls.at(-1)).toEqual(TO_BOXES_PAGE("box/bx_desk"));
-  expect(localStorage.getItem("bb-box:monitor:machine")).toBe("box:bx_desk");
+  expect(localStorage.getItem("alia-box:monitor:machine")).toBe("box:bx_desk");
 });
 
 test("a device box's Open menu offers its Simulator alone when it has no terminal, and it opens the device view", async () => {
@@ -374,10 +374,10 @@ test("a stopped box's views are in the menu, disabled, each with the reason, and
   expect(monitor.inspection.navigateCalls.filter((call) => call.method === "toPluginPanel")).toEqual([]);
 });
 
-test("BB's server and a BB machine that is not a box, with no threads on them, get no Open button, and the header keeps its own", async () => {
+test("VesnALIA's server and a VesnALIA machine that is not a box, with no threads on them, get no Open button, and the header keeps its own", async () => {
   openMonitor(null, [sidebarThread("thr_on_box", "Runs on a box", { hostId: "host_lxc", status: "active" })]);
   await screen.findByText("load 0.50");
-  await waitFor(() => expect(within(header()).getByRole("button", { name: "Machine" }).textContent).toContain("bb"));
+  await waitFor(() => expect(within(header()).getByRole("button", { name: "Machine" }).textContent).toContain("alia"));
   expect(within(header()).getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual(["Machine", "Reload machine status", "Hide machine status"]);
   cleanup();
   openMonitor("host_build", [sidebarThread("thr_archived", "Archived", { hostId: "host_build", archived: true })]);
@@ -401,7 +401,7 @@ test("the picker lists names only, as options, and pressing one still switches t
   const list = await screen.findByRole("listbox", { name: "Machines" });
   expect(within(list).queryAllByRole("button", { name: /^Open/ })).toEqual([]);
   fireEvent.click(within(list).getAllByRole("option").find((option) => option.textContent?.includes("brisk-wren"))!);
-  expect(localStorage.getItem("bb-box:monitor:machine")).toBe("box:bx_both");
+  expect(localStorage.getItem("alia-box:monitor:machine")).toBe("box:bx_both");
   await openButton();
 });
 
@@ -444,7 +444,7 @@ test("Escape in the machine picker closes only the picker: the Monitor stays ope
   await waitFor(() => expect(document.activeElement).toBe(trigger));
 });
 
-test("the header has no settings gear: the Monitor's settings are on BB Box's settings page", async () => {
+test("the header has no settings gear: the Monitor's settings are on VesnALIA Box's settings page", async () => {
   openMonitor(null);
   await screen.findByText("load 0.50");
   expect(within(header()).queryByRole("link")).toBeNull();
@@ -538,7 +538,7 @@ test("a box with no threads has no divider and no Threads section", async () => 
   expect(within(menu).queryByText("Threads")).toBeNull();
 });
 
-test("a thread item opens that thread through BB's navigation, as a thread chip does", async () => {
+test("a thread item opens that thread through VesnALIA's navigation, as a thread chip does", async () => {
   const monitor = openMonitor("host_lxc", [HOLDER, ON_GLAD_CORAL]);
   await openViews();
   fireEvent.click(screen.getByRole("menuitem", { name: "Runs the tests on the box, working" }));
@@ -561,7 +561,7 @@ test("the keyboard moves from the views to the threads in order, past the divide
 });
 
 function withoutLiveThreads(replacement: (() => never) | undefined, run: () => Promise<void>): Promise<void> {
-  const app = (globalThis as unknown as { __bbPluginRuntime: { pluginSdkApp: Record<string, unknown> } }).__bbPluginRuntime.pluginSdkApp;
+  const app = (globalThis as unknown as { __aliaPluginRuntime: { pluginSdkApp: Record<string, unknown> } }).__aliaPluginRuntime.pluginSdkApp;
   const live = app.experimental_useSidebarThreads;
   if (replacement) app.experimental_useSidebarThreads = replacement;
   else delete app.experimental_useSidebarThreads;
@@ -571,7 +571,7 @@ function withoutLiveThreads(replacement: (() => never) | undefined, run: () => P
 }
 
 for (const [why, replacement] of [["missing", undefined], ["throws", () => { throw new Error("no sidebar here"); }]] as const) {
-  test(`when BB's live thread list is ${why}, a kept machine lists its Boxes row's chips, and a thread's box and a machine that is not a box list none`, async () => {
+  test(`when VesnALIA's live thread list is ${why}, a kept machine lists its Boxes row's chips, and a thread's box and a machine that is not a box list none`, async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     await withoutLiveThreads(replacement, async () => {
       openMonitor("box:bx_desk");
@@ -602,7 +602,7 @@ const ON_BUILD_SERVER = [
   ON_GLAD_CORAL,
 ];
 
-test("a BB machine that is not a box lists its threads alone, working or active in the past 24 hours, working first, then the most recent, with no views, no Open details and no divider; hidden and archived threads are not listed", async () => {
+test("a VesnALIA machine that is not a box lists its threads alone, working or active in the past 24 hours, working first, then the most recent, with no views, no Open details and no divider; hidden and archived threads are not listed", async () => {
   openMonitor("host_build", ON_BUILD_SERVER);
   const menu = await openViews("Threads on build-server");
   expect(items(menu)).toEqual(["Runs the benchmarks", "Runs the soak test", "Finished the build", "Cleaned the cache"]);
@@ -621,26 +621,26 @@ test("the button of a machine that is not a box is named, and its tooltip says, 
   await waitFor(() => expect(screen.queryAllByRole("tooltip", { hidden: true }).some((tooltip) => tooltip.textContent === "Threads on build-server")).toBe(true));
 });
 
-test("BB's server lists the threads on it", async () => {
+test("VesnALIA's server lists the threads on it", async () => {
   openMonitor(null, [
     sidebarThread("thr_server_busy", "Answers a question", { hostId: SERVER_HOST, pending: true, updatedAt: hoursAgo(3) }),
     sidebarThread("thr_server_idle", "Wrote the release notes", { hostId: SERVER_HOST, updatedAt: hoursAgo(1) }),
     sidebarThread("thr_server_stale", "Wrote last month's notes", { hostId: SERVER_HOST, updatedAt: hoursAgo(25) }),
     ON_GLAD_CORAL,
   ]);
-  const menu = await openViews("Threads on bb");
+  const menu = await openViews("Threads on VesnALIA");
   expect(threadLabels(menu)).toEqual(["Answers a question, working", "Wrote the release notes, idle"]);
 });
 
-test("more than 5 threads on a machine that is not a box: the first 5, then how many more are in BB's sidebar, counting only those working or active in the past 24 hours, which is not an item", async () => {
+test("more than 5 threads on a machine that is not a box: the first 5, then how many more are in VesnALIA's sidebar, counting only those working or active in the past 24 hours, which is not an item", async () => {
   const seven = Array.from({ length: 7 }, (_, index) => sidebarThread(`thr_${index}`, `Thread ${index}`, { hostId: "host_build", updatedAt: hoursAgo(index + 1) }));
   const stale = Array.from({ length: 3 }, (_, index) => sidebarThread(`thr_stale_${index}`, `Stale ${index}`, { hostId: "host_build", updatedAt: hoursAgo(25 + index) }));
   const monitor = openMonitor("host_build", [...seven, ...stale]);
   const menu = await openViews("Threads on build-server");
   expect(threadLabels(menu)).toEqual(["Thread 0, idle", "Thread 1, idle", "Thread 2, idle", "Thread 3, idle", "Thread 4, idle"]);
-  expect(within(menu).getByText("2 more in BB's sidebar")).toBeTruthy();
+  expect(within(menu).getByText("2 more in VesnALIA's sidebar")).toBeTruthy();
   expect(within(menu).queryByRole("menuitem", { name: /more/ })).toBeNull();
-  fireEvent.click(within(menu).getByText("2 more in BB's sidebar"));
+  fireEvent.click(within(menu).getByText("2 more in VesnALIA's sidebar"));
   expect(monitor.inspection.navigateCalls).toEqual([]);
 });
 
@@ -706,9 +706,9 @@ function cards(shared: boolean): Partial<MonitorSnapshot> {
 
 test("a machine with NVIDIA cards has a section for each, with its use, memory and power, and its processes' card memory in Top processes", async () => {
   forgetMonitorReadings();
-  localStorage.setItem("bb-box:monitor:machine", "host_build");
+  localStorage.setItem("alia-box:monitor:machine", "host_build");
   const reading = snapshot({ ...cards(false), processes: { available: true, total: 2, running: 1, top: [{ pid: 4242, name: "python3", cpuPercent: 101, memoryPercent: 10, rssBytes: 2 * 1024 * MiB }] } });
-  renderSlot(footer!, { dismiss: vi.fn() }, { rpc: handlers({ host_build: reading }), pluginId: "bb-box" });
+  renderSlot(footer!, { dismiss: vi.fn() }, { rpc: handlers({ host_build: reading }), pluginId: "alia-box" });
   const first = await screen.findByRole("region", { name: "GPU 0" });
   expect(first.textContent).toContain("97");
   expect(first.textContent).toContain("81°C");
@@ -716,20 +716,20 @@ test("a machine with NVIDIA cards has a section for each, with its use, memory a
   const processes = screen.getByRole("region", { name: "Top processes" });
   expect(processes.textContent).toMatch(/^Top processesMemoryGPU% CPU/);
   expect(processes.querySelector("[data-gpu-memory]")!.textContent).toMatch(/GB$/);
-  expect(localStorage.getItem("bb-box:monitor:shape:host_build")).toContain('"gpuCards":2');
+  expect(localStorage.getItem("alia-box:monitor:shape:host_build")).toContain('"gpuCards":2');
 });
 
 test("a box that shares its card says the numbers are the whole card's, and its two sections are there before the reading lands", async () => {
   forgetMonitorReadings();
-  localStorage.setItem("bb-box:monitor:machine", "host_lxc");
-  localStorage.setItem("bb-box:monitor:shape:host_lxc", JSON.stringify({ gpu: true, gpuCards: 2, battery: false, tailscaleRows: 0 }));
+  localStorage.setItem("alia-box:monitor:machine", "host_lxc");
+  localStorage.setItem("alia-box:monitor:shape:host_lxc", JSON.stringify({ gpu: true, gpuCards: 2, battery: false, tailscaleRows: 0 }));
   let release: () => void = () => {};
   const landed = new Promise<void>((resolve) => {
     release = resolve;
   });
   const reading = snapshot(cards(true));
   const rpc = { ...handlers({}), "monitor.machine": async () => (await landed, reading) } as never;
-  renderSlot(footer!, { dismiss: vi.fn() }, { rpc, pluginId: "bb-box" });
+  renderSlot(footer!, { dismiss: vi.fn() }, { rpc, pluginId: "alia-box" });
   expect(await screen.findByRole("region", { name: "GPU 0" })).toBeTruthy();
   expect(screen.getByRole("region", { name: "GPU 1" })).toBeTruthy();
   release();
@@ -740,13 +740,13 @@ test("a box that shares its card says the numbers are the whole card's, and its 
 
 test("a reading that misses the cards keeps their sections and the GPU column, says they were not read, and the remembered count stays", async () => {
   forgetMonitorReadings();
-  localStorage.setItem("bb-box:monitor:machine", "host_build");
+  localStorage.setItem("alia-box:monitor:machine", "host_build");
   let readings = 0;
   const rpc = { ...handlers({}), "monitor.machine": () => (++readings === 1 ? snapshot(cards(false)) : snapshot({ gpus: null, refreshIntervalMs: 2000 })) } as never;
-  renderSlot(footer!, { dismiss: vi.fn() }, { rpc, pluginId: "bb-box" });
+  renderSlot(footer!, { dismiss: vi.fn() }, { rpc, pluginId: "alia-box" });
   expect(await screen.findByRole("region", { name: "GPU 0" })).toBeTruthy();
   await waitFor(() => expect(screen.getByRole("region", { name: "GPU 1" }).textContent).toContain("not read"), { timeout: 15_000 });
   expect(screen.getByRole("region", { name: "GPU 0" }).textContent).toContain("No reading of this card this time");
   expect(screen.getByRole("region", { name: "Top processes" }).textContent).toMatch(/^Top processesMemoryGPU% CPU/);
-  expect(localStorage.getItem("bb-box:monitor:shape:host_build")).toContain('"gpuCards":2');
+  expect(localStorage.getItem("alia-box:monitor:shape:host_build")).toContain('"gpuCards":2');
 }, 20_000);

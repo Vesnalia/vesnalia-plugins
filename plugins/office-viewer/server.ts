@@ -1,6 +1,6 @@
-// bb-plugin-office-viewer — server: locate a spreadsheet on the machine that
+// alia-plugin-office-viewer — server: locate a spreadsheet on the machine that
 // owns it and hand its bytes to the viewer.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import * as XLSX from "xlsx";
 import WordExtractor from "word-extractor";
@@ -74,7 +74,7 @@ export const rpcContract = defineRpcContract({
     input: fileSchema,
     output: z.object({ url: z.string(), hostName: z.string(), absPath: z.string() }).strict(),
   },
-  /** PDF reading position, stored in BB's server-side plugin KV. */
+  /** PDF reading position, stored in VesnALIA's server-side plugin KV. */
   getPdfViewState: {
     input: fileSchema.extend({ threadId: z.string().min(1).max(256) }).strict(),
     output: pdfViewStateSchema.nullable(),
@@ -364,9 +364,9 @@ function describe(error: unknown, hostName: string, absPath: string, lang: Lang)
   return new Error(message);
 }
 
-export default function plugin(bb: BbPluginApi) {
-  const sdk = bb.sdk as unknown as LocateSdk;
-  bb.events.on("thread.deleted", ({ thread }) => deletePdfViewStates(bb.storage.kv, thread.id));
+export default function plugin(alia: AliaPluginApi) {
+  const sdk = alia.sdk as unknown as LocateSdk;
+  alia.events.on("thread.deleted", ({ thread }) => deletePdfViewStates(alia.storage.kv, thread.id));
   let engine: Promise<string> | null = null;
 
   // PDF.js for the PDF opener, fetched by the browser on the first PDF instead of riding in every app bundle.
@@ -374,7 +374,7 @@ export default function plugin(bb: BbPluginApi) {
   const pdfjsVersion = (require("pdfjs-dist/package.json") as { version: string }).version;
   for (const name of ["pdf.min.mjs", "pdf.worker.min.mjs"]) {
     let body: Promise<Buffer> | null = null;
-    bb.http.route("GET", `/pdfjs/${name}`, async (context) => {
+    alia.http.route("GET", `/pdfjs/${name}`, async (context) => {
       if (context.req.header("if-none-match") === `"${pdfjsVersion}"`) return new Response(null, { status: 304 });
       body ??= readFile(require.resolve(`pdfjs-dist/legacy/build/${name}`));
       return new Response(new Uint8Array(await body), {
@@ -386,7 +386,7 @@ export default function plugin(bb: BbPluginApi) {
   // modern-screenshot for HTML screenshots: the page in its sandbox and the mockups around it draw themselves with it.
   const screenshotVersion = (require("modern-screenshot/package.json") as { version: string }).version;
   let screenshotBody: Promise<Buffer> | null = null;
-  bb.http.route("GET", "/capture/modern-screenshot.js", async (context) => {
+  alia.http.route("GET", "/capture/modern-screenshot.js", async (context) => {
     if (context.req.header("if-none-match") === `"${screenshotVersion}"`) return new Response(null, { status: 304 });
     screenshotBody ??= readFile(require.resolve("modern-screenshot/dist/index.js"));
     return new Response(new Uint8Array(await screenshotBody), {
@@ -398,14 +398,14 @@ export default function plugin(bb: BbPluginApi) {
   const schemaAssetRoot = join(dirname(fileURLToPath(import.meta.url)), "src/studio/prototype");
   let wireframeSchemaMd: Promise<Buffer> | null = null;
   let wireframeSchemaJson: Promise<Buffer> | null = null;
-  bb.http.route("GET", "/prototype/wireframe-schema.md", async (context) => {
+  alia.http.route("GET", "/prototype/wireframe-schema.md", async (context) => {
     wireframeSchemaMd ??= readFile(join(schemaAssetRoot, "WIREFRAME_SCHEMA.md"));
     const body = await wireframeSchemaMd;
     return new Response(new Uint8Array(body), {
       headers: { "content-type": "text/markdown; charset=utf-8", "cache-control": "private, max-age=3600" },
     });
   });
-  bb.http.route("GET", "/prototype/wireframe.schema.json", async (context) => {
+  alia.http.route("GET", "/prototype/wireframe.schema.json", async (context) => {
     wireframeSchemaJson ??= readFile(join(schemaAssetRoot, "wireframe.schema.json"));
     const body = await wireframeSchemaJson;
     return new Response(new Uint8Array(body), {
@@ -413,7 +413,7 @@ export default function plugin(bb: BbPluginApi) {
     });
   });
 
-  bb.http.route("POST", "/prototype/hugeicons", async (context) => {
+  alia.http.route("POST", "/prototype/hugeicons", async (context) => {
     const body = (await context.req.json().catch(() => null)) as { names?: unknown } | null;
     const raw = Array.isArray(body?.names) ? body.names : [];
     const names = raw.filter((entry): entry is string => typeof entry === "string");
@@ -432,31 +432,31 @@ export default function plugin(bb: BbPluginApi) {
     if (!storage) return new Response("Not found", { status: 404 });
     const dir = prototypesDir(storage.storageRootPath, "en");
     const indexAbs = publishIndexPath(dir, stem, "en");
-    const indexFile = await bb.sdk.files.read({ hostId: storage.hostId, path: indexAbs }).catch(() => null);
+    const indexFile = await alia.sdk.files.read({ hostId: storage.hostId, path: indexAbs }).catch(() => null);
     if (!indexFile || !("content" in indexFile)) return new Response("Not found", { status: 404 });
     const indexRaw = indexFile.contentEncoding === "base64" ? Buffer.from(indexFile.content, "base64").toString("utf8") : indexFile.content;
     const index = parsePublishIndex(indexRaw, stem);
     if (!index.published || index.threadId !== threadId) return new Response("Not published", { status: 404 });
     const playerAbs = publishPlayerPath(dir, stem, "en");
-    const playerFile = await bb.sdk.files.read({ hostId: storage.hostId, path: playerAbs }).catch(() => null);
+    const playerFile = await alia.sdk.files.read({ hostId: storage.hostId, path: playerAbs }).catch(() => null);
     if (!playerFile || !("content" in playerFile)) return new Response("Not found", { status: 404 });
     const html = playerFile.contentEncoding === "base64" ? Buffer.from(playerFile.content, "base64").toString("utf8") : playerFile.content;
     return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "private, max-age=60" } });
   };
 
-  bb.http.route("GET", "/prototype/preview/:threadId/:stem", async (context) => {
+  alia.http.route("GET", "/prototype/preview/:threadId/:stem", async (context) => {
     const threadId = decodeURIComponent(context.req.param("threadId") ?? "");
     const stem = decodeURIComponent(context.req.param("stem") ?? "");
     return serveWireframePreviewHtml(threadId, stem);
   });
 
-  bb.http.route("GET", "/prototype/preview/:threadId/:stem/index.html", async (context) => {
+  alia.http.route("GET", "/prototype/preview/:threadId/:stem/index.html", async (context) => {
     const threadId = decodeURIComponent(context.req.param("threadId") ?? "");
     const stem = decodeURIComponent(context.req.param("stem") ?? "");
     return serveWireframePreviewHtml(threadId, stem);
   });
 
-  bb.http.route("GET", "/prototype/preview/:threadId/:stem/data.json", async (context) => {
+  alia.http.route("GET", "/prototype/preview/:threadId/:stem/data.json", async (context) => {
     const threadId = decodeURIComponent(context.req.param("threadId") ?? "");
     const stem = decodeURIComponent(context.req.param("stem") ?? "");
     if (!threadId || !stem) return new Response("Not found", { status: 404 });
@@ -464,13 +464,13 @@ export default function plugin(bb: BbPluginApi) {
     if (!storage) return new Response("Not found", { status: 404 });
     const dir = prototypesDir(storage.storageRootPath, "en");
     const dataAbs = publishDataPath(dir, stem, "en");
-    const dataFile = await bb.sdk.files.read({ hostId: storage.hostId, path: dataAbs }).catch(() => null);
+    const dataFile = await alia.sdk.files.read({ hostId: storage.hostId, path: dataAbs }).catch(() => null);
     if (!dataFile || !("content" in dataFile)) return new Response("Not found", { status: 404 });
     const json = dataFile.contentEncoding === "base64" ? Buffer.from(dataFile.content, "base64").toString("utf8") : dataFile.content;
     return new Response(json, { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "private, max-age=60" } });
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     webPage: async ({ url, locale }) => {
       const page = await fetchPublic(url).catch((error: unknown) => { throw error instanceof WebError ? error.localized(locale) : error; });
       return { base64: Buffer.from(page.bytes).toString("base64"), contentType: page.contentType, finalUrl: page.finalUrl };
@@ -490,8 +490,8 @@ export default function plugin(bb: BbPluginApi) {
     },
     docText: async ({ source, path, locale = "en" }) => {
       const where = await locate(sdk, source, path, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: where.hostId }).catch(() => null))?.name || where.hostId;
-      const file = await bb.sdk.files
+      const hostName = (await alia.sdk.hosts.get({ hostId: where.hostId }).catch(() => null))?.name || where.hostId;
+      const file = await alia.sdk.files
         .read({ hostId: where.hostId, path: where.absPath })
         .catch((error: unknown) => { throw describe(error, hostName, where.absPath, locale); });
       if (!("content" in file)) throw new Error(say(locale, "The server returned no file content.", "Сервер не вернул содержимое файла."));
@@ -514,23 +514,23 @@ export default function plugin(bb: BbPluginApi) {
       };
     },
     getPdfViewState: async ({ threadId, source, path, locale = "en" }) => {
-      await bb.sdk.threads.get({ threadId });
+      await alia.sdk.threads.get({ threadId });
       const where = await locate(sdk, source, path, locale);
-      return readPdfViewState(bb.storage.kv, threadId, where);
+      return readPdfViewState(alia.storage.kv, threadId, where);
     },
     savePdfViewState: async ({ threadId, source, path, state, locale = "en" }) => {
-      await bb.sdk.threads.get({ threadId });
+      await alia.sdk.threads.get({ threadId });
       const where = await locate(sdk, source, path, locale);
-      await writePdfViewState(bb.storage.kv, threadId, where, state);
+      await writePdfViewState(alia.storage.kv, threadId, where, state);
       return {};
     },
     open: async ({ source, path, locale = "en" }) => {
       const where = await locate(sdk, source, path, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: where.hostId }).catch(() => null))?.name || where.hostId;
-      const exists = await bb.sdk.hosts.pathsExist({ hostId: where.hostId, paths: [where.absPath] }).catch(() => null);
+      const hostName = (await alia.sdk.hosts.get({ hostId: where.hostId }).catch(() => null))?.name || where.hostId;
+      const exists = await alia.sdk.hosts.pathsExist({ hostId: where.hostId, paths: [where.absPath] }).catch(() => null);
       if (exists && exists.existence[where.absPath] === false) throw describe(new Error("ENOENT"), hostName, where.absPath, locale);
       const slash = where.absPath.lastIndexOf("/");
-      const preview = await bb.sdk.files
+      const preview = await alia.sdk.files
         .createPreview({ hostId: where.hostId, rootPath: where.absPath.slice(0, slash) || "/", ttlMs: 10 * 60 * 1000 })
         .catch((error: unknown) => { throw describe(error, hostName, where.absPath, locale); });
       const url = `${preview.baseUrl.replace(/\/?$/, "/")}${encodeURIComponent(where.absPath.slice(slash + 1))}`;
@@ -539,7 +539,7 @@ export default function plugin(bb: BbPluginApi) {
     siblings: async ({ source, path, locale = "en" }) => {
       const where = await locate(sdk, source, path, locale);
       const dir = where.absPath.slice(0, where.absPath.lastIndexOf("/")) || "/";
-      const listed = await bb.sdk.files.list({ hostId: where.hostId, path: dir, limit: 5000, includeHidden: false });
+      const listed = await alia.sdk.files.list({ hostId: where.hostId, path: dir, limit: 5000, includeHidden: false });
       const names = listed.files
         .map((file) => (file.path.startsWith("/") ? file.path.slice(dir.length + 1) : file.path))
         .filter((name) => name && !name.includes("/"));
@@ -549,28 +549,28 @@ export default function plugin(bb: BbPluginApi) {
     writeImage: async ({ source, path, locale = "en", name, base64, overwrite }) => {
       if (name.includes("/") || name.startsWith(".")) throw new Error(say(locale, "Invalid file name.", "Некорректное имя файла."));
       const where = await locate(sdk, source, path, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: where.hostId }).catch(() => null))?.name || where.hostId;
+      const hostName = (await alia.sdk.hosts.get({ hostId: where.hostId }).catch(() => null))?.name || where.hostId;
       const dir = where.absPath.slice(0, where.absPath.lastIndexOf("/"));
       let target = `${dir}/${name}`;
       if (!overwrite) {
         const dot = name.lastIndexOf(".");
         const [stem, ext] = dot > 0 ? [name.slice(0, dot), name.slice(dot)] : [name, ""];
         const candidates = [target, ...Array.from({ length: 98 }, (_, i) => `${dir}/${stem}-${i + 2}${ext}`)];
-        const { existence } = await bb.sdk.hosts.pathsExist({ hostId: where.hostId, paths: candidates });
+        const { existence } = await alia.sdk.hosts.pathsExist({ hostId: where.hostId, paths: candidates });
         const free = candidates.find((candidate) => existence[candidate] === false);
         if (!free) throw new Error(say(locale, "No free file name left.", "Не нашлось свободного имени файла."));
         target = free;
       }
-      await bb.sdk.files
+      await alia.sdk.files
         .write({ hostId: where.hostId, path: target, content: base64, contentEncoding: "base64" })
         .catch((error: unknown) => { throw describe(error, hostName, target, locale); });
-      bb.log.info(`wrote image ${where.hostId}:${target}`);
+      alia.log.info(`wrote image ${where.hostId}:${target}`);
       return { name: target.slice(dir.length + 1), absPath: target, sizeBytes: Buffer.byteLength(base64, "base64") };
     },
     save: async ({ source, path, locale = "en", expectedSha256, sheet, edits }) => {
       const where = await locate(sdk, source, path, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: where.hostId }).catch(() => null))?.name || where.hostId;
-      const file = await bb.sdk.files
+      const hostName = (await alia.sdk.hosts.get({ hostId: where.hostId }).catch(() => null))?.name || where.hostId;
+      const file = await alia.sdk.files
         .read({ hostId: where.hostId, path: where.absPath })
         .catch((error: unknown) => { throw describe(error, hostName, where.absPath, locale); });
       if (!("content" in file)) throw new Error(say(locale, "The server returned no file content.", "Сервер не вернул содержимое файла."));
@@ -583,11 +583,11 @@ export default function plugin(bb: BbPluginApi) {
         if (error instanceof PatchError) throw new Error(say(locale, `Can't save: ${error.message}`, `Не удалось сохранить: ${error.message}`));
         throw error;
       }
-      const result = await bb.sdk.files
+      const result = await alia.sdk.files
         .write({ hostId: where.hostId, path: where.absPath, content: Buffer.from(next).toString("base64"), contentEncoding: "base64", expectedSha256 })
         .catch((error: unknown) => { throw describe(error, hostName, where.absPath, locale); });
       if (result.outcome === "conflict") return { outcome: "conflict" as const };
-      bb.log.info(`saved ${edits.length} edit(s) to ${where.hostId}:${where.absPath}`);
+      alia.log.info(`saved ${edits.length} edit(s) to ${where.hostId}:${where.absPath}`);
       return { outcome: "written" as const, sha256: result.sha256, sizeBytes: next.byteLength };
     },
     saveWireframe: async ({ threadId, name, json, pngBase64, overwrite, locale = "en", snapshotReason }) => {
@@ -598,46 +598,46 @@ export default function plugin(bb: BbPluginApi) {
       let stem = stemWanted;
       if (!overwrite) {
         const probes = [stemWanted, ...Array.from({ length: 98 }, (_, i) => `${stemWanted}-${i + 2}`)].map((candidate) => wireframePath(dir, candidate, locale));
-        const { existence } = await bb.sdk.hosts.pathsExist({ hostId: storage.hostId, paths: probes });
+        const { existence } = await alia.sdk.hosts.pathsExist({ hostId: storage.hostId, paths: probes });
         stem = freeStem(dir, stemWanted, existence, locale);
       }
       const jsonAbs = wireframePath(dir, stem, locale);
       const pngAbs = pngPath(dir, stem, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
-      await bb.sdk.files
+      const hostName = (await alia.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
+      await alia.sdk.files
         .write({ hostId: storage.hostId, path: jsonAbs, content: json, contentEncoding: "utf8", createParents: true })
         .catch((error: unknown) => { throw describe(error, hostName, jsonAbs, locale); });
       if (pngBase64) {
-        await bb.sdk.files
+        await alia.sdk.files
           .write({ hostId: storage.hostId, path: pngAbs, content: pngBase64, contentEncoding: "base64", createParents: true })
           .catch((error: unknown) => { throw describe(error, hostName, pngAbs, locale); });
       }
       if (snapshotReason) {
-        await appendWireframeHistorySnapshot(bb.sdk.files, storage.hostId, dir, stem, json, snapshotReason, locale).catch((error: unknown) => {
-          bb.log.warn(`wireframe history snapshot failed: ${error instanceof Error ? error.message : String(error)}`);
+        await appendWireframeHistorySnapshot(alia.sdk.files, storage.hostId, dir, stem, json, snapshotReason, locale).catch((error: unknown) => {
+          alia.log.warn(`wireframe history snapshot failed: ${error instanceof Error ? error.message : String(error)}`);
         });
       }
       await ensureWireframeAgentSchema(
-        bb.sdk.files,
+        alia.sdk.files,
         storage.hostId,
         storage.storageRootPath,
         async (paths) => {
-          const { existence } = await bb.sdk.hosts.pathsExist({ hostId: storage.hostId, paths });
+          const { existence } = await alia.sdk.hosts.pathsExist({ hostId: storage.hostId, paths });
           return existence;
         },
         locale,
       ).catch((error: unknown) => {
-        bb.log.warn(`wireframe agent schema copy failed: ${error instanceof Error ? error.message : String(error)}`);
+        alia.log.warn(`wireframe agent schema copy failed: ${error instanceof Error ? error.message : String(error)}`);
       });
-      bb.log.info(`wrote wireframe ${storage.hostId}:${jsonAbs}`);
+      alia.log.info(`wrote wireframe ${storage.hostId}:${jsonAbs}`);
       return { name: stem, jsonPath: jsonAbs, pngPath: pngAbs };
     },
     statWireframe: async ({ threadId, name, locale = "en" }) => {
       const stem = sanitizeStem(name, locale);
       const storage = await sdk.threads.storageLocation({ threadId });
       const absPath = wireframePath(prototypesDir(storage.storageRootPath, locale), stem, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
-      const file = await bb.sdk.files
+      const hostName = (await alia.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
+      const file = await alia.sdk.files
         .read({ hostId: storage.hostId, path: absPath })
         .catch((error: unknown) => { throw describe(error, hostName, absPath, locale); });
       if (!("content" in file)) throw new Error(say(locale, "The server returned no file content.", "Сервер не вернул содержимое файла."));
@@ -647,11 +647,11 @@ export default function plugin(bb: BbPluginApi) {
     ensureWireframeAgentSchema: async ({ threadId, locale = "en" }) => {
       const storage = await sdk.threads.storageLocation({ threadId });
       return ensureWireframeAgentSchema(
-        bb.sdk.files,
+        alia.sdk.files,
         storage.hostId,
         storage.storageRootPath,
         async (paths) => {
-          const { existence } = await bb.sdk.hosts.pathsExist({ hostId: storage.hostId, paths });
+          const { existence } = await alia.sdk.hosts.pathsExist({ hostId: storage.hostId, paths });
           return existence;
         },
         locale,
@@ -661,8 +661,8 @@ export default function plugin(bb: BbPluginApi) {
       const storage = await sdk.threads.storageLocation({ threadId });
       const dir = prototypesDir(storage.storageRootPath, locale);
       const absPath = prototypeRefPath(dir, fileName, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
-      await bb.sdk.files
+      const hostName = (await alia.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
+      await alia.sdk.files
         .write({ hostId: storage.hostId, path: absPath, content: base64, contentEncoding: "base64", createParents: true })
         .catch((error: unknown) => { throw describe(error, hostName, absPath, locale); });
       return { absPath };
@@ -671,33 +671,33 @@ export default function plugin(bb: BbPluginApi) {
       const stemSafe = sanitizeStem(stem, locale);
       const storage = await sdk.threads.storageLocation({ threadId });
       const dir = prototypesDir(storage.storageRootPath, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
+      const hostName = (await alia.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
       const written: string[] = [];
       let specPath: string | null = null;
       if (specMarkdown) {
         specPath = wireframeSpecPath(dir, stemSafe, locale);
-        await bb.sdk.files
+        await alia.sdk.files
           .write({ hostId: storage.hostId, path: specPath, content: specMarkdown, contentEncoding: "utf8", createParents: true })
           .catch((error: unknown) => { throw describe(error, hostName, specPath!, locale); });
         written.push(specPath);
       }
       for (const image of specImages) {
         const absPath = wireframeSpecAssetPath(dir, image.relPath, locale);
-        await bb.sdk.files
+        await alia.sdk.files
           .write({ hostId: storage.hostId, path: absPath, content: image.base64, contentEncoding: "base64", createParents: true })
           .catch((error: unknown) => { throw describe(error, hostName, absPath, locale); });
         written.push(absPath);
       }
       if (codeReadme) {
         const readmePath = wireframeCodeReadmePath(dir, stemSafe, locale);
-        await bb.sdk.files
+        await alia.sdk.files
           .write({ hostId: storage.hostId, path: readmePath, content: codeReadme, contentEncoding: "utf8", createParents: true })
           .catch((error: unknown) => { throw describe(error, hostName, readmePath, locale); });
         written.push(readmePath);
       }
       for (const file of codeFiles) {
         const absPath = wireframeCodeFilePath(dir, stemSafe, file.fileName, locale);
-        await bb.sdk.files
+        await alia.sdk.files
           .write({ hostId: storage.hostId, path: absPath, content: file.content, contentEncoding: "utf8", createParents: true })
           .catch((error: unknown) => { throw describe(error, hostName, absPath, locale); });
         written.push(absPath);
@@ -709,8 +709,8 @@ export default function plugin(bb: BbPluginApi) {
       const dir = prototypesDir(storage.storageRootPath, locale);
       const normalized = relPath.replace(/\\/g, "/").replace(/^\/+/, "");
       const absPath = within(dir, normalized, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
-      const file = await bb.sdk.files
+      const hostName = (await alia.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
+      const file = await alia.sdk.files
         .read({ hostId: storage.hostId, path: absPath })
         .catch((error: unknown) => { throw describe(error, hostName, absPath, locale); });
       if (!("content" in file)) throw new Error(say(locale, "The server returned no file content.", "Сервер не вернул содержимое файла."));
@@ -730,7 +730,7 @@ export default function plugin(bb: BbPluginApi) {
     readDesignMd: async ({ threadId, locale = "en" }) => {
       try {
         const where = await locate(sdk, { kind: "workspace", threadId, environmentId: null, projectId: null }, "DESIGN.md", locale);
-        const file = await bb.sdk.files.read({ hostId: where.hostId, path: where.absPath });
+        const file = await alia.sdk.files.read({ hostId: where.hostId, path: where.absPath });
         if (!("content" in file)) return { markdown: null };
         const markdown = file.contentEncoding === "base64" ? Buffer.from(file.content, "base64").toString("utf8") : file.content;
         return { markdown };
@@ -743,20 +743,20 @@ export default function plugin(bb: BbPluginApi) {
       const stem = sanitizeStem(name, locale);
       const storage = await sdk.threads.storageLocation({ threadId });
       const dir = prototypesDir(storage.storageRootPath, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
+      const hostName = (await alia.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
       const updatedAt = Date.now();
       const indexAbs = publishIndexPath(dir, stem, locale);
       const playerAbs = publishPlayerPath(dir, stem, locale);
       const dataAbs = publishDataPath(dir, stem, locale);
       const index = JSON.stringify({ stem, threadId, published: true, updatedAt }, null, 2);
       const html = buildStaticPlayerHtml({ ...doc, name: stem });
-      await bb.sdk.files
+      await alia.sdk.files
         .write({ hostId: storage.hostId, path: indexAbs, content: index, contentEncoding: "utf8", createParents: true })
         .catch((error: unknown) => { throw describe(error, hostName, indexAbs, locale); });
-      await bb.sdk.files
+      await alia.sdk.files
         .write({ hostId: storage.hostId, path: playerAbs, content: html, contentEncoding: "utf8", createParents: true })
         .catch((error: unknown) => { throw describe(error, hostName, playerAbs, locale); });
-      await bb.sdk.files
+      await alia.sdk.files
         .write({ hostId: storage.hostId, path: dataAbs, content: json, contentEncoding: "utf8", createParents: true })
         .catch((error: unknown) => { throw describe(error, hostName, dataAbs, locale); });
       return { stem, published: true as const, updatedAt, previewPath: prototypePreviewHttpPath(threadId, stem) };
@@ -765,10 +765,10 @@ export default function plugin(bb: BbPluginApi) {
       const stem = sanitizeStem(name, locale);
       const storage = await sdk.threads.storageLocation({ threadId });
       const dir = prototypesDir(storage.storageRootPath, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
+      const hostName = (await alia.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
       const indexAbs = publishIndexPath(dir, stem, locale);
       const index = JSON.stringify({ stem, threadId, published: false, updatedAt: Date.now() }, null, 2);
-      await bb.sdk.files
+      await alia.sdk.files
         .write({ hostId: storage.hostId, path: indexAbs, content: index, contentEncoding: "utf8", createParents: true })
         .catch((error: unknown) => { throw describe(error, hostName, indexAbs, locale); });
       return { published: false as const };
@@ -778,7 +778,7 @@ export default function plugin(bb: BbPluginApi) {
       const storage = await sdk.threads.storageLocation({ threadId });
       const dir = prototypesDir(storage.storageRootPath, locale);
       const indexAbs = publishIndexPath(dir, stem, locale);
-      const file = await bb.sdk.files.read({ hostId: storage.hostId, path: indexAbs }).catch(() => null);
+      const file = await alia.sdk.files.read({ hostId: storage.hostId, path: indexAbs }).catch(() => null);
       if (!file || !("content" in file)) return { published: false, updatedAt: null, previewPath: null };
       const raw = file.contentEncoding === "base64" ? Buffer.from(file.content, "base64").toString("utf8") : file.content;
       const index = parsePublishIndex(raw, stem);
@@ -789,7 +789,7 @@ export default function plugin(bb: BbPluginApi) {
       const stem = sanitizeStem(name, locale);
       const storage = await sdk.threads.storageLocation({ threadId });
       const dir = prototypesDir(storage.storageRootPath, locale);
-      const index = await readHistoryIndex(bb.sdk.files, storage.hostId, dir, stem, locale);
+      const index = await readHistoryIndex(alia.sdk.files, storage.hostId, dir, stem, locale);
       return { snapshots: index.entries };
     },
     loadWireframeHistory: async ({ threadId, name, snapshotId, locale = "en" }) => {
@@ -797,8 +797,8 @@ export default function plugin(bb: BbPluginApi) {
       const storage = await sdk.threads.storageLocation({ threadId });
       const dir = prototypesDir(storage.storageRootPath, locale);
       const absPath = historySnapshotPath(dir, stem, snapshotId, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
-      const file = await bb.sdk.files
+      const hostName = (await alia.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
+      const file = await alia.sdk.files
         .read({ hostId: storage.hostId, path: absPath })
         .catch((error: unknown) => { throw describe(error, hostName, absPath, locale); });
       if (!("content" in file)) throw new Error(say(locale, "The server returned no file content.", "Сервер не вернул содержимое файла."));
@@ -812,17 +812,17 @@ export default function plugin(bb: BbPluginApi) {
       const dir = prototypesDir(storage.storageRootPath, locale);
       const snapPath = historySnapshotPath(dir, stem, snapshotId, locale);
       const jsonAbs = wireframePath(dir, stem, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
-      const file = await bb.sdk.files
+      const hostName = (await alia.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
+      const file = await alia.sdk.files
         .read({ hostId: storage.hostId, path: snapPath })
         .catch((error: unknown) => { throw describe(error, hostName, snapPath, locale); });
       if (!("content" in file)) throw new Error(say(locale, "The server returned no file content.", "Сервер не вернул содержимое файла."));
       const json = file.contentEncoding === "base64" ? Buffer.from(file.content, "base64").toString("utf8") : file.content;
       parseWireframe(json);
-      await bb.sdk.files
+      await alia.sdk.files
         .write({ hostId: storage.hostId, path: jsonAbs, content: json, contentEncoding: "utf8", createParents: true })
         .catch((error: unknown) => { throw describe(error, hostName, jsonAbs, locale); });
-      await appendWireframeHistorySnapshot(bb.sdk.files, storage.hostId, dir, stem, json, "save", locale).catch(() => {});
+      await appendWireframeHistorySnapshot(alia.sdk.files, storage.hostId, dir, stem, json, "save", locale).catch(() => {});
       return { name: stem, jsonPath: jsonAbs };
     },
     appendWireframeSnapshot: async ({ threadId, name, json, reason, locale = "en" }) => {
@@ -830,13 +830,13 @@ export default function plugin(bb: BbPluginApi) {
       const stem = sanitizeStem(name, locale);
       const storage = await sdk.threads.storageLocation({ threadId });
       const dir = prototypesDir(storage.storageRootPath, locale);
-      const snapshotId = await appendWireframeHistorySnapshot(bb.sdk.files, storage.hostId, dir, stem, json, reason, locale);
+      const snapshotId = await appendWireframeHistorySnapshot(alia.sdk.files, storage.hostId, dir, stem, json, reason, locale);
       return { snapshotId };
     },
     listWireframes: async ({ threadId, locale = "en" }) => {
       const storage = await sdk.threads.storageLocation({ threadId });
       const dir = prototypesDir(storage.storageRootPath, locale);
-      const listed = await bb.sdk.files.list({ hostId: storage.hostId, path: dir, limit: 5000, includeHidden: false }).catch(() => ({ files: [] as { name?: string; path: string }[] }));
+      const listed = await alia.sdk.files.list({ hostId: storage.hostId, path: dir, limit: 5000, includeHidden: false }).catch(() => ({ files: [] as { name?: string; path: string }[] }));
       const names = listed.files
         .map((file) => listedStem(file.name ?? file.path))
         .filter((stem): stem is string => stem !== null);
@@ -847,8 +847,8 @@ export default function plugin(bb: BbPluginApi) {
       const stem = sanitizeStem(name, locale);
       const storage = await sdk.threads.storageLocation({ threadId });
       const absPath = wireframePath(prototypesDir(storage.storageRootPath, locale), stem, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
-      const file = await bb.sdk.files
+      const hostName = (await alia.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
+      const file = await alia.sdk.files
         .read({ hostId: storage.hostId, path: absPath })
         .catch((error: unknown) => { throw describe(error, hostName, absPath, locale); });
       if (!("content" in file)) throw new Error(say(locale, "The server returned no file content.", "Сервер не вернул содержимое файла."));
@@ -864,27 +864,27 @@ export default function plugin(bb: BbPluginApi) {
       let stem = stemWanted;
       if (!overwrite) {
         const probes = [stemWanted, ...Array.from({ length: 98 }, (_, i) => `${stemWanted}-${i + 2}`)].map((candidate) => paintJsonPath(dir, candidate, locale));
-        const { existence } = await bb.sdk.hosts.pathsExist({ hostId: storage.hostId, paths: probes });
+        const { existence } = await alia.sdk.hosts.pathsExist({ hostId: storage.hostId, paths: probes });
         stem = freePaintStem(dir, stemWanted, existence, locale);
       }
       const jsonAbs = paintJsonPath(dir, stem, locale);
       const pngAbs = paintPngPath(dir, stem, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
-      await bb.sdk.files
+      const hostName = (await alia.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
+      await alia.sdk.files
         .write({ hostId: storage.hostId, path: jsonAbs, content: json, contentEncoding: "utf8", createParents: true })
         .catch((error: unknown) => { throw describe(error, hostName, jsonAbs, locale); });
       if (pngBase64) {
-        await bb.sdk.files
+        await alia.sdk.files
           .write({ hostId: storage.hostId, path: pngAbs, content: pngBase64, contentEncoding: "base64", createParents: true })
           .catch((error: unknown) => { throw describe(error, hostName, pngAbs, locale); });
       }
-      bb.log.info(`wrote paint ${storage.hostId}:${jsonAbs}`);
+      alia.log.info(`wrote paint ${storage.hostId}:${jsonAbs}`);
       return { name: stem, jsonPath: jsonAbs, pngPath: pngAbs };
     },
     listPaints: async ({ threadId, locale = "en" }) => {
       const storage = await sdk.threads.storageLocation({ threadId });
       const dir = paintDir(storage.storageRootPath, locale);
-      const listed = await bb.sdk.files.list({ hostId: storage.hostId, path: dir, limit: 5000, includeHidden: false }).catch(() => ({ files: [] as { name?: string; path: string }[] }));
+      const listed = await alia.sdk.files.list({ hostId: storage.hostId, path: dir, limit: 5000, includeHidden: false }).catch(() => ({ files: [] as { name?: string; path: string }[] }));
       const names = listed.files
         .map((file) => listedPaintStem(file.name ?? file.path))
         .filter((stem): stem is string => stem !== null);
@@ -895,8 +895,8 @@ export default function plugin(bb: BbPluginApi) {
       const stem = sanitizePaintStem(name, locale);
       const storage = await sdk.threads.storageLocation({ threadId });
       const absPath = paintJsonPath(paintDir(storage.storageRootPath, locale), stem, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
-      const file = await bb.sdk.files
+      const hostName = (await alia.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
+      const file = await alia.sdk.files
         .read({ hostId: storage.hostId, path: absPath })
         .catch((error: unknown) => { throw describe(error, hostName, absPath, locale); });
       if (!("content" in file)) throw new Error(say(locale, "The server returned no file content.", "Сервер не вернул содержимое файла."));
@@ -912,27 +912,27 @@ export default function plugin(bb: BbPluginApi) {
       let stem = stemWanted;
       if (!overwrite) {
         const probes = [stemWanted, ...Array.from({ length: 98 }, (_, i) => `${stemWanted}-${i + 2}`)].map((candidate) => slidesJsonPath(dir, candidate, locale));
-        const { existence } = await bb.sdk.hosts.pathsExist({ hostId: storage.hostId, paths: probes });
+        const { existence } = await alia.sdk.hosts.pathsExist({ hostId: storage.hostId, paths: probes });
         stem = freeSlidesStem(dir, stemWanted, existence, locale);
       }
       const jsonAbs = slidesJsonPath(dir, stem, locale);
       const pngAbs = slidesPngPath(dir, stem, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
-      await bb.sdk.files
+      const hostName = (await alia.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
+      await alia.sdk.files
         .write({ hostId: storage.hostId, path: jsonAbs, content: json, contentEncoding: "utf8", createParents: true })
         .catch((error: unknown) => { throw describe(error, hostName, jsonAbs, locale); });
       if (pngBase64) {
-        await bb.sdk.files
+        await alia.sdk.files
           .write({ hostId: storage.hostId, path: pngAbs, content: pngBase64, contentEncoding: "base64", createParents: true })
           .catch((error: unknown) => { throw describe(error, hostName, pngAbs, locale); });
       }
-      bb.log.info(`wrote slides ${storage.hostId}:${jsonAbs}`);
+      alia.log.info(`wrote slides ${storage.hostId}:${jsonAbs}`);
       return { name: stem, jsonPath: jsonAbs, pngPath: pngAbs };
     },
     listSlides: async ({ threadId, locale = "en" }) => {
       const storage = await sdk.threads.storageLocation({ threadId });
       const dir = slidesDir(storage.storageRootPath, locale);
-      const listed = await bb.sdk.files.list({ hostId: storage.hostId, path: dir, limit: 5000, includeHidden: false }).catch(() => ({ files: [] as { name?: string; path: string }[] }));
+      const listed = await alia.sdk.files.list({ hostId: storage.hostId, path: dir, limit: 5000, includeHidden: false }).catch(() => ({ files: [] as { name?: string; path: string }[] }));
       const names = listed.files
         .map((file) => listedSlidesStem(file.name ?? file.path))
         .filter((stem): stem is string => stem !== null);
@@ -943,8 +943,8 @@ export default function plugin(bb: BbPluginApi) {
       const stem = sanitizeSlidesStem(name, locale);
       const storage = await sdk.threads.storageLocation({ threadId });
       const absPath = slidesJsonPath(slidesDir(storage.storageRootPath, locale), stem, locale);
-      const hostName = (await bb.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
-      const file = await bb.sdk.files
+      const hostName = (await alia.sdk.hosts.get({ hostId: storage.hostId }).catch(() => null))?.name || storage.hostId;
+      const file = await alia.sdk.files
         .read({ hostId: storage.hostId, path: absPath })
         .catch((error: unknown) => { throw describe(error, hostName, absPath, locale); });
       if (!("content" in file)) throw new Error(say(locale, "The server returned no file content.", "Сервер не вернул содержимое файла."));

@@ -5,7 +5,7 @@
 // pixels (the parity tool covers pixels).
 import { act, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { SCENES } from "../src/scenes";
 import { DEFAULT_PREFS, type Prefs, type ThreadPrefs } from "../src/settings";
 import type { Mood } from "../src/mood";

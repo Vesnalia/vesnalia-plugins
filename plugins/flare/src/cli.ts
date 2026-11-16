@@ -1,4 +1,4 @@
-import { PluginCliError, cliCommand, defineCli, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { PluginCliError, cliCommand, defineCli, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { flaresText } from "./format";
 import { KINDS } from "./kinds";
 import { BODY_DESCRIPTION } from "./notes";
@@ -14,14 +14,14 @@ function targetThread(option: string | undefined, ctx: { threadId?: string }): s
     throw new PluginCliError("No thread to use", {
       code: "no_thread",
       exitCode: 2,
-      hint: "Run it inside a bb thread, or pass --thread <thread-id>.",
+      hint: "Run it inside a VesnALIA thread, or pass --thread <thread-id>.",
     });
   }
   return id;
 }
 
-export function registerCli(bb: BbPluginApi, flares: FlareService): void {
-  bb.cli.register(
+export function registerCli(alia: AliaPluginApi, flares: FlareService): void {
+  alia.cli.register(
     defineCli({
       name: "flare",
       summary: "Send a flare the user sees mid-turn, or list a thread's flares",

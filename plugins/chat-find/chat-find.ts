@@ -1,6 +1,6 @@
 const THREAD_WINDOW_SELECTOR = "[data-thread-window]";
-const MATCH_HIGHLIGHT_NAME = "bb-chat-find-match";
-const ACTIVE_HIGHLIGHT_NAME = "bb-chat-find-active";
+const MATCH_HIGHLIGHT_NAME = "alia-chat-find-match";
+const ACTIVE_HIGHLIGHT_NAME = "alia-chat-find-active";
 const MAX_MATCHES = 1000;
 const REFRESH_THROTTLE_MS = 150;
 const BAR_WIDTH = 288;
@@ -72,7 +72,7 @@ const STYLE = `
   background-color: color-mix(in oklab, var(--warning) 75%, transparent);
   color: var(--ink);
 }
-.bb-chat-find {
+.alia-chat-find {
   position: fixed;
   z-index: 40;
   display: flex;
@@ -89,10 +89,10 @@ const STYLE = `
   font-size: 13px;
   line-height: 20px;
 }
-.bb-chat-find[hidden] {
+.alia-chat-find[hidden] {
   display: none;
 }
-.bb-chat-find__field {
+.alia-chat-find__field {
   display: flex;
   flex: 1;
   min-width: 0;
@@ -105,7 +105,7 @@ const STYLE = `
   border-radius: 6px;
   background: color-mix(in oklab, var(--background) 70%, transparent);
 }
-.bb-chat-find__input {
+.alia-chat-find__input {
   flex: 1;
   min-width: 0;
   padding: 0;
@@ -115,18 +115,18 @@ const STYLE = `
   color: var(--foreground);
   font: inherit;
 }
-.bb-chat-find__input::placeholder {
+.alia-chat-find__input::placeholder {
   color: var(--muted-foreground);
 }
-.bb-chat-find__count {
+.alia-chat-find__count {
   flex-shrink: 0;
   color: var(--muted-foreground);
   font-variant-numeric: tabular-nums;
 }
-.bb-chat-find__count[data-empty="true"] {
+.alia-chat-find__count[data-empty="true"] {
   color: var(--destructive);
 }
-.bb-chat-find__button {
+.alia-chat-find__button {
   display: flex;
   width: 28px;
   height: 28px;
@@ -140,18 +140,18 @@ const STYLE = `
   color: var(--muted-foreground);
   cursor: pointer;
 }
-.bb-chat-find__button:hover:not(:disabled) {
+.alia-chat-find__button:hover:not(:disabled) {
   background: var(--state-hover);
   color: var(--foreground);
 }
-.bb-chat-find__button:focus-visible {
+.alia-chat-find__button:focus-visible {
   outline: 1px solid var(--ring);
 }
-.bb-chat-find__button:disabled {
+.alia-chat-find__button:disabled {
   opacity: 0.4;
   cursor: default;
 }
-.bb-chat-find__button svg {
+.alia-chat-find__button svg {
   width: 16px;
   height: 16px;
 }
@@ -385,7 +385,7 @@ function primaryWindow(): Element | null {
 function iconButton(label: string, paths: readonly string[]): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "bb-chat-find__button";
+  button.className = "alia-chat-find__button";
   button.setAttribute("aria-label", label);
   button.title = label;
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -421,26 +421,26 @@ export function mountChatFind(): ChatFindController {
   }
 
   const style = document.createElement("style");
-  style.dataset.bbChatFind = "";
+  style.dataset.aliaChatFind = "";
   style.textContent = STYLE;
   document.head.append(style);
 
   const bar = document.createElement("div");
-  bar.className = "bb-chat-find";
+  bar.className = "alia-chat-find";
   bar.hidden = true;
   bar.setAttribute("role", "search");
   bar.setAttribute("aria-label", "Find in chat");
   const field = document.createElement("div");
-  field.className = "bb-chat-find__field";
+  field.className = "alia-chat-find__field";
   const input = document.createElement("input");
   input.type = "text";
-  input.className = "bb-chat-find__input";
+  input.className = "alia-chat-find__input";
   input.placeholder = "Find in chat";
   input.autocomplete = "off";
   input.spellcheck = false;
   input.setAttribute("aria-label", `Find in chat (${shortcutLabel})`);
   const count = document.createElement("span");
-  count.className = "bb-chat-find__count";
+  count.className = "alia-chat-find__count";
   count.setAttribute("aria-live", "polite");
   field.append(input, count);
   const previousButton = iconButton("Previous match", ICON_PATHS.previous);

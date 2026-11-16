@@ -26,8 +26,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install pinned BB build tool
-        run: npm install --global bb-app@0.39.0
+      - name: Install pinned ALIA build tool
+        run: npm install --global alia-app@0.39.0
 
       - name: Type check
         run: npm run check

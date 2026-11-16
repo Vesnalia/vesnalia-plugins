@@ -1,10 +1,10 @@
-// The plugin's host entry: bb's daemon runs this on the machine that owns the
-// thread's worktree, so git always sees the real files. bb cancels a host
+// The plugin's host entry: VesnALIA's daemon runs this on the machine that owns the
+// thread's worktree, so git always sees the real files. VesnALIA cancels a host
 // call at a fixed 30 s, so every handler runs its git commands against one
 // budget (host/budget.ts) and returns a typed result before that. Network
 // work (fetch, pull, push) is handed to a background job instead
 // (host/jobs.ts) and reports back through signals.
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import type { ActionResult, GitError, JobStart, Overview } from "./contracts";
 import { hostContract, hostSignals, unavailableOverview } from "./contracts";
 import type { JobKind } from "./shared/constants";

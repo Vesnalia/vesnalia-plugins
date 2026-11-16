@@ -1,4 +1,4 @@
-import type { BbPluginApi, PluginMentionItem } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginMentionItem } from "@vesnalia/plugin-sdk";
 import { scopeFor } from "./bindings.js";
 import { truncate } from "./format.js";
 import { safeIssueReference, UNTRUSTED_LINEAR_POLICY } from "./security-boundaries.js";
@@ -27,8 +27,8 @@ export interface MentionDeps {
 
 const SEARCH_LIMIT = 12;
 
-export function registerMentionProviders(bb: BbPluginApi, deps: MentionDeps): void {
-  bb.ui.registerMentionProvider({
+export function registerMentionProviders(alia: AliaPluginApi, deps: MentionDeps): void {
+  alia.ui.registerMentionProvider({
     id: "issue",
     label: "Linear issues",
     triggers: ["#"],
@@ -77,7 +77,7 @@ export function registerMentionProviders(bb: BbPluginApi, deps: MentionDeps): vo
       const issue = deps.store.issue(itemId) ?? deps.store.issueByIdentifier(itemId);
       if (issue === null) {
         return {
-          context: `(A Linear issue was mentioned, but it is no longer in bb's local copy of the workspace.)`,
+          context: `(A Linear issue was mentioned, but it is no longer in VesnALIA's local copy of the workspace.)`,
         };
       }
 

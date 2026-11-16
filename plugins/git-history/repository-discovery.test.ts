@@ -24,7 +24,7 @@ const runGit: GitRunner = (cwd, args, signal) =>
   });
 
 async function createRoot(): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), "bb-git-history-discovery-"));
+  const root = await mkdtemp(join(tmpdir(), "alia-git-history-discovery-"));
   temporaryRoots.push(root);
   return root;
 }
@@ -131,8 +131,8 @@ describe("discoverRepositories", () => {
 describe("discoverRepositories without a repos directory", () => {
   it("falls back to immediate non-hidden child repositories", async () => {
     const root = await createRoot();
-    await createRepository(join(root, "bb-plugin-a"));
-    await createRepository(join(root, "bb-plugin-b"));
+    await createRepository(join(root, "alia-plugin-a"));
+    await createRepository(join(root, "alia-plugin-b"));
     await createRepository(join(root, ".hidden"));
     await createRepository(join(root, "node_modules"));
     await mkdir(join(root, "docs"), { recursive: true });
@@ -141,9 +141,9 @@ describe("discoverRepositories without a repos directory", () => {
     const signal = new AbortController().signal;
     const result = await discoverRepositories(root, signal, runGit);
 
-    expect(result.map((repository) => repository.key)).toEqual(["bb-plugin-a", "bb-plugin-b"]);
-    await expect(resolveRepositorySelection(root, "bb-plugin-b", signal, runGit)).resolves.toBe(
-      await realpath(join(root, "bb-plugin-b")),
+    expect(result.map((repository) => repository.key)).toEqual(["alia-plugin-a", "alia-plugin-b"]);
+    await expect(resolveRepositorySelection(root, "alia-plugin-b", signal, runGit)).resolves.toBe(
+      await realpath(join(root, "alia-plugin-b")),
     );
     await expect(resolveRepositorySelection(root, "group/nested", signal, runGit)).rejects.toThrow();
   });

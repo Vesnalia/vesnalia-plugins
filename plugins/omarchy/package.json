@@ -1,25 +1,17 @@
 {
-  "name": "bb-plugin-omarchy",
+  "name": "alia-plugin-omarchy",
   "version": "0.1.5",
-  "description": "Keep BB perfectly in step with the active Omarchy theme.",
+  "description": "Keep VesnALIA perfectly in step with the active Omarchy theme.",
   "author": "Salem Sayed Abdel Gawad",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/salemsayed/bb-plugin-omarchy.git"
-  },
-  "homepage": "https://github.com/salemsayed/bb-plugin-omarchy#readme",
-  "bugs": {
-    "url": "https://github.com/salemsayed/bb-plugin-omarchy/issues"
-  },
   "license": "MIT",
   "type": "module",
   "engines": {
-    "bb": ">=0.41",
-    "bbPluginSdk": ">=0.4.34"
+    "alia": ">=0.41",
+    "aliaPluginSdk": ">=0.4.34"
   },
-  "bb": {
+  "alia": {
     "name": "Omarchy Sync",
-    "description": "Live Omarchy palette, syntax theme, ANSI colors, favicon tint, and animated transitions for BB.",
+    "description": "Live Omarchy palette, syntax theme, ANSI colors, favicon tint, and animated transitions for VesnALIA.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -29,13 +21,13 @@
     "skills": []
   },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "omarchy",
     "theme",
     "hyprland"
   ],
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "check": "npm run typecheck && npm test",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit"
@@ -44,7 +36,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.79",
     "@testing-library/react": "^16.3.2",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
@@ -58,5 +49,22 @@
     "react-dom": "^19.0.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vitest": "^4.1.1"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.79"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/omarchy#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/omarchy"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

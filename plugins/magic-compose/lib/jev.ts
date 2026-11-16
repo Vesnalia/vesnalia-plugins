@@ -134,7 +134,7 @@ function buildRequest(args: AskChoicesArgs): { headers: Record<string, string>; 
   );
   if (args.provider === "openrouter") {
     return {
-      headers: { ...base, "X-Title": "BB Magic Compose" },
+      headers: { ...base, "X-Title": "VesnALIA Magic Compose" },
       body: { model: args.model, state: args.state, questions },
     };
   }

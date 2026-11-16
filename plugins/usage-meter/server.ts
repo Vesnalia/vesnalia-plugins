@@ -1,6 +1,6 @@
-// bb-plugin-usage-meter — backend: one poll of Claude limits per server.
+// alia-plugin-usage-meter — backend: one poll of Claude limits per server.
 //
-// A background service asks bb.sdk.system.usageLimits() every five minutes and
+// A background service asks alia.sdk.system.usageLimits() every five minutes and
 // keeps the snapshot in memory. Every client reads that same snapshot through
 // the `state` RPC method, so the number of tabs adds no load on the API.
 //
@@ -8,7 +8,7 @@
 // the channel subscription lives only in the useRealtime React hook, out of a
 // content script's reach. There would be nobody to publish to: the frontend
 // polls `state` instead.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   usageScannerForPlugin,
@@ -47,13 +47,13 @@ const WINDOW_MS: Record<"day" | "week", number> = {
 // The package does not export the SDK response type (ProviderUsageResponse),
 // but it can be inferred from the method signature — honest typing instead of any.
 type UsageLimits = Awaited<
-  ReturnType<BbPluginApi["sdk"]["system"]["usageLimits"]>
+  ReturnType<AliaPluginApi["sdk"]["system"]["usageLimits"]>
 >;
 type ClaudeUsage = UsageLimits[string];
 
-/** bb's id for the Claude Code provider: the key its usage arrives under. */
+/** VesnALIA's id for the Claude Code provider: the key its usage arrives under. */
 const CLAUDE_PROVIDER_ID = "claude-code";
-/** The key the same figures came under before bb keyed the answer by provider id. */
+/** The key the same figures came under before VesnALIA keyed the answer by provider id. */
 const LEGACY_CLAUDE_KEY = "claudeCode";
 
 /**
@@ -169,11 +169,11 @@ function toState(claude: ClaudeUsage, previous: UsageState): UsageState {
   return { ...UNKNOWN, status: claude.status, fetchedAt };
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   // The scanner keeps its cache next to the plugin's own database and reads
-  // bb.db read-only for thread names.
-  const scanner = usageScannerForPlugin(bb);
-  bb.onDispose(() => scanner.close());
+  // alia.db read-only for thread names.
+  const scanner = usageScannerForPlugin(alia);
+  alia.onDispose(() => scanner.close());
 
   let current: UsageState = UNKNOWN;
   // Key of the last complaint written to the log: one and the same trouble is
@@ -187,19 +187,19 @@ export default async function plugin(bb: BbPluginApi) {
     if (inFlight) return inFlight;
     inFlight = (async () => {
       try {
-        const usage = await bb.sdk.system.usageLimits({
+        const usage = await alia.sdk.system.usageLimits({
           providerId: CLAUDE_PROVIDER_ID,
           ...(signal ? { signal } : {}),
         });
         const claude = claudeUsageOf(usage);
-        // No entry at all: this bb has no Claude Code provider to ask.
+        // No entry at all: this VesnALIA has no Claude Code provider to ask.
         const next = claude
           ? toState(claude, current)
           : { ...UNKNOWN, status: "not_installed" as const, fetchedAt: new Date().toISOString() };
         const key = next.status === "ok" ? "" : `${next.status}:${next.message ?? ""}`;
         if (key !== complaint) {
           complaint = key;
-          if (key) bb.log.info(`claude code: ${next.status}${next.message ? ` — ${next.message}` : ""}`);
+          if (key) alia.log.info(`claude code: ${next.status}${next.message ? ` — ${next.message}` : ""}`);
         }
         current = next;
         return current;
@@ -211,7 +211,7 @@ export default async function plugin(bb: BbPluginApi) {
         const message = error instanceof Error ? error.message : String(error);
         if (message !== complaint) {
           complaint = message;
-          bb.log.warn(`usageLimits failed: ${message}`);
+          alia.log.warn(`usageLimits failed: ${message}`);
         }
         // fetchedAt is set here too: otherwise every client seeing a snapshot
         // without a time would call refresh on its own.
@@ -240,7 +240,7 @@ export default async function plugin(bb: BbPluginApi) {
     return value;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     // Serves the snapshot from memory. The first client to arrive before the
     // service gets the result of the shared poll, not its own API call.
     state: async () => (current.fetchedAt === null ? refresh() : current),
@@ -250,11 +250,11 @@ export default async function plugin(bb: BbPluginApi) {
     scanStatus: () => scanner.status(),
   });
 
-  bb.background.service("usage-scan", {
+  alia.background.service("usage-scan", {
     start: (signal) => scanner.runForever(signal, SCAN_MS),
   });
 
-  bb.background.service("poll", {
+  alia.background.service("poll", {
     async start(signal) {
       let delay = POLL_MS;
       while (!signal.aborted) {

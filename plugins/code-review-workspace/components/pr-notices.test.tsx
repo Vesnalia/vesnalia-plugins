@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { toast } from "sonner";
 import { defaultPreferences } from "../src/preferences";
 import { patchReviewState } from "../lib/panel-state";
@@ -17,7 +17,7 @@ const KEY = "br-1";
 const URL = "https://github.com/acme/api/pull/4512";
 const patch = "diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -1 +1 @@\n-a\n+aa\n";
 const guide = { title: "Snooze flaky checks", intent: "Snoozes checks.", unplacedFiles: [] as string[], sections: [{ id: "c1", title: "Snooze", overview: "", diffs: [{ file: "src/a.ts" }] }] };
-const feature = { environmentId: "env1", hostId: "host_max", machine: "MaxBook", path: "/Users/me/src/api", branch: "bb/snooze-checks-thr_ab12", baseRef: "main", repo: "acme/api" };
+const feature = { environmentId: "env1", hostId: "host_max", machine: "MaxBook", path: "/Users/me/src/api", branch: "alia/snooze-checks-thr_ab12", baseRef: "main", repo: "acme/api" };
 const local = { targetKey: KEY, kind: "ref", gitRef: feature.branch, status: "ready", createdAt: 1, title: "Snooze flaky checks", feature, mainThread: { threadId: "main", environmentId: "env1", origin: "adopted", since: 1 } };
 const converted = { ...local, kind: "pr", repo: "acme/api", number: 4512, url: URL, gitRef: "main...feat/snooze", ownPr: true };
 const nothing: FeatureCheck = { state: "current", alsoActive: [], hidden: [], flagged: [] };

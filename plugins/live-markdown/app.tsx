@@ -1,4 +1,4 @@
-// bb-plugin-live-markdown — frontend.
+// alia-plugin-live-markdown — frontend.
 //
 // One fileOpener for .md/.mdx/.markdown: an Obsidian-style live-preview editor.
 // The buffer is the file's exact text; saving writes that text back, so an
@@ -6,7 +6,7 @@
 // compare-and-swap guarded; a file an agent changed underneath you reloads in
 // place when you have no unsaved edits, and raises a conflict when you do.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { definePluginApp, useRpc, type PluginFileOpenerProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRpc, type PluginFileOpenerProps } from "@vesnalia/plugin-sdk/app";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { search, searchKeymap } from "@codemirror/search";
@@ -44,7 +44,7 @@ interface DiskVersion {
 }
 
 /**
- * Unsaved text whose editor unmounted before it could be saved: bb can remount
+ * Unsaved text whose editor unmounted before it could be saved: VesnALIA can remount
  * the panel (a layout change), and a remount in a conflict used to drop the
  * edits. Keyed by file; the next editor for that file restores it.
  */

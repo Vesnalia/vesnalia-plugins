@@ -26,12 +26,12 @@ Each plugin record contains ID, agent name, display name, marketplace, version, 
 
 1. The server's regular scan calls host method `plugins_scan` for each connected host and stores its result (`server.ts:635-644`).
 2. The host parses Claude Code's installed registry and enabled settings, the first readable OpenCode config, and Codex plugin tables; read/parse errors are skipped (`host.ts:707-786`).
-3. The server aggregates records using agent and plugin IDs, then builds an installed/enabled/version/path cell for every enrolled BB machine (`server.ts:947-1000`).
-4. The UI displays the cross-machine table; `bb tools plugins` groups the same records by agent (`app.tsx:2468-2537`, `server.ts:2883-2908`).
+3. The server aggregates records using agent and plugin IDs, then builds an installed/enabled/version/path cell for every enrolled VesnALIA machine (`server.ts:947-1000`).
+4. The UI displays the cross-machine table; `alia tools plugins` groups the same records by agent (`app.tsx:2468-2537`, `server.ts:2883-2908`).
 
 ### Agent adapter registry (`AGENTS`)
 
-`AGENTS` is the ordered adapter table used by host scans. Each entry supplies a stable `kind`, label, executable candidates, ordered config candidates, format and dialect pointer, BB provider IDs, and optional gateway or confirmed-path flags (`agents.ts:56-219`).
+`AGENTS` is the ordered adapter table used by host scans. Each entry supplies a stable `kind`, label, executable candidates, ordered config candidates, format and dialect pointer, VesnALIA provider IDs, and optional gateway or confirmed-path flags (`agents.ts:56-219`).
 
 1. The host visits `AGENTS` in declaration order. For each entry, `findBin` tries executable names and platform candidates until it finds a file or symlink; empty `bins` skips that lookup (`agents.ts:56-219`, `host.ts:87-102`, `host.ts:792-798`).
 2. `pickConfig` loads all declared candidate paths concurrently and chooses the first with non-null text. If none has text, it returns the first candidate's load result (`host.ts:158-218`).
@@ -67,13 +67,13 @@ Failures are represented at config-load time where possible: missing/unreadable 
 ## Business rules
 
 - Plugin identity in the aggregation is the pair `agent:id` (`server.ts:956-962`, `server.ts:969-972`).
-- Host coverage is built against every enrolled machine returned by BB, including disconnected machines (`server.ts:966-979`).
+- Host coverage is built against every enrolled machine returned by VesnALIA, including disconnected machines (`server.ts:966-979`).
 - Display order prioritizes Claude Code, OpenCode, then Codex; other agent IDs follow (`server.ts:958-964`).
 - The host scan implementation reads registry/config data for plugins and does not perform marketplace installation (`host.ts:700-780`).
 
 ## Public API or commands
 
-See [API and commands](../api.md). The host RPC method is `plugins_scan`; the user command is `bb tools plugins [--json]` (`contract.ts:492-494`, `server.ts:2477-2480`, `server.ts:2883-2908`).
+See [API and commands](../api.md). The host RPC method is `plugins_scan`; the user command is `alia tools plugins [--json]` (`contract.ts:492-494`, `server.ts:2477-2480`, `server.ts:2883-2908`).
 
 ## Gotchas
 

@@ -10,7 +10,7 @@ process.env.TZ = "Europe/Warsaw";
 const { DATE_FIX_LABEL, DateFixes, dateFix } = await import("./date-fixes");
 
 const call = vi.hoisted(() => vi.fn());
-vi.mock("@get-bb/plugin-sdk/app", () => ({ useRpc: () => ({ call }) }));
+vi.mock("@vesnalia/plugin-sdk/app", () => ({ useRpc: () => ({ call }) }));
 afterEach(() => {
   cleanup();
   call.mockReset();

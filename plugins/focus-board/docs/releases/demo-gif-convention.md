@@ -72,7 +72,7 @@ Capture each release's gifs against **that release's tree**, in a throwaway work
 
 Some features are a write in one window landing in another. The recorder stages those for real: a demo with `windows: 2` opens a second live page against the same mocked host, every `shot` captures both, and the assembled gif stacks them side by side behind a hairline divider. `g.use("peer")` moves the pointer and the gestures to the second window without breaking the frame lockstep.
 
-The shared host is the part that makes the two pages honest: `?sharedHost=<token>` turns on a per-pair write log over localStorage (`scripts/screenshot/host-log.ts`), and both windows apply each received write through one function (`scripts/screenshot/host-state.ts`), firing the realtime signal the real server publishes, so the second window refetches exactly as bb's own second window does. `scripts/uat/run.mjs` drives the same pairing with `defaults.windows: 2` and `page: peer` steps, gated by `tests/manual/uat-two-windows.yaml`.
+The shared host is the part that makes the two pages honest: `?sharedHost=<token>` turns on a per-pair write log over localStorage (`scripts/screenshot/host-log.ts`), and both windows apply each received write through one function (`scripts/screenshot/host-state.ts`), firing the realtime signal the real server publishes, so the second window refetches exactly as VesnALIA's own second window does. `scripts/uat/run.mjs` drives the same pairing with `defaults.windows: 2` and `page: peer` steps, gated by `tests/manual/uat-two-windows.yaml`.
 
 Two fixed viewports of the same size are required: the halves are hstacked, so a height difference fails the assembly rather than cropping silently.
 
@@ -107,7 +107,7 @@ The backfill's per-bullet decisions live here so the record survives the pull re
 | 1.7.5 | Dragging a card against a board edge now pans the board | demonstrated | the demo board's own nine-lane overflow, staged with the uat-drag-autoscroll suite's park-and-drop gesture; the park holds on dragover-only frames because a CDP mousemove per frame throttles the loop to a third of its pace |
 | 1.7.6 | The New Thread dialog gains New project | demonstrated | the mock SDK's `projects.create` fixture (appends to the sim sidebar and wakes it); the dialog's create is filmed and the created project is read back in the Project filter, because the composer's picker is host chrome the harness cannot render |
 | 1.7.7 | The pane focuses the message composer on open and switch | demonstrated | the mock composer's focusRequest ring (the pane-parity audit's Gap 8 frames), filmed on an opened pane and through a thread switch |
-| 1.7.7 | The New project button sits on the project row's line; the create follows bb's typical flow | demonstrated | v1.7.6's `projects.create` fixture plus the mock's `pickFolder` hand-off (the default pick names the folder, the create carries `local_path`, and the Project filter reads the project back) |
+| 1.7.7 | The New project button sits on the project row's line; the create follows VesnALIA's typical flow | demonstrated | v1.7.6's `projects.create` fixture plus the mock's `pickFolder` hand-off (the default pick names the folder, the create carries `local_path`, and the Project filter reads the project back) |
 | 1.7.7 | Magic rename's thread-model row blocks when the environment cannot run it | demonstrated | `?envgate=1` (this release's fixture): the availability answer a destroyed environment produces, served with the gate's own refusal wording imported verbatim |
 | 1.7.7 | Magic rename's model probe generates on the thread's model again | demonstrated | the `?failautotitle=plain` walk into the "Use the thread's active model" pick |
 | 1.7.7 | Threads running background work stay in Working | demonstrated | a two-thread turn-end patch over the harness's `pushThreadUpdate`, both cards in the Working lane when the updates land |
@@ -143,13 +143,13 @@ Still skipped, with the reason:
 | 1.7.0 | Opening a thread on a big board repaints one card | Render count; identical pixels. |
 | 1.7.0 | A phone's pane header sizes the done checkbox to its thumb | A target-size measurement; a still. |
 | 1.7.0 | The New Thread dialog's header controls no longer touch | 16px of spacing; a still. |
-| 1.7.0 | `bb focus-board done list` survives a deleted index entry | A CLI, not the board; the harness renders no terminal. |
+| 1.7.0 | `alia focus-board done list` survives a deleted index entry | A CLI, not the board; the harness renders no terminal. |
 | 1.7.1 | The pane's queued-message Send button works on a phone | The mock chat cannot queue a message, so the row never renders. |
 | 1.7.2 | A phone stops repainting the whole board when the pane opens | Repaint count; identical pixels. |
 | 1.7.3 | The group picker lists groups alphabetically | Shown inside the group-picker gif rather than a second asset. |
 | 1.7.7 | The message rows' Copy message and Open in main view actions | The per-message action bar is the host chat's chrome; the mock chat renders bubbles only, so the shipped buttons never render there. |
 | 1.7.7 | Answering a pending question in the pane shows one form again | The answer banner is that same host chrome, and the fix itself proves an absence (the pane's own card is removed). |
-| 1.7.7 | Clicking a file-change row's name opens the thread in the main view | The maximize's outcome is host navigation (bb's main view opens the diff); the harness has no host to render it. |
+| 1.7.7 | Clicking a file-change row's name opens the thread in the main view | The maximize's outcome is host navigation (VesnALIA's main view opens the diff); the harness has no host to render it. |
 | 1.7.7 | The thread pane's "Recent decisions" card is gone | Proves an absence; nothing on screen to film. |
 | 1.7.8 | The load-time dissolve no longer plays: the board's mounting echo lands its cards in place | The fix proves an absence; the board simply stops repainting a few hundred ms after it looks loaded, and no frame distinguishes the landed state. |
 | 1.7.9 | Opening and closing the pane no longer works the board behind it | The fix proves an absence behind the invisible sheet (0 card renders per gesture); identical pixels frame to frame. |

@@ -619,7 +619,7 @@ async function openAccountBrowserLocked(
   const timezone = geo?.timezone ?? null;
   const url = safeBrowserUrl(options.url ?? "about:blank");
   const root = heliumRoot;
-  const socketPath = path.join(tmpdir(), `bb-pool-${createHash("sha256").update(root).digest("hex").slice(0, 24)}.sock`);
+  const socketPath = path.join(tmpdir(), `alia-pool-${createHash("sha256").update(root).digest("hex").slice(0, 24)}.sock`);
   let registry = await readRegistry(registryFile);
   let entry = registry[account.id];
   const selectable=()=>Object.entries(registry).filter(([id,e])=>!e.isolated&&(!!options.proxyUrl||!options.routedAccountIds?.includes(id))).map(([,e])=>e);

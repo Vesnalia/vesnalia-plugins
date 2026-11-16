@@ -128,7 +128,7 @@ export type EntryLike = { type: string; timestamp: string; agentId?: string };
 export const REPORT_VERSION = 2;
 export const SERIES_MAX = 60;
 export const MODELS_MAX = 8;
-/** Rows in `agents`; the rest fold into one Other row, as models and days do, so a thread with many subagents stays inside bb's KV cap. */
+/** Rows in `agents`; the rest fold into one Other row, as models and days do, so a thread with many subagents stays inside VesnALIA's KV cap. */
 export const AGENTS_MAX = 50;
 export const TURNS_MAX = 50;
 export const DAYS_MAX = 60;
@@ -485,7 +485,7 @@ export interface ReportOptions {
   timeZone?: string;
 }
 
-/** Costliest rows first; past AGENTS_MAX the rest fold into one Other row, so a report stays under bb's KV cap. */
+/** Costliest rows first; past AGENTS_MAX the rest fold into one Other row, so a report stays under VesnALIA's KV cap. */
 export function foldAgentRows(rows: AgentUsage["rows"]): AgentUsage["rows"] {
   const sorted = [...rows].sort((a, b) => b.cost.total - a.cost.total || a.id.localeCompare(b.id));
   if (sorted.length <= AGENTS_MAX) return sorted;

@@ -18,7 +18,7 @@ import {
   type ThreadEventPlanStep,
   type ThreadEventTokenUsageBreakdown,
   type ThreadEventTurnStatus,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import { museProviderErrorInfo } from "./error-info.js";
 import {
   mspContextUsageParamsSchema,
@@ -346,7 +346,7 @@ function workflowShape(item: MspItem): DeltaItemShape {
 }
 
 /**
- * Folds one Muse session's MSP view stream into bb's delta grammar. One
+ * Folds one Muse session's MSP view stream into VesnALIA's delta grammar. One
  * instance per provider session: `session.reset` is the id-space boundary, so a
  * replaced session gets a fresh translator.
  */
@@ -459,7 +459,7 @@ export class MuseTranslator {
     const deltas: ThreadDelta[] = [];
 
     /**
-     * The typed failure, ahead of the boundary that settles the turn. bb's own
+     * The typed failure, ahead of the boundary that settles the turn. VesnALIA's own
      * recovery reads the category off this delta — a turn that fails with only
      * a message is a turn nothing downstream can act on.
      */
@@ -557,7 +557,7 @@ export class MuseTranslator {
   }
 
   /**
-   * Every delta bb's assembler keeps has to name the turn it belongs to. An
+   * Every delta VesnALIA's assembler keeps has to name the turn it belongs to. An
    * unscoped `item.*Delta` is discarded outright — the assembler has no open
    * turn to hang it on — so a stream that arrives without this reads as an
    * agent that produced nothing until its terminal snapshot lands. `item/delta`

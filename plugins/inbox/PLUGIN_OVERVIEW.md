@@ -12,8 +12,8 @@ Needs You brings questions, failed runs, and completed work into one place, with
 
 Open Needs You from the sidebar. Dismiss clears an inbox item while keeping its thread. Done & archive records the thread's completion in Needs You and removes it from the sidebar. Linked Tracker tasks keep their separate status.
 
-BB retains conversation history when archiving, but may remove managed workspace files after its grace period. Save files you need before confirming. Restoring a conversation cannot recover removed files. Threads are never archived automatically.
+VesnALIA retains conversation history when archiving, but may remove managed workspace files after its grace period. Save files you need before confirming. Restoring a conversation cannot recover removed files. Threads are never archived automatically.
 
 ## Requirements
 
-BB 0.46.1 or later and Node 24 or later on the host. Telegram notifications require a bot and private chat; setup is optional. Native desktop notifications require macOS.
+VesnALIA 0.46.1 or later and Node 24 or later on the host. Telegram notifications require a bot and private chat; setup is optional. Native desktop notifications require macOS.

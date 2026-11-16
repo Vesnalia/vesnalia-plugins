@@ -9,7 +9,7 @@ import { behindSentence, checksSentence, linkedIssueLabel, staleBranch } from ".
 const PILL = "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] leading-none";
 
 /**
- * A count per outcome, as bb's own checks summary spells it; an outcome nobody
+ * A count per outcome, as VesnALIA's own checks summary spells it; an outcome nobody
  * has is left out. The glyphs carry the meaning, so it reads without colour.
  */
 export function ChecksPills({ checks }: { checks: CheckSummary }) {

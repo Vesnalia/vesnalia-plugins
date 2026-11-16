@@ -1,8 +1,8 @@
 export type ArchivedSurface = "page" | "panel";
 
 export const ARCHIVED_STORAGE_KEYS: Record<ArchivedSurface, string> = {
-  page: "bb-plugin-vantage:page-archived",
-  panel: "bb-plugin-vantage:panel-archived",
+  page: "alia-plugin-vantage:page-archived",
+  panel: "alia-plugin-vantage:panel-archived",
 };
 
 // The full-screen page covers many threads, so it starts without archived work; the side tab is about one tree's children.

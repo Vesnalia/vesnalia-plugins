@@ -27,7 +27,7 @@ import {
   threadStopParamsSchema,
   turnStartParamsSchema,
   turnSteerParamsSchema,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { describeAttachedFile, readAttachedImage, MAX_IMAGE_BYTES, MAX_TOTAL_IMAGE_BYTES } from "./attachments.js";
@@ -387,19 +387,19 @@ async function restoreSessionHistory(
       "history",
       controls,
     );
-    if (result.isError) throw new Error(`bb history could not be loaded: ${result.content}`);
+    if (result.isError) throw new Error(`alia history could not be loaded: ${result.content}`);
     let envelope: unknown;
     try {
       envelope = JSON.parse(result.content);
     } catch {
-      throw new Error("bb history returned an invalid page.");
+      throw new Error("alia history returned an invalid page.");
     }
     const parsed = historyPageSchema.safeParse(envelope);
     if (!parsed.success || parsed.data.threadId !== session.threadId) {
-      throw new Error("bb history returned a malformed page or a different thread.");
+      throw new Error("alia history returned a malformed page or a different thread.");
     }
     if (throughSeq !== null && parsed.data.throughSeq !== throughSeq) {
-      throw new Error("bb history changed during restoration.");
+      throw new Error("alia history changed during restoration.");
     }
     throughSeq = parsed.data.throughSeq;
     rows.push(...parsed.data.events);
@@ -417,11 +417,11 @@ async function restoreSessionHistory(
       return;
     }
     if (afterSeq !== null && parsed.data.nextAfterSeq <= afterSeq) {
-      throw new Error("bb history returned a non-advancing page cursor.");
+      throw new Error("alia history returned a non-advancing page cursor.");
     }
     afterSeq = parsed.data.nextAfterSeq;
   }
-  throw new Error("bb history exceeds the supported restoration limit.");
+  throw new Error("alia history exceeds the supported restoration limit.");
 }
 
 type ParsedToolArguments =
@@ -479,7 +479,7 @@ function requestToolApproval(
   signal: AbortSignal,
 ): Promise<{ content: string; isError: true } | null> {
   const presentation = toolApprovalPresentation(tool, args);
-  if (presentation === null) return Promise.resolve({ content: "Tool arguments are too large to review within bb's approval presentation limit. The tool was not run.", isError: true });
+  if (presentation === null) return Promise.resolve({ content: "Tool arguments are too large to review within VesnALIA's approval presentation limit. The tool was not run.", isError: true });
   if (signal.aborted) return Promise.resolve(CANCELLED_TOOL_REPLY);
   const id = `nano-gpt-req-${++outboundRequestCounter}`;
   return new Promise((resolve) => {
@@ -512,7 +512,7 @@ function requestToolApproval(
 }
 
 /**
- * Asks bb to run a tool. The returned promise always settles: either bb
+ * Asks VesnALIA to run a tool. The returned promise always settles: either VesnALIA
  * answers, or the turn is aborted and the pending entry is removed.
  */
 async function requestToolCall(
@@ -639,7 +639,7 @@ function settleTurn(
       item: {
         type: "tool",
         tool: open.tool,
-        server: "bb",
+        server: "alia",
         args: open.args,
       },
       ...(open.presentation === undefined
@@ -1051,7 +1051,7 @@ async function runTurnWork(
               item: {
                 type: "tool",
                 tool: call.function.name,
-                server: "bb",
+                server: "alia",
                 args: {},
               },
             },
@@ -1062,7 +1062,7 @@ async function runTurnWork(
               item: {
                 type: "tool",
                 tool: call.function.name,
-                server: "bb",
+                server: "alia",
                 args: {},
                 error: `Invalid tool arguments: ${parsedArgs.error}`,
               },
@@ -1090,7 +1090,7 @@ async function runTurnWork(
             item: {
               type: "tool",
               tool: call.function.name,
-              server: "bb",
+              server: "alia",
               args: toolArgs,
             },
             ...(presentation === undefined ? {} : { presentation }),
@@ -1119,7 +1119,7 @@ async function runTurnWork(
             item: {
               type: "tool",
               tool: call.function.name,
-              server: "bb",
+              server: "alia",
               args: toolArgs,
               ...(reply.isError
                 ? { error: reply.content }
@@ -1178,7 +1178,7 @@ function invalidParams(id: JsonRpcId, method: string, issues: unknown): void {
 }
 
 function healthResult(): ProviderHealthResult {
-  // Maintenance requests carry no current credentials. bb overlays this
+  // Maintenance requests carry no current credentials. VesnALIA overlays this
   // baseline with the server's experimental_contributeEnvHealth result.
   // Reading process.env here would report stale authentication after key edits.
   return {
@@ -1303,7 +1303,7 @@ const handlers: Record<string, RequestHandler> = {
             description: "Chat model routed through NanoGPT.",
             // The plugin always offers a complete, authoritative option set: when
             // NanoGPT omits or malforms `reasoning_efforts`, only Provider default
-            // is offered. Reporting "known" stops bb's catalog store from keeping
+            // is offered. Reporting "known" stops VesnALIA's catalog store from keeping
             // stale explicit options that the current catalog no longer verifies.
             reasoningDiscovery: "known" as const,
             supportedReasoningEfforts: options.map(({ reasoningEffort, label, description }) => ({ reasoningEffort, label, description })),
@@ -1315,7 +1315,7 @@ const handlers: Record<string, RequestHandler> = {
       } catch (error) {
         // A catalog failure must not masquerade as "no models": the host
         // would cache an empty list and hide the real reason. Report it as
-        // an error so bb retries the picker on demand.
+        // an error so VesnALIA retries the picker on demand.
         if (process.env.NANOGPT_DEBUG_BRIDGE === "1") {
           console.error("NanoGPT bridge: model/list failed.", error);
         }

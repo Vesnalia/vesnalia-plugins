@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import Database from "better-sqlite3";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import plugin from "../server.ts";
 import { Store } from "./store.ts";
 
@@ -16,7 +16,7 @@ test("agent tools enforce project ownership", async () => {
   const tools = new Map<string, (params: Record<string, unknown>, context: { projectId: string; threadId: string }) => Promise<unknown>>();
   const schemas = new Map<string, { safeParse: (value: unknown) => { success: boolean } }>();
   let rpc: Record<string, (params: Record<string, unknown>) => Promise<unknown>> = {};
-  const bb = {
+  const alia = {
     settings: { define: () => ({ get: async () => ({ goldfishBaseUrl: "", goldfishModel: "", goldfishApiKey: "", goldfishApiKeyEnv: "", goldfishTimeoutSeconds: 30 }) }) },
     storage: { database: () => db, migrate: (_db: unknown, migrations: string[]) => migrations.forEach((sql) => db.exec(sql)) },
     sdk: { projects: { get: async () => ({ sources: [{ type: "local_path", path: root, isDefault: true }] }) }, threads: { get: async ({ threadId }: { threadId: string }) => ({ projectId: threadId === "thread-a" ? "a" : "other" }) } },
@@ -27,7 +27,7 @@ test("agent tools enforce project ownership", async () => {
   };
   try {
     await fs.writeFile(path.join(root, "spec.md"), "# Spec\n");
-    await plugin(bb as unknown as BbPluginApi);
+    await plugin(alia as unknown as AliaPluginApi);
     const store = new Store(db);
     store.insertSpec({ id: "spec-a", projectId: "a", path: "spec.md", title: "Spec", createdAt: 1 });
     store.insertRun({ id: "run-a", specId: "spec-a", projectId: "a", preset: "implementation", round: 1, maxRounds: 1, state: "awaiting_decisions", stateReason: null, targetHash: "hash", context: [], threadId: "thread-a", engine: "goldfish", provider: null, model: null, parentRunId: null, reportDir: ".egm", createdAt: 1, finishedAt: null, stale: false });
@@ -106,7 +106,7 @@ test("workspace search uses the thread checkout and returns confined files", asy
   ], truncated: true };
   let failSearch = false;
   const searches: unknown[] = [];
-  const bb = {
+  const alia = {
     settings: { define: () => ({ get: async () => ({ goldfishBaseUrl: "", goldfishModel: "", goldfishApiKey: "", goldfishApiKeyEnv: "", goldfishTimeoutSeconds: 30 }) }) },
     storage: { database: () => db, migrate: (_db: unknown, migrations: string[]) => migrations.forEach((sql) => db.exec(sql)) },
     sdk: {
@@ -125,7 +125,7 @@ test("workspace search uses the thread checkout and returns confined files", asy
     await fs.writeFile(path.join(root, "notes.md"), "notes");
     await fs.writeFile(path.join(other, "outside.md"), "outside");
     await fs.symlink(path.join(other, "outside.md"), path.join(root, "escape.md"));
-    await plugin(bb as unknown as BbPluginApi);
+    await plugin(alia as unknown as AliaPluginApi);
     assert.deepEqual(await rpc.workspace_search!({ threadId: "thread", query: "notes" }), { paths: ["notes.md"], truncated: true });
     assert.deepEqual(searches[0], { environmentId: "env", query: "notes", includeFiles: "true", includeDirectories: "false" });
     results = { paths: [], truncated: false };
@@ -151,7 +151,7 @@ test("workspace search uses the thread checkout and returns confined files", asy
   }
 });
 
-test("a registered ad hoc RPC apply launches the configured Goldfish engine, never BB", async (t) => {
+test("a registered ad hoc RPC apply launches the configured Goldfish engine, never VesnALIA", async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "egm-rpc-"));
   const db = new Database(":memory:");
   const chats: { model: string }[] = [];
@@ -181,7 +181,7 @@ test("a registered ad hoc RPC apply launches the configured Goldfish engine, nev
   let rpc: Record<string, (params: Record<string, unknown>) => Promise<unknown>> = {};
   const tools = new Map<string, (params: Record<string, unknown>, context: { projectId: string; threadId: string }) => Promise<unknown>>();
   const threadCalls: string[] = [];
-  const bb = {
+  const alia = {
     settings: { define: () => ({ get: async () => settings }) },
     storage: { database: () => db, migrate: (_db: unknown, migrations: string[]) => migrations.forEach((sql) => db.exec(sql)) },
     sdk: {
@@ -195,7 +195,7 @@ test("a registered ad hoc RPC apply launches the configured Goldfish engine, nev
   };
   try {
     await fs.writeFile(path.join(root, "spec.md"), "# Spec\n\nFirst.\n");
-    await plugin(bb as unknown as BbPluginApi);
+    await plugin(alia as unknown as AliaPluginApi);
     const store = new Store(db);
     store.insertSpec({ id: "spec-a", projectId: "a", path: "spec.md", title: "Spec", createdAt: 1 });
     const proposed = JSON.parse(await tools.get("egm_propose")!({ specId: "spec-a", findingIds: [], content: "# Spec\n\nUpdated.\n", summary: "Change" }, { projectId: "a", threadId: "thread-a" }) as string) as { id: string; baseHash: string };
@@ -217,7 +217,7 @@ test("a registered ad hoc RPC apply launches the configured Goldfish engine, nev
     assert.equal(run.provider, baseUrl);
     assert.equal(run.state, "completed");
     assert.ok(chats.length >= 1, "the stub endpoint served the review");
-    assert.deepEqual(threadCalls, [], "no BB worker thread was consulted");
+    assert.deepEqual(threadCalls, [], "no VesnALIA worker thread was consulted");
   } finally {
     db.close();
     await fs.rm(root, { recursive: true, force: true });

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { WorkModels, workshopContract } from "../contract";
 import { slugify } from "../server/stages";
 import { btn, errCls, field, primary, raceCreation, type Created } from "./common";

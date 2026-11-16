@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { installTestPluginRuntime } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime } from "@vesnalia/plugin-sdk/testing/app";
 import { FilterBar } from "../src/filter-bar";
 import { GroupHeader, type GroupHeaderProps } from "../src/group-header";
 import { EMPTY_LAYOUT } from "../src/layout";

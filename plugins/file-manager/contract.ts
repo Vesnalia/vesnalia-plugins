@@ -1,17 +1,17 @@
 // contract.ts — frozen wire contract between the File Manager backend and panel.
 // Any change here is a breaking change: bump the plugin version and update both
 // sides in the same commit.
-import type { PluginRpcContract } from "@get-bb/plugin-sdk";
+import type { PluginRpcContract } from "@vesnalia/plugin-sdk";
 
 /**
  * Type-only identity helper, deliberately local.
  *
  * The SDK exports `defineRpcContract`, but importing it as a *value* pulls
- * `@get-bb/plugin-sdk` into the frontend bundle graph (app.tsx imports this
- * file for its constants). bb only shims the `/app` subpath, and a catalog
+ * `@vesnalia/plugin-sdk` into the frontend bundle graph (app.tsx imports this
+ * file for its constants). VesnALIA only shims the `/app` subpath, and a catalog
  * install runs `npm install --omit=dev` before bundling — so a value import
  * here breaks installs unless the SDK is a runtime dependency, which
- * `bb plugin types --check` then rejects. The SDK helper is `c => c`; the
+ * `alia plugin types --check` then rejects. The SDK helper is `c => c`; the
  * type-only import below is erased at build time and costs nothing.
  */
 const defineRpcContract = <const Contract extends PluginRpcContract>(
@@ -37,7 +37,7 @@ export const DOWNLOAD_ZIP_URL = `${HTTP_BASE}/download-zip`;
 /**
  * Extensions the file-location openers claim (§10.2).
  *
- * bb matches an opener by exact extension — there is no wildcard, and a name
+ * VesnALIA matches an opener by exact extension — there is no wildcard, and a name
  * with no extension at all (`Makefile`, `LICENSE`) gets no "Open with" rows
  * from any plugin — so this list is simply "what a link in a message
  * plausibly points at": text, docs, ebooks, config, data, code, web, images,
@@ -46,9 +46,9 @@ export const DOWNLOAD_ZIP_URL = `${HTTP_BASE}/download-zip`;
  * Documents are deliberately absent: `pdf`, the Word, Excel and PowerPoint
  * formats (`doc`, `docx`, `xls`, `xlsx`, `ppt`, `pptx`), their OpenDocument
  * twins (`odt`, `ods`, `odp`) and `rtf` all belong to the pdf-viewer plugin,
- * which renders them. bb's automatic pick is the FIRST matching opener in
+ * which renders them. VesnALIA's automatic pick is the FIRST matching opener in
  * plugin-id order, and `file-manager` sorts before `pdf-viewer` — so claiming
- * any of them here would shadow the viewer with a reveal strip over bb's own
+ * any of them here would shadow the viewer with a reveal strip over VesnALIA's own
  * preview, which cannot render an office file at all.
  */
 export const LOCATION_OPENER_EXTENSIONS = [
@@ -88,7 +88,7 @@ export const LOCATION_OPENER_EXTENSIONS = [
   "pem", "crt", "cer", "der", "p12", "pfx", "asc", "sig", "gpg",
 ] as const;
 
-/** Realtime channels published with bb.realtime.publish(channel, payload). */
+/** Realtime channels published with alia.realtime.publish(channel, payload). */
 export const FS_CHANNEL = "fs";
 export const JOB_CHANNEL = "job";
 
@@ -97,14 +97,14 @@ export const MAX_LIST_ENTRIES = 5000;
 export const MAX_SEARCH_RESULTS = 500;
 export const MAX_SEARCH_DEPTH = 8;
 /** Directory that holds in-flight upload parts; always hidden from listings. */
-export const STAGING_DIR_NAME = ".bb-file-manager";
+export const STAGING_DIR_NAME = ".alia-file-manager";
 
 export const UPLOAD_ID_PATTERN = /^[0-9a-f]{32}$/u;
 export const MIN_CHUNK_BYTES = 4 * 1024 * 1024;
 export const MAX_CHUNK_BYTES = 64 * 1024 * 1024;
 
 /**
- * The `bb.ui.registerMentionProvider` id, and the section label its rows group
+ * The `alia.ui.registerMentionProvider` id, and the section label its rows group
  * under in the composer's mention menu (§8.8).
  *
  * Shared because both halves address it by name: the backend registers the
@@ -140,7 +140,7 @@ export type ArchiveFormat = z.infer<typeof archiveFormatSchema>;
  *
  * Shared because both halves ask the question. The backend marks listing rows
  * with it and picks an extractor or a lister by it; the file opener asks it of
- * a link's name to decide between bb's own preview and the archive's contents
+ * a link's name to decide between VesnALIA's own preview and the archive's contents
  * (§10.2), before anything has been resolved on the server.
  */
 const ARCHIVE_SUFFIXES: ReadonlyArray<readonly [string, ArchiveFormat]> = [
@@ -179,7 +179,7 @@ export const viewModeSchema = z.enum(["list", "gallery"]);
 export type ViewMode = z.infer<typeof viewModeSchema>;
 
 /**
- * Lifetime asked of `bb.sdk.files.createPreview` for a gallery's base URL.
+ * Lifetime asked of `alia.sdk.files.createPreview` for a gallery's base URL.
  *
  * Long enough that scrolling a folder of a few hundred images never trips over
  * an expiry mid-scroll, short enough that a URL leaked out of the page stops
@@ -240,7 +240,7 @@ export const errorCodeSchema = z.enum([
 export type FileManagerErrorCode = z.infer<typeof errorCodeSchema>;
 
 /**
- * bb's `fileOpener` source descriptor, mirrored so the backend can validate it
+ * VesnALIA's `fileOpener` source descriptor, mirrored so the backend can validate it
  * (§10.2). `kind` decides what `path` is relative to.
  */
 export const fileOpenerSourceSchema = z.strictObject({
@@ -313,7 +313,7 @@ export const preferencesSchema = z.strictObject({
    * `restoreLastFolder` documents above: the panel decides where to open in
    * the tick `getState` lands, and a second async source racing it would
    * either delay the first listing or open one folder and jump a moment
-   * later. Surfaces bb gives no thread — the nav panel, the New thread
+   * later. Surfaces VesnALIA gives no thread — the nav panel, the New thread
    * launcher, the file openers — ignore it: there is no thread to be in.
    */
   openThreadWorkspace: z.boolean(),
@@ -423,7 +423,7 @@ export const pathPropertiesSchema = z.strictObject({
   ownerUid: z.number(),
   ownerGid: z.number(),
   /**
-   * Owner's name, or null. Node has no getpwuid, so only the user bb itself
+   * Owner's name, or null. Node has no getpwuid, so only the user VesnALIA itself
    * runs as can be named without a name-service lookup; every other owner —
    * and every group — is reported as a number, the way `ls -n` does it.
    */
@@ -534,7 +534,7 @@ export type ArchiveListing = z.infer<typeof archiveListingSchema>;
 /**
  * How many folders the bookmark list holds.
  *
- * The whole list is one `bb.storage.kv` row and kv caps a value at 256 KB, so
+ * The whole list is one `alia.storage.kv` row and kv caps a value at 256 KB, so
  * the ceiling has to be a number that cannot blow it: 50 × (PATH_MAX 4096 +
  * a short name + JSON overhead) still fits with room to spare. 50 is also well
  * past the point where a menu stops being a menu.
@@ -593,8 +593,8 @@ export const fileManagerContract = defineRpcContract({
       }),
       pluginVersion: z.string(),
       /**
-       * The host bb itself runs on — the machine whose home folder is the root
-       * (§8.2). The panel needs it to hand a file to bb's preview panel, which
+       * The host VesnALIA itself runs on — the machine whose home folder is the root
+       * (§8.2). The panel needs it to hand a file to VesnALIA's preview panel, which
        * addresses a live file by host id. Null when the server could not name
        * it, and then a double-click downloads as it did before 0.7.
        */
@@ -662,7 +662,7 @@ export const fileManagerContract = defineRpcContract({
   /**
    * A short-lived base URL the gallery hangs its thumbnails off (§8.9).
    *
-   * `bb.sdk.files.createPreview` mints a token-bearing URL rooted at one
+   * `alia.sdk.files.createPreview` mints a token-bearing URL rooted at one
    * folder; appending a relative path to it streams that file's bytes. The
    * panel needs exactly that and nothing else: a folder of photos is hundreds
    * of megabytes, so reading the bytes over RPC and building data-URLs would
@@ -696,7 +696,7 @@ export const fileManagerContract = defineRpcContract({
    *
    * The counterpart of `createPreviewUrl`: images, PDFs and media are *shown*
    * from a URL and never travel through JS, while text has to be a string in
-   * the page before bb's Markdown or source renderer can take it.
+   * the page before VesnALIA's Markdown or source renderer can take it.
    *
    * "Is this text?" is answered here rather than from the file name, because
    * the names that carry no extension — `Makefile`, `LICENSE`, `.gitignore` —
@@ -775,7 +775,7 @@ export const fileManagerContract = defineRpcContract({
    * Answers, never refuses: a thread with no environment, an environment with
    * no checkout and a checkout outside the hard root are all states the panel
    * tab's toolbar has to render, so they come back as a `reason` instead of a
-   * throw. Only a thread bb cannot answer for rejects.
+   * throw. Only a thread VesnALIA cannot answer for rejects.
    */
   threadWorkspace: {
     input: z.strictObject({ threadId: z.string().min(1) }),
@@ -932,7 +932,7 @@ export const fileManagerContract = defineRpcContract({
   /**
    * Persists panel preferences. The frontend cannot write settings
    * (`useSettings()` is read-only), so this method proxies to
-   * bb.sdk.plugins.updateSettings.
+   * alia.sdk.plugins.updateSettings.
    */
   savePreferences: {
     input: z.strictObject({

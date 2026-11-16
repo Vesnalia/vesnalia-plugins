@@ -12,7 +12,7 @@ export function writeStorage(win: Window, key: string, value: string | null): vo
 }
 
 // Keys mapped to values this device remembers, such as the files folded by hand. It holds at most `max` entries and drops
-// the one set longest ago first, because bb and every plugin share one localStorage.
+// the one set longest ago first, because VesnALIA and every plugin share one localStorage.
 export function createRemembered<T>(win: Window, key: string, parse: (value: unknown) => T | null, max: number) {
   const read = (): ReadonlyMap<string, T> => {
     const out = new Map<string, T>();
@@ -33,7 +33,7 @@ export function createRemembered<T>(win: Window, key: string, parse: (value: unk
   let entries = read();
   const listeners = new Set<() => void>();
   const notify = () => { for (const listener of [...listeners]) listener(); };
-  // Another bb window wrote; without this, the next write here would put back what that window changed.
+  // Another VesnALIA window wrote; without this, the next write here would put back what that window changed.
   const onStorage = (event: StorageEvent) => {
     if (event.key !== key && event.key !== null) return;
     entries = read();

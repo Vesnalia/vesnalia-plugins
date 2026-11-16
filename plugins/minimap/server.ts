@@ -1,9 +1,9 @@
-// bb-plugin-minimap — backend entry.
+// alia-plugin-minimap — backend entry.
 //
 // Owns the settings. The strip is drawn in the page by app.tsx, which reads each
 // thread's timeline with useSdk(); the page calls back here only to write a setting
 // (the frontend can read plugin settings but not write them).
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { BLOCKS, COLOR_KEYS, NUMBER_KEYS, NUMBER_RANGES, SETTING_KEYS, SETTINGS } from "./src/shared";
@@ -21,13 +21,13 @@ export const rpcContract = defineRpcContract({
   set_color: { input: z.object({ key: z.enum(COLOR_KEYS), value: z.string().regex(COLOR_PATTERN) }), output: z.null() },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  // The ranges are ours (held where a number is written and read), not part of BB's definition.
+export default async function plugin(alia: AliaPluginApi) {
+  // The ranges are ours (held where a number is written and read), not part of VesnALIA's definition.
   const definitions = Object.fromEntries(
     Object.entries(SETTINGS).map(([key, { min: _min, max: _max, short: _short, hint: _hint, unit: _unit, ...definition }]: [string, Record<string, unknown>]) => [key, definition]),
   );
-  const settings = bb.settings.define(definitions as unknown as typeof SETTINGS);
-  bb.rpc.register(rpcContract, {
+  const settings = alia.settings.define(definitions as unknown as typeof SETTINGS);
+  alia.rpc.register(rpcContract, {
     reset: async () => {
       await settings.experimental_set(Object.fromEntries(Object.entries(SETTINGS).map(([key, { default: value }]) => [key, value])) as never);
       return null;
@@ -46,6 +46,6 @@ export default async function plugin(bb: BbPluginApi) {
       return null;
     },
   });
-  bb.log.info("loaded");
-  bb.onDispose(() => bb.log.info("disposed"));
+  alia.log.info("loaded");
+  alia.onDispose(() => alia.log.info("disposed"));
 }

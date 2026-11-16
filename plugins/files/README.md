@@ -1,23 +1,23 @@
-# BB Files
+# VesnALIA Files
 
 [![CI](https://github.com/Diffuzmetall/bb-plugin-files/actions/workflows/ci.yml/badge.svg)](https://github.com/Diffuzmetall/bb-plugin-files/actions/workflows/ci.yml)
 
-A standalone BB plugin that adds **Actions → Files** to every thread. The panel is bound to that thread's live environment and uses `bb.sdk.files`, so the same tree/editor works on the local machine and connected hosts.
+A standalone VesnALIA plugin that adds **Actions → Files** to every thread. The panel is bound to that thread's live environment and uses `alia.sdk.files`, so the same tree/editor works on the local machine and connected hosts.
 
 ## Install
 
-BB Files requires BB `>=0.35.1`. Install the current tagged release:
+VesnALIA Files requires VesnALIA `>=0.35.1`. Install the current tagged release:
 
 ```bash
-bb plugin install 'git:https://github.com/Diffuzmetall/bb-plugin-files.git@v0.1.4' --yes
+alia plugin install 'git:https://github.com/Diffuzmetall/bb-plugin-files.git@v0.1.4' --yes
 ```
 
-After the plugin is listed in the BB Community marketplace, BB can report and
+After the plugin is listed in the VesnALIA Community marketplace, VesnALIA can report and
 apply compatible tagged updates without installing them automatically:
 
 ```bash
-bb plugin outdated
-bb plugin update files
+alia plugin outdated
+alia plugin update files
 ```
 
 Releases use immutable `vX.Y.Z` Git tags. Marketplace updates within the
@@ -25,7 +25,7 @@ current `^0.1.0` range are selected from those tags.
 
 ## Project documentation
 
-- [`ROADMAP.md`](ROADMAP.md) — detailed product and technical ideas. Highlighted directions include BB agent integration, breadcrumbs, secure workspace previews, richer HTML/image tooling, filesystem-watch or adaptive-polling synchronization, performance, and reliability.
+- [`ROADMAP.md`](ROADMAP.md) — detailed product and technical ideas. Highlighted directions include VesnALIA agent integration, breadcrumbs, secure workspace previews, richer HTML/image tooling, filesystem-watch or adaptive-polling synchronization, performance, and reliability.
 
 ## Features
 
@@ -44,19 +44,19 @@ current `^0.1.0` range are selected from those tags.
 - upload multiple local files to the workspace root or any folder through the picker, context menu, or drag and drop (25 MiB per file, create-only);
 - optional **MD Annotate integration** for opening Markdown files in a review/commenting tab;
 - optional **SQL integration** for opening `.sql` files with the preferred host opener
-  ([yazydzhi/bb-plugin-sql](https://github.com/yazydzhi/bb-plugin-sql));
-- **Open with preferred…** on any file — reopens via BB’s host file flow so
+  ([yazydzhi/alia-plugin-sql](https://github.com/yazydzhi/bb-plugin-sql));
+- **Open with preferred…** on any file — reopens via VesnALIA’s host file flow so
   **Settings → File openers** apply (the in-panel editor itself does not);
 - **file opener** registration for links from other surfaces — see
   [Opening files from other plugins](#opening-files-from-other-plugins);
 - narrow panel navigation with a Back control;
-- symlinks and `node_modules` remain excluded by BB's host lister.
+- symlinks and `node_modules` remain excluded by VesnALIA's host lister.
 
 ## Opening files from other plugins
 
-BB Files registers itself as a file opener for text-like files, so a file link
+VesnALIA Files registers itself as a file opener for text-like files, so a file link
 outside the panel — a terminal path in the Wterm terminal plugin, a Markdown
-link, a host-provided file tab — can land in this editor instead of BB's
+link, a host-provided file tab — can land in this editor instead of VesnALIA's
 built-in preview:
 
 ```ts
@@ -70,13 +70,13 @@ app.slots.fileOpener({
 ```
 
 The panel receives `{path, source, experimental_lineRange}` and opens that file
-in the active workspace, so a workspace or host path opens directly; when BB has
+in the active workspace, so a workspace or host path opens directly; when VesnALIA has
 no thread for the tab, the panel reports that the source is unavailable. Git-ref
-snapshots (diff views) always use BB's preview.
+snapshots (diff views) always use VesnALIA's preview.
 
-BB renders the first applicable opener for an extension unless a preference
+VesnALIA renders the first applicable opener for an extension unless a preference
 says otherwise, so installing the plugin makes the Files panel the default
-viewer for these extensions instead of BB's built-in preview. **Settings →
+viewer for these extensions instead of VesnALIA's built-in preview. **Settings →
 Files → File openers** pins a viewer per extension — `Automatic (…)`,
 `Built-in preview`, or any registered opener — and right-clicking a file link
 overrides the choice for that one open. Another plugin registering the same
@@ -88,16 +88,16 @@ extension competes for that default until a preference settles it.
 npm install --legacy-peer-deps
 npm run typecheck
 npm test
-bb plugin build .
-bb plugin install "$PWD" --yes
+alia plugin build .
+alia plugin install "$PWD" --yes
 ```
 
-Then open a thread and choose **New tab → Actions → Files** in its right panel. During development, run `bb plugin dev "$PWD"`.
+Then open a thread and choose **New tab → Actions → Files** in its right panel. During development, run `alia plugin dev "$PWD"`.
 
 ## MD Annotate integration
 
-BB Files integrates optionally with
-[`DarrenTsung/bb-plugin-md-annotate`](https://github.com/DarrenTsung/bb-plugin-md-annotate),
+VesnALIA Files integrates optionally with
+[`DarrenTsung/alia-plugin-md-annotate`](https://github.com/DarrenTsung/bb-plugin-md-annotate),
 a Google Docs-style review surface for Markdown files.
 
 When a compatible, running `md-annotate` plugin is detected, Markdown files
@@ -107,13 +107,13 @@ receive two additional actions:
 - **Open in Annotate** in the file context menu.
 
 The actions are hidden when MD Annotate is not installed, disabled, failed, or
-frontend-incompatible. BB Files does not import, modify, or control MD Annotate;
-it asks BB to reopen the selected workspace file using the client's configured
+frontend-incompatible. VesnALIA Files does not import, modify, or control MD Annotate;
+it asks VesnALIA to reopen the selected workspace file using the client's configured
 file opener.
 
 ### Compatibility and setup
 
-- BB `>=0.35.1` with Plugin SDK `^0.4.1`;
+- VesnALIA `>=0.35.1` with Plugin SDK `^0.4.1`;
 - MD Annotate `0.1.x` with plugin id `md-annotate` and opener id `annotate`;
 - `.md`, `.mdx`, and `.markdown` workspace files;
 - in **Settings → File openers**, set the Markdown extension you use to
@@ -122,10 +122,10 @@ file opener.
 Install MD Annotate separately:
 
 ```bash
-bb plugin install git:https://github.com/DarrenTsung/bb-plugin-md-annotate@main
+alia plugin install git:https://github.com/DarrenTsung/bb-plugin-md-annotate@main
 ```
 
-The integration intentionally uses BB's standard file-open flow. Consequently,
+The integration intentionally uses VesnALIA's standard file-open flow. Consequently,
 if Annotate is installed but is not the configured default for that extension,
 the action opens whichever viewer the client selected instead.
 
@@ -137,20 +137,20 @@ When a compatible, running `sql` plugin is detected, `.sql` files receive:
 - **Open in SQL** in the file context menu.
 
 Every file also gets **Open with preferred…** (toolbar + context menu), which
-asks BB to reopen the workspace path through the host. That honors
+asks VesnALIA to reopen the workspace path through the host. That honors
 **Settings → File openers** (e.g. `.sql` → **SQL**). Clicking a file in the
 Files tree still uses Files’ built-in preview — use these actions to leave it.
 
 ### Compatibility and setup (SQL)
 
-- BB `>=0.35.1` with Plugin SDK `^0.4.1`;
+- VesnALIA `>=0.35.1` with Plugin SDK `^0.4.1`;
 - SQL plugin id `sql` with a compatible app bundle;
 - in **Settings → File openers**, set `.sql` to **SQL (sql)**.
 
 ```bash
-bb plugin install git:https://github.com/yazydzhi/bb-plugin-sql.git@^0.1.0 --yes
+alia plugin install git:https://github.com/yazydzhi/bb-plugin-sql.git@^0.1.0 --yes
 # or from a local checkout:
-# bb plugin install /path/to/bb-plugin-sql --yes
+# alia plugin install /path/to/alia-plugin-sql --yes
 ```
 
 ## Hand-off / Current Status
@@ -180,7 +180,7 @@ This is a comprehensive summary of the current implementation for future mainten
 
 ### Next Steps / Future Work
 
-See [`ROADMAP.md`](ROADMAP.md) for the complete idea backlog and proposed implementation phases. The highlighted directions are BB agent integration, breadcrumbs, secure workspace previews, richer HTML/image tooling, replacing constant polling, tree virtualization, and stronger autosave concurrency.
+See [`ROADMAP.md`](ROADMAP.md) for the complete idea backlog and proposed implementation phases. The highlighted directions are VesnALIA agent integration, breadcrumbs, secure workspace previews, richer HTML/image tooling, replacing constant polling, tree virtualization, and stronger autosave concurrency.
 
 ## Safety model
 
@@ -188,7 +188,7 @@ The frontend sends only `threadId` and project-relative paths. Every RPC resolve
 
 Binary and oversized files are metadata-only. There is no fallback to the primary machine when the thread environment is unavailable.
 
-BB plugins are full-trust code. Files can read, create, edit, move, duplicate,
+VesnALIA plugins are full-trust code. Files can read, create, edit, move, duplicate,
 download, and delete files inside the selected thread environment, including
 common dotfiles such as `.env` and `.npmrc`. Destructive actions are initiated
 by the user through confirmation UI. The plugin has no telemetry, external

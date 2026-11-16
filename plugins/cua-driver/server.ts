@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { CATALOG, CATALOG_BY_NAME, toolNamesForGroups, type ToolGroup } from "./src/catalog.js";
 import {
@@ -150,7 +150,7 @@ function setupGuidance(status: DriverStatus, hostId: string): string | null {
     return [
       "Computer Use setup is required because Cua Driver is not installed on this machine.",
       `[Open Computer Use settings](${SETTINGS_PATH}), expand this machine, and select **Install Cua Driver**.`,
-      `CLI alternative: \`bb cua install --yes --host ${hostId}\`. Retry the tool after the checklist shows Ready.`,
+      `CLI alternative: \`alia cua install --yes --host ${hostId}\`. Retry the tool after the checklist shows Ready.`,
     ].join("\n\n");
   }
   const missing = missingMacPermissions(status);
@@ -158,7 +158,7 @@ function setupGuidance(status: DriverStatus, hostId: string): string | null {
   return [
     `Computer Use setup is required. macOS permissions are missing or unconfirmed: **${missing.join(", ")}**.`,
     `[Open Computer Use settings](${SETTINGS_PATH}), expand this machine, and select **Grant macOS permissions**. Approve the system prompts; a one-time direct-capture prompt may also appear on the first screenshot.`,
-    `CLI alternative: \`bb cua grant --host ${hostId}\`. Retry the tool after the checklist shows Ready.`,
+    `CLI alternative: \`alia cua grant --host ${hostId}\`. Retry the tool after the checklist shows Ready.`,
   ].join("\n\n");
 }
 
@@ -179,8 +179,8 @@ function isPermissionFailure(result: ToolCallResult): boolean {
   );
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     mode: {
       type: "select",
       label: "Routing mode",
@@ -210,8 +210,8 @@ export default async function plugin(bb: BbPluginApi) {
     sessionPrefix: {
       type: "string",
       label: "Session label prefix",
-      description: "Each active bb thread run gets its own Cua session label beginning with <prefix>-<threadId>, shown in the agent cursor badge.",
-      default: "bb",
+      description: "Each active VesnALIA thread run gets its own Cua session label beginning with <prefix>-<threadId>, shown in the agent cursor badge.",
+      default: "alia",
     },
   });
 
@@ -227,19 +227,19 @@ export default async function plugin(bb: BbPluginApi) {
       browserTools: values.browserTools,
       clipboardTools: values.clipboardTools,
       passthroughTools: values.passthroughTools,
-      sessionPrefix: values.sessionPrefix.trim().length > 0 ? values.sessionPrefix.trim() : "bb",
+      sessionPrefix: values.sessionPrefix.trim().length > 0 ? values.sessionPrefix.trim() : "alia",
     };
   }
 
   let snapshot: SettingsSnapshot = toSnapshot(await settings.get());
   settings.onChange((next) => {
     snapshot = toSnapshot(next);
-    bb.realtime.publish(REALTIME_CHANNEL, { reason: "settings" });
+    alia.realtime.publish(REALTIME_CHANNEL, { reason: "settings" });
   });
 
   let overrides = normalizePolicy({
     mode: snapshot.mode,
-    overrides: await bb.storage.kv.get<unknown>(OVERRIDES_KEY),
+    overrides: await alia.storage.kv.get<unknown>(OVERRIDES_KEY),
   }).overrides;
   const statusCache = new Map<string, DriverStatus>();
   const statusRefreshedAt = new Map<string, number>();
@@ -249,30 +249,30 @@ export default async function plugin(bb: BbPluginApi) {
   const sessionEpoch = Date.now().toString(36);
   let sessionCounter = 0;
 
-  for (const key of await bb.storage.kv.list(STATUS_KEY_PREFIX)) {
-    const parsed = driverStatusSchema.safeParse(await bb.storage.kv.get<unknown>(key));
+  for (const key of await alia.storage.kv.list(STATUS_KEY_PREFIX)) {
+    const parsed = driverStatusSchema.safeParse(await alia.storage.kv.get<unknown>(key));
     if (parsed.success) statusCache.set(key.slice(STATUS_KEY_PREFIX.length), parsed.data);
   }
 
-  const host = bb.hosts.experimental_client({ contract: hostContract, experimental_signals: hostSignals });
+  const host = alia.hosts.experimental_client({ contract: hostContract, experimental_signals: hostSignals });
 
   host.experimental_onSignal("connectionChanged", ({ hostId, payload }) => {
     const cached = statusCache.get(hostId);
     if (cached !== undefined) {
       const next = { ...cached, connected: payload.connected };
       statusCache.set(hostId, next);
-      void bb.storage.kv.set(`${STATUS_KEY_PREFIX}${hostId}`, next);
+      void alia.storage.kv.set(`${STATUS_KEY_PREFIX}${hostId}`, next);
     }
-    bb.realtime.publish(REALTIME_CHANNEL, { reason: "connection", hostId });
+    alia.realtime.publish(REALTIME_CHANNEL, { reason: "connection", hostId });
   });
   host.experimental_onSignal("installChanged", ({ hostId, payload }) => {
     const previous = installByHost.get(hostId);
     installByHost.set(hostId, payload);
-    bb.realtime.publish(REALTIME_CHANNEL, { reason: "install", hostId });
+    alia.realtime.publish(REALTIME_CHANNEL, { reason: "install", hostId });
     if (previous?.running === true && !payload.running) {
-      bb.log.info(`Cua Driver install on host ${hostId} finished: ${payload.ok ? "ok" : "failed"}`);
+      alia.log.info(`Cua Driver install on host ${hostId} finished: ${payload.ok ? "ok" : "failed"}`);
       void refreshStatus(hostId, true).catch((error: unknown) =>
-        bb.log.warn(`status refresh after install failed on ${hostId}: ${errorMessage(error)}`),
+        alia.log.warn(`status refresh after install failed on ${hostId}: ${errorMessage(error)}`),
       );
     }
   });
@@ -289,7 +289,7 @@ export default async function plugin(bb: BbPluginApi) {
         tail: [...install.tail, "The host worker exited while the installer was running."],
       });
     }
-    bb.realtime.publish(REALTIME_CHANNEL, { reason: "worker-exit", hostId });
+    alia.realtime.publish(REALTIME_CHANNEL, { reason: "worker-exit", hostId });
   });
 
   function policy(): RoutingPolicy {
@@ -313,19 +313,19 @@ export default async function plugin(bb: BbPluginApi) {
     const status = await host.call("status", { probeDaemon }, { hostId, ...(signal ? { signal } : {}) });
     statusCache.set(hostId, status);
     statusRefreshedAt.set(hostId, Date.now());
-    await bb.storage.kv.set(`${STATUS_KEY_PREFIX}${hostId}`, status);
-    bb.realtime.publish(REALTIME_CHANNEL, { reason: "status", hostId });
+    await alia.storage.kv.set(`${STATUS_KEY_PREFIX}${hostId}`, status);
+    alia.realtime.publish(REALTIME_CHANNEL, { reason: "status", hostId });
     return status;
   }
 
   async function resolveHostId(threadId: string): Promise<string> {
     const cached = hostByThread.get(threadId);
     if (cached !== undefined) return cached;
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (thread.environmentId === null) {
       throw new Error("This thread has no environment, so there is no machine to drive.");
     }
-    const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
     hostByThread.set(threadId, environment.hostId);
     if (hostByThread.size > 512) {
       const oldest = hostByThread.keys().next().value;
@@ -335,9 +335,9 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function primaryHostId(): Promise<string> {
-    const hosts = await bb.sdk.hosts.list();
+    const hosts = await alia.sdk.hosts.list();
     const connected = hosts.find((entry) => entry.status === "connected") ?? hosts[0];
-    if (connected === undefined) throw new Error("No bb host is available.");
+    if (connected === undefined) throw new Error("No VesnALIA host is available.");
     return connected.id;
   }
 
@@ -395,7 +395,7 @@ export default async function plugin(bb: BbPluginApi) {
       [
         "Computer Use was blocked by a system permission while using Cua Driver.",
         `[Open Computer Use settings](${SETTINGS_PATH}), expand this machine, run **Grant macOS permissions**, and retry after the checklist shows Ready.`,
-        `CLI alternative: \`bb cua grant --host ${hostId}\`.`,
+        `CLI alternative: \`alia cua grant --host ${hostId}\`.`,
       ].join("\n\n");
     return failure(`${recovery}\n\nDriver detail: ${toolResultText(result).trim().slice(0, 500)}`);
   }
@@ -441,7 +441,7 @@ export default async function plugin(bb: BbPluginApi) {
       return await callConfiguredDriver(hostId, entry.upstream, args, context);
     } catch (error) {
       const message = errorMessage(error);
-      bb.log.warn(`${toolName} failed on host ${hostId}: ${message}`);
+      alia.log.warn(`${toolName} failed on host ${hostId}: ${message}`);
       return failure(
         `${message}\n\n[Open Computer Use settings](${SETTINGS_PATH}), expand this machine, check its setup, and retry.`,
       );
@@ -449,7 +449,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   for (const entry of CATALOG) {
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: entry.name,
       description: entry.description,
       parameters: z.toJSONSchema(entry.parameters, { io: "input" }),
@@ -464,7 +464,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
   }
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const decision = resolveProviderDecision(policy(), context.provider.id);
     if (decision !== "cua") return { tools: [], skills: [] };
     const status = statusCache.get(context.host.id) ?? null;
@@ -482,7 +482,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function buildState(): Promise<State> {
     const current = policy();
-    const [providers, hosts] = await Promise.all([bb.sdk.providers.list(), bb.sdk.hosts.list()]);
+    const [providers, hosts] = await Promise.all([alia.sdk.providers.list(), alia.sdk.hosts.list()]);
     return {
       mode: current.mode,
       groups: { browser: snapshot.browserTools, clipboard: snapshot.clipboardTools, passthrough: snapshot.passthroughTools },
@@ -514,17 +514,17 @@ export default async function plugin(bb: BbPluginApi) {
     if (override === "inherit") delete next[providerId];
     else next[providerId] = override;
     overrides = next;
-    await bb.storage.kv.set(OVERRIDES_KEY, next);
-    bb.realtime.publish(REALTIME_CHANNEL, { reason: "policy" });
+    await alia.storage.kv.set(OVERRIDES_KEY, next);
+    alia.realtime.publish(REALTIME_CHANNEL, { reason: "policy" });
   }
 
   async function saveMode(mode: RoutingMode): Promise<void> {
-    await bb.sdk.plugins.updateSettings({ pluginId: bb.pluginId, values: { mode } });
+    await alia.sdk.plugins.updateSettings({ pluginId: alia.pluginId, values: { mode } });
     snapshot = { ...snapshot, mode };
-    bb.realtime.publish(REALTIME_CHANNEL, { reason: "policy" });
+    alia.realtime.publish(REALTIME_CHANNEL, { reason: "policy" });
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     getState: buildState,
     async setMode({ mode }) {
       await saveMode(mode);
@@ -546,8 +546,8 @@ export default async function plugin(bb: BbPluginApi) {
   async function startInstall(hostId: string): Promise<InstallState> {
     const state = await host.call("install", null, { hostId });
     installByHost.set(hostId, state);
-    bb.log.info(`Cua Driver install started on host ${hostId} (user-initiated)`);
-    bb.realtime.publish(REALTIME_CHANNEL, { reason: "install", hostId });
+    alia.log.info(`Cua Driver install started on host ${hostId} (user-initiated)`);
+    alia.realtime.publish(REALTIME_CHANNEL, { reason: "install", hostId });
     return state;
   }
 
@@ -569,26 +569,26 @@ export default async function plugin(bb: BbPluginApi) {
 
   const USAGE = [
     "Usage:",
-    "  bb cua status [--host <id>] [--json]        Driver readiness on a machine",
-    "  bb cua policy [<providerId> <cua|native|off|inherit>] [--json]",
-    "  bb cua mode <prefer-native|cua-everywhere|off>",
-    "  bb cua tools [--host <id>]                   Upstream tool catalog",
-    "  bb cua call <tool> [<json-args>] [--host <id>]",
-    "  bb cua install --yes [--host <id>]           Run Cua's official installer on a machine",
-    "  bb cua grant [--host <id>]                   Request macOS Accessibility + Screen Recording",
+    "  VesnALIA cua status [--host <id>] [--json]        Driver readiness on a machine",
+    "  VesnALIA cua policy [<providerId> <cua|native|off|inherit>] [--json]",
+    "  VesnALIA cua mode <prefer-native|cua-everywhere|off>",
+    "  VesnALIA cua tools [--host <id>]                   Upstream tool catalog",
+    "  VesnALIA cua call <tool> [<json-args>] [--host <id>]",
+    "  VesnALIA cua install --yes [--host <id>]           Run Cua's official installer on a machine",
+    "  VesnALIA cua grant [--host <id>]                   Request macOS Accessibility + Screen Recording",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "cua",
     summary: "Cua Driver computer use: readiness, routing policy, and raw tool calls",
     commands: [
-      { name: "status", summary: "Show Cua Driver readiness for a machine", usage: "bb cua status [--host <id>] [--json]" },
-      { name: "policy", summary: "Show or set per-provider routing overrides", usage: "bb cua policy [<providerId> <cua|native|off|inherit>] [--json]" },
-      { name: "mode", summary: "Set the routing mode", usage: "bb cua mode <prefer-native|cua-everywhere|off>" },
-      { name: "tools", summary: "List the upstream Cua Driver tool catalog", usage: "bb cua tools [--host <id>]" },
-      { name: "call", summary: "Call any Cua Driver tool with JSON arguments", usage: "bb cua call <tool> [<json-args>] [--host <id>]" },
-      { name: "install", summary: "Run Cua's official installer on a machine (requires --yes)", usage: "bb cua install --yes [--host <id>]" },
-      { name: "grant", summary: "Request macOS Accessibility and Screen Recording for CuaDriver.app", usage: "bb cua grant [--host <id>]" },
+      { name: "status", summary: "Show Cua Driver readiness for a machine", usage: "alia cua status [--host <id>] [--json]" },
+      { name: "policy", summary: "Show or set per-provider routing overrides", usage: "alia cua policy [<providerId> <cua|native|off|inherit>] [--json]" },
+      { name: "mode", summary: "Set the routing mode", usage: "alia cua mode <prefer-native|cua-everywhere|off>" },
+      { name: "tools", summary: "List the upstream Cua Driver tool catalog", usage: "alia cua tools [--host <id>]" },
+      { name: "call", summary: "Call any Cua Driver tool with JSON arguments", usage: "alia cua call <tool> [<json-args>] [--host <id>]" },
+      { name: "install", summary: "Run Cua's official installer on a machine (requires --yes)", usage: "alia cua install --yes [--host <id>]" },
+      { name: "grant", summary: "Request macOS Accessibility and Screen Recording for CuaDriver.app", usage: "alia cua grant [--host <id>]" },
     ],
     async run(argv, ctx) {
       const json = argv.includes("--json");
@@ -680,7 +680,7 @@ export default async function plugin(bb: BbPluginApi) {
           }
           if (!state.running) await refreshStatus(hostId, true).catch(() => null);
           const summary = state.running
-            ? "Installer still running after 15 minutes; check `bb cua status` later."
+            ? "Installer still running after 15 minutes; check `alia cua status` later."
             : state.ok
               ? "Install finished."
               : "Install failed.";
@@ -706,17 +706,17 @@ export default async function plugin(bb: BbPluginApi) {
     activeSessions.delete(threadId);
     void host
       .call("callTool", { name: "end_session", arguments: { session: active.label } }, { hostId: active.hostId })
-      .catch((error: unknown) => bb.log.debug(`end_session for ${threadId} failed: ${errorMessage(error)}`));
+      .catch((error: unknown) => alia.log.debug(`end_session for ${threadId} failed: ${errorMessage(error)}`));
   }
-  bb.events.on("thread.idle", ({ thread }) => endSession(thread.id));
-  bb.events.on("thread.failed", ({ thread }) => endSession(thread.id));
-  bb.events.on("thread.archived", ({ thread }) => endSession(thread.id));
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.idle", ({ thread }) => endSession(thread.id));
+  alia.events.on("thread.failed", ({ thread }) => endSession(thread.id));
+  alia.events.on("thread.archived", ({ thread }) => endSession(thread.id));
+  alia.events.on("thread.deleted", ({ thread }) => {
     endSession(thread.id);
     hostByThread.delete(thread.id);
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     activeSessions.clear();
     hostByThread.clear();
     statusRefreshedAt.clear();

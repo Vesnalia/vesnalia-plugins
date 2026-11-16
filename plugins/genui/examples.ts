@@ -21,8 +21,8 @@ Before your HTML runs, the page has:
 - Forms: submit handlers run; the page never navigates.
 - genui.reducedMotion (boolean, live): true when the system asks for less motion or the user turned animations off (then CSS animations and transitions are off and prefers-reduced-motion matches).
 - genui.answer(text), only in a click, key or change handler: puts text (trimmed, up to 2000 chars) in the user's message box as this app's answer, replacing its previous one; genui.answer(null) takes it back. Nothing is sent until the user sends. Returns true when accepted. Label the button for what it does ("Put my score in my message").
-- Links: an <a href="https://…"> click, or genui.openLink(url) in a click handler, opens the page in BB; "#part" links move within the app; others (http, relative) open nothing.
-- Styles: transparent background, BB's font, styled buttons, inputs, selects and textareas, accent-coloured range and checkbox, a focus ring. Theme variables, live in light and dark: --background --foreground --muted --muted-foreground --subtle-foreground --border --card --primary --primary-foreground --success --warning --warning-text --destructive --accent --font-sans --font-mono.
+- Links: an <a href="https://…"> click, or genui.openLink(url) in a click handler, opens the page in VesnALIA; "#part" links move within the app; others (http, relative) open nothing.
+- Styles: transparent background, VesnALIA's font, styled buttons, inputs, selects and textareas, accent-coloured range and checkbox, a focus ring. Theme variables, live in light and dark: --background --foreground --muted --muted-foreground --subtle-foreground --border --card --primary --primary-foreground --success --warning --warning-text --destructive --accent --font-sans --font-mono.
 - SVG kit, inside <svg>: text classes t (14px), ts (12px muted), th (14px medium); shapes box (muted fill, border stroke), arr (a connector: stroke, no fill), leader (thin dashed annotation); tone-good tone-warn tone-bad tone-info tone-accent on a shape or a <g> tint it and its text; marker-end="url(#genui-arrow)" is an arrowhead in the line's colour.
 - Height: the frame grows to fit the page, up to 1400px. Never height: 100vh.
 Make it work for the reader:
@@ -57,37 +57,37 @@ const DATA_PREVIEW_CHARS = 600;
 /**
  * For components that read a tool's output: the commands that save it where
  * Load reads it. Gallery examples Load gallery files (`data/…`); in a thread
- * the file goes to $BB_THREAD_STORAGE.
+ * the file goes to $ALIA_THREAD_STORAGE.
  */
 const SOURCES: Partial<Record<ComponentName, string>> = {
   Tests:
-    'npx vitest run --reporter=json --outputFile=$BB_THREAD_STORAGE/vitest.json · npx jest --json --outputFile=$BB_THREAD_STORAGE/jest.json · pytest --junitxml=$BB_THREAD_STORAGE/junit.xml (any JUnit XML works)',
-  Json: "curl -s -o $BB_THREAD_STORAGE/response.json <url> · <command> --json > $BB_THREAD_STORAGE/out.json",
-  Logs: 'npm run build > $BB_THREAD_STORAGE/build.log 2>&1; echo $? (that exit code is the `exit` argument) · a server or JSON-lines log file as it is',
+    'npx vitest run --reporter=json --outputFile=$ALIA_THREAD_STORAGE/vitest.json · npx jest --json --outputFile=$ALIA_THREAD_STORAGE/jest.json · pytest --junitxml=$ALIA_THREAD_STORAGE/junit.xml (any JUnit XML works)',
+  Json: "curl -s -o $ALIA_THREAD_STORAGE/response.json <url> · <command> --json > $ALIA_THREAD_STORAGE/out.json",
+  Logs: 'npm run build > $ALIA_THREAD_STORAGE/build.log 2>&1; echo $? (that exit code is the `exit` argument) · a server or JSON-lines log file as it is',
   StackTrace:
-    "node app.mjs 2> $BB_THREAD_STORAGE/crash.txt (python3, go run, RUST_BACKTRACE=1 cargo run, java the same way) · or the error text as a string",
+    "node app.mjs 2> $ALIA_THREAD_STORAGE/crash.txt (python3, go run, RUST_BACKTRACE=1 cargo run, java the same way) · or the error text as a string",
   Findings:
-    "npx eslint -f json . > $BB_THREAD_STORAGE/eslint.json · npx tsc --noEmit --pretty false > $BB_THREAD_STORAGE/tsc.txt · ruff check --output-format json > $BB_THREAD_STORAGE/ruff.json · SARIF from semgrep --sarif, CodeQL and others · oxlint -f json, biome lint --reporter=json · or a review written as the list",
+    "npx eslint -f json . > $ALIA_THREAD_STORAGE/eslint.json · npx tsc --noEmit --pretty false > $ALIA_THREAD_STORAGE/tsc.txt · ruff check --output-format json > $ALIA_THREAD_STORAGE/ruff.json · SARIF from semgrep --sarif, CodeQL and others · oxlint -f json, biome lint --reporter=json · or a review written as the list",
   Coverage:
-    "npx vitest run --coverage --coverage.reporter=lcov --coverage.reportsDirectory=$BB_THREAD_STORAGE/coverage (needs @vitest/coverage-v8), then Load(\"$BB_THREAD_STORAGE/coverage/lcov.info\") · the json-summary reporter's coverage-summary.json · coverage json -o $BB_THREAD_STORAGE/coverage.json · go test -coverprofile=$BB_THREAD_STORAGE/coverage.out ./...",
+    "npx vitest run --coverage --coverage.reporter=lcov --coverage.reportsDirectory=$ALIA_THREAD_STORAGE/coverage (needs @vitest/coverage-v8), then Load(\"$ALIA_THREAD_STORAGE/coverage/lcov.info\") · the json-summary reporter's coverage-summary.json · coverage json -o $ALIA_THREAD_STORAGE/coverage.json · go test -coverprofile=$ALIA_THREAD_STORAGE/coverage.out ./...",
   Dependencies:
-    "npm outdated --json --long > $BB_THREAD_STORAGE/outdated.json || true · npm audit --json > $BB_THREAD_STORAGE/audit.json || true · both in one: Dependencies({outdated: Load(…), audit: Load(…)}) · pnpm outdated --format json · pip list --outdated --format=json",
+    "npm outdated --json --long > $ALIA_THREAD_STORAGE/outdated.json || true · npm audit --json > $ALIA_THREAD_STORAGE/audit.json || true · both in one: Dependencies({outdated: Load(…), audit: Load(…)}) · pnpm outdated --format json · pip list --outdated --format=json",
   Pipeline:
-    "gh run view <id> --json name,displayTitle,status,conclusion,event,headBranch,headSha,url,createdAt,updatedAt,jobs > $BB_THREAD_STORAGE/run.json · gh pr checks <n> --json name,state,bucket,link,startedAt,completedAt,workflow > $BB_THREAD_STORAGE/checks.json",
+    "gh run view <id> --json name,displayTitle,status,conclusion,event,headBranch,headSha,url,createdAt,updatedAt,jobs > $ALIA_THREAD_STORAGE/run.json · gh pr checks <n> --json name,state,bucket,link,startedAt,completedAt,workflow > $ALIA_THREAD_STORAGE/checks.json",
   Benchmark:
-    "hyperfine --export-json $BB_THREAD_STORAGE/bench.json 'cmd a' 'cmd b' · vitest bench --run --outputJson $BB_THREAD_STORAGE/bench.json · or before/after numbers you measured, as the list",
+    "hyperfine --export-json $ALIA_THREAD_STORAGE/bench.json 'cmd a' 'cmd b' · vitest bench --run --outputJson $ALIA_THREAD_STORAGE/bench.json · or before/after numbers you measured, as the list",
   Waterfall:
-    'a HAR: Playwright browser.newContext({recordHar: {path: "$BB_THREAD_STORAGE/page.har"}}), written when the context closes · a Chrome trace filtered to its slow events (jq \'{traceEvents: [.traceEvents[] | select(.ph == "X" and .dur > 1000)]}\') · or spans you timed, as the list',
+    'a HAR: Playwright browser.newContext({recordHar: {path: "$ALIA_THREAD_STORAGE/page.har"}}), written when the context closes · a Chrome trace filtered to its slow events (jq \'{traceEvents: [.traceEvents[] | select(.ph == "X" and .dur > 1000)]}\') · or spans you timed, as the list',
   Treemap:
-    "esbuild <entry> --bundle --metafile=$BB_THREAD_STORAGE/meta.json --outdir=/tmp/out · du -k -d 2 <dir> > $BB_THREAD_STORAGE/du.txt · or sizes as the list",
+    "esbuild <entry> --bundle --metafile=$ALIA_THREAD_STORAGE/meta.json --outdir=/tmp/out · du -k -d 2 <dir> > $ALIA_THREAD_STORAGE/du.txt · or sizes as the list",
   Board:
-    "bb tasks list --project <KEY> --json > $BB_THREAD_STORAGE/tasks.json · gh issue list --json number,title,state,labels,assignees,url,updatedAt > $BB_THREAD_STORAGE/issues.json · gh pr list --json number,title,state,isDraft,labels,assignees,author,url,updatedAt",
+    "alia tasks list --project <KEY> --json > $ALIA_THREAD_STORAGE/tasks.json · gh issue list --json number,title,state,labels,assignees,url,updatedAt > $ALIA_THREAD_STORAGE/issues.json · gh pr list --json number,title,state,isDraft,labels,assignees,author,url,updatedAt",
   Acceptance:
-    "write {criteria: [{name, cells: {column: {status, note, evidence, by}}}]} to $BB_THREAD_STORAGE/acceptance.json as you check each criterion; a workflow gate's {matrix} or an owner's {complete, contract, blockers} loads as it is · evidence: file:line, a path, an https URL or an image",
+    "write {criteria: [{name, cells: {column: {status, note, evidence, by}}}]} to $ALIA_THREAD_STORAGE/acceptance.json as you check each criterion; a workflow gate's {matrix} or an owner's {complete, contract, blockers} loads as it is · evidence: file:line, a path, an https URL or an image",
   Transcript:
-    "whisper-cli -m ggml-base.en.bin -f call.wav -ojf -of $BB_THREAD_STORAGE/hyp (whisper.cpp) · whisper --word_timestamps True --output_format json · an .srt or .vtt as {name, text: Load(…)} · the reference as {name: \"Reference\", text} or timed words; audio: wav, mp3, m4a, flac, ogg (25 MB)",
+    "whisper-cli -m ggml-base.en.bin -f call.wav -ojf -of $ALIA_THREAD_STORAGE/hyp (whisper.cpp) · whisper --word_timestamps True --output_format json · an .srt or .vtt as {name, text: Load(…)} · the reference as {name: \"Reference\", text} or timed words; audio: wav, mp3, m4a, flac, ogg (25 MB)",
   Provenance:
-    "append one stage per step to $BB_THREAD_STORAGE/trace.json as you go: {name, status, facts: {branch: git branch --show-current, sha: git rev-parse HEAD, build, device, url}, evidence: the log or receipt path}; pass what was asked for as expected",
+    "append one stage per step to $ALIA_THREAD_STORAGE/trace.json as you go: {name, status, facts: {branch: git branch --show-current, sha: git rev-parse HEAD, build, device, url}, evidence: the log or receipt path}; pass what was asked for as expected",
 };
 
 /**
@@ -111,7 +111,7 @@ objects: a list of {shape, ...} records, or a function t => [...] (t in seconds)
 - {shape: "sprite", at, size? = 48 px, color?, glow? = 1, src?: "flare.png"}: a camera-facing light (a soft round glow without src) that blooms.
 Materials (box, sphere, cylinder, surface, mesh, model): color, roughness (0 mirror to 1 matte, 0.55), metal (0–1), glow (emits its colour and blooms: lamps, beams, highlights), glass: true (refracts what's behind it; ior = 1.5, dispersion 0–1 splits it into a rainbow, as a prism does), texture: "wood.jpg" (multiplied by color; a mesh needs uvs).
 Colours are theme tokens: text, muted, faint, accent, good, warn, bad, info, border, chart1–chart6 (series in order); a material's physical colour may be "#rrggbb" (gold, glass, wood), only in 3D. Solids default to chart1, lines and labels to muted.
-Files (models, environments, sprites, textures) are paths like Image's: workspace, $BB_THREAD_STORAGE or /tmp, up to 10 MB; find or make them with your tools first (download; convert KTX2 or EXR to PNG or HDR).
+Files (models, environments, sprites, textures) are paths like Image's: workspace, $ALIA_THREAD_STORAGE or /tmp, up to 10 MB; find or make them with your tools first (download; convert KTX2 or EXR to PNG or HDR).
 Style: build real forms from several primitives (legs, tops, rims), not single boxes, and give materials so surfaces read as wood, metal or glass. The scene sits on the chat: no backgrounds or floors to paint; a grid is optional. Math: sin cos tan asin acos atan atan2 sqrt clamp lerp range(a, b, step?) random(i) (the same every render) PI TAU. Up to 2,000 objects, 20,000 vertices per mesh, 2,000 path points.`,
   Shader: `GPU shaders for what geometry can't express: raymarched SDFs and fractals, light and optics (beams, refraction, dispersion), volumes, fluids, particles, generative art.
 Shader(code, height? = 320, buffers?: [code, ...], inputs?: {speed: $speed}, textures?: ["rock.jpg"], blend?: light|alpha|opaque, bloom? = 0 (0–3), orbit?, spin?, camera?: {yaw, pitch, zoom}, animate? = true).

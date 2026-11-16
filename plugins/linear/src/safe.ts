@@ -4,13 +4,13 @@ import { describeError } from "./linear/errors.js";
  * The fix for a specific incident, not a hygiene wrapper.
  *
  * On reload the host aborts background services, runs dispose hooks, drains
- * in-flight handlers and then **invalidates the `bb` handle**. Any `bb.*`
+ * in-flight handlers and then **invalidates the `VesnALIA` handle**. Any `VesnALIA.*`
  * touch after that throws `PluginContextStaleError` — and from a detached
  * continuation (a timer, a promise tail, an HTTP callback) Node raises that as
- * an `uncaughtException`, which takes down **the whole bb server**, not just
+ * an `uncaughtException`, which takes down **the whole VesnALIA server**, not just
  * this plugin.
  *
- * The part that makes it vicious: `bb.log` throws once stale too, *including
+ * The part that makes it vicious: `alia.log` throws once stale too, *including
  * from inside the `catch` that was containing the original failure*. So the
  * containment itself becomes the crash. Which means a guard has to do three
  * things, and doing two is the same as doing none:
@@ -19,7 +19,7 @@ import { describeError } from "./linear/errors.js";
  *   2. Swallow everything, including whatever the logging attempt throws.
  *   3. Never hand a rejected promise back to a caller that will not await it.
  *
- * Every `bb.*` call reachable from a timer, a promise continuation or an HTTP
+ * Every `VesnALIA.*` call reachable from a timer, a promise continuation or an HTTP
  * callback goes through here.
  */
 

@@ -58,7 +58,7 @@ describe("Liveness", () => {
     store.upsert(entry({ threadId: "t1", eventId: "e1" }));
     store.upsert(entry({ threadId: "t2", eventId: "e2" }));
     port.facts_.set("t1", open());
-    // t2 is not known to bb any more.
+    // t2 is not known to VesnALIA any more.
     expect((await liveness.visible(store)).map((item) => item.threadId)).toEqual(["t1"]);
     expect(store.get("t2")).toBeNull();
   });
@@ -91,7 +91,7 @@ describe("Liveness", () => {
     expect(store.get("t1")?.eventId).toBe("new");
   });
 
-  it("asks bb about a thread at most once per TTL", async () => {
+  it("asks VesnALIA about a thread at most once per TTL", async () => {
     const now = { value: T0 + 1000 };
     const { port, store, liveness } = setup(now);
     store.upsert(entry({ reason: "error" }));

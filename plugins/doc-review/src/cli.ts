@@ -1,13 +1,13 @@
-// `bb doc-review` — how agents read review comments and report back.
+// `alia doc-review` — how agents read review comments and report back.
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   PluginCliError,
   cliCommand,
   defineCli,
-  type BbPluginApi,
+  type AliaPluginApi,
   type PluginCliRegistration,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import type { Exchange } from "./exchange.js";
 import { isWindowsPath, normalizeAbsolute } from "./files.js";
 import { CLI_NAME, strokeLines } from "./message.js";
@@ -99,11 +99,11 @@ async function writeBeside(file: string, bytes: Uint8Array): Promise<string> {
 }
 
 export function reviewCli(options: {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   store: ReviewStore;
   onChanged: (docIds: string[]) => void;
   exchange: Exchange;
-  /** The document for a file on the bb server's machine; throws when there is no such file. */
+  /** The document for a file on the VesnALIA server's machine; throws when there is no such file. */
   openDoc: (absPath: string, hostId: string | null) => Promise<DocRow>;
   readSigner: () => Promise<string | null>;
 }): PluginCliRegistration {
@@ -112,7 +112,7 @@ export function reviewCli(options: {
   const absolute = (file: string, cwd: string | undefined) => {
     if (isWindowsPath(file)) return normalizeAbsolute(file);
     if (path.posix.isAbsolute(file)) return path.posix.normalize(file);
-    // A bb server running on Windows reports a Windows working directory.
+    // A VesnALIA server running on Windows reports a Windows working directory.
     if (cwd && isWindowsPath(cwd)) return normalizeAbsolute(path.win32.resolve(cwd, file));
     return path.posix.resolve(cwd ?? "/", file);
   };
@@ -130,7 +130,7 @@ export function reviewCli(options: {
     if (!comment) {
       throw new PluginCliError(`No review comment with id ${id}.`, {
         code: "comment_not_found",
-        hint: `Run \`bb ${CLI_NAME} list\` to see ids.`,
+        hint: `Run \`VesnALIA ${CLI_NAME} list\` to see ids.`,
       });
     }
     return comment;
@@ -159,7 +159,7 @@ export function reviewCli(options: {
     name: CLI_NAME,
     summary: "Read review comments left on files in the Doc Review panel and report fixes",
     description:
-      "Comments are left on Markdown, PDF, Word, PowerPoint, Excel, and HTML files in bb's Doc Review panel and handed to an agent. Close each handled comment with `resolve`, or answer with `reply` when it cannot be applied. Notes go into the comment's thread, where the user can answer back; a follow-up arrives with the thread so far. `export` writes a PDF with the comments in it to send to someone, and `import` brings in the comments of such a PDF from another reviewer.",
+      "Comments are left on Markdown, PDF, Word, PowerPoint, Excel, and HTML files in VesnALIA's Doc Review panel and handed to an agent. Close each handled comment with `resolve`, or answer with `reply` when it cannot be applied. Notes go into the comment's thread, where the user can answer back; a follow-up arrives with the thread so far. `export` writes a PDF with the comments in it to send to someone, and `import` brings in the comments of such a PDF from another reviewer.",
     commands: {
       list: cliCommand({
         summary: "List review comments (default: the ones sent to this thread and still waiting)",
@@ -273,7 +273,7 @@ export function reviewCli(options: {
       }),
       export: cliCommand({
         summary:
-          "Write a PDF of a PDF, Word, or PowerPoint file with its review comments in it, to send to someone; Doc Review in another bb imports them from it",
+          "Write a PDF of a PDF, Word, or PowerPoint file with its review comments in it, to send to someone; Doc Review in another VesnALIA imports them from it",
         positionals: [{ name: "file", description: "The reviewed file (absolute, or relative to the current directory)", required: true }],
         options: {
           out: {

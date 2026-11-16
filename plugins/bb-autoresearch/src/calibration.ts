@@ -62,7 +62,7 @@ export async function runCalibration(ctx: Ctx, pipeline: Pipeline, studyId: stri
   const { store } = ctx;
   const study = store.study(studyId)!;
   const spec = store.spec(study);
-  const runner = ctx.bb.hostRunner(study.host_id!);
+  const runner = ctx.alia.hostRunner(study.host_id!);
   const repo = study.repo_path!;
   const timeoutMs = spec.oracle.timeout_minutes * 60_000;
   const problems: string[] = [];
@@ -185,7 +185,7 @@ export async function runCalibration(ctx: Ctx, pipeline: Pipeline, studyId: stri
   const done = perHost.filter((r): r is CalibratedResult => r.outcome !== null);
   if (!done.length && !problems.length) problems.push("every bench host left during calibration");
   if (perHost.some((r) => r.problem) || !done.length) return finish({ baselineSha: baseSha, oracleHash: hash, gateSeconds, warnings: remoteWarnings });
-  // Much noisier than its peers: a BB machine or the edit host leaves the dispatch set, a remote machine is replaced.
+  // Much noisier than its peers: a VesnALIA machine or the edit host leaves the dispatch set, a remote machine is replaced.
   const { kept: ok, noisy, unclear } = splitNoisyHosts(done, spec, (id) => pipeline.remote?.acceptsNoisy(study, id) ?? false);
   const noisyWarnings = [...applyNoisyHosts(ctx, pipeline, study, spec, done, noisy, "calibration"), ...unclear];
   for (const r of ok) if (r.h.mode === "remote") pipeline.remote?.markCalibrated(study, r.h.host_id, r.outcome, baseSha);
@@ -269,7 +269,7 @@ export function noiseUnit(spec: Pick<StudySpec, "oracle">): string {
 }
 
 /**
- * Take the noisy hosts out: BB machines and the edit host leave the dispatch
+ * Take the noisy hosts out: VesnALIA machines and the edit host leave the dispatch
  * set until the next calibration (`excluded_json`); remote machines are
  * replaced (during the study's calibration they leave when it ends, so the
  * replacement calibrates on arrival once the study runs). Every other
@@ -437,7 +437,7 @@ export async function recordCalibration(ctx: Ctx, study: StudyRow, report: Calib
     });
     return;
   }
-  const runner = ctx.bb.hostRunner(study.host_id!);
+  const runner = ctx.alia.hostRunner(study.host_id!);
   const repo = study.repo_path!;
   // A new segment starts only once candidates were judged under the previous oracle.
   const k = store.candidateCount(study.id) > 0 ? study.segment + 1 : Math.max(1, study.segment);
@@ -607,7 +607,7 @@ export async function runAutoRecalibration(ctx: Ctx, pipeline: Pipeline, studyId
     finishedAt: ctx.now(),
   };
   const k = study.segment + 1;
-  const runner = ctx.bb.hostRunner(study.host_id!);
+  const runner = ctx.alia.hostRunner(study.host_id!);
   const segRef = segmentRef(study.slug, k);
   const seg = await runner.resolveRef(study.repo_path!, segRef);
   if (seg !== baseSha) await runner.updateRef(study.repo_path!, segRef, baseSha, seg);

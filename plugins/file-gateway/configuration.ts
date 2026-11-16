@@ -1,4 +1,4 @@
-import { defineRpcContract } from '@get-bb/plugin-sdk';
+import { defineRpcContract } from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 import { policiesSchema, policySchema } from './contract.js';
 export const configSchema=z.object({shares:policiesSchema,revision:z.number().int().min(0),maxFileMiB:z.number().int().min(1).max(256)}).strict();

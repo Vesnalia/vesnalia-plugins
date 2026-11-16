@@ -7,14 +7,14 @@
  * `src/scope-sync.ts`, `src/thread-sync.ts`, `src/wrapped.ts`.
  *
  * Tracked builds whose checkout lives on another enrolled Mac run there,
- * through this plugin's `bb.host` worker (`host.ts`); `src/launcher.ts` picks
+ * through this plugin's `alia.host` worker (`host.ts`); `src/launcher.ts` picks
  * the machine and `src/remote.ts` keeps the run rows of the ones elsewhere.
  * Builds on those Macs that nothing routed here — Xcode.app's, a terminal's —
  * are watched through the same worker by `src/remote-watch.ts`.
  */
 
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import { XCODE_CHANNEL } from "./src/channel";
 import { CLI_COMMANDS, createCli } from "./src/cli";
@@ -71,22 +71,22 @@ const OPPORTUNISTIC_PRUNE_MS = 6 * 3_600_000;
 /**
  * The simulator verbs, as one entry.
  *
- * bb validates command names against `[a-z0-9-]+`, so `sim devices` cannot be
+ * VesnALIA validates command names against `[a-z0-9-]+`, so `sim devices` cannot be
  * registered as a name — and registering twenty `sim-<verb>` entries would bury
- * the tracker's own six in `bb xcode --help`. One line advertises the prefix,
- * and `bb xcode sim` with no arguments prints the verb list that
+ * the tracker's own six in `alia xcode --help`. One line advertises the prefix,
+ * and `alia xcode sim` with no arguments prints the verb list that
  * `src/sim/cli.ts` already writes for itself.
  */
 const SIMULATOR_CLI_COMMANDS = [
   {
     name: "sim",
     summary: "Look at, and touch, an iOS simulator",
-    usage: `bb xcode sim <verb>  (${SIM_VERBS.map((command) => command.name).join(", ")})`,
+    usage: `alia xcode sim <verb>  (${SIM_VERBS.map((command) => command.name).join(", ")})`,
   },
 ];
 
-export default async function plugin(bb: BbPluginApi): Promise<void> {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi): Promise<void> {
+  const settings = alia.settings.define({
     scanIntervalSeconds: {
       type: "string",
       label: "Process scan interval (seconds)",
@@ -135,19 +135,19 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
         "Builds on another Mac — in Xcode, a terminal, or Xcode's own agent tools — are watched while a thread whose checkout is there is active or was in the last 30 minutes. Name a Mac here to watch it all the time. Watching means a process scan there every few seconds.",
       default: "",
     },
-    // `bb.settings.define` is one call per plugin, so the Simulators half's
+    // `alia.settings.define` is one call per plugin, so the Simulators half's
     // descriptors are spread in here rather than declared where they are read.
     // The key spaces are disjoint and asserted to be, in `test/sim/merge.test.ts`.
     ...SIMULATOR_SETTINGS,
   });
 
-  const database = bb.storage.database();
-  // This bb's folder for the plugin, next to its database. Never a guessed
-  // `~/.bb`: a dev or test bb keeps its data elsewhere, and guessing would
-  // put its result bundles and shim into the main bb's folder.
+  const database = alia.storage.database();
+  // This VesnALIA's folder for the plugin, next to its database. Never a guessed
+  // `~/.vesnalia`: a dev or test VesnALIA keeps its data elsewhere, and guessing would
+  // put its result bundles and shim into the main VesnALIA's folder.
   const dataDir = dataDirOf(database);
   const db = database as unknown as Db;
-  bb.storage.migrate(db as never, [...MIGRATIONS]);
+  alia.storage.migrate(db as never, [...MIGRATIONS]);
   const store = new Store(db);
 
   const positive = (raw: string, fallback: number, max = Infinity): number => {
@@ -187,7 +187,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
    * makes the first probe pass after load prune immediately — the cron-only
    * schedule below fires at 04:23 and on a laptop that mostly never happens.
    */
-  let lastPruneAt = (await bb.storage.kv.get<number>("last-prune-at")) ?? 0;
+  let lastPruneAt = (await alia.storage.kv.get<number>("last-prune-at")) ?? 0;
 
   let disposed = false;
   const isDisposed = (): boolean => disposed;
@@ -200,12 +200,12 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
    * continuation that folds its exit, the collector sweep. Publishing through
    * a disposed handle throws PluginContextStaleError, and from a detached
    * continuation Node raises that as an uncaughtException — which takes the
-   * whole bb server down, not just this plugin. The collector loop already
+   * whole VesnALIA server down, not just this plugin. The collector loop already
    * re-checks its own abort signal for this reason; the wrapped-build paths
    * had no equivalent and crashed the server on 2026-08-10.
    */
   const publish = safely(isDisposed, (payload?: Record<string, unknown>) => {
-    bb.realtime.publish(XCODE_CHANNEL, payload ?? { at: Date.now() });
+    alia.realtime.publish(XCODE_CHANNEL, payload ?? { at: Date.now() });
   });
 
   /**
@@ -229,22 +229,22 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
   };
 
   /**
-   * Logging carries the same guard, and for a sharper reason: `bb.log` throws
+   * Logging carries the same guard, and for a sharper reason: `alia.log` throws
    * once stale, including from inside the very `catch` that was containing a
    * failure — turning a handled error into an unhandled rejection. Nothing in
-   * this plugin calls `bb.log` directly.
+   * this plugin calls `alia.log` directly.
    */
   const log = {
-    debug: safely(isDisposed, (m: string) => bb.log.debug(m)),
-    info: safely(isDisposed, (m: string) => bb.log.info(m)),
-    warn: safely(isDisposed, (m: string) => bb.log.warn(m)),
-    error: safely(isDisposed, (m: string) => bb.log.error(m)),
+    debug: safely(isDisposed, (m: string) => alia.log.debug(m)),
+    info: safely(isDisposed, (m: string) => alia.log.info(m)),
+    warn: safely(isDisposed, (m: string) => alia.log.warn(m)),
+    error: safely(isDisposed, (m: string) => alia.log.error(m)),
   };
 
   const listProjects = async (
     signal?: AbortSignal,
   ): Promise<CollectorProject[]> => {
-    const projects = await bb.sdk.projects.list({
+    const projects = await alia.sdk.projects.list({
       includePersonal: true,
       signal,
     });
@@ -274,9 +274,9 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
   let collectorRef: Collector | null = null;
   const scopeSync = new ScopeSync({
     store,
-    getThread: (threadId) => bb.sdk.threads.get({ threadId }),
+    getThread: (threadId) => alia.sdk.threads.get({ threadId }),
     getEnvironment: (environmentId) =>
-      bb.sdk.environments.get({ environmentId }),
+      alia.sdk.environments.get({ environmentId }),
     // Late-bound: only called during a refresh, after the factory has run.
     serverHostId: () => resolveHostId(),
     log: (message) => log.debug(message),
@@ -287,8 +287,8 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
   /**
    * Which machine is this plugin running on?
    *
-   * bb's own answer, `primaryHostId`. This replaced a nonce file written here
-   * and looked for on every host, which predates bb exposing it. Only needed
+   * VesnALIA's own answer, `primaryHostId`. This replaced a nonce file written here
+   * and looked for on every host, which predates VesnALIA exposing it. Only needed
    * when a scope names a host, so it is resolved lazily. A failed read is not
    * cached: it routes the build here (as the old check failed open) and the
    * next build asks again.
@@ -296,12 +296,12 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
   let serverHostId: string | null = null;
   const resolveHostId = async (): Promise<string | null> => {
     if (serverHostId !== null) return serverHostId;
-    serverHostId = (await bb.sdk.system.config()).primaryHostId ?? null;
+    serverHostId = (await alia.sdk.system.config()).primaryHostId ?? null;
     return serverHostId;
   };
 
   /**
-   * Enrolled machines, for naming them: the confirmation sheet, `bb xcode
+   * Enrolled machines, for naming them: the confirmation sheet, `alia xcode
    * show`, `xcode_status` and the live row all say which Mac a build is on.
    * Cached, and refreshed off the handler path when stale.
    */
@@ -309,7 +309,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
   let hostsAt = 0;
   const listHosts = async (): Promise<HostSummary[]> => {
     if (Date.now() - hostsAt < HOSTS_TTL_MS) return hosts;
-    const listed = await bb.sdk.hosts.list();
+    const listed = await alia.sdk.hosts.list();
     hosts = listed.map((entry) => ({ id: entry.id, name: entry.name }));
     hostsAt = Date.now();
     return hosts;
@@ -365,15 +365,15 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
 
   const threadSync = new ThreadSync({
     engine,
-    listEvents: (args) => bb.sdk.threads.events.list(args),
-    kvGet: (key) => bb.storage.kv.get(key),
-    kvSet: (key, value) => bb.storage.kv.set(key, value),
+    listEvents: (args) => alia.sdk.threads.events.list(args),
+    kvGet: (key) => alia.storage.kv.get(key),
+    kvSet: (key, value) => alia.storage.kv.set(key, value),
     log: (message) => log.debug(message),
     isDisposed,
     onChanged: publishSoon,
   });
 
-  const unsubscribeThreadChanges = bb.sdk.subscribe({
+  const unsubscribeThreadChanges = alia.sdk.subscribe({
     event: "thread:changed",
     callback(event) {
       if (
@@ -420,24 +420,24 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
 
   // -------------------------------------------------------- thread scopes
   //
-  // There is no event for "an agent ran xcodebuild"; what bb DOES tell us is
+  // There is no event for "an agent ran xcodebuild"; what VesnALIA DOES tell us is
   // when a thread starts a turn, and its environment names the exact checkout
   // any build it launches will run from. Registering that path as a scope
   // lets the probe attribute a new build to its thread on first sighting, and
   // lets the banner / agent tools answer for "this thread's build" instead of
   // the whole machine.
 
-  bb.events.on("thread.active", ({ thread }) => {
+  alia.events.on("thread.active", ({ thread }) => {
     scopeSync.markActive(thread.id);
     detach(() => scopeSync.refresh(thread.id, true));
   });
-  bb.events.on("thread.idle", ({ thread }) => scopeSync.deactivate(thread.id));
-  bb.events.on("thread.failed", ({ thread }) => scopeSync.deactivate(thread.id));
-  bb.events.on("thread.archived", ({ thread }) => {
+  alia.events.on("thread.idle", ({ thread }) => scopeSync.deactivate(thread.id));
+  alia.events.on("thread.failed", ({ thread }) => scopeSync.deactivate(thread.id));
+  alia.events.on("thread.archived", ({ thread }) => {
     scopeSync.remove(thread.id);
     threadSync.forget(thread.id);
   });
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     scopeSync.remove(thread.id);
     threadSync.forget(thread.id);
   });
@@ -496,7 +496,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
 
   // ------------------------------------------------- builds on other Macs
 
-  const hostClient = bb.hosts.experimental_client({
+  const hostClient = alia.hosts.experimental_client({
     contract: hostContract,
     experimental_signals: hostSignals,
   });
@@ -583,7 +583,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
    * the await between the two.
    */
   const dismissedRuns = new Set(
-    (await bb.storage.kv.get<string[]>("dismissed-runs")) ?? [],
+    (await alia.storage.kv.get<string[]>("dismissed-runs")) ?? [],
   );
   const persistDismissedRuns = async (): Promise<void> => {
     const retained = [...dismissedRuns].slice(-500);
@@ -591,7 +591,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
       dismissedRuns.clear();
       for (const id of retained) dismissedRuns.add(id);
     }
-    await bb.storage.kv.set("dismissed-runs", retained);
+    await alia.storage.kv.set("dismissed-runs", retained);
   };
 
   /**
@@ -599,7 +599,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
    *
    * The panel gets this through the DTO; the CLI and the agent tools deal in
    * `Run` rows, which carry no phase because it is derived from the process
-   * tree rather than stored. Without it, `bb xcode status` on a build that is
+   * tree rather than stored. Without it, `alia xcode status` on a build that is
    * seven minutes into a dependency fetch reads as a build that is seven
    * minutes into nothing.
    */
@@ -627,7 +627,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
     onShimStateKnown,
     confirmHostAction: async (threadId, consent) => {
       try {
-        const result = await bb.ui.requestInput({
+        const result = await alia.ui.requestInput({
           threadId,
           rendererId: "server-confirm",
           title: consent.title,
@@ -646,7 +646,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
 
   // ------------------------------------------------------------------- RPC
 
-  bb.rpc.register(
+  alia.rpc.register(
     rpcContract,
     createRpcHandlers({
       store,
@@ -680,7 +680,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
   let simulatorCli: SimulatorCliRun | null = null;
   let simulatorInstructions: string | null = null;
   try {
-    await installSimulators(bb, {
+    await installSimulators(alia, {
       db,
       settings,
       mountCli: (run) => {
@@ -715,7 +715,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
 
   // -------------------------------------------------------------- services
 
-  bb.background.service("probe", {
+  alia.background.service("probe", {
     async start(signal) {
       await collector.isXcodeAvailable().catch(() => false);
       await collector.fullScan(Date.now(), signal).catch((error: unknown) => {
@@ -754,7 +754,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
           } else if (open) {
             pendingVerdicts = true;
           }
-          // Opportunistic retention: the 04:23 cron only fires if bb happens
+          // Opportunistic retention: the 04:23 cron only fires if VesnALIA happens
           // to be awake then, which on this machine it never was — the db held
           // fourteen MONTHS of runs against a 30-day retention setting. The
           // probe loop is already background work, so piggyback on it.
@@ -815,7 +815,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
    * read. Cheap when there are none — one indexed query per idle tick — so the
    * single-machine setup pays nothing it would notice.
    */
-  bb.background.service("remote-builds", {
+  alia.background.service("remote-builds", {
     async start(signal) {
       while (!signal.aborted) {
         let busy = false;
@@ -835,7 +835,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
    * so a thread turning active on a MacBook has its Xcode.app build on the
    * row within moments; each Mac then runs its own loop (`RemoteWatch`).
    */
-  bb.background.service("remote-watch", {
+  alia.background.service("remote-watch", {
     async start(signal) {
       try {
         while (!signal.aborted) {
@@ -856,7 +856,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
     },
   });
 
-  bb.background.schedule("discover", "*/10 * * * *", () => {
+  alia.background.schedule("discover", "*/10 * * * *", () => {
     // A sweep may spend up to 60s in xcresulttool for each bundle. Keeping
     // that work inside the schedule callback made the host measure a 27s
     // handler and could push the whole plugin into an error state. The
@@ -884,7 +884,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
     // and the WAL was never checkpointed — the visible "4.8MB db" was 82% WAL.
     store.pruneRoots(cutoff);
     store.checkpoint();
-    await bb.storage.kv.set("last-prune-at", now);
+    await alia.storage.kv.set("last-prune-at", now);
     if (bundles.removed > 0) {
       log.info(
         `pruned ${bundles.removed} result bundle(s), freeing ${formatBytes(bundles.bytesFreed)} (${formatBytes(bundles.bytesRetained)} retained)`,
@@ -907,7 +907,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
     }
   };
 
-  bb.background.schedule("prune", "23 4 * * *", () => {
+  alia.background.schedule("prune", "23 4 * * *", () => {
     // Detached like discover: pruning a large backlog plus a WAL checkpoint
     // is real work, and schedule callbacks are measured as handlers.
     detach(runPrune, (error) => log.warn(`scheduled prune failed: ${String(error)}`));
@@ -915,13 +915,13 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
 
   // ------------------------------------------------------------------- CLI
 
-  bb.cli.register({
+  alia.cli.register({
     name: "xcode",
     summary: "Track Xcode builds and tests, and drive the simulators they run on",
     commands: [...CLI_COMMANDS, ...SIMULATOR_CLI_COMMANDS],
     run: (argv, ctx) => {
-      // `bb xcode sim <verb>` — one `cli.register` per plugin, so the
-      // simulator verbs hang off this dispatch rather than owning `bb sims`.
+      // `alia xcode sim <verb>` — one `cli.register` per plugin, so the
+      // simulator verbs hang off this dispatch rather than owning `alia sims`.
       // They keep their own argv from the verb onwards, so every parser in
       // `src/sim/cli.ts` is untouched by living one level deeper.
       if (argv[0] === "sim" || argv[0] === "sims") {
@@ -946,7 +946,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
   // One call per plugin, so both halves are joined here. The simulator half
   // contributes only when its tools were actually registered, which is why this
   // reads the variable rather than the module constant.
-  bb.agents.contributeInstructions(() =>
+  alia.agents.contributeInstructions(() =>
     simulatorInstructions === null
       ? AGENT_INSTRUCTIONS
       : `${AGENT_INSTRUCTIONS}\n\n${simulatorInstructions}`,
@@ -965,11 +965,11 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
     showRun: (id) => cli.show(id),
   });
 
-  bb.agents.registerTool(tools.status);
-  bb.agents.registerTool(tools.lastFailure);
-  bb.agents.registerTool(tools.build);
+  alia.agents.registerTool(tools.status);
+  alia.agents.registerTool(tools.lastFailure);
+  alia.agents.registerTool(tools.build);
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     // Order matters: flip the flag before detaching, so anything the tail
     // loop has already queued finds `disposed` true when it lands.
     log.debug("xcode tracker disposed");

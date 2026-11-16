@@ -2,7 +2,7 @@
  * Sending the captain's words to the first mate through `mate.ask` and `mate.command`, one at a time
  * (`./send-gate`). A failure is shown as a toast; a refused second press does nothing.
  */
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { useSyncExternalStore } from "react";
 import { toast } from "sonner";
 

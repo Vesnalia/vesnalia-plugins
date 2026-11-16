@@ -116,7 +116,7 @@ describe("project artwork policy", () => {
         },
         readFile: async ({ path }) => {
           const content = path === "package.json"
-            ? JSON.stringify({ bb: { branding: { icon: "brand.svg" } } })
+            ? JSON.stringify({ alia: { branding: { icon: "brand.svg" } } })
             : '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"/></svg>';
           return {
             content,
@@ -134,7 +134,7 @@ describe("project artwork policy", () => {
     expect(searches).toBe(0);
   });
 
-  it("returns a declared BB glyph without searching project files", async () => {
+  it("returns a declared VesnALIA glyph without searching project files", async () => {
     let searches = 0;
     const artwork = await findProjectArtwork(
       {
@@ -143,7 +143,7 @@ describe("project artwork policy", () => {
           return { files: [] };
         },
         readFile: async () => {
-          const content = JSON.stringify({ bb: { branding: { icon: "GridView" } } });
+          const content = JSON.stringify({ alia: { branding: { icon: "GridView" } } });
           return { content, contentEncoding: "utf8", mimeType: "application/json", sizeBytes: content.length };
         },
       },
@@ -163,7 +163,7 @@ describe("project artwork policy", () => {
         }),
         readFile: async ({ path }) => {
           if (path === "package.json") {
-            const content = JSON.stringify({ bb: { branding: { icon: "NotABbIcon" } } });
+            const content = JSON.stringify({ alia: { branding: { icon: "NotABbIcon" } } });
             return { content, contentEncoding: "utf8", mimeType: "application/json", sizeBytes: content.length };
           }
           return { content: "iVBORw0KGgo=", contentEncoding: "base64", mimeType: "image/png", sizeBytes: 8 };

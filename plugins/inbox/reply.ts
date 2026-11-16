@@ -1,10 +1,10 @@
-// Route an inbound Telegram reply back into a bb thread: answer a pending
+// Route an inbound Telegram reply back into a VesnALIA thread: answer a pending
 // question, approve/deny an approval, or (if nothing is pending) send it as a
 // follow-up message.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 type Interaction = Awaited<
-  ReturnType<BbPluginApi["sdk"]["threads"]["interactions"]["list"]>
+  ReturnType<AliaPluginApi["sdk"]["threads"]["interactions"]["list"]>
 >[number];
 type QuestionPayload = Extract<
   Interaction["payload"],
@@ -55,19 +55,19 @@ export interface RouteResult {
  * Returns a short confirmation to send back to Telegram.
  */
 export async function routeReply(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
   text: string,
 ): Promise<RouteResult> {
   let thread;
   try {
-    thread = await bb.sdk.threads.get({ threadId });
+    thread = await alia.sdk.threads.get({ threadId });
   } catch {
     return { ok: false, message: "That thread is no longer available." };
   }
 
   const pending = (
-    await bb.sdk.threads.interactions.list({ threadId })
+    await alia.sdk.threads.interactions.list({ threadId })
   ).find((item) => item.status === "pending");
 
   if (pending) {
@@ -84,7 +84,7 @@ export async function routeReply(
               : { selected: [] };
       });
       try {
-        await bb.sdk.threads.interactions.resolve({
+        await alia.sdk.threads.interactions.resolve({
           threadId,
           interactionId: pending.id,
           resolution: { kind: "user_answer", answers },
@@ -96,7 +96,7 @@ export async function routeReply(
       } catch (error) {
         return {
           ok: false,
-          message: `Couldn't submit that answer (${error instanceof Error ? error.message : String(error)}). Answer it in bb.`,
+          message: `Couldn't submit that answer (${error instanceof Error ? error.message : String(error)}). Answer it in VesnALIA.`,
         };
       }
     }
@@ -104,14 +104,14 @@ export async function routeReply(
     if (payload.kind === "plugin") {
       return {
         ok: false,
-        message: "This prompt needs to be answered inside bb.",
+        message: "This prompt needs to be answered inside VesnALIA.",
       };
     }
 
     // Provider approval (plan / command / file change).
     const t = text.trim().toLowerCase();
     if (/^(y|yes|approve|ok|okay|allow|go|do it)\b/.test(t)) {
-      await bb.sdk.threads.interactions.resolve({
+      await alia.sdk.threads.interactions.resolve({
         threadId,
         interactionId: pending.id,
         resolution: { decision: "allow_once", grantedPermissions: null },
@@ -119,7 +119,7 @@ export async function routeReply(
       return { ok: true, message: "✅ Approved." };
     }
     if (/^(n|no|deny|reject|stop|don'?t)\b/.test(t)) {
-      await bb.sdk.threads.interactions.resolve({
+      await alia.sdk.threads.interactions.resolve({
         threadId,
         interactionId: pending.id,
         resolution: { decision: "deny" },
@@ -134,7 +134,7 @@ export async function routeReply(
 
   // Nothing pending — continue the conversation.
   try {
-    await bb.sdk.threads.send({
+    await alia.sdk.threads.send({
       threadId,
       mode: "auto",
       input: [{ type: "text", text, mentions: [] }],

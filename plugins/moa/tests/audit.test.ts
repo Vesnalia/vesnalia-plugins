@@ -1,14 +1,14 @@
 import { afterEach, expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createAudit } from "../audit";
 import { createStore, type Run } from "../store";
 import { referenceBlock } from "../core";
 const disposers: (() => Promise<void>)[] = [];
 afterEach(async () => { for (const fn of disposers.splice(0)) await fn(); });
 function setup() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "moa" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "moa" });
   disposers.push(() => harness.lifecycle.dispose());
-  const store = createStore(bb);
+  const store = createStore(alia);
   const slot = { providerId: "codex", model: "a", reasoningLevel: "medium" as const, agentId: null };
   const first: Run = { id: "11111111-1111-4111-8111-111111111111", threadId: "parent", workerId: "worker", status: "dispatched",
     advisor: slot, aggregator: { ...slot, model: "b" }, startedAt: 1000, finishedAt: 1500, error: null, advice: "First advice",
@@ -27,7 +27,7 @@ function setup() {
     if (Number(limit) > 100) throw new Error("Thread event limit cannot exceed 100");
     return (events[threadId] ?? []).filter(row => !beforeSeq || row.seq < Number(beforeSeq)).sort((a, b) => b.seq - a.seq).slice(0, Number(limit));
   });
-  return { audit: createAudit(bb, store), first, second, events, store };
+  return { audit: createAudit(alia, store), first, second, events, store };
 }
 it("binds history to actual outgoing requests, not identical question text or user-written markers", async () => {
   const f = setup();
@@ -55,7 +55,7 @@ it("refuses a consultation id from another chat", async () => {
   const f = setup(); await expect(f.audit.detail("other", f.first.id)).rejects.toThrow("not found");
 });
 
-it("pages past 100 newer requests within BB's native event limit", async () => {
+it("pages past 100 newer requests within VesnALIA's native event limit", async () => {
   const f = setup();
   for (let i = 0; i < 100; i++) f.events.parent.push({ threadId: "parent", seq: 100 + i, createdAt: 3000 + i,
     type: "client/turn/requested", data: { input: [{ type: "text", text: "ordinary request" }] } });

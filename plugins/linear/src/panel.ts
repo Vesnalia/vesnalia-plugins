@@ -9,7 +9,7 @@ import { todayAsTimelessDate } from "./format.js";
 import {
   selectPanelState,
   selectRow,
-  type BbFact,
+  type AliaFact,
   type Grouping,
   type IssueRowView,
 } from "./select/panel.js";
@@ -55,16 +55,16 @@ export interface PanelDeps {
   readonly store: Store;
   readonly now: () => number;
   readonly hasCredential: boolean;
-  /** Teams bound to at least one bb project. The panel's scope is the
+  /** Teams bound to at least one VesnALIA project. The panel's scope is the
    *  binding, never the workspace. */
   readonly boundTeamIds: readonly string[];
   /** Which of those teams have finished their bounded backfill. A team that
    *  has not is *reading*, not *empty*. */
   readonly backfilledTeamIds: ReadonlySet<string>;
   readonly notice: PanelNotice | null;
-  /** What bb knows that Linear cannot. Empty until the milestone that fills
+  /** What VesnALIA knows that Linear cannot. Empty until the milestone that fills
    *  it; an absent fact renders as no fact rather than as a wrong one. */
-  readonly bbFacts?: ReadonlyMap<string, BbFact>;
+  readonly aliaFacts?: ReadonlyMap<string, AliaFact>;
 }
 
 /**
@@ -72,7 +72,7 @@ export interface PanelDeps {
  *
  * The panel windows above 200 rows, 60 at a time, so anything past this is
  * invisible until the user filters or searches — and shipping ten thousand
- * rows to render sixty is the kind of thing that makes a plugin the reason bb
+ * rows to render sixty is the kind of thing that makes a plugin the reason VesnALIA
  * feels slow.
  */
 export const PANEL_ROW_LIMIT = 300;
@@ -82,7 +82,7 @@ export const PANEL_ROW_LIMIT = 300;
  *
  * The value is untrusted — it round-trips through the address bar — so it is
  * resolved first and then **narrowed against the bound set**. That second step
- * is what stops a hand-edited deep link from reading a team no bb project
+ * is what stops a hand-edited deep link from reading a team no VesnALIA project
  * binds, and it is why an unknown team produces the no-binding state rather
  * than an empty list that looks like a team with no work.
  */
@@ -203,9 +203,9 @@ export function buildPanelView(deps: PanelDeps, query: PanelQuery): PanelView {
     now: deps.now(),
     today,
     // Grouping by state means every glyph inside a group is identical, so the
-    // lead column carries the bb-native fact instead and the state moves to
+    // lead column carries the alia-native fact instead and the state moves to
     // the header where it varies.
-    lead: query.grouping === "state" ? ("bb-fact" as const) : ("state" as const),
+    lead: query.grouping === "state" ? ("alia-fact" as const) : ("state" as const),
   };
 
   const views: IssueRowView[] = issues.map((issue) =>
@@ -220,7 +220,7 @@ export function buildPanelView(deps: PanelDeps, query: PanelQuery): PanelView {
         cycleName: issue.cycleId === null ? null : (cycleNames.get(issue.cycleId) ?? null),
         showCycle: spansCycles,
       },
-      deps.bbFacts?.get(issue.id) ?? "none",
+      deps.aliaFacts?.get(issue.id) ?? "none",
     ),
   );
 
@@ -316,9 +316,9 @@ function describeActiveFacets(
 /**
  * The panel's default segment.
  *
- * Grouped by **bb fact**, so the lead glyph carries the Linear state — the
+ * Grouped by **VesnALIA fact**, so the lead glyph carries the Linear state — the
  * mirror image of *All issues*, where the grouping is by state and the lead
- * carries the bb fact. In both cases the lead column shows the thing that
+ * carries the VesnALIA fact. In both cases the lead column shows the thing that
  * varies within a group, which is the only way a column of glyphs is worth
  * the pixels.
  */
@@ -434,7 +434,7 @@ export function buildWorkingSet(deps: PanelDeps, team: string | null): WorkingSe
   // than the row limit, the viewer's own low-priority work sits past the cut,
   // and "Assigned to you, never started" showed 5 of 41. So the viewer's open
   // issues are fetched on their own and merged in, in the same order. The
-  // same goes for issues with bb work on this machine (a thread, a branch, a
+  // same goes for issues with VesnALIA work on this machine (a thread, a branch, a
   // pull request): Running, PR needs you and In progress are about that work
   // whoever the issue is assigned to, and it is a handful of rows.
   const viewerId = deps.store.viewer()?.id ?? null;
@@ -448,13 +448,13 @@ export function buildWorkingSet(deps: PanelDeps, team: string | null): WorkingSe
           sort: "priority",
           limit: PANEL_ROW_LIMIT,
         });
-  const bbWorkIssues = deps.store.queryIssues({
+  const aliaWorkIssues = deps.store.queryIssues({
     teamIds,
-    withBbWork: true,
+    withAliaWork: true,
     sort: "priority",
     limit: PANEL_ROW_LIMIT,
   });
-  const issues = mergeByPriority(teamIssues, viewerIssues, bbWorkIssues);
+  const issues = mergeByPriority(teamIssues, viewerIssues, aliaWorkIssues);
   const issueIds = issues.map((issue) => issue.id);
 
   const states = new Map<string, WorkflowStateRow>();
@@ -484,7 +484,7 @@ export function buildWorkingSet(deps: PanelDeps, team: string | null): WorkingSe
   const facts: WorkingFacts = {
     running: new Set(
       links
-        .filter((link) => deps.bbFacts?.get(link.issueId) === "thread-running")
+        .filter((link) => deps.aliaFacts?.get(link.issueId) === "thread-running")
         .map((link) => link.issueId),
     ),
     threaded: new Set(links.map((link) => link.issueId)),
@@ -514,7 +514,7 @@ export function buildWorkingSet(deps: PanelDeps, team: string | null): WorkingSe
     priorityLabels,
     now: deps.now(),
     today: todayAsTimelessDate(deps.now()),
-    // Grouped by bb fact, so the lead is the Linear state.
+    // Grouped by VesnALIA fact, so the lead is the Linear state.
     lead: "state" as const,
   };
   const prByIssue = new Map(
@@ -543,7 +543,7 @@ export function buildWorkingSet(deps: PanelDeps, team: string | null): WorkingSe
               completedColor: completedColors.get(issue.teamId) ?? null,
               showCycle: false,
             },
-            deps.bbFacts?.get(issue.id) ?? "none",
+            deps.aliaFacts?.get(issue.id) ?? "none",
           ),
         ),
     })),

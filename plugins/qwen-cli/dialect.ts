@@ -4,7 +4,7 @@ import {
   type AcpClassifiedToolCall,
   type AcpToolCallUpdateEvent,
   type AcpToolKind,
-} from "@get-bb/plugin-sdk/provider-bridge/acp";
+} from "@vesnalia/plugin-sdk/provider-bridge/acp";
 
 // ---- Public types ----
 

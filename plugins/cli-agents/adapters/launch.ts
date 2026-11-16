@@ -30,12 +30,12 @@ export async function prepareLaunch(
     const file = join(dir, "claude");
     await atomicWrite(
       file,
-      `#!/bin/sh\nunset BB_CLAUDE_CODE_EXECUTABLE\nexec ${shellQuote(command)} "$@" --agent ${shellQuote(agentId)}\n`,
+      `#!/bin/sh\nunset ALIA_CLAUDE_CODE_EXECUTABLE\nexec ${shellQuote(command)} "$@" --agent ${shellQuote(agentId)}\n`,
       0o700,
     );
     return [
       {
-        name: "BB_CLAUDE_CODE_EXECUTABLE",
+        name: "ALIA_CLAUDE_CODE_EXECUTABLE",
         value: file,
         reason: `CLI Agents: ${agentId}`,
       },

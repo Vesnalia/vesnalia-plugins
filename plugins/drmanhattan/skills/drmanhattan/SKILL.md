@@ -16,7 +16,7 @@ manhattan submit --wait -- cargo test
 ```
 
 It prints the output and exits with the command's exit code. The run is linked to this
-thread (drmanhattan reads `BB_THREAD_ID`), so it shows in the thread's context row and
+thread (drmanhattan reads `ALIA_THREAD_ID`), so it shows in the thread's context row and
 Info tab, and on the drmanhattan dashboard with a link back here.
 
 - Your tool timed out while waiting: don't submit again. `manhattan follow <name>` (the
@@ -34,8 +34,8 @@ Info tab, and on the drmanhattan dashboard with a link back here.
 ## Look at runs
 
 ```sh
-bb drmanhattan runs [--thread <id>] [--limit N] [--json]   # this thread's runs
-bb drmanhattan status [--machine <host-id>] [--json]       # the whole queue
-bb drmanhattan cancel <run-id> [--thread <id>]             # cancel one of this thread's runs
+alia drmanhattan runs [--thread <id>] [--limit N] [--json]   # this thread's runs
+alia drmanhattan status [--machine <host-id>] [--json]       # the whole queue
+alia drmanhattan cancel <run-id> [--thread <id>]             # cancel one of this thread's runs
 manhattan status                                           # the whole queue, from the shell
 ```

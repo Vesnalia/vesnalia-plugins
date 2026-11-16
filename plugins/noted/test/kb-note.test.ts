@@ -7,6 +7,6 @@ describe("buildCompanionNote", () => {
     expect(n.startsWith('---\ntitle: "Plan A"\ncreated: "20260902150000"\nprofile: durable_research\n')).toBe(true);
     expect(n).toContain('executive_summary: "Why A."');
     expect(n).toContain("[[20260902150000_Plan_A.html]]");
-    expect(n).toContain("bb thread: thr_x");
+    expect(n).toContain("alia thread: thr_x");
   });
 });

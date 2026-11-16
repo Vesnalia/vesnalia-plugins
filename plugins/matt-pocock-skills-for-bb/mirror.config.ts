@@ -1,11 +1,11 @@
 export const mirrorConfig = {
   identity: {
-    packageName: "bb-plugin-matt-pocock-skills-for-bb",
-    pluginId: "matt-pocock-skills-for-bb",
-    cliName: "matt-pocock-skills-for-bb",
-    displayName: "Matt Pocock skills for bb",
+    packageName: "alia-plugin-matt-pocock-skills-for-alia",
+    pluginId: "matt-pocock-skills-for-alia",
+    cliName: "matt-pocock-skills-for-alia",
+    displayName: "Matt Pocock skills for VesnALIA",
     shortName: "Matt Pocock skills",
-    description: "Matt Pocock's engineering and productivity skills for bb, with experimental skills available by opt-in. Synced daily from mattpocock/skills.",
+    description: "Matt Pocock's engineering and productivity skills for VesnALIA, with experimental skills available by opt-in. Synced daily from mattpocock/skills.",
     icon: "Layers",
     pageId: "matt-pocock-skills",
     pagePath: "matt-pocock-skills",
@@ -13,7 +13,7 @@ export const mirrorConfig = {
     eventChannel: "matt-pocock-skills-state-changed",
   },
   mirror: {
-    repo: "erikmackinnon/bb-plugin-matt-pocock-skills-for-bb",
+    repo: "erikmackinnon/alia-plugin-matt-pocock-skills-for-alia",
     url: "https://github.com/erikmackinnon/bb-plugin-matt-pocock-skills-for-bb",
     gitUrl: "https://github.com/erikmackinnon/bb-plugin-matt-pocock-skills-for-bb.git",
     issuesUrl: "https://github.com/erikmackinnon/bb-plugin-matt-pocock-skills-for-bb/issues",
@@ -38,7 +38,7 @@ export const mirrorConfig = {
     catalog: "generated/catalog.json",
     commitMarker: "upstream/UPSTREAM_SHA",
     dateMarker: "upstream/UPSTREAM_COMMITTED_AT",
-    runtimeNote: "compat/bb-runtime-note.md",
+    runtimeNote: "compat/alia-runtime-note.md",
     skillRoots: ["matt-pocock/skills/engineering", "matt-pocock/skills/productivity", "matt-pocock/skills/in-progress"],
   },
   selection: {
@@ -58,7 +58,7 @@ export const mirrorConfig = {
     retryMs: { baseMs: 2_000, maxMs: 60_000 },
     incompletePolicy: "yield-affected-names",
     refreshOn: ["startup", "plugin-change", "explicit-refresh"],
-    sourceAdapters: ["bb-plugin", "bb-user"],
+    sourceAdapters: ["alia-plugin", "alia-user"],
   },
   dependencies: {
     activationKinds: ["hard", "conditional-hard"],
@@ -106,7 +106,7 @@ export const mirrorConfig = {
     syncCron: "17 9 * * *",
     updateCron: "0 */6 * * *",
     concurrencyGroup: "matt-pocock-upstream-sync",
-    dataDir: "/tmp/matt-pocock-bb",
+    dataDir: "/tmp/matt-pocock-alia",
     reviewBranch: "sync/upstream",
     reviewLabel: "needs-review",
     commitPrefix: "chore(sync): matt-pocock",
@@ -125,11 +125,11 @@ export const mirrorConfig = {
   },
   eval: { provider: "codex", model: "gpt-6.1-sol", reasoning: "high", timeoutSeconds: 900, pollSeconds: 5 },
   marketplace: {
-    entryPath: "marketplace/matt-pocock-skills-for-bb.json",
+    entryPath: "marketplace/matt-pocock-skills-for-alia.json",
     /** Store listing text: a one-sentence hook, then one capability per sentence. The manifest keeps its short line. */
-    description: "Gives your agents Matt Pocock's engineering and productivity skills as slash commands, from test-first development to issue triage. Choose which skills each project gets, or turn them on only in the projects you pick; Matt's 6 experimental skills stay off until you opt in. A same-name skill from another plugin or your own bb skills keeps its name, and you can keep both, with Matt's as matt-pocock-<name>. Turning off a skill that another one needs asks first and names what else changes. New releases follow mattpocock/skills daily; some skills use Git or GitHub CLI, and no account is needed.",
-    overviewPath: "overview/matt-pocock-skills-for-bb.md",
-    screenshotPaths: ["screenshots/matt-pocock-skills-for-bb/overview.png", "screenshots/matt-pocock-skills-for-bb/project.png", "screenshots/matt-pocock-skills-for-bb/dependencies.png", "screenshots/matt-pocock-skills-for-bb/skills.png"],
+    description: "Gives your agents Matt Pocock's engineering and productivity skills as slash commands, from test-first development to issue triage. Choose which skills each project gets, or turn them on only in the projects you pick; Matt's 6 experimental skills stay off until you opt in. A same-name skill from another plugin or your own VesnALIA skills keeps its name, and you can keep both, with Matt's as matt-pocock-<name>. Turning off a skill that another one needs asks first and names what else changes. New releases follow mattpocock/skills daily; some skills use Git or GitHub CLI, and no account is needed.",
+    overviewPath: "overview/matt-pocock-skills-for-alia.md",
+    screenshotPaths: ["screenshots/matt-pocock-skills-for-alia/overview.png", "screenshots/matt-pocock-skills-for-alia/project.png", "screenshots/matt-pocock-skills-for-alia/dependencies.png", "screenshots/matt-pocock-skills-for-alia/skills.png"],
     category: "code-and-reviews",
     sourceRange: "^0.1.0",
   },

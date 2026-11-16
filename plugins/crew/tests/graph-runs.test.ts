@@ -1,5 +1,5 @@
 // BBP-31: a graph run linked back to the member/crew that started it —
-// durable storage, activity, bb crew stop (cancel) and bb crew delete
+// durable storage, activity, VesnALIA crew stop (cancel) and VesnALIA crew delete
 // (worker thread cleanup).
 import { describe, expect, it } from "vitest";
 import type { GraphRun, GraphsRpc } from "../lib/graphs";
@@ -85,7 +85,7 @@ describe("service.graphs.run: records the run durably", () => {
   });
 });
 
-describe("service.graphs.cancelOpen (bb crew stop)", () => {
+describe("service.graphs.cancelOpen (VesnALIA crew stop)", () => {
   it("positive: stops every open run via the RPC and marks it stopped locally", async () => {
     const stopped: string[] = [];
     const rpc: GraphsRpc = {
@@ -126,7 +126,7 @@ describe("service.graphs.cancelOpen (bb crew stop)", () => {
     expect(calls).toBe(0);
   });
 
-  it("bb crew stop cancels the crew's open graph runs", async () => {
+  it("alia crew stop cancels the crew's open graph runs", async () => {
     const stopped: string[] = [];
     const rpc: GraphsRpc = {
       listGraphs: async () => [],
@@ -145,7 +145,7 @@ describe("service.graphs.cancelOpen (bb crew stop)", () => {
   });
 });
 
-describe("service.graphs.workerThreadIds and bb crew delete", () => {
+describe("service.graphs.workerThreadIds and VesnALIA crew delete", () => {
   it("positive: collects childThreadIds across every run of the crew, done or open", async () => {
     const rpc: GraphsRpc = {
       listGraphs: async () => [],
@@ -196,7 +196,7 @@ describe("service.graphs.workerThreadIds and bb crew delete", () => {
     expect(calls).toBe(0);
   });
 
-  it("bb crew delete --threads delete also deletes the graph run worker threads", async () => {
+  it("alia crew delete --threads delete also deletes the graph run worker threads", async () => {
     const rpc: GraphsRpc = {
       listGraphs: async () => [],
       startRun: async () => mkRun({ id: "x", status: "running" }),

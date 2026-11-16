@@ -23,13 +23,13 @@ function setup({ env = {}, args = [], cwdInit } = {}) {
 }
 const prompt = (agent, sessionId, t) => agent.request("session/prompt", { sessionId, prompt: [{ type: "text", text: t }] });
 const git = (cwd, ...a) => execFileSync("git", ["-C", cwd, ...a], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
-const bbServer = [{ name: "bridge", command: "node", args: [], env: [{ name: "BB_ACP_DYNAMIC_TOOL_TOKEN", value: "secret-token" }] }];
+const aliaServer = [{ name: "bridge", command: "node", args: [], env: [{ name: "ALIA_ACP_DYNAMIC_TOOL_TOKEN", value: "secret-token" }] }];
 
 test("Windows does not write MCP credentials without an owner-only ACL", { skip: process.platform !== "win32" }, async () => {
   const d = setup();
   try {
     await d.agent.request("initialize", { protocolVersion: 1 });
-    await d.agent.request("session/new", { cwd: d.cwd, mcpServers: bbServer });
+    await d.agent.request("session/new", { cwd: d.cwd, mcpServers: aliaServer });
     assert.equal(fs.existsSync(path.join(d.cwd, ".zcode", "config.json")), false);
   } finally {
     d.agent.close();
@@ -55,13 +55,13 @@ test("the plugin setting decides the mode: Full access by default, the setting c
   a.agent.close();
 });
 
-test("the chat's BB permission mode wins only when the setting says so", async () => {
-  for (const [follow, bb, want] of [["1", "accept-edits", "auto"], ["1", "full", "full"], ["0", "accept-edits", "full"], ["1", "", "full"]]) {
-    const d = setup({ env: { ZCODE_ACP_FOLLOW_CHAT: follow }, args: bb ? [`--bb-permission=${bb}`] : [] });
+test("the chat's VesnALIA permission mode wins only when the setting says so", async () => {
+  for (const [follow, alia, want] of [["1", "accept-edits", "auto"], ["1", "full", "full"], ["0", "accept-edits", "full"], ["1", "", "full"]]) {
+    const d = setup({ env: { ZCODE_ACP_FOLLOW_CHAT: follow }, args: alia ? [`--alia-permission=${alia}`] : [] });
     await d.agent.request("initialize", { protocolVersion: 1 });
     const s = await d.agent.request("session/new", { cwd: d.cwd, mcpServers: [] });
     await prompt(d.agent, s.sessionId, "first");
-    assert.match(d.calls().find((c) => c.startsWith("send ")), new RegExp(`--mode ${want}`), `follow=${follow} bb=${bb}`);
+    assert.match(d.calls().find((c) => c.startsWith("send ")), new RegExp(`--mode ${want}`), `follow=${follow} alia=${alia}`);
     d.agent.close();
   }
 });
@@ -84,12 +84,12 @@ test("Plan mode is switched on only for a session that asks for it, and its chip
   n.agent.close();
 });
 
-test("Autonomous mode lets in-project file edits through by itself, and asks BB for the rest (scope project)", async () => {
+test("Autonomous mode lets in-project file edits through by itself, and asks VesnALIA for the rest (scope project)", async () => {
   const d = setup({ env: { ZCODE_ACP_MODE_DEFAULT: "auto" } });
   d.agent.handlers.permission = () => "deny";
   await d.agent.request("initialize", { protocolVersion: 1 });
   const s = await d.agent.request("session/new", { cwd: d.cwd, mcpServers: [] });
-  // the fake card writes /tmp/x.txt: outside the project, so BB is asked (and denies)
+  // the fake card writes /tmp/x.txt: outside the project, so VesnALIA is asked (and denies)
   await prompt(d.agent, s.sessionId, "approve this");
   assert.ok(d.calls().some((c) => c.startsWith("deny task_")));
   d.agent.close();
@@ -102,10 +102,10 @@ test("Autonomous mode lets in-project file edits through by itself, and asks BB 
   a.agent.close();
 });
 
-test("the MCP entry (BB tokens) never reaches a commit: .zcode/ is excluded in the repository, the file is 0600, and it is gone after the session", async () => {
+test("the MCP entry (VesnALIA tokens) never reaches a commit: .zcode/ is excluded in the repository, the file is 0600, and it is gone after the session", async () => {
   const d = setup({ cwdInit: (cwd) => { git(cwd, "init", "-q"); git(cwd, "config", "user.email", "t@example.com"); git(cwd, "config", "user.name", "t"); } });
   await d.agent.request("initialize", { protocolVersion: 1 });
-  const s = await d.agent.request("session/new", { cwd: d.cwd, mcpServers: bbServer });
+  const s = await d.agent.request("session/new", { cwd: d.cwd, mcpServers: aliaServer });
   const file = path.join(d.cwd, ".zcode", "config.json");
   assert.ok(fs.existsSync(file));
   assert.equal(fs.statSync(file).mode & 0o777, 0o600);
@@ -127,7 +127,7 @@ test("a worktree shares the repository's exclude file, so its .zcode/ is exclude
     },
   });
   await d.agent.request("initialize", { protocolVersion: 1 });
-  await d.agent.request("session/new", { cwd: wt, mcpServers: bbServer });
+  await d.agent.request("session/new", { cwd: wt, mcpServers: aliaServer });
   assert.ok(fs.existsSync(path.join(wt, ".zcode", "config.json")));
   assert.equal(git(wt, "status", "--porcelain").includes(".zcode"), false);
   d.agent.close();
@@ -142,7 +142,7 @@ test("a config.json that git already tracks is left alone (no token is written i
     },
   });
   await d.agent.request("initialize", { protocolVersion: 1 });
-  await d.agent.request("session/new", { cwd: d.cwd, mcpServers: bbServer });
+  await d.agent.request("session/new", { cwd: d.cwd, mcpServers: aliaServer });
   assert.equal(fs.readFileSync(path.join(d.cwd, ".zcode", "config.json"), "utf8"), '{"mcp":{"servers":{}}}\n');
   d.agent.close();
 });
@@ -163,7 +163,7 @@ test("closing a session cancels its still-running ZCode task and takes an auto-r
   d.agent.close();
 });
 
-test("the models BB offers are the ones ZCode offers (enabled ones from its model list)", async () => {
+test("the models VesnALIA offers are the ones ZCode offers (enabled ones from its model list)", async () => {
   const d = setup();
   await d.agent.request("initialize", { protocolVersion: 1 });
   const s = await d.agent.request("session/new", { cwd: d.cwd, mcpServers: [] });

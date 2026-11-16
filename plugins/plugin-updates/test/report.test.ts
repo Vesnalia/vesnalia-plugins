@@ -4,14 +4,14 @@ import { buildReport, type CheckEntry } from "../src/report";
 const homepageUpdate: CheckEntry = {
   id: "homepage",
   outcome: "update-available",
-  installed: { version: "7caaae1", label: "0.2.5", display: "bb-homepage.git@v0.2.5 (7caaae1)" },
-  candidate: { version: "dbcb6f5", label: "0.2.7", display: "bb-homepage.git@v0.2.7 (dbcb6f5)" },
+  installed: { version: "7caaae1", label: "0.2.5", display: "alia-homepage.git@v0.2.5 (7caaae1)" },
+  candidate: { version: "dbcb6f5", label: "0.2.7", display: "alia-homepage.git@v0.2.7 (dbcb6f5)" },
 };
 
 const agentBoardCurrent: CheckEntry = {
   id: "agent-board",
   outcome: "current",
-  installed: { version: "c4a6633", label: "0.7.0", display: "bb-plugin-agent-board.git@v0.7.0 (c4a6633)" },
+  installed: { version: "c4a6633", label: "0.7.0", display: "alia-plugin-agent-board.git@v0.7.0 (c4a6633)" },
 };
 
 const agentBoardRelease = {
@@ -35,8 +35,8 @@ describe("buildReport", () => {
     expect(report.compatible).toEqual([
       {
         id: "homepage",
-        from: "bb-homepage.git@v0.2.5 (7caaae1)",
-        to: "bb-homepage.git@v0.2.7 (dbcb6f5)",
+        from: "alia-homepage.git@v0.2.5 (7caaae1)",
+        to: "alia-homepage.git@v0.2.7 (dbcb6f5)",
         version: "dbcb6f5",
       },
     ]);
@@ -71,8 +71,8 @@ describe("buildReport", () => {
       {
         id: "homepage",
         kind: "compatible",
-        from: "bb-homepage.git@v0.2.5 (7caaae1)",
-        to: "bb-homepage.git@v0.2.7 (dbcb6f5)",
+        from: "alia-homepage.git@v0.2.5 (7caaae1)",
+        to: "alia-homepage.git@v0.2.7 (dbcb6f5)",
         version: "dbcb6f5",
       },
     ]);
@@ -110,7 +110,7 @@ describe("buildReport", () => {
         {
           ...agentBoardCurrent,
           outcome: "update-available",
-          candidate: { version: "aaaa111", label: "0.7.3", display: "bb-plugin-agent-board.git@v0.7.3 (aaaa111)" },
+          candidate: { version: "aaaa111", label: "0.7.3", display: "alia-plugin-agent-board.git@v0.7.3 (aaaa111)" },
         },
       ],
       releases: { "agent-board": agentBoardRelease },
@@ -128,7 +128,7 @@ describe("buildReport", () => {
       checks: [
         {
           ...agentBoardCurrent,
-          blocked: { version: "v0.7.5", label: "0.7.5", reasons: ["requires bb >=0.60"] },
+          blocked: { version: "v0.7.5", label: "0.7.5", reasons: ["requires VesnALIA >=0.60"] },
         },
       ],
       releases: {},
@@ -137,17 +137,17 @@ describe("buildReport", () => {
     });
 
     expect(report.blocked).toEqual([
-      { id: "agent-board", version: "v0.7.5", label: "0.7.5", reasons: ["requires bb >=0.60"] },
+      { id: "agent-board", version: "v0.7.5", label: "0.7.5", reasons: ["requires VesnALIA >=0.60"] },
     ]);
     expect(report.badgeCount).toBe(0);
     expect(report.newlySeen).toEqual([]);
   });
 
-  it("lists releases outside the range that this bb can't run as blocked, beside bb's own", () => {
-    const reasons = ["requires bb >=0.47, running bb is 0.46.1"];
+  it("lists releases outside the range that this VesnALIA can't run as blocked, beside VesnALIA's own", () => {
+    const reasons = ["requires VesnALIA >=0.47, running VesnALIA is 0.46.1"];
     const report = buildReport({
       checks: [
-        { ...agentBoardCurrent, blocked: { version: "v0.7.5", label: "0.7.5", reasons: ["requires bb >=0.60"] } },
+        { ...agentBoardCurrent, blocked: { version: "v0.7.5", label: "0.7.5", reasons: ["requires VesnALIA >=0.60"] } },
         { ...homepageUpdate, id: "notes" },
       ],
       releases: {
@@ -161,7 +161,7 @@ describe("buildReport", () => {
     });
 
     expect(report.blocked).toEqual([
-      { id: "agent-board", version: "v0.7.5", label: "0.7.5", reasons: ["requires bb >=0.60"] },
+      { id: "agent-board", version: "v0.7.5", label: "0.7.5", reasons: ["requires VesnALIA >=0.60"] },
       { id: "agent-board", version: "0.9.2", reasons },
       { id: "notes", version: "0.9.2", reasons },
     ]);
@@ -184,7 +184,7 @@ describe("buildReport", () => {
         {
           id: "gone",
           outcome: "unavailable",
-          installed: { version: "abc1234", label: "1.0.0", display: "bb-plugin-gone.git@v1.0.0 (abc1234)" },
+          installed: { version: "abc1234", label: "1.0.0", display: "alia-plugin-gone.git@v1.0.0 (abc1234)" },
           detail: "repository not found",
         },
       ],
@@ -194,13 +194,13 @@ describe("buildReport", () => {
     });
 
     expect(report.upToDate).toEqual([
-      { id: "agent-board", installed: "bb-plugin-agent-board.git@v0.7.0 (c4a6633)" },
+      { id: "agent-board", installed: "alia-plugin-agent-board.git@v0.7.0 (c4a6633)" },
     ]);
     expect(report.other).toEqual([
       { id: "tasks", installed: "builtin:tasks", outcome: "pinned" },
       {
         id: "gone",
-        installed: "bb-plugin-gone.git@v1.0.0 (abc1234)",
+        installed: "alia-plugin-gone.git@v1.0.0 (abc1234)",
         outcome: "unavailable",
         detail: "repository not found",
       },
@@ -261,8 +261,8 @@ describe("buildReport", () => {
     expect(report.compatible).toEqual([
       {
         id: "homepage",
-        from: "bb-homepage.git@v0.2.5 (7caaae1)",
-        to: "bb-homepage.git@v0.2.7 (dbcb6f5)",
+        from: "alia-homepage.git@v0.2.5 (7caaae1)",
+        to: "alia-homepage.git@v0.2.7 (dbcb6f5)",
         version: "dbcb6f5",
         stale: { confirmedAt: 2000 },
       },
@@ -306,13 +306,13 @@ describe("buildReport", () => {
     expect(report.newlySeen).toEqual([]);
   });
 
-  it("keeps release results for plugins bb couldn't check, in the order given, never as idle", () => {
+  it("keeps release results for plugins VesnALIA couldn't check, in the order given, never as idle", () => {
     const report = buildReport({
       checks: [homepageUpdate],
       releases: {
         c: { kind: "failed", error: "Authentication failed" },
-        b: { kind: "blocked", version: "2.0.0", reasons: ["requires bb >=9"] },
-        "agent-board": { ...agentBoardRelease, blocked: { version: "1.0.0", reasons: ["requires bb >=9"] } },
+        b: { kind: "blocked", version: "2.0.0", reasons: ["requires VesnALIA >=9"] },
+        "agent-board": { ...agentBoardRelease, blocked: { version: "1.0.0", reasons: ["requires VesnALIA >=9"] } },
         off: { ...agentBoardRelease, from: "0.1.0" },
       },
       ignored: {},
@@ -327,8 +327,8 @@ describe("buildReport", () => {
       { id: "off", ...offered, from: "0.1.0", version: "0.9.2", disabled: true },
     ]);
     expect(report.blocked).toEqual([
-      { id: "agent-board", version: "1.0.0", reasons: ["requires bb >=9"] },
-      { id: "b", version: "2.0.0", reasons: ["requires bb >=9"] },
+      { id: "agent-board", version: "1.0.0", reasons: ["requires VesnALIA >=9"] },
+      { id: "b", version: "2.0.0", reasons: ["requires VesnALIA >=9"] },
     ]);
     expect(report.releaseCheckFailures).toEqual([{ id: "c", error: "Authentication failed" }]);
     expect(report.upToDate).toEqual([]);

@@ -14,12 +14,12 @@ import path from "node:path";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import { inspectMove, moveDirectory } from "./move-files";
 import plugin from "./server";
 async function setup() {
   const base = await realpath(
-    await mkdtemp(path.join(os.tmpdir(), "bb-move-test-")),
+    await mkdtemp(path.join(os.tmpdir(), "alia-move-test-")),
   );
   const root = path.join(base, "project");
   await mkdir(root);
@@ -123,7 +123,7 @@ async function setup() {
       },
     },
   });
-  await plugin(h.bb);
+  await plugin(h.alia);
   return {
     h,
     base,
@@ -281,7 +281,7 @@ it("rejects the filesystem root and home directory", async () => {
   await expect(
     inspectMove({
       source: home,
-      destination: path.join(path.dirname(home), "bb-home-move-test"),
+      destination: path.join(path.dirname(home), "alia-home-move-test"),
     }),
   ).rejects.toThrow("home folder");
 });

@@ -39,10 +39,10 @@ happened in three days.
 | `vercel-gateway` | `GET ai-gateway.vercel.sh/v1/credits` | `{balance, total_used}` — the authoritative live figure |
 | `vercel-gateway` | `GET ai-gateway.vercel.sh/v1/report?group_by=day&provider=token-pass` | per-day `total_cost`, for the shape of the curve |
 | `opencode-usage` | `GET opencode.ai/zen/go/v1/usage` | `usage.{rolling,weekly,monthly}.{percent, resetsAt}` |
-| `codex-usage` | `bb.sdk.system.usageLimits()` → BB's `provider-codex` | the plan's own `usedPercent` and reset, with no spend figure to report |
+| `codex-usage` | `alia.sdk.system.usageLimits()` → VesnALIA's `provider-codex` | the plan's own `usedPercent` and reset, with no spend figure to report |
 | `manual` | — | a figure you type in; the plugin dates it to the day that period first saw it |
 
-Both live sources use credentials bb already calls them with (the AI Gateway key and the
+Both live sources use credentials VesnALIA already calls them with (the AI Gateway key and the
 OpenCode key); no extra token is needed.
 
 Three consequences worth knowing:
@@ -79,7 +79,7 @@ Three consequences worth knowing:
 ## The one slot measured by the provider itself
 
 ChatGPT / Codex reports a share of your plan and no price, so there is no spend figure to divide.
-Rather than count tokens and guess a ceiling, this slot asks BB: `bb.sdk.system.usageLimits()`
+Rather than count tokens and guess a ceiling, this slot asks VesnALIA: `alia.sdk.system.usageLimits()`
 returns every registered provider's own quota, and `provider-codex` answers it from
 `chatgpt.com/backend-api/wham/usage` — the same endpoint the Codex client reads. The percentage is
 the plan's own number.
@@ -90,19 +90,19 @@ figure is nominal and exists only so the slot can be described in the same unit 
 the row never prints it as money, because none was measured. It shows "no dollar limit set"
 instead.
 
-**Setup, and it is not zero-config.** The slot reads BB's Codex provider, so that provider has to
+**Setup, and it is not zero-config.** The slot reads VesnALIA's Codex provider, so that provider has to
 be enabled and signed in:
 
 ```
-bb plugin enable provider-codex
+alia plugin enable provider-codex
 ```
 
-Then sign in through BB's **Settings → Providers** page, which installs the Codex CLI and starts the
+Then sign in through VesnALIA's **Settings → Providers** page, which installs the Codex CLI and starts the
 sign-in for you. Without that setup the slot reads "Could not be read" rather than 0% — a plan with
 an unknown balance is not a plan with an empty one — and the row names which step is missing:
-CLI not installed, signed out, sign-in expired, or a CLI too old for BB to drive.
+CLI not installed, signed out, sign-in expired, or a CLI too old for VesnALIA to drive.
 
-The plugin never installs the CLI or drives a login itself. BB owns provider setup, and a spending
+The plugin never installs the CLI or drives a login itself. VesnALIA owns provider setup, and a spending
 widget should not be managing global packages behind it.
 
 Two things this source cannot do:
@@ -169,5 +169,5 @@ subscription's guess — confirm them before trusting the line.
 npm test          # 155 tests
 npx tsc --noEmit
 npm run build
-bb plugin install . --yes
+alia plugin install . --yes
 ```

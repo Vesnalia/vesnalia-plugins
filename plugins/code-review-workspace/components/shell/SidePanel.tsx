@@ -21,7 +21,7 @@ export const PanelActionsContext = createContext<HTMLElement | null>(null);
  * Comments and Finish review, at the code's right: docked at its width, over the code (`overlay`), or closed. On a
  * phone (`sheet`) over the code is the sheet above the dock. Its views stay mounted when it closes or switches, so
  * neither loses what you were doing; `children` are them, each showing for its own view. The review agent and the main
- * thread are tabs in BB's own side panel (components/PanelTabs.tsx).
+ * thread are tabs in VesnALIA's own side panel (components/PanelTabs.tsx).
  */
 export function SidePanel({ targetKey, placement, sheet, view, width, maxWidth, onWidth, onWidthDone, onClose, onBack, children }: {
   targetKey: string;

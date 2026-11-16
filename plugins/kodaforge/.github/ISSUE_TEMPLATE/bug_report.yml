@@ -13,12 +13,12 @@ body:
     id: versions
     attributes:
       label: Versions
-      description: KodaForge version (`bb plugin list`) and BB version (`bb --version`).
+      description: KodaForge version (`alia plugin list`) and ALIA version (`alia --version`).
     validations:
       required: true
   - type: textarea
     id: logs
     attributes:
       label: Logs
-      description: Output of `bb plugin logs kodaforge`, and anything in KodaForge's Output panel.
+      description: Output of `alia plugin logs kodaforge`, and anything in KodaForge's Output panel.
       render: text

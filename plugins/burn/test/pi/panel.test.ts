@@ -42,7 +42,7 @@ const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe("BurnPanel views", () => {
   it("renders every view at every width without a line exceeding it", async () => {
-    const h = history([session("/s/other", "fix bb footer selector", 5.12, 41, 2)]);
+    const h = history([session("/s/other", "fix VesnALIA footer selector", 5.12, 41, 2)]);
     for (const view of VIEWS.map((v) => v.key)) {
       for (const width of WIDTHS) {
         const { p } = panel({ view, history: h, budget: 10 });
@@ -229,7 +229,7 @@ describe("BurnPanel keys", () => {
 
 describe("BurnPanel history", () => {
   it("loads this project's sessions, shows Loading first, and marks the open one", async () => {
-    const h = history([session("/s/other", "fix bb footer selector", 5.12, 41, 2), session("/s/old", "last week", 3, 9, 72)]);
+    const h = history([session("/s/other", "fix VesnALIA footer selector", 5.12, 41, 2), session("/s/old", "last week", 3, 9, 72)]);
     const { p, requestRender } = panel({ view: "history", history: h });
     expect(text(p.render(100))).toContain("Loading sessions…");
     await flush();
@@ -240,7 +240,7 @@ describe("BurnPanel history", () => {
     expect(out).toContain("$9.94 today");
     expect(out).toContain("2 sessions · 64 calls");
     expect(out).toMatch(/▸ ● burn UX polish +\d\d:\d\d +23 +\$4\.82/);
-    expect(out).toContain("fix bb footer selector");
+    expect(out).toContain("fix VesnALIA footer selector");
     expect(out).not.toContain("last week");
     expect(out).toContain("[ ] range");
   });
@@ -261,7 +261,7 @@ describe("BurnPanel history", () => {
   });
 
   it("resumes the selected session with enter, but not the open one", async () => {
-    const h = history([session("/s/other", "fix bb footer selector", 5.12, 41, 2)]);
+    const h = history([session("/s/other", "fix VesnALIA footer selector", 5.12, 41, 2)]);
     const { p, done } = panel({ view: "history", history: h });
     await flush();
     p.handleInput(KEY.enter);

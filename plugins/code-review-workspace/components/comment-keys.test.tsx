@@ -4,7 +4,7 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { toast } from "sonner";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { defaultKnobs, type Knobs } from "../lib/knobs";
 import { patchReviewState } from "../lib/panel-state";
@@ -25,7 +25,7 @@ afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear(); vi.cl
 Element.prototype.scrollIntoView ??= () => {};
 
 const file = (path: string, lines: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n${lines}`;
-const patch = file("src/a.ts", "@@ -1,2 +1,2 @@\n one\n-two\n+TWO\n") + file("src/b.ts", "@@ -1 +1 @@\n-x\n+bb\n");
+const patch = file("src/a.ts", "@@ -1,2 +1,2 @@\n one\n-two\n+TWO\n") + file("src/b.ts", "@@ -1 +1 @@\n-x\n+alia\n");
 const guide = { title: "Guide", intent: "Parses rows.", unplacedFiles: [] as string[], sections: [
   { id: "c1", title: "Parsing", overview: "Reads rows.", diffs: [{ file: "src/a.ts" }, { file: "src/b.ts" }] },
 ] };
@@ -35,7 +35,7 @@ const comments = [
   { file: "src/b.ts", line: 1, side: "RIGHT", author: "agent", severity: "nit", body: "Spacing.", chapterId: "c1" },
 ];
 // alice's thread on b.ts:1.
-const threads = () => [{ id: "t1", isResolved: false, isOutdated: false, path: "src/b.ts", line: 1, side: "RIGHT", subjectType: "LINE", comments: [{ id: "c1", databaseId: 111, author: "alice", body: "Why bb?", createdAt: Date.now() }] }];
+const threads = () => [{ id: "t1", isResolved: false, isOutdated: false, path: "src/b.ts", line: 1, side: "RIGHT", subjectType: "LINE", comments: [{ id: "c1", databaseId: 111, author: "alice", body: "Why VesnALIA?", createdAt: Date.now() }] }];
 
 async function renderReview({ knobs = defaultKnobs, rpc = {}, drafts = comments }: { knobs?: Knobs; rpc?: Record<string, unknown>; drafts?: unknown[] } = {}) {
   patchReviewState("pr-42", { activeId: "c1" });

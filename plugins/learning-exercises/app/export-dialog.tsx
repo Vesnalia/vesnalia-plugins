@@ -3,8 +3,8 @@
  * root). Where is chosen in a folder browser over the project's checkout (the `browseOrientationFolder`
  * read, one folder at a time: open a folder, **Up** to its parent, pick an existing file to take its name)
  * and a file name box. Every path is built from the listed names and a name with no folders in it, so it
- * stays inside the workspace; the server checks again. This works wherever bb runs (desktop, a browser,
- * a remote machine, mobile): bb offers plugins no native save dialog.
+ * stays inside the workspace; the server checks again. This works wherever VesnALIA runs (desktop, a browser,
+ * a remote machine, mobile): VesnALIA offers plugins no native save dialog.
  *
  * An existing file is never overwritten silently: the first call answers `{ exists: true, sha256 }`, the
  * dialog asks, and **Replace** sends `replace: true` with that hash as `expectedSha256`, so a file changed

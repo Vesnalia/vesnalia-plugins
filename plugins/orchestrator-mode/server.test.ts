@@ -6,8 +6,8 @@ import {
   makePluginAgentConfigurationContext,
   makeThreadResponse,
   type FakePluginHarness,
-} from "@get-bb/plugin-sdk/testing";
-import type { BbPluginApi, PluginSettingValue } from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk/testing";
+import type { AliaPluginApi, PluginSettingValue } from "@vesnalia/plugin-sdk";
 import { REVIEW_TOOL } from "./shared";
 import plugin, { DELEGATE_TOOL, MAX_STATE_BYTES, type OrchestratorStateDto } from "./server";
 import { writeMirror } from "./shared";
@@ -151,7 +151,7 @@ async function load(
   catalog: ProviderCatalogFixture = {},
   seedKv?: Record<string, unknown>,
   seedQueue?: QueueEntry[],
-): Promise<{ bb: BbPluginApi; harness: FakePluginHarness }> {
+): Promise<{ alia: AliaPluginApi; harness: FakePluginHarness }> {
   const providers = catalog.providers ?? [{ id: "acp-omp", available: true }];
   const modelsByProvider = catalog.models ?? {
     "acp-omp": [{ id: "command-code/deepseek/deepseek-v4.1-flash-fast" }],
@@ -246,17 +246,17 @@ async function load(
   });
   if (seedQueue) queueFixture(host.harness, seedQueue);
   if (seedState !== undefined) {
-    await host.bb.storage.kv.set("state", seedState);
+    await host.alia.storage.kv.set("state", seedState);
   }
   for (const [key, value] of Object.entries(seedKv ?? {})) {
-    await host.bb.storage.kv.set(key, value);
+    await host.alia.storage.kv.set(key, value);
   }
-  // The plugin owns the global settings record in KV rather than through BB
+  // The plugin owns the global settings record in KV rather than through VesnALIA
   // settings descriptors, so the values a test names seed that record.
   if (Object.keys(settings).length > 0) {
-    await host.bb.storage.kv.set("settings", settings);
+    await host.alia.storage.kv.set("settings", settings);
   }
-  await plugin(host.bb);
+  await plugin(host.alia);
   // The real host starts services after registration; the official fake host
   // drives them explicitly. Most tests exercise the ready steady state.
   await host.harness.behavior.runService("worker-catalog").done;
@@ -344,7 +344,7 @@ describe("agent configuration", () => {
     await enable(harness);
     expect(sentTexts).toHaveLength(1);
     expect(sentTexts[0]).toContain("ORCHESTRATOR MODE IS ON");
-    expect(sentTexts[0]).toContain("bb orchestrator-mode delegate");
+    expect(sentTexts[0]).toContain("alia orchestrator-mode delegate");
     await harness.behavior.callRpc("set_enabled", { threadId: THREAD, enabled: false });
     expect(sentTexts).toHaveLength(2);
     expect(sentTexts[1]).toContain("Orchestrator mode is now off");
@@ -823,9 +823,9 @@ describe("the dispatch checkpoint", () => {
   });
 
   it("recovers same-child batches already waiting when the plugin reloads", async () => {
-    const { bb } = await load({}, { [THREAD]: { enabled: true } }, {}, undefined,
+    const { alia } = await load({}, { [THREAD]: { enabled: true } }, {}, undefined,
       [childEntry("a1"), childEntry("a2")]);
-    const queued = await bb.sdk.threads.queuedMessages.list({ threadId: THREAD });
+    const queued = await alia.sdk.threads.queuedMessages.list({ threadId: THREAD });
     expect(queued.map((entry) => entry.groupWithNext)).toEqual([true, false]);
   });
 
@@ -942,7 +942,7 @@ describe("the dispatch checkpoint", () => {
   });
 
   it("keeps the per-turn delegation budget through waits and steering messages", async () => {
-    const { bb, harness } = await load({}, {
+    const { alia, harness } = await load({}, {
       [THREAD]: { enabled: true, turnStartedAt: 777 },
     });
     await dispatch(harness, THREAD, { status: "active" }, {
@@ -951,10 +951,10 @@ describe("the dispatch checkpoint", () => {
     await dispatch(harness, THREAD, { status: "active" }, {
       initiator: "user", senderThreadId: null, attempt: "join-turn",
     });
-    const state = await bb.storage.kv.get<Record<string, { turnStartedAt: number }>>("state");
+    const state = await alia.storage.kv.get<Record<string, { turnStartedAt: number }>>("state");
     expect(state?.[THREAD]?.turnStartedAt).toBe(777);
     await dispatch(harness, THREAD, { status: "idle" }, { attempt: "start-turn" });
-    const updated = await bb.storage.kv.get<Record<string, { turnStartedAt: number }>>("state");
+    const updated = await alia.storage.kv.get<Record<string, { turnStartedAt: number }>>("state");
     expect(updated?.[THREAD]?.turnStartedAt).toBeGreaterThan(777);
   });
 
@@ -1032,8 +1032,8 @@ describe("the dispatch checkpoint", () => {
     await dispatch(
       harness,
       "th_recap_worker",
-      { createdAt: Date.now(), originPluginId: "bb-recap" },
-      { initiator: "agent", originPluginId: "bb-recap" },
+      { createdAt: Date.now(), originPluginId: "alia-recap" },
+      { initiator: "agent", originPluginId: "alia-recap" },
     );
     expect(metadata["th_recap_worker"]).toBeUndefined();
   });
@@ -1049,7 +1049,7 @@ describe("the dispatch checkpoint", () => {
 
 describe("the watchdog", () => {
   it("records and deduplicates work delivered in timeline delta patches", async () => {
-    const { bb, harness } = await load({ enforcement: "guard" });
+    const { alia, harness } = await load({ enforcement: "guard" });
     await arm(harness);
     const edit = workRow({
       id: "row_delta", workKind: "file-change", turnId: "turn_2",
@@ -1066,7 +1066,7 @@ describe("the watchdog", () => {
     await new Promise((resolve) => setTimeout(resolve, 350));
     const state = (await harness.behavior.callRpc("get_state", { threadId: THREAD })) as OrchestratorStateDto;
     expect(state).toMatchObject({ violations: [{ id: "row_delta" }], nudgeCount: 1 });
-    expect(await bb.storage.kv.get("state")).toMatchObject({ [THREAD]: { lastSeq: 4 } });
+    expect(await alia.storage.kv.get("state")).toMatchObject({ [THREAD]: { lastSeq: 4 } });
     expect(sentTexts).toHaveLength(1);
   });
 
@@ -1095,14 +1095,14 @@ describe("the watchdog", () => {
   });
 
   it("advances past an empty timeline patch without recording work", async () => {
-    const { bb, harness } = await load();
+    const { alia, harness } = await load();
     await arm(harness);
     harness.inspection.sdk.stub("threads.timeline", async () => ({
       rows: [], maxSeq: 3, delta: { upsertRows: [] },
     }));
     await idle(harness);
     await vi.waitFor(async () => {
-      expect(await bb.storage.kv.get("state")).toMatchObject({ [THREAD]: { lastSeq: 3 } });
+      expect(await alia.storage.kv.get("state")).toMatchObject({ [THREAD]: { lastSeq: 3 } });
     });
     expect(sentTexts).toEqual([]);
     expect(await harness.behavior.callRpc("get_state", { threadId: THREAD })).toMatchObject({ violations: [] });
@@ -1139,7 +1139,7 @@ describe("the watchdog", () => {
   });
 
   it("treats a correction to a real child as coordination, not direct work", async () => {
-    const { bb, harness } = await load({ enforcement: "guard" });
+    const { alia, harness } = await load({ enforcement: "guard" });
     await arm(harness);
     // No delegation row exists for this child: the exemption has to come from
     // the parent/child relationship, which is the only thing that says this
@@ -1153,7 +1153,7 @@ describe("the watchdog", () => {
         turnId: "turn_2",
         sourceSeqStart: 3,
         sourceSeqEnd: 4,
-        command: `bb thread tell ${WORKER} 'HOLD: do not change the schema yet'`,
+        command: `alia thread tell ${WORKER} 'HOLD: do not change the schema yet'`,
       }),
     ];
     timelineMaxSeq = 4;
@@ -1162,7 +1162,7 @@ describe("the watchdog", () => {
     // wait for when the row is exempt, and the cursor is the real signal that
     // the scan finished.
     await vi.waitFor(async () => {
-      expect(await bb.storage.kv.get("state")).toMatchObject({ [THREAD]: { lastSeq: 4 } });
+      expect(await alia.storage.kv.get("state")).toMatchObject({ [THREAD]: { lastSeq: 4 } });
     });
 
     expect(sentTexts).toEqual([]);
@@ -1177,7 +1177,7 @@ describe("the watchdog", () => {
   });
 
   it("treats a correction to an unrecorded fork as coordination", async () => {
-    const { bb, harness } = await load({ enforcement: "guard" });
+    const { alia, harness } = await load({ enforcement: "guard" });
     await arm(harness);
     // A fork stores the source on `sourceThreadId` and leaves `parentThreadId`
     // null, so the parent page cannot see it. No delegation row either.
@@ -1190,13 +1190,13 @@ describe("the watchdog", () => {
         turnId: "turn_2",
         sourceSeqStart: 3,
         sourceSeqEnd: 4,
-        command: "bb thread tell th_fork 'HOLD: do not change the schema yet'",
+        command: "alia thread tell th_fork 'HOLD: do not change the schema yet'",
       }),
     ];
     timelineMaxSeq = 4;
     await idle(harness);
     await vi.waitFor(async () => {
-      expect(await bb.storage.kv.get("state")).toMatchObject({ [THREAD]: { lastSeq: 4 } });
+      expect(await alia.storage.kv.get("state")).toMatchObject({ [THREAD]: { lastSeq: 4 } });
     });
 
     expect(sentTexts).toEqual([]);
@@ -1204,7 +1204,7 @@ describe("the watchdog", () => {
   });
 
   it("treats a correction to an unrecorded hidden child as coordination", async () => {
-    const { bb, harness } = await load({ enforcement: "guard" });
+    const { alia, harness } = await load({ enforcement: "guard" });
     await arm(harness);
     // Hidden, and not in the delegation record. The parent page returns it only
     // when the scan asks for hidden threads.
@@ -1217,13 +1217,13 @@ describe("the watchdog", () => {
         turnId: "turn_2",
         sourceSeqStart: 3,
         sourceSeqEnd: 4,
-        command: "bb thread tell th_hidden 'HOLD: do not change the schema yet'",
+        command: "alia thread tell th_hidden 'HOLD: do not change the schema yet'",
       }),
     ];
     timelineMaxSeq = 4;
     await idle(harness);
     await vi.waitFor(async () => {
-      expect(await bb.storage.kv.get("state")).toMatchObject({ [THREAD]: { lastSeq: 4 } });
+      expect(await alia.storage.kv.get("state")).toMatchObject({ [THREAD]: { lastSeq: 4 } });
     });
 
     expect(sentTexts).toEqual([]);
@@ -1231,7 +1231,7 @@ describe("the watchdog", () => {
   });
 
   it("keeps a recorded hidden delegation exempt when the child pages omit it", async () => {
-    const { bb, harness } = await load({ enforcement: "guard" });
+    const { alia, harness } = await load({ enforcement: "guard" });
     await arm(harness);
     // The worker was spawned hidden and the list pages do not return it. The
     // delegation record is the remaining reason a correction is coordination.
@@ -1249,13 +1249,13 @@ describe("the watchdog", () => {
         turnId: "turn_2",
         sourceSeqStart: 3,
         sourceSeqEnd: 4,
-        command: `bb thread tell ${WORKER} 'HOLD: do not change the schema yet'`,
+        command: `alia thread tell ${WORKER} 'HOLD: do not change the schema yet'`,
       }),
     ];
     timelineMaxSeq = 4;
     await idle(harness);
     await vi.waitFor(async () => {
-      expect(await bb.storage.kv.get("state")).toMatchObject({ [THREAD]: { lastSeq: 4 } });
+      expect(await alia.storage.kv.get("state")).toMatchObject({ [THREAD]: { lastSeq: 4 } });
     });
 
     expect(sentTexts).toEqual([]);
@@ -1276,7 +1276,7 @@ describe("the watchdog", () => {
         turnId: "turn_2",
         sourceSeqStart: 3,
         sourceSeqEnd: 4,
-        command: "bb thread tell thr_stranger 'HOLD: do not change the schema yet'",
+        command: "alia thread tell thr_stranger 'HOLD: do not change the schema yet'",
       }),
     ];
     timelineMaxSeq = 4;
@@ -1333,7 +1333,7 @@ describe("the watchdog", () => {
 
   it.each([
     "git status",
-    "bb status --json; bb provider models codex --environment env_bucd4j3r9b --json",
+    "alia status --json; VesnALIA provider models codex --environment env_bucd4j3r9b --json",
     "find benchmarks -maxdepth 2 -type f 2>/dev/null; find research/sqlite -maxdepth 2 -type f 2>/dev/null",
   ])("lets read-only command `%s` through", async (command) => {
     const { harness } = await load({ enforcement: "block", allowReadCommands: true });
@@ -1360,7 +1360,7 @@ describe("the watchdog", () => {
       DELEGATE_TOOL, { task: "Review the implementation", waitForResult: false },
       { threadId: THREAD, projectId: "proj_1" },
     );
-    const command = `bb thread tell ${WORKER} --model grok-4.7 --mode steer --message-file - <<'FOLLOWUP'\nAdd tests and run them in the worker.\nFOLLOWUP`;
+    const command = `alia thread tell ${WORKER} --model grok-4.7 --mode steer --message-file - <<'FOLLOWUP'\nAdd tests and run them in the worker.\nFOLLOWUP`;
     timelineRows = [
       ...timelineRows,
       workRow({ id: "row_followup", workKind: "command", turnId: "turn_2", sourceSeqStart: 3, sourceSeqEnd: 4, command }),
@@ -1378,7 +1378,7 @@ describe("the watchdog", () => {
   it("recognises workers recorded while the timeline request is in flight", async () => {
     const { harness } = await load({ enforcement: "block", allowReadCommands: false });
     await arm(harness);
-    const command = `bb thread tell ${WORKER} 'Add tests'`;
+    const command = `alia thread tell ${WORKER} 'Add tests'`;
     timelineRows = [
       ...timelineRows,
       workRow({ id: "row_concurrent_followup", workKind: "command", turnId: "turn_2", sourceSeqStart: 3, sourceSeqEnd: 4, command }),
@@ -1405,7 +1405,7 @@ describe("the watchdog", () => {
     await arm(harness);
     timelineRows = [
       ...timelineRows,
-      workRow({ id: "row_unrecorded", workKind: "command", turnId: "turn_2", sourceSeqStart: 3, sourceSeqEnd: 4, command: "bb thread tell th_other 'Do work'" }),
+      workRow({ id: "row_unrecorded", workKind: "command", turnId: "turn_2", sourceSeqStart: 3, sourceSeqEnd: 4, command: "alia thread tell th_other 'Do work'" }),
     ];
     timelineMaxSeq = 4;
     await idle(harness);
@@ -1728,7 +1728,7 @@ describe("the delegation tool", () => {
     expect(spawned).toEqual([]);
   });
 
-  it("does not fall back to an unpinned worker when BB rejects the pins", async () => {
+  it("does not fall back to an unpinned worker when VesnALIA rejects the pins", async () => {
     const { harness } = await load({ workerModelPolicy: "flexible" }, undefined, PIN_CATALOG);
     await enable(harness);
     harness.inspection.sdk.stub("threads.spawn", async () => {
@@ -2354,7 +2354,7 @@ describe("the delegation tool", () => {
     harness.inspection.sdk.stub("environments.get", async ({ environmentId }: { environmentId: string }) => ({
       environmentId,
       hostId: "host_1",
-      branchName: "bb/work/th-unit",
+      branchName: "alia/work/th-unit",
       path: "/tmp/worktrees/th-unit",
       isWorktree: true,
       status: "ready",
@@ -2376,8 +2376,8 @@ describe("the delegation tool", () => {
     expect(spawned[1]!.environment).toEqual({ type: "reuse", environmentId: "env_worktree" });
     // The result names the branch, because nothing lands until it is merged, and
     // hands over the merge brief the orchestrator is allowed to run.
-    expect(String(result)).toContain("bb/work/th-unit");
-    expect(String(result)).toContain("bb environment diff env_worktree");
+    expect(String(result)).toContain("alia/work/th-unit");
+    expect(String(result)).toContain("alia environment diff env_worktree");
     expect(String(result)).toContain('delegate a merge unit with `workspace: "shared"`');
     expect(String(result)).toContain("report what conflicts instead of resolving them");
 
@@ -2912,27 +2912,27 @@ describe("the delegation tool", () => {
 
 describe("rpc", () => {
   it("preserves both thread choices when they are enabled together", async () => {
-    const { bb, harness } = await load();
+    const { alia, harness } = await load();
     await Promise.all([enable(harness, "th_first"), enable(harness, "th_second")]);
     for (const threadId of ["th_first", "th_second"]) {
       expect(await harness.behavior.callRpc("get_state", { threadId })).toMatchObject({ enabled: true });
       expect(metadata[threadId]).toEqual(writeMirror({ enabled: true, enforcement: null }));
     }
-    expect(await bb.storage.kv.get("state")).toMatchObject({
+    expect(await alia.storage.kv.get("state")).toMatchObject({
       th_first: { enabled: true }, th_second: { enabled: true },
     });
   });
 
   it("leaves failed writes uncommitted and accepts later mutations", async () => {
-    const { bb, harness } = await load();
-    const write = vi.spyOn(bb.storage.kv, "set").mockRejectedValueOnce(new Error("write failed"));
+    const { alia, harness } = await load();
+    const write = vi.spyOn(alia.storage.kv, "set").mockRejectedValueOnce(new Error("write failed"));
     try {
       await expect(enable(harness, "th_failed")).rejects.toThrow("write failed");
       expect(await harness.behavior.callRpc("get_state", { threadId: "th_failed" })).toMatchObject({ enabled: false });
       expect(metadata["th_failed"]).toBeUndefined();
 
       await enable(harness, "th_later");
-      expect(await bb.storage.kv.get("state")).toMatchObject({ th_later: { enabled: true } });
+      expect(await alia.storage.kv.get("state")).toMatchObject({ th_later: { enabled: true } });
       expect(await harness.behavior.callRpc("get_state", { threadId: "th_later" })).toMatchObject({ enabled: true });
     } finally {
       write.mockRestore();
@@ -2988,7 +2988,7 @@ describe("rpc", () => {
   });
 
   it("reads and writes one scope's settings, and refuses to clear the global record", async () => {
-    const { bb, harness } = await load({ enforcement: "instruct", maxNudges: 5 });
+    const { alia, harness } = await load({ enforcement: "instruct", maxNudges: 5 });
     const globals = {
       enforcement: "instruct",
       allowReadCommands: true,
@@ -3017,7 +3017,7 @@ describe("rpc", () => {
     expect(written.values.maxParallelWorkers).toBe(2);
     expect(written.overridden).toEqual([]);
     // Stored, not just mirrored: the next read and a thread's own view both see it.
-    expect(await bb.storage.kv.get("settings")).toMatchObject({ maxParallelWorkers: 2 });
+    expect(await alia.storage.kv.get("settings")).toMatchObject({ maxParallelWorkers: 2 });
     const state = (await harness.behavior.callRpc("get_state", { threadId: THREAD })) as {
       maxParallelWorkers: number;
     };
@@ -3069,7 +3069,7 @@ describe("rpc", () => {
   });
 
   it.each(["Explore", "Plan"])("does not mistake cached built-in telemetry for launch-specific proof of native Claude %s", async (name) => {
-    const { bb, harness } = await load({ enforcement: "block" });
+    const { alia, harness } = await load({ enforcement: "block" });
     harness.inspection.sdk.stub("threads.get", async ({ threadId }) =>
       makeThreadResponse({ id: threadId, providerId: "claude-code" }));
     harness.inspection.sdk.stub("threads.context", async () => ({ usage: {
@@ -3092,7 +3092,7 @@ describe("rpc", () => {
     timelineMaxSeq = 3;
     await idle(harness);
     await vi.waitFor(async () => {
-      expect(await bb.storage.kv.get("state")).toMatchObject({ [THREAD]: { lastSeq: 3,
+      expect(await alia.storage.kv.get("state")).toMatchObject({ [THREAD]: { lastSeq: 3,
         violations: [expect.objectContaining({ detail: `started subagent \`${name}\` itself` })] } });
     });
     await vi.waitFor(() => expect(stoppedThreads).toEqual([THREAD]));
@@ -3129,7 +3129,7 @@ describe("rpc", () => {
   });
 
   it.each(["read-only", "none"])("allows normalised Codex result collection and cleanup under %s", async (subagents) => {
-    const { bb, harness } = await load({ enforcement: "block", orchestratorSubagents: subagents });
+    const { alia, harness } = await load({ enforcement: "block", orchestratorSubagents: subagents });
     harness.inspection.sdk.stub("threads.get", async ({ threadId }) =>
       makeThreadResponse({ id: threadId, providerId: "codex" }));
     await arm(harness);
@@ -3144,7 +3144,7 @@ describe("rpc", () => {
     timelineMaxSeq = 5;
     await idle(harness);
     await vi.waitFor(async () => {
-      expect(await bb.storage.kv.get("state")).toMatchObject({ [THREAD]: { lastSeq: 5, violations: [] } });
+      expect(await alia.storage.kv.get("state")).toMatchObject({ [THREAD]: { lastSeq: 5, violations: [] } });
     });
     expect(stoppedThreads).toEqual([]);
     expect(sentTexts).toEqual([]);
@@ -3241,9 +3241,9 @@ describe("rpc", () => {
       seed[`th_${index}`] = { enabled: false, touchedAt: index };
     }
     seed.th_bad = { enabled: false, touchedAt: "recently" };
-    const { bb, harness } = await load({}, seed);
+    const { alia, harness } = await load({}, seed);
     await enable(harness);
-    const raw = (await bb.storage.kv.get("state")) as Record<string, unknown>;
+    const raw = (await alia.storage.kv.get("state")) as Record<string, unknown>;
     expect(Object.keys(raw)).toHaveLength(300);
     // The unreadable timestamp falls back to 0, so that row is the oldest.
     expect(raw.th_bad).toBeUndefined();
@@ -3269,10 +3269,10 @@ describe("rpc", () => {
     // ~220 KB of rows: seedable (under the store's 256 KB limit) but well past
     // the plugin's 192 KB budget, so the next write has to prune before it can
     // succeed.
-    const { bb, harness } = await load({}, seed);
+    const { alia, harness } = await load({}, seed);
     await enable(harness);
 
-    const raw = (await bb.storage.kv.get("state")) as Record<string, unknown>;
+    const raw = (await alia.storage.kv.get("state")) as Record<string, unknown>;
     // (a) the persisted map fits the budget the store enforces.
     expect(Buffer.byteLength(JSON.stringify(raw), "utf8")).toBeLessThanOrEqual(MAX_STATE_BYTES);
     // (b) the newest thread and the newest seeded row survived the trim.
@@ -3298,10 +3298,10 @@ describe("state persistence", () => {
     expect(JSON.stringify(seed).length).toBeLessThan(MAX_STATE_BYTES);
     expect(Buffer.byteLength(JSON.stringify(seed), "utf8")).toBeGreaterThan(MAX_STATE_BYTES);
 
-    const { bb, harness } = await load({}, seed);
+    const { alia, harness } = await load({}, seed);
     await enable(harness, "th_write");
 
-    const raw = (await bb.storage.kv.get("state")) as Record<string, unknown>;
+    const raw = (await alia.storage.kv.get("state")) as Record<string, unknown>;
     expect(Buffer.byteLength(JSON.stringify(raw), "utf8")).toBeLessThanOrEqual(MAX_STATE_BYTES);
     expect(raw.th_old).toBeUndefined();
     expect(raw.th_new).toBeDefined();
@@ -3315,9 +3315,9 @@ describe("state persistence", () => {
   });
 
   it("starts empty when the stored state cannot be read, then recovers on the next write", async () => {
-    const { bb, harness } = await load();
-    const realGet = bb.storage.kv.get.bind(bb.storage.kv);
-    const read = vi.spyOn(bb.storage.kv, "get").mockImplementation(async (key: string) => {
+    const { alia, harness } = await load();
+    const realGet = alia.storage.kv.get.bind(alia.storage.kv);
+    const read = vi.spyOn(alia.storage.kv, "get").mockImplementation(async (key: string) => {
       if (key === "state") throw new Error("corrupt json");
       return realGet(key);
     });
@@ -3335,16 +3335,16 @@ describe("state persistence", () => {
       read.mockRestore();
     }
     await enable(harness);
-    expect(await bb.storage.kv.get("state")).toMatchObject({ [THREAD]: { enabled: true } });
+    expect(await alia.storage.kv.get("state")).toMatchObject({ [THREAD]: { enabled: true } });
   });
 
   it("treats an array-shaped stored state as empty instead of harvesting its indices", async () => {
-    const { bb, harness } = await load(
+    const { alia, harness } = await load(
       {},
       [{ enabled: true, touchedAt: 1 }] as unknown as Record<string, unknown>,
     );
     await enable(harness);
-    const raw = (await bb.storage.kv.get("state")) as Record<string, unknown>;
+    const raw = (await alia.storage.kv.get("state")) as Record<string, unknown>;
     // The array's element must not come back as a thread keyed "0".
     expect(Object.keys(raw)).toEqual([THREAD]);
     expect(
@@ -3369,10 +3369,10 @@ describe("state persistence", () => {
       configurable: true,
     });
 
-    const { bb, harness } = await load({}, seed);
+    const { alia, harness } = await load({}, seed);
     await enable(harness);
 
-    const raw = (await bb.storage.kv.get("state")) as Record<string, unknown>;
+    const raw = (await alia.storage.kv.get("state")) as Record<string, unknown>;
     expect(Object.prototype.hasOwnProperty.call(raw, "__proto__")).toBe(true);
     // The count cap still evicted the oldest real row, not the newer proto row.
     expect(raw.th_0).toBeUndefined();
@@ -3382,14 +3382,14 @@ describe("state persistence", () => {
   });
 
   it("does not let a read that was in flight when a write landed resurrect the pre-write map", async () => {
-    const { bb, harness } = await load();
-    const realGet = bb.storage.kv.get.bind(bb.storage.kv);
+    const { alia, harness } = await load();
+    const realGet = alia.storage.kv.get.bind(alia.storage.kv);
     let stateReads = 0;
     let release!: () => void;
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
-    const read = vi.spyOn(bb.storage.kv, "get").mockImplementation(async (key: string) => {
+    const read = vi.spyOn(alia.storage.kv, "get").mockImplementation(async (key: string) => {
       const value = await realGet(key);
       // Hold the first state read open until a write has already committed, so
       // it resolves with a snapshot older than the cache.
@@ -3404,7 +3404,7 @@ describe("state persistence", () => {
       await pending;
       await enable(harness, "th_b");
 
-      const raw = (await bb.storage.kv.get("state")) as Record<string, unknown>;
+      const raw = (await alia.storage.kv.get("state")) as Record<string, unknown>;
       expect(raw).toMatchObject({ th_a: { enabled: true }, th_b: { enabled: true } });
     } finally {
       read.mockRestore();

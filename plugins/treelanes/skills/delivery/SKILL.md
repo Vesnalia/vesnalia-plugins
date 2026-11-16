@@ -20,7 +20,7 @@ For coding delivery, read `/ponytail` as the implementation guide; default to fu
 
 ## Execute the assigned step
 
-1. Read `treelanes_get_context` or `bb treelanes context`. Confirm this thread is `ownerThreadId` and the task is unpaused. If `status` is `unassigned`, use the new-task path; keep unresolved choices in Design. A missing or failed context read uses [recovery](references/recovery.md).
+1. Read `treelanes_get_context` or `alia treelanes context`. Confirm this thread is `ownerThreadId` and the task is unpaused. If `status` is `unassigned`, use the new-task path; keep unresolved choices in Design. A missing or failed context read uses [recovery](references/recovery.md).
 2. Follow the full saved `task` and `activeStep`. Load `execution.selectedSkills` from their returned references. Read the prior thread only when you need its evidence. Use the stage skill below even when no extra skills were selected. In TDD, Quality, and Simplify, also apply `/ponytail` at the saved level unless the user turned it off.
 3. Complete the assigned work and exact `requiredChecks`. Reuse accepted decisions that still cover the current scope and inputs. If a decision changed, read [task requests](references/task-requests.md). If work fails or you need to yield with a repair left, read [recovery](references/recovery.md).
 4. Submit the stage result below. End this turn; the board starts the next step after this worker becomes idle.
@@ -37,7 +37,7 @@ Normal delivery is TDD → Quality → Simplify → PR Watch. Findings may justi
 
 ## Submit the stage result
 
-Design, TDD, Quality, and Simplify use `treelanes_complete_stage` or `bb treelanes complete '<JSON>'`. After the last edit and check, read fresh context. Submit its `stage`, `stageUpdatedAt`, `taskRevision`, and `workspaceDigest`, plus `checks`, `decisionsResolved`, `openFindings`, and `summary`.
+Design, TDD, Quality, and Simplify use `treelanes_complete_stage` or `alia treelanes complete '<JSON>'`. After the last edit and check, read fresh context. Submit its `stage`, `stageUpdatedAt`, `taskRevision`, and `workspaceDigest`, plus `checks`, `decisionsResolved`, `openFindings`, and `summary`.
 
 Each check has its exact effective name, actual status, and evidence. For a check shown by a run, quote the command and its output. A check on external API calls passes with the evidence `no external API call` when the change makes none. Skipped, missing, failed, or blocked checks cannot count as passed. For PR delivery, diagnosed base or environment failures may permit stage progress with their actual status; use the check classification in [recovery](references/recovery.md). Set `decisionsResolved: false` for an open human choice. Changed task or file evidence needs the recovery path, not a reused receipt.
 

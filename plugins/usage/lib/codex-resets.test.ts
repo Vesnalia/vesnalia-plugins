@@ -11,7 +11,7 @@ const dirs: string[] = [];
 afterEach(async () => { await Promise.all(dirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true }))); });
 
 async function collect(usage: unknown, behavior = "normal") {
-  const bin = await mkdtemp(join(tmpdir(), "bb-codex-resets-"));
+  const bin = await mkdtemp(join(tmpdir(), "alia-codex-resets-"));
   dirs.push(bin);
   const requests = join(bin, "requests.jsonl");
   await symlink(process.execPath, join(bin, "node"));
@@ -128,7 +128,7 @@ describe("Codex reset collection", () => {
   });
 
   it("rejects malformed or unbounded host snapshots", () => {
-    const wrap = (data: unknown) => `__BB_CODEX_RESETS_BEGIN__\n${JSON.stringify(data)}\n__BB_CODEX_RESETS_END__`;
+    const wrap = (data: unknown) => `__ALIA_CODEX_RESETS_BEGIN__\n${JSON.stringify(data)}\n__ALIA_CODEX_RESETS_END__`;
     for (const resetCredits of [
       { availableCount: -1, credits: null }, { availableCount: 1_000_000, credits: null },
       { availableCount: 1, credits: [{ expiresAt: "invalid" }] },
@@ -170,7 +170,7 @@ describe("Codex collector cleanup through a launcher", () => {
   // Stands in for cmd.exe running the npm shim: killing the wrapper leaves the
   // server alive and holding the pipes, and the server ignores stdin closing.
   async function collectThroughWrapper(respond: boolean) {
-    const bin = await mkdtemp(join(tmpdir(), "bb-codex-wrapper-"));
+    const bin = await mkdtemp(join(tmpdir(), "alia-codex-wrapper-"));
     dirs.push(bin);
     const pidFile = join(bin, "server.pid");
     await symlink(process.execPath, join(bin, "node"));

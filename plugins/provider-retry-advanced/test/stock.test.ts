@@ -1,4 +1,4 @@
-// Ported from get-bb/bb plugins/provider-retry/server.test.ts (MIT, desktop-v0.46.1)
+// Ported from get-alia/alia plugins/provider-retry/server.test.ts (MIT, desktop-v0.46.1)
 // to bun:test. Fork deltas are limited to: plugin id, the extra
 // transportRecovery setting, the extra CLI commands, the CLI name, the
 // `connectivity` field in `status --json`, cancel's not-found message, the
@@ -14,8 +14,8 @@ import {
   makeQueueEntry,
   makeTurnFailedEvent,
   type CreateFakePluginHostOptions,
-} from "@get-bb/plugin-sdk/testing";
-import type { PluginTurnFailedEvent } from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk/testing";
+import type { PluginTurnFailedEvent } from "@vesnalia/plugin-sdk";
 import plugin from "../server.js";
 import {
   MAX_RETRY_ATTEMPTS,
@@ -161,9 +161,9 @@ function createHost(
   };
 }
 
-/** Fork: mark the install as armed, as after `bb provider-retry-advanced arm`. */
-async function armedBefore(host: { bb: { storage: { kv: { set(key: string, value: unknown): Promise<void> } } } }) {
-  await host.bb.storage.kv.set("armed", { at: 0 });
+/** Fork: mark the install as armed, as after `alia provider-retry-advanced arm`. */
+async function armedBefore(host: { alia: { storage: { kv: { set(key: string, value: unknown): Promise<void> } } } }) {
+  await host.alia.storage.kv.set("armed", { at: 0 });
 }
 
 describe("provider retry policy", () => {
@@ -382,7 +382,7 @@ describe("provider retry plugin", () => {
   it("listens for one event and answers no hook", async () => {
     const host = createHost();
     await armedBefore(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     expect(host.harness.registrations.settingsDescriptors).toEqual({
       maximumWait: {
@@ -405,14 +405,14 @@ describe("provider retry plugin", () => {
         type: "boolean",
         label: "Resume workflows a restart killed",
         description:
-          "When a BB or machine restart kills a Claude Code workflow, send the idle thread one message to resume that run by its id. Agents that were mid-step run again, so their side effects can repeat.",
+          "When a VesnALIA or machine restart kills a Claude Code workflow, send the idle thread one message to resume that run by its id. Agents that were mid-step run again, so their side effects can repeat.",
         default: false,
       },
       stallWatchdog: {
         type: "select",
         label: "Restart stalled turns",
         description:
-          "Stop a running turn that sent no events for this long while BB was awake, and continue it once. Never touches a turn waiting for you, running a tool, or with background work open.",
+          "Stop a running turn that sent no events for this long while VesnALIA was awake, and continue it once. Never touches a turn waiting for you, running a tool, or with background work open.",
         options: ["Off", "15 minutes", "20 minutes", "30 minutes", "60 minutes"],
         default: "Off",
       },
@@ -446,7 +446,7 @@ describe("provider retry plugin", () => {
   it("asks core to retry the failed turn at the reset window", async () => {
     const host = createHost();
     await armedBefore(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     const { errors } = await host.harness.behavior.emitThreadEvent(
       "turn.failed",
@@ -502,7 +502,7 @@ describe("provider retry plugin", () => {
         callRpc: async () => availability,
       });
       await armedBefore(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
       expect(
         (await host.harness.behavior.emitThreadEvent("turn.failed", failure()))
           .errors,
@@ -544,7 +544,7 @@ describe("provider retry plugin", () => {
       callRpc: async () => ({ kind: "blocked", retryAt: RESET_AT_MS }),
     });
     await armedBefore(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     const result = await host.harness.behavior.emitThreadEvent(
       "turn.failed",
       failure({
@@ -578,7 +578,7 @@ describe("provider retry plugin", () => {
       },
     });
     await armedBefore(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     expect(
       (await host.harness.behavior.emitThreadEvent("turn.failed", failure()))
         .errors,
@@ -593,7 +593,7 @@ describe("provider retry plugin", () => {
   it("re-reads the maximum wait when the setting changes", async () => {
     const host = createHost();
     await armedBefore(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     const beyondSixHours = failure({
       rateLimits: rateLimits({
         windows: [
@@ -619,7 +619,7 @@ describe("provider retry plugin", () => {
   it("reports pending retries from the queue rather than private state", async () => {
     const host = createHost([queuedRetry()]);
     await armedBefore(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     const status = await host.harness.runCli(["status", THREAD_ID, "--json"]);
     expect(status.exitCode).toBe(0);
@@ -644,7 +644,7 @@ describe("provider retry plugin", () => {
   it("cancels by deleting the queued row and retries by sending it now", async () => {
     const host = createHost([queuedRetry()]);
     await armedBefore(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     const cancelled = await host.harness.runCli(["cancel", THREAD_ID]);
     expect(cancelled.exitCode).toBe(0);
@@ -663,7 +663,7 @@ describe("provider retry plugin", () => {
   it("reports no pending retry when no row is queued", async () => {
     const host = createHost();
     await armedBefore(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     const status = await host.harness.runCli(["status"]);
     expect(status.stdout).toBe("No provider retries are pending.\n");
@@ -676,7 +676,7 @@ describe("provider retry plugin", () => {
   it("acts on the invoking thread and says how to name one outside a thread", async () => {
     const host = createHost([queuedRetry()]);
     await armedBefore(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     const cancelled = await host.harness.runCli(["cancel"], {
       threadId: THREAD_ID,
@@ -689,7 +689,7 @@ describe("provider retry plugin", () => {
     const missing = await host.harness.runCli(["cancel"]);
     expect(missing.exitCode).toBe(2);
     expect(missing.stderr).toContain(
-      "A thread id is required: bb provider-retry-advanced cancel <thread-id>",
+      "A thread id is required: VesnALIA provider-retry-advanced cancel <thread-id>",
     );
     await host.harness.dispose();
   });
@@ -697,10 +697,10 @@ describe("provider retry plugin", () => {
   it("documents the optional thread id, exits 2 on usage errors, and reports errors as JSON", async () => {
     const host = createHost();
     await armedBefore(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     const help = (await host.harness.runCli(["retry", "--help"])).stdout;
-    expect(help).toContain("bb provider-retry-advanced retry");
+    expect(help).toContain("alia provider-retry-advanced retry");
     expect(help).toContain("[<thread-id>]");
 
     const stray = await host.harness.runCli(["retry", THREAD_ID, "extra"]);

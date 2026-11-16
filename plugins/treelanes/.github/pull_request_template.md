@@ -21,4 +21,4 @@
 <!-- CI runs the checks that CONTRIBUTING.md lists. -->
 
 - [ ] Tests cover each change in behavior.
-- [ ] A screenshot shows each change that you can see in bb.
+- [ ] A screenshot shows each change that you can see in VesnALIA.

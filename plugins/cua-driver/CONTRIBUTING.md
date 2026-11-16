@@ -1,19 +1,19 @@
 # Contributing
 
-Thanks for helping. This plugin follows bb's community conventions.
+Thanks for helping. This plugin follows VesnALIA's community conventions.
 
 ## Before you open a pull request
 
 - Open an issue first for features and UI changes; bug fixes can go straight
   to a PR.
-- Run `npm run check` (typecheck, tests, `bb plugin build`). CI runs the same.
+- Run `npm run check` (typecheck, tests, `alia plugin build`). CI runs the same.
 - Keep pure logic in `src/` and unit-test it. Server and host behavior is
-  tested with `@get-bb/plugin-sdk/testing`; do not mock the fake host's
+  tested with `@vesnalia/plugin-sdk/testing`; do not mock the fake host's
   storage.
 - Never bundle Cua Driver binaries or call the installer from the plugin. The
   user installs and grants permissions on each machine.
-- Any new bb SDK surface you rely on must exist in the `@get-bb/plugin-sdk`
-  version pinned in `package.json`; bump `engines.bbPluginSdk` when you raise
+- Any new VesnALIA SDK surface you rely on must exist in the `@vesnalia/plugin-sdk`
+  version pinned in `package.json`; bump `engines.aliaPluginSdk` when you raise
   it.
 
 ## Tool catalog changes

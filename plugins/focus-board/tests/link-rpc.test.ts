@@ -2,7 +2,7 @@
 // suite. Red-first: the fake host has no link handlers until server.ts
 // grows them, so these suites fail before the wiring lands.
 import { describe, expect, it } from "vitest";
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 import { setup, linksOf } from "./helpers/link-fake-host";
 
 describe("link_set over plugin metadata", () => {
@@ -10,7 +10,7 @@ describe("link_set over plugin metadata", () => {
     const { callRpc, meta } = await setup({ threads: ["thr_a"] });
     await callRpc("link_set", {
       threadId: "thr_a",
-      repo: "cristoslc/bb-plugin-focus-board",
+      repo: "cristoslc/alia-plugin-focus-board",
       number: 12,
       kind: "issue",
       source: "operator",
@@ -18,7 +18,7 @@ describe("link_set over plugin metadata", () => {
     const links = linksOf(meta, "thr_a");
     expect(links).toHaveLength(1);
     expect(links![0]).toMatchObject({
-      repo: "cristoslc/bb-plugin-focus-board",
+      repo: "cristoslc/alia-plugin-focus-board",
       issue: 12,
       kind: "issue",
       source: "operator",

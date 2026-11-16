@@ -36,7 +36,7 @@ function setup(values: Record<string, unknown> = {}, options: Partial<TartBacken
   const mac = ssh.home(MAC);
   fakeMacTools(mac);
   addImage(mac);
-  if (values["tart-linux-image"]) addImage(mac, "bb-box-linux", "linux");
+  if (values["tart-linux-image"]) addImage(mac, "alia-box-linux", "linux");
   const make = (install = "test") => {
     const backend = new TartBackend(tartConfig(values), testContext(new MemoryStorage(), install), { ...FAKES, ...options });
     made.push(backend);
@@ -87,7 +87,7 @@ test("a macOS box's snapshots hold its disk and memory, suspend it, restore in p
   assert.deepEqual([linux.holds, linux.whileRunning, linux.restore, linux.fork, linux.keepsPastRelease, linux.lives, linux.outlivesGuest, linux.forkSafeFrom], [["disk"], "stopped-only", "in-place", "copy", "as-is", "host", true, LINUX_FORK_SAFE_FROM]);
   const desktop = tartOffer("linux", false);
   assert.deepEqual([desktop.holds, desktop.fork, desktop.keepsPastRelease, desktop.forkWhy], [["disk"], "none", "no", LINUX_NO_FORKS]);
-  const { backend } = setup({ "tart-linux-image": "bb-box-linux", "tart-linux-desktop-image": "bb-box-linux-desktop" });
+  const { backend } = setup({ "tart-linux-image": "alia-box-linux", "tart-linux-desktop-image": "alia-box-linux-desktop" });
   assert.equal(backend.snapshotting("macos")?.whileRunning, "suspends");
   assert.equal(backend.snapshotting("linux-arm64")?.fork, "copy");
   assert.equal(backend.snapshotting("linux-arm64-desktop-cpu")?.fork, "copy");
@@ -107,9 +107,9 @@ const IOS_DEVICE = {
 };
 
 async function iosSetup() {
-  const made = setup({ "tart-ios-image": "bb-box-ios" });
-  addImage(made.mac, "bb-box-ios");
-  writeFileSync(join(made.mac, ".bb-box", "tart", "images", "bb-box-ios.json"), `${imageRecord("ios", { build: "build.20261003-040000-1111", base: "build.20261003-021500", devices: [IOS_DEVICE], tools: { idb_companion: "1.7.7" } })}\n`);
+  const made = setup({ "tart-ios-image": "alia-box-ios" });
+  addImage(made.mac, "alia-box-ios");
+  writeFileSync(join(made.mac, ".alia-box", "tart", "images", "alia-box-ios.json"), `${imageRecord("ios", { build: "build.20261003-040000-1111", base: "build.20261003-021500", devices: [IOS_DEVICE], tools: { idb_companion: "1.7.7" } })}\n`);
   const backend = made.make();
   await backend.withheldKinds("ios", signal());
   return { ...made, backend };
@@ -181,7 +181,7 @@ test("a dedicated iOS box's snapshot forks into a VM of its own, from its disk w
   const fork = identity("ios");
   const made = await backend.forkSnapshot({ id: SNAP, ref: SNAP, guest }, fork, null, acquiring, signal());
 
-  assert.equal(made.ref, `bb-box-${fork.boxId}`);
+  assert.equal(made.ref, `alia-box-${fork.boxId}`);
   assert.ok(!existsSync(join(vms, made.ref, "state.vzvmsave")), "a fork starts from the disk, never the saved memory");
   const source = JSON.parse(readFileSync(join(vms, guest.ref, "config.json"), "utf8")) as { macAddress: string };
   const copy = JSON.parse(readFileSync(join(vms, made.ref, "config.json"), "utf8")) as { macAddress: string };
@@ -237,7 +237,7 @@ test("a take whose suspend fails copies nothing, says so, and leaves the box run
   const box = identity();
   const guest = await backend.acquire(box, null, acquiring, signal());
   writeFileSync(join(mac, ".fake-tart-suspend-fails"), "");
-  await assert.rejects(backend.snapshot(guest, { id: SNAP, box: box.boxId, memory: true }, recorder().hooks, signal()), (error: unknown) => error instanceof SnapshotFailed && /could not suspend bb-box-\S+ on mac1 to copy it, so it copied nothing/.test(error.message));
+  await assert.rejects(backend.snapshot(guest, { id: SNAP, box: box.boxId, memory: true }, recorder().hooks, signal()), (error: unknown) => error instanceof SnapshotFailed && /could not suspend alia-box-\S+ on mac1 to copy it, so it copied nothing/.test(error.message));
   assert.ok(!existsSync(join(snaps, SNAP)) && !existsSync(join(snaps, `${SNAP}.part`)));
   assert.equal(await backend.power(guest), "running");
   await backend.release(guest, releasing);
@@ -266,7 +266,7 @@ test("a Tart take whose box does not resume reports no completed pause", async (
   writeFileSync(join(mac, ".fake-tart-run-fails"), "2");
   const taken = await backend.snapshot(guest, { id: SNAP, box: box.boxId, memory: true }, recorder().hooks, signal());
 
-  assert.match(taken.notResumed ?? "", /could not start bb-box-\S+ on mac1/);
+  assert.match(taken.notResumed ?? "", /could not start alia-box-\S+ on mac1/);
   assert.equal(taken.pausedMs, null);
   await backend.release(guest, releasing);
 });
@@ -285,7 +285,7 @@ test("a take of a stopped macOS box copies it as it is, with no suspend or resum
 });
 
 test("a Linux VM is copied only while stopped, and holds its disk", async () => {
-  const { backend, snaps } = setup({ "tart-linux-image": "bb-box-linux" });
+  const { backend, snaps } = setup({ "tart-linux-image": "alia-box-linux" });
   const box = identity("linux-arm64", { cores: 2, memoryMiB: 4096, diskGiB: null });
   const guest = await backend.acquire(box, null, acquiring, signal());
   await assert.rejects(backend.snapshot(guest, { id: SNAP, box: box.boxId, memory: false }, recorder().hooks, signal()), (error: unknown) => error instanceof SnapshotFailed && /only while the box is stopped/.test(error.message));
@@ -301,7 +301,7 @@ test("a Linux VM is copied only while stopped, and holds its disk", async () => 
 });
 
 test("what a Tart VM holds now: its lease while it runs, none once it is shut down, gone only when its folder is missing; a start returns the address the Mac's DHCP gave it", async () => {
-  const { backend, mac, vms } = setup({ "tart-linux-image": "bb-box-linux" });
+  const { backend, mac, vms } = setup({ "tart-linux-image": "alia-box-linux" });
   const linux = await backend.acquire(identity("linux-arm64", { cores: 2, memoryMiB: 4096, diskGiB: null }), null, acquiring, signal());
   assert.ok(linux.address);
   assert.deepEqual(await backend.leasedAddressNow(linux, signal()), { power: "running", leased: linux.address });
@@ -325,9 +325,9 @@ test("what a Tart VM holds now: its lease while it runs, none once it is shut do
 });
 
 test("what a Tart VM holds now fails closed: a VM that is there but not this box's, one Tart does not list, a running VM with no lease, and a lease that is not an address all throw", async () => {
-  const { backend, mac, vms } = setup({ "tart-linux-image": "bb-box-linux" });
+  const { backend, mac, vms } = setup({ "tart-linux-image": "alia-box-linux" });
   const linux = await backend.acquire(identity("linux-arm64", { cores: 2, memoryMiB: 4096, diskGiB: null }), null, acquiring, signal());
-  const owner = join(mac, ".bb-box", "tart", "owners", linux.ref);
+  const owner = join(mac, ".alia-box", "tart", "owners", linux.ref);
   const owned = readFileSync(owner, "utf8");
   writeFileSync(owner, owned.replace(/^box=.*$/m, "box=bxsomeoneelse"));
   await assert.rejects(backend.leasedAddressNow(linux, signal()), /is there, but its owner file does not name this box/);
@@ -345,7 +345,7 @@ test("what a Tart VM holds now fails closed: a VM that is there but not this box
 });
 
 test("a Tart VM's commands never go to its recorded address: with no address from the Mac, a connection is unreachable, so a fork that now holds that address is never reached as its source", async () => {
-  const { backend, mac, make } = setup({ "tart-linux-image": "bb-box-linux" });
+  const { backend, mac, make } = setup({ "tart-linux-image": "alia-box-linux" });
   const linux = await backend.acquire(identity("linux-arm64", { cores: 2, memoryMiB: 4096, diskGiB: null }), null, acquiring, signal());
   assert.ok(linux.address);
   writeFileSync(join(mac, ".fake-tart-ip-fails"), "");
@@ -365,7 +365,7 @@ test("a snapshots folder on another volume than the VMs is refused before anythi
   const plan = await backend.planSnapshots(guest, "macos-desktop", null, signal());
   assert.equal(plan.take.ok, false);
   assert.equal(plan.take.why, "the snapshots folder on mac1 is on another volume than the VMs, so a copy there would be a full copy. Move it to the VMs' volume.");
-  await assert.rejects(backend.snapshot(guest, { id: SNAP, box: box.boxId, memory: true }, recorder().hooks, signal()), (error: unknown) => error instanceof SnapshotFailed && /is on another volume than the VMs, so a copy there would be a full copy\. Move it to the VMs' volume\. BB Box suspended nothing\./.test(error.message));
+  await assert.rejects(backend.snapshot(guest, { id: SNAP, box: box.boxId, memory: true }, recorder().hooks, signal()), (error: unknown) => error instanceof SnapshotFailed && /is on another volume than the VMs, so a copy there would be a full copy\. Move it to the VMs' volume\. ALIA Box suspended nothing\./.test(error.message));
   assert.deepEqual(readdirSync(snaps).filter((entry) => entry.startsWith("sn")), [], "nothing copied");
   assert.ok(!tartCalls(mac).some((call) => call[1] === "suspend"), "refused before the suspend");
   assert.equal(await backend.power(guest), "running");
@@ -379,8 +379,8 @@ test("a take is refused when the VMs' volume has less free than the floor, befor
   writeFileSync(join(mac, ".nix-profile", "bin", "df"), `#!/bin/sh\necho 'Filesystem 1024-blocks Used Available Capacity Mounted on'\necho 'fake 1073741824 1063256064 10485760 99% /'\n`);
   const plan = await backend.planSnapshots(guest, "macos-desktop", null, signal());
   assert.deepEqual([plan.take.ok, plan.fork.ok], [false, false]);
-  assert.match(plan.take.why ?? "", /has 10 GiB free, and BB Box copies a VM there only with at least 50 GiB free/);
-  await assert.rejects(backend.snapshot(guest, { id: SNAP, box: box.boxId, memory: true }, recorder().hooks, signal()), (error: unknown) => error instanceof SnapshotFailed && /10 GiB free, and BB Box copies a VM there only with at least 50 GiB free.*BB Box suspended nothing\./.test(error.message));
+  assert.match(plan.take.why ?? "", /has 10 GiB free, and ALIA Box copies a VM there only with at least 50 GiB free/);
+  await assert.rejects(backend.snapshot(guest, { id: SNAP, box: box.boxId, memory: true }, recorder().hooks, signal()), (error: unknown) => error instanceof SnapshotFailed && /10 GiB free, and ALIA Box copies a VM there only with at least 50 GiB free.*ALIA Box suspended nothing\./.test(error.message));
   assert.ok(!existsSync(join(snaps, SNAP)) && !existsSync(join(snaps, `${SNAP}.part`)));
   assert.ok(!tartCalls(mac).some((call) => call[1] === "suspend"), "refused before the suspend");
   await backend.release(guest, releasing);
@@ -425,9 +425,9 @@ function baseLabel(box: string, vm: string): Omit<SnapshotLabel, "snapshot"> & {
 
 test("a task reads its outcome from the Mac's folders: a take done, cut short or never begun, a delete done or cut short, and a putting back recorded", () => {
   const listing = (entries: string) => parseListing(`@macosbuild\n27A1\n@tart\n2.30.0\n@volume\n/\n@entries\n${entries}`);
-  const entry = (name: string, alive = "no") => `=${name}\nalive=${alive}\n${labelText(baseLabel("bxone", "bb-box-bxone"))}`;
+  const entry = (name: string, alive = "no") => `=${name}\nalive=${alive}\n${labelText(baseLabel("bxone", "alia-box-bxone"))}`;
   assert.deepEqual(parseTaskRef(taskRef({ kind: "take", id: SNAP })), { kind: "take", id: SNAP });
-  assert.deepEqual(parseTaskRef(taskRef({ kind: "rollback", vm: "bb-box-bxone", id: SNAP, attempt: "a1b2c3d4e5f6" })), { kind: "rollback", vm: "bb-box-bxone", id: SNAP, attempt: "a1b2c3d4e5f6" });
+  assert.deepEqual(parseTaskRef(taskRef({ kind: "rollback", vm: "alia-box-bxone", id: SNAP, attempt: "a1b2c3d4e5f6" })), { kind: "rollback", vm: "alia-box-bxone", id: SNAP, attempt: "a1b2c3d4e5f6" });
   assert.equal(parseTaskRef("UPID:pve:1"), null);
   assert.deepEqual(taskOutcome({ kind: "take", id: SNAP }, listing(entry(SNAP)), null), { state: "ok" });
   assert.deepEqual(taskOutcome({ kind: "take", id: SNAP }, listing(entry(`${SNAP}.part`, "yes")), null), { state: "running" });
@@ -435,10 +435,10 @@ test("a task reads its outcome from the Mac's folders: a take done, cut short or
   assert.deepEqual(taskOutcome({ kind: "take", id: SNAP }, listing(""), null), { state: "failed", words: "the Mac has no copy of it, so the take did not begin" });
   assert.deepEqual(taskOutcome({ kind: "delete", id: SNAP }, listing(""), null), { state: "ok" });
   assert.equal(taskOutcome({ kind: "delete", id: SNAP }, listing(entry(`${SNAP}.deleting`)), null).state, "failed");
-  const rollback = { kind: "rollback" as const, vm: "bb-box-bxone", id: SNAP, attempt: "a1b2c3d4e5f6" };
+  const rollback = { kind: "rollback" as const, vm: "alia-box-bxone", id: SNAP, attempt: "a1b2c3d4e5f6" };
   assert.deepEqual(taskOutcome(rollback, listing(""), `done ${SNAP} a1b2c3d4e5f6\n`), { state: "ok" });
   assert.deepEqual(taskOutcome(rollback, listing(""), `running\nswapping ${SNAP} a1b2c3d4e5f6 42 Sun Nov  1 00:00:00 2026\n`), { state: "running" });
-  assert.deepEqual(taskOutcome(rollback, listing(""), `undone ${SNAP} a1b2c3d4e5f6\n`), { state: "failed", unchanged: true, words: "BB Box stopped before it finished putting the snapshot's copy in the VM's place, and the Mac put the VM's own folder back as it was" });
+  assert.deepEqual(taskOutcome(rollback, listing(""), `undone ${SNAP} a1b2c3d4e5f6\n`), { state: "failed", unchanged: true, words: "VesnALIA Box stopped before it finished putting the snapshot's copy in the VM's place, and the Mac put the VM's own folder back as it was" });
   assert.deepEqual(taskOutcome(rollback, listing(""), `done ${SNAP} ffffffffffff\n`), { state: "failed", unchanged: true, words: "the Mac has no record of putting this snapshot back for this restore, so it did not begin, and the VM is as it was" }, "an earlier restore's done is not this one's");
   assert.equal(taskOutcome(rollback, listing(""), "unhealed\n").state, "failed");
   assert.deepEqual(taskOutcome(rollback, listing(""), "unhealed\n"), { state: "failed", words: "the VM's folder is missing, and the Mac has neither the snapshot's whole copy nor the VM's own folder set aside to put back" });
@@ -483,7 +483,7 @@ test("a snapshot whose memory was saved under another macOS build or Tart is not
   writeFileSync(join(mac, ".fake-macos-build"), "27B5");
   const plan = await backend.planSnapshots(guest, "macos-desktop", { id: SNAP, ref: SNAP, guest }, signal());
   assert.equal(plan.restore.way, "none");
-  assert.match(plan.restore.why ?? "", /saved while the Mac ran macOS build 27A1, and the Mac runs 27B5 now, so BB Box does not restore it.*Fork it instead/);
+  assert.match(plan.restore.why ?? "", /saved while the Mac ran macOS build 27A1, and the Mac runs 27B5 now, so ALIA Box does not restore it.*Fork it instead/);
   assert.equal(plan.fork.ok, true, "a fork starts from the disk");
   await backend.stop(guest);
   await assert.rejects(backend.rollbackSnapshot(guest, { id: SNAP, ref: SNAP, guest }, recorder().hooks, signal()), (error: unknown) => error instanceof SnapshotFailed && /27B5/.test(error.message));
@@ -501,11 +501,11 @@ test("a fork copies the snapshot's disk without its memory into a VM of its own,
   const fork = identity("macos-desktop", { cores: 6, memoryMiB: 16384, diskGiB: null });
   const claims: Guest[] = [];
   const made = await backend.forkSnapshot({ id: SNAP, ref: SNAP, guest }, fork, null, { ...acquiring, claim: async (one) => void claims.push(one) }, signal());
-  assert.equal(made.ref, `bb-box-${fork.boxId}`);
+  assert.equal(made.ref, `alia-box-${fork.boxId}`);
   assert.deepEqual(made.data, { box: fork.boxId, forkOf: guest.ref, forkName: fork.name });
   assert.deepEqual(made.size, { cores: 6, memoryMiB: 16384, diskGiB: 59 });
   assert.equal(claims[0]?.ref, made.ref, "claimed before the copy");
-  assert.ok(readFileSync(join(mac, ".bb-box", "tart", "owners", made.ref), "utf8").includes(`box=${fork.boxId}`));
+  assert.ok(readFileSync(join(mac, ".alia-box", "tart", "owners", made.ref), "utf8").includes(`box=${fork.boxId}`));
   assert.ok(!existsSync(join(vms, made.ref, "state.vzvmsave")), "a fork starts from the disk, never the saved memory");
   const source = JSON.parse(readFileSync(join(vms, guest.ref, "config.json"), "utf8")) as { macAddress: string; ecid?: string };
   const copy = JSON.parse(readFileSync(join(vms, made.ref, "config.json"), "utf8")) as { macAddress: string; ecid?: string };
@@ -517,7 +517,7 @@ test("a fork copies the snapshot's disk without its memory into a VM of its own,
 });
 
 test("a Linux VM's snapshot forks into a VM of its own with a new MAC address, from its disk as it is: no machine identifier to change and nothing to clean on the Mac, as its own reset runs before its network; the plan offers fork and Keep", async () => {
-  const { backend, vms, mac } = setup({ "tart-linux-image": "bb-box-linux" });
+  const { backend, vms, mac } = setup({ "tart-linux-image": "alia-box-linux" });
   writeFileSync(join(mac, ".fake-diskutil-no-image"), "");
   const box = identity("linux-arm64", { cores: 2, memoryMiB: 4096, diskGiB: null });
   const guest = await backend.acquire(box, null, acquiring, signal());
@@ -527,7 +527,7 @@ test("a Linux VM's snapshot forks into a VM of its own with a new MAC address, f
   assert.deepEqual([plan.fork.ok, plan.fork.why, plan.keep.way, plan.keep.why], [true, null, "as-is", null]);
   const fork = identity("linux-arm64", { cores: 4, memoryMiB: 8192, diskGiB: null });
   const made = await backend.forkSnapshot({ id: SNAP, ref: SNAP, guest }, fork, null, acquiring, signal());
-  assert.equal(made.ref, `bb-box-${fork.boxId}`);
+  assert.equal(made.ref, `alia-box-${fork.boxId}`);
   assert.deepEqual(made.data, { box: fork.boxId, os: "linux", forkOf: guest.ref, forkName: fork.name });
   assert.deepEqual([made.size?.cores, made.size?.memoryMiB], [4, 8192]);
   const source = JSON.parse(readFileSync(join(vms, guest.ref, "config.json"), "utf8")) as { macAddress: string };
@@ -542,7 +542,7 @@ test("a Linux VM's snapshot forks into a VM of its own with a new MAC address, f
 });
 
 test("a Linux VM's snapshot taken before its box had the identity reset does not fork, and says a box from a refreshed image does", async () => {
-  const { backend } = setup({ "tart-linux-image": "bb-box-linux", "tart-linux-desktop-image": "bb-box-linux-desktop" });
+  const { backend } = setup({ "tart-linux-image": "alia-box-linux", "tart-linux-desktop-image": "alia-box-linux-desktop" });
   const box = identity("linux-arm64", { cores: 2, memoryMiB: 4096, diskGiB: null });
   const guest = await backend.acquire(box, null, acquiring, signal());
   await backend.stop(guest);
@@ -558,16 +558,16 @@ test("a Linux VM's snapshot taken before its box had the identity reset does not
 test("a macOS box gets the identity reset installed at its first ready, only in a VM", () => {
   const script = identityInstallScript("#!/bin/sh\necho tool\n");
   assert.match(script, /^case "\$\(sysctl -n hw\.model 2>\/dev\/null\)" in VirtualMac\*\)/);
-  assert.match(script, /\/Library\/LaunchDaemons\/dev\.bb-box\.identity\.plist/);
-  assert.match(script, /bb-box-identity enable/);
-  assert.match(script, /\[ -e \/var\/run\/bb-box-identity\/boot \] \|\| \/usr\/local\/sbin\/bb-box-identity boot/);
+  assert.match(script, /\/Library\/LaunchDaemons\/dev\.alia-box\.identity\.plist/);
+  assert.match(script, /alia-box-identity enable/);
+  assert.match(script, /\[ -e \/var\/run\/alia-box-identity\/boot \] \|\| \/usr\/local\/sbin\/alia-box-identity boot/);
   assert.throws(() => identityInstallScript("BBBOX_IDENTITY_TOOL\n"), /ends its heredoc/);
   assert.match(macosIdentityTool(), /^VERSION=4$/m);
   assert.match(macosIdentityTool(), /ioreg -r -c AppleVirtIONetwork/, "only the VM's VirtIO cards, never the USB NCM placeholders en1 and anpi0");
 });
 
 function tool(root: string, macs: string, ...args: string[]) {
-  const ran = spawnSync("/bin/sh", [join(import.meta.dirname, "..", "setup", "tart", "guest", "bb-box-identity-macos.sh"), ...args], {
+  const ran = spawnSync("/bin/sh", [join(import.meta.dirname, "..", "setup", "tart", "guest", "alia-box-identity-macos.sh"), ...args], {
     encoding: "utf8",
     env: { PATH: process.env.PATH!, BBBOX_IDENTITY_ROOT: root, BBBOX_IDENTITY_MACS: macs, BBBOX_IDENTITY_NIC_WAIT_TENTHS: "0" },
   });
@@ -580,64 +580,64 @@ function status(root: string, macs: string): Record<string, string> {
 
 function macosBox(): string {
   const root = tempDir("macos-identity");
-  const machine = join(root, "Users", "admin", ".bb-machines", "bb.example");
+  const machine = join(root, "Users", "admin", ".alia-machines", "alia.example");
   mkdirSync(join(machine, "logs"), { recursive: true });
   writeFileSync(join(machine, "host-id"), "host_source1\n");
   writeFileSync(join(machine, "auth.json"), "{}");
   writeFileSync(join(machine, "host-artifact.sha256"), "abc\n");
-  mkdirSync(join(root, "Users", "admin", ".config", "bb-box"), { recursive: true });
-  writeFileSync(join(root, "Users", "admin", ".config", "bb-box", "env"), "GH_TOKEN=x\n");
+  mkdirSync(join(root, "Users", "admin", ".config", "alia-box"), { recursive: true });
+  writeFileSync(join(root, "Users", "admin", ".config", "alia-box", "env"), "GH_TOKEN=x\n");
   mkdirSync(join(root, "Users", "admin", "Library", "LaunchAgents"), { recursive: true });
-  writeFileSync(join(root, "Users", "admin", "Library", "LaunchAgents", "app.getbb.host-daemon.bb-example-host_source1.plist"), "<plist/>");
+  writeFileSync(join(root, "Users", "admin", "Library", "LaunchAgents", "app.getbb.host-daemon.alia-example-host_source1.plist"), "<plist/>");
   mkdirSync(join(root, "etc", "ssh"), { recursive: true });
   writeFileSync(join(root, "etc", "ssh", "ssh_host_ed25519_key.pub"), "ssh-ed25519 OLDKEY\n");
   writeFileSync(join(root, "console-user"), "root\n");
   return root;
 }
 
-test("macOS's identity reset keeps a box whose MAC address matches its marker, and resets a copy at its boot: BB's credentials, its LaunchAgent and the access file go, the SSH host keys are new", () => {
+test("macOS's identity reset keeps a box whose MAC address matches its marker, and resets a copy at its boot: VesnALIA's credentials, its LaunchAgent and the access file go, the SSH host keys are new", () => {
   const root = macosBox();
-  const box = "aa:bb:cc:00:00:01";
+  const box = "aa:alia:cc:00:00:01";
   assert.equal(tool(root, box, "boot").code, 0);
-  assert.equal(status(root, box).boot, "off", "off until BB Box enables it");
+  assert.equal(status(root, box).boot, "off", "off until VesnALIA Box enables it");
   assert.equal(tool(root, box, "enable").code, 0);
   tool(root, box, "boot");
   assert.equal(status(root, box).boot, "unarmed");
   const written = tool(root, box, "write", "--box", "bxsource1", "--source", "device");
   assert.equal(written.code, 0, written.err);
-  assert.equal(written.out, "bb-box identity 1\nbox bxsource1\nsource device\nmac aa:bb:cc:00:00:01\n");
+  assert.equal(written.out, "alia-box identity 1\nbox bxsource1\nsource device\nmac aa:alia:cc:00:00:01\n");
   assert.deepEqual(status(root, box), { version: "4", enabled: "yes", boot: "unarmed", marker: "matches", armed: "yes", pending: "no", box: "bxsource1", source: "device", raced: "no" });
   tool(root, box, "boot");
   assert.equal(status(root, box).boot, "kept");
-  assert.ok(existsSync(join(root, "Users", "admin", ".config", "bb-box", "env")));
+  assert.ok(existsSync(join(root, "Users", "admin", ".config", "alia-box", "env")));
 
-  const fork = "aa:bb:cc:00:00:02";
+  const fork = "aa:alia:cc:00:00:02";
   const reset = tool(root, fork, "boot");
   assert.equal(reset.code, 0, reset.err);
-  assert.match(reset.out, /this box is a copy, so it resets its identity: none of the marker's MAC addresses \(aa:bb:cc:00:00:01\) is on this box's interfaces \(aa:bb:cc:00:00:02\)/);
+  assert.match(reset.out, /this box is a copy, so it resets its identity: none of the marker's MAC addresses \(aa:alia:cc:00:00:01\) is on this box's interfaces \(aa:alia:cc:00:00:02\)/);
   const after = status(root, fork);
   assert.deepEqual([after.boot, after.marker, after.armed, after.box, after.raced], ["reset", "matches", "yes", "", "no"]);
-  const machine = join(root, "Users", "admin", ".bb-machines", "bb.example");
+  const machine = join(root, "Users", "admin", ".alia-machines", "alia.example");
   assert.deepEqual(readdirSync(machine).sort(), ["host-artifact.sha256"]);
-  assert.ok(!existsSync(join(root, "Users", "admin", ".config", "bb-box", "env")));
+  assert.ok(!existsSync(join(root, "Users", "admin", ".config", "alia-box", "env")));
   assert.deepEqual(readdirSync(join(root, "Users", "admin", "Library", "LaunchAgents")), []);
   assert.doesNotMatch(readFileSync(join(root, "etc", "ssh", "ssh_host_ed25519_key.pub"), "utf8"), /OLDKEY/);
-  assert.match(readFileSync(join(root, "var", "lib", "bb-box", "identity-resets"), "utf8"), /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ .*; BB machines removed: host_source1$/m);
+  assert.match(readFileSync(join(root, "var", "lib", "alia-box", "identity-resets"), "utf8"), /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ .*; ALIA machines removed: host_source1$/m);
   tool(root, fork, "boot");
   assert.equal(status(root, fork).boot, "kept", "the next boot of the fork keeps it");
 });
 
 test("macOS's reset says when a user had logged in before it decided, and the fork check refuses such a fork", () => {
   const root = macosBox();
-  tool(root, "aa:bb:cc:00:00:01", "enable");
-  tool(root, "aa:bb:cc:00:00:01", "write", "--box", "bxsource1", "--source", "device");
+  tool(root, "aa:alia:cc:00:00:01", "enable");
+  tool(root, "aa:alia:cc:00:00:01", "write", "--box", "bxsource1", "--source", "device");
   writeFileSync(join(root, "console-user"), "admin\n");
-  tool(root, "aa:bb:cc:00:00:02", "boot");
-  assert.equal(status(root, "aa:bb:cc:00:00:02").raced, "yes");
-  assert.match(readFileSync(join(root, "var", "lib", "bb-box", "identity-resets"), "utf8"), /someone was logged in at the console \(admin admin\) while it decided or removed BB's machine/);
-  const seen = parseForkSeen(`${tool(root, "aa:bb:cc:00:00:02", "status").out}tailnet_node=no\nmarker_mac=aa:bb:cc:00:00:02\naddress=192.168.64.9\naddresses_read=yes\nmachine_id=${"1".repeat(64)}\nhost_key=${"2".repeat(64)}\nprobes=done\n`, 0);
-  const verdict = forkVerdict(seen, { forkMacs: ["aa:bb:cc:00:00:02"], forkValue: null, sourceMacs: ["aa:bb:cc:00:00:01"], sourceBox: "bxsource1", sourceName: "calm-otter", sourceAddresses: [], freedSourceAddresses: [], ownAddress: "192.168.64.9", boxAddresses: [], held: null, safeFrom: 1 });
-  assert.deepEqual(verdict, { is: "refused", why: "its identity reset ran after a user had logged in, so BB's daemon may have started as its source before the reset" });
+  tool(root, "aa:alia:cc:00:00:02", "boot");
+  assert.equal(status(root, "aa:alia:cc:00:00:02").raced, "yes");
+  assert.match(readFileSync(join(root, "var", "lib", "alia-box", "identity-resets"), "utf8"), /someone was logged in at the console \(admin admin\) while it decided or removed ALIA's machine/);
+  const seen = parseForkSeen(`${tool(root, "aa:alia:cc:00:00:02", "status").out}tailnet_node=no\nmarker_mac=aa:alia:cc:00:00:02\naddress=192.168.64.9\naddresses_read=yes\nmachine_id=${"1".repeat(64)}\nhost_key=${"2".repeat(64)}\nprobes=done\n`, 0);
+  const verdict = forkVerdict(seen, { forkMacs: ["aa:alia:cc:00:00:02"], forkValue: null, sourceMacs: ["aa:alia:cc:00:00:01"], sourceBox: "bxsource1", sourceName: "calm-otter", sourceAddresses: [], freedSourceAddresses: [], ownAddress: "192.168.64.9", boxAddresses: [], held: null, safeFrom: 1 });
+  assert.deepEqual(verdict, { is: "refused", why: "its identity reset ran after a user had logged in, so VesnALIA's daemon may have started as its source before the reset" });
 });
 
 test("on macOS the checks read the hardware UUID, the users' homes, the LaunchAgents and ifconfig, never Linux's paths", () => {
@@ -646,7 +646,7 @@ test("on macOS the checks read the hardware UUID, the users' homes, the LaunchAg
   assert.match(safety, /shasum -a 256/);
   assert.doesNotMatch(safety, /etc\/machine-id|sha256sum/);
   const check = forkCheckScript("macos");
-  assert.match(check, /\/Users\/\*\/\.bb-machines/);
+  assert.match(check, /\/Users\/\*\/\.alia-machines/);
   assert.match(check, /app\.getbb\.host-daemon/);
   assert.match(check, /ifconfig -a/);
   assert.doesNotMatch(check, /ip -o -4|\/home\/\*/);
@@ -713,7 +713,7 @@ test("a box whose restore was cut short is put right when it starts or its power
   const live = `${process.pid} ${startedAt(process.pid)}`;
   cutShort(snaps, vms, guest.ref, "swapping", { restore: "whole", aside: true, pid: live });
   assert.equal(await backend.power(guest), "stopped", "never gone while a restore runs");
-  await assert.rejects(backend.start(guest, signal()), /BB Box is putting a snapshot in the place of bb-box-\S+ on the Mac, so it does not start it until that has ended/);
+  await assert.rejects(backend.start(guest, signal()), /ALIA Box is putting a snapshot in the place of alia-box-\S+ on the Mac, so it does not start it until that has ended/);
   assert.ok(!existsSync(join(vms, guest.ref)), "nothing moved under a live restore");
   writeFileSync(join(snaps, ".rollbacks", guest.ref), `swapping ${SNAP} a1b2c3d4e5f6 ${process.pid} Thu Jan  1 00:00:00 1970\n`);
   assert.equal(await backend.power(guest), "stopped", "a reused PID with another start time is not the restore's shell, so the power read puts the copy in");
@@ -760,7 +760,7 @@ test("memory saved before a macOS update is labelled with the build that saved i
   assert.equal(label(snaps, OTHER).macos, "27A1", "the build the suspend saved its memory under, not the Mac's now");
   const plan = await backend.planSnapshots(guest, "macos-desktop", { id: OTHER, ref: OTHER, guest }, signal());
   assert.match(plan.restore.why ?? "", /saved while the Mac ran macOS build 27A1, and the Mac runs 27B5 now/);
-  rmSync(join(mac, ".bb-box", "tart", "run", `${guest.ref}.saved-under`));
+  rmSync(join(mac, ".alia-box", "tart", "run", `${guest.ref}.saved-under`));
   await backend.deleteSnapshot({ id: OTHER, ref: OTHER, guest }, recorder().hooks, signal());
   await backend.snapshot(guest, { id: OTHER, box: box.boxId, memory: true, forkSafe: 3 }, recorder().hooks, signal());
   assert.deepEqual([label(snaps, OTHER).macos, label(snaps, OTHER).tart], ["unknown", "unknown"]);
@@ -772,7 +772,7 @@ test("the start just after a restore never boots the VM from its disk when the s
   const { backend, guest, vms } = await suspendedWithSnapshot();
   await backend.rollbackSnapshot(guest, { id: SNAP, ref: SNAP, guest }, recorder().hooks, signal());
   writeFileSync(join(vms, guest.ref, "state.vzvmsave"), "corrupt");
-  await assert.rejects(backend.start(guest, signal()), /did not resume, so BB Box did not boot it from its disk/);
+  await assert.rejects(backend.start(guest, signal()), /did not resume, so ALIA Box did not boot it from its disk/);
   assert.ok(existsSync(join(vms, guest.ref, "state.vzvmsave")), "its memory is kept");
   await backend.start(guest, signal());
   assert.equal(await backend.power(guest), "running");
@@ -784,7 +784,7 @@ test("a copy APFS cannot clone is refused, never made in full, and the box resum
   const box = identity();
   const guest = await backend.acquire(box, null, acquiring, signal());
   writeFileSync(join(mac, ".fake-clone-fails"), "");
-  await assert.rejects(backend.snapshot(guest, { id: SNAP, box: box.boxId, memory: true }, recorder().hooks, signal()), (error: unknown) => error instanceof SnapshotFailed && /APFS could not clone .* and BB Box makes no full copy of a VM/.test(error.message));
+  await assert.rejects(backend.snapshot(guest, { id: SNAP, box: box.boxId, memory: true }, recorder().hooks, signal()), (error: unknown) => error instanceof SnapshotFailed && /APFS could not clone .* and ALIA Box makes no full copy of a VM/.test(error.message));
   assert.ok(!existsSync(join(snaps, SNAP)) && !existsSync(join(snaps, `${SNAP}.part`)));
   assert.equal(await backend.power(guest), "running");
   await backend.release(guest, releasing);
@@ -796,7 +796,7 @@ test("a take whose box does not resume says the box is stopped, with why", async
   const guest = await backend.acquire(box, null, acquiring, signal());
   writeFileSync(join(mac, ".fake-tart-run-fails"), "2");
   const taken = await backend.snapshot(guest, { id: SNAP, box: box.boxId, memory: true }, recorder().hooks, signal());
-  assert.match(taken.notResumed ?? "", /could not start bb-box-\S+ on mac1/);
+  assert.match(taken.notResumed ?? "", /could not start alia-box-\S+ on mac1/);
   assert.equal(await backend.power(guest), "stopped");
   await backend.release(guest, releasing);
 });
@@ -804,18 +804,18 @@ test("a take whose box does not resume says the box is stopped, with why", async
 function dataVolume(mac: string): void {
   const volume = join(mac, ".fake-data-volume");
   const files: Record<string, string> = {
-    "Users/admin/.bb-machines/bb.example/host-id": "host_source1\n",
-    "Users/admin/.bb-machines/bb.example/auth.json": "{}",
-    "Users/admin/.bb-machines/bb.example/host-artifact.sha256": "abc\n",
-    "Users/admin/.bb-machines/bb.example/logs/daemon.log": "x",
-    "Users/admin/Library/LaunchAgents/app.getbb.host-daemon.bb-example-host_source1.plist": "<plist/>",
+    "Users/admin/.alia-machines/alia.example/host-id": "host_source1\n",
+    "Users/admin/.alia-machines/alia.example/auth.json": "{}",
+    "Users/admin/.alia-machines/alia.example/host-artifact.sha256": "abc\n",
+    "Users/admin/.alia-machines/alia.example/logs/daemon.log": "x",
+    "Users/admin/Library/LaunchAgents/app.getbb.host-daemon.alia-example-host_source1.plist": "<plist/>",
     "Users/admin/Library/LaunchAgents/com.trycua.cua-driver.plist": "<plist/>",
-    "Users/admin/.config/bb-box/env": "GH_TOKEN=x\n",
-    "Users/admin/.config/bb-box/vm": "bb-box-source\n",
+    "Users/admin/.config/alia-box/env": "GH_TOKEN=x\n",
+    "Users/admin/.config/alia-box/vm": "alia-box-source\n",
     "Users/admin/work.txt": "kept\n",
     "private/etc/ssh/ssh_host_ed25519_key": "OLD",
     "private/etc/ssh/ssh_host_ed25519_key.pub": "ssh-ed25519 OLD\n",
-    "private/etc/bb-box/identity": "bb-box identity 1\n",
+    "private/etc/alia-box/identity": "alia-box identity 1\n",
   };
   for (const [path, text] of Object.entries(files)) {
     mkdirSync(join(volume, path, ".."), { recursive: true });
@@ -823,7 +823,7 @@ function dataVolume(mac: string): void {
   }
 }
 
-test("a fork's disk loses its source's BB machine, LaunchAgent, access file, VM name and SSH host keys on the Mac, before its first boot, from its own container only", async () => {
+test("a fork's disk loses its source's VesnALIA machine, LaunchAgent, access file, VM name and SSH host keys on the Mac, before its first boot, from its own container only", async () => {
   const { backend, vms, mac, guest } = await suspendedWithSnapshot();
   dataVolume(mac);
   const fork = identity();
@@ -831,10 +831,10 @@ test("a fork's disk loses its source's BB machine, LaunchAgent, access file, VM 
   const volume = join(vms, made.ref, "disk.img.data");
   const left = (path: string) => existsSync(join(volume, path));
   assert.deepEqual(
-    ["Users/admin/.bb-machines/bb.example/host-id", "Users/admin/.bb-machines/bb.example/auth.json", "Users/admin/.bb-machines/bb.example/logs", "Users/admin/Library/LaunchAgents/app.getbb.host-daemon.bb-example-host_source1.plist", "Users/admin/.config/bb-box/env", "Users/admin/.config/bb-box/vm", "private/etc/ssh/ssh_host_ed25519_key", "private/etc/ssh/ssh_host_ed25519_key.pub"].filter(left),
+    ["Users/admin/.alia-machines/alia.example/host-id", "Users/admin/.alia-machines/alia.example/auth.json", "Users/admin/.alia-machines/alia.example/logs", "Users/admin/Library/LaunchAgents/app.getbb.host-daemon.alia-example-host_source1.plist", "Users/admin/.config/alia-box/env", "Users/admin/.config/alia-box/vm", "private/etc/ssh/ssh_host_ed25519_key", "private/etc/ssh/ssh_host_ed25519_key.pub"].filter(left),
     [],
   );
-  assert.ok(left("Users/admin/.bb-machines/bb.example/host-artifact.sha256") && left("Users/admin/Library/LaunchAgents/com.trycua.cua-driver.plist") && left("Users/admin/work.txt") && left("private/etc/bb-box/identity"), "the rest of the disk stays, the marker too, so its own reset still runs");
+  assert.ok(left("Users/admin/.alia-machines/alia.example/host-artifact.sha256") && left("Users/admin/Library/LaunchAgents/com.trycua.cua-driver.plist") && left("Users/admin/work.txt") && left("private/etc/alia-box/identity"), "the rest of the disk stays, the marker too, so its own reset still runs");
   const calls = tartCalls(mac).filter((call) => call[0] === "diskutil" && !call.includes("--help")).map((call) => call.slice(1, 3).join(" "));
   assert.deepEqual(calls.filter((call) => /^(image attach|mount|unmount|eject)/.test(call)).map((call) => call.split(" ")[0]), ["image", "mount", "unmount", "eject"]);
   assert.equal(readFileSync(join(mac, ".fake-diskutil.json"), "utf8"), "{}", "nothing left attached");
@@ -846,8 +846,8 @@ test("a fork whose disk would mount from the Mac's own container, or will not at
   dataVolume(mac);
   writeFileSync(join(mac, ".fake-diskutil-container"), "disk3");
   const fork = identity();
-  await assert.rejects(backend.forkSnapshot({ id: SNAP, ref: SNAP, guest }, fork, null, acquiring, signal()), /names the Mac's own container, so BB Box changed nothing.*could not remove the source's identity from the fork's disk before its first boot, so it makes no fork/s);
-  assert.ok(!existsSync(join(vms, `bb-box-${fork.boxId}`)));
+  await assert.rejects(backend.forkSnapshot({ id: SNAP, ref: SNAP, guest }, fork, null, acquiring, signal()), /names the Mac's own container, so ALIA Box changed nothing.*could not remove the source's identity from the fork's disk before its first boot, so it makes no fork/s);
+  assert.ok(!existsSync(join(vms, `alia-box-${fork.boxId}`)));
   assert.ok(!tartCalls(mac).some((call) => call[0] === "diskutil" && call[1] === "mount"), "nothing mounted");
   rmSync(join(mac, ".fake-diskutil-container"));
   writeFileSync(join(mac, ".fake-diskutil-attach-fails"), "");
@@ -859,19 +859,19 @@ test("a fork is never made over a VM that is there already, so it always gets a 
   const { backend, vms, mac, guest } = await suspendedWithSnapshot();
   dataVolume(mac);
   const fork = identity();
-  spawnSync("cp", ["-r", "--sparse=always", join(vms, guest.ref), join(vms, `bb-box-${fork.boxId}`)]);
-  await assert.rejects(backend.forkSnapshot({ id: SNAP, ref: SNAP, guest }, fork, null, acquiring, signal()), /is there already, so BB Box makes no fork over it/);
+  spawnSync("cp", ["-r", "--sparse=always", join(vms, guest.ref), join(vms, `alia-box-${fork.boxId}`)]);
+  await assert.rejects(backend.forkSnapshot({ id: SNAP, ref: SNAP, guest }, fork, null, acquiring, signal()), /is there already, so ALIA Box makes no fork over it/);
   await backend.release(guest, releasing);
 });
 
-test("macOS's reset records a race when someone logs in while it removes BB's machine, not only before it decides", () => {
+test("macOS's reset records a race when someone logs in while it removes VesnALIA's machine, not only before it decides", () => {
   const root = macosBox();
-  tool(root, "aa:bb:cc:00:00:01", "enable");
-  tool(root, "aa:bb:cc:00:00:01", "write", "--box", "bxsource1", "--source", "device");
+  tool(root, "aa:alia:cc:00:00:01", "enable");
+  tool(root, "aa:alia:cc:00:00:01", "write", "--box", "bxsource1", "--source", "device");
   writeFileSync(join(root, "console-users"), "root\nadmin\n");
-  tool(root, "aa:bb:cc:00:00:02", "boot");
-  assert.equal(status(root, "aa:bb:cc:00:00:02").raced, "yes");
-  assert.match(readFileSync(join(root, "var", "lib", "bb-box", "identity-resets"), "utf8"), /someone was logged in at the console \(root admin\) while it decided or removed BB's machine/);
+  tool(root, "aa:alia:cc:00:00:02", "boot");
+  assert.equal(status(root, "aa:alia:cc:00:00:02").raced, "yes");
+  assert.match(readFileSync(join(root, "var", "lib", "alia-box", "identity-resets"), "utf8"), /someone was logged in at the console \(root admin\) while it decided or removed ALIA's machine/);
 });
 
 test("the restore's words follow the backend: Tart suspends and its undo holds memory", async () => {
@@ -887,16 +887,16 @@ test("the restore's words follow the backend: Tart suspends and its undo holds m
   await backend.release(guest, releasing);
 });
 
-test("a login during the reset of a disk that holds nothing of BB's, as a fork's after the Mac removed it, is no race: nothing of the source's could act", () => {
+test("a login during the reset of a disk that holds nothing of VesnALIA's, as a fork's after the Mac removed it, is no race: nothing of the source's could act", () => {
   const root = macosBox();
-  tool(root, "aa:bb:cc:00:00:01", "enable");
-  tool(root, "aa:bb:cc:00:00:01", "write", "--box", "bxsource1", "--source", "device");
-  rmSync(join(root, "Users", "admin", ".bb-machines", "bb.example", "host-id"));
-  rmSync(join(root, "Users", "admin", "Library", "LaunchAgents", "app.getbb.host-daemon.bb-example-host_source1.plist"));
+  tool(root, "aa:alia:cc:00:00:01", "enable");
+  tool(root, "aa:alia:cc:00:00:01", "write", "--box", "bxsource1", "--source", "device");
+  rmSync(join(root, "Users", "admin", ".alia-machines", "alia.example", "host-id"));
+  rmSync(join(root, "Users", "admin", "Library", "LaunchAgents", "app.getbb.host-daemon.alia-example-host_source1.plist"));
   writeFileSync(join(root, "console-users"), "admin\nadmin\n");
-  tool(root, "aa:bb:cc:00:00:02", "boot");
-  assert.deepEqual([status(root, "aa:bb:cc:00:00:02").boot, status(root, "aa:bb:cc:00:00:02").raced], ["reset", "no"]);
-  assert.match(readFileSync(join(root, "var", "lib", "bb-box", "identity-resets"), "utf8"), /BB machines removed: none$/m);
+  tool(root, "aa:alia:cc:00:00:02", "boot");
+  assert.deepEqual([status(root, "aa:alia:cc:00:00:02").boot, status(root, "aa:alia:cc:00:00:02").raced], ["reset", "no"]);
+  assert.match(readFileSync(join(root, "var", "lib", "alia-box", "identity-resets"), "utf8"), /ALIA machines removed: none$/m);
 });
 
 test("a Mac whose diskutil cannot attach a disk image makes no macOS forks, says which macOS has it, and the doctor says so; there is no other way to clean a fork's disk", async () => {
@@ -910,7 +910,7 @@ test("a Mac whose diskutil cannot attach a disk image makes no macOS forks, says
   assert.equal(plan.restore.way, "rollback", "takes and restores go on");
   const fork = identity();
   await assert.rejects(backend.forkSnapshot({ id: SNAP, ref: SNAP, guest }, fork, null, acquiring, signal()), /The Mac's diskutil has no image attach/);
-  assert.ok(!existsSync(join(vms, `bb-box-${fork.boxId}`)));
+  assert.ok(!existsSync(join(vms, `alia-box-${fork.boxId}`)));
   assert.ok(!tartCalls(mac).some((call) => call[0] === "hdiutil"), "never hdiutil");
   const check = await forks();
   assert.deepEqual([check?.status, check?.fix], ["warn", "Update mac1 to macOS 27 or later to make macOS forks there."]);
@@ -928,18 +928,18 @@ function throughGuestTool(backend: TartBackend, testRoot: { readonly root: strin
   };
 }
 
-test("070 close-out: through BB Box's own boxes and snapshots, a Tart Linux box that BB Box stops takes a fork-safe snapshot, its identity reset read just before the stop, and Keep takes it; one stopped another way takes one that is not fork-safe", async () => {
+test("070 close-out: through VesnALIA Box's own boxes and snapshots, a Tart Linux box that VesnALIA Box stops takes a fork-safe snapshot, its identity reset read just before the stop, and Keep takes it; one stopped another way takes one that is not fork-safe", async () => {
   const ssh = fakeSsh();
   const mac = ssh.home(MAC);
   fakeMacTools(mac);
   addImage(mac);
-  addImage(mac, "bb-box-linux", "linux");
+  addImage(mac, "alia-box-linux", "linux");
   const guest = identityGuest();
   mkdirSync(join(guest.root, "sys/class/net/eth0/device"), { recursive: true });
   let tart: TartBackend | null = null;
   const state = world({
     backend: (storage) => {
-      tart = new TartBackend(tartConfig({ "tart-linux-image": "bb-box-linux" }), testContext(storage, "test", { id: "fake" }), FAKES);
+      tart = new TartBackend(tartConfig({ "tart-linux-image": "alia-box-linux" }), testContext(storage, "test", { id: "fake" }), FAKES);
       made.push(tart);
       throughGuestTool(tart, guest);
       return tart;
@@ -962,7 +962,7 @@ test("070 close-out: through BB Box's own boxes and snapshots, a Tart Linux box 
   await tart!.start(stopped.guest!);
   await tart!.stop!(stopped.guest!);
   const ranOutside = (await state.boxes.find(box.id))!;
-  assert.ok(ranOutside.state === "stopped" && ranOutside.stopForkSafety, "BB Box has not seen the run");
+  assert.ok(ranOutside.state === "stopped" && ranOutside.stopForkSafety, "VesnALIA Box has not seen the run");
   const afterRun = (await state.snapshots.take(COMMAND, ranOutside, standing(ranOutside), { name: "after a run outside" })).snapshot!;
   assert.deepEqual([state.store.record(afterRun.id)?.forkSafe, state.store.record(afterRun.id)?.forkSafeWhy], [null, "unread"], "the VM's files changed as it ran, so the reading is not its own");
   await state.boxes.start(THREAD, box.id, undefined, BY_COMMAND);

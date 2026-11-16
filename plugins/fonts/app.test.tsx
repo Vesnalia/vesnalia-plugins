@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { fireEvent, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { CATALOG_STORAGE_KEY, CONFIG_STORAGE_KEY, saveCatalog } from "./client-store";
 
 describe("Fonts settings UI", () => {

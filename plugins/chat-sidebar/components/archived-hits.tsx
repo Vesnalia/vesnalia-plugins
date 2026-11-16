@@ -1,9 +1,9 @@
-// Archived chats the message search found, under the results: bb loads the
+// Archived chats the message search found, under the results: VesnALIA loads the
 // archive into the list only page by page, so these rows are drawn from what
 // the search returned and open the thread directly. A few at first, the rest
 // one click away.
 import { useState } from "react";
-import { experimental_ProviderIcon as ProviderIcon, type PluginSidebarProject } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderIcon as ProviderIcon, type PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
 
 import { Icon } from "@/components/ui/icon";
 import type { ArchivedHit } from "@/hooks/use-message-search";

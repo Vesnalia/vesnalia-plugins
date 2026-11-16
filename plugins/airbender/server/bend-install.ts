@@ -1,5 +1,5 @@
 // What: plans a verified bend release download, or a source build.
-// Why: installing Airbender should not require a Go toolchain (bead-bb-bk2).
+// Why: installing Airbender should not require a Go toolchain (bead-alia-bk2).
 // Design: download the release matching package.json, never “latest”; stage
 // beside the destination and verify before replacing an existing executable.
 // Gotchas: the visible terminal runs a POSIX shell even when the user's shell

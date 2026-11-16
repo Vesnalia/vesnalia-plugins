@@ -37,7 +37,7 @@ ranking and light context/alias awareness. No Monaco/LSP/LLM.
 ### Stage 3 — Editor popup (UI)
 - Wire catalog load on active connection connect/change.
 - Overlay list under caret; Tab accept; Esc/arrows navigate.
-- **Check:** `bb plugin build` + install/reload; type in Query editor and
+- **Check:** `alia plugin build` + install/reload; type in Query editor and
   accept a table name (manual or scripted if possible).
 
 ### Stage 4 — Personal ranking (A5/A6)

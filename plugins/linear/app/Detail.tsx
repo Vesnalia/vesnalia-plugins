@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { Markdown, useBbNavigate, useRealtime } from "@get-bb/plugin-sdk/app";
+import { Markdown, useAliaNavigate, useRealtime } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -148,7 +148,7 @@ function DetailBody({
         </div>
         <p className="text-sm text-muted-foreground">
           Bind teams from the Linear panel, or on the command line:{" "}
-          <code className="text-foreground">bb linear bind &lt;TEAM-KEY&gt;</code>.
+          <code className="text-foreground">alia linear bind &lt;TEAM-KEY&gt;</code>.
         </p>
       </div>
     );
@@ -194,7 +194,7 @@ function IssueBody({
   const id = detail.id;
   const options = useEditorOptions(id);
   const rpc = useLinearRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const parent = detail.parent;
 
   const clearParent = useCallback(() => {
@@ -327,7 +327,7 @@ function IssueBody({
           </div>
         </div>
 
-        {/* bb's own chat-message renderer, so a Linear description reads like
+        {/* VesnALIA's own chat-message renderer, so a Linear description reads like
             the rest of the app rather than like a differently-styled bundled
             renderer. */}
         <div className="border-t border-border px-4 py-3">
@@ -726,7 +726,7 @@ function DetailMenu({
   onReload: () => void;
 }) {
   const rpc = useLinearRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [archiving, setArchiving] = useState(false);
   const [addingLink, setAddingLink] = useState(false);
   const [settingParent, setSettingParent] = useState(false);
@@ -1182,7 +1182,7 @@ function CustomerRequests({ requests }: { requests: DetailView["customerRequests
  * A plain textarea, by choice.
  *
  * Markdown in, markdown out: mention insertion, but no paste-image or toolbar.
- * bb owns the rich composer and this plugin refuses to ship a second one — a
+ * VesnALIA owns the rich composer and this plugin refuses to ship a second one — a
  * textarea that posts is honest, while a half-rich editor is not.
  *
  * Posting is optimistic with a **named rollback**: on failure the text comes
@@ -1373,7 +1373,7 @@ function CommentComposer({
         </div>
       ) : null}
       {/*
-        `pr-12` clears bb's own floating action button, which is fixed to the
+        `pr-12` clears VesnALIA's own floating action button, which is fixed to the
         bottom-right of the window and sits directly over this corner. Found by
         screenshotting the pane rather than by reading it: the Comment button
         was half-covered and looked disabled.

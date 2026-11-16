@@ -14,7 +14,7 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { Button as BaseButton } from "@/components/ui/button";
 import {
   Dialog,
@@ -83,7 +83,7 @@ const MARKER = "flex size-5 shrink-0 items-center justify-center rounded-full te
 // ---------------------------------------------------------------------------
 // Entity
 
-/** Line glyphs (lucide geometry) for the kinds BB's icon set has no exact glyph for; drawn in currentColor. */
+/** Line glyphs (lucide geometry) for the kinds VesnALIA's icon set has no exact glyph for; drawn in currentColor. */
 const KIND_GLYPH: Record<EntityKind, ReactNode> = {
   product: (
     <>
@@ -202,7 +202,7 @@ export function Entity({ props }: { props: Props }) {
   const card = (
     // The image-preview plugin restyles chat <img>s into zoomable thumbnails; this layout owns its pictures.
     <article
-      data-bb-image-preview-ignore=""
+      data-alia-image-preview-ignore=""
       className={cn(
         "relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-lg text-sm text-foreground transition-colors duration-150 hover:duration-0 motion-reduce:transition-none",
         "@min-[18rem]:flex-row @min-[18rem]:items-center @min-[18rem]:gap-3 @min-[18rem]:p-2.5",
@@ -229,7 +229,7 @@ export function Entity({ props }: { props: Props }) {
                 referrerPolicy="no-referrer"
                 onLoad={() => settle(true)}
                 onError={() => settle(false)}
-                // Opacity inline, never a toggled class: BB's image preview rewrites an <img>'s class from a stale copy.
+                // Opacity inline, never a toggled class: VesnALIA's image preview rewrites an <img>'s class from a stale copy.
                 style={{ opacity: shown ? 1 : 0 }}
                 className="absolute inset-0 size-full object-cover transition-opacity duration-300 motion-reduce:transition-none"
               />
@@ -306,7 +306,7 @@ export function Entity({ props }: { props: Props }) {
               {url !== null && shown ? (
                 <button
                   type="button"
-                  data-bb-image-preview-ignore=""
+                  data-alia-image-preview-ignore=""
                   aria-label={`View the picture of ${name} full size`}
                   onClick={() => {
                     backToDetail.current = true;
@@ -619,7 +619,7 @@ export function Hotspots({ props }: { props: Props }) {
       <div className="flex min-w-0 justify-center">
         <div
           // Pins are placed on this box: the image-preview plugin must not resize the picture inside it.
-          data-bb-image-preview-ignore=""
+          data-alia-image-preview-ignore=""
           className="relative max-w-full"
           style={{ width: `min(100%, ${HOTSPOT_MAX_HEIGHT_REM * ratio}rem)`, aspectRatio: String(ratio) }}
         >

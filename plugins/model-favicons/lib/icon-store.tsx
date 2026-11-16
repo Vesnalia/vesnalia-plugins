@@ -1,13 +1,13 @@
 // The live override map, shared between the registered icon components and the
 // settings page.
 //
-// bb collects `experimental_providerIcon` registrations once, when it
+// VesnALIA collects `experimental_providerIcon` registrations once, when it
 // interprets the plugin's app bundle, and a second registration for the same
 // (kind, provider id) throws. The registered mark must therefore be a stable
 // component that *reads* the current choice at render time rather than a
 // component bound to one mark.
 //
-// The server owns the persisted map (bb.storage.kv). This module caches the
+// The server owns the persisted map (alia.storage.kv). This module caches the
 // last map the app fetched, so rendering a provider icon never waits on a
 // round trip; the page and the realtime signal refresh it.
 
@@ -33,7 +33,7 @@ export function getOverrides(): Overrides {
  * The mark a provider id draws.
  *
  * An explicit override wins. Otherwise the built-in default applies. A
- * provider with neither keeps bb's own logo, which is what we want: the
+ * provider with neither keeps VesnALIA's own logo, which is what we want: the
  * plugin must not repaint providers that already look right.
  */
 export function markFor(providerId: string): MarkId | undefined {
@@ -45,7 +45,7 @@ export function markFor(providerId: string): MarkId | undefined {
 /**
  * A stable component for one provider id.
  *
- * The identity never changes, so bb keeps the registration, but the mark it
+ * The identity never changes, so VesnALIA keeps the registration, but the mark it
  * draws follows the current override.
  */
 export function providerIconComponent(providerId: string, fallback: Mark): Mark {

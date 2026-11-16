@@ -5,7 +5,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { TaskManager } from "../host.ts";
-import { createFakePluginHost, makePluginAgentConfigurationContext, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makePluginAgentConfigurationContext, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 
 const threadId = "thread-test";
@@ -99,10 +99,10 @@ async function setup() {
     },
   });
   let current = host;
-  await plugin(current.bb);
+  await plugin(current.alia);
   current.harness.behavior.runService("reconcile");
   await flush();
-  const row = (id: number): any => current.bb.storage.database().prepare("SELECT * FROM tasks WHERE id = ?").get(id);
+  const row = (id: number): any => current.alia.storage.database().prepare("SELECT * FROM tasks WHERE id = ?").get(id);
   const complete = async (id: number, signal = true) => {
     const task = row(id);
     const payload = { key: task.task_key, status: "success", endedAt: Date.now(), exitCode: 0,
@@ -352,7 +352,7 @@ test("read and tail do not acknowledge a pre-completion snapshot as final output
 test("task tool is available to Pi without a setting", async () => {
   const host = createFakePluginHost({ pluginId: "shell-tasks" });
   try {
-    await plugin(host.bb);
+    await plugin(host.alia);
     const config = await host.harness.behavior.resolveAgentConfiguration(
       makePluginAgentConfigurationContext({ provider: { id: "pi" } }),
     );
@@ -366,11 +366,11 @@ test("preference setting nudges agents away from provider background tasks", asy
     settings: { preferOverNativeBackgroundTasks: true },
   });
   try {
-    await plugin(host.bb);
+    await plugin(host.alia);
     const config = await host.harness.behavior.resolveAgentConfiguration(
       makePluginAgentConfigurationContext({ provider: { id: "claude-code" } }),
     );
-    assert.match(config.instructions ?? "", /Prefer the BB task tool over the provider's native background-task runner/);
+    assert.match(config.instructions ?? "", /Prefer the ALIA task tool over the provider's native background-task runner/);
   } finally { await host.harness.lifecycle.dispose(); }
 });
 

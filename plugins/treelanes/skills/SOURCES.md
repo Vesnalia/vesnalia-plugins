@@ -28,8 +28,8 @@ Each copied skill keeps the MIT license notice of its upstream:
 - thermo-nuclear-code-quality-review:
   <https://github.com/cursor/plugins/tree/main/cursor-team-kit>, in
   [cursor-team-kit-LICENSE](cursor-team-kit-LICENSE).
-- babysit-pr: the bb built-in skill from <https://github.com/get-bb/bb>, in
-  [bb-LICENSE](bb-LICENSE).
+- babysit-pr: the VesnALIA built-in skill from <https://github.com/get-bb/bb>, in
+  [alia-LICENSE](alia-LICENSE).
 - The pstack skills: <https://github.com/backnotprop/pstack>, in
   [pstack-LICENSE](pstack-LICENSE).
 

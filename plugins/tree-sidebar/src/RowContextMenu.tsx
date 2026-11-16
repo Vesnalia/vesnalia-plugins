@@ -3,7 +3,7 @@ import * as ContextMenu from "@radix-ui/react-context-menu";
 import {
   experimental_useSidebarThreadActions as useSidebarThreadActions,
   type PluginSidebarThread,
-} from "@bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import { copyPermalink } from "./copyPermalink";
 import { threadPermalink } from "./permalink";
@@ -12,7 +12,7 @@ import { threadPermalink } from "./permalink";
  * This sidebar's right-click menu. The plugin API ships no menu component on
  * purpose, so a replaced list owns the surface. Every item is one call on
  * `experimental_useSidebarThreadActions`, and the destructive one is
- * `requestDelete`, which opens bb's confirmation rather than deleting a
+ * `requestDelete`, which opens VesnALIA's confirmation rather than deleting a
  * subtree silently.
  */
 export function RowContextMenu({
@@ -28,7 +28,7 @@ export function RowContextMenu({
     <ContextMenu.Root>
       <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
       <ContextMenu.Portal>
-        {/* The marker keeps `threadMenu.ts` out: this menu shares bb's
+        {/* The marker keeps `threadMenu.ts` out: this menu shares VesnALIA's
             "Thread actions" label, and it already has its own Copy link. */}
         <ContextMenu.Content
           aria-label="Thread actions"
@@ -38,8 +38,8 @@ export function RowContextMenu({
           <Item onSelect={() => actions.open(thread.id, { split: true })}>
             Open in split
           </Item>
-          {/* The origin, not a fixed one: whatever address bb is open at is
-              the one a link has to carry, so a link copied over `bb connect`
+          {/* The origin, not a fixed one: whatever address VesnALIA is open at is
+              the one a link has to carry, so a link copied over `alia connect`
               opens for whoever it is pasted to. */}
           <Item
             onSelect={() =>
@@ -66,7 +66,7 @@ export function RowContextMenu({
           </Item>
           <Separator />
           {/* Already archived, and the plugin actions have no unarchive to
-              offer instead — that lives in bb's own archive view. */}
+              offer instead — that lives in VesnALIA's own archive view. */}
           {thread.isArchived ? null : (
             <Item onSelect={() => actions.archive(thread.id)}>Archive</Item>
           )}

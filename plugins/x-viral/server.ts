@@ -1,8 +1,8 @@
-// bb-plugin-x-viral — scores a post against the open-source X For You
+// alia-plugin-x-viral — scores a post against the open-source X For You
 // ranking algorithm and runs an autoresearch loop (propose edit → score →
 // keep if better) to improve it. Pure logic lives in lib/; this file wires
-// RPC (for the sidebar page), the `bb x-viral` CLI, and two agent tools.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+// RPC (for the sidebar page), the `alia x-viral` CLI, and two agent tools.
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { autoresearch, suggestions, type AutoresearchResult, type Suggestion } from "./lib/autoresearch";
 import { unifiedPatch } from "./lib/diff";
@@ -104,7 +104,7 @@ export function runVideo(text: string, context?: PostContext): VideoScript {
   return asJson(videoScript(text, context));
 }
 
-/** Parses `bb x-viral` flags into a PostContext; the rest of argv is the post text. */
+/** Parses `alia x-viral` flags into a PostContext; the rest of argv is the post text. */
 export function parseCliArgs(argv: string[]): { text: string; context: PostContext; json: boolean; iterations?: number; verbose: boolean } {
   const context: PostContext = {};
   const words: string[] = [];
@@ -145,10 +145,10 @@ export function parseCliArgs(argv: string[]): { text: string; context: PostConte
   return { text: words.join(" ").replace(/\\n/g, "\n").trim(), context, json, iterations, verbose };
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     score: ({ text, context }) => runScore(text, context),
     autoresearch: ({ text, context, maxIterations }) => runAutoresearch(text, context, maxIterations),
     video: ({ text, context }) => runVideo(text, context),
@@ -156,10 +156,10 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    '  bb x-viral score "<post text>" [flags]         Score a post and list suggestions',
-    '  bb x-viral autoresearch "<post text>" [flags]  Iteratively rewrite until the score stops rising',
-    '  bb x-viral video "<post text>"                 Turn the post into a short-video beat sheet',
-    "  bb x-viral weights                              Print the production ranking weights",
+    '  VesnALIA x-viral score "<post text>" [flags]         Score a post and list suggestions',
+    '  VesnALIA x-viral autoresearch "<post text>" [flags]  Iteratively rewrite until the score stops rising',
+    '  VesnALIA x-viral video "<post text>"                 Turn the post into a short-video beat sheet',
+    "  VesnALIA x-viral weights                              Print the production ranking weights",
     "",
     "Flags: --image  --video[=secs]  --reply  --repost  --quote  --mutual  --in-network",
     "       --followers N  --impressions N  --age-hours N  --duplicate  --topic-feed",
@@ -167,14 +167,14 @@ export default async function plugin(bb: BbPluginApi) {
     "Use \\n inside the quoted text for line breaks.",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "x-viral",
     summary: "Score a post against the X For You algorithm and autoresearch a better version",
     commands: [
-      { name: "score", summary: "Score a post (0-100) with the reasons and ranked suggestions", usage: 'bb x-viral score "<post text>" [--image] [--video] [--reply] [--followers N] [--json]' },
-      { name: "autoresearch", summary: "Loop: propose edit → rescore → keep if better; prints the improved post", usage: 'bb x-viral autoresearch "<post text>" [--iterations N] [--json]' },
-      { name: "video", summary: "Turn a post into a 10-30s video script (hook, beats, ask) using its own sentences", usage: 'bb x-viral video "<post text>" [--json]' },
-      { name: "weights", summary: "Print the ranking weights mirrored from home-mixer/params/param.rs", usage: "bb x-viral weights [--json]" },
+      { name: "score", summary: "Score a post (0-100) with the reasons and ranked suggestions", usage: 'alia x-viral score "<post text>" [--image] [--video] [--reply] [--followers N] [--json]' },
+      { name: "autoresearch", summary: "Loop: propose edit → rescore → keep if better; prints the improved post", usage: 'alia x-viral autoresearch "<post text>" [--iterations N] [--json]' },
+      { name: "video", summary: "Turn a post into a 10-30s video script (hook, beats, ask) using its own sentences", usage: 'alia x-viral video "<post text>" [--json]' },
+      { name: "weights", summary: "Print the ranking weights mirrored from home-mixer/params/param.rs", usage: "alia x-viral weights [--json]" },
     ],
     async run(argv) {
       const [command, ...rest] = argv;
@@ -217,7 +217,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "x_viral_score",
     description:
       "Score a draft X post 0-100 against the open-source For You ranking algorithm (weighted engagement heads, out-of-network discount, visibility gates). Returns the breakdown, the signals the model would read, and suggestions each with its projected score.",
@@ -231,7 +231,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "x_viral_autoresearch",
     description:
       "Run the autoresearch loop on a draft X post: try each candidate edit, rescore with the X algorithm model, keep only edits that raise the score, and return the original score, every kept step, the improved post, and its new score.",
@@ -246,7 +246,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "x_viral_video_script",
     description:
       "Turn a draft X post into a 10-30 second video beat sheet (hook, beats, ask, on-screen captions, timing) built from the post's own sentences, with feed-specific production notes.",

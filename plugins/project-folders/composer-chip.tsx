@@ -13,7 +13,7 @@ import {
   useComposerView,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,7 +43,7 @@ import {
 export const NATIVE_SLOT_CLASS = "pf-native-project-slot";
 
 /**
- * BB's own project chip, if it is still BB's. A chip already replaced — by
+ * VesnALIA's own project chip, if it is still VesnALIA's. A chip already replaced — by
  * this component or by the plugin's own New chat screen — is skipped, both
  * because the replacement carries the same attribute and because two owners
  * would insert two chips beside one control.
@@ -70,10 +70,10 @@ export function controlOwner(from: HTMLElement): HTMLElement | null {
 export type ChipSlot = { node: HTMLElement; className: string };
 
 /**
- * Holds BB's project chip on behalf of a replacement, and hands it back
+ * Holds VesnALIA's project chip on behalf of a replacement, and hands it back
  * untouched. `sync` is cheap to call as often as the composer re-renders: as
  * long as the chip taken is still in the document with the replacement's span
- * beside it, there is nothing to do. The search only runs again once BB has
+ * beside it, there is nothing to do. The search only runs again once VesnALIA has
  * thrown one of them away — which is also why a chip already taken is not a
  * candidate: finding "nothing to take" while holding one means we are the
  * reason, not that the composer lost its chip.
@@ -119,7 +119,7 @@ export function chipTakeover(
  * Whether the native chip is currently showing the tree. The composer's
  * separate "Section" action is the fallback for when it is not: with both on
  * screen the action row would offer the same choice twice and crowd itself
- * into BB's overflow menu.
+ * into VesnALIA's overflow menu.
  */
 let taken = false;
 const watchers = new Set<() => void>();
@@ -141,10 +141,10 @@ export function useChipTaken() {
 }
 
 /**
- * The project/section tree inside BB's own project chip on the New thread
+ * The project/section tree inside VesnALIA's own project chip on the New thread
  * screen.
  *
- * BB's composer knows projects, not folders: its chip lists projects flat, so
+ * VesnALIA's composer knows projects, not folders: its chip lists projects flat, so
  * a chat started there lands in a project root however deep the section tree
  * goes. This hides that chip and puts the plugin's tree in its place, styled
  * with the chip's own classes. Choosing a place applies it through the
@@ -158,8 +158,8 @@ export function ComposerProjectChip() {
   useLanguage();
   const rpc = useRpc<typeof rpcContract>();
   const composer = useComposer();
-  // BB before 0.43.3 cannot set the composer's pickers: the native project
-  // control stays BB's own and the environment picker's tree is the way in.
+  // VesnALIA before 0.43.3 cannot set the composer's pickers: the native project
+  // control stays VesnALIA's own and the environment picker's tree is the way in.
   const selectable = composerCanSetSelection(composer);
   const view = useComposerView();
   const marker = useRef<HTMLSpanElement>(null);
@@ -202,7 +202,7 @@ export function ComposerProjectChip() {
       },
     );
     takeover.sync();
-    // BB re-renders its action row as the draft changes; the chip is looked
+    // VesnALIA re-renders its action row as the draft changes; the chip is looked
     // for again then, once per batch of changes rather than once per change.
     const observer = new MutationObserver(() => {
       if (frame) return;
@@ -299,7 +299,7 @@ export function ComposerProjectChip() {
       } else rememberPick(null);
       await composer.experimental_setSelection({
         projectId: entry.projectId,
-        // A project BB knows and the plugin has no folder for keeps BB's own
+        // A project VesnALIA knows and the plugin has no folder for keeps VesnALIA's own
         // environment: there is nothing here to point it at.
         ...(folder
           ? {
@@ -317,7 +317,7 @@ export function ComposerProjectChip() {
                     }
                   : {
                       // The project root, the way the plugin's own New chat
-                      // screen starts one: BB's checkout provider at the folder.
+                      // screen starts one: VesnALIA's checkout provider at the folder.
                       type: "provider" as const,
                       environmentProviderId: "project-checkout",
                       machine: {

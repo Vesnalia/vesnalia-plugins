@@ -1,27 +1,27 @@
 ---
-eyebrow: BB plugin design
-title: Autoresearch for BB
-subtitle: A BB plugin for long-running, measured code-optimization studies. Short-lived agent workers propose changes in parallel. The plugin owns the loop, the measurements, and every keep or discard decision.
+eyebrow: VesnALIA plugin design
+title: Autoresearch for VesnALIA
+subtitle: A VesnALIA plugin for long-running, measured code-optimization studies. Short-lived agent workers propose changes in parallel. The plugin owns the loop, the measurements, and every keep or discard decision.
 brand: AR
-brandLabel: bb-autoresearch
-brandSublabel: BB plugin design
+brandLabel: alia-autoresearch
+brandSublabel: VesnALIA plugin design
 pills: 1.0 | M0-M3 built | Agent-led harvest | Per-host thresholds | Live view and replay | Remote bench hosts | Exit criteria partly validated
 cards: Unit of work=Study | Agents=Strategist, workers, harvest | Verdicts=Plugin-owned | Output=PRs with plugin-measured gains
 ---
 
-# Autoresearch for BB
+# Autoresearch for VesnALIA
 
 > Autoresearch works like a merge queue. The CI is a benchmark, and the authors are short-lived agents. The plugin runs the loop, measures every candidate, and decides what to keep. Agents only propose changes and explain what they learned.
 
 ## Status
 
-All four milestones are built (BB 0.45, plugin SDK 0.6.14). Each was smoke-tested live on toy repositories on one MacBook. With v0.2.2 it also ran once on a real workload: a blind comparison against another autoresearch loop on a real-world CLI performance task, from the same starting commit (5.4× against the other loop's 3.9× on that benchmark, in about 3.6× the wall time; one run of each). The exit criteria:
+All four milestones are built (VesnALIA 0.45, plugin SDK 0.6.14). Each was smoke-tested live on toy repositories on one MacBook. With v0.2.2 it also ran once on a real workload: a blind comparison against another autoresearch loop on a real-world CLI performance task, from the same starting commit (5.4× against the other loop's 3.9× on that benchmark, in about 3.6× the wall time; one run of each). The exit criteria:
 
 | Milestone | Exit criterion | Validated? |
 |---|---|---|
 | M0: test the main assumption | Equal or better improvement than a serial single-agent loop at equal tokens, and a measured false-win rate | **No.** The head-to-head against a serial loop was never run. False-win rates are measured in simulation only (stats and expensive-class tests). |
 | M1: parallel | Bench busy > 80% of Running time; time to target clearly below M0 at similar tokens per win | **No.** Toy studies reached 85% in steady state when eval > think, but they are too short; no real workload, no M0 comparison. |
-| M2: remote bench and trust | A study runs a full day on a remote x86 bench host without a human stepping in | **No.** Only one BB machine existed; the remote path ran against the server's own machine in clone mode for minutes. |
+| M2: remote bench and trust | A study runs a full day on a remote x86 bench host without a human stepping in | **No.** Only one VesnALIA machine existed; the remote path ran against the server's own machine in clone mode for minutes. |
 | M3: harvest and operations | A harvested PR set whose measured contributions add up to the total gain within the CI | **On a toy only**, with the plugin-run harvest of v0.x: sum of contributions +290.7% ± 1.4% vs measured total +293.9% (CI half-width of the gap 3.7%). See [the M3 notes](release-notes.md#v010-m3-harvest-and-operations). Since 1.0 an agent harvests with the plugin's measurements; not yet validated on a real workload. |
 
 This document is the design: what the plugin does and why. How each version was built, every deviation from this design, the live checks and the known issues are in the [release notes](release-notes.md); the user guide is [guide.md](guide.md), the bench provider contract [bench-providers.md](bench-providers.md), and what 1.0 promises to keep stable [stability.md](stability.md).
@@ -42,7 +42,7 @@ The simple form is one long-lived agent that edits, benchmarks, and decides, in 
 - **Measurements are taken on the wrong hardware.** The benchmark runs wherever the agent runs, usually a laptop. That isn't the production architecture, and other work on the same machine adds noise.
 - **The output is a messy branch.** Hundreds of commits and reverts that someone then has to untangle by hand.
 
-BB already has the building blocks: worktrees, cheap threads, multiple providers, remote machines, plugins with a server, a host daemon and UI. A design built for BB can fix each of these.
+VesnALIA already has the building blocks: worktrees, cheap threads, multiple providers, remote machines, plugins with a server, a host daemon and UI. A design built for VesnALIA can fix each of these.
 
 ## Goals
 
@@ -68,7 +68,7 @@ BB already has the building blocks: worktrees, cheap threads, multiple providers
 4. **Edit in parallel, measure one at a time.** N worktrees edit at once, and each benchmark machine runs one measurement at a time.
 5. **Git stores every experiment.** Every candidate is a commit kept under a ref. Nothing is lost to a revert.
 6. **Humans steer the list of ideas, not a chat.** You change direction by editing the idea queue, scope, and budget. Chat is optional.
-7. **Output is evidence.** PRs carry the plugin's measurements with confidence intervals, and the study's record (`bb study evidence`) says where each one came from.
+7. **Output is evidence.** PRs carry the plugin's measurements with confidence intervals, and the study's record (`alia study evidence`) says where each one came from.
 
 With concurrency 1, the same design reduces to a classic serial loop. It isn't a separate mode.
 
@@ -93,21 +93,21 @@ With concurrency 1, the same design reduces to a classic serial loop. It isn't a
 | **Best** | The current best commit. Only the plugin advances it, by promoting a winning candidate. |
 | **Finding** | What a worker learned: outcome, why, and when the idea would be worth revisiting. |
 | **Dossier** | The strategist's running map of the codebase: hot paths, what's been learned, dead ends. |
-| **Bench host** | A machine that measures: the edit machine, another BB machine, or a remote machine. It runs one measurement at a time. |
-| **Bench provider** | A separate BB plugin that lends short-lived machines over a small RPC contract ([bench-providers.md](bench-providers.md)). |
-| **Remote bench host** | One machine lent by a bench provider, driven by the BB server. Each is its own bench host with its own calibration. |
+| **Bench host** | A machine that measures: the edit machine, another VesnALIA machine, or a remote machine. It runs one measurement at a time. |
+| **Bench provider** | A separate VesnALIA plugin that lends short-lived machines over a small RPC contract ([bench-providers.md](bench-providers.md)). |
+| **Remote bench host** | One machine lent by a bench provider, driven by the VesnALIA server. Each is its own bench host with its own calibration. |
 | **Harvest** | Freezing best, then turning base→best into reviewable PRs. The plugin freezes and measures; an agent groups, splits, writes and publishes. |
-| **Evidence** | The study's record as stable JSON (`bb study evidence`): candidates, commit messages, verdicts, samples, guardrails, findings, segments, base and best. |
-| **Requested measurement** | A paired A/B of any two commits (`bb study measure`) or the gates on any commit (`bb study gate`), run by the plugin on the study's bench for whoever asks. |
+| **Evidence** | The study's record as stable JSON (`alia study evidence`): candidates, commit messages, verdicts, samples, guardrails, findings, segments, base and best. |
+| **Requested measurement** | A paired A/B of any two commits (`alia study measure`) or the gates on any commit (`alia study gate`), run by the plugin on the study's bench for whoever asks. |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
   human([Human])
-  subgraph bbserver["BB server"]
+  subgraph bbserver["ALIA server"]
     plugin["autoresearch plugin<br/>scheduler · pipeline · stats · budget"]
-    db[("SQLite<br/>bb.storage")]
+    db[("SQLite<br/>alia.storage")]
     ui["Study page<br/>navPanel + header badge"]
   end
   subgraph edit["Edit host"]
@@ -117,7 +117,7 @@ flowchart LR
     w3["Worker N<br/>worktree"]
     ehost["host bundle<br/>snapshot · scope · gate"]
   end
-  subgraph bench["Bench host (BB machine)"]
+  subgraph bench["Bench host (ALIA machine)"]
     bhost["host bundle<br/>build · measure"]
   end
   provider["bench provider plugin<br/>create · files · exec"]
@@ -141,11 +141,11 @@ flowchart LR
 ### Components
 
 - **Plugin server.** The scheduler, the candidate pipeline, statistics, budget enforcement, the SQLite state, RPC for the UI, and the CLI. It's the only component allowed to advance `best`.
-- **Host bundle (`bb.host`).** One full-trust Node entry that runs on every machine the study uses. On edit hosts it snapshots worktrees, checks scope, rebases, and runs gates. On bench hosts it builds, runs measurements, and reports machine health. It streams progress back to the server through host signals.
+- **Host bundle (`alia.host`).** One full-trust Node entry that runs on every machine the study uses. On edit hosts it snapshots worktrees, checks scope, rebases, and runs gates. On bench hosts it builds, runs measurements, and reports machine health. It streams progress back to the server through host signals.
 - **Study thread.** One visible thread per study. It starts as the conversation that creates the study. After that it's where strategist rounds run and where the human talks to the study.
 - **Worker threads.** Hidden threads, one per idea. Each runs in its own managed worktree, branched from `best`.
 - **Frontend.** A Studies nav panel, the study page, and a header badge on study and worker threads.
-- **Bench providers (optional).** Other BB plugins that lend remote machines; the plugin server drives those machines through them (see [Remote bench hosts](#remote-bench-hosts)).
+- **Bench providers (optional).** Other VesnALIA plugins that lend remote machines; the plugin server drives those machines through them (see [Remote bench hosts](#remote-bench-hosts)).
 
 ## Study lifecycle
 
@@ -311,7 +311,7 @@ If the minimum detectable effect is larger than any plausible win, the study goe
 
 **Each bench host decides with its own threshold.** Machines differ: one cloud machine may have twice another's noise. Each host's threshold is calibrated so that the false-win rate on that host is the nominal one, and candidates are assigned to hosts by availability, not by outcome, so a per-host threshold adds no selection bias; the confirmation runs on the same host. A threshold is never below `min_effect`. A candidate goes to the quietest free host first (lowest threshold, then noise floor), so a quiet machine both measures more and detects smaller wins. The report gives each host's numbers ("2 bench hosts, each deciding with its own win threshold: 1.42% on b, 3.33% on a").
 
-**A host much noisier than its peers is left out.** When a host's noise floor is more than `max_host_noise_ratio` (default 2) times the median of the *other* hosts', and beyond what chance gives two equal hosts with that many calibration pairs (about 1% of the time: with 12 pairs the ratio must exceed 3.4×), it measures nothing: a remote machine is replaced (a bounded number of times in a row, then kept), and a local or BB host leaves the dispatch set until the next calibration measures it again. Within chance it keeps measuring with its own threshold, and calibration warns that more pairs would tell the hosts apart.
+**A host much noisier than its peers is left out.** When a host's noise floor is more than `max_host_noise_ratio` (default 2) times the median of the *other* hosts', and beyond what chance gives two equal hosts with that many calibration pairs (about 1% of the time: with 12 pairs the ratio must exceed 3.4×), it measures nothing: a remote machine is replaced (a bounded number of times in a row, then kept), and a local or VesnALIA host leaves the dispatch set until the next calibration measures it again. Within chance it keeps measuring with its own threshold, and calibration warns that more pairs would tell the hosts apart.
 
 During Running, a schedule repeats an A/A run on `best` every N evaluations. If noise grows past 2× the calibrated level, the study pauses and notifies the human. A disturbed bench machine would otherwise hand out random verdicts. While it is paused for drift, nothing more is measured on that machine.
 
@@ -345,7 +345,7 @@ The common case is a laptop: the edit host is also the bench host. Gates (tests,
 - `T_eval` becomes gate + measure time per candidate, because both occupy the bench. Candidates waiting to gate already count as bench queue for backpressure.
 - Calibration runs the base gates under the lock too, and reports the time a candidate occupies the bench.
 
-`quiet_bench = true` goes one step further: while a measurement runs on a machine, a worker turn that would start there waits (BB's `message.dispatch` hook). Turns already running are not interrupted, and a held turn waits for at most one measurement, so a busy bench never starves the workers.
+`quiet_bench = true` goes one step further: while a measurement runs on a machine, a worker turn that would start there waits (VesnALIA's `message.dispatch` hook). Turns already running are not interrupted, and a held turn waits for at most one measurement, so a busy bench never starves the workers.
 
 Neither setting changes how a commit is judged, so neither is part of the oracle hash.
 
@@ -369,7 +369,7 @@ Only one round runs at a time. Each round prompt starts with a self-contained di
 
 ## Remote bench hosts
 
-A laptop measures one candidate at a time, and it is also where the agents and gates run. Cloud machines can run the same benchmark, often more quietly, but the ones that are cheap to lend usually can't be BB machines: they only allow outbound calls. A **bench provider** is a separate BB plugin that lends such machines through a small contract ([bench-providers.md](bench-providers.md)): create, status, list and destroy by labels, move files, run processes. The provider is a thin transport; git, seeding, calibration and scheduling stay in bb-autoresearch, which runs ordinary shell commands on the machine.
+A laptop measures one candidate at a time, and it is also where the agents and gates run. Cloud machines can run the same benchmark, often more quietly, but the ones that are cheap to lend usually can't be VesnALIA machines: they only allow outbound calls. A **bench provider** is a separate VesnALIA plugin that lends such machines through a small contract ([bench-providers.md](bench-providers.md)): create, status, list and destroy by labels, move files, run processes. The provider is a thin transport; git, seeding, calibration and scheduling stay in alia-autoresearch, which runs ordinary shell commands on the machine.
 
 - **The machine is the study's choice.** A study must be able to bench on the node shape its workload runs on in production, and that differs per study, so it isn't a provider-wide setting. Each entry names `cores` (what the plugin plans threads for and checks against what the machine reports) and a `machine` table of provider-specific options (machine type, SMT off, CPU platform, image, …) passed verbatim to `create`. The provider lists the keys it takes; calibration checks the spec against them, and the provider rejects a key it doesn't know, so a typo fails loudly instead of benching on the wrong machine. The options are part of the oracle hash, since they change what is measured; each machine records them next to what it reports (`info`).
 - **Slots.** Each `[[oracle.remote_bench]]` entry keeps `hosts` machines measuring. Each machine is its own bench host. A machine goes `creating → joining → calibrating → ready → retiring → gone`; the cost guard allows one machine per slot plus one replacement.
@@ -379,8 +379,8 @@ A laptop measures one candidate at a time, and it is also where the agents and g
 - **Reloads keep machines.** A plugin update in the middle of a study must not throw away calibrated machines. Unloading keeps every `ready` machine in the database, with its own calibration and threshold (and the count of noisy replacements in a row). The next instance re-adopts one only when its provider still lists it as ready and a probe finds its bench repository and seed; until then it takes no work, and one that can't be verified within ten minutes leaves. Machines that were joining, calibrating or retiring are destroyed at unload. Pausing and archiving destroy machines as before; a disabled plugin's machines end with their lifetime, or at the next load.
 - **Frozen studies use machines on demand.** A running study keeps its slots filled; a paused one releases its machines. A study frozen for harvest needs them only for the measurements an agent asks for, and a harvest can sit frozen for days, so idle machines there would only cost money and rotate every lifetime. Its machines are wanted while best is still freezing, while a requested measurement or gate is queued or running, and for `idle_release_minutes` (default 10, not hashed) after the last one; then they are released. The next request brings them up again and waits for them to join and calibrate on arrival.
 - **Orphans.** Machines carry the study id and slot as labels. At load, on pause and archive, and every ten minutes, the fleet lists each provider's machines and destroys those no live row uses.
-- **Seeds and base bundles.** They are content addressed and built once: a seed per segment baseline and seed inputs (the command, `seed_allow` and the cores), so a spec change that leaves those alone reuses it. Files no non-archived study uses are deleted at load and when a study is archived; `bb study bench` reports what is on disk.
-- **Trust.** Nothing on a lent machine holds the user's credentials: the BB server reaches it only through the provider, and the seed is refused when anything in it looks like a credential (paths and rules are reported, never the values).
+- **Seeds and base bundles.** They are content addressed and built once: a seed per segment baseline and seed inputs (the command, `seed_allow` and the cores), so a spec change that leaves those alone reuses it. Files no non-archived study uses are deleted at load and when a study is archived; `alia study bench` reports what is on disk.
+- **Trust.** Nothing on a lent machine holds the user's credentials: the VesnALIA server reaches it only through the provider, and the seed is refused when anything in it looks like a credential (paths and rules are reported, never the values).
 
 ## Agents
 
@@ -427,9 +427,9 @@ A laptop measures one candidate at a time, and it is also where the agents and g
 | `study_update_dossier` | strategist | Replace the dossier. |
 | `study_search_findings` | strategist | Search findings and candidates by text, theme, or verdict. |
 
-Every agent tool carries the `study_` prefix so it can't collide with another plugin's tools. No agent has a keep, discard, or promote tool. Harvest uses no agent tool: the agent asked to harvest uses the CLI (`bb study evidence`, `measure`, `gate`, `results`), which any thread with a shell can call; a study's own workers are refused. Concurrency, budget, the oracle, and pausing are human controls.
+Every agent tool carries the `study_` prefix so it can't collide with another plugin's tools. No agent has a keep, discard, or promote tool. Harvest uses no agent tool: the agent asked to harvest uses the CLI (`alia study evidence`, `measure`, `gate`, `results`), which any thread with a shell can call; a study's own workers are refused. Concurrency, budget, the oracle, and pausing are human controls.
 
-The tool set depends on the role. `bb.agents.configure` selects tools from the thread's metadata, and then the plugin checks the role again against its own `threads` table on every call. Thread metadata can be written by the thread's own agent, so it can't be the only check.
+The tool set depends on the role. `alia.agents.configure` selects tools from the thread's metadata, and then the plugin checks the role again against its own `threads` table on every call. Thread metadata can be written by the thread's own agent, so it can't be the only check.
 
 ## Git model
 
@@ -442,7 +442,7 @@ The tool set depends on the role. `bb.agents.configure` selects tools from the t
 | `studies/<slug>/w/<n>` | Each worker's worktree branch. Deleted when the worker is archived. |
 
 - Workers' managed worktrees share the project's object store on the edit host, so candidates are visible locally without pushing.
-- A bench host on another BB machine keeps its own clone of the project. Candidates reach it as a `git bundle` covering `best..candidate`, sent through host RPC. That's small for typical diffs and well under the 32 MiB input limit. A remote bench host starts from a shallow bundle of the study base instead, and gets the same delta bundles through its provider.
+- A bench host on another VesnALIA machine keeps its own clone of the project. Candidates reach it as a `git bundle` covering `best..candidate`, sent through host RPC. That's small for typical diffs and well under the 32 MiB input limit. A remote bench host starts from a shallow bundle of the study base instead, and gets the same delta bundles through its provider.
 - **The plugin never pushes.** The agent that harvests publishes with the repository's own tools, only when the human asks.
 - **Commit identity.** The plugin's commits in the repository (worker snapshots, prepared candidates, promotions) are authored and committed as `[git] identity` says. `"repo"` (the default) is the identity git resolves in the repository on the edit host (`user.name` and `user.email`, repo-local config first, then global), so a work repo carries the user's work identity; with none configured the plugin falls back to `autoresearch <autoresearch@bb.local>` and says so in the calibration report and a notice. `"plugin"` always uses that identity. The server resolves it on the edit host and passes it explicitly to every commit, so bench clones, which only receive commits as bundles, see exactly the edit host's commits. It isn't part of the oracle hash.
 
@@ -450,10 +450,10 @@ The tool set depends on the role. `bb.agents.configure` selects tools from the t
 
 Harvest turns base→best into reviewable PRs. The plugin keeps the part that needs trust; an agent does the rest.
 
-1. **Freeze (the plugin).** `bb study harvest <slug>` (or the Harvest tab) moves the study to Harvesting: no new workers, submissions closed, in-flight candidates finish. Then base, best and the promotions are recorded and best is pinned as `refs/studies/<slug>/harvest/h<N>`. A notice says how to ask an agent.
-2. **Read (the agent).** `bb study evidence <slug> --json` is the whole record: every candidate with its refs, the worker's commit message, diff stats, verdict, effect and CI, guardrails and findings; the promotions on best; segments and bench hosts; and the measurements asked for so far. It is stable within 1.x ([stability.md](stability.md#the-evidence-json)).
+1. **Freeze (the plugin).** `alia study harvest <slug>` (or the Harvest tab) moves the study to Harvesting: no new workers, submissions closed, in-flight candidates finish. Then base, best and the promotions are recorded and best is pinned as `refs/studies/<slug>/harvest/h<N>`. A notice says how to ask an agent.
+2. **Read (the agent).** `alia study evidence <slug> --json` is the whole record: every candidate with its refs, the worker's commit message, diff stats, verdict, effect and CI, guardrails and findings; the promotions on best; segments and bench hosts; and the measurements asked for so far. It is stable within 1.x ([stability.md](stability.md#the-evidence-json)).
 3. **Plan and build (the agent).** Following the `study-harvest` skill and the repository's conventions, it groups promotions that belong together, keeps unrelated ones apart, splits a candidate that bundled two changes (by file or by hunk), stacks a change on the one it needs, and builds the branches in its own worktree. It checks nothing was lost against the frozen tree. It can also consolidate several studies on one repository into one stack.
-4. **Measure and gate (the plugin).** Every number the agent reports comes from `bb study measure <slug> <A> <B>`: B against A with the study's protocol (a fixed number of pairs, early stops off), guardrails and bench hosts, under the bench lock, on the quietest free host and with that host's own threshold, its time counted as bench time. `bb study gate <slug> <ref>` runs the study's gates on any commit. Both are recorded (`bb study results`) and audited.
+4. **Measure and gate (the plugin).** Every number the agent reports comes from `alia study measure <slug> <A> <B>`: B against A with the study's protocol (a fixed number of pairs, early stops off), guardrails and bench hosts, under the bench lock, on the quietest free host and with that host's own threshold, its time counted as bench time. `alia study gate <slug> <ref>` runs the study's gates on any commit. Both are recorded (`alia study results`) and audited.
 5. **Describe and publish (the agent).** PR descriptions follow the repository's style and cite the plugin's runs. The agent publishes with the repository's own tool (gh, Graphite, Gerrit, …) only when the human asks.
 
 Measurements are refused while the study runs workers and its bench is busy, so a requested measurement never pushes workers' verdicts back. The plugin never groups, ablates, writes PR text or publishes: those are judgment and prose, and an agent with the repository's conventions in front of it does them better. Harvests the plugin ran itself before 1.0 stay readable on the Harvest tab.
@@ -477,7 +477,7 @@ Deliberate steps (approving a spec, approving a calibration and starting, freezi
 
 Every number follows one convention: **better is positive, in the metric's own terms** ("74.7% fewer ops (4.0×)", "+74.7%"), with the raw values next to it ("210,802 → 53,300 opcodes"). See [v0.1.0: human interface](release-notes.md#v010-human-interface).
 
-Live updates use `bb.realtime` signals, and the page refetches through `bb.rpc`. The Live view also applies small typed deltas (stage changes, phases, pair progress, verdicts) locally, throttled per study.
+Live updates use `alia.realtime` signals, and the page refetches through `alia.rpc`. The Live view also applies small typed deltas (stage changes, phases, pair progress, verdicts) locally, throttled per study.
 
 ### Threads
 
@@ -488,26 +488,26 @@ Live updates use `bb.realtime` signals, and the page refetches through `bb.rpc`.
 ### CLI
 
 ```bash
-bb study list
-bb study show routing-p99
-bb study calibrate routing-p99
-bb study start|pause|resume routing-p99
-bb study ideas add routing-p99 "Precompile header matchers into a trie"
-bb study workers routing-p99
-bb study harvest routing-p99
-bb study evidence routing-p99 --json
-bb study measure routing-p99 main my-split-branch
-bb study gate routing-p99 my-split-branch
-bb study archive routing-p99
+alia study list
+alia study show routing-p99
+alia study calibrate routing-p99
+alia study start|pause|resume routing-p99
+alia study ideas add routing-p99 "Precompile header matchers into a trie"
+alia study workers routing-p99
+alia study harvest routing-p99
+alia study evidence routing-p99 --json
+alia study measure routing-p99 main my-split-branch
+alia study gate routing-p99 my-split-branch
+alia study archive routing-p99
 ```
 
 ### Notifications
 
-Milestones reach the human as notices: a new best, a stall, a budget threshold, a broken oracle, noise drift, a host left out for its noise, a rate limit, and a frozen harvest. Each notice shows on the study page and in `bb study show`, marks the study thread unread (without starting a turn), and rides along in the next strategist round. BB gives plugins no push or Slack channel (see [the M3 notes](release-notes.md#v010-m3-harvest-and-operations)).
+Milestones reach the human as notices: a new best, a stall, a budget threshold, a broken oracle, noise drift, a host left out for its noise, a rate limit, and a frozen harvest. Each notice shows on the study page and in `alia study show`, marks the study thread unread (without starting a turn), and rides along in the next strategist round. VesnALIA gives plugins no push or Slack channel (see [the M3 notes](release-notes.md#v010-m3-harvest-and-operations)).
 
 ## Data model
 
-SQLite through `bb.storage.database()`:
+SQLite through `alia.storage.database()`:
 
 | Table | Key columns |
 |---|---|
@@ -528,25 +528,25 @@ SQLite through `bb.storage.database()`:
 
 The dossier is stored as a versioned text blob per study. Git refs are the source of truth for code, and SQLite for everything else.
 
-## BB integration map
+## VesnALIA integration map
 
-| Need | BB surface | Stability |
+| Need | VesnALIA surface | Stability |
 |---|---|---|
-| Role-specific agent tools | `bb.agents.registerTool`, `bb.agents.configure` | Public |
-| Workers in their own worktrees | `bb.sdk.threads.spawn` with a host environment and managed worktree from a named base branch, `visibility: "hidden"`, `sectionId`, `pluginMetadata`, `providerId`, `model` | Public |
-| Deliver verdicts | `bb.sdk.threads.send` with `mode: "auto"` | Public |
-| React to idle, failure, rate limits | `thread.idle`, `thread.failed`, `turn.failed` events; `bb.sdk.threads.retry` with `sendAt` | Public |
+| Role-specific agent tools | `alia.agents.registerTool`, `alia.agents.configure` | Public |
+| Workers in their own worktrees | `alia.sdk.threads.spawn` with a host environment and managed worktree from a named base branch, `visibility: "hidden"`, `sectionId`, `pluginMetadata`, `providerId`, `model` | Public |
+| Deliver verdicts | `alia.sdk.threads.send` with `mode: "auto"` | Public |
+| React to idle, failure, rate limits | `thread.idle`, `thread.failed`, `turn.failed` events; `alia.sdk.threads.retry` with `sendAt` | Public |
 | Pause a study's threads | `message.dispatch` hook returning `wait`; `recheck` on resume | Experimental |
-| Git, gates, builds, benchmarks on machines | `bb.host` entry with `bb.hosts.experimental_client`, host signals for progress | Experimental |
-| Remote machines from bench provider plugins | `bb.sdk.plugins.callRpc` to the provider's `bb.rpc` methods | Public |
-| State | `bb.storage.database()` (SQLite), `bb.storage.kv` | Public |
-| Drift checks, sweeps, reconciliation | `bb.background.schedule`, `bb.background.service` | Public |
-| UI | `navPanel`, `threadHeader`, `threadPanelAction`; `bb.rpc`, `bb.realtime`; `ThreadChat` (`variant="timeline"`) for a worker's transcript | Public |
-| What a worker is doing now (live view) | `experimental_thread.events` and `bb.sdk.threads.events.list` (tool items only) | Experimental |
-| CLI | `bb.cli` | Public |
+| Git, gates, builds, benchmarks on machines | `alia.host` entry with `alia.hosts.experimental_client`, host signals for progress | Experimental |
+| Remote machines from bench provider plugins | `alia.sdk.plugins.callRpc` to the provider's `alia.rpc` methods | Public |
+| State | `alia.storage.database()` (SQLite), `alia.storage.kv` | Public |
+| Drift checks, sweeps, reconciliation | `alia.background.schedule`, `alia.background.service` | Public |
+| UI | `navPanel`, `threadHeader`, `threadPanelAction`; `alia.rpc`, `alia.realtime`; `ThreadChat` (`variant="timeline"`) for a worker's transcript | Public |
+| What a worker is doing now (live view) | `experimental_thread.events` and `alia.sdk.threads.events.list` (tool items only) | Experimental |
+| CLI | `alia.cli` | Public |
 | Study creation and harvest prompts | `skills/study-create`, `skills/study-harvest` | Public |
-| Keep the study thread small | `bb.sdk.threads.compact` | Public |
-| Clean up workers | `bb.sdk.threads.archive` | Public |
+| Keep the study thread small | `alia.sdk.threads.compact` | Public |
+| Clean up workers | `alia.sdk.threads.archive` | Public |
 
 ## Failure handling
 
@@ -562,7 +562,7 @@ The dossier is stored as a versioned text blob per study. Git refs are the sourc
 | Worker stuck or looping | One nudge, then the worker is stopped, the idea marked `abandoned`, and the worktree removed. |
 | Provider rate limit | `turn.failed` with a rate-limit category triggers a retry at the window reset. The scheduler lowers `W` while limits are tight. |
 | Budget exhausted | No new workers start. Running workers finish their current submission. The study pauses and proposes a harvest; its remote machines go, and come back when it is frozen. |
-| A bench host much noisier than the others | Left out at calibration: a remote machine is replaced, a local or BB host measures nothing until the next calibration. A notice says so. |
+| A bench host much noisier than the others | Left out at calibration: a remote machine is replaced, a local or VesnALIA host measures nothing until the next calibration. A notice says so. |
 | Unhealthy host during an automatic recalibration | Nothing changes; it tries again after `retry_seconds`, up to `recalibration_retries` times, then pauses. |
 
 ## Security and trust
@@ -582,23 +582,23 @@ The dossier is stored as a versioned text blob per study. Git refs are the sourc
 - special-casing the benchmark input: the holdout, whose inputs and numbers never enter agent context (only pass or fail);
 - widening their own resources: control RPCs are clamped to the approved spec (concurrency can only go down);
 - approving their own oracle: a revised spec from the study thread stays pending until it is approved, the CLI's approval commands refuse a study's own worker and strategist threads, and every approval (in the app or the CLI) names the exact spec version it approves and is audited;
-- doing any of this unnoticed: every human control is an append-only `control.*` event with the caller information BB provides and the study agent turns running at that moment, plus a notice (and an unread study thread when an agent turn was running).
+- doing any of this unnoticed: every human control is an append-only `control.*` event with the caller information VesnALIA provides and the study agent turns running at that moment, plus a notice (and an unread study thread when an agent turn was running).
 
 **What it cannot protect against on a full-access local machine.** An agent with a shell running as the user can do anything the user can:
 
-- BB gives plugins no caller-thread identity for RPC: the app, the `bb` CLI, and agents are all `client`, so an agent can call the plugin's RPC with `bb plugin rpc call`.
+- VesnALIA gives plugins no caller-thread identity for RPC: the app, the `alia` CLI, and agents are all `client`, so an agent can call the plugin's RPC with `alia plugin rpc call`.
 - The CLI's thread id comes from the invoking shell's environment; an agent can drop it and look like the human.
-- Plugin forms (`bb.ui.requestInput`) can be answered with `bb thread interactions respond`, so a form is no stronger an approval channel.
+- Plugin forms (`alia.ui.requestInput`) can be answered with `alia thread interactions respond`, so a form is no stronger an approval channel.
 - With a `local` bench host, the holdout's files sit on the same disk the agents can read.
 - Nothing stops it from editing the plugin's SQLite database or source, or pushing.
 
-**In-app and CLI approval are equivalent.** Approving a spec, approving a calibration and starting, and freezing for harvest can be done on the Studies page (RPC with an explicit `confirm: true`, sent only from a dialog that states what will happen) or with the CLI. Neither path is stronger: BB cannot tell an agent from a human on any of them (RPC callers are all `client`, the CLI's thread id comes from the shell, forms can be answered from a shell), so a CLI-only rule only made the human's path longer. What makes approval trustworthy is the same on both paths: the action is deliberate (a confirmation, or a typed command), it approves a specific version (a stale page is refused), it is recorded as an append-only `control.*` event with the caller information BB gives and the study agent turns running at that moment, and it raises a notice the human sees on the page.
+**In-app and CLI approval are equivalent.** Approving a spec, approving a calibration and starting, and freezing for harvest can be done on the Studies page (RPC with an explicit `confirm: true`, sent only from a dialog that states what will happen) or with the CLI. Neither path is stronger: VesnALIA cannot tell an agent from a human on any of them (RPC callers are all `client`, the CLI's thread id comes from the shell, forms can be answered from a shell), so a CLI-only rule only made the human's path longer. What makes approval trustworthy is the same on both paths: the action is deliberate (a confirmation, or a typed command), it approves a specific version (a stale page is refused), it is recorded as an append-only `control.*` event with the caller information VesnALIA gives and the study agent turns running at that moment, and it raises a notice the human sees on the page.
 
 There, the defenses are detection (the audit trail above) and isolation: a separate bench machine that holds the holdout, and agent permission modes and sandboxes that don't allow arbitrary shell access. A study whose results matter should run its bench on a machine its workers can't reach.
 
 ## Budget and cost
 
-- **Limits.** `max_workers`, `max_candidates`, `max_bench_hours`, `deadline`, and `max_tokens` (BB exposes per-thread token usage to plugins; dollar cost is not exposed per thread, see [the M3 notes](release-notes.md#v010-m3-harvest-and-operations)).
+- **Limits.** `max_workers`, `max_candidates`, `max_bench_hours`, `deadline`, and `max_tokens` (VesnALIA exposes per-thread token usage to plugins; dollar cost is not exposed per thread, see [the M3 notes](release-notes.md#v010-m3-harvest-and-operations)).
 - **Cost per evaluation.** Calibration estimates bench time per evaluation up front, so the study page can project spend before Running starts.
 - **Where tokens go.** Workers dominate token spend, because each one relearns part of the codebase. The dossier and brief are the main lever. Track tokens per accepted win as the efficiency metric.
 - **Cheap rejections.** Scope rejection, rebase conflicts, and gate failures all cost no bench time. Stopping early cuts bench time on clear losers.
@@ -613,7 +613,7 @@ The main assumption: short-lived workers with good briefs, judged by the plugin,
 - [x] Pipeline: snapshot, scope check, gate, paired measurement against `best`, verdict, promotion
 - [x] Worker spawn, brief, verdict message, `study_record_finding`, `study_finish`, archive
 - [x] Strategist rounds in the study thread from plugin-built digests
-- [x] `bb study show` and `bb study ideas add`
+- [x] `alia study show` and `alia study ideas add`
 - [ ] Head-to-head on a reference benchmark against a serial single-agent loop
 
 **Exit:** equal or better improvement at equal tokens, and a measured false-win rate.
@@ -631,10 +631,10 @@ The main assumption: short-lived workers with good briefs, judged by the plugin,
 
 ### M2: remote bench and trust
 
-- [x] Bench hosts through `bb.host`, `git bundle` transfer, cached `best` builds
+- [x] Bench hosts through `alia.host`, `git bundle` transfer, cached `best` builds
 - [x] Machine health checks, drift checks, holdout, guardrails
 - [x] Oracle versioning and segments
-- [ ] Exit criterion: not run, because only one BB machine exists (see [the M2 notes](release-notes.md#v010-m2-remote-bench-and-trust))
+- [ ] Exit criterion: not run, because only one VesnALIA machine exists (see [the M2 notes](release-notes.md#v010-m2-remote-bench-and-trust))
 
 **Exit:** a study runs a full day on a remote x86 bench host without a human stepping in.
 
@@ -669,8 +669,8 @@ The main assumption: short-lived workers with good briefs, judged by the plugin,
 
 ## Open questions
 
-1. ~~Can plugins read per-thread token or cost usage?~~ Answered in M3: tokens yes (the thread's `thread/tokenUsage/updated` events, read with `bb.sdk.threads.events.list`), dollars no. `budget.max_tokens` and tokens per win are built on it.
-2. ~~What notification channel should be the default?~~ Answered in M3: study-thread attention is the only channel. The SDK has no push, notification, or Slack API for plugins; `bb.sdk.system.attention()` only reads the global "needs attention" flag.
+1. ~~Can plugins read per-thread token or cost usage?~~ Answered in M3: tokens yes (the thread's `thread/tokenUsage/updated` events, read with `alia.sdk.threads.events.list`), dollars no. `budget.max_tokens` and tokens per win are built on it.
+2. ~~What notification channel should be the default?~~ Answered in M3: study-thread attention is the only channel. The SDK has no push, notification, or Slack API for plugins; `alia.sdk.system.attention()` only reads the global "needs attention" flag.
 3. ~~What are the host RPC limits for long calls?~~ Answered in M2: a call is capped at 30 minutes, input at 32 MiB and output at 8 MiB. Long commands run as host background jobs polled in short calls, cancelled through `jobCancel`, with progress through host signals (see [the M2 notes](release-notes.md#v010-m2-remote-bench-and-trust)).
 4. Do hidden threads count against concurrency limits? Is a link from the study page enough for users to find them?
 5. Is `threads.compact` enough for the study thread, or should the plugin replace it with a fresh thread that starts from a digest?

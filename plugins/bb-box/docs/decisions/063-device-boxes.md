@@ -64,8 +64,8 @@ open and the Pixel Tablet have about 1.6 times its pixels, and drawing and
 encoding both grow with pixels, so their frame rate and cost are not known
 yet. E17 measures them before the Android viewer is built.
 
-Through BB's server, both should show a tap in about 80 to 90 ms at the
-median: the box's own 54 to 64 ms, and BB's 25 ms
+Through VesnALIA's server, both should show a tap in about 80 to 90 ms at the
+median: the box's own 54 to 64 ms, and VesnALIA's 25 ms
 ([060](060-every-desktop-streams-as-video-through-one-viewer.md)). That
 is an estimate, the sum of medians from different tests, not a measured
 distribution. The iOS figure also took a frame's size as the sign of a
@@ -74,11 +74,11 @@ pixels, with its tail.
 
 The lead made nine decisions before this note: two kinds, `ios` and
 `android`; one device per box, switched in place; idb_companion for iOS and
-a server of bb-box's own for Android, both into 060's viewer; Android on
+a server of alia-box's own for Android, both into 060's viewer; Android on
 the CPU with one AVD per profile, each with a snapshot, and Google APIs
 images only; text other than ASCII as a paste; the agent's device input
 held back while a person has control, and its commands not; frames of
-bb-box's own drawing; spares that keep a booted device; and Tart nested
+alia-box's own drawing; spares that keep a booted device; and Tart nested
 virtualisation, Namespace and pool Macs later. After the reviews the lead
 also set defaults for the note's open questions; they are written in, and
 listed under [Defaults set by the lead](#defaults-set-by-the-lead). Where
@@ -94,14 +94,14 @@ under [Experiments](#experiments)) that settles it in a named unit.
 | --- | --- | --- |
 | 1 | Two kinds, `ios` and `android`: a host VM with one booted device. An ios box keeps the host's macOS desktop, for the person only; an android box has no host desktop in v1 | iOS: the simulator runs headless in a Tart VM. Android: it runs headless in a QEMU VM with KVM, and not in LXC, Docker or Tart Linux |
 | 2 | One data model for both platforms, in which a state the device cannot be in cannot be written: posture only on foldables, no fold on iOS, a runtime on every offered device, relative and absolute rotation apart | the two research sketches, merged, and both reviews |
-| 3 | One device server per box, `bb-box-device`, in TypeScript on the box's Node, with a driver per platform | Node is in both images already; idb and the emulator both speak gRPC, which Node's `http2` reaches. Unit 2.2 proves the gRPC codec against both |
-| 4 | It speaks 060's Selkies subset for video and input, and bb-box's own `BB_DEVICE` messages for the rest, over a unix socket reached by `connect` over SSH, as `bb-box-stream` | bb-box-stream does so on Macs and Windows today (060) |
+| 3 | One device server per box, `alia-box-device`, in TypeScript on the box's Node, with a driver per platform | Node is in both images already; idb and the emulator both speak gRPC, which Node's `http2` reaches. Unit 2.2 proves the gRPC codec against both |
+| 4 | It speaks 060's Selkies subset for video and input, and alia-box's own `ALIA_DEVICE` messages for the rest, over a unix socket reached by `connect` over SSH, as `alia-box-stream` | alia-box-stream does so on Macs and Windows today (060) |
 | 5 | Every request has an ID, every switch a written intent, and every restart a rule: the [operations and recovery](#operations-and-recovery) contract | both reviews |
 | 6 | The server's code is delivered by version, only forward, only by the plugin instance that holds the box's control connection, and never while a person has control or a recording runs | 045's reload of two instances |
 | 7 | A viewer picks a display by its ID, not its protocol; a device display has no VNC and falls back to stills where video cannot play | today's routing picks the first Selkies display |
 | 8 | Android frames are encoded by a small C helper, on x264 where the operator's image built it and on OpenH264 otherwise, which makes a key frame on demand; frames reach it by shared memory if E6 shows it pays | x264 took 20 ms a frame at 1080x2400; raw frames are 7.8 MB |
-| 9 | Nothing of the device listens off the box: idb on a unix socket; the emulator's gRPC with a token, and a firewall of bb-box's own that the emulator cannot start without | the emulator's gRPC listens on every interface with no token by default |
-| 10 | The panel draws the device in a frame of bb-box's own, from numbers in a model table, with a narrow toolbar and a More menu | Device Hub and Android Studio; what each platform can do, measured |
+| 9 | Nothing of the device listens off the box: idb on a unix socket; the emulator's gRPC with a token, and a firewall of alia-box's own that the emulator cannot start without | the emulator's gRPC listens on every interface with no token by default |
+| 10 | The panel draws the device in a frame of alia-box's own, from numbers in a model table, with a narrow toolbar and a More menu | Device Hub and Android Studio; what each platform can do, measured |
 | 11 | The computer tools read and drive the device only: its tree, its framebuffer, its touches | Cua saw one element on Android and nothing of the device on iOS |
 | 12 | A new tool, `box_device`, has one action per control; screenshots and URLs stay with the computer tools | the control tables in both notes |
 | 13 | While a person holds control, the agent's device input is refused at once, and input already sent is stopped; reading, new installs and commands go on | 038 for desktops, and the notes' finding that adb input cannot be seen |
@@ -132,7 +132,7 @@ Two rules hold throughout:
 
 ### Device models
 
-A model is one device a box can boot. bb-box's own table holds every model
+A model is one device a box can boot. alia-box's own table holds every model
 it can offer, with the numbers its frame is drawn from.
 
 ```ts
@@ -238,10 +238,10 @@ type Power =
   | { readonly is: "failed"; readonly error: { readonly code: FailureCode; readonly words: string }; readonly since: number };
 
 type Observed<T> =
-  | { readonly known: true; readonly value: T; readonly at: number; readonly by: "bb-box" | "outside" }
+  | { readonly known: true; readonly value: T; readonly at: number; readonly by: "alia-box" | "outside" }
   | { readonly known: false; readonly why: string };
 
-interface Override<T> { readonly set: T | null; readonly at: number | null }   // what bb-box last set; null: the device's own
+interface Override<T> { readonly set: T | null; readonly at: number | null }   // what alia-box last set; null: the device's own
 
 type DeviceState =
   | { readonly platform: "ios"; readonly model: string; readonly power: Power; readonly geometry: Geometry | null;
@@ -293,11 +293,11 @@ What each shape rules out:
   status_bar override` makes it. Setting the status bar live clears the
   battery too, and the state shows both cleared. The answer says so: "The
   status bar is live again, so the battery shows the Mac's."
-- **What bb-box set and what the device shows are apart.** A setting the
+- **What alia-box set and what the device shows are apart.** A setting the
   device can report is `Observed`, with who changed it last: `outside`
-  when it differs from what bb-box last set, as after `adb shell settings`
+  when it differs from what alia-box last set, as after `adb shell settings`
   in `box_run`. A setting the device cannot report is an `Override`: what
-  bb-box set, and nothing more is claimed.
+  alia-box set, and nothing more is claimed.
 - **Text size keeps each platform's own steps.** iOS's content size
   categories and Android's font scale do not scale text alike, so the
   state and the answers name the platform's own step, such as
@@ -305,7 +305,7 @@ What each shape rules out:
   move between them on either.
 
 Rotation has two meanings, kept apart. `physical` is how the device is
-held, which bb-box sets. `content` is how the app in front draws, which the
+held, which alia-box sets. `content` is how the app in front draws, which the
 device decides: on a phone turned sideways, Android's launcher stays
 upright. The frame turns the picture by `content`. The emulator's picture
 turns with the device as it is held, whatever the app draws, so the Android
@@ -319,11 +319,11 @@ Where each part lives, with one writer each:
 
 | Data | Lives in | Written by | Read by |
 | --- | --- | --- | --- |
-| The model table | code, `src/core/device-models.ts` | bb-box | everything |
-| The devices an image offers, as `OfferedDevice`s | the image record's `devices`: `/usr/share/bb-box/image.json` on Linux, `/usr/local/share/bb-box/image.json` on macOS; and the backend's own copy of the record | the image build | the backend's `kinds()`, box_list, acquire, the doctor |
-| What the box should run, and any switch under way | the server's intent file, `~/.bb-box/device/intent.json` in the box | the device server, written whole and renamed into place | the device server at start |
-| `DeviceState` | the server's state file, `~/.bb-box/device/state.json`; the plugin keeps the last it heard in memory | the device server | the plugin, every viewer |
-| A box's platform, model and runtime, for lists | the box record's new `device` field: a copy | the plugin, from each `BB_DEVICE_HELLO` and `BB_DEVICE_STATE` | box_list, box_status, spares, the panel's lists |
+| The model table | code, `src/core/device-models.ts` | alia-box | everything |
+| The devices an image offers, as `OfferedDevice`s | the image record's `devices`: `/usr/share/alia-box/image.json` on Linux, `/usr/local/share/alia-box/image.json` on macOS; and the backend's own copy of the record | the image build | the backend's `kinds()`, box_list, acquire, the doctor |
+| What the box should run, and any switch under way | the server's intent file, `~/.alia-box/device/intent.json` in the box | the device server, written whole and renamed into place | the device server at start |
+| `DeviceState` | the server's state file, `~/.alia-box/device/state.json`; the plugin keeps the last it heard in memory | the device server | the plugin, every viewer |
+| A box's platform, model and runtime, for lists | the box record's new `device` field: a copy | the plugin, from each `ALIA_DEVICE_HELLO` and `ALIA_DEVICE_STATE` | box_list, box_status, spares, the panel's lists |
 | How the tab shows it: fit, frame on or off | the tab's local storage, per box, as the stream choice is | the viewer | the viewer |
 
 The device server is the one writer of what a box runs. The box record's
@@ -378,7 +378,7 @@ it. What each platform does for each, from the notes' control tables:
 | appearance | `simctl ui appearance`: 140 ms, seen | `cmd uimode night`: 25 ms, seen |
 | text_size | `simctl ui content_size`: 239 ms, seen | `settings put system font_scale`: 10 ms, seen |
 | location | `simctl location set`, `clear`: 121 to 139 ms, accepted | gRPC `setGps`, read back by `getGps`: 0.2 s. An emulator always has a location, so clearing sets the emulator's own |
-| status_bar | `simctl status_bar override`, `clear`: 178 ms, seen | SystemUI's demo mode (E10): 9:41, full signal, the battery as bb-box set it; 0.2 s, seen, and set again when the device starts |
+| status_bar | `simctl status_bar override`, `clear`: 178 ms, seen | SystemUI's demo mode (E10): 9:41, full signal, the battery as alia-box set it; 0.2 s, seen, and set again when the device starts |
 | battery | the status bar's picture only, through `status_bar override`; the answer says the device's battery API is unchanged | gRPC `setBattery`, read back by `getBattery`: 0.1 s, seen in Settings |
 | network | refused in v1 | the presets below, checked by an app's own requests (E22) |
 | install | `simctl install`: not timed | `adb install -r`, or `install-multiple` for split APKs, then `sync` so a crash keeps the app (E23): 0.2 to 0.3 s for a 2 MB APK |
@@ -464,7 +464,7 @@ description names HID.
 | --- | --- | --- |
 | Label | iOS Simulator | Android emulator |
 | Host | macOS on arm64, a Tart VM | Linux on x86_64, a Proxmox QEMU VM where the host gives KVM (057) |
-| Image | `bb-box-ios`, built on the Tart macOS image | a Proxmox QEMU template of its own, built on the Linux VM template (057), with no desktop |
+| Image | `alia-box-ios`, built on the Tart macOS image | a Proxmox QEMU template of its own, built on the Linux VM template (057), with no desktop |
 | Commands | SSH, sh, as the box user with sudo | SSH, sh, as `box` with sudo |
 | Displays | `device`, the device's video; `desktop`, the host's, for the person | `device` only |
 | Computer use | the device, through the device server | the device, through the device server |
@@ -510,7 +510,7 @@ description names HID.
 
 ### One program, a driver per platform
 
-`bb-box-device` is TypeScript run by the box's own Node: Homebrew's Node 24
+`alia-box-device` is TypeScript run by the box's own Node: Homebrew's Node 24
 in the Tart image, and the pinned Node in Linux images. It has no npm
 dependencies. It speaks gRPC with Node's `http2` and a small protobuf codec
 for the messages it uses, tested against the field numbers of the pinned
@@ -550,12 +550,12 @@ interface EncodedFrame { readonly data: Uint8Array; readonly key: boolean; reado
 
 | | iOS driver | Android driver | Test driver |
 | --- | --- | --- | --- |
-| Device | `simctl boot`, `shutdown`, `bootstatus`; reattaches to a booted device of the target's UDID | the emulator in its own user service, `bb-box-emulator@<avd>`, `-no-window -gpu swiftshader_indirect -grpc 8554 -grpc-use-token`; `adb emu kill` saves the snapshot; reattaches to a running emulator found by a discovery file whose process is alive; boots cold after an end that saved no snapshot (E23) | none |
-| Frames | idb_companion's `video_stream`, H.264, encoded by VideoToolbox in the box | gRPC `streamScreenshot` RGB888 at the device's size, given width and height both; encoded by `bb-box-h264` | a test card, drawn and encoded in the server's own process |
+| Device | `simctl boot`, `shutdown`, `bootstatus`; reattaches to a booted device of the target's UDID | the emulator in its own user service, `alia-box-emulator@<avd>`, `-no-window -gpu swiftshader_indirect -grpc 8554 -grpc-use-token`; `adb emu kill` saves the snapshot; reattaches to a running emulator found by a discovery file whose process is alive; boots cold after an end that saved no snapshot (E23) | none |
+| Frames | idb_companion's `video_stream`, H.264, encoded by VideoToolbox in the box | gRPC `streamScreenshot` RGB888 at the device's size, given width and height both; encoded by `alia-box-h264` | a test card, drawn and encoded in the server's own process |
 | Key frame on demand | idb's, if E5 shows it gives one on a still screen; otherwise the stream is restarted, which gave its first frame in 61 ms on a warm companion | the helper encodes the last raw frame again as an IDR | encodes the card again |
 | Touch, keys | idb's HID stream, opened when a person takes control or the agent sends its first input, as the first tap after the companion starts took 578 ms | gRPC `sendTouch`, `sendKey`, held open | recorded, for tests |
 | Clipboard | `simctl pbcopy` with `LANG=en_US.UTF-8`, `simctl pbpaste` | gRPC `setClipboard`, `getClipboard` | recorded |
-| Tree | idb `describe-all`, 18 ms | bb-box's tree server in the device, run by `app_process` with UiAutomation, 2 to 4 ms a read; `uiautomator dump`, 1.9 s, when the server cannot run (units 7.2, 7.3) | a fixed tree |
+| Tree | idb `describe-all`, 18 ms | alia-box's tree server in the device, run by `app_process` with UiAutomation, 2 to 4 ms a read; `uiautomator dump`, 1.9 s, when the server cannot run (units 7.2, 7.3) | a fixed tree |
 | Screenshot | idb, 22 ms | gRPC `getScreenshot` PNG, 80 ms | the test card |
 
 The test driver lets the shared path, the plugin, the relay and the viewer
@@ -566,7 +566,7 @@ default. The conformance suite (009) turns it on, so every backend's
 device path is checked; the suite's device cases run on real device kinds
 too wherever an offer has a device, as below.
 
-`bb-box-h264` is about 200 lines of C, built in the Android image against
+`alia-box-h264` is about 200 lines of C, built in the Android image against
 Ubuntu's libx264 where the operator's build has it, and against OpenH264,
 with Cisco's binary as Windows uses it, where it has not. It reads frames, and a one-byte command to make the next
 frame a key frame, and writes each access unit with its length first. An
@@ -601,15 +601,15 @@ Its licence is settled in [the owner's answers](#the-owners-answers).
   sends a key frame. Viewers see one stall, under 1 s, checked by killing
   each in units 4.1 and 4.2.
 
-### Where it listens and how bb-box reaches it
+### Where it listens and how alia-box reaches it
 
-As `bb-box-stream` does (060):
+As `alia-box-stream` does (060):
 
-- It listens on a unix socket, `~/.bb-box/device/device.sock`, in a folder
+- It listens on a unix socket, `~/.alia-box/device/device.sock`, in a folder
   only the box user can open. It has no TCP port. One server runs per box:
-  it holds a lock (`flock` on `~/.bb-box/device/lock`), and removes a
+  it holds a lock (`flock` on `~/.alia-box/device/lock`), and removes a
   socket file left behind only once it holds the lock.
-- bb-box reaches it with `bb-box-device connect` over the box user's SSH,
+- alia-box reaches it with `alia-box-device connect` over the box user's SSH,
   the `device` display's command route. `connect` joins its stdin and
   stdout to the socket, starting the service first if it is not running.
   If the service manager has given up on it, `connect` says so in words,
@@ -631,7 +631,7 @@ As `bb-box-stream` does (060):
 
 ### Messages
 
-The Selkies subset, as bb-box-stream speaks it:
+The Selkies subset, as alia-box-stream speaks it:
 
 | From | Message | Meaning |
 | --- | --- | --- |
@@ -644,25 +644,25 @@ The Selkies subset, as bb-box-stream speaks it:
 | server | binary type 4 | an H.264 access unit, with its frame number, and since version 9 the low 16 bits of its geometry generation in the header's last two bytes, so the viewer holds a turned picture until the first frame of the new generation |
 | server | `clipboard,<base64>` | the device's clipboard, to the input connection only, which passes it to the viewer with control |
 
-bb-box's own, each a verb, then one JSON value, as `BB_CURSOR` is a verb of
-bb-box-stream's:
+alia-box's own, each a verb, then one JSON value, as `ALIA_CURSOR` is a verb of
+alia-box-stream's:
 
 | From | Message | Meaning |
 | --- | --- | --- |
-| server | `BB_DEVICE_HELLO {protocol, version, platform, devices, state, lease}` | first, on every connection: the protocol and the server's version, the box's devices and the state |
-| server | `BB_DEVICE_STATE {state}` | each change of `DeviceState`, to every connection |
-| server | `BB_DEVICE_TOUCH {contacts, by}` | each touch, by the agent or a person, to viewers: those not in control draw it |
-| server | `BB_DEVICE_STILL {png, generation}` | a still of the screen, to a viewer that asked for stills instead of video |
-| input | `BB_DEVICE {id, type: "touch", contacts}` | a person's touches with more than one finger, from a touch screen |
-| input | `BB_DEVICE {id, type: "text", text}` | committed text from the person: an input method's composition, a phone's keyboard, or Type text |
-| input | `BB_DEVICE {id, type: "paste", text}` | the person's paste, since version 29: Cmd+V or Ctrl+V, or Paste from this computer, pasted whole with the device's clipboard put back (F-15) |
-| control, input | `BB_DEVICE {id, type: "control", control}` | a `DeviceControl` |
-| control | `BB_DEVICE {id, type: "input", input, owner}` | a `DeviceInput` from the agent, with the owner generation it was sent under |
-| control | `BB_DEVICE {id, type: "owner", generation, holder}` | control's owner changed: `agent` or `person` |
-| control | `BB_DEVICE {id, type: "screenshot"}`, `{type: "tree"}` | reads |
-| control | `BB_DEVICE {id, type: "record", to: "start" or "stop"}` | box_record |
-| control | `BB_DEVICE {id, type: "result"}` | the answer to an earlier request, asked for again after a lost connection |
-| server | `BB_DEVICE_ANSWER {id, ok: true, state, ms, ...}` or `{id, ok: false, error: {code, words}}` | the answer to one request; a screenshot comes as base64 PNG, a tree as `DeviceElement`s |
+| server | `ALIA_DEVICE_HELLO {protocol, version, platform, devices, state, lease}` | first, on every connection: the protocol and the server's version, the box's devices and the state |
+| server | `ALIA_DEVICE_STATE {state}` | each change of `DeviceState`, to every connection |
+| server | `ALIA_DEVICE_TOUCH {contacts, by}` | each touch, by the agent or a person, to viewers: those not in control draw it |
+| server | `ALIA_DEVICE_STILL {png, generation}` | a still of the screen, to a viewer that asked for stills instead of video |
+| input | `ALIA_DEVICE {id, type: "touch", contacts}` | a person's touches with more than one finger, from a touch screen |
+| input | `ALIA_DEVICE {id, type: "text", text}` | committed text from the person: an input method's composition, a phone's keyboard, or Type text |
+| input | `ALIA_DEVICE {id, type: "paste", text}` | the person's paste, since version 29: Cmd+V or Ctrl+V, or Paste from this computer, pasted whole with the device's clipboard put back (F-15) |
+| control, input | `ALIA_DEVICE {id, type: "control", control}` | a `DeviceControl` |
+| control | `ALIA_DEVICE {id, type: "input", input, owner}` | a `DeviceInput` from the agent, with the owner generation it was sent under |
+| control | `ALIA_DEVICE {id, type: "owner", generation, holder}` | control's owner changed: `agent` or `person` |
+| control | `ALIA_DEVICE {id, type: "screenshot"}`, `{type: "tree"}` | reads |
+| control | `ALIA_DEVICE {id, type: "record", to: "start" or "stop"}` | box_record |
+| control | `ALIA_DEVICE {id, type: "result"}` | the answer to an earlier request, asked for again after a lost connection |
+| server | `ALIA_DEVICE_ANSWER {id, ok: true, state, ms, ...}` or `{id, ok: false, error: {code, words}}` | the answer to one request; a screenshot comes as base64 PNG, a tree as `DeviceElement`s |
 
 Error codes: `unsupported` (this platform or model has no such control),
 `unknown-device`, `bad-value`, `not-booted`, `busy` (another control or a
@@ -673,7 +673,7 @@ took effect; the answer gives the state read back), `superseded`, and
 before a request reaches the server. The words are the ones the agent and
 the panel show.
 
-The relay drops `BB_DEVICE` from a viewer without control, as it drops
+The relay drops `ALIA_DEVICE` from a viewer without control, as it drops
 input today. Controls from the person's toolbar come over the input
 connection, so the same rule holds them.
 
@@ -750,11 +750,11 @@ E16 times each, through to a frame the viewer has drawn.
 | The server crashes | lives on: simulators under CoreSimulatorService, the emulator in its own service | back in about 1 s: the LaunchAgent sets `ThrottleInterval` to 1, as launchd's default waits 10 s; the systemd unit sets `RestartSec=1`, `StartLimitIntervalSec=60`, `StartLimitBurst=10`. After 10 crashes in a minute it stays down, and `connect` says why | lifted as the server starts: every touch up, every key up | its segment ends; a new one starts at the next key frame; the clip notes the gap |
 | The device crashes | the server boots it once again; a second crash within 5 minutes leaves it `failed`, with Reboot device | stays up | lifted | as for a server crash |
 | A connection ends: input, control, relay or SSH | lives on | stays up | every touch and key that connection held is lifted, and its queued input dropped | goes on |
-| bb-box reloads, two instances at once (045) | lives on | stays up; the later instance takes the lease; the earlier is `superseded` | the relay's input connection ends, so its touches and keys are lifted; a person keeps control (045) | goes on |
+| alia-box reloads, two instances at once (045) | lives on | stays up; the later instance takes the lease; the earlier is `superseded` | the relay's input connection ends, so its touches and keys are lifted; a person keeps control (045) | goes on |
 | The server's code changes | lives on | updated only when no person has control and no recording runs, by the lease holder (below) | lifted, as for a crash | not touched: the update waits for it |
-| The box stops and starts: a Tart suspend, a Proxmox hibernation | suspended with the VM | on resume it sees its monotonic and wall clocks part by more than 5 s, then sets the device's clock if it lags (E3, E4), opens idb's HID stream or the emulator's gRPC again, and sends a key frame. A resumed Linux VM's clock stays behind until its time service next asks, up to about half an hour, so bb-box sets an android box's clock as it resumes it | lifted on resume | ends at the stop; box_record says so |
+| The box stops and starts: a Tart suspend, a Proxmox hibernation | suspended with the VM | on resume it sees its monotonic and wall clocks part by more than 5 s, then sets the device's clock if it lags (E3, E4), opens idb's HID stream or the emulator's gRPC again, and sends a key frame. A resumed Linux VM's clock stays behind until its time service next asks, up to about half an hour, so alia-box sets an android box's clock as it resumes it | lifted on resume | ends at the stop; box_record says so |
 | A spare is claimed after hours suspended | as above | as above, and E3 and E4 check it after 1 h and after 24 h | none | none |
-| The VM restarts cold: `box_restart`, a resize by restart (061), a crash | before a restart it asks for, bb-box stops the device with its snapshot saved; after any restart the device boots again | starts with the VM, reads its intent, and boots `target` | none | ends; box_record says so |
+| The VM restarts cold: `box_restart`, a resize by restart (061), a crash | before a restart it asks for, alia-box stops the device with its snapshot saved; after any restart the device boots again | starts with the VM, reads its intent, and boots `target` | none | ends; box_record says so |
 | The emulator is killed with no snapshot saved | its next boot is cold, in about 15 s: the last snapshot saved would lose everything written since, apps installed included (E23). A cold boot keeps what reached the device's disk | as for a device crash | lifted | as for a device crash |
 
 ### Delivering the server's code
@@ -767,19 +767,19 @@ E16 times each, through to a frame the viewer has drawn.
   box's is older, or when the box's speaks no protocol the plugin can.
   Otherwise it uses the server it finds. So during a reload, the earlier
   instance never sends its older code back, as it holds no lease once the
-  later one connects; and a bb-box rolled back to an older version
+  later one connects; and a alia-box rolled back to an older version
   replaces a server only if it cannot speak to it.
 - **Never under a person or a recording.** A delivery waits while a person
   holds control or a recording runs, and the plugin log says so, as 045's
   does: "Box b-12's device server waits for version 7 until the person
   hands back control." It is tried again at each hand-back and each
   recording's end.
-- **How.** The files go to `~/.bb-box/device/server/<version>/` through the
+- **How.** The files go to `~/.alia-box/device/server/<version>/` through the
   command transport, about 100 KB. `current` is pointed at them, and the
   service restarted. Viewers see the box end their connection, and come
   back within 043's 5 s. The device stays booted.
 - **Rollback.** The last version's folder stays. If the new one does not
-  answer `BB_DEVICE_HELLO` within 10 s, twice, `current` points back, the
+  answer `ALIA_DEVICE_HELLO` within 10 s, twice, `current` points back, the
   version is marked bad for that box, and the plugin delivers it no more
   until a newer one. The doctor shows a box running a version marked bad.
 
@@ -803,7 +803,7 @@ E16 times each, through to a frame the viewer has drawn.
 
 ## Keeping the device's own ports closed
 
-The rule: nothing outside the box reaches the device but through bb-box,
+The rule: nothing outside the box reaches the device but through alia-box,
 and if that cannot be ensured, the device does not start.
 
 | What | How it is kept |
@@ -816,14 +816,14 @@ and if that cannot be ensured, the device does not start.
 
 The firewall:
 
-- **A table of bb-box's own,** `inet bb_box_device`, so IPv4 and IPv6
+- **A table of alia-box's own,** `inet alia_box_device`, so IPv4 and IPv6
   alike, with an input hook at priority -300, ahead of anything Docker or
   Tailscale writes. It drops 8554, 5554, 5555 and 5037 from every
   interface but `lo`. Docker and Tailscale manage their own tables and
   chains, never this one, so their rule changes leave it be. A container
   on `docker0` or a tailnet peer on `tailscale0` is not `lo`, and is
   dropped.
-- **Fail closed.** A unit, `bb-box-device-firewall.service`, loads the
+- **Fail closed.** A unit, `alia-box-device-firewall.service`, loads the
   table and checks it is there. The emulator's service `Requires` it and,
   before each start, checks the table again; without it the emulator does
   not start, and the device's state says why. The unit runs at every boot
@@ -904,7 +904,7 @@ put a person's clicks on the wrong screen.
 
 ### The frame
 
-- **Drawn by bb-box,** as SVG around the video's canvas, from the model's
+- **Drawn by alia-box,** as SVG around the video's canvas, from the model's
   `Body` and `Screen`: a body with rounded corners, black glass of `bezel`
   pixels round the screen, the side buttons, and the screen's corners
   clipped to `cornerRadius`. No Apple or Google artwork.
@@ -943,8 +943,8 @@ put a person's clicks on the wrong screen.
   and the screen is never drawn larger than its own pixels at the browser's
   pixel ratio. The More menu has Pixel for pixel, which scrolls, and Show
   frame, on by default.
-- **Light and dark.** The device's body is graphite in both of BB's themes.
-  In BB's dark theme the body has a 1 px light edge so it stands off the
+- **Light and dark.** The device's body is graphite in both of VesnALIA's themes.
+  In VesnALIA's dark theme the body has a 1 px light edge so it stands off the
   background; in the light theme, a soft shadow. The device's own
   appearance is separate, and is what the Appearance control sets.
 - **Booting, asleep and failed.** While the device boots the screen is
@@ -982,7 +982,7 @@ decision).
   unit 6.4 found the row only shrinks a device the panel's height limits,
   the bar goes below the frame as
   one row: Home, Back and Recents on Android, Rotate, Fold on foldables,
-  and More, which takes the rest. Targets stay 44 px. On a phone's BB the
+  and More, which takes the rest. Targets stay 44 px. On a phone's VesnALIA the
   row is the same.
 - **Accessible.** Each control has a name, Appearance and Fold say which is
   on, popovers close with Escape and a click outside, and a change of the
@@ -997,7 +997,7 @@ decision).
   models for this box, and switches. A switch to a model not yet booted in
   this box warns that it may take a minute (iOS first boots, 14 to 68 s).
   The server says which models it booted in this box in its hello's
-  `bootedHere`, kept in `~/.bb-box/device/booted-here.json`.
+  `bootedHere`, kept in `~/.alia-box/device/booted-here.json`.
 - **Device and Desktop** in the top bar, on an ios box only, shows the
   device or the host's desktop, each a kept session (037), so switching is
   instant.
@@ -1015,7 +1015,7 @@ decision).
   control takes control from the agent" once, under the bar, the first
   time.
 - **Watchers see touches.** A viewer without control draws each
-  `BB_DEVICE_TOUCH` as a 36 px translucent circle for 300 ms, so a person
+  `ALIA_DEVICE_TOUCH` as a 36 px translucent circle for 300 ms, so a person
   watching sees where the agent tapped. The viewer with control draws only
   its own pointer.
 - **Typed keys** go as keys where a US keyboard has one. Committed text, from
@@ -1079,7 +1079,7 @@ Text with no US key, from the agent or the person, is pasted:
   another kind it is refused. A name no offer has is refused, with the
   kind's models listed. With `wait`, the answer comes once the device has
   booted, or after 120 s with "still booting", and says how long it took.
-  The CLI's `bb box acquire` gains `--device`, and the New box form a
+  The CLI's `alia box acquire` gains `--device`, and the New box form a
   device step for these kinds.
 - `box_list`'s line for each device kind ends with its models: "Devices:
   iPhone 18 Pro (default), iPhone 17, iPad Pro 13-inch (M5)." A box's line
@@ -1089,7 +1089,7 @@ Text with no US key, from the agent or the person, is pasted:
   appearance, text size, any warning, and the IDs for commands.
 - `box_run` runs on the host, as on any box. On an ios box `simctl`
   commands may name the device as `booted`; on an android box `ANDROID_SERIAL`
-  is set, so `adb` needs no `-s`. `BB_DEVICE_ID` holds the UDID or the
+  is set, so `adb` needs no `-s`. `ALIA_DEVICE_ID` holds the UDID or the
   serial on both.
 
 ### box_device
@@ -1124,7 +1124,7 @@ dark, text size large, booted." Refusals:
 | `bad-value` | "text_size on Android takes larger, smaller, default or a font scale: 0.85, 1, 1.15, 1.3, 1.5, 1.8 or 2." |
 | `not-booted` | "The Pixel Fold is still booting. Try again in a few seconds, or call box_status." |
 | `busy` | "The box is switching to the Pixel Fold. Try again when box_status says it has booted." |
-| `outcome-unknown` | "The connection to the box ended while turning the device, so bb-box cannot tell whether it turned. It is now upright. Read box_status before trying again." |
+| `outcome-unknown` | "The connection to the box ended while turning the device, so alia-box cannot tell whether it turned. It is now upright. Read box_status before trying again." |
 | `person-has-control` | "A person has control of this box's device. Wait for them to hand it back, or take it back with computer_take_control when they ask." |
 | `failed` | the command's own words |
 
@@ -1176,7 +1176,7 @@ The agent's work on the host is commands.
   `ambiguous`, naming both. iOS gives a flat list; the server nests it by
   frames, which is only an approximation, so on iOS the identifier and the
   frame count for more than the nesting. Unit 7.1 found idb's nested form
-  gives the nesting itself. Before a tap by reference, bb-box asks the
+  gives the nesting itself. Before a tap by reference, alia-box asks the
   device what is at the point, and refuses, naming it, when something else
   covers the element, as a title bar, the keyboard or a hidden page can.
 - **After an action** the tool waits until the screen has not changed for
@@ -1184,12 +1184,12 @@ The agent's work on the host is commands.
 - **Web pages** in Safari are not in iOS's nested tree, which stops at
   Safari's own controls, but each point of the page names its element. So
   where the app's own elements leave the screen's middle to another
-  process, bb-box reads the page point by point and lists it in a `web
+  process, alia-box reads the page point by point and lists it in a `web
   view` (F-20 in [063 results](063-results.md#f-20-settings-taps-the-front-app-and-web-pages)).
   Chrome on Android shows a page's contents only some of the time, to
   `uiautomator dump` and the tree server alike; otherwise the tree has a
   `web view` whose value says so.
-- **Android's tree** comes from bb-box's tree server in the device, in 2 to
+- **Android's tree** comes from alia-box's tree server in the device, in 2 to
   4 ms a read, and from `uiautomator dump`, 1.9 s, when the server cannot
   run (units 7.2 and 7.3). Android lets one UiAutomation client in at a
   time, and the dump is one too, so while an instrumentation test runs the
@@ -1206,7 +1206,7 @@ The agent's work on the host is commands.
 | `box_device install` | runs for a new app; refused for one already installed |
 | `computer_windows`, `computer_observe`, `computer_screenshot` | answer: reading the device sends it nothing |
 | `box_record` | runs |
-| `box_run`, including `simctl`, `idb` and `adb` | runs. bb-box cannot see input sent this way (`adb shell input`), and does not try |
+| `box_run`, including `simctl`, `idb` and `adb` | runs. alia-box cannot see input sent this way (`adb shell input`), and does not try |
 
 Refused, not held: a call that waited for a hand-back would hold the
 agent's turn for as long as the person tests, which may be minutes. This is
@@ -1291,7 +1291,7 @@ Expected time to a booted device:
 | A spare, another model booted before in this box | that, then a switch: the shutdown, and 1.3 to 1.9 s | that, then 5.0 to 6.7 s |
 | A spare, another model booted once in the image | that, then a switch: the shutdown, and E1's boot | that, then 5.0 to 6.7 s if the image's snapshot loads (E2); 19 to 21 s if it boots cold |
 | A new box | a clone and macOS's boot (13.6 s in 061), then the device: 1.9 to 13.1 s by E1, 32.2 s were it never booted | a clone and the VM's boot (8.3 s in 061), then 2.2 to 3.9 s from its snapshot if it loads there (E2), 16 to 18 s cold |
-| Becoming a BB machine | 8 to 11 s more, unless a spare, which is enrolled ahead (032) | about 5 s more, unless a spare |
+| Becoming a VesnALIA machine | 8 to 11 s more, unless a spare, which is enrolled ahead (032) | about 5 s more, unless a spare |
 
 If E3 or E4 shows the device does not survive its VM's suspend, a spare
 waits with its device shut down instead, and a claim boots it: the second
@@ -1303,14 +1303,14 @@ Both are built, checked, refreshed and promoted as other images are (049):
 a build in a box, a check, a trial, then promotion, keeping the last
 working build.
 
-| | iOS: `bb-box-ios` | Android: a Proxmox QEMU template |
+| | iOS: `alia-box-ios` | Android: a Proxmox QEMU template |
 | --- | --- | --- |
 | Base | the Tart macOS image with Xcode 27, its iOS runtime (7.5 GiB, a cryptex) and the other runtimes it already has | the Linux VM template (057), with no desktop |
-| Adds | idb_companion 1.7.7, 115 MB, from Meta's Homebrew tap, its bottle pinned by version and SHA-256, with its licence notice; each offered model created, booted once and shut down; the image record's `devices` | the SDK's command-line tools, emulator 37.2.12.0, platform-tools 37.0.1 and the Android 15 (API 35) Google APIs x86_64 system image revision 9, each pinned by URL and SHA-256 from Google's repository manifest in `setup/android/pins.json`; one AVD per model, each booted once and saved to its snapshot; `bb-box-h264`; the firewall unit; the image record's `devices` |
+| Adds | idb_companion 1.7.7, 115 MB, from Meta's Homebrew tap, its bottle pinned by version and SHA-256, with its licence notice; each offered model created, booted once and shut down; the image record's `devices` | the SDK's command-line tools, emulator 37.2.12.0, platform-tools 37.0.1 and the Android 15 (API 35) Google APIs x86_64 system image revision 9, each pinned by URL and SHA-256 from Google's repository manifest in `setup/android/pins.json`; one AVD per model, each booted once and saved to its snapshot; `alia-box-h264`; the firewall unit; the image record's `devices` |
 | Size added | about 0.6 GB: idb's 115 MB and about 0.15 GB a model, to measure (E24). Clones share the base on APFS, so the other runtimes cost nothing more | about 18 GB: 4.6 GB of SDK and about 4.5 GB a model (2.0 GB data, 2.5 GB snapshot memory), to measure (E24). A used device grows to 5 to 7 GB in its box |
 | Build time added | each model's first boot: 27 to 68 s | 48 s to install, about 17 s to boot each model, 2.8 s to save it |
 | Built by | `setup/tart/prepare-ios-image.sh`, on the macOS image | `setup/proxmox-qemu/build.sh android`, in a box of the Linux VM template |
-| Refreshed | with the macOS image, after 30 days, by `bb box images refresh` (049) | monthly, in a box of the current build, as 054 refreshes Windows: the pins move with bb-box's releases |
+| Refreshed | with the macOS image, after 30 days, by `alia box images refresh` (049) | monthly, in a box of the current build, as 054 refreshes Windows: the pins move with alia-box's releases |
 | Licences | idb: MIT. Xcode's, accepted at build as now | the SDK's terms, accepted by `sdkmanager` in the build. Java is needed for `sdkmanager` and `avdmanager` at build only, and removed after. See [open questions](#the-owners-answers) |
 
 The ios image is its own, not the macOS image itself, so macOS boxes do not
@@ -1370,14 +1370,14 @@ idb does not pin its fit with Xcode, the runtime and the server: the record's
 `runtime` names all of them, and the doctor fails an offer whose
 combination the check has not passed. If a new Xcode breaks idb, the macOS
 image's refresh keeps building, and the ios image stays on its last good
-build until idb catches up. Writing bb-box's own server on the same private
+build until idb catches up. Writing alia-box's own server on the same private
 frameworks is a possible way out, not a proven one.
 
 ## Build phases
 
 Phase 1 was the research. Each unit below is one builder's PR, on the
 target OS's box: a Mac box for iOS, a Linux box with KVM for Android. Each
-ends in a live check through BB, on a separate BB in a box with bb-box from
+ends in a live check through VesnALIA, on a separate VesnALIA in a box with alia-box from
 the unit's branch, with what it measured. Units side by side run in
 parallel. Each unit brings what it introduces: the reference and the skill
 text for each tool and parameter, the setup guide for each image, the
@@ -1388,10 +1388,10 @@ and conformance cases for what it adds. The "Also" column names them.
 
 | Unit | Builds | Also | Live check | After |
 | --- | --- | --- | --- | --- |
-| 2.1 The data model and the kinds | `src/core/device.ts` and the model table; validators for every record and message; `supports`; the compile-time cases that must fail; `ios` and `android` in `KIND_INFO` with no offers; `KindCapabilities.device`; `DisplayCapability.shows`; the box record's `device`; box_acquire's `device` and `bb box acquire --device`, with their refusals | the kinds and tools reference; conformance cases for device capabilities, run where an offer has a device | on a separate BB: `box_acquire({kind: "ios"})` refused, naming no offer; `device` on a linux kind refused; box_list, box_status and the settings page unchanged for every other kind | |
-| 2.2 The device server's life | `bb-box-device` with `connect`, the socket, its lock, the LaunchAgent (`ThrottleInterval` 1) and the systemd unit (`RestartSec=1`, its start limit); the protobuf codec, proved against idb's and the emulator's `.proto` files; HELLO, STATE, ANSWER; request IDs, deadlines and the intent file; the lease; delivery by version, deferral and rollback; the test driver with key frames on demand; the `test-device` setting | the setting's row; a doctor check of each box's server version; conformance cases on the test device | on a Linux box and a Mac box with the test device: the server killed and back within 2 s; a crash loop ending in words; a reload of bb-box with two instances delivering once; a delivery waiting while a person holds control, then made at hand-back; a version that never answers rolled back | 2.1 |
+| 2.1 The data model and the kinds | `src/core/device.ts` and the model table; validators for every record and message; `supports`; the compile-time cases that must fail; `ios` and `android` in `KIND_INFO` with no offers; `KindCapabilities.device`; `DisplayCapability.shows`; the box record's `device`; box_acquire's `device` and `alia box acquire --device`, with their refusals | the kinds and tools reference; conformance cases for device capabilities, run where an offer has a device | on a separate VesnALIA: `box_acquire({kind: "ios"})` refused, naming no offer; `device` on a linux kind refused; box_list, box_status and the settings page unchanged for every other kind | |
+| 2.2 The device server's life | `alia-box-device` with `connect`, the socket, its lock, the LaunchAgent (`ThrottleInterval` 1) and the systemd unit (`RestartSec=1`, its start limit); the protobuf codec, proved against idb's and the emulator's `.proto` files; HELLO, STATE, ANSWER; request IDs, deadlines and the intent file; the lease; delivery by version, deferral and rollback; the test driver with key frames on demand; the `test-device` setting | the setting's row; a doctor check of each box's server version; conformance cases on the test device | on a Linux box and a Mac box with the test device: the server killed and back within 2 s; a crash loop ending in words; a reload of alia-box with two instances delivering once; a delivery waiting while a person holds control, then made at hand-back; a version that never answers rolled back | 2.1 |
 | 2.3 Display routing and the device display | displays by ID in the route, the kept-session key and the relay; input and clipboard per display, control per box; the device display as plain video, ignoring the video setting and VNC; stills where video cannot play; Device and Desktop | the desktops guide's section on device displays | a linux-desktop-cpu box with the test device: both displays together, switched for 2 minutes; input, clipboard, a hidden tab and a reconnect each reach only the display meant; with WebCodecs off, stills with their words, never the host; E18 | 2.2 |
-| 2.4 The Android encoder and what devices cost | `bb-box-h264`, with key frames on command, and its tests; frames from the emulator to it, as E6 decides; the android kind's default and least sizes, from E17 | none outside the image yet | on a Linux box with KVM and the SDK installed by the research's script: E17, E6 and E7, each model, each number with its method | |
+| 2.4 The Android encoder and what devices cost | `alia-box-h264`, with key frames on command, and its tests; frames from the emulator to it, as E6 decides; the android kind's default and least sizes, from E17 | none outside the image yet | on a Linux box with KVM and the SDK installed by the research's script: E17, E6 and E7, each model, each number with its method | |
 
 ### Phase 3: the images
 
@@ -1404,14 +1404,14 @@ and conformance cases for what it adds. The "Also" column names them.
 
 | Unit | Builds | Also | Live check | After |
 | --- | --- | --- | --- | --- |
-| 4.1 The Android driver: boot, video, recovery | the emulator's service with its token; attach and reattach; frames through `bb-box-h264`; key frames; every row of [When things stop and start](#when-things-stop-and-start) on Android; the `android` kind offered on Proxmox QEMU where the host has KVM | the New box form's device step; the skill's text for device boxes; box_list and box_status lines | 060's harness through BB on each model: first frame, frame rate still and busy, CPU, memory; the encoder killed; the emulator killed; box stop and start; a cold restart; E3 after 1 h and 24 h suspended; E23 | 2.3, 3.1 |
-| 4.2 The iOS driver: boot, video, recovery | idb_companion on its socket; attach and reattach; its frames and key frames; the same rows on iOS; the Device Hub watch; the `ios` kind offered on Tart | as 4.1, for iOS | the same harness through BB; idb's stream killed; box stop and start; E4 after 1 h and 24 h suspended; E5 | 2.3, 3.2 |
+| 4.1 The Android driver: boot, video, recovery | the emulator's service with its token; attach and reattach; frames through `alia-box-h264`; key frames; every row of [When things stop and start](#when-things-stop-and-start) on Android; the `android` kind offered on Proxmox QEMU where the host has KVM | the New box form's device step; the skill's text for device boxes; box_list and box_status lines | 060's harness through VesnALIA on each model: first frame, frame rate still and busy, CPU, memory; the encoder killed; the emulator killed; box stop and start; a cold restart; E3 after 1 h and 24 h suspended; E23 | 2.3, 3.1 |
+| 4.2 The iOS driver: boot, video, recovery | idb_companion on its socket; attach and reattach; its frames and key frames; the same rows on iOS; the Device Hub watch; the `ios` kind offered on Tart | as 4.1, for iOS | the same harness through VesnALIA; idb's stream killed; box stop and start; E4 after 1 h and 24 h suspended; E5 | 2.3, 3.2 |
 
 ### Phase 5: touch, keys and shared control
 
 | Unit | Builds | Also | Live check | After |
 | --- | --- | --- | --- | --- |
-| 5.1 Input, shared, and on Android | owner generations and fencing; lifting on every end; the wheel as a swipe; Alt and drag, and two fingers on a touch screen; committed text; batched paste with the clipboard saved and put back; touch echo to watchers; geometry generations and `stale-geometry`; all of it on Android | the desktops guide's device input section | E14 through BB, with and without a Gradle build running, and the first tap after a reconnect; a person taking control halfway through the agent's swipe and halfway through its paste; a reload while a person holds control; Japanese through the browser's input method, Arabic, an emoji, dead keys; a trackpad scrolling a list; a pinch on a phone's BB; E8, E21 | 4.1 |
+| 5.1 Input, shared, and on Android | owner generations and fencing; lifting on every end; the wheel as a swipe; Alt and drag, and two fingers on a touch screen; committed text; batched paste with the clipboard saved and put back; touch echo to watchers; geometry generations and `stale-geometry`; all of it on Android | the desktops guide's device input section | E14 through VesnALIA, with and without a Gradle build running, and the first tap after a reconnect; a person taking control halfway through the agent's swipe and halfway through its paste; a reload while a person holds control; Japanese through the browser's input method, Arabic, an emoji, dead keys; a trackpad scrolling a list; a pinch on a phone's VesnALIA; E8, E21 | 4.1 |
 | 5.2 Input on iOS | the HID stream, opened as control is taken; keys mapped from W3C names; paste through `simctl pbcopy`; Allow Paste answered by the server; pinch (E9) | | the same checks, with an `xcodebuild` running; the first tap after taking control quick, not 578 ms; E8, E9, E14, E21 | 4.2, 5.1 |
 
 ### Phase 6: the frame, the controls and box_device
@@ -1429,7 +1429,7 @@ and conformance cases for what it adds. The "Also" column names them.
 | --- | --- | --- | --- | --- |
 | 7.1 iOS computer use | the computer tools on the device: tree with identifiers, screenshot, act, type, launch; references by identifier, refusing ambiguous ones; scroll in its container; set_value on fields only; settling after actions | the computer tools reference for device boxes | an agent opens Settings, General, About by references, types a URL into Safari, scrolls a long list, sets a text field and is refused on a slider, and meets two rows with one label; each tool's time | 6.3 |
 | 7.2 Android computer use | the same with `uiautomator dump` | | the same in Settings and Chrome; each tool's time, the tree's 1.9 s noted | 6.2; beside 7.1 |
-| 7.3 Android's tree in tens of milliseconds | a UiAutomation server in the device: Appium's UiAutomator2 server (Apache-2.0), or one of bb-box's own run with `app_process` as scrcpy runs; it gives way to an app's instrumentation tests, and the dump is used while it does | | E12: tree times before and after; the same references found; an instrumentation test run beside it | 7.2 |
+| 7.3 Android's tree in tens of milliseconds | a UiAutomation server in the device: Appium's UiAutomator2 server (Apache-2.0), or one of alia-box's own run with `app_process` as scrcpy runs; it gives way to an app's instrumentation tests, and the dump is used while it does | | E12: tree times before and after; the same references found; an instrumentation test run beside it | 7.2 |
 | 7.4 Recording | box_record on device boxes: the monotonic timeline, segments with key frames, still stretches held, gaps captioned, the frame drawn by ffmpeg on both OSes | the box_record reference for devices | a 60 s clip on each platform with a rotation and, on the Pixel Fold, a fold, and two captioned steps; a clip of a still screen; a long still end; no viewer open; the server killed mid-recording; E15 | 6.1 |
 | 7.5 Spares and switching on claim | suspended enrolled Tart spares; hibernated android spares; the default of one each where a host has room; switching on claim; stale spares retired | the spares rows of the configuration reference; doctor words for a spare with no room | five claims of each path in [Spares and ready times](#spares-and-ready-times), on each platform, timed; a failed switch rolled back; E16, E24 | 4.1, 4.2, 6.4 |
 
@@ -1442,18 +1442,18 @@ and conformance cases for what it adds. The "Also" column names them.
 | E3 | The emulator survives its VM's hibernation and resume, after 1 h and after 24 h: frames, gRPC, adb, the device's clock, held touches | whether an android box's stop and start, and an android spare, keep the device running | 4.1 |
 | E4 | A booted simulator survives its Tart VM's suspend and resume, after 1 h and after 24 h: frames, HID, the clock | the same for ios | 4.2 |
 | E5 | Each message of idb's video stream is one whole access unit; idb gives a key frame on request on a still screen, with SPS and PPS | whether the iOS driver needs a parser, and how it makes key frames | 4.2 |
-| E6 | The emulator's `MMAP` frames to `bb-box-h264`, against RGB over gRPC through Node: CPU at the busy frame rate | how frames reach the encoder | 2.4 |
-| E7 | x264 against OpenH264 in `bb-box-h264`: ms a frame at each model's size, and the picture at 8 Mbit/s | the encoder's cost under each licence choice | 2.4 |
+| E6 | The emulator's `MMAP` frames to `alia-box-h264`, against RGB over gRPC through Node: CPU at the busy frame rate | how frames reach the encoder | 2.4 |
+| E7 | x264 against OpenH264 in `alia-box-h264`: ms a frame at each model's size, and the picture at 8 Mbit/s | the encoder's cost under each licence choice | 2.4 |
 | E8 | Which space each device takes touches in: all four orientations, an app locked upright, both screens of the Pixel Fold, half open, a downscaled agent screenshot, a turn mid-gesture | the server's transform | 5.1, 5.2 |
 | E9 | idb's HID stream with two touches, for a pinch | whether iOS pinches from the viewer | 5.2 |
 | E10 | SystemUI's demo mode for a clean status bar on Android 15 | whether Android has status_bar | 6.2 |
 | E11 | Which way left and right turn on each platform | that the toolbar's arrows turn the way they point | 6.2, 6.3 |
 | E12 | A UiAutomation server in the device against `uiautomator dump`; beside an app's instrumentation tests; back to the dump when it fails | Android's tree time | 7.3 |
 | E13 | Autocorrect off by preferences, checked by typing "Hello idb 123" | the image's keyboard defaults | 3.1, 3.2 |
-| E14 | Tap to screen through BB, on pixels decoded in the browser: 100 taps, median, 95th percentile and worst; gaps between frames; with a build running in the box, and on Android with the emulator pinned to its cores; the first tap after a reconnect | the device bar, below | 5.1, 5.2 |
+| E14 | Tap to screen through VesnALIA, on pixels decoded in the browser: 100 taps, median, 95th percentile and worst; gaps between frames; with a build running in the box, and on Android with the emulator pinned to its cores; the first tap after a reconnect | the device bar, below | 5.1, 5.2 |
 | E15 | Segments decoded at 15 fps keep still stretches cut as on desktops | the recording's clip | 7.4 |
 | E16 | Every path's time to a booted device and every switch's to its first drawn frame, five times each, with a failed switch | the ready-time and switch tables | 7.5 |
-| E17 | The Pixel Fold closed, half open and open, and the Pixel Tablet, against the Pixel 8: frames a second busy, cores drawing, ms a frame in `bb-box-h264`, memory after 10 minutes' use; and two device boxes on one host | the android kind's sizes per model, and whether the tablet needs more than 8 cores | 2.4 |
+| E17 | The Pixel Fold closed, half open and open, and the Pixel Tablet, against the Pixel 8: frames a second busy, cores drawing, ms a frame in `alia-box-h264`, memory after 10 minutes' use; and two device boxes on one host | the android kind's sizes per model, and whether the tablet needs more than 8 cores | 2.4 |
 | E18 | Safari on macOS and on iOS: whether WebCodecs decodes the device's H.264 at each model's size, and the stream plays | whether stills are Safari's way, or a fallback seldom seen | 2.3 |
 | E19 | Whether the pinned emulator can bind its gRPC to loopback only | whether the firewall is the only wall, or the second | 3.1 |
 | E20 | Whether running an app from Xcode in the host opens Device Hub, and whether a preference stops it | the iOS host desktop's warning and the image's default | 3.2 |
@@ -1465,7 +1465,7 @@ and conformance cases for what it adds. The "Also" column names them.
 ### The device bar
 
 Devices are held to about 90 ms at the median from a tap to the screen
-through BB, against 50 ms for desktops (060), and E14 reports the 95th
+through VesnALIA, against 50 ms for desktops (060), and E14 reports the 95th
 percentile and the worst beside it. The reasons:
 
 - Most of it is the device's own time from a touch to drawing: 50 to
@@ -1474,17 +1474,17 @@ percentile and the worst beside it. The reasons:
 - The stream itself adds 1 to 2 ms on iOS and about 20 ms on Android,
   where the device has no hardware encoder.
 - Device Hub's own window, captured, was slower: 86 ms in the box alone,
-  before BB.
-- The rest is BB's path, which desktops share: about 25 ms.
+  before VesnALIA.
+- The rest is VesnALIA's path, which desktops share: about 25 ms.
 
 If E14 shows the median over 100 ms, or a 95th percentile over 150 ms on an
 idle box, the unit stops and the lead decides.
 
 Android's bar, from unit 5.1's E14: about 70 to 90 ms at the median
-through BB, 67 ms idle and 87 ms with two Gradle builds busy in the box. Its
+through VesnALIA, 67 ms idle and 87 ms with two Gradle builds busy in the box. Its
 floor is the device's own drawing on the CPU, 50 to 60 ms from a touch to
 the encoded frame, which a host with KVM and a GPU would lower. Its 95th
-percentile through BB, 76 to 346 ms idle, is BB's server standing still
+percentile through VesnALIA, 76 to 346 ms idle, is VesnALIA's server standing still
 while the input waits, which desktops share
 ([#1158](https://github.com/ahkohd/bb-box/issues/1158)).
 
@@ -1547,7 +1547,7 @@ while the input waits, which desktops share
   it, which the agent drives through the tools it already knows, and
   records.
 - Device video is over 060's desktop bar: about 80 to 90 ms from a tap to
-  the screen through BB, most of it the device's own time.
+  the screen through VesnALIA, most of it the device's own time.
 - An Android device draws on the CPU: busy, the phone takes 7 of 8 cores
   and shows at most about 35 fps. The foldable open and the tablet have
   1.6 times its pixels, and E17 says what they cost; they may need more
@@ -1567,7 +1567,7 @@ while the input waits, which desktops share
   the ios kind until idb follows; the last good image keeps it running
   meanwhile.
 - adb and simctl in `box_run` can send input while a person holds control.
-  bb-box's own tools cannot.
+  alia-box's own tools cannot.
 - Device boxes have no sound in v1.
 
 ## Defaults set by the lead
@@ -1586,7 +1586,7 @@ note above; the owner may still change any of them.
 4. **The host's desktop:** the computer tools drive the device only. A
    person may open an ios box's host desktop, with the warning about
    Device Hub. An android box has no host desktop in v1.
-5. **The device bar:** about 80 to 90 ms from tap to screen through BB, for
+5. **The device bar:** about 80 to 90 ms from tap to screen through VesnALIA, for
    the reasons under [The device bar](#the-device-bar).
 
 ## The owner's answers
@@ -1594,18 +1594,18 @@ note above; the owner may still change any of them.
 Given on 26 October 2026, to the questions the revision left open:
 
 1. **Licences.**
-   - **Android's encoder:** both. `bb-box-h264` uses x264 where the
+   - **Android's encoder:** both. `alia-box-h264` uses x264 where the
      operator's own image build has built it from source, and OpenH264,
      with Cisco's patent-licensed binary as Windows uses it, where it has
-     not. bb-box never ships an x264 binary. E7 measures OpenH264's cost,
+     not. alia-box never ships an x264 binary. E7 measures OpenH264's cost,
      and the encoder in use is shown in the box's details.
    - **idb_companion:** Meta's pinned bottle in the ios image, with its
-     notice. bb-box's own server only if idb falls behind Xcode.
+     notice. alia-box's own server only if idb falls behind Xcode.
    - **The Android SDK's terms:** the operator accepts them, as a step they
      confirm in the setup guide, and the template never leaves their
      install.
 
-   Before bb-box is published with device boxes, the exact SDK and system
+   Before alia-box is published with device boxes, the exact SDK and system
    image terms, x264's obligations for a helper built in the image, and the
    notices each image must carry are checked, with legal advice if the
    owner wants it.
@@ -1634,7 +1634,7 @@ agreed, the note changed.
 | F6 | Illegal states in the data model; iOS status bar and battery conflated; no runtime | Changed. Discriminated models and state, posture on foldables only, network Android only, battery inside iOS's status bar override, runtime on each offered device: [The data shape](#the-data-shape) |
 | F7 | The host desktop can start Device Hub | Changed. A warning in the Desktop view, a watch with Quit Device Hub, and E20 for Xcode's Run and a preference |
 | F8 | 2.1 is three units; doctor, docs, settings, forms come late; template build and refresh unplaced | Changed. 2.1 is split into 2.1, 2.2 and 2.3; each unit names its docs, settings, doctor and conformance; the template's build and monthly refresh are in 3.1 |
-| F9 | Docker in the box can undo the firewall | Changed. A table of bb-box's own at priority -300, which Docker does not manage; checked from a container and a tailnet peer; the emulator does not start without it |
+| F9 | Docker in the box can undo the firewall | Changed. A table of alia-box's own at priority -300, which Docker does not manage; checked from a container and a tailnet peer; the emulator does not start without it |
 | F10 | The host desktop on android boxes is scope not asked for | Changed. No host desktop on android in v1; the template is the Linux VM template's |
 | F11 | Licences left open; unused runtimes in the iOS image | Changed. Licences are an open question with options. The runtimes stay: the ios image is an APFS clone of the macOS image, so removing them from it saves nothing while the macOS image keeps them |
 | F12 | Every toolbar control needs Take control first | Changed. A toolbar click takes control and says so; open question 2. `person-has-control` has device words |

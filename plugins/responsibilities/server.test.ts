@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
 import { expect, test } from "bun:test";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { mkdirSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -27,7 +27,7 @@ function load(list: (args: { beforeSeq?: string }) => Promise<Page>, { dataDir =
     background: { service: (name: string, service: { start: (signal: AbortSignal) => Promise<void> }) => (services[name] = service.start) },
     log: { info() {}, warn() {} },
     sdk: { threads: { list: async ({ archived }: { archived: boolean }) => (archived ? [] : threads), events: { list } } },
-  } as unknown as BbPluginApi);
+  } as unknown as AliaPluginApi);
   const row = () => db.query("SELECT result_at AS resultAt, quiet_attention_at AS quietAttentionAt, seen_at AS seenAt FROM attention").get();
   return { idle, rpc, row, services, order, invalidated, db };
 }
@@ -69,7 +69,7 @@ test("REPRO: a full page without the run's request reads the next page instead o
   expect(row()).toEqual({ resultAt: 150, quietAttentionAt: null, seenAt: null });
 });
 
-test("a root run proven quiet stores its attention so BB's dot for it can be hidden", async () => {
+test("a root run proven quiet stores its attention so VesnALIA's dot for it can be hidden", async () => {
   const { idle, row } = load(async () => [tool(3), request(1, 1)]);
   await idle({ thread: thread(400, null) });
   expect(row()).toEqual({ resultAt: null, quietAttentionAt: 400, seenAt: null });

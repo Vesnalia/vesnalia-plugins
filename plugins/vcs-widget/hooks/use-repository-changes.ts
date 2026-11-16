@@ -1,10 +1,10 @@
-import { useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRealtime } from "@vesnalia/plugin-sdk/app";
 import { CHANGED_CHANNEL } from "../shared/constants";
 import { useSidebarThread } from "./use-sidebar-thread";
 
 /**
  * Calls `refetch` whenever the repository behind this thread's environment
- * changed: after one of our own actions, a job, bb's environment events or
+ * changed: after one of our own actions, a job, VesnALIA's environment events or
  * the host worker's file watch. A payload without an environment id means
  * "everyone refetch".
  */

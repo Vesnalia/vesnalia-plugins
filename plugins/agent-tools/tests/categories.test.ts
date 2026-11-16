@@ -88,7 +88,7 @@ test("rename keeps ids, remove refuses a used category", () => {
   assert.equal(normalizeKey("  Ёлки — Палки "), "елки палки");
 });
 
-test("skill metadata follows BB's rules", () => {
+test("skill metadata follows VesnALIA's rules", () => {
   const ok = parseSkillMeta('---\nname: ru-text\ndescription: "Use when: editing Russian text"\n---\n# Body', "ru-text");
   assert.deepEqual(ok.problems, []);
   assert.equal(ok.name, "ru-text");

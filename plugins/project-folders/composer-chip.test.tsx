@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { act, cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { installTestMatchMedia } from "./test-match-media";
 import { chipEntries, placeLabel, rememberPick } from "./section-tree";
 
@@ -50,7 +50,7 @@ beforeAll(async () => {
   app = await loadPluginApp(() => import("./app"));
 });
 
-/** BB's own project chip, as the composer renders it. */
+/** VesnALIA's own project chip, as the composer renders it. */
 function nativeChip() {
   const button = document.createElement("button");
   button.setAttribute("data-promptbox-project-control", "");
@@ -118,7 +118,7 @@ const openChip = async (view: ReturnType<typeof renderChip>) => {
   return button;
 };
 
-describe("the tree behind BB's project chip", () => {
+describe("the tree behind VesnALIA's project chip", () => {
   it("lists a project once and keeps its sections under it, every device", () => {
     expect(
       chipEntries(tree).map((e) => [e.kind, e.folder.name, e.depth]),
@@ -130,7 +130,7 @@ describe("the tree behind BB's project chip", () => {
       ["section", "Server", 1],
     ]);
   });
-  it("keeps every project BB offers, in BB's order, with sections under them", () => {
+  it("keeps every project VesnALIA offers, in VesnALIA's order, with sections under them", () => {
     const entries = chipEntries(tree, [
       { id: "p0", name: "Notes", isPersonal: false },
       { id: "p1", name: "Project", isPersonal: false },
@@ -157,8 +157,8 @@ describe("the tree behind BB's project chip", () => {
   });
 });
 
-describe("the chip in BB's own New thread composer", () => {
-  it("takes BB's chip, offers the tree and gives the chip back", async () => {
+describe("the chip in VesnALIA's own New thread composer", () => {
+  it("takes VesnALIA's chip, offers the tree and gives the chip back", async () => {
     const native = nativeChip();
     const view = renderChip();
     await waitFor(() => expect(native.style.display).toBe("none"));
@@ -387,7 +387,7 @@ describe("the chip in BB's own New thread composer", () => {
     );
     view.lifecycle.unmount();
   });
-  it("hands a project it has no folder for to BB untouched", async () => {
+  it("hands a project it has no folder for to VesnALIA untouched", async () => {
     nativeChip();
     const view = renderChip();
     await openChip(view);
@@ -419,7 +419,7 @@ describe("the chip in BB's own New thread composer", () => {
         action.queryByRole("button", { name: "Project section" }),
       ).toBeNull(),
     );
-    // Without the chip — BB changed its composer, say — the action is back.
+    // Without the chip — VesnALIA changed its composer, say — the action is back.
     chip.lifecycle.unmount();
     await waitFor(() =>
       expect(
@@ -428,7 +428,7 @@ describe("the chip in BB's own New thread composer", () => {
     );
     action.lifecycle.unmount();
   });
-  it("leaves BB's chip alone when there is none to take", async () => {
+  it("leaves VesnALIA's chip alone when there is none to take", async () => {
     const view = renderChip();
     await waitFor(() =>
       expect(view.inspection.rpcCalls.length).toBeGreaterThan(0),

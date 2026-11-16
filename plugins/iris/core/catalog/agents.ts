@@ -56,9 +56,9 @@ export const AGENTS = [
     name: "ContextMeter",
     group: "Agents",
     summary:
-      'How full a session\'s context window is, split by category, with model, cost and how both moved over the session. Pass load("bb:thread") in a live card (it records readings as they change), a list from load("bb:threads?usage=1") for totals by model, or {used, window, model, categories, cost}.',
+      'How full a session\'s context window is, split by category, with model, cost and how both moved over the session. Pass load("VesnALIA:thread") in a live card (it records readings as they change), a list from load("VesnALIA:threads?usage=1") for totals by model, or {used, window, model, categories, cost}.',
     props: {
-      thread: p.any('load("bb:thread"), load("bb:threads?usage=1"), or {title?, context: {used, window, model?, categories?}, cost?}', { required: true }),
+      thread: p.any('load("alia:thread"), load("alia:threads?usage=1"), or {title?, context: {used, window, model?, categories?}, cost?}', { required: true }),
       points: p.list("History to draw", "{t, used, cost?}[]"),
       warn: p.num("Share of the window that warns", { def: 0.8 }),
       title: p.str("Caption"),
@@ -248,7 +248,7 @@ export const THEME_PREVIEW = [
   component({
     name: "ThemePreview",
     group: "Design",
-    summary: "A mock app screen drawn only from the theme you give it (primary, background, foreground, border, radius, font and more), following inputs live: bind ColorInput and Slider states to it to try a theme. Tokens not given fall back to bb's theme.",
+    summary: "A mock app screen drawn only from the theme you give it (primary, background, foreground, border, radius, font and more), following inputs live: bind ColorInput and Slider states to it to try a theme. Tokens not given fall back to VesnALIA's theme.",
     props: {
       vars: p.obj("Theme tokens", "{primary?, primaryForeground?, background?, foreground?, card?, muted?, mutedForeground?, border?, accent?, radius?, font?, mono?}", { required: true }),
       mock: p.oneOf(["app", "form", "pricing"], "Which screen", { def: "app" }),

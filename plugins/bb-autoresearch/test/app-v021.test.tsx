@@ -3,8 +3,8 @@
 // a guardrail loss explained on the Candidates list, the Live card, the feed
 // and in replay, single-run wording on the bench strip and the CI band of a
 // deterministic measurement, and the Overview's state-aware "Now" hint.
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { configure, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createAutoresearchPlugin } from "../server.ts";
@@ -61,8 +61,8 @@ describe("frontend: v0.2.1 fixes", () => {
     host.refs.set("main", host.commit("T0", null));
     host.metric.set("T0", 1000);
     port.addThread("thr_study");
-    const fake = createFakePluginHost({ pluginId: "bb-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
-    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0 }, onEngine: (e) => (engine = e) })(fake.bb);
+    const fake = createFakePluginHost({ pluginId: "alia-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
+    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0 }, onEngine: (e) => (engine = e) })(fake.alia);
     harness = fake.harness;
     // The default test spec is deterministic, with an rss guardrail of 5% per step.
     await harness.behavior.callAgentTool("study_propose", { spec_toml: fakeHostSpec() }, { threadId: "thr_study", projectId: "proj_1" });

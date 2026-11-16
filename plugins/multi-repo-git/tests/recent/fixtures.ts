@@ -1,4 +1,4 @@
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { messageTime, topRecent, type EventRow, type Sdk, type ThreadEntry, type MessageIndex } from "../../lib/recent/data.js";
 
 export const thread = (id: string, overrides: Partial<ThreadEntry> = {}): ThreadEntry => ({

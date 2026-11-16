@@ -1,6 +1,6 @@
 ---
 name: xberg
-description: Read PDFs, Word, Excel and PowerPoint files, scanned images, email and other binary documents with the xberg_extract tool, and check or install Xberg on a machine with the bb xberg CLI.
+description: Read PDFs, Word, Excel and PowerPoint files, scanned images, email and other binary documents with the xberg_extract tool, and check or install Xberg on a machine with the VesnALIA xberg CLI.
 ---
 
 # Xberg
@@ -44,9 +44,9 @@ The first extraction on a machine downloads the pinned Xberg release (a
 to delete the text Xberg has cached:
 
 ```sh
-bb xberg status [--machine <name>]
-bb xberg install [--machine <name>]
-bb xberg cache clear [--machine <name>]
+alia xberg status [--machine <name>]
+alia xberg install [--machine <name>]
+alia xberg cache clear [--machine <name>]
 ```
 
 Without `--machine`, these commands use the current thread's machine.

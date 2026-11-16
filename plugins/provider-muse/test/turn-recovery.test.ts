@@ -8,7 +8,7 @@ import {
   experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness,
   type BridgeJsonRpcOutputMessage,
   type BridgeJsonRpcTestHarness,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 
 const fixtureDir = dirname(fileURLToPath(import.meta.url));
 
@@ -20,10 +20,10 @@ const fixtureDir = dirname(fileURLToPath(import.meta.url));
  */
 const POISONED_SESSION_ID = randomUUID();
 
-const previousExecutable = process.env.BB_MUSE_EXECUTABLE;
+const previousExecutable = process.env.ALIA_MUSE_EXECUTABLE;
 const previousApiKey = process.env.META_API_KEY;
 const previousPoisoned = process.env.FAKE_MUSE_POISONED_SESSION;
-process.env.BB_MUSE_EXECUTABLE = join(fixtureDir, "fake-muse-serve.mjs");
+process.env.ALIA_MUSE_EXECUTABLE = join(fixtureDir, "fake-muse-serve.mjs");
 process.env.META_API_KEY = "recovery-key";
 process.env.FAKE_MUSE_POISONED_SESSION = POISONED_SESSION_ID;
 
@@ -31,7 +31,7 @@ const { handleLine } = await import("../src/provider-bridge.js");
 
 const PROMPT =
   '"clicking copy assessment on my phone isnt working, and it caused it to submit a blank jsa"';
-const INSTRUCTIONS = "You are working inside bb.";
+const INSTRUCTIONS = "You are working inside VesnALIA.";
 
 let harness: BridgeJsonRpcTestHarness;
 let workspaceDir: string;
@@ -39,7 +39,7 @@ let workspaceDir: string;
 let rawMessages: BridgeJsonRpcOutputMessage[] = [];
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-muse-recovery-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "alia-muse-recovery-"));
   rawMessages = [];
   harness = createBridgeJsonRpcTestHarness(handleLine);
 });
@@ -50,7 +50,7 @@ afterEach(() => {
 });
 
 afterAll(() => {
-  restore("BB_MUSE_EXECUTABLE", previousExecutable);
+  restore("ALIA_MUSE_EXECUTABLE", previousExecutable);
   restore("META_API_KEY", previousApiKey);
   restore("FAKE_MUSE_POISONED_SESSION", previousPoisoned);
 });
@@ -122,7 +122,7 @@ const EXECUTION_OPTIONS = {
 async function resumeThread(threadId: string): Promise<void> {
   harness.sendRequest(1, "initialize", {
     protocolVersion: 1,
-    client: { name: "bb", version: "1" },
+    client: { name: "alia", version: "1" },
   });
   await harness.waitForResponse(1);
   harness.sendRequest(2, "thread/resume", {
@@ -156,8 +156,8 @@ it("reruns the prompt when Muse refuses the session's reasoning history", async 
   expect(countRerunWarnings(collected)).toBe(1);
 
   /**
-   * The failure reaches bb typed, not just described: core's `turn.failed`
-   * carries this category, and bb's retry policy is written against it.
+   * The failure reaches VesnALIA typed, not just described: core's `turn.failed`
+   * carries this category, and VesnALIA's retry policy is written against it.
    */
   const typed = collected.filter(
     (delta) => delta.kind === "provider.error" && delta.errorInfo !== undefined,
@@ -181,10 +181,10 @@ it("reruns the prompt when Muse refuses the session's reasoning history", async 
   expect(echoed).toContain("copyAssessment posts an empty form on mobile.");
   expect(echoed).not.toContain("opaque reasoning that must never travel");
 
-  /** A fresh session has never seen bb's instructions, so they ride again. */
+  /** A fresh session has never seen VesnALIA's instructions, so they ride again. */
   expect(echoed).toContain(INSTRUCTIONS);
 
-  /** Accepted exactly once: the rerun is bb's, not a second client request. */
+  /** Accepted exactly once: the rerun is VesnALIA's, not a second client request. */
   const accepted = collected.filter((delta) => delta.kind === "input.accepted");
   expect(accepted).toHaveLength(1);
 }, 45_000);
@@ -214,7 +214,7 @@ it("re-identifies the thread when a rebuild replaces the session", async () => {
     );
 
   /**
-   * bb resolves an approval back to its thread through the provider thread id
+   * VesnALIA resolves an approval back to its thread through the provider thread id
    * it last recorded. An identity announced once and never renewed leaves every
    * approval on the replacement session unresolvable — the prompt never appears
    * and Muse keeps holding the tool call.

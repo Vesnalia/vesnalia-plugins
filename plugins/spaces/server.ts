@@ -1,11 +1,11 @@
-// Spaces — Arc-style workspaces for bb's sidebar.
+// Spaces — Arc-style workspaces for VesnALIA's sidebar.
 //
 // A space is a named set of projects with an icon. Switching to a space hides
 // every project that belongs only to other spaces by writing the Thread list
 // plugin's `hiddenGroups` preference (keys `project:<id>`). Groups the user
 // hid by hand are kept: we remember which keys Spaces itself added and only
 // ever replace those.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const COLOR_RE = /^#[0-9a-fA-F]{6}$/;
@@ -13,7 +13,7 @@ const COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 const spaceSchema = z.object({
   id: z.string().regex(/^[a-z0-9-]{1,40}$/),
   name: z.string().trim().min(1).max(40),
-  /** A bb icon name, e.g. "Laptop". */
+  /** A VesnALIA icon name, e.g. "Laptop". */
   icon: z.string().regex(/^[A-Za-z0-9]{1,40}$/).optional(),
   /** Legacy field from v0.1; no longer shown. */
   color: z.string().regex(COLOR_RE).optional(),
@@ -112,11 +112,11 @@ const prefsSchema = z.object({
 });
 const setPrefSchema = z.object({ key: z.string(), value: z.unknown() });
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   async function listProjects(): Promise<SpaceProject[]> {
-    // bb's implicit personal project is not a project group in the thread
+    // VesnALIA's implicit personal project is not a project group in the thread
     // list (its threads show under "Threads"), so spaces cannot hide it.
-    const result = await bb.sdk.projects.list({ includePersonal: false });
+    const result = await alia.sdk.projects.list({ includePersonal: false });
     return result
       .filter((project) => project.id !== PERSONAL_PROJECT_ID)
       .map((project) => ({
@@ -127,7 +127,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function readSpaces(): Promise<Space[]> {
-    const stored = await bb.storage.kv.get<unknown>(KV_SPACES);
+    const stored = await alia.storage.kv.get<unknown>(KV_SPACES);
     const parsed = z.array(spaceSchema).safeParse(stored);
     if (parsed.success && parsed.data.length > 0) {
       // Spaces saved before icons existed get the seeded defaults.
@@ -143,18 +143,18 @@ export default async function plugin(bb: BbPluginApi) {
       { id: "work", name: "Work", icon: "Laptop", projectIds: [] },
       { id: "personal", name: "Personal", icon: "Home", projectIds: [] },
     ];
-    await bb.storage.kv.set(KV_SPACES, seeded);
+    await alia.storage.kv.set(KV_SPACES, seeded);
     return seeded;
   }
 
   async function readActive(spaces: Space[]): Promise<string | null> {
-    const id = await bb.storage.kv.get<string>(KV_ACTIVE);
+    const id = await alia.storage.kv.get<string>(KV_ACTIVE);
     if (id && spaces.some((space) => space.id === id)) return id;
     return null;
   }
 
   async function readThreadListPrefs() {
-    return bb.sdk.plugins.callRpc({
+    return alia.sdk.plugins.callRpc({
       pluginId: THREAD_LIST,
       method: "listPreferences",
       input: null,
@@ -165,7 +165,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function getState(): Promise<SpacesState> {
     const spaces = await readSpaces();
     const managed = new Set(
-      (await bb.storage.kv.get<string[]>(KV_MANAGED)) ?? [],
+      (await alia.storage.kv.get<string[]>(KV_MANAGED)) ?? [],
     );
     let hasUserHiddenGroups = false;
     try {
@@ -187,7 +187,7 @@ export default async function plugin(bb: BbPluginApi) {
       spaces: live,
       activeSpaceId: await readActive(spaces),
       projects,
-      showOthersInMore: (await bb.storage.kv.get<boolean>(KV_SHOW_MORE)) ?? false,
+      showOthersInMore: (await alia.storage.kv.get<boolean>(KV_SHOW_MORE)) ?? false,
       hasUserHiddenGroups,
     };
   }
@@ -206,7 +206,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function setThreadListPref(key: string, value: unknown) {
-    await bb.sdk.plugins.callRpc({
+    await alia.sdk.plugins.callRpc({
       pluginId: THREAD_LIST,
       method: "setPreference",
       input: { key, value, origin: "spaces" } as never,
@@ -218,7 +218,7 @@ export default async function plugin(bb: BbPluginApi) {
     const prefs = await readThreadListPrefs();
     const current = prefs.preferences.hiddenGroups ?? [];
     const previouslyManaged = new Set(
-      (await bb.storage.kv.get<string[]>(KV_MANAGED)) ?? [],
+      (await alia.storage.kv.get<string[]>(KV_MANAGED)) ?? [],
     );
     const managed = hiddenKeysFor(space, spaces);
     // Keep what the user hid themselves; replace only what we added.
@@ -230,13 +230,13 @@ export default async function plugin(bb: BbPluginApi) {
     // Project groups only exist when the list is organized by project.
     const mode = prefs.preferences.organizationMode;
     if (mode !== "project") {
-      if ((await bb.storage.kv.get<string>(KV_PREV_MODE)) === undefined && mode) {
-        await bb.storage.kv.set(KV_PREV_MODE, mode);
+      if ((await alia.storage.kv.get<string>(KV_PREV_MODE)) === undefined && mode) {
+        await alia.storage.kv.set(KV_PREV_MODE, mode);
       }
       await setThreadListPref("organizationMode", "project");
     }
-    await bb.storage.kv.set(KV_MANAGED, managed);
-    await bb.storage.kv.set(KV_ACTIVE, space.id);
+    await alia.storage.kv.set(KV_MANAGED, managed);
+    await alia.storage.kv.set(KV_ACTIVE, space.id);
   }
 
   // Serialize every write so two quick switches cannot interleave.
@@ -254,7 +254,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (!space) throw new Error(`No space with id ${spaceId}`);
       await apply(space, spaces);
       const state = await getState();
-      bb.realtime.publish(SPACES_CHANGED, { activeSpaceId: space.id });
+      alia.realtime.publish(SPACES_CHANGED, { activeSpaceId: space.id });
       return state;
     });
   }
@@ -265,21 +265,21 @@ export default async function plugin(bb: BbPluginApi) {
       const prefs = await readThreadListPrefs();
       const current = prefs.preferences.hiddenGroups ?? [];
       const managed = new Set(
-        (await bb.storage.kv.get<string[]>(KV_MANAGED)) ?? [],
+        (await alia.storage.kv.get<string[]>(KV_MANAGED)) ?? [],
       );
       const next = current.filter((key) => !managed.has(key));
       if (next.length !== current.length) {
         await setThreadListPref("hiddenGroups", next);
       }
-      const previous = await bb.storage.kv.get<string>(KV_PREV_MODE);
+      const previous = await alia.storage.kv.get<string>(KV_PREV_MODE);
       if (previous && prefs.preferences.organizationMode === "project") {
         await setThreadListPref("organizationMode", previous);
       }
-      await bb.storage.kv.delete(KV_PREV_MODE);
-      await bb.storage.kv.set(KV_MANAGED, []);
-      await bb.storage.kv.delete(KV_ACTIVE);
+      await alia.storage.kv.delete(KV_PREV_MODE);
+      await alia.storage.kv.set(KV_MANAGED, []);
+      await alia.storage.kv.delete(KV_ACTIVE);
       const state = await getState();
-      bb.realtime.publish(SPACES_CHANGED, { activeSpaceId: null });
+      alia.realtime.publish(SPACES_CHANGED, { activeSpaceId: null });
       return state;
     });
   }
@@ -291,16 +291,16 @@ export default async function plugin(bb: BbPluginApi) {
     return serial(async () => {
       const ids = new Set(spaces.map((s) => s.id));
       if (ids.size !== spaces.length) throw new Error("Space ids must be unique");
-      await bb.storage.kv.set(KV_SPACES, spaces);
+      await alia.storage.kv.set(KV_SPACES, spaces);
       if (showOthersInMore !== undefined) {
-        await bb.storage.kv.set(KV_SHOW_MORE, showOthersInMore);
+        await alia.storage.kv.set(KV_SHOW_MORE, showOthersInMore);
       }
       const active = await readActive(spaces);
       if (active !== null) {
         await apply(spaces.find((s) => s.id === active)!, spaces);
       }
       const state = await getState();
-      bb.realtime.publish(SPACES_CHANGED, { activeSpaceId: active });
+      alia.realtime.publish(SPACES_CHANGED, { activeSpaceId: active });
       return state;
     });
   }
@@ -326,16 +326,16 @@ export default async function plugin(bb: BbPluginApi) {
   };
 
   async function primaryHostId(): Promise<string> {
-    const config = await bb.sdk.system.config();
+    const config = await alia.sdk.system.config();
     if (config.primaryHostId) return config.primaryHostId;
-    const hosts = await bb.sdk.hosts.list();
+    const hosts = await alia.sdk.hosts.list();
     const host = hosts.find((h) => h.status === "connected") ?? hosts[0];
     if (!host) throw new Error("No machine is connected");
     return host.id;
   }
 
   /**
-   * Find folders by name on the host: first among git repos bb discovers,
+   * Find folders by name on the host: first among git repos VesnALIA discovers,
    * then next to folders already found (a multi-folder drop usually comes
    * from one parent), then a bounded walk from the home folder and drives.
    */
@@ -348,7 +348,7 @@ export default async function plugin(bb: BbPluginApi) {
     const missing = () => [...want].filter((key) => !found.has(key)).length;
 
     try {
-      const discovered = await bb.sdk.hosts.experimental_discoverRepos({ hostId });
+      const discovered = await alia.sdk.hosts.experimental_discoverRepos({ hostId });
       const repos = [...discovered.repos].sort((a, b) =>
         b.lastActivityAt.localeCompare(a.lastActivityAt),
       );
@@ -357,13 +357,13 @@ export default async function plugin(bb: BbPluginApi) {
         if (want.has(key) && !found.has(key)) found.set(key, repo.path);
       }
     } catch (cause) {
-      bb.log.warn(`discoverRepos failed: ${String(cause)}`);
+      alia.log.warn(`discoverRepos failed: ${String(cause)}`);
     }
 
     const listed = new Set<string>();
     async function list(path: string | undefined) {
       try {
-        const listing = await bb.sdk.hosts.directory({ hostId, path });
+        const listing = await alia.sdk.hosts.directory({ hostId, path });
         listed.add(normPath(listing.directory));
         return listing;
       } catch {
@@ -447,7 +447,7 @@ export default async function plugin(bb: BbPluginApi) {
         ? await resolveFolders(hostId, needLookup)
         : new Map<string, string>();
 
-    const existing = await bb.sdk.projects.list({ includePersonal: false });
+    const existing = await alia.sdk.projects.list({ includePersonal: false });
     const byPath = new Map<string, string>();
     for (const project of existing) {
       for (const source of project.sources ?? []) {
@@ -473,7 +473,7 @@ export default async function plugin(bb: BbPluginApi) {
         continue;
       }
       try {
-        const project = await bb.sdk.projects.create({
+        const project = await alia.sdk.projects.create({
           name,
           source: { type: "local_path", hostId, path },
         });
@@ -508,11 +508,11 @@ export default async function plugin(bb: BbPluginApi) {
       return { state: await saveSpaces(next, undefined), results };
     }
     const state = await getState();
-    bb.realtime.publish(SPACES_CHANGED, { activeSpaceId: state.activeSpaceId });
+    alia.realtime.publish(SPACES_CHANGED, { activeSpaceId: state.activeSpaceId });
     return { state, results };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     folders_add: ({ folders, spaceId }) => addFolders(folders, spaceId),
     state_get: () => getState(),
     space_switch: ({ spaceId }) => switchTo(spaceId),
@@ -523,32 +523,32 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb space list [--json]     List spaces; * marks the current one",
-    "  bb space <name|number>     Switch to a space",
-    "  bb space off               Show all projects and restore the list's grouping",
-    "  bb space add [--space <name|number>] <folder>...",
+    "  VesnALIA space list [--json]     List spaces; * marks the current one",
+    "  VesnALIA space <name|number>     Switch to a space",
+    "  VesnALIA space off               Show all projects and restore the list's grouping",
+    "  VesnALIA space add [--space <name|number>] <folder>...",
     "                             Make each folder (name or path) a project in a space",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "space",
     summary: "List and switch Arc-style sidebar spaces",
     commands: [
-      { name: "list", summary: "List spaces", usage: "bb space list [--json]" },
+      { name: "list", summary: "List spaces", usage: "alia space list [--json]" },
       {
         name: "off",
         summary: "Show all projects and restore the thread list's grouping",
-        usage: "bb space off [--json]",
+        usage: "alia space off [--json]",
       },
       {
         name: "add",
         summary: "Create projects from folders (names or paths) and put them in a space",
-        usage: "bb space add [--space <name|number>] <folder>... [--json]",
+        usage: "alia space add [--space <name|number>] <folder>... [--json]",
       },
       {
         name: "switch",
         summary: "Switch to a space by name or number (the word switch is optional)",
-        usage: "bb space [switch] <name|number>",
+        usage: "alia space [switch] <name|number>",
       },
     ],
     async run(argv) {
@@ -579,7 +579,7 @@ export default async function plugin(bb: BbPluginApi) {
         };
       }
       if (first === "add") {
-        // bb space add [--space <name|number>] <folder name|path>...
+        // VesnALIA space add [--space <name|number>] <folder name|path>...
         let rest = args.slice(1);
         let spaceQuery: string | null = null;
         const flag = rest.indexOf("--space");
@@ -588,7 +588,7 @@ export default async function plugin(bb: BbPluginApi) {
           rest = rest.filter((_, i) => i !== flag && i !== flag + 1);
         }
         if (rest.length === 0) {
-          return { exitCode: 1, stderr: "Usage: bb space add [--space <name|number>] <folder>..." };
+          return { exitCode: 1, stderr: "Usage: VesnALIA space add [--space <name|number>] <folder>..." };
         }
         let space: Space | undefined;
         if (spaceQuery !== null) {
@@ -597,7 +597,7 @@ export default async function plugin(bb: BbPluginApi) {
             ? state.spaces[Number(q) - 1]
             : state.spaces.find((s) => s.name.toLowerCase() === q || s.id === q);
           if (!space) {
-            return { exitCode: 1, stderr: `No space named "${spaceQuery}". Run "bb space list".` };
+            return { exitCode: 1, stderr: `No space named "${spaceQuery}". Run "alia space list".` };
           }
         } else if (state.activeSpaceId !== null) {
           space = state.spaces.find((s) => s.id === state.activeSpaceId);
@@ -629,7 +629,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (!target) {
         return {
           exitCode: 1,
-          stderr: `No space named "${nameArgs.join(" ")}". Run "bb space list".`,
+          stderr: `No space named "${nameArgs.join(" ")}". Run "alia space list".`,
         };
       }
       const next = await switchTo(target.id);

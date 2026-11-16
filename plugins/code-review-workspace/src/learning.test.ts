@@ -10,7 +10,7 @@ vi.mock("./gh", async (original) => ({
     : Promise.resolve({ stdout: JSON.stringify({ headRefOid: "sha1" }), stderr: "", code: 0 }),
 }));
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { reanchorDraft } from "./store";
 import { OUTCOMES_KEPT, suggestionLines } from "./learning";
@@ -31,9 +31,9 @@ const patch = [
 const at = { file: "a.ts", line: 3, side: "RIGHT" } as const;
 
 async function host(sdk: Record<string, unknown> = {}) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: sdk as any });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: sdk as any });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1" });
   await store.savePatch("pr-1", patch);
   await store.setAssistantThread("pr-1", "assistant");
@@ -42,7 +42,7 @@ async function host(sdk: Record<string, unknown> = {}) {
   const revision = async () => (await rpc("getReviewBundle", { targetKey: "pr-1" })).revision;
   const remove = (where: { file: string; line: number; side: "LEFT" | "RIGHT" } = at) => rpc("removeDraftComment", { targetKey: "pr-1", ...where });
   const save = async (body: string, where: { file: string; line: number; side: "LEFT" | "RIGHT" } = at) => rpc("saveDraftComment", { targetKey: "pr-1", revision: await revision(), comment: { ...where, body } });
-  return { bb, harness, store, rpc, tool, remove, save, revision };
+  return { alia, harness, store, rpc, tool, remove, save, revision };
 }
 
 test("the reviewer's removal of an agent's comment is remembered with its code; their own comments and Undo are not", async () => {
@@ -77,10 +77,10 @@ test("adding a comment on code whose comment the reviewer removed warns the agen
   await tool("add_draft_comment", { ...at, code: "const c = b * 2;", body: "Can this overflow?" });
   await remove();
   const again = await tool("add_draft_comment", { ...at, code: " const c = b * 2; ", body: "Overflow risk." });
-  expect(again).toBe('Added a draft comment on a.ts:3. It stays in bb until the reviewer submits the review. The reviewer removed an earlier comment on this code: "Can this overflow?". Unless this one makes a different point, delete it with delete_draft_comment.');
+  expect(again).toBe('Added a draft comment on a.ts:3. It stays in VesnALIA until the reviewer submits the review. The reviewer removed an earlier comment on this code: "Can this overflow?". Unless this one makes a different point, delete it with delete_draft_comment.');
   expect((await store.getDraft("pr-1")).comments).toEqual([{ ...at, author: "agent", body: "Overflow risk." }]);
   // Other code draws no warning.
-  expect(await tool("add_draft_comment", { file: "a.ts", line: 2, code: "const b = 3;", body: "Why 3?" })).toBe("Added a draft comment on a.ts:2. It stays in bb until the reviewer submits the review.");
+  expect(await tool("add_draft_comment", { file: "a.ts", line: 2, code: "const b = 3;", body: "Why 3?" })).toBe("Added a draft comment on a.ts:2. It stays in VesnALIA until the reviewer submits the review.");
 });
 
 test("submitting records each agent comment as kept, edited, or removed", async () => {
@@ -265,8 +265,8 @@ test("suggestion lines drop bullets and numbering and keep at most five", () => 
   expect(suggestionLines("* a\n• b\n3) c\n  d  \ne\nf")).toBe("a\nb\nc\nd\ne");
 });
 
-// bug bash AGT-14: BB may start the suggester's first session before its spawn returns, and until its record was written
-// it was an ordinary thread of yours to bb review, which could change any review's draft.
+// bug bash AGT-14: VesnALIA may start the suggester's first session before its spawn returns, and until its record was written
+// it was an ordinary thread of yours to VesnALIA review, which could change any review's draft.
 test("the suggester can't change a review's draft while its spawn is still in flight", async () => {
   let early: unknown;
   const { harness, store, rpc } = await host({
@@ -287,8 +287,8 @@ test("the suggester can't change a review's draft while its spawn is still in fl
   expect((await store.getDraft("pr-1")).comments).toEqual([]);
 });
 
-// bug bash F2: after a dispose, bb.sdk throws PluginContextStaleError; read in the run's finally, it rejected the run,
-// which started from an RPC has no service to catch it, and BB 0.46.1 exits on an unhandled rejection.
+// bug bash F2: after a dispose, alia.sdk throws PluginContextStaleError; read in the run's finally, it rejected the run,
+// which started from an RPC has no service to catch it, and VesnALIA 0.46.1 exits on an unhandled rejection.
 test("a suggestion running across a dispose ends without an unhandled rejection, and its worker is still archived and stopped", async () => {
   let waiting = false;
   const { harness, store, rpc } = await host({

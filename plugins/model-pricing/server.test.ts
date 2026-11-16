@@ -1,10 +1,10 @@
 /**
  * The server entry through the SDK's fake host: a reload while a fetch is in
  * flight. The new instance loads before the old one is disposed, and after
- * dispose the old instance's `bb` handle is stale — so the old fetch must be
+ * dispose the old instance's `VesnALIA` handle is stale — so the old fetch must be
  * aborted, and nothing it answers may be written through that handle.
  */
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import plugin from "./server";
@@ -39,7 +39,7 @@ describe("model-pricing server", () => {
     });
 
     const host = createFakePluginHost({ pluginId: "model-pricing" });
-    await plugin(host.bb);
+    await plugin(host.alia);
     live.push(host);
     const pending = host.harness.callRpc("load", { providers: ["openrouter"] });
     await vi.waitFor(() => expect(signals).toHaveLength(1));

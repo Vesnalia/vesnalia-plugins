@@ -1,8 +1,8 @@
-// The `bb.host` entry. It runs on the machine where agents run — the machine
+// The `alia.host` entry. It runs on the machine where agents run — the machine
 // that can reach Qlik Sense (often only inside a corporate network or VPN) and
 // that keeps the password in its own OS store. The server entry never sees the
 // password or Qlik data except tool answers on their way to an approved agent.
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostContract } from "../contract.js";
 import { QlikService } from "./host/service.js";
 

@@ -11,7 +11,7 @@ import type { GeneralConfig } from "../src/core/config.ts";
 import { openBoxFiles } from "../src/plugin/attached-files.ts";
 import { BOX_LOG_MIGRATIONS, BoxLogStore } from "../src/plugin/box-log-store.ts";
 import { gpuCommands } from "../src/plugin/gpu-cli.ts";
-import type { BbBox } from "../src/plugin/setup.ts";
+import type { AliaBox } from "../src/plugin/setup.ts";
 import { boxDetail, boxView, userspaceFixLine } from "../src/plugin/views.ts";
 import { FAKE_KINDS, FakeBackend } from "./fake-backend.ts";
 import { fakeNvidia, updateCalls, withFakeNvidia, type FakeNvidia } from "./fake-nvidia.ts";
@@ -101,7 +101,7 @@ test("071 unit 12: --check says what the update does and changes nothing; the up
   const plan = await state.boxes.updateUserspace(THREAD, box.id, { check: true });
   assert.equal(plan.needed, true);
   assert.equal(plan.changed, false);
-  assert.equal(plan.words, `BB Box installs NVIDIA's userspace 580.142 in ${box.name}, over 570.86, then restarts it. Everything running in it stops: python3 (3310) has the GPU open.`);
+  assert.equal(plan.words, `VesnALIA Box installs NVIDIA's userspace 580.142 in ${box.name}, over 570.86, then restarts it. Everything running in it stops: python3 (3310) has the GPU open.`);
   assert.deepEqual(updateCalls(state.nvidia), ["check"]);
   assert.equal((await found(state, box)).userspaceUpdate ?? null, null, "a check records no update");
   assert.equal((await found(state, box)).nvidiaUserspace, "570.86");
@@ -133,11 +133,11 @@ test("071 unit 12: --check says what the update does and changes nothing; the up
   state.nvidia.calls.length = 0;
   const again = await state.boxes.updateUserspace(THREAD, box.id, { check: true });
   assert.equal(again.needed, false);
-  assert.equal(again.words, `Box ${box.name} already has NVIDIA's userspace 580.142, the host's driver. BB Box changed nothing.`);
+  assert.equal(again.words, `Box ${box.name} already has NVIDIA's userspace 580.142, the host's driver. VesnALIA Box changed nothing.`);
   assert.deepEqual(updateCalls(state.nvidia), [], "nothing is checked or fetched when there is nothing to do");
 });
 
-test("071 unit 12: an update is refused before anything changes: NVIDIA packages from apt, a stopped box, a box with no GPU, a backend that keeps no userspace, and a host whose driver BB Box cannot tell", async () => {
+test("071 unit 12: an update is refused before anything changes: NVIDIA packages from apt, a stopped box, a box with no GPU, a backend that keeps no userspace, and a host whose driver VesnALIA Box cannot tell", async () => {
   const apt = world(fakeNvidia({ apt: ["nvidia-driver-570"] }));
   const box = await gpuBox(apt);
   const conflict = await rejectionOf(apt.boxes.updateUserspace(THREAD, box.id, { check: true }));
@@ -157,11 +157,11 @@ test("071 unit 12: an update is refused before anything changes: NVIDIA packages
 
   const none = world();
   const plain = await gpuBox(none, "none");
-  assert.equal((await rejectionOf(none.boxes.updateUserspace(THREAD, plain.id))).message, `Box ${plain.name} has no GPU, so nothing in it uses NVIDIA's userspace. BB Box changed nothing.`);
+  assert.equal((await rejectionOf(none.boxes.updateUserspace(THREAD, plain.id))).message, `Box ${plain.name} has no GPU, so nothing in it uses NVIDIA's userspace. VesnALIA Box changed nothing.`);
 
   const keepsNone = world(fakeNvidia(), []);
   const docker = await gpuBox(keepsNone);
-  assert.match((await rejectionOf(keepsNone.boxes.updateUserspace(THREAD, docker.id))).message, /keeps no NVIDIA userspace in its boxes, so box \S+ has none to update\. BB Box changed nothing\.$/);
+  assert.match((await rejectionOf(keepsNone.boxes.updateUserspace(THREAD, docker.id))).message, /keeps no NVIDIA userspace in its boxes, so box \S+ has none to update\. ALIA Box changed nothing\.$/);
 
   const unknown = world(fakeNvidia({ hostRefused: { why: "The GPU helper on pve-1 is not reporting.", fix: "Try again in a minute." } }));
   const unsure = await gpuBox(unknown);
@@ -176,7 +176,7 @@ test("071 unit 12: an install cut short leaves a half-installed userspace, which
   assert.equal(failed.code, "failed");
   assert.equal(
     failed.message,
-    `BB Box could not install NVIDIA's userspace 580.142 in box ${box.name}: ERROR: An error occurred while performing the step: "Installing 'NVIDIA Accelerated Graphics Driver'". It has a half-installed NVIDIA userspace: no NVIDIA libraries and a version file that says 570.86 now: run bb box gpu update ${box.name} again. It goes on running, and was not restarted.`,
+    `VesnALIA Box could not install NVIDIA's userspace 580.142 in box ${box.name}: ERROR: An error occurred while performing the step: "Installing 'NVIDIA Accelerated Graphics Driver'". It has a half-installed NVIDIA userspace: no NVIDIA libraries and a version file that says 570.86 now: run alia box gpu update ${box.name} again. It goes on running, and was not restarted.`,
   );
   const half = await found(state, box);
   assert.equal(half.state, "ready");
@@ -189,11 +189,11 @@ test("071 unit 12: an install cut short leaves a half-installed userspace, which
     action: "update-again",
   });
   assert.match(boxDetail(half), new RegExp(`^GPU: .*nvidia-smi and CUDA may fail in ${half.name}: it has a half-installed NVIDIA userspace: no NVIDIA libraries and a version file that says 570\\.86\\. Ask the user to update it again\\.$`, "m"));
-  assert.equal(userspaceFixLine(half), `NVIDIA userspace: It has a half-installed NVIDIA userspace: no NVIDIA libraries and a version file that says 570.86, so nvidia-smi and CUDA may fail in it. Update it again: bb box gpu update ${half.name} --thread ${THREAD}`);
+  assert.equal(userspaceFixLine(half), `NVIDIA userspace: It has a half-installed NVIDIA userspace: no NVIDIA libraries and a version file that says 570.86, so nvidia-smi and CUDA may fail in it. Update it again: VesnALIA box gpu update ${half.name} --thread ${THREAD}`);
   const checks = await state.boxes.userspaceChecks();
   const named = checks.find((check) => check.id === `gpu-userspace.${half.name}`);
   assert.equal(named?.status, "warn");
-  assert.equal(named?.fix, `Update it again: bb box gpu update ${half.name} --thread ${THREAD}`);
+  assert.equal(named?.fix, `Update it again: VesnALIA box gpu update ${half.name} --thread ${THREAD}`);
 
   state.nvidia.install = "works";
   const again = await state.boxes.updateUserspace(THREAD, box.id, { who: BY_COMMAND });
@@ -205,7 +205,7 @@ test("071 unit 12: an install cut short leaves a half-installed userspace, which
   assert.equal((await state.boxes.userspaceChecks()).some((check) => check.id.startsWith("gpu-userspace.")), false);
 });
 
-test("071 unit 12: BB Box restarting mid-install leaves the update unknown until BB Box reads the box again; the sweep reads it, names the half-installed userspace, and Update again fixes it", async () => {
+test("071 unit 12: VesnALIA Box restarting mid-install leaves the update unknown until VesnALIA Box reads the box again; the sweep reads it, names the half-installed userspace, and Update again fixes it", async () => {
   const state = world(fakeNvidia({ install: "hangs-half" }));
   const box = await gpuBox(state);
   const updating = state.boxes.updateUserspace(THREAD, box.id, { who: BY_COMMAND }).catch((error: unknown) => error);
@@ -217,15 +217,15 @@ test("071 unit 12: BB Box restarting mid-install leaves the update unknown until
   const stopped = state.boxes;
   await state.restart();
   assert.ok((await updating) instanceof Error);
-  assert.equal((await rejectionOf(stopped.updateUserspace(THREAD, box.id))).message, "BB Box is stopping, as for an update. Try again once it is back.");
+  assert.equal((await rejectionOf(stopped.updateUserspace(THREAD, box.id))).message, "VesnALIA Box is stopping, as for an update. Try again once it is back.");
   const cut = await found(state, box);
-  assert.equal(cut.userspaceUpdate?.state, "unknown", "BB Box stopped in the middle, so it does not know what the box has");
+  assert.equal(cut.userspaceUpdate?.state, "unknown", "VesnALIA Box stopped in the middle, so it does not know what the box has");
   assert.deepEqual(boxView(cut, true, { owner: "agent", holder: null }).userspaceNotice, {
-    words: `An update of NVIDIA's userspace in ${box.name} to 580.142 was cut short while installing it, and BB Box has not read its userspace since. bb box doctor reads it, and says whether that update is still running and when to update it again.`,
+    words: `An update of NVIDIA's userspace in ${box.name} to 580.142 was cut short while installing it, and VesnALIA Box has not read its userspace since. VesnALIA box doctor reads it, and says whether that update is still running and when to update it again.`,
     action: null,
   });
-  assert.equal(userspaceFixLine(cut), `NVIDIA userspace: An update of NVIDIA's userspace in ${box.name} to 580.142 was cut short while installing it, and BB Box has not read its userspace since. bb box doctor reads it, and says whether that update is still running and when to update it again.`, "status sends the person to the doctor, not to Update again, while the update may still run");
-  assert.match(boxDetail(cut), new RegExp(`^GPU: .*was cut short while installing it, and BB Box has not read its userspace since\\. nvidia-smi and CUDA may fail in it\\. Ask the user\\.$`, "m"));
+  assert.equal(userspaceFixLine(cut), `NVIDIA userspace: An update of NVIDIA's userspace in ${box.name} to 580.142 was cut short while installing it, and VesnALIA Box has not read its userspace since. VesnALIA box doctor reads it, and says whether that update is still running and when to update it again.`, "status sends the person to the doctor, not to Update again, while the update may still run");
+  assert.match(boxDetail(cut), new RegExp(`^GPU: .*was cut short while installing it, and VesnALIA Box has not read its userspace since\\. nvidia-smi and CUDA may fail in it\\. Ask the user\\.$`, "m"));
   state.nvidia.calls.length = 0;
 
   await state.boxes.sweep();
@@ -233,7 +233,7 @@ test("071 unit 12: BB Box restarting mid-install leaves the update unknown until
   assert.ok(state.nvidia.calls.includes("read"));
   const read = await found(state, box);
   assert.equal(read.userspaceUpdate?.state, "failed");
-  assert.match(read.userspaceUpdate?.error ?? "", /When BB Box read the box again, it had a half-installed NVIDIA userspace: no NVIDIA libraries and a version file that says 570\.86\.$/);
+  assert.match(read.userspaceUpdate?.error ?? "", /When ALIA Box read the box again, it had a half-installed NVIDIA userspace: no NVIDIA libraries and a version file that says 570\.86\.$/);
   assert.equal(boxView(read, true, { owner: "agent", holder: null }).userspaceNotice?.action, "update-again");
 
   state.nvidia.install = "works";
@@ -242,7 +242,7 @@ test("071 unit 12: BB Box restarting mid-install leaves the update unknown until
   assert.equal((await found(state, box)).userspaceUpdate?.state, "done");
 });
 
-test("071 unit 12: an update left updating by a crash of BB Box is cut short at the next sweep, which settles a box left starting and reads its userspace; one whose install had finished is named as not restarted", async () => {
+test("071 unit 12: an update left updating by a crash of VesnALIA Box is cut short at the next sweep, which settles a box left starting and reads its userspace; one whose install had finished is named as not restarted", async () => {
   const state = world();
   const box = await gpuBox(state);
   state.nvidia.file = "580.142";
@@ -250,15 +250,15 @@ test("071 unit 12: an update left updating by a crash of BB Box is cut short at 
   await state.boxes.update(box, () => ({ state: "starting", userspaceUpdate: { from: "570.86", to: "580.142", at: Date.now(), state: "updating", step: "install", ms: null, error: null } }));
   await state.restart(false);
   const early = (await state.boxes.userspaceChecks()).find((check) => check.id === `gpu-userspace.${box.name}`);
-  assert.match(early?.detail ?? "", /did not finish: it stopped while restarting the box: BB Box restarted before the update finished\./, "the doctor does not take an update from before a restart as running");
+  assert.match(early?.detail ?? "", /did not finish: it stopped while restarting the box: ALIA Box restarted before the update finished\./, "the doctor does not take an update from before a restart as running");
   await state.boxes.sweep();
   const settled = await found(state, box);
   assert.equal(settled.state, "ready", "a box left starting is settled by its power");
   assert.equal(settled.userspaceUpdate?.state, "failed");
   assert.equal(settled.userspaceUpdate?.step, "restart", "its install had finished, so what is left is the restart");
-  assert.ok(state.logs.some((line) => /an update of NVIDIA's userspace was cut short: BB Box restarted before the update finished\./.test(line)));
+  assert.ok(state.logs.some((line) => /an update of NVIDIA's userspace was cut short: ALIA Box restarted before the update finished\./.test(line)));
   assert.deepEqual(boxView(settled, true, { owner: "agent", holder: null }).userspaceNotice, {
-    words: `The last update of NVIDIA's userspace in ${box.name} to 580.142 did not finish: it stopped while restarting the box: BB Box restarted before the update finished. When BB Box read the box again, it had NVIDIA's userspace 580.142.`,
+    words: `The last update of NVIDIA's userspace in ${box.name} to 580.142 did not finish: it stopped while restarting the box: VesnALIA Box restarted before the update finished. When VesnALIA Box read the box again, it had NVIDIA's userspace 580.142.`,
     action: "update-again",
   });
   assert.deepEqual(updateCalls(state.nvidia), []);
@@ -278,31 +278,31 @@ test("071 unit 12: nothing updates NVIDIA's userspace by itself: not an acquire,
 
   const summary = checks.find((check) => check.id === "gpu-userspace");
   assert.equal(summary?.status, "ok");
-  assert.match(summary?.detail ?? "", /^0 boxes with a GPU have NVIDIA's userspace for their host's driver\. 1 box needs a look, below\. BB Box never updates a box's userspace by itself\.$/);
+  assert.match(summary?.detail ?? "", /^0 boxes with a GPU have NVIDIA's userspace for their host's driver\. 1 box needs a look, below\. ALIA Box never updates a box's userspace by itself\.$/);
   const named = checks.find((check) => check.id === `gpu-userspace.${box.name}`);
   assert.deepEqual(named && { status: named.status, detail: named.detail, fix: named.fix }, {
     status: "warn",
     detail: `Box ${box.name} has NVIDIA's userspace 570.86, and the host's driver is 580.142: nvidia-smi and CUDA fail in it until its userspace is updated.`,
-    fix: `Update it: bb box gpu update ${box.name} --thread ${THREAD}`,
+    fix: `Update it: VesnALIA box gpu update ${box.name} --thread ${THREAD}`,
   });
   const ready = await found(state, box);
   assert.match(boxDetail(ready), new RegExp(`^GPU: .*nvidia-smi in ${box.name} fails: its NVIDIA userspace is 570\\.86 and the host's driver 580\\.142\\. Ask the user to update it\\.$`, "m"));
 
   await state.boxes.stop(THREAD, box.id);
   const stopped = (await state.boxes.userspaceChecks()).find((check) => check.id === `gpu-userspace.${box.name}`);
-  assert.match(stopped?.detail ?? "", / It is stopped: this is as BB Box read it at \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC\.$/);
-  assert.equal(stopped?.fix, `Start ${box.name}, then update it: bb box gpu update ${box.name} --thread ${THREAD}`);
-  assert.equal(userspaceFixLine(await found(state, box)), `NVIDIA userspace: Its NVIDIA userspace is 570.86, and the host's driver 580.142: nvidia-smi and CUDA fail in it until its userspace is updated. Update it once it runs: bb box gpu update ${box.name} --thread ${THREAD}`);
+  assert.match(stopped?.detail ?? "", / It is stopped: this is as ALIA Box read it at \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC\.$/);
+  assert.equal(stopped?.fix, `Start ${box.name}, then update it: VesnALIA box gpu update ${box.name} --thread ${THREAD}`);
+  assert.equal(userspaceFixLine(await found(state, box)), `NVIDIA userspace: Its NVIDIA userspace is 570.86, and the host's driver 580.142: nvidia-smi and CUDA fail in it until its userspace is updated. Update it once it runs: VesnALIA box gpu update ${box.name} --thread ${THREAD}`);
   assert.deepEqual(updateCalls(state.nvidia), []);
 
   await state.boxes.update(box, () => ({ userspaceRead: null, nvidiaUserspace: null }));
   const unread = (await state.boxes.userspaceChecks()).find((check) => check.id === `gpu-userspace.${box.name}`);
-  assert.deepEqual(unread && { status: unread.status, detail: unread.detail }, { status: "ok", detail: `Box ${box.name} is stopped, and BB Box has not read its NVIDIA userspace yet: it does when ${box.name} next starts.` });
+  assert.deepEqual(unread && { status: unread.status, detail: unread.detail }, { status: "ok", detail: `Box ${box.name} is stopped, and VesnALIA Box has not read its NVIDIA userspace yet: it does when ${box.name} next starts.` });
   await state.boxes.start(THREAD, box.id);
-  assert.equal((await found(state, box)).nvidiaUserspace, "570.86", "a start BB Box makes reads it");
+  assert.equal((await found(state, box)).nvidiaUserspace, "570.86", "a start VesnALIA Box makes reads it");
 });
 
-test("071 unit 12: the doctor reads a running box's userspace now, so a change BB Box did not make is named; a box with no GPU is not checked", async () => {
+test("071 unit 12: the doctor reads a running box's userspace now, so a change VesnALIA Box did not make is named; a box with no GPU is not checked", async () => {
   const state = world(fakeNvidia({ file: "580.142", library: "580.142" }));
   const box = await gpuBox(state);
   await gpuBox(state, "none");
@@ -338,12 +338,12 @@ function cli(state: World, options: { readonly working?: boolean; readonly snaps
         return { snapshot: { name: "Fri 22:30" } };
       },
     },
-  } as unknown as BbBox;
+  } as unknown as AliaBox;
   const run = gpuCommands(app)["gpu update"] as unknown as { run: CliRun };
   return { run: (boxes: string[], flags: Record<string, unknown> = {}) => run.run({ positionals: { box: boxes }, options: { thread: THREAD, ...flags } }, {}), taken, guarded };
 }
 
-test("071 unit 12: bb box gpu update --check says what the update does, who is working on the box and that --snapshot takes one first, and changes nothing", async () => {
+test("071 unit 12: VesnALIA box gpu update --check says what the update does, who is working on the box and that --snapshot takes one first, and changes nothing", async () => {
   const state = world(fakeNvidia({ processes: ["3310 python3"] }));
   const box = await gpuBox(state);
   const { run } = cli(state, { working: true, snapshots: true });
@@ -351,13 +351,13 @@ test("071 unit 12: bb box gpu update --check says what the update does, who is w
   assert.equal(checked.exitCode, 0);
   assert.equal(
     checked.stdout,
-    `BB Box installs NVIDIA's userspace 580.142 in ${box.name}, over 570.86, then restarts it. Everything running in it stops: python3 (3310) has the GPU open. A thread is working on it, "Train the model": the restart ends its work, so BB Box refuses it unless --force. --snapshot takes a snapshot of it first, so you can restore it. Changes nothing (--check).\n`,
+    `VesnALIA Box installs NVIDIA's userspace 580.142 in ${box.name}, over 570.86, then restarts it. Everything running in it stops: python3 (3310) has the GPU open. A thread is working on it, "Train the model": the restart ends its work, so VesnALIA Box refuses it unless --force. --snapshot takes a snapshot of it first, so you can restore it. Changes nothing (--check).\n`,
   );
   assert.deepEqual(updateCalls(state.nvidia), ["check"]);
   assert.equal((await found(state, box)).userspaceUpdate ?? null, null);
 });
 
-test("071 unit 12: bb box gpu update is refused while a thread works on the box unless --force, takes a snapshot first with --snapshot, and updates several boxes one at a time, saying which failed", async () => {
+test("071 unit 12: VesnALIA box gpu update is refused while a thread works on the box unless --force, takes a snapshot first with --snapshot, and updates several boxes one at a time, saying which failed", async () => {
   const state = world();
   const box = await gpuBox(state);
   const busy = cli(state, { working: true, snapshots: true });
@@ -370,7 +370,7 @@ test("071 unit 12: bb box gpu update is refused while a thread works on the box 
   busy.guarded.length = 0;
   const forced = await busy.run([box.name], { force: true, snapshot: true });
   assert.equal(forced.exitCode, 0, forced.stderr);
-  assert.deepEqual(busy.taken, [`${box.name}: named by the time: Taken by bb box gpu update before it installed NVIDIA's userspace 580.142 over 570.86.`], "named by the time, so a second update's snapshot never takes the first's name");
+  assert.deepEqual(busy.taken, [`${box.name}: named by the time: Taken by VesnALIA box gpu update before it installed NVIDIA's userspace 580.142 over 570.86.`], "named by the time, so a second update's snapshot never takes the first's name");
   assert.match(forced.stdout ?? "", new RegExp(`^Took snapshot "Fri 22:30" first\\. Updated NVIDIA's userspace in box ${box.name} from 570\\.86 to 580\\.142`));
   assert.deepEqual(busy.guarded, [true, true, true], "--force reaches the restart's guard: before the snapshot, before the update's first step and just before its restart");
 
@@ -381,7 +381,7 @@ test("071 unit 12: bb box gpu update is refused while a thread works on the box 
   assert.equal(several.exitCode, 1);
   assert.equal(several.stdout, "");
   const [first, second] = (several.stderr ?? "").trim().split("\n");
-  assert.equal(first, `${plain.name}: Box ${plain.name} has no GPU, so nothing in it uses NVIDIA's userspace. BB Box changed nothing. (unsupported)`);
+  assert.equal(first, `${plain.name}: Box ${plain.name} has no GPU, so nothing in it uses NVIDIA's userspace. VesnALIA Box changed nothing. (unsupported)`);
   assert.match(second ?? "", new RegExp(`^${box.name}: Updated NVIDIA's userspace in box ${box.name} from 570\\.86 to 580\\.142`));
 });
 
@@ -391,7 +391,7 @@ test("071 unit 12: an update whose check after the restart fails is named as not
   state.nvidia.card = null;
   const failed = await rejectionOf(state.boxes.updateUserspace(THREAD, box.id, { who: BY_COMMAND }));
   assert.equal(failed.code, "failed");
-  assert.match(failed.message, new RegExp(`^BB Box installed NVIDIA's userspace 580\\.142 in box ${box.name} and restarted it, but its check after the restart failed: nvidia-smi in it listed no card, not its card 3f9a2c1e-55b0-4c1d-9e2a-0b7d6c4a1f00 \\(Failed to initialize NVML: Driver/library version mismatch\\)\\. It goes on running\\. Run bb box gpu update ${box.name} again, or bb box doctor\\.$`));
+  assert.match(failed.message, new RegExp(`^VesnALIA Box installed NVIDIA's userspace 580\\.142 in box ${box.name} and restarted it, but its check after the restart failed: nvidia-smi in it listed no card, not its card 3f9a2c1e-55b0-4c1d-9e2a-0b7d6c4a1f00 \\(Failed to initialize NVML: Driver/library version mismatch\\)\\. It goes on running\\. Run alia box gpu update ${box.name} again, or VesnALIA box doctor\\.$`));
   const after = await found(state, box);
   assert.equal(after.state, "ready");
   assert.equal(after.nvidiaUserspace, "580.142");
@@ -423,8 +423,8 @@ test("071 unit 12: one of the person's machines is named with --machine, and spa
   const state = world(fakeNvidia(), ["linux", "linux-desktop"], { "linux-desktop": 1 });
   const machine = await gpuBox(state, "shared", "linux", OPERATOR);
   const named = (await state.boxes.userspaceChecks()).find((check) => check.id === `gpu-userspace.${machine.name}`);
-  assert.equal(named?.fix, `Update it: bb box gpu update ${machine.name} --machine`);
-  assert.match(userspaceFixLine(await found(state, machine)) ?? "", new RegExp(`: bb box gpu update ${machine.name} --machine$`));
+  assert.equal(named?.fix, `Update it: VesnALIA box gpu update ${machine.name} --machine`);
+  assert.match(userspaceFixLine(await found(state, machine)) ?? "", new RegExp(`: VesnALIA box gpu update ${machine.name} --machine$`));
 
   await state.boxes.keepSpares();
   await state.boxes.idle();
@@ -450,7 +450,7 @@ test("071 unit 12: a check after the restart that cannot run fails the update at
   assert.deepEqual([(await found(state, box)).userspaceUpdate?.state, (await found(state, box)).userspaceUpdate?.step], ["failed", "check"]);
 });
 
-test("071 unit 12: while an earlier update still runs in the box, as one BB Box lost when it restarted, the sweep and the doctor leave it unknown, a new update is refused before any check, and once it ends the sweep settles it and Update again works", async () => {
+test("071 unit 12: while an earlier update still runs in the box, as one VesnALIA Box lost when it restarted, the sweep and the doctor leave it unknown, a new update is refused before any check, and once it ends the sweep settles it and Update again works", async () => {
   const state = world(fakeNvidia({ install: "hangs-half" }));
   const box = await gpuBox(state);
   const updating = state.boxes.updateUserspace(THREAD, box.id, { who: BY_COMMAND }).catch((error: unknown) => error);
@@ -467,21 +467,21 @@ test("071 unit 12: while an earlier update still runs in the box, as one BB Box 
   const named = (await state.boxes.userspaceChecks()).find((check) => check.id === `gpu-userspace.${box.name}`);
   assert.deepEqual(named && { status: named.status, detail: named.detail, fix: named.fix }, {
     status: "warn",
-    detail: `An earlier update of NVIDIA's userspace is still running in box ${box.name}: BB Box reads its userspace once it ends, and starts no other update until then.`,
-    fix: "Wait for it to end, then run bb box doctor again.",
+    detail: `An earlier update of NVIDIA's userspace is still running in box ${box.name}: VesnALIA Box reads its userspace once it ends, and starts no other update until then.`,
+    fix: "Wait for it to end, then run alia box doctor again.",
   });
   const busy = await found(state, box);
   assert.equal(typeof busy.userspaceRunningSeenAt, "number", "the held lock is recorded on the box");
   assert.deepEqual(boxView(busy, true, { owner: "agent", holder: null }).userspaceNotice, {
-    words: "An earlier update of NVIDIA's userspace is still running in it: BB Box reads its userspace once it ends, and starts no other update until then.",
+    words: "An earlier update of NVIDIA's userspace is still running in it: VesnALIA Box reads its userspace once it ends, and starts no other update until then.",
     action: null,
   });
-  assert.equal(userspaceFixLine(busy), "NVIDIA userspace: An earlier update of NVIDIA's userspace is still running in it: BB Box reads its userspace once it ends, and starts no other update until then.", "status offers no Update again while it runs");
-  assert.match(boxDetail(busy), new RegExp(`^GPU: .*An earlier update of NVIDIA's userspace is still running in box ${box.name}: BB Box reads its userspace once it ends, and starts no other update until then\\. nvidia-smi and CUDA may fail in it until it ends\\. Ask the user\\.$`, "m"));
+  assert.equal(userspaceFixLine(busy), "NVIDIA userspace: An earlier update of NVIDIA's userspace is still running in it: VesnALIA Box reads its userspace once it ends, and starts no other update until then.", "status offers no Update again while it runs");
+  assert.match(boxDetail(busy), new RegExp(`^GPU: .*An earlier update of NVIDIA's userspace is still running in box ${box.name}: VesnALIA Box reads its userspace once it ends, and starts no other update until then\\. nvidia-smi and CUDA may fail in it until it ends\\. Ask the user\\.$`, "m"));
   for (const check of [true, false]) {
     const refused = await rejectionOf(state.boxes.updateUserspace(THREAD, box.id, { check }));
     assert.equal(refused.code, "try_again");
-    assert.equal(refused.message, `Not changed: an earlier update of NVIDIA's userspace is still running in box ${box.name}: BB Box reads its userspace once it ends, and starts no other update until then. Run this again once it has ended: bb box doctor says when it has.`);
+    assert.equal(refused.message, `Not changed: an earlier update of NVIDIA's userspace is still running in box ${box.name}: VesnALIA Box reads its userspace once it ends, and starts no other update until then. Run this again once it has ended: VesnALIA box doctor says when it has.`);
   }
   assert.deepEqual(updateCalls(state.nvidia), [], "nothing is checked, fetched or installed beside it");
   assert.equal((await found(state, box)).userspaceUpdate?.state, "unknown");
@@ -491,7 +491,7 @@ test("071 unit 12: while an earlier update still runs in the box, as one BB Box 
   await state.boxes.sweep();
   const settled = await found(state, box);
   assert.equal(settled.userspaceUpdate?.state, "failed");
-  assert.match(settled.userspaceUpdate?.error ?? "", /When BB Box read the box again, it had a half-installed NVIDIA userspace/);
+  assert.match(settled.userspaceUpdate?.error ?? "", /When ALIA Box read the box again, it had a half-installed NVIDIA userspace/);
   assert.equal(settled.userspaceRunningSeenAt, null, "a reading with the lock free clears it");
   assert.equal(boxView(settled, true, { owner: "agent", holder: null }).userspaceNotice?.action, "update-again");
   assert.equal((await state.boxes.updateUserspace(THREAD, box.id, { who: BY_COMMAND })).changed, true);
@@ -511,7 +511,7 @@ test("071 unit 12: the restart's guard is asked again just before the restart, s
   assert.equal(failed.code, "in_use");
   assert.equal(
     failed.message,
-    `BB Box installed NVIDIA's userspace 580.142 in box ${box.name}, but did not restart it: Restarting box ${box.name} would end the work of thread "Train the model", which is working on it. Wait until it is done. Its programs keep the old libraries until it restarts. Run bb box gpu update ${box.name} again once it can restart.`,
+    `VesnALIA Box installed NVIDIA's userspace 580.142 in box ${box.name}, but did not restart it: Restarting box ${box.name} would end the work of thread "Train the model", which is working on it. Wait until it is done. Its programs keep the old libraries until it restarts. Run alia box gpu update ${box.name} again once it can restart.`,
   );
   const after = await found(state, box);
   assert.equal(after.state, "ready");
@@ -531,7 +531,7 @@ test("071 unit 12: a restart that fails after the install says the new userspace
     return start(...args);
   };
   const failed = await rejectionOf(state.boxes.updateUserspace(THREAD, box.id));
-  assert.match(failed.message, new RegExp(`^BB Box installed NVIDIA's userspace 580\\.142 in box ${box.name}, but could not restart it: .*the box did not start\\. It is stopped now, with the new userspace on its disk\\. Run bb box gpu update ${box.name} again once it runs\\.$`));
+  assert.match(failed.message, new RegExp(`^VesnALIA Box installed NVIDIA's userspace 580\\.142 in box ${box.name}, but could not restart it: .*the box did not start\\. It is stopped now, with the new userspace on its disk\\. Run alia box gpu update ${box.name} again once it runs\\.$`));
 });
 
 test("071 unit 12: a failed update is settled once a reading after a start, or after a download that failed, shows the host's driver, so the box is no longer named and no update reinstalls it", async () => {
@@ -552,7 +552,7 @@ test("071 unit 12: a failed update is settled once a reading after a start, or a
   await cut.boxes.stop(THREAD, restarted.id);
   await cut.boxes.start(THREAD, restarted.id);
   const settled = await found(cut, restarted);
-  assert.equal(settled.userspaceUpdate?.state, "done", "a reading at a start BB Box makes settles it");
+  assert.equal(settled.userspaceUpdate?.state, "done", "a reading at a start VesnALIA Box makes settles it");
   assert.equal(boxView(settled, true, { owner: "agent", holder: null }).userspaceNotice, null);
   cut.nvidia.calls.length = 0;
   assert.equal((await cut.boxes.updateUserspace(THREAD, restarted.id, { check: true })).needed, false);
@@ -567,7 +567,7 @@ test("071 unit 12: the doctor says why it did not read a running box it has no r
   const check = (await state.boxes.userspaceChecks()).find((candidate) => candidate.id === `gpu-userspace.${box.name}`);
   assert.deepEqual(check && { status: check.status, detail: check.detail }, {
     status: "ok",
-    detail: `BB Box has not read NVIDIA's userspace in box ${box.name} yet, and did not now, as BB Box could not read the host's driver: Reading the host's NVIDIA driver failed: the host's report could not be read: the doctor reads it at its next run.`,
+    detail: `VesnALIA Box has not read NVIDIA's userspace in box ${box.name} yet, and did not now, as VesnALIA Box could not read the host's driver: Reading the host's NVIDIA driver failed: the host's report could not be read: the doctor reads it at its next run.`,
   });
 });
 
@@ -579,7 +579,7 @@ test("071 unit 12: a failed update is settled against the host's driver as read 
   state.nvidia.calls.length = 0;
   const again = await state.boxes.updateUserspace(THREAD, box.id, { check: true });
   assert.equal(again.needed, false);
-  assert.equal(again.words, `Box ${box.name} already has NVIDIA's userspace 570.86, the host's driver. BB Box changed nothing.`);
+  assert.equal(again.words, `Box ${box.name} already has NVIDIA's userspace 570.86, the host's driver. VesnALIA Box changed nothing.`);
   assert.deepEqual(updateCalls(state.nvidia), []);
   assert.equal((await found(state, box)).userspaceUpdate?.state, "done");
 });

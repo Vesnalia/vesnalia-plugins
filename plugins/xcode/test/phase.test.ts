@@ -54,7 +54,7 @@ describe("isResolvingPackages", () => {
   const RESOLVE =
     "/Applications/Xcode-26.6.0.app/Contents/Developer/usr/bin/xcodebuild -resolvePackageDependencies -scmProvider system -clonedSourcePackagesDirPath .build/DerivedData/SourcePackages";
   const UNZIP =
-    "unzip /Users/me/.bb/worktrees/env_x/indexed/ios/Index/.build/DerivedData/SourcePackages/prebuilts/swift-syntax/602.0.0/swiftlang-6.3.3.1.3.zip";
+    "unzip /Users/me/.vesnalia/worktrees/env_x/indexed/ios/Index/.build/DerivedData/SourcePackages/prebuilts/swift-syntax/602.0.0/swiftlang-6.3.3.1.3.zip";
 
   it("recognises the invocation that IS a resolve", () => {
     expect(isResolvingPackages(RESOLVE)).toBe(true);

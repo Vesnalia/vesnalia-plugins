@@ -9,7 +9,7 @@ sit on a solid column or on frosted glass that lets the wallpaper show through.
   (a light veil). In dark mode the glass dims bright frames so text stays
   readable, the composer becomes a matching glass capsule, and the sheet keeps
   its margins from phone to 4K widths. Set it per slot, or with
-  `bb aura-motion chat glass`.
+  `alia aura-motion chat glass`.
 - **Video wallpapers.** Upload an MP4 (H.264) or WebM loop up to 24 MB and
   4,096 px per side, so a 4K loop plays in full colour. Videos play muted and
   looped. Turn the texture off to show the video exactly as encoded, or keep
@@ -21,10 +21,10 @@ sit on a solid column or on frosted glass that lets the wallpaper show through.
   resized to fit the 2 MB stored-image limit. Choose how the dither texture
   moves across the photo: Wave, Ripple, Diagonal drift, Shimmer or Still.
 - **Patterns without an image.** Drifting noise, Warp, Falling dots, Sine
-  wave, Ripple, Swirl or Lit sphere, in lavender or your BB theme color.
+  wave, Ripple, Swirl or Lit sphere, in lavender or your VesnALIA theme color.
 - **Dither styles.** Grain, or a 2×2, 4×4 or 8×8 ordered grid.
 - **Six saved slots.** Save an image with its appearance and switch with one
-  click, from Settings or with `bb aura-motion use <1-6>`.
+  click, from Settings or with `alia aura-motion use <1-6>`.
 - **Where it shows.** Full or half wallpaper on New thread, and optionally in
   every conversation. The settings preview switches between Chat and New
   thread so you can see either before applying.
@@ -40,8 +40,8 @@ instead. With Reduce Transparency turned on, every glass surface turns solid.
 
 ## Requirements
 
-- Images stay on your BB server and are never sent anywhere else.
-- The activity overview needs the GitHub CLI signed in on the BB server
+- Images stay on your VesnALIA server and are never sent anywhere else.
+- The activity overview needs the GitHub CLI signed in on the VesnALIA server
   (`gh auth login`). It makes no requests while it is off.
 - GIF playback through the dither effect needs WebCodecs' ImageDecoder, which
   Chromium-based browsers provide. Without it, the GIF's first frame shows.

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { experimental_Icon as Icon, UrlLink } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, UrlLink } from "@vesnalia/plugin-sdk/app";
 import { change, dollars, tokenCount } from "../amounts";
 import type { UsageOutcome, UsageRange, UsageView as Usage } from "../contract";
 import { addDays, isDay, periodLabel, previousText, RANGE_DAYS, stepEnd } from "../period";
@@ -80,7 +80,7 @@ function Source({ data }: { data: Usage }) {
     return (
       <div data-usage-source="missing" className="mb-2.5 rounded-lg border border-border bg-card px-3 py-2.5 text-xs text-muted-foreground">
         <b className="block text-[13px] text-foreground">Token usage comes from the Burn plugin</b>
-        Burn reads what every thread used, whatever harness runs it, and Shuttle splits it between your reviews. bb says it is not there: {source.message}.{" "}
+        Burn reads what every thread used, whatever harness runs it, and Shuttle splits it between your reviews. VesnALIA says it is not there: {source.message}.{" "}
         <UrlLink href={BURN_URL} className="text-primary hover:underline">Install Burn</UrlLink>, and Shuttle reads your reviews of the last 90 days within a few minutes.
       </div>
     );

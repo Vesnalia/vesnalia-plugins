@@ -1,8 +1,8 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { threadHistoryTag, type HistoryPage } from "./contracts";
 import {
@@ -49,7 +49,7 @@ describe("Git history server", () => {
       revision: "abc123\0main\0",
       unavailableReason: null,
     };
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "git-history",
       sdk: {
         threads: {
@@ -60,7 +60,7 @@ describe("Git history server", () => {
         ? { path: "README.md", patch: "@@ -1 +1,2 @@", truncated: false }
         : historyPage,
     });
-    plugin(bb);
+    plugin(alia);
 
     expect(harness.registrations.settingsDescriptors.showHeaderShortcut).toEqual({
       type: "boolean",
@@ -157,7 +157,7 @@ describe("Git history server", () => {
       revision: "revision-1",
       unavailableReason: null,
     };
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "git-history",
       sdk: {
         threads: {
@@ -199,7 +199,7 @@ describe("Git history server", () => {
         }
       },
     });
-    plugin(bb);
+    plugin(alia);
 
     await expect(harness.behavior.callRpc("repositories", { threadId: "thread-1" })).resolves.toEqual({
       repositories: [
@@ -338,7 +338,7 @@ describe("Git history server", () => {
         updatedAt: 1,
       },
     };
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "git-history",
       sdk: {
         threads: {
@@ -348,7 +348,7 @@ describe("Git history server", () => {
         },
       },
     });
-    plugin(bb);
+    plugin(alia);
 
     for (const threadId of ["thread-missing", "thread-provisioning"]) {
       await expect(harness.behavior.callRpc("repositories", { threadId })).resolves.toEqual(
@@ -369,7 +369,7 @@ describe("Git history server", () => {
   });
 
   describe("refreshing watched history", () => {
-    type Subscription = Parameters<BbPluginApi["sdk"]["subscribe"]>[0];
+    type Subscription = Parameters<AliaPluginApi["sdk"]["subscribe"]>[0];
 
     afterEach(() => {
       vi.useRealTimers();
@@ -399,7 +399,7 @@ describe("Git history server", () => {
           },
         },
       });
-      plugin(fake.bb);
+      plugin(fake.alia);
       const emit = async (
         event: "thread:changed" | "environment:changed",
         payload: object,

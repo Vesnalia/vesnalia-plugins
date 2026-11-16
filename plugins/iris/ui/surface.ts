@@ -1,5 +1,5 @@
 // The color actually behind an element: every translucent layer above it down to the first
-// opaque one, as a CSS background. bb's panels are often a tint over the page, so a single
+// opaque one, as a CSS background. VesnALIA's panels are often a tint over the page, so a single
 // color (or a guessed token) would let content show through.
 
 /** The alpha of a computed CSS color: rgb(), rgba(), or the "/ a" form of oklab, oklch and color(). */

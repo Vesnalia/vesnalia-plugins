@@ -10,7 +10,7 @@
  * (`app/html.ts`), because a bot's body — Dependabot's, most of all — is
  * written in it.
  *
- * bb's own `Markdown` component is not used for bodies on purpose: it takes
+ * VesnALIA's own `Markdown` component is not used for bodies on purpose: it takes
  * only `content` and `className`, so it gives no say over how images load — and
  * an image from outside GitHub must wait for a tap (`app/image-gate.ts`), while
  * one on GitHub must come through the server with the token. Here every image is either a block the panel

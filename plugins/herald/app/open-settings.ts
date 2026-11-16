@@ -1,14 +1,14 @@
 /**
- * Opens Herald's page in bb's settings (the host-rendered form and the
+ * Opens Herald's page in VesnALIA's settings (the host-rendered form and the
  * settings section) from the Herald page.
  *
  * The panel SDK has no call for it: only a sidebar-footer action is handed
- * `openSettings()`, and in bb 0.44 that navigates to
+ * `openSettings()`, and in VesnALIA 0.44 that navigates to
  * `/settings/plugins/<pluginId>`. This goes to the same route the way the
  * app's react-router browser history does — push the route with the router's
  * `{ usr, key, idx }` state, then dispatch the `popstate` it listens for — as
- * `firstmate-crew` does. It is an internal route: if a later bb moves it, the
- * push lands on bb's not-found page, and the caller's toast says where the
+ * `firstmate-crew` does. It is an internal route: if a later VesnALIA moves it, the
+ * push lands on VesnALIA's not-found page, and the caller's toast says where the
  * settings are.
  */
 

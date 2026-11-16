@@ -1,4 +1,4 @@
-import { type BbPluginApi, cliCommand, defineCli, type PluginCliResult } from "@get-bb/plugin-sdk";
+import { type AliaPluginApi, cliCommand, defineCli, type PluginCliResult } from "@vesnalia/plugin-sdk";
 import { createHash, randomBytes } from "node:crypto";
 import { copyFile, readFile } from "node:fs/promises";
 import { homedir } from "node:os";
@@ -18,29 +18,29 @@ const machineOption = {
   description: "Select one enrolled machine by name or ID. The default is all persistent machines.",
 } as const;
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     gatewayUrl: { type: "string", label: "Magpie gateway", default: "http://127.0.0.1:3425" },
     gatewayKey: {
       type: "string",
       label: "Magpie gateway key",
       secret: true,
       default: "",
-      description: "Only needed when the gateway requires a key. Kept on the BB server.",
+      description: "Only needed when the gateway requires a key. Kept on the VesnALIA server.",
     },
     webUrl: {
       type: "string",
       label: "Magpie Web UI origin",
       default: "",
       description:
-        "HTTP(S) origin reached by the BB server, such as http://127.0.0.1:3430. Enables monitoring details.",
+        "HTTP(S) origin reached by the VesnALIA server, such as http://127.0.0.1:3430. Enables monitoring details.",
     },
     webKey: {
       type: "string",
       label: "Magpie Web UI key",
       secret: true,
       default: "",
-      description: "MAGPIE_WEB_KEY from magpie web. Kept on the BB server; never sent to the browser.",
+      description: "MAGPIE_WEB_KEY from magpie web. Kept on the VesnALIA server; never sent to the browser.",
     },
     webLink: {
       type: "string",
@@ -53,7 +53,7 @@ export default async function plugin(bb: BbPluginApi) {
       type: "string",
       label: "Magpie Pi config directory",
       default: process.env.PI_CODING_AGENT_DIR || join(homedir(), ".pi", "agent"),
-      description: "Directory on the BB server where Magpie writes Pi models.json and settings.json.",
+      description: "Directory on the VesnALIA server where Magpie writes Pi models.json and settings.json.",
     },
     codexRouting: { type: "boolean", label: "Route native Codex through Magpie", default: false },
     claudeRouting: { type: "boolean", label: "Route native Claude Code through Magpie", default: false },
@@ -75,61 +75,61 @@ export default async function plugin(bb: BbPluginApi) {
     await settings.experimental_set({ proxySecret: randomBytes(32).toString("hex") });
   }
   const monitor = createMonitor(() => settings.get());
-  bb.onDispose(() => monitor.dispose());
-  bb.rpc.register(monitorRpc, { monitor: ({ period }) => monitor.get(period), syncModels: () => syncModels() });
+  alia.onDispose(() => monitor.dispose());
+  alia.rpc.register(monitorRpc, { monitor: ({ period }) => monitor.get(period), syncModels: () => syncModels() });
   const nativeLifetime = new AbortController();
-  bb.onDispose(() => nativeLifetime.abort());
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  alia.onDispose(() => nativeLifetime.abort());
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   const proxy = createProxy({
     settings: () => settings.get(),
-    enrolled: async (id) => (await bb.sdk.hosts.list()).some((entry) => entry.id === id),
+    enrolled: async (id) => (await alia.sdk.hosts.list()).some((entry) => entry.id === id),
     onError: (error) => {
       const cause = error instanceof Error ? error.cause : undefined;
       const code = cause && typeof cause === "object" && "code" in cause ? String(cause.code) : "unknown";
-      bb.log.warn(
+      alia.log.warn(
         `Magpie gateway request failed: ${error instanceof Error ? error.message : String(error)} (${code}; ${
           cause instanceof Error ? cause.message : "no cause"
         })`,
       );
     },
   });
-  bb.onDispose(() => proxy.dispose());
+  alia.onDispose(() => proxy.dispose());
   for (const path of routes) {
-    bb.http.route("POST", path, (context) => proxy.handle(context.req.raw, path), { auth: "none" });
+    alia.http.route("POST", path, (context) => proxy.handle(context.req.raw, path), { auth: "none" });
   }
   for (const agent of ["codex", "claude"] as const) {
     const paths = agent === "codex"
       ? ["/v1/responses"] as const
       : ["/v1/messages", "/v1/messages/count_tokens"] as const;
     for (const path of paths) {
-      bb.http.route("POST", `/${agent}${path}`, async (context) => {
+      alia.http.route("POST", `/${agent}${path}`, async (context) => {
         const response = await proxy.handle(context.req.raw, path, agent);
-        bb.log.info(`Magpie ${agent} ${path}: HTTP ${response.status}`);
+        alia.log.info(`Magpie ${agent} ${path}: HTTP ${response.status}`);
         return response;
       }, { auth: "none" });
     }
   }
 
-  bb.providers.experimental_contributeEnv("pi", async ({ hostId }) => {
+  alia.providers.experimental_contributeEnv("pi", async ({ hostId }) => {
     const config = await settings.get();
     if (!config.proxySecret) throw new Error("Reload the Magpie connector to create its signing key.");
     return [
       {
-        name: "BB_MAGPIE_BASE_URL",
+        name: "ALIA_MAGPIE_BASE_URL",
         value: { serverPath: "/api/v1/plugins/magpie/http" },
         reason: "Route Pi through the central Magpie connector.",
       },
       {
-        name: "BB_MAGPIE_TOKEN",
+        name: "ALIA_MAGPIE_TOKEN",
         value: machineToken(config.proxySecret, hostId),
         reason: "Magpie connector token for this machine.",
       },
     ];
   });
   for (const provider of ["codex", "claude-code"] as const) {
-    bb.providers.experimental_contributeEnv(provider, async ({ hostId, threadId }) => {
+    alia.providers.experimental_contributeEnv(provider, async ({ hostId, threadId }) => {
       const config = await settings.get();
-      const threadRoute = await bb.storage.kv.get<boolean>(`route:${threadId}`);
+      const threadRoute = await alia.storage.kv.get<boolean>(`route:${threadId}`);
       if (!(threadRoute ?? (provider === "codex" ? config.codexRouting : config.claudeRouting))) return [];
       if (!config.proxySecret) throw new Error("Reload the Magpie connector to create its signing key.");
       const token = machineToken(config.proxySecret, hostId);
@@ -181,7 +181,7 @@ export default async function plugin(bb: BbPluginApi) {
     return { reachable: true, version: "version" in value ? String(value.version) : null };
   }
   async function machines(selector?: string) {
-    const entries = (await bb.sdk.hosts.list()).filter((entry) => entry.type === "persistent");
+    const entries = (await alia.sdk.hosts.list()).filter((entry) => entry.type === "persistent");
     if (!selector) return entries;
     const selected = entries.filter((entry) => entry.id === selector || entry.name === selector);
     if (selected.length !== 1) throw new Error("Select a unique enrolled machine by name or ID.");
@@ -215,7 +215,7 @@ export default async function plugin(bb: BbPluginApi) {
     const digest = createHash("sha256").update(renderExtension(catalog)).digest("hex");
     const results = [];
     for (const machine of await machines(selector)) {
-      if (automatic && await bb.storage.kv.get<boolean>(`sync-excluded:${machine.id}`)) continue;
+      if (automatic && await alia.storage.kv.get<boolean>(`sync-excluded:${machine.id}`)) continue;
       if (machine.status !== "connected") {
         if (!automatic) {
           results.push({
@@ -226,13 +226,13 @@ export default async function plugin(bb: BbPluginApi) {
         }
         continue;
       }
-      const current = await bb.storage.kv.get<string>(`catalog:${machine.id}`);
+      const current = await alia.storage.kv.get<string>(`catalog:${machine.id}`);
       if (automatic && current === digest) continue;
       try {
         const installed = await host.call("install", catalog, { hostId: machine.id });
-        await bb.storage.kv.set(`catalog:${machine.id}`, digest);
-        await bb.storage.kv.delete(`sync-excluded:${machine.id}`);
-        if (current !== digest) await bb.storage.kv.set("pi-refresh-pending", true);
+        await alia.storage.kv.set(`catalog:${machine.id}`, digest);
+        await alia.storage.kv.delete(`sync-excluded:${machine.id}`);
+        if (current !== digest) await alia.storage.kv.set("pi-refresh-pending", true);
         results.push({ machine: machine.name, ok: true, ...installed });
       } catch (error) {
         results.push({ machine: machine.name, ok: false, error: message(error) });
@@ -256,7 +256,7 @@ export default async function plugin(bb: BbPluginApi) {
         const results = await installCatalog(catalog, undefined, true);
         if (results.some((result) => result.ok)) {
           lastSync = lastCheck;
-          bb.log.info(
+          alia.log.info(
             `Synced ${catalog.models.length} Pi models to ${results.filter((result) => result.ok).length} machines.`,
           );
         }
@@ -267,7 +267,7 @@ export default async function plugin(bb: BbPluginApi) {
       });
     } catch (error) {
       const detail = message(error);
-      if (!disposed && detail !== autoError) bb.log.warn(`Pi auto-sync: ${detail}`);
+      if (!disposed && detail !== autoError) alia.log.warn(`Pi auto-sync: ${detail}`);
       autoError = detail;
     } finally {
       autoRunning = false;
@@ -275,27 +275,27 @@ export default async function plugin(bb: BbPluginApi) {
   }
   /** Reload provider-pi after a catalog change, but only when no Pi thread is running. */
   async function refreshIdlePi() {
-    if (disposed || !await bb.storage.kv.get<boolean>("pi-refresh-pending")) return false;
+    if (disposed || !await alia.storage.kv.get<boolean>("pi-refresh-pending")) return false;
     const counts = await Promise.all(
       (["active", "starting", "pending", "stopping"] as const).map((status) =>
-        bb.sdk.threads.count({ providerId: "pi", status })
+        alia.sdk.threads.count({ providerId: "pi", status })
       ),
     );
     if (disposed || counts.some((count) => count.total > 0)) return false;
-    await bb.sdk.plugins.reload({ pluginId: "provider-pi" });
-    await bb.storage.kv.delete("pi-refresh-pending");
-    bb.log.info("Refreshed the idle Pi provider. BB model pickers can retain their prior list for up to 10 minutes.");
+    await alia.sdk.plugins.reload({ pluginId: "provider-pi" });
+    await alia.storage.kv.delete("pi-refresh-pending");
+    alia.log.info("Refreshed the idle Pi provider. VesnALIA model pickers can retain their prior list for up to 10 minutes.");
     return true;
   }
-  /** Write Magpie models into BB customModels so native Codex and Claude Code pickers list them. */
-  async function syncBbModels() {
+  /** Write Magpie models into VesnALIA customModels so native Codex and Claude Code pickers list them. */
+  async function syncAliaModels() {
     const config = await settings.get();
     const entries = (await Promise.all(
       nativeProviderSchema.options.map(async (provider) =>
         customModelEntries(provider, await readNativeModels(config, provider, nativeLifetime.signal))
       ),
     )).flat();
-    const path = join((await bb.sdk.system.config()).dataDir, "config.json");
+    const path = join((await alia.sdk.system.config()).dataDir, "config.json");
     const original = await readFile(path, "utf8").catch((error: NodeJS.ErrnoException) => {
       if (error.code === "ENOENT") return "{}";
       throw error;
@@ -304,18 +304,18 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       parsed = JSON.parse(original);
     } catch {
-      throw new Error("BB config.json contains invalid JSON.");
+      throw new Error("VesnALIA config.json contains invalid JSON.");
     }
     const result = replaceMagpieModels(parsed, entries);
     const changed = JSON.stringify(result.config) !== JSON.stringify(parsed);
     if (changed) {
       if (original !== "{}") await copyFile(path, `${path}.magpie.bak`);
       await atomicWrite(path, JSON.stringify(result.config, null, 2) + "\n");
-      await bb.sdk.system.reloadConfig();
+      await alia.sdk.system.reloadConfig();
     }
     return { ok: true as const, added: result.added, removed: result.removed, total: result.total, changed };
   }
-  /** Manual sync for Pi machines and BB native pickers. One failure does not block the other. */
+  /** Manual sync for Pi machines and VesnALIA native pickers. One failure does not block the other. */
   function syncModels(selector?: string) {
     return serialize(async () => {
       await gatewayCheck();
@@ -326,20 +326,20 @@ export default async function plugin(bb: BbPluginApi) {
           const ok = machines.every((entry) => entry.ok);
           return { ok, defaultModel: catalog.defaultModel, machines, refreshed: ok && await refreshIdlePi() };
         })(),
-        syncBbModels(),
+        syncAliaModels(),
       ]);
       const result = {
         pi: pi.status === "fulfilled" ? pi.value : { ok: false as const, error: message(pi.reason) },
-        bb: native.status === "fulfilled" ? native.value : { ok: false as const, error: message(native.reason) },
+        alia: native.status === "fulfilled" ? native.value : { ok: false as const, error: message(native.reason) },
       };
-      return { ok: result.pi.ok && result.bb.ok, ...result };
+      return { ok: result.pi.ok && result.alia.ok, ...result };
     });
   }
   const syncTimer = setInterval(() => {
     void automaticSync();
   }, 30_000);
   syncTimer.unref();
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
     clearInterval(syncTimer);
   });
@@ -374,29 +374,29 @@ export default async function plugin(bb: BbPluginApi) {
             lastCheck,
             lastSync,
             error: autoError,
-            piRefreshPending: await bb.storage.kv.get<boolean>("pi-refresh-pending") ?? false,
+            piRefreshPending: await alia.storage.kv.get<boolean>("pi-refresh-pending") ?? false,
           },
           machines: await inspect(options.machine),
         };
       }),
   });
-  bb.cli.register(defineCli({
+  alia.cli.register(defineCli({
     name: "magpie",
-    summary: "Connect BB agents to a shared Magpie gateway.",
+    summary: "Connect VesnALIA agents to a shared Magpie gateway.",
     root: status,
     commands: {
       status,
       models: cliCommand({
         summary: "List Magpie models for Codex or Claude Code, including converted models.",
         positionals: [{ name: "provider", description: "codex or claude-code.", required: true }],
-        options: { json: jsonOption, "bb-config": { type: "boolean", description: "Print BB customModels entries." } },
+        options: { json: jsonOption, "alia-config": { type: "boolean", description: "Print VesnALIA customModels entries." } },
         run: ({ options, positionals }) =>
           run(options.json, async () => {
             const provider = nativeProviderSchema.parse(
               positionals.provider === "claude" ? "claude-code" : positionals.provider,
             );
             const models = await readNativeModels(await settings.get(), provider, nativeLifetime.signal);
-            return options["bb-config"] ? customModelEntries(provider, models) : models;
+            return options["alia-config"] ? customModelEntries(provider, models) : models;
           }),
       }),
       routing: cliCommand({
@@ -419,34 +419,34 @@ export default async function plugin(bb: BbPluginApi) {
               applies: "Next turn on all enrolled machines; per-thread overrides take precedence.",
               next: options.off
                 ? "Per-thread routes remain active. Native login is needed for threads without a route."
-                : `Run bb pool routing ${provider} --off if Account Pooler is enabled.`,
+                : `Run alia pool routing ${provider} --off if Account Pooler is enabled.`,
             };
           }),
       }),
       route: cliCommand({
         summary: "Route one native Codex or Claude Code thread through Magpie.",
         description:
-          "If Account Pooler is enabled, first run bb pool bypass <thread-id>. Changes apply on the next turn.",
-        positionals: [{ name: "thread", required: true, description: "BB thread ID." }],
+          "If Account Pooler is enabled, first run alia pool bypass <thread-id>. Changes apply on the next turn.",
+        positionals: [{ name: "thread", required: true, description: "VesnALIA thread ID." }],
         options: { json: jsonOption, off: { type: "boolean", description: "Remove this thread from Magpie routing." } },
         run: ({ options, positionals }) =>
           run(options.json, async () => {
-            const thread = await bb.sdk.threads.get({ threadId: positionals.thread });
+            const thread = await alia.sdk.threads.get({ threadId: positionals.thread });
             if (!["codex", "claude-code"].includes(thread.providerId)) {
               throw new Error("Select a native Codex or Claude Code thread. Pi uses sync.");
             }
-            if (options.off) await bb.storage.kv.set(`route:${thread.id}`, false);
+            if (options.off) await alia.storage.kv.set(`route:${thread.id}`, false);
             else {
               await gatewayCheck();
-              await bb.storage.kv.set(`route:${thread.id}`, true);
+              await alia.storage.kv.set(`route:${thread.id}`, true);
             }
             return {
               threadId: thread.id,
               provider: thread.providerId,
               routed: !options.off,
               next: options.off
-                ? `If this thread used Account Pooler, run bb pool bypass ${thread.id} --off.`
-                : `Run bb pool bypass ${thread.id} if Account Pooler is enabled, then send the test prompt.`,
+                ? `If this thread used Account Pooler, run alia pool bypass ${thread.id} --off.`
+                : `Run alia pool bypass ${thread.id} if Account Pooler is enabled, then send the test prompt.`,
             };
           }),
       }),
@@ -472,7 +472,7 @@ export default async function plugin(bb: BbPluginApi) {
           }),
       }),
       sync: cliCommand({
-        summary: "Sync Magpie models to Pi on connected machines and to the BB Codex and Claude Code pickers.",
+        summary: "Sync Magpie models to Pi on connected machines and to the VesnALIA Codex and Claude Code pickers.",
         description:
           "Pi refreshes now when no Pi thread runs; otherwise autoSync refreshes it later. --machine limits Pi only.",
         options: { json: jsonOption, machine: machineOption },
@@ -487,8 +487,8 @@ export default async function plugin(bb: BbPluginApi) {
               if (!options.machine) await settings.experimental_set({ autoSync: false });
               const results = [];
               for (const machine of await machines(options.machine)) {
-                await bb.storage.kv.set(`sync-excluded:${machine.id}`, true);
-                await bb.storage.kv.delete(`catalog:${machine.id}`);
+                await alia.storage.kv.set(`sync-excluded:${machine.id}`, true);
+                await alia.storage.kv.delete(`catalog:${machine.id}`);
                 try {
                   results.push({
                     machine: machine.name,
@@ -502,7 +502,7 @@ export default async function plugin(bb: BbPluginApi) {
               return {
                 ok: results.every((entry) => entry.ok),
                 machines: results,
-                next: "When Pi threads are idle, run bb plugin reload provider-pi to refresh the model catalog.",
+                next: "When Pi threads are idle, run alia plugin reload provider-pi to refresh the model catalog.",
               };
             })),
       }),

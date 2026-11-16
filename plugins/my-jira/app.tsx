@@ -1,7 +1,7 @@
-// bb-plugin-my-jira — frontend entry: the "My Tickets" page in the nav rail.
+// alia-plugin-my-jira — frontend entry: the "My Tickets" page in the nav rail.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
-import { UrlLink, definePluginApp, useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, definePluginApp, useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { AuthStatus as Status, BoardGroups, Scope, TicketPage, rpcContract } from "./server";
 import type { Ticket } from "./jira";
 import { ISSUE_KEY, RANK, allIds, byBoard, byHierarchy, byStatus, catOf, matchesFilter, visibleKeys, type Group, type GroupHead, type HierarchyBy } from "./filters";
@@ -43,7 +43,7 @@ type Site = NonNullable<Status["site"]>;
 type GroupBy = "status" | "hierarchy" | "board";
 const PAGE_SIZE = 50; // matches server.ts
 
-// Survive remounts (bb remounts the page on resize, and may on navigation).
+// Survive remounts (VesnALIA remounts the page on resize, and may on navigation).
 let cachedStatus: Status | null = null;
 /** Pages by site, tab and page token. A tab's first page carries its total. */
 const pageCache = new Map<string, TicketPage>();
@@ -351,7 +351,7 @@ function ListView({
   onClose: () => void;
   onDisconnect: () => void;
 }) {
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const rootRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -741,7 +741,7 @@ function ListView({
 }
 
 function ConnectPanel({ rpc }: { rpc: Rpc }) {
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const [error, setError] = useState<string | null>(null);
   const [opened, setOpened] = useState(false);
   const connect = () =>
@@ -769,7 +769,7 @@ function ConnectPanel({ rpc }: { rpc: Rpc }) {
 
 function TicketsPage({ subPath }: { subPath: string }) {
   const rpc = useRpc<typeof rpcContract>();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const [status, setStatus] = useState<Status | null>(cachedStatus);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(() => {
@@ -796,7 +796,7 @@ function TicketsPage({ subPath }: { subPath: string }) {
 
   return (
     // Not keyed by route: the list stays mounted while tickets open beside it.
-    // @container: layouts respond to this pane's width, not the window's (bb's sidebar and panels take some of it).
+    // @container: layouts respond to this pane's width, not the window's (VesnALIA's sidebar and panels take some of it).
     <div className="@container h-full min-h-0 flex-1 overflow-y-auto">
       <div className="mx-auto box-border w-full max-w-[120rem] space-y-6 px-4 pb-6 pt-4 md:px-6 md:pt-6">
         {error ? <Problem>{error}</Problem> : null}

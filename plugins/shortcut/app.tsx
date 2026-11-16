@@ -9,11 +9,11 @@ import {
 import {
   Markdown,
   definePluginApp,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "./server";
 import type {
@@ -50,7 +50,7 @@ import {
   type StoryDropEdge,
   workflowsForStories,
 } from "./kanban";
-import { openInBbFromRpcResponse, shortcutStoryIdFromUrl, shortcutStoryPluginPath } from "./shortcut-links";
+import { openInAliaFromRpcResponse, shortcutStoryIdFromUrl, shortcutStoryPluginPath } from "./shortcut-links";
 import {
   requestWorkflowStateUpdate,
   StoryDetailRequestGuard,
@@ -311,7 +311,7 @@ function StoryCard({
                   disabled={starting}
                   onSelect={() => void startWork()}
                 >
-                  {starting ? "Starting…" : "Start work in bb"}
+                  {starting ? "Starting…" : "Start work in VesnALIA"}
                 </DropdownMenuItem>
                 {story.appUrl ? (
                   <>
@@ -330,7 +330,7 @@ function StoryCard({
         <ContextMenuItem onSelect={onOpen}>View details</ContextMenuItem>
         <ContextMenuItem onSelect={() => void copyId()}>Copy ID</ContextMenuItem>
         <ContextMenuItem disabled={starting} onSelect={() => void startWork()}>
-          {starting ? "Starting…" : "Start work in bb"}
+          {starting ? "Starting…" : "Start work in VesnALIA"}
         </ContextMenuItem>
         {story.appUrl ? (
           <>
@@ -495,8 +495,8 @@ function KanbanColumn({
 
 function StoriesList() {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
-  const { projectId } = useBbContext();
+  const navigate = useAliaNavigate();
+  const { projectId } = useAliaContext();
   const [query, setQuery] = useState("");
   const [includeCompleted, setIncludeCompleted] = useState(false);
   const [selectedWorkflow, setSelectedWorkflow] = useState("all");
@@ -780,8 +780,8 @@ function StoriesList() {
 
 function StoryDetail({ id, onClose }: { id: number; onClose?: () => void }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
-  const { projectId } = useBbContext();
+  const navigate = useAliaNavigate();
+  const { projectId } = useAliaContext();
   const [story, setStory] = useState<Story | null>(null);
   const [workflowStates, setWorkflowStates] = useState<ShortcutWorkflowState[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -903,7 +903,7 @@ function StoryDetail({ id, onClose }: { id: number; onClose?: () => void }) {
               <h1 className="text-xl font-semibold tracking-tight text-foreground">{visibleStory.name}</h1>
               <div className="flex flex-wrap gap-2">
                 <Button disabled={starting} onClick={() => void startWork()}>
-                  {starting ? "Starting…" : "Start work in bb"}
+                  {starting ? "Starting…" : "Start work in VesnALIA"}
                 </Button>
                 {visibleStory.appUrl ? (
                   <Button asChild variant="outline">
@@ -983,12 +983,12 @@ export default definePluginApp((app) => {
         HTMLAnchorElement,
         { href: string; target: string | null; rewrittenHref: string }
       >();
-      let openInBb = true;
+      let openInAlia = true;
       let refreshInFlight = false;
       let mutationsSinceRefresh = false;
 
       function rewriteLink(link: HTMLAnchorElement) {
-        if (!openInBb) return;
+        if (!openInAlia) return;
         if (link.hasAttribute("data-shortcut-open-external")) return;
 
         const href = link.getAttribute("href");
@@ -1024,9 +1024,9 @@ export default definePluginApp((app) => {
         rewrittenLinks.clear();
       }
 
-      function setOpenInBb(next: boolean) {
-        if (openInBb === next) return;
-        openInBb = next;
+      function setOpenInAlia(next: boolean) {
+        if (openInAlia === next) return;
+        openInAlia = next;
         if (next) {
           rewriteLinksWithin(document);
         } else {
@@ -1048,8 +1048,8 @@ export default definePluginApp((app) => {
             },
           );
           if (!response.ok) return;
-          const next = openInBbFromRpcResponse(await response.json());
-          if (next !== null) setOpenInBb(next);
+          const next = openInAliaFromRpcResponse(await response.json());
+          if (next !== null) setOpenInAlia(next);
         } catch {
           // Keep the current mode when the request fails.
         } finally {
@@ -1058,7 +1058,7 @@ export default definePluginApp((app) => {
       }
 
       function handleShortcutLinkClick(event: MouseEvent) {
-        if (!openInBb) return;
+        if (!openInAlia) return;
         if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
           return;
         }

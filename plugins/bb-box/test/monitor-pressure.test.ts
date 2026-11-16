@@ -2,8 +2,8 @@ import "./check-test-machine.mjs";
 import assert from "node:assert/strict";
 import { test, type TestContext } from "node:test";
 import Database from "better-sqlite3";
-import { PLUGIN_CLI_OUTPUT_MAX_BYTES, type BbPluginApi } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { PLUGIN_CLI_OUTPUT_MAX_BYTES, type AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { freshPressureState, isPressureState, stepPressure, type PressureState } from "../src/monitor/pressure.ts";
 import { createMonitorStore, LOG_LIMIT, type AlertNotice, type LogEntry } from "../src/monitor/monitor-store.ts";
 import { createPressureMonitor, type LightSample } from "../src/monitor/pressure-monitor.ts";
@@ -28,14 +28,14 @@ function notice(sequence: number, type: "incident" | "recovery" = "incident", me
   return { sequence, type, metric, timestamp: 100_000, value: 99, peak: 100, durationSeconds: 60, threshold: 95 };
 }
 
-function fakeBb(t: TestContext): { bb: BbPluginApi; harness: ReturnType<typeof createFakePluginHost>["harness"] } {
-  const { bb, harness } = createFakePluginHost({ pluginId: "bb-box" });
-  bb.storage.database().pragma("synchronous = OFF");
+function fakeAlia(t: TestContext): { alia: AliaPluginApi; harness: ReturnType<typeof createFakePluginHost>["harness"] } {
+  const { alia, harness } = createFakePluginHost({ pluginId: "alia-box" });
+  alia.storage.database().pragma("synchronous = OFF");
   t.after(() => harness.lifecycle.dispose());
-  return { bb, harness };
+  return { alia, harness };
 }
 
-const count = (bb: BbPluginApi) => (bb.storage.database().prepare("SELECT COUNT(*) AS n FROM pressure_logs").get() as { n: number }).n;
+const count = (alia: AliaPluginApi) => (alia.storage.database().prepare("SELECT COUNT(*) AS n FROM pressure_logs").get() as { n: number }).n;
 
 test("brief peaks don't alert; both metrics need a full continuous minute", () => {
   const e = engine();
@@ -101,10 +101,10 @@ test("invalid counters don't create incidents or false recoveries", () => {
 });
 
 test("log storage is a fixed ring with bounded payloads and monotonically increasing IDs", (t) => {
-  const { bb } = fakeBb(t);
-  const store = createMonitorStore(bb);
+  const { alia } = fakeAlia(t);
+  const store = createMonitorStore(alia);
   for (let i = 0; i < LOG_LIMIT + 100; i++) store.write([{ type: "summary", timestamp: i, cpuPercent: 25, padding: "x".repeat(940) }]);
-  assert.equal(count(bb), LOG_LIMIT);
+  assert.equal(count(alia), LOG_LIMIT);
   assert.equal(store.cursor(), LOG_LIMIT + 100);
   assert.equal(store.read(9999).length, 500);
   assert.equal(store.read(1)[0]?.sequence, LOG_LIMIT + 100);
@@ -112,14 +112,14 @@ test("log storage is a fixed ring with bounded payloads and monotonically increa
   assert.throws(() => store.write([{ type: "error", timestamp: 1, message: "x".repeat(1100) }]));
   assert.equal(store.cursor(), before);
   assert.equal(store.read(1)[0]?.sequence, before);
-  const pages = Number(bb.storage.database().pragma("page_count", { simple: true }));
-  const pageSize = Number(bb.storage.database().pragma("page_size", { simple: true }));
+  const pages = Number(alia.storage.database().pragma("page_count", { simple: true }));
+  const pageSize = Number(alia.storage.database().pragma("page_size", { simple: true }));
   assert.ok(pages * pageSize < 10 * 1024 * 1024);
 });
 
 test("multi-record writes roll back atomically and state survives a store reopen", (t) => {
-  const { bb } = fakeBb(t);
-  const store = createMonitorStore(bb);
+  const { alia } = fakeAlia(t);
+  const store = createMonitorStore(alia);
   const e = engine();
   e.step(0);
   e.step(30_000);
@@ -128,14 +128,14 @@ test("multi-record writes roll back atomically and state survives a store reopen
   const previous = store.cursor();
   assert.throws(() => store.write([{ type: "summary", timestamp: 2 }, { type: "error", timestamp: 2, message: "x".repeat(1100) }], freshPressureState()));
   assert.equal(store.cursor(), previous);
-  assert.equal(createMonitorStore(bb).state().cpu.active, true);
+  assert.equal(createMonitorStore(alia).state().cpu.active, true);
   assert.equal(store.alerts().length, 2);
 });
 
 test("overlapping stores allocate fresh sequences without overwriting each other's logs", (t) => {
-  const { bb } = fakeBb(t);
-  const first = createMonitorStore(bb);
-  const second = createMonitorStore(bb);
+  const { alia } = fakeAlia(t);
+  const first = createMonitorStore(alia);
+  const second = createMonitorStore(alia);
   first.write([{ type: "summary", timestamp: 1 }]);
   assert.equal(second.cursor(), 1);
   const { sequence: _sequence, ...entry } = notice(0);
@@ -149,11 +149,11 @@ test("overlapping stores allocate fresh sequences without overwriting each other
 async function setupMonitor(t: TestContext, read: (signal: AbortSignal) => Promise<LightSample> = async () => base) {
   t.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 100_000 });
   t.mock.method(performance, "now", () => Date.now());
-  const { bb, harness } = createFakePluginHost({ pluginId: "bb-box" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "alia-box" });
   let calls = 0;
   let resets = 0;
   const monitor = createPressureMonitor(
-    bb,
+    alia,
     async (signal) => {
       calls++;
       return read(signal);
@@ -174,7 +174,7 @@ async function setupMonitor(t: TestContext, read: (signal: AbortSignal) => Promi
     t.mock.timers.tick(ms);
     await flush();
   };
-  return { bb, harness, monitor, controller, running, tick, calls: () => calls, resets: () => resets };
+  return { alia, harness, monitor, controller, running, tick, calls: () => calls, resets: () => resets };
 }
 
 const entry = (event: AlertNotice): LogEntry => {
@@ -285,14 +285,14 @@ test("failed samples persist broken streaks so reload cannot bridge the missing 
   await s.tick();
   failed = true;
   await s.tick();
-  const restored = createMonitorStore(s.bb).state();
+  const restored = createMonitorStore(s.alia).state();
   assert.equal(restored.memory.since, null);
   assert.deepEqual(stepPressure(restored, { cpu: null, memory: 99 }, Date.now() + 1).events, []);
   failed = false;
   await s.tick();
   failed = true;
   await s.tick();
-  assert.equal(createMonitorStore(s.bb).state().memory.since, null);
+  assert.equal(createMonitorStore(s.alia).state().memory.since, null);
   assert.equal(s.monitor.logs(100).filter((saved) => saved.type === "error").length, 1);
 });
 
@@ -311,7 +311,7 @@ test("repeated read failures cannot keep old incidents fresh, including after a 
   failed = true;
   for (let i = 0; i < 12; i++) await s.tick();
   assert.deepEqual(s.monitor.status().active, []);
-  const restored = createMonitorStore(s.bb).state();
+  const restored = createMonitorStore(s.alia).state();
   assert.equal(restored.lastSampleAt, sampledAt);
   assert.equal(restored.cpu.active, true, "missing readings cannot prove recovery");
   failed = false;
@@ -327,7 +327,7 @@ test("quiet samples persist broken candidates and recoveries before the next sum
   await flush();
   sample = base;
   await s.tick();
-  const restored = createMonitorStore(s.bb).state();
+  const restored = createMonitorStore(s.alia).state();
   assert.equal(restored.memory.since, null);
   assert.deepEqual(stepPressure(restored, { cpu: null, memory: 99 }, Date.now() + 30_000).events, []);
   sample = { ...base, memory: 99 };
@@ -336,10 +336,10 @@ test("quiet samples persist broken candidates and recoveries before the next sum
   await s.tick();
   sample = base;
   await s.tick();
-  assert.equal(createMonitorStore(s.bb).state().memory.recoveringSince, Date.now());
+  assert.equal(createMonitorStore(s.alia).state().memory.recoveringSince, Date.now());
   sample = { ...base, memory: 99 };
   await s.tick();
-  assert.equal(createMonitorStore(s.bb).state().memory.recoveringSince, null);
+  assert.equal(createMonitorStore(s.alia).state().memory.recoveringSince, null);
 });
 
 test("the first failed read after restart breaks persisted confirmation streaks", async (t) => {
@@ -347,10 +347,10 @@ test("the first failed read after restart breaks persisted confirmation streaks"
     throw new Error("read failed");
   });
   const previous = stepPressure(freshPressureState(), { cpu: null, memory: 99 }, Date.now() - 30_000).state;
-  createMonitorStore(s.bb).write([], previous);
+  createMonitorStore(s.alia).write([], previous);
   s.monitor.configure(true, true);
   await flush();
-  assert.equal(createMonitorStore(s.bb).state().memory.since, null);
+  assert.equal(createMonitorStore(s.alia).state().memory.since, null);
 });
 
 test("disable clears persisted incidents before a restarted monitor has sampled", async (t) => {
@@ -358,7 +358,7 @@ test("disable clears persisted incidents before a restarted monitor has sampled"
   const previous: PressureState = freshPressureState();
   Object.assign(previous.memory, { active: true, since: Date.now() - 60_000, peak: 99 });
   previous.lastSampleAt = Date.now();
-  const storage = createMonitorStore(s.bb);
+  const storage = createMonitorStore(s.alia);
   storage.write([entry(notice(1, "incident", "memory"))], previous);
   s.monitor.configure(true, true);
   s.monitor.configure(false, true);
@@ -378,7 +378,7 @@ test("monitor restart preserves active incidents without duplicate alerts; disab
   s.controller.abort();
   s.monitor.dispose();
   await s.running;
-  const replacement = createPressureMonitor(s.bb, async () => ({ ...base, cpu: 99, memory: 99 }), () => {});
+  const replacement = createPressureMonitor(s.alia, async () => ({ ...base, cpu: 99, memory: 99 }), () => {});
   replacement.configure(true, true);
   const controller = new AbortController();
   const running = replacement.start(controller.signal);
@@ -392,7 +392,7 @@ test("monitor restart preserves active incidents without duplicate alerts; disab
   assert.equal(replacement.status().active.length, 2);
   assert.equal(s.harness.realtimeSignals.length, 2);
   replacement.configure(false, true);
-  assert.equal(createMonitorStore(s.bb).state().memory.active, false);
+  assert.equal(createMonitorStore(s.alia).state().memory.active, false);
   replacement.configure(true, true);
   await flush();
   await s.tick();
@@ -401,8 +401,8 @@ test("monitor restart preserves active incidents without duplicate alerts; disab
 });
 
 test("active incident notices survive eviction from the diagnostic ring", (t) => {
-  const { bb } = fakeBb(t);
-  const store = createMonitorStore(bb);
+  const { alia } = fakeAlia(t);
+  const store = createMonitorStore(alia);
   store.write([entry(notice(1))]);
   for (let i = 0; i < LOG_LIMIT; i++) store.write([{ type: "summary", timestamp: i }]);
   assert.equal(store.alerts().length, 0);
@@ -467,14 +467,14 @@ test("reconnect collapses missed transitions to one latest notice per metric", (
   assert.deepEqual(shown.map((shownNotice) => shownNotice.sequence), [3, 5]);
 });
 
-test("bb box monitor logs exposes bounded logs without sampling full snapshots", async (t) => {
-  const { bb, harness, monitor } = await startTestMonitor(t);
-  bb.storage.database().pragma("synchronous = OFF");
+test("alia box monitor logs exposes bounded logs without sampling full snapshots", async (t) => {
+  const { alia, harness, monitor } = await startTestMonitor(t);
+  alia.storage.database().pragma("synchronous = OFF");
   assert.equal(monitor.status().enabled, false);
   assert.equal((await harness.behavior.runCli(["monitor", "logs", "--json"])).stdout, "");
   assert.notEqual((await harness.behavior.runCli(["monitor", "logs", "--limit", "501"])).exitCode, 0);
   assert.notEqual((await harness.behavior.runCli(["monitor", "logs", "--limit", "oops"])).exitCode, 0);
-  const store = createMonitorStore(bb);
+  const store = createMonitorStore(alia);
   for (let i = 0; i < 500; i++) store.write([{ type: "summary", timestamp: i, padding: "x".repeat(940) }]);
   for (const args of [["monitor", "logs", "--limit", "500"], ["monitor", "logs", "--limit", "500", "--json"]]) {
     const result = await harness.behavior.runCli(args);
@@ -503,10 +503,10 @@ test("test alerts are explicit, respect settings, and leave diagnostics and inci
 });
 
 test("malformed persisted notices are ignored without breaking status or state reads", (t) => {
-  const { bb } = fakeBb(t);
-  const store = createMonitorStore(bb);
+  const { alia } = fakeAlia(t);
+  const store = createMonitorStore(alia);
   store.write([entry(notice(1))], freshPressureState());
-  const db = bb.storage.database();
+  const db = alia.storage.database();
   db.prepare("UPDATE pressure_notices SET payload = ?").run('{"metric":"unknown"}');
   db.prepare("UPDATE pressure_logs SET payload = ?").run("invalid JSON");
   db.prepare("UPDATE pressure_state SET payload = ?").run("invalid JSON");
@@ -516,11 +516,11 @@ test("malformed persisted notices are ignored without breaking status or state r
 });
 
 test("damaged diagnostic rows cannot prevent exporting the remaining logs", async (t) => {
-  const { bb, harness } = await startTestMonitor(t);
-  const store = createMonitorStore(bb);
+  const { alia, harness } = await startTestMonitor(t);
+  const store = createMonitorStore(alia);
   const payloads = ["invalid JSON", "null", "[]", '{"type":"summary","timestamp":1e100}', '{"type":"summary","timestamp":"yesterday"}', '{"type":"summary","timestamp":1,"nested":{}}'];
   store.write(Array.from({ length: payloads.length + 2 }, (_, timestamp) => ({ type: "summary", timestamp })));
-  const update = bb.storage.database().prepare("UPDATE pressure_logs SET payload = ? WHERE sequence = ?");
+  const update = alia.storage.database().prepare("UPDATE pressure_logs SET payload = ? WHERE sequence = ?");
   payloads.forEach((payload, index) => update.run(payload, index + 2));
   assert.deepEqual(store.read().map((saved) => saved.sequence), [1, payloads.length + 2]);
   for (const args of [["monitor", "logs"], ["monitor", "logs", "--json"]]) {
@@ -533,7 +533,7 @@ test("damaged diagnostic rows cannot prevent exporting the remaining logs", asyn
 
 test("a locked monitor database incurs one busy wait and recovers on the next sample", async (t) => {
   const s = await setupMonitor(t);
-  const db = s.bb.storage.database();
+  const db = s.alia.storage.database();
   db.pragma("journal_mode = WAL");
   const original = db.transaction.bind(db);
   let attempts = 0;

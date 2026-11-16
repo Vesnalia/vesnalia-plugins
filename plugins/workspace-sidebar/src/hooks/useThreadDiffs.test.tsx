@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { useThreadDiffs } from "./useThreadDiffs";
 
 const { rpc } = vi.hoisted(() => ({ rpc: { call: vi.fn() } }));
-vi.mock("@get-bb/plugin-sdk/app", () => ({ useRpc: () => rpc }));
+vi.mock("@vesnalia/plugin-sdk/app", () => ({ useRpc: () => rpc }));
 const threads = (id: string, env = id) => [{ id, environment: { id: env } }] as PluginSidebarThread[];
 const response = (id: string, additions = 5) => ({ entries: [{ threadId: id, additions, deletions: 2 }] });
 beforeEach(() => { vi.useFakeTimers(); rpc.call.mockReset(); });

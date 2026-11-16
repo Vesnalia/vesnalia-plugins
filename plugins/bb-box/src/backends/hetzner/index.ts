@@ -15,7 +15,7 @@ export const hetznerDriver: BackendDriver<HetznerConfig> = {
   setup: {
     guide: "docs/guide/hetzner.md",
     scripts: [],
-    needs: "A Hetzner Cloud project and a Read & Write API token, and a way for its hosts to reach BB.",
+    needs: "A Hetzner Cloud project and a Read & Write API token, and a way for its hosts to reach VesnALIA.",
   },
   parse: parseHetznerPart,
   create: (config, context) => new HetznerBackend(config, context, {}),

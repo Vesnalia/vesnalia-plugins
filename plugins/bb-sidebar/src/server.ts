@@ -1,6 +1,6 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { ServerContext } from "./server-context";
-import { bbSidebarRpcContract } from "./contract";
+import { aliaSidebarRpcContract } from "./contract";
 import { INBOX_ORDER_CHANNEL } from "./contract";
 import { createPortDiscovery } from "./port-discovery";
 import { createThreadPortActions } from "./thread-ports";
@@ -116,17 +116,17 @@ const migrations = [
   ...INSTALL_DEFAULTS_MIGRATIONS,
 ];
 
-export default async function plugin(bb: BbPluginApi) {
-  const ctx: ServerContext = { bb, db: bb.storage.database() };
-  const getOpenPorts = createPortDiscovery(ctx.bb);
+export default async function plugin(alia: AliaPluginApi) {
+  const ctx: ServerContext = { alia, db: alia.storage.database() };
+  const getOpenPorts = createPortDiscovery(ctx.alia);
 
-  const threadPortActions = createThreadPortActions(ctx.bb);
+  const threadPortActions = createThreadPortActions(ctx.alia);
 
-  const threadPullRequests = createThreadPullRequests(ctx.bb);
+  const threadPullRequests = createThreadPullRequests(ctx.alia);
 
-  const regenerateTitle = createTitleRegenerator(ctx.bb);
-  ctx.bb.storage.migrate(ctx.db, migrations);
-  createAutoTitleRecovery(ctx.bb, regenerateTitle);
+  const regenerateTitle = createTitleRegenerator(ctx.alia);
+  ctx.alia.storage.migrate(ctx.db, migrations);
+  createAutoTitleRecovery(ctx.alia, regenerateTitle);
   const settings = await createServerSettings(ctx);
   const icons = createServerProjectIcons(ctx);
   const colors = createServerProjectColors(ctx);
@@ -149,7 +149,7 @@ export default async function plugin(bb: BbPluginApi) {
   );
   const { resolveProjectIcon } = icons;
   const { wakeAncestors, clearSettlingState, clear, settleUnarchivedTree } = lifecycle;
-  ctx.bb.http.route("GET", "/project-icon", async (context) => {
+  ctx.alia.http.route("GET", "/project-icon", async (context) => {
     const projectId = context.req.query("projectId")?.trim();
     const environmentId = context.req.query("environmentId")?.trim() || null;
     if (!projectId) return context.text("Missing projectId", 400);
@@ -159,7 +159,7 @@ export default async function plugin(bb: BbPluginApi) {
     } catch {
       return context.body(null, 503, { "cache-control": "no-store" });
     }
-    // Marked so the app can tell "this project has no icon" from a 404 bb
+    // Marked so the app can tell "this project has no icon" from a 404 VesnALIA
     // answers while the plugin is still loading (see ProjectFavicon).
     if (!icon) return context.body(null, 404, { "cache-control": "no-store", [PROJECT_ICON_MISSING_HEADER]: "1" });
     const body =
@@ -173,37 +173,37 @@ export default async function plugin(bb: BbPluginApi) {
       },
     });
   });
-  ctx.bb.background.schedule("auto-settle", "*/5 * * * *", async () => {
+  ctx.alia.background.schedule("auto-settle", "*/5 * * * *", async () => {
     await policy.evaluatePolicies();
   });
   const rateLimits = createServerRateLimits(ctx, lifecycle);
-  ctx.bb.rpc.register(bbSidebarRpcContract, { ...handlers, ...rateLimits });
-  ctx.bb.cli.register(createServerCli(lifecycle, handlers, rateLimits.getThreadLimits));
+  ctx.alia.rpc.register(aliaSidebarRpcContract, { ...handlers, ...rateLimits });
+  ctx.alia.cli.register(createServerCli(lifecycle, handlers, rateLimits.getThreadLimits));
   // New or resumed child work reopens the ancestor path, keeping its existing
   // sidebar nesting reachable. Siblings retain their own settled state.
-  ctx.bb.events.on("thread.created", async ({ thread }) => {
+  ctx.alia.events.on("thread.created", async ({ thread }) => {
     await wakeAncestors(thread);
   });
 
-  ctx.bb.events.on("thread.active", async ({ thread }) => {
+  ctx.alia.events.on("thread.active", async ({ thread }) => {
     clearSettlingState(thread.id);
     await wakeAncestors(thread);
   });
 
   // Archived threads miss a tree Settle. One that comes back inside a settled
   // tree is filed with it rather than waking the tree.
-  ctx.bb.events.on("thread.unarchived", async ({ thread }) => {
+  ctx.alia.events.on("thread.unarchived", async ({ thread }) => {
     await settleUnarchivedTree(thread.id);
   });
 
   // A deleted thread must not leave a row behind that would park a future
   // thread reusing the id, and stale rows accumulate otherwise.
-  ctx.bb.events.on("thread.deleted", ({ thread }) => {
+  ctx.alia.events.on("thread.deleted", ({ thread }) => {
     clear(thread.id);
     threadPullRequests.forgetThread(thread.id);
     const removed = ctx.db.prepare(`DELETE FROM inbox_order WHERE thread_id = ?`).run(thread.id);
     if (removed.changes > 0) {
-      ctx.bb.realtime.publish(INBOX_ORDER_CHANNEL, {});
+      ctx.alia.realtime.publish(INBOX_ORDER_CHANNEL, {});
     }
   });
 }

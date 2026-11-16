@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { summaryTemplateInputSchema, summaryTemplateSchema, type SummaryTemplate, type SummaryTemplateInput, type TemplateSnapshot } from "../shared/analysis.js";
 import { MeetingsError } from "./errors.js";
 
@@ -40,8 +40,8 @@ export interface SummaryTemplateStore {
   delete(id: string): Promise<void>;
 }
 
-export function createSummaryTemplateStore(bb: Pick<BbPluginApi, "storage">, options: { now?: () => number } = {}): SummaryTemplateStore {
-  const kv = bb.storage.kv;
+export function createSummaryTemplateStore(alia: Pick<AliaPluginApi, "storage">, options: { now?: () => number } = {}): SummaryTemplateStore {
+  const kv = alia.storage.kv;
   const now = options.now ?? Date.now;
   const get = async (id: string): Promise<SummaryTemplate> => {
     if (Object.hasOwn(SUMMARY_TEMPLATES, id)) return { ...SUMMARY_TEMPLATES[id] };

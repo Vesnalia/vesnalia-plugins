@@ -1,22 +1,22 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { CHANGED_CHANNEL, type ChangedPayload } from "../shared/constants";
 
 /**
- * bb serves environment status from a short read cache, and only a cache
+ * VesnALIA serves environment status from a short read cache, and only a cache
  * miss records the new branch for its own sidebar. Nudge once now and once
- * after the cache expires so bb's chrome follows a plugin-made checkout.
+ * after the cache expires so VesnALIA's chrome follows a plugin-made checkout.
  */
 export const STATUS_CACHE_TTL_MS = 3_000;
 const SECOND_NUDGE_DELAY_MS = STATUS_CACHE_TTL_MS + 200;
 
-export function createAfterMutation(bb: BbPluginApi) {
+export function createAfterMutation(alia: AliaPluginApi) {
   const timers = new Set<ReturnType<typeof setTimeout>>();
 
   async function nudgeStatus(environmentId: string): Promise<void> {
     try {
-      await bb.sdk.environments.status({ environmentId });
+      await alia.sdk.environments.status({ environmentId });
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `status nudge failed for ${environmentId}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
@@ -24,7 +24,7 @@ export function createAfterMutation(bb: BbPluginApi) {
 
   function publish(environmentId: string, reason: string): void {
     const payload: ChangedPayload = { environmentId, reason };
-    bb.realtime.publish(CHANGED_CHANNEL, payload);
+    alia.realtime.publish(CHANGED_CHANNEL, payload);
   }
 
   /** Call after every successful mutation on `environmentId`. */

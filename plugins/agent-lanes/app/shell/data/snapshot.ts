@@ -1,7 +1,7 @@
 // The client's copy of the turn history: a server snapshot, kept current by
 // realtime signals, with the sidebar's live state laid over it. Pure, so the
 // merge and overlay rules are unit tested.
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { z } from "zod";
 import type { LaneBlock, LaneHandoff, LanesChangedSignal, LanesSnapshot } from "../../../shared/model";
 import { laneBlockSchema, laneHandoffSchema } from "../../../shared/schemas";
@@ -90,7 +90,7 @@ export interface DecisionOverride {
 
 /**
  * Lay the sidebar's live state over the history so the lanes react the moment
- * bb does, before the server's signal arrives:
+ * VesnALIA does, before the server's signal arrives:
  * - a thread with a pending interaction shows its open block waiting;
  * - an open block marked waiting on a thread that is busy again and no longer
  *   asks anything shows running;

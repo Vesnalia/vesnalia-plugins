@@ -9,7 +9,7 @@ The installed source range is `^0.8.1` — stay in 0.8.x.
 ### Added
 - Office Studio **Slides**: a deck editor on the prototype engine with slide thumbnails, layout presets, a presenter mode, PNG and PowerPoint export and sending to the chat.
 - Prototype **Templates**: ready forms (sign-in, registration, checkout, card payment, feedback, search with filters, profile…) and interface blocks (header, sidebar, footer, product cards, pricing, table with pagination, dialogs…).
-- **Office Studio settings**: interface language (as in BB, Russian, English) for every tool, default screen size, grid, badges and brush.
+- **Office Studio settings**: interface language (as in VesnALIA, Russian, English) for every tool, default screen size, grid, badges and brush.
 
 ### Changed
 - Prototype Style panel: icon alignment row, geometry grid, collapsible sections, font and weight pickers, text alignment icons and a colour picker instead of typed colours.

@@ -1,4 +1,4 @@
-// UI strings follow BB's interface language (`<html lang>`); English by default.
+// UI strings follow VesnALIA's interface language (`<html lang>`); English by default.
 import { useSyncExternalStore } from "react";
 
 const en = {
@@ -55,7 +55,7 @@ const en = {
   count: "Count",
   formulaBar: "Formula bar",
   nameBox: "Cell",
-  unsupportedHint: "BB can't compute this formula; the value saved in the file is shown and Excel recalculates it",
+  unsupportedHint: "VesnALIA can't compute this formula; the value saved in the file is shown and Excel recalculates it",
   engineFailed: "Couldn't start the formula engine",
   inputRejected: "Couldn't enter this value",
   unsavedChanges: "Unsaved changes",
@@ -213,7 +213,7 @@ const en = {
   siteInvalid: "That isn't a web address.",
   siteOpenDevices: "See this page on devices",
   siteBrowser: "Browser",
-  siteBackToBrowser: "Back to the page in BB's Browser",
+  siteBackToBrowser: "Back to the page in VesnALIA's Browser",
   studio: "Office Studio",
   studioSubtitle: "Prototypes, drawings and slides for this chat",
   studioToolsLabel: "Tools",
@@ -229,7 +229,7 @@ const en = {
   studioHintSend: "Sent to the chat as a screenshot or file",
   studioSettings: "Office Studio settings",
   studioLanguage: "Interface language",
-  studioLanguageAuto: "Same as BB",
+  studioLanguageAuto: "Same as VesnALIA",
   studioLanguageRu: "Russian",
   studioLanguageEn: "English",
   studioSettingsPrototype: "Prototype",
@@ -923,7 +923,7 @@ const ru: Record<I18nKey, string> = {
   count: "Количество",
   formulaBar: "Строка формул",
   nameBox: "Ячейка",
-  unsupportedHint: "BB не умеет вычислять эту формулу: показано значение из файла, Excel пересчитает его сам",
+  unsupportedHint: "ALIA не умеет вычислять эту формулу: показано значение из файла, Excel пересчитает его сам",
   engineFailed: "Не удалось запустить вычисление формул",
   inputRejected: "Не удалось ввести значение",
   unsavedChanges: "Есть несохранённые изменения",
@@ -1081,7 +1081,7 @@ const ru: Record<I18nKey, string> = {
   siteInvalid: "Это не адрес сайта.",
   siteOpenDevices: "Посмотреть страницу на устройствах",
   siteBrowser: "В браузер",
-  siteBackToBrowser: "Вернуться к странице в браузере BB",
+  siteBackToBrowser: "Вернуться к странице в браузере ALIA",
   studio: "Office Studio",
   studioSubtitle: "Прототипы, рисунки и слайды для этого чата",
   studioToolsLabel: "Инструменты",
@@ -1097,7 +1097,7 @@ const ru: Record<I18nKey, string> = {
   studioHintSend: "В чат — скриншотом или файлом",
   studioSettings: "Настройки Office Studio",
   studioLanguage: "Язык интерфейса",
-  studioLanguageAuto: "Как в BB",
+  studioLanguageAuto: "Как в ALIA",
   studioLanguageRu: "Русский",
   studioLanguageEn: "English",
   studioSettingsPrototype: "Прототип",
@@ -1741,7 +1741,7 @@ export type LanguagePref = "auto" | Locale;
 export const I18N_EN = en;
 export const I18N_RU = ru;
 
-/** BB's own UI is English, so a Russian browser also counts: the Russifier plugin only translates strings it knows. */
+/** VesnALIA's own UI is English, so a Russian browser also counts: the Russifier plugin only translates strings it knows. */
 export function detectLocale(): Locale {
   const lang = globalThis.document?.documentElement?.lang ?? "";
   const browser = globalThis.navigator?.languages?.[0] ?? globalThis.navigator?.language ?? "";
@@ -1776,7 +1776,7 @@ export function useLocale(): Locale {
   return useSyncExternalStore(subscribeLanguage, studioLocale, studioLocale);
 }
 
-/** Studio UI: follows Office Studio language. File openers must keep calling `t()` (BB/browser locale). */
+/** Studio UI: follows Office Studio language. File openers must keep calling `t()` (ALIA/browser locale). */
 export function useT(): (key: I18nKey, vars?: Record<string, string | number>) => string {
   const locale = useLocale();
   return (key, vars = {}) => t(key, vars, locale);

@@ -3,12 +3,12 @@ import {
   experimental_NewThreadComposer as NewThreadComposer,
   experimental_Icon as Icon,
   ThreadChat,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRpc,
   useSdk,
   type NewThreadRequest,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { githubRpcContract } from "./server.js";
 import { toast } from "sonner";
 import { Button, Spinner } from "./shared-ui.js";
@@ -38,7 +38,7 @@ export function AgentComposer({
   hostId?: string;
 }) {
   const sdk = useSdk();
-  const current = useBbContext();
+  const current = useAliaContext();
   const [threadId, setThreadId] = useState<string | null>(null);
   const submit = async (request: NewThreadRequest) => {
     try {
@@ -89,7 +89,7 @@ type ItemTarget = {
 };
 
 export function AskAgent(target: ItemTarget) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <Button
       size="sm"
@@ -115,7 +115,7 @@ export function AgentTaskView({
   kind,
   onBack,
 }: ItemTarget & { onBack: () => void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const rpc = useRpc<typeof githubRpcContract>();
   const [task, setTask] = useState(kind === "pr" ? "Review" : "Investigate");
   const [target, setTarget] = useState<{

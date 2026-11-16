@@ -66,7 +66,7 @@ export function gpuChangeWords(world: World, box: FakeBox, plan: GpuPlan): strin
     const drawn = plan.installs && box.desktop ? " Its desktop is then drawn by the GPU." : "";
     return `${box.name} restarts${install} and gets ${cardName(card)}, ${card.model} with ${gib(card.memoryMiB)}, ${company}, ${about}. Everything running in it stops.${drawn}`;
   }
-  return `${capital(cardName(plan.fromCard!))} has ${listed(plan.others.map((other) => other.name))} running. bb-box moves ${box.name} to ${cardName(card)}, which has none, ${about}. Everything running in ${box.name} stops${gpuProgramsWords(box)}.${yielded}`;
+  return `${capital(cardName(plan.fromCard!))} has ${listed(plan.others.map((other) => other.name))} running. alia-box moves ${box.name} to ${cardName(card)}, which has none, ${about}. Everything running in ${box.name} stops${gpuProgramsWords(box)}.${yielded}`;
 }
 
 function namedIn(world: World, box: FakeBox): FakeBox[] {

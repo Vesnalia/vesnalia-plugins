@@ -1,7 +1,7 @@
 /**
  * The page's check that the relay is still there: a ping every few seconds,
  * and the session called lost when one goes unanswered with nothing else
- * arriving — the case a close event never reports (bb restarting behind the
+ * arriving — the case a close event never reports (VesnALIA restarting behind the
  * getbb.app tunnel leaves the browser's socket open).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

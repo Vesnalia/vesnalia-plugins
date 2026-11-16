@@ -1,6 +1,6 @@
 # Chrome Web Store listing
 
-Text for the Developer Dashboard. Upload `browser-bridge-for-bb-<version>.zip`
+Text for the Developer Dashboard. Upload `browser-bridge-for-alia-<version>.zip`
 from `npm run package --workspace browser-extension`.
 
 ## Store listing
@@ -17,7 +17,7 @@ from `npm run package --workspace browser-extension`.
 **Description:**
 
 ```
-Browser Bridge for bb lets the coding agents in bb work in your own browser tabs, in the background, while you keep using the browser.
+Browser Bridge for alia lets the coding agents in alia work in your own browser tabs, in the background, while you keep using the browser.
 
 Agents can read a page as a text outline, click, type, press keys, scroll, choose options, navigate and take screenshots, in any tab, including tabs that are not in front. Tabs that agents open go into a purple "Agent" tab group so you can see them at a glance, and a purple cursor shows where an agent clicks or types (you can turn it off in the popup).
 
@@ -26,11 +26,11 @@ You stay in control:
 • While an agent is working, the browser shows its debugging bar; closing it pauses agents too.
 • The extension only opens or navigates to http, https and about:blank pages.
 
-Requirements: the bb app and its Desktop & Browser Agent plugin, with the browser extension turned on and the bridge installed (Settings → Plugins → Desktop & Browser Agent → Browser extension). The extension talks only to that bridge on your own machine, through native messaging. It makes no network requests of its own and has no analytics.
+Requirements: the alia app and its Desktop & Browser Agent plugin, with the browser extension turned on and the bridge installed (Settings → Plugins → Desktop & Browser Agent → Browser extension). The extension talks only to that bridge on your own machine, through native messaging. It makes no network requests of its own and has no analytics.
 
 Works in Brave, Chrome, Edge and Chromium on macOS and Linux.
 
-Unofficial: not affiliated with bb or Cua AI. "bb" in the name only says which app it works with. Source code: https://github.com/qwadrox/bb-plugin-desktop-browser-agent
+Unofficial: not affiliated with alia or Cua AI. "alia" in the name only says which app it works with. Source code: https://github.com/qwadrox/bb-plugin-desktop-browser-agent
 ```
 
 ## Privacy practices
@@ -38,7 +38,7 @@ Unofficial: not affiliated with bb or Cua AI. "bb" in the name only says which a
 **Single purpose:**
 
 ```
-Lets coding agents running in the bb app on the user's own computer read and operate the user's browser tabs (read page text, click, type, scroll, navigate, take screenshots), relayed through a local native messaging bridge.
+Lets coding agents running in the alia app on the user's own computer read and operate the user's browser tabs (read page text, click, type, scroll, navigate, take screenshots), relayed through a local native messaging bridge.
 ```
 
 **Permission justifications:**
@@ -49,7 +49,7 @@ Lets coding agents running in the bb app on the user's own computer read and ope
   ```
 - `nativeMessaging`:
   ```
-  The extension's only connection is to the native messaging host that the bb Desktop & Browser Agent plugin installs on the same computer. Agent requests arrive and results return through it; nothing goes to a remote server.
+  The extension's only connection is to the native messaging host that the alia Desktop & Browser Agent plugin installs on the same computer. Agent requests arrive and results return through it; nothing goes to a remote server.
   ```
 - `tabs`:
   ```
@@ -65,7 +65,7 @@ Lets coding agents running in the bb app on the user's own computer read and ope
   ```
 - `alarms`:
   ```
-  Retries the connection to the local bridge periodically after bb or the browser restarts.
+  Retries the connection to the local bridge periodically after alia or the browser restarts.
   ```
 - **Host permissions:** `file:///*`:
   ```
@@ -75,7 +75,7 @@ Lets coding agents running in the bb app on the user's own computer read and ope
 **Remote code:** No, I am not using remote code. (All JavaScript is in the package.)
 
 **Data usage:** tick **Website content**. The page text and screenshots an
-agent asks for go to that agent in bb on the user's own computer, which sends
+agent asks for go to that agent in VesnALIA on the user's own computer, which sends
 them to the AI model provider the user chose. That is the item's single
 purpose, so the certifications below still hold.
 

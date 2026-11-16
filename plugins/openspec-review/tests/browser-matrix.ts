@@ -22,7 +22,7 @@ try {
   if (await show.isVisible()) await show.click();
   await page.getByRole('toolbar', { name: 'Right panel views' }).getByRole('button', { name: 'OpenSpec', exact: true }).click();
   const root = page.locator('.openspec-workspace');
-  const item = page.locator('.openspec-list').getByRole('button', { name: /add-bb-openspec-visual-plugin/ });
+  const item = page.locator('.openspec-list').getByRole('button', { name: /add-alia-openspec-visual-plugin/ });
   await item.waitFor();
   for (const width of [360, 480, 640, 1000]) {
     await root.evaluate((element, value) => { const panel = element.closest('aside'); if (!panel) throw Error('Missing thread panel'); panel.style.width = `${value + panel.offsetWidth - element.clientWidth}px`; }, width);

@@ -1,6 +1,6 @@
 // Rev 4 closure-check blocker, from the independent review (verbatim).
 import { expect, it } from "bun:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createTransportRecovery } from "../src/recovery.js";
 import { CODEX_HIGH, FAILURES, FakeCore } from "./fake-core.js";
 
@@ -32,8 +32,8 @@ it("a newer failure invalidates an older chain refresh already in flight", async
       } },
     },
   } as never });
-  await host.bb.storage.kv.set("armed", { at: 0 });
-  const recovery = createTransportRecovery(host.bb, {
+  await host.alia.storage.kv.set("armed", { at: 0 });
+  const recovery = createTransportRecovery(host.alia, {
     now: () => core.now, enabled: () => true, workflowRecovery: () => false, probe: async () => ({ reachable: true, detail: "HTTP 405" }),
   });
   await recovery.init();

@@ -1,6 +1,6 @@
 // Writes the files for every box (#455, core/box-files.ts) into each Linux
-// and macOS box that is running and a BB machine and has not had them as
-// they are now: as it joins BB, as it starts again after missing a change,
+// and macOS box that is running and a VesnALIA machine and has not had them as
+// they are now: as it joins VesnALIA, as it starts again after missing a change,
 // and when the list or a content changes. Windows boxes later. Each file is
 // the box user's, mode 600, its folders made. Nothing here logs or returns a
 // content: a failed write says the box and what the box said, which never
@@ -44,8 +44,8 @@ export class BoxFiles {
   }
 
   /**
-   * Takes the boxes running as bb-box starts as having the files: they had
-   * them when it stopped, as only bb-box changes them. One that is stopped
+   * Takes the boxes running as alia-box starts as having the files: they had
+   * them when it stopped, as only alia-box changes them. One that is stopped
    * gets them when it runs again.
    */
   async started(): Promise<void> {
@@ -54,7 +54,7 @@ export class BoxFiles {
     }
   }
 
-  /** A box's record changed: one that stopped or went is forgotten, and a running BB machine without the files as they are now gets them. */
+  /** A box's record changed: one that stopped or went is forgotten, and a running VesnALIA machine without the files as they are now gets them. */
   recorded(box: BoxRecord, deleted: boolean): void {
     if (deleted || !current(box)) {
       this.#had.delete(box.id);
@@ -63,7 +63,7 @@ export class BoxFiles {
     if (this.#had.get(box.id) !== this.#digest) void this.write(box);
   }
 
-  /** After the settings changed: when the files or their contents did, writes them into each running Linux and macOS box that is a BB machine. */
+  /** After the settings changed: when the files or their contents did, writes them into each running Linux and macOS box that is a VesnALIA machine. */
   async settingsChanged(): Promise<void> {
     const now = digest(this.#deps.files());
     if (now === this.#digest) return;
@@ -104,7 +104,7 @@ export class BoxFiles {
     if (!count && !this.#last) return [];
     const files = `${count} file${count === 1 ? "" : "s"} set`;
     if (!this.#last) {
-      return [{ id: "box-files", name: "Files for every box", status: "ok", detail: `${files}; none written yet. ${PRODUCT} writes them into each Linux and macOS box as it joins BB.`, fix: null }];
+      return [{ id: "box-files", name: "Files for every box", status: "ok", detail: `${files}; none written yet. ${PRODUCT} writes them into each Linux and macOS box as it joins VesnALIA.`, fix: null }];
     }
     const when = new Date(this.#last.at).toISOString().slice(0, 16).replace("T", " ");
     return this.#last.error
@@ -125,7 +125,7 @@ export class BoxFiles {
   }
 }
 
-/** Whether a box is one to have the files: running, a BB machine, and not Windows, which gets none yet. */
+/** Whether a box is one to have the files: running, a VesnALIA machine, and not Windows, which gets none yet. */
 function current(box: BoxRecord): boolean {
   return box.state === "ready" && box.enrol.state === "enrolled" && box.capabilities.os !== "windows";
 }

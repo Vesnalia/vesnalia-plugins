@@ -1,4 +1,4 @@
-# 015: Computer use drives a pinned Cua Driver through bb-box's own tools
+# 015: Computer use drives a pinned Cua Driver through alia-box's own tools
 
 Status: accepted, 30 September 2026. Partly supersedes
 [008](008-shared-control.md) and [011](011-interface-v1.md). Partly
@@ -62,7 +62,7 @@ computer-use service in the box.
   take control and when the box is released. A failed session is reopened
   once. For this, `CommandTransport` gains `spawn(script)`, which returns a
   byte channel to a long-running command.
-- **Agent tools.** The agent gets bb-box's six tools, never Cua's:
+- **Agent tools.** The agent gets alia-box's six tools, never Cua's:
   `computer_windows`, `computer_observe`, `computer_screenshot`,
   `computer_act`, `computer_type` and `computer_launch`.
   - Tree text has no frames, and uses the plugin's short references such as
@@ -88,7 +88,7 @@ computer-use service in the box.
 ## Consequences
 
 - Nothing in the box pauses the agent, on any OS. 008's cgroup freeze is
-  dropped. The pause is cooperative, like the rest of bb-box: the agent can
+  dropped. The pause is cooperative, like the rest of alia-box: the agent can
   still reach the box over SSH.
 - The core names Cua, as it names noVNC: in-box software, not a provider. A
   second driver, for example for the iOS Simulator, would be a new `driver`

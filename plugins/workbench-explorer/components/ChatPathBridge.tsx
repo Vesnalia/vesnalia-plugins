@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { mountChatPathButtons } from "@/lib/chat-path-buttons";
 import { registerSurfaceNavigation } from "@/lib/surface-navigation";
 import type { rpcContract } from "../contract";
@@ -19,7 +19,7 @@ import type { rpcContract } from "../contract";
  */
 export function ChatPathBridge({ threadId }: { threadId: string }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
 
   useEffect(() => {
     const controller = new AbortController();

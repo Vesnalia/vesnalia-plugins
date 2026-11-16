@@ -1,5 +1,5 @@
 // @vitest-environment node
-// The submit pipeline over the real host operations and a real git repository, with only bb faked.
+// The submit pipeline over the real host operations and a real git repository, with only VesnALIA faked.
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -57,8 +57,8 @@ async function worker(edit?: (doc: Doc) => void, opts: { repos?: boolean } = {})
   h.ctx.host = realHost;
   await (opts.repos === true ? seedRepoProject : seedProject)(h, edit);
   await startWorker(h);
-  h.bb.environments.get("env_1")!.path = worktree;
-  h.bb.environments.get("env_1")!.branchName = "wt-feature";
+  h.alia.environments.get("env_1")!.path = worktree;
+  h.alia.environments.get("env_1")!.branchName = "wt-feature";
 }
 
 beforeEach(() => {
@@ -146,6 +146,6 @@ describe("submit against a real repository", () => {
     await settleChecks(h.ctx);
     expect(lastCheck().body).toContain("FAIL echo lint says no; exit 7 (exit 7");
     expect(lastCheck().body).toContain("lint says no");
-    expect(h.bb.sent("thr_w1").at(-1)).toContain("exited with 7");
+    expect(h.alia.sent("thr_w1").at(-1)).toContain("exited with 7");
   });
 });

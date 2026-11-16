@@ -5,7 +5,7 @@ created: 2026-10-11
 updated: 2026-10-18
 status: active
 confidence: medium
-tags: [deployment, bb-plugin, release]
+tags: [deployment, alia-plugin, release]
 sources:
   - package.json
   - package-lock.json
@@ -17,23 +17,23 @@ sources:
 
 # Deployment
 
-TL;DR: Install the published plugin through BB’s plugin CLI, or build and install the checked-out source for local verification.
+TL;DR: Install the published plugin through VesnALIA’s plugin CLI, or build and install the checked-out source for local verification.
 
 ## Prerequisites
 
-- BB `>=0.43` and Plugin SDK `>=0.4.87` are declared as engine requirements (`package.json:4-7`).
+- VesnALIA `>=0.43` and Plugin SDK `>=0.4.87` are declared as engine requirements (`package.json:4-7`).
 - Node.js and npm are required by the lockfile and npm scripts; the plugin package is ESM (`package.json:1-4`).
-- The plugin manifest declares `./server.ts`, `./app.tsx`, and the `skills` directory under `bb` (`package.json:9-19`).
+- The plugin manifest declares `./server.ts`, `./app.tsx`, and the `skills` directory under `alia` (`package.json:9-19`).
 
 ## Deploy procedure
 
 1. Install the published plugin:
 
    ```sh
-   bb plugin install https://github.com/VKirill/bb-plugin-md-editor.git
+   alia plugin install https://github.com/VKirill/bb-plugin-md-editor.git
    ```
 
-   The `bb` manifest declares the app and server entry points (`package.json:9-19`); see [overview](overview.md#quick-start) for the install entry point.
+   The `alia` manifest declares the app and server entry points (`package.json:9-19`); see [overview](overview.md#quick-start) for the install entry point.
 
 2. For a checkout install, install dependencies and build:
 
@@ -42,15 +42,15 @@ TL;DR: Install the published plugin through BB’s plugin CLI, or build and inst
    npm run build
    ```
 
-   `build` runs `bb plugin build .` (`package.json:89-93`).
+   `build` runs `alia plugin build .` (`package.json:89-93`).
 
-3. Install the checkout into BB:
+3. Install the checkout into VesnALIA:
 
    ```sh
-   bb plugin install . --yes
+   alia plugin install . --yes
    ```
 
-   The local package declares its app and server entry points in the `bb` manifest (`package.json:9-19`, `app.tsx:668-675`); see [overview](overview.md) for the plugin setup context.
+   The local package declares its app and server entry points in the `alia` manifest (`package.json:9-19`, `app.tsx:668-675`); see [overview](overview.md) for the plugin setup context.
 
 4. Confirm the installed manifest declares the app, server handler, and skill directory (`package.json:9-19`).
 
@@ -58,17 +58,17 @@ TL;DR: Install the published plugin through BB’s plugin CLI, or build and inst
 
 1. Open a `.md` file and confirm the opener calls `open` and renders the returned content (`app.tsx:270-281`).
 2. Edit and save a file; the app calls `save` with the loaded hash and handles written or conflict results (`app.tsx:314-352`).
-3. Confirm BB’s server handler registered all four RPC endpoints (`server.ts:35-50`, `server.ts:77-123`).
+3. Confirm VesnALIA’s server handler registered all four RPC endpoints (`server.ts:35-50`, `server.ts:77-123`).
 4. Run the test suite with `npm test` and TypeScript checking with `npm run typecheck` (`package.json:89-93`).
 
 ## Rollback
 
-1. To view the file with BB’s standard preview, use **Standard preview** on the open-error panel; the opener renders the `Original` component supplied by BB (`app.tsx:596-606`, `app.tsx:496-505`).
-2. To roll back an installed release, install the chosen known-good plugin revision through BB’s plugin CLI using its source URL or local checkout, then reopen the file. The manifest identifies the BB app and server entry points (`package.json:9-19`); follow the [deployment procedure](#deploy-procedure) with the selected known-good source.
+1. To view the file with VesnALIA’s standard preview, use **Standard preview** on the open-error panel; the opener renders the `Original` component supplied by VesnALIA (`app.tsx:596-606`, `app.tsx:496-505`).
+2. To roll back an installed release, install the chosen known-good plugin revision through VesnALIA’s plugin CLI using its source URL or local checkout, then reopen the file. The manifest identifies the VesnALIA app and server entry points (`package.json:9-19`); follow the [deployment procedure](#deploy-procedure) with the selected known-good source.
 
 ## Troubleshooting
 
-- If BB does not load the app or RPC handler, check the manifest paths in `bb.app` and `bb.server` (`package.json:9-19`).
+- If VesnALIA does not load the app or RPC handler, check the manifest paths in `alia.app` and `alia.server` (`package.json:9-19`).
 - If open fails, check that the source resolves to a host and the file is UTF-8 and no larger than 5 MiB (`locate.ts:91-132`, `server.ts:81-86`).
 - If save reports conflict, another writer changed the file hash after open; reload or resolve that change before saving again (`server.ts:44-49`, `app.tsx:327-331`).
 

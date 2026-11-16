@@ -1,10 +1,10 @@
-// The public plugin data contract: any bb plugin can feed live data to Iris
+// The public plugin data contract: any VesnALIA plugin can feed live data to Iris
 // cards without Iris knowing about it.
 //
 // A plugin opts in by serving read-only GET routes under `iris/` with
-// bb.http.route, for example `bb.http.route("GET", "/iris/status", handler, { auth: "local" })`.
+// alia.http.route, for example `alia.http.route("GET", "/iris/status", handler, { auth: "local" })`.
 // A card reads one with load("plugin:<pluginId>/<name>"), which fetches
-// /api/v1/plugins/<pluginId>/http/iris/<name>?thread=<threadId> from bb's own
+// /api/v1/plugins/<pluginId>/http/iris/<name>?thread=<threadId> from VesnALIA's own
 // page and parses the answer by its content type (JSON, JSON Lines, CSV or
 // TSV, else text). Inside a live card it re-reads every 2 s like a file.
 // Only the `iris/` prefix is ever read, so a plugin shares exactly what it puts there.
@@ -67,7 +67,7 @@ export function parsePluginSource(spec: string): { ok: true; source: PluginSourc
   return { ok: true, source: { pluginId, name: segments.join("/"), query } };
 }
 
-/** The route a source reads, relative to bb's origin. */
+/** The route a source reads, relative to VesnALIA's origin. */
 export function pluginDataPath(source: PluginSource, threadId: string | null): string {
   const params = new URLSearchParams(source.query);
   if (threadId) params.set("thread", threadId);
@@ -109,7 +109,7 @@ async function readCapped(res: Response, cap: number, abort: AbortController): P
   return new TextDecoder().decode(all);
 }
 
-/** Fetches and parses a plugin source from bb's page. */
+/** Fetches and parses a plugin source from VesnALIA's page. */
 export async function loadPluginData(spec: string, threadId: string | null, raw: boolean, fetchImpl: typeof fetch = fetch, base?: string): Promise<Parsed> {
   const parsed = parsePluginSource(spec);
   if (!parsed.ok) return parsed;
@@ -185,7 +185,7 @@ export async function checkFeed(spec: string, threadId: string | null, base: str
   try {
     const res = await fetchImpl(new URL(route, base).href, { method: "GET", headers: { accept: "application/json, text/csv;q=0.9, text/plain;q=0.8" }, signal: abort.signal });
     const ms = Date.now() - started;
-    if (res.status === 404) return { ok: false, lines: [...lines, `Error: 404 in ${ms} ms. Plugin "${source.pluginId}" isn't installed or doesn't serve iris/${source.name} (bb.http.route("GET", "/iris/${source.name}", handler, { auth: "local" }))`] };
+    if (res.status === 404) return { ok: false, lines: [...lines, `Error: 404 in ${ms} ms. Plugin "${source.pluginId}" isn't installed or doesn't serve iris/${source.name} (alia.http.route("GET", "/iris/${source.name}", handler, { auth: "local" }))`] };
     if (!res.ok) return { ok: false, lines: [...lines, `Error: answered ${res.status} in ${ms} ms; a card shows that as an error`] };
     const type = res.headers.get("content-type") ?? "";
     const text = await readCapped(res, MAX_PLUGIN_DATA_BYTES, abort);
@@ -204,7 +204,7 @@ export async function checkFeed(spec: string, threadId: string | null, base: str
     lines.push(`Use it: <let feed={load("${full}")} />, or inside <Card state="live"> to re-read it every 10 s.`);
     return { ok: true, lines };
   } catch (e) {
-    return { ok: false, lines: [...lines, abort.signal.aborted ? `Error: no answer within ${PLUGIN_DATA_TIMEOUT_MS / 1000} s; a card gives up there` : `Error: couldn't reach bb: ${e instanceof Error ? e.message : String(e)}`] };
+    return { ok: false, lines: [...lines, abort.signal.aborted ? `Error: no answer within ${PLUGIN_DATA_TIMEOUT_MS / 1000} s; a card gives up there` : `Error: couldn't reach VesnALIA: ${e instanceof Error ? e.message : String(e)}`] };
   } finally {
     clearTimeout(timer);
   }

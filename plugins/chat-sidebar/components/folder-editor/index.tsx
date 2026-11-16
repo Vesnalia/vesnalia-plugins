@@ -3,7 +3,7 @@
 //
 // On a wide screen it has two columns, like Telegram Desktop's folder
 // settings: the strip on the left, the chosen folder (or the history) on the
-// right. On a phone the dialog is bb's bottom sheet and the columns become
+// right. On a phone the dialog is VesnALIA's bottom sheet and the columns become
 // steps, with a back link in the header.
 //
 // Changes save as they are made. Deleting a folder, resetting and restoring

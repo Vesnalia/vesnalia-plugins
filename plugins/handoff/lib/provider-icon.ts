@@ -1,13 +1,13 @@
 // Provider marks that stay legible in every theme.
 //
-// bb serves provider logos as monochrome SVGs drawn in `currentColor`. An
+// VesnALIA serves provider logos as monochrome SVGs drawn in `currentColor`. An
 // <img> loads the SVG as its own document, where `currentColor` is black, so
-// the mark vanishes on a dark theme. bb draws these logos as a mask filled
+// the mark vanishes on a dark theme. VesnALIA draws these logos as a mask filled
 // with the provider's tint, or with the text color when there is no tint.
 // These helpers do the same for the plugin's own provider marks.
 import type { CSSProperties } from "react";
 
-/** bb's per-provider brand color, one per color scheme. */
+/** VesnALIA's per-provider brand color, one per color scheme. */
 export interface ProviderIconTint {
   light: string;
   dark: string;
@@ -16,7 +16,7 @@ export interface ProviderIconTint {
 const HEX_COLOR = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
 /**
- * Read bb's optional `strings.iconTint` from a provider record. Only well-formed
+ * Read VesnALIA's optional `strings.iconTint` from a provider record. Only well-formed
  * hex colors pass, since the value ends up in an inline style.
  */
 export function providerIconTint(provider: unknown): ProviderIconTint | null {

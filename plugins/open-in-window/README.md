@@ -1,6 +1,6 @@
-# bb-plugin-open-in-window
+# alia-plugin-open-in-window
 
-Adds **Open in new window** to every bb thread actions menu (sidebar row "...",
+Adds **Open in new window** to every VesnALIA thread actions menu (sidebar row "...",
 right-click, and thread header). It opens the thread's URL the way a
 `target="_blank"` link does.
 
@@ -10,6 +10,6 @@ right-click, and thread header). It opens the thread's URL the way a
 ```sh
 npm test
 npm run typecheck
-bb plugin build
-bb plugin install path:. # from this directory
+alia plugin build
+alia plugin install path:. # from this directory
 ```

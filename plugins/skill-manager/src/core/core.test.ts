@@ -239,7 +239,7 @@ describe("doctor", () => {
       ["only", "unmanaged"],
       ["s", "modified"],
     ]);
-    expect(issues.every((i) => i.fix.startsWith("bb skill-manager "))).toBe(true);
+    expect(issues.every((i) => i.fix.startsWith("alia skill-manager "))).toBe(true);
   });
 });
 

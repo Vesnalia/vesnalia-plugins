@@ -1,4 +1,4 @@
-// Runs the `lobu` CLI the way the user's terminal would. bb opened from the
+// Runs the `lobu` CLI the way the user's terminal would. VesnALIA opened from the
 // Dock inherits launchd's PATH (/usr/bin:/bin:/usr/sbin:/sbin), so the CLI's
 // `#!/usr/bin/env node` cannot find a Homebrew, nvm, or Bun install of node.
 // The plugin therefore runs it with the PATH the user's login shell sets up.
@@ -19,7 +19,7 @@ const INSTALL_TIMEOUT_MS = 180_000;
 /** The CLI major the plugin is built against: `context list --json` arrived in 24. */
 export const CLI_MAJOR = 24;
 const CLI_PACKAGE = `@lobu/cli@^${CLI_MAJOR}`;
-const MARKER = "__BB_PLUGIN_LOBU_PATH__";
+const MARKER = "__ALIA_PLUGIN_LOBU_PATH__";
 
 /**
  * The user's home directory: HOME first, as Node's os.homedir() does. Bun's
@@ -119,7 +119,7 @@ export function cliFailure(error: unknown, context: string | null): LobuSetupErr
   const detail = failure.killed
     ? `it did not answer within ${CLI_TIMEOUT_MS / 1000} seconds`
     : errorOutput(failure.stderr) || `it exited with ${String(failure.signal ?? failure.code)}`;
-  return new LobuSetupError("cli_failed", context, `bb could not run the lobu CLI: ${detail}`);
+  return new LobuSetupError("cli_failed", context, `alia could not run the lobu CLI: ${detail}`);
 }
 
 /** A package manager on the user's PATH that can install the CLI globally. */

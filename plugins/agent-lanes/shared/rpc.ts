@@ -1,5 +1,5 @@
 // RPC contract between server.ts and app/. The browser imports its type only.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { laneBlockSchema, lanesSnapshotSchema, blockDetailSchema } from "./schemas";
 export * from "./schemas";

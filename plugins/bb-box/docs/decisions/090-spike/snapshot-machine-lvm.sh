@@ -10,11 +10,11 @@ VG=${BBBOX_HOOK_VG:-bbvg}
 POOL=${BBBOX_HOOK_POOL:-thinpool}
 ORIGIN=${BBBOX_HOOK_ORIGIN:-machine}
 MOUNT=${BBBOX_HOOK_MOUNT:-/srv/machine}
-TAKEN_AS=$MOUNT/.bb-box-taken-as
-RESTORED_BY=$MOUNT/.bb-box-restored-by
+TAKEN_AS=$MOUNT/.alia-box-taken-as
+RESTORED_BY=$MOUNT/.alia-box-restored-by
 SNAPSHOT_PREFIX=bbsn-
 REPLACED=$ORIGIN-replaced
-TAG=bb-box
+TAG=alia-box
 MOST_PERCENT_FULL=85
 STOP_AFTER_STEP_FOR_TESTS=${BBBOX_HOOK_STOP_AFTER:-}
 
@@ -54,7 +54,7 @@ freeze_and_snapshot() {
   printf '%s\n' "$id" >"$TAKEN_AS" && sync -f "$MOUNT"
   fsfreeze -f "$MOUNT" || return 1
   frozen_at=$(date +%s%3N)
-  lvcreate -q -s -n "$(lv_of "$id")" --addtag "$TAG" --addtag "bb-box-snapshot-$id" "$VG/$ORIGIN" >/dev/null
+  lvcreate -q -s -n "$(lv_of "$id")" --addtag "$TAG" --addtag "alia-box-snapshot-$id" "$VG/$ORIGIN" >/dev/null
   made=$?
   fsfreeze -u "$MOUNT"
   paused_ms=$(($(date +%s%3N) - frozen_at))

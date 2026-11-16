@@ -296,7 +296,7 @@ function noManualMerge(store: Store, project: ProjectRow, ticket: TicketRow): st
   if (settings === null) return `${ticket.key}'s repo sets no auto_merge, so Loom never merges its pull request.`;
   if (settings.mode !== "manual") return `${ticket.key}'s repo sets auto_merge.mode = "auto", so Loom merges its pull request by itself once it is ready.`;
   if (ticket.state !== "pr_open" || ticket.pr_url === null || ticket.pushed_sha === null) return `${ticket.key} is ${ticket.state} with no open pull request on a commit Loom pushed, so there is no merge to confirm.`;
-  if (attemptState(store, ticket.id).off || projectAutoMergeOff(store, project.id)) return `Auto-merge is off for ${ticket.key}, so Loom would not merge it. Turn it on first with \`bb loom auto-merge ${project.slug} on\`.`;
+  if (attemptState(store, ticket.id).off || projectAutoMergeOff(store, project.id)) return `Auto-merge is off for ${ticket.key}, so Loom would not merge it. Turn it on first with \`alia loom auto-merge ${project.slug} on\`.`;
   return null;
 }
 
@@ -425,7 +425,7 @@ export async function maintainFinalReviews(ctx: EngineCtx, _projectId?: number):
     try {
       await upkeep(ctx, projectId, ticketId, { items: null });
     } catch (error) {
-      ctx.bb.log("warn", `Keeping up the final reviews of ticket ${ticketId} stopped: ${errText(error)}`);
+      ctx.alia.log("warn", `Keeping up the final reviews of ticket ${ticketId} stopped: ${errText(error)}`);
     }
   }
   const hosts = () => ctx.store.projects().flatMap((project) => {
@@ -553,7 +553,7 @@ function unknownPost(ctx: EngineCtx, project: ProjectRow, ticket: TicketRow, set
   addPost(
     ctx,
     ticket,
-    `Loom asked to merge ${attempt.url} (attempt ${attempt.n} of ${settings.maxAttempts}), ${why}, so it cannot tell whether the ${what}, and does not ${again} again. It keeps reading the pull request; once you have checked, \`bb loom auto-merge ${project.slug} retry --ticket ${ticket.key}\` lets it ask again.${message === null ? "" : `\n\n${clip(message, 1500)}`}`,
+    `Loom asked to merge ${attempt.url} (attempt ${attempt.n} of ${settings.maxAttempts}), ${why}, so it cannot tell whether the ${what}, and does not ${again} again. It keeps reading the pull request; once you have checked, \`alia loom auto-merge ${project.slug} retry --ticket ${ticket.key}\` lets it ask again.${message === null ? "" : `\n\n${clip(message, 1500)}`}`,
     { outcome: "auto_merge_unknown", url: attempt.url, n: attempt.n, attempt: attempt.id, ...(message === null ? {} : { message: clip(message, 2000) }) },
   );
 }
@@ -616,7 +616,7 @@ async function settleAttempt(ctx: EngineCtx, project: ProjectRow, ticket: Ticket
       if (removed.reason === "manual") {
         outcome(ctx, ticket, attempt, "stopped", "removed from the merge queue by a person");
         ctx.store.event(ticket.project_id, ticket.id, TICKET_AUTO_MERGE, LOOM_ACTOR, { on: false, why: "dequeued" });
-        addPost(ctx, ticket, `Someone removed ${ticket.pr_url} from the merge queue, so Loom stops merging it by itself. \`bb loom auto-merge ${project.slug} on --ticket ${ticket.key}\` lets it ask again.`, { outcome: "auto_merge_stopped", url: ticket.pr_url, reason: removed.reason });
+        addPost(ctx, ticket, `Someone removed ${ticket.pr_url} from the merge queue, so Loom stops merging it by itself. \`alia loom auto-merge ${project.slug} on --ticket ${ticket.key}\` lets it ask again.`, { outcome: "auto_merge_stopped", url: ticket.pr_url, reason: removed.reason });
         return;
       }
       await rejected(ctx, project, ticket, settings, state, `GitHub's merge queue removed the pull request: ${removed.reason.replace(/_/g, " ")}.`, true, "the merge queue turned it away");
@@ -629,7 +629,7 @@ async function settleAttempt(ctx: EngineCtx, project: ProjectRow, ticket: Ticket
 }
 
 /**
- * `bb loom auto-merge <slug> on|off|retry [--ticket KEY]`: the human turns Loom's merging off or on again, for the project
+ * `alia loom auto-merge <slug> on|off|retry [--ticket KEY]`: the human turns Loom's merging off or on again, for the project
  * or one ticket, or clears a ticket's attempt in flight so the next ready read asks again. On for a ticket starts its
  * attempts afresh. Returns what changed, in a sentence.
  */

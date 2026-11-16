@@ -33,7 +33,7 @@ function localeFromLanguage(language: string): PluginLocale | null {
   return null;
 }
 
-/** The SDK has no locale hook: use the BB page, then browser, then English. */
+/** The SDK has no locale hook: use the VesnALIA page, then browser, then English. */
 export function resolvePluginLocale(
   setting: LanguageSetting,
   documentLanguage: string | null,

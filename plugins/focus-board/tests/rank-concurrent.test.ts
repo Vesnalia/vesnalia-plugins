@@ -7,8 +7,8 @@
 // in-process queue (withKvWriteLock in server.ts); these tests pin what
 // that serialization guarantees.
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import type { FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import type { FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { RANK_KV_KEY } from "../lib/rank";
 
@@ -39,7 +39,7 @@ async function setup(): Promise<{
       },
     },
   });
-  const kv = host.bb.storage.kv;
+  const kv = host.alia.storage.kv;
   const rawGet = kv.get.bind(kv);
   const rawSet = kv.set.bind(kv);
   const gates = new Map<string, Deferred>();
@@ -52,7 +52,7 @@ async function setup(): Promise<{
     }
     await rawSet(key, value);
   }) as typeof kv.set;
-  await plugin(host.bb);
+  await plugin(host.alia);
   return {
     host,
     callRpc: (method, input) =>

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { GoalItem, GoalItemStatus } from "../contract.js";
 import { currentSliceTitle } from "./titles.js";
 
@@ -71,8 +71,8 @@ function newId(): string {
   return `itm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function createItemStore(bb: BbPluginApi) {
-  const db = bb.storage.database();
+export function createItemStore(alia: AliaPluginApi) {
+  const db = alia.storage.database();
 
   const listStmt = db.prepare(
     "SELECT * FROM goal_items WHERE thread_id = ? ORDER BY sort_order ASC, created_at ASC",

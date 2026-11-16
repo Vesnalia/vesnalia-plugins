@@ -148,14 +148,14 @@ export function ExcalidrawEditor({
 
   if (loadError) {
     return (
-      <div className="bb-files-excalidraw-state" role="alert">
+      <div className="alia-files-excalidraw-state" role="alert">
         {loadError}
       </div>
     );
   }
   if (!scene) {
     return (
-      <div className="bb-files-excalidraw-state" role="status">
+      <div className="alia-files-excalidraw-state" role="status">
         Loading drawing…
       </div>
     );
@@ -164,8 +164,8 @@ export function ExcalidrawEditor({
   return (
     <div
       ref={mountRef}
-      className="bb-files-excalidraw"
-      data-testid="bb-files-excalidraw"
+      className="alia-files-excalidraw"
+      data-testid="alia-files-excalidraw"
       onPointerDownCapture={() => {
         hasUserInteractedRef.current = true;
       }}

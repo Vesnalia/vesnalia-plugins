@@ -1,11 +1,11 @@
 import { readdirSync } from "node:fs";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 /** Skill folders the plugin ships in skills/. */
 export const shippedSkills = readdirSync(new URL("./skills", import.meta.url), { withFileTypes: true })
   .filter(entry => entry.isDirectory()).map(entry => entry.name).sort();
 
-type Sdk = BbPluginApi["sdk"];
+type Sdk = AliaPluginApi["sdk"];
 
 type CurrentFile = {
   content: string;
@@ -180,11 +180,11 @@ export function makeWorkspaceSdk(options: {
       },
     },
     plugins: {
-      // bb--git serves workspace status and diffs with the same rows.
+      // alia--git serves workspace status and diffs with the same rows.
       callRpc: async ({ pluginId, method, input }: { pluginId: string; method: string; input: Record<string, unknown> }) => {
         const environments = sdk.environments as unknown as Record<string, (args: Record<string, unknown>) => Promise<unknown>>;
-        if (pluginId === "bb--git" && method === "workspaceStatus") return environments.status!(input);
-        if (pluginId === "bb--git" && method === "diff") {
+        if (pluginId === "alia--git" && method === "workspaceStatus") return environments.status!(input);
+        if (pluginId === "alia--git" && method === "diff") {
           const { target: { type, ...target }, ...rest } = input as { target: { type: string } };
           return environments.diff!({ ...rest, ...target, target: type });
         }

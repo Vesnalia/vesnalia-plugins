@@ -1,8 +1,8 @@
 /**
  * The watch runner: runs the scripts in the home's `watches/` folder on their schedules while the
- * plugin is loaded in bb, and sends the first mate whatever they print.
+ * plugin is loaded in VesnALIA, and sends the first mate whatever they print.
  *
- * bb's automations always start an agent run, and most runs of a watch should cost nothing, so the
+ * VesnALIA's automations always start an agent run, and most runs of a watch should cost nothing, so the
  * plugin keeps its own clock: a timer on each minute's boundary that runs every enabled, valid watch
  * whose schedule (`watch-schedule.ts`) matches that minute. A run prints nothing — the usual case —
  * and nothing happens. A run that prints something is queued, and the queue goes to the first mate in
@@ -107,7 +107,7 @@ export interface WatchRunnerOptions {
   stateFile: string;
   /** Where each script's `FIRSTMATE_WATCH_STATE` directory goes. */
   scriptStateRoot: string;
-  /** Where a failed tick, save or delivery is logged: bb's plugin log. */
+  /** Where a failed tick, save or delivery is logged: VesnALIA's plugin log. */
   log: Log;
   now?: () => Date;
   run?: typeof runWatchScript;

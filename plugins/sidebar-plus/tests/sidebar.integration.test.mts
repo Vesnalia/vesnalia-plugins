@@ -6,12 +6,12 @@ import { DatabaseSync } from "node:sqlite";
 import { test } from "node:test";
 import { pathToFileURL } from "node:url";
 import { z } from "zod";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { ProjectVisibilityState } from "../sidebar-preferences";
 
 interface ProjectRecord { id: string; name: string }
 interface RpcMethod { input: z.ZodType; output: z.ZodType }
-interface PluginModule { default: (bb: BbPluginApi) => Promise<void> }
+interface PluginModule { default: (alia: AliaPluginApi) => Promise<void> }
 type RpcHandler = (input: unknown) => Promise<unknown>;
 
 const moduleUrl: string = pathToFileURL(join(process.cwd(), "dist/server.js")).href;
@@ -32,7 +32,7 @@ class SidebarHost {
   }
 
   async start(): Promise<void> {
-    // Only the surfaces this plugin actually consumes are implemented; no live BB state is touched.
+    // Only the surfaces this plugin actually consumes are implemented; no live VesnALIA state is touched.
     const api = {
       pluginId: "sidebar-plus",
       sdk: { projects: { list: async (): Promise<ProjectRecord[]> => [...this.projects] } },
@@ -59,7 +59,7 @@ class SidebarHost {
       },
       onDispose: (_dispose: () => void): void => {},
     };
-    await pluginModule.default(api as unknown as BbPluginApi);
+    await pluginModule.default(api as unknown as AliaPluginApi);
   }
 
   async call(name: string, input: unknown): Promise<ProjectVisibilityState> {

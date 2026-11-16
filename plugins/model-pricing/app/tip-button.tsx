@@ -1,5 +1,5 @@
 /**
- * A button with bb's own tooltip, which bb's vendored `Button` uses in place of
+ * A button with VesnALIA's own tooltip, which VesnALIA's vendored `Button` uses in place of
  * a `title`. The tooltip hangs on a wrapper so it also shows while the button
  * is disabled, which is when "why can't I press this?" is asked.
  */

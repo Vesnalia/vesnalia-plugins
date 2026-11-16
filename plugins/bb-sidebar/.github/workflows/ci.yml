@@ -25,8 +25,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check BB SDK surface
-        run: npx --no-install bb plugin types --check
+      - name: Check ALIA SDK surface
+        run: npx --no-install alia plugin types --check
 
       - name: Run lint, format, Knip, typecheck, tests, and build
         run: npm run check

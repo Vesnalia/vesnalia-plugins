@@ -1,7 +1,7 @@
-export const issueDragType = "application/x-bb-jira-issue";
+export const issueDragType = "application/x-alia-jira-issue";
 
-/** Route our native drops through BB's public mention clipboard format.
- * BB's editor understands mention HTML on paste, but its generic drop path
+/** Route our native drops through VesnALIA's public mention clipboard format.
+ * VesnALIA's editor understands mention HTML on paste, but its generic drop path
  * otherwise flattens that HTML into text. No draft or editor internals are used.
  */
 export function mountIssueDrops() {

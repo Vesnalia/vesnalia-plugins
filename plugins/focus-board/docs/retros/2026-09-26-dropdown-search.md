@@ -4,7 +4,7 @@
 
 ## The pure-module split is what made this shippable in one pass
 
-The board has no DOM test harness: the panel is a browser-less bb surface,
+The board has no DOM test harness: the panel is a browser-less VesnALIA surface,
 so vitest only reaches logic modules. Putting the rule in
 `components/dropdown-search.ts` (threshold + substring match) meant the
 behavior that can be tested was tested, and the JSX that cannot be tested
@@ -43,10 +43,10 @@ Six should-fix items, all real, none cosmetic-only:
 - Local branch deletion after merge is refused while the worktree is
   checked out, so the sashay's step-12 cleanup has to wait for the session
   to leave the directory. The remote branch is gone; the local one and the
-  bb worktree die with the thread.
-- `bb plugin source` is the command that answers "what is the running bb
-  actually serving". It reported a `path:` source, which turned "update bb"
-  into pull + build + `bb plugin reload` rather than a registry update.
+  VesnALIA worktree die with the thread.
+- `alia plugin source` is the command that answers "what is the running VesnALIA
+  actually serving". It reported a `path:` source, which turned "update VesnALIA"
+  into pull + build + `alia plugin reload` rather than a registry update.
 
 ## Retro notes
 

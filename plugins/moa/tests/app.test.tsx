@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, expect, it, vi } from "vitest";
 import { act, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, mountPluginContentScripts, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, mountPluginContentScripts, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { Config } from "../contract";
 beforeAll(() => {
   window.matchMedia = vi.fn().mockImplementation(() => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
@@ -77,7 +77,7 @@ it("hides only the MoA draft chip and removes its styling on disposal", async ()
     expect(getComputedStyle(own).display).toBe("none");
     expect(getComputedStyle(other).display).not.toBe("none");
     await scripts.lifecycle.dispose();
-    expect(document.querySelector('style[data-bb-moa="draft-marker"]')).toBeNull();
+    expect(document.querySelector('style[data-alia-moa="draft-marker"]')).toBeNull();
   } finally { own.remove(); other.remove(); await scripts.lifecycle.dispose(); }
 });
 
@@ -109,7 +109,7 @@ it("opens an exact message consultation in a modal and exposes the advisor sessi
 
 it("decodes legacy and multi-participant payloads for readable Markdown", async () => {
   const { readablePayload } = await import("../history");
-  expect(readablePayload('[bb-moa-reference:run]\n' + JSON.stringify({ advice: '## Heading\n\n**Important**' }))).toBe('\n## Heading\n\n**Important**');
+  expect(readablePayload('[alia-moa-reference:run]\n' + JSON.stringify({ advice: '## Heading\n\n**Important**' }))).toBe('\n## Heading\n\n**Important**');
   const formatted = readablePayload(JSON.stringify({ advisors: [{ model: 'A', advice: 'First\n\n- Item' }, { model: 'B', advice: 'Second' }] }));
   expect(formatted).toContain('### A\n\nFirst\n\n- Item'); expect(formatted).toContain('### B\n\nSecond');
   expect(formatted).not.toContain('\\n');

@@ -64,7 +64,7 @@ export function isLiveThread(thread: FocusThread): boolean {
 }
 
 /**
- * Run on a schedule: spawned by bb's automations plugin, or a thread an
+ * Run on a schedule: spawned by VesnALIA's automations plugin, or a thread an
  * automation re-prompts on every tick (its target thread). The second kind
  * has no automation origin of its own, so the caller passes their ids.
  */
@@ -150,7 +150,7 @@ export function treeHasUnread<T extends FocusThread>(tree: ThreadTree<T>): boole
 /**
  * Split open threads into Focus, Periodic and Archive. A tree stays in Focus
  * when it had activity inside the window, is pinned, or is running or waiting
- * for the user. Closed (bb-archived) trees always go to the Archive. Opening a
+ * for the user. Closed (alia-archived) trees always go to the Archive. Opening a
  * thread does not move it: only new activity brings it back to Focus.
  * A periodic tree that ticks every few minutes would never leave Focus, so
  * unless `showAutomations` is on it goes to `periodic` (its own tab) however

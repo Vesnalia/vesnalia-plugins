@@ -311,7 +311,7 @@ problem; the measurements below say the lane direction was never involved.
 
 ### What the live board actually did (before this change)
 
-bb serving the plugin at 358 threads / 139 cards, three cold loads per lane
+VesnALIA serving the plugin at 358 threads / 139 cards, three cold loads per lane
 direction, page-side `performance.now()` via a puppeteer census:
 
 | Direction | first card | nine mount lists all landed | card-count changes after the paint |
@@ -338,7 +338,7 @@ and why the metadata sometimes reaches the screen while it is still painting.
 Six of the nine mount handlers walked every live thread and read its plugin
 metadata namespace: `done_list`, `pin_parks_list`, `link_list`,
 `error_acks_list`, `snooze_list`, `groups_list`. Fired together they SERIALIZE
-on bb's bridge, so the fan-in cost the sum, not the max. Measured from the shell
+on VesnALIA's bridge, so the fan-in cost the sum, not the max. Measured from the shell
 against the running plugin (one `curl` per call, then six in parallel):
 
 ```

@@ -1,4 +1,4 @@
-// Tests for lib/lines.ts against Markdown HTML shaped like BB's (bb 0.46).
+// Tests for lib/lines.ts against Markdown HTML shaped like VesnALIA's (VesnALIA 0.46).
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { Window } from "happy-dom";

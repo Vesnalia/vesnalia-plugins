@@ -1,4 +1,4 @@
-Pinch to make text bigger or smaller, anywhere in bb.
+Pinch to make text bigger or smaller, anywhere in VesnALIA.
 
 ## What you get
 

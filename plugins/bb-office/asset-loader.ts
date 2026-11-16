@@ -43,7 +43,7 @@ import type {
 } from "./vendor/pixel-agents/webview-ui/src/office/types";
 import { setWallSprites } from "./vendor/pixel-agents/webview-ui/src/office/wallTiles";
 
-export const BB_OFFICE_ASSET_ROOT = "/api/v1/plugins/bb-office/http/assets";
+export const ALIA_OFFICE_ASSET_ROOT = "/api/v1/plugins/alia-office/http/assets";
 
 export type OfficeLayoutKind = "compact" | "work-club";
 export type EmbeddedAssetMap = Readonly<Record<string, string>>;
@@ -265,7 +265,7 @@ async function decodeFurniture(
 const assetsPromises = new Map<string, Promise<OfficeLayout>>();
 
 export function loadPixelAgentsOffice(
-  assetRoot = BB_OFFICE_ASSET_ROOT,
+  assetRoot = ALIA_OFFICE_ASSET_ROOT,
   layoutKind: OfficeLayoutKind = "compact",
   embeddedAssets?: EmbeddedAssetMap,
 ): Promise<OfficeLayout> {

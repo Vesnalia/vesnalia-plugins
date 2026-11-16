@@ -131,7 +131,7 @@ export async function checkEnv(paths: HostPaths, input: EnvCheckInput): Promise<
       required: true,
       version: nodeVersion,
       detail: process.execPath,
-      fix: `Обновите bb: бот запускается тем же Node.js, что и bb (нужен ${MIN_NODE_MAJOR}+)`,
+      fix: `Обновите alia: бот запускается тем же Node.js, что и alia (нужен ${MIN_NODE_MAJOR}+)`,
     }),
     item({
       id: "runtime",
@@ -204,7 +204,7 @@ export async function checkEnv(paths: HostPaths, input: EnvCheckInput): Promise<
       required: true,
       version: null,
       detail: gigaam.detail,
-      fix: "Установите плагин gigaam и дождитесь готовности (bb gigaam status) или укажите адрес сервера в настройке gigaamUrl",
+      fix: "Установите плагин gigaam и дождитесь готовности (VesnALIA gigaam status) или укажите адрес сервера в настройке gigaamUrl",
     }),
   ];
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Installs the ZCode bridge on this Mac so BB (or you, from a terminal) can drive the ZCode desktop app.
+# Installs the ZCode bridge on this Mac so ALIA (or you, from a terminal) can drive the ZCode desktop app.
 #
 #   scripts/install.sh [--bin-dir DIR] [--no-plugin] [--default-mode ask|auto|full] [--rewards-job] [--dry-run] [--uninstall]
 #
@@ -7,10 +7,10 @@
 #   1. checks macOS, Python 3, Node 20+, the Swift compiler (Xcode Command Line Tools) and the ZCode app;
 #   2. builds the accessibility helper zcax from native/zcax.swift;
 #   3. copies zcbridge, zcax, zcode-acp (+ zcode-acp.mjs) to ~/.local/share/zcode-bridge and links the three commands into --bin-dir
-#      (default ~/.local/bin; BB's host daemon must have that folder on its PATH, or set the plugin's "Agent command" to the full path);
+#      (default ~/.local/bin; ALIA's host daemon must have that folder on its PATH, or set the plugin's "Agent command" to the full path);
 #   4. with --default-mode writes ~/.zcode-bridge/config.json (the mode `zcbridge send` uses when you name none);
 #   5. with --rewards-job installs a LaunchAgent that claims ZCode's daily token banner (see README);
-#   6. installs the BB plugin from this checkout unless --no-plugin or `bb` is missing.
+#   6. installs the ALIA plugin from this checkout unless --no-plugin or `alia` is missing.
 # It never signs in, never reads ZCode's credentials, and never runs `zcode login`.
 set -euo pipefail
 
@@ -80,7 +80,7 @@ for c in zcbridge zcode-acp zcax; do
   fi
   run ln -sfn "$SHARE/$c" "$BIN_DIR/$c"
 done
-case ":$PATH:" in *":$BIN_DIR:"*) ;; *) say "  note: $BIN_DIR is not on your PATH here; add it, and make sure BB's host daemon sees it too (or set the plugin's \"Agent command\" to $BIN_DIR/zcode-acp).";; esac
+case ":$PATH:" in *":$BIN_DIR:"*) ;; *) say "  note: $BIN_DIR is not on your PATH here; add it, and make sure ALIA's host daemon sees it too (or set the plugin's \"Agent command\" to $BIN_DIR/zcode-acp).";; esac
 
 # 4. default mode
 if [ -n "$DEFAULT_MODE" ]; then
@@ -112,13 +112,13 @@ PL
   fi
 fi
 
-# 6. the BB plugin
+# 6. the ALIA plugin
 if [ "$PLUGIN" = 1 ]; then
-  if command -v bb >/dev/null; then
-    say "Installing the BB plugin from $SRC"
-    run bb plugin install "$SRC" --yes
+  if command -v alia >/dev/null; then
+    say "Installing the ALIA plugin from $SRC"
+    run alia plugin install "$SRC" --yes
   else
-    say "bb is not on PATH: install the plugin later with  bb plugin install $SRC  (or from the BB Community marketplace)."
+    say "alia is not on PATH: install the plugin later with  alia plugin install $SRC  (or from the ALIA Community marketplace)."
   fi
 fi
 
@@ -127,10 +127,10 @@ cat <<MSG
 Almost done. One thing only you can do: macOS must let the program that runs zcax control ZCode.
   System Settings > Privacy & Security > Accessibility, add and switch on:
     - your terminal app (for running zcbridge by hand), and
-    - the program that runs BB's host daemon (find it with:  ps -axo comm | grep -i node ), for chats started from BB.
+    - the program that runs ALIA's host daemon (find it with:  ps -axo comm | grep -i node ), for chats started from ALIA.
 Keep the ZCode app open and signed in (sign in inside the app; this tool never logs in for you).
 
 Check:   $BIN_DIR/zcbridge doctor
 Try:     $BIN_DIR/zcbridge send --folder ~/some/project --prompt "Reply with OK" --wait
-In BB:   Settings > Plugins > ZCode provider, then pick ZCode as the provider of a chat.
+In ALIA:   Settings > Plugins > ZCode provider, then pick ZCode as the provider of a chat.
 MSG

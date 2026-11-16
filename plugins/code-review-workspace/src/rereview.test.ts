@@ -14,7 +14,7 @@ vi.mock("./gh", async (orig) => {
   };
 });
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { rerunReview } from "./rereview";
 import { runReviewCommand } from "./review-command";
 import { targetKey } from "./targets";
@@ -31,15 +31,15 @@ function host() {
 }
 
 test("rerunReview re-fetches a PR diff, re-saves patch, sets generating, and returns ok", async () => {
-  const { bb } = host();
-  const store = testStore(bb);
+  const { alia } = host();
+  const store = testStore(alia);
   await store.saveReview({
     targetKey: "pr-7", kind: "pr", number: 7, repo: "acme/web", status: "ready", createdAt: 1,
     projectId: "p1", headSha: "oldsha", gitRef: "main...feature",
   });
   await store.savePatch("pr-7", "stale patch");
 
-  const res = await rerunReview({ bb, store, gh }, "pr-7");
+  const res = await rerunReview({ alia, store, gh }, "pr-7");
 
   expect(res).toEqual({ ok: true });
   expect(await store.patch("pr-7")).toContain("diff --git a/a.ts");
@@ -48,15 +48,15 @@ test("rerunReview re-fetches a PR diff, re-saves patch, sets generating, and ret
 });
 
 test("rerunReview re-fetches a local-ref diff via git when cwd is present", async () => {
-  const { bb } = host();
-  const store = testStore(bb);
+  const { alia } = host();
+  const store = testStore(alia);
   await store.saveReview({
     targetKey: "ref-abc", kind: "ref", status: "ready", createdAt: 1,
     projectId: "p1", gitRef: "main...feature", cwd: "/repo",
   });
   await store.savePatch("ref-abc", "stale patch");
 
-  const res = await rerunReview({ bb, store, gh }, "ref-abc");
+  const res = await rerunReview({ alia, store, gh }, "ref-abc");
 
   expect(res).toEqual({ ok: true });
   expect(await store.patch("ref-abc")).toContain("diff --git a/b.ts");
@@ -64,41 +64,41 @@ test("rerunReview re-fetches a local-ref diff via git when cwd is present", asyn
 });
 
 test("rerunReview fails a local-ref review with no stored cwd", async () => {
-  const { bb } = host();
-  const store = testStore(bb);
+  const { alia } = host();
+  const store = testStore(alia);
   await store.saveReview({
     targetKey: "ref-abc", kind: "ref", status: "ready", createdAt: 1,
     projectId: "p1", gitRef: "main...feature",
   });
 
-  const res = await rerunReview({ bb, store, gh }, "ref-abc");
+  const res = await rerunReview({ alia, store, gh }, "ref-abc");
 
   expect(res.ok).toBe(false);
   expect(res.error).toMatch(/working dir/i);
 });
 
 test("rerunReview fails for an unknown target", async () => {
-  const { bb } = host();
-  const store = testStore(bb);
-  const res = await rerunReview({ bb, store, gh }, "missing");
+  const { alia } = host();
+  const store = testStore(alia);
+  const res = await rerunReview({ alia, store, gh }, "missing");
   expect(res.ok).toBe(false);
 });
 
 test("rerunReview leaves the review as it was when the guide writer's machine is offline", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { hosts: { get: async () => ({ id: "host_flomac", name: "FloMac", status: "disconnected", lifecycle: { phase: "active" } }) } } });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { hosts: { get: async () => ({ id: "host_flomac", name: "FloMac", status: "disconnected", lifecycle: { phase: "active" } }) } } });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-7", kind: "pr", number: 7, repo: "acme/web", status: "ready", createdAt: 1, projectId: "p1", headSha: "oldsha", gitRef: "main...feature" });
   await store.savePatch("pr-7", "stale patch");
   await store.savePreferences({ ...defaultPreferences, guideAgent: { hostId: "host_flomac", providerId: "codex", model: "gpt-6", reasoningLevel: "low", permissionMode: "auto" } }, 0);
-  expect(await rerunReview({ bb, store, gh }, "pr-7")).toEqual({ ok: false, error: "FloMac is offline. Wake it, or choose another machine for the guide writer in Review settings." });
+  expect(await rerunReview({ alia, store, gh }, "pr-7")).toEqual({ ok: false, error: "FloMac is offline. Wake it, or choose another machine for the guide writer in Review settings." });
   expect(await store.getReview("pr-7")).toMatchObject({ status: "ready", headSha: "oldsha" });
   expect(await store.patch("pr-7")).toBe("stale patch");
 });
 
 test("a review deleted while its PR loads isn't brought back", async () => {
   const { rerunReview } = await import("./rereview");
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { spawn: async () => ({ id: "w" }), wait: async () => ({}), archive: async () => ({}), stop: async () => ({}) } } as any });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { spawn: async () => ({ id: "w" }), wait: async () => ({}), archive: async () => ({}), stop: async () => ({}) } } as any });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-9", kind: "pr", number: 9, repo: "acme/web", status: "ready", createdAt: 1, projectId: "p1", headSha: "sha1" });
   const runGh = vi.fn(async (args: string[]) => {
     // The reviewer deletes the review while GitHub answers.
@@ -107,7 +107,7 @@ test("a review deleted while its PR loads isn't brought back", async () => {
     if (args[1] === "diff") return { code: 0, stderr: "", stdout: "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-a\n+b\n" };
     return { code: 0, stderr: "", stdout: JSON.stringify({ headRefOid: "sha2" }) };
   });
-  const result = await rerunReview({ bb, store, gh: { runGh: runGh as any, runGit: vi.fn() as any } }, "pr-9");
+  const result = await rerunReview({ alia, store, gh: { runGh: runGh as any, runGit: vi.fn() as any } }, "pr-9");
   expect(result).toEqual({ ok: false, error: "This review was deleted." });
   expect(await store.getReview("pr-9")).toBeNull();
 });
@@ -117,37 +117,37 @@ const prGh = (patch: string) => vi.fn(async (args: string[]) => args[1] === "dif
   : { code: 0, stderr: "", stdout: JSON.stringify({ title: "T", baseRefName: "main", headRefName: "h", url: "u", headRefOid: "sha2" }) });
 
 test("comments on neighbouring lines all follow their lines into the new diff", async () => {
-  const { bb } = host();
-  const store = testStore(bb);
+  const { alia } = host();
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, projectId: "p1", headSha: "sha1" });
   await store.savePatch("pr-1", fileDiff(["a", "b", "c"]));
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "on a" });
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 2, side: "RIGHT", body: "on b" });
   const runGh = prGh(fileDiff(["import x;", "a", "b", "c"]));
-  expect(await rerunReview({ bb, store, gh: { runGh: runGh as any, runGit: vi.fn() as any } }, "pr-1")).toEqual({ ok: true });
+  expect(await rerunReview({ alia, store, gh: { runGh: runGh as any, runGit: vi.fn() as any } }, "pr-1")).toEqual({ ok: true });
   expect((await store.getDraft("pr-1")).comments.map((c) => [c.body, c.line])).toEqual([["on a", 2], ["on b", 3]]);
   expect(await store.staleDraftComments("pr-1")).toEqual([]);
 });
 
 test("Re-review asked twice at once starts one guide writer", async () => {
-  const { bb, harness } = host();
-  const store = testStore(bb);
+  const { alia, harness } = host();
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, projectId: "p1", headSha: "sha1" });
   await store.savePatch("pr-1", fileDiff(["a"]));
   const runGh = prGh(fileDiff(["b"]));
-  const deps = { bb, store, gh: { runGh: runGh as any, runGit: vi.fn() as any } };
+  const deps = { alia, store, gh: { runGh: runGh as any, runGit: vi.fn() as any } };
   expect(await Promise.all([rerunReview(deps, "pr-1"), rerunReview(deps, "pr-1")])).toEqual([{ ok: true }, { ok: true }]);
   await vi.waitFor(async () => expect((await store.getReview("pr-1"))?.status).not.toBe("generating"));
   expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1);
 });
 
 test("a PR that can't be read says Couldn't, keeping the review as it was", async () => {
-  const { bb } = host();
-  const store = testStore(bb);
+  const { alia } = host();
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-7", kind: "pr", number: 7, repo: "acme/web", status: "ready", createdAt: 1, projectId: "p1", headSha: "oldsha" });
   // gh failing in a way that isn't an Error says nothing of its own.
   vi.mocked(gh.runGh).mockRejectedValueOnce("gh vanished");
-  expect(await rerunReview({ bb, store, gh }, "pr-7")).toEqual({ ok: false, error: "Couldn't load the PR." });
+  expect(await rerunReview({ alia, store, gh }, "pr-7")).toEqual({ ok: false, error: "Couldn't load the PR." });
   expect(await store.getReview("pr-7")).toMatchObject({ status: "ready", headSha: "oldsha" });
 });
 
@@ -163,9 +163,9 @@ test.each([
   vi.mocked(gh.runGh).mockImplementation(async (args: string[]) => args[0] === "pr" && args[1] === "view" ? { stdout: JSON.stringify(pr), stderr: "", code: 0 }
     : args[0] === "pr" && args[1] === "diff" ? { stdout: diff, stderr: "", code: 0 } : { stdout: "", stderr: "offline", code: 1 });
   try {
-    const { bb, harness } = host();
-    await plugin(bb);
-    const store = testStore(bb);
+    const { alia, harness } = host();
+    await plugin(alia);
+    const store = testStore(alia);
     await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", title: "Launch it", status: "error", createdAt: 1, projectId: "proj", headSha: "abc123", gitRef: "main...feat", base: "main", head: "feat" });
     await store.savePatch("pr-1", diff);
     await store.setLifecycle("pr-1", { prState: "MERGED", archivedAt: Date.now(), guideError: { at: Date.now(), text } });
@@ -180,9 +180,9 @@ test.each([
   }
 });
 
-// bug bash CLI-4: bb review on a PR while its Update guide still read GitHub started a writer, and the update then
+// bug bash CLI-4: VesnALIA review on a PR while its Update guide still read GitHub started a writer, and the update then
 // started a second one for the same review, whose guide was refused.
-test("bb review during an update's PR read leaves one guide writer building the review", async () => {
+test("alia review during an update's PR read leaves one guide writer building the review", async () => {
   let release: (() => void) | null = null;
   let hold = true;
   const view = { number: 7, headRefOid: "sha2", title: "Fix", body: "", author: { login: "a" }, baseRefName: "main", headRefName: "f", url: "https://github.com/acme/web/pull/7", state: "OPEN" };
@@ -197,15 +197,15 @@ test("bb review during an update's PR read leaves one guide writer building the 
   try {
     const key = targetKey({ kind: "pr", number: 7, repo: "acme/web" });
     let spawned = 0;
-    const { bb } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { spawn: async () => ({ id: `writer-${++spawned}` }), wait: () => new Promise(() => {}), archive: async () => ({}), stop: async () => ({}) } } as any });
-    const store = testStore(bb);
+    const { alia } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { spawn: async () => ({ id: `writer-${++spawned}` }), wait: () => new Promise(() => {}), archive: async () => ({}), stop: async () => ({}) } } as any });
+    const store = testStore(alia);
     await store.saveReview({ targetKey: key, kind: "pr", number: 7, repo: "acme/web", status: "ready", createdAt: 1, projectId: "p1", headSha: "sha1" });
     await store.savePatch(key, "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-o\n+n\n");
     await store.saveGuide(key, { title: "Kept", intent: "I", sections: [], unplacedFiles: [] });
-    const update = rerunReview({ bb, store, gh }, key);
+    const update = rerunReview({ alia, store, gh }, key);
     await vi.waitFor(() => expect(release).not.toBeNull());
-    // Meanwhile an agent runs bb review on the same PR: it reads GitHub, sees a ready guide behind the PR, and rebuilds.
-    expect((await runReviewCommand({ bb, store, gh }, ["https://github.com/acme/web/pull/7"], { projectId: "p1" })).stdout).toContain("Review started for");
+    // Meanwhile an agent runs VesnALIA review on the same PR: it reads GitHub, sees a ready guide behind the PR, and rebuilds.
+    expect((await runReviewCommand({ alia, store, gh }, ["https://github.com/acme/web/pull/7"], { projectId: "p1" })).stdout).toContain("Review started for");
     await vi.waitFor(() => expect(spawned).toBe(1));
     release!();
     expect(await update).toEqual({ ok: true });

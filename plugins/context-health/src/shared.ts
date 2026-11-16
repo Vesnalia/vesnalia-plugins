@@ -1,9 +1,9 @@
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import type { Breakdown, Entry } from './contract.ts';
 import { estimateTokens, PREVIEW_LIMIT, MAX_ENTRIES, loadedSkillEvidence } from './analyze.ts';
 
-type Event = Awaited<ReturnType<BbPluginApi['sdk']['threads']['events']['list']>>[number];
-export type Skill = Awaited<ReturnType<BbPluginApi['sdk']['skills']['list']>>['skills'][number];
+type Event = Awaited<ReturnType<AliaPluginApi['sdk']['threads']['events']['list']>>[number];
+export type Skill = Awaited<ReturnType<AliaPluginApi['sdk']['skills']['list']>>['skills'][number];
 export const relevantSkills = (skills: Skill[], provider: string) => skills.filter(s => s.provider === null || s.provider === provider);
 const serialize = (value: unknown) => typeof value === 'string' ? value : value === undefined ? '' : JSON.stringify(value);
 
@@ -67,24 +67,24 @@ export function analyzeEvents(events: Event[], boundary: number, compacted: bool
     }
   }
   return {
-    entries: entries.sort((a,b) => b.tokens - a.tokens).slice(0, MAX_ENTRIES), source: 'BB normalized thread events', compacted,
+    entries: entries.sort((a,b) => b.tokens - a.tokens).slice(0, MAX_ENTRIES), source: 'VesnALIA normalized thread events', compacted,
     notices: [
-      'All providers use the same BB event data and estimate: four Unicode characters per token. Recorded activity is not a reconstruction of retained model context and does not sum to the usage meter.',
+      'All providers use the same VesnALIA event data and estimate: four Unicode characters per token. Recorded activity is not a reconstruction of retained model context and does not sum to the usage meter.',
       'Only completed, top-level items and accepted user text are counted. Hidden prompts, native tool definitions, attachment contents and provider-side truncation are not fully exposed by this SDK.',
       'Available skills are a current inventory, not proof of injection or loading. Their sizes are excluded from the recorded-content totals.',
       ...(boundary ? [`Showing activity after context boundary ${boundary}. Earlier content is excluded; retained compaction summaries may be unavailable.`] : []),
-      ...(truncated ? ['Some tool results were truncated by BB; estimates cover only the retained text.'] : []),
+      ...(truncated ? ['Some tool results were truncated by VesnALIA; estimates cover only the retained text.'] : []),
       ...(skipped ? [`${skipped} items had no supported text payload and were excluded from estimates.`] : []),
       ...(entries.length > MAX_ENTRIES ? ['Only the 1,500 largest entries are shown.'] : []),
     ],
   };
 }
 
-// BB rejects thread event list requests with a limit above 100 (bb >= 0.43).
+// VesnALIA rejects thread event list requests with a limit above 100 (VesnALIA >= 0.43).
 const EVENT_PAGE_SIZE = 100;
 const MAX_EVENT_PAGES = 10;
 
-export async function readSharedContext(sdk: BbPluginApi['sdk'], threadId: string, maxSeq: number, clearBoundary: number | null): Promise<Breakdown> {
+export async function readSharedContext(sdk: AliaPluginApi['sdk'], threadId: string, maxSeq: number, clearBoundary: number | null): Promise<Breakdown> {
   const boundaries = await sdk.threads.events.list({ threadId, types: ['thread/compacted', 'thread/context/cleared'], order: 'desc', beforeSeq: String(maxSeq + 1), limit: '1' });
   const boundary = Math.max(clearBoundary ?? 0, boundaries[0]?.seq ?? 0);
   const events: Event[] = [];

@@ -16,8 +16,8 @@ Changes apply at once, with no reload.
 
 ## How it works
 
-The plugin runs in the open app. It reads the thread timeline: the row ids, the thread pane, the expand buttons, and the Stop run button. It clicks a block's expand button only when that block's place in the window changes. It needs no account, key, or external service. Its settings are stored in bb on your bb server.
+The plugin runs in the open app. It reads the thread timeline: the row ids, the thread pane, the expand buttons, and the Stop run button. It clicks a block's expand button only when that block's place in the window changes. It needs no account, key, or external service. Its settings are stored in VesnALIA on your VesnALIA server.
 
 ## Limits
 
-The plugin depends on bb's timeline markup. A bb update that renames those attributes or the Stop run label can stop the plugin from working. It does not show an error of its own when that happens.
+The plugin depends on VesnALIA's timeline markup. A VesnALIA update that renames those attributes or the Stop run label can stop the plugin from working. It does not show an error of its own when that happens.

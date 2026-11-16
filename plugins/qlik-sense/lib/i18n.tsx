@@ -1,11 +1,11 @@
 // Interface language for the plugins of this repository: English or Russian.
 //
-// Canonical copy: shared/i18n.tsx in the xMinor-1/bb-plugins repository. Each
+// Canonical copy: shared/i18n.tsx in the xMinor-1/alia-plugins repository. Each
 // plugin keeps an identical copy (plugins are built and installed one by one,
 // so they cannot import from outside their own directory). Change it there and
 // copy it to every plugin again.
 //
-// bb loads plugin frontends into its own page, so they share localStorage: the
+// VesnALIA loads plugin frontends into its own page, so they share localStorage: the
 // language picked in one plugin's panel switches every plugin at once. Until
 // someone picks, the browser's language decides.
 //

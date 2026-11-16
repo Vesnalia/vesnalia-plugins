@@ -4,7 +4,7 @@ Status: accepted, 9 November 2026. Extends [077](077-files-draw-one-level-before
 
 ## Context
 
-BB unmounts a panel when the person switches tabs. The cached directory listing from 077 made the tree faster, but did not keep open files, unsaved text or the person's position.
+VesnALIA unmounts a panel when the person switches tabs. The cached directory listing from 077 made the tree faster, but did not keep open files, unsaved text or the person's position.
 
 ## Decision
 

@@ -1,11 +1,11 @@
-// bb-plugin-ide server entry: workspace resolution, guarded file I/O, the Monaco
+// alia-plugin-ide server entry: workspace resolution, guarded file I/O, the Monaco
 // asset URL, and relaying the host's file watcher to the app over realtime.
 //
-// Workspace resolution follows bb-plugin-files-editor (MIT, abdoutelb).
+// Workspace resolution follows alia-plugin-files-editor (MIT, abdoutelb).
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { hostContract, hostSignals, searchOptionsSchema, searchQuerySchema, searchResultSchema } from "./contract.js";
 import { applyReplacements } from "./lib/replace.js";
@@ -13,7 +13,7 @@ import { createBridge } from "./lib/lsp-bridge.js";
 import { createWorkspaceFiles, type Target } from "./lib/workspace-files.js";
 
 export const CHANGED_CHANNEL = "ide/changed";
-const LIST_LIMIT = 10_000; // BB's listPaths maximum
+const LIST_LIMIT = 10_000; // VesnALIA's listPaths maximum
 const PREVIEW_TTL_MS = 60 * 60_000;
 const DEFAULT_EXCLUDED = ".git\n.claude/worktrees\nnode_modules\n.venv\nvenv\n__pycache__\n.next\n.turbo\ndist\nbuild\n.cache";
 
@@ -238,8 +238,8 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     excludedDirectories: {
       type: "string",
       label: "Excluded directories",
@@ -262,25 +262,25 @@ export default async function plugin(bb: BbPluginApi) {
       .filter((line) => line !== "" && !line.includes(".."));
   }
 
-  const host = bb.hosts.experimental_client({
+  const host = alia.hosts.experimental_client({
     contract: hostContract,
     experimental_signals: hostSignals,
   });
   host.experimental_onSignal("changed", ({ payload }) => {
-    bb.log.debug(`changed ${payload.root}: ${payload.paths.length} path(s)${payload.rescan ? ", rescan" : ""}`);
-    bb.realtime.publish(CHANGED_CHANNEL, payload);
+    alia.log.debug(`changed ${payload.root}: ${payload.paths.length} path(s)${payload.rescan ? ", rescan" : ""}`);
+    alia.realtime.publish(CHANGED_CHANNEL, payload);
   });
 
-  const files = createWorkspaceFiles(bb.sdk.files, async (target, relativePath) =>
+  const files = createWorkspaceFiles(alia.sdk.files, async (target, relativePath) =>
     host.call("checkPath", { root: target.root, path: relativePath }, { hostId: target.hostId }),
   );
 
   /** `projects.get` 404s on the personal project; the list includes it. */
   async function project(projectId: string) {
     try {
-      return await bb.sdk.projects.get({ projectId });
+      return await alia.sdk.projects.get({ projectId });
     } catch {
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       return projects.find((entry) => entry.id === projectId) ?? null;
     }
   }
@@ -289,7 +289,7 @@ export default async function plugin(bb: BbPluginApi) {
     let environmentId: string | null = null;
     let projectId: string | null = null;
     if (scope.kind === "thread") {
-      const thread = await bb.sdk.threads.get({ threadId: scope.id });
+      const thread = await alia.sdk.threads.get({ threadId: scope.id });
       environmentId = thread.environmentId;
       projectId = thread.projectId;
     } else if (scope.kind === "environment") {
@@ -299,7 +299,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
 
     if (environmentId !== null) {
-      const environment = await bb.sdk.environments.get({ environmentId });
+      const environment = await alia.sdk.environments.get({ environmentId });
       if (environment.path !== null) {
         const owner = await project(environment.projectId);
         return {
@@ -342,14 +342,14 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   // Language servers and debug adapters: browser WebSocket <-> this bridge <-> host
-  // session (see lib/lsp-bridge.ts). Routes require the plugin token; BB serves them
+  // session (see lib/lsp-bridge.ts). Routes require the plugin token; VesnALIA serves them
   // on its own listener.
   function bridgeRoute(
     route: string,
     kindSchema: z.ZodType<string>,
     start: (resolved: ResolvedScope, kind: string) => Promise<{ sessionId: string; generation: number; command: string }>,
   ) {
-    bb.http.experimental_websocket(
+    alia.http.experimental_websocket(
       route,
       ({ url }) => {
         const parsed = z
@@ -367,7 +367,7 @@ export default async function plugin(bb: BbPluginApi) {
                 start: async () => {
                   const resolved = await opened;
                   const started = await start(resolved, language);
-                  bb.log.info(`${route.slice(1)} ${language} started (${started.command}) for ${resolved.root}`);
+                  alia.log.info(`${route.slice(1)} ${language} started (${started.command}) for ${resolved.root}`);
                   return started;
                 },
                 send: async (sessionId, generation, messages) => {
@@ -376,7 +376,7 @@ export default async function plugin(bb: BbPluginApi) {
                 receive: async (sessionId, generation, after) =>
                   host.call("lspReceive", { sessionId, generation, after, waitMs: 20_000 }, { hostId: (await opened).hostId }),
               },
-              (line) => bb.log.info(line),
+              (line) => alia.log.info(line),
             );
           },
           onMessage(_socket, data) {
@@ -396,9 +396,9 @@ export default async function plugin(bb: BbPluginApi) {
   );
   bridgeRoute("/dap", z.enum(["python"]), (resolved) => host.call("dapStart", { root: resolved.root, adapter: "python" }, { hostId: resolved.hostId }));
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async workspaces() {
-      const projects = await bb.sdk.projects.list({ include: "threads", includePersonal: true });
+      const projects = await alia.sdk.projects.list({ include: "threads", includePersonal: true });
       const workspaces: WorkspaceOption[] = [];
       for (const entry of projects) {
         if (entry.sources.length > 0) {
@@ -437,7 +437,7 @@ export default async function plugin(bb: BbPluginApi) {
         }
         const checkouts = new Set(entry.sources.map((source) => source.path));
         const resolved = await Promise.all(
-          others.map(({ environmentId }) => bb.sdk.environments.get({ environmentId }).catch(() => null)),
+          others.map(({ environmentId }) => alia.sdk.environments.get({ environmentId }).catch(() => null)),
         );
         resolved.forEach((environment, i) => {
           if (environment === null || environment.path === null || checkouts.has(environment.path)) return;
@@ -463,7 +463,7 @@ export default async function plugin(bb: BbPluginApi) {
 
     async listFiles({ scope, includeHidden }) {
       const resolved = await target(scope);
-      const result = await bb.sdk.files.listPaths({
+      const result = await alia.sdk.files.listPaths({
         hostId: resolved.hostId,
         path: resolved.root,
         includeFiles: true,
@@ -480,7 +480,7 @@ export default async function plugin(bb: BbPluginApi) {
 
     async tree({ scope, includeHidden }) {
       const resolved = await target(scope);
-      const result = await bb.sdk.files.listPaths({
+      const result = await alia.sdk.files.listPaths({
         hostId: resolved.hostId,
         path: resolved.root,
         includeFiles: true,
@@ -508,13 +508,13 @@ export default async function plugin(bb: BbPluginApi) {
 
     async move({ scope, from, to }) {
       await files.move(await target(scope), from, to);
-      bb.log.info(`moved ${from} -> ${to}`);
+      alia.log.info(`moved ${from} -> ${to}`);
       return { moved: true };
     },
 
     async remove({ scope, path: relativePath }) {
       await files.remove(await target(scope), relativePath);
-      bb.log.info(`removed ${relativePath}`);
+      alia.log.info(`removed ${relativePath}`);
       return { removed: true };
     },
 
@@ -531,7 +531,7 @@ export default async function plugin(bb: BbPluginApi) {
       const resolved = await target(scope);
       const result = await files.write(resolved, relativePath, content, expectedSha256);
       if (result.outcome === "written") {
-        bb.log.info(`saved ${relativePath} in ${resolved.root}`);
+        alia.log.info(`saved ${relativePath} in ${resolved.root}`);
       }
       return result;
     },
@@ -570,13 +570,13 @@ export default async function plugin(bb: BbPluginApi) {
           results.push({ path: file.path, outcome: "failed" as const, count: 0, message: (error as Error).message });
         }
       }
-      bb.log.info(`replace: ${results.filter((r) => r.outcome === "replaced").length}/${selected.length} files`);
+      alia.log.info(`replace: ${results.filter((r) => r.outcome === "replaced").length}/${selected.length} files`);
       return { results };
     },
 
     async lspEndpoint() {
-      const { token } = await bb.sdk.plugins.token({ pluginId: bb.pluginId });
-      const base = `/api/v1/plugins/${encodeURIComponent(bb.pluginId)}/http`;
+      const { token } = await alia.sdk.plugins.token({ pluginId: alia.pluginId });
+      const base = `/api/v1/plugins/${encodeURIComponent(alia.pluginId)}/http`;
       return { path: `${base}/lsp`, dapPath: `${base}/dap`, token };
     },
 
@@ -601,7 +601,7 @@ export default async function plugin(bb: BbPluginApi) {
     async scmCommit({ scope, message, all }) {
       const resolved = await target(scope);
       const result = await host.call("gitCommit", { root: resolved.root, message, all }, { hostId: resolved.hostId });
-      bb.log.info(`commit in ${resolved.root}: ${result.summary}`);
+      alia.log.info(`commit in ${resolved.root}: ${result.summary}`);
       return result;
     },
     async scmBranches({ scope }) {
@@ -611,13 +611,13 @@ export default async function plugin(bb: BbPluginApi) {
     async scmSwitch({ scope, name, create }) {
       const resolved = await target(scope);
       const result = await host.call("gitSwitch", { root: resolved.root, name, create }, { hostId: resolved.hostId });
-      bb.log.info(`switched ${resolved.root} to ${name}`);
+      alia.log.info(`switched ${resolved.root} to ${name}`);
       return result;
     },
 
     async scmDiscard({ scope, tracked, untracked }) {
       const resolved = await target(scope);
-      bb.log.info(`discard in ${resolved.root}: ${tracked.length} tracked, ${untracked.length} untracked`);
+      alia.log.info(`discard in ${resolved.root}: ${tracked.length} tracked, ${untracked.length} untracked`);
       return host.call("gitDiscard", { root: resolved.root, tracked, untracked }, { hostId: resolved.hostId });
     },
     async scmStash({ scope, action, message, ref }) {
@@ -631,9 +631,9 @@ export default async function plugin(bb: BbPluginApi) {
       // The CLI only runs in a thread's context. Reading runs doesn't need a chosen thread:
       // any thread of the project will do. Starting one still needs the chat thread it reports to.
       if (thread === null && request.action !== "run") {
-        thread = (await bb.sdk.threads.list({ projectId: resolved.projectId, limit: 1 }))[0]?.id ?? null;
+        thread = (await alia.sdk.threads.list({ projectId: resolved.projectId, limit: 1 }))[0]?.id ?? null;
       }
-      if (request.action === "run") bb.log.info(`workflow ${request.name} started from the IDE for ${thread}`);
+      if (request.action === "run") alia.log.info(`workflow ${request.name} started from the IDE for ${thread}`);
       return host.call(
         "workflows",
         { root: resolved.root, context: { projectId: resolved.projectId, environmentId: resolved.environmentId, threadId: thread }, request },
@@ -654,7 +654,7 @@ export default async function plugin(bb: BbPluginApi) {
     async pythonEnvs({ scope }) {
       const resolved = await target(scope);
       const { envs } = await host.call("pythonEnvs", { root: resolved.root }, { hostId: resolved.hostId });
-      const saved = await bb.storage.kv.get<string>(`python:${resolved.hostId}:${resolved.root}`);
+      const saved = await alia.storage.kv.get<string>(`python:${resolved.hostId}:${resolved.root}`);
       // A saved choice that no longer exists falls back to the default: the workspace's own env.
       const selected = envs.find((env) => env.python === saved)?.python ?? envs.find((env) => env.local || env.kind === "poetry")?.python ?? null;
       return { envs, selected };
@@ -664,19 +664,19 @@ export default async function plugin(bb: BbPluginApi) {
       const resolved = await target(scope);
       const key = `python:${resolved.hostId}:${resolved.root}`;
       if (python === null) {
-        await bb.storage.kv.delete(key);
+        await alia.storage.kv.delete(key);
         return { selected: null };
       }
       // Only an interpreter the host just found: the browser never names a program to run.
       const { envs } = await host.call("pythonEnvs", { root: resolved.root }, { hostId: resolved.hostId });
       if (!envs.some((env) => env.python === python)) throw new Error("That interpreter was not found in this workspace's environments");
-      await bb.storage.kv.set(key, python);
+      await alia.storage.kv.set(key, python);
       return { selected: python };
     },
 
     async monacoAssets() {
       if (preview === null || preview.expiresAtMs - Date.now() < 5 * 60_000) {
-        preview = await bb.sdk.files.createPreview({ rootPath: monacoDir(), ttlMs: PREVIEW_TTL_MS });
+        preview = await alia.sdk.files.createPreview({ rootPath: monacoDir(), ttlMs: PREVIEW_TTL_MS });
       }
       return preview;
     },

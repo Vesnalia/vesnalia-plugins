@@ -24,7 +24,7 @@ const START = Date.UTC(2026, 9, 30, 10, 42);
 const DAY = 86_400_000;
 const INSTALL = "test";
 const SOURCE_CREDENTIALS = {
-  "home/box/.bb-machines/bb.example/host-id": "host_source\n",
+  "home/box/.alia-machines/alia.example/host-id": "host_source\n",
   "var/lib/tailscale/tailscaled.state": '{"_current-profile":"cHJvZmlsZQ=="}\n',
 } as const;
 
@@ -214,7 +214,7 @@ test("Docker forks a kept snapshot after its box's release into one of the perso
   const container = fork.guest!.ref;
   assert.ok(fake.inspect(container).Config.Env.includes(`BBBOX_IDENTITY=${fork.id}`));
   assert.equal(readFileSync(join(fake.home(container), "work.txt"), "utf8"), "before the take");
-  assert.match(readFileSync(join(fake.identityRoot(container), "var/lib/bb-box/identity-resets"), "utf8"), /BB machines removed: host_source/, "its boot reset ran");
+  assert.match(readFileSync(join(fake.identityRoot(container), "var/lib/alia-box/identity-resets"), "utf8"), /ALIA machines removed: host_source/, "its boot reset ran");
   assert.equal(state.store.operation(answer.operation.id)?.state, "done");
 });
 
@@ -250,7 +250,7 @@ test("on an engine of this machine with no other box, Docker forks a kept snapsh
   assert.equal(fork.state, "ready", fork.error ?? "");
   assert.equal(addressOf(fake, fork.guest!.ref), "172.30.0.2", "Docker gave the fork the lowest free address, its source's");
   assert.equal(readFileSync(join(fake.home(fork.guest!.ref), "work.txt"), "utf8"), "before the take");
-  assert.match(readFileSync(join(fake.identityRoot(fork.guest!.ref), "var/lib/bb-box/identity-resets"), "utf8"), /BB machines removed: host_source/);
+  assert.match(readFileSync(join(fake.identityRoot(fork.guest!.ref), "var/lib/alia-box/identity-resets"), "utf8"), /ALIA machines removed: host_source/);
 });
 
 test("Docker still refuses a fork that holds the address of its source, stopped but not released, as the source could come back to it", async () => {
@@ -347,7 +347,7 @@ test("Docker refuses a fork after its source's release that holds the source's o
   assert.match(fork.error ?? "", new RegExp(`it holds ${box.name}'s address 172\\.30\\.0\\.2`));
 });
 
-test("Docker's kept snapshots and their dates are found again from the engine alone after BB Box restarts without snapshots.db's records", async () => {
+test("Docker's kept snapshots and their dates are found again from the engine alone after VesnALIA Box restarts without snapshots.db's records", async () => {
   const fake = fakeDockerHost();
   const state = dockerWorld(fake);
   const { box, kept } = await keptAndPlain(state, fake);
@@ -422,8 +422,8 @@ test("Docker's doctor says what kept snapshots hold on Docker's disk, and until 
   const report = await dockerOf(state).doctor();
 
   const kept = report.checks.find((check) => check.id === "docker.kept-snapshots");
-  assert.match(kept?.detail ?? "", /^1 snapshot is kept, whether its box is released or not, until its keep date, 2026-11-29\. It takes about \S+ (MB|GB) of Docker's disk that no other image or container there uses, and up to \S+ (MB|GB) if what it shares is deleted\. BB Box refuses to remove this backend while it holds them\.$/);
-  assert.match(kept?.fix ?? "", /bb box snapshot delete <box> <snapshot>/);
+  assert.match(kept?.detail ?? "", /^1 snapshot is kept, whether its box is released or not, until its keep date, 2026-11-29\. It takes about \S+ (MB|GB) of Docker's disk that no other image or container there uses, and up to \S+ (MB|GB) if what it shares is deleted\. ALIA Box refuses to remove this backend while it holds them\.$/);
+  assert.match(kept?.fix ?? "", /alia box snapshot delete <box> <snapshot>/);
 });
 
 function keptCheckOf(report: { readonly checks: readonly { readonly id: string; readonly detail: string }[] }): string {
@@ -447,7 +447,7 @@ test("Keep and the doctor say what a kept snapshot of a large image with a tiny 
 
   assert.match(keepCostWords(check), /nothing is copied then\. It takes about 1 MB of \S+ Docker's disk that no other image or container there uses, and up to 796 MB if what it shares is deleted\.$/);
   assert.match(released, /It takes about 1 MB of Docker's disk that no other image or container there uses, and up to 796 MB if what it shares is deleted\./);
-  assert.match(refreshed, /It takes about 796 MB of Docker's disk that no other image or container there uses\. BB Box/, "nothing shares its layers once the image it came from is gone");
+  assert.match(refreshed, /It takes about 796 MB of Docker's disk that no other image or container there uses\. ALIA Box/, "nothing shares its layers once the image it came from is gone");
 });
 
 async function keptLargeImageForkedAfterRelease(state: World, fake: FakeDockerHost) {
@@ -500,7 +500,7 @@ test("on containerd, a kept snapshot's unshared size counts its own layers unpac
   assert.deepEqual(unmatched, { unsharedBytes: null, wholeBytes: 795_410_974 + 87_633_920 + 2_102_317_056 + 7_193_000 });
 });
 
-test("where BB Box cannot read how much of Docker's disk a snapshot takes, Keep still keeps it and claims no size, and the doctor says it could not tell", async () => {
+test("where VesnALIA Box cannot read how much of Docker's disk a snapshot takes, Keep still keeps it and claims no size, and the doctor says it could not tell", async () => {
   const fake = fakeDockerHost();
   const state = dockerWorld(fake);
   const box = await readyDockerBox(state, fake);
@@ -512,7 +512,7 @@ test("where BB Box cannot read how much of Docker's disk a snapshot takes, Keep 
   const detail = keptCheckOf(await dockerOf(state).doctor());
 
   assert.equal(keepCostWords(check), `If ${box.name} is released, it stays where it is until Sun 29 Nov.`);
-  assert.match(detail, /BB Box could not read how much of Docker's disk it takes\./);
+  assert.match(detail, /ALIA Box could not read how much of Docker's disk it takes\./);
   assert.deepEqual(keepTags(fake), [keptTag(INSTALL, taken.id, "2026-11-29")]);
 });
 
@@ -547,13 +547,13 @@ for (const { provider, why, options } of KEEP_OFF_PARTS) {
     assert.deepEqual([offer?.keepsPastRelease, offer?.keepWhy], ["no", why]);
     assert.deepEqual([plan.keep.way, plan.keep.why], ["no", why]);
     assert.ok(refused instanceof SnapshotFailed);
-    assert.equal(refused.message, `BB Box keeps no snapshot here past its box's release: ${why}.`);
+    assert.equal(refused.message, `VesnALIA Box keeps no snapshot here past its box's release: ${why}.`);
     assert.deepEqual(keepTags(fake), []);
     await backend.dispose?.();
   });
 }
 
-test("a Docker engine of a person's own keeps snapshots as they are, and lives with the provider, so BB Box asks the engine before it removes the backend", () => {
+test("a Docker engine of a person's own keeps snapshots as they are, and lives with the provider, so VesnALIA Box asks the engine before it removes the backend", () => {
   const fake = fakeDockerHost();
   const backend = new DockerBackend(dockerConfig(), testContext(new MemoryStorage(), INSTALL, { id: "fake" }), { binary: fake.binary });
 
@@ -572,7 +572,7 @@ test("where a Docker engine keeps nothing past a release, Keep is refused with i
   const offer = dockerOf(state).snapshotting("linux");
 
   assert.equal(refused.code, "unsupported");
-  assert.match(refused.message, new RegExp(`past the box's release: ${HETZNER_KEEP_OFF}, so BB Box does not keep "one"\\.$`));
+  assert.match(refused.message, new RegExp(`past the box's release: ${HETZNER_KEEP_OFF}, so VesnALIA Box does not keep "one"\\.$`));
   assert.equal(keepWhyOf(state.store.record(taken.id)!, offer, null), HETZNER_KEEP_OFF);
   assert.deepEqual(keepTags(fake), []);
 });

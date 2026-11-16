@@ -141,7 +141,7 @@ export function withheldCopy(reason: string | null): Line {
   return LINE.lastSecond;
 }
 
-/** The message BB shows in the chat when the dispatch hook rejects one of this plugin's nudges. */
+/** The message VesnALIA shows in the chat when the dispatch hook rejects one of this plugin's nudges. */
 export function nudgeRejectMessage(reason: string): string {
   const text = withheldCopy(reason).text.replace(/\.$/, "");
   return `Nudger didn't send its nudge: ${text[0]!.toLowerCase()}${text.slice(1)}.`;

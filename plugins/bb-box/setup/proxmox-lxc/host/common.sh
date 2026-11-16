@@ -1,8 +1,8 @@
-# Shared by bb-box's Proxmox host scripts: reads /etc/bb-box/bb-box.env (or
+# Shared by alia-box's Proxmox host scripts: reads /etc/alia-box/alia-box.env (or
 # $BBBOX_ENV) and fills in defaults. Sourced, not run.
 # shellcheck shell=bash
 
-BBBOX_ENV=${BBBOX_ENV:-/etc/bb-box/bb-box.env}
+BBBOX_ENV=${BBBOX_ENV:-/etc/alia-box/alia-box.env}
 if [ -f "$BBBOX_ENV" ]; then
   # Settings already in the environment win over the file, so one run can
   # override one value (for example BBBOX_BUILD_ADDRESS for a second build).
@@ -25,13 +25,13 @@ BBBOX_BUILD_VMID=${BBBOX_BUILD_VMID:-}
 BBBOX_GPU_REPORT_VMID=${BBBOX_GPU_REPORT_VMID:-}
 BBBOX_DNS=${BBBOX_DNS:-1.1.1.1 9.9.9.9}
 BBBOX_DNAT=${BBBOX_DNAT:-}
-BBBOX_BB_URL=${BBBOX_BB_URL:-}
-BBBOX_BB_RESOLVE=${BBBOX_BB_RESOLVE:-}
-BBBOX_SSH_KEY=${BBBOX_SSH_KEY:-/root/bb-box/ssh/id_ed25519}
+BBBOX_ALIA_URL=${BBBOX_ALIA_URL:-}
+BBBOX_ALIA_RESOLVE=${BBBOX_ALIA_RESOLVE:-}
+BBBOX_SSH_KEY=${BBBOX_SSH_KEY:-/root/alia-box/ssh/id_ed25519}
 BBBOX_API_USER=${BBBOX_API_USER:-bbbox@pve}
 BBBOX_API_TOKEN=${BBBOX_API_TOKEN:-plugin}
 BBBOX_API_ROLE=${BBBOX_API_ROLE:-BBBoxPlugin}
-BBBOX_TOKEN_FILE=${BBBOX_TOKEN_FILE:-/root/bb-box/proxmox-token.env}
+BBBOX_TOKEN_FILE=${BBBOX_TOKEN_FILE:-/root/alia-box/proxmox-token.env}
 
 BBBOX_GATEWAY=${BBBOX_GATEWAY_CIDR%/*}
 BBBOX_PREFIX=${BBBOX_GATEWAY_CIDR#*/}

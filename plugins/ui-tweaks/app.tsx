@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   UrlLink,
   definePluginApp,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   IconPackPreview,
   SpinnerStylePreview,
@@ -58,11 +58,11 @@ import {
 import "@wy3z/bb-suite/settings.css";
 import "./app.css";
 
-const WORKSPACE_APPS_STORAGE_KEY = "bb-plugin-ui-tweaks.workspace-apps.v3";
-const LEGACY_PROMPT_POSITION_KEY = "bb-plugin-prompt-box-position";
-const WORKSPACE_APPS_CHANGE_EVENT = "bb:ui-tweaks-workspace-apps-change";
-const WORKSPACE_APPS_REFRESH_EVENT = "bb:ui-tweaks-workspace-apps-refresh";
-const WORKSPACE_APPS_STATUS_EVENT = "bb:ui-tweaks-workspace-apps-status";
+const WORKSPACE_APPS_STORAGE_KEY = "alia-plugin-ui-tweaks.workspace-apps.v3";
+const LEGACY_PROMPT_POSITION_KEY = "alia-plugin-prompt-box-position";
+const WORKSPACE_APPS_CHANGE_EVENT = "alia:ui-tweaks-workspace-apps-change";
+const WORKSPACE_APPS_REFRESH_EVENT = "alia:ui-tweaks-workspace-apps-refresh";
+const WORKSPACE_APPS_STATUS_EVENT = "alia:ui-tweaks-workspace-apps-status";
 const WORKSPACE_APP_MENU_TRIGGER_LABEL =
   "Choose another app to open workspace";
 const CHAT_FILE_OPEN_SUBMENU_TRIGGER_LABEL = "Open in";
@@ -71,10 +71,10 @@ const CHAT_FILE_MENU_SIGNATURE_LABELS = [
   "Copy file name",
 ] as const;
 const WORKSPACE_APP_MENU_ITEM_MARKER =
-  "data-bb-ui-tweaks-workspace-app-menu-item";
+  "data-alia-ui-tweaks-workspace-app-menu-item";
 const WORKSPACE_APP_MENU_HIDDEN_MARKER =
-  "data-bb-ui-tweaks-workspace-app-menu-hidden";
-const PROMPT_CONTAINER_MARKER = "data-bb-ui-tweaks-prompt-container";
+  "data-alia-ui-tweaks-workspace-app-menu-hidden";
+const PROMPT_CONTAINER_MARKER = "data-alia-ui-tweaks-prompt-container";
 const PROMPT_POSITIONS = ["top", "center", "bottom"] as const;
 type PromptPosition = (typeof PROMPT_POSITIONS)[number];
 const PROMPT_HEIGHTS = ["default", "two-lines", "one-line"] as const;
@@ -199,7 +199,7 @@ const RETIRED_PREFERENCE_KEYS = [
 function deleteRetiredPreferences() {
   try {
     window.localStorage.removeItem(
-      "bb-plugin-ui-tweaks.show-panel-toggle-migration.v1",
+      "alia-plugin-ui-tweaks.show-panel-toggle-migration.v1",
     );
 
     const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -297,14 +297,14 @@ function applyRootPreferences(
   setOwnedAttribute(
     overrides,
     root,
-    "data-bb-ui-prompt-position",
+    "data-alia-ui-prompt-position",
     preferences.promptPosition,
     reclaimExternal,
   );
   setOwnedAttribute(
     overrides,
     root,
-    "data-bb-ui-prompt-height",
+    "data-alia-ui-prompt-height",
     preferences.promptHeight === "default" ? null : preferences.promptHeight,
     reclaimExternal,
     "private",
@@ -312,7 +312,7 @@ function applyRootPreferences(
   setOwnedAttribute(
     overrides,
     root,
-    "data-bb-ui-clearer-hierarchy",
+    "data-alia-ui-clearer-hierarchy",
     preferences.clearerHierarchy ? "true" : null,
     reclaimExternal,
     "private",
@@ -320,7 +320,7 @@ function applyRootPreferences(
   setOwnedAttribute(
     overrides,
     root,
-    "data-bb-ui-hide-steer-labels",
+    "data-alia-ui-hide-steer-labels",
     preferences.hideSteerLabels ? "true" : null,
     reclaimExternal,
     "private",
@@ -328,7 +328,7 @@ function applyRootPreferences(
   setOwnedAttribute(
     overrides,
     root,
-    "data-bb-ui-disable-chrome-animations",
+    "data-alia-ui-disable-chrome-animations",
     preferences.disableChromeAnimations ? "true" : null,
     reclaimExternal,
     "private",
@@ -454,7 +454,7 @@ type LocalNetworkPermissionName = "loopback-network" | "local-network-access";
 async function canProbeLocalHostDaemon(): Promise<boolean> {
   const hostname = window.location.hostname.toLowerCase();
   if (
-    "bbDesktop" in window ||
+    "aliaDesktop" in window ||
     hostname === "localhost" ||
     hostname === "127.0.0.1" ||
     hostname === "::1" ||
@@ -1050,7 +1050,7 @@ function IconSettings() {
     <SettingsCard>
       <SettingsRow
         label="Icon pack"
-        description="The artwork for BB's interface icons. Provider logos and brand marks are left alone. BB Default by default."
+        description="The artwork for VesnALIA's interface icons. Provider logos and brand marks are left alone. VesnALIA Default by default."
         placement="below"
       >
         {({ labelId, descriptionId }) => (
@@ -1096,7 +1096,7 @@ function IconSettings() {
       </SettingsRow>
       <SettingsRow
         label="Spinner"
-        description="The spinner for BB's shared loading indicators. Other icons keep the icon pack. Follows the icon pack by default."
+        description="The spinner for VesnALIA's shared loading indicators. Other icons keep the icon pack. Follows the icon pack by default."
         placement="below"
       >
         {({ labelId, descriptionId }) => (
@@ -1290,18 +1290,18 @@ function OpenWithSettings() {
                 : workspaceStatus === "error"
                   ? "Couldn't list your apps. Trying again automatically."
                   : workspaceStatus === "unavailable"
-                    ? "This BB client can't list apps."
+                    ? "This VesnALIA client can't list apps."
                     : "Looking for apps…"}
             </p>
           ) : null}
           {workspaceApps.length > 0 && workspaceStatus === "stale" ? (
             <p className="border-t border-border p-3 text-xs text-muted-foreground">
-              Showing the last apps found while BB reconnects.
+              Showing the last apps found while VesnALIA reconnects.
             </p>
           ) : null}
           {workspaceApps.length > 0 && workspaceStatus === "unavailable" ? (
             <p className="border-t border-border p-3 text-xs text-muted-foreground">
-              Showing saved apps. This BB client can't list apps.
+              Showing saved apps. This VesnALIA client can't list apps.
             </p>
           ) : null}
         </div>
@@ -1336,7 +1336,7 @@ export default definePluginApp((app) => {
   registerIconPacks(app.experimental_icons.register);
 
   // Alt+1..9 selects the nth tab in the focused surface's right panel,
-  // in the order bb's tab strip shows them.
+  // in the order VesnALIA's tab strip shows them.
   for (let n = 1; n <= 9; n += 1) {
     app.commands.register({
       id: `panel-tab-${n}`,
@@ -1415,16 +1415,16 @@ export default definePluginApp((app) => {
 
       for (const stale of Array.from(
         document.querySelectorAll<HTMLStyleElement>(
-          'style[data-bb-ui-tweaks-font-size]',
+          'style[data-alia-ui-tweaks-font-size]',
         ),
       )) {
         stale.remove();
       }
       document.documentElement.removeAttribute(
-        "data-bb-ui-hide-sidebar-toggle",
+        "data-alia-ui-hide-sidebar-toggle",
       );
       document.documentElement.removeAttribute(
-        "data-bb-ui-hide-panel-toggle",
+        "data-alia-ui-hide-panel-toggle",
       );
       applyPreferences(getPreferences(), overrides);
       observeDynamicSurfaces();

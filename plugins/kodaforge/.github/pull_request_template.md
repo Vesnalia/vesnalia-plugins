@@ -4,4 +4,4 @@
 
 - [ ] `npm run typecheck`
 - [ ] `npm test`
-- [ ] Tried in BB (`bb plugin install path:. --yes`)
+- [ ] Tried in VesnALIA (`alia plugin install path:. --yes`)

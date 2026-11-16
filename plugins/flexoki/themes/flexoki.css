@@ -1,4 +1,4 @@
-/* Flexoki for bb — an inky color scheme for prose and code by Steph Ango.
+/* Flexoki for alia — an inky color scheme for prose and code by Steph Ango.
    https://stephango.com/flexoki · https://github.com/kepano/flexoki (MIT)
    Source revision: kepano/flexoki@8d723ba (2026-03-07).
 
@@ -148,7 +148,7 @@
 }
 
 /* ---------- Text metrics ----------
-   Compact reading scale for BB: sizes, system Regular weight, leading and
+   Compact reading scale for ALIA: sizes, system Regular weight, leading and
    sidebar rhythm. Desktop / touch phones (≤767px, coarse pointer). */
 :root,
 .light,
@@ -214,11 +214,11 @@ form[class*="group/promptbox"] .ProseMirror { font-size: var(--composer); line-h
   --text-xs--line-height: var(--text-sm--line-height);
 }
 [data-sidebar="group-label"] { line-height: 1.75rem; }
-:root { --bb-sidebar-row-height: 1.875rem; }
+:root { --alia-sidebar-row-height: 1.875rem; }
 
 /* ---------- Composer ----------
    A context strip (project, machine) sits on top and the prompt slab overlaps
-   its lower edge. bb renders those controls in [data-new-thread-footer] below
+   its lower edge. alia renders those controls in [data-new-thread-footer] below
    the box, so on the new-thread page the footer is moved above it with `order`
    and drawn as the strip. Slab: 20px corners, hairline outline; strip: 40px
    visible, 13px inset, 18px corners; send button: a 32px ink circle. */
@@ -271,7 +271,7 @@ form[data-promptbox] .ProseMirror p.is-editor-empty:first-child::before {
   z-index: 1;
 }
 [data-promptbox-shell]:has(> [data-new-thread-footer]) [data-promptbox-editor-scroll] {
-  min-height: 3.25rem !important;        /* overrides bb's inline 80px */
+  min-height: 3.25rem !important;        /* overrides alia's inline 80px */
 }
 [data-promptbox-shell]:has(> [data-new-thread-footer]) > div:first-child {
   order: -2;                             /* scheduled-send cards stay above the strip */
@@ -283,7 +283,7 @@ form[data-promptbox] .ProseMirror p.is-editor-empty:first-child::before {
   font-size: 0.75rem;                    /* 12px: quieter than the 14px prompt text */
   line-height: 1.125rem;
 }
-/* Center the desktop new-thread composer, leaving room below for BB's command menu. */
+/* Center the desktop new-thread composer, leaving room below for ALIA's command menu. */
 @media (width >= 768px) {
   [data-testid="root-compose-compact-home"] {
     min-height: 100%;

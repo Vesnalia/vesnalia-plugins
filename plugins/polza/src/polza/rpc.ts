@@ -1,5 +1,5 @@
 // polza: the server ↔ frontend contract. app.tsx imports only its type.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { polzaAccountSchema } from "./account.js";
 import { polzaModelListSchema } from "./contract.js";

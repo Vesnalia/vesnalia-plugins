@@ -2,7 +2,7 @@
 // (#492, src/host/files.ts). A copy makes a one-time secret, asks the
 // worker to copy the file over a WebSocket to FILE_ROUTE with it, and opens
 // one channel on that socket's Mux once it connects. The channel carries the
-// file's bytes one way, with the Mux's flow control, and bb-box closes the
+// file's bytes one way, with the Mux's flow control, and alia-box closes the
 // link when it is done with it.
 
 import { randomBytes } from "node:crypto";
@@ -52,7 +52,7 @@ export class FileRelay {
     this.#deps = deps;
   }
 
-  /** The handler for bb-box's WebSocket route, which the worker connects to. */
+  /** The handler for alia-box's WebSocket route, which the worker connects to. */
   route(url: URL) {
     const secret = url.searchParams.get("s") ?? "";
     const pending = this.#pending.get(secret);
@@ -92,11 +92,11 @@ export class FileRelay {
     call.catch(() => undefined);
     let timer: ReturnType<typeof setTimeout> | undefined;
     const late = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error(`The thread's machine did not connect to bb-box for the copy within ${(this.#deps.acceptMs ?? FILE_ACCEPT_MS) / 1000} s.`)), this.#deps.acceptMs ?? FILE_ACCEPT_MS);
+      timer = setTimeout(() => reject(new Error(`The thread's machine did not connect to alia-box for the copy within ${(this.#deps.acceptMs ?? FILE_ACCEPT_MS) / 1000} s.`)), this.#deps.acceptMs ?? FILE_ACCEPT_MS);
     });
     let mux: Mux;
     try {
-      // The call fails first when the worker cannot read the file or reach bb-box.
+      // The call fails first when the worker cannot read the file or reach alia-box.
       mux = await Promise.race([linked, call.then(() => Promise.reject(new Error("The thread's machine ended the copy before it connected."))), late]);
     } finally {
       clearTimeout(timer);

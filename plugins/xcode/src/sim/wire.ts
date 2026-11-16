@@ -7,15 +7,15 @@
  *
  * Rules live in `src/model.ts`, state in `src/store.ts` and `src/frames.ts`,
  * I/O in named drivers, each surface in its own module — which is what makes
- * the interesting logic unit-testable without a bb server or a Mac.
+ * the interesting logic unit-testable without a VesnALIA server or a Mac.
  *
- * The staleness discipline is not optional here. A `bb` handle captured before
+ * The staleness discipline is not optional here. A `VesnALIA` handle captured before
  * a reload throws `PluginContextStaleError` on use, and from a detached
  * continuation Node raises that as an `uncaughtException` that takes the whole
- * bb server down. Every `bb.*` call that can outlive this load goes through
+ * VesnALIA server down. Every `VesnALIA.*` call that can outlive this load goes through
  * `safely`, and every fire-and-forget through `detach`.
  */
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -99,7 +99,7 @@ export interface SimulatorHost {
     get(): Promise<RawSettings>;
     onChange(handler: (next: RawSettings) => void): void;
   };
-  /** Mounts the simulator verbs under `bb xcode sim <verb>`. */
+  /** Mounts the simulator verbs under `alia xcode sim <verb>`. */
   mountCli(run: SimulatorCliRun): void;
   /**
    * Adds this half's paragraph to the plugin's single instruction block.
@@ -127,24 +127,24 @@ export type SimulatorCliRun = (
   ctx: Parameters<ReturnType<typeof makeCli>>[1],
 ) => ReturnType<ReturnType<typeof makeCli>>;
 
-export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): Promise<void> {
+export async function installSimulators(alia: AliaPluginApi, host: SimulatorHost): Promise<void> {
   let disposed = false;
   const isDisposed = (): boolean => disposed;
 
   const log = (level: "info" | "warn" | "error", message: string): void => {
-    safely(isDisposed, () => bb.log[level](message));
+    safely(isDisposed, () => alia.log[level](message));
   };
 
   // ---------------------------------------------------------------------------
   // Platform first, before anything else is registered
   // ---------------------------------------------------------------------------
 
-  // bb supports a Linux server with enrolled Macs — which is why
-  // `bb.sdk.terminals` takes an explicit `{ kind: "host_path", hostId }` scope.
+  // VesnALIA supports a Linux server with enrolled Macs — which is why
+  // `alia.sdk.terminals` takes an explicit `{ kind: "host_path", hostId }` scope.
   // Without this check that topology gets told to run `xcode-select --install`.
   const platform = platformProbe(process.platform);
   if (platform.state === "blocked") {
-    bb.status.needsConfiguration(platform.detail);
+    alia.status.needsConfiguration(platform.detail);
     return;
   }
 
@@ -154,10 +154,10 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
 
   const settingsApi = host.settings;
   let settings: Settings = normalizeSettings(await settingsApi.get());
-  // The host has already migrated: `bb.storage.migrate` keys by statement
+  // The host has already migrated: `alia.storage.migrate` keys by statement
   // index across the whole plugin, so there is exactly one array and it lives
   // in `src/store.ts`. Only the pragmas are ours.
-  const db = host.db as unknown as ReturnType<BbPluginApi["storage"]["database"]>;
+  const db = host.db as unknown as ReturnType<AliaPluginApi["storage"]["database"]>;
   prepareConnection(db);
 
   const dataDir = dataDirOf(db);
@@ -189,7 +189,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
     const kinds = [...pending];
     pending.clear();
     for (const kind of kinds) {
-      safely(isDisposed, () => bb.realtime.publish(CHANNEL, { kind }));
+      safely(isDisposed, () => alia.realtime.publish(CHANNEL, { kind }));
     }
   });
   const publish = (kind: "look" | "live"): void => {
@@ -285,8 +285,8 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
    * The scope, from whatever the caller knew.
    *
    * Order matters and was arrived at by getting it wrong: a bare
-   * `bb xcode sim onboard` in a terminal has no thread, so falling straight through
-   * to "bb's first project" made it analyse a completely different repository
+   * `alia xcode sim onboard` in a terminal has no thread, so falling straight through
+   * to "VesnALIA's first project" made it analyse a completely different repository
    * from the one the user was standing in. `cwd` is the strongest evidence a
    * terminal invocation carries.
    */
@@ -311,13 +311,13 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
     cwd?: string;
   }): Promise<ThreadScope | null> => {
     try {
-      const projects = await bb.sdk.projects.list();
+      const projects = await alia.sdk.projects.list();
       const hasHint = hints.threadId !== undefined || hints.projectId !== undefined || hints.cwd !== undefined;
 
       let projectId: string | null = null;
       let environmentId: string | null = null;
       if (hints.threadId !== undefined) {
-        const thread = await bb.sdk.threads.get({ threadId: hints.threadId });
+        const thread = await alia.sdk.threads.get({ threadId: hints.threadId });
         projectId = thread.projectId;
         environmentId = thread.environmentId;
         if (hints.projectId !== undefined && hints.projectId !== projectId) return null;
@@ -334,7 +334,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
         projectId = matches[0]?.project.id ?? null;
       }
       // Only a trusted panel call has no hints. An agent-facing CLI call with a
-      // bad cwd must fail closed instead of widening to whichever project bb
+      // bad cwd must fail closed instead of widening to whichever project VesnALIA
       // happens to list first.
       if (projectId === null && !hasHint) projectId = projects[0]?.id ?? null;
       if (projectId === null) return null;
@@ -342,9 +342,9 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
       let checkoutPath: string | null = null;
       let hostId: string | null = null;
       if (environmentId !== null) {
-        // A thread's environment is the authority: bb creates a per-thread git
+        // A thread's environment is the authority: VesnALIA creates a per-thread git
         // worktree, so this is where the code actually is.
-        const environment = await bb.sdk.environments.get({ environmentId });
+        const environment = await alia.sdk.environments.get({ environmentId });
         checkoutPath = environment.path;
         hostId = environment.hostId;
       }
@@ -369,7 +369,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
 
       // Where the checkout lives matters for Stills, which builds on the
       // server's own filesystem. Live is unaffected: it needs no checkout.
-      const hosts = await bb.sdk.hosts.list();
+      const hosts = await alia.sdk.hosts.list();
       const summaries = hosts.map((host) => ({ id: host.id, name: host.name }));
       const resolvedHostId = await resolveHostId();
 
@@ -394,7 +394,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
    * Resolve everything a render needs, then put it on the device queue.
    *
    * Resolution happens *here* rather than inside the queued job, so the job
-   * closes over facts rather than over `bb`, which may be stale by the time
+   * closes over facts rather than over `VesnALIA`, which may be stale by the time
    * the queue reaches it. Every refusal is a sentence naming what to do next:
    * "could not run" for a project with twelve schemes is a dead end, and
    * naming the twelve is not.
@@ -443,7 +443,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
       }
       if (project.snapshotTestTarget === null) {
         throw new Error(
-          "Stills needs a hosted unit-test target linking SnapshottingTests. Run `bb xcode sim onboard` to see the exact changes.",
+          "Stills needs a hosted unit-test target linking SnapshottingTests. Run `alia xcode sim onboard` to see the exact changes.",
         );
       }
 
@@ -508,7 +508,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
   };
 
   /**
-   * The host id of the machine running bb, resolved once.
+   * The host id of the machine running VesnALIA, resolved once.
    *
    * The `Host` DTO carries no "this is the server's own host" flag, so it is
    * derived by writing a nonce file under the plugin's own data directory and
@@ -518,13 +518,13 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
   let serverHostId: string | null = null;
   const resolveHostId = async (): Promise<string | null> => {
     if (serverHostId !== null) return serverHostId;
-    const hosts = await bb.sdk.hosts.list();
+    const hosts = await alia.sdk.hosts.list();
     serverHostId = await resolveServerHostId({
       pluginDataDir: dataDir,
       listHosts: async () => hosts.map((host) => ({ id: host.id, name: host.name })),
-      pathsExist: async (id, paths) => (await bb.sdk.hosts.pathsExist({ hostId: id, paths })).existence,
-      kvGet: async (key) => (await bb.storage.kv.get<string>(key)) ?? null,
-      kvSet: async (key, value) => bb.storage.kv.set(key, value),
+      pathsExist: async (id, paths) => (await alia.sdk.hosts.pathsExist({ hostId: id, paths })).existence,
+      kvGet: async (key) => (await alia.storage.kv.get<string>(key)) ?? null,
+      kvSet: async (key, value) => alia.storage.kv.set(key, value),
     });
     return serverHostId;
   };
@@ -544,8 +544,8 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
   const rememberThread = (thread: { id: string; projectId: string }): void => {
     lastActiveThread.set(thread.projectId, { threadId: thread.id, at: Date.now() });
   };
-  bb.events.on("thread.active", ({ thread }) => rememberThread(thread));
-  bb.events.on("thread.idle", ({ thread }) => rememberThread(thread));
+  alia.events.on("thread.active", ({ thread }) => rememberThread(thread));
+  alia.events.on("thread.idle", ({ thread }) => rememberThread(thread));
 
   const linkRunToThread = (projectId: string, lookId: string): void => {
     const recent = lastActiveThread.get(projectId);
@@ -564,7 +564,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
     consent: { title: string; facts: string[]; confirmLabel: string },
   ): Promise<boolean> => {
     try {
-      const result = await bb.ui.requestInput({
+      const result = await alia.ui.requestInput({
         threadId,
         rendererId: "server-confirm",
         title: consent.title,
@@ -590,7 +590,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
   let reserveFrameBytes: (incomingBytes: number) => Promise<void> = async () => {};
 
   const ctx: Ctx = {
-    pluginId: bb.pluginId,
+    pluginId: alia.pluginId,
     db,
     dataDir,
     framesRoot,
@@ -616,7 +616,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
     rawSettings: () => settingsApi.get(),
 
     async writeSetting(key, value) {
-      await bb.sdk.plugins.updateSettings({ pluginId: bb.pluginId, values: { [key]: value } });
+      await alia.sdk.plugins.updateSettings({ pluginId: alia.pluginId, values: { [key]: value } });
     },
 
     /**
@@ -626,7 +626,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
      */
     async machines() {
       try {
-        const [hosts, serverId] = await Promise.all([bb.sdk.hosts.list(), resolveHostId()]);
+        const [hosts, serverId] = await Promise.all([alia.sdk.hosts.list(), resolveHostId()]);
         const current = hosts.find((entry) => entry.id === serverId)?.name ?? null;
         const others = hosts
           .filter((entry) => entry.id !== serverId)
@@ -644,7 +644,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
      *
      * `run` executes on the server, so `--out ./shot.jpg` names a file in the
      * *caller's* working directory. Resolving the invoking host and going
-     * through `bb.sdk.files` is the difference between writing where the user
+     * through `alia.sdk.files` is the difference between writing where the user
      * is looking and writing somewhere they will never find.
      */
     async writeToInvokingHost(threadId, path, rootPath, frameId) {
@@ -662,9 +662,9 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
       let hostId: string | undefined;
       if (threadId !== null) {
         try {
-          const thread = await bb.sdk.threads.get({ threadId });
+          const thread = await alia.sdk.threads.get({ threadId });
           if (thread.environmentId !== null) {
-            const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+            const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
             hostId = environment.hostId;
           }
         } catch {
@@ -674,7 +674,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
       }
 
       try {
-        const written = await bb.sdk.files.write({
+        const written = await alia.sdk.files.write({
           ...(hostId === undefined ? {} : { hostId }),
           path,
           rootPath,
@@ -697,7 +697,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
      *
      * Everything the run needs is resolved *here* — the device, the project,
      * the scheme, the build path — so the queued job closes over facts rather
-     * than over `bb`, which may be stale by the time the queue reaches it.
+     * than over `VesnALIA`, which may be stale by the time the queue reaches it.
      *
      * Every refusal is a sentence naming what to do next. "Could not run" for
      * a project with twelve schemes is a dead end; naming the twelve is not.
@@ -715,7 +715,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
     },
 
     /**
-     * Write the onboarding files through `bb.sdk.files`.
+     * Write the onboarding files through `alia.sdk.files`.
      *
      * Confined beneath the checkout root, and never with `node:fs`: the
      * checkout can be on another host, and a plugin writing to the wrong disk
@@ -755,7 +755,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
       const root = scope.scope.checkoutPath;
       const written: string[] = [];
       for (const file of files) {
-        const result = await bb.sdk.files.write({
+        const result = await alia.sdk.files.write({
           path: `${root}/${file.relPath}`,
           rootPath: root,
           content: file.contents,
@@ -773,7 +773,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
   // RPC
   // ---------------------------------------------------------------------------
 
-  bb.rpc.register(rpcContract, makeRpcHandlers(ctx, liveStreamStats));
+  alia.rpc.register(rpcContract, makeRpcHandlers(ctx, liveStreamStats));
 
   // ---------------------------------------------------------------------------
   // The stream proxy
@@ -808,7 +808,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
    * `noteViewerOpened` is unchanged, and there is still no heartbeat and no
    * timer running while nothing is being watched.
    */
-  bb.http.route(
+  alia.http.route(
     "GET",
     "/presence",
     makePresenceRouteHandler(privateStreamDeps, presenceConnections),
@@ -819,11 +819,11 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
    * The device stream, proxied from the capture host — H.264 or MJPEG.
    *
    * The fallback path since direct streaming landed: it is what a remote
-   * bb panel uses. It keeps its own presence accounting for that
+   * VesnALIA panel uses. It keeps its own presence accounting for that
    * case, and it carries both codecs because the 18× bandwidth difference
    * matters most across a remote connection.
    */
-  bb.http.route(
+  alia.http.route(
     "GET",
     "/stream",
     makeStreamRouteHandler(privateStreamDeps, streamConnections),
@@ -843,7 +843,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
    * `ETag: <content_hash>` with a one-year immutable cache is honest here,
    * because a frame row is never rewritten.
    */
-  bb.http.route(
+  alia.http.route(
     "GET",
     "/image",
     async (context) => {
@@ -901,7 +901,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
 
   // Owns the loopback capture host and its control sockets. It awaits an abort
   // — there is no loop and no timer running while nothing is on screen.
-  bb.background.service("sim-live", {
+  alia.background.service("sim-live", {
     async start(signal) {
       if (signal.aborted) return;
       await new Promise<void>((resolve) => {
@@ -943,7 +943,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
     }
     await sweepServeSimLogs(tmpdir(), Date.now());
     await sweepLegacyStillsResults(dataDir);
-    await bb.storage.kv.set("lastPruneAt", Date.now());
+    await alia.storage.kv.set("lastPruneAt", Date.now());
   };
 
   reserveFrameBytes = async (incomingBytes) => {
@@ -956,7 +956,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
 
   const pruneIfDue = (): void => {
     detach(async () => {
-      const last = (await bb.storage.kv.get<number>("lastPruneAt")) ?? 0;
+      const last = (await alia.storage.kv.get<number>("lastPruneAt")) ?? 0;
       if (Date.now() - last < PRUNE_INTERVAL_MS) return;
       await runPrune();
     }, (error) => log("warn", `prune failed: ${describe(error)}`));
@@ -964,7 +964,7 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
 
   // Named apart from the tracker's own `prune`: schedule names are unique
   // per plugin, and a collision leaves the whole plugin in `error`.
-  bb.background.schedule("sim-prune", "37 4 * * *", async () => {
+  alia.background.schedule("sim-prune", "37 4 * * *", async () => {
     // Enqueued rather than run inline: it is unbounded work, and reload
     // teardown must not wait on it.
     queue.enqueue({
@@ -984,10 +984,10 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
   // model provider, and a setting that turns that off has to actually remove
   // the tools rather than make them refuse.
   if (settings.allowAgentCapture) {
-    bb.agents.registerTool(makeCaptureTool(ctx, liveStreamStats));
-    bb.agents.registerTool(makeDriveTool(ctx));
-    bb.agents.registerTool(makeStillsTool(ctx));
-    bb.agents.registerTool(makeStreamStatusTool(ctx, liveStreamStats));
+    alia.agents.registerTool(makeCaptureTool(ctx, liveStreamStats));
+    alia.agents.registerTool(makeDriveTool(ctx));
+    alia.agents.registerTool(makeStillsTool(ctx));
+    alia.agents.registerTool(makeStreamStatusTool(ctx, liveStreamStats));
     // The instructions themselves are contributed by `server.ts`:
     // `contributeInstructions` is one call per plugin, and both halves have
     // something to say. They are still contributed *globally* rather than only
@@ -1001,15 +1001,15 @@ export async function installSimulators(bb: BbPluginApi, host: SimulatorHost): P
   // CLI
   // ---------------------------------------------------------------------------
 
-  // `bb.cli.register` is one-per-plugin, so these are handed to the host and
-  // dispatched as `bb xcode sim <verb>` rather than registered here.
+  // `alia.cli.register` is one-per-plugin, so these are handed to the host and
+  // dispatched as `alia xcode sim <verb>` rather than registered here.
   host.mountCli(makeCli(ctx));
 
   // ---------------------------------------------------------------------------
   // Teardown
   // ---------------------------------------------------------------------------
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     flush.cancel();
     leases.releaseAll();
     queue.abortAll();

@@ -6,11 +6,11 @@
 // commands, and the "Paste into terminal" message action. All of them call this
 // singleton; the React tree subscribes via useSyncExternalStore and registers
 // one command handler. Module-level state is safe here because a content
-// script instantiates this module once per bb window, tab, or remote client.
+// script instantiates this module once per VesnALIA window, tab, or remote client.
 
 type Listener = () => void;
 
-/** Where the person is looking in bb, as the route reports it. */
+/** Where the person is looking in VesnALIA, as the route reports it. */
 export interface HostContext {
   projectId: string | null;
   threadId: string | null;
@@ -95,7 +95,7 @@ const contextListeners = new Set<Listener>();
 
 /**
  * The route the person is on, reported by a tiny app overlay that can read
- * bb's React context — which the window, mounted by a content script, cannot.
+ * VesnALIA's React context — which the window, mounted by a content script, cannot.
  * Stays at nulls where the route names no thread or project; everything that
  * reads it treats "unknown" as "nowhere in particular".
  */
@@ -116,7 +116,7 @@ export const hostContext = {
 
 // ---------------------------------------------------------- composer bridge
 
-/** The slice of bb's composer handle this plugin uses. */
+/** The slice of VesnALIA's composer handle this plugin uses. */
 export interface ComposerHandle {
   scope: { kind: string; threadId?: string | null };
   insert(text: string, options?: { at?: "end"; block?: boolean }): void;

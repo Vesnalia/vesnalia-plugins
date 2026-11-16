@@ -1,8 +1,8 @@
-// Maximize transfer: the board composer rides up to bb's main new-thread
-// view (BbNavigate.toCompose) carrying the plugin's stored prompt draft and
+// Maximize transfer: the board composer rides up to VesnALIA's main new-thread
+// view (AliaNavigate.toCompose) carrying the plugin's stored prompt draft and
 // the composer's seeds; the stored draft then moves, it is not copied.
 // Draft storage is host-owned (apps/app usePromptDraftStorage): the key is
-// `bb.promptbox.contents-plugin-draft-<encodeURIComponent(key)>-<VERSION>`,
+// `alia.promptbox.contents-plugin-draft-<encodeURIComponent(key)>-<VERSION>`,
 // the value is JSON `{ text, ... }`, and empty drafts are never written.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -11,7 +11,7 @@ import {
   readNewThreadDraftText,
 } from "../lib/compose-maximize";
 
-const KEY_PREFIX = "bb.promptbox.contents-plugin-draft-";
+const KEY_PREFIX = "alia.promptbox.contents-plugin-draft-";
 const pluginKey = (composerKey: string, version: number): string =>
   `${KEY_PREFIX}${encodeURIComponent(composerKey)}-${version}`;
 
@@ -58,7 +58,7 @@ describe("readNewThreadDraftText", () => {
 
   it("ignores foreign keys and other plugins' drafts", () => {
     const storage = new FakeStorage();
-    storage.setItem("bb.promptbox.contents-draft-3", draftRecord("main view"));
+    storage.setItem("alia.promptbox.contents-draft-3", draftRecord("main view"));
     storage.setItem(pluginKey("other-plugin", 3), draftRecord("other"));
     storage.setItem("unrelated", "junk");
     expect(readNewThreadDraftText(storage, PLUGIN_COMPOSER_DRAFT_KEY)).toBeNull();
@@ -109,7 +109,7 @@ describe("maximizeComposerToMainView", () => {
   });
 
   it("the draft record still exists while the app reads the navigation state", () => {
-    // Order guard: the main view seeds from the route state bb carries, but
+    // Order guard: the main view seeds from the route state VesnALIA carries, but
     // a navigate implementation that resolved before the record vanished is
     // the contract the removal relies on. So the record must still be there
     // when toCompose fires.
@@ -130,7 +130,7 @@ describe("maximizeComposerToMainView", () => {
   it("keeps the transferred record after navigation, leaving others alone", () => {
     // A maximize is a close, not a spawn: the board modal's draft survives
     // it (the dialog promises "your draft is saved as you type, even if you
-    // close and come back later"), and bb's main view seeds its own draft
+    // close and come back later"), and VesnALIA's main view seeds its own draft
     // from the transferred prompt. Only spending the prompt on a spawn may
     // clear it.
     const storage = new FakeStorage();

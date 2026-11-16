@@ -1,10 +1,10 @@
 /**
  * The builder's six `orient_*` tools: thin wrappers over `OrientationService`. Every call is checked
- * against the store by the calling thread's id (bb supplies it), so a thread that is not building an
+ * against the store by the calling thread's id (VesnALIA supplies it), so a thread that is not building an
  * orientation is refused whatever tools it was handed. The plugin captures a listing's code from the
  * file itself; the agent never pastes code. Refusals come back as tool errors the agent can act on.
  */
-import type { BbPluginApi, PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginAgentToolResult } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { ORIENT_LIMITS, OrientationSummarySchema } from "../shared/orientation";
@@ -21,8 +21,8 @@ async function guarded(work: () => Promise<string>): Promise<PluginAgentToolResu
   }
 }
 
-export function registerOrientationTools(bb: BbPluginApi, orientations: OrientationService): void {
-  bb.agents.registerTool({
+export function registerOrientationTools(alia: AliaPluginApi, orientations: OrientationService): void {
+  alia.agents.registerTool({
     name: "orient_chapter",
     description: "Start a new chapter of the walkthrough with a short title.",
     presentation: { label: { pending: "Adding a chapter", completed: "Added a chapter" }, icon: { glyph: "Brain" } },
@@ -30,7 +30,7 @@ export function registerOrientationTools(bb: BbPluginApi, orientations: Orientat
     execute: ({ title }, ctx) => guarded(() => orientations.chapter(ctx.threadId, title)),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "orient_note",
     description:
       "Add a prose note to the walkthrough, in Markdown. A note takes no fenced code (use orient_listing for code) and no line that starts with an image.",
@@ -39,7 +39,7 @@ export function registerOrientationTools(bb: BbPluginApi, orientations: Orientat
     execute: ({ markdown }, ctx) => guarded(() => orientations.note(ctx.threadId, markdown)),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "orient_listing",
     description:
       "Add a listing: the plugin reads the lines from the file and captures the code itself, so never paste code. Name the file, the lines and a caption.",
@@ -52,7 +52,7 @@ export function registerOrientationTools(bb: BbPluginApi, orientations: Orientat
     execute: ({ path, lines, caption }, ctx) => guarded(() => orientations.listing(ctx.threadId, { path, lines, caption })),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "orient_pop",
     description: "Remove the last block you added to the walkthrough.",
     presentation: { label: { pending: "Removing the last block", completed: "Removed the last block" }, icon: { glyph: "Brain" } },
@@ -60,7 +60,7 @@ export function registerOrientationTools(bb: BbPluginApi, orientations: Orientat
     execute: (_input, ctx) => guarded(() => orientations.pop(ctx.threadId)),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "orient_summary",
     description: "Record the orientation's summary: purpose, languages, stages, key files, concepts, gotchas, exercises and sources.",
     presentation: { label: { pending: "Recording the summary", completed: "Recorded the summary" }, icon: { glyph: "Brain" } },
@@ -68,7 +68,7 @@ export function registerOrientationTools(bb: BbPluginApi, orientations: Orientat
     execute: (summary, ctx) => guarded(() => orientations.summary(ctx.threadId, summary)),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "orient_finish",
     description: "Finish the orientation. Call this last, after the summary and every chapter.",
     presentation: { label: { pending: "Finishing the orientation", completed: "Finished the orientation" }, icon: { glyph: "Brain" } },

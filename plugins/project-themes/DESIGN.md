@@ -1,9 +1,9 @@
 # Project Themes design
 
-Extends bb's existing settings UI in Operate mode. The primary task is to select
+Extends VesnALIA's existing settings UI in Operate mode. The primary task is to select
 a project, choose a color, toggle surfaces, and save. No extra navigation page.
 
-Uses bb fonts and semantic CSS tokens: foreground, background, muted-foreground,
+Uses VesnALIA fonts and semantic CSS tokens: foreground, background, muted-foreground,
 border, input, ring, and sidebar. One project-wide palette with eight swatches
 and a native color input precedes three rows, each with a label, description,
 and switch. The preview and Save/Reset buttons complete the form.

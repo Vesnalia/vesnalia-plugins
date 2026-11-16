@@ -1,5 +1,5 @@
 import { useCallback, useRef } from "react";
-import { useBbNavigate, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { LifecycleApi } from "./useLifecycle";
 import { useSnoozeCommands } from "./useSnoozeCommands";
 
@@ -20,7 +20,7 @@ export function useShelveActions({
   activeThreadId: string | null;
   onNavigate: () => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const activeThreadIdRef = useRef(activeThreadId);
   activeThreadIdRef.current = activeThreadId;
 

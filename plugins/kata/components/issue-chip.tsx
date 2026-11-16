@@ -5,7 +5,7 @@
 // Attributes are untrusted: lib/refs.ts validates them and
 // the server resolves the ref before anything is shown.
 import { useMemo } from "react";
-import { useBbNavigate, type PluginMessageDirectiveProps } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, type PluginMessageDirectiveProps } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { formatRef, parseIssueDirective } from "@/lib/refs";
 import { openIssue, targetOf } from "@/lib/issue-open";
@@ -47,7 +47,7 @@ export function IssueChipDirective({ attributes, message }: PluginMessageDirecti
 }
 
 export function IssueChip({ issue }: { issue: IssueSummary }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const closed = issue.status !== "open";
 
   const open = () => {

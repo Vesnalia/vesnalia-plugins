@@ -1,12 +1,12 @@
 // Frontend data access for souls: one RPC read per surface, kept current by
 // the server's "souls-changed" signal (which fires for writes from this page,
-// another window, `bb souls`, or an agent tool).
+// another window, `alia souls`, or an agent tool).
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   experimental_useSidebarThreads,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { moodFor, type Activity, type Mood } from "../motion";
 import type { Soul, SoulSummary, ThreadSoulState } from "../shared";

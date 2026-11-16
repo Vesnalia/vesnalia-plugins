@@ -3,11 +3,11 @@
  * last Herald event — the sentence stays above the composer, read or not,
  * answered or not, until the next event replaces it — so the only thing that
  * takes one away here is the thread vanishing: archived, deleted or missing,
- * which can happen without an event the plugin hears. The list RPC asks bb
+ * which can happen without an event the plugin hears. The list RPC asks VesnALIA
  * about each entry's thread first, with the answers cached for a short while
- * so a burst of list calls does not turn into one bb read per entry per call.
+ * so a burst of list calls does not turn into one VesnALIA read per entry per call.
  *
- * bb's own unread rule and pending interactions decide what the *panel*
+ * VesnALIA's own unread rule and pending interactions decide what the *panel*
  * lists; that join happens in the app (`app/rows.ts`).
  */
 import type { AttentionEntry } from "../shared/herald";

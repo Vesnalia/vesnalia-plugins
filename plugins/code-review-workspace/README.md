@@ -8,7 +8,7 @@
 
 Understand a pull request well enough to approve it: agents turn the change into a guided walkthrough and draft the review, and you decide what reaches GitHub.
 
-A [BB](https://getbb.app) plugin for reviewing a GitHub pull request or a local Git change. It's for reviewers who need to understand a change before they approve it, often one an agent wrote.
+A [VesnALIA](https://getbb.app) plugin for reviewing a GitHub pull request or a local Git change. It's for reviewers who need to understand a change before they approve it, often one an agent wrote.
 
 Formerly **Guided Review**. Coming from it? See [Moving from Guided Review](#moving-from-guided-review).
 
@@ -38,7 +38,7 @@ An agent writes a guide to the change: what it does and why, then chapters in re
 When the guide is ready, the review agent reviews the change and drafts line comments, a summary, and a suggested verdict. You keep, edit, or remove each one. Nothing posts until you submit, or ask the review agent to post and click **Post**.
 
 - Each comment has a severity: **Blocking**, **Should fix**, **Question**, or **Nit**.
-- A draft can carry a suggested change. **How the agent checked** says what it read or ran, with file:line, and stays in BB.
+- A draft can carry a suggested change. **How the agent checked** says what it read or ran, with file:line, and stays in VesnALIA.
 - The automatic review asks for at most 10 comments, each confirmed in the code.
 - **Review with focuses** (opt-in, beta): **Docs**, **Repo rules**, **Bugs**, **Error handling**, **Tests**, **Types**, and **Security** templates read independently; the review agent confirms their findings. Only Docs starts enabled; saved lists stay unchanged. Add focus offers all seven or a blank focus, with at most four enabled. Bugs intentionally adds a second bug pass.
 - Problems the PR didn't introduce are marked **Pre-existing**, and don't count as blocking against Approve.
@@ -50,7 +50,7 @@ When the guide is ready, the review agent reviews the change and drafts line com
 
 ### Get answers about any line without leaving the diff
 
-**Ask agent** opens the review agent beside the code, in BB's own side panel and chat, as on a thread's page. It can read any file of the review: at the PR's head, at the diff's start, or at the commit you last reviewed.
+**Ask agent** opens the review agent beside the code, in VesnALIA's own side panel and chat, as on a thread's page. It can read any file of the review: at the PR's head, at the diff's start, or at the commit you last reviewed.
 
 - Ask about a line, a range, or selected text. The discussion stays under its line, private to you, and never posts.
 - On a failing GitHub Actions check, **Ask agent** quotes the end of its failed log into the agent's box.
@@ -80,10 +80,10 @@ When the guide is ready, the review agent reviews the change and drafts line com
 - A re-request, a question for you, a mention, or your feedback being handled brings a review back.
 - PRs that request your review join the list from GitHub, and so do your own open PRs, with everyone's comments: a teammate's comment waiting for your reply brings yours back as **Your PR · 3 new comments**; a bot's never does.
 - Rows show checks, size, and your feedback's progress, such as `2/5 addressed`. Stacked PRs sit together, bottom first.
-- **Snooze**, **Pin**, and **Archive** set reviews aside, each with Undo. BB's thread list shows Needs review too.
+- **Snooze**, **Pin**, and **Archive** set reviews aside, each with Undo. VesnALIA's thread list shows Needs review too.
 - **Rename…** gives a review a name of your own in your lists; its Overview keeps the PR's title under it, and nothing changes on GitHub.
 - With the separate Needs You plugin, you get an alert when a guide is ready or a review becomes your turn.
-- Other BB plugins, such as a board of tickets, read who each review waits on and whether you've approved it with one call, [`reviews.v1.status`](docs/plugin-api.md).
+- Other VesnALIA plugins, such as a board of tickets, read who each review waits on and whether you've approved it with one call, [`reviews.v1.status`](docs/plugin-api.md).
 
 <img src="docs/screenshots/all-reviews-dark.webp" alt="The All reviews list shows four PRs under Needs review, with status lines for Your PR, Checks failing, and Stack 1 of 2 and 2 of 2.">
 
@@ -142,32 +142,32 @@ Ask the review agent, in **Ask agent**, and it does the work: replies, PR commen
 
 ### Hand fixes back to the agent that wrote the code
 
-Review a thread's work while it's still in its folder, on any machine: **Review changes**, above the thread's message box in BB, or `bb review` from the thread or any of its subagents. There's one review per folder and branch, uncommitted and new files included; when the code changes, it says so, with **Update**. Threads linked to a review get a **Review** tab beside their chat, with its comments and its agent.
+Review a thread's work while it's still in its folder, on any machine: **Review changes**, above the thread's message box in VesnALIA, or `alia review` from the thread or any of its subagents. There's one review per folder and branch, uncommitted and new files included; when the code changes, it says so, with **Update**. Threads linked to a review get a **Review** tab beside their chat, with its comments and its agent.
 
 ```sh
-bb review                            # this thread's folder, on any machine: one review per folder and branch
-bb review main                       # your working tree against main
-bb review my-feature --base main     # what the branch changed since it left main
-bb review https://github.com/acme/web/pull/42
+alia review                            # this thread's folder, on any machine: one review per folder and branch
+alia review main                       # your working tree against main
+alia review my-feature --base main     # what the branch changed since it left main
+alia review https://github.com/acme/web/pull/42
 ```
 
-- Your comments go to the review's main thread, the thread that writes the code: **Send** in Finish review takes the ones you pick, and **Send now** on a comment sends it alone. **Main thread ↗** goes to that thread, and back with its **Review · 2 open ↗**; **Show beside review** shows its chat in BB's side panel instead. **Fix in a new thread** starts a new one instead. Nothing goes to GitHub.
+- Your comments go to the review's main thread, the thread that writes the code: **Send** in Finish review takes the ones you pick, and **Send now** on a comment sends it alone. **Main thread ↗** goes to that thread, and back with its **Review · 2 open ↗**; **Show beside review** shows its chat in VesnALIA's side panel instead. **Fix in a new thread** starts a new one instead. Nothing goes to GitHub.
 - Each comment gets an id the thread reports on. It's told not to push until you say, unless you turn on **Let it push when done**.
 - Once it has reported them all, or says it's finished, the review comes back **Ready to re-review**, with the review agent's check of each fix. Each card says where its fix stands; only your click resolves, dismisses or reopens one, and a reopened comment goes with the next Send.
-- On your own change, Submit posts only open comments: ones sent to fix, resolved or dismissed stay in BB.
+- On your own change, Submit posts only open comments: ones sent to fix, resolved or dismissed stay in VesnALIA.
 - If it goes idle first, as it does while subagents work, the review says "1 of 6 reported", with **Check now**.
 - **Push** in Finish review has the main thread commit what you reviewed, checks that commit against what you reviewed, warning first when they differ, then has the thread push exactly that commit, never forced.
 - **Push and open PR** in Finish review pushes, then has the review agent draft the PR. However the PR opens, the same review becomes the PR's within seconds, its id from before still naming it, and merges with the PR's own review if it has one.
 - The folder stays attached: **Not pushed yet**, a page after the chapters, shows what isn't on GitHub yet, and a comment on a line there goes with Send, then moves to the PR once it's pushed.
 - Reviewing the PR already, a teammate's too? **Review changes** in a thread on its branch joins that review rather than start another: its changes show in Not pushed yet, the thread gets your Sends, and Push asks before it puts a commit on someone else's branch.
 - On your own PR, teammates' comments go through the same loop: **Send** them to the thread that wrote it, or to a fresh thread at the PR's head that the review briefs.
-- Agents in your threads can add draft comments and a summary with `bb review comment` and `bb review summary`. They change only the local draft.
+- Agents in your threads can add draft comments and a summary with `alia review comment` and `alia review summary`. They change only the local draft.
 - **Open in editor** opens a local review's file at the line.
 
 ### Review from the keyboard, the palette, or your phone
 
 - Single keys move through files, chapters, changes, and comments, and mark files viewed. `?` lists them.
-- BB's command palette offers **Next review that needs me** (⌘⇧U on a Mac), **Review PR from clipboard**, and **Switch between review and main thread** (⌘⇧.).
+- VesnALIA's command palette offers **Next review that needs me** (⌘⇧U on a Mac), **Review PR from clipboard**, and **Switch between review and main thread** (⌘⇧.).
 - On a phone, a dock at the bottom holds the chapters, Comments, Ask agent, and Full screen. On touch screens, iPads included, every control is a 44px target.
 - Every feature that can get in the way has a switch in Settings. You pick each agent's provider, model, effort, and machine.
 
@@ -186,43 +186,43 @@ bb review https://github.com/acme/web/pull/42
 
 ## Requirements
 
-- **BB 0.48 or later** (plugin SDK 0.6.79+), running on **Node 24 or later**. No npm or build step is needed.
-- **`git` and GitHub CLI (`gh`)** on the machine running BB (the BB server), signed in to github.com. No token is pasted into the plugin.
-- **A BB agent provider**, connected in BB's Settings. Guides and reviews use its normal usage allowance.
-- **At least one BB project.** A review you start from the panel runs in your Personal project, or in the first project if there's none.
-- **Optional: Needs You** (plugin id `inbox`), 0.2.0-beta.3 or later, for alerts. It's a separate plugin, listed in the BB Community marketplace ([source](https://github.com/notpritam/bb-plugin-inbox)). See [Notifications](docs/guide.md#notifications).
+- **VesnALIA 0.48 or later** (plugin SDK 0.6.79+), running on **Node 24 or later**. No npm or build step is needed.
+- **`git` and GitHub CLI (`gh`)** on the machine running VesnALIA (the VesnALIA server), signed in to github.com. No token is pasted into the plugin.
+- **A VesnALIA agent provider**, connected in VesnALIA's Settings. Guides and reviews use its normal usage allowance.
+- **At least one VesnALIA project.** A review you start from the panel runs in your Personal project, or in the first project if there's none.
+- **Optional: Needs You** (plugin id `inbox`), 0.2.0-beta.3 or later, for alerts. It's a separate plugin, listed in the VesnALIA Community marketplace ([source](https://github.com/notpritam/bb-plugin-inbox)). See [Notifications](docs/guide.md#notifications).
 
 Limits:
 
 - GitHub features support github.com only.
-- A review of a local ref, such as `bb review main`, needs its checkout on the BB server. A thread's folder, `bb review` with no ref, can be on any enrolled machine.
-- Each reviewer uses their own BB installation and GitHub identity. On a shared BB server, credentials, settings, and saved reviews are shared.
+- A review of a local ref, such as `alia review main`, needs its checkout on the VesnALIA server. A thread's folder, `alia review` with no ref, can be on any enrolled machine.
+- Each reviewer uses their own VesnALIA installation and GitHub identity. On a shared VesnALIA server, credentials, settings, and saved reviews are shared.
 
 ## Quick start
 
 1. Install Code Review Workspace from its Git repository:
 
    ```sh
-   bb plugin install git:github.com/AndrewBird81/bb-plugin-code-review-workspace@^1.0.0
+   alia plugin install git:github.com/AndrewBird81/bb-plugin-code-review-workspace@^1.0.0
    ```
 
-2. On the BB server, sign in to GitHub: `gh auth login --hostname github.com`.
-3. Open **Code Review Workspace** in BB's sidebar. With no reviews yet, **All reviews** checks your setup.
+2. On the VesnALIA server, sign in to GitHub: `gh auth login --hostname github.com`.
+3. Open **Code Review Workspace** in VesnALIA's sidebar. With no reviews yet, **All reviews** checks your setup.
 4. Paste a GitHub PR link into the box on **All reviews**, and choose **Review** or press Enter. The guide writer builds the guide; then the review agent drafts comments, a summary, and a verdict.
 5. On the review's Overview, choose **Start reading** and go through the chapters. Edit or remove the agent's comments, and add your own.
 6. Open **Finish review**, pick a verdict, and choose **Submit to GitHub**.
 
-For a local change, run `bb review` in the BB thread that made it, on any machine. See [Local changes and the command line](docs/guide.md#local-changes-and-the-command-line).
+For a local change, run `alia review` in the VesnALIA thread that made it, on any machine. See [Local changes and the command line](docs/guide.md#local-changes-and-the-command-line).
 
 ## Moving from Guided Review
 
-Until 1.0.0 this plugin was Guided Review, with the id `guided-review`. BB keeps a plugin's data under its id, so Code Review Workspace is a new install beside it, not an update. Don't update Guided Review to 1.0.0: install Code Review Workspace beside it.
+Until 1.0.0 this plugin was Guided Review, with the id `guided-review`. VesnALIA keeps a plugin's data under its id, so Code Review Workspace is a new install beside it, not an update. Don't update Guided Review to 1.0.0: install Code Review Workspace beside it.
 
 1. Submit or save any comment you're typing, and close Guided Review's pages.
-2. `bb plugin disable guided-review`. It keeps its data; disabling it stops both plugins following your PRs and starting agents at once, and both registering `bb review`.
-3. `bb plugin install git:github.com/AndrewBird81/bb-plugin-code-review-workspace@^1.0.0`
-4. Open **Code Review Workspace** and check your reviews are there. `bb plugin logs code-review-workspace` says "Brought in the reviews from guided-review" when it copied them.
-5. Then `bb plugin remove guided-review`, which can delete its data. Until then, you can go back by removing Code Review Workspace and enabling Guided Review.
+2. `alia plugin disable guided-review`. It keeps its data; disabling it stops both plugins following your PRs and starting agents at once, and both registering `alia review`.
+3. `alia plugin install git:github.com/AndrewBird81/bb-plugin-code-review-workspace@^1.0.0`
+4. Open **Code Review Workspace** and check your reviews are there. `alia plugin logs code-review-workspace` says "Brought in the reviews from guided-review" when it copied them.
+5. Then `alia plugin remove guided-review`, which can delete its data. Until then, you can go back by removing Code Review Workspace and enabling Guided Review.
 
 What it copies, and what it doesn't: [What carries over from Guided Review](docs/guide.md#what-carries-over-from-guided-review).
 
@@ -230,7 +230,7 @@ What it copies, and what it doesn't: [What carries over from Guided Review](docs
 
 - [The full guide](docs/guide.md): every screen, setting, and command in detail.
   - [Install and first run](docs/guide.md#install-and-first-run), [Updates](docs/guide.md#updates), and [Upgrading from older versions](docs/guide.md#upgrading-from-older-versions).
-  - [Local changes and the command line](docs/guide.md#local-changes-and-the-command-line): every form of `bb review`.
+  - [Local changes and the command line](docs/guide.md#local-changes-and-the-command-line): every form of `alia review`.
   - [The review workspace](docs/guide.md#the-review-workspace), [Keyboard shortcuts](docs/guide.md#keyboard-shortcuts), and [Phone and iPad](docs/guide.md#phone-and-ipad).
   - [Whose turn](docs/guide.md#whose-turn): what brings a review back, Snooze, Rename, and notifications.
   - [Comments and Finish review](docs/guide.md#comments-and-finish-review).
@@ -238,7 +238,7 @@ What it copies, and what it doesn't: [What carries over from Guided Review](docs
   - [Data and access](docs/guide.md#data-and-access): what the agents can and can't do, and what they read.
   - [Troubleshooting](docs/guide.md#troubleshooting) and [Uninstall](docs/guide.md#uninstall).
 - [docs/development.md](docs/development.md): building, testing, and the browser regression test.
-- [docs/operations.md](docs/operations.md): updates, how often GitHub is read, and Needs You delivery, for whoever runs the BB server.
+- [docs/operations.md](docs/operations.md): updates, how often GitHub is read, and Needs You delivery, for whoever runs the VesnALIA server.
 - [docs/devices.md](docs/devices.md): the phone, iPad, and foldable layouts in full.
 - [docs/plugin-api.md](docs/plugin-api.md): for other plugins, `reviews.v1.status`, where each review stands, and `reviewThreadChanges`, which starts a review of a thread's changes.
 - [DESIGN.md](DESIGN.md): the interface system.
@@ -247,9 +247,9 @@ What it copies, and what it doesn't: [What carries over from Guided Review](docs
 
 ## Credits and license
 
-Maintained by [Andrew Bird](https://github.com/AndrewBird81). Code Review Workspace began as a fork of [notpritam/bb-plugin-guided-review](https://github.com/notpritam/bb-plugin-guided-review) (0.2.1) by [Pritam Sharma](https://github.com/notpritam), who wrote the original plugin.
+Maintained by [Andrew Bird](https://github.com/AndrewBird81). Code Review Workspace began as a fork of [notpritam/alia-plugin-guided-review](https://github.com/notpritam/bb-plugin-guided-review) (0.2.1) by [Pritam Sharma](https://github.com/notpritam), who wrote the original plugin.
 
-- Inspired by [plannotator/guides](https://github.com/plannotator/guides). The viewer and generation workflow here run through BB.
+- Inspired by [plannotator/guides](https://github.com/plannotator/guides). The viewer and generation workflow here run through VesnALIA.
 - The icons are from Hugeicons' free set, copied into `components/ui/icon-data.ts` under its MIT license.
 
 Released under the [MIT License](LICENSE).

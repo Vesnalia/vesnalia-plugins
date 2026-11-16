@@ -1,5 +1,5 @@
 // Transports reach inside a box. Backends compose them: a backend says which
-// transports reach each of its boxes, and bb-box's core uses them without
+// transports reach each of its boxes, and alia-box's core uses them without
 // knowing which provider made the box. Commands and file copies go through a
 // CommandTransport (SSH now; docker exec or a guest agent later). A desktop
 // is a Display, whose route leads to a stream server inside the box. Routes
@@ -119,7 +119,7 @@ export interface DisplayOpened {
   readonly keyDelayMs?: number;
 }
 
-/** A change of the box's pointer, from bb-box-cursor (060). */
+/** A change of the box's pointer, from alia-box-cursor (060). */
 export type BoxPointer =
   | { readonly type: "enter" }
   /** The pointer left the output, as when the seat's last pointer went. */
@@ -128,7 +128,7 @@ export type BoxPointer =
   | { readonly type: "position"; readonly x: number; readonly y: number }
   /** A new image: width*height pixels of 32-bit ARGB, little-endian, and its hotspot. */
   | { readonly type: "image"; readonly width: number; readonly height: number; readonly hotX: number; readonly hotY: number; readonly argb: Uint8Array }
-  /** A new image as Selkies' own cursor message, as bb-box-stream.exe sends it (#865). */
+  /** A new image as Selkies' own cursor message, as alia-box-stream.exe sends it (#865). */
   | { readonly type: "shape"; readonly message: string };
 
 export interface Display {
@@ -189,7 +189,7 @@ export interface Display {
    */
   readonly pointerWhile?: "rfb";
   /**
-   * Follows the box's pointer, where its image has bb-box-cursor (060):
+   * Follows the box's pointer, where its image has alia-box-cursor (060):
    * where it is and what it looks like, as it changes, until `signal` ends it
    * or the helper does. Neither of a Wayland desktop's streams sends either.
    */
@@ -209,7 +209,7 @@ export const LEFT_TO_STREAM_SERVER = "stream-server";
 /** The smallest size a viewer sets a Linux or Windows desktop to: their apps are hard to use below it. */
 export const MIN_DESKTOP: DisplaySize = { width: 800, height: 600 };
 
-/** How to reach a box over SSH, for bb-box and for the thread's own machine. */
+/** How to reach a box over SSH, for alia-box and for the thread's own machine. */
 export interface SshAccess {
   readonly host: string;
   readonly port: number;
@@ -275,7 +275,7 @@ export interface CommandTransport {
   spawn?(script: string, signal?: AbortSignal): Promise<ByteChannel>;
   /**
    * The box user's login shell on a PTY, for a person's terminal. The PTY is
-   * on BB's server, so nothing runs in the box (src/transports/terminal.ts).
+   * on VesnALIA's server, so nothing runs in the box (src/transports/terminal.ts).
    * Closing it hangs the shell up.
    */
   terminal?(size: TerminalSize, signal?: AbortSignal): Promise<Terminal>;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { PluginBrowserBbSdk } from "@get-bb/plugin-sdk/app";
+import type { PluginBrowserAliaSdk } from "@vesnalia/plugin-sdk/app";
 
 /**
  * Per-thread execution info (model + reasoning level) for the thread rows.
@@ -35,7 +35,7 @@ function cap<T>(map: Map<string, T>, limit = 2000): void {
 }
 
 function fetchExecution(
-  sdk: PluginBrowserBbSdk,
+  sdk: PluginBrowserAliaSdk,
   threadId: string,
   version: string,
 ): Promise<ThreadExecution | null> {
@@ -67,7 +67,7 @@ function fetchExecution(
 
 export function useThreadExecution(
   threadId: string,
-  sdk: PluginBrowserBbSdk,
+  sdk: PluginBrowserAliaSdk,
   epoch: number,
   enabled = true,
   latestAttentionAt = 0,
@@ -112,7 +112,7 @@ export function useThreadExecution(
 }
 
 function fetchCatalog(
-  sdk: PluginBrowserBbSdk,
+  sdk: PluginBrowserAliaSdk,
   providerId: string,
 ): Promise<Map<string, string> | null> {
   const existing = catalogInflight.get(providerId);
@@ -144,7 +144,7 @@ function fetchCatalog(
 export function useModelDisplayName(
   providerId: string,
   model: string | null,
-  sdk: PluginBrowserBbSdk,
+  sdk: PluginBrowserAliaSdk,
   isVisible = true,
 ): string | null {
   const [names, setNames] = useState<Map<string, string> | null | undefined>(

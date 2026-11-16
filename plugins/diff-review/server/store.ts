@@ -2,9 +2,9 @@
  * The plugin's own SQLite: review sessions, threads, comments and sends. The tables follow diffity's
  * store (https://github.com/nilbuild/diffity, `src-tauri/src/core/store.rs`, MIT) — a session per
  * workspace and view, threads with a file, side, line range, status, severity and anchor text, and
- * comments by the user or an agent — plus `sends`, the ledger of which threads went to which bb thread.
+ * comments by the user or an agent — plus `sends`, the ledger of which threads went to which VesnALIA thread.
  *
- * `MIGRATIONS` is append-only: bb records each statement's index as applied, so a shipped statement is
+ * `MIGRATIONS` is append-only: VesnALIA records each statement's index as applied, so a shipped statement is
  * never edited or reordered, only followed by new ones.
  */
 import { randomBytes } from "node:crypto";
@@ -51,17 +51,17 @@ export const MIGRATIONS: string[] = [
   `CREATE TABLE sends (
      id TEXT PRIMARY KEY,
      session_id TEXT NOT NULL REFERENCES review_sessions(id) ON DELETE CASCADE,
-     bb_thread_id TEXT NOT NULL,
+     alia_thread_id TEXT NOT NULL,
      note TEXT NOT NULL,
      created_at INTEGER NOT NULL
    )`,
-  `CREATE INDEX sends_bb_thread ON sends(bb_thread_id)`,
+  `CREATE INDEX sends_alia_thread ON sends(alia_thread_id)`,
   // 0.2.0: AI runs.
   `CREATE TABLE runs (
      id TEXT PRIMARY KEY,
      session_id TEXT NOT NULL REFERENCES review_sessions(id) ON DELETE CASCADE,
      kind TEXT NOT NULL CHECK (kind IN ('review', 'mention', 'fix')),
-     bb_thread_id TEXT,
+     alia_thread_id TEXT,
      review_thread_id TEXT REFERENCES review_threads(id) ON DELETE SET NULL,
      focus TEXT,
      provider_id TEXT NOT NULL,
@@ -74,7 +74,7 @@ export const MIGRATIONS: string[] = [
      finished_at INTEGER
    )`,
   `CREATE INDEX runs_session ON runs(session_id)`,
-  `CREATE INDEX runs_bb_thread ON runs(bb_thread_id)`,
+  `CREATE INDEX runs_alia_thread ON runs(alia_thread_id)`,
   // Runs start as children of the thread under review.
   `ALTER TABLE runs ADD COLUMN parent_thread_id TEXT`,
   // What each thread's Review tab keeps of a view: drafts, folds, scroll.
@@ -94,7 +94,7 @@ export const MIGRATIONS: string[] = [
      previous_delivery TEXT,
      PRIMARY KEY (send_id, thread_id)
    )`,
-  // The revision of the file a thread was made on, as bb's Git plugin gave it, to tell that the file
+  // The revision of the file a thread was made on, as VesnALIA's Git plugin gave it, to tell that the file
   // changed since.
   `ALTER TABLE review_threads ADD COLUMN file_revision TEXT`,
   // Summaries and explanations are review-kind runs (they read and comment, never edit) with a
@@ -180,7 +180,7 @@ interface ThreadRow {
   delivery: DeliveryState | null;
   created_at: number;
   updated_at: number;
-  bb_thread_id: string | null;
+  alia_thread_id: string | null;
   sent_at: number | null;
 }
 
@@ -189,7 +189,7 @@ export interface NewRun {
   id?: string;
   sessionId: string;
   kind: RunKind;
-  bbThreadId: string | null;
+  aliaThreadId: string | null;
   reviewThreadId: string | null;
   focus: string | null;
   providerId: string;
@@ -206,7 +206,7 @@ interface RunRow {
   session_id: string;
   kind: RunKind;
   purpose: "summary" | "explain" | null;
-  bb_thread_id: string | null;
+  alia_thread_id: string | null;
   review_thread_id: string | null;
   focus: string | null;
   provider_id: string;
@@ -228,7 +228,7 @@ export interface RecordedSend {
   createdAt: number;
 }
 
-/** Where a run's sends point before bb has given it a thread (`bindRun` moves them). */
+/** Where a run's sends point before VesnALIA has given it a thread (`bindRun` moves them). */
 export function pendingRunThread(runId: string): string {
   return `run:${runId}`;
 }
@@ -251,7 +251,7 @@ export function newId(): string {
 }
 
 const THREAD_SELECT = `
-  SELECT t.*, s.bb_thread_id AS bb_thread_id, s.created_at AS sent_at
+  SELECT t.*, s.alia_thread_id AS alia_thread_id, s.created_at AS sent_at
   FROM review_threads t LEFT JOIN sends s ON s.id = t.send_id`;
 
 export class ReviewStore {
@@ -306,9 +306,9 @@ export class ReviewStore {
     return Object.fromEntries(rows.map((row) => [row.alias_id, row.thread_id]));
   }
 
-  /** The threads whose last send went to `bbThreadId`, oldest first. */
-  threadsSentTo(bbThreadId: string): ReviewThread[] {
-    const rows = this.db.prepare<[string], ThreadRow>(`${THREAD_SELECT} WHERE s.bb_thread_id = ? ORDER BY t.created_at, t.rowid`).all(bbThreadId);
+  /** The threads whose last send went to `aliaThreadId`, oldest first. */
+  threadsSentTo(aliaThreadId: string): ReviewThread[] {
+    const rows = this.db.prepare<[string], ThreadRow>(`${THREAD_SELECT} WHERE s.alia_thread_id = ? ORDER BY t.created_at, t.rowid`).all(aliaThreadId);
     return this.withComments(rows);
   }
 
@@ -377,11 +377,11 @@ export class ReviewStore {
    * Records a send and points each thread at it, keeping what each thread pointed at before
    * (`send_previous`) so `dropSend` can put it back if this send cannot be delivered.
    */
-  recordSend(sessionId: string, bbThreadId: string, threadIds: readonly string[], note: string): RecordedSend {
+  recordSend(sessionId: string, aliaThreadId: string, threadIds: readonly string[], note: string): RecordedSend {
     const id = newId();
     const createdAt = this.now();
     this.db.transaction(() => {
-      this.db.prepare("INSERT INTO sends (id, session_id, bb_thread_id, note, created_at) VALUES (?, ?, ?, ?, ?)").run(id, sessionId, bbThreadId, note, createdAt);
+      this.db.prepare("INSERT INTO sends (id, session_id, alia_thread_id, note, created_at) VALUES (?, ?, ?, ?, ?)").run(id, sessionId, aliaThreadId, note, createdAt);
       const read = this.db.prepare<[string, string], { send_id: string | null; delivery: DeliveryState | null }>(
         "SELECT send_id, delivery FROM review_threads WHERE id = ? AND session_id = ?",
       );
@@ -444,7 +444,7 @@ export class ReviewStore {
       this.db
         .prepare(
           `UPDATE review_threads SET delivery = 'answered' WHERE id = ? AND send_id IN
-             (SELECT id FROM sends WHERE bb_thread_id = ? AND (? IS NULL OR created_at <= ?))`,
+             (SELECT id FROM sends WHERE alia_thread_id = ? AND (? IS NULL OR created_at <= ?))`,
         )
         .run(input.threadId, input.callerThreadId, input.ackBefore, input.ackBefore);
       return { drafted: mirror };
@@ -470,14 +470,14 @@ export class ReviewStore {
     })();
   }
 
-  /** The threads sent to `bbThreadId` still waiting for an answer, with when they were sent. */
-  waitingOn(bbThreadId: string): { threadId: string; sessionId: string; sendId: string; sentAt: number }[] {
+  /** The threads sent to `aliaThreadId` still waiting for an answer, with when they were sent. */
+  waitingOn(aliaThreadId: string): { threadId: string; sessionId: string; sendId: string; sentAt: number }[] {
     return this.db
       .prepare<[string], { id: string; session_id: string; send_id: string; sent_at: number }>(
         `SELECT t.id, t.session_id, t.send_id, s.created_at AS sent_at FROM review_threads t JOIN sends s ON s.id = t.send_id
-         WHERE s.bb_thread_id = ? AND t.delivery = 'sent'`,
+         WHERE s.alia_thread_id = ? AND t.delivery = 'sent'`,
       )
-      .all(bbThreadId)
+      .all(aliaThreadId)
       .map((row) => ({ threadId: row.id, sessionId: row.session_id, sendId: row.send_id, sentAt: row.sent_at }));
   }
 
@@ -494,7 +494,7 @@ export class ReviewStore {
   /**
    * Every session with comment threads (or only `sessionId`), newest activity first (at most `limit`,
    * all by default): its
-   * counts, and the bb thread whose Review tab opened it last (null when no tab kept state for it, as
+   * counts, and the VesnALIA thread whose Review tab opened it last (null when no tab kept state for it, as
    * for a review only an agent wrote).
    */
   reviewSummaries(limit = -1, sessionId: string | null = null): ReviewSummaryRow[] {
@@ -540,10 +540,10 @@ export class ReviewStore {
     const purpose = input.kind === "summary" || input.kind === "explain" ? input.kind : null;
     this.db
       .prepare(
-        `INSERT INTO runs (id, session_id, kind, purpose, bb_thread_id, review_thread_id, focus, provider_id, model, status, summary, baseline, created_at, finished_at, parent_thread_id)
+        `INSERT INTO runs (id, session_id, kind, purpose, alia_thread_id, review_thread_id, focus, provider_id, model, status, summary, baseline, created_at, finished_at, parent_thread_id)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
-      .run(id, input.sessionId, purpose === null ? input.kind : "review", purpose, input.bbThreadId, input.reviewThreadId, input.focus, input.providerId, input.model, input.status, input.summary ?? null, input.baseline ?? null, at, finished, input.parentThreadId ?? null);
+      .run(id, input.sessionId, purpose === null ? input.kind : "review", purpose, input.aliaThreadId, input.reviewThreadId, input.focus, input.providerId, input.model, input.status, input.summary ?? null, input.baseline ?? null, at, finished, input.parentThreadId ?? null);
     return this.run(id)!;
   }
 
@@ -560,15 +560,15 @@ export class ReviewStore {
       .map(toRun);
   }
 
-  /** The runs a bb thread carries that are not closed, newest first. */
-  runsOfThread(bbThreadId: string): StoredRun[] {
+  /** The runs a VesnALIA thread carries that are not closed, newest first. */
+  runsOfThread(aliaThreadId: string): StoredRun[] {
     return this.db
-      .prepare<[string], RunRow>("SELECT * FROM runs WHERE bb_thread_id = ? AND status != 'closed' ORDER BY created_at DESC, rowid DESC")
-      .all(bbThreadId)
+      .prepare<[string], RunRow>("SELECT * FROM runs WHERE alia_thread_id = ? AND status != 'closed' ORDER BY created_at DESC, rowid DESC")
+      .all(aliaThreadId)
       .map(toRun);
   }
 
-  /** Whether a thread has run threads as children (closed ones included: bb may still be reporting them). */
+  /** Whether a thread has run threads as children (closed ones included: VesnALIA may still be reporting them). */
   hasRunChildren(threadId: string): boolean {
     return this.db.prepare<[string], { n: number }>("SELECT count(*) AS n FROM runs WHERE parent_thread_id = ?").get(threadId)!.n > 0;
   }
@@ -577,37 +577,37 @@ export class ReviewStore {
   reviewerRun(sessionId: string): StoredRun | null {
     const row = this.db
       .prepare<[string], RunRow>(
-        "SELECT * FROM runs WHERE session_id = ? AND kind = 'review' AND purpose IS NULL AND status != 'closed' AND bb_thread_id IS NOT NULL ORDER BY created_at DESC, rowid DESC LIMIT 1",
+        "SELECT * FROM runs WHERE session_id = ? AND kind = 'review' AND purpose IS NULL AND status != 'closed' AND alia_thread_id IS NOT NULL ORDER BY created_at DESC, rowid DESC LIMIT 1",
       )
       .get(sessionId);
     return row === undefined ? null : toRun(row);
   }
 
   /**
-   * Binds a run to the thread bb started for it, once: its row and the sends recorded for it while it
+   * Binds a run to the thread VesnALIA started for it, once: its row and the sends recorded for it while it
    * had no thread now name that thread. Returns false when the run is unknown or already bound.
    */
-  bindRun(id: string, bbThreadId: string): boolean {
+  bindRun(id: string, aliaThreadId: string): boolean {
     return this.db.transaction(() => {
-      const bound = this.db.prepare("UPDATE runs SET bb_thread_id = ? WHERE id = ? AND bb_thread_id IS NULL").run(bbThreadId, id).changes > 0;
-      if (bound) this.db.prepare("UPDATE sends SET bb_thread_id = ? WHERE bb_thread_id = ?").run(bbThreadId, pendingRunThread(id));
+      const bound = this.db.prepare("UPDATE runs SET alia_thread_id = ? WHERE id = ? AND alia_thread_id IS NULL").run(aliaThreadId, id).changes > 0;
+      if (bound) this.db.prepare("UPDATE sends SET alia_thread_id = ? WHERE alia_thread_id = ?").run(aliaThreadId, pendingRunThread(id));
       return bound;
     })();
   }
 
-  /** Whether some run not yet closed is still waiting for bb to give it a thread. */
+  /** Whether some run not yet closed is still waiting for VesnALIA to give it a thread. */
   hasUnboundRuns(): boolean {
-    return this.db.prepare("SELECT 1 FROM runs WHERE bb_thread_id IS NULL AND status != 'closed' LIMIT 1").get() !== undefined;
+    return this.db.prepare("SELECT 1 FROM runs WHERE alia_thread_id IS NULL AND status != 'closed' LIMIT 1").get() !== undefined;
   }
 
   /**
-   * Whether `bbThreadId` is the thread of AI runs that are all closed: it has lost every right, those
+   * Whether `aliaThreadId` is the thread of AI runs that are all closed: it has lost every right, those
    * from sends to it included. A thread that never was a run's (the one under review) is not.
    */
-  isClosedRunThread(bbThreadId: string): boolean {
+  isClosedRunThread(aliaThreadId: string): boolean {
     const row = this.db
-      .prepare<[string], { runs: number; open: number }>("SELECT count(*) AS runs, sum(status != 'closed') AS open FROM runs WHERE bb_thread_id = ?")
-      .get(bbThreadId)!;
+      .prepare<[string], { runs: number; open: number }>("SELECT count(*) AS runs, sum(status != 'closed') AS open FROM runs WHERE alia_thread_id = ?")
+      .get(aliaThreadId)!;
     return row.runs > 0 && (row.open ?? 0) === 0;
   }
 
@@ -618,9 +618,9 @@ export class ReviewStore {
       .run(input.parentThreadId, input.baseline, input.providerId, input.model, id);
   }
 
-  /** Whether `bbThreadId` is any run's thread, closed ones included. */
-  isRunThread(bbThreadId: string): boolean {
-    return this.db.prepare("SELECT 1 FROM runs WHERE bb_thread_id = ? LIMIT 1").get(bbThreadId) !== undefined;
+  /** Whether `aliaThreadId` is any run's thread, closed ones included. */
+  isRunThread(aliaThreadId: string): boolean {
+    return this.db.prepare("SELECT 1 FROM runs WHERE alia_thread_id = ? LIMIT 1").get(aliaThreadId) !== undefined;
   }
 
   /** Marks a run running again (a follow-up was sent to its thread). */
@@ -889,9 +889,9 @@ export class ReviewStore {
       updatedAt: row.updated_at,
       comments: byThread.get(row.id) ?? [],
       delivery:
-        row.send_id === null || row.delivery === null || row.bb_thread_id === null || row.sent_at === null
+        row.send_id === null || row.delivery === null || row.alia_thread_id === null || row.sent_at === null
           ? null
-          : { state: row.delivery, sendId: row.send_id, threadId: row.bb_thread_id, sentAt: row.sent_at },
+          : { state: row.delivery, sendId: row.send_id, threadId: row.alia_thread_id, sentAt: row.sent_at },
     }));
   }
 }
@@ -901,7 +901,7 @@ function toRun(row: RunRow): StoredRun {
     id: row.id,
     sessionId: row.session_id,
     kind: row.purpose ?? row.kind,
-    threadId: row.bb_thread_id,
+    threadId: row.alia_thread_id,
     reviewThreadId: row.review_thread_id,
     focus: row.focus,
     providerId: row.provider_id,

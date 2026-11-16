@@ -1,6 +1,6 @@
-// Theme fit: every style takes its colors from bb's active theme.
+// Theme fit: every style takes its colors from VesnALIA's active theme.
 //
-// bb themes set a canvas color, an ink color, and a primary color, and mix
+// VesnALIA themes set a canvas color, an ink color, and a primary color, and mix
 // ink into canvas for all other surfaces. The styles do the same, so they
 // fit light and dark themes alike. An accent must reach 4.5:1 against its
 // surface; if it does not, it is pulled toward a color that reads.
@@ -93,7 +93,7 @@ function readTheme(probe: HTMLElement): Theme {
 }
 
 /**
- * The active bb theme. Re-reads when bb changes the palette or the light
+ * The active VesnALIA theme. Re-reads when VesnALIA changes the palette or the light
  * or dark mode, or the system switches light and dark.
  */
 function readThemeOnce(): Theme {
@@ -131,7 +131,7 @@ export function useTheme(): Theme {
     for (const node of [document.documentElement, document.body]) {
       observer.observe(node, { attributes: true, attributeFilter: ["class", "style", "data-theme"] });
     }
-    // bb applies a palette by rewriting a <style> element in <head>.
+    // VesnALIA applies a palette by rewriting a <style> element in <head>.
     observer.observe(document.head, { childList: true, subtree: true, characterData: true });
     const scheme = window.matchMedia("(prefers-color-scheme: dark)");
     scheme.addEventListener("change", update);

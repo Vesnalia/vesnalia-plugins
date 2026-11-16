@@ -5,7 +5,7 @@
  * service over an in-memory store, so the server's reading of a draft against the form is in the loop.
  */
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { LearningApi } from "../server/api";

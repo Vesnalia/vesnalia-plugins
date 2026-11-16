@@ -14,7 +14,7 @@ beforeEach(() => {
 
 const project = () => h.store.projectBySlug("csv")!;
 const view = (threadId = "thr_plan") => plannerView({ store: h.store, projects: h.projects }, threadId, h.clock.now())!;
-const propose = (edit?: (doc: Doc) => void) => h.projects.propose({ toml: specToml(edit), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+const propose = (edit?: (doc: Doc) => void) => h.projects.propose({ toml: specToml(edit), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
 const idle = async (text: string) => {
   h.clock.advance(1000);
   await h.engine.onThreadIdle("thr_plan", text);
@@ -93,13 +93,13 @@ describe("the planner view", () => {
   it("sends the human's message from the page to the planner and keeps it, and refuses a thread that is not a live planner", async () => {
     await propose();
     await h.engine.messagePlanner("thr_plan", "  Keep it to one ticket.  ");
-    expect(h.bb.sent("thr_plan").at(-1)).toBe("Keep it to one ticket.");
+    expect(h.alia.sent("thr_plan").at(-1)).toBe("Keep it to one ticket.");
     expect(view().steps.at(-1)).toMatchObject({ kind: "message", text: "Keep it to one ticket." });
     await expect(h.engine.messagePlanner("thr_other", "hi")).rejects.toThrow("not a live Loom planner");
   });
 
   it("tells a planning conversation before it proposes from its planning row, and is null for any other thread", async () => {
-    h.store.addPlanning({ thread_id: "thr_new", bb_project_id: "proj_1", title: "Export orders as CSV" });
+    h.store.addPlanning({ thread_id: "thr_new", alia_project_id: "proj_1", title: "Export orders as CSV" });
     await h.engine.onThreadIdle("thr_new", "Which columns should the file have?");
     await h.engine.onThreadIdle("thr_new", "   ");
     const planning = view("thr_new");

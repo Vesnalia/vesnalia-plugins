@@ -1,24 +1,24 @@
 ---
 name: lame-duck
-description: Drain a busy BB server before an update or restart by queuing sends, then resume queued work after maintenance. Use the CLI when managing BB servers for the user.
+description: Drain a busy VesnALIA server before an update or restart by queuing sends, then resume queued work after maintenance. Use the CLI when managing VesnALIA servers for the user.
 ---
 
 # Lame duck
 
-Use Lame duck when BB needs an update or restart but active threads, agents
+Use Lame duck when VesnALIA needs an update or restart but active threads, agents
 messaging each other, and incoming follow-ups keep it busy. Lame-duck mode
 queues sends while active turns finish, creating a drained state for server
 maintenance. Queued work and the pause survive a restart.
 
 ## Agent-managed maintenance
 
-1. Run `bb lame-duck pause` to enter lame-duck mode.
-2. Poll `bb lame-duck status --json` until `drained` is true.
-3. Update and restart the target BB server using its normal management commands.
-4. Check server health, then run `bb lame-duck resume` to leave lame-duck mode
+1. Run `alia lame-duck pause` to enter lame-duck mode.
+2. Poll `alia lame-duck status --json` until `drained` is true.
+3. Update and restart the target VesnALIA server using its normal management commands.
+4. Check server health, then run `alia lame-duck resume` to leave lame-duck mode
    and release queued work.
 
-Run this workflow from outside the BB instance being drained. If you are a
+Run this workflow from outside the VesnALIA instance being drained. If you are a
 thread inside that instance, you count as active: hand off polling, restart,
 and resume to an external maintenance process and finish your turn. Do not
 wait indefinitely for your own thread to disappear from the running count.
@@ -36,15 +36,15 @@ or disabling the plugin.
 ## Manual maintenance
 
 The user can click the duck in the sidebar footer, choose **Pause sends**, wait
-for **Ready to update**, update/restart BB, then choose **Resume**. The disclosure
+for **Ready to update**, update/restart VesnALIA, then choose **Resume**. The disclosure
 shows active-thread and held-send counts and updates automatically.
 
 ## Queue behavior
 
 The pause is server-wide. New threads, follow-ups, steering, scheduled sends,
-and retries wait in BB's durable queue. Explicit **Send now** overrides plugin
+and retries wait in VesnALIA's durable queue. Explicit **Send now** overrides plugin
 holds, so avoid it during maintenance. Sends can only reach this queue while
-BB is online; the plugin does not provide an offline client outbox.
+VesnALIA is online; the plugin does not provide an offline client outbox.
 
 `heldCount` includes queue rows whose current wait owner is Lame duck; rows
 waiting on another plugin or a core condition are excluded.

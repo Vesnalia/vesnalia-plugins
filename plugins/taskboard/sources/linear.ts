@@ -703,12 +703,12 @@ export function createLinearAdapter(options: {
     },
     configurationMessage: () =>
       !options.enabled
-        ? 'Enable Linear for this BB project in Manage.'
+        ? 'Enable Linear for this VesnALIA project in Manage.'
         : !teamKey
-          ? 'Choose a Linear team key for this BB project in Manage.'
+          ? 'Choose a Linear team key for this VesnALIA project in Manage.'
           : hasApiKey
             ? null
-            : 'Add a Linear personal API key for this BB project in Manage.',
+            : 'Add a Linear personal API key for this VesnALIA project in Manage.',
     async list() {
       if (!configured) throw new Error('Linear is not configured');
       const issues: z.infer<typeof issueSchema>[] = [];

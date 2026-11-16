@@ -160,7 +160,7 @@ export function CreateIssue({
     setDescription("");
     setCategory(null);
     // The parent is for the one issue just created (the user's rule,
-    // bead-bb-zty.5): left selected, the next issue typed here would land
+    // bead-alia-zty.5): left selected, the next issue typed here would land
     // inside it unnoticed. In the details window this puts the field back to
     // the issue the window is showing.
     onParentChange(null);

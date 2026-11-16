@@ -1,5 +1,5 @@
 /*
- * Iris styles beyond Tailwind utilities. bb appends this file unscoped, so
+ * Iris styles beyond Tailwind utilities. alia appends this file unscoped, so
  * every rule sits under [data-iris-root]. Every color is a theme token or is
  * derived from one (ui/palette.ts sets --iris-accent from the theme's primary).
  * No gradients, no rainbow: one accent, quiet surfaces.
@@ -150,7 +150,7 @@
   margin-bottom: 0;
 }
 
-/* Mermaid in the card's style: rounded nodes. Edge labels keep the renderer's own colors: bb
+/* Mermaid in the card's style: rounded nodes. Edge labels keep the renderer's own colors: alia
  * draws them on a light knockout with dark text, so the label box is never recolored here. */
 [data-iris-root] .iris-diagram g.node rect,
 [data-iris-root] .iris-diagram g.cluster rect {

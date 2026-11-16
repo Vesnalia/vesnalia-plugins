@@ -1,7 +1,7 @@
-/* Claude Theme for BB.
+/* Claude Theme for ALIA.
  * Adapted from Claude Theme for VS Code by SK, version 3.1.0 (MIT).
  * Copyright (c) 2026 S K 🦊. See LICENSE.txt and README.md.
- * Follows BB's Light / Dark / System mode, with matching syntax palettes.
+ * Follows ALIA's Light / Dark / System mode, with matching syntax palettes.
  */
 :root,
 .light {
@@ -182,7 +182,7 @@
   --ansi-bg-fg-15: #1a1813;
 }
 
-/* BB's navigation uses explicit neutral text utilities. Override only the
+/* ALIA's navigation uses explicit neutral text utilities. Override only the
  * current-page state so selected labels and their currentColor icons pick up
  * mode-appropriate terracotta. Semantic status colours keep their own tokens.
  */
@@ -191,7 +191,7 @@
   background-color: var(--surface-selected);
 }
 
-/* BB's native tab pills expose their active state on the direct select button.
+/* ALIA's native tab pills expose their active state on the direct select button.
  * An inset underline does not alter tab sizing or the close-button hit area.
  */
 [data-tab-pill]:has(> button[aria-pressed="true"]) {

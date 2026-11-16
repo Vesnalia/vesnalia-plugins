@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 
 type Viewport = "phone" | "narrow" | "wide";
 
-/** bb's own compact breakpoint; below it the page is one column and menus become bottom sheets. */
+/** VesnALIA's own compact breakpoint; below it the page is one column and menus become bottom sheets. */
 const PHONE = "(max-width: 767px)";
 /** Below Tailwind's xl the PR panel slides over the list instead of sitting beside it. */
 const NARROW = "(max-width: 1279px)";

@@ -1,7 +1,7 @@
-import type { PluginDispatchInput } from "@get-bb/plugin-sdk";
+import type { PluginDispatchInput } from "@vesnalia/plugin-sdk";
 import { detect, type Finding } from "./detect.ts";
 
-// BB stores uploaded attachments under a relative project path. Absolute paths
+// VesnALIA stores uploaded attachments under a relative project path. Absolute paths
 // refer to runtime files, which are not available through this API.
 export async function scanAttachments(
   blocks: PluginDispatchInput["blocks"],

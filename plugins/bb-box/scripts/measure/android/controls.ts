@@ -16,12 +16,12 @@ import { DeviceServers } from "../../../src/plugin/devices.ts";
 import type { ByteChannel } from "../../../src/transports/types.ts";
 
 const ROOT = join(import.meta.dirname, "..", "..", "..");
-const DIR = join(homedir(), ".bb-box", "device");
-const LAUNCHER = join(DIR, "current", "src", "device", "bb-box-device.sh");
-const RECORDS = ["/usr/share/bb-box/image.json", "/usr/share/bb-box/android-devices.json"];
+const DIR = join(homedir(), ".alia-box", "device");
+const LAUNCHER = join(DIR, "current", "src", "device", "alia-box-device.sh");
+const RECORDS = ["/usr/share/alia-box/image.json", "/usr/share/alia-box/android-devices.json"];
 const ADB = "/opt/android-sdk/platform-tools/adb";
 const SERIAL = "emulator-5554";
-const SHOTS = "/tmp/bb-box-controls";
+const SHOTS = "/tmp/alia-box-controls";
 
 const { positionals, values } = parseArgs({
   allowPositionals: true,

@@ -1,15 +1,15 @@
 {
-  "name": "bb-plugin-auto-router",
+  "name": "alia-plugin-auto-router",
   "version": "0.4.5",
   "private": true,
   "type": "module",
   "engines": {
-    "bb": ">=0.46.0 <0.47.0",
-    "bbPluginSdk": ">=0.6.26"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.26"
   },
-  "bb": {
+  "alia": {
     "name": "Model Pilot",
-    "description": "Match coding tasks to agent models, reasoning effort, and focused helpers. Track token usage and estimated costs in BB.",
+    "description": "Match coding tasks to agent models, reasoning effort, and focused helpers. Track token usage and estimated costs in VesnALIA.",
     "branding": {
       "icon": "Workflow"
     },
@@ -25,13 +25,13 @@
     "app": "./app.tsx"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "tsx --test host.test.ts server.test.ts routing/router.test.ts routing/usage.test.ts routing/classifier.test.ts routing/native-classifier.test.ts report.test.ts dashboard.test.ts dashboard-view.test.tsx",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "zod": "4.3.6",
-    "@get-bb/plugin-sdk": "0.6.26"
+    "@vesnalia/plugin-sdk": "^0.6.26"
   },
   "devDependencies": {
     "@types/node": "22.19.0",
@@ -51,16 +51,8 @@
     "name": "Mahmoud Elsayad",
     "url": "https://github.com/MahmoudElsayad"
   },
-  "homepage": "https://github.com/MahmoudElsayad/bb-model-pilot#readme",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/MahmoudElsayad/bb-model-pilot.git"
-  },
-  "bugs": {
-    "url": "https://github.com/MahmoudElsayad/bb-model-pilot/issues"
-  },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "ai-model-routing",
     "automatic-model-selection",
     "coding-agents",
@@ -72,5 +64,14 @@
     "token-usage",
     "cost-estimation",
     "agent-delegation"
-  ]
+  ],
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/auto-router#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/auto-router"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

@@ -2,13 +2,13 @@
 import { act, cleanup, screen, fireEvent, waitFor } from "@testing-library/react";
 import { createElement, Fragment, type FunctionComponent } from "react";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import * as pluginSdk from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread, PluginSidebarThreadsState } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import * as pluginSdk from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread, PluginSidebarThreadsState } from "@vesnalia/plugin-sdk/app";
 import { DAY, HOUR, NOW, makeProject, makeSection, makeThread } from "./fixtures";
 
 // Expose configurable test exports while retaining the SDK's slot runtime.
-vi.mock("@get-bb/plugin-sdk/app", async (importOriginal) => ({
+vi.mock("@vesnalia/plugin-sdk/app", async (importOriginal) => ({
   ...await importOriginal<typeof pluginSdk>(),
 }));
 
@@ -81,7 +81,7 @@ function visibleRowIds(container: HTMLElement): string[] {
   ).map((node) => node.getAttribute("data-sidebar-thread-id") ?? "");
 }
 
-/** Rows bb would number for the ⌘/Ctrl jump keys, in DOM order. */
+/** Rows VesnALIA would number for the ⌘/Ctrl jump keys, in DOM order. */
 function shortcutTargetIds(container: HTMLElement): string[] {
   return Array.from(
     container.querySelectorAll("[data-sidebar-thread-shortcut-target]"),

@@ -1,12 +1,12 @@
 import { NATIVE_LABEL } from "./native-add-to-chat";
 
 // On touch devices the OS draws its own selection callout (Copy, Look Up, ...)
-// right where bb places the selection menu, above the selected text. The callout
+// right where VesnALIA places the selection menu, above the selected text. The callout
 // sits on top of the web view and takes every touch inside it, so taps on the
 // covered part of "Add to chat" never reach the page, or trigger Copy instead.
 // Web pages can't move or disable the callout, so the menu moves: it docks just
 // above the composer, away from the selection in all but its last lines.
-// If bb changes the menu's markup nothing matches and the menu stays in place.
+// If VesnALIA changes the menu's markup nothing matches and the menu stays in place.
 const DOCK_ATTRIBUTE = "data-inline-comments-dock";
 const DOCK_X = "--inline-comments-dock-x";
 const DOCK_Y = "--inline-comments-dock-y";
@@ -45,7 +45,7 @@ function hasPluginAction(wrapper: Element) {
   );
 }
 
-// bb portals the menu into a layer of the scrolled transcript that is the
+// VesnALIA portals the menu into a layer of the scrolled transcript that is the
 // containing block even for position: fixed, so viewport coordinates are
 // reached by correcting the current offset against the measured position.
 function dock(wrapper: HTMLElement) {

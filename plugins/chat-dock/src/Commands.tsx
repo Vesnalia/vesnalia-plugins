@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { useOptions, type Options } from "./options";
 import type { SettingKey } from "./shared";

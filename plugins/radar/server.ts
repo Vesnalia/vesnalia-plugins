@@ -1,5 +1,5 @@
 /**
- * bb-plugin-radar — backend entry.
+ * alia-plugin-radar — backend entry.
  *
  * A live view of the PR/issue queues that need you. Each "lane"
  * is a saved query over one or more hosts: a Delta repo (`dt api search/issues`, the
@@ -18,7 +18,7 @@
 import { execFile } from "node:child_process";
 import { homedir } from "node:os";
 import { promisify } from "node:util";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { MentionTracker, mentionStoreSchema, createMentionStore, type MentionStore } from "./mentions";
 
@@ -175,7 +175,7 @@ const SEEN_CARRY_FACTOR = 4;
 const MAX_DESCRIPTION = 600;
 const DESCRIPTION_TOO_LONG = `Keep the description under ${MAX_DESCRIPTION} characters.`;
 
-/** The bb server may start with a GUI-app PATH; add the usual dev toolchain dirs. */
+/** The VesnALIA server may start with a GUI-app PATH; add the usual dev toolchain dirs. */
 const EXTRA_PATH = [
   `${homedir()}/.local/state/tec/toolchain/base_profile/bin`,
   "/opt/homebrew/bin",
@@ -244,7 +244,7 @@ const snapshotSchema = z.object({
   deltaLogin: z.string(),
   /** Whether Rebase is offered on Delta (a rebase checkout is configured). */
   deltaRebase: z.boolean(),
-  /** Item key → bb thread started from Radar for it. */
+  /** Item key → VesnALIA thread started from Radar for it. */
   reviews: z.record(z.string(), z.object({ threadId: z.string(), at: z.string() })),
   ai: z.object({ available: z.boolean(), model: z.string(), detail: z.string() }),
   /** Focus filter in effect (empty while Focus is off), applied to every lane, view and the rail badge. */
@@ -333,7 +333,7 @@ export const rpcContract = defineRpcContract({
     input: z.object({ laneId: z.string().optional(), view: z.enum(CATEGORIES).optional(), kind: z.enum(["pr", "issue"]).optional() }),
     output: z.any(),
   },
-  /** Seeds bb's new-thread composer for reviewing one item. */
+  /** Seeds VesnALIA's new-thread composer for reviewing one item. */
   radar_review_context: { input: z.object({ key: z.string() }), output: z.any() },
   /** Spawns the review thread from the composer's resolved request. */
   radar_review_start: {
@@ -377,8 +377,8 @@ export type DraftResult = { lane: Lane; preview: LaneResult };
 
 // ---------------------------------------------------------------------------
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     refreshSeconds: {
       type: "number",
       label: "Refresh & retention · Refresh interval in seconds (min 30)",
@@ -422,7 +422,7 @@ export default async function plugin(bb: BbPluginApi) {
     aiBaseUrl: {
       type: "string",
       label: "AI & focus · Fallback endpoint, OpenAI-compatible https URL (empty = none)",
-      description: "Used only when this BB host has no configured-provider completion (experimental_ai). Receives the key below; /v1/chat/completions is appended.",
+      description: "Used only when this VesnALIA host has no configured-provider completion (experimental_ai). Receives the key below; /v1/chat/completions is appended.",
       default: "",
     },
     aiKeyEnv: {
@@ -471,7 +471,7 @@ export default async function plugin(bb: BbPluginApi) {
     slackTokenCommand: {
       type: "string",
       label: "Slack context · Command that prints the endpoint's bearer token",
-      description: "Run on the bb host without a shell; the last line it prints is the token. Re-run when the token expires.",
+      description: "Run on the VesnALIA host without a shell; the last line it prints is the token. Re-run when the token expires.",
       default: "",
     },
     slackSweepMinutes: {
@@ -537,20 +537,20 @@ export default async function plugin(bb: BbPluginApi) {
     slackTokenCommand: (values.slackTokenCommand ?? "").trim(),
     slackSweepMinutes: Number.isFinite(values.slackSweepMinutes) ? Math.min(1440, Math.max(10, values.slackSweepMinutes)) : 30,
   });
-  const savedAi = aiOverrideSchema.safeParse(await bb.storage.kv.get<unknown>("aiOverride"));
+  const savedAi = aiOverrideSchema.safeParse(await alia.storage.kv.get<unknown>("aiOverride"));
   let aiOverride: AiOverride = savedAi.success ? savedAi.data : null;
   /** An absolute path, `~/` expanded; anything else turns Delta rebase off. */
   function checkoutPath(value: string): string {
     const trimmed = value.trim().replace(/^~(?=\/|$)/, homedir());
     if (trimmed === "") return "";
     if (trimmed.startsWith("/") && !trimmed.includes("\0")) return trimmed;
-    bb.log.warn(`deltaCheckout "${trimmed.slice(0, 80)}" is not an absolute path; Rebase on Delta is off`);
+    alia.log.warn(`deltaCheckout "${trimmed.slice(0, 80)}" is not an absolute path; Rebase on Delta is off`);
     return "";
   }
   /** Applies the host settings; malformed values switch that host off and are logged. */
   function applyHosts(values: Config): void {
     const { hosts: next, problems } = readHosts(values);
-    for (const problem of problems) bb.log.warn(`${problem}; that host is off`);
+    for (const problem of problems) alia.log.warn(`${problem}; that host is off`);
     setHosts(next);
   }
   let config = readConfig(await settings.get());
@@ -558,12 +558,12 @@ export default async function plugin(bb: BbPluginApi) {
 
   // Radar threads get radar-review / radar-triage on top of the radar CLI skill. Selecting
   // any skill filters this plugin's roots to the selection, so `radar` is always included.
-  bb.agents.configure((context) => ({ tools: [], skills: selectedSkills(context.pluginMetadata) }));
+  alia.agents.configure((context) => ({ tools: [], skills: selectedSkills(context.pluginMetadata) }));
 
   // Anything that can grow past kv's 256KB value cap lives in the plugin database: the label
   // index (~5k names, ~300KB), per-item hides, the mention tracker and the results cache.
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     "CREATE TABLE label_index (name TEXT PRIMARY KEY) WITHOUT ROWID",
     "CREATE TABLE label_index_meta (id INTEGER PRIMARY KEY CHECK (id = 1), indexed_at TEXT NOT NULL)",
     // Per-item hides: id = lowercased item key, entry = the validated HiddenEntry as JSON.
@@ -607,11 +607,11 @@ export default async function plugin(bb: BbPluginApi) {
   // ---- persisted configuration -------------------------------------------
 
   async function loadLanes(): Promise<Lane[]> {
-    const stored = await bb.storage.kv.get<unknown>("lanes");
+    const stored = await alia.storage.kv.get<unknown>("lanes");
     if (stored === undefined || stored === null) return DEFAULT_LANES.map((lane) => ({ ...lane }));
     const parsed = lanesSchema.safeParse(stored);
     if (parsed.success) return parsed.data;
-    bb.log.warn("stored lanes were invalid; falling back to defaults");
+    alia.log.warn("stored lanes were invalid; falling back to defaults");
     return DEFAULT_LANES.map((lane) => ({ ...lane }));
   }
   async function saveLanes(next: Lane[]) {
@@ -621,12 +621,12 @@ export default async function plugin(bb: BbPluginApi) {
       throw new UserError(`Invalid lanes (${issue?.path.join(".")}: ${issue?.message})`);
     }
     lanes = parsed.data;
-    await bb.storage.kv.set("lanes", lanes);
+    await alia.storage.kv.set("lanes", lanes);
   }
 
   type SeenMap = Record<string, string[]>;
-  let seen: SeenMap = (await bb.storage.kv.get<SeenMap>("seen")) ?? {};
-  const persistSeen = () => bb.storage.kv.set("seen", seen);
+  let seen: SeenMap = (await alia.storage.kv.get<SeenMap>("seen")) ?? {};
+  const persistSeen = () => alia.storage.kv.set("seen", seen);
   const saveMentionRows = db.transaction((store: MentionStore) => {
     db.prepare("DELETE FROM mention_items").run();
     db.prepare("DELETE FROM mention_accounts").run();
@@ -649,17 +649,17 @@ export default async function plugin(bb: BbPluginApi) {
     }
     const parsed = mentionStoreSchema.safeParse(store);
     if (parsed.success) return parsed.data;
-    bb.log.warn("stored mention state was invalid; starting over");
+    alia.log.warn("stored mention state was invalid; starting over");
     saveMentionRows(createMentionStore());
     return createMentionStore();
   }
   // One-time move from kv (where it could outgrow the 256KB value cap) into SQLite.
-  const kvMentions = await bb.storage.kv.get<unknown>("mentions");
+  const kvMentions = await alia.storage.kv.get<unknown>("mentions");
   if (kvMentions !== undefined) {
     const parsed = mentionStoreSchema.safeParse(kvMentions);
     const empty = (db.prepare("SELECT COUNT(*) AS n FROM mention_accounts").get() as { n: number }).n === 0;
     if (parsed.success && empty) saveMentionRows(parsed.data);
-    await bb.storage.kv.delete("mentions");
+    await alia.storage.kv.delete("mentions");
   }
   const mentions = new MentionTracker(loadMentionStore(), async (path, method = "GET") => {
     const output = await tool(config.ghPath, ["api", "--method", method, path], "GitHub notifications");
@@ -683,12 +683,12 @@ export default async function plugin(bb: BbPluginApi) {
     }
     return out;
   }
-  const kvCandidates = await bb.storage.kv.get<unknown>("mentionCandidates");
+  const kvCandidates = await alia.storage.kv.get<unknown>("mentionCandidates");
   if (kvCandidates !== undefined) {
     const parsed = z.record(z.string(), candidateSchema).safeParse(kvCandidates);
     const empty = (db.prepare("SELECT COUNT(*) AS n FROM mention_candidates").get() as { n: number }).n === 0;
     if (parsed.success && empty) saveCandidateRows(parsed.data);
-    await bb.storage.kv.delete("mentionCandidates");
+    await alia.storage.kv.delete("mentionCandidates");
   }
   let trackedMentions: Record<string, Candidate> = loadCandidates();
   const persistTracked = async () => { saveCandidateRows(trackedMentions); };
@@ -764,16 +764,16 @@ export default async function plugin(bb: BbPluginApi) {
 
   let lanes = await loadLanes();
 
-  const storedFocus = focusStateSchema.safeParse(await bb.storage.kv.get<unknown>("focus"));
+  const storedFocus = focusStateSchema.safeParse(await alia.storage.kv.get<unknown>("focus"));
   let focusState: FocusState = storedFocus.success ? storedFocus.data : { ...FOCUS_OFF };
   let scope: ScopeFilter = effectiveScope(focusState);
   let visible = scopePredicate(scope);
 
   type Reviews = Record<string, { threadId: string; at: string }>;
-  let reviews: Reviews = (await bb.storage.kv.get<Reviews>("reviews")) ?? {};
+  let reviews: Reviews = (await alia.storage.kv.get<Reviews>("reviews")) ?? {};
   /** Repo → project last chosen in the review composer; beats remote-URL matching. */
   let reviewProjects: Record<string, string> =
-    (await bb.storage.kv.get<Record<string, string>>("reviewProjects")) ?? {};
+    (await alia.storage.kv.get<Record<string, string>>("reviewProjects")) ?? {};
 
   // ---- live state ---------------------------------------------------------
 
@@ -788,14 +788,14 @@ export default async function plugin(bb: BbPluginApi) {
     db.prepare("INSERT INTO results_meta (id, fetched_at) VALUES (1, ?) ON CONFLICT (id) DO UPDATE SET fetched_at = excluded.fetched_at").run(at);
   });
   // One-time move from kv, where it outgrew the 256KB value cap at about 650 items.
-  const kvResults = await bb.storage.kv.get<unknown>("resultsCache");
+  const kvResults = await alia.storage.kv.get<unknown>("resultsCache");
   if (kvResults !== undefined) {
     const parsed = resultsCacheSchema.safeParse(kvResults);
     const empty = db.prepare("SELECT 1 FROM results_meta WHERE id = 1").get() === undefined;
     if (parsed.success && empty) {
       saveResultsRows(parsed.data.fetchedAt, Object.entries(parsed.data.lanes).map(([laneId, cached]) => ({ laneId, ...cached })));
     }
-    await bb.storage.kv.delete("resultsCache");
+    await alia.storage.kv.delete("resultsCache");
   }
   {
     const meta = db.prepare("SELECT fetched_at FROM results_meta WHERE id = 1").get() as { fetched_at: string } | undefined;
@@ -849,7 +849,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
     const { entries, dropped } = parseHidden(values);
     if (dropped > 0) {
-      bb.log.warn(`dropped ${dropped} invalid or excess hidden item row(s)`);
+      alia.log.warn(`dropped ${dropped} invalid or excess hidden item row(s)`);
       replaceHiddenRows(entries);
     }
     return entries;
@@ -876,7 +876,7 @@ export default async function plugin(bb: BbPluginApi) {
     ).run(index.at);
   });
   let labelIndex: LabelIndex | null = loadLabelIndex();
-  await bb.storage.kv.delete("labelIndex");
+  await alia.storage.kv.delete("labelIndex");
   let labelIndexing: Promise<void> | null = null;
   let disposed = false;
   let wakeSleep: (() => void) | undefined;
@@ -888,11 +888,11 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function aiState() {
-    const backend = aiBackend(bb, aiFallback());
+    const backend = aiBackend(alia, aiFallback());
     return {
       available: backend !== null,
-      model: backend === "fallback" ? config.aiModel : (aiOverride?.model ?? "BB default"),
-      detail: aiDetail(bb, aiFallback()),
+      model: backend === "fallback" ? config.aiModel : (aiOverride?.model ?? "VesnALIA default"),
+      detail: aiDetail(alia, aiFallback()),
     };
   }
 
@@ -940,7 +940,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (publishTimer !== undefined) return;
     publishTimer = setTimeout(() => {
       publishTimer = undefined;
-      if (!disposed) bb.realtime.publish(CHANGED, { fetchedAt });
+      if (!disposed) alia.realtime.publish(CHANGED, { fetchedAt });
     }, 50);
   }
 
@@ -1063,11 +1063,11 @@ export default async function plugin(bb: BbPluginApi) {
       if (names.length > 0) {
         labelIndex = { at: new Date().toISOString(), names: [...new Set(names)] };
         saveLabelIndex(labelIndex);
-        bb.log.info(`indexed ${labelIndex.names.length} labels from ${labelRepo()}${complete ? "" : ` (first ${pages} pages, merged with the previous index)`}`);
+        alia.log.info(`indexed ${labelIndex.names.length} labels from ${labelRepo()}${complete ? "" : ` (first ${pages} pages, merged with the previous index)`}`);
       }
     })()
       .catch((error) => {
-        if (!(error instanceof ToolAborted) && !disposed) bb.log.warn(`label index failed: ${String(error)}`);
+        if (!(error instanceof ToolAborted) && !disposed) alia.log.warn(`label index failed: ${String(error)}`);
       })
       .finally(() => {
         labelIndexing = null;
@@ -1160,7 +1160,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (outcome.value.warning !== "") warnings.push(outcome.value.warning);
       } else {
         const error = outcome.reason;
-        if (!(error instanceof UserError)) bb.log.warn(`lane ${lane.id} ${sources[index]} failed: ${String(error)}`);
+        if (!(error instanceof UserError)) alia.log.warn(`lane ${lane.id} ${sources[index]} failed: ${String(error)}`);
         errors.push(error instanceof UserError ? error.message : `${SOURCE_LABEL[sources[index]!]}: could not be read.`);
       }
     });
@@ -1229,7 +1229,7 @@ export default async function plugin(bb: BbPluginApi) {
     } catch (error) {
       if (disposed || !stillCurrent(lane)) return;
       const message = error instanceof UserError ? error.message : "Lane could not be read.";
-      if (!(error instanceof UserError)) bb.log.warn(`lane ${lane.id} failed: ${String(error)}`);
+      if (!(error instanceof UserError)) alia.log.warn(`lane ${lane.id} failed: ${String(error)}`);
       results[lane.id] = { ...results[lane.id]!, error: message, loading: false };
     }
     publish();
@@ -1264,7 +1264,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (lane !== undefined) await refreshLane(lane);
         });
         // Mention acknowledgement is optional: its failure must never stop the board updating.
-        await syncMentions().catch((error: unknown) => bb.log.warn(`mention sync failed: ${String(error)}`));
+        await syncMentions().catch((error: unknown) => alia.log.warn(`mention sync failed: ${String(error)}`));
         fetchedAt = new Date().toISOString();
         reconcileHiddenItems();
         // Drop results and seen sets for lanes that no longer exist.
@@ -1278,7 +1278,7 @@ export default async function plugin(bb: BbPluginApi) {
           }
         }
         if (prunedSeen) await persistSeen();
-        await persistResults().catch((error: unknown) => bb.log.warn(`results cache write failed: ${String(error)}`));
+        await persistResults().catch((error: unknown) => alia.log.warn(`results cache write failed: ${String(error)}`));
       } finally {
         refreshing = false;
         inFlight = null;
@@ -1292,9 +1292,9 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function chat(system: string, user: string, maxTokens: number): Promise<string> {
     try {
-      return await complete(bb, aiOverride, system, user, maxTokens, AI_TIMEOUT_MS, controller.signal, aiFallback());
+      return await complete(alia, aiOverride, system, user, maxTokens, AI_TIMEOUT_MS, controller.signal, aiFallback());
     } catch (error) {
-      throw new UserError(error instanceof Error ? error.message : "BB AI completion failed.");
+      throw new UserError(error instanceof Error ? error.message : "VesnALIA AI completion failed.");
     }
   }
 
@@ -1388,7 +1388,7 @@ export default async function plugin(bb: BbPluginApi) {
         delete seen[lane.id];
         await persistSeen();
       }
-      void refreshLane(lane).then(() => isMentionLane(lane) ? syncMentions() : undefined).catch(error => bb.log.warn(`lane refresh failed: ${String(error)}`));
+      void refreshLane(lane).then(() => isMentionLane(lane) ? syncMentions() : undefined).catch(error => alia.log.warn(`lane refresh failed: ${String(error)}`));
     }
     publish();
     return lane.id;
@@ -1455,9 +1455,9 @@ export default async function plugin(bb: BbPluginApi) {
       putHiddenRows(touched);
       deleteHiddenRows(pruned);
       setHidden(entries);
-      if (pruned.length > 0) bb.log.info(`unhid ${pruned.length} item(s) not seen in any lane for ${HIDDEN_STALE_DAYS} days`);
+      if (pruned.length > 0) alia.log.info(`unhid ${pruned.length} item(s) not seen in any lane for ${HIDDEN_STALE_DAYS} days`);
     } catch (error) {
-      bb.log.warn(`hidden items write failed: ${String(error)}`);
+      alia.log.warn(`hidden items write failed: ${String(error)}`);
     }
   }
 
@@ -1526,7 +1526,7 @@ export default async function plugin(bb: BbPluginApi) {
     focusState = parsed.data;
     scope = effectiveScope(focusState);
     visible = scopePredicate(scope);
-    await bb.storage.kv.set("focus", focusState);
+    await alia.storage.kv.set("focus", focusState);
     publish();
     return snapshot();
   }
@@ -1596,7 +1596,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function defaultProjectFor(repo: string): Promise<string | null> {
     const remembered = reviewProjects[repo];
-    const projects = await bb.sdk.projects.list({ includePersonal: false });
+    const projects = await alia.sdk.projects.list({ includePersonal: false });
     const list = Array.isArray(projects) ? projects : ((projects as { projects?: unknown[] }).projects ?? []);
     const rows = list as { id: string; gitRemoteUrl: string | null }[];
     if (remembered !== undefined && rows.some((project) => project.id === remembered)) return remembered;
@@ -1620,17 +1620,17 @@ export default async function plugin(bb: BbPluginApi) {
     const projectId = typeof request.projectId === "string" ? request.projectId : null;
     const [context, sectionId, skill] = await Promise.all([reviewContext(key), reviewSectionId(), availableHostSkill(item, projectId)]);
     const withSkill = skill !== null ? withSkillMention(request as { input?: unknown; prompt?: unknown }, skill) : request;
-    const thread = (await bb.sdk.threads.spawn({
-      ...(withSkill as unknown as Parameters<typeof bb.sdk.threads.spawn>[0]),
+    const thread = (await alia.sdk.threads.spawn({
+      ...(withSkill as unknown as Parameters<typeof alia.sdk.threads.spawn>[0]),
       ...(sectionId !== null ? { sectionId } : {}),
       title: context.title,
       pluginMetadata: { itemKey: key, url: item.url, action: actionFor(item.kind), source: item.source },
     })) as { id?: string; thread?: { id?: string } };
     const threadId = thread.id ?? thread.thread?.id;
-    if (threadId === undefined) throw new Error("bb did not return the new thread id");
+    if (threadId === undefined) throw new Error("alia did not return the new thread id");
     reviews = { ...reviews, [key]: { threadId, at: new Date().toISOString() } };
     if (typeof request.projectId === "string") reviewProjects = { ...reviewProjects, [item.repo]: request.projectId };
-    await Promise.all([bb.storage.kv.set("reviews", reviews), bb.storage.kv.set("reviewProjects", reviewProjects)]);
+    await Promise.all([alia.storage.kv.set("reviews", reviews), alia.storage.kv.set("reviewProjects", reviewProjects)]);
     publish();
     return { threadId };
   }
@@ -1644,12 +1644,12 @@ export default async function plugin(bb: BbPluginApi) {
     if (name === null) return null;
     if (projectId === null) return name;
     try {
-      const { skills } = await bb.sdk.skills.list({ projectId, environmentId: null });
+      const { skills } = await alia.sdk.skills.list({ projectId, environmentId: null });
       if (skills.some((skill) => skill.name === name)) return name;
-      bb.log.warn(`review skill "${name}" is not installed for project ${projectId}; starting without it`);
+      alia.log.warn(`review skill "${name}" is not installed for project ${projectId}; starting without it`);
       return null;
     } catch (error) {
-      bb.log.warn(`could not list skills for ${projectId}: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`could not list skills for ${projectId}: ${error instanceof Error ? error.message : String(error)}`);
       return name;
     }
   }
@@ -1662,32 +1662,32 @@ export default async function plugin(bb: BbPluginApi) {
     const name = config.reviewSection;
     if (name === "") return null;
     try {
-      const existing = findSection(await bb.sdk.threadSections.list(), name);
+      const existing = findSection(await alia.sdk.threadSections.list(), name);
       if (existing !== null) return existing;
-      return (await bb.sdk.threadSections.create({ name })).id;
+      return (await alia.sdk.threadSections.create({ name })).id;
     } catch (error) {
-      bb.log.warn(`review section "${name}" unavailable: ${String(error)}`);
+      alia.log.warn(`review section "${name}" unavailable: ${String(error)}`);
       return null;
     }
   }
 
   /** One-time move of review threads started before sections were applied. */
   async function backfillReviewSection(): Promise<void> {
-    if ((await bb.storage.kv.get<boolean>("reviewSectionBackfilled")) === true) return;
+    if ((await alia.storage.kv.get<boolean>("reviewSectionBackfilled")) === true) return;
     const sectionId = await reviewSectionId();
     if (sectionId === null) return;
     const threads = await Promise.all(
       Object.values(reviews).map(async ({ threadId }) => {
         try {
-          const thread = (await bb.sdk.threads.get({ threadId })) as { sectionId?: string | null };
+          const thread = (await alia.sdk.threads.get({ threadId })) as { sectionId?: string | null };
           return { id: threadId, sectionId: thread.sectionId ?? null };
         } catch {
           return { id: threadId, sectionId: "unknown" };
         }
       }),
     );
-    await Promise.all(threadsToSection(threads).map((threadId) => bb.sdk.threads.update({ threadId, sectionId })));
-    await bb.storage.kv.set("reviewSectionBackfilled", true);
+    await Promise.all(threadsToSection(threads).map((threadId) => alia.sdk.threads.update({ threadId, sectionId })));
+    await alia.storage.kv.set("reviewSectionBackfilled", true);
   }
 
   /** Drop links to threads that were archived or deleted; the user is done with them. */
@@ -1698,7 +1698,7 @@ export default async function plugin(bb: BbPluginApi) {
     await Promise.all(
       entries.map(async ([key, review]) => {
         try {
-          const thread = (await bb.sdk.threads.get({ threadId: review.threadId })) as {
+          const thread = (await alia.sdk.threads.get({ threadId: review.threadId })) as {
             archivedAt?: number | null;
             deletedAt?: number | null;
           };
@@ -1711,7 +1711,7 @@ export default async function plugin(bb: BbPluginApi) {
     );
     if (Object.keys(keep).length === entries.length) return;
     reviews = keep;
-    await bb.storage.kv.set("reviews", reviews);
+    await alia.storage.kv.set("reviews", reviews);
     publish();
   }
 
@@ -1874,7 +1874,7 @@ export default async function plugin(bb: BbPluginApi) {
     rebasing.add(key);
     try {
       const result = target.source === "github" ? await rebaseGithub(target) : await rebaseDelta(target);
-      bb.log.info(`rebase ${key}: ${result.status} ${result.headSha.slice(0, 12)}`);
+      alia.log.info(`rebase ${key}: ${result.status} ${result.headSha.slice(0, 12)}`);
       if (result.status === "rebased") {
         // Refresh every lane showing this PR so its row reflects the new head.
         const showing = lanes.filter((lane) => results[lane.id]?.items.some((item) => item.key === key));
@@ -1889,7 +1889,7 @@ export default async function plugin(bb: BbPluginApi) {
   /** CLI target → source: explicit flag, URL host, else the matching item in lanes. */
   function resolveRebaseTarget(input: string, sourceFlag: string | undefined): RebaseTarget {
     const parsed = parseRebaseTarget(input);
-    if (parsed === null) throw new UserError("Usage: bb radar rebase <PR url | owner/repo#number> [--source github|delta] [--yes]");
+    if (parsed === null) throw new UserError("Usage: VesnALIA radar rebase <PR url | owner/repo#number> [--source github|delta] [--yes]");
     if (sourceFlag !== undefined && sourceFlag !== "github" && sourceFlag !== "gitstream" && sourceFlag !== "delta") {
       throw new UserError("--source must be github or delta (gitstream is read-only history).");
     }
@@ -2104,7 +2104,7 @@ export default async function plugin(bb: BbPluginApi) {
       const context = slackContext(item.key);
       let summaryError = context.summaryError;
       const stale = threads.filter((thread) => thread.latest_ts !== "" && compareTs(thread.latest_ts, thread.synced_ts) > 0);
-      if (stale.length > 0 && aiBackend(bb, aiFallback()) !== null) {
+      if (stale.length > 0 && aiBackend(alia, aiFallback()) !== null) {
         summaryError = "";
         const setSummary = db.prepare("UPDATE slack_threads SET summary = ?, synced_ts = ? WHERE issue_key = ? AND channel_id = ? AND thread_ts = ?");
         for (const thread of stale) {
@@ -2219,12 +2219,12 @@ export default async function plugin(bb: BbPluginApi) {
     });
   }
 
-  bb.background.service("slack-context", {
+  alia.background.service("slack-context", {
     async start(signal) {
       // Let the board load first; Slack is never on the critical path.
       await slackSleep(60_000);
       while (!signal.aborted && !disposed) {
-        await sweepSlack().catch((error: unknown) => bb.log.warn(`slack sweep failed: ${String(error)}`));
+        await sweepSlack().catch((error: unknown) => alia.log.warn(`slack sweep failed: ${String(error)}`));
         await new Promise<void>((resolve) => {
           const finish = () => {
             clearTimeout(timer);
@@ -2240,14 +2240,14 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  // Read by the rail-badge content script; local auth keeps it to bb app origins.
-  bb.http.route("GET", "/badge", (c) => c.json({ new: newCount(), fetchedAt }));
+  // Read by the rail-badge content script; local auth keeps it to VesnALIA app origins.
+  alia.http.route("GET", "/badge", (c) => c.json({ new: newCount(), fetchedAt }));
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     radar_snapshot: () => snapshot(),
     radar_ai_get: () => aiOverride,
     radar_ai_set: async (next) => {
-      await bb.storage.kv.set("aiOverride", next);
+      await alia.storage.kv.set("aiOverride", next);
       aiOverride = next;
       publish();
       return aiOverride;
@@ -2256,7 +2256,7 @@ export default async function plugin(bb: BbPluginApi) {
       const lane = input?.laneId === undefined ? undefined : lanes.find((candidate) => candidate.id === input.laneId);
       if (lane !== undefined) {
         await refreshLane(lane);
-        if (isMentionLane(lane)) await syncMentions().catch((error: unknown) => bb.log.warn(`mention sync failed: ${String(error)}`));
+        if (isMentionLane(lane)) await syncMentions().catch((error: unknown) => alia.log.warn(`mention sync failed: ${String(error)}`));
       }
       else await refreshAll();
       return snapshot();
@@ -2277,7 +2277,7 @@ export default async function plugin(bb: BbPluginApi) {
       await persistMentions();
       publish();
       // Do not make local clearing wait for GitHub. Failed writes remain queued for refresh.
-      void syncMentions().catch(error => bb.log.warn(`mention sync failed: ${String(error)}`));
+      void syncMentions().catch(error => alia.log.warn(`mention sync failed: ${String(error)}`));
       return snapshot();
     },
     radar_hide_item: ({ key }) => hideItem(key),
@@ -2315,7 +2315,7 @@ export default async function plugin(bb: BbPluginApi) {
     wakeSlack?.();
   });
 
-  bb.background.service("poll", {
+  alia.background.service("poll", {
     async start(signal) {
       const maxAge = hosts().delta !== null ? 7 * 24 * 3_600_000 : 24 * 3_600_000;
       const stale = labelRepo() !== "" && (labelIndex === null || Date.now() - Date.parse(labelIndex.at) > maxAge);
@@ -2323,7 +2323,7 @@ export default async function plugin(bb: BbPluginApi) {
       await refreshAll();
       void pruneReviews()
         .then(backfillReviewSection)
-        .catch((error) => bb.log.warn(`review prune/backfill failed: ${String(error)}`));
+        .catch((error) => alia.log.warn(`review prune/backfill failed: ${String(error)}`));
       while (!signal.aborted && !disposed) {
         await new Promise<void>((resolve) => {
           const finish = () => {
@@ -2338,7 +2338,7 @@ export default async function plugin(bb: BbPluginApi) {
         });
         if (signal.aborted || disposed) return;
         await refreshAll();
-        void pruneReviews().catch((error) => bb.log.warn(`review prune failed: ${String(error)}`));
+        void pruneReviews().catch((error) => alia.log.warn(`review prune failed: ${String(error)}`));
       }
     },
   });
@@ -2347,29 +2347,29 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb radar status [--json]                  lane counts, new counts, errors",
-    "  bb radar list [--lane <id>] [--view reviews|prs|issues|all] [--new] [--all] [--json]",
+    "  VesnALIA radar status [--json]                  lane counts, new counts, errors",
+    "  VesnALIA radar list [--lane <id>] [--view reviews|prs|issues|all] [--new] [--all] [--json]",
     "                                            --view: what that panel view shows; --all ignores the focus filter",
-    "  bb radar lanes [--json]                   configured lanes, their view (category) and queries",
-    "  bb radar add <description…> [--dry-run] [--json]  draft a lane with the LLM and add it",
-    "  bb radar remove <lane-id>",
-    "  bb radar seen [<lane-id>]                 mark items as seen",
-    "  bb radar refresh",
-    "  bb radar defaults                         add missing default lanes",
-    "  bb radar put '<lane json>'                create or replace a lane (category inferred unless given; prints its id)",
-    "  bb radar scopes [--json]                  repos (and area-repo areas) in results, with the focus filter",
-    "  bb radar focus <description…> [--json]    e.g. \"no billing stuff\": AI picks repos/areas, Focus on",
-    "  bb radar focus <repo|area>…               show only these (exact names)",
-    "  bb radar focus --add <repo|area>…         add to the focus",
-    "  bb radar focus --off | --on               turn Focus off (back to normal) / resume the last one",
-    "  bb radar hide <repo|area>… [--json]       hide from every lane, view and the badge",
-    "  bb radar show <repo|area>… [--json]       undo hide (adds to the focus while one is set)",
-    "  bb radar hide-item <url|key> [--json]     hide one PR or issue everywhere until unhidden",
-    "  bb radar unhide-item <url|key> | --all [--json]  bring hidden items back",
-    "  bb radar hidden [--json]                  list items hidden one by one",
-    "  bb radar slack [<url|key>] [--json]       Slack context: board items linked from public Slack threads, with Radar's summary",
-    "  bb radar slack-check <url|key> [--json]   check one open issue/PR against Slack now (reads only; never posts)",
-    "  bb radar rebase <url|owner/repo#n> [--source github|delta] --yes [--json]",
+    "  VesnALIA radar lanes [--json]                   configured lanes, their view (category) and queries",
+    "  VesnALIA radar add <description…> [--dry-run] [--json]  draft a lane with the LLM and add it",
+    "  VesnALIA radar remove <lane-id>",
+    "  VesnALIA radar seen [<lane-id>]                 mark items as seen",
+    "  VesnALIA radar refresh",
+    "  VesnALIA radar defaults                         add missing default lanes",
+    "  VesnALIA radar put '<lane json>'                create or replace a lane (category inferred unless given; prints its id)",
+    "  VesnALIA radar scopes [--json]                  repos (and area-repo areas) in results, with the focus filter",
+    "  VesnALIA radar focus <description…> [--json]    e.g. \"no billing stuff\": AI picks repos/areas, Focus on",
+    "  VesnALIA radar focus <repo|area>…               show only these (exact names)",
+    "  VesnALIA radar focus --add <repo|area>…         add to the focus",
+    "  VesnALIA radar focus --off | --on               turn Focus off (back to normal) / resume the last one",
+    "  VesnALIA radar hide <repo|area>… [--json]       hide from every lane, view and the badge",
+    "  VesnALIA radar show <repo|area>… [--json]       undo hide (adds to the focus while one is set)",
+    "  VesnALIA radar hide-item <url|key> [--json]     hide one PR or issue everywhere until unhidden",
+    "  VesnALIA radar unhide-item <url|key> | --all [--json]  bring hidden items back",
+    "  VesnALIA radar hidden [--json]                  list items hidden one by one",
+    "  VesnALIA radar slack [<url|key>] [--json]       Slack context: board items linked from public Slack threads, with Radar's summary",
+    "  VesnALIA radar slack-check <url|key> [--json]   check one open issue/PR against Slack now (reads only; never posts)",
+    "  VesnALIA radar rebase <url|owner/repo#n> [--source github|delta] --yes [--json]",
     "                                            rebase your own open PR (GitHub server-side; Delta via git)",
     "",
     "Repos are owner/name (or a unique tail, e.g. billing); areas of the area repo (a setting)",
@@ -2387,32 +2387,32 @@ export default async function plugin(bb: BbPluginApi) {
     return `${lane.id.padEnd(24)} ${lane.title}  ${category}\n${"".padEnd(25)}${scope}${filter}`;
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "radar",
     summary: "Live PR/issue queues that need you (Delta and GitHub, plus optional read-only Gitstream history)",
     commands: [
-      { name: "status", summary: "Per-lane counts", usage: "bb radar status [--json]" },
-      { name: "list", summary: "List items", usage: "bb radar list [--lane <id>] [--view reviews|prs|issues|all] [--new] [--all] [--json]" },
-      { name: "lanes", summary: "List configured lanes with their view (category)", usage: "bb radar lanes [--json]" },
-      { name: "add", summary: "Draft a lane from a description and add it", usage: "bb radar add <description…> [--dry-run] [--json]" },
-      { name: "remove", summary: "Remove a lane", usage: "bb radar remove <lane-id>" },
-      { name: "seen", summary: "Mark items seen", usage: "bb radar seen [<lane-id>]" },
-      { name: "refresh", summary: "Refetch every lane now", usage: "bb radar refresh" },
-      { name: "put", summary: "Create or replace a lane from JSON; prints its id", usage: "bb radar put '<lane json>'" },
-      { name: "defaults", summary: "Add any missing default lanes (keeps yours)", usage: "bb radar defaults" },
-      { name: "scopes", summary: "Repos and areas in results, with the focus filter", usage: "bb radar scopes [--json]" },
-      { name: "focus", summary: "Focus mode: describe it, or name repos/areas; --off / --on", usage: "bb radar focus <description…> | <repo|area>… | --add <…> | --off | --on [--json]" },
-      { name: "hide", summary: "Hide repos/areas everywhere", usage: "bb radar hide <repo|area>… [--json]" },
-      { name: "show", summary: "Unhide repos/areas", usage: "bb radar show <repo|area>… [--json]" },
-      { name: "hide-item", summary: "Hide one PR or issue everywhere", usage: "bb radar hide-item <url|key|owner/repo#n> [--json]" },
-      { name: "unhide-item", summary: "Unhide one item, or all", usage: "bb radar unhide-item <url|key|owner/repo#n> | --all [--json]" },
-      { name: "hidden", summary: "List items hidden one by one", usage: "bb radar hidden [--json]" },
-      { name: "slack", summary: "Slack context for board items: linked public threads and Radar's summary", usage: "bb radar slack [<url|key|owner/repo#n>] [--json]" },
-      { name: "slack-check", summary: "Check one open issue or PR against Slack now (never posts)", usage: "bb radar slack-check <url|key|owner/repo#n> [--json]" },
+      { name: "status", summary: "Per-lane counts", usage: "alia radar status [--json]" },
+      { name: "list", summary: "List items", usage: "alia radar list [--lane <id>] [--view reviews|prs|issues|all] [--new] [--all] [--json]" },
+      { name: "lanes", summary: "List configured lanes with their view (category)", usage: "alia radar lanes [--json]" },
+      { name: "add", summary: "Draft a lane from a description and add it", usage: "alia radar add <description…> [--dry-run] [--json]" },
+      { name: "remove", summary: "Remove a lane", usage: "alia radar remove <lane-id>" },
+      { name: "seen", summary: "Mark items seen", usage: "alia radar seen [<lane-id>]" },
+      { name: "refresh", summary: "Refetch every lane now", usage: "alia radar refresh" },
+      { name: "put", summary: "Create or replace a lane from JSON; prints its id", usage: "alia radar put '<lane json>'" },
+      { name: "defaults", summary: "Add any missing default lanes (keeps yours)", usage: "alia radar defaults" },
+      { name: "scopes", summary: "Repos and areas in results, with the focus filter", usage: "alia radar scopes [--json]" },
+      { name: "focus", summary: "Focus mode: describe it, or name repos/areas; --off / --on", usage: "alia radar focus <description…> | <repo|area>… | --add <…> | --off | --on [--json]" },
+      { name: "hide", summary: "Hide repos/areas everywhere", usage: "alia radar hide <repo|area>… [--json]" },
+      { name: "show", summary: "Unhide repos/areas", usage: "alia radar show <repo|area>… [--json]" },
+      { name: "hide-item", summary: "Hide one PR or issue everywhere", usage: "alia radar hide-item <url|key|owner/repo#n> [--json]" },
+      { name: "unhide-item", summary: "Unhide one item, or all", usage: "alia radar unhide-item <url|key|owner/repo#n> | --all [--json]" },
+      { name: "hidden", summary: "List items hidden one by one", usage: "alia radar hidden [--json]" },
+      { name: "slack", summary: "Slack context for board items: linked public threads and Radar's summary", usage: "alia radar slack [<url|key|owner/repo#n>] [--json]" },
+      { name: "slack-check", summary: "Check one open issue or PR against Slack now (never posts)", usage: "alia radar slack-check <url|key|owner/repo#n> [--json]" },
       {
         name: "rebase",
         summary: "Rebase your own open PR onto its base (GitHub server-side, Delta via git replay + leased push; needs --yes)",
-        usage: "bb radar rebase <PR url | owner/repo#number> [--source github|delta] [--yes] [--json]",
+        usage: "alia radar rebase <PR url | owner/repo#number> [--source github|delta] [--yes] [--json]",
       },
     ],
     async run(argv) {
@@ -2449,11 +2449,11 @@ export default async function plugin(bb: BbPluginApi) {
               return `${String(shown.length).padStart(3)}  ${lane.title} [${lane.id}]${tail}`;
             });
             const filterLine = isActive(scope)
-              ? `focus: ON ${focusState.description ? `“${focusState.description}” → ` : ""}${describeScope(scope)} (${focusHidden.size} item${focusHidden.size === 1 ? "" : "s"} hidden; bb radar focus --off to turn off)`
+              ? `focus: ON ${focusState.description ? `“${focusState.description}” → ` : ""}${describeScope(scope)} (${focusHidden.size} item${focusHidden.size === 1 ? "" : "s"} hidden; VesnALIA radar focus --off to turn off)`
               : isActive(focusState)
-                ? `focus: off (last: ${focusState.summary || describeScope(focusState)}; bb radar focus --on to resume)`
+                ? `focus: off (last: ${focusState.summary || describeScope(focusState)}; VesnALIA radar focus --on to resume)`
                 : "focus: off";
-            const hiddenLine = hiddenItems.length > 0 ? [`hidden items: ${hiddenItems.length} (bb radar hidden)`] : [];
+            const hiddenLine = hiddenItems.length > 0 ? [`hidden items: ${hiddenItems.length} (VesnALIA radar hidden)`] : [];
             return { exitCode: 0, stdout: [`fetched ${fetchedAt || "(never)"}`, filterLine, ...hiddenLine, ...lines].join("\n") };
           }
           case "list": {
@@ -2463,10 +2463,10 @@ export default async function plugin(bb: BbPluginApi) {
             const viewIndex = rest.indexOf("--view");
             const viewArg = viewIndex >= 0 ? rest[viewIndex + 1] : undefined;
             if ((laneIndex >= 0 && laneId === undefined) || (viewIndex >= 0 && viewArg === undefined)) {
-              return { exitCode: 1, stderr: "Usage: bb radar list [--lane <id>] [--view <view>] [--new] [--all] [--json]" };
+              return { exitCode: 1, stderr: "Usage: VesnALIA radar list [--lane <id>] [--view <view>] [--new] [--all] [--json]" };
             }
             if (laneId !== undefined && !lanes.some((lane) => lane.id === laneId)) {
-              return { exitCode: 1, stderr: `No lane "${laneId}". Run bb radar lanes.` };
+              return { exitCode: 1, stderr: `No lane "${laneId}". Run alia radar lanes.` };
             }
             if (viewArg !== undefined && !(CATEGORIES as readonly string[]).includes(viewArg)) {
               return { exitCode: 1, stderr: `--view must be one of ${CATEGORIES.join(", ")}.` };
@@ -2522,12 +2522,12 @@ export default async function plugin(bb: BbPluginApi) {
             };
           }
           case "put": {
-            // Agent/scripting path: upsert one lane from JSON (same schema as `bb radar lanes --json`).
+            // Agent/scripting path: upsert one lane from JSON (same schema as `alia radar lanes --json`).
             let lane: unknown;
             try {
               lane = JSON.parse(rest.join(" "));
             } catch {
-              return { exitCode: 1, stderr: "Usage: bb radar put '<lane json>'" };
+              return { exitCode: 1, stderr: "Usage: VesnALIA radar put '<lane json>'" };
             }
             let id: string;
             try {
@@ -2540,14 +2540,14 @@ export default async function plugin(bb: BbPluginApi) {
           case "remove": {
             const id = rest[0];
             if (id === undefined || !lanes.some((lane) => lane.id === id)) {
-              return { exitCode: 1, stderr: `No lane "${id ?? ""}". Run bb radar lanes.` };
+              return { exitCode: 1, stderr: `No lane "${id ?? ""}". Run alia radar lanes.` };
             }
             await deleteLane(id);
             return { exitCode: 0, stdout: `Removed ${id}.` };
           }
           case "seen":
             if (rest[0] !== undefined && !lanes.some((lane) => lane.id === rest[0])) {
-              return { exitCode: 1, stderr: `No lane "${rest[0]}". Run bb radar lanes.` };
+              return { exitCode: 1, stderr: `No lane "${rest[0]}". Run alia radar lanes.` };
             }
             await markSeen(rest[0]);
             return { exitCode: 0, stdout: "Marked seen." };
@@ -2575,7 +2575,7 @@ export default async function plugin(bb: BbPluginApi) {
             if (command === "focus" && (rest.includes("--off") || rest.includes("--clear"))) await setFocusEnabled(false);
             else if (command === "focus" && rest.includes("--on")) await setFocusEnabled(true);
             else if (names.length === 0) {
-              return { exitCode: 1, stderr: `Usage: bb radar ${command} ${command === "focus" ? "<description…> | <repo|area>… | --on | --off" : "<repo|area>…"}` };
+              return { exitCode: 1, stderr: `Usage: VesnALIA radar ${command} ${command === "focus" ? "<description…> | <repo|area>… | --on | --off" : "<repo|area>…"}` };
             } else if (command === "focus" && !rest.includes("--add")) {
               // Exact repo/area names focus on them; anything else is a description.
               let keys: string[] | null;
@@ -2601,7 +2601,7 @@ export default async function plugin(bb: BbPluginApi) {
             };
           }
           case "hide-item": {
-            if (rest.length !== 1) return { exitCode: 1, stderr: "Usage: bb radar hide-item <url|key|owner/repo#n>" };
+            if (rest.length !== 1) return { exitCode: 1, stderr: "Usage: VesnALIA radar hide-item <url|key|owner/repo#n>" };
             if (fetchedAt === "") await refreshAll();
             // Board items, plus hidden ones so re-hiding says "Already hidden".
             const key = cliItemKey(rest[0]!, [...shownItems(), ...hiddenItems]);
@@ -2617,10 +2617,10 @@ export default async function plugin(bb: BbPluginApi) {
             const all = rest.includes("--all");
             const positional = rest.filter((arg) => arg !== "--all");
             if (all === (positional.length > 0) || positional.length > 1) {
-              return { exitCode: 1, stderr: "Usage: bb radar unhide-item <url|key|owner/repo#n> | --all" };
+              return { exitCode: 1, stderr: "Usage: VesnALIA radar unhide-item <url|key|owner/repo#n> | --all" };
             }
             const { removed } = all ? await unhideItems("all") : await unhideItems([cliItemKey(positional[0]!, hiddenItems)]);
-            if (!all && removed.length === 0) return { exitCode: 1, stderr: `${positional[0]} is not hidden. Run bb radar hidden.` };
+            if (!all && removed.length === 0) return { exitCode: 1, stderr: `${positional[0]} is not hidden. Run alia radar hidden.` };
             return {
               exitCode: 0,
               stdout: json ? JSON.stringify(removed) : all ? `Unhid ${removed.length} item${removed.length === 1 ? "" : "s"}.` : `Unhid ${removed[0]!.key}.`,
@@ -2664,7 +2664,7 @@ export default async function plugin(bb: BbPluginApi) {
           }
           case "slack-check": {
             if (!slackEnabled()) return { exitCode: 1, stderr: "Slack context is off. Set the Slack endpoint and token command in Radar settings." };
-            if (rest[0] === undefined) return { exitCode: 1, stderr: "Usage: bb radar slack-check <url|key|owner/repo#n>" };
+            if (rest[0] === undefined) return { exitCode: 1, stderr: "Usage: VesnALIA radar slack-check <url|key|owner/repo#n>" };
             if (fetchedAt === "") await refreshAll();
             const key = cliItemKey(rest[0], slackCandidates());
             await checkSlackIssue(slackItem(key));
@@ -2679,7 +2679,7 @@ export default async function plugin(bb: BbPluginApi) {
             const sourceFlag = sourceIndex >= 0 ? rest[sourceIndex + 1] : undefined;
             const positional = rest.filter((arg, index) => !arg.startsWith("--") && (sourceIndex < 0 || index !== sourceIndex + 1));
             if (positional.length !== 1 || (sourceIndex >= 0 && (sourceFlag === undefined || sourceFlag.startsWith("--")))) {
-              return { exitCode: 1, stderr: "Usage: bb radar rebase <PR url | owner/repo#number> [--source github|delta] [--yes]" };
+              return { exitCode: 1, stderr: "Usage: VesnALIA radar rebase <PR url | owner/repo#number> [--source github|delta] [--yes]" };
             }
             if (fetchedAt === "") await refreshAll();
             const target = resolveRebaseTarget(positional[0]!, sourceFlag);
@@ -2705,7 +2705,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     disposed = true;
     controller.abort();
     wakeSleep?.();

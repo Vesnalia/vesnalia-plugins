@@ -113,7 +113,7 @@ test("a 403 that isn't a rate limit is never retried, and says whether it's the 
   expect(run).toHaveBeenCalledTimes(1);
   const forbidden = (message: string) => ({ stdout: JSON.stringify({ message }), stderr: `gh: ${message} (HTTP 403)` });
   expect(classifyWriteError(forbidden("Something else"), { args: replyArgs, action: "review" }).error).toBe("Your GitHub role on this repo doesn't allow that. Leave a comment instead?");
-  expect(classifyWriteError(forbidden("Resource not accessible by personal access token"), { args: replyArgs })).toMatchObject({ kind: "token", error: expect.stringContaining("The GitHub token on the BB server isn't allowed") });
+  expect(classifyWriteError(forbidden("Resource not accessible by personal access token"), { args: replyArgs })).toMatchObject({ kind: "token", error: expect.stringContaining("The GitHub token on the VesnALIA server isn't allowed") });
   expect(classifyWriteError(forbidden("Resource not accessible by integration"), { args: replyArgs })).toMatchObject({ kind: "token" });
   expect(classifyWriteError(forbidden("Resource protected by organization SAML enforcement. You must grant your OAuth token access to this organization."), { args: replyArgs })).toMatchObject({ kind: "sso" });
 });
@@ -146,7 +146,7 @@ test("GitHub's refusals say what happened and what to do, and keep GitHub's word
   expect(merge("X Pull request acme/web#4 is not mergeable: the head branch is not up to date with the base branch.")).toMatchObject({ kind: "not-up-to-date" });
   // The scope GitHub names, not always the same two.
   expect(classifyWriteError({ stdout: "", stderr: "error: your authentication token is missing required scopes [read:project]\nTo request it, run:  gh auth refresh -s read:project" }, { args: ["pr", "edit", "4"] }))
-    .toMatchObject({ kind: "missing-scope", error: "The GitHub login on the BB server is missing the read:project scope. Run gh auth refresh -h github.com -s read:project there, then try again." });
+    .toMatchObject({ kind: "missing-scope", error: "The GitHub login on the VesnALIA server is missing the read:project scope. Run gh auth refresh -h github.com -s read:project there, then try again." });
   expect(classifyWriteError({ stdout: "", stderr: "error fetching organization teams: GraphQL: Your token has not been granted the required scopes" }, { args: ["pr", "edit", "4"] }).error).toContain("-s read:org ");
   // Anything else is GitHub's own message.
   expect(classifyWriteError({ stdout: "", stderr: "HTTP 502: Bad Gateway" })).toEqual({ ok: false, kind: "other", error: "HTTP 502: Bad Gateway", detail: "HTTP 502: Bad Gateway" });

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";

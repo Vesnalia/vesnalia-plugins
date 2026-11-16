@@ -277,7 +277,7 @@ async function resolveCodexDirs(): Promise<string[]> {
 
 async function resolvePiDirs(): Promise<string[]> {
   const dirs = [
-    NodePath.join(NodeOS.homedir(), ".bb", "pi-bridge-sessions"),
+    NodePath.join(NodeOS.homedir(), ".vesnalia", "pi-bridge-sessions"),
     NodePath.join(NodeOS.homedir(), ".pi", "agent", "sessions"),
   ];
   const existing: string[] = [];

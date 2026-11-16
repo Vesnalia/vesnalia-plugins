@@ -6,7 +6,7 @@
 # `threads.retry`, recorded in the harness's call log as `threads.retry`)
 # ahead of Ignore error (the old acknowledgment under a name that tells what
 # its write does) — and a healthy card offers neither. The refusal path
-# surfaces bb's own reason on the board's notice banner (`?retryFails=`
+# surfaces alia's own reason on the board's notice banner (`?retryFails=`
 # arms the mock's refusal) instead of failing silently.
 #
 # The suite runs on the touch device (390x844, hasTouch), where the menu's
@@ -53,7 +53,7 @@ steps:
       - no_visible_error: true
 
   - id: retry-refusal-surfaces-the-reason
-    title: A refused retry reports bb's reason on the board's notice banner
+    title: A refused retry reports alia's reason on the board's notice banner
     goto: "?groupBy=status&retryFails=thread%20is%20stopping"
     gestures:
       - { card_menu: { card: thr_deploy_fail } }

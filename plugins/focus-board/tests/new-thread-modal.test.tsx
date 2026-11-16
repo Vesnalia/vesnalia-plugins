@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// The board's in-board new-thread composer modal: renders bb's host
+// The board's in-board new-thread composer modal: renders VesnALIA's host
 // NewThreadComposer inside the responsive dialog, spawns through the SDK on
 // submit, closes and hands the new thread to the board on success, and keeps
 // the modal (and the composer's draft) on failure.
@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement, type ReactNode } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { NewThreadModal } from "../components/new-thread-modal";
-import type { NewThreadRequest } from "@get-bb/plugin-sdk/app";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk/app";
 
 const spawn = vi.fn();
 const onOpenChange = vi.fn();
@@ -41,7 +41,7 @@ let lastComposerProps: Record<string, unknown> | null = null;
 let lastSubmitPromise: Promise<void> | null = null;
 
 // The measured-placement tests push a fake footer-row geometry in here; the
-// stub composer then renders bb's own pickers-row hook
+// stub composer then renders VesnALIA's own pickers-row hook
 // (`data-new-thread-footer`, the element lib/composer-row-anchor anchors to)
 // carrying those offsets. Null (the default) keeps the row out — the shape
 // every other test exercises, which is also the stacked-fallback contract.
@@ -51,10 +51,10 @@ const stubRow = vi.hoisted(() => ({
     | null,
 }));
 
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   // A stub composer: records the props it was seeded with and offers a
   // button that fires onSubmit, the way the host composer would on submit.
-  // When a footer-row geometry is armed, it also renders bb's pickers-row
+  // When a footer-row geometry is armed, it also renders VesnALIA's pickers-row
   // hook element the way the real host does, with the offsets predefined
   // (jsdom has no layout); the ref writes them before the modal's layout
   // measurement runs, so the modal's anchor sees a measurable row.
@@ -220,7 +220,7 @@ describe("NewThreadModal", () => {
     // because its containing block is the form) — but the modal's
     // max-h-[70vh] overflow-y-auto wrapper sat at y=306..470 and IS an
     // ancestor of that containing block, so it erased the menu entirely
-    // (menu in the DOM, invisible; bb's main view and the board's chat-pane
+    // (menu in the DOM, invisible; VesnALIA's main view and the board's chat-pane
     // composer, which have no clipping ancestor above the prompt form, show
     // the same menu fine). The same clipping path also erased the composer's
     // "/" command menu. No wrapper — the menu escapes to overlap the dialog
@@ -711,7 +711,7 @@ describe("the New project option's row placement", () => {
   });
 });
 
-// The button's click follows bb's typical new-project flow when the app
+// The button's click follows VesnALIA's typical new-project flow when the app
 // hands the folder picker off (lib/project-create-flow): the native pick,
 // the create carried by it, the seed selecting the created project. A
 // cancelled pick rests; a refused pick arms the inline name field with the

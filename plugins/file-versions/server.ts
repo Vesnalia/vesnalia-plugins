@@ -1,5 +1,5 @@
 // File Versions: shows every version of a document across project folders.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { collect, folderOf, group } from "./lib/versions";
 
@@ -12,8 +12,8 @@ export const rpcContract = defineRpcContract({
   scan: { input: z.null(), output: outputSchema },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     extraFolders: {
       type: "string",
       label: "Extra folders to include, one absolute path per line",
@@ -23,10 +23,10 @@ export default async function plugin(bb: BbPluginApi) {
   });
   const { extraFolders } = await settings.get();
   const stop = new AbortController();
-  bb.onDispose(() => stop.abort());
+  alia.onDispose(() => stop.abort());
 
   async function run(): Promise<VersionsOutput> {
-    const projects = await bb.sdk.projects.list({ includePersonal: true });
+    const projects = await alia.sdk.projects.list({ includePersonal: true });
     const sources = projects.flatMap((project) => project.sources ?? []);
     const paths = [...sources.map((source) => source.path), ...extraFolders.split("\n").map((line) => line.trim()).filter(Boolean)];
     // A project nested inside another would otherwise be listed twice.
@@ -45,12 +45,12 @@ export default async function plugin(bb: BbPluginApi) {
     return { groups: groups.slice(0, 2000), files, roots, hostId: sources[0]?.hostId ?? null };
   }
 
-  bb.rpc.register(rpcContract, { scan: run });
+  alia.rpc.register(rpcContract, { scan: run });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "file-versions",
     summary: "List documents with several versions and which one is the latest",
-    commands: [{ name: "list", summary: "List documents with versions", usage: "bb file-versions list [--json]" }],
+    commands: [{ name: "list", summary: "List documents with versions", usage: "alia file-versions list [--json]" }],
     async run(argv) {
       const out = await run();
       const multi = out.groups.filter((g) => g.older.length > 0);

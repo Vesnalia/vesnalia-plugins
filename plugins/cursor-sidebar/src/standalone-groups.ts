@@ -8,9 +8,9 @@ import type { DisplayRow } from "./forest";
  * never duplicates it under its date group. Assignment is a family property
  * read from the family root: the root's native pin state and the root's
  * native section id. Children follow their root even when native state
- * diverges per thread (only settable from BB's own surfaces).
+ * diverges per thread (only settable from VesnALIA's own surfaces).
  *
- * Folders are BB's native thread sections. A section id no native section
+ * Folders are VesnALIA's native thread sections. A section id no native section
  * names (deleted elsewhere, or never listed) files nothing: those families
  * fall through to their date group. Managed projects never consult this
  * module; their native sections are ignored here.

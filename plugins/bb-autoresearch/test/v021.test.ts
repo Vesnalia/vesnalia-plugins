@@ -3,7 +3,7 @@
 // the Candidates list, the live cards, the feed, deltas and replay), single-run
 // wording for deterministic and expensive measurements, the status line's
 // counts, and lanes linked to candidates through the plugin's worker row (a
-// worker row without a BB thread id).
+// worker row without a VesnALIA thread id).
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { MIGRATIONS } from "../src/db/schema.ts";
 import type { Store } from "../src/db/store.ts";
@@ -160,7 +160,7 @@ describe("formatting (pure)", () => {
 });
 
 describe("candidates.worker_id backfill (migration)", () => {
-  it("links existing candidates to their worker row by BB thread id, then by the worker.phase events", () => {
+  it("links existing candidates to their worker row by VesnALIA thread id, then by the worker.phase events", () => {
     const db = makeDb();
     db.exec(`INSERT INTO threads (id, thread_id, spawn_token, study_id, role, idea_id, state, submissions, spawned_at) VALUES (7, 'thr_a', 'tok7', 's1', 'worker', 1, 'finished', 1, 0), (8, NULL, 'tok8', 's1', 'worker', 2, 'finished', 1, 0)`);
     db.exec(`INSERT INTO candidates (study_id, n, idea_id, thread_id, sha, parent_sha, summary, stage, submitted_at) VALUES ('s1', 1, 1, 'thr_a', 'a', 'b', 'x', 'decided', 0), ('s1', 2, 2, NULL, 'c', 'd', 'y', 'decided', 0), ('s1', 3, 3, NULL, 'e', 'f', 'z', 'decided', 0)`);
@@ -264,7 +264,7 @@ describe("v0.2.1 (fake host)", () => {
     expect(lines.join("\n")).not.toMatch(/in the bench queue/u);
   });
 
-  it("lanes link to their candidates through the worker row, even without a BB thread id (live view and replay)", async () => {
+  it("lanes link to their candidates through the worker row, even without a VesnALIA thread id (live view and replay)", async () => {
     const id = await running(["Idea A"], 1);
     host.onMeasure = () => clock.advance(1000); // events of the measurement get their own times
     await submit("thr_w1", "TA", 900);
@@ -272,7 +272,7 @@ describe("v0.2.1 (fake host)", () => {
     const w = store.threadById("thr_w1")!;
     const c = store.candidateByN(id, 1)!;
     expect(c.worker_id).toBe(w.id);
-    // A worker row without a BB thread id (imported studies), and a candidate without one either.
+    // A worker row without a VesnALIA thread id (imported studies), and a candidate without one either.
     store.updateThread(w.id, { thread_id: null });
     store.updateCandidate(c.id, { thread_id: null });
     const v = liveView(engine, store.study(id)!);
@@ -287,7 +287,7 @@ describe("v0.2.1 (fake host)", () => {
     expect(m.viewAt(started).workers.find((x) => x.key === w.id)).toMatchObject({ candidate: 1, candidateStage: "measuring" });
   });
 
-  it("candidates without a worker row fall back to the BB thread id", async () => {
+  it("candidates without a worker row fall back to the VesnALIA thread id", async () => {
     const id = await running(["Idea A"], 1);
     await submit("thr_w1", "TA", 900);
     await settle();

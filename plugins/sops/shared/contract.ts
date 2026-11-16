@@ -16,7 +16,7 @@
 // - Decrypted text crosses the wire only in `open`'s reply and `save`'s
 //   input. Nothing else carries a secret value.
 
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 /** A SOPS-encrypted file: a folder the server lists, and a path inside it. */

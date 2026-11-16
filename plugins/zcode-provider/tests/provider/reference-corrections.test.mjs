@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { threadDeltaSchema, threadDeltaNotificationParamsSchema, jsonRpcEnvelopeSchema } from '@get-bb/plugin-sdk/provider-bridge';
+import { threadDeltaSchema, threadDeltaNotificationParamsSchema, jsonRpcEnvelopeSchema } from '@vesnalia/plugin-sdk/provider-bridge';
 import { experimental_assembleCapturedThreadEvents as assemble,
   experimental_assembleRecordedEvents as replay, experimental_createBridgeDeltaEventCollector as collector,
-  experimental_normalizeCalibrationEvents as normalize } from '@get-bb/plugin-sdk/provider-bridge/testing';
+  experimental_normalizeCalibrationEvents as normalize } from '@vesnalia/plugin-sdk/provider-bridge/testing';
 import { api, rows, snapshot, inputs } from './helpers.mjs';
 
 const controls = JSON.parse(readFileSync(new URL('./fixtures/control-states.json', import.meta.url), 'utf8'));

@@ -5,7 +5,7 @@
 //
 // Why: syncing is bend's, for every tracker: bend runs the syncs, keeps
 // time with a helper process of its own, keeps the log, and works out what
-// is wrong (bead-bb-c9l.16). The plugin used to do all of that, which put
+// is wrong (bead-alia-c9l.16). The plugin used to do all of that, which put
 // it on the path the owner's issues take; the owner: "asking plugin to do
 // critical data management path is kind of smelly". What is left here is
 // what a screen needs.
@@ -19,7 +19,7 @@
 // - "Running" is bend's word (it tries the sync's lock), plus the one this
 //   module started and has not yet seen end.
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { CHANGED_CHANNEL } from "../shared/constants.ts";
 import type { HelperState, SyncEntry, SyncState } from "../sync/types.ts";
 import type { Trackers } from "./bend.ts";
@@ -51,17 +51,17 @@ const NOTHING: Shown = {
  * Side effects: removes what the plugin's earlier sync kept in storage.
  */
 export function createSync({
-  bb,
+  alia,
   store,
   trackers,
 }: {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   store: Store;
   /** The folder's tracker, as calls on bend. */
   trackers: Trackers;
 }) {
   for (const key of OLD_KEYS) {
-    bb.storage.kv.delete(key).catch(() => {
+    alia.storage.kv.delete(key).catch(() => {
       // Left behind: it is read by nothing.
     });
   }
@@ -83,7 +83,7 @@ export function createSync({
         const state = await found.tracker.syncState(passive);
         return asked.has(path) ? { ...state, running: true } : state;
       } catch (cause) {
-        bb.log.warn(`issue sync: the state of ${path} could not be read: ${cause}`);
+        alia.log.warn(`issue sync: the state of ${path} could not be read: ${cause}`);
         return NOTHING;
       }
     },
@@ -119,18 +119,18 @@ export function createSync({
         };
       }
       asked.add(path);
-      bb.realtime.publish(CHANGED_CHANNEL, { path });
+      alia.realtime.publish(CHANGED_CHANNEL, { path });
       void found.tracker
         .sync()
         .then(
-          (entry) => bb.log.info(`issue sync of ${path}: ${entry.end}`),
-          (cause: unknown) => bb.log.warn(`issue sync of ${path} could not be run: ${cause}`),
+          (entry) => alia.log.info(`issue sync of ${path}: ${entry.end}`),
+          (cause: unknown) => alia.log.warn(`issue sync of ${path} could not be run: ${cause}`),
         )
         .finally(() => {
           asked.delete(path);
           // What it brought in is in bend's copy; the list is read anew.
           store.stale(path);
-          bb.realtime.publish(CHANGED_CHANNEL, { path });
+          alia.realtime.publish(CHANGED_CHANNEL, { path });
         });
       return { message: null };
     },

@@ -8,7 +8,7 @@ async function send(request: PopupRequest): Promise<BridgeStatus> {
 
 function render(status: BridgeStatus): void {
   const connection = $("connection");
-  connection.textContent = status.connected ? `Connected to bb (${status.browser})` : "Not connected to bb";
+  connection.textContent = status.connected ? `Connected to VesnALIA (${status.browser})` : "Not connected to VesnALIA";
   connection.dataset.state = status.connected ? "ok" : "off";
   $("connection-help").hidden = status.connected;
   $("error").textContent = status.error ?? "";

@@ -1,7 +1,7 @@
 // What you've marked as Focus (thread id → when). Stored apart from sections, so
 // a thread keeps its section while it's in Focus. The name is `focused` because
 // focus.ts already means "the window you're looking at".
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { matchLanes, type LaneSections } from "./lanes.ts";
 import { listLiveThreads } from "./thread-list.ts";
 
@@ -14,7 +14,7 @@ const DISMISSED_KEY = "dueDismissed";
 export type Due = { at: number; reason: string | null; source: "agent" | "you"; setAt: number };
 
 type Store = {
-  storage: { kv: Pick<BbPluginApi["storage"]["kv"], "get" | "set"> };
+  storage: { kv: Pick<AliaPluginApi["storage"]["kv"], "get" | "set"> };
   sdk: {
     threadSections: { list(): Promise<readonly { id: string; name: string }[]> };
     threads: Parameters<typeof listLiveThreads<{ id: string }>>[0]["sdk"]["threads"];
@@ -22,8 +22,8 @@ type Store = {
   events: { on(event: "thread.archived" | "thread.deleted", listener: (payload: { thread: { id: string } }) => unknown): unknown };
 };
 
-export function createNowStore(bb: Store, changed: () => void) {
-  const kv = bb.storage.kv;
+export function createNowStore(alia: Store, changed: () => void) {
+  const kv = alia.storage.kv;
   // One queue, so a write never replaces another with a stale copy.
   let lock: Promise<unknown> = Promise.resolve();
   const queued = <T>(work: () => Promise<T>): Promise<T> => {
@@ -40,11 +40,11 @@ export function createNowStore(bb: Store, changed: () => void) {
    */
   const seeded = async () => {
     if ((await kv.get<boolean>(SEEDED_KEY)) === true) return;
-    const sections = await bb.sdk.threadSections.list();
+    const sections = await alia.sdk.threadSections.list();
     const pinned = (await kv.get<LaneSections>("laneSections")) ?? {};
     const priority = matchLanes(sections, pinned).priority;
     if (priority !== undefined) {
-      const threads = await listLiveThreads(bb, { sectionId: priority });
+      const threads = await listLiveThreads(alia, { sectionId: priority });
       if (threads.length > 0) {
         const all = await read();
         const at = Date.now();
@@ -131,8 +131,8 @@ export function createNowStore(bb: Store, changed: () => void) {
   };
 
   const forget = ({ thread }: { thread: { id: string } }) => prune((threadId) => threadId !== thread.id);
-  bb.events.on("thread.archived", forget);
-  bb.events.on("thread.deleted", forget);
+  alia.events.on("thread.archived", forget);
+  alia.events.on("thread.deleted", forget);
 
   return { all, set, prune, dueAll, setDue };
 }

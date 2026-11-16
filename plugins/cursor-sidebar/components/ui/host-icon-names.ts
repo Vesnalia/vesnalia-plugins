@@ -1,5 +1,5 @@
 /**
- * BB 0.48.1 shared built-in icon names. Only these names go through the host
+ * VesnALIA 0.48.1 shared built-in icon names. Only these names go through the host
  * `experimental_Icon`; everything else keeps this plugin's own artwork.
  */
 export const HOST_ICON_NAMES: ReadonlySet<string> = new Set([

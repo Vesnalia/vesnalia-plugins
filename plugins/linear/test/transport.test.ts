@@ -250,7 +250,7 @@ describe("single flight", () => {
   });
 
   it("lets a person's click jump ahead of queued background work", async () => {
-    // Found live: `bb linear doctor` timed out against the bb CLI's own
+    // Found live: `alia linear doctor` timed out against the VesnALIA CLI's own
     // two-second budget because its request had queued behind the first
     // backfill. Everything looked healthy; the command just never answered.
     const order: string[] = [];

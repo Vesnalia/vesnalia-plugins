@@ -1,4 +1,4 @@
-// The move from BB's settings into bb-box's configuration document (029),
+// The move from VesnALIA's settings into alia-box's configuration document (029),
 // once, on the first start of the version that brings the document and
 // before any backend is built.
 //
@@ -6,13 +6,13 @@
 // finishes the move on the next:
 //
 // 1. the secrets, under their own key;
-// 2. a copy of the non-secret values BB's settings gave, with the time and
-//    bb-box's version, so a value that moved wrongly can be compared;
-// 3. the document at revision 1. From here on BB's settings drive nothing;
-// 4. BB's settings cleared, so no second copy of a secret is left;
-// 5. a mark that they are cleared. bb-box declares the old keys until then.
+// 2. a copy of the non-secret values VesnALIA's settings gave, with the time and
+//    alia-box's version, so a value that moved wrongly can be compared;
+// 3. the document at revision 1. From here on VesnALIA's settings drive nothing;
+// 4. VesnALIA's settings cleared, so no second copy of a secret is left;
+// 5. a mark that they are cleared. alia-box declares the old keys until then.
 
-import type { PluginSettingDescriptor } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptor } from "@vesnalia/plugin-sdk";
 import { isSecret, type BackendDriver } from "../backends/types.ts";
 import { GENERAL_SETTINGS } from "./config.ts";
 import { MAX_WARM, SCHEMA, checkDocument, knownKinds, type BackendConfig, type ConfigDocument, type KindConfig, type Secrets } from "./document.ts";
@@ -21,17 +21,17 @@ import { PRODUCT } from "../brand.ts";
 
 export const DOCUMENT_KEY = "config/document";
 export const SECRETS_KEY = "config/secrets";
-export const COPY_KEY = "config/migrated-from-bb-settings";
-export const CLEARED_KEY = "config/bb-settings-cleared";
+export const COPY_KEY = "config/migrated-from-alia-settings";
+export const CLEARED_KEY = "config/alia-settings-cleared";
 /** Set once 028 moved the Proxmox LXC sizes into the box-sizes setting. */
 export const SIZES_ADOPTED_KEY = "sizes-adopted";
 
-/** What BB's settings held when they moved, without the secrets. */
+/** What VesnALIA's settings held when they moved, without the secrets. */
 export interface MovedCopy {
   readonly at: number;
-  /** bb-box's version that made the move. */
+  /** alia-box's version that made the move. */
   readonly version: string;
-  /** Each setting BB gave, its declared default included. A secret shows only whether it was set. */
+  /** Each setting VesnALIA gave, its declared default included. A secret shows only whether it was set. */
   readonly values: Readonly<Record<string, unknown>>;
   /** Anything the move did not carry over as it was, in words. */
   readonly notes: readonly string[];
@@ -43,7 +43,7 @@ export interface Kv {
   delete(key: string): Promise<void>;
 }
 
-/** Every key bb-box declared in BB's settings before the document, general and backends. */
+/** Every key alia-box declared in VesnALIA's settings before the document, general and backends. */
 export function earlierSettings(drivers: readonly BackendDriver<any>[]): Record<string, PluginSettingDescriptor> {
   const settings: Record<string, PluginSettingDescriptor> = { ...GENERAL_SETTINGS };
   for (const driver of drivers) {
@@ -57,7 +57,7 @@ export function earlierSettings(drivers: readonly BackendDriver<any>[]): Record<
 }
 
 /**
- * The document and secrets BB's settings make. `sizesAdopted` says whether
+ * The document and secrets VesnALIA's settings make. `sizesAdopted` says whether
  * 028's version already moved the Proxmox LXC sizes into box-sizes; if not,
  * the move does it first, so those keys are read once and only once.
  */
@@ -119,7 +119,7 @@ export function fromSettings(
     if (Object.keys(earlier.secrets).length) secrets[driver.type] = { ...earlier.secrets };
   }
   const document: ConfigDocument = { schema: SCHEMA, revision: 1, backends, kinds, general };
-  // The move copies values as they were; what bb-box would refuse on a save is noted too.
+  // The move copies values as they were; what alia-box would refuse on a save is noted too.
   for (const problem of checkDocument(document, secrets, drivers)) notes.push(`${problem.path}: ${problem.message}`);
   return { document, secrets, notes };
 }
@@ -138,7 +138,7 @@ export function copyOf(values: Readonly<Record<string, unknown>>, settings: Read
 export interface MoveOptions {
   readonly kv: Kv;
   readonly drivers: readonly BackendDriver<any>[];
-  /** BB's settings as the handle gives them, declared defaults included. */
+  /** VesnALIA's settings as the handle gives them, declared defaults included. */
   readonly values: Readonly<Record<string, unknown>>;
   readonly settings: Readonly<Record<string, PluginSettingDescriptor>>;
   readonly version: string;
@@ -156,7 +156,7 @@ export async function moveSettings(options: MoveOptions): Promise<{ document: Co
   return { document, notes };
 }
 
-/** Steps 4 and 5: clears every old key in BB's settings, then marks them cleared. */
+/** Steps 4 and 5: clears every old key in VesnALIA's settings, then marks them cleared. */
 export async function clearSettings(
   kv: Kv,
   handle: { experimental_set(values: Record<string, null>): Promise<unknown> },

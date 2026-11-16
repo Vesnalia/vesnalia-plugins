@@ -5,7 +5,7 @@
  * there counts as cut unless a test supplies an observer and the sizes it should read.
  */
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { toast } from "sonner";
 import { afterEach, describe, expect, it, vi } from "vitest";
 

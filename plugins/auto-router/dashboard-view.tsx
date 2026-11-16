@@ -311,7 +311,7 @@ export function ConnectionSetup({
       <div className="ar-connect-copy">
         <div className="ar-eyebrow">Classifier connection</div>
         <h2 id="ar-setup-title">
-          {mode === "jev" ? "Connect Jev" : "Use a model already in BB"}
+          {mode === "jev" ? "Connect Jev" : "Use a model already in VesnALIA"}
         </h2>
         <p>
           A classifier is the model that chooses how your task runs. It selects
@@ -335,13 +335,13 @@ export function ConnectionSetup({
           </>
         ) : (
           <>
-            <p>Use models already connected to BB. No additional API key.</p>
+            <p>Use models already connected to VesnALIA. No additional API key.</p>
             <div className="ar-privacy-note">
               <h3>Your existing connection</h3>
               <p>
-                This list comes from the same provider catalog that BB uses. The
+                This list comes from the same provider catalog that VesnALIA uses. The
                 selected provider receives task text and routing criteria
-                through your existing BB sign-in.
+                through your existing VesnALIA sign-in.
               </p>
               <p>
                 Your subscription limits and provider usage rules still apply.
@@ -378,7 +378,7 @@ export function ConnectionSetup({
           {(
             [
               ["jev", "Jev"],
-              ["native", "Model in BB"],
+              ["native", "Model in VesnALIA"],
             ] as const
           ).map(([value, label]) => (
             <button
@@ -444,7 +444,7 @@ export function ConnectionSetup({
               {loading ? "Refreshing models…" : "Refresh models"}
             </button>
           </div>
-          {loading && <p role="status">Loading models from BB…</p>}
+          {loading && <p role="status">Loading models from VesnALIA…</p>}
           {error && (
             <div className="ar-form-error" role="alert">
               <p>{error}</p>
@@ -470,7 +470,7 @@ export function ConnectionSetup({
             }}
           >
             <option value="" disabled>
-              Select a model from BB
+              Select a model from VesnALIA
             </option>
             {providers.map((providerId) => (
               <optgroup
@@ -496,8 +496,8 @@ export function ConnectionSetup({
           </p>
           {!loading && !error && models.length === 0 && (
             <div className="ar-model-empty" role="status">
-              <p>No models are available from BB on this host.</p>
-              <p>Connect an agent provider in BB, then refresh this list.</p>
+              <p>No models are available from VesnALIA on this host.</p>
+              <p>Connect an agent provider in VesnALIA, then refresh this list.</p>
             </div>
           )}
           {warnings.map((warning) => (
@@ -563,12 +563,12 @@ export function PilotGuide() {
         <summary>Start your first task</summary>
         <div>
           <p>
-            Connect an agent provider in BB. Open Connection and choose a model
-            from the BB catalog. The test uses your existing sign-in before BB
+            Connect an agent provider in VesnALIA. Open Connection and choose a model
+            from the VesnALIA catalog. The test uses your existing sign-in before VesnALIA
             saves the selection.
           </p>
           <p>
-            Sign in to the agent providers that you want to use in BB. Select
+            Sign in to the agent providers that you want to use in VesnALIA. Select
             Model Pilot in the thread model picker, then describe your task
             normally.
           </p>
@@ -601,7 +601,7 @@ export function PilotGuide() {
         <summary>Choose a classifier</summary>
         <div>
           <p>
-            Choose an available model from your connected BB providers. A fast
+            Choose an available model from your connected VesnALIA providers. A fast
             model can make routing decisions with less delay and plan usage.
           </p>
           <p>
@@ -641,7 +641,7 @@ export function PilotGuide() {
         <summary>Connections, privacy, and usage</summary>
         <div>
           <p>
-            Model Pilot uses the agent connections that you manage in BB. You do
+            Model Pilot uses the agent connections that you manage in VesnALIA. You do
             not enter another API key on this page.
           </p>
           <p>
@@ -656,7 +656,7 @@ export function PilotGuide() {
           </p>
           <p>
             Jev is the default classifier and uses its own API key and billing.
-            You can choose a model already in BB instead. A new connection
+            You can choose a model already in VesnALIA instead. A new connection
             passes a connection test before it replaces the current one.
           </p>
         </div>
@@ -671,12 +671,12 @@ export function PilotGuide() {
           </p>
           <p>
             If a connection test fails, the current saved connection stays
-            active. Make sure that your BB sign-in, provider limits, and network
+            active. Make sure that your VesnALIA sign-in, provider limits, and network
             connection work, then refresh the model list and try again.
           </p>
           <p>
-            The current native-agent bridge targets BB 0.46 on macOS. Other
-            platforms and BB versions need compatibility testing before public
+            The current native-agent bridge targets VesnALIA 0.46 on macOS. Other
+            platforms and VesnALIA versions need compatibility testing before public
             release.
           </p>
         </div>
@@ -848,10 +848,10 @@ export function DashboardView({
                   <h2 id="ar-connected-title">Classifier configured</h2>
                   <p>
                     {setup.provider === "native"
-                      ? "The saved model uses your existing BB sign-in. Test the connection to make sure that it can answer now."
+                      ? "The saved model uses your existing VesnALIA sign-in. Test the connection to make sure that it can answer now."
                       : setup.provider === "jev"
                         ? "Jev classifies your tasks with its saved API key. Test the connection to make sure that it can answer now."
-                        : "An earlier API connection is active. Choose Jev or a BB model to replace it."}
+                        : "An earlier API connection is active. Choose Jev or a VesnALIA model to replace it."}
                   </p>
                   <dl className="ar-data-list">
                     <div>
@@ -883,7 +883,7 @@ export function DashboardView({
                       <dt>Connection</dt>
                       <dd>
                         {setup.provider === "native"
-                          ? "Existing BB sign-in"
+                          ? "Existing VesnALIA sign-in"
                           : setup.provider !== "jev"
                             ? "Earlier API connection"
                             : setup.source === "setting"
@@ -922,7 +922,7 @@ export function DashboardView({
               <section className="ar-section ar-next-step">
                 <h2>Use Model Pilot in a thread</h2>
                 <p>
-                  Keep your Codex and Claude Code sign-ins in BB. Select Model
+                  Keep your Codex and Claude Code sign-ins in VesnALIA. Select Model
                   Pilot in the model picker and send your task.
                 </p>
                 <button

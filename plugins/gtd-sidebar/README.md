@@ -9,7 +9,7 @@
 
 **A thread list organized by who can act next.**
 
-![bb 0.40+](https://img.shields.io/badge/bb-0.40%2B-88C0D0?style=flat-square)
+![VesnALIA 0.40+](https://img.shields.io/badge/bb-0.40%2B-88C0D0?style=flat-square)
 ![any platform](https://img.shields.io/badge/platform-any-3FA266?style=flat-square)
 ![experimental slot](https://img.shields.io/badge/uses-experimental%20SDK%20slot-F1B467?style=flat-square)
 
@@ -19,14 +19,14 @@
 <picture><img src="docs/media/hero.png" alt="The GTD Sidebar inbox beside its shelf model: Next Action, Waiting, Snoozed, and Settled" width="100%" /></picture>
 </div>
 
-GTD Sidebar replaces the scrolling thread list in bb's left sidebar with an inbox.
+GTD Sidebar replaces the scrolling thread list in VesnALIA's left sidebar with an inbox.
 
 Active threads split into **Next Action** when the user can act and **Waiting** while
 the agent works. Each section is oldest first. A thread that enters a section goes
 to its bottom and holds that place until its next handoff.
 
 While the sidebar stays mounted, this is exact entrance order. After an app reload,
-bb does not provide historical section-entry times, so existing rows seed oldest
+VesnALIA does not provide historical section-entry times, so existing rows seed oldest
 first from their last update time.
 
 You clear the list with two email verbs: **snooze** a thread until a wake time, or
@@ -37,12 +37,12 @@ You clear the list with two email verbs: **snooze** a thread until a wake time, 
 **From the marketplace** — add this repository once, then install by name:
 
 ```sh
-bb marketplace add git:github.com/smsunarto/bb-plugins
-bb plugin install gtd-sidebar
+alia marketplace add git:github.com/smsunarto/bb-plugins
+alia plugin install gtd-sidebar
 ```
 
-bb resolves the newest `gtd-sidebar/vX.Y.Z` tag and builds the plugin from it against
-your bb, so the bundle always matches the host it runs on. `bb plugin update
+VesnALIA resolves the newest `gtd-sidebar/vX.Y.Z` tag and builds the plugin from it against
+your VesnALIA, so the bundle always matches the host it runs on. `alia plugin update
 gtd-sidebar` follows the same release line. If another marketplace you have added
 publishes a `gtd-sidebar`, spell it `gtd-sidebar@smsunarto`.
 
@@ -51,19 +51,19 @@ source. This is also how you install a change that is not released yet:
 
 ```sh
 git clone https://github.com/smsunarto/bb-plugins.git
-cd bb-plugins
+cd alia-plugins
 bun install
-bun run --filter '@smsunarto/bb-plugin-gtd-sidebar' build
-bb plugin install ./plugins/gtd-sidebar
+bun run --filter '@smsunarto/alia-plugin-gtd-sidebar' build
+alia plugin install ./plugins/gtd-sidebar
 ```
 
-The source path needs Bun and the `bb` CLI. It installs the plugin as a **local
-path source**, so bb reads the files in place: edit, rebuild, reload, with no
+The source path needs Bun and the `alia` CLI. It installs the plugin as a **local
+path source**, so VesnALIA reads the files in place: edit, rebuild, reload, with no
 reinstall.
 
 ## Requirements
 
-- bb 0.40+
+- VesnALIA 0.40+
 - Nothing else. No accounts, keys, or external services.
 
 ## Usage
@@ -71,9 +71,9 @@ reinstall.
 Installing does not change your sidebar by itself. Open **Settings → Appearance →
 Sidebar** and choose **GTD Sidebar (inbox)**.
 
-<picture><img src="docs/media/enable.png" alt="bb's Appearance settings with GTD Sidebar (inbox) chosen for Sidebar" width="100%" /></picture>
+<picture><img src="docs/media/enable.png" alt="VesnALIA's Appearance settings with GTD Sidebar (inbox) chosen for Sidebar" width="100%" /></picture>
 
-bb's own list stays the default, and comes back the moment you switch away or
+VesnALIA's own list stays the default, and comes back the moment you switch away or
 disable the plugin.
 
 ### Active and parked sections
@@ -82,7 +82,7 @@ disable the plugin.
 - **Next Action** — the agent turn is done, an interaction needs input, or the thread is otherwise quiet. The oldest handoff is first.
 - **Waiting** — foreground or background agent work is live. The oldest wait is first.
 - **Snoozed** — hidden until the wake time you chose. A snoozed thread comes back early if it starts working or asks you something.
-- **Settled** — work you are done with, collapsed to one line and shown for 24 hours. Settling also **archives the thread in bb**, so every other surface agrees, and new attention un-settles and unarchives it. After a day the row stops being drawn but stays archived.
+- **Settled** — work you are done with, collapsed to one line and shown for 24 hours. Settling also **archives the thread in VesnALIA**, so every other surface agrees, and new attention un-settles and unarchives it. After a day the row stops being drawn but stays archived.
 
 An empty section disappears. A pending interaction stays in **Next Action** even if
 background work is also live, because the user can act now.
@@ -118,7 +118,7 @@ a child, a chip that names the parent and opens it.
 - A project scope picker — the one control the plugin adds.
 - Right-click for open in split, mark read/unread, pin, archive, delete.
 - Drag a card to a split pane, or Cmd/Ctrl-click to open one.
-- bb's search, its thread shortcuts, and modifier-click split-open all keep working.
+- VesnALIA's search, its thread shortcuts, and modifier-click split-open all keep working.
 
 ## Configuration
 
@@ -138,35 +138,35 @@ these are settings.
 Appearance → Sidebar. Installing alone changes nothing.
 
 **A thread I settled is not on the Settled shelf.** The shelf only reaches back 24
-hours. Older work is still settled and still archived — look for it in bb's archived
+hours. Older work is still settled and still archived — look for it in VesnALIA's archived
 view.
 
 **A snoozed thread came back early.** That is the design: a snoozed thread wakes when
 it starts working or asks you a question.
 
 **Un-settling did not bring the thread back.** Archive and unarchive run on the
-thread's host, which can be offline. When an unarchive fails, bb keeps the thread
-archived and the thread leaves the sidebar until you unarchive it in bb yourself.
+thread's host, which can be offline. When an unarchive fails, VesnALIA keeps the thread
+archived and the thread leaves the sidebar until you unarchive it in VesnALIA yourself.
 
 **Uninstalling left data behind.** The shelves live in the plugin's own database,
-which bb removes with the plugin — but a copy of them is cached in the browser's
+which VesnALIA removes with the plugin — but a copy of them is cached in the browser's
 `localStorage` under `gtd-sidebar:v1:*` (thread ids, park timestamps, and provider ids,
-names, and logo paths). bb's uninstall does not clear web storage. Clear site data if
+names, and logo paths). VesnALIA's uninstall does not clear web storage. Clear site data if
 that matters to you.
 
 ## Credits
 
-Forked from bb's own example, and released as `t3sidebar` until 0.3.0. bb keys a
+Forked from VesnALIA's own example, and released as `t3sidebar` until 0.3.0. VesnALIA keys a
 plugin by its id, so the renamed plugin installs as a separate one: install
 `gtd-sidebar`, then uninstall `t3sidebar`. Shelves do not carry over — settled and
 snoozed state lives in the old plugin's database and goes with it.
 
 |          |                                                                                                                 |
 | -------- | --------------------------------------------------------------------------------------------------------------- |
-| Upstream | [`get-bb/bb` → `examples/plugins/t3sidebar`](https://github.com/get-bb/bb/tree/main/examples/plugins/t3sidebar) |
+| Upstream | [`get-alia/alia` → `examples/plugins/t3sidebar`](https://github.com/get-bb/bb/tree/main/examples/plugins/t3sidebar) |
 | Commit   | `f13c2d35f96540012b305f3b555839b30e1b6163` (2026-08-07)                                                         |
 
-The provider brand marks are vendored SVG geometry from `get-bb/bb` and depict
+The provider brand marks are vendored SVG geometry from `get-alia/alia` and depict
 third-party brands. A host-served logo always wins over them, rendered as a muted
 silhouette rather than in brand color — by design.
 
@@ -176,8 +176,8 @@ Install from source as shown under [Install](#install), then check a change
 with:
 
 ```sh
-bun run --filter '@smsunarto/bb-plugin-gtd-sidebar' typecheck
-bun run --filter '@smsunarto/bb-plugin-gtd-sidebar' test
+bun run --filter '@smsunarto/alia-plugin-gtd-sidebar' typecheck
+bun run --filter '@smsunarto/alia-plugin-gtd-sidebar' test
 ```
 
 The test script needs Node 22.6+.

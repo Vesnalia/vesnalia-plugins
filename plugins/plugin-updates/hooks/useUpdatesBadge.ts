@@ -1,7 +1,7 @@
-import type { ExperimentalBadge } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalBadge } from "@vesnalia/plugin-sdk/app";
 import { useUpdates } from "@/hooks/useUpdates";
 
-/** The nav badge: how many plugins have updates. bb formats the count (`9+`, `99+`). */
+/** The nav badge: how many plugins have updates. VesnALIA formats the count (`9+`, `99+`). */
 export function useUpdatesBadge(): ExperimentalBadge | null {
   const { snapshot } = useUpdates();
   const count = snapshot?.report.badgeCount ?? 0;

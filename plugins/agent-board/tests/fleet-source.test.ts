@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import {
   FleetSource,
   fleetWireSchema,
@@ -22,7 +22,7 @@ function source(load: () => Promise<unknown>, now: () => number = Date.now) {
     pluginId: "agent-board",
     sdk: { plugins: { callRpc: call } },
   });
-  return { s: new FleetSource(h.bb, now), call };
+  return { s: new FleetSource(h.alia, now), call };
 }
 describe("optional Fleet wire source", () => {
   it.each(["missing", "disabled", "unknown_method", "RPC failure"])(
@@ -241,7 +241,7 @@ describe("linking and logical grouping", () => {
   it("two parents remain two executions", () => {
     const g2 = {
       ...group(parent({ threadId: "other", key: "thread:other" })),
-      key: "bb:other",
+      key: "alia:other",
       threadId: "other",
     };
     const groups = addFleetGroups(
@@ -339,7 +339,7 @@ describe("Fleet lifecycle timeline", () => {
         finishedAt: new Date(NOW).toISOString(),
         durationMs: 10000,
       });
-      const events = fleetTimelineEvents([j], "bb:parent");
+      const events = fleetTimelineEvents([j], "alia:parent");
       expect(events.map((e) => e.kind)).toEqual([
         "delegation",
         "child-start",
@@ -366,7 +366,7 @@ describe("Fleet lifecycle timeline", () => {
     expect(
       fleetTimelineEvents(
         [job({ state: "routing", actualModel: null, server: null })],
-        "bb:p",
+        "alia:p",
       ).some((e) => e.kind === "model-selected"),
     ).toBe(false));
   it("orders multiple jobs chronologically", () => {
@@ -375,7 +375,7 @@ describe("Fleet lifecycle timeline", () => {
         job(),
         job({ jobId: "b", startedAt: new Date(NOW - 20000).toISOString() }),
       ],
-      "bb:p",
+      "alia:p",
     );
     expect(events.map((e) => e.timestamp)).toEqual(
       events.map((e) => e.timestamp).sort((a, b) => a - b),

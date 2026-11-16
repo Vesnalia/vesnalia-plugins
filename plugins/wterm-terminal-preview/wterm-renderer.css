@@ -21,7 +21,7 @@
  box-shadow: none !important;
 }
 
-/* Keep terminal spans character-selectable even inside BB surfaces that
+/* Keep terminal spans character-selectable even inside ALIA surfaces that
  * disable selection. Mouse-tracking TUIs still prevent native gestures. */
 .wterm-renderer .term-row,
 .wterm-renderer .term-row > span,

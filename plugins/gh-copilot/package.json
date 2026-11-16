@@ -1,31 +1,23 @@
 {
-  "name": "bb-plugin-gh-copilot",
+  "name": "alia-plugin-gh-copilot",
   "version": "1.0.0",
-  "description": "Adds GitHub Copilot CLI to bb as an ACP coding-agent provider.",
+  "description": "Adds GitHub Copilot CLI to VesnALIA as an ACP coding-agent provider.",
   "license": "MIT",
   "type": "module",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "acp",
     "coding-agent",
     "copilot"
   ],
-  "homepage": "https://github.com/ai-ecoverse/bb-gh-copilot#readme",
-  "bugs": {
-    "url": "https://github.com/ai-ecoverse/bb-gh-copilot/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ai-ecoverse/bb-gh-copilot.git"
-  },
   "engines": {
-    "bb": ">=0.40",
-    "bbPluginSdk": ">=0.4.94"
+    "alia": ">=0.40",
+    "aliaPluginSdk": ">=0.4.94"
   },
-  "bb": {
+  "alia": {
     "name": "GitHub Copilot",
-    "description": "Adds GitHub Copilot CLI to bb as an ACP coding-agent provider.",
+    "description": "Adds GitHub Copilot CLI to VesnALIA as an ACP coding-agent provider.",
     "branding": {
       "icon": "./assets/logo.svg"
     },
@@ -35,7 +27,7 @@
   },
   "scripts": {
     "prepare": "slicc-install-hooks",
-    "build": "bb plugin build .",
+    "build": "alia plugin build .",
     "test": "node --test 'test/integration/*.test.mjs'",
     "test:unit": "NODE_NO_WARNINGS=1 mcr -c node_modules/@ai-ecoverse/slicc-shared-web/mcr.config.mjs node --test 'test/unit/**/*.test.mjs'",
     "typecheck": "tsc",
@@ -49,7 +41,6 @@
   "devDependencies": {
     "@ai-ecoverse/slicc-shared-web": "2.14.2",
     "@biomejs/biome": "2.6.7",
-    "@get-bb/plugin-sdk": "0.6.140",
     "@pierre/diffs": "1.6.4",
     "@radix-ui/react-alert-dialog": "1.2.1",
     "@radix-ui/react-context-menu": "2.4.1",
@@ -76,5 +67,22 @@
     "tailwind-merge": "3.7.0",
     "typescript": "7.0.2",
     "vaul": "1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.140"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/gh-copilot#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/gh-copilot"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

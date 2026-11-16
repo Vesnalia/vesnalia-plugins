@@ -12,7 +12,7 @@
 import Database from "better-sqlite3";
 import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createHostEntry } from "../host";
@@ -84,7 +84,7 @@ function setup(
     dropStartReply: false,
     /** When set, the start reply waits for it. */
     holdStartReply: null as Promise<void> | null,
-    /** When set, a start call gives up after this long, as bb's timeout would. */
+    /** When set, a start call gives up after this long, as VesnALIA's timeout would. */
     startTimeoutMs: null as number | null,
   };
   const calls: string[] = [];

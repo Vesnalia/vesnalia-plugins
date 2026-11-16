@@ -1,7 +1,7 @@
 import { DEFAULT_KIND, isKind, type Kind } from "./kinds";
 
 export const TITLE_MAX = 120;
-// Room for a page or a view block, which the Flares tab draws as bb draws a reply.
+// Room for a page or a view block, which the Flares tab draws as VesnALIA draws a reply.
 export const BODY_MAX = 60_000;
 
 export interface FlareDraft {

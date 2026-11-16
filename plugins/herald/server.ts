@@ -2,13 +2,13 @@
  * Herald's server: thread events become "needs you" entries, each with one
  * plain sentence, and the app speaks it.
  *
- * Every decision lives in `server/`; this file only wires it to bb. The ports
- * over `bb.sdk` are built on first use, from a handler — never in the factory
+ * Every decision lives in `server/`; this file only wires it to VesnALIA. The ports
+ * over `alia.sdk` are built on first use, from a handler — never in the factory
  * body. Herald starts no threads of its own. See AGENTS.md.
  */
 import { randomUUID } from "node:crypto";
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import { rpcContract } from "./shared/contract";
 import {
@@ -22,7 +22,7 @@ import {
 } from "./shared/herald";
 import { customCommandSeed, sentenceSettingsOf, SETTINGS } from "./shared/settings";
 import { CHOICES_CHANNEL } from "./shared/thread-choice";
-import { bbEvents, bbLiveness, bbNames, bbThreadChoices } from "./server/bb-ports";
+import { aliaEvents, aliaLiveness, aliaNames, aliaThreadChoices } from "./server/alia-ports";
 import { SentenceHistory } from "./server/history";
 import { createHooks, type HeraldConfig } from "./server/hooks";
 import { kvBackend } from "./server/kv-backend";
@@ -47,18 +47,18 @@ const CONFIG_KEY = "config";
  */
 export const ABANDONED_AFTER_MS = 60_000;
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define(SETTINGS);
-  const store = new AttentionStore(kvBackend(bb.storage.kv), bb.log);
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define(SETTINGS);
+  const store = new AttentionStore(kvBackend(alia.storage.kv), alia.log);
   // Read before any handler is registered. The store merges anyway, so an
   // event that ever arrived mid-read would not be lost under an older entry.
   await store.load().catch((error: unknown) => {
-    bb.log.error(`Could not load saved entries: ${error instanceof Error ? error.message : String(error)}`);
+    alia.log.error(`Could not load saved entries: ${error instanceof Error ? error.message : String(error)}`);
   });
   // A sentence an earlier instance was still writing is not coming: its tool
   // died with it. Such an entry is dropped, never promoted — but only once
   // that instance has had its last word. On a reload that is its drain signal
-  // (bb loads this instance before disposing the old one, which may still
+  // (VesnALIA loads this instance before disposing the old one, which may still
   // withdraw or land the entry meanwhile); on a cold start no signal ever
   // comes, so a timer stands in for it. This instance's own runs are left alone.
   const instance = randomUUID();
@@ -66,7 +66,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (store.dropPending(hooks.inFlightEventIds())) publish();
   };
   const abandonedTimer = setTimeout(dropAbandoned, ABANDONED_AFTER_MS);
-  const stopListening = onOtherDrained(bb.pluginId, instance, () => {
+  const stopListening = onOtherDrained(alia.pluginId, instance, () => {
     store
       .reconcile()
       .then(() => {
@@ -77,30 +77,30 @@ export default async function plugin(bb: BbPluginApi) {
         publish();
       })
       .catch((error: unknown) => {
-        bb.log.error(`Could not re-read saved entries after a reload: ${error instanceof Error ? error.message : String(error)}`);
+        alia.log.error(`Could not re-read saved entries after a reload: ${error instanceof Error ? error.message : String(error)}`);
       });
   });
 
-  const writer = new SentenceWriter(bb.log);
-  const history = new SentenceHistory(bb.storage.kv, bb.log);
+  const writer = new SentenceWriter(alia.log);
+  const history = new SentenceHistory(alia.storage.kv, alia.log);
 
   let events: EventsPort | null = null;
   let liveness: Liveness | null = null;
   let names: NamesPort | null = null;
   let choices: ThreadChoices | null = null;
-  const eventsPort = () => (events ??= bbEvents(bb.sdk, bb.log));
+  const eventsPort = () => (events ??= aliaEvents(alia.sdk, alia.log));
   /** Saves are chained: two partial writes at once must both land. */
   let configWrites: Promise<unknown> = Promise.resolve();
-  const livenessOf = () => (liveness ??= new Liveness(bbLiveness(bb.sdk), bb.log));
-  const namesPort = () => (names ??= bbNames(bb.sdk));
-  const choicesOf = () => (choices ??= new ThreadChoices(bbThreadChoices(bb.sdk)));
+  const livenessOf = () => (liveness ??= new Liveness(aliaLiveness(alia.sdk), alia.log));
+  const namesPort = () => (names ??= aliaNames(alia.sdk));
+  const choicesOf = () => (choices ??= new ThreadChoices(aliaThreadChoices(alia.sdk)));
 
   function publishOn(channel: string, what: string): void {
     try {
-      bb.realtime.publish(channel, { at: Date.now() });
+      alia.realtime.publish(channel, { at: Date.now() });
     } catch (error) {
       // After an unload the handle is stale; the clients re-read on reconnect anyway.
-      bb.log.warn(`Could not tell the app ${what} changed: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`Could not tell the app ${what} changed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -110,7 +110,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   /** The stored configuration, each part falling back to its default when unreadable. */
   async function storedConfig(): Promise<StoredConfig> {
-    const raw = await bb.storage.kv.get<Partial<StoredConfig>>(CONFIG_KEY);
+    const raw = await alia.storage.kv.get<Partial<StoredConfig>>(CONFIG_KEY);
     const voices = VoicesConfigSchema.safeParse(raw?.voices);
     const tool = SentenceToolSchema.safeParse(raw?.sentenceTool);
     const limit = RecentHistoryLimitSchema.safeParse(raw?.recentHistoryLimit);
@@ -142,7 +142,7 @@ export default async function plugin(bb: BbPluginApi) {
   const hooks = createHooks({
     store,
     readConfig,
-    // A getter, so bb.sdk is reached when an event needs it, not here.
+    // A getter, so alia.sdk is reached when an event needs it, not here.
     events: {
       context: (thread, options) => eventsPort().context(thread, options),
       interruptedRecently: (threadId, withinMs) => eventsPort().interruptedRecently(threadId, withinMs),
@@ -151,18 +151,18 @@ export default async function plugin(bb: BbPluginApi) {
     // Read per event, so a choice made in the thread menu applies to the next one.
     choiceOf: (thread) => choicesOf().inputsOf(thread.id),
     publish,
-    // The tool runs here, on the bb server's machine; see AGENTS.md.
+    // The tool runs here, on the VesnALIA server's machine; see AGENTS.md.
     writeSentence: (command, prompt) => writer.write(command, prompt),
     remember: (threadId, item) => history.append(threadId, item),
-    log: bb.log,
+    log: alia.log,
   });
 
-  bb.events.on("thread.active", ({ thread }) => hooks.active(thread));
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) => hooks.idle(thread, lastAssistantText));
-  bb.events.on("thread.failed", ({ thread, error }) => hooks.failed(thread, error));
-  bb.events.on("interaction.pending", ({ thread, interaction }) => hooks.interactionPending(thread, interaction));
-  bb.events.on("thread.archived", ({ thread }) => hooks.gone(thread));
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.active", ({ thread }) => hooks.active(thread));
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) => hooks.idle(thread, lastAssistantText));
+  alia.events.on("thread.failed", ({ thread, error }) => hooks.failed(thread, error));
+  alia.events.on("interaction.pending", ({ thread, interaction }) => hooks.interactionPending(thread, interaction));
+  alia.events.on("thread.archived", ({ thread }) => hooks.gone(thread));
+  alia.events.on("thread.deleted", ({ thread }) => {
     hooks.gone(thread);
     // Archived threads keep their history; a deleted one is gone for good.
     // An archived thread has no entry left for `gone` to publish about, so
@@ -170,12 +170,12 @@ export default async function plugin(bb: BbPluginApi) {
     void history.remove(thread.id).then(publish);
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     list: async () => ({ entries: await livenessOf().visible(store) }),
     "history.list": ({ threadId }) => history.list(threadId).then((items) => ({ items })),
     "history.recent": async () => {
       const { recentHistoryLimit } = await storedConfig();
-      return { items: await withNames(await history.recent(recentHistoryLimit), namesPort(), bb.log) };
+      return { items: await withNames(await history.recent(recentHistoryLimit), namesPort(), alia.log) };
     },
     "choices.list": async ({ threadIds }) => ({ threads: Object.fromEntries(await choicesOf().inputs(threadIds)) }),
     // A thread's choice also decides its descendants', so every open menu
@@ -206,7 +206,7 @@ export default async function plugin(bb: BbPluginApi) {
         const merged = StoredConfigSchema.parse({ ...current, ...next });
         const seed = customCommandSeed(current, merged);
         const saved = seed === null ? merged : { ...merged, sentenceCommand: seed };
-        await bb.storage.kv.set(CONFIG_KEY, saved);
+        await alia.storage.kv.set(CONFIG_KEY, saved);
         // An open Herald page re-reads its history at the new length.
         if (saved.recentHistoryLimit !== current.recentHistoryLimit) publish();
         return saved;
@@ -216,7 +216,7 @@ export default async function plugin(bb: BbPluginApi) {
       return write;
     },
     log: ({ level, message }) => {
-      bb.log[level](`app: ${message}`);
+      alia.log[level](`app: ${message}`);
       return null;
     },
     // The server's Mac renders speech with `say`; the app plays the bytes. Not
@@ -226,12 +226,12 @@ export default async function plugin(bb: BbPluginApi) {
       return { available, voices: available ? await listSayVoices() : [] };
     },
     "speech.render": async ({ text, voice, rate }) => {
-      if (!(await sayAvailable())) throw new Error("bb does not run on a Mac here, so `say` is not available.");
+      if (!(await sayAvailable())) throw new Error("alia does not run on a Mac here, so `say` is not available.");
       return renderWithSay(text, { voice, rate });
     },
   });
 
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     stopListening();
     clearTimeout(abandonedTimer);
     // Hooks first, so a tool killed next cannot land a sentence; the store
@@ -240,6 +240,6 @@ export default async function plugin(bb: BbPluginApi) {
     await writer.dispose();
     await store.shutdown();
     await history.flush();
-    announceDrained(bb.pluginId, instance);
+    announceDrained(alia.pluginId, instance);
   });
 }

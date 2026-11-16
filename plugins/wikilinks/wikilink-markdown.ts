@@ -1,4 +1,4 @@
-export const WIKILINK_URL_PREFIX = "bb-wikilink:";
+export const WIKILINK_URL_PREFIX = "alia-wikilink:";
 
 function stripAngleBrackets(value: string): string {
   return value.startsWith("<") && value.endsWith(">")

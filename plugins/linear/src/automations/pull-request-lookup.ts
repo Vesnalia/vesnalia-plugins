@@ -4,12 +4,12 @@ import { describeError } from "../linear/errors.js";
 /**
  * Where the pull-request facts come from.
  *
- * bb 0.47 deleted `bb.sdk.environments.pullRequest` and moved GitHub pull
+ * VesnALIA 0.47 deleted `alia.sdk.environments.pullRequest` and moved GitHub pull
  * requests into its bundled GitHub PR Status plugin, which is built in and on
  * by default. Its `pullRequests` RPC is a keyed read with the same three-way
  * union the old method returned, so the runner's decision logic is unchanged.
  */
-export const GITHUB_PR_STATUS_PLUGIN_ID = "bb--github-pr-status";
+export const GITHUB_PR_STATUS_PLUGIN_ID = "alia--github-pr-status";
 
 /** Only the fields this plugin reads. Not `.strict()`: the peer's rows carry
  *  more (checks, review, mergeability), and a new field there must not turn
@@ -36,7 +36,7 @@ export const refreshOutputSchema = z.object({ ok: z.literal(true) });
 
 export type PullRequestLookup = z.infer<typeof environmentPullRequestSchema>;
 
-/** The slice of `bb.sdk.plugins.callRpc` this module uses. */
+/** The slice of `alia.sdk.plugins.callRpc` this module uses. */
 export type GithubPrStatusRpc = <T>(args: {
   pluginId: string;
   method: "pullRequests" | "refresh";

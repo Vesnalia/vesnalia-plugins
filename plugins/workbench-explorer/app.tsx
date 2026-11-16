@@ -1,4 +1,4 @@
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { FileExplorerHeaderAction } from "@/components/FileExplorerHeaderAction";
 import { GlobalFileExplorerRail } from "@/components/GlobalFileExplorerRail";
 import { NewThreadFileExplorerAction } from "@/components/NewThreadFileExplorerAction";
@@ -47,7 +47,7 @@ export default definePluginApp((app) => {
   app.commands.register({
     id: "quick-open",
     title: "Explorer: Go to File…",
-    // ⌘P is BB's own "Quick open file"; ⌘E is VS Code's other Quick Open key on macOS.
+    // ⌘P is VesnALIA's own "Quick open file"; ⌘E is VS Code's other Quick Open key on macOS.
     defaultShortcut: { key: "e", mod: true },
     run: () => setQuickOpen(true),
   });
@@ -62,7 +62,7 @@ export default definePluginApp((app) => {
   app.commands.register({
     id: "toggle-file-explorer",
     title: "Explorer: show or hide",
-    // ⇧⌘E resizes BB's chat pane; ⌘B is VS Code's sidebar toggle.
+    // ⇧⌘E resizes VesnALIA's chat pane; ⌘B is VS Code's sidebar toggle.
     defaultShortcut: { key: "b", mod: true },
     run: toggleRailOpen,
   });

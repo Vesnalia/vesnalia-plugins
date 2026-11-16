@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import { SIDEBAR_VIEW_CHANNEL } from "./channels";
 import type { cursorSidebarRpcContract } from "./server";
 import type { SidebarViewStore } from "./sidebar-view";

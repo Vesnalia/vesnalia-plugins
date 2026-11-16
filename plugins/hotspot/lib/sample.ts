@@ -17,7 +17,7 @@ import {
   type ProcessSource,
   type ProcessTotal,
   attributeThreads,
-  bbTotals,
+  aliaTotals,
   groupByThread,
   readProcesses,
   systemProcessSource,
@@ -210,7 +210,7 @@ export function createSampler(options: SamplerOptions = {}): TakeReading {
       const psCpu =
         measured === null ? null : clampPercent(measured.reduce((sum, row) => sum + row.cpuPercent, 0) / cores);
       const cpu = (enoughTicks ? kernelCpu : (psCpu ?? kernelCpu)) ?? 0;
-      if (measured === null) return { at, thermal, cpu, load, memory, threads: [], procs: [], bb: null };
+      if (measured === null) return { at, thermal, cpu, load, memory, threads: [], procs: [], alia: null };
 
       const attribution = attributeThreads(measured);
       const part = (total: ProcessTotal) => ({
@@ -218,7 +218,7 @@ export function createSampler(options: SamplerOptions = {}): TakeReading {
         memBytes: total.rssBytes,
         processes: total.processes,
       });
-      const { app, threads: inThreads } = bbTotals(measured, attribution);
+      const { app, threads: inThreads } = aliaTotals(measured, attribution);
       const threads = groupByThread(measured, attribution)
         .filter((entry) => entry.cpuPercent > 0)
         .slice(0, STORED_THREADS);
@@ -248,7 +248,7 @@ export function createSampler(options: SamplerOptions = {}): TakeReading {
           name: row.name,
           cpu: round(row.cpuPercent / cores),
         })),
-        bb: {
+        alia: {
           ...part({
             cpuPercent: app.cpuPercent + inThreads.cpuPercent,
             rssBytes: app.rssBytes + inThreads.rssBytes,

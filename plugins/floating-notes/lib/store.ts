@@ -4,7 +4,7 @@
 // all render from this module-level store and mutate through it, so a save
 // made in a sticky is on the nav panel's screen the moment the RPC returns.
 // Module-level state is safe here: the plugin app bundle is instantiated once
-// per bb window, and the server is the source of truth underneath.
+// per VesnALIA window, and the server is the source of truth underneath.
 import {
   rpcContract,
   type ListedNote,
@@ -14,17 +14,17 @@ import {
 import { createRpcClient } from "./rpc";
 
 /**
- * The id bb installed this plugin under, which is NOT a constant: it is
+ * The id VesnALIA installed this plugin under, which is NOT a constant: it is
  * derived from the package name, so renaming the package renames the id and
- * every RPC route with it. `__BB_PLUGIN_ID__` is the esbuild define
- * `bb plugin build` stamps with the real id (see lib/portal-scope.ts); the
+ * every RPC route with it. `__ALIA_PLUGIN_ID__` is the esbuild define
+ * `alia plugin build` stamps with the real id (see lib/portal-scope.ts); the
  * content script also calls `setPluginId` with the id the host hands it, so
  * the two agree even outside that build pipeline.
  */
-declare const __BB_PLUGIN_ID__: string | undefined;
+declare const __ALIA_PLUGIN_ID__: string | undefined;
 
 let pluginId =
-  typeof __BB_PLUGIN_ID__ === "string" ? __BB_PLUGIN_ID__ : "floating-notes";
+  typeof __ALIA_PLUGIN_ID__ === "string" ? __ALIA_PLUGIN_ID__ : "floating-notes";
 let client = createRpcClient<typeof rpcContract>(pluginId);
 
 export function setPluginId(id: string): void {

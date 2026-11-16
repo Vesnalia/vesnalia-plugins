@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { register } from "./rpc-stubs";
 
@@ -18,8 +18,8 @@ const CALLS: Record<string, unknown> = {
 };
 
 test("an RPC method whose build hasn't landed takes its contract's input and says it isn't available yet", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
   for (const [name, handler] of Object.entries(register().handlers)) {
     await expect((handler as () => Promise<unknown>)(), name).rejects.toThrow(/^.+ isn’t available yet\.$/);
     await expect(harness.behavior.callRpc(name, CALLS[name]), name).rejects.toThrow(/isn’t available yet/);

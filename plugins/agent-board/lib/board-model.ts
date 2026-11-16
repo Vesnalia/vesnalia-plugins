@@ -1,4 +1,4 @@
-// bb-plugin-agent-board — pure board helpers shared by the normalizer and UI.
+// alia-plugin-agent-board — pure board helpers shared by the normalizer and UI.
 //
 // No SDK imports here: this module is safe for both bundle sides and is
 // exhaustively unit-tested without any host.
@@ -54,7 +54,7 @@ export const BOARD_LIMITS = {
 /**
  * Reasoning event types, explicitly refused. Agent Board is an execution
  * observability surface: model reasoning text never enters a snapshot even
- * though BB exposes the events publicly.
+ * though VesnALIA exposes the events publicly.
  */
 export const REASONING_EVENT_TYPES: ReadonlySet<string> = new Set([
   "item/reasoning/textDelta",
@@ -153,7 +153,7 @@ export function previewText(text: string | null | undefined, max: number): strin
 
 /**
  * Defense-in-depth redaction for globally aggregated operational messages.
- * BB/adapter data should already be presentation-safe; these narrow patterns
+ * ALIA/adapter data should already be presentation-safe; these narrow patterns
  * prevent common credential assignments and bearer tokens from becoming more
  * widely visible on the global page.
  */

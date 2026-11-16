@@ -1,25 +1,20 @@
 {
-  "name": "bb-plugin-cortado",
+  "name": "alia-plugin-cortado",
   "version": "1.0.0",
-  "description": "Cortado: a bb theme in neutral graphite with warm orange and amber, in light and dark.",
+  "description": "Cortado: a VesnALIA theme in neutral graphite with warm orange and amber, in light and dark.",
   "license": "MIT",
   "author": "Vedran Burojević (https://github.com/vburojevic)",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/vburojevic/bb-plugin-cortado.git"
-  },
-  "homepage": "https://github.com/vburojevic/bb-plugin-cortado#readme",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "theme",
     "dark-theme",
     "light-theme"
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.48",
-    "bbPluginSdk": ">=0.6.104"
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.104"
   },
   "scripts": {
     "build": "node scripts/build-variants.mjs",
@@ -27,7 +22,7 @@
     "typecheck": "tsc --noEmit",
     "images": "npm install --no-save opentype.js@1 @fontsource/inter@5 @fontsource/fira-code@5 && node scripts/render-images.mjs"
   },
-  "bb": {
+  "alia": {
     "name": "Cortado",
     "description": "Neutral graphite with warm orange and amber, in light and dark. Inter and Fira Code.",
     "branding": {
@@ -39,7 +34,7 @@
       {
         "id": "cortado",
         "name": "Cortado",
-        "description": "Follows bb's light or dark mode",
+        "description": "Follows VesnALIA's light or dark mode",
         "css": "./themes/cortado.css",
         "codeTheme": {
           "dark": "./themes/cortado-code.json",
@@ -69,8 +64,24 @@
     ]
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/cortado#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/cortado"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

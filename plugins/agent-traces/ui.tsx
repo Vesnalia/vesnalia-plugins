@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { experimental_useCodeTheme } from "@get-bb/plugin-sdk/app";
+import { experimental_useCodeTheme } from "@vesnalia/plugin-sdk/app";
 import { PHASE_HINTS, PHASE_LABELS, PHASES, type PhaseTotals } from "./breakdown.js";
 import { FAILED_COLOR, PHASE_COLORS } from "./palette.js";
-import { BB_SENDER, formatDuration, type Status } from "./trace.js";
+import { ALIA_SENDER, formatDuration, type Status } from "./trace.js";
 import { share } from "./util.js";
 
 export function useColors() {
@@ -54,12 +54,12 @@ export function PromptText({ prompt, sender }: { prompt: string; sender: string 
         <span
           className="shrink-0 rounded bg-muted px-1 text-[10.5px] text-muted-foreground"
           title={
-            sender === BB_SENDER
-              ? "A notice from bb, such as a spawned thread finishing"
+            sender === ALIA_SENDER
+              ? "A notice from VesnALIA, such as a spawned thread finishing"
               : `Sent by thread ${sender}`
           }
         >
-          {sender === BB_SENDER ? "from bb" : "from thread"}
+          {sender === ALIA_SENDER ? "from VesnALIA" : "from thread"}
         </span>
       ) : null}
       <span className="truncate" title={prompt}>

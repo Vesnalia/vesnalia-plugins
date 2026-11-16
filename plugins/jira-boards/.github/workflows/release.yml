@@ -53,21 +53,21 @@ jobs:
           git tag -f -a "$TAG" -m "Release $TAG"
           git push -f origin "refs/tags/$TAG"
       - name: Package the plugin source
-        run: git archive --format=tar.gz --prefix=bb-jira-boards-${TAG}/ -o bb-jira-boards-${TAG}.tar.gz HEAD
+        run: git archive --format=tar.gz --prefix=alia-jira-boards-${TAG}/ -o alia-jira-boards-${TAG}.tar.gz HEAD
       - name: Publish GitHub release
         run: |
           flags=""
           case "$TAG" in *-*) flags="--prerelease" ;; esac
-          gh release create "$TAG" "bb-jira-boards-${TAG}.tar.gz" --verify-tag --title "$TAG" --notes-file release-notes.md $flags
+          gh release create "$TAG" "alia-jira-boards-${TAG}.tar.gz" --verify-tag --title "$TAG" --notes-file release-notes.md $flags
       - name: Check the marketplace range
         # The marketplace entry tracks tags by semver range; a release outside it
-        # needs a pull request to get-bb/marketplace. This only reports, never fails.
+        # needs a pull request to get-alia/marketplace. This only reports, never fails.
         run: |
           version="${TAG#v}"
           range="$(curl -fsS https://raw.githubusercontent.com/get-bb/marketplace/main/entries/jira-boards.json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).source.git.range))')" || { echo "Could not read the marketplace entry." >> "$GITHUB_STEP_SUMMARY"; exit 0; }
           if npx --yes semver -r "$range" "$version" > /dev/null; then
-            echo "Marketplace range \`$range\` includes $version: users can update with \`bb plugin update jira-boards --yes\`." >> "$GITHUB_STEP_SUMMARY"
+            echo "Marketplace range \`$range\` includes $version: users can update with \`alia plugin update jira-boards --yes\`." >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "::warning::$version is outside the marketplace range $range. Open a PR to get-bb/marketplace changing entries/jira-boards.json."
+            echo "::warning::$version is outside the marketplace range $range. Open a PR to get-alia/marketplace changing entries/jira-boards.json."
             echo "**Marketplace PR needed:** $version is outside \`$range\`. Update \`source.git.range\` in \`entries/jira-boards.json\`." >> "$GITHUB_STEP_SUMMARY"
           fi

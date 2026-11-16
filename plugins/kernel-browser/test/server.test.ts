@@ -1,5 +1,5 @@
-import type { PluginSettingValue } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { PluginSettingValue } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthConnectionSummary } from "../src/types.js";
 
@@ -81,9 +81,9 @@ vi.mock("../src/kernel-auth-client.js", () => ({
 const { default: plugin } = await import("../src/server.js");
 
 async function setup(settings: Record<string, PluginSettingValue> = { apiKey: "test-key" }) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "kernel-browser", settings });
-  await plugin(bb);
-  return { bb, harness };
+  const { alia, harness } = createFakePluginHost({ pluginId: "kernel-browser", settings });
+  await plugin(alia);
+  return { alia, harness };
 }
 
 describe("kernel-browser plugin", () => {

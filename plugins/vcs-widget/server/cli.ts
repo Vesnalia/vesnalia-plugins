@@ -1,4 +1,4 @@
-// The read-only surfaces: the `bb vcs-widget` command and the
+// The read-only surfaces: the `alia vcs-widget` command and the
 // `vcs_widget_status` agent tool. Both parse here, read through the same two
 // host reads (overview and log) and render the same text, so an agent sees
 // exactly what a human at a terminal sees.
@@ -7,7 +7,7 @@
 // is the one part of the plugin an agent can reach without a browser, and the
 // safety promise in the README is that no agent-callable surface can change
 // git state. It therefore never names a mutating host method.
-import type { PluginCliCommandInfo, PluginCliResult } from "@get-bb/plugin-sdk";
+import type { PluginCliCommandInfo, PluginCliResult } from "@vesnalia/plugin-sdk";
 import type { LocalBranch, LogCommit, LogFilter, LogPage, Overview, RemoteBranch } from "../contracts";
 import { isValidGitBranchName } from "../shared/branch-name";
 import { LOG_PAGE_SIZE, MAX_LOG_GREP_LENGTH } from "../shared/constants";
@@ -36,24 +36,24 @@ export const CLI_COMMANDS: PluginCliCommandInfo[] = [
   {
     name: "status",
     summary: "Current branch, upstream, working tree and any running git job (read-only).",
-    usage: `bb ${CLI_NAME} status [--thread <id>] [--json]`,
+    usage: `VesnALIA ${CLI_NAME} status [--thread <id>] [--json]`,
   },
   {
     name: "branches",
     summary: "Local and remote branches with ahead/behind and upstream (read-only).",
-    usage: `bb ${CLI_NAME} branches [--remote | --all] [--limit <n>] [--thread <id>] [--json]`,
+    usage: `VesnALIA ${CLI_NAME} branches [--remote | --all] [--limit <n>] [--thread <id>] [--json]`,
   },
   {
     name: "log",
     summary: "Recent commits on the current branch, one branch or all branches (read-only).",
-    usage: `bb ${CLI_NAME} log [--branch <name> | --all] [--grep <text>] [--limit <n>] [--thread <id>] [--json]`,
+    usage: `VesnALIA ${CLI_NAME} log [--branch <name> | --all] [--grep <text>] [--limit <n>] [--thread <id>] [--json]`,
   },
 ];
 
-export const CLI_SUMMARY = "Read the git state of a bb thread's worktree (read-only; it never changes a repository).";
+export const CLI_SUMMARY = "Read the git state of a VesnALIA thread's worktree (read-only; it never changes a repository).";
 
 export const CLI_HELP = [
-  `bb ${CLI_NAME} — ${CLI_SUMMARY}`,
+  `alia ${CLI_NAME} — ${CLI_SUMMARY}`,
   "",
   "Commands:",
   ...CLI_COMMANDS.map((command) => `  ${command.usage}`),
@@ -378,7 +378,7 @@ async function read(command: CliCommand, threadId: string, reader: CliReader): P
   );
 }
 
-/** The `bb vcs-widget` entry point: parse, resolve the thread, run. */
+/** The `alia vcs-widget` entry point: parse, resolve the thread, run. */
 export async function runCli(argv: readonly string[], threadId: string | undefined, reader: CliReader): Promise<PluginCliResult> {
   const parsed = parseCli(argv);
   if (!parsed.ok) return usage(parsed.message);
@@ -386,7 +386,7 @@ export async function runCli(argv: readonly string[], threadId: string | undefin
   if (command.kind === "help") return printed(CLI_HELP);
   const target = command.threadId ?? threadId ?? null;
   if (target === null) {
-    return usage("No thread to read. Run this from a bb thread, or name one with --thread <id>.");
+    return usage("No thread to read. Run this from a VesnALIA thread, or name one with --thread <id>.");
   }
   return runCommand(command, target, reader);
 }

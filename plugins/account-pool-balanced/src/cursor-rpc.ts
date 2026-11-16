@@ -1,4 +1,4 @@
-export const CURSOR_RPC_PATH_HEADER = "x-bb-cursor-rpc-path";
+export const CURSOR_RPC_PATH_HEADER = "x-alia-cursor-rpc-path";
 
 // Keep the upstream host fixed. Accept new methods within Cursor RPC namespaces,
 // never arbitrary URLs, traversal, encoded separators or authentication endpoints.

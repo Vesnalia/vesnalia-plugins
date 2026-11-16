@@ -1,9 +1,9 @@
-// The Docker backend's fields in bb-box's configuration (029), parsed into a
+// The Docker backend's fields in alia-box's configuration (029), parsed into a
 // typed config. The settings page, the conformance run's settings file and
 // the tests all go through parseDockerPart.
 //
 // The backend runs boxes as containers on one Docker host, through the docker
-// CLI on BB's server: the local socket, or another host over SSH. Each kind
+// CLI on VesnALIA's server: the local socket, or another host over SSH. Each kind
 // runs an image the setup guide builds from the same guest scripts as the
 // Proxmox LXC templates (setup/docker/README.md).
 
@@ -20,21 +20,21 @@ export const IMAGE_VERSION = "1";
 
 export interface DockerConfig {
   /**
-   * A unix://, tcp://, ssh:// or wsl:// address, bb:<machine ID> for a BB
-   * machine reached through bb-box's relay (042), or null for the docker
+   * A unix://, tcp://, ssh:// or wsl:// address, VesnALIA:<machine ID> for a VesnALIA
+   * machine reached through alia-box's relay (042), or null for the docker
    * CLI's own default: DOCKER_HOST, its context, or the local socket.
    * wsl://distro reaches Docker in that WSL distribution through wsl.exe.
    */
   readonly host: string | null;
-  /** The BB machine's ID when the host is one, else null. */
+  /** The VesnALIA machine's ID when the host is one, else null. */
   readonly machine: string | null;
   /** The image of each kind, or null when the kind is off. */
   readonly images: Readonly<Record<DockerKind, string | null>>;
   /** Whether boxes are privileged containers with their own Docker daemon: on unless set (041). */
   readonly docker: boolean;
-  /** The network bb-box makes for its boxes and keeps them on. */
+  /** The network alia-box makes for its boxes and keeps them on. */
   readonly network: string;
-  /** The most bb-box containers on the host, counting every install's. */
+  /** The most alia-box containers on the host, counting every install's. */
   readonly boxes: number;
   readonly gpus: boolean;
   readonly boxesPerCard: number;
@@ -54,7 +54,7 @@ export const DOCKER_DEFAULTS = {
   reserveMemoryMiB: 4096,
 } as const;
 
-/** Field keys in bb-box's configuration (029). Docker had no BB settings before it. */
+/** Field keys in alia-box's configuration (029). Docker had no VesnALIA settings before it. */
 export const DOCKER_KEYS = {
   host: "host",
   machineDockerHost: "machine-docker-host",
@@ -78,7 +78,7 @@ export const DOCKER_FIELDS: Readonly<Record<string, FieldDescriptor>> = {
     type: "string",
     label: "Host",
     description:
-      `The Docker daemon boxes run on. Give unix:///path/to/docker.sock, ssh://user@host, tcp://host:port, wsl://distro or wsl://user@distro, or bb:<machine ID> for a BB machine, which ${PRODUCT} reaches through BB. wsl:// reaches Docker in that WSL distribution through wsl.exe and docker system dial-stdio, not through WSL's localhost forwarder. Over SSH, BB's server user must log in without a prompt. Empty uses the docker CLI's own default on BB's server: DOCKER_HOST, its current context, or the local socket.`,
+      `The Docker daemon boxes run on. Give unix:///path/to/docker.sock, ssh://user@host, tcp://host:port, wsl://distro or wsl://user@distro, or VesnALIA:<machine ID> for a VesnALIA machine, which ${PRODUCT} reaches through VesnALIA. wsl:// reaches Docker in that WSL distribution through wsl.exe and docker system dial-stdio, not through WSL's localhost forwarder. Over SSH, VesnALIA's server user must log in without a prompt. Empty uses the docker CLI's own default on VesnALIA's server: DOCKER_HOST, its current context, or the local socket.`,
     group: "connection",
     default: "",
   },
@@ -86,7 +86,7 @@ export const DOCKER_FIELDS: Readonly<Record<string, FieldDescriptor>> = {
     type: "string",
     label: "Docker on the machine",
     description:
-      `Where Docker is on a BB machine, when Host is bb:<machine ID>. Give wsl://distro or wsl://user@distro, unix:///path/to/docker.sock, or tcp://host:port. ${PRODUCT} sends it when that machine's relay opens, and the machine dials it instead of its own DOCKER_HOST or docker context. Empty leaves those. On a Windows machine whose Docker is at tcp://127.0.0.1, set wsl://<distro>: WSL's localhost forwarder drops attached output, so docker exec prints nothing and exits 0.`,
+      `Where Docker is on a VesnALIA machine, when Host is VesnALIA:<machine ID>. Give wsl://distro or wsl://user@distro, unix:///path/to/docker.sock, or tcp://host:port. ${PRODUCT} sends it when that machine's relay opens, and the machine dials it instead of its own DOCKER_HOST or docker context. Empty leaves those. On a Windows machine whose Docker is at tcp://127.0.0.1, set wsl://<distro>: WSL's localhost forwarder drops attached output, so docker exec prints nothing and exits 0.`,
     group: "connection",
     default: "",
   },
@@ -205,12 +205,12 @@ function number(values: Readonly<Record<string, unknown>>, key: string, fallback
   return fallback;
 }
 
-/** An image reference as bb-box passes it to docker: no spaces or quotes, and no leading "-". */
+/** An image reference as alia-box passes it to docker: no spaces or quotes, and no leading "-". */
 const IMAGE = /^[A-Za-z0-9][A-Za-z0-9._/:@-]{0,254}$/;
 const NETWORK = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,62}$/;
 const UNIX = /^unix:\/\/\/[^\s'"]+$/;
-/** A BB machine, by its ID: bb-box reaches its Docker through BB (042). */
-export const BB_MACHINE = /^bb:([A-Za-z0-9_-]{1,64})$/;
+/** A VesnALIA machine, by its ID: alia-box reaches its Docker through VesnALIA (042). */
+export const ALIA_MACHINE = /^alia:([A-Za-z0-9_-]{1,64})$/;
 const SSH = /^ssh:\/\/(?:[a-z_][a-z0-9_.-]{0,31}@)?(?:\[[0-9a-fA-F:.]+\]|[A-Za-z0-9][A-Za-z0-9.-]*)(?::\d{1,5})?$/;
 
 function directHost(host: string): boolean {
@@ -218,22 +218,22 @@ function directHost(host: string): boolean {
   return endpointOf(host) !== null;
 }
 
-/** Docker's part of bb-box's configuration (029), with each problem at its field. */
+/** Docker's part of alia-box's configuration (029), with each problem at its field. */
 export function parseDockerPart(part: BackendPart): ParsedBackend<DockerConfig> {
   const values = part.fields;
   const problems: FieldProblem[] = [];
   const problem = (path: string, message: string) => problems.push({ path, message });
 
   const host = text(values, DOCKER_KEYS.host);
-  if (host && !UNIX.test(host) && !SSH.test(host) && !BB_MACHINE.test(host) && !directHost(host)) {
-    problem(DOCKER_KEYS.host, `Docker: the host must be unix:///path/to/docker.sock, ssh://user@host, tcp://host:port, wsl://distro or wsl://user@distro, or bb:<machine ID>, or empty for the docker CLI's default.`);
+  if (host && !UNIX.test(host) && !SSH.test(host) && !ALIA_MACHINE.test(host) && !directHost(host)) {
+    problem(DOCKER_KEYS.host, `Docker: the host must be unix:///path/to/docker.sock, ssh://user@host, tcp://host:port, wsl://distro or wsl://user@distro, or VesnALIA:<machine ID>, or empty for the docker CLI's default.`);
   }
   const machineTarget = text(values, DOCKER_KEYS.machineDockerHost);
-  const machineId = BB_MACHINE.exec(host)?.[1] ?? null;
+  const machineId = ALIA_MACHINE.exec(host)?.[1] ?? null;
   if (machineTarget && !endpointOf(machineTarget)) {
     problem(DOCKER_KEYS.machineDockerHost, `Docker: machine-docker-host must be wsl://distro, wsl://user@distro, unix:///path/to/docker.sock or tcp://host:port.`);
   } else if (machineTarget && !machineId) {
-    problem(DOCKER_KEYS.machineDockerHost, "Docker: machine-docker-host is for a host of bb:<machine ID>. It names where Docker is on that machine.");
+    problem(DOCKER_KEYS.machineDockerHost, "Docker: machine-docker-host is for a host of VesnALIA:<machine ID>. It names where Docker is on that machine.");
   }
 
   const linux = text(values, DOCKER_KEYS.linuxImage, DOCKER_DEFAULTS.linuxImage);
@@ -277,10 +277,10 @@ export function parseDockerPart(part: BackendPart): ParsedBackend<DockerConfig> 
 export function machineDockerHost(backends: readonly { readonly type: string; readonly fields: Readonly<Record<string, unknown>> }[], hostId: string): string | null {
   const values = new Set<string>();
   for (const backend of backends) {
-    if (backend.type !== "docker" || backend.fields.host !== `bb:${hostId}`) continue;
+    if (backend.type !== "docker" || backend.fields.host !== `alia:${hostId}`) continue;
     const value = backend.fields[DOCKER_KEYS.machineDockerHost];
     if (typeof value === "string" && value.trim()) values.add(value.trim());
   }
-  if (values.size > 1) throw new Error(`BB machine ${hostId} has more than one machine-docker-host: ${[...values].join(", ")}.`);
+  if (values.size > 1) throw new Error(`VesnALIA machine ${hostId} has more than one machine-docker-host: ${[...values].join(", ")}.`);
   return [...values][0] ?? null;
 }

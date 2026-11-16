@@ -1,9 +1,9 @@
-import type { PluginComposerApi } from "@get-bb/plugin-sdk/app";
+import type { PluginComposerApi } from "@vesnalia/plugin-sdk/app";
 
 export type PermissionMode = NonNullable<NonNullable<PluginComposerApi["selection"]>["permissionMode"]>;
 type Storage = Pick<globalThis.Storage, "getItem" | "setItem">;
 const isMode = (value: unknown): value is PermissionMode => value === "auto" || value === "full" || value === "accept-edits";
-const key = (pluginId: string) => `bb-${pluginId}:last-permission-mode:v1`;
+const key = (pluginId: string) => `alia-${pluginId}:last-permission-mode:v1`;
 
 export function readPermissionMode(pluginId: string, storage?: Storage): PermissionMode | undefined {
   try {

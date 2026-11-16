@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { AttentionItem, GlobalExecution } from "@/contract/rpc";
 import { useGlobalDashboard } from "@/hooks/useGlobalDashboard";
 import { cardElapsedMs, formatElapsed } from "@/lib/board-model";
@@ -31,7 +31,7 @@ function relativeAge(at: number, now: number): string {
 }
 
 function GlobalExecutionCard({ execution, now, reducedMotion }: { execution: GlobalExecution; now: number; reducedMotion: boolean }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const card = execution.card;
   const executing = card.status === "running" || card.status === "starting";
   const elapsed = cardElapsedMs(card, now);
@@ -53,7 +53,7 @@ function GlobalExecutionCard({ execution, now, reducedMotion }: { execution: Glo
             {executing ? <LiveIndicator reducedMotion={reducedMotion} /> : <StatusChip status={card.status} />}
             {elapsed !== null ? <span data-part="execution-elapsed" className="shrink-0 text-[11px] tabular-nums text-muted-foreground">{formatElapsed(elapsed)}</span> : null}
           </div>
-          <span className="sr-only">{card.source === "bb" ? "BB" : card.source === "ollama-fleet" ? "Ollama Fleet" : "Redteam"}</span>
+          <span className="sr-only">{card.source === "alia" ? "ALIA" : card.source === "ollama-fleet" ? "Ollama Fleet" : "Redteam"}</span>
         </div>
       </div>
       {card.phaseTitle !== null || model !== "" ? (
@@ -122,7 +122,7 @@ const ATTENTION_LABEL: Record<AttentionItem["type"], string> = {
 };
 
 function AttentionCard({ item, now, onDismiss }: { item: AttentionItem; now: number; onDismiss: (item: AttentionItem) => void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const destructive = item.type === "failed";
   const action = item.interactionKind === "question" ? "Reply" : item.interactionKind === "approval" ? "Review approval" : item.type === "failed" ? "Inspect failure" : item.type === "action-required" ? "Respond" : "Open";
   return (
@@ -137,14 +137,14 @@ function AttentionCard({ item, now, onDismiss }: { item: AttentionItem; now: num
           <p data-part="attention-message" className="mt-1 min-w-0 max-w-full line-clamp-3 text-xs text-muted-foreground [overflow-wrap:anywhere]">{item.message}</p>
           <p className="mt-1 min-w-0 max-w-full text-[11px] text-muted-foreground [overflow-wrap:anywhere]">
             {item.type === "action-required" || item.type === "waiting" ? `Waiting ${formatElapsed(now - item.firstObservedAt)}` : relativeAge(item.updatedAt, now)}
-            <span aria-hidden="true"> · </span>{item.source === "bb" ? "BB" : item.source === "ollama-fleet" ? "Ollama Fleet" : "Redteam"}
+            <span aria-hidden="true"> · </span>{item.source === "alia" ? "ALIA" : item.source === "ollama-fleet" ? "Ollama Fleet" : "Redteam"}
           </p>
         </div>
         <div data-part="card-actions" className="flex max-w-full shrink-0 flex-col gap-1">
           {item.threadId !== null ? (
             <Button variant={item.interactionKind === "question" ? "default" : "outline"} size="sm" className="h-7 px-2 text-[11px]" onClick={() => navigate.toThread(item.threadId!)} aria-label={`${action === "Reply" ? "Reply to" : action} ${item.title}`}>{action}</Button>
           ) : null}
-          {destructive && item.threadId ? <ExecutionTimelineDialog target={{ source: "bb", executionKey: item.executionKey, threadId: item.threadId, title: item.title }} /> : null}
+          {destructive && item.threadId ? <ExecutionTimelineDialog target={{ source: "alia", executionKey: item.executionKey, threadId: item.threadId, title: item.title }} /> : null}
           <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px]" onClick={() => onDismiss(item)} aria-label={`Dismiss ${item.title}`}
             aria-description="Hide from Needs attention (presentation only; reappears when the condition changes)"
           >Dismiss</Button>
@@ -155,7 +155,7 @@ function AttentionCard({ item, now, onDismiss }: { item: AttentionItem; now: num
 }
 
 function RecentRow({ execution, now }: { execution: GlobalExecution; now: number }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const card = execution.card;
   const elapsed = cardElapsedMs(card, now);
   const finishedAt = card.completedAt ?? execution.updatedAt;
@@ -166,7 +166,7 @@ function RecentRow({ execution, now }: { execution: GlobalExecution; now: number
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
           <h3 data-part="recent-title" className="min-w-0 flex-1 truncate text-sm font-medium">{card.title}</h3>
-          <span className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground">{card.source === "bb" ? "BB" : card.source === "ollama-fleet" ? "Ollama Fleet" : "Redteam"}</span>
+          <span className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground">{card.source === "alia" ? "ALIA" : card.source === "ollama-fleet" ? "Ollama Fleet" : "Redteam"}</span>
         </div>
         <p data-part="recent-metadata" className="mt-0.5 min-w-0 max-w-full line-clamp-2 text-[11px] text-muted-foreground [overflow-wrap:anywhere]">
           {elapsed !== null ? formatElapsed(elapsed) : card.status}
@@ -174,7 +174,7 @@ function RecentRow({ execution, now }: { execution: GlobalExecution; now: number
           <> · {relativeAge(finishedAt, now)}</>
         </p>
         <p data-part="recent-outcome" className={cn("mt-1 text-[11px]", card.status === "failed" ? "text-destructive" : "text-muted-foreground")}>
-          {card.status === "completed" ? card.source === "bb" ? "Turn finished · review needed" : "Execution finished" : card.status === "failed" ? `Failed${card.errorPreview ? ` · ${card.errorPreview}` : ""}` : card.status}
+          {card.status === "completed" ? card.source === "alia" ? "Turn finished · review needed" : "Execution finished" : card.status === "failed" ? `Failed${card.errorPreview ? ` · ${card.errorPreview}` : ""}` : card.status}
         </p>
         <details className="mt-1 text-[11px] text-muted-foreground"><summary className="cursor-pointer">Result and checks</summary><CompletionSummary card={card} /></details>
         <ExecutionChildren execution={execution} now={now} />
@@ -227,7 +227,7 @@ export function GlobalDashboard() {
             <h2 id="recent-heading" className="mb-2 text-xs font-semibold">Recent results</h2>
             {visible.recent.length ? <div data-global-grid="recent" className="grid min-w-0 max-w-full grid-cols-[minmax(0,1fr)] gap-2"><ExecutionGroups executions={visible.recent} grouping={preferences.grouping} render={execution => <RecentRow key={execution.key} execution={execution} now={now} />} /></div> : <p className="text-sm text-muted-foreground">{filtered ? "No recent completions match these filters." : "No recent completions in the bounded window."}</p>}
           </section>
-          {snapshot.unavailableSources.includes("bb") ? <p role="alert" className="text-xs text-destructive">Native BB observation is unavailable. Refresh to retry; optional sources may still report.</p> : null}
+          {snapshot.unavailableSources.includes("alia") ? <p role="alert" className="text-xs text-destructive">Native VesnALIA observation is unavailable. Refresh to retry; optional sources may still report.</p> : null}
           {snapshot.partial ? <p className="text-[11px] text-muted-foreground">The global view is bounded; older or excess executions are not shown.</p> : null}
         </div> : null}
         <details data-part="monitoring-details" className="mt-5 border-t border-border pt-2 text-[11px] text-muted-foreground">
@@ -236,7 +236,7 @@ export function GlobalDashboard() {
             <p>{lastRefreshAt === null ? "Waiting for first snapshot" : `Last refresh ${relativeAge(lastRefreshAt, now)}`}{lastRefreshAt !== null && now - lastRefreshAt > 60_000 ? " · Refresh is overdue" : ""}</p>
             <p>{lastSignalAt === null ? "No change signal received in this view yet" : `Last change signal ${relativeAge(lastSignalAt, now)}`}</p>
             {snapshot?.monitoring ? <p>{watcherUnconfirmed ? `Watcher health unconfirmed · Last known state: ${snapshot.monitoring.status}` : `Watcher: ${snapshot.monitoring.status}`}{snapshot.monitoring.lastEventAt === null ? " · No relevant source event observed yet" : ` · Source event ${relativeAge(snapshot.monitoring.lastEventAt, now)}`}</p> : null}
-            {snapshot?.unavailableSources.some(source => source !== "bb") ? <p>Optional sources unavailable: {snapshot.unavailableSources.filter(source => source !== "bb").map(source => source === "ollama-fleet" ? "Ollama Fleet" : "Redteam").join(", ")}. Missing optional integrations do not prevent BB observation.</p> : null}
+            {snapshot?.unavailableSources.some(source => source !== "alia") ? <p>Optional sources unavailable: {snapshot.unavailableSources.filter(source => source !== "alia").map(source => source === "ollama-fleet" ? "Ollama Fleet" : "Redteam").join(", ")}. Missing optional integrations do not prevent VesnALIA observation.</p> : null}
           </div>
           <ReleaseAnnouncement />
         </details>

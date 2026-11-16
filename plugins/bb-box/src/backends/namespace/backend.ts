@@ -88,7 +88,7 @@ const LARGEST_MACHINE = "largest-machine";
 const USAGE_GRANT = '{"resource_type":"tenant/usage","resource_id":"*","actions":["get"]}';
 const LARGEST_ALLOWED = /maximum ([0-9]+)x([0-9]+)/;
 const KEEP_UNREACHABLE_ENGINE_ALIVE_MS = 60 * 60_000;
-const RELEASED_WHY = "bb-box: the box was released";
+const RELEASED_WHY = "alia-box: the box was released";
 
 function linuxTooBig(size: MachineSize): string {
   return `Namespace's Linux machines have at most 32 cores and 56 GB of memory, less than the ${size.cores} cores and ${Math.round(size.memoryMiB / MIB_PER_GB)} GiB asked for.`;
@@ -120,9 +120,9 @@ const MAC_DESKTOP = [
   'work=$(mktemp -d); trap \'rm -rf "$work"\' EXIT',
   'ffmpeg_install=; [ -x /opt/homebrew/bin/ffmpeg ] || { HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install --quiet ffmpeg >"$work/ffmpeg.log" 2>&1 & ffmpeg_install=$!; }',
   'cat > "$work/stream.swift"',
-  'xcrun swiftc -O -swift-version 5 -o "$work/bb-box-stream" "$work/stream.swift" >"$work/build.log" 2>&1 || { tail -n 5 "$work/build.log" >&2; exit 1; }',
+  'xcrun swiftc -O -swift-version 5 -o "$work/alia-box-stream" "$work/stream.swift" >"$work/build.log" 2>&1 || { tail -n 5 "$work/build.log" >&2; exit 1; }',
   `sudo -n mkdir -p ${"$(dirname " + MAC_STREAM + ")"}`,
-  `sudo -n install -m 0755 "$work/bb-box-stream" ${MAC_STREAM}`,
+  `sudo -n install -m 0755 "$work/alia-box-stream" ${MAC_STREAM}`,
   'db="/Library/Application Support/com.apple.TCC/TCC.db"; now=$(date +%s)',
   ...MAC_DESKTOP_CLIENTS.flatMap((client) =>
     MAC_DESKTOP_SERVICES.map(
@@ -214,7 +214,7 @@ const SLOT_COMMAND: CommandCapability = { transport: "ssh", shell: "sh", admin: 
 const HOST_SHAPE: MacShape = { cores: 6, memoryGB: 14 };
 const HOST_READY_TIMEOUT_MS = 20 * 60_000;
 const HOST_TAILNET_NAME = "ios-host";
-const HOST_SETUP_PATHS = ["setup/ssh-pool/mac-ios.sh", "setup/ssh-pool/mac-home/.zshenv", "setup/tart/ios", "setup/android/build-h264.sh", "setup/android/pins.json", "setup/android/bb-box-h264"];
+const HOST_SETUP_PATHS = ["setup/ssh-pool/mac-ios.sh", "setup/ssh-pool/mac-home/.zshenv", "setup/tart/ios", "setup/android/build-h264.sh", "setup/android/pins.json", "setup/android/alia-box-h264"];
 
 export function hostSetupArchive(setup = setupDir()): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -383,7 +383,7 @@ export class NamespaceBackend implements Backend {
   readonly #linux: NamespaceLinux;
 
   constructor(config: NamespaceConfig, context: BackendContext, options: NamespaceBackendOptions = {}) {
-    if (!config.token) throw new BackendError("unsupported", "Namespace has no API token: set it in BB Box's settings.");
+    if (!config.token) throw new BackendError("unsupported", "Namespace has no API token: set it in VesnALIA Box's settings.");
     this.#config = config;
     this.#context = context;
     this.#options = options;
@@ -402,7 +402,7 @@ export class NamespaceBackend implements Backend {
       publicKey: async () => (await this.#keys()).publicKey,
       answers: (instance, signal) => this.#answers(instance, this.#now() + (options.readyTimeoutMs ?? READY_TIMEOUT_MS), signal),
       run: async (instance, script, stdin, timeoutMs, signal) => new SshTransport((await this.#keys()).ssh, this.#access(instance), "linux").run(script, { stdin, timeoutMs, signal, maxOutputBytes: 1024 * 1024 }),
-      bbUrl: () => context.bbUrl?.() ?? null,
+      aliaUrl: () => context.aliaUrl?.() ?? null,
       joinTailnet: async (instance, name, signal) => {
         const tailnet = context.tailnet?.() ?? null;
         if (!tailnet) return null;
@@ -411,7 +411,7 @@ export class NamespaceBackend implements Backend {
       },
       leaveTailnet: (instance, name) => this.#leaveTailnetAs(instance, name),
       sleep: this.#sleep,
-      bbApp: async (signal) => (context.bbUrl?.() ? ((await context.images?.bbApp(signal).catch(() => null)) ?? null) : null),
+      aliaApp: async (signal) => (context.aliaUrl?.() ? ((await context.images?.aliaApp(signal).catch(() => null)) ?? null) : null),
       log: (line) => context.log?.(line),
       ...(options.linuxImageScript ? { buildScript: options.linuxImageScript } : {}),
       ...(options.setupArchive ? { setupArchive: options.setupArchive } : {}),
@@ -551,7 +551,7 @@ export class NamespaceBackend implements Backend {
     const started = this.#now();
     const within = AbortSignal.timeout(MEASURE_LIFE_MS - MEASURE_MARGIN_MS);
     const { publicKey } = await this.#keys();
-    this.#context.log?.(`bb-box is starting a ${shape.cores}x${shape.memoryGB} Namespace Mac to measure what Namespace's Macs offer iOS devices afresh, as ${why}. It is destroyed once measured, and by ${clock(until)} at the latest.`);
+    this.#context.log?.(`alia-box is starting a ${shape.cores}x${shape.memoryGB} Namespace Mac to measure what Namespace's Macs offer iOS devices afresh, as ${why}. It is destroyed once measured, and by ${clock(until)} at the latest.`);
     const made = await this.#api.create(
       {
         shape: { os: "macos", arch: "arm64", cores: shape.cores, memoryMiB: shape.memoryGB * MIB_PER_GB, selectors: { "macos.version": this.#config.macosVersion } },
@@ -563,7 +563,7 @@ export class NamespaceBackend implements Backend {
       },
       within,
     );
-    const step = (what: string) => this.#context.log?.(`bb-box's Namespace Mac ${made.id}, made to measure afresh: ${what}, ${Math.round((this.#now() - started) / 1000)} s after it was asked for.`);
+    const step = (what: string) => this.#context.log?.(`alia-box's Namespace Mac ${made.id}, made to measure afresh: ${what}, ${Math.round((this.#now() - started) / 1000)} s after it was asked for.`);
     step("made");
     try {
       const ready = await this.#api.wait(made.id, within);
@@ -575,7 +575,7 @@ export class NamespaceBackend implements Backend {
       step(`measured: an ${report.chip ?? "unknown chip"}, ${capabilityWords(report.capabilities)}`);
     } finally {
       await this.#api
-        .destroy(made.id, "bb-box: measured what it offers")
+        .destroy(made.id, "alia-box: measured what it offers")
         .then(() => step("destroyed"))
         .catch((error) => this.#context.logError(`destroy Namespace machine ${made.id}, made to measure afresh`, error));
     }
@@ -674,7 +674,7 @@ export class NamespaceBackend implements Backend {
     const ok = used < this.#config.machines;
     return {
       ok,
-      message: ok ? null : `${this.label} has ${held.length} of the ${this.#config.machines} machines ${PRODUCT} may have at once, counting other ${PRODUCT} installs' in the workspace. Release a box, or raise the most machines in BB Box's settings.`,
+      message: ok ? null : `${this.label} has ${held.length} of the ${this.#config.machines} machines ${PRODUCT} may have at once, counting other ${PRODUCT} installs' in the workspace. Release a box, or raise the most machines in VesnALIA Box's settings.`,
       warm: null,
       hosts: [{ host, ok, limits: [{ resource: "machines", used, total: this.#config.machines, reserve: 0, unit: "count" }] }],
     };
@@ -711,7 +711,7 @@ export class NamespaceBackend implements Backend {
             shape: instanceShape,
             labels: this.#labels(box, kind),
             deadline: this.#now() + KEEP_AHEAD_MS,
-            purpose: `bb-box ${box.kind} box ${box.name}`,
+            purpose: `alia-box ${box.kind} box ${box.name}`,
             uniqueTag: tag,
             sshPublicKeys: [publicKey],
           },
@@ -741,7 +741,7 @@ export class NamespaceBackend implements Backend {
       return guest;
     } catch (error) {
       const instance = made?.id ?? (await this.#find(box.boxId).catch(() => null))?.id;
-      if (instance) await this.#api.destroy(instance, "bb-box: the box did not start").catch((cause) => this.#context.logError("destroy after a failed acquire", cause));
+      if (instance) await this.#api.destroy(instance, "alia-box: the box did not start").catch((cause) => this.#context.logError("destroy after a failed acquire", cause));
       const allowed = error instanceof NamespaceError ? largestAllowedIn(error.message) : null;
       if (allowed) {
         await this.#context.storage.set(LARGEST_MACHINE, allowed);
@@ -1109,7 +1109,7 @@ export class NamespaceBackend implements Backend {
         name: "API token",
         status: "fail",
         detail: error instanceof Error ? error.message : String(error),
-        fix: "Make a token with nsc token create, as the guide shows, and set it in BB Box's settings.",
+        fix: "Make a token with nsc token create, as the guide shows, and set it in VesnALIA Box's settings.",
       });
     }
     const now = this.#now();
@@ -1383,8 +1383,8 @@ export class NamespaceBackend implements Backend {
       id: "namespace.limits",
       name: "Workspace limits",
       status: "warn",
-      detail: `${refused ? "The token may not read the workspace's limits" : `${PRODUCT} could not read the workspace's limits: ${unread?.message ?? "Namespace gave none for macOS"}`}. So ${largestWords}, from Largest machine in BB Box's settings or Namespace's last refusal, and a full workspace shows only when Namespace refuses a Mac.`,
-      fix: refused ? `Make a new token with the grant ${USAGE_GRANT} as well, as the guide shows, and set it in BB Box's settings.` : null,
+      detail: `${refused ? "The token may not read the workspace's limits" : `${PRODUCT} could not read the workspace's limits: ${unread?.message ?? "Namespace gave none for macOS"}`}. So ${largestWords}, from Largest machine in VesnALIA Box's settings or Namespace's last refusal, and a full workspace shows only when Namespace refuses a Mac.`,
+      fix: refused ? `Make a new token with the grant ${USAGE_GRANT} as well, as the guide shows, and set it in VesnALIA Box's settings.` : null,
     };
   }
 

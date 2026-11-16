@@ -6,7 +6,7 @@ import {
   type ExperimentalSidebarHeaderProps,
   type ExperimentalSidebarNavigationItem,
   type ExperimentalSidebarNavigationProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   useLayoutEffect,
   useRef,
@@ -25,7 +25,7 @@ const TINT_TOP_PROPERTY = "--nav-rail-tint-top";
 const TINT_WIDTH_PROPERTY = "--nav-rail-tint-width";
 const SIDEBAR_TOGGLE_SELECTOR = '[data-sidebar="trigger"]';
 const HEADER_LABEL_MIN_WIDTH = 120;
-// Where bb's sidebar rows start inside the column beside the rail.
+// Where VesnALIA's sidebar rows start inside the column beside the rail.
 const ROW_INSET = 8;
 
 let headerMounted = false;
@@ -77,7 +77,7 @@ function useRailDock(railRef: RefObject<HTMLDivElement | null>) {
     };
     const sync = () => {
       const block = rail.offsetParent;
-      // bb hides this component while its customize editor is open.
+      // VesnALIA hides this component while its customize editor is open.
       if (block === null) {
         undock();
         return;

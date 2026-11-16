@@ -10,7 +10,7 @@ import type { MeetingsNav } from "./route";
 import { CopyButton, ErrorText, Spinner } from "./ui";
 
 export function AgentPrompt({ prompt }: { prompt: string }) {
-  return <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3"><p className="text-xs leading-relaxed text-muted-foreground">Разбор выполняет агент BB. Скопируйте запрос и отправьте его агенту в тред; здесь появится сохранённый результат.</p><div className="flex items-center gap-1 text-xs font-medium">Скопировать запрос агенту<CopyButton text={prompt} label="Скопировать запрос агенту" /></div><details><summary className="cursor-pointer text-xs text-muted-foreground">Показать запрос</summary><pre className="mt-2 max-h-56 overflow-y-auto whitespace-pre-wrap break-words text-xs">{prompt}</pre></details></div>;
+  return <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3"><p className="text-xs leading-relaxed text-muted-foreground">Разбор выполняет агент VesnALIA. Скопируйте запрос и отправьте его агенту в тред; здесь появится сохранённый результат.</p><div className="flex items-center gap-1 text-xs font-medium">Скопировать запрос агенту<CopyButton text={prompt} label="Скопировать запрос агенту" /></div><details><summary className="cursor-pointer text-xs text-muted-foreground">Показать запрос</summary><pre className="mt-2 max-h-56 overflow-y-auto whitespace-pre-wrap break-words text-xs">{prompt}</pre></details></div>;
 }
 
 export function AskPanel({ id, nav }: { id?: string; nav: MeetingsNav }) {

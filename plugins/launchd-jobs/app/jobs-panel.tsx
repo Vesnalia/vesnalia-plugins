@@ -3,10 +3,10 @@
  * the right whichever of three things is open — a job's detail, the form
  * editing it, or the form for a new one. A compact viewport shows one pane at
  * a time. With more than one Mac connected, a picker chooses whose jobs these
- * are; it opens on the Mac running the bb server.
+ * are; it opens on the Mac running the VesnALIA server.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRpc, type PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { useRpc, type PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import type { HostChoice } from "../shared/channels";
@@ -273,7 +273,7 @@ export function JobsPanel(_props: PluginNavPanelProps) {
           {hosts.hosts.map((host) => (
             <option key={host.id} value={host.id}>
               {host.name}
-              {host.id === hosts.primaryHostId ? " (bb server)" : ""}
+              {host.id === hosts.primaryHostId ? " (VesnALIA server)" : ""}
             </option>
           ))}
         </select>
@@ -301,7 +301,7 @@ export function JobsPanel(_props: PluginNavPanelProps) {
     return (
       <div className="flex h-full flex-col">
         <Centered title="No Mac to show">
-          {hostsError ?? (hosts === null ? "Looking for your Macs…" : "None of your Macs is connected to bb right now.")}
+          {hostsError ?? (hosts === null ? "Looking for your Macs…" : "None of your Macs is connected to VesnALIA right now.")}
         </Centered>
       </div>
     );
@@ -384,7 +384,7 @@ export function JobsPanel(_props: PluginNavPanelProps) {
             ) : jobs.length === 0 ? (
               <Centered>
                 No jobs yet. Anything created here becomes a LaunchAgent
-                {launchAgentsDir === null ? "" : ` in ${launchAgentsDir}`}, and runs whether or not bb is open.
+                {launchAgentsDir === null ? "" : ` in ${launchAgentsDir}`}, and runs whether or not VesnALIA is open.
               </Centered>
             ) : (
               jobs.map((job) => (

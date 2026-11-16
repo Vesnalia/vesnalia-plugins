@@ -11,7 +11,7 @@ const { chromium } = require("playwright-core");
 export const CHROME = process.env.CHROME ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 export const UPSTREAM = process.env.UPSTREAM_URL ?? "http://localhost:5181/";
 export const HARNESS = process.env.HARNESS_URL ?? "http://localhost:5199/";
-export const BB = process.env.BB_URL ?? "http://127.0.0.1:38886";
+export const ALIA = process.env.ALIA_URL ?? "http://127.0.0.1:38886";
 
 export function launch() {
   return chromium.launch({ executablePath: CHROME });

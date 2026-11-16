@@ -1,17 +1,17 @@
-// Upgrades diagrams that bb drew with its stock renderer before this plugin loaded.
+// Upgrades diagrams that VesnALIA drew with its stock renderer before this plugin loaded.
 //
-// On a page load bb renders visible chat diagrams roughly a second before plugin
+// On a page load VesnALIA renders visible chat diagrams roughly a second before plugin
 // bundles arrive, and it caches every SVG by source + theme for the page's
 // lifetime, so a remounted block can come back from that cache as stock too.
-// Neither path calls the patched `render`. bb exposes no API for re-rendering a
+// Neither path calls the patched `render`. VesnALIA exposes no API for re-rendering a
 // block, so this reads the block's React state (its Mermaid source and rendered
-// diagram) and swaps the diagram through the block's own state setter; bb's
+// diagram) and swaps the diagram through the block's own state setter; VesnALIA's
 // preview, source toggle, and pan/zoom dialog then all show the new SVG. Any
 // shape mismatch leaves the stock diagram in place.
 import type { AgenticRender } from "./mermaid-renderer";
 
 const DIAGRAM_HOST = '[role="img"][aria-label="Mermaid diagram"]';
-/** How far above the SVG host bb's Mermaid block component sits (observed: 4). */
+/** How far above the SVG host VesnALIA's Mermaid block component sits (observed: 4). */
 const MAX_FIBER_DEPTH = 12;
 
 type StateUpdate = (previous: unknown) => unknown;
@@ -64,7 +64,7 @@ export function upgradeStockDiagrams(render: AgenticRender): () => void {
   const upgrade = async (block: DiagramBlock, stockId: string) => {
     const svg = await render(`${stockId}-agentic`, block.source);
     if (svg === null || stopped) return;
-    // Only replace the exact stock diagram that was read: if bb re-rendered meanwhile (new source while streaming), keep its result.
+    // Only replace the exact stock diagram that was read: if VesnALIA re-rendered meanwhile (new source while streaming), keep its result.
     block.setState((previous) =>
       typeof previous === "object" && previous !== null && "diagram" in previous && previous.diagram === block.diagram
         ? { kind: "rendered", diagram: { svg, bindFunctions: undefined } }
@@ -79,7 +79,7 @@ export function upgradeStockDiagrams(render: AgenticRender): () => void {
       if (svg === null || svg.hasAttribute("data-agentic-mermaid") || attempted.has(svg)) continue;
       attempted.add(svg);
       const block = findDiagramBlock(host);
-      if (block !== null) void upgrade(block, svg.id || "bb-mermaid");
+      if (block !== null) void upgrade(block, svg.id || "alia-mermaid");
     }
   };
 

@@ -9,7 +9,7 @@ what makes a standard Linux or Android image due.
 ## Context
 
 Each standard Linux and Android image's record holds a program digest.
-bb-box works out the digest a rebuild would record now, and an image
+alia-box works out the digest a rebuild would record now, and an image
 whose record holds another is due: "its guest program or prepare script changed".
 
 The digest covered the identity reset setting, the guest folder's
@@ -47,9 +47,9 @@ made no image due either.
   by the same rule, and gives it to the build as `IMAGE_SOURCES_SHA256`.
   `customize.sh` records it as `PREPARE`, and `image-record.sh` hashes the
   build's copy of the guest folder by the same rule. So a fresh build
-  records the digest bb-box works out, and is not due at once.
+  records the digest alia-box works out, and is not due at once.
 - Boat stages only the files its template's build reads, and gives the
-  build no prepare digest. The program digest bb-box works out for a boat
+  build no prepare digest. The program digest alia-box works out for a boat
   template covers the guest files boat stages, with an empty prepare
   digest, as boat's build records it. Boat does not judge its templates by
   this digest: it builds a template again when its template key changes,
@@ -64,7 +64,7 @@ made no image due either.
   after this change, because its record was made by the earlier rule:
   the Linux and Android images on Docker, microsandbox, Proxmox LXC,
   Proxmox QEMU and Tart. The nightly rebuilds take them one at a time,
-  most needed first, and start none after 4 hours, so on a BB with many
+  most needed first, and start none after 4 hours, so on a VesnALIA with many
   images they can take more than one night. An image built before records held a
   program digest is not due for this.
 - A change to `start`, `fork-hold` or `gpu-bus-id` now runs the whole
@@ -79,6 +79,6 @@ made no image due either.
   `fetch-artifacts.sh`, does not make their images due by itself.
 - Each boat template is built again once after this change, as its
   template key covers `image-record.sh`, which this change edits. Its
-  reason is that BB Box's template scripts changed.
+  reason is that VesnALIA Box's template scripts changed.
 - An image built by running `docker build` directly, not through
   `build.sh`, records no prepare digest, so it is due until it is rebuilt.

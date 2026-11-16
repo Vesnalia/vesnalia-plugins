@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { loadPluginApp, renderSlot } from '@get-bb/plugin-sdk/testing/app';
+import { loadPluginApp, renderSlot } from '@vesnalia/plugin-sdk/testing/app';
 
 const app = await loadPluginApp(() => import('./app.js'));
 
@@ -18,7 +18,7 @@ function overview() {
 }
 
 describe('Trace context panel', () => {
-  it('shows index, bb context usage, and project decisions, then saves a new decision', async () => {
+  it('shows index, VesnALIA context usage, and project decisions, then saves a new decision', async () => {
     const slot = renderSlot(
       app.threadPanelActions[0]!,
       { threadId: 'thread-1', params: null },

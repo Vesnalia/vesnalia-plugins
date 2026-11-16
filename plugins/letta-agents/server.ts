@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { delimiter, dirname } from "node:path";
 import { promisify } from "node:util";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { identities, mergeProviders, singleFlight, slug, THREAD_ID_PATTERN, validAgentId, validContainer, validEndpoint, validThreadId, type AgentRecord, type CustomAgent } from "./lib/backend-policy.ts";
 const execute = promisify(execFile);
@@ -20,15 +20,15 @@ export const rpcContract = defineRpcContract({
 });
 // Fixed script: no configuration or roster values are ever inserted into shell source.
 const ROSTER_SCRIPT = 'const fs=require("fs");const p="/root/.letta/lc-local-backend/agents";process.stdout.write(JSON.stringify(fs.readdirSync(p).filter(x=>x.endsWith(".json")).map(x=>JSON.parse(fs.readFileSync(p+"/"+x,"utf8")))));';
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     appServerUrl: { type: "string", label: "Letta app-server URL", description: "Reachable from the ACP execution host. Use wss:// outside a trusted local network.", default: "ws://127.0.0.1:4500" },
     container: { type: "string", label: "Letta container", description: "Local Docker container running letta-code. Docker and Node in the container are required.", default: "letta" },
     dockerExecutable: { type: "string", label: "Docker executable", description: "Executable name on PATH or absolute path; not a shell command.", default: "docker" },
-    projectId: { type: "string", label: "Chat project ID", description: "Required. Select an existing BB project using bb project list.", default: "" },
+    projectId: { type: "string", label: "Chat project ID", description: "Required. Select an existing VesnALIA project using VesnALIA project list.", default: "" },
     hostId: { type: "string", label: "Chat host ID", description: "Required. Existing host for the workspace and ACP process.", default: "" },
     environmentProviderId: { type: "string", label: "Workspace provider ID", description: "Required. Installed environment provider; e.g. personal-workspace where installed.", default: "" },
-    allowUnrestricted: { type: "boolean", label: "Allow unrestricted agent tools", description: "Opt-in: grants full BB permissions and unrestricted Letta tool execution. Off uses standard approvals. Existing sessions keep their current permissions.", default: false },
+    allowUnrestricted: { type: "boolean", label: "Allow unrestricted agent tools", description: "Opt-in: grants full VesnALIA permissions and unrestricted Letta tool execution. Off uses standard approvals. Existing sessions keep their current permissions.", default: false },
     showAgentsInProviderPicker: { type: "boolean", label: "Show agents in provider picker", description: "UI-only. Providers remain enabled for the Bots sidebar.", default: false },
   });
   let disposed = false;
@@ -53,12 +53,12 @@ export default async function plugin(bb: BbPluginApi) {
   }
   async function cachedRoster(): Promise<Roster | null> {
     const config = await settings.get();
-    const cached = await bb.storage.kv.get<{ source: string; roster: Roster }>("roster:v2");
+    const cached = await alia.storage.kv.get<{ source: string; roster: Roster }>("roster:v2");
     if (cached?.source !== `${config.dockerExecutable}:${config.container}`) return null;
     const parsed = rosterSchema.safeParse(cached.roster); return parsed.success ? parsed.data : null;
   }
   async function adapterEntries(): Promise<CustomAgent[]> {
-    const result = await bb.sdk.plugins.getSettings({ pluginId: "bb--provider-acp-next" });
+    const result = await alia.sdk.plugins.getSettings({ pluginId: "alia--provider-acp-next" });
     const value = result.values.customAgents;
     return customSchema.parse(typeof value === "string" ? JSON.parse(value || "[]") : value ?? []) as CustomAgent[];
   }
@@ -73,9 +73,9 @@ export default async function plugin(bb: BbPluginApi) {
       const token = (await docker(["cat", "/root/.letta/app-server.token"])).toString("utf8").trim();
       if (!token || /[\r\n\0]/.test(token)) throw new Error("Letta token is empty or malformed.");
       const current = await adapterEntries();
-      const saved = await bb.storage.kv.get<Record<string, string>>("provider-identities:v2") ?? {};
+      const saved = await alia.storage.kv.get<Record<string, string>>("provider-identities:v2") ?? {};
       const source = `${config.dockerExecutable}:${config.container}:${config.appServerUrl}`;
-      const previousSource = await bb.storage.kv.get<string>("provider-source:v2");
+      const previousSource = await alia.storage.kv.get<string>("provider-source:v2");
       if (previousSource && previousSource !== source) throw new Error("Provider source differs; explicit migration required.");
       const ids = identities(agents, current, saved, config.appServerUrl);
       const desired = agents.map(agent => ({ id: ids[agent.id]!, displayName: agent.name, command: "npx", args: ["-y", "@letta-ai/letta-acp@0.1.10"], env: { LETTA_ACP_BACKEND: "remote", LETTA_APP_SERVER_URL: config.appServerUrl, LETTA_AGENT_ID: agent.id, LETTA_APP_SERVER_TOKEN: token, LETTA_ACP_PERMISSION_MODE: config.allowUnrestricted ? "unrestricted" : "standard" } }));
@@ -89,24 +89,24 @@ export default async function plugin(bb: BbPluginApi) {
       if (JSON.stringify(await adapterEntries()) !== JSON.stringify(current)) throw new Error("ACP settings changed during sync; retry.");
       if (epoch !== generation || disposed) throw new Error("Settings changed; retry roster synchronization.");
       if (JSON.stringify(next) !== JSON.stringify(current)) {
-        try { await bb.sdk.plugins.updateSettings({ pluginId: "bb--provider-acp-next", values: { customAgents: JSON.stringify(next) } }); }
+        try { await alia.sdk.plugins.updateSettings({ pluginId: "alia--provider-acp-next", values: { customAgents: JSON.stringify(next) } }); }
         catch { throw new Error("Unable to update ACP settings. Details withheld to protect credentials."); }
       }
       if (epoch !== generation || disposed) throw new Error("Settings changed; retry roster synchronization.");
-      await bb.storage.kv.set("provider-source:v2", source);
+      await alia.storage.kv.set("provider-source:v2", source);
       if (epoch !== generation || disposed) throw new Error("Settings changed; retry roster synchronization.");
-      await bb.storage.kv.set("provider-identities:v2", { ...saved, ...ids });
+      await alia.storage.kv.set("provider-identities:v2", { ...saved, ...ids });
       if (epoch !== generation || disposed) throw new Error("Settings changed; retry roster synchronization.");
-      await bb.storage.kv.set("provider-aliases:v2", Object.fromEntries(agents.map(agent => [agent.id, [...new Set([`acp-${ids[agent.id]}`, ...current.filter(entry => entry.id.startsWith("letta-") && entry.env?.LETTA_AGENT_ID === agent.id && entry.env?.LETTA_ACP_BACKEND === "remote").map(entry => `acp-${entry.id}`)])]])));
+      await alia.storage.kv.set("provider-aliases:v2", Object.fromEntries(agents.map(agent => [agent.id, [...new Set([`acp-${ids[agent.id]}`, ...current.filter(entry => entry.id.startsWith("letta-") && entry.env?.LETTA_AGENT_ID === agent.id && entry.env?.LETTA_ACP_BACKEND === "remote").map(entry => `acp-${entry.id}`)])]])));
       if (epoch !== generation || disposed) throw new Error("Settings changed; retry roster synchronization.");
-      await bb.storage.kv.set("roster:v2", { source: `${config.dockerExecutable}:${config.container}`, roster });
+      await alia.storage.kv.set("roster:v2", { source: `${config.dockerExecutable}:${config.container}`, roster });
       if (epoch !== generation || disposed) throw new Error("Settings changed; retry roster synchronization.");
       ready = true; warning = null; lastSync = Date.now();
-      bb.log.info(`Synchronized ${agents.length} Letta providers; unrelated ACP entries preserved.`);
+      alia.log.info(`Synchronized ${agents.length} Letta providers; unrelated ACP entries preserved.`);
       return roster;
     } catch (error) {
       warning = safeError(error);
-      bb.log.warn(warning);
+      alia.log.warn(warning);
       throw new Error(warning);
     }
   });
@@ -132,12 +132,12 @@ export default async function plugin(bb: BbPluginApi) {
   async function savedChatId(agent: AgentRecord, ids: Record<string, string>, rosterAgents: AgentRecord[]): Promise<string | undefined> {
     const pending = pendingChats.get(agent.id);
     if (pending) return pending;
-    const current = await bb.storage.kv.get<string>(`chat-id:${agent.id}`);
+    const current = await alia.storage.kv.get<string>(`chat-id:${agent.id}`);
     if (current) return current;
-    const byIdentity = await bb.storage.kv.get<string>(`chat:${ids[agent.id]}`);
+    const byIdentity = await alia.storage.kv.get<string>(`chat:${ids[agent.id]}`);
     if (byIdentity) return byIdentity;
     return rosterAgents.filter(other => slug(other.name) === slug(agent.name)).length === 1
-      ? await bb.storage.kv.get<string>(`chat:letta-${slug(agent.name)}`)
+      ? await alia.storage.kv.get<string>(`chat:letta-${slug(agent.name)}`)
       : undefined;
   }
   const startChat = singleFlight(async (rawId: string) => {
@@ -147,13 +147,13 @@ export default async function plugin(bb: BbPluginApi) {
     // Resuming a verified conversation must not depend on Docker/ACP availability.
     // Cached display data is usable only for its previously synchronized source.
     let current = await cachedRoster();
-    const savedSource = await bb.storage.kv.get<string>("provider-source:v2");
+    const savedSource = await alia.storage.kv.get<string>("provider-source:v2");
     if (!current || savedSource !== source) current = await roster();
     if (epoch !== generation || disposed) throw new Error("Settings changed; retry roster synchronization.");
     const matches = current.agents.filter(agent => agent.id === rawId);
     if (matches.length !== 1) throw new Error("Agent is missing or ambiguous. Refresh the roster.");
     const agent = matches[0]!;
-    const ids = await bb.storage.kv.get<Record<string, string>>("provider-identities:v2") ?? {};
+    const ids = await alia.storage.kv.get<Record<string, string>>("provider-identities:v2") ?? {};
     const identity = Object.hasOwn(ids, agent.id) ? ids[agent.id] : undefined;
     if (typeof identity !== "string" || !/^letta-[a-zA-Z0-9_-]{1,199}$/.test(identity)) throw new Error("Invalid Letta saved provider identity.");
     const providerId = `acp-${identity}`;
@@ -163,15 +163,15 @@ export default async function plugin(bb: BbPluginApi) {
       // Transport/auth/not-found errors do NOT imply deletion. Surface a safe
       // error rather than spawning a duplicate on an uncertain lookup.
       let thread;
-      try { thread = await bb.sdk.threads.get({ threadId: existing }); }
+      try { thread = await alia.sdk.threads.get({ threadId: existing }); }
       catch { throw new Error("Cannot verify the saved chat. Retry later; no duplicate chat was created."); }
-      const aliases = await bb.storage.kv.get<Record<string, string[]>>("provider-aliases:v2") ?? {};
+      const aliases = await alia.storage.kv.get<Record<string, string[]>>("provider-aliases:v2") ?? {};
       const accepted = Object.hasOwn(aliases, agent.id) ? aliases[agent.id] : [providerId];
       if (!Array.isArray(accepted) || !accepted.includes(thread.providerId)) throw new Error("Saved chat belongs to another provider. No replacement was created.");
       if (epoch !== generation || disposed) throw new Error("Settings changed; retry roster synchronization.");
       if (!thread.archivedAt && !thread.deletedAt) {
         pendingChats.set(agent.id, thread.id);
-        await bb.storage.kv.set(key, thread.id); pendingChats.delete(agent.id);
+        await alia.storage.kv.set(key, thread.id); pendingChats.delete(agent.id);
         return { threadId: thread.id };
       }
     }
@@ -179,24 +179,24 @@ export default async function plugin(bb: BbPluginApi) {
     await roster();
     if (epoch !== generation || disposed) throw new Error("Settings changed; retry roster synchronization.");
     if (!config.projectId || !config.hostId || !config.environmentProviderId) throw new Error("Configure chat project ID, host ID and workspace provider ID in Letta Agents settings before starting a chat.");
-    const providers = await bb.sdk.providers.list({ hostId: config.hostId });
+    const providers = await alia.sdk.providers.list({ hostId: config.hostId });
     if (!providers.some(provider => provider.id === providerId && provider.available)) throw new Error("Letta provider is not available yet. Enable the ACP adapter/provider and retry.");
     if (epoch !== generation || disposed) throw new Error("Settings changed; retry roster synchronization.");
     let thread;
     try {
-      thread = await bb.sdk.threads.spawn({ providerId, permissionMode: config.allowUnrestricted ? "full" : "auto", projectId: config.projectId, title: `${agent.name} (Letta)`, environment: { type: "provider", environmentProviderId: config.environmentProviderId, inputs: {}, machine: { type: "existing", hostId: config.hostId } }, prompt: "Say hello and briefly remind me what you do." });
+      thread = await alia.sdk.threads.spawn({ providerId, permissionMode: config.allowUnrestricted ? "full" : "auto", projectId: config.projectId, title: `${agent.name} (Letta)`, environment: { type: "provider", environmentProviderId: config.environmentProviderId, inputs: {}, machine: { type: "existing", hostId: config.hostId } }, prompt: "Say hello and briefly remind me what you do." });
     } catch { throw new Error("Could not start the Letta chat. Check project, host, workspace provider and ACP readiness. Details withheld."); }
     pendingChats.set(agent.id, thread.id);
-    await bb.storage.kv.set(key, thread.id);
+    await alia.storage.kv.set(key, thread.id);
     pendingChats.delete(agent.id);
     return { threadId: thread.id };
   });
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     agents_list: async () => {
       let value: Roster;
       try { value = await roster(); } catch { const cached = await cachedRoster(); if (!cached) throw new Error(warning ?? "Letta is not ready. Check settings and retry."); value = cached; }
-      const ids = await bb.storage.kv.get<Record<string, string>>("provider-identities:v2") ?? {};
-      const aliases = await bb.storage.kv.get<Record<string, string[]>>("provider-aliases:v2") ?? {};
+      const ids = await alia.storage.kv.get<Record<string, string>>("provider-identities:v2") ?? {};
+      const aliases = await alia.storage.kv.get<Record<string, string[]>>("provider-aliases:v2") ?? {};
       // Resolve each agent's saved chat exactly as chat_start does, so a row's dot
       // can be scoped to the thread clicking it opens.
       const chats = await Promise.all(value.agents.map(agent => savedChatId(agent, ids, value.agents)));
@@ -214,7 +214,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     chat_start: ({ agentId }) => startChat(agentId),
   });
-  bb.background.schedule("roster-refresh", "*/5 * * * *", async () => { try { await refresh("sync"); } catch { /* stale roster retained; safe warning already logged */ } });
+  alia.background.schedule("roster-refresh", "*/5 * * * *", async () => { try { await refresh("sync"); } catch { /* stale roster retained; safe warning already logged */ } });
   settings.onChange((next, prev) => {
     if (["container", "dockerExecutable", "appServerUrl", "allowUnrestricted", "projectId", "hostId", "environmentProviderId"].some(key => next[key as keyof typeof next] !== prev[key as keyof typeof prev])) {
       generation++; ready = false; lastSync = 0;
@@ -225,7 +225,7 @@ export default async function plugin(bb: BbPluginApi) {
       });
     }
   });
-  bb.onDispose(() => { disposed = true; generation++; for (const controller of controllers) controller.abort(); });
+  alia.onDispose(() => { disposed = true; generation++; for (const controller of controllers) controller.abort(); });
   // Initial sync is non-blocking so unavailable Docker never prevents settings/RPC loading.
   void refresh("sync").catch(() => {});
 }

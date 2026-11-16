@@ -20,7 +20,7 @@ function fakeHome(): string {
   symlinkSync(path.join(home, ".agents/skills/ru-text"), path.join(home, ".claude/skills/ru-text"));
   skill(path.join(home, ".claude/skills/synced"), "pdf");
   skill(path.join(home, ".codex/skills/.system"), "imagegen");
-  skill(path.join(home, ".bb/skills"), "edo");
+  skill(path.join(home, ".vesnalia/skills"), "edo");
   return home;
 }
 
@@ -29,7 +29,7 @@ test("count and clean CLI skill folders, keeping what the CLI owns", async () =>
   const counts = await countSkillHomes(home);
   assert.deepEqual(
     counts.map((item) => [item.id, item.skills, item.links]),
-    [["agents", 2, 0], ["claude", 0, 1], ["bb", 1, 0]],
+    [["agents", 2, 0], ["claude", 0, 1], ["alia", 1, 0]],
   );
   const dry = await cleanupSkillHomes(true, home);
   assert.equal(dry.backup, null);
@@ -42,13 +42,13 @@ test("count and clean CLI skill folders, keeping what the CLI owns", async () =>
   assert.equal(existsSync(path.join(home, ".codex/skills/.system/imagegen/SKILL.md")), true);
   assert.equal(existsSync(path.join(home, ".agents/skills/.git")), false);
   assert.deepEqual(readdirSync(path.join(done.backup as string, "agents")).sort(), [".git", "ru-text", "seo"]);
-  assert.equal(existsSync(path.join(done.backup as string, "bb/edo/SKILL.md")), true);
+  assert.equal(existsSync(path.join(done.backup as string, "alia/edo/SKILL.md")), true);
   assert.equal(existsSync(path.join(home, ".agents/skills-on-hub")), true);
 });
 
 test("a protected folder (the hub canon) is never counted, listed or moved", async () => {
   const home = fakeHome();
-  const canon = path.join(home, ".bb/skills");
+  const canon = path.join(home, ".vesnalia/skills");
   const protect = [canon];
   assert.deepEqual(
     (await countSkillHomes(home, protect)).map((item) => item.id),
@@ -68,10 +68,10 @@ test("a protected folder (the hub canon) is never counted, listed or moved", asy
 test("a protect path through a symlink also protects the canon", async () => {
   const home = fakeHome();
   const link = path.join(home, "canon-link");
-  symlinkSync(path.join(home, ".bb/skills"), link, "dir");
+  symlinkSync(path.join(home, ".vesnalia/skills"), link, "dir");
   const done = await cleanupSkillHomes(false, home, [link]);
   assert.deepEqual(done.errors, []);
-  assert.equal(existsSync(path.join(home, ".bb/skills/edo/SKILL.md")), true);
+  assert.equal(existsSync(path.join(home, ".vesnalia/skills/edo/SKILL.md")), true);
   assert.equal(existsSync(path.join(home, ".agents/skills/seo")), false);
 });
 
@@ -96,7 +96,7 @@ test("machine skills: links resolve, newest copy wins, CLI-owned folders are ski
   skill(path.join(home, ".qwen/skills"), "seo");
   mkdirSync(path.join(home, ".gemini/config/skills"), { recursive: true });
   symlinkSync(path.join(home, ".codex/skills/.system/imagegen"), path.join(home, ".gemini/config/skills/imagegen"));
-  skill(path.join(home, ".claude/skills"), "bb-cli");
+  skill(path.join(home, ".claude/skills"), "alia-cli");
   const old = new Date("2020-01-01");
   utimesSync(path.join(home, ".agents/skills/seo/SKILL.md"), old, old);
   const found = await listMachineSkills(home);

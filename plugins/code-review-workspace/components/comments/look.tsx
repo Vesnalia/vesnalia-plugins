@@ -1,5 +1,5 @@
 // How a comment-like thing looks wherever it shows, in the code, the list, or Finish (spec §4): dashed with a colored
-// edge while it's only in BB, solid on GitHub with its author, muted with a lock when it's private. Never color alone:
+// edge while it's only in VesnALIA, solid on GitHub with its author, muted with a lock when it's private. Never color alone:
 // its state is always in words too.
 import { CHECK_LABEL, STATE_LABEL, THREAD_FLAG_LABEL, type CommentCheck, type CommentItem, type FixMark, type ThreadItem } from "../../lib/comments";
 import type { AssessmentVerdict } from "../../lib/feedback";
@@ -17,7 +17,7 @@ export type Edge = "yours" | "agent" | "older";
 const EDGE: Record<Edge, string> = { yours: "border-l-primary/70", agent: "border-l-(--ansi-13)/70", older: "border-l-warning" };
 const EDGE_TEXT: Record<Edge, string> = { yours: "text-primary", agent: "text-(--ansi-13)", older: "text-warning-text" };
 
-/** Only in BB: a dashed outline, and a solid 3px edge in its words' color. */
+/** Only in VesnALIA: a dashed outline, and a solid 3px edge in its words' color. */
 export const notSubmitted = (edge: Edge) => cn("border border-dashed border-muted-foreground/40 border-l-[3px] [border-left-style:solid]", EDGE[edge]);
 /** On GitHub: a solid outline and no edge. */
 export const onGitHub = "border border-border";
@@ -100,7 +100,7 @@ export function ThreadState({ item, size = "sm" }: { item: ThreadItem; size?: "s
   </>;
 }
 
-/** A thread's reply drafted and not sent yet, yours or the agent's, on its row or pill: dashed, as anything only in BB. */
+/** A thread's reply drafted and not sent yet, yours or the agent's, on its row or pill: dashed, as anything only in VesnALIA. */
 export function ReplyDraftBadge({ reply, brief = false }: {
   reply: NonNullable<ThreadItem["replyDraft"]>;
   /** "Reply draft", its dashed frame and icon saying the rest, which a screen reader hears in full. */

@@ -1,6 +1,6 @@
 ---
 name: openspec-work
-description: Work on linked OpenSpec changes or assign changes to BB agent threads; keep repository artifacts and task progress current.
+description: Work on linked OpenSpec changes or assign changes to VesnALIA agent threads; keep repository artifacts and task progress current.
 ---
 
 # Linked OpenSpec work
@@ -29,18 +29,18 @@ appropriate to the project.
 ## Assign changes to threads
 
 When the user has authorized delegation, a manager can use the plugin RPCs
-through `bb plugin rpc call openspec <method> --input-file <json-file> --json`.
+through `alia plugin rpc call openspec <method> --input-file <json-file> --json`.
 Use structured JSON files; never interpolate prompts into shell commands.
 
 - `changes`: `{ "environmentId": "env_..." }` lists progress and linked threads.
-- `launch`: `{ "environmentId": "env_...", "changeId": "change-name", "action": "apply", "prompt": "Implement this change and update tasks.md after checks.", "execution": null }` creates and starts a visible thread in the same environment with an automatic binding. Actions are `explore`, `apply`, `verify`; `execution: null` uses BB defaults. Returns `threadId`.
+- `launch`: `{ "environmentId": "env_...", "changeId": "change-name", "action": "apply", "prompt": "Implement this change and update tasks.md after checks.", "execution": null }` creates and starts a visible thread in the same environment with an automatic binding. Actions are `explore`, `apply`, `verify`; `execution: null` uses VesnALIA defaults. Returns `threadId`.
 - `attach`: `{ "environmentId": "env_...", "changeId": "change-name", "threadId": "thr_..." }` assigns an existing thread from that environment without sending a message or starting work. This replaces its previous binding.
 - `threadChoices`: `{ "environmentId": "env_..." }` includes each candidate's current `changeId`.
 
 One thread has one current binding; a change may have several threads. Archive
 changes cannot be assigned or launched. Assigning metadata alone does not direct
 an already running turn: when changing the assignment, explicitly communicate
-the new task through BB thread orchestration if authorized. Avoid assigning
+the new task through VesnALIA thread orchestration if authorized. Avoid assigning
 concurrent edits of the same files to several agents.
 
 ## Store-backed changes

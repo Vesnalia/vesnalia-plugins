@@ -8,7 +8,7 @@
 //
 // Edges are drawn along the layout's own paths rather than React Flow's, so a
 // back edge still bows out to the right and a cycle reads as a cycle. Colours
-// come from the BB theme's CSS variables, as before.
+// come from the VesnALIA theme's CSS variables, as before.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   ControlButton,
@@ -753,7 +753,7 @@ const EDGE_TYPES = { layout: LayoutEdgeView };
 
 /**
  * React Flow's chrome in the host theme. Its defaults are a light theme of
- * their own, which reads as a foreign widget inside BB's dark one.
+ * their own, which reads as a foreign widget inside VesnALIA's dark one.
  */
 const THEME = {
   "--xy-background-color": "var(--background)",
@@ -791,9 +791,9 @@ export function colorLightness(color: string): number | null {
 }
 
 /**
- * React Flow's colour mode, taken from the BB theme actually on screen. Left at
+ * React Flow's colour mode, taken from the VesnALIA theme actually on screen. Left at
  * its default, React Flow paints its own chrome light — white controls and
- * surfaces inside a dark BB, which is what made the canvas look foreign.
+ * surfaces inside a dark VesnALIA, which is what made the canvas look foreign.
  */
 function useHostColorMode(): [React.RefObject<HTMLDivElement | null>, ColorMode] {
   const ref = useRef<HTMLDivElement | null>(null);

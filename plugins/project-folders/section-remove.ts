@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Folder } from "./server";
 
 export const sectionRemoveMode = ["archive", "unbind", "purge"] as const;
@@ -27,11 +27,11 @@ function withNestedGroups(all: Folder[], members: Folder[]): Folder[] {
   return out;
 }
 
-async function threadInventory(bb: BbPluginApi, projectId: string) {
-  const result: Awaited<ReturnType<typeof bb.sdk.threads.list>> = [];
+async function threadInventory(alia: AliaPluginApi, projectId: string) {
+  const result: Awaited<ReturnType<typeof alia.sdk.threads.list>> = [];
   for (const archived of [false, true]) {
     for (let offset = 0; ; offset += 200) {
-      const page = await bb.sdk.threads.list({
+      const page = await alia.sdk.threads.list({
         projectId,
         includeHidden: true,
         archived,
@@ -46,7 +46,7 @@ async function threadInventory(bb: BbPluginApi, projectId: string) {
 }
 
 export async function removeSection(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   deps: {
     folders: () => Folder[];
     root: (projectId: string, hostId: string) => Promise<Folder>;
@@ -100,7 +100,7 @@ export async function removeSection(
       "The section holds sections on another device or outside its folder. Move or remove them first.",
     );
 
-  const otherProjects = await bb.sdk.projects.list();
+  const otherProjects = await alia.sdk.projects.list();
   const nestedProject = otherProjects.some(
     (p) =>
       p.id !== f.projectId &&
@@ -113,7 +113,7 @@ export async function removeSection(
   );
   if (input.mode === "purge" && nestedProject)
     throw new Error(
-      "This folder contains another BB project. Remove it from the tree instead of deleting the files.",
+      "This folder contains another VesnALIA project. Remove it from the tree instead of deleting the files.",
     );
 
   const pathShared = all.some(
@@ -135,7 +135,7 @@ export async function removeSection(
       "Complete delete is only for a folder inside the project. Remove an outside folder from the tree instead.",
     );
 
-  const envs = await bb.sdk.environments.list();
+  const envs = await alia.sdk.environments.list();
   if (
     input.mode === "purge" &&
     envs.some(
@@ -147,7 +147,7 @@ export async function removeSection(
         e.status === "ready",
     )
   )
-    throw new Error("An environment from another BB project uses this folder.");
+    throw new Error("An environment from another VesnALIA project uses this folder.");
   const envIds = new Set(
     envs
       .filter(
@@ -158,9 +158,9 @@ export async function removeSection(
       )
       .map((e) => e.id),
   );
-  const threads = await threadInventory(bb, f.projectId);
+  const threads = await threadInventory(alia, f.projectId);
   const dbPlaces = (
-    bb.storage
+    alia.storage
       .database()
       .prepare("SELECT threadId, folderId FROM thread_places")
       .all() as { threadId: string; folderId: string | null }[]
@@ -204,28 +204,28 @@ export async function removeSection(
       remaining.find(
         (t) => !remaining.some((c) => c.parentThreadId === t.id),
       ) ?? remaining[0];
-    const live = await bb.sdk.threads.get({ threadId: leaf.id });
+    const live = await alia.sdk.threads.get({ threadId: leaf.id });
     if (["active", "starting", "pending", "stopping"].includes(live.status))
       throw new Error(
         "The chat started running. Wait for it to finish and retry.",
       );
-    await bb.sdk.threads.stop({ threadId: leaf.id });
+    await alia.sdk.threads.stop({ threadId: leaf.id });
     if (input.mode === "purge")
-      await bb.sdk.threads.delete({
+      await alia.sdk.threads.delete({
         threadId: leaf.id,
         childThreadsConfirmed: false,
       });
-    else await bb.sdk.threads.archive({ threadId: leaf.id });
+    else await alia.sdk.threads.archive({ threadId: leaf.id });
     remaining.splice(remaining.indexOf(leaf), 1);
   }
 
   if (input.mode === "purge") {
-    const exists = await bb.sdk.hosts.pathsExist({
+    const exists = await alia.sdk.hosts.pathsExist({
       hostId: f.hostId,
       paths: [f.path],
     });
     if (exists.existence[f.path])
-      await bb.sdk.files.remove({
+      await alia.sdk.files.remove({
         hostId: f.hostId,
         path: f.path,
         recursive: true,

@@ -68,7 +68,7 @@ export function NoteField({
         <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
           <Icon name="human-tasks/shield" className="mt-0.5 size-4 shrink-0 text-foreground/70" />
           <span>
-            After you mark this done, the agent opens bb's secure form for{" "}
+            After you mark this done, the agent opens VesnALIA's secure form for{" "}
             {task.secrets.map((secret, index) => (
               <span key={secret.name}>
                 {index > 0 ? ", " : ""}
@@ -99,7 +99,7 @@ export function NoteField({
           <span className="flex items-center gap-1.5">
             <Icon name="human-tasks/alert" className="size-3.5" />
             This looks like {state.secretWarning}. Notes land in the agent's chat history.
-            {task.secrets.length === 0 ? " Ask the agent to request it with `bb secret request` instead." : ""}
+            {task.secrets.length === 0 ? " Ask the agent to request it with `alia secret request` instead." : ""}
           </span>
           <label className="flex cursor-pointer items-center gap-1.5 text-muted-foreground">
             <input

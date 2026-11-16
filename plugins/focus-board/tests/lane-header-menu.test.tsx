@@ -9,7 +9,7 @@
 // sweep entry, guarded against opening mid-touch-drag.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Board } from "../components/board";
 import { buildColumns } from "../components/grouping";
 import type { RankStore } from "../lib/rank";
@@ -257,12 +257,12 @@ describe("lane header: the per-lane menu", () => {
     // painted pixel; the harness frames in docs/screenshots/lane-name-hover/
     // are the picture (rest beside hover, pointer parked on the pair).
     //
-    // The fill is bb's interactive-state step (`hover:bg-state-active`) and NO
+    // The fill is VesnALIA's interactive-state step (`hover:bg-state-active`) and NO
     // longer the dropdown chips' `hover:bg-accent`: accent is the same weight
-    // as bb's `state-hover`, which measured 1.24:1 against the dark canvas and
+    // as VesnALIA's `state-hover`, which measured 1.24:1 against the dark canvas and
     // 1.35:1 against the light one — near invisible on the plain board, which
-    // is what the operator's stronger-hover ruling names. state-active is bb's
-    // step above it (1.63:1 / 1.60:1 on the same pass) and the fill bb's own
+    // is what the operator's stronger-hover ruling names. state-active is VesnALIA's
+    // step above it (1.63:1 / 1.60:1 on the same pass) and the fill VesnALIA's own
     // small rounded caret triggers hover with, so it reads as this app's
     // vocabulary rather than a new tone.
     const trigger = laneMenuTrigger("unread");
@@ -270,7 +270,7 @@ describe("lane header: the per-lane menu", () => {
     expect(trigger.className).not.toContain("hover:bg-accent");
     expect(trigger.className).toContain("cursor-pointer");
     // The caret rides the same hover: rest is muted-foreground at 60%, hover
-    // is full ink — the fill-plus-glyph-tone pair bb's sidebar controls carry.
+    // is full ink — the fill-plus-glyph-tone pair VesnALIA's sidebar controls carry.
     // The group is NAMED because the lane header already owns a plain `group`
     // (the hide-lane icon), and a bare group-hover would fire from anywhere in
     // the header.

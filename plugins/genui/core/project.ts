@@ -1,12 +1,12 @@
-// What the BB-backed Project components (Changes, Commits, PullRequest,
+// What the ALIA-backed Project components (Changes, Commits, PullRequest,
 // Threads, Environments) show: the shapes the backend (project/) answers
 // with, which the renderer and the markdown fallback both read, and the pure
-// helpers they share. Nothing here talks to BB; project/source.ts does.
+// helpers they share. Nothing here talks to VesnALIA; project/source.ts does.
 // Environments' own shapes are in environments.ts.
 import type { EnvironmentsView } from "./environments";
 import type { LastMessage, PendingAsk } from "./thread-activity";
 
-/** BB thread ids: `thr_` and lowercase letters and digits. */
+/** VesnALIA thread ids: `thr_` and lowercase letters and digits. */
 export const THREAD_ID = /^thr_[a-z0-9]{4,40}$/;
 
 /** A full or abbreviated git commit sha, lowercase. */
@@ -89,7 +89,7 @@ export function parseThreadIds(value: unknown): Parsed<readonly string[] | null>
   return { ok: true, value: ids };
 }
 
-/** One read of BB state a rendered reply needs, as the markdown fallback collects them. */
+/** One read of VesnALIA state a rendered reply needs, as the markdown fallback collects them. */
 export type ProjectRequest =
   | { readonly kind: "changes"; readonly target: ChangesTarget; readonly paths: readonly string[] | null }
   | { readonly kind: "commits" }
@@ -103,7 +103,7 @@ export function projectRequestKey(request: ProjectRequest): string {
 
 // ── Answers ─────────────────────────────────────────────────────────────────
 
-/** Why BB state couldn't be read, in one sentence for the user. */
+/** Why VesnALIA state couldn't be read, in one sentence for the user. */
 export interface ProjectFailure {
   readonly ok: false;
   readonly reason: "no-thread" | "not-found" | "no-environment" | "not-git" | "unavailable" | "invalid";
@@ -112,7 +112,7 @@ export interface ProjectFailure {
 
 export type ChangeKind = "added" | "copied" | "deleted" | "modified" | "renamed" | "type_changed";
 
-/** How a file's diff can be shown: BB sent it, fetches it on request, or won't show text. */
+/** How a file's diff can be shown: VesnALIA sent it, fetches it on request, or won't show text. */
 export type DiffAvailability = "inline" | "on-demand" | "too-large" | "binary";
 
 export interface ChangedFile {
@@ -130,7 +130,7 @@ export interface ChangedFile {
 export interface FilePatch {
   readonly path: string;
   readonly patch: string;
-  /** BB cut the patch short. */
+  /** VesnALIA cut the patch short. */
   readonly truncated: boolean;
 }
 
@@ -151,18 +151,18 @@ export type ChangesScope =
 export interface ChangesView {
   readonly ok: true;
   readonly scope: ChangesScope;
-  /** Files the path filter keeps, in BB's order. */
+  /** Files the path filter keeps, in VesnALIA's order. */
   readonly files: readonly ChangedFile[];
   /** Files before the filter. */
   readonly totalFiles: number;
   readonly filter: readonly string[] | null;
-  /** BB listed only part of the changed files (or the snapshot kept only part). */
+  /** VesnALIA listed only part of the changed files (or the snapshot kept only part). */
   readonly listTruncated: boolean;
   /** The patches at hand; a stored snapshot carries every one that fit. */
   readonly patches: readonly FilePatch[];
   /** Whether a patch not at hand may be fetched now. False for a snapshot: today's diff isn't what it showed. */
   readonly livePatches: boolean;
-  /** When BB was read (epoch ms). */
+  /** When VesnALIA was read (epoch ms). */
   readonly takenAt: number;
   /** Kept in plugin storage for this reply: later renders show this, not today's state. */
   readonly stored: boolean;
@@ -186,7 +186,7 @@ export interface CommitsView {
   readonly base: string;
   /** The checkout is on the default branch itself. */
   readonly onBase: boolean;
-  /** Null when BB couldn't find a merge base. */
+  /** Null when VesnALIA couldn't find a merge base. */
   readonly ahead: number | null;
   readonly behind: number | null;
   /** Newest first. */
@@ -266,15 +266,15 @@ export interface ThreadInfo {
   readonly archived: boolean;
   readonly provider: { readonly id: string; readonly name: string | null; readonly logoUrl: string | null };
   readonly model: string | null;
-  /** The reasoning level BB runs the thread with ("high"); null when unknown or "none". */
+  /** The reasoning level VesnALIA runs the thread with ("high"); null when unknown or "none". */
   readonly reasoning: string | null;
-  /** Epoch ms of the last change BB recorded. */
+  /** Epoch ms of the last change VesnALIA recorded. */
   readonly updatedAt: number;
-  /** Its latest assistant message; null when it has none yet or BB couldn't say. */
+  /** Its latest assistant message; null when it has none yet or VesnALIA couldn't say. */
   readonly lastMessage: LastMessage | null;
-  /** The question or approval it waits on the user for; null when none (or BB couldn't say which). */
+  /** The question or approval it waits on the user for; null when none (or VesnALIA couldn't say which). */
   readonly pending: PendingAsk | null;
-  /** Its subthreads BB is running right now. */
+  /** Its subthreads VesnALIA is running right now. */
   readonly runningWorkers: number;
 }
 
@@ -289,7 +289,7 @@ export interface ThreadsView {
   /** Subthreads of the reply's thread, or the ids the spec named. */
   readonly mode: "subthreads" | "ids";
   readonly threads: readonly (ThreadInfo | MissingThread)[];
-  /** BB had more subthreads than were listed. */
+  /** VesnALIA had more subthreads than were listed. */
   readonly truncated: boolean;
   readonly fetchedAt: number;
 }
@@ -320,7 +320,7 @@ export function scopeLabel(scope: ChangesScope): string {
   }
 }
 
-/** One-letter git status per change kind, as BB's diff panel and `git status` show them. */
+/** One-letter git status per change kind, as VesnALIA's diff panel and `git status` show them. */
 export const CHANGE_LETTER: Record<ChangeKind, string> = {
   added: "A",
   copied: "C",
@@ -420,7 +420,7 @@ export const MERGEABILITY_LABEL: Record<MergeabilityState, string> = {
   unknown: "Mergeability unknown",
 };
 
-/** BB's attention reason: what the pull request waits for now. Null when nothing does. */
+/** VesnALIA's attention reason: what the pull request waits for now. Null when nothing does. */
 export const ATTENTION_LABEL: Record<PullRequestAttention, string | null> = {
   blocked: "Blocked by branch rules",
   changes_requested: "Changes requested",

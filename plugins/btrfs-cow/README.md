@@ -1,6 +1,6 @@
-# CoW copy (bb-plugin-btrfs-cow)
+# CoW copy (alia-plugin-btrfs-cow)
 
-A BB environment provider that gives each thread a **copy-on-write reflink copy**
+A VesnALIA environment provider that gives each thread a **copy-on-write reflink copy**
 of the project checkout instead of a git worktree.
 
 On Btrfs (and XFS, ZFS, bcachefs) `cp --reflink=always` clones a directory tree
@@ -22,8 +22,8 @@ subvolume (root inode 256) and snapshots it, otherwise reflinks it. To get the
 constant-time path, convert the checkout once:
 
 ```sh
-bb btrfs-cow status  --machine <name> /path/to/checkout   # what would happen today
-bb btrfs-cow convert --machine <name> /path/to/checkout   # one-time, keeps the path
+alia btrfs-cow status  --machine <name> /path/to/checkout   # what would happen today
+alia btrfs-cow convert --machine <name> /path/to/checkout   # one-time, keeps the path
 ```
 
 Conversion reflinks the contents into a new subvolume beside the checkout and
@@ -48,7 +48,7 @@ snapshot with `rm` and removes the shell, which is slower but works.
 - `remove` kills processes whose cwd is inside the copy and deletes it
   (`btrfs subvolume delete` for snapshots, falling back to `rm`). Only paths
   of the form `<dataDir>/copies/<key>/<repo>` are ever removed.
-- Core still runs the repo's `.bb-env-setup.sh` and `.bb-env-teardown.sh`.
+- Core still runs the repo's `.alia-env-setup.sh` and `.alia-env-teardown.sh`.
 
 The source checkout must own its `.git` directory. Linked worktrees (whose
 `.git` is a file) are refused because a copy would share the parent's
@@ -58,21 +58,21 @@ worktree metadata.
 
 ```sh
 git clone https://github.com/SawyerHood/bb-plugin-btrfs-cow.git
-cd bb-plugin-btrfs-cow
+cd alia-plugin-btrfs-cow
 npm install
-bb plugin build
-bb plugin install .      # on the machine that runs the bb server
+alia plugin build
+alia plugin install .      # on the machine that runs the alia server
 # or, without cloning:
-bb plugin install git:https://github.com/SawyerHood/bb-plugin-btrfs-cow.git
+alia plugin install git:https://github.com/SawyerHood/bb-plugin-btrfs-cow.git
 ```
 
 Select **Btrfs Cow** in the environment picker, or
-`bb thread spawn --environment-provider btrfs-cow`.
+`alia thread spawn --environment-provider btrfs-cow`.
 
 ## Develop
 
 ```sh
 npm run typecheck
-npm test                 # needs a reflink-capable $HOME; set BB_COW_TEST_ROOT to override
-bb plugin dev
+npm test                 # needs a reflink-capable $HOME; set ALIA_COW_TEST_ROOT to override
+alia plugin dev
 ```

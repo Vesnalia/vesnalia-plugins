@@ -20,7 +20,7 @@ describe("parking threads", () => {
   it("keeps Woke beside the current card status and preserves its controls", async () => {
     const acknowledged: string[] = [];
     const now = Math.floor(Date.now() / 60_000) * 60_000;
-    window.localStorage.setItem("bb-sidebar:working-since:v1", JSON.stringify({ runtime: now - 5 * 60_000 }));
+    window.localStorage.setItem("alia-sidebar:working-since:v1", JSON.stringify({ runtime: now - 5 * 60_000 }));
     const threads = [
       thread({
         id: "pending",
@@ -130,7 +130,7 @@ describe("parking threads", () => {
               updatedAt: now,
             }),
           ],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         },
         rpc: {
           listLifecycle: () => ({ rows: lifecycleRows }),
@@ -184,7 +184,7 @@ it("keeps parked threads parked when opened and offers Resume with Undo", async 
     sidebarThreads: {
       status: "ready",
       threads: [thread({ id: "waiting", title: "Awaiting review", isPinned: true })],
-      projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+      projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
     },
     rpc: {
       listLifecycle: () => ({
@@ -205,7 +205,7 @@ it("keeps parked threads parked when opened and offers Resume with Undo", async 
   const shelf = await screen.findByRole("region", { name: "Parked" });
   fireEvent.click(within(shelf).getByRole("button"));
   expect(within(shelf).getByText("Waiting 5d")).toBeDefined();
-  fireEvent.click(within(shelf).getByRole("link", { name: "bb · Awaiting review" }));
+  fireEvent.click(within(shelf).getByRole("link", { name: "VesnALIA · Awaiting review" }));
   expect(resume).not.toHaveBeenCalled();
   expect(rendered.linkCalls).toContainEqual({ href: "/projects/proj_1/threads/waiting", split: false });
   fireEvent.click(within(shelf).getByRole("button", { name: "Resume thread" }));

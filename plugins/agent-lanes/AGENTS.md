@@ -1,12 +1,12 @@
 # AGENTS.md
 
-This file is for every agent and person who works on bb Lanes. Read it before
+This file is for every agent and person who works on VesnALIA Lanes. Read it before
 you change anything. `SPEC.md` describes what we are building. This file
 describes how we think while we build it.
 
 ## What we are building
 
-bb Lanes is an opinionated swarm manager for bb. It shows every agent thread
+VesnALIA Lanes is an opinionated swarm manager for VesnALIA. It shows every agent thread
 as a lane on a live timeline, so you can see at a glance:
 
 - who is working
@@ -43,7 +43,7 @@ decision we failed to make.
 explanation. Power comes from keyboard paths, hover detail, and depth that you
 find as you use it. It does not come from menus of options.
 
-**Aim for clarity.** Use the names bb already uses: thread, project, section,
+**Aim for clarity.** Use the names VesnALIA already uses: thread, project, section,
 machine, turn. Do not invent new terms. Copy is short and literal, e.g.,
 "Needs you", "Idle", "now".
 
@@ -73,12 +73,12 @@ record the change here.
   - Created (a thread started another) is red, solid, and ends in a filled
     circle.
   - Messaged (one agent told another) is blue, dashed, and ends in an arrow.
-  - Ended (a child finished or failed and bb told its parent) is red, solid,
+  - Ended (a child finished or failed and VesnALIA told its parent) is red, solid,
     and ends in an open circle.
   - Forked is neutral, dotted, and ends in an arrow.
   - None of the lines has a start cap.
 - **A confirmed input has a hollow dot at its turn's start.** Blue means a
-  user initiated it; red means bb initiated it. These dots have no incoming
+  user initiated it; red means VesnALIA initiated it. These dots have no incoming
   line. An incoming hand-off keeps its existing marker instead of getting a
   second dot. Uncertain origins stay unmarked. Tool icons describe work within
   the turn; their group has one tooltip naming the tools.
@@ -109,7 +109,7 @@ record the change here.
   `prefers-reduced-motion`.
 - Light and dark mode both need to look right. Check both before you report
   that you are done.
-- Check your work in real bb with real data before you call it done. The QA
+- Check your work in real VesnALIA with real data before you call it done. The QA
   scripts in `scripts/qa/` take screenshots of the live pane.
 - This repository is public. Never commit a screenshot or fixture that shows
   real threads, projects, or messages. Live screenshots go to
@@ -119,7 +119,7 @@ record the change here.
 
 ### Robustness
 
-- Lanes must keep working when bb restarts, when a thread is deleted, when the
+- Lanes must keep working when VesnALIA restarts, when a thread is deleted, when the
   connection drops, or when history is large. Treat every value from storage or
   from the network as untrusted until it is parsed.
 - A failure in one thread must never stop the others from showing.
@@ -135,13 +135,13 @@ record the change here.
   where the reason is not obvious. Leave no dead code and no TODOs in shipped
   paths.
 - Before you report, run `npx tsc --noEmit`, `npx vitest run`, and
-  `bb plugin build`. All three must pass.
+  `alia plugin build`. All three must pass.
 
 ## How we work
 
 - The coordinator thread owns `main`, the contracts, and the installed copy of
   the plugin. Workers build on their own git worktree branch and report to the
-  coordinator with `bb thread tell <coordinator-id> --message-file <file>`.
+  coordinator with `alia thread tell <coordinator-id> --message-file <file>`.
 - Stay inside the paths you own. The ownership table is in `SPEC.md`.
 - Commit in small, logical steps. Each commit message explains why the change
   was made.

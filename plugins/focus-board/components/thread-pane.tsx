@@ -9,13 +9,13 @@ import {
 } from "react";
 import {
   ThreadChat,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
   useSdk,
   useSettings,
   type ThreadChatMessageAction,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -58,7 +58,7 @@ const PANE_DEFAULT_WIDTH = 480;
 /** The narrowest panel row that still hosts the board and the side-by-side
  *  pane together. At or below this measured row width the pane covers the
  *  board as a sheet. Measured on the pane's row itself — the plugin
- *  panel inside the host — not the window: a desktop bb window can squeeze
+ *  panel inside the host — not the window: a desktop VesnALIA window can squeeze
  *  the panel far below any window media query, and the stored pane width
  *  (480px on a 250px panel) would otherwise overrun the panel edge. */
 export const PANE_SHEET_MAX_PANEL_WIDTH = 640;
@@ -114,7 +114,7 @@ export interface ThreadPaneThread {
   /**
    * Project + checkout facts (lib/pane-context) backing the composer-context
    * fallback row: null when the thread has no environment to describe
-   * (archived rows, provisional spawns) — the same threads bb's own page
+   * (archived rows, provisional spawns) — the same threads VesnALIA's own page
    * shows no context row for. Absent means the same, so older call shapes
    * stay quiet rather than flash a wrong line.
    */
@@ -172,7 +172,7 @@ interface ThreadPaneProps {
    * converts agent-written `@thread:`/`@project:` tokens — and the host's
    * own empty mention elements — into labeled chips inside the embedded
    * chat, and `onOpen` decides their routing (the board's thread pane for a
-   * thread it lists, bb's main thread/project view otherwise). Optional:
+   * thread it lists, VesnALIA's main thread/project view otherwise). Optional:
    * absent, the pane keeps the host's rendering untouched.
    */
   referenceMentions?: ReferenceMentions;
@@ -554,7 +554,7 @@ export function ThreadPane({
   const effectiveWidth =
     panelWidth === null ? width : Math.min(width, boardFloor, panelWidth);
   const sdk = useSdk();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const rpc = useRpc<typeof rpcContract>();
   // The developer scroll instrumentation (setting "Developer: instrument
   // pane chat scrolling (debug)") is read here instead of threaded through
@@ -577,7 +577,7 @@ export function ThreadPane({
 
   // The host's embedded ThreadChat renders markdown links with their raw
   // destination, so a message like `[ERD](docs/erd.mmd)` becomes an anchor
-  // the browser resolves against the bb app's origin — an error page. The
+  // the browser resolves against the VesnALIA app's origin — an error page. The
   // host's own thread view owns message link routing; this pane does not.
   // Capture clicks on relative anchors here and reopen them as live files
   // against the thread's environment instead. The same routing gap also
@@ -612,7 +612,7 @@ export function ThreadPane({
       if (!(target instanceof Element)) return;
       // A reference chip (issue #161) claims its click outright: the chip's
       // own routing (referenceMentions.onOpen) decides where the target
-      // opens — the pane for a listed thread, bb's main view otherwise —
+      // opens — the pane for a listed thread, VesnALIA's main view otherwise —
       // and nothing underneath the chip runs (no anchor navigation, no
       // workspace preview on a stray wrapped code span). The chip is either
       // the painted button or the repainted host mention element.
@@ -736,7 +736,7 @@ export function ThreadPane({
           return;
         }
         if (escStopsRunningThread) {
-          // bb sorts "starting", "active", and "stopping" as busy threads.
+          // VesnALIA sorts "starting", "active", and "stopping" as busy threads.
           // Escape interrupts the running turn first — closing the pane
           // while the agent still runs would feel like the stop did
           // nothing — and only closes once nothing is running. "stopping"
@@ -784,7 +784,7 @@ export function ThreadPane({
   // coalesced to one scan per frame. The environment id scopes the
   // verdict cache (the same relative path exists in one workspace but
   // not another) and is resolved once per thread.
-  // bb's page-shell scroll rewrite (bb #5951, one owner of the reading
+  // VesnALIA's page-shell scroll rewrite (VesnALIA #5951, one owner of the reading
   // position, shipped in 0.48.0) removed the pending-capture arithmetic the
   // old "chat jumps up a half-page" bug ran on (docs/chat-click-jump-2026-
   // 09-29.md holds the verdict history and the probe), so the pane no longer
@@ -919,7 +919,7 @@ export function ThreadPane({
             // sheet with the X close button in the header. As a fixed element
             // it escapes the host panel's own safe-area padding, so it pads
             // for the home indicator / notch itself.
-            "fixed inset-0 z-30 flex min-h-0 flex-col bg-background pb-[var(--bb-safe-area-bottom,env(safe-area-inset-bottom))]"
+            "fixed inset-0 z-30 flex min-h-0 flex-col bg-background pb-[var(--alia-safe-area-bottom,env(safe-area-inset-bottom))]"
           : panelScopedSheet
             ? // A narrow panel on a desktop window: the sheet anchors to the
               // plugin panel only, so the host's chrome stays visible.
@@ -1055,7 +1055,7 @@ export function ThreadPane({
             // divider, then the family-spawn entry ("New child thread…")
             // behind the snooze: a creation action stays categorically
             // apart from the state toggles. Archived rows carry it
-            // too — bb accepts a child of an archived parent (the child
+            // too — VesnALIA accepts a child of an archived parent (the child
             // re-roots to render standalone), and the operator's call.
             {
               id: "done",
@@ -1094,7 +1094,7 @@ export function ThreadPane({
           if (isCompact) {
             // On compact viewports the full-screen button is dropped from
             // the header to save space, so the menu carries it instead
-            // (bb's compact term; the desktop open dropdown has "Maximize
+            // (VesnALIA's compact term; the desktop open dropdown has "Maximize
             // pane").
             actionItems.push({
               id: "maximize",
@@ -1151,7 +1151,7 @@ export function ThreadPane({
           // icon that opens the thread's workspace in the preferred editor
           // plus a dropdown (file explorer, terminal, Maximize pane, new
           // window, copy link). The standalone full-screen button is gone —
-          // its action lives in this dropdown as bb's "Maximize pane". On a
+          // its action lives in this dropdown as VesnALIA's "Maximize pane". On a
           // wide pane the primary grows an "Open in editor" label; the
           // default width keeps it icon-only so the title keeps its room.
           // Renders nothing when no local open applies — no workspace,
@@ -1176,21 +1176,21 @@ export function ThreadPane({
           <Icon name="X" className="size-4" />
         </Button>
       </header>
-      {/* The host's embedded ThreadChat lives here. bb scopes our plugin
-          stylesheet with `:where([data-bb-plugin="focus-board"],
-          [data-bb-plugin-root]:not([data-bb-plugin]))` and appends it after
-          bb's global utilities, so our own scoped `.pointer-events-none` and
+      {/* The host's embedded ThreadChat lives here. VesnALIA scopes our plugin
+          stylesheet with `:where([data-alia-plugin="focus-board"],
+          [data-alia-plugin-root]:not([data-alia-plugin]))` and appends it after
+          VesnALIA's global utilities, so our own scoped `.pointer-events-none` and
           `.opacity-0` outrank the host's `[@media(hover:none)]` touch reveal
           on any host element inside this root (the scoping mechanism is
-          unchanged in bb 0.48.1: packages/plugin-build scopePluginUtilities).
+          unchanged in VesnALIA 0.48.1: packages/plugin-build scopePluginUtilities).
           The queued-message row's actions control is the case that bites: on
           a phone it stays `opacity:0` and `pointer-events:none`, so the
           row's "…" is invisible and Send is unreachable. Emitting the host's
           own touch utilities from this subtree carries them into our scoped
           sheet, where they win by order and restore the host control exactly
-          as bb's own thread page renders it. The host class names are echoed
-          on purpose; the durable fix belongs to bb's plugin CSS scoping
-          (issue #296). Re-verified against bb 0.48.1 on 2026-11-04 (the
+          as VesnALIA's own thread page renders it. The host class names are echoed
+          on purpose; the durable fix belongs to VesnALIA's plugin CSS scoping
+          (issue #296). Re-verified against VesnALIA 0.48.1 on 2026-11-04 (the
           pane-parity audit's Gap 10): stripping these utilities from the
           served plugin sheet in the live app leaves the queued row's
           "…" untappable (pointer-events none), so they still earn their
@@ -1219,10 +1219,10 @@ export function ThreadPane({
           messageActions={messageActions}
         />
       </div>
-      {/* bb's embedded chat shows no project/checkout context on a pane
+      {/* VesnALIA's embedded chat shows no project/checkout context on a pane
           container; when its row is genuinely absent from the chat DOM this
           line answers "where does my next message land". The probe stays
-          quiet whenever the host paints its own context, so bb fixing the
+          quiet whenever the host paints its own context, so VesnALIA fixing the
           gap never duplicates the line. */}
       {contextRowMissing && thread.context !== null && thread.context !== undefined ? (
         <PaneContextRow info={thread.context} />

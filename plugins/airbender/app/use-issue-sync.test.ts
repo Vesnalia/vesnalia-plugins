@@ -4,7 +4,7 @@
 // What: checks what a sync is said to have done, the state on the menu's
 // row, the refresh button's tooltip, and when that button is marked.
 // Why: these words are all the owner sees of a sync that otherwise runs
-// unseen (bead-bb-0bz, bead-bb-6a9).
+// unseen (bead-alia-0bz, bead-alia-6a9).
 
 import assert from "node:assert/strict";
 import { test } from "node:test";

@@ -1,15 +1,15 @@
-// What agents are told about ```ui blocks, in the three sections BB adds to
-// sessions whose replies a person reads (see server.ts). BB appends tool
+// What agents are told about ```ui blocks, in the three sections VesnALIA adds to
+// sessions whose replies a person reads (see server.ts). VesnALIA appends tool
 // sections before plugin sections, so:
 // - UI_REFERENCE (the check_ui tool's instructions) and UI_REFERENCE_MORE
 //   (the ui_examples tool's) come first: the syntax and every component
 //   signature, generated from the catalog so the prompt cannot drift from
 //   what the parser accepts, plus the icon names.
-// - AGENT_INSTRUCTIONS (bb.agents.configure) comes last, closest to the
+// - AGENT_INSTRUCTIONS (alia.agents.configure) comes last, closest to the
 //   conversation: when to write UI, and worked examples. Examples here are the
 //   strongest lever on what models write; moved to the earlier section, the
 //   same calculator example stopped being followed.
-// BB refuses a tool whose instructions pass 4096 characters and truncates the
+// VesnALIA refuses a tool whose instructions pass 4096 characters and truncates the
 // configure section there; instructions.test.ts holds all three.
 import { ACTIONS, callSignature, COMPONENTS, componentSignature, type ComponentGroup, type ComponentName, type ComponentSpec } from "./core/catalog";
 
@@ -45,7 +45,7 @@ Syntax: one statement per line. \`$x = 8\` is state inputs bind to; \`name = exp
 Components (? optional; tone: neutral|good|warn|bad|info if meaningful; more in the next section):
 ${componentLines(REFERENCE_GROUPS)}
 Actions: ${actionList}; a list runs in order; a picked Send puts its text in the user's message.
-Data: Load("path") reads JSON/CSV/TSV/JSONL from the workspace, "$BB_THREAD_STORAGE/x.json" or /tmp into lists and objects, and other files (a log, tsc output) as text; never retype values a file or command output holds. Snippet and Image read files the same way. Table/Chart/Metric not from Load: source: "illustrative"|"user-provided"|URL.
+Data: Load("path") reads JSON/CSV/TSV/JSONL from the workspace, "$ALIA_THREAD_STORAGE/x.json" or /tmp into lists and objects, and other files (a log, tsc output) as text; never retype values a file or command output holds. Snippet and Image read files the same way. Table/Chart/Metric not from Load: source: "illustrative"|"user-provided"|URL.
 External screenshots: copy into workspace, thread storage or /tmp first.
 Games, simulations, custom visuals: write \`\`\`app, a self-contained HTML page (inline CSS/JS, CSS vars --foreground --muted-foreground --border --primary --card; no network; localStorage persists; dialogs don't show). Contract: ui_examples(["app"]); check with check_ui(spec, language: "app").`;
 
@@ -59,31 +59,31 @@ Card("Day 1", [Map([{name: "Belém Tower, Lisbon", note: "Opens 9:30"}, {name: "
 
 /**
  * Engineering and management work, contributed as its own section
- * (bb.agents.contributeInstructions), which BB places after the tool sections
+ * (alia.agents.contributeInstructions), which VesnALIA places after the tool sections
  * and right before AGENT_INSTRUCTIONS. Says, per kind of tool output, which
  * command saves it and which component reads it, so results are shown from
  * the file instead of pasted. It no longer calls prose "the worse answer":
  * with that line, replies after a task shrank to one sentence plus UI.
  */
 export const CODE_WORK_INSTRUCTIONS = `# Inline UI for code work
-After a task, say in prose what you did, what you found and what is left. Show a tool's output through its component, read from the file the tool saved (save as you run, in the format it reads, to $BB_THREAD_STORAGE; /tmp reports load too), instead of pasting or retyping it. Tests or a build that fully passed need one sentence and no block.
-- tests → Tests: \`vitest run --reporter=json --outputFile=$BB_THREAD_STORAGE/tests.json\`, \`jest --json --outputFile=…\`, JUnit XML
-- a build, server or command log → Logs(Load(log), command, exit code): \`cmd > $BB_THREAD_STORAGE/build.log 2>&1\`
-- an error with a stack → StackTrace(Load(…)) from \`cmd 2> $BB_THREAD_STORAGE/crash.txt\`, or StackTrace(the error text)
+After a task, say in prose what you did, what you found and what is left. Show a tool's output through its component, read from the file the tool saved (save as you run, in the format it reads, to $ALIA_THREAD_STORAGE; /tmp reports load too), instead of pasting or retyping it. Tests or a build that fully passed need one sentence and no block.
+- tests → Tests: \`vitest run --reporter=json --outputFile=$ALIA_THREAD_STORAGE/tests.json\`, \`jest --json --outputFile=…\`, JUnit XML
+- a build, server or command log → Logs(Load(log), command, exit code): \`cmd > $ALIA_THREAD_STORAGE/build.log 2>&1\`
+- an error with a stack → StackTrace(Load(…)) from \`cmd 2> $ALIA_THREAD_STORAGE/crash.txt\`, or StackTrace(the error text)
 - lint, type errors, a code review → Findings: \`eslint -f json\`, \`tsc --noEmit --pretty false\`, SARIF, \`ruff check --output-format json\`; a review as [{severity, title, file, line, detail, fix}]
-- coverage → Coverage(Load(…)): \`vitest run --coverage --coverage.reporter=lcov --coverage.reportsDirectory=$BB_THREAD_STORAGE/cov\`, then cov/lcov.info; or coverage-summary.json
+- coverage → Coverage(Load(…)): \`vitest run --coverage --coverage.reporter=lcov --coverage.reportsDirectory=$ALIA_THREAD_STORAGE/cov\`, then cov/lcov.info; or coverage-summary.json
 - outdated or vulnerable packages → Dependencies: \`npm outdated --json --long\`, \`npm audit --json\`, \`pip list --outdated --format=json\`
 - a CI run → Pipeline: \`gh run view <id> --json name,displayTitle,status,conclusion,event,headBranch,headSha,url,createdAt,updatedAt,jobs\`
 - timings you measured (before/after, A vs B) → Benchmark([{name, before, after, unit}]) or Load(\`hyperfine --export-json\`); a page load → Waterfall(Load(a HAR)); what takes space → Treemap(Load(\`du -k -d 2 <dir>\` or an esbuild metafile))
 - an API response → Json(Load(…)) from \`curl -s -o\`
 - what you changed → Changes(); a commit → Changes(sha); this branch's commits → Commits(); the pull request → PullRequest(); subthreads → Threads()
-- tasks or issues → Board(Load(…)) from \`bb tasks list --project <KEY> --json\` or \`gh issue list --json number,title,state,labels,assignees,url,updatedAt\`
+- tasks or issues → Board(Load(…)) from \`alia tasks list --project <KEY> --json\` or \`gh issue list --json number,title,state,labels,assignees,url,updatedAt\`
 - this project's worktrees and their threads → Environments()
 - work the user approves before you start → Plan(steps); options against criteria → Decision(options, criteria); effort → Estimate(tasks); workstream health → Status(items); dated phases → Roadmap(items)
 ${componentLines(["Evidence"])}
 Examples:
 \`\`\`ui
-Card("npm run build fails", [Logs(Load("$BB_THREAD_STORAGE/build.log"), "npm run build", 2), Findings(Load("$BB_THREAD_STORAGE/tsc.txt"))])
+Card("npm run build fails", [Logs(Load("$ALIA_THREAD_STORAGE/build.log"), "npm run build", 2), Findings(Load("$ALIA_THREAD_STORAGE/tsc.txt"))])
 \`\`\`
 \`\`\`ui
 Card("Review: src/worker/queue.ts", [Findings([{severity: "high", title: "A retry drops the job's payload", file: "src/worker/queue.ts", line: 88, detail: "requeue() passes only the id", fix: "Pass the payload too"}])])
@@ -97,8 +97,8 @@ Card("Which queue?", [Decision([{name: "pg-boss", scores: [4, 5], pros: ["Uses o
 
 /**
  * When to write UI, where, and how questions work, tuned on a 64-prompt
- * component-fit battery run headless through omp the way BB injects these
- * sections, on Haiku 5.5 and Sonnet 5.5, then in real BB. What moved models:
+ * component-fit battery run headless through omp the way VesnALIA injects these
+ * sections, on Haiku 5.5 and Sonnet 5.5, then in real VesnALIA. What moved models:
  * - The opening says what the user wants shown (things better seen or used
  *   than read) and that markdown tables, numbered steps, pasted code and
  *   ASCII diagrams are the wrong form for it. Without that line, markdown
@@ -108,7 +108,7 @@ Card("Which queue?", [Decision([{name: "pg-boss", scores: [4, 5], pros: ["Uses o
  *   questions", Haiku filed recommendations, calculations and histories under
  *   it and answered half the prompts that call for UI in prose. "In doubt,
  *   add the block" settles the rest.
- * - "Read in BB, not a terminal" answers Claude Code's own system prompt,
+ * - "Read in VesnALIA, not a terminal" answers Claude Code's own system prompt,
  *   which says replies are shown as markdown in a terminal.
  * - The shape list names a component for every kind of content; components
  *   named or shown here are the ones agents reach for.
@@ -116,7 +116,7 @@ Card("Which queue?", [Decision([{name: "pg-boss", scores: [4, 5], pros: ["Uses o
  * one sentence over a card; the prose rule replaces it.
  */
 export const AGENT_INSTRUCTIONS = `# Inline UI
-This chat renders \`\`\`ui and \`\`\`app blocks as live UI; your reply is read in BB, not a terminal. The user wants a block wherever part of a reply is better seen or used than read: numbers, comparisons, flows, code, tool output, dates, places, steps to follow, practice, choices. Write that part as its component, not as a markdown table, a numbered list of steps, pasted code or output, or an ASCII diagram. Tell the rest in prose: the answer, why, and what to do next, in your own words. Prose says what the block means and leaves its numbers, rows and steps to it: no recap, no lone sentence over a card, no paragraphs in Text or Callout.
+This chat renders \`\`\`ui and \`\`\`app blocks as live UI; your reply is read in VesnALIA, not a terminal. The user wants a block wherever part of a reply is better seen or used than read: numbers, comparisons, flows, code, tool output, dates, places, steps to follow, practice, choices. Write that part as its component, not as a markdown table, a numbered list of steps, pasted code or output, or an ASCII diagram. Tell the rest in prose: the answer, why, and what to do next, in your own words. Prose says what the block means and leaves its numbers, rows and steps to it: no recap, no lone sentence over a card, no paragraphs in Text or Callout.
 Skip the block only when the whole reply is a few sentences with nothing to see: a definition, a yes/no, a short status, tests that all passed, or when the user asks for brevity. Simple is not a reason for prose: a recommendation still shows its options, a calculation its live calculator, a history its Timeline, a file's results their component. In doubt, add the block.
 Only the message that ends your turn may hold a block. While you are still working, and in thinking, files, commits, PR text and tool input, write plain text; don't ask the user to decide anything mid-turn.
 Pick the component the content calls for:

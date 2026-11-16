@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import {
- experimental_useRpcMutation as useMutation, experimental_useRpcQuery as useQuery, useBbNavigate, useSdk,
+ experimental_useRpcMutation as useMutation, experimental_useRpcQuery as useQuery, useAliaNavigate, useSdk,
  type ExperimentalBadge, type ExperimentalPageTitle, type PluginNavPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { rpcContract } from "./contract.ts";
 import { Bar, Button, cx, ErrorLine, Glyph, hostOf, Loading, Notice, plural, shortUrl, size, Spinner, Tag, Tile, when } from "./kit.tsx";
 import { POLICY_LABEL, ResearchView } from "./research.tsx";
@@ -36,7 +36,7 @@ export function parseRoute(subPath: string): Route {
 
 function useThreads() { return useQuery({ contract: rpcContract, method: "researchThreads", input: { limit: 60 } }); }
 function useGo() {
- const navigate = useBbNavigate();
+ const navigate = useAliaNavigate();
  return (subPath: string) => navigate.toPluginPanel(PAGE_PATH, { subPath });
 }
 
@@ -56,7 +56,7 @@ export function usePageTitle({ subPath }: PluginNavPanelProps): ExperimentalPage
 
 export function ResearchHeader({ subPath }: PluginNavPanelProps) {
  const route = parseRoute(subPath);
- const navigate = useBbNavigate();
+ const navigate = useAliaNavigate();
  const threads = useThreads();
  const totals = threads.data?.totals;
  return <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -190,7 +190,7 @@ function ThreadPage({ threadId }: { threadId: string }) {
  const threads = useThreads();
  const info = useThreadInfo(threadId);
  const listed = threads.data?.threads.find((x) => x.threadId === threadId);
- // A thread outside the index's newest 60 still opens; its details come from bb.
+ // A thread outside the index's newest 60 still opens; its details come from VesnALIA.
  const t = listed ?? (info.value ? { ...info.value, threadId, projectName: "", lastAt: 0, archived: info.value.archived } : null);
  if (info.error && !listed) return <Scroll><p className="text-sm text-muted-foreground">This thread was deleted or is unavailable.</p></Scroll>;
  if (!t) return <Loading />;

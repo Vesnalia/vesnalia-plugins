@@ -13,19 +13,19 @@ registerHooks({
     return next(specifier, context);
   }
 });
-if (!process.env.BB_THREAD_ID || !process.env.BB_PROJECT_ID || !process.env.FACTORY_SMOKE_DB) {
-  throw new Error('Requires BB context and an isolated FACTORY_SMOKE_DB path.');
+if (!process.env.ALIA_THREAD_ID || !process.env.ALIA_PROJECT_ID || !process.env.FACTORY_SMOKE_DB) {
+  throw new Error('Requires VesnALIA context and an isolated FACTORY_SMOKE_DB path.');
 }
 const { createFactoryStore } = await import('../factory/store.ts');
 const { createFactoryService } = await import('../factory/service.ts');
-const sdk = createBBSdk({ baseUrl: process.env.BB_SERVER_URL });
+const sdk = createBBSdk({ baseUrl: process.env.ALIA_SERVER_URL });
 const db = new Database(process.env.FACTORY_SMOKE_DB);
 const store = createFactoryStore(db);
 const service = createFactoryService(sdk, store, () => {});
 const contextThreadId = process.env.FACTORY_SMOKE_NO_CONTEXT === '1'
-  ? null : process.env.BB_THREAD_ID;
+  ? null : process.env.ALIA_THREAD_ID;
 const item = {
-  bbProjectId: process.env.BB_PROJECT_ID, source: 'github' as const,
+  aliaProjectId: process.env.ALIA_PROJECT_ID, source: 'github' as const,
   locator: 'synthetic/taskboard-smoke#0', key: 'TASKBOARD-SMOKE',
   title: 'Read-only Taskboard native execution smoke test',
   description: 'Synthetic test, not a tracker issue. Inspect the repository root and report the package name and one verification script. Do not change any files, create commits or contact trackers.',

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { definePluginApp, useRealtime, useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type {
   ApplyResult,
@@ -258,13 +258,13 @@ function PresetSyncSettings() {
   const disabled = busy !== null;
   const confirmationTitle =
     pendingAction === "pull"
-      ? "Apply preset to this BB installation?"
+      ? "Apply preset to this VesnALIA installation?"
       : pendingAction === "push"
         ? "Push the staged preset to GitHub?"
         : "Capture this machine and push to GitHub?";
   const confirmationDescription =
     pendingAction === "pull"
-      ? "This can install full-trust plugins and update BB settings. Local plugins absent from the preset will remain installed."
+      ? "This can install full-trust plugins and update VesnALIA settings. Local plugins absent from the preset will remain installed."
       : "The managed preset JSON files in the configured branch will be committed and pushed. Other repository files are preserved.";
 
   return (
@@ -325,7 +325,7 @@ function PresetSyncSettings() {
             <section className="space-y-3 rounded-md border border-border p-3">
               <div>
                 <div className="flex items-center justify-between gap-2 font-medium">
-                  <span>Pull to this BB</span>
+                  <span>Pull to this VesnALIA</span>
                   <span className="text-xs text-muted-foreground">
                     ↓ {status.pullChanges.length}
                   </span>
@@ -348,7 +348,7 @@ function PresetSyncSettings() {
             <section className="space-y-3 rounded-md border border-border p-3">
               <div>
                 <div className="flex items-center justify-between gap-2 font-medium">
-                  <span>Push this BB</span>
+                  <span>Push this VesnALIA</span>
                   <span className="text-xs text-muted-foreground">
                     ↑ {status.pushChanges.length}
                   </span>
@@ -565,7 +565,7 @@ export default definePluginApp((app) => {
   app.slots.settingsSection({
     id: "preset-sync",
     title: "Preset Sync",
-    description: "Synchronize portable BB configuration through a Git repository.",
+    description: "Synchronize portable VesnALIA configuration through a Git repository.",
     component: PresetSyncSettings,
   });
   app.slots.navPanel({

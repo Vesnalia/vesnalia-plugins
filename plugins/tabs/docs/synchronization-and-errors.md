@@ -10,4 +10,4 @@ Membership читает актуальный state после mutation tail, ref
 
 Ошибка записи оставляет данные и возможность retry, а не успешную галочку. UI-ошибки scoped к текущему посещению; old result не навигирует после нового намерения. Повреждение storage не лечится reset автоматически.
 
-Это согласованность состояния плагина, не транзакция с history или runtime BB. Связанные заметки: [storage](storage-and-migration.md), [lifecycle](archive-delete-lifecycle.md), [membership](workspace-memberships.md), [ошибочные состояния](empty-loading-error-states.md).
+Это согласованность состояния плагина, не транзакция с history или runtime VesnALIA. Связанные заметки: [storage](storage-and-migration.md), [lifecycle](archive-delete-lifecycle.md), [membership](workspace-memberships.md), [ошибочные состояния](empty-loading-error-states.md).

@@ -1,4 +1,4 @@
-// bb-plugin-agent-board — the multi-agent Kanban board (existing view).
+// alia-plugin-agent-board — the multi-agent Kanban board (existing view).
 //
 // Extracted unchanged from board.tsx when the single-agent focus mode was
 // added: whenever the board is watching more than one logical execution

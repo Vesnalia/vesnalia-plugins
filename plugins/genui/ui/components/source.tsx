@@ -9,7 +9,7 @@ import { useOpenUrl } from "./perfKit";
 
 const LINK = cn("cursor-pointer rounded-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline", FOCUS_RING);
 
-/** A loaded file the caption names: opens in BB where there is a file viewer. */
+/** A loaded file the caption names: opens in VesnALIA where there is a file viewer. */
 function FileName({ path }: { path: string }) {
   const { openFile } = useUiRuntime();
   const label = sourceFileLabel(path);

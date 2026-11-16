@@ -95,7 +95,7 @@ export function rateSecurity(template: RatedTemplate): Score {
   const reasons: string[] = [];
   if (template.command !== undefined) {
     score -= 6;
-    reasons.push("runs a shell as the BB server user");
+    reasons.push("runs a shell as the VesnALIA server user");
   }
   if (template.url !== undefined) {
     score -= 16;
@@ -110,7 +110,7 @@ export function rateSecurity(template: RatedTemplate): Score {
   }
   if (/>>/.test(command)) {
     score -= 8;
-    reasons.push("writes a file on the machine that hosts BB");
+    reasons.push("writes a file on the machine that hosts VesnALIA");
   }
   return settle(score, reasons, "Stays on this machine.");
 }

@@ -2,7 +2,7 @@
 // reasoning level with Jev (TypeSafe's classifier) on the Vercel AI Gateway,
 // then start the thread there. app.tsx owns the composer toggle; this file
 // gathers the candidates, asks Jev, and spawns.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { hostContract, machineStatsSchema } from "./contract";
 import {
@@ -61,7 +61,7 @@ const AVAILABILITY_FRESH_MS = 30_000;
 const SERVE_STALE_MS = 10 * 60_000;
 /**
  * How long a dispatch waits for a machine to describe itself when nothing is
- * cached, as just after BB starts. Past this it routes without that detail;
+ * cached, as just after VesnALIA starts. Past this it routes without that detail;
  * the answer still lands in the cache for next time.
  */
 const FACT_WAIT_MS = 350;
@@ -308,8 +308,8 @@ function formatDecision(decision: DecisionSummary): string {
   ].join("\n");
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     gatewayApiKey: {
       type: "string",
       label: "Vercel AI Gateway API key",
@@ -334,19 +334,19 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   // The warm connections to Jev belong to this load of the plugin.
-  bb.onDispose(() => jevTransport.close());
+  alia.onDispose(() => jevTransport.close());
 
   async function readPreferences(): Promise<Preferences> {
-    return readStoredPreferences(await bb.storage.kv.get(PREFERENCES_KEY));
+    return readStoredPreferences(await alia.storage.kv.get(PREFERENCES_KEY));
   }
 
   async function writePreferences(patch: Partial<Preferences>): Promise<Preferences> {
     const next = preferencesSchema.parse({ ...(await readPreferences()), ...patch });
     // Effort is chosen per model, so Magic Compose cannot set it for a model it did not pick.
     if (!next.maySet.model) next.maySet.effort = false;
-    await bb.storage.kv.set(PREFERENCES_KEY, next);
+    await alia.storage.kv.set(PREFERENCES_KEY, next);
     return next;
   }
 
@@ -357,12 +357,12 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function readRotation(): Promise<RotationEntry[]> {
-    const parsed = rotationSchema.safeParse(await bb.storage.kv.get(ROTATION_KEY));
+    const parsed = rotationSchema.safeParse(await alia.storage.kv.get(ROTATION_KEY));
     return parsed.success ? parsed.data : [];
   }
 
   async function readScope(): Promise<Scope> {
-    const parsed = storedScopeSchema.safeParse(await bb.storage.kv.get(SCOPE_KEY));
+    const parsed = storedScopeSchema.safeParse(await alia.storage.kv.get(SCOPE_KEY));
     if (!parsed.success) return DEFAULT_SCOPE;
     // Magic Compose always needs somewhere to run and some effort to run at.
     return {
@@ -397,7 +397,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   type EnvironmentProvider = Awaited<
-    ReturnType<typeof bb.sdk.environments.listProviders>
+    ReturnType<typeof alia.sdk.environments.listProviders>
   >[number];
 
   // A dispatch reads these through caches, so it never waits on a machine
@@ -411,7 +411,7 @@ export default async function plugin(bb: BbPluginApi) {
   const hostProvidersCache = new SwrCache<Map<string, boolean>>(
     async (hostId) => {
       const providers = await withTimeout(
-        (signal) => bb.sdk.providers.list({ hostId, signal }),
+        (signal) => alia.sdk.providers.list({ hostId, signal }),
         PROVIDER_CHECK_TIMEOUT_MS,
       );
       return new Map(providers.map((entry) => [entry.id, entry.available] as const));
@@ -420,7 +420,7 @@ export default async function plugin(bb: BbPluginApi) {
     SERVE_STALE_MS,
   );
   const environmentsCache = new SwrCache<EnvironmentProvider[]>(
-    (projectId) => bb.sdk.environments.listProviders({ projectId }),
+    (projectId) => alia.sdk.environments.listProviders({ projectId }),
     AVAILABILITY_FRESH_MS,
     SERVE_STALE_MS,
   );
@@ -429,7 +429,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       return await statsCache.get(hostId);
     } catch (error) {
-      bb.log.warn(`machine stats unavailable for ${hostId}: ${messageOf(error)}`);
+      alia.log.warn(`machine stats unavailable for ${hostId}: ${messageOf(error)}`);
       return null;
     }
   }
@@ -439,7 +439,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       return await hostProvidersCache.get(hostId);
     } catch (error) {
-      bb.log.warn(`provider check failed for ${hostId}: ${messageOf(error)}`);
+      alia.log.warn(`provider check failed for ${hostId}: ${messageOf(error)}`);
       return null;
     }
   }
@@ -447,9 +447,9 @@ export default async function plugin(bb: BbPluginApi) {
   /** The connected machines, with how many threads each is running right now. */
   async function loadMachines() {
     const [hosts, systemConfig, running] = await Promise.all([
-      bb.sdk.hosts.list(),
-      bb.sdk.system.config(),
-      bb.sdk.threads.count({ groupBy: "host", status: "active" }),
+      alia.sdk.hosts.list(),
+      alia.sdk.system.config(),
+      alia.sdk.threads.count({ groupBy: "host", status: "active" }),
     ]);
     const runningByHost = new Map(
       (running.groups ?? []).map((group) => [group.key, group.count] as const),
@@ -475,7 +475,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function loadProjects(scope: Scope): Promise<ProjectCandidate[]> {
-    const projects = await bb.sdk.projects.list({ includePersonal: true, include: "threads" });
+    const projects = await alia.sdk.projects.list({ includePersonal: true, include: "threads" });
     const candidates: ProjectCandidate[] = [];
     for (const project of projects) {
       const isPersonal = project.kind === "personal";
@@ -497,7 +497,7 @@ export default async function plugin(bb: BbPluginApi) {
     return candidates;
   }
 
-  type ModelCatalog = Awaited<ReturnType<typeof bb.sdk.providers.models>>;
+  type ModelCatalog = Awaited<ReturnType<typeof alia.sdk.providers.models>>;
 
   async function loadModels(rotation: RotationEntry[]): Promise<{
     models: ModelCandidate[];
@@ -507,9 +507,9 @@ export default async function plugin(bb: BbPluginApi) {
     await Promise.all(
       [...new Set(rotation.map((entry) => entry.providerId))].map(async (providerId) => {
         try {
-          catalogs.set(providerId, await bb.sdk.providers.models({ providerId }));
+          catalogs.set(providerId, await alia.sdk.providers.models({ providerId }));
         } catch (error) {
-          bb.log.warn(`model catalog unavailable for ${providerId}: ${messageOf(error)}`);
+          alia.log.warn(`model catalog unavailable for ${providerId}: ${messageOf(error)}`);
         }
       }),
     );
@@ -812,17 +812,17 @@ export default async function plugin(bb: BbPluginApi) {
 
   function userFacing(error: unknown): Error {
     if (error instanceof JevError || error instanceof RouteError) return error;
-    bb.log.error(`dispatch failed: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
+    alia.log.error(`dispatch failed: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
     return new Error(messageOf(error));
   }
 
-  /** Route `text` and start the thread there. What `bb magic-compose spawn` runs. */
+  /** Route `text` and start the thread there. What `alia magic-compose spawn` runs. */
   async function dispatch(text: string): Promise<{ threadId: string; decision: DecisionSummary }> {
     try {
       const routed = await decide(text);
       const summary = summarize(routed);
       const projectId = summary.project.id;
-      const thread = await routed.profiler.time("threads.spawn", () => bb.sdk.threads.spawn({
+      const thread = await routed.profiler.time("threads.spawn", () => alia.sdk.threads.spawn({
         projectId,
         providerId: summary.model.providerId,
         model: summary.model.model,
@@ -837,7 +837,7 @@ export default async function plugin(bb: BbPluginApi) {
         input: [{ type: "text", text, mentions: [] }],
         pluginMetadata: { decision: { ...summary, timings: [] } },
       }));
-      bb.log.info(
+      alia.log.info(
         `dispatched ${thread.id}: ${summary.project.label} · ${summary.machine.label} · ${summary.model.label} · ${summary.reasoning.label} · ${summary.environment.label} (decided in ${summary.latencyMs}ms, ${routed.profiler.spans
             .filter((span) => !span.name.startsWith("facts.") && span.endMs - span.startMs >= 20)
             .map((span) => `${span.name} ${span.endMs - span.startMs}ms`)
@@ -864,7 +864,7 @@ export default async function plugin(bb: BbPluginApi) {
     }));
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     status: async () => {
       const routes = await jevRoutes();
       return {
@@ -882,7 +882,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (routes.length === 0) return { warmed: false };
       const [{ connected }, projects] = await Promise.all([
         loadMachines(),
-        bb.sdk.projects.list({ includePersonal: true }),
+        alia.sdk.projects.list({ includePersonal: true }),
         warmRoutes(routes),
       ]);
       // Refreshed, not just read, so a dispatch in the next moments finds them fresh.
@@ -897,15 +897,15 @@ export default async function plugin(bb: BbPluginApi) {
     },
     rotation_get: async () => ({ entries: await readRotation() }),
     rotation_set: async ({ entries }) => {
-      await bb.storage.kv.set(ROTATION_KEY, entries);
+      await alia.storage.kv.set(ROTATION_KEY, entries);
       return { entries };
     },
     scope_get: async () => {
       const [scope, projects, environments, hosts] = await Promise.all([
         readScope(),
-        bb.sdk.projects.list({ includePersonal: true }),
-        bb.sdk.environments.listProviders(),
-        bb.sdk.hosts.list(),
+        alia.sdk.projects.list({ includePersonal: true }),
+        alia.sdk.environments.listProviders(),
+        alia.sdk.hosts.list(),
       ]);
       const hostNames = new Map(hosts.map((entry) => [entry.id, entry.name] as const));
       return {
@@ -933,14 +933,14 @@ export default async function plugin(bb: BbPluginApi) {
       };
     },
     scope_set: async ({ scope }) => {
-      await bb.storage.kv.set(SCOPE_KEY, { ...(await readScope()), ...scope });
+      await alia.storage.kv.set(SCOPE_KEY, { ...(await readScope()), ...scope });
       return { scope: await readScope() };
     },
     rotation_seed: async () => {
-      const { providers } = await bb.sdk.providers.models();
+      const { providers } = await alia.sdk.providers.models();
       const provider = providers.find((entry) => entry.available);
       if (provider === undefined) return { seed: null };
-      const { models } = await bb.sdk.providers.models({ providerId: provider.id });
+      const { models } = await alia.sdk.providers.models({ providerId: provider.id });
       const model = models.find((entry) => entry.isDefault) ?? models[0];
       if (model === undefined) return { seed: null };
       return {
@@ -994,11 +994,11 @@ export default async function plugin(bb: BbPluginApi) {
     const userOrigins = new Set([...COMPOSER_PLUGINS, ...extraOrigins]);
     const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
     const [projects, threads] = await Promise.all([
-      bb.sdk.projects.list({ includePersonal: true }),
+      alia.sdk.projects.list({ includePersonal: true }),
       (async () => {
-        const all: Awaited<ReturnType<typeof bb.sdk.threads.list>> = [];
+        const all: Awaited<ReturnType<typeof alia.sdk.threads.list>> = [];
         for (let offset = 0; ; offset += 500) {
-          const page = await bb.sdk.threads.list({ limit: 500, offset });
+          const page = await alia.sdk.threads.list({ limit: 500, offset });
           all.push(...page);
           if (page.length < 500) return all;
         }
@@ -1021,7 +1021,7 @@ export default async function plugin(bb: BbPluginApi) {
 
     const rows = await inBatches(started, 16, async (thread): Promise<HistoryRow | null> => {
       try {
-        const [first] = await bb.sdk.threads.events.list({
+        const [first] = await alia.sdk.threads.events.list({
           threadId: thread.id,
           limit: "1",
           order: "asc",
@@ -1110,7 +1110,7 @@ export default async function plugin(bb: BbPluginApi) {
         });
         return { row, model: decision.model.value.model, effort: decision.reasoning.value };
       } catch (error) {
-        bb.log.warn(`backtest skipped ${row.threadId}: ${messageOf(error)}`);
+        alia.log.warn(`backtest skipped ${row.threadId}: ${messageOf(error)}`);
         return null;
       }
     });
@@ -1136,57 +1136,57 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb magic-compose route <prompt> [--json] [--profile]   Show where Jev would send a prompt; starts nothing",
-    "  bb magic-compose spawn <prompt> [--json]   Route a prompt and start the thread",
-    "  bb magic-compose machines [--json]         Show what Jev is told about each connected machine",
-    "  bb magic-compose rotation get [--json]     Show the model rotation",
-    "  bb magic-compose rotation set <json>       Replace it: [{providerId, model, note, reasoningLevel}, ...]",
-    "  bb magic-compose preferences get [--json]  Show the instructions and the other preferences",
-    "  bb magic-compose preferences set <key> <value>   Set one, for example modelInstructions",
-    "  bb magic-compose history [--days 14] [--include-origin <plugin-id>]... [--json]",
+    "  VesnALIA magic-compose route <prompt> [--json] [--profile]   Show where Jev would send a prompt; starts nothing",
+    "  VesnALIA magic-compose spawn <prompt> [--json]   Route a prompt and start the thread",
+    "  VesnALIA magic-compose machines [--json]         Show what Jev is told about each connected machine",
+    "  VesnALIA magic-compose rotation get [--json]     Show the model rotation",
+    "  VesnALIA magic-compose rotation set <json>       Replace it: [{providerId, model, note, reasoningLevel}, ...]",
+    "  VesnALIA magic-compose preferences get [--json]  Show the instructions and the other preferences",
+    "  VesnALIA magic-compose preferences set <key> <value>   Set one, for example modelInstructions",
+    "  VesnALIA magic-compose history [--days 14] [--include-origin <plugin-id>]... [--json]",
     "                                             The model and effort you chose for each thread you started",
-    "  bb magic-compose backtest [--days 14] [--map <regex>=<model>]... [--exclude <regex>] [--limit 250] [--json]",
+    "  VesnALIA magic-compose backtest [--days 14] [--map <regex>=<model>]... [--exclude <regex>] [--limit 250] [--json]",
     "                                             Route your past prompts through Jev and score agreement with what you chose",
   ].join("\n");
-  bb.cli.register({
+  alia.cli.register({
     name: "magic-compose",
     summary: "Route prompts to a project, machine, model, and reasoning level with Jev",
     commands: [
       {
         name: "route",
         summary: "Show where Jev would send a prompt, without starting a thread",
-        usage: "bb magic-compose route <prompt> [--json]",
+        usage: "alia magic-compose route <prompt> [--json]",
       },
       {
         name: "spawn",
         summary: "Route a prompt with Jev and start the thread there",
-        usage: "bb magic-compose spawn <prompt> [--json]",
+        usage: "alia magic-compose spawn <prompt> [--json]",
       },
       {
         name: "machines",
         summary: "Show what Jev is told about each connected machine",
-        usage: "bb magic-compose machines [--json]",
+        usage: "alia magic-compose machines [--json]",
       },
       {
         name: "rotation",
         summary: "Show or replace the model rotation",
-        usage: "bb magic-compose rotation get [--json] | rotation set <json>",
+        usage: "alia magic-compose rotation get [--json] | rotation set <json>",
       },
       {
         name: "preferences",
         summary: "Show or set the instructions and the other preferences",
-        usage: "bb magic-compose preferences get [--json] | preferences set <key> <value>",
+        usage: "alia magic-compose preferences get [--json] | preferences set <key> <value>",
       },
       {
         name: "history",
         summary: "List the model and effort the user chose for each thread they started",
-        usage: "bb magic-compose history [--days 14] [--json]",
+        usage: "alia magic-compose history [--days 14] [--json]",
       },
       {
         name: "backtest",
         summary: "Route past prompts through Jev and score agreement with the user's own choices",
         usage:
-          "bb magic-compose backtest [--days 14] [--map <regex>=<model>]... [--exclude <regex>] [--limit 250] [--json]",
+          "alia magic-compose backtest [--days 14] [--map <regex>=<model>]... [--exclude <regex>] [--limit 250] [--json]",
       },
     ],
     async run(argv) {
@@ -1214,7 +1214,7 @@ export default async function plugin(bb: BbPluginApi) {
             const entries = rotationSchema.parse(
               Array.isArray(raw) ? raw : (raw as { entries?: unknown }).entries,
             );
-            await bb.storage.kv.set(ROTATION_KEY, entries);
+            await alia.storage.kv.set(ROTATION_KEY, entries);
             return { exitCode: 0, stdout: `Rotation set to ${entries.length} model(s).` };
           } catch (error) {
             return { exitCode: 1, stderr: `Could not read the rotation: ${messageOf(error)}` };

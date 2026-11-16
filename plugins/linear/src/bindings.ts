@@ -6,7 +6,7 @@ import type { BindingRow, TeamRow } from "./store/rows.js";
 /**
  * Per-project team scoping — the model, and the refusal.
  *
- * A bb project binds to exactly one **primary** Linear team, plus zero or more
+ * A VesnALIA project binds to exactly one **primary** Linear team, plus zero or more
  * additional teams each marked **write** or **read**. Unqualified writes,
  * spawns and pull-request transitions target the primary; a tool or command
  * may name another team explicitly and is allowed if and only if that team is
@@ -19,9 +19,9 @@ import type { BindingRow, TeamRow } from "./store/rows.js";
  * team does this new issue go to?" unanswerable without a picker on every
  * action, and turns the refusal below into a lie.
  *
- * *Primary-only writes* forces a monorepo organisation into one bb project per
+ * *Primary-only writes* forces a monorepo organisation into one VesnALIA project per
  * team on a single repository — forty projects, each with its own environments
- * and worktrees — purely to work around a Linear-side fact. That is a bb-side
+ * and worktrees — purely to work around a Linear-side fact. That is a alia-side
  * workaround for somebody else's data model.
  */
 
@@ -69,7 +69,7 @@ export function canWrite(scope: Scope, teamId: string): boolean {
  * A filter artefact — "no results" — teaches the user that the issue does not
  * exist. A refusal teaches the actual rule, and names both sides of it so the
  * next step is obvious. This exact sentence is also what the panel renders
- * when a deep link points at an issue whose team no bb project binds, which
+ * when a deep link points at an issue whose team no VesnALIA project binds, which
  * is the one place a stranger meets the scoping model and the place it should
  * teach itself.
  */

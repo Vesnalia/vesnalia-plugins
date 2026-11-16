@@ -10,7 +10,7 @@
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "../src/store";
 import { queueStore } from "../src/store-queue";
 import { toGithubReviewPayload } from "../src/draft";
@@ -30,8 +30,8 @@ const PATCH = [
 ].join("\n");
 const AT = 1_792_000_000_000;
 
-const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-const store = queueStore(createStore(bb));
+const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+const store = queueStore(createStore(alia));
 
 await store.savePreferences({ ...defaultPreferences, knobs: { ...defaultPreferences.knobs, codeOwners: false } }, 0);
 
@@ -79,14 +79,14 @@ await store.setLifecycle(local, {
   approvalSent: { at: AT + 22, threadId: "thr_local", title: "Upload retries", revision: "rev-1" },
 });
 
-const db = bb.storage.database();
+const db = alia.storage.database();
 const dir = mkdtempSync(join(tmpdir(), "fixture-1.7.0-"));
 const snapshot = join(dir, "data.db");
 db.prepare(`VACUUM INTO ?`).run(snapshot);
 
 // Each table's rows as INSERTs, in a fixed order, but the migrations' own record.
 const quote = (value: unknown) => value === null ? "NULL" : typeof value === "number" || typeof value === "bigint" ? String(value) : `'${String(value).replaceAll("'", "''")}'`;
-const tables = (db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != '_bb_migrations' ORDER BY name`).all() as Array<{ name: string }>).map((row) => row.name);
+const tables = (db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != '_alia_migrations' ORDER BY name`).all() as Array<{ name: string }>).map((row) => row.name);
 const sql = tables.flatMap((table) => {
   const rows = db.prepare(`SELECT * FROM "${table}" ORDER BY rowid`).all() as Array<Record<string, unknown>>;
   return rows.map((row) => `INSERT INTO ${table} (${Object.keys(row).join(", ")}) VALUES (${Object.values(row).map(quote).join(", ")});`);

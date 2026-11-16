@@ -61,9 +61,9 @@ describe.skipIf(!testPgUrl)("activation's open of Postgres storage, tried again 
     await interruptedReview(schema);
     const spawned = vi.fn();
     const sdk = sdkWith(spawned);
-    const { bb, harness } = await host(settings, sdk);
+    const { alia, harness } = await host(settings, sdk);
     cleanup.push(() => harness.lifecycle.dispose());
-    await plugin(bb);
+    await plugin(alia);
     harness.behavior.runService("storage");
     await opened(harness);
     await vi.waitFor(() => { expect(spawned).toHaveBeenCalledTimes(1); }, { timeout: 5_000 });
@@ -90,9 +90,9 @@ describe.skipIf(!testPgUrl)("activation's open of Postgres storage, tried again 
     await locked;
     const spawned = vi.fn();
     const sdk = sdkWith(spawned);
-    const { bb, harness } = await host(settings, sdk);
+    const { alia, harness } = await host(settings, sdk);
     cleanup.push(() => harness.lifecycle.dispose());
-    await plugin(bb);
+    await plugin(alia);
     harness.behavior.runService("storage");
     await vi.waitFor(() => {
       expect(harness.inspection.logEntries.map((entry) => entry.message)).toContainEqual(expect.stringMatching(/^Could not open Code Review Workspace's Postgres storage: Postgres answered: canceling statement due to statement timeout/));

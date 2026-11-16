@@ -1,10 +1,10 @@
-// OpenRouter Inference — serves BB's helper completions (thread titles and
+// OpenRouter Inference — serves VesnALIA's helper completions (thread titles and
 // commit messages) and voice transcription with an OpenRouter API key and
 // models picked in settings.
 import { randomUUID } from "node:crypto";
 import { readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   DEFAULT_TRANSCRIPTION_MODEL,
@@ -21,10 +21,10 @@ const DEFAULT_MODEL = "google/gemini-2.5-flash-lite";
 const MODEL_CACHE_MS = 10 * 60_000;
 const STATE_CHANGED = "state-changed";
 
-/** The BB config key that selects the service for each kind. */
-const CONFIG_KEYS: Record<ServiceKind, "BB_INFERENCE" | "BB_TRANSCRIPTION"> = {
-  inference: "BB_INFERENCE",
-  voice: "BB_TRANSCRIPTION",
+/** The VesnALIA config key that selects the service for each kind. */
+const CONFIG_KEYS: Record<ServiceKind, "ALIA_INFERENCE" | "ALIA_TRANSCRIPTION"> = {
+  inference: "ALIA_INFERENCE",
+  voice: "ALIA_TRANSCRIPTION",
 };
 
 const modelSchema = z.object({
@@ -40,7 +40,7 @@ const statusSchema = z.object({
   hasApiKey: z.boolean(),
   model: z.string(),
   transcriptionModel: z.string(),
-  /** The running server's BB_INFERENCE and BB_TRANSCRIPTION. */
+  /** The running server's ALIA_INFERENCE and ALIA_TRANSCRIPTION. */
   inference: z.string(),
   transcription: z.string(),
   serviceValue: z.string(),
@@ -72,14 +72,14 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.experimental_aiServices.register({
+export default async function plugin(alia: AliaPluginApi) {
+  alia.experimental_aiServices.register({
     id: SERVICE_ID,
     displayName: "OpenRouter (API key)",
     kinds: ["inference", "voice"],
   });
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     apiKey: {
       type: "string",
       label: "OpenRouter API key",
@@ -102,7 +102,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
 
   const modelCaches = new Map<ServiceKind, { models: OpenRouterModel[]; fetchedAt: number }>();
   async function listModels(kind: ServiceKind, refresh: boolean): Promise<OpenRouterModel[]> {
@@ -122,7 +122,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       reasoning = (await listModels("inference", false)).find((entry) => entry.id === model)?.reasoning ?? null;
     } catch (error) {
-      bb.log.warn(`model catalog unavailable; sending no reasoning override: ${messageOf(error)}`);
+      alia.log.warn(`model catalog unavailable; sending no reasoning override: ${messageOf(error)}`);
     }
     return { apiKey: apiKey.trim(), model, reasoning, transcriptionModel };
   }
@@ -131,12 +131,12 @@ export default async function plugin(bb: BbPluginApi) {
   // transcription always run there.
   async function primaryHostId(): Promise<string> {
     try {
-      const id = (await readFile(join(bb.server.experimental_dataDir, "host-id"), "utf8")).trim();
+      const id = (await readFile(join(alia.server.experimental_dataDir, "host-id"), "utf8")).trim();
       if (id !== "") return id;
     } catch {
       // Fall through to the enrolled hosts.
     }
-    const hosts = await bb.sdk.hosts.list();
+    const hosts = await alia.sdk.hosts.list();
     const connected = hosts.filter((entry) => entry.status === "connected");
     const only = connected.length === 1 ? connected[0] : hosts.length === 1 ? hosts[0] : undefined;
     if (!only) throw new Error("Could not determine the primary host");
@@ -148,7 +148,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // Keep the primary host's copy of the key and models current. Retries with
   // backoff while the host is offline; settings changes wake it immediately.
-  bb.background.service("host-sync", {
+  alia.background.service("host-sync", {
     async start(signal) {
       let dirty = true;
       let failures = 0;
@@ -168,10 +168,10 @@ export default async function plugin(bb: BbPluginApi) {
           } catch (error) {
             if (signal.aborted) break;
             hostError = messageOf(error);
-            bb.log.warn(`host sync failed: ${hostError}`);
+            alia.log.warn(`host sync failed: ${hostError}`);
             failures += 1;
           }
-          bb.realtime.publish(STATE_CHANGED, {});
+          alia.realtime.publish(STATE_CHANGED, {});
         }
         // A settings change during the sync already marked it dirty again.
         if (dirty) continue;
@@ -194,11 +194,11 @@ export default async function plugin(bb: BbPluginApi) {
 
   settings.onChange(() => requestSync());
 
-  // BB_INFERENCE and BB_TRANSCRIPTION live in BB's managed config.json. Write
-  // them the way the bb-app launcher does (merge, temp file, rename), then
+  // ALIA_INFERENCE and ALIA_TRANSCRIPTION live in VesnALIA's managed config.json. Write
+  // them the way the alia-app launcher does (merge, temp file, rename), then
   // reload the server.
   async function selectService(kind: ServiceKind): Promise<string> {
-    const dataDir = bb.server.experimental_dataDir;
+    const dataDir = alia.server.experimental_dataDir;
     const configPath = join(dataDir, "config.json");
     let current: Record<string, unknown> = {};
     try {
@@ -226,15 +226,15 @@ export default async function plugin(bb: BbPluginApi) {
       await unlink(tempPath).catch(() => undefined);
       throw error;
     }
-    await bb.sdk.system.reloadConfig();
-    const { aiServices } = await bb.sdk.system.config();
+    await alia.sdk.system.reloadConfig();
+    const { aiServices } = await alia.sdk.system.config();
     return kind === "voice" ? aiServices.transcription : aiServices.inference;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     status: async () => {
       const { apiKey, model, transcriptionModel } = await settings.get();
-      const { aiServices } = await bb.sdk.system.config();
+      const { aiServices } = await alia.sdk.system.config();
       return {
         hasApiKey: typeof apiKey === "string" && apiKey.trim() !== "",
         model,
@@ -258,7 +258,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     useFor: async ({ kind }) => {
       const value = await selectService(kind);
-      bb.realtime.publish(STATE_CHANGED, {});
+      alia.realtime.publish(STATE_CHANGED, {});
       return { value };
     },
     test: async ({ kind }) => {

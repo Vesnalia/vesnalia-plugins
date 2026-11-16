@@ -1,30 +1,30 @@
-# Matt Pocock skills for bb
+# Matt Pocock skills for VesnALIA
 
-Use [Matt Pocock's skills](https://github.com/mattpocock/skills) in [bb](https://github.com/get-bb), with a page for turning skills on or off globally and per project. This is an **unofficial mirror** of `mattpocock/skills`. Matt's skill text ships unchanged; see the [compatibility notes](compat/README.md) for how it is packaged for bb.
+Use [Matt Pocock's skills](https://github.com/mattpocock/skills) in [VesnALIA](https://github.com/get-bb), with a page for turning skills on or off globally and per project. This is an **unofficial mirror** of `mattpocock/skills`. Matt's skill text ships unchanged; see the [compatibility notes](compat/README.md) for how it is packaged for VesnALIA.
 
 > [!NOTE]
-> This project is not affiliated with or endorsed by Matt Pocock or bb.
+> This project is not affiliated with or endorsed by Matt Pocock or VesnALIA.
 
 ## Install and update
 
 Install the compatible release range:
 
 ```sh
-bb plugin install git:https://github.com/erikmackinnon/bb-plugin-matt-pocock-skills-for-bb.git@^0.1.0
+alia plugin install git:https://github.com/erikmackinnon/bb-plugin-matt-pocock-skills-for-bb.git@^0.1.0
 ```
 
-bb selects the highest compatible tag in that range and builds the plugin. Requires bb 0.45.0 or later.
+VesnALIA selects the highest compatible tag in that range and builds the plugin. Requires VesnALIA 0.45.0 or later.
 
 New upstream skills are released here as patch versions. To update:
 
 ```sh
-bb plugin outdated
-bb plugin update matt-pocock-skills-for-bb
+alia plugin outdated
+alia plugin update matt-pocock-skills-for-alia
 ```
 
 ## Use the skills
 
-Open **Matt Pocock skills for bb** in the sidebar. Under **Scope**, choose **Default for all projects** to set defaults, or select a project to follow those defaults or pick its own skills. The master switch turns the whole set off at the selected scope. Changes apply to new threads.
+Open **Matt Pocock skills for VesnALIA** in the sidebar. Under **Scope**, choose **Default for all projects** to set defaults, or select a project to follow those defaults or pick its own skills. The master switch turns the whole set off at the selected scope. Changes apply to new threads.
 
 The bundle has 33 skills:
 
@@ -38,15 +38,15 @@ A skill can require other skills. Those stay on while a selected skill needs the
 
 ### Skills with the same name
 
-If one of Matt's skills has the same name as another plugin's skill or one of your bb skills, theirs keeps the name and the page says so. Choose **Keep both** to also get Matt's under `/matt-pocock-<name>`, or **Use Matt's** where bb allows it. Skills in a project's `.bb/skills` folder also win over Matt's but aren't flagged; provider-native skills (for example in `~/.claude/skills`) load alongside Matt's, so give yours a different name or choose **Keep both** to call Matt's unambiguously. Nothing is shown when there are no clashes.
+If one of Matt's skills has the same name as another plugin's skill or one of your VesnALIA skills, theirs keeps the name and the page says so. Choose **Keep both** to also get Matt's under `/matt-pocock-<name>`, or **Use Matt's** where VesnALIA allows it. Skills in a project's `.vesnalia/skills` folder also win over Matt's but aren't flagged; provider-native skills (for example in `~/.claude/skills`) load alongside Matt's, so give yours a different name or choose **Keep both** to call Matt's unambiguously. Nothing is shown when there are no clashes.
 
 ### Command line
 
 ```sh
-bb matt-pocock-skills-for-bb --help
-bb matt-pocock-skills-for-bb list --project <id>
-bb matt-pocock-skills-for-bb enable teach --project <id>
-bb matt-pocock-skills-for-bb conflicts --project <id>
+alia matt-pocock-skills-for-alia --help
+alia matt-pocock-skills-for-alia list --project <id>
+alia matt-pocock-skills-for-alia enable teach --project <id>
+alia matt-pocock-skills-for-alia conflicts --project <id>
 ```
 
 Every command accepts `--json`.
@@ -58,8 +58,8 @@ Every command accepts `--json`.
 ## Report an issue
 
 - For skill content or workflow issues, use [mattpocock/skills issues](https://github.com/mattpocock/skills/issues).
-- For installation, toggles or bb compatibility, use [this repository's issues](https://github.com/erikmackinnon/bb-plugin-matt-pocock-skills-for-bb/issues). Include the plugin version, bb version and any error output.
+- For installation, toggles or VesnALIA compatibility, use [this repository's issues](https://github.com/erikmackinnon/bb-plugin-matt-pocock-skills-for-bb/issues). Include the plugin version, VesnALIA version and any error output.
 
 ---
 
-Plugin maintained by [erikmackinnon](https://github.com/erikmackinnon) ([X](https://x.com/erikmackinnon)). The skills are Matt Pocock's; this repo packages them for bb.
+Plugin maintained by [erikmackinnon](https://github.com/erikmackinnon) ([X](https://x.com/erikmackinnon)). The skills are Matt Pocock's; this repo packages them for VesnALIA.

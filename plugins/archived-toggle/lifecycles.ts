@@ -1,6 +1,6 @@
 export type Lifecycle = 'active' | 'archived';
 
-// bb's built-in Thread list plugin owns the list and its preferences; this
+// VesnALIA's built-in Thread list plugin owns the list and its preferences; this
 // plugin only flips its existing threadLifecycles preference.
 const THREAD_LIST_RPC = '/api/v1/plugins/thread-list/rpc';
 
@@ -21,7 +21,7 @@ export function nextLifecycles(current: readonly Lifecycle[]): Lifecycle[] {
   return current.includes('archived') ? ['active'] : ['active', 'archived'];
 }
 
-/** Toggles archived threads in bb's list and returns whether they are now shown. */
+/** Toggles archived threads in VesnALIA's list and returns whether they are now shown. */
 export async function toggleArchived(fetcher: Fetch = fetch): Promise<boolean> {
   const listed = (await call(fetcher, 'listPreferences', null)) as { preferences: { threadLifecycles: Lifecycle[] } };
   const next = nextLifecycles(listed.preferences.threadLifecycles);

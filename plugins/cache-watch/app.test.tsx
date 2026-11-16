@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from 'vitest';
 import { act, fireEvent, waitFor, within } from '@testing-library/react';
-import { loadPluginApp, mountPluginContentScripts, renderSlot } from '@get-bb/plugin-sdk/testing/app';
+import { loadPluginApp, mountPluginContentScripts, renderSlot } from '@vesnalia/plugin-sdk/testing/app';
 import appDefinition from './app';
-import { definePluginApp, type PluginCommandRegistration } from '@get-bb/plugin-sdk/app';
-import { experimental_makePanelController } from '@get-bb/plugin-sdk/testing';
+import { definePluginApp, type PluginCommandRegistration } from '@vesnalia/plugin-sdk/app';
+import { experimental_makePanelController } from '@vesnalia/plugin-sdk/testing';
 import { toast } from 'sonner';
 
 vi.mock('sonner', () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }));

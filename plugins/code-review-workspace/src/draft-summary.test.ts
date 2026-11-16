@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { commentsKey, SUMMARY_AT } from "./draft";
 import { writeSummary } from "./draft-summary";
@@ -16,9 +16,9 @@ const patch = [
 const at = { file: "a.ts", line: 3, side: "RIGHT" } as const;
 
 async function host() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1" });
   await store.savePatch("pr-1", patch);
   await store.setAssistantThread("pr-1", "assistant");
@@ -27,18 +27,18 @@ async function host() {
   const error = (result: any) => (result.isError ? result.content[0].text : null) as string | null;
   const signals = () => harness.inspection.realtimeSignals.filter((signal) => signal.channel === "draft:pr-1").length;
   const ask = async (where: typeof at | typeof SUMMARY_AT, body: string) => await store.addDiscussionMessage("pr-1", where, "reviewer", body);
-  return { bb, harness, store, tool, call, error, signals, ask };
+  return { alia, harness, store, tool, call, error, signals, ask };
 }
 
 test("the assistant writes an empty or an agent's summary and suggests a verdict, and nothing reaches GitHub", async () => {
   const { store, tool, signals } = await host();
   expect(await tool("set_review_summary", { body: " Looks right; one risk at a.ts:3. ", verdict: "APPROVE" }))
-    .toBe("Wrote the review summary. Your suggested verdict, Approve, is marked for the reviewer, who picks the verdict. It stays in bb until the reviewer submits the review.");
+    .toBe("Wrote the review summary. Your suggested verdict, Approve, is marked for the reviewer, who picks the verdict. It stays in VesnALIA until the reviewer submits the review.");
   expect(await store.getDraft("pr-1")).toEqual({ targetKey: "pr-1", verdict: "COMMENT", body: "Looks right; one risk at a.ts:3.", comments: [],
     bodyAuthor: "agent", suggestedVerdict: "APPROVE", written: { verdict: "APPROVE", comments: commentsKey([]) } });
 
   // Without a verdict, the suggestion stays, and the summary is written for no verdict until the reviewer picks one.
-  expect(await tool("set_review_summary", { body: "Looks right." })).toBe("Wrote the review summary. It stays in bb until the reviewer submits the review.");
+  expect(await tool("set_review_summary", { body: "Looks right." })).toBe("Wrote the review summary. It stays in VesnALIA until the reviewer submits the review.");
   expect(await store.getDraft("pr-1")).toMatchObject({ body: "Looks right.", bodyAuthor: "agent", suggestedVerdict: "APPROVE", written: { verdict: null } });
   await store.setVerdict("pr-1", "REQUEST_CHANGES");
   await store.upsertDraftComment("pr-1", { ...at, body: "Overflow?" });
@@ -76,7 +76,7 @@ test("a summary the reviewer wrote is refused, unless they asked on it; then it 
   expect(error(await tool("set_review_summary", { body: "Short." }))).toBe(refused);
   await store.setLifecycle("pr-1", { summaryAsk: { threadId: "assistant", state: "queued", queuedMessageId: "q1", at: Date.now() } });
   expect(error(await tool("set_review_summary", { body: "Short." }))).toBe(refused);
-  // A turn whose end bb never reported doesn't keep it open.
+  // A turn whose end VesnALIA never reported doesn't keep it open.
   await store.setLifecycle("pr-1", { summaryAsk: { threadId: "assistant", state: "running", at: Date.now() - 31 * 60_000 } });
   expect(error(await tool("set_review_summary", { body: "Short." }))).toBe(refused);
   await store.setLifecycle("pr-1", { summaryAsk: { threadId: "assistant", state: "running", at: Date.now() } });
@@ -210,24 +210,24 @@ test("Undo puts back the verdict that change suggested, unless another came sinc
   await expect(call("undoAgentChange", SUMMARY_AT)).rejects.toThrow("merged");
 });
 
-test("a removed comment drafted before bb kept its line's code doesn't go back", async () => {
-  const { bb, store, tool, call, ask } = await host();
+test("a removed comment drafted before VesnALIA kept its line's code doesn't go back", async () => {
+  const { alia, store, tool, call, ask } = await host();
   await ask(at, "Drop it?");
   await tool("add_draft_comment", { ...at, code: "const c = b * 2;", body: "Overflow?" });
   // As a version before 0.3.0 left it.
-  await testSql(bb).run(`UPDATE draft_comment_revisions SET code=NULL`);
+  await testSql(alia).run(`UPDATE draft_comment_revisions SET code=NULL`);
   await tool("delete_draft_comment", at);
   expect(await store.lastDiscussionChange("pr-1", at)).toMatchObject({ kind: "removed" });
   expect((await call("getDraft", {})).discussions[0]).not.toHaveProperty("undoable");
-  await expect(call("undoAgentChange", at)).rejects.toThrow("bb didn't keep the code the comment on a.ts:3 was drafted on");
+  await expect(call("undoAgentChange", at)).rejects.toThrow("alia didn't keep the code the comment on a.ts:3 was drafted on");
   expect((await store.getDraft("pr-1")).comments).toEqual([]);
 });
 
 test("an ask on the summary left from before the plugin started gives way", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1" });
   await store.setLifecycle("pr-1", { summaryAsk: { threadId: "assistant", state: "running", at: Date.now() } });
-  await plugin(bb);
+  await plugin(alia);
   expect((await store.getReview("pr-1"))?.summaryAsk).toBeNull();
 });

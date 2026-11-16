@@ -1,15 +1,15 @@
 ---
 name: obsidian-at-home
-description: Use Obsidian at Home (the BB wikilinks plugin) for linked Markdown notes, recursive hover previews, contextual backlinks, note autocomplete, and Thinking Trails. Use when the user asks how to use these features in BB or wants to reconstruct a path they explored through notes. For vault-wide full-text or structural queries, prefer the separate Vault Graph tools when available.
+description: Use Obsidian at Home (the VesnALIA wikilinks plugin) for linked Markdown notes, recursive hover previews, contextual backlinks, note autocomplete, and Thinking Trails. Use when the user asks how to use these features in VesnALIA or wants to reconstruct a path they explored through notes. For vault-wide full-text or structural queries, prefer the separate Vault Graph tools when available.
 ---
 
 # Obsidian at Home
 
-This BB plugin supplies a Markdown editor, link previews, and navigation history. Its stable plugin ID is `wikilinks`.
+This VesnALIA plugin supplies a Markdown editor, link previews, and navigation history. Its stable plugin ID is `wikilinks`.
 
 ## Help the user navigate
 
-- Open a note inside a BB thread whose workspace contains the notes. If another Markdown opener is pinned, select **Obsidian at Home** under **Settings → File openers**.
+- Open a note inside a VesnALIA thread whose workspace contains the notes. If another Markdown opener is pinned, select **Obsidian at Home** under **Settings → File openers**.
 - Click document text to edit it. Changes autosave to the original file. If external edits conflict, use the presented **Reload** or **Overwrite** choice according to the user's intended version.
 - In an existing thread's composer, type `[[` and part of a note name. Arrow keys select; Enter or Tab inserts; Escape dismisses.
 - Hover a note link for its excerpt. Links inside previews open further previews. Command-hover shows contextual backlinks. The **Open note** action opens the full file.
@@ -32,6 +32,6 @@ For the user-facing history, open **Thinking trails** from a thread's panel acti
 
 For full-text note search, tags, properties, graph queries, canvas relationships, or thread mentions, use `vault_search`, `vault_query`, `vault_backlinks`, `vault_note`, or `vault_schema` when Vault Graph is installed. This plugin supplies only `query_thinking_trails` as an agent tool. If Vault Graph is unavailable, use ordinary file tools for the user's requested search and explain the narrower scope when relevant.
 
-**Linked mentions** under each document uses Vault Graph when available and falls back to workspace backlinks otherwise. Unlinked mentions and vault-wide canvas/thread results require Vault Graph. The section is controlled by `bb plugin config wikilinks set documentBacklinks false` (or `true`).
+**Linked mentions** under each document uses Vault Graph when available and falls back to workspace backlinks otherwise. Unlinked mentions and vault-wide canvas/thread results require Vault Graph. The section is controlled by `alia plugin config wikilinks set documentBacklinks false` (or `true`).
 
 No separate Obsidian application, account, or API key is required. For complete behavior and development instructions, read the plugin's README.md.

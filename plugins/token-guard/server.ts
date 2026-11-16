@@ -1,6 +1,6 @@
 // Token Guard: stops credentials on their way into a thread and reports the
 // ones already in agent history. No matched value is ever logged or stored.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { detect, rejectionMessage } from "./lib/detect.ts";
 import { scanAttachments } from "./lib/attachments.ts";
@@ -39,8 +39,8 @@ export const rpcContract = defineRpcContract({
 
 const STATE_CHANGED = "state-changed";
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     enabled: {
       type: "boolean",
       label: "Block messages that contain a credential",
@@ -52,15 +52,15 @@ export default async function plugin(bb: BbPluginApi) {
   let scanning = false;
   let scanError: string | null = null;
   const stop = new AbortController();
-  bb.onDispose(() => stop.abort());
+  alia.onDispose(() => stop.abort());
 
   async function readState(): Promise<GuardState> {
     return {
       enabled,
-      blocked: (await bb.storage.kv.get<number>("blocked")) ?? 0,
+      blocked: (await alia.storage.kv.get<number>("blocked")) ?? 0,
       scanning,
       error: scanError,
-      report: (await bb.storage.kv.get<ScanReport>("report")) ?? null,
+      report: (await alia.storage.kv.get<ScanReport>("report")) ?? null,
     };
   }
 
@@ -68,30 +68,30 @@ export default async function plugin(bb: BbPluginApi) {
     if (scanning) return;
     scanning = true;
     scanError = null;
-    bb.realtime.publish(STATE_CHANGED, {});
+    alia.realtime.publish(STATE_CHANGED, {});
     try {
-      const report = await scan(defaultRoots(bb.server.experimental_dataDir ?? null), stop.signal);
-      await bb.storage.kv.set("report", report);
+      const report = await scan(defaultRoots(alia.server.experimental_dataDir ?? null), stop.signal);
+      await alia.storage.kv.set("report", report);
     } catch (cause) {
       if (!stop.signal.aborted) {
         scanError = cause instanceof Error ? cause.message : String(cause);
-        bb.log.error(`scan failed: ${scanError}`);
+        alia.log.error(`scan failed: ${scanError}`);
       }
     } finally {
       scanning = false;
-      if (!stop.signal.aborted) bb.realtime.publish(STATE_CHANGED, {});
+      if (!stop.signal.aborted) alia.realtime.publish(STATE_CHANGED, {});
     }
   }
 
   if (enabled) {
-    bb.experimental_hooks.on("message.dispatch", async (ctx) => {
+    alia.experimental_hooks.on("message.dispatch", async (ctx) => {
       // A retry resends what already went through; blocking it helps nobody.
       if (ctx.initiator === "system") return { action: "proceed" };
       const findings = detect(ctx.input.text);
       let attachmentFindings;
       try {
         attachmentFindings = findings.length > 0 ? [] : await scanAttachments(ctx.input.blocks, async (path) =>
-          (await bb.sdk.projects.attachments.read({ projectId: ctx.project.id, path })).bytes,
+          (await alia.sdk.projects.attachments.read({ projectId: ctx.project.id, path })).bytes,
         );
       } catch {
         return { action: "reject", message: /[а-яё]/i.test(ctx.input.text)
@@ -100,10 +100,10 @@ export default async function plugin(bb: BbPluginApi) {
       }
       if (findings.length === 0 && attachmentFindings.length === 0) return { action: "proceed" };
       const allFindings = [...findings, ...attachmentFindings];
-      const blocked = ((await bb.storage.kv.get<number>("blocked")) ?? 0) + 1;
-      await bb.storage.kv.set("blocked", blocked);
-      bb.realtime.publish(STATE_CHANGED, {});
-      bb.log.info(`blocked a message in ${ctx.thread.id}: ${allFindings.map((f) => f.kind).join(", ")}`);
+      const blocked = ((await alia.storage.kv.get<number>("blocked")) ?? 0) + 1;
+      await alia.storage.kv.set("blocked", blocked);
+      alia.realtime.publish(STATE_CHANGED, {});
+      alia.log.info(`blocked a message in ${ctx.thread.id}: ${allFindings.map((f) => f.kind).join(", ")}`);
       return { action: "reject", message: attachmentFindings.length > 0
         ? /[а-яё]/i.test(ctx.input.text)
           ? `Сообщение не отправлено: в текстовом вложении обнаружен ключ (${[...new Set(attachmentFindings.map((f) => f.kind))].join(", ")}). Удалите ключ из файла и прикрепите его заново. Если ключ уже использовался в чате, отзовите его.`
@@ -112,7 +112,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     state: readState,
     scan_start: async () => {
       void runScan();
@@ -120,25 +120,25 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "token-guard",
     summary: "Find credentials in agent history; report them without their values",
     commands: [
-      { name: "scan", summary: "Scan agent history on the server machine", usage: "bb token-guard scan [--json]" },
-      { name: "status", summary: "Show guard state and the last report", usage: "bb token-guard status [--json]" },
+      { name: "scan", summary: "Scan agent history on the server machine", usage: "alia token-guard scan [--json]" },
+      { name: "status", summary: "Show guard state and the last report", usage: "alia token-guard status [--json]" },
     ],
     async run(argv) {
       const json = argv.includes("--json");
       const [command] = argv.filter((arg) => arg !== "--json");
       if (command === "scan") await runScan();
       else if (command !== "status") {
-        return { exitCode: command === undefined || command === "help" || command === "--help" ? 0 : 1, stdout: "Usage:\n  bb token-guard scan [--json]\n  bb token-guard status [--json]" };
+        return { exitCode: command === undefined || command === "help" || command === "--help" ? 0 : 1, stdout: "Usage:\n  VesnALIA token-guard scan [--json]\n  VesnALIA token-guard status [--json]" };
       }
       const state = await readState();
       if (json) return { exitCode: 0, stdout: JSON.stringify(state) };
       const lines = [`Guard: ${state.enabled ? "on" : "off"}. Messages blocked: ${state.blocked}.`];
       if (state.error !== null) lines.push(`Last scan failed: ${state.error}`);
-      if (state.report === null) lines.push("No scan yet. Run: bb token-guard scan");
+      if (state.report === null) lines.push("No scan yet. Run: VesnALIA token-guard scan");
       else {
         const { report } = state;
         lines.push(`${report.rows.length} credentials in ${report.filesScanned} files (${report.finishedAt}).`);

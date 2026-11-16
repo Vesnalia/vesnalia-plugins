@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { BoxEntry, Contract, Machine } from "../../plugin/contract.ts";
 import { useLive } from "../common.tsx";
 import { openActions, type OpenAction } from "../box-opens.tsx";
@@ -25,7 +25,7 @@ export type OpensOf = (machine: Machine | undefined) => MachineOpens | null;
 
 export function useOpensOf(): OpensOf {
   const rpc = useRpc<Contract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const nav = useBoxesNav();
   const { value: entries } = useLive<BoxEntry[]>("allBoxes", () => rpc.call("allBoxes"), () => true);
   const entryOf = useMemo(() => new Map((entries ?? []).map((entry) => [entry.box.id, entry])), [entries]);

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { renameOverviewChapter, type Guide } from "./guide";
 import { diffSide, isLocal, isSummary, postedBody, rangeOf, sameLocation, SUMMARY_AT, type Claim, type CommentLocation, type Discussion, type DiscussionEntry, type Draft, type DraftComment, type GithubReviewComment, type Severity, type Verdict } from "./draft";
 import { createHash, randomUUID } from "node:crypto";
@@ -29,11 +29,11 @@ export interface ReviewLifecycle {
   archivedAt?: number | null;
   /** Archived by the reviewer. GitHub sync owns archivedAt and never changes this. */
   userArchivedAt?: number | null;
-  /** Pinned by the reviewer, into BB's Pinned group in the thread list, since this time. */
+  /** Pinned by the reviewer, into VesnALIA's Pinned group in the thread list, since this time. */
   pinnedAt?: number | null;
   /** The reviewer's own name for the review, shown in place of its PR's title or ref (lib/review-name.ts); null for none. */
   name?: string | null;
-  /** The thread `bb review` last ran in for this review, since `sourceThreadAt`: where the change was made. Never one of this plugin's agents. */
+  /** The thread `alia review` last ran in for this review, since `sourceThreadAt`: where the change was made. Never one of this plugin's agents. */
   sourceThreadId?: string | null;
   sourceThreadAt?: number | null;
   /** The draft comments last sent to the source thread, each since when, and the thread's title then. Sending submits nothing. */
@@ -98,7 +98,7 @@ export interface ReviewLifecycle {
   deepDiveResults?: Record<string, DeepDiveResult>;
   /** The reviewer asked on draft comments: each opens the reviewer's comment there as summaryAsk opens the summary. */
   commentAsks?: Array<CommentLocation & { ask: Ask }>;
-  /** When bb first read the PR's state. Earlier events don't alert or start work. */
+  /** When VesnALIA first read the PR's state. Earlier events don't alert or start work. */
   watchingSince?: number | null;
   /** Found on GitHub with a request for your review that you haven't been told about. */
   newRequest?: boolean | null;
@@ -108,7 +108,7 @@ export interface ReviewLifecycle {
   submittedReviewId?: string | null;
   /** The head commit the assistant is checking. */
   verifyingHead?: string | null;
-  /** The head commit when bb first read the PR; pushes before it are history. */
+  /** The head commit when VesnALIA first read the PR; pushes before it are history. */
   watchedHead?: string | null;
   /** The turn signal whose re-review was prepared, or needed none. */
   preparedSignal?: string | null;
@@ -168,7 +168,7 @@ export interface ReviewLifecycle {
   headFork?: string | null;
   /** On your own PR, others' review summaries and comments on the PR, as the sync last read them; null on others' PRs. */
   prConversation?: PrConversationItem[] | null;
-  /** Fixers' branches whose folders bb removed: git keeps them in the repo at `path` on `machine`, and the review says how to delete each. */
+  /** Fixers' branches whose folders VesnALIA removed: git keeps them in the repo at `path` on `machine`, and the review says how to delete each. */
   keptBranches?: Array<{ branch: string; machine: string | null; path?: string | null; at: number }>;
   /** A relayed approve, merge or close, waiting in Needs review for the reviewer's own click. Null for none. */
   readyToApprove?: ReadyToApprove | null;
@@ -284,7 +284,7 @@ export interface PushRun {
 
 /** A local review's folder and branch. */
 export interface FeatureReview {
-  /** bb's environment for the folder: with `branch`, the review's key. */
+  /** VesnALIA's environment for the folder: with `branch`, the review's key. */
   environmentId: string;
   /** The machine the folder is on, and its name as the review shows it ("MaxBook"). */
   hostId: string;
@@ -292,7 +292,7 @@ export interface FeatureReview {
   /** The folder's path on that machine. */
   path: string;
   branch: string;
-  /** What the diff is against: the PR's base, else the folder's merge base in bb, the branch it was made from, or the default branch (src/env-diff.ts). */
+  /** What the diff is against: the PR's base, else the folder's merge base in VesnALIA, the branch it was made from, or the default branch (src/env-diff.ts). */
   baseRef: string;
   /** The commit where the branch left `baseRef` when the stored diff was read (src/env-diff.ts): file reads take the diff's old side there. */
   mergeBaseRef?: string;
@@ -300,7 +300,7 @@ export interface FeatureReview {
   repo: string | null;
   /** The branch the folder is on instead of `branch`: the review is paused until it's back. */
   pausedOn?: string | null;
-  /** bb removed the folder. A review that became a PR goes on, and its next Send starts a fresh thread. */
+  /** VesnALIA removed the folder. A review that became a PR goes on, and its next Send starts a fresh thread. */
   folderGone?: boolean;
   /**
    * The folder's own branch when it isn't `branch`: a fresh thread's new worktree, made from `branch` once the folder it
@@ -350,7 +350,7 @@ export interface MainThread {
   branch?: string;
   /**
    * A fixer the plugin started for a PR, fresh or forked, at its head commit `sha`, recorded as it's made: what makes it
-   * one (lib/fixer.ts), never its branch, which BB says only later.
+   * one (lib/fixer.ts), never its branch, which VesnALIA says only later.
    */
   fixer?: { sha: string; at: number };
 }
@@ -366,14 +366,14 @@ export interface SendEntry {
   ids: string[];
   /** "You do it": the exact unified diff the review agent wrote for the comment it carried, for the thread to apply as written. */
   patch?: string;
-  /** The message that carries it while it waits in the thread's queue, as BB names it; absent once the thread takes it. */
+  /** The message that carries it while it waits in the thread's queue, as VesnALIA names it; absent once the thread takes it. */
   queued?: string;
   /**
-   * When it became Ready to re-review: its thread ran `bb review ready`, or reported the last comment out (src/reports.ts).
+   * When it became Ready to re-review: its thread ran `alia review ready`, or reported the last comment out (src/reports.ts).
    */
   readyAt?: number;
   /**
-   * Who ran `bb review ready` for it: the main thread or a thread under it, another thread (by its title then), or a
+   * Who ran `alia review ready` for it: the main thread or a thread under it, another thread (by its title then), or a
    * shell outside any thread. Absent when its last comment's report made it ready.
    */
   readyBy?: { from: "main" | "thread" | "shell"; title?: string };
@@ -395,7 +395,7 @@ export interface SendEntry {
  * for a Send's. saveSnapshotFiles keeps it out of the lifecycle that every read of the review carries.
  */
 export interface SnapshotFiles {
-  /** Each file's revision in the diff, by path, as bb's diff gave it: Push and Since your last Send compare them. */
+  /** Each file's revision in the diff, by path, as VesnALIA's diff gave it: Push and Since your last Send compare them. */
   revisions: Record<string, string>;
   /** The files the secrets filter kept out of the patch, and why. */
   hidden: Array<{ path: string; reason: "secret" | "binary" | "large" }>;
@@ -528,7 +528,7 @@ export interface Store extends AgentCommentStore {
   setStatus(targetKey: string, status: ReviewMeta["status"]): Promise<void>;
   /** Merge `state` into the review's lifecycle. `sends` and `activity` given are cut to what a review keeps of them. */
   setLifecycle(targetKey: string, state: ReviewLifecycle): Promise<void>;
-  /** Context for the assistant's automatic review, from `bb review --context`. */
+  /** Context for the assistant's automatic review, from `alia review --context`. */
   getReviewContext(targetKey: string): Promise<string | null>;
   /** null removes it. */
   setReviewContext(targetKey: string, text: string | null): Promise<void>;
@@ -645,12 +645,12 @@ export interface Store extends AgentCommentStore {
   /** You said the chapter's quick read is fine, now; returns when. */
   setChapterFine(targetKey: string, chapterId: string): Promise<number>;
   // Legacy review-agent worker and plugin-stored chat log, read-only since
-  // conversations moved into bb threads.
+  // conversations moved into VesnALIA threads.
   getAgentThread(targetKey: string): Promise<string | null>;
   clearAgentThread(targetKey: string): Promise<void>;
   listAgentMessages(targetKey: string): Promise<AgentMessage[]>;
   clearAgentMessages(targetKey: string): Promise<void>;
-  // The hidden bb thread behind a review's assistant chat.
+  // The hidden VesnALIA thread behind a review's assistant chat.
   getAssistantThread(targetKey: string): Promise<string | null>;
   setAssistantThread(targetKey: string, threadId: string): Promise<void>;
   clearAssistantThread(targetKey: string): Promise<void>;
@@ -716,8 +716,8 @@ export type SummaryChange = Partial<Pick<Draft, "verdict" | "body" | "bodyAuthor
 export type PreviousState = { body: string; focus?: string; author?: "agent"; severity?: Severity; evidence?: string; introduced?: false; chapterId?: string; startLine?: number; startSide?: "LEFT" | "RIGHT"; startCode?: string; relined?: true; written?: Draft["written"]; suggestedVerdict?: Verdict | null; suggested?: Verdict } | null;
 
 /**
- * The statements bb.storage.migrate applies to the plugin's SQLite database, each at its index for good, and mirrored
- * by src/db/pg-migrations.ts. _bb_migrations records each one's SHA-256, so its text stays as it is, indentation and all.
+ * The statements alia.storage.migrate applies to the plugin's SQLite database, each at its index for good, and mirrored
+ * by src/db/pg-migrations.ts. _alia_migrations records each one's SHA-256, so its text stays as it is, indentation and all.
  */
 export const SQLITE_MIGRATIONS: readonly string[] = [
     `CREATE TABLE IF NOT EXISTS reviews (
@@ -815,16 +815,16 @@ export const SQLITE_MIGRATIONS: readonly string[] = [
 ];
 
 /** The plugin's SQLite database, a former install brought in and SQLITE_MIGRATIONS applied, as the Store opens it. */
-export function migrateSqlite(bb: BbPluginApi) {
-  const db = bb.storage.database();
+export function migrateSqlite(alia: AliaPluginApi) {
+  const db = alia.storage.database();
   assertSqliteLedger(db, SQLITE_MIGRATIONS);
-  importFormerInstall(bb, db, () => assertSqliteLedger(db, SQLITE_MIGRATIONS, "former"));
-  bb.storage.migrate(db, [...SQLITE_MIGRATIONS]);
+  importFormerInstall(alia, db, () => assertSqliteLedger(db, SQLITE_MIGRATIONS, "former"));
+  alia.storage.migrate(db, [...SQLITE_MIGRATIONS]);
   return db;
 }
 
-export function createStore(bb: BbPluginApi): Store {
-  return storeOn(sqliteSql(migrateSqlite(bb)));
+export function createStore(alia: AliaPluginApi): Store {
+  return storeOn(sqliteSql(migrateSqlite(alia)));
 }
 
 /** The Store over `sql`, on the tables the migrations above make, or on Postgres those of src/db/pg-migrations.ts. */
@@ -1244,7 +1244,7 @@ export function storeOn(sql: Sql): Store {
         await sql.run(`INSERT INTO generations (target_key,generation_id) VALUES (?,?) ON CONFLICT(target_key) DO UPDATE SET generation_id=excluded.generation_id, worker_id=NULL`, [k, id]);
         await sql.run(`DELETE FROM guides WHERE target_key=?`, [k]);
         await sql.run(`UPDATE reviews SET status='generating' WHERE target_key=?`, [k]);
-        // Restarting a review (new PR link, `bb review`, Re-review) takes it out of the reviewer's archive.
+        // Restarting a review (new PR link, `alia review`, Re-review) takes it out of the reviewer's archive.
         if ((await this.getReview(k))?.userArchivedAt) await this.setLifecycle(k, { userArchivedAt: null });
       });
       return id;
@@ -1600,7 +1600,7 @@ export function storeOn(sql: Sql): Store {
         const before = await saved();
         const previous = new Map((await sql.all<{ thread_id: string; resolved_seen_at: number | null }>(`SELECT thread_id, resolved_seen_at FROM feedback_threads WHERE target_key=? ORDER BY thread_id`, [k]))
           .map((row) => [row.thread_id, row.resolved_seen_at]));
-        // When a thread was resolved isn't in GitHub's data; the first time bb saw it resolved stands in.
+        // When a thread was resolved isn't in GitHub's data; the first time VesnALIA saw it resolved stands in.
         // On the first read it was resolved some time before, so its last activity stands in instead.
         const seen = (thread: FeedbackThread) => previous.has(thread.id) ? previous.get(thread.id) ?? now
           : first ? Math.max(thread.createdAt, ...thread.replies.map((r) => r.createdAt)) : now;
@@ -1799,7 +1799,7 @@ const COMMENT_COUNTER = "comment-counter";
  * tx): unique across reviews, so a report names one comment. A counter kv lost, as a reinstall loses it while Postgres
  * keeps the reviews, starts after the highest id they hold.
  */
-export async function newCommentIds(store: AsyncStore, kv: BbPluginApi["storage"]["kv"], count: number): Promise<string[]> {
+export async function newCommentIds(store: AsyncStore, kv: AliaPluginApi["storage"]["kv"], count: number): Promise<string[]> {
   return store.exclusive(async (tx) => {
     let last = await kv.get<number>(COMMENT_COUNTER);
     if (last === null || last === undefined) {

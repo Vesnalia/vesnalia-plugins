@@ -2,16 +2,16 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@get-bb/plugin-sdk/provider-bridge/testing";
+import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import { afterEach, beforeEach, expect, it } from "vitest";
 
-const LIVE = process.env.BB_KIMI_LIVE === "1";
+const LIVE = process.env.ALIA_KIMI_LIVE === "1";
 const itLive = LIVE ? it : it.skip;
 
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-kimi-plan-mode-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "alia-kimi-plan-mode-"));
 });
 
 afterEach(() => {
@@ -77,7 +77,7 @@ itLive("promptMode plan actually enters kimi plan mode", async () => {
           }>;
         }).deltas;
         for (const delta of deltas ?? []) {
-          if (delta.kind !== "extension.state" || delta.extensionKind !== "bb/session-options") continue;
+          if (delta.kind !== "extension.state" || delta.extensionKind !== "alia/session-options") continue;
           currentMode = delta.payload?.options?.find((option) => option.id === "mode")?.value;
         }
       }

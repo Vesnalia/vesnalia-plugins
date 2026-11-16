@@ -68,7 +68,7 @@ let pin = 0;
 
 // The chat list sticks to the bottom while an agent writes and is
 // virtualized: rows above get measured as they come into view, the list
-// grows and bb pulls it back down. A user scroll is a wheel event, so an
+// grows and VesnALIA pulls it back down. A user scroll is a wheel event, so an
 // upward command sends one (it does not scroll by itself) to release that.
 function releaseStick(el: HTMLElement): void {
   el.dispatchEvent(new WheelEvent("wheel", { deltaY: -1, bubbles: true, cancelable: true }));

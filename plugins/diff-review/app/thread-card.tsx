@@ -3,7 +3,7 @@
  * actions — reply, resolve or reopen, dismiss, edit or delete their own comments. Resolved and
  * dismissed threads fold to one line.
  */
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { Fragment } from "react";
 import { useEffect, useState } from "react";
 

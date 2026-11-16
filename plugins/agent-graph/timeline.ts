@@ -1,4 +1,4 @@
-// Pure helpers for reading bb thread timelines. No SDK imports, so they are
+// Pure helpers for reading VesnALIA thread timelines. No SDK imports, so they are
 // easy to unit test (see tests/).
 
 /** A timeline row read loosely, so new row kinds never break the graph. */

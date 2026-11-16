@@ -1,5 +1,5 @@
-// Find the GigaAM ASR server: the configured URL, else the gigaam bb plugin's
-// managed server (`bb gigaam status --json` → port). The result is cached for
+// Find the GigaAM ASR server: the configured URL, else the gigaam VesnALIA plugin's
+// managed server (`alia gigaam status --json` → port). The result is cached for
 // 30 s and persisted to <hostData>/gigaam.json, which running transcribers
 // re-read so a GigaAM restart on a new port does not stall them.
 import os from "node:os";
@@ -12,7 +12,7 @@ import type { HostPaths } from "./paths.js";
 const CACHE_MS = 30_000;
 const HEALTH_TIMEOUT_MS = 3_000;
 /** With the health check this stays inside gigaam.discover's 15 s call deadline. */
-const BB_STATUS_TIMEOUT_MS = 10_000;
+const ALIA_STATUS_TIMEOUT_MS = 10_000;
 
 const cache = new Map<string, { at: number; status: GigaamStatus }>();
 
@@ -20,9 +20,9 @@ export function normalizeUrl(url: string): string {
   return url.trim().replace(/\/+$/, "");
 }
 
-/** The bb CLI: PATH first, then the usual npm-global location. */
-export async function findBb(): Promise<string | null> {
-  return (await which("bb")) ?? (await which(path.join(os.homedir(), ".npm-global", "bin", "bb")));
+/** The VesnALIA CLI: PATH first, then the usual npm-global location. */
+export async function findAlia(): Promise<string | null> {
+  return (await which("alia")) ?? (await which(path.join(os.homedir(), ".npm-global", "bin", "alia")));
 }
 
 interface Located {
@@ -31,9 +31,9 @@ interface Located {
 }
 
 async function locateViaPlugin(): Promise<Located> {
-  const bb = await findBb();
-  if (bb === null) return { url: null, detail: "Команда bb не найдена: не удаётся найти сервер GigaAM" };
-  const result = await run(bb, ["gigaam", "status", "--json"], { timeoutMs: BB_STATUS_TIMEOUT_MS }).catch(
+  const alia = await findAlia();
+  if (alia === null) return { url: null, detail: "Команда alia не найдена: не удаётся найти сервер GigaAM" };
+  const result = await run(alia, ["gigaam", "status", "--json"], { timeoutMs: ALIA_STATUS_TIMEOUT_MS }).catch(
     (error: unknown) => ({ code: -1, stdout: "", stderr: String(error), timedOut: false, signal: null }),
   );
   if (result.code !== 0) {
@@ -41,15 +41,15 @@ async function locateViaPlugin(): Promise<Located> {
     return {
       url: null,
       detail: /unknown command|not found|no plugin|Unknown/i.test(text)
-        ? "Плагин gigaam не установлен (bb plugin install gigaam)"
-        : `bb gigaam status завершился с ошибкой: ${text.trim().split("\n").slice(-1)[0] ?? ""}`.trim(),
+        ? "Плагин gigaam не установлен (VesnALIA plugin install gigaam)"
+        : `alia gigaam status завершился с ошибкой: ${text.trim().split("\n").slice(-1)[0] ?? ""}`.trim(),
     };
   }
   let status: Record<string, unknown>;
   try {
     status = JSON.parse(result.stdout) as Record<string, unknown>;
   } catch {
-    return { url: null, detail: "bb gigaam status вернул не JSON" };
+    return { url: null, detail: "alia gigaam status вернул не JSON" };
   }
   if (status.mode === "external" && typeof status.serverUrl === "string") {
     return { url: normalizeUrl(status.serverUrl), detail: "Внешний сервер GigaAM" };

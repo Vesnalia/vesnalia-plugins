@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { deviceKindFor, fitDevice, shortcutFor } from "./components/simulator-panel";
 import { BEZEL_PARTS, fitBezel, type DeviceBezel } from "./lib/device-bezel";
 import { decodeHid, encodeHid, HID } from "./lib/sim-protocol";

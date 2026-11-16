@@ -2,9 +2,9 @@
 import { Profiler, type ReactNode } from "react";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 const mocks = vi.hoisted(() => ({ rpc: { call: vi.fn() } }));
-vi.mock("@get-bb/plugin-sdk/app", () => ({ useRpc: () => mocks.rpc, UrlLink: "a" }));
+vi.mock("@vesnalia/plugin-sdk/app", () => ({ useRpc: () => mocks.rpc, UrlLink: "a" }));
 import { OpenPortsProvider, OpenPortsIndicator, type PortScanScope } from "./OpenPorts";
 const thread = { id: "thr_a", environment: { id: "env_a" } } as PluginSidebarThread;
 const snapshot = (ownerThreadId = "thr_a") => ({

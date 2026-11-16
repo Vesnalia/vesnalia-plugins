@@ -91,7 +91,7 @@ test("pins end with their operation: done, failed, and settled after a restart",
     assert.ok(eligible(target, "delete", { pin: pinsOf(ended).get(target.id) ?? null, now: NOW }).ok, state);
   }
   const unknown = operation("restore", [target.id], { state: "unknown" });
-  assert.equal(pinsOf(unknown).get(target.id), unknown, "an operation BB Box could not confirm still pins");
+  assert.equal(pinsOf(unknown).get(target.id), unknown, "an operation VesnALIA Box could not confirm still pins");
 });
 
 test("automatic deletions never take a kept snapshot, the person's, an undo, or one an agent did not take; the limit goes by who took it, so an agent's on the person's machine may go", () => {
@@ -273,7 +273,7 @@ test("mayAct: another thread's box, a guessed ID or a box that is gone gives an 
   assert.equal(mayAct(AGENT, "see", own, record({ boxGone: { at: NOW, how: "released" }, keptUntil: NOW + 1 })).ok, false, "once its box is gone, a kept one is the person's alone");
 });
 
-test("mayAct: the person and a bb box command may do everything, on any box", () => {
+test("mayAct: the person and a VesnALIA box command may do everything, on any box", () => {
   const theirs = record({ box: { id: "bxamberfox2q7k", name: "amber-fox", kind: "linux", system: "linux", thread: OTHER } });
   for (const caller of [PERSON, COMMAND]) for (const act of ["take", "see", "see-picture", "restore", "fork", "delete", "keep", "unkeep", "rename", "note"] as const) assert.ok(mayAct(caller, act, anothers, theirs).ok);
 });
@@ -322,7 +322,7 @@ test("section 3's table, cell by cell, on a set clock: who may take, see, see th
     ["the person, its box", PERSON, ownBox, takenByIt, yes(ACTS)],
     ["the person, a box a thread runs on", PERSON, machine, theirsThere, yes(ACTS)],
     ["the person, a kept one", PERSON, ownBox, kept, yes(ACTS)],
-    ["a bb box command", COMMAND, anothers, takenByAnother, yes(ACTS)],
+    ["a VesnALIA box command", COMMAND, anothers, takenByAnother, yes(ACTS)],
   ];
   for (const [what, caller, standing, snapshot, cell] of rows) {
     for (const act of ACTS) {
@@ -343,7 +343,7 @@ test("restoreRoute: an agent restores its own box at once, through the form when
   for (const caller of [AGENT, PERSON, COMMAND]) {
     const off = restoreRoute(caller, { ...on, machineRestores: false }, onMachine);
     assert.equal(off.ok, false);
-    assert.match((off as { why: string }).why, /does not restore a box threads run on yet: that stays off until BB Box can hold every turn on it/);
+    assert.match((off as { why: string }).why, /does not restore a box threads run on yet: that stays off until ALIA Box can hold every turn on it/);
     assert.match((restoreRoute(caller, on, { onAMachine: true, memory: true }) as { why: string }).why, /restored from disk snapshots only/);
   }
   assert.deepEqual(restoreRoute(PERSON, on, onMachine), { ok: true, through: "restore" });

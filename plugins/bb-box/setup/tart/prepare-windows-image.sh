@@ -3,9 +3,9 @@
 # (046): Windows 11 on arm64 from your own ISO, installed unattended in QEMU
 # with the Windows template's answer file and first-logon scripts
 # (../proxmox-qemu), adapted for arm64 here. Run on each Mac as the user
-# bb-box logs in as (see README.md):
+# alia-box logs in as (see README.md):
 #
-#   ./prepare-windows-image.sh --iso <ISO> --iso-sha256 <its SHA-256> --key '<bb-box public key>' [--key <another>]... [--name <image>] [--edition <edition>] [--product-key <key>] [--reserve-gib <GiB>] [--delete-iso] [--replace] [--keep]
+#   ./prepare-windows-image.sh --iso <ISO> --iso-sha256 <its SHA-256> --key '<alia-box public key>' [--key <another>]... [--name <image>] [--edition <edition>] [--product-key <key>] [--reserve-gib <GiB>] [--delete-iso] [--replace] [--keep]
 #
 # The ISO is Windows 11 Arm64 in English (United States), which Setup needs
 # no answers for. --edition is the one to install from it (Windows 11 Pro),
@@ -15,13 +15,13 @@
 # It downloads the virtio-win drivers, installs Windows from the ISO with them
 # (Setup, then the first logon, which installs OpenSSH, PowerShell 7, Git,
 # GitHub CLI, Cua Driver, the build tools: Visual Studio Build Tools for
-# C++, LLVM and Rust, and bb-box-stream.exe with Cisco's OpenH264, 060),
+# C++, LLVM and Rust, and alia-box-stream.exe with Cisco's OpenH264, 060),
 # boots it once as a box boots, and checks a clone of it as the backend uses
 # a box, saved and restored. The image is then
-# ~/.bb-box/qemu/images/<name>/build.<time>, with a read-only disk.qcow2 and
+# ~/.alia-box/qemu/images/<name>/build.<time>, with a read-only disk.qcow2 and
 # vars.fd, and the link `current` names it. Its record (049) is in the image,
-# C:\bb-box\image.json, which the first logon writes, and beside it,
-# image.json in the build's directory, where bb-box's doctor reads it. About 30 minutes, and about 40 GiB
+# C:\alia-box\image.json, which the first logon writes, and beside it,
+# image.json in the build's directory, where alia-box's doctor reads it. About 30 minutes, and about 40 GiB
 # beyond --reserve-gib (50 GiB, as the backend's tart-reserve-disk-gib): the
 # build stops rather than leave less free. --delete-iso deletes the ISO once
 # Setup has copied Windows from it, which gives its space back. --replace
@@ -29,7 +29,7 @@
 # --keep keeps a failed build's directory, to boot and look at.
 set -eu
 
-name=bb-box-windows
+name=alia-box-windows
 iso=
 iso_sha256=
 key=
@@ -60,7 +60,7 @@ while [ $# -gt 0 ]; do
     *) die "unknown option $1 (see the top of this script)" ;;
   esac
 done
-[ -n "$key" ] || die "give bb-box's public key with --key, as bb box doctor shows it"
+[ -n "$key" ] || die "give alia-box's public key with --key, as alia box doctor shows it"
 [ -n "$iso" ] || die "give the Windows 11 Arm64 ISO with --iso"
 [ -f "$iso" ] || die "there is no ISO at $iso"
 case $iso in *,*) die "QEMU cannot take a path with a comma: move $iso" ;; esac
@@ -104,7 +104,7 @@ PI_SHA256=2E0D544999A765018EE5C2FF1A8B1A7E0F5D5B6B1E00B32D8C025D6C1DBCC833
 FFMPEG_VERSION=9.0.1
 FFMPEG_URL=https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-08-31-13-27/ffmpeg-n9.0.1-11-ge47273f4d9-winarm64-gpl-9.0.zip
 FFMPEG_SHA256=7E6142AE4D04B35123EBA48D91BB2C559EF43B49A6B3857F7324BBCF7266D18B
-# bb-box-stream.exe's H.264 encoder (060): Cisco's own arm64 binary, which its
+# alia-box-stream.exe's H.264 encoder (060): Cisco's own arm64 binary, which its
 # licence asks to be downloaded from Cisco, as ../proxmox-qemu/build.sh pins
 # its x64 one. The first logon compiles the program beside it.
 OPENH264_VERSION=2.6.0
@@ -116,7 +116,7 @@ VIRTIO_SHA256=303f7ae40dad495d6ae474fdc571df58958a4dbc5c37a522d80f9a203867949d
 
 here=$(cd "$(dirname "$0")" && pwd)
 template=$here/../proxmox-qemu
-[ -f "$template/answer/autounattend.xml" ] || die "no $template: run this from a checkout of bb-box"
+[ -f "$template/answer/autounattend.xml" ] || die "no $template: run this from a checkout of alia-box"
 export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.nix-profile/bin:/run/current-system/sw/bin:$PATH"
 [ "$(uname -s)" = Darwin ] && [ "$(uname -m)" = arm64 ] || die "this builds Windows for a Mac with Apple silicon"
 [ "$(/usr/sbin/sysctl -n kern.hv_support 2>/dev/null)" = 1 ] || die "this Mac has no Hypervisor framework"
@@ -143,7 +143,7 @@ case $label in
 esac
 
 umask 077
-q=$HOME/.bb-box/qemu
+q=$HOME/.alia-box/qemu
 images=$q/images/$name
 mkdir -p "$images"
 if [ -e "$images/current" ] && [ "$replace" = 0 ]; then die "$name exists; give --replace to build it again"; fi
@@ -155,7 +155,7 @@ free=$(kib)
 
 build=build.$(date -u +%Y%m%d-%H%M%S)
 # The image's record (049). The pins' SHA-256 is of this script's pin lines.
-record=$(printf '{"contract":1,"image":"standard","kind":"windows-arm64-desktop","arch":"arm64","build":"%s","built":"%s","base":null,"os":"%s","aptSnapshot":null,"pins":"%s","bbApp":null,"tools":{"pwsh":"%s","git":"%s","gh":"%s","cua-driver":"%s","vs-buildtools":"%s","llvm":"%s","rustup":"%s","node":"%s","claude-code":"%s","codex":"%s","pi":"%s","ffmpeg":"%s","openh264":"%s","hardware-cursor":"1","password-never-expires":"1","virtio-win":"%s"},"nvidia":null,"layer":null,"sizeGiB":null}' \
+record=$(printf '{"contract":1,"image":"standard","kind":"windows-arm64-desktop","arch":"arm64","build":"%s","built":"%s","base":null,"os":"%s","aptSnapshot":null,"pins":"%s","aliaApp":null,"tools":{"pwsh":"%s","git":"%s","gh":"%s","cua-driver":"%s","vs-buildtools":"%s","llvm":"%s","rustup":"%s","node":"%s","claude-code":"%s","codex":"%s","pi":"%s","ffmpeg":"%s","openh264":"%s","hardware-cursor":"1","password-never-expires":"1","virtio-win":"%s"},"nvidia":null,"layer":null,"sizeGiB":null}' \
   "$build" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$edition" "$(grep -E '^[A-Z0-9_]+_(VERSION|SHA256|URL)=' "$here/prepare-windows-image.sh" | shasum -a 256 | cut -d' ' -f1)" \
   "$PWSH_VERSION" "$GIT_VERSION" "$GH_VERSION" "$CUA_VERSION" "$VS_VERSION" "$LLVM_VERSION" "$RUSTUP_VERSION" "$NODE_VERSION" "$CLAUDE_VERSION" "$CODEX_VERSION" "$PI_VERSION" "$FFMPEG_VERSION" "$OPENH264_VERSION" "$VIRTIO_VERSION")
 d=$images/$build.new
@@ -169,9 +169,9 @@ done_ok=
 step() { printf '%s  %s\n' "$(date +%H:%M:%S)" "$*"; }
 lock_opens() { mkdir -p "${1%/*}" 2>/dev/null && (: >>"$1") 2>/dev/null; }
 hold_turn() {
-  _turn_lock=$HOME/.bb-box/turn.lock
+  _turn_lock=$HOME/.alia-box/turn.lock
   lock_opens "$_turn_lock" || {
-    echo "prepare-windows-image: could not open $_turn_lock, which BB Box's restores and image refreshes on this Mac take turns by. Check that $(id -un) can write to it." >&2
+    echo "prepare-windows-image: could not open $_turn_lock, which ALIA Box's restores and image refreshes on this Mac take turns by. Check that $(id -un) can write to it." >&2
     return 2
   }
   exec 9>>"$_turn_lock"
@@ -186,9 +186,9 @@ publish_build() {
   case $_turn in
     0) ;;
     1)
-      step "waiting up to 10 minutes for BB Box's restore or image refresh on this Mac to end"
+      step "waiting up to 10 minutes for ALIA Box's restore or image refresh on this Mac to end"
       hold_turn 6000 || {
-        echo "prepare-windows-image: another BB Box task on this Mac kept the build waiting for 10 minutes. Run the build again once BB Box's restores and image refreshes have ended." >&2
+        echo "prepare-windows-image: another ALIA Box task on this Mac kept the build waiting for 10 minutes. Run the build again once ALIA Box's restores and image refreshes have ended." >&2
         return 1
       } ;;
     *) return 1 ;;
@@ -254,7 +254,7 @@ sum=$(shasum -a 256 "$iso" | awk '{ print tolower($1) }')
 # directory, and the first logon deletes its copy in Windows.
 step "downloading the virtio-win $VIRTIO_VERSION drivers"
 a=$w/answer
-mkdir -p "$a/bb-box" "$a/drivers"
+mkdir -p "$a/alia-box" "$a/drivers"
 curl -fsSL --retry 3 -o "$w/virtio.iso" "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-$VIRTIO_VERSION-1/virtio-win-$VIRTIO_VERSION.iso"
 [ "$(shasum -a 256 "$w/virtio.iso" | awk '{ print $1 }')" = "$VIRTIO_SHA256" ] || die "the virtio-win ISO does not match its SHA-256"
 # Its arm64 drivers for Windows 11 are hard links to those for Server 2025,
@@ -283,7 +283,7 @@ ssh-keygen -q -t ed25519 -N '' -C "$name-build" -f "$w/key"
 cat >"$w/specialize.xml" <<'EOF'
         <RunSynchronousCommand wcm:action="add">
           <Order>4</Order>
-          <Path>powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\bb-box\clock.ps1</Path>
+          <Path>powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\alia-box\clock.ps1</Path>
         </RunSynchronousCommand>
 EOF
 cat >"$w/windowspe.xml" <<'EOF'
@@ -318,18 +318,18 @@ sed -e 's/\\vioscsi\\w11\\amd64<\/Path>/\\drivers<\/Path>/' -e 's/processorArchi
 # should Windows Update not have it.
 awk '
   $0 == "Step \"Build address $($build.address)\"" { n++; next }
-  $0 == "& C:\\bb-box\\boot.ps1 -Address $build.address -Gateway $build.gateway -Dns $build.dns" { n++; next }
+  $0 == "& C:\\alia-box\\boot.ps1 -Address $build.address -Gateway $build.gateway -Dns $build.dns" { n++; next }
   $0 == "# The downloads below need the network the address has just brought up." { print "# The downloads below need the network."; n++; next }
   index($0, "Step '\''The box address at each boot") == 1 { drop = 1 }
-  drop { if (index($0, "Set-Content C:\\bb-box\\dns.txt") == 1) { drop = 0; n++ } next }
+  drop { if (index($0, "Set-Content C:\\alia-box\\dns.txt") == 1) { drop = 0; n++ } next }
   { if (sub(/OpenSSH-Win64-/, "OpenSSH-ARM64-")) n++; print }
   END { if (n != 5) exit 1 }
-' "$template/answer/bb-box/firstlogon.ps1" >"$a/bb-box/firstlogon.ps1" &&
-  ! grep -Eq 'boot\.ps1|\$build\.(address|gateway|dns)|Win64' "$a/bb-box/firstlogon.ps1" ||
-  die "../proxmox-qemu/answer/bb-box/firstlogon.ps1 has changed: adapt this script to it"
-cp "$template/answer/bb-box/logon.ps1" "$here/windows/clock.ps1" "$a/bb-box/"
-# bb-box-stream.exe's source (060), which the first logon compiles, its installer, and the hardware cursor's switch.
-cp "$here/../windows/bb-box-stream.cs" "$here/../windows/install-stream.ps1" "$here/../windows/hardware-cursor.ps1" "$a/bb-box/"
+' "$template/answer/alia-box/firstlogon.ps1" >"$a/alia-box/firstlogon.ps1" &&
+  ! grep -Eq 'boot\.ps1|\$build\.(address|gateway|dns)|Win64' "$a/alia-box/firstlogon.ps1" ||
+  die "../proxmox-qemu/answer/alia-box/firstlogon.ps1 has changed: adapt this script to it"
+cp "$template/answer/alia-box/logon.ps1" "$here/windows/clock.ps1" "$a/alia-box/"
+# alia-box-stream.exe's source (060), which the first logon compiles, its installer, and the hardware cursor's switch.
+cp "$here/../windows/alia-box-stream.cs" "$here/../windows/install-stream.ps1" "$here/../windows/hardware-cursor.ps1" "$a/alia-box/"
 # The check, with the clock's in place of the address's.
 awk -v clock="$here/windows/check-clock.ps1" '
   $0 == "Check '\''address from the SMBIOS serial'\'' {" { while ((getline line < clock) > 0) print line; drop = 1; n++; next }
@@ -370,7 +370,7 @@ pin() { printf '"%s": {"version": "%s", "sha256": "%s", "url": "%s"}' "$1" "$2" 
   pin openh264 "$OPENH264_VERSION" "$OPENH264_SHA256" "$OPENH264_URL"
   printf ',\n  "record": "%s"' "$(json "$record")"
   printf '\n}\n'
-} >"$a/bb-box/build.json"
+} >"$a/alia-box/build.json"
 hdiutil makehybrid -quiet -iso -joliet -default-volume-name BBBOXANSWER -o "$w/answer.iso" "$a"
 rm -rf "$a"
 
@@ -518,11 +518,11 @@ fi
 # Setup's last passes and the first logon, which restarts Windows when done.
 # Cua's daemon starts at the logon after that restart, so its pipe says the
 # restart is over.
-step "Windows Setup's last passes, then the first logon (C:\\bb-box\\firstlogon.log in Windows): about 10 minutes"
+step "Windows Setup's last passes, then the first logon (C:\\alia-box\\firstlogon.log in Windows): about 10 minutes"
 qemu_up "$d" -device ramfb \
   -drive "if=none,id=answer,media=cdrom,readonly=on,format=raw,file=$w/answer.iso" -device usb-storage,drive=answer
-installed='if (Test-Path C:\bb-box\firstlogon-failed) { exit 2 }
-if ((Test-Path C:\bb-box\firstlogon-done) -and (Get-Process explorer -ErrorAction SilentlyContinue | Where-Object SessionId -gt 0) -and (Test-Path -LiteralPath "\\.\pipe\cua-driver")) { exit 0 }
+installed='if (Test-Path C:\alia-box\firstlogon-failed) { exit 2 }
+if ((Test-Path C:\alia-box\firstlogon-done) -and (Get-Process explorer -ErrorAction SilentlyContinue | Where-Object SessionId -gt 0) -and (Test-Path -LiteralPath "\\.\pipe\cua-driver")) { exit 0 }
 exit 1'
 t=$(date +%s)
 answered= shot=0 next=$((t + 300))
@@ -534,7 +534,7 @@ while :; do
   case $st in
     0) break ;;
     2)
-      win 'Get-Content C:\bb-box\firstlogon.log -Tail 20' 2>&1 | tr -d '\r' || :
+      win 'Get-Content C:\alia-box\firstlogon.log -Tail 20' 2>&1 | tr -d '\r' || :
       fail "the first logon failed (above)" ;;
     255) ;;
     *) [ -n "$answered" ] || { answered=1; step "Windows answers SSH: the first logon is installing the tools"; } ;;
@@ -546,7 +546,7 @@ while :; do
   sleep 20
 done
 step "installed, restarted and logged on after $(($(date +%s) - t)) s"
-win 'Select-String -Path C:\bb-box\firstlogon.log -Pattern "^\d\d:\d\d:\d\d " | ForEach-Object Line' | tr -d '\r'
+win 'Select-String -Path C:\alia-box\firstlogon.log -Pattern "^\d\d:\d\d:\d\d " | ForEach-Object Line' | tr -d '\r'
 step "shutting Windows down"
 shut_down
 
@@ -574,9 +574,9 @@ step "the clone's clock is $off s off the Mac's"
 [ "${off#-}" -le 120 ] || fail "the clone's clock is $off s off the Mac's"
 wait_for "the clone's desktop is up" 300 "$desktop_up" || fail "the clone's desktop was not up within 5 minutes"
 scp -q -F /dev/null -i "$w/key" -P "$ssh_port" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=no \
-  -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR "$w/check.ps1" box@127.0.0.1:C:/bb-box/check.ps1
+  -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR "$w/check.ps1" box@127.0.0.1:C:/alia-box/check.ps1
 checked=0
-win '& C:\bb-box\check.ps1; exit $LASTEXITCODE' >"$w/check.out" 2>&1 || checked=1
+win '& C:\alia-box\check.ps1; exit $LASTEXITCODE' >"$w/check.out" 2>&1 || checked=1
 tr -d '\r' <"$w/check.out"
 [ "$checked" = 0 ] || fail "the check failed (above)"
 # The save takes up to the VM's memory on the disk.
@@ -614,8 +614,8 @@ step "restored the clone in $(($(date +%s) - t)) s"
 wait_for "the restored clone answers SSH" 120 'exit 0' || fail "the restored clone did not answer SSH within 2 minutes"
 wait_for "the restored clone's desktop is up" 120 "$desktop_up" || fail "the restored clone's desktop was not up within 2 minutes"
 step "the restored clone's clock is $(offset) s off the Mac's; setting it, as the backend does"
-win "\$bbNow = [DateTimeOffset]::FromUnixTimeMilliseconds($(date +%s)000).LocalDateTime + ((Get-Date) - [Diagnostics.Process]::GetCurrentProcess().StartTime)
-Set-Date -Date \$bbNow -ErrorAction Stop | Out-Null" || fail "could not set the restored clone's clock"
+win "\$aliaNow = [DateTimeOffset]::FromUnixTimeMilliseconds($(date +%s)000).LocalDateTime + ((Get-Date) - [Diagnostics.Process]::GetCurrentProcess().StartTime)
+Set-Date -Date \$aliaNow -ErrorAction Stop | Out-Null" || fail "could not set the restored clone's clock"
 off=$(offset)
 step "the restored clone's clock is $off s off the Mac's"
 [ "${off#-}" -le 5 ] || fail "the restored clone's clock is $off s off the Mac's"
@@ -640,7 +640,7 @@ note_older_builds() {
     [ -d "$images/$_b" ] || continue
     _older="$_older $_b"
   done
-  [ -z "$_older" ] || step "older builds stay in $images while a VM, a snapshot or a restore stands on them, and BB Box's next image refresh removes those that nothing stands on. Do not delete them by hand:$_older"
+  [ -z "$_older" ] || step "older builds stay in $images while a VM, a snapshot or a restore stands on them, and ALIA Box's next image refresh removes those that nothing stands on. Do not delete them by hand:$_older"
 }
 note_older_builds
 step "done: $name is $build ($(du -sh "$images/$build" | cut -f1) on disk, $(($(kib) / 1048576)) GiB free)"

@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
 import {
   definePluginApp,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRealtime,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,7 @@ interface RealtimePayload {
   };
 }
 
-/** Toast plus, when BB is in the background, a browser notification. */
+/** Toast plus, when VesnALIA is in the background, a browser notification. */
 function showNotification(payload: RealtimePayload["notification"]): void {
   if (!payload) return;
   const subject =
@@ -78,8 +78,8 @@ function matchesFilter(task: Task, filter: TaskFilter): boolean {
 
 function TriageBoard() {
   const { snapshot, error, loading, rpc, refresh } = useTriage();
-  const { projectId: routeProjectId } = useBbContext();
-  const navigate = useBbNavigate();
+  const { projectId: routeProjectId } = useAliaContext();
+  const navigate = useAliaNavigate();
   const [projectFilter, setProjectFilter] = useState("all");
   const [machineFilter, setMachineFilter] = useState("all");
   const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
@@ -343,7 +343,7 @@ export default definePluginApp((app) => {
     id: "triage-sidebar",
     title: "Triage above threads",
     description:
-      "BB's thread list with your Triage cards above it, once the plugin's sidebar setting is on.",
+      "VesnALIA's thread list with your Triage cards above it, once the plugin's sidebar setting is on.",
     component: SidebarThreadList,
   });
 });

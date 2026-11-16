@@ -200,7 +200,7 @@
   --ansi-15: #f2f2f0;
   --ansi-bg-fg-15: #070707;
 
-  /* shadows: bb's dark values in both modes */
+  /* shadows: alia's dark values in both modes */
   --shadow-color: #0006;
   --shadow-2xs: 0px 2px 0px 0px #0003;
   --shadow-xs: 0px 2px 0px 0px #0003;
@@ -213,8 +213,8 @@
   --shadow-2xl: inset 0 1px 0 0 #ffffff12, 0 16px 40px -8px #000000cc;
 }
 
-.bb-code-highlight.bb-code-highlight,
-.light .bb-code-highlight.bb-code-highlight {
+.alia-code-highlight.alia-code-highlight,
+.light .alia-code-highlight.alia-code-highlight {
   --sh-keyword: #b84703;
   --sh-string: #487817;
   --sh-comment: #717176;
@@ -224,7 +224,7 @@
   --sh-jsxliterals: #5951c1;
 }
 
-.dark .bb-code-highlight.bb-code-highlight {
+.dark .alia-code-highlight.alia-code-highlight {
   --sh-keyword: #fd9260;
   --sh-string: #a6d77d;
   --sh-comment: #737373;

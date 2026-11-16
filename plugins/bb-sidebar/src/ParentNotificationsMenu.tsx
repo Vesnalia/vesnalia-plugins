@@ -1,13 +1,13 @@
 import { useRef, useState, type MutableRefObject } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
-import { useSdk, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useSdk, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { toast } from "./lib/toast";
 import { Icon } from "./components/Icon";
 import { usePortalScopeProps } from "./lib/portal-scope";
 
 type ParentNotifications = "auto" | "stuck" | "off";
 
-// Which of this child's turn outcomes wake its parent thread, as bb defines them.
+// Which of this child's turn outcomes wake its parent thread, as VesnALIA defines them.
 const CHOICES: ReadonlyArray<{ value: ParentNotifications; label: string; detail: string }> = [
   { value: "auto", label: "Every outcome", detail: "Each finished, failed, or interrupted turn" },
   { value: "stuck", label: "Only when stuck", detail: "Failed, interrupted, or waiting on an answer" },
@@ -19,8 +19,8 @@ function isParentNotifications(value: unknown): value is ParentNotifications {
 }
 
 /**
- * Whether bb acts on this thread's setting: a child with a parent, but not a
- * fork, whose outcomes bb never reports to the parent.
+ * Whether VesnALIA acts on this thread's setting: a child with a parent, but not a
+ * fork, whose outcomes VesnALIA never reports to the parent.
  */
 export function notifiesParent(thread: PluginSidebarThread): boolean {
   return thread.parentThreadId !== null && thread.originKind === null;

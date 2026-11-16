@@ -5,7 +5,7 @@
  * A form is a flat list of items. A `section` item starts a group with a heading; a field's `width`
  * (`full`, `half`, `third`) lets neighbours share a line, and the card stacks them again when it is
  * narrow. Every text an agent writes here is untrusted: labels and option names are drawn as plain
- * text, `help` and `note` as bb's Markdown (no raw HTML), and nothing is ever run.
+ * text, `help` and `note` as VesnALIA's Markdown (no raw HTML), and nothing is ever run.
  *
  * The answer comes back as `FormValues`, keyed by field id, plus a readable summary of it
  * (`summarizeAnswer`). The server re-reads what a card sent against the form it asked with

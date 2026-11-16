@@ -81,7 +81,7 @@ export function ThreadChildrenMenu({
     // Portalled nested menus belong to this same hover region.
     if (
       event.relatedTarget instanceof Element &&
-      event.relatedTarget.closest(".bb-chat-tabs-child-menu, .bb-chat-tab-children")
+      event.relatedTarget.closest(".alia-chat-tabs-child-menu, .alia-chat-tab-children")
     )
       return;
     if (hovered.current) closeTimer.current = setTimeout(() => setOpen(false), 250);
@@ -108,26 +108,26 @@ export function ThreadChildrenMenu({
     return (
       <>
         {status ? (
-          <span className="bb-chat-tabs-child-indicators" title={status.text} aria-hidden>
+          <span className="alia-chat-tabs-child-indicators" title={status.text} aria-hidden>
             {node.isWaiting ? (
-              <span className="bb-chat-tab-waiting">?</span>
+              <span className="alia-chat-tab-waiting">?</span>
             ) : node.isWorking ? (
-              <span className="bb-chat-tab-working" />
+              <span className="alia-chat-tab-working" />
             ) : null}
-            {node.isUnread ? <span className="bb-chat-tabs-child-unread" /> : null}
+            {node.isUnread ? <span className="alia-chat-tabs-child-unread" /> : null}
           </span>
         ) : null}
-        <span className="bb-chat-tabs-child-copy">
-          <span className="bb-chat-tabs-child-title" title={label(node)}>
+        <span className="alia-chat-tabs-child-copy">
+          <span className="alia-chat-tabs-child-title" title={label(node)}>
             {label(node)}
           </span>
         </span>
         {node.workingCount > 0 ? (
-          <span className="bb-chat-tabs-child-count" aria-hidden>
+          <span className="alia-chat-tabs-child-count" aria-hidden>
             {node.workingCount}
           </span>
         ) : node.hasUnread && !node.isUnread ? (
-          <span className="bb-chat-tabs-child-unread" aria-hidden />
+          <span className="alia-chat-tabs-child-unread" aria-hidden />
         ) : null}
       </>
     );
@@ -137,7 +137,7 @@ export function ThreadChildrenMenu({
       node.children.length === 0 ? (
         <DropdownMenu.Item
           key={node.threadId}
-          className="bb-chat-tabs-child-item"
+          className="alia-chat-tabs-child-item"
           data-thread-id={node.threadId}
           aria-label={itemLabel(node)}
           onSelect={() => choose(node)}
@@ -147,14 +147,14 @@ export function ThreadChildrenMenu({
       ) : (
         <DropdownMenu.Sub key={node.threadId}>
           <DropdownMenu.SubTrigger
-            className="bb-chat-tabs-child-item"
+            className="alia-chat-tabs-child-item"
             data-thread-id={node.threadId}
             aria-label={itemLabel(node)}
             onClick={(event) => {
               // Touch users can tap the arrow to expand, or the title to open the chat.
               if (
                 event.target instanceof Element &&
-                event.target.closest(".bb-chat-tabs-child-expand")
+                event.target.closest(".alia-chat-tabs-child-expand")
               )
                 return;
               event.preventDefault();
@@ -169,16 +169,16 @@ export function ThreadChildrenMenu({
           >
             {content(node)}
             <span
-              className="bb-chat-tabs-child-expand"
+              className="alia-chat-tabs-child-expand"
               title={t("Subthreads of “{title}”", { title: label(node) })}
               aria-hidden
             >
-              <Icon name="ChevronRight" className="bb-chat-tabs-child-chevron" />
+              <Icon name="ChevronRight" className="alia-chat-tabs-child-chevron" />
             </span>
           </DropdownMenu.SubTrigger>
           <DropdownMenu.Portal>
             <DropdownMenu.SubContent
-              className="bb-chat-tabs-child-menu"
+              className="alia-chat-tabs-child-menu"
               sideOffset={4}
               collisionPadding={8}
               aria-label={t("Subthreads of “{title}”", { title: label(node) })}
@@ -214,7 +214,7 @@ export function ThreadChildrenMenu({
           ref={trigger}
           type="button"
           draggable={false}
-          className="bb-chat-tab-children"
+          className="alia-chat-tab-children"
           data-attention={workingCount > 0 ? "true" : undefined}
           onDragStart={(event) => {
             event.preventDefault();
@@ -240,7 +240,7 @@ export function ThreadChildrenMenu({
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content
-          className="bb-chat-tabs-child-menu"
+          className="alia-chat-tabs-child-menu"
           side="bottom"
           align="start"
           sideOffset={6}

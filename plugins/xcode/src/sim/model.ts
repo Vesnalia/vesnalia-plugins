@@ -4,7 +4,7 @@
  *
  * No I/O of any kind lives here, which is what makes the interesting decisions
  * — what counts as a regression, what counts as a re-key, what an empty result
- * is allowed to mean — testable on a Linux box with no bb, no Mac and no Xcode.
+ * is allowed to mean — testable on a Linux box with no VesnALIA, no Mac and no Xcode.
  */
 
 /** A look is one run of one mode against one device. */

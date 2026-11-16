@@ -1,6 +1,6 @@
 // A project's record, built from its board, and its delivery to the done hook the user sets in Loom's settings.
 // Loom only runs the user's command; what the command does with the record is the user's choice.
-import type { PluginSettingDescriptors } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptors } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { CHECKS_NEAR_DONE_PERCENT, CHECKS_QUEUED_MINUTES } from "./check-wait";
 import type { EventRow, PostRow, ProjectRow, RecordRow, Store, TicketRow } from "./db/store";
@@ -23,7 +23,7 @@ export const SETTINGS = {
     type: "string",
     label: "Done hook",
     description:
-      "A shell command Loom runs once when a project finishes, in the project's checkout on its machine, with a 2-minute limit. It reads the project's record (or its summary) on standard input and gets LOOM_PROJECT_SLUG, LOOM_PROJECT_NAME, LOOM_PROJECT_KEY, LOOM_PROJECT_URL (its pull request; on a multi-repo project, the first repo's that has one), LOOM_PROJECT_URLS (every repo's pull request, one per line) and LOOM_RECORD (summary or full). Empty turns it off. `bb loom report <slug> --send` runs it again for a finished project.",
+      "A shell command Loom runs once when a project finishes, in the project's checkout on its machine, with a 2-minute limit. It reads the project's record (or its summary) on standard input and gets LOOM_PROJECT_SLUG, LOOM_PROJECT_NAME, LOOM_PROJECT_KEY, LOOM_PROJECT_URL (its pull request; on a multi-repo project, the first repo's that has one), LOOM_PROJECT_URLS (every repo's pull request, one per line) and LOOM_RECORD (summary or full). Empty turns it off. `alia loom report <slug> --send` runs it again for a finished project.",
     default: "",
     experimental_schema: z.string().max(4000),
   },
@@ -122,7 +122,7 @@ function outcome(store: Store, project: ProjectRow, spec: Spec): string {
   return `${text[0]!.toUpperCase()}${text.slice(1)}.`;
 }
 
-const repoLine = (repo: RepoOverview) => `- ${repo.name}: bb project ${repo.bbProjectId}, base ${repo.base}${repo.branch === null ? "" : `, integration branch ${repo.branch}`}.`;
+const repoLine = (repo: RepoOverview) => `- ${repo.name}: VesnALIA project ${repo.aliaProjectId}, base ${repo.base}${repo.branch === null ? "" : `, integration branch ${repo.branch}`}.`;
 
 /** One line per repo of a multi-repo pull request project, in [[repo]] order: its tickets' merged pull requests, the ones still open, or none. */
 function prOutcomes(repos: readonly RepoOverview[], tickets: readonly TicketRow[]): string[] {
@@ -211,7 +211,7 @@ export function sendRecords(ctx: EngineCtx, settings: DoneSettings): void {
   for (const row of ctx.store.openRecords()) {
     if (running.has(row.project_id)) continue;
     const run = deliver(ctx, row, settings)
-      .catch((error) => ctx.bb.log("error", `The record of project ${row.project_id} failed: ${errText(error)}`))
+      .catch((error) => ctx.alia.log("error", `The record of project ${row.project_id} failed: ${errText(error)}`))
       .finally(() => running.delete(row.project_id));
     running.set(row.project_id, run);
   }
@@ -222,10 +222,10 @@ async function deliver(ctx: EngineCtx, row: RecordRow, settings: DoneSettings): 
   const project = store.project(row.project_id)!;
   if (row.state === "sending") {
     // Nothing in this process is sending it, so an earlier process was, and its hook may or may not have finished.
-    return settle(ctx, row.id, project, { kind: "unknown", reason: `Loom restarted while the done hook ran, so it may not have finished; run \`bb loom report ${project.slug} --send\` to send it again` });
+    return settle(ctx, row.id, project, { kind: "unknown", reason: `Loom restarted while the done hook ran, so it may not have finished; run \`alia loom report ${project.slug} --send\` to send it again` });
   }
   if (settings.doneHook.trim() === "") {
-    if (row.thread_id !== null) await endAgent(ctx, await ctx.bb.getThread(row.thread_id));
+    if (row.thread_id !== null) await endAgent(ctx, await ctx.alia.getThread(row.thread_id));
     store.updateRecord(row.id, { state: "skipped" });
     store.changed(project.id);
     return;
@@ -249,8 +249,8 @@ async function startSummary(ctx: EngineCtx, row: RecordRow, project: ProjectRow,
   const repo = isMultiRepo(spec) ? spec.repo![0]!.name : null;
   const spawn = async (sectionId: string | null) => {
     if (hostId === null) throw new Error("the project has no machine");
-    return ctx.bb.spawnThread({
-      bbProjectId: repoSettings(spec, repo).bbProjectId ?? project.bb_project_id,
+    return ctx.alia.spawnThread({
+      aliaProjectId: repoSettings(spec, repo).aliaProjectId ?? project.alia_project_id,
       hostId,
       baseBranch: freshBaseOf(spec, repo),
       environment: spawnEnvironment(repoSettings(spec, repo), { branch: threadBranch(project.slug, "record", String(row.id)), base: freshBaseOf(spec, repo) }, "reviewer"),
@@ -270,7 +270,7 @@ async function startSummary(ctx: EngineCtx, row: RecordRow, project: ProjectRow,
     try {
       ({ threadId } = await spawn(project.section_id));
     } catch (error) {
-      // A finished project's sidebar section is often deleted, and bb refuses a spawn into it; the agent does not need it.
+      // A finished project's sidebar section is often deleted, and VesnALIA refuses a spawn into it; the agent does not need it.
       if (project.section_id === null || !(error instanceof SpawnRefusedError)) throw error;
       ({ threadId } = await spawn(null));
     }
@@ -283,16 +283,16 @@ async function startSummary(ctx: EngineCtx, row: RecordRow, project: ProjectRow,
 
 async function pollSummary(ctx: EngineCtx, row: RecordRow, project: ProjectRow, settings: DoneSettings): Promise<void> {
   if (row.thread_id === null) return fullRecord(ctx, row.id, project, settings, "Loom restarted before the summary agent started");
-  const thread = await ctx.bb.getThread(row.thread_id);
+  const thread = await ctx.alia.getThread(row.thread_id);
   if (thread === null || thread.archivedAt !== null || thread.deletedAt !== null) return fullRecord(ctx, row.id, project, settings, "the summary agent's thread is gone");
   if (thread.status === "error") {
-    const failure = await ctx.bb.latestSystemError(thread.id).catch(() => null);
+    const failure = await ctx.alia.latestSystemError(thread.id).catch(() => null);
     await endAgent(ctx, thread);
     if (failure?.code === "thread_provisioning_failed") return summaryNotStarted(ctx, row, project, settings, provisioningFailure(failure));
     return fullRecord(ctx, row.id, project, settings, "the summary agent failed");
   }
   if (thread.status === "idle") {
-    const summary = ((await ctx.bb.threadOutput(thread.id)) ?? "").trim();
+    const summary = ((await ctx.alia.threadOutput(thread.id)) ?? "").trim();
     if (summary !== "") {
       await endAgent(ctx, thread);
       return runHook(ctx, row.id, project, settings, "summary", summary);
@@ -306,7 +306,7 @@ async function pollSummary(ctx: EngineCtx, row: RecordRow, project: ProjectRow, 
 
 /**
  * A summary agent that did not start, or whose environment could not be provisioned: Loom tries again every two minutes
- * while the summary's time limit lasts, unless bb refused it, and then sends the full record, as for any other failure.
+ * while the summary's time limit lasts, unless VesnALIA refused it, and then sends the full record, as for any other failure.
  */
 async function summaryNotStarted(ctx: EngineCtx, row: RecordRow, project: ProjectRow, settings: DoneSettings, problem: StartProblem): Promise<void> {
   const first = row.started_at ?? ctx.now();
@@ -321,10 +321,10 @@ async function summaryNotStarted(ctx: EngineCtx, row: RecordRow, project: Projec
 async function endAgent(ctx: EngineCtx, thread: ThreadInfo | null): Promise<void> {
   if (thread === null || thread.archivedAt !== null || thread.deletedAt !== null) return;
   try {
-    if (thread.status !== "idle" && thread.status !== "error") await ctx.bb.stop(thread.id);
-    await ctx.bb.archive(thread.id);
+    if (thread.status !== "idle" && thread.status !== "error") await ctx.alia.stop(thread.id);
+    await ctx.alia.archive(thread.id);
   } catch (error) {
-    ctx.bb.log("warn", `Could not end the summary agent ${thread.id}: ${errText(error)}`);
+    ctx.alia.log("warn", `Could not end the summary agent ${thread.id}: ${errText(error)}`);
   }
 }
 

@@ -527,7 +527,7 @@ export type QuickActionId = "update" | "commit" | "log" | "fetch" | "push" | "ne
 export interface QuickAction {
   id: QuickActionId;
   label: string;
-  /** IntelliJ chord, shown as a hint only (bb owns the global bindings). */
+  /** IntelliJ chord, shown as a hint only (VesnALIA owns the global bindings). */
   hint: string | null;
   disabled: boolean;
   reason: string | null;

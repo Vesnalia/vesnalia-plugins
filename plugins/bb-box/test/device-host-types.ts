@@ -2,12 +2,12 @@ import type { DeviceHost, HostState, Placement, PoolMacState, Slot, SlotName, Sl
 
 const runtime = { platform: "ios", os: "27.0", build: "24A434", xcode: "27A266a", companion: "1.7.7" } as const;
 const settings = { most: 8, ahead: 1, resettingMost: 4 };
-const common = { id: "bb-box-host-1", runtime, cores: 8, memoryGiB: 32, settings };
+const common = { id: "alia-box-host-1", runtime, cores: 8, memoryGiB: 32, settings };
 const device = { model: "iPhone 18 Pro", udid: "0F5B" } as const;
 
 export const legal = {
   poolMac: { ...common, on: "pool-mac", machine: "mac1", state: { is: "slots" } } satisfies DeviceHost,
-  tartStarting: { ...common, on: "tart", mac: "mac1", vm: "bb-box-host-1", state: { is: "starting", promised: ["bx1", "bx2"], since: 0 } } satisfies DeviceHost,
+  tartStarting: { ...common, on: "tart", mac: "mac1", vm: "alia-box-host-1", state: { is: "starting", promised: ["bx1", "bx2"], since: 0 } } satisfies DeviceHost,
   namespace: { ...common, on: "namespace", backend: "namespace:team-b", instance: "ns-1", endsAt: 0, state: { is: "draining", why: "ending", lends: false, since: 0 } } satisfies DeviceHost,
   failed: { is: "failed", error: { code: "no-slot-made", words: "three slots failed" }, since: 0 } satisfies HostState,
   whole: { is: "whole", box: "bx1" } satisfies PoolMacState,

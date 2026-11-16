@@ -48,7 +48,7 @@ The current modal still presents too many metadata properties as a dense grid. T
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Implemented content-first modal hierarchy with a compact primary summary, Markdown content before metadata, linked subtasks, and a quieter always-visible Task details section. Populated secondary fields use a compact two-column desktop grid and single-column narrow layout; empty optional fields are omitted. Focused modal suite passes 13/13; full mise test passes 63/63; mise typecheck and build pass. Fresh BB-owned CDP tabs were created, leased, and released, but agent-browser could not connect because its local daemon socket under /Users/vulture/.agent-browser is not writable in this runtime; live desktop and narrow visual checks remain unverified.
+Implemented content-first modal hierarchy with a compact primary summary, Markdown content before metadata, linked subtasks, and a quieter always-visible Task details section. Populated secondary fields use a compact two-column desktop grid and single-column narrow layout; empty optional fields are omitted. Focused modal suite passes 13/13; full mise test passes 63/63; mise typecheck and build pass. Fresh ALIA-owned CDP tabs were created, leased, and released, but agent-browser could not connect because its local daemon socket under /Users/vulture/.agent-browser is not writable in this runtime; live desktop and narrow visual checks remain unverified.
 
 Moved Task details directly beneath the primary summary so secondary metadata is immediately visible before the long-form task content; added DOM-order coverage.
 

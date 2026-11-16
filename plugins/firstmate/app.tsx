@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import {
   definePluginApp,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./rpc.ts";
 import "./app.css";
 
@@ -36,7 +36,7 @@ type Fleet = {
 
 function FleetBoard() {
   const rpc = useRpc<typeof rpcContract>();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const [fleet, setFleet] = useState<Fleet | null>(null);
   const [error, setError] = useState<string | null>(null);
 

@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const IMPORT_PATTERN = /^import\s+(?:(type)\s+)?(?:[^;]*?\s+from\s+)?["']([^"']+)["']/gm;
-const SDK_ROOT_ENTRY = "@get-bb/plugin-sdk";
+const SDK_ROOT_ENTRY = "@vesnalia/plugin-sdk";
 const CANDIDATE_SUFFIXES = ["", ".ts", ".tsx", "/index.ts", "/index.tsx"];
 
 function resolveModule(specifier: string, importer: string): string | null {

@@ -1,9 +1,9 @@
 // Wire model shared by server.ts (producer) and app/ (consumer).
 //
-// A lane is one bb thread. A block is one agent turn on that thread: it
+// A lane is one VesnALIA thread. A block is one agent turn on that thread: it
 // starts when the turn starts and ends when the turn completes. Hand-offs are
 // the moments one thread caused work on another: a spawn (parent -> child's
-// first turn), a fork, a `bb thread tell` (sender -> recipient's turn), or an
+// first turn), a fork, a `alia thread tell` (sender -> recipient's turn), or an
 // end (a child finishing, reported back into its parent's turn).
 //
 // Thread metadata (title, project, section, environment, machine, provider,
@@ -28,7 +28,7 @@ export type BlockStatus =
 /** Who asked for the turn. */
 export type BlockInitiator = "user" | "agent" | "system";
 
-/** How the turn's input arrived (bb's `client/turn/requested.source`). Unknown values pass through. */
+/** How the turn's input arrived (VesnALIA's `client/turn/requested.source`). Unknown values pass through. */
 export type BlockSource = "spawn" | "tell" | "send" | "queue" | "retry" | (string & {});
 
 /** Coarse tool families, drawn as small glyphs before a block's title. */
@@ -43,7 +43,7 @@ export type ToolKind =
 
 export interface BlockAsk {
   interactionId: string;
-  /** bb interaction payload kind, e.g. "approval", "user_question". */
+  /** VesnALIA interaction payload kind, e.g. "approval", "user_question". */
   kind: string;
   /** One sentence on what needs deciding (first question prompt / approval title), max ~240 chars. */
   prompt: string;
@@ -52,14 +52,14 @@ export interface BlockAsk {
 }
 
 export interface LaneBlock {
-  /** bb turn id (scope.turnId). Unique across threads. */
+  /** VesnALIA turn id (scope.turnId). Unique across threads. */
   id: string;
   threadId: string;
   /** The model id that ran the turn, when known. */
   model?: string | null;
   /**
    * Event sequence of the input that started the turn (its `client/turn/requested`,
-   * else `turn/started`). bb's thread view can scroll to this message.
+   * else `turn/started`). VesnALIA's thread view can scroll to this message.
    */
   seq?: number | null;
   start: number;
@@ -92,7 +92,7 @@ export interface LaneBlock {
  * - spawn: a parent created a child thread (the child's first turn).
  * - fork: a thread was forked from another (`originKind: "fork"`).
  * - tell: one agent messaged another (`client/turn/requested` source "tell" with a `senderThreadId`).
- * - end: a child finished or failed and bb reported it to the parent
+ * - end: a child finished or failed and VesnALIA reported it to the parent
  *   (`systemMessageKind` "child-completed" / "child-failed"; `fromThreadId` is the child).
  */
 export type HandoffKind = "spawn" | "fork" | "tell" | "end";

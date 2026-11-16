@@ -1,8 +1,8 @@
 // Thread panel tabs: "Compare with" (commits on either side, changed files)
-// and "Show Diff with Working Tree". Both are read-only and render bb's own
+// and "Show Diff with Working Tree". Both are read-only and render VesnALIA's own
 // diff viewer for the selected file.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { experimental_Diff as Diff, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Diff as Diff, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { Commit, CompareResult, FileChange, PatchResult, WorkingTreeDiff } from "../contracts";
 import { useRepositoryChanges } from "../hooks/use-repository-changes";
 import { errorMessage } from "../lib/errors";

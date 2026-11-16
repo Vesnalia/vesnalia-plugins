@@ -1,4 +1,4 @@
-// bb-plugin-kata — frontend entry.
+// alia-plugin-kata — frontend entry.
 //
 // A "Kata" sidebar page mirroring `kata tui`: one tab per included kata
 // project, issue list on the left, detail on the right, keyboard-first
@@ -15,7 +15,7 @@
 // in assistant messages, so bare `project#abc4` mentions are reached through
 // the directive and the action.
 import { useEffect } from "react";
-import { definePluginApp, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { KataPanel } from "@/components/kata-panel";
 import { KataThreadHeader } from "@/components/thread-header";
@@ -30,7 +30,7 @@ import { requestPanelFocus } from "@/lib/viewer-store";
 // Palette commands and message actions run outside React: an always-mounted,
 // invisible overlay lends them the app's navigator and RPC client.
 function Bridge() {
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const rpc = useRpc<KataRpcContract>();
   useEffect(() => {
     bridge.navigate = nav;

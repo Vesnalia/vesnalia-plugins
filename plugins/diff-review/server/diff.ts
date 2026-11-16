@@ -1,11 +1,11 @@
 /**
- * The diff under review, from bb's Git plugin (`server/git.ts`), which runs git on the machine that
+ * The diff under review, from VesnALIA's Git plugin (`server/git.ts`), which runs git on the machine that
  * holds the workspace, remote hosts included, so nothing here needs a host entry.
  */
 import { createHash, randomUUID } from "node:crypto";
 import { posix } from "node:path";
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import type { HostDiffSpec } from "../shared/git-spec";
 import { isHostTarget, type Commit, type DiffFile, type HostTarget, type Target, type TargetRequest, type Viewed } from "../shared/types";
@@ -13,7 +13,7 @@ import type { HostGit } from "./host-git";
 import { failureMessage, type GitReads, type GitStatus, type GitTarget } from "./git";
 import { gitfileTarget, ignoreMatcher, INFO_IGNORE_FILE, patternLines, WORKSPACE_IGNORE_FILE } from "./ignore";
 
-type Sdk = BbPluginApi["sdk"];
+type Sdk = AliaPluginApi["sdk"];
 type Environment = Awaited<ReturnType<Sdk["environments"]["get"]>>;
 
 export class ReviewUnavailable extends Error {}
@@ -38,10 +38,10 @@ export interface WorkspaceRefs {
 
 /**
  * The branch the branch views compare against, the current branch, and its commits since the base.
- * The diff does not depend on them, so when bb cannot give a status the environment's own record
+ * The diff does not depend on them, so when VesnALIA cannot give a status the environment's own record
  * stands in, without the commit list, and the reason is logged.
  */
-export async function workspaceRefs(git: GitReads, log: BbPluginApi["log"], environment: Environment, base: string | undefined): Promise<WorkspaceRefs> {
+export async function workspaceRefs(git: GitReads, log: AliaPluginApi["log"], environment: Environment, base: string | undefined): Promise<WorkspaceRefs> {
   const fallback = { defaultBase: environment.mergeBaseBranch ?? environment.defaultBranch, currentBranch: environment.branchName, commits: [] };
   let status: GitStatus;
   try {
@@ -67,10 +67,10 @@ export const FINGERPRINT_MAX_FILES = 500;
 export type Fingerprint = Record<string, string>;
 
 /**
- * Each uncommitted file's change kind, line counts and patch hash. bb sends some patches up front and
+ * Each uncommitted file's change kind, line counts and patch hash. VesnALIA sends some patches up front and
  * leaves the rest to load on demand; those are fetched too (in batches, up to `FINGERPRINT_MAX_FILES`),
  * since an edit can keep a file's line counts. `complete` is false when a patch could not be had for a
- * file that has one to show (past the limit, or bb did not answer), so equality is not proof there.
+ * file that has one to show (past the limit, or VesnALIA did not answer), so equality is not proof there.
  * Binary and too-large files show no patch, so their counts are all there is to compare.
  */
 export async function uncommittedFingerprint(git: GitReads, environmentId: string): Promise<{ prints: Fingerprint; complete: boolean }> {
@@ -97,7 +97,7 @@ export async function uncommittedFingerprint(git: GitReads, environmentId: strin
  * uncommitted changes (`uncommittedFingerprint`: every file's kind, line counts and patch content,
  * on-demand patches included). Two equal keys mean no view of the workspace changed. When a patch
  * could not be compared, the key is new every time, so the tabs reload rather than show a stale
- * diff. Only the named fields count: anything else bb's answers carry (now or in a later bb) must not
+ * diff. Only the named fields count: anything else VesnALIA's answers carry (now or in a later VesnALIA) must not
  * make an unchanged workspace look changed. `summary` says the same in words, for the log.
  */
 export interface WorkspaceState {
@@ -139,7 +139,7 @@ export function gitTarget(target: Target): GitTarget {
     case "range":
     case "files":
     case "pr":
-      throw new ReviewUnavailable(`bb's Git plugin has no ${target.kind} view.`);
+      throw new ReviewUnavailable(`VesnALIA's Git plugin has no ${target.kind} view.`);
     case "uncommitted":
       return { type: "uncommitted" };
     case "branch":
@@ -166,7 +166,7 @@ async function readTextOrNull(sdk: Sdk, hostId: string, path: string): Promise<s
 
 /**
  * The directory whose `info/` holds the repository's ignore file, as `git rev-parse --git-path
- * info/diffityignore` finds it, read through bb rather than by running git, so it works on any host.
+ * info/diffityignore` finds it, read through VesnALIA rather than by running git, so it works on any host.
  * In a plain checkout that is `.git`. In a linked worktree `.git` is a file naming the worktree's
  * git dir, and `info/` is shared: it lives in the common dir that git dir's `commondir` names. A
  * submodule's gitfile has no `commondir`, so its git dir is the one.
@@ -189,7 +189,7 @@ export async function gitInfoParent(sdk: Sdk, hostId: string, root: string): Pro
  */
 export async function ignorePatterns(
   sdk: Sdk,
-  log: BbPluginApi["log"],
+  log: AliaPluginApi["log"],
   environment: Environment,
   setting: string,
   readIgnoreFiles: boolean,
@@ -215,11 +215,11 @@ export interface LoadedDiff {
   mergeBaseRef: string | null;
   /** The commit a range view's new side is. */
   headRef: string | null;
-  /** Whether the view takes bb's Viewed marks. */
+  /** Whether the view takes VesnALIA's Viewed marks. */
   viewable: boolean;
 }
 
-/** Where the diff of a view comes from: bb's Git plugin, or the plugin's host entry for the views only raw git gives. */
+/** Where the diff of a view comes from: VesnALIA's Git plugin, or the plugin's host entry for the views only raw git gives. */
 export interface DiffSources {
   git: GitReads;
   host: HostGit;
@@ -227,7 +227,7 @@ export interface DiffSources {
 
 /**
  * Whether a file is marked Viewed: `yes` at its current revision, `changed` when it was marked at an
- * earlier one (bb's own diff panel then shows it unmarked), `no` otherwise.
+ * earlier one (VesnALIA's own diff panel then shows it unmarked), `no` otherwise.
  */
 export function viewedState(revision: string, marked: string | undefined): Viewed {
   if (marked === undefined) return "no";
@@ -235,13 +235,13 @@ export function viewedState(revision: string, marked: string | undefined): Viewe
 }
 
 /**
- * The changed files of a view with the patches bb sends up front, minus the ignored ones, and each
- * file's Viewed mark. Marks are bb's own (shared with its diff panel); when they cannot be read the
+ * The changed files of a view with the patches VesnALIA sends up front, minus the ignored ones, and each
+ * file's Viewed mark. Marks are VesnALIA's own (shared with its diff panel); when they cannot be read the
  * files show unmarked and the reason is logged.
  */
 export async function loadDiff(
   sources: DiffSources,
-  log: BbPluginApi["log"],
+  log: AliaPluginApi["log"],
   environment: Environment,
   target: Target,
   patterns: readonly string[],
@@ -285,7 +285,7 @@ export async function loadDiff(
 /**
  * A staged, unstaged or range view, from git on the workspace's host. Every patch comes with the list
  * (none loads on demand); a file's revision is its patch's hash, so it still tells a comment's file
- * changed. bb's Viewed marks do not cover these views.
+ * changed. VesnALIA's Viewed marks do not cover these views.
  */
 async function loadHostDiff(host: HostGit, environment: Environment, target: HostTarget, patterns: readonly string[], ignoreWhitespace: boolean): Promise<LoadedDiff> {
   if (environment.path === null) throw new ReviewUnavailable("This workspace has no checkout.");
@@ -317,7 +317,7 @@ async function loadHostDiff(host: HostGit, environment: Environment, target: Hos
   return { files, ignoredPaths, truncated: result.truncated, mergeBaseRef: result.baseSha, headRef: result.headSha, viewable: false };
 }
 
-/** Patches for files bb left to load on demand, at the revisions the file list gave. */
+/** Patches for files VesnALIA left to load on demand, at the revisions the file list gave. */
 export async function loadPatches(
   git: GitReads,
   environment: Environment,
@@ -337,14 +337,14 @@ export async function loadPatches(
 export const THREAD_PATCH_MAX_FILES = 100;
 
 /**
- * `files` with the patches of those that have a line thread filled in, where bb left them to load on
+ * `files` with the patches of those that have a line thread filled in, where VesnALIA left them to load on
  * demand. Where such a thread is drawn (at its line, or under "Not on the current diff") depends on its
  * file's patch, so the tab knows it from its first render rather than moving threads, and the
  * previous/next comment stops, as files load. A patch that cannot be had is left to load on demand.
  */
 export async function withThreadPatches(
   git: GitReads,
-  log: BbPluginApi["log"],
+  log: AliaPluginApi["log"],
   environment: Environment,
   target: Target,
   files: readonly DiffFile[],

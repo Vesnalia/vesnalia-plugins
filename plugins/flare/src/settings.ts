@@ -1,4 +1,4 @@
-import type { PluginSettingDescriptors } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptors } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const NOTIFY_MODES = ["blockers", "all", "off"] as const;
@@ -11,7 +11,7 @@ export const SETTING_DESCRIPTORS = {
     type: "select",
     label: "Push notifications",
     description:
-      "Which flares bb's push notifications plugin sends to your devices. Blockers also covers flares the agent marked urgent. A thread you muted in push notifications is never notified.",
+      "Which flares VesnALIA's push notifications plugin sends to your devices. Blockers also covers flares the agent marked urgent. A thread you muted in push notifications is never notified.",
     options: [...NOTIFY_MODES],
     experimental_optionLabels: { blockers: "Blockers and urgent flares", all: "Every flare", off: "None" },
     default: "blockers",
@@ -49,7 +49,7 @@ export const SETTING_DESCRIPTORS = {
     type: "select",
     label: "Flares tab shows",
     description:
-      "Rendered shows each flare as bb shows a reply, so any block an installed plugin draws (a chart, a page, a diagram) appears. It keeps a hidden companion thread per thread on Flare's renderer, which runs no model and costs nothing. Cards shows Flare's own Markdown cards and starts no companion.",
+      "Rendered shows each flare as VesnALIA shows a reply, so any block an installed plugin draws (a chart, a page, a diagram) appears. It keeps a hidden companion thread per thread on Flare's renderer, which runs no model and costs nothing. Cards shows Flare's own Markdown cards and starts no companion.",
     options: ["rendered", "cards"],
     experimental_optionLabels: { rendered: "Rendered, like a reply", cards: "Plain cards" },
     default: "rendered",
@@ -76,7 +76,7 @@ export interface FlareSettings {
 const oneOf = <T extends string>(values: readonly T[], value: unknown, fallback: T): T =>
   (values as readonly unknown[]).includes(value) ? (value as T) : fallback;
 
-/** Settings as typed values; a value bb could not validate falls back to its default. */
+/** Settings as typed values; a value VesnALIA could not validate falls back to its default. */
 export function readSettings(values: Record<string, unknown>): FlareSettings {
   const number = (value: unknown, fallback: number): number => (typeof value === "number" && Number.isFinite(value) ? value : fallback);
   return {

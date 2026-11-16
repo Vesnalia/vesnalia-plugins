@@ -40,7 +40,7 @@ const SIMULATOR = { is: "yes", what: { xcode: "27.0", runtimes: ["iOS 27.0"] } }
 const HARDWARE = { is: "yes", what: { fullSizeFps: 141 } } as const;
 const NO_HARDWARE = { is: "no", why: "VideoToolbox could not make a hardware session (-12903)" } as const;
 const SOFTWARE = { is: "yes", what: { encoder: "x264 0.165" } } as const;
-const NO_SOFTWARE = { is: "no", why: "bb-box-h264 is not installed" } as const;
+const NO_SOFTWARE = { is: "no", why: "alia-box-h264 is not installed" } as const;
 
 test("a probe's lines read back as what the Mac offers", () => {
   const read = parseMacProbe(BOTH, "mac-1", 5, "mac");
@@ -51,11 +51,11 @@ test("a probe's lines read back as what the Mac offers", () => {
   assert.deepEqual(read.capabilities.softwareEncoder, { is: "yes", what: { encoder: "x264 0.165" } });
   assert.deepEqual(deviceRoom(read.capabilities), { is: "yes", way: "hardware" });
 
-  const noEncoder = parseMacProbe(finished("xcode=26.1.1\nruntimes=iOS 26.2\nhardware=no status=-12903\nsoftware=no why=bb-box-h264 is not installed\n"), "ns", 5, "host");
+  const noEncoder = parseMacProbe(finished("xcode=26.1.1\nruntimes=iOS 26.2\nhardware=no status=-12903\nsoftware=no why=alia-box-h264 is not installed\n"), "ns", 5, "host");
   assert.deepEqual(noEncoder.capabilities.hardwareEncoder, { is: "no", why: "VideoToolbox could not make a hardware session (-12903)" });
   assert.deepEqual(deviceRoom(noEncoder.capabilities), {
     is: "no",
-    why: "It cannot stream a device's screen: VideoToolbox could not make a hardware session (-12903), and bb-box-h264 is not installed.",
+    why: "It cannot stream a device's screen: VideoToolbox could not make a hardware session (-12903), and alia-box-h264 is not installed.",
   });
 
   assert.deepEqual(parseMacProbe(finished("xcode=\nhardware=yes frames=12 seconds=0.1\n"), "m", 5, "mac").capabilities.simulator, { is: "no", why: "it has no Xcode" });
@@ -113,7 +113,7 @@ test("a Tart Mac's iOS offer comes from its iOS image, and its hardware encoder 
   const composed = imageCapabilities("mac-1", image, mac, 2_000);
   assert.deepEqual(composed.capabilities.simulator, { is: "yes", what: { xcode: "27.0", runtimes: ["iOS 27.0"] } });
   assert.deepEqual(composed.capabilities.hardwareEncoder, HARDWARE);
-  assert.deepEqual(composed.capabilities.softwareEncoder, { is: "no", why: "the iOS image's build build.20261028-1 has no bb-box-h264" });
+  assert.deepEqual(composed.capabilities.softwareEncoder, { is: "no", why: "the iOS image's build build.20261028-1 has no alia-box-h264" });
   assert.equal(composed.where, "mac");
   const measuredInVm = imageCapabilities("mac-1", { ...image, softwareEncoder: "openh264 2.6.0", hardwareEncoder: false }, mac, 2_000);
   assert.equal(measuredInVm.where, "image");
@@ -124,7 +124,7 @@ test("a Tart Mac's iOS offer comes from its iOS image, and its hardware encoder 
 test("the probe script measures a Mac with Xcode, and runs no xcrun on one without it", () => {
   const home = tempDir("probe");
   const bin = join(home, "bin");
-  const software = join(home, "local", "bb-box-h264");
+  const software = join(home, "local", "alia-box-h264");
   fakeIosProbe(bin, { hardware: "yes", software });
   const run = (script: string) => spawnSync("sh", ["-c", script], { env: { PATH: `${bin}:/usr/bin:/bin`, HOME: home }, encoding: "utf8" });
   const first = run(macProbeScript(software));
@@ -147,7 +147,7 @@ test("the probe script measures a Mac with Xcode, and runs no xcrun on one witho
   const nothing = parseMacProbe(without.stdout, "mac-2", 1, "mac").capabilities;
   assert.deepEqual(nothing.simulator, { is: "no", why: "it has no Xcode" });
   assert.deepEqual(nothing.hardwareEncoder, { is: "unknown", why: "the Mac has no Swift compiler to build its check" });
-  assert.deepEqual(nothing.softwareEncoder, { is: "no", why: "bb-box-h264 is not installed" });
+  assert.deepEqual(nothing.softwareEncoder, { is: "no", why: "alia-box-h264 is not installed" });
   assert.equal(existsSync(join(bare, ".fake-xcrun-log")), false);
 });
 
@@ -182,7 +182,7 @@ test("the cache measures a Mac once at a time, keeps the newest, and is read bac
   assert.equal(restored[0]!.capabilities.hardwareEncoder.is, "yes");
 });
 
-test("a report says which probe made it, and one from an older probe is stale, so BB Box measures the Mac again", async () => {
+test("a report says which probe made it, and one from an older probe is stale, so VesnALIA Box measures the Mac again", async () => {
   const fresh = parseMacProbe(BOTH, "mac-1", 1_000, "mac");
   assert.equal(fresh.probe, PROBE_VERSION);
   assert.equal(measuredByOlderProbe(fresh), false);

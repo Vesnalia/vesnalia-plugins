@@ -6,7 +6,7 @@
  * (`src/machine.ts`) does the reading. The engine owns all state; the
  * collector owns none beyond caches.
  *
- * One collector watches one machine. The machine running bb has one for the
+ * One collector watches one machine. The machine running VesnALIA has one for the
  * life of the plugin, reading its own disk through `LocalMachine`; another
  * Mac a thread works on gets one too while it is watched, reading through
  * that Mac's host worker (`src/remote-watch.ts`). Every run, root and
@@ -32,7 +32,7 @@ export interface CollectorProject {
   name: string;
   path: string;
   /**
-   * The Mac this source path is on; null for the machine running bb (or when
+   * The Mac this source path is on; null for the machine running VesnALIA (or when
    * that cannot be told, which is how every source was read before).
    */
   hostId?: string | null;
@@ -71,7 +71,7 @@ export interface CollectorDeps {
 const SIM_REFRESH_BUSY_MS = 20_000;
 const SIM_REFRESH_IDLE_MS = 10 * 60_000;
 /**
- * The project list is a loopback HTTP fetch into the bb server; under heavy
+ * The project list is a loopback HTTP fetch into the VesnALIA server; under heavy
  * host load or around sleep/wake it can fail or hang. The timeout keeps a
  * hung fetch from stalling the whole scan (undici's own limits are
  * minutes-class), and the breaker keeps a sustained outage from warning on

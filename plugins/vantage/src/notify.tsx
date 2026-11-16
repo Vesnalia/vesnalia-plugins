@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef } from "react";
-import { experimental_useSidebarThreads, useBbContext, useBbNavigate, useSettings, type ExperimentalBadge } from "@get-bb/plugin-sdk/app";
+import { experimental_useSidebarThreads, useAliaContext, useAliaNavigate, useSettings, type ExperimentalBadge } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { needsYou, useSidebarIndex, type SidebarIndex } from "./live";
 
 export interface Attention { id: string; title: string; failed: boolean }
 
-// Threads that wait for your answer or whose last turn failed, the same ones bb's sidebar marks.
+// Threads that wait for your answer or whose last turn failed, the same ones VesnALIA's sidebar marks.
 export function attentionOf(live: SidebarIndex): Attention[] {
   const out: Attention[] = [];
   for (const thread of live.values()) {
@@ -16,7 +16,7 @@ export function attentionOf(live: SidebarIndex): Attention[] {
   return out;
 }
 
-// Both alerts are settings; nothing shows until bb has said what they are.
+// Both alerts are settings; nothing shows until VesnALIA has said what they are.
 function useAlerts(): { badge: boolean; toasts: boolean; loaded: boolean } {
   const { values } = useSettings();
   return { badge: values?.badge === true, toasts: values?.toasts === true, loaded: values !== undefined };
@@ -31,7 +31,7 @@ export function useVantageBadge(): ExperimentalBadge | null {
 }
 
 // The threads to toast: new since the last look, not the one on screen. The first look is what was already waiting before
-// this window opened, which bb's own sidebar shows. With toasts off nothing is toasted, but what was seen still moves on,
+// this window opened, which VesnALIA's own sidebar shows. With toasts off nothing is toasted, but what was seen still moves on,
 // so turning them on does not toast everything already waiting.
 export function toastsFor(seen: ReadonlySet<string> | null, attention: readonly Attention[], onScreen: string | null, enabled: boolean): Attention[] {
   if (seen === null || !enabled) return [];
@@ -43,8 +43,8 @@ export function AttentionToasts() {
   const { status } = experimental_useSidebarThreads();
   const { toasts, loaded } = useAlerts();
   const attention = useMemo(() => attentionOf(live), [live]);
-  const { threadId } = useBbContext();
-  const navigate = useBbNavigate();
+  const { threadId } = useAliaContext();
+  const navigate = useAliaNavigate();
   const seen = useRef<Set<string> | null>(null);
   useEffect(() => {
     if (!loaded || status !== "ready") return;

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, afterEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, mountPluginContentScripts, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { useSdk } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, mountPluginContentScripts, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { useSdk } from "@vesnalia/plugin-sdk/app";
 import { SourcePreview } from "../src/app/components/source-preview";
 import { VirtualizerContext, WorkerPoolContext } from "@pierre/diffs/react";
 import type { Virtualizer } from "@pierre/diffs";
@@ -482,7 +482,7 @@ describe("Diff Tree panel", () => {
 
   it.each([
     ["binary", { content: "AAAB", contentEncoding: "base64", sizeBytes: 3 }, "Binary file — no source preview available."],
-    ["large", { content: "large", contentEncoding: "utf8", sizeBytes: 524289 }, "This file exceeds the 512 KiB source preview limit. Open it in BB to view it."],
+    ["large", { content: "large", contentEncoding: "utf8", sizeBytes: 524289 }, "This file exceeds the 512 KiB source preview limit. Open it in VesnALIA to view it."],
     ["empty", { content: "", contentEncoding: "utf8", sizeBytes: 0 }, "Empty file."],
   ])("handles %s worktree files without rendering invalid source", async (_kind, contents, notice) => {
     const slot = await open([], { paths: async () => listing(["a.dat"]) }, {}, undefined, { read: async () => ({ ...(contents as object), path: "/workspace/a.dat", sha256: "abc" }) });
@@ -598,7 +598,7 @@ describe("Diff Tree panel", () => {
     expect((slot.getByRole("textbox", { name: "Search files" }) as HTMLInputElement).value).toBe("");
     act(() => requestFile("thread-1", "unchanged.py"));
     await slot.findByText("No changes for this file in the selected comparison.");
-    expect(slot.getByRole("link", { name: "Open file in BB" })).toBeTruthy();
+    expect(slot.getByRole("link", { name: "Open file in VesnALIA" })).toBeTruthy();
     fireEvent.click(slot.getByRole("button", { name: /a.ts/ }));
     expect(slot.queryByText("No changes for this file in the selected comparison.")).toBeNull();
   });
@@ -708,7 +708,7 @@ describe("Diff Tree panel", () => {
     const slot = await open([file("a.ts")], {
       get: async () => environmentFixture({ baseBranch: "feature/parent", mergeBaseBranch: "develop" }),
     });
-    const picker = slot.getByTestId("bb-branch-picker");
+    const picker = slot.getByTestId("alia-branch-picker");
     expect(picker.getAttribute("data-host-id")).toBe("host-1");
     expect(picker.getAttribute("data-project-id")).toBe("project-1");
     expect((slot.getByRole("textbox", { name: "Base" }) as HTMLInputElement).value).toBe("feature/parent");

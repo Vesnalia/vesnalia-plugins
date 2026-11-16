@@ -1,10 +1,10 @@
 # Kimi Quota
 
-Shows your Kimi Code membership quota in BB's usage panel — the same surface
+Shows your Kimi Code membership quota in VesnALIA's usage panel — the same surface
 that displays Codex and Claude usage — and exposes it to agents.
 
 - `server.ts` — the backend: a discoverable `provider-usage.v1` source that
-  the built-in usage panel renders, plus a `bb kimi-quota` CLI command.
+  the built-in usage panel renders, plus a `alia kimi-quota` CLI command.
 - `skills/kimi-quota/SKILL.md` — tells agents how to read the quota.
 - `PLUGIN_OVERVIEW.md` — the store listing text.
 
@@ -21,25 +21,25 @@ The API host follows the CLI region (`api.kimi.com` for `mainland-cn`,
 
 ## Usage panel
 
-Install the plugin and open BB's usage panel with the BB server's machine
+Install the plugin and open VesnALIA's usage panel with the VesnALIA server's machine
 selected. **Kimi Code** appears in the same card as that machine's Codex/Claude
 limits, with no separate Kimi source to select. It shows the 5-hour rolling
 window and the monthly coding/total limits with reset times.
 
-The login is read on the BB server, not on enrolled remote machines. If BB
+The login is read on the VesnALIA server, not on enrolled remote machines. If VesnALIA
 cannot identify its server machine, Kimi remains available as a separate
 **Kimi Code** source in the panel's menu.
 
 ## Terminal
 
 ```
-bb kimi-quota            # human-readable
-bb kimi-quota --json     # full measurement JSON
+alia kimi-quota            # human-readable
+alia kimi-quota --json     # full measurement JSON
 ```
 
 ## Requirements
 
-- Kimi Code CLI installed and logged in on the machine that runs the BB server.
+- Kimi Code CLI installed and logged in on the machine that runs the VesnALIA server.
 - A Kimi membership that includes Kimi Code.
 
 ## License

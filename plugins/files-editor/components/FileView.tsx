@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Markdown,
   experimental_SourceCode as SourceCode,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { formatBytes, languageLabel } from "@/lib/file-kind";
@@ -414,7 +414,7 @@ function TextFileView({
 }
 
 /**
- * A plain textarea with a matching gutter. BB's own source viewer owns
+ * A plain textarea with a matching gutter. VesnALIA's own source viewer owns
  * highlighting for reading; editing only needs a caret, a monospace grid, and
  * line numbers that stay glued to it while it scrolls.
  */

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-const STORAGE_KEY = "bb-plugin-tree-sidebar:collapsed";
+const STORAGE_KEY = "alia-plugin-tree-sidebar:collapsed";
 
 function readStored(): string[] {
   try {
@@ -21,7 +21,7 @@ function readStored(): string[] {
  * Which nodes are folded shut, remembered per client.
  *
  * Collapsed rather than expanded is what gets stored, so a project added while
- * bb is closed shows up open — the tree's default is to show you everything,
+ * VesnALIA is closed shows up open — the tree's default is to show you everything,
  * and folding is the deliberate act.
  */
 export function useCollapsed(): {

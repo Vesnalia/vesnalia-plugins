@@ -1,13 +1,13 @@
-// bb-plugin-gh-projects-board — backend entry.
+// alia-plugin-gh-projects-board — backend entry.
 //
 // Reads a GitHub Projects v2 board through the machine's signed-in `gh` session
 // and serves it to three surfaces: the board page (app.tsx, over RPC), the
-// `bb gh-projects-board` CLI, and the skill that tells agents how to use it.
+// `alia gh-projects-board` CLI, and the skill that tells agents how to use it.
 //
-// Project items are cached in bb.storage.kv so opening the page is instant; a
+// Project items are cached in alia.storage.kv so opening the page is instant; a
 // background service refreshes them, and any refresh publishes a realtime
 // signal so every open page updates.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { checkAuth, GhProjectScopeError } from "./src/github/cli.js";
 import {
@@ -129,10 +129,10 @@ const cacheSchema = z.object({
 });
 type Cache = z.infer<typeof cacheSchema>;
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     owner: {
       type: "string",
       label: "Owner",
@@ -209,7 +209,7 @@ export default async function plugin(bb: BbPluginApi) {
   // A real board serializes to roughly a megabyte, well past the 256KB kv
   // ceiling, so the cache lives in the plugin's own SQLite database as a
   // single row of JSON.
-  const db = bb.storage.database();
+  const db = alia.storage.database();
   db.exec(
     `CREATE TABLE IF NOT EXISTS board_cache (
        id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -266,7 +266,7 @@ export default async function plugin(bb: BbPluginApi) {
       project,
     };
     writeCache(cache);
-    bb.realtime.publish(BOARD_CHANGED, { itemCount: project.items.length });
+    alia.realtime.publish(BOARD_CHANGED, { itemCount: project.items.length });
     return cache;
   }
 
@@ -346,7 +346,7 @@ export default async function plugin(bb: BbPluginApi) {
         : (readCache() ?? (await fetchAndCache(signal)));
       return present(cache, filter, groupBy);
     } catch (error) {
-      bb.log.warn(`board read failed: ${String(error)}`);
+      alia.log.warn(`board read failed: ${String(error)}`);
       if (error instanceof GhProjectScopeError) {
         return emptyState(error.message, filter, true);
       }
@@ -357,7 +357,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     board_get: (input) =>
       getState(
         resolveFilter(input?.filter, defaultFilter),
@@ -388,10 +388,10 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb gh-projects-board board [--filter <query>] [--group-by <field>] [--json]",
-    "  bb gh-projects-board refresh [--filter <query>] [--json]",
-    "  bb gh-projects-board projects [--owner <login>] [--json]",
-    "  bb gh-projects-board status [--json]",
+    "  VesnALIA gh-projects-board board [--filter <query>] [--group-by <field>] [--json]",
+    "  VesnALIA gh-projects-board refresh [--filter <query>] [--json]",
+    "  VesnALIA gh-projects-board projects [--owner <login>] [--json]",
+    "  VesnALIA gh-projects-board status [--json]",
   ].join("\n");
 
   function renderBoard(state: BoardState): string {
@@ -420,7 +420,7 @@ export default async function plugin(bb: BbPluginApi) {
     return argv[index + 1];
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "gh-projects-board",
     summary: "Read a GitHub Projects v2 board",
     commands: [
@@ -428,22 +428,22 @@ export default async function plugin(bb: BbPluginApi) {
         name: "board",
         summary: "Show the board grouped into columns",
         usage:
-          "bb gh-projects-board board [--filter <query>] [--group-by <field>] [--json]",
+          "alia gh-projects-board board [--filter <query>] [--group-by <field>] [--json]",
       },
       {
         name: "refresh",
         summary: "Re-read the project from GitHub now",
-        usage: "bb gh-projects-board refresh [--filter <query>] [--json]",
+        usage: "alia gh-projects-board refresh [--filter <query>] [--json]",
       },
       {
         name: "projects",
         summary: "List an owner's projects",
-        usage: "bb gh-projects-board projects [--owner <login>] [--json]",
+        usage: "alia gh-projects-board projects [--owner <login>] [--json]",
       },
       {
         name: "status",
         summary: "Show configuration and gh auth state",
-        usage: "bb gh-projects-board status [--json]",
+        usage: "alia gh-projects-board status [--json]",
       },
     ],
     async run(argv) {
@@ -538,14 +538,14 @@ export default async function plugin(bb: BbPluginApi) {
   const refreshMinutes = Number(config.refreshMinutes ?? 15);
   if (configured && Number.isFinite(refreshMinutes) && refreshMinutes > 0) {
     const intervalMs = Math.max(1, refreshMinutes) * 60_000;
-    bb.background.service("refresh", {
+    alia.background.service("refresh", {
       async start(signal) {
         while (!signal.aborted) {
           try {
             await fetchAndCache(signal);
           } catch (error) {
             if (signal.aborted) return;
-            bb.log.warn(`background refresh failed: ${String(error)}`);
+            alia.log.warn(`background refresh failed: ${String(error)}`);
           }
           // Must wake on abort, or a reload reports "service did not stop".
           await new Promise<void>((resolve) => {
@@ -564,7 +564,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
   }
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

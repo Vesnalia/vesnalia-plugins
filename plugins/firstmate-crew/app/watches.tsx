@@ -2,7 +2,7 @@
  * The home's watch scripts: one row each with its schedule, how its last run went, what it last printed
  * and a switch that turns it off or on. The scripts are edited as files; a watch's name opens its script.
  */
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useState } from "react";
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible";

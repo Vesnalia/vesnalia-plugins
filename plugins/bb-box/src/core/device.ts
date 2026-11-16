@@ -153,7 +153,7 @@ export type Power<P extends DevicePlatform = DevicePlatform> =
   | { readonly is: "failed"; readonly error: { readonly code: PlatformParts[P]["failure"]; readonly words: string }; readonly since: number };
 
 export type Observed<T> =
-  | { readonly known: true; readonly value: T; readonly at: number; readonly by: "bb-box" | "outside" }
+  | { readonly known: true; readonly value: T; readonly at: number; readonly by: "alia-box" | "outside" }
   | { readonly known: false; readonly why: string };
 
 export type Override<T> = { readonly set: T; readonly at: number } | { readonly set: null; readonly at: number | null };
@@ -425,12 +425,12 @@ export type DeviceAnswer =
   | { readonly id: string; readonly ok: false; readonly error: DeviceError; readonly state: DeviceState | null };
 
 export type DeviceServerMessage =
-  | { readonly verb: "BB_DEVICE_HELLO"; readonly hello: DeviceHello }
-  | { readonly verb: "BB_DEVICE_STATE"; readonly state: DeviceState }
-  | { readonly verb: "BB_DEVICE_TOUCH"; readonly contacts: readonly TouchContact[]; readonly by: ControlHolder; readonly generation: number }
-  | { readonly verb: "BB_DEVICE_STILL"; readonly png: string; readonly generation: number }
-  | { readonly verb: "BB_DEVICE_ANSWER"; readonly answer: DeviceAnswer }
-  | { readonly verb: "BB_DEVICE_VIDEO"; readonly video: VideoReport };
+  | { readonly verb: "ALIA_DEVICE_HELLO"; readonly hello: DeviceHello }
+  | { readonly verb: "ALIA_DEVICE_STATE"; readonly state: DeviceState }
+  | { readonly verb: "ALIA_DEVICE_TOUCH"; readonly contacts: readonly TouchContact[]; readonly by: ControlHolder; readonly generation: number }
+  | { readonly verb: "ALIA_DEVICE_STILL"; readonly png: string; readonly generation: number }
+  | { readonly verb: "ALIA_DEVICE_ANSWER"; readonly answer: DeviceAnswer }
+  | { readonly verb: "ALIA_DEVICE_VIDEO"; readonly video: VideoReport };
 
 export type WantFor = "viewer" | "recording" | "wait";
 
@@ -457,9 +457,9 @@ export interface VideoReport {
 }
 
 export type DeviceServerVerb = DeviceServerMessage["verb"];
-export const DEVICE_REQUEST_VERB = "BB_DEVICE";
-export const DEVICE_ANSWER_VERB = "BB_DEVICE_ANSWER" satisfies DeviceServerVerb;
-export const DEVICE_STILLS_VERB = "BB_DEVICE_STILLS";
+export const DEVICE_REQUEST_VERB = "ALIA_DEVICE";
+export const DEVICE_ANSWER_VERB = "ALIA_DEVICE_ANSWER" satisfies DeviceServerVerb;
+export const DEVICE_STILLS_VERB = "ALIA_DEVICE_STILLS";
 export const STILLS_EVERY_MS = 200;
 export const DEVICE_FIRST_FRAME_MS = 3_000;
 
@@ -468,11 +468,11 @@ export function stillsRequestText(on: boolean): string {
 }
 
 export function stillsAsked(message: string): boolean | null {
-  const match = /^BB_DEVICE_STILLS \{"on":(true|false)\}$/.exec(message);
+  const match = /^ALIA_DEVICE_STILLS \{"on":(true|false)\}$/.exec(message);
   return match ? match[1] === "true" : null;
 }
 
-export const DEVICE_VIEW_VERB = "BB_DEVICE_VIEW";
+export const DEVICE_VIEW_VERB = "ALIA_DEVICE_VIEW";
 export const DRAWN_PIXELS_MOST = 16_384;
 
 export function viewRequestText(drawn: VideoSize): string {
@@ -480,7 +480,7 @@ export function viewRequestText(drawn: VideoSize): string {
 }
 
 export function viewAsked(message: string): VideoSize | null {
-  const match = /^BB_DEVICE_VIEW \{"width":(\d{1,5}),"height":(\d{1,5})\}$/.exec(message);
+  const match = /^ALIA_DEVICE_VIEW \{"width":(\d{1,5}),"height":(\d{1,5})\}$/.exec(message);
   if (!match) return null;
   const width = Number(match[1]);
   const height = Number(match[2]);
@@ -740,7 +740,7 @@ export function companionWorksWith(xcode: string, companion: string): boolean {
 }
 
 export const TEST_DEVICE_NAME = "Test device";
-export const TEST_DEVICE_NATIVE = "bb-box-test-device";
+export const TEST_DEVICE_NATIVE = "alia-box-test-device";
 export const TEST_DEVICE_DRIVER = `${PRODUCT} test driver`;
 
 const TEST_RUNTIMES: { readonly [P in DevicePlatform]: PlatformParts[P]["runtime"] } = {

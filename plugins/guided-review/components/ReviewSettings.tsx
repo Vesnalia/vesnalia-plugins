@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useRpc, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useRpc, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 import type { PreferencesRecord } from "../src/preferences";
 import { defaultPreferences } from "../lib/review-preferences";
@@ -44,7 +44,7 @@ export function ReviewSettings({ onBack }: { onBack?: () => void }) {
     <div className="mx-auto w-full max-w-6xl space-y-7 px-4 py-5 sm:px-8">
       <div className="space-y-3">
         {onBack && <Button variant="ghost" size="sm" onClick={onBack} disabled={dirty || busy || updating}><Icon name="ArrowRight" className="size-4 rotate-180" aria-hidden /> Back to review</Button>}
-        <div><h1 className="text-xl font-semibold">Review settings</h1><p className="mt-1 text-sm text-muted-foreground">Shape your guides and how the assistant helps you review. Applies across this BB installation.</p></div>
+        <div><h1 className="text-xl font-semibold">Review settings</h1><p className="mt-1 text-sm text-muted-foreground">Shape your guides and how the assistant helps you review. Applies across this VesnALIA installation.</p></div>
       </div>
       <SetupReadiness />
       <ReleaseSettings clientId={session.clientId} disabled={dirty || busy} onUpdatingChange={setUpdating} />
@@ -62,7 +62,7 @@ export function ReviewSettings({ onBack }: { onBack?: () => void }) {
               {(["concise", "standard", "detailed"] as const).map((value) => <Button key={value} variant="outline" size="sm" className="aria-pressed:border-foreground aria-pressed:bg-state-active" aria-pressed={record.preferences.guideDetail === value} onClick={() => { setSaved(false); setRecord({ ...record, preferences: { ...record.preferences, guideDetail: value } }); }}>{value[0].toUpperCase() + value.slice(1)}</Button>)}
             </div></div>
             <label className="block space-y-2"><span className="text-sm font-medium">Guide instructions</span><Textarea aria-label="Guide instructions" maxLength={12000} rows={6} value={record.preferences.guideInstructions} onChange={(event) => { setSaved(false); setRecord({ ...record, preferences: { ...record.preferences, guideInstructions: event.target.value } }); }} placeholder="Explain data migrations and compatibility. Keep tests with the behavior they cover. Write for engineers new to this repository." /><span className="block text-xs text-muted-foreground">Add review priorities, language, and team conventions. These extend the built-in guide skill.</span></label>
-            <details className="text-sm"><summary className="cursor-pointer text-muted-foreground">About the guide skill</summary><div className="mt-3 space-y-2 text-muted-foreground"><p>The bundled skill reads the complete diff, organizes chapters by meaning, and covers every changed file exactly once. Custom instructions shape its explanations while the required output format stays validated.</p><p>Based on the chaptered walkthrough approach from <a className="underline underline-offset-4" href="https://github.com/plannotator/guides/blob/main/skills/plannotator-guide/SKILL.md" target="_blank" rel="noreferrer">Plannotator’s guide skill</a>, adapted for BB. Guides run through your BB project’s agent.</p></div></details>
+            <details className="text-sm"><summary className="cursor-pointer text-muted-foreground">About the guide skill</summary><div className="mt-3 space-y-2 text-muted-foreground"><p>The bundled skill reads the complete diff, organizes chapters by meaning, and covers every changed file exactly once. Custom instructions shape its explanations while the required output format stays validated.</p><p>Based on the chaptered walkthrough approach from <a className="underline underline-offset-4" href="https://github.com/plannotator/guides/blob/main/skills/plannotator-guide/SKILL.md" target="_blank" rel="noreferrer">Plannotator’s guide skill</a>, adapted for VesnALIA. Guides run through your VesnALIA project’s agent.</p></div></details>
           </section>
           <section className="space-y-4 border-t border-border pt-5">
             <div><h2 className="text-sm font-semibold">Review assistant</h2><p className="mt-1 text-sm text-muted-foreground">Applies to your next message, including conversations already in progress.</p></div>
@@ -85,6 +85,6 @@ export function ReviewSettings({ onBack }: { onBack?: () => void }) {
 }
 
 export function ReviewSettingsPage({ returnTo = "" }: { returnTo?: string }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return <ReviewSettings onBack={() => navigate.toPluginPanel("review", { subPath: returnTo })} />;
 }

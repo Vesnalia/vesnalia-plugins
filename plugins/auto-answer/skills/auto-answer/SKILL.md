@@ -1,11 +1,11 @@
 ---
 name: auto-answer
-description: How BB's Auto Answer plugin applies an agent question's answer after a countdown, and how to read or change its settings.
+description: How VesnALIA's Auto Answer plugin applies an agent question's answer after a countdown, and how to read or change its settings.
 ---
 
 # Auto Answer
 
-When an agent asks the user a question, BB replaces the thread composer with a
+When an agent asks the user a question, VesnALIA replaces the thread composer with a
 question widget: one tab per question, option buttons, and a
 "Next" / "Submit answer" button.
 
@@ -37,7 +37,7 @@ be right:
 
 ## Settings
 
-Editable in Settings → Auto Answer, or with `bb plugin config auto-answer`:
+Editable in Settings → Auto Answer, or with `alia plugin config auto-answer`:
 
 - `enabled` (boolean, default `true`) — turn the countdown off entirely.
 - `delaySeconds` (number, default `4`, range 1–120) — how long to wait after the
@@ -46,7 +46,7 @@ Editable in Settings → Auto Answer, or with `bb plugin config auto-answer`:
 ## Command
 
 ```
-bb auto-answer status [--json]
+alia auto-answer status [--json]
 ```
 
 Prints the effective settings. There is nothing to start or stop from the CLI;

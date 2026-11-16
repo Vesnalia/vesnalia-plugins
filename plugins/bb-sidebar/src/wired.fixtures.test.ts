@@ -141,12 +141,12 @@ it("v0.2.34 contains only its released settings schema and cache shape", () => {
       "dock_shelves",
     ]);
     expect(db.prepare("SELECT name FROM sqlite_master WHERE name = 'project_colors'").get()).toBeUndefined();
-    expect(db.prepare("SELECT COUNT(*) AS n FROM _bb_migrations").get()).toEqual({ n: 16 });
+    expect(db.prepare("SELECT COUNT(*) AS n FROM _alia_migrations").get()).toEqual({ n: 16 });
   } finally {
     db.close();
   }
   const storage = JSON.parse(readFileSync(fixturePath("local-storage-v0.2.34.json"), "utf8"));
-  expect(JSON.parse(storage["bb-sidebar:settings-cache:v1"])).toEqual(releaseSettings);
+  expect(JSON.parse(storage["alia-sidebar:settings-cache:v1"])).toEqual(releaseSettings);
 });
 
 it.each(databaseSnapshots)(
@@ -333,7 +333,7 @@ it.each(snapshots)(
         "shelf-expansion",
         "working-since",
       ]
-        .map((key) => `bb-sidebar:${key}:v1`)
+        .map((key) => `alia-sidebar:${key}:v1`)
         .sort(),
     );
     expect(inboxSlot.inspection.rpcCalls.length).toBeGreaterThan(0);
@@ -361,8 +361,8 @@ it.each(snapshots)("reads $version legacy grouping when active-sort is absent", 
     readFileSync(fixturePath(`local-storage-${version}.json`), "utf8"),
   );
   // active-grouping is a legacy fallback; active-sort takes priority in the full dump.
-  localStorage.setItem("bb-sidebar:active-grouping:v1", fixture["bb-sidebar:active-grouping:v1"]!);
-  expect(localStorage.getItem("bb-sidebar:active-sort:v1")).toBeNull();
+  localStorage.setItem("alia-sidebar:active-grouping:v1", fixture["alia-sidebar:active-grouping:v1"]!);
+  expect(localStorage.getItem("alia-sidebar:active-sort:v1")).toBeNull();
   const wired = await createWired([thread({ id: "first" }), thread({ id: "second" })], {
     rpcGate: deferred<void>().promise,
   });
@@ -376,7 +376,7 @@ it("JSON snapshot records the new schema and stores real JSON boolean values", (
   try {
     const columns = db.prepare("PRAGMA table_info(sidebar_settings)").all() as Array<{ name: string }>;
     expect(columns.map(({ name }) => name)).toContain("settings_json");
-    expect(db.prepare("SELECT COUNT(*) AS n FROM _bb_migrations").get()).toEqual({ n: 23 });
+    expect(db.prepare("SELECT COUNT(*) AS n FROM _alia_migrations").get()).toEqual({ n: 23 });
     const row = db.prepare("SELECT settings_json FROM sidebar_settings WHERE id = 1").get() as {
       settings_json: string;
     };

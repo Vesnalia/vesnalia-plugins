@@ -1,4 +1,4 @@
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import plugin, { activitySchema, parseCliArgs } from "./server";
 
@@ -102,7 +102,7 @@ function createWorld() {
 
 async function loadWorld() {
   const world = createWorld();
-  await plugin(world.host.bb);
+  await plugin(world.host.alia);
   return world;
 }
 
@@ -126,7 +126,7 @@ describe("Agent Calendar server", () => {
       ]),
     );
     world.events.set("thr_b", turnEvents("thr_b", [[at(6, 8, 0), at(6, 8, 50)]]));
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
 
     const activity = activitySchema.parse(await world.host.harness.callRpc("activity", WEEK));
 
@@ -153,7 +153,7 @@ describe("Agent Calendar server", () => {
       "thr_api",
       turnEvents("thr_api", [[recent - 86_400_000, recent - 85_000_000]]),
     );
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
 
     const oneDay = activitySchema.parse(
       await world.host.harness.callRpc("activity", {
@@ -164,7 +164,7 @@ describe("Agent Calendar server", () => {
     );
 
     expect(oneDay.threads.map((item) => item.id)).toEqual(["thr_web"]);
-    // Both projects keep their slots, in bb's project order.
+    // Both projects keep their slots, in VesnALIA's project order.
     expect(oneDay.colorOrder).toEqual(["proj_web", "proj_api"]);
   });
 
@@ -176,7 +176,7 @@ describe("Agent Calendar server", () => {
       at(5, 0) + index * 10 * 60_000 + 60_000,
     ]);
     world.events.set("thr_long", turnEvents("thr_long", turns));
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
 
     const activity = activitySchema.parse(await world.host.harness.callRpc("activity", WEEK));
 
@@ -213,7 +213,7 @@ describe("Agent Calendar server", () => {
     );
     world.events.set("thr_running", turnEvents("thr_running", [[Date.now() - 20 * 60_000, null]]));
     world.events.set("thr_crashed", turnEvents("thr_crashed", [[at(5, 10), null]]));
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
 
     const activity = activitySchema.parse(
       await world.host.harness.callRpc("activity", {
@@ -233,7 +233,7 @@ describe("Agent Calendar server", () => {
   it("follows lifecycle events between full syncs", async () => {
     const world = createWorld();
     world.threads.push(thread({ id: "thr_a" }));
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
     await world.host.harness.callRpc("activity", WEEK);
 
     vi.useFakeTimers();
@@ -258,7 +258,7 @@ describe("Agent Calendar server", () => {
     const world = createWorld();
     world.threads.push(thread({ id: "thr_a" }));
     world.events.set("thr_a", turnEvents("thr_a", [[at(5, 9), at(5, 10)]]));
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
     await world.host.harness.callRpc("activity", WEEK);
 
     await world.host.harness.emitThreadEvent("thread.deleted", {
@@ -283,7 +283,7 @@ describe("Agent Calendar server", () => {
     const world = createWorld();
     world.threads.push(thread({ id: "thr_a", title: "Fix the flaky test" }));
     world.events.set("thr_a", turnEvents("thr_a", [[at(6, 9, 10), at(6, 10, 20)]]));
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
 
     const sheet = await world.host.harness.runCli(["timesheet", "--week", "2026-10-07"]);
     expect(sheet.exitCode).toBe(0);

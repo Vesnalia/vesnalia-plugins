@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { joinPath, relativeSegments, isAbsolutePath } from "./src/paths";
 
@@ -20,11 +20,11 @@ export const rpcContract = defineRpcContract({
 
 type ReadFileInput = z.infer<typeof rpcContract.readFile.input>;
 
-export default function plugin(bb: BbPluginApi) {
-  bb.rpc.register(rpcContract, {
+export default function plugin(alia: AliaPluginApi) {
+  alia.rpc.register(rpcContract, {
     async readFile(input) {
-      const target = await resolveTarget(bb, input);
-      const file = await bb.sdk.files.read(target);
+      const target = await resolveTarget(alia, input);
+      const file = await alia.sdk.files.read(target);
       if (file.contentEncoding !== "utf8") {
         throw new Error("This file is not UTF-8 text.");
       }
@@ -33,7 +33,7 @@ export default function plugin(bb: BbPluginApi) {
   });
 }
 
-async function resolveTarget(bb: BbPluginApi, input: ReadFileInput) {
+async function resolveTarget(alia: AliaPluginApi, input: ReadFileInput) {
   if (input.kind === "host") {
     if (!isAbsolutePath(input.path)) throw new Error("A host file path must be absolute.");
     return { hostId: input.hostId ?? undefined, path: input.path };
@@ -42,7 +42,7 @@ async function resolveTarget(bb: BbPluginApi, input: ReadFileInput) {
   const segments = relativeSegments(input.path);
   if (input.kind === "workspace") {
     if (!input.environmentId) throw new Error("This file has no workspace.");
-    const environment = await bb.sdk.environments.get({ environmentId: input.environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId: input.environmentId });
     if (!environment.path) throw new Error("This workspace has no path on its host.");
     return {
       hostId: environment.hostId,
@@ -52,7 +52,7 @@ async function resolveTarget(bb: BbPluginApi, input: ReadFileInput) {
   }
 
   if (!input.threadId) throw new Error("This file has no thread storage.");
-  const location = await bb.sdk.threads.storageLocation({ threadId: input.threadId });
+  const location = await alia.sdk.threads.storageLocation({ threadId: input.threadId });
   return {
     hostId: location.hostId,
     rootPath: location.storageRootPath,

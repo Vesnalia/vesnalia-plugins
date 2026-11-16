@@ -1,9 +1,9 @@
-import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@get-bb/plugin-sdk/provider-bridge/testing";
+import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import { expect, it } from "vitest";
 
-// Live probe of the bridge's model/list answer: the reasoning picker in bb
+// Live probe of the bridge's model/list answer: the reasoning picker in VesnALIA
 // renders from this catalog, so assert the thinking levels survive into it.
-const LIVE = process.env.BB_KIMI_LIVE === "1";
+const LIVE = process.env.ALIA_KIMI_LIVE === "1";
 const itLive = LIVE ? it : it.skip;
 
 itLive("model/list carries kimi thinking levels per model", async () => {

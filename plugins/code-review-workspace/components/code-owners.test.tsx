@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
-import { installTestPluginRuntime } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime } from "@vesnalia/plugin-sdk/testing/app";
 
 vi.mock("@pierre/diffs/react", () => ({ FileDiff: () => <div /> }));
 installTestPluginRuntime();

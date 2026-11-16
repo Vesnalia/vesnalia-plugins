@@ -1,6 +1,6 @@
 import { afterEach, describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { createFakePluginHost, type FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, type FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import {
   createFindingStore,
   findingRegistrationCliMessage,
@@ -15,7 +15,7 @@ afterEach(async () => {
 function freshFindings() {
   const host = createFakePluginHost({ pluginId: `findings-test-${hosts.length}` });
   hosts.push(host);
-  host.bb.storage.database().exec(`CREATE TABLE goal_findings (
+  host.alia.storage.database().exec(`CREATE TABLE goal_findings (
       id TEXT PRIMARY KEY,
       thread_id TEXT NOT NULL,
       fingerprint TEXT NOT NULL,
@@ -32,7 +32,7 @@ function freshFindings() {
       UNIQUE(thread_id, fingerprint)
     )
   `);
-  return createFindingStore(host.bb);
+  return createFindingStore(host.alia);
 }
 
 describe("finding registration reporting", () => {
@@ -68,7 +68,7 @@ describe("filing warns when a slice has no gate", () => {
     // defect gone, and the filer is the only one who knows the command.
     const msg = findingRegistrationCliMessage("fnd_1", "itm_1", false);
     assert.match(msg, /nothing gates its completion/);
-    assert.match(msg, /bb ultragoal item itm_1 --check/);
+    assert.match(msg, /alia ultragoal item itm_1 --check/);
   });
 
   it("stays quiet about checks when no slice was minted at all", () => {

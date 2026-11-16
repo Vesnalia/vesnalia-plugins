@@ -1,9 +1,9 @@
-// The clipboard writer, through bb.
-import { experimental_copyToClipboard } from "@get-bb/plugin-sdk/app";
+// The clipboard writer, through VesnALIA.
+import { experimental_copyToClipboard } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 /**
- * Write the clipboard through bb's own writer: bb Desktop copies through the
+ * Write the clipboard through VesnALIA's own writer: VesnALIA Desktop copies through the
  * native clipboard, which works without window focus or a secure origin, both
  * of which `navigator.clipboard` needs.
  */

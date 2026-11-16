@@ -1,13 +1,13 @@
 /**
- * Where the Reviews page shows one review: `<bb thread>/<view>[/<file>]`. The view (and the file) may
- * hold a `/` (a branch name, a path), so each is encoded once more: bb encodes each segment it is
+ * Where the Reviews page shows one review: `<VesnALIA thread>/<view>[/<file>]`. The view (and the file) may
+ * hold a `/` (a branch name, a path), so each is encoded once more: VesnALIA encodes each segment it is
  * given and the page decodes each segment once. No SDK import: the app uses this at run time.
  */
 import { targetSchema, type Target } from "./types";
 
 export const REVIEWS_PATH = "reviews";
 
-/** The realtime channel `bb diff-review open` asks the windows to open a review on. */
+/** The realtime channel `alia diff-review open` asks the windows to open a review on. */
 export const OPEN_CHANNEL = "open-review";
 
 export interface ReviewAddress {
@@ -23,7 +23,7 @@ export function reviewSubPath(address: ReviewAddress): string {
   return parts.join("/");
 }
 
-/** The page's route, as a link to it reads (each segment percent-encoded, as bb's router keeps them). */
+/** The page's route, as a link to it reads (each segment percent-encoded, as VesnALIA's router keeps them). */
 export function reviewRoute(pluginId: string, address: ReviewAddress): string {
   return `/plugins/${pluginId}/${REVIEWS_PATH}/${reviewSubPath(address).split("/").map(encodeURIComponent).join("/")}`;
 }
@@ -41,7 +41,7 @@ export function parseReviewSubPath(subPath: string): { threadId: string; target:
   }
 }
 
-/** What `bb diff-review open` publishes on `OPEN_CHANNEL`. */
+/** What `alia diff-review open` publishes on `OPEN_CHANNEL`. */
 export function openRequest(value: unknown): ReviewAddress | null {
   if (typeof value !== "object" || value === null) return null;
   const { threadId, target, file } = value as { threadId?: unknown; target?: unknown; file?: unknown };

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type RefObject } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { Picker, PickerAction } from "./picker";
 import type { PrTab } from "./pr-state";
 
@@ -9,7 +9,7 @@ export interface TabEntry {
   badge?: { text: string; tone: "neutral" | "bad" | "warn" | "info" };
 }
 
-/** bb's own count badge (bg-surface-recessed, text-2xs), tinted only when it asks for attention. */
+/** VesnALIA's own count badge (bg-surface-recessed, text-2xs), tinted only when it asks for attention. */
 const BADGE_TONES = {
   neutral: "bg-surface-recessed text-muted-foreground",
   bad: "bg-surface-destructive text-destructive-text",

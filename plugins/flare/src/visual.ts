@@ -18,7 +18,7 @@ export interface Drawable {
 // A number standing on its own: not part of a hash, a PR number, a version or a name such as lx7.
 const NUMBER = /(?<![\w#.\/-])\d[\d,]*(?:\.\d+)?%?(?![\w\/-])/g;
 const ITEM = /^ {0,3}(?:[-*+]|\d+[.)])\s+\S/gm;
-const FILE = /(?:\$BB_THREAD_STORAGE|[~\w./-]*\/\.bb\/thread-storage)\/[^\s`'")\]]+/g;
+const FILE = /(?:\$ALIA_THREAD_STORAGE|[~\w./-]*\/\.alia\/thread-storage)\/[^\s`'")\]]+/g;
 const TABLE_RULE = /^ {0,3}\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/m;
 const IMAGE = /!\[[^\]]*\]\([^)]+\)/;
 const TIMING_COLUMN = /\b(?:timings?|time|latency|durations?|elapsed|runtime|p(?:50|90|95|99))\b/i;
@@ -106,7 +106,7 @@ export function drawHint(found: Drawable): string {
   if (found.items >= ITEMS_MIN) fits.push(`turn its ${found.items} bullets into a Table, Steps or a mermaid diagram`);
   return [
     "This flare is all text.",
-    "The Flares tab draws a body the way bb draws a reply, and the rule that only the message ending your turn may hold a block does not cover a flare.",
+    "The Flares tab draws a body the way VesnALIA draws a reply, and the rule that only the message ending your turn may hold a block does not cover a flare.",
     `Next time, open with a sentence and show the evidence: ${fits.join("; ")}.`,
   ].join(" ");
 }

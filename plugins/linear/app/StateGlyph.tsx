@@ -1,4 +1,4 @@
-import type { BbFact } from "../src/contract.js";
+import type { AliaFact } from "../src/contract.js";
 import type { GlyphSpec } from "../src/select/glyph.js";
 import {
   ISSUE_DISC_DASH,
@@ -89,15 +89,15 @@ export function StateGlyph({
 }
 
 /**
- * The bb-native lead: what bb knows about an issue that Linear cannot.
+ * The alia-native lead: what VesnALIA knows about an issue that Linear cannot.
  *
  * Deliberately drawn from the same 14px grid as the state glyph so the two
  * lead columns line up when the grouping changes and the column swaps meaning.
  * `none` renders an empty box rather than nothing, so rows do not shift
  * horizontally as facts arrive.
  */
-export function BbFactGlyph({ fact }: { fact: BbFact }) {
-  const label = BB_FACT_LABEL[fact];
+export function AliaFactGlyph({ fact }: { fact: AliaFact }) {
+  const label = ALIA_FACT_LABEL[fact];
   return (
     <svg
       viewBox="0 0 14 14"
@@ -161,7 +161,7 @@ export function BbFactGlyph({ fact }: { fact: BbFact }) {
   );
 }
 
-const BB_FACT_LABEL: Record<BbFact, string> = {
+const ALIA_FACT_LABEL: Record<AliaFact, string> = {
   "thread-running": "thread running",
   "thread-idle": "thread",
   "pull-request": "pull request",
@@ -169,6 +169,6 @@ const BB_FACT_LABEL: Record<BbFact, string> = {
   none: "",
 };
 
-export function describeBbFact(fact: BbFact): string {
-  return BB_FACT_LABEL[fact];
+export function describeAliaFact(fact: AliaFact): string {
+  return ALIA_FACT_LABEL[fact];
 }

@@ -2,9 +2,9 @@
 
 `npm run check` covers the pure modules, the host against a temp repository
 with a bare origin (including jobs, deadline, cancel and process-group kill,
-the file watch through the harness), the server against bb's fake plugin
+the file watch through the harness), the server against VesnALIA's fake plugin
 host, and the app under jsdom. This document is the click-through against a
-running bb: `scripts/live-check.mjs` for milestone 1, `scripts/live-check-m2.mjs`
+running VesnALIA: `scripts/live-check.mjs` for milestone 1, `scripts/live-check-m2.mjs`
 for milestone 2, `scripts/live-check-m3.mjs` for milestone 3,
 `scripts/live-check-m4.mjs` for milestone 4, `scripts/live-check-m5.mjs` for
 milestone 5 and `scripts/live-check-m6.mjs` for the commit panel's later
@@ -13,12 +13,12 @@ additions, all on `scripts/live-lib.mjs`.
 ## Setup
 
 ```sh
-bb plugin install . --yes      # once
-bb plugin dev                  # terminal 1: rebuild + reload on save
-bb plugin logs vcs-widget -f    # terminal 2
+alia plugin install . --yes      # once
+alia plugin dev                  # terminal 1: rebuild + reload on save
+alia plugin logs vcs-widget -f    # terminal 2
 ```
 
-A scratch repository with a bare origin and a second clone, then a bb thread
+A scratch repository with a bare origin and a second clone, then a VesnALIA thread
 whose environment is the scratch repository:
 
 ```sh
@@ -29,7 +29,7 @@ node scripts/live-check.mjs setup /tmp/vcs-scratch
 
 ## Headless run
 
-The script drives the bb web UI with system Chromium through puppeteer-core
+The script drives the VesnALIA web UI with system Chromium through puppeteer-core
 and prints one PASS/FAIL line per scenario:
 
 ```sh
@@ -52,16 +52,16 @@ Milestone 6 sends a real "LGTM - Commit" to `VCS_E2E_THREAD`, which starts a
 turn on the scratch repository. It runs last, after the tree is clean, so the
 agent it wakes has nothing to commit.
 
-Milestone 5 also needs `bb` on `PATH`: it runs the plugin's own command
+Milestone 5 also needs `alia` on `PATH`: it runs the plugin's own command
 against `VCS_E2E_THREAD` and compares the output with git in the scratch
 repository.
 
-Environment: `BB_SERVER_URL` (default `http://127.0.0.1:38886`), `CHROMIUM`
+Environment: `ALIA_SERVER_URL` (default `http://127.0.0.1:38886`), `CHROMIUM`
 (default `/usr/bin/chromium`). Screenshots land in `/tmp/vcs-e2e/`.
 
 ## Scenarios (manual or scripted)
 
-1. Header: branch button left of bb's workspace buttons, label `main`;
+1. Header: branch button left of VesnALIA's workspace buttons, label `main`;
    nothing renders on a thread without an environment; icon-only at phone
    width.
 2. Open: search focused; Actions, Recent, Local (`main` current), Remote
@@ -69,7 +69,7 @@ Environment: `BB_SERVER_URL` (default `http://127.0.0.1:38886`), `CHROMIUM`
    remote-only name hides the empty Local heading; Esc closes; reopening
    starts unfiltered.
 3. Checkout `origin/feat/click-test`: label follows, popup closes, tracking
-   branch created, bb's sidebar follows within ~4 s.
+   branch created, VesnALIA's sidebar follows within ~4 s.
 4. New Branch: `bad name` disables Create with a hint; Escape in the form
    returns to the list; create with checkout switches; create without
    checkout keeps the popup open with "Created ...".
@@ -92,7 +92,7 @@ Environment: `BB_SERVER_URL` (default `http://127.0.0.1:38886`), `CHROMIUM`
    the Detached HEAD banner; `git switch main`: an open popup refreshes.
 9. Update Project after a commit pushed from the second clone: "Update
    Project: Fast-forward."
-10. Mod+Shift+P lists the seven `VCS Widget:` rows (bb adds a settings row);
+10. Mod+Shift+P lists the seven `VCS Widget:` rows (VesnALIA adds a settings row);
     "Open branches" opens the popup; "Push..." shows the confirm dialog with
     the tracked refspec; a `vcs-widget:open` CustomEvent dispatched from the
     console with a `detail` opens nothing.
@@ -116,7 +116,7 @@ Environment: `BB_SERVER_URL` (default `http://127.0.0.1:38886`), `CHROMIUM`
 6. Compare with 'main' opens a side panel tab titled `main ⇄ feature` with
    commit counts, two commit lists and the changed files.
 7. Show Diff with Working Tree (after editing `a.txt`) opens a tab listing
-   `a.txt`; clicking it renders the patch in bb's diff viewer.
+   `a.txt`; clicking it renders the patch in VesnALIA's diff viewer.
 8. Merge into main: dialog `git merge --no-edit --end-of-options
    refs/heads/<b>`, toast "Merged ... Fast-forward".
 9. A conflicting merge: toast `Merge failed: CONFLICT (content): ...`; the
@@ -155,7 +155,7 @@ Environment: `BB_SERVER_URL` (default `http://127.0.0.1:38886`), `CHROMIUM`
    staged state: `a.txt` unchecked, `b.txt` mixed, the new file unchecked.
 4. Ticking `a.txt` runs `git add` (status `M.`), unticking runs
    `git reset -q --` (status `.M`).
-5. Selecting `b.txt` renders its patch in bb's diff viewer; the partially
+5. Selecting `b.txt` renders its patch in VesnALIA's diff viewer; the partially
    staged file offers Staged / Unstaged and the switch reloads the diff.
 6. A message with a body and Commit: the toast names the sha and subject,
    `git log -1 --format=%B` holds the message exactly (it travelled on
@@ -176,7 +176,7 @@ Environment: `BB_SERVER_URL` (default `http://127.0.0.1:38886`), `CHROMIUM`
     no" (the hook's last line) and HEAD is unchanged. With Run Git hooks
     unticked the commit passes (`--no-verify`).
 12. An edit and a `git add` from a terminal reach the panel without a
-    click (the host watch on the git dir, bb's environment events).
+    click (the host watch on the git dir, VesnALIA's environment events).
 13. Commit and Push commits, then the push dialog previews
     `git push --no-progress --end-of-options origin HEAD:refs/heads/main`;
     after Push the bare remote's `main` equals HEAD.
@@ -194,7 +194,7 @@ Environment: `BB_SERVER_URL` (default `http://127.0.0.1:38886`), `CHROMIUM`
 4. The message filter finds the commit by its subject; adding a regex
    character (`.`) finds nothing, because the filter is `--fixed-strings`.
 5. Selecting a commit shows its full sha, message and changed files;
-   selecting a file renders its diff in bb's viewer and Back returns to the
+   selecting a file renders its diff in VesnALIA's viewer and Back returns to the
    commit.
 6. The commit's context menu lists the seven rows; Cherry-Pick previews
    `git cherry-pick --end-of-options <sha>` and, after confirming, HEAD
@@ -226,9 +226,9 @@ Environment: `BB_SERVER_URL` (default `http://127.0.0.1:38886`), `CHROMIUM`
    cap.
 7. There is no mutating command: `checkout` is unknown. A usage error exits
    2, a thread with no repository exits 1 with the reason.
-8. The settings page (`/settings/plugins/vcs-widget`) shows bb's own form
+8. The settings page (`/settings/plugins/vcs-widget`) shows VesnALIA's own form
    plus both plugin sections.
-9. "Agent access" names `bb vcs-widget status`, `vcs_widget_status` and the
+9. "Agent access" names `alia vcs-widget status`, `vcs_widget_status` and the
    read-only promise.
 10. "Favourite branches" lists the worktree whose branch the popup starred,
     and Clear empties it.
@@ -241,9 +241,9 @@ Manual, on top of the script:
 
 15. The `vcs_widget_status` tool: ask an agent on a thread for the branch
     state; the row reads "Reading the git state" and the answer matches
-    `bb vcs-widget status`.
-16. `bb skill list` shows the `vcs-widget` plugin skill.
-17. `bb plugin list --json` shows `statusDetail: null` with the `skill` and
+    `alia vcs-widget status`.
+16. `alia skill list` shows the `vcs-widget` plugin skill.
+17. `alia plugin list --json` shows `statusDetail: null` with the `skill` and
     `agent-tool` capabilities: a rejected tool registration would say so
     there.
 
@@ -269,7 +269,7 @@ Manual, on top of the script:
 7. Both agent buttons read "Agent Commit" and "Agent Commit & Push", carry
    the Sent icon and are enabled with nothing staged and no message. Only the
    first is clicked: it puts a User message reading "LGTM - Commit" in the
-   thread's event log (`bb thread log`), and the panel says it was sent or
+   thread's event log (`alia thread log`), and the panel says it was sent or
    queued. Clicking the second would tell a real agent to push, and the only
    thing it would add is that the variant picks the other row of
    `AGENT_ACTIONS`, which `server.test.ts` proves against that same table.
@@ -296,7 +296,7 @@ Manual, on top of the script:
 
 ## Last run
 
-2026-09-09, bb 0.42.1, git 2.55, one local machine: milestone 1 scenarios
+2026-09-09, VesnALIA 0.42.1, git 2.55, one local machine: milestone 1 scenarios
 1 to 12 (27 steps), milestone 2 scenarios 1 to 19 (21 steps), milestone 3
 scenarios 1 to 14 (16 steps), milestone 4 scenarios 1 to 12 (12 steps) and
 milestone 5 scenarios 1 to 14 pass headlessly (see the COS-121 to COS-125
@@ -308,8 +308,8 @@ button is reachable by a hit test at its own centre, what element is there
 instead, `document.body`'s pointer-events, the active element, any
 `aria-hidden` or `inert` ancestor, and every open dialog and popper layer with
 its `data-state`. It also writes a screenshot. Radix reaches the plugin through
-bb's shared runtime (`globalThis.__bbPluginRuntime`), not a bundled copy, so
-the layer bookkeeping that owns `pointer-events` is one instance across bb and
+VesnALIA's shared runtime (`globalThis.__aliaPluginRuntime`), not a bundled copy, so
+the layer bookkeeping that owns `pointer-events` is one instance across VesnALIA and
 the plugin, and split module state is not the explanation.
 
 The commit panel additions (six scenarios) pass headlessly on the same
@@ -318,7 +318,7 @@ file row: 16 of 16. Scenario 3 found that Copy Path cannot be verified
 headlessly at all: Chromium denies the clipboard write to any page in that
 mode, the plugin's own code is not involved, and the same limit applies to
 Copy Branch Name and Copy Revision Number, which no script covers either.
-Scenario 7 first looked for the message in `bb thread history`, which
+Scenario 7 first looked for the message in `alia thread history`, which
 collapses identical prompts, so a second run saw no new message; it reads the
 thread's event log now.
 

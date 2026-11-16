@@ -34,7 +34,7 @@ function loadSharp(): SharpFn | null {
   return sharpCached;
 }
 
-/** WebAssembly libvips: BB installs git plugins with --omit=optional, which can drop sharp's native binaries. */
+/** WebAssembly libvips: VesnALIA installs git plugins with --omit=optional, which can drop sharp's native binaries. */
 function loadVips(): Promise<Vips | null> {
   vipsCached ??= (async () => {
     try {

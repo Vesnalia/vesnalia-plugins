@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { discoverSkills, readDiscoveredSkill, type SkillRoots } from "../host/discover";
 import { SkillListSchema } from "../shared/skills";
 import type { ReportedCommand } from "./reported";
-import { listSkills, readSkill, workspaceFrom, type BbSkill, type SkillsPorts, type ThreadWorkspace } from "./skills";
+import { listSkills, readSkill, workspaceFrom, type AliaSkill, type SkillsPorts, type ThreadWorkspace } from "./skills";
 
 let root: string;
 let roots: SkillRoots;
@@ -22,14 +22,14 @@ async function writeSkill(dir: string, name: string, description: string): Promi
   );
 }
 
-function bbSkill(overrides: Partial<BbSkill> & { name: string }): BbSkill {
+function aliaSkill(overrides: Partial<AliaSkill> & { name: string }): AliaSkill {
   return {
     id: `skill_${overrides.name}`,
     description: `Description for ${overrides.name}`,
     scope: "plugin",
     provider: null,
     pluginId: "example-plugin",
-    filePath: `/opt/bb/plugins/example-plugin/skills/${overrides.name}/SKILL.md`,
+    filePath: `/opt/alia/plugins/example-plugin/skills/${overrides.name}/SKILL.md`,
     ...overrides,
   };
 }
@@ -40,11 +40,11 @@ function command(name: string, source: ReportedCommand["source"] = "skill"): Rep
 
 /**
  * Real discovery against temp-dir homes, behind the same ports `server.ts`
- * binds to the host entry; bb's own skills and the reported list are fakes.
+ * binds to the host entry; VesnALIA's own skills and the reported list are fakes.
  */
 function portsFor(options: {
   provider?: string;
-  bb?: BbSkill[];
+  alia?: AliaSkill[];
   contents?: Record<string, string>;
   commands?: () => Promise<ReportedCommand[]>;
   workspace?: () => Promise<ThreadWorkspace>;
@@ -56,7 +56,7 @@ function portsFor(options: {
     hostId: "host_example",
     cwd,
   };
-  const bbSkillContent = vi.fn(async (_workspace: ThreadWorkspace, id: string) => {
+  const aliaSkillContent = vi.fn(async (_workspace: ThreadWorkspace, id: string) => {
     const content = options.contents?.[id];
     if (content === undefined) throw new Error(`no content for ${id}`);
     return content;
@@ -65,15 +65,15 @@ function portsFor(options: {
     workspaceOf: options.workspace ?? (async () => workspace),
     discover: (ws) => discoverSkills(ws, roots),
     readDiscovered: (ws, skillId) => readDiscoveredSkill({ ...ws, skillId }, roots),
-    bbSkills: async () => options.bb ?? [],
-    bbSkillContent,
+    aliaSkills: async () => options.alia ?? [],
+    aliaSkillContent,
     commands: options.commands ?? (async () => []),
   };
-  return { ports, bbSkillContent };
+  return { ports, aliaSkillContent };
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(path.join(os.tmpdir(), "bb-skills-server-"));
+  root = await mkdtemp(path.join(os.tmpdir(), "alia-skills-server-"));
   cwd = path.join(root, "work");
   await mkdir(cwd, { recursive: true });
   roots = {
@@ -98,34 +98,34 @@ describe("listSkills", () => {
     expect(() => SkillListSchema.parse(result)).not.toThrow();
   });
 
-  test("adds the skills bb injects, under their own source", async () => {
+  test("adds the skills VesnALIA injects, under their own source", async () => {
     const { ports } = portsFor({
-      bb: [
-        bbSkill({ name: "plugin-guide" }),
-        bbSkill({ name: "house-style", scope: "bb-user", pluginId: null, filePath: "/home/me/.bb/skills/house-style/SKILL.md" }),
-        bbSkill({ name: "repo-rules", scope: "bb-project", pluginId: null, filePath: `${cwd}/.bb/skills/repo-rules/SKILL.md` }),
+      alia: [
+        aliaSkill({ name: "plugin-guide" }),
+        aliaSkill({ name: "house-style", scope: "alia-user", pluginId: null, filePath: "/home/me/.vesnalia/skills/house-style/SKILL.md" }),
+        aliaSkill({ name: "repo-rules", scope: "alia-project", pluginId: null, filePath: `${cwd}/.vesnalia/skills/repo-rules/SKILL.md` }),
       ],
     });
 
     const result = await listSkills(ports, "thr_example");
 
     expect(result.skills.map((skill) => [skill.name, skill.source])).toEqual([
-      ["house-style", { kind: "bb", label: "bb personal", dir: "/home/me/.bb/skills" }],
-      ["plugin-guide", { kind: "bb", label: "bb plugin · example-plugin", dir: "/opt/bb/plugins/example-plugin/skills" }],
-      ["repo-rules", { kind: "bb", label: "bb project", dir: `${cwd}/.bb/skills` }],
+      ["house-style", { kind: "alia", label: "alia personal", dir: "/home/me/.vesnalia/skills" }],
+      ["plugin-guide", { kind: "alia", label: "alia plugin · example-plugin", dir: "/opt/alia/plugins/example-plugin/skills" }],
+      ["repo-rules", { kind: "alia", label: "alia project", dir: `${cwd}/.vesnalia/skills` }],
     ]);
-    expect(result.skills.every((skill) => skill.id.startsWith("bb:"))).toBe(true);
+    expect(result.skills.every((skill) => skill.id.startsWith("alia:"))).toBe(true);
   });
 
-  // bb's list also holds every provider's own roots; discovery reads the one
+  // VesnALIA's list also holds every provider's own roots; discovery reads the one
   // provider whose thread this is, so those rows would list another provider's
   // skills as this agent's.
-  test("leaves out the provider roots bb's list also carries", async () => {
+  test("leaves out the provider roots VesnALIA's list also carries", async () => {
     const { ports } = portsFor({
-      bb: [
-        bbSkill({ name: "codex-only", scope: "provider-user", provider: "codex", pluginId: null }),
-        bbSkill({ name: "codex-plugin", scope: "plugin", provider: "codex" }),
-        bbSkill({ name: "shared", scope: "shared-user", provider: null, pluginId: null }),
+      alia: [
+        aliaSkill({ name: "codex-only", scope: "provider-user", provider: "codex", pluginId: null }),
+        aliaSkill({ name: "codex-plugin", scope: "plugin", provider: "codex" }),
+        aliaSkill({ name: "shared", scope: "shared-user", provider: null, pluginId: null }),
       ],
     });
 
@@ -134,34 +134,34 @@ describe("listSkills", () => {
     expect(result.skills).toEqual([]);
   });
 
-  test("adds the thread's own provider's plugin skills bb found, as plugin sources", async () => {
-    const pluginSkill = bbSkill({
+  test("adds the thread's own provider's plugin skills VesnALIA found, as plugin sources", async () => {
+    const pluginSkill = aliaSkill({
       name: "slides:deck",
       provider: "codex",
       pluginId: "slides",
       filePath: "/home/me/.codex/plugins/cache/slides/skills/deck/SKILL.md",
     });
-    const { ports, bbSkillContent } = portsFor({
+    const { ports, aliaSkillContent } = portsFor({
       provider: "codex",
-      bb: [pluginSkill, bbSkill({ name: "plugin-guide" })],
+      alia: [pluginSkill, aliaSkill({ name: "plugin-guide" })],
       contents: { [pluginSkill.id]: "---\nname: deck\ndescription: Decks\n---\nMake a deck.\n" },
     });
 
     const result = await listSkills(ports, "thr_example");
 
     expect(result.skills.map((skill) => [skill.name, skill.source.kind, skill.source.label])).toEqual([
-      ["plugin-guide", "bb", "bb plugin · example-plugin"],
+      ["plugin-guide", "alia", "alia plugin · example-plugin"],
       ["slides:deck", "plugin", "slides"],
     ]);
     const document = await readSkill(ports, "thr_example", result.skills[1]!.id);
-    expect(bbSkillContent).toHaveBeenCalledWith(expect.anything(), pluginSkill.id);
+    expect(aliaSkillContent).toHaveBeenCalledWith(expect.anything(), pluginSkill.id);
     expect(document.body).toBe("Make a deck.\n");
   });
 
-  test("ranks a provider plugin's copy above bb's when the two share a name", async () => {
+  test("ranks a provider plugin's copy above VesnALIA's when the two share a name", async () => {
     const { ports } = portsFor({
       provider: "codex",
-      bb: [bbSkill({ name: "shared-name" }), bbSkill({ name: "shared-name", id: "skill_codex", provider: "codex", pluginId: "slides" })],
+      alia: [aliaSkill({ name: "shared-name" }), aliaSkill({ name: "shared-name", id: "skill_codex", provider: "codex", pluginId: "slides" })],
     });
 
     const result = await listSkills(ports, "thr_example");
@@ -169,9 +169,9 @@ describe("listSkills", () => {
     expect(result.skills.map((skill) => skill.source.kind)).toEqual(["plugin"]);
   });
 
-  test("keeps the provider's copy when bb injects a skill of the same name", async () => {
+  test("keeps the provider's copy when VesnALIA injects a skill of the same name", async () => {
     await writeSkill(path.join(roots.claudeHome, "skills"), "plugin-guide", "The personal copy");
-    const { ports } = portsFor({ bb: [bbSkill({ name: "plugin-guide" })] });
+    const { ports } = portsFor({ alia: [aliaSkill({ name: "plugin-guide" })] });
 
     const result = await listSkills(ports, "thr_example");
 
@@ -180,11 +180,11 @@ describe("listSkills", () => {
     expect(result.skills[0]!.description).toBe("The personal copy");
   });
 
-  test("lists bb's skills and the reported list for a provider discovery does not scan", async () => {
+  test("lists VesnALIA's skills and the reported list for a provider discovery does not scan", async () => {
     await writeSkill(path.join(cwd, ".claude", "skills"), "tidy-imports", "Sorts imports");
     const { ports } = portsFor({
       provider: "pi",
-      bb: [bbSkill({ name: "plugin-guide" })],
+      alia: [aliaSkill({ name: "plugin-guide" })],
       commands: async () => [command("plugin-guide"), command("explain"), command("clear", "command")],
     });
 
@@ -199,10 +199,10 @@ describe("listSkills", () => {
     });
   });
 
-  test("leaves out of the reported list every name discovery or bb already listed", async () => {
+  test("leaves out of the reported list every name discovery or VesnALIA already listed", async () => {
     await writeSkill(path.join(cwd, ".claude", "skills"), "tidy-imports", "Sorts imports");
     const { ports } = portsFor({
-      bb: [bbSkill({ name: "plugin-guide" })],
+      alia: [aliaSkill({ name: "plugin-guide" })],
       commands: async () => [command("tidy-imports"), command("plugin-guide"), command("charts")],
     });
 
@@ -247,17 +247,17 @@ describe("readSkill", () => {
     expect(result.body).toBe("Body for tidy-imports.\n");
   });
 
-  test("reads one of bb's skills through bb, without its frontmatter", async () => {
-    const skill = bbSkill({ name: "plugin-guide" });
-    const { ports, bbSkillContent } = portsFor({
-      bb: [skill],
+  test("reads one of VesnALIA's skills through VesnALIA, without its frontmatter", async () => {
+    const skill = aliaSkill({ name: "plugin-guide" });
+    const { ports, aliaSkillContent } = portsFor({
+      alia: [skill],
       contents: { [skill.id]: "---\nname: plugin-guide\ndescription: Guides\n---\n\n# Guide\n" },
     });
     const listed = await listSkills(ports, "thr_example");
 
     const result = await readSkill(ports, "thr_example", listed.skills[0]!.id);
 
-    expect(bbSkillContent).toHaveBeenCalledWith(expect.anything(), skill.id);
+    expect(aliaSkillContent).toHaveBeenCalledWith(expect.anything(), skill.id);
     expect(result).toEqual({
       name: "plugin-guide",
       description: "Description for plugin-guide",
@@ -267,21 +267,21 @@ describe("readSkill", () => {
   });
 
   // The security boundary: `read` takes an id discovery produced for this
-  // thread, never a path, on either side of the bb/host split.
+  // thread, never a path, on either side of the alia/host split.
   describe("only reads what discovery produced", () => {
-    test("refuses a bb id bb's list no longer has", async () => {
-      const { ports, bbSkillContent } = portsFor({ bb: [], contents: { skill_gone: "---\n---\n" } });
+    test("refuses a VesnALIA id VesnALIA's list no longer has", async () => {
+      const { ports, aliaSkillContent } = portsFor({ alia: [], contents: { skill_gone: "---\n---\n" } });
 
-      await expect(readSkill(ports, "thr_example", "bb:skill_gone")).rejects.toThrow(/not available/);
-      expect(bbSkillContent).not.toHaveBeenCalled();
+      await expect(readSkill(ports, "thr_example", "alia:skill_gone")).rejects.toThrow(/not available/);
+      expect(aliaSkillContent).not.toHaveBeenCalled();
     });
 
-    test("refuses a bb id for a provider root bb's list carries but this thread does not load", async () => {
-      const foreign = bbSkill({ name: "codex-only", scope: "provider-user", provider: "codex", pluginId: null });
-      const { ports, bbSkillContent } = portsFor({ bb: [foreign], contents: { [foreign.id]: "---\n---\n" } });
+    test("refuses a VesnALIA id for a provider root VesnALIA's list carries but this thread does not load", async () => {
+      const foreign = aliaSkill({ name: "codex-only", scope: "provider-user", provider: "codex", pluginId: null });
+      const { ports, aliaSkillContent } = portsFor({ alia: [foreign], contents: { [foreign.id]: "---\n---\n" } });
 
-      await expect(readSkill(ports, "thr_example", `bb:${foreign.id}`)).rejects.toThrow(/not available/);
-      expect(bbSkillContent).not.toHaveBeenCalled();
+      await expect(readSkill(ports, "thr_example", `alia:${foreign.id}`)).rejects.toThrow(/not available/);
+      expect(aliaSkillContent).not.toHaveBeenCalled();
     });
 
     test("refuses a path, and an id naming a file no scan produced", async () => {
@@ -289,7 +289,7 @@ describe("readSkill", () => {
       await writeSkill(secret, "notes", "Not a skill anyone installed");
       const { ports } = portsFor({});
 
-      for (const skillId of [path.join(secret, "notes", "SKILL.md"), `project:${secret}:notes`, "bb:"]) {
+      for (const skillId of [path.join(secret, "notes", "SKILL.md"), `project:${secret}:notes`, "alia:"]) {
         await expect(readSkill(ports, "thr_example", skillId)).rejects.toThrow(/not available/);
       }
     });

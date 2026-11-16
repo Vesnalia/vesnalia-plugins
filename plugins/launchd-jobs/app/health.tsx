@@ -6,7 +6,7 @@
  * window was disconnected is gone.
  */
 import { useEffect, useRef, useState } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc, type ExperimentalBadge } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc, type ExperimentalBadge } from "@vesnalia/plugin-sdk/app";
 
 import { HEALTH_CHANGED, HealthSchema, type Health } from "../shared/channels";
 import type { RpcContract } from "../shared/contract";
@@ -60,7 +60,7 @@ export function useHealth(): Health | null {
 
 /**
  * The badge on the sidebar entry: the count of jobs whose latest run failed
- * unseen, with their names in the tooltip, or no badge at all. A hook bb
+ * unseen, with their names in the tooltip, or no badge at all. A hook VesnALIA
  * calls in the plugin's scope (`experimental_useBadge`), not a component.
  */
 export function useFailingBadge(): ExperimentalBadge | null {

@@ -1,13 +1,13 @@
 ---
 name: radar-sidebar
-description: Use the Radar Sidebar plugin's thread list. Use when the user asks about the sidebar's groups, filters, pins, sections, or how to switch back to BB's list.
+description: Use the Radar Sidebar plugin's thread list. Use when the user asks about the sidebar's groups, filters, pins, sections, or how to switch back to VesnALIA's list.
 ---
 
 # Radar Sidebar
 
-Replaces BB's sidebar thread list. There is no
-CLI and no server state: everything below is UI in the BB app, and thread mutations go
-through BB's own flows (pins, reads, renames, archives, deletes).
+Replaces VesnALIA's sidebar thread list. There is no
+CLI and no server state: everything below is UI in the VesnALIA app, and thread mutations go
+through VesnALIA's own flows (pins, reads, renames, archives, deletes).
 
 ## Surfaces
 
@@ -16,14 +16,14 @@ through BB's own flows (pins, reads, renames, archives, deletes).
   group by project, or by **section** for drag-to-organise. The header holds
   a text filter, an Active / Archived / All switch, grouping + expand-all +
   density toggles, status chips, and the smart-views bar (New thread is
-  BB's own, above the list, so the list keeps no duplicate). Preferences
+  VesnALIA's own, above the list, so the list keeps no duplicate). Preferences
   persist per client in `localStorage` (`radar-sidebar:*:v1` keys).
 ## Navigation
 
-BB 0.46 retired the `experimental_sidebarNavigation` slot. BB's own navigation
+VesnALIA 0.46 retired the `experimental_sidebarNavigation` slot. VesnALIA's own navigation
 rail now holds Home, plugins and the user's chosen destinations, and plugins
 cannot replace it, so Radar 0.5.3 ships no navigation or rail. The `railNav`
-and `wideRail` settings are gone. On BB 0.44 or 0.45, Radar 0.5.2 still has
+and `wideRail` settings are gone. On VesnALIA 0.44 or 0.45, Radar 0.5.2 still has
 both.
 
 ## Organisation tools
@@ -37,16 +37,16 @@ both.
   closes the form without creating anything. Names are trimmed; blank names
   are rejected. Creation uses `sdk.threadSections.create({ name })`, with
   duplicate submissions blocked while pending and inline API errors that keep
-  the name for retry. BB's realtime sidebar state supplies the new section;
+  the name for retry. VesnALIA's realtime sidebar state supplies the new section;
   empty sections stay visible even with no threads or no filter matches.
 - **Drag to file**: in section grouping, hover a root thread to reveal its
   grip, then drag it onto a section header (or **Unfiled**) to set its
-  `sectionId` through BB's own thread update — the drop target highlights,
+  `sectionId` through VesnALIA's own thread update — the drop target highlights,
   the thread's own section is marked as a no-op, and a toast confirms.
   Dragging a selected thread files the whole selection. For keyboard filing,
   focus the grip, press Space, move with arrow keys, and press Enter to drop
   or Escape to cancel.
-  Threads cannot be moved between *projects*: BB's update API has no
+  Threads cannot be moved between *projects*: VesnALIA's update API has no
   `projectId` field, so project grouping is view-only.
 - **Smart views** (`RadarSmartViews.tsx`): the bar under the filters offers a
   Pinned preset plus any saved view. Configure query + status chip +
@@ -62,7 +62,7 @@ both.
   categories (used / reserved / deferred, with a legend of the four biggest)
   plus a marker at the auto-compaction threshold; folded-family names; and
   Open / Split / Pin / Archive actions. It is interactive, so it stays open
-  while pointed at. **The context section is omitted entirely when BB records
+  while pointed at. **The context section is omitted entirely when VesnALIA records
   no usage** (a thread that never ran a turn) rather than showing a zeroed
   bar. Placement is measured in a pre-paint layout effect: the card prefers
   the row's right, flips left when that would overflow, and clamps to an 8px
@@ -74,8 +74,8 @@ both.
 
 ## Selecting it
 
-Settings → Appearance → **Sidebar**. Choosing BB there restores the stock
-list; disabling this plugin falls back to BB's list automatically.
+Settings → Appearance → **Sidebar**. Choosing VesnALIA there restores the stock
+list; disabling this plugin falls back to VesnALIA's list automatically.
 
 ## Row behaviour
 
@@ -100,7 +100,7 @@ list; disabling this plugin falls back to BB's list automatically.
   NEEDS YOU, QUEUED, FAILED, DONE — coloured to match), jump shortcut
   while the app command modifier is held (only rows on screen get one:
   rows in a folded family or collapsed group are skipped), another
-  plugin's row status (takes the draft slot, as BB's list does), amber pip
+  plugin's row status (takes the draft slot, as VesnALIA's list does), amber pip
   for an unsent composer draft, blue pip for unread.
 - State changes animate: washes fade, badges pop in, quiet rows fold
   smoothly, and groups + families expand/collapse with an animated roll
@@ -195,7 +195,7 @@ list; disabling this plugin falls back to BB's list automatically.
   (red failed, amber needs-you, pulsing green live rollup dot). Group
   counts/rollups always include folded members and count each thread. Failed
   work takes priority over input waits, which take priority over running work.
-- Hidden helper threads (`isHidden`) are filtered out, as in BB's list.
+- Hidden helper threads (`isHidden`) are filtered out, as in VesnALIA's list.
 
 ## Keyboard and selection
 
@@ -217,7 +217,7 @@ list; disabling this plugin falls back to BB's list automatically.
 
 ## Settings
 
-`bb plugin config radar-sidebar`, or Settings → Installed plugins → Radar
+`alia plugin config radar-sidebar`, or Settings → Installed plugins → Radar
 Sidebar. The frontend reads them through `useSettings()`, and every value
 has a default, so the list never waits on them. Until they load,
 `defaultDensity` and `twoLineTitles` use the value this client last saw, so
@@ -238,10 +238,10 @@ rows paint at their final height.
 
 ## Rules
 
-- Never edit `localStorage` or `bb.db` to change sidebar state; use the UI.
+- Never edit `localStorage` or `alia.db` to change sidebar state; use the UI.
 - The list renders no virtualisation: very large thread counts (thousands)
   may scroll slowly on low-end machines. Prefer the text filter or Archived
   separation in that case.
-- `app.css` is custom CSS against BB theme tokens; Tailwind utilities in
+- `app.css` is custom CSS against VesnALIA theme tokens; Tailwind utilities in
   `components/radar/*.tsx` compile in the plugin build. Keep new styles
   behind the `radar-` prefix.

@@ -1,4 +1,4 @@
-// bb-plugin-retitle — frontend entry.
+// alia-plugin-retitle — frontend entry.
 //
 // Two surfaces start a rename: the "Retitle" command (quick palette and ⌘⌥R),
 // and a button in the thread header. Command callbacks run outside React, so
@@ -10,7 +10,7 @@ import {
   experimental_Icon as Icon,
   useRpc,
   type PluginThreadHeaderActionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 
 type RetitleRpc = ReturnType<typeof useRpc<typeof rpcContract>>;

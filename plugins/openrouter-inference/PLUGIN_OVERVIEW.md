@@ -1,6 +1,6 @@
 ## Titles, commit messages, and voice input from OpenRouter models
 
-OpenRouter Inference lets BB generate thread titles and commit messages, and transcribe voice input, with models you pick on OpenRouter, billed to your own API key.
+OpenRouter Inference lets VesnALIA generate thread titles and commit messages, and transcribe voice input, with models you pick on OpenRouter, billed to your own API key.
 
 ## Pick a model
 
@@ -12,8 +12,8 @@ Under **Voice transcription**, pick one of OpenRouter's speech-to-text models, s
 
 ## Turn it on
 
-Click **Use for titles & commit messages**, **Use for voice transcription**, or both. BB then routes that work to this plugin. If you pick a different model later, BB uses it right away.
+Click **Use for titles & commit messages**, **Use for voice transcription**, or both. VesnALIA then routes that work to this plugin. If you pick a different model later, VesnALIA uses it right away.
 
 ## Requirements
 
-Requires BB 0.42 or later, Plugin SDK 0.4.56 or later, and an [OpenRouter API key](https://openrouter.ai/keys). Prompts for titles and commit messages, including thread text and diffs, go to OpenRouter and the provider that serves the selected model. So do voice recordings and up to 1,000 characters of the text before the cursor, which the plugin sends as context to OpenAI and Groq transcription models.
+Requires VesnALIA 0.42 or later, Plugin SDK 0.4.56 or later, and an [OpenRouter API key](https://openrouter.ai/keys). Prompts for titles and commit messages, including thread text and diffs, go to OpenRouter and the provider that serves the selected model. So do voice recordings and up to 1,000 characters of the text before the cursor, which the plugin sends as context to OpenAI and Groq transcription models.

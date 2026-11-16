@@ -5,7 +5,7 @@ import { chromium } from "playwright";
 
 export const home = process.env.HOME;
 export const base = process.env.LIVE_BASE ?? "http://127.0.0.1:7801";
-export const boxesUrl = `${base}/plugins/bb-box/desktop`;
+export const boxesUrl = `${base}/plugins/alia-box/desktop`;
 export const shots = join(home, "live-results", "shots");
 export const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const report = join(home, "live-results", "unit-6.md");
@@ -16,16 +16,16 @@ export function line(text) {
   appendFileSync(report, `${text}\n`);
 }
 
-export function bb(args) {
+export function alia(args) {
   return execFileSync(join(home, "bbc"), args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
 }
 
 export function inBox(box, command) {
-  return bb(["box", "run", box, "--machine", command]).trim();
+  return alia(["box", "run", box, "--machine", command]).trim();
 }
 
 export async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;

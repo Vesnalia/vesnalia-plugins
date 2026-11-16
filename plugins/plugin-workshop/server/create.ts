@@ -1,6 +1,6 @@
 // New work: «New plugin» (scaffold → rename → git → project → task → first stage) and «Rework» (project → task → first stage).
 // The work is written first, with `created = 0`; every step is an intent (`beginOp`, key `${workId}:create:<step>`) → action → `finishOp`.
-// An intent that was already pending (the previous pass failed or bb restarted) first looks for what was done and only then repeats the action.
+// An intent that was already pending (the previous pass failed or VesnALIA restarted) first looks for what was done and only then repeats the action.
 // While `created = 0`, the work is driven by `Creation`, not by the engine's reconcile. The way out of creation is `cancel`.
 //
 // A refusal found BEFORE the action (a foreign folder in the plugin's place, a damaged scaffold) closes the intent as `failed`: the work stays in `error`,
@@ -20,12 +20,12 @@ export { SCAFFOLD_FILES };
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-/** Names bb keeps for its own commands and rejects as a plugin id (checked against bb 0.46.0). */
+/** Names VesnALIA keeps for its own commands and rejects as a plugin id (checked against VesnALIA 0.46.0). */
 const RESERVED_IDS: ReadonlySet<string> = new Set([
   "browser", "diagnostics", "environment", "file", "guide", "help", "machine", "marketplace", "plugin", "project", "prompt-history",
   "provider", "server", "settings", "skill", "status", "terminal", "theme", "thread", "updates", "voice",
 ]);
-const FOLDER_PREFIX = "bb-plugin-";
+const FOLDER_PREFIX = "alia-plugin-";
 
 /** Form field limits — as in the panel contract. */
 const NAME_MAX = 80;
@@ -35,7 +35,7 @@ const ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const validId = (id: string) => id.length <= ID_MAX && ID_RE.test(id);
 
 /**
- * What is wrong with the «New plugin» form; empty — all fine. `taken` — ids of installed plugins, `bb-plugin-*` folders, live board rows and the Workshop itself;
+ * What is wrong with the «New plugin» form; empty — all fine. `taken` — ids of installed plugins, `alia-plugin-*` folders, live board rows and the Workshop itself;
  * `retired` — ids of gone plugins that left history behind (rolled-out commit, attempt, past work), with their names.
  */
 export function validateNewPlugin(input: { name: string; id: string; request: string }, taken: Set<string>, retired: ReadonlyMap<string, string> = new Map()): string[] {
@@ -47,7 +47,7 @@ export function validateNewPlugin(input: { name: string; id: string; request: st
   if (!id) out.push("an id is required");
   else if (!validId(id)) out.push("id — lowercase Latin letters, digits and hyphens, up to 40 characters");
   else if (id.startsWith(FOLDER_PREFIX)) out.push(`id must not start with ${FOLDER_PREFIX}`);
-  else if (RESERVED_IDS.has(id)) out.push(`id ${id} is taken by a bb command — choose another one`);
+  else if (RESERVED_IDS.has(id)) out.push(`id ${id} is taken by a VesnALIA command — choose another one`);
   else if (taken.has(id)) out.push(`id ${id} is already taken`);
   else if (retired.has(id)) out.push(retiredText(id, retired.get(id)!));
   out.push(...requestProblems(input.request));
@@ -66,7 +66,7 @@ function requestProblems(request: string): string[] {
 /** Work marker in the tracker task description: the task is found by it if the `create` response is lost. */
 export const taskMarker = (workId: string) => `[workshop:${workId}]`;
 
-/** The work's temporary scaffold folder: in it `bb plugin new <id>` creates the nested `bb-plugin-<id>/`. */
+/** The work's temporary scaffold folder: in it `alia plugin new <id>` creates the nested `alia-plugin-<id>/`. */
 export const tmpDirOf = (workId: string) => `${PLUGINS_ROOT}/.workshop-new/${workId}`;
 
 /** What `Creation` takes from the engine: entry into the first stage and reconcile (it creates the stage thread). */
@@ -94,7 +94,7 @@ class NotYet extends Error {
 }
 
 /**
- * The scaffold (`bb plugin new` under the build lock, with `npm install`) is heavy: after a failure it is retried no sooner than
+ * The scaffold (`alia plugin new` under the build lock, with `npm install`) is heavy: after a failure it is retried no sooner than
  * `SCAFFOLD_RETRY_MS` later, after `SCAFFOLD_MAX_FAILURES` failures — a refusal, the owner decides. The counter lives in the payload of the scaffold intent:
  * it survives a restart.
  */
@@ -151,7 +151,7 @@ export class Creation {
 
   /** The tracker project for work tasks must be selected in the settings: the Workshop has no default of its own. */
   private needTasksProject(): void {
-    if (!this.settings().tasksProject) throw new Error("no tracker project for work tasks is selected in the plugin settings (tasksProject) — project ids: `bb tasks project list`");
+    if (!this.settings().tasksProject) throw new Error("no tracker project for work tasks is selected in the plugin settings (tasksProject) — project ids: `alia tasks project list`");
   }
 
   /** New plugin: writes the plugin and the work (`created = 0`) and drives the steps. An error after the work is written carries `workId`. */
@@ -180,7 +180,7 @@ export class Creation {
     return this.drive(workId);
   }
 
-  /** Model choice: checked against bb's model list; if the list did not come, only what can be seen without it is checked. */
+  /** Model choice: checked against VesnALIA's model list; if the list did not come, only what can be seen without it is checked. */
   private async modelsCheck(models: WorkModels | undefined): Promise<{ problems: string[]; models: WorkModels | null }> {
     if (!models) return { problems: [], models: null };
     const catalog = await this.ports.modelCatalog().then((providers) => ({ providers }), () => null);
@@ -222,7 +222,7 @@ export class Creation {
 
   /**
    * Cancel a work whose creation is not finished: remove the temporary scaffold folder, close the tracker task (`canceled`, with a comment),
-   * close the work. The plugin row stays; if there is no plugin folder — «gone: creation canceled». The plugin folder, the bb project and anything
+   * close the work. The plugin row stays; if there is no plugin folder — «gone: creation canceled». The plugin folder, the VesnALIA project and anything
    * foreign are not touched. The cancel intent is written at once — a running pass stops after its current step, reconcile completes an interrupted cancel.
    */
   async cancel(workId: string, reason: string): Promise<void> {
@@ -360,7 +360,7 @@ export class Creation {
     }
   }
 
-  /** The scaffold is complete: the nested folder has everything `bb plugin new` puts there (an interrupted `npm install` lacks `node_modules`). */
+  /** The scaffold is complete: the nested folder has everything `alia plugin new` puts there (an interrupted `npm install` lacks `node_modules`). */
   private async complete(nested: string): Promise<boolean> {
     const names = await this.ports.fs.list(nested);
     return SCAFFOLD_FILES.every((f) => names.includes(f));
@@ -369,7 +369,7 @@ export class Creation {
   private async scaffold(w: WorkRow): Promise<void> {
     const dir = pluginDir(w.plugin_id);
     const tmp = tmpDirOf(w.id);
-    const nested = `${tmp}/bb-plugin-${w.plugin_id}`;
+    const nested = `${tmp}/alia-plugin-${w.plugin_id}`;
     const key = `${w.id}:create:scaffold`;
     const op = this.store.op(key);
     if (op?.status === "pending") {
@@ -394,10 +394,10 @@ export class Creation {
         if (triesOf(this.store.op(key)?.payload).failures >= SCAFFOLD_MAX_FAILURES) throw new Refusal(SCAFFOLD_GAVE_UP);
         try {
           await this.ports.fs.scaffold(w.plugin_id, tmp);
-          // `bb plugin new` reports success even when `npm install` failed: completeness is checked here, an incomplete scaffold is removed — the next pass starts over.
+          // `alia plugin new` reports success even when `npm install` failed: completeness is checked here, an incomplete scaffold is removed — the next pass starts over.
           if (!(await this.complete(nested))) {
             await this.ports.fs.remove(tmp);
-            throw new Error(`scaffold incomplete: bb plugin new finished, but ${nested} is missing files (npm install may have failed); the temporary folder was removed, the scaffold will be made again`);
+            throw new Error(`scaffold incomplete: VesnALIA plugin new finished, but ${nested} is missing files (npm install may have failed); the temporary folder was removed, the scaffold will be made again`);
           }
         } catch (e) {
           const failures = triesOf(this.store.op(key)?.payload).failures + 1;
@@ -415,7 +415,7 @@ export class Creation {
   private rename(w: WorkRow): Promise<void> {
     const dir = pluginDir(w.plugin_id);
     const tmp = tmpDirOf(w.id);
-    const nested = `${tmp}/bb-plugin-${w.plugin_id}`;
+    const nested = `${tmp}/alia-plugin-${w.plugin_id}`;
     return this.step(w, "rename", {
       title: "scaffold rename",
       search: "pending",
@@ -443,7 +443,7 @@ export class Creation {
       title: "git",
       search: "always",
       find: async () => (await this.ports.git.facts(dir)).head,
-      act: () => this.ports.git.initCommit(dir, `chore: scaffold plugin ${w.plugin_id} (bb plugin new)`),
+      act: () => this.ports.git.initCommit(dir, `chore: scaffold plugin ${w.plugin_id} (VesnALIA plugin new)`),
     });
   }
 
@@ -455,7 +455,7 @@ export class Creation {
       search: "always",
       find: async () => {
         const found = await this.ports.projects.findByPath(w.host_id, dir);
-        if (found.length > 1) throw new Error(`several bb projects point to folder ${dir}: ${found.join(", ")} — keep one`);
+        if (found.length > 1) throw new Error(`several VesnALIA projects point to folder ${dir}: ${found.join(", ")} — keep one`);
         return found[0] ?? null;
       },
       act: () => this.ports.projects.create({ name: `Plugin · ${name}`, dir, hostId: w.host_id }),

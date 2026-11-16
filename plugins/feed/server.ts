@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { BbPluginApi, PluginThreadEventName } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginThreadEventName } from "@vesnalia/plugin-sdk";
 import {
   boundedErrorText,
   isMissingThreadError,
@@ -35,8 +35,8 @@ function managerInstructions(settings: FeedSettings): string {
   ].join("\n");
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     managerThreadId: {
       type: "string",
       label: "Manager thread ID",
@@ -73,46 +73,46 @@ export default async function plugin(bb: BbPluginApi) {
   // The SDK requires synchronous agent configuration, so keep this cache current through onChange.
   let currentSettings: FeedSettings = await settings.get();
 
-  const database = bb.storage.database();
+  const database = alia.storage.database();
   const retiredSummarizerId = readRetiredSummarizerId(database);
-  bb.storage.migrate(database, SCHEMA_STATEMENTS);
+  alia.storage.migrate(database, SCHEMA_STATEMENTS);
   const store = new FeedStore(database);
   const summaries = new Summaries(
-    bb,
+    alia,
     store,
     () => currentSettings.summarizerModel?.trim() || DEFAULT_SUMMARIZER_MODEL,
     () => currentSettings.summaryInstructions,
   );
-  const service = new FeedService(bb, store, () => settings.get(), (threadId, seq) =>
+  const service = new FeedService(alia, store, () => settings.get(), (threadId, seq) =>
     summaries.start(threadId, seq),
   );
 
   const initialProblem = configurationProblem(currentSettings);
-  if (initialProblem !== null) bb.status.needsConfiguration(initialProblem);
+  if (initialProblem !== null) alia.status.needsConfiguration(initialProblem);
 
   async function inspectManager(next: FeedSettings): Promise<void> {
     const managerThreadId = next.managerThreadId?.trim();
     if (!managerThreadId) return;
     try {
-      const thread = await bb.sdk.threads.get({ threadId: managerThreadId });
+      const thread = await alia.sdk.threads.get({ threadId: managerThreadId });
       if (thread.archivedAt === null && thread.deletedAt === null) return;
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Configured manager ${managerThreadId} lookup failed: ${boundedErrorText(error)}`,
       );
       if (!isMissingThreadError(error)) return;
     }
-    bb.log.warn(`${STALE_MANAGER_MESSAGE} Manager: ${managerThreadId}.`);
-    bb.status.needsConfiguration(STALE_MANAGER_MESSAGE);
+    alia.log.warn(`${STALE_MANAGER_MESSAGE} Manager: ${managerThreadId}.`);
+    alia.status.needsConfiguration(STALE_MANAGER_MESSAGE);
   }
 
-  // Plugin promises that reject unobserved crash the BB server, and a reloaded plugin's stale handle throws on every call.
+  // Plugin promises that reject unobserved crash the VesnALIA server, and a reloaded plugin's stale handle throws on every call.
   function guarded(work: () => unknown): Promise<void> {
     return (async () => {
       await work();
     })().catch((error: unknown) => {
       try {
-        bb.log.warn(`Feed background step failed: ${boundedErrorText(error)}`);
+        alia.log.warn(`Feed background step failed: ${boundedErrorText(error)}`);
       } catch {
         // A stale handle cannot log either.
       }
@@ -128,7 +128,7 @@ export default async function plugin(bb: BbPluginApi) {
     // The summarizer thread of an earlier version; its ID is gone after the migrations.
     inBackground(async () => {
       try {
-        await bb.sdk.threads.archive({ threadId: retiredSummarizerId });
+        await alia.sdk.threads.archive({ threadId: retiredSummarizerId });
       } catch (error) {
         if (!isMissingThreadError(error)) throw error;
       }
@@ -138,13 +138,13 @@ export default async function plugin(bb: BbPluginApi) {
   settings.onChange((next) => {
     currentSettings = next;
     inBackground(() => {
-      bb.realtime.publish("feed-invalidated", {
+      alia.realtime.publish("feed-invalidated", {
         threadId: next.managerThreadId ?? "",
         reason: "settings-changed",
       });
       inBackground(() => inspectManager(next));
       const problem = configurationProblem(next);
-      if (problem !== null) bb.status.needsConfiguration(problem);
+      if (problem !== null) alia.status.needsConfiguration(problem);
     });
   });
 
@@ -159,14 +159,14 @@ export default async function plugin(bb: BbPluginApi) {
     clearInProgress = true;
     try {
       const managerId = await service.authorize(surfaceThreadId);
-      const manager = await bb.sdk.threads.get({ threadId: managerId });
-      if (!(await isQuiet(bb.sdk, manager))) {
+      const manager = await alia.sdk.threads.get({ threadId: managerId });
+      if (!(await isQuiet(alia.sdk, manager))) {
         throw new Error(
           "The manager must be idle with no queued work or pending interaction to clear context.",
         );
       }
-      await bb.sdk.threads.clearContext({ threadId: managerId });
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.clearContext({ threadId: managerId });
+      await alia.sdk.threads.send({
         threadId: managerId,
         mode: "auto",
         input: [{
@@ -174,7 +174,7 @@ export default async function plugin(bb: BbPluginApi) {
           mentions: [],
           text: [
             "[feed] Your context was cleared. Load the feed skill and follow it. This thread is already bound, so skip the Bind step.",
-            `Run \`bb feed show\`, then run \`bb thread history ${managerId} --limit 5\` to read the user's 5 most recent messages. Reply in one line that you are ready.`,
+            `Run \`alia feed show\`, then run \`alia thread history ${managerId} --limit 5\` to read the user's 5 most recent messages. Reply in one line that you are ready.`,
           ].join("\n\n"),
         }],
       });
@@ -184,13 +184,13 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "feed",
     summary: "Read the Feed",
     commands: [{
       name: "show",
       summary: "Show Feed rows",
-      usage: "bb feed show [--json]",
+      usage: "alia feed show [--json]",
     }],
     async run(argv, ctx) {
       if (
@@ -200,7 +200,7 @@ export default async function plugin(bb: BbPluginApi) {
       ) {
         return {
           exitCode: 2,
-          stderr: "Usage: bb feed show [--json]\n",
+          stderr: "Usage: VesnALIA feed show [--json]\n",
         };
       }
       try {
@@ -245,7 +245,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     clearManager: ({ surfaceThreadId }) => clearManager(surfaceThreadId),
     canOpen: ({ surfaceThreadId }) => service.canOpen(surfaceThreadId),
     queueSnapshot: ({ surfaceThreadId }) => service.snapshot(surfaceThreadId),
@@ -256,7 +256,7 @@ export default async function plugin(bb: BbPluginApi) {
     sendReply: (input) => service.sendReply(input),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "feed_mark",
     description:
       "Mark the latest result of a managed child of this manager thread as needs_response.",
@@ -281,7 +281,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     if (context.thread.id !== currentSettings.managerThreadId?.trim()) {
       return { tools: [], skills: ["feed"] };
     }
@@ -309,7 +309,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function unpauseOnMessage(threadId: string): Promise<void> {
     const pausedAt = store.getPausedAt(threadId);
     if (pausedAt === null) return;
-    const [request] = await bb.sdk.threads.events.list({
+    const [request] = await alia.sdk.threads.events.list({
       threadId,
       types: ["client/turn/requested"],
       order: "desc",
@@ -327,9 +327,9 @@ export default async function plugin(bb: BbPluginApi) {
     summaries.start(threadId, seq);
   }
 
-  bb.background.service("thread-change-listener", {
+  alia.background.service("thread-change-listener", {
     start: (signal) => guarded(async () => {
-      const unsubscribe = bb.sdk.subscribe({
+      const unsubscribe = alia.sdk.subscribe({
         event: "thread:changed",
         callback: (event) => {
           const threadId = event.id;
@@ -369,21 +369,21 @@ export default async function plugin(bb: BbPluginApi) {
       | "thread.deleted"
     >,
   ): void {
-    bb.events.on(event, ({ thread }) => guarded(async () => {
+    alia.events.on(event, ({ thread }) => guarded(async () => {
       const managerThreadId = configuredManagerId();
       if (
         thread.id === managerThreadId &&
         (thread.archivedAt !== null || thread.deletedAt !== null)
       ) {
         const message = `Configured manager ${thread.id} is archived or deleted.`;
-        bb.log.warn(message);
-        bb.status.needsConfiguration(message);
+        alia.log.warn(message);
+        alia.status.needsConfiguration(message);
       }
       try {
         if (event === "thread.idle") await onThreadIdle(thread.id);
         if (event === "thread.active") await unpauseOnMessage(thread.id);
       } catch (error) {
-        bb.log.warn(`Feed ${event} handling failed: ${boundedErrorText(error)}`);
+        alia.log.warn(`Feed ${event} handling failed: ${boundedErrorText(error)}`);
       }
       if (event === "thread.archived" || event === "thread.deleted") {
         // An archived or deleted thread is no longer a feed thread, so check its last shape.
@@ -406,13 +406,13 @@ export default async function plugin(bb: BbPluginApi) {
   registerThreadEvent("thread.failed");
   registerThreadEvent("thread.archived");
   registerThreadEvent("thread.deleted");
-  bb.events.on("message.queued", ({ entry }) =>
+  alia.events.on("message.queued", ({ entry }) =>
     guarded(() => publishOwningRow(entry.threadId, "message.queued")),
   );
-  bb.events.on("message.dispatched", ({ entry }) =>
+  alia.events.on("message.dispatched", ({ entry }) =>
     guarded(() => publishOwningRow(entry.threadId, "message.dispatched")),
   );
-  bb.events.on("turn.failed", ({ threadId }) =>
+  alia.events.on("turn.failed", ({ threadId }) =>
     guarded(() => publishOwningRow(threadId, "turn.failed")),
   );
 }

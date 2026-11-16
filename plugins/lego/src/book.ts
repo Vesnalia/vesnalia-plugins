@@ -191,7 +191,7 @@ export interface BookState {
   events: BookEvent[];
   error: string | null;
   notified: boolean;
-  /** A `bb lego demo` book driven by simulated workers. */
+  /** A `alia lego demo` book driven by simulated workers. */
   demo?: boolean;
   /** How a demo book is staffed when someone presses Play. */
   demoSetup?: { builders: number; choice: AgentChoice };

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from 'react';
-import { definePluginApp, useRpc } from '@get-bb/plugin-sdk/app';
+import { definePluginApp, useRpc } from '@vesnalia/plugin-sdk/app';
 import type { rpcContract, GraphProject, GraphTree, GraphThread, GraphInspection } from './contract';
 import './graph.css';
 
@@ -27,7 +27,7 @@ export function makeLayout(projects: GraphProject[], unplacedThreads: GraphThrea
   for (const project of projects) {
     const key = projectKey(project), top = y;
     const repoId = `repo:${key}`;
-    nodes.push({ id: repoId, kind: 'repo', title: project.name, subtitle: `${project.trees.length} worktrees · ${project.threads.length} BB threads`, detail: project.root, x: X.repo, y: y + 64, width: WIDTH.repo, projectId: key, meta: project.error ?? undefined });
+    nodes.push({ id: repoId, kind: 'repo', title: project.name, subtitle: `${project.trees.length} worktrees · ${project.threads.length} VesnALIA threads`, detail: project.root, x: X.repo, y: y + 64, width: WIDTH.repo, projectId: key, meta: project.error ?? undefined });
     let cursor = y + 160;
     const branches = new Map<string, GraphTree[]>();
     for (const tree of project.trees) { const branch = tree.branch ?? '(detached HEAD)'; branches.set(branch, [...(branches.get(branch) ?? []), tree]); }
@@ -41,7 +41,7 @@ export function makeLayout(projects: GraphProject[], unplacedThreads: GraphThrea
         const span = Math.max(84, threads.length * 78);
         const treeY = cursor + (span - NODE_H) / 2;
         const treeId = `tree:${key}:${tree.path}`;
-        nodes.push({ id: treeId, kind: 'tree', title: shortPath(tree.path), subtitle: `${tree.kind} · ${tree.sha.slice(0, 9)}${threads.length ? ` · ${threads.length} BB` : ''}`, detail: tree.path, x: X.tree, y: treeY, width: WIDTH.tree, projectId: key, meta: tree.note, flag: tree.kind === 'prunable' ? 'prunable' : tree.kind === 'detached' ? 'detached' : undefined, inspect: { root: project.root, hostId: project.hostId, path: tree.path, branch: tree.branch ?? undefined } });
+        nodes.push({ id: treeId, kind: 'tree', title: shortPath(tree.path), subtitle: `${tree.kind} · ${tree.sha.slice(0, 9)}${threads.length ? ` · ${threads.length} ALIA` : ''}`, detail: tree.path, x: X.tree, y: treeY, width: WIDTH.tree, projectId: key, meta: tree.note, flag: tree.kind === 'prunable' ? 'prunable' : tree.kind === 'detached' ? 'detached' : undefined, inspect: { root: project.root, hostId: project.hostId, path: tree.path, branch: tree.branch ?? undefined } });
         edges.push({ from: branchId, to: treeId, kind: 'git' });
         for (const [index, thread] of threads.entries()) {
           const threadId = `thread:${key}:${thread.id}`;
@@ -60,7 +60,7 @@ export function makeLayout(projects: GraphProject[], unplacedThreads: GraphThrea
   }
   if (unplacedThreads.length) {
     const top = y, key = 'no-git-checkout', groupId = `workspace:${key}`;
-    nodes.push({ id: groupId, kind: 'workspace', title: 'BB threads without Git checkout', subtitle: `${unplacedThreads.length} threads · not attached to repository worktrees`, detail: 'Personal workspaces and unmatched BB environments. This grouping is not a Git relationship.', x: X.repo, y: top + 64, width: WIDTH.repo, projectId: key });
+    nodes.push({ id: groupId, kind: 'workspace', title: 'VesnALIA threads without Git checkout', subtitle: `${unplacedThreads.length} threads · not attached to repository worktrees`, detail: 'Personal workspaces and unmatched VesnALIA environments. This grouping is not a Git relationship.', x: X.repo, y: top + 64, width: WIDTH.repo, projectId: key });
     let cursor = top + 160;
     for (const thread of [...unplacedThreads].sort((a,b) => Number(!!a.archivedAt) - Number(!!b.archivedAt) || Number(b.status === 'active') - Number(a.status === 'active') || a.title.localeCompare(b.title))) {
       const id = `thread:unplaced:${thread.id}`;
@@ -69,7 +69,7 @@ export function makeLayout(projects: GraphProject[], unplacedThreads: GraphThrea
       cursor += 78;
     }
     y = cursor + 76;
-    sections.push({ id: key, title: 'BB threads / no Git checkout', y: top, height: y - top, trees: 0 });
+    sections.push({ id: key, title: 'VesnALIA threads / no Git checkout', y: top, height: y - top, trees: 0 });
   }
   return { nodes, edges, sections, width: 1400, height: y + 30 };
 }
@@ -135,22 +135,22 @@ function GraphPage() {
   const onWheel = (event: ReactWheelEvent<HTMLDivElement>) => { event.preventDefault(); if (event.ctrlKey || event.metaKey) zoomAt(Math.exp(-event.deltaY * .006), event.clientX, event.clientY); else setView(v => ({ ...v, x: v.x - event.deltaX, y: v.y - event.deltaY })); };
   const counts = data ? { projects: data.projects.length, trees: data.projects.reduce((n,p)=>n+p.trees.length,0), branches: data.projects.reduce((n,p)=>n+p.branches.length,0), threads: data.projects.reduce((n,p)=>n+p.threads.length,0) + data.unplacedThreads.length, review: data.projects.reduce((n,p)=>n+p.branches.length+p.trees.filter(t=>t.kind==='detached'||t.kind==='prunable').length,0) } : null;
   return <div className="bgx-page">
-    <header className="bgx-toolbar"><div className="bgx-heading"><span className="bgx-logo">⑂</span><div><strong>Branch Graph</strong><small>Repository → branch → worktree → BB thread</small></div></div><div className="bgx-search"><span>⌕</span><input aria-label="Search graph" placeholder="Highlight branch, worktree, thread…" value={query} onChange={event=>setQuery(event.target.value)} />{query && <button aria-label="Clear search" onClick={()=>setQuery('')}>×</button>}</div><button className="bgx-action" onClick={refresh} disabled={busy}>{busy ? 'Scanning…' : '↻ Refresh'}</button></header>
+    <header className="bgx-toolbar"><div className="bgx-heading"><span className="bgx-logo">⑂</span><div><strong>Branch Graph</strong><small>Repository → branch → worktree → VesnALIA thread</small></div></div><div className="bgx-search"><span>⌕</span><input aria-label="Search graph" placeholder="Highlight branch, worktree, thread…" value={query} onChange={event=>setQuery(event.target.value)} />{query && <button aria-label="Clear search" onClick={()=>setQuery('')}>×</button>}</div><button className="bgx-action" onClick={refresh} disabled={busy}>{busy ? 'Scanning…' : '↻ Refresh'}</button></header>
     <nav className="bgx-jumps" aria-label="Jump to graph section"><span>SECTIONS</span>{layout.sections.map(section=><button key={section.id} onClick={()=>focus(section)}>{section.title}<small>{section.id==='no-git-checkout' ? data?.unplacedThreads.length : section.trees}</small></button>)}<span className="bgx-jumps-note">All nodes remain on the canvas</span></nav>
     <div className="bgx-focus" role="group" aria-label="Highlight graph nodes"><span>FOCUS</span>{([['all','All'],['threads','Threads'],['review','Review signals'],['branch-only','Branch-only']] as const).map(([value,label])=><button key={value} aria-pressed={mode===value} onClick={()=>setMode(value)}>{label}{value==='review' && counts ? ` · ${counts.review}` : ''}</button>)}<small>Focus dims nodes; it never removes them.</small></div>
     {error && <div role="alert" className="bgx-error">{error}</div>}
     <div className="bgx-stage" ref={stageRef} onWheel={onWheel} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={()=>{ drag.current = null; }} onPointerCancel={()=>{ drag.current = null; }}>
-      {!data && !error && <div className="bgx-loading">Scanning registered repositories and BB threads…</div>}
+      {!data && !error && <div className="bgx-loading">Scanning registered repositories and VesnALIA threads…</div>}
       {data && <div className="bgx-world" style={{ width: layout.width, height: layout.height, transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})` }}>
         {layout.sections.map(section=><div className="bgx-section" key={section.id} style={{ top: section.y, height: section.height }}><div className="bgx-section-label">{section.title.toUpperCase()} <span>{section.id==='no-git-checkout' ? 'NO GIT ASSOCIATION' : `${section.trees} ${section.trees === 1 ? 'WORKTREE' : 'WORKTREES'}`}</span></div></div>)}
         <svg className="bgx-lines" width={layout.width} height={layout.height} aria-hidden="true">{layout.edges.map(edge=>{ const a = byId.get(edge.from), b = byId.get(edge.to); if (!a || !b) return null; const x1=a.x+a.width, y1=a.y+NODE_H/2, x2=b.x, y2=b.y+NODE_H/2, bend=Math.max(70,(x2-x1)*.55); const dim=highlighted && (!highlighted.has(edge.from)||!highlighted.has(edge.to)); return <path key={`${edge.from}>${edge.to}`} className={`bgx-edge bgx-edge-${edge.kind}${dim?' bgx-dim':''}`} d={`M ${x1} ${y1} C ${x1+bend} ${y1}, ${x2-bend} ${y2}, ${x2} ${y2}`} />; })}</svg>
         {layout.nodes.map(node=><button key={node.id} type="button" title={`${node.title}\n${node.detail}`} className={`bgx-node bgx-node-${node.kind}${node.flag?` bgx-flag-${node.flag}`:''}${selectedId===node.id?' bgx-selected':''}${highlighted && !highlighted.has(node.id)?' bgx-dim':''}`} style={{ left: node.x, top: node.y, width: node.width }} onClick={()=>setSelectedId(node.id)}><span className="bgx-node-icon">{node.kind==='repo'?'⌂':node.kind==='workspace'?'◫':node.kind==='branch'?'⑂':node.kind==='tree'?'▣':'◉'}</span><span className="bgx-node-text"><strong>{node.title}</strong><small>{node.subtitle}</small></span>{node.flag && <span className="bgx-node-flag" title={node.flag}>{node.flag==='branch-only'?'○':node.flag==='prunable'?'!':node.flag==='detached'?'◇':node.flag==='active'?'●':'◷'}</span>}<span className="bgx-port" /></button>)}
       </div>}
       {selected && <aside className="bgx-inspector"><button className="bgx-close" aria-label="Close details" onClick={()=>setSelectedId(null)}>×</button><span className={`bgx-inspector-kind bgx-${selected.kind}`}>{selected.kind.toUpperCase()}{selected.flag ? ` · ${selected.flag.toUpperCase()}` : ''}</span><h2>{selected.title}</h2><p>{selected.subtitle}</p><div className="bgx-inspector-detail">{selected.detail}</div>{selected.meta && <small>{selected.meta}</small>}{selected.inspect && <div className="bgx-evidence"><h3>On-demand Git evidence</h3>{evidence?.id!==selected.id || evidence.loading ? <p>Inspecting checkout, history and PR…</p> : evidence.error ? <p>{evidence.error}</p> : evidence.value ? <>{evidence.value.error && <p>{evidence.value.error}</p>}{!evidence.value.error && <><dl><dt>Working tree</dt><dd>{evidence.value.dirty===null?'not applicable':evidence.value.dirty?'Changed (includes untracked)':'Clean'}</dd><dt>Upstream</dt><dd>{evidence.value.upstream ?? 'None'}</dd><dt>Ahead / behind</dt><dd>{evidence.value.ahead===null?'Unavailable':`${evidence.value.ahead} / ${evidence.value.behind}`}</dd><dt>Last commit</dt><dd>{evidence.value.lastCommitAt ? new Date(evidence.value.lastCommitAt).toLocaleString() : 'Unavailable'}</dd><dt>Locally merged into main</dt><dd>{evidence.value.mergedIntoMain===null?'Unavailable':evidence.value.mergedIntoMain?'Yes':'No'}</dd><dt>Pull request</dt><dd>{evidence.value.pr ? <a href={evidence.value.pr.url} target="_blank" rel="noopener noreferrer">{evidence.value.pr.state}: {evidence.value.pr.title}</a> : evidence.value.prStatus==='none'?'None found': 'Unavailable'}</dd></dl>{evidence.value.lastCommitSubject && <small>“{evidence.value.lastCommitSubject}”</small>}</>}</> : null}<small>Read-only, inspected on selection. “No PR found” is not proof of no remote work.</small></div>}</aside>}
-      <div className="bgx-legend"><div><i className="bgx-swatch bgx-repo" /> Repository <i className="bgx-swatch bgx-branch" /> Branch <i className="bgx-swatch bgx-tree" /> Worktree <i className="bgx-swatch bgx-thread" /> BB thread <i className="bgx-swatch bgx-workspace" /> No Git checkout</div><small>Solid lines: checkout / thread association. Dashed lines: non-Git grouping. Not Git ancestry. Drag to pan · scroll to pan · ⌘/Ctrl+scroll to zoom.</small></div>
+      <div className="bgx-legend"><div><i className="bgx-swatch bgx-repo" /> Repository <i className="bgx-swatch bgx-branch" /> Branch <i className="bgx-swatch bgx-tree" /> Worktree <i className="bgx-swatch bgx-thread" /> VesnALIA thread <i className="bgx-swatch bgx-workspace" /> No Git checkout</div><small>Solid lines: checkout / thread association. Dashed lines: non-Git grouping. Not Git ancestry. Drag to pan · scroll to pan · ⌘/Ctrl+scroll to zoom.</small></div>
       <div className="bgx-zoom"><button onClick={()=>zoomAt(1.25)} aria-label="Zoom in">+</button><span>{Math.round(view.scale*100)}%</span><button onClick={()=>zoomAt(.8)} aria-label="Zoom out">−</button><button onClick={fitAll} aria-label="Fit whole graph" title="Fit whole graph">◇</button></div>
     </div>
-    <div className="bgx-status">{counts ? `${counts.projects} repositories · ${counts.trees} worktrees · ${counts.branches} branch-only · ${counts.threads} BB threads (${data?.unplacedThreads.length} without Git checkout)` : 'Loading graph'}{highlighted && ` · ${highlighted.size} highlighted nodes`}<span>{data ? `Snapshot ${new Date(data.generatedAt).toLocaleString()} · Read only · Local branches only` : ''}</span></div>
+    <div className="bgx-status">{counts ? `${counts.projects} repositories · ${counts.trees} worktrees · ${counts.branches} branch-only · ${counts.threads} VesnALIA threads (${data?.unplacedThreads.length} without Git checkout)` : 'Loading graph'}{highlighted && ` · ${highlighted.size} highlighted nodes`}<span>{data ? `Snapshot ${new Date(data.generatedAt).toLocaleString()} · Read only · Local branches only` : ''}</span></div>
   </div>;
 }
 export default definePluginApp(app => { app.slots.navPanel({ id: 'branch-graph', title: 'Branch Graph', icon: 'GitBranch', path: 'graph', component: GraphPage }); });

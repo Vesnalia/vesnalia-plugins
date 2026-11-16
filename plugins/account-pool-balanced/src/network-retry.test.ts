@@ -1,10 +1,10 @@
-import { createFakePluginHost, makeMessageDispatchHookContext, makeThreadResponse, makeTurnFailedEvent } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost, makeMessageDispatchHookContext, makeThreadResponse, makeTurnFailedEvent } from '@vesnalia/plugin-sdk/testing';
 import { expect, it, vi } from 'vitest';
 import { registerNetworkRetry } from './network-retry.js';
 async function setup() {
  const retry=vi.fn(async(_input:unknown)=>({ok:true,delivery:'queued'}) as never);
  const fake=createFakePluginHost({pluginId:'account-pool-balanced',sdk:{threads:{get:async()=>makeThreadResponse({id:'thread-one',status:'error'}),queue:{list:async()=>[]},events:{list:async()=>[{threadId:'thread-one',type:'client/turn/requested',data:{requestId:'request-one'}}] as never},retry}}});
- const eligible=vi.fn(async()=>true);await registerNetworkRetry(fake.bb,eligible,()=>100_000,()=>0);
+ const eligible=vi.fn(async()=>true);await registerNetworkRetry(fake.alia,eligible,()=>100_000,()=>0);
  const fail=async(overrides:Parameters<typeof makeTurnFailedEvent>[0]={})=>fake.harness.behavior.emitThreadEvent('turn.failed',makeTurnFailedEvent({threadId:'thread-one',requestId:'request-one',attemptNumber:1,errorInfo:{category:'connection-failed',httpStatusCode:502,providerCode:'POOL_UPSTREAM_UNAVAILABLE'},...overrides}));
  return {fake,retry,eligible,fail};
 }
@@ -68,13 +68,13 @@ it('retains the failed-turn reference when the original input was never accepted
 });
 it('retains durable ownership across reload and does not schedule twice',async()=>{
  const {fake,retry,fail}=await setup();await fail();
- const reloaded=await fake.harness.lifecycle.reload(bb=>registerNetworkRetry(bb,async()=>true,()=>100_000,()=>0));
+ const reloaded=await fake.harness.lifecycle.reload(alia=>registerNetworkRetry(alia,async()=>true,()=>100_000,()=>0));
  await reloaded.harness.behavior.emitThreadEvent('turn.failed',makeTurnFailedEvent({threadId:'thread-one',requestId:'request-one',attemptNumber:1,errorInfo:{category:'connection-failed',httpStatusCode:502,providerCode:null}}));
  expect(retry).toHaveBeenCalledTimes(1);await reloaded.harness.lifecycle.dispose();
 });
 it('cancels an uncertain native retry after reload when the user has moved on',async()=>{
  const {fake,retry,fail}=await setup();retry.mockRejectedValue(Error('lost reply'));await fail();
- const reloaded=await fake.harness.lifecycle.reload(bb=>registerNetworkRetry(bb,async()=>true));
+ const reloaded=await fake.harness.lifecycle.reload(alia=>registerNetworkRetry(alia,async()=>true));
  reloaded.harness.sdk.stub('threads.get',async()=>makeThreadResponse({id:'thread-one',status:'idle'}));
  reloaded.harness.sdk.stub('threads.queue.list',async()=>[{id:'uncertain-retry',payload:{kind:'retry',retryOfTurnRequestId:'request-one',reason:'Temporary connection failure. Retry 1/3.'}},{id:'user-retry',payload:{kind:'retry',retryOfTurnRequestId:'request-one',reason:'Manual retry'}}] as never);
  const remove=vi.fn(async()=>({ok:true}) as never);reloaded.harness.sdk.stub('threads.queuedMessages.delete',remove);
@@ -83,7 +83,7 @@ it('cancels an uncertain native retry after reload when the user has moved on',a
 });
 it('removes an old retry on reload when newer user work also ended in error',async()=>{
  const {fake,retry,fail}=await setup();retry.mockRejectedValue(Error('lost reply'));await fail();
- const reloaded=await fake.harness.lifecycle.reload(bb=>registerNetworkRetry(bb,async()=>true));
+ const reloaded=await fake.harness.lifecycle.reload(alia=>registerNetworkRetry(alia,async()=>true));
  reloaded.harness.sdk.stub('threads.events.list',async()=>[{threadId:'thread-one',type:'client/turn/requested',data:{requestId:'new-request'}}] as never);
  reloaded.harness.sdk.stub('threads.queue.list',async()=>[{id:'owned',payload:{kind:'retry',retryOfTurnRequestId:'request-one',reason:'Temporary connection failure. Retry 1/3.'}},{id:'foreign',payload:{kind:'retry',retryOfTurnRequestId:'different-request',reason:'Manual'}}] as never);
  const remove=vi.fn(async()=>({ok:true}) as never);reloaded.harness.sdk.stub('threads.queuedMessages.delete',remove);
@@ -139,18 +139,18 @@ it('bounds a stalled dispatch history read and shares its slot until the underly
 it('refuses new scheduling at capacity without evicting queued ownership, and reclaims confirmed completed rows',async()=>{
  const fake=createFakePluginHost({pluginId:'account-pool-balanced'});
  const claims=Array.from({length:256},(_,i)=>({threadId:`old-${i}`,requestId:`request-${i}`,originalRequestId:`request-${i}`,attempt:1,queuedMessageId:`queue-${i}`}));
- await fake.bb.storage.kv.set('network-retry-claims-v1',claims);
+ await fake.alia.storage.kv.set('network-retry-claims-v1',claims);
  const retry=vi.fn(async()=>({ok:true,delivery:'queued',queuedMessageId:'fresh-queue'}) as never);
  fake.harness.sdk.stub('threads.retry',retry);fake.harness.sdk.stub('threads.get',async()=>makeThreadResponse({id:'fresh-thread',status:'error'}));
  fake.harness.sdk.stub('threads.events.list',async()=>[{threadId:'fresh-thread',type:'client/turn/requested',data:{requestId:'fresh-request'}}] as never);
  fake.harness.sdk.stub('threads.queue.list',async()=>[]);
- await registerNetworkRetry(fake.bb,async()=>true);
+ await registerNetworkRetry(fake.alia,async()=>true);
  const fail=()=>fake.harness.behavior.emitThreadEvent('turn.failed',makeTurnFailedEvent({threadId:'fresh-thread',requestId:'fresh-request',errorInfo:{category:'connection-failed',httpStatusCode:503,providerCode:null}}));
- await fail();expect(retry).not.toHaveBeenCalled();expect(await fake.bb.storage.kv.get('network-retry-claims-v1')).toEqual(claims);
+ await fail();expect(retry).not.toHaveBeenCalled();expect(await fake.alia.storage.kv.get('network-retry-claims-v1')).toEqual(claims);
  fake.harness.sdk.stub('threads.queue.list',async()=>[]);
  await fake.harness.behavior.emitThreadEvent('thread.active',{thread:makeThreadResponse({id:'old-0',status:'active'})});
  await fail();expect(retry).toHaveBeenCalledTimes(1);
- expect((await fake.bb.storage.kv.get('network-retry-claims-v1') as unknown[])).toHaveLength(256);await fake.harness.lifecycle.dispose();
+ expect((await fake.alia.storage.kv.get('network-retry-claims-v1') as unknown[])).toHaveLength(256);await fake.harness.lifecycle.dispose();
 });
 it('rejects an owned retry when the user bypasses routing or disables its usable accounts during the delay',async()=>{
  const {fake,fail,eligible}=await setup();await fail();eligible.mockResolvedValue(false);
@@ -164,7 +164,7 @@ it('rejects an owned retry when the provider changes before queue drain',async()
  await fake.harness.lifecycle.dispose();
 });
 it('holds recognizable automatic queue rows when their ownership journal is malformed without affecting manual retries',async()=>{
- const fake=createFakePluginHost({pluginId:'account-pool-balanced'});await fake.bb.storage.kv.set('network-retry-claims-v1',{invalid:true});await registerNetworkRetry(fake.bb,async()=>true);
+ const fake=createFakePluginHost({pluginId:'account-pool-balanced'});await fake.alia.storage.kv.set('network-retry-claims-v1',{invalid:true});await registerNetworkRetry(fake.alia,async()=>true);
  const hook=fake.harness.registrations.hooks['message.dispatch']!;
  const context=makeMessageDispatchHookContext({queuedMessage:{payload:{kind:'retry',retryOfTurnRequestId:'request-one',attempt:2,reason:'Temporary connection failure. Retry 1/3.'}}});
  expect(await hook(context)).toMatchObject({action:'wait'});

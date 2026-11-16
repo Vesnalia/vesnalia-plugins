@@ -3,9 +3,9 @@
  *
  * The charter is the port of FirstMate's operating contract — the part of that
  * distro that is behaviour rather than plumbing. Everything it did with tmux
- * panes, treehouse worktrees, a bash watcher and status files is done with bb's
- * own pieces: `bb firstmate-crew crew spawn` (`cli.ts`) starts a crewmate as a child
- * thread of the first mate in a new worktree, bb's message to a parent when a
+ * panes, treehouse worktrees, a bash watcher and status files is done with VesnALIA's
+ * own pieces: `alia firstmate-crew crew spawn` (`cli.ts`) starts a crewmate as a child
+ * thread of the first mate in a new worktree, VesnALIA's message to a parent when a
  * child's turn ends is the wake-up, and the crewmate's last line is its status.
  *
  * Its words are `templates/data/charter.md`, and the home keeps a copy the

@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 export type RowState = "failed" | "needs" | "running" | "unread" | "idle";
 export const STATE_ORDER: readonly RowState[] = ["failed", "needs", "running", "unread", "idle"];
@@ -17,7 +17,7 @@ export function rowState(thread: PluginSidebarThread): RowState {
       thread.runtimeStatus === "provisioning" || thread.runtimeStatus === "waiting-for-host" ||
       activity.workflows > 0 || activity.planMode > 0 || activity.goals > 0 ||
       ["runtime", "workflow", "goal", "plan-mode"].includes(thread.indicator)) return "running";
-  // bb's own order: an unread reply outranks background agents, background commands and waiting queued messages.
+  // VesnALIA's own order: an unread reply outranks background agents, background commands and waiting queued messages.
   if (thread.isUnread) return "unread";
   return hasBackgroundWork(thread) ? "running" : "idle";
 }

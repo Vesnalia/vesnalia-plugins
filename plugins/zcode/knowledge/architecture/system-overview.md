@@ -1,7 +1,7 @@
 ---
 type: architecture
 title: System overview
-description: Entry points, the per-thread supervised ZCode process, and the responsibility of each source module of the bb-zcode plugin.
+description: Entry points, the per-thread supervised ZCode process, and the responsibility of each source module of the alia-zcode plugin.
 status: stable
 tags: [architecture, bridge, plugin]
 sources:
@@ -25,16 +25,16 @@ verified:
 
 # System overview
 
-The plugin is a protocol adapter with two process boundaries: bb on one side
+The plugin is a protocol adapter with two process boundaries: VesnALIA on one side
 (through the published plugin SDK) and a supervised ZCode CLI child process on
 the other. The user-facing picture, including the protocol diagram, is in the
 [README](../../README.md#how-it-works); this document maps the code.
 
 ## Entry points
 
-`package.json` declares two entries under its `bb` field:
+`package.json` declares two entries under its `alia` field:
 
-- `server` → [server.ts](../../server.ts) runs inside bb. It defines the eight
+- `server` → [server.ts](../../server.ts) runs inside VesnALIA. It defines the eight
   plugin settings (with zod-backed `experimental_schema` validation), registers
   the `zcode` provider with its capabilities and model fallback, and
   re-registers whenever settings change. It never launches a child process.
@@ -45,41 +45,41 @@ the other. The user-facing picture, including the protocol diagram, is in the
 
 ## Process and session model
 
-- One supervised ZCode child process per bb thread. Each `Session` record in
+- One supervised ZCode child process per VesnALIA thread. Each `Session` record in
   [src/bridge.ts](../../src/bridge.ts) owns its `ZCodeConnection`, account
   host, timeline, usage, v4 history, background-work tracker, follow-up queue,
   tool server, and skills catalog.
-- Every bb method is validated against the SDK's zod schemas (`initialize`,
+- Every VesnALIA method is validated against the SDK's zod schemas (`initialize`,
   `model/list`, `provider/health`, `thread/*`, `turn/*`, `skills/configure`)
   before dispatch.
 - Empty sessions are marked non-restorable (ZCode does not persist them until a
   turn starts); saved conversations resume by native session ID.
 - Settings changes re-register the provider; because launch settings become
-  part of `experimental_bridgeOptions`, the bridge fingerprint changes and bb
+  part of `experimental_bridgeOptions`, the bridge fingerprint changes and VesnALIA
   invalidates the old model catalog (comment in `server.ts`).
 
 ## Module map
 
 | Module               | Responsibility                                                                                              |
 | -------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `src/bridge.ts`      | Session orchestration and bb ↔ ZCode translation; the largest module (~1500 lines)                          |
+| `src/bridge.ts`      | Session orchestration and VesnALIA ↔ ZCode translation; the largest module (~1500 lines)                          |
 | `src/client.ts`      | `ZCodeClient`: JSON-lines stdio child, split-UTF-8-safe framing, request timeouts, exit/error surfacing     |
 | `src/launch.ts`      | Executable resolution and child argv/env construction (`app-server --stdio --surface terminal`)             |
 | `src/protocol.ts`    | Zod schemas for native snapshots/events, model-selection resolution, fallback model, runtime preferences    |
 | `src/lifecycle.ts`   | Bounded v4 history queries, checkpoint token encode/resolve, background work, provider management commands  |
 | `src/coding-plan.ts` | Individual Coding Plan host: desktop credential exchange, short-lived project tokens, official MCP identity |
-| `src/timeline.ts`    | Native events → bb thread deltas and tool presentation                                                      |
+| `src/timeline.ts`    | Native events → VesnALIA thread deltas and tool presentation                                                      |
 | `src/input.ts`       | Prompt/attachment preparation: local files, data URLs, bounded HTTPS images, follow-up queueing             |
 | `src/usage.ts`       | Token/cache/reasoning usage aggregation and context estimates                                               |
-| `src/tool-server.ts` | Opt-in authenticated loopback MCP endpoint exposing bb plugin tools to ZCode                                |
-| `src/skills.ts`      | bb skill catalog: names, descriptions, absolute SKILL.md paths                                              |
+| `src/tool-server.ts` | Opt-in authenticated loopback MCP endpoint exposing VesnALIA plugin tools to ZCode                                |
+| `src/skills.ts`      | VesnALIA skill catalog: names, descriptions, absolute SKILL.md paths                                              |
 | `src/subagents.ts`   | Validation of the native subagent configuration snapshot                                                    |
 | `src/settings.ts`    | `mcpServers` setting parsing and runtime settings assembly                                                  |
 
 ## Executable resolution order
 
 `resolveLaunch` in [src/launch.ts](../../src/launch.ts) resolves the CLI in
-this order: explicit `executable` setting → `BB_ZCODE_EXECUTABLE` env →
+this order: explicit `executable` setting → `ALIA_ZCODE_EXECUTABLE` env →
 `zcode` on `PATH` → the macOS app bundle
 `/Applications/ZCode.app/Contents/Resources/glm/zcode.cjs`. Script bundles
 (`.cjs`/`.mjs`/`.js`) run through `nodeExecutable`; the launcher strips

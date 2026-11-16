@@ -1,9 +1,9 @@
 import type { CoreStatus } from "../server";
 
 /**
- * Paints core state onto this plugin's row in bb's main sidebar.
+ * Paints core state onto this plugin's row in VesnALIA's main sidebar.
  *
- * bb renders that row itself from the `navPanel` registration — title and icon
+ * VesnALIA renders that row itself from the `navPanel` registration — title and icon
  * are read once, and no slot accepts a live component — so a content script is
  * the only way to reflect state there. We locate the row by its label and set
  * one data attribute on it; `app.css` owns the visuals.

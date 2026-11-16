@@ -5,19 +5,19 @@ import { useThreadDiffs } from "../hooks/useThreadDiffs";
 import { ThreadDiffsContext, ThreadFactsContext } from "./ThreadWorkSummary";
 import { SidebarInteractions, useSidebarSelection } from "./SidebarInteractions";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import * as pluginApp from "@get-bb/plugin-sdk/app";
+import * as pluginApp from "@vesnalia/plugin-sdk/app";
 import {
   experimental_useProviders,
   experimental_useSidebarThreads,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../server";
 import type {
   PluginSidebarThread,
   PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { resolveTree, type ResolvedTree, type ThreadNode } from "@/lib/resolve";
 import { moveId } from "@/lib/order";
@@ -79,11 +79,11 @@ import { previewRoots, SECTION_PREVIEW_SIZE } from "@/lib/section-preview";
 import { useSectionPreviews } from "@/hooks/useSectionPreviews";
 
 /**
- * bb's own row actions: open with its split and focus rules, pin, read
+ * VesnALIA's own row actions: open with its split and focus rules, pin, read
  * state, silent rename, archive with its child-count confirmation, and the
  * delete confirmation. SDK 0.6 dropped this hook from its types but still
  * bridges it at runtime (dist/app.js in 0.6.37 and 0.6.39). The declared
- * alternatives, useBbNavigate and useSdk().threads, skip those confirmations
+ * alternatives, useAliaNavigate and useSdk().threads, skip those confirmations
  * and split rules, so the rows keep calling the bridged hook.
  */
 interface SidebarThreadActions {
@@ -216,7 +216,7 @@ export function UltraSidebar(props: PluginThreadListProps) {
     [tree],
   );
 
-  // bb's implicit personal project is left unnamed on purpose. It is where
+  // VesnALIA's implicit personal project is left unnamed on purpose. It is where
   // every thread that belongs to no project lands, so a badge reading
   // "Personal" appears on row after row without telling you anything about
   // any of them. Real projects are still named.
@@ -307,9 +307,9 @@ export function UltraSidebar(props: PluginThreadListProps) {
   const sectionsRef = useRef<Section[]>([]);
 
 
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const rpc = useRpc<typeof rpcContract>();
-  // The host owns the pin, so bb's own sidebar and this one never disagree
+  // The host owns the pin, so VesnALIA's own sidebar and this one never disagree
   // about which threads are pinned.
   const setPinned = useCallback(
     (threadId: string, pinned: boolean) => {
@@ -616,7 +616,7 @@ export function UltraSidebar(props: PluginThreadListProps) {
         },
       );
     },
-    // Deletion is recursive; only bb can show the confirmation that counts
+    // Deletion is recursive; only VesnALIA can show the confirmation that counts
     // the child threads, so there is no silent delete here by design.
     deleteThread: (threadId) => threadActions.requestDelete(threadId),
     newThreadIn: (projectId) => {
@@ -674,7 +674,7 @@ export function UltraSidebar(props: PluginThreadListProps) {
     );
   };
   // Ultra Launcher, when installed, claims New thread by cancelling this
-  // event (its lib/contract.ts names it); otherwise bb's own composer opens.
+  // event (its lib/contract.ts names it); otherwise VesnALIA's own composer opens.
   const openNewThread = () => {
     const event = new Event("ultra-launcher:open", { cancelable: true });
     if (window.dispatchEvent(event)) threadActions.openNewThread({ focusPrompt: true });
@@ -706,13 +706,13 @@ export function UltraSidebar(props: PluginThreadListProps) {
               onExpandAll={expandAll}
               onViewOptions={() => requestAnimationFrame(() => setViewOptionsOpen(true))}
             >
-              {/* bb keeps the New-thread button, the search action, the plugin nav
+              {/* VesnALIA keeps the New-thread button, the search action, the plugin nav
             rows and the footer; a replaced list owns the scroll area only, so
             our own controls belong at the top of it. */}
-              <div className="bb-ws-body flex min-h-0 flex-1 flex-col overflow-hidden">
-              <div ref={scrollRef} className="bb-ws-scroll flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-auto px-1 pb-2">
-              <div className="bb-ws-content flex flex-col">
-                <div className="bb-ws-toolbar sticky top-0 z-10 flex items-center gap-0.5 bg-sidebar px-1 py-1.5">
+              <div className="alia-ws-body flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div ref={scrollRef} className="alia-ws-scroll flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-auto px-1 pb-2">
+              <div className="alia-ws-content flex flex-col">
+                <div className="alia-ws-toolbar sticky top-0 z-10 flex items-center gap-0.5 bg-sidebar px-1 py-1.5">
                       <SidebarFilters
                         projects={availableProjects}
                         projectIds={projectIds}
@@ -726,7 +726,7 @@ export function UltraSidebar(props: PluginThreadListProps) {
                         onClick={openNewThread}
                       >
                         <Icon name="Plus" className="size-3.5" />
-                        <span className="bb-ws-new-thread-label">New thread</span>
+                        <span className="alia-ws-new-thread-label">New thread</span>
                       </button>
                       <SelectionToggle />
                       <ViewOptions
@@ -811,7 +811,7 @@ function Skeleton() {
 
 function SelectionToggle() {
   const selection = useSidebarSelection();
-  return <button type="button" className="bb-ws-selection-toggle flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+  return <button type="button" className="alia-ws-selection-toggle flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
     aria-label={selection.active ? "Exit thread selection" : "Select threads"} aria-pressed={selection.active}
     onClick={() => selection.active ? selection.exit() : selection.enter()}>
     <Icon name="Check" className="size-3.5" />

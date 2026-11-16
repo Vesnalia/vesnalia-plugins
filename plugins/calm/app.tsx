@@ -1,4 +1,4 @@
-// bb-plugin-calm frontend: a bare composer banner that draws a small scene
+// alia-plugin-calm frontend: a bare composer banner that draws a small scene
 // above the prompt box while the viewed thread, or its crew of child threads,
 // has something to show, or all the time when scenes are set to show always.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from "react";
@@ -8,7 +8,7 @@ import {
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { CrewSignal, MoodSignal, StepSignal, rpcContract } from "./server";
 import { failureKey, helperAlert, type CrewMember } from "./src/crew";
 import { IDLE, type Mood } from "./src/mood";
@@ -35,7 +35,7 @@ const WATCH_RENEW_MS = 5 * 60_000;    // the server stops counting a thread's st
 /** A "working" strip whose composer says nothing is running for this long has missed its run-ended event. */
 const MISSED_END_MS = 10_000;
 
-/** `projectId` is undefined until the first state read answers, and null if bb did not say. */
+/** `projectId` is undefined until the first state read answers, and null if VesnALIA did not say. */
 interface ThreadState { mood: Mood; steps: number; crew: CrewMember[]; projectId?: string | null }
 
 /** The thread's mood, steps, and crew: fetched on open and on reconnect, then kept live. */
@@ -193,7 +193,7 @@ function Strip({ threadId, isRunning }: { threadId: string; isRunning: boolean }
   const features = prefs.features;
   const crew = features.crew ? state.crew : NO_CREW;
   // While the main agent is idle, helpers that are just working show nothing
-  // (bb's child thread bar covers them); one that needs you gets a small alert.
+  // (VesnALIA's child thread bar covers them); one that needs you gets a small alert.
   const [, setSeen] = useState(0);
   const alert = own.kind === "idle" && features.alert ? helperAlert(state.crew, seenFailures) : null;
   const crewOnly = alert !== null;
@@ -203,7 +203,7 @@ function Strip({ threadId, isRunning }: { threadId: string; isRunning: boolean }
       seenFailures.add(failureKey(m));
       while (seenFailures.size > 200) seenFailures.delete(seenFailures.values().next().value!);
       setSeen((n) => n + 1);
-      // Kept on the server, so it stays gone after a reload or a bb restart.
+      // Kept on the server, so it stays gone after a reload or a VesnALIA restart.
       rpc.call("failure_dismiss", { threadId: m.id }).catch(() => {});
     }
   };
@@ -259,7 +259,7 @@ function Strip({ threadId, isRunning }: { threadId: string; isRunning: boolean }
   const turns = idleTurns(threadId);
   const place = Math.max(1, own.run ?? 0) + turns;
   // "One scene per project" hashes the project id from the first state read;
-  // if bb did not say, the thread stands in.
+  // if VesnALIA did not say, the thread stands in.
   const projectId = choice === "each-project" ? state.projectId ?? null : null;
   lock.current = lockScene(lock.current, sceneFor(threadId, choice, place, prefs.excluded, projectId), `${choice}:${turns}:${projectId ?? ""}`, mounted, own);
   const kind = lock.current.scene;
@@ -297,7 +297,7 @@ function Strip({ threadId, isRunning }: { threadId: string; isRunning: boolean }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind]);
 
-  // bb spaces the rows above the prompt box with a gap. Read it so a closed
+  // VesnALIA spaces the rows above the prompt box with a gap. Read it so a closed
   // strip can cancel it and leave no jump when it unmounts.
   const [gap, setGap] = useState(8);
   useLayoutEffect(() => {
@@ -466,7 +466,7 @@ export default definePluginApp((app) => {
     scopes: ["thread"],
     banners: [{ id: "scene", chrome: "bare", component: CalmStrip }],
   });
-  // An experimental bb slot: if a future bb renames it, Calm loads without the header button.
+  // An experimental VesnALIA slot: if a future VesnALIA renames it, Calm loads without the header button.
   optionalSlot(app.slots.experimental_threadHeaderAction && (() => app.slots.experimental_threadHeaderAction({ id: "calm-thread", title: "Calm", component: CalmHeaderControl })), "thread header button");
   app.slots.settingsSection({
     id: "calm",

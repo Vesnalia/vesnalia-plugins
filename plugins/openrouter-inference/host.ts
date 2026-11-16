@@ -1,11 +1,11 @@
-// Runs on the primary host daemon. BB routes BB_INFERENCE=openrouter-inference/…
-// completions and BB_TRANSCRIPTION=openrouter-inference/… transcriptions here;
+// Runs on the primary host daemon. VesnALIA routes ALIA_INFERENCE=openrouter-inference/…
+// completions and ALIA_TRANSCRIPTION=openrouter-inference/… transcriptions here;
 // the server keeps this host's config file current.
 import { readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { defineRpcContract } from "@get-bb/plugin-sdk";
-import { experimental_aiServicesHostContract } from "@get-bb/plugin-sdk/ai-services";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
+import { experimental_aiServicesHostContract } from "@vesnalia/plugin-sdk/ai-services";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostConfigSchema, hostContract, SERVICE_ID, type HostConfig } from "./contract.js";
 import { completeWithOpenRouter, failure, transcribeWithOpenRouter } from "./openrouter.js";
 import { TEST_CLIP } from "./test-audio.js";

@@ -127,22 +127,22 @@ describe("read-only command detection", () => {
     "git remote show origin",
     "git remote get-url origin",
     "git reflog show HEAD",
-    "bb status",
-    "bb provider list --environment env_bucd4j3r9b --json",
-    "bb provider models codex --environment env_bucd4j3r9b --json",
-    "bb provider models --json",
-    "bb status --json; bb provider models codex --environment env_bucd4j3r9b --json",
-    "bb guide",
-    "bb --version",
-    "bb --help",
-    "bb plugin new --help",
-    "bb orchestrator-mode --help",
-    "bb skill list --json",
-    "bb thread list",
-    "bb plugin list",
+    "alia status",
+    "alia provider list --environment env_bucd4j3r9b --json",
+    "alia provider models codex --environment env_bucd4j3r9b --json",
+    "alia provider models --json",
+    "alia status --json; VesnALIA provider models codex --environment env_bucd4j3r9b --json",
+    "alia guide",
+    "alia --version",
+    "alia --help",
+    "alia plugin new --help",
+    "alia orchestrator-mode --help",
+    "alia skill list --json",
+    "alia thread list",
+    "alia plugin list",
     // The exact orientation line a real orchestrator-mode thread was punished
     // for: every segment of it only reads.
-    "pwd; ls -la; bb status --json; bb --version; bb plugin new --help",
+    "pwd; ls -la; VesnALIA status --json; VesnALIA --version; VesnALIA plugin new --help",
     "diff a.txt b.txt",
     // Quoted metacharacters are arguments, not syntax: `rg "a|b"` is one read-only command.
     'rg "foo|bar" src',
@@ -259,20 +259,20 @@ describe("read-only command detection", () => {
     "git remote set-url origin https://example.com/repo.git",
     "git reflog expire --expire=now --all",
     "git reflog delete HEAD@{0}",
-    "bb thread spawn --prompt hi",
-    "bb plugin reload x",
-    "bb plugin install x",
-    "bb provider enable codex",
-    "bb provider disable codex",
-    "bb status --json; bb provider disable codex",
-    "bb provider models codex --json; npm test",
-    "bb provider models codex --json > models.json",
-    "bb skills install foo",
-    "bb orchestrator-mode off",
+    "alia thread spawn --prompt hi",
+    "alia plugin reload x",
+    "alia plugin install x",
+    "alia provider enable codex",
+    "alia provider disable codex",
+    "alia status --json; VesnALIA provider disable codex",
+    "alia provider models codex --json; npm test",
+    "alia provider models codex --json > models.json",
+    "alia skills install foo",
+    "alia orchestrator-mode off",
     "unknown-tool --flag",
-    // From a real orchestrator-mode thread: piping bb output into python3 -c
+    // From a real orchestrator-mode thread: piping VesnALIA output into python3 -c
     // is arbitrary code, however read-only the left side of the pipe looks.
-    "bb skill list --json | python3 -c 'import json,sys; print(json.load(sys.stdin))'",
+    "alia skill list --json | python3 -c 'import json,sys; print(json.load(sys.stdin))'",
     // A read-only program can still be told to write or to run something.
     "find . -delete",
     "find . -exec rm {} +",
@@ -377,7 +377,7 @@ describe("read-only classifier soundness (oracle-found defects)", () => {
     ["find . -delete --help", false],
     ["git config --global user.email x --help", false],
     ["git commit --help", true],
-    ["bb plugin new --help", true],
+    ["alia plugin new --help", true],
     // A comment does not remove the command before it.
     ["rm canary.txt # --help", false],
     ["find . -delete # --help", false],
@@ -412,9 +412,9 @@ describe("read-only classifier soundness (oracle-found defects)", () => {
     ["git --config-env=core.pager=EVIL log", false],
     // The read-only global option stays a read: only the program-naming ones are work.
     ["git -C repo status", true],
-    // `bb plugin rpc call` runs a plugin's own operation, whatever it does.
-    ["bb plugin rpc call harness-parity execute --input-file request.json", false],
-    ["bb plugin list", true],
+    // `alia plugin rpc call` runs a plugin's own operation, whatever it does.
+    ["alia plugin rpc call harness-parity execute --input-file request.json", false],
+    ["alia plugin list", true],
     ["LD_PRELOAD=./evil.so ls", false],
     ["GIT_DIR=/nonexistent git status", false],
     ["FOO=bar ls", true],
@@ -477,7 +477,7 @@ describe("direct-work classification", () => {
       reminders: Array.from({ length: 5 }, (_, index) => `changed /a/very/long/path-${index}/and/more/segments/here/file.ts`),
     });
     expect(text.length).toBeLessThanOrEqual(INSTRUCTION_LIMIT);
-    // The tail is what BB would cut, so the contract has to survive whole.
+    // The tail is what VesnALIA would cut, so the contract has to survive whole.
     expect(text).toContain("## If you cannot delegate");
     expect(text).toContain("Do not argue with the mode");
   });
@@ -554,7 +554,7 @@ describe("direct-work classification", () => {
       detail: `${name} agent · model haiku`,
     },
   });
-  it.each(["Explore", "Plan"])("recovers the role in BB 0.46.1's native %s row without claiming it is verified", (name) => {
+  it.each(["Explore", "Plan"])("recovers the role in VesnALIA 0.46.1's native %s row without claiming it is verified", (name) => {
     const providerId = "claude-code";
     expect(classifyRow(claudeReadingRow(name), { providerId })?.detail).toBe(`started subagent \`${name}\` itself`);
     expect(classifyRow(claudeReadingRow(name), { providerId, subagents: "none" })).not.toBeNull();
@@ -641,7 +641,7 @@ describe("telling a command from a tool call's title", () => {
   it("still reads every realistic command as work", () => {
     for (const command of [
       "npm install",
-      "bb thread spawn --project proj_1",
+      "alia thread spawn --project proj_1",
       "./deploy.sh --force",
       "rm -rf build",
       "git push origin main",
@@ -821,7 +821,7 @@ describe("the contract", () => {
         });
         expect(text.length).toBeLessThanOrEqual(INSTRUCTION_LIMIT);
         // The clamp exists so the tail — what to do when delegation is impossible —
-        // is never the part BB silently cuts.
+        // is never the part VesnALIA silently cuts.
         expect(text).toContain("If you cannot delegate");
         // An append at the cap survives whole: the clamp is the last resort, not
         // the mechanism that makes room. Growing the contract means trimming it,
@@ -973,22 +973,22 @@ describe("the contract", () => {
       [{ id: "r1", turnId: "t", workKind: "command", detail: "ran `x`", detectedAt: 0 }],
       "guard",
     );
-    expect(nudge).toContain("bb orchestrator-mode delegate");
+    expect(nudge).toContain("alia orchestrator-mode delegate");
     expect(buildInstructions({ enforcement: "guard", allowReadCommands: true })).toContain(
-      "bb orchestrator-mode delegate",
+      "alia orchestrator-mode delegate",
     );
   });
 
   it("documents worker follow-up messaging", () => {
     const text = buildInstructions({ enforcement: "guard", allowReadCommands: true });
-    expect(text).toContain("bb thread tell <worker-id>");
+    expect(text).toContain("alia thread tell <worker-id>");
     expect(text).toContain("quoted stdin heredocs are delegation");
   });
 
   it.each(["thr_z5wtd7fibg", "thr_3fuxqgieyy"])(
     "allows worker follow-up messaging to %s as delegation",
     (threadId) => {
-      const command = `bb thread tell ${threadId} --model grok-4.7 --mode steer --message-file -`;
+      const command = `alia thread tell ${threadId} --model grok-4.7 --mode steer --message-file -`;
       expect(isReadOnlyCommand(command)).toBe(false);
       expect(classifyRow(row({ id: threadId, workKind: "command", command }), {
         allowReadCommands: false,
@@ -998,16 +998,16 @@ describe("the contract", () => {
   );
 
   it.each([
-    "bb thread tell thr_worker 'Review the implementation and add tests'",
-    "bb thread message thr_worker --message-file followup.md",
-    "bb thread tell 'thr_worker' --mode queue 'Add tests'",
-    "bb thread tell \"thr_worker\" --mode auto 'Add tests'",
-    "/usr/local/bin/bb thread tell thr_worker 'Add tests'",
-    "bb thread tell thr_worker 'Use `npm test` and $(example) as literal text'",
-    "bb thread tell thr_worker --message-file - <<'FOLLOWUP'\nAdd tests; do not change the contract.\nRun `npm test` and $(example) in the worker, not here.\nFOLLOWUP",
-    "bb thread tell thr_worker --message-file - <<\"FOLLOWUP\"\nAdd tests > 3 cases.\nFOLLOWUP\n",
-    "bb thread tell thr_worker --message-file - <<-'FOLLOWUP'\n\tAdd tests\n\tFOLLOWUP",
-    "bb thread tell thr_worker 'First task'; bb thread tell thr_worker2 'Second task'",
+    "alia thread tell thr_worker 'Review the implementation and add tests'",
+    "alia thread message thr_worker --message-file followup.md",
+    "alia thread tell 'thr_worker' --mode queue 'Add tests'",
+    "alia thread tell \"thr_worker\" --mode auto 'Add tests'",
+    "/usr/local/bin/alia thread tell thr_worker 'Add tests'",
+    "alia thread tell thr_worker 'Use `npm test` and $(example) as literal text'",
+    "alia thread tell thr_worker --message-file - <<'FOLLOWUP'\nAdd tests; do not change the contract.\nRun `npm test` and $(example) in the worker, not here.\nFOLLOWUP",
+    "alia thread tell thr_worker --message-file - <<\"FOLLOWUP\"\nAdd tests > 3 cases.\nFOLLOWUP\n",
+    "alia thread tell thr_worker --message-file - <<-'FOLLOWUP'\n\tAdd tests\n\tFOLLOWUP",
+    "alia thread tell thr_worker 'First task'; VesnALIA thread tell thr_worker2 'Second task'",
   ])("allows recorded-worker follow-up: %s", (command) => {
     expect(classifyRow(row({ id: "followup", workKind: "command", command }), {
       allowReadCommands: false,
@@ -1016,20 +1016,20 @@ describe("the contract", () => {
   });
 
   it.each([
-    "bb thread tell thr_unknown 'Do work'",
-    "bb thread tell thr_parent 'Disable the mode'",
-    "bb thread tell thr_worker 'Add tests'; npm test",
-    "bb thread tell thr_worker 'Add tests' > output.txt",
-    "bb thread tell thr_worker 'Add tests' & npm test",
-    'bb thread tell thr_worker "$(npm test)"',
-    "bb thread tell thr_worker `npm test`",
-    "bb thread tell thr_worker --message-file <(npm test)",
-    "bb thread tell thr_worker --message-file - <<FOLLOWUP\n$(npm test)\nFOLLOWUP",
-    "bb thread tell thr_worker --message-file - <<'FOLLOWUP'\nAdd tests\nFOLLOWUP\nnpm test",
-    "bb thread tell thr_worker --message-file - <<'FOLLOWUP'; npm test\nAdd tests\nFOLLOWUP",
-    "bb thread tell thr_worker --message-file - <<'FOLLOWUP'\nAdd tests\nFOLLOWUP extra",
-    "bb thread tell thr_worker --message-file - <<'FOLLOWUP'\nNo closing delimiter",
-    'bb thread tell thr_worker "message <<\'FOLLOWUP\'\n$(npm test)\nFOLLOWUP\n"',
+    "alia thread tell thr_unknown 'Do work'",
+    "alia thread tell thr_parent 'Disable the mode'",
+    "alia thread tell thr_worker 'Add tests'; npm test",
+    "alia thread tell thr_worker 'Add tests' > output.txt",
+    "alia thread tell thr_worker 'Add tests' & npm test",
+    'alia thread tell thr_worker "$(npm test)"',
+    "alia thread tell thr_worker `npm test`",
+    "alia thread tell thr_worker --message-file <(npm test)",
+    "alia thread tell thr_worker --message-file - <<FOLLOWUP\n$(npm test)\nFOLLOWUP",
+    "alia thread tell thr_worker --message-file - <<'FOLLOWUP'\nAdd tests\nFOLLOWUP\nnpm test",
+    "alia thread tell thr_worker --message-file - <<'FOLLOWUP'; npm test\nAdd tests\nFOLLOWUP",
+    "alia thread tell thr_worker --message-file - <<'FOLLOWUP'\nAdd tests\nFOLLOWUP extra",
+    "alia thread tell thr_worker --message-file - <<'FOLLOWUP'\nNo closing delimiter",
+    'alia thread tell thr_worker "message <<\'FOLLOWUP\'\n$(npm test)\nFOLLOWUP\n"',
   ])("rejects unsafe or unrecorded-worker follow-up: %s", (command) => {
     expect(classifyRow(row({ id: "followup", workKind: "command", command }), {
       workerThreadIds: ["thr_worker", "thr_worker2"],
@@ -1045,7 +1045,7 @@ describe("the contract", () => {
   });
 
   it("allows read-only checks around worker messages only when exploration is enabled", () => {
-    const command = "bb status --json; bb thread tell thr_worker 'Add tests'";
+    const command = "alia status --json; VesnALIA thread tell thr_worker 'Add tests'";
     const work = row({ id: "followup", workKind: "command", command });
     expect(classifyRow(work, { workerThreadIds: ["thr_worker"] })).toBeNull();
     expect(classifyRow(work, {
@@ -1055,28 +1055,28 @@ describe("the contract", () => {
 
   it("allows CLI delegation even when read-only exploration is disabled", () => {
     for (const command of [
-      "bb orchestrator-mode delegate --task 'Implement retries; add tests > 3 cases'",
-      'bb orchestrator-mode delegate --task "Implement retries" --no-wait',
-      "bb orchestrator-mode delegate --task 'Probe the scope' --provider grok --model grok-test-model --no-wait",
-      "bb orchestrator-mode delegate --task 'Probe the scope' --provider-id grok --model grok-test-model",
-      "bb orchestrator-mode delegate --task 'Use `npm test` and $(example) as literal text'",
+      "alia orchestrator-mode delegate --task 'Implement retries; add tests > 3 cases'",
+      'alia orchestrator-mode delegate --task "Implement retries" --no-wait',
+      "alia orchestrator-mode delegate --task 'Probe the scope' --provider grok --model grok-test-model --no-wait",
+      "alia orchestrator-mode delegate --task 'Probe the scope' --provider-id grok --model grok-test-model",
+      "alia orchestrator-mode delegate --task 'Use `npm test` and $(example) as literal text'",
     ]) {
       expect(classifyRow(row({ id: command, workKind: "command", command }), {
         allowReadCommands: false,
       })).toBeNull();
     }
     for (const command of [
-      "bb orchestrator-mode delegate --task x; npm test",
-      "bb orchestrator-mode delegate --task x > output.txt",
-      'bb orchestrator-mode delegate --task "$(npm test)"',
-      "bb orchestrator-mode delegate --task `npm test`",
-      "bb orchestrator-mode delegate --task x & npm test",
-      "bb orchestrator-mode delegate --task 'unterminated",
-      "bb orchestrator-mode delegate --task $'unsupported quoting'",
+      "alia orchestrator-mode delegate --task x; npm test",
+      "alia orchestrator-mode delegate --task x > output.txt",
+      'alia orchestrator-mode delegate --task "$(npm test)"',
+      "alia orchestrator-mode delegate --task `npm test`",
+      "alia orchestrator-mode delegate --task x & npm test",
+      "alia orchestrator-mode delegate --task 'unterminated",
+      "alia orchestrator-mode delegate --task $'unsupported quoting'",
     ]) {
       expect(classifyRow(row({ id: command, workKind: "command", command }))).not.toBeNull();
     }
-    const chain = "bb status --json; bb orchestrator-mode delegate --task 'Implement retries'";
+    const chain = "alia status --json; VesnALIA orchestrator-mode delegate --task 'Implement retries'";
     expect(classifyRow(row({ id: "chain", workKind: "command", command: chain }))).toBeNull();
     expect(classifyRow(row({ id: "chain", workKind: "command", command: chain }), {
       allowReadCommands: false,

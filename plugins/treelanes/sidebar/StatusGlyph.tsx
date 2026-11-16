@@ -1,4 +1,4 @@
-import type { PluginSidebarThreadIndicator } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThreadIndicator } from "@vesnalia/plugin-sdk";
 import { Icon } from "../components/ui/icon";
 import { cn } from "../lib/utils";
 
@@ -85,7 +85,7 @@ export function StatusGlyph({
       );
     case "unread-success":
       // The notification dot, in a box the size of every other glyph, the way
-      // bb centers its own trailing indicators. Right-aligned on its own, a
+      // VesnALIA centers its own trailing indicators. Right-aligned on its own, a
       // 5px dot would sit ~4px off the column the icons share.
       return (
         <span

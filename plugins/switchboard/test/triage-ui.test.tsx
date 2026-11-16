@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginThreadListProps } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginThreadListProps } from "@vesnalia/plugin-sdk/app";
 import { createCommands } from "../src/commands";
 import { EMPTY_LAYOUT, isCollapseKey, type Layout } from "../src/layout";
 import { nextWake } from "../src/triage";

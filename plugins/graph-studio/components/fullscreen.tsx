@@ -1,4 +1,4 @@
-// A real full screen: a layer over the whole BB window, not a column that
+// A real full screen: a layer over the whole VesnALIA window, not a column that
 // merely hides its neighbours.
 //
 // The old focus mode only dropped the prose around the canvas, which left the

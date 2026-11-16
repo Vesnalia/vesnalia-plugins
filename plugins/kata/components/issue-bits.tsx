@@ -64,7 +64,7 @@ export function LabelChip({ label }: { label: string }) {
   );
 }
 
-/** The dashed box BB's own list pages use for loading and empty states. */
+/** The dashed box VesnALIA's own list pages use for loading and empty states. */
 export function EmptyState({ children }: { children: ReactNode }) {
   return (
     <div

@@ -1,18 +1,18 @@
 #!/bin/sh
-# Sets up a Mac for bb-box's SSH host pool (047). Copy this directory to the
+# Sets up a Mac for alia-box's SSH host pool (047). Copy this directory to the
 # Mac and run it there with sudo, from an administrator's account:
 #
-#   sudo sh setup-mac.sh --key "ssh-ed25519 AAAA... bb-box" [--name mac-mini]
+#   sudo sh setup-mac.sh --key "ssh-ed25519 AAAA... alia-box" [--name mac-mini]
 #     [--address 192.0.2.30] [--port 22] [--admin bbbox-admin]
 #
-# --key is the public key bb-box's doctor shows. Give it once for each
-# bb-box install that lends the Mac. The Mac must have Apple silicon,
+# --key is the public key alia-box's doctor shows. Give it once for each
+# alia-box install that lends the Mac. The Mac must have Apple silicon,
 # FileVault off and Remote Login on. It:
 #
-# - makes bb-box's admin user, hidden, which accepts only those keys, with no
-#   forwarding or terminal, and may run only bb-box's helper as root
-# - installs the helper, machine-mac.sh, as /usr/local/libexec/bb-box/machine,
-#   and the box users' home template, mac-home, as /usr/local/share/bb-box/home
+# - makes alia-box's admin user, hidden, which accepts only those keys, with no
+#   forwarding or terminal, and may run only alia-box's helper as root
+# - installs the helper, machine-mac.sh, as /usr/local/libexec/alia-box/machine,
+#   and the box users' home template, mac-home, as /usr/local/share/alia-box/home
 # - installs Homebrew if it is missing, as the administrator who ran sudo,
 #   then Git, GitHub CLI and Node.js with it, and Cua Driver
 # - installs BlackHole 2ch, the box's audio input (#631)
@@ -20,10 +20,10 @@
 #   checked, with the Linux images' policies against its prompts, and box
 #   users' profiles past its first run (mac-chrome.sh, which Tart's image
 #   shares)
-# - installs the agent CLIs BB runs threads with, Claude Code, Codex and Pi,
+# - installs the agent CLIs ALIA runs threads with, Claude Code, Codex and Pi,
 #   pinned as the Linux images pin them (#561)
-# - builds bb-box-stream, each box's desktop as video (060), with swiftc
-# - clears BB's daemon lock and PID file in box homes at boot (017)
+# - builds alia-box-stream, each box's desktop as video (060), with swiftc
+# - clears ALIA's daemon lock and PID file in box homes at boot (017)
 # - keeps the Mac awake, starts it after a power failure, and turns off
 #   automatic macOS updates, which would restart a box, automatic App Store
 #   updates, which would change Xcode under the pool's offers, and Spotlight
@@ -34,7 +34,7 @@
 #   pool's offers follow
 # - starts the Mac's reset generation at 0 and makes the first box user,
 #   bbx-0, the automatic login
-# - prints the line for bb-box's machines setting, the host keys, and the
+# - prints the line for alia-box's machines setting, the host keys, and the
 #   steps for a person at the Mac: Screen Sharing, Full Disk Access for
 #   SSH, Cua Driver's grants, the grant for a viewer's input, and Xcode
 #
@@ -56,7 +56,7 @@ CUA_SHA256=e270ea67388d794505031b0a15d8b58994c67e18e754a43634d7732251f595df
 # BlackHole 2ch (#631), as Tart's image pins it in setup/tart/prepare-image.sh.
 BLACKHOLE_VERSION=0.7.1
 BLACKHOLE_SHA256=57b540f27a3e29c37e310e01bee0fdfab76733087e47f997ef9dccf851400dcf
-# The agent CLIs BB runs threads with, at the versions the Linux images pin
+# The agent CLIs ALIA runs threads with, at the versions the Linux images pin
 # in setup/proxmox-lxc/template/pins.json (#561), for darwin-arm64. A test
 # keeps the versions equal. Claude Code's SHA-256 is from its release
 # manifest, Codex's and Pi's from GitHub's asset digests.
@@ -67,8 +67,8 @@ CODEX_SHA256=3c45b162b7a76f51325015b1d0a8112c73219b7a9b59cd5762c37c9ba55894fa
 PI_VERSION=0.87.1
 PI_SHA256=4f8d288b78c9768d3a4ac6f61f06cd34394b82ac17d5b42d1e44a437add401b7
 
-LIBEXEC=/usr/local/libexec/bb-box
-SHARE=/usr/local/share/bb-box
+LIBEXEC=/usr/local/libexec/alia-box
+SHARE=/usr/local/share/alia-box
 BREW=/opt/homebrew/bin/brew
 CUA_APP=/Applications/CuaDriver.app
 here=$(cd "$(dirname "$0")" && pwd)
@@ -88,7 +88,7 @@ while [ $# -gt 0 ]; do
         *"
 "*) die "Give each --key one public key on one line." ;;
         "ssh-ed25519 "* | "ssh-rsa "* | "ecdsa-sha2-"*) ;;
-        *) die "Give --key the public key bb-box's doctor shows, starting ssh-ed25519." ;;
+        *) die "Give --key the public key alia-box's doctor shows, starting ssh-ed25519." ;;
       esac
       keys="$keys$2
 "
@@ -104,8 +104,8 @@ done
 
 [ "$(id -u)" = 0 ] || die "Run it as root, with sudo."
 [ "$(uname -s)" = Darwin ] || die "setup-mac.sh sets up a Mac. For a Linux machine, use setup.sh."
-[ "$(uname -m)" = arm64 ] || die "bb-box lends only Macs with Apple silicon."
-[ -n "$keys" ] || die "Give --key the public key bb-box's doctor shows, starting ssh-ed25519."
+[ "$(uname -m)" = arm64 ] || die "alia-box lends only Macs with Apple silicon."
+[ -n "$keys" ] || die "Give --key the public key alia-box's doctor shows, starting ssh-ed25519."
 printf '%s\n' "$admin" | grep -Eq '^[a-z_][a-z0-9_-]{0,31}$' || die "--admin must be a user name."
 case $admin in bbx-*) die "bbx- names are for box users. Choose another admin user." ;; esac
 [ -f "$here/machine-mac.sh" ] && [ -d "$here/mac-home" ] && [ -f "$here/mac-chrome.sh" ] && [ -f "$here/mac-ios.sh" ] ||
@@ -117,10 +117,10 @@ launchctl print system/com.openssh.sshd >/dev/null 2>&1 ||
 
 # The admin user: hidden, with a random password nobody keeps, so only the key logs in.
 if dscl . -read "/Users/$admin" >/dev/null 2>&1; then
-  [ "$(id -F "$admin" 2>/dev/null)" = "bb-box admin" ] ||
-    die "User $admin exists and setup-mac.sh did not make it. Choose a new name for bb-box's admin user with --admin."
+  [ "$(id -F "$admin" 2>/dev/null)" = "alia-box admin" ] ||
+    die "User $admin exists and setup-mac.sh did not make it. Choose a new name for alia-box's admin user with --admin."
 else
-  sysadminctl -addUser "$admin" -fullName "bb-box admin" -password "$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)" \
+  sysadminctl -addUser "$admin" -fullName "alia-box admin" -password "$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)" \
     -home "/private/var/$admin" >/dev/null 2>&1 || :
   dscl . -read "/Users/$admin" >/dev/null 2>&1 || die "sysadminctl could not make user $admin."
   dscl . -create "/Users/$admin" IsHidden 1
@@ -156,7 +156,7 @@ rmdir "$replayd" "$ROOT$SHARE/home/Library/Group Containers" 2>/dev/null || true
 cp -R "$here/mac-home/." "$ROOT$SHARE/home/"
 
 # The admin user may run the helper as root, and nothing else.
-rule=$ROOT/etc/sudoers.d/bb-box
+rule=$ROOT/etc/sudoers.d/alia-box
 printf 'Defaults:%s !requiretty\n%s ALL=(root) NOPASSWD: %s/machine\n' "$admin" "$admin" "$LIBEXEC" >"$rule.new"
 chmod 0440 "$rule.new"
 visudo -cqf "$rule.new" >/dev/null || die "visudo refused the sudo rule in $rule.new."
@@ -200,9 +200,9 @@ ln -sf "$CUA_APP/Contents/MacOS/cua-driver" "$ROOT/usr/local/bin/cua-driver"
 ROOT=$ROOT sh "$here/mac-chrome.sh" "$ROOT$SHARE/home" >/dev/null || die "Could not install Google Chrome."
 
 # The agent CLIs, so threads on a box can run (#561): each pinned by
-# version and SHA-256, in /usr/local/lib/bb-box/<name>-<version>, linked
+# version and SHA-256, in /usr/local/lib/alia-box/<name>-<version>, linked
 # from /usr/local/bin, which box users' PATH has. An earlier version goes.
-TOOLS=/usr/local/lib/bb-box
+TOOLS=/usr/local/lib/alia-box
 tool() { # name version sha256 url strip command path
   dest=$TOOLS/$1-$2
   if [ ! -x "$ROOT$dest/$7" ]; then
@@ -246,28 +246,28 @@ if [ "$(cat "$ROOT$SHARE/blackhole" 2>/dev/null)" != "$BLACKHOLE_VERSION" ]; the
   echo "$BLACKHOLE_VERSION" >"$ROOT$SHARE/blackhole"
 fi
 
-# 058: bb-box-own runs a program as its own responsible process, so the
-# permissions bb-box grants that program are the ones macOS checks. Built
+# 058: alia-box-own runs a program as its own responsible process, so the
+# permissions alia-box grants that program are the ones macOS checks. Built
 # with the Command Line Tools' clang, which Homebrew needs anyway.
 own_built=
-if clang -O -o "$ROOT/usr/local/bin/bb-box-own.new" "$here/mac-own.c" 2>/dev/null; then
-  chmod 0755 "$ROOT/usr/local/bin/bb-box-own.new" && mv -f "$ROOT/usr/local/bin/bb-box-own.new" "$ROOT/usr/local/bin/bb-box-own" && own_built=1
+if clang -O -o "$ROOT/usr/local/bin/alia-box-own.new" "$here/mac-own.c" 2>/dev/null; then
+  chmod 0755 "$ROOT/usr/local/bin/alia-box-own.new" && mv -f "$ROOT/usr/local/bin/alia-box-own.new" "$ROOT/usr/local/bin/alia-box-own" && own_built=1
 fi
-# bb-box-display gives each box user's desktop the 2x mode of its size, for
+# alia-box-display gives each box user's desktop the 2x mode of its size, for
 # the session, where the display offers one, as with an HDMI dummy plug: the
 # viewer then draws it as sharp as the Mac does.
 display_built=
-if clang -O -framework ApplicationServices -o "$ROOT/usr/local/bin/bb-box-display.new" "$here/mac-display.c" 2>/dev/null; then
-  chmod 0755 "$ROOT/usr/local/bin/bb-box-display.new" && mv -f "$ROOT/usr/local/bin/bb-box-display.new" "$ROOT/usr/local/bin/bb-box-display" && display_built=1
+if clang -O -framework ApplicationServices -o "$ROOT/usr/local/bin/alia-box-display.new" "$here/mac-display.c" 2>/dev/null; then
+  chmod 0755 "$ROOT/usr/local/bin/alia-box-display.new" && mv -f "$ROOT/usr/local/bin/alia-box-display.new" "$ROOT/usr/local/bin/alia-box-display" && display_built=1
 fi
 
-# 060: bb-box-stream streams each box user's desktop as H.264 video, for the
+# 060: alia-box-stream streams each box user's desktop as H.264 video, for the
 # panel's video client. It runs over the box user's SSH in the desktop
 # session, so it has the Screen Recording and Accessibility that
 # sshd-keygen-wrapper has below. Built with the Command Line Tools' swiftc.
 stream_built=
-if swiftc -O -swift-version 5 -o "$ROOT/usr/local/bin/bb-box-stream.new" "$here/mac-stream.swift" 2>/dev/null; then
-  chmod 0755 "$ROOT/usr/local/bin/bb-box-stream.new" && mv -f "$ROOT/usr/local/bin/bb-box-stream.new" "$ROOT/usr/local/bin/bb-box-stream" && stream_built=1
+if swiftc -O -swift-version 5 -o "$ROOT/usr/local/bin/alia-box-stream.new" "$here/mac-stream.swift" 2>/dev/null; then
+  chmod 0755 "$ROOT/usr/local/bin/alia-box-stream.new" && mv -f "$ROOT/usr/local/bin/alia-box-stream.new" "$ROOT/usr/local/bin/alia-box-stream" && stream_built=1
 fi
 
 # 058: with System Integrity Protection off, a box's commands run over SSH,
@@ -288,15 +288,15 @@ if csrutil status 2>/dev/null | grep -q 'status: disabled'; then
   fi
 fi
 
-# 017: a box's BB daemon leaves its lock and PID file after a hard stop. Clear them at boot.
-daemon=$ROOT/Library/LaunchDaemons/dev.bb-box.clear-bb-state.plist
+# 017: a box's ALIA daemon leaves its lock and PID file after a hard stop. Clear them at boot.
+daemon=$ROOT/Library/LaunchDaemons/dev.alia-box.clear-alia-state.plist
 cat >"$daemon" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>Label</key><string>dev.bb-box.clear-bb-state</string>
+<key>Label</key><string>dev.alia-box.clear-alia-state</string>
 <key>ProgramArguments</key><array><string>/bin/sh</string><string>-c</string>
-<string>rm -rf /Users/bbx-*/.bb-machines/*/daemon.lock.lock /Users/bbx-*/.bb-machines/*/install-daemon.pid</string></array>
+<string>rm -rf /Users/bbx-*/.alia-machines/*/daemon.lock.lock /Users/bbx-*/.alia-machines/*/install-daemon.pid</string></array>
 <key>RunAtLoad</key><true/>
 </dict></plist>
 PLIST
@@ -318,11 +318,11 @@ warnings=''
 warn() { warnings="$warnings
 - $*"; }
 [ -n "$display_built" ] ||
-  warn "clang could not build bb-box-display, so desktops stay at 1x. Install the Command Line Tools: xcode-select --install, then run setup-mac.sh again."
+  warn "clang could not build alia-box-display, so desktops stay at 1x. Install the Command Line Tools: xcode-select --install, then run setup-mac.sh again."
 [ -n "$stream_built" ] ||
-  warn "swiftc could not build bb-box-stream, so desktops show over Screen Sharing only, not as video. Install the Command Line Tools: xcode-select --install, then run setup-mac.sh again."
+  warn "swiftc could not build alia-box-stream, so desktops show over Screen Sharing only, not as video. Install the Command Line Tools: xcode-select --install, then run setup-mac.sh again."
 [ -n "$own_built" ] ||
-  warn "clang could not build bb-box-own, so programs granted permissions cannot run as their own responsible process. Install the Command Line Tools: xcode-select --install, then run setup-mac.sh again."
+  warn "clang could not build alia-box-own, so programs granted permissions cannot run as their own responsible process. Install the Command Line Tools: xcode-select --install, then run setup-mac.sh again."
 if csrutil status 2>/dev/null | grep -q 'status: disabled' && [ -z "$sip_granted" ]; then
   warn "SIP is off, but Screen Recording could not be granted to sshd-keygen-wrapper, so box_run's commands cannot capture the screen."
 fi
@@ -361,22 +361,22 @@ fi
 status=$("$ROOT$LIBEXEC/machine" status xcode) || warn "The helper could not list Xcode's Simulator runtimes. Check that sudo xcrun simctl list runtimes works, then run setup-mac.sh again."
 value() { printf '%s\n' "$status" | sed -n "s/^$1=//p" | head -n 1; }
 snapshots=$("$ROOT$LIBEXEC/machine" snapshot probe 2>&1) || {
-  warn "The helper's snapshot probe failed: $(printf '%s\n' "$snapshots" | tail -n 1). bb box doctor probes it again."
+  warn "The helper's snapshot probe failed: $(printf '%s\n' "$snapshots" | tail -n 1). alia box doctor probes it again."
   snapshots=''
 }
 probed() { printf '%s\n' "$snapshots" | sed -n "s/^snapshot\.$1=//p" | head -n 1; }
 [ -z "$(probed left)" ] || warn "The snapshot probe could not remove its trial, which leaves $(probed left | sed 's/ /, /g'). As root, delete each file there with rm, then its folder with rmdir."
 generation=$(value generation)
 
-# What BB's installer and a box's GitHub access need.
+# What ALIA's installer and a box's GitHub access need.
 node=$(value node | sed 's/^v//')
 lacks=$(value lacks | sed 's/ /, /g')
 if [ -z "$node" ]; then
-  warn "Node.js is missing. BB's installer needs Node.js 22.19 or newer with npm: brew install node."
+  warn "Node.js is missing. ALIA's installer needs Node.js 22.19 or newer with npm: brew install node."
 elif ! printf '%s\n' "$node" | awk -F. '{ exit !($1 > 22 || ($1 == 22 && $2 >= 19)) }'; then
-  warn "Node.js is $node, but BB's installer needs 22.19 or newer with npm: brew upgrade node."
+  warn "Node.js is $node, but ALIA's installer needs 22.19 or newer with npm: brew upgrade node."
 fi
-[ -z "$lacks" ] || warn "This Mac lacks $lacks. BB's installer needs npm, and boxes need git and gh for the thread's GitHub access: brew install git gh node."
+[ -z "$lacks" ] || warn "This Mac lacks $lacks. ALIA's installer needs npm, and boxes need git and gh for the thread's GitHub access: brew install git gh node."
 
 # The panes for Cua Driver's grants and the viewer's input, for the person at the Mac.
 person=${SUDO_USER:-}
@@ -395,9 +395,9 @@ case $address in *:*) target="[$address]" ;; *) target=$address ;; esac
 known=$address
 [ "$port" = 22 ] || known="[$address]:$port"
 
-echo "This Mac is ready for bb-box's SSH host pool, at reset generation $generation, once a person has done the steps below."
+echo "This Mac is ready for alia-box's SSH host pool, at reset generation $generation, once a person has done the steps below."
 echo
-echo "Add this line to the SSH host pool's machines setting. Use another name or address if bb-box reaches it by another:"
+echo "Add this line to the SSH host pool's machines setting. Use another name or address if alia-box reaches it by another:"
 echo
 if [ "$ios_slots" = yes ]; then
   echo "  $name $admin@$target macos,macos-desktop,ios"
@@ -430,7 +430,7 @@ if [ "$(value console)" != "$(value autologin)" ]; then
 fi
 if [ -n "$snapshots" ]; then
   echo
-  echo "For snapshots, which bb-box does not take on pool machines yet, it reported: box homes on $(probed filesystem) under $(probed homes), home snapshots $(probed home), snapshot hook $(probed hook). bb box doctor shows what each machine could offer."
+  echo "For snapshots, which alia-box does not take on pool machines yet, it reported: box homes on $(probed filesystem) under $(probed homes), home snapshots $(probed home), snapshot hook $(probed hook). alia box doctor shows what each machine could offer."
 fi
 if [ -n "$warnings" ]; then
   echo

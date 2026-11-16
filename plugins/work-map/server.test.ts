@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import { task } from "./fixtures";
 afterEach(() => vi.restoreAllMocks());
@@ -153,7 +153,7 @@ async function host(
       },
     },
   });
-  await plugin(fake.bb);
+  await plugin(fake.alia);
   return {
     ...fake,
     setOutput(value: string) {

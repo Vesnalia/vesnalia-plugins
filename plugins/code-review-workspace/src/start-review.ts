@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { ReviewMeta } from "./store";
 import { parseTarget, prReviewKey } from "./targets";
 import { ensureGitHeaders } from "./patch";
@@ -8,7 +8,7 @@ import { rebuildReview, upToDate } from "./rereview";
 import type { AsyncStore } from "./store-queue";
 
 interface Deps {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   store: AsyncStore;
   gh: { runGh: typeof import("./gh").runGh; runGit: typeof import("./gh").runGit };
 }
@@ -22,7 +22,7 @@ export async function recordPrState(store: AsyncStore, targetKey: string, state:
 }
 
 // Panel-driven counterpart to review-command.ts's PR branch: a user pastes a
-// full GitHub PR URL into the panel instead of running `bb review` in a
+// full GitHub PR URL into the panel instead of running `alia review` in a
 // terminal. Only a PR's URL or owner/repo#n is accepted here — a bare PR number or local
 // git ref needs a project-scoped cwd/branch that the nav panel doesn't have,
 // so those still route through the CLI.
@@ -35,11 +35,11 @@ export async function createPrReview(
     return {
       ok: false,
       error:
-        "Paste a full GitHub PR URL (github.com/owner/repo/pull/N). For a PR number or local ref, run `bb review` in a terminal.",
+        "Paste a full GitHub PR URL (github.com/owner/repo/pull/N). For a PR number or local ref, run `alia review` in a terminal.",
     };
   }
 
-  const unavailable = await guideWriterUnavailable(deps.bb, deps.store);
+  const unavailable = await guideWriterUnavailable(deps.alia, deps.store);
   if (unavailable) return { ok: false, error: unavailable };
 
   let snapshot: Awaited<ReturnType<typeof readPrSnapshot>>;
@@ -53,8 +53,8 @@ export async function createPrReview(
   const now = Date.now();
   // Open pages hear of a review started, rebuilding, or back from Archive at once, not when its guide is done.
   const told = (key: string) => {
-    deps.bb.realtime.publish(`review:${key}`, { ts: now });
-    deps.bb.realtime.publish("reviews", { ts: now });
+    deps.alia.realtime.publish(`review:${key}`, { ts: now });
+    deps.alia.realtime.publish("reviews", { ts: now });
   };
 
   // What it finds and what it starts, in one turn, so a second start finds this one.
@@ -99,7 +99,7 @@ export async function createPrReview(
       // Starting a PR again brings it back into discovery after a delete.
       await tx.unignoreDiscovery(key);
       // The panel refetches on the realtime signal.
-      run = await beginGuide(deps.bb, tx, deps.store, key, args.projectId);
+      run = await beginGuide(deps.alia, tx, deps.store, key, args.projectId);
       return { key, told: true };
     });
   } finally {

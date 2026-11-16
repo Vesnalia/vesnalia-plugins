@@ -12,7 +12,7 @@ import {
 
 const roots: string[] = [];
 async function root() {
-  const p = await mkdtemp(path.join(tmpdir(), "bb-repo-remote-"));
+  const p = await mkdtemp(path.join(tmpdir(), "alia-repo-remote-"));
   roots.push(p);
   return p;
 }

@@ -12,13 +12,13 @@ import { CompactViewportOverrideProvider } from "../components/ui/hooks/use-comp
 const stop = vi.fn();
 const onClose = vi.fn();
 
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   // The pane's embedded chat is only imported for render; the Escape
   // handling under test does not involve it.
   ThreadChat: (): ReactNode => null,
   useSdk: () => ({ threads: { get: async () => ({}), stop } }),
   useRpc: () => ({ call: async () => ({ existence: {} }) }),
-  useBbNavigate: () => ({ toThread: () => {} }),
+  useAliaNavigate: () => ({ toThread: () => {} }),
   useSettings: () => ({ values: undefined, isLoading: false }),
 }));
 

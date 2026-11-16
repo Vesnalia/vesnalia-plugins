@@ -19,7 +19,7 @@
 //   the user's text, offering to copy it or reload.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";

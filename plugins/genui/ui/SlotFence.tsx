@@ -1,5 +1,5 @@
-// Renderer for BB's experimental_codeFenceRenderer slot (get-bb/bb#5387).
-import type { ExperimentalCodeFenceRendererProps } from "@get-bb/plugin-sdk/app";
+// Renderer for VesnALIA's experimental_codeFenceRenderer slot (get-alia/alia#5387).
+import type { ExperimentalCodeFenceRendererProps } from "@vesnalia/plugin-sdk/app";
 import { Fence, useThreadActions, type FenceLanguage } from "./Fence";
 
 export const FENCE_LANGUAGES: readonly FenceLanguage[] = ["ui", "app"];
@@ -15,7 +15,7 @@ export function SlotFence({ code, language, status, index, message, Original }: 
         language={language}
         code={code}
         complete={status !== "streaming"}
-        stateKey={`bb.genui.state:${message.id}#${language}#${index}`}
+        stateKey={`alia.genui.state:${message.id}#${language}#${index}`}
         threadId={message.threadId}
         messageId={message.id}
         fence={index}

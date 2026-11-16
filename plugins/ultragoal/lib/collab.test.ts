@@ -4,7 +4,7 @@ import {
   createFakePluginHost,
   makeThreadResponse,
   type FakePluginHost,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import { COLLAB_TOOL_NAMES, createCollabStore } from "./collab.ts";
 
 const hosts: FakePluginHost[] = [];
@@ -81,7 +81,7 @@ function collabHost(options?: {
     },
   });
   hosts.push(host);
-  host.bb.storage.database().exec(`
+  host.alia.storage.database().exec(`
     CREATE TABLE collab_agents (
       thread_id TEXT PRIMARY KEY,
       root_thread_id TEXT NOT NULL,
@@ -144,7 +144,7 @@ function collabHost(options?: {
 describe("scheduler-strict collaboration spawns", () => {
   it("binds allocation to the validated host, peeled commit, and execution revision", async () => {
     const state = collabHost();
-    const collab = createCollabStore(state.host.bb, {
+    const collab = createCollabStore(state.host.alia, {
       claimItem: (_root, args) => args.itemId,
       executionRevision: () => 7,
     });
@@ -187,7 +187,7 @@ describe("scheduler-strict collaboration spawns", () => {
 
   it("refuses a stale execution revision before spawning", async () => {
     const state = collabHost();
-    const collab = createCollabStore(state.host.bb, {
+    const collab = createCollabStore(state.host.alia, {
       claimItem: (_root, args) => args.itemId,
       executionRevision: () => 8,
     });
@@ -206,7 +206,7 @@ describe("scheduler-strict collaboration spawns", () => {
 
   it("fails closed before claim fallback when the requested item already has a worker", async () => {
     const state = collabHost();
-    state.host.bb.storage.database().prepare(`
+    state.host.alia.storage.database().prepare(`
       INSERT INTO collab_agents (
         thread_id, root_thread_id, parent_thread_id, task_name, created_at,
         display_name, item_id, role
@@ -214,7 +214,7 @@ describe("scheduler-strict collaboration spawns", () => {
         'Existing worker', 'itm_held', 'worker')
     `).run();
     let claimCalls = 0;
-    const collab = createCollabStore(state.host.bb, {
+    const collab = createCollabStore(state.host.alia, {
       claimItem: (_root, args) => {
         claimCalls += 1;
         return args.createIfMissing === false ? null : "itm_duplicate";
@@ -233,7 +233,7 @@ describe("scheduler-strict collaboration spawns", () => {
     assert.equal(claimCalls, 0);
     assert.equal(state.spawnCalls(), 0);
     assert.equal(
-      (state.host.bb.storage.database().prepare(
+      (state.host.alia.storage.database().prepare(
         "SELECT COUNT(*) AS n FROM collab_agents WHERE retired_at IS NULL",
       ).get() as { n: number }).n,
       1,
@@ -242,7 +242,7 @@ describe("scheduler-strict collaboration spawns", () => {
 
   it("retires and stops a spawned worker whose durable item differs from the request", async () => {
     const state = collabHost();
-    state.host.bb.storage.database().exec(`
+    state.host.alia.storage.database().exec(`
       CREATE TRIGGER rewrite_scheduler_item
       AFTER INSERT ON collab_agents
       WHEN NEW.thread_id = 'thr_spawned'
@@ -250,7 +250,7 @@ describe("scheduler-strict collaboration spawns", () => {
         UPDATE collab_agents SET item_id = 'itm_wrong' WHERE thread_id = NEW.thread_id;
       END;
     `);
-    const collab = createCollabStore(state.host.bb, {
+    const collab = createCollabStore(state.host.alia, {
       claimItem: (_root, args) => args.itemId,
     });
 
@@ -265,7 +265,7 @@ describe("scheduler-strict collaboration spawns", () => {
     assert.match(result.error, /did not retain scheduler item/);
     assert.equal(state.spawnCalls(), 1);
     assert.deepEqual(state.stopped, ["thr_spawned"]);
-    const row = state.host.bb.storage.database().prepare(
+    const row = state.host.alia.storage.database().prepare(
       "SELECT item_id, retired_at FROM collab_agents WHERE thread_id = 'thr_spawned'",
     ).get() as { item_id: string | null; retired_at: number | null };
     assert.equal(row.item_id, null);
@@ -274,7 +274,7 @@ describe("scheduler-strict collaboration spawns", () => {
 
   it("does not convert a null strict claim back into the requested item", async () => {
     const state = collabHost();
-    const collab = createCollabStore(state.host.bb, {
+    const collab = createCollabStore(state.host.alia, {
       claimItem: () => null,
     });
 
@@ -289,7 +289,7 @@ describe("scheduler-strict collaboration spawns", () => {
     assert.match(result.error, /resolved to no item/);
     assert.equal(state.spawnCalls(), 0);
     assert.equal(
-      (state.host.bb.storage.database().prepare(
+      (state.host.alia.storage.database().prepare(
         "SELECT COUNT(*) AS n FROM collab_item_reservations",
       ).get() as { n: number }).n,
       0,
@@ -299,7 +299,7 @@ describe("scheduler-strict collaboration spawns", () => {
 
   it("injects scope and defect evidence without promoting agent-authored checks", async () => {
     const state = collabHost();
-    const collab = createCollabStore(state.host.bb, {
+    const collab = createCollabStore(state.host.alia, {
       itemBrief: () => ({
         files: ["src/domain.ts"],
         linkedDefects: "LINKED DEFECTS: fnd_public_verifier — untrusted evidence only",
@@ -333,14 +333,14 @@ describe("scheduler-strict collaboration spawns", () => {
 
   it("keeps structured item evidence available after the reporting row retires", () => {
     const state = collabHost();
-    state.host.bb.storage.database().prepare(`
+    state.host.alia.storage.database().prepare(`
       INSERT INTO collab_agents (
         thread_id, root_thread_id, parent_thread_id, task_name, created_at,
         display_name, item_id, role
       ) VALUES ('thr_reporter', 'thr_root', 'thr_root', '/root/reporter', 1,
         'Evidence Keeper', 'itm_proven', 'worker')
     `).run();
-    const collab = createCollabStore(state.host.bb);
+    const collab = createCollabStore(state.host.alia);
     assert.equal(
       collab.setReport("thr_reporter", "done", "commit abc; test passed", [
         { findingId: "fnd_retired", proof: "regression test passed" },
@@ -352,7 +352,7 @@ describe("scheduler-strict collaboration spawns", () => {
     assert.deepEqual(collab.findingEvidenceForItem("thr_root", "itm_proven"), [
       { findingId: "fnd_retired", proof: "regression test passed" },
     ]);
-    const row = state.host.bb.storage.database().prepare(
+    const row = state.host.alia.storage.database().prepare(
       "SELECT item_id, report_item_id, retired_at FROM collab_agents WHERE thread_id='thr_reporter'",
     ).get() as { item_id: string | null; report_item_id: string | null; retired_at: number | null };
     assert.equal(row.item_id, null);
@@ -374,7 +374,7 @@ describe("scheduler-strict collaboration spawns", () => {
       discovered: [legacyChild],
       prompts: { thr_legacy_b: "SLICE (item_id=itm_b): late old-generation work" },
     });
-    const db = state.host.bb.storage.database();
+    const db = state.host.alia.storage.database();
     db.prepare(`
       INSERT INTO collab_root_worker_caps (root_thread_id, max_workers, updated_at)
       VALUES ('thr_root', 1, 1)
@@ -387,7 +387,7 @@ describe("scheduler-strict collaboration spawns", () => {
         'Worker A', 'itm_a', 'worker')
     `).run();
     const rejected: Array<{ threadId: string; itemId: string | null }> = [];
-    const collab = createCollabStore(state.host.bb, {
+    const collab = createCollabStore(state.host.alia, {
       onRejectedChild: (_root, threadId, itemId) => rejected.push({ threadId, itemId }),
     });
 
@@ -426,7 +426,7 @@ describe("fleet management tool surface", () => {
 
 describe("immediate agent messaging", () => {
   function seedWorker(state: ReturnType<typeof collabHost>, itemId = "itm_live") {
-    state.host.bb.storage.database().prepare(`
+    state.host.alia.storage.database().prepare(`
       INSERT INTO collab_agents (
         thread_id, root_thread_id, parent_thread_id, task_name, created_at,
         display_name, item_id, role
@@ -438,7 +438,7 @@ describe("immediate agent messaging", () => {
   it("ultragoal_send_message steers a live worker and never touches the composer queue", async () => {
     const state = collabHost();
     seedWorker(state);
-    const collab = createCollabStore(state.host.bb, {
+    const collab = createCollabStore(state.host.alia, {
       itemStatus: () => "in_progress",
     });
     collab.registerTools();
@@ -461,7 +461,7 @@ describe("immediate agent messaging", () => {
   it("ultragoal_followup_task uses the same immediate send path", async () => {
     const state = collabHost();
     seedWorker(state);
-    const collab = createCollabStore(state.host.bb, {
+    const collab = createCollabStore(state.host.alia, {
       itemStatus: () => "in_progress",
     });
     collab.registerTools();

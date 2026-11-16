@@ -46,7 +46,7 @@ const AUDIO_EXTENSIONS: ReadonlySet<string> = new Set([
   "weba",
 ]);
 
-/** Rendered by bb's Markdown component, with the source one click away. */
+/** Rendered by VesnALIA's Markdown component, with the source one click away. */
 const MARKDOWN_EXTENSIONS: ReadonlySet<string> = new Set(["md", "markdown", "mdx"]);
 
 /** Lowercased extension after the last dot, or "" for a dotfile / no dot. */

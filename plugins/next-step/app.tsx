@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   definePluginApp, experimental_usePluginId, useComposer, useRealtime,
   useRealtimeConnectionState, useRpc, useSettings,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Suggestion } from "./contract";
 import { mountGhost, GHOST_CSS } from "./ghost";
 
@@ -48,7 +48,7 @@ export function NextStep() {
       rpc.call("suggest", { threadId }).then((result) => {
         if (disposed || id !== request.current || epoch.current !== startedAt || composer.isRunning || !composer.isEmpty) return;
         let dismissed = false;
-        try { dismissed = sessionStorage.getItem(`bb-next-step:${threadId}`) === result.key; } catch { /* optional */ }
+        try { dismissed = sessionStorage.getItem(`alia-next-step:${threadId}`) === result.key; } catch { /* optional */ }
         setSuggestion(dismissed ? null : result);
       }).catch(() => { if (!disposed) setSuggestion(null); });
     }, 250);
@@ -66,7 +66,7 @@ export function NextStep() {
     if (!anchor.current || !enabled || !threadId || !suggestion?.text || !suggestion.key || composer.isRunning || composer.isSubmitting || !composer.isEmpty) return;
     return mountGhost(anchor.current, composer, suggestion.text, pluginId, () => {
       epoch.current++;
-      try { sessionStorage.setItem(`bb-next-step:${threadId}`, suggestion.key!); } catch { /* optional */ }
+      try { sessionStorage.setItem(`alia-next-step:${threadId}`, suggestion.key!); } catch { /* optional */ }
       setSuggestion(null);
     });
   }, [suggestion, enabled, threadId, composer.isRunning, composer.isSubmitting, composer.isEmpty, composer.layout, composer, pluginId]);

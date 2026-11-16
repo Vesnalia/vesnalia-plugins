@@ -80,7 +80,7 @@ describe("provider-usage source mapping", () => {
     });
   });
 
-  it("gives bb's panel no 5-hour window for an account without a session (Ultra, 2026-10-30)", () => {
+  it("gives VesnALIA's panel no 5-hour window for an account without a session (Ultra, 2026-10-30)", () => {
     const measurement = toMeasurement(ACCOUNT, {
       observedAt: NOW,
       problem: null,
@@ -99,7 +99,7 @@ describe("provider-usage source mapping", () => {
     ).toEqual(["weekly"]);
   });
 
-  it("gives bb's panel no weekly window for a Team seat, only its 5 hours and its models (Aitor, 2026-11-02)", () => {
+  it("gives VesnALIA's panel no weekly window for a Team seat, only its 5 hours and its models (Aitor, 2026-11-02)", () => {
     const measurement = toMeasurement(
       { ...ACCOUNT, name: "team1", kind: "team" },
       {
@@ -123,7 +123,7 @@ describe("provider-usage source mapping", () => {
 
   // What BARS-001 guards: an incomplete answer (a seven_day bucket and no
   // weekly_all) leaves the weekly unknown, as parseUsage marks it (100 %,
-  // no reset, `missing`): bb would show a known Team seat at 100 % of a
+  // no reset, `missing`): VesnALIA would show a known Team seat at 100 % of a
   // week nobody measured. A weekly measured without a reset is not that
   // (Codex Sol r1 medium, 2026-11-07).
   it("gives no weekly window to a known Team seat whose weekly is unknown, an incomplete answer (Codex BARS-001)", () => {
@@ -151,8 +151,8 @@ describe("provider-usage source mapping", () => {
 
   // Aitor, 2026-11-07: «no entiendo por qué pone agotada si tiene fable»:
   // team4 read its general weekly at 100 % till Monday 17:00 (a Team seat
-  // reports one since 0.2.39). bb's panel gets that window too.
-  it("gives bb's panel a Team seat's weekly window when its reading has one with its reset (team4, 2026-11-07)", () => {
+  // reports one since 0.2.39). VesnALIA's panel gets that window too.
+  it("gives VesnALIA's panel a Team seat's weekly window when its reading has one with its reset (team4, 2026-11-07)", () => {
     const measurement = toMeasurement(
       { ...ACCOUNT, name: "team4", kind: "team" },
       {
@@ -176,9 +176,9 @@ describe("provider-usage source mapping", () => {
 
   // Codex Sol r1 medium (2026-11-07): the same team4 with its weekly read at
   // 100 % and no reset in the answer (the reset is optional). Measured, not
-  // unknown: bb gets it, or it would show 0 % and 85 % and hide the limit
+  // unknown: VesnALIA gets it, or it would show 0 % and 85 % and hide the limit
   // that stops the seat.
-  it("gives bb's panel a Team seat's weekly window measured without a reset (Codex Sol r1 medium)", () => {
+  it("gives VesnALIA's panel a Team seat's weekly window measured without a reset (Codex Sol r1 medium)", () => {
     const measurement = toMeasurement(
       { ...ACCOUNT, name: "team4", kind: "team" },
       {
@@ -245,7 +245,7 @@ describe("provider-usage source mapping", () => {
     expect(measurement.usage.status).toBe("ok");
   });
 
-  // Codex ULTRA-R05: the badge said only the account's name. bb's panel
+  // Codex ULTRA-R05: the badge said only the account's name. VesnALIA's panel
   // heads the card with the email and replaces planLabel by its own word
   // when it knows plan.id ("max", "team"), so the name would be lost: the
   // plan goes in the label, beside the name, and plan stays null.

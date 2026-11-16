@@ -1,7 +1,7 @@
-/* Integrations — other plugins' panels and BB's diff view in the Pokecut look.
+/* Integrations — other plugins' panels and ALIA's diff view in the Pokecut look.
    Only colors, radii and elevation are restyled; layout and behavior stay theirs. */
 
-/* ── Git History (yusuf8834/bb-git-history) ─────────────────────────────────
+/* ── Git History (yusuf8834/alia-git-history) ─────────────────────────────────
    The plugin exposes its palette as --gh-* / --git-ref-* variables on
    .git-history-panel; re-pointing them at our tokens repaints everything. */
 .git-history-workspace .git-history-panel {
@@ -71,7 +71,7 @@
   background-color: var(--state-hover);
 }
 
-/* ── BB diff view ("All changes"): file cards ───────────────────────────────
+/* ── ALIA diff view ("All changes"): file cards ───────────────────────────────
    Each changed file is a card (the one holding a "Copy path for" button).
    diff-paths.ts splits the path so the folder reads quiet, the name strong. */
 .overflow-clip.rounded-lg.border:has(button[aria-label^="Copy path for"]) {
@@ -162,7 +162,7 @@
 }
 
 /* ── Composer attachments as file cards ─────────────────────────────────────
-   BB's attachment chip (name + remove button) becomes a small Pokecut file
+   ALIA's attachment chip (name + remove button) becomes a small Pokecut file
    card: white, outlined, a leading document tile. Text files from the
    Paste as File plugin (pasted-*.md / .json / .txt) get the accent tile. */
 [data-app-composer] span.inline-flex.rounded-full.border:has(> span > button[aria-label^="Remove "]) {

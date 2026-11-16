@@ -8,7 +8,7 @@ import { syncBuiltinESMExports } from "node:module";
 import { execFileSync } from "node:child_process";
 import { chmod, lstat, mkdir, readdir, readFile, rename, rm, stat, symlink, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import hostEntry from "../../host";
 import { newId } from "../../src/ids";
@@ -1229,7 +1229,7 @@ describe("what a restore never touches", () => {
   });
 });
 
-describe("bb's chat storage", () => {
+describe("VesnALIA's chat storage", () => {
   /** git in the shadow with the workspace as work tree, as the host runs it. */
   function shadowWorkTreeGit(workspace: string, ...args: string[]): string {
     const gitDir = path.join(dataDir, "shadows", shadowKey(workspace), "git");
@@ -1241,68 +1241,68 @@ describe("bb's chat storage", () => {
   }
   const treePaths = (workspace: string, tree: string) => shadowGit(workspace, "ls-tree", "-r", "--name-only", tree).split("\n").filter(Boolean).sort();
 
-  it("never captures .bb/chats, even files the repository tracks, but captures the rest of .bb/", async () => {
+  it("never captures .vesnalia/chats, even files the repository tracks, but captures the rest of .vesnalia/", async () => {
     const ws = await tempDir("ws");
     // The repository ignores the folder, yet commits one chat copy anyway.
-    await initRepo(ws, { "a.txt": "one\n", ".gitignore": ".bb/chats/\n" });
-    await write(ws, ".bb/chats/thr_tracked/thread.json", "{}\n");
-    userGit(ws, "add", "-f", ".bb/chats/thr_tracked/thread.json");
+    await initRepo(ws, { "a.txt": "one\n", ".gitignore": ".vesnalia/chats/\n" });
+    await write(ws, ".vesnalia/chats/thr_tracked/thread.json", "{}\n");
+    userGit(ws, "add", "-f", ".vesnalia/chats/thr_tracked/thread.json");
     userGit(ws, "commit", "-q", "-m", "track a chat copy");
-    await write(ws, ".bb/plugins.json", '{"rewind":true}\n');
-    await write(ws, ".bb/chats/thr_1/thread.json", '{"title":"one"}\n');
-    await write(ws, ".bb/chats/thr_1/history/index.json", "[]\n");
-    await write(ws, ".bb/chatsworth.txt", "not a chat copy\n");
+    await write(ws, ".vesnalia/plugins.json", '{"rewind":true}\n');
+    await write(ws, ".vesnalia/chats/thr_1/thread.json", '{"title":"one"}\n');
+    await write(ws, ".vesnalia/chats/thr_1/history/index.json", "[]\n");
+    await write(ws, ".vesnalia/chatsworth.txt", "not a chat copy\n");
     const first = await okSnap(ws);
-    expect(treePaths(ws, first.tree)).toEqual([".bb/chatsworth.txt", ".bb/plugins.json", ".gitignore", "a.txt"]);
-    expect(first.changes.map((change) => change.path).filter((file) => file.startsWith(".bb/chats/"))).toEqual([]);
+    expect(treePaths(ws, first.tree)).toEqual([".vesnalia/chatsworth.txt", ".vesnalia/plugins.json", ".gitignore", "a.txt"]);
+    expect(first.changes.map((change) => change.path).filter((file) => file.startsWith(".vesnalia/chats/"))).toEqual([]);
 
-    // bb rewrites its copies after every turn: that alone changes nothing.
-    await write(ws, ".bb/chats/thr_1/thread.json", '{"title":"renamed"}\n');
-    await write(ws, ".bb/chats/thr_1/history/turn_2/page-1.json", "[]\n");
-    await write(ws, ".bb/chats/thr_tracked/thread.json", "{\"changed\":true}\n");
+    // VesnALIA rewrites its copies after every turn: that alone changes nothing.
+    await write(ws, ".vesnalia/chats/thr_1/thread.json", '{"title":"renamed"}\n');
+    await write(ws, ".vesnalia/chats/thr_1/history/turn_2/page-1.json", "[]\n");
+    await write(ws, ".vesnalia/chats/thr_tracked/thread.json", "{\"changed\":true}\n");
     const second = await okSnap(ws, { compareTo: first.commit });
     expect(second.deduped).toBe(true);
 
-    await write(ws, ".bb/plugins.json", '{"rewind":false}\n');
-    await write(ws, ".bb/chats/thr_1/thread.json", '{"title":"again"}\n');
+    await write(ws, ".vesnalia/plugins.json", '{"rewind":false}\n');
+    await write(ws, ".vesnalia/chats/thr_1/thread.json", '{"title":"again"}\n');
     const third = await okSnap(ws, { compareTo: first.commit });
-    expect(third.changes.map((change) => [change.path, change.status])).toEqual([[".bb/plugins.json", "M"]]);
+    expect(third.changes.map((change) => [change.path, change.status])).toEqual([[".vesnalia/plugins.json", "M"]]);
     expect(third.stats.files).toBe(1);
   });
 
   it("drops chat copies an earlier version captured, and never restores or deletes them from an old checkpoint", async () => {
     const ws = await tempDir("ws");
-    await initRepo(ws, { "a.txt": "one\n", ".bb/plugins.json": "{}\n" });
-    await write(ws, ".bb/chats/thr_old/thread.json", "v1\n");
-    await write(ws, ".bb/chats/thr_gone/thread.json", "gone\n");
+    await initRepo(ws, { "a.txt": "one\n", ".vesnalia/plugins.json": "{}\n" });
+    await write(ws, ".vesnalia/chats/thr_old/thread.json", "v1\n");
+    await write(ws, ".vesnalia/chats/thr_gone/thread.json", "gone\n");
     await okSnap(ws);
 
     // What Rewind 0.1 left behind: chat copies in the shadow index, in the
     // latest checkpoint's tree, and no exclusion for them.
-    shadowWorkTreeGit(ws, "update-index", "--add", "--", ".bb/chats/thr_old/thread.json", ".bb/chats/thr_gone/thread.json");
+    shadowWorkTreeGit(ws, "update-index", "--add", "--", ".vesnalia/chats/thr_old/thread.json", ".vesnalia/chats/thr_gone/thread.json");
     const oldTree = shadowWorkTreeGit(ws, "write-tree").trim();
     const oldCommit = shadowGit(ws, "commit-tree", "-m", "old", oldTree).trim();
     const old = { checkpointId: newId("ck"), commit: oldCommit };
     shadowGit(ws, "update-ref", `refs/rewind/${old.checkpointId}`, oldCommit);
-    expect(treePaths(ws, oldTree)).toContain(".bb/chats/thr_old/thread.json");
+    expect(treePaths(ws, oldTree)).toContain(".vesnalia/chats/thr_old/thread.json");
     const shadowRoot = path.join(dataDir, "shadows", shadowKey(ws));
     const state = JSON.parse(await readFile(path.join(shadowRoot, "state.json"), "utf8")) as Record<string, unknown>;
     await writeFile(path.join(shadowRoot, "state.json"), JSON.stringify({ ...state, lastTree: oldTree, lastCommit: oldCommit }));
     const excludeFile = path.join(shadowRoot, "git", "info", "exclude");
-    await writeFile(excludeFile, (await readFile(excludeFile, "utf8")).replace("/.bb/chats/\n", ""));
+    await writeFile(excludeFile, (await readFile(excludeFile, "utf8")).replace("/.vesnalia/chats/\n", ""));
 
     // The next snapshot drops them from the index; its changes do not show it.
     const next = await okSnap(ws, { compareTo: oldCommit });
-    expect(treePaths(ws, next.tree)).toEqual([".bb/plugins.json", "a.txt"]);
-    expect(shadowWorkTreeGit(ws, "ls-files").split("\n").filter(Boolean).sort()).toEqual([".bb/plugins.json", "a.txt"]);
+    expect(treePaths(ws, next.tree)).toEqual([".vesnalia/plugins.json", "a.txt"]);
+    expect(shadowWorkTreeGit(ws, "ls-files").split("\n").filter(Boolean).sort()).toEqual([".vesnalia/plugins.json", "a.txt"]);
     expect(next.changes).toEqual([]);
-    expect(await readFile(excludeFile, "utf8")).toContain("/.bb/chats/\n");
+    expect(await readFile(excludeFile, "utf8")).toContain("/.vesnalia/chats/\n");
 
-    // bb keeps writing its copies; one chat was deleted, one started.
+    // VesnALIA keeps writing its copies; one chat was deleted, one started.
     await write(ws, "a.txt", "two\n");
-    await write(ws, ".bb/chats/thr_old/thread.json", "v2\n");
-    await rm(path.join(ws, ".bb/chats/thr_gone"), { recursive: true });
-    await write(ws, ".bb/chats/thr_new/thread.json", "new\n");
+    await write(ws, ".vesnalia/chats/thr_old/thread.json", "v2\n");
+    await rm(path.join(ws, ".vesnalia/chats/thr_gone"), { recursive: true });
+    await write(ws, ".vesnalia/chats/thr_new/thread.json", "new\n");
 
     const plan = await restore(ws, old, { dryRun: true });
     expect(plan.plan.changes.map((change) => [change.path, change.action])).toEqual([["a.txt", "write"]]);
@@ -1311,26 +1311,26 @@ describe("bb's chat storage", () => {
     const restored = await restore(ws, old);
     expect(restored.verification?.ok).toBe(true);
     expect(await readFile(path.join(ws, "a.txt"), "utf8")).toBe("one\n");
-    expect(await readFile(path.join(ws, ".bb/chats/thr_old/thread.json"), "utf8")).toBe("v2\n");
-    expect(await exists(path.join(ws, ".bb/chats/thr_gone/thread.json"))).toBe(false);
-    expect(await readFile(path.join(ws, ".bb/chats/thr_new/thread.json"), "utf8")).toBe("new\n");
-    expect(await readFile(path.join(ws, ".bb/plugins.json"), "utf8")).toBe("{}\n");
-    expect(treePaths(ws, restored.effectiveTree)).toEqual([".bb/plugins.json", "a.txt"]);
+    expect(await readFile(path.join(ws, ".vesnalia/chats/thr_old/thread.json"), "utf8")).toBe("v2\n");
+    expect(await exists(path.join(ws, ".vesnalia/chats/thr_gone/thread.json"))).toBe(false);
+    expect(await readFile(path.join(ws, ".vesnalia/chats/thr_new/thread.json"), "utf8")).toBe("new\n");
+    expect(await readFile(path.join(ws, ".vesnalia/plugins.json"), "utf8")).toBe("{}\n");
+    expect(treePaths(ws, restored.effectiveTree)).toEqual([".vesnalia/plugins.json", "a.txt"]);
 
     // Undo puts a.txt back and still leaves the copies alone.
     const undo = await restore(ws, { checkpointId: restored.preRestoreId, commit: restored.preRestore!.commit });
     expect(undo.verification?.ok).toBe(true);
     expect(await readFile(path.join(ws, "a.txt"), "utf8")).toBe("two\n");
-    expect(await readFile(path.join(ws, ".bb/chats/thr_old/thread.json"), "utf8")).toBe("v2\n");
-    expect(await readFile(path.join(ws, ".bb/chats/thr_new/thread.json"), "utf8")).toBe("new\n");
+    expect(await readFile(path.join(ws, ".vesnalia/chats/thr_old/thread.json"), "utf8")).toBe("v2\n");
+    expect(await readFile(path.join(ws, ".vesnalia/chats/thr_new/thread.json"), "utf8")).toBe("new\n");
   });
 
   it("hides chat copies from diffs between old checkpoints", async () => {
     const ws = await tempDir("ws");
     await initRepo(ws, { "a.txt": "one\n" });
     const first = await okSnap(ws);
-    await write(ws, ".bb/chats/thr_1/thread.json", "{}\n");
-    shadowWorkTreeGit(ws, "update-index", "--add", "--", ".bb/chats/thr_1/thread.json");
+    await write(ws, ".vesnalia/chats/thr_1/thread.json", "{}\n");
+    shadowWorkTreeGit(ws, "update-index", "--add", "--", ".vesnalia/chats/thr_1/thread.json");
     await write(ws, "a.txt", "two\n");
     shadowWorkTreeGit(ws, "update-index", "--", "a.txt");
     const oldCommit = shadowGit(ws, "commit-tree", "-m", "old", shadowWorkTreeGit(ws, "write-tree").trim()).trim();
@@ -1353,7 +1353,7 @@ describe("bb's chat storage", () => {
     expect(diff.stats.files).toBe(1);
   });
 
-  it("leaves bb thread storage inside the workspace alone, and remembers it for later calls", async () => {
+  it("leaves VesnALIA thread storage inside the workspace alone, and remembers it for later calls", async () => {
     const ws = await tempDir("ws");
     await initRepo(ws, { "a.txt": "one\n" });
     await write(ws, "chat-store/thr_9/thread.json", "{}\n");

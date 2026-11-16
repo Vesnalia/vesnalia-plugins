@@ -1,61 +1,69 @@
 {
-    "name": "bb-plugin-dashboard",
-    "version": "0.1.8",
-    "license": "MIT",
-    "author": "devalextelematika",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/devalextelematika/BBDesk.git"
+  "name": "alia-plugin-dashboard",
+  "version": "0.1.8",
+  "license": "MIT",
+  "author": "devalextelematika",
+  "type": "module",
+  "engines": {
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.94 <0.7.0"
+  },
+  "alia": {
+    "name": "BBDesk",
+    "description": "Your VesnALIA projects, chats and applications in one workspace.",
+    "branding": {
+      "icon": "./assets/icon.svg",
+      "experimental_icons": {
+        "mark": "./assets/icon.svg"
+      },
+      "logo": {
+        "light": "./assets/logo.svg"
+      }
     },
-    "homepage": "https://github.com/devalextelematika/BBDesk#readme",
-    "bugs": {
-        "url": "https://github.com/devalextelematika/BBDesk/issues"
-    },
-    "type": "module",
-    "engines": {
-        "bb": ">=0.48",
-        "bbPluginSdk": ">=0.6.94 <0.7.0"
-    },
-    "bb": {
-        "name": "BBDesk",
-        "description": "Your BB projects, chats and applications in one workspace.",
-        "branding": {
-            "icon": "./assets/icon.svg",
-            "experimental_icons": {
-                "mark": "./assets/icon.svg"
-            },
-            "logo": {
-                "light": "./assets/logo.svg"
-            }
-        },
-        "server": "./server.ts",
-        "app": "./app.tsx"
-    },
-    "dependencies": {
-        "zod": "^4.6.5"
-    },
-    "devDependencies": {
-        "@get-bb/plugin-sdk": "0.6.94",
-        "@testing-library/react": "^16.3.3",
-        "@types/better-sqlite3": "^7.6.12",
-        "@types/node": "^22.0.0",
-        "@types/react": "^19.0.0",
-        "@types/react-dom": "^19.0.0",
-        "better-sqlite3": "^12.0.0",
-        "cron-parser": "^5.5.0",
-        "css-tree": "3.2.1",
-        "hono": "^4.11.9",
-        "jsdom": "^30.1.3",
-        "react": "19.3.1",
-        "react-dom": "19.3.1",
-        "typescript": "^5.7.0"
-    },
-    "scripts": {
-        "prebuild": "node scripts/check-ui.mjs",
-        "build": "bb plugin build",
-        "prepack": "npm run build",
-        "typecheck": "tsc --noEmit",
-        "pretest": "node scripts/check-ui.mjs",
-        "test": "node scripts/test.mjs"
+    "server": "./server.ts",
+    "app": "./app.tsx"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.3",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "cron-parser": "^5.5.0",
+    "css-tree": "3.2.1",
+    "hono": "^4.11.9",
+    "jsdom": "^30.1.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "typescript": "^5.7.0"
+  },
+  "scripts": {
+    "prebuild": "node scripts/check-ui.mjs",
+    "build": "alia plugin build",
+    "prepack": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "pretest": "node scripts/check-ui.mjs",
+    "test": "node scripts/test.mjs"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.94"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
     }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/dashboard#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/dashboard"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

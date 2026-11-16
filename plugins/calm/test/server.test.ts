@@ -1,11 +1,11 @@
-// The server's step counting and cleanup, driven through a stand-in for bb's
+// The server's step counting and cleanup, driven through a stand-in for VesnALIA's
 // plugin API: events go in, realtime messages and RPC answers come out.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import plugin from "../server";
-import { fakeBb, type Row } from "./fake-bb";
+import { fakeAlia, type Row } from "./fake-alia";
 
 const step = (seq: number, at = Date.now()): Row => ({ seq, createdAt: at, data: { item: { type: "toolCall" } } });
-const stepsOf = (f: ReturnType<typeof fakeBb>, id: string) =>
+const stepsOf = (f: ReturnType<typeof fakeAlia>, id: string) =>
   f.published.filter((p) => p.channel === "step" && p.payload.threadId === id).at(-1)?.payload.steps ?? 0;
 
 describe("server step counting", () => {
@@ -13,8 +13,8 @@ describe("server step counting", () => {
   afterEach(() => { vi.useRealTimers(); });
 
   async function watchedRun() {
-    const f = fakeBb();
-    await plugin(f.bb as never);
+    const f = fakeAlia();
+    await plugin(f.alia as never);
     await f.emit("thread.active", { thread: f.thread("t") });
     await f.rpc.state_get({ threadId: "t" });   // a strip opens and starts watching
     return f;
@@ -73,8 +73,8 @@ describe("server step counting", () => {
   });
 
   it("a child archived during the crew lookup stays gone", async () => {
-    const f = fakeBb();
-    await plugin(f.bb as never);
+    const f = fakeAlia();
+    await plugin(f.alia as never);
     f.setChildren([f.thread("kid", "active", "p")]);
     const hold = f.holdList();
     const asking = f.rpc.state_get({ threadId: "p" });

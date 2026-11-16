@@ -1,13 +1,13 @@
 import {
   experimental_captureBridgeJsonRpcOutput as captureBridgeJsonRpcOutput,
   experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import { expect, it } from "vitest";
 
 // Live integration test for the kimi dialect maintenance surface. Reads the
 // real ~/.kimi-code credential state and probes the real kimi binary, so it
-// runs only when BB_KIMI_LIVE=1 is set explicitly.
-const LIVE = process.env.BB_KIMI_LIVE === "1";
+// runs only when ALIA_KIMI_LIVE=1 is set explicitly.
+const LIVE = process.env.ALIA_KIMI_LIVE === "1";
 const itLive = LIVE ? it : it.skip;
 
 const PROVIDER_OPTIONS = {

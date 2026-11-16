@@ -111,7 +111,7 @@ describe("transport", () => {
     await seedProject(h, (doc) => (doc.merge = { strategy: "pr", stack: false }));
     ({ clone } = repos());
     laptop = clone();
-    h.bb.checkout = laptop;
+    h.alia.checkout = laptop;
     host = new RepoHost();
     ctx = { ...h.ctx, host };
   });
@@ -350,7 +350,7 @@ describe("transport for a stacked ticket", () => {
     await seedProject(h, (doc) => (doc.merge = { strategy: "pr" }));
     ({ clone } = repos());
     laptop = clone();
-    h.bb.checkout = laptop;
+    h.alia.checkout = laptop;
     host = new RepoHost();
     ctx = { ...h.ctx, host };
   });

@@ -4,7 +4,7 @@
 // Mutations return the changed issue as `issues.get` would (list shape plus
 // children and comments), so the UI can reconcile its optimistic state and
 // its detail cache in one step.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { CLOSE_REASONS } from "./close-rules.ts";
 import {
@@ -20,13 +20,13 @@ const title = z.string().trim().min(1).max(500);
 const body = z.string().max(65_536);
 const label = z.string().trim().min(1).max(100);
 const idempotencyKey = z.string().min(8).max(128);
-const bbId = z.string().regex(/^[a-z]+_[a-z0-9]{1,64}$/u, "Expected a bb id");
+const aliaId = z.string().regex(/^[a-z]+_[a-z0-9]{1,64}$/u, "Expected a VesnALIA id");
 /** Which panel's split is meant: only the nav page resizes today. */
 const splitSurface = z.enum(["nav"]);
 
 const boundProjectSchema = z.object({ id: z.number().int(), uid: z.string(), name: z.string() });
 const bindingSchema = z.object({
-  /** The kata project the bb project is bound to, or null. */
+  /** The kata project the VesnALIA project is bound to, or null. */
   kataProject: boundProjectSchema.nullable(),
   /** `[project] name` from `.kata.toml` (even when no kata project matches). */
   tomlName: z.string().nullable(),
@@ -107,14 +107,14 @@ export const rpcContract = defineRpcContract({
   /**
    * Resolve refs (short id, `project#abc4`, ULID) to a small summary; the
    * first that resolves wins. Short ids resolve against the thread's, else
-   * the bb project's, kata binding. Unresolvable → `issue: null`.
+   * the VesnALIA project's, kata binding. Unresolvable → `issue: null`.
    */
   "issues.resolve": {
     input: z
       .object({
         refs: z.array(ref).min(1).max(10),
-        projectId: bbId.optional(),
-        threadId: bbId.optional(),
+        projectId: aliaId.optional(),
+        threadId: aliaId.optional(),
       })
       .strict(),
     output: z.object({
@@ -124,23 +124,23 @@ export const rpcContract = defineRpcContract({
     }),
   },
   // ---- kata-aware threads ----
-  /** The kata project a bb project is bound to through `.kata.toml`. */
+  /** The kata project a VesnALIA project is bound to through `.kata.toml`. */
   "binding.forProject": {
-    input: z.object({ projectId: bbId }).strict(),
+    input: z.object({ projectId: aliaId }).strict(),
     output: bindingSchema,
   },
   /** The thread's project binding plus its linked issue, if any. */
   "binding.forThread": {
-    input: z.object({ threadId: bbId }).strict(),
+    input: z.object({ threadId: aliaId }).strict(),
     output: threadBindingSchema,
   },
   /** Link an issue to the thread (stored in this plugin's thread metadata). */
   "thread.linkIssue": {
-    input: z.object({ threadId: bbId, projectUid, ref }).strict(),
+    input: z.object({ threadId: aliaId, projectUid, ref }).strict(),
     output: threadBindingSchema,
   },
   "thread.unlinkIssue": {
-    input: z.object({ threadId: bbId }).strict(),
+    input: z.object({ threadId: aliaId }).strict(),
     output: threadBindingSchema,
   },
 

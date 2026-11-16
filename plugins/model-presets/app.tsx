@@ -1,9 +1,9 @@
-// bb-plugin-model-presets — frontend entry.
+// alia-plugin-model-presets — frontend entry.
 //
 // Registers the "Preset" control in the built-in New thread composer, the
 // keyboard shortcut that opens it, and a Presets section on the plugin's
 // settings page.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { PresetAction } from "@/components/preset-menu";
 import { PresetManager } from "@/components/preset-manager";
 import { handleShortcutKeydown } from "@/lib/shortcut";
@@ -21,7 +21,7 @@ export default definePluginApp((app) => {
 
   // The shortcut only does something while a PresetAction is mounted (the
   // New thread screen); elsewhere the registry is empty and the key passes
-  // through to bb untouched.
+  // through to VesnALIA untouched.
   app.contentScripts.register({
     id: "preset-shortcut",
     mount({ signal }) {

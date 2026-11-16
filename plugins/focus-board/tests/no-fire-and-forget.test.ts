@@ -1,7 +1,7 @@
 // The no-fire-and-forget gate for the plugin's SERVER process.
 //
 // The 2026-10-05 security re-audit found the class this test kills: a
-// `void someAsync()` inside the bb server process turns any rejection into
+// `void someAsync()` inside the VesnALIA server process turns any rejection into
 // an unhandled rejection in the host (crash-class). The gate enforces, for
 // every `void <callee>(...)` site in server.ts and lib/, one of:
 //   (a) the statement carries its own `.catch(...)` — the call site owns

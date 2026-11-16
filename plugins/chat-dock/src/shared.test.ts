@@ -23,7 +23,7 @@ test("the thread menu lists the settings in the list's order, by their short lab
   ]);
 });
 
-test("what the backend hands BB is the list less what only the page uses", () => {
+test("what the backend hands VesnALIA is the list less what only the page uses", () => {
   const defined = definitions();
   assert.deepEqual(Object.keys(defined), [...SETTING_KEYS]);
   for (const key of SETTING_KEYS) {

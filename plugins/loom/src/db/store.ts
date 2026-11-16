@@ -10,7 +10,7 @@ export interface ProjectRow {
   slug: string;
   name: string;
   key: string;
-  bb_project_id: string;
+  alia_project_id: string;
   host_id: string | null;
   state: ProjectState;
   approved_version: number | null;
@@ -40,7 +40,7 @@ export interface ProjectRepoRow {
 
 export type ProjectRepoPatch = Partial<Pick<ProjectRepoRow, "pr_url" | "landed_sha" | "landed_at">>;
 
-export type NewProject = Pick<ProjectRow, "slug" | "name" | "key" | "bb_project_id"> & Partial<Pick<ProjectRow, "host_id" | "section_id" | "planner_thread_id">>;
+export type NewProject = Pick<ProjectRow, "slug" | "name" | "key" | "alia_project_id"> & Partial<Pick<ProjectRow, "host_id" | "section_id" | "planner_thread_id">>;
 
 export interface SpecVersionRow {
   project_id: number;
@@ -95,7 +95,7 @@ export interface TicketRow {
   pr_rounds: number;
   /** PrStatus: the pull request's checks when Loom last read them. */
   pr_status_json: string | null;
-  /** HandBack: work going back to the ticket's worker that bb has not taken yet, waiting for a worker slot or sent again by the tick. */
+  /** HandBack: work going back to the ticket's worker that VesnALIA has not taken yet, waiting for a worker slot or sent again by the tick. */
   handback_json: string | null;
   /** Stack: what the ticket's branch is built on when its project stacks pull requests; null before its first worker started. */
   stack_json: string | null;
@@ -204,7 +204,7 @@ export interface EventRow {
 export interface PlanningRow {
   id: number;
   thread_id: string;
-  bb_project_id: string;
+  alia_project_id: string;
   title: string;
   started_at: number;
   ended_at: number | null;
@@ -244,7 +244,7 @@ export interface RecordRow {
   id: number;
   project_id: number;
   state: RecordState;
-  /** The summary agent's thread, once bb started it. */
+  /** The summary agent's thread, once VesnALIA started it. */
   thread_id: string | null;
   /** When the summary agent was first asked for, for its time limit. */
   started_at: number | null;
@@ -294,7 +294,7 @@ export interface SpecReviewRow {
   round: number;
   state: SpecReviewState;
   spawn_token: string;
-  /** The reviewer's thread, once bb started it. */
+  /** The reviewer's thread, once VesnALIA started it. */
   thread_id: string | null;
   idle_count: number;
   summary: string | null;
@@ -412,8 +412,8 @@ export class Store {
     return this.tx(() => {
       const now = this.now();
       const result = this.db
-        .prepare("INSERT INTO projects (slug, name, key, bb_project_id, host_id, section_id, planner_thread_id, state, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?)")
-        .run(row.slug, row.name, row.key, row.bb_project_id, row.host_id ?? null, row.section_id ?? null, row.planner_thread_id ?? null, now, now);
+        .prepare("INSERT INTO projects (slug, name, key, alia_project_id, host_id, section_id, planner_thread_id, state, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?)")
+        .run(row.slug, row.name, row.key, row.alia_project_id, row.host_id ?? null, row.section_id ?? null, row.planner_thread_id ?? null, now, now);
       const project = this.requireProject(Number(result.lastInsertRowid));
       this.event(project.id, null, "project.created", actor, { slug: project.slug, key: project.key, planner: project.planner_thread_id });
       return project;
@@ -495,15 +495,15 @@ export class Store {
     return (this.db.prepare("SELECT * FROM spec_versions WHERE project_id = ? ORDER BY version DESC LIMIT 1").get(projectId) as SpecVersionRow | undefined) ?? null;
   }
 
-  /** The environment each project's approved spec gives each of its repos that has one, with the repo's bb project, the newest approved spec first. */
-  pastEnvironments(): Array<{ slug: string; bbProjectId: string; environment: EnvironmentSpec }> {
+  /** The environment each project's approved spec gives each of its repos that has one, with the repo's VesnALIA project, the newest approved spec first. */
+  pastEnvironments(): Array<{ slug: string; aliaProjectId: string; environment: EnvironmentSpec }> {
     const rows = this.db
-      .prepare("SELECT p.slug, p.bb_project_id, v.spec_json FROM projects p JOIN spec_versions v ON v.project_id = p.id AND v.version = p.approved_version ORDER BY v.created_at DESC, p.id DESC")
-      .all() as Array<{ slug: string; bb_project_id: string; spec_json: string }>;
+      .prepare("SELECT p.slug, p.alia_project_id, v.spec_json FROM projects p JOIN spec_versions v ON v.project_id = p.id AND v.version = p.approved_version ORDER BY v.created_at DESC, p.id DESC")
+      .all() as Array<{ slug: string; alia_project_id: string; spec_json: string }>;
     return rows.flatMap((row) => {
       const spec = JSON.parse(row.spec_json) as Spec;
-      const repos = (spec.repo ?? []).length === 0 ? [{ bbProjectId: row.bb_project_id, environment: spec.environment }] : spec.repo!.map((repo) => ({ bbProjectId: repo.project, environment: repo.environment ?? spec.environment }));
-      return repos.flatMap(({ bbProjectId, environment }) => (environment === undefined ? [] : [{ slug: row.slug, bbProjectId, environment }]));
+      const repos = (spec.repo ?? []).length === 0 ? [{ aliaProjectId: row.alia_project_id, environment: spec.environment }] : spec.repo!.map((repo) => ({ aliaProjectId: repo.project, environment: repo.environment ?? spec.environment }));
+      return repos.flatMap(({ aliaProjectId, environment }) => (environment === undefined ? [] : [{ slug: row.slug, aliaProjectId, environment }]));
     });
   }
 
@@ -685,8 +685,8 @@ export class Store {
 
   // ---- planning conversations
 
-  addPlanning(row: Pick<PlanningRow, "thread_id" | "bb_project_id" | "title">): PlanningRow {
-    const result = this.db.prepare("INSERT INTO planning (thread_id, bb_project_id, title, started_at) VALUES (?, ?, ?, ?)").run(row.thread_id, row.bb_project_id, row.title, this.now());
+  addPlanning(row: Pick<PlanningRow, "thread_id" | "alia_project_id" | "title">): PlanningRow {
+    const result = this.db.prepare("INSERT INTO planning (thread_id, alia_project_id, title, started_at) VALUES (?, ?, ?, ?)").run(row.thread_id, row.alia_project_id, row.title, this.now());
     const added = this.db.prepare("SELECT * FROM planning WHERE id = ?").get(Number(result.lastInsertRowid)) as PlanningRow;
     this.changed(null);
     return added;

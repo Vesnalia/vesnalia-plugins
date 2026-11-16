@@ -31,22 +31,22 @@ import {
 } from "./css.mjs";
 
 test("manifest contributes both Liquid Glass palettes plus a server and an app", () => {
-  assert.equal(manifest.name, "bb-plugin-liquid-glass");
-  assert.equal(manifest.bb.server, "./server.ts");
-  assert.equal(manifest.bb.app, "./app.tsx");
-  assert.deepEqual(manifest.bb.skills, []);
+  assert.equal(manifest.name, "alia-plugin-liquid-glass");
+  assert.equal(manifest.alia.server, "./server.ts");
+  assert.equal(manifest.alia.app, "./app.tsx");
+  assert.deepEqual(manifest.alia.skills, []);
   assert.deepEqual(
-    manifest.bb.themes.map((theme) => theme.id),
+    manifest.alia.themes.map((theme) => theme.id),
     ["liquid-glass", "liquid-glass-light"],
   );
-  for (const theme of manifest.bb.themes) {
+  for (const theme of manifest.alia.themes) {
     assert.ok(theme.name && theme.description);
     assert.match(theme.css, /^\.\/themes\/.+\.css$/);
     assert.match(theme.codeTheme.dark, /^\.\/themes\/.+\.json$/);
     assert.match(theme.codeTheme.light, /^\.\/themes\/.+\.json$/);
   }
-  assert.equal(manifest.engines.bb, ">=0.41");
-  assert.equal(manifest.engines.bbPluginSdk, ">=0.4.8");
+  assert.equal(manifest.engines.alia, ">=0.41");
+  assert.equal(manifest.engines.aliaPluginSdk, ">=0.4.8");
   assert.equal(manifest.version, "0.5.21");
   assert.ok(manifest.dependencies.zod, "zod must be a runtime dependency");
   for (const dependency of ["clsx", "tailwind-merge"]) {
@@ -60,10 +60,10 @@ test("manifest contributes both Liquid Glass palettes plus a server and an app",
 
 test("every declared asset exists and the icon is inert", async () => {
   const declared = [
-    manifest.bb.branding.icon,
-    manifest.bb.server,
-    manifest.bb.app,
-    ...manifest.bb.themes.flatMap((theme) => [
+    manifest.alia.branding.icon,
+    manifest.alia.server,
+    manifest.alia.app,
+    ...manifest.alia.themes.flatMap((theme) => [
       theme.css,
       theme.codeTheme.dark,
       theme.codeTheme.light,
@@ -279,11 +279,11 @@ for (const [mode, css] of Object.entries(palettes)) {
   test(`${mode} palette strengthens the sidebar row states`, () => {
     assert.match(
       css,
-      /\.bb-sidebar-open-in-split-row \{\n\s*--bb-sidebar-open-in-split-background: color-mix\(in oklab, var\(--primary\) 10%, var\(--sidebar\)\);\n\s*outline: 1px dashed color-mix\(in oklab, var\(--primary\) 50%, transparent\);\n\s*outline-offset: -1px;\n\}/,
+      /\.alia-sidebar-open-in-split-row \{\n\s*--alia-sidebar-open-in-split-background: color-mix\(in oklab, var\(--primary\) 10%, var\(--sidebar\)\);\n\s*outline: 1px dashed color-mix\(in oklab, var\(--primary\) 50%, transparent\);\n\s*outline-offset: -1px;\n\}/,
     );
     assert.match(
       css,
-      /\.bb-sidebar-selected-row \{\n\s*box-shadow: inset 3px 0 0 var\(--primary\);\n\}/,
+      /\.alia-sidebar-selected-row \{\n\s*box-shadow: inset 3px 0 0 var\(--primary\);\n\}/,
     );
     assert.match(
       css,
@@ -301,7 +301,7 @@ for (const [mode, css] of Object.entries(palettes)) {
   test(`${mode} palette keeps sheets solid and fades chrome backgrounds without touching layout`, () => {
     for (const selector of [
       '[data-radix-popper-content-wrapper] > *', '[role="dialog"]',
-      '[role="menu"]', '[role="listbox"]', '[data-bb-portaled-overlay]',
+      '[role="menu"]', '[role="listbox"]', '[data-alia-portaled-overlay]',
       '[data-secondary-panel-shelf]', '[data-vaul-drawer-direction]',
       '[data-sonner-toast]', '[cmdk-root]',
       '[data-testid="root-compose-compact-home"]',

@@ -2,8 +2,8 @@
 set -eu
 
 usage="./prepare-ios-image.sh [--from <macOS image>] [--name <vm>] [--replace] [--skip-check] [--with-x264]"
-from=bb-box-macos
-name=bb-box-ios
+from=alia-box-macos
+name=alia-box-ios
 replace=0
 skip_check=0
 with_x264=no
@@ -15,7 +15,7 @@ while [ $# -gt 0 ]; do
     --replace) replace=1; shift ;;
     --skip-check) skip_check=1; shift ;;
     --with-x264) with_x264=yes; shift ;;
-    --key | --bb-url) shift 2 ;;
+    --key | --alia-url) shift 2 ;;
     *) die "unknown option $1: $usage" ;;
   esac
 done
@@ -89,10 +89,10 @@ tart clone "$from" "$build"
 step "booting $build"
 boot
 desktop_ready
-guest_setup=/tmp/bb-box-ios-setup
-tar -C "$here" -czf - ios -C "$here/../ssh-pool" mac-home/.zshenv -C "$here/.." android/build-h264.sh android/pins.json android/bb-box-h264 | tart exec -i "$build" /bin/sh -c "rm -rf $guest_setup && mkdir -p $guest_setup && tar -xzf - -C $guest_setup"
-tart exec "$build" test -s /usr/local/share/bb-box/image.json || die "$from has no image record: build it with prepare-image.sh"
-tart exec "$build" cp /usr/local/share/bb-box/image.json "$guest_setup/macos-image.json"
+guest_setup=/tmp/alia-box-ios-setup
+tar -C "$here" -czf - ios -C "$here/../ssh-pool" mac-home/.zshenv -C "$here/.." android/build-h264.sh android/pins.json android/alia-box-h264 | tart exec -i "$build" /bin/sh -c "rm -rf $guest_setup && mkdir -p $guest_setup && tar -xzf - -C $guest_setup"
+tart exec "$build" test -s /usr/local/share/alia-box/image.json || die "$from has no image record: build it with prepare-image.sh"
+tart exec "$build" cp /usr/local/share/alia-box/image.json "$guest_setup/macos-image.json"
 
 step "adding idb_companion and the devices to $build"
 tart exec "$build" /usr/bin/env IDB_VERSION="$IDB_VERSION" IDB_URL="$IDB_URL" IDB_SHA256="$IDB_SHA256" H264_WITH_X264="$with_x264" /bin/sh "$guest_setup/ios/build-ios.sh" "$guest_setup/ios" \
@@ -100,8 +100,8 @@ tart exec "$build" /usr/bin/env IDB_VERSION="$IDB_VERSION" IDB_URL="$IDB_URL" ID
 cat "$work/build.txt"
 
 if [ "$skip_check" = 0 ]; then
-  step "checking $build with bb-box-check-ios"
-  tart exec "$build" /usr/local/bin/bb-box-check-ios >"$work/check.txt" 2>&1 || { cat "$work/check.txt"; die "the iOS image's check failed"; }
+  step "checking $build with alia-box-check-ios"
+  tart exec "$build" /usr/local/bin/alia-box-check-ios >"$work/check.txt" 2>&1 || { cat "$work/check.txt"; die "the iOS image's check failed"; }
   cat "$work/check.txt"
 fi
 
@@ -109,14 +109,14 @@ step "recording $build_id in $build"
 tart exec -i "$build" /bin/sh -c "cat >$guest_setup/build.txt" <"$work/build.txt"
 record=$(tart exec "$build" python3 "$guest_setup/ios/record-ios.py" "$guest_setup/macos-image.json" "$guest_setup/build.txt" "$build_id" "$built" "$pins")
 [ -n "$record" ] || die "the image's record was not made"
-printf '%s\n' "$record" | tart exec -i "$build" sudo -n sh -c 'cat >/usr/local/share/bb-box/image.json && chmod 0644 /usr/local/share/bb-box/image.json'
+printf '%s\n' "$record" | tart exec -i "$build" sudo -n sh -c 'cat >/usr/local/share/alia-box/image.json && chmod 0644 /usr/local/share/alia-box/image.json'
 tart exec "$build" rm -rf "$guest_setup"
 step "shutting $build down"
 shutdown
 
 if exists "$name"; then tart delete "$name"; fi
 tart rename "$build" "$name"
-mkdir -p "$HOME/.bb-box/tart/images"
-printf 'from=%s\nbuilt=%s\n' "$from" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$HOME/.bb-box/tart/images/$name"
-printf '%s\n' "$record" >"$HOME/.bb-box/tart/images/$name.json"
+mkdir -p "$HOME/.alia-box/tart/images"
+printf 'from=%s\nbuilt=%s\n' "$from" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$HOME/.alia-box/tart/images/$name"
+printf '%s\n' "$record" >"$HOME/.alia-box/tart/images/$name.json"
 step "done: $name is ready to clone ($(du -sh "${TART_HOME:-$HOME/.tart}/vms/$name" | cut -f1) on disk)"

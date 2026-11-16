@@ -2,7 +2,7 @@
 
 Status: accepted, 11 November 2026, with the owner's build order (see
 Build order). Unit 1 is built: each machine reports whether it can
-snapshot, and BB Box takes no pool snapshots yet.
+snapshot, and VesnALIA Box takes no pool snapshots yet.
 Extends [070](070-snapshots.md), whose table says the SSH host pool takes
 no snapshots, and follows [065](065-macs-say-what-they-offer-and-ios-streams-in-software-where-they-must.md)'s
 pattern: each machine says what it offers, measured on the machine.
@@ -40,7 +40,7 @@ or cloud:
 
 1. Built in, found by probing: box homes on a filesystem that clones or
    snapshots. Scope "home".
-2. An operator-installed hook with a contract BB Box defines. Scope
+2. An operator-installed hook with a contract VesnALIA Box defines. Scope
    "machine".
 
 A machine with neither is refused with the reason, as today.
@@ -86,8 +86,8 @@ automatic login.
 
 ### A fork of a home keeps the user's own secrets and its source's paths
 
-A fork's reset removes BB's machine files (`host-id`, `auth.json`,
-`config.json`), the access file, BB's daemon unit or launch agent, and on a
+A fork's reset removes VesnALIA's machine files (`host-id`, `auth.json`,
+`config.json`), the access file, VesnALIA's daemon unit or launch agent, and on a
 Mac the login keychain and the keychain folder named by the Mac's hardware
 UUID, which would not unlock for the new user. It keeps the user's SSH
 keys, `gh` token and other files, as 070 says of every fork. No file named
@@ -157,9 +157,9 @@ machine snapshot hook <operation> <command> ...    runs the operator's hook, sec
 ```
 
 - Snapshots live in a folder only root can read, on the same volume as the
-  homes: `/var/db/bb-box/home-snapshots/<user>/<snapshot>` on a Mac,
-  `<homes>/.bb-box-snapshots/<user>/<snapshot>` on btrfs, `<dataset>@<snapshot>`
-  on ZFS. Each is named by BB Box's snapshot ID.
+  homes: `/var/db/alia-box/home-snapshots/<user>/<snapshot>` on a Mac,
+  `<homes>/.alia-box-snapshots/<user>/<snapshot>` on btrfs, `<dataset>@<snapshot>`
+  on ZFS. Each is named by VesnALIA Box's snapshot ID.
 - **Take.** On a Mac, the helper stops every process of the user
   (`SIGSTOP`), clones, and resumes them: one point in time, for a pause of
   about 0.3 s for 20,000 files and about 4 s for 220,000. `whileRunning`
@@ -180,7 +180,7 @@ machine snapshot hook <operation> <command> ...    runs the operator's hook, sec
   6. Start the user again: on a Mac, set the automatic login and restart
      loginwindow; on Linux, start `user@<uid>.service`, whose units come
      back from the home.
-  7. 070's step 9 then sets the box straight: its access file and BB's
+  7. 070's step 9 then sets the box straight: its access file and VesnALIA's
      machine.
 
   Each step is safe to run again. A restore cut short is finished by
@@ -208,8 +208,8 @@ chain, as 086 did for Proxmox.
 
 ### 3. The hook contract
 
-An operator installs a program as `/usr/local/libexec/bb-box/snapshot-machine`,
-as `setup.sh --snapshot-hook <path>`, beside `--reset-hook`. BB Box runs it
+An operator installs a program as `/usr/local/libexec/alia-box/snapshot-machine`,
+as `setup.sh --snapshot-hook <path>`, beside `--reset-hook`. VesnALIA Box runs it
 only through the helper, as root.
 
 | Command | Prints, as JSON on stdout | Exit codes |
@@ -220,7 +220,7 @@ only through the helper, as root.
 | `restore <snapshot> <operation>` | `id`, `operation`, `state` ("restored") | 0 restored; 4 no such snapshot; 1 failed, with the machine as it was |
 | `delete <snapshot>` | `id`, `state` ("gone") | 0, also when it was gone already |
 
-The words of every refusal or failure go to stderr. Snapshot IDs are BB
+The words of every refusal or failure go to stderr. Snapshot IDs are VesnALIA
 Box's own (`sn` and 12 letters and digits); operation IDs are `op` and 12.
 
 **Every command is safe to run again with the same arguments.** A take of
@@ -243,10 +243,10 @@ it is done.
 **The helper runs the hook detached,** under its lock, as it runs
 `reset-machine` today: `machine snapshot hook <operation> <command> ...`
 records the boot ID, launches the hook with `setsid`, and answers exit 10
-while it runs. BB Box asks again until it ends. If the hook died without an
+while it runs. VesnALIA Box asks again until it ends. If the hook died without an
 exit status, or the machine restarted, the helper launches it again with
 the same arguments, at most 3 times, then fails with its last words. A
-hook that restarts the machine to restore touches `$BB_BOX_RESTARTING`
+hook that restarts the machine to restore touches `$ALIA_BOX_RESTARTING`
 first, as `reset-machine` does. The helper refuses an operation ID reused
 with other arguments.
 
@@ -259,7 +259,7 @@ calls its provider's API with a token the operator puts in a file only root
 can read: take creates a snapshot of the server labelled with the ID and
 answers exit 10 until the provider's action ends; list filters the
 account's snapshots by that label; restore rebuilds the server from the
-snapshot, which restarts it, so it touches `$BB_BOX_RESTARTING` and later
+snapshot, which restarts it, so it touches `$ALIA_BOX_RESTARTING` and later
 reads the provider's action and the disk's file to confirm; delete deletes
 the snapshot. `lives` is "provider", and `price` is the provider's per GB a
 month, which 070's ceiling then bounds. A box with root on that server can
@@ -269,8 +269,8 @@ project only. No cloud was called in the spike.
 ### 4. How the pool reports and proves it
 
 - **A report per machine,** kept in the helper's state
-  (`/var/lib/bb-box/snapshots`, or `/var/db/bb-box/snapshots` on a Mac)
-  and in BB Box's storage, as 065 keeps a Mac's report: `home` and
+  (`/var/lib/alia-box/snapshots`, or `/var/db/alia-box/snapshots` on a Mac)
+  and in VesnALIA Box's storage, as 065 keeps a Mac's report: `home` and
   `machine`, each `Measured`: yes with how (APFS, btrfs, ZFS, or the
   hook's `describe`), no with why, or unknown. It also says the homes'
   folder, their filesystem and the free space there.
@@ -284,21 +284,21 @@ project only. No cloud was called in the spike.
   `describe` with a 30 s limit (below). A trial and a hook cost more than a
   survey should, so the probe runs at enrolment (`setup.sh` and
   `setup-mac.sh` run it and print what it found) and in the doctor, and
-  each `machine status` passes on the last report. BB Box keeps the
+  each `machine status` passes on the last report. VesnALIA Box keeps the
   newest report it has seen, so it can answer while the machine is away.
 - **The probe finishes on time and leaves nothing behind**, as it runs on
   machines whose boxes and iOS slots are in use. The hook runs in a
   session of its own. At 30 s the helper sends that whole session TERM,
   then KILL 2 s later, and reports the hook as failed, whatever it exits
   with after. Trials go in a folder only root can use, one subfolder per
-  probe named by its process ID: `<homes>/.bb-box-snapshot-trials` on
-  btrfs and `/var/db/bb-box/snapshot-trials` on a Mac. The probe removes
+  probe named by its process ID: `<homes>/.alia-box-snapshot-trials` on
+  btrfs and `/var/db/alia-box/snapshot-trials` on a Mac. The probe removes
   its trial after a failure and when it is stopped, then checks that
   nothing of it is left. A probe killed outright leaves its subfolder,
   and the next probe removes it once no process has that ID. A trial the
   probe cannot remove is reported as a failure that names each path left,
   and the doctor warns with what to remove.
-- **BB Box's rules on top.** A machine whose boxes have root
+- **VesnALIA Box's rules on top.** A machine whose boxes have root
   (`reset=machine`) offers no home snapshots, whatever its filesystem; a
   Mac that lends iOS slots offers no machine snapshots. The report keeps
   what the machine found, and the words say both.
@@ -348,8 +348,8 @@ It needs:
 3. The fork check (070 section 9) reads the whole guest: machine ID, SSH
    host keys, addresses, the tailnet node. For a home fork these are the
    same as the source's by design. So the check gains a home variant that
-   reads only the fork's home: BB's files, the access file, BB's daemon
-   unit, the keychain, and that nothing names the source's BB machine.
+   reads only the fork's home: VesnALIA's files, the access file, VesnALIA's daemon
+   unit, the keychain, and that nothing names the source's VesnALIA machine.
    `forkSafe` is the version of the helper's home reset.
 4. The pool backend implements `snapshotting`, `planSnapshots`,
    `snapshot`, `rollbackSnapshot`, `deleteSnapshot`, `heldSnapshots` and,
@@ -394,7 +394,7 @@ It needs:
   and 064's disk reserve for slots counts snapshots.
 - **Stale state outside the home** after a restore: caches are cleared;
   daemons' per-user state is not, and has not been seen to matter.
-- **Hooks are root code BB Box does not write.** One froze a filesystem in
+- **Hooks are root code VesnALIA Box does not write.** One froze a filesystem in
   the spike. The contract check runs before a hook goes live, and a hook
   that fails takes the machine out of service, as a failed reset does.
 - **Cloud tokens on the machine** are readable by a box with root there.
@@ -443,7 +443,7 @@ userspace.
 - 070's rule "never on a shared host to act on one slot" stands: a home
   snapshot acts on one slot's home only, never the host.
 - The pool's helpers, `setup.sh`, the setup guide, the snapshots guide and
-  the BB Box skill change with each unit.
+  the VesnALIA Box skill change with each unit.
 - Not measured in the spike: a real pool Mac (the spike used a Tart VM
   with System Integrity Protection off), Spotlight on, a cloud hook, ZFS
   at 220,000 files, a restore of a home on a Mac at 220,000 files.

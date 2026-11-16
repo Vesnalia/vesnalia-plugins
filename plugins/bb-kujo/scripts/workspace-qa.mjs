@@ -1,23 +1,23 @@
 import { chromium } from 'playwright';
 import { mkdir,writeFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
-const base=process.env.BB_SERVER_URL;
-const threadId=process.env.BB_QA_THREAD_ID;
-if(!base||!threadId) throw new Error('Set BB_SERVER_URL and BB_QA_THREAD_ID to an isolated bb test instance/thread.');
-const mode=process.env.BB_QA_APPEARANCE||'dark';
+const base=process.env.ALIA_SERVER_URL;
+const threadId=process.env.ALIA_QA_THREAD_ID;
+if(!base||!threadId) throw new Error('Set ALIA_SERVER_URL and ALIA_QA_THREAD_ID to an isolated VesnALIA test instance/thread.');
+const mode=process.env.ALIA_QA_APPEARANCE||'dark';
 assert.ok(['dark','light'].includes(mode));
 const prefix=mode==='light'?'light-':'';
 const browser=await chromium.launch({channel:process.env.KUJO_BROWSER||'chrome',headless:true});
 try {
  const page=await browser.newPage({viewport:{width:1600,height:1000}});
  const errors=[];page.on('pageerror',e=>errors.push((e.stack || e.message).split('\n').slice(0,16).join('\n')));
- await page.addInitScript(mode=>localStorage.setItem('bb.theme',mode),mode);
+ await page.addInitScript(mode=>localStorage.setItem('alia.theme',mode),mode);
  await page.goto(base,{waitUntil:'domcontentloaded'});
- await page.waitForSelector('.bb-kujo-signal',{state:'attached'});
+ await page.waitForSelector('.alia-kujo-signal',{state:'attached'});
  await page.evaluate(async({threadId,path})=>{
   const r=await fetch(`/api/v1/threads/${threadId}/open`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file:{source:'workspace',path,lineNumber:1}})});
   if(!r.ok) throw new Error(await r.text());
- },{threadId,path:process.env.BB_QA_FILE||'src/effects.ts'});
+ },{threadId,path:process.env.ALIA_QA_FILE||'src/effects.ts'});
  await page.locator('.monaco-editor .view-lines').first().waitFor({timeout:30000});
  await page.waitForTimeout(4000);
  assert.equal(await page.locator('.monaco-editor').first().evaluate(e=>getComputedStyle(e).backgroundColor),mode==='light'?'rgb(249, 249, 249)':'rgb(6, 6, 6)');

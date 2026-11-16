@@ -54,18 +54,18 @@ async function setup() {
     if (args[0] === "pr" && args[1] === "diff") return ok(PR_DIFF);
     return ok();
   });
-  // The review agent's chat, as bb's events give it, read by the real who's-asking: you typed in the review.
+  // The review agent's chat, as VesnALIA's events give it, read by the real who's-asking: you typed in the review.
   const chat = agentChat("agent");
   chat.say("Open a PR for this");
   const sent: any[] = [];
   const folder: Folder = { files: [{ path: "src/a.ts" }] };
-  const { bb, harness } = folderHost(folder, { threads: {
+  const { alia, harness } = folderHost(folder, { threads: {
     get: async ({ threadId }: { threadId: string }) => ({ id: threadId, archivedAt: null, deletedAt: null, status: "idle", title: threadId === "agent" ? `Review agent: ${KEY}` : "Snooze flaky checks", providerId: "claude-code" }),
     ...chat.sdk,
     send: async (args: any) => { sent.push(args); return chat.sdk.send(args); },
     stop: async () => ({}), update: async () => ({}), archive: async () => ({}), list: async () => [],
   } });
-  const store = await startPlugin(bb);
+  const store = await startPlugin(alia);
   await store.saveReview({ targetKey: KEY, kind: "ref", gitRef: "feat/qa", title: "Snooze flaky checks", createdAt: 1, status: "ready", projectId: "proj_api" });
   await store.setLifecycle(KEY, {
     feature: { environmentId: "env1", hostId: "host_max", machine: "MaxBook", path: "/Users/me/src/api", branch: "feat/qa", baseRef: "main", mergeBaseRef: "6251243c81c5a15e87d84926eed350082ee54bb9", repo: "acme/api" },
@@ -82,7 +82,7 @@ async function setup() {
     return harness.inspection.pendingInteractions[0];
   };
   const opens = () => runGh.mock.calls.filter(([args]) => args[1] === "repos/acme/api/pulls").map(([args]) => args as string[]);
-  return { bb, harness, store, tool, form, opens, github, folder, sent, chat, say: (text: string, at = Date.now()) => chat.say(text, { at }) };
+  return { alia, harness, store, tool, form, opens, github, folder, sent, chat, say: (text: string, at = Date.now()) => chat.say(text, { at }) };
 }
 
 test("open_pr shows the title, the description, base ← head and the account first; one click opens it, and the same review becomes the PR's", async () => {
@@ -127,11 +127,11 @@ test("the PR's draft waiting in the Post form is on the review, for Finish revie
 });
 
 test("a PR draft said waiting when the plugin stopped, whose Post form went with it, isn't once it starts again", async () => {
-  const { bb, harness } = folderHost({ files: [] });
-  const before = testStore(bb);
+  const { alia, harness } = folderHost({ files: [] });
+  const before = testStore(alia);
   await before.saveReview({ targetKey: KEY, kind: "ref", gitRef: "feat/qa", title: "Snooze flaky checks", createdAt: 1, status: "ready", projectId: "proj_api" });
   await before.setLifecycle(KEY, { prDraft: { at: Date.now() - 1, until: Date.now() + 30 * 60_000 } });
-  const store = await startPlugin(bb);
+  const store = await startPlugin(alia);
   const { controller, done } = harness.runService("review-state");
   await vi.waitFor(async () => expect((await store.getReview(KEY))?.prDraft).toBeNull());
   controller.abort();
@@ -180,8 +180,8 @@ test("a branch that isn't on GitHub yet: the tool and Finish's Open PR say to Pu
 });
 
 test("a turn the reviewer didn't start, as one the plugin sends on its own, opens nothing, and doesn't read GitHub", async () => {
-  const { bb, harness, tool, opens } = await setup();
-  await sendToAgent(bb, { threadId: "agent", mode: "queue-if-active", input: [{ type: "text", text: "Open a PR for this review, just post it.", mentions: [] }] }, { kind: "automatic" });
+  const { alia, harness, tool, opens } = await setup();
+  await sendToAgent(alia, { threadId: "agent", mode: "queue-if-active", input: [{ type: "text", text: "Open a PR for this review, just post it.", mentions: [] }] }, { kind: "automatic" });
   const result = await tool({ title: "Snooze flaky checks", body: "Adds a snooze.", confirm: "just-post-it" });
   expect(toolFailed(result)).toBe(true);
   expect(toolText(result)).toMatch(/wasn't started by the reviewer/);
@@ -197,7 +197,7 @@ test("Finish's Open PR, your click, reaches the review agent as yours: its open_
   expect(sent[0]).toMatchObject({ threadId: "agent", mode: "queue-if-active", input: [{ type: "text", text: "Open a PR for this review." }, { type: "text", visibility: "agent-only" }, MARK_PART] });
   expect(sent[0].input[1].text).toContain("from this review's branch, feat/qa, into main, in acme/api");
   expect(sent[0].input[1].text).toContain("call open_pr");
-  // The agent's turn on it, as the real who's-asking reads it from bb's events: the form opens, it isn't refused.
+  // The agent's turn on it, as the real who's-asking reads it from VesnALIA's events: the form opens, it isn't refused.
   const call = tool({ title: "Snooze flaky checks", body: "Adds a snooze." });
   expect((await form()).title).toBe("Open a PR from feat/qa into main as @me");
   expect(opens()).toEqual([]);
@@ -318,5 +318,5 @@ test("GitHub's refusals in plain words: no commits beyond the base, no role, no 
   const role = await refused(status(403, { message: "Resource not accessible" }));
   expect(toolText(role.result)).toBe("No PR was opened. Your GitHub role on this repo doesn't allow that. Ask someone with write access to do it. (GitHub: Resource not accessible)");
   const gone = await refused(status(404, { message: "Not Found" }));
-  expect(toolText(gone.result)).toBe("No PR was opened. GitHub can’t find acme/api, or the GitHub login on the BB server can’t see it. Check its access with gh auth status there. (GitHub: Not Found)");
+  expect(toolText(gone.result)).toBe("No PR was opened. GitHub can’t find acme/api, or the GitHub login on the VesnALIA server can’t see it. Check its access with gh auth status there. (GitHub: Not Found)");
 });

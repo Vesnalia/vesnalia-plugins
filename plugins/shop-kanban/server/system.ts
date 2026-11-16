@@ -1,10 +1,10 @@
-// Resource monitor for the bb server machine: the computer bb runs on, which the plugin server shares, so it reads
+// Resource monitor for the VesnALIA server machine: the computer VesnALIA runs on, which the plugin server shares, so it reads
 // the same numbers whether the board is open on that machine or in a browser elsewhere.
 
 import { execFile } from "node:child_process";
 import { readFile, statfs } from "node:fs/promises";
 import { cpus, homedir, hostname, loadavg, platform, totalmem, freemem, uptime } from "node:os";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { SystemProcesses, SystemStats } from "./schema";
 import { errorMessage } from "./text";
 
@@ -264,7 +264,7 @@ async function readProcesses(): Promise<SystemProcesses> {
   return { sampledAt, groups: [...top].map((group) => ({ ...group, cpu: Math.round(group.cpu * 10) / 10 })), error: null };
 }
 
-export function createSystemMonitor(bb: BbPluginApi) {
+export function createSystemMonitor(alia: AliaPluginApi) {
   let timer: ReturnType<typeof setInterval> | null = null;
   let lastReadAt = 0;
   let previousCpu: CpuTimes | null = null;
@@ -324,7 +324,7 @@ export function createSystemMonitor(bb: BbPluginApi) {
         history: { cpu: [...history.cpu], memory: [...history.memory], swapRate: [...history.swapRate] },
       };
     } catch (error) {
-      bb.log.warn(`system sample failed: ${errorMessage(error)}`);
+      alia.log.warn(`system sample failed: ${errorMessage(error)}`);
     } finally {
       sampling = false;
     }

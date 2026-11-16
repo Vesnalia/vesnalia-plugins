@@ -1,6 +1,6 @@
 import path from "node:path";
-import { experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { describe, expect, it } from "vitest";
 import hostEntry from "../host.js";
 

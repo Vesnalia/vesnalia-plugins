@@ -1,4 +1,4 @@
-// A fake bb host, just faithful enough to drive server.ts end to end.
+// A fake VesnALIA host, just faithful enough to drive server.ts end to end.
 //
 // The plugin's riskiest code is not in the store — it is the wiring: the idle
 // timer, the lifecycle handlers, the CLI, the tools. None of that was
@@ -74,7 +74,7 @@ export function createFakeHost(options: FakeHostOptions = {}) {
     return thread;
   }
 
-  const bb = {
+  const alia = {
     pluginId: "prompts",
     log: {
       debug: (message: string) => logs.push({ level: "debug", message }),
@@ -306,7 +306,7 @@ export function createFakeHost(options: FakeHostOptions = {}) {
     },
   };
 
-  return { bb: bb as never, harness };
+  return { alia: alia as never, harness };
 }
 
 export type FakeHarness = ReturnType<typeof createFakeHost>["harness"];

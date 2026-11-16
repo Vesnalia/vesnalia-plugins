@@ -1,4 +1,4 @@
-// Pure part of the message timestamps: walk BB timeline rows (nested included)
+// Pure part of the message timestamps: walk VesnALIA timeline rows (nested included)
 // and keep user/assistant conversation rows with their createdAt.
 // Adapted from Chat Timestamps (https://github.com/pixexid/bb-plugin-chat-timestamps, MIT).
 import type { MessageTime } from "./contract";

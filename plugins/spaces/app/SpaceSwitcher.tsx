@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,7 +62,7 @@ export function useSpacesConnection() {
   return rpc;
 }
 
-const HIDE_MORE_STYLE_ID = "bb-spaces-hide-more";
+const HIDE_MORE_STYLE_ID = "alia-spaces-hide-more";
 const HIDE_MORE_CSS = `
 div:has(> [data-testid="sidebar-thread-list-more-row"]),
 [data-testid="sidebar-thread-list-more-row"] { display: none !important; }

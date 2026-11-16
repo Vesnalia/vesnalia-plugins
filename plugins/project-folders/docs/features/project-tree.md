@@ -23,26 +23,26 @@ sources:
 ---
 # Project and section tree
 
-TL;DR: The plugin records a project’s section hierarchy in BB storage while each folder section points to a real directory on one connected host; groups add hierarchy using synthetic paths (`server.ts:705-737`, `server.ts:2255-2281`).
+TL;DR: The plugin records a project’s section hierarchy in VesnALIA storage while each folder section points to a real directory on one connected host; groups add hierarchy using synthetic paths (`server.ts:705-737`, `server.ts:2255-2281`).
 
 ## Purpose
 
-The tree organizes BB project chats by their working folder and supports nested sections, folderless groups, rename, reparent, ordering and multiple device copies (`server.ts:705-737`, `server.ts:2185-2218`, `server.ts:2257-2317`, `server.ts:3122-3168`).
+The tree organizes VesnALIA project chats by their working folder and supports nested sections, folderless groups, rename, reparent, ordering and multiple device copies (`server.ts:705-737`, `server.ts:2185-2218`, `server.ts:2257-2317`, `server.ts:3122-3168`).
 
 ## How it works
 
-Plugin startup starts by declaring the legacy agent settings and opening BB plugin storage. It sends the ordered tree, rules, journal, preference and execution migrations to `bb.storage.migrate`; a storage-open or migration error rejects the async plugin entry before runtime setup (`server.ts:682-776`). On success, startup proceeds to runtime settings and domain-service construction ([Plugin initialization](plugin-initialization.md), `server.ts:735-809`).
+Plugin startup starts by declaring the legacy agent settings and opening VesnALIA plugin storage. It sends the ordered tree, rules, journal, preference and execution migrations to `alia.storage.migrate`; a storage-open or migration error rejects the async plugin entry before runtime setup (`server.ts:682-776`). On success, startup proceeds to runtime settings and domain-service construction ([Plugin initialization](plugin-initialization.md), `server.ts:735-809`).
 
 | Startup branch | Condition | Outcome or failure |
 |---|---|---|
-| Storage and migrations | BB storage opens and the migration call resolves | Continue to runtime settings and service setup (`server.ts:735-777`). |
+| Storage and migrations | VesnALIA storage opens and the migration call resolves | Continue to runtime settings and service setup (`server.ts:735-777`). |
 | Storage failure | Opening storage or applying migrations throws | Plugin initialization rejects before later registration (`server.ts:735-776`, `server.ts:3579-3789`). |
 
 1. The management UI calls `list` to load folder rows, project roots, workspace bindings, manual chat placements, errors and host state (`server.ts:287-307`, `server.ts:2477-2545`).
 2. Creating a section resolves the selected project/parent and host folder, validates relative paths, then creates the directory through the host filesystem API and persists a row in `folders` (`server.ts:1576-1627`, `server.ts:650-667`, `server.ts:1774-1851`).
 3. Folder rows store parent identity and sort order. Reparenting changes the tree parent and sibling order; it does not move files (`server.ts:266-273`, `server.ts:2320-2381`).
 4. `group_create` stores a synthetic `@group/<id>` path and kind `group`; the path is not a filesystem location, and a section can be created beneath a group (`server.ts:2248-2275`, `server.ts:1774-1851`).
-5. `rename` changes a section’s stored display name or the BB project name; it does not change a section path. `section_move` handles path changes: it moves/re-links distinct paths, while shared-source or occupied-destination sections update their path binding without moving files (`server.ts:2950-2981`, `server.ts:2383-2389`, `section-move.ts:238-252`, `section-move.ts:254-304`).
+5. `rename` changes a section’s stored display name or the VesnALIA project name; it does not change a section path. `section_move` handles path changes: it moves/re-links distinct paths, while shared-source or occupied-destination sections update their path binding without moving files (`server.ts:2950-2981`, `server.ts:2383-2389`, `section-move.ts:238-252`, `section-move.ts:254-304`).
 6. `reorder` saves the full project order or sibling-section order and publishes `changed`; the management app refreshes on that event (`server.ts:3249-3295`, `server.ts:1603`, `app.tsx:359`).
 7. Project deletion checks and the `keep`/`archive` file modes are described in [Project and section removal](project-tree-lifecycle.md#project-deletion) (`project-delete.ts:27-124`).
 8. Section deletion checks and the `archive`/`unbind`/`purge` modes are described in [Project and section removal](project-tree-lifecycle.md#section-removal) (`app.tsx:569-574`, `server.ts:366-375`, `section-remove.ts:48-239`).
@@ -62,7 +62,7 @@ If the configured directory is unavailable, the dialog warns and uses the home d
 
 | Node | Owns a directory | Can contain | Chat environment | Rules |
 |---|---:|---|---:|---:|
-| Project root | BB project source | Sections and groups | Yes | Project rule record |
+| Project root | VesnALIA project source | Sections and groups | Yes | Project rule record |
 | Folder section | Yes | Sections and groups | Yes, only on its host | Section rule record |
 | Group | No | Sections and groups | No | No |
 
@@ -76,13 +76,13 @@ Hidden state is a presentation preference stored with the project or section’s
 |---|---|
 | Project deletion precondition or archive failure | See [Project and section removal](project-tree-lifecycle.md#project-deletion) (`project-delete.ts:38-124`). |
 | Section removal precondition or operation failure | See [Project and section removal](project-tree-lifecycle.md#section-removal) (`section-remove.ts:66-239`). |
-| Relative section path escapes its parent or enters `.bb`/`.git` | Path resolution rejects it before directory creation (`server.ts:650-667`). |
+| Relative section path escapes its parent or enters `.vesnalia`/`.git` | Path resolution rejects it before directory creation (`server.ts:650-667`). |
 | Requested host is disconnected or has no project/parent folder | The location response marks it unavailable; section creation cannot resolve a folder on that host (`server.ts:2895-2930`, `server.ts:1774-1851`). |
 | Folder is registered/protected or not an empty directory | Host directory deletion is rejected (`folder-files.ts:22-38`). |
 
 ## Business rules
 
-- Names and paths are validated before folder creation. Relative paths cannot traverse upward, enter `.bb` or `.git`, or resolve to the parent itself; an absolute path can select a folder elsewhere on the same device after external-path ownership checks (`server.ts:148-152`, `server.ts:650-667`, `server.ts:1690-1720`).
+- Names and paths are validated before folder creation. Relative paths cannot traverse upward, enter `.vesnalia` or `.git`, or resolve to the parent itself; an absolute path can select a folder elsewhere on the same device after external-path ownership checks (`server.ts:148-152`, `server.ts:650-667`, `server.ts:1690-1720`).
 - Groups store an `@group/<id>` marker instead of a filesystem path, and section-environment validation rejects a group because it has no folder of its own (`server.ts:2255-2281`, `server.ts:3706-3714`).
 - A new section environment must belong to the selected project and have a folder binding on the selected host; a busy move or archive blocks environment creation (`server.ts:3697-3733`).
 - Section depth is for display/inheritance; groups do not increment it (`section-tree.ts:8-11`, `app.tsx:115-128`).
@@ -96,12 +96,12 @@ Folder browser steps, states, host-side validation and failure outcomes are docu
 
 | RPC or command | Purpose | Evidence |
 |---|---|---|
-| `list`, `machines`, `project_browse`, `project_create`, `project_delete` | Load tree and hosts, browse/create/remove BB projects; `project_delete` accepts a keep/archive file choice (`server.ts:275-317`, `server.ts:2641`, `project-delete.ts:27-124`) |
+| `list`, `machines`, `project_browse`, `project_create`, `project_delete` | Load tree and hosts, browse/create/remove VesnALIA projects; `project_delete` accepts a keep/archive file choice (`server.ts:275-317`, `server.ts:2641`, `project-delete.ts:27-124`) |
 | `create`, `group_create`, `group_delete`, `rename`, `reorder`, `section_reparent`, `folder_edit` | Change sections, groups, names, ordering and directories | `server.ts:241-317`, `server.ts:378-421` |
 | `locations`, `browse` | Select host/path for a new section | `server.ts:379-401` |
 | `sections_list` | Read-only section listing for other plugins; optional project filter | `server.ts:155-172`, `server.ts:3579-3602` |
 | `section_remove` | Archive, unbind or purge a section and its selected chats | `server.ts:366-375`, `section-remove.ts:48-79` |
-| `bb project-folders list`, `create` | CLI tree listing and section creation | `server.ts:3622-3630`, `server.ts:3707-3718` |
+| `alia project-folders list`, `create` | CLI tree listing and section creation | `server.ts:3622-3630`, `server.ts:3707-3718` |
 
 ## Gotchas
 

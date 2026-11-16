@@ -22,7 +22,7 @@ import type {
   PluginRpcClient,
   StandardSchemaV1InferInput,
   StandardSchemaV1InferOutput,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 import {
   MAX_CHUNK_BYTES,
@@ -757,7 +757,7 @@ export class UploadManager {
       } catch {
         /* some fakes do not implement responseType */
       }
-      xhr.setRequestHeader("x-bb-plugin-token", token);
+      xhr.setRequestHeader("x-alia-plugin-token", token);
       // Irrelevant to the token route's auth, but honest about the payload.
       xhr.setRequestHeader("content-type", "application/octet-stream");
 

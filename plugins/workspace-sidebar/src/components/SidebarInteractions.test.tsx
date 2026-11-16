@@ -67,7 +67,7 @@ function mount() {
       >
         <Rows />
       </SidebarInteractions>
-      <div data-bb-portaled-overlay="" data-testid="portal">An open sidebar sheet</div>
+      <div data-alia-portaled-overlay="" data-testid="portal">An open sidebar sheet</div>
     </>,
   );
   const row = (id: string) => slot.container.querySelector<HTMLElement>(`[data-sidebar-thread-id="${id}"]`)!;

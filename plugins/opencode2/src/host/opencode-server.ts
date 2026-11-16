@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
-import { withoutBridgeRuntimeEnv } from "@get-bb/plugin-sdk/provider-bridge";
+import { withoutBridgeRuntimeEnv } from "@vesnalia/plugin-sdk/provider-bridge";
 import {
   DEFAULT_MODEL_SETTINGS,
   normalizeModelSettings,
@@ -54,7 +54,7 @@ export type OpenCodeModelCatalog = {
 
 export type McpBridgeRegistration = { serverName: string; cwd: string };
 
-// Persisted so an in-place rewind (BB reuses the same BB thread ID) still
+// Persisted so an in-place rewind (VesnALIA reuses the same VesnALIA thread ID) still
 // works when the host worker holding the live session is gone: after a worker
 // restart, or when another worker owns the thread, thread/fork carries no
 // in-memory session and would otherwise fall through to the fork path and
@@ -317,43 +317,43 @@ export class OpenCodeServer {
   }
 
   async rememberSessionRegistration(
-    bbThreadId: string,
+    aliaThreadId: string,
     entry: SessionBridgeRegistration,
   ) {
     await this.withSessionRegistryLock(async () => {
       await this.loadSessionRegistry();
-      const previous = this.sessionRegistry.get(bbThreadId);
-      this.sessionRegistry.set(bbThreadId, entry);
+      const previous = this.sessionRegistry.get(aliaThreadId);
+      this.sessionRegistry.set(aliaThreadId, entry);
       try {
         await this.writeSessionRegistry();
       } catch (error) {
-        if (previous) this.sessionRegistry.set(bbThreadId, previous);
-        else this.sessionRegistry.delete(bbThreadId);
+        if (previous) this.sessionRegistry.set(aliaThreadId, previous);
+        else this.sessionRegistry.delete(aliaThreadId);
         throw error;
       }
     });
   }
 
-  async forgetSessionRegistration(bbThreadId: string) {
+  async forgetSessionRegistration(aliaThreadId: string) {
     await this.withSessionRegistryLock(async () => {
       await this.loadSessionRegistry();
-      const previous = this.sessionRegistry.get(bbThreadId);
-      this.sessionRegistry.delete(bbThreadId);
+      const previous = this.sessionRegistry.get(aliaThreadId);
+      this.sessionRegistry.delete(aliaThreadId);
       try {
         await this.writeSessionRegistry();
       } catch (error) {
-        if (previous) this.sessionRegistry.set(bbThreadId, previous);
+        if (previous) this.sessionRegistry.set(aliaThreadId, previous);
         throw error;
       }
     });
   }
 
   async lookupSessionRegistration(
-    bbThreadId: string,
+    aliaThreadId: string,
   ): Promise<SessionBridgeRegistration | undefined> {
     return this.withSessionRegistryLock(async () => {
       await this.loadSessionRegistry();
-      return this.sessionRegistry.get(bbThreadId);
+      return this.sessionRegistry.get(aliaThreadId);
     });
   }
 
@@ -603,14 +603,14 @@ export class OpenCodeServer {
       }
       if (last === "failed") {
         process.stderr.write(
-          `[opencode2] BB tool server ${serverName} failed to start: ${stringValue(status.error) ?? "unknown error"}\n`,
+          `[opencode2] VesnALIA tool server ${serverName} failed to start: ${stringValue(status.error) ?? "unknown error"}\n`,
         );
         return false;
       }
       await new Promise((resolve) => setTimeout(resolve, MCP_CONNECT_POLL_MS));
     }
     process.stderr.write(
-      `[opencode2] BB tool server ${serverName} did not connect within ${timeoutMs} ms (last status: ${last})\n`,
+      `[opencode2] VesnALIA tool server ${serverName} did not connect within ${timeoutMs} ms (last status: ${last})\n`,
     );
     return false;
   }
@@ -830,7 +830,7 @@ export class OpenCodeServer {
   private reconciling = false;
 
   /**
-   * Finish BB turns whose OpenCode execution already ended without BB seeing
+   * Finish VesnALIA turns whose OpenCode execution already ended without VesnALIA seeing
    * the terminal event (a dropped event stream, or a service restart). Runs
    * after every stream reconnect and periodically as a watchdog. A turn is
    * only settled once OpenCode reports the session idle since the turn began
@@ -872,7 +872,7 @@ export class OpenCodeServer {
           this.finish(
             session,
             "failed",
-            "OpenCode reported this turn failed while BB was disconnected from its event stream",
+            "OpenCode reported this turn failed while VesnALIA was disconnected from its event stream",
           );
         else
           this.finish(

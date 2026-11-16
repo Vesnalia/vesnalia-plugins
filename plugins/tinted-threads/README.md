@@ -1,6 +1,6 @@
-# bb-plugin-tinted-threads
+# alia-plugin-tinted-threads
 
-A bb plugin that contributes a replacement sidebar thread list named
+A VesnALIA plugin that contributes a replacement sidebar thread list named
 `Tinted Threads`.
 
 Rows group by project, use a red hue when a thread is blocked on input or
@@ -19,8 +19,8 @@ Install or reload the local plugin:
 
 ```sh
 npm install --include=dev --cache .npm-cache
-bb plugin install . --yes
-bb plugin reload tinted-threads
+alia plugin install . --yes
+alia plugin reload tinted-threads
 ```
 
 Then select `Tinted Threads` in Settings -> Appearance -> Sidebar.
@@ -29,6 +29,6 @@ Then select `Tinted Threads` in Settings -> Appearance -> Sidebar.
 
 ```sh
 npx tsc --noEmit
-bb plugin build .
-bb plugin list
+alia plugin build .
+alia plugin list
 ```

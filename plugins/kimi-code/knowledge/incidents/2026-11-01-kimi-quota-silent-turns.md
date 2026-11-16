@@ -10,13 +10,13 @@ verified:
 stale_after: "2027-01-01"
 ---
 
-# Исчерпание квоты Kimi выглядит в bb как «agent ended the turn without replying»
+# Исчерпание квоты Kimi выглядит в VesnALIA как «agent ended the turn without replying»
 
 ## Симптом
 
 Тред провайдера kimi-code (пример: thr_69426gk5e4, 2026-11-01) после
 нормальной работы начинает отвечать пустотой: каждый turn длится ~3 c, ни
-одного item; bb показывает warning «The agent ended the turn without
+одного item; VesnALIA показывает warning «The agent ended the turn without
 replying. The agent reported no error and sent nothing back». Статус turn'а
 при этом `completed`, тред не падает.
 
@@ -47,11 +47,11 @@ replying. The agent reported no error and sent nothing back». Статус turn
    промпт). Лечится временем (reset) или докупкой/апгрейдом плана.
 2. **Протокольная**: acp-server kimi проглатывает ошибку turn'а — отвечает
    `end_turn` без единого update. SDK-кит мапит `end_turn` в чистое
-   completed, bb добавляет бессмысленный generic-warning. Пользователь не
+   completed, VesnALIA добавляет бессмысленный generic-warning. Пользователь не
    видит ни «квота», ни времени сброса.
 
 Отдельный режим того же треда (кластер 14:22–14:26): acp-server отвечал на
-`session/prompt` мгновенно пусто, а работу выполнял асинхронно — в bb
+`session/prompt` мгновенно пусто, а работу выполнял асинхронно — в VesnALIA
 приходили только нестандартные нотификации `acp/fs/write` (provider/unhandled).
 Не связано с квотой; ждёт отдельного upstream-issue.
 
@@ -66,7 +66,7 @@ maintenance; таймаут 2.5 c) и при окне с `used_ratio ≥ 1` и �
 не уходит. Любая неопределённость — fail-open (строка проходит в базовый
 бридж как есть): эндпоинт недоступен, статус не `ok`, ratio устарел (reset
 прошёл), reset не указан, таймаут. `turn/steer` не гейтится (turn уже открыт).
-Выключение: `BB_KIMI_QUOTA_GATE=0` (в тестах выставляет vitest.setup.ts).
+Выключение: `ALIA_KIMI_QUOTA_GATE=0` (в тестах выставляет vitest.setup.ts).
 
 Проверено: unit (quota-gate.test.ts, 9), live-композиция с инъектированным
 usage против реального спавна `kimi acp` (kimi-live.quota-gate.test.ts),
@@ -90,7 +90,7 @@ requests until startup completes» — вероятный апстрим-фик�
 
 ## Sources
 
-- Лог треда thr_69426gk5e4 (`bb thread log --all --json`), события 7210–7636.
+- Лог треда thr_69426gk5e4 (`alia thread log --all --json`), события 7210–7636.
 - wire.jsonl сессии session_4a508eeb-… (turn.ended failed, 429).
 - Проба ACP-провода на исчерпанной квоте, 2026-11-01 (initialize/new/prompt).
 - Ответ `GET /coding/v1/usages` 2026-11-01: limit_7d used_ratio 1,

@@ -13,11 +13,11 @@ import {
   experimental_Icon as Icon,
   experimental_ProviderIcon as ProviderIcon,
   experimental_useProviders as useProviders,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
   type PluginMessageDirectiveProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import type { AdvisorEntry, AdvisorRound, AdvisorStatus } from "./rounds";
 import { ADVISOR_ROUND_CHANNEL, MOA_PROVIDER_ID, ROUND_ID_PATTERN } from "./constants";
@@ -86,7 +86,7 @@ function useRound(id: string, threadId: string): { state: RoundState; reload: ()
 }
 
 // An agent answering `/moa` embeds its round twice: live while the advisors
-// work, then again above its answer, so the panel stays in view when BB folds
+// work, then again above its answer, so the panel stays in view when VesnALIA folds
 // the finished turn. Where turns stay flat, both copies are on screen, so
 // only the last one is shown in full.
 const copies = new Map<string, Set<HTMLElement>>();
@@ -225,7 +225,7 @@ function Question({ text }: { text: string }) {
 }
 
 function AdvisorRow({ entry, now }: { entry: AdvisorEntry; now: number }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const provider = useProviderRecord(entry.providerId);
   const [expanded, setExpanded] = useState(false);
   const answer = entry.answer?.trim() ?? "";

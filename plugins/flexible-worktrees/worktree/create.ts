@@ -36,7 +36,7 @@ export async function create(args: CreateArgs, dataDir: string, signal?: AbortSi
 
 /**
  * Restore: reattach the worktree recorded under a destroyed environment's pathKey, and record it under the new
- * environment's key so later restores find it. Never creates a worktree: a missing one was removed outside BB.
+ * environment's key so later restores find it. Never creates a worktree: a missing one was removed outside VesnALIA.
  */
 async function reattach({ plan: p, inputs, pathKey, initSubmodules }: CreateArgs, from: string, dataDir: string, signal?: AbortSignal) {
   const previous = await receipts(dataDir, from).read();

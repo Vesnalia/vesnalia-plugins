@@ -1,7 +1,7 @@
 // The Details block: assignee, due date, projects, section, time, and editable custom fields.
 import { useEffect, useId, useState } from "react";
 import type { ReactNode } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { CustomField, CustomFieldValue, rpcContract, TaskDetail, TaskTime } from "../server";
 import { projectColor } from "../colors";
 import { formatDue } from "../due";

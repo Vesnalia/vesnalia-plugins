@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { fireEvent, waitFor, within } from "@testing-library/react";
-import type { ExperimentalThreadActionTabProps } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalThreadActionTabProps } from "@vesnalia/plugin-sdk/app";
 import type { InboxView } from "../../src/contract";
 import { formatRoute } from "../../src/ui/route";
 import { app, find, handlers, inbox, lastNavigation, mount, next, page, pr, unmountAll, type Handlers } from "./helpers";

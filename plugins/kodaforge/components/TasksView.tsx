@@ -1,6 +1,6 @@
 // Tasks: Makefile targets and package.json scripts in the workspace, one click to run.
 import { useCallback, useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Scope } from "../server";
 import { parseMakefile, parsePackageScripts, taskFiles, type Task } from "@/lib/tasks";
 import { Icon } from "@/components/ui/icon";

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server.ts";
 import { CHANGED, snapshotSchema, type Snapshot } from "./model.ts";
 import { LOCAL_CHANGE } from "./background.ts";

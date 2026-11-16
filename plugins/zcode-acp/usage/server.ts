@@ -1,17 +1,17 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { hostContract } from "../contract.js";
 import { rpcContract, resourceIdentity, LIST, GET } from "./contract.js";
 export { rpcContract } from "./contract.js";
 
 // Quota sources contribute usage rows without adding selectable chat agents.
-export default function registerUsageSource(bb: BbPluginApi, readNativeEntry: () => Promise<string> = async () => "", readAcpCommand: () => Promise<string> = async () => "") {
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+export default function registerUsageSource(alia: AliaPluginApi, readNativeEntry: () => Promise<string> = async () => "", readAcpCommand: () => Promise<string> = async () => "") {
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   const known = new Set<string>();
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     [LIST]: async () => {
       const nativeEntry = (await readNativeEntry()).trim();
       const acpCommand = (await readAcpCommand()).trim();
-      const machines = (await bb.sdk.hosts.list()).filter(machine => machine.type !== "ephemeral");
+      const machines = (await alia.sdk.hosts.list()).filter(machine => machine.type !== "ephemeral");
       const resources = [];
       for (const machine of machines) {
         if (machine.status === "connected") {
@@ -39,5 +39,5 @@ export default function registerUsageSource(bb: BbPluginApi, readNativeEntry: ()
       return host.call("collect", { plan, refresh, ...(nativeEntry ? { nativeEntry } : {}), ...(acpCommand ? { acpCommand } : {}) }, { hostId, signal: AbortSignal.timeout(60_000) });
     },
   }, { experimental_discoverable: true, experimental_description: "Independent host-local ZCode Coding Plan and Start Plan quota resources." });
-  bb.onDispose(() => known.clear());
+  alia.onDispose(() => known.clear());
 }

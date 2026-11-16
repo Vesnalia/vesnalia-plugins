@@ -1,17 +1,17 @@
 ---
 title: Image Studio — "Texture by model" (texture-uv), blueprint, agent skill
 date: 2026-10-27
-source: TZ /Users/vechkasov/Documents/Мои проекты/Roblox/lava-arena/.bb/chats/thr_vgdyg342s5/artifacts/image-studio-texture-tz.md
+source: TZ /Users/vechkasov/Documents/Мои проекты/Roblox/lava-arena/.vesnalia/chats/thr_vgdyg342s5/artifacts/image-studio-texture-tz.md
 status: complete 2026-10-27 (accepted Lane Pilot tasks shipped; runtime acceptance checks remain)
 ---
 
 # Plan
 
-Repository: `/Users/vechkasov/Documents/BB-сервис/plugins/bb-plugin-image-studio` (image-studio@0.8.4, git VKirill/bb-plugin-image-studio).
+Repository: `/Users/vechkasov/Documents/ALIA-сервис/plugins/alia-plugin-image-studio` (image-studio@0.8.4, git VKirill/alia-plugin-image-studio).
 
 > [!WARNING]
-> This Lane Pilot run is bound to `bb-plugin-image-generator/`, a git-ignored subfolder of the plugin repo.
-> Writers must run in the repo root, so dispatch needs a PM run bound to `bb-plugin-image-studio/`.
+> This Lane Pilot run is bound to `alia-plugin-image-generator/`, a git-ignored subfolder of the plugin repo.
+> Writers must run in the repo root, so dispatch needs a PM run bound to `alia-plugin-image-studio/`.
 
 ## Shape
 
@@ -65,7 +65,7 @@ checklist.
 
 | id | what | depends_on | status | run |
 |---|---|---|---|---|
-| model-section-core | section `model`, `src/model.ts` (modes, prompts, request → jobs), Blender script `blender/texture_uv.py` (prepare / apply), runner on the project host, post (mask cut, dilate), tool `image_studio_model` mode texture-uv, CLI `bb image-studio model`, unit tests for prompt build and dilate | — | done | lprun_7ab1f614e5bf4e9cac43bc49529371b0 |
+| model-section-core | section `model`, `src/model.ts` (modes, prompts, request → jobs), Blender script `blender/texture_uv.py` (prepare / apply), runner on the project host, post (mask cut, dilate), tool `image_studio_model` mode texture-uv, CLI `alia image-studio model`, unit tests for prompt build and dilate | — | done | lprun_7ab1f614e5bf4e9cac43bc49529371b0 |
 | model-core-fix | bundle delivery, dedicated UV, existing textures, parts, tested light/mask, preview and variant preparation fixes | model-section-core | done | lprun_7ab1f614e5bf4e9cac43bc49529371b0 |
 | model-concept-projection | project concept onto model before Muse and structure the texture prompt | model-section-core | done | lprun_7ab1f614e5bf4e9cac43bc49529371b0 |
 | model-projection-fix | correct world-space projection, view mirroring, and fixture texture lookup | model-concept-projection | done | lprun_7ab1f614e5bf4e9cac43bc49529371b0 |
@@ -75,7 +75,7 @@ checklist.
 | model-release-prep | release fixes for baking, previews, concept defaults, browser safety, blueprint wording, and version 0.8.5 | model-core-fix, model-blueprint-v2 | done | lprun_7ab1f614e5bf4e9cac43bc49529371b0 |
 | model-preview-framing | preview tiles frame the whole model at 75–85% of the tile, nothing touching the edges; PM guide_check.py | model-release-prep | done | lprun_7ab1f614e5bf4e9cac43bc49529371b0 |
 | model-skill-holes | skill no longer claims prepare fills holes; the agent closes holes in Blender before texture-uv | model-skill-v2 | done | lprun_7ab1f614e5bf4e9cac43bc49529371b0 |
-| model-hub-build-fix | hub install: host.ts imports from the bare `@get-bb/plugin-sdk`; version 0.8.6 | — | done | lprun_7ab1f614e5bf4e9cac43bc49529371b0 |
+| model-hub-build-fix | hub install: host.ts imports from the bare `@vesnalia/plugin-sdk`; version 0.8.6 | — | done | lprun_7ab1f614e5bf4e9cac43bc49529371b0 |
 | model-skill-desc-limit | image-studio skill description under 1024 characters with every trigger group kept, frontmatter test for all skills; version 0.8.7 | — | done | lprun_7ab1f614e5bf4e9cac43bc49529371b0 |
 | model-accept-fixes | SKILL.md frontmatter valid YAML (skill registers again), absolute paths for every host file call, CLI carries all model flags and `--sheet-style`; version 0.8.8 | model-skill-desc-limit | done | lprun_7ab1f614e5bf4e9cac43bc49529371b0 |
 | model-accept-round2 | blueprint cut keeps the handle (true gaps, label removal), side-copy threshold 0.8 with a narrow-profile test, soft anchor in the top band, pale light-blue soft key, marker-coloured parts not locked to red; version 0.8.9 | model-accept-fixes | done | lprun_7ab1f614e5bf4e9cac43bc49529371b0 |
@@ -99,7 +99,7 @@ produce guide.png and mask.png (the built-in "test" rock stack from tex_guide.py
 
 ## Ship
 `git push` in the plugin repo, version 0.8.4 → 0.8.5 (git range `>=0.2.0` accepts it), then
-`bb-plugin-push image-studio`, `bb plugin list` shows 0.8.5.
+`alia-plugin-push image-studio`, `alia plugin list` shows 0.8.5.
 
 ## Open points
 - Where the plugin server runs vs where Blender is: Blender runs on the project folder's host via the SDK
@@ -108,11 +108,11 @@ produce guide.png and mask.png (the built-in "test" rock stack from tex_guide.py
 ## History
 ### 2026-10-27
 - Accepted Lane Pilot run `lprun_7ab1f614e5bf4e9cac43bc49529371b0` completed all seven model tasks, including texture-uv core fixes, concept projection, blueprint, panel, and skill updates. Fire-mop and rock-stack runtime acceptance checks remain a follow-up.
-- Same run also completed model-preview-framing, model-skill-holes and model-hub-build-fix (hub bundle build fixed: `bb plugin update` to 0.8.5 was refused; now 0.8.6). These three had no rows in the table until this entry.
-- Accepted Lane Pilot run `lprun_7ab1f614e5bf4e9cac43bc49529371b0` also completed model-accept-fixes (version 0.8.8): skill frontmatter fixed so BB registers the skill again, host file paths resolved to absolute, CLI carries all model flags and `--sheet-style`. The row was added in this entry.
+- Same run also completed model-preview-framing, model-skill-holes and model-hub-build-fix (hub bundle build fixed: `alia plugin update` to 0.8.5 was refused; now 0.8.6). These three had no rows in the table until this entry.
+- Accepted Lane Pilot run `lprun_7ab1f614e5bf4e9cac43bc49529371b0` also completed model-accept-fixes (version 0.8.8): skill frontmatter fixed so VesnALIA registers the skill again, host file paths resolved to absolute, CLI carries all model flags and `--sheet-style`. The row was added in this entry.
 - Accepted Lane Pilot run `lprun_7ab1f614e5bf4e9cac43bc49529371b0` also completed model-skill-desc-limit (version 0.8.7) and model-accept-round2 (version 0.8.9): the blueprint cut keeps the handle, the side-copy threshold is 0.8 with a narrow-profile test, soft anchors sit in the top band, the soft colour key is the pale light-blue clay, and untextured parts with marker colours no longer lock Muse to red. The rows were added in this entry. The `items/*/PLAN.md` files are pointers to this plan and were not edited.
 - Accepted Lane Pilot run `lprun_7ab1f614e5bf4e9cac43bc49529371b0` also completed model-accept-round3b (version 0.8.10): the blueprint draws the side view alone in a second Muse call (`sideSeparate`, default on) and the texture-uv prompt puts the game look on its own line after the Task. The row was added in this entry. Model-accept-round3 and model-blueprint have item folders but are not in this run's accepted list, so they have no rows here.
-- Accepted Lane Pilot run `lprun_7ab1f614e5bf4e9cac43bc49529371b0` also completed model-requester-round (version 0.8.11): the Task line outranks the game look, textured parts get a named colour palette through `parts`, blueprint views are classified by silhouette (`classifyViews`; the mirrored back is relabelled to side, or the side/back is drawn alone with `buildBackOnlyPrompt`), and `bb image-studio model generate` run from a game folder saves into that folder's project. The row was added in this entry.
+- Accepted Lane Pilot run `lprun_7ab1f614e5bf4e9cac43bc49529371b0` also completed model-requester-round (version 0.8.11): the Task line outranks the game look, textured parts get a named colour palette through `parts`, blueprint views are classified by silhouette (`classifyViews`; the mirrored back is relabelled to side, or the side/back is drawn alone with `buildBackOnlyPrompt`), and `alia image-studio model generate` run from a game folder saves into that folder's project. The row was added in this entry.
 - Accepted Lane Pilot run `lprun_7ab1f614e5bf4e9cac43bc49529371b0` also completed model-classify-real (version 0.8.12): `classifyViews` decides by a clear margin, so the real 0.8.10 sheet relabels its back panel to side; and model-side-crop (version 0.8.13): a separately drawn side view is cut to its object before centring. The rows were added in this entry; the `items/*/PLAN.md` files are pointers to this plan and were not edited.
 ### 2026-10-28
 - Accepted Lane Pilot run `lprun_7ab1f614e5bf4e9cac43bc49529371b0` also completed model-guide-fix2 (version 0.8.15), model-scepter-round (0.8.14) and model-blueprint-nb21 (0.8.16). The three rows were added in this entry, with no dependency recorded because the accepted task list did not name one.
@@ -145,5 +145,5 @@ Must be stated in the text: Muse draws neither the model nor a mesh to import �
 ## Prompt templates (requester, 2026-10-27)
 The texture-uv (TZ §3.1) and blueprint (TZ §3.2) prompt templates in the TZ file were rewritten to the Muse
 structure (image roles → Task → Must not change → bans). Take them **verbatim** from
-`/Users/vechkasov/Documents/Мои проекты/Roblox/lava-arena/.bb/chats/thr_vgdyg342s5/artifacts/image-studio-texture-tz.md`
+`/Users/vechkasov/Documents/Мои проекты/Roblox/lava-arena/.vesnalia/chats/thr_vgdyg342s5/artifacts/image-studio-texture-tz.md`
 into `src/model.ts` and the skill; read the TZ at dispatch time, not this plan's older wording.

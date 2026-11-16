@@ -1,13 +1,13 @@
-// bb-plugin-thread-tags — backend entry.
+// alia-plugin-thread-tags — backend entry.
 //
 // One configurable set of tags (an emoji or short text on a colored
-// background) and at most one tag per thread. Both live in bb.storage.kv and
+// background) and at most one tag per thread. Both live in alia.storage.kv and
 // serve three surfaces: the sidebar tag button and badges (app.tsx, over RPC),
-// the tag editor on the plugin's settings page, and the `bb thread-tags` CLI
+// the tag editor on the plugin's settings page, and the `alia thread-tags` CLI
 // that agents use (skills/thread-tags/SKILL.md). Every write publishes a
 // realtime signal so every open client refetches.
 import { randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const TAG_LABEL_MAX = 12;
@@ -63,18 +63,18 @@ const DEFAULT_TAGS: Tag[] = [
   { id: "done", label: "✅", color: "#22c55e" },
 ];
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   async function readTags(): Promise<Tag[]> {
-    return (await bb.storage.kv.get<Tag[]>("tags")) ?? DEFAULT_TAGS;
+    return (await alia.storage.kv.get<Tag[]>("tags")) ?? DEFAULT_TAGS;
   }
   async function readAssignments(): Promise<Record<string, string>> {
-    return (await bb.storage.kv.get<Record<string, string>>("assignments")) ?? {};
+    return (await alia.storage.kv.get<Record<string, string>>("assignments")) ?? {};
   }
   async function readState(): Promise<TagState> {
     return { tags: await readTags(), assignments: await readAssignments() };
   }
   function changed() {
-    bb.realtime.publish(TAGS_CHANGED, {});
+    alia.realtime.publish(TAGS_CHANGED, {});
   }
 
   // Writes are serialized so two quick clicks cannot lose an update.
@@ -88,7 +88,7 @@ export default async function plugin(bb: BbPluginApi) {
   const createTag = (label: string, color: string) =>
     serialized(async () => {
       const tag: Tag = { id: randomUUID().slice(0, 8), label, color };
-      await bb.storage.kv.set("tags", [...(await readTags()), tag]);
+      await alia.storage.kv.set("tags", [...(await readTags()), tag]);
       changed();
       return tag;
     });
@@ -100,7 +100,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (tag === undefined) return null;
       tag.label = label;
       tag.color = color;
-      await bb.storage.kv.set("tags", tags);
+      await alia.storage.kv.set("tags", tags);
       changed();
       return tag;
     });
@@ -114,8 +114,8 @@ export default async function plugin(bb: BbPluginApi) {
       for (const [threadId, tagId] of Object.entries(assignments)) {
         if (tagId === id) delete assignments[threadId];
       }
-      await bb.storage.kv.set("tags", remaining);
-      await bb.storage.kv.set("assignments", assignments);
+      await alia.storage.kv.set("tags", remaining);
+      await alia.storage.kv.set("assignments", assignments);
       changed();
       return true;
     });
@@ -129,12 +129,12 @@ export default async function plugin(bb: BbPluginApi) {
       if ((assignments[threadId] ?? null) === tagId) return tagId;
       if (tagId === null) delete assignments[threadId];
       else assignments[threadId] = tagId;
-      await bb.storage.kv.set("assignments", assignments);
+      await alia.storage.kv.set("assignments", assignments);
       changed();
       return tagId;
     });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     state_get: () => readState(),
     tag_create: ({ label, color }) => createTag(label, color),
     tag_update: async ({ id, label, color }) => {
@@ -149,7 +149,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // A deleted thread never comes back, so drop its tag.
-  bb.events.on("thread.deleted", async ({ thread }) => {
+  alia.events.on("thread.deleted", async ({ thread }) => {
     const assignments = await readAssignments();
     if (assignments[thread.id] !== undefined) await setThreadTag(thread.id, null);
   });
@@ -157,12 +157,12 @@ export default async function plugin(bb: BbPluginApi) {
   // ── CLI ────────────────────────────────────────────────────────────────
   const usage = [
     "Usage:",
-    "  bb thread-tags list [--json]                       List tags",
-    "  bb thread-tags get [--thread <id>] [--json]        Show a thread's tag",
-    "  bb thread-tags set <tag> [--thread <id>] [--json]  Tag a thread (tag id or label)",
-    "  bb thread-tags clear [--thread <id>] [--json]      Remove a thread's tag",
-    "  bb thread-tags create <label> --color <#rrggbb> [--json]",
-    "  bb thread-tags delete <tag> [--json]",
+    "  VesnALIA thread-tags list [--json]                       List tags",
+    "  VesnALIA thread-tags get [--thread <id>] [--json]        Show a thread's tag",
+    "  VesnALIA thread-tags set <tag> [--thread <id>] [--json]  Tag a thread (tag id or label)",
+    "  VesnALIA thread-tags clear [--thread <id>] [--json]      Remove a thread's tag",
+    "  VesnALIA thread-tags create <label> --color <#rrggbb> [--json]",
+    "  VesnALIA thread-tags delete <tag> [--json]",
     "",
     "--thread defaults to the thread the command runs in.",
   ].join("\n");
@@ -177,16 +177,16 @@ export default async function plugin(bb: BbPluginApi) {
     );
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "thread-tags",
     summary: "Tag threads in the sidebar with an emoji or short text",
     commands: [
-      { name: "list", summary: "List configured tags", usage: "bb thread-tags list [--json]" },
-      { name: "get", summary: "Show a thread's tag", usage: "bb thread-tags get [--thread <id>] [--json]" },
-      { name: "set", summary: "Tag a thread", usage: "bb thread-tags set <tag> [--thread <id>] [--json]" },
-      { name: "clear", summary: "Remove a thread's tag", usage: "bb thread-tags clear [--thread <id>] [--json]" },
-      { name: "create", summary: "Create a tag", usage: "bb thread-tags create <label> --color <#rrggbb> [--json]" },
-      { name: "delete", summary: "Delete a tag", usage: "bb thread-tags delete <tag> [--json]" },
+      { name: "list", summary: "List configured tags", usage: "alia thread-tags list [--json]" },
+      { name: "get", summary: "Show a thread's tag", usage: "alia thread-tags get [--thread <id>] [--json]" },
+      { name: "set", summary: "Tag a thread", usage: "alia thread-tags set <tag> [--thread <id>] [--json]" },
+      { name: "clear", summary: "Remove a thread's tag", usage: "alia thread-tags clear [--thread <id>] [--json]" },
+      { name: "create", summary: "Create a tag", usage: "alia thread-tags create <label> --color <#rrggbb> [--json]" },
+      { name: "delete", summary: "Delete a tag", usage: "alia thread-tags delete <tag> [--json]" },
     ],
     async run(argv, ctx) {
       const json = argv.includes("--json");
@@ -207,7 +207,7 @@ export default async function plugin(bb: BbPluginApi) {
       const fail = (message: string) => ({ exitCode: 1, stderr: message });
       const threadId = threadFlag ?? ctx.threadId;
       const needThread = () =>
-        fail("No thread: pass --thread <id> or run inside a bb thread.");
+        fail("No thread: pass --thread <id> or run inside a VesnALIA thread.");
 
       switch (command) {
         case undefined:
@@ -229,7 +229,7 @@ export default async function plugin(bb: BbPluginApi) {
           const ref = args.join(" ").trim();
           if (ref === "") break;
           const tag = findTag(await readTags(), ref);
-          if (tag === undefined) return fail(`No tag "${ref}". Run "bb thread-tags list".`);
+          if (tag === undefined) return fail(`No tag "${ref}". Run "alia thread-tags list".`);
           await setThreadTag(threadId, tag.id);
           return reply({ threadId, tag }, `Tagged ${threadId} with ${tag.label}`);
         }

@@ -5,7 +5,7 @@
 // kept its own geometry under agentDockKey, which forgetting a review still clears.
 import { NAV_WIDTH, PANEL_WIDTH } from "./workspace-layout";
 
-/** What the review's commands open: Comments and Finish review in its own panel, the agent and the main thread as tabs in BB's. */
+/** What the review's commands open: Comments and Finish review in its own panel, the agent and the main thread as tabs in VesnALIA's. */
 export type PanelView = "comments" | "agent" | "finish" | "main";
 /** The views of the review's own panel. */
 export type SideView = Exclude<PanelView, "agent" | "main">;
@@ -18,7 +18,7 @@ export interface ReviewUiState {
   scrollTop?: number;
   /** The focus run whose recovery notice the reviewer dismissed. */
   dismissedFocusRun?: string;
-  /** The side panel's view, open again where it can dock; "agent" or "main", BB's tab to open as the review opens, once. */
+  /** The side panel's view, open again where it can dock; "agent" or "main", VesnALIA's tab to open as the review opens, once. */
   panel?: PanelView | null;
   /** The turn the review last opened in, so it opens on its Overview only when it comes back to you. */
   turnSignal?: string;

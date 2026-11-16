@@ -1,5 +1,5 @@
 /**
- * Turns BB's code theme (a VS Code theme document from
+ * Turns VesnALIA's code theme (a VS Code theme document from
  * experimental_useCodeTheme) into Monaco's theme data. Monaco's Monarch tokens
  * are named like TextMate's top-level scopes (`comment`, `string`, `keyword`…),
  * so mapping each rule's scopes through as-is colours the common tokens.

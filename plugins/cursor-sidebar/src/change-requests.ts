@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { experimental_useRpcKeyedQuery } from "@get-bb/plugin-sdk/app";
+import { experimental_useRpcKeyedQuery } from "@vesnalia/plugin-sdk/app";
 import { z } from "zod";
 import {
   CHANGE_REQUEST_KEY_LIMIT,
@@ -15,7 +15,7 @@ import {
   type ChangeRequestState,
 } from "@wy3z/bb-suite/change-requests";
 
-export const GITHUB_PR_STATUS_PLUGIN = "bb--github-pr-status";
+export const GITHUB_PR_STATUS_PLUGIN = "alia--github-pr-status";
 
 export const githubPrStatus = {
   pullRequests: {

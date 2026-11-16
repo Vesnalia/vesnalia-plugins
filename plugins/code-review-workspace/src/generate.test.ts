@@ -1,6 +1,6 @@
 import { test, expect, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import type { PluginAgentConfigurationContext } from "@get-bb/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import type { PluginAgentConfigurationContext } from "@vesnalia/plugin-sdk";
 import plugin from "../server";
 import { spawnPrompt, toolFailed, toolText } from "./fake-host.test-support";
 import { generateGuide } from "./generate";
@@ -27,8 +27,8 @@ const patch = `diff --git a/a.ts b/a.ts
 // The tools are called as review pr-1's guide writer, the worker recorded for its generation.
 async function host() {
   const h = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { get: async () => ({ title: "Generate guide: pr-1" }) } } as any });
-  await plugin(h.bb);
-  const store = testStore(h.bb); // same pluginId → same DB the factory's tools read
+  await plugin(h.alia);
+  const store = testStore(h.alia); // same pluginId → same DB the factory's tools read
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, status: "generating", createdAt: 1 });
   await store.savePatch("pr-1", patch);
   const generationId = await store.beginGeneration("pr-1");
@@ -82,7 +82,7 @@ test("read_review_patch and list_review_files read only the calling thread's own
 
 test("read_review_patch and list_review_files say they read your own review, not any target", async () => {
   const writer = createFakePluginHost({ pluginId: "code-review-workspace", agentSkillIds: ["code-review-workspace-generate"] });
-  await recordWriter(await startPlugin(writer.bb), "thread-1");
+  await recordWriter(await startPlugin(writer.alia), "thread-1");
   const { tools } = await writer.harness.behavior.resolveAgentConfiguration(baseConfigContext("code-review-workspace", "Generate guide: pr-1"));
   for (const name of ["read_review_patch", "list_review_files"]) {
     const description = tools.find((tool) => tool.name === name)!.description;
@@ -92,7 +92,7 @@ test("read_review_patch and list_review_files say they read your own review, not
 
 test("generate_review_guide checks its generation and saves its guide in one turn, so a generation begun meanwhile comes after both", async () => {
   const h = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { get: async () => ({ title: "Generate guide: pr-1" }) } } as any });
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, status: "generating", createdAt: 1 });
   await store.savePatch("pr-1", patch);
   const superseded = await store.beginGeneration("pr-1");
@@ -214,7 +214,7 @@ async function recordWriter(store: AsyncStore, threadId: string) {
 
 test("agents.configure exposes tools/skill only to this plugin's own generation thread", async () => {
   const h = createFakePluginHost({ pluginId: "code-review-workspace", agentSkillIds: ["code-review-workspace-generate"] });
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await recordWriter(store, "thread-1");
   await store.setAssistantThread("pr-1", "assistant-1");
 
@@ -257,17 +257,17 @@ test("agents.configure exposes tools/skill only to this plugin's own generation 
 test("a rebuilt guide for a PR you reviewed checks your feedback instead of reviewing from scratch", async () => {
   const { generateGuide, buildGenerationPrompt } = await import("./generate");
   const { defaultPreferences } = await import("./preferences");
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     spawn: async () => ({ id: "worker" }), archive: async () => {}, stop: async () => {},
     get: async () => ({ archivedAt: null, deletedAt: null, status: "idle" }), send: async () => ({}),
   } } as any });
-  const store = testStore(bb);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, headSha: "sha2", status: "ready", createdAt: 1, projectId: "p1" });
   await store.setLifecycle("pr-1", { submittedVerdict: "REQUEST_CHANGES", submittedAt: 1000, submittedHeadSha: "sha1", signals: { lastReviewAt: 1000, lastReviewSha: "sha1" } });
   await store.saveGuide("pr-1", { title: "T", intent: "I", sections: [{ id: "cache", title: "Cache", overview: "o", diffs: [{ file: "a.ts", summary: "s" }] }], unplacedFiles: [] });
   await store.setAssistantThread("pr-1", "assistant");
   harness.inspection.sdk.stub("threads.wait", async () => { await store.saveGuide("pr-1", { title: "T", intent: "I", sections: [], unplacedFiles: [] }); return { matched: true }; });
-  await generateGuide(bb, store, "pr-1", "p1", { notify: false });
+  await generateGuide(alia, store, "pr-1", "p1", { notify: false });
   // The guide writer kept the earlier chapters in view and was asked for sinceReview.
   const prompt = spawnPrompt(harness.inspection.sdk.callsTo("threads.spawn")[0][0]);
   expect(prompt).toContain("- cache: Cache (a.ts)");
@@ -283,15 +283,15 @@ test("a rebuilt guide for a PR you reviewed checks your feedback instead of revi
 
 test("a failed rebuild keeps the guide you had", async () => {
   const { generateGuide } = await import("./generate");
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { spawn: async () => ({ id: "worker" }), archive: async () => {}, stop: async () => {} } } as any });
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { spawn: async () => ({ id: "worker" }), archive: async () => {}, stop: async () => {} } } as any });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, headSha: "sha1", status: "ready", createdAt: 1, projectId: "p1" });
   await store.savePatch("pr-1", patch);
   await store.saveGuide("pr-1", { title: "Kept", intent: "I", sections: [], unplacedFiles: [] });
   await store.backupGuide("pr-1");
   await store.savePatch("pr-1", "diff --git a/b.ts b/b.ts\n");
   harness.inspection.sdk.stub("threads.wait", async () => { throw new Error("worker timed out"); });
-  await generateGuide(bb, store, "pr-1", "p1", { notify: false });
+  await generateGuide(alia, store, "pr-1", "p1", { notify: false });
   expect((await store.getReview("pr-1"))?.status).toBe("error");
   expect((await store.getGuide("pr-1"))?.title).toBe("Kept");
   expect(await store.patch("pr-1")).toBe(patch);
@@ -299,7 +299,7 @@ test("a failed rebuild keeps the guide you had", async () => {
 
 test("generate_review_guide advertises the guide's schema and accepts a guide without unplacedFiles", async () => {
   const writer = createFakePluginHost({ pluginId: "code-review-workspace", agentSkillIds: ["code-review-workspace-generate"] });
-  await recordWriter(await startPlugin(writer.bb), "thread-1");
+  await recordWriter(await startPlugin(writer.alia), "thread-1");
   const tool = (await writer.harness.behavior.resolveAgentConfiguration(baseConfigContext("code-review-workspace", "Generate guide: pr-1"))).tools.find((t) => t.name === "generate_review_guide");
   const schema = JSON.stringify(tool?.inputSchema);
   for (const field of ["intent", "overview", "risk", "focus", "summary", "unplacedFiles", "requirements"]) expect(schema).toContain(`"${field}"`);
@@ -454,7 +454,7 @@ test("the guide-writing skill follows ticket references only from a trusted auth
 
 test("generate_review_guide's description names every rule it enforces, and its instructions say to stop once accepted", async () => {
   const writer = createFakePluginHost({ pluginId: "code-review-workspace", agentSkillIds: ["code-review-workspace-generate"] });
-  await recordWriter(await startPlugin(writer.bb), "thread-1");
+  await recordWriter(await startPlugin(writer.alia), "thread-1");
   const tool = (await writer.harness.behavior.resolveAgentConfiguration(baseConfigContext("code-review-workspace", "Generate guide: pr-1"))).tools.find((t) => t.name === "generate_review_guide");
   for (const rule of [
     "every problem listed", "each changed file (or each hunk of a split file) is in exactly one chapter", "chapter ids are unique", "unplaced files have no changed lines",
@@ -483,11 +483,11 @@ async function writerRun(turns: Array<(submit: (guide: unknown) => Promise<unkno
       return { matched: true };
     },
   } } as any });
-  await plugin(h.bb);
-  const store = testStore(h.bb);
+  await plugin(h.alia);
+  const store = testStore(h.alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, headSha: "sha1", status: "generating", createdAt: 1, projectId: "p1" });
   await store.savePatch("pr-1", patch);
-  await generateGuide(h.bb, store, "pr-1", "p1", { notify: false });
+  await generateGuide(h.alia, store, "pr-1", "p1", { notify: false });
   const logs = h.harness.inspection.logEntries.map((e) => `${e.level}: ${e.message}`).filter((line) => line.includes("pr-1"));
   return { store, send, logs };
 }
@@ -522,7 +522,7 @@ test("a guide writer told why its guide wasn't accepted can fix it, and the guid
 // machine. The automatic review couldn't start, and only the log said so.
 test("an automatic review that can't start waits for Run review, saying why", async () => {
   let prompt = "";
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: {
       spawn: async (args: { prompt?: string; title: string }) => { if (args.prompt) prompt = args.prompt; return { id: args.title.startsWith("Review agent") ? "assistant" : "writer" }; },
       wait: ({ signal }: { signal: AbortSignal }) => new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(new Error("aborted")), { once: true })),
@@ -531,12 +531,12 @@ test("an automatic review that can't start waits for Run review, saying why", as
     },
     hosts: { get: async () => ({ id: "host_laptop", name: "Laptop", status: "disconnected", lifecycle: { phase: "active" } }) },
   } as any });
-  await plugin(bb);
-  const store = testStore(bb);
+  await plugin(alia);
+  const store = testStore(alia);
   await store.savePreferences({ ...defaultPreferences, assistantAgent: { hostId: "host_laptop", providerId: "codex", model: "gpt-6", reasoningLevel: "low", permissionMode: "auto" } }, 0);
   await store.saveReview({ targetKey: "ref-1", kind: "ref", gitRef: "main", status: "generating", createdAt: 1, projectId: "p1" });
   await store.savePatch("ref-1", patch);
-  const run = generateGuide(bb, store, "ref-1", "p1", { notify: false });
+  const run = generateGuide(alia, store, "ref-1", "p1", { notify: false });
   await vi.waitFor(() => expect(prompt).toContain("generationId"));
   const generationId = prompt.match(/generationId "([^"]+)"/)![1];
   const guide = { title: "T", intent: "I", sections: [{ id: "c1", title: "A", overview: "O", risk: "low", diffs: [{ file: "a.ts", summary: "S" }] }], unplacedFiles: [] };
@@ -552,7 +552,7 @@ test("an automatic review that can't start waits for Run review, saying why", as
 // would have waited for your click anyway, "no default agent" stood in for why it waited.
 test("an untrusted author's automatic review that couldn't start says it waits for your click, not that it failed", async () => {
   let prompt = "";
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: {
       spawn: async (args: { prompt?: string; title: string }) => { if (args.prompt) prompt = args.prompt; return { id: "writer" }; },
       wait: ({ signal }: { signal: AbortSignal }) => new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(new Error("aborted")), { once: true })),
@@ -560,8 +560,8 @@ test("an untrusted author's automatic review that couldn't start says it waits f
       queuedMessages: { list: async () => [] },
     },
   } as any });
-  await plugin(bb);
-  const store = testStore(bb);
+  await plugin(alia);
+  const store = testStore(alia);
   const review = { targetKey: "pr-1", kind: "pr" as const, repo: "acme/web", number: 1, author: "stranger", headSha: "sha1", status: "generating" as const, createdAt: 1, projectId: "p1" };
   const build = async (key: string, lifecycle: Parameters<typeof store.setLifecycle>[1]) => {
     harness.inspection.sdk.stub("projects.defaultExecutionOptions", async () => ({ providerId: "codex", hostId: "host_1" }) as any);
@@ -570,7 +570,7 @@ test("an untrusted author's automatic review that couldn't start says it waits f
     await store.savePatch(key, patch);
     prompt = "";
     // Rebuilt without a click, as for new commits.
-    const run = generateGuide(bb, store, key, "p1", { notify: false, unattended: true });
+    const run = generateGuide(alia, store, key, "p1", { notify: false, unattended: true });
     await vi.waitFor(() => expect(prompt).toContain("generationId"));
     const generationId = prompt.match(/generationId "([^"]+)"/)![1];
     // Then the project loses its default agent, so the review's assistant can't start.
@@ -584,14 +584,14 @@ test("an untrusted author's automatic review that couldn't start says it waits f
   // You started agents at an earlier head: this one waits for your click.
   expect(await build("pr-1", { approvedHead: "sha0", approvedAt: 5 })).toEqual({ run: "review", head: "sha1", at: expect.any(Number) });
   // At the head you started agents on, it would have run, so it says why it didn't.
-  expect(await build("pr-2", { approvedHead: "sha1", approvedAt: 5 })).toEqual({ run: "review", head: "sha1", at: expect.any(Number), why: "failed", error: "bb has no default agent for the review's project." });
+  expect(await build("pr-2", { approvedHead: "sha1", approvedAt: 5 })).toEqual({ run: "review", head: "sha1", at: expect.any(Number), why: "failed", error: "alia has no default agent for the review's project." });
 });
 
 test("a run that couldn't start keeps its reason as one line, capped", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "ref-1", kind: "ref", gitRef: "main", status: "ready", createdAt: 1, projectId: "p1" });
-  await skipRun(bb, store, "ref-1", "review", null, `spawn failed:\n${"x".repeat(300)}`);
+  await skipRun(alia, store, "ref-1", "review", null, `spawn failed:\n${"x".repeat(300)}`);
   const { error } = (await store.getReview("ref-1"))!.skippedRun!;
   expect(error).toHaveLength(200);
   expect(error).toMatch(/^spawn failed: x+…$/);
@@ -602,17 +602,17 @@ test("a run that couldn't start keeps its reason as one line, capped", async () 
 test("a first guide's sinceReview is dropped; a re-review's is kept", async () => {
   for (const reviewed of [false, true]) {
     let prompt = "";
-    const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+    const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
       spawn: async (args: { prompt?: string; title: string }) => { if (args.prompt) prompt = args.prompt; return { id: "writer" }; },
       wait: ({ signal }: { signal: AbortSignal }) => new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(new Error("aborted")), { once: true })),
       archive: async () => ({}), stop: async () => ({}),
     } } as any });
-    await plugin(bb);
-    const store = testStore(bb);
+    await plugin(alia);
+    const store = testStore(alia);
     await store.saveReview({ targetKey: "ref-1", kind: "ref", gitRef: "main", status: "generating", createdAt: 1, projectId: "p1" });
     await store.savePatch("ref-1", patch);
     if (reviewed) await store.setLifecycle("ref-1", { submittedVerdict: "COMMENT", submittedAt: 1000, signals: { lastReviewAt: 1000 } });
-    const run = generateGuide(bb, store, "ref-1", "p1", { notify: false });
+    const run = generateGuide(alia, store, "ref-1", "p1", { notify: false });
     await vi.waitFor(() => expect(prompt).toContain("generationId"));
     const generationId = prompt.match(/generationId "([^"]+)"/)![1];
     const guide = { title: "T", intent: "I", sinceReview: "The retry now backs off.", sections: [{ id: "c1", title: "A", overview: "O", risk: "low", diffs: [{ file: "a.ts", summary: "S" }] }], unplacedFiles: [] };

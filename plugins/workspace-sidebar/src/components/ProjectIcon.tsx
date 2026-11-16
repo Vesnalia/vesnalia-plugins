@@ -1,15 +1,15 @@
 // A project's own artwork where it has some, else the folder glyph.
 //
 // Images come from our HTTP route as bytes the server has already vetted;
-// glyphs are BB icon names the server rendered to SVG, drawn as a mask so
+// glyphs are VesnALIA icon names the server rendered to SVG, drawn as a mask so
 // they take the row's text color like any other icon.
 import { useState } from "react";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "./sidebar-context";
 
-// Mounted by bb at /api/v1/plugins/<id>/http/<path>; the id is the package
-// name without its bb-plugin- prefix.
+// Mounted by VesnALIA at /api/v1/plugins/<id>/http/<path>; the id is the package
+// name without its alia-plugin- prefix.
 const PROJECT_ICON_URL = "/api/v1/plugins/workspace-sidebar/http/project-icon";
 
 export function ProjectIcon({

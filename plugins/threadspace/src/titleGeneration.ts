@@ -1,7 +1,7 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
-type Sdk = BbPluginApi["sdk"];
+type Sdk = AliaPluginApi["sdk"];
 export type TitleGenerationSdk = {
   threads: Pick<Sdk["threads"], "get" | "timeline" | "update">;
   system: Pick<Sdk["system"], "aiServices">;
@@ -24,7 +24,7 @@ type Failure = Extract<TitleRegenerationResult, { ok: false }>;
 
 const accountReplySchema = z.object({ status: z.number().int(), body: z.unknown() });
 const completionSchema = z.object({ text: z.string().max(16_000) });
-// bb-ai's public overview also contains account/usage information; only the
+// alia-ai's public overview also contains account/usage information; only the
 // enabled/readiness fields are needed here, so do not expose or retain the rest.
 const cloudOverviewSchema = z.object({
   enabled: z.boolean(),
@@ -50,7 +50,7 @@ export function resolveTitleService(view: AiServices): { ok: true; serviceName: 
   if (!service || !service.status.ready) {
     return { ok: false, reason: "unavailable", ...(service ? { serviceName: service.displayName } : {}) };
   }
-  if (service.pluginId !== "bb-ai" || service.id !== "bb") {
+  if (service.pluginId !== "alia-ai" || service.id !== "alia") {
     return { ok: false, reason: "unsupported", serviceName: service.displayName };
   }
   return { ok: true, serviceName: service.displayName };
@@ -92,7 +92,7 @@ export function buildTitlePrompt(rows: readonly TimelineRow[]): string | null {
   ].join("\n");
 }
 
-/** Same one-line/word-boundary policy as BB, bounded in Unicode code points. */
+/** Same one-line/word-boundary policy as VesnALIA, bounded in Unicode code points. */
 export function sanitizeGeneratedTitle(raw: string): string | null {
   let text = raw.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/gu, "")
     .replace(/<think\b[^>]*>[\s\S]*?<\/think>/giu, "").trim();
@@ -142,7 +142,7 @@ export function createTitleRegenerator(sdk: TitleGenerationSdk, options: { timeo
       // Core caches service status for ten seconds. Recheck the cloud plugin's
       // own switch before reading conversation content or sending a prompt.
       const rawOverview = await bounded(() => sdk.plugins.callRpc({
-        pluginId: "bb-ai", method: "overview", input: null, signal: controller.signal,
+        pluginId: "alia-ai", method: "overview", input: null, signal: controller.signal,
         outputSchema: cloudOverviewSchema,
       }));
       const overview = cloudOverviewSchema.safeParse(rawOverview);
@@ -154,10 +154,10 @@ export function createTitleRegenerator(sdk: TitleGenerationSdk, options: { timeo
       }));
       const prompt = buildTitlePrompt(timeline.rows);
       if (!prompt) return { ok: false, reason: "empty" };
-      // Published bb-account.v1.fetch keeps account credentials inside BB. This is
-      // the same endpoint and request body used by the selected bb cloud service.
+      // Published alia-account.v1.fetch keeps account credentials inside VesnALIA. This is
+      // the same endpoint and request body used by the selected VesnALIA cloud service.
       const rawReply = await bounded(() => sdk.plugins.callRpc({
-        pluginId: "bb-account", method: "bb-account.v1.fetch", signal: controller.signal,
+        pluginId: "alia-account", method: "alia-account.v1.fetch", signal: controller.signal,
         input: { target: "api", method: "POST", path: "/api/ai/v1/complete", body: { prompt }, timeoutMs: 7_000 },
         outputSchema: accountReplySchema,
       }));
@@ -172,7 +172,7 @@ export function createTitleRegenerator(sdk: TitleGenerationSdk, options: { timeo
       if (current.title !== thread.title) return { ok: false, reason: "conflict" };
       if (controller.signal.aborted || disposed) return { ok: false, reason: "cancelled" };
       // The public update also forwards the new name to supported provider sessions.
-      // No local optimistic title is committed until BB accepts this mutation.
+      // No local optimistic title is committed until VesnALIA accepts this mutation.
       // Unlike reads, update has no AbortSignal/CAS in this SDK. Once dispatched,
       // await its acknowledgement instead of reporting cancellation while it writes.
       clearTimeout(timer);

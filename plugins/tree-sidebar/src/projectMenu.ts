@@ -1,6 +1,6 @@
-// Making bb's project picker read like the tree, without touching the names.
+// Making VesnALIA's project picker read like the tree, without touching the names.
 //
-// Two problems, one script. bb's picker hard-codes its popover at `w-52`
+// Two problems, one script. VesnALIA's picker hard-codes its popover at `w-52`
 // (208px), which leaves about 136px for a name at 12px text — roughly 22
 // characters — before it is cut off. And the picker has no notion of depth at
 // all: every project sits flush left.
@@ -12,9 +12,9 @@
 // A plugin stylesheet cannot reach any of this: plugin CSS is scoped to
 // plugin-rendered content and this popover is portaled host UI. So it is a
 // content script — trusted page code, the documented escape hatch — and it is
-// deliberately narrow. It only touches a popover whose trigger carries bb's own
+// deliberately narrow. It only touches a popover whose trigger carries VesnALIA's own
 // `data-promptbox-project-control` hook, and everything it changes is a rule in
-// one stylesheet. If bb renames that hook or restructures the picker then
+// one stylesheet. If VesnALIA renames that hook or restructures the picker then
 // nothing is stamped and those rules match nothing. It can stop working; it
 // cannot break the app.
 import { onProjectDepths, projectDepths } from "./projectDepths";
@@ -24,19 +24,19 @@ const MARK = "data-tree-sidebar-project-menu";
 
 /**
  * Set on <html> while the option is on, so this is part of that feature rather
- * than a standing change to bb's chrome.
+ * than a standing change to VesnALIA's chrome.
  */
 export const INDENT_FLAG = "data-tree-sidebar-indent";
 
-/** bb's own hook on the picker's trigger button. */
+/** VesnALIA's own hook on the picker's trigger button. */
 const TRIGGER = "[data-promptbox-project-control]";
 
 /**
- * 16rem, up from bb's 13rem — enough, and no more.
+ * 16rem, up from VesnALIA's 13rem — enough, and no more.
  *
  * The widest row sets this: a 22-character name one level in wants about 231px
  * once the indent, the folder icon, the check, their gaps, and both paddings are
- * counted. 256px covers that with about four characters spare, where bb's 208px
+ * counted. 256px covers that with about four characters spare, where VesnALIA's 208px
  * cut it off.
  */
 const WIDTH = "16rem";

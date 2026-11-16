@@ -1,9 +1,9 @@
-// bb-plugin-bbium: keyboard behavior lives in the frontend app overlay (app.tsx, keys.ts).
+// alia-plugin-bbium: keyboard behavior lives in the frontend app overlay (app.tsx, keys.ts).
 // The server only declares settings; the frontend reads them via useSettings.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     vimKeys: {
       type: "boolean",
       label: "Vim keys",
@@ -13,7 +13,7 @@ export default async function plugin(bb: BbPluginApi) {
     disabledKeys: {
       type: "string",
       label: "Disabled keys",
-      description: "Keys bbium leaves to bb and other plugins, e.g. jk when the sidebar switches threads with j/k. Any of f i j k d u g G.",
+      description: "Keys bbium leaves to VesnALIA and other plugins, e.g. jk when the sidebar switches threads with j/k. Any of f i j k d u g G.",
       default: "",
     },
     hintCharacters: {
@@ -31,8 +31,8 @@ export default async function plugin(bb: BbPluginApi) {
     theme: {
       type: "select",
       label: "Hint theme",
-      options: ["keycap", "vimium", "bb", "mono"],
-      description: "keycap: bb-style key chips with the typed letters in the accent color. vimium: yellow labels. bb: the app accent color, follows light/dark. mono: text color on background.",
+      options: ["keycap", "vimium", "alia", "mono"],
+      description: "keycap: alia-style key chips with the typed letters in the accent color. vimium: yellow labels. VesnALIA: the app accent color, follows light/dark. mono: text color on background.",
       default: "keycap",
     },
     customCss: {

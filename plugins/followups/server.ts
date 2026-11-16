@@ -1,4 +1,4 @@
-// bb-plugin-followups — suggest what to do after a thread finishes.
+// alia-plugin-followups — suggest what to do after a thread finishes.
 //
 // When a visible thread goes idle, the server asks a hidden worker thread to
 // draft up to N short follow-up prompts from the finished answer. The banner
@@ -8,7 +8,7 @@
 // Sending any message first clears the banner instead.
 
 import { randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const suggestionSchema = z.object({
@@ -279,7 +279,7 @@ function workerPrompt(task: string, context: string, outputHeader: string, revie
 }
 
 /**
- * BB's permission modes, least privileged first. A worker only writes text, and the
+ * VesnALIA's permission modes, least privileged first. A worker only writes text, and the
  * conversation it reads can carry text from a web page or a file, so it runs in the
  * least privileged mode its provider offers rather than whatever the default is.
  */
@@ -292,7 +292,7 @@ function leastPermissionMode(supported: readonly string[] | undefined): Permissi
 
 /**
  * Whether a worker's output is just its own prompt: a worker that hasn't started its
- * turn is idle too, and BB reports its last message, the prompt, as its output.
+ * turn is idle too, and VesnALIA reports its last message, the prompt, as its output.
  */
 function isOwnPrompt(output: string, prompt: string): boolean {
   return output.trim().startsWith(prompt.trim().slice(0, OWN_PROMPT_PREFIX_CHARS));
@@ -330,7 +330,7 @@ const DESCENDANT_LOOKUPS = 60;
 const CHILD_SETTLE_MS = 5_000;
 
 /**
- * BB's model lookups (the provider catalog, the default model) change rarely
+ * VesnALIA's model lookups (the provider catalog, the default model) change rarely
  * but sometimes take over two seconds, and every run used to pay for them
  * before it could start. They are remembered: served as they are for the
  * refresh age, then served instantly while a fresh copy is fetched in the
@@ -636,10 +636,10 @@ export function parseSuggestions(text: string): { label: string; why?: string }[
   return parseSuggestionOutput(text).suggestions;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const settingsHandle = bb.settings.define({
+  const settingsHandle = alia.settings.define({
     enabled: {
       type: "boolean",
       label: "Suggest follow-ups automatically",
@@ -680,7 +680,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   let modelSelection = parseStoredModelSelection(
-    await bb.storage.kv.get(MODEL_SELECTION_KEY),
+    await alia.storage.kv.get(MODEL_SELECTION_KEY),
   );
 
   type Remembered<T> = { value: T; at: number };
@@ -711,9 +711,9 @@ export default async function plugin(bb: BbPluginApi) {
     return refresh();
   }
 
-  /** BB's primary default model, used until the user picks one in settings. */
+  /** VesnALIA's primary default model, used until the user picks one in settings. */
   async function mainDefaultSelection(signal?: AbortSignal): Promise<ModelSelection | null> {
-    const options = await bb.sdk.system.executionOptions({ signal });
+    const options = await alia.sdk.system.executionOptions({ signal });
     const model =
       options.models.find((candidate) => candidate.isDefault) ?? options.models[0];
     const providerId =
@@ -745,7 +745,7 @@ export default async function plugin(bb: BbPluginApi) {
     permissionMode: PermissionMode;
   };
 
-  type CatalogModel = Awaited<ReturnType<typeof bb.sdk.providers.models>>["models"][number];
+  type CatalogModel = Awaited<ReturnType<typeof alia.sdk.providers.models>>["models"][number];
 
   /** The wanted reasoning level if the model supports it (or lists no levels at all), else the model's default. */
   function reasoningLevelFor(
@@ -757,7 +757,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   /**
-   * The saved model if one is picked, else BB's primary default — validated
+   * The saved model if one is picked, else VesnALIA's primary default — validated
    * against the provider catalog for the thread's environment, falling back
    * to that provider's default model when the pick is unavailable.
    */
@@ -767,19 +767,19 @@ export default async function plugin(bb: BbPluginApi) {
       (await rememberedLookup("default-model", async () => {
         // Thrown rather than returned, so it isn't remembered: a model can become available at any moment.
         const selection = await mainDefaultSelection();
-        if (!selection) throw new Error("No default BB model is available.");
+        if (!selection) throw new Error("No default VesnALIA model is available.");
         return selection;
       }));
     const providerId = preferred.providerId;
     const catalog = await rememberedLookup(`catalog:${environmentId ?? "-"}:${providerId}`, () =>
-      bb.sdk.providers.models(environmentId ? { environmentId, providerId } : { providerId }),
+      alia.sdk.providers.models(environmentId ? { environmentId, providerId } : { providerId }),
     );
     let modelInfo = catalog.models.find(
       (candidate) =>
         candidate.model === preferred.model || candidate.id === preferred.model,
     );
     if (!modelInfo) {
-      bb.log.warn(
+      alia.log.warn(
         `Follow-ups model ${JSON.stringify(preferred.model)} is unavailable for provider ` +
           `${providerId}; using that provider's default.`,
       );
@@ -865,7 +865,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function publish(threadId: string): void {
-    bb.realtime.publish(FOLLOWUPS_CHANGED, { threadId });
+    alia.realtime.publish(FOLLOWUPS_CHANGED, { threadId });
   }
 
   async function readState(threadId: string): Promise<{
@@ -875,7 +875,7 @@ export default async function plugin(bb: BbPluginApi) {
     stats: FollowupStats | null;
     enabled: boolean;
   }> {
-    const meta = await bb.sdk.threads.getPluginMetadata({ threadId });
+    const meta = await alia.sdk.threads.getPluginMetadata({ threadId });
     // The thread's own choice is read apart from the rest, so stored follow-ups
     // that can't be read never turn a thread the user switched off back on.
     const choice = z.enum(["on", "off"]).safeParse((meta as Record<string, unknown> | null)?.[META_OVERRIDE]);
@@ -911,7 +911,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       return (await readState(threadId)).enabled;
     } catch (error) {
-      bb.log.warn(`followups could not read whether ${threadId} is switched on, so it gets none: ${errorMessage(error)}`);
+      alia.log.warn(`followups could not read whether ${threadId} is switched on, so it gets none: ${errorMessage(error)}`);
       return false;
     }
   }
@@ -924,7 +924,7 @@ export default async function plugin(bb: BbPluginApi) {
       stats?: FollowupStats;
     },
   ): Promise<void> {
-    await bb.sdk.threads.updatePluginMetadata({
+    await alia.sdk.threads.updatePluginMetadata({
       threadId,
       set: {
         [META_SUGGESTIONS]: state.suggestions,
@@ -942,7 +942,7 @@ export default async function plugin(bb: BbPluginApi) {
     // before the state is read, so its worker is stopped as early as possible.
     generations.set(threadId, (generations.get(threadId) ?? 0) + 1);
     abortDrafts(threadId);
-    // Every thread in BB goes through here whenever it starts a turn or gets a
+    // Every thread in VesnALIA goes through here whenever it starts a turn or gets a
     // message, almost always with nothing showing: then there is nothing to write
     // and nobody to tell. (If the state can't be read, try the write anyway.)
     const showing = await readState(threadId).then(
@@ -951,7 +951,7 @@ export default async function plugin(bb: BbPluginApi) {
     );
     if (!showing) return;
     try {
-      await bb.sdk.threads.updatePluginMetadata({
+      await alia.sdk.threads.updatePluginMetadata({
         threadId,
         set: {
           [META_SUGGESTIONS]: [],
@@ -961,10 +961,10 @@ export default async function plugin(bb: BbPluginApi) {
         },
       });
     } catch (error) {
-      bb.log.warn(`followups clear failed for ${threadId}: ${errorMessage(error)}`);
+      alia.log.warn(`followups clear failed for ${threadId}: ${errorMessage(error)}`);
       return;
     }
-    bb.log.info(`followups cleared for ${threadId} (${reason})`);
+    alia.log.info(`followups cleared for ${threadId} (${reason})`);
     publish(threadId);
   }
 
@@ -1009,7 +1009,7 @@ export default async function plugin(bb: BbPluginApi) {
         for (const parentId of level) {
           if (lookups >= DESCENDANT_LOOKUPS) return busy;
           lookups += 1;
-          const children = await bb.sdk.threads.list({ parentThreadId: parentId, includeHidden: true, limit: 100 });
+          const children = await alia.sdk.threads.list({ parentThreadId: parentId, includeHidden: true, limit: 100 });
           for (const child of children) {
             if (seen.has(child.id)) continue;
             seen.add(child.id);
@@ -1022,7 +1022,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       return [];
     } catch (error) {
-      bb.log.warn(`followups could not look up the child threads of ${threadId}: ${errorMessage(error)}`);
+      alia.log.warn(`followups could not look up the child threads of ${threadId}: ${errorMessage(error)}`);
       return [];
     }
   }
@@ -1042,7 +1042,7 @@ export default async function plugin(bb: BbPluginApi) {
         const waiting = parentId;
         settleTimers.set(waiting, setTimeout(() => void settleWaiting(waiting), CHILD_SETTLE_MS));
       }
-      const parent = await bb.sdk.threads.get({ threadId: parentId }).catch(() => null);
+      const parent = await alia.sdk.threads.get({ threadId: parentId }).catch(() => null);
       parentId = parent?.parentThreadId ?? null;
     }
   }
@@ -1052,22 +1052,22 @@ export default async function plugin(bb: BbPluginApi) {
     settleTimers.delete(threadId);
     if (!waitingOnChildren.has(threadId)) return;
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (thread.status !== "idle" || thread.visibility === "hidden") {
         waitingOnChildren.delete(threadId); // it is working again: its own idle event will come
         return;
       }
       if ((await activeDescendants(threadId)).length > 0) return; // another child is still going
       waitingOnChildren.delete(threadId);
-      const answer = (await bb.sdk.threads.output({ threadId })).output ?? "";
-      bb.log.info(`followups: the children of ${threadId} finished; drafting its follow-ups now`);
+      const answer = (await alia.sdk.threads.output({ threadId })).output ?? "";
+      alia.log.info(`followups: the children of ${threadId} finished; drafting its follow-ups now`);
       await generate(threadId, answer);
     } catch (error) {
-      bb.log.warn(`followups could not draft for ${threadId} after its children finished: ${errorMessage(error)}`);
+      alia.log.warn(`followups could not draft for ${threadId} after its children finished: ${errorMessage(error)}`);
     }
   }
 
-  type WorkerRow = Awaited<ReturnType<typeof bb.sdk.threads.list>>[number];
+  type WorkerRow = Awaited<ReturnType<typeof alia.sdk.threads.list>>[number];
   type SweepReport = {
     deleted: string[];
     kept: string[];
@@ -1079,32 +1079,32 @@ export default async function plugin(bb: BbPluginApi) {
 
   /**
    * Whether the environment has a live thread other than our hidden workers
-   * (the default list leaves out archived and hidden threads). BB tears an
+   * (the default list leaves out archived and hidden threads). VesnALIA tears an
    * environment down, with no grace period, when its last thread is deleted;
    * a worker only shares its parent's environment, so it must never be the
    * thread whose deletion does that.
    */
   async function environmentHasLiveThread(environmentId: string): Promise<boolean> {
-    const live = await bb.sdk.threads.list({ environmentId, limit: 1 });
+    const live = await alia.sdk.threads.list({ environmentId, limit: 1 });
     return live.length > 0;
   }
 
   /**
-   * A worker's output has been used or discarded as stale. BB forwards the
+   * A worker's output has been used or discarded as stale. VesnALIA forwards the
    * archive to providers that support it; deletion belongs to the later sweep.
    */
   function releaseWorker(workerId: string): Promise<"archived" | "retained"> {
     const current = workerReleases.get(workerId);
     if (current) return current;
     const release = (async (): Promise<"archived" | "retained"> => {
-      await bb.sdk.threads.stop({ threadId: workerId }).catch(() => undefined);
+      await alia.sdk.threads.stop({ threadId: workerId }).catch(() => undefined);
       try {
-        await bb.sdk.threads.archive({ threadId: workerId });
+        await alia.sdk.threads.archive({ threadId: workerId });
         return "archived";
       } catch (error) {
         // Keep the session available for a later cleanup attempt rather than
-        // deleting the only BB reference to a provider chat that is still live.
-        bb.log.warn(`followups could not archive worker ${workerId}: ${errorMessage(error)}`);
+        // deleting the only VesnALIA reference to a provider chat that is still live.
+        alia.log.warn(`followups could not archive worker ${workerId}: ${errorMessage(error)}`);
         return "retained";
       } finally {
         liveWorkers.delete(workerId);
@@ -1126,9 +1126,9 @@ export default async function plugin(bb: BbPluginApi) {
     const startedAt = Date.now();
     void releaseWorker(workerId).then(
       (outcome) =>
-        bb.log.info(`followups released worker ${workerId} (${outcome}) in ${Date.now() - startedAt}ms`),
+        alia.log.info(`followups released worker ${workerId} (${outcome}) in ${Date.now() - startedAt}ms`),
       (error: unknown) =>
-        bb.log.warn(`followups release failed for ${workerId}: ${errorMessage(error)}`),
+        alia.log.warn(`followups release failed for ${workerId}: ${errorMessage(error)}`),
     );
   }
 
@@ -1137,8 +1137,8 @@ export default async function plugin(bb: BbPluginApi) {
     const rows = new Map<string, WorkerRow>();
     for (const archived of [true, false]) {
       for (let offset = 0; offset < SWEEP_SCAN_LIMIT; offset += SWEEP_PAGE) {
-        const page = await bb.sdk.threads.list({
-          originPluginId: bb.pluginId,
+        const page = await alia.sdk.threads.list({
+          originPluginId: alia.pluginId,
           includeHidden: true,
           archived,
           limit: SWEEP_PAGE,
@@ -1174,7 +1174,7 @@ export default async function plugin(bb: BbPluginApi) {
       } else if (kept < keepWorkers) {
         kept += 1;
         try {
-          if (!options.dryRun && worker.archivedAt === null) await bb.sdk.threads.archive({ threadId: worker.id });
+          if (!options.dryRun && worker.archivedAt === null) await alia.sdk.threads.archive({ threadId: worker.id });
           report.kept.push(worker.id);
         } catch (error) {
           skip(`archive failed: ${errorMessage(error)}`);
@@ -1199,9 +1199,9 @@ export default async function plugin(bb: BbPluginApi) {
         }
         let operation = "archive";
         try {
-          if (worker.archivedAt === null) await bb.sdk.threads.archive({ threadId: worker.id });
+          if (worker.archivedAt === null) await alia.sdk.threads.archive({ threadId: worker.id });
           operation = "delete";
-          await bb.sdk.threads.delete({ threadId: worker.id, childThreadsConfirmed: false });
+          await alia.sdk.threads.delete({ threadId: worker.id, childThreadsConfirmed: false });
           report.deleted.push(worker.id);
         } catch (error) {
           skip(`${operation} failed: ${errorMessage(error)}`);
@@ -1218,14 +1218,14 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       const report = await sweepWorkers();
       if (report.deleted.length > 0) {
-        bb.log.info(`followups cleanup: deleted ${report.deleted.length} worker thread(s)`);
+        alia.log.info(`followups cleanup: deleted ${report.deleted.length} worker thread(s)`);
       }
       const failed = report.skipped.filter((item) => /^(archive|delete) failed:/.test(item.reason));
       if (failed.length > 0) {
-        bb.log.warn(`followups cleanup: ${failed.length} worker(s) could not be cleaned up, e.g. ${failed[0]!.reason}`);
+        alia.log.warn(`followups cleanup: ${failed.length} worker(s) could not be cleaned up, e.g. ${failed[0]!.reason}`);
       }
     } catch (error) {
-      bb.log.warn(`followups cleanup failed: ${errorMessage(error)}`);
+      alia.log.warn(`followups cleanup failed: ${errorMessage(error)}`);
     } finally {
       sweeping = false;
     }
@@ -1247,7 +1247,7 @@ export default async function plugin(bb: BbPluginApi) {
   /** How a wait went, for the log: status lookups made, and how many waits an event ended. */
   type WaitTrace = { checks: number; wakeups: number };
 
-  /** Wakes the wait on a worker when BB reports that worker's thread idle or failed. */
+  /** Wakes the wait on a worker when VesnALIA reports that worker's thread idle or failed. */
   const workerWakeups = new Map<string, () => void>();
   function wakeWorker(workerId: string): void {
     workerWakeups.get(workerId)?.();
@@ -1299,10 +1299,10 @@ export default async function plugin(bb: BbPluginApi) {
         if (cancel.isStale()) return null;
         if (Date.now() - startedAt > timeoutMs) throw new Error("Follow-up worker timed out.");
         if (trace) trace.checks += 1;
-        const worker = await bb.sdk.threads.get({ threadId: workerId });
+        const worker = await alia.sdk.threads.get({ threadId: workerId });
         if (worker.status === "error") throw new Error("Follow-up worker failed.");
         if (worker.status === "idle") {
-          const output = (await bb.sdk.threads.output({ threadId: workerId })).output ?? "";
+          const output = (await alia.sdk.threads.output({ threadId: workerId })).output ?? "";
           // Empty output means the turn hasn't produced text yet (same as still
           // showing the prompt). A finished model that chose none replies "[]".
           if (output.trim() !== "" && !isOwnPrompt(output, prompt)) return output;
@@ -1329,7 +1329,7 @@ export default async function plugin(bb: BbPluginApi) {
       model: `${execution.providerId}/${execution.model}`,
     };
     try {
-      const [latest] = await bb.sdk.threads.events.list({
+      const [latest] = await alia.sdk.threads.events.list({
         threadId: workerId,
         types: ["thread/tokenUsage/updated"],
         order: "desc",
@@ -1338,7 +1338,7 @@ export default async function plugin(bb: BbPluginApi) {
       const usage = tokenUsageEventSchema.safeParse(latest?.data);
       if (usage.success) Object.assign(stats, usage.data.tokenUsage.total);
     } catch (error) {
-      bb.log.warn(`followups token usage unavailable for ${workerId}: ${errorMessage(error)}`);
+      alia.log.warn(`followups token usage unavailable for ${workerId}: ${errorMessage(error)}`);
     }
     return stats;
   }
@@ -1350,7 +1350,7 @@ export default async function plugin(bb: BbPluginApi) {
    */
   async function recentUserPrompts(threadId: string): Promise<string[]> {
     try {
-      const history = await bb.sdk.threads.promptHistory({
+      const history = await alia.sdk.threads.promptHistory({
         threadId,
         limit: String(USER_PROMPTS),
       });
@@ -1364,7 +1364,7 @@ export default async function plugin(bb: BbPluginApi) {
         .filter((text) => text !== "")
         .reverse();
     } catch (error) {
-      bb.log.warn(`followups prompt history unavailable for ${threadId}: ${errorMessage(error)}`);
+      alia.log.warn(`followups prompt history unavailable for ${threadId}: ${errorMessage(error)}`);
       return [];
     }
   }
@@ -1383,7 +1383,7 @@ export default async function plugin(bb: BbPluginApi) {
     title: string,
     prompt: string,
   ): Promise<string> {
-    const spawned = bb.sdk.threads
+    const spawned = alia.sdk.threads
       .spawn({
         projectId: parent.projectId,
         environment: parent.environmentId
@@ -1414,7 +1414,7 @@ export default async function plugin(bb: BbPluginApi) {
   /**
    * Draft follow-ups for a thread's answer. Settles once the newest answer queued
    * for the thread has been drafted, so a caller that queues behind a draft in
-   * flight (`bb followups regenerate`) waits for its own run, not just the old one.
+   * flight (`alia followups regenerate`) waits for its own run, not just the old one.
    */
   function generate(threadId: string, lastAssistantText: string | null): Promise<void> {
     const running = inFlight.get(threadId);
@@ -1455,12 +1455,12 @@ export default async function plugin(bb: BbPluginApi) {
     let parent: { projectId: string; environmentId: string | null };
     let execution: ResolvedExecution;
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (thread.visibility === "hidden") return;
       // The thread's own choice, else the setting.
       if (!(await wantsFollowups(threadId))) return;
       // Follow-ups are for a finished answer. A thread that is running again has
-      // nothing to suggest yet, and nothing would clear them: BB only signals
+      // nothing to suggest yet, and nothing would clear them: VesnALIA only signals
       // "became active" on the idle → active transition.
       if (thread.status !== "idle") return;
       // Idle isn't finished while child threads are still working: the thread is
@@ -1469,7 +1469,7 @@ export default async function plugin(bb: BbPluginApi) {
       const working = await activeDescendants(threadId);
       if (working.length > 0) {
         waitingOnChildren.add(threadId);
-        bb.log.info(`followups: ${threadId} is idle but ${working.length} child thread(s) are still running; waiting for them`);
+        alia.log.info(`followups: ${threadId} is idle but ${working.length} child thread(s) are still running; waiting for them`);
         return;
       }
       waitingOnChildren.delete(threadId);
@@ -1478,7 +1478,7 @@ export default async function plugin(bb: BbPluginApi) {
       execution = await resolveExecution(thread.environmentId);
       clock.lap("model");
     } catch (error) {
-      if (!disposed) bb.log.warn(`followups resolve model failed for ${threadId}: ${errorMessage(error)}`);
+      if (!disposed) alia.log.warn(`followups resolve model failed for ${threadId}: ${errorMessage(error)}`);
       return;
     }
     if (disposed) return; // the plugin was reloaded while the model was being looked up
@@ -1503,7 +1503,7 @@ export default async function plugin(bb: BbPluginApi) {
     const dropStale = async (): Promise<void> => {
       if (disposed) return;
       await leaveEmpty();
-      bb.log.info(
+      alia.log.info(
         `followups: stopped the draft for ${threadId} after ${Date.now() - startedAt}ms ` +
           `(${generations.get(threadId) !== gen ? "its thread moved on" : "a newer answer is waiting"})`,
       );
@@ -1515,7 +1515,7 @@ export default async function plugin(bb: BbPluginApi) {
       // Wait for a free place before showing "finding follow-ups…": a draft that is
       // waiting isn't working yet, and the banner stays as it was until it is.
       if (freeDraftSlots === 0) {
-        bb.log.info(`followups: ${threadId} is waiting for a free worker (${MAX_CONCURRENT_DRAFTS} drafts are running)`);
+        alia.log.info(`followups: ${threadId} is waiting for a free worker (${MAX_CONCURRENT_DRAFTS} drafts are running)`);
       }
       await takeDraftSlot();
       holdsSlot = true;
@@ -1525,7 +1525,7 @@ export default async function plugin(bb: BbPluginApi) {
       await writeState(threadId, { status: "working", suggestions: [] }).catch(() => undefined);
       clock.lap("state");
 
-      bb.log.info(
+      alia.log.info(
         `followups worker for ${threadId}: ${execution.providerId}/${execution.model} ` +
           `(${execution.reasoningLevel} reasoning${execution.serviceTier ? `, ${execution.serviceTier} tier` : ""}, ` +
           `${execution.permissionMode} permissions)`,
@@ -1545,11 +1545,11 @@ export default async function plugin(bb: BbPluginApi) {
           await dropStale();
           return;
         }
-        // BB reports a thread's last message as its "answer", and that is the user's
+        // VesnALIA reports a thread's last message as its "answer", and that is the user's
         // own when the thread went idle before it replied (it was stopped, say).
         if (prompts.at(-1) === lastAssistantText.trim()) {
           await leaveEmpty();
-          bb.log.info(`followups: ${threadId} went idle with no assistant answer (its last message is the user's own); no follow-ups`);
+          alia.log.info(`followups: ${threadId} went idle with no assistant answer (its last message is the user's own); no follow-ups`);
           return;
         }
         const compact = promptStyle === "compact";
@@ -1562,7 +1562,7 @@ export default async function plugin(bb: BbPluginApi) {
         workerId = await spawnWorker(parent, execution, SUGGEST_TITLE, prompt);
         clock.lap("spawn");
       } catch (error) {
-        if (!disposed) bb.log.warn(`followups spawn failed for ${threadId}: ${errorMessage(error)}`);
+        if (!disposed) alia.log.warn(`followups spawn failed for ${threadId}: ${errorMessage(error)}`);
         await leaveEmpty(); // "working" was written before the spawn
         return;
       }
@@ -1576,7 +1576,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (generations.get(threadId) !== gen) return;
       const { suggestions: parsed, cutOff } = parseSuggestionOutput(text);
       if (cutOff) {
-        bb.log.warn(
+        alia.log.warn(
           `followups: the worker's answer for ${threadId} was cut off; ` +
             (parsed.length > 0 ? `kept its ${parsed.length} complete suggestion(s)` : "none was complete"),
         );
@@ -1586,12 +1586,12 @@ export default async function plugin(bb: BbPluginApi) {
         // An honest "[]" is a real model choice; anything else means the answer
         // was in a shape we couldn't read, which would otherwise look silent.
         if (trimmed === "" || trimmed === "[]") {
-          bb.log.info(
+          alia.log.info(
             `followups: ${threadId} got no suggestions from ${execution.providerId}/${execution.model} ` +
               `in ${Date.now() - startedAt}ms (${promptStyle} prompt; model replied ${trimmed === "" ? "empty" : "[]"})`,
           );
         } else {
-          bb.log.warn(
+          alia.log.warn(
             `followups: no usable suggestions for ${threadId} from ${execution.providerId}/${execution.model}: ${clip(trimmed, 200)}`,
           );
         }
@@ -1605,13 +1605,13 @@ export default async function plugin(bb: BbPluginApi) {
       // A child may have started working while this was being drafted.
       if ((await activeDescendants(threadId)).length > 0) {
         waitingOnChildren.add(threadId);
-        bb.log.info(`followups: a child of ${threadId} started working while its follow-ups were drafted; holding them back`);
+        alia.log.info(`followups: a child of ${threadId} started working while its follow-ups were drafted; holding them back`);
         await writeState(threadId, { status: "empty", suggestions: [] }).catch(() => undefined);
         return;
       }
       // Switched off, or a newer run started, while the stats and children were looked up.
       if (generations.get(threadId) !== gen) return;
-      bb.log.info(
+      alia.log.info(
         `followups ready for ${threadId}: ${parsed.length} suggestions (${parsed.filter((item) => item.why).length} with a reason) in ${timing}, ` +
           `${stats.totalTokens ?? "unknown"} tokens (${stats.outputTokens ?? "unknown"} output), ` +
           `${trace.checks} status checks (${trace.wakeups} by event), ${promptStyle} prompt`,
@@ -1623,7 +1623,7 @@ export default async function plugin(bb: BbPluginApi) {
       }).catch(() => undefined);
     } catch (error) {
       if (disposed) return;
-      bb.log.warn(`followups generate failed for ${threadId}: ${errorMessage(error)}`);
+      alia.log.warn(`followups generate failed for ${threadId}: ${errorMessage(error)}`);
       if (generations.get(threadId) === gen) await leaveEmpty();
     } finally {
       if (holdsSlot) giveDraftSlot();
@@ -1665,12 +1665,12 @@ export default async function plugin(bb: BbPluginApi) {
     const state = await readState(threadId);
     const picked = state.suggestions.find((item) => item.id === id);
     if (!picked || cancel.isStale()) throw gone();
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     const parent = { projectId: thread.projectId, environmentId: thread.environmentId };
     clock.lap("thread");
     let context = "";
     try {
-      const output = await bb.sdk.threads.output({ threadId });
+      const output = await alia.sdk.threads.output({ threadId });
       context = output.output ?? "";
     } catch {
       context = "";
@@ -1695,16 +1695,16 @@ export default async function plugin(bb: BbPluginApi) {
       clock.lap("stats");
       if (cancel.isStale()) throw gone(); // finished, but for a thread that has moved on
       lastRuns.set(`draft:${threadId}`, clock.describe());
-      bb.log.info(`followups drafted for ${threadId} in ${clock.describe()}`);
+      alia.log.info(`followups drafted for ${threadId} in ${clock.describe()}`);
       return text === ""
         ? { text: picked.label, drafted: false, stats }
         : { text, drafted: true, stats };
     } catch (error) {
       if (cancel.isStale()) {
-        if (!disposed) bb.log.info(`followups: stopped the message draft for ${threadId} after ${Date.now() - startedAt}ms (its thread moved on)`);
+        if (!disposed) alia.log.info(`followups: stopped the message draft for ${threadId} after ${Date.now() - startedAt}ms (its thread moved on)`);
         throw gone();
       }
-      bb.log.warn(`followups expand failed for ${threadId}: ${errorMessage(error)}`);
+      alia.log.warn(`followups expand failed for ${threadId}: ${errorMessage(error)}`);
       return { text: picked.label, drafted: false, stats: null };
     } finally {
       if (workerId) releaseInBackground(workerId);
@@ -1718,8 +1718,8 @@ export default async function plugin(bb: BbPluginApi) {
    * otherwise waits for its next idle.
    */
   async function setThreadEnabled(threadId: string, on: boolean): Promise<{ enabled: boolean }> {
-    await bb.sdk.threads.updatePluginMetadata({ threadId, set: { [META_OVERRIDE]: on ? "on" : "off" } });
-    bb.log.info(`followups turned ${on ? "on" : "off"} for ${threadId}`);
+    await alia.sdk.threads.updatePluginMetadata({ threadId, set: { [META_OVERRIDE]: on ? "on" : "off" } });
+    alia.log.info(`followups turned ${on ? "on" : "off"} for ${threadId}`);
     if (!on) {
       pendingRegen.delete(threadId);
       waitingOnChildren.delete(threadId);
@@ -1730,16 +1730,16 @@ export default async function plugin(bb: BbPluginApi) {
     }
     publish(threadId);
     void draftFromLatestAnswer(threadId).catch((error: unknown) => {
-      bb.log.warn(`followups could not draft for ${threadId} after it was turned on: ${errorMessage(error)}`);
+      alia.log.warn(`followups could not draft for ${threadId} after it was turned on: ${errorMessage(error)}`);
     });
     return { enabled: true };
   }
 
   async function draftFromLatestAnswer(threadId: string): Promise<void> {
     if ((await readState(threadId)).status !== "empty") return;
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (thread.visibility === "hidden" || thread.status !== "idle") return;
-    const answer = (await bb.sdk.threads.output({ threadId })).output ?? "";
+    const answer = (await alia.sdk.threads.output({ threadId })).output ?? "";
     await generate(threadId, answer);
   }
 
@@ -1753,39 +1753,39 @@ export default async function plugin(bb: BbPluginApi) {
     );
   }
 
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) => {
     wakeWorker(thread.id); // if it is one of our workers, it has finished
     // Hidden threads (our own workers, other plugins' helpers) never get follow-ups.
     if (thread.visibility === "hidden") return;
     void generate(thread.id, lastAssistantText).catch((error: unknown) => {
-      bb.log.warn(`followups idle handler failed: ${errorMessage(error)}`);
+      alia.log.warn(`followups idle handler failed: ${errorMessage(error)}`);
     });
   });
 
   // A message the user sends (queued, dispatched, thread back to work) clears
   // the banner: the follow-ups belonged to the previous answer.
-  bb.events.on("message.queued", ({ entry }) => {
+  alia.events.on("message.queued", ({ entry }) => {
     void clearFollowups(entry.threadId, "message queued").catch(() => undefined);
   });
-  bb.events.on("message.dispatched", ({ entry }) => {
+  alia.events.on("message.dispatched", ({ entry }) => {
     void clearFollowups(entry.threadId, "message dispatched").catch(() => undefined);
   });
-  bb.events.on("thread.active", ({ thread }) => {
+  alia.events.on("thread.active", ({ thread }) => {
     if (thread.visibility === "hidden") return;
     waitingOnChildren.delete(thread.id); // working again: its next idle event decides
     void clearFollowups(thread.id, "thread active").catch(() => undefined);
   });
-  bb.events.on("thread.failed", ({ thread }) => wakeWorker(thread.id));
+  alia.events.on("thread.failed", ({ thread }) => wakeWorker(thread.id));
   // A child (or deeper) stopped working: a parent that was waiting on its children may be able to draft now.
   for (const event of ["thread.idle", "thread.failed", "thread.archived", "thread.deleted"] as const) {
-    bb.events.on(event, ({ thread }) => {
+    alia.events.on(event, ({ thread }) => {
       void childSettled(thread).catch((error: unknown) => {
-        bb.log.warn(`followups child handler failed: ${errorMessage(error)}`);
+        alia.log.warn(`followups child handler failed: ${errorMessage(error)}`);
       });
     });
   }
   for (const event of ["thread.deleted", "thread.archived"] as const) {
-    bb.events.on(event, ({ thread }) => {
+    alia.events.on(event, ({ thread }) => {
       inFlight.delete(thread.id);
       pendingRegen.delete(thread.id);
       generations.delete(thread.id);
@@ -1799,7 +1799,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function setModelSelection(selection: ModelSelection): Promise<ModelSelection> {
-    const catalog = await bb.sdk.providers.models({ providerId: selection.providerId });
+    const catalog = await alia.sdk.providers.models({ providerId: selection.providerId });
     const modelInfo = catalog.models.find(
       (candidate) =>
         candidate.model === selection.model || candidate.id === selection.model,
@@ -1824,21 +1824,21 @@ export default async function plugin(bb: BbPluginApi) {
       ...(serviceTier ? { serviceTier } : {}),
     };
     modelSelection = saved;
-    await bb.storage.kv.set(MODEL_SELECTION_KEY, saved);
-    bb.realtime.publish(FOLLOWUPS_CHANGED, { model: true });
+    await alia.storage.kv.set(MODEL_SELECTION_KEY, saved);
+    alia.realtime.publish(FOLLOWUPS_CHANGED, { model: true });
     return saved;
   }
 
   async function clearModelSelection(): Promise<void> {
     modelSelection = undefined;
-    await bb.storage.kv.delete(MODEL_SELECTION_KEY);
-    bb.realtime.publish(FOLLOWUPS_CHANGED, { model: true });
+    await alia.storage.kv.delete(MODEL_SELECTION_KEY);
+    alia.realtime.publish(FOLLOWUPS_CHANGED, { model: true });
   }
 
   // Every agent session lists every enabled skill, and the workers are agent
   // sessions too. Ours only tells an agent how to inspect the banner, which a
   // worker never needs, so leave it out of theirs (everything else about their
-  // context is BB's and Claude Code's, not ours). Other threads get exactly what
+  // context is VesnALIA's and Claude Code's, not ours). Other threads get exactly what
   // they got before.
   //
   // A worker also gets a standing instruction. It is a full agent session in the
@@ -1853,7 +1853,7 @@ export default async function plugin(bb: BbPluginApi) {
   // A worker is recognised by its title and the marker seeded into its metadata at
   // spawn, so a thread that merely carries a worker's title is left alone.
   try {
-    bb.agents.configure(({ thread, pluginMetadata }) => {
+    alia.agents.configure(({ thread, pluginMetadata }) => {
       const isWorker =
         (thread.title === SUGGEST_TITLE || thread.title === DRAFT_TITLE) &&
         pluginMetadata[META_WORKER] === true;
@@ -1862,10 +1862,10 @@ export default async function plugin(bb: BbPluginApi) {
         : { tools: [], skills: ["followups"] };
     });
   } catch (error) {
-    bb.log.warn(`followups agent configuration unavailable: ${errorMessage(error)}`);
+    alia.log.warn(`followups agent configuration unavailable: ${errorMessage(error)}`);
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     followups_model_get: () => currentModelSelection(),
     followups_model_set: (selection) =>
       setModelSelection(selection).then((saved) => ({ selection: saved })),
@@ -1882,29 +1882,29 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb followups show <thread-id> [--json]",
-    "  bb followups clear <thread-id> [--json]",
-    "  bb followups on <thread-id> [--json]",
-    "  bb followups off <thread-id> [--json]",
-    "  bb followups model [--json]",
-    "  bb followups model-clear [--json]",
-    "  bb followups cleanup [--dry-run] [--json]",
-    "  bb followups regenerate <thread-id> [--json]",
-    "  bb followups draft <thread-id> <suggestion-id> [--json]",
+    "  VesnALIA followups show <thread-id> [--json]",
+    "  VesnALIA followups clear <thread-id> [--json]",
+    "  VesnALIA followups on <thread-id> [--json]",
+    "  VesnALIA followups off <thread-id> [--json]",
+    "  VesnALIA followups model [--json]",
+    "  VesnALIA followups model-clear [--json]",
+    "  VesnALIA followups cleanup [--dry-run] [--json]",
+    "  VesnALIA followups regenerate <thread-id> [--json]",
+    "  VesnALIA followups draft <thread-id> <suggestion-id> [--json]",
   ].join("\n");
-  bb.cli.register({
+  alia.cli.register({
     name: "followups",
     summary: "Inspect the follow-up prompts suggested for a thread",
     commands: [
-      { name: "show", summary: "Show suggested follow-ups", usage: "bb followups show <thread-id> [--json]" },
-      { name: "clear", summary: "Clear suggested follow-ups", usage: "bb followups clear <thread-id> [--json]" },
-      { name: "on", summary: "Turn follow-ups on for one thread", usage: "bb followups on <thread-id> [--json]" },
-      { name: "off", summary: "Turn follow-ups off for one thread", usage: "bb followups off <thread-id> [--json]" },
-      { name: "model", summary: "Show the follow-ups model", usage: "bb followups model [--json]" },
-      { name: "model-clear", summary: "Forget the saved model (use BB default)", usage: "bb followups model-clear [--json]" },
-      { name: "cleanup", summary: "Delete leftover follow-up worker threads", usage: "bb followups cleanup [--dry-run] [--json]" },
-      { name: "regenerate", summary: "Draft a thread's follow-ups again now, and show where the time went", usage: "bb followups regenerate <thread-id> [--json]" },
-      { name: "draft", summary: "Run the draft step for a suggestion, and show where the time went", usage: "bb followups draft <thread-id> <suggestion-id> [--json]" },
+      { name: "show", summary: "Show suggested follow-ups", usage: "alia followups show <thread-id> [--json]" },
+      { name: "clear", summary: "Clear suggested follow-ups", usage: "alia followups clear <thread-id> [--json]" },
+      { name: "on", summary: "Turn follow-ups on for one thread", usage: "alia followups on <thread-id> [--json]" },
+      { name: "off", summary: "Turn follow-ups off for one thread", usage: "alia followups off <thread-id> [--json]" },
+      { name: "model", summary: "Show the follow-ups model", usage: "alia followups model [--json]" },
+      { name: "model-clear", summary: "Forget the saved model (use VesnALIA default)", usage: "alia followups model-clear [--json]" },
+      { name: "cleanup", summary: "Delete leftover follow-up worker threads", usage: "alia followups cleanup [--dry-run] [--json]" },
+      { name: "regenerate", summary: "Draft a thread's follow-ups again now, and show where the time went", usage: "alia followups regenerate <thread-id> [--json]" },
+      { name: "draft", summary: "Run the draft step for a suggestion, and show where the time went", usage: "alia followups draft <thread-id> <suggestion-id> [--json]" },
     ],
     async run(argv) {
       const json = argv.includes("--json");
@@ -1963,7 +1963,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (args.length !== 0) break;
           const { selection, configured } = await currentModelSelection();
           const text = selection
-            ? `${configured ? "Saved selection" : "BB primary default"}: ${selection.providerId}/${selection.model} (${selection.reasoningLevel} reasoning${selection.serviceTier ? `, ${selection.serviceTier} tier` : ""})`
+            ? `${configured ? "Saved selection" : "VesnALIA primary default"}: ${selection.providerId}/${selection.model} (${selection.reasoningLevel} reasoning${selection.serviceTier ? `, ${selection.serviceTier} tier` : ""})`
             : "No model available.";
           return reply({ selection, configured }, text);
         }
@@ -1973,10 +1973,10 @@ export default async function plugin(bb: BbPluginApi) {
           if (!(await readState(threadId)).enabled) {
             return {
               exitCode: 1,
-              stderr: `Follow-ups are turned off for ${threadId}. Run \`bb followups on ${threadId}\` first.\n`,
+              stderr: `Follow-ups are turned off for ${threadId}. Run \`alia followups on ${threadId}\` first.\n`,
             };
           }
-          const thread = await bb.sdk.threads.get({ threadId });
+          const thread = await alia.sdk.threads.get({ threadId });
           if (thread.status !== "idle") {
             return {
               exitCode: 1,
@@ -1990,7 +1990,7 @@ export default async function plugin(bb: BbPluginApi) {
               stderr: `Thread ${threadId} is idle but ${working.length} of its child thread(s) are still running, so it isn't finished. Regenerate once they are done.\n`,
             };
           }
-          const answer = (await bb.sdk.threads.output({ threadId })).output ?? "";
+          const answer = (await alia.sdk.threads.output({ threadId })).output ?? "";
           if (answer.trim() === "") {
             return { exitCode: 1, stderr: `Thread ${threadId} has no answer to draw follow-ups from.\n` };
           }
@@ -2044,14 +2044,14 @@ export default async function plugin(bb: BbPluginApi) {
         case "model-clear": {
           if (args.length !== 0) break;
           await clearModelSelection();
-          return reply({ cleared: true }, "Follow-ups model cleared; using BB primary default.");
+          return reply({ cleared: true }, "Follow-ups model cleared; using VesnALIA primary default.");
         }
       }
       return { exitCode: 1, stderr: `${usage}\n` };
     },
   });
 
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     disposed = true;
     if (sweepTimer) clearTimeout(sweepTimer);
     for (const timer of settleTimers.values()) clearTimeout(timer);
@@ -2076,6 +2076,6 @@ export default async function plugin(bb: BbPluginApi) {
       }),
     ]);
     clearTimeout(grace);
-    bb.log.info("disposed");
+    alia.log.info("disposed");
   });
 }

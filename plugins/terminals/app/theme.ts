@@ -1,15 +1,15 @@
 /**
- * The terminal's colors and font, read from the same CSS variables bb's own
- * terminal reads (bb 0.48.1), so a tab here looks like a terminal in bb's
- * panel and follows bb's theme.
+ * The terminal's colors and font, read from the same CSS variables VesnALIA's own
+ * terminal reads (VesnALIA 0.48.1), so a tab here looks like a terminal in VesnALIA's
+ * panel and follows VesnALIA's theme.
  */
 import type { ITheme } from "@xterm/xterm";
 
-/** bb's own fallback when the theme sets no `--font-terminal`. */
+/** VesnALIA's own fallback when the theme sets no `--font-terminal`. */
 const FALLBACK_FONT =
   '"JetBrainsMono Nerd Font Mono", "MesloLGS NF", "Symbols Nerd Font Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace';
 
-/** xterm's theme field → the CSS variable bb's terminal fills it from. */
+/** xterm's theme field → the CSS variable VesnALIA's terminal fills it from. */
 export const THEME_VARIABLES: Readonly<Partial<Record<keyof ITheme, string>>> = {
   background: "--sidebar",
   foreground: "--foreground",

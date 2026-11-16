@@ -1,11 +1,11 @@
-/* Follow BB's native chrome, with the sidebar's original Linear status colors. */
-.bb-workspace-sidebar {
+/* Follow ALIA's native chrome, with the sidebar's original Linear status colors. */
+.alia-workspace-sidebar {
   --ws-selection-gutter: 26px;
   --ws-line: color-mix(in srgb, var(--muted-foreground) 25%, transparent);
   background: var(--sidebar);
 }
-.bb-workspace-sidebar,
-[data-bb-plugin="workspace-sidebar"][data-bb-portaled-overlay] {
+.alia-workspace-sidebar,
+[data-alia-plugin="workspace-sidebar"][data-alia-portaled-overlay] {
   --ws-goal: var(--primary);
   --ws-attention: #f2994a;
   --ws-success: #4cb782;
@@ -15,57 +15,57 @@
 }
 .ws-tone-goal { color: var(--ws-goal, var(--primary)); }
 .ws-tone-attention { color: var(--ws-attention, #f2994a); }
-.bb-ws-your-turn { background: var(--ws-attention, #f2994a); color: #271a09; }
+.alia-ws-your-turn { background: var(--ws-attention, #f2994a); color: #271a09; }
 .ws-tone-success { color: var(--ws-success, #4cb782); }
 .ws-tone-done { color: var(--ws-done, #5e6ad2); }
 .ws-tone-danger { color: var(--ws-danger, #eb5757); }
 .ws-tone-working { color: var(--ws-working, #f2c94c); }
-.bb-ws-row[data-selected="true"] { background: var(--accent); box-shadow: inset 0 0 0 1px var(--border); }
-.bb-ws-subtree { margin: 0; padding: 0; list-style: none; }
-.bb-ws-subtree > li { position: relative; }
-.bb-ws-subtree > li::before { content: ""; position: absolute; pointer-events: none; top: 0; bottom: 0; left: var(--ws-tree-left); border-left: 1px solid var(--ws-line); }
-.bb-ws-subtree > li:last-child::before { bottom: auto; height: 17px; width: var(--ws-tree-elbow, 8px); border-bottom: 1px solid var(--ws-line); border-bottom-left-radius: 4px; }
-.bb-ws-subtree > li > .group\/selection-row { position: relative; }
-.bb-ws-section-tree { position:relative; }
-.bb-ws-section-tree::before { content:""; position:absolute; left:4px; top:0; bottom:10px; border-left:1px solid var(--ws-line); pointer-events:none; }
-.bb-ws-selecting .bb-ws-subtree > li::before { translate: var(--ws-selection-gutter) 0; }
-.bb-ws-selecting .bb-ws-section-tree::before { translate:var(--ws-selection-gutter) 0; }
-.bb-ws-selecting .bb-ws-row-action { visibility:hidden; pointer-events:none; }
-@media (pointer: coarse) { .bb-ws-selection-toggle { min-height:44px; min-width:44px; } }
+.alia-ws-row[data-selected="true"] { background: var(--accent); box-shadow: inset 0 0 0 1px var(--border); }
+.alia-ws-subtree { margin: 0; padding: 0; list-style: none; }
+.alia-ws-subtree > li { position: relative; }
+.alia-ws-subtree > li::before { content: ""; position: absolute; pointer-events: none; top: 0; bottom: 0; left: var(--ws-tree-left); border-left: 1px solid var(--ws-line); }
+.alia-ws-subtree > li:last-child::before { bottom: auto; height: 17px; width: var(--ws-tree-elbow, 8px); border-bottom: 1px solid var(--ws-line); border-bottom-left-radius: 4px; }
+.alia-ws-subtree > li > .group\/selection-row { position: relative; }
+.alia-ws-section-tree { position:relative; }
+.alia-ws-section-tree::before { content:""; position:absolute; left:4px; top:0; bottom:10px; border-left:1px solid var(--ws-line); pointer-events:none; }
+.alia-ws-selecting .alia-ws-subtree > li::before { translate: var(--ws-selection-gutter) 0; }
+.alia-ws-selecting .alia-ws-section-tree::before { translate:var(--ws-selection-gutter) 0; }
+.alia-ws-selecting .alia-ws-row-action { visibility:hidden; pointer-events:none; }
+@media (pointer: coarse) { .alia-ws-selection-toggle { min-height:44px; min-width:44px; } }
 
 @media (pointer: coarse) {
-  .bb-workspace-sidebar { --ws-selection-gutter: 44px; }
-  .bb-ws-selecting .bb-ws-checkbox-gutter { width: 44px; padding-top: 18px; }
-  .bb-ws-selecting .bb-ws-checkbox-gutter [role="checkbox"] { position: relative; }
-  .bb-ws-selecting .bb-ws-checkbox-gutter [role="checkbox"]::after { content: ""; position: absolute; inset: -14px; }
-  .bb-ws-selecting .bb-ws-mainline { min-height: 44px; }
+  .alia-workspace-sidebar { --ws-selection-gutter: 44px; }
+  .alia-ws-selecting .alia-ws-checkbox-gutter { width: 44px; padding-top: 18px; }
+  .alia-ws-selecting .alia-ws-checkbox-gutter [role="checkbox"] { position: relative; }
+  .alia-ws-selecting .alia-ws-checkbox-gutter [role="checkbox"]::after { content: ""; position: absolute; inset: -14px; }
+  .alia-ws-selecting .alia-ws-mainline { min-height: 44px; }
 }
 
-.bb-ws-toolbar { container-type: inline-size; }
-.bb-ws-toolbar > button { flex-shrink: 0; }
+.alia-ws-toolbar { container-type: inline-size; }
+.alia-ws-toolbar > button { flex-shrink: 0; }
 @container (max-width: 360px) {
-  .bb-ws-new-thread-label { display: none; }
+  .alia-ws-new-thread-label { display: none; }
 }
 
 /* The dock under the list: scheduled automations and snoozed threads. Empty
    sections render nothing, so an empty dock takes no space at all. */
-.bb-ws-dock:not(:empty) { border-top: 1px solid var(--ws-line); padding: 4px 4px 2px; background: var(--sidebar); }
+.alia-ws-dock:not(:empty) { border-top: 1px solid var(--ws-line); padding: 4px 4px 2px; background: var(--sidebar); }
 /* The trailing word yields to the hover actions, exactly as a thread row's status does. */
-.bb-ws-dock-row:hover .bb-ws-dock-trailing, .bb-ws-dock-row:focus-within .bb-ws-dock-trailing { visibility: hidden; }
-@media (pointer: coarse) { .bb-ws-dock-trailing { display: none; } }
+.alia-ws-dock-row:hover .alia-ws-dock-trailing, .alia-ws-dock-row:focus-within .alia-ws-dock-trailing { visibility: hidden; }
+@media (pointer: coarse) { .alia-ws-dock-trailing { display: none; } }
 
 /* A row leaving the list — marked done, snoozed, filed away. It holds its
    slot while it fades, and only then do the rows below close the gap, so
    what the eye follows is the thread leaving rather than a frame dropping. */
-@keyframes bb-ws-row-leave {
+@keyframes alia-ws-row-leave {
   from { opacity: 1; transform: none; }
   to { opacity: 0; transform: translateX(10px) scale(0.97); }
 }
-.bb-ws-row-leaving {
+.alia-ws-row-leaving {
   pointer-events: none;
   transform-origin: left center;
-  animation: bb-ws-row-leave 150ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  animation: alia-ws-row-leave 150ms cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 @media (prefers-reduced-motion: reduce) {
-  .bb-ws-row-leaving { animation-duration: 1ms; }
+  .alia-ws-row-leaving { animation-duration: 1ms; }
 }

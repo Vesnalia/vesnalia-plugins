@@ -9,13 +9,13 @@
 
 **Stable projects, clear attention, inline agents.**
 
-![bb ≥ 0.36](https://img.shields.io/badge/bb-%E2%89%A5%200.36-88C0D0?style=flat-square)
+![VesnALIA ≥ 0.36](https://img.shields.io/badge/bb-%E2%89%A5%200.36-88C0D0?style=flat-square)
 ![any platform](https://img.shields.io/badge/platform-any-3FA266?style=flat-square)
 ![experimental slot](https://img.shields.io/badge/uses-experimental%20SDK%20slot-F1B467?style=flat-square)
 
 </div>
 
-Dockside replaces the scrolling thread list in bb's left sidebar with a
+Dockside replaces the scrolling thread list in VesnALIA's left sidebar with a
 compact project-first inbox designed for parallel agent work.
 
 Projects and complete root/child families stay where you put them. Drag the
@@ -32,7 +32,7 @@ meaning alone. Inactive and stale work recedes instead of using a bright unused
 state, and Dockside never invents Done for ordinary idle work.
 
 When a root has child threads, the family expands inline as an agent stack with
-provider marks for Codex, Claude, and other BB providers. Pull-request metadata
+provider marks for Codex, Claude, and other VesnALIA providers. Pull-request metadata
 stays on the parent only, including semantic ready, merged, and blocked/error
 states.
 
@@ -59,8 +59,8 @@ icon. The strip subscribes to Dockside's semantic palette, including custom
 and accessibility settings; defaults use yellow for runtime and red for goals.
 Vertical, short, cancelled, and secondary-touch gestures do not navigate.
 Pointer gestures that begin on the navigation title stay inside the strip, so
-they do not also open BB's mobile sidebar; vertical scrolling remains native.
-BB owns navigation and drafts; the strip never modifies thread contents.
+they do not also open VesnALIA's mobile sidebar; vertical scrolling remains native.
+VesnALIA owns navigation and drafts; the strip never modifies thread contents.
 
 This replaces the former standalone Thread Mobile plugin. Remove that old
 installation when updating to avoid showing two strips.
@@ -81,7 +81,7 @@ Dockside is available as an immutable Git release. Install the compatible range
 from the reviewed monorepo subdirectory:
 
 ```sh
-bb plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.1.0 \
+alia plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.1.0 \
   --subdirectory plugins/dockside \
   --tag-prefix dockside/
 ```
@@ -89,11 +89,11 @@ bb plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.1.0 
 The range currently resolves [`dockside/v0.1.8`](https://github.com/MateoCerquetella/bb-plugins/tree/dockside/v0.1.8),
 which adds workspace grouping by Projects, Status, or Environment, the Failed
 filter, and per-project filtering on top of mobile active-thread navigation.
-The [BB Community marketplace entry](https://github.com/get-bb/marketplace/pull/162)
+The [VesnALIA Community marketplace entry](https://github.com/get-bb/marketplace/pull/162)
 is live, so you can also install Dockside by name:
 
 ```sh
-bb plugin install dockside
+alia plugin install dockside
 ```
 
 The Git command above remains the source-verifiable install path. Do not use the
@@ -104,19 +104,19 @@ local path source:
 
 ```sh
 git clone https://github.com/mateocerquetella/bb-plugins.git
-cd bb-plugins
+cd alia-plugins
 bun install
-bun run --filter 'bb-plugin-dockside' build
-bb plugin install ./plugins/dockside
+bun run --filter 'alia-plugin-dockside' build
+alia plugin install ./plugins/dockside
 ```
 
-The source-development path needs Bun and the `bb` CLI. The release command does
-not: BB resolves the monorepo plugin through `--subdirectory` and builds the
+The source-development path needs Bun and the `alia` CLI. The release command does
+not: VesnALIA resolves the monorepo plugin through `--subdirectory` and builds the
 selected immutable tag through its normal managed install pipeline.
 
 ## Requirements
 
-- bb ≥ 0.36
+- VesnALIA ≥ 0.36
 - Nothing else. No accounts, keys, or external services.
 
 ## Usage
@@ -124,9 +124,9 @@ selected immutable tag through its normal managed install pipeline.
 Installing does not change your sidebar by itself. Open **Settings → Appearance →
 Sidebar** and choose **Dockside (projects)**.
 
-<picture><img src="docs/media/enable.png" alt="bb's Appearance settings where a sidebar replacement can be selected" width="100%" /></picture>
+<picture><img src="docs/media/enable.png" alt="VesnALIA's Appearance settings where a sidebar replacement can be selected" width="100%" /></picture>
 
-bb's own list stays the default, and comes back the moment you switch away or
+VesnALIA's own list stays the default, and comes back the moment you switch away or
 disable the plugin.
 
 ### Projects and parked shelves
@@ -141,7 +141,7 @@ disable the plugin.
   family order survives reloads. Clear search, choose the All filter, and
   exit bulk selection before sorting so hidden rows are never moved implicitly.
 - **Snoozed** — hidden until the wake time you chose. A snoozed thread comes back early if it starts working or asks you something.
-- **Settled** — work you are done with, collapsed to one line and shown for 24 hours. Settling also **archives the thread in bb**, so every other surface agrees, and new attention un-settles and unarchives it. After a day the row stops being drawn but stays archived.
+- **Settled** — work you are done with, collapsed to one line and shown for 24 hours. Settling also **archives the thread in VesnALIA**, so every other surface agrees, and new attention un-settles and unarchives it. After a day the row stops being drawn but stays archived.
 
 An empty shelf disappears.
 
@@ -186,14 +186,14 @@ a direct route back up.
 - Collapsible project and agent groups.
 - Right-click for open in split, mark read/unread, pin, archive, delete.
 - Drag a card to a split pane, or Cmd/Ctrl-click to open one.
-- Status-icon reordering is separate from BB's card-to-split drag target and
+- Status-icon reordering is separate from VesnALIA's card-to-split drag target and
   adds no extra row icon.
-- bb's search, its thread shortcuts, and modifier-click split-open all keep working.
+- VesnALIA's search, its thread shortcuts, and modifier-click split-open all keep working.
 
 ## Switching from t3sidebar
 
 Dockside is a new plugin identity, not an in-place release of t3sidebar. It
-uses a separate bb database and separate `dockside:v1:*` browser keys, so it
+uses a separate VesnALIA database and separate `dockside:v1:*` browser keys, so it
 starts with an empty Snoozed and Settled state. It does **not** migrate or
 delete the old plugin's parked threads.
 
@@ -223,33 +223,33 @@ Those timing constants are not configurable.
 Appearance → Sidebar. Installing alone changes nothing.
 
 **A thread I settled is not on the Settled shelf.** The shelf only reaches back 24
-hours. Older work is still settled and still archived — look for it in bb's archived
+hours. Older work is still settled and still archived — look for it in VesnALIA's archived
 view.
 
 **A snoozed thread came back early.** That is the design: a snoozed thread wakes when
 it starts working or asks you a question.
 
 **Un-settling did not bring the thread back.** Archive and unarchive run on the
-thread's host, which can be offline. When an unarchive fails, bb keeps the thread
-archived and the thread leaves the sidebar until you unarchive it in bb yourself.
+thread's host, which can be offline. When an unarchive fails, VesnALIA keeps the thread
+archived and the thread leaves the sidebar until you unarchive it in VesnALIA yourself.
 
 **Uninstalling left data behind.** The shelves live in the plugin's own database,
-which bb removes with the plugin — but a copy of them is cached in the browser's
+which VesnALIA removes with the plugin — but a copy of them is cached in the browser's
 `localStorage` under `dockside:v1:*` (thread ids, park timestamps, and legacy
-provider metadata). bb's uninstall does not clear web storage. Clear site data
+provider metadata). VesnALIA's uninstall does not clear web storage. Clear site data
 if that matters to you. The separate `t3sidebar:v1:*` keys belong to the old
 plugin and are not claimed by Dockside.
 
 ## Credits
 
-Forked from bb's own example.
+Forked from VesnALIA's own example.
 
 | | |
 |---|---|
-| Upstream | [`get-bb/bb` → `examples/plugins/t3sidebar`](https://github.com/get-bb/bb/tree/main/examples/plugins/t3sidebar) |
+| Upstream | [`get-alia/alia` → `examples/plugins/t3sidebar`](https://github.com/get-bb/bb/tree/main/examples/plugins/t3sidebar) |
 | Commit | `f13c2d35f96540012b305f3b555839b30e1b6163` (2026-08-07) |
 
-The provider brand marks are vendored SVG geometry from `get-bb/bb` and depict
+The provider brand marks are vendored SVG geometry from `get-alia/alia` and depict
 third-party brands. A host-served logo always wins over them, rendered as a muted
 silhouette rather than in brand color — by design.
 
@@ -259,8 +259,8 @@ Install from source as shown under [Install](#install), then check a change
 with:
 
 ```sh
-bun run --filter 'bb-plugin-dockside' typecheck
-bun run --filter 'bb-plugin-dockside' test
+bun run --filter 'alia-plugin-dockside' typecheck
+bun run --filter 'alia-plugin-dockside' test
 ```
 
 The test script needs Node 22.6+.

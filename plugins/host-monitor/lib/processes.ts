@@ -589,7 +589,7 @@ $currentIdentity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
 $currentSid = [string]$currentIdentity.User.Value
 $principal = New-Object System.Security.Principal.WindowsPrincipal($currentIdentity)
 $elevated = $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
-$includeOwnerProof = $env:BB_HOST_MONITOR_INCLUDE_OWNER_PROOF -eq '1'
+$includeOwnerProof = $env:ALIA_HOST_MONITOR_INCLUDE_OWNER_PROOF -eq '1'
 $boundedProcesses = @(Get-CimInstance Win32_Process | Select-Object -First ${MAX_PROCESS_COUNT})
 $items = @($boundedProcesses | ForEach-Object {
   $cimProcess = $_
@@ -641,7 +641,7 @@ export function windowsProcessInvocation(includeOwnerProof: boolean): {
       WINDOWS_PROCESS_SCRIPT,
     ],
     env: {
-      BB_HOST_MONITOR_INCLUDE_OWNER_PROOF: includeOwnerProof ? "1" : "0",
+      ALIA_HOST_MONITOR_INCLUDE_OWNER_PROOF: includeOwnerProof ? "1" : "0",
     },
     timeoutMs: includeOwnerProof
       ? WINDOWS_OWNER_SAMPLE_TIMEOUT_MS
@@ -651,8 +651,8 @@ export function windowsProcessInvocation(includeOwnerProof: boolean): {
 
 export const WINDOWS_FORCE_SCRIPT = String.raw`
 $ErrorActionPreference = 'Stop'
-$targetId = [int]$env:BB_HOST_MONITOR_PROCESS_PID
-$expectedStartedAtMs = [long]$env:BB_HOST_MONITOR_PROCESS_STARTED_AT_MS
+$targetId = [int]$env:ALIA_HOST_MONITOR_PROCESS_PID
+$expectedStartedAtMs = [long]$env:ALIA_HOST_MONITOR_PROCESS_STARTED_AT_MS
 $target = Get-Process -Id $targetId -ErrorAction SilentlyContinue
 if ($null -eq $target) { exit 44 }
 $actualStartedAtMs = $null
@@ -686,8 +686,8 @@ export function windowsForceInvocation(
       WINDOWS_FORCE_SCRIPT,
     ],
     env: {
-      BB_HOST_MONITOR_PROCESS_PID: String(pid),
-      BB_HOST_MONITOR_PROCESS_STARTED_AT_MS: String(startedAtMs),
+      ALIA_HOST_MONITOR_PROCESS_PID: String(pid),
+      ALIA_HOST_MONITOR_PROCESS_STARTED_AT_MS: String(startedAtMs),
     },
   };
 }

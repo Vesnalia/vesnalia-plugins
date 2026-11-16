@@ -1,18 +1,18 @@
-// The autotitle diagnostic CLI: `bb focus-board autotitle availability`
+// The autotitle diagnostic CLI: `alia focus-board autotitle availability`
 // reports the exact state the fallback modal shows (thread-model
 // availability, selected service, bridge-classified menu) and
 // `autotitle probe` runs the hidden thread-model probe end-to-end. Both
 // exist because the browser modal cannot be observed from the outside;
 // the CLI is the live-truth surface.
 import { afterEach, describe, expect, it } from "vitest";
-import type { FakePluginHarness } from "@get-bb/plugin-sdk/testing";
+import type { FakePluginHarness } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { setup } from "./helpers/autotitle-fake-host";
 
 afterEach(async () => {});
 
-describe("bb focus-board autotitle availability", () => {
+describe("alia focus-board autotitle availability", () => {
   it("prints an available thread model and the selected service", async () => {
     const { harness } = await setup({
       selection: { mode: "service", pluginId: "openrouter-inference", serviceId: "default" },
@@ -100,7 +100,7 @@ describe("bb focus-board autotitle availability", () => {
   });
 });
 
-describe("bb focus-board autotitle probe", () => {
+describe("alia focus-board autotitle probe", () => {
   it("runs the hidden thread-model probe and prints the title", async () => {
     const { harness } = await setup({});
     const result = await harness.behavior.runCli(["autotitle", "probe", "thr_x"]);
@@ -125,7 +125,7 @@ describe("bb focus-board autotitle probe", () => {
     expect(result.stderr).toMatch(/no resolved provider\/model|no project to inherit/);
   });
 });
-describe("bb focus-board autotitle prompt", () => {
+describe("alia focus-board autotitle prompt", () => {
   it("prints the resolved originating prompt (timeline row wins over history)", async () => {
     const { harness } = await setup({
       sourceTimeline: {

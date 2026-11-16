@@ -1,17 +1,17 @@
-// The Planner page's "What happened": Loom's planner steps and bb's question rounds in one order, cut into chapters, one
+// The Planner page's "What happened": Loom's planner steps and VesnALIA's question rounds in one order, cut into chapters, one
 // per draft version and one for the running project. Page-safe: it imports only types.
 import type { PlannerStep, PlannerView, TurnStep, VersionChange } from "./planner-view";
 
-/** One Ask User Question round of the planner, read from its thread in bb. */
+/** One Ask User Question round of the planner, read from its thread in VesnALIA. */
 export interface QuestionRound {
   id: string;
   title: string;
   askedAt: number;
-  /** Open while it waits for the human; ended when bb closed it without answers, such as an interrupted turn. */
+  /** Open while it waits for the human; ended when VesnALIA closed it without answers, such as an interrupted turn. */
   status: "open" | "answered" | "ended";
   /** When it was answered or ended; null while open. */
   answeredAt: number | null;
-  /** The questions and the human's answers; empty while it waits, or when bb did not say. */
+  /** The questions and the human's answers; empty while it waits, or when VesnALIA did not say. */
   answers: Array<{ header: string; question: string; answer: string }>;
 }
 

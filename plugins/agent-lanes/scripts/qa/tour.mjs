@@ -1,4 +1,4 @@
-// A tour of Lanes in the live bb at 1440×900, light and dark: the pane at 15
+// A tour of Lanes in the live VesnALIA at 1440×900, light and dark: the pane at 15
 // minutes and at an hour, a hovered block, the tooltip, the decision card
 // (when something waits), a hovered hand-off line, the menus, a pan back in
 // time, a zoom, and the team panel beside a thread. Screenshots go to
@@ -7,15 +7,15 @@
 //   PLAYWRIGHT_DIR=/tmp/lanes-qa-tools node scripts/qa/tour.mjs [outDir]
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { BB, launch } from "./browser.mjs";
+import { ALIA, launch } from "./browser.mjs";
 
-const out = process.argv[2] ?? "docs/fidelity/live/bb";
+const out = process.argv[2] ?? "docs/fidelity/live/alia";
 mkdirSync(out, { recursive: true });
 
 async function pane(browser, scheme) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, colorScheme: scheme, deviceScaleFactor: 2 });
   page.on("pageerror", (error) => console.error(`[page error] ${error.message}`));
-  await page.goto(`${BB}/plugins/agent-lanes/lanes`, { waitUntil: "networkidle" });
+  await page.goto(`${ALIA}/plugins/agent-lanes/lanes`, { waitUntil: "networkidle" });
   await page.waitForSelector(".bl-track", { timeout: 15000 });
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(1500);
@@ -123,7 +123,7 @@ try {
       return cell?.querySelector("a.lanes-name")?.getAttribute("href") ?? null;
     });
     if (thread) {
-      await page.goto(`${BB}${thread}`, { waitUntil: "networkidle" });
+      await page.goto(`${ALIA}${thread}`, { waitUntil: "networkidle" });
       await page.waitForTimeout(1200);
       const show = page.locator("button[aria-label^='Show right panel']");
       if (await show.count()) await show.click();

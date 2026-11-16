@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { CollapseKey } from "./layout";
 import { type RowState } from "./status";
 import type { Group, TreeNode } from "./tree";

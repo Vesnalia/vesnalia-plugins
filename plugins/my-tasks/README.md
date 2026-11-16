@@ -3,16 +3,16 @@
 # Apple Style Tasks
 
 [![Version](https://img.shields.io/badge/version-0.3.0-blue)](package.json)
-[![BB](https://img.shields.io/badge/bb-0.43%2B-blue)](https://getbb.app)
+[![VesnALIA](https://img.shields.io/badge/bb-0.43%2B-blue)](https://getbb.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Turn an idea into a personal plan. Keep tasks, context and small steps together, and ask an assistant for help when you need it.
 
 [Quick start](#quick-start) · [Install](#install) · [Requirements](#requirements) · [All plugins](../../README.md)
 
-![Apple Style Tasks in BB](../../marketplace/screenshots/my-tasks/overview.png)
+![Apple Style Tasks in VesnALIA](../../marketplace/screenshots/my-tasks/overview.png)
 
-*Real plugin interface captured in an isolated BB instance with example content.*
+*Real plugin interface captured in an isolated VesnALIA instance with example content.*
 
 ## What you can do
 
@@ -39,21 +39,21 @@ Turn an idea into a personal plan. Keep tasks, context and small steps together,
 From a local checkout, install this package:
 
 ```sh
-bb plugin install ./plugins/my-tasks
+alia plugin install ./plugins/my-tasks
 ```
 
 <details>
 <summary>Install a versioned release</summary>
 
 ```sh
-bb plugin install 'git:https://github.com/dmitriikapustin/bb-plugins-by-kapustin.git@^0.3.0' --plugin my-tasks --tag-prefix my-tasks/
+alia plugin install 'git:https://github.com/dmitriikapustin/bb-plugins-by-kapustin.git@^0.3.0' --plugin my-tasks --tag-prefix my-tasks/
 ```
 
 Compatible updates remain explicit:
 
 ```sh
-bb plugin outdated
-bb plugin update my-tasks
+alia plugin outdated
+alia plugin update my-tasks
 ```
 
 </details>
@@ -62,18 +62,18 @@ The plugin keeps the existing `my-tasks` ID, so renaming does not reset your che
 
 ## Requirements
 
-BB **0.43+** and Plugin SDK **0.4.87+**.
+VesnALIA **0.43+** and Plugin SDK **0.4.87+**.
 
-The checklist works locally in BB. Optional assistance requires an authenticated Codex CLI on a connected host and currently uses **gpt-6-astra** with low reasoning effort. It consumes the provider account’s quota.
+The checklist works locally in VesnALIA. Optional assistance requires an authenticated Codex CLI on a connected host and currently uses **gpt-6-astra** with low reasoning effort. It consumes the provider account’s quota.
 
 Task context is sent to Codex only when assistance is requested. The background worker is read-only, returns text, and does not make external changes. Work can continue after the dialog closes; you can stop it from the task. Each run has a ten-minute timeout. An interrupted active run shows an error rather than silently starting again.
 
 ## From the terminal
 
 ```sh
-bb my-tasks list
-bb my-tasks get <task-id>
-bb my-tasks add "Prepare the next release"
+alia my-tasks list
+alia my-tasks get <task-id>
+alia my-tasks add "Prepare the next release"
 ```
 
 <details>
@@ -88,7 +88,7 @@ There are no due dates or calendar views. The CLI lists the latest 100 tasks. Se
 <details>
 <summary>Development</summary>
 
-From the repository root, using Node 22.19+ and the BB CLI:
+From the repository root, using Node 22.19+ and the VesnALIA CLI:
 
 ```sh
 node scripts/run.mjs deps my-tasks
@@ -97,7 +97,7 @@ node scripts/run.mjs test my-tasks
 node scripts/run.mjs build my-tasks
 ```
 
-The test command reports when a package has no declared test suite. To reload a development installation, first confirm that `bb plugin source my-tasks` points to the copy you edited, then run `bb plugin reload my-tasks`.
+The test command reports when a package has no declared test suite. To reload a development installation, first confirm that `alia plugin source my-tasks` points to the copy you edited, then run `alia plugin reload my-tasks`.
 
 </details>
 

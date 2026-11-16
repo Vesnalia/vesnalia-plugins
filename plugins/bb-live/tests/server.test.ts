@@ -4,7 +4,7 @@ import {
   createFakePluginHost,
   makeThreadResponse,
   makeQueueEntry,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import { setup } from "../server";
 import type { Intent } from "../src/policy";
 import type { LiveTransport } from "../src/live-transport";
@@ -13,7 +13,7 @@ async function fixture(retention = 30) {
   const operator = makeThreadResponse({
     id: "operator",
     projectId: "personal",
-    title: "BB Operator",
+    title: "VesnALIA Operator",
   });
   const target = makeThreadResponse({
     id: "worker",
@@ -62,8 +62,8 @@ async function fixture(retention = 30) {
     },
     async closeRemote() {},
   };
-  const { bb, harness } = createFakePluginHost({
-    pluginId: "bb-live",
+  const { alia, harness } = createFakePluginHost({
+    pluginId: "alia-live",
     settings: { openaiApiKey: key, transcriptRetentionDays: retention },
     sdk: {
       plugins: {
@@ -101,7 +101,7 @@ async function fixture(retention = 30) {
           threadId === "operator" ? operator : target,
         pin: async () => operator,
         getPluginMetadata: async () => ({
-          role: "bb-live-operator",
+          role: "alia-live-operator",
           schemaVersion: 1,
         }),
         output: async () => ({ output: "Tests passed " + key }),
@@ -113,8 +113,8 @@ async function fixture(retention = 30) {
       },
     },
   });
-  const db = bb.storage.database();
-  await setup(bb, fake);
+  const db = alia.storage.database();
+  await setup(alia, fake);
   const call = async (method: string, input: unknown = null) => {
     return (await harness.behavior.callRpc(method, input)) as any;
   };
@@ -264,7 +264,7 @@ test("explicit steer stays distinct from queue and never resends queued messages
     await f.harness.lifecycle.dispose();
   }
 });
-test("end is idempotent and does not stop BB work", async () => {
+test("end is idempotent and does not stop VesnALIA work", async () => {
   const f = await fixture();
   try {
     const s = await f.start();
@@ -582,7 +582,7 @@ test("thread capability questions answer without dispatching work", async () => 
     await f.event({
       action: "capabilities",
       target: null,
-      message: "Can I start a brand new thread directly from BB Live?",
+      message: "Can I start a brand new thread directly from VesnALIA Live?",
       uncertain: false,
     });
     assert.equal(f.harness.inspection.sdk.callsTo("threads.spawn").length, 1); // Operator initialization only
@@ -684,7 +684,7 @@ test("new voice task spawns once in the resolved project and tracks its real out
       ),
     );
     assert.ok(
-      f.sent.some((e) => String(e.content).includes("BB reports pending")),
+      f.sent.some((e) => String(e.content).includes("VesnALIA reports pending")),
     );
   } finally {
     await f.harness.lifecycle.dispose();
@@ -826,7 +826,7 @@ test("a multi-project voice dump reaches the Operator with all tasks and a direc
   try {
     await f.start();
     const message =
-      "Continue the Release thread in Project with keyboard checks. Start a separate BB Live task to investigate voice routing, keeping the UI unchanged.";
+      "Continue the Release thread in Project with keyboard checks. Start a separate VesnALIA Live task to investigate voice routing, keeping the UI unchanged.";
     await f.event({
       action: "operator",
       target: null,
@@ -839,7 +839,7 @@ test("a multi-project voice dump reaches the Operator with all tasks and a direc
     assert.ok(dispatch.includes(message));
     assert.ok(dispatch.includes("Workspace directory"));
     assert.ok(dispatch.includes("existing project threads"));
-    assert.ok(dispatch.includes("bb thread spawn --project"));
+    assert.ok(dispatch.includes("alia thread spawn --project"));
     assert.ok(dispatch.includes('"threadId":"operator"'));
   } finally {
     await f.harness.lifecycle.dispose();

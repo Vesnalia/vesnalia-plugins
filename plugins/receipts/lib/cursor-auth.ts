@@ -109,7 +109,7 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
 
 async function readAccessToken(databasePath: string): Promise<string | null> {
   // Keep node:sqlite out of the plugin's top-level module graph. Cursor is
-  // optional, and older bb hosts should continue serving other providers.
+  // optional, and older VesnALIA hosts should continue serving other providers.
   const { DatabaseSync } = await import("node:sqlite");
   const database = new DatabaseSync(databasePath, { readOnly: true });
   try {

@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fireEvent, screen, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginCommandContext } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginCommandContext } from "@vesnalia/plugin-sdk/app";
 import { PANEL_ACTION_ID, createCommands } from "../src/commands";
 import { useVantageBadge } from "../src/notify";
 import { sidebarThread } from "./fixtures";
@@ -92,7 +92,7 @@ describe("the thread header's Vantage button", () => {
     slot.lifecycle.unmount();
   });
 
-  it("leaves the phone header to bb, since the panel launcher already opens the tab", async () => {
+  it("leaves the phone header to VesnALIA, since the panel launcher already opens the tab", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const slot = renderSlot(app.threadHeaderActions[0]!, props(true), { pluginId: "vantage" });
     expect(within(slot.container).queryByRole("button")).toBeNull();
@@ -110,7 +110,7 @@ describe("the thread header's Vantage button", () => {
     slot.lifecycle.unmount();
   });
 
-  it("falls back to bb's labelled header action, with the same icon, where bb has no header slot", () => {
+  it("falls back to VesnALIA's labelled header action, with the same icon, where VesnALIA has no header slot", () => {
     const toggle = vi.fn(() => true);
     const action = headerAction.item({ thread: { id: "thr_1" }, data: undefined, sdk: {}, navigate: {}, experimental_panel: { openTab: toggle } } as never)!;
     expect(headerAction.placement).toBe("header");
@@ -149,17 +149,17 @@ describe("manifest", () => {
   const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 
   it("declares the server, app, host entry, skill and Vantage's own icon", () => {
-    expect(manifest.name).toBe("bb-plugin-vantage");
-    expect(manifest.bb).toMatchObject({
+    expect(manifest.name).toBe("alia-plugin-vantage");
+    expect(manifest.alia).toMatchObject({
       name: "Vantage", branding: { icon: "./icons/vantage.svg", experimental_icons: { vantage: "./icons/vantage.svg" } }, server: "./server.ts", app: "./app.tsx", host: "./host.ts",
       skills: ["./skills"],
     });
-    expect(manifest.engines).toEqual({ bb: ">=0.48.1", bbPluginSdk: ">=0.6.104" });
+    expect(manifest.engines).toEqual({ alia: ">=0.48.1", aliaPluginSdk: ">=0.6.104" });
   });
 
-  it("keeps the SDK a dev dependency pinned to the version bb 0.48.1 ships, and bundles zod", () => {
+  it("keeps the SDK a dev dependency pinned to the version VesnALIA 0.48.1 ships, and bundles zod", () => {
     expect(manifest.dependencies).toEqual({ zod: "^4.3.6" });
-    expect(manifest.devDependencies["@get-bb/plugin-sdk"]).toBe("0.6.104");
+    expect(manifest.devDependencies["@vesnalia/plugin-sdk"]).toBe("0.6.104");
   });
 });
 

@@ -1,6 +1,6 @@
 import { useCallback, type CSSProperties } from "react";
-import type { PluginMessageDirectiveProps } from "@get-bb/plugin-sdk/app";
-import { experimental_useAppPanel } from "@get-bb/plugin-sdk/app";
+import type { PluginMessageDirectiveProps } from "@vesnalia/plugin-sdk/app";
+import { experimental_useAppPanel } from "@vesnalia/plugin-sdk/app";
 import { StateGlyph } from "./StateGlyph.js";
 import { useAsync, useLinearRpc } from "./rpc.js";
 import { ISSUE_TAB } from "./tabs.js";

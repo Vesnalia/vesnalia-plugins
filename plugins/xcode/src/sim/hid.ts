@@ -3,7 +3,7 @@
  *
  * ## Why the server owns the socket
  *
- * Two bb windows on the same device would otherwise both open control sockets
+ * Two VesnALIA windows on the same device would otherwise both open control sockets
  * and fight. The socket is server-owned and the frontend sends input over RPC.
  * The rejected alternative — a direct browser WebSocket to loopback — would
  * shave a millisecond or two, but it lets two windows race, needs a loopback

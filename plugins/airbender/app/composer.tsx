@@ -7,7 +7,7 @@
 //
 // Why: the user reads the agent's work in the chat, so the state of that
 // work and the decision about it belong there, not only in the side panel
-// (bead-bb-3l4, bead-bb-eg0).
+// (bead-alia-3l4, bead-alia-eg0).
 //
 // Design notes:
 // - The step button makes the real workflow move. Its wording comes from
@@ -25,7 +25,7 @@ import {
   useComposer,
   useComposerView,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -57,7 +57,7 @@ function useComposerThreadId(): string | null {
 }
 
 /**
- * One quick-reply button in the message box (bead-bb-lit): a click sends the
+ * One quick-reply button in the message box (bead-alia-lit): a click sends the
  * thread's agent a fixed reply, so the user does not have to type "yes, go
  * ahead" after every plan.
  *
@@ -69,7 +69,7 @@ function useComposerThreadId(): string | null {
  *
  * An icon with a tooltip, the user's first request, to keep the message
  * box's row quiet; with a short word after the icon when `text` is given
- * ("LGTM", the user's later request, bead-bb-ahs). The tooltip names the
+ * ("LGTM", the user's later request, bead-alia-ahs). The tooltip names the
  * button and shows the exact message, which the button itself cannot.
  *
  * Side effects: one RPC per click, which sends a message to the thread; a
@@ -84,7 +84,7 @@ export function QuickReplyButton({
   kind: keyof typeof QUICK_REPLIES;
   /** The button's name, for the tooltip and for screen readers. */
   label: string;
-  /** A BB icon name; an unknown one shows BB's fallback icon. */
+  /** A VesnALIA icon name; an unknown one shows VesnALIA's fallback icon. */
   icon: string;
   /** A short word shown after the icon; without it, the icon alone. */
   text?: string;
@@ -100,7 +100,7 @@ export function QuickReplyButton({
   if (threadId === null) return null;
   return (
     <Button
-      // A gray filled square button (the user's request: gray like BB's own
+      // A gray filled square button (the user's request: gray like VesnALIA's own
       // send button, and square, not round).
       variant="secondary"
       size={text === undefined ? "icon" : "sm"}
@@ -144,7 +144,7 @@ export function QuickReplyButton({
  * with this line above it; and finally, at the user's suggestion, the id on
  * this line, which they called the cleanest. The sentence could not go
  * where the user first wanted it, as the grey hint text of the empty
- * message box: BB gives a plugin no way to set that.
+ * message box: VesnALIA gives a plugin no way to set that.
  *
  * Draws nothing when the thread has no current issue or the folder has no
  * beads. It follows changes through useIssues, the same loading and change
@@ -169,7 +169,7 @@ function StatusLine({ threadId }: { threadId: string }) {
   if (issue === null || result === null) return null;
   const issues = result.issues;
   // On the simple workflow there is no step: the line then names the issue
-  // by its title instead of saying what the step asks for (bead-bb-8j6).
+  // by its title instead of saying what the step asks for (bead-alia-8j6).
   const workflow = workflowFor(result.workflow);
   const state = workflow === null ? null : stateOf(workflow, issue.step);
   return (
@@ -240,7 +240,7 @@ export function ComposerStatusLine() {
 
 /**
  * The buttons for the current issue's step, inside the message box
- * (bead-bb-eg0). What is expected is said in the line above the box;
+ * (bead-alia-eg0). What is expected is said in the line above the box;
  * a sentence was tried here, beside the buttons, and the user moved it up.
  *
  * At one of the user's steps, their answers: the main move ("Approve plan",
@@ -257,7 +257,7 @@ export function ComposerStatusLine() {
  * expected of them. It takes its reason from what is typed in the message
  * box and clears it; with nothing typed it asks for the reason.
  *
- * The "Agree & continue" button is drawn here too, always (bead-bb-7jd):
+ * The "Agree & continue" button is drawn here too, always (bead-alia-7jd):
  * alone when there is no current issue and at an agent's step, and after
  * the step's answer buttons where there are any.
  * Side effects: one RPC per click; a toast if a move is refused.
@@ -273,7 +273,7 @@ function StepButton({ threadId }: { threadId: string }) {
         ) ?? null)
       : null;
   // "Agree & continue" is shown all the time, whatever the workflow and
-  // the step (the user, bead-bb-7jd: "let's show accept and go button all
+  // the step (the user, bead-alia-7jd: "let's show accept and go button all
   // the time (not depending on the workflow)"). Until then it gave way to
   // the step's answer buttons, as a third, vaguer way of saying yes beside
   // "Accept" and "Send back". Beside them it makes no move in the workflow

@@ -211,7 +211,7 @@ export function usePrWrites(threadIds: readonly string[]) {
     const count = out.stopped.length;
     const message = count === 0 ? "No AI review was running." : `Stopped ${count === 1 ? `the AI review of ${tinyKey(out.stopped[0]!)}` : plural(count, "AI review")}${archive ? `, and archived ${count === 1 ? "its thread" : "their threads"}` : ""}.`;
     const first = out.failed[0];
-    if (first !== undefined) toast.warning(`${message} bb could not ${first.step === "archive" ? "archive" : "stop"} ${plural(out.failed.length, "thread")}: ${first.error}`);
+    if (first !== undefined) toast.warning(`${message} VesnALIA could not ${first.step === "archive" ? "archive" : "stop"} ${plural(out.failed.length, "thread")}: ${first.error}`);
     else toast.success(message);
     return true;
   };

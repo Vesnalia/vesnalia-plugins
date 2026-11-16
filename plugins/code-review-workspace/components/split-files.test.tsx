@@ -3,7 +3,7 @@ import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { toast } from "sonner";
 import type { ReactNode } from "react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { render } from "@testing-library/react";
 import { interdiff } from "../src/interdiff";
@@ -28,7 +28,7 @@ const patch = [
   "diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n",
   "@@ -1,2 +1,2 @@\n-parse\n+PARSE\n keep\n",
   "@@ -20,2 +20,2 @@\n-cache\n+CACHE\n keep\n",
-  "diff --git a/src/b.ts b/src/b.ts\n--- a/src/b.ts\n+++ b/src/b.ts\n@@ -1 +1 @@\n-b\n+bb\n",
+  "diff --git a/src/b.ts b/src/b.ts\n--- a/src/b.ts\n+++ b/src/b.ts\n@@ -1 +1 @@\n-b\n+VesnALIA\n",
 ].join("");
 const guide = {
   title: "Guide", intent: "Parses and caches rows.", unplacedFiles: [] as string[],

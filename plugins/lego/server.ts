@@ -1,4 +1,4 @@
-// bb-plugin-lego — plan a task as a Lego instruction book, build the bags in
+// alia-plugin-lego — plan a task as a Lego instruction book, build the bags in
 // parallel with builder agents, and have a Master Builder assemble them,
 // while a banner above the planning thread's composer and a side-panel
 // workbench show the model grow.
@@ -7,8 +7,8 @@ import {
   cliCommand,
   defineCli,
   defineRpcContract,
-  type BbPluginApi,
-} from "@get-bb/plugin-sdk";
+  type AliaPluginApi,
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   MAX_BUILDERS,
@@ -78,8 +78,8 @@ const SETUP_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 const RECONCILE_EVERY_MS = 60_000;
 const DEMO_PLAY_DELAY_MS = 1_200;
 
-type SpawnArgs = Parameters<BbPluginApi["sdk"]["threads"]["spawn"]>[0];
-type SendArgs = Parameters<BbPluginApi["sdk"]["threads"]["send"]>[0];
+type SpawnArgs = Parameters<AliaPluginApi["sdk"]["threads"]["spawn"]>[0];
+type SendArgs = Parameters<AliaPluginApi["sdk"]["threads"]["send"]>[0];
 
 const PLANNER_TOOLS = [
   "lego_create_book",
@@ -119,16 +119,16 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+export default async function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, MIGRATIONS);
   const store = new BookStore(db);
 
   const textInput = (value: string) => [{ type: "text" as const, text: value, mentions: [] }];
 
   const sdk: WorkerSdk = {
     async spawn(launch) {
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         projectId: launch.projectId,
         environment:
           launch.environmentId === null
@@ -155,7 +155,7 @@ export default async function plugin(bb: BbPluginApi) {
       return { threadId: thread.id };
     },
     async send(threadId, prompt, choice, permissionMode) {
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.send({
         threadId,
         input: textInput(prompt),
         mode: "auto",
@@ -165,21 +165,21 @@ export default async function plugin(bb: BbPluginApi) {
       });
     },
     async notify(threadId, message) {
-      await bb.sdk.threads.send({ threadId, input: textInput(message), mode: "auto" });
+      await alia.sdk.threads.send({ threadId, input: textInput(message), mode: "auto" });
     },
     async stop(threadId) {
-      await bb.sdk.threads.stop({ threadId });
+      await alia.sdk.threads.stop({ threadId });
     },
     async status(threadId) {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (thread.status !== "idle") return { status: thread.status, lastText: null };
       if (thread.queuedMessageCount > 0) return { status: "queued", lastText: null };
-      const { output } = await bb.sdk.threads.output({ threadId });
+      const { output } = await alia.sdk.threads.output({ threadId });
       return { status: thread.status, lastText: output };
     },
     async exists(threadId) {
       try {
-        const thread = await bb.sdk.threads.get({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         return thread.deletedAt === null;
       } catch (error) {
         if (/HTTP 404|not found/iu.test(error instanceof Error ? error.message : String(error))) return false;
@@ -189,20 +189,20 @@ export default async function plugin(bb: BbPluginApi) {
   };
 
   const publish = (book: BookState) =>
-    bb.realtime.publish(BOOK_CHANNEL, { bookId: book.id, threadId: book.threadId, updatedAt: book.updatedAt });
-  const engine = new BuildEngine({ store, sdk, publish, log: bb.log });
+    alia.realtime.publish(BOOK_CHANNEL, { bookId: book.id, threadId: book.threadId, updatedAt: book.updatedAt });
+  const engine = new BuildEngine({ store, sdk, publish, log: alia.log });
 
   // Demo books are simulated in this process; a reload stops them.
   retireDemos(store);
   const demos = new AbortController();
-  bb.onDispose(() => demos.abort());
+  alia.onDispose(() => demos.abort());
 
 
   /** The thread's workspace plus the provider/model it currently runs. */
   async function threadContext(threadId: string) {
     const [thread, options] = await Promise.all([
-      bb.sdk.threads.get({ threadId }),
-      bb.sdk.threads.defaultExecutionOptions({ threadId }).catch(() => null),
+      alia.sdk.threads.get({ threadId }),
+      alia.sdk.threads.defaultExecutionOptions({ threadId }).catch(() => null),
     ]);
     const choice: AgentChoice | null =
       options === null
@@ -222,7 +222,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ------------------------------------------------------------------- RPC
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     book_get: ({ bookId }) => ({ book: store.get(bookId) }),
     // A builder or Master Builder thread shows the book it works on; any
     // other thread shows its newest book.
@@ -242,18 +242,18 @@ export default async function plugin(bb: BbPluginApi) {
     },
     // The viewer pressed Play: give the side panel a moment to open first.
     demo_play: ({ bookId }) => {
-      playDemo({ store, publish, log: bb.log }, bookId, { startDelayMs: DEMO_PLAY_DELAY_MS, signal: demos.signal });
+      playDemo({ store, publish, log: alia.log }, bookId, { startDelayMs: DEMO_PLAY_DELAY_MS, signal: demos.signal });
       return { ok: true };
     },
     demo_replay: ({ bookId }) => {
-      const book = replayDemo({ store, publish, log: bb.log }, bookId, { startDelayMs: DEMO_PLAY_DELAY_MS, signal: demos.signal });
+      const book = replayDemo({ store, publish, log: alia.log }, bookId, { startDelayMs: DEMO_PLAY_DELAY_MS, signal: demos.signal });
       return { bookId: book.id, setNumber: book.setNumber };
     },
   });
 
   // ------------------------------------------------------- planner tools
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "lego_create_book",
     description:
       "Print a Lego instruction book for a task: independent sub-assemblies (bags) that builder agents build in parallel, plus the assembly steps a single Master Builder follows to attach every bag to the main model. The user sees it in a banner above the composer and can open the full instruction book in the side panel.",
@@ -289,7 +289,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "lego_setup_build",
     description:
       "Ask the user, in a form, how to staff a Lego build: how many builder agents, whether every builder runs the same provider and model, which provider/model/reasoning the builders use, and which runs the Master Builder. When the user submits, the build starts immediately.",
@@ -336,12 +336,12 @@ export default async function plugin(bb: BbPluginApi) {
           note: note ?? null,
         };
         engine.markConfiguring(bookId, true);
-        const answer = await bb.ui.requestInput(
+        const answer = await alia.ui.requestInput(
           {
             threadId,
             rendererId: SETUP_RENDERER,
             title: `Lego Set ${book.setNumber} build setup`,
-            payload: payload as unknown as Parameters<BbPluginApi["ui"]["requestInput"]>[0]["payload"],
+            payload: payload as unknown as Parameters<AliaPluginApi["ui"]["requestInput"]>[0]["payload"],
             timeoutMs: SETUP_TIMEOUT_MS,
             presentation: {
               label: { pending: "Waiting for the Lego build setup", completed: "Lego build set up" },
@@ -377,13 +377,13 @@ export default async function plugin(bb: BbPluginApi) {
         return [
           `The user started the build: ${builders} builder${builders === 1 ? "" : "s"} and a Master Builder on ${setup.data.master.providerId}/${setup.data.master.model}.`,
           `The builders are working now in child threads. The banner above the composer and the side panel update live as bricks land; you do not need to poll.`,
-          "BB may post routine reports here as child threads finish turns; do not act on those. This thread gets a [Lego] message when the Master Builder finishes or a builder fails. Tell the user the build is under way, then end your turn.",
+          "VesnALIA may post routine reports here as child threads finish turns; do not act on those. This thread gets a [Lego] message when the Master Builder finishes or a builder fails. Tell the user the build is under way, then end your turn.",
         ].join("\n");
       });
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "lego_status",
     description: "Show a Lego build's progress: bags, builders, Master Builder, and the latest events. Without a bookId, lists this thread's books.",
     presentation: {
@@ -401,7 +401,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "lego_cancel_build",
     description: "Cancel a Lego build and stop its builder and Master Builder threads.",
     presentation: {
@@ -417,7 +417,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "lego_retry",
     description: "Retry a failed bag (pass bagId) or, without bagId, every failed bag and a failed Master Builder.",
     presentation: {
@@ -435,7 +435,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ------------------------------------------------ builder / master tools
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "lego_step_done",
     description: "Builder only: report that you finished one numbered step of your bag. Snaps a brick onto the bag in the user's live view.",
     presentation: {
@@ -451,7 +451,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "lego_bag_complete",
     description: "Builder only: report that your whole bag is built, with a report for the Master Builder.",
     presentation: {
@@ -470,7 +470,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "lego_bag_blocked",
     description:
       "Builder only: report that you cannot build your bag, and why. Use it instead of reporting steps you did not do, for example when the code the bag builds on is missing or the workspace contradicts the brief. The planning thread is told.",
@@ -490,7 +490,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "lego_assembly_step",
     description: "Master Builder only: report that you finished one numbered assembly step. Bags that step attaches snap onto the main model in the live view.",
     presentation: {
@@ -506,7 +506,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "lego_build_complete",
     description: "Master Builder only: report that the whole model is assembled and verified.",
     presentation: {
@@ -528,7 +528,7 @@ export default async function plugin(bb: BbPluginApi) {
   // Builders and the Master Builder see only their reporting tools; every
   // other thread sees the planning tools and the lego skill. The worker tools
   // re-check the server-side binding, so a forged role grants nothing.
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const role = context.pluginMetadata.role;
     if (role === "builder") {
       return {
@@ -551,31 +551,31 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ------------------------------------------------------------- events
 
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) => {
     // A worker held in the queue (for example by a concurrency limit) has not
     // started its bag yet; only a finished turn counts.
     if (thread.queuedMessageCount > 0) return;
     engine.threadIdle(thread.id, lastAssistantText);
   });
-  bb.events.on("thread.failed", ({ thread, error }) => {
+  alia.events.on("thread.failed", ({ thread, error }) => {
     engine.threadFailed(thread.id, error);
   });
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     engine.threadDeleted(thread.id);
   });
 
-  bb.background.service("reconcile", {
+  alia.background.service("reconcile", {
     async start(signal) {
       try {
         await engine.sweepDeletedThreads();
       } catch (error) {
-        bb.log.warn(`deleted-thread sweep failed: ${String(error)}`);
+        alia.log.warn(`deleted-thread sweep failed: ${String(error)}`);
       }
       while (!signal.aborted) {
         try {
           await engine.reconcile();
         } catch (error) {
-          bb.log.warn(`reconcile failed: ${String(error)}`);
+          alia.log.warn(`reconcile failed: ${String(error)}`);
         }
         await sleep(RECONCILE_EVERY_MS, signal);
       }
@@ -604,7 +604,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   };
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "lego",
       summary: "Follow and report on Lego builds (parallel builders + a Master Builder)",
@@ -691,7 +691,7 @@ export default async function plugin(bb: BbPluginApi) {
             const threadId = requireThread(ctx.threadId);
             const thread = await threadContext(threadId);
             const choice = thread.choice ?? { providerId: "claude-code", model: "demo", reasoningLevel: "medium" };
-            const deps = { store, publish, log: bb.log };
+            const deps = { store, publish, log: alia.log };
             const book = createDemo(
               deps,
               { threadId, projectId: thread.projectId, environmentId: thread.environmentId },

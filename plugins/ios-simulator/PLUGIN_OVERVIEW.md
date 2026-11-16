@@ -37,12 +37,12 @@ not part of this initial path.
 ## Requirements
 
 For iOS, use an Apple Silicon Mac with Xcode, the iOS platform, and Node.js 20
-or newer. BB's server must run on that Mac. For Android, supply an installed
-Android SDK with adb, emulator, and a configured AVD. BB 0.46 and Plugin SDK
+or newer. VesnALIA's server must run on that Mac. For Android, supply an installed
+Android SDK with adb, emulator, and a configured AVD. VesnALIA 0.46 and Plugin SDK
 0.6.37 or newer are required. No external service or additional account is
 needed.
 
 The plugin runs local capture and input helpers and proxies the panel through
-BB. It shuts down devices it booted when their owning thread is archived or
+VesnALIA. It shuts down devices it booted when their owning thread is archived or
 deleted. Xcode Device Hub may capture iOS input; Repair input restarts
 SpringBoard and closes running apps so control can resume.

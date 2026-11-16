@@ -1,17 +1,17 @@
 import type {
-  BbPluginApi,
+  AliaPluginApi,
   PluginProviderDeclaration,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 
 /**
- * Pin ask mode so fx forwards unresolved permission requests to BB even when
+ * Pin ask mode so fx forwards unresolved permission requests to VesnALIA even when
  * the host shell sets a permissive default. fx's own rules, session grants,
  * and tool admission still apply before a request reaches the client.
  */
 const FX_ENV = { FX_PERMISSION_MODE: "ask" } as const;
 
 /**
- * How BB launches fx. `fx acp` speaks the Agent Client Protocol, which the
+ * How VesnALIA launches fx. `fx acp` speaks the Agent Client Protocol, which the
  * SDK's shared ACP bridge already implements end to end, so this plugin
  * declares the launch and lets that bridge do the talking. host.ts normalizes
  * the order of fx's model config options before the shared bridge reads them.
@@ -35,14 +35,14 @@ const FX_LAUNCH_SPEC = {
   env: FX_ENV,
 } as const;
 
-/** The provider BB lists in the picker. Exported for the declaration tests. */
+/** The provider VesnALIA lists in the picker. Exported for the declaration tests. */
 export const fxProviderDeclaration: PluginProviderDeclaration = {
   id: "fx",
   displayName: "fx",
   // Grouped with the other ACP agents, which is what fx is and which bridge
   // runs it.
   family: "acp",
-  // BB renders the monochrome SVG as a mask that follows the current theme.
+  // VesnALIA renders the monochrome SVG as a mask that follows the current theme.
   icon: "./assets/fx.svg",
   strings: {
     signInHint: "Run `fx login` on the machine to sign in.",
@@ -66,7 +66,7 @@ export const fxProviderDeclaration: PluginProviderDeclaration = {
   capabilities: {
     supportsServiceTier: false,
     // fx's native ask-user-question is ACP `elicitation/create`, which the
-    // shared bridge does not surface in BB. Claiming otherwise would make BB
+    // shared bridge does not surface in VesnALIA. Claiming otherwise would make VesnALIA
     // suppress its own fallback.
     supportsNativeUserQuestion: false,
     // `fx acp` advertises `sessionCapabilities: { list, resume, close }` — no
@@ -84,6 +84,6 @@ export const fxProviderDeclaration: PluginProviderDeclaration = {
 };
 
 /** Register the fx provider. Its implementation is the SDK's ACP bridge. */
-export default function plugin(bb: BbPluginApi): void {
-  bb.providers.register(fxProviderDeclaration);
+export default function plugin(alia: AliaPluginApi): void {
+  alia.providers.register(fxProviderDeclaration);
 }

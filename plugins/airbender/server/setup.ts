@@ -6,15 +6,15 @@
 // One step is this file's own: installing bend, which bend cannot do itself.
 //
 // Why: when something the tab needs is missing, the tab offers to set it up
-// instead of leaving the user at a dead end (bead-bb-80e). Setting a
-// repository up has to work from a plain terminal too, without BB, so what
-// the steps are and what they do lives in bend (bead-bb-c9l.9, by the
-// decision in bead-bb-c9l.7); the tab is buttons over them, and the two
+// instead of leaving the user at a dead end (bead-alia-80e). Setting a
+// repository up has to work from a plain terminal too, without VesnALIA, so what
+// the steps are and what they do lives in bend (bead-alia-c9l.9, by the
+// decision in bead-alia-c9l.7); the tab is buttons over them, and the two
 // cannot disagree.
 //
 // Design notes:
 // - Steps that run an outside program (installing beads, setting up or
-//   getting the issues, publishing them, building bend) run in a BB
+//   getting the issues, publishing them, building bend) run in a VesnALIA
 //   terminal the user can watch and type into: an install may ask for a
 //   password, and the user should see what is done to their machine. The
 //   steps that only write files (the tracker, the instructions, the facts)
@@ -29,7 +29,7 @@
 // - Something set up or taken away outside the tab is noticed only when
 //   the kept answer has run out.
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
@@ -134,7 +134,7 @@ export function fromBend(state: BendSetup) {
     foreign: state.foreign ?? null,
     elsewhere: state.elsewhere ?? false,
     // Why setup may not change the repository from this folder (a
-    // worktree, another branch); null where it may (bead-bb-25p).
+    // worktree, another branch); null where it may (bead-alia-25p).
     notHere: state.notHere === undefined || state.notHere === "" ? null : state.notHere,
     // Committing the files setup wrote, while that is to do.
     commitStep: offered("commit"),
@@ -156,7 +156,7 @@ export function fromBend(state: BendSetup) {
  * Side effects: none until one of them is called.
  */
 export function createSetup({
-  bb,
+  alia,
   folders,
   store,
   bendIn,
@@ -167,7 +167,7 @@ export function createSetup({
    * that nothing remembered about the old one is used again.
    */
   trackerChanged?: (path: string) => void;
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   folders: Folders;
   store: Store;
   /** How to run bend in a folder (server/bend.ts). */
@@ -218,7 +218,7 @@ export function createSetup({
       }
       return state;
     } catch (cause) {
-      bb.log.warn(`bend setup failed in ${path}: ${reasonOf(cause)}`);
+      alia.log.warn(`bend setup failed in ${path}: ${reasonOf(cause)}`);
       return { message: reasonOf(cause) };
     }
   }
@@ -245,7 +245,7 @@ export function createSetup({
       }
       try {
         const manifest = JSON.parse(readFileSync(join(folder, "package.json"), "utf8")) as { name?: unknown; version?: unknown };
-        if (manifest.name === "bb-plugin-airbender") {
+        if (manifest.name === "alia-plugin-airbender") {
           version = typeof manifest.version === "string" ? manifest.version : null;
           break;
         }
@@ -312,7 +312,7 @@ export function createSetup({
     if (!existsSync(path)) {
       return {
         path,
-        unavailable: `The folder ${path} does not exist on the machine BB runs on.`,
+        unavailable: `The folder ${path} does not exist on the machine VesnALIA runs on.`,
         ...nothing,
       };
     }
@@ -349,7 +349,7 @@ export function createSetup({
   }
 
   /**
-   * Runs one setup command in a BB terminal the user can watch and type
+   * Runs one setup command in a VesnALIA terminal the user can watch and type
    * into, and tells the tab when it ends.
    *
    * A terminal and not a hidden child process: an install may ask for a
@@ -362,7 +362,7 @@ export function createSetup({
    *   the background: when it exits (or after SETUP_TIMEOUT_MS) the exit
    *   code and the last lines of output are kept in setupLastRun and every
    *   open tab is told to reload.
-   * @throws When BB cannot open the terminal.
+   * @throws When VesnALIA cannot open the terminal.
    */
   async function runInTerminal(input: {
     threadId: string | null;
@@ -372,11 +372,11 @@ export function createSetup({
     command: string;
   }): Promise<void> {
     const { threadId, path, action, title } = input;
-    const { primaryHostId } = await bb.sdk.system.config();
+    const { primaryHostId } = await alia.sdk.system.config();
     if (threadId === null && primaryHostId === null) {
-      throw new Error("BB did not say which machine it runs on.");
+      throw new Error("VesnALIA did not say which machine it runs on.");
     }
-    const session = await bb.sdk.terminals.create({
+    const session = await alia.sdk.terminals.create({
       cols: 100,
       rows: 30,
       title,
@@ -393,14 +393,14 @@ export function createSetup({
     });
     setupRunning.set(path, { action, title });
     setupLastRun.delete(path);
-    bb.realtime.publish(CHANGED_CHANNEL, { path });
+    alia.realtime.publish(CHANGED_CHANNEL, { path });
     const startedAt = Date.now();
     const watchTerminal = async () => {
       let exitCode: number | null = null;
       try {
         for (;;) {
           await new Promise((resolve) => setTimeout(resolve, SETUP_POLL_MS));
-          const now = await bb.sdk.terminals.get({ terminalId: session.id });
+          const now = await alia.sdk.terminals.get({ terminalId: session.id });
           if (now.status === "exited" || now.status === "disconnected") {
             exitCode = now.exitCode;
             break;
@@ -408,11 +408,11 @@ export function createSetup({
           if (Date.now() - startedAt > SETUP_TIMEOUT_MS) break;
         }
       } catch (cause) {
-        bb.log.warn("watching setup terminal failed: " + cause);
+        alia.log.warn("watching setup terminal failed: " + cause);
       }
       let tail = "";
       try {
-        const output = await bb.sdk.terminals.output({
+        const output = await alia.sdk.terminals.output({
           terminalId: session.id,
           tailBytes: 4000,
         });
@@ -435,7 +435,7 @@ export function createSetup({
       // may be the very thing a failed check was waiting for.
       store.stale(path);
       forget(path);
-      bb.realtime.publish(CHANGED_CHANNEL, { path });
+      alia.realtime.publish(CHANGED_CHANNEL, { path });
     };
     void watchTerminal();
   }
@@ -455,11 +455,11 @@ export function createSetup({
    *   were changed by hand and fell behind, "claude:link" or
    *   "claude:rules" for a CLAUDE.md of its own; null otherwise.
    * @param anyway For "tracker": set up a folder that looks like someone
-   *   else's project as the owner's own (bead-bb-dof).
+   *   else's project as the owner's own (bead-alia-dof).
    * @returns `{ message: null }` once the step is done or its terminal is
    *   started; otherwise the reason in plain words.
    * Side effects: whatever the step does (see bend/internal/setup); for a
-   *   terminal step, a BB terminal.
+   *   terminal step, a VesnALIA terminal.
    */
   async function runSetup({
     threadId,
@@ -503,7 +503,7 @@ export function createSetup({
         forget(path);
         trackerChanged(path);
         store.stale(path);
-        bb.realtime.publish(CHANGED_CHANNEL, { path });
+        alia.realtime.publish(CHANGED_CHANNEL, { path });
       }
       return { message: null };
     };

@@ -482,7 +482,7 @@ export const COMPONENTS = {
     params: [{ name: "steps", kind: "list" }],
     summary: "{title, body, code?, language?} one step at a time",
   },
-  // Project: the first four read BB's own state for the reply's thread, so the
+  // Project: the first four read VesnALIA's own state for the reply's thread, so the
   // model writes no data at all; Tests and Json take Load() of a report.
   Changes: {
     group: "Project",
@@ -506,7 +506,7 @@ export const COMPONENTS = {
   Threads: {
     group: "Project",
     params: [{ name: "ids", kind: "list", optional: true }],
-    summary: "live status of BB threads; omit ids for this thread's subthreads",
+    summary: "live status of VesnALIA threads; omit ids for this thread's subthreads",
   },
   Tests: {
     group: "Project",
@@ -569,7 +569,7 @@ export const COMPONENTS = {
     params: [{ name: "items", kind: "any" }, { name: "unit", kind: "string", optional: true }],
     summary: "sizes [{path, size}] or a Load()ed du/esbuild report",
   },
-  // Manage: planning and tracking, plus BB's own environments.
+  // Manage: planning and tracking, plus VesnALIA's own environments.
   Board: {
     group: "Manage",
     params: [{ name: "items", kind: "any" }, { name: "columns", kind: "list", optional: true }],
@@ -609,7 +609,7 @@ export const COMPONENTS = {
     summary: "this project's worktrees: branch, threads, changes, PR",
   },
   // Evidence: what is actually proven, running, or heard, as opposed to what
-  // an agent says. Grounded in the user's own BB history (acceptance claims
+  // an agent says. Grounded in the user's own VesnALIA history (acceptance claims
   // without proof, visual parity disputes, wrong installed builds, speech).
   Acceptance: {
     group: "Evidence",

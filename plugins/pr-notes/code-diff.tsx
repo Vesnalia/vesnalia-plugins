@@ -5,7 +5,7 @@ import {
   experimental_Diff as Diff,
   UrlLink,
   type DiffViewMode,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type { DiffPage, PrRef } from "./github";
 import { Button } from "./components/ui/button";

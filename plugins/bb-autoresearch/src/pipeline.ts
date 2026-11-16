@@ -193,7 +193,7 @@ export async function withBench<T>(ctx: Ctx, study: StudyRow, hostId: string, ki
     } finally {
       ctx.store.closeBenchInterval(id);
       // Quiet bench: worker turns held while this measurement ran may start now.
-      if (kind !== "gate" && spec.oracle.quiet_bench && !ctx.disposed) ctx.bb.recheckDispatch().catch(() => undefined);
+      if (kind !== "gate" && spec.oracle.quiet_bench && !ctx.disposed) ctx.alia.recheckDispatch().catch(() => undefined);
     }
   });
 }
@@ -318,7 +318,7 @@ export class Pipeline {
   /** The edit host: snapshots, prepare, gates, promotion refs. */
   private runner(study: StudyRow): HostRunner {
     if (!study.host_id) throw new Error(`study ${study.slug} has no host`);
-    return this.ctx.bb.hostRunner(study.host_id);
+    return this.ctx.alia.hostRunner(study.host_id);
   }
 
   /** A study's bench host as a measuring site. */
@@ -478,7 +478,7 @@ export class Pipeline {
     try {
       this.launch();
     } catch (e) {
-      this.ctx.bb.log("error", `pipeline launch: ${errText(e)}`);
+      this.ctx.alia.log("error", `pipeline launch: ${errText(e)}`);
     }
   }
 
@@ -507,7 +507,7 @@ export class Pipeline {
         await fn();
       } catch (e) {
         // A disposed instance (plugin reload) stops quietly: the new one reconciles.
-        if (!this.ctx.disposed && !(e instanceof StoreClosedError)) this.ctx.bb.log("warn", `pipeline job ${key}: ${errText(e)}`);
+        if (!this.ctx.disposed && !(e instanceof StoreClosedError)) this.ctx.alia.log("warn", `pipeline job ${key}: ${errText(e)}`);
       } finally {
         this.jobs.delete(key);
         if (!this.ctx.disposed) this.kick();
@@ -656,7 +656,7 @@ export class Pipeline {
         if (this.ctx.disposed || e instanceof StoreClosedError) return;
         // Host errors: try again later rather than on every pass.
         this.backoff.set(key, this.ctx.now() + Math.max(this.ctx.config.retryDelayMs, 1000) * 5);
-        this.ctx.bb.log("warn", `automatic recalibration of ${study.slug}: ${errText(e)}`);
+        this.ctx.alia.log("warn", `automatic recalibration of ${study.slug}: ${errText(e)}`);
       }
     });
   }
@@ -729,7 +729,7 @@ export class Pipeline {
       this.ctx.store.updateCandidate(c.id, { attempts });
       this.backoff.set(`c:${c.id}`, this.ctx.now() + this.ctx.config.retryDelayMs * attempts);
       this.ctx.store.event(study.id, "pipeline.error", "plugin", { candidate: c.id, stage: fresh.stage, attempts, error: clip(errText(e), 500) });
-      this.ctx.bb.log("warn", `study ${study.slug} c/${c.n} ${fresh.stage} failed (attempt ${attempts}): ${errText(e)}`);
+      this.ctx.alia.log("warn", `study ${study.slug} c/${c.n} ${fresh.stage} failed (attempt ${attempts}): ${errText(e)}`);
       if (attempts >= MAX_ATTEMPTS) {
         await this.hooks.systemPause(study, `pipeline error on c/${c.n} (${fresh.stage}) after ${attempts} attempts: ${clip(errText(e), 300)}`);
       }
@@ -850,7 +850,7 @@ export class Pipeline {
 
   /** Live UI: the study page refetches on this signal. */
   private changed(studyId: string): void {
-    this.ctx.bb.publish("study-changed", { study: studyId });
+    this.ctx.alia.publish("study-changed", { study: studyId });
   }
 
   makeBench(runner: HostRunner, spec: StudySpec, dirs: Record<Side, string>, opts: { signal?: AbortSignal; label?: string } = {}): Bench {
@@ -1178,11 +1178,11 @@ export class Pipeline {
     }
   }
 
-  /** Ask BB whether a bench host is connected (cached); record transitions. */
+  /** Ask VesnALIA whether a bench host is connected (cached); record transitions. */
   async hostOffline(study: StudyRow, host: BenchHostRow): Promise<boolean> {
-    // Remote machines aren't BB machines: the fleet knows whether they are still there.
+    // Remote machines aren't VesnALIA machines: the fleet knows whether they are still there.
     if (host.mode === "remote") return this.remote?.status(host) !== "connected";
-    const status = await this.ctx.bb.hostStatus(host.host_id).catch(() => "unknown" as const);
+    const status = await this.ctx.alia.hostStatus(host.host_id).catch(() => "unknown" as const);
     this.noteHostStatus(study, host, status);
     return status === "disconnected";
   }
@@ -1261,7 +1261,7 @@ export class Pipeline {
       try {
         await this.runDrift(study.id, h.host_id);
       } catch (e) {
-        this.ctx.bb.log("warn", `drift check ${study.slug} on ${h.host_id}: ${errText(e)}`);
+        this.ctx.alia.log("warn", `drift check ${study.slug} on ${h.host_id}: ${errText(e)}`);
         // Try again after the host's retry delay rather than on every pass.
         this.ctx.store.updateBenchHost(study.id, h.host_id, { deferred_until: this.ctx.now() + spec.oracle.health.retry_seconds * 1000 });
       } finally {
@@ -1373,7 +1373,7 @@ export class Pipeline {
       this.requeue(c, "best moved before promotion");
       return;
     }
-    // The worker's message, verbatim, plus the plugin's trailers. Measurements live in the evidence (`bb study evidence`), not in the commit.
+    // The worker's message, verbatim, plus the plugin's trailers. Measurements live in the evidence (`alia study evidence`), not in the commit.
     const message = candidateCommitMessage(study.slug, c, c.idea_id ? store.idea(c.idea_id)?.title : null);
     const promoted = await runner.rewordCommit(study.repo_path!, c.prepared_sha!, message, gitId(await this.commitIdentity(study)));
     store.updateCandidate(c.id, { promoted_sha: promoted });
@@ -1425,7 +1425,7 @@ export class Pipeline {
     });
     const decided = store.candidate(c.id)!;
     this.hooks.onDecided(decided);
-    this.ctx.bb.publish("study-changed", { study: c.study_id });
+    this.ctx.alia.publish("study-changed", { study: c.study_id });
     return decided;
   }
 
@@ -1443,7 +1443,7 @@ export class Pipeline {
     const spec = store.spec(study);
     const left = spec.agents.max_submissions_per_worker - worker.submissions;
     try {
-      await this.ctx.bb.send(c.thread_id!, withNotice(worker.pending_notice, verdictMessage(c, { submissionsLeft: left, spec, guardrailPositions: bestGuardrailPositions(store, study, spec) })));
+      await this.ctx.alia.send(c.thread_id!, withNotice(worker.pending_notice, verdictMessage(c, { submissionsLeft: left, spec, guardrailPositions: bestGuardrailPositions(store, study, spec) })));
       store.tx(() => {
         store.updateCandidate(c.id, { reported_at: this.ctx.now() });
         store.updateThread(worker.id, { pending_notice: null });
@@ -1451,7 +1451,7 @@ export class Pipeline {
       });
     } catch (e) {
       this.backoff.set(`r:${c.id}`, this.ctx.now() + REPORT_RETRY_MS);
-      this.ctx.bb.log("warn", `could not deliver verdict for c/${c.n}: ${errText(e)}`);
+      this.ctx.alia.log("warn", `could not deliver verdict for c/${c.n}: ${errText(e)}`);
     }
   }
 

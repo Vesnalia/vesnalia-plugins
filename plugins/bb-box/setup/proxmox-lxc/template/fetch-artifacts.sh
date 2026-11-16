@@ -104,21 +104,21 @@ fetch() { # url sha256 file
   echo "fetched $name"
 }
 
-# Tools unpacked into /opt/bb-box-tools, those for the image's architecture.
+# Tools unpacked into /opt/alia-box-tools, those for the image's architecture.
 while IFS=$'\t' read -r url sha; do
   fetch "$url" "$sha" "${url##*/}"
 done < <(jq -er --arg arch "$arch" '.tools[] | select(.arch == $arch) | "\(.url)\t\(.sha256)"' "$here/pins.json")
 
-# BB's host daemon package, whatever build the server has now.
-if [ -n "$BBBOX_BB_URL" ]; then
+# ALIA's host daemon package, whatever build the server has now.
+if [ -n "$BBBOX_ALIA_URL" ]; then
   resolve=()
-  [ -z "$BBBOX_BB_RESOLVE" ] || resolve=(--resolve "$BBBOX_BB_RESOLVE")
-  curl -fsS "${download_limits[@]}" "${resolve[@]}" -D "$art/bb-app.headers.$$" -o "$art/bb-app.tgz.$$" "${BBBOX_BB_URL%/}/install/bb-app.tgz"
-  digest=$(sed -n 's/^x-bb-artifact-sha256: *\([a-f0-9]\{64\}\).*/\1/Ip' "$art/bb-app.headers.$$" | tr -d '\r' | tail -1)
-  echo "$digest  $art/bb-app.tgz.$$" | sha256sum -c --quiet - || die "bb-app.tgz does not match the server's digest"
-  mv "$art/bb-app.tgz.$$" "$art/bb-app.tgz"
-  mv "$art/bb-app.headers.$$" "$art/bb-app.headers"
-  echo "bb-app $digest"
+  [ -z "$BBBOX_ALIA_RESOLVE" ] || resolve=(--resolve "$BBBOX_ALIA_RESOLVE")
+  curl -fsS "${download_limits[@]}" "${resolve[@]}" -D "$art/alia-app.headers.$$" -o "$art/alia-app.tgz.$$" "${BBBOX_ALIA_URL%/}/install/alia-app.tgz"
+  digest=$(sed -n 's/^x-alia-artifact-sha256: *\([a-f0-9]\{64\}\).*/\1/Ip' "$art/alia-app.headers.$$" | tr -d '\r' | tail -1)
+  echo "$digest  $art/alia-app.tgz.$$" | sha256sum -c --quiet - || die "alia-app.tgz does not match the server's digest"
+  mv "$art/alia-app.tgz.$$" "$art/alia-app.tgz"
+  mv "$art/alia-app.headers.$$" "$art/alia-app.headers"
+  echo "alia-app $digest"
 fi
 
 nvidia_installer() {

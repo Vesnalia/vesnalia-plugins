@@ -1,6 +1,6 @@
 ## What you get
 
-Agents can navigate websites, inspect accessibility snapshots, click, type, and capture screenshots through native BB tools. A capability notice and browser skill explain when and how to use them.
+Agents can navigate websites, inspect accessibility snapshots, click, type, and capture screenshots through native VesnALIA tools. A capability notice and browser skill explain when and how to use them.
 
 ## Browser checks
 
@@ -12,4 +12,4 @@ Each session controls one browser tab for up to thirty minutes. Stop or Take ove
 
 ## Requirements and limits
 
-Requires BB 0.43 or later, a connected BB desktop browser, and an agent provider. Provider costs and website account requirements still apply. No separate browser automation server is required. Tested on macOS; other host operating systems are unverified. Popups, uploads, downloads, and multi-tab sessions are not supported.
+Requires VesnALIA 0.43 or later, a connected VesnALIA desktop browser, and an agent provider. Provider costs and website account requirements still apply. No separate browser automation server is required. Tested on macOS; other host operating systems are unverified. Popups, uploads, downloads, and multi-tab sessions are not supported.

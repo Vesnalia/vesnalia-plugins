@@ -1,10 +1,10 @@
 # Forage
 
-Forage 0.3.2 gives every BB agent six web-research tools, a Research tab in every thread and a zero-model-turn CLI. It requires BB 0.47 or newer and Plugin SDK 0.6.79.
+Forage 0.3.2 gives every VesnALIA agent six web-research tools, a Research tab in every thread and a zero-model-turn CLI. It requires VesnALIA 0.47 or newer and Plugin SDK 0.6.79.
 
 ## Screenshots
 
-Captured in an isolated demo bb researching a fictional docs site (Wattle Queue), in the default theme, light mode.
+Captured in an isolated demo VesnALIA researching a fictional docs site (Wattle Queue), in the default theme, light mode.
 
 ![Research Activity beside the thread](../../screenshots/forage/activity.jpg)
 
@@ -37,13 +37,13 @@ Every thread has a Research tab, kept on the id `sources` so tabs opened before 
 - Sources groups kept pages by how they arrived (read by the agent, from a crawl, saved by you) and lists sources shared with the project. Filters pick cited, changed or problem sources; a crawl folds into one row that expands to its pages.
 - The reader shows the kept text with line numbers, the lines a reply cited, an outline, find in page, versions and a section-by-section comparison. Select lines to quote them into your message with a citation the agent can reopen, copy a citation, or check other sources.
 - Crawls shows each job's pages, data and time against its limits, the latest pages and why one failed or was skipped, with Stop, Resume (with 20 more pages after a page limit) and a form to map or crawl a site yourself.
-- The search box searches the web, or reads a pasted link, in the thread with no model turn. The entry is labelled as yours; the agent sees what you find when you quote it. bb gives a plugin no way to prove that a call came from a person rather than an agent using the same RPC, so the label records where the call came from, not who made it.
+- The search box searches the web, or reads a pasted link, in the thread with no model turn. The entry is labelled as yours; the agent sees what you find when you quote it. VesnALIA gives a plugin no way to prove that a call came from a person rather than an agent using the same RPC, so the label records where the call came from, not who made it.
 
 Elsewhere in a thread:
 
 - Agents can cite a kept page in a reply with `::forage-cite{snapshot="<snapshotId>" lines="<from>-<to>"}` (or `find="<short phrase>"` instead of `lines`). The card shows the source, the lines and the quoted text, and opens the reader there. `::forage-sources` draws a one-line summary of the thread's sources. A source counts as cited when the reply that cites it finishes, and again when a card renders, once per range of lines.
 - Check in sources, in a message's action bar and text-selection menu, looks for the selected words in the thread's kept pages. It is a word match, not a model call, and it reports a passage that only an earlier version still contains.
-- A header chip, a segment above the composer and an Info section summarise the thread's research. Save to research in bb's Browser fetches Forage's own public copy of the page; the Browser's cookies and signed-in content are never used. Palette commands open the tab or its search box.
+- A header chip, a segment above the composer and an Info section summarise the thread's research. Save to research in VesnALIA's Browser fetches Forage's own public copy of the page; the Browser's cookies and signed-in content are never used. Palette commands open the tab or its search box.
 - Web research in the thread menu picks Use Forage settings, Docs first, Fresh results, Private or Off for that thread. Docs and Fresh change the default profile and Private applies the private ceiling. Off removes the web tools from the agent from its next session and refuses every web operation in the thread meanwhile, from tools, the CLI and the Research tab alike; checking and stopping crawls still works. Switching to Private or Off also stops running crawls the new policy would not allow. A thread can never widen the settings. Private is disabled until SearXNG is configured. The policy lives in thread metadata, which the thread's own agent can also write, so it is a narrowing the person chooses, not a lock against the agent.
 
 The Research page in the rail lists threads with research, running crawls first, with each thread's Activity and Sources side by side, sources shared with projects, and Health and storage: which providers and readers can run and why not, the policy in words, the last 24 hours from the diagnostics ring, storage by thread and Prune now. Its rail icon counts running crawls.
@@ -79,26 +79,26 @@ If a managed start is dispatched but its job-ID acknowledgement is lost, the dur
 Pass explicit SDK-validated scope IDs. Web operations require a thread; source operations can use project scope by omitting `--thread`. `--input` accepts the SAME strict JSON parameters as tools, including arrays and limits; `--input-stdin` avoids shell quoting. Profile/provider/reader/backend flags are also accepted and cannot conflict with JSON.
 
 ```sh
-bb forage search --project PROJECT --thread THREAD --input '{"queries":["API migration guide","API known issues"],"profile":"docs"}'
-bb forage fetch --project PROJECT --thread THREAD --input '{"url":"https://example.org/docs","resolve":"direct"}'
-bb forage map --project PROJECT --thread THREAD --input '{"url":"https://example.org","maxUrls":50}'
-bb forage extract --project PROJECT --thread THREAD --input '{"url":"https://example.org","fields":["headings","links"]}'
-bb forage diff --project PROJECT --thread THREAD --input '{"beforeSnapshotId":"BEFORE","afterSnapshotId":"AFTER"}'
-bb forage crawl start --project PROJECT --thread THREAD --input '{"url":"https://example.org","limits":{"maxPages":5}}'
-bb forage crawl status --project PROJECT --thread THREAD --input '{"jobId":"JOB"}'
-bb forage crawl list --project PROJECT --thread THREAD
-bb forage crawl cancel --project PROJECT --thread THREAD --input '{"jobId":"JOB"}'
-bb forage crawl resume --project PROJECT --thread THREAD --input '{"jobId":"JOB"}'
-bb forage sources list --project PROJECT --thread THREAD --input '{"limit":20}'
-bb forage sources show --project PROJECT --thread THREAD --input '{"sourceId":"SOURCE"}'
-bb forage sources export --project PROJECT --thread THREAD --input '{"sourceIds":["SOURCE"]}'
-bb forage sources delete --project PROJECT --thread THREAD --input '{"sourceId":"SOURCE"}' --confirm 'delete-source:thread:PROJECT:THREAD:SOURCE'
-bb forage sources prune --confirm 'prune-sources:all'
-bb forage status
-bb forage diagnostics
-bb forage clear
-bb forage doctor
-bb forage bench
+alia forage search --project PROJECT --thread THREAD --input '{"queries":["API migration guide","API known issues"],"profile":"docs"}'
+alia forage fetch --project PROJECT --thread THREAD --input '{"url":"https://example.org/docs","resolve":"direct"}'
+alia forage map --project PROJECT --thread THREAD --input '{"url":"https://example.org","maxUrls":50}'
+alia forage extract --project PROJECT --thread THREAD --input '{"url":"https://example.org","fields":["headings","links"]}'
+alia forage diff --project PROJECT --thread THREAD --input '{"beforeSnapshotId":"BEFORE","afterSnapshotId":"AFTER"}'
+alia forage crawl start --project PROJECT --thread THREAD --input '{"url":"https://example.org","limits":{"maxPages":5}}'
+alia forage crawl status --project PROJECT --thread THREAD --input '{"jobId":"JOB"}'
+alia forage crawl list --project PROJECT --thread THREAD
+alia forage crawl cancel --project PROJECT --thread THREAD --input '{"jobId":"JOB"}'
+alia forage crawl resume --project PROJECT --thread THREAD --input '{"jobId":"JOB"}'
+alia forage sources list --project PROJECT --thread THREAD --input '{"limit":20}'
+alia forage sources show --project PROJECT --thread THREAD --input '{"sourceId":"SOURCE"}'
+alia forage sources export --project PROJECT --thread THREAD --input '{"sourceIds":["SOURCE"]}'
+alia forage sources delete --project PROJECT --thread THREAD --input '{"sourceId":"SOURCE"}' --confirm 'delete-source:thread:PROJECT:THREAD:SOURCE'
+alia forage sources prune --confirm 'prune-sources:all'
+alia forage status
+alia forage diagnostics
+alia forage clear
+alia forage doctor
+alia forage bench
 ```
 
 Scope deletion needs `delete-scope:<scopeKey>`; a source deletion needs `delete-source:<scopeKey>:<sourceId>`. Global prune requires the exact `prune-sources:all` token. Clear empties process caches, not saved evidence. Export returns an authenticated streamed NDJSON HTTP route, not giant stdout or a server file path. Export is bounded to 32 MiB, 1,000 records, 30 seconds and two concurrent downloads.
@@ -113,4 +113,4 @@ Diagnostics retain at most 200 records for 24 hours, in memory only: operation, 
 
 `npm test`, `npm run typecheck` and `npm run build` run in the plugin directory. Root `npm run build` regenerates marketplace metadata; the marketplace release range intentionally does not opt into prereleases. The SDK fake host exercises native registration, validation, context, cancellation and compiled CLI. It does not prove that an LLM chose a tool.
 
-`scripts/fixture-check.sh` requires an OS egress sandbox profile. `scripts/smoke-isolated.sh` and `scripts/smoke-keyless.sh` require an explicitly supplied, already-isolated corrected harness run and never install, reload or launch the active BB profile. Do not run live acceptance against a normal profile. The corrected harness must verify server/host identity, suppress credential-aware helper executables, retain active-plugin before/after evidence and clean up all owned descendants. Credentialed-provider live checks are not part of keyless acceptance.
+`scripts/fixture-check.sh` requires an OS egress sandbox profile. `scripts/smoke-isolated.sh` and `scripts/smoke-keyless.sh` require an explicitly supplied, already-isolated corrected harness run and never install, reload or launch the active VesnALIA profile. Do not run live acceptance against a normal profile. The corrected harness must verify server/host identity, suppress credential-aware helper executables, retain active-plugin before/after evidence and clean up all owned descendants. Credentialed-provider live checks are not part of keyless acceptance.

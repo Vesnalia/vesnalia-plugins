@@ -5,7 +5,7 @@ interface SwitchProps {
   onCheckedChange: (checked: boolean) => void;
 }
 
-/** Accessible on/off toggle that mirrors the BB settings switch styling. */
+/** Accessible on/off toggle that mirrors the VesnALIA settings switch styling. */
 export function Switch({ checked, onCheckedChange }: SwitchProps): ReactElement {
   return (
     <button

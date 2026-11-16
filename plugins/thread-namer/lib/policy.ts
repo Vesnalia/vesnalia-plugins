@@ -1,6 +1,6 @@
 /**
  * When a thread may be renamed. Pure so the rules can be read — and tested —
- * without a bb server.
+ * without a VesnALIA server.
  */
 
 /** What the plugin remembers about a name it wrote itself. */

@@ -1,15 +1,15 @@
-// bb-plugin-pulse — panel frontend. Compiled by `bb plugin build`.
+// alia-plugin-pulse — panel frontend. Compiled by `alia plugin build`.
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   definePluginApp,
   experimental_Icon as Icon,
   UrlLink,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
   experimental_copyToClipboard,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type { Automation, ItemAction, MissedRun, PulseHistoryEntry, PulseItem, PulseRun, PulseSnapshot, QuickAction, Source } from "./types";
 import { horizonOf, horizonReason, type Horizon } from "./lib/horizon";
@@ -122,7 +122,7 @@ async function fetchNow() {
   }
 }
 
-/** bb's realtime connection state; "connected" where the runtime predates the hook (and in the demo). */
+/** VesnALIA's realtime connection state; "connected" where the runtime predates the hook (and in the demo). */
 const useConnection: () => string = typeof useRealtimeConnectionState === "function" ? useRealtimeConnectionState : () => "connected";
 
 function usePulse() {
@@ -457,7 +457,7 @@ function latestRun(snapshot: PulseSnapshot): PulseRun | undefined {
 /** "Daily run had 2 errors · 17h ago", "Hourly run failed 2h ago: …", for the title bar and Run Log. */
 function problemText(p: RunProblem): string {
   switch (p.kind) {
-    case "schedule": return `${p.label} schedule was refused by bb: ${p.error}`;
+    case "schedule": return `${p.label} schedule was refused by VesnALIA: ${p.error}`;
     case "failed": return `${p.label} run failed ${ago(p.at)}: ${p.error}${p.retryAt ? ` · retry ${when(p.retryAt)?.text ?? "soon"}` : ""}`;
     case "overdue": return `${p.label} run sent ${ago(p.at)} hasn't logged yet`;
     case "errors": return `${p.label} run had ${p.count} error${p.count > 1 ? "s" : ""} · ${ago(p.at)}`;
@@ -466,7 +466,7 @@ function problemText(p: RunProblem): string {
 
 /** The run menu line under each schedule: health first, then timing. */
 function automationNote(a: Automation, r: PulseRun | undefined): { text: string; tone?: "warn" | "fail" } {
-  if (a.scheduleError) return { text: `schedule refused by bb: ${a.scheduleError}`, tone: "fail" };
+  if (a.scheduleError) return { text: `schedule refused by VesnALIA: ${a.scheduleError}`, tone: "fail" };
   if (a.pendingReload) return a.pendingError ? { text: `new schedule is not valid: ${a.pendingError}`, tone: "fail" } : { text: "reload the plugin to apply the new schedule" };
   if (a.failure) return { text: `last run failed ${ago(a.failure.at)}: ${a.failure.error}`, tone: "fail" };
   if (a.overdue) return { text: `sent ${ago(a.lastDispatchAt)}, no log yet`, tone: "warn" };
@@ -542,7 +542,7 @@ function CaptureControl({ snapshot, capturing, runError, onCapture, onRun, onTog
   );
 }
 
-// ---- Title-bar popovers (rendered by bb in the navPanel title bar via headerContent) ----
+// ---- Title-bar popovers (rendered by VesnALIA in the navPanel title bar via headerContent) ----
 
 const CLOSED_STATUSES = new Set(["resolved", "done", "dismissed"]);
 const CLOSED_LABEL: Record<string, string> = { done: "Done", dismissed: "Dismissed", resolved: "Resolved" };
@@ -821,10 +821,10 @@ function useItems(snapshot: PulseSnapshot | null, overlay: Record<string, Partia
   return useMemo(() => withOverlay(snapshot?.items ?? [], overlay).map((i) => effectiveItem(i)), [snapshot, overlay, now]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
-/** Rendered by bb on the right of the title bar (navPanel headerContent): capture status and Run now. */
+/** Rendered by VesnALIA on the right of the title bar (navPanel headerContent): capture status and Run now. */
 function PulseHeader() {
   const { rpc, snapshot, overlay, mutate, call } = usePulse();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [capturingSince, setCapturingSince] = useState<string | null>(null);
   const [runError, setRunError] = useState("");
   const items = useItems(snapshot, overlay);
@@ -898,7 +898,7 @@ const SHORTCUTS: [string, string][] = [
 
 function PulsePage() {
   const { rpc, snapshot, overlay, error, setError, setOverlay, mutate, call, retry } = usePulse();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [filter, setFilter] = useState<"all" | Source>("all");
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -1095,13 +1095,13 @@ function PulsePage() {
           </div>
         ) : snapshot?.projectSetLive ? (
           <div className="pulse-setup" role="status">
-            Project set: runs work now. <b>bb plugin list</b> keeps showing "needs configuration" until the next <code className="pulse-code">bb plugin reload pulse</code>.
+            Project set: runs work now. <b>alia plugin list</b> keeps showing "needs configuration" until the next <code className="pulse-code">alia plugin reload pulse</code>.
           </div>
         ) : null}
 
         {snapshot?.homePending ? (
           <div className="pulse-setup" role="status">
-            The store directory setting changed. Pulse keeps using {snapshot.home} until you run <code className="pulse-code">bb plugin reload pulse</code>.
+            The store directory setting changed. Pulse keeps using {snapshot.home} until you run <code className="pulse-code">alia plugin reload pulse</code>.
           </div>
         ) : null}
 
@@ -1151,7 +1151,7 @@ function PulsePage() {
   );
 }
 
-// Lucide "sparkles", "bot", "check-check", "triangle-alert" and "ellipsis-vertical" (ISC); bb's built-in set lacks them.
+// Lucide "sparkles", "bot", "check-check", "triangle-alert" and "ellipsis-vertical" (ISC); VesnALIA's built-in set lacks them.
 const svgIcon = (paths: string[]) => ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     {paths.map((d) => <path key={d} d={d} />)}

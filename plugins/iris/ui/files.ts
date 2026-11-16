@@ -1,6 +1,6 @@
 // Reading the thread's files from the frontend, through the plugin's server.
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { RpcContract } from "../shared/rpc";
 import { DEMO_THREAD } from "./demo";
 import { useEnv } from "./env";
@@ -50,7 +50,7 @@ export function resolveImage(src: string, threadId: string | null, rpc: Pick<Ret
       (r): ImageState => (r.ok ? { status: "ok", url: r.dataUrl } : { status: "error", error: r.error, ...(r.final ? { final: true } : {}) }),
       (e: unknown): ImageState => ({ status: "error", error: e instanceof Error ? e.message : String(e) }),
     );
-    // Only a shown image is remembered. A failed read (bb busy, the file not written yet) is
+    // Only a shown image is remembered. A failed read (VesnALIA busy, the file not written yet) is
     // forgotten after a moment, so the next ask reads again instead of showing the failure for good,
     // while a block that is still streaming doesn't ask on every chunk.
     p = read.then((done) => {
@@ -96,7 +96,7 @@ export function useLoadedImages(srcs: string[]): ImageState[] {
       const next = cur.key === key ? now.map((x, k) => (x.status === "loading" && cur.list[k] && cur.list[k].status !== "loading" ? cur.list[k] : x)) : now;
       return cur.key === key && cur.list.length === next.length && cur.list.every((x, k) => sameImage(x, next[k])) ? cur : { key, list: next };
     });
-    // The first failed read that can change (bb busy, the file not written yet) schedules one more round.
+    // The first failed read that can change (VesnALIA busy, the file not written yet) schedules one more round.
     const retry = () => {
       if (!live || timer !== undefined) return;
       timer = setTimeout(() => live && setAttempt({ key, n: n + 1 }), IMAGE_RETRY_MS[Math.min(n, IMAGE_RETRY_MS.length - 1)]);

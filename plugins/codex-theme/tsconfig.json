@@ -10,5 +10,5 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["server.ts", "app.tsx", "options.ts", "bb-logo.ts", "*.test.ts", "*.test.tsx"]
+  "include": ["server.ts", "app.tsx", "options.ts", "alia-logo.ts", "*.test.ts", "*.test.tsx"]
 }

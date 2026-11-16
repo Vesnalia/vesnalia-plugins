@@ -4,7 +4,7 @@ import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSy
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { afterAll, afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { lstatSync, statSync } from "node:fs";
@@ -20,8 +20,8 @@ import { SELF_ID } from "./stages";
 type Thread = Record<string, unknown>;
 type Fn = (...a: never[]) => Promise<unknown>;
 
-/** A minimal bb: only what the ports under test touch. `sdk` adds and overrides SDK calls. */
-function fakeBb(over: { get?: (a: { threadId: string }) => Promise<Thread>; archive?: (a: { threadId: string }) => Promise<unknown>; status?: () => Promise<unknown>; sdk?: Record<string, Record<string, Fn>> }) {
+/** A minimal VesnALIA: only what the ports under test touch. `sdk` adds and overrides SDK calls. */
+function fakeAlia(over: { get?: (a: { threadId: string }) => Promise<Thread>; archive?: (a: { threadId: string }) => Promise<unknown>; status?: () => Promise<unknown>; sdk?: Record<string, Record<string, Fn>> }) {
   const warn = vi.fn();
   const get = vi.fn(over.get ?? (async () => ({ status: "idle" })));
   const archive = vi.fn(over.archive ?? (async () => ({ ok: true })));
@@ -32,67 +32,67 @@ function fakeBb(over: { get?: (a: { threadId: string }) => Promise<Thread>; arch
     files: { ...over.sdk?.files },
     system: { ...over.sdk?.system },
   };
-  const bb = { log: { warn }, sdk } as unknown as BbPluginApi;
-  return { ports: sdkPorts(bb, () => undefined), get, archive, warn };
+  const alia = { log: { warn }, sdk } as unknown as AliaPluginApi;
+  return { ports: sdkPorts(alia, () => undefined), get, archive, warn };
 }
 const notFound = () => new Error("HTTP 404: Thread not found");
 
 describe("sdkPorts.status", () => {
   it("returns the thread status, flat or wrapped", async () => {
-    expect(await fakeBb({ get: async () => ({ status: "active" }) }).ports.status("t")).toBe("active");
-    expect(await fakeBb({ get: async () => ({ thread: { status: "error" } }) }).ports.status("t")).toBe("error");
+    expect(await fakeAlia({ get: async () => ({ status: "active" }) }).ports.status("t")).toBe("active");
+    expect(await fakeAlia({ get: async () => ({ thread: { status: "error" } }) }).ports.status("t")).toBe("error");
   });
   it("is unknown only when the thread does not exist", async () => {
-    expect(await fakeBb({ get: async () => Promise.reject(notFound()) }).ports.status("t")).toBe("unknown");
-    expect(await fakeBb({ get: async () => ({ status: "idle", deletedAt: 1 }) }).ports.status("t")).toBe("unknown");
+    expect(await fakeAlia({ get: async () => Promise.reject(notFound()) }).ports.status("t")).toBe("unknown");
+    expect(await fakeAlia({ get: async () => ({ status: "idle", deletedAt: 1 }) }).ports.status("t")).toBe("unknown");
   });
   it("throws on any other failure or a response without a known status", async () => {
-    await expect(fakeBb({ get: async () => Promise.reject(new Error("HTTP 500: boom")) }).ports.status("t")).rejects.toThrow("boom");
-    await expect(fakeBb({ get: async () => ({}) }).ports.status("t")).rejects.toThrow(/status/);
-    await expect(fakeBb({ get: async () => ({ status: "weird" }) }).ports.status("t")).rejects.toThrow(/status/);
+    await expect(fakeAlia({ get: async () => Promise.reject(new Error("HTTP 500: boom")) }).ports.status("t")).rejects.toThrow("boom");
+    await expect(fakeAlia({ get: async () => ({}) }).ports.status("t")).rejects.toThrow(/status/);
+    await expect(fakeAlia({ get: async () => ({ status: "weird" }) }).ports.status("t")).rejects.toThrow(/status/);
   });
 });
 
 describe("sdkPorts.archive", () => {
   it("archives a live thread", async () => {
-    const b = fakeBb({});
+    const b = fakeAlia({});
     await b.ports.archive("t");
     expect(b.archive).toHaveBeenCalledWith({ threadId: "t" });
   });
   it("does not fail on an already archived or already deleted thread, whatever the error says", async () => {
-    await expect(fakeBb({ archive: async () => Promise.reject(new Error("conflict")), get: async () => ({ status: "idle", archivedAt: 5 }) }).ports.archive("t")).resolves.toBeUndefined();
-    await expect(fakeBb({ archive: async () => Promise.reject(new Error("conflict")), get: async () => Promise.reject(notFound()) }).ports.archive("t")).resolves.toBeUndefined();
+    await expect(fakeAlia({ archive: async () => Promise.reject(new Error("conflict")), get: async () => ({ status: "idle", archivedAt: 5 }) }).ports.archive("t")).resolves.toBeUndefined();
+    await expect(fakeAlia({ archive: async () => Promise.reject(new Error("conflict")), get: async () => Promise.reject(notFound()) }).ports.archive("t")).resolves.toBeUndefined();
   });
   it("still fails when the thread is live and archive really failed", async () => {
-    await expect(fakeBb({ archive: async () => Promise.reject(new Error("HTTP 500: boom")), get: async () => ({ status: "idle", archivedAt: null, deletedAt: null }) }).ports.archive("t")).rejects.toThrow("boom");
-    await expect(fakeBb({ archive: async () => Promise.reject(new Error("HTTP 500: boom")), get: async () => Promise.reject(new Error("HTTP 503: down")) }).ports.archive("t")).rejects.toThrow("boom");
+    await expect(fakeAlia({ archive: async () => Promise.reject(new Error("HTTP 500: boom")), get: async () => ({ status: "idle", archivedAt: null, deletedAt: null }) }).ports.archive("t")).rejects.toThrow("boom");
+    await expect(fakeAlia({ archive: async () => Promise.reject(new Error("HTTP 500: boom")), get: async () => Promise.reject(new Error("HTTP 503: down")) }).ports.archive("t")).rejects.toThrow("boom");
   });
 });
 
 describe("sdkPorts.head", () => {
   it("maps an unreachable machine to MachineUnavailable and logs the raw error", async () => {
-    const b = fakeBb({ status: async () => Promise.reject(new Error("host is offline")) });
+    const b = fakeAlia({ status: async () => Promise.reject(new Error("host is offline")) });
     await expect(b.ports.head("env")).rejects.toBeInstanceOf(MachineUnavailable);
     expect(b.warn).toHaveBeenCalled();
   });
   it("a removed worktree is WorktreeGone, not a machine problem", async () => {
     const st = (code: string) => async () => ({ outcome: "unavailable", failure: { code, message: "gone", workspacePath: "/w" } });
-    await expect(fakeBb({ status: st("path_not_found") }).ports.head("env")).rejects.toBeInstanceOf(WorktreeGone);
-    await expect(fakeBb({ status: st("unknown_environment") }).ports.head("env")).rejects.toThrow("worktree unavailable (unknown_environment): gone");
-    await expect(fakeBb({ status: st("unknown_environment") }).ports.head("env")).rejects.toBeInstanceOf(WorktreeGone);
-    await expect(fakeBb({ status: st("permission_denied") }).ports.head("env")).rejects.toBeInstanceOf(MachineUnavailable);
-    const other = await fakeBb({ status: st("not_git_repo") }).ports.head("env").catch((e: unknown) => e);
+    await expect(fakeAlia({ status: st("path_not_found") }).ports.head("env")).rejects.toBeInstanceOf(WorktreeGone);
+    await expect(fakeAlia({ status: st("unknown_environment") }).ports.head("env")).rejects.toThrow("worktree unavailable (unknown_environment): gone");
+    await expect(fakeAlia({ status: st("unknown_environment") }).ports.head("env")).rejects.toBeInstanceOf(WorktreeGone);
+    await expect(fakeAlia({ status: st("permission_denied") }).ports.head("env")).rejects.toBeInstanceOf(MachineUnavailable);
+    const other = await fakeAlia({ status: st("not_git_repo") }).ports.head("env").catch((e: unknown) => e);
     expect(other).toBeInstanceOf(Error);
     expect(other).not.toBeInstanceOf(WorktreeGone);
   });
   it("«Environment unavailable» is WorktreeGone once the environment is destroyed, not while it is still being created", async () => {
     const unavailable = async () => Promise.reject(new Error("HTTP 409: Environment unavailable"));
     const env = (status: string) => ({ environments: { get: async () => ({ hostId: "h", path: "/w", status }) } });
-    await expect(fakeBb({ status: unavailable, sdk: env("destroyed") }).ports.head("env")).rejects.toBeInstanceOf(WorktreeGone);
-    const creating = await fakeBb({ status: unavailable, sdk: env("provisioning") }).ports.head("env").catch((e: unknown) => e);
+    await expect(fakeAlia({ status: unavailable, sdk: env("destroyed") }).ports.head("env")).rejects.toBeInstanceOf(WorktreeGone);
+    const creating = await fakeAlia({ status: unavailable, sdk: env("provisioning") }).ports.head("env").catch((e: unknown) => e);
     expect(creating).not.toBeInstanceOf(WorktreeGone);
     expect(String(creating)).toMatch(/still being created/);
-    await expect(fakeBb({ status: async () => Promise.reject(new Error("unknown environment env")) }).ports.head("env")).rejects.toBeInstanceOf(WorktreeGone);
+    await expect(fakeAlia({ status: async () => Promise.reject(new Error("unknown environment env")) }).ports.head("env")).rejects.toBeInstanceOf(WorktreeGone);
   });
 });
 
@@ -104,25 +104,25 @@ describe("sdkPorts.findThread", () => {
   it("finds a matching thread on a later page even when earlier pages hold only old threads (order follows activity, not creation)", async () => {
     const list = listOf([old(0), [{ id: "wanted", createdAt: since + 5 }, { id: "other", createdAt: since + 6 }]]);
     const getPluginMetadata = vi.fn(async (a: { threadId: string }) => (a.threadId === "wanted" ? { opKey: "k1" } : { opKey: "zzz" }));
-    const b = fakeBb({ sdk: { threads: { list, getPluginMetadata } as unknown as Record<string, Fn> } });
+    const b = fakeAlia({ sdk: { threads: { list, getPluginMetadata } as unknown as Record<string, Fn> } });
     expect(await b.ports.findThread("p", "k1", since)).toBe("wanted");
     expect(list).toHaveBeenCalledTimes(2);
   });
   it("returns null when the last (short) page is reached without a match", async () => {
     const list = listOf([old(0), old(1).slice(0, 7)]);
-    const b = fakeBb({ sdk: { threads: { list, getPluginMetadata: async () => ({}) } as unknown as Record<string, Fn> } });
+    const b = fakeAlia({ sdk: { threads: { list, getPluginMetadata: async () => ({}) } as unknown as Record<string, Fn> } });
     expect(await b.ports.findThread("p", "k1", since)).toBeNull();
   });
   it("cannot confirm absence when the project has more plugin threads than it can page through — rejects, does not return null", async () => {
     const list = vi.fn(async () => old(0));
-    const b = fakeBb({ sdk: { threads: { list, getPluginMetadata: async () => ({}) } as unknown as Record<string, Fn> } });
+    const b = fakeAlia({ sdk: { threads: { list, getPluginMetadata: async () => ({}) } as unknown as Record<string, Fn> } });
     await expect(b.ports.findThread("p", "k1", since)).rejects.toThrow(/more than 500 plugin threads/);
   });
 });
 
 describe("sdkPorts host file calls", () => {
   const withFiles = (read: () => Promise<unknown>) =>
-    fakeBb({ sdk: { environments: { get: async () => ({ hostId: "h", path: "/w" }) }, files: { read } } });
+    fakeAlia({ sdk: { environments: { get: async () => ({ hostId: "h", path: "/w" }) }, files: { read } } });
   it("read() returns null for a missing path", async () => {
     const b = withFiles(async () => Promise.reject(new Error("HTTP 404: Path does not exist: /w/x.md")));
     expect(await b.ports.read("env", "x.md")).toBeNull();
@@ -132,8 +132,8 @@ describe("sdkPorts host file calls", () => {
     await expect(b.ports.read("env", "x.md")).rejects.toThrow("Host not found");
     expect(b.warn).toHaveBeenCalled();
   });
-  it("an environment bb no longer knows is WorktreeGone", async () => {
-    const b = fakeBb({ sdk: { environments: { get: async () => Promise.reject(new Error("HTTP 404: Environment not found")) } } });
+  it("an environment VesnALIA no longer knows is WorktreeGone", async () => {
+    const b = fakeAlia({ sdk: { environments: { get: async () => Promise.reject(new Error("HTTP 404: Environment not found")) } } });
     await expect(b.ports.read("env", "x.md")).rejects.toBeInstanceOf(WorktreeGone);
     await expect(b.ports.list("env", "x")).rejects.toBeInstanceOf(WorktreeGone);
   });
@@ -141,33 +141,33 @@ describe("sdkPorts host file calls", () => {
     const b = withFiles(async () => Promise.reject(new Error("HTTP 502: Host is not connected")));
     await expect(b.ports.read("env", "x.md")).rejects.toBeInstanceOf(MachineUnavailable);
   });
-  it("worktreeDir is the path of the environment; an environment bb no longer knows is WorktreeGone", async () => {
+  it("worktreeDir is the path of the environment; an environment VesnALIA no longer knows is WorktreeGone", async () => {
     expect(await withFiles(async () => ({})).ports.worktreeDir("env")).toBe("/w");
-    const gone = fakeBb({ sdk: { environments: { get: async () => Promise.reject(new Error("HTTP 404: Environment not found")) } } });
+    const gone = fakeAlia({ sdk: { environments: { get: async () => Promise.reject(new Error("HTTP 404: Environment not found")) } } });
     await expect(gone.ports.worktreeDir("env")).rejects.toBeInstanceOf(WorktreeGone);
   });
   it("worktreeDir checks the worktree on every call: a path cached before the worktree was removed is not handed out", async () => {
     const available = { outcome: "available", workspace: { checkout: { kind: "branch", headSha: "h1" }, workingTree: { hasUncommittedChanges: false } } };
     let st: unknown = available;
     const get = vi.fn(async () => ({ hostId: "h", path: "/w" }));
-    const b = fakeBb({ status: async () => st, sdk: { environments: { get } } });
+    const b = fakeAlia({ status: async () => st, sdk: { environments: { get } } });
     expect(await b.ports.worktreeDir("env")).toBe("/w");
     st = { outcome: "unavailable", failure: { code: "path_not_found", message: "gone", workspacePath: "/w" } };
     await expect(b.ports.worktreeDir("env")).rejects.toBeInstanceOf(WorktreeGone);
     expect(get).toHaveBeenCalledTimes(1);
-    const offline = fakeBb({ status: async () => Promise.reject(new Error("HTTP 502: Host is not connected")), sdk: { environments: { get } } });
+    const offline = fakeAlia({ status: async () => Promise.reject(new Error("HTTP 502: Host is not connected")), sdk: { environments: { get } } });
     await expect(offline.ports.worktreeDir("env")).rejects.toBeInstanceOf(MachineUnavailable);
   });
 });
 
 describe("sdkPorts snapshot confinement", () => {
-  function snapshotBb() {
+  function snapshotAlia() {
     const dataDir = tmp("snap");
     const works = join(dataDir, "plugins", SELF_ID, "works");
     mkdirSync(join(works, "w1", "snap1"), { recursive: true });
     writeFileSync(join(works, "secret.txt"), "outside");
     writeFileSync(join(works, "w1", "snap1", "ok.md"), "inside");
-    const b = fakeBb({
+    const b = fakeAlia({
       sdk: {
         system: { config: async () => ({ dataDir }) },
         environments: { get: async () => ({ hostId: "h", path: "/w" }) },
@@ -177,16 +177,16 @@ describe("sdkPorts snapshot confinement", () => {
     return { ...b, dataDir, works };
   }
   it("readSaved reads inside the snapshot and refuses a path that climbs out of it", async () => {
-    const { ports } = snapshotBb();
+    const { ports } = snapshotAlia();
     expect((await ports.readSaved("w1", "ok.md"))?.content).toBe("inside");
     await expect(ports.readSaved("w1", "../../secret.txt")).rejects.toThrow(/outside the work snapshots/);
   });
   it("listSaved refuses a directory that climbs out of the snapshot", async () => {
-    const { ports } = snapshotBb();
+    const { ports } = snapshotAlia();
     await expect(ports.listSaved("w1", "../..")).rejects.toThrow(/outside the work snapshots/);
   });
   it("saveArtifacts refuses a path that climbs out and writes nothing outside", async () => {
-    const { ports, works } = snapshotBb();
+    const { ports, works } = snapshotAlia();
     await expect(ports.saveArtifacts("w1", "env", { dirs: [], files: ["../../planted.txt"], mustExist: [] }, "snap2")).rejects.toThrow(/outside the work snapshots/);
     expect(existsSync(join(works, "planted.txt"))).toBe(false);
     expect(readFileSync(join(works, "secret.txt"), "utf8")).toBe("outside");
@@ -195,7 +195,7 @@ describe("sdkPorts snapshot confinement", () => {
 
 describe("sdkPorts.sleep", () => {
   it("waits, and returns at once and without an error when its signal is aborted", async () => {
-    const p = fakeBb({}).ports;
+    const p = fakeAlia({}).ports;
     let t = Date.now();
     await p.sleep(50);
     expect(Date.now() - t).toBeGreaterThanOrEqual(45);
@@ -211,14 +211,14 @@ describe("sdkPorts.sleep", () => {
 describe("sdkPorts.tasks.comment", () => {
   it("signs comments as «Plugin Workshop» — the tracker would show the author as «You»", async () => {
     const callRpc = vi.fn(async () => ({}));
-    const b = fakeBb({ sdk: { plugins: { callRpc } as unknown as Record<string, Fn> } });
+    const b = fakeAlia({ sdk: { plugins: { callRpc } as unknown as Record<string, Fn> } });
     await b.ports.tasks.comment("task_1", "Work started.");
     expect(callRpc).toHaveBeenCalledWith(expect.objectContaining({ pluginId: "tasks", method: "createComment", input: { taskId: "task_1", body: "Plugin Workshop: Work started.", notify: false } }));
   });
   it("redacts token-shaped text in comments and in a new task's title and description", async () => {
     const task = { id: "t1", key: "TEST-1", projectId: "tp", title: "x", status: "todo" };
     const callRpc = vi.fn(async () => ({ ok: true, task }));
-    const b = fakeBb({ sdk: { plugins: { callRpc } as unknown as Record<string, Fn> } });
+    const b = fakeAlia({ sdk: { plugins: { callRpc } as unknown as Record<string, Fn> } });
     await b.ports.tasks.comment("task_1", `Autopilot report: used ${OPENAI_KEY}`);
     await b.ports.tasks.create({ tasksProjectId: "tp", title: `fix ${GITHUB_TOKEN}`, description: `request with ${JWT}\n\n[workshop:w1]` });
     const sent = JSON.stringify(callRpc.mock.calls);
@@ -226,9 +226,9 @@ describe("sdkPorts.tasks.comment", () => {
     expect(sent).toContain("used [redacted:sk-]");
     expect(sent).toContain("[workshop:w1]");
   });
-  it("the plugin log gets redacted text: an unexpected bb answer is quoted without the token in it", async () => {
+  it("the plugin log gets redacted text: an unexpected VesnALIA answer is quoted without the token in it", async () => {
     const warn = vi.fn();
-    const p = sdkPorts({ log: { warn }, sdk: { plugins: { list: async () => ({ plugins: [{ id: "x", status: OPENAI_KEY, enabled: true, source: "path:/x" }] }) } } } as unknown as BbPluginApi, () => undefined);
+    const p = sdkPorts({ log: { warn }, sdk: { plugins: { list: async () => ({ plugins: [{ id: "x", status: OPENAI_KEY, enabled: true, source: "path:/x" }] }) } } } as unknown as AliaPluginApi, () => undefined);
     await expect(p.plugins.list()).rejects.toThrow();
     expect(warn).toHaveBeenCalled();
     expect(JSON.stringify(warn.mock.calls)).not.toContain(OPENAI_KEY);
@@ -250,13 +250,13 @@ afterAll(() => {
   for (const d of made.splice(0)) rmSync(d, { recursive: true, force: true });
 });
 const text = (dir: string, rel: string) => readFileSync(join(dir, rel), "utf8");
-/** Ports without bb: git, the lock and the file system never call bb. */
+/** Ports without VesnALIA: git, the lock and the file system never call VesnALIA. */
 function localPorts(opts: Parameters<typeof sdkPorts>[2] = {}) {
-  return sdkPorts({ log: { warn: () => undefined }, sdk: {} } as unknown as BbPluginApi, () => undefined, opts);
+  return sdkPorts({ log: { warn: () => undefined }, sdk: {} } as unknown as AliaPluginApi, () => undefined, opts);
 }
-/** Ports on a fake bb: only the given SDK areas. */
-function sdkBb(sdk: Record<string, unknown>, opts: Parameters<typeof sdkPorts>[2] = {}) {
-  return sdkPorts({ log: { warn: vi.fn() }, sdk } as unknown as BbPluginApi, () => undefined, opts);
+/** Ports on a fake VesnALIA: only the given SDK areas. */
+function sdkAlia(sdk: Record<string, unknown>, opts: Parameters<typeof sdkPorts>[2] = {}) {
+  return sdkPorts({ log: { warn: vi.fn() }, sdk } as unknown as AliaPluginApi, () => undefined, opts);
 }
 async function until(check: () => boolean | Promise<boolean>, ms = 4000, what = "condition"): Promise<number> {
   const start = Date.now();
@@ -533,7 +533,7 @@ describe("sdkPorts.git (real git)", () => {
     expect(await Promise.all(blobs.map((b) => stored(dir, b)))).toEqual([false, false]);
     // Linked worktree: HEAD is read from the shared store, and nothing new is written there.
     const wt = join(tmp("wt"), "work");
-    await git(dir, "worktree", "add", "-q", "-b", "bb/TEST-8", wt);
+    await git(dir, "worktree", "add", "-q", "-b", "alia/TEST-8", wt);
     put(wt, "wt-secret.ts", `export const t = "${randomUUID()}";\n`);
     const wtBlob = (await git(wt, "hash-object", "wt-secret.ts")).trim();
     expect(await p.git.changedFiles(wt, [])).toEqual(["wt-secret.ts"]);
@@ -581,7 +581,7 @@ describe("sdkPorts.git (real git)", () => {
     const p = localPorts();
     const { dir: plugin } = await repo();
     const wt = join(tmp("wt"), "work");
-    await git(plugin, "worktree", "add", "-q", "-b", "bb/TEST-4", wt);
+    await git(plugin, "worktree", "add", "-q", "-b", "alia/TEST-4", wt);
     put(wt, "src/new.ts");
     put(wt, "node_modules/x/i.js");
     const before = await git(wt, "status", "--porcelain");
@@ -695,7 +695,7 @@ describe("sdkPorts.git (real git)", () => {
     writeFileSync(join(dir, "blob.bin"), Buffer.from([0, 1, 2, 255, 0, 9, 9, 0]));
     // A binary patch is compressed: its text does not show the token, so a scan of the patch text alone passes it.
     expect(await git(dir, "diff", "--cached", "--binary")).not.toContain(GITHUB_TOKEN);
-    // Everything but git and the worktree reads is the fake: the worktree file is read from disk, the way bb hands it over.
+    // Everything but git and the worktree reads is the fake: the worktree file is read from disk, the way VesnALIA hands it over.
     const ports = new Proxy(fake, {
       get(target, key, receiver) {
         if (key === "git") return real.git;
@@ -885,8 +885,8 @@ describe("sdkPorts.lock (real flock)", () => {
 
   test("holderScript takes the locks dir and refuses a quote", () => {
     expect(holderScript("/tmp/x").startsWith("LOCKS='/tmp/x';")).toBe(true);
-    expect(holderScript("/srv/bb/locks/plugin-workshop")).toBe(
-      `LOCKS='/srv/bb/locks/plugin-workshop'; w="$LOCKS/$1.want"; [ "$(cat "$w" 2>/dev/null)" = "$2" ] || exit 0; echo "$$ $2" > "$LOCKS/$1.held"; while [ "$(cat "$w" 2>/dev/null)" = "$2" ]; do sleep 2; done; rm -f "$LOCKS/$1.held"`,
+    expect(holderScript("/srv/alia/locks/plugin-workshop")).toBe(
+      `LOCKS='/srv/alia/locks/plugin-workshop'; w="$LOCKS/$1.want"; [ "$(cat "$w" 2>/dev/null)" = "$2" ] || exit 0; echo "$$ $2" > "$LOCKS/$1.held"; while [ "$(cat "$w" 2>/dev/null)" = "$2" ]; do sleep 2; done; rm -f "$LOCKS/$1.held"`,
     );
     expect(() => holderScript("/tmp/a'b")).toThrow();
     expect(() => localPorts({ locksDir: "/tmp/a'b" })).toThrow();
@@ -930,25 +930,25 @@ describe("sdkPorts.fs (real file system)", () => {
     expect(gb).toBeLessThan(1_000_000);
   });
 
-  /** A fake `bb`: like `bb plugin new <id>` — a nested folder in the current one, plus notes: where it ran and whether the lock was held. */
-  function fakeBb(root: string, lock: string, body = ""): string {
-    const bin = join(root, "fake-bb");
+  /** A fake `VesnALIA`: like `alia plugin new <id>` — a nested folder in the current one, plus notes: where it ran and whether the lock was held. */
+  function fakeAlia(root: string, lock: string, body = ""): string {
+    const bin = join(root, "fake-alia");
     writeFileSync(
       bin,
-      `#!/bin/sh\n[ "$1 $2" = "plugin new" ] || exit 2\n${body}\nmkdir "bb-plugin-$3" || exit 1\nif flock -n '${lock}' true; then echo free; else echo held; fi > "bb-plugin-$3/lock"\npwd > "bb-plugin-$3/cwd"\n`,
+      `#!/bin/sh\n[ "$1 $2" = "plugin new" ] || exit 2\n${body}\nmkdir "alia-plugin-$3" || exit 1\nif flock -n '${lock}' true; then echo free; else echo held; fi > "alia-plugin-$3/lock"\npwd > "alia-plugin-$3/cwd"\n`,
     );
     chmodSync(bin, 0o755);
     return bin;
   }
 
-  test("scaffold makes tmpDir itself and runs bb plugin new in it under the build lock; the scaffold is the nested folder", async () => {
+  test("scaffold makes tmpDir itself and runs VesnALIA plugin new in it under the build lock; the scaffold is the nested folder", async () => {
     const root = tmp("scaffold");
     const lock = join(root, "build.lock");
-    const p = localPorts({ buildLock: lock, bbBin: fakeBb(root, lock) });
+    const p = localPorts({ buildLock: lock, aliaBin: fakeAlia(root, lock) });
     const tmpDir = join(root, ".workshop-new", "w1");
     await p.fs.scaffold("hello", tmpDir);
-    const nested = join(tmpDir, "bb-plugin-hello");
-    expect(await p.fs.list(tmpDir)).toEqual(["bb-plugin-hello"]);
+    const nested = join(tmpDir, "alia-plugin-hello");
+    expect(await p.fs.list(tmpDir)).toEqual(["alia-plugin-hello"]);
     expect(text(nested, "cwd").trim()).toBe(tmpDir);
     expect(text(nested, "lock").trim()).toBe("held");
   });
@@ -956,10 +956,10 @@ describe("sdkPorts.fs (real file system)", () => {
   test("a repeat after remove starts from a fresh folder even if an interrupted run wrote into the old one", { timeout: 20_000 }, async () => {
     const root = tmp("scaffold");
     const lock = join(root, "build.lock");
-    const p = localPorts({ buildLock: lock, bbBin: fakeBb(root, lock) });
+    const p = localPorts({ buildLock: lock, aliaBin: fakeAlia(root, lock) });
     const tmpDir = join(root, ".workshop-new", "w1");
-    const nested = join(tmpDir, "bb-plugin-hello");
-    // An earlier `bb plugin new` is still running and holds the build lock: the repeat waits for it to finish.
+    const nested = join(tmpDir, "alia-plugin-hello");
+    // An earlier `alia plugin new` is still running and holds the build lock: the repeat waits for it to finish.
     const old = spawn("flock", [lock, "sh", "-c", `sleep 1; mkdir -p '${nested}' && echo late > '${nested}/late'`], { detached: true, stdio: "ignore" });
     await until(async () => !(await exec("flock", ["-n", lock, "true"]).then(() => true, () => false)), 3000, "the earlier run holds the lock");
     await p.fs.remove(tmpDir);
@@ -969,22 +969,22 @@ describe("sdkPorts.fs (real file system)", () => {
     expect((await p.fs.list(nested)).sort()).toEqual(["cwd", "lock"]);
   });
 
-  test("scaffold fails when bb plugin new fails, and refuses an id that is not a plugin id", async () => {
+  test("scaffold fails when VesnALIA plugin new fails, and refuses an id that is not a plugin id", async () => {
     const root = tmp("scaffold");
     const lock = join(root, "build.lock");
-    const p = localPorts({ buildLock: lock, bbBin: fakeBb(root, lock, "echo 'npm exploded' >&2; exit 3") });
+    const p = localPorts({ buildLock: lock, aliaBin: fakeAlia(root, lock, "echo 'npm exploded' >&2; exit 3") });
     await expect(p.fs.scaffold("hello", join(root, "t"))).rejects.toThrow(/npm exploded/);
     await expect(p.fs.scaffold("../x", join(root, "u"))).rejects.toThrow();
     expect(existsSync(join(root, "u"))).toBe(false);
   });
 });
 
-describe("sdkPorts.plugins (fake bb)", () => {
+describe("sdkPorts.plugins (fake VesnALIA)", () => {
   const srcJob = (id: string, state: string, source: string, extra: Record<string, unknown> = {}) => ({
     id, displayName: source, state, target: { kind: "source", source, selection: { kind: "root" } }, ...extra,
   });
   const catJob = (id: string, state: string) => ({ id, displayName: "x", state, target: { kind: "catalog", entryId: "x", marketplace: "m" } });
-  const A = "/srv/plugins/bb-plugin-a";
+  const A = "/srv/plugins/alia-plugin-a";
 
   test("jobs map target.source and states", async () => {
     const list = vi.fn(async () => [
@@ -995,7 +995,7 @@ describe("sdkPorts.plugins (fake bb)", () => {
       srcJob("j5", "succeeded", "path:/y", { plugin: { id: "y", status: "error" } }),
       srcJob("j6", "cancelled", "path:/z"),
     ]);
-    const p = sdkBb({ plugins: { installJobs: { list } } });
+    const p = sdkAlia({ plugins: { installJobs: { list } } });
     const jobs = await p.plugins.jobs();
     expect(jobs).toEqual([
       { id: "j1", source: `path:${A}`, state: "running", error: null },
@@ -1006,28 +1006,28 @@ describe("sdkPorts.plugins (fake bb)", () => {
       { id: "j6", source: "path:/z", state: "cancelled", error: null },
     ]);
     expect(runningJobsOf(jobs, A).map((j) => j.id)).toEqual(["j1", "j3"]);
-    const odd = sdkBb({ plugins: { installJobs: { list: async () => [srcJob("j7", "exploding", A)] } } });
+    const odd = sdkAlia({ plugins: { installJobs: { list: async () => [srcJob("j7", "exploding", A)] } } });
     await expect(odd.plugins.jobs()).rejects.toThrow();
   });
 
   test("an unknown plugin status or job state stays an error, and its raw value goes to the plugin log", async () => {
     const warn = vi.fn();
-    const bb = (sdk: Record<string, unknown>) => sdkPorts({ log: { warn }, sdk } as unknown as BbPluginApi, () => undefined);
-    const plugins = [{ id: "mail", name: "Mail", status: "hibernating", enabled: true, source: "path:/p/bb-plugin-mail", rootDir: "/p/bb-plugin-mail", statusDetail: null }];
-    await expect(bb({ plugins: { list: async () => ({ plugins }) } }).plugins.list()).rejects.toThrow();
+    const alia = (sdk: Record<string, unknown>) => sdkPorts({ log: { warn }, sdk } as unknown as AliaPluginApi, () => undefined);
+    const plugins = [{ id: "mail", name: "Mail", status: "hibernating", enabled: true, source: "path:/p/alia-plugin-mail", rootDir: "/p/alia-plugin-mail", statusDetail: null }];
+    await expect(alia({ plugins: { list: async () => ({ plugins }) } }).plugins.list()).rejects.toThrow();
     expect(warn.mock.calls.map((c) => String(c[0])).join("\n")).toMatch(/plugins\.0\.status.*"hibernating"/);
     warn.mockClear();
-    await expect(bb({ plugins: { installJobs: { list: async () => [srcJob("j7", "exploding", A)] } } }).plugins.jobs()).rejects.toThrow();
+    await expect(alia({ plugins: { installJobs: { list: async () => [srcJob("j7", "exploding", A)] } } }).plugins.jobs()).rejects.toThrow();
     expect(warn.mock.calls.map((c) => String(c[0])).join("\n")).toMatch(/state.*"exploding"/);
   });
 
-  test("job by id; a job bb no longer knows is null, any other failure is an error", async () => {
+  test("job by id; a job VesnALIA no longer knows is null, any other failure is an error", async () => {
     const get = vi.fn(async ({ jobId }: { jobId: string }) => {
       if (jobId === "j1") return srcJob("j1", "succeeded", `path:${A}`);
       if (jobId === "gone") throw new Error("HTTP 404: unknown install job; the server may have restarted");
       throw new Error("HTTP 500: boom");
     });
-    const p = sdkBb({ plugins: { installJobs: { get } } });
+    const p = sdkAlia({ plugins: { installJobs: { get } } });
     expect(await p.plugins.job("j1")).toEqual({ id: "j1", source: `path:${A}`, state: "succeeded", error: null });
     expect(await p.plugins.job("gone")).toBeNull();
     await expect(p.plugins.job("x")).rejects.toThrow("boom");
@@ -1036,7 +1036,7 @@ describe("sdkPorts.plugins (fake bb)", () => {
   test("startInstall passes path:<dir> — the form of the CLI and of InstalledPlugin.source — and returns the job id; cancelJob cancels", async () => {
     const startInstall = vi.fn(async (a: { source: string }) => srcJob("j9", "running", a.source));
     const cancel = vi.fn(async () => srcJob("j9", "cancelling", `path:${A}`));
-    const p = sdkBb({ plugins: { startInstall, installJobs: { cancel } } });
+    const p = sdkAlia({ plugins: { startInstall, installJobs: { cancel } } });
     expect(await p.plugins.startInstall(A)).toBe("j9");
     expect(startInstall).toHaveBeenCalledWith({ source: `path:${A}` });
     await p.plugins.cancelJob("j9");
@@ -1046,28 +1046,28 @@ describe("sdkPorts.plugins (fake bb)", () => {
   test("list drops builtin plugins", async () => {
     const plugins = [
       { id: "account-pool", name: "Account Pool", status: "running", enabled: true, source: "builtin:account-pool", rootDir: "/app/builtin/account-pool", statusDetail: null },
-      { id: "mail", name: "Mail", status: "running", enabled: true, source: "path:/srv/plugins/bb-plugin-mail", rootDir: "/srv/plugins/bb-plugin-mail", statusDetail: null, version: "1.0.0", app: { hasApp: false, bundle: null } },
-      { id: "gone", name: null, status: "missing", enabled: true, source: "path:/srv/plugins/bb-plugin-gone", rootDir: "/srv/plugins/bb-plugin-gone", statusDetail: "plugin directory not found: /srv/plugins/bb-plugin-gone (reinstall)" },
+      { id: "mail", name: "Mail", status: "running", enabled: true, source: "path:/srv/plugins/alia-plugin-mail", rootDir: "/srv/plugins/alia-plugin-mail", statusDetail: null, version: "1.0.0", app: { hasApp: false, bundle: null } },
+      { id: "gone", name: null, status: "missing", enabled: true, source: "path:/srv/plugins/alia-plugin-gone", rootDir: "/srv/plugins/alia-plugin-gone", statusDetail: "plugin directory not found: /srv/plugins/alia-plugin-gone (reinstall)" },
       { id: "billing", name: "Billing", status: "error", enabled: true, source: "git:github.com/acme/bb-plugin-billing@main", rootDir: "/cache/billing", statusDetail: "Build failed" },
-      { id: "tags", name: "Tags", status: "disabled", enabled: false, source: "path:/srv/plugins/bb-plugin-tags", rootDir: "/srv/plugins/bb-plugin-tags", statusDetail: null },
+      { id: "tags", name: "Tags", status: "disabled", enabled: false, source: "path:/srv/plugins/alia-plugin-tags", rootDir: "/srv/plugins/alia-plugin-tags", statusDetail: null },
     ];
-    const p = sdkBb({ plugins: { list: async () => ({ plugins }) } });
+    const p = sdkAlia({ plugins: { list: async () => ({ plugins }) } });
     expect(await p.plugins.list()).toEqual([
-      { id: "mail", name: "Mail", state: "running", enabled: true, source: "path:/srv/plugins/bb-plugin-mail", rootDir: "/srv/plugins/bb-plugin-mail", error: null },
-      { id: "gone", name: null, state: "missing", enabled: true, source: "path:/srv/plugins/bb-plugin-gone", rootDir: "/srv/plugins/bb-plugin-gone", error: "plugin directory not found: /srv/plugins/bb-plugin-gone (reinstall)" },
+      { id: "mail", name: "Mail", state: "running", enabled: true, source: "path:/srv/plugins/alia-plugin-mail", rootDir: "/srv/plugins/alia-plugin-mail", error: null },
+      { id: "gone", name: null, state: "missing", enabled: true, source: "path:/srv/plugins/alia-plugin-gone", rootDir: "/srv/plugins/alia-plugin-gone", error: "plugin directory not found: /srv/plugins/alia-plugin-gone (reinstall)" },
       { id: "billing", name: "Billing", state: "error", enabled: true, source: "git:github.com/acme/bb-plugin-billing@main", rootDir: "/cache/billing", error: "Build failed" },
-      { id: "tags", name: "Tags", state: "disabled", enabled: false, source: "path:/srv/plugins/bb-plugin-tags", rootDir: "/srv/plugins/bb-plugin-tags", error: null },
+      { id: "tags", name: "Tags", state: "disabled", enabled: false, source: "path:/srv/plugins/alia-plugin-tags", rootDir: "/srv/plugins/alia-plugin-tags", error: null },
     ]);
-    await expect(sdkBb({ plugins: { list: async () => ({}) } }).plugins.list()).rejects.toThrow();
+    await expect(sdkAlia({ plugins: { list: async () => ({}) } }).plugins.list()).rejects.toThrow();
   });
 
-  test("enable and disable go to bb; an unknown plugin is bb's error", async () => {
+  test("enable and disable go to VesnALIA; an unknown plugin is VesnALIA's error", async () => {
     const enable = vi.fn(async ({ pluginId }: { pluginId: string }) => {
       if (pluginId === "nothere") throw new Error("HTTP 404: unknown plugin");
       return {};
     });
     const disable = vi.fn(async () => ({}));
-    const p = sdkBb({ plugins: { enable, disable } });
+    const p = sdkAlia({ plugins: { enable, disable } });
     await p.plugins.enable("mail");
     await p.plugins.disable("mail");
     expect(enable).toHaveBeenCalledWith({ pluginId: "mail" });
@@ -1075,24 +1075,24 @@ describe("sdkPorts.plugins (fake bb)", () => {
     await expect(p.plugins.enable("nothere")).rejects.toThrow("unknown plugin");
   });
 
-  test("folders: bb-plugin-* directories under the plugins root, the name from the manifest when it reads", async () => {
+  test("folders: alia-plugin-* directories under the plugins root, the name from the manifest when it reads", async () => {
     const root = tmp("plugins");
-    put(root, "bb-plugin-a/package.json", JSON.stringify({ name: "bb-plugin-a", bb: { name: "Plugin A" } }));
-    put(root, "bb-plugin-b/server.ts");
-    put(root, "bb-plugin-c/package.json", "{ broken");
-    put(root, "bb-plugin-file");
-    put(root, ".workshop-new/w1/bb-plugin-d/package.json", "{}");
+    put(root, "alia-plugin-a/package.json", JSON.stringify({ name: "alia-plugin-a", alia: { name: "Plugin A" } }));
+    put(root, "alia-plugin-b/server.ts");
+    put(root, "alia-plugin-c/package.json", "{ broken");
+    put(root, "alia-plugin-file");
+    put(root, ".workshop-new/w1/alia-plugin-d/package.json", "{}");
     put(root, "other/package.json", "{}");
-    const p = sdkBb({}, { pluginsRoot: root });
+    const p = sdkAlia({}, { pluginsRoot: root });
     expect((await p.plugins.folders()).sort((x, y) => x.id.localeCompare(y.id))).toEqual([
-      { id: "a", dir: join(root, "bb-plugin-a"), name: "Plugin A" },
-      { id: "b", dir: join(root, "bb-plugin-b"), name: null },
-      { id: "c", dir: join(root, "bb-plugin-c"), name: null },
+      { id: "a", dir: join(root, "alia-plugin-a"), name: "Plugin A" },
+      { id: "b", dir: join(root, "alia-plugin-b"), name: null },
+      { id: "c", dir: join(root, "alia-plugin-c"), name: null },
     ]);
   });
 });
 
-describe("sdkPorts: projects, tasks, snapshots, machine (fake bb)", () => {
+describe("sdkPorts: projects, tasks, snapshots, machine (fake VesnALIA)", () => {
   test("findByPath compares real paths", async () => {
     const real = tmp("proj");
     const link = join(tmp("link"), "l");
@@ -1103,7 +1103,7 @@ describe("sdkPorts: projects, tasks, snapshots, machine (fake bb)", () => {
       { id: "p3", sources: [{ hostId: "h", path: "/nowhere/x", type: "local_path", isDefault: true }] },
       { id: "p4", sources: [{ hostId: "x", path: "/x", type: "local_path", isDefault: true }, { hostId: "h", path: `${real}/`, type: "local_path", isDefault: false }] },
     ]);
-    const p = sdkBb({ projects: { list } });
+    const p = sdkAlia({ projects: { list } });
     expect(await p.projects.findByPath("h", real)).toEqual(["p1", "p4"]);
     expect(await p.projects.findByPath("h", link)).toEqual(["p1", "p4"]);
     expect(await p.projects.findByPath("h", "/nowhere/x")).toEqual(["p3"]);
@@ -1112,9 +1112,9 @@ describe("sdkPorts: projects, tasks, snapshots, machine (fake bb)", () => {
 
   test("projects.create makes a project on the folder of the machine", async () => {
     const create = vi.fn(async () => ({ id: "proj_new", name: "Plugin · Hello", sources: [] }));
-    const p = sdkBb({ projects: { create } });
-    expect(await p.projects.create({ name: "Plugin · Hello", dir: "/srv/plugins/bb-plugin-hello", hostId: "h" })).toBe("proj_new");
-    expect(create).toHaveBeenCalledWith({ name: "Plugin · Hello", source: { type: "local_path", hostId: "h", path: "/srv/plugins/bb-plugin-hello" } });
+    const p = sdkAlia({ projects: { create } });
+    expect(await p.projects.create({ name: "Plugin · Hello", dir: "/srv/plugins/alia-plugin-hello", hostId: "h" })).toBe("proj_new");
+    expect(create).toHaveBeenCalledWith({ name: "Plugin · Hello", source: { type: "local_path", hostId: "h", path: "/srv/plugins/alia-plugin-hello" } });
   });
 
   test("findByMarker searches the tracker project, pages through, and keeps exact matches in the description only", async () => {
@@ -1124,7 +1124,7 @@ describe("sdkPorts: projects, tasks, snapshots, machine (fake bb)", () => {
       if (!input.cursor) return { tasks: [task("t1", "TEST-1", "request\n\n[workshop:w1]"), task("t2", "TEST-2", "see [workshop:w10]"), task("t4", "TEST-4", null)], nextCursor: "c2" };
       return { tasks: [task("t3", "TEST-3", "[workshop:w1]", "canceled")], nextCursor: null };
     });
-    const p = sdkBb({ plugins: { callRpc } });
+    const p = sdkAlia({ plugins: { callRpc } });
     expect(await p.tasks.findByMarker("tp", "[workshop:w1]")).toEqual([
       { id: "t1", key: "TEST-1", projectId: "tp", title: "t TEST-1" },
       { id: "t3", key: "TEST-3", projectId: "tp", title: "t TEST-3" },
@@ -1137,7 +1137,7 @@ describe("sdkPorts: projects, tasks, snapshots, machine (fake bb)", () => {
 
   test("saveText writes into the snapshot folder of the work, readSaved finds it, a label or path out of it is refused", async () => {
     const dataDir = tmp("data");
-    const p = sdkBb({ system: { config: async () => ({ dataDir }) } });
+    const p = sdkAlia({ system: { config: async () => ({ dataDir }) } });
     await p.saveText("w1", "1000-canceled", "staged.patch", "diff --git a b\n");
     expect(text(join(dataDir, "plugins", SELF_ID, "works/w1/1000-canceled"), "staged.patch")).toBe("diff --git a b\n");
     expect((await p.readSaved("w1", "staged.patch"))?.content).toBe("diff --git a b\n");
@@ -1145,9 +1145,9 @@ describe("sdkPorts: projects, tasks, snapshots, machine (fake bb)", () => {
     await expect(p.saveText("w1", "l", "../../x", "z")).rejects.toThrow(/outside the work snapshots/);
   });
 
-  test("serverHostId is the primary host of bb", async () => {
-    expect(await sdkBb({ system: { config: async () => ({ primaryHostId: "host_server", dataDir: "/d" }) } }).serverHostId()).toBe("host_server");
-    await expect(sdkBb({ system: { config: async () => ({ primaryHostId: null, dataDir: "/d" }) } }).serverHostId()).rejects.toThrow();
+  test("serverHostId is the primary host of VesnALIA", async () => {
+    expect(await sdkAlia({ system: { config: async () => ({ primaryHostId: "host_server", dataDir: "/d" }) } }).serverHostId()).toBe("host_server");
+    await expect(sdkAlia({ system: { config: async () => ({ primaryHostId: null, dataDir: "/d" }) } }).serverHostId()).rejects.toThrow();
   });
 });
 
@@ -1163,7 +1163,7 @@ describe("sdkPorts.deps (real background process, fake npm)", () => {
     return npm;
   }
   function plugin(root: string, pkg: string, lock: string | null): string {
-    const dir = join(root, "bb-plugin-x");
+    const dir = join(root, "alia-plugin-x");
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "package.json"), pkg);
     if (lock !== null) writeFileSync(join(dir, "package-lock.json"), lock);
@@ -1178,7 +1178,7 @@ describe("sdkPorts.deps (real background process, fake npm)", () => {
     await p.deps.start(dir);
     await until(async () => (await p.deps.state(dir)).kind === "ok", 5000, "dependencies installed");
     expect(existsSync(join(dir, "node_modules", "yaml", "index.js"))).toBe(true);
-    expect(text(join(root, "state"), "bb-plugin-x.log")).toContain("npm ci --ignore-scripts");
+    expect(text(join(root, "state"), "alia-plugin-x.log")).toContain("npm ci --ignore-scripts");
     writeFileSync(join(dir, "package-lock.json"), '{"lockfileVersion":3,"x":1}');
     expect(await p.deps.state(dir)).toEqual({ kind: "need" });
   });
@@ -1196,21 +1196,21 @@ describe("sdkPorts.deps (real background process, fake npm)", () => {
     expect(s.text).toContain("npm exited with code 1");
     expect(s.text).toContain("E404 yaml not found");
     expect(s.startedAt).toBeGreaterThanOrEqual(before);
-    expect(text(join(root, "state"), "bb-plugin-x.log")).toContain("npm install --ignore-scripts --no-audit --no-fund --no-package-lock");
+    expect(text(join(root, "state"), "alia-plugin-x.log")).toContain("npm install --ignore-scripts --no-audit --no-fund --no-package-lock");
     expect(existsSync(join(dir, "package-lock.json"))).toBe(false);
   });
 
   test("a plugin without package.json has nothing to install", async () => {
     const root = tmp("deps");
     const p = localPorts({ depsDir: join(root, "state"), npmBin: fakeNpm(root), locksDir: join(root, "locks", SELF_ID) });
-    const dir = join(root, "bb-plugin-empty");
+    const dir = join(root, "alia-plugin-empty");
     mkdirSync(dir);
     expect(await p.deps.state(dir)).toEqual({ kind: "ok" });
   });
 });
 
 describe("sdkPorts worktree reads and work snapshots: links, findings, modes (real file system)", () => {
-  /** A worktree on the bb server machine (`primaryHostId` = the environment's host) and a data folder; the host reads follow links, as a host would. */
+  /** A worktree on the VesnALIA server machine (`primaryHostId` = the environment's host) and a data folder; the host reads follow links, as a host would. */
   function rig(serverHost = "h") {
     const wt = tmp("wt");
     const dataDir = tmp("data");
@@ -1226,7 +1226,7 @@ describe("sdkPorts worktree reads and work snapshots: links, findings, modes (re
       return { content: buf.toString("utf8"), contentEncoding: "utf8", sizeBytes: buf.length, path, sha256: "x" };
     });
     const listPaths = vi.fn(async () => ({ paths: ["a.md", "token.md", "keys.env", "link.md"].map((p) => ({ path: p, name: p, kind: "file" })), truncated: false }));
-    const p = sdkBb({
+    const p = sdkAlia({
       environments: { get: async () => ({ hostId: "h", path: wt }) },
       system: { config: async () => ({ primaryHostId: serverHost, dataDir }) },
       files: { read, listPaths },
@@ -1460,9 +1460,9 @@ describe("sdkPorts.github: what the publication gate reads and how it pushes (re
   test("deleteBranch removes a branch on the remote and refuses an option-like name", async () => {
     const p = localPorts();
     const { dir, bare, A } = await history();
-    await git(dir, "push", "-q", "origin", `${A}:refs/heads/bb/old`);
-    await p.github.deleteBranch(dir, "bb/old");
-    expect(await git(bare, "branch", "--list")).not.toContain("bb/old");
+    await git(dir, "push", "-q", "origin", `${A}:refs/heads/alia/old`);
+    await p.github.deleteBranch(dir, "alia/old");
+    expect(await git(bare, "branch", "--list")).not.toContain("alia/old");
     await expect(p.github.deleteBranch(dir, "-d")).rejects.toThrow(/not a branch name/);
   });
 });
@@ -1472,7 +1472,7 @@ describe("sdkPorts.deps: a recorded pid is signalled only if it is still the ins
     const root = tmp("deps");
     const depsDir = join(root, "state");
     const p = localPorts({ depsDir, npmBin: "/bin/false", locksDir: join(root, "locks", SELF_ID) });
-    const dir = join(root, "bb-plugin-x");
+    const dir = join(root, "alia-plugin-x");
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "package.json"), '{"name":"x"}');
     writeFileSync(join(dir, "package-lock.json"), '{"lockfileVersion":3}');
@@ -1481,7 +1481,7 @@ describe("sdkPorts.deps: a recorded pid is signalled only if it is still the ins
     try {
       mkdirSync(depsDir, { recursive: true });
       // Older than the 20-minute limit: the old code would have sent SIGTERM to this process group.
-      writeFileSync(join(depsDir, "bb-plugin-x.json"), JSON.stringify({ want, pid: other.pid, startedAt: Date.now() - 25 * 60_000 }));
+      writeFileSync(join(depsDir, "alia-plugin-x.json"), JSON.stringify({ want, pid: other.pid, startedAt: Date.now() - 25 * 60_000 }));
       const s = await p.deps.state(dir);
       expect(s).toMatchObject({ kind: "failed" });
       if (s.kind === "failed") expect(s.text).toContain("the install process vanished");
@@ -1497,7 +1497,7 @@ describe("sdkPorts.deps: a recorded pid is signalled only if it is still the ins
     writeFileSync(npm, "#!/bin/sh\nsleep 2\nmkdir -p node_modules\n");
     chmodSync(npm, 0o755);
     const p = localPorts({ depsDir: join(root, "state"), npmBin: npm, locksDir: join(root, "locks", SELF_ID) });
-    const dir = join(root, "bb-plugin-y");
+    const dir = join(root, "alia-plugin-y");
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "package.json"), '{"name":"y"}');
     await p.deps.start(dir);

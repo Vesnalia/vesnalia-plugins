@@ -23,7 +23,7 @@ const DEFAULT_DELAY_MS = 700;
 
 const SCROLLING_OVERFLOW = /auto|scroll|overlay|hidden|clip/;
 
-const HUD_HEADER = "[data-bb-box-monitor-header]";
+const HUD_HEADER = "[data-alia-box-monitor-header]";
 
 interface VisibleArea {
   readonly top: number;

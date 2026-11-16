@@ -9,17 +9,17 @@
  */
 import type { Episode, EpisodeView, Sample, SampleView } from "./schemas";
 
-/** What a lookup learned: the thread's title, or null when BB has no such thread. Throws on failure. */
+/** What a lookup learned: the thread's title, or null when VesnALIA has no such thread. Throws on failure. */
 export type ThreadLookup = (threadId: string) => Promise<{ title: string | null } | null>;
 
 /**
- * Titles for the ids BB knows. An id absent from the map is not a thread
+ * Titles for the ids VesnALIA knows. An id absent from the map is not a thread
  * and must not be shown; a null value means the lookup failed and the id is
  * shown bare.
  */
 export type KnownThreads = Map<string, string | null>;
 
-/** True only for BB's definite "no such thread" answer (HTTP 404, thread_not_found). */
+/** True only for VesnALIA's definite "no such thread" answer (HTTP 404, thread_not_found). */
 export function isNotFound(error: unknown): boolean {
   const fields = (error ?? {}) as { status?: unknown; code?: unknown };
   if (fields.status === 404 || fields.code === "thread_not_found") return true;

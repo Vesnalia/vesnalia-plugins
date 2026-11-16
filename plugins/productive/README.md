@@ -1,42 +1,42 @@
-# Productive for BB
+# Productive for VesnALIA
 
-Brings each BB project's [Productive.io](https://productive.io) tasks into one
+Brings each VesnALIA project's [Productive.io](https://productive.io) tasks into one
 focused board — a list and kanban view, task detail with comments, status and
 assignee changes, task creation, saved filter presets, `@`/`#` mentions in the
-composer, and a `bb productive` CLI for agents.
+composer, and a `alia productive` CLI for agents.
 
 Modelled on the Taskboard plugin, but single-provider: one Productive API token
-serves the whole organization, and each BB project is mapped to one Productive
+serves the whole organization, and each VesnALIA project is mapped to one Productive
 project.
 
 ## Install
 
 ```
-bb plugin install git:https://github.com/kristoffeys/bb-plugin-productive.git
+alia plugin install git:https://github.com/kristoffeys/bb-plugin-productive.git
 ```
 
-Needs `npm` on PATH: BB clones the repo, installs production dependencies, and
+Needs `npm` on PATH: VesnALIA clones the repo, installs production dependencies, and
 builds the server and app bundles.
 
 ## Setup
 
 1. Create a Productive API token: **Settings → API integrations** in Productive.
-2. Enter it in the Productive panel in BB, together with your organization id
+2. Enter it in the Productive panel in VesnALIA, together with your organization id
    and (optionally) your Productive person id. Headless alternative:
 
    ```
-   bb productive connect --org <organization-id> [--person <person-id>] \
+   alia productive connect --org <organization-id> [--person <person-id>] \
                          --token-file <path-to-a-file-containing-the-token>
    ```
 
-   A plugin CLI command runs inside the BB server, so it has no stdin to pipe a
+   A plugin CLI command runs inside the VesnALIA server, so it has no stdin to pipe a
    secret through — the token is passed as a file path so it never lands in
    argv, shell history, or an agent transcript. Delete the file afterwards.
-3. Map the BB project to a Productive project in the panel's manage view, or
+3. Map the VesnALIA project to a Productive project in the panel's manage view, or
    from the shell:
 
    ```
-   bb productive config --productive-project <productive-project-id>
+   alia productive config --productive-project <productive-project-id>
    ```
 
 The person id is optional because Productive has no `/me` endpoint — without it
@@ -49,7 +49,7 @@ plugin settings, so changing it does not require a plugin reload.
 
 | Productive | This plugin |
 | --- | --- |
-| Project | The external project a BB project maps to |
+| Project | The external project a VesnALIA project maps to |
 | Task | Board item |
 | Workflow status (`category_id` 1/2/3) | Status → `todo` / `in_progress` / `done` |
 | Task list | Optional lane filter within the project |
@@ -61,25 +61,25 @@ filter.
 ## CLI
 
 ```
-bb productive status
-bb productive list [--query <text>] [--state todo|in_progress|done] [--cached]
-bb productive show <locator>
-bb productive start <locator> [--worktree]
-bb productive transitions <locator>
-bb productive move <locator> --status <status-id>
-bb productive move-list <locator> --list <task-list-id>
-bb productive comment <locator> <text>
-bb productive edit <locator> [--title <text>] [--description <text>]
-bb productive create --title <text> [--description <text>] [--list <id>]
-bb productive refresh
-bb productive config [--productive-project <id>] [--folder <id>] [--list <id>]
+alia productive status
+alia productive list [--query <text>] [--state todo|in_progress|done] [--cached]
+alia productive show <locator>
+alia productive start <locator> [--worktree]
+alia productive transitions <locator>
+alia productive move <locator> --status <status-id>
+alia productive move-list <locator> --list <task-list-id>
+alia productive comment <locator> <text>
+alia productive edit <locator> [--title <text>] [--description <text>]
+alia productive create --title <text> [--description <text>] [--list <id>]
+alia productive refresh
+alia productive config [--productive-project <id>] [--folder <id>] [--list <id>]
                      [--assigned-to-me on|off] [--include-closed on|off]
-bb productive connect [--org <id> [--person <id>] --token-file <path>]
-bb productive disconnect
-bb productive presets list
+alia productive connect [--org <id> [--person <id>] --token-file <path>]
+alia productive disconnect
+alia productive presets list
 ```
 
-Every command takes `--project <proj_id>` to target another BB project and
+Every command takes `--project <proj_id>` to target another VesnALIA project and
 `--json` for machine-readable output. Tasks are addressed by their Productive
 task id (the `locator`), not the `#number` key — the key is only unique within
 a project.
@@ -90,7 +90,7 @@ Productive's hierarchy is **Project -> Folder -> Task list -> Task**. A folder i
 what Productive used to call a board, and its task lists are that board's
 columns. The panel mirrors that:
 
-- Map a BB project to a Productive project, and optionally narrow it to one
+- Map a VesnALIA project to a Productive project, and optionally narrow it to one
   folder.
 - Kanban lanes group by **workflow status** or by **task list** — the latter
   reproduces Productive's own board layout, in Productive's column order.
@@ -101,8 +101,8 @@ columns. The panel mirrors that:
 
 ## Working on a task
 
-`bb productive start <locator>`, or the **Start agent** button on a task,
-opens a new BB thread in the project the board is mapped to, with the task's
+`alia productive start <locator>`, or the **Start agent** button on a task,
+opens a new VesnALIA thread in the project the board is mapped to, with the task's
 fields as context. Nothing is written back to Productive.
 
 Add `--worktree` (or use the split button on the task detail page) to give the
@@ -120,7 +120,7 @@ Productive session authenticates it. Images are not inlined.
 ## Agent safety
 
 Task titles, descriptions, and comments are untrusted external text. Everything
-this plugin hands to an agent — mention context, `bb productive show`, the
+this plugin hands to an agent — mention context, `alia productive show`, the
 handoff prompt — is wrapped in a quoted, delimited block with an explicit
 instruction not to follow anything inside it. See `formatWorkItemContext` in
 `contract.ts`.
@@ -131,9 +131,9 @@ instruction not to follow anything inside it. See `formatWorkItemContext` in
 npm install --include=dev
 npx tsc --noEmit
 npx vitest run
-bb plugin build
-bb plugin install .
-bb plugin dev          # rebuild + reload on save
+alia plugin build
+alia plugin install .
+alia plugin dev          # rebuild + reload on save
 ```
 
 ## Layout
@@ -146,4 +146,4 @@ bb plugin dev          # rebuild + reload on save
 | `productive/` | Productive.io JSON:API client, entity mapper, and typed API surface |
 | `app.tsx` | Board UI: nav panel, thread panel, list, kanban, detail, create dialog, settings |
 | `board-settings.ts`, `filter-presets.ts` | Per-project board view state and saved filters |
-| `skills/productive/` | The skill that teaches agents to use `bb productive` |
+| `skills/productive/` | The skill that teaches agents to use `alia productive` |

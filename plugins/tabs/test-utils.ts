@@ -1,10 +1,10 @@
-import type { PluginRpcContract, PluginRpcResult } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { PluginRpcContract, PluginRpcResult } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import {
   renderSlot,
   type RenderSlotOptions,
   type PluginRpcTestHandlers,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import type { rpcContract } from "./server";
 
 type FakeHost = ReturnType<typeof createFakePluginHost>;

@@ -16,7 +16,7 @@ sources:
 
 # Gotchas
 
-TL;DR: Changes to BB’s tab-strip markup, file path context, or save conflict state can change behavior outside the visible editor surface.
+TL;DR: Changes to VesnALIA’s tab-strip markup, file path context, or save conflict state can change behavior outside the visible editor surface.
 
 ## Critical
 
@@ -30,21 +30,21 @@ TL;DR: Changes to BB’s tab-strip markup, file path context, or save conflict s
 
 ## High
 
-### Path resolution depends on the BB source context
+### Path resolution depends on the VesnALIA source context
 
 **Problem:** Workspace paths need an environment, thread, or project source; host paths require an absolute path (`locate.ts:99-132`).
 
 **Risk:** A file reference without an owning machine or resolvable folder fails rather than silently opening from another host (`locate.ts:1-3`, `locate.ts:110-132`).
 
-**Workaround:** Preserve BB’s opener source identifiers and resolve relative paths beneath their source root (`app.tsx:198-210`, `locate.ts:91-115`).
+**Workaround:** Preserve VesnALIA’s opener source identifiers and resolve relative paths beneath their source root (`app.tsx:198-210`, `locate.ts:91-115`).
 
-### Tab menu reads BB-private markup
+### Tab menu reads ALIA-private markup
 
-**Problem:** The content script locates the strip, tab contents, and close controls through BB `data-*` selectors (`tabs.ts:8-12`).
+**Problem:** The content script locates the strip, tab contents, and close controls through VesnALIA `data-*` selectors (`tabs.ts:8-12`).
 
 **Risk:** A markup change can prevent tab menu mounting; the script relies on those selectors (`tabs.ts:61-75`, `tabs.ts:139-177`).
 
-**Workaround:** Check selectors and observer behavior against BB’s current panel DOM when changing this integration (`tabs.ts:61-75`, `tabs.ts:139-177`).
+**Workaround:** Check selectors and observer behavior against VesnALIA’s current panel DOM when changing this integration (`tabs.ts:61-75`, `tabs.ts:139-177`).
 
 ## Medium
 

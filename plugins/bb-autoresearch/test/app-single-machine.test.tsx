@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 // Single-machine mode on the surfaces: Oracle tab, Overview, Bench tab, the
-// Live bench strip ("testing c/N" holds the bench), `bb study show`, and the
+// Live bench strip ("testing c/N" holds the bench), `alia study show`, and the
 // message.dispatch hook registration (quiet bench).
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { configure, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createAutoresearchPlugin } from "../server.ts";
@@ -63,8 +63,8 @@ describe("frontend: single-machine mode", () => {
     host.refs.set("main", host.commit("T0", null));
     host.metric.set("T0", 1000);
     port.addThread("thr_study");
-    const fake = createFakePluginHost({ pluginId: "bb-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
-    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0 }, onEngine: (e) => (engine = e) })(fake.bb);
+    const fake = createFakePluginHost({ pluginId: "alia-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
+    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0 }, onEngine: (e) => (engine = e) })(fake.alia);
     harness = fake.harness;
     await harness.behavior.callAgentTool("study_propose", { spec_toml: SPEC }, { threadId: "thr_study", projectId: "proj_1" });
     await harness.behavior.runCli(["calibrate", "toy-sm", "--wait"]);
@@ -101,7 +101,7 @@ describe("frontend: single-machine mode", () => {
     await waitFor(() => expect(page.container.textContent).toMatch(/Gates take [\d.]+ s on the edit host, holding the bench/u));
   });
 
-  it("bb study show prints the single-machine line; Overview, Bench and Live show the gate holding the bench", async () => {
+  it("alia study show prints the single-machine line; Overview, Bench and Live show the gate holding the bench", async () => {
     const show = await harness.behavior.runCli(["show", "toy-sm"]);
     expect(show.stdout).toMatch(/Single machine:\s+Single-machine mode is on/u);
     await harness.behavior.runCli(["ideas", "add", "toy-sm", "Faster loop", "--theme", "loop"]);

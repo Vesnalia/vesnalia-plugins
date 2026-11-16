@@ -1,19 +1,13 @@
 {
-  "name": "bb-plugin-simple-summaries",
+  "name": "alia-plugin-simple-summaries",
   "version": "0.1.0",
-  "description": "Small italic summaries above the BB composer",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/bottlebrushes/bb-simple-summaries.git",
-    "directory": "."
-  },
-  "homepage": "https://github.com/bottlebrushes/bb-simple-summaries#readme",
+  "description": "Small italic summaries above the VesnALIA composer",
   "type": "module",
   "engines": {
-    "bb": ">=0.40",
-    "bbPluginSdk": ">=0.4.21"
+    "alia": ">=0.40",
+    "aliaPluginSdk": ">=0.4.21"
   },
-  "bb": {
+  "alia": {
     "name": "Simple Summaries",
     "description": "Keep the latest thread summary above the composer as small italic text.",
     "branding": {
@@ -26,7 +20,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.29",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -68,5 +61,22 @@
     "NOTICE",
     "PLUGIN_OVERVIEW.md"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.29"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/simple-summaries#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/simple-summaries"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

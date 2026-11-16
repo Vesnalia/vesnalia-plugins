@@ -1,24 +1,20 @@
 {
-  "name": "bb-plugin-browser-session-import",
+  "name": "alia-plugin-browser-session-import",
   "version": "0.5.0",
   "private": true,
   "type": "module",
-  "description": "Import one cookie session into the shared BB Browser.",
+  "description": "Import one cookie session into the shared VesnALIA Browser.",
   "author": {
     "name": "GantisStorm",
     "url": "https://github.com/GantisStorm"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/GantisStorm/bb-plugin-browser-session-import.git"
-  },
   "engines": {
-    "bb": ">=0.42.2-0",
-    "bbPluginSdk": ">=0.4.48"
+    "alia": ">=0.42.2-0",
+    "aliaPluginSdk": ">=0.4.48"
   },
-  "bb": {
+  "alia": {
     "name": "Browser Session Import",
-    "description": "Import one session into the shared BB Browser",
+    "description": "Import one session into the shared VesnALIA Browser",
     "branding": {
       "icon": "File"
     },
@@ -30,7 +26,7 @@
     ]
   },
   "keywords": [
-    "bb-plugin"
+    "alia-plugin"
   ],
   "scripts": {
     "typecheck": "tsc --noEmit"
@@ -42,7 +38,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.48",
     "@testing-library/react": "^16.3.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
@@ -57,5 +52,22 @@
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vitest": "^4.1.1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.48"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/browser-session-import#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/browser-session-import"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

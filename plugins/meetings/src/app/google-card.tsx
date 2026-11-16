@@ -5,7 +5,7 @@
 // "Запланированные" list through calendar.status.
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
-import { useRealtime, useSettings } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useSettings } from "@vesnalia/plugin-sdk/app";
 import type { CalendarStatus, GoogleCalendarView, GoogleStatus } from "../shared/rpc-contract";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -77,7 +77,7 @@ export function useGoogleStatus() {
 
 export type GoogleStatusState = ReturnType<typeof useGoogleStatus>;
 
-/** The redirect URI to register in the OAuth client: this bb origin + the callback route. */
+/** The redirect URI to register in the OAuth client: this VesnALIA origin + the callback route. */
 export function googleRedirectUri(origin: string, callbackPath: string): string {
   return `${origin}${callbackPath === "" ? GOOGLE_CALLBACK_PATH : callbackPath}`;
 }
@@ -134,7 +134,7 @@ function RedirectUri({ status, label }: { status: GoogleStatus; label: ReactNode
       </div>
       {redirectOriginAllowed(origin) ? null : (
         <p className="text-xs text-warning-text">
-          Google принимает только адреса https:// или http://localhost. Откройте bb по https или через localhost и
+          Google принимает только адреса https:// или http://localhost. Откройте VesnALIA по https или через localhost и
           подключайте календарь оттуда.
         </p>
       )}
@@ -283,7 +283,7 @@ function ClientForm({
         )}
       </div>
       <p className="text-xs text-muted-foreground">
-        Секрет хранится в настройках плагина на сервере bb и на страницу не возвращается.
+        Секрет хранится в настройках плагина на сервере VesnALIA и на страницу не возвращается.
       </p>
     </form>
   );

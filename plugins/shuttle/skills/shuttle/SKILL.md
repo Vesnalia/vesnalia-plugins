@@ -1,16 +1,16 @@
 ---
 name: shuttle
-description: Use Shuttle, the bb plugin for pull requests on any versioning server. Link a PR to this thread (a thread can own several) so this thread becomes its agent, check the thread's PRs, look one up, start a review, hand a finished review back as a draft, report what you did with forwarded feedback, or add a server such as GitLab with command adapters. Create, curate, archive, or restore custom PR boards. Covers the shuttle_link, shuttle_unlink, shuttle_prs, shuttle_review_draft, shuttle_review_done, shuttle_feedback_done and shuttle_board tools, `bb shuttle` and `[shuttle]` messages.
+description: Use Shuttle, the VesnALIA plugin for pull requests on any versioning server. Link a PR to this thread (a thread can own several) so this thread becomes its agent, check the thread's PRs, look one up, start a review, hand a finished review back as a draft, report what you did with forwarded feedback, or add a server such as GitLab with command adapters. Create, curate, archive, or restore custom PR boards. Covers the shuttle_link, shuttle_unlink, shuttle_prs, shuttle_review_draft, shuttle_review_done, shuttle_feedback_done and shuttle_board tools, `alia shuttle` and `[shuttle]` messages.
 ---
 
 # Shuttle
 
 Shuttle lists the user's pull requests and review requests on every configured server, links
-them to bb threads, starts review threads from presets, and sends new review activity on a PR
+them to VesnALIA threads, starts review threads from presets, and sends new review activity on a PR
 to its agent: the one thread linked to it as owner. The user merges, comments and posts reviews
 from Shuttle as themselves; you never post on a PR unless the user asks you to.
 
-A PR's key is `<server>:<repo>#<number>`, with `!` instead of `#` on servers that use it, for example `github:get-bb/bb#4411` or
+A PR's key is `<server>:<repo>#<number>`, with `!` instead of `#` on servers that use it, for example `github:get-alia/alia#4411` or
 `gitlab:group/project!42`. Anywhere a PR is asked for, its link works too.
 
 ## Tools
@@ -97,33 +97,33 @@ Automation rules stay unchanged. Auto posts refused during a pause still need a 
 
 ## Refresh projects
 
-BB project changes update Shuttle's project list automatically. If a new project is missing, use Refresh projects beside the project picker, or open the Sync menu and choose BB projects. This reloads BB projects and repository matches only, preserving the current review choices. It does not sync pull requests, start a review, post anything, or change settings. A failed refresh shows an error and leaves the previous list available.
+VesnALIA project changes update Shuttle's project list automatically. If a new project is missing, use Refresh projects beside the project picker, or open the Sync menu and choose VesnALIA projects. This reloads VesnALIA projects and repository matches only, preserving the current review choices. It does not sync pull requests, start a review, post anything, or change settings. A failed refresh shows an error and leaves the previous list available.
 
 ## CLI
 
-`bb shuttle status` (each server's last sync, and when one failed, the step, why, what its command printed and
-what happens next), `bb shuttle list [--area inbox|mine|done|reviews|reviewed]`, `bb shuttle search <words…>`
-(the PRs Shuttle already has; every word must match, and a quoted `"#123"` is a PR number), `bb shuttle show <pr>`,
-`bb shuttle link <pr> [--thread <id>] [--role owner|review|reference]`,
-`bb shuttle unlink <pr> [--thread <id>]`,
-`bb shuttle agent <pr> [--thread <id> | --new | --none] [--mode fix|off]`,
-`bb shuttle track <pr> [--off]`, `bb shuttle watch <pr> [--off]`,
-`bb shuttle review <pr> [--preset <id>] [--project <id>] [--note <text>] [--new-thread]` (the PR's last review
+`alia shuttle status` (each server's last sync, and when one failed, the step, why, what its command printed and
+what happens next), `alia shuttle list [--area inbox|mine|done|reviews|reviewed]`, `alia shuttle search <words…>`
+(the PRs Shuttle already has; every word must match, and a quoted `"#123"` is a PR number), `alia shuttle show <pr>`,
+`alia shuttle link <pr> [--thread <id>] [--role owner|review|reference]`,
+`alia shuttle unlink <pr> [--thread <id>]`,
+`alia shuttle agent <pr> [--thread <id> | --new | --none] [--mode fix|off]`,
+`alia shuttle track <pr> [--off]`, `alia shuttle watch <pr> [--off]`,
+`alia shuttle review <pr> [--preset <id>] [--project <id>] [--note <text>] [--new-thread]` (the PR's last review
 thread of Shuttle's gets it, brought back from the archive when needed, unless `--new-thread`),
-`bb shuttle stop [<pr>…] [--archive]` (stops running AI reviews, every one without a PR; `--archive` archives the review threads Shuttle started; naming a PR whose review was stopped stops its threads again; a stopped review's `shuttle_review_draft` is refused, so a review thread told it was stopped hands back nothing),
-`bb shuttle skip [<pr>…] [--off]` (the PRs auto review never starts on; lists them without a PR), `bb shuttle sync [--server <id>]`, `bb shuttle usage [--range today|7d|30d|90d] [--end YYYY-MM-DD]` (what AI reviews used in tokens and dollars, from the Burn plugin, for a period ending today or on `--end`),
-`bb shuttle config-export`, `bb shuttle config-import <file> [--apply]`. PR and board commands
+`alia shuttle stop [<pr>…] [--archive]` (stops running AI reviews, every one without a PR; `--archive` archives the review threads Shuttle started; naming a PR whose review was stopped stops its threads again; a stopped review's `shuttle_review_draft` is refused, so a review thread told it was stopped hands back nothing),
+`alia shuttle skip [<pr>…] [--off]` (the PRs auto review never starts on; lists them without a PR), `alia shuttle sync [--server <id>]`, `alia shuttle usage [--range today|7d|30d|90d] [--end YYYY-MM-DD]` (what AI reviews used in tokens and dollars, from the Burn plugin, for a period ending today or on `--end`),
+`alia shuttle config-export`, `alia shuttle config-import <file> [--apply]`. PR and board commands
 accept `--json`; config export prints TOML and config import prints a change summary.
 `link`/`unlink` default to the calling thread.
 
 The board commands use the stable ID returned by list or create:
 
-- `bb shuttle board list [--query <text>] [--archived exclude|include|only] [--key <pr-key>]`
-- `bb shuttle board show <id>`
-- `bb shuttle board create "<name>" [<pr>…] [--description <text>]`
-- `bb shuttle board update <id> [--name <text>] [--description <text>] [--archive | --restore]`
-- `bb shuttle board add <id> <pr>…`
-- `bb shuttle board remove <id> <pr>…`
+- `alia shuttle board list [--query <text>] [--archived exclude|include|only] [--key <pr-key>]`
+- `alia shuttle board show <id>`
+- `alia shuttle board create "<name>" [<pr>…] [--description <text>]`
+- `alia shuttle board update <id> [--name <text>] [--description <text>] [--archive | --restore]`
+- `alia shuttle board add <id> <pr>…`
+- `alia shuttle board remove <id> <pr>…`
 
 Board writes accept `--thread <id>` for activity attribution; inside a thread, attribution uses
 that thread by default. PR arguments accept links or canonical keys. Add and remove accept up
@@ -134,10 +134,10 @@ to 200 PR references per call. No board command posts on a PR or changes its age
 GitHub is built in (through `gh`; set `hostname` for GitHub Enterprise). Any other server is a
 `command` server: a link pattern, a link template and one shell command per operation, each
 printing JSON. Leave an operation out and Shuttle hides that list for the server. Add servers
-in bb's Settings, Plugins, Shuttle, or with `bb shuttle config-import`. The full contract, with
+in VesnALIA's Settings, Plugins, Shuttle, or with `alia shuttle config-import`. The full contract, with
 an example, is in [references/servers.md](references/servers.md).
 
-A server's review workspace can also start each review on a new machine from any bb machine
+A server's review workspace can also start each review on a new machine from any VesnALIA machine
 provider, with `[server.workspace.machine]`; see "Reviews on a new machine" there. A review
 thread on another machine still hands its draft back with `shuttle_review_draft`, which runs in
-bb's server.
+VesnALIA's server.

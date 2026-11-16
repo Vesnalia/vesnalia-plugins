@@ -1,5 +1,5 @@
 // For tests, not the plugin: read what the plugin handed the fake host.
-import type { PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import type { PluginAgentToolResult } from "@vesnalia/plugin-sdk";
 
 /** An agent tool result's text: the bare string, or its first text part. */
 export function toolText(out: PluginAgentToolResult): string {

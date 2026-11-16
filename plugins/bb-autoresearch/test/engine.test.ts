@@ -96,7 +96,7 @@ describe("study lifecycle and candidate pipeline (fake host)", () => {
 
     await expect(engine.finish("thr_w1")).rejects.toThrow(/record_finding/u);
     expect(await engine.recordFinding("thr_w1", { outcome: "improved", learned: "Padding was 10% of the output." })).toContain("Finding #1");
-    host.refs.set("refs/heads/bb/thr_w1", c.sha);
+    host.refs.set("refs/heads/alia/thr_w1", c.sha);
     expect(await engine.finish("thr_w1")).toContain("Assignment finished");
     engine.onThreadIdle("thr_w1");
     await engine.settle();
@@ -104,7 +104,7 @@ describe("study lifecycle and candidate pipeline (fake host)", () => {
     expect(port.threads.get("thr_w1")!.archivedAt).not.toBeNull();
     expect(port.stopped).toContain("thr_w1");
     expect(port.released).toEqual(["env_w1"]);
-    expect(host.refs.has("refs/heads/bb/thr_w1")).toBe(false);
+    expect(host.refs.has("refs/heads/alia/thr_w1")).toBe(false);
     expect(store.idea(1)!.status).toBe("won");
     const kinds = store.events(store.study(SLUG)!.id, { limit: 200 }).map((e) => e.kind);
     expect(kinds).toEqual(expect.arrayContaining(["candidate.submitted", "candidate.queued", "best.promoted", "candidate.verdict", "verdict.delivered", "finding.recorded", "worker.finished"]));

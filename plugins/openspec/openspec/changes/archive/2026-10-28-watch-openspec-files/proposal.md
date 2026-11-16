@@ -6,8 +6,8 @@ The five-second poll rescans OpenSpec and reads every tasks.md, including archiv
 
 - A native watcher on the environment machine, active only while at least one panel is watching data.
 - One in-memory OpenSpec index per working directory; after an event, reread changed tasks.md files and reuse the other results.
-- Update the interface through standard watched RPC reads and bb realtime invalidation instead of periodic polling.
-- Thread statuses are updated through bb events and shown in the change list.
+- Update the interface through standard watched RPC reads and VesnALIA realtime invalidation instead of periodic polling.
+- Thread statuses are updated through VesnALIA events and shown in the change list.
 - The indicator on the left reflects the proportion of completed tasks; a thread link persists when switching changes and updates in all open views.
 - Missed events, directory recreation, and reconnects trigger a reread of the current state; watch errors are visible to the user.
 - Compare direct reads and the OpenSpec CLI on praxis and lore, reporting speed and data completeness. Do not add the CLI as a dependency unless measurements show an advantage.

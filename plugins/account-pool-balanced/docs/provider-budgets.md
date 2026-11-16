@@ -12,7 +12,7 @@ stored token identity binds project, optional purpose and thread. Optional
 `projectId` must match that identity; it grants no access. Unbound clients are
 refused. No token, label, email or upstream response body is returned.
 
-The schema is `bb-account-pool/provider-budget/1`. `provider`, `projectId`, optional
+The schema is `alia-account-pool/provider-budget/1`. `provider`, `projectId`, optional
 `purpose`, server `observedAt`, `maxAgeMs`, `eligibilityScope: "shared-policy-superset"`,
 existing route flags and `accounts` are
 returned. Each account has `accountId`, conservative `eligible`, `heldUntil`, `supported`,

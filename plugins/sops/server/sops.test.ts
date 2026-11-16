@@ -22,7 +22,7 @@ before(async () => {
     skip = missing;
     return;
   }
-  folder = await mkdtemp(join(tmpdir(), "bb-sops-test-"));
+  folder = await mkdtemp(join(tmpdir(), "alia-sops-test-"));
   execFileSync("age-keygen", ["-o", join(folder, "key.txt")], { stdio: "ignore" });
   const recipient = execFileSync("age-keygen", ["-y", join(folder, "key.txt")]).toString().trim();
   process.env.SOPS_AGE_KEY_FILE = join(folder, "key.txt");

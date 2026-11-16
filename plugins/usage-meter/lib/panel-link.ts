@@ -1,15 +1,15 @@
 // lib/panel-link.ts — one way into the Usage page from anywhere in the plugin.
 //
 // The rings live in a content script, outside React, so they cannot call
-// useBbNavigate() to open the page. The sidebar accessory can, and it is
-// mounted whenever bb draws the plugin's sidebar row, so it leaves a function
+// useAliaNavigate() to open the page. The sidebar accessory can, and it is
+// mounted whenever VesnALIA draws the plugin's sidebar row, so it leaves a function
 // behind for the content script to use. When it is not mounted — a compact
 // viewport, where the host does not render accessories — the link falls back to
 // an ordinary URL. Slower (a full app load), but it always works.
 import { PANEL_URL } from "./limits";
 
 /** Where the opener is parked. A string key, because two bundles share it. */
-const OPENER_KEY = "__bbUsageMeterOpenPanel";
+const OPENER_KEY = "__aliaUsageMeterOpenPanel";
 
 type Opener = (subPath?: string) => void;
 

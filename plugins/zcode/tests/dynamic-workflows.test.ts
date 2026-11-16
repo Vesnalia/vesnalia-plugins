@@ -30,7 +30,7 @@ it("runtimeSettings defaults dynamic workflows off and honors the setting", () =
 });
 
 function harness() {
-  const cwd = mkdtempSync(join(tmpdir(), "bb-zcode-dwf-bridge-"));
+  const cwd = mkdtempSync(join(tmpdir(), "alia-zcode-dwf-bridge-"));
   const messages: Record<string, unknown>[] = [];
   const calls: Array<{ method: string; params: Record<string, unknown> }> = [];
   let serial = 0;

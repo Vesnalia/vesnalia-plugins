@@ -2,7 +2,7 @@
 // the registry, talks to the host entry on the recording machine, maps runtime
 // snapshots to statuses, ingests segments, notifies threads and runs the
 // scheduler/reconcile loop. RPC, CLI, tools and HTTP are thin layers over it.
-import type { BbPluginApi, ExperimentalHostClient } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, ExperimentalHostClient } from "@vesnalia/plugin-sdk";
 import type { z } from "zod";
 import { MAX_SEGMENTS_PAGE, type EnvReport, type HostContract, type RuntimeSnapshot } from "../shared/contract.js";
 import { MeetingUrlError, maskMeetingUrl, parseMeetingUrl, meetingIdentity, type ParsedMeetingUrl } from "../shared/meeting-url.js";
@@ -147,7 +147,7 @@ export class MeetingsService {
   private readonly disposed = new AbortController();
 
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly settings: SettingsHandle,
     private readonly repo: Repository,
     private readonly host: HostClient,
@@ -155,13 +155,13 @@ export class MeetingsService {
   ) {
     this.now = options.now ?? Date.now;
     this.joinPollMs = options.joinPollMs ?? 2_000;
-    this.zoom = new ZoomAccount(bb, settings, this);
-    this.meet = new ZoomAccount(bb, settings, this, "meet");
-    this.telemost = new ZoomAccount(bb, settings, this, "telemost");
-    this.google = new GoogleService(bb, settings, repo, this, options.googleEndpoints);
-    this.calendar = new CalendarService(bb, settings, repo, this, options.fetchText ?? fetchIcs);
-    this.bot = new BotProfileService(bb, settings, this);
-    this.notetaker = new NotetakerService(bb, settings, this);
+    this.zoom = new ZoomAccount(alia, settings, this);
+    this.meet = new ZoomAccount(alia, settings, this, "meet");
+    this.telemost = new ZoomAccount(alia, settings, this, "telemost");
+    this.google = new GoogleService(alia, settings, repo, this, options.googleEndpoints);
+    this.calendar = new CalendarService(alia, settings, repo, this, options.fetchText ?? fetchIcs);
+    this.bot = new BotProfileService(alia, settings, this);
+    this.notetaker = new NotetakerService(alia, settings, this);
   }
 
   // ---------- plumbing ----------
@@ -169,14 +169,14 @@ export class MeetingsService {
   async primaryHostId(): Promise<string> {
     const now = this.now();
     if (this.primaryHost !== null && now - this.primaryHost.at < PRIMARY_HOST_CACHE_MS) return this.primaryHost.id;
-    const id = (await this.bb.sdk.system.config()).primaryHostId;
+    const id = (await this.alia.sdk.system.config()).primaryHostId;
     if (id === null || id === undefined) {
       this.primaryHost = null;
       throw new MeetingsError(
         "no_primary_host",
-        "К bb не подключена основная машина: записывать встречи негде",
-        "No primary machine is connected to bb, so there is nowhere to record",
-        "Start the bb daemon on the machine that should run the bots",
+        "К alia не подключена основная машина: записывать встречи негде",
+        "No primary machine is connected to VesnALIA, so there is nowhere to record",
+        "Start the VesnALIA daemon on the machine that should run the bots",
       );
     }
     this.primaryHost = { id, at: now };
@@ -197,7 +197,7 @@ export class MeetingsService {
   }
 
   publishMeeting(id: string): void {
-    this.bb.realtime.publish(CHANNEL_MEETING_CHANGED, { id });
+    this.alia.realtime.publish(CHANNEL_MEETING_CHANGED, { id });
   }
 
   wake(): void {
@@ -250,9 +250,9 @@ export class MeetingsService {
   private async discardRuntime(id: string, hostId: string | null): Promise<void> {
     try {
       await this.call("meeting.delete", { meetingId: id }, { hostId, timeoutMs: 30_000 });
-      this.bb.log.info(`Meeting ${id} was deleted while its bot was starting; removed it from the host`);
+      this.alia.log.info(`Meeting ${id} was deleted while its bot was starting; removed it from the host`);
     } catch (error) {
-      this.bb.log.warn(`Could not remove the deleted meeting ${id} from the host: ${errorMessage(error)}`);
+      this.alia.log.warn(`Could not remove the deleted meeting ${id} from the host: ${errorMessage(error)}`);
     }
   }
 
@@ -468,7 +468,7 @@ export class MeetingsService {
           "duplicate_meeting",
           `Бот уже в этой встрече: ${live.id} («${live.title}»)`,
           `A bot is already in this meeting: ${live.id} ("${live.title}")`,
-          `Follow it with: bb meetings show ${live.id}`,
+          `Follow it with: VesnALIA meetings show ${live.id}`,
         );
       }
     }
@@ -480,7 +480,7 @@ export class MeetingsService {
         "duplicate_meeting",
         `Эта встреча уже запланирована: ${scheduled.id} («${scheduled.title}»)`,
         `This meeting is already scheduled: ${scheduled.id} ("${scheduled.title}")`,
-        `Cancel it first: bb meetings cancel ${scheduled.id}`,
+        `Cancel it first: VesnALIA meetings cancel ${scheduled.id}`,
       );
     }
   }
@@ -496,7 +496,7 @@ export class MeetingsService {
         "too_many_bots",
         `Уже идёт ${live} записей — это лимит «Одновременных записей» (${settings.maxConcurrentBots}). Остановите одну из встреч или увеличьте лимит в настройках`,
         `${live} recordings are already running, the maxConcurrentBots limit is ${settings.maxConcurrentBots}`,
-        "Stop one (bb meetings stop <id>) or raise it: bb plugin config meetings set maxConcurrentBots <n>",
+        "Stop one (VesnALIA meetings stop <id>) or raise it: VesnALIA plugin config meetings set maxConcurrentBots <n>",
       );
     }
   }
@@ -512,7 +512,7 @@ export class MeetingsService {
     if (report.setup.phase !== "running") {
       if (this.now() - this.autoSetupAt < AUTO_SETUP_RETRY_MS) return report;
       this.autoSetupAt = this.now();
-      this.bb.log.info(`Installing runtime pieces for this plugin version: ${missing.map((item) => item.id).join(", ")}`);
+      this.alia.log.info(`Installing runtime pieces for this plugin version: ${missing.map((item) => item.id).join(", ")}`);
       report = await this.envSetup(false);
     }
     const deadline = this.now() + AUTO_SETUP_WAIT_MS;
@@ -530,9 +530,9 @@ export class MeetingsService {
       const names = missing.map((item) => item.label).join(", ");
       throw new MeetingsError(
         "dependency_missing",
-        `Не хватает компонентов для записи: ${names}. Нажмите «Установить компоненты» на странице «Встречи» или выполните bb meetings setup`,
+        `Не хватает компонентов для записи: ${names}. Нажмите «Установить компоненты» на странице «Встречи» или выполните VesnALIA meetings setup`,
         `Missing runtime components: ${names}`,
-        "Install them with: bb meetings setup (then check: bb meetings doctor)",
+        "Install them with: VesnALIA meetings setup (then check: VesnALIA meetings doctor)",
       );
     }
     return report;
@@ -561,7 +561,7 @@ export class MeetingsService {
       this.gigaamCache = { key, at: now, url: status.url };
       return status.url;
     } catch (error) {
-      this.bb.log.warn(`GigaAM discovery failed: ${errorMessage(error)}`);
+      this.alia.log.warn(`GigaAM discovery failed: ${errorMessage(error)}`);
       return settings.gigaamUrl.trim() || null;
     }
   }
@@ -573,9 +573,9 @@ export class MeetingsService {
     if (report.chromePath === null || report.chromePath === "") {
       throw new MeetingsError(
         "dependency_missing",
-        "Google Chrome не найден на машине записи. Установите компоненты (bb meetings setup) или укажите путь в настройке «Путь к Google Chrome»",
+        "Google Chrome не найден на машине записи. Установите компоненты (VesnALIA meetings setup) или укажите путь в настройке «Путь к Google Chrome»",
         "Google Chrome was not found on the recording machine",
-        "Run bb meetings setup, or set it: bb plugin config meetings set chromePath /usr/bin/google-chrome-stable",
+        "Run alia meetings setup, or set it: VesnALIA plugin config meetings set chromePath /usr/bin/google-chrome-stable",
       );
     }
     return report.chromePath;
@@ -610,16 +610,16 @@ export class MeetingsService {
       try {
         const profile = await this.call("zoom.profile", { action: "status" }, { hostId, signal });
         if (profile.signedIn) zoomProfileDir = profile.path;
-        else this.bb.log.warn("useZoomAccount is on but there is no signed-in Zoom profile; joining as a guest");
+        else this.alia.log.warn("useZoomAccount is on but there is no signed-in Zoom profile; joining as a guest");
       } catch (error) {
-        this.bb.log.warn(`Could not read the Zoom profile: ${errorMessage(error)}`);
+        this.alia.log.warn(`Could not read the Zoom profile: ${errorMessage(error)}`);
       }
     }
     let browserProfileDir: string | null = zoomProfileDir;
     if ((parsed.platform === "meet" && settings.useMeetAccount) || (parsed.platform === "telemost" && settings.useTelemostAccount)) {
       const profile = await this.call("browser.profile", { platform: parsed.platform as "meet" | "telemost", action: "status" }, { hostId, signal });
       if (profile.signedIn) browserProfileDir = profile.path;
-      else this.bb.log.warn(`No authenticated ${parsed.platform} profile is available; joining as a guest`);
+      else this.alia.log.warn(`No authenticated ${parsed.platform} profile is available; joining as a guest`);
     }
     const maxDurationMinutes = this.maxDurationMinutes(row, settings);
     return botConfigSchema.parse({
@@ -703,7 +703,7 @@ export class MeetingsService {
         endedAt: this.now(),
       });
       this.publishMeeting(row.id);
-      this.bb.log.warn(`Meeting ${row.id} failed to start: ${errorMessage(error)}`);
+      this.alia.log.warn(`Meeting ${row.id} failed to start: ${errorMessage(error)}`);
       // An interactive caller reports the error itself; don't message its thread again.
       if (options.throwOnError) this.repo.claimNotification(row.id, this.now());
       else await this.notify(failed);
@@ -713,7 +713,7 @@ export class MeetingsService {
           "start_failed",
           `Не удалось запустить бота: ${errorMessage(error)}`,
           `Could not start the bot: ${errorMessage(error)}`,
-          "Check the machine with: bb meetings doctor",
+          "Check the machine with: VesnALIA meetings doctor",
         );
       }
       return failed;
@@ -730,7 +730,7 @@ export class MeetingsService {
       const { snapshots } = await this.call("meeting.status", { meetingIds: [id] }, { hostId: row.hostId, timeoutMs: 5_000 });
       const snapshot = snapshots.find((s) => s.meetingId === id);
       if (snapshot === undefined || !snapshot.exists || (!snapshot.botAlive && snapshot.bot === null)) return null;
-      this.bb.log.warn(`meeting.start for ${id} failed, but the bot is running; following it`);
+      this.alia.log.warn(`meeting.start for ${id} failed, but the bot is running; following it`);
       return await this.withLock(id, () => this.applySnapshot(this.requireMeeting(id), snapshot));
     } catch {
       return null;
@@ -774,7 +774,7 @@ export class MeetingsService {
         try {
           row = await this.refresh(id, signal);
         } catch (error) {
-          this.bb.log.warn(`Polling ${id} failed: ${errorMessage(error)}`);
+          this.alia.log.warn(`Polling ${id} failed: ${errorMessage(error)}`);
           row = this.requireMeeting(id);
         }
       }
@@ -799,7 +799,7 @@ export class MeetingsService {
       failures += 1;
       options = { ...options, lastFailedTranscriberStart: transcriber.startedAt };
       const reason = transcriber.phase === "failed" ? (transcriber.error ?? transcriber.detail) : `exited during ${transcriber.phase}`;
-      this.bb.log.warn(`Transcriber of ${row.id} failed (${failures}): ${reason}`);
+      this.alia.log.warn(`Transcriber of ${row.id} failed (${failures}): ${reason}`);
     }
     const mark = `${snapshot.transcriberAlive}:${transcriber?.startedAt ?? 0}:${transcriber?.phase ?? ""}:${transcriber?.processedSec ?? 0}`;
     if (options.transcriberMark !== mark) options = { ...options, transcriberMark: mark, transcriberMarkAt: now };
@@ -821,7 +821,7 @@ export class MeetingsService {
       try {
         current = await this.ingestSegments(current, snapshot, signal);
       } catch (error) {
-        this.bb.log.warn(`Could not load segments of ${row.id}: ${errorMessage(error)}`);
+        this.alia.log.warn(`Could not load segments of ${row.id}: ${errorMessage(error)}`);
       }
     }
 
@@ -847,7 +847,7 @@ export class MeetingsService {
       try {
         await this.discoverGigaam(await this.settings.get(), row.hostId ?? (await this.primaryHostId()), signal);
       } catch (error) {
-        this.bb.log.warn(`GigaAM rediscovery for ${row.id} failed: ${errorMessage(error)}`);
+        this.alia.log.warn(`GigaAM rediscovery for ${row.id} failed: ${errorMessage(error)}`);
       }
     }
     const next = this.repo.updateMeeting(row.id, patch, now);
@@ -855,7 +855,7 @@ export class MeetingsService {
     if (next.status === "recording" && audioIssueEscalated(mapped.audioIssue)) await this.notifyWarning(next);
     if (!TERMINAL_STATUSES.has(row.status) && (next.status === "done" || next.status === "failed")) {
       await this.notify(next);
-      void this.notetaker.completed(next).catch(() => this.bb.log.warn(`Completion delivery failed for ${next.id}`));
+      void this.notetaker.completed(next).catch(() => this.alia.log.warn(`Completion delivery failed for ${next.id}`));
     }
     return next;
   }
@@ -872,9 +872,9 @@ export class MeetingsService {
         { meetingId: row.id, mode: "live", transcriber: this.transcriberConfig(settings, gigaamUrl) },
         { hostId, signal },
       );
-      if (after.transcriberAlive) this.bb.log.info(`Started the transcriber for ${row.id}`);
+      if (after.transcriberAlive) this.alia.log.info(`Started the transcriber for ${row.id}`);
     } catch (error) {
-      this.bb.log.warn(`Could not start the transcriber for ${row.id}: ${errorMessage(error)}`);
+      this.alia.log.warn(`Could not start the transcriber for ${row.id}: ${errorMessage(error)}`);
     }
   }
 
@@ -900,7 +900,7 @@ export class MeetingsService {
     if (page.segments.length === 0) return row;
     this.repo.upsertSegments(row.id, page.segments, false);
     const next = this.storeSegmentStats(row);
-    this.bb.realtime.publish(CHANNEL_MEETING_SEGMENTS, { id: row.id, lastId: page.lastId });
+    this.alia.realtime.publish(CHANNEL_MEETING_SEGMENTS, { id: row.id, lastId: page.lastId });
     return next;
   }
 
@@ -924,7 +924,7 @@ export class MeetingsService {
       segmentsCount: all.length,
       speakers: speakersFromSegments(all),
     });
-    this.bb.realtime.publish(CHANNEL_MEETING_SEGMENTS, { id: row.id, lastId: all.at(-1)?.id ?? -1 });
+    this.alia.realtime.publish(CHANNEL_MEETING_SEGMENTS, { id: row.id, lastId: all.at(-1)?.id ?? -1 });
     return next;
   }
 
@@ -944,13 +944,13 @@ export class MeetingsService {
     const summaryPrompt = await this.notetaker.notificationPrompt(row).catch(() => settings.autoSummaryPrompt);
     const text = notificationText(row, summaryPrompt);
     try {
-      await this.bb.sdk.threads.send({
+      await this.alia.sdk.threads.send({
         threadId: row.requestedByThreadId,
         mode: "queue-if-active",
         input: [{ type: "text", text, mentions: [] }],
       });
     } catch (error) {
-      this.bb.log.warn(`Could not notify thread ${row.requestedByThreadId} about ${row.id}: ${errorMessage(error)}`);
+      this.alia.log.warn(`Could not notify thread ${row.requestedByThreadId} about ${row.id}: ${errorMessage(error)}`);
     }
   }
 
@@ -963,15 +963,15 @@ export class MeetingsService {
     const settings = await this.settings.get();
     if (!settings.notifyThread) return;
     if (!this.repo.claimWarningNotification(row.id, this.now())) return;
-    this.bb.log.warn(`Meeting ${row.id}: the bot cannot hear the participants; warning thread ${row.requestedByThreadId}`);
+    this.alia.log.warn(`Meeting ${row.id}: the bot cannot hear the participants; warning thread ${row.requestedByThreadId}`);
     try {
-      await this.bb.sdk.threads.send({
+      await this.alia.sdk.threads.send({
         threadId: row.requestedByThreadId,
         mode: "queue-if-active",
         input: [{ type: "text", text: warningNotificationText(row), mentions: [] }],
       });
     } catch (error) {
-      this.bb.log.warn(`Could not warn thread ${row.requestedByThreadId} about ${row.id}: ${errorMessage(error)}`);
+      this.alia.log.warn(`Could not warn thread ${row.requestedByThreadId} about ${row.id}: ${errorMessage(error)}`);
     }
   }
 
@@ -986,7 +986,7 @@ export class MeetingsService {
       try {
         this.calendar.reapply(settings);
       } catch (error) {
-        this.bb.log.warn(`Could not apply the calendar settings: ${errorMessage(error)}`);
+        this.alia.log.warn(`Could not apply the calendar settings: ${errorMessage(error)}`);
       }
     }
     for (const listed of due.sort((a, b) => (a.scheduledAt ?? 0) - (b.scheduledAt ?? 0))) {
@@ -1001,7 +1001,7 @@ export class MeetingsService {
           errorCode: "unknown",
           errorMessage: waitedForBot
             ? `Встреча пропущена: все боты были заняты другими встречами (лимит «Одновременных записей» — ${settings.maxConcurrentBots})`
-            : "Встреча пропущена: в назначенное время bb не работал",
+            : "Встреча пропущена: в назначенное время alia не работал",
           endedAt: now,
         });
         this.publishMeeting(row.id);
@@ -1063,7 +1063,7 @@ export class MeetingsService {
     await this.reconcileActive(signal);
     let busy = this.repo.countWithStatus([...ACTIVE_STATUSES]) > 0;
     const signingIn = await Promise.all([this.zoom, this.meet, this.telemost].map((account) => account.active(signal))).then((active) => active.some(Boolean)).catch((error: unknown) => {
-      this.bb.log.warn(`Zoom sign-in session check failed: ${errorMessage(error)}`);
+      this.alia.log.warn(`Zoom sign-in session check failed: ${errorMessage(error)}`);
       return false;
     });
     if (signingIn) busy = true;
@@ -1086,7 +1086,7 @@ export class MeetingsService {
     try {
       await this.autoSetup(await this.envReport(true), false, signal);
     } catch (error) {
-      if (!signal.aborted) this.bb.log.warn(`Runtime check at startup failed: ${errorMessage(error)}`);
+      if (!signal.aborted) this.alia.log.warn(`Runtime check at startup failed: ${errorMessage(error)}`);
     }
     while (!signal.aborted) {
       let delay = IDLE_POLL_MS;
@@ -1096,7 +1096,7 @@ export class MeetingsService {
       } catch (error) {
         if (signal.aborted) break;
         const problem = errorMessage(error);
-        if (problem !== this.lastTickProblem) this.bb.log.warn(`Reconcile failed: ${problem}`);
+        if (problem !== this.lastTickProblem) this.alia.log.warn(`Reconcile failed: ${problem}`);
         this.lastTickProblem = problem;
       }
       await sleep(delay, signal, (wake) => {
@@ -1146,13 +1146,13 @@ export class MeetingsService {
         "not_scheduled",
         "Отменить можно только запланированную встречу. Чтобы бот вышел из идущей встречи, используйте «Остановить»",
         `Only scheduled meetings can be cancelled; ${id} is ${row.status}`,
-        `Use: bb meetings stop ${id}`,
+        `Use: VesnALIA meetings stop ${id}`,
       );
     }
     if (row.calendarKey !== null) this.repo.setCalendarEventFields(row.calendarKey, { skipped: true });
     const next = this.repo.updateMeeting(id, { status: "cancelled", statusDetail: "Отменена", endedAt: this.now() });
     this.publishMeeting(id);
-    if (row.calendarKey !== null) this.bb.realtime.publish(CHANNEL_CALENDAR_CHANGED, {});
+    if (row.calendarKey !== null) this.alia.realtime.publish(CHANNEL_CALENDAR_CHANGED, {});
     return next;
   }
 
@@ -1218,7 +1218,7 @@ export class MeetingsService {
         hostId,
       });
       this.publishMeeting(id);
-      this.bb.realtime.publish(CHANNEL_MEETING_SEGMENTS, { id, lastId: -1 });
+      this.alia.realtime.publish(CHANNEL_MEETING_SEGMENTS, { id, lastId: -1 });
       this.wake();
       return next;
     });
@@ -1275,7 +1275,7 @@ export class MeetingsService {
     else names[key] = trimmed;
     const next = this.repo.updateMeeting(id, { speakerNames: names });
     this.publishMeeting(id);
-    this.bb.realtime.publish(CHANNEL_MEETING_SEGMENTS, { id, lastId: -1 });
+    this.alia.realtime.publish(CHANNEL_MEETING_SEGMENTS, { id, lastId: -1 });
     return next;
   }
 
@@ -1393,7 +1393,7 @@ export class MeetingsService {
     const previous = this.envCache?.report;
     this.envCache = { at: this.now(), report };
     if (previous !== undefined && (previous.ready !== report.ready || previous.setup.phase !== report.setup.phase)) {
-      this.bb.realtime.publish(CHANNEL_ENV_CHANGED, {});
+      this.alia.realtime.publish(CHANNEL_ENV_CHANGED, {});
     }
     this.lastSetupPhase = report.setup.phase;
   }
@@ -1415,7 +1415,7 @@ export class MeetingsService {
     );
     this.envCache = { at: this.now(), report };
     this.lastSetupPhase = report.setup.phase;
-    this.bb.realtime.publish(CHANNEL_ENV_CHANGED, {});
+    this.alia.realtime.publish(CHANNEL_ENV_CHANGED, {});
     this.wake();
     return report;
   }

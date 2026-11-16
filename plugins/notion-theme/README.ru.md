@@ -1,8 +1,8 @@
 # Notion Theme
 
-Палитра Notion для [BB](https://getbb.app): цвета страницы и шрифты, светлая и тёмная тема.
+Палитра Notion для [VesnALIA](https://getbb.app): цвета страницы и шрифты, светлая и тёмная тема.
 
-После установки выбери **Notion** в Settings → Appearance или выполни `bb theme set plugin:notion-theme:notion`. Сброс: `bb theme reset`.
+После установки выбери **Notion** в Settings → Appearance или выполни `alia theme set plugin:notion-theme:notion`. Сброс: `alia theme reset`.
 
 На странице настроек плагина три плитки Ag — Default, Serif, Mono — для сообщений и композера. Остальной интерфейс остаётся на дефолтном стеке Notion.
 

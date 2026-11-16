@@ -279,7 +279,7 @@ function othersNext(f: NextFacts): NextStep {
       : run.endedBy === "thread"
         ? ["The review couldn\u2019t finish", `\u201c${run.title}\u201d says: ${run.note ?? "it could not finish the review."}`]
         : run.endedBy === "setup"
-          ? ["The review thread couldn\u2019t be set up", `bb could not set up the workspace of \u201c${run.title}\u201d, so the review never started.${(run.attempt ?? 1) > 1 ? ` Shuttle tried ${run.attempt} times, each in a new thread.` : ""}`]
+          ? ["The review thread couldn\u2019t be set up", `alia could not set up the workspace of \u201c${run.title}\u201d, so the review never started.${(run.attempt ?? 1) > 1 ? ` Shuttle tried ${run.attempt} times, each in a new thread.` : ""}`]
           : ["The review thread failed", `\u201c${run.title}\u201d stopped with an error.`];
     return step("review_failed", "bad", label, why, {
       inbox: true,

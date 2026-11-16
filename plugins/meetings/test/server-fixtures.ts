@@ -4,7 +4,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import type { AvatarStatus, EnvReport, RuntimeSnapshot } from "../src/shared/contract.js";
 import {
   botConfigSchema,
@@ -47,7 +47,7 @@ export function envReport(overrides: Partial<EnvReport> = {}): EnvReport {
     ],
     setup: { phase: "idle", message: "", startedAt: null, finishedAt: null, logTail: "" },
     runtimeHash: "abc123",
-    hostDataDir: "/home/bb/.bb/plugins/meetings/host-data",
+    hostDataDir: "/home/alia/.vesnalia/plugins/meetings/host-data",
     sudo: true,
     gigaam: { url: GIGAAM_URL, ready: true, detail: "ok" },
     chromePath: CHROME,
@@ -113,7 +113,7 @@ export class FakeRuntime {
   readonly meetings = new Map<string, FakeMeeting>();
   env: EnvReport = envReport();
   failStart: string | null = null;
-  profile = { exists: false, signedIn: false, path: "/home/bb/.bb/plugins/meetings/host-data/profiles/zoom", updatedAt: null as number | null };
+  profile = { exists: false, signedIn: false, path: "/home/alia/.vesnalia/plugins/meetings/host-data/profiles/zoom", updatedAt: null as number | null };
   ensureCalls: Array<{ meetingId: string; mode: string }> = [];
   controlSeq = 0;
   viewers: Array<{ meetingId: string; untilMs: number }> = [];
@@ -298,7 +298,7 @@ export interface LoadOptions {
 export async function load(options: LoadOptions = {}) {
   const fake = new FakeRuntime();
   let service: MeetingsService | null = null;
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "meetings",
     settings: options.settings,
     appUrl: "https://bb.example",
@@ -323,9 +323,9 @@ export async function load(options: LoadOptions = {}) {
     fetchText: options.fetchText,
     googleEndpoints: options.googleEndpoints,
     onService: (s) => (service = s),
-  })(bb);
+  })(alia);
   if (service === null) throw new Error("service not created");
-  return { bb, harness, fake, service: service as MeetingsService };
+  return { alia, harness, fake, service: service as MeetingsService };
 }
 
 /** Hold meeting.start calls until the returned function is called (races with a starting bot). */

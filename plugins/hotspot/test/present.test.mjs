@@ -34,7 +34,7 @@ test("verdict: calm and nothing busy reassures", () => {
     "calm",
     "Running cool",
     null,
-    "Nothing in BB is working hard.",
+    "Nothing in VesnALIA is working hard.",
   ]);
   assert.equal(view.detail, "12% CPU · thermal pressure nominal");
 });
@@ -59,7 +59,7 @@ test("verdict: moderate warms, CPU over the line works hard, unknown thermal ove
     "Running hot",
     "90% CPU",
     null,
-    "No BB thread is the main cause.",
+    "No VesnALIA thread is the main cause.",
   ]);
 });
 

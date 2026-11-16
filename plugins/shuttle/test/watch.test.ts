@@ -34,7 +34,7 @@ describe("linking", () => {
     expect(h.shuttle.view("forge:acme/app#1").links).toHaveLength(1);
   });
 
-  it("reads every linked thread from bb on each sync, a hundred at a time, so a thread archived without an event is known as archived", async () => {
+  it("reads every linked thread from VesnALIA on each sync, a hundred at a time, so a thread archived without an event is known as archived", async () => {
     const h = await setup();
     for (let i = 0; i < 105; i++) {
       h.port.addThread(`thr_ref${i}`, `Reference ${i}`);

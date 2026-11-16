@@ -1,17 +1,17 @@
 /**
- * What the panel lists: bb decides *who* is waiting, Herald explains *why*.
+ * What the panel lists: VesnALIA decides *who* is waiting, Herald explains *why*.
  *
- * Two sources, joined by thread id. bb's own state — the sidebar's unread dot
+ * Two sources, joined by thread id. VesnALIA's own state — the sidebar's unread dot
  * and its "waiting for input" — decides who is listed, live, without a round
- * trip; Herald's entries add the reason and the sentence. A thread bb flags
+ * trip; Herald's entries add the reason and the sentence. A thread VesnALIA flags
  * that Herald has no entry for (an event from before the plugin was watching,
- * say) is still listed, with what bb knows.
+ * say) is still listed, with what VesnALIA knows.
  */
-import type { PluginSidebarThreadIndicator } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThreadIndicator } from "@vesnalia/plugin-sdk/app";
 
 import type { AttentionEntry, AttentionReason } from "../shared/herald";
 
-/** The fields of bb's sidebar thread this join reads. */
+/** The fields of VesnALIA's sidebar thread this join reads. */
 export interface ThreadState {
   id: string;
   projectId: string;
@@ -25,7 +25,7 @@ export interface ThreadState {
   latestAttentionAt: number;
 }
 
-/** A row's reason: one of Herald's, or what bb alone says. */
+/** A row's reason: one of Herald's, or what VesnALIA alone says. */
 export type RowReason = AttentionReason | "input" | "attention";
 
 export interface Row {
@@ -33,10 +33,10 @@ export interface Row {
   projectId: string;
   title: string;
   reason: RowReason;
-  /** Epoch ms the row sorts by: the event, or when bb last flagged the thread. */
+  /** Epoch ms the row sorts by: the event, or when VesnALIA last flagged the thread. */
   at: number;
   entry: AttentionEntry | null;
-  /** bb's status for the thread, drawn with bb's own glyph; null while bb's list is loading. */
+  /** VesnALIA's status for the thread, drawn with VesnALIA's own glyph; null while VesnALIA's list is loading. */
   indicator: PluginSidebarThreadIndicator | null;
 }
 
@@ -57,7 +57,7 @@ function isFlagged(thread: ThreadState): boolean {
 
 /**
  * Whether an entry still describes its thread. An entry for an interaction
- * lasts while bb says the thread waits for input — answering it fires nothing
+ * lasts while VesnALIA says the thread waits for input — answering it fires nothing
  * Herald hears, so this is what takes it off the panel at once. A finish on a
  * thread that is working again is hidden: some providers report a turn as
  * finished and carry on.
@@ -70,7 +70,7 @@ function isCurrentEntry(entry: AttentionEntry, thread: ThreadState, now: number)
   return now - Date.parse(entry.createdAt) < FRESH_ENTRY_MS;
 }
 
-function reasonFromBb(thread: ThreadState): RowReason {
+function reasonFromAlia(thread: ThreadState): RowReason {
   if (thread.hasPendingInteraction) return "input";
   if (thread.indicator === "unread-error") return "error";
   if (thread.indicator === "unread-success") return "finished";
@@ -78,7 +78,7 @@ function reasonFromBb(thread: ThreadState): RowReason {
 }
 
 /**
- * The panel's rows, newest first. `threads` is null while bb's thread list is
+ * The panel's rows, newest first. `threads` is null while VesnALIA's thread list is
  * still loading, and then Herald's entries are shown as they are.
  */
 export function joinRows(entries: readonly AttentionEntry[], threads: readonly ThreadState[] | null, now: number): Row[] {
@@ -103,7 +103,7 @@ export function joinRows(entries: readonly AttentionEntry[], threads: readonly T
       threadId: thread.id,
       projectId: thread.projectId,
       title: thread.displayTitle,
-      reason: reasonFromBb(thread),
+      reason: reasonFromAlia(thread),
       at: thread.latestAttentionAt,
       entry: null,
       indicator: thread.indicator,

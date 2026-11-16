@@ -1,4 +1,4 @@
-// bb-plugin-prompts — backend entry.
+// alia-plugin-prompts — backend entry.
 //
 // Two complementary stores over one SQLite db:
 // - QUEUE: one-shot prompts written while agents are busy, scoped to a thread,
@@ -15,7 +15,7 @@
 //
 // A thread ending is not the end of its prompts: they move to the project's
 // queue, so the next session in that project still has the user's writing.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { rpcContract } from "./lib/contract";
 import { registerAgentTools } from "./lib/agent-tools";
 import { CLI_COMMANDS, createCliRunner } from "./lib/cli";
@@ -41,7 +41,7 @@ const DEFAULT_IDLE_DELAY_SECONDS = 20;
 /** Prompt-history entries pulled per project/thread when mining for suggestions. */
 const HISTORY_LIMIT = 500;
 /**
- * Recent threads whose history is mined. bb keeps prompt history per thread as
+ * Recent threads whose history is mined. VesnALIA keeps prompt history per thread as
  * well as per project, and the thread-scoped ones are the bulk of it — the
  * follow-ups ("commit and push", "fix all issues") are typed inside threads,
  * not into a project's new-thread composer.
@@ -58,12 +58,12 @@ const OVERVIEW_PROJECT_LIMIT = 20;
 const TARGET_LIMIT = 15;
 const TARGET_SCAN = 60;
 
-export default function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+export default function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, MIGRATIONS);
   const store = createStore(db);
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     autoSendDelaySeconds: {
       type: "string",
       label: "Auto-send idle delay (seconds)",
@@ -161,49 +161,49 @@ export default function plugin(bb: BbPluginApi) {
 
   function notify(signal: Signal): void {
     try {
-      bb.realtime.publish(REALTIME_CHANNEL, signal);
+      alia.realtime.publish(REALTIME_CHANNEL, signal);
     } catch {
       // Best-effort; the UI refetches when reopened.
     }
   }
 
-  // ---- The bb surface this plugin uses, as plain functions ----
+  // ---- The VesnALIA surface this plugin uses, as plain functions ----
   const host: PromptsHost = {
     async send(threadId, text) {
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.send({
         threadId,
         mode: "auto",
         input: [{ type: "text", text, mentions: [] }],
       });
     },
     async getThread(threadId) {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       return thread as unknown as ThreadInfo;
     },
     async listThreads(options) {
-      const threads = await bb.sdk.threads.list(options);
+      const threads = await alia.sdk.threads.list(options);
       return threads as unknown as ThreadInfo[];
     },
     async listProjects() {
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       return projects.map((project) => ({ id: project.id, name: project.name }));
     },
     async projectHistory(projectId, limit) {
-      const entries = await bb.sdk.projects.promptHistory({
+      const entries = await alia.sdk.projects.promptHistory({
         projectId,
         limit: String(limit),
       });
       return entries as unknown as HistoryEntryLike[];
     },
     async threadHistory(threadId, limit) {
-      const entries = await bb.sdk.threads.promptHistory({
+      const entries = await alia.sdk.threads.promptHistory({
         threadId,
         limit: String(limit),
       });
       return entries as unknown as HistoryEntryLike[];
     },
     async listQueuedMessages(threadId) {
-      const messages = await bb.sdk.threads.queuedMessages.list({ threadId });
+      const messages = await alia.sdk.threads.queuedMessages.list({ threadId });
       return messages.map((message) => ({
         id: message.id,
         content: message.content as { type: string; text?: string }[],
@@ -211,16 +211,16 @@ export default function plugin(bb: BbPluginApi) {
       }));
     },
     async createQueuedMessage(threadId, text) {
-      await bb.sdk.threads.queuedMessages.create({
+      await alia.sdk.threads.queuedMessages.create({
         threadId,
         input: [{ type: "text", text, mentions: [] }],
       });
     },
     async deleteQueuedMessage(threadId, queuedMessageId) {
-      await bb.sdk.threads.queuedMessages.delete({ threadId, queuedMessageId });
+      await alia.sdk.threads.queuedMessages.delete({ threadId, queuedMessageId });
     },
     async sendQueuedMessage(threadId, queuedMessageId) {
-      await bb.sdk.threads.queuedMessages.send({
+      await alia.sdk.threads.queuedMessages.send({
         threadId,
         queuedMessageId,
         mode: "auto",
@@ -232,7 +232,7 @@ export default function plugin(bb: BbPluginApi) {
     store,
     host,
     notify,
-    log: bb.log,
+    log: alia.log,
     threadEndMode: () => threadEndMode,
   });
 
@@ -271,7 +271,7 @@ export default function plugin(bb: BbPluginApi) {
         return entries.flatMap(toHistoryPrompt);
       } catch (error) {
         if (!disposed)
-          bb.log.warn(`prompt history unavailable for ${label}: ${errorText(error)}`);
+          alia.log.warn(`prompt history unavailable for ${label}: ${errorText(error)}`);
         return [];
       }
     }
@@ -296,7 +296,7 @@ export default function plugin(bb: BbPluginApi) {
     const fromProjects = perProject.flat();
     const fromThreads = perThread.flat();
     if (!disposed)
-      bb.log.info(
+      alia.log.info(
         `scanned ${projects.length} projects (${fromProjects.length} prompts) ` +
           `and ${threads.length} threads (${fromThreads.length} prompts)`,
       );
@@ -309,9 +309,9 @@ export default function plugin(bb: BbPluginApi) {
       store.listSnippets("", { limit: 500 }).snippets.map((snippet) => snippet.body),
     dismissedKeys: () => store.listDismissedSuggestions(),
     dismissedCount: () => store.countDismissedSuggestions(),
-    kvGet: (key) => bb.storage.kv.get(key),
-    kvSet: (key, value) => bb.storage.kv.set(key, value),
-    log: bb.log,
+    kvGet: (key) => alia.storage.kv.get(key),
+    kvSet: (key, value) => alia.storage.kv.set(key, value),
+    log: alia.log,
     onMined: () =>
       notify({
         topic: "suggestions",
@@ -334,7 +334,7 @@ export default function plugin(bb: BbPluginApi) {
   });
 
   // ---- RPC ----
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     listPrompts({ threadId, projectId }) {
       return {
         threadPrompts:
@@ -646,7 +646,7 @@ export default function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.events.on("thread.idle", ({ thread }) => {
+  alia.events.on("thread.idle", ({ thread }) => {
     if (store.countQueued(thread.id) === 0) return;
     notify({
       topic: "queue",
@@ -661,17 +661,17 @@ export default function plugin(bb: BbPluginApi) {
       idleTimers.delete(thread.id);
       if (threadEpoch.get(thread.id) !== epoch) return;
       void operations.drainOne(thread.id).catch((error) => {
-        bb.log.error(`auto-send drain failed: ${errorText(error)}`);
+        alia.log.error(`auto-send drain failed: ${errorText(error)}`);
       });
     }, idleDelayMs);
     idleTimers.set(thread.id, timer);
   });
 
-  bb.events.on("thread.active", ({ thread }) => {
+  alia.events.on("thread.active", ({ thread }) => {
     cancelIdleTimer(thread.id);
     bumpEpoch(thread.id);
     // Native queued messages deliver at turn boundaries — nudge any open
-    // popover/panel to refetch its "In bb's queue" section, but only for a
+    // popover/panel to refetch its "In VesnALIA's queue" section, but only for a
     // thread this plugin actually holds something for.
     if (store.countQueued(thread.id) > 0)
       notify({
@@ -685,13 +685,13 @@ export default function plugin(bb: BbPluginApi) {
   // A failed thread never goes idle, so an armed queue would wait forever
   // behind a banner promising it will send "when the agent finishes". Hold it
   // explicitly instead: pausing is visible, reversible, and says what happened.
-  bb.events.on("thread.failed", ({ thread, error }) => {
+  alia.events.on("thread.failed", ({ thread, error }) => {
     cancelIdleTimer(thread.id);
     bumpEpoch(thread.id);
     if (!store.nextArmed(thread.id)) return;
     if (store.isPaused(thread.id)) return;
     store.setPaused(thread.id, true);
-    bb.log.warn(
+    alia.log.warn(
       `thread ${thread.id} failed — auto-send paused with prompts still queued` +
         (error ? `: ${error}` : ""),
     );
@@ -712,13 +712,13 @@ export default function plugin(bb: BbPluginApi) {
         projectId: thread.projectId ?? null,
         title: thread.title ?? thread.titleFallback ?? null,
       })
-      .catch((error) => bb.log.error(`thread cleanup failed: ${errorText(error)}`));
+      .catch((error) => alia.log.error(`thread cleanup failed: ${errorText(error)}`));
   }
 
-  bb.events.on("thread.archived", ({ thread }) => endThread(thread));
-  bb.events.on("thread.deleted", ({ thread }) => endThread(thread));
+  alia.events.on("thread.archived", ({ thread }) => endThread(thread));
+  alia.events.on("thread.deleted", ({ thread }) => endThread(thread));
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     // A mine in flight outlives this context by seconds; the flag stops it
     // from logging or publishing through an API that is already gone.
     disposed = true;
@@ -728,7 +728,7 @@ export default function plugin(bb: BbPluginApi) {
   });
 
   // ---- Scheduled sends: fire due prompts regardless of idle state ----
-  bb.background.schedule("scheduled-send", "* * * * *", async () => {
+  alia.background.schedule("scheduled-send", "* * * * *", async () => {
     for (const prompt of store.listDue(Date.now())) {
       if (prompt.threadId === null) continue;
       await operations.sendPrompt(prompt, prompt.threadId, "scheduled");
@@ -736,7 +736,7 @@ export default function plugin(bb: BbPluginApi) {
   });
 
   // ---- Agent awareness ----
-  bb.agents.contributeInstructions(({ threadId, projectId }) => {
+  alia.agents.contributeInstructions(({ threadId, projectId }) => {
     if (!threadId) return null;
     const queued = store.countQueued(threadId);
     const project =
@@ -759,10 +759,10 @@ export default function plugin(bb: BbPluginApi) {
     return parts.join(" ");
   });
 
-  registerAgentTools(bb, { store, operations, notify });
+  registerAgentTools(alia, { store, operations, notify });
 
   // ---- @snippet mentions: reference a saved prompt, resolved at send time ----
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: "snippet",
     label: "Snippets",
     triggers: ["@", "~"],
@@ -795,8 +795,8 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  // ---- CLI: bb prompts ----
-  bb.cli.register({
+  // ---- CLI: VesnALIA prompts ----
+  alia.cli.register({
     name: "prompts",
     summary:
       "Prompt queue + snippets: stash prompts, auto-send on idle, reusable templates",

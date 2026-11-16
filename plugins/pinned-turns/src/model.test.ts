@@ -140,8 +140,8 @@ test("indexOf: an interrupted turn marks the reply, and a later reply clears it"
   assert.equal(indexOf([user(1), reply(1), interrupted(), reply(2)], false).messages.find((m) => m.title === "a2")?.status, undefined);
 });
 
-test("indexOf: titles read mentions as their labels and drop BB's own tag", () => {
-  const text = "[bb system] @thread:thr_x finished";
+test("indexOf: titles read mentions as their labels and drop VesnALIA's own tag", () => {
+  const text = "[VesnALIA system] @thread:thr_x finished";
   const mention = { start: 12, end: 25, resource: { label: "Review thread" } };
   const { messages } = indexOf([user(1, text, { mentions: [mention], initiator: "system" })], false);
   assert.equal(messages[0]?.title, "Review thread finished");
@@ -193,7 +193,7 @@ test("flatten: a turn's children follow it", () => {
   assert.deepEqual(ids(flatten([user(1), turn])), ["t:user-seed:1", "turn", "w"]);
 });
 
-test("rankOfRow: a row BB made up takes the rank of the nearest known row before it", () => {
+test("rankOfRow: a row VesnALIA made up takes the rank of the nearest known row before it", () => {
   const rank = new Map([["t:user-seed:1", 0], ["t:work:1", 1]]);
   const dom = (id: string) => ({ dataset: { timelineRowId: id } }) as unknown as HTMLElement;
   const rows = [dom("t:user-seed:1"), dom("t:turn:work-summary:t:work:1"), dom("t:turn:unknown")];
@@ -207,11 +207,11 @@ test("outlineOf: counts the messages the bar names, not another agent's or an em
   const item = (id: string, preview: string, attachmentSummary: { count: number } | null = null) => ({ id, preview, attachmentSummary }) as Parameters<typeof outlineOf>[0][number];
   const out = outlineOf([
     item("u1", "first"),
-    item("u2", "[bb message from thread:thr_abc123] done"),
-    item("u3", "[bb system] @thread:thr_x finished"),
+    item("u2", "[VesnALIA message from thread:thr_abc123] done"),
+    item("u3", "[VesnALIA system] @thread:thr_x finished"),
     item("u4", ""),
     item("u5", "", { count: 1 }),
-    item("u6", "[bb message from thread is just text"),
+    item("u6", "[VesnALIA message from thread is just text"),
   ]);
   assert.deepEqual([...out.ordinals], [["u1", 1], ["u3", 2], ["u5", 3], ["u6", 4]]);
   assert.equal(out.total, 4);

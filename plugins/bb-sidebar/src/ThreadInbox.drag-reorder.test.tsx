@@ -10,7 +10,7 @@ await loadInboxApp();
 
 describe("ThreadInbox", () => {
   it("retains attention root across reorder", async () => {
-    window.localStorage.setItem("bb-sidebar:shelf-expansion:v1", JSON.stringify({ pinned: true }));
+    window.localStorage.setItem("alia-sidebar:shelf-expansion:v1", JSON.stringify({ pinned: true }));
     const pending = deferred<{ pinnedThreadIds: string[] }>();
     let reorderInput: unknown = null;
     const rendered = renderSlot(
@@ -29,7 +29,7 @@ describe("ThreadInbox", () => {
               indicator: "waiting-for-input",
             }),
           ],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         },
         rpc: {
           getSidebarSettings: () => defaultSidebarSettings,
@@ -109,7 +109,7 @@ describe("ThreadInbox", () => {
             thread({ id: "a", title: "Row A", isPinned: pinned }),
             thread({ id: "b", title: "Row B", isPinned: pinned }),
           ],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         },
         rpc: {
           listLifecycle: () => ({ rows: [] }),
@@ -215,7 +215,7 @@ describe("ThreadInbox", () => {
             thread({ id: "a", title: "Pin A", isPinned: true }),
             thread({ id: "b", title: "Pin B", isPinned: true }),
           ],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         },
         rpc: { listLifecycle: () => ({ rows: [] }) },
       });
@@ -240,7 +240,7 @@ describe("ThreadInbox", () => {
     },
   );
 
-  it("cancels shelf reordering when bb takes over a split drag", async () => {
+  it("cancels shelf reordering when VesnALIA takes over a split drag", async () => {
     const rendered = renderSlot(inbox, listProps, {
       sidebarThreads: {
         status: "ready",
@@ -248,7 +248,7 @@ describe("ThreadInbox", () => {
           thread({ id: "a", title: "Pin A", isPinned: true }),
           thread({ id: "b", title: "Pin B", isPinned: true }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
@@ -311,7 +311,7 @@ describe("ThreadInbox", () => {
           thread({ id: "a", title: "Pin A", isPinned: true }),
           thread({ id: "b", title: "Pin B", isPinned: true }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: { listLifecycle: () => ({ rows: [] }) },
     });
@@ -370,7 +370,7 @@ describe("ThreadInbox", () => {
           thread({ id: "a", title: "Pin A", isPinned: true }),
           thread({ id: "b", title: "Pin B", isPinned: true }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: { listLifecycle: () => ({ rows: [] }) },
     });
@@ -414,7 +414,7 @@ describe("ThreadInbox", () => {
           thread({ id: "a", title: "Pin A", isPinned: true }),
           thread({ id: "b", title: "Pin B", isPinned: true }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: { listLifecycle: () => ({ rows: [] }) },
     });

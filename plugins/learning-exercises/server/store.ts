@@ -1,9 +1,9 @@
 /**
- * The plugin's own SQLite (`bb.storage.database()`): offers, sessions, the questions each session
+ * The plugin's own SQLite (`alia.storage.database()`): offers, sessions, the questions each session
  * asked with the learner's answers, per-thread offer state and a few global values. Learners' answers
  * can outgrow kv's 256 KB, and they stay on this machine; the tab deletes them per session.
  *
- * `MIGRATIONS` is append-only: bb records each statement's index as applied, so a shipped statement is
+ * `MIGRATIONS` is append-only: VesnALIA records each statement's index as applied, so a shipped statement is
  * never edited or reordered, only followed by new ones.
  */
 import { randomBytes } from "node:crypto";
@@ -117,7 +117,7 @@ export const MIGRATIONS: string[] = [
   `ALTER TABLE exercises ADD COLUMN draft_writer TEXT`,
   // The feedback the agent passed with its verdict (Markdown), which the chat and the next card show.
   `ALTER TABLE exercises ADD COLUMN feedback TEXT`,
-  // The bb turn that verdict was recorded in: the chat's feedback card sits above that turn's last message.
+  // The VesnALIA turn that verdict was recorded in: the chat's feedback card sits above that turn's last message.
   `ALTER TABLE exercises ADD COLUMN feedback_turn TEXT`,
   // 0.2.0: the caps count answered offers, under their own key. Seeded once, here, from the answers
   // 0.1.0 recorded on its offers (offers only seen are left out), so an upgrade keeps today's cap and gap.
@@ -239,7 +239,7 @@ export type ReplyProgress = z.infer<typeof ReplyProgressSchema>;
 const ONE_OPEN_INDEX = "sessions_one_open_per_source";
 
 /**
- * Runs before `bb.storage.migrate`. Versions before the unique index (0.1.0's first draft, e54db75)
+ * Runs before `alia.storage.migrate`. Versions before the unique index (0.1.0's first draft, e54db75)
  * could leave two open sessions for one source thread (a Start race), and creating the index over them
  * fails the plugin's load. So, once, before the index exists: per source thread, keep the most
  * progressed open session (waiting for an answer, then running, then paused, then starting; then the

@@ -1,9 +1,9 @@
-// Audit real bb interactions with the local build in this browser only.
+// Audit real VesnALIA interactions with the local build in this browser only.
 // PLAYWRIGHT_DIR=/tmp/lanes-qa-tools node scripts/qa/audit.mjs
 import assert from "node:assert/strict";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { BB, launch } from "./browser.mjs";
+import { ALIA, launch } from "./browser.mjs";
 
 const out = process.argv[2] ?? "docs/fidelity/live/audit";
 mkdirSync(out, { recursive: true });
@@ -24,7 +24,7 @@ async function open(scheme, { preview = true, width = 1440, failHistory = false 
     await route.fulfill(lanes ? { response, body: readFileSync(`dist/app.${js ? "js" : "css"}`, "utf8") } : { response });
   });
   if (failHistory) await page.route("**/plugins/agent-lanes/rpc/lanes_window", (route) => route.abort("failed"));
-  await page.goto(`${BB}/plugins/agent-lanes/lanes`, { waitUntil: "networkidle" });
+  await page.goto(`${ALIA}/plugins/agent-lanes/lanes`, { waitUntil: "networkidle" });
   await page.locator(".lanes-tray").waitFor();
   await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), scheme === "dark");
   return page;

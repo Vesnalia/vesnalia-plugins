@@ -50,7 +50,7 @@ three hosts:
   with KVM nested under Hyper-V, on an AMD Ryzen 7.
 - **A Mac**: an M4 Max on macOS 27, with msb in a scratch folder.
 
-bb-box's images, `bbbox/linux:1` and `bbbox/linux-desktop:1`, were built
+alia-box's images, `bbbox/linux:1` and `bbbox/linux-desktop:1`, were built
 by `setup/docker/build.sh` and given to msb with `docker save` and
 `msb load`.
 
@@ -84,12 +84,12 @@ In small pull requests, in this order:
 
 1. **This record**, amended.
 2. **The msb relay.** msb has no daemon or API socket, so the Docker
-   relay ([042](042-a-docker-host-can-be-a-bb-machine.md)), which forwards
-   Docker's socket, cannot carry it. bb-box's host entry on a BB machine
+   relay ([042](042-a-docker-host-can-be-a-alia-machine.md)), which forwards
+   Docker's socket, cannot carry it. alia-box's host entry on a VesnALIA machine
    gets a call that runs msb there, over the same kind of relay: each call
    is a channel carrying the command line, stdin, stdout, stderr, the exit
    status and a terminal's size. The entry runs only the pinned msb, and
-   imports images from Docker on the machine. On BB's server, a small
+   imports images from Docker on the machine. On VesnALIA's server, a small
    client stands in for the `msb` CLI, so transports use command lines as
    they do for Docker (031).
 3. **The backend**, virtual, with:
@@ -97,12 +97,12 @@ In small pull requests, in this order:
      `linux-docker` too ([041](041-every-linux-box-has-docker.md)), and
      `linux-desktop-cpu`, whose VNC server is reached as a Docker box's
      is;
-   - a host that is BB's server, one over `ssh://`, or a BB machine
+   - a host that is VesnALIA's server, one over `ssh://`, or a VesnALIA machine
      through the msb relay, one backend per host, as for Docker;
-   - our own OCI images, which bb-box never pulls: it imports them onto
+   - our own OCI images, which alia-box never pulls: it imports them onto
      the host from Docker there, as `setup/docker/build.sh` builds or
      loads them, with `docker save` and `msb load`;
-   - boxes that join BB as machines, as other Linux boxes do, with the
+   - boxes that join VesnALIA as machines, as other Linux boxes do, with the
      interface's capacity and doctor checks;
    - the conformance suite, against a fake `msb` in the tests and against
      a real host;
@@ -115,11 +115,11 @@ In small pull requests, in this order:
 
 ### How the backend handles what the spike found
 
-- **BB's server on a private or tailnet address**: boxes run with
+- **VesnALIA's server on a private or tailnet address**: boxes run with
   `--net public,private`.
 - **`msb start` does not rerun the image's command**: the backend runs
-  `bb-box-start` through `msb exec` after each start, and waits for
-  `/run/bb-box/ready`, on a `/run` that is a tmpfs.
+  `alia-box-start` through `msb exec` after each start, and waits for
+  `/run/alia-box/ready`, on a `/run` that is a tmpfs.
 - **Docker in a box**: `/var/lib/docker` is an ext4 disk of the box's own,
   removed with it.
 - **Proxmox LXC hosts**: LXC's seccomp filter answers EPERM to `FICLONE`,
@@ -129,12 +129,12 @@ In small pull requests, in this order:
 - **A fork or snapshot copies its source's identity**: each box from one
   gets a new machine ID, SSH host keys and hostname, and no enrolment of
   its source's, before it enrols.
-- **msb is beta**: bb-box pins one release and checks its SHA-256 against
+- **msb is beta**: alia-box pins one release and checks its SHA-256 against
   the one it was tested with. It installs msb, its guest agent and
-  libkrunfw as one release, in a folder of bb-box's own data, apart from a
+  libkrunfw as one release, in a folder of alia-box's own data, apart from a
   user's `~/.microsandbox`, and keeps msb's state and images there too
   (`MSB_HOME`). It never runs `msb self update`. A new release is a change
-  to bb-box that passes the conformance suite first, and the guide says
+  to alia-box that passes the conformance suite first, and the guide says
   how to upgrade.
 - **Records a failed create leaves**: a create for a box that failed is
   made again with `--replace`, which only a box of this install and the
@@ -164,7 +164,7 @@ Over Tart, for Linux on a Mac:
   copies its source's identity, so a forked spare still needs its own and
   an enrolment of about 5 s: forks would fill the pool faster, not shorten
   a handover.
-- A kernel per box is isolation, which bb-box does not aim at.
+- A kernel per box is isolation, which alia-box does not aim at.
 - It is beta, with 12 releases from 24 August to 5 October, and breaking
   changes before 1.0, such as the network presets removed on 24 July.
 - A box on a tailnet would reach its peers through Tailscale's DERP
@@ -174,10 +174,10 @@ Over Tart, for Linux on a Mac:
 ## What the built backend measured
 
 Measured on 7 October 2026 with msb 0.7.7, the backend as built (with
-each box's Docker disk made by bb-box, #568), and each backend's own flags
-as bb-box passes them: 2 cores, `bbbox/linux:1`. Not enrolled means bb-box's
+each box's Docker disk made by alia-box, #568), and each backend's own flags
+as alia-box passes them: 2 cores, `bbbox/linux:1`. Not enrolled means alia-box's
 steps to a ready box (create, the start script, the ready file) without
-BB's daemon; enrolled means through bb-box, until each box was a BB
+VesnALIA's daemon; enrolled means through alia-box, until each box was a VesnALIA
 machine.
 
 ### A Linux host with nested KVM
@@ -198,7 +198,7 @@ With msb's own disk for Docker, which formats ext4 whole, 20 at 4 GiB took
 | 10 at once, enrolled, 4 GiB | msb | Docker (9, for room) |
 | --- | --- | --- |
 | Ready, median and slowest | 5.8 s, 14.4 s | 10.1 s, 23.9 s |
-| BB enrolment each | 119 to 160 s | 118 to 148 s |
+| VesnALIA enrolment each | 119 to 160 s | 118 to 148 s |
 | Host memory each, idle | 1.7 to 2.0 GiB | about 830 MiB |
 
 - One box alone: msb ready in 1.6 s, enrolled 9.7 s later; a desktop in
@@ -218,7 +218,7 @@ With msb's own disk for Docker, which formats ext4 whole, 20 at 4 GiB took
 
 An M4 Max, 16 cores, 128 GiB, macOS 27; msb on the Hypervisor framework,
 with no nesting. The images are x86_64 and msb on a Mac runs arm64 guests
-only, so msb ran an arm64 stand-in, `ubuntu:24.04`, with bb-box's create
+only, so msb ran an arm64 stand-in, `ubuntu:24.04`, with alia-box's create
 flags and its three steps. The Mac has no Docker, so the comparison is
 with Tart's Linux VMs, which serve Linux on a Mac now
 ([040](040-linux-on-arm64-has-kinds-of-its-own.md)). The Mac has no
@@ -233,10 +233,10 @@ with Tart's Linux VMs, which serve Linux on a Mac now
 
 - A fork of a running box that had written 1 GiB took 0.70 s, its child
   answering 68 ms later: APFS has reflinks.
-- Tart, 10 `linux-arm64` boxes at once through bb-box, enrolled: ready in
+- Tart, 10 `linux-arm64` boxes at once through alia-box, enrolled: ready in
   9.1 s median, 10.1 s slowest, enrolled in 135 to 142 s, holding 3.4 to
   3.9 GiB RSS each, 2.3 to 2.8 GB as macOS counts a footprint. msb has no
-  Mac host in bb-box yet, so there is no enrolled msb run to set beside it.
+  Mac host in alia-box yet, so there is no enrolled msb run to set beside it.
 
 ### Spares
 
@@ -244,7 +244,7 @@ Spares on microsandbox are new boxes enrolled ahead, as on other backends
 (032), not forks. Measured on 8 October 2026:
 
 - On the Mac, a fork of a running box took 1.75 s with `msb`'s own Docker
-  disk and 1.88 s with none, against 1.8 s for a new box through bb-box with
+  disk and 1.88 s with none, against 1.8 s for a new box through alia-box with
   a clone of its template; `msb` refuses to fork a box whose Docker disk is
   such a clone ("has no immutable-generation provider"). A fork would also
   need a fresh identity and a prepared box that holds memory.
@@ -289,24 +289,24 @@ flags, as on the nested host.
   4 GiB, faster at 2 GiB. Most of the gap on the nested host was nesting.
 - Memory does not change with nesting: about 210 MiB per idle 4 GiB box,
   against a few MiB for a Docker box.
-- There is no enrolled run here: the box was not an msb host in bb-box.
+- There is no enrolled run here: the box was not an msb host in alia-box.
 
 ## What the spike measured
 
 ### Our images boot unchanged
 
 - msb's agent, `init.krun`, is PID 1 and runs the image's CMD,
-  `bb-box-start`, as Docker's `--init` does. `/run/bb-box/ready` appeared
+  `alia-box-start`, as Docker's `--init` does. `/run/alia-box/ready` appeared
   0.39 to 0.47 s after `msb run -d` for `bbbox/linux:1`, and 0.74 s after
   it for `bbbox/linux-desktop:1`.
 - `--init /lib/systemd/systemd` makes systemd PID 1 instead. sshd and
   Docker's socket started; only `systemd-sysctl` failed.
 - `msb start` boots a stopped box without the CMD. Started through
-  `msb exec`, `bb-box-start` had a stopped desktop ready again 0.59 s after
+  `msb exec`, `alia-box-start` had a stopped desktop ready again 0.59 s after
   `msb stop` began. Under systemd, units start at each boot.
 - `/run` is a tmpfs only when asked for with `--tmpfs /run`, as Docker
   boxes have it, so that `ready` does not outlive a stop.
-- sshd runs. BB's host app downloaded from BB's server in 0.04 s and Node
+- sshd runs. VesnALIA's host app downloaded from VesnALIA's server in 0.04 s and Node
   ran, which is what enrolment needs. A live enrolment was not tried.
 - The desktop, on the CPU: Xtigervnc, XFCE and Cua Driver's socket came
   up. A VNC client through a published port signed in with the VNC
@@ -319,8 +319,8 @@ flags, as on the nested host.
 | What | Result |
 | --- | --- |
 | HTTPS to the internet | by default; about 0.2 s to GitHub |
-| BB's server on a private or tailnet address | only with `--net public,private`. By default msb's DNS answers NXDOMAIN for a name with a private, 100.64.0.0/10 or link-local address, and the traffic is dropped |
-| Machines on the local network | as for BB's server |
+| VesnALIA's server on a private or tailnet address | only with `--net public,private`. By default msb's DNS answers NXDOMAIN for a name with a private, 100.64.0.0/10 or link-local address, and the traffic is dropped |
+| Machines on the local network | as for VesnALIA's server |
 | Into the box | published ports (`-p host:guest`) on the host's addresses: SSH to the box through one took 0.23 s. Guests have no address reachable from outside |
 | UDP | through msb's relay |
 | IPv6 | on a host with IPv4 only, a guest had no IPv6 address and no AAAA answers, and a dual-stack name connected over IPv4 in 16 ms. Not tried on a dual-stack host |
@@ -386,7 +386,7 @@ and cgroup v2. It has no modules, IP_VS, WireGuard or AppArmor.
   five.
 - A fork or a full snapshot is a copy of its source: the same hostname,
   as measured, and the same files, so the same machine ID, SSH host keys
-  and BB enrolment.
+  and VesnALIA enrolment.
 
 ### Rough edges
 
@@ -417,13 +417,13 @@ and cgroup v2. It has no modules, IP_VS, WireGuard or AppArmor.
   In an LXC container the host passes `/dev/kvm` in, and the user still
   needs the group, as udev inside resets the node's mode. Snapshots and
   flat roots then fail, so the guide recommends a VM or the machine itself.
-- bb-box reaches msb on a BB machine through
-  [042](042-a-docker-host-can-be-a-bb-machine.md)'s relay, so a user's own
+- alia-box reaches msb on a VesnALIA machine through
+  [042](042-a-docker-host-can-be-a-alia-machine.md)'s relay, so a user's own
   Mac or Linux PC needs no SSH, or over SSH, as Tart's Macs.
-- bb-box installs the release it was tested with, checked against its
+- alia-box installs the release it was tested with, checked against its
   published SHA-256, in a home of its own (`MSB_HOME`), apart from the
   user's `~/.microsandbox`. msb, its guest agent and libkrunfw are one
-  release, which bb-box upgrades, never `msb self update`. The doctor
+  release, which alia-box upgrades, never `msb self update`. The doctor
   checks the version.
 - Images come from build.sh through `msb load`, or from a registry, which
   hosts without Docker and flat roots need. A project's image
@@ -439,19 +439,19 @@ and cgroup v2. It has no modules, IP_VS, WireGuard or AppArmor.
 | Commands | `msb exec`, as Docker's are `docker exec` (031): stdin, the box user and exit codes |
 | Files | `msb cp`, or `msb exec` with stdin |
 | Display | RFB through `msb exec` and `socat`, as on Docker, or a published port on the host's loopback |
-| `start`, `stop`, `power` | `msb start`, then `bb-box-start` through `msb exec`; `msb stop`; `msb inspect` |
+| `start`, `stop`, `power` | `msb start`, then `alia-box-start` through `msb exec`; `msb stop`; `msb inspect` |
 | `held`, `release` | `msb ls --format json --label`; `msb stop` and `msb rm` |
 | `capacity` | the host's cores and memory, at each box's size |
-| `doctor` | `msb doctor`, the pinned version, KVM, a `FICLONE` test, and the network profile that BB's server needs |
+| `doctor` | `msb doctor`, the pinned version, KVM, a `FICLONE` test, and the network profile that VesnALIA's server needs |
 
 The conformance suite's Linux checks would apply as they are. Resizing
 ([021](021-desktop-resize-through-the-backend.md)) worked in the box.
 
 **Gaps to handle:**
 
-- start `bb-box-start` after each `msb start`, or boot systemd;
+- start `alia-box-start` after each `msb start`, or boot systemd;
 - `--tmpfs /run`, and an ext4 disk for `/var/lib/docker`;
-- the private network profile when BB's server or the user's network has
+- the private network profile when VesnALIA's server or the user's network has
   private or tailnet addresses;
 - a new identity after a fork or a full restore, before enrolment;
 - a host outside LXC, or snapshots and flat roots off;
@@ -463,12 +463,12 @@ The conformance suite's Linux checks would apply as they are. Resizing
 - A sixth backend, `microsandbox`, in `src/backends/microsandbox/`, with
   its guide in `setup/microsandbox/`. The README and the architecture list
   it with its status.
-- bb-box's host entry runs msb on a BB machine for it: the pinned release
-  only, from bb-box's own data folder.
+- alia-box's host entry runs msb on a VesnALIA machine for it: the pinned release
+  only, from alia-box's own data folder.
 - Not measured yet, and measured as the plan reaches them: a dual-stack
   host, a live enrolment, a tailnet join, the Wayland desktop, our images
   on arm64, Windows hosts, and forks on a host without `FICLONE`, where
   msb copies the box's disk.
 - Until 1.0, upstream may change the CLI or state formats. A pinned
-  release, upgraded by bb-box after the conformance suite passes, is the
+  release, upgraded by alia-box after the conformance suite passes, is the
   guard.

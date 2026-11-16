@@ -2,7 +2,7 @@
 //
 // A sidebar page with the pricing table (app/pricing-panel.tsx), and two
 // palette commands: one opens the page, one opens its settings.
-import { definePluginApp, experimental_usePluginId, useBbNavigate, type BbNavigate } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, experimental_usePluginId, useAliaNavigate, type AliaNavigate } from "@vesnalia/plugin-sdk/app";
 
 import { openPluginSettings } from "./app/open-settings";
 import { PANEL_PATH, PricingPanel } from "./app/pricing-panel";
@@ -12,11 +12,11 @@ import { PANEL_PATH, PricingPanel } from "./app/pricing-panel";
  * mounted once per window and rendering nothing, hands the host's navigator
  * and the plugin's id to the commands.
  */
-let navigator: BbNavigate | null = null;
+let navigator: AliaNavigate | null = null;
 let pluginId: string | null = null;
 
 function NavigatorBridge() {
-  navigator = useBbNavigate();
+  navigator = useAliaNavigate();
   pluginId = experimental_usePluginId();
   return null;
 }

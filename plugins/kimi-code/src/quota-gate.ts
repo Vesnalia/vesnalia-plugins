@@ -1,10 +1,10 @@
-import type { ProviderUsageResult } from "@get-bb/plugin-sdk/provider-bridge";
+import type { ProviderUsageResult } from "@vesnalia/plugin-sdk/provider-bridge";
 
 import { readKimiUsage } from "./kimi-usage.js";
 
 // kimi's acp-server answers a quota-exhausted (429) prompt with a bare
 // `stopReason: "end_turn"` and zero session/update items — the failure never
-// reaches the ACP wire, so the SDK bridge completes the turn cleanly and bb
+// reaches the ACP wire, so the SDK bridge completes the turn cleanly and VesnALIA
 // renders "The agent ended the turn without replying" (incident
 // 2026-11-01-kimi-quota-silent-turns). Until upstream reports turn failures,
 // the gate consults the same OAuth usage endpoint the maintenance dialect

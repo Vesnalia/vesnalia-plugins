@@ -1,7 +1,7 @@
-# bb-plugin-linear — build brief
+# alia-plugin-linear — build brief
 
-Linear inside bb: issues, inbox, triage, projects and cycles at parity for
-daily engineering work — and every bb thread knowing which issue it is
+Linear inside VesnALIA: issues, inbox, triage, projects and cycles at parity for
+daily engineering work — and every VesnALIA thread knowing which issue it is
 working on, live, in the header, the side panel, and the agent's own context.
 
 Public, MIT. Nothing in shipped code, fixtures, or copy may name an org, a
@@ -19,19 +19,19 @@ later change fights one of these, re-argue it here first.
 
 Public, canonical:
 
-- bb source: `https://github.com/get-bb/bb` — `packages/plugin-sdk/src/`,
+- VesnALIA source: `https://github.com/get-bb/bb` — `packages/plugin-sdk/src/`,
   `apps/server/src/services/plugins/`, `plugins/github` (closest official
   exemplar: navPanel + headerContent, background sync, rpc + realtime, CLI,
   agent-spawn buttons).
-- The bb-plugin-authoring skill (ships with bb) is the API guide; the
+- The alia-plugin-authoring skill (ships with VesnALIA) is the API guide; the
   authoritative surface is this repo's own `types/*.d.ts`, refreshed by
-  `bb plugin types`. Never read minified `dist/` to answer an API question.
+  `alia plugin types`. Never read minified `dist/` to answer an API question.
 - Linear GraphQL SDL: vendored at `src/schema/linear.graphql` (1.3 MB).
   Regenerate: `npx -y get-graphql-schema --header "Authorization=$LINEAR_API_KEY"
   https://api.linear.app/graphql > src/schema/linear.graphql`.
 
 On the author's machine only (not shipped, not required):
-`~/Git/bb-plugin-linear-archived` — the predecessor. Different product
+`~/Git/alia-plugin-linear-archived` — the predecessor. Different product
 thesis (seams-only, deliberately not a client), but its *experimentally
 verified* host and API findings carry over and are restated below wherever
 they bind.
@@ -53,21 +53,21 @@ they bind.
 4. Secret settings are raw files with no trim: a key pasted with a trailing
    newline 401s in a way that reads exactly like a revoked key. **Read fresh
    inside every handler, `.trim()` at every read, never capture into module
-   scope** — a key replaced while bb runs takes effect on the next request.
-5. `bb.sdk` is bind-gated: fine in factories on a real server, throws in
+   scope** — a key replaced while VesnALIA runs takes effect on the next request.
+5. `alia.sdk` is bind-gated: fine in factories on a real server, throws in
    isolated harnesses — prefer handlers/services/timers.
 6. kv values cap at 256 KB (cursors and links only; datasets go in the
    plugin database). `storage.migrate` is append-only by statement index.
 7. Thread lifecycle events are observe-only and exactly six; `thread.created`
    fires before the first message lands — react on `thread.active` /
-   `thread.idle` and read `bb.sdk.threads.timeline`.
+   `thread.idle` and read `alia.sdk.threads.timeline`.
 8. Tool names are unique **across plugins** (prefix everything `linear_`).
    Tool/instruction changes apply at next session start, never mid-session.
-9. `bb.agents.contributeInstructions` is synchronous, on the thread-start
+9. `alia.agents.contributeInstructions` is synchronous, on the thread-start
    path, capped 4096 chars — serve it from an in-memory cache, never I/O.
 10. CLI stdout+stderr cap: `PLUGIN_CLI_OUTPUT_MAX_BYTES` (1 MiB), rejected
     atomically, never clipped — page everything.
-11. Never stash `bb` in module state that outlives a load
+11. Never stash `alia` in module state that outlives a load
     (`PluginContextStaleError`); `onDispose` runs LIFO.
 12. Frontend styling: host token classes only (`bg-card`,
     `text-muted-foreground`, …). No custom `@theme` colors, no literal
@@ -81,7 +81,7 @@ they bind.
 A Linear client and a Linear seam, in one plugin:
 
 - **Client**: browse and act on issues, inbox, triage, projects and cycles
-  from bb's left nav panel — at parity for daily work, so linear.app stays
+  from VesnALIA's left nav panel — at parity for daily work, so linear.app stays
   closed. List-first at sidebar width; a board is a grouped list turned
   sideways, and the sideways part is deferred.
 - **Seam**: every thread resolves *which issue it is working on* through a
@@ -93,7 +93,7 @@ The predecessor refused to be a client. This build deliberately reverses
 that one decision — parity for daily work is the point — and keeps every
 architectural finding that made the seam trustworthy.
 
-**What bb already owns and this plugin never rebuilds:** threads,
+**What VesnALIA already owns and this plugin never rebuilds:** threads,
 environments, worktrees, branch names, git state, PR status and merge
 actions, the markdown renderer, the composer, the toaster, the settings
 form, the credential store. No diff view, no branch picker, no merge button,
@@ -106,7 +106,7 @@ no second toaster, no second API-key field outside declared settings.
 **D1 — GraphQL with its own credential; not Linear's MCP.** MCP OAuth lives
 inside one agent CLI's session: a background service cannot borrow it (no
 polling, no notifications, no 2am automation), and it is invisible to
-non-Claude providers while bb routinely runs Codex, Kimi, OpenCode, Gemini.
+non-Claude providers while VesnALIA routinely runs Codex, Kimi, OpenCode, Gemini.
 Owning the API: one credential, one source of truth, identical behavior in
 panel, CLI, tools, automations. Where a user's agents *also* have Linear MCP,
 this plugin's automations stay off by default (D7) so the two never fight.
@@ -128,22 +128,22 @@ runtime; nothing about a workspace is ever configured by hand. Key scopes
 are **not introspectable** (no `apiKeys`/`viewerScopes` root field, and
 `teams` cannot see teams a restricted key was scoped away from) — so the
 plugin never claims "read-only" or "2 of 3 teams"; restrictions are
-discovered by failure and reported where they surface (`bb linear doctor`,
+discovered by failure and reported where they surface (`alia linear doctor`,
 connection section).
 
-**D4 — Accounts compose by context, not by a global mode.** A bb project
+**D4 — Accounts compose by context, not by a global mode.** A VesnALIA project
 binds to one (account, team); thread surfaces — header chip, side panel,
 binding, tools' defaults — resolve from that binding with zero switching.
 The nav panel carries a workspace switcher for roaming; the inbox merges
 accounts with workspace badges. Beat: a Linear-style global workspace
-switcher (loses bb's one advantage: context), and merge-everything (cross-
+switcher (loses VesnALIA's one advantage: context), and merge-everything (cross-
 account writes become a standing footgun).
 
-**D5 — Hybrid data layer.** SQLite (`bb.storage.database()`) mirrors the
+**D5 — Hybrid data layer.** SQLite (`alia.storage.database()`) mirrors the
 working set — accounts, teams, workflow states, labels, users, projects,
 cycles, my issues, inbox notifications, and every issue a thread is bound
 to. Webhooks (when reachable) plus reconciliation polling keep it honest;
-`bb.realtime.publish` fans changes out to mounted UI; long-tail search and
+`alia.realtime.publish` fans changes out to mounted UI; long-tail search and
 arbitrary drill-ins go straight to GraphQL. Beat: full mirror (rebuilding
 Linear's sync engine; slow first sync) and live-only (blank panels offline,
 rate limits burned by browsing, and background automation needs its own
@@ -152,7 +152,7 @@ complexity-weighted — the poller uses coalesced delta queries
 (`updatedAt > cursor` filters) and the budgeter is one module every caller
 goes through.
 
-**D6 — Binding uses identifier evidence; fuzzy suggests only.** An unbound bb
+**D6 — Binding uses identifier evidence; fuzzy suggests only.** An unbound VesnALIA
 project may bind automatically only when a branch or thread title carries an
 issue identifier whose team key resolves to exactly one accessible Linear
 team. That is not a fuzzy guess: a human already chose the team key in another
@@ -185,7 +185,7 @@ one that coexists with agent-driven writes).
 **D8 — Full parity toolset, consolidated shapes.** Agents get `linear_*`
 tools covering issues (one `linear_save_issue` for create+update, not a
 dozen micro-tools), search, comments, projects, cycles, statuses/labels
-discovery, plus the tools only bb can have: `linear_context` (the thread's
+discovery, plus the tools only VesnALIA can have: `linear_context` (the thread's
 bound issue + team vocabulary + branch name), `linear_bind`. One credential,
 identical in every provider, discoverable via ToolSearch. A `skills/linear/`
 skill teaches conventions. Beat: context-only tools (useless to users
@@ -195,7 +195,7 @@ list (their shapes, our worse fit).
 **D9 — Surfaces.** `navPanel` (the client), `experimental_threadContextSegment`
 (one 24px chip in the context row above the composer: key + state dot;
 unbound-with-candidate renders the suggestion; hidden when it has nothing to
-say; bb leaves plugin segments out of archived threads; until bb 0.49 this was
+say; VesnALIA leaves plugin segments out of archived threads; until VesnALIA 0.49 this was
 `experimental_threadHeaderAction` in the thread header),
 `experimental_tab` with `availability: "action"` (issue detail, formerly
 `threadPanelAction`: description, controls, parent, sub-issues,
@@ -207,10 +207,10 @@ mention provider (`@issue` → send-time context resolve), message directive
 nav badge always; toasts only for direct items (assignment, mention, reply),
 configurable, quiet by default.
 
-**D10 — UI is vendored shadcn from the @bb registry.** `bb plugin new`
+**D10 — UI is vendored shadcn from the @alia registry.** `alia plugin new`
 seeded button/card/input/dialog; further components come from
-`npx shadcn add @bb/<item>` so vendored source is version-matched to the
-running bb by construction. Tailwind v4, React 19, host token classes,
+`npx shadcn add @alia-core/<item>` so vendored source is version-matched to the
+running VesnALIA by construction. Tailwind v4, React 19, host token classes,
 `toast` from `sonner` (host-shimmed). Beat: hand-rolled components (worse,
 slower) and any host-component dependency beyond the sanctioned `ThreadChat`
 / `Markdown` / `experimental_NewThreadComposer`.
@@ -218,7 +218,7 @@ slower) and any host-component dependency beyond the sanctioned `ThreadChat`
 **D11 — List-first nav panel; no kanban in v1.** Collapsible state groups,
 dense rows, a filter bar, saved views per team, projects and cycles pages,
 live search. A sidebar-width board is a cramped board; Linear's list idiom
-is its primary view anyway. Revisit boards only if bb grows a wide surface.
+is its primary view anyway. Revisit boards only if VesnALIA grows a wide surface.
 
 **D12 — One switch makes the plugin read-only, enforced structurally.**
 While `allowWrites` is off, every GraphQL mutation — issue edits, comments,
@@ -226,14 +226,14 @@ creations, attachments, archives, relations, webhook registration — is
 refused with one sentence naming the remedy. (Shipped default-off for one
 day, then revised at the owner's direction to default-ON: a kill switch
 rather than opt-in consent, because a fresh install that refuses its own
-first `bb linear create` reads as broken, and the flip to read-only is one
+first `alia linear create` reads as broken, and the flip to read-only is one
 toggle away. Everything structural below is unchanged either way.) The enforcement point is the
 transport (every mutation is a registry document, every document leaves
 through one transport, the transport consults the gate), so a tool, CLI
 command, rpc handler or automation added later is gated the day it is written
 — `test/write-gate.test.ts` walks the whole registry to prove no mutation
 escapes. The gate fails closed: a consent check that throws refuses. Local
-state (thread links, bindings, inbox seen/dismiss) is never gated — bb's own
+state (thread links, bindings, inbox seen/dismiss) is never gated — VesnALIA's own
 tables, not Linear's. Agents are not even offered write tools without consent
 (withheld beats degraded); `agentWrites` then narrows further among
 consenting installs. Beat: per-surface checks (one forgotten call site is a
@@ -253,13 +253,13 @@ src/
   binding/            the ladder, provenance, in-memory cache for instructions
   automations/        git/thread → state moves (off by default)
   tools/              linear_* registrations (thin over mirror/transport)
-  cli/                bb linear subcommands (thin over the same modules)
+  cli/                alia linear subcommands (thin over the same modules)
   webhooks/           route handler, signature verification, replay guard
 app.tsx              slot registrations only
 app/                 nav panel views, thread chip, issue panel, settings
 components/ui/       vendored shadcn (owned, editable)
 skills/linear/       agent conventions
-test/                vitest against @get-bb/plugin-sdk/testing
+test/                vitest against @vesnalia/plugin-sdk/testing
 ```
 
 Rules: pure logic lives in `src/` modules testable without a host; `server.ts`
@@ -269,10 +269,10 @@ realtime channels are named, documented, and carry "something changed"
 signals only — the frontend refetches via rpc, payloads never carry issue
 data (they'd be a second source of truth and a leak surface).
 
-Webhooks: one `bb.http.route` with `auth: "none"` + Linear's HMAC signature
+Webhooks: one `alia.http.route` with `auth: "none"` + Linear's HMAC signature
 verified inside the handler (reject unsigned/invalid before any parsing
 side effects). Registration is explicitly enabled with
-`bb linear webhook enable` and verified by a round-trip; absent that, polling
+`alia linear webhook enable` and verified by a round-trip; absent that, polling
 covers everything — webhooks are an upgrade, never a requirement.
 
 ---
@@ -284,12 +284,12 @@ tools file and move them). Each milestone ends installed, typechecked,
 tested, and exercised live.
 
 - **M1 Transport + accounts + doctor.** Typed GraphQL over the vendored SDL,
-  credential union, budgeter, per-key identity discovery, `bb linear doctor`
+  credential union, budgeter, per-key identity discovery, `alia linear doctor`
   (connection, identity, budget, webhook state — and nothing it cannot
   know, per D3).
 - **M2 Mirror + webhooks + polling.** Schema, append-only migrations, delta
   sync for the working set, webhook route + verification + explicit
-  `bb linear webhook enable` registration with polling fallback, realtime
+  `alia linear webhook enable` registration with polling fallback, realtime
   signals.
 - **M3 Binding + header + side panel.** The ladder with provenance,
   suggestion UX, header chip, issue detail panel, live updates,
@@ -300,7 +300,7 @@ tested, and exercised live.
   quiet configurable toasts, triage queue with configurable label
   conventions (defaults ship generic; any `namespace:value` scheme is
   configuration).
-- **M6 Toolset + CLI + skill.** Full `linear_*` set, `bb linear`
+- **M6 Toolset + CLI + skill.** Full `linear_*` set, `alia linear`
   (`doctor accounts bind open create my`), `skills/linear/SKILL.md`.
 - **M7 Automations (off).** Team git-automation targets, idempotent moves,
   deterministic-bindings-only, per-scope opt-in; mention provider +
@@ -312,7 +312,7 @@ tested, and exercised live.
 ## 5. Non-goals (v1)
 
 Board view. Hosted OAuth. Auto progress comments. Documents, initiatives,
-roadmaps, insights. Dependencies on other bb plugins. Spawned worker
+roadmaps, insights. Dependencies on other VesnALIA plugins. Spawned worker
 threads.
 
 ## 6. Testing
@@ -321,7 +321,7 @@ threads.
 rpc round-trips, service/schedule driving, tool calls, thread events);
 `renderSlot` for panel/chip/panel-detail UI; pure-module unit tests for the
 ladder, budgeter, delta merge, signature verification (fixtures, no
-network). Live loop via `bb plugin dev` against a real workspace. Smoke
+network). Live loop via `alia plugin dev` against a real workspace. Smoke
 checklist maintained in `docs/smoke.md` from M2 on.
 
 ---
@@ -349,7 +349,7 @@ checklist maintained in `docs/smoke.md` from M2 on.
   syncs, and the empty panel pointed at a settings surface that did not exist.
   An issue key in a branch or thread title is not a guess; a human already
   chose that team's key in another surface. The binding is announced, carries
-  `origin = auto`, and names `bb linear unbind TEAM-KEY` as its undo.
+  `origin = auto`, and names `alia linear unbind TEAM-KEY` as its undo.
 - The old core argument still stands: fuzzy title or team/repository name
   similarity never binds. It only orders visible offers, because a wrong
   binding plus write-back moves the wrong ticket.
@@ -399,7 +399,7 @@ checklist maintained in `docs/smoke.md` from M2 on.
   agents never receive delete, archive or workspace-administration tools.
   Beat: full symmetry, which would have broken that promise.
 - Mentions use Linear's documented `@[name](id)` markup. Beat: plain `@name`,
-  which looks right in bb but Linear cannot resolve to a person.
+  which looks right in VesnALIA but Linear cannot resolve to a person.
 - "Add sub-issue…" lives beside the sub-issue section heading instead of in
   the issue menu. Beat: hiding a section-specific action behind a global menu;
   the shared dialog still locks the team and presets the parent as designed.

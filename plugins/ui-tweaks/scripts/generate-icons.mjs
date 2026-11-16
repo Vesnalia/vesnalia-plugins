@@ -92,7 +92,7 @@ for (const pack of Object.keys(packSources)) {
   skipped[pack] = [];
 }
 
-for (const [bbName, mapping] of Object.entries(ICON_MAP)) {
+for (const [aliaName, mapping] of Object.entries(ICON_MAP)) {
   for (const pack of Object.keys(packSources)) {
     let iconName = mapping[pack];
 
@@ -101,20 +101,20 @@ for (const [bbName, mapping] of Object.entries(ICON_MAP)) {
         PACK_ICON_ALIASES[pack]?.[mapping.lucide] ??
         (hasIcon(pack, mapping.lucide) ? mapping.lucide : undefined);
       if (iconName === undefined) {
-        skipped[pack].push(`${bbName} (${mapping.lucide})`);
+        skipped[pack].push(`${aliaName} (${mapping.lucide})`);
         continue;
       }
     }
 
     const icon = resolveIcon(pack, iconName);
     if (icon === undefined || typeof icon.body !== "string") {
-      missing.push(`${pack}: ${bbName} -> ${iconName}`);
+      missing.push(`${pack}: ${aliaName} -> ${iconName}`);
       continue;
     }
     if (FORBIDDEN_BODY_PATTERNS.some((pattern) => pattern.test(icon.body))) {
       throw new Error(`Unsafe SVG body for ${pack}:${iconName}`);
     }
-    bodies[pack][bbName] = normalizeBody(icon, pack);
+    bodies[pack][aliaName] = normalizeBody(icon, pack);
   }
 }
 
@@ -160,7 +160,7 @@ ${Object.keys(packSources).map(renderPack).join("\n")}
 
 await writeFile(outputPath, content, "utf8");
 
-console.log(`Wrote ${outputPath}: ${entries.length} BB names.`);
+console.log(`Wrote ${outputPath}: ${entries.length} VesnALIA names.`);
 for (const pack of Object.keys(packSources)) {
   console.log(
     `  ${pack}: ${Object.keys(bodies[pack]).length}, ` +

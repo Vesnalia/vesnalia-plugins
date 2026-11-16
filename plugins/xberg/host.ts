@@ -2,7 +2,7 @@
 import {
   experimental_defineHostEntry,
   experimental_killProcessesWithCwdUnder,
-} from "@get-bb/plugin-sdk/host";
+} from "@vesnalia/plugin-sdk/host";
 import { hostContract } from "./contract.ts";
 import { cacheSize, clearCache, workDirFor } from "./lib/cache.ts";
 import { createLimiter, extractDocument } from "./lib/extract.ts";

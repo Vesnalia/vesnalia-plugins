@@ -1,4 +1,4 @@
-// bb-plugin-meetings host entry: runs on the recording machine. It installs
+// alia-plugin-meetings host entry: runs on the recording machine. It installs
 // the runtime (env.check / env.setup), spawns and inspects the detached bot
 // and transcriber processes, and serves files from meeting directories. It
 // keeps no state of its own: every call re-reads <hostData> (DESIGN §2–§4).
@@ -6,7 +6,7 @@ import {
   experimental_defineHostEntry,
   type ExperimentalHostRpcContext,
   type ExperimentalHostRpcHandlers,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { hostContract } from "./src/shared/contract.js";
 import { avatarAction, renderAvatarPreview } from "./src/host/avatar.js";
 import { checkEnv } from "./src/host/env.js";

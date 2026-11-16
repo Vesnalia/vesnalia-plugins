@@ -67,7 +67,7 @@ export async function branchOnGithub(run: Run, repo: string, branch: string): Pr
 export async function createPr(writes: GithubWrites, run: Run, pr: { repo: string; head: string; base: string; title: string; body: string }): Promise<{ ok: true; number: number; url: string } | WriteRefusal> {
   const r = await writes.post(run, ["api", `repos/${pr.repo}/pulls`, "-f", `head=${pr.head}`, "-f", `base=${pr.base}`, "-f", `title=${pr.title}`, "-f", `body=${pr.body}`]);
   // GitHub says Not Found for a repo the account can't see, as for one that isn't there.
-  if (!r.ok && r.kind === "other" && /^not found$/i.test(r.detail.trim())) return { ...r, kind: "not-found", error: `GitHub can’t find ${pr.repo}, or the GitHub login on the BB server can’t see it. Check its access with gh auth status there.` };
+  if (!r.ok && r.kind === "other" && /^not found$/i.test(r.detail.trim())) return { ...r, kind: "not-found", error: `GitHub can’t find ${pr.repo}, or the GitHub login on the VesnALIA server can’t see it. Check its access with gh auth status there.` };
   if (!r.ok) return r;
   let made: any;
   try { made = JSON.parse(r.stdout); } catch { /* reported below */ }
@@ -91,7 +91,7 @@ export async function becomeOpened(deps: Parameters<typeof becomePr>[0], review:
  * PR already becomes its review instead. Push and open PR asks it once its push lands (src/push.ts).
  */
 export async function draftPr(deps: Parameters<typeof becomePr>[0], targetKey: string): Promise<{ ok: boolean; error?: string; note?: string }> {
-  const { bb, store, gh } = deps;
+  const { alia, store, gh } = deps;
   if (!(await store.getPreferences()).preferences.knobs.reviewAgentActs) return { ok: false, error: "Settings has the review agent drafting only, so it can’t open a PR. Turn on Let the review agent act when you ask, or open it on GitHub." };
   const review = openable(await store.getReview(targetKey));
   if (typeof review === "string") return { ok: false, error: review };
@@ -109,7 +109,7 @@ export async function draftPr(deps: Parameters<typeof becomePr>[0], targetKey: s
     `Then call open_pr with them${base ? "" : " and that base"}: it shows the reviewer exactly what opens, with an Open PR button.`,
   ].join("\n\n");
   try {
-    await messageAssistant(bb, store, targetKey, "Open a PR for this review.", context, { kind: "ask", inserted: true });
+    await messageAssistant(alia, store, targetKey, "Open a PR for this review.", context, { kind: "ask", inserted: true });
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "The review agent couldn’t start." };
   }

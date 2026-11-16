@@ -1,4 +1,4 @@
-// bb-plugin-system-messages-tab - backend entry.
+// alia-plugin-system-messages-tab - backend entry.
 //
 // The thread outline knows each entry's id, text and role, but not when it
 // was sent, and it only knows the titles of sender threads the app has
@@ -10,7 +10,7 @@
 //   outline ids contain "item:<itemId>");
 // - the title of every thread that sent this thread a message.
 // Reads are incremental per thread, so reopening the outline is cheap.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const outlineMetaSchema = z.object({
@@ -41,7 +41,7 @@ type ThreadMeta = {
   senderIds: Set<string>;
 };
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   const cache = new Map<string, ThreadMeta>();
   const titles = new Map<string, string | null>();
   // One read per thread at a time; concurrent callers share it.
@@ -55,7 +55,7 @@ export default async function plugin(bb: BbPluginApi) {
       senderIds: new Set<string>(),
     };
     for (;;) {
-      const rows = await bb.sdk.threads.events.list({
+      const rows = await alia.sdk.threads.events.list({
         threadId,
         afterSeq: String(meta.lastSeq),
         limit: String(PAGE_SIZE),
@@ -91,16 +91,16 @@ export default async function plugin(bb: BbPluginApi) {
     if (titles.has(threadId)) return titles.get(threadId) ?? null;
     let title: string | null = null;
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       title = thread.title?.trim() ? thread.title : null;
     } catch {
-      // Deleted or unreadable thread: keep BB's own "Agent" label.
+      // Deleted or unreadable thread: keep VesnALIA's own "Agent" label.
     }
     titles.set(threadId, title);
     return title;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     outline_meta: async ({ threadId }) => {
       let pending = inflight.get(threadId);
       if (!pending) {
@@ -119,6 +119,6 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info("loaded");
-  bb.onDispose(() => bb.log.info("disposed"));
+  alia.log.info("loaded");
+  alia.onDispose(() => alia.log.info("disposed"));
 }

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   DELEGATION_COMMENT,
@@ -35,7 +35,7 @@ const trackerProjectSchema = z.object({
   id: z.string(),
   name: z.string(),
   prefix: z.string().optional(),
-  linkedBbProjectId: z.string().nullable().optional(),
+  linkedAliaProjectId: z.string().nullable().optional(),
 });
 /** An orchestrator the map should show on its area while its thread lives. */
 export const liveOrchestratorSchema = z.object({
@@ -89,7 +89,7 @@ export const areaDelegationSchema = z.object({
 export type AreaDelegation = z.infer<typeof areaDelegationSchema>;
 export const delegateAreaInput = z.object({
   requestId: z.string().uuid(),
-  /** The task project, never a bb project: its link is read here. */
+  /** The task project, never a VesnALIA project: its link is read here. */
   projectId: z.string().min(1),
   taskIds: z.array(z.string().min(1)).min(1).max(100),
 });
@@ -104,9 +104,9 @@ const TAKEN_FROM = ["in_review", "backlog", "todo"];
 /** Thread states that mean an orchestrator is still on the work. */
 const RUNNING_THREAD = new Set(["pending", "starting", "active", "stopping"]);
 
-export function delegationService(bb: BbPluginApi, changed: () => void) {
+export function delegationService(alia: AliaPluginApi, changed: () => void) {
   const call = <T>(method: string, input: unknown, output: z.ZodType<T>) =>
-    bb.sdk.plugins.callRpc({
+    alia.sdk.plugins.callRpc({
       pluginId: "tasks",
       method,
       input: input as never,
@@ -127,7 +127,7 @@ export function delegationService(bb: BbPluginApi, changed: () => void) {
       throw new Error(
         "No dispatch preset exists. Create one in Tasks before delegating work.",
       );
-    const stored = await bb.storage.kv.get<unknown>(PRESET_KEY);
+    const stored = await alia.storage.kv.get<unknown>(PRESET_KEY);
     const wanted = typeof stored === "string" ? stored : DEFAULT_PRESET;
     return (
       presets.find((preset) => preset.name === wanted) ??
@@ -176,7 +176,7 @@ export function delegationService(bb: BbPluginApi, changed: () => void) {
   const runs = new Map<string, Promise<Delegation>>();
   const run = async (input: z.infer<typeof delegateInput>) => {
     const key = `delegated:${input.requestId}`;
-    const stored = await bb.storage.kv.get<Delegation>(key);
+    const stored = await alia.storage.kv.get<Delegation>(key);
     if (stored) return delegationSchema.parse(stored);
     const { task } = await call(
       "getTask",
@@ -219,7 +219,7 @@ export function delegationService(bb: BbPluginApi, changed: () => void) {
       commented,
     };
     try {
-      await bb.storage.kv.set(key, result);
+      await alia.storage.kv.set(key, result);
     } catch {
       /* The in-memory receipt still prevents a repeat dispatch. */
     }
@@ -230,10 +230,10 @@ export function delegationService(bb: BbPluginApi, changed: () => void) {
   /** Whether a recorded orchestrator is still working on its area. */
   const stillRunning = async (threadId: string) => {
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       return thread.deletedAt == null && RUNNING_THREAD.has(thread.status);
     } catch {
-      // A thread bb can no longer read is no reason to refuse a fresh one.
+      // A thread VesnALIA can no longer read is no reason to refuse a fresh one.
       return false;
     }
   };
@@ -242,10 +242,10 @@ export function delegationService(bb: BbPluginApi, changed: () => void) {
     if (!preset.environmentKind || preset.environmentKind === "project-default")
       return { type: "project-default" as const };
     const hostId =
-      preset.machineId ?? (await bb.sdk.system.config()).primaryHostId;
+      preset.machineId ?? (await alia.sdk.system.config()).primaryHostId;
     if (!hostId)
       throw new Error(
-        `Preset "${preset.name}" needs a worktree, and bb has no default machine to make one on.`,
+        `Preset "${preset.name}" needs a worktree, and VesnALIA has no default machine to make one on.`,
       );
     return {
       type: "host" as const,
@@ -260,7 +260,7 @@ export function delegationService(bb: BbPluginApi, changed: () => void) {
   };
   const spawnOrchestrator = async (
     preset: Preset,
-    bbProjectId: string,
+    aliaProjectId: string,
     title: string,
     area: string,
     tasks: z.infer<typeof taskState>[],
@@ -271,12 +271,12 @@ export function delegationService(bb: BbPluginApi, changed: () => void) {
       throw new Error(
         `Preset "${preset.name}" does not say what to run an orchestrator on. Update it in Tasks, or let agents decide one task at a time.`,
       );
-    const thread = await bb.sdk.threads.spawn({
-      projectId: bbProjectId,
+    const thread = await alia.sdk.threads.spawn({
+      projectId: aliaProjectId,
       environment: await environmentFor(preset),
       providerId,
       model: modelId,
-      // BB owns which execution choices are valid, including values added after
+      // VesnALIA owns which execution choices are valid, including values added after
       // this SDK version, so the preset's own strings are passed through.
       reasoningLevel: reasoningLevel as never,
       ...(preset.serviceTier
@@ -297,7 +297,7 @@ export function delegationService(bb: BbPluginApi, changed: () => void) {
   const areas = new Map<string, Promise<AreaDelegation>>();
   const runArea = async (input: z.infer<typeof delegateAreaInput>) => {
     const key = `area:${input.requestId}`;
-    const stored = await bb.storage.kv.get<AreaDelegation>(key);
+    const stored = await alia.storage.kv.get<AreaDelegation>(key);
     if (stored) return areaDelegationSchema.parse(stored);
     const { projects } = await call(
       "listProjects",
@@ -307,14 +307,14 @@ export function delegationService(bb: BbPluginApi, changed: () => void) {
     const project = projects.find((row) => row.id === input.projectId);
     if (!project)
       throw new Error("This task project no longer exists. Refresh the map.");
-    if (!project.linkedBbProjectId)
+    if (!project.linkedAliaProjectId)
       throw new Error(
-        `Task project "${project.name}" is not linked to a bb project, so no agent can be started in it. Link it in Tasks, then try again.`,
+        `Task project "${project.name}" is not linked to a VesnALIA project, so no agent can be started in it. Link it in Tasks, then try again.`,
       );
     const title = orchestratorTitle(project.name);
     // A second click while this area's orchestrator runs belongs to that one.
     const liveKey = `orchestrator:${project.id}`;
-    const live = await bb.storage.kv.get<AreaDelegation>(liveKey);
+    const live = await alia.storage.kv.get<AreaDelegation>(liveKey);
     const running = areaDelegationSchema.safeParse(live);
     if (running.success && (await stillRunning(running.data.threadId)))
       return { ...running.data, reused: true };
@@ -346,7 +346,7 @@ export function delegationService(bb: BbPluginApi, changed: () => void) {
       );
     const threadId = await spawnOrchestrator(
       preset,
-      project.linkedBbProjectId,
+      project.linkedAliaProjectId,
       title,
       project.name,
       covered,
@@ -389,7 +389,7 @@ export function delegationService(bb: BbPluginApi, changed: () => void) {
       [liveKey, result],
     ] as const)
       try {
-        await bb.storage.kv.set(target, value);
+        await alia.storage.kv.set(target, value);
       } catch {
         /* The in-memory receipt still prevents a repeat dispatch. */
       }
@@ -404,14 +404,14 @@ export function delegationService(bb: BbPluginApi, changed: () => void) {
   const liveOrchestrators = async (): Promise<LiveOrchestrator[]> => {
     let keys: string[] = [];
     try {
-      keys = await bb.storage.kv.list("orchestrator:");
+      keys = await alia.storage.kv.list("orchestrator:");
     } catch {
       return [];
     }
     const rows = await Promise.all(
       keys.map(async (key) => {
         const parsed = areaDelegationSchema.safeParse(
-          await bb.storage.kv.get<unknown>(key),
+          await alia.storage.kv.get<unknown>(key),
         );
         return parsed.success
           ? {

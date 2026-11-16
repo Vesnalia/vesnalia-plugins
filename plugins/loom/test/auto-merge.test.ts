@@ -201,7 +201,7 @@ describe("merging a ready pull request", () => {
     await poll();
     expect(ticket().state).toBe("working");
     expect(outcomes()).toContain("auto_merge_rejected");
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("This PR conflicts with `main`.");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("This PR conflicts with `main`.");
     expect(attemptState(h.store, ticket().id)).toMatchObject({ used: 1, open: null, last: { outcome: "rejected" } });
   });
 

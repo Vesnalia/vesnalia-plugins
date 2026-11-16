@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { MAX_ENTRIES, parseLayout, type CollapseKey, type ContainerKey, type HueId, type Layout, type LayoutPatch, type SnoozeEntry, type SortMode } from "./layout";
 
 export interface LayoutStore {
@@ -14,7 +14,7 @@ export interface LayoutStore {
 }
 
 export function createLayoutStore(
-  kv: BbPluginApi["storage"]["kv"],
+  kv: AliaPluginApi["storage"]["kv"],
   publish: (patch: LayoutPatch) => void,
 ): LayoutStore {
   return {

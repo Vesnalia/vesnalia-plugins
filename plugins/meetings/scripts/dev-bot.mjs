@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Dev harness for the meeting bot: mirrors what the host does without bb.
+// Dev harness for the meeting bot: mirrors what the host does without VesnALIA.
 //   1. copies runtime/ to .e2e/runtime/ and installs playwright-core there once
 //      (the host layout: <runtime>/bot/*.mjs + <runtime>/node_modules),
 //   2. creates .e2e/meetings/<id>/config.json for a link,

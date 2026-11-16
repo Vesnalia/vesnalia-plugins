@@ -1,8 +1,8 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { OperationRequest } from "./contracts.js";
 
-type Db = ReturnType<BbPluginApi["storage"]["database"]>;
+type Db = ReturnType<AliaPluginApi["storage"]["database"]>;
 
 export const operationStatusSchema = z.enum([
   "requested",
@@ -33,7 +33,7 @@ export type MappingState = z.infer<typeof mappingStateSchema>;
 
 const mappingRowSchema = z
   .object({
-    bb_thread_id: z.string(),
+    alia_thread_id: z.string(),
     korey_thread_id: z.string().nullable(),
     marker: z.string().nullable(),
     state: mappingStateSchema,
@@ -46,7 +46,7 @@ const mappingRowSchema = z
 const operationRowSchema = z
   .object({
     id: z.string(),
-    bb_thread_id: z.string(),
+    alia_thread_id: z.string(),
     status: operationStatusSchema,
     request_json: z.string(),
     request_hash: z.string(),
@@ -67,7 +67,7 @@ const operationRowSchema = z
   .strict();
 
 export interface MappingRecord {
-  bbThreadId: string;
+  aliaThreadId: string;
   koreyThreadId: string | null;
   marker: string | null;
   state: MappingState;
@@ -78,7 +78,7 @@ export interface MappingRecord {
 
 export interface OperationRecord {
   id: string;
-  bbThreadId: string;
+  aliaThreadId: string;
   status: OperationStatus;
   request: Record<string, unknown>;
   requestHash: string;
@@ -99,7 +99,7 @@ export interface OperationRecord {
 
 export const migrations = [
   `CREATE TABLE korey_mappings (
-     bb_thread_id TEXT PRIMARY KEY,
+     alia_thread_id TEXT PRIMARY KEY,
      korey_thread_id TEXT UNIQUE,
      marker TEXT UNIQUE,
      state TEXT NOT NULL,
@@ -109,7 +109,7 @@ export const migrations = [
    );
    CREATE TABLE korey_operations (
      id TEXT PRIMARY KEY,
-     bb_thread_id TEXT NOT NULL,
+     alia_thread_id TEXT NOT NULL,
      status TEXT NOT NULL,
      request_json TEXT NOT NULL,
      request_hash TEXT NOT NULL,
@@ -125,7 +125,7 @@ export const migrations = [
      completed_at INTEGER
    );
    CREATE INDEX korey_operations_thread_created_idx
-     ON korey_operations(bb_thread_id, created_at DESC);`,
+     ON korey_operations(alia_thread_id, created_at DESC);`,
   `CREATE INDEX korey_operations_destination_idx
      ON korey_operations(korey_thread_id);`,
   `ALTER TABLE korey_operations ADD COLUMN request_version INTEGER NOT NULL DEFAULT 1;
@@ -136,7 +136,7 @@ export const migrations = [
 function mappingRecord(value: unknown): MappingRecord {
   const row = mappingRowSchema.parse(value);
   return {
-    bbThreadId: row.bb_thread_id,
+    aliaThreadId: row.alia_thread_id,
     koreyThreadId: row.korey_thread_id,
     marker: row.marker,
     state: row.state,
@@ -154,7 +154,7 @@ function operationRecord(value: unknown): OperationRecord {
       : z.array(z.string().min(1)).parse(JSON.parse(row.attachment_ids_json));
   return {
     id: row.id,
-    bbThreadId: row.bb_thread_id,
+    aliaThreadId: row.alia_thread_id,
     status: row.status,
     // Historical requests are data, not executable requests. Only the write
     // path validates against the current request contract.
@@ -178,46 +178,46 @@ function operationRecord(value: unknown): OperationRecord {
   };
 }
 
-export function getMapping(db: Db, bbThreadId: string): MappingRecord | null {
+export function getMapping(db: Db, aliaThreadId: string): MappingRecord | null {
   const row = db
-    .prepare("SELECT * FROM korey_mappings WHERE bb_thread_id = ?")
-    .get(bbThreadId);
+    .prepare("SELECT * FROM korey_mappings WHERE alia_thread_id = ?")
+    .get(aliaThreadId);
   return row === undefined ? null : mappingRecord(row);
 }
 
 export function reserveMapping(
   db: Db,
-  bbThreadId: string,
+  aliaThreadId: string,
   marker: string,
 ): MappingRecord {
   return db
     .transaction(() => {
-      const existing = getMapping(db, bbThreadId);
+      const existing = getMapping(db, aliaThreadId);
       if (existing !== null && existing.state !== "unlinked") return existing;
       const now = Date.now();
       if (existing === null) {
         db.prepare(
           `INSERT INTO korey_mappings (
-             bb_thread_id, korey_thread_id, marker, state, generation,
+             alia_thread_id, korey_thread_id, marker, state, generation,
              created_at, updated_at
            ) VALUES (?, NULL, ?, 'reserved', 1, ?, ?)`,
-        ).run(bbThreadId, marker, now, now);
+        ).run(aliaThreadId, marker, now, now);
       } else {
         db.prepare(
           `UPDATE korey_mappings
              SET korey_thread_id = NULL, marker = ?, state = 'reserved',
                  generation = generation + 1, updated_at = ?
-           WHERE bb_thread_id = ? AND state = 'unlinked'`,
-        ).run(marker, now, bbThreadId);
+           WHERE alia_thread_id = ? AND state = 'unlinked'`,
+        ).run(marker, now, aliaThreadId);
       }
-      return getMappingRequired(db, bbThreadId);
+      return getMappingRequired(db, aliaThreadId);
     })
     .immediate();
 }
 
 export function beginMappingCreate(
   db: Db,
-  bbThreadId: string,
+  aliaThreadId: string,
   generation: number,
 ): boolean {
   return (
@@ -225,27 +225,27 @@ export function beginMappingCreate(
       .prepare(
         `UPDATE korey_mappings
             SET state = 'create-dispatching', updated_at = ?
-          WHERE bb_thread_id = ? AND generation = ? AND state = 'reserved'`,
+          WHERE alia_thread_id = ? AND generation = ? AND state = 'reserved'`,
       )
-      .run(Date.now(), bbThreadId, generation).changes === 1
+      .run(Date.now(), aliaThreadId, generation).changes === 1
   );
 }
 
 export function completeMappingCreate(
   db: Db,
-  args: { bbThreadId: string; generation: number; koreyThreadId: string },
+  args: { aliaThreadId: string; generation: number; koreyThreadId: string },
 ): void {
   const changed = db
     .prepare(
       `UPDATE korey_mappings
           SET korey_thread_id = ?, state = 'ready', updated_at = ?
-        WHERE bb_thread_id = ? AND generation = ?
+        WHERE alia_thread_id = ? AND generation = ?
           AND state IN ('create-dispatching', 'reconcile-required')`,
     )
     .run(
       args.koreyThreadId,
       Date.now(),
-      args.bbThreadId,
+      args.aliaThreadId,
       args.generation,
     ).changes;
   if (changed !== 1) throw new Error("Korey mapping changed during creation");
@@ -253,7 +253,7 @@ export function completeMappingCreate(
 
 export function rejectMappingCreate(
   db: Db,
-  bbThreadId: string,
+  aliaThreadId: string,
   generation: number,
   from: "reserved" | "create-dispatching" = "create-dispatching",
 ): void {
@@ -262,10 +262,10 @@ export function rejectMappingCreate(
       `UPDATE korey_mappings
           SET korey_thread_id = NULL, marker = NULL, state = 'unlinked',
               updated_at = ?
-        WHERE bb_thread_id = ? AND generation = ?
+        WHERE alia_thread_id = ? AND generation = ?
           AND state = ?`,
     )
-    .run(Date.now(), bbThreadId, generation, from).changes;
+    .run(Date.now(), aliaThreadId, generation, from).changes;
   if (changed !== 1) {
     throw new Error("Korey mapping changed while creation was rejected");
   }
@@ -273,67 +273,67 @@ export function rejectMappingCreate(
 
 export function requireMappingReconciliation(
   db: Db,
-  bbThreadId: string,
+  aliaThreadId: string,
   generation: number,
 ): void {
   db.prepare(
     `UPDATE korey_mappings
         SET state = 'reconcile-required', updated_at = ?
-      WHERE bb_thread_id = ? AND generation = ?
+      WHERE alia_thread_id = ? AND generation = ?
         AND state = 'create-dispatching'`,
-  ).run(Date.now(), bbThreadId, generation);
+  ).run(Date.now(), aliaThreadId, generation);
 }
 
 export function setLinkedMapping(
   db: Db,
-  bbThreadId: string,
+  aliaThreadId: string,
   koreyThreadId: string,
 ): MappingRecord {
   return db
     .transaction(() => {
       const owner = db
         .prepare(
-          "SELECT bb_thread_id FROM korey_mappings WHERE korey_thread_id = ? AND bb_thread_id != ?",
+          "SELECT alia_thread_id FROM korey_mappings WHERE korey_thread_id = ? AND alia_thread_id != ?",
         )
-        .get(koreyThreadId, bbThreadId);
+        .get(koreyThreadId, aliaThreadId);
       if (owner !== undefined) {
-        const { bb_thread_id: ownerId } = z
-          .object({ bb_thread_id: z.string() })
+        const { alia_thread_id: ownerId } = z
+          .object({ alia_thread_id: z.string() })
           .parse(owner);
         throw new Error(
-          `Korey thread ${koreyThreadId} is already linked to bb thread ${ownerId}. Unlink it there with bb korey unlink --bb-thread ${ownerId}, then link it here.`,
+          `Korey thread ${koreyThreadId} is already linked to VesnALIA thread ${ownerId}. Unlink it there with VesnALIA korey unlink --alia-thread ${ownerId}, then link it here.`,
         );
       }
       const now = Date.now();
       db.prepare(
         `INSERT INTO korey_mappings (
-       bb_thread_id, korey_thread_id, marker, state, generation,
+       alia_thread_id, korey_thread_id, marker, state, generation,
        created_at, updated_at
      ) VALUES (?, ?, NULL, 'ready', 1, ?, ?)
-     ON CONFLICT(bb_thread_id) DO UPDATE SET
+     ON CONFLICT(alia_thread_id) DO UPDATE SET
        korey_thread_id = excluded.korey_thread_id,
        marker = NULL,
        state = 'ready',
        generation = korey_mappings.generation + 1,
        updated_at = excluded.updated_at`,
-      ).run(bbThreadId, koreyThreadId, now, now);
-      return getMappingRequired(db, bbThreadId);
+      ).run(aliaThreadId, koreyThreadId, now, now);
+      return getMappingRequired(db, aliaThreadId);
     })
     .immediate();
 }
 
-export function setUnlinkedMapping(db: Db, bbThreadId: string): boolean {
+export function setUnlinkedMapping(db: Db, aliaThreadId: string): boolean {
   return db
     .transaction(() => {
-      const existing = getMapping(db, bbThreadId);
+      const existing = getMapping(db, aliaThreadId);
       if (existing === null) {
         const now = Date.now();
         db.prepare(
           `INSERT INTO korey_mappings (
-             bb_thread_id, korey_thread_id, marker, state, generation,
+             alia_thread_id, korey_thread_id, marker, state, generation,
              created_at, updated_at
            ) VALUES (?, NULL, NULL, 'unlinked', 1, ?, ?)`,
-        ).run(bbThreadId, now, now);
+        ).run(aliaThreadId, now, now);
         return false;
       }
       const linked = existing.state !== "unlinked";
@@ -341,17 +341,17 @@ export function setUnlinkedMapping(db: Db, bbThreadId: string): boolean {
         `UPDATE korey_mappings
             SET korey_thread_id = NULL, marker = NULL, state = 'unlinked',
                 generation = generation + 1, updated_at = ?
-          WHERE bb_thread_id = ?`,
-      ).run(Date.now(), bbThreadId);
+          WHERE alia_thread_id = ?`,
+      ).run(Date.now(), aliaThreadId);
       return linked;
     })
     .immediate();
 }
 
-function getMappingRequired(db: Db, bbThreadId: string): MappingRecord {
-  const mapping = getMapping(db, bbThreadId);
+function getMappingRequired(db: Db, aliaThreadId: string): MappingRecord {
+  const mapping = getMapping(db, aliaThreadId);
   if (mapping === null)
-    throw new Error(`Missing Korey mapping for ${bbThreadId}`);
+    throw new Error(`Missing Korey mapping for ${aliaThreadId}`);
   return mapping;
 }
 
@@ -362,11 +362,11 @@ export function createOperation(
   const now = Date.now();
   db.prepare(
     `INSERT INTO korey_operations (
-       id, bb_thread_id, status, request_json, request_hash, created_at, updated_at, request_version
+       id, alia_thread_id, status, request_json, request_hash, created_at, updated_at, request_version
      ) VALUES (?, ?, 'requested', ?, ?, ?, ?, ?)`,
   ).run(
     request.operationId,
-    request.bbThreadId,
+    request.aliaThreadId,
     JSON.stringify(request),
     request.requestHash,
     now,
@@ -383,34 +383,34 @@ export function getOperation(db: Db, id: string): OperationRecord | null {
 
 export function listOperations(
   db: Db,
-  bbThreadId: string,
+  aliaThreadId: string,
   limit: number,
   koreyThreadId: string | null = null,
 ): OperationRecord[] {
   return db
     .prepare(
       `SELECT * FROM korey_operations
-        WHERE bb_thread_id = ? OR korey_thread_id = ?
+        WHERE alia_thread_id = ? OR korey_thread_id = ?
         ORDER BY created_at DESC, id DESC LIMIT ?`,
     )
-    .all(bbThreadId, koreyThreadId, limit)
+    .all(aliaThreadId, koreyThreadId, limit)
     .map(operationRecord);
 }
 
 export function listUnresolvedOperations(
   db: Db,
-  bbThreadId: string,
+  aliaThreadId: string,
   koreyThreadId: string | null,
 ): OperationRecord[] {
   return (
     db
       .prepare(
         `SELECT * FROM korey_operations
-        WHERE (bb_thread_id = ? OR korey_thread_id = ?)
+        WHERE (alia_thread_id = ? OR korey_thread_id = ?)
           AND status IN ('awaiting-response', 'reconcile-required')
         ORDER BY created_at ASC, id ASC`,
       )
-      .all(bbThreadId, koreyThreadId)
+      .all(aliaThreadId, koreyThreadId)
       .map(operationRecord)
       // A pending read must not become an unresolved external-write barrier.
       .filter((operation) => operation.request.action !== "consult")

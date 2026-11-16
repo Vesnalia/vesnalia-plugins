@@ -92,7 +92,7 @@ export async function release(version: string) {
 ## Project layout
 
 ```
-bb-plugin-md-editor/
+alia-plugin-md-editor/
 ├── app.tsx          # file opener and header
 ├── rich.tsx         # editor, toolbar, code blocks
 ├── md-extensions.ts # agent Markdown syntax

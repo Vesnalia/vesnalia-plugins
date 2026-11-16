@@ -1,23 +1,19 @@
 {
-  "name": "bb-plugin-pets",
+  "name": "alia-plugin-pets",
   "version": "0.3.1",
   "type": "module",
   "license": "MIT",
   "author": "Vedran Burojevic",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/vburojevic/bb-plugin-pets"
-  },
   "scripts": {
     "test": "node --experimental-strip-types --test test/*.test.ts"
   },
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "Pets",
-    "description": "An AI-hatched pixel companion that lives in your bb window, reacts to your agents, and levels up from real work.",
+    "description": "An AI-hatched pixel companion that lives in your VesnALIA window, reacts to your agents, and levels up from real work.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -37,7 +33,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@radix-ui/react-alert-dialog": "^1.2.1",
     "@radix-ui/react-context-menu": "^2.4.1",
     "@radix-ui/react-popover": "^1.3.1",
@@ -55,5 +50,22 @@
     "tailwind-merge": "^3.7.0",
     "typescript": "^5.7.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/pets#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/pets"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

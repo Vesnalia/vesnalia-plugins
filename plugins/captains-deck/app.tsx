@@ -1,4 +1,4 @@
-// bb-plugin-captains-deck — frontend.
+// alia-plugin-captains-deck — frontend.
 //
 // The board is read-only except for a Captain's Call: clicking a decision card
 // opens a dialog with the options the first mate attached, and the answer is
@@ -12,8 +12,8 @@ import {
   experimental_useSidebarThreads,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { DeckTask } from "./server";
 import type { rpcContract } from "./server";
 import { Button } from "@/components/ui/button";
@@ -633,7 +633,7 @@ function BoardPage() {
         <Icon name="Kanban" className="size-4 text-muted-foreground" />
         <h1 className="text-sm font-semibold">Captain&apos;s Deck</h1>
         <p className="text-xs text-muted-foreground">
-          The first mate charts and moves work with <code>bb deck</code>.
+          The first mate charts and moves work with <code>alia deck</code>.
         </p>
         <span className="ml-auto flex items-center gap-2 text-[10px] text-muted-foreground">
           <span>{columns.charted.length} charted</span>

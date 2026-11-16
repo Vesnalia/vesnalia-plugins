@@ -3,7 +3,7 @@
  * current, finds the threads a thread spawned, and reads a span's full output
  * on demand instead of holding every command's output in memory.
  */
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { TRACE_EVENT_TYPES, TraceBuilder, type Span, type Turn } from "./trace.js";
 import { errorMessage, record, text, type ThreadInfo } from "./util.js";
 
@@ -56,7 +56,7 @@ function preview(value: unknown): string | null {
   return raw.length > PREVIEW_CHARS ? `${raw.slice(0, PREVIEW_CHARS - 1)}…` : raw;
 }
 
-export function createTraceStore(bb: BbPluginApi) {
+export function createTraceStore(alia: AliaPluginApi) {
   /** Insertion order doubles as recency: a read moves the thread to the end. */
   const traces = new Map<string, TraceBuilder>();
   /** One fold at a time per thread, so concurrent reads share the same pages. */
@@ -85,7 +85,7 @@ export function createTraceStore(bb: BbPluginApi) {
       const cached = traces.get(threadId);
       const builder = cached ?? new TraceBuilder();
       for (;;) {
-        const page = await bb.sdk.threads.events.list({
+        const page = await alia.sdk.threads.events.list({
           threadId,
           afterSeq: String(builder.lastSeq),
           limit: String(EVENT_PAGE_SIZE),
@@ -131,7 +131,7 @@ export function createTraceStore(bb: BbPluginApi) {
   const info = async (threadId: string): Promise<ThreadInfo> => {
     const cached = infos.get(threadId);
     if (cached) return cached;
-    const raw = record(await bb.sdk.threads.get({ threadId }));
+    const raw = record(await alia.sdk.threads.get({ threadId }));
     const thread = "thread" in raw ? record(raw.thread) : raw;
     const result: ThreadInfo = {
       id: threadId,
@@ -150,7 +150,7 @@ export function createTraceStore(bb: BbPluginApi) {
     if (cached && Date.now() - cached.at < CHILD_LIST_TTL_MS) return cached.rows;
     const lists = await Promise.all(
       [false, true].map((archived) =>
-        bb.sdk.threads.list({ parentThreadId: threadId, includeHidden: true, archived }),
+        alia.sdk.threads.list({ parentThreadId: threadId, includeHidden: true, archived }),
       ),
     );
     const rows = lists.flat().map((row) => {
@@ -183,7 +183,7 @@ export function createTraceStore(bb: BbPluginApi) {
     try {
       spawned = await childThreads(threadId);
     } catch (cause) {
-      bb.log.warn(`Could not list the threads ${threadId} spawned: ${errorMessage(cause)}`);
+      alia.log.warn(`Could not list the threads ${threadId} spawned: ${errorMessage(cause)}`);
       return turn;
     }
     const end = turn.end ?? now;
@@ -270,7 +270,7 @@ export function createTraceStore(bb: BbPluginApi) {
     };
     if (!span || span.endSeq === null || span.kind === "error" || span.kind === "startup")
       return details;
-    const [event] = await bb.sdk.threads.events.list({
+    const [event] = await alia.sdk.threads.events.list({
       threadId,
       afterSeq: String(span.endSeq - 1),
       limit: "1",
@@ -296,7 +296,7 @@ export function createTraceStore(bb: BbPluginApi) {
 
   /** The most recently active threads of a project, for project-wide stats. */
   const projectThreads = async (projectId: string, limit: number): Promise<string[]> => {
-    const rows = await bb.sdk.threads.list({ projectId, limit: Math.max(limit * 2, limit) });
+    const rows = await alia.sdk.threads.list({ projectId, limit: Math.max(limit * 2, limit) });
     return rows
       .map((row) => record(row))
       .sort((a, b) => Number(b.updatedAt ?? 0) - Number(a.updatedAt ?? 0))

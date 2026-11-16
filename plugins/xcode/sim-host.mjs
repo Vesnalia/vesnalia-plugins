@@ -2,7 +2,7 @@
  * The capture host: a child process that mounts serve-sim's middleware behind
  * an allowlist and an auth filter.
  *
- * SHIPS RAW AND UNBUNDLED. `bb plugin build` inlines every third-party
+ * SHIPS RAW AND UNBUNDLED. `alia plugin build` inlines every third-party
  * dependency into `dist/server.js`, and serve-sim resolves its native addon
  * from `import.meta.url`-relative paths — inlining it would break that. Nothing
  * the bundled server statically imports may reach `serve-sim/middleware` except
@@ -10,11 +10,11 @@
  *
  * ## Why a child process at all
  *
- * `simMiddleware` embeds cleanly in-process and mounting it in bb's own event
+ * `simMiddleware` embeds cleanly in-process and mounting it in VesnALIA's own event
  * loop is about fifteen lines. Do not. `DeviceSession.start()`, `handleMjpeg()`
  * and `handleAvcc()` each launch a bare `(async () => { … })()` with no
- * `.catch`, and inside the bb server a rejection there is an
- * `uncaughtException` that takes bb down rather than the plugin. A child
+ * `.catch`, and inside the VesnALIA server a rejection there is an
+ * `uncaughtException` that takes VesnALIA down rather than the plugin. A child
  * process converts a fatal bug into a restart. It also gives the auth filter
  * somewhere to live.
  *
@@ -23,8 +23,8 @@
  * serve-sim's `GET /api` serves its `execToken` to any unauthenticated caller,
  * and `POST /exec` with that token runs arbitrary shell on the host — its
  * `Origin` check does not apply to a caller that sends no `Origin` at all.
- * Loopback is not a boundary under bb: `bb connect expose <port>` tunnels
- * loopback ports, and bb ships a builtin skill telling agents to run exactly
+ * Loopback is not a boundary under VesnALIA: `alia connect expose <port>` tunnels
+ * loopback ports, and VesnALIA ships a builtin skill telling agents to run exactly
  * that whenever they have started a local HTTP server. So this file serves the
  * small explicit route set the plugin actually uses and 404s everything else,
  * which makes the escalation unreachable rather than merely gated.
@@ -77,7 +77,7 @@ const WS_ALLOW = new RegExp(`^/helper/${UDID}/ws$`);
 /**
  * The routes a device-derived stream capability may open.
  *
- * The panel streams straight from this process rather than through the bb
+ * The panel streams straight from this process rather than through the VesnALIA
  * server — measured, the proxy hop cost 79% as much CPU as capturing and
  * encoding the frames did, all of it on the process every other plugin shares.
  * But an `<img>` cannot set a header, so a direct URL has to carry its

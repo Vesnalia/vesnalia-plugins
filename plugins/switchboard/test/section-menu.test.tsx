@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { installTestPluginRuntime } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime } from "@vesnalia/plugin-sdk/testing/app";
 import { EMPTY_LAYOUT } from "../src/layout";
 import { buildGroups } from "../src/tree";
 import { SectionMenu } from "../src/section-menu";

@@ -1,7 +1,7 @@
 // What a comment was before your Resolve or Dismiss click, kept in kv for that click's Undo (src/draft-rpc.ts): only
 // what the server recorded then comes back, never a state the caller names. Kept until Undo, Reopen, Remove, the
 // review's deletion, or UNDO_FOR_MS, whichever is first.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { CommentLocation, CommentState, DraftComment } from "./draft";
 
 /** How long after the click Undo can still put it back; the page offers it for 10 seconds. */
@@ -11,7 +11,7 @@ const PREFIX = "fix-undo:";
 /** The comment as the click found it: its id, state, and words and lines, which an edit since changes. */
 export type Before = { id: string | null; state: CommentState; at: number } & Pick<DraftComment, "body" | "startLine" | "startSide">;
 
-type Kv = BbPluginApi["storage"]["kv"];
+type Kv = AliaPluginApi["storage"]["kv"];
 // The review first, so one review's keys share a prefix.
 const keyOf = (targetKey: string, at?: CommentLocation) => `${PREFIX}${JSON.stringify(at ? [targetKey, at.file, at.line, at.side] : [targetKey]).slice(0, at ? undefined : -1)}${at ? "" : ","}`;
 

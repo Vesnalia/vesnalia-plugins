@@ -81,7 +81,7 @@ describe("readGitHubStatuses", () => {
   it("matches the real GitHub plugin cache when present", () => {
     // Live-integration probe: the real cache on this machine. Skips when
     // the file does not exist (other machines, CI).
-    const real = join(process.env.HOME ?? "~", ".bb/plugins/github/data.db");
+    const real = join(process.env.HOME ?? "~", ".vesnalia/plugins/github/data.db");
     if (!existsSync(real)) return;
     const db = new Database(real, { readonly: true });
     const row = db

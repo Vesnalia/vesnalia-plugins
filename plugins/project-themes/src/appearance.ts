@@ -1,6 +1,6 @@
 import { themeCss, type Themes } from "./theme.ts";
 
-const APPEARANCE_EVENT = "bb:project-themes:appearance";
+const APPEARANCE_EVENT = "alia:project-themes:appearance";
 type Appearance = { themes: Themes; projectId: string | null };
 let appearance: Appearance = { themes: {}, projectId: null };
 export function publishAppearance(next: Appearance) {
@@ -48,7 +48,7 @@ export function mountAppearance(signal: AbortSignal): () => void {
           context.fillStyle = theme.color;
           context.fillRect(0, 0, 32, 32);
           context.globalCompositeOperation = "source-over";
-          // BB's unread dot is at (28, 6) in a 32px favicon.
+          // VesnALIA's unread dot is at (28, 6) in a 32px favicon.
           context.drawImage(image, image.width * .75, 0, image.width * .25, image.height * .32, 24, 0, 8, 10);
           state.owned = canvas.toDataURL("image/png");
           link.setAttribute("href", state.owned);

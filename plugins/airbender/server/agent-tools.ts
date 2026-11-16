@@ -4,8 +4,8 @@
 // tools, and the decision whether "set the current issue" may go ahead in a
 // given folder.
 //
-// Why: the tools are offered to every thread, in any folder (bead-bb-8fm).
-// BB decides a thread's tools when its session starts and never adds any to
+// Why: the tools are offered to every thread, in any folder (bead-alia-8fm).
+// VesnALIA decides a thread's tools when its session starts and never adds any to
 // a running one, so offering them only where the folder already used beads
 // left agents without them: a thread started minutes before beads was set
 // up, and one running while its repository was switched to the simple
@@ -22,7 +22,7 @@
 //   it gets when the user sets one, and in a note when the user switches
 //   the workflow (workflowLine, switchNote).
 // - Kept apart from server.ts so the wording and the refusal can be tested
-//   without BB.
+//   without VesnALIA.
 // - The step tool's own refusals are not here: moving a step already goes
 //   through the folder and workflow checks in server/work.ts.
 

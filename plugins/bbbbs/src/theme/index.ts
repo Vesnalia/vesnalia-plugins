@@ -1,5 +1,5 @@
 /**
- * bbBBS theme: everything that makes the terminal look like 1994.
+ * aliaBBS theme: everything that makes the terminal look like 1994.
  * Owned by the Design stream; see ./README.md for usage.
  *
  * Also import "./theme.css" once from the plugin stylesheet.

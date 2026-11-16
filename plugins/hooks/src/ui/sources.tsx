@@ -55,7 +55,7 @@ export function SourcesTab({ onBrowse }: { onBrowse: (source: string) => void })
                 {alias}
               </Chip>
             ))}
-            <Chip active={false} onClick={() => setSource("MacHatter1/bb-hooks-marketplace")} icon="Github">
+            <Chip active={false} onClick={() => setSource("MacHatter1/alia-hooks-marketplace")} icon="Github">
               community
             </Chip>
           </div>
@@ -148,7 +148,7 @@ export function SourcesTab({ onBrowse }: { onBrowse: (source: string) => void })
 
       <section className="space-y-2">
         <SectionTitle hint="Put a hooks-catalog.json at the root of a GitHub repository; anyone can then add it as owner/repo.">Publish your own</SectionTitle>
-        <Code>{"bb hooks marketplace init --name my-hooks > hooks-catalog.json\nbb hooks export <hook-id>              # turn an installed hook into a template\nbb hooks marketplace validate owner/repo"}</Code>
+        <Code>{"alia hooks marketplace init --name my-hooks > hooks-catalog.json\nbb hooks export <hook-id>              # turn an installed hook into a template\nbb hooks marketplace validate owner/repo"}</Code>
       </section>
     </div>
   );

@@ -2,7 +2,7 @@
  * "Clear review": deletes every comment thread of the view and closes its AI runs, archiving their
  * threads, after the user confirms. Nothing of it can be brought back.
  */
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -49,7 +49,7 @@ export function ClearReviewDialog({
   };
 
   const parts = [threadCount > 0 ? `deletes ${plural(threadCount, "comment thread")} in this view, yours and the AI's, open or closed` : null];
-  if (runCount > 0) parts.push(`closes ${plural(runCount, "AI run")}, archiving ${runCount === 1 ? "its thread" : "their threads"} in bb`);
+  if (runCount > 0) parts.push(`closes ${plural(runCount, "AI run")}, archiving ${runCount === 1 ? "its thread" : "their threads"} in VesnALIA`);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

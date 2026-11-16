@@ -5,7 +5,7 @@ import {
   useRpc,
   type ExperimentalAppOverlayProps,
   type PluginComposerApi,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { Comment, rpcContract } from "../contract";
 import { editorStore, type EditorRequest } from "../lib/editor-store";

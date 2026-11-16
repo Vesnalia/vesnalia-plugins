@@ -91,7 +91,7 @@ describe("the run.host_id migration", () => {
       `INSERT INTO run (id, status, kind, started_at, pid, thread_id) VALUES ('r:1:1', 'passed', 'build', 1, 1, 'thr_old')`,
     ).run();
 
-    // What `bb.storage.migrate` does on the next load: the statements it has
+    // What `alia.storage.migrate` does on the next load: the statements it has
     // not applied yet, by index.
     for (const statement of MIGRATIONS.slice(V3_MIGRATIONS_START)) db.prepare(statement).run();
     const store = new Store(db);

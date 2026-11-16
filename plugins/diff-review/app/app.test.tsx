@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 /**
- * The Review tab against a recorded RPC backend. `@pierre/diffs` is bb's at run time and needs a
+ * The Review tab against a recorded RPC backend. `@pierre/diffs` is VesnALIA's at run time and needs a
  * highlighter jsdom does not have, so a stand-in renders each annotation through the tab's own
  * `renderAnnotation` and offers the gutter "+" as a button.
  */
 import { act, cleanup, fireEvent, render as renderPlain, screen, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -185,20 +185,20 @@ describe("the app", () => {
   it("registers the Review tab and one Review button of its own in the thread's header", async () => {
     const app = await loadPluginApp(() => import("../app"));
     expect(app.tabs.map((tab) => [tab.id, tab.context, tab.availability, tab.title, tab.layout])).toEqual([["review", { kind: "thread" }, "action", "Review", "flush"]]);
-    // bb 0.48 folds every plugin's header thread action into one shared split button; the old slot
+    // VesnALIA 0.48 folds every plugin's header thread action into one shared split button; the old slot
     // draws Review as its own control, so Review registers there and nowhere else.
     expect(app.threadHeaderActions.map((action) => [action.id, action.title])).toEqual([["review", "Review"]]);
     expect(app.threadActions).toEqual([]);
   });
 
-  it("opens and closes the Review tab through bb's panel controller from the header button", async () => {
+  it("opens and closes the Review tab through VesnALIA's panel controller from the header button", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const slot = renderSlot(app.threadHeaderActions[0]!, { threadId: "thr_1", projectId: "proj_1", isCompactViewport: false }, { experimental_panel: { toggleTab: () => true } });
     fireEvent.click(screen.getByRole("button", { name: "Review this thread's changes" }));
     expect(slot.inspection.experimental_panelCalls).toEqual([{ method: "toggleTab", options: { tab: { id: "review", context: { kind: "thread" }, availability: "action" } } }]);
   });
 
-  it("falls back to a header thread action on a bb without the old header slot, still one control", async () => {
+  it("falls back to a header thread action on a VesnALIA without the old header slot, still one control", async () => {
     const actions: { id: string; placement?: string; item(context: unknown): { label: string; run(context: unknown): unknown } | null }[] = [];
     const definition = (await import("../app")).default as unknown as { setup(builder: unknown): void };
     const slots = new Proxy({} as Record<string, unknown>, {
@@ -315,11 +315,11 @@ describe("the previous and next comment arrows", () => {
     expect((within(toolbar()).getByRole("button", { name: "Previous comment" }) as HTMLButtonElement).disabled).toBe(true);
   });
 
-  /** No step may scroll bb's containers around the tab: `scrollIntoView` would, so nothing calls it. */
+  /** No step may scroll VesnALIA's containers around the tab: `scrollIntoView` would, so nothing calls it. */
   const forbidScrollIntoView = () => {
     const original = Element.prototype.scrollIntoView;
     Element.prototype.scrollIntoView = () => {
-      throw new Error("scrollIntoView scrolls bb's own containers too");
+      throw new Error("scrollIntoView scrolls VesnALIA's own containers too");
     };
     return () => {
       Element.prototype.scrollIntoView = original;
@@ -505,7 +505,7 @@ describe("the previous and next comment arrows", () => {
       await step(next, "aaaaaa000004");
       expect(await step(next, "aaaaaa000009")).toEqual(["src/later.ts", "aaaaaa000009"]);
 
-      // The workspace changes and the view reloads, without the patches bb leaves to load: the diffs
+      // The workspace changes and the view reloads, without the patches VesnALIA leaves to load: the diffs
       // already loaded stay, so the thread stays at the top and the stops stay where they were.
       await slot.behavior.emitRealtime("environment:env_1", { kind: "diff" });
       await waitFor(() => expect(slot.inspection.rpcCalls.filter((call) => call.method === "getReview")).toHaveLength(2));
@@ -612,7 +612,7 @@ describe("the staged, unstaged and range views", () => {
     }
   });
 
-  it("offers no Viewed marks where bb has none", async () => {
+  it("offers no Viewed marks where VesnALIA has none", async () => {
     render({ getReview: () => ({ ...VIEW, target: { kind: "staged" }, viewable: false }) });
     await screen.findByTestId("patch");
     expect(screen.queryByRole("checkbox", { name: "Viewed src/a.ts" })).toBeNull();
@@ -742,7 +742,7 @@ describe("switching to another view", () => {
 
   const dimmed = (path: string) => screen.getByText(path).closest("[inert]");
 
-  it("marks the picked view at once and dims the previous one under bb's spinner until the new one arrives", async () => {
+  it("marks the picked view at once and dims the previous one under VesnALIA's spinner until the new one arrives", async () => {
     const { held, getReview } = heldLoads();
     render({ getReview });
     await screen.findByTestId("patch");
@@ -1348,7 +1348,7 @@ describe("the Review tab", () => {
     });
   });
 
-  it("marks a file Viewed through bb's marks, folding it, and says when a viewed file changed", async () => {
+  it("marks a file Viewed through VesnALIA's marks, folding it, and says when a viewed file changed", async () => {
     const slot = render({ setViewed: () => ({ ok: true }) });
     await screen.findByTestId("patch");
     fireEvent.click(screen.getByRole("checkbox", { name: "Viewed src/a.ts" }));
@@ -1386,7 +1386,7 @@ describe("the Review tab", () => {
     expect(screen.queryByTestId("patch")).toBeNull();
   });
 
-  it("opens a file in bb's preview at the version the view shows", async () => {
+  it("opens a file in VesnALIA's preview at the version the view shows", async () => {
     const opened: unknown[] = [];
     const slot = renderSlot(
       { component: ReviewPanel },
@@ -1485,7 +1485,7 @@ describe("the Review tab", () => {
     });
   });
 
-  it("loads the patches bb did not send, in one batch, without a tap", async () => {
+  it("loads the patches VesnALIA did not send, in one batch, without a tap", async () => {
     const unloaded = (path: string) => ({ ...VIEW.files[0]!, path, revision: `rev-${path}`, patch: null, loadMode: "on_demand" as const });
     const view = { ...VIEW, threads: [], files: [unloaded("src/a.ts"), unloaded("src/b.ts")] };
     const slot = renderSlot(
@@ -1627,7 +1627,7 @@ describe("the Review tab", () => {
       await screen.findByText("Why three?");
       await pickView("Staged changes");
       await waitFor(() => expect(loadsOf(first).at(-1)!.target).toEqual({ kind: "staged" }));
-      // Another thread opened in the panel, then this one again: bb mounts the tab anew each time.
+      // Another thread opened in the panel, then this one again: VesnALIA mounts the tab anew each time.
       first.lifecycle.unmount();
       const other = render({ getReview: echo }, "thr_2");
       await screen.findByText("Why three?");
@@ -1855,7 +1855,7 @@ describe("the Review tab", () => {
     // Cancel keeps everything.
     fireEvent.click(screen.getByRole("button", { name: "Clear review" }));
     let dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByText("This deletes 4 comment threads in this view, yours and the AI's, open or closed, and closes 1 AI run, archiving its thread in bb. It can't be undone.")).toBeTruthy();
+    expect(within(dialog).getByText("This deletes 4 comment threads in this view, yours and the AI's, open or closed, and closes 1 AI run, archiving its thread in VesnALIA. It can't be undone.")).toBeTruthy();
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(slot.inspection.rpcCalls.some((call) => call.method === "clearReview")).toBe(false);

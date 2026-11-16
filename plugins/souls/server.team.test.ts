@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { z } from "zod";
-import { createFakePluginHost, makeMessageDispatchHookContext, makePluginAgentConfigurationContext, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeMessageDispatchHookContext, makePluginAgentConfigurationContext, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.ts";
 import { soulSchema, soulHistorySchema, soulTeamSchema, threadSoulStateSchema } from "./shared.ts";
 
@@ -15,7 +15,7 @@ const spawnInput = z.object({
 });
 
 async function setup() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
   const children: ReturnType<typeof makeThreadResponse>[] = [];
   const metadata = new Map<string, { soulSpawnId: string }>();
   harness.inspection.sdk.stub("threads.get", ({ threadId }) => children.find((child) => child.id === threadId) ?? makeThreadResponse({ id: threadId, providerId: "parent-provider", environmentId: "parent-env", parentThreadId: null }));
@@ -50,7 +50,7 @@ async function setup() {
     assert.ok(state.soul, "the child must be bound before releasing its first message");
     return { ok: true, delivery: "sent" };
   });
-  await plugin(bb);
+  await plugin(alia);
   const create = async (name: string, settings = {}) => saved.parse(await harness.behavior.callRpc("souls_create", { draft: { name }, origin: "manual", ...settings })).soul;
   const read = async (name: string) => saved.parse(await harness.behavior.callRpc("souls_get", { idOrName: name })).soul;
   const state = async (threadId = "manager") => threadSoulStateSchema.parse(await harness.behavior.callRpc("souls_thread_get", { threadId }));

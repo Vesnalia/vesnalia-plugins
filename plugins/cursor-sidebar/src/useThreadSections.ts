@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { THREAD_SECTIONS_CHANNEL } from "./channels";
 import type { cursorSidebarRpcContract } from "./server";
@@ -24,7 +24,7 @@ export interface ThreadSectionsStore {
 }
 
 /**
- * BB's native named sections as standalone folders. The registry is the only
+ * VesnALIA's native named sections as standalone folders. The registry is the only
  * client state; assignments live on the threads themselves and arrive through
  * the host's sidebar feed. Registry renames and deletes apply optimistically
  * with rollback; assignment writes await the host and report failures.

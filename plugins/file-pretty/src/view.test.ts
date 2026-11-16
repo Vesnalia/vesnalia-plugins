@@ -9,7 +9,7 @@ const read = (name: string) => readFileSync(new URL(name, examples), "utf8");
 // The reason the server gives when the viewer asks for a path that is not in the workspace.
 const notFound = "HTTP 404: Path does not exist: /work/thr_x/examples/config.json";
 
-test("a file that cannot be read says why, instead of falling back to BB's preview", () => {
+test("a file that cannot be read says why, instead of falling back to VesnALIA's preview", () => {
   const view = viewFor({ format: "json", content: null, loadError: notFound, mode: null, indent: 2 });
   assert.deepEqual(view, { kind: "unreadable", message: notFound });
 });

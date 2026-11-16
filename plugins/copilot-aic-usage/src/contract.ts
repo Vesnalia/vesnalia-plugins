@@ -1,7 +1,7 @@
 import {
   defineRpcContract,
   type ExperimentalHostSignals,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { targetSchema, usageSchema, threadIdSchema } from "./model";
 

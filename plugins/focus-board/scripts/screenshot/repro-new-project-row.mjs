@@ -1,12 +1,12 @@
 // The New project button's row placement: repro, audit, and proof frames.
 //
 // The shipped placement the operator reported (the icon button stacked
-// BELOW bb's pickers row — "No project ⌄ … Default ⌄ Full Access ⌄" — with
+// BELOW VesnALIA's pickers row — "No project ⌄ … Default ⌄ Full Access ⌄" — with
 // an empty dead band under it) versus the fixed one: the dialog's own
 // plugin-owned button absolute-positions ON the row's line
 // (lib/composer-row-anchor), and nothing stays in flow below the composer.
 //
-// The audit, against the harness (whose mock composer replicates bb's
+// The audit, against the harness (whose mock composer replicates VesnALIA's
 // structural row verbatim — the row hook, class recipe, and pickers):
 //   1. the floating button's right edge meets the row's content start
 //      (the boundary the first picker's click area begins at), centered
@@ -20,7 +20,7 @@
 //      band gone);
 //   4. the typical flow: clicking the button runs the app's picked-folder
 //      hand-off (mock hosts.pickFolder → fixed folder), the create
-//      carries bb's typical payload (the folder's own name + the
+//      carries VesnALIA's typical payload (the folder's own name + the
 //      local_path source), and the composer's picker then reads the
 //      created project's name.
 // The other two pick answers the flow must survive:

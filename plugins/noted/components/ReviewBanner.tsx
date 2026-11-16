@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useBbNavigate, useComposerView, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useComposerView, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { z } from "zod";
 
 import type { rpcContract } from "../lib/rpc";
@@ -18,7 +18,7 @@ export default function ReviewBanner() {
 
 function ThreadReviewBanner({ threadId }: { threadId: string }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [sessions, setSessions] = useState<Session[]>([]);
   // Hides a card the moment it is pressed, before the server confirms. Keyed by
   // updatedAt so an agent reopening the review shows the card again.

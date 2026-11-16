@@ -1,7 +1,7 @@
 // Speaker identity colors. Eight categorical slots, each with a light-theme
 // and a dark-theme step (validated as a set for color-vision deficiency and
 // contrast against light and dark surfaces); CSS light-dark() picks the step
-// from the theme's color-scheme (bb sets color-scheme on .light/.dark). Slots
+// from the theme's color-scheme (VesnALIA sets color-scheme on .light/.dark). Slots
 // are handed out in order of first appearance and never cycled: the 9th
 // speaker on, and the "unknown" speaker, get a neutral color — the name text
 // next to every mark carries identity anyway.

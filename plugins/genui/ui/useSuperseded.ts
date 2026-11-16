@@ -2,10 +2,10 @@
 // has a user message after it. Every block of a thread shares one outline
 // read and one realtime subscription; the outline is read again only when a
 // thread event can add or drop a user message, so a streaming reply costs
-// nothing. Works for blocks scrolled out of BB's virtualized timeline too,
+// nothing. Works for blocks scrolled out of VesnALIA's virtualized timeline too,
 // since it reads the thread from the server, not the DOM.
 import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
-import { useSdk, type PluginBrowserBbSdk as Sdk } from "@get-bb/plugin-sdk/app";
+import { useSdk, type PluginBrowserAliaSdk as Sdk } from "@vesnalia/plugin-sdk/app";
 import { affectsConversation, hasLaterUserMessage, type OutlineItem } from "./supersession";
 
 /** Coalesces the burst of events a send produces into one read. */
@@ -135,7 +135,7 @@ class ThreadOutlines {
  * was released) folds their choices on the first frame, at the height the
  * block settled at, instead of when the outline arrives.
  */
-const ANSWERED_KEY = "bb.genui.answered";
+const ANSWERED_KEY = "alia.genui.answered";
 const MAX_ANSWERED = 2000;
 /** A thread opened again confirms many replies at once: they are written out together. */
 const SAVE_DELAY_MS = 500;
@@ -194,7 +194,7 @@ function outlinesFor(sdk: Sdk): ThreadOutlines {
 
 /**
  * True once thread `threadId` has a user message after message `messageId`
- * (a conversation row id: the `message.id` BB hands to slots, or a timeline
+ * (a conversation row id: the `message.id` VesnALIA hands to slots, or a timeline
  * row's `data-timeline-row-id`); false while the reply is the latest
  * exchange. Null while the outline is still being read for a reply not seen
  * answered before (on this page or an earlier one): the block doesn't know

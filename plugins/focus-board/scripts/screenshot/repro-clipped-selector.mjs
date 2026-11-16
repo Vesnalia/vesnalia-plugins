@@ -41,7 +41,7 @@ const squeeze = async (width) => {
       tag.id = "repro-squeeze";
       document.head.appendChild(tag);
     }
-    tag.textContent = `[data-bb-plugin="focus-board"] { width: ${width}px !important; min-width: ${width}px !important; max-width: ${width}px !important; outline: 1px solid red; }`;
+    tag.textContent = `[data-alia-plugin="focus-board"] { width: ${width}px !important; min-width: ${width}px !important; max-width: ${width}px !important; outline: 1px solid red; }`;
     window.dispatchEvent(new Event("resize"));
   }, width);
 };

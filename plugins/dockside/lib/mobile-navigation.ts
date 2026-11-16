@@ -17,7 +17,7 @@ const ACTIVE_INDICATORS = new Set([
   "plan-mode", "goal", "waiting-for-input", "working-draft",
 ]);
 
-/** BB's live sidebar projection already spans projects and excludes hidden work. */
+/** VesnALIA's live sidebar projection already spans projects and excludes hidden work. */
 export function navigationThreads<T extends Thread>(threads: readonly T[], currentId: string): T[] {
   const current = threads.find(thread => thread.id === currentId && !thread.isArchived);
   if (!current) return [];

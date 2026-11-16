@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { rpcContract } from "./contract";
-import type { useRpc } from "@get-bb/plugin-sdk/app";
+import type { useRpc } from "@vesnalia/plugin-sdk/app";
 import Markdown from "./Markdown";
 import RecordMeta from "./RecordMeta";
 import { Quotable } from "./quote";
@@ -24,7 +24,7 @@ export default function MarkdownRecordPanel({ projectId, kind, records, warnings
  const [conflict, setConflict] = useState<RecordFile | null>(null);
  const [query, setQuery] = useState("");
  const token = useRef(0);
- const storageKey = record ? `bb-backlog-markdown-draft:${projectId}:${record.path}` : "";
+ const storageKey = record ? `alia-backlog-markdown-draft:${projectId}:${record.path}` : "";
  useEffect(() => { setSelectedPath(""); setRecord(null); setDraft(""); setEditing(false); setError(""); setConflict(null); }, [projectId, kind]);
  useEffect(() => { if (selectedPath && !records.some(item => item.path === selectedPath)) setSelectedPath(""); }, [records, selectedPath]);
  useEffect(() => {
@@ -35,7 +35,7 @@ export default function MarkdownRecordPanel({ projectId, kind, records, warnings
    if (current !== token.current) return;
    setRecord(value);
    let saved: { content?: unknown; revision?: unknown } | null = null;
-   try { saved = JSON.parse(sessionStorage.getItem(`bb-backlog-markdown-draft:${projectId}:${value.path}`) ?? "null"); } catch { /* Ignore damaged local drafts; the file remains untouched. */ }
+   try { saved = JSON.parse(sessionStorage.getItem(`alia-backlog-markdown-draft:${projectId}:${value.path}`) ?? "null"); } catch { /* Ignore damaged local drafts; the file remains untouched. */ }
    const hasDraft = typeof saved?.content === "string" && typeof saved?.revision === "string";
    setDraft(hasDraft ? saved!.content as string : value.content);
    setEditing(hasDraft);

@@ -49,7 +49,7 @@ describe("buildBrief", () => {
 
   it("in a fork, names the tools first and the commands as the fallback", () => {
     const brief = buildBrief({ ...base, mode: "fork" });
-    expect(brief.indexOf("`learning_ask` tool")).toBeLessThan(brief.indexOf("bb learning ask"));
+    expect(brief.indexOf("`learning_ask` tool")).toBeLessThan(brief.indexOf("alia learning ask"));
     expect(brief).toContain("Commit b07c050");
     expect(brief).toContain("`calc.py`");
     expect(brief).toContain("at most 8 questions");
@@ -58,7 +58,7 @@ describe("buildBrief", () => {
   it("in the work thread, names only the commands and says when the rules end", () => {
     const brief = buildBrief({ ...base, mode: "here" });
     expect(brief).not.toContain("`learning_ask` tool");
-    expect(brief).toContain("bb learning ask");
+    expect(brief).toContain("alia learning ask");
     expect(brief).toContain("no longer apply");
   });
 
@@ -114,9 +114,9 @@ describe("orientation briefs", () => {
     for (const tool of ["orient_chapter", "orient_note", "orient_listing", "orient_pop", "orient_summary", "orient_finish"]) {
       expect(brief).toContain(tool);
     }
-    expect(brief.indexOf("orient_listing")).toBeLessThan(brief.indexOf("bb learning orient listing"));
-    expect(brief).toContain("bb learning orient listing");
-    expect(brief).toContain("bb learning orient finish");
+    expect(brief.indexOf("orient_listing")).toBeLessThan(brief.indexOf("alia learning orient listing"));
+    expect(brief).toContain("alia learning orient listing");
+    expect(brief).toContain("alia learning orient finish");
     for (const kept of ["## Step 3", "## Step 4", "## Rules", "Listing N"]) expect(brief).toContain(kept);
     expect(brief).not.toContain("walkthrough:");
     expect(brief).toContain("is refused, read the reason");
@@ -129,8 +129,8 @@ describe("orientation briefs", () => {
     expect(brief).not.toMatch(/close the current chapter/i);
     // The CLI fallback has no pop step: a builder that copied one deleted its last listing. Pop is named
     // there only as a comment, for undoing a mistake.
-    expect(brief.split("\n")).not.toContain("bb learning orient pop");
-    expect(brief).toContain("# bb learning orient pop");
+    expect(brief.split("\n")).not.toContain("alia learning orient pop");
+    expect(brief).toContain("# VesnALIA learning orient pop");
     expect(brief).toContain("use the number each `orient_listing` call returns (a pop leaves a gap)");
     expect(brief).not.toContain("Count carefully");
   });

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import { useComposer, useComposerView } from "@get-bb/plugin-sdk/app";
+import { useComposer, useComposerView } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { Preset, PresetFields } from "@/server";
 import { DEFAULT_SHORTCUT, MAX_PRESETS } from "@/shared/constants";

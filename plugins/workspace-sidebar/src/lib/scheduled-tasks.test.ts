@@ -4,7 +4,7 @@ import { createScheduledTasksActions, createScheduledTasksReader } from "./sched
 
 const now = Date.UTC(2026, 8, 15, 12);
 const task = (overrides: Partial<ScheduledTask> = {}): ScheduledTask => ({
-  id: "one", projectId: "p1", projectName: "BB", name: "Review", enabled: true,
+  id: "one", projectId: "p1", projectName: "ALIA", name: "Review", enabled: true,
   trigger: { triggerType: "schedule", cron: "0 9 * * *", timezone: "America/Toronto" },
   nextRunAt: now + 3_600_000, lastRunStatus: null, lastRunAt: null, lastError: null, threadId: null, problem: null,
   ...overrides,
@@ -75,7 +75,7 @@ function mockPlugins(data: unknown) {
 }
 
 it("uses the public automations RPC and strips prompts from the sidebar response", async () => {
-  const { api, callRpc } = mockPlugins({ automations: [{ project: { id: "p1", name: "BB" }, automation: {
+  const { api, callRpc } = mockPlugins({ automations: [{ project: { id: "p1", name: "ALIA" }, automation: {
     ...task(), lastRunThreadId: "run-thread", execution: { targetThreadId: "thread-1", prompt: "private instructions", script: "private script" },
   } }] });
   const read = createScheduledTasksReader(api).list;
@@ -87,7 +87,7 @@ it("uses the public automations RPC and strips prompts from the sidebar response
 
 it("deduplicates concurrent reads, expires cache and clears stale schedules on errors", async () => {
   vi.useFakeTimers();
-  const { api, callRpc, list } = mockPlugins({ automations: [{ project: { id: "p1", name: "BB" }, automation: task() }] });
+  const { api, callRpc, list } = mockPlugins({ automations: [{ project: { id: "p1", name: "ALIA" }, automation: task() }] });
   const reader = createScheduledTasksReader(api);
   const read = reader.list;
   const [first, second] = await Promise.all([read(), read()]);

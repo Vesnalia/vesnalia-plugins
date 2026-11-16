@@ -1,20 +1,20 @@
-// Issue #84: `bb focus-board group` grows create/rename/delete/add/remove/
+// Issue #84: `alia focus-board group` grows create/rename/delete/add/remove/
 // move beyond its read-only list. Red-first against commands the registry
 // does not carry yet (same shape as the group-rpc suite).
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
-import type { BbPluginApi, PluginCliExecutionResult } from "@get-bb/plugin-sdk";
-import type { FakePluginHarness } from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
+import type { AliaPluginApi, PluginCliExecutionResult } from "@vesnalia/plugin-sdk";
+import type { FakePluginHarness } from "@vesnalia/plugin-sdk/testing";
 import server from "../server";
 import { GROUP_METADATA_KEY, GROUPS_KV_KEY, parseGroupsStore } from "../lib/group-metadata";
 
-type Bb = BbPluginApi;
+type Alia = AliaPluginApi;
 
-describe("bb focus-board group CLI (create/rename/delete/add/remove/move)", () => {
-  let bb: Bb;
+describe("alia focus-board group CLI (create/rename/delete/add/remove/move)", () => {
+  let alia: Alia;
   let harness: FakePluginHarness;
   let metadata: Map<string, Record<string, unknown>>;
   let listedThreads: ReturnType<typeof makeThreadResponse>[];
@@ -53,9 +53,9 @@ describe("bb focus-board group CLI (create/rename/delete/add/remove/move)", () =
         },
       },
     });
-    bb = host.bb;
+    alia = host.alia;
     harness = host.harness;
-    await server(bb);
+    await server(alia);
   }
 
   afterEach(async () => {
@@ -77,7 +77,7 @@ describe("bb focus-board group CLI (create/rename/delete/add/remove/move)", () =
   }
 
   async function registry(): Promise<Record<string, { name: string; createdAt: string }>> {
-    return parseGroupsStore(await bb.storage.kv.get(GROUPS_KV_KEY));
+    return parseGroupsStore(await alia.storage.kv.get(GROUPS_KV_KEY));
   }
 
   function assignedTo(threadId: string): string | undefined {
@@ -433,7 +433,7 @@ describe("bb focus-board group CLI (create/rename/delete/add/remove/move)", () =
       listedThreads = [makeThreadResponse({ id: "thr_a" })];
       const existing = await registry();
       const id2 = "grp_twins_two";
-      await bb.storage.kv.set(GROUPS_KV_KEY, {
+      await alia.storage.kv.set(GROUPS_KV_KEY, {
         ...existing,
         [id2]: { name: "Twins", createdAt: new Date().toISOString() },
       });

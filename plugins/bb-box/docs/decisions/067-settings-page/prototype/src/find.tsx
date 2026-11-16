@@ -88,7 +88,7 @@ export function settingsIndex(doc: Document, live: Readonly<Record<string, Backe
   entries.push(
     option("o-default", "Default kind", "Boxes", "boxes", "general/defaultKind", "thread gets", kindName(general.defaultKind)),
     option("o-per-thread", "Boxes per thread", "Boxes", "boxes", "general/boxesPerThread", "limit most", general.boxesPerThread || "no limit"),
-    option("o-enrol", "Boxes join BB as machines", "Boxes", "boxes", "general/enrol", "enrol enroll credentials", general.enrol),
+    option("o-enrol", "Boxes join VesnALIA as machines", "Boxes", "boxes", "general/enrol", "enrol enroll credentials", general.enrol),
     option("o-video", "Linux desktops as video", "Boxes", "boxes", "general/video", "vnc stream selkies", general.video),
     option("o-files", "Files for every box", "Boxes", "boxes", "general/files", "home dotfiles secret", `${general.files.length} files`),
     option("o-nightly", "Rebuild each night", "Images", "images", "general/nightlyImages", "nightly refresh 03:00 rebuild", general.nightlyImages),

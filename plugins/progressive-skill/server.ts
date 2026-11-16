@@ -1,9 +1,9 @@
-// bb-plugin-progressive-skill — smart skill index compaction for BB.
+// alia-plugin-progressive-skill — smart skill index compaction for VesnALIA.
 //
 // Port of the Hermes `progressive-skill` plugin's decision core (usage
-// frequency + recency decay + budget-capped ranking) to BB's plugin model.
+// frequency + recency decay + budget-capped ranking) to VesnALIA's plugin model.
 //
-// BB has no `build_skills_system_prompt` to monkeypatch, so the port exposes
+// VesnALIA has no `build_skills_system_prompt` to monkeypatch, so the port exposes
 // the decision core as two native agent tools instead:
 //
 //   - `progressive_skill_list` — returns the skill catalog ranked by usage
@@ -14,7 +14,7 @@
 //
 // The decision logic (decay scoring, promote threshold, budget cap) is ported
 // faithfully from the Hermes core/ modules.
-import { type BbPluginApi } from "@get-bb/plugin-sdk";
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 // ─── Config (mirrors core/config.py) ──────────────────────────────────
@@ -88,10 +88,10 @@ class UsageTracker {
 
 // ─── Plugin entry ──────────────────────────────────────────────────────
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("bb-plugin-progressive-skill loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("alia-plugin-progressive-skill loaded");
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     budgetChars: {
       type: "string" as const,
       label: "Skill list budget (chars)",
@@ -109,7 +109,7 @@ export default async function plugin(bb: BbPluginApi) {
   let { budgetChars, promoteScore } = await settings.get();
   let budget = Number(budgetChars) || LIST_BUDGET_CHARS;
   let promote = Number(promoteScore) || PROMOTE_SCORE;
-  const tracker = new UsageTracker(bb.storage.kv);
+  const tracker = new UsageTracker(alia.storage.kv);
   await tracker.load();
 
   // Re-read settings on change without a plugin reload.
@@ -118,13 +118,13 @@ export default async function plugin(bb: BbPluginApi) {
     promoteScore = next.promoteScore;
     budget = Number(budgetChars) || LIST_BUDGET_CHARS;
     promote = Number(promoteScore) || PROMOTE_SCORE;
-    bb.log.info(`[progressive-skill] settings updated (budget ${budget} chars, promote ≥ ${promote})`);
+    alia.log.info(`[progressive-skill] settings updated (budget ${budget} chars, promote ≥ ${promote})`);
   });
 
   // Resolve the environment for a thread so we can list its skills.
   async function resolveEnvironment(threadId: string, projectId: string) {
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (thread.environmentId) {
         return { projectId, environmentId: thread.environmentId };
       }
@@ -138,7 +138,7 @@ export default async function plugin(bb: BbPluginApi) {
   // Returns the skill catalog ranked by usage frequency (recency-decayed),
   // capped to the budget. The agent calls this to decide which skills to load.
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "progressive_skill_list",
     description:
       "List available skills ranked by usage frequency (recency-decayed), capped to a token budget. " +
@@ -156,7 +156,7 @@ export default async function plugin(bb: BbPluginApi) {
     }),
     async execute({ maxSkills }, ctx) {
       const env = await resolveEnvironment(ctx.threadId, ctx.projectId);
-      const skills = await bb.sdk.skills.list(env);
+      const skills = await alia.sdk.skills.list(env);
       const usage = tracker.snapshot();
 
       // Rank: decayed score desc, then name asc for ties.
@@ -190,7 +190,7 @@ export default async function plugin(bb: BbPluginApi) {
   // ── Tool: progressive_skill_used ────────────────────────────────────
   // Records that a skill was used, so it rises in the ranking.
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "progressive_skill_used",
     description:
       "Record that you used a skill, so it ranks higher in future progressive_skill_list calls. " +
@@ -207,8 +207,8 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ── Cleanup ─────────────────────────────────────────────────────────
 
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     await tracker.save();
-    bb.log.info("bb-plugin-progressive-skill disposed");
+    alia.log.info("alia-plugin-progressive-skill disposed");
   });
 }

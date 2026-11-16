@@ -18,9 +18,9 @@ import { DeviceServers } from "../../../src/plugin/devices.ts";
 import type { ByteChannel } from "../../../src/transports/types.ts";
 
 const ROOT = join(import.meta.dirname, "..", "..", "..");
-const LAUNCHER = join(homedir(), ".bb-box", "device", "current", "src", "device", "bb-box-device.sh");
-const RECORD = "/usr/local/share/bb-box/image.json";
-const OUT = "/tmp/bb-box-computer";
+const LAUNCHER = join(homedir(), ".alia-box", "device", "current", "src", "device", "alia-box-device.sh");
+const RECORD = "/usr/local/share/alia-box/image.json";
+const OUT = "/tmp/alia-box-computer";
 
 const { positionals, values } = parseArgs({
   allowPositionals: true,
@@ -84,7 +84,7 @@ async function main(): Promise<void> {
   let server: DeviceServer | null = null;
   let socket = "";
   if (inProcess) {
-    const paths = devicePaths(join(tmpdir(), `bb-box-computer-${process.pid}`));
+    const paths = devicePaths(join(tmpdir(), `alia-box-computer-${process.pid}`));
     socket = paths.socket;
     const driver = new IosDriver({ paths, slim: false, companionProgram: values.companion, log: (line) => process.stderr.write(`server: ${line}\n`) });
     server = new DeviceServer({ paths, platform: "ios", devices: offer.devices as OfferedDevices, driver, version: DEVICE_SERVER_VERSION, log: (line) => process.stderr.write(`server: ${line}\n`) });

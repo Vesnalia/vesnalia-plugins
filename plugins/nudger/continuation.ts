@@ -1,4 +1,4 @@
-import type { BbPluginApi, MessageDispatchHookContext, MessageDispatchHookDecision } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, MessageDispatchHookContext, MessageDispatchHookDecision } from "@vesnalia/plugin-sdk";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { CANCEL_REASON, nudgeRejectMessage, WITHHELD_REASON } from "./continuation-copy.js";
@@ -91,7 +91,7 @@ export interface Continuation {
   dispose(): Promise<void>;
 }
 export interface ContinuationOptions {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   /** Recovery's live cursor for the thread; null when recovery is not observing it. */
   cursor(threadId: string): RecoveryCursor | null;
   /** The global pause; while set nothing is scheduled or admitted. */
@@ -136,7 +136,7 @@ function defaultSetTimer(callback: () => void, ms: number): unknown {
 }
 
 export function createContinuation(options: ContinuationOptions): Continuation {
-  const { bb } = options;
+  const { alia } = options;
   const now = options.now ?? Date.now;
   const delayMs = options.delayMs ?? NUDGE_DELAY_MS;
   const setTimer = options.setTimer ?? defaultSetTimer;
@@ -157,12 +157,12 @@ export function createContinuation(options: ContinuationOptions): Continuation {
   let loaded = false;
   let disposed = false;
   let writes: Promise<unknown> = Promise.resolve();
-  const kv = createKvWriter(bb.storage.kv);
+  const kv = createKvWriter(alia.storage.kv);
   let logTimer: NodeJS.Timeout | undefined;
   let sending: Promise<unknown> = Promise.resolve();
 
   function write(operation: () => Promise<unknown>): void {
-    writes = writes.then(operation).catch(caught => bb.log.warn(`Continuation persistence failed: ${String(caught)}`));
+    writes = writes.then(operation).catch(caught => alia.log.warn(`Continuation persistence failed: ${String(caught)}`));
   }
   /** Queues one write of the log as it is when the write runs; a log already stored as-is is skipped. */
   function writeLog(): void {
@@ -222,7 +222,7 @@ export function createContinuation(options: ContinuationOptions): Continuation {
   }
   function submissionNudgeId(context: MessageDispatchHookContext): string | null {
     const submission = context.experimental_submission;
-    if (submission?.pluginId !== bb.pluginId || typeof submission.data !== "object" || submission.data === null || Array.isArray(submission.data)) return null;
+    if (submission?.pluginId !== alia.pluginId || typeof submission.data !== "object" || submission.data === null || Array.isArray(submission.data)) return null;
     const id = submission.data.continuationNudge;
     return typeof id === "string" ? id : null;
   }
@@ -251,7 +251,7 @@ export function createContinuation(options: ContinuationOptions): Continuation {
   function decideAttempt(context: MessageDispatchHookContext): MessageDispatchHookDecision | null {
     const submitted = submissionNudgeId(context);
     // Nudger never legitimately queues rows: any owned queued row is unrecognized and fails closed.
-    const ownRows = context.queuedMessages.some(row => row.originPluginId === bb.pluginId);
+    const ownRows = context.queuedMessages.some(row => row.originPluginId === alia.pluginId);
     if (!loaded) {
       if (submitted !== null || ownRows) return reject("continuation state is still loading after a restart");
       return null;
@@ -275,8 +275,8 @@ export function createContinuation(options: ContinuationOptions): Continuation {
     return null;
   }
   async function send(nudge: Nudge): Promise<void> {
-    const result = await bb.sdk.threads.send({ threadId: nudge.threadId, input: [{ type: "text", text: RECOVERY_NUDGE, mentions: [] }], mode: "start",
-      pluginSubmission: { pluginId: bb.pluginId, data: { continuationNudge: nudge.nudgeId } } }).catch((caught: unknown) => {
+    const result = await alia.sdk.threads.send({ threadId: nudge.threadId, input: [{ type: "text", text: RECOVERY_NUDGE, mentions: [] }], mode: "start",
+      pluginSubmission: { pluginId: alia.pluginId, data: { continuationNudge: nudge.nudgeId } } }).catch((caught: unknown) => {
       // A reject by this plugin's own hook already recorded the withheld state.
       if (nudge.state === "pending") transition(nudge, "cancelled", `${CANCEL_REASON.sendFailed}: ${caught instanceof Error ? caught.message : String(caught)}`);
       return null;
@@ -291,8 +291,8 @@ export function createContinuation(options: ContinuationOptions): Continuation {
         transition(nudge, "withheld", WITHHELD_REASON.queued);
       }
       const queuedMessageId = result.queuedMessage.id;
-      await bb.sdk.threads.queuedMessages.delete({ threadId: nudge.threadId, queuedMessageId })
-        .catch(caught => bb.log.warn(`Continuation row ${queuedMessageId} not deleted: ${String(caught)}`));
+      await alia.sdk.threads.queuedMessages.delete({ threadId: nudge.threadId, queuedMessageId })
+        .catch(caught => alia.log.warn(`Continuation row ${queuedMessageId} not deleted: ${String(caught)}`));
     } else if (nudge.state === "pending") {
       transition(nudge, "sent", "Core started the continuation without a recorded admission pass");
     }
@@ -301,37 +301,37 @@ export function createContinuation(options: ContinuationOptions): Continuation {
     if (nudges.get(nudge.threadId) !== nudge) return;
     timers.delete(nudge.threadId);
     if (disposed || nudge.state !== "pending") return;
-    sending = sending.then(() => send(nudge)).catch(caught => bb.log.warn(`Continuation send failed: ${String(caught)}`));
+    sending = sending.then(() => send(nudge)).catch(caught => alia.log.warn(`Continuation send failed: ${String(caught)}`));
   }
 
   return {
     async start() {
-      for (const key of await retainedKeys(bb.storage.kv, OFF_KEY)) {
+      for (const key of await retainedKeys(alia.storage.kv, OFF_KEY)) {
         const threadId = key.slice(OFF_KEY.length);
-        if (!toggledEarly.has(threadId) && z.boolean().optional().parse(await retainedValue(bb.storage.kv, key))) off.add(threadId);
+        if (!toggledEarly.has(threadId) && z.boolean().optional().parse(await retainedValue(alia.storage.kv, key))) off.add(threadId);
       }
       // Unreadable logs are not evidence; start a fresh one.
-      const parsedLog = logSchema.optional().safeParse(await bb.storage.kv.get(LOG_KEY));
+      const parsedLog = logSchema.optional().safeParse(await alia.storage.kv.get(LOG_KEY));
       const storedLog = parsedLog.success ? parsedLog.data ?? [] : [];
-      const legacyLog = logSchema.optional().safeParse(await bb.storage.kv.get(`${LEGACY_DATA_PREFIX}${LOG_KEY}`));
+      const legacyLog = logSchema.optional().safeParse(await alia.storage.kv.get(`${LEGACY_DATA_PREFIX}${LOG_KEY}`));
       // Imported diagnostic history remains immutable; this package writes only its new log.
       importedLog = legacyLog.success ? legacyLog.data ?? [] : [];
       // A decision taken before loading (or a nudge scheduled meanwhile) is newer than the stored state.
       log = [...storedLog, ...log].slice(-LOG_LIMIT);
       // Legacy totals are immutable; this package persists only its new sends so reloads cannot import twice.
-      const legacy = sentCountsSchema.optional().parse(await bb.storage.kv.get(LEGACY_SENT_KEY));
+      const legacy = sentCountsSchema.optional().parse(await alia.storage.kv.get(LEGACY_SENT_KEY));
       const inherited = legacy ? new Map(Object.entries(legacy)) : sentFromLog(importedLog);
       for (const [threadId, count] of inherited) {
         inheritedCounts.set(threadId, count);
         sentCounts.set(threadId, (sentCounts.get(threadId) ?? 0) + count);
       }
-      const storedCounts = sentCountsSchema.optional().safeParse(await bb.storage.kv.get(SENT_KEY));
+      const storedCounts = sentCountsSchema.optional().safeParse(await alia.storage.kv.get(SENT_KEY));
       const baseline = storedCounts.success && storedCounts.data ? new Map(Object.entries(storedCounts.data)) : sentFromLog(storedLog);
       if (storedCounts.success) kv.remember(SENT_KEY, storedCounts.data);
       for (const [threadId, count] of baseline) sentCounts.set(threadId, (sentCounts.get(threadId) ?? 0) + count);
       const restored: Nudge[] = [];
-      for (const key of await retainedKeys(bb.storage.kv, NUDGE_KEY)) {
-        const parsed = nudgeSchema.safeParse(await retainedValue(bb.storage.kv, key));
+      for (const key of await retainedKeys(alia.storage.kv, NUDGE_KEY)) {
+        const parsed = nudgeSchema.safeParse(await retainedValue(alia.storage.kv, key));
         if (!parsed.success) continue;
         if (!nudges.has(parsed.data.threadId)) nudges.set(parsed.data.threadId, parsed.data);
         restored.push(parsed.data);

@@ -48,7 +48,7 @@ export function approvalMessage(ask: ApprovalAsk): MessagePart[] {
     "---",
     `Reply here and your answer goes to run \`${ask.runId}\`. ` +
       "You can also answer in the Graph Studio panel, or with " +
-      `\`bb graph-studio answer ${ask.runId} "<answer>"\`. ` +
+      `\`alia graph-studio answer ${ask.runId} "<answer>"\`. ` +
       "Whichever comes first counts.",
   ].join("\n");
   const instructions = [

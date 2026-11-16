@@ -1,6 +1,6 @@
 # Quick Compose
 
-A BB plugin that opens a floating new-thread composer over whatever you're looking at, so you can start a thread without going to the new thread page.
+A VesnALIA plugin that opens a floating new-thread composer over whatever you're looking at, so you can start a thread without going to the new thread page.
 
 - Press **Mod+Shift+L** (Cmd on macOS, Ctrl elsewhere), or run **Quick compose: new thread** from the command palette (Mod+Shift+P). The shortcut opens and closes it, and you can rebind it in Settings → Keyboard.
 - The composer starts on the project you're viewing. You can still pick a different project, model, environment, or permission mode.
@@ -11,12 +11,12 @@ A BB plugin that opens a floating new-thread composer over whatever you're looki
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/SawyerHood/sawyer-plugins.git --plugin quick-compose
+alia plugin install git:https://github.com/SawyerHood/sawyer-plugins.git --plugin quick-compose
 ```
 
 ## How it works
 
-The window is an app overlay around BB's own new-thread composer. On submit, the plugin's backend passes the composer's request to `threads.spawn`, so the thread is created exactly as the new thread page would create it and shows up in the sidebar as usual.
+The window is an app overlay around VesnALIA's own new-thread composer. On submit, the plugin's backend passes the composer's request to `threads.spawn`, so the thread is created exactly as the new thread page would create it and shows up in the sidebar as usual.
 
 The plugin adds no agent tools, CLI commands, or settings.
 
@@ -27,5 +27,5 @@ npm install
 npm run typecheck
 npm test
 npm run build
-bb plugin install . --yes
+alia plugin install . --yes
 ```

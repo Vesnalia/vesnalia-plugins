@@ -6,7 +6,7 @@
 import { createHash } from "node:crypto";
 
 import Database from "better-sqlite3";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 
 import plugin from "../server";
@@ -16,7 +16,7 @@ import { LearningStore, MIGRATIONS, reconcileOpenSessions } from "./store";
 
 const sha = (statement: string) => createHash("sha256").update(statement).digest("hex");
 
-/** What bb recorded for e54db75's nine migrations, and for migration 9 in the dev install of the draft. */
+/** What VesnALIA recorded for e54db75's nine migrations, and for migration 9 in the dev install of the draft. */
 const E54DB75_HASHES = [
   "932906ce983caef1fbf3480a4288321764ef5ab9b97755fffcd0edc072ab4e95",
   "af55c76195c80512bda89328c3045f57e0148a4d82638cc75e655bbd01650048",
@@ -82,7 +82,7 @@ const V0_3_0_HASHES = [
 /** 0.2.0's last statement (the answered-offer seed); everything after it is newer. */
 const SEED_INDEX = 20;
 
-type Db = ReturnType<ReturnType<typeof createFakePluginHost>["bb"]["storage"]["database"]>;
+type Db = ReturnType<ReturnType<typeof createFakePluginHost>["alia"]["storage"]["database"]>;
 
 function insertSession(db: Db, id: string, state: string, updatedAt: number) {
   db.prepare(
@@ -116,9 +116,9 @@ describe("migrations", () => {
   });
 
   it("an e54db75 store with duplicate open sessions loads: one survives, the others are kept as history", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "learning-exercises" });
-    const db = bb.storage.database();
-    bb.storage.migrate(db, MIGRATIONS.slice(0, 9));
+    const { alia, harness } = createFakePluginHost({ pluginId: "learning-exercises" });
+    const db = alia.storage.database();
+    alia.storage.migrate(db, MIGRATIONS.slice(0, 9));
     // The Start race: two open sessions for one source thread, both with answers.
     insertSession(db, "ses_old", "paused", 10);
     insertSession(db, "ses_new", "paused", 20);
@@ -126,8 +126,8 @@ describe("migrations", () => {
     answer(db, "ses_old", 1, "first answer");
     answer(db, "ses_answered", 1, "kept");
     answer(db, "ses_answered", 2, "kept too");
-    await plugin(bb);
-    const store = new LearningStore(bb.storage.database());
+    await plugin(alia);
+    const store = new LearningStore(alia.storage.database());
     // Most progressed wins: running before paused.
     expect(store.session("ses_answered")?.state).toBe("active");
     expect(store.session("ses_old")?.state).toBe("abandoned");
@@ -135,13 +135,13 @@ describe("migrations", () => {
     expect(store.exercises("ses_old")[0]?.answer).toBe("first answer");
     expect(harness.logEntries.some((entry) => entry.message.includes("Closed 2 duplicate open learning session"))).toBe(true);
     // The index is in place now.
-    expect(() => insertSession(bb.storage.database(), "ses_more", "paused", 30)).toThrow(/UNIQUE/);
+    expect(() => insertSession(alia.storage.database(), "ses_more", "paused", 30)).toThrow(/UNIQUE/);
   });
 
   it("among paused duplicates the one with more answers survives, then the newest", () => {
-    const { bb } = createFakePluginHost({ pluginId: "learning-exercises" });
-    const db = bb.storage.database();
-    bb.storage.migrate(db, MIGRATIONS.slice(0, 9));
+    const { alia } = createFakePluginHost({ pluginId: "learning-exercises" });
+    const db = alia.storage.database();
+    alia.storage.migrate(db, MIGRATIONS.slice(0, 9));
     insertSession(db, "ses_a", "paused", 10);
     insertSession(db, "ses_b", "paused", 30);
     insertSession(db, "ses_c", "paused", 20);
@@ -152,10 +152,10 @@ describe("migrations", () => {
   });
 
   it("leaves a fresh store and a store that has the index alone", () => {
-    const { bb } = createFakePluginHost({ pluginId: "learning-exercises" });
-    const db = bb.storage.database();
+    const { alia } = createFakePluginHost({ pluginId: "learning-exercises" });
+    const db = alia.storage.database();
     expect(reconcileOpenSessions(db, 1)).toBe(0);
-    bb.storage.migrate(db, MIGRATIONS);
+    alia.storage.migrate(db, MIGRATIONS);
     expect(reconcileOpenSessions(db, 1)).toBe(0);
   });
 });
@@ -229,14 +229,14 @@ describe("the orientation migration rebuilds sessions", () => {
 
   for (const foreignKeys of ["ON", "OFF"]) {
     it(`keeps every row and column, the indexes, and accepts mode spawn (foreign keys ${foreignKeys})`, () => {
-      const { bb } = createFakePluginHost({ pluginId: "learning-exercises" });
-      const db = bb.storage.database();
+      const { alia } = createFakePluginHost({ pluginId: "learning-exercises" });
+      const db = alia.storage.database();
       db.pragma(`foreign_keys = ${foreignKeys}`);
-      bb.storage.migrate(db, MIGRATIONS.slice(0, FIRST));
+      alia.storage.migrate(db, MIGRATIONS.slice(0, FIRST));
       seed(db);
       const before = dump(db);
       expect(before.exercises).toHaveLength(2);
-      bb.storage.migrate(db, MIGRATIONS);
+      alia.storage.migrate(db, MIGRATIONS);
       expect(dump(db)).toEqual(before);
       const store = new LearningStore(db);
       expect(() => insertSession(db, "ses_b", "paused", 20)).toThrow(/UNIQUE/);

@@ -7,8 +7,8 @@
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@vesnalia/plugin-sdk/testing/app";
 
 import type { FileEntry, FileManagerContract, Job } from "../../contract";
 import { CompactViewportOverrideProvider } from "../../components/ui/hooks/use-compact-viewport";
@@ -680,7 +680,7 @@ describe("row context menu (§8.2)", () => {
     clickItem(await openRowMenu(slot, NOTES.path), "Open");
 
     const viewer = await slot.findByTestId("fm-viewer");
-    expect(within(viewer).getByTestId("bb-source-code").getAttribute("data-path")).toBe("notes.txt");
+    expect(within(viewer).getByTestId("alia-source-code").getAttribute("data-path")).toBe("notes.txt");
   });
 
   it("offers no Open for several rows at once — there is no single destination", async () => {

@@ -1,5 +1,5 @@
 /**
- * The Review tab beside a thread: that thread's workspace diff, drawn by the plugin with bb's
+ * The Review tab beside a thread: that thread's workspace diff, drawn by the plugin with VesnALIA's
  * `@pierre/diffs`, with comment threads on lines, ranges, files and the whole diff, and "Send to
  * agent", which hands the open ones to this thread.
  *
@@ -12,7 +12,7 @@
  * when there are none, on the changes committed since the base branch. A view picked in the tab is
  * kept per thread (`view-memory.ts`), so coming back to the thread shows it again, unless it is gone.
  */
-import { experimental_useTabVisible, useRpc, type ExperimentalThreadActionTabProps } from "@get-bb/plugin-sdk/app";
+import { experimental_useTabVisible, useRpc, type ExperimentalThreadActionTabProps } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -55,7 +55,7 @@ import { draftKeys, useDraft, useDraftKeys, useViewState, ViewStateProvider } fr
 const DIFF_STYLE_KEY = "diff-review:diff-style";
 /** "Hide whitespace" is one choice for every thread, like split/unified. */
 const WHITESPACE_KEY = "diff-review:ignore-whitespace";
-/** "Only files with comments" is kept per bb thread: a thread that never set it starts with it off. */
+/** "Only files with comments" is kept per VesnALIA thread: a thread that never set it starts with it off. */
 const onlyCommentedKey = (threadId: string) => `diff-review:only-commented:${threadId}`;
 
 function stored(key: string): string | null {
@@ -177,7 +177,7 @@ export function ReviewBody({
   environmentId: string | null;
   params: unknown;
   visible: boolean;
-  /** A file to go to once the view has loaded (`bb diff-review open <file>`). */
+  /** A file to go to once the view has loaded (`alia diff-review open <file>`). */
   initialFile?: string | null;
   /** Keep the view picked here for the thread, and start on the one kept (the Review tab). */
   keepViews?: boolean;
@@ -268,7 +268,7 @@ export function ReviewBody({
   );
 }
 
-/** Over the dimmed previous view: bb's spinner while the picked view loads, or why it could not. */
+/** Over the dimmed previous view: VesnALIA's spinner while the picked view loads, or why it could not. */
 function PendingOverlay({ label, error, onRetry }: { label: string; error: string | null; onRetry(): void }) {
   return (
     <div className="absolute inset-0 z-20 flex items-start justify-center p-6" role="status" aria-live="polite">
@@ -391,11 +391,11 @@ function ReadyPanel({
     return text === null ? undefined : { startLine: thread.startLine, endLine: thread.endLine, text };
   };
 
-  // Patches bb did not send with the file list load as their files come near the screen.
+  // Patches VesnALIA did not send with the file list load as their files come near the screen.
   const loadPatches = useCallback(
     async (paths: string[]) => {
       try {
-        // Each file at the revision this load's file list gave, so bb answers for that version.
+        // Each file at the revision this load's file list gave, so VesnALIA answers for that version.
         const revisions = new Map(view.files.map((file) => [file.path, file.revision]));
         const files = paths.flatMap((path) => {
           const revision = revisions.get(path);
@@ -815,7 +815,7 @@ function ReadyPanel({
         <p className="px-3 py-2 text-xs text-muted-foreground">
           {fileCount} · +{additions} −{deletions}
           {view.ignoredPaths.length === 0 ? "" : ` · ${view.ignoredPaths.length} left out by the ignore patterns`}
-          {view.truncated ? " · bb cut this diff short" : ""}
+          {view.truncated ? " · VesnALIA cut this diff short" : ""}
         </p>
 
         {generalSection}

@@ -1,10 +1,10 @@
-import type { PluginRpcContract } from '@get-bb/plugin-sdk';
+import type { PluginRpcContract } from '@vesnalia/plugin-sdk';
 import { factoryRpcMethods } from './factory/contract.js';
 import { improvementRpcMethods } from './ticket-improvement.js';
 import { z } from 'zod';
 import { ticketImageSchema } from './ticket-images.js';
 import {
-  bbProjectIdSchema,
+  aliaProjectIdSchema,
   jiraBaseUrlSchema,
   projectCredentialsInteractionPayloadSchema,
   projectCredentialsInteractionResponseSchema,
@@ -59,7 +59,7 @@ export type {
   FilterPresetSummary
 } from './filter-presets.js';
 export {
-  bbProjectIdSchema,
+  aliaProjectIdSchema,
   jiraBaseUrlSchema,
   projectCredentialsInteractionPayloadSchema,
   projectCredentialsInteractionResponseSchema,
@@ -76,7 +76,7 @@ export type WorkSource = z.infer<typeof workSourceSchema>;
 
 export const trackerProjectSchema = z
   .object({
-    id: bbProjectIdSchema,
+    id: aliaProjectIdSchema,
     name: z.string()
   })
   .strict();
@@ -125,7 +125,7 @@ export const LINEAR_FINISHED_DAYS_MAX = 365;
 
 export const projectSourceConfigSchema = z
   .object({
-    projectId: bbProjectIdSchema,
+    projectId: aliaProjectIdSchema,
     source: workSourceSchema,
     linearTeamKey: z.string().trim(),
     linearFinishedDays: z.number().int().min(0).max(LINEAR_FINISHED_DAYS_MAX),
@@ -247,7 +247,7 @@ export type WorkItemFieldMutation = z.infer<
 
 export const workItemSchema = z
   .object({
-    bbProjectId: bbProjectIdSchema,
+    aliaProjectId: aliaProjectIdSchema,
     source: workSourceSchema,
     locator: z.string().min(1),
     key: z.string().min(1),
@@ -357,7 +357,7 @@ export const CREATE_OUTCOME_UNCERTAIN_MARKER =
 
 export const createIssueContextSchema = z
   .object({
-    projectId: bbProjectIdSchema,
+    projectId: aliaProjectIdSchema,
     projectName: z.string().min(1),
     source: workSourceSchema,
     available: z.boolean(),
@@ -373,7 +373,7 @@ export type CreateIssueContext = z.infer<typeof createIssueContextSchema>;
 
 export const createIssueInputSchema = z
   .object({
-    projectId: bbProjectIdSchema,
+    projectId: aliaProjectIdSchema,
     expectedSource: workSourceSchema,
     connectorRevision: connectorRevisionSchema,
     title: z.string().trim().min(1).max(500),
@@ -397,7 +397,7 @@ export type CreateIssueInput = z.infer<typeof createIssueInputSchema>;
 
 const listInputSchema = z
   .object({
-    projectId: bbProjectIdSchema.optional(),
+    projectId: aliaProjectIdSchema.optional(),
     source: workSourceSchema.optional(),
     query: z.string().optional(),
     stateCategories: z.array(workStateCategorySchema).optional(),
@@ -414,10 +414,10 @@ export const taskboardRpcContract = {
   },
   threadProject: {
     input: z.object({ threadId: z.string().min(1) }).strict(),
-    output: z.object({ projectId: bbProjectIdSchema }).strict()
+    output: z.object({ projectId: aliaProjectIdSchema }).strict()
   },
   status: {
-    input: z.object({ projectId: bbProjectIdSchema }).strict(),
+    input: z.object({ projectId: aliaProjectIdSchema }).strict(),
     output: z.object({ sources: z.array(workSourceStatusSchema) }).strict()
   },
   listItems: {
@@ -432,7 +432,7 @@ export const taskboardRpcContract = {
   refresh: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         source: workSourceSchema.optional()
       })
       .strict(),
@@ -446,7 +446,7 @@ export const taskboardRpcContract = {
   getItem: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         source: workSourceSchema,
         locator: z.string().min(1)
       })
@@ -456,7 +456,7 @@ export const taskboardRpcContract = {
   statusOptions: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         source: workSourceSchema,
         locator: z.string().min(1)
       })
@@ -466,7 +466,7 @@ export const taskboardRpcContract = {
   updateItemStatus: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         source: workSourceSchema,
         locator: z.string().min(1),
         statusId: z.string().min(1)
@@ -477,7 +477,7 @@ export const taskboardRpcContract = {
   getItemInspector: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         source: workSourceSchema,
         locator: z.string().min(1)
       })
@@ -487,7 +487,7 @@ export const taskboardRpcContract = {
   updateItemField: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         source: workSourceSchema,
         locator: z.string().min(1),
         mutation: workItemFieldMutationSchema
@@ -498,7 +498,7 @@ export const taskboardRpcContract = {
   addItemComment: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         source: workSourceSchema,
         locator: z.string().min(1),
         body: z.string().trim().min(1).max(100_000)
@@ -507,13 +507,13 @@ export const taskboardRpcContract = {
     output: z.object({ item: workItemDetailSchema }).strict()
   },
   getCreateIssueContext: {
-    input: z.object({ projectId: bbProjectIdSchema }).strict(),
+    input: z.object({ projectId: aliaProjectIdSchema }).strict(),
     output: z.object({ context: createIssueContextSchema }).strict()
   },
   getCreateIssueMetadata: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         expectedSource: workSourceSchema,
         destinationId: z.string().trim().min(1).max(500),
         issueType: z.string().trim().min(1).max(100).nullable()
@@ -548,7 +548,7 @@ export const taskboardRpcContract = {
       .strict()
   },
   getProjectConfig: {
-    input: z.object({ projectId: bbProjectIdSchema }).strict(),
+    input: z.object({ projectId: aliaProjectIdSchema }).strict(),
     output: z.object({ config: projectConfigViewSchema }).strict()
   },
   saveProjectConfig: {
@@ -556,7 +556,7 @@ export const taskboardRpcContract = {
     output: z.object({ config: projectConfigViewSchema }).strict()
   },
   getProjectBoardSettings: {
-    input: z.object({ projectId: bbProjectIdSchema }).strict(),
+    input: z.object({ projectId: aliaProjectIdSchema }).strict(),
     output: z.object({ settings: projectBoardSettingsSchema }).strict()
   },
   saveProjectBoardSettings: {
@@ -625,7 +625,7 @@ export function formatWorkItemContext(item: WorkItemDetail | WorkItem): string {
     `- Status: ${item.status}`,
     `- Priority: ${item.priority ?? 'None'}`,
     `- Assignee: ${item.assignee ?? 'Unassigned'}`,
-    `- BB project: ${item.bbProjectId}`,
+    `- VesnALIA project: ${item.aliaProjectId}`,
     `- Tracker project: ${item.project ?? 'None'}`,
     `- Labels: ${item.labels.join(', ') || 'None'}`,
     `- URL: ${item.url}`,
@@ -636,7 +636,7 @@ export function formatWorkItemContext(item: WorkItemDetail | WorkItem): string {
   ];
   const identity = [
     `provider=${delimiterValue(sourceName(item.source))}`,
-    `project=${delimiterValue(item.bbProjectId)}`,
+    `project=${delimiterValue(item.aliaProjectId)}`,
     `key=${delimiterValue(item.key)}`
   ].join(' ');
   const externalData = escapeExternalControlCharacters(

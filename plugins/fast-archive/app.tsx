@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { definePluginApp, experimental_useSidebarThreadActions, type PluginThreadHeaderActionProps } from '@get-bb/plugin-sdk/app';
+import { definePluginApp, experimental_useSidebarThreadActions, type PluginThreadHeaderActionProps } from '@vesnalia/plugin-sdk/app';
 import './style.css';
 function ArchiveButton({ threadId }: PluginThreadHeaderActionProps) {
   const actions = experimental_useSidebarThreadActions();

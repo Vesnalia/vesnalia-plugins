@@ -5,14 +5,14 @@ date: 2026-10-28
 updated: 2026-10-28
 owner: thr_hxiyebt8z7
 tags: [thread-pane, decisions, ux, issue-159]
-supersedes: docs/plans/2026-10-15-interaction-surface-decision-layer-thr_3a4twsefrp.md (unmerged branch bb/fix-focusboard-ux-thr_3a4twsefrp)
+supersedes: docs/plans/2026-10-15-interaction-surface-decision-layer-thr_3a4twsefrp.md (unmerged branch alia/fix-focusboard-ux-thr_3a4twsefrp)
 ---
 
 # Interaction surface: decision picker plus decision history
 
 The design note that [issue #159](https://github.com/cristoslc/bb-plugin-focus-board/issues/159) asks for before implementation. It covers the surface's states for desktop and phone and the mechanics that could serve each one. It states options and a recommendation per state, and it leaves the final shape to the operator. No component changes ride with it.
 
-This note is bluework. It carries the thinking from a draft on an unmerged branch (`bb/fix-focusboard-ux-thr_3a4twsefrp`, commit `690b4a8`) forward to `dev` at `77e8f57`, corrects what the two weeks since then changed, and supersedes it. The branch also holds `PURPOSE.md` (commit `6e10611`), the attention philosophy the issue cites, which now lives on `dev` at [PURPOSE.md](../../PURPOSE.md); this note quotes the philosophy it depends on and links it.
+This note is bluework. It carries the thinking from a draft on an unmerged branch (`alia/fix-focusboard-ux-thr_3a4twsefrp`, commit `690b4a8`) forward to `dev` at `77e8f57`, corrects what the two weeks since then changed, and supersedes it. The branch also holds `PURPOSE.md` (commit `6e10611`), the attention philosophy the issue cites, which now lives on `dev` at [PURPOSE.md](../../PURPOSE.md); this note quotes the philosophy it depends on and links it.
 
 ## Governing rule
 
@@ -28,7 +28,7 @@ Every mechanic below is judged by one test, taken from the issue and the philoso
 - The picker is 1086 lines (`components/pending-interaction-card.tsx`), the history card 232 (`components/decided-questions-card.tsx`). Both wear the same casing, `mx-3 mt-2 shrink-0 overflow-hidden rounded-lg border border-border bg-card shadow-sm` (`:1010` and `:160`). Neither carries amber, so the visual split #97 asked for has not shipped even though #97 was closed as superseded on 2026-10-15.
 - The picker's state model is already durable in the right places. Answers mirror into localStorage under `focus-board:questionDraft:<threadId>:<interactionId>` (`:232-236`), with the question step clamped into range (`:298-306`), written as the operator works (`:576`), and cleared on submit or dismiss (`:947`, `:975`).
 - The picker's body caps at `max-h-[45dvh]` (`BODY_MAX_CLASS` at `:90`, applied `:726`) and scrolls internally, so a long question cannot push the transcript off the screen.
-- The history reads decisions out of the raw event log through `lib/decisions.ts`, keeps five (`MAX_DECISIONS = 5` at `components/decided-questions-card.tsx:26`), sits collapsed, and auto-expands once when a fresh answer lands (`:81-88`). It is the only record the pane offers, because bb drops the transcript trace (upstream get-bb/bb#4463).
+- The history reads decisions out of the raw event log through `lib/decisions.ts`, keeps five (`MAX_DECISIONS = 5` at `components/decided-questions-card.tsx:26`), sits collapsed, and auto-expands once when a fresh answer lands (`:81-88`). It is the only record the pane offers, because VesnALIA drops the transcript trace (upstream get-alia/alia#4463).
 - Geometry matters more than the issue assumed. The pane is `flex h-full min-h-0 flex-col` with no scroll of its own (`components/thread-pane.tsx:901`), the two cards are `shrink-0`, and the only scroller is the host's `.thread-scrollbar` inside the embedded chat, which the pane finds by query rather than owning (`:802-805`). So on desktop the picker never scrolls out of view. What the operator loses during a re-read is salience and vertical room, not the card's position.
 - Two compact modes already exist: `isCompact` (`:510`) from a compact window or a panel narrower than `PANE_SHEET_MAX_PANEL_WIDTH = 640` (`:68`), and `panelScopedSheet` (`:515`) for a narrow panel on a desktop window. Phone mechanics should ride that split, not invent a third.
 

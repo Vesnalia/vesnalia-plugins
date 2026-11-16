@@ -142,7 +142,7 @@ describe("a builder that goes idle", () => {
     expect(store.get(id)).toEqual(before);
     expect(ports.stopped).toEqual([BUILDER]);
     expect(ports.archived).toEqual([BUILDER]);
-    // Its next idle (bb may report one for the stop) finds it archived and does nothing more.
+    // Its next idle (VesnALIA may report one for the stop) finds it archived and does nothing more.
     await service.onIdle(BUILDER);
     expect(ports.archived).toEqual([BUILDER]);
   });
@@ -248,7 +248,7 @@ describe("an idle or a failed turn before the spawn answers (review finding 3)",
   });
 });
 
-describe("bb's events never reject", () => {
+describe("VesnALIA's events never reject", () => {
   it("logs a store that throws instead of rejecting onIdle or onFailed", async () => {
     const { ports, store, service: orient } = await building();
     store.byBuilder = () => {
@@ -323,8 +323,8 @@ describe("a put-away that fails (review finding 1)", () => {
   }
 
   /**
-   * The builder is not put away: starts are refused, and a sweep while bb still refuses changes nothing.
-   * Once bb answers again, the next sweep puts it away and starts are allowed.
+   * The builder is not put away: starts are refused, and a sweep while VesnALIA still refuses changes nothing.
+   * Once VesnALIA answers again, the next sweep puts it away and starts are allowed.
    */
   async function refusedUntilASweepPutsItAway(context: { ports: FakePorts; service: OrientationService }): Promise<void> {
     const { ports, service: orient } = context;
@@ -390,7 +390,7 @@ describe("a put-away that fails (review finding 1)", () => {
     await refusedUntilASweepPutsItAway(context);
   });
 
-  it("is done when the stop fails but bb confirms the archive", async () => {
+  it("is done when the stop fails but VesnALIA confirms the archive", async () => {
     const { ports, store, service: orient, id } = await building();
     ports.stopFails = true;
     await orient.cancel(id);
@@ -413,7 +413,7 @@ describe("a put-away that fails (review finding 1)", () => {
     expect(orient.clean).toBe(true);
   });
 
-  it("is kept across a reload, and the new copy puts the builder away once bb answers", async () => {
+  it("is kept across a reload, and the new copy puts the builder away once VesnALIA answers", async () => {
     const { ports, store, service: first, id } = await building();
     putAwaysFail(ports, true);
     await first.cancel(id);
@@ -427,7 +427,7 @@ describe("a put-away that fails (review finding 1)", () => {
     expect(second.clean).toBe(true);
   });
 
-  it("is kept when the user deletes the orientation, and ends once bb no longer has the thread", async () => {
+  it("is kept when the user deletes the orientation, and ends once VesnALIA no longer has the thread", async () => {
     const { ports, store, service: orient, id } = await building();
     putAwaysFail(ports, true);
     await orient.cancel(id);
@@ -435,14 +435,14 @@ describe("a put-away that fails (review finding 1)", () => {
     expect(store.get(id)).toBeNull();
     await orient.sweep();
     expect(orient.clean).toBe(false);
-    // Deleted in bb: stop and archive keep failing, but no thread by that id and none listed confirms it gone.
+    // Deleted in VesnALIA: stop and archive keep failing, but no thread by that id and none listed confirms it gone.
     ports.threads.delete(BUILDER);
     await orient.sweep();
     expect(orient.clean).toBe(true);
     expect(ports.archived).toEqual([]);
   });
 
-  it("stays pending while bb cannot be read to confirm a thread it cannot find", async () => {
+  it("stays pending while VesnALIA cannot be read to confirm a thread it cannot find", async () => {
     const { ports, service: orient, id } = await building();
     putAwaysFail(ports, true);
     await orient.cancel(id);
@@ -487,7 +487,7 @@ describe("reload safety", () => {
       const { ports, store, id } = await building();
       if (change === "gone") ports.threads.delete(BUILDER);
       else ports.threads.set(BUILDER, { ...ports.threads.get(BUILDER)!, status: "active", archivedAt: 5 });
-      // As bb would: a deleted thread cannot be stopped or archived.
+      // As VesnALIA would: a deleted thread cannot be stopped or archived.
       const archive = ports.archiveThread.bind(ports);
       ports.archiveThread = async (threadId) => {
         if (!ports.threads.has(threadId)) throw new Error("thread not found");
@@ -624,7 +624,7 @@ describe("reload safety", () => {
       expect(store.allLive()).toEqual([]);
     });
 
-    /** A reload mid-spawn whose thread bb makes only after the new copy's next sweep has made it clean. */
+    /** A reload mid-spawn whose thread VesnALIA makes only after the new copy's next sweep has made it clean. */
     async function lateThread() {
       const { ports, store, db, service: a } = await setup();
       let b: OrientationService | null = null;
@@ -642,7 +642,7 @@ describe("reload safety", () => {
       return { ports, store, db, next };
     }
 
-    it("puts away a thread bb made after the sweep on its first tool call", async () => {
+    it("puts away a thread VesnALIA made after the sweep on its first tool call", async () => {
       const { ports, store, next } = await lateThread();
       await expect(next.summary(BUILDER, SUMMARY)).rejects.toThrow("This thread is not building an orientation.");
       await flush();
@@ -652,7 +652,7 @@ describe("reload safety", () => {
       expect(store.allLive()).toEqual([]);
     });
 
-    it("puts away a thread bb made after the sweep on its first idle, or its first failed turn", async () => {
+    it("puts away a thread VesnALIA made after the sweep on its first idle, or its first failed turn", async () => {
       for (const event of ["onIdle", "onFailed"] as const) {
         const { ports, store, next } = await lateThread();
         await next[event](BUILDER);

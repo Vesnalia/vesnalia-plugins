@@ -1,16 +1,16 @@
 // Opening the Live panel beside the study thread.
 //
-// `useBbNavigate().openThreadPanel` only works on a thread surface (it
+// `useAliaNavigate().openThreadPanel` only works on a thread surface (it
 // returns false on a plugin page, even right after `toThread`). So the Live
 // tab records a request and navigates to the study thread; the study
 // thread's header badge (mounted there, on the thread surface) takes the
 // request and opens the panel.
-import type { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import type { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 
 /** The threadPanelAction id of the Live panel. */
 export const LIVE_PANEL_ACTION = "study-live";
 
-type Nav = ReturnType<typeof useBbNavigate>;
+type Nav = ReturnType<typeof useAliaNavigate>;
 
 let pending: { threadId: string; slug: string; at: number } | null = null;
 

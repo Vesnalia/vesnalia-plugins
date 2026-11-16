@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { ProjectView, SpecVersionView, rpcContract } from "../src/contract";
 import { parseSpec, specSchema, type Spec } from "../src/spec";
 import { specDiff } from "../src/spec-diff";
@@ -246,7 +246,7 @@ const handlers = (over: Partial<Handlers>): Handlers => ({
   confirmMerge: unexpected,
   control: unexpected,
   startPlanning: unexpected,
-  bbProjects: () => [],
+  aliaProjects: () => [],
   planning: () => [],
   planningSession: () => null,
   plannerView: () => null,

@@ -76,7 +76,7 @@ test("the current file is marked for screen readers, and viewed files say so", (
 });
 
 test("a file split across chapters counts in each only the lines of its hunks there", () => {
-  const patch = "diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -1 +1 @@\n-a\n+aa\n@@ -20,2 +20,2 @@\n-b\n-c\n+bb\n+cc\n";
+  const patch = "diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -1 +1 @@\n-a\n+aa\n@@ -20,2 +20,2 @@\n-b\n-c\n+VesnALIA\n+cc\n";
   render(
     <ChapterNav
       sections={[

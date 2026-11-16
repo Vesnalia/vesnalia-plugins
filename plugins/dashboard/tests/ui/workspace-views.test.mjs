@@ -23,13 +23,13 @@ function reorderProjects(slot) {
   dragFire(source, 'dragend', {}, transfer);
 }
 function retainedChats(slot) {
-  const original = new Map(slot.getAllByTestId('bb-thread-chat').map(chat => {
+  const original = new Map(slot.getAllByTestId('alia-thread-chat').map(chat => {
     const editor = document.createElement('textarea'); editor.value = 'Draft ' + chat.dataset.threadId;
     chat.append(editor); editor.setSelectionRange(2, 5); chat.scrollTop = 73;
     return [chat.dataset.threadId, { chat, editor }];
   }));
   return () => {
-    const current = slot.getAllByTestId('bb-thread-chat');
+    const current = slot.getAllByTestId('alia-thread-chat');
     assert.equal(current.length, original.size);
     for (const chat of current) {
       const expected = original.get(chat.dataset.threadId);
@@ -46,9 +46,9 @@ function resize(slot) {
 }
 
 test('project view retains every native chat, draft and reading node across catalog, resize, reorder and language', async () => {
-  window.localStorage.setItem('bb-dashboard:split-layout:v1', JSON.stringify({ p1: { ids: ['a', 'b'], active: 'a', sizes: { a: 2, b: 3 } } }));
+  window.localStorage.setItem('alia-dashboard:split-layout:v1', JSON.stringify({ p1: { ids: ['a', 'b'], active: 'a', sizes: { a: 2, b: 3 } } }));
   const slot = mount({ language: 'en', connected: true, projects: [project, secondProject], threads: [thread('a', 'p1', 'Alpha'), thread('b', 'p1', 'Beta'), thread('other', 'p2', 'Other')] });
-  await slot.findAllByTestId('bb-thread-chat'); const retained = retainedChats(slot);
+  await slot.findAllByTestId('alia-thread-chat'); const retained = retainedChats(slot);
   await catalogAndLanguage(slot); retained();
   resize(slot); retained();
   await act(async () => reorderProjects(slot)); retained();
@@ -57,9 +57,9 @@ test('project view retains every native chat, draft and reading node across cata
 });
 
 test('pool view retains every native chat and draft while its columns reorder and resize', async () => {
-  window.localStorage.setItem('bb-dashboard:shared-pool:v1', JSON.stringify({ entries: [{ projectId: 'p1', threadId: 'a' }, { projectId: 'p2', threadId: 'b' }], active: 'a', open: true, sizes: { a: 2, b: 3 } }));
+  window.localStorage.setItem('alia-dashboard:shared-pool:v1', JSON.stringify({ entries: [{ projectId: 'p1', threadId: 'a' }, { projectId: 'p2', threadId: 'b' }], active: 'a', open: true, sizes: { a: 2, b: 3 } }));
   const slot = mount({ language: 'en', connected: true, projects: [project, secondProject], threads: [thread('a', 'p1', 'Alpha'), thread('b', 'p2', 'Beta')] });
-  await slot.findAllByTestId('bb-thread-chat'); const retained = retainedChats(slot);
+  await slot.findAllByTestId('alia-thread-chat'); const retained = retainedChats(slot);
   await catalogAndLanguage(slot); retained();
   resize(slot); retained();
   const dock = slot.container.querySelector('.db-pool-workspace .db-thread-dock');
@@ -76,15 +76,15 @@ test('pool view retains every native chat and draft while its columns reorder an
 
 for (const pool of [false, true]) test(`${pool ? 'pool' : 'project'} composer retains its draft, selection and project through view updates`, async () => {
   const slot = mount({ language: 'en', connected: true, projects: [project, secondProject], threads: [thread('a', 'p1', 'Alpha')] });
-  await slot.findByTestId('bb-thread-chat');
+  await slot.findByTestId('alia-thread-chat');
   const button = pool ? slot.getByRole('button', { name: 'New thread in the shared pool' }) : slot.getAllByRole('button', { name: `New thread in project “${project.name}”` })[0];
   fireEvent.click(button);
-  const composer = slot.getByTestId('bb-new-thread-composer'), editor = slot.getByTestId('bb-new-thread-composer-input');
+  const composer = slot.getByTestId('alia-new-thread-composer'), editor = slot.getByTestId('alia-new-thread-composer-input');
   fireEvent.change(editor, { target: { value: 'Unsent native draft' } }); editor.setSelectionRange(3, 8);
   await catalogAndLanguage(slot); resize(slot); await act(async () => reorderProjects(slot));
-  assert.equal(slot.getByTestId('bb-new-thread-composer'), composer);
-  assert.equal(slot.getByTestId('bb-new-thread-composer-input'), editor);
+  assert.equal(slot.getByTestId('alia-new-thread-composer'), composer);
+  assert.equal(slot.getByTestId('alia-new-thread-composer-input'), editor);
   assert.equal(editor.value, 'Unsent native draft'); assert.equal(editor.selectionStart, 3); assert.equal(editor.selectionEnd, 8);
   assert.equal(composer.dataset.defaultProjectId, 'p1');
-  assert.equal(slot.queryByTestId('bb-thread-chat'), null);
+  assert.equal(slot.queryByTestId('alia-thread-chat'), null);
 });

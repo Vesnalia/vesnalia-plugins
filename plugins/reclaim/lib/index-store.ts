@@ -109,7 +109,7 @@ const DIR_COLUMNS =
   "id, parent_id, path, name, depth, self_bytes, tree_bytes, tree_files, tree_dirs, newest_mtime_ms, opaque";
 
 export class IndexStore {
-  // Explicit fields, not constructor parameter properties: BB loads a
+  // Explicit fields, not constructor parameter properties: VesnALIA loads a
   // path-installed plugin as TypeScript directly and Node's strip-only mode
   // rejects the shorthand.
   private readonly db: Database;

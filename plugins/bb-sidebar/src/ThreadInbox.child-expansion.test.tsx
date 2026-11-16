@@ -37,11 +37,11 @@ describe("ThreadInbox", () => {
 
     fireEvent.click(within(await screen.findByRole("menu", { name: "Thread actions" })).getByText("Archive"));
     expect(rendered.threadActionCalls).toContainEqual({
-      key: "bb--core/archive",
+      key: "alia--core/archive",
       threadId: "child",
     });
     expect(rendered.threadActionCalls).not.toContainEqual({
-      key: "bb--core/archive",
+      key: "alia--core/archive",
       threadId: "parent",
     });
   });
@@ -63,7 +63,7 @@ describe("ThreadInbox", () => {
     fireEvent.click(within(await screen.findByRole("menu", { name: "Thread actions" })).getByText("Archive"));
 
     expect(rendered.threadActionCalls).toContainEqual({
-      key: "bb--core/archive",
+      key: "alia--core/archive",
       threadId: "parent",
     });
     await waitFor(() =>
@@ -186,9 +186,9 @@ describe("ThreadInbox", () => {
     fireEvent.contextMenu(screen.getByRole("link", { name: "Open grandchild thread: Grandchild" }));
 
     fireEvent.click(within(await screen.findByRole("menu", { name: "Thread actions" })).getByText("Archive"));
-    expect(rendered.threadActionCalls).toContainEqual({ key: "bb--core/archive", threadId: "grandchild" });
-    expect(rendered.threadActionCalls).not.toContainEqual({ key: "bb--core/archive", threadId: "child" });
-    expect(rendered.threadActionCalls).not.toContainEqual({ key: "bb--core/archive", threadId: "parent" });
+    expect(rendered.threadActionCalls).toContainEqual({ key: "alia--core/archive", threadId: "grandchild" });
+    expect(rendered.threadActionCalls).not.toContainEqual({ key: "alia--core/archive", threadId: "child" });
+    expect(rendered.threadActionCalls).not.toContainEqual({ key: "alia--core/archive", threadId: "parent" });
   });
 
   // Moved from the removed header chip's tests; nothing else renames a child row.
@@ -222,7 +222,7 @@ describe("ThreadInbox", () => {
       expect(rendered.linkCalls).toEqual([]);
       expect(rendered.splitSourceCalls).toEqual([]);
       expect(rendered.sdkCalls.slice(sdkCallsBefore)).toEqual([]);
-      expect(rendered.threadActionCalls).toEqual([{ key: "bb--core/rename", threadId: targetId }]);
+      expect(rendered.threadActionCalls).toEqual([{ key: "alia--core/rename", threadId: targetId }]);
       fireEvent.change(input, { target: { value: "Canceled" } });
       fireEvent.keyDown(input, { key: "Escape" });
       expect(screen.getByRole("list", { name: "Child threads" })).toBeDefined();
@@ -241,8 +241,8 @@ describe("ThreadInbox", () => {
       expect(rendered.linkCalls).toEqual([]);
       expect(rendered.splitSourceCalls).toEqual([]);
       expect(rendered.threadActionCalls).toEqual([
-        { key: "bb--core/rename", threadId: targetId },
-        { key: "bb--core/rename", threadId: targetId },
+        { key: "alia--core/rename", threadId: targetId },
+        { key: "alia--core/rename", threadId: targetId },
       ]);
     },
   );

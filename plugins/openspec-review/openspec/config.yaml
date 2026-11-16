@@ -1,13 +1,13 @@
 schema: spec-driven
 
 context: |
-  Проект: BB-плагин `openspec-review` (публичный репо github.com/nicolay-i/bb-plugin-openspec-review, MIT).
+  Проект: ALIA-плагин `openspec-review` (публичный репо github.com/nicolay-i/bb-plugin-openspec-review, MIT).
   Показывает спеки и изменения OpenSpec проекта треда, даёт ревью Markdown с комментариями,
-  которые ставятся в очередь текущего BB-треда; агент закрывает их `bb openspec-review review resolve <id>`.
-  Стек: TypeScript, Bun (скрипты/тесты), React (app.tsx, ui/), BB plugin SDK (server.ts, host.ts),
+  которые ставятся в очередь текущего ALIA-треда; агент закрывает их `alia openspec-review review resolve <id>`.
+  Стек: TypeScript, Bun (скрипты/тесты), React (app.tsx, ui/), ALIA plugin SDK (server.ts, host.ts),
   SQLite в данных плагина (src/store), OpenSpec CLI 1.9 на хосте окружения (контракт — tests/fixtures).
-  Распространение: git-тег vX.Y.Z, маркетплейс get-bb/marketplace (entry с диапазоном ^0.1.0).
-  Проверки: `bun run typecheck`, `bun run test`, `bb plugin build .`; UI — tests/browser-matrix.ts и скриншоты.
+  Распространение: git-тег vX.Y.Z, маркетплейс get-alia/marketplace (entry с диапазоном ^0.1.0).
+  Проверки: `bun run typecheck`, `bun run test`, `alia plugin build .`; UI — tests/browser-matrix.ts и скриншоты.
 
 rules:
   proposal:
@@ -20,5 +20,5 @@ rules:
     - MODIFIED-блок содержит все сценарии текущего требования; удаление сценария — отдельным REMOVED/переименованием требования.
   tasks:
     - Одна задача — один коммит; коммиты и публикация только по просьбе пользователя.
-    - В конце задачи проверки typecheck, test и bb plugin build.
+    - В конце задачи проверки typecheck, test и alia plugin build.
     - Публикация (push, тег, PR маркетплейса) — отдельными задачами с показом команд до выполнения.

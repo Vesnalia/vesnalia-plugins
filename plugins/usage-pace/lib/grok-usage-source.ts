@@ -1,14 +1,14 @@
-// Makes the Grok usage provider a source for bb's usage card.
+// Makes the Grok usage provider a source for VesnALIA's usage card.
 //
-// A registered provider with `maintenance.usage` is not enough: bb's
+// A registered provider with `maintenance.usage` is not enough: VesnALIA's
 // provider-usage card lists the plugins that serve the discoverable
 // `provider-usage.v1` RPC contract, and shows the resources they list. Each
 // provider plugin serves it for its own providers (provider-acp,
 // provider-claude-code, provider-codex), so this plugin serves it for
 // `usage-pace-grok`: one resource per connected host where the provider is
 // listed. The numbers come from the provider bridge (host.ts) through
-// `bb.sdk.system.usageLimits`.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+// `alia.sdk.system.usageLimits`.
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { GROK_PROVIDER_ID } from "./grok-provider";
 
@@ -81,7 +81,7 @@ export const grokUsageSourceContract = defineRpcContract({
 
 const RESOURCE_PREFIX = "grok:";
 
-type UsageLimits = Awaited<ReturnType<BbPluginApi["sdk"]["system"]["usageLimits"]>>;
+type UsageLimits = Awaited<ReturnType<AliaPluginApi["sdk"]["system"]["usageLimits"]>>;
 type RawUsage = NonNullable<UsageLimits[string]>;
 
 function windowKind(label: string): z.infer<typeof windowSchema>["kind"] {
@@ -95,7 +95,7 @@ function windowId(label: string): string {
   return label.toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, "") || "window";
 }
 
-/** The usage bb reports for a provider, in the provider-usage.v1 shape. */
+/** The usage VesnALIA reports for a provider, in the provider-usage.v1 shape. */
 export function toSourceUsage(raw: RawUsage | undefined): SourceUsage {
   const empty = { plan: null, accountEmail: null, planLabel: null };
   if (raw === undefined) return { status: "error", ...empty, message: "No usage reported." };
@@ -127,20 +127,20 @@ export function toSourceUsage(raw: RawUsage | undefined): SourceUsage {
 }
 
 export function createGrokUsageSource(
-  bb: Pick<BbPluginApi, "sdk">,
+  alia: Pick<AliaPluginApi, "sdk">,
   now: () => number = Date.now,
 ) {
   const cache = new Map<string, { at: number; value: SourceResource }>();
   const lastSuccess = new Map<string, number>();
 
   async function listResources() {
-    const hosts = await bb.sdk.hosts.list();
+    const hosts = await alia.sdk.hosts.list();
     const resources: z.infer<typeof resourceSchema>[] = [];
     for (const host of hosts) {
       if (host.status === "disconnected") continue;
-      // The provider has `experimental_visibility: "installed"`, so bb lists
+      // The provider has `experimental_visibility: "installed"`, so VesnALIA lists
       // it only on hosts where the grok command is installed.
-      const listed = await bb.sdk.providers
+      const listed = await alia.sdk.providers
         .list({ hostId: host.id, capability: "usage" })
         .then((providers) => providers.some((provider) => provider.id === GROK_PROVIDER_ID))
         .catch(() => false);
@@ -164,7 +164,7 @@ export function createGrokUsageSource(
 
     let usage: SourceUsage;
     try {
-      const limits = await bb.sdk.system.usageLimits({ hostId });
+      const limits = await alia.sdk.system.usageLimits({ hostId });
       usage = toSourceUsage(limits[GROK_PROVIDER_ID]);
     } catch (cause) {
       usage = {

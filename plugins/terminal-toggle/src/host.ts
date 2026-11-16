@@ -2,7 +2,7 @@ import { CompatibilityError } from "./compatibility";
 import type {
   ExperimentalPanelController,
   PluginCommandShortcut,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import {
   ancestors,
   callable,
@@ -80,7 +80,7 @@ export function commandContext(doc: Document = document): Commands | null {
   }
   throw new CompatibilityError(
     "TT_COMMANDS",
-    "Cannot access bb's keyboard dispatcher.",
+    "Cannot access VesnALIA's keyboard dispatcher.",
   );
 }
 
@@ -242,7 +242,7 @@ export function terminals(tabs: unknown): { key: string; id: string }[] {
   )
     throw new CompatibilityError(
       "TT_TABS",
-      "bb returned an unrecognized panel-tab snapshot.",
+      "alia returned an unrecognized panel-tab snapshot.",
     );
   const result: { key: string; id: string }[] = [];
   const keys = new Set<string>(),
@@ -258,7 +258,7 @@ export function terminals(tabs: unknown): { key: string; id: string }[] {
     )
       throw new CompatibilityError(
         "TT_TABS",
-        "bb returned ambiguous or invalid panel tabs.",
+        "alia returned ambiguous or invalid panel tabs.",
       );
     keys.add(tab.key);
     if (detail.kind !== "terminal") continue;
@@ -269,7 +269,7 @@ export function terminals(tabs: unknown): { key: string; id: string }[] {
     )
       throw new CompatibilityError(
         "TT_TABS",
-        "bb returned ambiguous or invalid terminal identifiers.",
+        "alia returned ambiguous or invalid terminal identifiers.",
       );
     ids.add(detail.terminalId);
     result.push({ key: tab.key, id: detail.terminalId });

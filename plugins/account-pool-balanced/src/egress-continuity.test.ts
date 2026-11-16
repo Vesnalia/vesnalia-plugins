@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, expect, it, vi } from 'vitest';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import { AccountEgress } from './account-egress.js';
 import { createHub } from './hub.js';
 import { accountPoolConfigSchema, type PoolProvider } from './contracts.js';
@@ -26,7 +26,7 @@ async function fixture(provider: PoolProvider = 'claude', threadBound = true) {
   const host = createFakePluginHost({ pluginId: 'fixture-pool', dataDir: dir });
   cleanups.push(() => host.harness.lifecycle.dispose());
   let now = 1900000000000;
-  const accounts = new AccountStore(host.bb.storage.kv, path.join(dir, 'secrets'));
+  const accounts = new AccountStore(host.alia.storage.kv, path.join(dir, 'secrets'));
   await accounts.initialize();
   const common = { provider, kind: provider === 'codex' ? 'oauth' as const : 'api-key' as const, label: 'Fixture', email: null,
     accountUuid: null, subscriptionType: null, rateLimitTier: null, enabled: true, autopilotAllowed: true };
@@ -35,13 +35,13 @@ async function fixture(provider: PoolProvider = 'claude', threadBound = true) {
       ? { kind: 'oauth', accessToken: key, refreshToken: 'fixture-refresh', expiresAt: now + 365 * 86400000 }
       : { kind: 'api-key', apiKey: key });
   const a = await add('fixture-a', 100), b = await add('fixture-b', 200);
-  const db = host.bb.storage.database(); for (const sql of QUOTA_MIGRATIONS) db.exec(sql);
+  const db = host.alia.storage.database(); for (const sql of QUOTA_MIGRATIONS) db.exec(sql);
   const quotas = new QuotaStore(db), affinity = new PoolAffinityStore(db);
   const affinityKey = JSON.stringify([provider, JSON.stringify(['host-one', 'project-one']), 'session:original']);
   const sessionKey = threadBound ? JSON.stringify(['host-one', 'project-one', 'original', provider]) : affinityKey;
   const egressInstances: AccountEgress[] = [];
   const newEgress = async () => {
-    const e = new AccountEgress(host.bb.storage.kv, async () => 'host-one', async () => provider === 'claude' || provider === 'codex');
+    const e = new AccountEgress(host.alia.storage.kv, async () => 'host-one', async () => provider === 'claude' || provider === 'codex');
     egressInstances.push(e); await e.initialize(); return e;
   };
   let egress = await newEgress();
@@ -108,7 +108,7 @@ async function fixture(provider: PoolProvider = 'claude', threadBound = true) {
   };
 }
 
-it('restores Codex pins using provider session affinity without a BB thread binding or a model substitution', async () => {
+it('restores Codex pins using provider session affinity without a VesnALIA thread binding or a model substitution', async () => {
   const f = await fixture('codex', false); await f.seedAssigned(); f.advance(); await f.restart();
   expect((await f.request('ordinary')).status).toBe(200);
   expect(f.sends.at(-1)?.key).toBe('fixture-b');
@@ -134,7 +134,7 @@ for (const reason of ['disabled', 'removed', 'project', 'purpose', 'quota', 'sha
       reserveDrainHours: null, schedule: { timeZone: 'UTC', intervals: [] } });
     if (reason === 'cap') await f.accounts.setCap(f.a.id, { early: 0, late: 0 });
     const response = await f.request('original', 'claude-sonnet-fixture', reason === 'purpose');
-    expect(response.status).toBe(503); expect(response.headers.get('x-bb-pool-error')).toBe('POOL_EGRESS_UNAVAILABLE');
+    expect(response.status).toBe(503); expect(response.headers.get('x-alia-pool-error')).toBe('POOL_EGRESS_UNAVAILABLE');
     expect(f.sends).toEqual([]);
     expect(f.egress().snapshot().pins[f.sessionKey]).toEqual({ accountId: f.a.id, ref: { id: profile.id, version: 1 } });
   });
@@ -150,7 +150,7 @@ it('rechecks the pinned account policy after the awaited Guard before dispatch',
   let checks = 0;
   f.onGuard(async () => { if (++checks === 2) await f.accounts.setEnabled(f.a.id, false); });
   const response = await f.request();
-  expect(response.status).toBe(503); expect(response.headers.get('x-bb-pool-error')).toBe('POOL_EGRESS_UNAVAILABLE');
+  expect(response.status).toBe(503); expect(response.headers.get('x-alia-pool-error')).toBe('POOL_EGRESS_UNAVAILABLE');
   expect(checks).toBe(2); expect(f.sends).toEqual([]);
 });
 
@@ -159,7 +159,7 @@ it('still enforces the shared admission deadline for the pinned account with ano
   const snapshot = f.accounts.withSnapshot.bind(f.accounts);
   f.accounts.withSnapshot = action => snapshot(rows => { f.advance(ACCOUNT_QUEUE_MAX_WAIT_MS + 1); return action(rows); });
   const response = await f.request();
-  expect(response.status).toBe(503); expect(response.headers.get('x-bb-pool-error')).toBe('POOL_QUEUE_TIMEOUT');
+  expect(response.status).toBe(503); expect(response.headers.get('x-alia-pool-error')).toBe('POOL_QUEUE_TIMEOUT');
   expect(f.sends).toEqual([]);
 });
 

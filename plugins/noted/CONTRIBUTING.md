@@ -11,7 +11,7 @@ npm run check
 
 `npm run check` runs the type check, test suite, and both plugin builds.
 
-Run `npm run e2e` only when a live BB instance is available and Noted is loaded from the checkout. Public CI does not run this live-BB check.
+Run `npm run e2e` only when a live VesnALIA instance is available and Noted is loaded from the checkout. Public CI does not run this live-ALIA check.
 
 ## Update vendored Lavish files
 

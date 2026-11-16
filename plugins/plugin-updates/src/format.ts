@@ -1,4 +1,4 @@
-// Plain-text rendering of a report for `bb plugin-updates`.
+// Plain-text rendering of a report for `alia plugin-updates`.
 import type { ReportSnapshot } from "./contract";
 import type { Report } from "./report";
 

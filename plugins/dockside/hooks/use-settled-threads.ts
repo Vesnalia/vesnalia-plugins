@@ -3,8 +3,8 @@ import {
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import type { docksideRpcContract } from "@/server";
 import {
   isWithinSettledWindow,
@@ -30,7 +30,7 @@ export interface SettledThreadsApi {
    * and never answers leaves it standing for the same reason and for good.
    *
    * Every later read raises it again, which is what covers the gap around a
-   * settle: bb evicts the thread from its own view the moment the archive lands,
+   * settle: VesnALIA evicts the thread from its own view the moment the archive lands,
    * a whole round trip before this read can hand it back.
    *
    * The caller may count parked rows the merge has not been handed while this is
@@ -44,7 +44,7 @@ export interface SettledThreadsApi {
 /**
  * The threads on the settled shelf, fetched from the plugin's own backend.
  *
- * The host cannot supply them: settling archives the thread, and bb's sidebar
+ * The host cannot supply them: settling archives the thread, and VesnALIA's sidebar
  * view is built from queries pinned to `archived: false`. This hook is the
  * second source that fills that hole, refreshed by the same signals the
  * lifecycle rows use — the shelf and its rows must never disagree about which

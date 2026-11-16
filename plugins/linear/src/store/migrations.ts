@@ -1,7 +1,7 @@
 /**
  * The local mirror's schema, as an append-only list of statements.
  *
- * `bb.storage.migrate` uses the **statement index as the migration id**.
+ * `alia.storage.migrate` uses the **statement index as the migration id**.
  * Editing statement 3 in a later release does not re-run it — it silently
  * skips it on every existing install, so a column added by an edit exists on
  * fresh installs and nowhere else, and the failure surfaces as a `no such
@@ -9,7 +9,7 @@
  * `test/migrations.test.ts` hashes every shipped statement and fails on any
  * change to one, which turns that rule from a comment into a gate.
  *
- * Migrations are also **additive only**. bb rolls a failed activation back to
+ * Migrations are also **additive only**. VesnALIA rolls a failed activation back to
  * the previous plugin version, which then runs *old code against the new
  * schema*. A dropped column takes the rollback down with it; an added one is
  * simply ignored by the older code.
@@ -203,7 +203,7 @@ export const MIGRATIONS: string[] = [
 
   /* ── Plugin state ──────────────────────────────────────────────────────── */
 
-  // A bb project binds to exactly one **primary** Linear team plus zero or
+  // A VesnALIA project binds to exactly one **primary** Linear team plus zero or
   // more additional teams, each marked write or read. Unqualified work goes to
   // the primary; anything else must name its team and is allowed only if that
   // team is in the write set.
@@ -264,7 +264,7 @@ export const MIGRATIONS: string[] = [
   /* ── M4: a thread started from an issue ────────────────────────────────── */
 
   /**
-   * The link between a bb thread and a Linear issue.
+   * The link between a VesnALIA thread and a Linear issue.
    *
    * Written **before the spawn returns**, so the composer banner and the
    * thread header chip are correct on the thread's first paint rather than one
@@ -402,13 +402,13 @@ export const MIGRATIONS: string[] = [
   /**
    * One-shot host capability probes.
    *
-   * bb's pull-request lookup is `gh pr view` and nothing else, so the
-   * automation needs the GitHub CLI authenticated on the machine running bb
+   * VesnALIA's pull-request lookup is `gh pr view` and nothing else, so the
+   * automation needs the GitHub CLI authenticated on the machine running VesnALIA
    * and does not fire on GitLab, Bitbucket, Gitea or Azure DevOps. The first
    * `unavailable` writes a row here; while it says this host has never once
    * produced an `available` lookup, the per-thread banner row is **not
    * rendered at all** and the fact appears in exactly two places instead — the
-   * settings section and `bb linear doctor`.
+   * settings section and `alia linear doctor`.
    *
    * Otherwise a GitLab shop gets a permanent apology attached to every linked
    * thread. One successful lookup clears the probe forever.

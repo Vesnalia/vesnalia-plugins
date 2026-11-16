@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "./server";
 import type { Preferences, SetupStatus } from "./setup";
@@ -83,7 +83,7 @@ export function SettingsView({ model, back }: { model: Model; back: () => void }
     ["notifyFinished", "Completed turns", "When an agent finishes. Off by default to keep things quiet."],
     ["notifyExtensions", "Extension activity", "Notify when Guided Review and other extensions finish work. Items stay until dismissed."],
     ["toastEnabled", "In-app popups", "One dismissible popup per thread or review, quiet while you’re viewing it. Desktop sidebar required."],
-    ["desktopEnabled", "Native desktop notifications", state.desktopAvailable ? "Notifications on the Mac running BB." : "Requires a Mac running the BB server; unavailable on this host."],
+    ["desktopEnabled", "Native desktop notifications", state.desktopAvailable ? "Notifications on the Mac running VesnALIA." : "Requires a Mac running the VesnALIA server; unavailable on this host."],
     ["telegramInstant", "Telegram alerts", "Send selected alerts to your connected private chat."],
   ];
   return <div className="ny-settings">
@@ -106,7 +106,7 @@ export function SettingsView({ model, back }: { model: Model; back: () => void }
               <label>Quiet hours start<input type="time" value={preferences.quietStart} onChange={e => change("quietStart", e.target.value)} /></label>
               <label>Quiet hours end<input type="time" value={preferences.quietEnd} onChange={e => change("quietEnd", e.target.value)} /></label>
             </div>
-            <p>Uses {state.timezone}, the BB host’s timezone. Clear both times to turn quiet hours off.</p>
+            <p>Uses {state.timezone}, the VesnALIA host’s timezone. Clear both times to turn quiet hours off.</p>
             <label className="ny-settings-field">Seconds between completion alerts<input type="number" min="0" max="86400" value={preferences.cooldownSeconds} onChange={e => change("cooldownSeconds", Number(e.target.value))} /></label>
             <div className="ny-settings-actions"><button className="ny-primary" type="submit">{busy === "save" ? "Saving…" : "Save notification settings"}</button>
               <button className="ny-secondary" type="button" onClick={preview}>Preview popup</button></div>
@@ -115,7 +115,7 @@ export function SettingsView({ model, back }: { model: Model; back: () => void }
       </section>
       <section aria-labelledby="ny-telegram-title">
         <h4 id="ny-telegram-title">Telegram</h4>
-        <p>Use your own bot for phone alerts. Notifications share titles and request context with Telegram. Reply to questions and approve requests inside BB.</p>
+        <p>Use your own bot for phone alerts. Notifications share titles and request context with Telegram. Reply to questions and approve requests inside VesnALIA.</p>
         {state.telegram.configured && <div className="ny-connection">
           <strong>{state.telegram.botUsername ? `@${state.telegram.botUsername}` : "Telegram configured"}</strong>
           <p>{state.telegram.name ?? "Private chat"} · {state.telegram.chatId}</p>
@@ -125,7 +125,7 @@ export function SettingsView({ model, back }: { model: Model; back: () => void }
           })}>{busy === "test" ? "Sending…" : "Send test notification"}</button>
             <button className="ny-secondary" disabled={Boolean(busy)} onClick={() => { setReplacing(true); setDisconnecting(false); }}>Change bot</button>
             <button className="ny-secondary" disabled={Boolean(busy)} onClick={() => setDisconnecting(true)}>Disconnect</button></div>
-          {disconnecting && <div className="ny-disconnect"><p>Remove this bot token and chat from BB? Your inbox will keep working.</p>
+          {disconnecting && <div className="ny-disconnect"><p>Remove this bot token and chat from VesnALIA? Your inbox will keep working.</p>
             <button className="ny-secondary" disabled={Boolean(busy)} onClick={() => void run("disconnect", async () => {
               model.setState(await model.rpc.call("setupTelegramDisconnect", null)); setPairing(null); setReplacing(false); setDisconnecting(false); setToken(""); setMessage("Telegram disconnected.");
             })}>Disconnect Telegram</button> <button className="ny-secondary" onClick={() => setDisconnecting(false)}>Keep connected</button></div>}
@@ -156,22 +156,22 @@ export function SettingsView({ model, back }: { model: Model; back: () => void }
           <ol><li>Open <a href="https://t.me/BotFather" target="_blank" rel="noreferrer">BotFather</a> and send <code>/newbot</code>.</li>
             <li>Name your bot and copy the token BotFather gives you.</li></ol>
           <label className="ny-settings-field">Telegram bot token<input type="password" autoComplete="off" spellCheck={false} value={token} onChange={e => setToken(e.target.value)} required disabled={Boolean(busy)} /></label>
-          <p>The token stays in this BB installation. Use a dedicated bot that no other app is reading.</p>
+          <p>The token stays in this VesnALIA installation. Use a dedicated bot that no other app is reading.</p>
           <button className="ny-primary" type="submit" disabled={Boolean(busy) || !token.trim()}>{busy === "connect" ? "Checking bot…" : "Connect bot"}</button>
         </form>}
-        <p className="ny-telegram-help">Enable BB Connect for thread links that open from your phone. Setup never enables Telegram replies or sends a test automatically.</p>
+        <p className="ny-telegram-help">Enable VesnALIA Connect for thread links that open from your phone. Setup never enables Telegram replies or sends a test automatically.</p>
         {!state.completed && <button className="ny-secondary" disabled={Boolean(busy)} onClick={() => void run("finish", async () => { await model.rpc.call("setupFinish", null); await model.load(); back(); })}>Finish setup</button>}
       </section>
     </div>
     <section className="ny-updates" aria-labelledby="ny-updates-title">
-      <div><h4 id="ny-updates-title">Version & updates</h4><p>Update now installs the latest compatible release available when BB resolves the update.</p><p>Installed: {state.version}</p>
+      <div><h4 id="ny-updates-title">Version & updates</h4><p>Update now installs the latest compatible release available when VesnALIA resolves the update.</p><p>Installed: {state.version}</p>
         <p>{model.updateError || (model.checking ? "Checking for updates…" : model.update?.detail ?? "Check for compatible releases from your installation’s source.")}</p>
         {model.update?.latestVersion && <p>Available: {model.update.latestVersion}</p>}</div>
       <div className="ny-settings-actions">
         <button className="ny-secondary" disabled={Boolean(busy) || model.checking} onClick={() => void model.check(true)}>Check for updates</button>
         {model.update?.outcome === "update-available" && model.update.candidateVersion && <button className="ny-primary" disabled={Boolean(busy) || Boolean(pairing) || model.checking} onClick={() => void run("update", async () => {
           const result = await model.rpc.call("setupApplyUpdate", { candidateVersion: model.update!.candidateVersion! });
-          if (result.outcome === "rolled-back") throw new Error("The update could not start. BB restored the previous version. Check for updates before trying again.");
+          if (result.outcome === "rolled-back") throw new Error("The update could not start. VesnALIA restored the previous version. Check for updates before trying again.");
           setMessage(result.outcome === "updated" ? "Update installed. Reload Needs You to use the new version." : "You’re already on the latest compatible release.");
           setReloadReady(result.outcome === "updated"); await model.check(true);
         })}>{busy === "update" ? "Updating…" : "Update now"}</button>}

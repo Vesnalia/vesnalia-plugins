@@ -2,7 +2,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 
 import {
   autoCompactRules,
@@ -44,9 +44,9 @@ describe("crew reasoning", () => {
     expect(labels.xhigh).toBe("Extra high");
   });
 
-  it("is a settings form bb accepts", () => {
-    const { bb } = createFakePluginHost({ pluginId: "firstmate-crew" });
-    expect(() => bb.settings.define(SETTINGS)).not.toThrow();
+  it("is a settings form VesnALIA accepts", () => {
+    const { alia } = createFakePluginHost({ pluginId: "firstmate-crew" });
+    expect(() => alia.settings.define(SETTINGS)).not.toThrow();
   });
 });
 

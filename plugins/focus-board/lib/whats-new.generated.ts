@@ -153,7 +153,7 @@ export const DERIVED_WHATS_NEW: readonly { version: string; items: readonly { le
         "group": "The thread pane"
       },
       {
-        "lead": "The New project button sits on the New Thread dialog's project row, and its create follows bb's typical flow.",
+        "lead": "The New project button sits on the New Thread dialog's project row, and its create follows VesnALIA's typical flow.",
         "children": [],
         "group": "The thread pane"
       },
@@ -317,7 +317,7 @@ export const DERIVED_WHATS_NEW: readonly { version: string; items: readonly { le
         "group": "Board layout"
       },
       {
-        "lead": "A family's fold and its idle-children filter now follow you to every bb window and machine.",
+        "lead": "A family's fold and its idle-children filter now follow you to every VesnALIA window and machine.",
         "children": [],
         "group": "Board layout"
       },
@@ -426,7 +426,7 @@ export const DERIVED_WHATS_NEW: readonly { version: string; items: readonly { le
         "group": "Board layout"
       },
       {
-        "lead": "`bb focus-board done list` survives a done index entry whose thread was deleted.",
+        "lead": "`alia focus-board done list` survives a done index entry whose thread was deleted.",
         "children": [],
         "group": "Cards and chips"
       },
@@ -491,7 +491,7 @@ export const DERIVED_WHATS_NEW: readonly { version: string; items: readonly { le
         "group": "Cards and chips"
       },
       {
-        "lead": "A family folded in one bb window stays folded when the other window folds one.",
+        "lead": "A family folded in one VesnALIA window stays folded when the other window folds one.",
         "children": [],
         "group": "Groups and family boxes"
       },
@@ -506,12 +506,12 @@ export const DERIVED_WHATS_NEW: readonly { version: string; items: readonly { le
         "group": "Board layout"
       },
       {
-        "lead": "A rank drag in one bb window now survives another window's drop in the same lane.",
+        "lead": "A rank drag in one VesnALIA window now survives another window's drop in the same lane.",
         "children": [],
         "group": "Board layout"
       },
       {
-        "lead": "A wallpaper chosen in one bb window survives the second window's dim change.",
+        "lead": "A wallpaper chosen in one VesnALIA window survives the second window's dim change.",
         "children": [],
         "group": "Board layout"
       }
@@ -721,7 +721,7 @@ export const DERIVED_WHATS_NEW: readonly { version: string; items: readonly { le
         "group": "Board layout"
       },
       {
-        "lead": "The auto-rename's service picks fit bb's bridge prompt cap again.",
+        "lead": "The auto-rename's service picks fit VesnALIA's bridge prompt cap again.",
         "children": [],
         "group": "Board layout"
       },
@@ -1090,7 +1090,7 @@ export const DERIVED_WHATS_NEW: readonly { version: string; items: readonly { le
       {
         "lead": "New thread starts where the board points, even with no filter armed.",
         "children": [
-          "The maximize hand-off rides the same seed now, instead of bb's own remembered pick."
+          "The maximize hand-off rides the same seed now, instead of VesnALIA's own remembered pick."
         ],
         "group": "The New thread composer"
       },
@@ -1467,7 +1467,7 @@ export const DERIVED_WHATS_NEW: readonly { version: string; items: readonly { le
     "version": "0.5.0",
     "items": [
       {
-        "lead": "The open pane now lives in the panel's URL, so bb's back arrow restores it.",
+        "lead": "The open pane now lives in the panel's URL, so VesnALIA's back arrow restores it.",
         "children": []
       },
       {
@@ -1610,7 +1610,7 @@ export const DERIVED_WHATS_NEW: readonly { version: string; items: readonly { le
     "version": "0.3.0",
     "items": [
       {
-        "lead": "The new `bb thread-board` CLI manages the plugin's own state.",
+        "lead": "The new `alia thread-board` CLI manages the plugin's own state.",
         "children": [
           "`done list|mark|clear` — agents get free Done marking."
         ]

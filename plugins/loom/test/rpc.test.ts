@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BoardCard, ChangesView, HomeView, PlanningSession, ProjectInsights, ProjectSummary, ProjectTimeline, ProjectView, TicketDetail, ThreadInfo } from "../src/contract";
 import type { SpecVersionView } from "../src/spec-view";
-import type { BbPluginApi, NewThreadRequest } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, NewThreadRequest } from "@vesnalia/plugin-sdk";
 import { notesMessage } from "../src/prompts";
 import { agentRows, boardCards, registerRpc, specSummary, watchChanges } from "../src/rpc";
 import { START_FAILED, specOf } from "../src/workers";
@@ -14,14 +14,14 @@ let fake: FakePort;
 beforeEach(() => {
   fake = new FakePort();
   host = makeHost({ port: fake });
-  registerRpc(host.bb, { projects: host.projects, engine: host.engine, store: host.store, now: Date.now });
+  registerRpc(host.alia, { projects: host.projects, engine: host.engine, store: host.store, now: Date.now });
 });
 afterEach(() => {
   vi.useRealTimers();
 });
 
 const call = <T>(method: string, input?: unknown, options?: { experimental_caller?: { kind: "client" } | { kind: "plugin"; pluginId: string } }) => host.harness.behavior.callRpc(method, input, options) as Promise<T>;
-const propose = (edit?: (doc: Doc) => void) => host.projects.propose({ toml: specToml(edit), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_env" });
+const propose = (edit?: (doc: Doc) => void) => host.projects.propose({ toml: specToml(edit), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_env" });
 const approved = async (edit?: (doc: Doc) => void) => {
   await propose(edit);
   await host.projects.approve("csv", "human");
@@ -62,8 +62,8 @@ describe("reads", () => {
   });
 
   it("changes and changePatch read each repo of a multi-repo project in its own checkout, and changePatch takes the repo", async () => {
-    fake.addBbProject("proj_web", { host_env: "/src/web" });
-    fake.addBbProject("proj_api", { host_env: "/src/api" });
+    fake.addAliaProject("proj_web", { host_env: "/src/web" });
+    fake.addAliaProject("proj_api", { host_env: "/src/api" });
     await approved(withRepos);
     const view = await call<ChangesView>("changes", { slug: "csv" });
     expect(view.repos.map((repo) => [repo.name, repo.remoteBase, repo.unavailable])).toEqual([
@@ -508,11 +508,11 @@ describe("changes", () => {
     host.store.setTicketState(ticketId("CSV-1"), "working", "loom");
     host.store.setTicketState(ticketId("CSV-1"), "blocked", "loom", { reason: START_FAILED });
     for (const state of ["working", "checking", "review", "blocked"] as const) host.store.setTicketState(ticketId("CSV-2"), state, "loom");
-    host.store.updateTicket(ticketId("CSV-2"), { head_sha: "abc1234", review_round: 1, blocked_reason: "bb refused to start a reviewer: HTTP 400: Unsupported provider claude" });
+    host.store.updateTicket(ticketId("CSV-2"), { head_sha: "abc1234", review_round: 1, blocked_reason: "alia refused to start a reviewer: HTTP 400: Unsupported provider claude" });
     await propose((doc) => (doc.project.goal = "Let people export their orders as a CSV file, with filters."));
     const pending = await call<ProjectView>("project", { slug: "csv" });
     expect(pending.next?.action).toMatchObject({ control: "approve", version: 2, label: "Approve v2 · requeue 2 tickets" });
-    expect(pending.next?.text).toContain("sends CSV-2 back to review, because bb refused to start its reviewer");
+    expect(pending.next?.text).toContain("sends CSV-2 back to review, because VesnALIA refused to start its reviewer");
     const view = await call<ProjectView>("control", { slug: "csv", action: "approve", version: 2, confirm: true });
     expect(view.board.find((card) => card.key === "CSV-1")?.state).toBe("queued");
     expect(view.board.find((card) => card.key === "CSV-2")).toMatchObject({ state: "review", reviewRound: 2 });
@@ -580,8 +580,8 @@ describe("changes", () => {
   });
 
   it("control land and landDirect take a repo on a multi-repo project, and refuse an unknown one or a repo with another action", async () => {
-    fake.addBbProject("proj_web", { host_env: "/src/web" });
-    fake.addBbProject("proj_api", { host_env: "/src/api" });
+    fake.addAliaProject("proj_web", { host_env: "/src/web" });
+    fake.addAliaProject("proj_api", { host_env: "/src/api" });
     await running((doc) => {
       doc.repo = [
         { name: "web", project: "proj_web" },
@@ -625,25 +625,25 @@ describe("repos", () => {
     doc.ticket[1].depends_on = [];
   };
   const addProjects = () => {
-    fake.addBbProject("proj_web", { host_env: "/src/web" }, { name: "shop-web" });
-    fake.addBbProject("proj_api", { host_env: "/src/api" }, { name: "shop-api" });
+    fake.addAliaProject("proj_web", { host_env: "/src/web" }, { name: "shop-web" });
+    fake.addAliaProject("proj_api", { host_env: "/src/api" }, { name: "shop-api" });
   };
   const toDone = (key: string) => {
     for (const state of ["working", "checking", "review", "approved", "merging", "done"] as const) host.store.setTicketState(ticketId(key), state, "loom");
   };
-  const names = (repos: Array<{ bbProjectId: string; bbProjectName: string | null }>) => repos.map((repo) => [repo.bbProjectId, repo.bbProjectName]);
+  const names = (repos: Array<{ aliaProjectId: string; aliaProjectName: string | null }>) => repos.map((repo) => [repo.aliaProjectId, repo.aliaProjectName]);
 
-  it("project names each repo's bb project, and every card and ticket carries its repo", async () => {
+  it("project names each repo's VesnALIA project, and every card and ticket carries its repo", async () => {
     addProjects();
     await running(withRepos);
     const view = await call<ProjectView>("project", { slug: "csv" });
     expect(view.overview.repos).toEqual([
-      { name: "web", bbProjectId: "proj_web", bbProjectName: "shop-web", base: "main", branch: "loom/csv", prUrl: null, landedAt: null, toLand: false },
-      { name: "api", bbProjectId: "proj_api", bbProjectName: "shop-api", base: "trunk", branch: "loom/csv", prUrl: null, landedAt: null, toLand: false },
+      { name: "web", aliaProjectId: "proj_web", aliaProjectName: "shop-web", base: "main", branch: "loom/csv", prUrl: null, landedAt: null, toLand: false },
+      { name: "api", aliaProjectId: "proj_api", aliaProjectName: "shop-api", base: "trunk", branch: "loom/csv", prUrl: null, landedAt: null, toLand: false },
     ]);
     expect(view.spec.summary.repos).toEqual([
-      { name: "web", bbProjectId: "proj_web", bbProjectName: "shop-web" },
-      { name: "api", bbProjectId: "proj_api", bbProjectName: "shop-api" },
+      { name: "web", aliaProjectId: "proj_web", aliaProjectName: "shop-web" },
+      { name: "api", aliaProjectId: "proj_api", aliaProjectName: "shop-api" },
     ]);
     expect(view.board.map((card) => [card.key, card.repo])).toEqual([
       ["CSV-1", "web"],
@@ -655,17 +655,17 @@ describe("repos", () => {
     toDone("CSV-2");
     expect((await call<ProjectView>("project", { slug: "csv" })).next).toMatchObject({ stage: 5, text: expect.stringContaining('the repos "web" and "api" have merged work that is not landed yet') });
     const landed = await call<ProjectView>("control", { slug: "csv", action: "land", repo: "web", confirm: true });
-    expect(landed.overview.repos.map((repo) => [repo.name, repo.prUrl, repo.toLand, repo.bbProjectName])).toEqual([
+    expect(landed.overview.repos.map((repo) => [repo.name, repo.prUrl, repo.toLand, repo.aliaProjectName])).toEqual([
       ["web", PR(1), false, "shop-web"],
       ["api", null, true, "shop-api"],
     ]);
     expect(landed.next).toMatchObject({ text: expect.stringContaining('the repo "api" has merged work that is not landed yet'), action: { control: "land", label: "Land · 1 repo" } });
   });
 
-  it("a single-repo project has one repo in the Loom project's bb project, and its cards and tickets none", async () => {
+  it("a single-repo project has one repo in the Loom project's VesnALIA project, and its cards and tickets none", async () => {
     await approved();
     const view = await call<ProjectView>("project", { slug: "csv" });
-    expect(view.overview.repos).toEqual([{ name: null, bbProjectId: "proj_1", bbProjectName: "shop", base: "main", branch: "loom/csv", prUrl: null, landedAt: null, toLand: false }]);
+    expect(view.overview.repos).toEqual([{ name: null, aliaProjectId: "proj_1", aliaProjectName: "shop", base: "main", branch: "loom/csv", prUrl: null, landedAt: null, toLand: false }]);
     expect(view.spec.summary.repos).toEqual([]);
     expect(view.board.map((card) => card.repo)).toEqual([null, null]);
     expect((await call<TicketDetail>("ticket", { key: "CSV-1" })).repo).toBeNull();
@@ -686,7 +686,7 @@ describe("repos", () => {
     expect(names(view.overview.repos)).toEqual(names(view.spec.summary.repos));
   });
 
-  it("projects and home name the repos' bb projects too, and every view leaves a name null when bb cannot list its projects", async () => {
+  it("projects and home name the repos' VesnALIA projects too, and every view leaves a name null when VesnALIA cannot list its projects", async () => {
     addProjects();
     await running(withRepos);
     expect(names((await call<ProjectSummary[]>("projects"))[0]!.repos)).toEqual([
@@ -698,7 +698,7 @@ describe("repos", () => {
       ["proj_api", "shop-api"],
     ]);
 
-    fake.bbProjects = new Error("bb is restarting");
+    fake.aliaProjects = new Error("alia is restarting");
     const unnamed = [
       ["proj_web", null],
       ["proj_api", null],
@@ -747,7 +747,7 @@ describe("planning", () => {
   it("threadInfo describes an open planning conversation until it proposes, and is null once one without a spec ends", async () => {
     const { threadId } = await host.projects.startPlanning({ request: request(), merge: "integration", reviewer: "" });
     expect(await call<ThreadInfo | null>("threadInfo", { threadId })).toEqual({ role: "planner", slug: null, key: null, state: "planning" });
-    await host.projects.propose({ toml: specToml(), threadId, bbProjectId: "proj_1", hostId: "host_env" });
+    await host.projects.propose({ toml: specToml(), threadId, aliaProjectId: "proj_1", hostId: "host_env" });
     expect(await call<ThreadInfo | null>("threadInfo", { threadId })).toEqual({ role: "planner", slug: "csv", key: null, state: "draft" });
 
     const other = await host.projects.startPlanning({ request: request(), merge: "integration", reviewer: "" });
@@ -759,26 +759,26 @@ describe("planning", () => {
     await expect(start({ request: request({ input: [{ type: "text", text: "  ", mentions: [] }] }) })).rejects.toThrow(/Describe what should exist/);
   });
 
-  it("bbProjects lists bb's standard projects for the repo picker, with the machines that have a checkout", async () => {
-    fake.addBbProject("proj_api", {}, { name: "shop-api" });
-    fake.addBbProject("proj_personal", {}, { name: "Personal", kind: "personal" });
-    expect(await call("bbProjects", null)).toEqual([
+  it("aliaProjects lists VesnALIA's standard projects for the repo picker, with the machines that have a checkout", async () => {
+    fake.addAliaProject("proj_api", {}, { name: "shop-api" });
+    fake.addAliaProject("proj_personal", {}, { name: "Personal", kind: "personal" });
+    expect(await call("aliaProjects", null)).toEqual([
       { id: "proj_1", name: "shop", hostIds: ["host_local", "host_1"] },
       { id: "proj_api", name: "shop-api", hostIds: [] },
     ]);
-    fake.bbProjects = new Error("bb is restarting");
-    await expect(call("bbProjects", null)).rejects.toThrow(/could not read bb's projects to list the repos: bb is restarting/);
+    fake.aliaProjects = new Error("alia is restarting");
+    await expect(call("aliaProjects", null)).rejects.toThrow(/could not read alia's projects to list the repos: alia is restarting/);
   });
 
   it("startPlanning lists the picked repos in the kickoff, refuses an unknown or personal one naming it, and takes at most 10", async () => {
-    fake.addBbProject("proj_api", { host_local: "/api" }, { name: "shop-api" });
-    fake.addBbProject("proj_personal", {}, { name: "Personal", kind: "personal" });
+    fake.addAliaProject("proj_api", { host_local: "/api" }, { name: "shop-api" });
+    fake.addAliaProject("proj_personal", {}, { name: "Personal", kind: "personal" });
     const kickoffs = () => fake.callsTo("spawnPlanner").map(([args]) => (args as { kickoff: string }).kickoff);
     await start({ repos: ["proj_api"] });
     expect(kickoffs()[0]).toContain("besides this thread's own project: shop-api (proj_api).");
 
-    await expect(start({ repos: ["proj_gone"] })).rejects.toThrow(/bb has no project "proj_gone"/);
-    await expect(start({ repos: ["proj_personal"] })).rejects.toThrow(/"proj_personal" is bb's personal project/);
+    await expect(start({ repos: ["proj_gone"] })).rejects.toThrow(/alia has no project "proj_gone"/);
+    await expect(start({ repos: ["proj_personal"] })).rejects.toThrow(/"proj_personal" is alia's personal project/);
     await expect(start({ repos: Array.from({ length: 11 }, (_, n) => `proj_${n}`) })).rejects.toThrow();
     await expect(start({ repos: [""] })).rejects.toThrow();
     expect(kickoffs()).toHaveLength(1);
@@ -1099,8 +1099,8 @@ describe("live updates", () => {
 
   it("refreshes a project's reads, and the reads of no one project, once for a burst of its events", () => {
     vi.useFakeTimers();
-    const stop = watchChanges(host.bb, host.store);
-    const project = host.store.createProject({ slug: "csv", name: "CSV", key: "CSV", bb_project_id: "p" }, "human");
+    const stop = watchChanges(host.alia, host.store);
+    const project = host.store.createProject({ slug: "csv", name: "CSV", key: "CSV", alia_project_id: "p" }, "human");
     host.store.event(project.id, null, "a", "human");
     host.store.event(project.id, null, "b", "human");
     expect(signals()).toEqual([]);
@@ -1119,10 +1119,10 @@ describe("live updates", () => {
 
   it("throttles each project on its own", () => {
     vi.useFakeTimers();
-    const stop = watchChanges(host.bb, host.store);
-    const one = host.store.createProject({ slug: "one", name: "One", key: "ONE", bb_project_id: "p" }, "human");
+    const stop = watchChanges(host.alia, host.store);
+    const one = host.store.createProject({ slug: "one", name: "One", key: "ONE", alia_project_id: "p" }, "human");
     vi.advanceTimersByTime(100);
-    const two = host.store.createProject({ slug: "two", name: "Two", key: "TWO", bb_project_id: "p" }, "human");
+    const two = host.store.createProject({ slug: "two", name: "Two", key: "TWO", alia_project_id: "p" }, "human");
     host.store.event(one.id, null, "a", "human");
     host.store.event(two.id, null, "a", "human");
     vi.advanceTimersByTime(300);
@@ -1132,8 +1132,8 @@ describe("live updates", () => {
 
   it("delivers a change that lands inside a window with that window's refresh, and the next one in its own", () => {
     vi.useFakeTimers();
-    const stop = watchChanges(host.bb, host.store);
-    const project = host.store.createProject({ slug: "csv", name: "CSV", key: "CSV", bb_project_id: "p" }, "human");
+    const stop = watchChanges(host.alia, host.store);
+    const project = host.store.createProject({ slug: "csv", name: "CSV", key: "CSV", alia_project_id: "p" }, "human");
     vi.advanceTimersByTime(250);
     host.store.changed(project.id);
     vi.advanceTimersByTime(50);
@@ -1150,8 +1150,8 @@ describe("live updates", () => {
 
   it("refreshes only the reads of no one project, once, for a burst of changes outside any project", () => {
     vi.useFakeTimers();
-    const stop = watchChanges(host.bb, host.store);
-    host.store.addPlanning({ thread_id: "thr_p1", bb_project_id: "proj_1", title: "Plan" });
+    const stop = watchChanges(host.alia, host.store);
+    host.store.addPlanning({ thread_id: "thr_p1", alia_project_id: "proj_1", title: "Plan" });
     host.store.endPlanning("thr_p1", "archived");
     expect(signals()).toEqual([]);
     vi.advanceTimersByTime(300);
@@ -1161,8 +1161,8 @@ describe("live updates", () => {
 
   it("refreshes for a row-only change that no event accompanies", () => {
     vi.useFakeTimers();
-    const project = host.store.createProject({ slug: "csv", name: "CSV", key: "CSV", bb_project_id: "p" }, "human");
-    const stop = watchChanges(host.bb, host.store);
+    const project = host.store.createProject({ slug: "csv", name: "CSV", key: "CSV", alia_project_id: "p" }, "human");
+    const stop = watchChanges(host.alia, host.store);
     host.store.changed(project.id);
     vi.advanceTimersByTime(300);
     expect(signals()).toEqual([["project:csv", "loom"]]);
@@ -1174,12 +1174,12 @@ describe("live updates", () => {
     const h = makeCtx();
     const project = await seedProject(h);
     const invalidate = vi.fn();
-    const stop = watchChanges({ rpc: { experimental_invalidate: invalidate } } as unknown as BbPluginApi, h.store);
+    const stop = watchChanges({ rpc: { experimental_invalidate: invalidate } } as unknown as AliaPluginApi, h.store);
     let release!: () => void;
     let reserved!: () => void;
     const started = new Promise<void>((resolve) => (reserved = resolve));
-    const spawn = h.bb.spawnThread.bind(h.bb);
-    h.bb.spawnThread = async (args) => {
+    const spawn = h.alia.spawnThread.bind(h.alia);
+    h.alia.spawnThread = async (args) => {
       reserved();
       await new Promise<void>((resolve) => (release = resolve));
       return spawn(args);
@@ -1201,8 +1201,8 @@ describe("live updates", () => {
 
   it("stops refreshing once disposed, even for a timer already waiting", () => {
     vi.useFakeTimers();
-    const stop = watchChanges(host.bb, host.store);
-    const project = host.store.createProject({ slug: "csv", name: "CSV", key: "CSV", bb_project_id: "p" }, "human");
+    const stop = watchChanges(host.alia, host.store);
+    const project = host.store.createProject({ slug: "csv", name: "CSV", key: "CSV", alia_project_id: "p" }, "human");
     stop();
     vi.advanceTimersByTime(1000);
     host.store.event(project.id, null, "a", "human");
@@ -1217,7 +1217,7 @@ describe("rewind", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     fake = new FakePort();
     host = makeHost({ port: fake });
-    registerRpc(host.bb, { projects: host.projects, engine: host.engine, store: host.store, now: Date.now });
+    registerRpc(host.alia, { projects: host.projects, engine: host.engine, store: host.store, now: Date.now });
   });
   const later = () => vi.setSystemTime(Date.now() + 1000);
   const newest = () => host.store.projectEvents(host.store.projectBySlug("csv")!.id).at(-1)!;
@@ -1313,8 +1313,8 @@ describe("rewind", () => {
   });
 
   it("project at an event shows each repo's land as it was then", async () => {
-    fake.addBbProject("proj_web", { host_env: "/src/web" }, { name: "shop-web" });
-    fake.addBbProject("proj_api", { host_env: "/src/api" });
+    fake.addAliaProject("proj_web", { host_env: "/src/web" }, { name: "shop-web" });
+    fake.addAliaProject("proj_api", { host_env: "/src/api" });
     await running((doc) => {
       doc.repo = [
         { name: "web", project: "proj_web" },
@@ -1332,7 +1332,7 @@ describe("rewind", () => {
     const landedAt = Date.now();
 
     const past = await call<ProjectView>("project", { slug: "csv", at: merged.id });
-    expect(past.overview.repos.map((repo) => [repo.name, repo.bbProjectName, repo.prUrl, repo.landedAt, repo.toLand])).toEqual([
+    expect(past.overview.repos.map((repo) => [repo.name, repo.aliaProjectName, repo.prUrl, repo.landedAt, repo.toLand])).toEqual([
       ["web", "shop-web", null, null, true],
       ["api", "api", null, null, false],
     ]);
@@ -1345,7 +1345,7 @@ describe("rewind", () => {
   });
 
   it("refuses a moment before the project's first event", async () => {
-    host.store.createProject({ slug: "other", name: "Other", key: "OTH", bb_project_id: "p" }, "human");
+    host.store.createProject({ slug: "other", name: "Other", key: "OTH", alia_project_id: "p" }, "human");
     const other = host.store.projectEvents(host.store.projectBySlug("other")!.id)[0]!.id;
     later();
     await approved();

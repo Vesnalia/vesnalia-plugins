@@ -9,7 +9,7 @@
 
 **Stacked pull requests, without the rebase choreography.**
 
-![bb 0.40+](https://img.shields.io/badge/bb-0.40%2B-88C0D0?style=flat-square)
+![VesnALIA 0.40+](https://img.shields.io/badge/bb-0.40%2B-88C0D0?style=flat-square)
 ![macOS · Linux](https://img.shields.io/badge/platform-macOS%20%C2%B7%20Linux-3FA266?style=flat-square)
 ![needs gh-stack](https://img.shields.io/badge/needs-gh--stack-F1B467?style=flat-square)
 
@@ -19,7 +19,7 @@
 
 [`gh stack`](https://github.com/github/gh-stack) is a GitHub CLI extension that
 manages a chain of dependent branches, each with its own pull request stacked on
-the one below it. This plugin puts that chain in bb's thread panel.
+the one below it. This plugin puts that chain in VesnALIA's thread panel.
 
 It runs `gh` and `git` in the thread's own workspace, so building, checking out,
 syncing, submitting, merging, and pruning a stack all happen in the panel with no
@@ -28,7 +28,7 @@ thread's agent.
 
 ## Requirements
 
-The plugin drives the GitHub CLI on the bb **server** host. It cannot install or
+The plugin drives the GitHub CLI on the VesnALIA **server** host. It cannot install or
 sign in to a third-party CLI for you, so do that once yourself:
 
 ```sh
@@ -42,12 +42,12 @@ gh extension install github/gh-stack
 **From the marketplace** — add this repository once, then install by name:
 
 ```sh
-bb marketplace add git:github.com/smsunarto/bb-plugins
-bb plugin install gh-stack
+alia marketplace add git:github.com/smsunarto/bb-plugins
+alia plugin install gh-stack
 ```
 
-bb resolves the newest `gh-stack/vX.Y.Z` tag and builds the plugin from it against
-your bb, so the bundle always matches the host it runs on. `bb plugin update
+VesnALIA resolves the newest `gh-stack/vX.Y.Z` tag and builds the plugin from it against
+your VesnALIA, so the bundle always matches the host it runs on. `alia plugin update
 gh-stack` follows the same release line. If another marketplace you have added
 publishes a `gh-stack`, spell it `gh-stack@smsunarto`.
 
@@ -56,14 +56,14 @@ source. This is also how you install a change that is not released yet:
 
 ```sh
 git clone https://github.com/smsunarto/bb-plugins.git
-cd bb-plugins
+cd alia-plugins
 bun install
-bun run --filter '@smsunarto/bb-plugin-gh-stack' build
-bb plugin install ./plugins/gh-stack
+bun run --filter '@smsunarto/alia-plugin-gh-stack' build
+alia plugin install ./plugins/gh-stack
 ```
 
-The source path needs Bun and the `bb` CLI. It installs the plugin as a **local
-path source**, so bb reads the files in place: edit, rebuild, reload, with no
+The source path needs Bun and the `alia` CLI. It installs the plugin as a **local
+path source**, so VesnALIA reads the files in place: edit, rebuild, reload, with no
 reinstall.
 
 ## Usage
@@ -144,8 +144,8 @@ Install from source as shown under [Install](#install), then check a change
 with:
 
 ```sh
-bun run --filter '@smsunarto/bb-plugin-gh-stack' typecheck
-bun run --filter '@smsunarto/bb-plugin-gh-stack' test
+bun run --filter '@smsunarto/alia-plugin-gh-stack' typecheck
+bun run --filter '@smsunarto/alia-plugin-gh-stack' test
 ```
 
 The test script needs Node 22.6+.

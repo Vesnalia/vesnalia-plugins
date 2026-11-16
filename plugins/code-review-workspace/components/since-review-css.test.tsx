@@ -3,7 +3,7 @@
 // using pierre's own server renderer (the same row markup as its shadow DOM).
 import { test, expect } from "vitest";
 import { preloadPatchDiff } from "@pierre/diffs/ssr";
-import { installTestPluginRuntime } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime } from "@vesnalia/plugin-sdk/testing/app";
 
 installTestPluginRuntime();
 const { sinceReviewCSS } = await import("./DiffViewer");

@@ -158,7 +158,7 @@ export function ConnectionFormDialog({
           {form.ssl ? (
             <div className="grid gap-2 rounded border border-border p-2">
               <p className="text-xs text-muted-foreground">
-                Optional PEM paths on the bb host (verify-full style when CA is set).
+                Optional PEM paths on the VesnALIA host (verify-full style when CA is set).
               </p>
               <Field label="CA path">
                 <Input

@@ -200,7 +200,7 @@ function startRuns(ctx: EngineCtx): void {
     }
     if (!store.moveHookFiring(row.id, "pending", { state: "running" })) continue;
     const run = runCommand(ctx, project, { ...row, state: "running" })
-      .catch((error) => ctx.bb.log("error", `A hook command of project ${project.slug} failed: ${errText(error)}`))
+      .catch((error) => ctx.alia.log("error", `A hook command of project ${project.slug} failed: ${errText(error)}`))
       .finally(() => {
         running.delete(row.project_id);
         ctx.kick();
@@ -262,7 +262,7 @@ async function tellPlanners(ctx: EngineCtx): Promise<void> {
       continue;
     }
     const planner = store.threads({ projectId, role: "planner", states: ["active"] })[0];
-    const thread = planner?.thread_id == null ? null : await ctx.bb.getThread(planner.thread_id);
+    const thread = planner?.thread_id == null ? null : await ctx.alia.getThread(planner.thread_id);
     if (planner?.thread_id == null || thread === null || thread.archivedAt !== null || thread.deletedAt !== null) {
       for (const row of rows) settle(ctx, row, { state: "failed", reason: "the project has no planner thread to tell" });
       continue;
@@ -272,12 +272,12 @@ async function tellPlanners(ctx: EngineCtx): Promise<void> {
     if (claimed.length === 0) continue;
     const tells = claimed.map((row) => ({ hook: row.hook, on: row.hook_on, text: row.text, facts: JSON.parse(row.facts_json) as HookFacts }));
     try {
-      await ctx.bb.send(planner.thread_id, hookTellText(project.slug, tells));
+      await ctx.alia.send(planner.thread_id, hookTellText(project.slug, tells));
     } catch (error) {
       const why = errText(error);
-      ctx.bb.log("warn", `Could not tell the planner ${planner.thread_id} about ${project.slug}'s hooks: ${why}`);
+      ctx.alia.log("warn", `Could not tell the planner ${planner.thread_id} about ${project.slug}'s hooks: ${why}`);
       for (const row of claimed) {
-        if (row.tries + 1 >= HOOK_TELL_TRIES) settle(ctx, row, { state: "failed", reason: `bb refused ${HOOK_TELL_TRIES} sends to the planner: ${why}` });
+        if (row.tries + 1 >= HOOK_TELL_TRIES) settle(ctx, row, { state: "failed", reason: `alia refused ${HOOK_TELL_TRIES} sends to the planner: ${why}` });
         else store.moveHookFiring(row.id, "running", { state: "pending", tries: row.tries + 1 });
       }
       continue;
@@ -295,7 +295,7 @@ export async function followHooks(ctx: EngineCtx): Promise<void> {
     try {
       queueHooks(ctx, project);
     } catch (error) {
-      ctx.bb.log("warn", `Could not read the hooks of project ${project.slug}: ${errText(error)}`);
+      ctx.alia.log("warn", `Could not read the hooks of project ${project.slug}: ${errText(error)}`);
     }
   }
   startRuns(ctx);

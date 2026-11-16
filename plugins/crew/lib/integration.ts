@@ -18,7 +18,7 @@
 // Local case (the sandbox has no remote): "merge request" is a row in the
 // plugin DB, "merge" is `git merge --no-ff` in the worktree that has the base
 // branch checked out (or `git merge-tree` + `update-ref` when none has), and
-// the crew branch is the branch BB gave the lead's worktree.
+// the crew branch is the branch VesnALIA gave the lead's worktree.
 import { execFile } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { AddressError, type Delivery } from "./delivery";
@@ -55,7 +55,7 @@ type Run = (
   options?: { timeoutMs?: number; shell?: boolean },
 ) => Promise<{ code: number; stdout: string; stderr: string; killed?: boolean }>;
 
-// NODE_ENV is left out on purpose: the BB server runs with NODE_ENV=production,
+// NODE_ENV is left out on purpose: the VesnALIA server runs with NODE_ENV=production,
 // and a check command that shells out to vitest would load React's production
 // builds under that, failing every render test with "React.act is not a function".
 const runProcess: Run = (args, cwd, options = {}) =>
@@ -144,14 +144,14 @@ export function createLocalGit(run: Run = runProcess): GitBackend {
 }
 
 // Backend selection (BBP-14). Git runs where the worktree is: the local
-// backend shells out in the plugin server, which only reaches the BB server's
-// own machine. A worktree on any other host — or on a host BB does not name —
-// gets the remote backend. Until a host component exists (route: a `bb.host`
-// entry called via `bb.hosts.experimental_client(...).call(m, input, { hostId })`)
+// backend shells out in the plugin server, which only reaches the VesnALIA server's
+// own machine. A worktree on any other host — or on a host VesnALIA does not name —
+// gets the remote backend. Until a host component exists (route: a `alia.host`
+// entry called via `alia.hosts.experimental_client(...).call(m, input, { hostId })`)
 // the remote backend refuses with a reason instead of running git against a
 // path that does not exist on this machine.
 export type BackendChoice = { ok: true; git: GitBackend } | { ok: false; hostId: string | null; reason: string };
-/** Git for a worktree on a host other than the BB server's. */
+/** Git for a worktree on a host other than the VesnALIA server's. */
 export type RemoteGitFactory = (hostId: string) => BackendChoice;
 
 export const unavailableLine = (hostId: string | null, why: string) => `integration unavailable on remote host ${hostId ?? "unknown"}: ${why}`;
@@ -160,13 +160,13 @@ export const unavailableLine = (hostId: string | null, why: string) => `integrat
 export const unavailableRemoteGit: RemoteGitFactory = (hostId) => ({
   ok: false,
   hostId,
-  reason: unavailableLine(hostId, "crew runs git in the BB server process and has no host component on that machine yet (BBP-14); merge, rebase and checks stay with the human"),
+  reason: unavailableLine(hostId, "crew runs git in the VesnALIA server process and has no host component on that machine yet (BBP-14); merge, rebase and checks stay with the human"),
 });
 
 export function selectBackend(args: { hostId: string | null; localHostId: string | null; local: GitBackend; remote: RemoteGitFactory }): BackendChoice {
   const { hostId, localHostId } = args;
-  if (hostId === null) return { ok: false, hostId: null, reason: unavailableLine(null, "BB does not name the worktree's host, so it is treated as remote") };
-  if (localHostId === null) return { ok: false, hostId, reason: unavailableLine(hostId, "BB does not name its own host, so no worktree can be shown to be local") };
+  if (hostId === null) return { ok: false, hostId: null, reason: unavailableLine(null, "VesnALIA does not name the worktree's host, so it is treated as remote") };
+  if (localHostId === null) return { ok: false, hostId, reason: unavailableLine(hostId, "VesnALIA does not name its own host, so no worktree can be shown to be local") };
   return hostId === localHostId ? { ok: true, git: args.local } : args.remote(hostId);
 }
 
@@ -175,7 +175,7 @@ export type IntegrationDeps = {
   port: ThreadPort;
   models: CrewModels;
   delivery: Delivery;
-  /** Backend for worktrees on the BB server's own machine. */
+  /** Backend for worktrees on the VesnALIA server's own machine. */
   git: GitBackend;
   /** Backend for every other host; defaults to the "not available" stub. */
   remote?: RemoteGitFactory;
@@ -226,7 +226,7 @@ export function createIntegration(deps: IntegrationDeps) {
     return store.listMembers(crew.id).find((member) => member.lead) ?? null;
   }
 
-  /** Where the member works. BB names worktree branches itself, so this is read from the environment, not assumed. */
+  /** Where the member works. VesnALIA names worktree branches itself, so this is read from the environment, not assumed. */
   async function locate(member: MemberRow, refresh = false): Promise<MemberEnvRow | null> {
     const known = store.memberEnv(member.id);
     if (known && known.path && known.branch && !refresh) return known;

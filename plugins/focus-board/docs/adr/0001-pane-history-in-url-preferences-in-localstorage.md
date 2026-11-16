@@ -14,10 +14,10 @@ first link-out:
 - **How the board is arranged** — group-by, filters, search, nesting toggle —
   already persisted to `localStorage` (keys `focus-board:*`).
 
-bb's back arrow walks browser history. A nav panel participates in that
+VesnALIA's back arrow walks browser history. A nav panel participates in that
 history only through its `subPath` route remainder
 (`/plugins/<pluginId>/board/*`), pushed via
-`useBbNavigate().toPluginPanel(path, { subPath })`.
+`useAliaNavigate().toPluginPanel(path, { subPath })`.
 
 ## Decision
 
@@ -25,7 +25,7 @@ The two kinds of state get different homes, deliberately:
 
 | State | Home | Why |
 | --- | --- | --- |
-| Open pane (`t/<threadId>`) | Panel subPath → browser history | Opening a pane is a *navigation act* ("go look at this thread"). Back/forward, reload, deep links, and link-outs to main bb must land on the pane the user left. Each opened pane is one history entry, so back walks the trail of cards the user opened — including ones they lost track of. |
+| Open pane (`t/<threadId>`) | Panel subPath → browser history | Opening a pane is a *navigation act* ("go look at this thread"). Back/forward, reload, deep links, and link-outs to main VesnALIA must land on the pane the user left. Each opened pane is one history entry, so back walks the trail of cards the user opened — including ones they lost track of. |
 | Group-by, filters, search, nesting | `localStorage` (`focus-board:*`) | These are *view adjustments* — the board equivalent of zoom. Replaying them through back/forward would make the back arrow unreliable for its main job (undoing pane navigation), and every keystroke in the search box would spam history entries. |
 
 Consequences of the split, accepted:
@@ -56,14 +56,14 @@ Consequences of the split, accepted:
   panel must parse forever. Rejected: complexity and history noise for a
   gain back arrow users do not expect from a view adjustment.
 - **Everything in localStorage/sessionStorage ("restore on return").** One
-  hop only: back leaves main bb the normal way and the pane is restored from
+  hop only: back leaves main VesnALIA the normal way and the pane is restored from
   storage. Simpler, but it loses the trail — the user specifically wanted
   back to reopen cards they lost track of — and it cannot express "closed on
   purpose" vs "left open when I navigated away" without extra machinery.
   Rejected.
 - **History state objects (`history.pushState(state)`)** instead of the
   subPath. Would work for back/forward but bypasses the host router — deep
-  links and bb's own route-to-panel navigation would not carry the state.
+  links and VesnALIA's own route-to-panel navigation would not carry the state.
   Rejected in favor of the documented `toPluginPanel` contract.
 
 ## Verification
@@ -73,4 +73,4 @@ Consequences of the split, accepted:
   against the harness's mock router: click pushes, back reopens the trail,
   foreign-surface push-and-back restores the pane, Escape-close replaces,
   deep links open (malformed ones degrade).
-- Live-host cell (manual): bb's back arrow after a real link-out.
+- Live-host cell (manual): VesnALIA's back arrow after a real link-out.

@@ -4,17 +4,17 @@
 
 **See everything your agents changed, across every worktree and repository, without leaving the thread.**
 
-A file tree, a multi-repo Git panel and a commit graph for [bb](https://getbb.app), living right beside your agent's chat.
+A file tree, a multi-repo Git panel and a commit graph for [VesnALIA](https://getbb.app), living right beside your agent's chat.
 
 [![Release](https://img.shields.io/github/v/release/redhajuanda/bb-treehouse?label=release&color=3b82f6)](https://github.com/redhajuanda/bb-treehouse/releases)
-[![bb plugin](https://img.shields.io/badge/bb-plugin-111827)](https://getbb.app)
+[![VesnALIA plugin](https://img.shields.io/badge/bb-plugin-111827)](https://getbb.app)
 
 ![Treehouse beside a thread: files open as tabs and in the editor, the right-click menu, a diff and a commit, all next to the chat](docs/demo.gif)
 
 </div>
 
 ```sh
-bb plugin install git:https://github.com/redhajuanda/bb-treehouse@^0.3.0 --yes
+alia plugin install git:https://github.com/redhajuanda/bb-treehouse@^0.3.0 --yes
 ```
 
 Open any thread's side panel, pick **Files** (or press <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd>), and you're in.
@@ -24,10 +24,10 @@ Open any thread's side panel, pick **Files** (or press <kbd>Ctrl</kbd>/<kbd>⌘<
 Agents don't work in one tidy repo. They spread out across `.worktrees/`, nested service repos and feature branches, and you end up jumping to a terminal or another editor just to see what happened. Treehouse puts it all one click away, in the same panel as the conversation:
 
 - 🗂️ **Every repository, one panel.** Treehouse finds every git repo in the workspace, worktrees and nested repos included, and gives each its own section.
-- ⚡ **Live, not polled.** Changes appear the moment an agent saves a file or you run `git` in a terminal, using bb's native file watcher. Idle workspaces cost nothing.
+- ⚡ **Live, not polled.** Changes appear the moment an agent saves a file or you run `git` in a terminal, using VesnALIA's native file watcher. Idle workspaces cost nothing.
 - ✨ **Commit in seconds.** Claude writes the commit message in your repo's own style. Review it, hit <kbd>⌘</kbd>+<kbd>Enter</kbd>, done.
-- 🔀 **From branch to PR without leaving bb.** Compare any branch against `main`, then open a pull request on GitHub, GitLab or Bitbucket in one click.
-- 🧭 **Feels native.** bb's own theme, keyboard navigation, VS Code-style file icons, and views that remember exactly where you were.
+- 🔀 **From branch to PR without leaving VesnALIA.** Compare any branch against `main`, then open a pull request on GitHub, GitLab or Bitbucket in one click.
+- 🧭 **Feels native.** VesnALIA's own theme, keyboard navigation, VS Code-style file icons, and views that remember exactly where you were.
 
 ## Three views, one tab
 
@@ -38,9 +38,9 @@ Agents don't work in one tidy repo. They spread out across `.worktrees/`, nested
 - Jump between the workspace, any worktree or any nested repo from a searchable folder picker.
 - Fuzzy **Find files** that searches inside nested repos too.
 - Ignored files are judged by the repo that actually owns them, so your worktrees don't show up greyed out. One click hides ignored files entirely.
-- **Everything opens in Treehouse's own tabs** on the left, with the tree, change list or graph kept on the right, so the list never gets covered. Files, diffs and commits share one tab bar, and they come back after a reload. Pin tabs, drag them to reorder, reopen closed ones, and switch with <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Alt</kbd>+<kbd>←</kbd>/<kbd>→</kbd> (rebindable in bb's keyboard settings). One click pops a file out to a regular bb tab.
+- **Everything opens in Treehouse's own tabs** on the left, with the tree, change list or graph kept on the right, so the list never gets covered. Files, diffs and commits share one tab bar, and they come back after a reload. Pin tabs, drag them to reorder, reopen closed ones, and switch with <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Alt</kbd>+<kbd>←</kbd>/<kbd>→</kbd> (rebindable in VesnALIA's keyboard settings). One click pops a file out to a regular VesnALIA tab.
 - **Drag and drop** files and folders in the tree to move them, with Undo. Drag a file onto the tabs to open it.
-- **Edit files right in the tab.** Switch a tab from Preview to Edit for a code editor with syntax highlighting in bb's own code theme, search, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>S</kbd> to save. If an agent changes the file while you edit, Treehouse tells you instead of overwriting either side.
+- **Edit files right in the tab.** Switch a tab from Preview to Edit for a code editor with syntax highlighting in VesnALIA's own code theme, search, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>S</kbd> to save. If an agent changes the file while you edit, Treehouse tells you instead of overwriting either side.
 - **Right-click anything** for New File, New Folder, Copy Path, Copy Relative Path, Duplicate, Download (folders as `.tar.gz`), Open in an external editor or a terminal, Reveal in File Manager, Rename, and Move to Trash (or Delete Permanently).
 
 ### ± Diff: a Git client built for many repos
@@ -76,7 +76,7 @@ Treehouse is built to stay smooth on big monorepos:
 | **Workspaces** | Plain repos, `git worktree` folders, nested repos, monorepos |
 | **Pull requests** | GitHub, GitLab (cloud and self-hosted), Bitbucket |
 | **✨ Commit messages** | An Anthropic API key, an `ant auth login` profile, or the `claude` CLI, whichever you already have |
-| **CLI** | `bb treehouse status` and `bb treehouse ls` for scripts and agents |
+| **CLI** | `alia treehouse status` and `alia treehouse ls` for scripts and agents |
 
 ---
 
@@ -96,15 +96,15 @@ node scripts/generate-file-icons.mjs
 - Folders load only when you expand them (one `readdir` plus one `git check-ignore` for that folder).
 - Only the rows on screen are rendered, so huge folders and long change lists scroll smoothly.
 - One round trip per refresh returns every repository's status; the host runs `git status --porcelain=v2` for up to 6 repositories in parallel. Repository discovery is cached for 30 seconds (the refresh button rescans).
-- Changes are pushed, not polled. While Treehouse is open, bb's native file watcher (on the environment's machine) watches the workspace, skipping `node_modules`, build output and git object stores, plus each repository's git directory (index, HEAD and refs, including linked worktrees' git dirs). Any change sends one debounced signal and the open views refresh. Treehouse's own git reads use `GIT_OPTIONAL_LOCKS=0`, so they never trigger a refresh themselves. The watch is a lease renewed every minute and dropped three minutes after the last Treehouse view closes. If the watcher can't start, Treehouse falls back to a 5-second check while the tab is visible.
+- Changes are pushed, not polled. While Treehouse is open, VesnALIA's native file watcher (on the environment's machine) watches the workspace, skipping `node_modules`, build output and git object stores, plus each repository's git directory (index, HEAD and refs, including linked worktrees' git dirs). Any change sends one debounced signal and the open views refresh. Treehouse's own git reads use `GIT_OPTIONAL_LOCKS=0`, so they never trigger a refresh themselves. The watch is a lease renewed every minute and dropped three minutes after the last Treehouse view closes. If the watcher can't start, Treehouse falls back to a 5-second check while the tab is visible.
 - Search uses a 5-second cached `git ls-files` (cached, untracked, not ignored).
 
 ### ✨ Commit messages
 
 Treehouse asks Claude Opus 5.5 (low effort) for a one-line summary in your repository's commit style, plus a short body when the change needs one. It uses, in order:
 
-1. the **Anthropic API key** in Treehouse's settings (`bb plugin config treehouse set anthropicApiKey <key>`; stored as a secret on the bb server),
-2. the bb server's own Anthropic credentials (`ANTHROPIC_API_KEY` or an `ant auth login` profile),
+1. the **Anthropic API key** in Treehouse's settings (`alia plugin config treehouse set anthropicApiKey <key>`; stored as a secret on the VesnALIA server),
+2. the VesnALIA server's own Anthropic credentials (`ANTHROPIC_API_KEY` or an `ant auth login` profile),
 3. the `claude` CLI on the workspace's machine.
 
 Requests opt into the API's server-side refusal fallback. Diffs over 120 KB are cut off; the diffstat still lists every file.
@@ -112,16 +112,16 @@ Requests opt into the API's server-side refusal fallback. Diffs over 120 KB are 
 ### CLI
 
 ```sh
-bb treehouse status <environment-id> [folder] [--json]  # every repository (or those under folder): branch, ahead/behind, changed files
-bb treehouse ls <environment-id> [dir] [--json] # one directory, marking ignored entries
+alia treehouse status <environment-id> [folder] [--json]  # every repository (or those under folder): branch, ahead/behind, changed files
+alia treehouse ls <environment-id> [dir] [--json] # one directory, marking ignored entries
 ```
 
-Find an environment id with `bb status` inside a thread.
+Find an environment id with `alia status` inside a thread.
 
 ### Code layout
 
 - `host.ts`: runs on the environment's machine and does all filesystem and `git` work.
-- `server.ts`: maps a thread's environment to its host and path, exposes RPC and the CLI, and asks bb's Git plugin to refresh after each change.
+- `server.ts`: maps a thread's environment to its host and path, exposes RPC and the CLI, and asks VesnALIA's Git plugin to refresh after each change.
 - `app.tsx`, `ui/`: the panel tab.
 - `contract.ts`: shared RPC schemas.
 
@@ -131,5 +131,5 @@ Find an environment id with `bb status` inside a thread.
 npm install
 npm test          # vitest against real temporary git repositories
 npm run typecheck
-bb plugin dev .   # rebuild and reload on save
+alia plugin dev .   # rebuild and reload on save
 ```

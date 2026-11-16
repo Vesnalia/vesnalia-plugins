@@ -1,9 +1,9 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 /**
  * Theme-only plugin. The palette and code themes are declared in package.json;
- * BB requires this load-safe backend entry to activate the contribution.
+ * VesnALIA requires this load-safe backend entry to activate the contribution.
  */
-export default function plugin(bb: BbPluginApi) {
-  bb.log.info("Vercel theme registered");
+export default function plugin(alia: AliaPluginApi) {
+  alia.log.info("Vercel theme registered");
 }

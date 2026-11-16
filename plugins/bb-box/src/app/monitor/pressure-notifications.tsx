@@ -1,12 +1,12 @@
 import { useEffect, useRef } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { Contract } from "../../plugin/contract.ts";
 import { PRESSURE_CHANNEL } from "../../monitor/pressure.ts";
 import { createAlertReceiver, type AlertCursor } from "../../monitor/alert-receiver.ts";
 import { pressureAlertCopy, TEST_ALERT_COPY } from "../../monitor/alert-copy.ts";
 
-const CURSOR_KEY = "bb-box-monitor-pressure-cursor";
+const CURSOR_KEY = "alia-box-monitor-pressure-cursor";
 let openStatus = () => {};
 
 function readSavedCursor(): unknown {
@@ -39,7 +39,7 @@ function ActiveNotifications() {
     if (pageHidden.current || document.visibilityState !== "visible") return;
     if (value && typeof value === "object" && "type" in value && value.type === "test") {
       toast.warning(TEST_ALERT_COPY.title, {
-        id: "bb-box-monitor-pressure-test", description: TEST_ALERT_COPY.description,
+        id: "alia-box-monitor-pressure-test", description: TEST_ALERT_COPY.description,
         duration: 20_000, closeButton: true,
         action: { label: "Open Status", onClick: () => openStatus() },
       });
@@ -58,7 +58,7 @@ function ActiveNotifications() {
       const recovered = notice.type === "recovery";
       const { title, description } = pressureAlertCopy(notice);
       (recovered ? toast.success : toast.warning)(title, {
-        id: `bb-box-monitor-pressure-${notice.metric}`, description, duration: 12_000,
+        id: `alia-box-monitor-pressure-${notice.metric}`, description, duration: 12_000,
         action: { label: "Open Status", onClick: () => openStatus() },
       });
     }, saveCursor);
@@ -92,9 +92,9 @@ function ActiveNotifications() {
       document.removeEventListener("visibilitychange", visible);
       window.removeEventListener("pagehide", hide);
       window.removeEventListener("pageshow", show);
-      toast.dismiss("bb-box-monitor-pressure-cpu");
-      toast.dismiss("bb-box-monitor-pressure-memory");
-      toast.dismiss("bb-box-monitor-pressure-test");
+      toast.dismiss("alia-box-monitor-pressure-cpu");
+      toast.dismiss("alia-box-monitor-pressure-memory");
+      toast.dismiss("alia-box-monitor-pressure-test");
     };
   }, [rpc]);
 

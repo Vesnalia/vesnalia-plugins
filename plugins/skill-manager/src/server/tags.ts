@@ -1,7 +1,7 @@
 // Tags are plugin state, not filesystem state: they live in the plugin's
 // key-value store so the hub and agent folders stay untouched and other
-// tools (npx skills, BB's own page) are unaffected.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// tools (npx skills, VesnALIA's own page) are unaffected.
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 const TAGS_KEY = "tags";
 const TAG = /^[a-z0-9][a-z0-9._-]{0,31}$/;
@@ -15,10 +15,10 @@ export function normalizeTag(raw: string): string {
 }
 
 export class TagStore {
-  constructor(private readonly bb: BbPluginApi) {}
+  constructor(private readonly alia: AliaPluginApi) {}
 
   async all(): Promise<TagMap> {
-    return (await this.bb.storage.kv.get<TagMap>(TAGS_KEY)) ?? {};
+    return (await this.alia.storage.kv.get<TagMap>(TAGS_KEY)) ?? {};
   }
 
   async forSkill(skill: string): Promise<string[]> {
@@ -31,7 +31,7 @@ export class TagStore {
     const map = await this.all();
     if (normalized.length === 0) delete map[skill];
     else map[skill] = normalized;
-    await this.bb.storage.kv.set(TAGS_KEY, map);
+    await this.alia.storage.kv.set(TAGS_KEY, map);
     return normalized;
   }
 

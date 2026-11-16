@@ -9,7 +9,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
-import { useRealtime, useRpc, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../../server";
 import { Button } from "@/components/ui/button";
@@ -135,7 +135,7 @@ const MAX_EDITOR_RATIO = 0.82;
  */
 export function SqlQueryWorkspace() {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [connections, setConnections] = useState<ConnectionListItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeDatabase, setActiveDatabase] = useState<string | null>(null);

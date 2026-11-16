@@ -3,14 +3,14 @@
 // haven't made one. Run with `npm test`.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 import { modelStubs, sleep, until } from "./helpers.mjs";
 
 const WORKER_OUTPUT = '[{"label": "Add a test", "why": "The fix shipped untested"}]';
 
 /**
- * A fake BB with a few threads. `tree` maps id -> { status, parent, visibility }.
+ * A fake VesnALIA with a few threads. `tree` maps id -> { status, parent, visibility }.
  * `settings` are the plugin's settings; `workerGate`, when given, holds every worker's
  * output until it resolves, so a test can act while a draft is in flight.
  */
@@ -62,7 +62,7 @@ async function boot(tree, { settings = {}, workerGate = null, metadataFails = fa
       ...modelStubs(),
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const rpc = (name, input) => host.harness.callRpc(name, input);
   return {
     world, host, row, rpc,
@@ -264,7 +264,7 @@ test("turning a thread on and off is logged", async () => {
   await w.dispose();
 });
 
-test("`bb followups off` and `on` change one thread, and `show` says which it is", async () => {
+test("`alia followups off` and `on` change one thread, and `show` says which it is", async () => {
   const w = await boot(one());
   const off = await w.cli("off", "t1");
   assert.equal(off.exitCode, 0);
@@ -281,7 +281,7 @@ test("`bb followups off` and `on` change one thread, and `show` says which it is
   await w.dispose();
 });
 
-test("`bb followups on` and `off` need exactly one thread id", async () => {
+test("`alia followups on` and `off` need exactly one thread id", async () => {
   const w = await boot(one());
   for (const argv of [["on"], ["off"], ["on", "a", "b"], ["off", "a", "b"]]) {
     const result = await w.cli(...argv);
@@ -291,7 +291,7 @@ test("`bb followups on` and `off` need exactly one thread id", async () => {
   await w.dispose();
 });
 
-test("`bb followups regenerate` refuses a thread that is off and spawns nothing", async () => {
+test("`alia followups regenerate` refuses a thread that is off and spawns nothing", async () => {
   const w = await boot(one());
   await w.setEnabled(false);
   const result = await w.cli("regenerate", "t1");
@@ -302,7 +302,7 @@ test("`bb followups regenerate` refuses a thread that is off and spawns nothing"
   await w.dispose();
 });
 
-test("`bb followups regenerate` while a draft is running waits for its own run, and reports that one", async () => {
+test("`alia followups regenerate` while a draft is running waits for its own run, and reports that one", async () => {
   let release;
   const workerGate = new Promise((resolve) => { release = resolve; });
   const w = await boot(one(), { workerGate });

@@ -1,10 +1,10 @@
-// `bb cursor-sidebar icon …` — set a project icon from a shell, so a chat can
+// `alia cursor-sidebar icon …` — set a project icon from a shell, so a chat can
 // draw one and apply it without the picker. Runs in the plugin server, so a
-// file path is read on the BB server's machine, resolved against the caller's
+// file path is read on the VesnALIA server's machine, resolved against the caller's
 // working directory.
 import { readFile } from "node:fs/promises";
 import { isAbsolute, resolve } from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { PROJECT_ICON_NAMES, findProjectIconName, parseProjectIcon } from "./project-icons";
 
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
@@ -13,7 +13,7 @@ const MAX_PNG_BYTES = 192 * 1024;
 /** The heading draws 14px; anything past this is wasted storage. */
 const MAX_PNG_EDGE = 1024;
 
-const USAGE = `Usage: bb cursor-sidebar icon <command> [--project <id|name>]
+const USAGE = `Usage: VesnALIA cursor-sidebar icon <command> [--project <id|name>]
 
 Commands:
   set <file.png>   Use a PNG as the project icon (transparency is kept)
@@ -34,15 +34,15 @@ type CliResult = { exitCode: number; stdout?: string; stderr?: string };
 
 const fail = (message: string): CliResult => ({ exitCode: 1, stderr: `${message}\n` });
 
-export function registerIconCli(bb: BbPluginApi, store: IconStore): void {
-  bb.cli.register({
+export function registerIconCli(alia: AliaPluginApi, store: IconStore): void {
+  alia.cli.register({
     name: "cursor-sidebar",
     summary: "Cursor Sidebar: set project icons",
     commands: [
       {
         name: "icon",
         summary: "Set, clear or show a project icon: a PNG (transparency kept) or a built-in glyph",
-        usage: "bb cursor-sidebar icon <set <file.png> | glyph <Name|--list> | clear | get> [--project <id|name>]",
+        usage: "alia cursor-sidebar icon <set <file.png> | glyph <Name|--list> | clear | get> [--project <id|name>]",
       },
     ],
     async run(argv, ctx) {
@@ -63,7 +63,7 @@ export function registerIconCli(bb: BbPluginApi, store: IconStore): void {
         return { exitCode: 0, stdout: `${PROJECT_ICON_NAMES.join("\n")}\n` };
       }
 
-      const project = await resolveProject(bb, projectArg ?? ctx.projectId ?? null);
+      const project = await resolveProject(alia, projectArg ?? ctx.projectId ?? null);
       if (typeof project === "string") return fail(project);
 
       switch (command) {
@@ -90,7 +90,7 @@ export function registerIconCli(bb: BbPluginApi, store: IconStore): void {
         case "glyph": {
           if (value === undefined) return fail("Name a glyph, or run `glyph --list`.");
           const name = findProjectIconName(value);
-          if (name === null) return fail(`Unknown glyph "${value}". Run \`bb cursor-sidebar icon glyph --list\`.`);
+          if (name === null) return fail(`Unknown glyph "${value}". Run \`alia cursor-sidebar icon glyph --list\`.`);
           store.save(project.id, name);
           return { exitCode: 0, stdout: `${project.name}: icon set to ${name}.\n` };
         }
@@ -101,7 +101,7 @@ export function registerIconCli(bb: BbPluginApi, store: IconStore): void {
           try {
             bytes = await readFile(path);
           } catch {
-            return fail(`Could not read ${path} on the BB server.`);
+            return fail(`Could not read ${path} on the VesnALIA server.`);
           }
           const problem = checkPng(bytes);
           if (problem !== null) return fail(problem);
@@ -117,17 +117,17 @@ export function registerIconCli(bb: BbPluginApi, store: IconStore): void {
 
 /** A project id or a case-insensitive name; a string result is the error. */
 async function resolveProject(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   wanted: string | null,
 ): Promise<{ id: string; name: string } | string> {
   if (wanted === null) return "No project: pass --project <id|name>, or run this from a chat.";
   try {
-    const project = await bb.sdk.projects.get({ projectId: wanted });
+    const project = await alia.sdk.projects.get({ projectId: wanted });
     return { id: project.id, name: project.name };
   } catch {
     // Not an id; fall through to a name match.
   }
-  const projects = await bb.sdk.projects.list();
+  const projects = await alia.sdk.projects.list();
   const matches = projects.filter((project) => project.name.toLowerCase() === wanted.toLowerCase());
   if (matches.length === 1) return { id: matches[0]!.id, name: matches[0]!.name };
   if (matches.length > 1) return `More than one project is named "${wanted}"; pass its id instead.`;

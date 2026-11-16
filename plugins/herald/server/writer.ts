@@ -1,7 +1,7 @@
 /**
  * Runs the sentence-writing tool: one process per announcement, the prompt on
- * stdin, the sentence on stdout. There is no bb thread behind it — the tool
- * is a plain child of the bb server, started with every tool of its own
+ * stdin, the sentence on stdout. There is no VesnALIA thread behind it — the tool
+ * is a plain child of the VesnALIA server, started with every tool of its own
  * switched off that the preset command can switch off — so a reload has
  * nothing to find and put away: `dispose` kills whatever is still running.
  *
@@ -13,7 +13,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { experimental_spawnHostProcess } from "@get-bb/plugin-sdk/process";
+import { experimental_spawnHostProcess } from "@vesnalia/plugin-sdk/process";
 
 import type { Log } from "./ports";
 import { plainText } from "./timeline";
@@ -50,9 +50,9 @@ export interface RunResult {
 
 /**
  * `command[0]` with `command.slice(1)` as its arguments, no shell, `input` on
- * stdin. bb's host toolchain finds the tool and sets the child's PATH — the
+ * stdin. VesnALIA's host toolchain finds the tool and sets the child's PATH — the
  * login shell's, `~/.local/bin`, mise and asdf shims, Volta and Homebrew — so
- * a tool the bb server's own PATH lacks is still found, and one installed
+ * a tool the VesnALIA server's own PATH lacks is still found, and one installed
  * after a miss is found on the next run. The tool leads its own process
  * group, and the group is killed on every way out — the timeout, an abort,
  * too much output, and the tool's own exit — so a helper it started never
@@ -145,7 +145,7 @@ export class SentenceWriter {
    * for it and removed after it, so a tool that reads its working directory
    * — project instructions, hooks, a repository — finds nothing. (One folder
    * for the life of the plugin was tried first; macOS purges unused temp
-   * entries after a few days, and a bb server runs for weeks.)
+   * entries after a few days, and a VesnALIA server runs for weeks.)
    */
   async write(command: readonly string[], prompt: string): Promise<string> {
     if (this.disposed) throw new Error("The sentence writer is closed.");

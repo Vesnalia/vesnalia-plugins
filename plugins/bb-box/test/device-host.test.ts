@@ -39,7 +39,7 @@ test("each slot's ports are 100 from 20000 plus 100 times its place, from 0 as t
 });
 
 test("a placement is written into guest.data once and read back; no slot keys is a VM of its own; a broken one is refused in words (064)", () => {
-  const slot: SlotPlacement = { on: "slot", host: "bb-box-host-1", hostOn: "pool-mac", carried: true, generation: 1, place: 0, most: 12 };
+  const slot: SlotPlacement = { on: "slot", host: "alia-box-host-1", hostOn: "pool-mac", carried: true, generation: 1, place: 0, most: 12 };
   const data = { box: "bx1", generation: 4, ...placementData(slot) };
   assert.deepEqual(readPlacement(data), { ok: true, value: slot }, "beside a backend's own keys, such as the pool's generation");
   assert.deepEqual(placementOf({ guest: { ref: "r", host: null, address: null, size: null, data } }), slot);
@@ -52,9 +52,9 @@ test("a placement is written into guest.data once and read back; no slot keys is
   assert.deepEqual(readPlacement({ ...placementData(slot), slotHostOn: "docker" }), { ok: false, words: 'guest.data.slotHostOn must be "pool-mac", "tart" or "namespace", not "docker".' });
 });
 
-test("a slot's host is named by its Mac where BB Box knows it, never by the shared host VM's name or a Namespace tag; a VM of its own has none (069 unit 5)", () => {
-  const tart: SlotPlacement = { on: "slot", host: "bb-box-host-0a1b2c3d4e", hostOn: "tart", carried: false, generation: 3, place: 1, most: 3 };
-  assert.equal(slotHostName({ guest: { ref: "bb-box-host-0a1b2c3d4e/3", host: "mac-1", address: null, size: null, data: placementData(tart) } }), "mac-1");
+test("a slot's host is named by its Mac where VesnALIA Box knows it, never by the shared host VM's name or a Namespace tag; a VM of its own has none (069 unit 5)", () => {
+  const tart: SlotPlacement = { on: "slot", host: "alia-box-host-0a1b2c3d4e", hostOn: "tart", carried: false, generation: 3, place: 1, most: 3 };
+  assert.equal(slotHostName({ guest: { ref: "alia-box-host-0a1b2c3d4e/3", host: "mac-1", address: null, size: null, data: placementData(tart) } }), "mac-1");
   const pool: SlotPlacement = { ...tart, host: "mac-2", hostOn: "pool-mac" };
   assert.equal(slotHostName({ guest: { ref: "mac-2/3", host: "mac-2", address: null, size: null, data: placementData(pool) } }), "mac-2");
   const namespace: SlotPlacement = { ...tart, host: "bbbox-install-ios-host-abc123", hostOn: "namespace" };
@@ -66,7 +66,7 @@ test("box_status's words for where a box is (064)", () => {
   assert.equal(placementWords(OWN_VM), "A VM of its own.");
   assert.equal(
     placementWords({ on: "slot", host: "h", hostOn: "tart", carried: false, generation: 9, place: 2, most: 8 }),
-    "On a shared iOS host (a Tart VM), slot 3 of 8. Ports 20200 to 20299, in BB_PORT_BASE and BB_PORT_COUNT.",
+    "On a shared iOS host (a Tart VM), slot 3 of 8. Ports 20200 to 20299, in ALIA_PORT_BASE and ALIA_PORT_COUNT.",
   );
   assert.match(placementWords({ on: "slot", host: "h", hostOn: "pool-mac", carried: false, generation: 9, place: 0, most: 12 }), /^On a shared iOS host \(the pool's Mac\), slot 1 of 12\. Ports 20000 to 20099/);
 });
@@ -127,7 +127,7 @@ test("the legal shapes of hosts and slots read back whole; the illegal ones that
 
 test("a Namespace host written before several workspaces, with no backend, reads as the first Namespace backend's (#1455)", () => {
   const writtenBeforeSeveralWorkspaces =
-    '{"id":"bb-box-host-1","runtime":{"platform":"ios","os":"27.0","build":"24A434","xcode":"27A266a","companion":"1.7.7"},"cores":8,"memoryGiB":32,"settings":{"most":8,"ahead":1,"resettingMost":4},"on":"namespace","instance":"ns-1","endsAt":0,"state":{"is":"draining","why":"ending","lends":false,"since":0}}';
+    '{"id":"alia-box-host-1","runtime":{"platform":"ios","os":"27.0","build":"24A434","xcode":"27A266a","companion":"1.7.7"},"cores":8,"memoryGiB":32,"settings":{"most":8,"ahead":1,"resettingMost":4},"on":"namespace","instance":"ns-1","endsAt":0,"state":{"is":"draining","why":"ending","lends":false,"since":0}}';
 
   const parsed = parseDeviceHost(JSON.parse(writtenBeforeSeveralWorkspaces));
 

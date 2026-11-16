@@ -4,8 +4,8 @@
 // lead and its workers read as one tree.
 //
 // Child rows are anchors on the thread's href, reached with the arrow keys
-// like any row, but without bb's ⌘1…9 target: those numbers belong to the
-// chats, and children appearing would renumber them. Each has bb's own thread
+// like any row, but without VesnALIA's ⌘1…9 target: those numbers belong to the
+// chats, and children appearing would renumber them. Each has VesnALIA's own thread
 // menu (archive, delete, rename, …) plus "Make a separate chat", and the row's
 // quick actions on hover.
 import { useMemo, useState, type MouseEvent, type PointerEvent } from "react";
@@ -17,7 +17,7 @@ import {
   experimental_useSidebarThreadSplit,
   useSdk,
   type PluginThreadActionsInlineItem,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 import { Icon } from "@/components/ui/icon";
 import { childTree, type Chat, type ChildNode } from "@/lib/model";
@@ -46,7 +46,7 @@ export function SubThreadToggle({
   const count = row.children.length;
   const label = expanded ? t("row.hideSubAgents") : t("row.showSubAgents", { count });
   // A button inside the row's anchor: keep the click from opening the chat
-  // and the press from starting bb's split drag.
+  // and the press from starting VesnALIA's split drag.
   const stop = (event: MouseEvent | PointerEvent) => {
     event.preventDefault();
     event.stopPropagation();

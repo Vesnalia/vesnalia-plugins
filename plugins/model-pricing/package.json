@@ -1,26 +1,17 @@
 {
-  "name": "@gpambrozio/bb-plugin-model-pricing",
+  "name": "@gpambrozio/alia-plugin-model-pricing",
   "version": "0.1.1",
   "license": "MIT",
   "author": "gpambrozio (https://github.com/gpambrozio)",
-  "homepage": "https://github.com/gpambrozio/bb-plugins/tree/main/model-pricing#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/gpambrozio/bb-plugins.git",
-    "directory": "model-pricing"
-  },
-  "bugs": {
-    "url": "https://github.com/gpambrozio/bb-plugins/issues"
-  },
   "type": "module",
   "engines": {
-    "bb": ">=0.44",
-    "bbPluginSdk": ">=0.5.29"
+    "alia": ">=0.44",
+    "aliaPluginSdk": ">=0.5.29"
   },
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "files": [
     "server.ts",
@@ -37,7 +28,7 @@
     "!**/*.test.tsx",
     "!app/testing/"
   ],
-  "bb": {
+  "alia": {
     "name": "Model Pricing",
     "description": "Compare what every AI model costs per million tokens, across Anthropic, OpenAI, Fireworks AI, Ollama Cloud and OpenRouter, in one table.",
     "branding": {
@@ -51,7 +42,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.15",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -82,5 +72,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^5.0.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.15"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/model-pricing#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/model-pricing"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

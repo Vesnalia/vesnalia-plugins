@@ -10,7 +10,7 @@ import {
 const configuration = {
   provider: "native",
   nativeProvider: "codex",
-  model: "bb-catalog-model",
+  model: "alia-catalog-model",
   effort: "low",
 } as const;
 const questions = {

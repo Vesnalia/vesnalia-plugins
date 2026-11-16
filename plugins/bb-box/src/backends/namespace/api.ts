@@ -108,7 +108,7 @@ export class NamespaceApi {
   readonly #endpoint: string;
 
   constructor(options: NamespaceApiOptions) {
-    if (!options.token) throw new NamespaceError("refused", "Namespace has no API token: set it in BB Box's settings.");
+    if (!options.token) throw new NamespaceError("refused", "Namespace has no API token: set it in VesnALIA Box's settings.");
     this.#token = options.token;
     this.region = options.region ?? "us";
     this.#fetch = options.fetch ?? freshFetch("Namespace", options.log);
@@ -218,7 +218,7 @@ export class NamespaceApi {
 }
 
 function hint(kind: NamespaceErrorKind): string {
-  if (kind === "refused") return " Check the Namespace token in BB Box's settings: that it has not expired, and that it may manage instances.";
+  if (kind === "refused") return " Check the Namespace token in VesnALIA Box's settings: that it has not expired, and that it may manage instances.";
   if (kind === "full") return " The workspace may be at its plan's limit of machines at once, or have none of this shape free.";
   return "";
 }

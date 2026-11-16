@@ -151,7 +151,7 @@ export class AndroidVideo implements VideoSource {
     const encoder = this.#options.encoder();
     this.#encoder = encoder;
     void encoder.description.then((said) => {
-      if (this.#encoderWords !== said) this.#options.log(`video: bb-box-h264 encodes with ${said}`);
+      if (this.#encoderWords !== said) this.#options.log(`video: alia-box-h264 encodes with ${said}`);
       this.#encoderWords = said;
     });
     this.#encoding = this.#drain(encoder);
@@ -175,7 +175,7 @@ export class AndroidVideo implements VideoSource {
     if (encoder !== this.#encoder || this.#stopping.signal.aborted) return;
     this.#encoder = null;
     this.#encoderRestarts++;
-    this.#options.log(`video: bb-box-h264 stopped (${failure ? words(failure) : "it ended"}); starting it again`);
+    this.#options.log(`video: alia-box-h264 stopped (${failure ? words(failure) : "it ended"}); starting it again`);
     const fresh = this.#ensureEncoder();
     if (this.#shown) fresh.submitShared(this.#shown);
   }

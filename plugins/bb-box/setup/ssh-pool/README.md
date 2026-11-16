@@ -1,7 +1,7 @@
 # SSH host pool backend
 
 This backend lends Linux machines and Macs you already have, reached over
-SSH. A box has a whole machine to itself. When the box is released, bb-box
+SSH. A box has a whole machine to itself. When the box is released, alia-box
 resets the machine and lends it again.
 
 It suits spare desktops, build servers and virtual machines you run
@@ -11,24 +11,24 @@ your machine, and can read what any user there can read.
 | Path | What it does |
 | --- | --- |
 | `setup.sh` | Sets up a machine: run it once on each machine, as root |
-| `machine.sh` | bb-box's helper, which `setup.sh` installs on the machine |
+| `machine.sh` | alia-box's helper, which `setup.sh` installs on the machine |
 | `setup-mac.sh`, `machine-mac.sh`, `mac-home/` | A Mac's setup, helper and box users' home template. See [Macs](#a-mac) |
 | `test/` | A pool of Docker containers for testing the backend on one computer |
 
 ## How it works
 
 - `setup.sh` makes an admin user on the machine, `bbbox-admin`. It accepts
-  only bb-box's SSH key, with no terminal or forwarding, and may run only
-  bb-box's helper as root.
-- To lend the machine, bb-box asks the helper to claim it. The helper makes
-  a new user for the box, `bbx-<generation>`, which accepts bb-box's key.
-  bb-box reaches the box as that user.
+  only alia-box's SSH key, with no terminal or forwarding, and may run only
+  alia-box's helper as root.
+- To lend the machine, alia-box asks the helper to claim it. The helper makes
+  a new user for the box, `bbx-<generation>`, which accepts alia-box's key.
+  alia-box reaches the box as that user.
 - To reset the machine, the helper removes the box's user and everything it
   left, then adds 1 to the machine's reset generation.
 
-The machine keeps the truth about itself in `/var/lib/bb-box`: its reset
-generation, and a marker naming the box that holds it. If bb-box restarts
-or loses its storage, it reads the markers and carries on. Two bb-box
+The machine keeps the truth about itself in `/var/lib/alia-box`: its reset
+generation, and a marker naming the box that holds it. If alia-box restarts
+or loses its storage, it reads the markers and carries on. Two alia-box
 installs can share machines: each leaves alone the boxes of the other.
 
 ## What you need
@@ -42,14 +42,14 @@ installs can share machines: each leaves alone the boxes of the other.
   (procps), `find`, `tar`, and `curl` or `wget`.
 - `git` and `gh`. A box uses them for the thread's GitHub access: `git`
   takes the thread's token through `gh`.
-- Node.js 22.19 or newer, with npm, on the default `PATH`. BB's installer
+- Node.js 22.19 or newer, with npm, on the default `PATH`. VesnALIA's installer
   needs it to enrol a box. Debian's and Ubuntu's own `nodejs` is too old,
   so install Node.js 24 from NodeSource or nodejs.org.
-- BB's server, where bb-box runs, must reach the machine's sshd, directly or
+- VesnALIA's server, where alia-box runs, must reach the machine's sshd, directly or
   through a jump host.
 - At least the default size of the kinds it serves, or no box made at that
   size fits it: 2 cores and 4 GiB of memory for `linux`. For smaller
-  machines, make the presets smaller in the kinds part of BB Box's settings.
+  machines, make the presets smaller in the kinds part of VesnALIA Box's settings.
 
 On Debian or Ubuntu, this installs the tools, then Node.js 24 from
 NodeSource:
@@ -60,7 +60,7 @@ curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
 sudo apt-get install nodejs
 ```
 
-`setup.sh` warns if one of these is missing. bb-box's check fails without
+`setup.sh` warns if one of these is missing. alia-box's check fails without
 Node.js 22.19 or newer and npm, and warns without `git` or `gh`.
 
 A machine that is itself an unprivileged container, such as a Proxmox LXC
@@ -77,11 +77,11 @@ keeps for its own users. Elsewhere box users take 70000 to 79999.
 - Nobody signed in at the console, as the box user takes it.
 - At least the default size of the kinds it serves: 4 cores and 8 GiB of
   memory for `macos` and `macos-desktop`. Change the sizes in the kinds
-  part of BB Box's settings if your Macs are smaller.
+  part of VesnALIA Box's settings if your Macs are smaller.
 - A Mac set aside for boxes, not one people use. A box can read whatever
   any user on the Mac can read, and the reset removes users.
 - Your own home on it closed to box users: macOS makes a home readable to
-  the `staff` group, which box users are in, and yours may hold BB's or an
+  the `staff` group, which box users are in, and yours may hold VesnALIA's or an
   agent CLI's credentials. Run `sudo chmod 700 /Users/<you>`. The doctor
   warns while a person's home is open.
 - An HDMI dummy plug, if the Mac runs without a display. With nothing
@@ -100,7 +100,7 @@ pool's `macos` and `macos-desktop` offers have the features `xcode` while
 every Mac that serves them has Xcode, and `ios-simulator` while each also
 has an iOS runtime. Listing the runtimes takes a few seconds, so only
 `setup-mac.sh` and the doctor list them. The helper keeps what they found
-in `/var/db/bb-box/xcode`, and the pool reads it each time it looks at the
+in `/var/db/alia-box/xcode`, and the pool reads it each time it looks at the
 Macs. Only the Macs that answered count, so one that is switched off does
 not hide the features.
 
@@ -109,19 +109,19 @@ when you update it (see Update).
 
 ## Steps
 
-### 1. Get bb-box's key
+### 1. Get alia-box's key
 
-1. In BB, open BB Box's settings and set up **SSH host pool**. Leave it off
+1. In VesnALIA, open VesnALIA Box's settings and set up **SSH host pool**. Leave it off
    until a machine is ready.
-2. Leave **SSH private key** empty. bb-box makes a key.
+2. Leave **SSH private key** empty. alia-box makes a key.
 3. Press "Check". A note shows the public key, starting `ssh-ed25519`. The
    check fails until the pool has a machine; that is expected here.
 
 To use a key you already have, paste its private key into the field
 instead. It must have no passphrase.
 
-From a terminal, `bb box config check <file> --test` runs the same check on
-a configuration file, as `bb box config show --json` prints it.
+From a terminal, `alia box config check <file> --test` runs the same check on
+a configuration file, as `alia box config show --json` prints it.
 
 ### 2. Set up each Linux machine
 
@@ -131,26 +131,26 @@ public key:
 ```sh
 scp -r setup/ssh-pool build-1:
 ssh build-1
-sudo sh ssh-pool/setup.sh --key "ssh-ed25519 AAAA... bb-box"
+sudo sh ssh-pool/setup.sh --key "ssh-ed25519 AAAA... alia-box"
 ```
 
 These options are optional:
 
 | Option | What it does |
 | --- | --- |
-| `--name <name>` | The machine's name in bb-box. By default, its host name |
-| `--address <host>` | How BB's server reaches it. By default, its first IP address |
-| `--port <port>` | sshd's port, if BB's server reaches it on another |
+| `--name <name>` | The machine's name in alia-box. By default, its host name |
+| `--address <host>` | How VesnALIA's server reaches it. By default, its first IP address |
+| `--port <port>` | sshd's port, if VesnALIA's server reaches it on another |
 | `--admin <user>` | The admin user's name. By default, `bbbox-admin` |
 | `--reset-hook <path>` | Your whole-machine reset, for Docker. See [Docker](#docker-on-the-pools-machines) |
 
 `setup.sh`:
 
 - makes the admin user, if it does not exist
-- installs the helper as `/usr/local/libexec/bb-box/machine`
-- adds `/etc/sudoers.d/bb-box`, which lets the admin user run the helper
+- installs the helper as `/usr/local/libexec/alia-box/machine`
+- adds `/etc/sudoers.d/alia-box`, which lets the admin user run the helper
   as root, and nothing else
-- adds `/etc/tmpfiles.d/bb-box.conf`, which clears BB's lock and PID files
+- adds `/etc/tmpfiles.d/alia-box.conf`, which clears VesnALIA's lock and PID files
   in box users' homes at boot
 - starts the machine's reset generation at 0
 - checks sshd's settings
@@ -173,12 +173,12 @@ Read any warnings at the end, and fix them before you go on.
 `setup.sh` never changes a user it did not make: if `bbbox-admin` already
 exists for something else, choose another name with `--admin`.
 
-#### If 2 bb-box installs lend the same machine
+#### If 2 alia-box installs lend the same machine
 
 Give `--key` once for each install's key:
 
 ```sh
-sudo sh ssh-pool/setup.sh --key "ssh-ed25519 AAAA... bb-box" --key "ssh-ed25519 BBBB... bb-box"
+sudo sh ssh-pool/setup.sh --key "ssh-ed25519 AAAA... alia-box" --key "ssh-ed25519 BBBB... alia-box"
 ```
 
 `setup.sh` replaces the admin user's keys each time it runs, so give every
@@ -217,9 +217,9 @@ Copy the setup folder to the Mac, then run `setup-mac.sh` with sudo, from an
 administrator's account:
 
 ```sh
-scp -r setup mac-mini:bb-box-setup
+scp -r setup mac-mini:alia-box-setup
 ssh mac-mini
-sudo sh bb-box-setup/ssh-pool/setup-mac.sh --key "ssh-ed25519 AAAA... bb-box"
+sudo sh alia-box-setup/ssh-pool/setup-mac.sh --key "ssh-ed25519 AAAA... alia-box"
 ```
 
 `setup/ssh-pool` alone is enough for whole boxes. iOS slots need
@@ -228,18 +228,18 @@ sudo sh bb-box-setup/ssh-pool/setup-mac.sh --key "ssh-ed25519 AAAA... bb-box"
 It takes the same options as `setup.sh`, except `--reset-hook`.
 `setup-mac.sh`:
 
-- makes the admin user, `bbbox-admin`, hidden, which accepts only bb-box's
+- makes the admin user, `bbbox-admin`, hidden, which accepts only alia-box's
   keys and may run only the helper as root
-- installs the helper as `/usr/local/libexec/bb-box/machine`, and the box
-  users' home template in `/usr/local/share/bb-box/home`
+- installs the helper as `/usr/local/libexec/alia-box/machine`, and the box
+  users' home template in `/usr/local/share/alia-box/home`
 - installs Homebrew if it is missing, as the administrator who ran sudo,
   then Git, GitHub CLI and Node.js with it
 - installs Cua Driver in `/Applications`
 - installs BlackHole 2ch, pinned, as the Mac's audio input
-- installs the agent CLIs BB runs threads with, Claude Code, Codex and Pi,
-  in `/usr/local/lib/bb-box`, linked from `/usr/local/bin`, pinned as the
+- installs the agent CLIs VesnALIA runs threads with, Claude Code, Codex and Pi,
+  in `/usr/local/lib/alia-box`, linked from `/usr/local/bin`, pinned as the
   Linux images pin them
-- adds a launch daemon that clears BB's lock and PID files in box homes at
+- adds a launch daemon that clears VesnALIA's lock and PID files in box homes at
   boot
 - keeps the Mac awake, starts it after a power failure, and turns off
   automatic macOS and App Store updates, and Spotlight indexing
@@ -248,7 +248,7 @@ It takes the same options as `setup.sh`, except `--reset-hook`.
   and Simulator runtimes for the pool
 - with Xcode, its iOS platform and `setup/tart/ios` beside it, sets up iOS
   slots with `mac-ios.sh`, as [below](#ios-slots-on-a-mac)
-- starts the Mac's reset generation at 0, in `/var/db/bb-box`, and makes
+- starts the Mac's reset generation at 0, in `/var/db/alia-box`, and makes
   the first box user, `bbx-0`, the automatic login
 
 It prints the line for the machines setting, the host keys, and steps for a
@@ -276,7 +276,7 @@ screen capture: macOS 27 asks each new user, so the helper writes the
 approval for each box user it makes.
 
 If someone was signed in when you ran it, restart the Mac, so that it signs
-in `bbx-0`. Then add the line and host keys to bb-box, as for a Linux
+in `bbx-0`. Then add the line and host keys to alia-box, as for a Linux
 machine. Leave out `macos-desktop` if boxes should not get the Mac's
 desktop.
 
@@ -288,7 +288,7 @@ shared by default or with `shared: true`, gets a macOS user of its own on the Ma
 booted device, files and keychain, ready in seconds. Slots use the Mac's
 cores and video encoder, not a VM's. A slot has no sudo, no Homebrew
 installs, no console and no app windows, and shares the Mac's loopback with
-the other slots: each has 100 ports from `BB_PORT_BASE`, and the Mac holds
+the other slots: each has 100 ports from `ALIA_PORT_BASE`, and the Mac holds
 the common dev ports while it lends slots.
 
 The Mac lends slots before whole boxes. While any slot is held, promised
@@ -307,18 +307,18 @@ off its line to keep it for whole boxes.
   `/usr/local/bin`
 - installs the slots' helper, `device-host`, its held ports' program, the
   slots' home template (the pool's `.zshenv`) and the device list in
-  `/usr/local/share/bb-box`
-- builds `bb-box-h264` in `/usr/local/bin`, from `setup/android` beside
+  `/usr/local/share/alia-box`
+- builds `alia-box-h264` in `/usr/local/bin`, from `setup/android` beside
   `setup/ssh-pool`, which encodes a device's video in software should the
   Mac's hardware encoder fail
   ([065](../../docs/decisions/065-macs-say-what-they-offer-and-ios-streams-in-software-where-they-must.md)):
   with Cisco's OpenH264, or with x264 built from its pinned source when run
-  with `H264_WITH_X264=yes`. bb-box ships no x264 binary
-- for the newest iOS runtime, installs bb-box's slimming list and makes its
+  with `H264_WITH_X264=yes`. alia-box ships no x264 binary
+- for the newest iOS runtime, installs alia-box's slimming list and makes its
   seed: a device made, booted and slimmed twice as `bbbox-admin`, whose
   store of disabled services must have every label of the list off. It
   takes a few minutes the first time, and is kept after
-- sets the helper up as a kept host, never deleted, closed until bb-box
+- sets the helper up as a kept host, never deleted, closed until alia-box
   opens it
 - checks that a user with no desktop session, as a slot's user is, can set
   and read a device's clipboard as the device server does: on a device made
@@ -340,41 +340,41 @@ or box user, and may run while a box holds the Mac whole, though not while
 the Mac is resetting (`machine status` says `marker=resetting`):
 
 ```sh
-sudo mkdir -m 700 /var/root/bb-box-backup
-sudo cp -p /usr/local/libexec/bb-box/machine /etc/sudoers.d/bb-box /var/root/bb-box-backup/
-sudo install -m 0755 bb-box-setup/ssh-pool/machine-mac.sh /usr/local/libexec/bb-box/machine.new
-sudo mv -f /usr/local/libexec/bb-box/machine.new /usr/local/libexec/bb-box/machine
-sudo sh bb-box-setup/ssh-pool/mac-ios.sh "$PWD/bb-box-setup/ssh-pool" bbbox-admin
+sudo mkdir -m 700 /var/root/alia-box-backup
+sudo cp -p /usr/local/libexec/alia-box/machine /etc/sudoers.d/alia-box /var/root/alia-box-backup/
+sudo install -m 0755 alia-box-setup/ssh-pool/machine-mac.sh /usr/local/libexec/alia-box/machine.new
+sudo mv -f /usr/local/libexec/alia-box/machine.new /usr/local/libexec/alia-box/machine
+sudo sh alia-box-setup/ssh-pool/mac-ios.sh "$PWD/alia-box-setup/ssh-pool" bbbox-admin
 ```
 
-`bbbox-admin` is the admin user `/etc/sudoers.d/bb-box` names. Its rule
+`bbbox-admin` is the admin user `/etc/sudoers.d/alia-box` names. Its rule
 lets it run the helper with any arguments, so `machine slot` needs no new
 rule. To undo it, with `ios` off the Mac's line, every ios box there
 released and the doctor's `iOS slots` check showing none sweeping, put the
 helper back and remove what `mac-ios.sh` added:
 
 ```sh
-sudo launchctl bootout system/app.bb-box.device-host
-sudo launchctl bootout system/app.bb-box.device-host.ports
-sudo rm -f /Library/LaunchDaemons/app.bb-box.device-host.plist /Library/LaunchDaemons/app.bb-box.device-host.ports.plist
-sudo rm -rf /var/db/bb-box/host /usr/local/libexec/bb-box/device-host /usr/local/libexec/bb-box/device-host-ports /usr/local/share/bb-box/ios /usr/local/share/bb-box/slot-home
-sudo cp -p /var/root/bb-box-backup/machine /usr/local/libexec/bb-box/machine.new
-sudo mv -f /usr/local/libexec/bb-box/machine.new /usr/local/libexec/bb-box/machine
+sudo launchctl bootout system/app.alia-box.device-host
+sudo launchctl bootout system/app.alia-box.device-host.ports
+sudo rm -f /Library/LaunchDaemons/app.alia-box.device-host.plist /Library/LaunchDaemons/app.alia-box.device-host.ports.plist
+sudo rm -rf /var/db/alia-box/host /usr/local/libexec/alia-box/device-host /usr/local/libexec/alia-box/device-host-ports /usr/local/share/alia-box/ios /usr/local/share/alia-box/slot-home
+sudo cp -p /var/root/alia-box-backup/machine /usr/local/libexec/alia-box/machine.new
+sudo mv -f /usr/local/libexec/alia-box/machine.new /usr/local/libexec/alia-box/machine
 ```
 
 idb_companion stays in `/usr/local/lib`, linked from `/usr/local/bin`.
 
-bb-box opens the Mac's slots at its next upkeep while the Mac is not lent
+alia-box opens the Mac's slots at its next upkeep while the Mac is not lent
 whole, and keeps one ready. The helper is
 [`device-host`](../tart/ios/README.md#shared-hosts-device-host), as on a
 shared Tart host, run through `machine slot`. The doctor's `iOS slots`
 check says whether it lends, and how many slots are held, ready, making
 and sweeping.
 
-### 4. Add the machines to bb-box
+### 4. Add the machines to alia-box
 
 1. Add the line `setup.sh` printed to **Machines**, one line per machine.
-2. Add the host keys to **Host keys**. bb-box connects only to machines
+2. Add the host keys to **Host keys**. alia-box connects only to machines
    whose keys are there.
 3. Press "Check". Each machine should pass `SSH`, `helper`, `architecture`,
    `tools` and `state`. Then turn the pool on and save.
@@ -394,24 +394,24 @@ A line is:
 | `reset=machine` | The machine has a whole-machine reset, so its boxes get Docker. `setup.sh` adds it when you give `--reset-hook`. Not on a Mac |
 | `labels=` | Words for your own use |
 
-bb-box lends the smallest free machine that fits the box's size. The pool's
+alia-box lends the smallest free machine that fits the box's size. The pool's
 boxes have Docker only when every machine's line has `reset=machine`
 ([decision 041](../../docs/decisions/041-every-linux-box-has-docker.md)).
 When only some lines have it, no box has Docker, each says No Docker, and
-the doctor warns. Of machines of one size, bb-box then lends those without
+the doctor warns. Of machines of one size, alia-box then lends those without
 `reset=machine` first, since a whole-machine reset may restart the machine.
 After that it lends the one free longest, then the first listed.
 
 #### Through a jump host
 
-bb-box reaches the jump host with the same key, as the user in `via=`, and
+alia-box reaches the jump host with the same key, as the user in `via=`, and
 asks it to forward to the machine. The admin user cannot forward, so use
 another user on the jump host. In its `authorized_keys`, you can limit the
 key to forwarding to your machines. `restrict` alone still lets the key run
 commands there, so add `command="false"`:
 
 ```text
-command="false",restrict,port-forwarding,permitopen="build-1:22",permitopen="build-2:22" ssh-ed25519 AAAA... bb-box
+command="false",restrict,port-forwarding,permitopen="build-1:22",permitopen="build-2:22" ssh-ed25519 AAAA... alia-box
 ```
 
 Add the jump host's keys to the host keys setting too. Name the machine by
@@ -422,23 +422,23 @@ URL.
 ### Docker on the pool's machines
 
 Boxes with Docker have passwordless sudo too, which means root on the
-machine. So bb-box gives Docker only on a machine with a whole-machine reset
+machine. So alia-box gives Docker only on a machine with a whole-machine reset
 that puts the machine back as it was, and only when every machine in the
 pool has one. Install Docker Engine on each machine, give `setup.sh` your
 reset with `--reset-hook`, and use the line it prints, which has
 `reset=machine`. If a machine with `reset=machine` lacks Docker, the doctor
-fails for it, and bb-box does not lend it.
+fails for it, and alia-box does not lend it.
 
 The whole-machine reset is a program you write. Give it to `setup.sh` with
-`--reset-hook`, which installs it as `/usr/local/libexec/bb-box/reset-machine`.
+`--reset-hook`, which installs it as `/usr/local/libexec/alia-box/reset-machine`.
 It must:
 
-- restore everything a root user could change, except `/var/lib/bb-box`,
+- restore everything a root user could change, except `/var/lib/alia-box`,
   which it must keep: the reset generation lives there
 - exit 0 when the machine is restored, or exit non-zero with the reason on
   standard error
 - if it restarts the machine to finish, create the file named in
-  `BB_BOX_RESTARTING` just before it does
+  `ALIA_BOX_RESTARTING` just before it does
 
 The helper runs it as root, detached, without a terminal. It may take up to
 15 minutes. When the machine comes back after a restart, the helper counts
@@ -453,19 +453,19 @@ be:
 
 ```sh
 #!/bin/sh
-touch "$BB_BOX_RESTARTING"
+touch "$ALIA_BOX_RESTARTING"
 systemctl reboot
 sleep 600
 echo "The machine did not restart." >&2
 exit 1
 ```
 
-Keep `/var/lib/bb-box` on a filesystem the overlay leaves alone, or the
+Keep `/var/lib/alia-box` on a filesystem the overlay leaves alone, or the
 machine forgets its reset generation, and the helper refuses to lend it.
 
 A virtual machine your hypervisor restores from a snapshot works the same
-way, if `/var/lib/bb-box` is on a disk the snapshot does not cover. Its
-hook creates the `BB_BOX_RESTARTING` file before it asks for the restore.
+way, if `/var/lib/alia-box` is on a disk the snapshot does not cover. Its
+hook creates the `ALIA_BOX_RESTARTING` file before it asks for the restore.
 
 `test/reset-machine-docker.sh` is not a whole-machine reset. It removes
 Docker's containers, images and volumes and empties the temporary
@@ -476,7 +476,7 @@ yet.
 
 ## Check it worked
 
-On BB Box's settings page, press Check, or run `bb box doctor`. Each Linux
+On VesnALIA Box's settings page, press Check, or run `alia box doctor`. Each Linux
 machine should pass `SSH`, `helper`, `architecture`, `tools` and `state`. The
 doctor shows each machine's state, why one is out of service, its cores,
 memory and free disk, and warns about a machine too small for a kind's
@@ -508,7 +508,7 @@ iOS Simulator.
 
 ### What each machine reports for snapshots
 
-BB Box takes no snapshots on pool machines yet. Each machine says what it
+VesnALIA Box takes no snapshots on pool machines yet. Each machine says what it
 could offer, so you can see which will take them as the later parts are
 built ([decision 090](../../docs/decisions/090-pool-machines-say-whether-they-snapshot.md)).
 
@@ -521,20 +521,20 @@ The helper's `machine snapshot probe` finds out, as root:
   which it deletes; on ZFS, the dataset mounted at `/home`. It also notes
   the free space there.
 - **Machine snapshots**, of the whole machine. It runs
-  `/usr/local/libexec/bb-box/snapshot-machine describe`, if an operator
+  `/usr/local/libexec/alia-box/snapshot-machine describe`, if an operator
   installed such a hook, for at most 30 seconds. At 30 seconds it stops
   the hook and everything the hook started, and reports the hook as
   failed.
 
 The probe's trials go in a folder only root can use:
-`/home/.bb-box-snapshot-trials` on Linux, `/var/db/bb-box/snapshot-trials`
+`/home/.alia-box-snapshot-trials` on Linux, `/var/db/alia-box/snapshot-trials`
 on a Mac. The probe removes its trial even when it fails or is stopped,
 and the next probe removes the trial of one that was killed. If a trial
 cannot be removed, the probe says what is left and where, `setup.sh` and
 `setup-mac.sh` warn, and the doctor warns with what to remove as root.
 
 `setup.sh` and `setup-mac.sh` run the probe and print what it found. The
-doctor runs it again, and each status passes on the last report, which BB
+doctor runs it again, and each status passes on the last report, which VesnALIA
 Box keeps for each machine. The doctor shows it as `<machine>: snapshots`,
 and counts the machines that could offer each in `Snapshots on the pool's
 machines`. For example:
@@ -549,7 +549,7 @@ A machine with `reset=machine` gives its boxes root, so it never offers
 home snapshots: a home snapshot would not hold what they change outside
 the home. A Mac that lends iOS slots never offers machine snapshots. A
 take on a pool box is refused with its machine's own reason. A machine
-whose helper is older than this BB Box's warns: run `setup.sh`, or
+whose helper is older than this VesnALIA Box's warns: run `setup.sh`, or
 `setup-mac.sh`, on it again.
 
 
@@ -579,13 +579,13 @@ a box holds the machine,
 returning a machine to service, an old box released again after its machine
 went to the next box, linger, and a jump host.
 
-The suite skips enrolment in BB, which needs a BB server, and stopping and
+The suite skips enrolment in VesnALIA, which needs a VesnALIA server, and stopping and
 starting, which a pool cannot do.
 
 ## Update
 
 - Run `setup.sh` or `setup-mac.sh` again to update the helper or the key. It
-  keeps the reset generation. With 2 bb-box installs, give every install's
+  keeps the reset generation. With 2 alia-box installs, give every install's
   key each time.
 - On a Mac, update Xcode by hand, from the App Store or Apple's developer
   site, then run `setup-mac.sh` again. It accepts the new licence, runs the
@@ -602,7 +602,7 @@ starting, which a pool cannot do.
 
    ```sh
    sudo userdel -r bbbox-admin
-   sudo rm -rf /usr/local/libexec/bb-box /etc/sudoers.d/bb-box /etc/tmpfiles.d/bb-box.conf /var/lib/bb-box
+   sudo rm -rf /usr/local/libexec/alia-box /etc/sudoers.d/alia-box /etc/tmpfiles.d/alia-box.conf /var/lib/alia-box
    ```
 
 ### A Mac
@@ -624,17 +624,17 @@ starting, which a pool cannot do.
    daemons:
 
    ```sh
-   sudo launchctl bootout system/app.bb-box.device-host
-   sudo launchctl bootout system/app.bb-box.device-host.ports
-   sudo rm -f /Library/LaunchDaemons/app.bb-box.device-host.plist /Library/LaunchDaemons/app.bb-box.device-host.ports.plist
+   sudo launchctl bootout system/app.alia-box.device-host
+   sudo launchctl bootout system/app.alia-box.device-host.ports
+   sudo rm -f /Library/LaunchDaemons/app.alia-box.device-host.plist /Library/LaunchDaemons/app.alia-box.device-host.ports.plist
    ```
 
 6. Remove what `setup-mac.sh` added:
 
    ```sh
    sudo sysadminctl -deleteUser bbbox-admin
-   sudo launchctl bootout system/dev.bb-box.clear-bb-state
-   sudo rm -rf /usr/local/libexec/bb-box /usr/local/share/bb-box /etc/sudoers.d/bb-box /Library/LaunchDaemons/dev.bb-box.clear-bb-state.plist /var/db/bb-box
+   sudo launchctl bootout system/dev.alia-box.clear-alia-state
+   sudo rm -rf /usr/local/libexec/alia-box /usr/local/share/alia-box /etc/sudoers.d/alia-box /Library/LaunchDaemons/dev.alia-box.clear-alia-state.plist /var/db/alia-box
    ```
 
 Homebrew, Cua Driver and the settings setup changed stay. Turn Spotlight
@@ -643,7 +643,7 @@ System Settings, General, Software Update.
 
 ## When it goes wrong
 
-bb-box's panel lists each machine as free, held, resetting or out of
+alia-box's panel lists each machine as free, held, resetting or out of
 service. The doctor shows each machine's state, and why one is out of
 service.
 
@@ -659,7 +659,7 @@ A machine goes out of service when:
 The doctor shows the reason. Fix the cause, then reset the machine on it:
 
 ```sh
-sudo /usr/local/libexec/bb-box/machine reset
+sudo /usr/local/libexec/alia-box/machine reset
 ```
 
 Add `machine` to run the whole-machine reset too. The helper waits for it
@@ -667,13 +667,13 @@ to finish. If it reboots the machine, run the command again once the
 machine is back, to finish the reset:
 
 ```sh
-sudo /usr/local/libexec/bb-box/machine reset machine
+sudo /usr/local/libexec/alia-box/machine reset machine
 ```
 
 If the whole-machine reset fails, its log is in
-`/var/lib/bb-box/restore.failed/log`.
+`/var/lib/alia-box/restore.failed/log`.
 
-bb-box lends the machine again once it is clean. The helper refuses to
+alia-box lends the machine again once it is clean. The helper refuses to
 reset a machine that a box holds. Release the box first.
 
 If your reset was cut short, for example because your SSH session ended,
@@ -681,7 +681,7 @@ the machine stays resetting, and the doctor says so. Run the reset again.
 
 ### A machine that does not answer
 
-A box on a machine that does not answer keeps its machine. bb-box resets
+A box on a machine that does not answer keeps its machine. alia-box resets
 the machine when it answers again. Its power shows as unknown meanwhile.
 
 ### A Mac out of service
@@ -689,7 +689,7 @@ the machine when it answers again. Its power shows as unknown meanwhile.
 Fix the cause the doctor shows, then reset the Mac on it:
 
 ```sh
-sudo /usr/local/libexec/bb-box/machine reset
+sudo /usr/local/libexec/alia-box/machine reset
 ```
 
 The command waits while the next box user signs in. If the helper restarts
@@ -714,7 +714,7 @@ When a box is released, the helper:
 6. checks that nothing is left, and adds 1 to the reset generation
 
 The next box gets a new user, with a new user ID. If the reset fails, the
-machine goes out of service. bb-box lends it again only after a reset
+machine goes out of service. alia-box lends it again only after a reset
 succeeds.
 
 #### What it does not do
@@ -736,14 +736,14 @@ hold nothing you would not show the box.
 
 ### How a box gets a Mac
 
-bb-box claims a free Mac whose box user is at the console. If the user is
+alia-box claims a free Mac whose box user is at the console. If the user is
 still signing in, the box waits for it, then, for `macos-desktop`, for Cua
 Driver's socket in the user's home. It waits up to 3 minutes in all.
 
 The desktop is Screen Sharing on the Mac, reached through SSH as the box
-user. Each time the desktop opens, bb-box asks the helper for the box
+user. Each time the desktop opens, alia-box asks the helper for the box
 user's password, over the admin user's SSH, and gives it only to Screen
-Sharing's sign-in. bb-box never stores it. Each box's user has its own
+Sharing's sign-in. alia-box never stores it. Each box's user has its own
 password, which the reset removes with the user. The desktop has the size
 of the Mac's display, and cannot be resized. A Mac without a display may
 need an HDMI dummy plug for a useful size.
@@ -753,7 +753,7 @@ its size, for that user's session only: 1920 x 1080 points drawn with
 3840 x 2160 pixels on a 1080p plug. On a Retina screen the viewer then
 shows each pixel at about 1.35 screen pixels, rather than 2.7 at 1x, so
 text is sharp. Computer use's coordinates stay in points, so they do not
-change. setup-mac.sh builds `bb-box-display`, which the helper runs after
+change. setup-mac.sh builds `alia-box-display`, which the helper runs after
 each user signs in. On a Mac whose display has no 2x mode, it does
 nothing.
 
@@ -782,7 +782,7 @@ On such a Mac, an agent grants its own programs other permissions with
 lists them. The helper grants only the box user's programs and apps in
 `/Applications`, never Apple's, a shell or an interpreter, and the reset
 removes every grant. Each box user has a signing identity of its own,
-"bb-box local code signing", so a program it rebuilds keeps its grants.
+"alia-box local code signing", so a program it rebuilds keeps its grants.
 
 ### How an ios box gets a slot
 
@@ -795,13 +795,13 @@ promised a place and the helper makes a slot for it: a new user, a device
 by `simctl create`, seeded, and its first boot. The Mac keeps
 `ios-hosts-ahead` slots ready, 1 by default, while it is not lent whole.
 
-Each slot's home starts with the build of BB's app that BB's server gives,
-so the slot's enrolment skips its download, about 2 to 3 s. bb-box's upkeep
-installs that build as bb-box's admin user, with the admin user's `npm`,
-when BB's server gives a new one. The helper's `machine slot keep-app` then
+Each slot's home starts with the build of VesnALIA's app that VesnALIA's server gives,
+so the slot's enrolment skips its download, about 2 to 3 s. alia-box's upkeep
+installs that build as alia-box's admin user, with the admin user's `npm`,
+when VesnALIA's server gives a new one. The helper's `machine slot keep-app` then
 copies it into the slots' home, and into each ready slot no box has
 claimed, once it has checked the copy. Without `npm` for the admin user,
-slots download the app as they enrol, and bb-box's log says why.
+slots download the app as they enrol, and alia-box's log says why.
 
 A macos box asked for with `shared: true` takes a slot the same way, and
 the slot's device is deleted at the claim: a macOS user on the Mac for
@@ -811,7 +811,7 @@ or grants. Its release removes the slot as an ios box's does.
 A slot's release stops its user gently, removes it, and queues a sweep of
 every file its UID owns on the Data volume, as a shared Tart host's do. A
 slot's UID, from 80000, is never given again. The helper's `status`, read
-with `sudo /usr/local/libexec/bb-box/machine slot status`, gives each
+with `sudo /usr/local/libexec/alia-box/machine slot status`, gives each
 sweep's paths found and left.
 
 A whole claim of a Mac lending only ready spares removes them first, before
@@ -821,7 +821,7 @@ box, and the slots' `closed` marker, under the slots' lock, for slots.
 
 | Setting | Default | What |
 | --- | --- | --- |
-| `ios-hosts-most` | empty | slots making, ready or held on each Mac. Empty, bb-box estimates it for each Mac: the fewest of its cores over 1.3, its memory over 1.5 GiB after 8 GiB for the Mac, and what its video encoder allows; 13 on an 18-core, 36 GiB M5 Max. `ios:<slots>` on a Mac's line, as in `macos,ios:10`, wins for that Mac, and `bb box doctor` says where each Mac's number came from |
+| `ios-hosts-most` | empty | slots making, ready or held on each Mac. Empty, alia-box estimates it for each Mac: the fewest of its cores over 1.3, its memory over 1.5 GiB after 8 GiB for the Mac, and what its video encoder allows; 13 on an 18-core, 36 GiB M5 Max. `ios:<slots>` on a Mac's line, as in `macos,ios:10`, wins for that Mac, and `alia box doctor` says where each Mac's number came from |
 | `ios-hosts-ahead` | 1 | ready slots kept while the Mac is not lent whole |
 | `ios-hosts-resetting-most` | 4 | released slots swept in one pass |
 | `ios-hosts-disk-reserve-gib` | 40 | no new slot below this much free disk |
@@ -855,7 +855,7 @@ updated to macOS 27 starts with the way it remembers, so its next reset
 takes a minute longer.
 
 Restarting user space or the Mac ends every process on it, SSH sessions
-included. bb-box then asks the helper again, which waits for the sign-in to
+included. alia-box then asks the helper again, which waits for the sign-in to
 finish.
 
 The next user's home says which macOS it last signed in on, so its first
@@ -865,7 +865,7 @@ A person signed in at the console stops the reset, and the Mac goes out of
 service. Their session is left alone. Sign them out, then run
 `machine reset` as in [A Mac out of service](#a-mac-out-of-service).
 Signing them out is not enough: the automatic login runs only when the
-login window starts, and bb-box lends the Mac again only at a later reset
+login window starts, and alia-box lends the Mac again only at a later reset
 generation.
 
 A Mac's reset keeps macOS, its settings and apps, Homebrew, and Cua
@@ -884,11 +884,11 @@ A Mac has no whole-machine reset, and its boxes have no Docker.
 ### Notes
 
 - **systemd.** On a machine with systemd, the helper turns on linger for
-  each box user, so BB's daemon keeps running when no one is logged in.
-  The reset turns it off. Without systemd, BB's daemon runs without linger.
-- **Boot.** `/etc/tmpfiles.d/bb-box.conf` clears BB's lock and PID files in
-  box homes at boot, so BB's daemon starts again after a hard stop.
-- **Sizes.** Every machine is lent whole. bb-box claims the smallest free
+  each box user, so VesnALIA's daemon keeps running when no one is logged in.
+  The reset turns it off. Without systemd, VesnALIA's daemon runs without linger.
+- **Boot.** `/etc/tmpfiles.d/alia-box.conf` clears VesnALIA's lock and PID files in
+  box homes at boot, so VesnALIA's daemon starts again after a hard stop.
+- **Sizes.** Every machine is lent whole. alia-box claims the smallest free
   machine of at least the size a box asks for: as many cores, 90% of the
   memory or more (the kernel keeps some of it), and, when the size names a
   disk, that much free under `/home`, or `/Users` on a Mac. It counts the
@@ -897,6 +897,6 @@ A Mac has no whole-machine reset, and its boxes have no Docker.
   doctor shows each machine's cores, memory and free disk, and warns about
   a machine too small for a kind's default size, saying which presets it
   holds. If your machines are smaller than the presets, change them in the
-  kinds part of BB Box's settings.
+  kinds part of VesnALIA Box's settings.
 - **Desktops.** On a Linux machine, the pool lends terminal boxes only. A
   Mac lends its desktop as `macos-desktop`.

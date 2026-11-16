@@ -100,9 +100,9 @@ Where it fits:
 - Its line in the machines setting names macOS kinds:
   `mac-mini bbbox-admin@192.0.2.30 macos,macos-desktop`.
 - Its setup is `setup/ssh-pool/setup-mac.sh`, and its helper is
-  `machine-mac.sh`, installed as `/usr/local/libexec/bb-box/machine`. The
+  `machine-mac.sh`, installed as `/usr/local/libexec/alia-box/machine`. The
   helper has the Linux helper's commands, input, output and exit codes,
-  and one more command, `display`, below. Its state is in `/var/db/bb-box`,
+  and one more command, `display`, below. Its state is in `/var/db/alia-box`,
   where macOS keeps such state.
 - Everything else is the pool's: the smallest free machine that fits, the
   markers and generation, out of service and return to service, jump
@@ -125,7 +125,7 @@ Where it fits:
   with a random password only root on the Mac can read. The helper gives
   the password to `sysadminctl` on stdin and writes `/etc/kcpassword`
   itself, so it is in no command's arguments. Its home is made from
-  macOS's template and bb-box's: the login PATH, no sleep and no screen
+  macOS's template and alia-box's: the login PATH, no sleep and no screen
   saver, as in Tart's image, and Cua Driver's LaunchAgent. Its
   `loginwindow.plist` names the macOS version and build, so its first
   sign-in does not open Setup Assistant.
@@ -133,7 +133,7 @@ Where it fits:
   marker, adds the box's SSH key and 030's sudoers rule for the user, and
   waits for SSH, the user at the console and, for `macos-desktop`, Cua's
   socket. `readyTimeoutMs` is 3 minutes for both kinds.
-- The reset, after the old box's BB machine is removed:
+- The reset, after the old box's VesnALIA machine is removed:
   1. make the next user and set it as the automatic login. From then on,
      whatever signs a user in signs in the next one: while the old user
      was still the automatic login, macOS signed it in again about 6 s
@@ -171,7 +171,7 @@ Where it fits:
   5. the clean check: no process or file of the old user, and the next
      user at the console. While a restart signs the user in, the helper
      reports the reset as still running, as for the pool's whole-machine
-     reset, and bb-box asks again once it answers. Then the generation
+     reset, and alia-box asks again once it answers. Then the generation
      moves on.
 - On the stand-in, a claim took 0.7 to 1.3 s, and a release under a
   minute. A real Mac's full restart is slower than the VM's. Enrolment is
@@ -185,12 +185,12 @@ Boxes are not a security boundary between each other or from the Mac.
 - Kept, as set up: macOS, its settings and updates; apps in
   `/Applications`, such as Xcode and Cua Driver; Homebrew and what setup
   installed with it; the iOS Simulator's runtimes; Cua's Accessibility and
-  Screen Recording grants; Screen Sharing and Remote Login; bb-box's
+  Screen Recording grants; Screen Sharing and Remote Login; alia-box's
   helper, template and state.
 - Removed: the user and its home, with its keychain, LaunchAgents, login
   items, privacy answers, Simulator devices, DerivedData, caches, shell
-  history, Git and GitHub CLI credentials, and BB's daemon; its processes;
-  its files anywhere on the Data volume. Its BB machine is removed first,
+  history, Git and GitHub CLI credentials, and VesnALIA's daemon; its processes;
+  its files anywhere on the Data volume. Its VesnALIA machine is removed first,
   as on Linux machines.
 - May carry over, and rarely matters in daily use:
   - changes to files that others own and anyone may write;
@@ -203,11 +203,11 @@ Boxes are not a security boundary between each other or from the Mac.
   aside for boxes, not ones people use.
 - That includes a person's home: macOS makes it `drwxr-x---` for the
   `staff` group, which box users are in. On the Mac set aside, the
-  administrator's home held BB's and the agent CLIs' credentials, readable
+  administrator's home held VesnALIA's and the agent CLIs' credentials, readable
   by every box until it was made `700`. The doctor warns of each person's
   home (a user with a login shell, a UID under the box users', not hidden)
   that box users can enter, and gives the `chmod 700`.
-- Box users' `PATH` has `/usr/local/bin`, bb-box's pinned agent CLIs, before
+- Box users' `PATH` has `/usr/local/bin`, alia-box's pinned agent CLIs, before
   Homebrew's `bin`, so a link a person puts there, as to a CLI in their
   own home, does not shadow them.
 
@@ -306,7 +306,7 @@ Boxes are not a security boundary between each other or from the Mac.
   need Accessibility and leave to post events (`kTCCServicePostEvent`), as
   Tart's images have them; the live check confirms that this pane gives
   both. A Mac under MDM can grant them by profile instead. Any command run
-  over SSH on the Mac can then post events, which bb-box accepts, as it is
+  over SSH on the Mac can then post events, which alia-box accepts, as it is
   not a boundary on the Mac. Desktop commands run through 030's wrapper.
 - SSH does need Full Disk Access, which a person gives at setup with
   Remote Login's "Allow full disk access for remote users". Without it,
@@ -329,7 +329,7 @@ Boxes are not a security boundary between each other or from the Mac.
 - The pool's macOS offers add the features `xcode` and `ios-simulator`
   when every Mac serving the kind that answered the last survey has them,
   as the pool's Docker feature works; the doctor warns when only some do.
-  The doctor's `status xcode` keeps its answer in `/var/db/bb-box/xcode`,
+  The doctor's `status xcode` keeps its answer in `/var/db/alia-box/xcode`,
   and each survey reads it while the Mac's Xcode version is the same. No
   kind requires them yet ([012](012-offers-may-add-features.md)); one can
   come when an agent needs the promise.
@@ -347,14 +347,14 @@ Boxes are not a security boundary between each other or from the Mac.
 
 **Reach and enrolment.**
 
-- bb-box reaches each Mac over SSH as the pool's admin user,
+- alia-box reaches each Mac over SSH as the pool's admin user,
   `bbbox-admin`, directly or through a jump host, with its host keys in
   settings. It reaches boxes as their user.
-- Reaching a Mac through BB, as Docker on a BB machine
-  ([042](042-a-docker-host-can-be-a-bb-machine.md)), would need no inbound
+- Reaching a Mac through VesnALIA, as Docker on a VesnALIA machine
+  ([042](042-a-docker-host-can-be-a-alia-machine.md)), would need no inbound
   SSH, but the relay would have to carry SSH and the display as well as
-  Docker's API. Later, if a Mac only BB can reach is to be lent.
-- A box enrols in BB as a machine, as its user, when claimed
+  Docker's API. Later, if a Mac only VesnALIA can reach is to be lent.
+- A box enrols in VesnALIA as a machine, as its user, when claimed
   ([014](014-enrol-through-machine-providers.md)), as Linux pool boxes and
   Tart's macOS boxes do.
 
@@ -367,12 +367,12 @@ Mac mini with 16 GB fits the small and medium macOS presets. Several
 
 **Setup.** `setup-mac.sh`, run with sudo on the Mac:
 
-- makes `bbbox-admin`, which takes only bb-box's key and may run only the
+- makes `bbbox-admin`, which takes only alia-box's key and may run only the
   helper as root, as on Linux;
 - installs the helper, the home template, Cua Driver, Homebrew with Git,
-  GitHub CLI and Node.js, and a launch daemon that clears BB's daemon lock
+  GitHub CLI and Node.js, and a launch daemon that clears VesnALIA's daemon lock
   and PID file in box homes at boot
-  ([017](017-boxes-clear-bb-daemon-state-at-boot.md));
+  ([017](017-boxes-clear-alia-daemon-state-at-boot.md));
 - keeps the Mac awake, starts it after a power failure, and turns off
   automatic macOS updates, which would restart a box, automatic App Store
   updates, which would change Xcode under a box, and Spotlight indexing;
@@ -406,7 +406,7 @@ runtime when present.
   by a restart is finished.
 - The hardware: a Mac with Apple silicon, set aside for boxes and erased
   first, such as a Mac mini with M2 or later, 16 GB of memory and 512 GB of
-  disk, as Xcode with an iOS runtime takes tens of GB; on a network BB's
+  disk, as Xcode with an iOS runtime takes tens of GB; on a network VesnALIA's
   server reaches over SSH; an HDMI dummy plug, to compare the console's
   size with and without; an Apple Account for Xcode; and a person at the
   Mac or on Screen Sharing for setup's steps. A second Mac only for the
@@ -469,13 +469,13 @@ resets.
 | a release: the sweep | 21 to 37 s |
 | a release: userspace restarting | 20 to 25 s in |
 | the next user's Dock, after `launchctl reboot userspace` | 7 to 10 s; 16 to 22 s without the version stamp |
-| bb-box's next call, once the user is signed in | 0.66 to 0.87 s |
+| alia-box's next call, once the user is signed in | 0.66 to 0.87 s |
 | a full restart of the VM, to the next user at the console | about 25 s |
 | restarting loginwindow, to the next user at the console | never, within 60 s |
 
 The conformance suite passed for `macos-desktop`. Acquiring took 1,285 ms,
 copying 32 MiB in and out 453 ms, and opening TextEdit 2,167 ms. It skipped
-enrolment, as there was no BB server, resizing, and stopping and starting.
+enrolment, as there was no VesnALIA server, resizing, and stopping and starting.
 
 It also found:
 
@@ -524,7 +524,7 @@ A Mac set aside, as under the hardware above, must still confirm:
 - a release whose SSH the userspace restart cuts from outside the Mac,
   tested only on the fake Mac, as the runner was inside the VM;
 - a full restart's time on real hardware;
-- the timings without a runner on the same Mac, and enrolment, with a BB
+- the timings without a runner on the same Mac, and enrolment, with a VesnALIA
   server.
 
 ### The viewer's input

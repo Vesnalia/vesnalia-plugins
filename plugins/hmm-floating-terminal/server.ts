@@ -1,6 +1,6 @@
-// bb-plugin-hmm-floating-terminal — backend.
+// alia-plugin-hmm-floating-terminal — backend.
 //
-// BB already owns the PTYs: `bb.sdk.terminals` starts a session and the host
+// VesnALIA already owns the PTYs: `alia.sdk.terminals` starts a session and the host
 // streams it at `/ws/terminals/<id>`. This server therefore only decides *which*
 // sessions a scope has, and creates or closes them; the frontend attaches to the
 // host socket directly instead of proxying every byte through the plugin.
@@ -8,14 +8,14 @@
 // The scope is the project's checkout, not a thread. A thread-scoped session
 // would vanish the moment the user opened another thread in the same project,
 // stranding a running dev script in a scope nothing links back to.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
-/** Marks the sessions this plugin owns, so terminals opened in BB's own panel
+/** Marks the sessions this plugin owns, so terminals opened in VesnALIA's own panel
  *  are never hijacked by the floating window. Tabs are `<TITLE> <n>`. */
 const TITLE = "Hmm floating terminal";
 
-/** Every scope is a project: BB has no thread without one, and the window is
+/** Every scope is a project: VesnALIA has no thread without one, and the window is
  *  hidden wherever no project is open. */
 const scopeInput = z.object({ projectId: z.string().min(1) }).strict();
 
@@ -46,13 +46,13 @@ function labelOf(title: string): string {
   return title.startsWith(TITLE) ? `Terminal${title.slice(TITLE.length)}` : title;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
   // ponytail: the project's default source wins; add a source picker if a
   // multi-checkout project ever needs a terminal per checkout.
   const scopeOf = async (projectId: string) => {
-    const { sources } = await bb.sdk.projects.get({ projectId });
+    const { sources } = await alia.sdk.projects.get({ projectId });
     const source = sources.find((one) => one.isDefault) ?? sources[0];
     if (source === undefined) {
       throw new Error("Project has no checkout to open a terminal in");
@@ -64,9 +64,9 @@ export default async function plugin(bb: BbPluginApi) {
     } as const;
   };
 
-  /** The plugin's own live sessions in one scope, in BB's order. */
+  /** The plugin's own live sessions in one scope, in VesnALIA's order. */
   const own = async (projectId: string) => {
-    const { sessions } = await bb.sdk.terminals.list({
+    const { sessions } = await alia.sdk.terminals.list({
       scope: await scopeOf(projectId),
     });
     return sessions.filter(
@@ -77,7 +77,7 @@ export default async function plugin(bb: BbPluginApi) {
     );
   };
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     // Reopening the window reattaches to the live shells: closing it must not
     // cost the user their history, their ssh session, or a running build.
     session_list: async ({ projectId }) => ({
@@ -97,13 +97,13 @@ export default async function plugin(bb: BbPluginApi) {
         index += 1;
       }
       const title = `${TITLE} ${index}`;
-      const created = await bb.sdk.terminals.create({
+      const created = await alia.sdk.terminals.create({
         cols,
         rows,
         scope: await scopeOf(projectId),
         title,
       });
-      bb.log.info(`opened ${created.id} in ${created.initialCwd}`);
+      alia.log.info(`opened ${created.id} in ${created.initialCwd}`);
       return {
         terminalId: created.id,
         label: labelOf(title),
@@ -112,12 +112,12 @@ export default async function plugin(bb: BbPluginApi) {
     },
 
     session_close: async ({ terminalId }) => {
-      await bb.sdk.terminals.close({ terminalId, mode: "force" });
+      await alia.sdk.terminals.close({ terminalId, mode: "force" });
       return {};
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

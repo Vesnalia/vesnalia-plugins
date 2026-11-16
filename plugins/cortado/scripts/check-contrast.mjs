@@ -12,8 +12,8 @@ const block = (selector) => {
   return all.slice(start, all.indexOf("}", start));
 };
 const MODES = {
-  light: block(":root, .light") + block(".light .bb-code-highlight.bb-code-highlight"),
-  dark: block(".dark") + block(".dark .bb-code-highlight.bb-code-highlight"),
+  light: block(":root, .light") + block(".light .alia-code-highlight.alia-code-highlight"),
+  dark: block(".dark") + block(".dark .alia-code-highlight.alia-code-highlight"),
 };
 let css = "";
 const token = (name) => {

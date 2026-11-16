@@ -1,4 +1,4 @@
-import type { BbPluginApi, PluginAgentToolResult, PluginInteractionCancelReason } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginAgentToolResult, PluginInteractionCancelReason } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { PRODUCT } from "../brand.ts";
 import { BoxError, describeError, describeErrorForAgent, errorForAgent, type BoxErrorCode, type BoxRecord } from "../core/boxes.ts";
@@ -6,7 +6,7 @@ import { countsAgainstLimit, snapshotLine, type Caller, type Standing } from "..
 import { YesNeeded, type RestoreAnswer } from "../core/snapshots.ts";
 import { toolsForPurposes } from "./purposes.ts";
 import { RESTORE_FORM, RESTORE_FORM_TIMEOUT_MS, isRestoreYes, restoreFormPayload, restoreFormTitle, type RestoreFormPayload } from "./restore-form.ts";
-import type { BbBox } from "./setup.ts";
+import type { AliaBox } from "./setup.ts";
 import { deletedText, forkMayMissWords, offerSnapshotWords, restoredText, takeCheckText, takenText } from "./snapshot-words.ts";
 import { agentErrorText, boxParam, failure, ready, runsOnBox, thread, using, withHint } from "./tools.ts";
 import { boxDetail, startingWords } from "./views.ts";
@@ -40,12 +40,12 @@ function agent(threadId: string): Caller {
   return { is: "agent", threadId };
 }
 
-async function snapshotTarget(app: BbBox, threadId: string, ref: string, signal?: AbortSignal): Promise<{ box: BoxRecord; standing: Standing }> {
+async function snapshotTarget(app: AliaBox, threadId: string, ref: string, signal?: AbortSignal): Promise<{ box: BoxRecord; standing: Standing }> {
   const { box, runsOn } = await app.resolve(threadId, ref, signal);
   return { box, standing: { box: { id: box.id, threadId: box.threadId }, runsOn: runsOn || (await runsOnBox(app, threadId, box, signal)) } };
 }
 
-function boxSnapshotsText(app: BbBox, threadId: string, box: BoxRecord, standing: Standing): string {
+function boxSnapshotsText(app: AliaBox, threadId: string, box: BoxRecord, standing: Standing): string {
   const offer = app.snapshots.offerFor(app.backends.get(box.backend), box.kind);
   const seen = app.snapshots.seen(agent(threadId), standing);
   const perBox = app.snapshots.settings.perBox;
@@ -74,7 +74,7 @@ function cancelledText(reason: PluginInteractionCancelReason, box: string): Plug
     timeout: "nobody answered the form within 10 minutes",
     "thread-stopped": "the thread was stopped",
     "thread-deleted": "the thread was deleted",
-    "server-restarted": "BB's server restarted",
+    "server-restarted": "VesnALIA's server restarted",
     "plugin-disposed": `${PRODUCT} stopped, as for an update`,
     "request-aborted": "the request was cancelled",
   };
@@ -82,7 +82,7 @@ function cancelledText(reason: PluginInteractionCancelReason, box: string): Plug
   return reason === "user" || reason === "timeout" ? text : { content: [{ type: "text", text }], isError: true };
 }
 
-async function quietOn(app: BbBox, box: BoxRecord, signal: AbortSignal): Promise<void> {
+async function quietOn(app: AliaBox, box: BoxRecord, signal: AbortSignal): Promise<void> {
   const deadline = Date.now() + QUIET_WAIT_MS;
   while (Date.now() < deadline && !signal.aborted) {
     const working = (await app.threadsOn(box).catch(() => [])).filter((each) => each.running);
@@ -94,7 +94,7 @@ async function quietOn(app: BbBox, box: BoxRecord, signal: AbortSignal): Promise
 export function forkParameters(wholeCards: boolean) {
   return z.object({
     box: boxParam.describe("The box to fork, by its name or ID: one of this thread's boxes, not one it runs on."),
-    snapshot: z.string().min(1).optional().describe('The snapshot\'s name or ID, from box_snapshots. Left out, bb-box takes one of the box now, named "for a fork", and forks that.'),
+    snapshot: z.string().min(1).optional().describe('The snapshot\'s name or ID, from box_snapshots. Left out, alia-box takes one of the box now, named "for a fork", and forks that.'),
     name: z.string().min(1).max(32).refine(isMachineName, FORK_NAME_RULE).optional().describe(`The new box's name: ${FORK_NAME_RULE} One is made up when left out.`),
     gpu: wholeCards
       ? z.enum(["none", "shared", "whole"]).optional().describe("The fork's GPU. none, the default, starts it with no card. shared places a shared card, and whole a card to itself where this install has whole cards on, before anything is copied; only a desktop can take either.")
@@ -102,10 +102,10 @@ export function forkParameters(wholeCards: boolean) {
   });
 }
 
-export function registerSnapshotTools(bb: BbPluginApi, app: BbBox): void {
-  const registerTool = toolsForPurposes(bb);
+export function registerSnapshotTools(alia: AliaPluginApi, app: AliaBox): void {
+  const registerTool = toolsForPurposes(alia);
   const titleOf = async (threadId: string): Promise<string | null> => {
-    const found = await bb.sdk.threads.get({ threadId }).catch(() => null);
+    const found = await alia.sdk.threads.get({ threadId }).catch(() => null);
     return found?.title ?? found?.titleFallback ?? null;
   };
 
@@ -187,7 +187,7 @@ export function registerSnapshotTools(bb: BbPluginApi, app: BbBox): void {
   registerTool({
     name: "box_fork",
     description:
-      "Make a new box of this thread from a snapshot of one of its boxes, or from the box as it is now, to try two things from one set-up state. The fork gets the snapshot's files and its own identity: a new BB machine, address and keys, so it never acts as its source. Everything else on the disk comes with it, project secrets and signed-in browsers too. It starts fresh, with no apps running, at the snapshot's size.",
+      "Make a new box of this thread from a snapshot of one of its boxes, or from the box as it is now, to try two things from one set-up state. The fork gets the snapshot's files and its own identity: a new VesnALIA machine, address and keys, so it never acts as its source. Everything else on the disk comes with it, project secrets and signed-in browsers too. It starts fresh, with no apps running, at the snapshot's size.",
     presentation: { label: { pending: "Forking a box", completed: "Forked a box" } },
     parameters: forkParameters(true),
     async execute({ box: ref, snapshot, name, gpu }, { threadId, projectId, signal }) {
@@ -264,7 +264,7 @@ export function registerSnapshotTools(bb: BbPluginApi, app: BbBox): void {
           const title = await titleOf(id);
           for (let round = 0; round < ASKS_AGAIN_AT_MOST; round++) {
             const payload: RestoreFormPayload = restoreFormPayload(needed.check, needed.asks, standing.runsOn, needed.changed);
-            const result = await bb.ui.requestInput(
+            const result = await alia.ui.requestInput(
               {
                 threadId: id,
                 rendererId: RESTORE_FORM,

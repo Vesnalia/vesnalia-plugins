@@ -27,7 +27,7 @@ interface Provider {
   readonly slots?: { readonly kinds: readonly SlotKind[]; readonly most: number };
 }
 
-const BB_CANNOT_SAY = new Error("BB did not answer");
+const ALIA_CANNOT_SAY = new Error("VesnALIA did not answer");
 
 function threadsInProjects(): Map<string, string | null | Error> {
   return new Map<string, string | null | Error>([
@@ -249,7 +249,7 @@ test("with no backend kept for a project, every thread sees every backend in set
   await boxes.idle();
 });
 
-test("a backend's projects are a list of BB project IDs, read without repeats, left out when empty, and anything else is a problem at its path (#1458)", () => {
+test("a backend's projects are a list of VesnALIA project IDs, read without repeats, left out when empty, and anything else is a problem at its path (#1458)", () => {
   const drivers = [fakeDriver(tempDir("reserved-driver"))];
   const read = (projects: unknown) => readDraft({ backends: [{ id: "fake", type: "fake", enabled: true, fields: { address: "192.0.2.10" }, projects }] }, drivers);
 
@@ -288,7 +288,7 @@ function forkOf(source: BoxRecord, id: string, onto: Pick<ForkRequest, "backend"
   };
 }
 
-test("a fork follows the thread's project now, as BB says it, not the project its source box was made in: a thread moved out of a kept backend's project gets no fork there (#1458)", async () => {
+test("a fork follows the thread's project now, as VesnALIA says it, not the project its source box was made in: a thread moved out of a kept backend's project gets no fork there (#1458)", async () => {
   const { boxes, threads } = world([
     { id: "fake", hosts: ["devpc"] },
     { id: "fake:work", hosts: ["work-1"], projects: [WORK] },
@@ -304,8 +304,8 @@ test("a fork follows the thread's project now, as BB says it, not the project it
   await assert.rejects(boxes.fork(forkOf(source, "bxforkmoved01")), keptFromThread);
   assert.ok(await boxes.forkRefusal(askedWithSourceProject));
 
-  threads.set(WORK_THREAD, BB_CANNOT_SAY);
-  await assert.rejects(boxes.admitFork(askedWithSourceProject), keptFromThread, "a thread BB cannot place has no project");
+  threads.set(WORK_THREAD, ALIA_CANNOT_SAY);
+  await assert.rejects(boxes.admitFork(askedWithSourceProject), keptFromThread, "a thread VesnALIA cannot place has no project");
 
   threads.set(WORK_THREAD, HOME);
   const shared = await boxes.fork(forkOf(source, "bxforkshared1", { backend: "fake", backendLabel: "Fake host on devpc" }));

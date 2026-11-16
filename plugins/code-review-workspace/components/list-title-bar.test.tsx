@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { TITLE_BAR_WAIT_MS } from "../lib/title-bar";
 
@@ -30,7 +30,7 @@ function fakeSize(width: number, height: number) {
 
 const reviews = [{ targetKey: "pr-7", kind: "pr", repo: "acme/web", number: 7, title: "Change Seven", status: "ready" }];
 
-/** All reviews and BB's title bar, as the host renders them: the bar apart from the page, with the panel's headerContent. */
+/** All reviews and VesnALIA's title bar, as the host renders them: the bar apart from the page, with the panel's headerContent. */
 async function renderList(rpc: Record<string, (input: any) => unknown> = {}, { titleBar = true } = {}) {
   const app = await loadPluginApp(() => import("../app"));
   const handlers = {
@@ -46,7 +46,7 @@ async function renderList(rpc: Record<string, (input: any) => unknown> = {}, { t
   return { bar, page };
 }
 
-test("on All reviews BB's title bar has Refresh and Settings, and Settings opens Settings; on Settings it has nothing", async () => {
+test("on All reviews VesnALIA's title bar has Refresh and Settings, and Settings opens Settings; on Settings it has nothing", async () => {
   fakeTime();
   const { bar, page } = await renderList();
   const commands = within(await bar!.findByRole("group", { name: "Review list commands" }));
@@ -89,7 +89,7 @@ test("on a phone the title bar has three buttons at most: Find a review opens th
   const commands = within(await bar!.findByRole("group", { name: "Review list commands" }));
   const buttons = await waitFor(() => { const all = commands.getAllByRole("button"); expect(all).toHaveLength(3); return all; });
   expect(buttons.map((button) => button.getAttribute("aria-label"))).toEqual(["Find a review", "Refresh", "Settings"]);
-  // 36px on a coarse pointer, inside 44px targets: three fit BB's 150px with room to spare.
+  // 36px on a coarse pointer, inside 44px targets: three fit VesnALIA's 150px with room to spare.
   for (const button of buttons) expect(button.className).toContain("pointer-coarse:h-9");
   expect(page.queryByRole("searchbox")).toBeNull();
   fireEvent.click(commands.getByRole("button", { name: "Find a review" }));
@@ -103,7 +103,7 @@ test("on a phone the title bar has three buttons at most: Find a review opens th
   expect(page.getByText("Change Seven")).toBeTruthy();
 });
 
-test("without BB's title bar the page shows the list's controls itself, after a moment", async () => {
+test("without VesnALIA's title bar the page shows the list's controls itself, after a moment", async () => {
   fakeTime();
   const { page } = await renderList({}, { titleBar: false });
   expect(page.queryByRole("group", { name: "Review list commands" })).toBeNull();

@@ -1,11 +1,11 @@
 // Tracks every PR a thread creates, across repos, so stacked and cross-repo
-// work shows up as one unit. bb itself only links the PR for a thread's branch.
+// work shows up as one unit. VesnALIA itself only links the PR for a thread's branch.
 //
 // Discovery: scan the thread's completed commands for `gh pr create` output
 // (incrementally, from a per-thread cursor), plus manual links. Status: one
 // batched GraphQL query every few minutes for all linked PRs, with stack order
 // derived from base/head branches within a repo.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { anySignal, ghGraphql, type GhError } from "./gh.ts";
 import { listLiveThreads } from "./thread-list.ts";
@@ -184,16 +184,16 @@ export function shown(status: Readonly<Record<string, PrStatus>>): string {
   );
 }
 
-export function createPrTracker(bb: BbPluginApi, changed: () => void) {
-  const kv = bb.storage.kv;
+export function createPrTracker(alia: AliaPluginApi, changed: () => void) {
+  const kv = alia.storage.kv;
   // Aborted when this load is disposed (a reload, disable or update). Work still
-  // running then must stop before its next bb call: the old handle is dead.
+  // running then must stop before its next VesnALIA call: the old handle is dead.
   const lifetime = new AbortController();
-  bb.onDispose(() => lifetime.abort());
+  alia.onDispose(() => lifetime.abort());
   // PR data lives in the plugin's own SQLite database: kv values are capped at
   // 256KB, and a busy user links hundreds of PRs a month.
-  const db = () => bb.storage.database();
-  bb.storage.migrate(db(), [
+  const db = () => alia.storage.database();
+  alia.storage.migrate(db(), [
     "CREATE TABLE pr_status (key TEXT PRIMARY KEY, json TEXT NOT NULL)",
     "CREATE TABLE thread_prs (thread_id TEXT PRIMARY KEY, json TEXT NOT NULL)",
   ]);
@@ -240,7 +240,7 @@ export function createPrTracker(bb: BbPluginApi, changed: () => void) {
       writeTable(table, column, old);
       await kv.delete(kvKey);
     }
-  })().catch((error) => bb.log.warn(`pr storage move: ${String(error)}`));
+  })().catch((error) => alia.log.warn(`pr storage move: ${String(error)}`));
   const getThreads = async () => {
     await moved;
     return readTable<ThreadPrs>("thread_prs", "thread_id");
@@ -278,7 +278,7 @@ export function createPrTracker(bb: BbPluginApi, changed: () => void) {
     const found: PrRef[] = [];
     for (let page = 0; page < 400; page += 1) {
       if (signal?.aborted) break;
-      const rows = await bb.sdk.threads.events.list({
+      const rows = await alia.sdk.threads.events.list({
         ...(signal ? { signal } : {}),
         threadId,
         afterSeq: String(cursor),
@@ -312,7 +312,7 @@ export function createPrTracker(bb: BbPluginApi, changed: () => void) {
 
   /** Ids of threads that are neither archived nor deleted. */
   async function liveThreadIds(): Promise<Set<string>> {
-    const threads = await listLiveThreads(bb);
+    const threads = await listLiveThreads(alia);
     return new Set(threads.filter((thread) => thread.deletedAt === null).map((thread) => thread.id));
   }
 
@@ -355,7 +355,7 @@ export function createPrTracker(bb: BbPluginApi, changed: () => void) {
       // Up to 40 PRs with their checks: GitHub can take a while.
       return { data: await ghGraphql<Batch>(query, { signal, timeout: 60_000 }) };
     } catch (error) {
-      if (!signal.aborted) bb.log.warn(`pr refresh: ${String(error)}`);
+      if (!signal.aborted) alia.log.warn(`pr refresh: ${String(error)}`);
       return { error };
     }
   }
@@ -478,25 +478,25 @@ export function createPrTracker(bb: BbPluginApi, changed: () => void) {
     if (refs.length > 0) await refresh(refs);
   }
 
-  bb.events.on("thread.idle", ({ thread }) => refreshThread(thread.id));
+  alia.events.on("thread.idle", ({ thread }) => refreshThread(thread.id));
 
   // Single flight: a slow run (GitHub having a bad day) mustn't queue up more
   // full runs behind it; the next tick after it finishes picks up from there.
   let scheduled: Promise<void> | null = null;
-  bb.background.schedule("pr-refresh", "*/3 * * * *", () => {
+  alia.background.schedule("pr-refresh", "*/3 * * * *", () => {
     if (scheduled !== null || lifetime.signal.aborted) return;
     scheduled = refresh().finally(() => (scheduled = null));
     return scheduled;
   });
 
   // Backfill active threads once per load, without blocking startup.
-  bb.background.service("pr-backfill", {
+  alia.background.service("pr-backfill", {
     async start(signal) {
       if ((await kv.get<number>("threadPrsVersion")) !== 2) {
         await exclusive(() => setThreads({}));
         await kv.set("threadPrsVersion", 2);
       }
-      const threads = await listLiveThreads(bb, { signal });
+      const threads = await listLiveThreads(alia, { signal });
       const known = await getThreads();
       for (const thread of threads) {
         if (signal.aborted) return;
@@ -504,7 +504,7 @@ export function createPrTracker(bb: BbPluginApi, changed: () => void) {
         // Untouched since its last scan: no new commands to read.
         if (known[thread.id]?.scannedUpdatedAt === thread.updatedAt) continue;
         await scan(thread.id, signal, thread.updatedAt).catch((error) => {
-          if (!signal.aborted) bb.log.warn(`pr scan ${thread.id}: ${String(error)}`);
+          if (!signal.aborted) alia.log.warn(`pr scan ${thread.id}: ${String(error)}`);
         });
       }
       if (!signal.aborted) await refresh(undefined, signal);

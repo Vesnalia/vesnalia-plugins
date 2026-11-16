@@ -23,10 +23,10 @@
 #   scripts/node-modules-share.sh status
 set -euo pipefail
 
-BB_HOME=${BB_HOME:-$HOME/.bb}
-STORE=${NODE_MODULES_STORE:-$BB_HOME/node-modules-store}
-WORKTREES="$BB_HOME/worktrees"
-BB_DB="$BB_HOME/bb.db"
+ALIA_HOME=${ALIA_HOME:-$HOME/.alia}
+STORE=${NODE_MODULES_STORE:-$ALIA_HOME/node-modules-store}
+WORKTREES="$ALIA_HOME/worktrees"
+ALIA_DB="$ALIA_HOME/alia.db"
 
 lock_key() {
   # Which dependency set this tree belongs to. package-lock is authoritative;
@@ -83,7 +83,7 @@ case "$cmd" in
     [ -d "$STORE" ] || { echo "dedupe: no store yet — seed one first" >&2; exit 1; }
     # Never touch a worktree whose thread is mid-turn: replacing node_modules
     # under a running install is how you get a half-installed tree.
-    busy=$(sqlite3 -readonly "$BB_DB" "
+    busy=$(sqlite3 -readonly "$ALIA_DB" "
       select distinct environment_id from threads
        where environment_id is not null and deleted_at is null
          and status in ('active','starting')" 2>/dev/null || true)

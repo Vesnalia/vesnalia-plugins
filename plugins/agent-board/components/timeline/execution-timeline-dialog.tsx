@@ -98,8 +98,8 @@ export function timelineTargetForCard(card: BoardCard, executionKey = card.group
     return { source: "ollama-fleet", executionKey, jobId: card.jobId, title: card.title };
   }
   const threadId = card.threadId ?? card.ownerThreadId;
-  if (card.source === "bb" && threadId) {
-    return { source: "bb", executionKey, threadId, title: card.title };
+  if (card.source === "alia" && threadId) {
+    return { source: "alia", executionKey, threadId, title: card.title };
   }
   if (card.source === "redteam" && card.scanId) {
     return { source: "redteam", executionKey, scanId: card.scanId, title: card.title };

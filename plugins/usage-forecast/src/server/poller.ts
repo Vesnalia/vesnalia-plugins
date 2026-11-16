@@ -1,19 +1,19 @@
 // Limits poller. The `poll-limits` schedule ticks every minute; `tick` decides
-// which hosts are due. bb 0.49 throws when a schedule name is registered
+// which hosts are due. VesnALIA 0.49 throws when a schedule name is registered
 // twice, so the backoff skips ticks instead of re-registering. Each host has
 // its own backoff: the user's interval normally, 5 minutes after one failed
-// poll in a row, 15 minutes after two or more. A host's poll fails when the bb
+// poll in a row, 15 minutes after two or more. A host's poll fails when the VesnALIA
 // call or plugin storage fails, or when every provider reports an error. A
 // success resets it, and so does a restart: the counts live in memory. A tick
 // throws, naming the hosts, when a polled host failed or a host is paused, so
-// `bb plugin list` keeps showing it.
+// `alia plugin list` keeps showing it.
 //
 // Hosts: until the plugin knows which host owns the data stored before 0.4.6
-// (the host bb answers for when no host is named), it makes that single call
+// (the host VesnALIA answers for when no host is named), it makes that single call
 // and keeps it on the legacy keys. Once `system.config().primaryHostId` (or
 // the only listed host) names that owner, every connected, active host is
 // polled in parallel and stored under its own keys; the owner keeps the
-// legacy keys. Hosts that leave bb are removed with their keys.
+// legacy keys. Hosts that leave VesnALIA are removed with their keys.
 //
 // The answer of `system.usageLimits` is parsed field by field: account
 // identifiers (`accountEmail`, `accountKey`) are never copied, and error
@@ -420,7 +420,7 @@ export class Poller {
     };
   }
 
-  /** Reads the host's previous record and asks bb. Never throws; writes only closed windows. */
+  /** Reads the host's previous record and asks VesnALIA. Never throws; writes only closed windows. */
   private async fetch(target: Target, now: number): Promise<Fetched> {
     const { storage } = this.deps;
     let previous: StoredLatest;

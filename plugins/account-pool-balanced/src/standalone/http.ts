@@ -70,10 +70,10 @@ export async function listenPool(pool: StandalonePool, options: { port: number; 
         if (value !== undefined) headers.set(key, Array.isArray(value) ? value.join(", ") : value);
       }
       // Authenticate before buffering input, including Anthropic's x-api-key form.
-      const credential = headers.get("x-bb-account-pool-token") ?? (provider === "devin" ? devinMachineToken(headers) : headers.get("authorization")?.replace(/^Bearer\s+/i, "")) ?? headers.get("x-api-key") ?? null;
+      const credential = headers.get("x-alia-account-pool-token") ?? (provider === "devin" ? devinMachineToken(headers) : headers.get("authorization")?.replace(/^Bearer\s+/i, "")) ?? headers.get("x-api-key") ?? null;
       const client = await pool.tokens.authenticate(credential);
       if (client === null) { fail(401, "Invalid pool token."); return; }
-      headers.set("x-bb-account-pool-token", credential!);
+      headers.set("x-alia-account-pool-token", credential!);
       if (cursorGateway && !isCursorRpcPath(headers.get(CURSOR_RPC_PATH_HEADER) ?? "")) { fail(400, "Invalid Cursor RPC path."); return; }
       if (backgroundError) { fail(503, "Pool service unavailable."); return; }
       if (!cursorExchange) await pool.hub.assertNetworkAllowed(provider ?? "devin");
@@ -104,7 +104,7 @@ export async function listenPool(pool: StandalonePool, options: { port: number; 
       else res.end();
     } catch (error) {
       if (error instanceof VpnRequiredError && !res.headersSent && !res.destroyed) {
-        res.setHeader("x-bb-pool-error", error.code);
+        res.setHeader("x-alia-pool-error", error.code);
         fail(403, error.message);
         return;
       }

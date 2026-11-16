@@ -93,14 +93,14 @@ export function parsePoolAccountList(payload: unknown): PoolAccountRecord[] {
   return accounts;
 }
 
-function bbBin(): string {
-  return process.env.BB_CLI && process.env.BB_CLI.length > 0
-    ? process.env.BB_CLI
-    : "bb";
+function aliaBin(): string {
+  return process.env.ALIA_CLI && process.env.ALIA_CLI.length > 0
+    ? process.env.ALIA_CLI
+    : "alia";
 }
 
 async function runPool(args: string[]): Promise<string> {
-  const { stdout } = await execFileAsync(bbBin(), ["pool", ...args], {
+  const { stdout } = await execFileAsync(aliaBin(), ["pool", ...args], {
     timeout: EXEC_TIMEOUT_MS,
     maxBuffer: 2_000_000,
   });

@@ -1,14 +1,14 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { saveMyModelRpcContract } from "./contract.js";
 import { resolveSupportedSelection } from "./lib/selection.js";
 
 export { saveMyModelRpcContract } from "./contract.js";
 
-export default function plugin(bb: BbPluginApi): void {
-  bb.rpc.register(saveMyModelRpcContract, {
+export default function plugin(alia: AliaPluginApi): void {
+  alia.rpc.register(saveMyModelRpcContract, {
     async listHosts() {
       try {
-        const hosts = await bb.sdk.hosts.list();
+        const hosts = await alia.sdk.hosts.list();
         return {
           hosts: hosts
             .map(({ id, name, status }) => ({ id, name, status }))
@@ -21,23 +21,23 @@ export default function plugin(bb: BbPluginApi): void {
           error: null,
         };
       } catch {
-        return { hosts: [], error: "BB could not list machines." };
+        return { hosts: [], error: "VesnALIA could not list machines." };
       }
     },
     async resolveSelection({ hostId, preferred }) {
       try {
-        const host = await bb.sdk.hosts.get({ hostId });
+        const host = await alia.sdk.hosts.get({ hostId });
         if (host.id !== hostId) throw new Error("Host identity mismatch");
       } catch {
         return {
           selection: null,
           error: {
             code: "host-unavailable" as const,
-            message: "This machine is no longer enrolled in BB.",
+            message: "This machine is no longer enrolled in VesnALIA.",
           },
         };
       }
-      return resolveSupportedSelection(bb.sdk.system, hostId, preferred);
+      return resolveSupportedSelection(alia.sdk.system, hostId, preferred);
     },
   });
 }

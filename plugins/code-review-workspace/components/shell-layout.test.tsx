@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { getNavWidth, getPanelWidth, patchReviewState, setPanelWidth } from "../lib/panel-state";
 import { panelTabCalls } from "./panel-tabs.test-support";
@@ -14,7 +14,7 @@ const restores: (() => void)[] = [];
 globalThis.PointerEvent ??= class extends MouseEvent {} as typeof PointerEvent;
 afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear(); vi.clearAllMocks(); restores.splice(0).forEach((restore) => restore()); });
 
-/** Every ResizeObserver reports this size, as if the workspace sat in a BB pane that size; `resize` changes it. */
+/** Every ResizeObserver reports this size, as if the workspace sat in a VesnALIA pane that size; `resize` changes it. */
 function fakePane(width: number, height = 900) {
   const original = globalThis.ResizeObserver;
   const observers: (() => void)[] = [];
@@ -36,7 +36,7 @@ function fakePane(width: number, height = 900) {
 }
 
 const file = (path: string, line: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n@@ -1 +1 @@\n-x\n+${line}\n`;
-const patch = file("src/a.ts", "aa") + file("src/b.ts", "bb");
+const patch = file("src/a.ts", "aa") + file("src/b.ts", "alia");
 const guide = { title: "Guide", intent: "Parses rows.", unplacedFiles: [] as string[], sections: [
   { id: "c1", title: "Parsing", overview: "Reads rows.", diffs: [{ file: "src/a.ts" }] },
   { id: "c2", title: "Caching", overview: "Keeps rows.", diffs: [{ file: "src/b.ts" }] },
@@ -59,7 +59,7 @@ async function renderWorkspace({ opened = true, notes = "" }: { opened?: boolean
     markSeen: () => ({ ok: true }),
   } as any });
   await slot.findByRole("main", { name: /^Review\b/ });
-  // The commands sit in the band, where BB's title bar didn't take them.
+  // The commands sit in the band, where VesnALIA's title bar didn't take them.
   const comments = await slot.findByRole("button", { name: "Comments" });
   return { slot, comments };
 }
@@ -127,7 +127,7 @@ test("over the code, the panel closes on Esc or a tap on the dimmed code, and a 
   fireEvent.click(comments);
   fireEvent.click(within(slot.getByRole("dialog", { name: "Comments" })).getByRole("button", { name: /^Draft · not submitted · src\/b\.ts:1/ }));
   expect(slot.queryByRole("dialog")).toBeNull();
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   slot.lifecycle.unmount();
 });
 
@@ -164,7 +164,7 @@ test("with the panel docked, the chapters toggle peeks the chapters over the cod
   expect(panel(slot)).toBeTruthy();
   fireEvent.click(within(peek).getByText("Caching"));
   expect(slot.queryByRole("dialog", { name: "Chapters" })).toBeNull();
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   expect(panel(slot)).toBeTruthy();
   slot.lifecycle.unmount();
 });
@@ -229,7 +229,7 @@ test("padded clear of a screen edge's inset (a phone's rail), the sides still ke
   slot.lifecycle.unmount();
 });
 
-test("on an iPad as a home-screen app, the workspace keeps its foot clear of the home indicator where the inset reaches it, and not where BB's frame does", async () => {
+test("on an iPad as a home-screen app, the workspace keeps its foot clear of the home indicator where the inset reaches it, and not where VesnALIA's frame does", async () => {
   fakePane(1376, 984);
   const { slot } = await renderWorkspace();
   const root = slot.getByRole("main").closest<HTMLElement>("[class*='@container/review']")!;
@@ -307,14 +307,14 @@ test("the chapters hidden with the focus in them, as when the pane gets too narr
   const chapter = within(chapters(slot)!).getByText("Caching").closest("button")!;
   chapter.focus();
   fireEvent.keyDown(chapter, { key: "Tab" });
-  // BB's thread list opens beside the pane: the chapters no longer fit beside the code.
+  // VesnALIA's thread list opens beside the pane: the chapters no longer fit beside the code.
   pane.resize(700);
   expect(chapters(slot)).toBeNull();
   await waitFor(() => expect(document.activeElement).toBe(within(slot.getByRole("navigation", { name: "Breadcrumb" }).parentElement!).getByRole("button", { name: "Show chapters" })));
   slot.lifecycle.unmount();
 });
 
-test("an older version's saved state opens at its chapter and scroll position; its open agent, which BB's panel keeps now, opens nothing", async () => {
+test("an older version's saved state opens at its chapter and scroll position; its open agent, which VesnALIA's panel keeps now, opens nothing", async () => {
   fakePane(1400);
   const errors = vi.spyOn(console, "error");
   localStorage.setItem("gr:panelstate", JSON.stringify({
@@ -326,7 +326,7 @@ test("an older version's saved state opens at its chapter and scroll position; i
   Object.defineProperty(Element.prototype, "scrollTop", { configurable: true, get() { return 0; }, set(value: number) { scrolled.push(value); } });
   restores.push(() => Object.defineProperty(Element.prototype, "scrollTop", scrollTop));
   const { slot } = await renderWorkspace({ opened: false });
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   expect(scrolled).toContain(120);
   expect(panelTabCalls(slot)).toEqual([]);
   expect(panel(slot)).toBeNull();
@@ -346,7 +346,7 @@ test("a saved scroll position the diff can't reach yet is reached as its files d
   localStorage.setItem("gr:panelstate", JSON.stringify({ layoutVersion: 2, perReview: { "pr-42": { activeId: "c2", scrollTop: 500 } } }));
   let { slot } = await renderWorkspace({ opened: false });
   const code = () => slot.getByRole("main").querySelector<HTMLElement>(".overflow-y-auto")!;
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   expect(top).toBe(100);
   // The browser's scroll anchoring, which would move the code off its place as the diff above it draws, waits.
   expect(code().style.overflowAnchor).toBe("none");
@@ -357,7 +357,7 @@ test("a saved scroll position the diff can't reach yet is reached as its files d
   room = 100; top = 0;
   localStorage.setItem("gr:panelstate", JSON.stringify({ layoutVersion: 2, perReview: { "pr-42": { activeId: "c2", scrollTop: 500 } } }));
   ({ slot } = await renderWorkspace({ opened: false }));
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   fireEvent.wheel(code());
   expect(code().style.overflowAnchor).toBe("");
   room = 1000;

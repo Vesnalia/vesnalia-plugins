@@ -1,15 +1,15 @@
 // Harvest (v1): freeze best and close submissions. The plugin no longer
 // groups, ablates, drafts or publishes: an agent does, following the
-// study-harvest skill, with `bb study evidence` (what happened), `bb study
-// measure` and `bb study gate` (every number and check it reports) and the
+// study-harvest skill, with `alia study evidence` (what happened), `alia study
+// measure` and `alia study gate` (every number and check it reports) and the
 // repository's own tools for branches, PRs and publishing.
 //
 //   waiting   in-flight candidates finish (no new submissions, no new workers)
 //   frozen    best is final for this harvest: base, best and the promotion
 //             list are recorded, and refs/studies/<slug>/harvest/h<N> pins best
 //
-// `bb study resume` keeps exploring (best moves on; the frozen ref stays) and
-// `bb study archive` ends the study. Harvests the plugin ran before 1.0
+// `alia study resume` keeps exploring (best moves on; the frozen ref stays) and
+// `alia study archive` ends the study. Harvests the plugin ran before 1.0
 // (states grouping … ready) stay readable; one still in progress at the
 // upgrade stops where it was and becomes frozen (see `stopLegacy`).
 import type { Ctx } from "./context.ts";
@@ -106,7 +106,7 @@ export class Harvester {
         this.store.updateHarvest(harvestId, { state: "failed", error: clip(errText(e), 1000), finished_at: this.ctx.now() });
         this.store.event(h.study_id, "harvest.failed", "plugin", { harvest: harvestId, error: clip(errText(e), 500) });
         const study = this.store.study(h.study_id);
-        if (study) await this.hooks.notify(study, "harvest.failed", `Harvest h${h.seq} of \`${study.slug}\` could not freeze best: ${clip(errText(e), 500)}. Next: fix the cause and run \`bb study harvest ${study.slug}\` again, or resume to keep exploring.`);
+        if (study) await this.hooks.notify(study, "harvest.failed", `Harvest h${h.seq} of \`${study.slug}\` could not freeze best: ${clip(errText(e), 500)}. Next: fix the cause and run \`alia study harvest ${study.slug}\` again, or resume to keep exploring.`);
       } finally {
         this.jobs.delete(harvestId);
         const h = this.store.harvest(harvestId);
@@ -165,7 +165,7 @@ export class Harvester {
     const h = this.store.harvest(harvestId)!;
     const study = this.store.study(h.study_id)!;
     if (!study.base_sha || !study.best_sha) throw new Error("the study has no base or best commit");
-    const runner = this.ctx.bb.hostRunner(study.host_id!);
+    const runner = this.ctx.alia.hostRunner(study.host_id!);
     const log = study.base_sha === study.best_sha ? [] : await runner.commitLog(study.repo_path!, study.base_sha, study.best_sha);
     const promotions: Promotion[] = log.map((c) => {
       const n = candidateFromMessage(c.message, study.slug);
@@ -208,7 +208,7 @@ export function isLegacyHarvest(store: { changesets(harvestId: number): unknown[
 
 /**
  * The harvest a Harvesting study is on: waiting for in-flight candidates,
- * frozen, or a ready one from before 1.0 (its best is frozen too). `bb study
+ * frozen, or a ready one from before 1.0 (its best is frozen too). `alia study
  * harvest` on such a study shows it and changes nothing; only `--refreeze`
  * starts a new one. Null when the study isn't harvesting or its latest
  * harvest failed (a new freeze retries it).
@@ -218,14 +218,14 @@ export function currentHarvest(study: StudyRow, latest: HarvestRow | undefined):
 }
 
 /**
- * Why `bb study harvest --refreeze` can't freeze the current harvest again,
+ * Why `alia study harvest --refreeze` can't freeze the current harvest again,
  * or null when it can: only when that pins something new (best moved since
  * the freeze, or the freeze is from before 1.0, which no frozen ref pins).
  */
 export function refreezeRefusal(store: { changesets(harvestId: number): unknown[] }, study: StudyRow, current: HarvestRow): string | null {
-  if (current.state === "waiting") return `harvest h${current.seq} hasn't frozen best yet (in-flight candidates finish first), so there is nothing to refreeze; \`bb study harvest ${study.slug} --wait\` waits for it`;
+  if (current.state === "waiting") return `harvest h${current.seq} hasn't frozen best yet (in-flight candidates finish first), so there is nothing to refreeze; \`alia study harvest ${study.slug} --wait\` waits for it`;
   if (isLegacyHarvest(store, current)) return null;
-  if (current.best_sha === study.best_sha && current.base_sha === study.base_sha) return `best hasn't moved since harvest h${current.seq} froze it at ${current.best_sha?.slice(0, 10) ?? "?"}, so there is nothing to refreeze; \`bb study harvest ${study.slug}\` shows that harvest`;
+  if (current.best_sha === study.best_sha && current.base_sha === study.base_sha) return `best hasn't moved since harvest h${current.seq} froze it at ${current.best_sha?.slice(0, 10) ?? "?"}, so there is nothing to refreeze; \`alia study harvest ${study.slug}\` shows that harvest`;
   return null;
 }
 
@@ -234,6 +234,6 @@ export function harvestFrozenText(study: StudyRow, h: HarvestRow): string {
   const promotions = safeJson<Promotion[]>(h.promotions_json) ?? [];
   return [
     `Harvest h${h.seq} of \`${study.slug}\`: best is frozen at ${h.best_sha?.slice(0, 10) ?? "?"} (${promotions.length} promotion${promotions.length === 1 ? "" : "s"} on ${bestBranch(study.slug)}, pinned as ${frozenRef(study.slug, h.seq)}). Submissions are closed.`,
-    `Next: ask an agent to harvest it with the study-harvest skill (for example in this thread: "harvest ${study.slug} into PRs"). It reads \`bb study evidence ${study.slug} --json\`, splits and groups the changes, measures them with \`bb study measure\` and gates them with \`bb study gate\`, and drafts PR descriptions; it publishes only when you ask. Or keep exploring (\`bb study resume ${study.slug}\`) or archive.`,
+    `Next: ask an agent to harvest it with the study-harvest skill (for example in this thread: "harvest ${study.slug} into PRs"). It reads \`alia study evidence ${study.slug} --json\`, splits and groups the changes, measures them with \`alia study measure\` and gates them with \`alia study gate\`, and drafts PR descriptions; it publishes only when you ask. Or keep exploring (\`alia study resume ${study.slug}\`) or archive.`,
   ].join("\n");
 }

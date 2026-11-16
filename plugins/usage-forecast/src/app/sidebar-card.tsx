@@ -7,7 +7,7 @@
 // other hosts of its account share its heading line.
 
 import { useState } from "react";
-import type { ExperimentalSidebarFooterDisclosureProps } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalSidebarFooterDisclosureProps } from "@vesnalia/plugin-sdk/app";
 import type { LimitWindow, Tokens } from "../shared/contract";
 import { planText } from "../shared/plan";
 import { formatTokenCount } from "../shared/tokens";

@@ -1,12 +1,12 @@
-import type { PluginSettingDescriptors } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptors } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const settingDescriptors = {
   chatFileLinks: {
     type: "select", label: "File links in chat", default: "default",
     options: ["default", "icon", "diff-tree"],
-    experimental_optionLabels: { default: "BB default", icon: "Show a Diff Tree button beside links", "diff-tree": "Open in Diff Tree" },
-    description: "Applies to workspace file links and Open buttons in chat Changes cards. Modified clicks keep BB behavior. Files outside this workspace are unaffected.",
+    experimental_optionLabels: { default: "VesnALIA default", icon: "Show a Diff Tree button beside links", "diff-tree": "Open in Diff Tree" },
+    description: "Applies to workspace file links and Open buttons in chat Changes cards. Modified clicks keep VesnALIA behavior. Files outside this workspace are unaffected.",
   },
   fileIcons: { type: "boolean", label: "Show file type icons", default: true },
   smoothTransitions: {
@@ -28,7 +28,7 @@ export const settingDescriptors = {
     experimental_schema: z.number().int().min(1).max(200),
     description: "An integer from 1 to 200. Expand all remains available.",
   },
-  refreshOnReturn: { type: "boolean", label: "Refresh when returning to BB", default: true },
+  refreshOnReturn: { type: "boolean", label: "Refresh when returning to VesnALIA", default: true },
 } satisfies PluginSettingDescriptors;
 
 export type ChatFileLinks = "default" | "icon" | "diff-tree";

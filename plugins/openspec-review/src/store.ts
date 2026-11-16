@@ -17,7 +17,7 @@ export const migrations = [
   `UPDATE comments SET status = CASE status WHEN 'draft' THEN 'open' WHEN 'resolved' THEN 'closed' ELSE 'sent' END`,
   `DROP TABLE replies`,
   `DROP TABLE links`,
-  // A queued delivery waits for BB's dispatched/cancelled event for this queue row.
+  // A queued delivery waits for VesnALIA's dispatched/cancelled event for this queue row.
   `ALTER TABLE comments ADD COLUMN queued_id TEXT`,
 ];
 export interface StoredDocument { id: string; context: string; path: string; missing: number; version: string }
@@ -71,7 +71,7 @@ export class Store {
     this.db.transaction(() => { for (const id of ids) this.db.prepare("UPDATE comments SET status=?, sent_thread_id=?, queued_id=? WHERE id=?").run(queuedId ? "queued" : "sent", threadId, queuedId, id); })();
   }
   queued() { return this.db.prepare("SELECT id, sent_thread_id AS threadId, queued_id AS queuedId FROM comments WHERE status='queued'").all() as { id: string; threadId: string; queuedId: string }[]; }
-  /** BB dispatched the queue row: it reached the chat. Returns false when no comment waits on it. */
+  /** VesnALIA dispatched the queue row: it reached the chat. Returns false when no comment waits on it. */
   dispatched(queuedId: string) { return this.db.prepare("UPDATE comments SET status='sent' WHERE queued_id=? AND status='queued'").run(queuedId).changes > 0; }
   /** The user removed the queue row before dispatch: the comment is editable and sendable again. */
   cancelled(queuedId: string) { return this.db.prepare("UPDATE comments SET status='open', sent_thread_id=NULL, queued_id=NULL WHERE queued_id=? AND status='queued'").run(queuedId).changes > 0; }

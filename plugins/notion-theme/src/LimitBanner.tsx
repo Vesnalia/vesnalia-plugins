@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useComposer, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useComposer, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import type { LimitState } from "./limits";
 

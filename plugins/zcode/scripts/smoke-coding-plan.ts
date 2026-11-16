@@ -91,7 +91,7 @@ export async function smokeCodingPlan(
   sourceBuiltin: string,
   parentEnv: NodeJS.ProcessEnv,
 ) {
-  const root = mkdtempSync(join(tmpdir(), "bb-zcode-coding-plan-"));
+  const root = mkdtempSync(join(tmpdir(), "alia-zcode-coding-plan-"));
   const data = join(root, ".zcode", "v2");
   mkdirSync(data, { recursive: true });
   const builtin = JSON.parse(readFileSync(sourceBuiltin, "utf8"));
@@ -291,7 +291,7 @@ export async function smokeCodingPlan(
           `Coding Plan runtime authentication failed: ${JSON.stringify(deltas())}`,
         );
       if (JSON.stringify(messages).includes(token))
-        throw new Error("Credential leaked to bb.");
+        throw new Error("Credential leaked to VesnALIA.");
       if (
         transport.checks.authenticatedModelRequests !== 1 ||
         !transport.checks.signingHandshakes

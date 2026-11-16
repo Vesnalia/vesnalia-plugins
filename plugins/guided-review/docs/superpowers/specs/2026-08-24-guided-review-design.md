@@ -2,16 +2,16 @@
 
 **Date:** 2026-08-24
 **Status:** Approved design, pending spec review
-**Plugin id:** `guided-review` · **Command:** `bb review <pr-url | pr-number | git-ref>`
-**Stack:** TypeScript backend (`bb.server`) + React/Tailwind panel (`bb.app`)
+**Plugin id:** `guided-review` · **Command:** `alia review <pr-url | pr-number | git-ref>`
+**Stack:** TypeScript backend (`alia.server`) + React/Tailwind panel (`alia.app`)
 
 ---
 
 ## 1. Summary
 
-Guided Review is a bb plugin that turns a GitHub pull request (or a local git
-ref) into an ordered, chaptered walkthrough — a "guide" — authored by a bb
-agent, rendered in a live bb panel, and reviewable end to end. Unlike GitHub's
+Guided Review is a VesnALIA plugin that turns a GitHub pull request (or a local git
+ref) into an ordered, chaptered walkthrough — a "guide" — authored by a VesnALIA
+agent, rendered in a live VesnALIA panel, and reviewable end to end. Unlike GitHub's
 flat file list, the PR arrives as a *story*: implementation heart first,
 consequences next, glue/config last. The reviewer reads the chapters, browses
 syntax-highlighted diffs, asks the agent questions inline, drafts comments, and
@@ -19,15 +19,15 @@ submits the whole thing back to the real GitHub PR as one batched review
 (Approve / Request changes / Comment).
 
 It is inspired by [plannotator/guides](https://github.com/plannotator/guides)
-(the "guided review" concept and its `guide.json` shape) but is native to bb:
-the generation engine is a bb agent, the viewer is a bb panel, and it writes
+(the "guided review" concept and its `guide.json` shape) but is native to VesnALIA:
+the generation engine is a VesnALIA agent, the viewer is a VesnALIA panel, and it writes
 back to GitHub — no external CLI and no upload to a third-party host.
 
 ## 2. Goals / Non-goals
 
 ### Goals
-- One command (`bb review <target>`) produces a chaptered guide and opens it in a panel.
-- Native bb agent generates the guide from the diff (no external `plannotator` CLI).
+- One command (`alia review <target>`) produces a chaptered guide and opens it in a panel.
+- Native VesnALIA agent generates the guide from the diff (no external `plannotator` CLI).
 - Reviewer can leave per-line and per-chapter comments into a draft review.
 - Reviewer can ask the agent inline while reviewing ("explain", "assess risk", "draft a comment").
 - Submit posts back to the GitHub PR as a single review with a verdict.
@@ -40,15 +40,15 @@ back to GitHub — no external CLI and no upload to a third-party host.
 
 ## 3. Prerequisites (verified 2026-08-24)
 - `gh` CLI installed and authenticated with `repo` scope. Confirmed: `gh 2.95.0`, account `notpritamm`, scopes include `repo`.
-- bb plugin toolchain (`bb plugin new/build/dev`) available.
+- VesnALIA plugin toolchain (`alia plugin new/build/dev`) available.
 
 ## 4. Primary user flow
 
-1. `bb review 1234` (PR number) — or a PR URL, or `bb review origin/main...HEAD` (local ref).
+1. `alia review 1234` (PR number) — or a PR URL, or `alia review origin/main...HEAD` (local ref).
 2. Backend resolves the target:
    - PR: `gh pr view` + `gh pr diff` → `guide.patch`, plus PR metadata (title, body, author, base, head, number, url).
    - Local ref: `git diff <ref>` → `guide.patch`, no `source.pr`.
-3. Backend spawns a bb agent with the bundled generation prompt/skill. The agent
+3. Backend spawns a VesnALIA agent with the bundled generation prompt/skill. The agent
    reads `guide.patch` (authoritative file set) + PR title/body + `git log --oneline`,
    chunks the diff into ordered chapters, and calls the `generate_review_guide`
    agent tool to persist `guide.json`.
@@ -61,12 +61,12 @@ back to GitHub — no external CLI and no upload to a third-party host.
 
 ## 5. Architecture
 
-Three bb-plugin bundles.
+Three alia-plugin bundles.
 
-### 5.1 `bb.server` (backend, TypeScript)
+### 5.1 `alia.server` (backend, TypeScript)
 
 **CLI command**
-- `bb review <target> [--base <ref>]` — resolves target, builds `guide.patch`,
+- `alia review <target> [--base <ref>]` — resolves target, builds `guide.patch`,
   gathers metadata, kicks off generation, opens the panel focused on this review.
 
 **Agent tools** (native, scoped to this plugin's generation thread via `configure()`)
@@ -77,7 +77,7 @@ Three bb-plugin bundles.
   to submit the guide it authored. Validates shape + coverage and returns errors
   for the agent to fix, or success (this is plannotator's "verify coverage" gate).
 
-**RPC methods** (frontend data plane via `bb.rpc`; the panel calls these with `useRpc`)
+**RPC methods** (frontend data plane via `alia.rpc`; the panel calls these with `useRpc`)
 | Method | Purpose | Backed by |
 |--------|---------|-----------|
 | `getGuide` | current guide.json | plugin db |
@@ -88,12 +88,12 @@ Three bb-plugin bundles.
 | `saveDraftComment` | add/update a draft comment | plugin db (`review-draft`) |
 | `removeDraftComment` | remove a draft comment | plugin db |
 | `submitReview` | post batched review + verdict | `gh api .../pulls/{n}/reviews` |
-| `assist` | scoped agent turn (explain/assess/draft) | hidden bb thread |
+| `assist` | scoped agent turn (explain/assess/draft) | hidden VesnALIA thread |
 
 GitHub-touching methods shell out to `gh` (no raw token handling in the plugin).
-`bb.http` is reserved for external callers/webhooks and is unused in Phase 1.
+`alia.http` is reserved for external callers/webhooks and is unused in Phase 1.
 
-### 5.2 `bb.app` (frontend panel, React + Tailwind)
+### 5.2 `alia.app` (frontend panel, React + Tailwind)
 
 Component tree:
 - `ReviewHeader` — title, author, `base ← head`, CI badge, verdict selector.
@@ -113,8 +113,8 @@ panel never talks to GitHub or the filesystem directly.
 
 ### 5.3 Generation
 
-A bundled skill/prompt (shipped with the plugin) instructs a bb agent to author
-the guide. The agent runs as a scoped bb turn/child thread; its only side effect
+A bundled skill/prompt (shipped with the plugin) instructs a VesnALIA agent to author
+the guide. The agent runs as a scoped VesnALIA turn/child thread; its only side effect
 is calling `generate_review_guide`. This reuses plannotator's chunk-and-order
 heuristic (heart → consequences → glue) but the engine is ours.
 
@@ -177,9 +177,9 @@ Reading context (title/body, existing threads, CI checks) is read-only in
 Phase 1. Reply/resolve of existing threads is Phase 2.
 
 ## 8. Storage
-- Per-thread storage dir (`$BB_THREAD_STORAGE`), keyed by target (PR number or ref hash):
+- Per-thread storage dir (`$ALIA_THREAD_STORAGE`), keyed by target (PR number or ref hash):
   `guide.json`, `guide.patch`, `review-draft.json`.
-- Re-running `bb review` on the same target resumes the in-progress draft instead of discarding it.
+- Re-running `alia review` on the same target resumes the in-progress draft instead of discarding it.
 
 ## 9. Error handling
 - `gh` missing/unauthed → panel shows an actionable message (how to `gh auth login`), no crash.
@@ -197,7 +197,7 @@ Phase 1. Reply/resolve of existing threads is Phase 2.
 ## 11. Phasing
 
 ### Phase 1 (MVP — ships, already beats a flat PR view)
-- `bb review <pr|ref>` → agent-generated guide → panel (chapters + diffs).
+- `alia review <pr|ref>` → agent-generated guide → panel (chapters + diffs).
 - Per-line and per-chapter draft comments.
 - **Inline agent-assist** (explain / assess / draft a comment).
 - Submit as a batched GitHub review (Approve / Request changes / Comment).
@@ -213,15 +213,15 @@ Phase 1. Reply/resolve of existing threads is Phase 2.
 
 ## 12. Resolved decisions & assumptions
 - **Diff renderer — RESOLVED:** use `@pierre/diffs` (`parsePatchFiles` + `FileDiff`
-  from `@pierre/diffs/react`), shipped/shimmed by the SDK; renders exactly like bb's
+  from `@pierre/diffs/react`), shipped/shimmed by the SDK; renders exactly like VesnALIA's
   own diff panel. Synthesize `diff --git a/<p> b/<p>` headers when `gh` output omits
   them (same approach as the official `github` plugin).
-- **Agent run mechanism — RESOLVED:** generation runs as a hidden bb thread
-  (`bb.sdk.threads.spawn({ visibility: "hidden" })`), archived + stopped in a `finally`.
+- **Agent run mechanism — RESOLVED:** generation runs as a hidden VesnALIA thread
+  (`alia.sdk.threads.spawn({ visibility: "hidden" })`), archived + stopped in a `finally`.
   The agent gets the diff and submits the guide through two native tools
   (`read_review_patch`, `generate_review_guide`) selected only for this plugin's own
-  spawned thread via `bb.agents.configure` (gated on `context.origin.pluginId`).
-- **Panel open — ASSUMPTION:** backend cannot force frontend navigation, so `bb review`
+  spawned thread via `alia.agents.configure` (gated on `context.origin.pluginId`).
+- **Panel open — ASSUMPTION:** backend cannot force frontend navigation, so `alia review`
   prepares the review and prints "open the Guided Review panel"; the panel (a `navPanel`)
   lists reviews and the user opens the target. Auto-open is Phase 2.
 - **Host — ASSUMPTION:** Phase 1 targets a single local machine (server host == local),

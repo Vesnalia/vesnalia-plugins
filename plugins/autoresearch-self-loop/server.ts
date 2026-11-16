@@ -1,8 +1,8 @@
-// bb-plugin-autoresearch-self-loop — the backend entry.
+// alia-plugin-autoresearch-self-loop — the backend entry.
 //
 // Ported from pi-autoresearch (MIT, see README.md). The loop logic lives in lib/;
-// this file wires it to BB: three agent tools (init_experiment, run_experiment,
-// log_experiment), the `bb self-loop` CLI, the panel's RPC contract, thread
+// this file wires it to VesnALIA: three agent tools (init_experiment, run_experiment,
+// log_experiment), the `alia self-loop` CLI, the panel's RPC contract, thread
 // events for auto-resume, and the owner thread's instructions.
 //
 // A thread's checkout is on the environment the thread is in. The primary host is
@@ -15,10 +15,10 @@ import {
   defineRpcContract,
   experimental_PluginRpcRefusal,
   PluginCliError,
-  type BbPluginApi,
+  type AliaPluginApi,
   type PluginAgentToolResult,
   type PluginCliResult,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { writeExport } from "./lib/export";
@@ -75,8 +75,8 @@ function errorText(err: unknown): string {
  * instead. The run directory is resolved only by the commands that run the benchmark,
  * so stop, status and clear still work with a broken config.json.
  */
-async function openExistingCheckout(bb: BbPluginApi, ref: CheckoutRef): Promise<Checkout> {
-  const co = openCheckout(bb.sdk, ref);
+async function openExistingCheckout(alia: AliaPluginApi, ref: CheckoutRef): Promise<Checkout> {
+  const co = openCheckout(alia.sdk, ref);
   if (!(await co.ws.isDirectory(co.workDir))) {
     throw new Refusal(
       `The checkout ${checkoutLabel(co)} does not exist or is not a directory.`,
@@ -87,12 +87,12 @@ async function openExistingCheckout(bb: BbPluginApi, ref: CheckoutRef): Promise<
 }
 
 /**
- * True when the host is the primary bb host, the one this plugin runs on. A config
+ * True when the host is the primary VesnALIA host, the one this plugin runs on. A config
  * that cannot be read is an error, not a guess: it propagates, so the run is refused
  * rather than sent to the wrong disk.
  */
-async function isPrimaryHost(bb: BbPluginApi, hostId: string): Promise<boolean> {
-  const system = await bb.sdk.system.config();
+async function isPrimaryHost(alia: AliaPluginApi, hostId: string): Promise<boolean> {
+  const system = await alia.sdk.system.config();
   return system.primaryHostId === hostId;
 }
 
@@ -102,33 +102,33 @@ async function isPrimaryHost(bb: BbPluginApi, hostId: string): Promise<boolean> 
  * the SDK. A remote environment never falls back to this server's disk. The folder is
  * not checked here, so a loop can still be stopped after its folder is gone.
  */
-async function checkoutRefForThread(bb: BbPluginApi, threadId: string): Promise<CheckoutRef> {
-  const thread = await bb.sdk.threads.get({ threadId });
+async function checkoutRefForThread(alia: AliaPluginApi, threadId: string): Promise<CheckoutRef> {
+  const thread = await alia.sdk.threads.get({ threadId });
   if (!thread.environmentId) {
     throw new Refusal(
       "This thread has no environment, so there is no checkout to run in.",
       "Open the thread in an environment whose checkout holds the benchmark.",
     );
   }
-  const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+  const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
   if (!environment.path) {
     throw new Refusal("This environment has no checkout path.", "Autoresearch needs a checkout in the thread's environment.");
   }
   if (!environment.hostId) {
     throw new Refusal("This environment has no host, so its checkout cannot be reached.", "Re-create the environment on a host.");
   }
-  const hostId = (await isPrimaryHost(bb, environment.hostId)) ? null : environment.hostId;
+  const hostId = (await isPrimaryHost(alia, environment.hostId)) ? null : environment.hostId;
   return { hostId, workDir: environment.path };
 }
 
 /** A thread's checkout, which must exist: the benchmark and the session reads need its files. */
-async function checkoutForThread(bb: BbPluginApi, threadId: string): Promise<Checkout> {
-  return openExistingCheckout(bb, await checkoutRefForThread(bb, threadId));
+async function checkoutForThread(alia: AliaPluginApi, threadId: string): Promise<Checkout> {
+  return openExistingCheckout(alia, await checkoutRefForThread(alia, threadId));
 }
 
 /** The target of a CLI command or tool: a thread's checkout, or a directory on the primary host for the shell. The folder is not checked here. */
 async function cliTarget(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   opts: { thread?: string; dir?: string },
   ctx: { cwd?: string; threadId?: string },
 ): Promise<{ ref: CheckoutRef; threadId: string | null }> {
@@ -144,21 +144,21 @@ async function cliTarget(
   if (!threadId) {
     throw new Refusal("No thread or checkout given.", "Pass --thread <id> or --dir <checkout>.");
   }
-  return { ref: await checkoutRefForThread(bb, threadId), threadId };
+  return { ref: await checkoutRefForThread(alia, threadId), threadId };
 }
 
 /** A CLI target whose checkout must exist. */
 async function cliCheckout(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   opts: { thread?: string; dir?: string },
   ctx: { cwd?: string; threadId?: string },
 ): Promise<{ co: Checkout; threadId: string | null }> {
-  const { ref, threadId } = await cliTarget(bb, opts, ctx);
-  return { co: await openExistingCheckout(bb, ref), threadId };
+  const { ref, threadId } = await cliTarget(alia, opts, ctx);
+  return { co: await openExistingCheckout(alia, ref), threadId };
 }
 
-async function sendToThread(bb: BbPluginApi, threadId: string, text: string): Promise<void> {
-  await bb.sdk.threads.send({ threadId, mode: "auto", input: [{ type: "text", text, mentions: [] }] });
+async function sendToThread(alia: AliaPluginApi, threadId: string, text: string): Promise<void> {
+  await alia.sdk.threads.send({ threadId, mode: "auto", input: [{ type: "text", text, mentions: [] }] });
 }
 
 /** First message to the owner thread after a start: setup when there is no session yet, otherwise resume. */
@@ -176,13 +176,13 @@ async function kickoffMessage(co: Checkout, goal: string | null): Promise<string
  * Sends the start message. If it does not go out, the loop is stopped again: an active
  * loop with no agent to run it would wait for a run that never comes.
  */
-async function handOff(bb: BbPluginApi, rt: LoopRuntime, co: Checkout, threadId: string, goal: string | null): Promise<void> {
+async function handOff(alia: AliaPluginApi, rt: LoopRuntime, co: Checkout, threadId: string, goal: string | null): Promise<void> {
   try {
-    await sendToThread(bb, threadId, await kickoffMessage(co, goal));
+    await sendToThread(alia, threadId, await kickoffMessage(co, goal));
   } catch (err) {
     const reason = `The start message was not sent to thread ${threadId}: ${errorText(err)}`;
     await stopLoop(rt, co, reason).catch((stopErr: unknown) =>
-      bb.log.info(`Stopping the loop after a failed start also failed: ${errorText(stopErr)}`),
+      alia.log.info(`Stopping the loop after a failed start also failed: ${errorText(stopErr)}`),
     );
     // The same text the status line shows, so the CLI and the panel say why the loop stopped.
     throw new Error(reason);
@@ -216,11 +216,11 @@ function fallbackLoop(rt: LoopRuntime, threadId: string, current: CheckoutRef | 
  * The panel's state for a thread. When the checkout cannot be read, the panel still
  * gets the thread's loop if it has one, so its Stop button stays.
  */
-async function panelStateFor(bb: BbPluginApi, rt: LoopRuntime, threadId: string): Promise<PanelState> {
+async function panelStateFor(alia: AliaPluginApi, rt: LoopRuntime, threadId: string): Promise<PanelState> {
   let current: CheckoutRef | null = null;
   try {
-    current = await checkoutRefForThread(bb, threadId);
-    return await buildPanelState(rt, threadId, await openExistingCheckout(bb, current));
+    current = await checkoutRefForThread(alia, threadId);
+    return await buildPanelState(rt, threadId, await openExistingCheckout(alia, current));
   } catch (err) {
     const reason = err instanceof Refusal ? refusalText(err) : errorText(err);
     return unavailableState(threadId, reason, fallbackLoop(rt, threadId, current));
@@ -302,24 +302,24 @@ const targetOptions = {
   dir: { type: "string", description: "Directory on the primary host to use instead of a thread's environment." },
 } as const;
 
-export default async function plugin(bb: BbPluginApi) {
-  const open = (ref: CheckoutRef) => openCheckout(bb.sdk, ref);
+export default async function plugin(alia: AliaPluginApi) {
+  const open = (ref: CheckoutRef) => openCheckout(alia.sdk, ref);
   const rt = new LoopRuntime({
-    kv: bb.storage.kv,
-    publish: (ref) => bb.realtime.publish(CHANNEL, { workDir: ref.workDir, hostId: ref.hostId }),
-    log: (message) => bb.log.info(message),
+    kv: alia.storage.kv,
+    publish: (ref) => alia.realtime.publish(CHANNEL, { workDir: ref.workDir, hostId: ref.hostId }),
+    log: (message) => alia.log.info(message),
   });
   await rt.load();
-  bb.onDispose(() => rt.dispose());
+  alia.onDispose(() => rt.dispose());
 
   // Owner notes live in memory; rebuild them for loops that were running before a reload.
   for (const record of rt.activeRecords()) {
-    void refreshNote(rt, open(record)).catch((err: unknown) => bb.log.info(`note refresh failed: ${errorText(err)}`));
+    void refreshNote(rt, open(record)).catch((err: unknown) => alia.log.info(`note refresh failed: ${errorText(err)}`));
   }
 
   // ─── Agent tools ─────────────────────────────────────────────────────────
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "init_experiment",
     description:
       "Set up an autoresearch session for this checkout: a name, the metric to optimize, its unit, and whether lower or higher is better. Writes the config header to the session log (.auto/log.jsonl, or autoresearch.jsonl in a legacy session) and activates the loop. Calling it again starts a new segment with a new baseline.",
@@ -333,7 +333,7 @@ export default async function plugin(bb: BbPluginApi) {
     }),
     execute: (params, ctx) =>
       toolRun(async () => {
-        const co = await checkoutForThread(bb, ctx.threadId);
+        const co = await checkoutForThread(alia, ctx.threadId);
         return initExperiment(
           rt,
           co,
@@ -348,7 +348,7 @@ export default async function plugin(bb: BbPluginApi) {
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "run_experiment",
     description:
       "Run the benchmark command, for example `bash .auto/measure.sh`. On a Windows checkout the scripts are PowerShell: `./.auto/measure.ps1`, and the checks script is `.auto/checks.ps1`. Captures the output, parses METRIC name=value lines, and runs the checks script (.auto/checks.sh or .ps1, or autoresearch.checks.sh in a legacy session) when it exists and the benchmark passed.",
@@ -361,7 +361,7 @@ export default async function plugin(bb: BbPluginApi) {
     }),
     execute: (params, ctx) =>
       toolRun(async () => {
-        const co = await checkoutForThread(bb, ctx.threadId);
+        const co = await checkoutForThread(alia, ctx.threadId);
         return runExperiment(
           rt,
           co,
@@ -375,7 +375,7 @@ export default async function plugin(bb: BbPluginApi) {
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "log_experiment",
     description:
       "Record the outcome of the last run_experiment. 'keep' commits the change with git. 'discard', 'crash', and 'checks_failed' revert code changes and keep the autoresearch files.",
@@ -395,7 +395,7 @@ export default async function plugin(bb: BbPluginApi) {
     }),
     execute: (params, ctx) =>
       toolRun(async () => {
-        const co = await checkoutForThread(bb, ctx.threadId);
+        const co = await checkoutForThread(alia, ctx.threadId);
         return logExperiment(rt, co, {
           commit: params.commit ?? "HEAD",
           metric: params.metric,
@@ -410,62 +410,62 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ─── Owner-thread instructions and auto-resume ───────────────────────────
 
-  bb.agents.contributeInstructions(({ threadId }) => ownerInstructions(rt, threadId));
+  alia.agents.contributeInstructions(({ threadId }) => ownerInstructions(rt, threadId));
 
   const resume: ResumeDeps = {
     open,
-    current: (threadId) => checkoutRefForThread(bb, threadId),
-    status: async (threadId) => (await bb.sdk.threads.get({ threadId })).status,
-    send: (threadId, text) => sendToThread(bb, threadId, text),
-    log: (message) => bb.log.info(message),
+    current: (threadId) => checkoutRefForThread(alia, threadId),
+    status: async (threadId) => (await alia.sdk.threads.get({ threadId })).status,
+    send: (threadId, text) => sendToThread(alia, threadId, text),
+    log: (message) => alia.log.info(message),
   };
-  bb.events.on("thread.idle", ({ thread }) => onThreadIdle(rt, thread.id, resume));
-  bb.events.on("thread.active", ({ thread }) => onThreadActive(rt, thread.id));
+  alia.events.on("thread.idle", ({ thread }) => onThreadIdle(rt, thread.id, resume));
+  alia.events.on("thread.active", ({ thread }) => onThreadActive(rt, thread.id));
   // A reload can land inside a resume's settle. Re-arm it now if its thread is still idle.
-  void rearmPendingResumes(rt, resume).catch((err: unknown) => bb.log.info(`auto-resume re-arm failed: ${errorText(err)}`));
+  void rearmPendingResumes(rt, resume).catch((err: unknown) => alia.log.info(`auto-resume re-arm failed: ${errorText(err)}`));
 
   // ─── Panel RPC ───────────────────────────────────────────────────────────
 
-  bb.rpc.register(autoresearchContract, {
-    state: ({ threadId }) => panelStateFor(bb, rt, threadId),
+  alia.rpc.register(autoresearchContract, {
+    state: ({ threadId }) => panelStateFor(alia, rt, threadId),
     start: ({ threadId, goal }) =>
       rpc(async () => {
-        const co = await checkoutForThread(bb, threadId);
+        const co = await checkoutForThread(alia, threadId);
         const started = await startLoop(rt, co, threadId, goal ?? null);
-        await handOff(bb, rt, co, threadId, started.goal);
+        await handOff(alia, rt, co, threadId, started.goal);
         return buildPanelState(rt, threadId, co);
       }),
     stop: ({ threadId }) =>
       rpc(async () => {
         // Nothing here reads the folder, so a thread whose checkout is gone can still stop its loops.
-        const current = await checkoutRefForThread(bb, threadId).catch((err: unknown) => {
-          bb.log.info(`Stop could not read the thread's checkout: ${errorText(err)}`);
+        const current = await checkoutRefForThread(alia, threadId).catch((err: unknown) => {
+          alia.log.info(`Stop could not read the thread's checkout: ${errorText(err)}`);
           return null;
         });
         stopForThread(rt, threadId, current, "Stopped from the panel");
-        return panelStateFor(bb, rt, threadId);
+        return panelStateFor(alia, rt, threadId);
       }),
     finalize: ({ threadId }) =>
       rpc(async () => {
-        const co = await checkoutForThread(bb, threadId);
+        const co = await checkoutForThread(alia, threadId);
         await requireLoggedExperiments(co);
         const owner = rt.get(co)?.ownerThreadId ?? threadId;
         await stopLoop(rt, co, "Finalizing");
-        await sendToThread(bb, owner, FINALIZE_MESSAGE);
+        await sendToThread(alia, owner, FINALIZE_MESSAGE);
         return buildPanelState(rt, threadId, co);
       }),
     export: ({ threadId }) =>
       rpc(async () => {
-        const co = await checkoutForThread(bb, threadId);
+        const co = await checkoutForThread(alia, threadId);
         const view = await readSession(co);
         if (!view.hasConfig) throw new Refusal("No experiment is initialized here.", "Start the loop first.");
         return { path: await writeExport(co, view) };
       }),
   });
 
-  // ─── `bb self-loop` CLI ───────────────────────────────────────────────
+  // ─── `alia self-loop` CLI ───────────────────────────────────────────────
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "self-loop",
       summary: "Run the autoresearch experiment loop in a checkout",
@@ -478,12 +478,12 @@ export default async function plugin(bb: BbPluginApi) {
           options: targetOptions,
           run: ({ options, positionals }, ctx) =>
             cliRun(async () => {
-              const { co, threadId } = await cliCheckout(bb, options, ctx);
+              const { co, threadId } = await cliCheckout(alia, options, ctx);
               const started = await startLoop(rt, co, threadId, positionals.goal ?? null);
               if (!threadId) {
                 return `Loop started for ${checkoutLabel(co)}, but no thread is attached. Pass --thread <id> instead of --dir to hand it to an agent.`;
               }
-              await handOff(bb, rt, co, threadId, started.goal);
+              await handOff(alia, rt, co, threadId, started.goal);
               return `Loop started for ${checkoutLabel(co)} and handed to thread ${threadId}.`;
             }),
         }),
@@ -498,7 +498,7 @@ export default async function plugin(bb: BbPluginApi) {
           },
           run: ({ options }, ctx) =>
             cliRun(async () => {
-              const { co, threadId } = await cliCheckout(bb, options, ctx);
+              const { co, threadId } = await cliCheckout(alia, options, ctx);
               return initExperiment(
                 rt,
                 co,
@@ -521,7 +521,7 @@ export default async function plugin(bb: BbPluginApi) {
           },
           run: ({ options, positionals }, ctx) =>
             cliRun(async () => {
-              const { co } = await cliCheckout(bb, options, ctx);
+              const { co } = await cliCheckout(alia, options, ctx);
               return runExperiment(rt, co, {
                 command: positionals.command,
                 timeoutSeconds: options.timeout,
@@ -542,7 +542,7 @@ export default async function plugin(bb: BbPluginApi) {
           },
           run: ({ options, positionals }, ctx) =>
             cliRun(async () => {
-              const { co } = await cliCheckout(bb, options, ctx);
+              const { co } = await cliCheckout(alia, options, ctx);
               // Number("") is 0, so an empty value is refused rather than read as zero.
               const metric = options.metric.trim() === "" ? NaN : Number(options.metric);
               if (!Number.isFinite(metric)) {
@@ -577,7 +577,7 @@ export default async function plugin(bb: BbPluginApi) {
           summary: "Show the loop state and the session's numbers",
           options: targetOptions,
           run: (input, ctx) =>
-            cliRun(async () => statusText(rt, (await cliCheckout(bb, input.options, ctx)).co)),
+            cliRun(async () => statusText(rt, (await cliCheckout(alia, input.options, ctx)).co)),
         }),
         off: cliCommand({
           summary: "Stop the loop (the session log is kept)",
@@ -586,7 +586,7 @@ export default async function plugin(bb: BbPluginApi) {
             cliRun(async () => {
               // No folder check: turning a loop off must still work after its checkout was removed. A thread whose
               // environment cannot be read still has its own loops stopped, as the panel's Stop does.
-              const target = await cliTarget(bb, input.options, ctx).then(
+              const target = await cliTarget(alia, input.options, ctx).then(
                 (found) => ({ ...found, reason: null as string | null }),
                 (err: unknown) => {
                   const threadId = input.options.dir ? null : (input.options.thread ?? ctx.threadId ?? null);
@@ -609,12 +609,12 @@ export default async function plugin(bb: BbPluginApi) {
           options: targetOptions,
           run: (input, ctx) =>
             cliRun(async () => {
-              const { co, threadId } = await cliCheckout(bb, input.options, ctx);
+              const { co, threadId } = await cliCheckout(alia, input.options, ctx);
               await requireLoggedExperiments(co);
               const owner = rt.get(co)?.ownerThreadId ?? threadId;
               await stopLoop(rt, co, "Finalizing");
               if (!owner) return "Loop stopped. No thread to hand the finalize step to; run the autoresearch-finalize skill yourself.";
-              await sendToThread(bb, owner, FINALIZE_MESSAGE);
+              await sendToThread(alia, owner, FINALIZE_MESSAGE);
               return `Loop stopped and finalize handed to thread ${owner}.`;
             }),
         }),
@@ -623,9 +623,9 @@ export default async function plugin(bb: BbPluginApi) {
           options: targetOptions,
           run: (input, ctx) =>
             cliRun(async () => {
-              const { co } = await cliCheckout(bb, input.options, ctx);
+              const { co } = await cliCheckout(alia, input.options, ctx);
               const view = await readSession(co);
-              if (!view.hasConfig) throw new Refusal("No experiment is initialized here.", "Run `bb self-loop init` first.");
+              if (!view.hasConfig) throw new Refusal("No experiment is initialized here.", "Run `alia self-loop init` first.");
               return writeExport(co, view);
             }),
         }),
@@ -640,7 +640,7 @@ export default async function plugin(bb: BbPluginApi) {
               if (!input.options.yes) {
                 throw new PluginCliError("clear deletes the session log (.auto/log.jsonl, or autoresearch.jsonl in a legacy session). Re-run with --yes to confirm.", { code: "confirm" });
               }
-              const { co } = await cliCheckout(bb, input.options, ctx);
+              const { co } = await cliCheckout(alia, input.options, ctx);
               return clearSession(rt, co);
             }),
         }),

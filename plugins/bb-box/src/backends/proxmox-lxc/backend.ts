@@ -1,8 +1,8 @@
 // The Proxmox LXC backend. Boxes are unprivileged containers, linked-cloned
 // from one CT template per kind into a resource pool, with a VMID from
-// bb-box's range and the static address fixed to it. Ownership lives in
+// alia-box's range and the static address fixed to it. Ownership lives in
 // Proxmox tags (and the description, which the clone sets first), so the
-// sweep can find every guest even if bb-box's storage is lost. Both name the
+// sweep can find every guest even if alia-box's storage is lost. Both name the
 // install as well as the box (018): an install acts only on its own guests,
 // and checks the guest still names the box before it acts on a VMID, which
 // Proxmox reuses. Commands run over SSH as the templates' box user; desktops
@@ -230,31 +230,31 @@ const MiB = 2 ** 20;
 const GiB = 2 ** 30;
 const VNC_PORT = 5900;
 /** The desktop template writes a fresh VNC password here, readable by the box user. */
-const VNC_PASSWORD_FILE = "/var/lib/bb-box/vnc-password";
+const VNC_PASSWORD_FILE = "/var/lib/alia-box/vnc-password";
 /** The desktop's display service writes the path it took, gpu or cpu, and why. */
-const DISPLAY_MODE_FILE = "/run/bb-box/display-mode";
+const DISPLAY_MODE_FILE = "/run/alia-box/display-mode";
 const DRIVER_READS = 3;
 const DRIVER_READ_MS = 10_000;
-const DISPLAY_REASON_FILE = "/run/bb-box/display-reason";
+const DISPLAY_REASON_FILE = "/run/alia-box/display-reason";
 /** The host's NVIDIA driver, as a container sees it: the host's kernel module. */
 const NVIDIA_VERSION_FILE = "/sys/module/nvidia/version";
 /** The host's NVIDIA driver as a box last saw it, {version, seen}, for the doctor (049). */
 const NVIDIA_KEY = "nvidia-host";
 /** The cookie a desktop's display :99 writes at each start. */
-const DISPLAY_AUTH_FILE = "/run/bb-box/Xauthority";
+const DISPLAY_AUTH_FILE = "/run/alia-box/Xauthority";
 /** What a program needs to reach the desktop's display as the box user. */
 const DISPLAY_ENV = `DISPLAY=:99 XAUTHORITY=${DISPLAY_AUTH_FILE}`;
 /** The desktop's display service's script. A Wayland desktop's resizes it (048). */
-const DISPLAY_SCRIPT = "/usr/local/libexec/bb-box/display";
+const DISPLAY_SCRIPT = "/usr/local/libexec/alia-box/display";
 /** The user wayvnc signs in, with the VNC password, on a Wayland desktop (048). */
 const WAYVNC_USER = "box";
 const SSH_KEY = "ssh-key";
 /** The hostname a warm guest has until a box claims it. */
-const WARM_HOSTNAME = "bb-box-warm";
-/** The tag and hostname of a box bb-box builds or tries an image in (049), which no sweep releases. */
+const WARM_HOSTNAME = "alia-box-warm";
+/** The tag and hostname of a box alia-box builds or tries an image in (049), which no sweep releases. */
 const IMAGE_BOX = "image-box";
-const IMAGE_HOSTNAME = "bb-box-image";
-const VM_BOOT_SCRIPT = "/usr/local/sbin/bb-box-boot";
+const IMAGE_HOSTNAME = "alia-box-image";
+const VM_BOOT_SCRIPT = "/usr/local/sbin/alia-box-boot";
 /** The tag that names a captured build's image (049), such as image.standard. */
 const IMAGE_TAG = "image.";
 /** The tag that names a captured build's kind. */
@@ -277,7 +277,7 @@ const READY_TIMEOUT_MS = 30_000;
 /** How long new desktops avoid a GPU whose desktop started without it. */
 const AVOID_GPU_MS = 10 * 60_000;
 const RETAG_TRIES = 5;
-/** Each GPU's memory as bb-box last read it (#603), by GPU. */
+/** Each GPU's memory as alia-box last read it (#603), by GPU. */
 const GPUS_KEY = "gpu-readings";
 /** How often upkeep reads a GPU's memory in a running desktop that has it. */
 const GPU_READ_EVERY_MS = 60_000;
@@ -286,12 +286,12 @@ const GPU_FRESH_MS = 5 * 60_000;
 /** A GPU's free and total memory in MiB, as a desktop that has it reads them. */
 const GPU_QUERY = "nvidia-smi --query-gpu=memory.free,memory.total --format=csv,noheader,nounits | head -1";
 /** The VM, never started, whose notes carry the host's report of each GPU's memory (#603): host/setup-gpu-report.sh makes it. */
-const GPU_REPORT_VM = "bb-box-gpu-memory";
-/** How old the host's report may be and still stand: host/bb-box-gpu-memory writes it at least every 4 minutes. */
+const GPU_REPORT_VM = "alia-box-gpu-memory";
+/** How old the host's report may be and still stand: host/alia-box-gpu-memory writes it at least every 4 minutes. */
 const GPU_REPORT_FRESH_MS = 10 * 60_000;
 /** How long one read of the host's report serves. The host writes it within 15 s of a change. */
 const GPU_REPORT_CACHE_MS = 10_000;
-/** How long a GPU the host reports full refuses desktops before bb-box looks again. */
+/** How long a GPU the host reports full refuses desktops before alia-box looks again. */
 const GPU_REPORT_REFUSES_MS = 60_000;
 /** How long the views wait for the host's report before they show the readings without it. */
 const GPU_REPORT_WAIT_MS = 2_000;
@@ -474,7 +474,7 @@ export interface LxcBackendOptions {
   readonly sshBinary?: string;
   /** Where a Wayland box's image has Selkies' launcher, instead of SELKIES_LAUNCHER: a file the fake SSH finds, in tests. */
   readonly selkiesLauncher?: string;
-  /** Where a Wayland box's image has bb-box-cursor, instead of CURSOR_HELPER: a file the test finds, in tests. */
+  /** Where a Wayland box's image has alia-box-cursor, instead of CURSOR_HELPER: a file the test finds, in tests. */
   readonly cursorHelper?: string;
   /** Where a GPU desktop's image has what gives it video, instead of GPU_VIDEO_MARKER: a file the test finds, in tests. */
   readonly gpuVideoMarker?: string;
@@ -527,9 +527,9 @@ awk -v old="$3" -v new="$1" '
   }
   { print }
   END { if (!found) print "127.0.1.1", new }
-' "$2/hosts" > "$2/hosts.bb-box"
-cat "$2/hosts.bb-box" > "$2/hosts"
-rm -f "$2/hosts.bb-box"
+' "$2/hosts" > "$2/hosts.alia-box"
+cat "$2/hosts.alia-box" > "$2/hosts"
+rm -f "$2/hosts.alia-box"
 printf '%s\n' "$1" > "$2/hostname"
 hostname "$1"
 NAME
@@ -629,7 +629,7 @@ const NO_CARDS: CardsView = { is: "none" };
 
 type CardPart = "shared" | "whole";
 
-const USERSPACE_COMMAND = "cat /usr/share/bb-box/nvidia-version 2>/dev/null || true";
+const USERSPACE_COMMAND = "cat /usr/share/alia-box/nvidia-version 2>/dev/null || true";
 
 const PUT_BACK_TRIES = 4;
 const PUT_BACK_WAIT_MS = 2_000;
@@ -781,16 +781,16 @@ interface PowerNode {
 const POWER_WAIT_MS = 120_000;
 const WITHDRAW_WAIT_MS = 10_000;
 const DELETED_UNANSWERED_MS = 5_000;
-const POWER_TAG = /^bb-power\.(start|stop|shutdown|delete)\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.g\d+\.n[0-9a-f]{8,32}$/;
+const POWER_TAG = /^alia-power\.(start|stop|shutdown|delete)\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.g\d+\.n[0-9a-f]{8,32}$/;
 
 function powerBox(config: Record<string, unknown>, helper: string): string | null {
   const description = typeof config.description === "string" ? config.description : "";
   const tags = parseTags(config.tags);
-  if (!description.startsWith("bb-box ") || /^bb-box install \S+ box \S+ held copy of snapshot /.test(description)) return null;
+  if (!description.startsWith("alia-box ") || /^alia-box install \S+ box \S+ held copy of snapshot /.test(description)) return null;
   if (tags.includes("held-copy") || tags.includes(EARLIER_GUEST) || /^earlier guest$/m.test(description) || !/^install \S+$/m.test(description)) return null;
   const box = /^box (\S+)$/m.exec(description)?.[1];
   if (box) return box;
-  const warm = /^bb-box warm \S+$/m.test(description) ? /^warm ([0-9a-f]+)$/m.exec(description)?.[1] : undefined;
+  const warm = /^alia-box warm \S+$/m.test(description) ? /^warm ([0-9a-f]+)$/m.exec(description)?.[1] : undefined;
   return warm && atLeast(helper, WARM_BOUND_FROM) ? `warm-${warm}` : null;
 }
 
@@ -814,7 +814,7 @@ const POWER_REFUSALS: Readonly<Record<string, string>> = {
   running: "it is running",
   template: "it is a template",
   "not-served": "its pool is not one the helper serves",
-  "not-bb-box": `its description names no ${PRODUCT} install`,
+  "not-alia-box": `its description names no ${PRODUCT} install`,
   failed: "Proxmox's own call failed",
 };
 
@@ -852,7 +852,7 @@ function refusedWith(code: BackendErrorCode, refusal: Refusal): BackendError {
 
 const START_LATER = "Start it again later, or ask the user.";
 
-const START_TAILS: readonly RegExp[] = [/ ?It is stopped, with its disk as it was\.$/, / ?Start tries again; bb box doctor has more\.$/, new RegExp(` ?${START_LATER.replace(/[.,]/g, "\\$&")}$`)];
+const START_TAILS: readonly RegExp[] = [/ ?It is stopped, with its disk as it was\.$/, / ?Start tries again; alia box doctor has more\.$/, new RegExp(` ?${START_LATER.replace(/[.,]/g, "\\$&")}$`)];
 
 function withoutStartTails(text: string): string {
   let now = text.trimEnd();
@@ -891,10 +891,10 @@ async function titleWithin(lookup: Promise<string | null>, ms: number): Promise<
 
 function leftStopped(card: string, why: string, more: string, agentMore = more): AudienceError {
   const said = (said: string) => `The box did not get ${card.split(",")[0]}: ${why}. ${said} It is stopped, with its disk as it was.`;
-  return new AudienceError(`${said(more)} Start tries again; bb box doctor has more.`, `${said(agentMore)} ${START_LATER}`);
+  return new AudienceError(`${said(more)} Start tries again; VesnALIA box doctor has more.`, `${said(agentMore)} ${START_LATER}`);
 }
 
-/** A GPU's memory as bb-box keeps it. The total is null until a running desktop reads it. */
+/** A GPU's memory as alia-box keeps it. The total is null until a running desktop reads it. */
 interface StoredGpu {
   readonly freeMiB: number;
   readonly totalMiB: number | null;
@@ -906,7 +906,7 @@ function gpusOf(templates: readonly LxcTemplate[]): string[] {
   return [...new Set(templates.flatMap((template) => (template.gpu ? [template.gpu] : [])))];
 }
 
-/** A GPU's room as bb-box knows it now (#603). */
+/** A GPU's room as alia-box knows it now (#603). */
 interface GpuState extends StoredGpu {
   readonly source: "host" | "desktop";
   /** Until when it refuses desktops, if it has less free than one needs; null once it no longer stands. */
@@ -929,7 +929,7 @@ export interface GpuReport {
 }
 
 /**
- * The host's report in the notes host/bb-box-gpu-memory writes: an
+ * The host's report in the notes host/alia-box-gpu-memory writes: an
  * "at <seconds since the epoch>" line, then a "gpu <UUID> <PCI bus ID>
  * <index> <free MiB> <total MiB>" line per GPU, each indented so that the
  * notes panel shows them as written. Null when the notes hold no report.
@@ -1006,7 +1006,7 @@ export class ProxmoxLxcBackend implements Backend {
   readonly #selkies: SelkiesPresence;
   /** Whether each GPU desktop's image has video with NVENC (#863). */
   readonly #gpuVideo: ImageFile;
-  /** Whether each Wayland box's image has bb-box-cursor (060). */
+  /** Whether each Wayland box's image has alia-box-cursor (060). */
   readonly #cursor: ImageFile;
   readonly #cursorHelper: string;
   readonly #warmStore: WarmStore;
@@ -1267,7 +1267,7 @@ export class ProxmoxLxcBackend implements Backend {
     const vmid = this.#vmid(copy);
     const config = await this.#copyConfig(api, copy, signal);
     if (!config) throw gone(vmid);
-    const madeFor = `bb-box install ${this.#context.installId} box ${label.box} held copy of snapshot ${label.snapshot}`;
+    const madeFor = `alia-box install ${this.#context.installId} box ${label.box} held copy of snapshot ${label.snapshot}`;
     if (!String(config.description ?? "").startsWith(madeFor)) throw new SnapshotFailed(`Guest ${vmid} is not the copy ${PRODUCT} made of snapshot ${label.snapshot}, so ${PRODUCT} does not label it as one.`);
     const template = typeof copy.data?.template === "number" ? copy.data.template : null;
     const owner = copyOwner(this.#context.installId, this.#boxData(copy));
@@ -1345,7 +1345,7 @@ export class ProxmoxLxcBackend implements Backend {
     if (!config) return;
     const tags = parseTags(config.tags);
     const box = typeof copy.data?.box === "string" ? copy.data.box : "";
-    const described = typeof config.description === "string" && config.description.startsWith(`bb-box install ${this.#context.installId} box ${box} held copy of snapshot `);
+    const described = typeof config.description === "string" && config.description.startsWith(`alia-box install ${this.#context.installId} box ${box} held copy of snapshot `);
     if (!isHeldCopy(tags) && !isEarlierGuest(tags) && !described) throw new SnapshotFailed(`Guest ${copy.ref} is not a held copy or an earlier guest of box ${box}, so ${PRODUCT} does not delete it as one.`);
     await this.#forget(this.#vmid(copy));
     await this.#owned(api).destroy(this.#vmid(copy), copyOwner(this.#context.installId, this.#boxData(copy)), signal);
@@ -1621,7 +1621,7 @@ export class ProxmoxLxcBackend implements Backend {
     if (view.is === "on") {
       const driver = reportedDriver(view.notes);
       if (driver) return { driver, refused: null };
-      return { driver: null, refused: { why: `The GPU helper on ${api.node} does not report the host's NVIDIA driver.`, fix: `Run host/setup-gpu.sh again, as root on ${api.node}, then bb box doctor.` } };
+      return { driver: null, refused: { why: `The GPU helper on ${api.node} does not report the host's NVIDIA driver.`, fix: `Run host/setup-gpu.sh again, as root on ${api.node}, then VesnALIA box doctor.` } };
     }
     const seen = await this.#driverInARunningBox(api, signal);
     if (seen) return { driver: seen, refused: null };
@@ -2151,7 +2151,7 @@ export class ProxmoxLxcBackend implements Backend {
             const answer = await step("gpu", () => this.#askHelper(api, id, asked, signal));
             if (answer.is !== "granted") {
               const refusedWords = `The host's GPU helper on ${api.node} did not give box ${box.name} gpu none, ${answer.is === "refused" ? `as ${answer.why}` : "in time"}, so the card's device lines its image carries stay. ${PRODUCT} released the guest it had made.`;
-              throw new BackendError("no_capacity", `${refusedWords} Try again, or run bb box doctor.`, `${refusedWords} Try again later, or ask the user.`);
+              throw new BackendError("no_capacity", `${refusedWords} Try again, or run alia box doctor.`, `${refusedWords} Try again later, or ask the user.`);
             }
           }
           if (asked && placed) {
@@ -2169,13 +2169,13 @@ export class ProxmoxLxcBackend implements Backend {
               acquiring.held = null;
               if (answer.is === "refused" && refusedCards.size === 0) {
                 refusedCards.add(card.uuid);
-                this.#context.logError("acquire", new Error(`The GPU helper on ${api.node} refused ${cardName(card)} for box ${box.name}, as ${answer.why}, so bb-box released its guest and places it once more, on another card.`));
+                this.#context.logError("acquire", new Error(`The GPU helper on ${api.node} refused ${cardName(card)} for box ${box.name}, as ${answer.why}, so alia-box released its guest and places it once more, on another card.`));
                 continue;
               }
               const refusedWords = `The host's GPU helper on ${api.node} refused ${cardName(card)} for box ${box.name}, as ${"why" in answer ? answer.why : "it gave no answer"}${refusedCards.size ? ", after it had refused another card" : ""}. ${PRODUCT} released the guest it had made; nothing else changed.`;
               throw new BackendError(
                 "no_capacity",
-                answer.is === "refused" ? `${refusedWords} Try again, or run bb box doctor.` : notAnsweredWords(api.node, answer),
+                answer.is === "refused" ? `${refusedWords} Try again, or run alia box doctor.` : notAnsweredWords(api.node, answer),
                 answer.is === "refused" ? `${refusedWords} Try again later, or ask the user.` : notAnsweredForAgent(api.node, answer),
               );
             }
@@ -2228,7 +2228,7 @@ export class ProxmoxLxcBackend implements Backend {
         const reason = offCard ?? offGpu ?? "no reason given";
         failed.set(gpu, reason);
         this.#avoidGpu(gpu === "unknown" ? null : gpu);
-        this.#context.logError("acquire", new Error(`Box ${box.name} started without GPU ${gpu} (${reason}), so bb-box released it and tries another GPU.`));
+        this.#context.logError("acquire", new Error(`Box ${box.name} started without GPU ${gpu} (${reason}), so alia-box released it and tries another GPU.`));
         dropPlacement();
         await this.#forget(id);
         await this.#owned(api).destroy(id, ours, signal);
@@ -2560,7 +2560,7 @@ export class ProxmoxLxcBackend implements Backend {
     if (facts.unmarked) return { is: "refused", refusal: unmarkedRefusal(facts.box), way: "no" };
     const ready = await this.#helperReady(api, view, signal);
     if (ready || view.is !== "on") {
-      return { is: "refused", refusal: helperNotReadyRefusal(api.node, facts.box, ready?.why ?? "it has no GPU helper to give a box a card", ready?.fix ?? "Run bb box doctor."), way: "no" };
+      return { is: "refused", refusal: helperNotReadyRefusal(api.node, facts.box, ready?.why ?? "it has no GPU helper to give a box a card", ready?.fix ?? "Run alia box doctor."), way: "no" };
     }
     if (to === "whole") {
       if (!this.#wholeOn()) return { is: "refused", refusal: wholeCardsOffForResize(this), way: "no" };
@@ -2630,7 +2630,7 @@ export class ProxmoxLxcBackend implements Backend {
     const from = facts.marker?.part ?? "none";
     const base = { box: facts.box, from, to, others: [], limit: this.#config.desktop.perGpu, fromHeldBy: null, installs: null };
     if (decided.is === "refused") return plannedChange({ ...base, fromCard: null, toCard: null, way: decided.way }, decided.refusal);
-    if (view.is !== "on") return plannedChange({ ...base, fromCard: null, toCard: null, way: "no" }, helperNotReadyRefusal(api.node, facts.box, "it has no GPU helper to give a box a card", "Run bb box doctor."));
+    if (view.is !== "on") return plannedChange({ ...base, fromCard: null, toCard: null, way: "no" }, helperNotReadyRefusal(api.node, facts.box, "it has no GPU helper to give a box a card", "Run alia box doctor."));
     const blocks = decided.is === "blocked" ? decided.blocks : decided.is === "place" ? decided.fromBlocks : [];
     const namer = await this.#namer(guests, view.lines, blocks);
     if (decided.is === "blocked") {
@@ -2828,7 +2828,7 @@ export class ProxmoxLxcBackend implements Backend {
       const said = `the host's GPU helper on ${api.node} refused ${card}, as ${answer.why}`;
       return { person: said, agent: said };
     }
-    const unsentenced = (words: string) => uncapitalise(words.replace(/ Run bb box doctor\.$/, "").replace(/\.$/, ""));
+    const unsentenced = (words: string) => uncapitalise(words.replace(/ Run alia box doctor\.$/, "").replace(/\.$/, ""));
     return { person: unsentenced(notAnsweredWords(api.node, answer)), agent: unsentenced(notAnsweredForAgent(api.node, answer)) };
   }
 
@@ -2887,7 +2887,7 @@ export class ProxmoxLxcBackend implements Backend {
           : `It holds ${this.#holdingWords(held.claim, held.lines)} now.`;
     const person = stopped
       ? `${capitalise(name)} is stopped, with its disk as it was: ${cause.person}. ${holding} Start it to use it so, or resize it again.`
-      : `Not resized: ${cause.person}. ${holding} Try again, or run bb box doctor.`;
+      : `Not resized: ${cause.person}. ${holding} Try again, or run alia box doctor.`;
     const agent = stopped
       ? `Not resized: ${name} is stopped, with its disk as it was: ${cause.agent}. ${holding} Start it with box_start, or ask the user.`
       : `Not resized: ${cause.agent}. ${holding} Try again later, or ask the user.`;
@@ -3000,7 +3000,7 @@ export class ProxmoxLxcBackend implements Backend {
       const stoppedWords = ` It is stopped, with ${diskAfterWords(from, size, notGrown)}.`;
       const heldGuest: Guest = { ...guest, size, claim: holds, facts: await this.#factsWithCard(api, guest, vmid, holds, lines, null, reading).catch(() => guest.facts ?? []) };
       throw new ResizeLeftStopped(
-        `${capitalise(name)} holds ${after} now, but did not start after its GPU changed: ${said}${stoppedWords} Start tries again; bb box doctor has more.`,
+        `${capitalise(name)} holds ${after} now, but did not start after its GPU changed: ${said}${stoppedWords} Start tries again; VesnALIA box doctor has more.`,
         `Not resized as asked: ${name} holds ${after} now, but did not start after its GPU changed: ${agentSaid}${stoppedWords} Start it with box_start, or ask the user.`,
         heldGuest,
         holds?.part ?? "none",
@@ -3130,7 +3130,7 @@ export class ProxmoxLxcBackend implements Backend {
     const names = namesOf(config);
     if (names.install !== null || names.box !== boxId) return stamped;
     const tags = parseTags(config.tags);
-    const description = typeof config.description === "string" && config.description.startsWith("bb-box ") ? config.description : null;
+    const description = typeof config.description === "string" && config.description.startsWith("alia-box ") ? config.description : null;
     await this.#owned(api).writeOn(
       vmid,
       unstampedOwner(boxId),
@@ -3156,7 +3156,7 @@ export class ProxmoxLxcBackend implements Backend {
     // before its Selkies encoded with NVENC (#863).
     const video =
       offer?.flavour === "desktop" ? await this.#gpuVideo.has(presenceKey(guest), command) : !wayland || (await this.#selkies.has(presenceKey(guest), command));
-    // An image with bb-box-cursor (060): Sway 1.11, whose streams paint no pointer, so none is hidden, and Sway keeps a theme
+    // An image with alia-box-cursor (060): Sway 1.11, whose streams paint no pointer, so none is hidden, and Sway keeps a theme
     // the cursor session and wayvnc send as the pointer's shape. One without keeps #707's hidden theme.
     const sends = wayland && (await this.#cursor.has(presenceKey(guest), command));
     const displays = (capabilities?.displays ?? []).filter((display) => video || display.protocol !== "selkies").map(
@@ -3217,7 +3217,7 @@ export class ProxmoxLxcBackend implements Backend {
         message(error),
         unauthorised
           ? `Check the API token ID and secret in ${PRODUCT}'s settings.`
-          : "Check the API URL, and that BB's server can reach it. Set the TLS fingerprint from the setup guide's token file, or the CA certificate if a private CA signed the API's certificate.",
+          : "Check the API URL, and that VesnALIA's server can reach it. Set the TLS fingerprint from the setup guide's token file, or the CA certificate if a private CA signed the API's certificate.",
       );
       skip(...later);
     }
@@ -3267,7 +3267,7 @@ export class ProxmoxLxcBackend implements Backend {
       const facts = Promise.all([
         images?.pins("linux") ?? null,
         images?.pins("linux-desktop") ?? null,
-        images?.bbApp(signal) ?? null,
+        images?.aliaApp(signal) ?? null,
         this.#hostNvidia(),
         images?.chrome?.("x86_64") ?? null,
       ]).catch(() => [null, null, null, null, null] as const);
@@ -3295,18 +3295,18 @@ export class ProxmoxLxcBackend implements Backend {
               this.#templates.set(template, templateInfo(storage, config));
               templateStorages.push({ name: storage, type: (disk as StorageStatus).type, volume: String(config.rootfs) });
               pass(name, `CT template ${template} on ${storage}, ${Math.floor((disk as { available: number }).available / GiB)} GiB free.`);
-              const [linuxPins, desktopPins, bbApp, nvidia, chromeAmd] = await facts;
+              const [linuxPins, desktopPins, aliaApp, nvidia, chromeAmd] = await facts;
               const recorded = recordInDescription(String(config.description ?? ""));
               const rebuild = `Rebuild it with the setup guide's template/build.sh, as root on ${node}: build.sh ${REBUILD[listed.flavour](template, listed.template.gpu)} --replace.`;
               const server = listed.flavour === "linux";
               const judged = judgeImage(
                 recorded,
-                { os: "linux", pins: pinSet(listed.flavour) === "linux" ? linuxPins : desktopPins, bbApp, hostNvidia: server ? null : nvidia, pinChrome: recorded?.arch === "arm64" ? null : chromeAmd },
+                { os: "linux", pins: pinSet(listed.flavour) === "linux" ? linuxPins : desktopPins, aliaApp, hostNvidia: server ? null : nvidia, pinChrome: recorded?.arch === "arm64" ? null : chromeAmd },
                 rebuild,
               );
               const driver = (await reportDriver) ?? nvidia?.version ?? null;
               const offDriver = server && recorded?.nvidia && driver && recorded.nvidia !== driver;
-              const userspaceWords = `The Linux template has NVIDIA's userspace ${recorded?.nvidia}, and the host's driver is ${driver}. New boxes with a GPU are not made from it until it is rebuilt, with bb box images build ${this.id}/${template} or build.sh linux. Boxes with no GPU are made as usual.`;
+              const userspaceWords = `The Linux template has NVIDIA's userspace ${recorded?.nvidia}, and the host's driver is ${driver}. New boxes with a GPU are not made from it until it is rebuilt, with VesnALIA box images build ${this.id}/${template} or build.sh linux. Boxes with no GPU are made as usual.`;
               checks.push({
                 id: `template.${template}.image`,
                 name: `Image of ${name[1]}`,
@@ -3338,7 +3338,7 @@ export class ProxmoxLxcBackend implements Backend {
           const vm = await api.vmNotes(GPU_REPORT_VM, signal);
           const report = vm ? parseGpuReport(vm.notes) : null;
           const helper = vm ? parseGpuHelper(vm.notes) : null;
-          const fix = status(helper ? "bb-box-gpu" : "bb-box-gpu-memory.timer");
+          const fix = status(helper ? "alia-box-gpu" : "alia-box-gpu-memory.timer");
           const unnamed = report ? gpus.filter((gpu) => !report.gpus.some((reported) => namesGpu(gpu, reported))) : [];
           if (!helper) {
             warn(
@@ -3435,7 +3435,7 @@ export class ProxmoxLxcBackend implements Backend {
         const limit = this.#config.desktop.perGpu;
         if (inUse?.is === "read" && limit !== null) {
           for (const card of inUse.cards.filter((each) => boxesOver(each, limit) > 0)) {
-            warn([`gpu.${card.uuid}.limit`, `GPU ${card.index ?? card.uuid} boxes`], overLimitWords(card, limit, inUse.counts), "Release boxes on the card, or raise the boxes per card in BB Box's Proxmox LXC settings.");
+            warn([`gpu.${card.uuid}.limit`, `GPU ${card.index ?? card.uuid} boxes`], overLimitWords(card, limit, inUse.counts), "Release boxes on the card, or raise the boxes per card in VesnALIA Box's Proxmox LXC settings.");
           }
         }
       }
@@ -3517,12 +3517,12 @@ export class ProxmoxLxcBackend implements Backend {
     return {
       status: "fail",
       detail: `${wrong.join("; ")}. ${PRODUCT} places no new box on those cards until it is put right, and does not stop the boxes.`,
-      fix: "Restart each box named: its start places it on its card again. If it comes back on the wrong card, the node's card numbering changed; bb box doctor's GPU helper check has more.",
+      fix: "Restart each box named: its start places it on its card again. If it comes back on the wrong card, the node's card numbering changed; VesnALIA box doctor's GPU helper check has more.",
     };
   }
 
   /**
-   * The doctor's note on containers in bb-box's pool and VMID range that
+   * The doctor's note on containers in alia-box's pool and VMID range that
    * this install leaves alone, counted by the install they name, or null
    * when there are none.
    */
@@ -3544,7 +3544,7 @@ export class ProxmoxLxcBackend implements Backend {
       .map(([install, count]) => (install === null ? `${containers(count)} with no install ID` : `${containers(count)} of install ${install}`));
     return (
       `This install leaves alone ${parts.join(", ")} in pool ${this.#config.proxmox.pool}. They still count against the host's capacity. ` +
-      "If one of these IDs was this install's before it lost its storage, take it back with bb box install-id --set <id>."
+      "If one of these IDs was this install's before it lost its storage, take it back with VesnALIA box install-id --set <id>."
     );
   }
 
@@ -3680,7 +3680,7 @@ export class ProxmoxLxcBackend implements Backend {
       unread = error;
     }
     const helper = vm ? parseGpuHelper(vm.notes) : null;
-    const throughIt = `Run systemctl status bb-box-gpu as root on ${api.node}, and check the host's clock.`;
+    const throughIt = `Run systemctl status alia-box-gpu as root on ${api.node}, and check the host's clock.`;
     if (vm && helper?.version) {
       await this.#rememberPower(key, helper.version);
       if (!atLeast(helper.version, POWER_ON_THE_NODE_FROM)) return null;
@@ -3691,7 +3691,7 @@ export class ProxmoxLxcBackend implements Backend {
       const only = `${PRODUCT} starts, stops and deletes this install's guests on ${api.node} only through it. ${throughIt}`;
       if (ageMs === null) throw new Error(`The GPU helper on ${api.node} has written no time in VM ${vm.vmid}'s report, and ${only}`);
       if (ageMs >= GPU_HELPER_FRESH_MS) throw new Error(`The GPU helper on ${api.node} last reported ${ago(ageMs)}, in VM ${vm.vmid}, and ${only}`);
-      if (ageMs <= -GPU_HELPER_CLOCK_AHEAD_MS) throw new Error(`The GPU helper's report in VM ${vm.vmid} is dated ahead of this BB server's clock, so ${PRODUCT} cannot tell whether the helper still runs, and ${only}`);
+      if (ageMs <= -GPU_HELPER_CLOCK_AHEAD_MS) throw new Error(`The GPU helper's report in VM ${vm.vmid} is dated ahead of this VesnALIA server's clock, so ${PRODUCT} cannot tell whether the helper still runs, and ${only}`);
       if (helper.tested === false && atLeast(helper.version, STOPS_ONLY_UNTESTED_FROM)) {
         if (await this.#plainGuest(api, vmid, config, signal)) return null;
         if (action === "delete" && (await this.#unusedClone(api, vmid, config, signal))) return null;
@@ -3710,7 +3710,7 @@ export class ProxmoxLxcBackend implements Backend {
 
   async #unstartedClones(): Promise<Record<string, Record<string, string>>> {
     this.#unstarted ??= (await this.#context.storage.get<Record<string, Record<string, string>>>(UNSTARTED).catch((error: unknown) => {
-      this.#context.logError("read the clones bb-box has not started", error);
+      this.#context.logError("read the clones alia-box has not started", error);
       return null;
     })) ?? {};
     return this.#unstarted;
@@ -3720,7 +3720,7 @@ export class ProxmoxLxcBackend implements Backend {
     const all = await this.#unstartedClones();
     const key = this.#cardKey(api);
     this.#unstarted = { ...all, [key]: { ...all[key], [String(vmid)]: description } };
-    await this.#context.storage.set(UNSTARTED, this.#unstarted).catch((error: unknown) => this.#context.logError("record a clone bb-box has not started", error));
+    await this.#context.storage.set(UNSTARTED, this.#unstarted).catch((error: unknown) => this.#context.logError("record a clone alia-box has not started", error));
   }
 
   async #dropUnstarted(api: Proxmox, vmid: number): Promise<void> {
@@ -3729,7 +3729,7 @@ export class ProxmoxLxcBackend implements Backend {
     if (all[key]?.[String(vmid)] === undefined) return;
     const { [String(vmid)]: _started, ...rest } = all[key];
     this.#unstarted = { ...all, [key]: rest };
-    await this.#context.storage.set(UNSTARTED, this.#unstarted).catch((error: unknown) => this.#context.logError("record that bb-box started or deleted a clone", error));
+    await this.#context.storage.set(UNSTARTED, this.#unstarted).catch((error: unknown) => this.#context.logError("record that alia-box started or deleted a clone", error));
   }
 
   async #unusedClone(api: Proxmox, vmid: number, config: Record<string, unknown>, signal?: AbortSignal): Promise<boolean> {
@@ -3746,7 +3746,7 @@ export class ProxmoxLxcBackend implements Backend {
     if (!helper?.version || helper.tested !== false || !atLeast(helper.version, STOPS_ONLY_UNTESTED_FROM)) return null;
     const pool = this.#config.proxmox.pool;
     if (helper.serves && !helper.serves.listed.includes(pool) && helper.serves.unlisted === 0) return null;
-    return `The GPU helper on ${api.node}, bb-box-gpu ${helper.version}, was not tested on pve-container ${helper.pveContainer}, so it starts no GPU desktop there, and ${PRODUCT} makes none. Install a bb-box-gpu release newer than ${helper.version} that was tested on pve-container ${helper.pveContainer}: run host/setup-gpu.sh from that BB Box release, as root on ${api.node}.`;
+    return `The GPU helper on ${api.node}, alia-box-gpu ${helper.version}, was not tested on pve-container ${helper.pveContainer}, so it starts no GPU desktop there, and ${PRODUCT} makes none. Install a alia-box-gpu release newer than ${helper.version} that was tested on pve-container ${helper.pveContainer}: run host/setup-gpu.sh from that VesnALIA Box release, as root on ${api.node}.`;
   }
 
   async #plainGuest(api: Proxmox, vmid: number, config: Record<string, unknown>, signal?: AbortSignal): Promise<boolean> {
@@ -3783,10 +3783,10 @@ export class ProxmoxLxcBackend implements Backend {
     try {
       await plain.configure(vmid, owner, (config) => {
         const tags = parseTags(config.tags);
-        tag = `bb-power.${action}.${this.#context.installId}.${powerBox(config, helper) ?? "-"}.g${markerOf(tags)?.generation ?? 0}.n${nonce}`;
+        tag = `alia-power.${action}.${this.#context.installId}.${powerBox(config, helper) ?? "-"}.g${markerOf(tags)?.generation ?? 0}.n${nonce}`;
         if (!POWER_TAG.test(tag)) throw new Error(`${PRODUCT} cannot ask the GPU helper on ${api.node} to ${action} CT ${vmid}: its install or box ID makes the request ${tag}, which is not a Proxmox tag the helper reads.`);
         sent = true;
-        return { tags: [...tags.filter((each) => !each.startsWith("bb-power.")), tag] };
+        return { tags: [...tags.filter((each) => !each.startsWith("alia-power.")), tag] };
       }, signal);
       await this.#awaitPower(api, plain, vmid, action, owner, tag, nonce, asked, signal);
     } catch (error) {
@@ -3798,9 +3798,9 @@ export class ProxmoxLxcBackend implements Backend {
     if (asked.answered || failure.error instanceof NoLongerOurs) throw failure.error;
     if (unwithdrawn) {
       this.#context.logError(`take the request to ${action} CT ${vmid} off it`, unwithdrawn.error);
-      throw new Error(`${asSentence(message(failure.error))} ${PRODUCT} could not take its request off CT ${vmid}, so the GPU helper on ${api.node} may still ${action} it. Run bb box doctor, then ${action} the box again or release it.`);
+      throw new Error(`${asSentence(message(failure.error))} ${PRODUCT} could not take its request off CT ${vmid}, so the GPU helper on ${api.node} may still ${action} it. Run alia box doctor, then ${action} the box again or release it.`);
     }
-    if (failure.error instanceof PowerUnanswered) throw new Error(`${failure.error.message}, so ${PRODUCT} withdrew it. Run bb box doctor.`);
+    if (failure.error instanceof PowerUnanswered) throw new Error(`${failure.error.message}, so ${PRODUCT} withdrew it. Run alia box doctor.`);
     throw failure.error;
   }
 
@@ -4054,7 +4054,7 @@ export class ProxmoxLxcBackend implements Backend {
    * install and the box in `guest.data.box`, or no box when that is absent,
    * as for a leftover `held()` found without an owner. Proxmox reuses a VMID
    * once the range wraps, so a box whose container was deleted outside
-   * bb-box may find another box's there.
+   * alia-box may find another box's there.
    */
   async #still(api: Proxmox, guest: Guest, signal?: AbortSignal): Promise<boolean> {
     const config = await this.#guestConfig(api, this.#vmid(guest), signal);
@@ -4064,7 +4064,7 @@ export class ProxmoxLxcBackend implements Backend {
     return names.install === this.#context.installId && names.box === box;
   }
 
-  /** How bb-box and the thread reach a box over SSH. A fresh guest's host key is accepted. */
+  /** How alia-box and the thread reach a box over SSH. A fresh guest's host key is accepted. */
   #access(vmid: number): SshAccess {
     const address = addressFor(this.#config, vmid);
     if (!address) throw new Error(`VMID ${vmid} has no address.`);
@@ -4239,7 +4239,7 @@ export class ProxmoxLxcBackend implements Backend {
         }
         if (!(error instanceof ProxmoxError)) throw error;
         const started = performance.now();
-        // When bb-box cannot read the template, the clone's error stands.
+        // When alia-box cannot read the template, the clone's error stands.
         const state = await this.#templateBack(api, template, deadline, signal).catch(() => null);
         signal.throwIfAborted();
         if (state === null) throw error;
@@ -4303,7 +4303,7 @@ export class ProxmoxLxcBackend implements Backend {
     let vmid: number | null = null;
     try {
       const guests = await api.listPool(this.#config.proxmox.pool, signal);
-      const description = `bb-box image box: ${label}\ninstall ${this.#context.installId}`;
+      const description = `alia-box image box: ${label}\ninstall ${this.#context.installId}`;
       vmid = await this.#clone(api, guests, template, IMAGE_HOSTNAME, description, async (id) => void this.#imageBoxes.add(id), signal);
       await this.#owned(api).configure(vmid, this.#image(), this.#settings(null, vmid), signal);
       await this.#owned(api).configure(vmid, this.#image(), { tags: [TAG, installTag(this.#context.installId), IMAGE_BOX, templateTag(template)] }, signal);
@@ -4328,9 +4328,9 @@ export class ProxmoxLxcBackend implements Backend {
   async #capture(box: ImageBox, from: ImageBuild, image: string, signal: AbortSignal): Promise<ImageBuild> {
     const api = await this.client();
     const vmid = Number(box.ref);
-    const read = await box.command.run("cat /usr/share/bb-box/image.json", { timeoutMs: 15_000, signal, maxOutputBytes: 64 * 1024 });
+    const read = await box.command.run("cat /usr/share/alia-box/image.json", { timeoutMs: 15_000, signal, maxOutputBytes: 64 * 1024 });
     const record = read.exitCode === 0 ? recordFromJson(read.stdout.trim()) : null;
-    if (!record) throw new Error(`Image box ${vmid} has no image record in /usr/share/bb-box/image.json, which finalizing writes.`);
+    if (!record) throw new Error(`Image box ${vmid} has no image record in /usr/share/alia-box/image.json, which finalizing writes.`);
     const source = await api.config(Number(from.ref), signal);
     const build = record.build.startsWith(BUILD) ? record.build : `${BUILD}${record.build}`;
     await this.#forget(vmid);
@@ -4342,7 +4342,7 @@ export class ProxmoxLxcBackend implements Backend {
         hostname: typeof source.hostname === "string" ? source.hostname : IMAGE_HOSTNAME,
         ...(typeof source.net0 === "string" ? { net0: source.net0 } : {}),
         onboot: false,
-        description: `bb-box ${image} image of ${from.kind}, built ${new Date().toISOString().slice(0, 10)} from template ${from.ref}.\n${JSON.stringify(record)}`,
+        description: `alia-box ${image} image of ${from.kind}, built ${new Date().toISOString().slice(0, 10)} from template ${from.ref}.\n${JSON.stringify(record)}`,
         tags: [TAG, installTag(this.#context.installId), `${IMAGE_TAG}${image}`, `${KIND_TAG}${from.kind}`, templateTag(Number(from.ref)), build],
       },
       signal,
@@ -4368,8 +4368,8 @@ export class ProxmoxLxcBackend implements Backend {
     const old = await api.config(target, signal);
     const storage = String(old.rootfs ?? "").split(":")[0] ?? "";
     const thin = (await api.storageStatus(storage, signal)).type === "lvmthin";
-    const hostname = typeof old.hostname === "string" ? old.hostname : `bb-box-${target}`;
-    const first = String(old.description ?? `bb-box ${current.kind} template.`).split("\n")[0]!;
+    const hostname = typeof old.hostname === "string" ? old.hostname : `alia-box-${target}`;
+    const first = String(old.description ?? `alia-box ${current.kind} template.`).split("\n")[0]!;
     const today = new Date().toISOString().slice(0, 10);
     const line = /, (built|refreshed) \d{4}-\d{2}-\d{2}/.test(first) ? first.replace(/, (built|refreshed) \d{4}-\d{2}-\d{2}/, `, refreshed ${today}`) : first;
     const description = `${line}${build.record ? `\n${JSON.stringify(build.record)}` : ""}`;
@@ -4464,7 +4464,7 @@ export class ProxmoxLxcBackend implements Backend {
     if (!open) {
       throw new Error(
         `Nothing answered on port ${port} of ${host} within ${seconds(timeoutMs)}. ` +
-          `Check that BB's server can reach the boxes' subnet, and that the ${kind ?? "box's"} template starts sshd.`,
+          `Check that VesnALIA's server can reach the boxes' subnet, and that the ${kind ?? "box's"} template starts sshd.`,
       );
     }
     const left = Math.max(1_000, deadline - Date.now());
@@ -4502,7 +4502,7 @@ export class ProxmoxLxcBackend implements Backend {
       if (Date.now() >= deadline) {
         throw new Error(
           `The ${kind} box's desktop did not start: ${DISPLAY_MODE_FILE} is missing after ${Math.round(timeoutMs / 1000)} s. ` +
-            `Check bb-box-display.service in the ${kind} template.`,
+            `Check alia-box-display.service in the ${kind} template.`,
         );
       }
       await sleep(200, signal);
@@ -4582,9 +4582,9 @@ export class ProxmoxLxcBackend implements Backend {
   }
 
   /**
-   * Each GPU's room as bb-box knows it now: the host's report while it is
+   * Each GPU's room as alia-box knows it now: the host's report while it is
    * under 10 minutes old, else the last reading in a desktop. A GPU the host
-   * reports full refuses desktops until bb-box reads the report again, so it
+   * reports full refuses desktops until alia-box reads the report again, so it
    * has room again within seconds of the host freeing it. A reading in a
    * desktop stands 5 minutes, and only until a desktop on the GPU is
    * released, which frees memory it does not show.
@@ -4760,7 +4760,7 @@ export class ProxmoxLxcBackend implements Backend {
     return {
       is: "blocked",
       why: `The GPU helper on ${api.node} is not reporting: ${vm ? `VM ${vm.vmid}'s report has no helper line` : `the token can read no VM named ${GPU_REPORT_VM}`}, as while host/setup-gpu.sh restarts the helper or once it is removed, and ${marked === 1 ? "1 guest" : `${marked} guests`} of this install ${marked === 1 ? "carries a GPU marker" : "carry GPU markers"}.`,
-      fix: `Try again in a minute. If it lasts, run systemctl status bb-box-gpu as root on ${api.node}, and put the helper back with host/setup-gpu.sh.`,
+      fix: `Try again in a minute. If it lasts, run systemctl status alia-box-gpu as root on ${api.node}, and put the helper back with host/setup-gpu.sh.`,
     };
   }
 
@@ -4786,7 +4786,7 @@ export class ProxmoxLxcBackend implements Backend {
       if (left.length) {
         this.#context.logError(
           "GPU claims",
-          new Error(`The GPU helper on ${api.node} had not answered ${left.map(({ vmid, marker }) => `CT ${vmid}'s ${marker}`).join(", ")} a minute after bb-box started. bb-box places nothing on their cards and does not start them until it answers. Run bb box doctor.`),
+          new Error(`The GPU helper on ${api.node} had not answered ${left.map(({ vmid, marker }) => `CT ${vmid}'s ${marker}`).join(", ")} a minute after alia-box started. alia-box places nothing on their cards and does not start them until it answers. Run alia box doctor.`),
         );
       }
     })().catch((error: unknown) => {
@@ -4909,7 +4909,7 @@ export class ProxmoxLxcBackend implements Backend {
     }
     const holder = lines.holders.find((candidate) => candidate.vmid === vmid);
     if (holder?.install === this.#context.installId) return { is: "box", name: guest?.name || `CT ${vmid}`, threadId: null };
-    return holder && holder.install === null ? { is: "not-bb-box", vmid } : { is: "other-install", vmid };
+    return holder && holder.install === null ? { is: "not-alia-box", vmid } : { is: "other-install", vmid };
   }
 
   async #namer(guests: readonly PoolGuest[], lines: HelperLines, blocks: readonly CardBlock[], withTitles = true): Promise<CardNamer> {
@@ -5202,7 +5202,7 @@ export class ProxmoxLxcBackend implements Backend {
 
   async #wholeDesktopChoice(api: Proxmox, offer: Offer, view: CardsView, guests: readonly PoolGuest[], before: LxcTemplate, threadId: string | null, signal?: AbortSignal): Promise<Choice> {
     const ready = await this.#wholeHelperReady(api, view, signal);
-    if (ready || view.is !== "on") return refusedChoice(before, wholeRefusal(api.node, ready?.why ?? "it has no GPU helper to give a box a card", ready?.fix ?? "Run bb box doctor."));
+    if (ready || view.is !== "on") return refusedChoice(before, wholeRefusal(api.node, ready?.why ?? "it has no GPU helper to give a box a card", ready?.fix ?? "Run alia box doctor."));
     const placed = await this.#placement(api, offer, view, guests, NO_GPUS, NO_GPUS, "whole");
     if (placed.is === "refused") return refusedChoice(before, (await this.#wholeWords(api.node, placed, { guests, lines: view.lines }, threadId)).refusal);
     const counts = this.#perTemplate(guests);
@@ -5245,7 +5245,7 @@ export class ProxmoxLxcBackend implements Backend {
   async #helperReady(api: Proxmox, view: CardsView, signal?: AbortSignal): Promise<{ readonly why: string; readonly fix: string } | null> {
     const node = api.node;
     if (view.is === "none") return { why: "it has no GPU helper to give a box a card", fix: `Set up the helper with host/setup-gpu.sh, as root on ${node}.` };
-    if (view.is === "blocked") return { why: sentenceStart(view.why), fix: view.fix ?? "Run bb box doctor." };
+    if (view.is === "blocked") return { why: sentenceStart(view.why), fix: view.fix ?? "Run alia box doctor." };
     if (!view.writes) return { why: "its GPU helper has writes off, so it gives no box a card", fix: `Turn writes on with host/setup-gpu.sh --writes on --check, then --writes on, as root on ${node}.` };
     const untested = await this.#untestedHere(api, signal);
     if (untested) return { why: "its GPU helper was not tested on the node's pve-container, so it gives no box a card", fix: untested };
@@ -5268,7 +5268,7 @@ export class ProxmoxLxcBackend implements Backend {
       return { why: `${what} has no NVIDIA userspace for its driver ${driver ?? "(not reported)"}: ${others.join(", ")}`, fix: "Build it again from a Linux template with the userspace, or ask for gpu none." };
     }
     if (!fitting.length) {
-      return { why: `no Linux template there has NVIDIA's userspace for its driver ${driver ?? "(not reported)"}: ${others.join(", ")}`, fix: `Rebuild one with bb box images build ${this.id}/<vmid>, or with build.sh linux <vmid> --replace as root on ${node}.` };
+      return { why: `no Linux template there has NVIDIA's userspace for its driver ${driver ?? "(not reported)"}: ${others.join(", ")}`, fix: `Rebuild one with VesnALIA box images build ${this.id}/<vmid>, or with build.sh linux <vmid> --replace as root on ${node}.` };
     }
     return { templates: fitting };
   }
@@ -5318,7 +5318,7 @@ export class ProxmoxLxcBackend implements Backend {
       checked.add(guest.vmid);
       const reading = await this.#checkCard(api, guest.vmid, claim.card, signal);
       if (!wrongCardSeen(reading, claim.card) || reading.ok) continue;
-      if (!this.#mismatches.has(guest.vmid)) this.#context.logError("check boxes' cards", new Error(`CT ${guest.vmid} holds card ${claim.card}, and nvidia-smi in it lists ${reading.seen.length ? reading.seen.join(" and ") : "no card"}. bb-box places no new box on either card until it is put right, and does not stop it: Restart places it again.`));
+      if (!this.#mismatches.has(guest.vmid)) this.#context.logError("check boxes' cards", new Error(`CT ${guest.vmid} holds card ${claim.card}, and nvidia-smi in it lists ${reading.seen.length ? reading.seen.join(" and ") : "no card"}. alia-box places no new box on either card until it is put right, and does not stop it: Restart places it again.`));
       this.#mismatches.set(guest.vmid, { card: claim.card, seen: reading.seen, at: this.#now() });
     }
     for (const vmid of this.#mismatches.keys()) if (!checked.has(vmid)) this.#mismatches.delete(vmid);
@@ -5507,7 +5507,7 @@ export class ProxmoxLxcBackend implements Backend {
       pool: this.#config.proxmox.pool,
       installId: this.#context.installId,
       reportVm: GPU_REPORT_VM,
-      madeAndRemovedByBbBox: (tags) => tags.includes(FILLING) || tags.includes(RETIRED) || tags.includes(IMAGE_BOX) || tags.some((tag) => tag.startsWith(IMAGE_TAG)),
+      madeAndRemovedByAliaBox: (tags) => tags.includes(FILLING) || tags.includes(RETIRED) || tags.includes(IMAGE_BOX) || tags.some((tag) => tag.startsWith(IMAGE_TAG)),
       now: () => this.#now(),
       sleep: this.#options.sleep ?? pause,
       ago,
@@ -5658,7 +5658,7 @@ export class ProxmoxLxcBackend implements Backend {
       // template replaced in between retires the guest later, which is safe.
       const build = await templateBuild(api, guests, template, signal);
       const tags = (state: string) => [TAG, install, state, templateTag(template), ...(build ? [`${BUILD}${build}`] : [])];
-      const made = `bb-box warm ${flavour}\ninstall ${this.#context.installId}\nwarm ${randomBytes(6).toString("hex")}`;
+      const made = `alia-box warm ${flavour}\ninstall ${this.#context.installId}\nwarm ${randomBytes(6).toString("hex")}`;
       warmGuest = warmOwner(this.#context.installId, made);
       vmid = await this.#clone(
         api,

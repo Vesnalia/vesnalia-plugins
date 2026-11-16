@@ -7,7 +7,7 @@ export async function tailnetDoctor(tailnet: Tailnet, installId: string, signal?
   const checks: DoctorCheck[] = [
     signedIn.ok
       ? { id: "tailnet.client", name: "OAuth client", status: "ok", detail: `Tailscale signs the OAuth client in; machines join with the tags ${tailnet.tags.join(", ")}.`, fix: null }
-      : { id: "tailnet.client", name: "OAuth client", status: "fail", detail: signedIn.reason, fix: "Check the OAuth client's ID and secret in BB Box's General settings, and that it has the auth_keys scope with these tags." },
+      : { id: "tailnet.client", name: "OAuth client", status: "fail", detail: signedIn.reason, fix: "Check the OAuth client's ID and secret in VesnALIA Box's General settings, and that it has the auth_keys scope with these tags." },
   ];
   if (signedIn.ok) {
     try {

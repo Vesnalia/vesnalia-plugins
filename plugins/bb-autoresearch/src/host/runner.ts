@@ -1,10 +1,10 @@
 // Server-side view of the host contract. The pipeline only talks to a
 // HostRunner bound to one host id; it never touches the server's disk.
 //
-// - BbHostRunner: the real path, bb.host entry via bb.hosts.experimental_client.
+// - AliaHostRunner: the real path, alia.host entry via alia.hosts.experimental_client.
 // - LocalHostRunner: the same ops in-process (tests; also the escape hatch if
 //   host RPC is unavailable on a machine).
-import type { ExperimentalHostClient } from "@get-bb/plugin-sdk";
+import type { ExperimentalHostClient } from "@vesnalia/plugin-sdk";
 import type {
   ArtifactReport,
   BaseBundle,
@@ -151,7 +151,7 @@ export interface HostRunner {
   composeCommits(input: ComposeInput): Promise<ComposeResult>;
   gitRemotes(repoPath: string): Promise<Array<{ name: string; url: string }>>;
   writeExport(key: string, files: Array<{ path: string; content: string }>): Promise<string>;
-  /** Remote bench: a shallow bundle of `sha` alone, as a file on this host (the BB server's machine). */
+  /** Remote bench: a shallow bundle of `sha` alone, as a file on this host (the VesnALIA server's machine). */
   baseBundle(repoPath: string, sha: string): Promise<BaseBundle>;
   /** Remote bench: scan a seed for credentials and pack it (host/seed.ts). */
   seedPack(input: { source: string; cwd: string; allow: string[] }): Promise<SeedPack>;
@@ -161,7 +161,7 @@ export interface HostRunner {
 
 const GIT_TIMEOUT = 5 * 60_000;
 
-export class BbHostRunner implements HostRunner {
+export class AliaHostRunner implements HostRunner {
   constructor(
     private readonly client: ExperimentalHostClient<HostContract, typeof hostSignals>,
     readonly hostId: string,

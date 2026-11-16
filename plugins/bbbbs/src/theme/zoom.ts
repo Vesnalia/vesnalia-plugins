@@ -1,5 +1,5 @@
 /**
- * Terminal-only zoom and fit, independent of bb's app zoom.
+ * Terminal-only zoom and fit, independent of VesnALIA's app zoom.
  *
  * Sizes are xterm `fontSize` values in CSS pixels. The VGA font's cell is
  * half as wide as it is tall (8×16 at 16px), so an 80×25 grid at size `f` is
@@ -91,7 +91,7 @@ interface KeyLike {
 
 /**
  * Terminal zoom chords.
- * - Ctrl/Cmd + `+` `=` / `-` / `0`: the familiar ones. bb's desktop app binds
+ * - Ctrl/Cmd + `+` `=` / `-` / `0`: the familiar ones. VesnALIA's desktop app binds
  *   the same keys to app zoom, so the page must claim them in the capture
  *   phase with preventDefault.
  * - Alt/Option + `=` / `-` / `0` (by physical key): a fallback that never

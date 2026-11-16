@@ -1,10 +1,10 @@
-# bb-plugin-progressive-skill
+# alia-plugin-progressive-skill
 
-Smart skill index compaction for BB. Port of the Hermes `progressive-skill`
+Smart skill index compaction for VesnALIA. Port of the Hermes `progressive-skill`
 plugin's decision core (usage frequency + recency decay + budget-capped
-ranking) to BB's plugin model.
+ranking) to VesnALIA's plugin model.
 
-BB has no `build_skills_system_prompt` to monkeypatch, so this port exposes
+VesnALIA has no `build_skills_system_prompt` to monkeypatch, so this port exposes
 the decision core as two native agent tools instead:
 
 - **`progressive_skill_list`** — returns the skill catalog ranked by usage
@@ -24,7 +24,7 @@ The decision logic is ported faithfully from the Hermes `core/` modules:
 - **Budget cap** — the ranked list is trimmed to a character budget
   (default 4600 chars ≈ 1150 tokens), keeping the highest-scored skills.
 
-Usage is stored in the plugin's KV store (`bb.storage.kv`), so it persists
+Usage is stored in the plugin's KV store (`alia.storage.kv`), so it persists
 across sessions.
 
 ## Tools

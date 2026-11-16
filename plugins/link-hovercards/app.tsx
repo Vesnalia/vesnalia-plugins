@@ -1,11 +1,11 @@
-// bb-plugin-link-hovercards — frontend entry.
+// alia-plugin-link-hovercards — frontend entry.
 //
 // One app overlay listens for the pointer resting on (or, on touch screens, a
 // long press of) any link to a GitHub pull request, GitHub issue or Linear
-// issue, anywhere in BB, and floats a summary card beside it.
+// issue, anywhere in VesnALIA, and floats a summary card beside it.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { definePluginApp, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { GithubResult, LinearResult } from "./contract";
 import type { rpcContract } from "./server";
 import { IssueCard, LinearCard, PrCard } from "./components/cards";

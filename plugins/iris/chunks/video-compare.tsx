@@ -1,5 +1,5 @@
 // VideoCompare (chunk "compare"): two videos on one timeline. Both stream
-// through bb preview leases as VideoPlayer's do (useMediaSource); the shared
+// through VesnALIA preview leases as VideoPlayer's do (useMediaSource); the shared
 // controls come from chunks/players.tsx and the timing rules from
 // core/compare.ts.
 //

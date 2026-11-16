@@ -16,7 +16,7 @@ import {
 } from "../lib/formats.ts";
 import { clampSeekTime } from "../lib/playback.ts";
 
-test("m4a is audio/mp4 — the MIME BB's built-in preview refuses", () => {
+test("m4a is audio/mp4 — the MIME VesnALIA's built-in preview refuses", () => {
   assert.equal(mimeForPath("music-tense-clockwork-combo.m4a"), "audio/mp4");
   assert.equal(formatLabel("apps/web/public/audio/x.m4a"), "M4A");
   assert.ok(AUDIO_EXTENSIONS.includes("m4a"));

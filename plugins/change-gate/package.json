@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-change-gate",
+  "name": "alia-plugin-change-gate",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.44",
-    "bbPluginSdk": ">=0.5.29"
+    "alia": ">=0.44",
+    "aliaPluginSdk": ">=0.5.29"
   },
-  "bb": {
+  "alia": {
     "name": "Change Gate",
-    "description": "Approve production changes from a card that says what changes, where and how to undo it. Agents ask before a migration, a deploy or deleting shared data, and you answer with one click. An approval covers one request, and a decline tells the agent not to look for another route. Every decision stays in a journal page and in bb change-gate log. Agents are instructed to ask; the gate does not block other tools.",
+    "description": "Approve production changes from a card that says what changes, where and how to undo it. Agents ask before a migration, a deploy or deleting shared data, and you answer with one click. An approval covers one request, and a decline tells the agent not to look for another route. Every decision stays in a journal page and in VesnALIA change-gate log. Agents are instructed to ask; the gate does not block other tools.",
     "branding": {
       "icon": "./icons/logo.svg"
     },
@@ -20,7 +20,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.29",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -52,10 +51,22 @@
     "typecheck": "tsc --noEmit"
   },
   "license": "MIT",
+  "author": "Alexander Kashin",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.29"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/change-gate#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AlexKashin29/bb-plugins.git",
-    "directory": "bb-plugin-change-gate"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/change-gate"
   },
-  "author": "Alexander Kashin"
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

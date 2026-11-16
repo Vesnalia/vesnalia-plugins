@@ -1,6 +1,6 @@
 /**
  * The settle-attribution probe: boots the REAL app in the screenshot harness
- * (mock SDK, no bb account, no network) at one or more board scales and, once
+ * (mock SDK, no VesnALIA account, no network) at one or more board scales and, once
  * the board's first card has painted, names WHICH React commits and DOM
  * mutations produce the load bench's `settleTail` — the post-paint window in
  * which the board "looks loaded but keeps repainting" (Rank 2 of the perf
@@ -357,7 +357,7 @@ function installSettleInstrument() {
   };
 
   // ── Fence marks (same watchers as the load bench's own instrument) ──────
-  const root = document.querySelector('[data-bb-plugin="focus-board"]');
+  const root = document.querySelector('[data-alia-plugin="focus-board"]');
   if (root === null) throw new Error("settle instrument: the plugin mount point is missing");
   if (root.childElementCount > 0) pushMark("fb:first-commit");
   else {

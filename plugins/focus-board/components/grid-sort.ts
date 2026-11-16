@@ -6,7 +6,7 @@
 // state (components/preferences.ts parses the stored text), the View menu
 // renders the rows, and the board sorts the assembled cards through
 // `sortGridCards`.
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 /**
  * The grid's sort keys. Every one of them is a field the card row actually

@@ -111,8 +111,8 @@ describe("verifyWebhook", () => {
   });
 
   it("rejects an unbound team", () => {
-    // Scope is the binding here too: an event about a team no bb project binds
-    // is an event about work this bb does not track.
+    // Scope is the binding here too: an event about a team no VesnALIA project binds
+    // is an event about work this VesnALIA does not track.
     const raw = body({ data: { id: "i_1", teamId: "team_secret" } });
     expect(verifyWebhook(context(raw))).toEqual({ ok: false, reason: "unbound-team" });
   });
@@ -163,7 +163,7 @@ describe("webhookDeliveryKey", () => {
 describe("the self-test", () => {
   it("produces a payload this plugin's own verifier accepts", () => {
     // Register on proof, not on hope: a webhook registered against a URL that
-    // does not reach bb gets three failed deliveries and is then disabled by
+    // does not reach VesnALIA gets three failed deliveries and is then disabled by
     // Linear, which is a worse state than never having registered.
     const raw = selfTestPayload(NOW, "nonce-1");
     const result = verifyWebhook({

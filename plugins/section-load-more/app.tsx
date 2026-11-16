@@ -1,9 +1,9 @@
-// bb-plugin-section-load-more — frontend entry.
+// alia-plugin-section-load-more — frontend entry.
 //
 // An invisible app overlay owns the sidebar controller for this window, so
 // it can read the plugin settings and dispose cleanly with the plugin.
 import { useEffect, useRef } from "react";
-import { definePluginApp, useSettings } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useSettings } from "@vesnalia/plugin-sdk/app";
 import { SectionLoadMore, type LoadMoreOptions } from "./controller";
 
 function positiveInt(value: unknown, fallback: number): number {

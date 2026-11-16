@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { createPlugin } from "../server.js";
 import type { LinearClient } from "../src/linear/client.js";
 import { createStore } from "../src/store/store.js";
@@ -7,7 +7,7 @@ import { issue, NOW, state, team } from "./helpers/store.js";
 
 /*
  * The write-back end to end through the real server wiring: a thread event,
- * bb's GitHub PR Status plugin answering through `bb.sdk.plugins.callRpc`,
+ * VesnALIA's GitHub PR Status plugin answering through `alia.sdk.plugins.callRpc`,
  * and the Linear write. The runner's own tests inject the lookup, which is
  * exactly how a removed SDK method once went unnoticed, so this one fakes only
  * the edges: the peer plugin's RPCs and the Linear client. Nothing reaches the
@@ -67,7 +67,7 @@ async function fixture(options: { refreshFails?: boolean } = {}) {
   });
 
   const thread = makeThreadResponse({ id: "t", projectId: "p", environmentId: "env_1" });
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "linear",
     settings: { apiKey: "lin_api_test", allowWrites: true, prTransitions: true },
     sdk: {
@@ -88,9 +88,9 @@ async function fixture(options: { refreshFails?: boolean } = {}) {
     },
   });
   cleanups.push(() => harness.lifecycle.dispose());
-  await createPlugin(() => client)(bb as never);
+  await createPlugin(() => client)(alia as never);
 
-  const store = createStore(bb.storage.database() as never);
+  const store = createStore(alia.storage.database() as never);
   store.putTeams([team("team_eng", "ENG")], NOW);
   store.replaceWorkflowStates("team_eng", [
     state("todo", "team_eng", "unstarted"),
@@ -136,8 +136,8 @@ describe("pull-request write-back through the server", () => {
     await settled(store, "merged");
 
     expect(peerCalls).toEqual([
-      { pluginId: "bb--github-pr-status", method: "refresh", input: { environmentId: "env_1" } },
-      { pluginId: "bb--github-pr-status", method: "pullRequests", input: { keys: ["env_1"] } },
+      { pluginId: "alia--github-pr-status", method: "refresh", input: { environmentId: "env_1" } },
+      { pluginId: "alia--github-pr-status", method: "pullRequests", input: { keys: ["env_1"] } },
     ]);
     expect(updates).toEqual([{ issueId: "a", input: { stateId: "done" } }]);
   });

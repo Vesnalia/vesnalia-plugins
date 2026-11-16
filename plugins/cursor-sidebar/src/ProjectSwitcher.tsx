@@ -74,7 +74,7 @@ export interface ProjectSwitcherProps {
   onSelect: (projectId: string | null) => void;
   /** Set the chosen project's icon; only offered for one real project. */
   onSetIcon?: ((anchor: HTMLElement) => void) | undefined;
-  /** Open BB's own Add project dialog. */
+  /** Open VesnALIA's own Add project dialog. */
   onNewProject?: ((trigger: EventTarget) => void) | undefined;
 }
 
@@ -181,7 +181,7 @@ export function ProjectSwitcher({
                   className={cn(VIEW_MENU_ITEM, "text-muted-foreground")}
                   onSelect={() => {
                     // Start from the trigger: the menu item sits in a portal,
-                    // too far down the React tree to reach bb's provider.
+                    // too far down the React tree to reach VesnALIA's provider.
                     const trigger = triggerRef.current;
                     if (trigger !== null) onNewProject(trigger);
                   }}

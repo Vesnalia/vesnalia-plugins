@@ -19,7 +19,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm install --global bb-app@0.43.1
+      - run: npm install --global alia-app@0.43.1
       - run: npm run check
       - name: Build with only Git-install dependencies
         shell: bash
@@ -29,7 +29,7 @@ jobs:
           git archive HEAD | tar -x -C "$checkout_dir"
           cd "$checkout_dir"
           npm ci --omit=dev --omit=optional
-          bb plugin build
+          alia plugin build
 
   secrets:
     runs-on: ubuntu-latest

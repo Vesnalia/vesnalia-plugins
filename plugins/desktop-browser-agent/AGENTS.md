@@ -1,6 +1,6 @@
 # AGENTS.md
 
-A bb plugin, Desktop & Browser Agent (id `desktop-browser-agent`), that gives bb agents
+A VesnALIA plugin, Desktop & Browser Agent (id `desktop-browser-agent`), that gives VesnALIA agents
 Cua Driver desktop and browser control, plus an optional Chromium extension in
 `browser-extension/` (npm workspace).
 
@@ -17,15 +17,15 @@ npm run build:extension && CHROMIUM=<path> npm run test:browser   # extension en
 npm run sync:tools     # refresh the tested driver snapshot and installer checksums
 ```
 
-A local checkout runs in bb from its path: after a change, `npm run build`
-then `bb plugin reload desktop-browser-agent`. Agent tools, skills and instructions
+A local checkout runs in VesnALIA from its path: after a change, `npm run build`
+then `alia plugin reload desktop-browser-agent`. Agent tools, skills and instructions
 change only in sessions that start afterwards.
 
 ## Where things live
 
 ```
 server.ts                plugin factory: settings, tools, configure(), rpc (rpcContract: app ⇄ server), events
-src/cli.ts               the `bb cua` command; actions come from server.ts as deps
+src/cli.ts               the `alia cua` command; actions come from server.ts as deps
 host.ts                  host worker: find cua-driver, readiness, MCP session, installs, browser bridge
 app.tsx                  app entry: registers the settings sections and the approval card
 settings/                one file per settings section; shared.tsx, use-rpc-resource.ts
@@ -51,13 +51,13 @@ scripts/release-notes.mjs     a version's CHANGELOG section, the notes of its Gi
 .github/workflows/       ci.yml, driver-drift.yml (daily driver check, opens a PR), publish-extension.yml (Web Store), release.yml (GitHub release on a v* tag)
 docs/REFERENCE.md        user-facing behaviour in full (settings, routing, safety)
 docs/SPEC.md, docs/ARCHITECTURE.md, docs/SETTINGS-UI.md, docs/PLAN.md   design notes (SPEC is the original design)
-docs/MARKETPLACE.md      the bb marketplace entry and the release steps
+docs/MARKETPLACE.md      the alia marketplace entry and the release steps
 ```
 
 ## Rules that are easy to break
 
-- **A setting with its own card lives in `bb.storage.kv`, not
-  `bb.settings.define`.** bb renders every declared setting in its form and
+- **A setting with its own card lives in `alia.storage.kv`, not
+  `alia.settings.define`.** VesnALIA renders every declared setting in its form and
   cannot hide one, so a declared routing mode or browser-extension switch
   would show twice.
 - **A new driver tool needs a reviewed exposure in `src/exposure.ts`.**
@@ -70,10 +70,10 @@ docs/MARKETPLACE.md      the bb marketplace entry and the release steps
   lists both the unpacked id (fixed by the manifest `key`) and the Chrome Web
   Store id; keep them in step with the manifest `key` and the store listing.
   Installed paths stay `agent-browser-bridge`.
-- **Branding:** the extension is "Browser Bridge for bb" with its own icon.
-  Use no bb or Cua logo or artwork.
+- **Branding:** the extension is "Browser Bridge for VesnALIA" with its own icon.
+  Use no VesnALIA or Cua logo or artwork.
 - Never bundle Cua Driver binaries; installs run only on the user's request.
-- Server and host behaviour is tested with `@get-bb/plugin-sdk/testing`;
+- Server and host behaviour is tested with `@vesnalia/plugin-sdk/testing`;
   pure logic lives in `src/` with unit tests.
 
 User-visible changes go in `CHANGELOG.md` under **Unreleased**, and into

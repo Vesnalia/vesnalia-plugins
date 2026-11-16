@@ -1,4 +1,4 @@
-// bb team report: render a TeamSnapshot as an inline-vis HTML page or Markdown.
+// VesnALIA team report: render a TeamSnapshot as an inline-vis HTML page or Markdown.
 // Pure module: no SDK calls.
 
 import {
@@ -44,14 +44,14 @@ const LABELS: Record<Language, ReportLabels> = {
   en: {
     title: (project) => `Team · ${project}`,
     generated: (when) => `generated ${when}`,
-    noConfig: "No .bb/team.yaml in this project — bb team init",
+    noConfig: "No .vesnalia/team.yaml in this project — VesnALIA team init",
     configError: (error) => `Config problem: ${error}`,
-    paused: "Team paused — agent messages to executors are held (bb team resume)",
+    paused: "Team paused — agent messages to executors are held (VesnALIA team resume)",
     hierarchy: "Hierarchy",
     roles: "Roles",
     tasks: "Open work packages",
-    noTasks: "No open work packages (bb team task add <role> <title>)",
-    noThreads: "No team threads yet — bb team create",
+    noTasks: "No open work packages (VesnALIA team task add <role> <title>)",
+    noThreads: "No team threads yet — VesnALIA team create",
     role: "Role",
     thread: "Thread",
     status: "Status",
@@ -86,14 +86,14 @@ const LABELS: Record<Language, ReportLabels> = {
   ru: {
     title: (project) => `Команда · ${project}`,
     generated: (when) => `сформировано ${when}`,
-    noConfig: "В проекте нет .bb/team.yaml — bb team init",
+    noConfig: "В проекте нет .vesnalia/team.yaml — VesnALIA team init",
     configError: (error) => `Проблема конфига: ${error}`,
-    paused: "Команда на паузе — сообщения агентов исполнителям придерживаются (bb team resume)",
+    paused: "Команда на паузе — сообщения агентов исполнителям придерживаются (VesnALIA team resume)",
     hierarchy: "Иерархия",
     roles: "Роли",
     tasks: "Открытые пакеты работ",
-    noTasks: "Открытых пакетов нет (bb team task add <роль> <название>)",
-    noThreads: "Тредов команды ещё нет — bb team create",
+    noTasks: "Открытых пакетов нет (VesnALIA team task add <роль> <название>)",
+    noThreads: "Тредов команды ещё нет — VesnALIA team create",
     role: "Роль",
     thread: "Тред",
     status: "Статус",
@@ -201,7 +201,7 @@ function resourceLines(snapshot:TeamSnapshot,lang:Language):string[]{
  const r=snapshot.resources;if(!r)return [];const ru=lang==="ru";
  return [ru?"Ресурсы команды":"Team resources",`${ru?"Допусков запусков (включая резервы)":"Start admissions (including reservations)"}: ${r.starts}/${r.policy.teamStarts}; ${ru?"осталось":"remaining"} ${r.remainingStarts}`,
  `${ru?"Сообщённые накопленные токены":"Reported cumulative tokens"}: ${r.reportedTokens===null?(ru?"недоступны":"unavailable"):`${r.reportedTokens} (${ru?"неполный учёт":"partial coverage"})`}`,
- ru?"Контекст не равен расходу. Денежный расход неизвестен. Активный вызов не прерывается; Send-now — ручное исключение BB.":"Context is not cumulative spend. Monetary cost is unknown. Active calls are not interrupted; Send-now is a manual BB override.",
+ ru?"Контекст не равен расходу. Денежный расход неизвестен. Активный вызов не прерывается; Send-now — ручное исключение ALIA.":"Context is not cumulative spend. Monetary cost is unknown. Active calls are not interrupted; Send-now is a manual VesnALIA override.",
  ...(r.blocked?[`${ru?"Блокировка":"Blocked"}: ${r.blocked}`]:[]),
  ...Object.entries(r.holds).map(([key,why])=>`${key}: ${why}`),
  ...r.fallbacks.map(f=>`#${f.taskId??"—"}: ${f.stage} · ${f.selection?.provider??"—"}/${f.selection?.model??"—"} · ${f.reason}`),

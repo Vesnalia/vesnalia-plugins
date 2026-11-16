@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Cross-window localStorage propagation. A second bb window's panel is a
+ * Cross-window localStorage propagation. A second VesnALIA window's panel is a
  * second document over the same localStorage: its writes fire a `storage`
  * event in every OTHER document of the origin (never in the writing one),
  * and until these listeners existed the board learned nothing from them —

@@ -21,7 +21,7 @@ export interface TreeRow {
 
 /**
  * Both listings hand us forward slashes already — the local walk joins prefixes
- * with "/" on every platform, and BB's daemon runs its own separator
+ * with "/" on every platform, and VesnALIA's daemon runs its own separator
  * normalizer over `host.list_paths`. So a backslash that survives to here is
  * part of a POSIX file's NAME, and collapsing it would build a phantom
  * directory whose rows open a path that does not exist. `resolveWithinRoot`

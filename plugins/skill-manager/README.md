@@ -4,7 +4,7 @@
 
 <h1 align="center">Skill Manager</h1>
 
-<p align="center"><strong>All your agent skills, one place, inside BB.</strong></p>
+<p align="center"><strong>All your agent skills, one place, inside VesnALIA.</strong></p>
 
 <p align="center">
   <a href="https://github.com/sankalpaacharya/bb-skill-manager/releases"><img src="https://img.shields.io/github/v/tag/sankalpaacharya/bb-skill-manager?label=version&color=4f8cff" alt="Version" /></a>
@@ -23,7 +23,7 @@ Skill Manager fixes that. One hub, every agent linked to it, updates in one clic
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/sankalpaacharya/bb-skill-manager.git
+alia plugin install git:https://github.com/sankalpaacharya/bb-skill-manager.git
 ```
 
 Then open **Skills** in the sidebar.
@@ -35,25 +35,25 @@ Then open **Skills** in the sidebar.
 - Search skills.sh and install into the agents you pick
 - Knows where each skill came from, tells you when there's an update
 - Tags, grouping by source, read any skill in place
-- Your agents can run all of it with `bb skill-manager`
+- Your agents can run all of it with `alia skill-manager`
 
 ## CLI
 
 ```sh
-bb skill-manager status
-bb skill-manager search react
-bb skill-manager install mattpocock/skills@code-review --all-agents
-bb skill-manager check
-bb skill-manager update
-bb skill-manager sync impeccable --to codex,pi
-bb skill-manager doctor
+alia skill-manager status
+alia skill-manager search react
+alia skill-manager install mattpocock/skills@code-review --all-agents
+alia skill-manager check
+alia skill-manager update
+alia skill-manager sync impeccable --to codex,pi
+alia skill-manager doctor
 ```
 
-Run `bb skill-manager` for the full list. Nothing destructive happens without `--force`.
+Run `alia skill-manager` for the full list. Nothing destructive happens without `--force`.
 
 ## Settings
 
-`bb plugin config skill-manager`
+`alia plugin config skill-manager`
 
 | Key | Default |
 | --- | --- |
@@ -67,7 +67,7 @@ Run `bb skill-manager` for the full list. Nothing destructive happens without `-
 ```sh
 npm install
 npm test
-bb plugin install .
+alia plugin install .
 ```
 
 MIT

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { loadPlugin } from "./test-server";
 
 describe("parent thread RPC", () => {
-  it("uses BB's thread update for assigning and removing a parent", async () => {
+  it("uses VesnALIA's thread update for assigning and removing a parent", async () => {
     const harness = await loadPlugin();
     let state = makeThreadResponse({ id: "thr_1" });
     harness.inspection.sdk.stub("threads.get", async () => state);
@@ -21,7 +21,7 @@ describe("parent thread RPC", () => {
       [{ threadId: "thr_1", parentThreadId: null }],
     ]);
   });
-  it("propagates BB's validation failures", async () => {
+  it("propagates VesnALIA's validation failures", async () => {
     const harness = await loadPlugin();
     harness.inspection.sdk.stub("threads.update", async () => {
       throw new Error("Invalid parent relationship");

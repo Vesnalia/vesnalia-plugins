@@ -45,15 +45,15 @@ describe("project icon discovery", () => {
     ]);
   });
 
-  it("reads image paths declared through bb.branding in package.json", () => {
-    expect(manifestProjectIconPath(manifest({ bb: { branding: { icon: "./brand/mark.svg" } } }))).toBe(
+  it("reads image paths declared through alia.branding in package.json", () => {
+    expect(manifestProjectIconPath(manifest({ alia: { branding: { icon: "./brand/mark.svg" } } }))).toBe(
       "brand/mark.svg",
     );
     expect(
-      manifestProjectIconPath(manifest({ bb: { branding: { icon: "PanelLeft", logo: { light: "logo.png" } } } })),
+      manifestProjectIconPath(manifest({ alia: { branding: { icon: "PanelLeft", logo: { light: "logo.png" } } } })),
     ).toBe("logo.png");
-    expect(manifestProjectIconPath(manifest({ bb: { branding: { icon: "PanelLeft" } } }))).toBeNull();
-    expect(manifestProjectIconPath(manifest({ bb: { branding: { icon: "../secret.svg" } } }))).toBeNull();
+    expect(manifestProjectIconPath(manifest({ alia: { branding: { icon: "PanelLeft" } } }))).toBeNull();
+    expect(manifestProjectIconPath(manifest({ alia: { branding: { icon: "../secret.svg" } } }))).toBeNull();
     expect(manifestProjectIconPath({ content: "{", contentEncoding: "utf8", sizeBytes: 1 })).toBeNull();
     expect(manifestProjectIconPath(manifest(null))).toBeNull();
   });

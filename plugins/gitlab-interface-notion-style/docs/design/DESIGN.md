@@ -101,7 +101,7 @@ field and Resolve (or Reopen) on one row, aligned to the text column.
 number. The heatmap shows a tooltip on hover: date, commits, lines +/−,
 projects. Reason tags are `Tag`-sized.
 
-**Chat strip (thread context segment).** bb draws the box; the plugin draws
+**Chat strip (thread context segment).** VesnALIA draws the box; the plugin draws
 its contents: branch icon + "GitLab", branch in mono, a status dot with a
 short reason, one button (primary when an action is due, secondary to open the
 MR, ghost when everything is done).
@@ -117,4 +117,4 @@ MR, ghost when everything is done).
 1. No new arbitrary font size, tint, radius or border opacity.
 2. Controls are 28px; one primary button per row.
 3. States use `StatusIcon`, `Tag` or a status dot, never text glyphs.
-4. Look at it in light and dark (`bb plugin build`, reload, open the panel).
+4. Look at it in light and dark (`alia plugin build`, reload, open the panel).

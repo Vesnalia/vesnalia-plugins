@@ -5,11 +5,11 @@ import { describe, expect, it } from "vitest";
 /**
  * Regression guard for the recurring "Focus Board plugin vanished" incident.
  *
- * bb serves the plugin from the main checkout (`~/Documents/code/bb-plugin-focus-board`)
+ * VesnALIA serves the plugin from the main checkout (`~/Documents/code/alia-plugin-focus-board`)
  * and rebuilds its frontend bundle on reload. When `node_modules` there is a
  * symlink — the worktrees' shared-deps shortcut (`ln -s <main>/node_modules node_modules`)
  * run from inside the main checkout — every import fails to resolve and the
- * bundle rebuild dies with hundreds of "Could not resolve" errors, which bb
+ * bundle rebuild dies with hundreds of "Could not resolve" errors, which VesnALIA
  * shows as a silently missing board.
  *
  * Invariant: at the repo root, `node_modules` must be a real directory or be

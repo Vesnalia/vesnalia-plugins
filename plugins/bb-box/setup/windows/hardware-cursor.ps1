@@ -4,10 +4,10 @@
 #   hardware-cursor.ps1
 #
 # The driver's INF sets HWCursor to 0, so Windows draws the pointer into the
-# desktop image, and Desktop Duplication returns it there: bb-box-stream
+# desktop image, and Desktop Duplication returns it there: alia-box-stream
 # cannot then leave it out of the video while a person holds control. With
 # HWCursor 1 in the display device's 2 keys, and the device restarted,
-# Desktop Duplication leaves it out, and bb-box-stream draws it in when asked.
+# Desktop Duplication leaves it out, and alia-box-stream draws it in when asked.
 # QEMU's VNC then sends the pointer as a cursor shape, not in the picture.
 # Does nothing where there is no VirtIO GPU.
 $ErrorActionPreference = 'Stop'

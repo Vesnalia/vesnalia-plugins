@@ -1,13 +1,13 @@
 # Fonts product specification
 
-Fonts is a polished, publishable bb plugin that controls client-local typography
-without participating in bb's color-theme system.
+Fonts is a polished, publishable VesnALIA plugin that controls client-local typography
+without participating in VesnALIA's color-theme system.
 
 ## Required behavior
 
 1. Provide independent Interface, Code, and Serif typography roles.
 2. Let each role inherit its family, size, weight, style, line height, and letter spacing from the active theme or override them independently.
-3. Preserve bb's relative interface hierarchy when changing the Interface base size, weight, line height, or spacing.
+3. Preserve VesnALIA's relative interface hierarchy when changing the Interface base size, weight, line height, or spacing.
 4. Keep saved overrides active while color themes change and restore the theme exactly when overrides are cleared or the plugin is disabled.
 5. Preview drafts immediately in the current window; persist only through Save and restore saved settings through Discard or unmount.
 6. Synchronize saved settings across windows in one client profile. Preserve a dirty draft and warn when another window saves newer settings.
@@ -26,8 +26,8 @@ without participating in bb's color-theme system.
 
 ## Remote browsers
 
-1. Discover fonts on the viewing device only; do not inspect or serve fonts from the BB server.
-2. Support full discovery in secure desktop Chromium clients through BB Connect or another secure origin.
+1. Discover fonts on the viewing device only; do not inspect or serve fonts from the VesnALIA server.
+2. Support full discovery in secure desktop Chromium clients through VesnALIA Connect or another secure origin.
 3. Keep generic and manual family choices available in unsupported desktop and mobile browsers.
 4. Store configuration and catalog metadata per browser profile and origin, independently from the desktop app and other devices.
 5. Clear cached catalog metadata when local-font permission is denied or revoked while preserving selected settings.
@@ -47,11 +47,11 @@ without participating in bb's color-theme system.
 ## Privacy and persistence
 
 1. Store configuration and cached family metadata in versioned client-local storage.
-2. Never send the font catalog, selected families, or typography settings to the bb server, logs, or analytics.
+2. Never send the font catalog, selected families, or typography settings to the VesnALIA server, logs, or analytics.
 3. Store a single family name, never arbitrary CSS syntax.
 
 ## Delivery quality
 
-1. Use the name Fonts, package `bb-plugin-fonts`, and plugin-owned `Aa` branding.
-2. Follow bb's existing settings visual language on desktop and compact clients.
+1. Use the name Fonts, package `alia-plugin-fonts`, and plugin-owned `Aa` branding.
+2. Follow VesnALIA's existing settings visual language on desktop and compact clients.
 3. Include domain, storage, content-script, and frontend tests; typechecking; successful plugin build; documentation; CI; and the MIT license.

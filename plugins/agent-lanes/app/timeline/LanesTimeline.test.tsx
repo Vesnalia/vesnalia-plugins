@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { installTestPluginRuntime } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { LaneBlock } from "../../shared/model";
 import type { Row, TimelineProps } from "../../shared/view";
@@ -55,19 +55,19 @@ describe("LanesTimeline", () => {
     expect(screen.getByText("Started by you")).toBeTruthy();
   });
 
-  it("marks bb inputs, keeps uncertain inputs unmarked, and avoids duplicating an incoming hand-off", () => {
+  it("marks VesnALIA inputs, keeps uncertain inputs unmarked, and avoids duplicating an incoming hand-off", () => {
     const fixture = scenario(BASE, 2, { noHistory: true });
     const blocks = fixture.blocks.map((turn) => turn.id === "r2" ? { ...turn, initiator: "system" as const }
       : turn.id === "s2" ? { ...turn, initiatorConfirmed: false }
       : turn.id === "b2" ? { ...turn, initiator: "system" as const, senderThreadId: null } : turn);
     setup({ blocks });
-    const bb = block(/Customer interviews/);
-    expect((bb.closest(".bl-slot") as HTMLElement).dataset.origin).toBe("system");
-    expect(bb.getAttribute("aria-label")).toContain("started by bb");
+    const alia = block(/Customer interviews/);
+    expect((alia.closest(".bl-slot") as HTMLElement).dataset.origin).toBe("system");
+    expect(alia.getAttribute("aria-label")).toContain("started by VesnALIA");
     expect(block(/Push the shell to main/).closest(".bl-slot")!.hasAttribute("data-origin")).toBe(false);
     expect(block(/Answer the coordinator's review notes/).closest(".bl-slot")!.hasAttribute("data-origin")).toBe(false);
-    fireEvent.click(bb);
-    expect(screen.getByText("Started by bb")).toBeTruthy();
+    fireEvent.click(alia);
+    expect(screen.getByText("Started by VesnALIA")).toBeTruthy();
   });
 
   it("names the tool group on keyboard focus without adding another tab stop", async () => {

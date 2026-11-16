@@ -19,7 +19,7 @@ test("lockfiles and generated files don't count toward reading", () => {
 });
 
 test("each chapter reads its files' changed lines, a split file only its hunks there, and no lockfiles", () => {
-  const split = ["diff --git a/src/b.ts b/src/b.ts", "--- a/src/b.ts", "+++ b/src/b.ts", "@@ -1 +1 @@", "-a", "+aa", "@@ -20,2 +20,2 @@", "-b", "-c", "+bb", "+cc", ""].join("\n");
+  const split = ["diff --git a/src/b.ts b/src/b.ts", "--- a/src/b.ts", "+++ b/src/b.ts", "@@ -1 +1 @@", "-a", "+aa", "@@ -20,2 +20,2 @@", "-b", "-c", "+alia", "+cc", ""].join("\n");
   const sections = [
     { id: "c1", diffs: [{ file: "src/a.ts" }, { file: "src/b.ts", hunks: [1] }] },
     { id: "c2", diffs: [{ file: "src/b.ts", hunks: [2] }, { file: "package-lock.json" }] },

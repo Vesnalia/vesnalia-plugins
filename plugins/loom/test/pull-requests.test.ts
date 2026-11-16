@@ -76,7 +76,7 @@ describe("writing the pull request", () => {
     const worker = await reachApproved(h);
     await ask();
     await ask();
-    const asks = h.bb.sent(worker.thread_id!).filter((text) => text.includes("loom_pr"));
+    const asks = h.alia.sent(worker.thread_id!).filter((text) => text.includes("loom_pr"));
     expect(asks).toHaveLength(1);
     expect(asks[0]).toContain("Write its pull request and hand it in with loom_pr({ title, body, commit_message })");
     expect(asks[0]).toContain("follow your own instructions and skills for pull request descriptions and commit messages");
@@ -116,7 +116,7 @@ describe("writing the pull request", () => {
     const worker = await reachApproved(h);
     await ask();
     expect(await onPrWriterIdle(h.ctx, worker)).toBe(true);
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("your turn ended without loom_pr");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("your turn ended without loom_pr");
     await onPrWriterIdle(h.ctx, worker);
     await queue();
     expect(h.host.callsTo("prCommit")[0]!.message).toBe("CSV-1: Order rows");
@@ -151,18 +151,18 @@ describe("writing the pull request", () => {
     h.clock.advance(40 * 60_000);
     await resumePrAsks(h.ctx, project().id);
     expect(JSON.parse(ticket().pr_ask_json!).at).toBe(h.clock.t);
-    h.bb.threads.get(worker.thread_id!)!.status = "idle";
+    h.alia.threads.get(worker.thread_id!)!.status = "idle";
     await resumePrAsks(h.ctx, project().id);
     expect(ticket().pr_ask_json).toBeNull();
     await ask();
-    expect(h.bb.sent(worker.thread_id!).filter((text) => text.includes("hand it in with loom_pr"))).toHaveLength(2);
+    expect(h.alia.sent(worker.thread_id!).filter((text) => text.includes("hand it in with loom_pr"))).toHaveLength(2);
   });
 
   it('opens from the template without asking on describe = "loom", and pushes the branch as it is on squash = false', async () => {
     await seedProject(h, pr({ describe: "loom", squash: false }));
     const worker = await reachApproved(h);
     await ask();
-    expect(h.bb.sent(worker.thread_id!).some((text) => text.includes("loom_pr"))).toBe(false);
+    expect(h.alia.sent(worker.thread_id!).some((text) => text.includes("loom_pr"))).toBe(false);
     await queue();
     expect(h.host.callsTo("prCommit")).toEqual([]);
     expect(h.host.callsTo("push")[0]).toMatchObject({ src: "c1" });
@@ -278,7 +278,7 @@ describe("following the pull request", () => {
 
   it("reads the settings through the engine: 30, 5 and 75 when they are not set", () => {
     const store = h.store;
-    const engine = (settings?: () => LoomSettings) => new Engine({ store, bb: h.bb, now: h.clock.now, host: h.host, projects: h.projects, ...(settings === undefined ? {} : { settings }) });
+    const engine = (settings?: () => LoomSettings) => new Engine({ store, alia: h.alia, now: h.clock.now, host: h.host, projects: h.projects, ...(settings === undefined ? {} : { settings }) });
     expect(engine().ctx.checksSettleMs!()).toBe(30 * 60_000);
     expect(engine().ctx.checksQueuedMinutes!()).toBe(5);
     expect(engine().ctx.checksNearDonePercent!()).toBe(75);
@@ -299,7 +299,7 @@ describe("following the pull request", () => {
       await poll();
       expect(ticket().state).toBe("working");
       expect(skippedOf()).toEqual([{ name: "e2e", url: null, why: "queued", minutes: 5 }]);
-      expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("Still pending; Loom did not wait for them, so their results are not in yet:\n- e2e: still queued after 5 minutes");
+      expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("Still pending; Loom did not wait for them, so their results are not in yet:\n- e2e: still queued after 5 minutes");
       expect(posts().at(-1)!.body).toContain("- e2e: still queued after 5 minutes");
     });
 
@@ -403,7 +403,7 @@ describe("following the pull request", () => {
     const worker = await openPr();
     h.host.feedback.set(URL, changesRequested);
     await poll();
-    const message = h.bb.sent(worker.thread_id!).at(-1)!;
+    const message = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(message).toContain("Loom ends each reply with a blank line and this line:\n  <sub>Posted by Loom</sub>");
   });
 
@@ -412,14 +412,14 @@ describe("following the pull request", () => {
     const worker = await openPr();
     h.host.feedback.set(URL, changesRequested);
     await poll();
-    const message = h.bb.sent(worker.thread_id!).at(-1)!;
+    const message = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(message).toContain("with loom_pr_reply({ item, text, resolve }), naming it by the key the fix round's message gives it, never with the forge's CLI");
     expect(message).not.toContain("Loom ends each reply");
   });
 
   it("reads the signature through the engine, Posted by Loom when it is not set", () => {
     const store = h.store;
-    const engine = (settings?: () => { doneHook: string; doneRecord: string; commentSignature?: string }) => new Engine({ store, bb: h.bb, now: h.clock.now, host: h.host, projects: h.projects, ...(settings === undefined ? {} : { settings }) });
+    const engine = (settings?: () => { doneHook: string; doneRecord: string; commentSignature?: string }) => new Engine({ store, alia: h.alia, now: h.clock.now, host: h.host, projects: h.projects, ...(settings === undefined ? {} : { settings }) });
     expect(engine().ctx.commentSignature!()).toBe("Posted by Loom");
     expect(engine(() => ({ doneHook: "", doneRecord: "summary", commentSignature: "Sent by an agent for me" })).ctx.commentSignature!()).toBe("Sent by an agent for me");
   });
@@ -437,7 +437,7 @@ describe("following the pull request", () => {
     await poll();
 
     expect(ticket()).toMatchObject({ state: "working", pr_rounds: 1 });
-    const message = h.bb.sent(worker.thread_id!).at(-1)!;
+    const message = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(message).toContain("needs fixes (fix round 1; 1 of the 5 the pull request may start)");
     expect(message).toContain("Rename the column.");
     expect(message).toContain("Review thread on src/a.ts:4, last from binks");
@@ -509,7 +509,7 @@ describe("following the pull request", () => {
     await poll();
     await approveFix(worker);
     await ask();
-    const fixAsk = h.bb.sent(worker.thread_id!).at(-1)!;
+    const fixAsk = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(fixAsk).toContain("fix round 1 is approved. Write its commit message and hand it in with loom_pr({ commit_message })");
     expect(() => handInPrText(h.ctx, worker.thread_id!, { commit_message: " " })).toThrow("commit_message is empty");
     handInPrText(h.ctx, worker.thread_id!, { commit_message: "Rename the column\n\nAs alice asked." });
@@ -623,7 +623,7 @@ describe("following the pull request", () => {
     submit(h.ctx, worker.thread_id!, "Renamed it.");
     await settleChecks(h.ctx);
     await spawnReviewers(h.ctx, project(), spec());
-    const brief = h.bb.callsTo("spawnThread").at(-1)![0] as { prompt: string; detail?: string };
+    const brief = h.alia.callsTo("spawnThread").at(-1)![0] as { prompt: string; detail?: string };
     expect(`${brief.prompt}\n${brief.detail ?? ""}`).toContain("## Pull request feedback");
     expect(`${brief.prompt}\n${brief.detail ?? ""}`).toContain("Rename the column.");
   });
@@ -637,7 +637,7 @@ describe("following the pull request", () => {
     expect(ticket().state).toBe("pr_open");
     expect(h.host.callsTo("exec")).toHaveLength(execs);
     expect(dataOf("pr_unchanged")[0]!.post.body).toContain("changed nothing for fix round 1");
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("nothing changed since the pull request's last commit");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("nothing changed since the pull request's last commit");
   });
 
   describe("commits someone else pushed to the pull request's branch", () => {
@@ -660,7 +660,7 @@ describe("following the pull request", () => {
       h.host.feedback.set(URL, { ...changesRequested, head: "theirs1" });
       await poll();
       expect(ticket()).toMatchObject({ state: "working", pushed_sha: "sq1" });
-      expect(h.bb.sent(worker.thread_id!).at(-1)).toContain(`git fetch origin ${ticket().pr_branch}\` and \`git merge FETCH_HEAD\``);
+      expect(h.alia.sent(worker.thread_id!).at(-1)).toContain(`git fetch origin ${ticket().pr_branch}\` and \`git merge FETCH_HEAD\``);
       expect(h.host.callsTo("mergeOnto")).toEqual([]);
     });
 
@@ -690,7 +690,7 @@ describe("following the pull request", () => {
       await queue();
       expect(ticket()).toMatchObject({ state: "working", pushed_sha: "sq1" });
       expect(dataOf("conflict").at(-1)!.data).toMatchObject({ files: ["src/model/a.ts"], tip: "theirs1" });
-      expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("git merge --no-edit refs/loom/csv/csv-1/tip");
+      expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("git merge --no-edit refs/loom/csv/csv-1/tip");
       expect(h.host.callsTo("resetHard")).toEqual([]);
       expect(h.host.callsTo("push")).toHaveLength(1);
     });
@@ -700,7 +700,7 @@ describe("following the pull request", () => {
       h.host.worktree(`/wt/${worker.environment_id}`).dirty = true;
       await queue();
       expect(ticket().state).toBe("working");
-      expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("left your worktree as it is: it has uncommitted changes");
+      expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("left your worktree as it is: it has uncommitted changes");
       expect(h.host.callsTo("resetHard")).toEqual([]);
     });
 
@@ -713,7 +713,7 @@ describe("following the pull request", () => {
       await queue();
       expect(h.host.callsTo("mergeOnto")).toHaveLength(3);
       expect(ticket().state).toBe("working");
-      expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("kept getting commits Loom did not push while Loom merged them");
+      expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("kept getting commits Loom did not push while Loom merged them");
       expect(h.host.callsTo("push")).toHaveLength(1);
     });
   });
@@ -760,27 +760,27 @@ describe("following the pull request", () => {
     await ask();
     handInPrText(h.ctx, worker.thread_id!, { commit_message: "Rename" });
     await queue();
-    h.bb.stopConfirms = false;
+    h.alia.stopConfirms = false;
     h.host.feedback.set(URL, { checks: [{ key: "check:9", name: "lint", state: "failed", url: null }] });
     await poll();
     expect(h.store.thread(worker.id)).toMatchObject({ state: "ending", end_reason: "blocked" });
     expect(ticket()).toMatchObject({ state: "pr_open", blocked_reason: expect.stringContaining("more than 1 fix round") });
-    h.bb.stopConfirms = true;
+    h.alia.stopConfirms = true;
     await resumeEnding(h.ctx, h.store.thread(worker.id)!);
     expect(ticket().state).toBe("blocked");
   });
 
-  it("keeps a fix round's message when bb does not take it, and sends it on the next tick", async () => {
+  it("keeps a fix round's message when VesnALIA does not take it, and sends it on the next tick", async () => {
     const worker = await openPr();
     h.host.feedback.set(URL, changesRequested);
-    h.bb.sendError = new Error("bb is restarting");
+    h.alia.sendError = new Error("alia is restarting");
     await poll();
     expect(ticket()).toMatchObject({ state: "working" });
     expect(JSON.parse(ticket().handback_json!)).toMatchObject({ thread: worker.thread_id, text: { summary: expect.stringContaining("fix round 1;") } });
-    h.bb.sendError = null;
+    h.alia.sendError = null;
     h.clock.advance(20_000);
     await deliverHandBacks(h.ctx, project().id);
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("Rename the column.");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("Rename the column.");
     expect(ticket().handback_json).toBeNull();
   });
 
@@ -801,7 +801,7 @@ describe("following the pull request", () => {
     await poll();
     expect(ticket().state).toBe("queued");
     const next = await startWorker(h);
-    const brief = h.bb.callsTo("spawnThread").at(-1)![0] as { prompt: string };
+    const brief = h.alia.callsTo("spawnThread").at(-1)![0] as { prompt: string };
     expect(brief.prompt).toContain(`This ticket's pull request ${URL} is open.`);
     await approveFix(next);
     expect(ticket().branch).not.toBe(branch);
@@ -858,7 +858,7 @@ describe("a human reply on an open pull request", () => {
     const worker = await openPr();
     await e.engine.humanPost("CSV-1", "Also log the row count.");
     expect(ticket()).toMatchObject({ state: "working", pr_rounds: 1 });
-    const message = h.bb.sent(worker.thread_id!).at(-1)!;
+    const message = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(message).toContain("The human replied on the ticket about its open pull request (fix round 1)");
     expect(message).toContain("Also log the row count.");
     expect(dataOf("pr_feedback")[0]!.data).toMatchObject({ human: true, round: 1 });
@@ -871,7 +871,7 @@ describe("a human reply on an open pull request", () => {
     const post = h.ctx.store.addPost({ project_id: project().id, ticket_id: ticket().id, parent_id: null, author_kind: "planner", author_thread_id: "thr_plan", kind: "reply", body: "Merge origin/main into the branch.", data_json: "{}" });
     expect(await humanFixRound(h.ctx, ticket(), post, "planner")).toBe(true);
     expect(ticket()).toMatchObject({ state: "working", pr_rounds: 1 });
-    const message = h.bb.sent(worker.thread_id!).at(-1)!;
+    const message = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(message).toContain("The planner replied on the ticket about its open pull request (fix round 1)");
     expect(message).toContain("Merge origin/main into the branch.");
   });
@@ -881,10 +881,10 @@ describe("a human reply on an open pull request", () => {
     h = e;
     const worker = await openPr();
     h.store.setProjectState(project().id, "paused", "human");
-    const before = h.bb.sent(worker.thread_id!).length;
+    const before = h.alia.sent(worker.thread_id!).length;
     await e.engine.humanPost("CSV-1", "Also log the row count.");
     expect(ticket()).toMatchObject({ state: "pr_open", pr_rounds: 0 });
-    expect(h.bb.sent(worker.thread_id!)).toHaveLength(before);
+    expect(h.alia.sent(worker.thread_id!)).toHaveLength(before);
   });
 
   it("does not count the human's rounds toward the limit", async () => {
@@ -915,7 +915,7 @@ describe("a requeue of a ticket whose pull request stays open", () => {
     const next = await startWorker(h);
     await approveFix(next);
     await ask();
-    expect(h.bb.sent(next.thread_id!).at(-1)).toContain("fix round 2 is approved. Write its commit message");
+    expect(h.alia.sent(next.thread_id!).at(-1)).toContain("fix round 2 is approved. Write its commit message");
     handInPrText(h.ctx, next.thread_id!, { commit_message: "Keep the old column name" });
     await queue();
     h.host.feedback.set(URL, { checks: [{ key: "check:3", name: "lint", state: "failed", url: null }] });
@@ -960,7 +960,7 @@ describe("review again as is, for a ticket whose pull request stays open", () =>
     h.host.feedback.set(URL, { checks: [{ key: "check:9", name: "bot status", state: "failed", url: null }, { key: "check:10", name: "lint", state: "failed", url: null }] });
     await poll();
     expect(ticket()).toMatchObject({ state: "working", pr_rounds: 2, worker_thread_id: worker.thread_id });
-    expect(h.bb.callsTo("unarchive")).toContainEqual([worker.thread_id]);
+    expect(h.alia.callsTo("unarchive")).toContainEqual([worker.thread_id]);
     expect(dataOf("pr_feedback").at(-1)!.data).toMatchObject({ counted: 1, overLimit: false, checks: [{ name: "lint" }] });
   });
 

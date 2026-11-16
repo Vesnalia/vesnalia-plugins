@@ -1,7 +1,7 @@
 // Shared pieces of the Asana UI: small hooks, layout helpers, thread links, the project map, and Start thread.
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { useBbContext, useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaContext, useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Task, ThreadLink, LinkedThread, ProjectMapRow } from "../server";
 import { formatDue } from "../due";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 /** useState that survives reloads, in this browser's localStorage. */
 export function usePersistentState<T>(key: string, initial: T, isValid: (value: unknown) => value is T) {
-  const storageKey = `bb-plugin-asana:${key}`;
+  const storageKey = `alia-plugin-asana:${key}`;
   const [value, setValue] = useState<T>(() => {
     try {
       const stored: unknown = JSON.parse(localStorage.getItem(storageKey) ?? "null");
@@ -52,12 +52,12 @@ export type TaskRef = Pick<Task, "gid" | "name" | "url" | "projectGids">;
 
 export type ProjectMapData = {
   rows: ProjectMapRow[];
-  bbProjects: { id: string; name: string }[];
+  aliaProjects: { id: string; name: string }[];
   effective: Record<string, string>;
 };
 
 /**
- * One shared copy of the Asana → bb project mapping for every component on
+ * One shared copy of the Asana → VesnALIA project mapping for every component on
  * screen (each list row's Start thread reads it), refetched when it changes.
  */
 export const projectMapStore = {
@@ -98,26 +98,26 @@ export function useProjectMap() {
 
 /**
  * The first message of a thread started from a task. It leads with the
- * ticket's name, which bb shows until the thread is renamed to it on linking.
+ * ticket's name, which VesnALIA shows until the thread is renamed to it on linking.
  */
 export function resolvePrompt(task: TaskRef): string {
   return [
     task.name,
     task.url,
     "",
-    `Resolve this Asana task. Start with \`bb asana task ${task.gid}\` to read its description, attachments, and comments, then work out the fix in this project. Don't post to Asana unless I ask.`,
+    `Resolve this Asana task. Start with \`alia asana task ${task.gid}\` to read its description, attachments, and comments, then work out the fix in this project. Don't post to Asana unless I ask.`,
   ].join("\n");
 }
 
 /**
  * Opens the new-thread composer with a prompt for this task. The project is
- * preselected: in a thread's panel, that thread's project; otherwise the bb
+ * preselected: in a thread's panel, that thread's project; otherwise the VesnALIA
  * project mapped to the task's first mapped Asana project; otherwise the
  * composer's default.
  */
 export function useStartThread(task: TaskRef): () => void {
-  const navigate = useBbNavigate();
-  const { projectId: contextProjectId } = useBbContext();
+  const navigate = useAliaNavigate();
+  const { projectId: contextProjectId } = useAliaContext();
   const { data: projectMap } = useProjectMap();
   const mapped =
     task.projectGids.map((gid) => projectMap?.effective[gid]).find((id) => id !== undefined) ?? null;
@@ -189,7 +189,7 @@ export function DueLabel({ dueOn }: { dueOn: string }) {
   );
 }
 
-/** The dashed box BB's own list pages use for loading and empty states. */
+/** The dashed box VesnALIA's own list pages use for loading and empty states. */
 export function EmptyState({ children }: { children: ReactNode }) {
   return (
     <div

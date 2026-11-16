@@ -2,7 +2,7 @@
 // and logging time.
 import { useId, useState } from "react";
 import type { FormEvent } from "react";
-import { UrlLink, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, TaskTime } from "../server";
 import { toast } from "sonner";
 import { formatDuration, parseDuration } from "../duration";
@@ -24,7 +24,7 @@ export function TimeExtras({
   onChange,
 }: {
   taskGid: string;
-  /** Where to log built-in Actual time, which bb can't add to. */
+  /** Where to log built-in Actual time, which VesnALIA can't add to. */
   taskUrl: string;
   time: TaskTime;
   onChange: (time: TaskTime) => void;
@@ -108,7 +108,7 @@ export function TimeExtras({
           <p className="mt-1 text-xs text-muted-foreground">
             <UrlLink
               href={taskUrl}
-              title="bb can't add to Asana's built-in time"
+              title="alia can't add to Asana's built-in time"
               className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-2 hover:underline"
             >
               Log time in Asana

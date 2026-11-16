@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   blockBriefing,
   HISTORY_LIMIT,
@@ -14,11 +14,11 @@ interface RecordedCall {
 }
 
 /**
- * Minimal hand-rolled fake of the narrow BbPluginApi surface startHandoff
- * touches (the packed @bb/plugin-sdk testing harness is not distributed with
- * this bb build). Live behavior is covered by the bb plugin dev loop.
+ * Minimal hand-rolled fake of the narrow AliaPluginApi surface startHandoff
+ * touches (the packed @vesnalia/plugin-sdk testing harness is not distributed with
+ * this VesnALIA build). Live behavior is covered by the VesnALIA plugin dev loop.
  */
-function makeFakeBb(
+function makeFakeAlia(
   options: {
     spawnError?: Error;
     threadStatus?: string;
@@ -50,7 +50,7 @@ function makeFakeBb(
     },
   ];
 
-  const bb = {
+  const alia = {
     realtime: { publish: (channel: string, payload: unknown) => record(`realtime:${channel}`, payload) },
     storage: {
       kv: {
@@ -78,7 +78,7 @@ function makeFakeBb(
           record("threads.send", args);
           if (options.briefingAsksQuestion) {
             // The agent stops to ask instead of answering: the thread stays
-            // active, so no idle ever arrives for this turn. bb announces the
+            // active, so no idle ever arrives for this turn. VesnALIA announces the
             // question with interaction.pending, which server.ts forwards.
             blocked = true;
             queueMicrotask(() => blockBriefing("thr_src"));
@@ -135,13 +135,13 @@ function makeFakeBb(
     },
     log: { info: () => {}, warn: () => {}, error: () => {}, debug: () => {} },
   };
-  return { bb: bb as unknown as BbPluginApi, calls, kv };
+  return { alia: alia as unknown as AliaPluginApi, calls, kv };
 }
 
 describe("startHandoff", () => {
   it("captures, uploads, and spawns on the target provider reusing the environment", async () => {
-    const { bb, calls, kv } = makeFakeBb();
-    const result = await startHandoff(bb, {
+    const { alia, calls, kv } = makeFakeAlia();
+    const result = await startHandoff(alia, {
       sourceThreadId: "thr_src",
       providerId: "codex",
       model: "gpt-5.6-sol",
@@ -187,9 +187,9 @@ describe("startHandoff", () => {
     expect(stages).toEqual(["capturing", "rendering", "uploading", "spawning", "done"]);
   });
 
-  it("spawns a personal-workspace handoff in bb's personal project", async () => {
-    const { bb, calls } = makeFakeBb();
-    await startHandoff(bb, { sourceThreadId: "thr_src", providerId: "codex", workspace: "personal" });
+  it("spawns a personal-workspace handoff in VesnALIA's personal project", async () => {
+    const { alia, calls } = makeFakeAlia();
+    await startHandoff(alia, { sourceThreadId: "thr_src", providerId: "codex", workspace: "personal" });
     const upload = calls.find((call) => call.method === "attachments.upload")!.args as { projectId: string };
     const spawn = calls.find((call) => call.method === "threads.spawn")!.args as {
       projectId: string;
@@ -197,13 +197,13 @@ describe("startHandoff", () => {
     };
     expect(spawn.environment.workspace).toEqual({ type: "personal" });
     expect(spawn.projectId).toBe("proj_personal");
-    // bb only lets a thread attach a document uploaded to its own project.
+    // VesnALIA only lets a thread attach a document uploaded to its own project.
     expect(upload.projectId).toBe("proj_personal");
   });
 
   it("passes the requested thinking effort to the target thread", async () => {
-    const { bb, calls, kv } = makeFakeBb();
-    await startHandoff(bb, {
+    const { alia, calls, kv } = makeFakeAlia();
+    await startHandoff(alia, {
       sourceThreadId: "thr_src",
       providerId: "codex",
       workspace: "reuse",
@@ -219,8 +219,8 @@ describe("startHandoff", () => {
   });
 
   it("omits the effort entirely when none is requested, so the model's default stands", async () => {
-    const { bb, calls } = makeFakeBb();
-    await startHandoff(bb, { sourceThreadId: "thr_src", providerId: "codex", workspace: "reuse" });
+    const { alia, calls } = makeFakeAlia();
+    await startHandoff(alia, { sourceThreadId: "thr_src", providerId: "codex", workspace: "reuse" });
     const spawn = calls.find((call) => call.method === "threads.spawn")!.args as Record<
       string,
       unknown
@@ -231,8 +231,8 @@ describe("startHandoff", () => {
   });
 
   it("uses a managed worktree on the source host when asked", async () => {
-    const { bb, calls } = makeFakeBb();
-    await startHandoff(bb, { sourceThreadId: "thr_src", providerId: "codex", workspace: "worktree" });
+    const { alia, calls } = makeFakeAlia();
+    await startHandoff(alia, { sourceThreadId: "thr_src", providerId: "codex", workspace: "worktree" });
     const spawn = calls.find((call) => call.method === "threads.spawn")!.args as {
       environment: { type: string; hostId: string; workspace: { type: string } };
       model?: string;
@@ -244,8 +244,8 @@ describe("startHandoff", () => {
   });
 
   it("with untilSeq, captures only up to the selected message", async () => {
-    const { bb, calls } = makeFakeBb();
-    await startHandoff(bb, {
+    const { alia, calls } = makeFakeAlia();
+    await startHandoff(alia, {
       sourceThreadId: "thr_src",
       providerId: "codex",
       workspace: "reuse",
@@ -266,19 +266,19 @@ describe("startHandoff", () => {
   });
 
   it("tells the next agent how to reach the source thread", async () => {
-    const { bb, calls } = makeFakeBb();
-    await startHandoff(bb, { sourceThreadId: "thr_src", providerId: "codex", workspace: "reuse" });
+    const { alia, calls } = makeFakeAlia();
+    await startHandoff(alia, { sourceThreadId: "thr_src", providerId: "codex", workspace: "reuse" });
     const upload = calls.find((call) => call.method === "attachments.upload")!.args as {
       clientFile: Uint8Array;
     };
     const doc = new TextDecoder().decode(upload.clientFile);
-    expect(doc).toContain('bb thread tell thr_src "<your question>" --mode queue');
-    expect(doc).toContain("bb thread output thr_src");
+    expect(doc).toContain('alia thread tell thr_src "<your question>" --mode queue');
+    expect(doc).toContain("alia thread output thr_src");
   });
 
   it("with briefing, asks the idle source agent and embeds its answer", async () => {
-    const { bb, calls } = makeFakeBb({ briefingReply: "State: tests green. Next: fix lint." });
-    await startHandoff(bb, {
+    const { alia, calls } = makeFakeAlia({ briefingReply: "State: tests green. Next: fix lint." });
+    await startHandoff(alia, {
       sourceThreadId: "thr_src",
       providerId: "codex",
       workspace: "reuse",
@@ -313,8 +313,8 @@ describe("startHandoff", () => {
   });
 
   it("reports the briefing outcome on the result", async () => {
-    const included = makeFakeBb();
-    const withBriefing = await startHandoff(included.bb, {
+    const included = makeFakeAlia();
+    const withBriefing = await startHandoff(included.alia, {
       sourceThreadId: "thr_src",
       providerId: "codex",
       workspace: "reuse",
@@ -322,8 +322,8 @@ describe("startHandoff", () => {
     });
     expect(withBriefing.briefing).toBe("included");
 
-    const busy = makeFakeBb({ threadStatus: "active" });
-    const skipped = await startHandoff(busy.bb, {
+    const busy = makeFakeAlia({ threadStatus: "active" });
+    const skipped = await startHandoff(busy.alia, {
       sourceThreadId: "thr_src",
       providerId: "codex",
       workspace: "reuse",
@@ -331,8 +331,8 @@ describe("startHandoff", () => {
     });
     expect(skipped.briefing).toBe("skipped-busy");
 
-    const off = makeFakeBb();
-    const without = await startHandoff(off.bb, {
+    const off = makeFakeAlia();
+    const without = await startHandoff(off.alia, {
       sourceThreadId: "thr_src",
       providerId: "codex",
       workspace: "reuse",
@@ -341,12 +341,12 @@ describe("startHandoff", () => {
   });
 
   it("verifies the receiving thread's first turn onto the history record", async () => {
-    const { bb, calls, kv } = makeFakeBb();
-    await startHandoff(bb, { sourceThreadId: "thr_src", providerId: "codex", workspace: "reuse" });
+    const { alia, calls, kv } = makeFakeAlia();
+    await startHandoff(alia, { sourceThreadId: "thr_src", providerId: "codex", workspace: "reuse" });
     const key = [...kv.keys()].find((k) => k.startsWith("handoff:") && k.endsWith(":thr_new"))!;
     expect((kv.get(key) as { verification?: string }).verification).toBe("pending");
 
-    await settleVerification(bb, "thr_new", true, "Work stands at step two; continuing.");
+    await settleVerification(alia, "thr_new", true, "Work stands at step two; continuing.");
     expect((kv.get(key) as { verification?: string }).verification).toBe("confirmed");
     const verify = calls.find((call) => call.method === "realtime:handoff:verify")!.args as {
       targetThreadId: string;
@@ -355,21 +355,21 @@ describe("startHandoff", () => {
     expect(verify).toMatchObject({ targetThreadId: "thr_new", verification: "confirmed" });
 
     // Already settled — a later idle for the same thread is a no-op.
-    await settleVerification(bb, "thr_new", false);
+    await settleVerification(alia, "thr_new", false);
     expect((kv.get(key) as { verification?: string }).verification).toBe("confirmed");
   });
 
   it("marks verification failed when the receiving thread fails", async () => {
-    const { bb, kv } = makeFakeBb();
-    await startHandoff(bb, { sourceThreadId: "thr_src", providerId: "codex", workspace: "reuse" });
-    await settleVerification(bb, "thr_new", false);
+    const { alia, kv } = makeFakeAlia();
+    await startHandoff(alia, { sourceThreadId: "thr_src", providerId: "codex", workspace: "reuse" });
+    await settleVerification(alia, "thr_new", false);
     const key = [...kv.keys()].find((k) => k.startsWith("handoff:") && k.endsWith(":thr_new"))!;
     expect((kv.get(key) as { verification?: string }).verification).toBe("failed");
   });
 
   it("does not ask for a briefing while the agent is already waiting on the user", async () => {
-    const { bb, calls } = makeFakeBb({ pendingInteraction: true });
-    const result = await startHandoff(bb, {
+    const { alia, calls } = makeFakeAlia({ pendingInteraction: true });
+    const result = await startHandoff(alia, {
       sourceThreadId: "thr_src",
       providerId: "codex",
       workspace: "reuse",
@@ -386,8 +386,8 @@ describe("startHandoff", () => {
   it("gives up on the briefing as soon as the agent stops to ask something", async () => {
     vi.useFakeTimers();
     try {
-      const { bb, calls } = makeFakeBb({ briefingAsksQuestion: true });
-      const running = startHandoff(bb, {
+      const { alia, calls } = makeFakeAlia({ briefingAsksQuestion: true });
+      const running = startHandoff(alia, {
         sourceThreadId: "thr_src",
         providerId: "codex",
         workspace: "reuse",
@@ -414,8 +414,8 @@ describe("startHandoff", () => {
   });
 
   it("skips the briefing when the source thread is busy", async () => {
-    const { bb, calls } = makeFakeBb({ threadStatus: "active" });
-    await startHandoff(bb, {
+    const { alia, calls } = makeFakeAlia({ threadStatus: "active" });
+    await startHandoff(alia, {
       sourceThreadId: "thr_src",
       providerId: "codex",
       workspace: "reuse",
@@ -435,11 +435,11 @@ describe("startHandoff", () => {
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
-    const { bb, calls } = makeFakeBb({ spawnGate: gate });
+    const { alia, calls } = makeFakeAlia({ spawnGate: gate });
     const request = { sourceThreadId: "thr_src", providerId: "codex", workspace: "reuse" } as const;
 
-    const first = startHandoff(bb, { ...request });
-    await expect(startHandoff(bb, { ...request })).rejects.toThrow(/already running/);
+    const first = startHandoff(alia, { ...request });
+    await expect(startHandoff(alia, { ...request })).rejects.toThrow(/already running/);
 
     release();
     await first;
@@ -447,14 +447,14 @@ describe("startHandoff", () => {
 
     // The guard is per-run, not a permanent lock: handing the thread off again
     // once the first finished is allowed.
-    await startHandoff(bb, { ...request });
+    await startHandoff(alia, { ...request });
     expect(calls.filter((call) => call.method === "threads.spawn")).toHaveLength(2);
   });
 
   it("publishes a failed stage and rethrows when spawning fails", async () => {
-    const { bb, calls } = makeFakeBb({ spawnError: new Error("provider exploded") });
+    const { alia, calls } = makeFakeAlia({ spawnError: new Error("provider exploded") });
     await expect(
-      startHandoff(bb, { sourceThreadId: "thr_src", providerId: "codex", workspace: "reuse" }),
+      startHandoff(alia, { sourceThreadId: "thr_src", providerId: "codex", workspace: "reuse" }),
     ).rejects.toThrow("provider exploded");
 
     const progress = calls
@@ -471,12 +471,12 @@ describe("startHandoff", () => {
   });
 
   it("prunes the oldest history records beyond HISTORY_LIMIT", async () => {
-    const { bb, kv } = makeFakeBb();
+    const { alia, kv } = makeFakeAlia();
     const base = 1_700_000_000_000;
     for (let i = 0; i < HISTORY_LIMIT; i += 1) {
       kv.set(`handoff:${base + i}:thr_${i}`, { targetThreadId: `thr_${i}`, at: base + i });
     }
-    await startHandoff(bb, { sourceThreadId: "thr_src", providerId: "codex", workspace: "reuse" });
+    await startHandoff(alia, { sourceThreadId: "thr_src", providerId: "codex", workspace: "reuse" });
 
     const keys = [...kv.keys()].filter((key) => key.startsWith("handoff:"));
     expect(keys).toHaveLength(HISTORY_LIMIT);

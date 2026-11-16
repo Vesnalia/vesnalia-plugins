@@ -21,7 +21,7 @@ export const WRITING_PERMISSIONS: ReadonlySet<Permission> = new Set([
 export const LINK_KINDS = ["assigns_to", "works_with", "escalates_to", "can_read"] as const;
 export type LinkKind = (typeof LINK_KINDS)[number];
 
-/** BB's per-thread instruction limit (4096 characters). */
+/** VesnALIA's per-thread instruction limit (4096 characters). */
 export const INSTRUCTION_LIMIT = 4096;
 
 // `environment` accepts the object form from the concept and the short string
@@ -51,7 +51,7 @@ const memberSchema = z
     lead: z.boolean().optional(),
     provider: z.string().min(1).optional(),
     model: z.string().min(1).optional(),
-    /** Optional; BB's own default for the model applies when absent. Same values as the SDK's reasoningLevel. */
+    /** Optional; VesnALIA's own default for the model applies when absent. Same values as the SDK's reasoningLevel. */
     reasoningLevel: z.enum(REASONING_LEVELS).optional(),
     /** Optional; only for providers that offer service tiers. */
     serviceTier: z.enum(SERVICE_TIERS).optional(),
@@ -216,7 +216,7 @@ export type Catalog = {
   providers: Map<string, Set<string>>;
 };
 
-/** Skill names known here (global, project and BB global skills); absent means "not checked". */
+/** Skill names known here (global, project and VesnALIA global skills); absent means "not checked". */
 export type SkillsCatalog = {
   names: ReadonlySet<string>;
 };
@@ -408,7 +408,7 @@ export function validateCrew(input: string | unknown, options: ValidateOptions =
     if (member.deputy !== null && !keys.has(member.deputy)) {
       error("deputy", `${member.key}: deputy "${member.deputy}" is not a member`);
     }
-    // Without both values BB picks the project default without saying so —
+    // Without both values VesnALIA picks the project default without saying so —
     // exactly the silent fallback §6 warns about.
     if (member.provider === null || member.model === null) {
       error("execution-missing", `${member.key}: provider and model must both be set on the member itself`);

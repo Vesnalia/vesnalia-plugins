@@ -56,7 +56,7 @@ export function protectedFiles(output, roots) {
 
 export function createIsolationGuard(rootPid, scratch, env, logPath, realHome) {
   const realRoot = realpathSync(realHome);
-  const roots = [".codex", ".claude", ".cursor", ".config", ".bb"].flatMap((name) => {
+  const roots = [".codex", ".claude", ".cursor", ".config", ".vesnalia"].flatMap((name) => {
     const paths = [join(realRoot, name), resolve(realHome, name)];
     return [...paths, ...paths.filter(existsSync).map((path) => realpathSync(path))];
   });

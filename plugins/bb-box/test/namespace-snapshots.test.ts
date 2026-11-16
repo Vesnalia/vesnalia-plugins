@@ -38,7 +38,7 @@ function namespaceSnapshotWorld(): NamespaceSnapshotWorld {
     if (!cli) {
       const host = fakeDockerHost({ name: instance, cpus: 4, memoryMiB: 16 * 1024 });
       machines.set(instance, host);
-      cli = new DockerCli(`unix:///run/bb-box/namespace/${instance}.sock`, host.binary, async () => {});
+      cli = new DockerCli(`unix:///run/alia-box/namespace/${instance}.sock`, host.binary, async () => {});
       clis.set(instance, cli);
     }
     return cli;
@@ -163,7 +163,7 @@ test("Namespace refuses a fork and Keep, and says why", async () => {
 
   assert.ok(fork.message.endsWith(`: ${NAMESPACE_FORK_OFF}.`), fork.message);
   assert.equal(forkNow.message, fork.message);
-  assert.ok(keep.message.includes(`: ${NAMESPACE_KEEP_OFF}, so BB Box does not keep "A".`), keep.message);
+  assert.ok(keep.message.includes(`: ${NAMESPACE_KEEP_OFF}, so VesnALIA Box does not keep "A".`), keep.message);
   assert.equal(keepWhyOf(state.store.record(target.id)!, offer, null), NAMESPACE_KEEP_OFF);
   assert.deepEqual([offer?.fork, offer?.keepsPastRelease, offer?.lives], ["none", "no", "host"]);
   assert.equal(namespaceOf(state).snapshotting("macos"), null, "Namespace's Macs take no snapshots");
@@ -224,7 +224,7 @@ test("Namespace asks no machine for its containers or snapshots while its box to
   assert.equal(machineStatus(made, box), "DESTROYED");
 });
 
-test("Namespace finishes a restore that BB Box stopped after the new container was made, leaving one working box", async () => {
+test("Namespace finishes a restore that VesnALIA Box stopped after the new container was made, leaving one working box", async () => {
   const made = await boxWithSnapshotOfA();
   const { state, fake, box, target } = made;
   state.holds.step = "adopted";

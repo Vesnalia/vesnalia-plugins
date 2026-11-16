@@ -13,26 +13,26 @@ Work out which models this session can actually delegate to, let the user pick o
 
 Before inventing anything, use what the host already exposes.
 
-On a BB host:
+On a VesnALIA host:
 
-- **Catalog.** `bb provider list` lists every provider this host has — `pi`,
+- **Catalog.** `alia provider list` lists every provider this host has — `pi`,
   `codex`, the `acp-*` agents, `muse`, and anything else installed — so enumerate
-  all of them, not just the one this thread runs on. `bb provider models
+  all of them, not just the one this thread runs on. `alia provider models
   <providerId>` lists that provider's models; add `--json` to get each model's
   real `supportedReasoningEfforts` and `defaultReasoningEffort`, which the
   default table view omits. Both commands take `--environment <id>` or
   `--machine <id-or-name>`: use the workspace you are actually spawning into,
   because some providers scope their model list per workspace and the answer can
   differ from the host default.
-- **Per-spawn choice, not a stored role table.** BB keeps one remembered
+- **Per-spawn choice, not a stored role table.** VesnALIA keeps one remembered
   provider/model pair per project — what a new thread gets when the flags are
   omitted — and applies a model per spawn:
-  `bb thread spawn --provider <id> --model <id> --reasoning-level <level>`.
+  `alia thread spawn --provider <id> --model <id> --reasoning-level <level>`.
   There is no per-role model record, no per-role model map, and no CLI that
   reads or writes one. Do not hunt for one, and do not write a file expecting
-  BB to load it as configuration.
+  VesnALIA to load it as configuration.
 - **What that means for role intent.** The mapping you settle on here is intent
-  you honor by passing explicit flags when you spawn workers, not a setting BB
+  you honor by passing explicit flags when you spawn workers, not a setting VesnALIA
   stores and re-applies on its own.
 
 On another host, discover the equivalent: a model catalog the session can query, and a configuration file or setting the harness reads. If no catalog and no config authority exist, do not fabricate one.
@@ -43,7 +43,7 @@ Get the real catalog of models this session can run or delegate to. Prefer a mod
 
 Never invent or assume a model. Do not carry over the upstream author's slugs (`grok-4.6-fast-xhigh`, `claude-fable-5-1-thinking-max`, and similar): they are unrelated to whatever the user actually has.
 
-Inheriting the parent model is a valid choice only where the harness supports it, and omission does not imply inheritance. On a BB host, omitting `--model` from `bb thread spawn` falls back to the project's remembered provider/model, not the parent thread's model, so a pstack fan-out cannot inherit that way. The one place BB does inherit is a workflow worker: an agent call with no explicit selection inherits the run's origin provider, model, and reasoning level. Treat inherit-the-parent as valid only where you have confirmed it; otherwise leave it out.
+Inheriting the parent model is a valid choice only where the harness supports it, and omission does not imply inheritance. On a VesnALIA host, omitting `--model` from `alia thread spawn` falls back to the project's remembered provider/model, not the parent thread's model, so a pstack fan-out cannot inherit that way. The one place VesnALIA does inherit is a workflow worker: an agent call with no explicit selection inherits the run's origin provider, model, and reasoning level. Treat inherit-the-parent as valid only where you have confirmed it; otherwise leave it out.
 
 ### 3. Map and confirm
 
@@ -86,15 +86,15 @@ interrogate reviewers         (list)
 
 Write the choices to the configuration authority the running harness actually provides. Choose per host:
 
-- **BB host.** Write nothing on the user's behalf. BB has no configuration
+- **VesnALIA host.** Write nothing on the user's behalf. VesnALIA has no configuration
   authority for a per-role model table, and its only persisted execution state is
   the single remembered project provider/model pair, which is a default for new
   threads rather than a role map. Confirm the mapping, then either (a) hand it
   back for the user to keep in context, to apply when you spawn workers with
   explicit `--provider`, `--model`, and `--reasoning-level` flags, or (b) if the
   user wants it to persist, offer to save it where the project already keeps
-  instructions (`.bb/AGENTS.md` or a project skill) and say plainly that agents
-  read it as guidance — never that BB loads it as configuration.
+  instructions (`.vesnalia/AGENTS.md` or a project skill) and say plainly that agents
+  read it as guidance — never that VesnALIA loads it as configuration.
 - **Another harness.** If it has a settings or skills directory the harness reads, write a config file there in the shape it expects. If it has none, do not fabricate a portable file and do not claim it will load elsewhere. Present the mapping in the reply for the user to keep and say it is not auto-loaded.
 
 Write only discovered values (or a valid inherit-the-parent choice), and keep the write idempotent.

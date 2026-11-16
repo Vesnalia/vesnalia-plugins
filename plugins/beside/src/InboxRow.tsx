@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { PinnedDragBindings } from "./PinnedSortable";
 import { SidebarRow, type ChildToggle, type RowAction } from "./SidebarRow";
 import { ThreadStatus } from "./StatusSlot";

@@ -1,4 +1,4 @@
-// A Claude Code login run from bb, for one account directory at a time.
+// A Claude Code login run from VesnALIA, for one account directory at a time.
 //
 // `claude auth login` needs no terminal: it starts a localhost callback,
 // hands the consent URL to `$BROWSER` (one executable path, no arguments)

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { Overview, rpcContract } from "../src/contract";
 import { panelSelection } from "../src/panel";
 import { disposeSessions } from "../src/session";
@@ -77,7 +77,7 @@ describe("the composer segment", () => {
     slot.lifecycle.unmount();
   });
 
-  it("shows above the composer whenever the thread or a child changed something, with bb's card on or off", async () => {
+  it("shows above the composer whenever the thread or a child changed something, with VesnALIA's card on or off", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const useVisible = app.threadContextSegments[0]!.useVisible!;
     function Probe() {
@@ -144,7 +144,7 @@ describe("the composer segment", () => {
 });
 
 describe("the thread context card", () => {
-  it("lists the child worktrees and the shared files beside bb's own rows", async () => {
+  it("lists the child worktrees and the shared files beside VesnALIA's own rows", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const slot = renderSlot<object, typeof rpcContract>(app.threadContextCardSections[0]! as never, PROPS, { ...options(), threadContextKind: "card" as const });
     await waitFor(() => expect(slot.container.textContent).toContain("Banner"));
@@ -155,7 +155,7 @@ describe("the thread context card", () => {
     slot.lifecycle.unmount();
   });
 
-  it("renders nothing, so bb leaves the section out, while no child worktree has changes", async () => {
+  it("renders nothing, so VesnALIA leaves the section out, while no child worktree has changes", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const empty = overview({ ...TREE, worktrees: [], sharedFiles: [] });
     const slot = renderSlot<object, typeof rpcContract>(app.threadContextCardSections[0]! as never, PROPS,

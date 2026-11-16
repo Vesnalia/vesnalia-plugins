@@ -1,11 +1,11 @@
 /**
- * The captain's settings, rendered by bb as a form (`bb.settings.define(SETTINGS)`). Settings changes do
+ * The captain's settings, rendered by VesnALIA as a form (`alia.settings.define(SETTINGS)`). Settings changes do
  * not reload the plugin; read them with `get()` when needed, or subscribe with `onChange`.
  */
 import { homedir } from "node:os";
 import { isAbsolute, join } from "node:path";
 
-import type { PluginSettingDescriptor, PluginSettingsValues } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptor, PluginSettingsValues } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import type { HomeConfig } from "./home";
@@ -17,14 +17,14 @@ const POSITIVE_WHOLE = z.number().int("Use a whole number.").positive("Use a num
 export const AUTOCOMPACT_DEFAULTS = { enabled: false, kTokens: 200, idleMinutes: 60 } as const;
 
 /**
- * The token thresholds are set in thousands of tokens: bb's number field shows no thousands separators,
+ * The token thresholds are set in thousands of tokens: VesnALIA's number field shows no thousands separators,
  * and 200 reads more easily than 200000.
  */
 const TOKENS_PER_K = 1_000;
 
 export const REASONING_OPTIONS = ["default", "low", "medium", "high", "xhigh", "max"];
 
-/** What the settings form shows for each reasoning option (bb 0.46's `experimental_optionLabels`). */
+/** What the settings form shows for each reasoning option (VesnALIA 0.46's `experimental_optionLabels`). */
 export const REASONING_LABELS: Record<(typeof REASONING_OPTIONS)[number], string> = {
   default: "Leave it to the first mate",
   low: "Low",
@@ -118,7 +118,7 @@ export const SETTINGS = {
 
 export type FirstmateSettings = PluginSettingsValues<typeof SETTINGS>;
 
-/** Every setting at its default, as bb reports them before the captain changes any. */
+/** Every setting at its default, as VesnALIA reports them before the captain changes any. */
 export function defaultSettings(): FirstmateSettings {
   const entries = Object.entries(SETTINGS).map(([key, descriptor]) => [key, descriptor.default]);
   return Object.fromEntries(entries) as FirstmateSettings;

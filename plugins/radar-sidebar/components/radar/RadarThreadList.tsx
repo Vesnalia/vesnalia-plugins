@@ -38,7 +38,7 @@ import {
   useSettings,
   type PluginSidebarThread,
   type PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -596,7 +596,7 @@ export function RadarThreadList({
     setCollapsed(new Set(allGroupIds));
   }, [allGroupIds]);
 
-  /** File the dragged thread or its selection via BB's own update API. */
+  /** File the dragged thread or its selection via VesnALIA's own update API. */
   const moveThreadToSection = useCallback(
     (threadId: string, sectionId: string | null, threadIds = [threadId]) => {
       const ids = threadIds.filter((id) => {

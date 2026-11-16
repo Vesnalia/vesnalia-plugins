@@ -54,15 +54,15 @@ function tasks(): { hooks: SnapshotHooks; seen: TaskRef[]; submitted: number[] }
 test("a snapshot's Proxmox name and label carry IDs and dates only, and the label reads back", () => {
   assert.equal(snapshotName(SNAPSHOT), "bbsn7kq2m6xa4pdq");
   const label = snapshotLabel({ install: "inst1", box: "bxamberfox2q7k", snapshot: SNAPSHOT, kept: null });
-  assert.equal(label, `bb-box install inst1 box bxamberfox2q7k snapshot ${SNAPSHOT}`);
+  assert.equal(label, `alia-box install inst1 box bxamberfox2q7k snapshot ${SNAPSHOT}`);
   assert.deepEqual(parseSnapshotLabel(label), { install: "inst1", box: "bxamberfox2q7k", snapshot: SNAPSHOT, reset: null, kept: null });
   const versioned = snapshotLabel({ install: "inst1", box: "bxamberfox2q7k", snapshot: SNAPSHOT, reset: 7, kept: "2026-11-29" });
-  assert.equal(versioned, `bb-box install inst1 box bxamberfox2q7k snapshot ${SNAPSHOT} reset 7 kept 2026-11-29`);
+  assert.equal(versioned, `alia-box install inst1 box bxamberfox2q7k snapshot ${SNAPSHOT} reset 7 kept 2026-11-29`);
   assert.deepEqual(parseSnapshotLabel(versioned), { install: "inst1", box: "bxamberfox2q7k", snapshot: SNAPSHOT, reset: 7, kept: "2026-11-29" }, "the identity reset's version is a number, not a name or a secret");
   assert.deepEqual(parseSnapshotLabel(`${label} kept 2026-11-29`)?.kept, "2026-11-29");
   assert.equal(keptUntilOf("2026-11-29"), Date.UTC(2026, 10, 30) - 1, "kept until the end of the day");
-  assert.equal(parseSnapshotLabel("BB Box snapshot research"), null);
-  assert.equal(parseSnapshotLabel(`bb-box install inst1 box bx1 snapshot notanid`), null);
+  assert.equal(parseSnapshotLabel("VesnALIA Box snapshot research"), null);
+  assert.equal(parseSnapshotLabel(`alia-box install inst1 box bx1 snapshot notanid`), null);
 });
 
 test("a container offers disk snapshots taken while it runs, forks by a full copy from version 7 of the identity reset, and nothing it cannot do yet", () => {
@@ -105,7 +105,7 @@ test("the plan refuses a take on storage that takes none, on a locked guest with
   state.proxmox.storageTypes.set("local-lvm", "dir");
   const directory = await state.backend.planSnapshots(guest, "linux", null);
   assert.equal(directory.take.ok, false);
-  assert.equal(directory.take.why, "local-lvm (directory) takes no snapshots of containers, so BB Box takes no snapshot there.");
+  assert.equal(directory.take.why, "local-lvm (directory) takes no snapshots of containers, so VesnALIA Box takes no snapshot there.");
   state.proxmox.storageTypes.delete("local-lvm");
 
   state.proxmox.guests.get(vmid)!.config.lock = "rollback";
@@ -123,7 +123,7 @@ test("the plan refuses a take on storage that takes none, on a locked guest with
   made.push(fresh);
   const noRight = await fresh.planSnapshots(guest, "linux", null);
   assert.equal(noRight.take.ok, false);
-  assert.equal(noRight.take.why, "The Proxmox token lacks VM.Snapshot on /pool/bbbox, so BB Box cannot take snapshots there. Run host/setup-token.sh from the Proxmox LXC setup guide again, as root on pve.");
+  assert.equal(noRight.take.why, "The Proxmox token lacks VM.Snapshot on /pool/bbbox, so VesnALIA Box cannot take snapshots there. Run host/setup-token.sh from the Proxmox LXC setup guide again, as root on pve.");
 });
 
 test("a take records its task before it waits, and is complete only once Proxmox lists it without a snapstate", async () => {
@@ -136,7 +136,7 @@ test("a take records its task before it waits, and is complete only once Proxmox
   assert.equal(seen.length, 1);
   assert.match(seen[0]!.ref, /^UPID:pve:.*:vzsnapshot:7000:/);
   const listed = state.proxmox.guests.get(vmid)!.snapshots!;
-  assert.deepEqual(listed.map((snapshot) => [snapshot.name, snapshot.description]), [["bbsn7kq2m6xa4pdq", `bb-box install ${state.context.installId} box ${id.boxId} snapshot ${SNAPSHOT}\n`]]);
+  assert.deepEqual(listed.map((snapshot) => [snapshot.name, snapshot.description]), [["bbsn7kq2m6xa4pdq", `alia-box install ${state.context.installId} box ${id.boxId} snapshot ${SNAPSHOT}\n`]]);
   assert.deepEqual(await state.backend.providerTask(seen[0]!), { state: "ok" });
   const held = await state.backend.heldSnapshots();
   assert.deepEqual(
@@ -195,15 +195,15 @@ test("the listing finds only this install's labelled snapshots, a kept date as k
   const { vmid, id } = await box(state);
   const snapshots = (state.proxmox.guests.get(vmid)!.snapshots ??= []);
   snapshots.push({ name: "manual", description: "taken by hand", snaptime: 1_790_000_000 });
-  snapshots.push({ name: "bbsnaaaaaaaaaaaa", description: `bb-box install another box ${id.boxId} snapshot snaaaaaaaaaaaa`, snaptime: 1_790_000_000 });
-  snapshots.push({ name: "bbsnbbbbbbbbbbbb", description: `bb-box install ${state.context.installId} box ${id.boxId} snapshot snbbbbbbbbbbbb kept 2026-11-29`, snaptime: 1_790_000_000 });
+  snapshots.push({ name: "bbsnaaaaaaaaaaaa", description: `alia-box install another box ${id.boxId} snapshot snaaaaaaaaaaaa`, snaptime: 1_790_000_000 });
+  snapshots.push({ name: "bbsnbbbbbbbbbbbb", description: `alia-box install ${state.context.installId} box ${id.boxId} snapshot snbbbbbbbbbbbb kept 2026-11-29`, snaptime: 1_790_000_000 });
   const held = await state.backend.heldSnapshots();
   assert.deepEqual(held.map((each) => [each.id, each.keptUntil, each.takenAt]), [["snbbbbbbbbbbbb", Date.UTC(2026, 10, 30) - 1, 1_790_000_000_000]]);
 
-  snapshots.push({ name: "bbsn7kq2m6xa4pdq", description: `bb-box install ${state.context.installId} box ${id.boxId} snapshot ${SNAPSHOT}`, snaptime: 1_790_000_000, snapstate: "prepare" });
+  snapshots.push({ name: "bbsn7kq2m6xa4pdq", description: `alia-box install ${state.context.installId} box ${id.boxId} snapshot ${SNAPSHOT}`, snaptime: 1_790_000_000, snapstate: "prepare" });
   state.proxmox.intercept = (call) =>
     call.method === "GET" && call.path === "/nodes/pve/tasks" && call.params.vmid === String(vmid)
-      ? { ok: true, status: 200, statusText: "OK", text: async () => JSON.stringify({ data: [{ upid: `UPID:pve:1:0:0:vzsnapshot:${vmid}:bb-box@pve!plugin:`, type: "vzsnapshot", status: "running" }] }) }
+      ? { ok: true, status: 200, statusText: "OK", text: async () => JSON.stringify({ data: [{ upid: `UPID:pve:1:0:0:vzsnapshot:${vmid}:alia-box@pve!plugin:`, type: "vzsnapshot", status: "running" }] }) }
       : undefined;
   const during = (await state.backend.heldSnapshots()).find((each) => each.id === SNAPSHOT);
   assert.equal(during?.state, "in-progress", "a part-made snapshot whose task is still running is not incomplete yet");
@@ -241,10 +241,10 @@ test("thin metadata is read from the storage's own thin pool; when it cannot be,
   state.proxmox.storageConfigs.set("local-lvm", { storage: "local-lvm", type: "lvmthin", content: "rootdir" });
   const plan = await state.backend.planSnapshots(guest, "linux", null);
   assert.equal(plan.storage.metadataPercentFull, null);
-  assert.equal(plan.storage.metadataUnread, "BB Box cannot read which thin pool local-lvm is");
+  assert.equal(plan.storage.metadataUnread, "VesnALIA Box cannot read which thin pool local-lvm is");
   const check = (await state.backend.doctor()).checks.find((each) => each.id === "proxmox.snapshots")!;
   assert.equal(check.status, "warn");
-  assert.match(check.detail, /BB Box cannot read local-lvm's thin metadata \(BB Box cannot read which thin pool local-lvm is\), so a take checks the pool's data use but not that its metadata is under 80% full\./);
+  assert.match(check.detail, /ALIA Box cannot read local-lvm's thin metadata \(ALIA Box cannot read which thin pool local-lvm is\), so a take checks the pool's data use but not that its metadata is under 80% full\./);
   assert.match(check.fix!, /Sys\.Audit on \/, a read of the whole cluster/);
 });
 
@@ -254,9 +254,9 @@ test("a delete checks the snapshot's own label before it deletes: one named as o
   (state.proxmox.guests.get(vmid)!.snapshots ??= []).push({ name: snapshotName(SNAPSHOT), description: "made by hand", snaptime: 1_790_000_000 });
   const refused = await state.backend.deleteSnapshot({ id: SNAPSHOT, ref: "", guest }, tasks().hooks).catch((caught: unknown) => caught);
   assert.ok(refused instanceof SnapshotFailed);
-  assert.equal((refused as Error).message, `The snapshot named bbsn7kq2m6xa4pdq on guest ${vmid} is not BB Box's snapshot ${SNAPSHOT}: its description says "made by hand". BB Box deleted nothing.`);
+  assert.equal((refused as Error).message, `The snapshot named bbsn7kq2m6xa4pdq on guest ${vmid} is not VesnALIA Box's snapshot ${SNAPSHOT}: its description says "made by hand". VesnALIA Box deleted nothing.`);
   assert.equal(state.proxmox.guests.get(vmid)!.snapshots!.length, 1);
-  state.proxmox.guests.get(vmid)!.snapshots![0]!.description = `bb-box install ${state.context.installId} box bxanotherboxaa snapshot ${SNAPSHOT}`;
+  state.proxmox.guests.get(vmid)!.snapshots![0]!.description = `alia-box install ${state.context.installId} box bxanotherboxaa snapshot ${SNAPSHOT}`;
   assert.ok((await state.backend.deleteSnapshot({ id: SNAPSHOT, ref: "", guest }, tasks().hooks).catch((caught: unknown) => caught)) instanceof SnapshotFailed, "another box's label");
 });
 
@@ -268,7 +268,7 @@ test("a take is complete only when its task succeeded; the provider is told befo
   const { hooks, submitted, seen } = tasks();
   const failed = await state.backend.snapshot(guest, { id: SNAPSHOT, box: id.boxId, memory: false }, hooks).catch((caught: unknown) => caught);
   assert.ok(failed instanceof SnapshotIncomplete);
-  assert.equal((failed as Error).message, "Proxmox's task failed (vmstate save failed), though it left the snapshot with no part-made state, so BB Box does not count it as taken.");
+  assert.equal((failed as Error).message, "Proxmox's task failed (vmstate save failed), though it left the snapshot with no part-made state, so VesnALIA Box does not count it as taken.");
   assert.deepEqual(submitted, [0], "submitting came before any task was recorded");
   assert.deepEqual((await state.backend.findTasks(guest, "take", since)).map((task) => task.ref), [seen[0]!.ref]);
   assert.deepEqual(await state.backend.findTasks(guest, "delete", since), []);
@@ -492,7 +492,7 @@ test("a restore's plan: rollback to any snapshot on LVM-thin, the size it goes b
   made.push(fresh);
   const noRight = await fresh.planSnapshots(guest, "linux", { id: SNAPSHOT, ref: "", guest });
   assert.equal(noRight.restore.way, "none");
-  assert.match(noRight.restore.why!, /^The Proxmox token lacks VM\.Snapshot\.Rollback on \/pool\/bbbox, so BB Box cannot restore snapshots there\./);
+  assert.match(noRight.restore.why!, /^The Proxmox token lacks VM\.Snapshot\.Rollback on \/pool\/bbbox, so ALIA Box cannot restore snapshots there\./);
 });
 
 const SAME_SECOND = 1_790_000_000;
@@ -558,7 +558,7 @@ test("a rollback refuses a running guest, records its task before it waits, puts
   const ref = { id: SNAPSHOT, ref: snapshotName(SNAPSHOT), guest };
   const running = await state.backend.rollbackSnapshot(guest, ref, hooks).catch((caught: unknown) => caught);
   assert.ok(running instanceof SnapshotFailed);
-  assert.equal((running as Error).message, `Guest ${vmid} is running, and BB Box restores a guest only once it has stopped.`);
+  assert.equal((running as Error).message, `Guest ${vmid} is running, and VesnALIA Box restores a guest only once it has stopped.`);
   await state.backend.powerOff(guest);
   assert.equal(state.proxmox.guests.get(vmid)!.status, "stopped");
   state.proxmox.guests.get(vmid)!.config.lock = "backup";
@@ -591,8 +591,8 @@ test("G13: rollbacks of this install's guests are read from the node's task list
   assert.deepEqual(
     found.map((each) => ({ guest: each.guest, user: each.user, ours: each.ours, outcome: each.outcome })),
     [
-      { guest: guest.ref, user: "bb-box@pve!plugin", ours: true, outcome: { state: "ok" } },
-      { guest: guest.ref, user: "bb-box@pve!plugin", ours: true, outcome: { state: "failed", words: "unable to rollback" } },
+      { guest: guest.ref, user: "alia-box@pve!plugin", ours: true, outcome: { state: "ok" } },
+      { guest: guest.ref, user: "alia-box@pve!plugin", ours: true, outcome: { state: "failed", words: "unable to rollback" } },
     ],
   );
 });
@@ -618,7 +618,7 @@ test("G16 on Proxmox LXC: a held copy is cloned into the box range, labelled, di
   const { guest, vmid, id } = await box(state);
   const { hooks: snapshotHooks } = tasks();
   await state.backend.snapshot(guest, { id: SNAPSHOT, box: id.boxId, memory: false }, snapshotHooks);
-  const mac = "BC:24:11:AA:BB:CC";
+  const mac = "BC:24:11:AA:ALIA:CC";
   state.proxmox.guests.get(vmid)!.config.net0 = `${state.proxmox.guests.get(vmid)!.config.net0},hwaddr=${mac}`;
   const identity = await state.backend.guestIdentity(guest);
   assert.equal(identity.macs.net0, mac);
@@ -675,7 +675,7 @@ test("a new guest cut short while it is cloned from a held copy, still carrying 
   await state.backend.retireGuest(guest, id);
   const identity = await state.backend.guestIdentity(guest);
   let made: Guest | null = null;
-  const stopped = new Error("BB Box stopped once the clone's task began");
+  const stopped = new Error("VesnALIA Box stopped once the clone's task began");
   const cutShort = { ...tasks().hooks, claimed: async (fresh: Guest) => void (made = fresh), task: async () => { throw stopped; } };
 
   await assert.rejects(state.backend.adoptCopy(copy, id, identity, cutShort), stopped);
@@ -699,13 +699,13 @@ test("review A3: a restore's task is looked up among the token's own, never anot
     if (call.method !== "GET" || !/\/tasks$/.test(call.path) || call.params.typefilter !== "vzrollback") return undefined;
     const data = [
       { upid: `UPID:pve:0000AAAA:00:00:vzrollback:${guest.ref}:root@pam:`, type: "vzrollback", id: guest.ref, user: "root@pam", starttime: now, status: "OK", endtime: now },
-      { upid: `UPID:pve:0000BBBB:00:00:vzrollback:${guest.ref}:bb-box@pve!plugin:`, type: "vzrollback", id: guest.ref, user: "bb-box@pve", starttime: now, status: "OK", endtime: now },
+      { upid: `UPID:pve:0000BBBB:00:00:vzrollback:${guest.ref}:alia-box@pve!plugin:`, type: "vzrollback", id: guest.ref, user: "alia-box@pve", starttime: now, status: "OK", endtime: now },
     ];
     return { ok: true, status: 200, statusText: "OK", text: async () => JSON.stringify({ data }) };
   };
   assert.deepEqual(
     (await state.backend.findTasks(guest, "rollback", Date.now())).map((task) => task.ref),
-    [`UPID:pve:0000BBBB:00:00:vzrollback:${guest.ref}:bb-box@pve!plugin:`],
+    [`UPID:pve:0000BBBB:00:00:vzrollback:${guest.ref}:alia-box@pve!plugin:`],
   );
 });
 
@@ -739,7 +739,7 @@ test("070 unit 7: a fork is a full copy of the snapshot in a VMID of its own, re
   const { guest, vmid, id } = await box(state);
   await state.backend.snapshot(guest, { id: SNAPSHOT, box: id.boxId, memory: false }, tasks().hooks);
   const source = state.proxmox.guests.get(vmid)!;
-  source.config.net0 = `${source.config.net0},hwaddr=BC:24:11:AA:BB:CC`;
+  source.config.net0 = `${source.config.net0},hwaddr=BC:24:11:AA:ALIA:CC`;
   source.snapshots![0]!.config = { ...source.snapshots![0]!.config, net0: `${source.config.net0},link_down=1`, onboot: "0", memory: "4096", cores: "2" };
   const plan = await state.backend.planSnapshots(guest, "linux", { id: SNAPSHOT, ref: snapshotName(SNAPSHOT), guest });
   assert.equal(plan.fork.ok, true, plan.fork.why ?? "");
@@ -767,7 +767,7 @@ test("070 unit 7: a fork is a full copy of the snapshot in a VMID of its own, re
   const config = state.proxmox.guests.get(Number(made.ref))!.config;
   assert.equal(config.onboot, "0", "not armed yet");
   assert.match(config.net0 ?? "", /link_down=1/, "its own address, with its link still down");
-  assert.doesNotMatch(config.net0 ?? "", /BC:24:11:AA:BB:CC/i, "a MAC of its own, so its identity reset runs at its first boot");
+  assert.doesNotMatch(config.net0 ?? "", /BC:24:11:AA:ALIA:CC/i, "a MAC of its own, so its identity reset runs at its first boot");
   assert.match(config.net0 ?? "", /hwaddr=BC:24:11:/);
   assert.match(config.net0 ?? "", new RegExp(`ip=${made.address}/`), "the address of its own VMID");
   assert.match(config.tags ?? "", new RegExp(`box\\.${forked.boxId}`));
@@ -925,12 +925,12 @@ test("a held copy cut short before its own labels still carries its source's tag
   const cut = await state.backend.copySnapshot({ id: SNAPSHOT, ref: snapshotName(SNAPSHOT), guest }, { box: id.boxId, snapshot: SNAPSHOT, kept: "2026-11-30" }, { ...tasks().hooks, claimed: async (made) => void (claimed = made) }).catch((caught: unknown) => caught);
   state.proxmox.intercept = undefined;
   assert.ok(cut instanceof Error);
-  const part = [...state.proxmox.guests.values()].find((each) => each.vmid !== vmid && each.name.startsWith("bb-box-copy-"))!;
+  const part = [...state.proxmox.guests.values()].find((each) => each.vmid !== vmid && each.name.startsWith("alia-box-copy-"))!;
   assert.match(part.config.tags ?? "", new RegExp(`(^|;)box\\.${id.boxId}(;|$)`), "it still carries its source's tags");
   const listed = (await state.backend.held()).find((each) => each.ref === String(part.vmid));
   assert.ok(listed, "the sweep sees it");
   assert.equal(listed.owner, null, "as a guest that names no box");
-  await assert.rejects(state.backend.labelCopy(claimed!, { box: id.boxId, snapshot: "snbbbbbbbbbbbb", kept: null }), /is not the copy BB Box made of snapshot snbbbbbbbbbbbb/);
+  await assert.rejects(state.backend.labelCopy(claimed!, { box: id.boxId, snapshot: "snbbbbbbbbbbbb", kept: null }), /is not the copy ALIA Box made of snapshot snbbbbbbbbbbbb/);
   await state.backend.labelCopy(claimed!, { box: id.boxId, snapshot: SNAPSHOT, kept: "2026-11-30", forkSafe: 7, kind: "linux" });
   for (const tag of ["held-copy", `snapshot.${SNAPSHOT}`, "kept.2026-11-30", "reset.7"]) assert.match(part.config.tags ?? "", new RegExp(`(^|;)${tag.replace(/\./g, "\\.")}(;|$)`), `labelled once its clone ends well: ${tag}`);
   assert.equal(part.config.onboot, "0");
@@ -1011,20 +1011,20 @@ test("review 6: the wait for a held copy's template is bounded by 120 s of elaps
     async () => ({}),
     () => false,
     async () => {
-      stop.abort(new Error("BB Box is stopping."));
+      stop.abort(new Error("VesnALIA Box is stopping."));
       throw stop.signal.reason;
     },
     250,
     7002,
     () => 0,
   );
-  await assert.rejects(cancelled, /BB Box is stopping/);
+  await assert.rejects(cancelled, /ALIA Box is stopping/);
   let ready = 0;
   await untilTemplate(async () => (++ready >= 3 ? { template: 1 } : {}), (config) => config.template === 1, async () => {}, 250, 7003, () => 0);
   assert.equal(ready, 3);
 });
 
-test("review: a clone's wait grows with its disk, at 3 times BB Box's estimate and never under 180 s, and the task is waited for that long in the same run", async () => {
+test("review: a clone's wait grows with its disk, at 3 times VesnALIA Box's estimate and never under 180 s, and the task is waited for that long in the same run", async () => {
   assert.equal(cloneWaitMs(null), 180_000);
   assert.equal(cloneWaitMs(16), 180_000);
   assert.equal(cloneWaitMs(100), 720_000, "a 100 GiB disk: 3 times 240 s");
@@ -1074,7 +1074,7 @@ for (const unclear of UNCLEAR_ROLLBACK_ANSWERS) {
     assert.ok(error instanceof Error);
     assert.ok(!(error instanceof SnapshotFailed), "not a refusal");
     assert.ok(!(error instanceof RestoreChanged));
-    assert.match(error.message, /^Proxmox gave no clear answer to the rollback, so BB Box cannot tell whether it began: /);
+    assert.match(error.message, /^Proxmox gave no clear answer to the rollback, so ALIA Box cannot tell whether it began: /);
     assert.equal(submitted.length, 2, "the rollback was journalled as asked for before it was sent");
   });
 }

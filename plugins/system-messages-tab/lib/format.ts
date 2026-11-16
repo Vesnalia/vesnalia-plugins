@@ -35,7 +35,7 @@ export function timeKeyOf(outlineId: string): TimeKey | null {
   return null;
 }
 
-/** The sender thread of a "[bb message from thread:<id>]" entry. */
+/** The sender thread of a "[VesnALIA message from thread:<id>]" entry. */
 export function senderThreadOf(label: string): string | null {
-  return /^\s*\[bb message from thread:([^;\]\s]+)/.exec(label)?.[1] ?? null;
+  return /^\s*\[alia message from thread:([^;\]\s]+)/.exec(label)?.[1] ?? null;
 }

@@ -13,7 +13,7 @@ import { resolveBuildArgv } from "../src/wrapped";
 const temps: string[] = [];
 
 function scratch(): { root: string; outside: string } {
-  const base = mkdtempSync(join(tmpdir(), "bb-xcode-security-"));
+  const base = mkdtempSync(join(tmpdir(), "alia-xcode-security-"));
   temps.push(base);
   const root = join(base, "checkout");
   const outside = join(base, "outside");
@@ -114,13 +114,13 @@ describe("child-process inputs", () => {
       HOME: "/Users/test",
       DEVELOPER_DIR: "/Applications/Xcode.app/Contents/Developer",
       XCODE_XCCONFIG_FILE: "/tmp/server-owned.xcconfig",
-      BB_SERVER_TOKEN: "server-secret",
+      ALIA_SERVER_TOKEN: "server-secret",
       OPENAI_API_KEY: "provider-secret",
     });
     expect(env.PATH).toBe("/usr/bin");
     expect(env.DEVELOPER_DIR).toContain("Xcode.app");
     expect(env.XCODE_XCCONFIG_FILE).toBeUndefined();
-    expect(env.BB_SERVER_TOKEN).toBeUndefined();
+    expect(env.ALIA_SERVER_TOKEN).toBeUndefined();
     expect(env.OPENAI_API_KEY).toBeUndefined();
   });
 

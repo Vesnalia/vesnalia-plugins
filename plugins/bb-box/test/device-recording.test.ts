@@ -85,7 +85,7 @@ describe("recording a device (063, 7.4)", () => {
     const bad = parseDeviceRequest(deviceRequestText({ id: "e", type: "record", to: "caption", kind: "maybe", text: "x" } as never));
     assert.equal(bad.ok, false);
     const state = { platform: "ios", model: "iPhone 18 Pro", power: { is: "stopped" }, geometry: null, settings: { appearance: { known: false, why: "x" }, textSize: { known: false, why: "x" }, location: { set: null, at: null }, statusBar: { set: null, at: null } }, at: 1 } as const;
-    const message = { verb: "BB_DEVICE_ANSWER", answer: { id: "d", ok: true, ms: 3, state, result: { type: "recording", recording: { active: false, ended: "stopped", seconds: 12.5, segments: 2, lost: ["The device restarted here"] } } } } as const;
+    const message = { verb: "ALIA_DEVICE_ANSWER", answer: { id: "d", ok: true, ms: 3, state, result: { type: "recording", recording: { active: false, ended: "stopped", seconds: 12.5, segments: 2, lost: ["The device restarted here"] } } } } as const;
     const read = parseDeviceServerMessage(deviceServerMessageText(message));
     assert.ok(read.ok, read.ok ? "" : read.words);
     assert.deepEqual(read.value, message);

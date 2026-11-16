@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
-import { experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 
 it("uses only public SDK contracts and package-local source", () => {
   const result = experimental_scanPublicSdkOnly(fileURLToPath(new URL(".", import.meta.url)), {

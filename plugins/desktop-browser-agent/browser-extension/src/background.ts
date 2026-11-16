@@ -674,7 +674,7 @@ function noFileAccess(): BridgeError {
   const scheme = browser === "Brave" ? "brave" : browser === "Edge" ? "edge" : "chrome";
   return new BridgeError(
     "no_file_access",
-    `${browser} does not let Browser Bridge for bb read files yet. Ask the user to open ${scheme}://extensions/?id=${chrome.runtime.id} in ${browser}, turn on **Allow access to file URLs**, and tell you when it is on; then call browser_upload again.`,
+    `${browser} does not let Browser Bridge for VesnALIA read files yet. Ask the user to open ${scheme}://extensions/?id=${chrome.runtime.id} in ${browser}, turn on **Allow access to file URLs**, and tell you when it is on; then call browser_upload again.`,
   );
 }
 

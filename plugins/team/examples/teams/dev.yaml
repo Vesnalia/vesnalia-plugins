@@ -1,9 +1,9 @@
-# Example team "dev": copy to <project>/.bb/teams/dev.yaml together with the dev/ folder,
-# then: bb team doctor --team dev && bb team create --team dev
+# Example team "dev": copy to <project>/.vesnalia/teams/dev.yaml together with the dev/ folder,
+# then: alia team doctor --team dev && alia team create --team dev
 version: 1
 title: Development team
 vars:
-  # A separate environment (for example a VM) for integration checks: bb environment list
+  # A separate environment (for example a VM) for integration checks: alia environment list
   testEnv: checkout
   plan: docs/plan.md
 defaults:
@@ -16,7 +16,7 @@ roles:
     lead: true
     provider: codex
     reasoningLevel: high
-    promptFile: .bb/teams/dev/lead.md
+    promptFile: .vesnalia/teams/dev/lead.md
   - name: developer
     kind: developer
     title: Developer
@@ -32,4 +32,4 @@ roles:
     title: Tester
     provider: codex
     environment: "{{vars.testEnv}}"
-    promptFile: .bb/teams/dev/tester.md
+    promptFile: .vesnalia/teams/dev/tester.md

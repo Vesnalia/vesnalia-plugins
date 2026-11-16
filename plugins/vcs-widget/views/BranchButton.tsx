@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { BranchRef } from "../contracts";
 import { useFavourites } from "../hooks/use-favourites";
@@ -35,12 +35,12 @@ export interface BranchButtonProps {
 export function BranchButton({ threadId, isCompactViewport }: BranchButtonProps) {
   const sidebar = useSidebarThread(threadId);
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [open, setOpen] = useState(false);
   const [everOpened, setEverOpened] = useState(false);
   const [pendingAction, setPendingAction] = useState<QuickActionId | null>(null);
 
-  // Hidden and archived threads are not in bb's sidebar list, so their label
+  // Hidden and archived threads are not in VesnALIA's sidebar list, so their label
   // can only come from the overview.
   const offSidebar = sidebar.status === "ready" && !sidebar.found;
   const enabled = everOpened || offSidebar;

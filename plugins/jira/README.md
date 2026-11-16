@@ -1,13 +1,13 @@
-# bb-plugin-jira
+# alia-plugin-jira
 
-Jira Cloud issues in BB: a browser page and side panel, in-place editing, and
+Jira Cloud issues in VesnALIA: a browser page and side panel, in-place editing, and
 `jira_*` agent tools whose writes are approved per action.
 
 ```sh
-bb plugin install git:https://github.com/Willhong/bb-plugin-jira.git@main
+alia plugin install git:https://github.com/Willhong/bb-plugin-jira.git@main
 ```
 
-For development, install a checkout in place with `bb plugin install .`.
+For development, install a checkout in place with `alia plugin install .`.
 
 ## Settings
 
@@ -17,16 +17,16 @@ For development, install a checkout in place with `bb plugin install .`.
 | `email` | Atlassian account email for the token. |
 | `apiToken` | API token (secret; server only). |
 | `allow_create`, `allow_update`, `allow_transition`, `allow_comment`, `allow_assign`, `allow_sprint`, `allow_delete` | `Ask every time` (default) or `Always allow`, for agent writes. |
-| `settle_on_done` | Settle the issue's agent threads in BB Sidebar when it reaches a done status (default on). |
+| `settle_on_done` | Settle the issue's agent threads in VesnALIA Sidebar when it reaches a done status (default on). |
 
 ```sh
-bb plugin config jira set siteUrl acme.atlassian.net
-bb plugin config jira set allow_comment "Always allow"
+alia plugin config jira set siteUrl acme.atlassian.net
+alia plugin config jira set allow_comment "Always allow"
 ```
 
 ## Project links
 
-A BB project can be linked to one or more Jira projects (Jira page →
+A VesnALIA project can be linked to one or more Jira projects (Jira page →
 **Project links**, or the Jira side panel in a thread). In a linked project's
 threads:
 
@@ -43,13 +43,13 @@ Links live in plugin storage (`project-links`); unlinked projects are unscoped.
 
 When an issue reaches a **done** status through this plugin — the board, the
 issue view, or `jira_transition_issue` — every thread **Send to agent** started
-for it is settled in [BB Sidebar](https://github.com/Willhong/bb-sidebar)
-(`bb.sdk.plugins.callRpc` → its `settle` rpc), which also releases the thread's
+for it is settled in [VesnALIA Sidebar](https://github.com/Willhong/bb-sidebar)
+(`alia.sdk.plugins.callRpc` → its `settle` rpc), which also releases the thread's
 runtime and terminals. Each thread settles at most once, so un-settling it
 afterwards sticks. Sidebar is optional: without it the transition is unaffected
 and the attempt is only logged. Turn it off with `settle_on_done`.
 
-A status change made outside BB (Jira's own web UI, another tool) is not seen —
+A status change made outside VesnALIA (Jira's own web UI, another tool) is not seen —
 there is no polling.
 
 ## Write rules
@@ -76,8 +76,8 @@ npm install --include=dev
 npm run typecheck
 npm test
 npm run build
-bb plugin install .
+alia plugin install .
 ```
 
-`vendor/get-bb-plugin-sdk-0.4.98.tgz` is packed from the local bb checkout
+`vendor/get-alia-plugin-sdk-0.4.98.tgz` is packed from the local VesnALIA checkout
 because that SDK version is not on npm yet; it is a dev dependency only.

@@ -1,15 +1,15 @@
 {
-  "name": "bb-plugin-forage",
+  "name": "alia-plugin-forage",
   "version": "0.3.2",
   "private": true,
   "type": "module",
   "engines": {
-    "bb": ">=0.47",
-    "bbPluginSdk": ">=0.6.79"
+    "alia": ">=0.47",
+    "aliaPluginSdk": ">=0.6.79"
   },
-  "bb": {
+  "alia": {
     "name": "Forage",
-    "description": "Six web-research tools for every BB agent: search, fetch, map, deterministic extraction, bounded crawl jobs and snapshot diffs, with a Research tab in every thread for what was looked up, kept pages, citations and crawls. A zero-turn CLI and privacy ceilings share one runtime.",
+    "description": "Six web-research tools for every VesnALIA agent: search, fetch, map, deterministic extraction, bounded crawl jobs and snapshot diffs, with a Research tab in every thread for what was looked up, kept pages, citations and crawls. A zero-turn CLI and privacy ceilings share one runtime.",
     "branding": {
       "icon": "./icons/forage.svg",
       "experimental_icons": {
@@ -29,8 +29,8 @@
     ]
   },
   "scripts": {
-    "build": "bb plugin build",
-    "pretest": "bb plugin build",
+    "build": "alia plugin build",
+    "pretest": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc"
   },
@@ -38,7 +38,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.79",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
     "@types/react": "^19.3.0",
@@ -53,5 +52,22 @@
     "hono": "^4.13.13",
     "typescript": "^5.7.0",
     "vitest": "^4.1.12"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.79"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/forage#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/forage"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

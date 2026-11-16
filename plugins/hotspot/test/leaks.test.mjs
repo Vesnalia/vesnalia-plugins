@@ -1,12 +1,12 @@
 /**
  * Secrets on real command lines never reach any surface: the popover's
- * payload, stored rows, `bb hotspot status`, the agent tool, and kill plans.
+ * payload, stored rows, `alia hotspot status`, the agent tool, and kill plans.
  * Each command is a leak the naming review found, run through the real
  * sampler and the real plugin.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createHotspot } from "../server.ts";
 import { step } from "../lib/episodes.ts";
 import { parseKillLine } from "../lib/kill.ts";
@@ -44,7 +44,7 @@ function processSource() {
     // Each reading, every process has used ten more seconds of CPU.
     minutes += 1;
     const time = `${minutes * 10}:00.00`;
-    const lines = [`200 1 5.0 1024 ${time} ${START} /Users/me/.local/bin/claude --verbose BB_THREAD_ID=${THREAD}`];
+    const lines = [`200 1 5.0 1024 ${time} ${START} /Users/me/.local/bin/claude --verbose ALIA_THREAD_ID=${THREAD}`];
     LEAKS.forEach((command, index) => {
       const inThread = index % 2 === 0;
       lines.push(`${300 + index} ${inThread ? 200 : 1} ${(40 - index).toFixed(1)} 1024 ${time} ${START} ${command}`);
@@ -55,7 +55,7 @@ function processSource() {
 }
 
 async function load() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "hotspot" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "hotspot" });
   harness.sdk.stub("threads.get", async ({ threadId }) => ({ id: threadId, title: "Leaky", titleFallback: null, status: "idle" }));
   let clock = 0;
   const takeReading = createSampler({
@@ -66,17 +66,17 @@ async function load() {
     clock: () => (clock += 60_000),
     ticks: () => ({ busy: clock * 3, total: clock * 4 }),
   });
-  await createHotspot(bb, { takeReading });
-  return { bb, harness, takeReading };
+  await createHotspot(alia, { takeReading });
+  return { alia, harness, takeReading };
 }
 
 const clean = (surface, text) => assert.doesNotMatch(text, new RegExp(SECRET), `${surface} leaks: ${text.slice(0, 2000)}`);
 
 test("no surface shows a secret from a command line", async () => {
-  const { bb, harness, takeReading } = await load();
+  const { alia, harness, takeReading } = await load();
 
   // Three hot stored samples open a hot spell, written the way the service writes them.
-  const store = createStore(bb.storage.database());
+  const store = createStore(alia.storage.database());
   let state = { streak: null, open: null, normalStreak: 0, lastAt: null, lastIntervalMs: null };
   const now = Date.now();
   for (let minute = 3; minute >= 1; minute -= 1) {
@@ -87,18 +87,18 @@ test("no surface shows a secret from a command line", async () => {
 
   const status = await harness.runCli(["status"]);
   assert.equal(status.exitCode, 0);
-  clean("bb hotspot status", status.stdout);
-  // The drill-down and the outside-BB line are really there, just safely named.
+  clean("alia hotspot status", status.stdout);
+  // The drill-down and the outside-ALIA line are really there, just safely named.
   assert.match(status.stdout, /npm \(pid 300\)/);
   assert.match(status.stdout, /other .* yarn \(pid 301\)/);
-  clean("bb hotspot status --json", (await harness.runCli(["status", "--json"])).stdout);
+  clean("alia hotspot status --json", (await harness.runCli(["status", "--json"])).stdout);
 
   const popover = await harness.callRpc("status", null);
   assert.ok(popover.latest.threads[0].top.length > 0);
   clean("status RPC (popover)", JSON.stringify(popover));
   clean("overview RPC", JSON.stringify(await harness.callRpc("overview", null)));
 
-  const db = bb.storage.database();
+  const db = alia.storage.database();
   const rows = JSON.stringify([
     db.prepare("SELECT * FROM samples").all(),
     db.prepare("SELECT * FROM episodes").all(),
@@ -114,22 +114,22 @@ test("no surface shows a secret from a command line", async () => {
   const text = typeof result === "string" ? result : JSON.stringify(result);
   assert.match(text, /processes: npm avg/);
   clean("hotspot_history tool", text);
-  clean("bb hotspot episodes", (await harness.runCli(["episodes", "--since", "1h", "--json"])).stdout);
+  clean("alia hotspot episodes", (await harness.runCli(["episodes", "--since", "1h", "--json"])).stdout);
 });
 
-test("kill plans, their results and bb hotspot kill show no secret", async () => {
+test("kill plans, their results and VesnALIA hotspot kill show no secret", async () => {
   const uid = process.getuid();
   const line = (pid, ppid, command) => `${pid} ${ppid} ${uid} ?? 10.0 ${START}     ${command}`;
   let rows = [
-    line(100, 1, "/Applications/bb.app/Contents/MacOS/bb"),
-    line(150, 100, `/Users/me/.local/bin/claude --verbose BB_THREAD_ID=${THREAD}`),
+    line(100, 1, "/Applications/alia.app/Contents/MacOS/alia"),
+    line(150, 100, `/Users/me/.local/bin/claude --verbose ALIA_THREAD_ID=${THREAD}`),
     line(160, 150, "/bin/zsh -c work"),
     ...LEAKS.map((command, index) => line(400 + index, 160, command)),
-    line(600, 100, "/Applications/bb.app/Contents/MacOS/bb bb-plugin-host-worker.mjs"),
+    line(600, 100, "/Applications/alia.app/Contents/MacOS/alia alia-plugin-host-worker.mjs"),
   ].join("\n");
-  const { bb, harness } = createFakePluginHost({ pluginId: "hotspot" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "hotspot" });
   harness.sdk.stub("threads.get", async ({ threadId }) => ({ id: threadId, title: "Leaky", titleFallback: null, status: "idle" }));
-  await createHotspot(bb, {
+  await createHotspot(alia, {
     takeReading: async (at) => ({ live: { at, thermal: 0, cpu: 10, load: 0.1, threads: [], procs: [] }, stored: null }),
     kill: {
       readRows: async () => rows.split("\n").map((entry) => parseKillLine(entry)).filter(Boolean),
@@ -144,14 +144,14 @@ test("kill plans, their results and bb hotspot kill show no secret", async () =>
   const listed = new Set([...plan.targets, ...plan.excluded].map((entry) => entry.pid));
   assert.ok(LEAKS.every((_, index) => listed.has(400 + index)), "every leaky process is in the plan");
   clean("kill plan", JSON.stringify(plan));
-  clean("bb hotspot kill", (await harness.runCli(["kill", THREAD])).stdout);
-  clean("bb hotspot kill --json", (await harness.runCli(["kill", THREAD, "--json"])).stdout);
+  clean("alia hotspot kill", (await harness.runCli(["kill", THREAD])).stdout);
+  clean("alia hotspot kill --json", (await harness.runCli(["kill", THREAD, "--json"])).stdout);
   // One process at a time, each named as it runs.
   for (const [index] of LEAKS.entries()) {
     const one = await harness.callRpc("killPlan", { threadId: THREAD, process: `${400 + index}@${START}` });
     assert.notEqual(one.selected.name, null);
     clean("one-process kill plan", JSON.stringify(one));
-    clean("bb hotspot kill --pid", (await harness.runCli(["kill", THREAD, "--pid", String(400 + index)])).stdout);
+    clean("alia hotspot kill --pid", (await harness.runCli(["kill", THREAD, "--pid", String(400 + index)])).stdout);
   }
   // Each call above minted a plan and the oldest were let go: apply a fresh one.
   const fresh = await harness.callRpc("killPlan", { threadId: THREAD });

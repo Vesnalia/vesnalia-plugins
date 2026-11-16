@@ -178,7 +178,7 @@ function repoWebUrl(url) {
 
 function noticeText(entry) {
   const lines = [
-    `# ${entry.displayName}`,
+    `# ${entry.displayName.replace(/\u2014/g, "-")}`,
     "",
     entry.license === "permission"
       ? "Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026)."

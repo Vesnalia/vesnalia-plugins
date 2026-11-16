@@ -4,7 +4,7 @@ import {
   createFakePluginHost,
   makePluginAgentConfigurationContext,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.js";
 import type { Route } from "./routing/core.js";
 import type { JevAsk } from "./routing/jev.js";
@@ -78,8 +78,8 @@ async function setup(
             {
               id: "native-test",
               model: "catalog-native-test",
-              displayName: "A model from BB",
-              description: "Discovered from BB",
+              displayName: "A model from VesnALIA",
+              description: "Discovered from VesnALIA",
               defaultReasoningEffort: "medium",
               supportedReasoningEfforts: [
                 { reasoningEffort: "low", description: "Fast" },
@@ -162,7 +162,7 @@ async function setup(
     },
   });
   await plugin(
-    host.bb,
+    host.alia,
     options.hostRouting ? { helperPollMs: 1 } : { ask: options.ask ?? noAnswer, helperPollMs: 1 },
   );
   return {
@@ -579,7 +579,7 @@ test("failed classification setup preserves the previous selected service and cr
   }
 });
 
-test("BB classifier catalog uses discovered models and rejects unknown or recursive selections", async () => {
+test("VesnALIA classifier catalog uses discovered models and rejects unknown or recursive selections", async () => {
   const { harness } = await setup();
   try {
     const catalog = await harness.callRpc("localModels", {});
@@ -587,8 +587,8 @@ test("BB classifier catalog uses discovered models and rejects unknown or recurs
       {
         providerId: "codex",
         modelId: "catalog-native-test",
-        label: "A model from BB",
-        description: "Discovered from BB",
+        label: "A model from VesnALIA",
+        description: "Discovered from VesnALIA",
         providerLabel: "Codex",
         reasoningEffort: "low",
       },
@@ -598,7 +598,7 @@ test("BB classifier catalog uses discovered models and rejects unknown or recurs
         providerId: "codex",
         modelId: "invented",
       }),
-      /available through BB/,
+      /available through ALIA/,
     );
     await assert.rejects(
       harness.callRpc("saveNativeClassifier", {
@@ -622,7 +622,7 @@ test("BB classifier catalog uses discovered models and rejects unknown or recurs
     await harness.dispose();
   }
 });
-test("failed BB classifier connection preserves the saved selection", async () => {
+test("failed VesnALIA classifier connection preserves the saved selection", async () => {
   const { harness } = await setup({ testClassifierOk: false });
   try {
     await assert.rejects(
@@ -715,7 +715,7 @@ test("a thread's usage includes the helpers it started", async () => {
       },
     },
   });
-  await plugin(host.bb, { ask: noAnswer });
+  await plugin(host.alia, { ask: noAnswer });
   const { harness } = host;
   try {
     const opus = 16 * 4e-6 + 340_976 * 2e-7 + 45_494 * 8e-6 + 5_216 * 2e-5;

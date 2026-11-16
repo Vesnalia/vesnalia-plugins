@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRealtime } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,7 +94,7 @@ export function HomePage() {
                 : "—"}
             </div>
             <div className="mt-1 text-xs text-muted-foreground">
-              The proxy stays available when bb is closed. Stop disables the login service until it
+              The proxy stays available when VesnALIA is closed. Stop disables the login service until it
               is started again.
             </div>
           </div>

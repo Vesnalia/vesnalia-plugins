@@ -16,7 +16,7 @@ vi.mock("./store-queue", async (original) => {
   return { ...actual, queueStore: vi.fn(actual.queueStore) };
 });
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { pruneDiffs, sinceReview } from "./feedback-view";
 import { sendBaselineOf } from "../lib/send-baseline";
 import type { ReviewMeta, SendEntry, SnapshotFiles } from "./store";
@@ -55,7 +55,7 @@ async function localReview(store: AsyncStore, sends: SendEntry[] = [send(1)]) {
 }
 
 test("pruneDiffs keeps each Send's snapshot and its files while the review keeps the Send, and drops those the 20-Send cap dropped", async () => {
-  const store = testStore(host().bb);
+  const store = testStore(host().alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, headSha: "sha1", status: "ready", createdAt: 1 });
   await store.savePatch("pr-1", SENT);
   await store.saveSnapshot("pr-1", "sha1", SENT);
@@ -86,7 +86,7 @@ test("each comment's baseline is the Send it went in; without one it's the last 
 });
 
 test("Since your last Send on a local review with no head shows only the hunk that changed, without reading GitHub", async () => {
-  const store = testStore(host().bb);
+  const store = testStore(host().alia);
   const review = await localReview(store);
   const since = await sinceReview(store, noGitHub, review, "send:1");
   expect(since?.baseline).toEqual({ sha: "send:1", at: 1000, verdict: null });
@@ -98,7 +98,7 @@ test("Since your last Send on a local review with no head shows only the hunk th
 });
 
 test("a Send whose diff isn't kept, as after 1.7.0's prune, fails to compare instead of saying nothing changed", async () => {
-  const store = testStore(host().bb);
+  const store = testStore(host().alia);
   const review = await localReview(store, [send(1), send(2)]);
   await expect(sinceReview(store, noGitHub, review, "send:2")).rejects.toThrow("The diff Send 2 went at isn’t kept anymore.");
   await expect(sinceReview(store, noGitHub, review, "send:7")).rejects.toThrow("Send 7 isn’t kept anymore.");
@@ -106,8 +106,8 @@ test("a Send whose diff isn't kept, as after 1.7.0's prune, fails to compare ins
 });
 
 test("on a PR with Sends, Since your review still compares with your review, and the page can ask for the last Send", async () => {
-  const { bb, harness } = host();
-  const store = await startPlugin(bb);
+  const { alia, harness } = host();
+  const store = await startPlugin(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, headSha: "sha2", status: "ready", createdAt: 1 });
   await store.savePatch("pr-1", FIXED);
   await store.saveSnapshot("pr-1", "sha1", SENT);
@@ -124,8 +124,8 @@ test("on a PR with Sends, Since your review still compares with your review, and
 });
 
 test("read_changes_since_review compares a local review with its last Send, or the Send asked for, and says when that diff is gone", async () => {
-  const { bb, harness } = host();
-  const store = await startPlugin(bb);
+  const { alia, harness } = host();
+  const store = await startPlugin(alia);
   NOW.diff = FIXED;
   await localReview(store, [send(1), send(2)]);
   await store.setAssistantThread("ref-1", "agent-1");
@@ -145,8 +145,8 @@ test("read_changes_since_review compares a local review with its last Send, or t
 });
 
 test("read_changes_since_review compares a Send with the code now, not the diff the review shows, which Update or a rebuild hasn't caught up", async () => {
-  const { bb, harness } = host();
-  const store = await startPlugin(bb);
+  const { alia, harness } = host();
+  const store = await startPlugin(alia);
   const read = (input: Record<string, unknown>) => harness.behavior.callAgentTool("read_changes_since_review", input, { threadId: "agent-1" });
   // A local review whose diff is still Send 1's: the main thread fixed b.ts since, and nobody clicked Update.
   await localReview(store);
@@ -175,8 +175,8 @@ test("read_changes_since_review compares a Send with the code now, not the diff 
 });
 
 test("Rewrite guide keeps an archived review's guide, as Update guide does", async () => {
-  const { bb, harness, spawn } = host();
-  const store = await startPlugin(bb);
+  const { alia, harness, spawn } = host();
+  const store = await startPlugin(alia);
   await localReview(store);
   await store.saveGuide("ref-1", { title: "T", intent: "I", unplacedFiles: [], sections: [], hotspots: [] } as any);
   await store.setLifecycle("ref-1", { archivedAt: 5 });
@@ -185,8 +185,8 @@ test("Rewrite guide keeps an archived review's guide, as Update guide does", asy
 });
 
 test("Update shows a local review's new diff, moving its comments, and keeps the guide without starting the guide writer", async () => {
-  const { bb, harness, spawn } = host({ writing: true });
-  const store = await startPlugin(bb);
+  const { alia, harness, spawn } = host({ writing: true });
+  const store = await startPlugin(alia);
   await localReview(store);
   await store.savePatch("ref-1", SENT);
   const guide = { title: "T", intent: "I", unplacedFiles: [], sections: [{ id: "s", title: "S", overview: "o", risk: "low", diffs: [{ file: "b.ts", summary: "s" }] }], hotspots: [] };
@@ -211,8 +211,8 @@ test("Update shows a local review's new diff, moving its comments, and keeps the
 });
 
 test("Update is a local review's: a PR updates with Update guide", async () => {
-  const { bb, harness } = host();
-  const store = await startPlugin(bb);
+  const { alia, harness } = host();
+  const store = await startPlugin(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, headSha: "sha1", status: "ready", createdAt: 1 });
   expect(await harness.behavior.callRpc("updateFeature", { targetKey: "pr-1" })).toMatchObject({ ok: false, error: expect.stringContaining("Update guide") });
 });

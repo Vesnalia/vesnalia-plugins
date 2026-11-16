@@ -5,8 +5,8 @@
  * and a member card in Crew should read as the same kind of surface: an
  * icon-tile head, folded sections with a one-line summary, label/value rows
  * and form controls of one height. The plugins share no dependency, so this
- * file exists twice — bb-plugin-graph-studio/components/inspector.tsx and
- * bb-plugin-crew/components/inspector.tsx — and a test in each plugin keeps
+ * file exists twice — alia-plugin-graph-studio/components/inspector.tsx and
+ * alia-plugin-crew/components/inspector.tsx — and a test in each plugin keeps
  * the two copies byte-identical.
  */
 import type { ReactNode } from "react";

@@ -1,4 +1,4 @@
-// A small in-memory Proxmox API with the behaviour BB Box relies on, for
+// A small in-memory Proxmox API with the behaviour VesnALIA Box relies on, for
 // containers and VMs: linked clones that reject `storage`, need a template
 // that is not locked and inherit its protection, "already exists" for used
 // VMIDs, asynchronous tasks, tags, pools, /cluster/resources with the status
@@ -62,7 +62,7 @@ export const TOKEN_ROLE = [
   "Pool.Audit",
 ] as const;
 
-export const FAKE_TOKEN = { tokenId: "bb-box@pve!plugin", tokenSecret: "s3cret-token-value" };
+export const FAKE_TOKEN = { tokenId: "alia-box@pve!plugin", tokenSecret: "s3cret-token-value" };
 
 export class FakeProxmox {
   readonly node = "pve";
@@ -245,7 +245,7 @@ export class FakeProxmox {
   #task(type: string, id: number | string, exit?: string): string {
     const start = this.#nodeNow();
     const workerStart = this.#uptime() * 100;
-    const upid = `UPID:${this.node}:${hex8(4000 + ++this.#taskCounter)}:${hex8(workerStart)}:${hex8(start)}:${type}:${id}:bb-box@pve!plugin:`;
+    const upid = `UPID:${this.node}:${hex8(4000 + ++this.#taskCounter)}:${hex8(workerStart)}:${hex8(start)}:${type}:${id}:alia-box@pve!plugin:`;
     this.#tasks.set(upid, { exitstatus: exit ?? this.nextTaskExit.get(type) ?? "OK", pollsLeft: this.taskPolls, start });
     this.nextTaskExit.delete(type);
     return upid;

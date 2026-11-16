@@ -3,7 +3,7 @@
 import type {
   PluginSidebarThread,
   PluginSidebarThreadIndicator,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 /** The inbox buckets, in badge order. A thread lands in at most one. */
 export const BUCKETS = ["decision", "failed", "working", "done"] as const;

@@ -1,9 +1,9 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { rpcContract } from "./src/contract";
 import { snapshotForThread } from "./src/snapshot";
 
-export default function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     expandOnEnter: {
       type: "boolean",
       label: "Expand list when opening a thread",
@@ -13,20 +13,20 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     getTodos({ threadId }) {
-      return snapshotForThread(bb, threadId);
+      return snapshotForThread(alia, threadId);
     },
   });
 
   const publish = (threadId: string) => {
-    bb.realtime.publish("todos", { threadId });
+    alia.realtime.publish("todos", { threadId });
   };
-  bb.events.on("thread.active", ({ thread }) => {
+  alia.events.on("thread.active", ({ thread }) => {
     publish(thread.id);
   });
-  bb.events.on("thread.idle", ({ thread }) => {
+  alia.events.on("thread.idle", ({ thread }) => {
     publish(thread.id);
   });
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }

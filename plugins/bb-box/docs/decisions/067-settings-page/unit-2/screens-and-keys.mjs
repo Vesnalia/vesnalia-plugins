@@ -2,12 +2,12 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
 const out = process.env.LIVE_SHOTS ?? join(process.cwd(), "screens");
 mkdirSync(out, { recursive: true });
 
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -27,7 +27,7 @@ async function reset() {
   });
 }
 
-const APPLY = "**/api/v1/plugins/bb-box/rpc/config.apply";
+const APPLY = "**/api/v1/plugins/alia-box/rpc/config.apply";
 const browser = await chromium.launch();
 const shots = [];
 
@@ -38,7 +38,7 @@ async function shot(page, name) {
 }
 
 async function open(page, hash, heading) {
-  await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   await page.getByRole("heading", { name: heading, exact: true }).waitFor();
 }
 
@@ -64,9 +64,9 @@ for (const scheme of ["light", "dark"]) {
     await page.getByRole("button", { name: "Keep mine" }).click();
     await page.route(APPLY, (route) => route.abort("failed"), { times: 1 });
     await page.getByRole("region", { name: "Save the Monitor" }).getByRole("button", { name: "Save", exact: true }).click();
-    await page.getByText(/^Save not confirmed: BB Box has no receipt for it yet/).waitFor();
+    await page.getByText(/^Save not confirmed: ALIA Box has no receipt for it yet/).waitFor();
     await shot(page, `monitor-not-confirmed-${tag}`);
-    await page.getByRole("button", { name: "BB Box settings" }).click();
+    await page.getByRole("button", { name: "VesnALIA Box settings" }).click();
     await page.locator('[data-row-key="option-monitor"]').waitFor();
     await shot(page, `overview-unsaved-${tag}`);
 

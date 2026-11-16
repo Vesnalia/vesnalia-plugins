@@ -3,10 +3,10 @@
   "schemaVersion": 2,
   "name": "kujo",
   "displayName": "Kujo",
-  "description": "Kujo design-system adapters for bb.",
+  "description": "Kujo design-system adapters for VesnALIA.",
   "plugins": [
     {
-      "id": "bb-kujo",
+      "id": "alia-kujo",
       "displayName": "Kujo",
       "description": "A mechanical workspace skin based on Kujo and SiteKit.",
       "icon": {

@@ -1,6 +1,6 @@
 ## What you get
 
-A real notes app lives inside bb, one keystroke away. `Ctrl+'` opens a
+A real notes app lives inside VesnALIA, one keystroke away. `Ctrl+'` opens a
 draggable window that floats over whatever you are reading; `Ctrl+Shift+'`
 opens a one-line capture bar that saves a thought and disappears. Any note can
 pop out as a sticky card that stays on screen while you work.
@@ -36,8 +36,8 @@ becomes a filterable tag.
 Agents can search, read, append, and keep the thread scratchpad current
 through five tools, so findings land on the pad you are already watching.
 `@note` mentions pull a note into a prompt, and the `+` menu inserts one into
-the draft. The `bb notes` command covers the same ground from a shell,
-including `bb notes export` and `bb notes import`, which round-trip every note
+the draft. The `alia notes` command covers the same ground from a shell,
+including `alia notes export` and `alia notes import`, which round-trip every note
 as a markdown file with front matter.
 
 ## Safety net
@@ -48,7 +48,7 @@ collected automatically.
 
 ## Requirements
 
-Requires bb 0.49 or newer. No account, no API key, and no external service —
-notes live in a SQLite database inside bb's own data directory, and nothing
+Requires VesnALIA 0.49 or newer. No account, no API key, and no external service —
+notes live in a SQLite database inside VesnALIA's own data directory, and nothing
 leaves the machine. Stickies are a desktop surface; on a phone the window
 becomes a full-height sheet instead.

@@ -15,11 +15,11 @@ sources:
 ---
 # Session context
 
-TL;DR: On BB builds with the experimental session-policy extension, rules can filter BB plugins, skills, MCP servers and CLI plugins per global/project/section scope and control selected instruction switches (`session-policy-server.ts:52-68`, `session-policy.ts:16-30`).
+TL;DR: On VesnALIA builds with the experimental session-policy extension, rules can filter VesnALIA plugins, skills, MCP servers and CLI plugins per global/project/section scope and control selected instruction switches (`session-policy-server.ts:52-68`, `session-policy.ts:16-30`).
 
 ## Purpose
 
-The server stores rules and supplies a resolved per-thread policy to BB core; the UI hides the feature when the extension is unavailable (`session-policy-server.ts:52-68`, `session-policy-server.ts:144-150`).
+The server stores rules and supplies a resolved per-thread policy to VesnALIA core; the UI hides the feature when the extension is unavailable (`session-policy-server.ts:52-68`, `session-policy-server.ts:144-150`).
 
 ## How it works
 
@@ -30,7 +30,7 @@ The server stores rules and supplies a resolved per-thread policy to BB core; th
 6. For a thread, the server maps its host and environment path to the deepest real section folder, then gathers policy layers nearest first (`session-policy-server.ts:130-142`, `session-policy-server.ts:102-128`).
 7. Each group resolves independently. An `all` setting can lift a parent restriction; `allow` and `deny` carry selected names (`session-policy.ts:118-170`).
 8. The server converts the effective policy into the core format and sends `null` when there is no restriction (`session-policy.ts:172-202`).
-9. Inventory combines BB plugin metadata, project skills and host-discovered MCP/CLI plugins; failures from optional inventory sources return empty lists (`session-policy-server.ts:178-241`).
+9. Inventory combines VesnALIA plugin metadata, project skills and host-discovered MCP/CLI plugins; failures from optional inventory sources return empty lists (`session-policy-server.ts:178-241`).
 
 ### `SessionPolicyEditor` and `GroupRow`
 
@@ -60,7 +60,7 @@ Inventory entries are presentation choices, not validation gates: selected names
 
 | Switch | Effect |
 |---|---|
-| `userInstructions` | BB-wide `<dataDir>/AGENTS.md` inclusion |
+| `userInstructions` | ALIA-wide `<dataDir>/AGENTS.md` inclusion |
 | `projectInstructions` | Project instruction file inclusion |
 | `claudeAiSync` | Claude account plugin/skill synchronization |
 
@@ -70,16 +70,16 @@ Schema limits names to 200 characters and 500 entries per group; the four filter
 
 | Failure | Result |
 |---|---|
-| BB core extension absent | Capability is false; policy resolver is not registered (`session-policy-server.ts:52-68`, `session-policy-server.ts:144-150`). |
+| VesnALIA core extension absent | Capability is false; policy resolver is not registered (`session-policy-server.ts:52-68`, `session-policy-server.ts:144-150`). |
 | Stored policy is invalid JSON/schema | Reader returns an empty policy (`session-policy-server.ts:76-86`). |
 | Inventory source is unavailable | That inventory source returns an empty list; other sources remain usable (`session-policy-server.ts:194-224`). |
 
 ## Business rules
 
 - Inheritance order is section, ancestors, project, global (`session-policy-server.ts:102-128`).
-- Required items cannot be removed: `environment-project-checkout`, `project-folders` and `bb-bridge` (`session-policy.ts:32-47`, `session-policy.ts:118-141`).
-- The policy is enforced only when BB exposes `experimental_vkSessionPolicy` (`session-policy-server.ts:52-68`, `session-policy-server.ts:144-150`).
-- CLI support varies: Claude Code and Codex support all four groups; OpenCode lacks native CLI plugins; Cursor supports BB plugins and MCP servers (`session-policy.ts:204-210`).
+- Required items cannot be removed: `environment-project-checkout`, `project-folders` and `alia-bridge` (`session-policy.ts:32-47`, `session-policy.ts:118-141`).
+- The policy is enforced only when VesnALIA exposes `experimental_vkSessionPolicy` (`session-policy-server.ts:52-68`, `session-policy-server.ts:144-150`).
+- CLI support varies: Claude Code and Codex support all four groups; OpenCode lacks native CLI plugins; Cursor supports VesnALIA plugins and MCP servers (`session-policy.ts:204-210`).
 - Invalid stored JSON falls back to an empty policy (`session-policy-server.ts:76-86`).
 
 ## Public API
@@ -88,11 +88,11 @@ Schema limits names to 200 characters and 500 entries per group; the four filter
 |---|---|---|
 | `session_policy_capability` | Report enforcement availability | `server.ts:502-505`, `server.ts:2094-2096` |
 | `session_policy_read`, `session_policy_save` | Read/save policy at a scope | `server.ts:506-521`, `server.ts:2097-2102` |
-| `session_policy_inventory` | List selectable names and BB plugin contributions | `server.ts:522-526`, `server.ts:2103`, `session-policy-server.ts:178-241` |
+| `session_policy_inventory` | List selectable names and VesnALIA plugin contributions | `server.ts:522-526`, `server.ts:2103`, `session-policy-server.ts:178-241` |
 
 ## Gotchas
 
-- Saving a policy on stock BB persists it, but the plugin does not register the core resolver without the experimental extension (`session-policy-server.ts:52-68`).
+- Saving a policy on stock VesnALIA persists it, but the plugin does not register the core resolver without the experimental extension (`session-policy-server.ts:52-68`).
 - CLI support is group-specific; the policy editor’s saved values do not mean every CLI honors every group (`session-policy.ts:204-210`).
 
 <!-- lane-pilot:backlinks -->

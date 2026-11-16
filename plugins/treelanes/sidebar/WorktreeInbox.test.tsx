@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { toast } from "sonner";
 import { fixture } from "./test-fixtures";
 const app = await loadPluginApp(() => import("../app"));
@@ -12,7 +12,7 @@ const props = {
   isCompactViewport: false,
   onNavigate: () => {},
   searchQuery: "",
-  Original: () => <p>BB fallback</p>,
+  Original: () => <p>VesnALIA fallback</p>,
 };
 const threads = [
   fixture("a", "one"),
@@ -165,7 +165,7 @@ it("repairs a saved child main to its root once", async () => {
   expect(info.mock.calls).toEqual([["Main thread changed to b."]]);
   info.mockRestore();
 });
-it("falls back to BB when lifecycle data cannot load", async () => {
+it("falls back to VesnALIA when lifecycle data cannot load", async () => {
   renderSlot(slot, props, {
     sidebarThreads: { status: "ready", threads, projects: [] },
     rpc: {
@@ -176,7 +176,7 @@ it("falls back to BB when lifecycle data cannot load", async () => {
       },
     },
   });
-  expect(await screen.findByText("BB fallback")).toBeDefined();
+  expect(await screen.findByText("VesnALIA fallback")).toBeDefined();
   expect(screen.queryByText("No threads yet")).toBeNull();
 });
 
@@ -203,7 +203,7 @@ it("reloads lifecycle state when the connection returns", async () => {
       },
     },
   });
-  expect(await screen.findByText("BB fallback")).toBeDefined();
+  expect(await screen.findByText("VesnALIA fallback")).toBeDefined();
   online = true;
   await view.behavior.setRealtimeConnectionState("reconnecting");
   await view.behavior.setRealtimeConnectionState("connected");

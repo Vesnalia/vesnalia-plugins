@@ -2,8 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, within } from "@testing-library/react";
-import { renderSlot, type PluginSdkTestFakes, type RenderSlotOptions } from "@get-bb/plugin-sdk/testing/app";
-import { useSdk, type PluginProvidersState, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { renderSlot, type PluginSdkTestFakes, type RenderSlotOptions } from "@vesnalia/plugin-sdk/testing/app";
+import { useSdk, type PluginProvidersState, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { PullRequest } from "../src/pull-request";
 import { InfoCardProvider } from "../src/info-card";
 import { resetInfoCache } from "../src/info-data";
@@ -175,7 +175,7 @@ describe("info card", () => {
     expect(view.getByText("#12 Open").parentElement!.textContent).toBe("#12 Open · Checks passing · Approved");
   });
 
-  it("reads git status from bb's Git plugin after 250 ms, reuses it when reopened, and marks failures unavailable", async () => {
+  it("reads git status from VesnALIA's Git plugin after 250 ms, reuses it when reopened, and marks failures unavailable", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
     vi.setSystemTime(NOW);
     const calls: string[] = [];
@@ -213,20 +213,20 @@ describe("info card", () => {
     expect(within(card()!).getByText(/· 21 files/)).toBeTruthy();
   });
 
-  it("marks git changes unavailable when bb's Git plugin fails a row or cannot answer", async () => {
+  it("marks git changes unavailable when VesnALIA's Git plugin fails a row or cannot answer", async () => {
     const failed = mount("glance", { status: async ({ keys }) => Object.fromEntries(keys.map((key) => [key, { outcome: "failed", message: "git crashed" }])) });
     focus(failed.link);
     await screen.findByRole("tooltip");
     expect(await within(card()!).findByText("Unavailable")).toBeTruthy();
     failed.slot.unmount();
     resetInfoCache();
-    const missing = mount("glance", { status: async () => { throw new Error("bb--git is disabled"); } });
+    const missing = mount("glance", { status: async () => { throw new Error("alia--git is disabled"); } });
     focus(missing.link);
     await screen.findByRole("tooltip");
     expect(await within(card()!).findByText("Unavailable")).toBeTruthy();
   });
 
-  it("colours each pull request state and checks result with bb's state tokens", async () => {
+  it("colours each pull request state and checks result with VesnALIA's state tokens", async () => {
     const cases = [
       [{ state: "merged", checks: { state: "failing" } }, "sb-info-tone-merged", "Checks failing", "sb-info-tone-bad"],
       [{ state: "closed", checks: { state: "pending" } }, "sb-info-tone-bad", "Checks pending", "sb-info-tone-warn"],

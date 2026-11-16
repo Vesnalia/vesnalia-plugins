@@ -1,7 +1,7 @@
 import { LANGUAGE_OPTIONS, LANGUAGE_OPTION_LABELS } from "./src/messages";
 import { pluginError } from "./src/plugin-error";
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { rpcContract } from "./src/contract";
 import { ACTION, ACTION_LABEL, type LinkedThread } from "./src/model";
@@ -18,10 +18,10 @@ const bindingSchema = z.object({
   storeId: storeIdSchema.nullable().default(null),
 });
 
-export default function plugin(bb: BbPluginApi) {
-  const sdk = bb.sdk;
-  const host = createHostClient(bb);
-  bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  const sdk = alia.sdk;
+  const host = createHostClient(alia);
+  alia.settings.define({
     language: {
       type: "select",
       label: "Language",
@@ -112,7 +112,7 @@ export default function plugin(bb: BbPluginApi) {
     );
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     sources: async ({ projectId, threadId, environmentId }) => {
       const projects = await sdk.projects.list();
       let preferredEnvironmentId: string | null = null;
@@ -220,7 +220,7 @@ export default function plugin(bb: BbPluginApi) {
         { hostId: source.hostId },
       );
       await live.refresh(environmentId);
-      bb.rpc.experimental_invalidate([liveTags.environment(environmentId)]);
+      alia.rpc.experimental_invalidate([liveTags.environment(environmentId)]);
       return null;
     },
     detail: async ({ environmentId, changeId, storeId }) => {
@@ -290,7 +290,7 @@ export default function plugin(bb: BbPluginApi) {
         pluginMetadata: { environmentId, changeId, storeId: selected.storeId },
         visibility: "visible",
       });
-      bb.rpc.experimental_invalidate([
+      alia.rpc.experimental_invalidate([
         liveTags.threads(environmentId),
         liveTags.changes(environmentId),
       ]);
@@ -309,7 +309,7 @@ export default function plugin(bb: BbPluginApi) {
         threadId,
         set: { environmentId, changeId, storeId: selected.storeId },
       });
-      bb.rpc.experimental_invalidate([
+      alia.rpc.experimental_invalidate([
         liveTags.threads(environmentId),
         liveTags.changes(environmentId),
         liveTags.binding(threadId),
@@ -318,9 +318,9 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  const live = registerLiveUpdates(bb, host);
+  const live = registerLiveUpdates(alia, host);
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const binding = bindingSchema.safeParse(context.pluginMetadata);
     if (
       !binding.success ||

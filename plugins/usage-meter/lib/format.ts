@@ -1,7 +1,7 @@
 // lib/format.ts — numbers and times as the Usage page prints them.
 //
 // Two locales, and the split is deliberate. Dates and clock times are en-GB:
-// "21 Aug · 17:47" is the order bb writes them in everywhere else. Compact token
+// "21 Aug · 17:47" is the order VesnALIA writes them in everywhere else. Compact token
 // counts are en-US, because en-GB abbreviates them the British way — "556.4m",
 // "1.7bn" — and this page prints "2h 38m" two rows above, where a lower-case "m"
 // already means minutes. Claude Code's own extension writes "1.6B" as well.
@@ -99,7 +99,7 @@ export function weekday(at: number | Date): string {
  * over separately so the column can shrink it and keep the tail whole.
  *
  * The split point is the last "/" of a path or the last ":" of a namespaced
- * skill ("bb-global-skills:automations"); a name with neither is all tail.
+ * skill ("alia-global-skills:automations"); a name with neither is all tail.
  */
 export function splitTail(value: string): { head: string; tail: string } {
   const at = Math.max(value.lastIndexOf("/"), value.lastIndexOf(":"));

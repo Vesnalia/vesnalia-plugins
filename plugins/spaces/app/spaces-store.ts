@@ -2,7 +2,7 @@
 // outside React and have no RPC hook, so the mounted header publishes its RPC
 // client and latest state here.
 import { useSyncExternalStore } from "react";
-import type { PluginRpcClient } from "@get-bb/plugin-sdk/app";
+import type { PluginRpcClient } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, SpacesState } from "../server";
 
 export type SpacesRpc = PluginRpcClient<typeof rpcContract>;

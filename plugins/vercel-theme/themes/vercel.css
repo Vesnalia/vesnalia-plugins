@@ -1,5 +1,5 @@
 /*
- * Vercel-inspired palette for bb.
+ * Vercel-inspired palette for alia.
  * Light and dark modes use Vercel's characteristic neutral ramp, Geist type,
  * restrained blue interaction color, and high-clarity one-pixel boundaries.
  */
@@ -276,7 +276,7 @@
 }
 
 /* sugar-high powers lightweight chat code outside the Shiki diff viewer. */
-.dark .bb-code-highlight.bb-code-highlight {
+.dark .alia-code-highlight.alia-code-highlight {
   --sh-identifier: #ededed;
   --sh-sign: #a1a1a1;
   --sh-property: #52a8ff;
@@ -288,7 +288,7 @@
   --sh-jsxliterals: #52a8ff;
 }
 
-.light .bb-code-highlight.bb-code-highlight {
+.light .alia-code-highlight.alia-code-highlight {
   --sh-identifier: #171717;
   --sh-sign: #666666;
   --sh-property: #006fee;

@@ -1,12 +1,12 @@
 # Plan quotas
 
-Open **Provider usage** in BB's sidebar footer. Select the machine running ZCode, then **All** or an individual ZCode source.
+Open **Provider usage** in VesnALIA's sidebar footer. Select the machine running ZCode, then **All** or an individual ZCode source.
 
 <figure class="screenshot narrow">
 
-![Coding Plan quota windows and the separate Start Plan token balance in BB](/screenshots/plan-quotas.png)
+![Coding Plan quota windows and the separate Start Plan token balance in VesnALIA](/screenshots/plan-quotas.png)
 
-<figcaption>A user-supplied BB screenshot. Values are an observation, not a current balance or a guaranteed quota.</figcaption>
+<figcaption>A user-supplied VesnALIA screenshot. Values are an observation, not a current balance or a guaranteed quota.</figcaption>
 </figure>
 
 ## Reading the rows

@@ -5,7 +5,7 @@ import { StaleNote } from "@/components/sections/StaleNote";
 import { Button } from "@/components/ui/button";
 
 /**
- * Updates bb applies in place; one job each, or all at once (enabled plugins
+ * Updates VesnALIA applies in place; one job each, or all at once (enabled plugins
  * only). A plugin with an out-of-range update pending waits for it first.
  */
 export function CompatibleSection({

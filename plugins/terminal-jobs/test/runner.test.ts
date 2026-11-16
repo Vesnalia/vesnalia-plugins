@@ -46,7 +46,7 @@ function runnerArguments(artifactRoot: string, jobId: string, command: string[])
 function run(artifactRoot: string, jobId: string, command: string[]) {
   return spawnSync(process.execPath, runnerArguments(artifactRoot, jobId, command), {
     encoding: "utf8",
-    env: { ...process.env, BB_TERMINAL_SESSION_ID: "term_fixture" },
+    env: { ...process.env, ALIA_TERMINAL_SESSION_ID: "term_fixture" },
   });
 }
 
@@ -112,7 +112,7 @@ describe("bundled terminal-job runner", () => {
     const artifactRoot = await root();
     const jobId = "job_no_terminal_env";
     const env = { ...process.env };
-    delete env.BB_TERMINAL_SESSION_ID;
+    delete env.ALIA_TERMINAL_SESSION_ID;
     const result = spawnSync(process.execPath, runnerArguments(artifactRoot, jobId, ["true"]), {
       encoding: "utf8",
       env,
@@ -241,7 +241,7 @@ describe("bundled terminal-job runner", () => {
     );
     const result = spawnSync("/bin/sh", ["-c", command], {
       encoding: "utf8",
-      env: { ...process.env, BB_TERMINAL_SESSION_ID: "term_shell" },
+      env: { ...process.env, ALIA_TERMINAL_SESSION_ID: "term_shell" },
     });
 
     expect(result.status).toBe(6);

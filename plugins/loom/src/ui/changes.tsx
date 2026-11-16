@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { experimental_Diff as Diff, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Diff as Diff, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { ChangedFile, ChangeSource, ChangesView, ControlAction, FilePatch, ProjectView, RepoOverview, rpcContract } from "../contract";
 import { formatDuration, isMultiRepoProject, readyToLand } from "../format";
 import { BUTTON, ConfirmButton, HEADING, RepoChip, StateBadge, messageOf, plural } from "./common";
@@ -254,7 +254,7 @@ function FileRow(props: { slug: string; source: ChangeSource; file: ChangedFile;
 // ---------------------------------------------------------------- the selected source
 
 function SourceIntro({ changes, source, view, busy, onControl }: { changes: ChangesView; source: ChangeSource; view: ProjectView; busy: boolean; onControl(action: ControlAction, repo?: string): void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { overview } = view;
   const files = source.files ?? [];
   const card = view.board.find((entry) => entry.key === source.key);

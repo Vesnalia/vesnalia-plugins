@@ -2,7 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import postcss from "postcss";
 
 const cssPath = new URL("../dist/app.css", import.meta.url);
-const pluginRoot = ':where([data-bb-plugin="wakatime"], [data-bb-plugin-root]:not([data-bb-plugin]))';
+const pluginRoot = ':where([data-alia-plugin="wakatime"], [data-alia-plugin-root]:not([data-alia-plugin]))';
 
 function splitSelectors(value) {
   const selectors = [];
@@ -104,12 +104,12 @@ root.walkAtRules("scope", (rule) => scopes.push(rule));
 if (scopes.length === 0) {
   let hasPrefixedRules = false;
   root.walkRules((rule) => {
-    if (/\[data-bb-plugin=(?:"wakatime"|wakatime)\]/.test(rule.selector)) {
+    if (/\[data-alia-plugin=(?:"wakatime"|wakatime)\]/.test(rule.selector)) {
       hasPrefixedRules = true;
     }
   });
   if (!hasPrefixedRules) {
-    throw new Error("bb's generated plugin scope was not found; refusing to emit an incomplete fallback");
+    throw new Error("VesnALIA's generated plugin scope was not found; refusing to emit an incomplete fallback");
   }
   console.log("CSS is already flattened and plugin-prefixed; legacy fallback is not needed.");
   process.exit(0);

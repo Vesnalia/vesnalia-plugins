@@ -2,12 +2,12 @@
 layout: home
 title: Documentation · Документация
 hero:
-  name: ZCode for BB
+  name: ZCode for VesnALIA
   text: Your plans. Your models.
   tagline: CLI / ACP · Coding Plan · Start Plan · Windows & macOS
   image:
     src: /logo.svg
-    alt: ZCode for BB
+    alt: ZCode for VesnALIA
   actions:
     - theme: brand
       text: English guide
@@ -17,9 +17,9 @@ hero:
       link: /ru/
 features:
   - title: CLI first / Приоритет CLI
-    details: The separate zcode-acp runtime connects ZCode to BB. Отдельный модуль zcode-acp соединяет ZCode и BB.
+    details: The separate zcode-acp runtime connects ZCode to VesnALIA. Отдельный модуль zcode-acp соединяет ZCode и VesnALIA.
   - title: Plans & providers / Планы и провайдеры
     details: Coding Plan, Start Plan and personal API connections keep their own model routes. Отдельные источники и маршруты моделей.
-  - title: Quotas in BB / Квоты в BB
+  - title: Quotas in VesnALIA / Квоты в VesnALIA
     details: Two plan rows in the standard usage panel. Две строки планов в стандартной панели использования.
 ---

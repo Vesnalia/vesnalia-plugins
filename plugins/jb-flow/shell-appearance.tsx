@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useSettings } from "@get-bb/plugin-sdk/app";
+import { useSettings } from "@vesnalia/plugin-sdk/app";
 import "./shell-appearance.css";
 
 const SHELL_CLASS = "jb-flow-shell";
@@ -27,7 +27,7 @@ export function mountShellAppearance({ signal }: { signal: AbortSignal }) {
 /** The public settings hook bridges only the appearance preference to the script. */
 export function ShellAppearancePreference() {
   const { values, isLoading } = useSettings();
-  // Off by default: only an explicit opt-in restyles BB.
+  // Off by default: only an explicit opt-in restyles VesnALIA.
   const enabled = values?.polishShell === true;
   useEffect(() => {
     if (!isLoading)

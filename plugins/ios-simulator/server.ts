@@ -1,16 +1,16 @@
-// bb-plugin-ios-simulator — backend entry.
+// alia-plugin-ios-simulator — backend entry.
 //
-// Streams Apple's iOS Simulator into a BB thread panel and gives agents
+// Streams Apple's iOS Simulator into a VesnALIA thread panel and gives agents
 // native tools to boot, install, screenshot, and drive the same device. The
 // heavy lifting (framebuffer capture, HID injection) is serve-sim, run as a
-// child process per device; this file wires BB surfaces to the service.
+// child process per device; this file wires VesnALIA surfaces to the service.
 import {
   PluginCliError,
   cliCommand,
   defineCli,
   defineRpcContract,
-  type BbPluginApi,
-} from "@get-bb/plugin-sdk";
+  type AliaPluginApi,
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   HARDWARE_BUTTON_NAMES,
@@ -176,8 +176,8 @@ export interface PluginDependencies {
 }
 
 export function createPlugin(dependencies: PluginDependencies = {}) {
-  return async function plugin(bb: BbPluginApi) {
-    const settings = bb.settings.define({
+  return async function plugin(alia: AliaPluginApi) {
+    const settings = alia.settings.define({
       agentControl: {
         type: "select",
         label: "Agent control",
@@ -227,19 +227,19 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
     if (!dependencies.streams) {
       try {
         const entry = resolveServeSimEntry({ override: current.serveSimPath });
-        installNativePatch(entry?.path ?? null, { log: (message) => bb.log.info(message) });
+        installNativePatch(entry?.path ?? null, { log: (message) => alia.log.info(message) });
         nativePatched = nativePatchStatus(entry?.path ?? null).installed;
       } catch (error) {
-        bb.log.warn(`could not install the patched capture module: ${describe(error)}`);
+        alia.log.warn(`could not install the patched capture module: ${describe(error)}`);
       }
     }
     const streams =
       dependencies.streams ??
       new StreamManager({
-        log: bb.log,
+        log: alia.log,
         node: () => resolveNodeCommand({ override: current.nodePath }),
         serveSim: () => resolveServeSimEntry({ override: current.serveSimPath }),
-        onChange: () => { syncRecorders(); bb.realtime.publish(CHANNELS.sessions, {}); },
+        onChange: () => { syncRecorders(); alia.realtime.publish(CHANNELS.sessions, {}); },
         // 0 = automatic: the forced-capture pacer is only needed with the
         // stock serve-sim capture; the patched module polls on its own.
         captureHz: () => (current.captureHz > 0 ? current.captureHz : nativePatched ? 0 : 60),
@@ -248,9 +248,9 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       simctl,
       exec,
       streams,
-      kv: bb.storage.kv,
-      log: bb.log,
-      publish: (channel, payload) => { syncRecorders(); bb.realtime.publish(channel, payload); },
+      kv: alia.storage.kv,
+      log: alia.log,
+      publish: (channel, payload) => { syncRecorders(); alia.realtime.publish(channel, payload); },
       idleShutdownMs: async () => current.idleShutdownMinutes * 60_000,
       screenshotMaxDimension: async () => current.screenshotMaxDimension,
       deviceAvailableTo: (threadId, udid) => { const owner = controls.state(udid); return !owner || owner.threadId === threadId; },
@@ -263,7 +263,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
         kind: "control", actor: "system", label: control ? `${control.mode === "human" ? "Human" : "Agent"} took control` : "Control released",
         ...(control ? { threadId: control.threadId } : {}),
       });
-      bb.realtime.publish("control-changed", { udid, control });
+      alia.realtime.publish("control-changed", { udid, control });
     });
     const recordedDevices = new Set<string>();
     const endedThreads = new Set<string>();
@@ -301,8 +301,8 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       catch (error) { event(udid, "human", threadId, `${label}: ${describe(error)}`, "error"); throw error; }
       finally { operation.release(); }
     }
-    registerAndroid(bb, { agentControl: () => normalizeAgentControl(current.agentControl) });
-    registerDeviceBezels(bb, { exec, simctl });
+    registerAndroid(alia, { agentControl: () => normalizeAgentControl(current.agentControl) });
+    registerDeviceBezels(alia, { exec, simctl });
 
     async function readiness(): Promise<SimulatorState["ready"]> {
       const problems: string[] = [];
@@ -334,7 +334,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
     }
 
     // ----- RPC: the panel's data plane -----------------------------------
-    bb.rpc.register(rpcContract, {
+    alia.rpc.register(rpcContract, {
       async state({ threadId }) {
         await service.ready();
         const ready = await readiness();
@@ -428,7 +428,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       async saveReplay({ threadId, udid }) {
         assertAttached(threadId, udid);
         const clip = replay.save(udid, threadId);
-        bb.realtime.publish("replay-changed", { udid });
+        alia.realtime.publish("replay-changed", { udid });
         return clip;
       },
       async timeline({ threadId, udid }) {
@@ -442,7 +442,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
     });
 
     // ----- HTTP: the live stream, screenshots, and the input relay --------
-    bb.http.route("GET", "/stream", async (c) => {
+    alia.http.route("GET", "/stream", async (c) => {
       const udid = c.req.query("udid") ?? "";
       if (!streams.get(udid)) {
         return c.json({ error: `No stream is running for ${udid || "(missing udid)"}.` }, 404);
@@ -463,7 +463,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
 
     // Hardware H.264 (AVCC records, see lib/avcc.ts): the panel's preferred
     // stream. MJPEG above stays as the fallback for clients without WebCodecs.
-    bb.http.route("GET", "/video", async (c) => {
+    alia.http.route("GET", "/video", async (c) => {
       const udid = c.req.query("udid") ?? "";
       if (!streams.get(udid)) {
         return c.json({ error: `No stream is running for ${udid || "(missing udid)"}.` }, 404);
@@ -481,7 +481,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       });
     });
 
-    bb.http.route("GET", "/screenshot", async (c) => {
+    alia.http.route("GET", "/screenshot", async (c) => {
       const udid = c.req.query("udid") ?? "";
       if (udid === "") return c.json({ error: "udid is required" }, 400);
       try {
@@ -500,7 +500,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       }
     });
 
-    bb.http.route("GET", "/replay", async (c) => {
+    alia.http.route("GET", "/replay", async (c) => {
       const udid = c.req.query("udid") ?? "";
       const threadId = c.req.query("threadId") ?? "";
       const id = c.req.query("id") ?? "";
@@ -512,7 +512,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       return new Response(JSON.stringify(clip), { headers });
     });
 
-    bb.http.experimental_websocket("/hid", ({ url }) => {
+    alia.http.experimental_websocket("/hid", ({ url }) => {
       const udid = url.searchParams.get("udid") ?? "";
       const threadId = url.searchParams.get("threadId") ?? "";
       let upstream: Awaited<ReturnType<StreamManager["openHid"]>> | null = null;
@@ -615,7 +615,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
           `The user declined agent control of ${device.name}. Ask them to tap through the simulator panel, or to allow agent control from the panel.`,
         );
       }
-      const answer = await bb.ui.requestInput(
+      const answer = await alia.ui.requestInput(
         {
           threadId,
           rendererId: "device-consent",
@@ -692,7 +692,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       );
     const coordinate = z.number().min(0).max(1);
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_list_devices",
       description:
         "List the iOS simulators Xcode provides with their runtime, state (Booted or Shutdown), udid, and which one is attached to this thread.",
@@ -716,7 +716,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_attach",
       description:
         "Boot an iOS simulator if needed, start streaming it into the iOS Simulator panel beside this thread, and make it this thread's device. Call it before building when the task is about running, seeing, or testing an iOS app.",
@@ -748,7 +748,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_screenshot",
       description:
         "Capture the attached simulator's screen as an image. Use it after launching the app and after every UI change to verify the result.",
@@ -771,7 +771,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_describe_ui",
       description:
         "List the accessibility elements on the attached simulator's screen: role, label, value, frame, and the normalized center to pass to ios_sim_tap. Prefer this over guessing coordinates.",
@@ -791,7 +791,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_tap",
       description:
         "Tap the attached simulator. Give either `element` (an accessibility label, value, or id from ios_sim_describe_ui) or normalized `x`/`y` in 0..1. Set holdMs for a long press.",
@@ -830,7 +830,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_swipe",
       description:
         "Swipe or scroll on the attached simulator. Give a `direction` (the content moves that way from the screen center) or explicit normalized from/to points.",
@@ -866,7 +866,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_type",
       description:
         "Type into the focused field using the simulator pasteboard (supports Unicode; \\n presses Return and \\t presses Tab). Tap the field first. Set method to keys for US-keyboard ASCII events when an app blocks paste.",
@@ -880,7 +880,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_paste",
       description: "Paste literal text, including Unicode and line breaks, into the focused simulator field. Tap the field first. Uses the guest pasteboard and Command-V without opening Device Hub.",
       presentation: { label: { pending: "Pasting text", completed: "Pasted text" } },
@@ -893,7 +893,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_press_button",
       description:
         "Press a hardware button on the attached simulator: home, lock (power), volume-up, volume-down, action, or side-button.",
@@ -907,7 +907,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_rotate",
       description: "Rotate the attached simulator to portrait, portrait_upside_down, landscape_left, or landscape_right.",
       presentation: { label: { pending: "Rotating", completed: "Rotated" } },
@@ -920,7 +920,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_install_and_launch",
       description:
         "Install a built .app bundle on the attached simulator and launch it (relaunching if it is already running). Reads the bundle id from the app's Info.plist when omitted.",
@@ -944,7 +944,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_launch",
       description: "Launch (or relaunch) an installed app on the attached simulator by bundle id.",
       presentation: { label: { pending: "Launching app", completed: "Launched app" } },
@@ -967,7 +967,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_open_url",
       description: "Open a URL on the attached simulator: a deep link into your app or a web page in Safari.",
       presentation: { label: { pending: "Opening URL", completed: "Opened URL" } },
@@ -980,7 +980,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_set_appearance",
       description: "Switch the attached simulator between light and dark appearance.",
       presentation: { label: { pending: "Setting appearance", completed: "Set appearance" } },
@@ -993,7 +993,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_repair_input",
       description:
         "Take simulator input back from Xcode 27's Device Hub when taps and keys are being ignored. Restarts SpringBoard and closes running apps on the device, so relaunch the app afterwards. Only needed when another tool reports input is captured.",
@@ -1009,7 +1009,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_session",
       description: "Read who controls this simulator, replay buffer health, saved replay metadata, and recent input/app diagnostics. Does not take control from a human or another thread.",
       parameters: z.object({ device: deviceParam }),
@@ -1021,20 +1021,20 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_save_replay",
       description: "Save the last 30 seconds of the attached iOS video and synchronized input/app diagnostics. The replay stays in bounded memory until detach/reload; view or download it in the Simulator panel.",
       parameters: z.object({ device: deviceParam }),
       async execute({ device }, ctx) {
         return withDevice(ctx, device, { consent: false }, async (dev) => {
           const clip = replay.save(dev.udid, ctx.threadId);
-          bb.realtime.publish("replay-changed", { udid: dev.udid });
+          alia.realtime.publish("replay-changed", { udid: dev.udid });
           return `Replay saved. Open Replay in the Simulator panel to view or download it. ${JSON.stringify(clip)}`;
         });
       },
     });
 
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: "ios_sim_detach",
       description:
         "Stop streaming this thread's simulator. Set shutdown to also power the device off. Leave devices attached unless the user asks otherwise.",
@@ -1066,12 +1066,12 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       endedThreads.add(threadId);
       controls.releaseThread(threadId);
       service.releaseThread(threadId).catch((error) => {
-        bb.log.warn(`releasing simulators for ${threadId} failed: ${describe(error)}`);
+        alia.log.warn(`releasing simulators for ${threadId} failed: ${describe(error)}`);
       });
     };
-    bb.events.on("thread.archived", ({ thread }) => release(thread.id));
-    bb.events.on("thread.deleted", ({ thread }) => release(thread.id));
-    bb.events.on("thread.unarchived", ({ thread }) => { endedThreads.delete(thread.id); });
+    alia.events.on("thread.archived", ({ thread }) => release(thread.id));
+    alia.events.on("thread.deleted", ({ thread }) => release(thread.id));
+    alia.events.on("thread.unarchived", ({ thread }) => { endedThreads.delete(thread.id); });
 
     // ----- CLI ------------------------------------------------------------
     const threadOption = {
@@ -1079,10 +1079,10 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       description: "Thread id; defaults to the thread running the command",
     } as const;
     const jsonOption = { type: "boolean", description: "Machine-readable JSON output" } as const;
-    bb.cli.register(
+    alia.cli.register(
       defineCli({
         name: "ios-simulator",
-        summary: "List, attach, and release iOS simulators for BB threads",
+        summary: "List, attach, and release iOS simulators for VesnALIA threads",
         commands: {
           session: cliCommand({
             summary: "Read device control, replay status, and recent diagnostics as JSON",
@@ -1109,7 +1109,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
               const device = await service.resolveDevice(threadId, input.positionals.device, { signal: ctx.signal });
               assertAttached(threadId, device.udid);
               const clip = replay.save(device.udid, threadId);
-              bb.realtime.publish("replay-changed", { udid: device.udid });
+              alia.realtime.publish("replay-changed", { udid: device.udid });
               return { exitCode: 0, stdout: JSON.stringify(clip) };
             },
           }),
@@ -1220,7 +1220,7 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
               });
               const outPath =
                 input.options.out ??
-                `${(await import("node:os")).tmpdir()}/bb-ios-sim-${Date.now()}.mov`;
+                `${(await import("node:os")).tmpdir()}/alia-ios-sim-${Date.now()}.mov`;
               await simctl.recordVideo(device.udid, outPath, input.options.seconds, ctx.signal);
               return { exitCode: 0, stdout: outPath };
             },
@@ -1269,16 +1269,16 @@ export function createPlugin(dependencies: PluginDependencies = {}) {
       }),
     );
 
-    bb.onDispose(async () => {
+    alia.onDispose(async () => {
       controls.dispose();
       replay.dispose();
       await service.dispose();
     });
-    bb.log.info("iOS Simulator plugin loaded");
+    alia.log.info("iOS Simulator plugin loaded");
     // Streams die with the previous generation on reload; bring them back for
     // devices threads still hold so open panels do not go dark.
     service.restoreSessions().catch((error) => {
-      bb.log.warn(`restoring simulator streams failed: ${describe(error)}`);
+      alia.log.warn(`restoring simulator streams failed: ${describe(error)}`);
     });
   };
 }

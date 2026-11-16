@@ -1,11 +1,11 @@
-import type { PluginBrowserBbSdk, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginBrowserAliaSdk, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { GitStatus } from "./git-status";
 import { countStates, rowState, STATE_ORDER } from "./status";
 
-export type ExecutionOptions = Awaited<ReturnType<PluginBrowserBbSdk["threads"]["defaultExecutionOptions"]>>;
-export type Usage = NonNullable<Awaited<ReturnType<PluginBrowserBbSdk["threads"]["context"]>>["usage"]>;
-export type Outline = Awaited<ReturnType<PluginBrowserBbSdk["threads"]["conversationOutline"]>>;
-export type Interactions = Awaited<ReturnType<PluginBrowserBbSdk["threads"]["interactions"]["list"]>>;
+export type ExecutionOptions = Awaited<ReturnType<PluginBrowserAliaSdk["threads"]["defaultExecutionOptions"]>>;
+export type Usage = NonNullable<Awaited<ReturnType<PluginBrowserAliaSdk["threads"]["context"]>>["usage"]>;
+export type Outline = Awaited<ReturnType<PluginBrowserAliaSdk["threads"]["conversationOutline"]>>;
+export type Interactions = Awaited<ReturnType<PluginBrowserAliaSdk["threads"]["interactions"]["list"]>>;
 export type WorkspaceStatus = GitStatus;
 export interface Stat { insertions: number; deletions: number; files: number }
 export interface Changes { committed: Stat | null; uncommitted: Stat | null; ahead: number; behind: number; base: string | null }

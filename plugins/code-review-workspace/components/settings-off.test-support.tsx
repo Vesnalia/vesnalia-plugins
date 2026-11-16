@@ -2,7 +2,7 @@
 // with them off. Each render loads the plugin first; a test file using it mocks @pierre/diffs/react, which jsdom can't run.
 import { vi } from "vitest";
 import { within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultKnobs, KNOB_RANGES, type Knobs } from "../lib/knobs";
 import { defaultPreferences } from "../lib/review-preferences";
 
@@ -49,7 +49,7 @@ export function settingsOffRpc(knobs: Knobs, rpc: Record<string, unknown> = {}) 
   };
 }
 
-/** A 1400 × 900 window, where BB's title bar shows the review's commands; returns its undo. */
+/** A 1400 × 900 window, where VesnALIA's title bar shows the review's commands; returns its undo. */
 export function desktopWindow(): () => void {
   const original = globalThis.ResizeObserver;
   globalThis.ResizeObserver = class {
@@ -69,7 +69,7 @@ export function desktopWindow(): () => void {
   return () => { globalThis.ResizeObserver = original; matchMedia.mockRestore(); delete (root as { clientWidth?: number }).clientWidth; delete (root as { clientHeight?: number }).clientHeight; };
 }
 
-/** The review's page on its Overview, and BB's title bar as the host renders it, apart from the page. */
+/** The review's page on its Overview, and VesnALIA's title bar as the host renders it, apart from the page. */
 export async function renderReview(knobs: Knobs, rpc: Record<string, unknown> = {}) {
   const app = await loadPluginApp(() => import("../app"));
   const registration = app.navPanels[0]!;

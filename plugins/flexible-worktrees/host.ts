@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostContract } from "./contract";
 import { choices, liveBranches } from "./worktree/choices";
 import { create } from "./worktree/create";

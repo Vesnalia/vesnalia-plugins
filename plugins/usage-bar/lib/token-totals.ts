@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 /** Provider totals already include cached/reasoning tokens where applicable. */
 export function tokenDelta(total: number, last: number, previous?: number): number {
@@ -26,9 +26,9 @@ export function sumPeriods(rows: { createdAt: number; tokens: number }[], timeZo
   return { day, month };
 }
 
-export function createTokenTotals(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+export function createTokenTotals(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     "CREATE TABLE token_events (id TEXT PRIMARY KEY, created_at INTEGER NOT NULL, tokens INTEGER NOT NULL)",
     "CREATE INDEX token_events_date ON token_events(created_at)",
     "CREATE TABLE token_cursors (thread_id TEXT PRIMARY KEY, seq INTEGER NOT NULL, updated_at INTEGER NOT NULL)",
@@ -43,7 +43,7 @@ export function createTokenTotals(bb: BbPluginApi) {
   let fetchedAt = 0;
   let error: string | null = null;
   const controller = new AbortController();
-  bb.onDispose(() => controller.abort());
+  alia.onDispose(() => controller.abort());
 
   async function sync() {
     const seen = new Set<string>();
@@ -51,7 +51,7 @@ export function createTokenTotals(bb: BbPluginApi) {
     // Both lists include hidden workers; paging avoids the default list cap.
     for (const archived of [false, true]) {
       for (let offset = 0; ; offset += 100) {
-        const threads = await bb.sdk.threads.list({ archived, includeHidden: true, limit: 100, offset, signal: controller.signal });
+        const threads = await alia.sdk.threads.list({ archived, includeHidden: true, limit: 100, offset, signal: controller.signal });
         for (const thread of threads) {
           if (seen.has(thread.id)) continue;
           seen.add(thread.id);
@@ -60,7 +60,7 @@ export function createTokenTotals(bb: BbPluginApi) {
           let seq = saved?.seq ?? 0;
           try {
             while (true) {
-              const events = await bb.sdk.threads.events.list({
+              const events = await alia.sdk.threads.events.list({
                 threadId: thread.id, afterSeq: String(seq), order: "asc", limit: "100",
                 types: ["thread/tokenUsage/updated"], signal: controller.signal,
               });

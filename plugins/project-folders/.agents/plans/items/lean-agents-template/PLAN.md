@@ -2,7 +2,7 @@
 
 - [x] Accepted in Lane Pilot run `lprun_94fe112109c04e95be6ed6b833f6330c` (2026-10-09).
 
-The owner wants the default AGENTS.md templates the plugin writes into new projects and sections cut to what an agent cannot know by itself. An audit found: a contradiction (results go to `.bb/chats/<id>/artifacts/` vs "don't edit .bb/chats/"), owner-specific rules shipped to every user ("one person maintains", "commit straight to main, no branches or PRs", unconditional "deploy and restart"), the `.bb/chats` layout duplicated in both templates and in the plugin's own session instruction (`bb.agents.configure`, server.ts ~3619, which stays the single place for it), an imposed folder layout (docs/, src/, todo/, registry, STATE), and generic coding advice current models already follow.
+The owner wants the default AGENTS.md templates the plugin writes into new projects and sections cut to what an agent cannot know by itself. An audit found: a contradiction (results go to `.vesnalia/chats/<id>/artifacts/` vs "don't edit .vesnalia/chats/"), owner-specific rules shipped to every user ("one person maintains", "commit straight to main, no branches or PRs", unconditional "deploy and restart"), the `.vesnalia/chats` layout duplicated in both templates and in the plugin's own session instruction (`alia.agents.configure`, server.ts ~3619, which stays the single place for it), an imposed folder layout (docs/, src/, todo/, registry, STATE), and generic coding advice current models already follow.
 
 ## Change
 In `server.ts`, replace the bodies of `defaultProjectTemplate` (~line 104) and `defaultAgentsTemplate` (~line 77) with exactly these texts:

@@ -264,7 +264,7 @@ describe("stack frames", () => {
 });
 
 describe("paths", () => {
-  it("gives BB a workspace-relative path or none", () => {
+  it("gives VesnALIA a workspace-relative path or none", () => {
     expect(workspacePath("/repo/src/a.ts", "/repo")).toBe("src/a.ts");
     expect(workspacePath("file:///repo/src/a%20b.ts", "/repo/")).toBe("src/a b.ts");
     expect(workspacePath("./src/a.ts", null)).toBe("src/a.ts");

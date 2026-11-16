@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { Markdown, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { Markdown, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../../src/rpc-contract";
 import { linesOf, sameLocation, type CommentLocation } from "../../src/draft";
@@ -176,7 +176,7 @@ function ThreadCard({ targetKey, item, variant }: { targetKey: string; item: Thr
   const [sendNote, setSendNote] = useState<ReactNode>(null);
   const busy = useComments(targetKey, "busy").includes(item.id);
   const api = useWorkspaceFor(targetKey);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const inline = variant === "inline";
   // In a list, the row above it names who and what state, and folds it.
   const [shut, setShut] = useState(false);

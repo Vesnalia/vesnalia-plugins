@@ -8,7 +8,7 @@ import {
   loadPluginApp,
   renderSlot,
   type CapturedPluginApp,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import { TEMPLATE_SECTIONS, TEMPLATES } from "../lib/templates";
 import { toGraphFile } from "../server";
 
@@ -36,7 +36,7 @@ function panel(overrides: Record<string, unknown> = {}) {
               id: "code-review",
               name: "code-review",
               description: "Review changes",
-              scope: "bb-user",
+              scope: "alia-user",
             },
           ],
           error: null,
@@ -221,7 +221,7 @@ describe("Full screen", () => {
     );
     // The host renders Markdown; the harness stands in with a marked div, so
     // what can be checked here is that the question goes to it, whole.
-    const rendered = await slot.findByTestId("bb-markdown");
+    const rendered = await slot.findByTestId("alia-markdown");
     expect(rendered.textContent).toContain("| a.md | Projects |");
     expect(rendered.tagName).not.toBe("P");
   });
@@ -385,27 +385,27 @@ describe("copying the command", () => {
 
   it("offers the graph's own example, not a <task> placeholder", async () => {
     const slot = panel();
-    const line = await slot.findByText(/^bb graph-studio run my-graph/);
+    const line = await slot.findByText(/^alia graph-studio run my-graph/);
     expect(line.textContent).toBe(
-      `bb graph-studio run my-graph "${mine.example}"`,
+      `alia graph-studio run my-graph "${mine.example}"`,
     );
     expect(line.textContent).not.toContain("<task>");
   });
 
   it("follows the task field once something is typed", async () => {
     const slot = panel();
-    await slot.findByText(/^bb graph-studio run my-graph/);
+    await slot.findByText(/^alia graph-studio run my-graph/);
     fireEvent.change(slot.getByLabelText("Task"), {
       target: { value: "Something else entirely" },
     });
     expect(
-      (await slot.findByText(/^bb graph-studio run my-graph/)).textContent,
-    ).toBe('bb graph-studio run my-graph "Something else entirely"');
+      (await slot.findByText(/^alia graph-studio run my-graph/)).textContent,
+    ).toBe('alia graph-studio run my-graph "Something else entirely"');
   });
 
   it("copies exactly the line that is on screen", async () => {
     const slot = panel();
-    const line = await slot.findByText(/^bb graph-studio run my-graph/);
+    const line = await slot.findByText(/^alia graph-studio run my-graph/);
     const command = line.textContent!;
     fireEvent.click(
       slot.getByRole("button", { name: `Copy command: ${command}` }),
@@ -418,13 +418,13 @@ describe("copying the command", () => {
   // broken paste, and it is invisible until someone actually runs the line.
   it("quotes a task containing double quotes so the shell survives it", async () => {
     const slot = panel();
-    await slot.findByText(/^bb graph-studio run my-graph/);
+    await slot.findByText(/^alia graph-studio run my-graph/);
     fireEvent.change(slot.getByLabelText("Task"), {
       target: { value: 'say "hello"' },
     });
-    const line = await slot.findByText(/^bb graph-studio run my-graph/);
+    const line = await slot.findByText(/^alia graph-studio run my-graph/);
     expect(line.textContent).toBe(
-      'bb graph-studio run my-graph "say \\"hello\\""',
+      'alia graph-studio run my-graph "say \\"hello\\""',
     );
   });
 });

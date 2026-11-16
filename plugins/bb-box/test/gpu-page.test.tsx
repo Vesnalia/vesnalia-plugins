@@ -1,8 +1,8 @@
 import "./check-test-machine.mjs";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@get-bb/plugin-sdk/testing/app";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@vesnalia/plugin-sdk/testing/app";
 import type { BoxPageState, Contract, MonitorReach, MonitorSnapshot } from "../src/plugin/contract.ts";
 import type { BoxView } from "../src/plugin/views.ts";
 import { forgetLive } from "../src/app/common.tsx";
@@ -184,7 +184,7 @@ afterEach(() => {
 
 function open(state: BoxPageState, reading?: MonitorSnapshot) {
   const [panel] = app.navPanels;
-  return renderSlot(panel!, { subPath: `box/${BOX}` }, { rpc: handlers(state, reading), pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "Train the model" }) } } });
+  return renderSlot(panel!, { subPath: `box/${BOX}` }, { rpc: handlers(state, reading), pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "Train the model" }) } } });
 }
 
 test("071 unit 14: a stopped shared row says it holds no card while stopped", () => {
@@ -263,7 +263,7 @@ test("071 unit 13: Resize keeps the button enabled when the size snaps to the bo
     return empty;
   };
   const [panel] = app.navPanels;
-  const slot = renderSlot(panel!, { subPath: `box/${BOX}` }, { rpc, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "Train the model" }) } } });
+  const slot = renderSlot(panel!, { subPath: `box/${BOX}` }, { rpc, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "Train the model" }) } } });
   const card = await slot.findByRole("region", { name: "GPU card" });
   fireEvent.click(within(card).getByRole("button", { name: "Change…" }));
   const dialog = await screen.findByRole("alertdialog");
@@ -314,7 +314,7 @@ test("071 unit 13: a resize that changes the GPU names it when it has finished",
     };
   };
   const [panel] = app.navPanels;
-  const slot = renderSlot(panel!, { subPath: `box/${BOX}` }, { rpc, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "Train the model" }) } } });
+  const slot = renderSlot(panel!, { subPath: `box/${BOX}` }, { rpc, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "Train the model" }) } } });
   const card = await slot.findByRole("region", { name: "GPU card" });
   fireEvent.click(within(card).getByRole("button", { name: "Change…" }));
   const dialog = await screen.findByRole("alertdialog");
@@ -458,7 +458,7 @@ test("071 unit 13: Resize shows the GPU change, names a program that has it open
 });
 
 test("071 unit 14: a box with no GPU keeps its facts when Docker reports every card", async () => {
-  const reach = "On devpc, every box with Docker in it can open every card, with a GPU or without. None and Whole card are what BB Box places, not what a box can reach.";
+  const reach = "On devpc, every box with Docker in it can open every card, with a GPU or without. None and Whole card are what VesnALIA Box places, not what a box can reach.";
   const slot = open(page(boxView({ gpu: false, gpuPart: "none", claim: null, form: "Docker", backendLabel: "Docker on devpc", facts: [{ label: "Cards", value: reach }] })));
   const facts = await slot.findByRole("region", { name: "Facts" });
   expect(facts.textContent).not.toContain("Cards");
@@ -468,7 +468,7 @@ test("071 unit 14: a box with no GPU keeps its facts when Docker reports every c
 });
 
 test("071 unit 14: a GPU box puts the every-card sentence on the card, and an unmatched reading is unavailable", async () => {
-  const reach = "On devpc, every box with Docker in it can open every card, with a GPU or without. None and Whole card are what BB Box places, not what a box can reach.";
+  const reach = "On devpc, every box with Docker in it can open every card, with a GPU or without. None and Whole card are what VesnALIA Box places, not what a box can reach.";
   const slot = open(page(boxView({ form: "Docker", backendLabel: "Docker on devpc", facts: [{ label: "GPU", value: "card 1, shared, NVIDIA RTX 4090, 24 GiB" }, { label: "Cards", value: reach }] })));
   const facts = await slot.findByRole("region", { name: "Facts" });
   expect(facts.textContent).not.toContain("every box");

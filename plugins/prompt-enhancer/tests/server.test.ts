@@ -1,12 +1,12 @@
 // Backend behavior against the SDK's fake host: real SQLite storage, real RPC
-// validation, recorded bb.sdk calls. Each test drives one run the way bb
+// validation, recorded alia.sdk calls. Each test drives one run the way VesnALIA
 // would: an RPC from the composer, then the child thread's events.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 
 const SCOPE_THREAD = "thr_scope";
@@ -26,7 +26,7 @@ async function waitFor(check: () => boolean, label: string): Promise<void> {
 /** A loaded plugin with one scope thread and a child whose output we control. */
 async function setup() {
   const child = { output: null as string | null, spawned: 0 };
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "prompt-enhancer",
     sdk: {
       providers: { list: async () => [] },
@@ -59,7 +59,7 @@ async function setup() {
       },
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   const childOutputReads = () =>
     harness.inspection.sdk
       .callsTo("threads.output")
@@ -107,7 +107,7 @@ async function setup() {
   return { harness, child, childOutputReads, signals, start, startRpc, enhancement, settled, announce };
 }
 
-test("reads the child only when bb announces new events, never on a timer", async () => {
+test("reads the child only when VesnALIA announces new events, never on a timer", async () => {
   const { harness, child, childOutputReads, signals, start, enhancement, announce } =
     await setup();
   const id = await start();
@@ -188,7 +188,7 @@ test("a child that ended before its watch began still resolves the run", async (
   assert.equal(run.error, "Rate limited");
 });
 
-/** bb's own error event for a provider that never came up. */
+/** VesnALIA's own error event for a provider that never came up. */
 const startFailure = {
   type: "system/error",
   data: {
@@ -198,7 +198,7 @@ const startFailure = {
   },
 };
 
-test("a provider that never starts shows bb's cause, after the retries", async () => {
+test("a provider that never starts shows VesnALIA's cause, after the retries", async () => {
   const { harness, child, start, settled } = await setup();
   harness.inspection.sdk.stub("threads.events.list", async () => [startFailure]);
   const id = await start();
@@ -247,7 +247,7 @@ test("a provider error shows its detail and is not retried", async () => {
 
 test("a child that streamed a long rewrite before failing still shows the cause", async () => {
   const { harness, start, settled } = await setup();
-  // Like bb: oldest first by default, newest first on request, 100 a page.
+  // Like VesnALIA: oldest first by default, newest first on request, 100 a page.
   const events = [
     ...Array.from({ length: 120 }, (_, seq) => ({
       type: "item/agentMessage/delta",

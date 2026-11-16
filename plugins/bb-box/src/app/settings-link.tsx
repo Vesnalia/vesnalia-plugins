@@ -1,4 +1,4 @@
-import { UrlLink } from "@get-bb/plugin-sdk/app";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
 import type { MouseEvent, ReactNode } from "react";
 import { leaveModifiedClick, opensInNewTab } from "./modified-click.ts";
 import { onSettingsPage, openSettingsView, settingsHref, type SettingsView } from "./settings-route.ts";

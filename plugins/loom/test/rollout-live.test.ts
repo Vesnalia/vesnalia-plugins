@@ -169,9 +169,9 @@ describe("a run that something overtook", () => {
   it("runs no command for a project archived while Loom looked for the checkout", async () => {
     await seedProject(h, rollout);
     let found!: (path: string | null) => void;
-    const lookup = h.bb.projectCheckout.bind(h.bb);
-    h.bb.projectCheckout = (bbProjectId: string, hostId: string) => {
-      void lookup(bbProjectId, hostId);
+    const lookup = h.alia.projectCheckout.bind(h.alia);
+    h.alia.projectCheckout = (aliaProjectId: string, hostId: string) => {
+      void lookup(aliaProjectId, hostId);
       return new Promise((resolve) => (found = resolve));
     };
     followRollout(h.ctx, project());
@@ -220,7 +220,7 @@ describe("a run that something overtook", () => {
     const release = holdExec("./traffic-low.sh");
     followRollout(h.ctx, project());
     await flush();
-    await h.projects.propose({ toml: specToml((doc) => ((rollout(doc), (doc.rollout.milestone[0].check = "./traffic-low.sh --strict")))), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    await h.projects.propose({ toml: specToml((doc) => ((rollout(doc), (doc.rollout.milestone[0].check = "./traffic-low.sh --strict")))), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
     await h.projects.approve("csv", "human");
     release({ exitCode: 0 });
     await settleRolloutChecks(h.ctx);
@@ -264,13 +264,13 @@ describe("rollout order is advice only", () => {
     h.host.onExec = (input) => {
       if (input.command === "./traffic-low.sh") h.host.execResults.unshift({ exitCode: 1, output: "still high" });
     };
-    const roles = () => h.bb.callsTo("spawnThread").map(([args]) => `${(args as SpawnArgs).metadata.role}:${(args as SpawnArgs).metadata.ticket}`);
+    const roles = () => h.alia.callsTo("spawnThread").map(([args]) => `${(args as SpawnArgs).metadata.role}:${(args as SpawnArgs).metadata.ticket}`);
 
     await h.engine.tick();
     await settleRolloutChecks(h.ctx);
     expect(roles()).toEqual(["worker:CSV-1"]);
     const brief = (index: number) => {
-      const args = h.bb.callsTo("spawnThread")[index]![0] as SpawnArgs;
+      const args = h.alia.callsTo("spawnThread")[index]![0] as SpawnArgs;
       return `${args.prompt}\n${args.detail ?? ""}`;
     };
     expect(brief(0)).toContain("## Rollout\nLoom writes the rollout order in the pull request's Rollout section; do not write deploy order or prerequisites into the description.\nStage: none.\nLive first:\n- traffic-low: Old traffic is near zero.\n");

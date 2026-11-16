@@ -1,5 +1,5 @@
 import { memo, startTransition, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { NextKind, PrView } from "../contract";
 import { mentionOnly, postText } from "../next";
 import { NextButton } from "./actions";

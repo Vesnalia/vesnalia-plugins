@@ -1,17 +1,12 @@
 {
-  "name": "bb-plugin-agent-tools",
+  "name": "alia-plugin-agent-tools",
   "version": "0.2.32",
-  "description": "One inventory of MCP servers and agent skills across every BB machine: what is connected where, what is missing, a single skills canon with fan-out, sync and a version archive.",
+  "description": "One inventory of MCP servers and agent skills across every VesnALIA machine: what is connected where, what is missing, a single skills canon with fan-out, sync and a version archive.",
   "license": "MIT",
   "author": "Kirill Vechkasov",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/VKirill/bb-plugin-agent-tools.git"
-  },
-  "homepage": "https://github.com/VKirill/bb-plugin-agent-tools#readme",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "mcp",
     "agent-skills",
     "claude-code",
@@ -20,12 +15,12 @@
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Agent Tools",
-    "description": "Compare MCP servers and agent skills across BB machines, then sync a shared catalogue and skills canon.",
+    "description": "Compare MCP servers and agent skills across VesnALIA machines, then sync a shared catalogue and skills canon.",
     "branding": {
       "icon": "Toolbox"
     },
@@ -47,7 +42,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -75,8 +69,25 @@
     "vaul": "^1.1.2"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.ts"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/agent-tools#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/agent-tools"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

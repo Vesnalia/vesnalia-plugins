@@ -86,7 +86,7 @@ function fixture() {
       },
       stop: async (a: any) => calls.push(["stop", a]),
       update: async (a: any) => calls.push(["update", a]),
-      output: async () => ({ output: "Ответ из BB" }),
+      output: async () => ({ output: "Ответ из ALIA" }),
       events: {
         list: async (a: any) =>
           a.order === "desc"
@@ -104,7 +104,7 @@ function fixture() {
       },
     },
   };
-  const dir = mkdtempSync(join(tmpdir(), "bb-chat-test-"));
+  const dir = mkdtempSync(join(tmpdir(), "alia-chat-test-"));
   const bridge = new ChatBridge({
     store,
     sdk,
@@ -138,7 +138,7 @@ function fixture() {
     assert.ok(action, "button " + kind);
     await bridge.handle({
       ...input(""),
-      callback: "bb:" + action[0].slice("chat:button:".length),
+      callback: "alia:" + action[0].slice("chat:button:".length),
     });
   };
   return {
@@ -163,7 +163,7 @@ function fixture() {
     cleanup: () => rmSync(dir, { recursive: true, force: true }),
   };
 }
-test("new message creates visible BB chat; subsequent message reuses it", async () => {
+test("new message creates visible VesnALIA chat; subsequent message reuses it", async () => {
   const f = fixture();
   try {
     await f.bridge.handle(f.input("Первый запрос"));
@@ -186,7 +186,7 @@ test("custom Telegram topic can bind a project before sending", async () => {
     )!;
     await f.bridge.handle({
       ...f.input("", 777),
-      callback: "bb:" + key.slice(12),
+      callback: "alia:" + key.slice(12),
     });
     await f.bridge.handle(f.input("Из новой темы", 777));
     assert.equal(f.calls[0][1].projectId, "proj_one");
@@ -232,7 +232,7 @@ test("connecting an existing chat baselines old events and rejects stale control
     assert.equal(f.bridge.bindings()[0].cursor, 99);
     await f.bridge.handle({
       ...f.input(""),
-      callback: "bb:" + button[0].slice(12),
+      callback: "alia:" + button[0].slice(12),
     });
     assert.equal(f.calls.length, 0);
     assert.ok([...f.data.values()].some((v) => v.text?.includes("устарела")));
@@ -264,7 +264,7 @@ test("section choice sets exact host and folder for native spawn", async () => {
     )!;
     await f.bridge.handle({
       ...f.input(""),
-      callback: "bb:" + entry[0].slice(12),
+      callback: "alia:" + entry[0].slice(12),
     });
     await f.bridge.handle(f.input("Run"));
     assert.deepEqual(f.calls[0][1].environment, {
@@ -276,7 +276,7 @@ test("section choice sets exact host and folder for native spawn", async () => {
     f.cleanup();
   }
 });
-test("model menu uses BB catalog and does not alter other chats", async () => {
+test("model menu uses VesnALIA catalog and does not alter other chats", async () => {
   const f = fixture();
   try {
     await f.bridge.handle(f.input("/model"));
@@ -286,7 +286,7 @@ test("model menu uses BB catalog and does not alter other chats", async () => {
         v.kind === "provider" &&
         v.arg === "codex",
     )!;
-    await f.bridge.handle({ ...f.input(""), callback: "bb:" + p[0].slice(12) });
+    await f.bridge.handle({ ...f.input(""), callback: "alia:" + p[0].slice(12) });
     await f.press("model");
     await f.bridge.handle(f.input("Run"));
     assert.equal(f.calls[0][1].model, "model-a");
@@ -398,7 +398,7 @@ test("approval callback resolves once; later stale tap does not execute again", 
     f.cleanup();
   }
 });
-test("pending BB question prevents normal text from steering past it", async () => {
+test("pending VesnALIA question prevents normal text from steering past it", async () => {
   const f = fixture();
   try {
     await f.bridge.handle(f.input("Run"));
@@ -515,7 +515,7 @@ test("folder button hides host path; callback menu edits original card", async (
     await f.bridge.handle({
       ...f.input(""),
       messageId: 12345,
-      callback: "bb:" + action[0].slice(12),
+      callback: "alia:" + action[0].slice(12),
     });
     await f.bridge.flush();
     assert.equal(f.sent.at(-1).method, "editMessageText");
@@ -569,7 +569,7 @@ test("CLI profile selection follows model and travels only in initial native pro
     )!;
     await f.bridge.handle({
       ...f.input(""),
-      callback: "bb:" + reviewer[0].slice(12),
+      callback: "alia:" + reviewer[0].slice(12),
     });
     await f.bridge.flush();
     assert.ok(f.sent.at(-1).text.includes("🎭 Профиль: reviewer"));
@@ -637,7 +637,7 @@ test("profile pages show eight agents, paired buttons, bounded navigation and de
       assert.ok(next);
       await f.bridge.handle({
         ...f.input(""),
-        callback: "bb:" + next[0].slice(12),
+        callback: "alia:" + next[0].slice(12),
       });
       await f.bridge.flush();
     };
@@ -655,7 +655,7 @@ test("profile pages show eight agents, paired buttons, bounded navigation and de
     assert.ok(
       buttons()
         .flat()
-        .some((b: any) => b.text === "По умолчанию BB"),
+        .some((b: any) => b.text === "По умолчанию ALIA"),
     );
   } finally {
     f.cleanup();
@@ -699,7 +699,7 @@ test("Projects & Sections target is passed to CLI Agents; absent CLI Agents skip
     )!;
     await f.bridge.handle({
       ...f.input(""),
-      callback: "bb:" + section[0].slice(12),
+      callback: "alia:" + section[0].slice(12),
     });
     await f.bridge.handle(f.input("/model"));
     await f.press("provider");

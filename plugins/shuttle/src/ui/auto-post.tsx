@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { experimental_Icon as Icon, experimental_usePluginId, UrlLink } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, experimental_usePluginId, UrlLink } from "@vesnalia/plugin-sdk/app";
 import type { AutoPostMode } from "../config";
 import type { AutoPostInsights, ShadowLabel } from "../contract";
 import { BUTTON, ErrorNote, Pill, Segmented, type Tone } from "./common";

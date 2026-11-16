@@ -1,5 +1,5 @@
 import path from "node:path";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { giteaBranchHostContract } from "./branch-contract.js";
 import {
   createWorktree,

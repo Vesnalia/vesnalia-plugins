@@ -1,6 +1,6 @@
 import path from "node:path";
 import Database from "better-sqlite3";
-import { experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import { isSemanticRepoChange } from "../host";
 import { classifyGhFailure, normalizePr } from "../lib/github";

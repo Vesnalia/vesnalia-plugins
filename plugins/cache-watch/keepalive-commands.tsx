@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useRpc, type PluginAppBuilder } from '@get-bb/plugin-sdk/app';
+import { useRpc, type PluginAppBuilder } from '@vesnalia/plugin-sdk/app';
 import { toast } from 'sonner';
 import type { rpcContract } from './server';
 

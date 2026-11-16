@@ -1,6 +1,6 @@
 /**
  * Scrolling the tab's own scroll area, and nothing else. `Element.scrollIntoView` scrolls every
- * ancestor that can scroll, bb's containers around the tab included (even an `overflow: hidden` one):
+ * ancestor that can scroll, VesnALIA's containers around the tab included (even an `overflow: hidden` one):
  * in a real panel it moved the tab's toolbar out of sight. Every reveal and comment step scrolls here.
  *
  * A place scrolled to is then held while the layout settles. Patches load and diffs draw as their

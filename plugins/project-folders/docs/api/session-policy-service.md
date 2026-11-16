@@ -15,7 +15,7 @@ sources:
 ---
 # Session policy service
 
-TL;DR: `makeSessionPolicies` stores per-scope session filters, resolves nearest-first inheritance, reports inventory suggestions, and registers core enforcement only when BB exposes its experimental hook (`session-policy-server.ts:57-243`).
+TL;DR: `makeSessionPolicies` stores per-scope session filters, resolves nearest-first inheritance, reports inventory suggestions, and registers core enforcement only when VesnALIA exposes its experimental hook (`session-policy-server.ts:57-243`).
 
 ## Purpose
 
@@ -23,13 +23,13 @@ The service backs session-policy read, save, capability and inventory RPCs. It a
 
 ## How it works
 
-1. The factory detects whether `bb.agents.experimental_vkSessionPolicy` exists and maps scopes to stable database keys: `g`, `p:<projectId>` or `f:<folderId>` (`session-policy-server.ts:66-75`).
+1. The factory detects whether `alia.agents.experimental_vkSessionPolicy` exists and maps scopes to stable database keys: `g`, `p:<projectId>` or `f:<folderId>` (`session-policy-server.ts:66-75`).
 2. `read` loads the scope's JSON row, schema-validates it and normalizes it; missing, malformed or invalid rows become an empty policy (`session-policy-server.ts:76-86`). `write` normalizes first, deletes an empty policy row, or upserts nonempty JSON (`session-policy-server.ts:88-96`).
 3. `layers` walks a section and its parents with cycle detection, then adds project and global policies. `folderFor` maps a core thread to the deepest real section containing its canonical workspace path on the same project and host; no environment path or matching section yields no folder (`session-policy-server.ts:102-142`).
 4. When the hook exists, the service registers a resolver that resolves those layers and converts them to the core policy shape. When absent, it skips registration but still returns read, save and inventory functions with `available:false` (`session-policy-server.ts:68`, `session-policy-server.ts:144-153`).
-5. `read` validates placement, returns the scope's own normalized value, inherited policy and effective policy, and reports the BB-wide `AGENTS.md` path/existence (`session-policy-server.ts:154-172`). Own policy precedes inherited layers during resolution (`session-policy.ts:144-169`).
+5. `read` validates placement, returns the scope's own normalized value, inherited policy and effective policy, and reports the ALIA-wide `AGENTS.md` path/existence (`session-policy-server.ts:154-172`). Own policy precedes inherited layers during resolution (`session-policy.ts:144-169`).
 6. `save` validates placement then normalizes and persists the supplied policy; an empty normalized policy deletes the key (`session-policy-server.ts:174-177`, `session-policy-server.ts:88-96`).
-7. `inventory` gathers plugin contributions and BB plugin names. For project/folder scopes it also lists project skills and asks the selected host to collect CLI MCP/plugin names; each optional source failure falls back to an empty result (`session-policy-server.ts:178-241`).
+7. `inventory` gathers plugin contributions and VesnALIA plugin names. For project/folder scopes it also lists project skills and asks the selected host to collect CLI MCP/plugin names; each optional source failure falls back to an empty result (`session-policy-server.ts:178-241`).
 
 | Branch | Condition | Outcome or failure |
 |---|---|---|
@@ -43,7 +43,7 @@ The service backs session-policy read, save, capability and inventory RPCs. It a
 | Inventory source failure | Plugin, skill or host lookup rejects | That source contributes an empty list; other sources are returned (`session-policy-server.ts:194-224`). |
 | Placement/database failure | Injected `place` or database operation rejects | Read/save/inventory rejects to the caller; the service does not catch those failures (`session-policy-server.ts:154-180`, `session-policy-server.ts:88-96`). |
 
-Policy filters apply per group: `bbPlugins`, `skills`, `mcpServers` and `nativePlugins`; switches cover user instructions, project instructions and Claude AI sync (`session-policy.ts:16-30`, `session-policy.ts:71-79`). Each group resolves independently, nearest defined value wins, and an `all` value can lift an inherited restriction (`session-policy.ts:12-15`, `session-policy.ts:144-169`).
+Policy filters apply per group: `aliaPlugins`, `skills`, `mcpServers` and `nativePlugins`; switches cover user instructions, project instructions and Claude AI sync (`session-policy.ts:16-30`, `session-policy.ts:71-79`). Each group resolves independently, nearest defined value wins, and an `all` value can lift an inherited restriction (`session-policy.ts:12-15`, `session-policy.ts:144-169`).
 
 ## Business rules
 
@@ -57,7 +57,7 @@ Policy filters apply per group: `bbPlugins`, `skills`, `mcpServers` and `nativeP
 
 ## Gotchas
 
-- Without BB's experimental hook, saved policies can still be edited and queried but do not filter sessions (`session-policy-server.ts:52-55`, `session-policy-server.ts:144-153`).
+- Without VesnALIA's experimental hook, saved policies can still be edited and queried but do not filter sessions (`session-policy-server.ts:52-55`, `session-policy-server.ts:144-153`).
 - A project/folder inventory needs a resolved host to include machine-local config; global inventory is not host-scoped (`session-policy-server.ts:207-225`).
 
 <!-- lane-pilot:backlinks -->

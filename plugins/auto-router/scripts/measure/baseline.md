@@ -92,7 +92,7 @@ Opus did the extra check in each case, for example the Buildkite log in r100 and
 
 Every Haiku 4.5 helper that needed the network, an MCP tool, or a file outside its workspace stopped at an approval prompt.
 A helper's thread is hidden, so nobody saw the prompt.
-The delegate tool's call ended after 302 seconds, BB stopped the helper, and the main agent then did the work itself.
+The delegate tool's call ended after 302 seconds, VesnALIA stopped the helper, and the main agent then did the work itself.
 In the baseline it happened in r101, r106, r107, and m3, and in the first run of m3 and m4.
 Across all Model Pilot threads in these projects, 18 of 21 Haiku helpers stopped this way.
 The 9 Sonnet 5.5 and GPT-6 Luna helpers asked for no approval, but they only worked inside their workspace.

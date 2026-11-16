@@ -3,7 +3,7 @@ import type { Part } from "./reviewed";
 
 export interface Comment { id: string; path: string; part: Part; quote: string; text: string; at: number }
 
-export const COMMENTS_STORAGE_KEY = "bb-plugin-vantage:comments";
+export const COMMENTS_STORAGE_KEY = "alia-plugin-vantage:comments";
 const MAX_WORKTREES = 100;
 const NONE: readonly Comment[] = [];
 

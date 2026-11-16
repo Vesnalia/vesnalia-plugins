@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { DEFAULT_SHORTCUT } from "@/shared/constants";
 import {
-  bbDefaultBindingFor,
+  aliaDefaultBindingFor,
   parseShortcut,
   serializeShortcut,
   setShortcutsSuspended,
@@ -73,11 +73,11 @@ export function ShortcutRecorder({
     setMessage(null);
     try {
       await onChange(next === null ? null : serializeShortcut(next));
-      const conflict = next === null ? null : bbDefaultBindingFor(next);
+      const conflict = next === null ? null : aliaDefaultBindingFor(next);
       setMessage(
         conflict === null
           ? null
-          : { tone: "info", text: `Heads-up: bb uses this for "${conflict}" by default.` },
+          : { tone: "info", text: `Heads-up: VesnALIA uses this for "${conflict}" by default.` },
       );
       stop();
     } catch (cause) {

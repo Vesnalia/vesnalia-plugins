@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Legacy uninstall for pre-plugin copies. Prefer `bb droid unregister`.
+# Legacy uninstall for pre-plugin copies. Prefer `alia droid unregister`.
 set -euo pipefail
 
-BB_DATA_DIR="${BB_DATA_DIR:-$HOME/.bb}"
-CONFIG_PATH="$BB_DATA_DIR/config.json"
+ALIA_DATA_DIR="${ALIA_DATA_DIR:-$HOME/.alia}"
+CONFIG_PATH="$ALIA_DATA_DIR/config.json"
 AGENT_ID="${1:-droid}"
-LOGO_DST="$BB_DATA_DIR/droid-logo.svg"
+LOGO_DST="$ALIA_DATA_DIR/droid-logo.svg"
 
 if ! command -v jq >/dev/null 2>&1; then
   echo "error: jq is required (brew install jq)" >&2
@@ -29,7 +29,7 @@ else
       | if (.customAcpAgents | length) == 0 then del(.customAcpAgents) else . end
     ' <<<"$CURRENT"
   )"
-  TMP="$(mktemp "${BB_DATA_DIR}/.config.json.XXXXXX")"
+  TMP="$(mktemp "${ALIA_DATA_DIR}/.config.json.XXXXXX")"
   umask 077
   printf '%s\n' "$(jq '.' <<<"$NEXT")" >"$TMP"
   mv "$TMP" "$CONFIG_PATH"
@@ -43,4 +43,4 @@ if [[ -f "$LOGO_DST" ]]; then
 fi
 
 echo "remaining custom agents: $(jq -r '[.customAcpAgents[]?.id] // [] | join(", ")' "$CONFIG_PATH" 2>/dev/null || echo '(none)')"
-echo "restart bb (or bb-app config refresh) so the provider disappears from the list"
+echo "restart alia (or alia-app config refresh) so the provider disappears from the list"

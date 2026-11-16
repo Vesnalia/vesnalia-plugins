@@ -1,7 +1,7 @@
 import { useId } from "react";
 
 // The Agent Network's activity-bar icon: a planet with a tilted ring that passes behind it
-// and in front of it. Drawn here because BB's icon set has no planet; tints like BB's icons.
+// and in front of it. Drawn here because VesnALIA's icon set has no planet; tints like VesnALIA's icons.
 export function SaturnIcon({ className }: { className?: string }) {
   const id = useId();
   return (

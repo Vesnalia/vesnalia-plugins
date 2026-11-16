@@ -1,7 +1,7 @@
-// bb-box's configuration: one checked document in plugin storage (029). It
-// holds what the operator set; a value left out takes bb-box's default, so a
+// alia-box's configuration: one checked document in plugin storage (029). It
+// holds what the operator set; a value left out takes alia-box's default, so a
 // later release's default reaches it. Secrets are kept apart from it, under
-// a key of their own, and never leave bb-box: the document shows each as
+// a key of their own, and never leave alia-box: the document shows each as
 // { set: true } or { set: false }.
 //
 // Every problem has a path, such as "backends.proxmox-lxc.url" or
@@ -17,14 +17,14 @@ import { keyPath, ordinal, unknownKey, unnamedValue, type ProblemAt, type Unname
 
 export const SCHEMA = 1;
 
-/** How a secret shows outside bb-box. In a draft, { set: true } keeps it. */
+/** How a secret shows outside alia-box. In a draft, { set: true } keeps it. */
 export interface SecretState {
   /** Whether it has a value. In a draft, true keeps it and false clears it. */
   readonly set: boolean;
   /**
    * As the settings page reads the configuration, from config.get and config.apply: the revision that last set or
    * cleared it, so the page can tell that it changed while a person edited. A secret never has the same version twice,
-   * and the version says nothing of its value. bb box config show leaves it out; a draft may send it back, and it is
+   * and the version says nothing of its value. VesnALIA box config show leaves it out; a draft may send it back, and it is
    * ignored.
    */
   readonly version?: number;
@@ -63,7 +63,7 @@ export interface BackendConfig {
   /** Ready guests to keep, by kind. */
   readonly warm?: Readonly<Record<string, number>>;
   /**
-   * The BB projects it is kept for, by their IDs (#1458). Left out or empty, it serves every project. With a list, only
+   * The VesnALIA projects it is kept for, by their IDs (#1458). Left out or empty, it serves every project. With a list, only
    * threads in those projects place boxes and forks on it or claim its spares, and they use it before the backends every
    * project shares. Threads elsewhere, or in no project, never see it. Spares are made on it in the backend list's
    * order, as on any backend. Your own machines may still be made on it.
@@ -105,9 +105,9 @@ export interface ImageConfig {
   readonly check?: string;
   /** When it is built ahead: auto, after two boxes in 14 days; always; or never, so it runs at each start. */
   readonly bake?: ImageBake;
-  /** The BB projects whose threads' boxes get it. */
+  /** The VesnALIA projects whose threads' boxes get it. */
   readonly projects: readonly string[];
-  /** Where the files came from in the project's repository, such as .bb/box-setup.sh. */
+  /** Where the files came from in the project's repository, such as .vesnalia/box-setup.sh. */
   readonly source?: { readonly script?: string; readonly check?: string };
   /** When it was set, as an ISO 8601 time. */
   readonly updated?: string;
@@ -117,13 +117,13 @@ export const IMAGE_BAKES = ["auto", "always", "never"] as const;
 export type ImageBake = (typeof IMAGE_BAKES)[number];
 /** An image's name: a lower-case letter first, then letters, digits and "-". "standard" is the kinds' own images. */
 export const IMAGE_NAME = /^[a-z][a-z0-9-]{0,39}$/;
-/** The largest script or check bb-box keeps. */
+/** The largest script or check alia-box keeps. */
 export const IMAGE_SCRIPT_BYTES = 256 * 1024;
 
 export interface GeneralSettings {
   /** The most boxes a thread may hold at once. 0 means no limit. */
   readonly boxesPerThread?: number;
-  /** Whether boxes join BB as machines, so threads and terminals can use them with the thread's credentials. */
+  /** Whether boxes join VesnALIA as machines, so threads and terminals can use them with the thread's credentials. */
   readonly enrol?: boolean;
   /** The kind a thread gets when it asks for none. */
   readonly defaultKind?: string;
@@ -136,28 +136,28 @@ export interface GeneralSettings {
    */
   readonly video?: boolean;
   /**
-   * Whether bb-box rebuilds the standard images that are due each night (049), on a schedule of its own at 03:00 on
-   * BB's server. Off unless set; first-run setup turns it on.
+   * Whether alia-box rebuilds the standard images that are due each night (049), on a schedule of its own at 03:00 on
+   * VesnALIA's server. Off unless set; first-run setup turns it on.
    */
   readonly nightlyImages?: boolean;
   /** The backends whose new Linux boxes get an identity marker, so that a copy of one resets its identity (070). None by default. */
   readonly identityResetBackends?: readonly string[];
   /**
    * Advanced: whether linux, linux-desktop-cpu, macos and macos-desktop boxes offer the test device (063), a test card
-   * served by bb-box's device server in place of a phone, for checking the device path with no simulator or emulator.
+   * served by alia-box's device server in place of a phone, for checking the device path with no simulator or emulator.
    * It stands in for an Android phone or tablet on Linux and an iPhone on macOS, under those models' names, so a box
    * acquired with device "Pixel 8" or "Test device" gets one. Off unless set; the conformance suite turns it on.
    */
   readonly testDevice?: boolean;
   /**
    * Whether a Linux box or desktop on a backend that can give one may have a whole card: a GPU to itself, on which
-   * bb-box places no other box (071). Off, gpu whole is refused and not offered, and boxes that hold a card whole keep
+   * alia-box places no other box (071). Off, gpu whole is refused and not offered, and boxes that hold a card whole keep
    * it until they are released. Off unless set. A backend's own whole-cards field, in its GPUs section, wins where it
    * is set: this is what a backend gets while that field is unset.
    */
   readonly wholeCards?: boolean;
   /**
-   * Advanced: whether bb-box keeps the iOS devices it streams on each Mac within that Mac's video encoder (064), giving
+   * Advanced: whether alia-box keeps the iOS devices it streams on each Mac within that Mac's video encoder (064), giving
    * room first to the person in control of a device, then recordings, other viewers and the agent's waits, and showing
    * the others at a lower resolution. Off, every stream of a shared ios box is capped at two thirds and nothing else is.
    * On unless set off.
@@ -165,13 +165,13 @@ export interface GeneralSettings {
   readonly encoderLedger?: boolean;
   /**
    * Advanced: how an ios box's device server encodes the device's video (065). auto uses the Mac's hardware H.264
-   * encoder where it has one, and bb-box-h264 in software where it has none or its encoder fails; hardware never uses
+   * encoder where it has one, and alia-box-h264 in software where it has none or its encoder fails; hardware never uses
    * software; software always does, as to test it on a Mac that has an encoder. A box takes it when its device server
    * is delivered. auto unless set.
    */
   readonly iosEncoder?: "auto" | "hardware" | "software";
   /**
-   * How bb-box joins machines it makes to the operator's tailnet: off, where BB is reached without one, or through a
+   * How alia-box joins machines it makes to the operator's tailnet: off, where VesnALIA is reached without one, or through a
    * Tailscale OAuth client, from which it makes a single-use key for each machine. The client's ID and secret are
    * general secrets.
    */
@@ -185,12 +185,12 @@ export interface SnapshotSettings {
   /** The most snapshots a box holds, 1 to 50; kept ones count, and undos are counted apart, 2 a box. 5 unless set. */
   readonly perBox?: number;
   /**
-   * How full a host's storage may be, in percent, 50 to 90, for bb-box to take a snapshot on it: a take is refused past
-   * it, and past 5 points below it of a thin pool's metadata. 7 points above it, bb-box deletes agents' snapshots on
+   * How full a host's storage may be, in percent, 50 to 90, for alia-box to take a snapshot on it: a take is refused past
+   * it, and past 5 points below it of a thin pool's metadata. 7 points above it, alia-box deletes agents' snapshots on
    * that storage that nobody kept, oldest first. 85 unless set.
    */
   readonly roomPercent?: number;
-  /** Days Keep keeps a snapshot from the day the person keeps it, or adds to a keep that has not ended, unless they choose a date: 1 to 365, 30 unless set. bb-box deletes a kept snapshot after its date. */
+  /** Days Keep keeps a snapshot from the day the person keeps it, or adds to a keep that has not ended, unless they choose a date: 1 to 365, 30 unless set. alia-box deletes a kept snapshot after its date. */
   readonly keepDays?: number;
   /**
    * Whether an agent restores its thread's own boxes without asking, always with an undo first. Off, it asks for a yes
@@ -199,7 +199,7 @@ export interface SnapshotSettings {
   readonly agentsRestore?: boolean;
   /** Whether an agent may restore a snapshot that holds a box's memory; off, only the person restores one. On unless set off. */
   readonly agentsMemory?: boolean;
-  /** Whether bb-box keeps a small picture of a box's screen with each snapshot: a JPEG 320 px wide, taken as the snapshot is, kept with it in snapshots.db and shown to the person on the box's page. On unless set off. */
+  /** Whether alia-box keeps a small picture of a box's screen with each snapshot: a JPEG 320 px wide, taken as the snapshot is, kept with it in snapshots.db and shown to the person on the box's page. On unless set off. */
   readonly pictures?: boolean;
   /**
    * The ceiling on paid snapshots, by backend ID: the most a month, in the provider's currency, that the paid snapshots
@@ -286,15 +286,15 @@ function readSnapshots(value: unknown, problem: ProblemAt): SnapshotSettings | n
 }
 
 export interface MonitorSettings {
-  /** Whether the Monitor runs: the machine status in BB's sidebar footer, its sampling, background monitoring and the Mac sensors helper. Off, none of them runs. On unless set off. */
+  /** Whether the Monitor runs: the machine status in VesnALIA's sidebar footer, its sampling, background monitoring and the Mac sensors helper. Off, none of them runs. On unless set off. */
   readonly enabled?: boolean;
   /** Seconds between readings while the machine status is open, 2 to 60. Background monitoring keeps its own 30 seconds. */
   readonly refreshIntervalSeconds?: number;
-  /** Whether bb-box checks BB's server's CPU and memory every 30 seconds while nobody looks, and keeps diagnostic logs for bb box monitor logs. Off unless set. */
+  /** Whether alia-box checks VesnALIA's server's CPU and memory every 30 seconds while nobody looks, and keeps diagnostic logs for VesnALIA box monitor logs. Off unless set. */
   readonly backgroundMonitoring?: boolean;
-  /** Whether background monitoring shows a toast in BB when CPU or memory stays high, and when it recovers. On unless set off. */
+  /** Whether background monitoring shows a toast in VesnALIA when CPU or memory stays high, and when it recovers. On unless set off. */
   readonly pressureNotifications?: boolean;
-  /** Whether bb-box keeps each box's history: a light reading of every running box once a minute, kept 24 hours by the minute and 7 days by the hour, for the 1 h, 24 h and 7 d of a box's page (069). Off, nothing is read in the background, and what was kept stays until it ages out. On unless set off. */
+  /** Whether alia-box keeps each box's history: a light reading of every running box once a minute, kept 24 hours by the minute and 7 days by the hour, for the 1 h, 24 h and 7 d of a box's page (069). Off, nothing is read in the background, and what was kept stays until it ages out. On unless set off. */
   readonly boxHistory?: boolean;
 }
 
@@ -311,11 +311,11 @@ export interface ConfigDocument {
   readonly general: GeneralSettings;
   /** Projects' images, by name (049). */
   readonly images?: Readonly<Record<string, ImageConfig>>;
-  /** The Monitor (066): machine status in BB's sidebar footer, and background monitoring of BB's server. */
+  /** The Monitor (066): machine status in VesnALIA's sidebar footer, and background monitoring of VesnALIA's server. */
   readonly monitor?: MonitorSettings;
 }
 
-/** Secret values by backend ID and field. Never leaves bb-box. */
+/** Secret values by backend ID and field. Never leaves alia-box. */
 export type Secrets = Readonly<Record<string, Readonly<Record<string, string>>>>;
 
 export interface Problem {
@@ -375,7 +375,7 @@ export function emptyDocument(revision = 0): ConfigDocument {
 export interface GeneralConfig {
   /** Most boxes one thread may hold, or null for no limit. */
   readonly perThreadLimit: number | null;
-  /** Enrol boxes whose kind can enrol as BB machines. */
+  /** Enrol boxes whose kind can enrol as VesnALIA machines. */
   readonly enrol: boolean;
   /** The kind a box gets when none is asked for. */
   readonly defaultKind: string;
@@ -697,7 +697,7 @@ function readImage(path: string, value: unknown, problem: ProblemAt): ImageConfi
     ok = false;
   };
   if (!kinds?.length) bad("kinds", "Give the kinds it builds on, such as [\"linux\"].");
-  if (!projects?.length) bad("projects", "Give the BB projects whose boxes get it, by their IDs.");
+  if (!projects?.length) bad("projects", "Give the VesnALIA projects whose boxes get it, by their IDs.");
   if (typeof value.script !== "string" || !value.script.trim()) bad("script", "Give its script: the shell script run as root on the kind's standard image.");
   if (value.check !== undefined && typeof value.check !== "string") bad("check", "Its check is a shell script, run as the box user.");
   if (value.bake !== undefined && !(IMAGE_BAKES as readonly unknown[]).includes(value.bake)) bad("bake", `bake is ${IMAGE_BAKES.join(", ")}.`);
@@ -783,7 +783,7 @@ function readKind(path: string, value: unknown, problem: ProblemAt): KindConfig 
 
 /**
  * Whose fields `readFields` reads, for its messages: "Backend tart" or a
- * host of it, and the prefix the backend's keys had in BB's settings, if any.
+ * host of it, and the prefix the backend's keys had in VesnALIA's settings, if any.
  */
 interface FieldOwner {
   readonly name: string;
@@ -793,7 +793,7 @@ interface FieldOwner {
 
 /**
  * Why `key` is not a field of `owner`'s, naming the key it has now when it
- * is the name BB's settings gave it before the document (029), such as
+ * is the name VesnALIA's settings gave it before the document (029), such as
  * "tart-linux-image" for "linux-image".
  */
 function unknownField(owner: FieldOwner, key: string, descriptors: Readonly<Record<string, FieldDescriptor>>): string {
@@ -801,7 +801,7 @@ function unknownField(owner: FieldOwner, key: string, descriptors: Readonly<Reco
   const current = prefix && key.startsWith(prefix) ? key.slice(prefix.length) : null;
   const hint =
     current && Object.hasOwn(descriptors, current)
-      ? `That was its name in BB's settings; here it is "${current}".`
+      ? `That was its name in VesnALIA's settings; here it is "${current}".`
       : `The fields are ${Object.keys(descriptors).join(", ") || "none"}.`;
   return `${owner.name} has no field "${key}". ${hint}`;
 }
@@ -941,7 +941,7 @@ function readBackendProjects(path: string, value: unknown, problem: ProblemAt): 
   if (value === undefined || value === null) return [];
   const listed = Array.isArray(value) && value.every((item) => typeof item === "string" && item.trim() && item.length <= 200);
   if (!listed) {
-    problem(path, "projects is a list of BB project IDs, or empty for every project.");
+    problem(path, "projects is a list of VesnALIA project IDs, or empty for every project.");
     return [];
   }
   const projects = [...new Set((value as string[]).map((project) => project.trim()))];
@@ -950,7 +950,7 @@ function readBackendProjects(path: string, value: unknown, problem: ProblemAt): 
 }
 
 /**
- * A backend of a type this bb-box has no driver for, as after going back to
+ * A backend of a type this alia-box has no driver for, as after going back to
  * an earlier version: kept as it is, unchecked, so a draft that leaves it
  * alone can still be saved. checkDocument says it cannot run.
  */
@@ -1047,7 +1047,7 @@ export function backendPart(backend: BackendConfig, driver: BackendDriver<any>, 
   };
 }
 
-/** The document as it leaves bb-box: each secret field as whether it is set, and with `versionOf`, its version. */
+/** The document as it leaves alia-box: each secret field as whether it is set, and with `versionOf`, its version. */
 export function exported(document: ConfigDocument, secrets: Secrets, drivers: readonly BackendDriver<any>[], versionOf?: (owner: string, key: string) => number): ConfigDocument {
   const state = (owner: string, key: string, set: boolean): SecretState => (versionOf ? { set, version: versionOf(owner, key) } : { set });
   const files = document.general.files?.map((file) => ({ path: file.path, content: state(GENERAL_SECRETS, contentKey(file.path), secrets[GENERAL_SECRETS]?.[contentKey(file.path)] !== undefined) }));
@@ -1119,7 +1119,7 @@ export interface InUse {
   readonly backends: ReadonlyMap<string, number>;
   /** Boxes by backend ID and the name of a host the configuration lists. */
   readonly hosts: ReadonlyMap<string, ReadonlyMap<string, number>>;
-  /** Snapshots bb-box records by backend ID (070), with how many there are and their size and price in words. */
+  /** Snapshots alia-box records by backend ID (070), with how many there are and their size and price in words. */
   readonly snapshots?: ReadonlyMap<string, { readonly count: number; readonly words: string }>;
   /** Snapshots a provider holds on its account for this install, kept or not, by the ID of a backend being removed (070 unit 11b), or why they could not be listed. */
   readonly onProvider?: ReadonlyMap<string, ({ readonly count: number; readonly words: string } | { readonly unread: string }) & { readonly charges?: boolean }>;
@@ -1218,7 +1218,7 @@ export function checkDocument(
     if (held.count > 0 && !seen.has(id)) {
       problem(
         `backends.${id}`,
-        `Backend ${id} holds ${held.words}, so it cannot be removed or renamed. Delete them first, or forget them with bb box snapshot forget ${id}: ${PRODUCT} then drops its records of them, and they may still exist there and be billed.`,
+        `Backend ${id} holds ${held.words}, so it cannot be removed or renamed. Delete them first, or forget them with VesnALIA box snapshot forget ${id}: ${PRODUCT} then drops its records of them, and they may still exist there and be billed.`,
       );
     }
   }
@@ -1231,7 +1231,7 @@ export function checkDocument(
     } else if (held.count > 0) {
       problem(
         `backends.${id}`,
-        `Backend ${id} has ${plural(held.count, "snapshot")} ${left.where}, kept or not, which ${left.stays} after it is removed, with nothing to delete ${held.count === 1 ? "it" : "them"}: ${held.words}. Delete ${held.count === 1 ? "it" : "them"} first: bb box snapshot delete <box> <snapshot> deletes each one ${PRODUCT} records, as bb box snapshot list --all names them; delete any other ${left.elsewhere}.`,
+        `Backend ${id} has ${plural(held.count, "snapshot")} ${left.where}, kept or not, which ${left.stays} after it is removed, with nothing to delete ${held.count === 1 ? "it" : "them"}: ${held.words}. Delete ${held.count === 1 ? "it" : "them"} first: VesnALIA box snapshot delete <box> <snapshot> deletes each one ${PRODUCT} records, as VesnALIA box snapshot list --all names them; delete any other ${left.elsewhere}.`,
       );
     }
   }

@@ -97,7 +97,7 @@ export function blockedNote(call: BlockedCall): string {
     case "open":
       return "This app called window.open(), which apps can't use: links go through genui.openLink.";
     case "link":
-      return "Only https links open from an app (in BB); this one goes nowhere.";
+      return "Only https links open from an app (in VesnALIA); this one goes nowhere.";
     case "answer":
     case "openLink":
       return `genui.${call}() works only from a click or key press in the app.`;
@@ -105,8 +105,8 @@ export function blockedNote(call: BlockedCall): string {
 }
 
 /** Index of saved app storage, oldest write first: `[stateKey, size]`. */
-const INDEX_KEY = "bb.genui.appStorage";
-/** What every app's saved storage together may take of the host's localStorage (BB's own lives there too). */
+const INDEX_KEY = "alia.genui.appStorage";
+/** What every app's saved storage together may take of the host's localStorage (VesnALIA's own lives there too). */
 export const APPS_STORAGE_BUDGET = 1024 * 1024;
 
 const itemKey = (stateKey: string) => `${stateKey}:storage`;

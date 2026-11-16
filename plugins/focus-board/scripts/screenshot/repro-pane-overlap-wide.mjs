@@ -77,7 +77,7 @@ async function boot() {
   );
 }
 
-/** Squeeze the plugin panel itself (stands in for a narrower bb panel on a
+/** Squeeze the plugin panel itself (stands in for a narrower VesnALIA panel on a
  *  wide window). A stylesheet, not inline styles: opening the pane remounts
  *  the panel and wipes inline overrides. */
 async function squeeze(width) {
@@ -88,7 +88,7 @@ async function squeeze(width) {
       tag.id = "repro-squeeze";
       document.head.appendChild(tag);
     }
-    tag.textContent = `[data-bb-plugin="focus-board"] { width: ${width}px !important; min-width: ${width}px !important; max-width: ${width}px !important; }`;
+    tag.textContent = `[data-alia-plugin="focus-board"] { width: ${width}px !important; min-width: ${width}px !important; max-width: ${width}px !important; }`;
     window.dispatchEvent(new Event("resize"));
   }, width);
   await sleep(280);
@@ -144,7 +144,7 @@ const readState = (label) =>
   page.evaluate(
     ({ label, LANE, LANE_FLOOR }) => {
       const round = (n) => Math.round(n * 100) / 100;
-      const root = document.querySelector('[data-bb-plugin="focus-board"]');
+      const root = document.querySelector('[data-alia-plugin="focus-board"]');
       const aside = document.querySelector('aside[role="complementary"]');
       const board = root?.querySelector(":scope > div > div.flex-1") ?? null;
       const band = board?.querySelector(":scope > div") ?? null;

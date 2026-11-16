@@ -140,7 +140,7 @@ describe("loadFrame", () => {
 
   it("ignores junk rather than throwing the window away", () => {
     const store = new Map<string, string>([
-      ["bb-plugin-floating-terminal:frame:v5", '{"x":"nope"}'],
+      ["alia-plugin-floating-terminal:frame:v5", '{"x":"nope"}'],
     ]);
     stubWindow(1440, 900, store);
     expect(loadFrame()).toEqual(defaultFrame());

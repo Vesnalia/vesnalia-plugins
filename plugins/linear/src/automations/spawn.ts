@@ -3,16 +3,16 @@ import { safeIssueReference, UNTRUSTED_LINEAR_POLICY } from "../security-boundar
 import type { WorkflowStateRow } from "../store/rows.js";
 
 /**
- * Start a bb thread from a Linear issue.
+ * Start a VesnALIA thread from a Linear issue.
  *
  * **One verb everywhere: *start*.** The row menu says "Start a thread from
  * this issue", the detail pane says "Start a thread", the command is
- * `bb linear start`, and the agent tool is `linear_thread_start`. Four names
+ * `alia linear start`, and the agent tool is `linear_thread_start`. Four names
  * for one action is four things to learn.
  *
  * Everything in this file is pure. `buildSpawnRequest` returns the exact
- * arguments `bb.sdk.threads.spawn` will receive, which is what makes the two
- * branch modes and their fallback testable without a bb server.
+ * arguments `alia.sdk.threads.spawn` will receive, which is what makes the two
+ * branch modes and their fallback testable without a VesnALIA server.
  */
 
 export interface SpawnIssue {
@@ -80,7 +80,7 @@ export interface SpawnPlan {
 }
 
 /**
- * Branch naming is where this design meets a wall, and the wall is real: **bb
+ * Branch naming is where this design meets a wall, and the wall is real: **VesnALIA
  * owns worktree branch names.** `buildManagedBranchName` derives them from the
  * thread *title* for both managed worktrees and unmanaged new checkouts, and a
  * plugin cannot override it.
@@ -88,7 +88,7 @@ export interface SpawnPlan {
  * So there are two modes and neither fights the host for the name.
  *
  * **Title mode (the default)** puts the identifier at the front of the title
- * and lets bb derive `bb/eng-42-fix-the-flaky-login-test-thr_x`. Linear's
+ * and lets VesnALIA derive `alia/eng-42-fix-the-flaky-login-test-thr_x`. Linear's
  * branch autolink matches on the identifier appearing anywhere in the branch
  * name, so the link survives. Works on every workspace with no preconditions.
  *
@@ -139,7 +139,7 @@ export function buildSpawnRequest(input: {
   const fallback = (reason: string): SpawnPlan => ({
     mode: "title",
     request: { ...shared, environment: { type: "project-default" } },
-    note: `Started the thread on a branch bb named — ${reason}`,
+    note: `Started the thread on a branch VesnALIA named — ${reason}`,
   });
 
   if (preconditions.hostId === null) {
@@ -149,10 +149,10 @@ export function buildSpawnRequest(input: {
     // A branch absent from a truncated list is not a branch that does not
     // exist. Guessing here would silently downgrade exact mode on any
     // repository with a lot of branches.
-    return fallback(`bb couldn't confirm that \`${issue.branchName}\` exists.`);
+    return fallback(`alia couldn't confirm that \`${issue.branchName}\` exists.`);
   }
   if (!preconditions.branchExists) {
-    return fallback(`\`${issue.branchName}\` doesn't exist yet, so bb named the branch.`);
+    return fallback(`\`${issue.branchName}\` doesn't exist yet, so VesnALIA named the branch.`);
   }
   if (!preconditions.treeClean) {
     return fallback("the working tree has uncommitted changes.");

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { useRpc } from '@get-bb/plugin-sdk/app';
+import { useRpc } from '@vesnalia/plugin-sdk/app';
 import type { accountPoolRpcContract } from './src/rpc.js';
 import type { managementRpcContract } from './src/management-wire.js';
 import type { ManagementGrant } from './src/management-wire.js';

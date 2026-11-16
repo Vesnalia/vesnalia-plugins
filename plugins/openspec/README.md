@@ -1,19 +1,19 @@
-# OpenSpec for bb
+# OpenSpec for VesnALIA
 
 English · [Русский](README.ru.md)
 
-Track OpenSpec changes and task progress in [bb](https://getbb.app/), read specifications, and launch or link agent threads. Tasks stay in your repository.
+Track OpenSpec changes and task progress in [VesnALIA](https://getbb.app/), read specifications, and launch or link agent threads. Tasks stay in your repository.
 
 ## Features
 
 - Active and archived changes, search, project and environment selection.
 - A separate **OpenSpec · Specs** panel: a searchable namespace tree combining main specs and active change deltas, including capabilities before their first archive.
 - Read complete specifications in **Current / Proposed / Compare**, with Git-style status colors, explicit change selection and visible unresolved operations.
-- Markdown previews for proposals, specifications, designs and tasks, with access to the source files in bb.
+- Markdown previews for proposals, specifications, designs and tasks, with access to the source files in VesnALIA.
 - Read-only `✓` / `○` checklists and progress from `tasks.md`; agents update the files.
 - Compact cards or a list with details, including linked thread status and an animated working indicator.
 - Changes with a working agent first, followed by recently modified artifacts.
-- Launch threads to explore, implement or verify a change, with an editable English prompt and bb's provider, model and permission controls. The new thread is linked automatically.
+- Launch threads to explore, implement or verify a change, with an editable English prompt and VesnALIA's provider, model and permission controls. The new thread is linked automatically.
 - Link existing threads manually or through plugin RPC. Available in the navigation panel and inside a thread.
 - Local OpenSpec directories and registered OpenSpec stores (beta).
 - Native file watching on the project machine, incremental task updates and reconnect recovery.
@@ -25,33 +25,33 @@ Track OpenSpec changes and task progress in [bb](https://getbb.app/), read speci
 | --- | --- |
 | ![OpenSpec Changes with archived task groups and completion status](marketplace/screenshots/openspec/changes.jpg) | ![OpenSpec Specs with the recursive tree and a complete specification](marketplace/screenshots/openspec/specifications.jpg) |
 
-Changes and Specs open together in bb:
+Changes and Specs open together in VesnALIA:
 
 ![Changes and Specs in stacked panels](marketplace/screenshots/openspec/changes-and-specs.jpg)
 
 ## Requirements
 
-- bb 0.47 or later with Plugin SDK 0.6.79 or later. Verified locally with bb 0.47.1 / SDK 0.6.79 on macOS.
-- A ready bb environment with a standard OpenSpec directory or a registered store.
+- VesnALIA 0.47 or later with Plugin SDK 0.6.79 or later. Verified locally with VesnALIA 0.47.1 / SDK 0.6.79 on macOS.
+- A ready VesnALIA environment with a standard OpenSpec directory or a registered store.
 - OpenSpec CLI on the environment machine for store discovery (`context --json`, `store list --json`; verified with OpenSpec 1.10.0). Local planning files work without it.
-- An agent provider configured in bb to run agents. The plugin itself needs no external account or service.
+- An agent provider configured in VesnALIA to run agents. The plugin itself needs no external account or service.
 
 ## Install from source
 
-Node.js 22.19+ (22.x), 24.x or 26.x and npm are needed for development. Git installs use bb's bundled tools to install production dependencies and build the plugin.
+Node.js 22.19+ (22.x), 24.x or 26.x and npm are needed for development. Git installs use VesnALIA's bundled tools to install production dependencies and build the plugin.
 
 ```sh
 npm ci --include=dev
 npm run build
-bb plugin install .
+alia plugin install .
 ```
 
-Open **OpenSpec · Changes** or **OpenSpec · Specs** in bb navigation. To keep either view beside a conversation, open the thread's right panel, click **+**, and choose **OpenSpec · Changes** or **OpenSpec · Specs** under **Actions**. bb remembers opened tabs separately for each thread. Click the project name in the header to select its environment and planning source. Use the view icon to switch between compact cards and details.
+Open **OpenSpec · Changes** or **OpenSpec · Specs** in VesnALIA navigation. To keep either view beside a conversation, open the thread's right panel, click **+**, and choose **OpenSpec · Changes** or **OpenSpec · Specs** under **Actions**. VesnALIA remembers opened tabs separately for each thread. Click the project name in the header to select its environment and planning source. Use the view icon to switch between compact cards and details.
 
 Install the current main branch from Git:
 
 ```sh
-bb plugin install 'git:https://github.com/khaale/bb-openspec.git@main'
+alia plugin install 'git:https://github.com/khaale/bb-openspec.git@main'
 ```
 
 Tagged releases and version ranges are described in [release preparation](docs/RELEASING.md). A `v0.5.0` release tag has not been created by this update.
@@ -66,9 +66,9 @@ In narrow panels, select a tree entry to read it and use the back button to retu
 
 ## Agent threads
 
-**Launch agent** starts a visible thread in the selected code environment and links it to the change. It uses the existing checkout. **Link thread** assigns a thread from that environment without starting it or sending a message. A thread has one current binding; a change can have several threads. Bindings persist in bb plugin metadata and include the planning source.
+**Launch agent** starts a visible thread in the selected code environment and links it to the change. It uses the existing checkout. **Link thread** assigns a thread from that environment without starting it or sending a message. A thread has one current binding; a change can have several threads. Bindings persist in VesnALIA plugin metadata and include the planning source.
 
-Manager agents can call `launch`, `attach`, `changes` and `threadChoices` using `bb plugin rpc call`. See the [plugin instructions](skills/openspec-work/SKILL.md) for request formats.
+Manager agents can call `launch`, `attach`, `changes` and `threadChoices` using `alia plugin rpc call`. See the [plugin instructions](skills/openspec-work/SKILL.md) for request formats.
 
 Task checkboxes are read-only. “Completed” means every task in `tasks.md` is checked; validation and archiving are separate operations.
 
@@ -77,12 +77,12 @@ Task checkboxes are read-only. “Completed” means every task in `tasks.md` is
 In the plugin settings, **Language** offers **Automatic**, **English** and **Russian**. Automatic uses supported languages from the current browser's preferences, with English as fallback. A manual selection applies to all open plugin panels without reload.
 
 ```sh
-bb plugin config openspec set language ru
-bb plugin config openspec set language en
-bb plugin config openspec set language auto
+alia plugin config openspec set language ru
+alia plugin config openspec set language en
+alia plugin config openspec set language auto
 ```
 
-UI labels, tooltips, counters and the plugin's own errors are translated. OpenSpec content, names and external tool errors retain their original text. Native bb controls follow bb's own language behavior. Settings labels are English.
+UI labels, tooltips, counters and the plugin's own errors are translated. OpenSpec content, names and external tool errors retain their original text. Native VesnALIA controls follow VesnALIA's own language behavior. Settings labels are English.
 
 New launch prompts and agent instructions are always English and require following project instructions, including the language of artifacts. Switching the UI language preserves the selected change and edited prompt.
 
@@ -97,13 +97,13 @@ New launch prompts and agent instructions are always English and require followi
 
 Expand the header to choose **OpenSpec source**: **Automatic**, **Local**, or a registered store. Automatic follows OpenSpec discovery; Local explicitly uses the environment's own planning files. Store selection changes the planning source while preserving the agent's code environment. Launch prompts include both paths and the required `--store` flag.
 
-Configure stores with the [OpenSpec CLI](https://openspec.dev/docs/stores). The plugin reads registration on the selected environment's machine; it does not register, clone, pull or push stores. Agent access to an external planning path depends on its bb permissions.
+Configure stores with the [OpenSpec CLI](https://openspec.dev/docs/stores). The plugin reads registration on the selected environment's machine; it does not register, clone, pull or push stores. Agent access to an external planning path depends on its VesnALIA permissions.
 
 Click refresh after changing registration, `store:` configuration or `defaultStore`. Discovery is cached; files in the selected planning root update through native watching. References remain read-only CLI workflow context. Custom workflow schemas, upstream spec browsing and Worksets are not interpreted.
 
 ## Updates and limits
 
-Initial loading indexes the planning directory and reads task files. The Specs catalog caches active-delta summaries; full main/delta documents load on demand in a bounded cache. Saving a known `tasks.md` rereads that file; structural changes rescan the file list. Documents load on demand. Both panels share a watcher and update queue per path, with native 120 ms debounce, 700 ms maximum batch wait and one coalesced pending batch during slow processing. These timings bound native batching, not end-to-end processing. The watcher is released after the last subscription closes. Reconnect triggers a rescan; a watch error can be retried with refresh. Thread status uses bb events.
+Initial loading indexes the planning directory and reads task files. The Specs catalog caches active-delta summaries; full main/delta documents load on demand in a bounded cache. Saving a known `tasks.md` rereads that file; structural changes rescan the file list. Documents load on demand. Both panels share a watcher and update queue per path, with native 120 ms debounce, 700 ms maximum batch wait and one coalesced pending batch during slow processing. These timings bound native batching, not end-to-end processing. The watcher is released after the last subscription closes. Reconnect triggers a rescan; a watch error can be retried with refresh. Thread status uses VesnALIA events.
 
 Standard active and archived change directories are supported, including `proposal.md`, `design.md`, `tasks.md` and `specs/**/spec.md`. Limits per planning source: 200 changes, 4000 files/directories and 512 KiB per document. Thread discovery considers up to 200 recent visible threads in an environment.
 
@@ -117,11 +117,11 @@ npm run test:specifications # requires OpenSpec CLI; isolated archive/projection
 npm run test:stores # requires OpenSpec CLI; uses isolated temporary stores
 ```
 
-`verify:git-build` copies the working source to a temporary directory, installs with `--omit=dev --omit=optional --ignore-scripts`, builds all entries and checks their identity metadata. It does not install or replace a plugin. The temporary copy is removed afterwards. The build may download bb's toolchain on first use.
+`verify:git-build` copies the working source to a temporary directory, installs with `--omit=dev --omit=optional --ignore-scripts`, builds all entries and checks their identity metadata. It does not install or replace a plugin. The temporary copy is removed afterwards. The build may download VesnALIA's toolchain on first use.
 
-`bb-app` is pinned as a development dependency for CI and builds without a running bb server. CI runs checks and the production dependency build; it has no release or publishing steps. Store CLI integration is a separate local check.
+`alia-app` is pinned as a development dependency for CI and builds without a running VesnALIA server. CI runs checks and the production dependency build; it has no release or publishing steps. Store CLI integration is a separate local check.
 
-For live development, run `bb plugin dev`. After a one-off build, use `bb plugin reload openspec` to reload an installed local plugin.
+For live development, run `alia plugin dev`. After a one-off build, use `alia plugin reload openspec` to reload an installed local plugin.
 
 | Files | Purpose |
 | --- | --- |

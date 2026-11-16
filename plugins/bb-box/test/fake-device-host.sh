@@ -62,7 +62,7 @@ run_session_job() {
 }
 has_pasteboard_server() {
   [ -n "${FAKE_DOMAIN:-}" ] || return 1
-  case $FAKE_DOMAIN in gui/*) flag "${FAKE_DOMAIN%%/*}-${FAKE_DOMAIN#*/}" ;; *) [ -e "$(agents_of "$FAKE_DOMAIN")/app.bb-box.pboard" ] ;; esac
+  case $FAKE_DOMAIN in gui/*) flag "${FAKE_DOMAIN%%/*}-${FAKE_DOMAIN#*/}" ;; *) [ -e "$(agents_of "$FAKE_DOMAIN")/app.alia-box.pboard" ] ;; esac
 }
 
 shutdown_device() {
@@ -225,7 +225,7 @@ case $tool in
         ;;
       print)
         case $2 in
-          system/app.bb-box.*) [ -e "$F/daemons/${2#system/}" ] ;;
+          system/app.alia-box.*) [ -e "$F/daemons/${2#system/}" ] ;;
           user/*/* | gui/*/*) [ -e "$(agents_of "${2%/*}")/${2##*/}" ] ;;
           gui/*) flag "gui-${2#gui/}" ;;
           *) exec "$FAKE_MACOS_BIN/launchctl" "$@" ;;

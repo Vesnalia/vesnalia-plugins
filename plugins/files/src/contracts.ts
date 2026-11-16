@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const threadIdSchema = z.string().trim().min(1);

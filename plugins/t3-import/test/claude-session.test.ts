@@ -7,7 +7,7 @@ import { claudeSession, fixture } from "./helpers.ts";
 
 test("matches Claude Code's project directory naming", () => {
   assert.equal(projectSlug("/Users/karol/Desktop/voxelhost-infrastructure"), "-Users-karol-Desktop-voxelhost-infrastructure");
-  assert.equal(projectSlug("/Users/karol/.bb/workspaces/thr_ans8h3mzrb"), "-Users-karol--bb-workspaces-thr-ans8h3mzrb");
+  assert.equal(projectSlug("/Users/karol/.vesnalia/workspaces/thr_ans8h3mzrb"), "-Users-karol--alia-workspaces-thr-ans8h3mzrb");
 });
 
 test("rewrites only lines that belong to the copied session", () => {

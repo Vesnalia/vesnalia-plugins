@@ -1,6 +1,6 @@
 ---
-name: Guided Review — BB-native Operate surface
-description: Existing BB theme and controls applied to the review list and chapter workspace.
+name: Guided Review — ALIA-native Operate surface
+description: Existing VesnALIA theme and controls applied to the review list and chapter workspace.
 colors:
   background: "var(--background)"
   foreground: "var(--foreground)"
@@ -32,17 +32,17 @@ components:
 
 ## Overview
 
-This records the incumbent **Operate** surface inside BB. [app.tsx](app.tsx) registers the sidebar panel; [ReviewList](components/ReviewList.tsx) and [ReviewWorkspace](components/ReviewWorkspace.tsx) provide its two working views. The design inherits BB’s typography, semantic colors, controls, and code themes. It establishes no separate marketing identity.
+This records the incumbent **Operate** surface inside VesnALIA. [app.tsx](app.tsx) registers the sidebar panel; [ReviewList](components/ReviewList.tsx) and [ReviewWorkspace](components/ReviewWorkspace.tsx) provide its two working views. The design inherits VesnALIA’s typography, semantic colors, controls, and code themes. It establishes no separate marketing identity.
 
 ## Colors
 
 The frontmatter retains live host token references so light and dark themes remain authoritative. Background and card surfaces, muted supporting text, borders, focus rings, hover/active fills, and destructive feedback all use those roles. Small PR/local-type marks and status badges add localized violet, sky, amber, emerald, and destructive treatments with explicit dark variants. Status text and icons accompany color.
 
-[DiffViewer](components/DiffViewer.tsx) uses BB’s light/dark code-theme names when supplied and receives the current mode from the SDK. Preserve that connection rather than hardcoding a syntax palette.
+[DiffViewer](components/DiffViewer.tsx) uses VesnALIA’s light/dark code-theme names when supplied and receives the current mode from the SDK. Preserve that connection rather than hardcoding a syntax palette.
 
 ## Typography
 
-Interface text inherits the BB sans family; file paths, line references, and CLI examples use monospace. The list title uses the host extra-large scale, increasing one step on larger screens. Review titles and controls predominantly use the small scale, with extra-small metadata and compact 10–11px badges. Headings rely on medium/semibold weight and modest size changes. Keep explanations readable and reserve truncation for titles and paths with constrained space.
+Interface text inherits the VesnALIA sans family; file paths, line references, and CLI examples use monospace. The list title uses the host extra-large scale, increasing one step on larger screens. Review titles and controls predominantly use the small scale, with extra-small metadata and compact 10–11px badges. Headings rely on medium/semibold weight and modest size changes. Keep explanations readable and reserve truncation for titles and paths with constrained space.
 
 ## Layout
 
@@ -64,7 +64,7 @@ Controls and diff frames use the host medium radius; review rows and the start f
 
 - **Account and onboarding:** keep the title, compact GitHub account control, and Settings on one header line. Account switching and authentication guidance live in the account popover; Review help sits beside the CLI hint. At narrow widths, account and Settings retain accessible icon controls instead of wrapping.
 - **Review workspace:** chapters expose file summaries and risk labels; the toolbar switches Diff/Threads and controls viewed state, focus, and fullscreen. Viewed files collapse, while changed-file indicators preserve re-review context.
-- **Draft and agent:** a review panel sits beside the diff when the plugin has at least 1024px available, and below it otherwise. Draft comments and Reviewer notes are distinct views. Line comments can be edited or opened at their file; the public Review summary stays with the submission controls. Reviewer notes never enter GitHub or assistant payloads and stay accessible for submitted/archived reviews. Approve, Comment, and Request changes are visible quick-selection buttons with a highlighted selection; Submit to GitHub remains explicit. A saved receipt replaces the empty submission form after sending. Merged and closed PRs retain their guide, conversation, and unsent drafts in Archive; local reviews show installation-local notes. The Ask agent tool accepts file or selected-line context and retains the conversation inside the plugin. Pop out moves the same chat into a draggable, resizable widget; Dock returns it to the panel. The composer and pending answer survive both moves. Its worker thread stays hidden from the BB sidebar.
+- **Draft and agent:** a review panel sits beside the diff when the plugin has at least 1024px available, and below it otherwise. Draft comments and Reviewer notes are distinct views. Line comments can be edited or opened at their file; the public Review summary stays with the submission controls. Reviewer notes never enter GitHub or assistant payloads and stay accessible for submitted/archived reviews. Approve, Comment, and Request changes are visible quick-selection buttons with a highlighted selection; Submit to GitHub remains explicit. A saved receipt replaces the empty submission form after sending. Merged and closed PRs retain their guide, conversation, and unsent drafts in Archive; local reviews show installation-local notes. The Ask agent tool accepts file or selected-line context and retains the conversation inside the plugin. Pop out moves the same chat into a draggable, resizable widget; Dock returns it to the panel. The composer and pending answer survive both moves. Its worker thread stays hidden from the VesnALIA sidebar.
 - **Recovery:** loading skeletons reflect the workspace structure. Load and generation failures offer retry/back actions; draft-load failure pauses editing. Errors stay visible near the relevant action or in an alert/toast, and submission failures preserve the draft.
 
 ## Do's and Don'ts
@@ -72,7 +72,7 @@ Controls and diff frames use the host medium radius; review rows and the start f
 - Do reuse host tokens, shared controls, visible focus, and explicit loading/error states.
 - Do retain full-width panel use, responsive chapter access, and unified narrow-screen diffs.
 - Do make server account scope and GitHub write actions clear where users act.
-- Don’t imply separate team accounts, remote-machine checkout support, or shared review storage beyond the actual BB installation.
+- Don’t imply separate team accounts, remote-machine checkout support, or shared review storage beyond the actual VesnALIA installation.
 
 ## Review lifecycle
 
@@ -80,4 +80,4 @@ Generation and the submitted verdict are stored separately. Successful submissio
 
 ## Review customization
 
-Settings are accessible from the list, workspace, and BB plugin settings. Separate guide generation, assistant behavior, and reading layout into simple sections. Settings are explicit-save, and restoring defaults is staged. Private notes autosave with recoverable text and non-destructive conflict comparison. Keep Ask agent beside draft comments and reviewer notes in a 44px activity rail. On desktop, the rail stays on the right and the open sidebar uses 384px including the rail. Clicking the active icon or its close control collapses the panel while preserving mounted editors; clicking another icon opens that tool. Persist the selected tool and open state per review. Show accessible tooltips, a draft-count badge, and an active indicator. Below 1024px of plugin width, use a horizontal rail above the panel and combine its label and close control in that row. A toolbar shortcut opens Ask agent with current-file context. An optional widget stays within the fullscreen root; Dock returns to the tab, including when the panel was hidden. Derive an opaque page background from the host background color so a translucent host theme cannot show the mobile sidebar through the review.
+Settings are accessible from the list, workspace, and VesnALIA plugin settings. Separate guide generation, assistant behavior, and reading layout into simple sections. Settings are explicit-save, and restoring defaults is staged. Private notes autosave with recoverable text and non-destructive conflict comparison. Keep Ask agent beside draft comments and reviewer notes in a 44px activity rail. On desktop, the rail stays on the right and the open sidebar uses 384px including the rail. Clicking the active icon or its close control collapses the panel while preserving mounted editors; clicking another icon opens that tool. Persist the selected tool and open state per review. Show accessible tooltips, a draft-count badge, and an active indicator. Below 1024px of plugin width, use a horizontal rail above the panel and combine its label and close control in that row. A toolbar shortcut opens Ask agent with current-file context. An optional widget stays within the fullscreen root; Dock returns to the tab, including when the panel was hidden. Derive an opaque page background from the host background color so a translucent host theme cannot show the mobile sidebar through the review.

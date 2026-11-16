@@ -460,7 +460,7 @@ export type GameMigration = {
 
 /**
  * Moving the GUI and Characters projects into games: one game per folder (origin); a project made in a chat's
- * scratch folder (.bb/chats/…) becomes a game of its own, named after the project. The game takes the GUI project's
+ * scratch folder (.vesnalia/chats/…) becomes a game of its own, named after the project. The game takes the GUI project's
  * theme (else the Characters one's); the projects keep theirs.
  */
 export function planGameMigration(styles: readonly GuiStyle[], now: string, newId: () => string): GameMigration {
@@ -474,7 +474,7 @@ export function planGameMigration(styles: readonly GuiStyle[], now: string, newI
     const key = style.origin || `style:${style.id}`;
     let game = byOrigin.get(key) ?? styles.find((item) => item.section === "roblox" && item.origin && item.origin === style.origin) ?? null;
     if (!game) {
-      const scratch = !style.origin || /[\\/]\.bb[\\/]chats[\\/]/.test(style.origin);
+      const scratch = !style.origin || /[\\/]\.alia[\\/]chats[\\/]/.test(style.origin);
       game = {
         id: newId(),
         projectId: style.projectId,

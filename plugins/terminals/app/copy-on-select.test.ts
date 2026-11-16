@@ -1,4 +1,4 @@
-/** Following bb's "Copy on select" setting, which the SDK reads only on request. */
+/** Following VesnALIA's "Copy on select" setting, which the SDK reads only on request. */
 import { describe, expect, it, vi } from "vitest";
 
 import { COPY_ON_SELECT_FRESH_MS, CopyOnSelectSetting } from "./copy-on-select";
@@ -20,7 +20,7 @@ describe("CopyOnSelectSetting", () => {
     expect(setting.current()).toBe(false);
   });
 
-  it("takes bb's default, on, when the setting is missing", async () => {
+  it("takes VesnALIA's default, on, when the setting is missing", async () => {
     expect(await new CopyOnSelectSetting(reader([undefined])).resolve()).toBe(true);
   });
 
@@ -44,7 +44,7 @@ describe("CopyOnSelectSetting", () => {
     expect(source.config).toHaveBeenCalledTimes(1);
   });
 
-  it("keeps the last answer when a read fails, and bb's default before any", async () => {
+  it("keeps the last answer when a read fails, and VesnALIA's default before any", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     let now = 0;
     const setting = new CopyOnSelectSetting(reader([new Error("down"), false, new Error("down")]), () => now);
@@ -67,7 +67,7 @@ describe("CopyOnSelectSetting", () => {
   });
 });
 
-describe("reload, when bb says its settings were saved", () => {
+describe("reload, when VesnALIA says its settings were saved", () => {
   it("reads at once, inside the freshness window", async () => {
     const now = 0;
     const source = reader([true, false]);
@@ -114,7 +114,7 @@ describe("a read that a newer one overtakes", () => {
   it("hands its waiter the newer answer even when it finishes first", async () => {
     const { reader, pending } = controlled();
     const setting = new CopyOnSelectSetting(reader);
-    // A selection's press starts read A; bb then says its settings were saved, starting read B.
+    // A selection's press starts read A; VesnALIA then says its settings were saved, starting read B.
     const selection = setting.refresh();
     void setting.reload();
     let answered: boolean | null = null;

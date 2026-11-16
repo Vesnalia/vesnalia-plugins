@@ -1,16 +1,16 @@
-// Captures the README screenshots from a real, running bb.
+// Captures the README screenshots from a real, running VesnALIA.
 //
-//   BB_DEMO_PROJECT=proj_… BB_DEMO_THREAD=thr_… npm run screenshots
+//   ALIA_DEMO_PROJECT=proj_… ALIA_DEMO_THREAD=thr_… npm run screenshots
 //
-// These are not mockups. Every frame below is Chromium driving a live bb with
+// These are not mockups. Every frame below is Chromium driving a live VesnALIA with
 // this plugin installed: the same DOM a user sees. What is invented is only the
-// *data*: a throwaway bb (its own data folder and ports, for example
-// `npx bb-app --data-dir /tmp/demo-bb --server-port 47286 --host-daemon-port 47287`)
+// *data*: a throwaway VesnALIA (its own data folder and ports, for example
+// `npx alia-app --data-dir /tmp/demo-alia --server-port 47286 --host-daemon-port 47287`)
 // with a few made-up projects and threads, and prompts and snippets added
-// through `bb prompts add` and `bb prompts snip-add`. Point the script at it:
+// through `alia prompts add` and `alia prompts snip-add`. Point the script at it:
 //
-//   BB_APP_URL=http://127.0.0.1:47286 \
-//   BB_DEMO_PROJECT=proj_xxx BB_DEMO_THREAD=thr_xxx npm run screenshots
+//   ALIA_APP_URL=http://127.0.0.1:47286 \
+//   ALIA_DEMO_PROJECT=proj_xxx ALIA_DEMO_THREAD=thr_xxx npm run screenshots
 //
 // The demo thread wants three thread prompts (one armed, one scheduled),
 // project and global prompts, a few recently used ones, and a snippet titled
@@ -19,7 +19,7 @@
 //
 // Each surface is captured twice, light and dark, so the README can serve the
 // right one per reader through <picture>. Dark mode comes from the OS-level
-// preference Playwright emulates, which is what bb follows.
+// preference Playwright emulates, which is what VesnALIA follows.
 
 import { chromium } from "playwright";
 import { mkdir, readFile, rm } from "node:fs/promises";
@@ -31,14 +31,14 @@ const outDir = resolve(repoRoot, "assets/screenshots");
 
 // Ids are per instance, so there is no useful default: a stale one would just
 // render a 404 into the README. Name the demo thread explicitly.
-const APP = process.env.BB_APP_URL ?? "http://127.0.0.1:47286";
-const PROJECT = process.env.BB_DEMO_PROJECT;
-const THREAD = process.env.BB_DEMO_THREAD;
+const APP = process.env.ALIA_APP_URL ?? "http://127.0.0.1:47286";
+const PROJECT = process.env.ALIA_DEMO_PROJECT;
+const THREAD = process.env.ALIA_DEMO_THREAD;
 
 if (!PROJECT || !THREAD) {
   console.error(
-    "Set BB_DEMO_PROJECT and BB_DEMO_THREAD to the seeded demo thread, e.g.\n" +
-      "  BB_DEMO_PROJECT=proj_… BB_DEMO_THREAD=thr_… npm run screenshots",
+    "Set ALIA_DEMO_PROJECT and ALIA_DEMO_THREAD to the seeded demo thread, e.g.\n" +
+      "  ALIA_DEMO_PROJECT=proj_… ALIA_DEMO_THREAD=thr_… npm run screenshots",
   );
   process.exit(1);
 }
@@ -235,9 +235,9 @@ async function main() {
           deviceScaleFactor: 2,
           colorScheme: mode.colorScheme,
         });
-        // A fresh browser profile would land on bb's first-run setup.
+        // A fresh browser profile would land on VesnALIA's first-run setup.
         await ctx.addInitScript(() => {
-          window.localStorage.setItem("bb.onboarding.seen", "1");
+          window.localStorage.setItem("alia.onboarding.seen", "1");
         });
         const page = await ctx.newPage();
         try {

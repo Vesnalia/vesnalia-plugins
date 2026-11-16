@@ -80,13 +80,13 @@ export const mspSessionResumeResultSchema = z
  * `session/read` folds a stored session without loading it, so a replacement
  * session can be told what the session it replaced had already said. Only the
  * transcript's speech is read here; the shape stays minimal so a history rung
- * bb does not use can never fail the parse.
+ * VesnALIA does not use can never fail the parse.
  */
 const mspHistoryItemSchema = z
   .object({
     kind: z.string(),
     text: z.string().optional(),
-    /** `userMessage`: what bb showed the user, without the wrappers bb added. */
+    /** `userMessage`: what VesnALIA showed the user, without the wrappers VesnALIA added. */
     displayText: z.string().optional(),
   })
   .loose();

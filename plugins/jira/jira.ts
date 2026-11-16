@@ -397,7 +397,7 @@ export type IssueView = "assigned" | "reported" | "recent" | "all";
 export function buildViewJql(args: {
   view: IssueView;
   projectKey: string;
-  /** A linked BB project's Jira projects; used when `projectKey` is empty. */
+  /** A linked VesnALIA project's Jira projects; used when `projectKey` is empty. */
   projectKeys?: readonly string[];
   text: string;
   includeDone: boolean;

@@ -35,7 +35,7 @@ after(() => {
   dom.window.close();
 });
 
-test("the notice names the layout and how to switch back to BB's navigation", () => {
+test("the notice names the layout and how to switch back to VesnALIA's navigation", () => {
   const { container } = render(<NavigationNotice layout="Compact" />);
   const note = container.querySelector('[role="note"]');
   assert.ok(note);

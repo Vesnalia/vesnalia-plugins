@@ -181,7 +181,7 @@ function parseItem(section: BacklogSection, line: string): BacklogItem | null {
     project: field(groups, "project", "repo"),
     kind: field(groups, "kind")?.toLowerCase() ?? null,
     mode: field(groups, "mode"),
-    // `agent:` and `crewmate:` are the spellings from before crewmates were bb threads.
+    // `agent:` and `crewmate:` are the spellings from before crewmates were VesnALIA threads.
     threadId: field(groups, "thread", "agent", "crewmate"),
     hold: field(groups, "hold"),
     actions,

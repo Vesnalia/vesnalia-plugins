@@ -20,7 +20,7 @@ const REPORT: MacReport = {
   capabilities: {
     simulator: { is: "yes", what: { xcode: "26.1.1", runtimes: ["iOS 26.2"], newest: { os: "26.2", build: "23C54" }, deviceTypes: ["com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro", "com.apple.CoreSimulator.SimDeviceType.iPhone-17"] } },
     hardwareEncoder: { is: "no", why: "VideoToolbox's encoder is not available here (-12915)" },
-    softwareEncoder: { is: "no", why: "bb-box-h264 is not installed" },
+    softwareEncoder: { is: "no", why: "alia-box-h264 is not installed" },
   },
 };
 
@@ -140,7 +140,7 @@ function harness(options: { report?: MacReport | null; room?: string | null; mea
     command: async () => host as never,
     measure: async () => options.measured ?? REPORT,
     setupArchive: async () => Buffer.from("archive"),
-    publicKey: async () => "ssh-ed25519 AAAA bb-box",
+    publicKey: async () => "ssh-ed25519 AAAA alia-box",
     log: (line) => void logs.push(line),
     logError: (operation, error) => void logs.push(`${operation}: ${error instanceof Error ? error.message : String(error)}`),
   };
@@ -193,7 +193,7 @@ test("a shared iOS host recorded before several workspaces, with no backend, rea
   }
 });
 
-test("Namespace's ios offer comes from its last Mac measured: a model its Xcode makes, its newest runtime, and BB Box's list for it (065, unit 7)", () => {
+test("Namespace's ios offer comes from its last Mac measured: a model its Xcode makes, its newest runtime, and VesnALIA Box's list for it (065, unit 7)", () => {
   const offer = namespaceDeviceOffer(REPORT);
   assert.ok(offer.ok);
   const device = offer.device.devices[0];
@@ -204,14 +204,14 @@ test("Namespace's ios offer comes from its last Mac measured: a model its Xcode 
   const noList = { ...REPORT, capabilities: { ...REPORT.capabilities, simulator: { is: "yes" as const, what: { xcode: "26.4", runtimes: ["iOS 26.4"], newest: { os: "26.4", build: "23E1" }, deviceTypes: ["com.apple.CoreSimulator.SimDeviceType.iPhone-17"] } } } };
   assert.match((namespaceDeviceOffer(noList) as { why: string }).why, /no slimming list for iOS 26\.4 \(23E1\)/);
   const noModel = { ...REPORT, capabilities: { ...REPORT.capabilities, simulator: { is: "yes" as const, what: { xcode: "26.1.1", runtimes: ["iOS 26.2"], newest: { os: "26.2", build: "23C54" }, deviceTypes: ["com.apple.CoreSimulator.SimDeviceType.iPhone-8"] } } } };
-  assert.match((namespaceDeviceOffer(noModel) as { why: string }).why, /can make none of BB Box's iOS devices/);
+  assert.match((namespaceDeviceOffer(noModel) as { why: string }).why, /can make none of ALIA Box's iOS devices/);
   assert.match((namespaceDeviceOffer({ ...REPORT, capabilities: NOT_MEASURED }) as { why: string }).why, /cannot run the iOS Simulator/);
 });
 
-test("a host's setup unpacks BB Box's setup and runs mac-ios.sh as root with the host's settings, as a host deleted after its last box", () => {
+test("a host's setup unpacks VesnALIA Box's setup and runs mac-ios.sh as root with the host's settings, as a host deleted after its last box", () => {
   const script = hostSetupScript({ most: 4, ahead: 1, resettingMost: 2, diskReserveGiB: 20 });
   assert.match(script, /sudo -n env HOST_SETTINGS='most=4\nahead=1\nresetting-most=2\ndisk-reserve-gib=20' \/bin\/sh "\$here\/ssh-pool\/mac-ios\.sh" "\$here\/ssh-pool" "\$\(id -un\)"/);
-  assert.match(UNPACK_SETUP, /tar -xzf - -C "\$HOME\/bb-box-setup"/);
+  assert.match(UNPACK_SETUP, /tar -xzf - -C "\$HOME\/alia-box-setup"/);
 });
 
 test("a slot's commands run as its user, in its launchd session, through the host's own SSH and sudo, as Namespace's Macs have no sshd for other users", async () => {
@@ -257,7 +257,7 @@ test("the first ios box starts a Namespace host and the next joins it while it s
   assert.equal(transports.daemonKeptByHost?.daemonPort, 38900);
   const guest2 = await hosts.acquire(box("b2"), promise2 as Guest, hooks, signal());
   assert.equal(namespaceSlotOf(guest2)?.slot, "2");
-  assert.equal((await hosts.transports(guest2)).daemonKeptByHost?.daemonPort, 38901, "two slots enrolling at once never pick the same port for BB's daemon");
+  assert.equal((await hosts.transports(guest2)).daemonKeptByHost?.daemonPort, 38901, "two slots enrolling at once never pick the same port for VesnALIA's daemon");
   assert.deepEqual((await hosts.held(signal())).map((each) => [each.owner?.boxId, namespaceSlotOf(each)?.slot]).sort(), [["b1", "1"], ["b2", "2"]]);
   assert.equal((await hosts.doctor(signal())).status, "ok");
   assert.match((await hosts.doctor(signal())).detail, /2 held, 0 ready, 0 making, 0 sweeping, of 4; ends at \d\d:\d\d UTC; video by software, as its Mac has no hardware H\.264 encoder\./);
@@ -318,7 +318,7 @@ test("a Namespace host whose first Mac fails to start starts once more on a fres
   assert.equal(joined.tier, "join", "the host is still starting, so a box joins it");
   const second = await hosts.take(joined, box("b2"), signal());
   assert.match((await hosts.doctor(signal())).detail, /^The Namespace host is starting, with 2 boxes promised, made \d+ s ago, on a fresh Namespace Mac as its first start failed \(its iOS slots were not set up: mac-ios\.sh: xcrun simctl runtime add failed\)\.$/);
-  assert.ok(logs.includes("The Namespace host's Mac ns-1 did not start, so bb-box destroys it and starts a fresh Namespace Mac, once: its iOS slots were not set up: mac-ios.sh: xcrun simctl runtime add failed"), logs.join("\n"));
+  assert.ok(logs.includes("The Namespace host's Mac ns-1 did not start, so alia-box destroys it and starts a fresh Namespace Mac, once: its iOS slots were not set up: mac-ios.sh: xcrun simctl runtime add failed"), logs.join("\n"));
   held.open();
   const slots = await Promise.all([hosts.acquire(box("b1"), first as Guest, hooks, signal()), hosts.acquire(box("b2"), second as Guest, hooks, signal())]);
   assert.deepEqual(slots.map((slot) => namespaceSlotOf(slot)?.instance), ["ns-2", "ns-2"]);
@@ -356,8 +356,8 @@ test("a Namespace Mac that stops or goes before the host serves is noticed withi
   const slot = await hosts.acquire(box("b1"), promised as Guest, hooks, signal());
   assert.ok(Date.now() - began < 5_000, "seen within a poll");
   assert.equal(namespaceSlotOf(slot)?.instance, "ns-2");
-  assert.ok(logs.some((line) => /^Namespace's Mac ns-1 is suspended before the host served: Namespace lists it suspended\. bb-box saw it \d+\.\d s after the Mac ran, and stops waiting for it\.$/.test(line)), logs.join("\n"));
-  assert.ok(logs.some((line) => line.startsWith("The Namespace host's Mac ns-1 did not start, so bb-box destroys it and starts a fresh Namespace Mac, once: Namespace's Mac ns-1 is suspended before the host served")), logs.join("\n"));
+  assert.ok(logs.some((line) => /^Namespace's Mac ns-1 is suspended before the host served: Namespace lists it suspended\. alia-box saw it \d+\.\d s after the Mac ran, and stops waiting for it\.$/.test(line)), logs.join("\n"));
+  assert.ok(logs.some((line) => line.startsWith("The Namespace host's Mac ns-1 did not start, so alia-box destroys it and starts a fresh Namespace Mac, once: Namespace's Mac ns-1 is suspended before the host served")), logs.join("\n"));
   assert.deepEqual(destroyed, ["ns-1"]);
   await hosts.release(slot);
 });

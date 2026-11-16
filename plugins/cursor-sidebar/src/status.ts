@@ -4,7 +4,7 @@
  * The main status uses one descending order over separate facts. A status the
  * feed cannot observe is never inferred.
  */
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { isWorking } from "./activity";
 
 export type ThreadStatusKind =

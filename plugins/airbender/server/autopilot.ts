@@ -5,7 +5,7 @@
 // no issue, so the owner does not have to press Start on each one.
 //
 // Why: an epic with many issues is worked one at a time, and each had to be
-// started by hand after the one before was committed (bead-bb-8ff). Of
+// started by hand after the one before was committed (bead-alia-8ff). Of
 // three kinds of autopilot the user chose the supervised one first ("Let's
 // have b first, and then we'll create a as automation for b"): every review
 // stays the owner's; autopilot only strings the issues together.
@@ -25,7 +25,7 @@
 //   the step that closes it; or it could not be started. The user said the
 //   resistance may be raised later: this is the place.
 // - To see "the agent's turn ended", the conversation is watched after
-//   every step handed to the agent while autopilot is on: wait until BB
+//   every step handed to the agent while autopilot is on: wait until VesnALIA
 //   says it is idle, look again a few seconds later (a queued message
 //   starts the next turn a moment after the last one ends, and that gap
 //   must not be taken for a stop), then look at the current issue.
@@ -40,7 +40,7 @@
 //   work.setCurrent: that one is the owner stepping in, which turns
 //   autopilot off.
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { CLOSED_STATUS, DEFERRED_STATUS } from "../shared/constants.ts";
 import { stateOf } from "../shared/workflow.ts";
 import type { Issue } from "./contract.ts";
@@ -95,7 +95,7 @@ export function nextIssue(
   heldElsewhere: ReadonlySet<string>,
 ): Pick_ {
   // Someday issues are set aside: not to be started, and not left to do
-  // (bead-bb-26g).
+  // (bead-alia-26g).
   const open = issues.filter(
     (issue) =>
       issue.parentId === epicId &&
@@ -152,13 +152,13 @@ const BY_HAND = "Carry on by hand; turn autopilot on again to resume.";
  * Side effects: one read of the plugin's storage now.
  */
 export async function createAutopilot({
-  bb,
+  alia,
   store,
   currentBead,
   workflowChoice,
   begin,
 }: {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   store: Store;
   currentBead: CurrentBead;
   workflowChoice: WorkflowChoice;
@@ -170,7 +170,7 @@ export async function createAutopilot({
 }) {
   /** Conversation id -> its autopilot. */
   const states = new Map<string, AutopilotState>();
-  const saved = await bb.storage.kv.get<unknown>(STATE_KEY).catch(() => undefined);
+  const saved = await alia.storage.kv.get<unknown>(STATE_KEY).catch(() => undefined);
   if (typeof saved === "object" && saved !== null) {
     for (const [threadId, entry] of Object.entries(saved)) {
       const { epicId, on, reason: why } = (entry ?? {}) as Partial<AutopilotState>;
@@ -184,9 +184,9 @@ export async function createAutopilot({
     }
   }
   const save = () =>
-    bb.storage.kv
+    alia.storage.kv
       .set(STATE_KEY, Object.fromEntries(states))
-      .catch((cause) => bb.log.warn("could not save autopilot: " + cause));
+      .catch((cause) => alia.log.warn("could not save autopilot: " + cause));
 
   /** Conversations being advanced or looked at right now. */
   const busy = new Set<string>();
@@ -213,7 +213,7 @@ export async function createAutopilot({
   /** Whether the conversation's agent is at work; false when it cannot be told. */
   async function agentBusy(threadId: string): Promise<boolean> {
     try {
-      return BUSY.has((await bb.sdk.threads.get({ threadId })).status);
+      return BUSY.has((await alia.sdk.threads.get({ threadId })).status);
     } catch {
       return false;
     }
@@ -282,7 +282,7 @@ export async function createAutopilot({
           issue.status !== CLOSED_STATUS &&
           issue.status !== DEFERRED_STATUS,
       );
-      const { projectId } = await bb.sdk.threads.get({ threadId });
+      const { projectId } = await alia.sdk.threads.get({ threadId });
       const held = new Set(
         await currentBead.heldAmong(
           projectId,
@@ -327,7 +327,7 @@ export async function createAutopilot({
       // The message may not have started a turn yet.
       await pause(SETTLE_MS);
       while (current()) {
-        await bb.sdk.threads
+        await alia.sdk.threads
           .wait({ threadId, status: "idle", timeoutMs: TURN_MS })
           .catch(() => undefined);
         await pause(SETTLE_MS);
@@ -337,7 +337,7 @@ export async function createAutopilot({
       if (!current()) return;
       watches.delete(threadId);
       await look(threadId, true);
-    })().catch((cause) => bb.log.warn(`autopilot watch of ${threadId} failed: ${reason(cause)}`));
+    })().catch((cause) => alia.log.warn(`autopilot watch of ${threadId} failed: ${reason(cause)}`));
   }
 
   /**

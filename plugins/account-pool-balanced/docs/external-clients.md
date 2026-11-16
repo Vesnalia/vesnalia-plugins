@@ -1,31 +1,31 @@
 # External clients and standalone server
 
-The pool can serve agents launched outside BB. Use the BB-hosted pool to share its existing accounts, or run the standalone server without BB. Both hosts use the same hub, adapters, quota routing and affinity code. Devin Local CLI support starts with `account-pool-balanced/v0.4.0`; standalone and Devin cloud support are experimental.
+The pool can serve agents launched outside VesnALIA. Use the ALIA-hosted pool to share its existing accounts, or run the standalone server without VesnALIA. Both hosts use the same hub, adapters, quota routing and affinity code. Devin Local CLI support starts with `account-pool-balanced/v0.4.0`; standalone and Devin cloud support are experimental.
 
-## Share a BB pool
+## Share a VesnALIA pool
 
 With version 0.3.0 or later, create a separate client credential:
 
 ```sh
-bb pool client add orca --output /secure/client.token
+alia pool client add orca --output /secure/client.token
 ```
 
-The output file is created on the **BB server**, exclusively with mode 0600. Transfer it privately to the client machine. It contains only a pool credential, never a provider login. The base URL is `https://YOUR_BB_SERVER/api/v1/plugins/account-pool-balanced/http`. Verify the BB server is reachable from the client; this command does not expose ports or configure TLS. External credentials survive BB host inventory pruning. Revoke with `bb pool client revoke orca`; subsequent requests are rejected immediately. Already accepted requests can finish.
+The output file is created on the **VesnALIA server**, exclusively with mode 0600. Transfer it privately to the client machine. It contains only a pool credential, never a provider login. The base URL is `https://YOUR_BB_SERVER/api/v1/plugins/account-pool-balanced/http`. Verify the VesnALIA server is reachable from the client; this command does not expose ports or configure TLS. External credentials survive VesnALIA host inventory pruning. Revoke with `alia pool client revoke orca`; subsequent requests are rejected immediately. Already accepted requests can finish.
 
 Pool credentials are for trusted clients belonging to the operator. Their server-side project and purpose binding, account policies and quota rules determine access; this is not a tenant billing or per-client spending isolation system. Use a separate pool for untrusted tenants.
 
 For an external pilot restricted to specific accounts and a dedicated exit, see
-[server-owned account scope](../CLIENT-ACCOUNT-SCOPE.md). The BB issuance command
+[server-owned account scope](../CLIENT-ACCOUNT-SCOPE.md). The VesnALIA issuance command
 accepts `--account-scope-json`; scope requires a project and survives rotation.
 This is an account allowlist, not a per-client spending budget.
 
 ## Standalone setup
 
-Requirements: Node 22+, npm, and a compiler toolchain if the SQLite native prebuild is unavailable. No BB installation is needed for this mode:
+Requirements: Node 22+, npm, and a compiler toolchain if the SQLite native prebuild is unavailable. No VesnALIA installation is needed for this mode:
 
 ```sh
 git clone --branch account-pool-balanced/v0.4.1 --depth 1 https://github.com/OXI-717/bb-plugins.git
-cd bb-plugins/plugins/account-pool-balanced
+cd alia-plugins/plugins/account-pool-balanced
 npm ci
 npm run pool -- --data-dir /secure/pool import-login --provider codex
 npm run pool -- --data-dir /secure/pool import-login --provider claude
@@ -33,7 +33,7 @@ npm run pool -- --data-dir /secure/pool client-add --client orca --output /secur
 npm run pool -- --data-dir /secure/pool serve --port 8787
 ```
 
-`import-login` reads the operator's existing local CLI login. Repeat after logging into a different account to add more accounts. It does not start a new browser login. Refresh tokens should have one active owner: do not independently run the same imported login in multiple pools. Start with a new empty directory, never BB's data directory. Stop the standalone server before running its administration commands. The lock rejects concurrent processes; after an unclean crash, confirm no server is running before removing `standalone.lock`.
+`import-login` reads the operator's existing local CLI login. Repeat after logging into a different account to add more accounts. It does not start a new browser login. Refresh tokens should have one active owner: do not independently run the same imported login in multiple pools. Start with a new empty directory, never VesnALIA's data directory. Stop the standalone server before running its administration commands. The lock rejects concurrent processes; after an unclean crash, confirm no server is running before removing `standalone.lock`.
 
 For provider keys or explicitly transferred OAuth accounts, `import-account` accepts JSON on stdin (keep the file outside Git):
 
@@ -48,7 +48,7 @@ For provider keys or explicitly transferred OAuth accounts, `import-account` acc
 }
 ```
 
-Use `npm run pool -- --data-dir /secure/pool import-account < /secure/account.json`. Account metadata also accepts `"role":"reserve"` and `"cap":{"early":0.5,"late":0.95}`; default is primary with no cap. `accounts` lists metadata only. `client-revoke --client orca` removes a client's token. `--config /secure/config.json` accepts the existing pool settings, for example `{"routingStrategy":"balanced","switchThreshold":0.98,"reserveDrainHours":24,"restDays":[0,6]}`. Balance and reserve behavior match BB; quota visibility still depends on the provider.
+Use `npm run pool -- --data-dir /secure/pool import-account < /secure/account.json`. Account metadata also accepts `"role":"reserve"` and `"cap":{"early":0.5,"late":0.95}`; default is primary with no cap. `accounts` lists metadata only. `client-revoke --client orca` removes a client's token. `--config /secure/config.json` accepts the existing pool settings, for example `{"routingStrategy":"balanced","switchThreshold":0.98,"reserveDrainHours":24,"restDays":[0,6]}`. Balance and reserve behavior match VesnALIA; quota visibility still depends on the provider.
 
 The listener defaults to `127.0.0.1`. For remote access, place it behind a TLS reverse proxy or a private tunnel. Do not expose plain HTTP on a public interface. Requests have a 16 MiB body cap; streaming responses propagate without buffering. The standalone process has no administration HTTP endpoints.
 
@@ -79,11 +79,11 @@ on the hub; supply client tokens through private environment configuration.
 
 Add a [Devin personal access token](https://docs.devin.ai/api-reference/personal-access-tokens) to the pool on its server. This is for local `devin -p` or `devin acp`; the separate `/agents/devin/sessions` endpoints below drive Devin Cloud sessions instead.
 
-BB-hosted pool:
+ALIA-hosted pool:
 
 ```sh
-bb pool account add --provider devin --api-key-stdin --label team-one
-bb pool client add devin-laptop --output /secure/devin-client.token
+alia pool account add --provider devin --api-key-stdin --label team-one
+alia pool client add devin-laptop --output /secure/devin-client.token
 ```
 
 Standalone pool: import an account with `"provider":"devin"`, `"kind":"api-key"` and the PAT in `secret.apiKey` using `import-account`. Create a client token with `client-add` as above. Repeat account import for each subscription; priorities and reserve roles use the ordinary pool controls. Keep PATs only on the pool server.
@@ -134,17 +134,17 @@ POOL_CLIENT_TOKEN="$(cat "$POOL_TOKEN_FILE")" codex \
   -c 'model_providers.account-pool.supports_websockets=false'
 ```
 
-For a BB-hosted pool, set `POOL_URL` to its plugin HTTP base URL above. Do not enable shell tracing around token loading. The token is in the child environment, not in CLI arguments. These commands connect the CLI inside Orca; they do not add a new native Orca provider UI. Configuration contract: [Codex reference](https://developers.openai.com/codex/config-reference).
+For a ALIA-hosted pool, set `POOL_URL` to its plugin HTTP base URL above. Do not enable shell tracing around token loading. The token is in the child environment, not in CLI arguments. These commands connect the CLI inside Orca; they do not add a new native Orca provider UI. Configuration contract: [Codex reference](https://developers.openai.com/codex/config-reference).
 
 ## Verify routing and context
 
-In Claude, `/status` must show your pool URL and `ANTHROPIC_AUTH_TOKEN`. The saved local login email and “API Usage Billing” label do not identify the upstream account selected by the pool. Use `bb pool status` or the BB pool panel for per-account quotas; native client screens do not show aggregate pool balances.
+In Claude, `/status` must show your pool URL and `ANTHROPIC_AUTH_TOKEN`. The saved local login email and “API Usage Billing” label do not identify the upstream account selected by the pool. Use `alia pool status` or the VesnALIA pool panel for per-account quotas; native client screens do not show aggregate pool balances.
 
-For Opus 5.5 use Claude Code 2.1.280 or later. BB-routed Claude Code sessions preserve the native 1M window starting with pool version 0.4.1; restart the session after updating and check `/context`. For external clients, select `/model claude-opus-5-5[1m]`, then check `/context` shows a 1M denominator. Plain `opus` through a gateway was observed to budget only 200K, causing repeated compaction with large rules/MCP context. Keep automatic compaction enabled. See [Claude model configuration](https://code.claude.com/docs/en/model-config#extended-context).
+For Opus 5.5 use Claude Code 2.1.280 or later. ALIA-routed Claude Code sessions preserve the native 1M window starting with pool version 0.4.1; restart the session after updating and check `/context`. For external clients, select `/model claude-opus-5-5[1m]`, then check `/context` shows a 1M denominator. Plain `opus` through a gateway was observed to budget only 200K, causing repeated compaction with large rules/MCP context. Keep automatic compaction enabled. See [Claude model configuration](https://code.claude.com/docs/en/model-config#extended-context).
 
 In Codex, check that the provider is `Account Pool`. Choose a model available to your accounts. Unsupported models should produce a provider error, not bypass the pool. Revoking a dedicated client token should make new requests fail rather than use the local login.
 
-BB client commands run on the server: a remote `--output` path is not a file on your laptop. Keep the server running. On the same host use `http://127.0.0.1:38886/api/v1/plugins/account-pool-balanced/http`; standalone examples use port 8787. Claude subscription connectors may be unavailable under proxy authentication.
+VesnALIA client commands run on the server: a remote `--output` path is not a file on your laptop. Keep the server running. On the same host use `http://127.0.0.1:38886/api/v1/plugins/account-pool-balanced/http`; standalone examples use port 8787. Claude subscription connectors may be unavailable under proxy authentication.
 
 ## Devin cloud sessions (standalone host)
 
@@ -165,20 +165,20 @@ Send the pool client token as `Authorization: Bearer ...`:
 | POST | `/agents/devin/sessions/SESSION_ID/messages` | `{"message":"Please run the focused tests"}` |
 | DELETE | `/agents/devin/sessions/SESSION_ID` | none |
 
-Omit `account` to distribute new sessions round-robin. Specify it when organizations have different repository access. Status includes Devin's consumed ACUs and result fields. Sessions stay on their original account across server restarts, and are visible through the pool only to the client that created them. There is no remaining-credit balancing yet. No creation is automatically retried or transferred on errors: a timeout may mean Devin already started work. Inspect Devin before retrying to avoid duplicate paid sessions. Local Devin CLI subscription proxying and a BB-native Devin conversation UI are not implemented by this adapter.
+Omit `account` to distribute new sessions round-robin. Specify it when organizations have different repository access. Status includes Devin's consumed ACUs and result fields. Sessions stay on their original account across server restarts, and are visible through the pool only to the client that created them. There is no remaining-credit balancing yet. No creation is automatically retried or transferred on errors: a timeout may mean Devin already started work. Inspect Devin before retrying to avoid duplicate paid sessions. Local Devin CLI subscription proxying and a ALIA-native Devin conversation UI are not implemented by this adapter.
 
 Contracts: [create](https://docs.devin.ai/api-reference/v3/sessions/post-organizations-sessions), [get](https://docs.devin.ai/api-reference/v3/sessions/get-organizations-session), [message](https://docs.devin.ai/api-reference/v3/sessions/post-organizations-sessions-messages), [terminate](https://docs.devin.ai/api-reference/v3/sessions/delete-organizations-sessions).
 
 ## Validation boundary
 
-Tests cover loopback HTTP forwarding and streaming, durable standalone accounts/tokens, BB client issuance and revocation, Devin session binding, client isolation, ACU limits and non-retry behavior with synthetic upstreams. Real Claude and Codex generation from Orca terminals has been verified against the BB-hosted pool using an existing machine token. Opus 5.5 with `[1m]` accepted a synthetic request exceeding 500K input tokens. Dedicated external-client issuance/revocation and standalone forwarding use synthetic upstreams in integration tests. Real Devin execution and forced live quota exhaustion/failover have not been tested. Automated tests do not import production accounts or reload a live pool.
+Tests cover loopback HTTP forwarding and streaming, durable standalone accounts/tokens, VesnALIA client issuance and revocation, Devin session binding, client isolation, ACU limits and non-retry behavior with synthetic upstreams. Real Claude and Codex generation from Orca terminals has been verified against the ALIA-hosted pool using an existing machine token. Opus 5.5 with `[1m]` accepted a synthetic request exceeding 500K input tokens. Dedicated external-client issuance/revocation and standalone forwarding use synthetic upstreams in integration tests. Real Devin execution and forced live quota exhaustion/failover have not been tested. Automated tests do not import production accounts or reload a live pool.
 
 ## Purpose-bound automation clients
 
-The BB-hosted CLI supports an explicit trusted purpose:
+The ALIA-hosted CLI supports an explicit trusted purpose:
 
 ```sh
-bb pool client add worker --output NEW_PRIVATE_TOKEN_FILE --project PROJECT_ID --purpose autopilot
+alia pool client add worker --output NEW_PRIVATE_TOKEN_FILE --project PROJECT_ID --purpose autopilot
 ```
 
 The project is mandatory for this purpose. Only accounts explicitly permitted in
@@ -198,12 +198,12 @@ admission. No provider credential is returned by the local exchange.
 NeuralDeep uses the native OpenAI-compatible Chat Completions protocol. Store its
 provider API key once on the pool server, through the existing account dialog or
 API-key stdin command. Each client receives only its ordinary pool credential.
-For a BB-hosted pool, the base URL is the plugin HTTP root followed by
+For a ALIA-hosted pool, the base URL is the plugin HTTP root followed by
 `/neuraldeep/v1`; standalone uses the same suffix on its root. Send the pool
 credential as a Bearer token. The hub replaces it with the selected account key
 and preserves Chat Completions bodies, tools and streaming bytes.
 
-The BB provider `acp-opencode-neuraldeep` receives `OXI_NEURALDEEP_BASE_URL` and
+The VesnALIA provider `acp-opencode-neuraldeep` receives `OXI_NEURALDEEP_BASE_URL` and
 `NEURALDEEP_API_KEY` in its process environment; that key variable contains the
 pool credential, not the provider key. The existing OpenCode route launcher must
 honor both overrides. Project restrictions, account permissions, schedules,

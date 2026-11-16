@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-route",
+  "name": "alia-plugin-route",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49"
   },
-  "bb": {
+  "alia": {
     "name": "Route",
     "description": "Hand edits to another agent, ask another model, or get a ranked decision without leaving the turn.",
     "branding": {
@@ -22,14 +22,26 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
   },
-  "description": "Hand work to another BB harness, ask another model, or ask a decision model during an agent's turn.",
+  "description": "Hand work to another VesnALIA harness, ask another model, or ask a decision model during an agent's turn.",
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/route#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lanjak/bb-plugin-route.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/route"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { definePluginApp, useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import { acpRpcContract } from "./acp-contract.js";
 import type { z } from "zod";
 import type { acpStatus } from "./acp-contract.js";

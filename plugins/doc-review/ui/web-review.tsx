@@ -1,5 +1,5 @@
-// The Review button beside the address bar of bb's own browser (desktop app
-// only: elsewhere bb gives plugins no access to the page). It puts the review
+// The Review button beside the address bar of VesnALIA's own browser (desktop app
+// only: elsewhere VesnALIA gives plugins no access to the page). It puts the review
 // controls into the live page (src/web-ui.ts with the bridge), keeps them fed
 // with the site's comments, and does what they ask: save a comment, reply,
 // delete, take a picture of the tab for a drawing, and send the drafts to the
@@ -10,7 +10,7 @@ import {
   useRealtime,
   type ExperimentalPluginBrowserPage,
   type ExperimentalPluginBrowserToolbarActionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { defineMessages, messagesNow, useMessages } from "@/lib/i18n";
@@ -103,14 +103,14 @@ const STATE = "globalThis.__docReviewWeb";
 /** Installs the controls and the bridge once per document, then switches them on. */
 function installExpression(config: unknown): string {
   return (
-    "(function (bb, config) {\n" +
+    "(function (alia, config) {\n" +
     `if (!${STATE}) {\n${WEB_UI_SCRIPT}\n${BRIDGE_SCRIPT}\n}\n` +
     `return ${STATE}.activate(config);\n` +
-    `})(bb, ${JSON.stringify(config)})`
+    `})(alia, ${JSON.stringify(config)})`
   );
 }
 
-/** bb's colors, resolved to values the page understands. */
+/** VesnALIA's colors, resolved to values the page understands. */
 function themeColors(): Record<string, string> {
   const probe = document.createElement("span");
   document.body.appendChild(probe);

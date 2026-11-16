@@ -42,7 +42,7 @@ export const AGENT_RESULT_MAX_CHARS = 24_000;
 const AGENT_CELL_MAX_CHARS = 40;
 const AGENT_MAX_COLUMNS = 32;
 
-/** Один Pool на connection id; закрывается в bb.onDispose. */
+/** Один Pool на connection id; закрывается в alia.onDispose. */
 const pools = new Map<string, { pool: pg.Pool; accessMode: PoolAccessMode }>();
 
 /**
@@ -197,7 +197,7 @@ export async function dropPool(connectionId: string): Promise<void> {
 }
 
 /**
- * Закрывает все пулы — вызывается из bb.onDispose.
+ * Закрывает все пулы — вызывается из alia.onDispose.
  */
 export async function closeAllPools(): Promise<void> {
   const pending = [...pools.entries()].map(async ([id, entry]) => {
@@ -639,7 +639,7 @@ async function tryFetchViaCursor(
 
   try {
     await client.query({
-      text: `DECLARE __bb_sql_cur NO SCROLL CURSOR FOR\n${trimmed}`,
+      text: `DECLARE __alia_sql_cur NO SCROLL CURSOR FOR\n${trimmed}`,
       values: [],
     });
   } catch {
@@ -649,10 +649,10 @@ async function tryFetchViaCursor(
   try {
     const fetchCount = Math.max(1, Math.floor(limitRows)) + 1;
     const fetched = await client.query({
-      text: `FETCH ${fetchCount} FROM __bb_sql_cur`,
+      text: `FETCH ${fetchCount} FROM __alia_sql_cur`,
       values: [],
     });
-    await client.query({ text: "CLOSE __bb_sql_cur", values: [] });
+    await client.query({ text: "CLOSE __alia_sql_cur", values: [] });
 
     if (Array.isArray(fetched)) {
       throw new Error("Unexpected multi-result FETCH");
@@ -662,7 +662,7 @@ async function tryFetchViaCursor(
     const rows = truncated ? fetched.rows.slice(0, limitRows) : fetched.rows;
     return { columns, rows, truncated };
   } catch (error) {
-    await client.query({ text: "CLOSE __bb_sql_cur", values: [] }).catch(() => undefined);
+    await client.query({ text: "CLOSE __alia_sql_cur", values: [] }).catch(() => undefined);
     throw error;
   }
 }
@@ -678,7 +678,7 @@ function serializeRow(
   return out;
 }
 
-/** Приводит значения ячеек к JSON-safe виду для bb.rpc. */
+/** Приводит значения ячеек к JSON-safe виду для alia.rpc. */
 function serializeValue(value: unknown): unknown {
   if (value === null || value === undefined) {
     return null;

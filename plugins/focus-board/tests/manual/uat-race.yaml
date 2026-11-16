@@ -1,7 +1,7 @@
 # Operator-assisted E2E: host pushes racing in-flight gestures.
 #
 # The mock's sidebar is now a real reactive store (a push rewrites the array
-# and re-renders the board the way bb's host push does), so this suite can do
+# and re-renders the board the way alia's host push does), so this suite can do
 # the thing the board's own comments name as its historically bug-dense seam:
 # a live update reassembling the board WHILE a gesture's promise is armed.
 # The board invariants run after every step (suite-level `invariants: true`).

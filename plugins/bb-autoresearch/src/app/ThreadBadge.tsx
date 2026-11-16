@@ -1,6 +1,6 @@
 // Thread header badge for study and worker threads; renders nothing elsewhere.
 // On the study thread it leads with what needs the human, if anything.
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useEffect } from "react";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -8,7 +8,7 @@ import { useLive } from "./data.ts";
 import { openLivePanel, openLivePanelSoon, takeOpenBeside } from "./live/openBeside.ts";
 
 export function ThreadBadge({ threadId, isCompactViewport }: { threadId: string; projectId: string; isCompactViewport: boolean }) {
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const b = useLive((rpc) => rpc.call("thread.badge", { threadId }), [threadId], 15_000);
   // The Live tab's "Open beside the study thread" navigated here: open the Live panel on this thread surface.
   useEffect(() => {

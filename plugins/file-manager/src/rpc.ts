@@ -1,7 +1,7 @@
 // src/rpc.ts — wiring only. Core (metadata) handlers live here; the byte-transfer
 // half of the contract is injected as `deps.transfer` so this module never
 // imports src/uploads.ts, src/archives.ts or src/jobs.ts.
-import type { BbPluginApi, PluginRpcHandlers } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginRpcHandlers } from "@vesnalia/plugin-sdk";
 
 import { MAX_LIST_ENTRIES, fileManagerContract, type FileManagerContract } from "../contract";
 import type { BookmarksModule } from "./bookmarks";
@@ -52,21 +52,21 @@ export interface RpcDeps {
 }
 
 /**
- * The id of the machine bb runs on, which is the machine this plugin reads.
+ * The id of the machine VesnALIA runs on, which is the machine this plugin reads.
  *
  * Resolved once and remembered: `getState` runs on every panel mount, and the
  * answer cannot change without a server restart. A failure is not fatal — the
  * panel falls back to downloading a double-clicked file — so it is cached as
  * "unknown" only for this call and retried on the next one.
  */
-async function resolvePrimaryHostId(bb: BbPluginApi): Promise<string | null> {
+async function resolvePrimaryHostId(alia: AliaPluginApi): Promise<string | null> {
   if (cachedPrimaryHostId !== undefined) return cachedPrimaryHostId;
   try {
-    const config = await bb.sdk.system.config();
+    const config = await alia.sdk.system.config();
     cachedPrimaryHostId = config.primaryHostId;
     return cachedPrimaryHostId;
   } catch (error) {
-    bb.log.warn(`could not resolve the primary host: ${String(error)}`);
+    alia.log.warn(`could not resolve the primary host: ${String(error)}`);
     return null;
   }
 }
@@ -75,14 +75,14 @@ let cachedPrimaryHostId: string | null | undefined;
 
 /** The metadata half of the contract — everything that never carries bytes. */
 export function createCoreHandlers(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   deps: Omit<RpcDeps, "transfer">,
 ): Omit<FileManagerHandlers, keyof TransferHandlers> {
   return {
     async getState() {
       return {
         root: getRoot(),
-        primaryHostId: await resolvePrimaryHostId(bb),
+        primaryHostId: await resolvePrimaryHostId(alia),
         startFolder: await deps.settings.resolveStartFolder(),
         preferences: deps.settings.preferences(),
         chunkSizeBytes: deps.settings.chunkSizeBytes(),
@@ -96,17 +96,17 @@ export function createCoreHandlers(
     pathProperties: (input) => pathProperties(input),
     directorySize: (input) => directorySize(input),
     statPath: (input) => statPath(input),
-    createPreviewUrl: (input) => createPreviewUrl(bb, input),
+    createPreviewUrl: (input) => createPreviewUrl(alia, input),
     readTextFile: (input) => readTextFile(input),
-    resolveFileLocation: (input) => locateFile(bb, input),
-    threadWorkspace: (input) => resolveThreadWorkspace(bb, input),
+    resolveFileLocation: (input) => locateFile(alia, input),
+    threadWorkspace: (input) => resolveThreadWorkspace(alia, input),
     searchDir: (input) => searchDir(input),
 
-    createFolder: (input) => createFolder(bb, input),
-    renameEntry: (input) => renameEntry(bb, input),
-    deleteEntries: (input) => deleteEntries(bb, input),
-    moveEntries: (input) => moveEntries(bb, input),
-    copyEntries: (input) => copyEntries(bb, input),
+    createFolder: (input) => createFolder(alia, input),
+    renameEntry: (input) => renameEntry(alia, input),
+    deleteEntries: (input) => deleteEntries(alia, input),
+    moveEntries: (input) => moveEntries(alia, input),
+    copyEntries: (input) => copyEntries(alia, input),
 
     savePreferences: (input) => deps.settings.savePreferences(input),
 
@@ -117,10 +117,10 @@ export function createCoreHandlers(
   };
 }
 
-export function registerRpc(bb: BbPluginApi, deps: RpcDeps): void {
+export function registerRpc(alia: AliaPluginApi, deps: RpcDeps): void {
   const handlers: FileManagerHandlers = {
-    ...createCoreHandlers(bb, deps),
+    ...createCoreHandlers(alia, deps),
     ...deps.transfer,
   };
-  bb.rpc.register(fileManagerContract, handlers);
+  alia.rpc.register(fileManagerContract, handlers);
 }

@@ -76,10 +76,10 @@ describe("resolveNodeCommand", () => {
       home: "/Users/nobody",
       executable: () => false,
       isElectron: true,
-      execPath: "/Applications/bb.app/Contents/MacOS/bb",
+      execPath: "/Applications/alia.app/Contents/MacOS/alia",
     });
     expect(electron).toMatchObject({
-      command: "/Applications/bb.app/Contents/MacOS/bb",
+      command: "/Applications/alia.app/Contents/MacOS/alia",
       env: { ELECTRON_RUN_AS_NODE: "1" },
     });
     expect(

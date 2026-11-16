@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import sessionLog from "../server";
 import { DEFAULT_SETTINGS, SETTINGS_CHANNEL, SETTING_DESCRIPTORS, parseSettings } from "../src/settings";
 
@@ -46,8 +46,8 @@ describe("server", () => {
     let listener: (() => void) | undefined;
     const define = vi.fn(() => ({ onChange: (next: () => void) => { listener = next; } }));
     const publish = vi.fn();
-    const bb = { settings: { define }, realtime: { publish }, log: { info: vi.fn() } } as unknown as BbPluginApi;
-    sessionLog(bb);
+    const alia = { settings: { define }, realtime: { publish }, log: { info: vi.fn() } } as unknown as AliaPluginApi;
+    sessionLog(alia);
     expect(define).toHaveBeenCalledWith(SETTING_DESCRIPTORS);
     expect(publish).not.toHaveBeenCalled();
     listener?.();

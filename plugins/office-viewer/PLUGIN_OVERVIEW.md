@@ -1,6 +1,6 @@
 ## What you get
 
-Office Viewer opens spreadsheets, Word, PowerPoint and PDF documents, images, videos and audio in BB's side panel: `.xlsx`, `.xlsm`, `.xlsb`, `.xls`, `.ods`, `.csv` and `.tsv`, from chat links, the file picker and `bb thread open`.
+Office Viewer opens spreadsheets, Word, PowerPoint and PDF documents, images, videos and audio in VesnALIA's side panel: `.xlsx`, `.xlsm`, `.xlsb`, `.xls`, `.ods`, `.csv` and `.tsv`, from chat links, the file picker and `alia thread open`.
 
 - **A familiar grid** — column letters, row numbers, a frozen first row, right-aligned numbers and merged cells.
 - **Big sheets stay fast** — only the visible part is drawn, so thousands of rows scroll smoothly.
@@ -31,8 +31,8 @@ Pictures, GIFs, SVGs and videos (`.png`, `.jpg`, `.gif`, `.webp`, `.svg`, `.mp4`
 
 ## Machine-aware files
 
-A file is read on the machine of the thread, environment or project it came from, whichever device you browse BB on.
+A file is read on the machine of the thread, environment or project it came from, whichever device you browse VesnALIA on.
 
 ## Requirements
 
-BB 0.43 or later. No account, API key or external service. Files up to 30 MB; `.xls`, `.xlsb` and `.ods` open read-only. The interface is Russian when BB's language or the browser's first language is Russian, English otherwise.
+VesnALIA 0.43 or later. No account, API key or external service. Files up to 30 MB; `.xls`, `.xlsb` and `.ods` open read-only. The interface is Russian when VesnALIA's language or the browser's first language is Russian, English otherwise.

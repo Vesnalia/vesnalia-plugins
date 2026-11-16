@@ -1,6 +1,6 @@
 // Bundles Monaco into ./monaco (editor.js, editor.css, editor.worker.js + chunks),
-// which server.ts serves through bb.sdk.files.createPreview and the app import()s
-// only when an editor opens — the way BB's builtin monaco-editor plugin does it.
+// which server.ts serves through alia.sdk.files.createPreview and the app import()s
+// only when an editor opens — the way VesnALIA's builtin monaco-editor plugin does it.
 import { build } from "esbuild";
 import { rm } from "node:fs/promises";
 

@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import type { ReplayClip, ReplayClipInfo, ReplayStatus, TimelineEvent } from "@/lib/session-types";
 import { Button } from "@/components/ui/button";

@@ -175,13 +175,13 @@ function outside(r: DOMRect, c: Clip): boolean {
 
 /**
  * One recursive pass over the DOM. A subtree that lies outside the visible part
- * of its scroll container is skipped whole: bb's sidebar keeps every thread
+ * of its scroll container is skipped whole: VesnALIA's sidebar keeps every thread
  * row in the DOM (16k nodes with 400 threads), and only a few are on screen.
  * Styles that make an element unclickable are checked before the hit test,
  * which costs ~0.5 ms per call on a large page.
  */
 // ponytail: an absolute or fixed child of a skipped row that sits on screen
-// is missed; bb renders menus and popovers in portals, so none exist today.
+// is missed; VesnALIA renders menus and popovers in portals, so none exist today.
 function collectTargets(): { el: HTMLElement; rect: DOMRect }[] {
   const found: { el: HTMLElement; rect: DOMRect }[] = [];
   const viewport: Clip = { top: 0, left: 0, bottom: innerHeight, right: innerWidth };

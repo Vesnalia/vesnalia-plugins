@@ -1,7 +1,7 @@
 // Fixtures for the app tests: snapshots, thread states and a render helper
 // with counting RPC handlers.
 
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { ComponentType } from "react";
 import {
   usageForecastContract,

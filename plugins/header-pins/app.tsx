@@ -2,17 +2,17 @@ import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "
 import {
   definePluginApp,
   experimental_useSidebarThreads,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useSdk,
   experimental_Icon as Icon,
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 const TITLE_BAR = '[data-testid="app-window-title-bar"]';
 const OVERLAY_ATTR = "data-header-pins";
-const PLUGIN_OVERLAYS = "[data-bb-plugin-app-overlays]";
+const PLUGIN_OVERLAYS = "[data-alia-plugin-app-overlays]";
 const CONTROLS = 'button, a, [role="button"], [role="link"], input';
 
 type Band = {
@@ -232,7 +232,7 @@ function treeLanes(threads: readonly PluginSidebarThread[], roots: ReadonlySet<s
 type Colors = Readonly<Record<string, string>>;
 
 const CHAT_SIDEBAR_ROOT = ".chat-sidebar";
-const BUILTIN_THREAD_LIST = '[data-bb-plugin="thread-list"]';
+const BUILTIN_THREAD_LIST = '[data-alia-plugin="thread-list"]';
 const LIST_MODE_KEY = "header-pins:chat-sidebar";
 
 // Without Chat Sidebar the stripe shows who runs the thread.
@@ -436,8 +436,8 @@ const CHIP_CSS = `
 function HeaderPins() {
   const bands = useHeaderBands();
   const { threads } = experimental_useSidebarThreads();
-  const { threadId } = useBbContext();
-  const navigate = useBbNavigate();
+  const { threadId } = useAliaContext();
+  const navigate = useAliaNavigate();
   const sdk = useSdk();
   const unpin = (id: string) => {
     sdk.threads.unpin({ threadId: id }).catch((cause: unknown) => {

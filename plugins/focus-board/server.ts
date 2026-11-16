@@ -1,6 +1,6 @@
-// bb-plugin-focus-board — a BB plugin backend entry.
+// alia-plugin-focus-board — a VesnALIA plugin backend entry.
 //
-// The board reads bb's live thread view through the frontend sidebar hooks.
+// The board reads VesnALIA's live thread view through the frontend sidebar hooks.
 // Server state is: (1) the set of threads the user marked "Done" — one record
 // per thread in the board's plugin-metadata namespace (key "done" →
 // { doneAt: ISO-8601, keep? }), exposed over RPC and broadcast over realtime
@@ -10,13 +10,13 @@
 //
 // Plugin metadata writes emit no thread realtime event, so the explicit
 // done-changed publish stays.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { createThreadPulseTracker } from "./lib/thread-pulse";
 import {
   PluginCliError,
   cliCommand,
   defineCli,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   DONE_METADATA_KEY,
@@ -135,7 +135,7 @@ import {
   attachmentPromptTarget,
   readAttachmentPromptText,
 } from "./lib/autotitle-attachment";
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 
 /**
  * A rank store column key: a bare lane name ("pinned", "done") or
@@ -184,7 +184,7 @@ export const rpcContract = defineRpcContract({
   /**
    * The board's whole mount state in ONE round trip (issue #424): six of the
    * nine mount lists each walked every live thread and read its plugin
-   * metadata namespace, and fired together those walks serialize on bb's
+   * metadata namespace, and fired together those walks serialize on VesnALIA's
    * bridge — so the mount fan-in cost the SUM of six passes (~2s on a
    * 358-thread workspace, measured) instead of one. This handler reads each
    * thread's namespace once and projects every shape from it.
@@ -247,9 +247,9 @@ export const rpcContract = defineRpcContract({
   /**
    * Board-linked GitHub items (issue #13): per-thread plugin metadata key
    * "linkedIssues" → ThreadLink[], first entry primary (lib/link-metadata).
-   * The builtin GitHub plugin persists its own thread↔issue links in bb.db
+   * The builtin GitHub plugin persists its own thread↔issue links in alia.db
    * rows under another plugin's namespace, which focus-board cannot read
-   * (no cross-plugin surface in BbPluginApi), so the board keeps its own
+   * (no cross-plugin surface in AliaPluginApi), so the board keeps its own
    * record and renders chips from title/branch text refs merged with these.
    */
   link_list: {
@@ -419,8 +419,8 @@ export const rpcContract = defineRpcContract({
   },
 
   // ✨ auto-rename: generate a thread title from its first user prompt with
-  // whatever AI service bb's thread-title task is set to (Settings → AI
-  // services). bb has no plugin-facing invocation for its AI services, so
+  // whatever AI service VesnALIA's thread-title task is set to (Settings → AI
+  // services). VesnALIA has no plugin-facing invocation for its AI services, so
   // the title rides the cross-plugin RPC bridge into the selected service's
   // own `complete` method; lib/autotitle.ts owns the pure pieces.
   thread_autotitle: {
@@ -484,7 +484,7 @@ export const rpcContract = defineRpcContract({
 
   // Workspace-open discovery for the pane header's open menu: which local
   // apps can open the thread's workspace folder. The plugin server asks
-  // the loopback host daemon (the same authority bb's own thread header
+  // the loopback host daemon (the same authority VesnALIA's own thread header
   // uses), so the verdict also covers the remote-browser case — the app
   // opens where the workspace lives. Unavailable always carries a reason.
   workspace_open_targets: {
@@ -545,7 +545,7 @@ export const rpcContract = defineRpcContract({
    * to top level (`parentThreadId: null`). The handler re-checks
    * lib/reparent's rules against its own fresh thread rows — the board's map
    * is stale the moment any other surface moves a family — and a loop write
-   * (a card under its own child) would corrupt bb's own sidebar tree, so a
+   * (a card under its own child) would corrupt VesnALIA's own sidebar tree, so a
    * refused gesture throws and the board says why on screen.
    */
   thread_reparent: {
@@ -777,7 +777,7 @@ const LEGACY_DONE_KEY = "done-thread-ids";
 const KEEP_KEY = "sweep-keep-flags";
 /**
  * Best-effort index of thread ids the board believes carry its `done`
- * metadata. The SDK has no metadata scan, so `bb focus-board done list`
+ * metadata. The SDK has no metadata scan, so `alia focus-board done list`
  * and `sweep` use it to report marks on threads that have dropped out of
  * both the live and archived thread lists (deleted since their mark).
  * Metadata stays the source of truth; the index only widens reporting of
@@ -788,7 +788,7 @@ const DONE_INDEX_KV_KEY = "done-index";
 
 // time ("mirror, don't integrate": read-only, degrade-to-empty access —
 // see lib/tracker-status.ts).
-const GITHUB_CACHE_DB = ".bb/plugins/github/data.db";
+const GITHUB_CACHE_DB = ".vesnalia/plugins/github/data.db";
 
 // The freshness layer over that cache (issue #187, reshaped by issue
 // #236): a stateless trust-window judge that answers only what the cache
@@ -855,10 +855,10 @@ async function readBounded<T, R>(
   return results;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     // Each sweep threshold is a value+unit pair: the number is a count of
     // the unit setting next to it (hours | days | weeks). Both arms
     // default to 2 days — the operator-tuned aggressive default. The
@@ -946,7 +946,7 @@ export default async function plugin(bb: BbPluginApi) {
   const workspaceOpenTargetsCache = createWorkspaceOpenTargetsCache(5 * 60_000);
 
   async function requireLocalDaemon(): Promise<HostDaemonProbe | null> {
-    const config = (await bb.sdk.system.config()) as {
+    const config = (await alia.sdk.system.config()) as {
       hostDaemonPort?: number | null;
       localHelperPorts?: number[] | null;
     };
@@ -959,7 +959,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function resolveThreadWorkspaceOpen(
     threadId: string,
   ): Promise<WorkspaceOpenState> {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     const environmentId =
       "environmentId" in thread ? thread.environmentId : null;
     if (environmentId === null) {
@@ -970,11 +970,11 @@ export default async function plugin(bb: BbPluginApi) {
         targets: [],
       };
     }
-    const environment = await bb.sdk.environments.get({ environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId });
     return resolveWorkspaceOpenState({
       root: environment.path,
       environmentHostId: environment.hostId,
-      systemConfig: (await bb.sdk.system.config()) as {
+      systemConfig: (await alia.sdk.system.config()) as {
         hostDaemonPort?: number | null;
         localHelperPorts?: number[] | null;
       },
@@ -996,7 +996,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function readNamespace(threadId: string): Promise<Record<string, JsonValue>> {
     // getPluginMetadata returns an untyped namespace record; every parser
     // below validates its own key before use.
-    return (await bb.sdk.threads.getPluginMetadata({ threadId })) as Record<
+    return (await alia.sdk.threads.getPluginMetadata({ threadId })) as Record<
       string,
       JsonValue
     >;
@@ -1009,7 +1009,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   /**
-   * The 404 bb answers for a thread id the host no longer has — deleted
+   * The 404 VesnALIA answers for a thread id the host no longer has — deleted
    * since a board-owned index (the done index) last saw it.
    * getPluginMetadata is the only per-thread reader, so this exact
    * rejection is what a stale index entry produces (issue #259).
@@ -1043,7 +1043,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function readDoneIndex(): Promise<string[]> {
-    const ids: unknown = await bb.storage.kv.get(DONE_INDEX_KV_KEY);
+    const ids: unknown = await alia.storage.kv.get(DONE_INDEX_KV_KEY);
     if (!Array.isArray(ids)) return [];
     return ids.filter((id): id is string => typeof id === "string");
   }
@@ -1056,7 +1056,7 @@ export default async function plugin(bb: BbPluginApi) {
       const ids = new Set(await readDoneIndex());
       if (ids.has(threadId)) return;
       ids.add(threadId);
-      await bb.storage.kv.set(DONE_INDEX_KV_KEY, [...ids]);
+      await alia.storage.kv.set(DONE_INDEX_KV_KEY, [...ids]);
     });
   }
 
@@ -1064,7 +1064,7 @@ export default async function plugin(bb: BbPluginApi) {
     await withKvWriteLock(async () => {
       const ids = await readDoneIndex();
       if (!ids.includes(threadId)) return;
-      await bb.storage.kv.set(
+      await alia.storage.kv.set(
         DONE_INDEX_KV_KEY,
         ids.filter((id) => id !== threadId),
       );
@@ -1075,13 +1075,13 @@ export default async function plugin(bb: BbPluginApi) {
     if (done) {
       const existing = await readDoneRecord(threadId);
       const record = stampDone(existing, now);
-      await bb.sdk.threads.updatePluginMetadata({
+      await alia.sdk.threads.updatePluginMetadata({
         threadId,
         set: { [DONE_METADATA_KEY]: record },
       });
       await addToDoneIndex(threadId);
     } else {
-      await bb.sdk.threads.updatePluginMetadata({
+      await alia.sdk.threads.updatePluginMetadata({
         threadId,
         remove: [DONE_METADATA_KEY],
       });
@@ -1103,12 +1103,12 @@ export default async function plugin(bb: BbPluginApi) {
     if (parked) {
       const existing = await readPinParkRecord(threadId);
       const record = stampPinPark(existing, new Date());
-      await bb.sdk.threads.updatePluginMetadata({
+      await alia.sdk.threads.updatePluginMetadata({
         threadId,
         set: { [PIN_PARK_METADATA_KEY]: record },
       });
     } else {
-      await bb.sdk.threads.updatePluginMetadata({
+      await alia.sdk.threads.updatePluginMetadata({
         threadId,
         remove: [PIN_PARK_METADATA_KEY],
       });
@@ -1124,12 +1124,12 @@ export default async function plugin(bb: BbPluginApi) {
   async function writeErrorAck(threadId: string, acked: boolean): Promise<void> {
     if (acked) {
       const record = stampErrorAck(new Date());
-      await bb.sdk.threads.updatePluginMetadata({
+      await alia.sdk.threads.updatePluginMetadata({
         threadId,
         set: { [ERROR_ACK_METADATA_KEY]: record },
       });
     } else {
-      await bb.sdk.threads.updatePluginMetadata({
+      await alia.sdk.threads.updatePluginMetadata({
         threadId,
         remove: [ERROR_ACK_METADATA_KEY],
       });
@@ -1139,12 +1139,12 @@ export default async function plugin(bb: BbPluginApi) {
   // --- Feature groups (the family boxes) ---
 
   async function readGroupsStore(): Promise<Readonly<Record<string, GroupRecord>>> {
-    const row = await bb.storage.kv.get(GROUPS_KV_KEY);
+    const row = await alia.storage.kv.get(GROUPS_KV_KEY);
     return parseGroupsStore(row);
   }
 
   async function writeGroupsStore(store: Readonly<Record<string, GroupRecord>>): Promise<void> {
-    await bb.storage.kv.set(GROUPS_KV_KEY, groupsRowFromStore(store));
+    await alia.storage.kv.set(GROUPS_KV_KEY, groupsRowFromStore(store));
   }
 
   // --- Family fold + idle-hide state (lib/family-state) ---
@@ -1158,11 +1158,11 @@ export default async function plugin(bb: BbPluginApi) {
   async function readFamilyState(): Promise<FamilyStateStore> {
     // get returns an untyped row; parseFamilyStateStore validates it and
     // throws on a present-but-malformed row (fail loud, never coerce).
-    return parseFamilyStateStore(await bb.storage.kv.get(FAMILY_STATE_KV_KEY));
+    return parseFamilyStateStore(await alia.storage.kv.get(FAMILY_STATE_KV_KEY));
   }
 
   async function writeFamilyState(store: FamilyStateStore): Promise<void> {
-    await bb.storage.kv.set(FAMILY_STATE_KV_KEY, familyStateRowFromStore(store));
+    await alia.storage.kv.set(FAMILY_STATE_KV_KEY, familyStateRowFromStore(store));
   }
 
   async function readGroupAssignment(
@@ -1173,13 +1173,13 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function writeGroupAssignment(threadId: string, groupId: string | null): Promise<void> {
     if (groupId === null) {
-      await bb.sdk.threads.updatePluginMetadata({
+      await alia.sdk.threads.updatePluginMetadata({
         threadId,
         remove: [GROUP_METADATA_KEY],
       });
       return;
     }
-    await bb.sdk.threads.updatePluginMetadata({
+    await alia.sdk.threads.updatePluginMetadata({
       threadId,
       set: { [GROUP_METADATA_KEY]: { groupId } },
     });
@@ -1194,8 +1194,8 @@ export default async function plugin(bb: BbPluginApi) {
    */
   async function countAllGroupMembers(): Promise<Map<string, number>> {
     const [live, archived] = await Promise.all([
-      bb.sdk.threads.list({}),
-      bb.sdk.threads.list({ archived: true, limit: 200 }),
+      alia.sdk.threads.list({}),
+      alia.sdk.threads.list({ archived: true, limit: 200 }),
     ]);
     const counts = new Map<string, number>();
     for (const row of [...live, ...archived]) {
@@ -1228,7 +1228,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // --- Feature-group writes shared by every surface ---
   //
-  // The RPC contract, the `bb focus-board group` CLI commands (issue #84),
+  // The RPC contract, the `alia focus-board group` CLI commands (issue #84),
   // and the focus_board_group_set agent tool all run these five flows; the
   // registry, the per-thread metadata, and the group-changed signal move in
   // exactly one place each.
@@ -1267,7 +1267,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     throw new PluginCliError(
       `group ${JSON.stringify(ref)} does not exist`,
-      { code: "invalid_value", hint: "List groups with `bb focus-board group list`." },
+      { code: "invalid_value", hint: "List groups with `alia focus-board group list`." },
     );
   }
 
@@ -1304,7 +1304,7 @@ export default async function plugin(bb: BbPluginApi) {
       const id = crypto.randomUUID();
       const record = createGroupRecord(settled, new Date());
       await writeGroupsStore({ ...store, [id]: record });
-      bb.realtime.publish(GROUP_CHANGED, { threadId: null });
+      alia.realtime.publish(GROUP_CHANGED, { threadId: null });
       return { id, record, created: true };
     });
   }
@@ -1350,7 +1350,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       const record = { ...existing, name: settled };
       await writeGroupsStore({ ...store, [groupId]: record });
-      bb.realtime.publish(GROUP_CHANGED, { threadId: null });
+      alia.realtime.publish(GROUP_CHANGED, { threadId: null });
       return record;
     });
   }
@@ -1388,7 +1388,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     await writeGroupAssignment(threadId, groupId);
     await pruneGroupsToMembers();
-    bb.realtime.publish(GROUP_CHANGED, { threadId });
+    alia.realtime.publish(GROUP_CHANGED, { threadId });
     return { threadId, groupId, from, fromName };
   }
 
@@ -1411,8 +1411,8 @@ export default async function plugin(bb: BbPluginApi) {
       const store = await readGroupsStore();
       if (store[groupId] === undefined) throw unknownGroupError(groupId);
       const [liveRows, archivedRows] = await Promise.all([
-        bb.sdk.threads.list({}),
-        bb.sdk.threads.list({ archived: true, limit: 200 }),
+        alia.sdk.threads.list({}),
+        alia.sdk.threads.list({ archived: true, limit: 200 }),
       ]);
       const cleared: string[] = [];
       for (const row of [...liveRows, ...archivedRows]) {
@@ -1423,7 +1423,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       const { [groupId]: _removed, ...rest } = store;
       await writeGroupsStore(rest);
-      bb.realtime.publish(GROUP_CHANGED, { threadId: cleared[cleared.length - 1] ?? null });
+      alia.realtime.publish(GROUP_CHANGED, { threadId: cleared[cleared.length - 1] ?? null });
       return { groupId, cleared };
     });
   }
@@ -1437,20 +1437,20 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function writeLinkedIssues(threadId: string, links: ThreadLink[] | null): Promise<void> {
     if (links === null) {
-      await bb.sdk.threads.updatePluginMetadata({
+      await alia.sdk.threads.updatePluginMetadata({
         threadId,
         remove: [LINK_METADATA_KEY],
       });
       return;
     }
-    await bb.sdk.threads.updatePluginMetadata({
+    await alia.sdk.threads.updatePluginMetadata({
       threadId,
       set: { [LINK_METADATA_KEY]: links },
     });
   }
 
   async function publishLinksChanged(threadIds: string[]): Promise<void> {
-    bb.realtime.publish(LINK_CHANGED, { threadIds });
+    alia.realtime.publish(LINK_CHANGED, { threadIds });
   }
 
   /**
@@ -1460,8 +1460,8 @@ export default async function plugin(bb: BbPluginApi) {
    */
   async function resolveLinkRepo(threadId: string, repoArg: string | undefined): Promise<string> {
     if (repoArg !== undefined) return repoArg;
-    const thread = await bb.sdk.threads.get({ threadId });
-    const project = await bb.sdk.projects.get({
+    const thread = await alia.sdk.threads.get({ threadId });
+    const project = await alia.sdk.projects.get({
       projectId: thread.projectId,
     });
     const slug = resolveRepoSlug(project.gitRemoteUrl);
@@ -1489,7 +1489,7 @@ export default async function plugin(bb: BbPluginApi) {
    * be resurrected by a later import.
    */
   async function importLegacyDone(): Promise<void> {
-    const legacy: unknown = await bb.storage.kv.get(LEGACY_DONE_KEY);
+    const legacy: unknown = await alia.storage.kv.get(LEGACY_DONE_KEY);
     if (legacy === undefined || legacy === null) return;
     const keepFlag = (keep: unknown) =>
       typeof keep === "boolean" && keep ? { keep: true } : {};
@@ -1541,7 +1541,7 @@ export default async function plugin(bb: BbPluginApi) {
         `legacy done store: unexpected shape ${JSON.stringify(legacy)}`,
       );
     }
-    await bb.storage.kv.delete(LEGACY_DONE_KEY);
+    await alia.storage.kv.delete(LEGACY_DONE_KEY);
   }
 
   async function importOne(threadId: string, record: DoneRecord): Promise<void> {
@@ -1551,7 +1551,7 @@ export default async function plugin(bb: BbPluginApi) {
       await addToDoneIndex(threadId);
       return;
     }
-    await bb.sdk.threads.updatePluginMetadata({
+    await alia.sdk.threads.updatePluginMetadata({
       threadId,
       set: { [DONE_METADATA_KEY]: record },
     });
@@ -1702,11 +1702,11 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function readKept(): Promise<KeepStore> {
-    const raw: unknown = await bb.storage.kv.get<unknown>(KEEP_KEY);
+    const raw: unknown = await alia.storage.kv.get<unknown>(KEEP_KEY);
     const kept = keptFromRow(raw);
     if (kept === null) {
       if (raw !== null && raw !== undefined) {
-        bb.log.warn(`Sweep keep store under "${KEEP_KEY}" failed validation; resetting to empty.`);
+        alia.log.warn(`Sweep keep store under "${KEEP_KEY}" failed validation; resetting to empty.`);
       }
       return {};
     }
@@ -1716,15 +1716,15 @@ export default async function plugin(bb: BbPluginApi) {
   async function writeKept(store: KeepStore): Promise<void> {
     // Persist the exact row shape readKept validates, so a written row
     // round-trips instead of failing validation and being wiped.
-    await bb.storage.kv.set(KEEP_KEY, keepRowFromStore(store));
+    await alia.storage.kv.set(KEEP_KEY, keepRowFromStore(store));
   }
 
   async function readRanks(): Promise<FractionRankStore> {
-    return parseFractionRankStore(await bb.storage.kv.get<unknown>(RANK_KV_KEY));
+    return parseFractionRankStore(await alia.storage.kv.get<unknown>(RANK_KV_KEY));
   }
 
   async function writeRanks(store: FractionRankStore): Promise<void> {
-    await bb.storage.kv.set(RANK_KV_KEY, fractionRowFromStore(store));
+    await alia.storage.kv.set(RANK_KV_KEY, fractionRowFromStore(store));
   }
 
   /**
@@ -1758,7 +1758,7 @@ export default async function plugin(bb: BbPluginApi) {
   // job: a setTimeout per snoozed thread re-checked against the fresh
   // record at fire time, re-armed at plugin load so a daemon restart
   // catches misses, and cleared on dispose. The wake itself is mark-unread
-  // through bb's own write — every open board sees the resulting
+  // through VesnALIA's own write — every open board sees the resulting
   // read-state-changed event and applies its existing unread state truth
   // (parked pin returns, Done un-does) without any snooze-specific code.
 
@@ -1793,7 +1793,7 @@ export default async function plugin(bb: BbPluginApi) {
    */
   async function fireWake(threadId: string, wakeAtMs: number): Promise<void> {
     // Self-catching end-to-end (audit 2026-10-05 finding 1): this runs on
-    // setTimeout inside the bb server process, so any rejection here — a
+    // setTimeout inside the VesnALIA server process, so any rejection here — a
     // record corrupted between read and wake, a failed metadata remove —
     // must land in the log, never as an unhandled rejection. The record
     // is left in place on failure: corrupt state stays fail-loud (the
@@ -1806,7 +1806,7 @@ export default async function plugin(bb: BbPluginApi) {
       let readSinceSet = false;
       let threadResolvable = true;
       try {
-        const row = await bb.sdk.threads.get({ threadId });
+        const row = await alia.sdk.threads.get({ threadId });
         const lastReadAt = row.lastReadAt;
         readSinceSet = lastReadAt !== null && lastReadAt > Date.parse(record.setAt);
       } catch {
@@ -1814,24 +1814,24 @@ export default async function plugin(bb: BbPluginApi) {
       }
       if (!readSinceSet && threadResolvable) {
         try {
-          await bb.sdk.threads.markUnread({ threadId });
+          await alia.sdk.threads.markUnread({ threadId });
         } catch (error) {
           // The unread write is the feature; failing it is logged, not
           // swallowed — but the snooze still consumed (no retry loop), so
           // the board at least stops dimming and the record cannot haunt
           // a later session.
-          bb.log.warn(
+          alia.log.warn(
             `snooze wake: markUnread failed for ${threadId}: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
       }
-      await bb.sdk.threads.updatePluginMetadata({
+      await alia.sdk.threads.updatePluginMetadata({
         threadId,
         remove: [SNOOZE_METADATA_KEY],
       });
-      bb.realtime.publish(SNOOZE_CHANGED, { threadId });
+      alia.realtime.publish(SNOOZE_CHANGED, { threadId });
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `snooze wake: failed for ${threadId}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
@@ -1880,19 +1880,19 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<SnoozeRecord> {
     let anchor = new Date();
     try {
-      await bb.sdk.threads.markRead({ threadId });
-      const row = await bb.sdk.threads.get({ threadId });
+      await alia.sdk.threads.markRead({ threadId });
+      const row = await alia.sdk.threads.get({ threadId });
       if (row.lastReadAt !== null) anchor = new Date(row.lastReadAt);
     } catch {
       // Best-effort anchoring; the record write below is the loud part.
     }
     const record = stampSnooze(anchor, wakeAt);
-    await bb.sdk.threads.updatePluginMetadata({
+    await alia.sdk.threads.updatePluginMetadata({
       threadId,
       set: { [SNOOZE_METADATA_KEY]: record },
     });
     armWakeAt(threadId, wakeAt.getTime());
-    bb.realtime.publish(SNOOZE_CHANGED, { threadId });
+    alia.realtime.publish(SNOOZE_CHANGED, { threadId });
     return record;
   }
 
@@ -1900,12 +1900,12 @@ export default async function plugin(bb: BbPluginApi) {
   async function clearSnooze(threadId: string): Promise<boolean> {
     const existing = await readSnoozeRecord(threadId);
     if (existing === null) return false;
-    await bb.sdk.threads.updatePluginMetadata({
+    await alia.sdk.threads.updatePluginMetadata({
       threadId,
       remove: [SNOOZE_METADATA_KEY],
     });
     clearWakeTimer(threadId);
-    bb.realtime.publish(SNOOZE_CHANGED, { threadId });
+    alia.realtime.publish(SNOOZE_CHANGED, { threadId });
     return true;
   }
 
@@ -1919,7 +1919,7 @@ export default async function plugin(bb: BbPluginApi) {
    * behind it.
    */
   async function armAllSnoozes(): Promise<void> {
-    const rows = await bb.sdk.threads.list({});
+    const rows = await alia.sdk.threads.list({});
     for (const row of rows) {
       try {
         const record = await readSnoozeRecord(row.id);
@@ -1928,7 +1928,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (wakeAtMs === null) continue; // Unparseable stamps never wake.
         armWakeAt(row.id, wakeAtMs);
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `snooze wake scan: skipping ${row.id}: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
@@ -1936,10 +1936,10 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   // ---- ✨ auto-rename's thread-model probe (useThreadModel path) ----
-  // bb exposes no direct completion API for a thread's model; the route is
+  // VesnALIA exposes no direct completion API for a thread's model; the route is
   // a hidden probe thread the plugin spawns on the same provider/model pair
-  // (cloned with explicit provenance so bb actually honors it), reads the
-  // reply off the timeline, and deletes. Helpers live here in `bb` scope.
+  // (cloned with explicit provenance so VesnALIA actually honors it), reads the
+  // reply off the timeline, and deletes. Helpers live here in `VesnALIA` scope.
 
   const PROBE_POLL_MS = 1000;
   // 120s: an acp-opencode provider turn can cold-start past 45s (observed
@@ -1951,10 +1951,10 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ---- ✨ bridge classification (thread_autotitle_services) ----
   // Only plugins implementing a `complete` RPC method can serve the ✨ at
-  // all (the openrouter-inference fork does; bb's builtin cloud and
+  // all (the openrouter-inference fork does; VesnALIA's builtin cloud and
   // provider-codex do not — ready-but-unbridged services 404 on pick, the
   // "errors on all providers" shape). The capability probe calls `complete`
-  // with a deliberately invalid prompt: without the method bb answers 404;
+  // with a deliberately invalid prompt: without the method VesnALIA answers 404;
   // with it, the target contract's own validation rejects the input — and a
   // non-string prompt can never reach a model, so the probe is free.
   const BRIDGE_TTL_MS = 60_000;
@@ -1964,7 +1964,7 @@ export default async function plugin(bb: BbPluginApi) {
     pluginId: string,
   ): Promise<{ ok: boolean; reason: string | null }> {
     try {
-      await bb.sdk.plugins.callRpc({
+      await alia.sdk.plugins.callRpc({
         pluginId,
         method: "complete",
         input: { prompt: 1 } as never,
@@ -1974,7 +1974,7 @@ export default async function plugin(bb: BbPluginApi) {
       return { ok: true, reason: null };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      // This exact shape is what bb answers for a method the plugin lacks;
+      // This exact shape is what VesnALIA answers for a method the plugin lacks;
       // anything else is the target contract refusing the bad prompt —
       // proof the method exists.
       if (/no rpc method|\b404\b|not found/i.test(message)) {
@@ -2000,16 +2000,16 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   /**
-   * How a title probe spawns, in a 2-tier fallback chain — bb's
+   * How a title probe spawns, in a 2-tier fallback chain — VesnALIA's
    * defaultExecutionOptions can return null live (its route fails
    * capability validation on empty input) even for threads that run fine,
    * so the chain keeps the probe meaningful:
    * 1. a resolved provider/model pair → clone both explicitly;
-   * 2. nothing → a plain hidden child inherits bb's own spawn default
+   * 2. nothing → a plain hidden child inherits VesnALIA's own spawn default
    *    chain (project remembered default → global), exactly what a new
    *    thread in the project gets.
    *
-   * The old middle tier cloned the providerId alone, letting bb resolve
+   * The old middle tier cloned the providerId alone, letting VesnALIA resolve
    * the model against the provider's catalog default — which here is an
    * openrouter model, the metered fall-through the metered gate had to
    * reject live (409 on a vikunja-pwa-fork title probe). Inheriting rides
@@ -2032,7 +2032,7 @@ export default async function plugin(bb: BbPluginApi) {
     projectId?: unknown;
     environmentId?: unknown;
     /**
-     * The source thread's OWN provider (bb's thread rows carry it). bb
+     * The source thread's OWN provider (VesnALIA's thread rows carry it). VesnALIA
      * 0.48.x dropped providerId from threads.defaultExecutionOptions — that
      * response is exactly the resolved execution ({model, permissionMode,
      * reasoningLevel, serviceTier, source}) — so the pair's provider half
@@ -2047,13 +2047,13 @@ export default async function plugin(bb: BbPluginApi) {
   async function probeSpawnPlan(
     threadId: string,
   ): Promise<{ plan: ProbeSpawnPlan; source: ProbeSourceRow }> {
-    const execution = (await bb.sdk.threads.defaultExecutionOptions({
+    const execution = (await alia.sdk.threads.defaultExecutionOptions({
       threadId,
     })) as unknown as { providerId?: unknown; model?: unknown } | null;
     // The single source-row fetch per probe invocation: every tier returns
     // it alongside the plan so callers validate/spawn from this one read.
-    const source = (await bb.sdk.threads.get({ threadId })) as unknown as ProbeSourceRow;
-    // The provider half: older bb served providerId/model together in this
+    const source = (await alia.sdk.threads.get({ threadId })) as unknown as ProbeSourceRow;
+    // The provider half: older VesnALIA served providerId/model together in this
     // response (honor that shape first); 0.48.x responses carry only the
     // model, so the source thread row supplies the provider.
     const providerId =
@@ -2093,9 +2093,9 @@ export default async function plugin(bb: BbPluginApi) {
   /**
    * The thread's ORIGINATING prompt, the input the title should summarize.
    * Two live-found reasons make prompt history the FALLBACK, not the
-   * source: bb's history carries composer turns only (spawn inputs never
+   * source: VesnALIA's history carries composer turns only (spawn inputs never
    * land there) and pages newest-first. The source thread's timeline's
-   * oldest user conversation row is the honest first read — but bb serves
+   * oldest user conversation row is the honest first read — but VesnALIA serves
    * the timeline in segment windows (the newest first), so the read walks
    * the older cursors and only trusts the result when the walk reached the
    * thread's beginning; a capped walk that never reaches the bottom uses
@@ -2107,11 +2107,11 @@ export default async function plugin(bb: BbPluginApi) {
     let cursor: { anchorId: string; anchorSeq: number } | null = null;
     let reachedBeginning = false;
     for (let page = 0; page < ORIGINATING_PROMPT_MAX_PAGES; page += 1) {
-      const timeline = (await bb.sdk.threads.timeline({
+      const timeline = (await alia.sdk.threads.timeline({
         threadId,
-        // bb's sequence-anchored first read: afterSequence "0" = events
+        // VesnALIA's sequence-anchored first read: afterSequence "0" = events
         // strictly above 0 (the bound is a string, like limit). The
-        // parameterless call serves bb's latest-rows cache — live it
+        // parameterless call serves VesnALIA's latest-rows cache — live it
         // returned only seq 9066-10188 of a 10k-sequence thread, putting
         // the user's newest message in "first".
         afterSequence: "0",
@@ -2146,13 +2146,13 @@ export default async function plugin(bb: BbPluginApi) {
     // carries a user row with EMPTY text whose content lives in the stored
     // attachment the row's attachments.localFilePaths names (found live on
     // thr_eid3vv6gzt — every ✨ option failed "has no prompt text" before
-    // any service or probe was called). The file is read out of bb's own
-    // attachments store, resolved with bb.server.experimental_dataDir (a
-    // plugin that guesses ~/.bb would read the wrong server's files), and
+    // any service or probe was called). The file is read out of VesnALIA's own
+    // attachments store, resolved with alia.server.experimental_dataDir (a
+    // plugin that guesses ~/.vesnalia would read the wrong server's files), and
     // every refusal names the file or path it is about.
     const storedPath = firstUserPromptFileFromTimeline(collected);
     if (storedPath !== null) {
-      const source = (await bb.sdk.threads.get({ threadId })) as unknown as {
+      const source = (await alia.sdk.threads.get({ threadId })) as unknown as {
         projectId?: unknown;
       };
       const projectId =
@@ -2163,7 +2163,7 @@ export default async function plugin(bb: BbPluginApi) {
         );
       }
       const target = attachmentPromptTarget(
-        bb.server.experimental_dataDir,
+        alia.server.experimental_dataDir,
         projectId,
         storedPath,
       );
@@ -2180,9 +2180,9 @@ export default async function plugin(bb: BbPluginApi) {
       }
       return read.text;
     }
-    const history = (await bb.sdk.threads.promptHistory({
+    const history = (await alia.sdk.threads.promptHistory({
       threadId,
-      // bb pages prompt history newest-first and types limit as a string;
+      // VesnALIA pages prompt history newest-first and types limit as a string;
       // the default page drops the thread's originating prompt on long
       // threads, so ask big and sort oldest-first locally
       // (promptTextFromHistory does).
@@ -2193,10 +2193,10 @@ export default async function plugin(bb: BbPluginApi) {
 
   /**
    * The environment-read host call behind the thread-model row's
-   * availability (issue #378): bb's spawn reusing a torn-down environment
+   * availability (issue #378): VesnALIA's spawn reusing a torn-down environment
    * is the call that answers raw `HTTP 409: Environment unavailable`, so
    * the verdict must read the environment row itself, never the ids'
-   * existence. Only bb's `ready` status admits the row, and a failed or
+   * existence. Only VesnALIA's `ready` status admits the row, and a failed or
    * shapeless read blocks it with the actual failure named
    * (lib/autotitle-thread-model owns the wording) — it under-signals,
    * never over-signals.
@@ -2206,7 +2206,7 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<{ ok: true } | { ok: false; reason: string }> {
     let environment: { status?: unknown } | null;
     try {
-      environment = (await bb.sdk.environments.get({
+      environment = (await alia.sdk.environments.get({
         environmentId,
       })) as unknown as { status?: unknown } | null;
     } catch (error: unknown) {
@@ -2243,7 +2243,7 @@ export default async function plugin(bb: BbPluginApi) {
       // Issue #378: the ids above say the environment exists; only the
       // environment row says it is spawnable. Without this read the modal
       // advertised the row on torn-down environments and the pick answered
-      // bb's raw `HTTP 409: Environment unavailable`.
+      // VesnALIA's raw `HTTP 409: Environment unavailable`.
       const readiness = await environmentSpawnReadiness(source.environmentId);
       if (!readiness.ok) return { available: false, reason: readiness.reason };
       return { available: true, reason: null };
@@ -2278,7 +2278,7 @@ export default async function plugin(bb: BbPluginApi) {
       );
     }
     // The menu's readiness gate holds on the probe path too (issue #378):
-    // refusing here keeps bb's raw spawn error (`HTTP 409: Environment
+    // refusing here keeps VesnALIA's raw spawn error (`HTTP 409: Environment
     // unavailable`) unreachable from a row the ✨ modal advertised, so the
     // modal names the environment's actual blocker instead.
     const readiness = await environmentSpawnReadiness(source.environmentId);
@@ -2292,7 +2292,7 @@ export default async function plugin(bb: BbPluginApi) {
       );
     }
     // Per-tier spawn args: the pair clones both fields explicitly, the
-    // inherit tier passes nothing and rides bb's own spawn default chain.
+    // inherit tier passes nothing and rides VesnALIA's own spawn default chain.
     const executionArgs: Record<string, unknown> =
       plan.kind === "pair"
         ? {
@@ -2304,15 +2304,15 @@ export default async function plugin(bb: BbPluginApi) {
     const execution =
       plan.kind === "pair"
         ? { providerId: plan.providerId, model: plan.model }
-        : { providerId: "bb default chain", model: "bb default chain" };
-    // Security residual (audit 2026-10-05, finding 3): bb's spawn contract
+        : { providerId: "alia default chain", model: "alia default chain" };
+    // Security residual (audit 2026-10-05, finding 3): VesnALIA's spawn contract
     // has no tools-disabled or readonly option — CreateThreadRequest's
     // permissionMode union is accept-edits|auto|full|workspace-write — so
     // the "No tools" guardrail below is promptual only. The probe's payload
     // is untrusted thread content, and an instruction-ignoring model could
     // act with the environment's ordinary tool access. Accepted for 1.0:
     // the probe is hidden, deleted on every path, and capped at one turn.
-    const probe = (await bb.sdk.threads.spawn({
+    const probe = (await alia.sdk.threads.spawn({
       projectId: source.projectId,
       environment: {
         type: "reuse" as const,
@@ -2330,24 +2330,24 @@ export default async function plugin(bb: BbPluginApi) {
     }
     const probeId = probe.id;
     // A failing probe turn may still be mid-run; stopping first keeps the
-    // delete from racing bb's own teardown.
+    // delete from racing VesnALIA's own teardown.
     const stopProbe = async () => {
       try {
-        await bb.sdk.threads.stop({ threadId: probeId });
+        await alia.sdk.threads.stop({ threadId: probeId });
       } catch (error: unknown) {
-        bb.log.warn(
+        alia.log.warn(
           `title probe stop failed: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     };
     const deleteProbe = async () => {
       try {
-        await bb.sdk.threads.delete({
+        await alia.sdk.threads.delete({
           threadId: probeId,
           childThreadsConfirmed: true,
         });
       } catch (error: unknown) {
-        bb.log.warn(
+        alia.log.warn(
           `title probe delete failed: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
@@ -2355,7 +2355,7 @@ export default async function plugin(bb: BbPluginApi) {
     const deadline = Date.now() + PROBE_TIMEOUT_MS;
     try {
       for (;;) {
-        const row = (await bb.sdk.threads.get({
+        const row = (await alia.sdk.threads.get({
           threadId: probeId,
         })) as unknown as { status?: unknown };
         if (probeSettled(String(row?.status))) {
@@ -2373,7 +2373,7 @@ export default async function plugin(bb: BbPluginApi) {
         }
         await probeDelay(PROBE_POLL_MS);
       }
-      const timeline = (await bb.sdk.threads.timeline({
+      const timeline = (await alia.sdk.threads.timeline({
         threadId: probeId,
       })) as unknown as { rows?: readonly AutotitleTimelineRow[] };
       const reply = assistantTextFromTimeline(timeline.rows ?? []);
@@ -2391,7 +2391,7 @@ export default async function plugin(bb: BbPluginApi) {
       return title;
     } catch (error: unknown) {
       // A failing turn may still be mid-run: stop it so the delete below
-      // (finally) does not race bb's own teardown.
+      // (finally) does not race VesnALIA's own teardown.
       await stopProbe();
       throw error;
     } finally {
@@ -2406,7 +2406,7 @@ export default async function plugin(bb: BbPluginApi) {
    * availability. One builder so the modal and the CLI cannot drift.
    */
   async function autotitleServicesMenu(threadId: string) {
-    const state = (await bb.sdk.system.aiServices()) as Parameters<
+    const state = (await alia.sdk.system.aiServices()) as Parameters<
       typeof resolveTitleTarget
     >[0];
     const selected = resolveTitleSelection(state);
@@ -2437,11 +2437,11 @@ export default async function plugin(bb: BbPluginApi) {
   // has open costs one registered function and no events.
   const pulse = createThreadPulseTracker({
     readUsedTokens: async (threadId) => {
-      const context = await bb.sdk.threads.context({ threadId });
+      const context = await alia.sdk.threads.context({ threadId });
       return context.usage?.usedTokens ?? null;
     },
     onSampleError: (threadId, error) => {
-      bb.log.warn(
+      alia.log.warn(
         `pulse sample failed for ${threadId}: ${error instanceof Error ? error.message : String(error)}`,
       );
     },
@@ -2453,17 +2453,17 @@ export default async function plugin(bb: BbPluginApi) {
     // A thread-changed event carries the event types it was raised for; only
     // the two token-usage types can have moved the used-token count, and
     // `noteEvent` drops everything else on the first comparison.
-    const unsubscribe = bb.sdk.subscribe({
+    const unsubscribe = alia.sdk.subscribe({
       event: "thread:changed",
       callback: (event) => {
         if (event.id === undefined) return;
         void pulse.noteEvent(event.id, event.metadata?.eventTypes);
       },
     });
-    bb.onDispose(unsubscribe);
+    alia.onDispose(unsubscribe);
   };
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     pulse_rates: async () => {
       // The call IS the sampler's demand signal (issue #279): it opens the
       // lease that lets the sampler read a thread's context at all, so a board
@@ -2479,7 +2479,7 @@ export default async function plugin(bb: BbPluginApi) {
       // runs first for the same reason done_list runs it: a legacy KV row must
       // be consumed before any read builds the done projection.
       await importLegacyDone();
-      const rows = await bb.sdk.threads.list({});
+      const rows = await alia.sdk.threads.list({});
       const pending = new Map<string, Promise<Record<string, JsonValue>>>();
       const readOnce: NamespaceRead = (threadId) => {
         const hit = pending.get(threadId);
@@ -2500,20 +2500,20 @@ export default async function plugin(bb: BbPluginApi) {
     },
     done_list: async () => {
       await importLegacyDone();
-      return donePayload(await bb.sdk.threads.list({}), readNamespace);
+      return donePayload(await alia.sdk.threads.list({}), readNamespace);
     },
     done_set: async ({ threadId, done }) => {
       // Consume any legacy KV state before the first metadata write, or a
       // later import could resurrect state this write just changed.
       await importLegacyDone();
       await writeDoneRecord(threadId, done);
-      bb.realtime.publish(DONE_CHANGED, { threadId, done });
+      alia.realtime.publish(DONE_CHANGED, { threadId, done });
       return { done };
     },
     link_list: async () => {
       // The live list only, like pin_parks_list: a link on an archived
       // thread has no chip to drive (the card is not on the board).
-      return listLinksFor(await bb.sdk.threads.list({}), readNamespace);
+      return listLinksFor(await alia.sdk.threads.list({}), readNamespace);
     },
     link_set: async ({ threadId, repo, number, kind, url, label, source }) => {
       const now = new Date();
@@ -2558,7 +2558,7 @@ export default async function plugin(bb: BbPluginApi) {
       // The live list only: a park on an archived thread has no consumer —
       // un-archiving returns the thread through done state, not a pin — and
       // the SDK scan the done CLI lacks is not needed here.
-      return listParksFor(await bb.sdk.threads.list({}), readNamespace);
+      return listParksFor(await alia.sdk.threads.list({}), readNamespace);
     },
     pin_park_set: async ({ threadId, parked }) => {
       await writePinPark(threadId, parked);
@@ -2570,18 +2570,18 @@ export default async function plugin(bb: BbPluginApi) {
       // record stays dormant in metadata and re-arms if the thread returns
       // still errored; the client's stale sweep drops it after any turn
       // that leaves the error status, so a later error is never masked.
-      return listAcksFor(await bb.sdk.threads.list({}), readNamespace);
+      return listAcksFor(await alia.sdk.threads.list({}), readNamespace);
     },
     error_ack_set: async ({ threadId, acked }) => {
       await writeErrorAck(threadId, acked);
-      bb.realtime.publish(ERROR_ACK_CHANGED, { threadId, acked });
+      alia.realtime.publish(ERROR_ACK_CHANGED, { threadId, acked });
       return { threadId, acked };
     },
     snooze_list: async () => {
       // The live list only, like pin_parks_list: a snooze record on an
       // archived thread has no board consumer (snoozed cards never leave
       // their column), and the wake scan below reads the same list.
-      return listSnoozesFor(await bb.sdk.threads.list({}), readNamespace);
+      return listSnoozesFor(await alia.sdk.threads.list({}), readNamespace);
     },
     snooze_set: async ({ threadId, wakeAt }) => {
       const wakeMs = Date.parse(wakeAt);
@@ -2613,7 +2613,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (useThreadModel === true) {
         return { title: await probeThreadModelTitle(threadId) };
       }
-      const servicesState = (await bb.sdk.system.aiServices()) as Parameters<
+      const servicesState = (await alia.sdk.system.aiServices()) as Parameters<
         typeof resolveTitleTarget
       >[0];
       const resolved = resolveTitleTarget(
@@ -2632,9 +2632,9 @@ export default async function plugin(bb: BbPluginApi) {
           `thread_autotitle: thread ${threadId} has no prompt text to title from`,
         );
       }
-      // Any plugin service bb routes titles to must answer the same shape;
+      // Any plugin service VesnALIA routes titles to must answer the same shape;
       // this is the bridge method the openrouter-inference fork serves.
-      const reply = (await bb.sdk.plugins.callRpc({
+      const reply = (await alia.sdk.plugins.callRpc({
         pluginId: selection.pluginId,
         method: "complete",
         input: { prompt: buildAutotitlePrompt(threadPrompt) },
@@ -2660,11 +2660,11 @@ export default async function plugin(bb: BbPluginApi) {
     tracker_status: async ({ repo, numbers }) => {
       const home = process.env.HOME ?? "";
       if (home === "") return { statuses: {} };
-      const cached = readGitHubStatuses(`${home}/${GITHUB_CACHE_DB}`, repo, numbers, bb.log);
+      const cached = readGitHubStatuses(`${home}/${GITHUB_CACHE_DB}`, repo, numbers, alia.log);
       // The freshness layer (issue #187, issue #236): paint only trustworthy
       // verdicts. A stale OPEN row is simply absent — the chip renders
       // unsure-plain — and nothing behind this reply re-checks it, so the
-      // handler stays a pure read over bb's own cache.
+      // handler stays a pure read over VesnALIA's own cache.
       const decisions = trackerFreshness.decide(numbers, cached);
       return {
         statuses: Object.fromEntries(
@@ -2688,11 +2688,11 @@ export default async function plugin(bb: BbPluginApi) {
           home === ""
             ? () => ({})
             : (repo, numbers) =>
-                readGitHubStatuses(`${home}/${GITHUB_CACHE_DB}`, repo, numbers, bb.log),
+                readGitHubStatuses(`${home}/${GITHUB_CACHE_DB}`, repo, numbers, alia.log),
         kvGet: async (key) => {
           // Cached outcome read; garbage in the KV slot reads as absent (the
           // cache is an optimization, never a correctness source here).
-          const raw = (await bb.storage.kv.get(key)) as unknown;
+          const raw = (await alia.storage.kv.get(key)) as unknown;
           if (
             typeof raw !== "object" ||
             raw === null ||
@@ -2704,17 +2704,17 @@ export default async function plugin(bb: BbPluginApi) {
           return raw as { ok: boolean; at: number };
         },
         kvSet: async (key, value) => {
-          await bb.storage.kv.set(key, value);
+          await alia.storage.kv.set(key, value);
         },
         now: () => Date.now(),
       });
       return { results };
     },
     workspace_files_exist: async ({ threadId, paths }) => {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       const environmentId = "environmentId" in thread ? thread.environmentId : null;
       if (environmentId === null) return { existence: {} };
-      const environment = await bb.sdk.environments.get({ environmentId });
+      const environment = await alia.sdk.environments.get({ environmentId });
       const root = environment.path;
       // A workspaceless environment has no files to verify against.
       if (root === null) return { existence: {} };
@@ -2733,7 +2733,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (absolute.length === 0) return { existence: {} };
       // The check runs on the environment's own host, so workspaces on
       // other machines verify correctly too.
-      const result = await bb.sdk.hosts.pathsExist({
+      const result = await alia.sdk.hosts.pathsExist({
         hostId: environment.hostId,
         paths: absolute,
       });
@@ -2813,7 +2813,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (!changed) return { threadId, keep };
       // Keep changes feed the same refetch signal the board already
       // subscribes to; payload consumers refetch, so done:false is a dummy.
-      bb.realtime.publish(DONE_CHANGED, { threadId, done: false });
+      alia.realtime.publish(DONE_CHANGED, { threadId, done: false });
       return { threadId, keep };
     },
     rank_list: async () => {
@@ -2828,7 +2828,7 @@ export default async function plugin(bb: BbPluginApi) {
       // other surface moved between the dragover and the drop must not get
       // a second write on top. (list({}) returns live rows; an archived id
       // reads as a missing one, which refuses too.)
-      const rows = await bb.sdk.threads.list({});
+      const rows = await alia.sdk.threads.list({});
       // list({}) returns live rows; archivedAt is the row's archive stamp.
       const live = rows.map((row) => ({
         id: row.id,
@@ -2837,7 +2837,7 @@ export default async function plugin(bb: BbPluginApi) {
       }));
       const refusal = reparentRefusal(live, threadId, parentThreadId);
       if (refusal !== null) throw new PluginCliError(refusal);
-      await bb.sdk.threads.update({ threadId, parentThreadId });
+      await alia.sdk.threads.update({ threadId, parentThreadId });
       return { threadId, parentThreadId };
     },
     rank_move: ({ columnKey, threadId, beforeId, toEnd, visibleIds, unitIds }) =>
@@ -2868,7 +2868,7 @@ export default async function plugin(bb: BbPluginApi) {
         });
         if (!result.unchanged) {
           await writeRanks(result.next);
-          bb.realtime.publish(RANK_CHANGED, { columnKey });
+          alia.realtime.publish(RANK_CHANGED, { columnKey });
         }
         return { columnKey, order: result.order };
       }),
@@ -2882,14 +2882,14 @@ export default async function plugin(bb: BbPluginApi) {
         const result = applyRankClearFractions(store, columnKey);
         if (result.cleared) {
           await writeRanks(result.next);
-          bb.realtime.publish(RANK_CHANGED, { columnKey });
+          alia.realtime.publish(RANK_CHANGED, { columnKey });
         }
         return { columnKey, order: [] };
       }),
     groups_list: async () => {
       // Live rows only, like the other list scans: an archived member has
       // no card to box, and unarchive brings the assignment back with it.
-      return listGroupsFor(await bb.sdk.threads.list({}), readNamespace);
+      return listGroupsFor(await alia.sdk.threads.list({}), readNamespace);
     },
     group_create: async ({ name }) => {
       const { id, record } = await createGroupNamed(name);
@@ -2924,7 +2924,7 @@ export default async function plugin(bb: BbPluginApi) {
         // nothing and signals nothing, like every other idempotent write.
         if (next === store) return { key, id, on };
         await writeFamilyState(next);
-        bb.realtime.publish(FAMILY_STATE_CHANGED, { key, id, on });
+        alia.realtime.publish(FAMILY_STATE_CHANGED, { key, id, on });
         return { key, id, on };
       }),
     family_state_merge: async (incoming) =>
@@ -2935,23 +2935,23 @@ export default async function plugin(bb: BbPluginApi) {
         const next = mergeFamilyStateIds(store, incoming);
         if (sameFamilyState(store, next)) return familyStateRowFromStore(store);
         await writeFamilyState(next);
-        bb.realtime.publish(FAMILY_STATE_CHANGED, { key: null, id: null, on: null });
+        alia.realtime.publish(FAMILY_STATE_CHANGED, { key: null, id: null, on: null });
         return familyStateRowFromStore(next);
       }),
   });
 
-  // --- CLI: bb focus-board ---
+  // --- CLI: VesnALIA focus-board ---
   //
   // Manages plugin-owned state only (the standing rule from the CLI
   // musing): done list/mark/clear over the board's own metadata, and the
   // sweep over the board's own eligibility rules and settings. It never
-  // re-spells `bb thread` commands, and it no longer carries config
+  // re-spells `alia thread` commands, and it no longer carries config
   // commands: the declared settings already edit through
-  // `bb plugin config focus-board` and the board settings modal's Behavior
+  // `alia plugin config focus-board` and the board settings modal's Behavior
   // tab, and a second threshold door was one more copy to keep true.
 
   /** The SDK's thread row shape, as returned by `threads.list`. */
-  type ThreadRow = Awaited<ReturnType<typeof bb.sdk.threads.list>>[number];
+  type ThreadRow = Awaited<ReturnType<typeof alia.sdk.threads.list>>[number];
 
   /**
    * Every thread the board can currently see: the live list plus the
@@ -2964,8 +2964,8 @@ export default async function plugin(bb: BbPluginApi) {
     liveIds: Set<string>;
   }> {
     const [live, archivedRows] = await Promise.all([
-      bb.sdk.threads.list({}),
-      bb.sdk.threads.list({ archived: true, limit: 200 }),
+      alia.sdk.threads.list({}),
+      alia.sdk.threads.list({ archived: true, limit: 200 }),
     ]);
     const byId = new Map<string, ThreadRow>();
     for (const thread of [...live, ...archivedRows]) byId.set(thread.id, thread);
@@ -3077,7 +3077,7 @@ export default async function plugin(bb: BbPluginApi) {
       const marked: string[] = [];
       for (const threadId of input.positionals["thread-id"]) {
         await writeDoneRecord(threadId, true);
-        bb.realtime.publish(DONE_CHANGED, { threadId, done: true });
+        alia.realtime.publish(DONE_CHANGED, { threadId, done: true });
         marked.push(threadId);
       }
       const stdout = input.options.json
@@ -3107,7 +3107,7 @@ export default async function plugin(bb: BbPluginApi) {
       const cleared: string[] = [];
       for (const threadId of input.positionals["thread-id"]) {
         await writeDoneRecord(threadId, false);
-        bb.realtime.publish(DONE_CHANGED, { threadId, done: false });
+        alia.realtime.publish(DONE_CHANGED, { threadId, done: false });
         cleared.push(threadId);
       }
       const stdout = input.options.json
@@ -3323,7 +3323,7 @@ export default async function plugin(bb: BbPluginApi) {
           `${conflicts.length} thread(s) already sit in other groups: ${conflicts.join(", ")}`,
           {
             code: "invalid_value",
-            hint: "Use `bb focus-board group move <thread...> --to <group>` to change a thread's group.",
+            hint: "Use `alia focus-board group move <thread...> --to <group>` to change a thread's group.",
           },
         );
       }
@@ -3746,10 +3746,10 @@ export default async function plugin(bb: BbPluginApi) {
         // vanishing while it was never done.
         if (entry.reason === "idle") {
           await writeDoneRecord(entry.id, true);
-          bb.realtime.publish(DONE_CHANGED, { threadId: entry.id, done: true });
+          alia.realtime.publish(DONE_CHANGED, { threadId: entry.id, done: true });
           results.push({ id: entry.id, action: "marked-done" });
         } else {
-          await bb.sdk.threads.archive({ threadId: entry.id });
+          await alia.sdk.threads.archive({ threadId: entry.id });
           results.push({ id: entry.id, action: "archived" });
         }
       }
@@ -3782,7 +3782,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  // --- Snooze CLI: bb focus-board snooze ---
+  // --- Snooze CLI: VesnALIA focus-board snooze ---
   //
   // Mirrors the done commands (board-owned state only; set is read-now +
   // record + arm wake, clear kills the timer). `snooze set` takes the wake
@@ -3795,7 +3795,7 @@ export default async function plugin(bb: BbPluginApi) {
       json: { type: "boolean", description: "Emit machine-readable JSON" },
     },
     async run(input) {
-      const rows = await bb.sdk.threads.list({});
+      const rows = await alia.sdk.threads.list({});
       const records: Array<{
         id: string;
         title: string | null;
@@ -3906,7 +3906,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  // --- ✨ auto-rename diagnostics: bb focus-board autotitle ---
+  // --- ✨ auto-rename diagnostics: VesnALIA focus-board autotitle ---
   //
   // The fallback modal owns the browser truth but cannot be observed from
   // the outside; these two commands print the same state (availability,
@@ -3972,7 +3972,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     async run(input) {
       const threadId = input.positionals["thread-id"];
-      const timeline = (await bb.sdk.threads.timeline({
+      const timeline = (await alia.sdk.threads.timeline({
         threadId,
       })) as { rows?: unknown };
       const rows = (timeline.rows ?? []) as readonly AutotitleTimelineRow[];
@@ -4033,10 +4033,10 @@ export default async function plugin(bb: BbPluginApi) {
   // presence in the session's tool set, so any thread's agent learns to link
   // what it files or turns up, without text pasted into every repo's AGENTS.md.
   const LINK_AGENT_TOOL = "focus_board_link_issue";
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: LINK_AGENT_TOOL,
     description:
-      "Link this bb thread to a tracker item so the Focus Board card shows a chip: a GitHub issue or pull request (live status dot), or any other https URL the conversation turns up (external tracker, chip reads the label or hostname). Call it right after you open or file the item, passing its URL.",
+      "Link this VesnALIA thread to a tracker item so the Focus Board card shows a chip: a GitHub issue or pull request (live status dot), or any other https URL the conversation turns up (external tracker, chip reads the label or hostname). Call it right after you open or file the item, passing its URL.",
     instructions: [
       "Linking work to tracker items: whenever you open or file a GitHub issue",
       "or pull request for this thread's work, call focus_board_link_issue with",
@@ -4047,9 +4047,9 @@ export default async function plugin(bb: BbPluginApi) {
       "item; prefer the URL form (a bare GitHub number needs a GitHub remote",
       "on the thread's project).",
       "If focus_board_link_issue is unavailable in your session (Copilot CLI",
-      "sessions, for one, are not served bb plugin tools), fall back to the",
-      "bb CLI instead of telling the user the tool is missing:",
-      'run `bb focus-board link set "$BB_THREAD_ID" <url>` (add',
+      "sessions, for one, are not served VesnALIA plugin tools), fall back to the",
+      "VesnALIA CLI instead of telling the user the tool is missing:",
+      'run `alia focus-board link set "$ALIA_THREAD_ID" <url>` (add',
       "--label \"<chip text>\" for external trackers). Verify success from",
       "the command's output; report the linked URL either way.",
     ].join("\n"),
@@ -4105,7 +4105,7 @@ export default async function plugin(bb: BbPluginApi) {
         const kind = params.kind ?? "issue";
         // Repo from the thread's project remote only; never guessed. The
         // URL form is preferred precisely because bare numbers need this.
-        const project = await bb.sdk.projects.get({ projectId: ctx.projectId });
+        const project = await alia.sdk.projects.get({ projectId: ctx.projectId });
         const slug = resolveRepoSlug(project.gitRemoteUrl);
         if (slug === null) {
           return linkError(
@@ -4145,19 +4145,19 @@ export default async function plugin(bb: BbPluginApi) {
   // or its id, and assigning replaces any current group with the move
   // reported, so the agent sees what it changed.
   const GROUP_AGENT_TOOL = "focus_board_group_set";
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: GROUP_AGENT_TOOL,
     description:
-      "Assign a Focus Board feature group (family box) to this bb thread, or to another thread id, so the card joins that group on the board's Group view. Pass the group's exact name, or its id. Assigning replaces any previous group.",
+      "Assign a Focus Board feature group (family box) to this VesnALIA thread, or to another thread id, so the card joins that group on the board's Group view. Pass the group's exact name, or its id. Assigning replaces any previous group.",
     instructions: [
       "Feature groups: when the conversation settles that this thread belongs",
       "to a named feature group (a family box on the Focus Board's Group view),",
       "call focus_board_group_set with the group's name as given (its id works",
       "too). Assigning replaces any previous group. Create a missing group",
-      'first with `bb focus-board group create "<name>"`. If the tool is',
-      "unavailable in your session, fall back to the bb CLI instead of telling",
+      'first with `alia focus-board group create "<name>"`. If the tool is',
+      "unavailable in your session, fall back to the VesnALIA CLI instead of telling",
       "the user the tool is missing:",
-      '`bb focus-board group add "<group>" "$BB_THREAD_ID"` (or',
+      '`alia focus-board group add "<group>" "$ALIA_THREAD_ID"` (or',
       '`group move <thread id> --to "<group>" for a thread other than this',
       "one). Verify success from the command's output.",
     ].join("\n"),
@@ -4200,19 +4200,19 @@ export default async function plugin(bb: BbPluginApi) {
         const detail = error instanceof Error ? error.message : String(error);
         return groupError(
           `Cannot assign the group: ${detail}. List the existing groups with ` +
-            "`bb focus-board group list`, or create one first with " +
-            '`bb focus-board group create "<name>".',
+            "`alia focus-board group list`, or create one first with " +
+            '`alia focus-board group create "<name>".',
         );
       }
     },
   });
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "focus-board",
       summary: "Manage the Focus Board plugin's own state",
       description:
-        "Done list/mark/clear, feature groups (group list/create/rename/delete/add/remove/move, each taking the id or the exact name), linked tracker items (link list/set/clear), snooze list/set/clear, autotitle availability/probe diagnostics, and sweep (archive old Done + long-idle, dry-run by default). Sweep thresholds live in the declared plugin settings (`bb plugin config focus-board`) and the board settings modal; this CLI no longer carries its own config commands.",
+        "Done list/mark/clear, feature groups (group list/create/rename/delete/add/remove/move, each taking the id or the exact name), linked tracker items (link list/set/clear), snooze list/set/clear, autotitle availability/probe diagnostics, and sweep (archive old Done + long-idle, dry-run by default). Sweep thresholds live in the declared plugin settings (`alia plugin config focus-board`) and the board settings modal; this CLI no longer carries its own config commands.",
       commands: {
         "done list": doneList,
         "done mark": doneMark,
@@ -4242,13 +4242,13 @@ export default async function plugin(bb: BbPluginApi) {
   // never block the plugin's other surfaces), and drop all timers on
   // dispose so a reload never leaves stale wakes ticking.
   void armAllSnoozes().catch((error: unknown) => {
-    bb.log.warn(
+    alia.log.warn(
       `snooze wake scan failed: ${error instanceof Error ? error.message : String(error)}`,
     );
   });
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     for (const timer of wakeTimers.values()) clearTimeout(timer);
     wakeTimers.clear();
-    bb.log.info("disposed");
+    alia.log.info("disposed");
   });
 }

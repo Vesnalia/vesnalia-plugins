@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp } from "@vesnalia/plugin-sdk/testing/app";
 import {
   renderPartialSlot as renderSlot,
   type PartialRenderSlotOptions as RenderSlotOptions,
 } from "./test-utils";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import {
   addTabCandidates,
@@ -93,7 +93,7 @@ interface DesktopCloseRequestBridge {
   onCloseWindowRequest(listener: () => boolean): () => void;
 }
 
-type DesktopHost = typeof globalThis & { bbDesktop?: unknown };
+type DesktopHost = typeof globalThis & { aliaDesktop?: unknown };
 
 const desktopHost = globalThis as DesktopHost;
 let previousDesktopBridge: unknown;
@@ -118,7 +118,7 @@ function installDesktopCloseRequestBridge(): {
       return () => listeners.delete(listener);
     },
   };
-  desktopHost.bbDesktop = bridge;
+  desktopHost.aliaDesktop = bridge;
   return {
     dispatch: () => {
       let handled = false;
@@ -138,8 +138,8 @@ function installDesktopCloseRequestBridge(): {
 }
 
 beforeEach(() => {
-  previousDesktopBridge = desktopHost.bbDesktop;
-  desktopHost.bbDesktop = undefined;
+  previousDesktopBridge = desktopHost.aliaDesktop;
+  desktopHost.aliaDesktop = undefined;
   Object.defineProperty(document, "hidden", {
     configurable: true,
     value: false,
@@ -148,7 +148,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  desktopHost.bbDesktop = previousDesktopBridge;
+  desktopHost.aliaDesktop = previousDesktopBridge;
   Object.defineProperty(document, "hidden", {
     configurable: true,
     value: false,
@@ -183,7 +183,7 @@ describe("Chat Tabs", () => {
       },
     );
     const first = await slot.findByRole("button", { name: "First" });
-    const tab = first.closest<HTMLElement>(".bb-chat-tab")!;
+    const tab = first.closest<HTMLElement>(".alia-chat-tab")!;
     fireEvent.contextMenu(first);
     fireEvent.keyDown(await slot.findByRole("menuitem", { name: "Tab color" }), {
       key: "ArrowRight",
@@ -199,7 +199,7 @@ describe("Chat Tabs", () => {
       sourceThreadIds: ["first"],
     });
     await waitFor(() =>
-      expect(tab.style.getPropertyValue("--bb-chat-tab-color")).toBe(initial.palette[3]),
+      expect(tab.style.getPropertyValue("--alia-chat-tab-color")).toBe(initial.palette[3]),
     );
     settings.tabAppearance = original;
     await slot.emitRealtime("tabs-sidechat-activity-changed", {
@@ -208,7 +208,7 @@ describe("Chat Tabs", () => {
       sourceThreadIds: [],
     });
     await waitFor(() =>
-      expect(tab.style.getPropertyValue("--bb-chat-tab-color")).toBe(initial.palette[0]),
+      expect(tab.style.getPropertyValue("--alia-chat-tab-color")).toBe(initial.palette[0]),
     );
     await act(async () =>
       finish({
@@ -219,7 +219,7 @@ describe("Chat Tabs", () => {
         },
       }),
     );
-    expect(tab.style.getPropertyValue("--bb-chat-tab-color")).toBe(initial.palette[0]);
+    expect(tab.style.getPropertyValue("--alia-chat-tab-color")).toBe(initial.palette[0]);
   });
   it("renders aliases without renaming and applies tab color overrides without navigating", async () => {
     let appearance = updateTabAppearance(defaultTabAppearance(), {
@@ -253,22 +253,22 @@ describe("Chat Tabs", () => {
       },
     );
     const first = await slot.findByRole("button", { name: "[API] First" });
-    const firstTab = first.closest<HTMLElement>(".bb-chat-tab")!;
-    expect(firstTab.style.getPropertyValue("--bb-chat-tab-color")).toBe(appearance.palette[0]);
+    const firstTab = first.closest<HTMLElement>(".alia-chat-tab")!;
+    expect(firstTab.style.getPropertyValue("--alia-chat-tab-color")).toBe(appearance.palette[0]);
     expect(
-      slot.getByRole("button", { name: "New chat" }).closest(".bb-chat-tabs-strip"),
+      slot.getByRole("button", { name: "New chat" }).closest(".alia-chat-tabs-strip"),
     ).toBeNull();
     fireEvent.contextMenu(first);
     const colorMenu = await slot.findByRole("menuitem", { name: "Tab color" });
     fireEvent.keyDown(colorMenu, { key: "ArrowRight" });
     fireEvent.click(await slot.findByRole("menuitemradio", { name: "Color 2" }));
     await waitFor(() =>
-      expect(firstTab.style.getPropertyValue("--bb-chat-tab-color")).toBe(appearance.palette[1]),
+      expect(firstTab.style.getPropertyValue("--alia-chat-tab-color")).toBe(appearance.palette[1]),
     );
     expect(update).toHaveBeenCalledWith({ kind: "tab", threadId: "first", color: 1 });
     expect(slot.inspection.navigateCalls).toEqual([]);
     expect(slot.inspection.sidebarActionCalls).toEqual([]);
-    fireEvent.doubleClick(firstTab.querySelector(".bb-chat-tab-title")!);
+    fireEvent.doubleClick(firstTab.querySelector(".alia-chat-tab-title")!);
     const rename = await slot.findByRole("textbox", { name: "Rename tab “First”" });
     expect(rename).toHaveProperty("value", "First");
     fireEvent.keyDown(rename, { key: "Escape" });
@@ -321,12 +321,12 @@ describe("Chat Tabs", () => {
           },
         );
         const active = (await slot.findByRole("button", { name: "Chat 15" })).closest<HTMLElement>(
-          ".bb-chat-tab",
+          ".alia-chat-tab",
         )!;
-        const strip = slot.container.querySelector<HTMLElement>(".bb-chat-tabs-strip")!;
-        const top = slot.container.querySelector<HTMLElement>(".bb-chat-tabs-top-scrollbar")!;
+        const strip = slot.container.querySelector<HTMLElement>(".alia-chat-tabs-strip")!;
+        const top = slot.container.querySelector<HTMLElement>(".alia-chat-tabs-top-scrollbar")!;
         const spacer = slot.container.querySelector<HTMLElement>(
-          ".bb-chat-tabs-top-scrollbar-spacer",
+          ".alia-chat-tabs-top-scrollbar-spacer",
         )!;
         let width = 1000;
         Object.defineProperty(top, "clientWidth", { configurable: true, get: () => width + 44 });
@@ -376,7 +376,7 @@ describe("Chat Tabs", () => {
         );
         await waitFor(() =>
           expect(
-            slot!.container.querySelector('.bb-chat-tab[data-nested-work="true"]'),
+            slot!.container.querySelector('.alia-chat-tab[data-nested-work="true"]'),
           ).not.toBeNull(),
         );
         await new Promise((resolve) => window.requestAnimationFrame(resolve));
@@ -525,11 +525,11 @@ describe("Chat Tabs", () => {
     );
     expect(
       (await slot.findByRole("button", { name: "Live child" })).querySelector(
-        ".bb-chat-tabs-subthread-badge",
+        ".alia-chat-tabs-subthread-badge",
       ),
     ).not.toBeNull();
     expect(
-      slot.getByRole("button", { name: "Root" }).querySelector(".bb-chat-tabs-subthread-badge"),
+      slot.getByRole("button", { name: "Root" }).querySelector(".alia-chat-tabs-subthread-badge"),
     ).toBeNull();
     fireEvent.pointerDown(slot.getByRole("button", { name: "Open chat list" }), {
       button: 0,
@@ -538,18 +538,18 @@ describe("Chat Tabs", () => {
     for (const name of [/Live child/, /Old child/]) {
       const item = await slot.findByRole("menuitem", { name });
       expect(
-        item.querySelector('.bb-chat-tabs-subthread-badge [data-icon="GitBranch"]'),
+        item.querySelector('.alia-chat-tabs-subthread-badge [data-icon="GitBranch"]'),
       ).not.toBeNull();
       expect(item.textContent).not.toContain("Subthread");
     }
     expect(
-      slot.getByRole("menuitem", { name: /^Root/ }).querySelector(".bb-chat-tabs-subthread-badge"),
+      slot.getByRole("menuitem", { name: /^Root/ }).querySelector(".alia-chat-tabs-subthread-badge"),
     ).toBeNull();
     fireEvent.change(slot.getByRole("searchbox", { name: "Search chats by title or project" }), {
       target: { value: "Remote child" },
     });
     const remote = await slot.findByRole("menuitem", { name: /Remote child/ });
-    expect(remote.querySelector(".bb-chat-tabs-subthread-badge")).not.toBeNull();
+    expect(remote.querySelector(".alia-chat-tabs-subthread-badge")).not.toBeNull();
     expect(remote.textContent).not.toContain("Subthread");
   });
 
@@ -812,7 +812,7 @@ describe("Chat Tabs", () => {
         expect(item.getAttribute("data-selected")).not.toBe("true");
         expect(item.querySelector("svg")).toBeNull();
         expect(
-          item.querySelector('.bb-chat-tabs-list-menu-title[data-unavailable="archived"]'),
+          item.querySelector('.alia-chat-tabs-list-menu-title[data-unavailable="archived"]'),
         ).not.toBeNull();
       } else {
         expect(await slot.findByText("No matching chats")).toBeTruthy();
@@ -927,18 +927,18 @@ describe("Chat Tabs", () => {
     const tab = await slot.findByRole("button", {
       name: /Parent, В дочернем чате требуется ваш ответ/,
     });
-    expect(tab.closest(".bb-chat-tab")?.getAttribute("data-waiting")).toBe("true");
-    expect(tab.querySelector(".bb-chat-tab-waiting")?.textContent).toBe("?");
-    expect(tab.querySelector(".bb-chat-tab-waiting")?.getAttribute("title")).toBe(
+    expect(tab.closest(".alia-chat-tab")?.getAttribute("data-waiting")).toBe("true");
+    expect(tab.querySelector(".alia-chat-tab-waiting")?.textContent).toBe("?");
+    expect(tab.querySelector(".alia-chat-tab-waiting")?.getAttribute("title")).toBe(
       "В дочернем чате требуется ваш ответ или подтверждение.",
     );
-    expect(tab.querySelector(".bb-chat-tab-working")).toBeNull();
+    expect(tab.querySelector(".alia-chat-tab-working")).toBeNull();
     fireEvent.pointerDown(slot.getByRole("button", { name: "Открыть список чатов" }), {
       button: 0,
     });
     await waitFor(() =>
       expect(
-        document.querySelector('.bb-chat-tabs-list-menu-status[data-status="waiting"]'),
+        document.querySelector('.alia-chat-tabs-list-menu-status[data-status="waiting"]'),
       ).not.toBeNull(),
     );
   });
@@ -1232,10 +1232,10 @@ describe("Chat Tabs", () => {
 
     await waitFor(() => {
       expect(
-        slot.container.querySelector("#bb-chat-tabs-overlay")?.getAttribute("data-row-count"),
+        slot.container.querySelector("#alia-chat-tabs-overlay")?.getAttribute("data-row-count"),
       ).toBe("1");
     });
-    const overlayElement = slot.container.querySelector("#bb-chat-tabs-overlay");
+    const overlayElement = slot.container.querySelector("#alia-chat-tabs-overlay");
     if (!(overlayElement instanceof HTMLElement)) {
       throw new Error("Chat tabs overlay was not found");
     }
@@ -1248,15 +1248,15 @@ describe("Chat Tabs", () => {
     expect(buildTab.getAttribute("title")).toContain("Chat: Build");
     expect(buildTab.getAttribute("title")).toContain("Click to open the chat.");
     expect(buildTab.getAttribute("aria-description")).toContain("Click opens the chat.");
-    expect(buildTab.closest(".bb-chat-tab")?.getAttribute("data-preview")).toBe("true");
-    expect(slot.container.querySelectorAll(".bb-chat-tab")).toHaveLength(4);
+    expect(buildTab.closest(".alia-chat-tab")?.getAttribute("data-preview")).toBe("true");
+    expect(slot.container.querySelectorAll(".alia-chat-tab")).toHaveLength(4);
     expect(slot.queryByRole("button", { name: /Pin «/u })).toBeNull();
 
-    const strip = slot.container.querySelector(".bb-chat-tabs-strip");
+    const strip = slot.container.querySelector(".alia-chat-tabs-strip");
     if (!(strip instanceof HTMLDivElement)) {
       throw new Error("Chat tab strip was not found");
     }
-    const topScrollbar = slot.container.querySelector(".bb-chat-tabs-top-scrollbar");
+    const topScrollbar = slot.container.querySelector(".alia-chat-tabs-top-scrollbar");
     if (!(topScrollbar instanceof HTMLDivElement)) {
       throw new Error("Top scrollbar was not found");
     }
@@ -1275,7 +1275,7 @@ describe("Chat Tabs", () => {
     });
     expect(topScrollbar.getAttribute("aria-hidden")).toBe("false");
     expect(topScrollbar.tabIndex).toBe(0);
-    const spacer = slot.container.querySelector(".bb-chat-tabs-top-scrollbar-spacer");
+    const spacer = slot.container.querySelector(".alia-chat-tabs-top-scrollbar-spacer");
     if (!(spacer instanceof HTMLDivElement)) throw new Error("Scrollbar spacer was not found");
     const writeWidth = vi.spyOn(spacer.style, "width", "set");
     readClientWidth.mockClear();
@@ -1313,8 +1313,8 @@ describe("Chat Tabs", () => {
     expect(topScrollbar.scrollLeft).toBe(84);
 
     const docsTab = slot.getByRole("button", { name: "Documentation" });
-    const docsContainer = docsTab.closest(".bb-chat-tab");
-    const previewContainer = buildTab.closest(".bb-chat-tab");
+    const docsContainer = docsTab.closest(".alia-chat-tab");
+    const previewContainer = buildTab.closest(".alia-chat-tab");
     const designAfterSlot = strip.querySelector(
       '[data-drop-target="thr_design"][data-drop-position="after"]',
     );
@@ -1342,7 +1342,7 @@ describe("Chat Tabs", () => {
     fireEvent(designAfterSlot, dragOver);
     await waitFor(() => {
       expect(designAfterSlot.getAttribute("data-active")).toBe("true");
-      expect(strip.querySelectorAll('.bb-chat-tab-drop-slot[data-active="true"]')).toHaveLength(1);
+      expect(strip.querySelectorAll('.alia-chat-tab-drop-slot[data-active="true"]')).toHaveLength(1);
     });
     const drop = new Event("drop", { bubbles: true, cancelable: true });
     Object.defineProperties(drop, {
@@ -1358,7 +1358,7 @@ describe("Chat Tabs", () => {
         "thr_docs",
       ]);
       expect(
-        [...strip.querySelectorAll(".bb-chat-tab-select")].map((tab) =>
+        [...strip.querySelectorAll(".alia-chat-tab-select")].map((tab) =>
           tab.getAttribute("aria-label"),
         ),
       ).toEqual(["Review", "Design", "Documentation", "Build"]);
@@ -1376,7 +1376,7 @@ describe("Chat Tabs", () => {
       expect(designBeforeSlotForNoop.getAttribute("data-active")).toBe("true");
     });
     fireEvent.dragOver(docsContainer, { clientX: 0, dataTransfer });
-    expect(strip.querySelector('.bb-chat-tab-drop-slot[data-active="true"]')).toBeNull();
+    expect(strip.querySelector('.alia-chat-tab-drop-slot[data-active="true"]')).toBeNull();
     fireEvent.drop(strip, { clientX: 0, dataTransfer });
     expect(moveCalls).toBe(1);
     expect(state.entries.map((entry) => entry.threadId)).toEqual([
@@ -1386,8 +1386,8 @@ describe("Chat Tabs", () => {
       "thr_docs",
     ]);
 
-    const reviewContainer = slot.getByRole("button", { name: "Review" }).closest(".bb-chat-tab");
-    const designContainer = slot.getByRole("button", { name: "Design" }).closest(".bb-chat-tab");
+    const reviewContainer = slot.getByRole("button", { name: "Review" }).closest(".alia-chat-tab");
+    const designContainer = slot.getByRole("button", { name: "Design" }).closest(".alia-chat-tab");
     if (
       !(reviewContainer instanceof HTMLDivElement) ||
       !(designContainer instanceof HTMLDivElement)
@@ -1565,15 +1565,15 @@ describe("Chat Tabs", () => {
 
     fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
     const menu = await waitFor(() => {
-      const next = document.body.querySelector<HTMLElement>(".bb-chat-tabs-list-menu");
+      const next = document.body.querySelector<HTMLElement>(".alia-chat-tabs-list-menu");
       if (next === null) throw new Error("Tab list submenu did not open");
       return next;
     });
 
-    const groups = [...menu.querySelectorAll<HTMLElement>(".bb-chat-tabs-list-menu-group")];
+    const groups = [...menu.querySelectorAll<HTMLElement>(".alia-chat-tabs-list-menu-group")];
     expect(
       groups.map(
-        (group) => group.querySelector(".bb-chat-tabs-list-menu-group-label")?.textContent,
+        (group) => group.querySelector(".alia-chat-tabs-list-menu-group-label")?.textContent,
       ),
     ).toEqual(["Pinned", "History"]);
     expect(
@@ -1584,21 +1584,21 @@ describe("Chat Tabs", () => {
     const currentMenuItem = menu.querySelector<HTMLElement>('[data-thread-id="thr_api_current"]');
     const workingMenuItem = menu.querySelector<HTMLElement>('[data-thread-id="thr_web"]');
     const unreadMenuItem = menu.querySelector<HTMLElement>('[data-thread-id="thr_api_review"]');
-    expect(currentMenuItem?.querySelector(".bb-chat-tabs-list-menu-status")).toBeNull();
+    expect(currentMenuItem?.querySelector(".alia-chat-tabs-list-menu-status")).toBeNull();
     expect(
-      workingMenuItem?.querySelector(".bb-chat-tabs-list-menu-status")?.getAttribute("data-status"),
+      workingMenuItem?.querySelector(".alia-chat-tabs-list-menu-status")?.getAttribute("data-status"),
     ).toBe("working");
     expect(workingMenuItem?.textContent).toContain("Working");
     expect(
-      unreadMenuItem?.querySelector(".bb-chat-tabs-list-menu-status")?.getAttribute("data-status"),
+      unreadMenuItem?.querySelector(".alia-chat-tabs-list-menu-status")?.getAttribute("data-status"),
     ).toBe("unread");
     expect(unreadMenuItem?.textContent).toContain("Unread");
-    const unreadMeta = unreadMenuItem?.querySelector(".bb-chat-tabs-list-menu-meta");
+    const unreadMeta = unreadMenuItem?.querySelector(".alia-chat-tabs-list-menu-meta");
     expect(
-      unreadMeta?.firstElementChild?.classList.contains("bb-chat-tabs-list-menu-project"),
+      unreadMeta?.firstElementChild?.classList.contains("alia-chat-tabs-list-menu-project"),
     ).toBe(true);
     expect(unreadMeta?.lastElementChild).toBe(
-      unreadMenuItem?.querySelector(".bb-chat-tabs-list-menu-status"),
+      unreadMenuItem?.querySelector(".alia-chat-tabs-list-menu-status"),
     );
     const historyGroup = groups[1];
     if (historyGroup === undefined) throw new Error("History section was not found");
@@ -1609,12 +1609,12 @@ describe("Chat Tabs", () => {
     ).toEqual(history.entries.slice(0, 8).map((entry) => entry.threadId));
     const historyPageSeparators = () => [
       ...historyGroup.querySelectorAll<HTMLElement>(
-        ".bb-chat-tabs-list-menu-history-page-separator",
+        ".alia-chat-tabs-list-menu-history-page-separator",
       ),
     ];
     expect(historyPageSeparators()).toHaveLength(0);
 
-    let more = menu.querySelector<HTMLElement>(".bb-chat-tabs-list-menu-more");
+    let more = menu.querySelector<HTMLElement>(".alia-chat-tabs-list-menu-more");
     if (more === null) throw new Error("More item was not found");
     vi.useFakeTimers();
     try {
@@ -1644,7 +1644,7 @@ describe("Chat Tabs", () => {
         "thr_history_8",
       );
 
-      more = menu.querySelector<HTMLElement>(".bb-chat-tabs-list-menu-more");
+      more = menu.querySelector<HTMLElement>(".alia-chat-tabs-list-menu-more");
       if (more === null) throw new Error("Repeated More item was not found");
       fireEvent.pointerEnter(more, { pointerType: "mouse" });
       await act(async () => {
@@ -1664,7 +1664,7 @@ describe("Chat Tabs", () => {
         "thr_history_16",
       );
 
-      more = menu.querySelector<HTMLElement>(".bb-chat-tabs-list-menu-more");
+      more = menu.querySelector<HTMLElement>(".alia-chat-tabs-list-menu-more");
       if (more === null) throw new Error("Repeated More item was not found");
       fireEvent.pointerDown(more, { pointerType: "touch" });
       fireEvent.click(more);
@@ -1746,14 +1746,14 @@ describe("Chat Tabs", () => {
     );
 
     await slot.findByRole("button", { name: "Current" });
-    expect(slot.container.querySelectorAll(".bb-chat-tab")).toHaveLength(1);
+    expect(slot.container.querySelectorAll(".alia-chat-tab")).toHaveLength(1);
 
     const trigger = await slot.findByRole("button", {
       name: "Open chat list",
     });
     fireEvent.pointerDown(trigger, { button: 0 });
     const menu = await waitFor(() => {
-      const next = document.body.querySelector<HTMLElement>(".bb-chat-tabs-list-menu");
+      const next = document.body.querySelector<HTMLElement>(".alia-chat-tabs-list-menu");
       expect(next).not.toBeNull();
       return next;
     });
@@ -1771,7 +1771,7 @@ describe("Chat Tabs", () => {
     expect(archivedItem.querySelector("svg")).toBeNull();
     expect(archivedItem.getAttribute("data-selected")).not.toBe("true");
     expect(
-      archivedItem.querySelector(".bb-chat-tabs-list-menu-title")?.getAttribute("data-unavailable"),
+      archivedItem.querySelector(".alia-chat-tabs-list-menu-title")?.getAttribute("data-unavailable"),
     ).toBe("archived");
     expect(archivedItem.textContent).toContain("Archived");
 
@@ -1781,7 +1781,7 @@ describe("Chat Tabs", () => {
     expect(deletedItem.querySelector("svg")).toBeNull();
     expect(deletedItem.getAttribute("data-selected")).not.toBe("true");
     expect(
-      deletedItem.querySelector(".bb-chat-tabs-list-menu-title")?.getAttribute("data-unavailable"),
+      deletedItem.querySelector(".alia-chat-tabs-list-menu-title")?.getAttribute("data-unavailable"),
     ).toBe("deleted");
     expect(deletedItem.textContent).toContain("Deleted");
 
@@ -1840,7 +1840,7 @@ describe("Chat Tabs", () => {
       },
     );
     expect(
-      desktop.container.querySelector("#bb-chat-tabs-overlay")?.getAttribute("data-docked"),
+      desktop.container.querySelector("#alia-chat-tabs-overlay")?.getAttribute("data-docked"),
     ).toBe("false");
     await act(async () => undefined);
     expect(desktopListCalls).toBe(0);
@@ -1875,7 +1875,7 @@ describe("Chat Tabs", () => {
         },
       );
       expect(
-        mobile.container.querySelector("#bb-chat-tabs-overlay")?.getAttribute("data-docked"),
+        mobile.container.querySelector("#alia-chat-tabs-overlay")?.getAttribute("data-docked"),
       ).toBe("false");
       await act(async () => undefined);
       expect(mobileListCalls).toBe(0);
@@ -1963,17 +1963,17 @@ describe("Chat Tabs", () => {
     const trigger = await slot.findByRole("button", {
       name: "Open chat list",
     });
-    const contentRow = slot.container.querySelector(".bb-chat-tabs-content-row");
+    const contentRow = slot.container.querySelector(".alia-chat-tabs-content-row");
     expect(contentRow?.lastElementChild).toBe(
-      slot.container.querySelector('.bb-chat-tabs-list-switcher[data-position="right"]'),
+      slot.container.querySelector('.alia-chat-tabs-list-switcher[data-position="right"]'),
     );
-    const strip = slot.container.querySelector(".bb-chat-tabs-strip");
-    expect(strip?.querySelector(".bb-chat-tabs-new-switcher")).toBeNull();
-    expect(slot.container.querySelector(".bb-chat-tabs-new-switcher")?.parentElement).toBe(
+    const strip = slot.container.querySelector(".alia-chat-tabs-strip");
+    expect(strip?.querySelector(".alia-chat-tabs-new-switcher")).toBeNull();
+    expect(slot.container.querySelector(".alia-chat-tabs-new-switcher")?.parentElement).toBe(
       contentRow,
     );
     const openMenu = () =>
-      document.body.querySelector<HTMLElement>('.bb-chat-tabs-list-menu[data-state="open"]');
+      document.body.querySelector<HTMLElement>('.alia-chat-tabs-list-menu[data-state="open"]');
     const waitPastLeaveDelay = () =>
       act(async () => {
         await new Promise((resolve) => window.setTimeout(resolve, 180));
@@ -2009,17 +2009,17 @@ describe("Chat Tabs", () => {
     await waitFor(() => expect(openMenu()).toBeNull());
 
     fireEvent.pointerEnter(trigger, { pointerType: "mouse" });
-    expect(document.body.querySelector(".bb-chat-tabs-list-menu")).toBeNull();
+    expect(document.body.querySelector(".alia-chat-tabs-list-menu")).toBeNull();
     const menu = await waitFor(
       () => {
-        const next = document.body.querySelector<HTMLElement>(".bb-chat-tabs-list-menu");
+        const next = document.body.querySelector<HTMLElement>(".alia-chat-tabs-list-menu");
         if (next === null) throw new Error("Tab list submenu did not open");
         return next;
       },
       { timeout: 900 },
     );
     expect(
-      [...menu.querySelectorAll(".bb-chat-tabs-list-menu-group-label")].map(
+      [...menu.querySelectorAll(".alia-chat-tabs-list-menu-group-label")].map(
         (label) => label.textContent,
       ),
     ).toEqual(["History"]);
@@ -2065,7 +2065,7 @@ describe("Chat Tabs", () => {
     fireEvent.pointerLeave(searchResult, { pointerType: "mouse" });
     expect(document.activeElement).toBe(search);
     expect(
-      menu.querySelectorAll(".bb-chat-tabs-list-menu-search-results [data-thread-id]"),
+      menu.querySelectorAll(".alia-chat-tabs-list-menu-search-results [data-thread-id]"),
     ).toHaveLength(1);
     expect(menu.querySelector('[data-thread-id="thr_history_one"]')).toBeNull();
     fireEvent.keyDown(search, { key: "ArrowDown" });
@@ -2076,7 +2076,7 @@ describe("Chat Tabs", () => {
     tapShift();
     await waitFor(() => {
       expect(
-        document.body.querySelector('.bb-chat-tabs-list-menu[data-state="open"]'),
+        document.body.querySelector('.alia-chat-tabs-list-menu[data-state="open"]'),
       ).not.toBeNull();
     });
     const reopenedSearch = document.body.querySelector<HTMLInputElement>(
@@ -2085,7 +2085,7 @@ describe("Chat Tabs", () => {
     if (reopenedSearch === null) throw new Error("Reopened search was not found");
     fireEvent.keyDown(reopenedSearch, { key: "Escape" });
     await waitFor(() => {
-      expect(document.body.querySelector('.bb-chat-tabs-list-menu[data-state="open"]')).toBeNull();
+      expect(document.body.querySelector('.alia-chat-tabs-list-menu[data-state="open"]')).toBeNull();
     });
     const composer = document.createElement("textarea");
     slot.container.appendChild(composer);
@@ -2094,7 +2094,7 @@ describe("Chat Tabs", () => {
     tapShift(composer);
     await waitFor(() => {
       expect(
-        document.body.querySelector('.bb-chat-tabs-list-menu[data-state="open"]'),
+        document.body.querySelector('.alia-chat-tabs-list-menu[data-state="open"]'),
       ).not.toBeNull();
       expect(document.activeElement).toBe(
         document.body.querySelector('input[aria-label="Search chats by title or project"]'),
@@ -2172,11 +2172,11 @@ describe("Chat Tabs", () => {
       }
     }
     tapShift();
-    expect(document.querySelector('.bb-chat-tabs-list-menu[data-state="open"]')).toBeNull();
+    expect(document.querySelector('.alia-chat-tabs-list-menu[data-state="open"]')).toBeNull();
     // An interruption must not poison the next clean pair.
     tapShift();
     await waitFor(() =>
-      expect(document.querySelector('.bb-chat-tabs-list-menu[data-state="open"]')).not.toBeNull(),
+      expect(document.querySelector('.alia-chat-tabs-list-menu[data-state="open"]')).not.toBeNull(),
     );
   });
 
@@ -2243,12 +2243,12 @@ describe("Chat Tabs", () => {
     });
     fireEvent.pointerDown(trigger, { button: 0 });
     const menu = await waitFor(() => {
-      const next = document.body.querySelector<HTMLElement>(".bb-chat-tabs-list-menu");
+      const next = document.body.querySelector<HTMLElement>(".alia-chat-tabs-list-menu");
       if (next === null) throw new Error("Tab list submenu did not open");
       return next;
     });
     expect(
-      [...menu.querySelectorAll(".bb-chat-tabs-list-menu-group-label")].map(
+      [...menu.querySelectorAll(".alia-chat-tabs-list-menu-group-label")].map(
         (label) => label.textContent,
       ),
     ).toEqual(["Pinned"]);
@@ -2463,7 +2463,7 @@ describe("Chat Tabs", () => {
     });
     expect(pinnedTab.getAttribute("title")).toContain("Click to open the chat.");
     expect(pinnedTab.getAttribute("title")).not.toContain("edits");
-    const title = pinnedTab.querySelector(".bb-chat-tab-title");
+    const title = pinnedTab.querySelector(".alia-chat-tab-title");
     if (!(title instanceof HTMLSpanElement)) {
       throw new Error("Tab title was not found");
     }
@@ -2484,7 +2484,7 @@ describe("Chat Tabs", () => {
     expect(state.entries[0]?.pinned).toBe(true);
     pinnedTab = slot.getByRole("button", { name: "Pinned chat" });
 
-    const titleAfterRename = pinnedTab.querySelector(".bb-chat-tab-title");
+    const titleAfterRename = pinnedTab.querySelector(".alia-chat-tab-title");
     if (!(titleAfterRename instanceof HTMLSpanElement)) {
       throw new Error("Tab title after inline rename was not found");
     }
@@ -3020,7 +3020,7 @@ describe("Chat Tabs", () => {
       },
     );
     const tab = await slot.findByRole("button", { name: "Current chat" });
-    expect(tab.closest(".bb-chat-tab")?.getAttribute("data-preview")).toBe("true");
+    expect(tab.closest(".alia-chat-tab")?.getAttribute("data-preview")).toBe("true");
     fireEvent.doubleClick(tab);
     await waitFor(() => {
       expect(state.entries).toEqual([
@@ -3159,16 +3159,16 @@ describe("Chat Tabs", () => {
     const unreadTab = await slot.findByRole("button", {
       name: "Unread chat, unread messages",
     });
-    expect(unreadTab.closest(".bb-chat-tab")?.getAttribute("data-unread")).toBe("true");
-    expect(unreadTab.querySelector(".bb-chat-tab-unread")).not.toBeNull();
-    expect(unreadTab.querySelector(".bb-chat-tab-working")).toBeNull();
+    expect(unreadTab.closest(".alia-chat-tab")?.getAttribute("data-unread")).toBe("true");
+    expect(unreadTab.querySelector(".alia-chat-tab-unread")).not.toBeNull();
+    expect(unreadTab.querySelector(".alia-chat-tab-working")).toBeNull();
     expect(unreadTab.getAttribute("title")).toContain("There are unread messages.");
 
     const workingTab = slot.getByRole("button", {
       name: "Working chat, work is running, unread messages",
     });
-    expect(workingTab.querySelector(".bb-chat-tab-working")).not.toBeNull();
-    expect(workingTab.querySelector(".bb-chat-tab-unread")).not.toBeNull();
+    expect(workingTab.querySelector(".alia-chat-tab-working")).not.toBeNull();
+    expect(workingTab.querySelector(".alia-chat-tab-unread")).not.toBeNull();
   });
 
   it("handles behavior 14", async () => {
@@ -3260,13 +3260,13 @@ describe("Chat Tabs", () => {
     );
 
     const list = await slot.findByRole("list", { name: "Tabs" });
-    const rows = [...list.querySelectorAll(".bb-chat-tabs-homepage-pinned-item")];
+    const rows = [...list.querySelectorAll(".alia-chat-tabs-homepage-pinned-item")];
     expect(rows).toHaveLength(3);
     expect(
-      rows.map((row) => row.querySelector(".bb-chat-tabs-homepage-pinned-title")?.textContent),
+      rows.map((row) => row.querySelector(".alia-chat-tabs-homepage-pinned-title")?.textContent),
     ).toEqual(["Quiet chat", "Parent chat", "Active chat"]);
     expect(list.textContent).not.toContain("No activity");
-    expect(rows[0]?.querySelector(".bb-chat-tabs-homepage-pinned-status")).toBeNull();
+    expect(rows[0]?.querySelector(".alia-chat-tabs-homepage-pinned-status")).toBeNull();
     expect(list.textContent).toContain("Working · Unread");
     expect(list.textContent).toContain("Working");
     expect(
@@ -3274,14 +3274,14 @@ describe("Chat Tabs", () => {
         name: "Quiet chat. Project: API.",
       }),
     ).toBeTruthy();
-    const activeMeta = rows[2]?.querySelector(".bb-chat-tabs-homepage-pinned-meta");
-    const activeStatus = rows[2]?.querySelector(".bb-chat-tabs-homepage-pinned-status");
+    const activeMeta = rows[2]?.querySelector(".alia-chat-tabs-homepage-pinned-meta");
+    const activeStatus = rows[2]?.querySelector(".alia-chat-tabs-homepage-pinned-status");
     expect(
-      activeMeta?.firstElementChild?.classList.contains("bb-chat-tabs-homepage-pinned-project"),
+      activeMeta?.firstElementChild?.classList.contains("alia-chat-tabs-homepage-pinned-project"),
     ).toBe(true);
     expect(activeMeta?.lastElementChild).toBe(activeStatus);
     expect(
-      rows[0]?.querySelector(".bb-chat-tabs-homepage-pinned-project")?.getAttribute("title"),
+      rows[0]?.querySelector(".alia-chat-tabs-homepage-pinned-project")?.getAttribute("title"),
     ).toBe("API");
     expect(slot.queryByText("Temporary chat")).toBeNull();
 
@@ -3338,7 +3338,7 @@ describe("Chat Tabs", () => {
       },
     );
 
-    const list = await slot.findByTestId("bb-chat-tabs-homepage-pinned-list");
+    const list = await slot.findByTestId("alia-chat-tabs-homepage-pinned-list");
     expect(list.getAttribute("data-visible")).toBe("false");
     expect(slot.queryByRole("button", { name: /Current/u })).toBeNull();
     expect(listCalls).toBe(0);
@@ -3397,7 +3397,7 @@ describe("Chat Tabs", () => {
       const parent = await slot.findByRole("button", {
         name: "Parent chat, nested work is running",
       });
-      expect(parent.querySelector('.bb-chat-tab-working[data-nested-only="true"]')).not.toBeNull();
+      expect(parent.querySelector('.alia-chat-tab-working[data-nested-only="true"]')).not.toBeNull();
       await slot.emitRealtime("tabs-sidechat-activity-changed", {
         revision: 2,
         sourceThreadIds: [],
@@ -3406,12 +3406,12 @@ describe("Chat Tabs", () => {
         revision: "bad",
         sourceThreadIds: [],
       });
-      expect(parent.querySelector(".bb-chat-tab-working")).not.toBeNull();
+      expect(parent.querySelector(".alia-chat-tab-working")).not.toBeNull();
       await slot.emitRealtime("tabs-sidechat-activity-changed", {
         revision: 4,
         sourceThreadIds: [],
       });
-      expect(parent.querySelector(".bb-chat-tab-working")).toBeNull();
+      expect(parent.querySelector(".alia-chat-tab-working")).toBeNull();
       await slot.emitRealtime("tabs-sidechat-activity-changed", {
         generation: 1,
         revision: 0,
@@ -3422,7 +3422,7 @@ describe("Chat Tabs", () => {
         revision: 9000,
         sourceThreadIds: [],
       });
-      expect(parent.querySelector(".bb-chat-tab-working")).not.toBeNull();
+      expect(parent.querySelector(".alia-chat-tab-working")).not.toBeNull();
       await slot.emitRealtime("tabs-sidechat-activity-changed", {
         generation: 2,
         revision: 0,
@@ -3433,7 +3433,7 @@ describe("Chat Tabs", () => {
         revision: 9001,
         sourceThreadIds: ["thr_parent"],
       });
-      expect(parent.querySelector(".bb-chat-tab-working")).toBeNull();
+      expect(parent.querySelector(".alia-chat-tab-working")).toBeNull();
     },
   );
 
@@ -3502,9 +3502,9 @@ describe("Chat Tabs", () => {
           : "Parent chat, nested work is running",
       });
       expect(
-        parentTab.querySelector(".bb-chat-tab-working")?.getAttribute("data-nested-only"),
+        parentTab.querySelector(".alia-chat-tab-working")?.getAttribute("data-nested-only"),
       ).toBe(parentWorking ? "false" : "true");
-      expect(parentTab.closest(".bb-chat-tab")?.getAttribute("data-nested-work")).toBe("true");
+      expect(parentTab.closest(".alia-chat-tab")?.getAttribute("data-nested-work")).toBe("true");
       expect(parentTab.getAttribute("title")).toContain("Nested work is running.");
     },
   );
@@ -3561,7 +3561,7 @@ describe("Chat Tabs", () => {
     const systemTab = await slot.findByRole("button", {
       name: "SystemAll 1, work is running",
     });
-    expect(systemTab.querySelector(".bb-chat-tab-working")).not.toBeNull();
+    expect(systemTab.querySelector(".alia-chat-tab-working")).not.toBeNull();
   });
 
   it("handles behavior 18", async () => {
@@ -3611,7 +3611,7 @@ describe("Chat Tabs", () => {
     const parentTab = await slot.findByRole("button", {
       name: "Parent chat, nested work is running",
     });
-    expect(parentTab.querySelector(".bb-chat-tab-working")).not.toBeNull();
+    expect(parentTab.querySelector(".alia-chat-tab-working")).not.toBeNull();
   });
 
   it("does not create a preview for a background workflow without a viewed chat", async () => {

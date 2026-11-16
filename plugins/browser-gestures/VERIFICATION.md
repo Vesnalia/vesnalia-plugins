@@ -2,7 +2,7 @@
 
 - Typecheck and plugin build passed; installed plugin reports running.
 - Four tests execute the actual injected script: thresholds/directions/one action per burst; scrollable ancestor priority for the entire burst; ignored inputs; renewal, cooldown, cleanup and lease expiry.
-- Actual BB desktop browser test page: synthetic negative horizontal wheel over the plain region followed by observed history transition from step 2 to step 1. Positive wheel over a scrollable child left step 1 unchanged.
+- Actual VesnALIA desktop browser test page: synthetic negative horizontal wheel over the plain region followed by observed history transition from step 2 to step 1. Positive wheel over a scrollable child left step 1 unchanged.
 - Physical trackpad input, native wheel default scrolling, forward navigation, and same-URL reload recovery still need live confirmation. Synthetic dispatch is not equivalent to OS input.
 - Test page at http://127.0.0.1:18767/ has three history links, a horizontal scroller and a plain gesture area. The temporary local server must be running to use it.
 
@@ -18,7 +18,7 @@ New model: decide once at gesture start (vertical, modifier, horizontal scroller
 
 ## Trace-driven rewrite, 2026-10-18
 
-Recorded 506 real trackpad wheel events from the BB desktop browser (`fixtures/trackpad-trace.json`). Findings: every new touch starts with the only `cancelable=true` event of its sequence; while fingers rest on the pad, 1–3px events keep arriving every ~16ms (max observed gap 132ms); post-lift momentum arrives with `deltaY === 0` and large smooth steps. The 1.2s post-navigation cooldown swallowed quick repeat swipes, and the deceleration-based momentum guess fired while the user was still holding.
+Recorded 506 real trackpad wheel events from the VesnALIA desktop browser (`fixtures/trackpad-trace.json`). Findings: every new touch starts with the only `cancelable=true` event of its sequence; while fingers rest on the pad, 1–3px events keep arriving every ~16ms (max observed gap 132ms); post-lift momentum arrives with `deltaY === 0` and large smooth steps. The 1.2s post-navigation cooldown swallowed quick repeat swipes, and the deceleration-based momentum guess fired while the user was still holding.
 
 Now: a gesture starts only on a cancelable (touch-begin) event, so leftover momentum on a freshly loaded page cannot start one; release = new touch, 220ms of silence, or 5 smooth `deltaY === 0` steps of at least 6px. The recorded session replays as a test: every touch past 160px navigates exactly once and both 1.2–1.4s holds wait for lift. Cooldown plumbing removed; injection poll 250ms.
 

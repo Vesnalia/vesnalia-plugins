@@ -1,6 +1,6 @@
 import { expect, test, vi } from "vitest";
 import { readFileSync } from "node:fs";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { targetKey } from "./targets";
 import { runGh } from "./gh";
@@ -18,18 +18,18 @@ const url = "https://github.com/acme/web/pull/7";
 const patch = "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1,2 +1,2 @@\n keep();\n-old();\n+next();\n";
 
 async function host() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: key, kind: "pr", number: 7, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1" });
   await store.savePatch(key, patch);
   const cli = (...argv: string[]) => harness.behavior.runCli(["comment", ...argv]);
-  return { bb, harness, store, cli };
+  return { alia, harness, store, cli };
 }
 
-test("bb review comment adds, lists, edits, and deletes local draft comments, and never calls GitHub", async () => {
+test("alia review comment adds, lists, edits, and deletes local draft comments, and never calls GitHub", async () => {
   const { harness, store, cli } = await host();
-  expect(await cli("add", url, "a.ts:2", "--code", "next();", "--body", "Why rename?\nIt breaks callers.")).toMatchObject({ exitCode: 0, stdout: "Added a draft comment on a.ts:2. It stays in bb until the reviewer submits the review." });
+  expect(await cli("add", url, "a.ts:2", "--code", "next();", "--body", "Why rename?\nIt breaks callers.")).toMatchObject({ exitCode: 0, stdout: "Added a draft comment on a.ts:2. It stays in VesnALIA until the reviewer submits the review." });
   expect(await cli("add", key, "a.ts:2", "--side", "left", "--code", "old();", "--body", "Was this used?")).toMatchObject({ exitCode: 0 });
   await store.upsertDraftComment(key, { file: "a.ts", line: 1, side: "RIGHT", body: "Reviewer's own" });
 
@@ -51,7 +51,7 @@ test("bb review comment adds, lists, edits, and deletes local draft comments, an
   expect(runGh).not.toHaveBeenCalled();
 });
 
-test("bb review comment edits and deletes a comment not on GitHub yet with --side LOCAL, but adds none there", async () => {
+test("alia review comment edits and deletes a comment not on GitHub yet with --side LOCAL, but adds none there", async () => {
   const { store, cli } = await host();
   await store.upsertDraftComment(key, { file: "a.ts", line: 2, side: "LOCAL", author: "agent", body: "Folder's" });
   expect(await cli("add", url, "a.ts:2", "--side", "LOCAL", "--code", "next();", "--body", "x")).toMatchObject({ exitCode: 2, stderr: expect.stringMatching(/^--side is LEFT or RIGHT\./) });
@@ -60,7 +60,7 @@ test("bb review comment edits and deletes a comment not on GitHub yet with --sid
   expect((await store.getDraft(key)).comments).toEqual([]);
 });
 
-test("bb review comment and summary find a renamed repository's review by the URL bb review list prints for it (bug bash CLI-2)", async () => {
+test("alia review comment and summary find a renamed repository's review by the URL VesnALIA review list prints for it (bug bash CLI-2)", async () => {
   const { harness, store, cli } = await host();
   // As the sync leaves it: the old name and key, the PR's new URL.
   await store.saveReview({ ...(await store.getReview(key))!, url: "https://github.com/acme/site/pull/7" });
@@ -74,7 +74,7 @@ test("bb review comment and summary find a renamed repository's review by the UR
 test("while a review's first guide is written, comment and summary say the draft waits for it, not that it's being regenerated (bug bash CLI-1)", async () => {
   const { harness, store, cli } = await host();
   await store.saveReview({ ...(await store.getReview(key))!, status: "generating" });
-  const building = "The guide is still being written, and the draft waits for it. Run `bb review list` until it says guide ready, then try again.";
+  const building = "The guide is still being written, and the draft waits for it. Run `alia review list` until it says guide ready, then try again.";
   expect(await cli("add", url, "a.ts:2", "--code", "next();", "--body", "Callers still use old().")).toMatchObject({ exitCode: 1, stderr: building });
   expect(await harness.behavior.runCli(["summary", url, "--body", "One question."])).toMatchObject({ exitCode: 1, stderr: building });
   // Usage mistakes still say what's wrong, and listing works.
@@ -88,19 +88,19 @@ test("while a review's first guide is written, comment and summary say the draft
   expect(await store.getDraft(key)).toMatchObject({ body: "", comments: [] });
   // The skill says so, rather than that nothing waits for the guide.
   const skill = readFileSync(new URL("../skills/code-review-workspace/SKILL.md", import.meta.url), "utf8").replace(/\s+/g, " ");
-  expect(skill).toContain("you needn't wait for it, but comments and the summary do: run `bb review list` until the review says guide ready.");
+  expect(skill).toContain("you needn't wait for it, but comments and the summary do: run `alia review list` until the review says guide ready.");
 });
 
-test("bb review comment and summary ask bb what names a review by its id outside the store's lock, so other store calls don't wait on bb", async () => {
-  const commands = [(store: AsyncStore, bb: Parameters<typeof runCommentCommand>[1]) => runCommentCommand(store, bb, ["list", "web#7"], () => {}),
-    (store: AsyncStore, bb: Parameters<typeof runSummaryCommand>[1]) => runSummaryCommand(store, bb, ["web#7"], () => {})];
+test("alia review comment and summary ask VesnALIA what names a review by its id outside the store's lock, so other store calls don't wait on VesnALIA", async () => {
+  const commands = [(store: AsyncStore, alia: Parameters<typeof runCommentCommand>[1]) => runCommentCommand(store, alia, ["list", "web#7"], () => {}),
+    (store: AsyncStore, alia: Parameters<typeof runSummaryCommand>[1]) => runSummaryCommand(store, alia, ["web#7"], () => {})];
   for (const command of commands) {
-    const { bb, harness, store } = await host();
-    // A local review, whose id needs bb's projects.
+    const { alia, harness, store } = await host();
+    // A local review, whose id needs VesnALIA's projects.
     await store.saveReview({ targetKey: "ref-1", kind: "ref", gitRef: "main...feature", cwd: "/repo", status: "ready", createdAt: 1 });
     let answer!: () => void;
     harness.inspection.sdk.stub("projects.list", () => new Promise((resolve) => { answer = () => resolve([]); }));
-    const ran = command(store, bb);
+    const ran = command(store, alia);
     await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("projects.list")).toHaveLength(1));
     expect(await Promise.race([store.exclusive(async () => "free"), new Promise((resolve) => setTimeout(() => resolve("held"), 200))])).toBe("free");
     answer();
@@ -108,7 +108,7 @@ test("bb review comment and summary ask bb what names a review by its id outside
   }
 });
 
-test("the comment usage BB shows agents, and the skill, name the options add and edit take (bug bash CLI-10, DOC-7)", async () => {
+test("the comment usage VesnALIA shows agents, and the skill, name the options add and edit take (bug bash CLI-10, DOC-7)", async () => {
   const { harness } = await host();
   const usage = harness.inspection.registrations.cli!.commands!.find((command) => command.name === "comment")!.usage;
   const skill = readFileSync(new URL("../skills/code-review-workspace/SKILL.md", import.meta.url), "utf8");
@@ -120,7 +120,7 @@ test("the comment usage BB shows agents, and the skill, name the options add and
   expect(skill.replace(/\s+/g, " ")).toContain("The reviewer can send their comments back here, each with an id, while **Send comments to the main thread** is on in Settings.");
 });
 
-test("bb review comment changes an agent's comments but not the reviewer's", async () => {
+test("alia review comment changes an agent's comments but not the reviewer's", async () => {
   const { store, cli } = await host();
   await store.upsertDraftComment(key, { file: "a.ts", line: 1, side: "RIGHT", body: "Reviewer's own" });
   const refused = { exitCode: 1, stderr: "The reviewer wrote this comment. Suggest the change in chat; they can ask on the comment to have you apply it. Nothing was changed." };
@@ -129,21 +129,21 @@ test("bb review comment changes an agent's comments but not the reviewer's", asy
   expect((await store.getDraft(key)).comments).toEqual([{ file: "a.ts", line: 1, side: "RIGHT", body: "Reviewer's own" }]);
 });
 
-test("bb review comment explains refusals and usage mistakes", async () => {
+test("alia review comment explains refusals and usage mistakes", async () => {
   const { store, cli } = await host();
   expect(await cli("add", url, "a.ts:1", "--code", "next();", "--body", "x")).toMatchObject({ exitCode: 1, stderr: "Line 1 on the RIGHT side of a.ts is `keep();`. The code you sent is on line 2. Nothing was added." });
   expect(await cli("edit", url, "a.ts:9", "--body", "x")).toMatchObject({ exitCode: 1, stderr: "There's no draft comment on a.ts:9." });
   expect(await cli("list", "https://github.com/acme/web/pull/8")).toMatchObject({ exitCode: 1, stderr: expect.stringContaining("No saved review for") });
   for (const argv of [[], ["move", url], ["add", url, "a.ts:2", "--body", "x"], ["edit", url, "a.ts:2"], ["edit", url, "a.ts:2", "--body", "  "],
     ["delete", url, "a.ts"], ["delete", url, "a.ts:2", "--side", "UP"], ["delete", url, "a.ts:2", "--body", "x"], ["list", url, "--json", "--json"], ["add", url, "a.ts:2", "--code"]]) {
-    expect({ argv, ...(await cli(...argv)) }).toMatchObject({ argv, exitCode: 2, stderr: expect.stringContaining("usage: bb review comment") });
+    expect({ argv, ...(await cli(...argv)) }).toMatchObject({ argv, exitCode: 2, stderr: expect.stringContaining("usage: VesnALIA review comment") });
   }
   expect((await store.getDraft(key)).comments).toEqual([]);
   expect(await cli("--help")).toMatchObject({ exitCode: 0, stdout: expect.stringContaining("Nothing is posted to GitHub") });
   expect(await cli("add", "--help")).toMatchObject({ exitCode: 0 });
 });
 
-test("bb review comment keeps how the agent checked a comment with --evidence", async () => {
+test("alia review comment keeps how the agent checked a comment with --evidence", async () => {
   const { store, cli } = await host();
   expect(await cli("add", url, "a.ts:2", "--code", "next();", "--body", "Callers still use old().", "--evidence", "grep finds old() in b.ts:4.")).toMatchObject({ exitCode: 0 });
   expect((await store.getDraft(key)).comments[0].evidence).toBe("grep finds old() in b.ts:4.");
@@ -155,7 +155,7 @@ test("bb review comment keeps how the agent checked a comment with --evidence", 
   expect(await cli("delete", url, "a.ts:2", "--evidence", "x")).toMatchObject({ exitCode: 2, stderr: expect.stringMatching(/^delete doesn't take --evidence/) });
 });
 
-test("bb review comment sets a comment's severity with --severity or a label, and lists it", async () => {
+test("alia review comment sets a comment's severity with --severity or a label, and lists it", async () => {
   const { store, cli } = await host();
   expect(await cli("add", url, "a.ts:2", "--code", "next();", "--severity", "Should-fix", "--body", "Rename it back.")).toMatchObject({ exitCode: 0 });
   expect(await cli("add", url, "a.ts:2", "--side", "LEFT", "--code", "old();", "--body", "**Question:** Was this used?")).toMatchObject({ exitCode: 0 });
@@ -170,7 +170,7 @@ test("bb review comment sets a comment's severity with --severity or a label, an
   expect(await cli("delete", url, "a.ts:2", "--severity", "nit")).toMatchObject({ exitCode: 2, stderr: expect.stringMatching(/^delete doesn't take --severity/) });
 });
 
-test("a review's own agent can't change another review through bb review; an ordinary thread still can", async () => {
+test("a review's own agent can't change another review through VesnALIA review; an ordinary thread still can", async () => {
   const { harness, store } = await host();
   const other = targetKey({ kind: "pr", number: 8, repo: "acme/web" });
   await store.saveReview({ targetKey: other, kind: "pr", number: 8, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1" });
@@ -191,7 +191,7 @@ test("a review's own agent can't change another review through bb review; an ord
   expect(await store.getDraft(other)).toMatchObject({ body: "Theirs too", comments: [{ body: "Theirs" }] });
 });
 
-test("bb review from a review's own agent rebuilds its guide without approving agents on the PR's head", async () => {
+test("alia review from a review's own agent rebuilds its guide without approving agents on the PR's head", async () => {
   const { harness, store } = await host();
   await store.setAssistantThread(key, "assistant-7");
   vi.mocked(runGh).mockImplementation(async (args: string[]) =>
@@ -202,7 +202,7 @@ test("bb review from a review's own agent rebuilds its guide without approving a
   expect(await harness.behavior.runCli([url], { threadId: "assistant-7", projectId: "p1" })).toMatchObject({ exitCode: 0 });
   expect((await store.getReview(key))?.headSha).toBe("sha2");
   expect((await store.getReview(key))?.approvedHead).toBeUndefined();
-  // Your own bb review on a member's PR approves the head it starts the guide on.
+  // Your own VesnALIA review on a member's PR approves the head it starts the guide on.
   await store.saveReview({ ...(await store.getReview(key))!, status: "ready", headSha: "sha1" });
   expect(await harness.behavior.runCli([url], { threadId: "ordinary", projectId: "p1" })).toMatchObject({ exitCode: 0 });
   expect((await store.getReview(key))?.approvedHead).toBe("sha2");
@@ -222,7 +222,7 @@ async function otherReview(store: AsyncStore) {
   return other;
 }
 
-/** Every bb review command `threadId` might run against the review `on`, and whether each was refused. */
+/** Every VesnALIA review command `threadId` might run against the review `on`, and whether each was refused. */
 async function refusedOn(harness: Awaited<ReturnType<typeof host>>["harness"], threadId: string, on: string, number: number) {
   const as = (...argv: string[]) => harness.behavior.runCli(argv, { threadId, projectId: "p1" });
   const results = [
@@ -234,7 +234,7 @@ async function refusedOn(harness: Awaited<ReturnType<typeof host>>["harness"], t
   return results.map((result) => result.exitCode === 2 && /only its own review|can't list reviews/.test(result.stderr ?? ""));
 }
 
-test("an assistant New conversation replaced can't change another review through bb review, and its own bb review doesn't approve agents", async () => {
+test("an assistant New conversation replaced can't change another review through VesnALIA review, and its own VesnALIA review doesn't approve agents", async () => {
   const { harness, store } = await host();
   const other = await otherReview(store);
   await store.setAssistantThread(key, "assistant-7");
@@ -245,7 +245,7 @@ test("an assistant New conversation replaced can't change another review through
   expect(await refusedOn(harness, "assistant-7", other, 8)).toEqual([true, true, true, true]);
   expect(await store.getDraft(other)).toMatchObject({ body: "", comments: [] });
   expect((await store.getReview(other))?.approvedHead).toBeUndefined();
-  // Its own review's bb review rebuilds the guide unattended, and doesn't make the thread the review's source.
+  // Its own review's VesnALIA review rebuilds the guide unattended, and doesn't make the thread the review's source.
   expect(await harness.behavior.runCli([url], { threadId: "assistant-7", projectId: "p1" })).toMatchObject({ exitCode: 0 });
   expect(await store.getReview(key)).toMatchObject({ headSha: "sha2" });
   expect((await store.getReview(key))?.approvedHead).toBeUndefined();
@@ -253,17 +253,17 @@ test("an assistant New conversation replaced can't change another review through
 });
 
 test("an assistant found archived, or a guide writer a new generation replaced, can change only its own review", async () => {
-  const { bb, harness, store } = await host();
+  const { alia, harness, store } = await host();
   const other = await otherReview(store);
   await store.setAssistantThread(key, "archived-7");
   harness.inspection.sdk.stub("threads.get", async () => ({ archivedAt: 1, deletedAt: null }));
-  expect((await getConversation(bb, store, key)).threadId).toBeNull();
+  expect((await getConversation(alia, store, key)).threadId).toBeNull();
   expect(await refusedOn(harness, "archived-7", other, 8)).toEqual([true, true, true, true]);
 
   const generation = await store.beginGeneration(key);
   await store.setGenerationWorker(key, generation, "writer-7");
   await store.saveReview({ ...(await store.getReview(key))!, status: "ready" });
-  // An ordinary thread's bb review rebuilds the guide, with a new writer.
+  // An ordinary thread's VesnALIA review rebuilds the guide, with a new writer.
   expect(await harness.behavior.runCli([url], { threadId: "ordinary", projectId: "p1" })).toMatchObject({ exitCode: 0 });
   await vi.waitFor(async () => expect(await store.isCurrentGeneration(key, generation)).toBe(false));
   expect(await refusedOn(harness, "writer-7", other, 8)).toEqual([true, true, true, true]);
@@ -273,12 +273,12 @@ test("an assistant found archived, or a guide writer a new generation replaced, 
 // A reload deleted an interrupted generation's row before its writer was stopped, and a writer spawned for a generation
 // replaced meanwhile had no row at all, so neither was recorded (70-review-correctness #2, 71-review-security F4).
 test("a guide writer a reload interrupted, or one whose generation was replaced while it spawned, can change only its own review", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: key, kind: "pr", number: 7, repo: "acme/web", status: "generating", createdAt: 1, headSha: "sha1" });
   await store.savePatch(key, patch);
   await store.setGenerationWorker(key, await store.beginGeneration(key), "writer-9");
-  await plugin(bb);
+  await plugin(alia);
   const other = await otherReview(store);
   expect(await refusedOn(harness, "writer-9", other, 8)).toEqual([true, true, true, true]);
 
@@ -286,11 +286,11 @@ test("a guide writer a reload interrupted, or one whose generation was replaced 
   await store.saveReview({ ...(await store.getReview(key))!, status: "ready" });
   harness.inspection.sdk.stub("threads.spawn", async () => { await store.beginGeneration(key); return { id: "writer-raced" }; });
   expect(await harness.behavior.runCli([url], { threadId: "ordinary", projectId: "p1" })).toMatchObject({ exitCode: 0 });
-  await vi.waitFor(async () => expect(await formerWorkerReview(bb, "writer-raced")).toBe(key));
+  await vi.waitFor(async () => expect(await formerWorkerReview(alia, "writer-raced")).toBe(key));
   expect(await refusedOn(harness, "writer-raced", other, 8)).toEqual([true, true, true, true]);
 });
 
-test("the Suggest instructions worker can't change or list any review through bb review", async () => {
+test("the Suggest instructions worker can't change or list any review through VesnALIA review", async () => {
   const { harness, store } = await host();
   const other = await otherReview(store);
   harness.inspection.sdk.stub("projects.list", async () => [{ id: "personal", kind: "personal" }]);
@@ -305,21 +305,21 @@ test("the Suggest instructions worker can't change or list any review through bb
 });
 
 test("a former agent's record outlives its review, and threads never recorded, such as a Fix thread's, are ordinary", async () => {
-  const { bb, harness, store } = await host();
+  const { alia, harness, store } = await host();
   const other = await otherReview(store);
   await store.setAssistantThread(key, "assistant-7");
   harness.inspection.sdk.stub("threads.archive", async () => ({}));
-  await newConversation(bb, store, key);
+  await newConversation(alia, store, key);
   await store.deleteReview(key);
   expect(await refusedOn(harness, "assistant-7", other, 8)).toEqual([true, true, true, true]);
   for (const threadId of ["ordinary", "fix-thread"]) expect(await refusedOn(harness, threadId, other, 8)).toEqual([false, false, false, false]);
   // The newest records are kept.
-  for (let i = 0; i < FORMER_WORKERS_KEPT; i++) void recordFormerWorker(bb, `old-${i}`, other, "writer");
+  for (let i = 0; i < FORMER_WORKERS_KEPT; i++) void recordFormerWorker(alia, `old-${i}`, other, "writer");
   expect(await refusedOn(harness, "assistant-7", other, 8)).toEqual([false, false, false, false]);
   expect(await refusedOn(harness, `old-${FORMER_WORKERS_KEPT - 1}`, key, 7)).toEqual([true, true, true, true]);
 });
 
-test("bb review comment and bb review summary refuse a --body over 65,000 characters", async () => {
+test("alia review comment and VesnALIA review summary refuse a --body over 65,000 characters", async () => {
   const { harness, store, cli } = await host();
   const long = "x".repeat(65_001);
   expect(await cli("add", url, "a.ts:2", "--code", "next();", "--body", long)).toMatchObject({ exitCode: 2, stderr: expect.stringMatching(/^--body is limited to 65,000 characters\./) });
@@ -328,7 +328,7 @@ test("bb review comment and bb review summary refuse a --body over 65,000 charac
   expect(await cli("add", url, "a.ts:2", "--code", "next();", "--body", "x".repeat(65_000))).toMatchObject({ exitCode: 0 });
 });
 
-test("bb review comment marks a problem in code the PR didn't change with --pre-existing, and lists it", async () => {
+test("alia review comment marks a problem in code the PR didn't change with --pre-existing, and lists it", async () => {
   const { store, cli } = await host();
   expect(await cli("add", url, "a.ts:2", "--code", "next();", "--body", "old() was never awaited.", "--pre-existing")).toMatchObject({ exitCode: 0 });
   expect((await store.getDraft(key)).comments[0].introduced).toBe(false);

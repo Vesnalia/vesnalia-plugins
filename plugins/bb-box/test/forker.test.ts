@@ -1,5 +1,5 @@
 import "./check-test-machine.mjs";
-// The helper that starts BB Box's short-lived child processes in place of BB's server (forker.ts).
+// The helper that starts VesnALIA Box's short-lived child processes in place of VesnALIA's server (forker.ts).
 
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -37,11 +37,11 @@ test("a child from the helper is killed, gives its environment and folder, and a
   assert.equal(sleeper.kill("SIGKILL"), true);
   assert.deepEqual([(await ended).signal, sleeper.signalCode], ["SIGKILL", "SIGKILL"]);
 
-  const env = startChild("sh", ["-c", 'printf "%s %s" "$BB_FORKER_TEST" "$(pwd)"'], { env: { ...process.env, BB_FORKER_TEST: "yes" }, cwd: "/tmp", site: "test" });
+  const env = startChild("sh", ["-c", 'printf "%s %s" "$ALIA_FORKER_TEST" "$(pwd)"'], { env: { ...process.env, ALIA_FORKER_TEST: "yes" }, cwd: "/tmp", site: "test" });
   env.stdin.end();
   assert.equal((await collect(env)).out, "yes /tmp");
 
-  const missing = startChild("bb-box-no-such-program", [], { site: "test" });
+  const missing = startChild("alia-box-no-such-program", [], { site: "test" });
   const error = new Promise<Error>((resolve) => missing.once("error", resolve));
   missing.stdin.end();
   assert.match((await error).message, /ENOENT/);
@@ -72,7 +72,7 @@ function neverSignalled(child: ReturnType<typeof spawn>): () => boolean {
 }
 
 test("a child started here whose program could not start is never signalled, as Node would signal a process ID that is not its own, its group's when that reads 0 (#1004)", async () => {
-  const missing = timedSpawn(() => spawn("bb-box-no-such-program", [], { stdio: "ignore" }), "test");
+  const missing = timedSpawn(() => spawn("alia-box-no-such-program", [], { stdio: "ignore" }), "test");
   const failed = new Promise((resolve) => missing.once("error", resolve));
   const signalled = neverSignalled(missing);
   assert.equal(missing.kill("SIGKILL"), false);
@@ -80,7 +80,7 @@ test("a child started here whose program could not start is never signalled, as 
   await failed;
 
   const controller = new AbortController();
-  const aborted = timedSpawn(() => spawn("bb-box-no-such-program", [], { stdio: "ignore", signal: controller.signal }), "test");
+  const aborted = timedSpawn(() => spawn("alia-box-no-such-program", [], { stdio: "ignore", signal: controller.signal }), "test");
   const abortFailed = new Promise((resolve) => aborted.once("error", resolve));
   const abortSignalled = neverSignalled(aborted);
   controller.abort();
@@ -92,7 +92,7 @@ const NEVER_STARTS = `const cp = require("node:child_process");
 const spawn = cp.ChildProcess.prototype.spawn;
 cp.ChildProcess.prototype.spawn = function (options) {
   const result = spawn.call(this, options);
-  if (this.pid === undefined && this._handle && options.file === "bb-box-never-starts") {
+  if (this.pid === undefined && this._handle && options.file === "alia-box-never-starts") {
     this._handle.onexit = () => {};
     this._handle.kill = (signal) => (process.kill(0, signal), 0);
   }
@@ -103,9 +103,9 @@ cp.ChildProcess.prototype.spawn = function (options) {
 const SIGNALS_UNSTARTED = (forker: string, spawns: string) => `import { spawn } from "node:child_process";
 import { startChild, stopForker } from ${JSON.stringify(forker)};
 import { timedSpawn } from ${JSON.stringify(spawns)};
-const direct = timedSpawn(() => spawn("bb-box-never-starts", [], { stdio: "ignore" }), "test");
+const direct = timedSpawn(() => spawn("alia-box-never-starts", [], { stdio: "ignore" }), "test");
 direct.kill("SIGKILL");
-const helped = startChild("bb-box-never-starts", [], { site: "test" });
+const helped = startChild("alia-box-never-starts", [], { site: "test" });
 const sleeper = startChild("sleep", ["30"], { site: "test" });
 await new Promise((resolve) => sleeper.once("spawn", resolve));
 helped.kill("SIGKILL");

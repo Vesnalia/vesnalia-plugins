@@ -1,5 +1,5 @@
 // Images. Every image, a file of the thread (workspace or
-// `$BB_THREAD_STORAGE/…`) or an https URL, is read through the plugin
+// `$ALIA_THREAD_STORAGE/…`) or an https URL, is read through the plugin
 // backend: files confined to the thread, https images through the
 // address-checked proxy that the webLookups setting switches off.
 import { useEffect, useLayoutEffect, useMemo, useState, type CSSProperties } from "react";
@@ -133,7 +133,7 @@ const SURFACE = "relative flex min-w-0 justify-center overflow-hidden rounded-lg
 /** A picture the browser decoded (or couldn't), with its natural size when it has one. */
 type Decoded = { readonly url: string; readonly ok: boolean; readonly size: ImageSize | null };
 
-/** One picture; pressing it opens it full screen, where a file can also be opened in BB. */
+/** One picture; pressing it opens it full screen, where a file can also be opened in VesnALIA. */
 export function Image({ props }: { props: Props }) {
   const src = text(props.src).trim();
   const alt = optionalText(props.alt)?.trim() ?? "";

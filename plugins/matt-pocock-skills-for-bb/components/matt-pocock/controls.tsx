@@ -42,7 +42,7 @@ export function Hint({
   );
 }
 
-/** Native button semantics and bb theme tokens; no additional dependency. */
+/** Native button semantics and VesnALIA theme tokens; no additional dependency. */
 export function Toggle({
   checked,
   onChange,

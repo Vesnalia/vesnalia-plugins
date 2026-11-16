@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { PluginPendingInteractionProps } from "@get-bb/plugin-sdk/app";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import type { PluginPendingInteractionProps } from "@vesnalia/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import {
   OPERATION_RESOLUTION_RENDERER_ID,
   type ConnectionView,
@@ -163,7 +163,7 @@ describe("Korey account settings", () => {
     app.settingsSections.find(({ id }) => id === "korey-account")!;
   const authorizationUrl =
     "https://api.korey.ai/oauth/authorize?client_id=kc_client&state=s";
-  const account = "bb User in example";
+  const account = "VesnALIA User in example";
 
   // Models the server: a connected account takes precedence over the token.
   function koreyHost(initial: {
@@ -268,7 +268,7 @@ describe("Korey account settings", () => {
     const slot = renderSlot(registration(), {}, { rpc: korey.rpc });
     expect(
       await slot.findByText(
-        `bb is using the saved personal access token for ${account}.`,
+        `alia is using the saved personal access token for ${account}.`,
       ),
     ).toBeTruthy();
 
@@ -299,7 +299,7 @@ describe("Korey account settings", () => {
     expect(await slot.findByText(`Connected as ${account}.`)).toBeTruthy();
     expect(
       slot.getByText(
-        /bb uses it only while your Korey account is disconnected/u,
+        /alia uses it only while your Korey account is disconnected/u,
       ),
     ).toBeTruthy();
     expect(slot.getByRole("button", { name: "Disconnect" })).toBeTruthy();
@@ -312,7 +312,7 @@ describe("Korey account settings", () => {
     const korey = koreyHost({
       connected: true,
       tokenSaved: false,
-      error: "Korey sign-in expired. Reconnect with `bb korey login`.",
+      error: "Korey sign-in expired. Reconnect with `alia korey login`.",
     });
     const slot = renderSlot(registration(), {}, { rpc: korey.rpc });
     expect(await slot.findByText(/Korey sign-in expired/u)).toBeTruthy();

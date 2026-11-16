@@ -1,8 +1,8 @@
 # Provider Usage
 
-A BB panel for **what you are burning right now**, **how much of your plan is
+A VesnALIA panel for **what you are burning right now**, **how much of your plan is
 left**, and **how many tokens you have spent** — across every provider you are
-signed in to, on every machine BB knows about.
+signed in to, on every machine VesnALIA knows about.
 
 <!-- screenshot: docs/panel.png -->
 
@@ -13,8 +13,8 @@ per 10 seconds and stacked by provider, with the current rate over the trailing
 60 seconds, the best rate seen in the window, and the threads doing the work. It
 updates every couple of seconds while a turn is running and settles when the
 machine goes quiet. Archived and deleted threads drop out immediately — they
-are history, not current burn. BB's token events are authoritative; for
-BB-launched ACP sessions whose bridges do not emit them, the plugin maps the
+are history, not current burn. VesnALIA's token events are authoritative; for
+ALIA-launched ACP sessions whose bridges do not emit them, the plugin maps the
 provider thread id back to opencode's exact local counters or Cursor's
 text-derived estimate.
 
@@ -40,7 +40,7 @@ provider figures, counting each provider once. Providers no longer stack down th
 page: adding one adds a list row, and a pool's accounts live in that provider's
 pane rather than stretching the whole section.
 
-A provider bb ships stays listed even when it is not installed, because that is
+A provider VesnALIA ships stays listed even when it is not installed, because that is
 real news; a plugin-supplied provider such as Muse Code appears only once its
 plugin is installed.
 
@@ -57,7 +57,7 @@ machine. Before that first turn the row shows the account without a meter. Its
 lead window counts toward the totals and the rail badge like any other
 provider's.
 
-Google Antigravity appears when `acp-antigravity` is registered in BB. On the
+Google Antigravity appears when `acp-antigravity` is registered in VesnALIA. On the
 primary machine, the panel reads `agy -p /usage --output-format json`, a
 read-only command that spends no model tokens. It shows Google's five-hour
 and weekly limits separately for Gemini and Claude/GPT models, with reset
@@ -66,7 +66,7 @@ stores credentials. Missing quota values remain unknown. Remote machines need
 their own quota collector and never borrow the primary machine's login.
 
 **Pooled accounts.** With routing enabled, each account shows the quota and
-availability reported by `bb pool status --json`. Pool observations remain
+availability reported by `alia pool status --json`. Pool observations remain
 separate from the machine's local login: a matching email or user UUID does
 not prove that two credentials share the same quota tier. Local credit balances
 and banked resets are not assigned to pool accounts without verified credential
@@ -97,8 +97,8 @@ estimated from the recorded conversation text. The data reads from two tiers:
   `$CLAUDE_CONFIG_DIR`), Cursor's ACP session stores, opencode
   (`~/.local/share/opencode`, or `$XDG_DATA_HOME/opencode`), and Muse Code
   (`~/.local/share/muse`, or `$MUSE_HOME`/`$XDG_DATA_HOME`). These give full
-  history and exact per-day attribution, back to before you installed BB.
-- **BB's own usage events** for everything else. As soon as a provider emits
+  history and exact per-day attribution, back to before you installed VesnALIA.
+- **VesnALIA's own usage events** for everything else. As soon as a provider emits
   `thread/tokenUsage/updated`, an agent this plugin has never heard of — a new
   ACP agent, one you wrote yourself — lands in the chart automatically, with a
   name and a colour of its own. No release here required.
@@ -116,19 +116,19 @@ opening the panel.
 
 ## Install
 
-From the BB marketplace:
+From the VesnALIA marketplace:
 
 ```bash
-bb plugin install provider-usage
+alia plugin install provider-usage
 ```
 
 Or from a local checkout:
 
 ```bash
 git clone https://github.com/braedonsaunders/bb-plugin-provider-usage.git
-cd bb-plugin-provider-usage
+cd alia-plugin-provider-usage
 npm install --include=dev
-bb plugin install . --yes
+alia plugin install . --yes
 ```
 
 Open **Usage** from the navigation rail.
@@ -136,11 +136,11 @@ Open **Usage** from the navigation rail.
 ## CLI
 
 ```bash
-bb usage                          # remaining quota, plans, reset windows
-bb usage --json                   # same, machine-readable
-bb usage live                     # what is being burned right now, by thread
-bb usage tokens --days 30         # global token volume across providers
-bb usage --machine <id-or-name>   # read another paired host
+alia usage                          # remaining quota, plans, reset windows
+alia usage --json                   # same, machine-readable
+alia usage live                     # what is being burned right now, by thread
+alia usage tokens --days 30         # global token volume across providers
+alia usage --machine <id-or-name>   # read another paired host
 ```
 
 Agents get the same data through the bundled `usage` skill, which is how a
@@ -148,13 +148,13 @@ long-running thread can decide whether to keep going or wait for a reset.
 
 ## How it works
 
-Subscription windows come from BB's own `system.usageLimits` for each signed-in
+Subscription windows come from VesnALIA's own `system.usageLimits` for each signed-in
 provider. On the primary machine, a read-only `codex app-server` request fills
-in newer Codex fields that BB's provider-neutral schema does not yet carry, and
-a single cached Claude OAuth usage read lifts banked-reset programs BB's
+in newer Codex fields that VesnALIA's provider-neutral schema does not yet carry, and
+a single cached Claude OAuth usage read lifts banked-reset programs VesnALIA's
 windows omit. Both use the existing provider sign-in and never read, store, or
 return auth tokens. If the installed CLI or endpoint does not support the
-request, the panel silently falls back to BB's regular windows.
+request, the panel silently falls back to VesnALIA's regular windows.
 
 Muse Code's windows need no extra read here: the Muse Code provider plugin keeps
 the newest `usage/changed` reading its `muse serve` hosts receive and hands it
@@ -174,14 +174,14 @@ re-syncs every 15 minutes. Only sources whose size or mtime changed are re-read,
 so a large history stays cheap. Nothing is uploaded anywhere.
 
 That per-file cache is also the ledger. Transcripts are evidence of usage, not
-the record of it: Codex prunes old rollouts, BB removes a worktree's thread
+the record of it: Codex prunes old rollouts, VesnALIA removes a worktree's thread
 files, a session gets cleared. A file that leaves disk keeps the days it already
 contributed until those days age out of the 90-day window, so the chart never
 revises history downwards for work that really happened. Claude responses are
 still deduplicated by message id across live and retained files, so a fragment
 that replays a response cannot count it twice.
 
-The same pass asks BB for `thread/tokenUsage/updated` on any thread whose
+The same pass asks VesnALIA for `thread/tokenUsage/updated` on any thread whose
 provider has no dedicated scanner. Those events carry the thread's *running*
 total rather than the turn's, so consecutive events are differenced; a total
 that goes backwards means the thread was compacted or restarted upstream and is
@@ -190,15 +190,15 @@ read as a fresh total rather than a negative one.
 Live throughput is a separate, deliberately different path: a
 `throughput-scan` service follows `thread/tokenUsage/updated` for every provider
 that emits it, polling every two seconds while a thread is working and every ten
-when none is. Some ACP bridges currently omit that event. For BB-launched
-opencode and Cursor sessions, a local fallback resolves BB's persisted
+when none is. Some ACP bridges currently omit that event. For ALIA-launched
+opencode and Cursor sessions, a local fallback resolves VesnALIA's persisted
 `thread/identity` to the matching provider session and reads only that session's
 store. Native events always win, so the two paths never count the same thread.
-Work run outside BB, such as an agent CLI in a bare terminal, remains excluded.
+Work run outside VesnALIA, such as an agent CLI in a bare terminal, remains excluded.
 
 Attribution is the subtle part. Those events carry the thread's *running* total,
 so consecutive events are differenced. The first event seen for a thread has
-nothing to difference against, and providers report it very differently: BB's
+nothing to difference against, and providers report it very differently: VesnALIA's
 Claude Code bridge has been seen emitting a single event whose running total is
 98.7M and whose `last` is 55.9M — usage since the session resumed, hours of it,
 not one step. Charting either figure raw drops tens of millions of tokens onto
@@ -224,27 +224,27 @@ record on disk at all.
 
 ```bash
 npm install --include=dev
-bb plugin install .
-bb plugin dev
+alia plugin install .
+alia plugin dev
 ```
 
-## Upgrading from `bb-plugin-dashboard`
+## Upgrading from `alia-plugin-dashboard`
 
-This plugin was previously called `dashboard` and its CLI was `bb dashboard`.
+This plugin was previously called `dashboard` and its CLI was `alia dashboard`.
 The panel, data, and layout are unchanged — the id is now `provider-usage` and
-the command is `bb usage`. If you installed the old one from a path, remove it
+the command is `alia usage`. If you installed the old one from a path, remove it
 before installing this one:
 
 ```bash
-bb plugin remove dashboard
-bb plugin install provider-usage
+alia plugin remove dashboard
+alia plugin install provider-usage
 ```
 
 To keep your token history, copy the old plugin's database across before
 installing:
 
 ```bash
-cp ~/.bb/plugins/dashboard/data.db ~/.bb/plugins/provider-usage/data.db
+cp ~/.vesnalia/plugins/dashboard/data.db ~/.vesnalia/plugins/provider-usage/data.db
 ```
 
 It is not the same plugin as the marketplace's `usage`, `usage-page`, or

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeQueueEntry, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeQueueEntry, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin, { type Todo, type TodoView } from "./server";
 
 type BotsList = {
@@ -11,7 +11,7 @@ type BotsList = {
 type Thread = ReturnType<typeof makeThreadResponse>;
 
 async function setup(threads: Record<string, Thread>, options: { bots?: BotsList; settings?: Record<string, boolean> } = {}) {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "human-tasks",
     ...(options.settings ? { settings: options.settings } : {}),
     sdk: {
@@ -38,7 +38,7 @@ async function setup(threads: Record<string, Thread>, options: { bots?: BotsList
       },
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   const create = (threadId: string, params: Record<string, unknown> = {}) =>
     harness.behavior.callAgentTool(
       "human_task_create",
@@ -155,7 +155,7 @@ describe("duplicates", () => {
 });
 
 describe("credentials", () => {
-  it("tells the agent to collect secrets with bb secret request, never in chat", async () => {
+  it("tells the agent to collect secrets with VesnALIA secret request, never in chat", async () => {
     const { create, list, setStatus, sends } = await setup({ thr_a: live("thr_a") });
     const missing = await create("thr_a", { secrets: [{ name: "STRIPE_KEY", description: "Stripe key" }] });
     expect(JSON.stringify(missing)).toContain("env_file");
@@ -163,7 +163,7 @@ describe("credentials", () => {
     const [task] = await list();
     await setStatus(task!.id, "done");
     const text = sends()[0]!.input[0]!.text;
-    expect(text).toContain('bb secret request STRIPE_KEY --purpose "Create an API key" --describe STRIPE_KEY "Stripe restricted key" --write-env ".env.local"');
+    expect(text).toContain('alia secret request STRIPE_KEY --purpose "Create an API key" --describe STRIPE_KEY "Stripe restricted key" --write-env ".env.local"');
     expect(text).toContain("Never ask for them in chat");
   });
 });
@@ -448,8 +448,8 @@ describe("boundaries between threads and projects", () => {
     await create("thr_b");
     await setStatus((await list())[0]!.id, "done");
     const [toRequester, toWatcher] = sends().map((send) => send.input[0]!.text);
-    expect(toRequester).toContain("bb secret request");
-    expect(toWatcher).not.toContain("bb secret request");
+    expect(toRequester).toContain("alia secret request");
+    expect(toWatcher).not.toContain("alia secret request");
     expect(toWatcher).toContain("create your own task");
   });
 

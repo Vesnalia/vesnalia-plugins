@@ -7,7 +7,7 @@ import {
   registerAntigravityUsageSource,
 } from '../usage.ts';
 import { experimental_providerBridge } from '../host.ts';
-import { providerUsageResultSchema } from '@get-bb/plugin-sdk/provider-bridge';
+import { providerUsageResultSchema } from '@vesnalia/plugin-sdk/provider-bridge';
 
 const SAMPLE_USAGE_JSON = JSON.stringify({
   conversation_id: '',
@@ -76,7 +76,7 @@ const SAMPLE_USAGE_JSON = JSON.stringify({
   },
 });
 
-test('normalizes Antigravity per-model quota groups into BB usage windows', () => {
+test('normalizes Antigravity per-model quota groups into VesnALIA usage windows', () => {
   const result = normalizeAntigravityUsageOutput(SAMPLE_USAGE_JSON);
   const parsed = providerUsageResultSchema.parse(result);
   assert.equal(parsed.supported, true);
@@ -238,7 +238,7 @@ test('registers discoverable provider-usage.v1 RPC handlers and returns host usa
   let registeredHandlers;
   let registeredOptions;
 
-  const mockBb = {
+  const mockAlia = {
     pluginId: 'antigravity-cli',
     rpc: {
       register(contract, handlers, options) {
@@ -269,7 +269,7 @@ test('registers discoverable provider-usage.v1 RPC handlers and returns host usa
     },
   };
 
-  registerAntigravityUsageSource(mockBb);
+  registerAntigravityUsageSource(mockAlia);
   assert.ok(registeredContract);
   assert.equal(registeredOptions?.experimental_discoverable, true);
 
@@ -291,7 +291,7 @@ test('evicts cached usage when the provider is removed', async () => {
   let handlers;
   let enabled = true;
   let collections = 0;
-  const bb = {
+  const alia = {
     pluginId: 'antigravity-cli',
     rpc: { register(_contract, registered) { handlers = registered; } },
     sdk: {
@@ -303,7 +303,7 @@ test('evicts cached usage when the provider is removed', async () => {
       } },
     },
   };
-  registerAntigravityUsageSource(bb);
+  registerAntigravityUsageSource(alia);
   const getResource = handlers['provider-usage.v1.getResource'];
   const resourceId = JSON.stringify(['host_1', 'antigravity-cli']);
   assert.equal((await getResource({ resourceId, refresh: true })).usage.status, 'ok');

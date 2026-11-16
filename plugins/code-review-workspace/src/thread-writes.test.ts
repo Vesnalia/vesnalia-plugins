@@ -1,6 +1,6 @@
 // Replies and resolves on GitHub: posted as the account the page verified, and only on the review's own PR's threads.
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { testStore } from "./test-store.test-support";
 
 const runGh = vi.hoisted(() => vi.fn());
@@ -27,9 +27,9 @@ async function setup() {
     if (args[0] === "api" && args[1] === "graphql" && args.some((a) => a.includes("reviewThreads"))) return { code: 0, stderr: "", stdout: prThreads };
     return { code: 0, stderr: "", stdout: "{}" };
   });
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, createdAt: 1, status: "ready", headSha: "sha1" });
   await store.setLifecycle("pr-1", { submittedVerdict: "COMMENT", submittedAt: 10, submittedHeadSha: "sha1" });
   await store.saveFeedbackThreads("pr-1", [feedbackThread], 1);
@@ -54,7 +54,7 @@ for (const { method, input, write, reload } of cases) {
     expect(await call(method, { ...input, account: "me" })).toMatchObject({ ok: true });
     expect(writes()).toEqual([{ write: expect.stringContaining(write), token: "tok-me" }]);
     // An account gh isn't signed in as on this server.
-    expect(await call(method, { ...input, account: "someone-else" })).toEqual({ ok: false, error: expect.stringMatching(/^Couldn't use this GitHub account\. Check authentication on the BB server/) });
+    expect(await call(method, { ...input, account: "someone-else" })).toEqual({ ok: false, error: expect.stringMatching(/^Couldn't use this GitHub account\. Check authentication on the ALIA server/) });
     // A page from 0.7.0, which sends none.
     expect(await call(method, input)).toEqual({ ok: false, error: expect.stringContaining(reload) });
     expect(writes()).toHaveLength(1);
@@ -85,7 +85,7 @@ test("replies wait out GitHub's rate limit and post again, in the server's line 
   expect(Date.now() - started).toBeGreaterThanOrEqual(1_000);
   expect(writes()).toEqual([{ write: expect.stringContaining("/replies"), token: "tok-me" }, { write: expect.stringContaining("/replies"), token: "tok-me" }]);
   expect(runGh.mock.calls.find(([args]) => args.some((a: string) => a.endsWith("/replies")))![0].at(-1)).toBe("-i");
-  expect(await call("resolveThread", { threadId: "t-alice", account: "me" })).toEqual({ ok: false, error: "The GitHub token on the BB server isn't allowed to do this on this repo. Give it access, or sign in again with gh auth login, then try again. (GitHub: Resource not accessible by integration)" });
+  expect(await call("resolveThread", { threadId: "t-alice", account: "me" })).toEqual({ ok: false, error: "The GitHub token on the VesnALIA server isn't allowed to do this on this repo. Give it access, or sign in again with gh auth login, then try again. (GitHub: Resource not accessible by integration)" });
 });
 
 test("a reply GitHub asks to wait longer for than the page waits is refused at once, and so are the page's writes after it, without asking GitHub", async () => {

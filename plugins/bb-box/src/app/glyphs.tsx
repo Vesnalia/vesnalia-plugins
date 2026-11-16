@@ -1,6 +1,6 @@
 // The plugin's own glyphs, inline, so they show at once with their room
 // reserved and nothing moves when they appear (the operator's note of
-// 1 October 2026). The same drawings as assets/, which BB shows in its own
+// 1 October 2026). The same drawings as assets/, which VesnALIA shows in its own
 // places (the tab, the settings page).
 
 import type { SVGProps } from "react";
@@ -45,7 +45,7 @@ export function ServerGlyph(props: Props) {
   );
 }
 
-/** Paste into the box: a clipboard with an arrow into it, since BB's set has no clipboard; it pairs with BB's Copy (the operator's note of 4 October 2026). */
+/** Paste into the box: a clipboard with an arrow into it, since VesnALIA's set has no clipboard; it pairs with VesnALIA's Copy (the operator's note of 4 October 2026). */
 export function PasteGlyph(props: Props) {
   return (
     <Stroked {...props}>

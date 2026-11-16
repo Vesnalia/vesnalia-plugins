@@ -4,8 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { afterEach, describe, expect, it } from "vitest";
-import type { PluginCliContext } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, type FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { PluginCliContext } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, type FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.js";
 import { RUNNER_ARGUMENT } from "../src/host-contract.js";
 import { TerminalJobService } from "../src/service.js";
@@ -73,13 +73,13 @@ async function load(options: {
       },
     } as never,
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   return host;
 }
 
 async function processJobs(host: FakePluginHost, token = "service_test", now = Date.now()) {
-  const store = new JobStore(host.bb.storage.database());
-  await new TerminalJobService(host.bb, store).processPass(token, now);
+  const store = new JobStore(host.alia.storage.database());
+  await new TerminalJobService(host.alia, store).processPass(token, now);
   return store;
 }
 
@@ -222,7 +222,7 @@ describe("terminal jobs plugin", () => {
       const result = spawnSync(
         process.execPath,
         [runner, RUNNER_ARGUMENT, "--job-id", jobId, "--owner-thread", "thr_owner", "--artifact-root", artifactRoot, "--", "true"],
-        { encoding: "utf8", env: { ...process.env, BB_TERMINAL_SESSION_ID: "term_target" } },
+        { encoding: "utf8", env: { ...process.env, ALIA_TERMINAL_SESSION_ID: "term_target" } },
       );
       expect(result.status).toBe(0);
       outcomeContent = readFileSync(path.join(artifactRoot, jobId, "outcome.json"), "utf8");
@@ -238,7 +238,7 @@ describe("terminal jobs plugin", () => {
     await processJobs(host);
     const shown = await host.harness.behavior.runCli(["show", initial.jobId, "--json"]);
     const value = JSON.parse(shown.stdout);
-    expect(value.terminal).toMatchObject({ state: "exited", bbStatus: "exited", exitCode: 0 });
+    expect(value.terminal).toMatchObject({ state: "exited", aliaStatus: "exited", exitCode: 0 });
     expect(value.outcome).toMatchObject({ state: "present", result: "success", commandExitCode: 0 });
     expect(value.delivery).toMatchObject({ state: "delivered", acceptedKind: "queued", attemptCount: 1 });
     expect(sends).toHaveLength(1);
@@ -275,7 +275,7 @@ describe("terminal jobs plugin", () => {
     ]);
     expect(Object.keys(value.artifacts)).toEqual(["root", "directory", "launch", "log", "outcome"]);
     expect(Object.keys(value.terminal)).toEqual([
-      "id", "state", "bbStatus", "exitCode", "closeReason", "lastError", "observedAt", "exitedAt",
+      "id", "state", "aliaStatus", "exitCode", "closeReason", "lastError", "observedAt", "exitedAt",
     ]);
     expect(Object.keys(value.outcome)).toEqual([
       "state", "result", "commandExitCode", "signal", "shellStatus", "durationMs", "terminalMarker", "error", "checkedAt",
@@ -299,7 +299,7 @@ describe("terminal jobs plugin", () => {
         return { ok: true, delivery: "deferred" };
       },
     });
-    const before = (host.bb.storage.database().prepare("SELECT COUNT(*) AS count FROM jobs").get() as { count: number }).count;
+    const before = (host.alia.storage.database().prepare("SELECT COUNT(*) AS count FROM jobs").get() as { count: number }).count;
     expect(before).toBe(0);
     const missingLog = await host.harness.behavior.runCli([
       "watch",
@@ -358,8 +358,8 @@ describe("terminal jobs plugin", () => {
     const retry = await host.harness.behavior.runCli(["retry-notification", retryWait.jobId, "--json"]);
     expect(JSON.parse(retry.stdout).delivery.state).toBe("retry_wait");
     failure = null;
-    const store = new JobStore(host.bb.storage.database());
-    await new TerminalJobService(host.bb, store).processPass("service_restart", Date.now() + 2_000);
+    const store = new JobStore(host.alia.storage.database());
+    await new TerminalJobService(host.alia, store).processPass("service_restart", Date.now() + 2_000);
     expect(store.get(retryWait.jobId)?.deliveryState).toBe("delivered");
     const refused = await host.harness.behavior.runCli(["retry-notification", retryWait.jobId]);
     expect(refused.stderr).toContain("state is delivered");
@@ -391,12 +391,12 @@ describe("terminal jobs plugin", () => {
       "watch", "term_target", "--notify-thread", "thr_owner", "--log", "/tmp/recover.log", "--json",
     ]);
     const value = JSON.parse(created.stdout);
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare(
       "UPDATE jobs SET delivery_state = 'delivering', reservation_token = 'old', delivered_at = NULL, accepted_delivery_kind = NULL WHERE job_id = ?",
     ).run(value.jobId);
     const store = new JobStore(db);
-    const service = new TerminalJobService(host.bb, store);
+    const service = new TerminalJobService(host.alia, store);
     await service.processPass("new", Date.now());
     expect(store.get(value.jobId)).toMatchObject({
       deliveryState: "delivering",
@@ -520,7 +520,7 @@ describe("terminal jobs plugin", () => {
       const result = spawnSync(
         process.execPath,
         [runner, RUNNER_ARGUMENT, "--job-id", jobId, "--owner-thread", "thr_owner", "--artifact-root", artifactRoot, "--", "true"],
-        { encoding: "utf8", env: { ...process.env, BB_TERMINAL_SESSION_ID: "term_target" } },
+        { encoding: "utf8", env: { ...process.env, ALIA_TERMINAL_SESSION_ID: "term_target" } },
       );
       expect(result.status).toBe(0);
       throw Object.assign(new Error("503 response lost"), { status: 503 });
@@ -533,8 +533,8 @@ describe("terminal jobs plugin", () => {
     expect(initial.terminal).toMatchObject({ id: null, state: "preparing" });
     expect(jobDirectory).not.toBe("");
 
-    const store = new JobStore(host.bb.storage.database());
-    await new TerminalJobService(host.bb, store).processPass("restart");
+    const store = new JobStore(host.alia.storage.database());
+    await new TerminalJobService(host.alia, store).processPass("restart");
     expect(store.get(initial.jobId)).toMatchObject({
       terminalId: "term_target",
       terminalState: "exited",
@@ -551,10 +551,10 @@ describe("terminal jobs plugin", () => {
     }) as never);
     const launched = await runJob(host);
     const value = JSON.parse(launched.stdout);
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare("UPDATE jobs SET created_at = created_at - 121000 WHERE job_id = ?").run(value.jobId);
     const store = new JobStore(db);
-    await new TerminalJobService(host.bb, store).processPass("restart", Date.now());
+    await new TerminalJobService(host.alia, store).processPass("restart", Date.now());
     expect(store.get(value.jobId)).toMatchObject({
       terminalState: "launch_ambiguous",
       outcomeState: "missing",
@@ -568,7 +568,7 @@ describe("terminal jobs plugin", () => {
     const host = await load();
     const created = await runJob(host);
     const value = JSON.parse(created.stdout);
-    host.bb.storage.database().prepare("UPDATE jobs SET scope_json = '{}' WHERE job_id = ?").run(value.jobId);
+    host.alia.storage.database().prepare("UPDATE jobs SET scope_json = '{}' WHERE job_id = ?").run(value.jobId);
     const shown = await host.harness.behavior.runCli(["show", value.jobId, "--json"]);
     expect(shown.exitCode).toBe(1);
     expect(shown.stderr).toContain("invalid stored scope");
@@ -581,7 +581,7 @@ describe("terminal jobs plugin", () => {
     expect(unknown.exitCode).toBe(1);
     expect(unknown.stderr).toContain("unknown job");
     await Promise.all([runJob(host), runJob(host)]);
-    const rows = host.bb.storage.database().prepare("SELECT job_id, argv_json FROM jobs ORDER BY job_id").all() as Array<{
+    const rows = host.alia.storage.database().prepare("SELECT job_id, argv_json FROM jobs ORDER BY job_id").all() as Array<{
       job_id: string;
       argv_json: string;
     }>;

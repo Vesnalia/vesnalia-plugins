@@ -13,7 +13,7 @@ vi.mock("@pierre/diffs/react", () => ({
   },
 }));
 
-import { installTestPluginRuntime, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { FileViewFlags } from "./DiffViewer";
 import { ONE_SIDE_CSS, WHOLE_FILE_CSS } from "../lib/diff-css";
 import { hunkPatch } from "../lib/diff-fixtures.test-support";
@@ -131,7 +131,7 @@ test("a file whose diff fails to draw says so, with Try again and Open on GitHub
   // React reports the error it caught.
   const report = vi.spyOn(console, "error").mockImplementation(() => {});
   broken.add("src/bad.ts");
-  // Mounted as BB mounts a slot, which its links need.
+  // Mounted as VesnALIA mounts a slot, which its links need.
   const component = () => <DiffViewer patch={file("src/bad.ts", ["b"]) + file("src/a.ts", ["a"])} files={["src/bad.ts", "src/a.ts"]} views={new Map()} onToggleViewed={() => {}} prUrl="https://github.com/acme/web/pull/42" />;
   const slot = renderSlot({ component }, {}, { rpc: {} as any });
   expect(new Set(drawn.map((d) => d.name))).toEqual(new Set(["src/a.ts"]));

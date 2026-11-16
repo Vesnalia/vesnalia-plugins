@@ -80,19 +80,19 @@ When the user requests a durable behavior change, record it here or in the relev
 
 ## Project Guidance
 
-- This repository implements a BB spec workspace adapting `google/elephant-goldfish-model`; see `README.md` for installation and workflows.
+- This repository implements a VesnALIA spec workspace adapting `google/elephant-goldfish-model`; see `README.md` for installation and workflows.
 - The root owns project-wide guidance and configuration. `.bend.json` selects Beads; `.beads/` holds its configuration and tracker data.
-- Development checks are `npm run typecheck`, `npm test`, and `npm run build` (Node 24); reload with `bb plugin reload elephant-goldfish`.
+- Development checks are `npm run typecheck`, `npm test`, and `npm run build` (Node 24); reload with `alia plugin reload elephant-goldfish`.
 - `PLUGIN_OVERVIEW.md` is the marketplace long-form description; keep it consistent with `README.md` and the plugin's real behavior (plain text, no marketing adjectives, marketplace content rules).
 - `screenshots/elephant-goldfish/` holds marketplace screenshots of the real plugin UI (PNG, at least 1200 px wide, light theme, no private data). Regenerate with the seeded-fixture method and clean the fixture fully afterwards.
-- Elephant UI actions draft requests only into the matching existing thread's BB composer; the human reviews, edits and explicitly sends. Never send or start an Elephant turn automatically, replace an occupied draft, or guess a thread from the project page. Preserve existing text, mentions and attachments when the user chooses to append; cancelling an in-flight contextual append must prevent its eventual workspace search result from changing the draft.
+- Elephant UI actions draft requests only into the matching existing thread's VesnALIA composer; the human reviews, edits and explicitly sends. Never send or start an Elephant turn automatically, replace an occupied draft, or guess a thread from the project page. Preserve existing text, mentions and attachments when the user chooses to append; cancelling an in-flight contextual append must prevent its eventual workspace search result from changing the draft.
 - Applying proposed changes requires explicit confirmation, a version check, a retained backup and atomic replacement. External editors are not locked; concurrent edits can be overwritten, so coordinate writers.
 - Repository-owned work is MIT-licensed in `LICENSE`. Preserve upstream license and attribution requirements when importing third-party code or skills.
 - `.gitignore` excludes dependencies, generated output, secrets, logs, local Noema database/lock files, and EGM staging and pre-image files; review reports remain versionable.
 
 ## Child DOX Index
 
-- [`bb-elephant-goldfish/AGENTS.md`](bb-elephant-goldfish/AGENTS.md) — Noema cortex identity and trace mutation contract for `bb-elephant-goldfish/`.
+- [`alia-elephant-goldfish/AGENTS.md`](alia-elephant-goldfish/AGENTS.md) — Noema cortex identity and trace mutation contract for `alia-elephant-goldfish/`.
 - [`server/AGENTS.md`](server/AGENTS.md) — review engine, persistence and workspace safety contracts.
 - [`skills/AGENTS.md`](skills/AGENTS.md) — adapted agent skills and bundled references.
 - [`upstream/AGENTS.md`](upstream/AGENTS.md) — pinned third-party source materials and licensing.
@@ -101,7 +101,7 @@ When the user requests a durable behavior change, record it here or in the relev
 <!-- airbender:rules:version 4 -->
 ## Working with issues through Airbender
 
-This repository's issues are worked from the Airbender tab in BB, and read
+This repository's issues are worked from the Airbender tab in VesnALIA, and read
 and changed with the `bend` command, whatever tracker holds them. These are
 the instructions for working on issues here; follow them whenever you work
 on one.

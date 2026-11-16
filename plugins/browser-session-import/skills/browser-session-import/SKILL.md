@@ -1,17 +1,17 @@
 ---
 name: browser-session-import
-description: Import one browser cookie session into the shared BB Browser session, or clear it.
+description: Import one browser cookie session into the shared VesnALIA Browser session, or clear it.
 ---
 
 # Browser Session Import
 
 This plugin's installation id is `browser-session-import`. It imports sessions only; use the official `browser-automation` plugin for general page automation.
 
-Requires the native BB desktop Browser and Plugin SDK 0.4.48 or newer with `experimental_desktopBrowsers`. BB desktop v0.42.1 (SDK 0.4.47) is not supported. An npx-only web/server installation does not supply native desktop tabs.
+Requires the native VesnALIA desktop Browser and Plugin SDK 0.4.48 or newer with `experimental_desktopBrowsers`. VesnALIA desktop v0.42.1 (SDK 0.4.47) is not supported. An npx-only web/server installation does not supply native desktop tabs.
 
 ## What it does
 
-There is no profile library and no per-tab switching. Importing one session writes it into the host's shared BB Browser session, so every ordinary Browser tab — existing and future — uses it. Isolated automation browsers keep their own session. Importing again replaces the session; `clear` removes it.
+There is no profile library and no per-tab switching. Importing one session writes it into the host's shared VesnALIA Browser session, so every ordinary Browser tab — existing and future — uses it. Isolated automation browsers keep their own session. Importing again replaces the session; `clear` removes it.
 
 All of this lives in **Settings → Browser Session Import** (Extensions → Plugins). The plugin registers no side-panel action, no thread-header control, and no top-bar UI.
 
@@ -21,7 +21,7 @@ Open an ordinary Browser tab in a thread first — the import applies through th
 
 ## Operations
 
-`bb browser-session-import` accepts one JSON operation. The `bb_browser_session_import` tool accepts the same object. `current` and `clear` take no target.
+`alia browser-session-import` accepts one JSON operation. The `alia_browser_session_import` tool accepts the same object. `current` and `clear` take no target.
 
 - `current`: `{ "operation": "current" }` returns the connected host and what is currently imported (or null).
 - `list-sources`: `{ "operation": "list-sources", "hostId": "<host>" }` lists local Chromium/Firefox profiles on the host.

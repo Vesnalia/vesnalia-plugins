@@ -1,11 +1,11 @@
 ---
 name: kimi-usage
-description: Read Kimi Code plan limits (5-hour and monthly windows) for the hosts enrolled in this BB server. Use when the user asks how much of the Kimi Code quota is left, when limits reset, or why bb shows no Kimi usage.
+description: Read Kimi Code plan limits (5-hour and monthly windows) for the hosts enrolled in this VesnALIA server. Use when the user asks how much of the Kimi Code quota is left, when limits reset, or why VesnALIA shows no Kimi usage.
 ---
 
 # Kimi Code usage
 
-Run `bb kimi-usage show --json` to get the current windows for every connected
+Run `alia kimi-usage show --json` to get the current windows for every connected
 host. Each entry looks like:
 
 ```json
@@ -28,4 +28,4 @@ host. Each entry looks like:
 signed in again with `kimi login`; this plugin cannot repair a rejected refresh
 token on its own.
 
-The same numbers appear in BB under Settings → Plugins → Provider usage.
+The same numbers appear in VesnALIA under Settings → Plugins → Provider usage.

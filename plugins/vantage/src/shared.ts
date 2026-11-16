@@ -1,5 +1,5 @@
 import { useMemo, useRef } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./contract";
 import { createCommentStore } from "./comments";
 import { createLimiter } from "./limit";

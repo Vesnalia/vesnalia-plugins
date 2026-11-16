@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, UrlLink, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, UrlLink, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -28,7 +28,7 @@ interface AddGroup {
 }
 
 const ADD_GROUPS: readonly AddGroup[] = [
-  { title: "On BB's server or a machine you have", description: "Docker, microVMs, or your own machines over SSH.", types: ["docker", "microsandbox", "ssh-pool"] },
+  { title: "On VesnALIA's server or a machine you have", description: "Docker, microVMs, or your own machines over SSH.", types: ["docker", "microsandbox", "ssh-pool"] },
   { title: "On a Proxmox VE host", description: "Linux containers and VMs, Windows and Android, with GPU desktops.", types: ["proxmox-lxc", "proxmox-qemu"] },
   { title: "On your Macs with Apple silicon", description: "macOS, the iOS Simulator, and Linux and Windows on arm64.", types: ["tart"] },
   { title: "In the cloud, paid by use", description: "Machines made when a box needs one, and deleted after.", types: ["hetzner", "namespace", "boat"] },

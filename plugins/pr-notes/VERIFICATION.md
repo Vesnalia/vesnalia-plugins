@@ -10,12 +10,12 @@ These failure cases were recorded before implementing the plugin.
 - A note must survive page reloads and plugin reloads. Two editors must not silently overwrite each other's changes.
 - Switching PRs or completing requests out of order must not show or save one PR's note on another PR.
 - Unsaved note text must remain available after navigation, failed saves, and refreshes.
-- Chats must retain the selected provider, project, environment, permissions, attachments, and first question from BB's native composer.
+- Chats must retain the selected provider, project, environment, permissions, attachments, and first question from VesnALIA's native composer.
 - Existing PR chats must reopen; selecting a PR must not launch an agent or write to GitHub.
 - Failed chat creation must preserve the composer's draft. PR context must include its exact head SHA and current saved notes.
 - Large PR responses and command output must be bounded and identify truncation.
 - Reload/unmount must release timers, subscriptions, and subprocesses.
-- The plugin must work in narrow and wide panels with keyboard accessible controls and BB theme colors.
+- The plugin must work in narrow and wide panels with keyboard accessible controls and VesnALIA theme colors.
 
 Run the browser suite against an installed local plugin. It uses read-only GitHub requests and temporary private notes, removes its own fixtures, and captures repeatable reports and screenshots. No test may post a comment, review, or merge a PR. Agent creation is intercepted in the browser when checking the submission boundary.
 

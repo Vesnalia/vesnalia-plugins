@@ -128,8 +128,8 @@
 28	node_modules/simple-get
 92	node_modules/scheduler/cjs
 120	node_modules/scheduler
-4360	node_modules/@get-bb/plugin-sdk
-4360	node_modules/@get-bb
+4360	node_modules/@vesnalia/plugin-sdk
+4360	node_modules/@get-alia
 168	node_modules/hast-util-to-html/lib
 200	node_modules/hast-util-to-html
 20	node_modules/ccount

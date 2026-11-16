@@ -1,9 +1,9 @@
-/* Hallmark · shape: app screen · scope: component kit · genre: modern-minimal · theme: BB (by request: BB's own tokens) · states: 8 · v2.0.0 */
-/* critique: borrowed BB surfaces, one data accent, tabular figures; flat surface ladder, no card in card. */
+/* Hallmark · shape: app screen · scope: component kit · genre: modern-minimal · theme: ALIA (by request: ALIA's own tokens) · states: 8 · v2.0.0 */
+/* critique: borrowed ALIA surfaces, one data accent, tabular figures; flat surface ladder, no card in card. */
 /* waive 46a-gauge: Gauge kept for genui parity, drawn as a level against a limit, never a dashboard dial. */
 
-/* Tokens. Every colour and font below this block goes through one of these. They point at BB's
-   own variables, so BB's light/dark switch and custom themes flow through unchanged. */
+/* Tokens. Every colour and font below this block goes through one of these. They point at ALIA's
+   own variables, so ALIA's light/dark switch and custom themes flow through unchanged. */
 :root {
   --bbui-font: var(--font-sans, Inter, system-ui, sans-serif);
   --bbui-mono: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
@@ -23,7 +23,7 @@
   --bbui-warning: var(--warning, oklch(72% 0.16 50));
   --bbui-danger: var(--destructive, oklch(56% 0.19 22));
   --bbui-attention: var(--attention, oklch(77% 0.15 80));
-  /* Status as text (labels, +/- counts): BB's darker variants; the base colours stay for fills and dots. */
+  /* Status as text (labels, +/- counts): ALIA's darker variants; the base colours stay for fills and dots. */
   --bbui-success-text: var(--success-foreground, oklch(53% 0.14 155));
   --bbui-warning-text: var(--warning-text, oklch(55% 0.14 50));
   --bbui-danger-text: var(--destructive-text, oklch(45% 0.19 26));

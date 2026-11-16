@@ -21,7 +21,7 @@ import {
   type PromptInput,
   type ProviderHealthResult,
   type ThreadDelta,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import { randomUUID } from "node:crypto";
 import { MODEL_ID, NOT_AN_AGENT, RENDERER_MODEL, parseRenderPrompt } from "./provider";
 

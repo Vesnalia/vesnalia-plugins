@@ -6,7 +6,7 @@ import {
   loadPluginApp,
   renderSlot,
   type CapturedPluginApp,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import type { HarnessStatusDto } from "../server";
 import { emptyRoleRouting } from "../lib/harness";
 import { STANDARD_HARNESS_ID } from "../lib/definitions";

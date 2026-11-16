@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginCommandRegistration } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginCommandRegistration } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { Turn } from "../lib/turn";
 import { defaultPreferences } from "../src/preferences";
@@ -36,7 +36,7 @@ async function load(rpc: Record<string, (input: any) => unknown> = {}, paletteCo
   return { commands, command, mount };
 }
 
-test("the four commands are in BB's palette with their ids and titles: Next review that needs me has ⌘⇧U, Switch ⌘⇧.", async () => {
+test("the four commands are in VesnALIA's palette with their ids and titles: Next review that needs me has ⌘⇧U, Switch ⌘⇧.", async () => {
   const { commands } = await load();
   expect(commands.map(({ target, id, title, defaultShortcut }) => ({ target, id, title, defaultShortcut }))).toEqual([
     { target: "app", id: "next-review", title: "Code Review Workspace: Next review that needs me", defaultShortcut: { key: "u", mod: true, shift: true, meta: false, control: false, alt: false } },
@@ -46,11 +46,11 @@ test("the four commands are in BB's palette with their ids and titles: Next revi
   ]);
 });
 
-test("the default keys are ones neither BB nor a browser takes with mod and shift", async () => {
-  // BB 0.46.0's own mod+shift defaults (desktop, and 1–9 on the web off a Mac), and the keys Chrome, Safari, Firefox and
-  // Electron's default menu bind with mod+shift, Force Reload's R among them: BB nulls a plugin default that collides
-  // with its own, and a browser's or BB desktop's takes the key before the palette sees it.
-  const bb = ["p", "o", "[", "]", "e", "x", "t", "enter", "c", "m", "n", ..."123456789"];
+test("the default keys are ones neither VesnALIA nor a browser takes with mod and shift", async () => {
+  // VesnALIA 0.46.0's own mod+shift defaults (desktop, and 1–9 on the web off a Mac), and the keys Chrome, Safari, Firefox and
+  // Electron's default menu bind with mod+shift, Force Reload's R among them: VesnALIA nulls a plugin default that collides
+  // with its own, and a browser's or VesnALIA desktop's takes the key before the palette sees it.
+  const alia = ["p", "o", "[", "]", "e", "x", "t", "enter", "c", "m", "n", ..."123456789"];
   const browsers = [..."abcdfghijklmnopqrstvwxyz"];
   // Shifted, "/" is macOS's Help menu, "\\" Safari's tab overview and "`" the window before.
   const punctuation = ["/", "\\", "`"];
@@ -58,7 +58,7 @@ test("the default keys are ones neither BB nor a browser takes with mod and shif
   for (const id of ["next-review", "switch-review-thread"]) {
     const shortcut = command(id).defaultShortcut!;
     expect(shortcut).toMatchObject({ mod: true, shift: true, alt: false });
-    expect([...bb, ...browsers, ...punctuation]).not.toContain(shortcut.key.toLowerCase());
+    expect([...alia, ...browsers, ...punctuation]).not.toContain(shortcut.key.toLowerCase());
   }
   expect(command("next-review").defaultShortcut!.key).not.toBe(command("switch-review-thread").defaultShortcut!.key);
 });

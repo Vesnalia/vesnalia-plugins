@@ -1,4 +1,4 @@
-# bb-github-app-auth
+# alia-github-app-auth
 
 Are you sick of every pull request landing under YOUR name?
 
@@ -10,7 +10,7 @@ One account, talking to itself, all day long?
 
 Friend, there is a better way.
 
-With **bb GitHub App Auth**, your agents get a GitHub identity of their very
+With **VesnALIA GitHub App Auth**, your agents get a GitHub identity of their very
 own. Make a GitHub App in about two minutes, for FREE, with only the scopes
 you choose. Install this plugin. That's it! From then on, every agent turn in
 the projects you pick runs as the app. Pull requests open under the app's
@@ -19,13 +19,13 @@ name. You review them. You approve them. You stay in charge.
 Your agents get their own personality. Your agents get only the access you
 give them. And you get your name back.
 
-Try bb GitHub App Auth today!
+Try VesnALIA GitHub App Auth today!
 
 ---
 
 ## What it does
 
-bb runs coding agents in threads. Each time bb starts, resumes, forks or sends
+VesnALIA runs coding agents in threads. Each time VesnALIA starts, resumes, forks or sends
 a turn to an agent in a project you have set up, this plugin hands the agent a
 fresh GitHub App installation token. The agent sees it as `GH_TOKEN` and
 `GITHUB_TOKEN`, so `gh` and `git` act as the app without any login step.
@@ -50,7 +50,7 @@ Do this once on GitHub.
    at No access.
 4. Create the app. On its page, note the App ID.
 5. Under Private keys, choose Generate a private key. GitHub downloads a `.pem`
-   file. Put it on the machine that runs the bb server and keep it readable
+   file. Put it on the machine that runs the VesnALIA server and keep it readable
    only by you.
 6. Choose Install App, and install it on the account or organisation that owns
    the repositories. Pick the repositories the agents may touch.
@@ -62,7 +62,7 @@ the private key file.
 
 ## Give the plugin the app credentials
 
-The plugin holds the credentials on the bb server and never sends them to an
+The plugin holds the credentials on the VesnALIA server and never sends them to an
 agent. It reads the private key, mints the token, and gives the agent only the
 token. Pick one of the ways below.
 
@@ -72,7 +72,7 @@ This is the way to tie one app to one project. Run this once, from a thread in
 the project or with `--project`:
 
 ```bash
-bb github-app-auth set-app \
+alia github-app-auth set-app \
   --app-id 123456 \
   --installation-id 98765432 \
   --key-path ~/.config/github-apps/my-app.private-key.pem
@@ -81,9 +81,9 @@ bb github-app-auth set-app \
 The plugin stores the credentials in its own server-side storage, keyed to that
 project. Only that project has them, and no other project or agent can read
 them. A project that has a stored app is enabled on its own, with no list to
-keep. Remove it later with `bb github-app-auth unset-app`.
+keep. Remove it later with `alia github-app-auth unset-app`.
 
-You cannot store the credentials as a project environment variable. bb hides a
+You cannot store the credentials as a project environment variable. VesnALIA hides a
 project's environment variable values from plugins, so the plugin could not
 read them. `set-app` is the project-scoped path that works.
 
@@ -92,17 +92,17 @@ read them. `set-app` is the project-scoped path that works.
 Set one app in plugin settings, then choose which projects use it.
 
 ```bash
-bb plugin config github-app-auth set appId 123456
-bb plugin config github-app-auth set installationId 98765432
-bb plugin config github-app-auth set privateKeyPath ~/.config/github-apps/my-app.private-key.pem
-bb plugin reload github-app-auth
+alia plugin config github-app-auth set appId 123456
+alia plugin config github-app-auth set installationId 98765432
+alia plugin config github-app-auth set privateKeyPath ~/.config/github-apps/my-app.private-key.pem
+alia plugin reload github-app-auth
 ```
 
 Choose the projects by name or id:
 
 ```bash
-bb plugin config github-app-auth set projects my-project,another-project
-bb plugin reload github-app-auth
+alia plugin config github-app-auth set projects my-project,another-project
+alia plugin reload github-app-auth
 ```
 
 Or leave the projects setting empty and keep `enableByEnvVar` on, which is the
@@ -113,17 +113,17 @@ then Environment variables, pick a project, add a variable named
 project, never its value, so the value can be a placeholder. Your personal
 projects never define it, so they never get a token.
 
-### The bb server launch environment
+### The VesnALIA server launch environment
 
-The default app's credentials can also come from the bb server process's own
+The default app's credentials can also come from the VesnALIA server process's own
 environment, which you set by exporting `GITHUB_APP_ID`,
 `GITHUB_APP_INSTALLATION_ID` and `GITHUB_APP_PRIVATE_KEY_PATH` in the shell or
-launch agent that starts bb. Leave the three plugin settings empty to use this.
+launch agent that starts VesnALIA. Leave the three plugin settings empty to use this.
 Do not set them at the global scope on the Environment variables page, because
-bb copies every global value into every agent's environment, and an agent could
+VesnALIA copies every global value into every agent's environment, and an agent could
 then read the private key path and the app id.
 
-The private key is read on the bb server machine. Tokens are minted there and
+The private key is read on the VesnALIA server machine. Tokens are minted there and
 sent to whichever machine runs the thread, so the key never has to be copied
 to other machines.
 
@@ -131,7 +131,7 @@ to other machines.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| `appId`, `installationId`, `privateKeyPath` | empty | The default app, used by a project that has no stored app of its own. Read from plugin settings or the bb server environment. |
+| `appId`, `installationId`, `privateKeyPath` | empty | The default app, used by a project that has no stored app of its own. Read from plugin settings or the VesnALIA server environment. |
 | `projects` | empty | Comma-separated project names or ids that get the default app. |
 | `enableByEnvVar` | true | Also give the default app to any project that defines the enable environment variable. |
 | `enableEnvVarName` | GITHUB_APP_ID | The environment variable whose presence on a project enables the default app. |
@@ -146,12 +146,12 @@ A stored project app takes precedence over the default app for that project.
 
 | Command | Effect |
 | --- | --- |
-| `bb github-app-auth set-app --app-id <id> --installation-id <id> --key-path <path> [--project <id>]` | Store a project's app credentials on the server. |
-| `bb github-app-auth unset-app [--project <id>]` | Remove a project's stored app. |
-| `bb github-app-auth status [--json]` | Show the default app, each stored project app, token expiry and the bot identity. It never prints a token. |
-| `bb github-app-auth env [--project <id>]` | Print `export` lines for `GH_TOKEN` and `GITHUB_TOKEN`. |
-| `bb github-app-auth token [--project <id>] [--json]` | Print the current token on its own. |
-| `bb github-app-auth refresh [--project <id>] [--json]` | Throw away the cached token and mint a new one. |
+| `alia github-app-auth set-app --app-id <id> --installation-id <id> --key-path <path> [--project <id>]` | Store a project's app credentials on the server. |
+| `alia github-app-auth unset-app [--project <id>]` | Remove a project's stored app. |
+| `alia github-app-auth status [--json]` | Show the default app, each stored project app, token expiry and the bot identity. It never prints a token. |
+| `alia github-app-auth env [--project <id>]` | Print `export` lines for `GH_TOKEN` and `GITHUB_TOKEN`. |
+| `alia github-app-auth token [--project <id>] [--json]` | Print the current token on its own. |
+| `alia github-app-auth refresh [--project <id>] [--json]` | Throw away the cached token and mint a new one. |
 
 `--project` defaults to the current thread's project.
 
@@ -175,9 +175,9 @@ with a stale one.
 An agent process that stays alive across turns keeps the environment it
 started with. A single turn that runs for more than an hour can outlive its
 token. The bundled skill tells agents to run
-`eval "$(bb github-app-auth env)"` in the affected shell and try again.
+`eval "$(alia github-app-auth env)"` in the affected shell and try again.
 
-The plugin never writes a token or the private key to its logs. bb itself
+The plugin never writes a token or the private key to its logs. VesnALIA itself
 records contributed environment values in a thread's `provider.env-resolved`
 diagnostics, so treat those like any other log that holds credentials.
 
@@ -186,8 +186,8 @@ diagnostics, so treat those like any other log that holds credentials.
 ```bash
 npm install
 npm run typecheck
-bb plugin install .
-bb plugin dev
+alia plugin install .
+alia plugin dev
 ```
 
 ## Licence

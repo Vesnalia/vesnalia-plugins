@@ -34,7 +34,7 @@ for (const [theme, label] of [["dark", "Ayu Dark"], ["light", "Ayu Light"]]) {
     }
     await page.waitForTimeout(1800);
     const text = await stage.evaluate((e) => e.innerText);
-    if (/load inside a bb thread|only inside a thread|inside bb|can't|couldn't|Error/i.test(text)) problems.push(`${theme} ${name}: ${text.replace(/\s+/g, " ").slice(0, 140)}`);
+    if (/load inside a alia thread|only inside a thread|inside alia|can't|couldn't|Error/i.test(text)) problems.push(`${theme} ${name}: ${text.replace(/\s+/g, " ").slice(0, 140)}`);
     const box = await stage.boundingBox();
     const png = join(dir, `${name}.png`);
     await page.screenshot({ path: png, clip: { x: box.x, y: box.y, width: box.width, height: Math.min(box.height, 1100) } });

@@ -1,7 +1,7 @@
 // Global dashboard data hook. Core thread events drive immediate refreshes;
 // one slow bounded discovery check catches unrelated optional-plugin work.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import {
   BOARD_CHANGED_CHANNEL,
   boardChangedPayloadSchema,
@@ -124,7 +124,7 @@ export function useGlobalDashboard() {
     refetch();
   }, [rpc, refetch]);
 
-  // BB lifecycle events are immediate. This slow mounted-page check exists
+  // VesnALIA lifecycle events are immediate. This slow mounted-page check exists
   // only to discover a new Redteam run, whose realtime channel cannot be
   // subscribed to cross-plugin on runtime SDK 0.4.21.
   useEffect(() => {

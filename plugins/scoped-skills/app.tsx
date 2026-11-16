@@ -1,6 +1,6 @@
 // Scoped Skills — the library page.
 //
-// Two views behind one nav panel, the same list → detail pattern as BB's own
+// Two views behind one nav panel, the same list → detail pattern as VesnALIA's own
 // "My skills": the library (search, a thread preview, compact rows) and one
 // page per skill (who gets it, its SKILL.md, its files). The subPath routes
 // between them, so browser back/forward walks the panel's history. All state
@@ -12,10 +12,10 @@ import {
   experimental_ProviderIcon as ProviderIcon,
   experimental_useProviders as useProviders,
   Markdown,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { Agent, Project, rpcContract, SkillSummary } from "./server";
 import { projectMatches, scopeMatches, type Scope } from "./core/scope";
@@ -61,7 +61,7 @@ function useLibrary() {
 }
 
 function usePanelNav() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return useMemo(
     () => ({
       toLibrary: () => navigate.toPluginPanel(PANEL, { subPath: "" }),
@@ -85,7 +85,7 @@ const stripFrontmatter = (markdown: string) => markdown.replace(/^---\r?\n[\s\S]
 
 // ---- Small building blocks ---------------------------------------------------
 
-/** The same quiet badge BB uses for "Included" on My skills. */
+/** The same quiet badge VesnALIA uses for "Included" on My skills. */
 function Badge({ children, className, title }: { children: ReactNode; className?: string; title?: string }) {
   return (
     <span
@@ -466,7 +466,7 @@ function LibraryView() {
       <div className="mx-auto box-border w-full max-w-5xl px-4 pb-10 pt-3 md:px-5 md:pt-4">
         <p className="text-sm text-muted-foreground">
           Skills here reach only the agents, models and projects you choose. Anything in{" "}
-          <code className="text-foreground">~/.bb/skills</code> still reaches every thread.
+          <code className="text-foreground">~/.vesnalia/skills</code> still reaches every thread.
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-2 [&>button]:flex-1 sm:flex-nowrap sm:[&>button]:flex-none">
@@ -535,7 +535,7 @@ function LibraryView() {
                 Import skill
               </Button>
               <p className="mt-3 text-xs text-muted-foreground">
-                Or from a terminal: <code>bb scoped-skills import ~/.claude/skills/&lt;name&gt; --agents codex</code>
+                Or from a terminal: <code>alia scoped-skills import ~/.claude/skills/&lt;name&gt; --agents codex</code>
               </p>
             </div>
           ) : visible.length === 0 ? (
@@ -632,7 +632,7 @@ function ImportDialog({
         <DialogHeader>
           <DialogTitle>Import a skill</DialogTitle>
           <DialogDescription>
-            Copies a skill folder on the BB machine into the library. The original stays where it is.
+            Copies a skill folder on the VesnALIA machine into the library. The original stays where it is.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
@@ -654,7 +654,7 @@ function ImportDialog({
           </div>
           {error ? <Notice>{error}</Notice> : null}
           <p className="text-xs text-muted-foreground">
-            Delete the original afterwards. A copy left in <code>~/.bb/skills</code>, <code>~/.claude/skills</code> or{" "}
+            Delete the original afterwards. A copy left in <code>~/.vesnalia/skills</code>, <code>~/.claude/skills</code> or{" "}
             <code>~/.codex/skills</code> still reaches every agent.
           </p>
           <DialogFooter>

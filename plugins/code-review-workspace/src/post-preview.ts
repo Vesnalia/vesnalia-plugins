@@ -43,7 +43,7 @@ export function carries(text: string, lines: readonly string[]): boolean {
 
 /**
  * What of a message is the sender's own words: not a fenced block, a `>` quote line, or inline code, where the plugin and
- * bb put what they quote into it (a file's path, selected lines, a check's log), which the PR wrote. A fence or inline
+ * VesnALIA put what they quote into it (a file's path, selected lines, a check's log), which the PR wrote. A fence or inline
  * code left open runs to the end. Only a backstop: a message carrying text the plugin put in it confirms nothing.
  */
 export function ownWords(text: string): string {

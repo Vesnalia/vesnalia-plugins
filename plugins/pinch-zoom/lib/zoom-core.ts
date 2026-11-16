@@ -17,7 +17,7 @@
 
 /** Per-device state, changed by gestures and the settings section buttons. */
 export interface ZoomState {
-  /** Master text scale: 1 = bb's default size. */
+  /** Master text scale: 1 = VesnALIA's default size. */
   textScale: number;
   /** Per-device terminal fine-tune from pinching over a terminal; 1 = exactly the configured ratio. */
   terminalAdjust: number;
@@ -45,7 +45,7 @@ export const TEXT_SCALE_STEP = 0.05;
 
 export const TERMINAL_FONT_MIN = 8;
 export const TERMINAL_FONT_MAX = 32;
-/** Matches the hard-coded `fontSize: 12` in bb's ThreadTerminalView. */
+/** Matches the hard-coded `fontSize: 12` in VesnALIA's ThreadTerminalView. */
 export const TERMINAL_FONT_BASE = 12;
 
 export const RATIO_MIN = 0.5;
@@ -122,7 +122,7 @@ export function adjustForTerminalPx(
  * FNXC:PinchZoom 2026-11-13-13:11:
  * Where each scale is applied.
  * - "app": the root font size scales every rem-sized element (sidebar, headers, chat); the composer only needs its ratio on top.
- * - "content": the root is untouched; the chat timeline and composer use CSS `zoom` because bb sizes chat text in rem, which a container font size cannot change.
+ * - "content": the root is untouched; the chat timeline and composer use CSS `zoom` because VesnALIA sizes chat text in rem, which a container font size cannot change.
  */
 export interface AppliedScales {
   root: number;
@@ -140,9 +140,9 @@ export function appliedScales(state: ZoomState, config: ZoomConfig): AppliedScal
 /**
  * FNXC:PinchZoom 2026-11-13-16:35:
  * User requirement: the composer text size follows the chat text size, not just its scale factor.
- * bb sizes the two differently on phones (chat 15px, composer 16px; both 13px on desktop), so scaling both by the same factor kept the composer larger than chat.
+ * VesnALIA sizes the two differently on phones (chat 15px, composer 16px; both 13px on desktop), so scaling both by the same factor kept the composer larger than chat.
  * The composer zoom therefore also corrects for the measured base sizes, so composer text = chat text × the composer ratio.
- * `minComposerPx` keeps the composer at or above 16px on iOS, where a smaller focused field makes Safari zoom the whole page; that is why bb uses 16px there.
+ * `minComposerPx` keeps the composer at or above 16px on iOS, where a smaller focused field makes Safari zoom the whole page; that is why VesnALIA uses 16px there.
  *
  * @param baseZoom composer zoom before correction (`appliedScales().composer`)
  * @param chatPx chat message font size with no plugin zoom applied
@@ -220,7 +220,7 @@ export function touchPinchScale(
   return currentDistance / startDistance;
 }
 
-export const STORAGE_KEY = "bb-plugin-pinch-zoom:v1";
+export const STORAGE_KEY = "alia-plugin-pinch-zoom:v1";
 
 /**
  * Parses persisted per-device state; anything malformed falls back to the defaults field by field.

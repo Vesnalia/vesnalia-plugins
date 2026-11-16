@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin, { type SpecDetail } from "./server";
 
 function deferred<T>() {
@@ -41,7 +41,7 @@ async function setup() {
   const send = vi.fn(async () => ({}));
   const stop = vi.fn(async () => ({}));
   const archive = vi.fn(async () => ({}));
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "specs",
     settings: { autoTriageQuestions: false },
     sdk: {
@@ -61,7 +61,7 @@ async function setup() {
       },
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   cleanups.push(() => harness.lifecycle.dispose());
   const rpc = <T>(name: string, input: unknown) =>
     harness.behavior.callRpc(name, input) as Promise<T>;
@@ -78,11 +78,11 @@ async function setup() {
       brief: "Investigate a question",
     });
   const rows = (table: string, specId: string) =>
-    bb.storage.database().prepare(`SELECT * FROM ${table} WHERE spec_id = ?`).all(specId);
+    alia.storage.database().prepare(`SELECT * FROM ${table} WHERE spec_id = ?`).all(specId);
   const reports = (specId: string) =>
-    bb.storage.database().prepare("SELECT * FROM specs WHERE parent_spec_id = ?").all(specId);
+    alia.storage.database().prepare("SELECT * FROM specs WHERE parent_spec_id = ?").all(specId);
   return {
-    harness, rpc, create, detail, start, rows, reports, threads, db: bb.storage.database(),
+    harness, rpc, create, detail, start, rows, reports, threads, db: alia.storage.database(),
     spawn, output, send, stop, archive,
     holdSpawn: (gate: Promise<void>) => { spawnGate = gate; },
     holdOutput: (gate: Promise<string>) => { outputGate = gate; },

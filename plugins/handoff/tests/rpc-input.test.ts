@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { omitUndefined } from "../lib/rpc-input";
 
 /**
- * Faithful copy of bb's client-side `serializePluginRpcInput`
+ * Faithful copy of VesnALIA's client-side `serializePluginRpcInput`
  * (apps/app/src/lib/plugin-sdk-hooks.ts). Every `rpc.call` input goes through
  * this before it hits the wire, so a shape it rejects can never reach the
  * server — the panel just renders the thrown message.
@@ -43,7 +43,7 @@ function serializePluginRpcInput(value: unknown): string {
   return JSON.stringify(value);
 }
 
-describe("bb rpc input validation", () => {
+describe("alia rpc input validation", () => {
   it("rejects a present-but-undefined optional field", () => {
     // The regression: the Hand off panel opened with no message scope built
     // `{ threadId, upToSeq: undefined }`, which fails before the request is

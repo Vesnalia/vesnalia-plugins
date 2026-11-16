@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { BoardCard } from "../contract";
 import { formatDuration, mergeRetryText, startWaitText } from "../format";
 import type { TicketState } from "../states";
@@ -56,7 +56,7 @@ function DraftCard({ card }: { card: BoardCard }) {
 }
 
 function Card({ slug, card, now, draft, onChanges, withState }: { card: BoardCard; withState: boolean } & CardProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   if (draft) return <DraftCard card={card} />;
   const detail = [`${formatDuration(Math.max(0, now - card.stateAt))} in ${STATE_NAMES[card.state]}`, card.attempt > 0 ? `attempt ${card.attempt}` : null, card.reviewRound > 0 ? `round ${card.reviewRound}` : null].filter((part) => part !== null);
   return (

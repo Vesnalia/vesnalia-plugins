@@ -4,12 +4,12 @@ The plugin's own code is MIT, Copyright (c) 2026 Evgeniy Perin. See [LICENSE](LI
 
 The package also ships code from the projects below, under their own MIT licences.
 
-## bb — `get-bb/bb`
+## VesnALIA — `get-alia/alia`
 
 MIT License, Copyright (c) 2026 Michael Yong.
 
 The components under `components/ui/` (context menu, input, icon, and their
-helpers) and `lib/portal-scope.ts` come from bb's plugin component registry and
+helpers) and `lib/portal-scope.ts` come from VesnALIA's plugin component registry and
 are compiled into `dist/app.js`.
 
 Source: <https://github.com/get-bb/bb>
@@ -50,6 +50,6 @@ Source: <https://github.com/clauderic/dnd-kit>
 MIT License, Copyright (c) 2025 Hugeicons.
 
 The folder icons in `assets/icons/` come from `@hugeicons/core-free-icons`
-(4.3.5), the icon family bb draws its own icons with.
+(4.3.5), the icon family VesnALIA draws its own icons with.
 
 Source: <https://github.com/hugeicons/hugeicons>

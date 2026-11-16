@@ -1,7 +1,7 @@
 import {
   experimental_THREAD_ACTION_GROUPS as GROUPS,
   type PluginThreadActionRegistration,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { useOptions, type Options } from "./options";
 import { setPanelOpen } from "./panelState";
 

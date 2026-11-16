@@ -385,9 +385,9 @@ describe("captureWorkspace", () => {
       captureWorkspace(diffFixture.sdk, "environment-one"),
     ).rejects.toThrow(/unavailable/u);
   });
-  it("reads workspace status and diffs through the bb--git plugin", async () => {
+  it("reads workspace status and diffs through the alia--git plugin", async () => {
     const fixture = makeSdk({ files: { "src/file.ts": { content: "new" } } });
-    // Drop the retired reads so only the bb--git RPC can serve them.
+    // Drop the retired reads so only the alia--git RPC can serve them.
     const { status: _status, diff: _diff, ...environments } = fixture.sdk.environments;
     const rpcs: Array<{ method: string; input: unknown }> = [];
     const sdk = {

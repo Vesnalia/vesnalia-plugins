@@ -60,7 +60,7 @@ export const chipWidth = ({ idRepo, idTail }: Pick<ReviewIdentity, "idRepo" | "i
  * What fits in `room` px of band beside its `buttons` square buttons of `size` px and the review's id, `chip` px wide,
  * which always shows: the chapter's title first, then the compare select, `compare` px wide with its full or brief
  * label (null: the review has none), then "All reviews" from a reader of 720px, then the review's title, which goes
- * first. Where BB's title bar doesn't name the review (`named`), as in full screen, its title comes before "All
+ * first. Where VesnALIA's title bar doesn't name the review (`named`), as in full screen, its title comes before "All
  * reviews". Fold comments, one of the buttons, is a setting Diff options has too: it gives way to the chapter's title
  * and to the compare select, a state you must see. On a phone's touch screen (`touch`), under 600px of room, both are
  * in Diff options.
@@ -118,7 +118,7 @@ function useBandFit(el: HTMLElement | null, fitIn: (room: number) => BandFit): B
 /**
  * The band over the code: the chapters toggle and Find where the navigator isn't docked, where you are (All reviews,
  * the review, its chapter), and how the diff draws: the compare select on a re-review, Fold comments, and Diff options.
- * What shows depends on the band's room. The review's commands end it in full screen, which hides BB's title bar, and
+ * What shows depends on the band's room. The review's commands end it in full screen, which hides VesnALIA's title bar, and
  * where the title bar didn't take them. A phone has no band: its dock and sheet hold all this. `threads`: the PR has
  * GitHub threads to show. `onCompareShown` is told whether the band shows the compare select.
  */
@@ -146,9 +146,9 @@ export function ReaderBar({ threads, onCompareShown }: { threads: boolean; onCom
     .reduce((a, b) => b.length > a.length ? b : a);
   const sized = (brief: boolean) => selectWidth(longer(brief)) + (compare.error ? 18 : 0);
   const buttons = (layout.nav === "docked" ? 0 : 2) + 1 + (chapter ? 2 : 0);
-  // The review's commands end the band where BB's title bar doesn't show them, nor the review's name.
+  // The review's commands end the band where VesnALIA's title bar doesn't show them, nor the review's name.
   const commands = fullscreen.on || (waited && !titleBar);
-  // The review's name has one home: BB's title bar, where it shows this pane's review, else the band.
+  // The review's name has one home: VesnALIA's title bar, where it shows this pane's review, else the band.
   const titled = usePageTitleShown(targetKey) && !commands;
   // A local review with no name of its own goes by its guide's title, as its page title does.
   const identity = useMemo(() => reviewIdentity(review, guide.title), [review, guide.title]);

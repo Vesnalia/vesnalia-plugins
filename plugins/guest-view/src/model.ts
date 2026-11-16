@@ -4,7 +4,7 @@
 
 // ─── Timeline → guest transcript ────────────────────────────────────────────
 
-/** The parts of a BB timeline row this module reads. Everything else is ignored. */
+/** The parts of a VesnALIA timeline row this module reads. Everything else is ignored. */
 export interface Row {
   id: string;
   kind: string;
@@ -69,7 +69,7 @@ export function summariseWork(counts: Record<string, number>): string {
  * Turns timeline rows (with turn children) into what a guest sees: user and agent
  * messages, and runs of tool work collapsed into one counts-only line. Reasoning,
  * system operations, tool names, commands, paths, output and diffs never appear.
- * Messages from other agents or from BB itself become a short note with no content.
+ * Messages from other agents or from VesnALIA itself become a short note with no content.
  */
 export function guestTranscript(rows: readonly Row[], memo?: ParseMemo): GuestItem[] {
   const items: GuestItem[] = [];
@@ -127,7 +127,7 @@ export function guestTranscript(rows: readonly Row[], memo?: ParseMemo): GuestIt
         if (row.initiator === "user") {
           if (text.trim()) items.push({ id: row.id, type: "user", blocks: blocksOf(row.id, text) });
         } else {
-          items.push({ id: row.id, type: "note", text: row.initiator === "agent" ? "A message from another agent (hidden)" : "A message from BB (hidden)" });
+          items.push({ id: row.id, type: "note", text: row.initiator === "agent" ? "A message from another agent (hidden)" : "A message from VesnALIA (hidden)" });
         }
       }
       return;
@@ -476,8 +476,8 @@ export function attributed(name: string, text: string): string {
   return text.includes("\n") ? `${who}\n${text}` : `${who} ${text}`;
 }
 
-/** Names that would pass for the owner, BB or the agent in the card and in the composer ("System says: …"). */
-const RESERVED_NAMES = new Set(["owner", "system", "bb", "assistant", "agent", "claude", "admin", "administrator", "moderator", "host"]);
+/** Names that would pass for the owner, VesnALIA or the agent in the card and in the composer ("System says: …"). */
+const RESERVED_NAMES = new Set(["owner", "system", "alia", "assistant", "agent", "claude", "admin", "administrator", "moderator", "host"]);
 
 /** A word compared loosely: lower case, look-alike digits turned back into letters, anything else dropped. */
 function looseWord(word: string): string {
@@ -620,7 +620,7 @@ export class RateLimiter {
 
 // ─── Header ─────────────────────────────────────────────────────────────────
 
-/** BB's thread status as the guest reads it. */
+/** VesnALIA's thread status as the guest reads it. */
 export function workingLabel(status: string): "Working" | "Idle" | "Stopped" {
   if (status === "active" || status === "starting" || status === "pending" || status === "stopping") return "Working";
   return status === "error" ? "Stopped" : "Idle";

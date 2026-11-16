@@ -1,13 +1,13 @@
-// Mobile end-to-end pass, driven against a running bb.
+// Mobile end-to-end pass, driven against a running VesnALIA.
 //
 //   npm run test:mobile                       # the whole matrix
 //   node tests/mobile-e2e.mjs webkit "iPhone 14 Pro"
 //
-// This is not part of `npm test`: it needs a real bb on the other end, and it
+// This is not part of `npm test`: it needs a real VesnALIA on the other end, and it
 // opens and closes real shells there (it asserts it leaves none behind). Point
-// it somewhere else with BB_APP_URL; the `bb` commands it runs follow it there.
+// it somewhere else with ALIA_APP_URL; the `VesnALIA` commands it runs follow it there.
 //
-// It is safe to run against the bb you work in: it only ever types into, and
+// It is safe to run against the VesnALIA you work in: it only ever types into, and
 // closes, the shell it opened itself. With shells already open the empty-state
 // checks are skipped rather than earned by closing yours.
 //
@@ -27,7 +27,7 @@ import { execSync } from "node:child_process";
 
 const ENGINE = process.argv[2] ?? "chromium";
 const DEVICE = process.argv[3] ?? "iPhone 14 Pro";
-const APP = process.env.BB_APP_URL ?? "http://localhost:38886";
+const APP = process.env.ALIA_APP_URL ?? "http://localhost:38886";
 
 const results = [];
 const pass = (n, d = "") => results.push({ s: "PASS", n, d });
@@ -35,10 +35,10 @@ const fail = (n, d = "") => results.push({ s: "FAIL", n, d });
 const skip = (n, d = "") => results.push({ s: "SKIP", n, d });
 const check = (n, ok, d = "") => (ok ? pass(n, d) : fail(n, d));
 
-// The `bb` CLI follows BB_SERVER_URL (or its default), not the page, so it is
-// pointed at the bb the browser drives: otherwise it types into, and counts
-// the shells of, a different bb.
-const sh = (c) => execSync(c, { encoding: "utf8", env: { ...process.env, BB_SERVER_URL: APP } }).trim();
+// The `VesnALIA` CLI follows ALIA_SERVER_URL (or its default), not the page, so it is
+// pointed at the VesnALIA the browser drives: otherwise it types into, and counts
+// the shells of, a different VesnALIA.
+const sh = (c) => execSync(c, { encoding: "utf8", env: { ...process.env, ALIA_SERVER_URL: APP } }).trim();
 /** Bytes the pty has emitted since `seq`; a pager redrawing is the only signal
  *  that a swipe reached it, since input does not stamp the session record. */
 const outputSince = (id, seq) => {
@@ -49,7 +49,7 @@ const outputSince = (id, seq) => {
 
 const machines = (() => {
   try {
-    const j = JSON.parse(sh("bb machine list --json"));
+    const j = JSON.parse(sh("alia machine list --json"));
     const list = Array.isArray(j) ? j : (j.machines ?? j.hosts ?? []);
     return list.map((m) => m.id).filter(Boolean);
   } catch {
@@ -61,7 +61,7 @@ const sessions = () => {
   const out = [];
   for (const m of machines) {
     try {
-      const j = JSON.parse(sh(`bb terminal list --machine ${m} --json`));
+      const j = JSON.parse(sh(`alia terminal list --machine ${m} --json`));
       for (const s of j.sessions ?? []) out.push(s);
     } catch {}
   }
@@ -80,7 +80,7 @@ const cdp = ENGINE === "chromium" ? await ctx.newCDPSession(page) : null;
 const errors = [];
 // "ResizeObserver loop completed with undelivered notifications" is the
 // browser saying it deferred a resize notification to the next frame, not an
-// exception — and WebKit raises it from bb's own compose view (traced to
+// exception — and WebKit raises it from VesnALIA's own compose view (traced to
 // RootComposeView, not this plugin), intermittently, on the page this runs on.
 page.on("pageerror", (e) => {
   if (/ResizeObserver loop/.test(String(e))) return;
@@ -123,7 +123,7 @@ await wait(ENGINE === "webkit" ? 12000 : 10000);
 const compact = (device.viewport?.width ?? 0) < 768;
 
 // ---------------------------------------------------------------- open it
-// bb mounts plugin frontends after its own boot, which on a cold page (or
+// VesnALIA mounts plugin frontends after its own boot, which on a cold page (or
 // straight after a plugin reload) can land after a fixed sleep. Ask again
 // until the window is actually up rather than failing the whole run.
 const term = page.locator('[aria-label="Floating terminal"]');
@@ -143,8 +143,8 @@ const layout = await page.evaluate(() => {
   const w = document.querySelector('[aria-label="Floating terminal"]');
   if (!w) return null;
   const r = w.getBoundingClientRect();
-  const bd = document.querySelector(".bb-ft-backdrop");
-  const grip = w.querySelector("[data-bb-ft-grip]");
+  const bd = document.querySelector(".alia-ft-backdrop");
+  const grip = w.querySelector("[data-alia-ft-grip]");
   return {
     layout: w.dataset.layout,
     z: Number(getComputedStyle(w).zIndex),
@@ -152,7 +152,7 @@ const layout = await page.evaluate(() => {
     vw: window.innerWidth,
     vh: window.innerHeight,
     inline: /left:|width:/.test(w.getAttribute("style") ?? ""),
-    edges: w.querySelectorAll(".bb-ft-edge").length,
+    edges: w.querySelectorAll(".alia-ft-edge").length,
     backdropBlur: bd ? getComputedStyle(bd).backdropFilter : null,
     gripDisplay: grip ? getComputedStyle(grip).display : "absent",
     radius: getComputedStyle(w).borderRadius,
@@ -175,15 +175,15 @@ if (compact) {
   check("no backdrop", layout.backdropBlur === null);
 }
 
-// ------------------------------- 2. above bb's chrome (the z-50 toggle)
+// ------------------------------- 2. above VesnALIA's chrome (the z-50 toggle)
 const cover = await page.evaluate(() => {
   const w = document.querySelector('[aria-label="Floating terminal"]');
   const r = w.getBoundingClientRect();
   const top = document.elementsFromPoint(r.x + 22, r.y + 18)[0];
   return { inside: w.contains(top), tag: `${top?.tagName}.${String(top?.className).slice(0, 30)}` };
 });
-check("nothing of bb's paints over the tab bar", cover.inside, cover.tag);
-check("z-index clears bb chrome (50) and stays under its top layer (70)", layout.z > 50 && layout.z < 70, String(layout.z));
+check("nothing of VesnALIA's paints over the tab bar", cover.inside, cover.tag);
+check("z-index clears VesnALIA chrome (50) and stays under its top layer (70)", layout.z > 50 && layout.z < 70, String(layout.z));
 
 // ------------------------------------------------------- 3. empty state
 const tabIds = () =>
@@ -213,7 +213,7 @@ if (empty === null) {
 } else {
 check("empty state heading visible", empty.heading === "Start a shell" && empty.headingVisible);
 check("directory list stays inside the sheet", empty.listInside);
-// A group with nothing left in it is not rendered: on a bb with one machine
+// A group with nothing left in it is not rendered: on a VesnALIA with one machine
 // whose home is already in Recent, there is no Machines group at all. What
 // must hold is the order of the groups that are there.
 const ORDER = ["Recent", "Projects", "Machines"];
@@ -265,7 +265,7 @@ const mine = (await tabIds()).find((tab) => !preexisting.has(tab));
 // ------------------------------------------------------------ 5. key bar
 // Only in sheet mode: a window-mode viewport has a real keyboard with all of
 // these on it already.
-const bar = term.locator(".bb-ft-keybar");
+const bar = term.locator(".alia-ft-keybar");
 if (compact) {
   check("key bar present", (await term.getByRole("toolbar", { name: "Terminal keys" }).count()) === 1);
   const labels = await bar.locator("button").evaluateAll((bs) => bs.map((b) => b.textContent));
@@ -294,9 +294,9 @@ if (compact) {
 // The shell this run opened, never one that was already there.
 const id = sessions().find((s) => !beforeIds.has(s.id))?.id ?? mine;
 if (id) {
-  sh(`bb terminal send ${id} --text 'clear' --enter`);
+  sh(`alia terminal send ${id} --text 'clear' --enter`);
   await wait(1200);
-  sh(`bb terminal send ${id} --text 'seq 1 400' --enter`);
+  sh(`alia terminal send ${id} --text 'seq 1 400' --enter`);
   await wait(3000);
 }
 const screen = term.locator(".xterm-screen").locator("visible=true").first();
@@ -354,9 +354,9 @@ if (cdp) {
 
 // ------------------------------------------- 10. alt buffer (less/vim)
 if (cdp && id) {
-  sh(`bb terminal send ${id} --text $'\\003'`);
+  sh(`alia terminal send ${id} --text $'\\003'`);
   await wait(600);
-  sh(`bb terminal send ${id} --text 'seq 1 400 | less' --enter`);
+  sh(`alia terminal send ${id} --text 'seq 1 400 | less' --enter`);
   await wait(3000);
   const sb = await screen.boundingBox();
   const cx = Math.round(sb.x + sb.width / 2), cy = Math.round(sb.y + sb.height / 2);
@@ -365,15 +365,15 @@ if (cdp && id) {
   await wait(1800);
   const redraw = outputSince(id, mark);
   check("swipe scrolls the alternate screen", redraw.bytes > 0, `pager redrew ${redraw.bytes} bytes`);
-  sh(`bb terminal send ${id} --text 'q'`);
+  sh(`alia terminal send ${id} --text 'q'`);
   await wait(800);
-  sh(`bb terminal send ${id} --text $'\\003'`);
+  sh(`alia terminal send ${id} --text $'\\003'`);
   await wait(400);
 } else skip("swipe scrolls the alternate screen", "needs CDP");
 
 // -------------------------------------------------------- 11. nerd font
 const glyph = await page.evaluate(async () => {
-  await document.fonts.load('16px "BB FT Nerd Symbols"', "");
+  await document.fonts.load('16px "VesnALIA FT Nerd Symbols"', "");
   const draw = (font) => {
     const c = document.createElement("canvas"); c.width = 40; c.height = 40;
     const g = c.getContext("2d");
@@ -386,8 +386,8 @@ const glyph = await page.evaluate(async () => {
   const w = document.querySelector('[aria-label="Floating terminal"]');
   const declared = getComputedStyle(w).getPropertyValue("--font-mono").trim();
   const host = declared && !declared.includes("var(") ? declared + ", " : "";
-  const stack = `"JetBrainsMono Nerd Font Mono", "MesloLGS NF", "Symbols Nerd Font Mono", ${host}ui-monospace, monospace, "BB FT Nerd Symbols"`;
-  return { loaded: document.fonts.check('16px "BB FT Nerd Symbols"', ""), stack: draw(stack), tofu: draw('"No Such Font XYZ", monospace') };
+  const stack = `"JetBrainsMono Nerd Font Mono", "MesloLGS NF", "Symbols Nerd Font Mono", ${host}ui-monospace, monospace, "VesnALIA FT Nerd Symbols"`;
+  return { loaded: document.fonts.check('16px "VesnALIA FT Nerd Symbols"', ""), stack: draw(stack), tofu: draw('"No Such Font XYZ", monospace') };
 });
 check("bundled symbol font is loaded", glyph.loaded === true);
 check("terminal stack draws a Nerd glyph", glyph.stack > glyph.tofu * 1.5, `ink ${glyph.stack} vs tofu ${glyph.tofu}`);
@@ -415,7 +415,7 @@ if (compact) {
 
 // --------------------------------------------- 13. persistence + dismiss
 if (compact) {
-  const bd = page.locator(".bb-ft-backdrop");
+  const bd = page.locator(".alia-ft-backdrop");
   const box = await term.boundingBox();
   await page.mouse.click(Math.round(box.x + box.width / 2), 4);
   await wait(900);

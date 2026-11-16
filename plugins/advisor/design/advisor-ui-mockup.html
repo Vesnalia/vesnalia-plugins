@@ -11,7 +11,7 @@
     <style>
       /* ---------------------------------------------------------------
          Tokens copied from apps/app/src/components/ui/theme.css so this
-         mockup renders in bb's real palette. Light + dark anchors only;
+         mockup renders in VesnALIA's real palette. Light + dark anchors only;
          everything else derives from --canvas / --ink exactly as the app
          does, so a custom palette (Nord, Dracula) would re-tint this too.
          --------------------------------------------------------------- */
@@ -410,7 +410,7 @@
         <div>
           <h1>Advisor — proposed thread UI</h1>
           <p>
-            Rendered with bb's own tokens from
+            Rendered with VesnALIA's own tokens from
             <code style="font-family: var(--font-mono)">theme.css</code>. Every
             surface below maps to a slot that exists in the plugin app SDK today.
           </p>
@@ -537,7 +537,7 @@
 
         <p class="note">
           <b>Caveat.</b> The SDK has no tool-result renderer slot, so the card
-          above is the one piece here that bb cannot render today —
+          above is the one piece here that VesnALIA cannot render today —
           <code>experimental_statusLabels</code> is two static strings. Until
           that slot exists, the timeline keeps today's text and the card lives in
           the panel. Everything else on this page is buildable now.
@@ -605,7 +605,7 @@
                 <span class="name">Audit advisor plugin</span>
                 <span class="chip blocker" style="padding: 1px 5px">blocker</span>
               </div>
-              <div class="sb-row"><span class="sb-dot" style="background: var(--success)"></span><span class="name">Customize BB sidebar</span></div>
+              <div class="sb-row"><span class="sb-dot" style="background: var(--success)"></span><span class="name">Customize VesnALIA sidebar</span></div>
             </div>
             <p class="note">
               <b>Row status</b> via
@@ -633,8 +633,8 @@
             </div>
             <p class="note">
               <b>Only on a repeat.</b> This uses
-              <code>bb.ui.requestInput</code> + the
-              <code>pendingInteraction</code> slot, which lights bb's native
+              <code>alia.ui.requestInput</code> + the
+              <code>pendingInteraction</code> slot, which lights VesnALIA's native
               attention state. It consumes the thread's single interaction slot
               (409 if the agent needs to ask you something), so a first-time
               finding must never use it.
@@ -723,7 +723,7 @@
         </div>
 
         <p class="note">
-          <b>Verified against bb source.</b>
+          <b>Verified against VesnALIA source.</b>
           <code>EmbeddedThreadChat.tsx</code> has no <code>visibility</code>
           guard — only the sidebar filters hidden threads — so embedding the
           hidden reviewer transcript works today with no backend change. The

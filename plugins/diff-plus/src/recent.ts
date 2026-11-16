@@ -1,7 +1,7 @@
-// "Recent commits" in BB's scope picker: the newest commits of HEAD, read in the
+// "Recent commits" in VesnALIA's scope picker: the newest commits of HEAD, read in the
 // backend with git (see server.ts), and re-read when the branch moves.
 import { useEffect, useState } from "react";
-import { useRpc, useSdk } from "@get-bb/plugin-sdk/app";
+import { useRpc, useSdk } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 
 /** Changes that can mean new commits. */

@@ -1,6 +1,6 @@
 # 099 results: ffmpeg for clips on every kind
 
-Measured on 13 November 2026, on real boxes. The first measurements used BB Box 0.2.0's tool for the start, the captions and the device's actions, and this decision's code for the stop. The live gate at the end ran this decision's code whole, through the tool, in a separate BB.
+Measured on 13 November 2026, on real boxes. The first measurements used VesnALIA Box 0.2.0's tool for the start, the captions and the device's actions, and this decision's code for the stop. The live gate at the end ran this decision's code whole, through the tool, in a separate VesnALIA.
 
 ## What each kind had, and what 0.2.0 made
 
@@ -34,9 +34,9 @@ On both Macs, the caption script ended on `NSInvalidArgumentException: -[__NSArr
 
 A second recording on the Android box found the fetched build kept, in 0.04 s. A slot user on a shared Mac fetched with no root.
 
-## Live gate in a separate BB
+## Live gate in a separate VesnALIA
 
-A fresh BB with no account, in a Linux desktop box, with this branch's BB Box installed and a scripted ACP agent calling the tools. Each clip played in that BB's thread.
+A fresh VesnALIA with no account, in a Linux desktop box, with this branch's VesnALIA Box installed and a scripted ACP agent calling the tools. Each clip played in that VesnALIA's thread.
 
 | Kind and where | Clip | In the chat |
 | --- | --- | --- |

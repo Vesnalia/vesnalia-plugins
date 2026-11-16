@@ -3,7 +3,7 @@
 // Pure functions, no React. Units, words and `Intl` locales follow the
 // interface language at call time (lib/i18n.tsx); the components that render
 // these subscribe to it. Binary multiples with short labels ("1 KB" =
-// 1024 B) match the rest of bb (`plugins/tasks/views/detail/meta.tsx`).
+// 1024 B) match the rest of VesnALIA (`plugins/tasks/views/detail/meta.tsx`).
 import { defineMessages, getLang, intlLocale, messagesNow, pluralRu } from "./i18n";
 
 const messages = defineMessages(

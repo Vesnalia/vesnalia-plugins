@@ -1,8 +1,8 @@
 // Commits: the branch's commits since the default branch, newest first, read
-// from BB (project_commits) and kept per reply block like Changes. Each
+// from VesnALIA (project_commits) and kept per reply block like Changes. Each
 // commit opens its own changes, read live (a commit never changes).
 import { useId, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { parseCommitLimit, relativeTime, type CommitInfo, type CommitsResult, type CommitsView } from "../../core/project";
@@ -94,7 +94,7 @@ function Divergence({ view }: { view: CommitsView }) {
 function emptySentence(view: CommitsView): string {
   if (view.checkout === "unborn") return `${view.branch ?? "This branch"} has no commits yet.`;
   if (view.onBase) return `This checkout is on ${view.base}, the default branch: there are no branch commits to list.`;
-  if (view.ahead === null) return `BB found no merge base with ${view.base}.`;
+  if (view.ahead === null) return `VesnALIA found no merge base with ${view.base}.`;
   return `No commits since ${view.base}.`;
 }
 

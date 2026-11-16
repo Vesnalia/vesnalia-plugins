@@ -28,7 +28,7 @@ for (const scheme of ["light", "dark"]) {
   for (const width of widths) {
     const context = await browser.newContext({ viewport: { width, height: 1000 }, colorScheme: scheme });
     const page = await context.newPage();
-    await page.goto(`${base}/plugins/bb-box/desktop/box/${boxId}`);
+    await page.goto(`${base}/plugins/alia-box/desktop/box/${boxId}`);
     const skip = page.getByText("Skip setup");
     if (await skip.waitFor({ timeout: 8000 }).then(() => true, () => false)) {
       await skip.click();
@@ -38,7 +38,7 @@ for (const scheme of ["light", "dark"]) {
       await new Promise((resolve) => setTimeout(resolve, holdMs));
       await route.continue();
     });
-    await page.goto(`${base}/plugins/bb-box/desktop/box/${boxId}`);
+    await page.goto(`${base}/plugins/alia-box/desktop/box/${boxId}`);
     await page.getByRole("region", { name: "Activity" }).waitFor({ timeout: 60_000 });
     await page.locator('[aria-label="Facts"]').waitFor({ timeout: 60_000 });
     await new Promise((resolve) => setTimeout(resolve, 500));

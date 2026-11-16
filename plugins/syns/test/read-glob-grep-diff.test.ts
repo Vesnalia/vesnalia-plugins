@@ -11,7 +11,7 @@ describe("syns.read", () => {
       version: HEAD,
       number: 6,
       path: "README.md",
-      text: "\nA throwaway repository the Syns bb plugin is tested against. Nothing here matters.",
+      text: "\nA throwaway repository the Syns VesnALIA plugin is tested against. Nothing here matters.",
       offset: 2,
       limit: 2,
       totalLines: 3,

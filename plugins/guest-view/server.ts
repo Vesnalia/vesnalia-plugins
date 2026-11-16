@@ -1,6 +1,6 @@
-// bb-plugin-guest-view — backend entry.
+// alia-plugin-guest-view — backend entry.
 //
-// Shares one thread at a time per link with someone who has no BB account. The
+// Shares one thread at a time per link with someone who has no VesnALIA account. The
 // owner starts a share from the thread's menu; this backend then runs a small
 // HTTP server on 127.0.0.1 (src/http.ts) and a Cloudflare quick tunnel to it
 // (src/tunnel.ts). The guest's page long-polls the filtered transcript
@@ -14,7 +14,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { chmod, mkdir, rename, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { emptyHeld, readHeld, type Held, type TimelineRead } from "./src/delta.ts";
 import { Feed, hideHistory, type Header } from "./src/feed.ts";
@@ -75,7 +75,7 @@ const guestsSee = z.enum(["own", "count", "prompts"]);
 export type GuestsSee = z.infer<typeof guestsSee>;
 
 const threadInput = z.object({ threadId: z.string().min(1).max(200) });
-/** `via: "app"` is what the thread menu and the card send. Anything else (the bb CLI, an agent, another plugin) starts a share too, and the owner is told. */
+/** `via: "app"` is what the thread menu and the card send. Anything else (the VesnALIA CLI, an agent, another plugin) starts a share too, and the owner is told. */
 const shareInput = z.object({ threadId: z.string().min(1).max(200), via: z.literal("app").optional() });
 const promptInput = z.object({ threadId: z.string().min(1).max(200), promptId: z.string().min(1).max(100) });
 
@@ -195,8 +195,8 @@ interface Share {
   dirty: boolean;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     expiryHours: {
       type: "number",
       label: "Link lifetime (hours)",
@@ -217,7 +217,7 @@ export default async function plugin(bb: BbPluginApi) {
   // What outlives this run: the cloudflared process id and the threads that were shared. A run that is
   // stopped without ending its shares (a reload, a crash) leaves them here, and the next run says so
   // on the card and stops a cloudflared left behind.
-  const { kv } = bb.storage;
+  const { kv } = alia.storage;
   let keepRecord = true;
   const currentTunnel = (): Tunnel | null => tunnel;
   const record = async () => {
@@ -227,7 +227,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (!tunnel?.pid && live.length === 0) await kv.delete("state");
       else await kv.set("state", { pid: tunnel?.pid, live });
     } catch (error) {
-      bb.log.debug(`could not save the share record: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.debug(`could not save the share record: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
   let install: OwnerState["install"] = null;
@@ -240,7 +240,7 @@ export default async function plugin(bb: BbPluginApi) {
   const modelNames = new Map<string, string>();
   let disposed = false;
 
-  const publish = (threadId: string) => bb.realtime.publish(STATE_CHANNEL, { threadId });
+  const publish = (threadId: string) => alia.realtime.publish(STATE_CHANNEL, { threadId });
 
   const stateOf = (threadId: string): OwnerState => {
     const share = shares.get(threadId);
@@ -312,7 +312,7 @@ export default async function plugin(bb: BbPluginApi) {
     let name = model;
     if (environmentId) {
       try {
-        const result = (await bb.sdk.providers.models({ environmentId })) as unknown as { models?: { model: string; displayName?: string }[] };
+        const result = (await alia.sdk.providers.models({ environmentId })) as unknown as { models?: { model: string; displayName?: string }[] };
         name = result.models?.find((m) => m.model === model)?.displayName ?? model;
       } catch {
         // The id is fine as a fallback.
@@ -329,9 +329,9 @@ export default async function plugin(bb: BbPluginApi) {
    */
   async function readThread(threadId: string, memo: ParseMemo, held: Held<Row>, withModel: boolean): Promise<{ header: Header; items: ReturnType<typeof guestTranscript> }> {
     const [, thread, exec] = await Promise.all([
-      readHeld(held, async (afterTag) => (await bb.sdk.threads.timeline({ threadId, includeNestedRows: "true", deferContent: "true", ...(afterTag ? { afterTag } : {}) })) as unknown as TimelineRead<Row>),
-      bb.sdk.threads.get({ threadId }),
-      withModel ? bb.sdk.threads.defaultExecutionOptions({ threadId }).catch(() => null) : Promise.resolve(null),
+      readHeld(held, async (afterTag) => (await alia.sdk.threads.timeline({ threadId, includeNestedRows: "true", deferContent: "true", ...(afterTag ? { afterTag } : {}) })) as unknown as TimelineRead<Row>),
+      alia.sdk.threads.get({ threadId }),
+      withModel ? alia.sdk.threads.defaultExecutionOptions({ threadId }).catch(() => null) : Promise.resolve(null),
     ]);
     const t = thread as unknown as { title?: string | null; titleFallback?: string | null; status: string; environmentId?: string | null };
     const options = exec as unknown as { model?: string; reasoningLevel?: string } | null;
@@ -367,7 +367,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (share.feed.update(shown, items)) wake(share);
         } while (share.dirty);
       } catch (error) {
-        bb.log.warn(`could not read thread ${share.threadId}: ${error instanceof Error ? error.message : String(error)}`);
+        alia.log.warn(`could not read thread ${share.threadId}: ${error instanceof Error ? error.message : String(error)}`);
       } finally {
         share.refreshing = null;
       }
@@ -397,17 +397,17 @@ export default async function plugin(bb: BbPluginApi) {
         throw new Error("cloudflared is not installed.");
       }
       install = null;
-      const started = server ?? (await startGuestServer(routes, (error) => bb.log.error(`guest server: ${error instanceof Error ? error.stack : String(error)}`)));
+      const started = server ?? (await startGuestServer(routes, (error) => alia.log.error(`guest server: ${error instanceof Error ? error.stack : String(error)}`)));
       server = started;
       try {
-        const opened = await startTunnel(binary, started.port, (line) => bb.log.debug(`cloudflared: ${line}`));
+        const opened = await startTunnel(binary, started.port, (line) => alia.log.debug(`cloudflared: ${line}`));
         tunnel = opened;
-        bb.log.info(`tunnel up at ${opened.url} → 127.0.0.1:${started.port}`);
+        alia.log.info(`tunnel up at ${opened.url} → 127.0.0.1:${started.port}`);
         void record();
         void opened.exited.then(() => {
           if (tunnel !== opened) return;
           tunnel = null;
-          bb.log.warn("cloudflared exited; ending every share");
+          alia.log.warn("cloudflared exited; ending every share");
           for (const share of [...shares.values()]) {
             errors.set(share.threadId, "The Cloudflare tunnel stopped, so the guest link ended. Share again for a new link.");
             endShare(share, "revoked");
@@ -434,7 +434,7 @@ export default async function plugin(bb: BbPluginApi) {
     const s = server;
     server = null;
     await s?.close();
-    if (t || s) bb.log.info("tunnel and guest server stopped");
+    if (t || s) alia.log.info("tunnel and guest server stopped");
     void record();
   }
 
@@ -449,7 +449,7 @@ export default async function plugin(bb: BbPluginApi) {
     for (const p of share.prompts) if (p.status === "pending") p.status = "dismissed";
     promptsChanged(share);
     wake(share);
-    bb.log.info(`share for ${share.threadId} ended (${reason})`);
+    alia.log.info(`share for ${share.threadId} ended (${reason})`);
     publish(share.threadId);
     // Give the woken polls a moment to carry "ended" out before the tunnel goes.
     setTimeout(() => void stopServerIfUnused(), END_GRACE_MS);
@@ -565,7 +565,7 @@ export default async function plugin(bb: BbPluginApi) {
       trimSettled(share.prompts, MAX_PROMPTS);
       promptsChanged(share);
       publish(share.threadId);
-      bb.log.info(`guest prompt on ${share.threadId} from "${name}" (${prompt.text.length} chars)`);
+      alia.log.info(`guest prompt on ${share.threadId} from "${name}" (${prompt.text.length} chars)`);
       share.notices.add({ name, text: prompt.text });
       return { status: 201, body: { id: entry.id, text: entry.text } };
     },
@@ -574,27 +574,27 @@ export default async function plugin(bb: BbPluginApi) {
   /** A push notification through the Push Notifications plugin, when it is there. */
   async function push(notice: Notice, threadId: string) {
     try {
-      await bb.sdk.plugins.callRpc({
+      await alia.sdk.plugins.callRpc({
         pluginId: "push-notifications",
         method: "notifications.send",
         input: { ...notice, threadId },
         outputSchema: z.object({ ok: z.literal(true) }).passthrough(),
       });
     } catch (error) {
-      bb.log.debug(`no push notification: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.debug(`no push notification: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   // ─── Owner actions ───────────────────────────────────────────────────────
 
   async function share(threadId: string, fromApp: boolean): Promise<OwnerState> {
-    // Claimed before anything is awaited: two calls in flight (a double click, two BB pages) must not each make a share.
+    // Claimed before anything is awaited: two calls in flight (a double click, two VesnALIA pages) must not each make a share.
     if (shares.has(threadId) || starting.has(threadId)) return stateOf(threadId);
     starting.add(threadId);
     errors.delete(threadId);
     publish(threadId);
     try {
-      const thread = (await bb.sdk.threads.get({ threadId })) as unknown as { title?: string | null; titleFallback?: string | null }; // throws for a thread that does not exist
+      const thread = (await alia.sdk.threads.get({ threadId })) as unknown as { title?: string | null; titleFallback?: string | null }; // throws for a thread that does not exist
       await ensureTunnel();
       if (disposed) throw new Error("Guest View is stopping.");
       const now = Date.now();
@@ -627,17 +627,17 @@ export default async function plugin(bb: BbPluginApi) {
       scheduleExpiry(entry, lifetime);
       shares.set(threadId, entry);
       void record();
-      bb.log.info(`sharing ${threadId} until ${new Date(entry.expiresAt).toISOString()}`);
+      alia.log.info(`sharing ${threadId} until ${new Date(entry.expiresAt).toISOString()}`);
       if (!fromApp) {
-        // The thread menu and the card say who they are; a share started any other way (the bb CLI, an agent that ran a
+        // The thread menu and the card say who they are; a share started any other way (the VesnALIA CLI, an agent that ran a
         // command, another plugin) cannot be told apart from the owner by the SDK, so it is logged and the owner is told.
-        bb.log.warn(`share for ${threadId} was started from outside the Guest View menu`);
-        void push({ title: "A guest link was started", body: `"${thread.title || thread.titleFallback || "A thread"}" is shared with a public link, started from outside the Guest View menu (the bb CLI, an agent or another plugin). Stop it from the card above that thread's composer if that was not you.` }, threadId);
+        alia.log.warn(`share for ${threadId} was started from outside the Guest View menu`);
+        void push({ title: "A guest link was started", body: `"${thread.title || thread.titleFallback || "A thread"}" is shared with a public link, started from outside the Guest View menu (the VesnALIA CLI, an agent or another plugin). Stop it from the card above that thread's composer if that was not you.` }, threadId);
       }
       void refresh(entry);
     } catch (error) {
       errors.set(threadId, error instanceof Error ? error.message : String(error));
-      bb.log.warn(`could not share ${threadId}: ${errors.get(threadId)}`);
+      alia.log.warn(`could not share ${threadId}: ${errors.get(threadId)}`);
     } finally {
       starting.delete(threadId);
       publish(threadId);
@@ -668,10 +668,10 @@ export default async function plugin(bb: BbPluginApi) {
     prompt.resolvedAt = Date.now();
     promptsChanged(share);
     publish(share.threadId);
-    bb.log.info(`guest prompt on ${share.threadId} ${status}`);
+    alia.log.info(`guest prompt on ${share.threadId} ${status}`);
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     state: async ({ threadId }) => stateOf(threadId),
     shared: async () => ({
       shares: tunnel
@@ -704,22 +704,22 @@ export default async function plugin(bb: BbPluginApi) {
       if (!live) throw new Error("This thread is not shared.");
       if (expiryHours !== undefined) {
         scheduleExpiry(live, expiryMs(expiryHours));
-        bb.log.info(`share for ${threadId} now expires ${new Date(live.expiresAt).toISOString()}`);
+        alia.log.info(`share for ${threadId} now expires ${new Date(live.expiresAt).toISOString()}`);
       }
       if (showHistory !== undefined) {
         live.showHistory = showHistory;
-        bb.log.info(`share for ${threadId}: guests who join later ${showHistory ? "see" : "do not see"} earlier messages`);
+        alia.log.info(`share for ${threadId}: guests who join later ${showHistory ? "see" : "do not see"} earlier messages`);
       }
       if (see !== undefined) {
         live.guestsSee = see;
         showViewers(live);
         promptsChanged(live);
-        bb.log.info(`share for ${threadId}: guests see ${see === "own" ? "only their own prompts" : see === "count" ? "how many guests are here" : "how many guests are here and each other's prompts"}`);
+        alia.log.info(`share for ${threadId}: guests see ${see === "own" ? "only their own prompts" : see === "count" ? "how many guests are here" : "how many guests are here and each other's prompts"}`);
       }
       if (showModel !== undefined) {
         live.showModel = showModel;
         void refresh(live);
-        bb.log.info(`share for ${threadId}: guests ${showModel ? "see" : "do not see"} the model`);
+        alia.log.info(`share for ${threadId}: guests ${showModel ? "see" : "do not see"} the model`);
       }
       publish(threadId);
       return stateOf(threadId);
@@ -732,7 +732,7 @@ export default async function plugin(bb: BbPluginApi) {
       live.viewers.delete(guestId);
       guest.connectedAt = null;
       wake(live);
-      bb.log.info(`guest "${guest.name}" removed from ${threadId}`);
+      alia.log.info(`guest "${guest.name}" removed from ${threadId}`);
       publish(threadId);
       return stateOf(threadId);
     },
@@ -754,7 +754,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function installCloudflared() {
     if (process.platform !== "linux") throw new Error("Install cloudflared with the command shown, then share again.");
     const asset = pinnedAsset(process.arch);
-    bb.log.info(`installing cloudflared ${CLOUDFLARED_VERSION} from ${asset?.url ?? "(no build for " + process.arch + ")"}`);
+    alia.log.info(`installing cloudflared ${CLOUDFLARED_VERSION} from ${asset?.url ?? "(no build for " + process.arch + ")"}`);
     // Nothing touches the disk until the size and SHA-256 match the pinned release.
     const { bytes } = await downloadPinned(process.arch);
     const dir = join(homedir(), ".local", "bin");
@@ -763,24 +763,24 @@ export default async function plugin(bb: BbPluginApi) {
     await writeFile(`${target}.download`, bytes, { mode: 0o755 });
     await chmod(`${target}.download`, 0o755);
     await rename(`${target}.download`, target);
-    bb.log.info(`installed cloudflared at ${target} (${bytes.length} bytes)`);
+    alia.log.info(`installed cloudflared at ${target} (${bytes.length} bytes)`);
   }
 
   // ─── Live updates ────────────────────────────────────────────────────────
 
-  bb.events.on("experimental_thread.events", ({ thread }) => {
+  alia.events.on("experimental_thread.events", ({ thread }) => {
     const live = shares.get(thread.id);
     if (live && watched(live)) void refresh(live);
     else if (live) live.feed.ready = false; // read again when someone opens the page
   });
   for (const event of ["thread.active", "thread.idle", "thread.failed"] as const) {
-    bb.events.on(event, ({ thread }) => {
+    alia.events.on(event, ({ thread }) => {
       const live = shares.get(thread.id);
       if (live && watched(live)) void refresh(live);
     });
   }
   for (const event of ["thread.archived", "thread.deleted"] as const) {
-    bb.events.on(event, ({ thread }) => {
+    alia.events.on(event, ({ thread }) => {
       const live = shares.get(thread.id);
       if (live) endShare(live, "revoked");
     });
@@ -800,18 +800,18 @@ export default async function plugin(bb: BbPluginApi) {
       const left = await kv.get<{ pid?: number; live?: string[] }>("state");
       if (!left) return;
       await kv.delete("state");
-      if (left.pid !== currentTunnel()?.pid && (await stopLeftoverTunnel(left.pid))) bb.log.warn(`stopped cloudflared ${left.pid}, left over from an earlier run`);
+      if (left.pid !== currentTunnel()?.pid && (await stopLeftoverTunnel(left.pid))) alia.log.warn(`stopped cloudflared ${left.pid}, left over from an earlier run`);
       for (const threadId of left.live ?? []) {
         if (shares.has(threadId) || starting.has(threadId)) continue;
         errors.set(threadId, "The guest link ended because Guest View was restarted or reloaded. Share again for a new link.");
         publish(threadId);
       }
     } catch (error) {
-      bb.log.debug(`could not read the share record: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.debug(`could not read the share record: ${error instanceof Error ? error.message : String(error)}`);
     }
   })();
 
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     disposed = true;
     // The record keeps the threads that were shared, so the next run can tell the owner they ended.
     keepRecord = false;
@@ -821,7 +821,7 @@ export default async function plugin(bb: BbPluginApi) {
     for (const live of [...shares.values()]) endShare(live, "revoked");
     if (open) await new Promise((done) => setTimeout(done, 1_000));
     await stopServerIfUnused();
-    bb.log.info("disposed");
+    alia.log.info("disposed");
   });
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }

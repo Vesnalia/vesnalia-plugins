@@ -81,7 +81,7 @@ export function searchStep(targetRank: number, here: number, viewport: number): 
 }
 
 // ---------------------------------------------------------------------------
-// The fast path. `bandContent` above reads every row's top on every paint; BB's
+// The fast path. `bandContent` above reads every row's top on every paint; VesnALIA's
 // timeline is windowed and its rows are in chronological order, so none of that
 // is needed. Row tops only have to be searched to find *one* boundary row, and
 // everything above the boundary is answered from the timeline data, which also
@@ -101,7 +101,7 @@ export interface Message {
   title: string;
   /** The whole text with whitespace collapsed, for a tooltip. */
   full: string;
-  /** Whether the user typed a `user` row, or BB wrote it (a child thread finishing). */
+  /** Whether the user typed a `user` row, or VesnALIA wrote it (a child thread finishing). */
   by: "user" | "system";
   /** A reply's turn status, or "pending" on the user message whose turn is in progress; absent otherwise. */
   status?: TurnStatus;
@@ -173,7 +173,7 @@ export function oneLine(text: string, max = 240): string {
 
 /** A timeline row id's rank key: the data id a mounted row stands for, or null. */
 export function dataIdOf(domRowId: string): string {
-  // BB folds runs of work rows into `<thread>:<turn>:work-summary:<data id of a member>`.
+  // VesnALIA folds runs of work rows into `<thread>:<turn>:work-summary:<data id of a member>`.
   const at = domRowId.indexOf(":work-summary:");
   return at < 0 ? domRowId : domRowId.slice(at + ":work-summary:".length);
 }

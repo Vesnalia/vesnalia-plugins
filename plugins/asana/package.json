@@ -1,21 +1,17 @@
 {
-  "name": "bb-plugin-asana",
+  "name": "alia-plugin-asana",
   "version": "1.0.1",
-  "description": "Your Asana My Tasks inside bb: work tickets, start agent threads from them, and hand them back.",
+  "description": "Your Asana My Tasks inside VesnALIA: work tickets, start agent threads from them, and hand them back.",
   "license": "MIT",
   "author": "Jack Shedd",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/etchalon/bb-plugin-asana.git"
-  },
   "type": "module",
   "engines": {
-    "bb": ">=0.47",
-    "bbPluginSdk": ">=0.6.79"
+    "alia": ">=0.47",
+    "aliaPluginSdk": ">=0.6.79"
   },
-  "bb": {
+  "alia": {
     "name": "Asana",
-    "description": "Your Asana My Tasks in bb: read and work tickets, start threads from them, and hand them back when done.",
+    "description": "Your Asana My Tasks in VesnALIA: read and work tickets, start threads from them, and hand them back when done.",
     "branding": {
       "icon": "ListTodo"
     },
@@ -30,7 +26,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.79",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -60,6 +55,23 @@
   "scripts": {
     "test": "node --import tsx --test tests/*.test.ts",
     "typecheck": "tsc --noEmit -p .",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.79"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/asana#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/asana"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

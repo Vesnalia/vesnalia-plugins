@@ -1,5 +1,5 @@
 /**
- * One `bb.storage.kv` value per upstream (`cache/<source>`), holding that
+ * One `alia.storage.kv` value per upstream (`cache/<source>`), holding that
  * source's rows, when they were fetched, and its ETag.
  *
  * This is the plugin's own store rather than a setting because nobody edits it
@@ -27,7 +27,7 @@ export interface CacheEntry {
   etag: string | null;
 }
 
-/** The slice of `bb.storage.kv` the cache uses. */
+/** The slice of `alia.storage.kv` the cache uses. */
 export interface CacheStore {
   get(key: string): Promise<unknown>;
   set(key: string, value: unknown): Promise<void>;

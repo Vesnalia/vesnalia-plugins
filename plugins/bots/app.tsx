@@ -1,11 +1,11 @@
-// bb-plugin-bots — frontend entry.
+// alia-plugin-bots — frontend entry.
 //
 // A persistent left rail of bots (BotRail) beside a content pane. The chat
-// pane is BB's own ThreadChat component, so this plugin never reimplements a
+// pane is VesnALIA's own ThreadChat component, so this plugin never reimplements a
 // composer or a timeline.
 import { useEffect, useState, type ReactNode } from "react";
-import { definePluginApp, useBbNavigate } from "@get-bb/plugin-sdk/app";
-import type { PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
+import type { PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { parseRoute } from "@/bots";
 import { BotChatView } from "@/components/BotChatView";
@@ -50,7 +50,7 @@ function DocumentPane({
 function BotsPanel({ subPath }: PluginNavPanelProps) {
   const route = parseRoute(subPath);
   const rpc = useBotsRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const isCompact = useIsCompactViewport();
   const [isCreatingDraft, setIsCreatingDraft] = useState(false);
 

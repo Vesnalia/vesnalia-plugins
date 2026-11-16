@@ -143,31 +143,31 @@ export const secondLineSchema = z.object({
 export type SecondLine = z.infer<typeof secondLineSchema>;
 export type SecondLineKind = SecondLine["kind"];
 
-/** What bb knows about an issue that Linear cannot: whether a thread is
+/** What VesnALIA knows about an issue that Linear cannot: whether a thread is
  *  running on it, whether it has a branch, whether a pull request exists. */
-export const bbFactSchema = z.enum([
+export const aliaFactSchema = z.enum([
   "thread-running",
   "thread-idle",
   "pull-request",
   "branch",
   "none",
 ]);
-export type BbFact = z.infer<typeof bbFactSchema>;
+export type AliaFact = z.infer<typeof aliaFactSchema>;
 
 /**
  * The lead column, and the one place this panel refuses to copy Linear.
  *
  * In *All issues* the list is grouped by state, so every glyph inside the "In
  * Progress" group is identical — a column of identical marks is a column
- * nobody reads. There the lead carries the **bb-native** fact instead (a
+ * nobody reads. There the lead carries the **alia-native** fact instead (a
  * thread running, a branch, a pull request, nothing), which is the half of the
  * picture linear.app cannot draw, and the state moves to the group header
  * where it actually varies.
  *
- * In *Working set* the grouping is by bb fact, so the same argument runs the
+ * In *Working set* the grouping is by VesnALIA fact, so the same argument runs the
  * other way and the lead is the Linear state.
  */
-export const leadKindSchema = z.enum(["state", "bb-fact"]);
+export const leadKindSchema = z.enum(["state", "alia-fact"]);
 export type LeadKind = z.infer<typeof leadKindSchema>;
 
 export const priorityMarkSchema = z.enum(["urgent", "high"]).nullable();
@@ -181,7 +181,7 @@ export const issueRowViewSchema = z.object({
   tone: toneSchema,
   glyph: glyphSpecSchema,
   lead: leadKindSchema,
-  bbFact: bbFactSchema,
+  aliaFact: aliaFactSchema,
   assignee: assigneeViewSchema.nullable(),
   priority: z.number(),
   priorityLabel: z.string(),
@@ -270,7 +270,7 @@ export const panelQuerySchema = z.object({
    *
    * The panel is workspace-scoped because it cannot be otherwise:
    * `PluginNavPanelProps` is `{ subPath }` and nothing else, and
-   * `useBbContext().projectId` is null on a plugin panel route.
+   * `useAliaContext().projectId` is null on a plugin panel route.
    */
   team: z.string().nullable().default(null),
   grouping: groupingSchema.default("state"),
@@ -733,7 +733,7 @@ export const bindingOriginSchema = z.enum(["manual", "auto"]);
 export const projectBindingViewSchema = z.object({
   projectId: z.string(),
   projectName: z.string(),
-  /** bb's own project kind. The personal project is listed like any other and
+  /** VesnALIA's own project kind. The personal project is listed like any other and
    *  labelled — omitting it strands the solo developer who never created a
    *  project, whose every thread would be unbound. */
   isPersonal: z.boolean(),
@@ -1039,9 +1039,9 @@ export const rpcContract = defineRpcContract({
   },
 
   /**
-   * Start a bb thread from an issue.
+   * Start a VesnALIA thread from an issue.
    *
-   * Returns a sentence rather than a boolean, because "started, but bb named
+   * Returns a sentence rather than a boolean, because "started, but VesnALIA named
    * the branch" and "started" are different outcomes and the difference is
    * exactly what a user would otherwise discover an hour later.
    */
@@ -1137,7 +1137,7 @@ export const rpcContract = defineRpcContract({
    * Disconnect, and it means it: every mirror table and every kv row this
    * plugin owns.
    *
-   * `bb plugin remove` does **not** do this — the host deletes settings rows
+   * `alia plugin remove` does **not** do this — the host deletes settings rows
    * and the secrets directory, and its own comment states that kv rows and
    * `data.db` are plugin data that survive a remove/reinstall cycle. So this
    * is the only thing that removes a workspace's issue data from the machine.

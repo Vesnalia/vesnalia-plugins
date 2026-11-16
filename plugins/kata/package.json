@@ -1,24 +1,19 @@
 {
-  "name": "bb-plugin-kata",
+  "name": "alia-plugin-kata",
   "version": "0.1.1",
-  "description": "Keyboard-first viewer and editor for the local kata issue tracker inside bb, with a bb kata CLI and agent tools.",
+  "description": "Keyboard-first viewer and editor for the local kata issue tracker inside VesnALIA, with a VesnALIA kata CLI and agent tools.",
   "type": "module",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/zaymonoid/bb-kata-tracker.git"
-  },
-  "homepage": "https://github.com/zaymonoid/bb-kata-tracker#readme",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.104"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.104"
   },
   "scripts": {
     "test": "node --test lib/*.test.ts",
     "typecheck": "tsc",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
-  "bb": {
+  "alia": {
     "name": "Kata",
     "description": "Keyboard-first viewer for the local kata issue tracker: project tabs, list + detail, live updates from the kata daemon.",
     "branding": {
@@ -38,7 +33,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.104",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -63,5 +57,22 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/kata#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/kata"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

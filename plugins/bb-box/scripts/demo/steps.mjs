@@ -1,7 +1,7 @@
 const ask = "Get a Linux desktop box and open getbb.app on it.";
 
 export default {
-  url: process.env.DEMO_BB_URL ?? "http://localhost:4999/",
+  url: process.env.DEMO_ALIA_URL ?? "http://localhost:4999/",
   viewport: { width: 1280, height: 800 },
   scale: 2,
 
@@ -38,7 +38,7 @@ export default {
 
     await click(button("Machine status"));
     await pause(900);
-    await click(page.locator("[data-bb-box-monitor-header]").getByRole("button", { name: "Machine", exact: true }));
+    await click(page.locator("[data-alia-box-monitor-header]").getByRole("button", { name: "Machine", exact: true }));
     await pause(500);
     await click(page.getByRole("listbox", { name: "Machines" }).locator("[data-machine-index]").filter({ hasText: desktopBox }).first());
     mark("monitor");

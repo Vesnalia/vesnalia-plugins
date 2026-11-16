@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import {
   GROUP_METADATA_KEY,
@@ -54,7 +54,7 @@ export async function setup(opts: {
       },
     },
   });
-  Object.defineProperty(host.bb.storage, "kv", {
+  Object.defineProperty(host.alia.storage, "kv", {
     value: {
       get: async (key: string) => kv.get(key) ?? null,
       set: async (key: string, value: unknown) => {
@@ -63,7 +63,7 @@ export async function setup(opts: {
       },
     },
   });
-  await plugin(host.bb as never);
+  await plugin(host.alia as never);
   return {
     host,
     harness: host.harness,

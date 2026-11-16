@@ -1,6 +1,6 @@
 // Fleet state — the live view of what the user's agents are doing, maintained
 // server-side (so it works with zero windows open and feeds the CLI too).
-// Pure module: the store is plain data + reducers, unit-testable without bb.
+// Pure module: the store is plain data + reducers, unit-testable without VesnALIA.
 
 export type FleetStatus = "active" | "idle" | "failed";
 

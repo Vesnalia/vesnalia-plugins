@@ -1,7 +1,7 @@
 // Starred branches for this repository, kept by the server per host and
 // repository. Keys are `local:<name>` / `remote:<remote>/<branch>`.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../server";
 import { CHANGED_CHANNEL } from "../shared/constants";

@@ -1,6 +1,6 @@
 /** Time grouping + relative timestamps for the thread list. */
 
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 /**
  * True while a thread is live: executing, winding down, running background

@@ -1,14 +1,14 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Input } from "./core";
 
-export async function hasFileGateway(bb: BbPluginApi, signal?: AbortSignal) {
+export async function hasFileGateway(alia: AliaPluginApi, signal?: AbortSignal) {
   try {
-    const { plugins } = await bb.sdk.plugins.list({ signal });
+    const { plugins } = await alia.sdk.plugins.list({ signal });
     return plugins.some(plugin => plugin.id === "file-gateway" && plugin.enabled && plugin.status === "running");
   } catch { return false; }
 }
 
-// Preserve native references: BB, not MoA, resolves and checks the source.
+// Preserve native references: VesnALIA, not MoA, resolves and checks the source.
 // Do not forward other plugin mentions (especially MoA draft/profile markers).
 export function advisorInput(prompt: string, original: Input, gateway: boolean): Input {
   const result: Input = [{ type: "text", text: prompt, mentions: [] }];

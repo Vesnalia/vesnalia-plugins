@@ -15,11 +15,11 @@ sources:
 ---
 # Chat history export
 
-TL;DR: The plugin exports BB chat timelines as paginated JSON snapshots beneath the section’s `.bb/chats/<threadId>` directory; BB remains the canonical chat store (`server.ts:1903-1911`, `server.ts:1947-1962`).
+TL;DR: The plugin exports VesnALIA chat timelines as paginated JSON snapshots beneath the section’s `.vesnalia/chats/<threadId>` directory; VesnALIA remains the canonical chat store (`server.ts:1903-1911`, `server.ts:1947-1962`).
 
 ## Purpose
 
-Exports provide files for project workflows while BB retains canonical thread data (`server.ts:1947-1962`, `server.ts:2007-2017`).
+Exports provide files for project workflows while VesnALIA retains canonical thread data (`server.ts:1947-1962`, `server.ts:2007-2017`).
 
 ## How it works
 
@@ -54,14 +54,14 @@ Evidence: `server.ts:1930-1946`, `server.ts:2029-2043`, `server.ts:3632-3673`, `
 - Each snapshot uses `history/<snapshot>/page-00000.json` and a newest-first index (`server.ts:1975-1996`).
 - The new snapshot index is written after page traversal; an older snapshot is deleted only after the new index exists (`server.ts:1985-2006`).
 - Automatic requests for the same thread coalesce; one export runs at a time (`export-queue.ts:16-45`).
-- The exported timeline is a copy; export metadata and the generated README identify BB’s database as the canonical chat store (`server.ts:1947-1962`, `server.ts:2007-2009`).
+- The exported timeline is a copy; export metadata and the generated README identify VesnALIA’s database as the canonical chat store (`server.ts:1947-1962`, `server.ts:2007-2009`).
 
 ## Public API
 
 | RPC / command | Purpose | Evidence |
 |---|---|---|
 | `sync` | Manually export one thread’s history | `server.ts:584-587` |
-| `bb project-folders sync <thread-id>` | CLI form of manual export | `server.ts:3888-3891`, `server.ts:4094-4098` |
+| `alia project-folders sync <thread-id>` | CLI form of manual export | `server.ts:3888-3891`, `server.ts:4094-4098` |
 
 ## Gotchas
 

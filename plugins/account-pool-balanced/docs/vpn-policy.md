@@ -2,18 +2,18 @@
 
 The **Only VPN** switch applies to every account of the selected provider. Claude, Codex, Cursor and Devin default to VPN-only. Kimi, Z.ai and OpenCode Go are independent of this switch. Use-until-exhaustion never bypasses the network gate.
 
-Before each outbound request the pool checks a local status file on the **pool server**. Model requests, token refresh, browser/device login, quota polling, account profiles, reset-credit details and standalone Devin cloud requests use the same gate. Missing, stale, corrupt, untrusted or disconnected status produces a local refusal with `x-bb-pool-error: VPN_REQUIRED` on model routes. No provider request is attempted and the account is not marked invalid. Cached account information remains visible. Manual quota refresh reports the refusal, including the BB usage panel's Account Pooler source.
+Before each outbound request the pool checks a local status file on the **pool server**. Model requests, token refresh, browser/device login, quota polling, account profiles, reset-credit details and standalone Devin cloud requests use the same gate. Missing, stale, corrupt, untrusted or disconnected status produces a local refusal with `x-alia-pool-error: VPN_REQUIRED` on model routes. No provider request is attempted and the account is not marked invalid. Cached account information remains visible. Manual quota refresh reports the refusal, including the VesnALIA usage panel's Account Pooler source.
 
 The response depends on the entry point and protocol:
 
-- **BB-hosted Pooler:** ordinary model responses use HTTP `503` with `Retry-After: 10`. Cursor streaming retains the Connect HTTP `200` envelope and carries the local `503` in `x-bb-pool-http-status`.
+- **ALIA-hosted Pooler:** ordinary model responses use HTTP `503` with `Retry-After: 10`. Cursor streaming retains the Connect HTTP `200` envelope and carries the local `503` in `x-alia-pool-http-status`.
 - **Standalone HTTP server:** its initial VPN admission check returns HTTP `403` without `Retry-After`. If admission succeeds but a later check in the shared model hub refuses the request, the hub uses the response format described above. Standalone Devin cloud routes return HTTP `403` for VPN refusals.
 
 These are local network-policy refusals, not provider authentication failures. See [Pool errors and recovery](../../../docs/pool-errors.md) for the reason codes and retry behavior.
 
 ## Status writer
 
-Default path: `~/.local/state/vpnks/vpn-state.json` in the server user's home. Configure another absolute path with `bb pool config set vpnStatusFile /path/to/vpn-state.json`; `default` restores the default. The operator-controlled writer must confirm the outbound VPN route and live tunnel. The pool performs no external VPN probes.
+Default path: `~/.local/state/vpnks/vpn-state.json` in the server user's home. Configure another absolute path with `alia pool config set vpnStatusFile /path/to/vpn-state.json`; `default` restores the default. The operator-controlled writer must confirm the outbound VPN route and live tunnel. The pool performs no external VPN probes.
 
 The file must be a root-owned regular file, not a symlink, at most 4096 bytes, without group/world write permissions. Write it atomically every 10 seconds:
 
@@ -41,13 +41,13 @@ Only `connected` with a timestamp between now and 90 seconds ago and a coherent 
 ## Configuration
 
 ```sh
-bb pool config set vpnOnlyProviders codex,claude,cursor,devin
-bb pool status --json
+alia pool config set vpnOnlyProviders codex,claude,cursor,devin
+alia pool status --json
 ```
 
-The `vpn.state` and `vpn.blockedProviders` fields report the current local decision. A provider's switch in settings changes the same configuration. An explicit deployment opt-out is available with `bb pool config set vpnOnlyProviders none`. Standalone configurations accept the same `vpnOnlyProviders` and `vpnStatusFile` fields.
+The `vpn.state` and `vpn.blockedProviders` fields report the current local decision. A provider's switch in settings changes the same configuration. An explicit deployment opt-out is available with `alia pool config set vpnOnlyProviders none`. Standalone configurations accept the same `vpnOnlyProviders` and `vpnStatusFile` fields.
 
-This gate protects **the pool's traffic**. BB's built-in Codex/Claude usage sources and agents bypassing the pool are separate network clients. Their requests require their own admission checks or an enforced host firewall/VPN policy. A pool switch does not intercept another plugin's fetch or an agent's direct network activity. A heartbeat is not a packet-level firewall; keep the host VPN kill switch enabled to cover state-change races and already-running connections.
+This gate protects **the pool's traffic**. VesnALIA's built-in Codex/Claude usage sources and agents bypassing the pool are separate network clients. Their requests require their own admission checks or an enforced host firewall/VPN policy. A pool switch does not intercept another plugin's fetch or an agent's direct network activity. A heartbeat is not a packet-level firewall; keep the host VPN kill switch enabled to cover state-change races and already-running connections.
 
 ## Recovery
 
@@ -79,16 +79,16 @@ both attempts, provider, validated server host ID, current stage, per-stage
 milliseconds, outcome and deadline overrun. The overrun is a timing symptom,
 not proof of an event-loop stall. Normal first-attempt successes are not logged.
 Raw RPC errors, prompts, headers and credentials are never included. Use
-`bb plugin logs account-pool-balanced` to read these persistent BB logs;
+`alia plugin logs account-pool-balanced` to read these persistent VesnALIA logs;
 retention follows the server log rotation, independently of request observations.
 
-`bb pool guard-probe --provider cursor --json` reads the real Guard through the
+`alia pool guard-probe --provider cursor --json` reads the real Guard through the
 same server-host binding and retry path, without an upstream model request.
 To inject a delay into this probe only:
 
 ```sh
-bb pool guard-probe --provider cursor --delay-stage guard-rpc --delay-ms 4100 --json
-bb pool guard-probe --provider cursor --delay-stage guard-rpc --delay-ms 4100 --delay-attempts all --json
+alia pool guard-probe --provider cursor --delay-stage guard-rpc --delay-ms 4100 --json
+alia pool guard-probe --provider cursor --delay-stage guard-rpc --delay-ms 4100 --delay-attempts all --json
 ```
 
 Stages are `server-host`, `guard-rpc` and `server-host-recheck`. Delay is bounded

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { experimental_Icon as Icon, useBbContext, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaContext, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { ACCENT_TEXT, errorMessage } from "./model";
 
 /**
@@ -39,10 +39,10 @@ export const FORGE_NAME = { delta: "Delta", github: "GitHub" } as const;
 /** A list that has nothing to show, or nothing yet. */
 export const EMPTY_NOTE = `rounded-md border border-dashed border-foreground/15 px-3 py-2 text-center ${TYPE.meta} text-muted-foreground/90`;
 
-/** bb's composer and links: a new-thread draft in the open thread's project, and URLs (a new tab when bb can't). */
-export function useBbLinks() {
-  const navigate = useBbNavigate();
-  const context = useBbContext();
+/** VesnALIA's composer and links: a new-thread draft in the open thread's project, and URLs (a new tab when VesnALIA can't). */
+export function useAliaLinks() {
+  const navigate = useAliaNavigate();
+  const context = useAliaContext();
   return {
     compose(initialPrompt: string) {
       navigate?.toCompose?.({ ...(context?.projectId ? { projectId: context.projectId } : {}), initialPrompt, focusPrompt: true });

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { toast } from "sonner";
-import { useBbNavigate, useSdk, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useSdk, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import {
   archiveMany,
   copyBranch,
@@ -42,7 +42,7 @@ export function RowContextMenu({
   thread: PluginSidebarThread;
   onRename?: () => void;
   onOpen?: () => void;
-  /** Archive this row; the row owns bb's archive action so both entry points share it. */
+  /** Archive this row; the row owns VesnALIA's archive action so both entry points share it. */
   onArchive: () => void;
   onToggleChildren?: () => void;
   expanded?: boolean;
@@ -58,8 +58,8 @@ export function RowContextMenu({
 }) {
   const actions = useThreadMutations();
   const sdk = useSdk() as never;
-  const navigate = useBbNavigate();
-  // Delete is bb's own thread action, so its confirmation and child count stay
+  const navigate = useAliaNavigate();
+  // Delete is VesnALIA's own thread action, so its confirmation and child count stay
   // the host's.
   const remove = useCoreThreadAction(thread, "delete");
 
@@ -124,8 +124,8 @@ export function RowContextMenu({
       },
     });
   }
-  // Deleting without bb's confirmation is never an option, so the entry only
-  // exists while bb contributes the action that owns it.
+  // Deleting without VesnALIA's confirmation is never an option, so the entry only
+  // exists while VesnALIA contributes the action that owns it.
   if (remove !== null) {
     items.push({ label: "Delete", run: () => void remove.run(), destructive: true });
   }

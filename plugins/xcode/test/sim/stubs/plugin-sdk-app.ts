@@ -1,8 +1,8 @@
 /**
- * Runtime stand-in for `@bb/plugin-sdk/app`, so components can be rendered in
- * jsdom without a bb app shell.
+ * Runtime stand-in for `@vesnalia/plugin-sdk/app`, so components can be rendered in
+ * jsdom without a VesnALIA app shell.
  *
- * bb's own `@bb/plugin-sdk/testing/app` harness is the official version of
+ * VesnALIA's own `@vesnalia/plugin-sdk/testing/app` harness is the official version of
  * this, but it is not published to npm — this repo ships publicly and a
  * stranger running `npm ci && npm test` has to get a green suite. So the hooks
  * the plugin uses are reimplemented here with the semantics the host documents,
@@ -105,11 +105,11 @@ export function useSettings(): { values: Record<string, unknown>; isLoading: boo
   return { values: runtime.settings, isLoading: false };
 }
 
-export function useBbContext(): { projectId: string | null; threadId: string | null } {
+export function useAliaContext(): { projectId: string | null; threadId: string | null } {
   return runtime.context;
 }
 
-export function useBbNavigate(): {
+export function useAliaNavigate(): {
   toThread: (id: string) => void;
   toProject: (id: string) => void;
   toPluginPanel: (path: string, options?: { subPath?: string; replace?: boolean }) => void;

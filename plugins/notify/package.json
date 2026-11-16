@@ -1,21 +1,12 @@
 {
-  "name": "@smsunarto/bb-plugin-notify",
+  "name": "@smsunarto/alia-plugin-notify",
   "version": "0.2.2",
-  "description": "Native macOS notifications when a BB thread finishes or fails, plus a notify_user agent tool and a `bb notify` command.",
+  "description": "Native macOS notifications when a VesnALIA thread finishes or fails, plus a notify_user agent tool and a `alia notify` command.",
   "license": "MIT",
   "author": "Scott Sunarto",
-  "homepage": "https://github.com/smsunarto/bb-plugins/tree/main/plugins/notify",
-  "bugs": {
-    "url": "https://github.com/smsunarto/bb-plugins/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/smsunarto/bb-plugins.git",
-    "directory": "plugins/notify"
-  },
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "notifications",
     "desktop-notifications",
     "macos"
@@ -25,12 +16,12 @@
     "access": "public"
   },
   "engines": {
-    "bb": ">=0.39.0 <1.0.0",
-    "bbPluginSdk": ">=0.4.8"
+    "alia": ">=0.39.0 <1.0.0",
+    "aliaPluginSdk": ">=0.4.8"
   },
-  "bb": {
+  "alia": {
     "name": "Notify",
-    "description": "Native macOS notifications when a BB thread finishes or fails, plus a notify_user agent tool and a `bb notify` command.",
+    "description": "Native macOS notifications when a VesnALIA thread finishes or fails, plus a notify_user agent tool and a `alia notify` command.",
     "branding": {
       "icon": "./assets/icon.svg",
       "logo": {
@@ -63,7 +54,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.8",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -73,9 +63,26 @@
   },
   "scripts": {
     "dev": "bun ../../scripts/dev-plugin.ts",
-    "build": "bb plugin build .",
+    "build": "alia plugin build .",
     "typecheck": "tsc --noEmit",
     "test": "node --test --experimental-strip-types test/*.test.ts",
     "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.8"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/notify#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/notify"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

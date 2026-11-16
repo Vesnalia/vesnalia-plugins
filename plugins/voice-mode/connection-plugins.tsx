@@ -1,8 +1,8 @@
-// Connection plugins panel, rendered by bb below this plugin's settings form
+// Connection plugins panel, rendered by VesnALIA below this plugin's settings form
 // (app.slots.settingsSection). The host draws the heading and subheading from
 // the registration; everything below is ours. Content mirrors the README's
 // "Connection plugins" section — keep the two in step.
-import type { PluginSettingsSectionProps } from "@get-bb/plugin-sdk/app";
+import type { PluginSettingsSectionProps } from "@vesnalia/plugin-sdk/app";
 
 interface ConnectionPlugin {
   readonly name: string;
@@ -21,10 +21,10 @@ const PLUGINS: readonly ConnectionPlugin[] = [
   {
     name: "Realtime Gateway",
     summary:
-      "Runs sessions through a Vercel AI Gateway key, so voice bills to one gateway account and the bb host never needs an OpenAI key.",
+      "Runs sessions through a Vercel AI Gateway key, so voice bills to one gateway account and the VesnALIA host never needs an OpenAI key.",
     commands: [
-      "bb plugin install 'git:github.com/steveafrost/bb-plugin-realtime-gateway@^0.1.1'",
-      "bb realtime-gateway test",
+      "alia plugin install 'git:github.com/steveafrost/bb-plugin-realtime-gateway@^0.1.1'",
+      "alia realtime-gateway test",
     ],
     commandsNote: "The test command mints a secret and opens one real session, which checks the handshake.",
     docsUrl: "https://github.com/steveafrost/bb-plugin-realtime-gateway",
@@ -36,7 +36,7 @@ const PLUGINS: readonly ConnectionPlugin[] = [
     summary:
       "Hands Voice Mode the ChatGPT token that codex login already stores on disk. This is the subscription path.",
     commands: [
-      "bb plugin install 'git:github.com/gpambrozio/bb-plugins@>=0.1.0' --plugin codex-realtime --tag-prefix codex-realtime/",
+      "alia plugin install 'git:github.com/gpambrozio/bb-plugins@>=0.1.0' --plugin codex-realtime --tag-prefix codex-realtime/",
     ],
     docsUrl: "https://github.com/gpambrozio/bb-plugins/tree/main/codex-realtime",
     docsLabel: "github.com/gpambrozio/bb-plugins/tree/main/codex-realtime",

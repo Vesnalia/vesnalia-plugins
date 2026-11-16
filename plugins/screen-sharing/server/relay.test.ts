@@ -5,7 +5,7 @@
  * open — no TCP connection, no session.
  */
 import { connect, type Socket } from "node:net";
-import type { ExperimentalPluginWebSocket, ExperimentalPluginWebSocketHandlers } from "@get-bb/plugin-sdk";
+import type { ExperimentalPluginWebSocket, ExperimentalPluginWebSocketHandlers } from "@vesnalia/plugin-sdk";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { CloseCode, FLOW_VERSION, PING_FRAME, PONG_FRAME } from "../shared/channels";
@@ -26,7 +26,7 @@ class FakeWebSocket implements ExperimentalPluginWebSocket {
     else this.sent.push(data);
   }
   close(code?: number, reason?: string): void {
-    // As bb's `ws` does: a reason over 123 bytes of UTF-8 is refused and nothing is closed.
+    // As VesnALIA's `ws` does: a reason over 123 bytes of UTF-8 is refused and nothing is closed.
     if (reason !== undefined && Buffer.byteLength(reason) > 123) throw new SyntaxError("The message must not be greater than 123 bytes");
     this.closes.push({ code, reason });
     this.readyState = 3;
@@ -157,7 +157,7 @@ describe("the relay", () => {
     const { ws } = open(ticket());
     await until(() => vnc.sockets.length === 1, "the connection");
     expect(registry.closeAll()).toBe(1);
-    expect(ws.closes).toEqual([{ code: CloseCode.closedByUser, reason: "closed from bb" }]);
+    expect(ws.closes).toEqual([{ code: CloseCode.closedByUser, reason: "closed from VesnALIA" }]);
     await until(() => vnc.closed === 1, "the TCP close");
   });
 
@@ -204,7 +204,7 @@ describe("the relay", () => {
   it("turns away a page from before liveness (0.2.0's flow=ack), which would never ping, leaving its ticket unused", async () => {
     const minted = registry.mint({ hostId: "mini", hostName: "MacMini", route: "loopback" }).token;
     const { ws } = open(`host=mini&flow=ack&token=${minted}`);
-    expect(ws.closes).toEqual([{ code: CloseCode.policy, reason: "this page is out of date; reload bb and connect again" }]);
+    expect(ws.closes).toEqual([{ code: CloseCode.policy, reason: "this page is out of date; reload VesnALIA and connect again" }]);
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(vnc.sockets).toHaveLength(0);
     // The ticket was not used up: the same page, reloaded, may still redeem it.
@@ -216,7 +216,7 @@ describe("the relay", () => {
   it("turns away a page from before flow control, leaving its ticket unused", async () => {
     const minted = registry.mint({ hostId: "mini", hostName: "MacMini", route: "loopback" }).token;
     const { ws } = open(`host=mini&token=${minted}`);
-    expect(ws.closes).toEqual([{ code: CloseCode.policy, reason: "this page is out of date; reload bb and connect again" }]);
+    expect(ws.closes).toEqual([{ code: CloseCode.policy, reason: "this page is out of date; reload VesnALIA and connect again" }]);
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(vnc.sockets).toHaveLength(0);
   });

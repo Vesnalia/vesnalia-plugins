@@ -25,14 +25,14 @@ code are original.
 From the marketplace:
 
 ```sh
-bb marketplace add git:github.com/charpeni/bb-plugins@main
-bb plugin install gone-fishing@charpeni
+alia marketplace add git:github.com/charpeni/bb-plugins@main
+alia plugin install gone-fishing@charpeni
 ```
 
 Or directly from this repository:
 
 ```sh
-bb plugin install git:https://github.com/charpeni/bb-plugins.git@^1.0.0 --tag-prefix gone-fishing/ --plugin gone-fishing
+alia plugin install git:https://github.com/charpeni/bb-plugins.git@^1.0.0 --tag-prefix gone-fishing/ --plugin gone-fishing
 ```
 
 ## How to play
@@ -103,16 +103,16 @@ Hide the pond with its chevron button to keep only a one-line status and a dry
 chat input. That preference is stored in the browser. On compact layouts, the
 pond always shows as the one-line status.
 
-bb has no plugin API for placing UI next to the chat input or for painting it.
-Plugin banners render at the top of bb's card stack, above queued messages and
-changed files. So the pond and the flood find the chat input through bb's
+VesnALIA has no plugin API for placing UI next to the chat input or for painting it.
+Plugin banners render at the top of VesnALIA's card stack, above queued messages and
+changed files. So the pond and the flood find the chat input through VesnALIA's
 markup (`[data-app-composer]`, `[data-follow-up-composer-anchor]`, and
-`form[data-promptbox]`). If a bb update changes that markup, the pond falls back
-to bb's banner position and the chat input stays dry.
+`form[data-promptbox]`). If a VesnALIA update changes that markup, the pond falls back
+to VesnALIA's banner position and the chat input stays dry.
 
 ## Data
 
-Catches are saved on the bb server in the plugin's own SQLite database: the
+Catches are saved on the VesnALIA server in the plugin's own SQLite database: the
 species, length, size tier, map, whether you or auto-fishing landed it, the
 thread ID, and the time. Your look is saved in the plugin's key-value storage on the same server, so it
 follows you between the desktop app and the browser. The server checks unlocks

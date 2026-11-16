@@ -23,7 +23,7 @@ const IMAGE_EXTENSIONS = new Set([
   "webp",
 ]);
 
-/** Extensions BB's read returns as base64 that a browser can still render. */
+/** Extensions VesnALIA's read returns as base64 that a browser can still render. */
 export function isImagePath(path: string): boolean {
   return IMAGE_EXTENSIONS.has(extensionOf(path));
 }
@@ -70,7 +70,7 @@ const BINARY_EXTENSIONS = new Set([
 /**
  * A cheap pre-filter so an obviously binary file never round-trips its bytes
  * through RPC. Anything not listed is still read and re-checked against the
- * encoding BB reports, which is the authoritative answer.
+ * encoding VesnALIA reports, which is the authoritative answer.
  */
 export function isProbablyBinaryPath(path: string): boolean {
   const extension = extensionOf(path);

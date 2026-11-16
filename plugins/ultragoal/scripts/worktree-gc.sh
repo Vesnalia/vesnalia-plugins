@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Reclaim managed bb worktrees whose work is finished.
+# Reclaim managed alia worktrees whose work is finished.
 #
 # One agent = one slice means one worktree per slice, and nothing ever removed
 # them: 201 worktrees and 9.9 GB accumulated for a goal with 177 completed
@@ -19,13 +19,13 @@
 #   scripts/worktree-gc.sh --apply --force   also remove dirty/unmerged
 set -euo pipefail
 
-BB_HOME=${BB_HOME:-$HOME/.bb}
-WORKTREES="$BB_HOME/worktrees"
-BB_DB="$BB_HOME/bb.db"
+ALIA_HOME=${ALIA_HOME:-$HOME/.alia}
+WORKTREES="$ALIA_HOME/worktrees"
+ALIA_DB="$ALIA_HOME/alia.db"
 APPLY=0
 FORCE=0
 # GC_ARGS lets a scheduled runner pass flags where it can only set environment
-# variables, which is how bb automations invoke a stored script.
+# variables, which is how alia automations invoke a stored script.
 for arg in ${GC_ARGS:-} "$@"; do
   case "$arg" in
     --apply) APPLY=1 ;;
@@ -35,7 +35,7 @@ for arg in ${GC_ARGS:-} "$@"; do
 done
 
 [ -d "$WORKTREES" ] || { echo "worktree-gc: no worktree directory at $WORKTREES"; exit 0; }
-[ -f "$BB_DB" ] || { echo "worktree-gc: no bb database at $BB_DB" >&2; exit 1; }
+[ -f "$ALIA_DB" ] || { echo "worktree-gc: no alia database at $ALIA_DB" >&2; exit 1; }
 
 # Read the live databases read-only. WAL handles a concurrent reader, and the
 # obvious alternative — .backup to a temp file — copies 1.8 GB per run and then
@@ -49,7 +49,7 @@ done
 # directories did not, and an errored thread with no environment cannot take a
 # turn to explain itself. A thread that still exists is still using its
 # worktree. Archive or delete the thread first, then collect the directory.
-busy_envs=$(sqlite3 -readonly "$BB_DB" "
+busy_envs=$(sqlite3 -readonly "$ALIA_DB" "
   select distinct environment_id from threads
    where environment_id is not null
      and deleted_at is null
@@ -69,7 +69,7 @@ $1
 # Only agents that actually hold a slice count: an intake agent or a discovered
 # child has no item, and treating "no item" as "unfinished" protected 202 of
 # 216 worktrees — including every orphan this exists to collect.
-UG_DB=${UG_DB:-$BB_HOME/plugins/ultragoal/data.db}
+UG_DB=${UG_DB:-$ALIA_HOME/plugins/ultragoal/data.db}
 open_envs=""
 if [ -f "$UG_DB" ]; then
   # Two queries joined in the shell rather than one with ATTACH: a read-only
@@ -82,7 +82,7 @@ if [ -f "$UG_DB" ]; then
      where a.item_id is not null
        and (i.status is null or i.status <> 'completed')" 2>/dev/null || true)
   if [ -n "$open_threads" ]; then
-    thread_envs=$(sqlite3 -readonly "$BB_DB" "
+    thread_envs=$(sqlite3 -readonly "$ALIA_DB" "
       select id || ' ' || environment_id from threads
        where environment_id is not null and deleted_at is null" 2>/dev/null || true)
     open_envs=$(awk 'NR==FNR { open[$1]=1; next } ($1 in open) { print $2 }' \

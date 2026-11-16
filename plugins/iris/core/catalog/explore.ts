@@ -9,7 +9,7 @@ export const DATA_EXPLORE = [
     summary:
       "An explorer for large results (CSV, JSON, SQL; 10,000+ rows scroll smoothly): sort, filter per column, search, group with counts and sums, a quick pivot, column stats, copy as CSV. Use Table for small, styled lists.",
     props: {
-      rows: p.any("A list of objects, a list of lists (first row is the header), SQL output {columns, rows}, or CSV text; usually load(\"$BB_THREAD_STORAGE/q.csv\")", { required: true }),
+      rows: p.any("A list of objects, a list of lists (first row is the header), SQL output {columns, rows}, or CSV text; usually load(\"$ALIA_THREAD_STORAGE/q.csv\")", { required: true }),
       columns: p.list("Which columns and how; default: every key", "(string | {key, label?, format?, align?, width?, tone?: (value, row) => tone, render?: (value, row) => element})[]"),
       sort: p.str("Initial sort: a column key, prefix with - for descending, e.g. \"-ms\""),
       filters: p.obj("Initial column filters: {ms: \">100\", team: \"core\"}. Numbers and dates take > < = != and a..b; text matches anywhere, =x exactly, !x excludes", "{[column]: string}"),
@@ -97,7 +97,7 @@ export const LIVE_CARDS = [
     summary:
       "Tails a log file a running job keeps writing: ANSI colors, error lines marked, scrolls with new output and pauses when you scroll up. Re-reads every 2 s while on screen; start the job writing to a file, then show it.",
     props: {
-      file: p.str("The log: run cmd > $BB_THREAD_STORAGE/job.log 2>&1 and point here", { required: true }),
+      file: p.str("The log: run cmd > $ALIA_THREAD_STORAGE/job.log 2>&1 and point here", { required: true }),
       command: p.str("The command that writes it"),
       title: p.str("Caption, instead of the command"),
       tail: p.num("Most lines kept on screen", { def: 1000 }),
@@ -105,7 +105,7 @@ export const LIVE_CARDS = [
       wrap: p.bool("Wrap long lines instead of scrolling sideways"),
     },
     children: "none",
-    example: `<Card title="Release build" icon="hammer" state="live" status="Running">\n  <LiveLog file="$BB_THREAD_STORAGE/build.log" command="npm run build" />\n</Card>`,
+    example: `<Card title="Release build" icon="hammer" state="live" status="Running">\n  <LiveLog file="$ALIA_THREAD_STORAGE/build.log" command="npm run build" />\n</Card>`,
     aliases: ["TailLog", "LogTail", "LiveOutput", "Tail"],
   }),
   component({
@@ -114,14 +114,14 @@ export const LIVE_CARDS = [
     summary:
       "Progress of a running job read from a JSON file it rewrites: {done, total, label?, eta?} or {tasks: [...]}. Shows the bar, the rate and the time left (computed when eta is missing), and flags a stall.",
     props: {
-      file: p.str("The JSON file, e.g. $BB_THREAD_STORAGE/progress.json; or pass value"),
+      file: p.str("The JSON file, e.g. $ALIA_THREAD_STORAGE/progress.json; or pass value"),
       value: p.any("The progress itself, instead of a file; a load() here refreshes only inside <Card state=\"live\">", { shape: "{done, total, label?, eta?: seconds | ISO time, unit?}" }),
       label: p.str("What is progressing, if the file has no label"),
       unit: p.str("What is counted, e.g. \"tests\""),
       stallAfter: p.num("Seconds without progress before it says stalled", { def: 90 }),
     },
     children: "none",
-    example: `<Card title="Migrating photos" icon="images" state="live">\n  <LiveProgress file="$BB_THREAD_STORAGE/progress.json" unit="photos" />\n</Card>`,
+    example: `<Card title="Migrating photos" icon="images" state="live">\n  <LiveProgress file="$ALIA_THREAD_STORAGE/progress.json" unit="photos" />\n</Card>`,
     aliases: ["JobProgress", "LiveBar"],
   }),
 ];

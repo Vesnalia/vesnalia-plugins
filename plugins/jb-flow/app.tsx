@@ -11,8 +11,8 @@ import { mountTimelineActivity } from "./timeline-activity";
 import { COPY_CODE_FLAG, mountInlineCodeCopy } from "./inline-code-copy";
 import { mountCallouts } from "./callouts";
 import { useEffect, useRef, useState } from "react";
-import { definePluginApp, experimental_useSidebarThreads as useSidebarThreads, useRpc, experimental_useSidebarThreadPullRequest as useSidebarThreadPullRequest, useBbContext, useComposer, useSidebarSplitLayout, useSettings } from "@get-bb/plugin-sdk/app";
-import type { JsonValue } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, experimental_useSidebarThreads as useSidebarThreads, useRpc, experimental_useSidebarThreadPullRequest as useSidebarThreadPullRequest, useAliaContext, useComposer, useSidebarSplitLayout, useSettings } from "@vesnalia/plugin-sdk/app";
+import type { JsonValue } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { RepoCommandsPanel, RepoCommandsSettings } from "./repo-panel";
 import { DecisionChips, UnreleasedSection, YourMoveSection, HeaderStatusStrip, PullRequestsPanel } from "./ui-extras";
@@ -148,7 +148,7 @@ function SnoozeHeaderAction({ threadId }: { threadId: string }) {
 }
 
 // --- focus reporter ------------------------------------------------------------------
-// Tells the server which thread this window has focused, so `bb jb-flow focused`
+// Tells the server which thread this window has focused, so `alia jb-flow focused`
 // (used by the Stream Deck) can target it. Split layouts report the focused pane.
 
 /** RPC client for command-palette handlers, which run outside React. */
@@ -162,7 +162,7 @@ const SNOOZE_EVENT = "jb-flow:snooze";
 function FocusReporter() {
   const rpc = useRpc<typeof rpcContract>();
   commandRpc = rpc;
-  const { threadId: routeThreadId } = useBbContext();
+  const { threadId: routeThreadId } = useAliaContext();
   const split = useSidebarSplitLayout();
   const threadId = split?.panes.find((pane) => pane.isFocused)?.threadId ?? routeThreadId;
   const [clientId] = useState(() => {
@@ -204,7 +204,7 @@ function FocusReporter() {
     window.addEventListener("focus", send);
     window.addEventListener("blur", send);
     document.addEventListener("visibilitychange", send);
-    // Keep reporting while BB is in the background too: deck keys are pressed
+    // Keep reporting while VesnALIA is in the background too: deck keys are pressed
     // while other apps have focus.
     const heartbeat = window.setInterval(() => {
       if (document.visibilityState === "visible") send();

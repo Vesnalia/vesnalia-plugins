@@ -1,6 +1,6 @@
 # Burn in pi
 
-The pi extension puts a cost pill in pi's status line and a `/burn` overlay behind it. It works on its own in a terminal, and inside a bb thread.
+The pi extension puts a cost pill in pi's status line and a `/burn` overlay behind it. It works on its own in a terminal, and inside a VesnALIA thread.
 
 ![pi's footer with the Burn pill: $4.70 spent, and $0.85 added by the last prompt](../assets/screenshots/pi-pill.png)
 
@@ -49,7 +49,7 @@ The settings are stored in `burn.json` in pi's agent directory.
 | Stop a run at the budget | off | Aborts the pi run whose cost crosses the budget. A thread already over its budget is not stopped again, so sending another prompt continues. |
 | Nudge after an expensive prompt | off | Notifies after a prompt that costs at least 3 times the thread's median prompt and at least $0.50. |
 
-In a bb thread, pi follows bb's budget settings, and a thread budget set in bb takes precedence over one set with `/burn budget`. See [how it works](how-it-works.md#the-pi-extension-in-a-bb-thread).
+In a VesnALIA thread, pi follows VesnALIA's budget settings, and a thread budget set in VesnALIA takes precedence over one set with `/burn budget`. See [how it works](how-it-works.md#the-pi-extension-in-a-alia-thread).
 
 ## What the totals cover
 

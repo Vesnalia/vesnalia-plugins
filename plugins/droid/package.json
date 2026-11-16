@@ -1,31 +1,23 @@
 {
-  "name": "bb-plugin-droid",
+  "name": "alia-plugin-droid",
   "version": "0.4.0",
-  "description": "Adds Factory Droid to bb as an ACP coding-agent provider.",
+  "description": "Adds Factory Droid to VesnALIA as an ACP coding-agent provider.",
   "license": "MIT",
   "type": "module",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "acp",
     "coding-agent",
     "droid"
   ],
-  "homepage": "https://github.com/ai-ecoverse/bb-droid#readme",
-  "bugs": {
-    "url": "https://github.com/ai-ecoverse/bb-droid/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ai-ecoverse/bb-droid.git"
-  },
   "engines": {
-    "bb": ">=0.48.1",
-    "bbPluginSdk": ">=0.6.104"
+    "alia": ">=0.48.1",
+    "aliaPluginSdk": ">=0.6.104"
   },
-  "bb": {
+  "alia": {
     "name": "Factory Droid",
-    "description": "Adds Factory Droid to bb as an ACP coding-agent provider.",
+    "description": "Adds Factory Droid to VesnALIA as an ACP coding-agent provider.",
     "branding": {
       "icon": "./assets/logo.svg"
     },
@@ -35,7 +27,7 @@
     "skills": []
   },
   "scripts": {
-    "build": "bb plugin build .",
+    "build": "alia plugin build .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -43,7 +35,6 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -68,5 +59,22 @@
     "typescript": "^7.0.2",
     "vaul": "^1.1.2",
     "vitest": "5.1.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/droid#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/droid"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

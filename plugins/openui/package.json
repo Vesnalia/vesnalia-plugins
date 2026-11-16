@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-openui",
+  "name": "alia-plugin-openui",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "OpenUI Live Replies",
     "description": "Turns agent replies into dashboards, reports, plans and forms you can read at a glance and click, right in the chat.",
     "branding": {
@@ -24,7 +24,6 @@
     "zustand": "^4.5.7"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@pierre/diffs": "~1.2.12",
     "@radix-ui/react-alert-dialog": "^1.2.1",
     "@radix-ui/react-context-menu": "^2.4.1",
@@ -51,12 +50,29 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2"
   },
-  "description": "BB plugin: agents add OpenUI (openui.com) generative UI to their replies, rendered inline in chat.",
+  "description": "VesnALIA plugin: agents add OpenUI (openui.com) generative UI to their replies, rendered inline in chat.",
   "scripts": {
     "generate": "npx --yes tsx scripts/generate.ts",
     "typecheck": "tsc --noEmit",
     "test": "npx --yes tsx --test \"*.test.ts\" \"server/**/*.test.ts\" \"ui/**/*.test.ts\"",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/openui#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/openui"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

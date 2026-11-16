@@ -1,12 +1,12 @@
-// Headless click-through of milestone 5 against a running bb: the read-only
-// `bb vcs-widget` command against the scratch repository, the two settings
+// Headless click-through of milestone 5 against a running VesnALIA: the read-only
+// `alia vcs-widget` command against the scratch repository, the two settings
 // sections on the plugin's own page (including clearing a favourite the popup
 // starred), and a phone-width pass over the button, the popup and the panels.
 //
 //   node scripts/live-check.mjs setup /tmp/vcs-scratch          # once
 //   VCS_E2E_THREAD=thr_x VCS_E2E_PROJECT=proj_x node scripts/live-check-m5.mjs /tmp/vcs-scratch
 //
-// The CLI half needs `bb` on PATH and the thread from VCS_E2E_THREAD; the rest
+// The CLI half needs `VesnALIA` on PATH and the thread from VCS_E2E_THREAD; the rest
 // needs system Chromium and puppeteer-core in node_modules. See docs/VERIFY.md.
 import { GIT_ID, browserHelpers, recorder, sh, sleep } from "./live-lib.mjs";
 
@@ -20,9 +20,9 @@ const { step, summary } = recorder();
 const TS = Date.now().toString(36);
 const SIDE = `m5-${TS}`;
 const SUBJECT = `Settings check ${TS}`;
-const BASE = process.env.BB_SERVER_URL ?? "http://127.0.0.1:38886";
+const BASE = process.env.ALIA_SERVER_URL ?? "http://127.0.0.1:38886";
 const SETTINGS = `${BASE}/settings/plugins/vcs-widget`;
-const cli = (args) => sh(`bb vcs-widget ${args} --thread ${H.THREAD}`);
+const cli = (args) => sh(`alia vcs-widget ${args} --thread ${H.THREAD}`);
 
 // A known state: main at origin plus one side branch with one commit.
 sh(`git -C ${REPO} switch -q main`);
@@ -77,9 +77,9 @@ try {
     json.slice(0, 120),
   );
 
-  const unknown = sh(`bb vcs-widget checkout main --thread ${H.THREAD} 2>&1; echo "exit=$?"`);
-  const badBranch = sh(`bb vcs-widget log --branch "bad name" --thread ${H.THREAD} 2>&1; echo "exit=$?"`);
-  const noRepo = sh(`bb vcs-widget status --thread thr_definitelynotathread 2>&1; echo "exit=$?"`);
+  const unknown = sh(`alia vcs-widget checkout main --thread ${H.THREAD} 2>&1; echo "exit=$?"`);
+  const badBranch = sh(`alia vcs-widget log --branch "bad name" --thread ${H.THREAD} 2>&1; echo "exit=$?"`);
+  const noRepo = sh(`alia vcs-widget status --thread thr_definitelynotathread 2>&1; echo "exit=$?"`);
   step(
     "M5-7 there is no mutating command; usage errors exit 2 and a missing repository exits 1",
     /Unknown command "checkout"/.test(unknown) && unknown.includes("exit=2") && badBranch.includes("exit=2") && noRepo.includes("exit=1"),
@@ -104,13 +104,13 @@ try {
   const settings = await settingsText();
   await H.shot(page, "m5-settings");
   step(
-    "M5-8 the settings page carries bb's form and both plugin sections",
+    "M5-8 the settings page carries VesnALIA's form and both plugin sections",
     /Update Project strategy/.test(settings) && /Agent access/.test(settings) && /Favourite branches/.test(settings),
     settings.slice(0, 200),
   );
   step(
     "M5-9 the agent access section names the read-only surfaces",
-    /bb vcs-widget status/.test(settings) && /vcs_widget_status/.test(settings) && /Both only read/.test(settings),
+    /alia vcs-widget status/.test(settings) && /vcs_widget_status/.test(settings) && /Both only read/.test(settings),
     "",
   );
 

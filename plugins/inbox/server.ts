@@ -1,12 +1,12 @@
-// bb-plugin-inbox — backend entry.
+// alia-plugin-inbox — backend entry.
 //
 // A "Needs You" inbox: ranks threads that are blocked on you / failed / finished,
 // and pushes instant notifications to desktop (native macOS) and mobile
 // (Telegram) — quiet during long runs, loud only when you're actually needed.
 //
-// Detection/ranking borrows bb-plugin-attention; dedupe + deeplink borrow
-// bb-plugin-ntfy. Both MIT, by Shane Logsdon.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+// Detection/ranking borrows alia-plugin-attention; dedupe + deeplink borrow
+// alia-plugin-ntfy. Both MIT, by Shane Logsdon.
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { createSetup, setupRpc } from "./setup";
 import {
@@ -95,8 +95,8 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     notifyBlocked: {
       type: "boolean",
       label: "Notify when an agent is blocked on you",
@@ -122,7 +122,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     toastEnabled: {
       type: "boolean",
-      label: "In-app toast (bottom-right popup inside bb)",
+      label: "In-app toast (bottom-right popup inside VesnALIA)",
       default: true,
     },
     telegramInstant: {
@@ -160,8 +160,8 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const setup = createSetup(bb, settings);
-  const activities = createActivities(bb, notifyActivity);
+  const setup = createSetup(alia, settings);
+  const activities = createActivities(alia, notifyActivity);
 
   // ----- config helpers -------------------------------------------------
 
@@ -179,22 +179,22 @@ export default async function plugin(bb: BbPluginApi) {
   async function notifyActivity(item: ActivityItem, currentItem: () => boolean): Promise<void> {
     const cfg = await settings.get();
     if (!currentItem() || !cfg.notifyExtensions || (item.kind === "error" && !cfg.notifyFailed) || quietNow(cfg)) return;
-    if (cfg.toastEnabled) bb.realtime.publish("inbox:toast", { ...item, at: Date.now() });
+    if (cfg.toastEnabled) alia.realtime.publish("inbox:toast", { ...item, at: Date.now() });
     if (cfg.desktopEnabled && desktopAvailable()) {
-      await sendDesktop(`bb: ${truncate(item.title, 90)}`, truncate(item.detail, 200), item.label);
+      await sendDesktop(`alia: ${truncate(item.title, 90)}`, truncate(item.detail, 200), item.label);
     }
     await setup.telegram.withConnection(async current => {
       if (!currentItem() || !current.notifyExtensions || !current.telegramInstant || (item.kind === "error" && !current.notifyFailed) || quietNow(current)) return;
-      const base = await resolveDeeplinkBaseUrl(bb.server.loopbackBaseUrl);
+      const base = await resolveDeeplinkBaseUrl(alia.server.loopbackBaseUrl);
       if (!currentItem()) return;
       const result = await sendTelegram({ botToken: current.telegramBotToken, chatId: current.telegramChatId },
         `<b>${escapeHtml(item.label)}</b>\n${escapeHtml(item.title)}\n${escapeHtml(item.detail)}`, `${base}${item.href}`);
-      if (!result.ok) bb.log.warn("Extension Telegram delivery failed; the item remains in Needs You.");
+      if (!result.ok) alia.log.warn("Extension Telegram delivery failed; the item remains in Needs You.");
     });
   }
 
   async function inboxSnapshot(options: Parameters<typeof buildSnapshot>[1] = {}) {
-    const snapshot = await buildSnapshot(bb, options);
+    const snapshot = await buildSnapshot(alia, options);
     const rank = { error: 0, blocked: 1, finished: 2 };
     const items = [...snapshot.items, ...activities.list(options?.projectId, options?.includeFinished)]
       .sort((a, b) => rank[a.kind] - rank[b.kind] || b.attentionAt - a.attentionAt);
@@ -203,8 +203,8 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function loadDismissed(): Promise<Map<string, number>> {
     const map = new Map<string, number>();
-    for (const key of await bb.storage.kv.list(DISMISS_PREFIX)) {
-      const at = await bb.storage.kv.get<number>(key);
+    for (const key of await alia.storage.kv.list(DISMISS_PREFIX)) {
+      const at = await alia.storage.kv.get<number>(key);
       if (typeof at === "number") map.set(key.slice(DISMISS_PREFIX.length), at);
     }
     return map;
@@ -214,7 +214,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function deeplink(item: AttentionItem): Promise<string | undefined> {
     try {
-      const base = await resolveDeeplinkBaseUrl(bb.server.loopbackBaseUrl);
+      const base = await resolveDeeplinkBaseUrl(alia.server.loopbackBaseUrl);
       return threadUrl(base, item.projectId, item.threadId);
     } catch {
       return undefined;
@@ -236,12 +236,12 @@ export default async function plugin(bb: BbPluginApi) {
     if (quietNow(cfg)) return;
 
     const recKey = `${NOTI_PREFIX}${item.threadId}`;
-    const rec = await bb.storage.kv.get<NotiRecord>(recKey);
+    const rec = await alia.storage.kv.get<NotiRecord>(recKey);
     if (rec && rec.at === item.attentionAt && rec.kind === item.kind) return;
 
     if (item.kind === "finished") {
       const cooldownMs = (Number.isFinite(Number(cfg.cooldownSeconds)) ? Math.max(0, Number(cfg.cooldownSeconds)) : 45) * 1000;
-      const last = (await bb.storage.kv.get<number>(LAST_FINISHED_KEY)) ?? 0;
+      const last = (await alia.storage.kv.get<number>(LAST_FINISHED_KEY)) ?? 0;
       if (Date.now() - last < cooldownMs) return;
     }
 
@@ -250,11 +250,11 @@ export default async function plugin(bb: BbPluginApi) {
       ? `${item.label} — ${truncate(item.detail, 200)}`
       : item.label;
 
-    // In-app toast: a bottom-right popup inside bb, delivered over realtime to
+    // In-app toast: a bottom-right popup inside VesnALIA, delivered over realtime to
     // any open client. Fires here (past the enabled/quiet/dedupe/cooldown gates)
     // so it pops exactly once per new attention, like the desktop/Telegram pings.
     if (cfg.toastEnabled) {
-      bb.realtime.publish("inbox:toast", {
+      alia.realtime.publish("inbox:toast", {
         threadId: item.threadId,
         projectId: item.projectId,
         kind: item.kind,
@@ -267,7 +267,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
 
     if (cfg.desktopEnabled && desktopAvailable()) {
-      await sendDesktop(`bb: ${title}`, body, item.label);
+      await sendDesktop(`alia: ${title}`, body, item.label);
     }
 
     await setup.telegram.withConnection(async current => {
@@ -280,16 +280,16 @@ export default async function plugin(bb: BbPluginApi) {
       const text = `${emoji} <b>${escapeHtml(title)}</b>\n${escapeHtml(body)}`;
       const res = await sendTelegram(tg, text, url);
       if (!res.ok) {
-        bb.log.warn(`telegram send failed: ${res.detail}`);
+        alia.log.warn(`telegram send failed: ${res.detail}`);
       }
     });
 
-    await bb.storage.kv.set(recKey, {
+    await alia.storage.kv.set(recKey, {
       at: item.attentionAt,
       kind: item.kind,
     } satisfies NotiRecord);
     if (item.kind === "finished") {
-      await bb.storage.kv.set(LAST_FINISHED_KEY, Date.now());
+      await alia.storage.kv.set(LAST_FINISHED_KEY, Date.now());
     }
   }
 
@@ -303,11 +303,11 @@ export default async function plugin(bb: BbPluginApi) {
   async function reconcile(): Promise<void> {
     const cfg = await settings.get();
     const dismissed = await loadDismissed();
-    const snapshot = await buildSnapshot(bb, {
+    const snapshot = await buildSnapshot(alia, {
       dismissed,
       includeFinished: true,
     });
-    bb.realtime.publish("inbox", {
+    alia.realtime.publish("inbox", {
       total: snapshot.total + activities.list().length,
       at: snapshot.generatedAt,
     });
@@ -321,7 +321,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       await reconcile();
     } catch (error) {
-      bb.log.error(
+      alia.log.error(
         `reconcile failed: ${error instanceof Error ? error.message : String(error)}`,
       );
     } finally {
@@ -345,10 +345,10 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ----- triggers -------------------------------------------------------
 
-  bb.events.on("thread.idle", () => scheduleReconcile());
-  bb.events.on("thread.failed", () => scheduleReconcile());
-  bb.events.on("thread.active", () => scheduleReconcile());
-  bb.events.on("thread.archived", () => scheduleReconcile());
+  alia.events.on("thread.idle", () => scheduleReconcile());
+  alia.events.on("thread.failed", () => scheduleReconcile());
+  alia.events.on("thread.active", () => scheduleReconcile());
+  alia.events.on("thread.archived", () => scheduleReconcile());
 
   const RELEVANT_CHANGES = new Set([
     "interactions-changed",
@@ -359,9 +359,9 @@ export default async function plugin(bb: BbPluginApi) {
     "archived-changed",
   ]);
 
-  bb.background.service("watch", {
+  alia.background.service("watch", {
     async start(signal) {
-      const unsubscribe = bb.sdk.subscribe({
+      const unsubscribe = alia.sdk.subscribe({
         event: "thread:changed",
         callback: (event) => {
           if (event.changes.some((c) => RELEVANT_CHANGES.has(c))) {
@@ -392,9 +392,9 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ----- RPC ------------------------------------------------------------
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     ...setup.handlers,
-    ...createCleaner(bb),
+    ...createCleaner(alia),
     ...activities.handlers,
     async list({ projectId, includeFinished }) {
       const dismissed = await loadDismissed();
@@ -417,8 +417,8 @@ export default async function plugin(bb: BbPluginApi) {
       };
     },
     async dismiss({ threadId, attentionAt }) {
-      await bb.storage.kv.set(`${DISMISS_PREFIX}${threadId}`, attentionAt);
-      bb.realtime.publish("inbox", { total: -1, at: Date.now() });
+      await alia.storage.kv.set(`${DISMISS_PREFIX}${threadId}`, attentionAt);
+      alia.realtime.publish("inbox", { total: -1, at: Date.now() });
       return { ok: true };
     },
     async notify({ title, body, channel, url }) {
@@ -431,7 +431,7 @@ export default async function plugin(bb: BbPluginApi) {
         cfg.desktopEnabled &&
         desktopAvailable()
       ) {
-        await sendDesktop(`bb: ${truncate(title, 90)}`, truncate(body, 200), title);
+        await sendDesktop(`alia: ${truncate(title, 90)}`, truncate(body, 200), title);
         desktop = true;
       }
       if (channel === "telegram" || channel === "both") await setup.telegram.withConnection(async current => {
@@ -441,27 +441,27 @@ export default async function plugin(bb: BbPluginApi) {
           body ? `\n${escapeHtml(truncate(body, 300))}` : ""
         }`;
         const res = await sendTelegram(tg, text, url ?? undefined);
-        if (!res.ok) bb.log.warn(`notify telegram failed: ${res.detail}`);
+        if (!res.ok) alia.log.warn(`notify telegram failed: ${res.detail}`);
         else telegram = true;
       });
       return { desktop, telegram };
     },
   });
 
-  // ----- CLI (`bb inbox …`) --------------------------------------------
+  // ----- CLI (`alia inbox …`) --------------------------------------------
 
-  bb.cli.register({
+  alia.cli.register({
     name: "inbox",
     summary: "Threads that need you, with desktop + Telegram notifications",
     commands: [
-      { name: "list", summary: "List threads needing you", usage: "bb inbox list [--all]" },
-      { name: "dismiss", summary: "Dismiss an item until its next update", usage: "bb inbox dismiss <n>" },
-      { name: "status", summary: "Show notification config", usage: "bb inbox status" },
-      { name: "test", summary: "Send a test notification", usage: "bb inbox test [--desktop|--telegram|--toast]" },
-      { name: "chats", summary: "Discover your Telegram chat id", usage: "bb inbox chats" },
-      { name: "task", summary: "Add a daily task (via the tracker plugin)", usage: "bb inbox task <what to do>" },
-      { name: "tasks", summary: "List today's tasks", usage: "bb inbox tasks" },
-      { name: "done", summary: "Complete a task by its number", usage: "bb inbox done <n>" },
+      { name: "list", summary: "List threads needing you", usage: "alia inbox list [--all]" },
+      { name: "dismiss", summary: "Dismiss an item until its next update", usage: "alia inbox dismiss <n>" },
+      { name: "status", summary: "Show notification config", usage: "alia inbox status" },
+      { name: "test", summary: "Send a test notification", usage: "alia inbox test [--desktop|--telegram|--toast]" },
+      { name: "chats", summary: "Discover your Telegram chat id", usage: "alia inbox chats" },
+      { name: "task", summary: "Add a daily task (via the tracker plugin)", usage: "alia inbox task <what to do>" },
+      { name: "tasks", summary: "List today's tasks", usage: "alia inbox tasks" },
+      { name: "done", summary: "Complete a task by its number", usage: "alia inbox done <n>" },
     ],
     async run(argv) {
       const [sub, ...rest] = argv;
@@ -500,11 +500,11 @@ export default async function plugin(bb: BbPluginApi) {
             });
             const item = Number.isInteger(n) ? snap.items[n - 1] : undefined;
             if (!item) {
-              return { exitCode: 1, stderr: `No item ${rest[0] ?? ""}. Run \`bb inbox list\`.` };
+              return { exitCode: 1, stderr: `No item ${rest[0] ?? ""}. Run \`alia inbox list\`.` };
             }
             if ("id" in item) activities.handlers.dismissActivity({ id: item.id, attentionAt: item.attentionAt });
-            else await bb.storage.kv.set(`${DISMISS_PREFIX}${item.threadId}`, item.attentionAt);
-            bb.realtime.publish("inbox", { total: -1, at: Date.now() });
+            else await alia.storage.kv.set(`${DISMISS_PREFIX}${item.threadId}`, item.attentionAt);
+            alia.realtime.publish("inbox", { total: -1, at: Date.now() });
             return { exitCode: 0, stdout: `Dismissed: ${item.title}` };
           }
 
@@ -530,23 +530,23 @@ export default async function plugin(bb: BbPluginApi) {
             const wantToast = !has("--desktop") && !has("--telegram");
             const out: string[] = [];
             if (wantToast) {
-              bb.realtime.publish("inbox:toast", {
+              alia.realtime.publish("inbox:toast", {
                 threadId: "test",
                 projectId: "test",
                 kind: "blocked",
                 title: "Test — a thread needs you",
                 label: "Question for you",
-                detail: "Sample toast from `bb inbox test`.",
+                detail: "Sample toast from `alia inbox test`.",
                 attentionAt: Date.now(),
                 at: Date.now(),
               });
               out.push(
-                "toast:    published (pops in any open bb window; bottom-right)",
+                "toast:    published (pops in any open VesnALIA window; bottom-right)",
               );
             }
             if (wantDesktop) {
               const r = await sendDesktop(
-                "bb inbox",
+                "alia inbox",
                 "Test notification from the inbox plugin.",
                 "Test",
               );
@@ -567,13 +567,13 @@ export default async function plugin(bb: BbPluginApi) {
             const r = await telegramChats(cfg.telegramBotToken);
             if (!r.ok) return { exitCode: 1, stderr: `getUpdates failed — ${r.detail}` };
             if (r.chats.length === 0) {
-              return { exitCode: 0, stdout: "No recent chats. Send a message to your bot in Telegram, then re-run `bb inbox chats`." };
+              return { exitCode: 0, stdout: "No recent chats. Send a message to your bot in Telegram, then re-run `alia inbox chats`." };
             }
             const lines = r.chats.map(
               (c) => `${c.chatId}  ${c.name}${c.lastText ? `  — "${truncate(c.lastText, 40)}"` : ""}`,
             );
             lines.push(
-              "\nSet it with: bb plugin config inbox set telegramChatId <id>",
+              "\nSet it with: VesnALIA plugin config inbox set telegramChatId <id>",
             );
             return { exitCode: 0, stdout: lines.join("\n") };
           }
@@ -582,14 +582,14 @@ export default async function plugin(bb: BbPluginApi) {
           case "add": {
             const title = rest.join(" ").trim();
             if (!title) {
-              return { exitCode: 1, stderr: "Usage: bb inbox task <what to do>" };
+              return { exitCode: 1, stderr: "Usage: VesnALIA inbox task <what to do>" };
             }
-            const task = await trackerAdd(bb, title);
+            const task = await trackerAdd(alia, title);
             return { exitCode: 0, stdout: `Added #${task.seq} ${task.title}` };
           }
 
           case "tasks": {
-            const { tasks } = await trackerList(bb, "today");
+            const { tasks } = await trackerList(alia, "today");
             if (tasks.length === 0) {
               return { exitCode: 0, stdout: "No tasks for today." };
             }
@@ -602,9 +602,9 @@ export default async function plugin(bb: BbPluginApi) {
           case "done": {
             const seq = Number(rest[0]);
             if (!Number.isInteger(seq)) {
-              return { exitCode: 1, stderr: "Usage: bb inbox done <task number>" };
+              return { exitCode: 1, stderr: "Usage: VesnALIA inbox done <task number>" };
             }
-            const task = await trackerComplete(bb, seq);
+            const task = await trackerComplete(alia, seq);
             return task
               ? { exitCode: 0, stdout: `Done: ${task.title}` }
               : { exitCode: 1, stderr: `No open task #${seq}.` };
@@ -625,10 +625,10 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
     if (debounceTimer) clearTimeout(debounceTimer);
-    bb.log.info("inbox disposed");
+    alia.log.info("inbox disposed");
   });
 }
 
@@ -649,13 +649,13 @@ function truncate(value: string, max: number): string {
   return value.length <= max ? value : `${value.slice(0, max - 1)}…`;
 }
 
-const HELP = `bb inbox — threads that need you
+const HELP = `alia inbox — threads that need you
 
-  bb inbox list [--all]     list threads needing you (--all includes finished)
-  bb inbox dismiss <n>      hide an item until its next update
-  bb inbox status           show notification configuration
-  bb inbox test [--desktop|--telegram|--toast]  send a test notification
-  bb inbox chats            list Telegram chat ids (after messaging your bot)
+  VesnALIA inbox list [--all]     list threads needing you (--all includes finished)
+  VesnALIA inbox dismiss <n>      hide an item until its next update
+  VesnALIA inbox status           show notification configuration
+  VesnALIA inbox test [--desktop|--telegram|--toast]  send a test notification
+  VesnALIA inbox chats            list Telegram chat ids (after messaging your bot)
 
 Setup Telegram (optional):
   Open Needs You → Settings → Telegram.

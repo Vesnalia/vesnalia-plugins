@@ -1,8 +1,8 @@
 import { fixtureRuntime } from "../runtime-helper.ts";
 import assert from "node:assert/strict";
 import { afterAll, beforeAll, beforeEach, describe, it, vi } from "vitest";
-import type { PluginAgentToolResult } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { PluginAgentToolResult } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { CONFIG_DEFAULTS, type WebConfig } from "../../src/web/config.ts";
 import { type TestServer, startServer } from "../_server.ts";
 
@@ -133,7 +133,7 @@ function toolText(result: PluginAgentToolResult): string {
 
 function host(overrides: Partial<WebConfig> = {}) {
 	const fake = createFakePluginHost({ pluginId: "forage", experimental_declaredIconNames: ["search", "fetch", "map", "extract", "crawl", "diff"] });
-	registerTools(fake.bb, fixtureRuntime(fake.bb, async () => config(overrides)));
+	registerTools(fake.alia, fixtureRuntime(fake.alia, async () => config(overrides)));
 	return fake;
 }
 

@@ -1,4 +1,4 @@
-// Comments carried inside an exported PDF for another bb with Doc Review:
+// Comments carried inside an exported PDF for another VesnALIA with Doc Review:
 // the export attaches them as a JSON file, and Doc Review on the other side
 // reads it back and merges the comments into a document there. Ids travel
 // with every comment and reply, so a file that comes back with answers adds
@@ -9,7 +9,7 @@ import { isPageAnchor, type DocKind, type ReviewComment } from "./types.js";
 
 /** The attachment's name inside the PDF. */
 export const SHARE_FILE = "doc-review-comments.json";
-const FORMAT = "bb-doc-review";
+const FORMAT = "alia-doc-review";
 /** A name for people who exported without signing. */
 export const UNNAMED = "Reviewer";
 
@@ -67,7 +67,7 @@ export function shareable(comment: ReviewComment): boolean {
 }
 
 /**
- * The comments of a paged document as they travel. Whatever this bb's user
+ * The comments of a paged document as they travel. Whatever this VesnALIA's user
  * wrote is signed with `signer`; what came from others keeps its names.
  */
 export function buildShared(input: {

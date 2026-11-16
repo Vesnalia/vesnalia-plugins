@@ -26,7 +26,7 @@ export type { SourceResult } from './types.js';
  *
  * Auth is asymmetric and undocumented: `Authorization: Bearer` works on
  * `/usage` while `X-Api-Key` (which `/models` accepts) returns 401 there. The
- * key is the same `oc_s_...` value bb and Bifrost already call with.
+ * key is the same `oc_s_...` value VesnALIA and Bifrost already call with.
  *
  * There is no history endpoint — probing `/usage/history`, `/credits`,
  * `/balance`, `/limits` and `/quota` all 404 — so no daily series exists and

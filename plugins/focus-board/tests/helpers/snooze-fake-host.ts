@@ -3,9 +3,9 @@
 // the snooze set/wake paths drive (markRead, markUnread, get) and helpers
 // to seed snooze records before the plugin loads (so the load-time wake
 // scan is observable) and to fake reads/missing threads during a wake.
-import type { FakePluginHost } from "@get-bb/plugin-sdk/testing";
-import type { JsonValue } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { FakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../../server";
 import { SNOOZE_METADATA_KEY } from "../../lib/snooze";
 
@@ -79,7 +79,7 @@ export async function setup(opts: SetupOptions = {}): Promise<SnoozeTestHost> {
   });
   // Seed BEFORE the plugin loads: the wake scan must observe pre-seeded
   // records exactly as a daemon restart would.
-  await plugin(host.bb);
+  await plugin(host.alia);
   return {
     host,
     harness: host.harness,

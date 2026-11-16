@@ -10,7 +10,7 @@ this repository. Maintainers with a licence keep a local copy at
 `reference/affectui-agent-lanes/`, which git ignores. The parity and
 interaction scripts need that copy. The rest run without it.
 
-Screenshots of the live bb show real thread data, so the scripts that take
+Screenshots of the live VesnALIA show real thread data, so the scripts that take
 them write into `docs/fidelity/live/`, which git also ignores. Only
 screenshots of the harness, which draws made-up threads, and of the parity
 page are committed.
@@ -26,7 +26,7 @@ export PLAYWRIGHT_DIR=/tmp/lanes-qa-tools                               # npm i 
 node scripts/qa/measure.mjs light        # element by element style and box diff
 node scripts/qa/parity.mjs docs/fidelity # side by side screenshots
 node scripts/qa/interactions.mjs /tmp/lanes-interactions   # the checklist below, with frame sheets
-node scripts/qa/tour.mjs                  # the live bb, needs the plugin installed
+node scripts/qa/tour.mjs                  # the live alia, needs the plugin installed
 node scripts/qa/mobile.mjs
 ```
 
@@ -135,7 +135,7 @@ Frame sequences, upstream on the left and ours on the right:
 ## Deliberate differences
 
 Each of these is a choice. They follow from `AGENTS.md`, from `SPEC.md`, or
-from bb's real data, which is larger and messier than upstream's demo.
+from VesnALIA's real data, which is larger and messier than upstream's demo.
 
 - **Hand-off lines.** Upstream draws one dashed curve from the end of one
   task to the start of the next. Our lines leave the sender's lane at the
@@ -151,8 +151,8 @@ from bb's real data, which is larger and messier than upstream's demo.
   parent's turn while that turn is running. That line lands at the moment of
   the report, on the top or bottom edge of the parent's block, so its cap
   never covers the block's title.
-- **Tool glyphs.** Upstream shows app logos. We show bb's own tool family
-  icons (commands, edits, tools, web, MCP, skills), because that is what bb
+- **Tool glyphs.** Upstream shows app logos. We show VesnALIA's own tool family
+  icons (commands, edits, tools, web, MCP, skills), because that is what VesnALIA
   records about a turn.
 - **Tooltip.** Upstream's tooltip has an Open link only when it is given an
   `onOpen` handler, and its demo has none. Ours always ends with "Open" and
@@ -162,7 +162,7 @@ from bb's real data, which is larger and messier than upstream's demo.
   also lists the turn's tool counts. Its summary loads lazily behind a
   shimmer, shows `code` as code, and keeps each point to three lines,
   because real summaries are longer than upstream's.
-- **Decision card.** Ours adds an "Open" link that opens the thread. When bb
+- **Decision card.** Ours adds an "Open" link that opens the thread. When VesnALIA
   cannot answer inline, the card shows "Answer in thread" instead of Approve
   and Reject.
 - **Window pill.** Ours is a menu, so it has a small chevron. It lists the
@@ -178,23 +178,23 @@ from bb's real data, which is larger and messier than upstream's demo.
   now pill. Upstream has the pill only.
 - **Hover linking.** Hovering a block, a lane or a line lights its hand-offs
   and the lanes on the other end, and dims unrelated blocks.
-- **The bar in bb.** bb's title bar already says "Lanes", so the tray's bar
+- **The bar in VesnALIA.** VesnALIA's title bar already says "Lanes", so the tray's bar
   drops upstream's spark and title. On the full pane the summary moves to
   the title bar, so the counts appear once. The tray's bar carries Group, the
   filters, search and the window pill. The team panel has no title bar, so
   its bar leads with the team's own summary.
-- **Names column.** Upstream's 168px suits its 760px card. In bb the column
+- **Names column.** Upstream's 168px suits its 760px card. In VesnALIA the column
   is 120px plus 18% of the pane, from 168px to 320px, because real thread
   titles are long. The parity page keeps 168px.
 - **State tags.** A tag never shows cut off. A quiet tag (Idle, Queued)
   shows only beside a title that fits whole. An urgent tag (Needs you,
   Failed) always shows whole and the title shortens instead, unless the cell
   is too narrow for a readable title. Unread moves to a dot on the avatar.
-- **Palette.** Neutrals come from bb's `--canvas`, so a tinted bb theme
+- **Palette.** Neutrals come from VesnALIA's `--canvas`, so a tinted VesnALIA theme
   tints the whole pane. Each colour is mixed so that it equals upstream's
-  value on bb's default theme, and outside bb it falls back to upstream's
+  value on VesnALIA's default theme, and outside VesnALIA it falls back to upstream's
   literal value. Upstream's state colours stay as they are. Light and dark
-  follow bb's own `.dark` class on `<html>`, not the system setting.
+  follow VesnALIA's own `.dark` class on `<html>`, not the system setting.
 
 ## Extensions in upstream's language
 
@@ -230,17 +230,17 @@ motion.
 - **States.** Every control has hover, press and focus states. Focus uses
   upstream's 2px focus ring.
 
-## Real bb
+## Real VesnALIA
 
-`scripts/qa/tour.mjs` takes screenshots of the live bb at 1440 by 900, with
-real data, into `docs/fidelity/live/bb/`. They are not committed because they
+`scripts/qa/tour.mjs` takes screenshots of the live VesnALIA at 1440 by 900, with
+real data, into `docs/fidelity/live/alia/`. They are not committed because they
 show real threads. The tour covers the pane at 15 minutes and at an hour, the
 tooltip, line hover, a pan, a zoom, the group and window menus, and the team
 panel, in light and dark. It switches to the last hour after its first
 screenshot, because a quiet 15 minutes shows little.
 
 No thread was waiting on a person during the tour, so the decision card was
-checked in the parity page only. bb draws the sidebar accessory in a slot
+checked in the parity page only. VesnALIA draws the sidebar accessory in a slot
 that its icon navigation hides, so the accessory renders but does not show
 in these screenshots.
 
@@ -281,7 +281,7 @@ blocks, above the left fade. Its hit area is 32px, and 44px on touch.
   jumper. Its label reads, e.g., "Jump to previous turn: Plan the release,
   55m ago".
 
-`scripts/qa/jumps.mjs` checks and photographs the jumpers in the live bb with
+`scripts/qa/jumps.mjs` checks and photographs the jumpers in the live VesnALIA with
 real data, in light and dark, on a desktop and on a 390px touch screen. It
 also records a zip with Chrome's screencast and samples every animation
 frame. In every run the ruler had the same transform as the lanes on every
@@ -292,20 +292,20 @@ sheet is from the harness: [a zip to a turn not yet loaded](fidelity/jumps/harne
 
 ## Narrow panes and touch
 
-These checks run against the live bb at 390 by 844 with touch emulation, in
+These checks run against the live VesnALIA at 390 by 844 with touch emulation, in
 `scripts/qa/mobile.mjs`. The screenshots go to `docs/fidelity/live/mobile/`.
 
 | Check | Result |
 |---|---|
 | A rightward touch drag on the track pans back in time | Pass |
-| The same drag does not open bb's sidebar | Pass |
+| The same drag does not open VesnALIA's sidebar | Pass |
 | A vertical swipe over the track scrolls the rows | Pass |
 | The vertical swipe leaves the window following the clock | Pass |
-| A rightward drag that starts over the avatars still opens bb's sidebar | Pass |
+| A rightward drag that starts over the avatars still opens VesnALIA's sidebar | Pass |
 
-### How touch panning and bb's sidebar share the swipe
+### How touch panning and VesnALIA's sidebar share the swipe
 
-bb opens its sidebar on a phone when you swipe right from anywhere in the
+VesnALIA opens its sidebar on a phone when you swipe right from anywhere in the
 pane. It skips a swipe that starts inside `[data-no-sidebar-swipe]`. The
 track and the ruler carry that attribute, so a swipe over time pans time. The
 names column does not carry it, so a swipe that starts over the avatars still
@@ -340,7 +340,7 @@ to read at 11px on a phone.
 
 ## Interaction audit
 
-`scripts/qa/audit.mjs` previews the checkout's built frontend inside real bb
+`scripts/qa/audit.mjs` previews the checkout's built frontend inside real VesnALIA
 without changing the installed plugin. It checks the window menu's shortcut
 column and selection state, keys while the menu is open, filter navigation,
 search focus restoration, turn detail, the narrow View menu, and a failed
@@ -348,7 +348,7 @@ history request. It samples narrow row reordering on animation frames to
 check that captions move with their lanes. Light, dark and narrow screenshots
 and the JSON results go to `docs/fidelity/live/audit/` (ignored by git).
 
-Run `bb plugin build` first, then
+Run `alia plugin build` first, then
 `PLAYWRIGHT_DIR=/tmp/lanes-qa-tools node scripts/qa/audit.mjs`.
 The SDK tests additionally check approval rollback, reconnect notifications,
 history retry, and racing detail requests without answering real approvals.

@@ -1,4 +1,4 @@
-// End to end through the real bridge and BB's own delta assembler: advisor
+// End to end through the real bridge and VesnALIA's own delta assembler: advisor
 // rows plus a recorded Claude Code turn, mirrored the way src/runs.ts does it.
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -7,8 +7,8 @@ import {
   experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness,
   type BridgeJsonRpcTestHarness,
   type ThreadEvent,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
-import type { ThreadDelta } from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
+import type { ThreadDelta } from "@vesnalia/plugin-sdk/provider-bridge";
 import { handleLine } from "../src/bridge.js";
 import { AggregatorMirror, type MirrorEvent } from "../src/mirror.js";
 import type { LogEntry } from "../src/wire.js";

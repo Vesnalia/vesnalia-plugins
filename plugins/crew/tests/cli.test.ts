@@ -27,10 +27,10 @@ describe("argument parsing", () => {
   });
 });
 
-describe("bb crew", () => {
+describe("alia crew", () => {
   it("help and templates need no project", async () => {
     const { service } = setup();
-    expect((await runCli(service, [], {}, project)).stdout).toContain("bb crew apply");
+    expect((await runCli(service, [], {}, project)).stdout).toContain("alia crew apply");
     expect((await runCli(service, ["templates"], {}, project)).stdout).toMatch(/pair[\s\S]*trio[\s\S]*research/);
   });
 
@@ -61,11 +61,11 @@ describe("bb crew", () => {
     const ps = await runCli(service, ["ps", "trio"], ctx, project);
     expect(ps.stdout).toContain("orch-lead@trio");
     expect(ps.stdout).toContain("claude-code/claude-haiku-4-5-20251001");
-    expect(ps.stdout!.match(/\(BB: claude-code\/claude-haiku-4-5-20251001\)/g)).toHaveLength(3);
+    expect(ps.stdout!.match(/\(ALIA: claude-code\/claude-haiku-4-5-20251001\)/g)).toHaveLength(3);
     expect(ps.stdout).not.toContain("DRIFT");
     const lead = [...(service.ctx.port as import("../lib/thread-port").FakeThreadPort).threads.values()][0]!;
     lead.model = "other";
-    expect((await runCli(service, ["ps", "trio"], ctx, project)).stdout).toContain("DRIFT: BB reports claude-code/other");
+    expect((await runCli(service, ["ps", "trio"], ctx, project)).stdout).toContain("DRIFT: VesnALIA reports claude-code/other");
     lead.model = "claude-haiku-4-5-20251001";
 
     expect((await runCli(service, ["show", "trio"], ctx, project)).stdout).toContain("file v1");
@@ -128,7 +128,7 @@ describe("resolveFile", () => {
   });
 });
 
-describe("bb crew messaging commands", () => {
+describe("alia crew messaging commands", () => {
   const run = (service: Parameters<typeof runCli>[0], argv: string[], extra: Record<string, string> = {}) =>
     runCli(service, argv, { ...ctx, ...extra }, project);
 
@@ -228,7 +228,7 @@ describe("bb crew messaging commands", () => {
   });
 });
 
-describe("bb crew (E3)", () => {
+describe("alia crew (E3)", () => {
   it("work: create, list, claim --as, done; unknown sub-command and bad tier are refused", async () => {
     const { service, port } = setup();
     await running(service, port);
@@ -278,7 +278,7 @@ describe("bb crew (E3)", () => {
   });
 });
 
-describe("bb crew — E4 lifecycle commands", () => {
+describe("alia crew — E4 lifecycle commands", () => {
   const run = (service: ReturnType<typeof setup>["service"], argv: string[]) => runCli(service, argv, ctx, project);
 
   it("snapshot, snapshots, restore", async () => {
@@ -323,7 +323,7 @@ describe("bb crew — E4 lifecycle commands", () => {
     expect((await run(service, ["attach", "thr_x", "--as", "dev-impl@trio"])).stderr).toContain("already bound");
   });
 
-  it("export → import: unchanged file, plan no change; the plan lines equal bb crew plan's", async () => {
+  it("export → import: unchanged file, plan no change; the plan lines equal VesnALIA crew plan's", async () => {
     const { service, port } = setup();
     await running(service, port);
     const exported = (await run(service, ["export", "trio"])).stdout!;

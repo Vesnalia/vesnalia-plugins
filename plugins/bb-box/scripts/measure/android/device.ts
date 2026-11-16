@@ -11,9 +11,9 @@ import { DeviceLink } from "../../../src/core/device-link.ts";
 import type { ByteChannel } from "../../../src/transports/types.ts";
 
 const ROOT = join(import.meta.dirname, "..", "..", "..");
-const DIR = join(homedir(), ".bb-box", "device");
-const LAUNCHER = join(DIR, "current", "src", "device", "bb-box-device.sh");
-const RECORDS = ["/usr/share/bb-box/image.json", "/usr/share/bb-box/android-devices.json"];
+const DIR = join(homedir(), ".alia-box", "device");
+const LAUNCHER = join(DIR, "current", "src", "device", "alia-box-device.sh");
+const RECORDS = ["/usr/share/alia-box/image.json", "/usr/share/alia-box/android-devices.json"];
 const ADB = "/opt/android-sdk/platform-tools/adb";
 const SERIAL = "emulator-5554";
 const TICKS_A_SECOND = 100;
@@ -131,7 +131,7 @@ function own(): Own {
   const emulator = pids("qemu-system-x86_64.*-avd");
   return {
     server: [...new Set([...pids(`${DIR}/current/src/device/main.ts serve`), ...pids("src/device/main.ts serve")])],
-    encoder: pids("^/usr/local/bin/bb-box-h264"),
+    encoder: pids("^/usr/local/bin/alia-box-h264"),
     emulator: emulator.flatMap(processTree),
   };
 }

@@ -1,5 +1,5 @@
 import { STORAGE_KEYS } from "./lib/storage-keys";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { isThreadWorking } from "./lifecycle";
 import { readStoredValue, writeStoredValue } from "./lib/storage-codec";
 import type { StorageCodec } from "./lib/storage-codec";

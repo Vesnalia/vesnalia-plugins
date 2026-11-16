@@ -1,5 +1,5 @@
-/** The palette command opens the FirstMate tab through bb 0.48's panel controller, or bb 0.47's `openPanel`. */
-import type { PluginCommandContext } from "@get-bb/plugin-sdk/app";
+/** The palette command opens the FirstMate tab through VesnALIA 0.48's panel controller, or VesnALIA 0.47's `openPanel`. */
+import type { PluginCommandContext } from "@vesnalia/plugin-sdk/app";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
@@ -29,7 +29,7 @@ describe("openTab", () => {
     expect(openTab(context)).toBe(false);
   });
 
-  it("falls back to openPanel on a bb without the controller", () => {
+  it("falls back to openPanel on a VesnALIA without the controller", () => {
     const openPanel = vi.fn(() => true);
     const legacy = { threadId: "thr_mate", projectId: null, openPanel } as unknown as PluginCommandContext;
     expect(openTab(legacy)).toBe(true);

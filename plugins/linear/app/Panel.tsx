@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useBbNavigate, useRealtime } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime } from "@vesnalia/plugin-sdk/app";
 import { ArchiveDialog } from "./ArchiveDialog.js";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -34,7 +34,7 @@ import { useAsync, useLinearRpc } from "./rpc.js";
  *
  * **The panel is workspace-scoped, and it cannot be otherwise.**
  * `PluginNavPanelProps` is `{ subPath }` and nothing else, and the escape
- * hatch fails too: `useBbContext().projectId` is derived from
+ * hatch fails too: `useAliaContext().projectId` is derived from
  * `/projects/:projectId/*` route matches, and this panel's route is
  * `/plugins/linear/linear/*`. So there is no "this project" here — the team
  * selector in the header is the scope, and project-scoped calls to action live
@@ -42,7 +42,7 @@ import { useAsync, useLinearRpc } from "./rpc.js";
  */
 export function LinearPanel({ subPath }: { subPath: string }) {
   const rpc = useLinearRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const state = usePanelChrome();
   const [selected, setSelected] = useState<string | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -171,7 +171,7 @@ export function LinearPanel({ subPath }: { subPath: string }) {
             return;
           }
           // The fallback note is a second sentence rather than a second toast:
-          // "started, but bb named the branch" is one event.
+          // "started, but VesnALIA named the branch" is one event.
           toast.success(result.note === null ? result.message : `${result.message} ${result.note}`);
           if (result.threadId !== null) navigate.toThread(result.threadId);
         })();
@@ -368,17 +368,17 @@ function PanelBody({
             This panel needs a Linear API key. Create a personal key in Linear under Settings →
             Account → Security &amp; access → Personal API keys, then save it in this plugin&apos;s
             settings — the field is called <strong>Linear API key</strong>. The Linear button in
-            bb&apos;s sidebar footer opens that page.
+            VesnALIA&apos;s sidebar footer opens that page.
           </p>
           <p className="text-sm text-muted-foreground">
             From a terminal:{" "}
             <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
-              bb plugin config linear set apiKey &lt;key&gt;
+              alia plugin config linear set apiKey &lt;key&gt;
             </code>{" "}
             — that puts the key in your shell history and the process table.
           </p>
           <p className="text-sm text-muted-foreground">
-            The key is stored in bb&apos;s secret storage on this machine, is never shown again,
+            The key is stored in VesnALIA&apos;s secret storage on this machine, is never shown again,
             and is never given to an agent.
           </p>
         </Body>
@@ -388,7 +388,7 @@ function PanelBody({
       return (
         <Body>
           <p className="text-sm text-foreground">
-            No bb project is bound to a Linear team yet, so there is nothing to show here.
+            No VesnALIA project is bound to a Linear team yet, so there is nothing to show here.
           </p>
           <BindingOffers />
         </Body>
@@ -519,7 +519,7 @@ function BindingOffers() {
         ))
       )}
       <p className="text-xs text-muted-foreground">
-        or: <code className="rounded bg-muted px-1 py-0.5 font-mono">bb linear bind TEAM-KEY</code>
+        or: <code className="rounded bg-muted px-1 py-0.5 font-mono">alia linear bind TEAM-KEY</code>
       </p>
     </div>
   );
@@ -749,7 +749,7 @@ function Segments() {
 }
 
 /**
- * The Working set, grouped by **bb fact**.
+ * The Working set, grouped by **VesnALIA fact**.
  *
  * A bucket with nothing in it does not render at all. The five hints appear
  * only when the whole set is clear, which is the one case worth a sentence —

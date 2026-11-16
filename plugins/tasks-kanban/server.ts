@@ -1,15 +1,15 @@
-// tasks-kanban — backend: a live Kanban over BB's built-in Tasks.
+// tasks-kanban — backend: a live Kanban over VesnALIA's built-in Tasks.
 //
 // This plugin does not store its own copy of tasks. Every read and write is
 // proxied, server-side, into the built-in `tasks` plugin's RPC surface
-// (bb.sdk.plugins.callRpc). That is what makes the board "real": moving a card
-// here moves the same row that `bb tasks`, the sidebar, and agents see.
+// (alia.sdk.plugins.callRpc). That is what makes the board "real": moving a card
+// here moves the same row that `alia tasks`, the sidebar, and agents see.
 //
 //   board_*  (this plugin's contract, consumed by app.tsx)
-//     └─> bb.sdk.plugins.callRpc({ pluginId: "tasks", method, input, outputSchema })
-//           └─> built-in tasks plugin (same DB as the `bb tasks` CLI)
+//     └─> alia.sdk.plugins.callRpc({ pluginId: "tasks", method, input, outputSchema })
+//           └─> built-in tasks plugin (same DB as the `alia tasks` CLI)
 
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { BOARD_CHANGED_CHANNEL } from "./lib/board";
 import { detectLocale, translate, type MessageKey } from "./lib/i18n";
@@ -64,16 +64,16 @@ export const taskProjectSchema = z.object({
   nextTaskNumber: z.number().int(),
   color: z.string(),
   folderId: id.nullable(),
-  linkedBbProjectId: id.nullable(),
+  linkedAliaProjectId: id.nullable(),
   createdAt: z.string(),
 });
 export type TaskProject = z.infer<typeof taskProjectSchema>;
 
-const bbProjectSchema = z.object({
+const aliaProjectSchema = z.object({
   id: z.string(),
   name: z.string(),
 });
-export type BbProject = z.infer<typeof bbProjectSchema>;
+export type AliaProject = z.infer<typeof aliaProjectSchema>;
 
 export const commentSchema = z.object({
   id,
@@ -103,7 +103,7 @@ export type TaskResult = z.infer<typeof taskResult>;
 
 // Output wrappers as the tasks plugin returns them.
 const outProjects = z.object({ projects: z.array(taskProjectSchema) });
-const outBbProjects = z.object({ bbProjects: z.array(bbProjectSchema) });
+const outAliaProjects = z.object({ aliaProjects: z.array(aliaProjectSchema) });
 const outTasks = z.object({ tasks: z.array(taskSchema) });
 const outTask = z.object({ task: taskSchema.nullable() });
 const outLabels = z.object({ labels: z.array(labelSchema) });
@@ -113,7 +113,7 @@ const outComment = z.object({ comment: commentSchema });
 const outLabel = z.object({ label: labelSchema });
 
 // ---------------------------------------------------------------------------
-// Board settings (bb.settings.define): user preferences for the board UI.
+// Board settings (alia.settings.define): user preferences for the board UI.
 // The host renders these on the plugin's settings page; values below are
 // the effective (stored-over-defaults) shape the board receives.
 // ---------------------------------------------------------------------------
@@ -168,7 +168,7 @@ export const rpcContract = defineRpcContract({
     input: z.null(),
     output: z.object({
       projects: z.array(taskProjectSchema),
-      bbProjects: z.array(bbProjectSchema),
+      aliaProjects: z.array(aliaProjectSchema),
     }),
   },
   board_tasks: {
@@ -254,16 +254,16 @@ export const rpcContract = defineRpcContract({
 });
 
 /** Proxy one method of the built-in tasks plugin. */
-function proxy(bb: BbPluginApi) {
+function proxy(alia: AliaPluginApi) {
   return {
     call: async <T>(
       method: string,
       input: unknown,
       outputSchema: z.ZodType<T>,
     ): Promise<T> => {
-      // bb.sdk is bind-gated; this only ever runs from rpc handlers on the
+      // alia.sdk is bind-gated; this only ever runs from rpc handlers on the
       // real server, where it is bound.
-      return bb.sdk.plugins.callRpc<T>({
+      return alia.sdk.plugins.callRpc<T>({
         pluginId: "tasks",
         method,
         input: input as never,
@@ -273,17 +273,17 @@ function proxy(bb: BbPluginApi) {
   };
 }
 
-function emit(bb: BbPluginApi, extra: Record<string, unknown> = {}) {
-  bb.realtime.publish(BOARD_CHANGED_CHANNEL, {
+function emit(alia: AliaPluginApi, extra: Record<string, unknown> = {}) {
+  alia.realtime.publish(BOARD_CHANGED_CHANNEL, {
     at: new Date().toISOString(),
     ...extra,
   });
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("tasks-kanban loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("tasks-kanban loaded");
 
-  const tasks = () => proxy(bb);
+  const tasks = () => proxy(alia);
 
   // Declarative settings: the host renders them on this plugin's settings
   // page. onChange fires on every effective-value change, so every open
@@ -295,7 +295,7 @@ export default async function plugin(bb: BbPluginApi) {
   // itself. The board content follows that setting at all times.
   const hostLocale = detectLocale();
   const st = (key: MessageKey) => translate(hostLocale, key);
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     language: {
       type: "select",
       label: st("settings.language"),
@@ -359,15 +359,15 @@ export default async function plugin(bb: BbPluginApi) {
       default: true,
     },
   });
-  settings.onChange(() => emit(bb, { settings: true }));
+  settings.onChange(() => emit(alia, { settings: true }));
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     board_projects: async () => {
-      const [projects, bbProjects] = await Promise.all([
+      const [projects, aliaProjects] = await Promise.all([
         tasks().call("listProjects", {}, outProjects),
-        tasks().call("listBbProjects", null, outBbProjects),
+        tasks().call("listAliaProjects", null, outAliaProjects),
       ]);
-      return { projects: projects.projects, bbProjects: bbProjects.bbProjects };
+      return { projects: projects.projects, aliaProjects: aliaProjects.aliaProjects };
     },
 
     board_tasks: async (filters) => {
@@ -391,25 +391,25 @@ export default async function plugin(bb: BbPluginApi) {
 
     board_update: async (patch) => {
       const res = await tasks().call("updateTask", patch, taskResult);
-      if (res.ok) emit(bb, { taskId: patch.taskId });
+      if (res.ok) emit(alia, { taskId: patch.taskId });
       return res;
     },
 
     board_create: async (input) => {
       const res = await tasks().call("createTask", input, taskResult);
-      if (res.ok) emit(bb, { projectId: input.projectId });
+      if (res.ok) emit(alia, { projectId: input.projectId });
       return res;
     },
 
     board_delete: async ({ taskId }) => {
       const res = await tasks().call("deleteTask", { taskId }, outDeleted);
-      if (res.deleted) emit(bb, { taskId });
+      if (res.deleted) emit(alia, { taskId });
       return { deleted: res.deleted };
     },
 
     board_move: async (move) => {
       const res = await tasks().call("boardMove", move, taskResult);
-      if (res.ok) emit(bb, { taskId: move.taskId });
+      if (res.ok) emit(alia, { taskId: move.taskId });
       return res;
     },
 
@@ -419,7 +419,7 @@ export default async function plugin(bb: BbPluginApi) {
         { taskId, body, notify },
         outComment,
       );
-      emit(bb, { taskId });
+      emit(alia, { taskId });
       return { comment: res.comment };
     },
 
@@ -434,10 +434,10 @@ export default async function plugin(bb: BbPluginApi) {
         { projectId, name, color },
         outLabel,
       );
-      emit(bb, { projectId });
+      emit(alia, { projectId });
       return { label: res.label };
     },
   });
 
-  bb.onDispose(() => bb.log.info("tasks-kanban disposed"));
+  alia.onDispose(() => alia.log.info("tasks-kanban disposed"));
 }

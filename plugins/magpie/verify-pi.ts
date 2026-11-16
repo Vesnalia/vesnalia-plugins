@@ -175,8 +175,8 @@ try {
   const agentDir = join(root, "agent");
   await hostFiles(agentDir, join(root, "plugin")).install(catalog);
   const baseEnv: NodeJS.ProcessEnv = { ...process.env, PI_CODING_AGENT_DIR: agentDir, PI_OFFLINE: "1" };
-  delete baseEnv.BB_MAGPIE_BASE_URL;
-  delete baseEnv.BB_MAGPIE_TOKEN;
+  delete baseEnv.ALIA_MAGPIE_BASE_URL;
+  delete baseEnv.ALIA_MAGPIE_TOKEN;
   const command = process.env.PI_TEST_COMMAND || "pi";
   const flags = ["--offline", "--no-mcp", "--no-skills", "--no-prompt-templates", "--no-context-files", "--no-themes"];
   const version = await exec(command, ["--version"], { cwd: root, env: baseEnv, timeout: 30_000 });
@@ -185,7 +185,7 @@ try {
     assert.ok(list.stdout.includes(model.id), `Catalog omitted ${model.id}: ${list.stdout} ${list.stderr}`);
   }
   assert.equal(calls.length, 0, "Catalog discovery must not contact the gateway.");
-  const env = { ...baseEnv, BB_MAGPIE_BASE_URL: proxyUrl, BB_MAGPIE_TOKEN: machineToken(signingKey, "host_fixture") };
+  const env = { ...baseEnv, ALIA_MAGPIE_BASE_URL: proxyUrl, ALIA_MAGPIE_TOKEN: machineToken(signingKey, "host_fixture") };
   for (const model of catalog.models) {
     const result = await exec(command, [
       ...flags,

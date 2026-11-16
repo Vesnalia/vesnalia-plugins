@@ -30,7 +30,7 @@ runtime=$(xcrun simctl list runtimes | awk '/^iOS / && !/unavailable/ { id = $NF
 # The last iPhone listed that the runtime runs: not every one listed does.
 udid=
 for device in $(xcrun simctl list devicetypes | sed -n 's/^iPhone [^(]* (\(.*\))$/\1/p' | tail -r); do
-  udid=$(xcrun simctl create bb-box-warm-up "$device" "$runtime" 2>/dev/null) && break
+  udid=$(xcrun simctl create alia-box-warm-up "$device" "$runtime" 2>/dev/null) && break
 done
 [ -n "$udid" ] || die "no iPhone Simulator device type runs on $runtime"
 started=$(date +%s)

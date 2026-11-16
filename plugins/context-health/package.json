@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-context-health",
+  "name": "alia-plugin-context-health",
   "version": "0.1.2",
   "description": "Inspect thread context usage, skills, instructions and conversation content.",
   "type": "module",
   "engines": {
-    "bb": ">=0.42",
-    "bbPluginSdk": ">=0.4.48"
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.4.48"
   },
-  "bb": {
+  "alia": {
     "name": "Context Health",
     "description": "Inspect thread context usage, skills, instructions and conversation content.",
     "branding": {
@@ -23,7 +23,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "^0.4.48",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -56,7 +55,7 @@
     "check": "tsc --noEmit",
     "typecheck": "npm run check",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "files": [
     "dist/",
@@ -69,12 +68,21 @@
     "tsconfig.json"
   ],
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.48"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/context-health#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MacHatter1/bb-context-health.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/context-health"
   },
-  "homepage": "https://github.com/MacHatter1/bb-context-health#readme",
   "bugs": {
-    "url": "https://github.com/MacHatter1/bb-context-health/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

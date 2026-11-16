@@ -30,7 +30,7 @@ const spec = () => specOf(h.store, project());
 const ticket = (key = "CSV-1") => ticketOf(h, key);
 const waitOf = (key = "CSV-1") => mergeWaitOf(ticket(key));
 const systemPosts = (key = "CSV-1") => h.store.posts(ticket(key).id).filter((post) => post.kind === "system").map((post) => post.body);
-const warnings = (text: string) => h.bb.callsTo("log").filter(([level, message]) => level === "warn" && String(message).includes(text));
+const warnings = (text: string) => h.alia.callsTo("log").filter(([level, message]) => level === "warn" && String(message).includes(text));
 const queue = async () => {
   await runMergeQueue(h.ctx, project(), spec());
   await settleMerges(h.ctx);
@@ -50,7 +50,7 @@ async function fixOnMachineWithForeignTip(): Promise<ThreadRow> {
   await askForPrTexts(h.ctx, project(), spec());
   handInPrText(h.ctx, worker.thread_id!, { title: "Add order rows", body: "Why.", commit_message: "Add the order row mapper" });
   await queue();
-  h.bb.threads.get(worker.thread_id!)!.status = "idle";
+  h.alia.threads.get(worker.thread_id!)!.status = "idle";
   h.host.feedback.set(URL1, changesRequested);
   await poll();
   await fixAndApprove(worker);
@@ -87,7 +87,7 @@ describe("hostCallTransient", () => {
     "Host is not connected",
     "Host daemon is not connected",
     "Host is suspended",
-    // bb retires the old host plugin generation while a plugin update starts the new one, which may time out its startup.
+    // VesnALIA retires the old host plugin generation while a plugin update starts the new one, which may time out its startup.
     "host plugin loom generation 958cfa03-7186-47e3-9428-ffb4b2bff84f is retired",
     "host plugin loom startup timed out",
     "host plugin transport is unavailable",
@@ -283,7 +283,7 @@ describe("a merge that fails in a way worth waiting out", () => {
       await askForPrTexts(h.ctx, project(), spec());
       handInPrText(h.ctx, worker.thread_id!, { title: "Add order rows", body: "Why.", commit_message: "Add the order row mapper" });
       await queue();
-      h.bb.threads.get(worker.thread_id!)!.status = "idle";
+      h.alia.threads.get(worker.thread_id!)!.status = "idle";
       h.host.feedback.set(URL1, changesRequested);
       await poll();
       await fixAndApprove(worker);
@@ -339,7 +339,7 @@ describe("a merge that fails in a way worth waiting out", () => {
     it("on a repo with no checkout", async () => {
       await seedProject(h);
       await reachApproved(h);
-      h.bb.checkout = null;
+      h.alia.checkout = null;
       await queue();
       expect(project()).toMatchObject({ state: "paused", system_reason: expect.stringContaining("no checkout") });
     });
@@ -377,7 +377,7 @@ describe("a merge into a worker's worktree that has a merge the worker has not f
     expect(ticket("CSV-2")).toMatchObject({ state: "working", check_failures: 0 });
     expect(h.host.callsTo("push")).toHaveLength(pushes);
     expect(h.host.callsTo("resetHard")).toEqual([]);
-    const sent = h.bb.sent(worker.thread_id!).at(-1)!;
+    const sent = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(sent).toContain("Your worktree has a merge you have not finished. Finish it with git commit, or abort it with git merge --abort, then call loom_submit.");
     const post = h.store.posts(ticket("CSV-2").id).filter((each) => each.kind === "merge").at(-1)!;
     expect(JSON.parse(post.data_json)).toMatchObject({ outcome: "unfinished" });
@@ -411,7 +411,7 @@ describe("a merge that runs again after its checks got no answer", () => {
     expect(project().state).toBe("running");
     expect(ticket()).toMatchObject({ state: "merging", pushed_sha: "sq1" });
     expect(waitOf()).toMatchObject({ failures: 1 });
-    expect(h.bb.sent(worker.thread_id!).join("\n")).not.toContain("left your worktree as it is");
+    expect(h.alia.sent(worker.thread_id!).join("\n")).not.toContain("left your worktree as it is");
 
     h.clock.advance(MINUTE);
     await queue();
@@ -460,7 +460,7 @@ describe("a merge that runs again after its checks got no answer", () => {
     expect(h.host.callsTo("mergeOnto")).toHaveLength(1);
     expect(h.host.callsTo("exec").at(-1)).toMatchObject({ cwd: `/wt/${worker.environment_id}`, command: "npm test" });
     expect(ticket("CSV-2")).toMatchObject({ state: "pr_open", head_sha: "lm1", merge_step_json: null });
-    expect(h.bb.sent(worker.thread_id!).join("\n")).not.toContain("left your worktree as it is");
+    expect(h.alia.sent(worker.thread_id!).join("\n")).not.toContain("left your worktree as it is");
   });
 
   it("pushes a restack whose checks passed when the push got no answer, on the next run, with no new merge or checks", async () => {
@@ -516,7 +516,7 @@ describe("a merge that runs again after its checks got no answer", () => {
     await queue();
     expect(ticket("CSV-2")).toMatchObject({ state: "working", merge_step_json: null });
     expect(h.host.callsTo("resetHard")).toHaveLength(resets);
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("left your worktree as it is: its HEAD is x9");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("left your worktree as it is: its HEAD is x9");
   });
 
   it("hands the ticket back, resetting nothing, when a worker's worktree on the checkout's machine has a merge with nothing left to resolve", async () => {
@@ -533,7 +533,7 @@ describe("a merge that runs again after its checks got no answer", () => {
     expect(project().state).toBe("running");
     expect(ticket()).toMatchObject({ state: "working", merge_step_json: null, pushed_sha: "sq1" });
     expect(h.host.callsTo("resetHard")).toEqual([]);
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("Your worktree has a merge you have not finished.");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("Your worktree has a merge you have not finished.");
   });
 });
 
@@ -659,7 +659,7 @@ describe("a pull request read whose host call got no answer", () => {
     expect(ticket().pr_poll_json).toBeNull();
   });
 
-  // LANE and OTLP paused after each Loom update: bb retired the old host plugin generation in the middle of a read.
+  // LANE and OTLP paused after each Loom update: VesnALIA retired the old host plugin generation in the middle of a read.
   it.each([
     "host plugin loom generation b8fb7249-25dc-4876-a611-f5331fbe1ad8 is retired",
     "host plugin loom startup timed out",

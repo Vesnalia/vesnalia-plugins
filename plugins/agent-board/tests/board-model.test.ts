@@ -20,7 +20,7 @@ function card(status: BoardCard["status"], kind: BoardCard["kind"] = "thread"): 
     parentKey: null,
     depth: 0,
     kind,
-    source: "bb",
+    source: "alia",
     title: "Card",
     subtitle: null,
     status,

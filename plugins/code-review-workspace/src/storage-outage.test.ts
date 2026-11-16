@@ -1,8 +1,8 @@
-// What a storage failure leaves behind, as a Postgres outage does: BB tells each thread event once, and a guide run
+// What a storage failure leaves behind, as a Postgres outage does: VesnALIA tells each thread event once, and a guide run
 // records its end once, so a store call that fails then would leave a review generating, a feedback check or discussion
 // waiting, or an ask queued, until a reload. The review-state pass settles them while the plugin serves.
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 
 const PATCH = "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -0,0 +1,2 @@\n+one\n+two\n";
 vi.mock("./gh", async (original) => ({
@@ -13,7 +13,7 @@ vi.mock("./gh", async (original) => ({
 
 import plugin from "../server";
 import { GUIDE_UNFINISHED } from "./generate";
-import type { FakePluginHarness } from "@get-bb/plugin-sdk/testing";
+import type { FakePluginHarness } from "@vesnalia/plugin-sdk/testing";
 import { endPgTestSql } from "./db/pg-test.test-support";
 import { testOnPostgres, testSql, testStore } from "./test-store.test-support";
 
@@ -32,19 +32,19 @@ async function reviewStatePass(harness: FakePluginHarness, settled: () => Promis
 // Rebuild did nothing, Delete was refused, and no log said why.
 test("a guide whose run ended as the storage failed is failed, saying why, by the next review-state pass, and Rebuild builds it again", async () => {
   let spawns = 0;
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: {
       spawn: async () => { spawns++; throw new Error("spawn failed"); },
       archive: async () => ({}), stop: async () => ({}), list: async () => ({ threads: [], nextCursor: null }),
     },
     projects: { defaultExecutionOptions: async () => null }, providers: { list: async () => [] },
   } as never });
-  await plugin(bb);
-  const store = testStore(bb);
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "local:feature", kind: "ref", gitRef: "main...feature", cwd: process.cwd(), status: "ready", createdAt: 1, projectId: "p1" });
   await store.savePatch("local:feature", PATCH);
   // The run's end fails to record, as when Postgres goes away as the writer fails.
-  const sql = testSql(bb);
+  const sql = testSql(alia);
   if (sql.dialect === "sqlite") {
     await sql.run(`CREATE TRIGGER refuse_end BEFORE UPDATE ON reviews WHEN NEW.status = 'error' BEGIN SELECT RAISE(ABORT, 'Connection terminated unexpectedly'); END`);
   } else {
@@ -63,15 +63,15 @@ test("a guide whose run ended as the storage failed is failed, saying why, by th
 });
 
 test("a review-state pass leaves a guide that's still running be", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: {
       spawn: async () => ({ id: "writer" }), wait: () => new Promise(() => {}),
       archive: async () => ({}), stop: async () => ({}), list: async () => ({ threads: [], nextCursor: null }),
     },
     projects: { defaultExecutionOptions: async () => null }, providers: { list: async () => [] },
   } as never });
-  await plugin(bb);
-  const store = testStore(bb);
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "local:feature", kind: "ref", gitRef: "main...feature", cwd: process.cwd(), status: "ready", createdAt: 1, projectId: "p1" });
   await store.savePatch("local:feature", PATCH);
   expect(await harness.behavior.callRpc("rereview", { targetKey: "local:feature" })).toEqual({ ok: true });
@@ -86,7 +86,7 @@ test("a review-state pass leaves a guide that's still running be", async () => {
 // Review round 1, NIT 2: a reload or update while a guide ran logged that its end couldn't be recorded, though the
 // storage closing then is expected, and the next instance ends the run.
 test("a guide run a reload stops logs nothing about recording its end", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: {
       spawn: async () => ({ id: "writer" }),
       wait: ({ signal }: { signal: AbortSignal }) => new Promise((_, reject) => signal.addEventListener("abort", () => reject(new Error("This operation was aborted")), { once: true })),
@@ -96,9 +96,9 @@ test("a guide run a reload stops logs nothing about recording its end", async ()
   } as never });
   // The host closes its SQLite database after the plugin's dispose hooks, as a reload does; the Postgres the tests
   // share stays open unless closed there too, as the plugin's own Postgres is.
-  if (testOnPostgres) bb.onDispose(() => endPgTestSql(bb));
-  await plugin(bb);
-  const store = testStore(bb);
+  if (testOnPostgres) alia.onDispose(() => endPgTestSql(alia));
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "local:feature", kind: "ref", gitRef: "main...feature", cwd: process.cwd(), status: "ready", createdAt: 1, projectId: "p1" });
   await store.savePatch("local:feature", PATCH);
   expect(await harness.behavior.callRpc("rereview", { targetKey: "local:feature" })).toEqual({ ok: true });
@@ -112,17 +112,17 @@ const MINUTE = 60_000;
 
 /** A served review whose assistant is `status` with nothing queued, after activation's own settling. */
 async function assistantReview(status: "idle" | "active") {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     get: async () => makeThreadResponse({ id: "assistant", status }),
     queuedMessages: { list: async () => [] },
   } } as never });
-  await plugin(bb);
-  const store = testStore(bb);
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1", projectId: "p1" });
   await store.setAssistantThread("pr-1", "assistant");
   // Activation settles what it finds waiting, in the background; these come after it.
   await new Promise((resolve) => setTimeout(resolve, 50));
-  return { harness, store, sql: testSql(bb) };
+  return { harness, store, sql: testSql(alia) };
 }
 
 // bug bash F3: the thread.idle that ends a feedback check and a discussion's wait, lost to a storage failure, left

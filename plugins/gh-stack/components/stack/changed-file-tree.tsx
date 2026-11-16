@@ -1,6 +1,6 @@
 // Read-only Pierre Trees file tree adapted for the stack panel, with per-row +/− delta
 // decorations (files and aggregated folders), non-scrolling row-fitted
-// height, themed against bb host tokens in app.css.
+// height, themed against VesnALIA host tokens in app.css.
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import type {
@@ -205,7 +205,7 @@ export function ChangedFileTree({
           // calc(), where a bare number would invalidate the declaration and
           // silently restore the 16px default.
           "--trees-padding-inline-override": "0px",
-          // bb supplies its own tree foreground as an inline custom property,
+          // VesnALIA supplies its own tree foreground as an inline custom property,
           // which outranks app.css. Keep folder paths one text step below the
           // changed files by overriding the token at that same inline boundary.
           "--trees-fg-override": "var(--muted-foreground)",

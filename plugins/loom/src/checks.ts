@@ -79,7 +79,7 @@ export function submit(ctx: EngineCtx, threadId: string, summary: string, pr?: {
   store.changed(ticket.project_id);
   // After checks that could not reach the project's machine, the next run waits its turn; the tick starts it once it is due.
   const wait = retriesOf(store).checks.waitMs(ticket.id, ctx.now());
-  if (wait === 0) void runChecks(ctx, ticket.id).catch((error) => ctx.bb.log("error", `Checks of ${ticket.key} failed: ${errText(error)}`));
+  if (wait === 0) void runChecks(ctx, ticket.id).catch((error) => ctx.alia.log("error", `Checks of ${ticket.key} failed: ${errText(error)}`));
   else return `Submitted ${ticket.key}. The plugin's last run of the checks timed out or could not reach the project's machine, so it runs them in about ${formatDuration(wait)}. End your turn; the result arrives as a message.`;
   return `Submitted ${ticket.key}. The plugin is committing your work and running the checks now, so end your turn. The result arrives as a message: either what to fix, or a note that the ticket is waiting for review.`;
 }
@@ -106,7 +106,7 @@ export function resumeCheckingTickets(ctx: EngineCtx): number {
     for (const ticket of ctx.store.tickets(project.id, ["checking"])) {
       if (running.has(ticket.id) || retriesOf(ctx.store).checks.waitMs(ticket.id, ctx.now()) > 0) continue;
       started += 1;
-      void runChecks(ctx, ticket.id).catch((error) => ctx.bb.log("error", `Checks of ${ticket.key} failed: ${errText(error)}`));
+      void runChecks(ctx, ticket.id).catch((error) => ctx.alia.log("error", `Checks of ${ticket.key} failed: ${errText(error)}`));
     }
   }
   return started;
@@ -378,8 +378,8 @@ function hostFailed(ctx: EngineCtx, ticketId: number, failure: unknown): void {
 
 async function send(ctx: EngineCtx, threadId: string, message: string | { summary: string; detail: string }): Promise<void> {
   try {
-    await ctx.bb.send(threadId, message);
+    await ctx.alia.send(threadId, message);
   } catch (error) {
-    ctx.bb.log("warn", `Could not message ${threadId}: ${errText(error)}`);
+    ctx.alia.log("warn", `Could not message ${threadId}: ${errText(error)}`);
   }
 }

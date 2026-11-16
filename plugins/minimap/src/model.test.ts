@@ -3,7 +3,7 @@ import { test } from "node:test";
 import {
   glideStep,
   shadeAlpha,
-  bbOf,
+  aliaOf,
   buildLayout,
   dataIdOf,
   inScrollerPixels,
@@ -25,7 +25,7 @@ import {
 const item = (id: string, h: number, kind: Item["kind"] = "reply", w = 1): Item => ({ id, kind, h, w });
 const mounted = (id: string, rank: number | null, y: number, h: number, kind: Mounted["kind"] = "reply"): Mounted => ({ id, kind, rank, y, h, w: 1 });
 
-test("kind of a row BB made up is read from its id", () => {
+test("kind of a row VesnALIA made up is read from its id", () => {
   assert.equal(kindOfDomId("t:user-seed:12"), "user");
   assert.equal(kindOfDomId("t:assistant:kind:assistant|turn:x"), "reply");
   assert.equal(kindOfDomId("t:abc-t1:turn:0"), "work");
@@ -47,7 +47,7 @@ test("a longer text is taller and a short bubble is narrow", () => {
   assert.ok(long.h > short.h);
 });
 
-test("a very long message of yours is estimated no taller than BB shows it", () => {
+test("a very long message of yours is estimated no taller than VesnALIA shows it", () => {
   assert.equal(userSize("x".repeat(4000)).h, 380);
 });
 
@@ -77,7 +77,7 @@ test("the map does not move when the scroller's spacers do", () => {
   const items = ["a", "b", "c", "d", "e", "f"].map((id) => item(id, 100));
   const cache = new Map<string, Measure>();
   const one = buildLayout({ items, mounted: [mounted("c", 2, 1000, 150)], cache, total: 2000 });
-  // BB re-measures: the same row now sits at 2400 in a scroller twice as tall.
+  // VesnALIA re-measures: the same row now sits at 2400 in a scroller twice as tall.
   const two = buildLayout({ items, mounted: [mounted("c", 2, 2400, 150)], cache, total: 4000 });
   assert.deepEqual(two.y, one.y);
   assert.deepEqual(two.h, one.h);
@@ -90,8 +90,8 @@ test("scroller positions and strip positions convert both ways", () => {
   // Row b starts at 600 in the scroller and 100 on the strip.
   assert.equal(ownOf(layout, 600), 100);
   assert.equal(ownOf(layout, 750), 250);
-  assert.equal(bbOf(layout, 100), 600);
-  assert.equal(bbOf(layout, 250), 750);
+  assert.equal(aliaOf(layout, 100), 600);
+  assert.equal(aliaOf(layout, 250), 750);
   assert.equal(ownOf(layout, -50), 0);
   assert.equal(ownOf(layout, 5000), layout.total);
   // The span above the first row on screen is spread over the rows the data holds above it.
@@ -175,15 +175,15 @@ test("a folded line whose run is not in sight is left to the estimate", () => {
 test("in the scroller's pixels rows on screen keep their places and the whole spans the scroller", () => {
   const items = ["a", "b", "c", "d"].map((id) => item(id, 100));
   const own = buildLayout({ items, mounted: [mounted("b", 1, 600, 100), mounted("c", 2, 700, 100)], cache: new Map(), total: 1000 });
-  const bb = inScrollerPixels(own);
-  assert.equal(bb.y[1], 600);
-  assert.equal(bb.h[1], 100);
-  assert.equal(bb.y[2], 700);
-  assert.equal(bb.total, 1000);
+  const alia = inScrollerPixels(own);
+  assert.equal(alia.y[1], 600);
+  assert.equal(alia.h[1], 100);
+  assert.equal(alia.y[2], 700);
+  assert.equal(alia.total, 1000);
   // The row above is stretched over the 600px the scroller holds above the first row on screen.
-  assert.equal(bb.y[0], 0);
-  assert.equal(bb.h[0], 600);
-  assert.equal(ownOf(bb, 750), 750);
+  assert.equal(alia.y[0], 0);
+  assert.equal(alia.h[0], 600);
+  assert.equal(ownOf(alia, 750), 750);
 });
 
 test("a row measured while its turn worked and folded away since leaves no ghost rectangle", () => {

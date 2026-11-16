@@ -147,12 +147,12 @@ describe("organizeLanes: other modes", () => {
       input({
         mode: "environment",
         threads: [
-          makeThread({ id: "wt", environment: { id: "env_wt", branchName: "bb/lanes", isWorktree: true } }),
+          makeThread({ id: "wt", environment: { id: "env_wt", branchName: "alia/lanes", isWorktree: true } }),
           makeThread({ id: "bare", environment: null }),
         ],
       }),
     );
-    expect(outline(result.rows)).toEqual(["# bb/lanes", "wt", "# No environment", "bare"]);
+    expect(outline(result.rows)).toEqual(["# alia/lanes", "wt", "# No environment", "bare"]);
     expect(result.groups.get("env:env_wt")).toMatchObject({ detail: "alpha", icon: "GitBranch" });
   });
 

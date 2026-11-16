@@ -6,7 +6,7 @@ import {
   type ExperimentalSidebarHeaderProps,
   type ExperimentalSidebarNavigationItem,
   type ExperimentalSidebarNavigationProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { useLayoutEffect, useSyncExternalStore } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -221,7 +221,7 @@ export default definePluginApp((app) => {
   app.slots.experimental_sidebarNavigation({
     id: "icons",
     title: "Compact Nav",
-    description: "Compact icons with bb's saved order, visibility, and customization.",
+    description: "Compact icons with VesnALIA's saved order, visibility, and customization.",
     component: CompactNavigation,
   });
 });

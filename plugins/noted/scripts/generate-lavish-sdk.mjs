@@ -1,7 +1,7 @@
 // Serializes the vendored Lavish SDK into lib/lavish-sdk.generated.ts.
 //
 // The SDK runs inside the review iframe, so it ships as source text built with
-// Function.prototype.toString(). That must happen here, under plain Node: BB
+// Function.prototype.toString(). That must happen here, under plain Node: VesnALIA
 // compiles server.ts with minify and keepNames, which rewrites function bodies to
 // call a module-level `__name` helper the iframe does not have.
 //

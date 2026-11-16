@@ -75,7 +75,7 @@ export async function readEnvToken(
   signal: AbortSignal,
 ): Promise<string> {
   try {
-    const env: NodeJS.ProcessEnv = { ...process.env, BB_SERVER_URL: baseUrl };
+    const env: NodeJS.ProcessEnv = { ...process.env, ALIA_SERVER_URL: baseUrl };
     const r = await exec(binary, ["env-catalog", "get", name, "--raw"], {
       env,
       timeout: 15_000,
@@ -97,17 +97,17 @@ export async function checkBot(tg: Telegram, expected?: number) {
     topics: me.has_topics_enabled === true,
   };
 }
-export async function runBb(
+export async function runAlia(
   binary: string,
   baseUrl: string,
   args: string[],
   signal: AbortSignal,
 ): Promise<unknown> {
   try {
-    const env: NodeJS.ProcessEnv = { ...process.env, BB_SERVER_URL: baseUrl };
-    delete env.BB_PROJECT_ID;
-    delete env.BB_THREAD_ID;
-    delete env.BB_ENVIRONMENT_ID;
+    const env: NodeJS.ProcessEnv = { ...process.env, ALIA_SERVER_URL: baseUrl };
+    delete env.ALIA_PROJECT_ID;
+    delete env.ALIA_THREAD_ID;
+    delete env.ALIA_ENVIRONMENT_ID;
     const r = await exec(binary, args, {
       env,
       timeout: 30_000,
@@ -124,7 +124,7 @@ export const trackersSchema = z.object({
     z.object({
       id: z.string(),
       name: z.string(),
-      linkedBbProjectId: z.string().nullable(),
+      linkedAliaProjectId: z.string().nullable(),
     }),
   ),
 });
@@ -163,7 +163,7 @@ export async function readTasks(
 
 export async function transcribeTelegramVoice(
   token: TokenSource,
-  sdk: import("@get-bb/plugin-sdk").BbPluginApi["sdk"],
+  sdk: import("@vesnalia/plugin-sdk").AliaPluginApi["sdk"],
   voice: { fileId: string; mime: string; size: number; duration: number },
   signal: AbortSignal,
 ): Promise<string> {

@@ -268,7 +268,7 @@ describe("rung 3 — a key in a USER message", () => {
 });
 
 describe("rung 3.5 — a key in the title never binds", () => {
-  it("suggests instead, because a bb title's authorship is unknowable", () => {
+  it("suggests instead, because a VesnALIA title's authorship is unknowable", () => {
     // The regression this guards: assistant output mentioned an old, related
     // issue; only user messages may bind. A title (or any non-user text) with
     // a key must come back as a suggestion the user confirms.

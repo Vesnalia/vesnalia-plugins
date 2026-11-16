@@ -125,7 +125,7 @@ export function createServerProjectIcons(ctx: ServerContext) {
   const defaultProjectHostId = async (projectId: string): Promise<string | null> => {
     let pending = defaultProjectHostIds.get(projectId);
     if (!pending) {
-      pending = ctx.bb.sdk.projects
+      pending = ctx.alia.sdk.projects
         .get({ projectId })
         .then(
           (project) => project.sources.find((source) => source.isDefault)?.hostId ?? project.sources[0]?.hostId ?? null,
@@ -138,19 +138,19 @@ export function createServerProjectIcons(ctx: ServerContext) {
 
   const readProjectFile = async (projectId: string, environmentId: string | null, path: string) => {
     if (environmentId) {
-      return ctx.bb.sdk.projects.fileContent({ projectId, environmentId, path });
+      return ctx.alia.sdk.projects.fileContent({ projectId, environmentId, path });
     }
     const hostId = await defaultProjectHostId(projectId);
     return hostId
-      ? ctx.bb.sdk.projects.fileContent({ projectId, hostId, path })
-      : ctx.bb.sdk.projects.fileContent({ projectId, path });
+      ? ctx.alia.sdk.projects.fileContent({ projectId, hostId, path })
+      : ctx.alia.sdk.projects.fileContent({ projectId, path });
   };
 
   const listProjectFiles = async (projectId: string, environmentId: string | null, query: string) => {
     const request = { projectId, query, limit: "100" };
-    if (environmentId) return ctx.bb.sdk.projects.files({ ...request, environmentId });
+    if (environmentId) return ctx.alia.sdk.projects.files({ ...request, environmentId });
     const hostId = await defaultProjectHostId(projectId);
-    return hostId ? ctx.bb.sdk.projects.files({ ...request, hostId }) : ctx.bb.sdk.projects.files(request);
+    return hostId ? ctx.alia.sdk.projects.files({ ...request, hostId }) : ctx.alia.sdk.projects.files(request);
   };
 
   const readManifestIconPath = async (projectId: string, environmentId: string | null): Promise<string | null> => {
@@ -302,7 +302,7 @@ export function createServerProjectIcons(ctx: ServerContext) {
 
   const handlers = {
     async listProjectIconSettings() {
-      const projects = await ctx.bb.sdk.projects.list();
+      const projects = await ctx.alia.sdk.projects.list();
       return {
         projects: projects
           .filter((project) => project.kind === "standard")
@@ -324,8 +324,8 @@ export function createServerProjectIcons(ctx: ServerContext) {
         query,
       };
       const result = hostId
-        ? await ctx.bb.sdk.projects.paths({ ...request, hostId })
-        : await ctx.bb.sdk.projects.paths(request);
+        ? await ctx.alia.sdk.projects.paths({ ...request, hostId })
+        : await ctx.alia.sdk.projects.paths(request);
       return {
         paths: [
           ...new Set(
@@ -339,7 +339,7 @@ export function createServerProjectIcons(ctx: ServerContext) {
       };
     },
     async setProjectIcon({ projectId, path }) {
-      await ctx.bb.sdk.projects.get({ projectId });
+      await ctx.alia.sdk.projects.get({ projectId });
       const normalized = path === null ? null : normalizeProjectIconPath(path);
       if (path !== null && normalized === null) {
         throw new Error("Choose a relative image path inside the project");
@@ -364,11 +364,11 @@ export function createServerProjectIcons(ctx: ServerContext) {
         })();
       }
       clearProjectIconCache(projectId);
-      ctx.bb.realtime.publish(PROJECT_ICONS_CHANNEL, { projectId });
+      ctx.alia.realtime.publish(PROJECT_ICONS_CHANNEL, { projectId });
       return { customPath: normalized, customUploadName: null };
     },
     async uploadProjectIcon({ projectId, filename, mimeType, contentBase64 }) {
-      await ctx.bb.sdk.projects.get({ projectId });
+      await ctx.alia.sdk.projects.get({ projectId });
       const bytes = Buffer.from(contentBase64, "base64");
       if (bytes.byteLength === 0 || bytes.byteLength > PROJECT_ICON_MAX_BYTES) {
         throw new Error("Choose an image smaller than 1 MB");
@@ -397,7 +397,7 @@ export function createServerProjectIcons(ctx: ServerContext) {
         ctx.db.prepare(`DELETE FROM project_icons WHERE project_id = ?`).run(projectId);
       })();
       clearProjectIconCache(projectId);
-      ctx.bb.realtime.publish(PROJECT_ICONS_CHANNEL, { projectId });
+      ctx.alia.realtime.publish(PROJECT_ICONS_CHANNEL, { projectId });
       return {
         customPath: null,
         customUploadName: normalizedFilename,

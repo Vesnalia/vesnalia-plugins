@@ -1,32 +1,24 @@
 {
-  "name": "bb-plugin-omp-subagents",
+  "name": "alia-plugin-omp-subagents",
   "version": "0.1.2",
   "type": "module",
-  "description": "Watch, inspect, and steer the subagents an OMP thread spawns: live roster, transcripts, progress, and message injection in BB's own UI.",
+  "description": "Watch, inspect, and steer the subagents an OMP thread spawns: live roster, transcripts, progress, and message injection in VesnALIA's own UI.",
   "license": "MIT",
   "author": "IMPOSTOR15",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/IMPOSTOR15/bb-plugin-omp-subagents.git"
-  },
-  "homepage": "https://github.com/IMPOSTOR15/bb-plugin-omp-subagents#readme",
-  "bugs": {
-    "url": "https://github.com/IMPOSTOR15/bb-plugin-omp-subagents/issues"
-  },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "omp",
     "subagents",
     "observability",
     "agents"
   ],
   "engines": {
-    "bb": ">=0.47",
-    "bbPluginSdk": ">=0.6.73"
+    "alia": ">=0.47",
+    "aliaPluginSdk": ">=0.6.73"
   },
-  "bb": {
+  "alia": {
     "name": "OMP Subagents",
-    "description": "Watch OMP subagents inside BB: a live strip under each spawn, a roster panel with transcripts and results, and a CLI.",
+    "description": "Watch OMP subagents inside VesnALIA: a live strip under each spawn, a roster panel with transcripts and results, and a CLI.",
     "branding": {
       "icon": "Bot"
     },
@@ -38,7 +30,7 @@
     ]
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
@@ -47,7 +39,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.79",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -60,5 +51,22 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.79"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/omp-subagents#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/omp-subagents"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

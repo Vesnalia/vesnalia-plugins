@@ -1,6 +1,6 @@
 ## Archive without a menu
 
-Add a quick archive action to each thread header. The action uses BB’s native archive behavior, leaving the conversation recoverable through the archived-thread controls.
+Add a quick archive action to each thread header. The action uses VesnALIA’s native archive behavior, leaving the conversation recoverable through the archived-thread controls.
 
 ## Compatibility
 

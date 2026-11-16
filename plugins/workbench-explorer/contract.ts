@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   anchorFixSchema,
@@ -72,7 +72,7 @@ export const rpcContract = defineRpcContract({
    * `packs/gws` and `and/or` are the same shape, so the filesystem decides
    * which strings in a message get a reveal affordance.
    */
-  /** Diagnostics from the browser, so DOM behaviour is observable in bb.log. */
+  /** Diagnostics from the browser, so DOM behaviour is observable in alia.log. */
   clientLog: {
     input: z.object({ message: z.string().max(2000) }).strict(),
     output: z.object({ ok: z.boolean() }),
@@ -103,7 +103,7 @@ export const rpcContract = defineRpcContract({
   },
   /**
    * Which of these chat links point at a file that does not exist, and where
-   * the linked text actually lives. bb resolves a path written in a message
+   * the linked text actually lives. VesnALIA resolves a path written in a message
    * against the thread's own workspace root, so a message that names a file in
    * another project links to a path that was never there.
    */

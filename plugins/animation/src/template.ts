@@ -81,7 +81,7 @@ export function titleFromPath(filePath: string): string {
 /**
  * The chat directive that plays a scene inline.
  *
- * Attributes are separated by a space. BB parses directives like HTML
+ * Attributes are separated by a space. VesnALIA parses directives like HTML
  * attributes, so a comma between them makes the whole line plain text.
  */
 export function sceneDirective(file: string, height?: number): string {

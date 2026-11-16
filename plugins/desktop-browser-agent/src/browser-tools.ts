@@ -5,7 +5,7 @@ import type { BrowserCallResult, ToolCallResult } from "./contract.js";
 import type { ActionResult, BridgeParams, BridgeToolMethod, HostErrorCode, TabInfo } from "../browser-extension/src/shared.js";
 
 /**
- * Agent tools backed by the optional Browser Bridge for bb extension. Each one
+ * Agent tools backed by the optional Browser Bridge for VesnALIA extension. Each one
  * maps to a method the extension's service worker dispatches.
  */
 export interface BrowserTool {
@@ -212,7 +212,7 @@ function setupStep(code: string, settingsPath: string): string {
     return `Ask the user to press **Install bridge** for this machine in the **Browser extension** card of ${settings}.`;
   }
   if (code === "not_connected") {
-    return `Ask the user to open a browser with the Browser Bridge for bb extension, or to check the **Browser extension** card of ${settings}.`;
+    return `Ask the user to open a browser with the Browser Bridge for VesnALIA extension, or to check the **Browser extension** card of ${settings}.`;
   }
   return `Tell the user that the browser extension is not available on this system (see the **Browser extension** card of ${settings}).`;
 }
@@ -225,7 +225,7 @@ export function browserToolResult(tool: BrowserTool, reply: BrowserCallResult, s
     }
     if (reply.code === "unknown_method") {
       return text(
-        `${tool.name} needs a newer Browser Bridge for bb than the one in this browser. Ask the user to update it: **Update** on the browser's extensions page (with Developer mode on) for a Web Store install, or \`npm run build:extension\` and **Reload** for an unpacked build.`,
+        `${tool.name} needs a newer Browser Bridge for VesnALIA than the one in this browser. Ask the user to update it: **Update** on the browser's extensions page (with Developer mode on) for a Web Store install, or \`npm run build:extension\` and **Reload** for an unpacked build.`,
         true,
       );
     }

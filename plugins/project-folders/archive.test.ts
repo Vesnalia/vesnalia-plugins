@@ -13,11 +13,11 @@ import path from "node:path";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import type { Archive } from "./archive";
 async function fixture() {
-  const root = await mkdtemp(path.join(tmpdir(), "bb-folders-test-"));
+  const root = await mkdtemp(path.join(tmpdir(), "alia-folders-test-"));
   const h = createFakePluginHost({
     pluginId: "project-folders",
     agentSkillIds: ["project-folders"],
@@ -80,7 +80,7 @@ async function fixture() {
       },
     },
   });
-  await plugin(h.bb);
+  await plugin(h.alia);
   return {
     ...h,
     root,
@@ -276,7 +276,7 @@ it("archives and restores existing idle chats and rejects active work before mov
     );
     expect(
       await stat(
-        path.join(h.root, "chat/.bb/chats/t1/history/index.json"),
+        path.join(h.root, "chat/.vesnalia/chats/t1/history/index.json"),
       ).then(() => true),
     ).toBe(true);
   } finally {

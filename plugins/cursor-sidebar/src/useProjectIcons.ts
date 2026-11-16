@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import { PROJECT_ICON_CHANNEL } from "./channels";
 import type { cursorSidebarRpcContract } from "./server";
 import { parseProjectIcon, serializeProjectIcon, type ProjectIcon } from "./project-icons";
@@ -14,7 +14,7 @@ export interface ProjectIcons {
 
 /**
  * Project icons are a per-user overlay in the plugin database, keyed by the raw
- * native project id. BB's SDK has no icon field, so this is the only store; an
+ * native project id. VesnALIA's SDK has no icon field, so this is the only store; an
  * unknown or stale value falls back to unset rather than crashing the
  * heading. Writes are optimistic and reconcile against a reload on realtime or
  * a failed write.

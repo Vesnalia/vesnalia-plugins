@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createHotspot } from "../server.ts";
 import { parseKillLine } from "../lib/kill.ts";
 
@@ -12,18 +12,18 @@ function line(pid, ppid, command, cpu = 0, tty = "??") {
   return `${pid} ${ppid} ${uid} ${tty} ${cpu.toFixed(1)} ${START}     ${command}`;
 }
 
-/** BB (and, below it, the plugin host at pid 600), the thread's agent at 300, and a dev server under its shell. */
+/** VesnALIA (and, below it, the plugin host at pid 600), the thread's agent at 300, and a dev server under its shell. */
 const TABLE = [
-  line(100, 1, "/Applications/bb.app/Contents/MacOS/bb"),
-  line(200, 100, "/Applications/bb.app/Contents/MacOS/bb bb-provider-bridge-worker.mjs"),
-  line(300, 200, `/Users/me/.local/bin/claude --verbose BB_THREAD_ID=${THREAD}`),
+  line(100, 1, "/Applications/alia.app/Contents/MacOS/alia"),
+  line(200, 100, "/Applications/alia.app/Contents/MacOS/alia alia-provider-bridge-worker.mjs"),
+  line(300, 200, `/Users/me/.local/bin/claude --verbose ALIA_THREAD_ID=${THREAD}`),
   line(310, 300, "/bin/zsh -c npm run dev"),
   line(311, 310, "node vite --port 5173", 90),
-  line(600, 100, "/Applications/bb.app/Contents/MacOS/bb bb-plugin-host-worker.mjs"),
+  line(600, 100, "/Applications/alia.app/Contents/MacOS/alia alia-plugin-host-worker.mjs"),
 ];
 
 async function load({ status = "active", extra = [] } = {}) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "hotspot" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "hotspot" });
   harness.sdk.stub("threads.get", async ({ threadId }) => {
     if (threadId !== THREAD) throw Object.assign(new Error("HTTP 404: Thread not found"), { status: 404 });
     return { id: threadId, title: "Home page", titleFallback: null, status };
@@ -35,7 +35,7 @@ async function load({ status = "active", extra = [] } = {}) {
   });
   let rows = [...TABLE, ...extra].join("\n");
   const signals = [];
-  await createHotspot(bb, {
+  await createHotspot(alia, {
     takeReading: async (at) => ({ live: { at, thermal: 0, cpu: 10, load: 0.1, threads: [], procs: [] }, stored: null }),
     kill: {
       readRows: async () => rows.split("\n").map((entry) => parseKillLine(entry)).filter(Boolean),
@@ -47,7 +47,7 @@ async function load({ status = "active", extra = [] } = {}) {
       selfPid: 600,
     },
   });
-  return { bb, harness, signals, stopped };
+  return { alia, harness, signals, stopped };
 }
 
 test("agents get no kill or stop tool; only hotspot_history", async () => {
@@ -59,7 +59,7 @@ test("killPlan lists targets and the spared agent; killApply accepts only a mint
   const { harness, signals } = await load();
   const plan = await harness.callRpc("killPlan", { threadId: THREAD });
   assert.deepEqual(plan.targets.map((target) => target.pid), [311, 310]);
-  assert.deepEqual(plan.excluded.map((entry) => [entry.pid, entry.reason]), [[300, "the thread's agent (launched by BB)"]]);
+  assert.deepEqual(plan.excluded.map((entry) => [entry.pid, entry.reason]), [[300, "the thread's agent (launched by VesnALIA)"]]);
   assert.equal(plan.title, "Home page");
 
   await assert.rejects(harness.callRpc("killApply", { pid: 311 }));
@@ -74,7 +74,7 @@ test("killPlan lists targets and the spared agent; killApply accepts only a mint
 test("killPlan refuses a malformed or unknown thread id", async () => {
   const { harness } = await load();
   await assert.rejects(harness.callRpc("killPlan", { threadId: "../../etc" }));
-  await assert.rejects(harness.callRpc("killPlan", { threadId: "thr_unknown0001" }), /No BB thread/);
+  await assert.rejects(harness.callRpc("killPlan", { threadId: "thr_unknown0001" }), /No ALIA thread/);
 });
 
 test("allowKill off refuses planning, applying and the CLI", async () => {
@@ -91,7 +91,7 @@ test("allowKill off refuses planning, applying and the CLI", async () => {
   assert.equal(overview.allowKill, false);
 });
 
-test("bb hotspot kill prints the plan without --yes and applies it with --yes", async () => {
+test("alia hotspot kill prints the plan without --yes and applies it with --yes", async () => {
   const { harness, signals } = await load();
   const dry = await harness.runCli(["kill", THREAD]);
   assert.equal(dry.exitCode, 0);
@@ -107,8 +107,8 @@ test("bb hotspot kill prints the plan without --yes and applies it with --yes", 
   assert.deepEqual(signals, []);
 });
 
-test("bb hotspot kill --yes applies the plan when a person runs it in a terminal", async () => {
-  const cli = `node /Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/host-daemon/dist/bb hotspot kill ${THREAD} --yes`;
+test("alia hotspot kill --yes applies the plan when a person runs it in a terminal", async () => {
+  const cli = `node /Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/host-daemon/dist/alia hotspot kill ${THREAD} --yes`;
   const { harness, signals } = await load({
     extra: [
       line(900, 1, "/System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal"),
@@ -159,7 +159,7 @@ test("killPlan with a key that is not a target plans nothing: spared, reused pid
   assert.deepEqual(signals, []);
 });
 
-test("bb hotspot kill --pid plans one process, refuses --yes from an agent, and applies it from a terminal", async () => {
+test("alia hotspot kill --pid plans one process, refuses --yes from an agent, and applies it from a terminal", async () => {
   const dryRun = await load({ extra: [SLEEP] });
   const dry = await dryRun.harness.runCli(["kill", THREAD, "--pid", "312"]);
   assert.equal(dry.exitCode, 0);
@@ -174,7 +174,7 @@ test("bb hotspot kill --pid plans one process, refuses --yes from an agent, and 
   assert.match(missing.stdout, /Nothing to kill: process \(pid 4242\) .* is no longer running/);
   assert.deepEqual(dryRun.signals, []);
 
-  const cli = `node /Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/host-daemon/dist/bb hotspot kill ${THREAD} --pid 312 --yes`;
+  const cli = `node /Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/host-daemon/dist/alia hotspot kill ${THREAD} --pid 312 --yes`;
   const { harness, signals } = await load({
     extra: [
       SLEEP,

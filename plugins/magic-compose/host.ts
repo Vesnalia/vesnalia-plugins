@@ -1,10 +1,10 @@
-// Runs on every enrolled machine's daemon. BB's machine record carries no
+// Runs on every enrolled machine's daemon. VesnALIA's machine record carries no
 // operating system or load, so the server asks each machine directly.
 import { execFile } from "node:child_process";
 import { statfs } from "node:fs/promises";
 import os from "node:os";
 import { promisify } from "node:util";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostContract } from "./contract.js";
 import { parseVmStatAvailableBytes } from "./lib/vm-stat.js";
 

@@ -1,10 +1,10 @@
 import { createHash } from "node:crypto";
 import { statSync } from "node:fs";
 import { dirname, join } from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-export type Database = ReturnType<BbPluginApi["storage"]["database"]>;
-export type DatabaseSource = Pick<BbPluginApi["storage"], "database">;
+export type Database = ReturnType<AliaPluginApi["storage"]["database"]>;
+export type DatabaseSource = Pick<AliaPluginApi["storage"], "database">;
 
 const MB = 1024 * 1024;
 export const MONITOR_CAP_BYTES = 10 * MB;

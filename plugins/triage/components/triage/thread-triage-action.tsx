@@ -1,6 +1,6 @@
 import { RenameTaskDialog } from "./rename-task-dialog";
 import { useState } from "react";
-import { useBbNavigate, useRealtime } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -10,7 +10,7 @@ import { claimTriageRefresh } from "@/lib/triage-mounts";
 
 export function ThreadTriageAction({ threadId, sidebar = false, isCompactViewport = false }: { threadId: string; sidebar?: boolean; isCompactViewport?: boolean }) {
   const { snapshot, rpc, refresh } = useTriage();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [renaming, setRenaming] = useState(false);
   const [pending, setPending] = useState(false);
   useRealtime("triage", (payload) => {

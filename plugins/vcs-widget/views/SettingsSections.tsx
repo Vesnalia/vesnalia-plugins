@@ -1,9 +1,9 @@
-// The plugin's own blocks on its settings page, under bb's form for the
+// The plugin's own blocks on its settings page, under VesnALIA's form for the
 // declared settings: what the plugin exposes to agents and to a terminal
 // (read-only, deliberately), and the favourites the popup keeps per machine
 // and worktree, which nothing else can list or clear.
 import { useCallback, useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { FavouriteRepo } from "../contracts";
 import { errorMessage } from "../lib/errors";
 import type { rpcContract } from "../server";
@@ -11,9 +11,9 @@ import { favouriteLabel } from "../shared/model";
 import { Button } from "@/components/ui/button";
 
 const READS = [
-  ["bb vcs-widget status", "branch, upstream, working tree, running job"],
-  ["bb vcs-widget branches --all", "local and remote branches with ahead/behind"],
-  ["bb vcs-widget log --grep fix", "recent commits, literal message filter"],
+  ["alia vcs-widget status", "branch, upstream, working tree, running job"],
+  ["alia vcs-widget branches --all", "local and remote branches with ahead/behind"],
+  ["alia vcs-widget log --grep fix", "recent commits, literal message filter"],
 ];
 
 export function AgentAccessSection() {

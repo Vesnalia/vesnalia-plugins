@@ -10,7 +10,7 @@ export function urlProblem(raw: string): string | null {
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") return `Only http and https links open on a phone, got ${url.protocol}`;
   if (LOCAL.test(url.hostname)) {
-    return `${url.hostname} only works on the server. Publish it first, for example with \`bb connect expose <port>\`, then pass the public URL.`;
+    return `${url.hostname} only works on the server. Publish it first, for example with \`alia connect expose <port>\`, then pass the public URL.`;
   }
   return null;
 }

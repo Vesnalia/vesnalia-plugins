@@ -1,5 +1,5 @@
-// Drag to reorder, the way bb's own sidebar does it (plugins/navigation and
-// plugins/thread-list in get-bb/bb): @dnd-kit, the neighbours making room as
+// Drag to reorder, the way VesnALIA's own sidebar does it (plugins/navigation and
+// plugins/thread-list in get-alia/alia): @dnd-kit, the neighbours making room as
 // the item moves, a mouse drag after 8px, a finger after a short hold, the
 // keyboard with Space and the arrows, and no click after a drag (see
 // `swallowNextClick`).
@@ -9,7 +9,7 @@
 // it, letting go without moving opens the menu instead.
 //
 // dnd-kit listens to mouse and touch events, so it leaves the pointer events
-// to bb's split drag on the same row: dragged out of the sidebar, a chat still
+// to VesnALIA's split drag on the same row: dragged out of the sidebar, a chat still
 // opens in a split.
 import { useEffect, useMemo, useRef, type CSSProperties, type HTMLAttributes } from "react";
 import {
@@ -78,7 +78,7 @@ function swallowNextClick() {
 }
 
 function setDraggingCursor(active: boolean) {
-  // bb's own stylesheet shows the grabbing cursor across the sidebar for this.
+  // VesnALIA's own stylesheet shows the grabbing cursor across the sidebar for this.
   if (active) document.body.dataset.sidebarDragging = "true";
   else delete document.body.dataset.sidebarDragging;
 }

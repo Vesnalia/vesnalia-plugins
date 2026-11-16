@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { definePluginApp, useRpc, experimental_copyToClipboard, experimental_saveFile, experimental_Icon as Icon } from '@get-bb/plugin-sdk/app';
+import { definePluginApp, useRpc, experimental_copyToClipboard, experimental_saveFile, experimental_Icon as Icon } from '@vesnalia/plugin-sdk/app';
 import type { HostState, ViewerMessage, rpcContract } from './contract';
 import { hostError } from './errors';
 import { resolveLanguage, translate } from './i18n.js';
@@ -18,7 +18,7 @@ function Emulator() {
   const rpc = useRpc<typeof rpcContract>();
   const [language, setLanguage] = useState(() => resolveLanguage('auto', navigator.languages));
   const t = useCallback((key: string, values?: Record<string, string>) => translate(language, key, values), [language]);
-  const [transport, setTransport] = useState<'bb' | 'network'>('bb');
+  const [transport, setTransport] = useState<'alia' | 'network'>('alia');
   const [hosts, setHosts] = useState<Host[]>([]);
   const [hostId, setHostId] = useState<string | null>(null);
   const [state, setState] = useState<HostState | null>(null);
@@ -112,7 +112,7 @@ function Emulator() {
         ws.onclose = () => {
           if (!live) return;
           setLink('lost');
-          setStatus(t(player.frames ? 'disconnected' : transport === 'network' ? 'networkBlocked' : 'bbBlocked'));
+          setStatus(t(player.frames ? 'disconnected' : transport === 'network' ? 'networkBlocked' : 'aliaBlocked'));
           retry = setTimeout(() => setTick(value => value + 1), RECONNECT_MS[Math.min(failures.current++, RECONNECT_MS.length - 1)]);
         };
       } catch (error) {
@@ -387,7 +387,7 @@ function Checks({ state, t }: { state: HostState; t: (key: string, values?: Reco
   );
 }
 
-/** BB has no built-in camera or Android back glyph; both follow the host icon size and colour. */
+/** VesnALIA has no built-in camera or Android back glyph; both follow the host icon size and colour. */
 const IPV4 = /^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/;
 
 /** Settings: the LAN / VPN address list, one row per Android host. Rows read as text until edited. */

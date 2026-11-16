@@ -1,5 +1,5 @@
-import type { BbPluginApi, PluginCliResult } from "@get-bb/plugin-sdk";
-import type { ExperimentalHostClient } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginCliResult } from "@vesnalia/plugin-sdk";
+import type { ExperimentalHostClient } from "@vesnalia/plugin-sdk";
 import type { cowHostContract, cowHostSignals } from "./contract.js";
 
 type CowHostClient = ExperimentalHostClient<
@@ -11,8 +11,8 @@ const CONVERT_TIMEOUT_MS = 30 * 60 * 1000;
 const STATUS_TIMEOUT_MS = 60 * 1000;
 
 const USAGE = `Usage:
-  bb btrfs-cow status  --machine <id-or-name> <path>   Report copy mode for a checkout
-  bb btrfs-cow convert --machine <id-or-name> <path>   Turn a checkout into a Btrfs subvolume so threads snapshot it
+  VesnALIA btrfs-cow status  --machine <id-or-name> <path>   Report copy mode for a checkout
+  VesnALIA btrfs-cow convert --machine <id-or-name> <path>   Turn a checkout into a Btrfs subvolume so threads snapshot it
 Options:
   --json    Machine-readable output
 `;
@@ -54,20 +54,20 @@ function fail(message: string): PluginCliResult {
   return { exitCode: 1, stderr: `${message}\n${USAGE}` };
 }
 
-export function registerCli(bb: BbPluginApi, host: CowHostClient): void {
-  bb.cli.register({
+export function registerCli(alia: AliaPluginApi, host: CowHostClient): void {
+  alia.cli.register({
     name: "btrfs-cow",
     summary: "Inspect and prepare checkouts for copy-on-write thread environments",
     commands: [
       {
         name: "status",
         summary: "Report whether a checkout will be snapshotted or reflink-copied",
-        usage: "bb btrfs-cow status --machine <id-or-name> <path> [--json]",
+        usage: "alia btrfs-cow status --machine <id-or-name> <path> [--json]",
       },
       {
         name: "convert",
         summary: "Replace a checkout directory with a Btrfs subvolume of the same contents",
-        usage: "bb btrfs-cow convert --machine <id-or-name> <path> [--json]",
+        usage: "alia btrfs-cow convert --machine <id-or-name> <path> [--json]",
       },
     ],
     async run(argv, ctx) {
@@ -82,7 +82,7 @@ export function registerCli(bb: BbPluginApi, host: CowHostClient): void {
       if (args.path === null) return fail("A checkout path is required");
       if (args.machine === null) return fail("--machine is required");
 
-      const hosts = await bb.sdk.hosts.list(
+      const hosts = await alia.sdk.hosts.list(
         ctx.signal !== undefined ? { signal: ctx.signal } : {},
       );
       const matches = hosts.filter(
@@ -106,7 +106,7 @@ export function registerCli(bb: BbPluginApi, host: CowHostClient): void {
           `Subvolume: ${status.isSubvolume ? "yes" : "no"}`,
           `Reflink copies: ${status.reflinkSupported ? "supported" : `not supported (${status.reflinkMessage ?? "unknown"})`}`,
           `Snapshot delete without root: ${status.subvolumeDeleteAllowed === null ? "n/a" : status.subvolumeDeleteAllowed ? "yes" : "no (mount option user_subvol_rm_allowed missing; teardown falls back to rm)"}`,
-          `Thread environments would use: ${status.mode === null ? "unavailable" : status.mode === "snapshot" ? "snapshot (constant time)" : "reflink copy (per-file); run `bb btrfs-cow convert` to enable snapshots"}`,
+          `Thread environments would use: ${status.mode === null ? "unavailable" : status.mode === "snapshot" ? "snapshot (constant time)" : "reflink copy (per-file); run `alia btrfs-cow convert` to enable snapshots"}`,
         ];
         return { exitCode: status.exists ? 0 : 1, stdout: `${lines.join("\n")}\n` };
       }

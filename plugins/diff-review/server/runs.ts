@@ -1,9 +1,9 @@
 /**
- * AI runs: threads the plugin starts in the reviewed workspace, visible in bb's sidebar so the user can
+ * AI runs: threads the plugin starts in the reviewed workspace, visible in VesnALIA's sidebar so the user can
  * watch, steer and approve them.
  *
  * - **review** — an AI review with an optional focus, leaving comments with the `diff_review_*` tools.
- *   bb cannot make a thread read-only (its least privileged mode is `accept-edits`), so the
+ *   VesnALIA cannot make a thread read-only (its least privileged mode is `accept-edits`), so the
  *   workspace's uncommitted changes are fingerprinted before and after, and every file that changed
  *   while it ran is listed on the run.
  *   The latest review run of a view not yet closed is the view's **reviewer**: a user comment with
@@ -14,12 +14,12 @@
  *
  * Mention and fix runs are sends (`sends` ledger), so the agent answers through the same checks as the
  * thread under review. None is a child of the user's thread, so none posts into it. Each thread
- * carries its run id in the plugin's metadata, which `bb.agents.configure` reads to give it the tools;
+ * carries its run id in the plugin's metadata, which `alia.agents.configure` reads to give it the tools;
  * the tools check the caller against the store, so the metadata grants nothing by itself.
  */
 import { posix } from "node:path";
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import { mentionsReviewer } from "../shared/mentions";
 import { contentLines, linesText, parsePatchLines, type PatchLines } from "../shared/patch-lines";
@@ -40,7 +40,7 @@ import { publicRun, ReviewError, targetFromKey, type ReviewService, type ReviewS
 import { newId, pendingRunThread, type RecordedSend, type ReviewStore, type StoredRun } from "./store";
 import { RUN_METADATA_KEY } from "./tool-names";
 
-type Sdk = BbPluginApi["sdk"];
+type Sdk = AliaPluginApi["sdk"];
 
 export interface RunSettings extends ReviewSettings {
   aiProvider: string;
@@ -48,7 +48,7 @@ export interface RunSettings extends ReviewSettings {
   aiPermissionMode: string;
 }
 
-/** The permission modes a run may start in: bb's "Approve for me" (`auto`) and "Accept edits". */
+/** The permission modes a run may start in: VesnALIA's "Approve for me" (`auto`) and "Accept edits". */
 export const RUN_PERMISSION_MODES = ["auto", "accept-edits"] as const;
 export type RunPermissionMode = (typeof RUN_PERMISSION_MODES)[number];
 
@@ -57,12 +57,12 @@ export function runPermissionMode(value: string): RunPermissionMode {
   return (RUN_PERMISSION_MODES as readonly string[]).includes(value) ? (value as RunPermissionMode) : "auto";
 }
 
-/** The modes bb starts a thread in; a provider supports some of them (`capabilities.permissionModes`). */
+/** The modes VesnALIA starts a thread in; a provider supports some of them (`capabilities.permissionModes`). */
 export type SpawnPermissionMode = RunPermissionMode | "full";
 
 /**
- * The mode a run's thread starts in: the setting's, when its provider supports it (or bb did not say
- * which it does); otherwise full. bb refuses a mode the provider lacks (opencode supports only Accept
+ * The mode a run's thread starts in: the setting's, when its provider supports it (or VesnALIA did not say
+ * which it does); otherwise full. VesnALIA refuses a mode the provider lacks (opencode supports only Accept
  * edits and full), and the owner chose a run in full mode over one that fails.
  */
 export function spawnPermissionMode(configured: RunPermissionMode, supported: readonly string[] | null): SpawnPermissionMode {
@@ -105,7 +105,7 @@ export class RunService {
   }
 
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly store: ReviewStore,
     private readonly review: ReviewService,
     private readonly settings: () => Promise<RunSettings>,
@@ -123,10 +123,10 @@ export class RunService {
   }
 
   private async defaultExecution(threadId: string, settings: RunSettings): Promise<{ execution: Execution | null; message: string | null }> {
-    const thread = await this.bb.sdk.threads.get({ threadId });
+    const thread = await this.alia.sdk.threads.get({ threadId });
     if (thread.environmentId === null) return { execution: null, message: "This thread has no workspace yet." };
     const providerId = settings.aiProvider.trim() || "claude-code";
-    const options = await this.bb.sdk.providers.models({ environmentId: thread.environmentId, providerId });
+    const options = await this.alia.sdk.providers.models({ environmentId: thread.environmentId, providerId });
     if (options.modelLoadError !== null) {
       return { execution: null, message: options.modelLoadError.detail ?? `${providerId} could not list its models (${options.modelLoadError.code}).` };
     }
@@ -139,13 +139,13 @@ export class RunService {
     return { execution: { providerId, model: model.model, reasoningLevel: reasoningLevel(model.defaultReasoningEffort) }, message: null };
   }
 
-  /** The permission modes a provider supports in an environment, as bb reports them; null when bb does not say. */
+  /** The permission modes a provider supports in an environment, as VesnALIA reports them; null when VesnALIA does not say. */
   private async providerPermissionModes(environmentId: string, providerId: string): Promise<readonly string[] | null> {
     try {
-      const providers = await this.bb.sdk.providers.list({ environmentId });
+      const providers = await this.alia.sdk.providers.list({ environmentId });
       return providers.find((provider) => provider.id === providerId)?.capabilities.permissionModes ?? null;
     } catch (error) {
-      this.bb.log.warn(`Could not read ${providerId}'s permission modes; starting in the configured one: ${error instanceof Error ? error.message : String(error)}`);
+      this.alia.log.warn(`Could not read ${providerId}'s permission modes; starting in the configured one: ${error instanceof Error ? error.message : String(error)}`);
       return null;
     }
   }
@@ -267,7 +267,7 @@ export class RunService {
   onUserComment(thread: ReviewThread, body: string, viewerThreadId: string | null): void {
     if (!mentionsReviewer(body)) return;
     void this.askReviewer(thread.id, viewerThreadId).catch((error: unknown) => {
-      this.bb.log.warn(`Could not ask the reviewer about ${thread.id}: ${error instanceof Error ? error.message : String(error)}`);
+      this.alia.log.warn(`Could not ask the reviewer about ${thread.id}: ${error instanceof Error ? error.message : String(error)}`);
     });
   }
 
@@ -315,7 +315,7 @@ export class RunService {
     if (reviewer !== null && reviewer.threadId !== null && this.store.run(reviewer.id)?.status !== "closed") {
       const send = this.store.recordSend(session.id, reviewer.threadId, [thread.id], "");
       try {
-        await this.bb.sdk.threads.send({ threadId: reviewer.threadId, mode: "queue-if-active", input: [{ type: "text", text: reviewerPrompt(target, thread, true, commits), mentions: [] }] });
+        await this.alia.sdk.threads.send({ threadId: reviewer.threadId, mode: "queue-if-active", input: [{ type: "text", text: reviewerPrompt(target, thread, true, commits), mentions: [] }] });
         this.store.restartRun(reviewer.id);
         this.review.publishSession(session.id);
         return publicRun(this.store.run(reviewer.id)!);
@@ -323,7 +323,7 @@ export class RunService {
         // Its thread is gone (archived or deleted outside the tab): close that run and start anew.
         this.store.dropSend(send);
         this.store.closeRun(reviewer.id);
-        this.bb.log.info(`Reviewer run ${reviewer.id} could not take a follow-up (${error instanceof Error ? error.message : String(error)}); starting a new one.`);
+        this.alia.log.info(`Reviewer run ${reviewer.id} could not take a follow-up (${error instanceof Error ? error.message : String(error)}); starting a new one.`);
         if (this.clearCount(session.id) !== clears) return null;
         this.review.requireThread(reviewThreadId);
       }
@@ -401,17 +401,17 @@ export class RunService {
       deletedThreads += orphan.totalCount;
       this.review.publish(orphan.environmentId, orphan.sessionId);
     }
-    this.bb.log.info(`Deleted ${deleted} review(s) no live thread could open, with ${deletedThreads} comment thread(s).`);
+    this.alia.log.info(`Deleted ${deleted} review(s) no live thread could open, with ${deletedThreads} comment thread(s).`);
     return { deleted, deletedThreads };
   }
 
   private async archive(run: { id: string; threadId: string | null }): Promise<void> {
     if (run.threadId === null) return;
     try {
-      await this.bb.sdk.threads.archive({ threadId: run.threadId });
+      await this.alia.sdk.threads.archive({ threadId: run.threadId });
     } catch (error) {
       // The user may have archived or deleted it already; the run closes either way.
-      this.bb.log.warn(`Could not archive ${run.threadId} for run ${run.id}: ${error instanceof Error ? error.message : String(error)}`);
+      this.alia.log.warn(`Could not archive ${run.threadId} for run ${run.id}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -466,7 +466,7 @@ export class RunService {
       }
     }
     const authorName = await this.review.agentName(callerThreadId);
-    // The checks above awaited bb; the run may have been closed (Close, Clear review) meanwhile.
+    // The checks above awaited VesnALIA; the run may have been closed (Close, Clear review) meanwhile.
     if (this.store.runsOfThread(callerThreadId).every((row) => row.id !== run.id)) {
       throw new ReviewError("This review run was closed; its comments are no longer taken.", "not_a_review_run");
     }
@@ -475,21 +475,21 @@ export class RunService {
 
   /**
    * The lines a comment on `path` may be on: the diff's, or in the Any file view the file's own (read
-   * through bb on the workspace's machine), with the revision the thread keeps.
+   * through VesnALIA on the workspace's machine), with the revision the thread keeps.
    */
   private async linesOf(sessionId: string, environmentId: string, targetKey: string, path: string): Promise<{ lines: PatchLines; revision: string }> {
     if (targetFromKey(targetKey).kind !== "files") {
       const { patch, revision } = await this.patchOf(sessionId, environmentId, targetKey, path);
       return { lines: parsePatchLines(patch), revision };
     }
-    const environment = await this.bb.sdk.environments.get({ environmentId });
+    const environment = await this.alia.sdk.environments.get({ environmentId });
     const absolute = environment.path === null ? null : posix.join(environment.path, path);
     if (environment.path === null || absolute === null || !absolute.startsWith(`${environment.path.replace(/\/$/, "")}/`)) {
       throw new ReviewError(`${path} is not a file of this workspace.`, "file_not_in_diff");
     }
     let file;
     try {
-      file = await this.bb.sdk.files.read({ hostId: environment.hostId, path: absolute });
+      file = await this.alia.sdk.files.read({ hostId: environment.hostId, path: absolute });
     } catch (error) {
       throw new ReviewError(`Could not read ${path}: ${error instanceof Error ? error.message : String(error)}`, "file_not_in_diff");
     }
@@ -499,15 +499,15 @@ export class RunService {
 
   private async patchOf(sessionId: string, environmentId: string, targetKey: string, path: string): Promise<{ patch: string; revision: string }> {
     // Reads the ignore files like a tab's load does; this line tells the two apart in the log.
-    this.bb.log.debug(`Reading the diff of ${environmentId} to check a review comment on ${path}.`);
-    const environment = await this.bb.sdk.environments.get({ environmentId });
+    this.alia.log.debug(`Reading the diff of ${environmentId} to check a review comment on ${path}.`);
+    const environment = await this.alia.sdk.environments.get({ environmentId });
     const target = targetFromKey(targetKey);
     const settings = await this.settings();
-    const patterns = await ignorePatterns(this.bb.sdk, this.bb.log, environment, settings.ignorePatterns, settings.readIgnoreFiles);
+    const patterns = await ignorePatterns(this.alia.sdk, this.alia.log, environment, settings.ignorePatterns, settings.readIgnoreFiles);
     let diff;
     try {
       // A pull request's diff is its fetched range, as its view loaded it (or loads it now).
-      diff = target.kind === "pr" ? { files: await this.review.prs.filesFor(sessionId, environment, target, patterns) } : await loadDiff(this.review.sources, this.bb.log, environment, target, patterns);
+      diff = target.kind === "pr" ? { files: await this.review.prs.filesFor(sessionId, environment, target, patterns) } : await loadDiff(this.review.sources, this.alia.log, environment, target, patterns);
     } catch (error) {
       if (error instanceof ReviewUnavailable) throw new ReviewError(error.message, "diff_unavailable");
       throw error;
@@ -525,7 +525,7 @@ export class RunService {
       if (error instanceof ReviewUnavailable) throw new ReviewError(error.message, "diff_unavailable");
       throw error;
     }
-    if (loaded === undefined) throw new ReviewError(`bb gave no diff for ${path}.`, "file_not_in_diff");
+    if (loaded === undefined) throw new ReviewError(`alia gave no diff for ${path}.`, "file_not_in_diff");
     return { patch: loaded.patch, revision: file.revision };
   }
 
@@ -548,15 +548,15 @@ export class RunService {
    *
    * 1. Gives up if the view was cleared since the request came in (`clears`).
    * 2. Writes the run's row, and the sends of the comment threads it may answer (`grants`), before
-   *    anything awaits bb. Until bb names its thread, those sends point at `pendingRunThread`.
+   *    anything awaits VesnALIA. Until VesnALIA names its thread, those sends point at `pendingRunThread`.
    * 3. Reads what the start needs (workspace, parent, settings, execution, baseline), then stops
    *    there if the run was closed meanwhile.
-   * 4. Asks bb for the thread. The thread may call a tool, run the CLI or end a turn before bb's answer
-   *    arrives: `bindIfPending` then binds it by its metadata, which bb stamped as this plugin's.
+   * 4. Asks VesnALIA for the thread. The thread may call a tool, run the CLI or end a turn before VesnALIA's answer
+   *    arrives: `bindIfPending` then binds it by its metadata, which VesnALIA stamped as this plugin's.
    *    Binding moves the run's sends to it, so its rights exist before its first prompt can be acted
-   *    on. A run closed while bb started it has its thread archived at once.
+   *    on. A run closed while VesnALIA started it has its thread archived at once.
    *
-   * A thread bb refuses to start, or a start that fails before that, leaves a failed run that says
+   * A thread VesnALIA refuses to start, or a start that fails before that, leaves a failed run that says
    * why, with its sends taken back.
    */
   private async spawn(input: {
@@ -589,7 +589,7 @@ export class RunService {
       id,
       sessionId: input.sessionId,
       kind: input.kind,
-      bbThreadId: null,
+      aliaThreadId: null,
       reviewThreadId: input.reviewThreadId,
       focus: input.focus,
       providerId: known?.providerId ?? "",
@@ -603,7 +603,7 @@ export class RunService {
       grant = this.store.recordSend(input.sessionId, pendingRunThread(id), input.grants.reviewThreadIds, input.grants.note);
     }
     try {
-      const environment = await this.bb.sdk.environments.get({ environmentId: input.environmentId });
+      const environment = await this.alia.sdk.environments.get({ environmentId: input.environmentId });
       const parentThreadId = await this.parentIn(input.parentThreadId, input.environmentId);
       const execution = known ?? (await (input.execution as () => Promise<Execution>)());
       const permissionMode = spawnPermissionMode(
@@ -620,13 +620,13 @@ export class RunService {
       const before = this.store.run(id);
       if (before === null) throw new RunGone();
       if (before.status === "closed") {
-        // Cancelled before bb was asked: no thread will ever take its comments, so they go back to
+        // Cancelled before VesnALIA was asked: no thread will ever take its comments, so they go back to
         // whoever had them (Clear review already deleted them, which leaves nothing to undo).
         if (grant !== null) this.store.dropSend(grant);
         this.review.publishSession(input.sessionId);
         return publicRun(before);
       }
-      const thread = await this.bb.sdk.threads.spawn({
+      const thread = await this.alia.sdk.threads.spawn({
         projectId: environment.projectId,
         title: input.title,
         prompt: input.prompt,
@@ -644,7 +644,7 @@ export class RunService {
       });
       // Already bound if the thread called in first; binding again is a no-op.
       this.store.bindRun(id, thread.id);
-      // Closed (Close, Clear review) or deleted with its review while bb was starting it: that path
+      // Closed (Close, Clear review) or deleted with its review while VesnALIA was starting it: that path
       // had no thread to archive.
       const after = this.store.run(id);
       if (after === null || after.status === "closed") await this.archive({ id, threadId: thread.id });
@@ -662,7 +662,7 @@ export class RunService {
 
   /**
    * The startup handshake for a thread that calls in (a tool, the CLI, a turn's end) before `spawn`
-   * has recorded it: if bb stamped it as started by this plugin (`originPluginId`, which bb sets at
+   * has recorded it: if VesnALIA stamped it as started by this plugin (`originPluginId`, which VesnALIA sets at
    * creation and nothing can change) and its metadata names a run still waiting for its thread, the
    * thread is that run's from now on. The metadata alone proves nothing (any client can write it);
    * the origin and a still-unbound run with that random id do.
@@ -670,15 +670,15 @@ export class RunService {
   async bindIfPending(threadId: string | undefined): Promise<void> {
     if (threadId === undefined || !this.store.hasUnboundRuns() || this.store.isRunThread(threadId)) return;
     try {
-      const thread = await this.bb.sdk.threads.get({ threadId });
-      if (thread.originPluginId !== this.bb.pluginId) return;
-      const metadata = await this.bb.sdk.threads.getPluginMetadata({ threadId });
+      const thread = await this.alia.sdk.threads.get({ threadId });
+      if (thread.originPluginId !== this.alia.pluginId) return;
+      const metadata = await this.alia.sdk.threads.getPluginMetadata({ threadId });
       const runId = metadata[RUN_METADATA_KEY];
       if (typeof runId === "string" && /^[0-9a-f]{12}$/.test(runId) && this.store.bindRun(runId, threadId)) {
-        this.bb.log.debug(`Bound thread ${threadId} to run ${runId} before bb answered its start.`);
+        this.alia.log.debug(`Bound thread ${threadId} to run ${runId} before VesnALIA answered its start.`);
       }
     } catch (error) {
-      this.bb.log.debug(`Could not check whether ${threadId} is a run starting up: ${error instanceof Error ? error.message : String(error)}`);
+      this.alia.log.debug(`Could not check whether ${threadId} is a run starting up: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -689,11 +689,11 @@ export class RunService {
   private async parentIn(threadId: string | null, environmentId: string): Promise<string | null> {
     if (threadId === null) return null;
     try {
-      const thread = await this.bb.sdk.threads.get({ threadId });
+      const thread = await this.alia.sdk.threads.get({ threadId });
       if (thread.environmentId === environmentId) return thread.id;
-      this.bb.log.info(`Thread ${threadId} works in another workspace; its review run starts without a parent.`);
+      this.alia.log.info(`Thread ${threadId} works in another workspace; its review run starts without a parent.`);
     } catch (error) {
-      this.bb.log.warn(`Could not read thread ${threadId} to parent a review run: ${error instanceof Error ? error.message : String(error)}`);
+      this.alia.log.warn(`Could not read thread ${threadId} to parent a review run: ${error instanceof Error ? error.message : String(error)}`);
     }
     return null;
   }
@@ -705,8 +705,8 @@ export class RunService {
 }
 
 /**
- * A model's default reasoning as a level bb's spawn takes. Providers name their own efforts; one
- * bb's spawn does not know runs at "medium".
+ * A model's default reasoning as a level VesnALIA's spawn takes. Providers name their own efforts; one
+ * VesnALIA's spawn does not know runs at "medium".
  */
 export function reasoningLevel(effort: string): Execution["reasoningLevel"] {
   const parsed = reasoningLevelSchema.safeParse(effort);

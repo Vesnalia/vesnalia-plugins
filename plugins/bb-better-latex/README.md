@@ -1,23 +1,23 @@
 # Better LaTeX
 
-BB’s chat markdown turns **single-dollar** `$...$` off on purpose (`#511`): `$5 to $10` and `$HOME` were being typeset as math. The stock renderer only accepts `$$...$$`.
+VesnALIA’s chat markdown turns **single-dollar** `$...$` off on purpose (`#511`): `$5 to $10` and `$HOME` were being typeset as math. The stock renderer only accepts `$$...$$`.
 
 This plugin walks rendered chat (`[data-markdown-preview]`) and typesets the delimiters models actually emit. Text selections that include rendered math are serialized back to canonical `\(...\)` / `\[...\]` source, so **Add to chat** and **Reply in side chat** quote LaTeX instead of KaTeX's visual DOM text.
 
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/ZhenHuangLab/bb-better-latex.git
+alia plugin install git:https://github.com/ZhenHuangLab/bb-better-latex.git
 ```
 
 Or from a local checkout:
 
 ```sh
 npm install
-bb plugin install .
+alia plugin install .
 ```
 
-Then refresh the BB app. Disable with `bb plugin disable bb-better-latex`.
+Then refresh the VesnALIA app. Disable with `alia plugin disable alia-better-latex`.
 
 ## What renders
 
@@ -34,7 +34,7 @@ Then refresh the BB app. Disable with `bb plugin disable bb-better-latex`.
 
 ## Quoting rendered math
 
-When a selection includes plugin-rendered or stock BB KaTeX, the quoted text uses canonical delimiters:
+When a selection includes plugin-rendered or stock VesnALIA KaTeX, the quoted text uses canonical delimiters:
 
 ```md
 The result is \(m=0\), so
@@ -43,7 +43,7 @@ The result is \(m=0\), so
 \]
 ```
 
-This applies to both **Add to chat** and **Reply in side chat**, because BB snapshots both actions from the same browser selection. Selecting only part of a rendered formula intentionally quotes the whole formula; a partial KaTeX DOM subtree is not valid LaTeX. Pure-text selections are unchanged.
+This applies to both **Add to chat** and **Reply in side chat**, because VesnALIA snapshots both actions from the same browser selection. Selecting only part of a rendered formula intentionally quotes the whole formula; a partial KaTeX DOM subtree is not valid LaTeX. Pure-text selections are unchanged.
 
 It is **not** “formulas at the start of a line fail.” A line such as
 

@@ -1,6 +1,6 @@
-# AWS Activate Usage for BB
+# AWS Activate Usage for VesnALIA
 
-A BB plugin that reads official promotional-credit data from AWS Billing through
+A VesnALIA plugin that reads official promotional-credit data from AWS Billing through
 an existing local AWS CLI profile.
 
 It adds:
@@ -12,15 +12,15 @@ It adds:
 - current-month credit allocation totals;
 - configurable estimated spend for today or yesterday in the compact sidebar row;
 - an AWS reconnect action;
-- `bb aws-activate-usage summary|refresh|login`.
+- `alia aws-activate-usage summary|refresh|login`.
 
-No permanent AWS keys are stored by the plugin. Configuration lives in BB's
+No permanent AWS keys are stored by the plugin. Configuration lives in VesnALIA's
 plugin settings. The AWS account is detected with `aws sts
 get-caller-identity`; users can override it with a 12-digit account ID.
 
 ## Requirements
 
-- BB 0.46 or newer.
+- VesnALIA 0.46 or newer.
 - AWS CLI v2 available as `aws`, or a custom CLI path in plugin settings.
 - An AWS CLI profile with permission to call `billing:GetCredits`,
   `billing:GetCreditAllocationHistory`, `ce:GetCostAndUsage`, and
@@ -33,26 +33,26 @@ Clone the repository, then run:
 
 ```sh
 npm ci
-bb plugin build .
-bb plugin install . --yes
+alia plugin build .
+alia plugin install . --yes
 ```
 
-Open **AWS credits** in BB. The default profile is `default`. If credentials
+Open **AWS credits** in VesnALIA. The default profile is `default`. If credentials
 expire, **Reconnect AWS** runs `aws sso login --profile <profile>`. A user with
 a different authentication flow can configure an executable reconnect helper.
 
 For helpers that use `aws login`, AWS can first select an AWS Builder ID and
 show **You don't have any projects yet**. That is the Builder ID project page,
 not the AWS account. Choose **Add session** (not **Create project**), sign in to
-the intended AWS account, return to BB, and press **Refresh**. Once that account
+the intended AWS account, return to VesnALIA, and press **Refresh**. Once that account
 session exists in the browser, later reconnects can reuse it.
 
 ## Commands
 
 ```sh
-bb aws-activate-usage summary
-bb aws-activate-usage refresh
-bb aws-activate-usage login
+alia aws-activate-usage summary
+alia aws-activate-usage refresh
+alia aws-activate-usage login
 ```
 
 AWS labels current billing data as estimated and refreshes it on its own

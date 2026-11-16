@@ -1,5 +1,5 @@
 import type { Ref } from "react";
-import type { NewThreadComposerProps } from "@get-bb/plugin-sdk/app";
+import type { NewThreadComposerProps } from "@vesnalia/plugin-sdk/app";
 import { ThreadTabs } from "../thread-tabs";
 import { SplitWorkspace } from "../split-workspace";
 import { startThreadDrag } from "../split-layout";

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ExperimentalHostWatchListener, ExperimentalHostWatchOptions } from "@get-bb/plugin-sdk";
+import type { ExperimentalHostWatchListener, ExperimentalHostWatchOptions } from "@vesnalia/plugin-sdk";
 
 import { createLogFollows, FOLLOW_TTL_MS, type FollowContext } from "./follow";
 

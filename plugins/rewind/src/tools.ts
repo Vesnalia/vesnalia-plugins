@@ -1,6 +1,6 @@
 // Agent tools: checkpoint before something risky, and see recent checkpoints.
 // There is deliberately no restore tool: restoring is the user's call.
-import type { PluginAgents } from "@get-bb/plugin-sdk";
+import type { PluginAgents } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { capOutput, checkpointLine, statsLabel } from "./format";
 import { RewindError, type RewindService, toCheckpointDto } from "./service";
@@ -27,7 +27,7 @@ export function registerTools(agents: PluginAgents, service: RewindService): voi
         const row = await service.checkpointNow(ctx.threadId, label ?? null);
         const dto = toCheckpointDto(row);
         const skipped = dto.skippedCount > 0 ? ` ${dto.skippedCount} file(s) were skipped (over the size cap or nested repositories).` : "";
-        return `Checkpoint ${dto.id} saved (${statsLabel(dto) || "no changes since the last checkpoint"}).${skipped} The user can restore it from the Checkpoints panel or with \`bb rewind restore ${dto.id} --dry-run\`.`;
+        return `Checkpoint ${dto.id} saved (${statsLabel(dto) || "no changes since the last checkpoint"}).${skipped} The user can restore it from the Checkpoints panel or with \`alia rewind restore ${dto.id} --dry-run\`.`;
       } catch (error) {
         const message = error instanceof RewindError || error instanceof Error ? error.message : String(error);
         return { content: [{ type: "text", text: `No checkpoint was saved: ${message}` }], isError: true };

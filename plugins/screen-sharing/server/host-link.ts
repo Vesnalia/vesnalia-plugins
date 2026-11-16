@@ -1,10 +1,10 @@
 /**
- * A session to a Mac that is not the bb server's own, over bb's host link to
+ * A session to a Mac that is not the VesnALIA server's own, over VesnALIA's host link to
  * that Mac's host entry (host.ts, host/relay.ts). The round trip to a laptop
  * through getbb.app is ≈0.6 s, so nothing here waits a round trip per key:
  *
  * - Up: the viewer's bytes are batched into `write` calls numbered from 0,
- *   with up to `maxPipelinedWrites` in flight at once. bb's host link may
+ *   with up to `maxPipelinedWrites` in flight at once. VesnALIA's host link may
  *   deliver them out of order; the host puts them back in order.
  * - Down: `data` signals numbered from 0; a gap (a signal lost or reordered on
  *   the way) ends the session, since a VNC stream with a hole in it is garbage.
@@ -20,7 +20,7 @@
  * `HostLinks` keeps the open links by session id and routes the host's
  * signals to them, checking that a signal comes from the session's own host.
  */
-import type { ExperimentalHostClient, StandardSchemaV1InferInput } from "@get-bb/plugin-sdk";
+import type { ExperimentalHostClient, StandardSchemaV1InferInput } from "@vesnalia/plugin-sdk";
 
 import { CloseCode } from "../shared/channels";
 import { MAX_CHUNK_BYTES, type HostContract, type HostSignals } from "../shared/host-contract";
@@ -139,7 +139,7 @@ class HostLink implements Link {
     this.events.end(failed ? CloseCode.failed : CloseCode.normal, this.onHost(reason));
   }
 
-  /** bb's worker on the host exited; its sockets went with it. */
+  /** VesnALIA's worker on the host exited; its sockets went with it. */
   workerExited(): void {
     if (this.closed) return;
     this.closed = true;

@@ -1,13 +1,13 @@
-# bb-side-board
+# alia-side-board
 
-A [bb](https://getbb.app) plugin that keeps a side panel of the questions, bugs and todos your
+A [VesnALIA](https://getbb.app) plugin that keeps a side panel of the questions, bugs and todos your
 agent raises, numbered `Q1` / `B1` / `T1`. Items are added and closed automatically, in every thread.
 
 ```
  agent turn ──► board_add / board_close / board_list   (agent tools)
      ▲                    │
      │ instructions       ▼
-     │ (every thread)   bb.storage.kv  board:<threadId>
+     │ (every thread)   alia.storage.kv  board:<threadId>
      │                    │ realtime
      │                    ▼
      │              ┌──────────────┐
@@ -21,7 +21,7 @@ agent raises, numbered `Q1` / `B1` / `T1`. Items are added and closed automatica
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/devnoo/bb-side-board@semver:^0.1.0
+alia plugin install git:https://github.com/devnoo/bb-side-board@semver:^0.1.0
 ```
 
 Threads that are already running pick it up when their next session starts.
@@ -32,7 +32,7 @@ Threads that are already running pick it up when their next session starts.
 | --- | --- | --- |
 | `nudge` | `true` | Remind an agent that asked a question, mentioned a bug or deferred work, or finished open work, without updating the board. One reminder per turn at most. |
 
-`bb plugin config side-board set nudge false`
+`alia plugin config side-board set nudge false`
 
 ## Develop
 
@@ -40,8 +40,8 @@ Threads that are already running pick it up when their next session starts.
 npm install
 npm test            # board logic
 npm run typecheck
-bb plugin build
-bb plugin install path:$PWD   # then: bb plugin dev
+alia plugin build
+alia plugin install path:$PWD   # then: alia plugin dev
 ```
 
 | File | Role |
@@ -51,11 +51,11 @@ bb plugin install path:$PWD   # then: bb plugin dev
 | `app.tsx` | side-panel tab and header badge |
 | `skills/side-board/SKILL.md` | the agent-facing contract |
 
-The `components/ui/` files are vendored bb UI components (shadcn model).
+The `components/ui/` files are vendored VesnALIA UI components (shadcn model).
 
 ## Release
 
-Tag `vX.Y.Z` and push. `bb plugin update` follows the semver range. Never move a tag.
+Tag `vX.Y.Z` and push. `alia plugin update` follows the semver range. Never move a tag.
 
 ## License
 

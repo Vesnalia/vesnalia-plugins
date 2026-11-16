@@ -8,7 +8,7 @@ import type { Tone } from "./common.tsx";
 import { effectiveKind } from "./config.ts";
 import { switchKey, useSettings } from "./settings-context.tsx";
 import { kindPath } from "./settings-paths.ts";
-import { backendHealth, backendLabel, hostChip, kindName, onBbMachine } from "./settings-status.ts";
+import { backendHealth, backendLabel, hostChip, kindName, onAliaMachine } from "./settings-status.ts";
 
 export function kindPart(id: string): string {
   return `kind/${id}`;
@@ -73,7 +73,7 @@ export interface RunsOn {
   readonly config: BackendConfig;
   readonly label: string;
   readonly chip: string | null;
-  readonly bbMachine: boolean;
+  readonly aliaMachine: boolean;
   readonly form: BoxForm | null;
   readonly makes: MakesIt;
   readonly problem: string | null;
@@ -109,7 +109,7 @@ export function runsOn(state: ConfigState, info: KindInfoView): RunsOn[] {
         config,
         label,
         chip: hostChip(config, label, state.backends.find((each) => each.id === config.id)?.hosts),
-        bbMachine: onBbMachine(config),
+        aliaMachine: onAliaMachine(config),
         form: state.backends.find((each) => each.id === config.id)?.form ?? null,
         ...makesIt(state, config, info.id),
         keepsWarm,

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { experimental_Icon as Icon, useBbNavigate, useSdk } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate, useSdk } from "@vesnalia/plugin-sdk/app";
 import { usePreferences } from "../hooks/use-preferences";
 import { registerChatLinks } from "../chat-file-links";
 import { requestFile } from "../file-navigation";
 
 export function HeaderButton({ threadId }: { threadId: string }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const sdk = useSdk();
   const { chatFileLinks, loading } = usePreferences();
   const button = useRef<HTMLButtonElement>(null);
@@ -19,7 +19,7 @@ export function HeaderButton({ threadId }: { threadId: string }) {
       if (!thread.environmentId) return;
       const environment = await sdk.environments.get({ environmentId: thread.environmentId, signal });
       if (!signal.aborted && environment.isGitRepo && environment.path) setWorkspace({ threadId, path: environment.path });
-    })().catch(() => { /* Missing/unavailable workspace leaves BB's links intact. */ });
+    })().catch(() => { /* Missing/unavailable workspace leaves VesnALIA's links intact. */ });
     return () => controller.abort();
   }, [threadId, sdk, chatFileLinks, loading]);
   useEffect(() => {

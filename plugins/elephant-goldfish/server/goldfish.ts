@@ -4,7 +4,7 @@
 // material the plugin read itself; the request declares no tools, and a
 // response that tries to call one is rejected rather than trusted.
 //
-// BB threads are not used for Goldfish: every installed provider offers
+// VesnALIA threads are not used for Goldfish: every installed provider offers
 // only accept-edits/full permission modes, so a thread could write.
 import { z } from "zod";
 import type { ReviewerStatus } from "./contract.ts";

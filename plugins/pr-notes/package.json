@@ -1,15 +1,15 @@
 {
-  "name": "bb-plugin-pr-notes",
+  "name": "alia-plugin-pr-notes",
   "version": "0.1.0",
   "type": "module",
   "engines": {
     "node": ">=22",
-    "bb": ">=0.48",
-    "bbPluginSdk": ">=0.6.94 <0.7.0"
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.94 <0.7.0"
   },
-  "bb": {
+  "alia": {
     "name": "PR Notes",
-    "description": "Review pull requests, keep private notes, and chat with agents in BB.",
+    "description": "Review pull requests, keep private notes, and chat with agents in VesnALIA.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -24,7 +24,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.94",
     "@pierre/diffs": "^1.2.9",
     "@playwright/test": "^1.64.1",
     "@radix-ui/react-alert-dialog": "^1.1.19",
@@ -41,7 +40,6 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "bb-app": "0.48.0",
     "better-sqlite3": "^12.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -53,11 +51,11 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2"
   },
-  "description": "Review pull requests, keep private notes, and chat with agents in BB.",
+  "description": "Review pull requests, keep private notes, and chat with agents in VesnALIA.",
   "license": "MIT",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test:e2e": "playwright test",
     "format": "prettier --check \"*.ts\" \"*.tsx\" \"*.css\" \"e2e/*.ts\" \"scripts/*.mjs\"",
     "check": "npm run typecheck && npm run format && node scripts/release-notes.mjs --check && node scripts/verify-public-files.mjs",
@@ -111,21 +109,30 @@
     "name": "Adebola",
     "url": "https://github.com/AdzeB"
   },
-  "homepage": "https://github.com/AdzeB/bb-plugin-pr-notes#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/AdzeB/bb-plugin-pr-notes.git"
-  },
-  "bugs": {
-    "url": "https://github.com/AdzeB/bb-plugin-pr-notes/issues"
-  },
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "github",
     "pull-requests",
     "code-review",
     "notes",
     "agent-chat"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.94"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/pr-notes#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/pr-notes"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

@@ -20,7 +20,7 @@ export const HOST_WINDOW_BYTES = 16 * 1024 * 1024;
 /**
  * Writes to a remote Mac the server keeps in flight, counted from the
  * earliest one not yet answered: input never waits a round trip behind the
- * last batch. bb may deliver them out of order, and the host holds a write
+ * last batch. VesnALIA may deliver them out of order, and the host holds a write
  * that arrives early, up to `MAX_WRITES_AHEAD` past the one it waits for —
  * which must stay above the server's window.
  *
@@ -35,8 +35,8 @@ export const MAX_WRITES_AHEAD = 32;
 
 /**
  * The server calls a quiet remote session's host at least this often, so a
- * Mac that has gone (its bb restarted, its network lost) ends the session in
- * seconds: a call to a host bb is not connected to fails…
+ * Mac that has gone (its VesnALIA restarted, its network lost) ends the session in
+ * seconds: a call to a host VesnALIA is not connected to fails…
  */
 export const HOST_KEEPALIVE_MS = 5_000;
 /** …and gives up on a keepalive left unanswered for this long… */

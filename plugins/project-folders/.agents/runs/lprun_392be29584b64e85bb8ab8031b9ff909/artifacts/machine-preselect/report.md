@@ -4,4 +4,4 @@ STATUS: complete
 
 Let a project or section pin the machine (host) on which a new session starts, choosing among devices where the place has a folder, inherited like the other execution pins, and apply it in the plugin New chat screen and the composer chip.
 
-Attempt 1 accepted by Lane Pilot BB writer.
+Attempt 1 accepted by Lane Pilot VesnALIA writer.

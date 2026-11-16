@@ -1,7 +1,7 @@
 Proxmox VE snapshot measurements, run by the lead as root on the node with
 proxmox-snapshots.sh, 30 October 2026, 00:31 to 00:36 UTC. The first run
 stopped at the QEMU clone on a lock of the VM's config held for a moment by
-bb-box; the rest ran again with retries on that lock (none was needed).
+alia-box; the rest ran again with retries on that lock (none was needed).
 
 pve-manager/9.2.21 (running kernel: 6.17.13-2-pve)
 LXC rootfs: local-lvm:vm-3150-disk-0,size=16G

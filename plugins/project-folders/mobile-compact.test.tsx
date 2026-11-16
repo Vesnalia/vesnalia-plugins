@@ -2,8 +2,8 @@
 import { readFileSync } from "node:fs";
 import { beforeAll, afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { defaultPrefs } from "./preferences";
 import { installTestMatchMedia, setCompactViewport } from "./test-match-media";
 

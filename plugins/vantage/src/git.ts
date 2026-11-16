@@ -5,7 +5,7 @@ export const PATCH_LIMIT = 1_048_576;
 export const FILE_LIMIT = 2000;
 export const LOG_FORMAT = "%H%x1f%h%x1f%an%x1f%at%x1f%s";
 export const REFLOG_FORMAT = "%H%x1f%gd%x1f%gs";
-// Reflog times are whole seconds, and bb's clock and the machine's may differ a little.
+// Reflog times are whole seconds, and VesnALIA's clock and the machine's may differ a little.
 export const REFLOG_SLACK_MS = 2000;
 
 export interface GitEntry { path: string; previousPath: string | null; code: string }

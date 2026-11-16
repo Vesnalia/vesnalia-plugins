@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
-import { useRpc, useSettings, experimental_useCodeTheme } from '@get-bb/plugin-sdk/app';
+import { useRpc, useSettings, experimental_useCodeTheme } from '@vesnalia/plugin-sdk/app';
 import type { rpcContract } from '../server';
 import { RHYTHMS, TIMING_FIELDS, readBreatheSettings, resolveDraft, type SettingsDraft, type BreatheSettings as Settings } from '../lib/settings';
 import type { Timing } from '../lib/breath';
@@ -34,7 +34,7 @@ export function BreatheSettings({ onClose }: { onClose?: () => void }) {
   const [saveError, setSaveError] = useState('');
   const [replay, setReplay] = useState(0);
   useEffect(() => {
-    // BB can briefly move focus to the document when a settings broadcast rerenders its slots.
+    // VesnALIA can briefly move focus to the document when a settings broadcast rerenders its slots.
     if ((feedback || saveError) && !pending && document.activeElement === document.body) applyButton.current?.focus({ preventScroll: true });
   }, [feedback, saveError, pending, remoteKey]);
   const id = useId();
@@ -62,7 +62,7 @@ export function BreatheSettings({ onClose }: { onClose?: () => void }) {
   }
   return <section className="breathe-studio" aria-label="Breathe settings" aria-busy={locked}
     style={{ '--breathe-accent': waveColors(next.palette, mode).text } as CSSProperties}
-    // The popup is nested inside BB's composer. Keep its click-to-focus handlers
+    // The popup is nested inside VesnALIA's composer. Keep its click-to-focus handlers
     // from dismissing us before a label can activate its radio or number input.
     onPointerDown={event => event.stopPropagation()} onMouseDown={event => event.stopPropagation()} onClick={event => event.stopPropagation()}
     onKeyDown={event => {

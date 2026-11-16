@@ -1,4 +1,4 @@
-import type { BbPluginApi, PluginRpcHandlers } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginRpcHandlers } from "@vesnalia/plugin-sdk";
 import { hostContract, rpcContract, type Target } from "./contracts.js";
 
 function scopeFor(target: Target) {
@@ -10,9 +10,9 @@ function scopeFor(target: Target) {
   };
 }
 
-export default function browserCopy(bb: BbPluginApi): void {
-  const host = bb.hosts.experimental_client({ contract: hostContract });
-  const desktop = bb.sdk.experimental_desktopBrowsers;
+export default function browserCopy(alia: AliaPluginApi): void {
+  const host = alia.hosts.experimental_client({ contract: hostContract });
+  const desktop = alia.sdk.experimental_desktopBrowsers;
   const active = new Set<string>();
 
   const withLease = async <T>(
@@ -52,7 +52,7 @@ export default function browserCopy(bb: BbPluginApi): void {
             leaseId,
           })
           .catch((error: unknown) =>
-            bb.log.warn(
+            alia.log.warn(
               `Could not release Browser Copy lease: ${error instanceof Error ? error.message : String(error)}`,
             ),
           );
@@ -69,12 +69,12 @@ export default function browserCopy(bb: BbPluginApi): void {
         generation: string;
         tab: { tabId: string; title: string; url: string };
       }> = [];
-      for (const machine of await bb.sdk.hosts.list()) {
+      for (const machine of await alia.sdk.hosts.list()) {
         let instances;
         try {
           ({ instances } = await desktop.listInstances({ hostId: machine.id }));
         } catch (error) {
-          bb.log.warn(
+          alia.log.warn(
             `Browser discovery unavailable on ${machine.id}: ${error instanceof Error ? error.message : String(error)}`,
           );
           continue;
@@ -97,7 +97,7 @@ export default function browserCopy(bb: BbPluginApi): void {
               });
             }
           } catch (error) {
-            bb.log.warn(
+            alia.log.warn(
               `Browser tabs unavailable on ${machine.id}: ${error instanceof Error ? error.message : String(error)}`,
             );
           }
@@ -136,5 +136,5 @@ export default function browserCopy(bb: BbPluginApi): void {
       };
     },
   };
-  bb.rpc.register(rpcContract, handlers);
+  alia.rpc.register(rpcContract, handlers);
 }

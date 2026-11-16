@@ -1,6 +1,6 @@
-// Hover mode: bb's left sidebar stays collapsed and slides in over the
+// Hover mode: VesnALIA's left sidebar stays collapsed and slides in over the
 // content while the pointer is at the left window edge. Only <html> data
-// attributes change; bb's own collapsed state is driven by its toggle.
+// attributes change; VesnALIA's own collapsed state is driven by its toggle.
 export type PeekSpeed = "instant" | "fast" | "normal" | "slow";
 export const PEEK_SPEEDS: readonly PeekSpeed[] = ["instant", "fast", "normal", "slow"];
 export const isPeekSpeed = (v: unknown): v is PeekSpeed => typeof v === "string" && (PEEK_SPEEDS as readonly string[]).includes(v);
@@ -18,18 +18,18 @@ const CLOSE_DELAY = 250;
 
 const sidebar = () => document.querySelector<HTMLElement>('.peer[data-side="left"][data-state]');
 const panel = (s: HTMLElement) => s.querySelector<HTMLElement>(":scope > .fixed");
-// Any open bb menu or popover: often opened from the sidebar, so keep it open.
-const overlayOpen = () => !!document.querySelector('[data-radix-popper-content-wrapper], [data-bb-portaled-overlay][data-state="open"]');
+// Any open VesnALIA menu or popover: often opened from the sidebar, so keep it open.
+const overlayOpen = () => !!document.querySelector('[data-radix-popper-content-wrapper], [data-alia-portaled-overlay][data-state="open"]');
 
 function sidebarToggle(): HTMLButtonElement | null {
   return document.querySelector<HTMLButtonElement>('button[data-sidebar="trigger"]')
     ?? Array.from(document.querySelectorAll<HTMLButtonElement>("button[aria-label]")).find((b) => /^toggle sidebar/i.test(b.getAttribute("aria-label") ?? "")) ?? null;
 }
 
-/** False when this BB build no longer has the sidebar markup hover mode relies on. */
+/** False when this VesnALIA build no longer has the sidebar markup hover mode relies on. */
 export function peekSupported(): boolean { return !!sidebar() && !!sidebarToggle(); }
 
-/** Collapse (true) or expand (false) bb's sidebar through its own toggle. */
+/** Collapse (true) or expand (false) VesnALIA's sidebar through its own toggle. */
 export function setSidebarCollapsed(collapsed: boolean): void {
   const s = sidebar();
   if (!s || (s.dataset.state === "collapsed") === collapsed) return;

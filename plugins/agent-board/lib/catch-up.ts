@@ -45,7 +45,7 @@ export function catchUpChanges(snapshot: GlobalDashboardSnapshot, previous: Chec
     if (old?.status === execution.card.status && old.completedAt === at) continue;
     // Old list entries first discovered on this visit are not new results.
     if (at === null || (!old && at <= previous.at) || at > snapshot.fetchedAt + 5_000) continue;
-    const kind = execution.card.status === "completed" ? execution.card.source === "bb" ? "Turn finished" : "Execution finished" : execution.card.status === "failed" ? "Failed" : execution.card.status === "interrupted" ? "Interrupted" : null;
+    const kind = execution.card.status === "completed" ? execution.card.source === "alia" ? "Turn finished" : "Execution finished" : execution.card.status === "failed" ? "Failed" : execution.card.status === "interrupted" ? "Interrupted" : null;
     if (kind) changes.push({ key: execution.key, title: execution.card.title, kind, threadId: execution.card.threadId });
   }
   return changes.slice(0, 12);

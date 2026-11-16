@@ -1,7 +1,7 @@
 /* prompt-kit's TextShimmer keyframe. The build's Tailwind pass only emits
    default-theme utilities, so the keyframe and the animation class live here
    rather than in a tailwind config. */
-@keyframes bb-ws-text-shimmer {
+@keyframes alia-ws-text-shimmer {
   0% {
     background-position: 200% 50%;
   }
@@ -10,19 +10,19 @@
   }
 }
 
-.bb-ws-text-shimmer {
+.alia-ws-text-shimmer {
   display: inline-block;
   background-size: 200% 100%;
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  animation: bb-ws-text-shimmer var(--bb-ws-shimmer-duration, 4s) linear infinite;
+  animation: alia-ws-text-shimmer var(--alia-ws-shimmer-duration, 4s) linear infinite;
   will-change: transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bb-ws-text-shimmer {
+  .alia-ws-text-shimmer {
     animation: none;
     background-image: none !important;
     color: var(--foreground);

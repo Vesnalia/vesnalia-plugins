@@ -1,6 +1,6 @@
 // Plugin settings (docs/dev/DESIGN.md §11). Keys are part of the public
-// surface: `bb plugin config meetings set <key> <value>` and the skill use them.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// surface: `alia plugin config meetings set <key> <value>` and the skill use them.
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { DIARIZATION_MODES, type DiarizationMode } from "../shared/runtime-files.js";
 
@@ -73,8 +73,8 @@ export const DIARIZATION_LABELS: Readonly<Record<DiarizationMode, string>> = {
   acoustic: "Только по голосам",
 };
 
-export function defineSettings(bb: BbPluginApi) {
-  return bb.settings.define({
+export function defineSettings(alia: AliaPluginApi) {
+  return alia.settings.define({
     botName: {
       type: "string",
       label: "Имя бота",
@@ -209,7 +209,7 @@ export function defineSettings(bb: BbPluginApi) {
       type: "boolean",
       label: "Входить под Zoom-аккаунтом",
       description:
-        "Подключаться с профилем, в котором выполнен вход в Zoom (bb meetings zoom-login). Помогает, когда Zoom не пускает гостей-ботов.",
+        "Подключаться с профилем, в котором выполнен вход в Zoom (VesnALIA meetings zoom-login). Помогает, когда Zoom не пускает гостей-ботов.",
       default: false,
     },
     useMeetAccount: {
@@ -233,14 +233,14 @@ export function defineSettings(bb: BbPluginApi) {
     autoSummarize: {
       type: "boolean",
       label: "Разбирать встречи автоматически",
-      description: "После завершения распознавания использовать выбранный шаблон разбора. В режиме «Агент BB» просьба отправляется агенту, который запустил запись.",
+      description: "После завершения распознавания использовать выбранный шаблон разбора. В режиме «Агент ALIA» просьба отправляется агенту, который запустил запись.",
       default: true,
     },
     summaryMode: {
       type: "select",
       label: "Как выполнять ИИ-разбор",
       options: ["agent", "api"],
-      experimental_optionLabels: { agent: "Агент BB", api: "OpenAI-совместимый API" },
+      experimental_optionLabels: { agent: "Агент ALIA", api: "OpenAI-совместимый API" },
       default: "agent",
     },
     summaryTemplateId: {

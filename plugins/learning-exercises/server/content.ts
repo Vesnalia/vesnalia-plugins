@@ -22,7 +22,7 @@ export const PRINCIPLES = file("PRINCIPLES.md");
 export const ORIENT_BUILDER = file("orient-builder.md");
 export const ORIENTATION_SESSION = file("orientation-session.md");
 
-/** The ids `learning_ask` and `bb learning ask` take, with what each means. */
+/** The ids `learning_ask` and `alia learning ask` take, with what each means. */
 export const EXERCISE_TYPE_HELP = "prediction, generation, trace, debug, teach-back, retrieval or other";
 
 export interface BriefInput {
@@ -61,7 +61,7 @@ function sessionSection(input: BriefInput): string {
 const CLI_BLOCK = [
   "```sh",
   "# Ask. The question goes through stdin as base64, so quotes and backticks in it are safe.",
-  "base64 <<'LEARNING_QUESTION' | tr -d '\\n' | bb learning ask --type prediction --file src/example.ts:40-60 --question-base64-stdin",
+  "base64 <<'LEARNING_QUESTION' | tr -d '\\n' | VesnALIA learning ask --type prediction --file src/example.ts:40-60 --question-base64-stdin",
   "The full question, in Markdown.",
   "LEARNING_QUESTION",
   "",
@@ -70,25 +70,25 @@ const CLI_BLOCK = [
   '{"items": [{"kind": "yes-no", "id": "safe", "label": "Is this safe to call twice?"}, {"kind": "long-text", "id": "why", "label": "Why?"}]}',
   "LEARNING_FORM",
   ")",
-  "base64 <<'LEARNING_QUESTION' | tr -d '\\n' | bb learning ask --type prediction --form-base64 \"$FORM\" --question-base64-stdin",
+  "base64 <<'LEARNING_QUESTION' | tr -d '\\n' | VesnALIA learning ask --type prediction --form-base64 \"$FORM\" --question-base64-stdin",
   "Open `src/example.ts:40-60`. What happens when `save` runs twice?",
   "LEARNING_QUESTION",
   "",
   "# After each answer: your feedback (through stdin as base64, like the question), your verdict (correct,",
   "# partly, incorrect or skipped), the gap, the concepts. Leave the feedback out only for a skipped question.",
-  "base64 <<'LEARNING_FEEDBACK' | tr -d '\\n' | bb learning feedback --verdict partly --gap 'Mixed up X and Y' --concept 'X' --concept 'Y' --feedback-base64-stdin",
+  "base64 <<'LEARNING_FEEDBACK' | tr -d '\\n' | VesnALIA learning feedback --verdict partly --gap 'Mixed up X and Y' --concept 'X' --concept 'Y' --feedback-base64-stdin",
   "Your feedback, in Markdown: what is right, what is wrong and why.",
   "LEARNING_FEEDBACK",
   "",
   "# At the end: a two-sentence summary and the concepts covered.",
-  "bb learning finish --summary 'What we covered and how it went.' --concept 'X'",
+  "alia learning finish --summary 'What we covered and how it went.' --concept 'X'",
   "```",
 ].join("\n");
 
 /** The "How to ask" section for a session of this mode: the tools first, the commands as the fallback. */
 export function howToAsk(mode: SessionMode): string {
   const commands = [
-    "`bb learning ask` shows the learner a card and answers at once; **end your turn right after it**. The learner's",
+    "`alia learning ask` shows the learner a card and answers at once; **end your turn right after it**. The learner's",
     "answer arrives as your next message. `--file` is repeatable and names a workspace path to open, with an optional",
     "line or range (`src/a.ts:42`, `src/a.ts:40-60`); `--form-base64` takes an optional answer form; `--type` is one of",
     `${EXERCISE_TYPE_HELP}.`,
@@ -121,7 +121,7 @@ export function howToAsk(mode: SessionMode): string {
     "",
     commands,
     "",
-    "When you run `bb learning finish`, the session is over: go back to the user's normal work, and these session rules",
+    "When you run `alia learning finish`, the session is over: go back to the user's normal work, and these session rules",
     "no longer apply.",
   ].join("\n");
 }
@@ -132,7 +132,7 @@ export function buildBrief(input: BriefInput): string {
 
 /** The standing rule for a session thread, from `configure` (it outlives a compaction). */
 export const SESSION_INVARIANT =
-  "This thread is a learning session run by the Learning Exercises plugin. Ask every question with the learning_ask tool (or `bb learning ask` if that tool is missing), then end your turn and add nothing after it. Never answer your own question or hint at the answer. Every question stands on its own: code it relies on goes inside it as a fenced code block, and it never refers to \"above\" or an earlier message. After each answer give direct feedback in learning_feedback's `feedback` argument (or `bb learning feedback --feedback-base64-stdin`), not as a message; end with learning_finish.";
+  "This thread is a learning session run by the Learning Exercises plugin. Ask every question with the learning_ask tool (or `alia learning ask` if that tool is missing), then end your turn and add nothing after it. Never answer your own question or hint at the answer. Every question stands on its own: code it relies on goes inside it as a fenced code block, and it never refers to \"above\" or an earlier message. After each answer give direct feedback in learning_feedback's `feedback` argument (or `alia learning feedback --feedback-base64-stdin`), not as a message; end with learning_finish.";
 
 /** The line the user sees as a session's first message. */
 export function startLine(topic: string, trigger: TriggerKind, refs: Refs): string {
@@ -143,7 +143,7 @@ export function startLine(topic: string, trigger: TriggerKind, refs: Refs): stri
 
 /** The standing rule for a builder thread, from `configure` (it outlives a compaction). */
 export const ORIENT_TOOL_INVARIANT =
-  "This hidden thread builds an orientation for the Learning Exercises plugin. Write only through the orient_* tools (or `bb learning orient …`), never edit or create files, and call orient_finish last.";
+  "This hidden thread builds an orientation for the Learning Exercises plugin. Write only through the orient_* tools (or `alia learning orient …`), never edit or create files, and call orient_finish last.";
 
 const WALKTHROUGH_BLOCK = /<!-- walkthrough:start -->\n[\s\S]*?<!-- walkthrough:end -->\n?/;
 
@@ -165,21 +165,21 @@ function orientCliBlock(depth: OrientationDepth): string {
   if (depth === "walkthrough") {
     lines.push(
       "# Text goes through stdin as base64, so quotes and backticks in it are safe.",
-      "base64 <<'ORIENT_TITLE' | tr -d '\\n' | bb learning orient chapter --title-base64-stdin",
+      "base64 <<'ORIENT_TITLE' | tr -d '\\n' | VesnALIA learning orient chapter --title-base64-stdin",
       "A chapter title",
       "ORIENT_TITLE",
       "",
-      "base64 <<'ORIENT_NOTE' | tr -d '\\n' | bb learning orient note --markdown-base64-stdin",
+      "base64 <<'ORIENT_NOTE' | tr -d '\\n' | VesnALIA learning orient note --markdown-base64-stdin",
       "The note, in Markdown, with no fenced code. It points at *Listing 1*.",
       "ORIENT_NOTE",
       "",
       "# The plugin reads the file and captures the lines; the caption goes through stdin like the rest.",
-      "base64 <<'ORIENT_CAPTION' | tr -d '\\n' | bb learning orient listing --path src/example.ts --lines 40-72 --caption-base64-stdin",
+      "base64 <<'ORIENT_CAPTION' | tr -d '\\n' | VesnALIA learning orient listing --path src/example.ts --lines 40-72 --caption-base64-stdin",
       "What the listing shows",
       "ORIENT_CAPTION",
       "",
       "# Only to undo a mistake: removes the last block you added (a note, listing or chapter).",
-      "# bb learning orient pop",
+      "# VesnALIA learning orient pop",
       "",
     );
   }
@@ -189,10 +189,10 @@ function orientCliBlock(depth: OrientationDepth): string {
     '{"purpose": "…", "languages": ["…"], "stages": ["…"], "keyFiles": [], "concepts": [], "gotchas": [], "exercises": [], "sources": []}',
     "ORIENT_SUMMARY",
     ")",
-    'bb learning orient summary --summary-base64 "$SUMMARY"',
+    'alia learning orient summary --summary-base64 "$SUMMARY"',
     "",
     "# Last.",
-    "bb learning orient finish",
+    "alia learning orient finish",
     "```",
   );
   return lines.join("\n");

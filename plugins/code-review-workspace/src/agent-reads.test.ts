@@ -1,6 +1,6 @@
 // What the review's assistant read through Code Review Workspace, which Finish review counts beside its verdict.
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { runGh } from "./gh";
 import { createReviewSubmitter } from "./submit-review";
@@ -18,8 +18,8 @@ const file = (path: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+
 const patch = file("a.ts") + file("b.ts") + file("c.ts");
 
 async function host() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = await startPlugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = await startPlugin(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1" });
   await store.savePatch("pr-1", patch);
   await store.setAssistantThread("pr-1", "assistant");
@@ -78,14 +78,14 @@ test("what the agent says it didn't check is kept with its summary, stays withou
 });
 
 test("after the upgrade that adds unchecked and introduced, idle review assistants restart once to pick up the tools", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { get: async () => ({ status: "idle", archivedAt: null, deletedAt: null }), stop: async () => ({}) } } as any });
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { get: async () => ({ status: "idle", archivedAt: null, deletedAt: null }), stop: async () => ({}) } } as any });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1" });
   await store.setAssistantThread("pr-1", "assistant");
   // The version 0.7.0's tools were recorded at.
-  await bb.storage.kv.set("assistant-tools", 7);
-  await plugin(bb);
-  await vi.waitFor(async () => expect(await bb.storage.kv.get("assistant-tools")).toBeGreaterThan(7));
+  await alia.storage.kv.set("assistant-tools", 7);
+  await plugin(alia);
+  await vi.waitFor(async () => expect(await alia.storage.kv.get("assistant-tools")).toBeGreaterThan(7));
   expect(harness.inspection.sdk.callsTo("threads.stop").map(([args]) => (args as any).threadId)).toEqual(["assistant"]);
 });
 

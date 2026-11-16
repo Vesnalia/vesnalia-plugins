@@ -23,7 +23,7 @@ import {
 } from "../components/thread-card";
 import { threadState } from "../components/grouping";
 import { thread } from "./thread-fixture";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 const DOT_CLASS: Record<string, string> = {
   working: "bg-blue-500",

@@ -36,7 +36,7 @@
     "item": {
      "type": "agentMessage",
      "id": "daa6f6d4f6-i75",
-     "text": "Backend assessment sent to the root agent. The key result: BB supports native thread graphs, native follow-ups, realtime invalidation, and message-anchored forks. Arbitrary historical forks require a provider with `fork: \"checkpoint\"`. The public thread DTO exposes ancestry and source thread, but apparently does not expose the exact checkpoint of pre-existing forks, so the plugin should persist anchors for forks it creates.",
+     "text": "Backend assessment sent to the root agent. The key result: VesnALIA supports native thread graphs, native follow-ups, realtime invalidation, and message-anchored forks. Arbitrary historical forks require a provider with `fork: \"checkpoint\"`. The public thread DTO exposes ancestry and source thread, but apparently does not expose the exact checkpoint of pre-existing forks, so the plugin should persist anchors for forks it creates.",
      "presentation": {
       "label": {
        "pending": "Responding",

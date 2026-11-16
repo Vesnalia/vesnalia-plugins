@@ -4,10 +4,10 @@
 // One body, two surfaces (§10.1). `FileManagerSurface` takes an `FmLocation`
 // instead of reading the route, so the nav panel can keep the folder in the
 // URL while a panel tab keeps it in component state, and a `chrome` flag says
-// whether the actions live in bb's title bar or in the toolbar.
+// whether the actions live in VesnALIA's title bar or in the toolbar.
 //
 // Everything that can fail is caught here. A throw inside a slot component
-// disables the plugin's whole UI until `bb plugin reload`, so every RPC
+// disables the plugin's whole UI until `alia plugin reload`, so every RPC
 // rejection ends in a toast or an ErrorBanner, never in an exception.
 import {
   useCallback,
@@ -19,7 +19,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { useBbNavigate, useComposer, type PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useComposer, type PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import {
@@ -220,7 +220,7 @@ type GetState = RpcOutput<"getState">;
 type BatchResult = RpcOutput<"moveEntries">;
 
 /** Private drag flavour; `text/plain` carries the same paths as a fallback. */
-const DRAG_MIME = "application/x-bb-file-manager";
+const DRAG_MIME = "application/x-alia-file-manager";
 
 const DEFAULT_ARCHIVE_SUPPORT = { zip: false, tar: false, sevenZip: false, rar: false };
 
@@ -442,7 +442,7 @@ export interface FileManagerSurfaceProps {
   /**
    * Which chrome the surface is wearing.
    *
-   * "host-header" is the nav panel: bb renders `HeaderActions` in the shared
+   * "host-header" is the nav panel: VesnALIA renders `HeaderActions` in the shared
    * title bar, and the panel talks to it through components/panel-bus.ts.
    * "inline" is a panel tab, which has no title bar of its own — the same
    * actions ride in the toolbar instead, and the surface stays off the bus so
@@ -469,7 +469,7 @@ export interface FileManagerSurfaceProps {
   /**
    * The thread this surface belongs to, when it belongs to one (§10.3).
    *
-   * Only bb's thread panel names it, and it buys exactly one thing: the
+   * Only VesnALIA's thread panel names it, and it buys exactly one thing: the
    * toolbar's jump into that thread's checkout. Null everywhere else — the
    * nav panel, the New thread launcher and the file openers are rooted at the
    * home folder, not at a thread.
@@ -491,7 +491,7 @@ export function FileManagerSurface({
   const isCompactViewport = useIsCompactViewport();
   const isCoarsePointer = useIsCoarsePointer();
   // The selection bar helps wherever a right-click is unlikely: a phone, a
-  // tablet, or a window too narrow for bb's desktop layout. Native dragging is
+  // tablet, or a window too narrow for VesnALIA's desktop layout. Native dragging is
   // switched off only for a touch pointer, where a long press would turn the
   // row into a drag ghost; a narrow window driven by a mouse still drags.
   const selectionBarEnabled = isCompactViewport || isCoarsePointer;
@@ -514,8 +514,8 @@ export function FileManagerSurface({
   const [ready, setReady] = useState(false);
 
   // Folder navigation goes through `location`; this is the host's navigator,
-  // which is also how a file reaches bb's preview panel.
-  const navigate = useBbNavigate();
+  // which is also how a file reaches VesnALIA's preview panel.
+  const navigate = useAliaNavigate();
   const navigateRef = useRef(navigate);
   navigateRef.current = navigate;
 
@@ -633,7 +633,7 @@ export function FileManagerSurface({
         const result = await rpc.call("getState", null);
         if (cancelled) return;
         // The panel learns the hard root here: it is the home directory of the
-        // user running bb, so path helpers cannot default to a fixed value.
+        // user running VesnALIA, so path helpers cannot default to a fixed value.
         setClientRoot(result.root);
         setState(result);
         setShowHidden(result.preferences.showHiddenFiles);
@@ -1192,7 +1192,7 @@ export function FileManagerSurface({
    *
    * A "no" the lookup already knows about never reaches this handler: the
    * button is not rendered then. What does reach it is a lookup that *failed*,
-   * because "bb did not answer" is not "there is nowhere to go" — so the click
+   * because "alia did not answer" is not "there is nowhere to go" — so the click
    * retries once, and only a second failure becomes a toast.
    */
   const openThreadWorkspace = useCallback(() => {
@@ -1538,16 +1538,16 @@ export function FileManagerSurface({
   }, []);
 
   /**
-   * Opening a file (double-click, or Enter) shows it in bb's preview panel
+   * Opening a file (double-click, or Enter) shows it in VesnALIA's preview panel
    * beside the manager rather than downloading it (§8.2).
    *
-   * bb addresses a live file by host id, which is why `getState` carries the
-   * machine bb runs on. Everything that can go wrong here answers `false`
+   * VesnALIA addresses a live file by host id, which is why `getState` carries the
+   * machine VesnALIA runs on. Everything that can go wrong here answers `false`
    * rather than throwing: no host id (an older server, or a config call that
    * failed), no preview surface on this client, or a host that declined the
    * open. `showEntry` turns that `false` into the built-in viewer (§8.12) —
    * which is the ordinary case, not the exception, because the sidebar's own
-   * File Manager page is a surface bb wires no preview panel into.
+   * File Manager page is a surface VesnALIA wires no preview panel into.
    */
   const previewEntry = useCallback(
     (entry: FileEntry): boolean => {
@@ -1569,11 +1569,11 @@ export function FileManagerSurface({
   );
 
   /**
-   * Show one file: bb's shared preview panel when this surface has one, the
+   * Show one file: VesnALIA's shared preview panel when this surface has one, the
    * built-in viewer when it does not (§8.12).
    *
    * The order is not a preference for our own dialog — it is the opposite.
-   * bb's panel sits *beside* the manager and survives navigation, so it wins
+   * VesnALIA's panel sits *beside* the manager and survives navigation, so it wins
    * wherever it exists; the viewer is what the standalone page gets, where
    * the alternative was silently dropping the file in ~/Downloads.
    */
@@ -2490,7 +2490,7 @@ export function FileManagerSurface({
       ref={rootRef}
       data-testid="fm-panel"
       data-current-path={currentPath}
-      // `flex-1` beside `h-full`: BB mounts a file opener into a flex column,
+      // `flex-1` beside `h-full`: VesnALIA mounts a file opener into a flex column,
       // where a definite height comes from the flex line rather than from the
       // parent's box, and the panel body is the same surface either way.
       className="@container relative flex h-full min-h-0 flex-1 flex-col bg-background text-foreground outline-none"
@@ -2930,7 +2930,7 @@ export function FileManagerSurface({
 /* ------------------------------------------------------------------ */
 
 /**
- * The nav panel (§10): the route carries the folder, and bb renders
+ * The nav panel (§10): the route carries the folder, and VesnALIA renders
  * `HeaderActions` in the shared title bar above this component.
  */
 export function FileManagerPanel({ subPath }: PluginNavPanelProps) {

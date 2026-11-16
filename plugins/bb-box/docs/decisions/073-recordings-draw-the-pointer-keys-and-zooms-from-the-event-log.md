@@ -14,7 +14,7 @@ not zoom. [080](080-a-window-is-zoomed-once-it-has-painted-and-a-result-fades.md
 supersedes zooming in on a window before it has painted, a result
 caption that stays until the next step, and two captions for one moment.
 [081](081-a-recording-is-cut-to-its-actions-and-its-captions-keep-clear.md)
-supersedes cutting only still stretches where bb-box draws the pointer,
+supersedes cutting only still stretches where alia-box draws the pointer,
 captions that keep their places, the 1.5 seconds out before typing into
 a field just clicked, and a zoom that holds until a change elsewhere happens.
 Extends [059](059-agents-record-their-desktop-box-with-box-record.md).
@@ -43,7 +43,7 @@ clock). Nothing of the pointer, clicks or keys. What could be:
 - **The real pointer, in the box.** X11 answers `XQueryPointer` (place and
   buttons) to any client; macOS's `NSEvent` gives the pointer and its
   buttons without a grant; Windows gives `GetCursorPos` and
-  `GetAsyncKeyState`. Sway 1.11 images have `bb-box-cursor` (060), which
+  `GetAsyncKeyState`. Sway 1.11 images have `alia-box-cursor` (060), which
   gives places only.
 
 Measured in a Proxmox LXC X11 desktop, 8 cores, ffmpeg 6.1.1, an 8 s
@@ -64,7 +64,7 @@ capture at 1920 by 1080:
 
 ### Everything is drawn at the stop, from one event log
 
-While recording, bb-box logs events; at the stop it plans the clip in the
+While recording, alia-box logs events; at the stop it plans the clip in the
 plugin, in TypeScript, and the box draws it with ffmpeg, as the captions are
 drawn today. Nothing is drawn live, and the capture is as cheap as before.
 
@@ -79,19 +79,19 @@ The log has three sources, all put on the capture's timeline:
 2. **A person's input through the relay** while they have control: pointer
    places and buttons, and keys, sorted at once into chords, named keys and
    "typing". Each relay tells the log when it lets go of the keys the viewer
-   holds, on a key reset and when the viewer's connection ends, and bb-box
+   holds, on a key reset and when the viewer's connection ends, and alia-box
    does on each change of control: the log then forgets every modifier held,
    so a key after them is never read as a shortcut.
 3. **The box's pointer sampler**, beside the capture, 30 times a second,
    writing a line only when the place or buttons change.
 
-The log of the first two is in the plugin's memory: a restart of bb-box
+The log of the first two is in the plugin's memory: a restart of alia-box
 while recording loses it, and the clip is made from the sampler alone.
 
 ### What is drawn
 
 - **The pointer.** The screen's own pointer is left out of the capture
-  where the box samples it, and bb-box draws the owner's cursors. Each is
+  where the box samples it, and alia-box draws the owner's cursors. Each is
   a 32 unit square with a white outline and a soft shadow, one unit below
   and half a unit of blur, at 25% black. The dark parts are black. On a
   dark part of the screen the black and white swap, and the shadow stays.
@@ -176,11 +176,11 @@ them:
   such as an arrow. On Linux, X11 or Wayland, AltGr is a key of its own, so
   Ctrl+Alt+T is a shortcut and shows its pill.
 - Through noVNC in a Mac's browser, Option comes as `Mode_switch` or
-  `ISO_Level3_Shift`. bb-box's viewer sends a macOS desktop Command and
+  `ISO_Level3_Shift`. alia-box's viewer sends a macOS desktop Command and
   Option as its server names them: Meta and Alt, or Alt and Meta where the
   server takes Alt as Command, as Tart's does (its display's `macKeys`).
   The log reads each relay's keys with its desktop's naming.
-- An agent's chord with a modifier bb-box does not know, such as AltGr, is
+- An agent's chord with a modifier alia-box does not know, such as AltGr, is
   typing.
 - A composition's keys are typing, whatever is held, and never a pill:
   GTK's code point entry on Linux, Ctrl+Shift+U and the hex digits after
@@ -201,7 +201,7 @@ key, or the text looks like a key: 16 characters or more with no space and
 three kinds of character, or a known prefix such as `sk-`, `ghp_`, `AKIA`
 or `-----BEGIN`.
 
-Where bb-box cannot tell the field, the typing counts as secret: a person's
+Where alia-box cannot tell the field, the typing counts as secret: a person's
 typing through a relay, the agent's typing into a window's focused element
 or whatever has the focus, and the agent's single keys. Privacy wins over
 polish there. What the app itself draws is in the picture as it was, as
@@ -262,29 +262,29 @@ On by default; `zoom: false` at the stop turns it off.
 | Desktop | Screen's pointer | Sampler |
 | --- | --- | --- |
 | Linux X11 | left out (`x11grab -draw_mouse 0`) | `XQueryPointer` through Python's ctypes, in every image |
-| Linux Wayland | as the recorder draws it | none yet; `bb-box-cursor` could give places, not buttons |
+| Linux Wayland | as the recorder draws it | none yet; `alia-box-cursor` could give places, not buttons |
 | macOS | left out (`-capture_cursor 0`) | `NSEvent` through JavaScript for Automation |
 | Windows | left out (`gdigrab -draw_mouse 0`) | `GetCursorPos` and `GetAsyncKeyState` in PowerShell, in the desktop session |
 | iOS, Android | none | the touches, as today |
 
 Where no sampler runs, the screen's own pointer stays in the picture, as
-the recorder captures it, and bb-box draws only the rings, pills and zoom.
+the recorder captures it, and alia-box draws only the rings, pills and zoom.
 
 On macOS and Windows, Cua Driver draws its own agent cursor on the screen
-for each action. While recording, bb-box hides it, so it draws the same
+for each action. While recording, alia-box hides it, so it draws the same
 pointer on every platform. Cua 0.30 owns the cursor per lifecycle session:
-bb-box starts a session of its own, `bb-box-` and 8 hex digits, sets
+alia-box starts a session of its own, `alia-box-` and 8 hex digits, sets
 `set_agent_cursor_enabled` false in it, and names it on each call whose
 tool takes a session (38 of Cua 0.30.4's 58 tools). The hiding lasts as
 long as the capture: at the stop, or at the 5-minute limit if no stop comes
-first, bb-box sets the cursor shown again, and a later connection to the
+first, alia-box sets the cursor shown again, and a later connection to the
 driver keeps it shown. The cursor counts as shown only once the driver
 confirms it: a refused or failed call is tried again after 0.25, 1 and
-4 s, and again as bb-box next connects to the driver, whatever the tool
+4 s, and again as alia-box next connects to the driver, whatever the tool
 call's cancellation. A failed or cancelled hide leaves the session unused,
 so the driver's own cursor shows. Whether the cursor stayed hidden for the
 whole capture is kept apart from whether it is hidden now, so a stop after
-the limit still draws bb-box's pointer for that capture. bb-box keeps
+the limit still draws alia-box's pointer for that capture. alia-box keeps
 using the session after the capture, as Cua's element
 references belong to the session that read them: ending it made the next
 click on a ref fail. A new connection to the driver starts the session
@@ -295,7 +295,7 @@ a screenshot taken at once; shown again, it did, and a ref read while
 hidden still clicked.
 
 Where the driver cannot hide it, as one without sessions, or the session
-is lost while recording, the clip keeps Cua's cursor, and bb-box draws only
+is lost while recording, the clip keeps Cua's cursor, and alia-box draws only
 the real pointer, from the samples, and only once it first moves, as when a
 person has control: two arrows for one action would mislead. On Windows,
 Cua's badge beside its cursor shows the session's name when the cursor
@@ -320,7 +320,7 @@ still stretches, planning, drawing and encoding, and copying.
 5. The rounded pointer in two inks, its rings, and Cua's cursor hidden while
    recording on macOS and Windows. Done, the pointer re-recorded on Linux
    X11 and the hiding driven live on macOS and Windows.
-6. Wayland: a sampler from `bb-box-cursor`, once its pointer in the
+6. Wayland: a sampler from `alia-box-cursor`, once its pointer in the
    capture is known.
 7. Device boxes: key pills, then zoom. Not in this delivery: their clips
    are as before.
@@ -334,4 +334,4 @@ still stretches, planning, drawing and encoding, and copying.
 - **`perspective` for subpixel zooms**: four times `zoompan`'s time. At
   30 fps `zoompan`'s whole-pixel steps show only while the view moves.
 - **Showing typed text**, even shortened: it is the only way a secret
-  could reach a clip from bb-box's own drawing.
+  could reach a clip from alia-box's own drawing.

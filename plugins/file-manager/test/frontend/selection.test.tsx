@@ -5,8 +5,8 @@
 // exactly one `deleteEntries` call carrying all N paths.
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers, RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers, RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 import type { FileEntry, FileManagerContract } from "../../contract";
 

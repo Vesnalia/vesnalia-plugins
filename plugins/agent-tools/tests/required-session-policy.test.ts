@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   CORE_REQUIRED_SESSION_ADVERTISEMENT,
-  MANDATORY_BB_PLUGINS,
+  MANDATORY_ALIA_PLUGINS,
   MANDATORY_MCP_SERVERS,
   oneShotPluginNeed,
   requiredSessionPolicySpawnField,
@@ -25,7 +25,7 @@ test("claude-code one-shot keeps plugin tools, drops skills and extra MCP", () =
   assert.deepEqual(field.experimental_vkRequiredSessionPolicy, {
     version: 1,
     policy: {
-      bbPlugins: { mode: "allow", names: [...MANDATORY_BB_PLUGINS, "agent-tools"] },
+      aliaPlugins: { mode: "allow", names: [...MANDATORY_ALIA_PLUGINS, "agent-tools"] },
       skills: { mode: "allow", names: [] },
       mcpServers: { mode: "allow", names: [...MANDATORY_MCP_SERVERS] },
       nativePlugins: { mode: "allow", names: [] },
@@ -38,7 +38,7 @@ test("claude-code one-shot keeps plugin tools, drops skills and extra MCP", () =
 test("acp-cursor omits nativePlugins; unknown provider passes nothing", () => {
   const cursor = requiredSessionPolicySpawnField(agents, "acp-cursor", need);
   assert.deepEqual(cursor.experimental_vkRequiredSessionPolicy.policy, {
-    bbPlugins: { mode: "allow", names: [...MANDATORY_BB_PLUGINS, "agent-tools"] },
+    aliaPlugins: { mode: "allow", names: [...MANDATORY_ALIA_PLUGINS, "agent-tools"] },
     skills: { mode: "allow", names: [] },
     mcpServers: { mode: "allow", names: [...MANDATORY_MCP_SERVERS] },
     userInstructions: false,

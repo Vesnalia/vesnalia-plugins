@@ -16,7 +16,7 @@ export async function createAttachmentRefs(attachments: readonly NativeAttachmen
     let ref = attachment.localPath;
     if (!ref) {
       const bytes = Buffer.from(attachment.dataBase64!, 'base64'), chunkSize = 512 * 1024;
-      const binding = { connectionId: 'bb-zcode', sessionId, uploadId: randomUUID() };
+      const binding = { connectionId: 'alia-zcode', sessionId, uploadId: randomUUID() };
       try {
         const begin = record(await request('v4/attachment/begin', { ...binding, fileName: attachment.filename, mime: attachment.mimeType,
           totalBytes: bytes.length, totalChunks: Math.ceil(bytes.length / chunkSize), checksum: 'sha256:' + createHash('sha256').update(bytes).digest('hex') }));

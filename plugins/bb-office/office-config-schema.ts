@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const officeAppearanceSchema = z.enum([
-  "follow-bb",
+  "follow-alia",
   "neutral",
   "original",
 ]);
@@ -51,7 +51,7 @@ export type MeetingRelation = z.infer<typeof meetingRelationSchema>;
 
 export const DEFAULT_OFFICE_CONFIG: OfficeConfig = {
   schemaVersion: 1,
-  appearance: { mode: "follow-bb" },
+  appearance: { mode: "follow-alia" },
   behavior: {
     inactiveExitAfterMinutes: 30,
     meetingRelations: ["parent-child", "same-worktree", "siblings"],

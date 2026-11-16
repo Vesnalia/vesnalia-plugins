@@ -1,10 +1,10 @@
 import { expect, it } from 'vitest';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import plugin from './server';
 import { PALETTE_IDS } from './lib/palettes';
 it('persists each palette across reload without changing the breathing rhythm', async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: 'breathe', settings: { enabled: false, inhale: 6, hold: 0, exhale: 9 } });
-  plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: 'breathe', settings: { enabled: false, inhale: 6, hold: 0, exhale: 9 } });
+  plugin(alia);
   try {
     for (const palette of PALETTE_IDS) {
       expect(await harness.behavior.callRpc('saveSettings', { palette })).toEqual({ enabled: false, inhale: 6, hold: 0, exhale: 9, palette });
@@ -15,8 +15,8 @@ it('persists each palette across reload without changing the breathing rhythm', 
   } finally { await harness.lifecycle.dispose(); }
 });
 it('saves a validated settings patch atomically and preserves every untouched setting', async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: 'breathe', settings: { inhale: 6, hold: 0, exhale: 9 } });
-  plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: 'breathe', settings: { inhale: 6, hold: 0, exhale: 9 } });
+  plugin(alia);
   try {
     const expected = { palette: 'lavender', enabled: false, inhale: 6, hold: 0, exhale: 9 };
     expect(await harness.behavior.callRpc('saveSettings', { enabled: false })).toEqual(expected);

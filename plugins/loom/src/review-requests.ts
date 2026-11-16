@@ -117,7 +117,7 @@ export async function requestReviewers(ctx: EngineCtx, project: ProjectRow, tick
   try {
     checkout = await repoCheckout(ctx, current, spec, first.repo);
   } catch (error) {
-    ctx.bb.log("warn", `Asking for reviews of ${first.key}'s pull request waits: ${errText(error)}`);
+    ctx.alia.log("warn", `Asking for reviews of ${first.key}'s pull request waits: ${errText(error)}`);
     return;
   }
   const call = async <T extends { outcome: string }>(fn: () => Promise<T>): Promise<T | Failure> => {

@@ -1,6 +1,6 @@
 // RPC contract shared by the server and the frontend. Zod schemas run at the
 // wire boundary; the app imports only the inferred types.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const cellStateSchema = z.enum(["missing", "linked", "same", "modified", "unmanaged", "external-link", "broken", "hub", "plugin"]);

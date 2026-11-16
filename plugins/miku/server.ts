@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   BRAIN_INTRO_PROMPT,
@@ -60,10 +60,10 @@ function clipText(value: string | null | undefined, limit = 1_200): string {
 
 const MIKU_ASSET_PATH = resolveAssetPath(import.meta.url);
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   const voice = new MikuVoiceService();
-  bb.onDispose(() => voice.dispose());
-  bb.http.route("POST", "/voice", async (context) => {
+  alia.onDispose(() => voice.dispose());
+  alia.http.route("POST", "/voice", async (context) => {
     let text: string;
     try { text = await readVoiceRequest(context.req.raw); }
     catch { return Response.json({ error: "Provide 1–180 characters of speakable English text." }, { status: 400 }); }
@@ -74,16 +74,16 @@ export default async function plugin(bb: BbPluginApi) {
       });
     } catch (error) {
       // Renderer errors are deliberately text-free.
-      bb.log.warn(error instanceof Error ? error.message : "Miku voice rendering failed.");
+      alia.log.warn(error instanceof Error ? error.message : "Miku voice rendering failed.");
       return Response.json({ error: "Voice unavailable; check FFmpeg Flite and Rubber Band support on the server." }, { status: 503 });
     }
   });
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     brainEnabled: {
       type: "boolean",
       label: "Agent-powered comments",
       description:
-        "Let a hidden BB thread turn batches of app activity into Miku's speech.",
+        "Let a hidden VesnALIA thread turn batches of app activity into Miku's speech.",
       default: false,
     },
     brainProject: {
@@ -101,18 +101,18 @@ export default async function plugin(bb: BbPluginApi) {
   });
   let settingValues = await settings.get();
   let brainState = parseStoredBrainState(
-    await bb.storage.kv.get<unknown>(BRAIN_STATE_KEY),
+    await alia.storage.kv.get<unknown>(BRAIN_STATE_KEY),
   );
 
   const saveBrainState = async (): Promise<void> => {
-    await bb.storage.kv.set(BRAIN_STATE_KEY, brainState);
+    await alia.storage.kv.set(BRAIN_STATE_KEY, brainState);
   };
 
   const publish = (
     type: MikuEventType,
     details: Omit<MikuEvent, "id" | "type" | "at"> = {},
   ): void => {
-    bb.realtime.publish("companion-events", {
+    alia.realtime.publish("companion-events", {
       id: crypto.randomUUID(),
       type,
       at: Date.now(),
@@ -121,7 +121,7 @@ export default async function plugin(bb: BbPluginApi) {
   };
 
   const brain = new MikuBrainCoordinator(
-    bb,
+    alia,
     () => ({
       enabled: settingValues.brainEnabled,
       threadId: brainState.threadId,
@@ -145,28 +145,28 @@ export default async function plugin(bb: BbPluginApi) {
     visibility?: string;
   }): boolean =>
     thread.id === brainState.threadId ||
-    (thread.originPluginId === bb.pluginId && thread.visibility === "hidden");
+    (thread.originPluginId === alia.pluginId && thread.visibility === "hidden");
 
   settings.onChange((next, previous) => {
     settingValues = next;
     if (next.brainProject !== previous.brainProject) {
       brainState = { ...brainState, threadId: null };
       void saveBrainState().catch((error) =>
-        bb.log.warn(`Could not clear Miku's old brain selection: ${String(error)}`),
+        alia.log.warn(`Could not clear Miku's old brain selection: ${String(error)}`),
       );
       publish("brain-dismiss");
     }
   });
 
-  bb.rpc.register(brainRpcContract, {
+  alia.rpc.register(brainRpcContract, {
     async "brain.get"({ projectId }) {
       const threads =
         projectId === null
           ? []
-          : await bb.sdk.threads.list({
+          : await alia.sdk.threads.list({
               projectId,
               includeHidden: true,
-              originPluginId: bb.pluginId,
+              originPluginId: alia.pluginId,
               limit: 100,
             });
       return {
@@ -195,9 +195,9 @@ export default async function plugin(bb: BbPluginApi) {
     },
     async "brain.select"({ threadId }) {
       if (threadId !== null) {
-        const thread = await bb.sdk.threads.get({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         if (
-          thread.originPluginId !== bb.pluginId ||
+          thread.originPluginId !== alia.pluginId ||
           thread.visibility !== "hidden" ||
           (settingValues.brainProject !== undefined &&
             thread.projectId !== settingValues.brainProject)
@@ -216,7 +216,7 @@ export default async function plugin(bb: BbPluginApi) {
       return { threadId: brainState.threadId };
     },
     async "brain.create"({ projectId, selection }) {
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         projectId,
         environment: { type: "project-default" },
         prompt: BRAIN_INTRO_PROMPT,
@@ -231,13 +231,13 @@ export default async function plugin(bb: BbPluginApi) {
           : { serviceTier: selection.serviceTier }),
       });
       try {
-        await bb.sdk.threads.wait({
+        await alia.sdk.threads.wait({
           threadId: thread.id,
           status: "idle",
           timeoutMs: 120_000,
         });
       } finally {
-        await bb.sdk.threads.stop({ threadId: thread.id }).catch(() => undefined);
+        await alia.sdk.threads.stop({ threadId: thread.id }).catch(() => undefined);
       }
       brainState = { threadId: thread.id, selection };
       await saveBrainState();
@@ -253,7 +253,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.http.route("GET", "/assets/miku.png", async () => {
+  alia.http.route("GET", "/assets/miku.png", async () => {
     const bytes = await readFile(MIKU_ASSET_PATH);
     return new Response(
       new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength),
@@ -265,7 +265,7 @@ export default async function plugin(bb: BbPluginApi) {
       },
     );
   });
-  bb.http.route("GET", "/test-bench", () =>
+  alia.http.route("GET", "/test-bench", () =>
     new Response(renderTestBenchHtml(), {
       headers: {
         "cache-control": "no-store",
@@ -274,7 +274,7 @@ export default async function plugin(bb: BbPluginApi) {
     }),
   );
 
-  bb.experimental_hooks.on("message.dispatch", (context) => {
+  alia.experimental_hooks.on("message.dispatch", (context) => {
     if (!isBrainWorker(context.thread)) {
       useBrainOr(
         {
@@ -290,7 +290,7 @@ export default async function plugin(bb: BbPluginApi) {
     return { action: "proceed" };
   });
 
-  bb.events.on("thread.created", ({ thread }) => {
+  alia.events.on("thread.created", ({ thread }) => {
     if (isBrainWorker(thread)) return;
     useBrainOr(
       {
@@ -303,7 +303,7 @@ export default async function plugin(bb: BbPluginApi) {
       { threadId: thread.id, projectId: thread.projectId },
     );
   });
-  bb.events.on("thread.active", ({ thread }) => {
+  alia.events.on("thread.active", ({ thread }) => {
     if (isBrainWorker(thread)) return;
     useBrainOr(
       {
@@ -316,7 +316,7 @@ export default async function plugin(bb: BbPluginApi) {
       { threadId: thread.id, projectId: thread.projectId },
     );
   });
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) => {
     if (isBrainWorker(thread)) return;
     useBrainOr(
       {
@@ -329,7 +329,7 @@ export default async function plugin(bb: BbPluginApi) {
       { threadId: thread.id, projectId: thread.projectId },
     );
   });
-  bb.events.on("thread.failed", ({ thread, error }) => {
+  alia.events.on("thread.failed", ({ thread, error }) => {
     if (isBrainWorker(thread)) return;
     useBrainOr(
       {
@@ -342,7 +342,7 @@ export default async function plugin(bb: BbPluginApi) {
       { threadId: thread.id, projectId: thread.projectId },
     );
   });
-  bb.events.on("turn.failed", ({ threadId, errorInfo }) => {
+  alia.events.on("turn.failed", ({ threadId, errorInfo }) => {
     if (threadId === brainState.threadId) return;
     useBrainOr(
       {
@@ -354,7 +354,7 @@ export default async function plugin(bb: BbPluginApi) {
       { threadId },
     );
   });
-  bb.events.on("thread.archived", ({ thread }) => {
+  alia.events.on("thread.archived", ({ thread }) => {
     if (isBrainWorker(thread)) return;
     useBrainOr(
       {
@@ -367,7 +367,7 @@ export default async function plugin(bb: BbPluginApi) {
       { threadId: thread.id, projectId: thread.projectId },
     );
   });
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     if (isBrainWorker(thread)) return;
     useBrainOr(
       {
@@ -380,7 +380,7 @@ export default async function plugin(bb: BbPluginApi) {
       { threadId: thread.id, projectId: thread.projectId },
     );
   });
-  bb.events.on("interaction.pending", ({ thread }) => {
+  alia.events.on("interaction.pending", ({ thread }) => {
     if (isBrainWorker(thread)) return;
     useBrainOr(
       {
@@ -393,7 +393,7 @@ export default async function plugin(bb: BbPluginApi) {
       { threadId: thread.id, projectId: thread.projectId },
     );
   });
-  bb.events.on("message.queued", ({ entry }) => {
+  alia.events.on("message.queued", ({ entry }) => {
     if (entry.threadId === brainState.threadId) return;
     useBrainOr(
       {
@@ -405,7 +405,7 @@ export default async function plugin(bb: BbPluginApi) {
       { threadId: entry.threadId },
     );
   });
-  bb.events.on("message.dispatched", ({ entry }) => {
+  alia.events.on("message.dispatched", ({ entry }) => {
     if (entry.threadId === brainState.threadId) return;
     useBrainOr(
       {
@@ -418,12 +418,12 @@ export default async function plugin(bb: BbPluginApi) {
     );
   });
 
-  bb.background.service("brain", {
+  alia.background.service("brain", {
     start: (signal) => brain.run(signal),
   });
-  bb.background.service("task-events", {
+  alia.background.service("task-events", {
     async start(signal) {
-      await watchTaskCompletions(bb.server.loopbackBaseUrl, signal, (event) => {
+      await watchTaskCompletions(alia.server.loopbackBaseUrl, signal, (event) => {
         useBrainOr(
           {
             kind: "task completed",
@@ -437,5 +437,5 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info("Miku is ready to roam, observe, and react");
+  alia.log.info("Miku is ready to roam, observe, and react");
 }

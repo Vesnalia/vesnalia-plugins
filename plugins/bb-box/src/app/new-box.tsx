@@ -4,7 +4,7 @@
 // within the kind's largest (028). It remembers the last kind and size in
 // the browser, keyed by plugin ID.
 
-import { experimental_Icon as Icon, experimental_usePluginId, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, experimental_usePluginId, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +35,7 @@ export const ROOMS_CHECK_MS = 300;
  */
 
 export const IMAGE_REQUEST =
-  `Make a box image for this project with ${PRODUCT}: draft .bb/box-setup.sh and .bb/box-check.sh with box_image_draft from the project's files, ` +
+  `Make a box image for this project with ${PRODUCT}: draft .vesnalia/box-setup.sh and .vesnalia/box-check.sh with box_image_draft from the project's files, ` +
   "try them with box_image_try until every check passes, commit them, then register them with box_image_set.";
 
 /** What the acquire RPC takes: a preset, or the parts of a custom size. Nothing for the kind's default. */
@@ -156,7 +156,7 @@ export function useDesktopOnDemand(view: DesktopOnDemandView | null | undefined,
         const { result } = await rpc.call("setup.desktop", { threadId, hostId: view.hostId, kind: kind as "linux-desktop-cpu" | "linux-desktop-wayland-cpu", ...(size ? { size } : {}), ...(name ? { name } : {}) });
         await refresh();
         if (result.ok) return null;
-        return result.reason === "problems" ? result.problems.map((item) => item.message).join(" ") : "Someone else saved BB Box's settings at the same moment. Try again.";
+        return result.reason === "problems" ? result.problems.map((item) => item.message).join(" ") : "Someone else saved VesnALIA Box's settings at the same moment. Try again.";
       } catch (caught) {
         return message(caught);
       }
@@ -187,7 +187,7 @@ function formOffer(offer: OfferView, room: GpuRoom | null, unread: boolean, fail
   };
 }
 
-/** Why a typed name will not do, or null when it will; an empty name lets bb-box pick one. */
+/** Why a typed name will not do, or null when it will; an empty name lets alia-box pick one. */
 export function nameProblem(name: string): string | null {
   if (!name) return null;
   if (!MACHINE_NAME.test(name)) return "Lowercase letters, digits and hyphens, starting with a letter, up to 32 characters.";
@@ -550,7 +550,7 @@ export function NewBox({
     (noMatch
       ? "No provider matches these filters."
       : buildingFirst
-        ? `BB Box builds the ${buildingFirst.kind.windowing === "wayland" ? "Wayland desktop image" : "desktop image"} on ${onDemand!.machine} first, ${estimate(buildingFirst.took, DESKTOP_BUILD_WORDS)}, then makes the box.`
+        ? `VesnALIA Box builds the ${buildingFirst.kind.windowing === "wayland" ? "Wayland desktop image" : "desktop image"} on ${onDemand!.machine} first, ${estimate(buildingFirst.took, DESKTOP_BUILD_WORDS)}, then makes the box.`
         : null);
   const rowClass = (selected: boolean) =>
     cn(
@@ -597,7 +597,7 @@ export function NewBox({
             void submit();
           }}
         >
-          <FormSection title="System" description={machine ? "Of the kinds whose boxes join BB." : undefined}>
+          <FormSection title="System" description={machine ? "Of the kinds whose boxes join VesnALIA." : undefined}>
             <div
               role="radiogroup"
               aria-label="System"
@@ -871,7 +871,7 @@ export function NewBox({
           ) : null}
           {access ? (
             <p role="note" className="border-t border-border pt-4 text-xs leading-snug text-warning-text">
-              Boxes will not join BB yet. <JoinHelp words={access.message} />
+              Boxes will not join VesnALIA yet. <JoinHelp words={access.message} />
             </p>
           ) : null}
           <div className="flex items-center justify-between gap-3 pt-1">

@@ -1,9 +1,9 @@
-// Exercise actual bb navigation without changing the installed plugin.
+// Exercise actual VesnALIA navigation without changing the installed plugin.
 // PLAYWRIGHT_DIR=/tmp/lanes-qa-tools node scripts/qa/thread-opening.mjs
 import assert from "node:assert/strict";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { BB, launch } from "./browser.mjs";
+import { ALIA, launch } from "./browser.mjs";
 
 const out = process.argv[2] ?? "docs/fidelity/live/thread-opening";
 mkdirSync(out, { recursive: true });
@@ -22,7 +22,7 @@ try {
           const lanes = js ? body.includes("Pan back and forth") && body.includes("Window span") : body.includes(".lanes-tray");
           await route.fulfill({ response, body: lanes ? readFileSync(`dist/app.${js ? "js" : "css"}`, "utf8") : body });
         });
-        await page.goto(`${BB}/plugins/agent-lanes/lanes`, { waitUntil: "networkidle" });
+        await page.goto(`${ALIA}/plugins/agent-lanes/lanes`, { waitUntil: "networkidle" });
         const help = page.getByRole("button", { name: "Keyboard shortcuts", exact: true });
         await help.click();
         const preference = page.getByRole("checkbox", { name: "Open to the side by default" });

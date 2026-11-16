@@ -1,6 +1,6 @@
 # GitHub Board
 
-A board of your GitHub work inside bb, and a button that hands any of it to an agent thread. Ported
+A board of your GitHub work inside VesnALIA, and a button that hands any of it to an agent thread. Ported
 from [`paseo-plugins/github-board`](https://github.com/gpambrozio/paseo-plugins/tree/main/github-board).
 
 Four columns — **Issues**, **Draft PRs**, **Open PRs** and **Discussions** — covering what you wrote,
@@ -15,8 +15,8 @@ whatever is open on repositories you own, and what is assigned to you anywhere.
   request, and **Open on GitHub**. Images from GitHub load, private ones included; an image from any
   other host waits until you press **Load image**, since loading it tells that host you read the item.
 - Right-click an issue or pull request card (or long-press it) to add or remove labels.
-- **Send to chat** opens bb's new-thread composer with a prompt written for the card's column, in the
-  bb project whose checkout has that repository as a remote. Pick the model, environment and project as
+- **Send to chat** opens VesnALIA's new-thread composer with a prompt written for the card's column, in the
+  VesnALIA project whose checkout has that repository as a remote. Pick the model, environment and project as
   you would for any thread; the next card opens with the same choices.
 - **Add to chat**, in the detail panel, puts the prompt Send to chat would use — the card's column's
   template, with the per-project override of the chat's own project — at the end of a chat's draft,
@@ -26,24 +26,24 @@ whatever is open on repositories you own, and what is assigned to you anywhere.
   in the board's place, as the sidebar does, and adds the card there. It never replaces what you typed.
 - A filter narrows the board to some repositories. It, and the detail panel's width, are remembered.
 - A thread started with Send to chat shows its card in the thread's **Info** tab — `owner/repo#123`,
-  which opens it on GitHub, and the title. On bb 0.48, with bb's thread row metadata experiment on and
+  which opens it on GitHub, and the title. On VesnALIA 0.48, with VesnALIA's thread row metadata experiment on and
   Organize → Rows → Metadata enabled, the sidebar row shows it too.
 
 ## What you need
 
-- bb 0.47 or later. On bb 0.46, install with `@^0.5.0` instead of `@^0.6.0`; on bb 0.45, with
-  `@^0.4.0`; on bb 0.44, with `@^0.1.0`, which has everything but Add to chat.
+- VesnALIA 0.47 or later. On VesnALIA 0.46, install with `@^0.5.0` instead of `@^0.6.0`; on VesnALIA 0.45, with
+  `@^0.4.0`; on VesnALIA 0.44, with `@^0.1.0`, which has everything but Add to chat.
 - The GitHub CLI, [`gh`](https://cli.github.com), installed and signed in (`gh auth login`) **on the
-  machine running the bb server**. The board uses that login; it stores no token of its own. It finds
-  `gh` as bb finds its own tools: on the login shell's PATH, Homebrew, `~/.local/bin`, mise, asdf or
+  machine running the VesnALIA server**. The board uses that login; it stores no token of its own. It finds
+  `gh` as VesnALIA finds its own tools: on the login shell's PATH, Homebrew, `~/.local/bin`, mise, asdf or
   Volta. Without it the plugin shows as needing configuration.
-- For Send to chat to pick a project, a bb project whose checkout has the card's repository as a git
-  remote — its `origin`, or (on the bb server's machine) any other remote, such as a fork's `upstream`.
+- For Send to chat to pick a project, a VesnALIA project whose checkout has the card's repository as a git
+  remote — its `origin`, or (on the VesnALIA server's machine) any other remote, such as a fork's `upstream`.
 
 ## Install
 
 ```bash
-bb plugin install 'git:github.com/gpambrozio/bb-plugins@^0.6.0' --plugin github-board --tag-prefix github-board/
+alia plugin install 'git:github.com/gpambrozio/bb-plugins@^0.6.0' --plugin github-board --tag-prefix github-board/
 ```
 
 The board is **GitHub Board** in the sidebar. The palette has *GitHub Board: open the board* and
@@ -60,15 +60,15 @@ On the plugin's settings page:
   default. The gear on the board opens the same editor.
 
 After installing or signing in to `gh` for the first time, the board works on its next refresh; run
-`bb plugin reload github-board` to clear the "needs configuration" notice.
+`alia plugin reload github-board` to clear the "needs configuration" notice.
 
 ## Limitations
 
-- `gh` runs on the bb server's machine. The fallback that finds a fork's `upstream` remote only looks
+- `gh` runs on the VesnALIA server's machine. The fallback that finds a fork's `upstream` remote only looks
   at checkouts on that machine; a project checked out only on another machine is matched by its
   `origin` alone.
 - Pull request review comments (on the diff) are not shown; the conversation is.
-- A thread started from a card has no card row in its transcript, because bb has no way for a plugin to
+- A thread started from a card has no card row in its transcript, because VesnALIA has no way for a plugin to
   add one. The card is in the prompt, the thread's plugin metadata and its Info tab. A thread a card
   was added to with Add to chat carries no card.
 
@@ -78,7 +78,7 @@ After installing or signing in to `gh` for the first time, the board works on it
 npm install --include=dev
 npm test
 npx tsc --noEmit
-bb plugin build
+alia plugin build
 ```
 
 [`AGENTS.md`](AGENTS.md) records the invariants this plugin keeps.

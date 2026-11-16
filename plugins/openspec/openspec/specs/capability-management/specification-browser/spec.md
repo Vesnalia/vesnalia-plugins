@@ -9,7 +9,7 @@ Lets users discover existing and upcoming capabilities in one source-scoped spec
 The plugin SHALL provide a Specifications navigation panel alongside the existing change browser. The destinations SHALL use consistent OpenSpec names and distinct icons. Both Changes and Specs SHALL also be available as action tabs in a thread panel, using that thread's environment and planning source. It SHALL present one specification tree and one selected document, rather than separate overview, map, history, or requirement-navigation views.
 
 #### Scenario: Open the specification browser
-- **WHEN** the user opens Specifications in bb navigation
+- **WHEN** the user opens Specifications in VesnALIA navigation
 - **THEN** the specification tree and selected document are available for the chosen project, environment, and planning source
 - **AND** the existing change browser remains available independently
 

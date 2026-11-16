@@ -1,15 +1,15 @@
-// bb-plugin-omp-subagents — the bb.host entry.
+// alia-plugin-omp-subagents — the alia.host entry.
 //
 // Runs inside the host daemon on each enrolled machine. It owns every read of
 // the OMP session tree and emits `changed` signals whenever a watched session's
-// files change, so live rosters update in BB without polling loops.
+// files change, so live rosters update in VesnALIA without polling loops.
 import { readdir, realpath, stat } from "node:fs/promises";
 import { basename, isAbsolute, join, relative, sep, type PlatformPath } from "node:path";
 import { homedir } from "node:os";
 import {
   experimental_defineHostEntry,
   type ExperimentalHostRpcContext,
-} from "@get-bb/plugin-sdk/host";
+} from "@vesnalia/plugin-sdk/host";
 import {
   clipOutput,
   finalizeAgent,

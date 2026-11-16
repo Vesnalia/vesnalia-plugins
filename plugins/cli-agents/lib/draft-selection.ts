@@ -1,4 +1,4 @@
-import type { ComposerStructuredDraft, ComposerView } from "@get-bb/plugin-sdk";
+import type { ComposerStructuredDraft, ComposerView } from "@vesnalia/plugin-sdk";
 import { isHandoffComposer } from "./handoff-mode";
 export type DraftState = {
   projectId: string | null;

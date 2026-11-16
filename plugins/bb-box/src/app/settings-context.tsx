@@ -29,7 +29,7 @@ export const SettingsContext = createContext<SettingsContextValue | null>(null);
 
 export function useSettings(): SettingsContextValue {
   const value = useContext(SettingsContext);
-  if (!value) throw new Error("BB Box's settings are not loaded.");
+  if (!value) throw new Error("VesnALIA Box's settings are not loaded.");
   return value;
 }
 

@@ -44,26 +44,26 @@ describe("the retry schedule", () => {
   });
 });
 
-describe("a hand-back that bb does not take", () => {
+describe("a hand-back that VesnALIA does not take", () => {
   let h: ReturnType<typeof makeEngine>;
   const findings: Finding[] = [{ severity: "blocking", title: "The header row is missing", detail: "An empty export has no header." }];
   const project = () => h.store.projectBySlug("csv")!;
   const ticket = () => ticketOf(h, "CSV-1");
   const worker = (): ThreadRow => h.store.threads({ ticketId: ticket().id, role: "worker" }).at(-1)!;
-  const sends = () => h.bb.sent(worker().thread_id!).filter((text) => text.includes("asked for changes"));
-  const warnings = () => h.bb.callsTo("log").filter(([level, text]) => level === "warn" && String(text).startsWith("Could not send CSV-1's work")).map(([, text]) => String(text));
+  const sends = () => h.alia.sent(worker().thread_id!).filter((text) => text.includes("asked for changes"));
+  const warnings = () => h.alia.callsTo("log").filter(([level, text]) => level === "warn" && String(text).startsWith("Could not send CSV-1's work")).map(([, text]) => String(text));
   const systemPosts = () => h.store.posts(ticket().id).filter((post) => post.kind === "system");
   const tick = () => deliverHandBacks(h.ctx, project().id);
 
-  /** CSV-1's reviewer asks for changes while bb refuses every send. */
+  /** CSV-1's reviewer asks for changes while VesnALIA refuses every send. */
   async function refused(error: Error) {
     await seedProject(h);
     await reachReview(h, "CSV-1");
     await spawnReviewers(h.ctx, project(), specOf(h.store, project()));
     const reviewer = h.store.threads({ ticketId: ticket().id, role: "reviewer" }).at(-1)!;
     checkOutHead(h, reviewer);
-    h.bb.sendError = error;
-    h.bb.calls = [];
+    h.alia.sendError = error;
+    h.alia.calls = [];
     await requestChanges(h.ctx, reviewer.thread_id!, "Fix the header.", findings);
     expect(ticket().state).toBe("working");
   }
@@ -73,7 +73,7 @@ describe("a hand-back that bb does not take", () => {
   });
 
   it("is tried again after 15 seconds, 30, 60 and 120, then every 5 minutes", async () => {
-    await refused(new Error("HTTP 503: bb is restarting"));
+    await refused(new Error("HTTP 503: VesnALIA is restarting"));
     expect(sends()).toHaveLength(1);
     const delays: number[] = [];
     for (let round = 0; round < 6; round += 1) {
@@ -94,23 +94,23 @@ describe("a hand-back that bb does not take", () => {
     });
   });
 
-  it("logs the same failure once, a new one again, and stops waiting when bb takes the message", async () => {
-    await refused(new Error("HTTP 503: bb is restarting"));
+  it("logs the same failure once, a new one again, and stops waiting when VesnALIA takes the message", async () => {
+    await refused(new Error("HTTP 503: VesnALIA is restarting"));
     for (let round = 0; round < 4; round += 1) {
       h.clock.advance(6 * 60_000);
       await tick();
     }
     expect(sends()).toHaveLength(5);
-    expect(warnings()).toEqual([expect.stringContaining("HTTP 503: bb is restarting")]);
+    expect(warnings()).toEqual([expect.stringContaining("HTTP 503: VesnALIA is restarting")]);
     expect(warnings()[0]).toContain("tries again, waiting longer after each failure up to 5 minutes");
 
-    h.bb.sendError = new Error("HTTP 502: bad gateway");
+    h.alia.sendError = new Error("HTTP 502: bad gateway");
     h.clock.advance(6 * 60_000);
     await tick();
     expect(warnings()).toHaveLength(2);
     expect(warnings()[1]).toContain("HTTP 502: bad gateway");
 
-    h.bb.sendError = null;
+    h.alia.sendError = null;
     h.clock.advance(6 * 60_000);
     await tick();
     expect(ticket().handback_json).toBeNull();
@@ -126,11 +126,11 @@ describe("a hand-back that bb does not take", () => {
   });
 
   const unreachable: Array<[string, () => unknown]> = [
-    ["its machine was removed", () => h.bb.removedHosts.add(h.bb.environments.get(h.bb.threads.get(worker().thread_id!)!.environmentId!)!.hostId)],
-    ["its thread was archived", () => (h.bb.threads.get(worker().thread_id!)!.archivedAt = 1)],
-    ["its thread was deleted", () => (h.bb.threads.get(worker().thread_id!)!.deletedAt = 1)],
-    ["its thread was deleted", () => h.bb.threads.delete(worker().thread_id!)],
-    ["its environment is gone", () => h.bb.environments.delete(h.bb.threads.get(worker().thread_id!)!.environmentId!)],
+    ["its machine was removed", () => h.alia.removedHosts.add(h.alia.environments.get(h.alia.threads.get(worker().thread_id!)!.environmentId!)!.hostId)],
+    ["its thread was archived", () => (h.alia.threads.get(worker().thread_id!)!.archivedAt = 1)],
+    ["its thread was deleted", () => (h.alia.threads.get(worker().thread_id!)!.deletedAt = 1)],
+    ["its thread was deleted", () => h.alia.threads.delete(worker().thread_id!)],
+    ["its environment is gone", () => h.alia.environments.delete(h.alia.threads.get(worker().thread_id!)!.environmentId!)],
   ];
 
   describe.each(unreachable)("when %s", (why, gone) => {
@@ -143,12 +143,12 @@ describe("a hand-back that bb does not take", () => {
       const row = worker();
       const threadId = row.thread_id!;
       gone();
-      h.bb.sendError = new Error("HTTP 404: Host not found");
-      h.bb.calls = [];
+      h.alia.sendError = new Error("HTTP 404: Host not found");
+      h.alia.calls = [];
       h.host.calls = [];
       await requestChanges(h.ctx, reviewer.thread_id!, "Fix the header.", findings);
 
-      const attempts = () => h.bb.sent(threadId).filter((text) => text.includes("asked for changes")).length;
+      const attempts = () => h.alia.sent(threadId).filter((text) => text.includes("asked for changes")).length;
       expect(attempts()).toBe(1);
       expect(ticket()).toMatchObject({ state: "blocked", worker_thread_id: null, environment_id: null, handback_json: null, blocked_reason: `its worker can no longer be reached: ${why}` });
       expect(h.store.thread(row.id)).toMatchObject({ state: "ended", end_reason: "unreachable" });
@@ -157,7 +157,7 @@ describe("a hand-back that bb does not take", () => {
 
       const blocks = h.store.posts(ticket().id).filter((post) => post.kind === "block");
       expect(blocks).toHaveLength(1);
-      expect(blocks[0]!.body).toContain(`its worker can no longer be reached: ${why}. Needs: Requeue the ticket, for example with \`bb loom requeue CSV-1\`, to start a new worker from its branch.`);
+      expect(blocks[0]!.body).toContain(`its worker can no longer be reached: ${why}. Needs: Requeue the ticket, for example with \`alia loom requeue CSV-1\`, to start a new worker from its branch.`);
       expect(blocks[0]!.body).toContain("The message Loom could not send it:");
       expect(blocks[0]!.body).toContain("asked for changes");
       const kept = systemPosts().filter((post) => post.data_json.includes("undeliverable"));
@@ -173,7 +173,7 @@ describe("a hand-back that bb does not take", () => {
       expect(h.store.posts(ticket().id).filter((post) => post.data_json.includes("undeliverable"))).toHaveLength(2);
       expect(warnings()).toEqual([]);
 
-      h.bb.sendError = null;
+      h.alia.sendError = null;
       await requeueTicket(h.ctx, "CSV-1", { note: "", actor: HUMAN_ACTOR, author: "human" });
       expect(ticket().state).toBe("queued");
       const next = await startWorker(h, "CSV-1");
@@ -182,17 +182,17 @@ describe("a hand-back that bb does not take", () => {
     });
   });
 
-  it("blocks the ticket at once when the machine is gone but bb still reports the thread active, and a later ending pass touches no host", async () => {
+  it("blocks the ticket at once when the machine is gone but VesnALIA still reports the thread active, and a later ending pass touches no host", async () => {
     await seedProject(h, (doc) => (doc.agents.max_workers = 1));
     await reachReview(h, "CSV-1");
     await spawnReviewers(h.ctx, project(), specOf(h.store, project()));
     const reviewer = h.store.threads({ ticketId: ticket().id, role: "reviewer" }).at(-1)!;
     checkOutHead(h, reviewer);
     const row = worker();
-    h.bb.removedHosts.add(h.bb.environments.get(h.bb.threads.get(row.thread_id!)!.environmentId!)!.hostId);
-    // bb cannot stop a thread on a machine that is gone, so it stays active.
-    h.bb.stopConfirms = false;
-    h.bb.sendError = new Error("HTTP 404: Host not found");
+    h.alia.removedHosts.add(h.alia.environments.get(h.alia.threads.get(row.thread_id!)!.environmentId!)!.hostId);
+    // VesnALIA cannot stop a thread on a machine that is gone, so it stays active.
+    h.alia.stopConfirms = false;
+    h.alia.sendError = new Error("HTTP 404: Host not found");
     h.host.calls = [];
     await requestChanges(h.ctx, reviewer.thread_id!, "Fix the header.", findings);
 
@@ -225,19 +225,19 @@ describe("a hand-back that bb does not take", () => {
     await spawnReviewers(h.ctx, project(), specOf(h.store, project()));
     const reviewer = h.store.threads({ ticketId: ticket().id, role: "reviewer" }).at(-1)!;
     checkOutHead(h, reviewer);
-    h.bb.threads.get(worker().thread_id!)!.archivedAt = 1;
-    h.bb.sendError = new Error("HTTP 404: Host not found");
+    h.alia.threads.get(worker().thread_id!)!.archivedAt = 1;
+    h.alia.sendError = new Error("HTTP 404: Host not found");
     const long = `${"START ".repeat(10)}${"detail ".repeat(8000)}`;
     await requestChanges(h.ctx, reviewer.thread_id!, "Fix the header.", [{ severity: "blocking", title: "A long finding", detail: long }]);
     expect(ticket().state).toBe("blocked");
     const system = systemPosts().find((post) => post.data_json.includes("undeliverable"))!;
     expect(system.body.length).toBeGreaterThan(30_000);
 
-    h.bb.sendError = null;
+    h.alia.sendError = null;
     await requeueTicket(h.ctx, "CSV-1", { note: "", actor: HUMAN_ACTOR, author: "human" });
-    h.bb.calls = [];
+    h.alia.calls = [];
     await startWorker(h, "CSV-1");
-    const spawn = h.bb.callsTo("spawnThread").at(-1)![0] as { prompt: string; detail?: string };
+    const spawn = h.alia.callsTo("spawnThread").at(-1)![0] as { prompt: string; detail?: string };
     const brief = `${spawn.prompt}\n${spawn.detail ?? ""}`;
     expect(brief).toContain("The message Loom could not send it:");
     expect(brief).toContain("START START START");
@@ -250,27 +250,27 @@ describe("a hand-back that bb does not take", () => {
     await spawnReviewers(h.ctx, project(), specOf(h.store, project()));
     const reviewer = h.store.threads({ ticketId: ticket().id, role: "reviewer" }).at(-1)!;
     checkOutHead(h, reviewer);
-    h.bb.threads.get(worker().thread_id!)!.archivedAt = 1;
-    h.bb.sendError = new Error("HTTP 404: Host not found");
+    h.alia.threads.get(worker().thread_id!)!.archivedAt = 1;
+    h.alia.sendError = new Error("HTTP 404: Host not found");
     await requestChanges(h.ctx, reviewer.thread_id!, "Fix the header.", findings);
     expect(ticket().state).toBe("blocked");
     expect(freeWorkerSlots(1, h.store.tickets(project().id).map(toLite))).toBe(1);
   });
 
   it("ignores a send that fails after its hand-back was replaced by a new worker's", async () => {
-    await refused(new Error("HTTP 503: bb is restarting"));
+    await refused(new Error("HTTP 503: VesnALIA is restarting"));
     const oldThread = worker().thread_id!;
     h.clock.advance(6 * 60_000);
-    h.bb.sendError = null;
-    const real = h.bb.send.bind(h.bb);
+    h.alia.sendError = null;
+    const real = h.alia.send.bind(h.alia);
     let fail!: (error: Error) => void;
-    h.bb.send = (threadId, message) => (threadId === oldThread ? new Promise<void>((_, reject) => (fail = reject)) : real(threadId, message));
+    h.alia.send = (threadId, message) => (threadId === oldThread ? new Promise<void>((_, reject) => (fail = reject)) : real(threadId, message));
 
     const late = tick();
     await new Promise((resolve) => setTimeout(resolve, 10));
     // The ticket was requeued and a new worker has its own hand-back while the old send is still out.
     h.store.updateTicket(ticket().id, { worker_thread_id: "thr_new", handback_json: JSON.stringify({ thread: "thr_new", text: "new work" }) });
-    h.bb.threads.get(oldThread)!.deletedAt = 1;
+    h.alia.threads.get(oldThread)!.deletedAt = 1;
     fail(new Error("HTTP 404: Host not found"));
     await late;
 
@@ -279,21 +279,21 @@ describe("a hand-back that bb does not take", () => {
     expect(h.store.posts(ticket().id).filter((post) => post.data_json.includes("undeliverable"))).toEqual([]);
     expect(warnings()).toHaveLength(1);
 
-    h.bb.send = real;
+    h.alia.send = real;
     await tick();
-    expect(h.bb.sent("thr_new")).toEqual(["new work"]);
+    expect(h.alia.sent("thr_new")).toEqual(["new work"]);
     expect(ticket().handback_json).toBeNull();
   });
 
   it("does not make a new worker wait out the failures of the one before it", async () => {
-    await refused(new Error("HTTP 503: bb is restarting"));
+    await refused(new Error("HTTP 503: VesnALIA is restarting"));
     for (let round = 0; round < 3; round += 1) {
       h.clock.advance(6 * 60_000);
       await tick();
     }
     h.store.updateTicket(ticket().id, { worker_thread_id: "thr_new", handback_json: JSON.stringify({ thread: "thr_new", text: "new work" }) });
-    h.bb.sendError = null;
+    h.alia.sendError = null;
     await tick();
-    expect(h.bb.sent("thr_new")).toEqual(["new work"]);
+    expect(h.alia.sent("thr_new")).toEqual(["new work"]);
   });
 });

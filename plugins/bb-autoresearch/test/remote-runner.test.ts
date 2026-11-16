@@ -16,9 +16,9 @@ import { RunAbortedError } from "../src/host/runner.ts";
 import { ensureCommit } from "../src/transfer.ts";
 import { localRunner } from "./helpers.ts";
 
-const CALLER = { experimental_caller: { kind: "plugin" as const, pluginId: "bb-autoresearch" } };
+const CALLER = { experimental_caller: { kind: "plugin" as const, pluginId: "alia-autoresearch" } };
 
-/** A client that reaches the example provider in-process, validating inputs like bb.rpc would. */
+/** A client that reaches the example provider in-process, validating inputs like alia.rpc would. */
 export function providerClient(p: LocalBenchProvider, pluginId = "bench-provider-local"): BenchProviderClient {
   return new BenchProviderClient(
     pluginId,
@@ -55,7 +55,7 @@ describe("RemoteBenchRunner (example provider, real git)", () => {
     sh(repo, "commit", "-qam", "two");
     provider = createLocalBenchProvider({ root: join(root, "provider"), sweepMs: 0 });
     const client = providerClient(provider);
-    const created = await client.call("benchProvider.create", { key: "k1", cores: 1, lifetimeSeconds: 600, labels: { owner: "bb-autoresearch" } });
+    const created = await client.call("benchProvider.create", { key: "k1", cores: 1, lifetimeSeconds: 600, labels: { owner: "alia-autoresearch" } });
     remoteId = created.hostId;
     runner = new RemoteBenchRunner(client, remoteId, "remote-1", { home: null, stagingDir: join(root, "staging"), pollMs: 20, env: { STUDY_ENV: "yes" } });
   });

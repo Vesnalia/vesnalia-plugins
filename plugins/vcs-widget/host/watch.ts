@@ -6,12 +6,12 @@
 // under the daemon's 256-per-worker limit.
 //
 // `ignoredPaths` is root-relative, and a plain directory name is the right
-// syntax: bb hands the list to @parcel/watcher, whose wrapper resolves every
+// syntax: VesnALIA hands the list to @parcel/watcher, whose wrapper resolves every
 // non-glob entry against the watched root and then prefix-matches it, so
 // `objects` drops the whole subtree. On Linux the recursive walk skips those
 // directories outright, so an ignored one costs no inotify watch at all --
 // which is the difference between a handful of watches and one per loose
-// object directory. bb's own git watcher passes the same shape.
+// object directory. VesnALIA's own git watcher passes the same shape.
 //
 // Measured on a repository holding 50k loose objects (2026-09-09): the git
 // dir is 265 directories, of which the ignore list leaves 4. Writing those

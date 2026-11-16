@@ -3,7 +3,7 @@
 // never sends it; Insert only puts it in the draft.
 import { useState } from "react";
 import { toast } from "sonner";
-import { useComposer } from "@get-bb/plugin-sdk/app";
+import { useComposer } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { useLoadable, useRewindRpc } from "./data";

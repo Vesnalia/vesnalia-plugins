@@ -1,16 +1,16 @@
-// bb-plugin-quick-thread — backend entry.
+// alia-plugin-quick-thread — backend entry.
 //
 // One job: take the NewThreadRequest that the frontend's NewThreadComposer
 // produces and create the thread with it. The composer resolves every
 // selection (project, environment, provider/model, permission mode, prompt
-// input); this handler just forwards it to bb.sdk.threads.spawn, which fills
+// input); this handler just forwards it to alia.sdk.threads.spawn, which fills
 // in `origin: "plugin"` / `originPluginId` so quick-created threads stay
 // attributed to this plugin.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 // The composer's NewThreadRequest. Fields we forward verbatim; `.passthrough()`
-// keeps any additive fields a newer BB adds. spawn does the real validation.
+// keeps any additive fields a newer VesnALIA adds. spawn does the real validation.
 const newThreadRequestSchema = z
   .object({
     projectId: z.string(),
@@ -32,19 +32,19 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     create_thread: async ({ request }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const thread = await bb.sdk.threads.spawn({ ...(request as any) });
-      bb.log.info(`created thread ${thread.id}`);
+      const thread = await alia.sdk.threads.spawn({ ...(request as any) });
+      alia.log.info(`created thread ${thread.id}`);
       return { threadId: thread.id };
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

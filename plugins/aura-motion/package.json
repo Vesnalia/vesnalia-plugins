@@ -1,15 +1,15 @@
 {
-  "name": "bb-plugin-aura-motion",
+  "name": "alia-plugin-aura-motion",
   "version": "0.3.4",
-  "description": "Video, animated GIF and photo wallpapers with selectable dither textures for BB. Based on Aura by Mateo Cerquetella.",
+  "description": "Video, animated GIF and photo wallpapers with selectable dither textures for VesnALIA. Based on Aura by Mateo Cerquetella.",
   "license": "MIT",
   "type": "module",
   "engines": {
-    "bb": ">=0.40",
-    "bbPluginSdk": ">=0.4.21",
+    "alia": ">=0.40",
+    "aliaPluginSdk": ">=0.4.21",
     "node": ">=22.19.0"
   },
-  "bb": {
+  "alia": {
     "name": "Aura Motion",
     "description": "Video, animated GIF and photo wallpapers behind your chats with Apple-style glass, seven dither patterns, six saved slots, and an optional activity overview.",
     "branding": {
@@ -33,7 +33,7 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "build": "env -u BB_CLI bb plugin build .",
+    "build": "env -u ALIA_CLI alia plugin build .",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/*.test.ts",
     "check": "npm run typecheck && npm test && npm run build",
@@ -43,7 +43,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.29",
     "@playwright/test": "^1.51.0",
     "@testing-library/react": "^16.3.3",
     "@types/better-sqlite3": "^7.6.12",
@@ -51,7 +50,6 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "bb-app": "0.40.0",
     "better-sqlite3": "^12.0.0",
     "cron-parser": "^5.10.2",
     "hono": "^4.13.13",
@@ -62,12 +60,24 @@
     "typescript": "^5.7.0"
   },
   "author": "Nikos Benakis",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/NickolasBenakis/bb-plugin-aura-motion.git"
-  },
-  "homepage": "https://github.com/NickolasBenakis/bb-plugin-aura-motion",
   "contributors": [
     "Mateo Cerquetella (original Aura plugin)"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.29"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/aura-motion#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/aura-motion"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

@@ -29,7 +29,7 @@ const STATUS = JSON.stringify({
       expected_seconds: 240,
       log: "/inbox/cargo_test.log",
       job_file: "/inbox/cargo_test.json",
-      source: { tool: "bb", session: "thr_a" },
+      source: { tool: "alia", session: "thr_a" },
     },
     {
       slot: 0,
@@ -80,7 +80,7 @@ const STATUS = JSON.stringify({
 });
 
 function fakeDrmanhattan(script: string): NodeJS.ProcessEnv {
-  const dir = mkdtempSync(join(tmpdir(), "drmanhattan-bb-"));
+  const dir = mkdtempSync(join(tmpdir(), "drmanhattan-alia-"));
   const bin = join(dir, "drmanhattan");
   writeFileSync(join(dir, "status.json"), STATUS);
   writeFileSync(join(dir, "args"), "");
@@ -109,7 +109,7 @@ describe("parseStatus", () => {
     expect(queue.running.map((run) => [run.state, run.slot])).toEqual([["running", null]]);
   });
 
-  it("links a run to the bb thread that queued it", () => {
+  it("links a run to the VesnALIA thread that queued it", () => {
     const queue = parseStatus(STATUS);
     expect(queue.running.map((run) => run.threadId)).toEqual(["thr_a", null]);
     const other = parseStatus(

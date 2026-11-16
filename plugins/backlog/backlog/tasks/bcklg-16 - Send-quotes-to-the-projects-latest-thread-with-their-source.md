@@ -17,7 +17,7 @@ ordinal: 20000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Quoting selected text used the BB composer of whatever surface was active, which from the Backlog.MD panel is the generic new-thread draft, so passages lost their project and file context. The user wants quotes to go to the selected BB project's latest thread, or a new thread in that project when none exists, without sending, and to name the file they came from. Tasks need the same selection affordance as documents and decisions.
+Quoting selected text used the VesnALIA composer of whatever surface was active, which from the Backlog.MD panel is the generic new-thread draft, so passages lost their project and file context. The user wants quotes to go to the selected VesnALIA project's latest thread, or a new thread in that project when none exists, without sending, and to name the file they came from. Tasks need the same selection affordance as documents and decisions.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -37,7 +37,7 @@ Shared src/quote.tsx: Quotable selection wrapper, useSendQuote (threads.list, ne
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Tests: tests/quote.test.tsx (source path, latest-thread choice, routing to toThread plus receiver delivery exactly once, new-thread fallback) via the SDK app test runtime. Live: no-thread path on sparky-learn opened the new-thread composer with sparky-learn selected and the quote plus Source line; left idle 25s, no thread was created. The existing-thread path was not exercised live because the only projects with threads have no Backlog content or are the active working thread; it rests on the unit test and the SDK contract that useComposer inside a thread surface writes to that thread's draft. Two stray threads were sent during earlier testing by scripted execCommand clearing of BB's editor (not the plugin, which has no submit path); the sparky-learn one was stopped after 20s with no file changes and both were archived.
+Tests: tests/quote.test.tsx (source path, latest-thread choice, routing to toThread plus receiver delivery exactly once, new-thread fallback) via the SDK app test runtime. Live: no-thread path on sparky-learn opened the new-thread composer with sparky-learn selected and the quote plus Source line; left idle 25s, no thread was created. The existing-thread path was not exercised live because the only projects with threads have no Backlog content or are the active working thread; it rests on the unit test and the SDK contract that useComposer inside a thread surface writes to that thread's draft. Two stray threads were sent during earlier testing by scripted execCommand clearing of VesnALIA's editor (not the plugin, which has no submit path); the sparky-learn one was stopped after 20s with no file changes and both were archived.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

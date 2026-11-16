@@ -1,8 +1,8 @@
 // For tests, not the plugin: the plugin on Postgres storage, reached through a TCP proxy the test controls, so Postgres
-// can go away, hang, or come back while the plugin serves; and the crashes BB 0.46.1 would exit on.
+// can go away, hang, or come back while the plugin serves; and the crashes VesnALIA 0.46.1 would exit on.
 import { connect, createServer, type Server, type Socket } from "node:net";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, type FakePluginHarness } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, type FakePluginHarness } from "@vesnalia/plugin-sdk/testing";
 import { expect, vi } from "vitest";
 import { pgSql, type PgSql } from "./db/pg";
 import { migratePg } from "./db/pg-migrations";
@@ -92,9 +92,9 @@ export async function host(settings: Record<string, string>, sdk?: object) {
   const schema = settings.postgresSchema!;
   const migrating = pgSql(testPgOptions(schema));
   try { await migratePg(migrating, schema); } finally { await migrating.end(); }
-  const { bb, harness } = createFakePluginHost({ pluginId: PLUGIN, settings, ...(sdk ? { sdk } : {}) });
-  await bb.storage.kv.set(STORAGE_OWNER_KEY, "postgres");
-  return { bb, harness } as { bb: BbPluginApi; harness: FakePluginHarness };
+  const { alia, harness } = createFakePluginHost({ pluginId: PLUGIN, settings, ...(sdk ? { sdk } : {}) });
+  await alia.storage.kv.set(STORAGE_OWNER_KEY, "postgres");
+  return { alia, harness } as { alia: AliaPluginApi; harness: FakePluginHarness };
 }
 
 export async function opened(harness: FakePluginHarness) {
@@ -106,7 +106,7 @@ export function adminConnection(schema = "public"): PgSql {
   return pgSql(testPgOptions(schema));
 }
 
-/** Every unhandled rejection and uncaught exception while `fn` runs: either would end BB 0.46.1 outside a service. */
+/** Every unhandled rejection and uncaught exception while `fn` runs: either would end VesnALIA 0.46.1 outside a service. */
 export async function watchCrashes<T>(fn: (seen: unknown[]) => Promise<T>): Promise<{ value: T; crashes: unknown[] }> {
   const crashes: unknown[] = [];
   const onRejection = (reason: unknown) => { crashes.push(reason); };

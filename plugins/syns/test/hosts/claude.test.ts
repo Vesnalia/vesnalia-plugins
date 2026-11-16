@@ -8,7 +8,7 @@ import { VERSION, buildDeclaration } from "../../src/declaration.js";
 import { PAGEHOST } from "../../src/pagehost.js";
 import { METHODS } from "../../src/methods/index.js";
 import { controlOver, serve, type Served } from "../../hosts/claude/process.js";
-import { fakeBb } from "../fake-bb.js";
+import { fakeAlia } from "../fake-alia.js";
 import { rec } from "../fake-runner.js";
 
 const SESSION = "aaaaaaaa-1111-2222-3333-444444444444";
@@ -54,7 +54,7 @@ function post(endpoint: string, call: Record<string, unknown>): Promise<{ status
   });
 }
 
-describe("Claude Code: the declaration is bb's, byte for byte (07 R-X1)", () => {
+describe("Claude Code: the declaration is VesnALIA's, byte for byte (07 R-X1)", () => {
   for (const agentInstructions of [true, false]) {
     it(`with agentInstructions ${agentInstructions}: what the process registers equals what threadPagesContributions answers`, async () => {
       const dir = mkdtempSync(join(tmpdir(), "syns-rx1-"));
@@ -63,9 +63,9 @@ describe("Claude Code: the declaration is bb's, byte for byte (07 R-X1)", () => 
       const served = await serve({ socket: join(dir, "control.sock"), agentInstructions, log: { info: () => undefined, warn: () => undefined }, everyMs: 50 });
       try {
         await vi.waitFor(() => expect(daemon.seen.registrations).toHaveLength(1));
-        const bb = await fakeBb({ agentInstructions }, async () => rec("repo.ok")).handlers.threadPagesContributions!(undefined);
-        expect(JSON.stringify(daemon.seen.registrations[0]!.declaration)).toBe(JSON.stringify(bb));
-        expect(JSON.stringify(bb)).toBe(JSON.stringify(buildDeclaration(METHODS, { agentInstructions })));
+        const alia = await fakeAlia({ agentInstructions }, async () => rec("repo.ok")).handlers.threadPagesContributions!(undefined);
+        expect(JSON.stringify(daemon.seen.registrations[0]!.declaration)).toBe(JSON.stringify(alia));
+        expect(JSON.stringify(alia)).toBe(JSON.stringify(buildDeclaration(METHODS, { agentInstructions })));
       } finally {
         await served.stop();
         await daemon.close();

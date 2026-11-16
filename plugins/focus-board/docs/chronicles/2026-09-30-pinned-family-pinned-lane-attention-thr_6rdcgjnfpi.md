@@ -74,7 +74,7 @@ the mock's unlayered preflight**: unlayered author styles beat all
 `@layer`s regardless of specificity, so `border` utilities computed 0px
 and any border color resolved to `currentColor`. The preflight is now
 layered `base` (the plugin's utilities live in `@layer utilities`, which
-declares later and wins) — the same relationship real bb's host CSS stands
+declares later and wins) — the same relationship real VesnALIA's host CSS stands
 in. That fix is harness-only; it changed nothing in the plugin.
 
 ## Tests

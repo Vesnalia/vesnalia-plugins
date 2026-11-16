@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 //
 // §8.4 — the internal (row → folder) drag protocol and the external-drop
-// affordances. The private `application/x-bb-file-manager` flavour plus the
+// affordances. The private `application/x-alia-file-manager` flavour plus the
 // `text/plain` fallback, drop-target resolution, and the two rejections that
 // keep a drop from doing something destructive.
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@vesnalia/plugin-sdk/testing/app";
 
 import type { FileEntry, FileManagerContract } from "../../contract";
 
@@ -33,7 +33,7 @@ const { resetLastFolderStore } = await import("../../lib/last-folder");
 const registration = app.navPanels[0]!;
 const ROOT = "/home/coder";
 const DOCS = `${ROOT}/docs`;
-const DRAG_MIME = "application/x-bb-file-manager";
+const DRAG_MIME = "application/x-alia-file-manager";
 
 function makeEntry(partial: Partial<FileEntry> & { name: string; path?: string }): FileEntry {
   return {

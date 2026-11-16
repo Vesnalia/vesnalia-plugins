@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useSyncExternalStore } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
-import type { BbNavigate, PluginSidebarProject, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { AliaNavigate, PluginSidebarProject, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { EMPTY_WORKSPACES, inWorkspace, type WorkspaceState } from "./workspaces";
 
@@ -126,7 +126,7 @@ export function switchWorkspace(
     threads: readonly PluginSidebarThread[];
     projects: readonly Pick<PluginSidebarProject, "id">[];
     currentThreadId: string | null;
-    navigate: Pick<BbNavigate, "toThread" | "toCompose">;
+    navigate: Pick<AliaNavigate, "toThread" | "toCompose">;
   },
 ) {
   if (currentThreadId) rememberWorkspaceThread(workspacesEnabled ? selection : null, currentThreadId);

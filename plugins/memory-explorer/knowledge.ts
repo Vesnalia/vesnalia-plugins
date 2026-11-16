@@ -1,4 +1,4 @@
-// Knowledge model over BB memory records, shared by the page (browser-safe,
+// Knowledge model over VesnALIA memory records, shared by the page (browser-safe,
 // no Node imports): entity fields from front matter, `[[links]]` and typed
 // relations, display blocks, and the link graph.
 //

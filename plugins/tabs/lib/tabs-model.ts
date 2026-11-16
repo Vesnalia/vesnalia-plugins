@@ -5,7 +5,7 @@
  * preview is an entry with `pinned: false`; the next new active chat replaces
  * it, like VS Code's preview tab.
  *
- * This module does not depend on BB or React: the server writes the state and
+ * This module does not depend on VesnALIA or React: the server writes the state and
  * the frontend safely renders state received through RPC.
  */
 

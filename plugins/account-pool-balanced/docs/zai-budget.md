@@ -16,7 +16,7 @@ opting into the issued `autopilot` purpose must require that exact attestation.
 
 ## Version 1
 
-- `schema`: exactly `bb-account-pool/zai-budget/1`.
+- `schema`: exactly `alia-account-pool/zai-budget/1`.
 - `projectId`: authenticated project; `purpose`: issued purpose, omitted for legacy.
 - `observedAt`: response time in Unix milliseconds; `maxAgeMs`: 300000.
 - `route`: `provider="zai"`, `path="/zai/v1/chat/completions"`, and booleans

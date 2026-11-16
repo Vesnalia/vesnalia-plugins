@@ -4,10 +4,10 @@ import {
   experimental_useSidebarThreads as useSidebarThreads,
   useSdk,
   useSettings,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { describe, type Badge, type Catalog, type Execution } from "./format";
 
-/** BB's sidebar thread-row provider logo; True Colors paints the mask inside it. */
+/** VesnALIA's sidebar thread-row provider logo; True Colors paints the mask inside it. */
 const ICON = "[data-sidebar-thread-provider]";
 const BADGE = "data-model-effort";
 const TIP = "data-model-effort-tip";

@@ -4,7 +4,7 @@ import * as NodePath from "node:path";
 /** On-disk cache root for the Usage plugin. */
 export const USAGE_DATA_DIR = NodePath.join(
   NodeOS.homedir(),
-  ".bb",
+  ".vesnalia",
   "plugins",
   "usage",
 );

@@ -1,5 +1,5 @@
 import {nativeProbeCapabilities,runNativeProbe} from './native-probe-host.js';
-import {experimental_defineHostEntry} from '@get-bb/plugin-sdk/host';
+import {experimental_defineHostEntry} from '@vesnalia/plugin-sdk/host';
 import {browserHostContract,createMacBrowserHandlers} from './browser-host.js';
 const browser=createMacBrowserHandlers();
 export default experimental_defineHostEntry({contract:browserHostContract,handlers:{

@@ -11,7 +11,7 @@ import {
 
 const roots: string[] = [];
 async function root() {
-  const p = await mkdtemp(path.join(tmpdir(), "bb-github-remote-"));
+  const p = await mkdtemp(path.join(tmpdir(), "alia-github-remote-"));
   roots.push(p);
   return p;
 }

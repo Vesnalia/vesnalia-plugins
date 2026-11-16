@@ -16,13 +16,13 @@ sources:
 
 # Credential Catalog Management
 
-TL;DR: The Env Catalog page lets an operator find, add, inspect, copy, edit, and delete named credentials; the server validates and encrypts values before storing them in the BB plugin database (`app.tsx:408-547`, `server.ts:311-363`).
+TL;DR: The Env Catalog page lets an operator find, add, inspect, copy, edit, and delete named credentials; the server validates and encrypts values before storing them in the VesnALIA plugin database (`app.tsx:408-547`, `server.ts:311-363`).
 
 ## Purpose
 
-The page is registered in the BB navigation as `env-catalog` and uses typed RPC calls to operate on the server-side catalog (`app.tsx:1030-1037`, `app.tsx:366-394`).
+The page is registered in the VesnALIA navigation as `env-catalog` and uses typed RPC calls to operate on the server-side catalog (`app.tsx:1030-1037`, `app.tsx:366-394`).
 
-The page text defaults to English and uses Russian when the BB document language starts with `ru` (`i18n.ts:1-4`, `i18n.ts:83-86`, `i18n.ts:167-182`).
+The page text defaults to English and uses Russian when the VesnALIA document language starts with `ru` (`i18n.ts:1-4`, `i18n.ts:83-86`, `i18n.ts:167-182`).
 
 ## How it works
 
@@ -54,7 +54,7 @@ The page text defaults to English and uses Russian when the BB document language
 ### `rpcContract` and handler dispatch
 
 1. `rpcContract` declares each operation's input and output schema. The UI derives its typed RPC client from that contract; the server registers a handler map against the same contract (`server.ts:56-128`, `app.tsx:366-368`, `server.ts:562-599`).
-2. The BB RPC layer dispatches each operation to its matching handler. Read operations return summaries or a decrypted full record; writes call the common save/delete/import/export functions and return operation-specific results (`server.ts:562-599`).
+2. The VesnALIA RPC layer dispatches each operation to its matching handler. Read operations return summaries or a decrypted full record; writes call the common save/delete/import/export functions and return operation-specific results (`server.ts:562-599`).
 3. Handler errors propagate to the RPC caller. A missing `env_get_value` record throws; validation, decryption, or import errors from called functions also reject the operation (`server.ts:566-570`, `server.ts:582-598`, `server.ts:311-350`, `server.ts:408-491`).
 
 | RPC operation | Input conditions or modes | Outcome | Failure behavior |
@@ -101,7 +101,7 @@ See [API](../api.md) for RPC and CLI request details.
 | `env_list` | `server.ts:56-65` | Search and list masked summaries. |
 | `env_get_value` | `server.ts:66-80` | Retrieve a full record for reveal or edit. |
 | `env_save` | `server.ts:81-95` | Create or replace a record. |
-| RPC `env_delete` | `server.ts:96-103`, `server.ts:586-589` | Delete a record through the BB plugin RPC interface. |
+| RPC `env_delete` | `server.ts:96-103`, `server.ts:586-589` | Delete a record through the VesnALIA plugin RPC interface. |
 
 ## Gotchas
 

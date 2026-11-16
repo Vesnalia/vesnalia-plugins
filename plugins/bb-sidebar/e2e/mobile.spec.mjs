@@ -12,7 +12,7 @@ test("mobile sidebar opens a thread", async ({ page, request }) => {
   await expect(link(page, fixture.threads[0].title)).toBeVisible();
   expect(
     await page
-      .locator("[data-bb-sidebar-root] *")
+      .locator("[data-alia-sidebar-root] *")
       .evaluateAll((nodes) => nodes.filter((node) => "__aa_tgt" in node).length),
   ).toBe(0);
   await link(page, fixture.threads[0].title).tap();

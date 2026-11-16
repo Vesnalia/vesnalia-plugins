@@ -35,14 +35,14 @@ export type HubOnlyReport = Array<{
   hostName: string;
   /** Skills published to the hub this run. */
   imported: string[];
-  /** Refused by BB rules (a blocking problem): the machine is not cleaned. */
+  /** Refused by VesnALIA rules (a blocking problem): the machine is not cleaned. */
   rejected: Array<{ name: string; reason: string }>;
   /** Why this machine was left as is this run; null when it was processed. */
   skipped: string | null;
   cleanup: { backup: string | null; moved: Array<{ id: string; count: number }>; errors: string[] } | null;
 }>;
 
-/** Hub skill names BB can load: no problem with blocking: true. A missing problems list counts as none. */
+/** Hub skill names VesnALIA can load: no problem with blocking: true. A missing problems list counts as none. */
 export function loadableHubNames(skills: Array<{ name: string; problems?: Array<{ blocking: boolean }> }>): Set<string> {
   return new Set(skills.filter((skill) => !(skill.problems ?? []).some((problem) => problem.blocking)).map((skill) => skill.name));
 }
@@ -57,7 +57,7 @@ export function machineNotOnHub<T extends { name: string }>(
 }
 
 function skippedForRejected(rejected: Array<{ name: string; reason: string }>, labels: string[]): string {
-  return `BB не загружает: ${labels.length > 0 ? labels.join("; ") : rejected.map((item) => item.name).join("; ")}`;
+  return `ALIA не загружает: ${labels.length > 0 ? labels.join("; ") : rejected.map((item) => item.name).join("; ")}`;
 }
 
 export async function enforceHubOnly(deps: HubOnlyDeps): Promise<HubOnlyReport> {

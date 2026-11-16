@@ -8,7 +8,7 @@ import {
 } from "../format.js";
 import type {
   AssigneeView,
-  BbFact,
+  AliaFact,
   Grouping,
   IssueGroup,
   IssueRowView,
@@ -26,7 +26,7 @@ import { priorityMark, toneForStateType, type Tone } from "./tone.js";
    have to know that the wire schemas are what declare them. */
 export type {
   AssigneeView,
-  BbFact,
+  AliaFact,
   Grouping,
   IssueGroup,
   IssueRowView,
@@ -42,7 +42,7 @@ export type {
  *
  * This is the file the UI is tested through. Components under `app/` are thin
  * switches over these unions and hold no logic of their own, which is what
- * makes the panel verifiable in a fork's CI — `@bb/plugin-sdk/testing/app` is
+ * makes the panel verifiable in a fork's CI — `@vesnalia/plugin-sdk/testing/app` is
  * part of a package that is not on npm, so a DOM test here would be a test
  * only the author can run, and a UI only the author can verify is a UI that
  * regresses.
@@ -138,8 +138,8 @@ export function selectSecondLine(facts: SecondLineFacts): SecondLine | null {
 /**
  * The pull-request vocabulary is **borrowed, not minted.**
  *
- * These are bb's own resolved `attention` values, straight off
- * bb's GitHub PR Status plugin, and the words are the words a sibling PR plugin
+ * These are VesnALIA's own resolved `attention` values, straight off
+ * VesnALIA's GitHub PR Status plugin, and the words are the words a sibling PR plugin
  * already uses. A user running both must not meet two vocabularies for one
  * pull request fifteen pixels apart. States that are not asking anything of
  * anybody — `none`, `merged`, `draft` — deliberately have no entry, so they
@@ -181,7 +181,7 @@ export function selectRow(
   issue: IssueRow,
   context: RowContext,
   facts: Partial<SecondLineFacts> = {},
-  bbFact: BbFact = "none",
+  aliaFact: AliaFact = "none",
 ): IssueRowView {
   const state = issue.stateId === null ? undefined : context.states.get(issue.stateId);
   const tone = toneForStateType(state?.type);
@@ -228,7 +228,7 @@ export function selectRow(
     tone,
     glyph,
     lead: context.lead,
-    bbFact,
+    aliaFact,
     assignee,
     priority: issue.priority,
     priorityLabel,

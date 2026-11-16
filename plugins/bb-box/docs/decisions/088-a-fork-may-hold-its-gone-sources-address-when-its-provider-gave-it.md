@@ -5,7 +5,7 @@ Date: 11 November 2026
 
 ## Context
 
-Before a fork is handed over, BB Box checks that it does not hold its
+Before a fork is handed over, VesnALIA Box checks that it does not hold its
 source's address, so it cannot take what is sent to its source
 ([070](070-snapshots.md)). Where addresses are leased by DHCP, as on Tart, a
 fork may hold its source's last address once the source is stopped or gone,
@@ -17,7 +17,7 @@ Docker assigns addresses itself. It hands a new container the lowest free
 address on its network, and a stopped container holds none. So a fork of a
 kept snapshot after its box's release, on an engine with no other box, gets
 its source's old address. Docker uses no DHCP, so there is no client ID to
-show, and BB Box refused every such fork: Keep's promise of a fork after the
+show, and VesnALIA Box refused every such fork: Keep's promise of a fork after the
 release failed on an otherwise empty engine.
 
 Three other ways were weighed:
@@ -35,11 +35,11 @@ Three other ways were weighed:
   provider now, not from inside the guest: `addressesGivenByProvider`.
 - The fork check accepts a fork holding its source's last address only when
   the source is gone and the provider says it gave that address to the
-  fork. The source is gone only when the provider says so. When BB Box's
+  fork. The source is gone only when the provider says so. When VesnALIA Box's
   record of the source has a guest, the provider reads that guest. When the
-  record is lost, or has no guest, BB Box asks the provider whether the box
+  record is lost, or has no guest, VesnALIA Box asks the provider whether the box
   has any guest still, by the last one the snapshot recorded and by the box's
-  ID: `boxHasNoGuest`. A missing record alone is not evidence, as BB Box can
+  ID: `boxHasNoGuest`. A missing record alone is not evidence, as VesnALIA Box can
   lose its records while the provider keeps the guest. A provider that
   cannot answer, or a snapshot that recorded only a held copy, leaves the
   address refused. A stopped or suspended source could come
@@ -47,7 +47,7 @@ Three other ways were weighed:
   of its own, as before.
 - Every other part of the check stands: a source that runs keeps its
   address, and a fork holding it is refused at once; another box's address,
-  the source's MAC, machine ID, host keys, BB machine and tailnet node are
+  the source's MAC, machine ID, host keys, VesnALIA machine and tailnet node are
   refused as before; an address the provider did not give the fork is
   refused.
 - Docker says what its source holds now, from the source's container:
@@ -63,7 +63,7 @@ Three other ways were weighed:
 
 - A fork of a kept Docker snapshot after its box's release works on an
   engine with no other box, and its identity reset runs as for any fork.
-- On a remote engine, BB Box records no address for its boxes, as the BB
+- On a remote engine, VesnALIA Box records no address for its boxes, as the VesnALIA
   server cannot reach them. Docker still says what a running source holds,
   and the check refuses a fork that holds it, though Docker never gives one
   address to two running containers.

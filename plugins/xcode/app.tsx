@@ -5,7 +5,7 @@
  *
  *  - the left-sidebar nav panel (machine-wide history and trends);
  *  - a composer banner showing this thread's *live* builds as compact rows,
- *    in bb's own activity-row language. The host mounts it, so a build shows
+ *    in VesnALIA's own activity-row language. The host mounts it, so a build shows
  *    up whether or not the agent ever mentions it — see ActivityBanner.tsx for
  *    why that matters.
  *
@@ -20,7 +20,7 @@
  * is actually building, and disappears the moment nothing is.
  */
 
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 
 import "./app.css";
 

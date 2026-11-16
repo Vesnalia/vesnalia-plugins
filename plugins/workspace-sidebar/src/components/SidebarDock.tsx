@@ -16,7 +16,7 @@ export function SidebarDock({ snoozed, projectIds }: { snoozed: readonly Snoozed
     const timer = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(timer);
   }, []);
-  return <div className="bb-ws-dock shrink-0" data-sidebar-dock="">
+  return <div className="alia-ws-dock shrink-0" data-sidebar-dock="">
     <ScheduledSection projectIds={projectIds} now={now} />
     <SnoozedSection entries={snoozed} now={now} />
   </div>;

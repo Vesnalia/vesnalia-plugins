@@ -1,6 +1,6 @@
 ## What you get
 
-- A **Memory** page in the sidebar listing every global and project memory in BB's Memory plugin, each type with its own icon and colour.
+- A **Memory** page in the sidebar listing every global and project memory in VesnALIA's Memory plugin, each type with its own icon and colour.
 - **Table**: sort by any column, filter by type, and search names, aliases, email addresses, Slack ids and summaries.
 - **Drawer**: click a row or a graph node to read the memory. Follow a `[[link]]` to the memory it names, and see what links back to it, a small zoomable graph of its neighbours and, for an entity, the open threads whose title names it.
 - **Graph**: every memory and link on one canvas. Zoom, pan, and drag a node to pin it. Relations are arrows labelled with their type, such as `member of` or `led to`, so you see how memories relate, not only that they do. Unconnected entities and broken links are listed below.
@@ -21,6 +21,6 @@ A memory named `<type>.<slug>`, of kind `reference` and tagged `entity` and its 
 
 ## Requirements
 
-BB 0.48 or later, and BB's own Memory plugin, which ships with BB but is not installed by default: install **Memory** from the plugin store first. Memory Explorer stores nothing of its own: it reads and writes memories through the Memory plugin. The page does not watch memory for changes: press **Refresh** to read it again.
+VesnALIA 0.48 or later, and VesnALIA's own Memory plugin, which ships with VesnALIA but is not installed by default: install **Memory** from the plugin store first. Memory Explorer stores nothing of its own: it reads and writes memories through the Memory plugin. The page does not watch memory for changes: press **Refresh** to read it again.
 
 Source and format details: https://github.com/d-asensio/bb-plugin-memory-explorer

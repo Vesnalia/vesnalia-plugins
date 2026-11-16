@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { cliFailure, cliMajor, findInstaller, firstUrl, loginShellPath, mergePath, pathBetweenMarkers } from "../lib/cli";
 import { createLobuApi } from "../lib/lobu-api";
 
-// bb opened from the Dock runs plugins with launchd's PATH, while the CLI's
+// VesnALIA opened from the Dock runs plugins with launchd's PATH, while the CLI's
 // `#!/usr/bin/env node` needs the node the user's shell finds. These fakes
 // reproduce that: `lobu` needs an interpreter only the login shell's PATH has.
 const WHOAMI = JSON.stringify({
@@ -54,7 +54,7 @@ afterAll(() => {
   rmSync(root, { recursive: true, force: true });
 });
 
-describe("running the lobu CLI from a Dock-launched bb", () => {
+describe("running the lobu CLI from a Dock-launched VesnALIA", () => {
   // HOME has no ~/.bun/bin, so the CLI is found only through the login shell's PATH.
   test("finds the CLI and its interpreter on the login shell's PATH", async () => {
     process.env.PATH = MINIMAL_PATH;
@@ -104,9 +104,9 @@ describe("running the lobu CLI from a Dock-launched bb", () => {
 
 describe("reading the login shell's PATH", () => {
   test("takes only the text between the markers", () => {
-    expect(pathBetweenMarkers("rc noise\n__BB_PLUGIN_LOBU_PATH__/a:/b__BB_PLUGIN_LOBU_PATH__trailing")).toBe("/a:/b");
+    expect(pathBetweenMarkers("rc noise\n__ALIA_PLUGIN_LOBU_PATH__/a:/b__ALIA_PLUGIN_LOBU_PATH__trailing")).toBe("/a:/b");
     expect(pathBetweenMarkers("no markers at all")).toBeNull();
-    expect(pathBetweenMarkers("__BB_PLUGIN_LOBU_PATH____BB_PLUGIN_LOBU_PATH__")).toBeNull();
+    expect(pathBetweenMarkers("__ALIA_PLUGIN_LOBU_PATH____ALIA_PLUGIN_LOBU_PATH__")).toBeNull();
   });
 
   test("returns null when the shell is missing or fails", async () => {
@@ -141,7 +141,7 @@ describe("classifying a failed CLI run", () => {
   test("a CLI that cannot start shows the CLI's own error", () => {
     const failure = cliFailure({ code: 127, stderr: "env: node: No such file or directory\n" }, null);
     expect(failure.code).toBe("cli_failed");
-    expect(failure.message).toBe("bb could not run the lobu CLI: env: node: No such file or directory");
+    expect(failure.message).toBe("alia could not run the lobu CLI: env: node: No such file or directory");
   });
 
   test("a hung CLI is a CLI failure", () => {

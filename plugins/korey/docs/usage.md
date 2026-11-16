@@ -1,57 +1,57 @@
-# Using Korey from bb
+# Using Korey from VesnALIA
 
 For setup and example requests, start with the [README](../README.md).
 Connectors, their permissions, and reauthentication are managed in Korey.
 The plugin signs in to your Korey account, or uses a
 [Korey personal access token](https://app.korey.ai/settings/api-tokens), to
-continue private conversations from bb.
+continue private conversations from VesnALIA.
 
 ## Connecting your Korey account
 
 Select **Connect Korey** under **Settings → Installed plugins → Korey**, or run:
 
 ```sh
-bb korey login
+alia korey login
 ```
 
-Approve access in the browser. Korey redirects back to the bb server on
-`127.0.0.1`, and bb finishes connecting. If the browser runs on another
+Approve access in the browser. Korey redirects back to the VesnALIA server on
+`127.0.0.1`, and VesnALIA finishes connecting. If the browser runs on another
 computer, that last page cannot load. Copy its address and complete the
-sign-in from bb:
+sign-in from VesnALIA:
 
 ```sh
-bb korey login 'http://127.0.0.1:38886/api/v1/plugins/korey/http/oauth/callback?code=...&state=...'
+alia korey login 'http://127.0.0.1:38886/api/v1/plugins/korey/http/oauth/callback?code=...&state=...'
 ```
 
 The settings section accepts the same address. A sign-in link expires after
 15 minutes or when the plugin reloads.
 
 A connected account takes precedence over the personal access token setting.
-`bb korey status` reports which one is in use. **Disconnect** or
-`bb korey logout` revokes the current access token, removes the connection, and
+`alia korey status` reports which one is in use. **Disconnect** or
+`alia korey logout` revokes the current access token, removes the connection, and
 falls back to the token setting when one is configured.
 
-bb's settings form cannot clear a secret field, so the **Korey account**
+VesnALIA's settings form cannot clear a secret field, so the **Korey account**
 section also offers **Remove personal access token**. Removing the token
-deletes it from bb only; revoke it in Korey to invalidate it. From the CLI, run
-`bb plugin config korey unset apiToken`.
+deletes it from VesnALIA only; revoke it in Korey to invalidate it. From the CLI, run
+`alia plugin config korey unset apiToken`.
 
 ## CLI and agent tools
 
 Use the CLI to ask Korey to research your connected tools, answer questions, or
-prepare a draft. The same requests are available to every bb harness through the
+prepare a draft. The same requests are available to every VesnALIA harness through the
 plugin’s agent tools:
 
 ```sh
-bb korey ask "Summarize the Sentry errors introduced in our latest release"
-bb korey ask "Review these files" --file spec.md --file screenshot.png
+alia korey ask "Summarize the Sentry errors introduced in our latest release"
+alia korey ask "Review these files" --file spec.md --file screenshot.png
 ```
 
 To request a change through any of Korey's connected services, use `--change`:
 
 ```sh
-bb korey ask --change "Enable LaunchDarkly flag checkout-v2 in the shop project's staging environment"
-bb korey ask --change "Resolve Sentry issue SHOP-42"
+alia korey ask --change "Enable LaunchDarkly flag checkout-v2 in the shop project's staging environment"
+alia korey ask --change "Resolve Sentry issue SHOP-42"
 ```
 
 For agents, `korey_ask` accepts `mode: "change"` for requested actions and
@@ -68,26 +68,26 @@ is unresolved; a pending consultation does not block a new requested change.
 If a message begins with `-`, put options before `--`, then the message:
 
 ```sh
-bb korey ask --json -- "- Review this proposal"
+alia korey ask --json -- "- Review this proposal"
 ```
 
 Consultation results include `responseTruncated`. If it is `true`, open the
 returned `appUrl` to read the full response, or retrieve messages with
-`bb korey show <korey-thread-id>` and follow pagination. An empty `files` list
+`alia korey show <korey-thread-id>` and follow pagination. An empty `files` list
 is equivalent to omitting attachments.
 
 Link an existing private Korey conversation when needed:
 
 ```sh
-bb korey threads "checkout"
-bb korey link <korey-thread-id>
+alia korey threads "checkout"
+alia korey link <korey-thread-id>
 ```
 
 Ask Korey to create or update a Shortcut Story:
 
 ```sh
-bb korey shortcut create "Create the reviewed bug Story" --file screenshot.png
-bb korey shortcut update SC-123 "Add the approved acceptance criterion"
+alia korey shortcut create "Create the reviewed bug Story" --file screenshot.png
+alia korey shortcut update SC-123 "Add the approved acceptance criterion"
 ```
 
 An explicit request to create or update a Story authorizes the change. The
@@ -123,14 +123,14 @@ available.
 Inspect recent operations:
 
 ```sh
-bb korey operation list
-bb korey operation show <operation-id>
+alia korey operation list
+alia korey operation show <operation-id>
 ```
 
-The list includes operations started in this bb thread and operations in its
+The list includes operations started in this VesnALIA thread and operations in its
 currently linked Korey conversation. After relinking a conversation, you can
 inspect, resume, reconcile, or manually resolve its operations from the new
-thread. The originating bb thread also retains access. Recover unresolved
+thread. The originating VesnALIA thread also retains access. Recover unresolved
 write operations inherited from another thread before unlinking or changing the
 conversation link.
 
@@ -145,7 +145,7 @@ from receiving the result. Use `operation list` to find it.
 Resume this read-only poll for pending answers or after a polling error:
 
 ```sh
-bb korey operation resume <operation-id>
+alia korey operation resume <operation-id>
 ```
 
 Resume also refreshes an already completed operation using its saved message ID.
@@ -158,14 +158,14 @@ messages, inaccessible threads, and interrupted processing remain errors.
 
 Consultations sent by older plugin versions have no journal entry. Inspect
 their original Korey conversation with `korey_get_thread` or
-`bb korey show <korey-thread-id>` and follow pagination to retrieve the answer.
+`alia korey show <korey-thread-id>` and follow pagination to retrieve the answer.
 Do not send a replacement consultation just to retrieve its response.
 
 If message dispatch had an unknown outcome, reconcile the existing operation
 against the linked Korey history:
 
 ```sh
-bb korey operation reconcile <operation-id>
+alia korey operation reconcile <operation-id>
 ```
 
 Reconciliation never resends the message. An absent history match does not
@@ -176,10 +176,10 @@ After inspecting Korey and the affected service, close an unresolved operation
 with a note:
 
 ```sh
-bb korey operation resolve <operation-id> "Verified SC-123 contains the requested change"
+alia korey operation resolve <operation-id> "Verified SC-123 contains the requested change"
 ```
 
-bb displays the operation and note for your confirmation. This closeout form is
+VesnALIA displays the operation and note for your confirmation. This closeout form is
 reserved for unresolved outcomes. Resolution allows later requests to proceed
 and preserves the original request, error, note, and completion time. It does
 not cancel remote work or verify that Korey completed it. A changed operation
@@ -205,13 +205,13 @@ Important operation states:
 `korey_ask` in change mode and `korey_shortcut_change` act on the user's explicit
 request. The plugin records the request, destination, and attachment hashes
 before sending it. It checks conversation readiness, privacy, and revision,
-serializes requests within each bb thread, and claims first-use mappings
+serializes requests within each VesnALIA thread, and claims first-use mappings
 transactionally. If the destination changes during preparation, no change
 request is sent.
 
-Unresolved writes from either the current bb thread or the destination
+Unresolved writes from either the current VesnALIA thread or the destination
 Korey conversation block a new write, including after a conversation is relinked
-from another bb thread. The plugin checks again before message dispatch. Resume,
+from another VesnALIA thread. The plugin checks again before message dispatch. Resume,
 reconcile, or manually resolve the existing operation instead of submitting a
 replacement whose effect may be duplicated.
 
@@ -234,7 +234,7 @@ resending automatically.
 ## File Attachments
 
 Workspace file attachments require Linux, WSL2, or macOS. Paths are relative to
-the bb thread workspace. The host entry opens and checks
+the VesnALIA thread workspace. The host entry opens and checks
 the actual file descriptor, rejects absolute paths, traversal, external
 symlinks, non-files, unsupported extensions, duplicate files supplied through
 path aliases or hard links, and files that grow beyond their limit while being

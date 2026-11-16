@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { LANGS, MAX_TEXT, STRINGS, langOf, lastSent, type Lang } from "./i18n.ts";
 
@@ -76,7 +76,7 @@ const flatten = (rows: Row[], into: Row[] = []): Row[] => {
   for (const row of rows) { into.push(row); if (row.children) flatten(row.children, into); }
   return into;
 };
-// BB splits a long turn between pages: each page carries the same row with part of its children.
+// VesnALIA splits a long turn between pages: each page carries the same row with part of its children.
 // The parts are joined: children only the older part has go first, a child both have is taken from the newer part.
 const joinRow = (older: Row, newer: Row): Row => {
   if (!older.children || !newer.children) return { ...older, ...newer, children: newer.children ?? older.children };
@@ -100,25 +100,25 @@ const notification = (r: Row) =>
   (r.kind === "conversation" && r.role === "user" && (!!r.senderThreadId || r.systemMessageKind?.startsWith("child-") === true)) ||
   (r.kind === "system" && /@thread:[\w-]+\s+(?:finished|completed)\s*:/i.test(`${r.title ?? ""} ${r.detail ?? ""}`));
 
-// An outside tool marks its message by making the first line exactly [notify:Name] — the same way BB marks
+// An outside tool marks its message by making the first line exactly [notify:Name] — the same way VesnALIA marks
 // messages between threads. Name: 1–32 letters, digits, spaces, hyphens or dots, starting with a letter or digit.
 // The format is fixed; a line that deviates in any way leaves the message an ordinary one.
 const NOTIFY_RE = /^\[notify:([\p{L}\p{N}][\p{L}\p{N} .-]{0,31})\](?:\r?\n|$)/u;
 // The tool's name, or null. Only for a plain message from a person: thread and system messages keep their own kind.
-// Exported so that it can be checked on sample entries without a running BB.
+// Exported so that it can be checked on sample entries without a running VesnALIA.
 export const toolOf = (r: Pick<Row, "kind" | "role" | "text" | "senderThreadId" | "systemMessageKind">): string | null =>
   r.kind === "conversation" && r.role === "user" && !notification(r as Row) ? r.text?.match(NOTIFY_RE)?.[1] ?? null : null;
 
 const MENTION_RE = /((?:```[\s\S]*?```|~~~[\s\S]*?~~~|`+[^`\r\n]+`+|^[ ]{4,}.*$|!?\[(?:[^\[\]]|\[[^\[\]]*\])*\](?:\([^\)]*\)|\[[^\]]*\])|^[ \t]*\[[^\]]+\]:[ \t]*\S+.*$|\b[a-z]+:\/\/[^\s<>()]+|\bthr_\w+(?::[\w-]+)+|(?<!\w)[\/.][\w.\/-]+))|(?<![\w/:.\-=?&#])(?:@thread:)?(thr_\w+)(?![\w/\-=?&#]|[.:](?!\s|$))|(::task\{key="([^"]+)"[^}]*\})/gm;
 const esc = (s: string) => s.replace(/[\\\[\]*_`]/g, "\\$&");
 type CacheEntry = { title?: string; href?: string; at: number; failed?: boolean; archived?: boolean };
-// The service line BB puts before a message from another thread or from the system; cards show the text without it.
-const HEADER_RE = /^(?:(?:\[bb message from thread:[^\]]+\]|\[bb system\](?=\s*Child thread updates:))[ \t]*(?:\r?\n(?:\r?\n)?)?|\[bb system\]\s*@thread:[^\s:]+[ \t]*(?:(?:completed|finished):[ \t]*(?:\r?\n(?:\r?\n)?|$))?)/i;
+// The service line VesnALIA puts before a message from another thread or from the system; cards show the text without it.
+const HEADER_RE = /^(?:(?:\[alia message from thread:[^\]]+\]|\[alia system\](?=\s*Child thread updates:))[ \t]*(?:\r?\n(?:\r?\n)?)?|\[alia system\]\s*@thread:[^\s:]+[ \t]*(?:(?:completed|finished):[ \t]*(?:\r?\n(?:\r?\n)?|$))?)/i;
 const clean = (text: string) => text.replace(HEADER_RE, "");
-// The text of a card made from BB's own notice, header already removed. BB's notice about a child thread starts
+// The text of a card made from VesnALIA's own notice, header already removed. VesnALIA's notice about a child thread starts
 // with the predicate once the header is gone ("failed. Review the thread…"), so its start is rewritten in the
 // chosen language. What a thread wrote itself (the text after "completed:") is never touched.
-// Exported so that it can be checked on sample entries without a running BB.
+// Exported so that it can be checked on sample entries without a running VesnALIA.
 export const systemTextOf = (lang: Lang, r: Pick<Row, "kind" | "systemMessageKind">, text: string): string => {
   const strings = STRINGS[lang];
   if (r.systemMessageKind === "child-completed") return strings.bareCompleted && /^\s*completed\.?\s*$/i.test(text) ? strings.bareCompleted : text;
@@ -136,7 +136,7 @@ const isStale = (id: string) => {
 // Gluing does not affect hideIds: the main feed hides the same rows.
 // The walk goes from old to new, so parts inside a card are in time order: message, its reply, next message.
 // The reply to the "done" itself stays in reply and is shown last. Returns entries from new to old.
-// Exported so that it can be checked on sample entries without a running BB.
+// Exported so that it can be checked on sample entries without a running VesnALIA.
 export function glue<T extends { id: string; time: number; kind: string; senderThreadId: string | null; text: string; reply: string; replyAt?: number; parts: Part[] }>(items: T[]): T[] {
   const byTime = [...items].sort((a, b) => a.time - b.time);
   const absorbed = new Set<string>();
@@ -154,8 +154,8 @@ export function glue<T extends { id: string; time: number; kind: string; senderT
   return byTime.filter(it => !absorbed.has(it.id)).reverse();
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     language: { type: "select", label: "Language", options: [...LANGS], default: "en" },
     marker: { type: "string", label: "Reply marker, for example [bg] (empty = agent replies are not hidden and agents get no instruction)", experimental_schema: z.string().max(32, "At most 32 characters"), default: "" },
     hide: { type: "boolean", label: "Hide rows in the main feed (off = stock feed, the button and the tab keep working)", default: true },
@@ -169,7 +169,7 @@ export default async function plugin(bb: BbPluginApi) {
   let marker = first.marker.trim();
   const inScope = (threadId: string) => scope !== null && (scope.length === 0 || scope.includes(threadId));
 
-  // BB returns the feed in pages, newest first; an older page exists while olderCursor is set (BB 0.46 sends no hasOlderRows).
+  // VesnALIA returns the feed in pages, newest first; an older page exists while olderCursor is set (VesnALIA 0.46 sends no hasOlderRows).
   // The whole history is read once per thread and kept in feedCache. After that only the newest pages are read, back to
   // the first page that holds an already known row: the newest page is always read again, its rows still change.
   // Everything older is taken from the cache. Once per FULL_MS the history is read whole again, in case older rows changed.
@@ -181,7 +181,7 @@ export default async function plugin(bb: BbPluginApi) {
     let whole = false;
     let query: { threadId: string; includeNestedRows: "true"; beforeAnchorId?: string; beforeAnchorSeq?: string } = { threadId, includeNestedRows: "true" };
     for (let page = 0; page < MAX_PAGES; page++) {
-      const timeline = await bb.sdk.threads.timeline(query);
+      const timeline = await alia.sdk.threads.timeline(query);
       const pageRows = timeline.rows as Row[];
       rows = joinRows(pageRows, rows);
       if (page === 0) updates = (timeline.timelinePage.olderRowUpdates ?? []) as Row[];
@@ -218,7 +218,7 @@ export default async function plugin(bb: BbPluginApi) {
     for (const t of texts) for (const m of t.matchAll(MENTION_RE)) if (m[2]) needed.add(m[2]);
     await Promise.all([...needed].filter(isStale).map(async id => {
       try {
-        const t = await bb.sdk.threads.get({ threadId: id });
+        const t = await alia.sdk.threads.get({ threadId: id });
         threadCache.set(id, { title: t.title || t.titleFallback || id, href: `/projects/${t.projectId}/threads/${id}`, at: Date.now(), archived: t.archivedAt != null });
       } catch { threadCache.set(id, { at: Date.now(), failed: true }); }
     }));
@@ -240,7 +240,7 @@ export default async function plugin(bb: BbPluginApi) {
     const rows = await allRows(threadId);
     const notices = rows.filter(r => notification(r) || toolOf(r) !== null);
     // A turn is running while the thread is busy; its last turn is left alone so the reply in progress stays visible.
-    const busy = BUSY.includes((await bb.sdk.threads.get({ threadId })).status);
+    const busy = BUSY.includes((await alia.sdk.threads.get({ threadId })).status);
     const running = busy ? [...rows].reverse().find(r => r.turnId)?.turnId : null;
     const replies = rows.filter(r => isBg(r) && !!r.turnId && r.turnId !== running);
     const hideIds = [...new Set([...notices, ...replies].map(r => r.id))];
@@ -348,13 +348,13 @@ export default async function plugin(bb: BbPluginApi) {
   settings.onChange(next => { scope = scopeOf(next.threads); hide = next.hide; lang = langOf(next.language); marker = next.marker.trim(); memo.clear(); });
   // The viewed mark lives in the plugin's own storage, per thread, and survives a window reload.
   // Until a thread's tab is opened, the count starts at the first run of the plugin: older entries are not new.
-  const kv = bb.storage.kv;
+  const kv = alia.storage.kv;
   let since = await kv.get<number>("since");
   if (typeof since !== "number") { since = Date.now(); await kv.set("since", since); }
   const fallback = since;
   let writes: Promise<unknown> = Promise.resolve();
   const sentOf = async (threadId: string) => z.array(sentSchema).catch([]).parse(await kv.get(`sent:${threadId}`));
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     feed: async ({ threadId }) => ({
       ...(await rowsOf(threadId)), seenAt: (await kv.get<number>(`seen:${threadId}`)) ?? fallback, lang, marker, hide,
       view: z.enum(VIEWS).catch("time").parse(await kv.get(`view:${threadId}`)), sent: await sentOf(threadId),
@@ -366,7 +366,7 @@ export default async function plugin(bb: BbPluginApi) {
     delivered: async ({ threadId, peerId, text, since }) => {
       if (!inScope(threadId)) return { found: false };
       try {
-        const rows = flatten((await bb.sdk.threads.timeline({ threadId: peerId, includeNestedRows: "true" })).rows as Row[]);
+        const rows = flatten((await alia.sdk.threads.timeline({ threadId: peerId, includeNestedRows: "true" })).rows as Row[]);
         return { found: rows.some(r => r.kind === "conversation" && r.role === "user" && !r.senderThreadId && (r.createdAt ?? r.startedAt ?? 0) >= since - CLOCK_SLACK_MS && r.text?.trim() === text.trim()) };
       } catch { return { found: false }; }
     },
@@ -399,5 +399,5 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
   // No marker — no instruction: the plugin then adds nothing to the agents' prompt.
-  bb.agents.contributeInstructions(ctx => marker && inScope(ctx.threadId) ? STRINGS[lang].instruction(marker) : null);
+  alia.agents.contributeInstructions(ctx => marker && inScope(ctx.threadId) ? STRINGS[lang].instruction(marker) : null);
 }

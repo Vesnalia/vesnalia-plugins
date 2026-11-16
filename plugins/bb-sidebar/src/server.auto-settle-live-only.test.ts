@@ -27,8 +27,8 @@ async function load(threads: ProjectThread[], row: (environmentId: string) => Ro
   let failLookup = false;
   let failList = false;
   const callRpc = pullRequestStatus(row, batches);
-  const { bb, harness } = createFakePluginHost({
-    pluginId: "bb-sidebar",
+  const { alia, harness } = createFakePluginHost({
+    pluginId: "alia-sidebar",
     sdk: {
       projects: {
         list: async () => {
@@ -48,7 +48,7 @@ async function load(threads: ProjectThread[], row: (environmentId: string) => Ro
       },
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   disposers.push(() => harness.lifecycle.dispose());
   const evaluate = () => harness.behavior.callRpc("evaluateAutoSettle", {}) as Promise<{ changedThreadIds: string[] }>;
   const settledIds = async () =>
@@ -61,7 +61,7 @@ async function load(threads: ProjectThread[], row: (environmentId: string) => Ro
   };
   return {
     batches,
-    bb,
+    alia,
     changeRules,
     evaluate,
     failNextLookup: () => {
@@ -130,7 +130,7 @@ describe("automatic settle leaves settled threads alone", () => {
     const threads = [projectThread({ id: "thr", environmentId: "env_thr", ...quiet })];
     const policy = await load(threads, () => availablePullRequest("open"));
     const insert = () =>
-      policy.bb.storage
+      policy.alia.storage
         .database()
         .prepare(`INSERT INTO thread_lifecycle (thread_id, settled_at, settled_override) VALUES (?, ?, NULL)`)
         .run("thr", old + 1_000);

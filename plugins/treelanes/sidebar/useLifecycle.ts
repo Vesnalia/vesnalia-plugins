@@ -4,8 +4,8 @@ import {
   useRealtime,
   useRpc,
   useRealtimeConnectionState,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import type { sidebarRpcContract } from "./server";
 import {
   canPark,

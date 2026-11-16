@@ -6,7 +6,7 @@ export const managedProjectSchema = z.object({
   prefix: z.string(),
   color: z.string().default("slategray"),
   folderId: z.string().nullable().default(null),
-  linkedBbProjectId: z.string().nullable().default(null),
+  linkedAliaProjectId: z.string().nullable().default(null),
 });
 export type ManagedProject = z.infer<typeof managedProjectSchema>;
 export const projectFields = managedProjectSchema.omit({
@@ -29,7 +29,7 @@ export const managementInput = z.discriminatedUnion("action", [
       prefix: projectPrefix,
       color: z.string().min(1).max(40),
       folderId: z.string().nullable(),
-      linkedBbProjectId: z.string().nullable(),
+      linkedAliaProjectId: z.string().nullable(),
     })
     .strict(),
   z
@@ -39,7 +39,7 @@ export const managementInput = z.discriminatedUnion("action", [
       name,
       color: z.string().min(1).max(40),
       folderId: z.string().nullable(),
-      linkedBbProjectId: z.string().nullable(),
+      linkedAliaProjectId: z.string().nullable(),
       expected: projectFields,
     })
     .strict(),
@@ -79,7 +79,7 @@ export const managementOptions = z.object({
       parentFolderId: z.string().nullable().optional(),
     }),
   ),
-  bbProjects: z.array(z.object({ id: z.string(), name: z.string() })),
+  aliaProjects: z.array(z.object({ id: z.string(), name: z.string() })),
 });
 export type ManagementOptions = z.infer<typeof managementOptions>;
 export const managementContract = {

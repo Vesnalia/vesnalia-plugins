@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { percent } from "./format";
 
-// bb defines no chart colours inside a plugin's page; every theme defines a terminal palette, so a series takes one of its colours.
+// VesnALIA defines no chart colours inside a plugin's page; every theme defines a terminal palette, so a series takes one of its colours.
 const FALLBACKS = ["var(--ansi-4)", "var(--ansi-3)", "var(--ansi-2)", "var(--ansi-5)", "var(--ansi-6)", "var(--ansi-1)"];
 export const color = (n: number) => `var(--chart-${n}, ${FALLBACKS[(n - 1) % FALLBACKS.length]})`;
 

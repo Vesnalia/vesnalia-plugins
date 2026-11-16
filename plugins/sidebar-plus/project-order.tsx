@@ -1,5 +1,5 @@
 import { useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactElement, type ReactNode } from "react";
-import type { PluginSidebarProject } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
 
 export interface ProjectDragHandleProps {
   title: string;

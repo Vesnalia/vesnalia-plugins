@@ -1,7 +1,7 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { LanesService } from "./service";
 
-const usage = "Usage: bb lanes now [--json]\n\nShow running turns and requests waiting for a person.\nOpen the Lanes pane for the live timeline.";
+const usage = "Usage: VesnALIA lanes now [--json]\n\nShow running turns and requests waiting for a person.\nOpen the Lanes pane for the live timeline.";
 const cell = (value: string, width: number) => value.replace(/[\x00-\x1f\x7f-\x9f]/g, " ").slice(0, width).padEnd(width);
 function elapsed(start: number, now: number) {
   const seconds = Math.max(0, Math.floor((now - start) / 1000));
@@ -9,9 +9,9 @@ function elapsed(start: number, now: number) {
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
   return `${Math.floor(seconds / 3600)}h ${Math.floor(seconds % 3600 / 60)}m`;
 }
-export function registerCli(bb: BbPluginApi, lanes: LanesService) {
-  bb.cli.register({ name: "lanes", summary: "See running agents and turns that need you",
-    commands: [{ name: "now", summary: "Show open turns and requests needing a person", usage: "bb lanes now [--json]" }],
+export function registerCli(alia: AliaPluginApi, lanes: LanesService) {
+  alia.cli.register({ name: "lanes", summary: "See running agents and turns that need you",
+    commands: [{ name: "now", summary: "Show open turns and requests needing a person", usage: "alia lanes now [--json]" }],
     async run(argv) {
       const args = argv.filter(arg => arg !== "--json");
       if (args.length === 0 || (args.length === 1 && ["help", "--help"].includes(args[0]))) {
@@ -21,7 +21,7 @@ export function registerCli(bb: BbPluginApi, lanes: LanesService) {
       const open = lanes.storage.open();
       const now = Date.now();
       const needsYou = open.filter(({ block }) => block.status === "waiting").length;
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       const names = new Map(projects.map(project => [project.id, project.name]));
       const threads = open.slice(0, 50).map(({ block, thread }) => ({
         threadId: thread.id, title: thread.title || thread.id, project: names.get(thread.projectId ?? "") ?? thread.projectId ?? "",

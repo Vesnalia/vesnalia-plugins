@@ -2,12 +2,12 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
 const out = process.env.LIVE_SHOTS ?? join(process.cwd(), "screens");
 mkdirSync(out, { recursive: true });
 
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -27,7 +27,7 @@ async function reset({ dockerWarm = false } = {}) {
     general: {},
     backends: [
       { id: "docker", type: "docker", enabled: true, fields: {}, ...(dockerWarm ? { warm: { linux: 2 } } : {}) },
-      { id: "proxmox-lxc", type: "proxmox-lxc", enabled: false, fields: { url: "https://127.0.0.1:9", "token-id": "bb-box@pve!made-up", "token-secret": "made-up-screens" }, warm: { linux: 1 } },
+      { id: "proxmox-lxc", type: "proxmox-lxc", enabled: false, fields: { url: "https://127.0.0.1:9", "token-id": "alia-box@pve!made-up", "token-secret": "made-up-screens" }, warm: { linux: 1 } },
       { id: "tart", type: "tart", enabled: false, fields: {} },
       { id: "ssh-pool", type: "ssh-pool", enabled: false, fields: {} },
       { id: "namespace", type: "namespace", enabled: false, fields: {} },
@@ -46,13 +46,13 @@ async function shot(page, name) {
 }
 
 async function open(page, hash, title) {
-  await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   const skip = page.getByRole("button", { name: "Skip setup" });
   await Promise.race([skip.waitFor({ timeout: 4_000 }).catch(() => {}), page.locator("[data-settings-view]").waitFor({ timeout: 4_000 }).catch(() => {})]);
   if (await skip.count()) {
     await skip.click();
     await pause(500);
-    await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   }
   if (title) await page.locator("[data-page-heading]").filter({ hasText: new RegExp(`^${title}`) }).waitFor();
   else await page.locator("[data-settings-view]").waitFor();

@@ -98,7 +98,7 @@ export async function readBehind(ctx: EngineCtx, project: ProjectRow, spec: Spec
       times.set(key, { at, ok: true });
     } catch (error) {
       const where = name === null ? "" : ` in the repo "${name}"`;
-      ctx.bb.log("warn", `Could not count how far ${project.slug}'s open pull requests${where} are behind ${settings.remote}/${settings.base}: ${errText(error)}`);
+      ctx.alia.log("warn", `Could not count how far ${project.slug}'s open pull requests${where} are behind ${settings.remote}/${settings.base}: ${errText(error)}`);
     }
   }
 }

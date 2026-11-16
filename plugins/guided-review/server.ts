@@ -1,9 +1,9 @@
-// bb-plugin-guided-review — backend entry.
+// alia-plugin-guided-review — backend entry.
 //
 // Turns a GitHub PR (or local git ref) into an agent-authored chaptered
-// walkthrough, rendered and reviewed in a bb panel, submitted back to GitHub.
+// walkthrough, rendered and reviewed in a VesnALIA panel, submitted back to GitHub.
 // This factory is extended task-by-task (store, cli, tools, rpc, realtime).
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { rpcContract } from "./src/rpc-contract";
 import { createStore } from "./src/store";
@@ -40,14 +40,14 @@ import { createPluginUpdates } from "./src/plugin-updates";
 
 export { rpcContract } from "./src/rpc-contract";
 
-export default async function plugin(bb: BbPluginApi) {
-  const store = createStore(bb);
+export default async function plugin(alia: AliaPluginApi) {
+  const store = createStore(alia);
   store.interruptGenerations();
   const submitReview = createReviewSubmitter(store, runGh);
-  const sync = createReviewSync(bb, store, runGh);
-  const notifications = completionNotifications(bb, store);
-  const updates = createPluginUpdates(bb, () => hasGuideGenerations(bb) || hasReviewAgents(bb));
-  bb.background.service("plugin-updates", {
+  const sync = createReviewSync(alia, store, runGh);
+  const notifications = completionNotifications(alia, store);
+  const updates = createPluginUpdates(alia, () => hasGuideGenerations(alia) || hasReviewAgents(alia));
+  alia.background.service("plugin-updates", {
     async start(signal) {
       while (!signal.aborted) {
         await delay(60_000, undefined, { signal }).catch(() => {});
@@ -56,7 +56,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
     },
   });
-  bb.background.service("review-state", {
+  alia.background.service("review-state", {
     async start(signal) {
       while (!signal.aborted) {
         await updates.run(() => sync.all(), false).catch(() => {});
@@ -64,15 +64,15 @@ export default async function plugin(bb: BbPluginApi) {
       }
     },
   });
-  bb.onDispose(() => { stopGuideGenerations(bb); stopReviewAgents(bb); });
+  alia.onDispose(() => { stopGuideGenerations(alia); stopReviewAgents(alia); });
 
-  bb.log.info("guided-review loaded");
+  alia.log.info("guided-review loaded");
 
-  const handlers: Omit<Parameters<typeof bb.rpc.register<typeof rpcContract>>[1], keyof typeof import("./src/plugin-updates").releaseRpc> = {
+  const handlers: Omit<Parameters<typeof alia.rpc.register<typeof rpcContract>>[1], keyof typeof import("./src/plugin-updates").releaseRpc> = {
     async getSetupStatus() {
       const [cli, user, providers, projects] = await Promise.all([
         runGh(["--version"]), runGh(["api", "user", "--jq", ".login"]),
-        bb.sdk.providers.list().catch(() => null), bb.sdk.projects.list({ includePersonal: true }).catch(() => null),
+        alia.sdk.providers.list().catch(() => null), alia.sdk.projects.list({ includePersonal: true }).catch(() => null),
       ]);
       return { githubCli: cli.code === 0, account: user.code === 0 ? user.stdout.trim() || null : null, agentAvailable: providers ? providers.some(p => p.available) : null, projectAvailable: projects ? projects.length > 0 : null };
     },
@@ -83,7 +83,7 @@ export default async function plugin(bb: BbPluginApi) {
     getPreferences() { return store.getPreferences(); },
     savePreferences({ preferences, revision }) {
       const result = store.savePreferences(preferences, revision);
-      bb.realtime.publish("preferences", {});
+      alia.realtime.publish("preferences", {});
       return result;
     },
     getReviewerNotes({ targetKey }) { return store.getReviewerNotes(targetKey); },
@@ -98,14 +98,14 @@ export default async function plugin(bb: BbPluginApi) {
     async startReview({ input }) {
       let projectId: string | undefined;
       try {
-        const projects = await bb.sdk.projects.list({ includePersonal: true });
+        const projects = await alia.sdk.projects.list({ includePersonal: true });
         const personal = projects.find((p) => p.kind === "personal");
         projectId = (personal ?? projects[0])?.id;
       } catch {
         return { ok: false, error: "Could not resolve a project to run generation." };
       }
       if (!projectId) return { ok: false, error: "No project available to run generation." };
-      return createPrReview({ bb, store, gh: { runGh, runGit } }, { input, projectId });
+      return createPrReview({ alia, store, gh: { runGh, runGit } }, { input, projectId });
     },
 
     // Task 10: read data plane
@@ -189,7 +189,7 @@ export default async function plugin(bb: BbPluginApi) {
     async rereview({ targetKey }) {
       await sync.one(targetKey, true);
       if (store.getReview(targetKey)?.archivedAt) return { ok: false, error: "This PR is archived. Its guide and conversation are still available." };
-      return rerunReview({ bb, store, gh: { runGh, runGit } }, targetKey);
+      return rerunReview({ alia, store, gh: { runGh, runGit } }, targetKey);
     },
 
     // Task 11: draft + submit
@@ -211,8 +211,8 @@ export default async function plugin(bb: BbPluginApi) {
       if (!account) return { ok: false, error: "Verify your GitHub account before submitting. Reload this review to check access." };
       try { requireReviewRevision(store, targetKey, revision); } catch (error) { return { ok: false, error: (error as Error).message }; }
       const result = await submitReview(targetKey, revision, account);
-      bb.realtime.publish(`review:${targetKey}`, { ts: Date.now() });
-      bb.realtime.publish("reviews", { ts: Date.now() });
+      alia.realtime.publish(`review:${targetKey}`, { ts: Date.now() });
+      alia.realtime.publish("reviews", { ts: Date.now() });
       return result;
     },
 
@@ -241,10 +241,10 @@ export default async function plugin(bb: BbPluginApi) {
     async askAgent({ targetKey, message, context }) {
       const m = store.getReview(targetKey);
       if (!m?.projectId) {
-        return { answer: "This review has no associated project; re-run `bb review` inside a project." };
+        return { answer: "This review has no associated project; re-run `alia review` inside a project." };
       }
-      const res = await runAgentTurn(bb, store, { targetKey, message, context, projectId: m.projectId });
-      bb.realtime.publish(`agent:${targetKey}`, { ts: Date.now() });
+      const res = await runAgentTurn(alia, store, { targetKey, message, context, projectId: m.projectId });
+      alia.realtime.publish(`agent:${targetKey}`, { ts: Date.now() });
       return res;
     },
     // GitHub account indicator + switcher
@@ -253,7 +253,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     async switchGhAccount({ login }) {
       const r = await switchGhAccount(runGh, login);
-      if (r.ok) bb.realtime.publish("gh-account", { active: r.active });
+      if (r.ok) alia.realtime.publish("gh-account", { active: r.active });
       return r;
     },
     async checkRepoAccess({ targetKey }) {
@@ -263,7 +263,7 @@ export default async function plugin(bb: BbPluginApi) {
   };
   const guarded = Object.fromEntries(Object.entries(handlers).map(([name, handler]) =>
     [name, (input: unknown) => updates.run(() => (handler as (input: unknown) => unknown)(input))])) as typeof handlers;
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     ...guarded,
     getReleaseStatus: () => updates.status(),
     checkPluginUpdates: () => updates.check(),
@@ -272,7 +272,7 @@ export default async function plugin(bb: BbPluginApi) {
     applyPluginUpdate: ({ clientId, candidateVersion }) => updates.apply(clientId, candidateVersion),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "read_review_patch",
     description: "Return the diff text for a Guided Review target (paginated).",
     parameters: z.object({
@@ -288,7 +288,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "generate_review_guide",
     description: "Submit the authored guide. Validates shape and coverage.",
     parameters: z.object({ targetKey: z.string(), generationId: z.string(), guide: z.unknown() }),
@@ -317,8 +317,8 @@ export default async function plugin(bb: BbPluginApi) {
   // not enough — gate on the generation thread's distinctive title too. The
   // review-agent thread ("Review agent: …") answers from inlined context and
   // intentionally gets no tools.
-  bb.agents.configure((context) => {
-    if (context.origin?.pluginId !== bb.pluginId) return { tools: [], skills: [] };
+  alia.agents.configure((context) => {
+    if (context.origin?.pluginId !== alia.pluginId) return { tools: [], skills: [] };
     const title = context.thread?.title ?? "";
     if (title.startsWith("Generate guide:")) {
       return { tools: ["read_review_patch", "generate_review_guide"], skills: ["guided-review-generate"] };
@@ -332,12 +332,12 @@ export default async function plugin(bb: BbPluginApi) {
     return { tools: [], skills: [] };
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "review",
     summary: "Open a Guided Review of a GitHub PR or local git ref",
-    commands: [{ name: "review", summary: "Review a PR or ref", usage: "bb review <pr-url | pr-number | git-ref> [--base <ref>]" }],
+    commands: [{ name: "review", summary: "Review a PR or ref", usage: "alia review <pr-url | pr-number | git-ref> [--base <ref>]" }],
     async run(argv, ctx) {
-      return updates.run(() => runReviewCommand({ bb, store, gh: { runGh, runGit } }, argv, ctx));
+      return updates.run(() => runReviewCommand({ alia, store, gh: { runGh, runGit } }, argv, ctx));
     },
   });
 }

@@ -3,7 +3,7 @@
 // its fix, private notes when there are some, and Submit; then the receipt, with the next review that needs you.
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { defaultKnobs } from "../lib/knobs";
 import { commentsKey } from "../src/draft";
@@ -73,7 +73,7 @@ async function renderWorkspace({ review = {}, rpc = {} }: { review?: Record<stri
     Object.assign(sent, { submittedVerdict: input.verdict, submittedAt: Date.now() });
     return result;
   }) as unknown as typeof handlers.submitReview;
-  // BB's panel takes the tabs the page opens.
+  // VesnALIA's panel takes the tabs the page opens.
   const slot = renderSlot(app.navPanels[0]!, { subPath: "pr-42" }, { rpc: handlers as any, experimental_panel: { openTab: () => true } });
   await slot.findByRole("main", { name: /^Review\b/ });
   await slot.findByTestId("filediff");
@@ -147,7 +147,7 @@ test("it lists what goes to GitHub: the comments and their severities, who wrote
   expect(view.getByText("1 reply draft not sent: replies post on their own")).toBeTruthy();
   expect(submit(view).textContent).toBe("Submit to GitHub · Comment");
   // Said of the draft: nothing of it goes before Submit.
-  expect(view.getByText("Your draft stays in BB until you submit, then posts to acme/web#42 as @me.")).toBeTruthy();
+  expect(view.getByText("Your draft stays in VesnALIA until you submit, then posts to acme/web#42 as @me.")).toBeTruthy();
   // Each row opens Comments on what it counts.
   fireEvent.click(view.getByRole("button", { name: "Show the comments to send" }));
   const list = within(await slot.findByRole("region", { name: "Comments" }));
@@ -428,7 +428,7 @@ test("images in the agent's summary and its suggested one show as links to them"
     getFeedback: () => ({ feedback: feedbackOf({ run: { ...run, suggestedBody: "Asks ![b](https://attacker.example/b.png)" } }) }),
   } });
   const view = await finish(slot);
-  const texts = view.getAllByTestId("bb-markdown").map((markdown: HTMLElement) => markdown.textContent);
+  const texts = view.getAllByTestId("alia-markdown").map((markdown: HTMLElement) => markdown.textContent);
   expect(texts).toEqual(expect.arrayContaining(["Fine [Image: a](https://attacker.example/a.png)", "Asks [Image: b](https://attacker.example/b.png)"]));
   slot.lifecycle.unmount();
 });
@@ -600,7 +600,7 @@ test("a local review hands its comments to a new thread instead of Submit", asyn
   const view = await finish(slot);
   expect(view.queryByRole("button", { name: /^Submit to GitHub/ })).toBeNull();
   expect(view.queryByRole("group", { name: "Review verdict" })).toBeNull();
-  expect(view.getByText("Local review. Comments and notes stay in this BB installation.")).toBeTruthy();
+  expect(view.getByText("Local review. Comments and notes stay in this VesnALIA installation.")).toBeTruthy();
   fireEvent.click(view.getByRole("button", { name: "Fix in a new thread" }));
   fireEvent.click(view.getByRole("button", { name: "Start thread" }));
   await waitFor(() => expect(rpc.startFixThread).toHaveBeenCalled());
@@ -611,15 +611,15 @@ test("a folder's review in a GitHub repo says nothing goes to GitHub yet, and th
   const { slot } = await renderWorkspace({ review: folderReview, rpc: { checkFeature: () => ({ state: "current", alsoActive: [], hidden: [], flagged: [] }) } });
   const view = await finish(slot);
   expect(view.getByText("Nothing goes to GitHub yet. Once it has a PR, this review becomes the PR’s.")).toBeTruthy();
-  expect(view.queryByText(/stay in this BB installation/)).toBeNull();
+  expect(view.queryByText(/stay in this ALIA installation/)).toBeNull();
   slot.lifecycle.unmount();
 });
 
-test("a local review's private notes stay in BB under the one heading, with the rest that stays", async () => {
+test("a local review's private notes stay in VesnALIA under the one heading, with the rest that stays", async () => {
   const { slot } = await renderWorkspace({ review: { kind: "ref", gitRef: "main...x" }, rpc: { getReviewerNotes: () => ({ body: "Check the TTL.", revision: 1 }) } });
   const view = await finish(slot);
   expect(await view.findByText("Private notes")).toBeTruthy();
-  expect(view.getAllByRole("heading", { name: "Stays in BB" })).toHaveLength(1);
+  expect(view.getAllByRole("heading", { name: "Stays in VesnALIA" })).toHaveLength(1);
   slot.lifecycle.unmount();
 });
 
@@ -633,7 +633,7 @@ test("on your own PR it offers Comment only, and Fix in a new thread beside Subm
   slot.lifecycle.unmount();
 });
 
-test("on your own PR, Finish counts only the comments that post: one sent to fix stays in BB, and Submit says so", async () => {
+test("on your own PR, Finish counts only the comments that post: one sent to fix stays in VesnALIA, and Submit says so", async () => {
   const sentToFix = [{ ...comments[0], id: "c1", state: "sent", sendN: 1 }, comments[1]];
   const { slot, rpc } = await renderWorkspace({ review: { ownPr: true }, rpc: { getDraft: vi.fn(() => ({ draft: draftOf({ comments: structuredClone(sentToFix) }), stale: [] })) } });
   const view = await finish(slot);
@@ -718,14 +718,14 @@ test("a closed PR's Comments offers its archived review by touch, where the Fini
   slot.lifecycle.unmount();
 });
 
-test("private notes stay in BB, and show only when you have some", async () => {
+test("private notes stay in VesnALIA, and show only when you have some", async () => {
   let { slot } = await renderWorkspace();
   let view = await finish(slot);
   expect(view.queryByText("Private notes")).toBeNull();
   slot.lifecycle.unmount();
   ({ slot } = await renderWorkspace({ rpc: { getReviewerNotes: () => ({ body: "Check the TTL.", revision: 1 }) } }));
   view = await finish(slot);
-  expect(await view.findByText("Stays in BB")).toBeTruthy();
+  expect(await view.findByText("Stays in VesnALIA")).toBeTruthy();
   fireEvent.click(view.getByText("Private notes"));
   expect(((await view.findByRole("textbox", { name: "Private notes" })) as HTMLTextAreaElement).value).toBe("Check the TTL.");
   slot.lifecycle.unmount();
@@ -926,7 +926,7 @@ test("a local review of a branch in a GitHub repo offers Open PR, which asks the
   expect(view.getByText(/shows you its title and description before it opens/).textContent).toBe("The review agent drafts a PR from feat/qa in acme/web, and shows you its title and description before it opens.");
   fireEvent.click(view.getByRole("button", { name: "Open PR" }));
   await waitFor(() => expect(openPr).toHaveBeenCalledWith({ targetKey: "pr-42" }));
-  // Its chat, in BB's side panel.
+  // Its chat, in VesnALIA's side panel.
   await waitFor(() => expect(panelTabCalls(slot)).toEqual(["openTab:agent"]));
   slot.lifecycle.unmount();
 });
@@ -1313,7 +1313,7 @@ test("with the review agent drafting only, Push is just Push, and once pushed li
 });
 
 /** Your PR, acme/web#42 from feat/qa, with a fixer at work in its own folder. */
-const fixerReview = { kind: "pr", repo: "acme/web", number: 42, head: "feat/qa", ownPr: true, mainThread: { threadId: "fixer", environmentId: "env_fix", origin: "fresh", since: 1, branch: "bb/fixes-thr_fix", fixer: { sha: "9e9e9e9", at: 1 } } };
+const fixerReview = { kind: "pr", repo: "acme/web", number: 42, head: "feat/qa", ownPr: true, mainThread: { threadId: "fixer", environmentId: "env_fix", origin: "fresh", since: 1, branch: "alia/fixes-thr_fix", fixer: { sha: "9e9e9e9", at: 1 } } };
 
 test("on your PR with a fixer, Push says the fixer commits what Not pushed yet shows, and Update first opens Not pushed yet's page", async () => {
   const ready = await renderPush(null, {}, fixerReview);
@@ -1328,7 +1328,7 @@ test("on your PR with a fixer, Push says the fixer commits what Not pushed yet s
   fireEvent.click(within(part()).getByRole("button", { name: "Update first" }));
   await waitFor(() => expect(calls.dismissPush).toHaveBeenCalledWith({ targetKey: "pr-42" }));
   expect(calls.updateFeature).not.toHaveBeenCalled();
-  // The review shows its Not pushed yet page; BB's side panel stays as it was.
+  // The review shows its Not pushed yet page; VesnALIA's side panel stays as it was.
   expect(within(await slot.findByRole("region", { name: "Not pushed yet" })).getByText("Nothing waiting.")).toBeTruthy();
   expect(getNotPushed).toHaveBeenCalledWith({ targetKey: "pr-42" });
   expect(panelTabCalls(slot)).toEqual([]);

@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { FenceOverlay } from "./FenceOverlay";
 
 const Navigation = createContext<(url: string) => void>(() => { throw new Error("Missing thread navigation"); });
-vi.mock("@get-bb/plugin-sdk/app", () => ({ experimental_usePluginId: () => "genui" }));
+vi.mock("@vesnalia/plugin-sdk/app", () => ({ experimental_usePluginId: () => "genui" }));
 vi.mock("./Fence", () => ({
   useThreadActions: () => ({}),
   Fence: ({ threadId }: { threadId: string }) => {

@@ -36,7 +36,7 @@ export function firewallRules(tailnetOn: boolean, sshFrom: readonly string[]): F
     { direction: "in", protocol: "udp", port: TAILSCALE_DIRECT_PORT, sourceIps: ["0.0.0.0/0", "::/0"], description: "Tailscale's direct connections" },
     { direction: "in", protocol: "icmp", sourceIps: ["0.0.0.0/0", "::/0"], description: "ping" },
   ];
-  if (!tailnetOn && sshFrom.length) rules.push({ direction: "in", protocol: "tcp", port: "22", sourceIps: [...sshFrom], description: "SSH from BB's server" });
+  if (!tailnetOn && sshFrom.length) rules.push({ direction: "in", protocol: "tcp", port: "22", sourceIps: [...sshFrom], description: "SSH from VesnALIA's server" });
   return rules;
 }
 
@@ -94,7 +94,7 @@ export class HostReach {
 
   constructor(options: HostReachOptions) {
     this.#options = options;
-    this.#socketDir = makeTempFolderSync("bb-box-hz-", shortTempBase());
+    this.#socketDir = makeTempFolderSync("alia-box-hz-", shortTempBase());
   }
 
   get labels(): Labels {
@@ -102,7 +102,7 @@ export class HostReach {
   }
 
   get resourceName(): string {
-    return `bb-box-${this.#options.installId}`;
+    return `alia-box-${this.#options.installId}`;
   }
 
   async keys(): Promise<{ privateKey: string; publicKey: string; keyPath: string }> {
@@ -148,7 +148,7 @@ export class HostReach {
   canReach(): string | null {
     if (this.#options.tailnet()) return null;
     if (this.#options.sshFrom.length) return null;
-    return `${PRODUCT} reaches a host over the tailnet, which is off, or over the internet from the addresses in SSH from, which is empty. Turn the tailnet on in BB Box's General settings, or set SSH from to BB's server's public address`;
+    return `${PRODUCT} reaches a host over the tailnet, which is off, or over the internet from the addresses in SSH from, which is empty. Turn the tailnet on in VesnALIA Box's General settings, or set SSH from to VesnALIA's server's public address`;
   }
 
   async address(record: HostRecord, signal?: AbortSignal): Promise<HostAddress> {

@@ -22,12 +22,12 @@ type CollectorDependencies = {
 // This function is compiled by generate:collectors and executed on the host. Keep
 // every runtime dependency inside the function or pass it through `dependencies`.
 // The output reuses the host-json-collector wire format (gzipped scan JSON between
-// __BB_USAGE_SCAN_BEGIN__/END markers) so the plugin server decodes it with
+// __ALIA_USAGE_SCAN_BEGIN__/END markers) so the plugin server decodes it with
 // extractHostJsonScan and prices it with parseHostUsageAggregates.
 async function devinSqliteCollector(encodedInput: string, dependencies: CollectorDependencies) {
   const { buffer, fs, path, zlib, loadSqlite } = dependencies;
-  const scanBegin = "__BB_USAGE_SCAN_BEGIN__";
-  const scanEnd = "__BB_USAGE_SCAN_END__";
+  const scanBegin = "__ALIA_USAGE_SCAN_BEGIN__";
+  const scanEnd = "__ALIA_USAGE_SCAN_END__";
   const input = JSON.parse(buffer.from(encodedInput, "base64").toString("utf8")) as DevinScanInput;
   if (input.agentId !== "devin") throw new Error("Unsupported usage agent.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.sinceDay)) throw new Error("Invalid usage history boundary.");
@@ -198,7 +198,7 @@ async function devinSqliteCollector(encodedInput: string, dependencies: Collecto
 export function devinCollectorScript(input: DevinScanInput) {
   const encodedInput = Buffer.from(JSON.stringify(input)).toString("base64");
   const dependencies = "{buffer:require('node:buffer').Buffer,fs:require('node:fs'),path:require('node:path'),zlib:require('node:zlib'),loadSqlite:function(){return require('node:sqlite');}}";
-  return `(${devinSqliteCollectorSource})(${JSON.stringify(encodedInput)},${dependencies}).catch((error)=>{process.stderr.write('__BB_USAGE_ERROR__:'+String(error?.message??error).replace(/[\\r\\n]+/g,' ').slice(0,300)+'\\n');process.exitCode=1;});`;
+  return `(${devinSqliteCollectorSource})(${JSON.stringify(encodedInput)},${dependencies}).catch((error)=>{process.stderr.write('__ALIA_USAGE_ERROR__:'+String(error?.message??error).replace(/[\\r\\n]+/g,' ').slice(0,300)+'\\n');process.exitCode=1;});`;
 }
 
 export function compressedDevinCollectorScript(input: DevinScanInput) {

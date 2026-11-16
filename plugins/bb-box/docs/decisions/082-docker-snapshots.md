@@ -81,7 +81,7 @@ The questions a later sweep has to answer come from that structure.
   for this install. A snapshot volume is never labelled that way, so a
   release cannot delete one. [096](096-a-docker-volume-a-restores-copy-made-again-is-removed-by-its-note.md)
   supersedes this for a volume a restore's copy made again, without
-  labels: a release or maintenance removes it when BB Box's note of the
+  labels: a release or maintenance removes it when VesnALIA Box's note of the
   copy, or the copy's labels, name it.
 
 ### The lead's rulings
@@ -89,7 +89,7 @@ The questions a later sweep has to answer come from that structure.
 1. The snapshot is the image plus the volume, on the box's own engine. A
    separate manifest volume was rejected. It would be a second record that
    has to stay in step with the first.
-2. Before a take pauses a box, it refuses a writable mount BB Box cannot
+2. Before a take pauses a box, it refuses a writable mount VesnALIA Box cannot
    capture with the box. That is anything other than the box's own Docker
    volume and the mounts Docker makes itself. The refusal names the mount
    and says how to fix it, for example that shared storage at `/work` has
@@ -122,7 +122,7 @@ This record's first change is the volume a box keeps its Docker data on.
 Taking, listing, restoring, forking and keeping a snapshot come later, in
 the sequence below. They are not built with this record.
 
-Every privileged Docker box BB Box makes from now on gets a volume named
+Every privileged Docker box VesnALIA Box makes from now on gets a volume named
 `<container>-docker`. The labels are `bbbox.volume-of` set to the
 container's name, and `bbbox.install` set to the install. The volume is
 created before the container, so Docker does not invent an unlabelled
@@ -175,7 +175,7 @@ volume's failure.
 On rootless Docker, and when `privileged` is off, there is no volume, as
 today. A take of such a box will be the commit alone.
 
-A local engine, Docker over SSH, and a BB machine's Docker all use this
+A local engine, Docker over SSH, and a VesnALIA machine's Docker all use this
 path. Hetzner and Namespace Linux boxes are containers made by the same
 Docker backend, so a new box there gets the same volume. Their snapshot
 offer stays off until their own changes.
@@ -202,7 +202,7 @@ Only the take pauses a box. After a restart, a paused container is settled
 from its saved take record and the engine. An image means the take finished. No image, and still
 inside the time bound, means it is still running. Past the bound, the
 container is unpaused, the leftover volume is deleted, and the take has
-failed. The sweep uses the same bound. If BB Box's records are lost, it
+failed. The sweep uses the same bound. If VesnALIA Box's records are lost, it
 removes stale partial volumes but leaves the container paused: the engine
 alone cannot prove who owns the pause.
 
@@ -223,12 +223,12 @@ restart a container stopped by `docker kill`, so the old one stays stopped.
 A fork is a new container from the snapshot image, placed again, with its
 own box id in `BBBOX_IDENTITY`, restart policy `no` and a hold,
 `BBBOX_FORK_HOLD=1`. Its first start runs the identity reset and nothing
-else, then waits until BB Box releases it. Once the core's checks pass, the
-policy becomes `unless-stopped` and BB Box releases the hold. Item 4's
+else, then waits until VesnALIA Box releases it. Once the core's checks pass, the
+policy becomes `unless-stopped` and VesnALIA Box releases the hold. Item 4's
 results below say why and how.
 
 Keep adds the date tag and removes any other keep tag for that snapshot.
-The tag is written before BB Box's own record. Stopping keeping removes
+The tag is written before VesnALIA Box's own record. Stopping keeping removes
 the tag. Delete removes the keep tag, the snapshot tag, and the snapshot
 volume. A release deletes snapshots nobody kept. A kept snapshot stays
 where it is, on that engine.
@@ -296,8 +296,8 @@ was a 1.8 GB change on the containerd store (a 1.07 GB layer plus about
   would come back as if it were sound.
 - Copying the volume under our pause, then committing with Docker's own
   pause. Rejected. The disk and the Docker data would be seconds apart.
-  Docker would also unpause during the commit if BB Box had stopped.
-- Keeping the snapshot's state only in BB Box's own storage. Rejected. The
+  Docker would also unpause during the commit if VesnALIA Box had stopped.
+- Keeping the snapshot's state only in VesnALIA Box's own storage. Rejected. The
   engine can hold the names, the labels and the keep date, and the guide
   asks for that.
 - A separate manifest volume, from the other design. Rejected by the lead,
@@ -363,33 +363,33 @@ started Docker inside it at once when it found containers, and that Docker
 started the containers copied from the source with their own restart
 policies. With a reset that said it had worked but had not, a copied
 container running an SSH server served the source's SSH host key from the
-fork's address, before BB Box's check had refused the fork. Anything the
+fork's address, before VesnALIA Box's check had refused the fork. Anything the
 image starts, and anything a copied container runs, could do the same.
 
-So a fork's first start holds every service until BB Box has checked it:
+So a fork's first start holds every service until VesnALIA Box has checked it:
 
-- BB Box makes the fork with `BBBOX_FORK_HOLD=1` beside its own box ID in
+- VesnALIA Box makes the fork with `BBBOX_FORK_HOLD=1` beside its own box ID in
   `BBBOX_IDENTITY`. A new box, a restore and an image box are made without
   it, and start as before.
 - The image's start script runs the identity reset, then
-  `/usr/local/libexec/bb-box/fork-hold`. In a fork that has not been
-  released, the hold writes `/run/bb-box/held` and starts nothing until
-  `/var/lib/bb-box/fork-released` holds the fork's own box ID. Only then does
+  `/usr/local/libexec/alia-box/fork-hold`. In a fork that has not been
+  released, the hold writes `/run/alia-box/held` and starts nothing until
+  `/var/lib/alia-box/fork-released` holds the fork's own box ID. Only then does
   the start script go on to Docker, the desktop and the ready file. Docker,
   the desktop and every copied container wait with it. A Docker box's start
-  script never starts BB's daemon, SSH or Tailscale itself: those run only
-  as BB Box's bootstrap or a copied container starts them, after the hold.
-- BB Box starts the fork, waits for `held`, and runs the core's check while
+  script never starts VesnALIA's daemon, SSH or Tailscale itself: those run only
+  as VesnALIA Box's bootstrap or a copied container starts them, after the hold.
+- VesnALIA Box starts the fork, waits for `held`, and runs the core's check while
   the fork is held. When the check passes, it sets the restart policy to
   `unless-stopped`, writes the release as root with `docker exec`, and waits
   for the ready file before it hands the fork over.
 - A fork that fails the check is disarmed and removed without a release. A
-  fork BB Box stops before its check stays held, at each start, until the
+  fork VesnALIA Box stops before its check stays held, at each start, until the
   sweep removes it: the hold is in its container settings and the release
-  is on its disk, and only BB Box writes the release.
+  is on its disk, and only VesnALIA Box writes the release.
 - The release names the box, so a fork of a fork is held again, though its
   copy carries the first fork's release. A snapshot's image blanks
-  `BBBOX_FORK_HOLD`, as it blanks every value BB Box gives a box, so a
+  `BBBOX_FORK_HOLD`, as it blanks every value VesnALIA Box gives a box, so a
   restore of a fork's snapshot is not held.
 - The images say they hold forks with the label `bbbox.fork-hold="1"`,
   which a snapshot's image keeps from its box's. A snapshot of a box made
@@ -430,7 +430,7 @@ Three things differ from the package:
 - The offer says the snapshots live with the provider, as microsandbox's
   and boat.dev's do, not on the host with `outlivesGuest`, as Tart's do.
   Both shapes keep a snapshot as it is past its box's release. The
-  difference is that BB Box asks the provider before it removes the backend,
+  difference is that VesnALIA Box asks the provider before it removes the backend,
   and refuses while the engine holds any of this install's snapshots, kept
   or not. On a person's own engine, a kept snapshot left there would take
   its disk with nothing to delete it. The refusal's words now fit a backend
@@ -458,7 +458,7 @@ images it shares layers with are deleted, such as the box's image after a
 refresh. Both come from the image's layers, `docker image history`'s size of
 each, and the other images' layers. With the containerd image store, each
 layer is kept packed as well as unpacked; its packed size is not listed, so
-BB Box counts the image's packed content in proportion to each layer's
+VesnALIA Box counts the image's packed content in proportion to each layer's
 unpacked size. Docker's own count in `docker system df --verbose` is no use
 here: with the containerd store, it counts the packed layers two images share
 as unique to each, 795 MB for a snapshot whose own change was 139 kB. The

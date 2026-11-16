@@ -3,7 +3,7 @@ import { messageTime, topRecent } from "../../lib/recent/data.js";
 import { assistant, event, tool, user } from "./fixtures";
 
 describe("Семантика сохранённых сообщений", () => {
-  it("учитывает user, completed assistant и дату edit от BB", () => {
+  it("учитывает user, completed assistant и дату edit от VesnALIA", () => {
     expect(messageTime(user(100))).toBe(100);
     expect(messageTime(assistant(200))).toBe(200);
     expect(messageTime(user(900, 13))).toBe(900);

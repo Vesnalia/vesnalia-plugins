@@ -61,7 +61,7 @@ export interface PluginRow {
   installed_sha: string | null;
   /** The latest rollout attempt, whatever its outcome. */
   current_attempt: string | null;
-  /** The last confirmed state in bb. */
+  /** The last confirmed state in VesnALIA. */
   last_state: string | null; last_enabled: number | null; state_at: number | null;
   /** When the plugin list last failed to load; while this is later than `state_at`, the information is stale. */
   list_failed_at: number | null;
@@ -204,7 +204,7 @@ export class Store {
   setTask(id: string, task: { id: string; key: string }, now: number): void {
     this.db.prepare("UPDATE works SET task_id = ?, task_key = ?, updated_at = ? WHERE id = ?").run(task.id, task.key, now, id);
   }
-  /** The execution project (a bb project on the plugin folder) is found or created. */
+  /** The execution project (a VesnALIA project on the plugin folder) is found or created. */
   setProject(id: string, projectId: string, now: number): void {
     this.db.prepare("UPDATE works SET project_id = ?, updated_at = ? WHERE id = ?").run(projectId, now, id);
   }
@@ -435,16 +435,16 @@ export class Store {
       )
       .run(p.id, p.name, p.dir, p.source, now, now);
   }
-  /** The state in bb, confirmed by the plugin list; null — the list did not arrive: the previous state stays, the failure is recorded. */
+  /** The state in VesnALIA, confirmed by the plugin list; null — the list did not arrive: the previous state stays, the failure is recorded. */
   setLastState(id: string, s: { state: string; enabled: boolean } | null, now: number): void {
     if (s === null) this.db.prepare("UPDATE plugins SET list_failed_at = ? WHERE id = ?").run(now, id);
     else this.db.prepare("UPDATE plugins SET last_state = ?, last_enabled = ?, state_at = ?, list_failed_at = NULL WHERE id = ?").run(s.state, s.enabled ? 1 : 0, now, id);
   }
-  /** The plugin is no longer in bb nor on disk: the row stays with the reason and has no confirmed state. */
+  /** The plugin is no longer in VesnALIA nor on disk: the row stays with the reason and has no confirmed state. */
   markGone(id: string, reason: string, now: number): void {
     this.db.prepare("UPDATE plugins SET gone_reason = ?, last_state = NULL, last_enabled = NULL, state_at = ?, list_failed_at = NULL WHERE id = ?").run(reason, now, id);
   }
-  /** The plugin list arrived without the plugin, but its folder exists: it has no confirmed state in bb and does not count as gone. */
+  /** The plugin list arrived without the plugin, but its folder exists: it has no confirmed state in VesnALIA and does not count as gone. */
   setNotInstalled(id: string, now: number): void {
     this.db.prepare("UPDATE plugins SET last_state = NULL, last_enabled = NULL, state_at = ?, list_failed_at = NULL WHERE id = ?").run(now, id);
   }

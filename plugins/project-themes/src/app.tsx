@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import {
-  definePluginApp, experimental_useSidebarThreads, useBbContext,
+  definePluginApp, experimental_useSidebarThreads, useAliaContext,
   useRealtime, useRealtimeConnectionState, useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { mountAppearance, publishAppearance } from "./appearance";
 import { defaultTheme, PALETTE, SURFACES, tint, type ProjectTheme, type Themes } from "./theme";
@@ -33,7 +33,7 @@ function useThemes() {
 
 function AppearanceSync() {
   const { themes } = useThemes();
-  const { projectId } = useBbContext();
+  const { projectId } = useAliaContext();
   const { projects } = experimental_useSidebarThreads();
   useEffect(() => {
     const defaults = Object.fromEntries(projects.map((project) => [project.id, defaultTheme(project.id)]));
@@ -121,14 +121,14 @@ function ThemeEditor({ projectId, initialTheme, configured, rpc, refetch }: {
 function ThemeSettings() {
   const { rpc, themes, error, refetch } = useThemes();
   const { projects, status } = experimental_useSidebarThreads();
-  const context = useBbContext();
+  const context = useAliaContext();
   const [selection, setSelection] = useState("");
   const projectId = projects.some((project) => project.id === selection) ? selection : projects.some((project) => project.id === context.projectId) ? context.projectId : projects[0]?.id;
   const id = useId();
   return <section className="pt-settings">
     <p className="pt-intro">Give each project a subtle accent. Choose which elements to tint.</p>
     {error || status === "error" ? <div className="pt-error" role="alert">{error || "Could not load projects."} <button className="pt-link" onClick={() => { if (status === "error") window.location.reload(); else void refetch(); }}>Try again</button></div> : null}
-    {themes === null || status === "loading" ? <p className="pt-hint" role="status">Loading projects and colors…</p> : projects.length === 0 ? <p className="pt-hint">Create a project in bb to customize its colors.</p> : <>
+    {themes === null || status === "loading" ? <p className="pt-hint" role="status">Loading projects and colors…</p> : projects.length === 0 ? <p className="pt-hint">Create a project in VesnALIA to customize its colors.</p> : <>
       <label className="pt-label" htmlFor={id}>Project</label>
       <select id={id} className="pt-select" value={projectId ?? ""} onChange={(event) => setSelection(event.target.value)}>{projects.map((project) => <option value={project.id} key={project.id}>{project.isPersonal ? "Personal threads" : project.name}</option>)}</select>
       {projectId && <ThemeEditor key={projectId} projectId={projectId} initialTheme={themes[projectId] ?? defaultTheme(projectId)} configured={!!themes[projectId]} rpc={rpc} refetch={refetch} />}

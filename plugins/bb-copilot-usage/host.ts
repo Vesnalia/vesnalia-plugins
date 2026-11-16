@@ -12,7 +12,7 @@ import {
   experimental_defineProviderBridge,
   experimental_resolveExecutablePath,
   type ProviderUsageResult,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 
 const TIMEOUT_MS = 20_000;
 
@@ -20,7 +20,7 @@ export interface ParsedQuota { label: string; used: number; limit: number }
 
 // Confirmed by GitHub's authenticated AI usage page. GitHub does not expose
 // this date in the Copilot CLI's /usage output, so advance the account's
-// monthly billing anniversary without copying browser cookies into BB.
+// monthly billing anniversary without copying browser cookies into VesnALIA.
 const BILLING_CYCLE_DAY = 30;
 
 export function nextBillingReset(now = new Date()): string {
@@ -77,7 +77,7 @@ async function readUsage(): Promise<ProviderUsageResult> {
   // Copilot's TUI asks the terminal for capability/color responses before it
   // renders. node-pty alone does not emulate those replies, whereas tmux does.
   // Run a short-lived private tmux session, open /usage, and capture its pane.
-  const session = `bb-copilot-usage-${randomUUID().slice(0, 8)}`;
+  const session = `alia-copilot-usage-${randomUUID().slice(0, 8)}`;
   let started = false;
   try {
     const command = `${shellQuote(executable)} --no-color --no-auto-update`;

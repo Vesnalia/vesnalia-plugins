@@ -3,9 +3,9 @@
 // sees which soul it took on and can open the persona it is working from.
 import { useId, useState, type ReactNode } from "react";
 import {
-  useBbNavigate,
+  useAliaNavigate,
   type PluginMessageDirectiveProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { SOUL_ID_PREFIX, describeModelPin, type Soul } from "../shared";
 import { useSoulResource, useThreadSoul } from "../hooks/use-souls";
 import { Icon } from "@/components/ui/icon";
@@ -113,7 +113,7 @@ function LoadedSoul({
   const [section, setSection] = useState<Section | null>(null);
   const headingId = useId();
   const panelId = useId();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const session = thread.state?.session ?? null;
   // Only say what the evidence shows: the thread moved to another soul, or the
   // recorded session was built from an older version of this one.

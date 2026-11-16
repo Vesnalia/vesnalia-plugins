@@ -63,7 +63,7 @@ test("Keep is refused for a snapshot no fork could use after a release: taken be
   await state.snapshots.take(COMMAND, box, standing(box), { name: "old image" });
   const refused = await rejection(state.snapshots.keep(COMMAND, standing(box), "old image"));
   assert.equal(refused.code, "unsupported");
-  assert.equal(refused.message, `Taken before ${box.name}'s image had the identity reset: "old image" could not be forked after a release, so BB Box does not keep it. ${resetOffWords("linux")}.`);
+  assert.equal(refused.message, `Taken before ${box.name}'s image had the identity reset: "old image" could not be forked after a release, so VesnALIA Box does not keep it. ${resetOffWords("linux")}.`);
   const other = armedWorld();
   other.provider.keepWay = "no";
   const second = await readyBox(other);
@@ -162,7 +162,7 @@ test("G15: with too little room for the copy, the release stops and deletes noth
   state.provider.percentFull = 90;
   const left = await state.boxes.release(THREAD, box.id, "done with it", BY_COMMAND);
   assert.equal(left?.state, "releasing");
-  assert.match(left?.error ?? "", /^Release did not finish: BB Box could not copy "kept one", which you kept: .*storage fast has \d+ GB free, and with the held copy, about 2\.1 GB, it would be 92% full, past your settings' 85%\. BB Box tries again in a few minutes\. Release it again, or release it and delete what you kept\.$/);
+  assert.match(left?.error ?? "", /^Release did not finish: ALIA Box could not copy "kept one", which you kept: .*storage fast has \d+ GB free, and with the held copy, about 2\.1 GB, it would be 92% full, past your settings' 85%\. ALIA Box tries again in a few minutes\. Release it again, or release it and delete what you kept\.$/);
   assert.notEqual(await state.backend.power(box.guest!), null, "the guest stays");
   assert.equal(state.store.record(taken.id)?.guest, "current");
   assert.equal(state.provider.held.has(taken.id), true);
@@ -175,7 +175,7 @@ test("G15: with too little room for the copy, the release stops and deletes noth
   assert.equal(state.store.record(taken.id)?.guest, "held-copy");
 });
 
-test("Release and delete what you kept: BB Box takes each keep off first, at the person's word, and the snapshots go with the box", async () => {
+test("Release and delete what you kept: VesnALIA Box takes each keep off first, at the person's word, and the snapshots go with the box", async () => {
   const state = armedWorld();
   const { box, taken } = await keptBox(state);
   const unkept = await state.snapshots.unkeepForRelease(box, BY_COMMAND);
@@ -221,7 +221,7 @@ test("G16: a held copy whose clone finished as a template before a restart is co
   const copy = state.store.record(taken.id)!.livesOn.ref;
   const op = state.store.operations({ box: box.id, kind: "hold-copy" })[0]!;
   state.store.updateOperation(op.id, { state: "running", step: "copy-disarmed" });
-  state.store.updateRecord(taken.id, { guest: "current", livesOn: box.guest!, ref: `bb${taken.id}` });
+  state.store.updateRecord(taken.id, { guest: "current", livesOn: box.guest!, ref: `alia${taken.id}` });
   await state.restart();
   await state.snapshots.sweep();
   assert.equal(state.store.record(taken.id)?.livesOn.ref, copy);
@@ -248,10 +248,10 @@ test("expiry: a released box's kept snapshot goes at its date with its held copy
   assert.equal(state.store.record(taken.id), null);
   const last = state.log.events(box.id).at(-1)!;
   assert.equal(last.kind, "snapshot-deleted");
-  assert.deepEqual(last.by, { is: "bb-box", why: "its keep ended" });
+  assert.deepEqual(last.by, { is: "alia-box", why: "its keep ended" });
 });
 
-test("a living box's kept snapshot also goes at its keep date, as a delete by bb-box", async () => {
+test("a living box's kept snapshot also goes at its keep date, as a delete by alia-box", async () => {
   const state = armedWorld();
   const { taken } = await keptBox(state);
   state.tick(31 * DAY);
@@ -273,16 +273,16 @@ test("Keep of a released box's held copy renews it, never Stop keeping, and a he
   assert.equal(state.provider.copies.get(gone.livesOn.ref)?.kept, utcDay(keptUntilAfter(START, 60)));
   assert.match((await rejection(state.snapshots.unkeepGone(state.store.record(taken.id)!, BY_COMMAND))).message, /only its keep holds "kept one"\. Delete it instead, or keep it longer\./);
   state.provider.copies.get(gone.livesOn.ref)!.state = "copy";
-  assert.match((await rejection(state.snapshots.keepGone(state.store.record(taken.id)!, BY_COMMAND, { days: 90 }))).message, /is not a template, so BB Box does not keep it longer/);
+  assert.match((await rejection(state.snapshots.keepGone(state.store.record(taken.id)!, BY_COMMAND, { days: 90 }))).message, /is not a template, so ALIA Box does not keep it longer/);
 });
 
 test("with snapshots.db unreadable, a release that its provider's labels say holds a kept snapshot deletes nothing", async () => {
   const state = armedWorld();
   const { box, taken } = await keptBox(state);
   const problem = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(state.store), "problem")!;
-  Object.defineProperty(state.store, "problem", { get: () => "BB Box cannot write snapshots.db: disk I/O error." });
+  Object.defineProperty(state.store, "problem", { get: () => "VesnALIA Box cannot write snapshots.db: disk I/O error." });
   const left = await state.boxes.release(THREAD, box.id, "done", BY_COMMAND);
-  assert.match(left?.error ?? "", /cannot read its snapshots' records, so it cannot copy what box .* holds that you kept, and deleted nothing: its labels on .* say one is kept\. BB Box tries again in a few minutes\.$/);
+  assert.match(left?.error ?? "", /cannot read its snapshots' records, so it cannot copy what box .* holds that you kept, and deleted nothing: its labels on .* say one is kept\. ALIA Box tries again in a few minutes\.$/);
   assert.notEqual(await state.backend.power(box.guest!), null);
   assert.equal(state.provider.held.has(taken.id), true);
   void problem;
@@ -299,7 +299,7 @@ test("a fork of a kept snapshot of a released box needs its held copy to be a te
   assert.deepEqual([check.size.cores, check.size.memoryMiB], [2, 4096], "the size its held copy holds");
   assert.equal(readIn(state, box, "home/state.txt"), null, "the box itself is gone");
   state.provider.copies.get(gone.livesOn.ref)!.state = "copy";
-  assert.match((await rejection(state.snapshots.checkForkGone(gone, {}))).message, /its held copy, guest copy\d, is not a template, so BB Box does not trust it/);
+  assert.match((await rejection(state.snapshots.checkForkGone(gone, {}))).message, /its held copy, guest copy\d, is not a template, so ALIA Box does not trust it/);
   void taken;
 });
 
@@ -329,10 +329,10 @@ test("review 1: a renewal cut short after its label is written is recorded at th
   const copy = state.store.record(taken.id)!.livesOn.ref;
   const update = state.store.updateRecord.bind(state.store);
   state.store.updateRecord = (id, patch) => {
-    if (patch.keptUntil) throw new Error("BB Box stopped after the label, before the record");
+    if (patch.keptUntil) throw new Error("VesnALIA Box stopped after the label, before the record");
     return update(id, patch);
   };
-  await assert.rejects(state.snapshots.keepGone(state.store.record(taken.id)!, BY_COMMAND, { days: 30 }), /BB Box stopped after the label/);
+  await assert.rejects(state.snapshots.keepGone(state.store.record(taken.id)!, BY_COMMAND, { days: 30 }), /ALIA Box stopped after the label/);
   assert.equal(state.provider.copies.get(copy)!.kept, utcDay(keptUntilAfter(START, 30)), "the label says the new date");
   const cut = state.store.unsettled().find((operation) => operation.kind === "keep")!;
   assert.equal(cut.step, "labelled", "the keep was recorded before its label, and is unsettled");
@@ -343,7 +343,7 @@ test("review 1: a renewal cut short after its label is written is recorded at th
   assert.equal(state.provider.copies.has(copy), true, "not deleted at the old date");
   assert.equal(state.store.record(taken.id)?.keptUntil, keptUntilAfter(START, 30));
   assert.equal(state.store.operation(cut.id)?.state, "done");
-  assert.match(state.log.events(box.id).at(-1)?.words ?? "", /confirmed from its label after BB Box restarted/);
+  assert.match(state.log.events(box.id).at(-1)?.words ?? "", /confirmed from its label after ALIA Box restarted/);
 });
 
 test("review 1: a keep whose label answer is lost is checked against the label: written, it is recorded; not written, nothing changes; meanwhile nothing deletes it", async () => {
@@ -410,9 +410,9 @@ test("review 2: a release refuses while a kept snapshot's held copy is not a tem
   const state = armedWorld();
   const { box, taken } = await keptBox(state);
   const untrusted = { ref: "copy9", host: null, address: null, size: null, data: { box: box.id } };
-  state.store.updateRecord(taken.id, { guest: "held-copy", livesOn: untrusted, ref: "copy9", state: "incomplete", error: "Its copy is not a template yet, so BB Box does not trust it." });
+  state.store.updateRecord(taken.id, { guest: "held-copy", livesOn: untrusted, ref: "copy9", state: "incomplete", error: "Its copy is not a template yet, so VesnALIA Box does not trust it." });
   const left = await state.boxes.release(THREAD, box.id, "done", BY_COMMAND);
-  assert.equal(left?.error, `Release did not finish: The held copy of "kept one", which you kept, guest copy9, is not a template, so BB Box does not trust it, and deleted nothing. Delete that snapshot, then release the box again. BB Box tries again in a few minutes.`);
+  assert.equal(left?.error, `Release did not finish: The held copy of "kept one", which you kept, guest copy9, is not a template, so VesnALIA Box does not trust it, and deleted nothing. Delete that snapshot, then release the box again. VesnALIA Box tries again in a few minutes.`);
   assert.doesNotMatch(left?.error ?? "", /delete what you kept/, "Release and delete what you kept does not clear a held copy, so it is not offered");
   assert.notEqual(await state.backend.power(box.guest!), null);
 });
@@ -445,23 +445,23 @@ test("review 3: held copies share the room rule with takes: each reserves its ro
   assert.notEqual(await unread.backend.power(third.box.guest!), null);
 });
 
-test("a release leaves BB's machine list only once its kept snapshots are copied, so one that stops for a copy is still a BB machine", async () => {
+test("a release leaves VesnALIA's machine list only once its kept snapshots are copied, so one that stops for a copy is still a VesnALIA machine", async () => {
   const state = armedWorld();
   const { box, taken } = await keptBox(state);
   await state.boxes.update(box, () => ({ enrol: { state: "enrolled", hostId: "host-kept", error: null } }));
   state.provider.percentFull = 90;
   const stopped = await state.boxes.release(THREAD, box.id, "done", BY_COMMAND);
-  assert.match(stopped?.error ?? "", /^Release did not finish: BB Box could not copy "kept one"/);
-  assert.deepEqual(state.unenrolled, [], "a release that stopped for a copy keeps the machine in BB");
+  assert.match(stopped?.error ?? "", /^Release did not finish: ALIA Box could not copy "kept one"/);
+  assert.deepEqual(state.unenrolled, [], "a release that stopped for a copy keeps the machine in VesnALIA");
   state.provider.percentFull = 30;
   const copySnapshot = provider(state).copySnapshot.bind(state.backend);
   provider(state).copySnapshot = async (ref, label, hooks, signal) => {
-    assert.deepEqual(state.unenrolled, [], "the copy is made while the machine is still in BB");
+    assert.deepEqual(state.unenrolled, [], "the copy is made while the machine is still in VesnALIA");
     return copySnapshot(ref, label, hooks, signal);
   };
   await state.boxes.release(THREAD, box.id, "done", BY_COMMAND);
   assert.equal(state.store.record(taken.id)?.guest, "held-copy");
-  assert.deepEqual(state.unenrolled, [box.id], "once the copy is made, the machine leaves BB");
+  assert.deepEqual(state.unenrolled, [box.id], "once the copy is made, the machine leaves VesnALIA");
 });
 
 test("a held copy refused just past the room limit says by how much, not a whole percent equal to the limit", async () => {
@@ -582,7 +582,7 @@ test("a release whose copy outlasts its wait while the provider still makes it l
     throw new Error("Proxmox TASK vzclone failed (504): task did not finish in time.");
   };
   const left = await state.boxes.release(THREAD, box.id, "done", BY_COMMAND);
-  assert.match(left?.error ?? "", /task did not finish in time\. .* may still be making its copy, guest (copy\d+): BB Box waits for that task, and makes the copy a template once it ends well\. BB Box tries again in a few minutes\.$/);
+  assert.match(left?.error ?? "", /task did not finish in time\. .* may still be making its copy, guest (copy\d+): ALIA Box waits for that task, and makes the copy a template once it ends well\. ALIA Box tries again in a few minutes\.$/);
   const made = /guest (copy\d+):/.exec(left!.error!)![1]!;
   const cut = state.store.operations({ box: box.id, kind: "hold-copy" })[0]!;
   assert.equal(cut.state, "unknown");
@@ -615,13 +615,13 @@ test("re-review B1: after records loss, every release reads its guest's own labe
   assert.equal(state.store.record(taken.id), null);
   assert.ok(state.provider.held.get(taken.id)!.keptUntil! > state.now);
   const unread = await state.boxes.release(THREAD, box.id, "done", BY_COMMAND);
-  assert.match(unread?.error ?? "", /^Release did not finish: BB Box could not read the labels of box \S+'s snapshots on .*, so it cannot tell whether one is kept, and deleted nothing: one guest snapshot listing is unreadable\. BB Box tries again in a few minutes\.$/i);
+  assert.match(unread?.error ?? "", /^Release did not finish: ALIA Box could not read the labels of box \S+'s snapshots on .*, so it cannot tell whether one is kept, and deleted nothing: one guest snapshot listing is unreadable\. ALIA Box tries again in a few minutes\.$/i);
   assert.notEqual(await state.backend.power(box.guest!), null);
   assert.ok(state.provider.held.has(taken.id), "the kept snapshot is still there");
   assert.equal(state.provider.copies.size, 0);
   state.provider.listing = null;
   const unrecorded = await state.boxes.release(THREAD, box.id, "done", BY_COMMAND);
-  assert.match(unrecorded?.error ?? "", new RegExp(`label on .* says snapshot ${taken.id} is kept until \\d{4}-\\d{2}-\\d{2}, and BB Box's records do not say so yet, so it deleted nothing\\. BB Box checks its records against the labels at its next sweep\\. BB Box tries again in a few minutes\\.$`));
+  assert.match(unrecorded?.error ?? "", new RegExp(`label on .* says snapshot ${taken.id} is kept until \\d{4}-\\d{2}-\\d{2}, and VesnALIA Box's records do not say so yet, so it deleted nothing\\. VesnALIA Box checks its records against the labels at its next sweep\\. VesnALIA Box tries again in a few minutes\\.$`));
   assert.notEqual(await state.backend.power(box.guest!), null);
   await state.snapshots.sweep();
   assert.notEqual(state.store.record(taken.id)?.keptUntil ?? null, null, "the sweep records the label's keep");
@@ -736,7 +736,7 @@ test("review: a restart after the record moved to its held copy, before the gues
   state.backend.release = async (guest, hooks) => {
     if (!stopped && guest.ref === box.guest!.ref) {
       stopped = true;
-      throw new Error("BB Box stopped");
+      throw new Error("VesnALIA Box stopped");
     }
     return release(guest, hooks);
   };

@@ -1,19 +1,11 @@
 {
-  "name": "bb-plugin-vcs-widget",
+  "name": "alia-plugin-vcs-widget",
   "version": "0.7.0",
-  "description": "IntelliJ-style Git branches popup, commit dialog and log for bb.",
+  "description": "IntelliJ-style Git branches popup, commit dialog and log for VesnALIA.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/CostaFot/bb-plugin-vcs-widget.git"
-  },
-  "homepage": "https://github.com/CostaFot/bb-plugin-vcs-widget#readme",
-  "bugs": {
-    "url": "https://github.com/CostaFot/bb-plugin-vcs-widget/issues"
-  },
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "git",
     "vcs",
     "branches",
@@ -23,16 +15,16 @@
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.42",
-    "bbPluginSdk": ">=0.4.47"
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.4.47"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "check": "npm test && npm run typecheck && npm run build"
   },
-  "bb": {
+  "alia": {
     "name": "VCS Widget",
     "description": "IntelliJ-style Git branches popup in the thread header, a commit dialog and a git log panel: search, favourites, checkout, new branch, the full per-branch context menu (rebase, merge, compare, diff, worktrees, rename, delete), staging, diff preview, commit, amend, history with cherry-pick, revert and reset, background fetch, pull and push, running on the machine that owns the worktree.",
     "branding": {
@@ -56,7 +48,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.47",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -74,7 +65,6 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "bb-app": "0.42.1",
     "better-sqlite3": "^12.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -88,5 +78,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.47"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/vcs-widget#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/vcs-widget"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

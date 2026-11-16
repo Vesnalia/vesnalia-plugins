@@ -410,7 +410,7 @@ describe("author trust", () => {
     expect(result).toMatchObject({ blockedByTrust: true });
   });
 
-  it("treats 'anyone' as dangerous regardless of mode — none of BB's permission modes is read-only", () => {
+  it("treats 'anyone' as dangerous regardless of mode — none of VesnALIA's permission modes is read-only", () => {
     const request = {
       projectId: "p",
       providerId: "claude",

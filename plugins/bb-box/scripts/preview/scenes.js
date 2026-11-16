@@ -1,8 +1,8 @@
 // The scenes the preview renders: fixtures for each slot and state.
 
 export const THREAD = "thr_preview";
-const DESKTOP_PATH = "/api/v1/plugins/bb-box/http/desktop";
-const TERMINAL_PATH = "/api/v1/plugins/bb-box/http/terminal";
+const DESKTOP_PATH = "/api/v1/plugins/alia-box/http/desktop";
+const TERMINAL_PATH = "/api/v1/plugins/alia-box/http/terminal";
 const now = Date.now();
 
 function box(overrides = {}) {
@@ -76,7 +76,7 @@ const failed = box({
   enrol: { state: "off", hostId: null, error: null },
 });
 const gone = box({ id: "box_6", name: "soft-reed", state: "gone", enrol: { state: "off", hostId: null, error: null } });
-const refused = box({ id: "box_7", name: "quiet-fern", error: "Stopping the box failed: the host did not answer.", enrol: { state: "failed", hostId: null, error: "BB did not answer within 10 s." } });
+const refused = box({ id: "box_7", name: "quiet-fern", error: "Stopping the box failed: the host did not answer.", enrol: { state: "failed", hostId: null, error: "VesnALIA did not answer within 10 s." } });
 
 function size(cores, memoryGiB, diskGiB = null) {
   return { cores, memoryGiB, diskGiB, words: `${cores} cores, ${memoryGiB} GiB memory${diskGiB === null ? "" : `, ${diskGiB} GiB disk`}` };
@@ -183,10 +183,10 @@ const DOCTOR = {
           { id: "memory", name: "Memory", status: "warn", detail: "pve has 6 GiB free; 4 GiB is kept back, so one Linux box fits.", fix: "Release a box, or lower the memory kept free." },
           { id: "ssh", name: "SSH into a box", status: "skipped", detail: "skipped, since a template check failed.", fix: null },
         ],
-        notes: ["Install this public key in the templates:\nssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB0Zk3Y7XkG0rvmP2tq1u8jq2QwKxH1tO6V6bFm5wQ4a bb-box"],
+        notes: ["Install this public key in the templates:\nssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB0Zk3Y7XkG0rvmP2tq1u8jq2QwKxH1tO6V6bFm5wQ4a alia-box"],
       },
     },
-    { title: "Docker", report: { ok: false, summary: "Its settings need fixing.", checks: [{ id: "settings.0", name: "Settings", status: "fail", detail: "Set the Docker host.", fix: "Fix it in bb-box's settings." }], notes: [] } },
+    { title: "Docker", report: { ok: false, summary: "Its settings need fixing.", checks: [{ id: "settings.0", name: "Settings", status: "fail", detail: "Set the Docker host.", fix: "Fix it in alia-box's settings." }], notes: [] } },
   ],
 };
 
@@ -201,7 +201,7 @@ const DOCTOR_PROXMOX = {
     { id: "memory", name: "Memory", status: "warn", detail: "pve has 6 GiB free; 4 GiB is kept back, so one Linux box fits.", fix: "Release a box, or lower the memory kept free." },
     { id: "ssh", name: "SSH into a box", status: "skipped", detail: "skipped, since a template check failed.", fix: null },
   ],
-  notes: ["Install this public key in the templates:\nssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB0Zk3Y7XkG0rvmP2tq1u8jq2QwKxH1tO6V6bFm5wQ4a bb-box"],
+  notes: ["Install this public key in the templates:\nssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB0Zk3Y7XkG0rvmP2tq1u8jq2QwKxH1tO6V6bFm5wQ4a alia-box"],
 };
 const field = (key, label, group, extra = {}) => ({ key, type: "string", label, group, default: "", ...extra });
 const DRIVERS = [
@@ -218,7 +218,7 @@ const DRIVERS = [
       field("ca-certificate", "CA certificate", "connection", { experimental_multiline: true, description: "PEM certificate of the CA that signed the API's certificate, when there is no fingerprint." }),
       field("token-id", "API token ID", "credentials", { description: "For example bbbox@pve!plugin." }),
       field("token-secret", "API token secret", "credentials", { secret: true }),
-      field("ssh-private-key", "SSH private key", "credentials", { secret: true, description: "Leave empty and bb-box makes one and shows its public key, which the templates must then accept." }),
+      field("ssh-private-key", "SSH private key", "credentials", { secret: true, description: "Leave empty and alia-box makes one and shows its public key, which the templates must then accept." }),
       field("pool", "Resource pool", "boxes", { default: "bbbox", description: "Boxes are made in this pool." }),
       field("linux-templates", "Linux templates", "boxes", { default: "9100", description: "VMIDs of the CT templates Linux boxes are linked clones of, separated by spaces." }),
       field("desktop-templates", "GPU desktop templates", "boxes", { experimental_multiline: true, description: "One line per template: its VMID, a space and the ID of the GPU it carries." }),
@@ -254,7 +254,7 @@ const DRIVERS = [
     nature: "virtual",
     kinds: ["macos", "macos-desktop"],
     fields: [field("ssh-private-key", "SSH private key", "credentials", { secret: true }), field("vm-user", "VM user", "advanced", { default: "admin" }), field("macos-image", "macOS image", "boxes", { default: "ghcr.io/cirruslabs/macos-sequoia-base:latest" })],
-    hostFields: [field("address", "Address", "connection", { description: "The Mac's address, with :port when SSH is not on 22." }), field("user", "User", "connection", { description: "The user bb-box logs in to the Mac as." }), field("host-keys", "Host keys", "connection", { experimental_multiline: true })],
+    hostFields: [field("address", "Address", "connection", { description: "The Mac's address, with :port when SSH is not on 22." }), field("user", "User", "connection", { description: "The user alia-box logs in to the Mac as." }), field("host-keys", "Host keys", "connection", { experimental_multiline: true })],
     setup: { guide: "setup/tart/README.md", scripts: ["setup/tart/setup-mac.sh"] },
   },
   {
@@ -275,10 +275,10 @@ const DRIVERS = [
     setup: { guide: "setup/docker/README.md", scripts: ["setup/docker/build.sh"] },
   },
 ];
-/** Proxmox QEMU's driver, as the server describes it: Windows desktops, and the switch for their trial as BB machines (#539). */
-const PROXMOX_QEMU_DRIVER = {"type": "proxmox-qemu", "label": "Proxmox QEMU", "description": "Windows desktops as VMs on a Proxmox VE host.", "nature": "virtual", "kinds": ["windows-desktop"], "fields": [{"key": "url", "type": "string", "label": "API URL", "description": "For example https://192.0.2.10:8006/api2/json, as the Proxmox LXC setup guide's token file gives it. Leave it, the token, the fingerprint and the CA certificate empty to use Proxmox LXC's.", "group": "connection", "default": "", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["url", "token-id", "token-secret", "tls-fingerprint", "ca-certificate"]}}, {"key": "node", "type": "string", "label": "Node", "description": "The node boxes run on. Leave empty on a single-node host.", "group": "connection", "default": ""}, {"key": "tls-fingerprint", "type": "string", "label": "TLS fingerprint", "description": "The SHA-256 fingerprint of the Proxmox API's certificate, from the setup guide's token file. bb-box then trusts that certificate alone. Leave empty to check the certificate against its CA.", "group": "connection", "default": "", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["url", "token-id", "token-secret", "tls-fingerprint", "ca-certificate"]}}, {"key": "ca-certificate", "type": "string", "label": "CA certificate", "description": "PEM certificate of the CA that signed the Proxmox API's certificate, when there is no TLS fingerprint. Leave empty for a publicly trusted one.", "experimental_multiline": true, "group": "connection", "default": "", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["url", "token-id", "token-secret", "tls-fingerprint", "ca-certificate"]}}, {"key": "token-id", "type": "string", "label": "API token ID", "description": "For example bbbox@pve!plugin. The setup guide lists the privileges it needs.", "group": "credentials", "default": "", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["url", "token-id", "token-secret", "tls-fingerprint", "ca-certificate"]}}, {"key": "token-secret", "type": "string", "label": "API token secret", "description": "The secret of the API token, from the setup guide's token file.", "secret": true, "group": "credentials", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["url", "token-id", "token-secret", "tls-fingerprint", "ca-certificate"]}}, {"key": "ssh-private-key", "type": "string", "label": "SSH private key", "description": "Paste BBBOX_SSH_KEY, the private key build.sh put in the template, or leave it empty to use Proxmox LXC's. With neither, bb-box makes a key, which the template does not accept until you add its public key.", "secret": true, "group": "credentials", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["ssh-private-key"]}}, {"key": "pool", "type": "string", "label": "Resource pool", "description": "Boxes are made in this pool. The token needs rights on it.", "group": "boxes", "default": "bbbox"}, {"key": "windows-templates", "type": "string", "label": "Windows templates", "description": "VMIDs of the Windows templates windows-desktop boxes are linked clones of, separated by spaces or commas. setup/proxmox-qemu/build.sh builds one. A new box is cloned from the least used.", "group": "boxes", "default": "9104"}, {"key": "windows-enrol", "type": "boolean", "label": "Windows boxes as BB machines (trial)", "description": "A trial of Windows boxes that join BB, so threads and terminals can use them. Off unless you are trying it.", "group": "boxes", "default": false}, {"key": "bridge", "type": "string", "label": "Network bridge", "description": "The bridge boxes attach to.", "group": "advanced", "default": "vmbr200"}, {"key": "subnet", "type": "string", "label": "Subnet", "description": "The bridge's subnet in CIDR form. Boxes get static addresses; there is no DHCP.", "group": "advanced", "default": "10.200.0.0/24"}, {"key": "gateway", "type": "string", "label": "Gateway", "description": "The host's address on the bridge.", "group": "advanced", "default": "10.200.0.1"}, {"key": "addresses", "type": "string", "label": "Box addresses", "description": "The range bb-box hands out. The n-th VMID gets the n-th address. Keep it apart from the Proxmox LXC backend's. Leave empty to use the whole subnet except the gateway.", "group": "advanced", "default": "10.200.0.150-10.200.0.254"}, {"key": "vmid-first", "type": "number", "label": "First box VMID", "description": "Boxes take VMIDs from this range. Keep other guests out of it, the Proxmox LXC backend's too.", "group": "advanced", "default": 9700}, {"key": "vmid-last", "type": "number", "label": "Last box VMID", "description": "The end of the range boxes take VMIDs from.", "group": "advanced", "default": 9799}, {"key": "ssh-user", "type": "string", "label": "SSH user", "description": "The user in the template that bb-box and BB work as.", "group": "advanced", "default": "box"}, {"key": "reserve-memory-mib", "type": "number", "label": "Memory kept free (MiB)", "description": "A new box is refused if the node would have less memory than this left.", "group": "advanced", "default": 4096}, {"key": "reserve-disk-gib", "type": "number", "label": "Disk kept free (GiB)", "description": "A new box is refused if the template's storage has less free space than this.", "group": "advanced", "default": 50}], "hostFields": [], "setup": {"guide": "setup/proxmox-qemu/README.md", "scripts": ["setup/proxmox-qemu/build.sh"]}};
+/** Proxmox QEMU's driver, as the server describes it: Windows desktops, and the switch for their trial as VesnALIA machines (#539). */
+const PROXMOX_QEMU_DRIVER = {"type": "proxmox-qemu", "label": "Proxmox QEMU", "description": "Windows desktops as VMs on a Proxmox VE host.", "nature": "virtual", "kinds": ["windows-desktop"], "fields": [{"key": "url", "type": "string", "label": "API URL", "description": "For example https://192.0.2.10:8006/api2/json, as the Proxmox LXC setup guide's token file gives it. Leave it, the token, the fingerprint and the CA certificate empty to use Proxmox LXC's.", "group": "connection", "default": "", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["url", "token-id", "token-secret", "tls-fingerprint", "ca-certificate"]}}, {"key": "node", "type": "string", "label": "Node", "description": "The node boxes run on. Leave empty on a single-node host.", "group": "connection", "default": ""}, {"key": "tls-fingerprint", "type": "string", "label": "TLS fingerprint", "description": "The SHA-256 fingerprint of the Proxmox API's certificate, from the setup guide's token file. alia-box then trusts that certificate alone. Leave empty to check the certificate against its CA.", "group": "connection", "default": "", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["url", "token-id", "token-secret", "tls-fingerprint", "ca-certificate"]}}, {"key": "ca-certificate", "type": "string", "label": "CA certificate", "description": "PEM certificate of the CA that signed the Proxmox API's certificate, when there is no TLS fingerprint. Leave empty for a publicly trusted one.", "experimental_multiline": true, "group": "connection", "default": "", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["url", "token-id", "token-secret", "tls-fingerprint", "ca-certificate"]}}, {"key": "token-id", "type": "string", "label": "API token ID", "description": "For example bbbox@pve!plugin. The setup guide lists the privileges it needs.", "group": "credentials", "default": "", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["url", "token-id", "token-secret", "tls-fingerprint", "ca-certificate"]}}, {"key": "token-secret", "type": "string", "label": "API token secret", "description": "The secret of the API token, from the setup guide's token file.", "secret": true, "group": "credentials", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["url", "token-id", "token-secret", "tls-fingerprint", "ca-certificate"]}}, {"key": "ssh-private-key", "type": "string", "label": "SSH private key", "description": "Paste BBBOX_SSH_KEY, the private key build.sh put in the template, or leave it empty to use Proxmox LXC's. With neither, alia-box makes a key, which the template does not accept until you add its public key.", "secret": true, "group": "credentials", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["ssh-private-key"]}}, {"key": "pool", "type": "string", "label": "Resource pool", "description": "Boxes are made in this pool. The token needs rights on it.", "group": "boxes", "default": "bbbox"}, {"key": "windows-templates", "type": "string", "label": "Windows templates", "description": "VMIDs of the Windows templates windows-desktop boxes are linked clones of, separated by spaces or commas. setup/proxmox-qemu/build.sh builds one. A new box is cloned from the least used.", "group": "boxes", "default": "9104"}, {"key": "windows-enrol", "type": "boolean", "label": "Windows boxes as VesnALIA machines (trial)", "description": "A trial of Windows boxes that join VesnALIA, so threads and terminals can use them. Off unless you are trying it.", "group": "boxes", "default": false}, {"key": "bridge", "type": "string", "label": "Network bridge", "description": "The bridge boxes attach to.", "group": "advanced", "default": "vmbr200"}, {"key": "subnet", "type": "string", "label": "Subnet", "description": "The bridge's subnet in CIDR form. Boxes get static addresses; there is no DHCP.", "group": "advanced", "default": "10.200.0.0/24"}, {"key": "gateway", "type": "string", "label": "Gateway", "description": "The host's address on the bridge.", "group": "advanced", "default": "10.200.0.1"}, {"key": "addresses", "type": "string", "label": "Box addresses", "description": "The range alia-box hands out. The n-th VMID gets the n-th address. Keep it apart from the Proxmox LXC backend's. Leave empty to use the whole subnet except the gateway.", "group": "advanced", "default": "10.200.0.150-10.200.0.254"}, {"key": "vmid-first", "type": "number", "label": "First box VMID", "description": "Boxes take VMIDs from this range. Keep other guests out of it, the Proxmox LXC backend's too.", "group": "advanced", "default": 9700}, {"key": "vmid-last", "type": "number", "label": "Last box VMID", "description": "The end of the range boxes take VMIDs from.", "group": "advanced", "default": 9799}, {"key": "ssh-user", "type": "string", "label": "SSH user", "description": "The user in the template that alia-box and VesnALIA work as.", "group": "advanced", "default": "box"}, {"key": "reserve-memory-mib", "type": "number", "label": "Memory kept free (MiB)", "description": "A new box is refused if the node would have less memory than this left.", "group": "advanced", "default": 4096}, {"key": "reserve-disk-gib", "type": "number", "label": "Disk kept free (GiB)", "description": "A new box is refused if the template's storage has less free space than this.", "group": "advanced", "default": 50}], "hostFields": [], "setup": {"guide": "setup/proxmox-qemu/README.md", "scripts": ["setup/proxmox-qemu/build.sh"]}};
 /** microsandbox's driver, as the server describes it (053): the fields and help the settings page shows. */
-const MICROSANDBOX_DRIVER = {"type": "microsandbox", "label": "microsandbox", "description": "Linux boxes, with or without a desktop, as microVMs that start in under a second, on a Linux host with KVM or a Mac. bb-box installs its own msb there.", "nature": "virtual", "kinds": ["linux", "linux-desktop-cpu", "linux-arm64", "linux-arm64-desktop-cpu"], "fields": [{"key": "host", "type": "string", "label": "Host", "description": "The host that runs the boxes, a Linux host with KVM or a Mac: ssh://user@host, or bb:<machine ID> for a BB machine, which bb-box reaches through BB. Empty uses BB's server. bb-box installs its own msb there, in a folder of its own.", "group": "connection", "default": ""}, {"key": "linux-image", "type": "string", "label": "Linux image", "description": "The image linux boxes run. bb-box imports it from Docker on the host, where setup/docker/build.sh builds it. Empty turns them off.", "group": "boxes", "default": "bbbox/linux:1"}, {"key": "desktop-image", "type": "string", "label": "Desktop image", "description": "The image linux-desktop-cpu boxes run. bb-box imports it from Docker on the host, where setup/docker/build.sh builds it. Empty turns them off.", "group": "boxes", "default": "bbbox/linux-desktop:1"}, {"key": "linux-arm64-image", "type": "string", "label": "Linux image (arm64)", "description": "The image linux-arm64 boxes run, on an arm64 host such as a Mac. bb-box imports it from Docker on the host, or builds it there with setup/docker/build.sh --arch arm64 in a microVM of its own. Empty turns them off.", "group": "boxes", "default": "bbbox/linux:1-arm64"}, {"key": "desktop-arm64-image", "type": "string", "label": "Desktop image (arm64)", "description": "The image linux-arm64-desktop-cpu boxes run, on an arm64 host such as a Mac. bb-box imports it from Docker on the host, or builds it there in a microVM of its own. Empty turns them off.", "group": "boxes", "default": "bbbox/linux-desktop:1-arm64"}, {"key": "docker", "type": "boolean", "label": "Docker in boxes", "description": "Give each box its own Docker daemon, started by its first docker command, with its data on a disk of the box's own. Each box has its own kernel, so this needs no privilege on the host.", "group": "boxes", "default": true}, {"key": "docker-disk-gib", "type": "number", "label": "Docker disk (GiB)", "description": "The most each box's Docker disk may grow to. It takes only what Docker writes, and goes with the box.", "group": "advanced", "default": 64}, {"key": "disk-gib", "type": "number", "label": "Root disk (GiB)", "description": "The most a box's root disk may grow to when no disk size is asked for. It takes only what the box writes.", "group": "advanced", "default": 32}, {"key": "network", "type": "string", "label": "Network profiles", "description": "msb's network profiles for each box, comma-separated: public reaches the internet, private the host's local networks and tailnet, where BB's server often is.", "group": "advanced", "default": "public,private"}, {"key": "boxes", "type": "number", "label": "Most boxes", "description": "The most bb-box microVMs on the host at once, running or stopped, counting those of every bb-box install that uses it.", "group": "advanced", "default": 20}, {"key": "reserve-memory-mib", "type": "number", "label": "Memory kept free (MiB)", "description": "A new box is refused if the host would have less memory than this left, after the memory of the running boxes.", "group": "advanced", "default": 4096}, {"key": "memory-overcommit", "type": "number", "label": "Memory overcommit", "description": "How many times the host's memory the boxes may take in all, after the memory kept free: 1 to 4. At 1, each box counts at its full memory. Above 1, a new box also needs memory free on the host now. Raise it for mostly idle boxes.", "group": "advanced", "default": 1}], "hostFields": [], "setup": {"guide": "setup/microsandbox/README.md", "scripts": []}};
+const MICROSANDBOX_DRIVER = {"type": "microsandbox", "label": "microsandbox", "description": "Linux boxes, with or without a desktop, as microVMs that start in under a second, on a Linux host with KVM or a Mac. alia-box installs its own msb there.", "nature": "virtual", "kinds": ["linux", "linux-desktop-cpu", "linux-arm64", "linux-arm64-desktop-cpu"], "fields": [{"key": "host", "type": "string", "label": "Host", "description": "The host that runs the boxes, a Linux host with KVM or a Mac: ssh://user@host, or VesnALIA:<machine ID> for a VesnALIA machine, which alia-box reaches through VesnALIA. Empty uses VesnALIA's server. alia-box installs its own msb there, in a folder of its own.", "group": "connection", "default": ""}, {"key": "linux-image", "type": "string", "label": "Linux image", "description": "The image linux boxes run. alia-box imports it from Docker on the host, where setup/docker/build.sh builds it. Empty turns them off.", "group": "boxes", "default": "bbbox/linux:1"}, {"key": "desktop-image", "type": "string", "label": "Desktop image", "description": "The image linux-desktop-cpu boxes run. alia-box imports it from Docker on the host, where setup/docker/build.sh builds it. Empty turns them off.", "group": "boxes", "default": "bbbox/linux-desktop:1"}, {"key": "linux-arm64-image", "type": "string", "label": "Linux image (arm64)", "description": "The image linux-arm64 boxes run, on an arm64 host such as a Mac. alia-box imports it from Docker on the host, or builds it there with setup/docker/build.sh --arch arm64 in a microVM of its own. Empty turns them off.", "group": "boxes", "default": "bbbox/linux:1-arm64"}, {"key": "desktop-arm64-image", "type": "string", "label": "Desktop image (arm64)", "description": "The image linux-arm64-desktop-cpu boxes run, on an arm64 host such as a Mac. alia-box imports it from Docker on the host, or builds it there in a microVM of its own. Empty turns them off.", "group": "boxes", "default": "bbbox/linux-desktop:1-arm64"}, {"key": "docker", "type": "boolean", "label": "Docker in boxes", "description": "Give each box its own Docker daemon, started by its first docker command, with its data on a disk of the box's own. Each box has its own kernel, so this needs no privilege on the host.", "group": "boxes", "default": true}, {"key": "docker-disk-gib", "type": "number", "label": "Docker disk (GiB)", "description": "The most each box's Docker disk may grow to. It takes only what Docker writes, and goes with the box.", "group": "advanced", "default": 64}, {"key": "disk-gib", "type": "number", "label": "Root disk (GiB)", "description": "The most a box's root disk may grow to when no disk size is asked for. It takes only what the box writes.", "group": "advanced", "default": 32}, {"key": "network", "type": "string", "label": "Network profiles", "description": "msb's network profiles for each box, comma-separated: public reaches the internet, private the host's local networks and tailnet, where VesnALIA's server often is.", "group": "advanced", "default": "public,private"}, {"key": "boxes", "type": "number", "label": "Most boxes", "description": "The most alia-box microVMs on the host at once, running or stopped, counting those of every alia-box install that uses it.", "group": "advanced", "default": 20}, {"key": "reserve-memory-mib", "type": "number", "label": "Memory kept free (MiB)", "description": "A new box is refused if the host would have less memory than this left, after the memory of the running boxes.", "group": "advanced", "default": 4096}, {"key": "memory-overcommit", "type": "number", "label": "Memory overcommit", "description": "How many times the host's memory the boxes may take in all, after the memory kept free: 1 to 4. At 1, each box counts at its full memory. Above 1, a new box also needs memory free on the host now. Raise it for mostly idle boxes.", "group": "advanced", "default": 1}], "hostFields": [], "setup": {"guide": "setup/microsandbox/README.md", "scripts": []}};
 const KIND_INFO = [
   { id: "linux", label: "Linux", description: "A Linux box for builds, backend services and the agent's own work.", gpu: false, desktop: false, os: "linux", arch: "x86_64", features: [], docker: null, spares: { ready: 0, making: 0 }, drivers: ["proxmox-lxc", "ssh-pool", "docker"] },
   { id: "linux-desktop", label: "Linux desktop", description: "A Linux desktop on a GPU.", gpu: true, desktop: true, os: "linux", arch: "x86_64", features: [], docker: true, spares: { ready: 0, making: 0 }, drivers: ["proxmox-lxc", "docker"] },
@@ -323,9 +323,9 @@ const MACHINES = [
   { box: { ...stopped, id: "box_m2", name: "scratch", form: "LXC", backendLabel: "Proxmox LXC on pve", nature: "virtual" }, threads: [] },
 ];
 
-/** A BB machine's first-run setup (the setup job): the one that runs BB, with Docker ready. */
+/** A VesnALIA machine's first-run setup (the setup job): the one that runs VesnALIA, with Docker ready. */
 function setupOf(overrides = {}) {
-  return { hostId: "host_bb", name: "bb", here: true, state: "ready", docker: "29.8.1", problem: null, fix: null, restart: null, kvm: "ok", freeGb: 120, build: null, took: {}, ...overrides };
+  return { hostId: "host_alia", name: "alia", here: true, state: "ready", docker: "29.8.1", problem: null, fix: null, restart: null, kvm: "ok", freeGb: 120, build: null, took: {}, ...overrides };
 }
 
 function rpc(boxes, options = {}) {
@@ -353,13 +353,13 @@ function rpc(boxes, options = {}) {
       },
       status: { state: "active", problem: null, ok: true, summary: "Proxmox VE 9.2 on pve", checkedAt: Date.now() - 120_000 },
     }),
-    // Docker on BB machines (042): one hosting boxes, one that could, one with no Docker, one offline.
+    // Docker on VesnALIA machines (042): one hosting boxes, one that could, one with no Docker, one offline.
     "docker.hosts": () => ({
       hosts: options.dockerHosts ?? [
         { hostId: "host_1", name: "devpc", connected: true, docker: { version: "29.8.1", os: "Ubuntu 24.04", arch: "x86_64", cpus: 16, memoryMiB: 64 * 1024 }, problem: null, absent: false, backend: { id: "docker:host_1", enabled: true, boxes: 1 }, images: null },
         { hostId: "host_2", name: "mac-mini", connected: true, docker: { version: "29.8.1", os: "Docker Desktop", arch: "arm64", cpus: 10, memoryMiB: 32 * 1024 }, problem: null, absent: false, backend: null, images: null },
         { hostId: "host_3", name: "laptop", connected: true, docker: null, problem: null, absent: true, backend: null, images: null },
-        { hostId: "host_4", name: "attic", connected: false, docker: null, problem: "The machine is offline in BB.", absent: false, backend: { id: "docker:host_4", enabled: true, boxes: 0 }, images: null },
+        { hostId: "host_4", name: "attic", connected: false, docker: null, problem: "The machine is offline in VesnALIA.", absent: false, backend: { id: "docker:host_4", enabled: true, boxes: 0 }, images: null },
       ],
     }),
     "docker.host.set": () => ({ result: { ok: true, problems: [] }, hosts: [] }),
@@ -422,7 +422,7 @@ function resizer(target, ways, options = {}) {
     const plan = { parts, room: options.full ? { ok: false, message: options.full } : { ok: true, message: null }, downSeconds: restart ? (options.down ?? 8) : null };
     if (input.check) return { ...base, plan };
     if (options.inUseGiB !== undefined && to.memoryGiB < now.memoryGiB) {
-      return { ...base, plan: null, error: `Box ${target.name} uses ${options.inUseGiB} GiB of memory now, so ${to.memoryGiB} GiB would leave less than 512 MiB free, and the kernel could end its processes. Give it at least ${Math.ceil(options.inUseGiB + 0.5)} GiB, or free memory in it first. bb-box changed nothing.` };
+      return { ...base, plan: null, error: `Box ${target.name} uses ${options.inUseGiB} GiB of memory now, so ${to.memoryGiB} GiB would leave less than 512 MiB free, and the kernel could end its processes. Give it at least ${Math.ceil(options.inUseGiB + 0.5)} GiB, or free memory in it first. alia-box changed nothing.` };
     }
     return { ...base, plan, changed: true };
   };
@@ -504,13 +504,13 @@ const desktopChrome = (name) => `<span>Box</span><span class="pill"><svg viewBox
  */
 function resizeScenes() {
   // Each theme's shot says the rows' notes afresh: the page keeps what it has said in its session.
-  for (const key of Object.keys(window.sessionStorage)) if (key.startsWith("bb-box:resize-seen:")) window.sessionStorage.removeItem(key);
+  for (const key of Object.keys(window.sessionStorage)) if (key.startsWith("alia-box:resize-seen:")) window.sessionStorage.removeItem(key);
   const lxc = box({ sizeNow: viewSize(2, 4, 24), size: "2 cores, 4 GiB memory, 24 GiB disk", resizing: { cores: "live", memory: "live", disk: "live", shrinks: true } });
   const vm = box({ id: "box_6", name: "steady-pine", backendLabel: "Proxmox QEMU on pve", form: "VM", sizeNow: viewSize(2, 4, 32), size: "2 cores, 4 GiB memory, 32 GiB disk", resizing: { cores: "restart", memory: "restart", disk: "live", shrinks: true } });
   const windowsWays = { cores: "restart", memory: "restart", disk: "restart", shrinks: false };
   const windows = box({ id: "box_8", name: "brisk-alder", kind: "windows-arm64-desktop", kindLabel: "Windows desktop on arm64", backendLabel: "Tart on studio", form: "VM", os: "windows", arch: "arm64", desktop: true, extras: [], docker: false, sizeNow: viewSize(4, 8, 64), size: "4 cores, 8 GiB memory, 64 GiB disk", resizing: windowsWays });
   const resizedLately = box({ id: "box_11", name: "brisk-alder", kind: "windows-arm64-desktop", kindLabel: "Windows desktop on arm64", backendLabel: "Tart on studio", form: "VM", os: "windows", arch: "arm64", desktop: true, extras: [], docker: false, sizeNow: viewSize(6, 16, 96), size: "6 cores, 16 GiB memory, 96 GiB disk", resizing: windowsWays, lastResize: { to: viewSize(6, 16, 96), at: now - 40_000, state: "done", restart: true, ms: 15_000, error: null } });
-  const refusedLately = box({ id: "box_12", name: "steady-pine", backendLabel: "Proxmox QEMU on pve", form: "VM", sizeNow: viewSize(2, 4, 32), size: "2 cores, 4 GiB memory, 32 GiB disk", resizing: { cores: "restart", memory: "restart", disk: "live", shrinks: true }, lastResize: { to: viewSize(8, 16, 32), at: now - 70_000, state: "failed", restart: true, ms: 9_000, error: "pve has 6 GiB of memory left, and steady-pine would grow by 12 GiB. Release a box you no longer need. bb-box changed nothing." } });
+  const refusedLately = box({ id: "box_12", name: "steady-pine", backendLabel: "Proxmox QEMU on pve", form: "VM", sizeNow: viewSize(2, 4, 32), size: "2 cores, 4 GiB memory, 32 GiB disk", resizing: { cores: "restart", memory: "restart", disk: "live", shrinks: true }, lastResize: { to: viewSize(8, 16, 32), at: now - 70_000, state: "failed", restart: true, ms: 9_000, error: "pve has 6 GiB of memory left, and steady-pine would grow by 12 GiB. Release a box you no longer need. alia-box changed nothing." } });
   const docker = box({ id: "box_7", name: "lively-bay", backendLabel: "Docker on devpc", form: "Docker", sizeNow: viewSize(4, 8, null), size: "4 cores, 8 GiB memory", resizing: { cores: "live", memory: "live", disk: "no", shrinks: true } });
   const open = async (root, name) => {
     openMenu(root, `${name} actions`);
@@ -590,13 +590,13 @@ function resizeScenes() {
 export const scenes = {
   "panel-empty": { slot: "boxes", chrome: boxesChrome, rpc: rpc([]) },
   "panel-nobackend": { slot: "boxes", chrome: boxesChrome, rpc: rpc([], { kinds: [] }) },
-  // First run (the setup job): Docker on the machine that runs BB, one click; what stands in the way, with its line; the build.
+  // First run (the setup job): Docker on the machine that runs VesnALIA, one click; what stands in the way, with its line; the build.
   "first-run-offer": { slot: "boxes", chrome: boxesChrome, height: 300, rpc: rpc([], { kinds: [], setups: [setupOf()] }) },
   "first-run-fix": {
     slot: "boxes",
     chrome: boxesChrome,
     height: 420,
-    rpc: rpc([], { kinds: [], setups: [setupOf({ state: "fix", problem: "Docker is on this machine, but BB's user, dev, cannot use it. Add dev to the docker group, then restart BB's daemon there.", fix: "sudo usermod -aG docker dev", restart: "sudo systemctl restart user@1000.service" })] }),
+    rpc: rpc([], { kinds: [], setups: [setupOf({ state: "fix", problem: "Docker is on this machine, but VesnALIA's user, dev, cannot use it. Add dev to the docker group, then restart VesnALIA's daemon there.", fix: "sudo usermod -aG docker dev", restart: "sudo systemctl restart user@1000.service" })] }),
   },
   "first-run-building": {
     slot: "boxes",
@@ -610,18 +610,18 @@ export const scenes = {
     height: 300,
     rpc: rpc([], { setups: [setupOf({ state: "on", build: { state: "built", targets: ["linux"], detail: null, startedAt: now - 430_000, endedAt: now - 5_000 } })] }),
   },
-  // BB's machine access (the newcomer check): bb connect without a sign-in, up front and on the box that did not join.
+  // VesnALIA's machine access (the newcomer check): VesnALIA connect without a sign-in, up front and on the box that did not join.
   "first-run-access": {
     slot: "boxes",
     chrome: boxesChrome,
     height: 340,
-    rpc: rpc([], { kinds: [], setups: [setupOf()], access: { provider: "bb connect", message: "Sign in to your bb account to use bb connect" } }),
+    rpc: rpc([], { kinds: [], setups: [setupOf()], access: { provider: "alia connect", message: "Sign in to your VesnALIA account to use VesnALIA connect" } }),
   },
   "join-failed": {
     slot: "boxes",
     chrome: boxesChrome,
     height: 300,
-    rpc: rpc([box({ id: "box_j", name: "silver-harbor", timings: { total: 422 }, enrol: { state: "failed", hostId: null, error: "Enrolling box silver-harbor failed: Sign in to your bb account to use bb connect" } })]),
+    rpc: rpc([box({ id: "box_j", name: "silver-harbor", timings: { total: 422 }, enrol: { state: "failed", hostId: null, error: "Enrolling box silver-harbor failed: Sign in to your VesnALIA account to use VesnALIA connect" } })]),
   },
   // A desktop whose image builds first (the setup plan's PR 4): the form says so, and the panel shows the build.
   "desktop-on-demand-form": {
@@ -631,7 +631,7 @@ export const scenes = {
     height: 760,
     rpc: rpc([], {
       kinds: [{ ...KINDS[0], forms: ["Docker"], admin: true, docker: true, offers: [offer("docker:devpc", "Docker", ["devpc"], "Docker", { typicalReadyMs: 400 })] }],
-      desktopOnDemand: { hostId: "host_bb", name: "devpc", took: null, kind: { ...KINDS[2], forms: ["Docker"], offers: [offer("docker:devpc", "Docker", ["devpc"], "Docker", { resizable: true })] } },
+      desktopOnDemand: { hostId: "host_alia", name: "devpc", took: null, kind: { ...KINDS[2], forms: ["Docker"], offers: [offer("docker:devpc", "Docker", ["devpc"], "Docker", { resizable: true })] } },
     }),
     after: async (root) => {
       click(root, "button", "New box");
@@ -677,7 +677,7 @@ export const scenes = {
     after: (root) => click(root, "button", "bold-heron: details"),
   },
   "panel-problems": { slot: "boxes", chrome: boxesChrome, rpc: rpc([failed, gone, refused]) },
-  // A Windows spare that waited stopped, claimed (#539): ready once it resumed, then a BB machine with the thread's access once BB shows it
+  // A Windows spare that waited stopped, claimed (#539): ready once it resumed, then a VesnALIA machine with the thread's access once VesnALIA shows it
   // connected again, which its row says as a new box's says its enrolment.
   "panel-list-claimed": {
     slot: "boxes",
@@ -908,7 +908,7 @@ export const scenes = {
     slot: "boxes",
     chrome: boxesChrome,
     height: 940,
-    rpc: rpc([], { refuse: "pve has 10 GiB of memory free and keeps 4 GiB free, so a linux-desktop box with 8 GiB memory does not fit. Release a box, ask for less memory, or lower the memory kept free in bb-box's settings." }),
+    rpc: rpc([], { refuse: "pve has 10 GiB of memory free and keeps 4 GiB free, so a linux-desktop box with 8 GiB memory does not fit. Release a box, ask for less memory, or lower the memory kept free in alia-box's settings." }),
     after: async (root) => {
       click(root, "button", "New box");
       await wait(300);
@@ -989,14 +989,14 @@ export const scenes = {
     width: 720,
     height: 480,
     props: { threadId: THREAD, params: { box: "box_2" } },
-    rpc: rpc([{ ...desktop, control: { owner: "human", get holder() { return sessionStorage.getItem("bb-box:viewer:box_2") ?? "viewer"; }, takenFrom: null } }], { video: true }),
+    rpc: rpc([{ ...desktop, control: { owner: "human", get holder() { return sessionStorage.getItem("alia-box:viewer:box_2") ?? "viewer"; }, takenFrom: null } }], { video: true }),
     after: async (root) => {
       await wait(500);
       openMenu(root, "Desktop actions");
       await wait(300);
     },
   },
-  // Video that cannot start (056): the desktop shows over VNC, and BB's toast says so for a moment, the reason under it.
+  // Video that cannot start (056): the desktop shows over VNC, and VesnALIA's toast says so for a moment, the reason under it.
   "desktop-video-fallback": {
     slot: "desktop",
     chrome: desktopChrome("bold-heron"),
@@ -1010,7 +1010,7 @@ export const scenes = {
       await wait(600);
     },
   },
-  // Copy to this computer while the agent has control: nothing has come from the box, and the note says why, as BB's toast, so
+  // Copy to this computer while the agent has control: nothing has come from the box, and the note says why, as VesnALIA's toast, so
   // the toolbar keeps its height (the owner's note of 18 October 2026). At the panel's usual width and a narrow one.
   ...Object.fromEntries(
     [
@@ -1046,7 +1046,7 @@ export const scenes = {
     height: 480,
     props: { threadId: THREAD, params: { box: "box_2" } },
     // This tab holds control: the holder is read when the RPC answers, by which time the tab's viewer ID is in sessionStorage.
-    rpc: rpc([{ ...desktop, control: { owner: "human", get holder() { return sessionStorage.getItem("bb-box:viewer:box_2") ?? "viewer"; }, takenFrom: null } }], { sharp: false }),
+    rpc: rpc([{ ...desktop, control: { owner: "human", get holder() { return sessionStorage.getItem("alia-box:viewer:box_2") ?? "viewer"; }, takenFrom: null } }], { sharp: false }),
     after: async (root) => {
       await wait(300);
       try {
@@ -1064,7 +1064,7 @@ export const scenes = {
     width: 920,
     height: 480,
     props: { threadId: THREAD, params: { box: "box_2" } },
-    rpc: rpc([{ ...desktop, control: { owner: "human", get holder() { return sessionStorage.getItem("bb-box:viewer:box_2") ?? "viewer"; }, takenFrom: null } }], { sharp: false, video: true }),
+    rpc: rpc([{ ...desktop, control: { owner: "human", get holder() { return sessionStorage.getItem("alia-box:viewer:box_2") ?? "viewer"; }, takenFrom: null } }], { sharp: false, video: true }),
     after: async (root) => {
       await wait(300);
       openMenu(root, "Desktop actions");
@@ -1082,7 +1082,7 @@ export const scenes = {
     width: 920,
     height: 480,
     props: { threadId: THREAD, params: { box: "box_2" } },
-    rpc: rpc([{ ...desktop, control: { owner: "human", get holder() { return sessionStorage.getItem("bb-box:viewer:box_2") ?? "viewer"; }, takenFrom: null } }], { sharp: false, video: true }),
+    rpc: rpc([{ ...desktop, control: { owner: "human", get holder() { return sessionStorage.getItem("alia-box:viewer:box_2") ?? "viewer"; }, takenFrom: null } }], { sharp: false, video: true }),
     after: async (root) => {
       await wait(300);
       openMenu(root, "Desktop actions");
@@ -1183,7 +1183,7 @@ export const scenes = {
       machines: MACHINES,
       rebuildable: [
         { name: "docker/linux", kind: "linux", built: "build.2026-10-01, 10 days old", due: "it is 10 days old, past its 7-day interval", last: null },
-        { name: "pve/9101", kind: "linux-desktop-cpu", built: "build.2026-10-09, 2 days old", due: "it has another build of BB's app than BB's server gives", last: "Last rebuilt 2026-10-09" },
+        { name: "pve/9101", kind: "linux-desktop-cpu", built: "build.2026-10-09, 2 days old", due: "it has another build of VesnALIA's app than VesnALIA's server gives", last: "Last rebuilt 2026-10-09" },
         { name: "pve/9102", kind: "linux-desktop-wayland-cpu", built: "build.2026-10-10, 1 day old", due: null, last: "Last rebuilt 2026-10-10" },
       ],
     }),
@@ -1208,8 +1208,8 @@ export const scenes = {
         only: null,
         images: [
           { name: "docker/linux", kind: "linux", state: "refreshed", detail: "now build.2026-10-11, in 262 s" },
-          { name: "pve/9101", kind: "linux-desktop-cpu", state: "refreshing", detail: "it has another build of BB's app than BB's server gives", since: now - 118_000, line: "#9 [desktop 3/9] RUN", step: { at: 3, of: 9 } },
-          { name: "tart/mac1/bb-box-macos", kind: "macos", state: "next", detail: "it is 31 days old, past its 30-day interval" },
+          { name: "pve/9101", kind: "linux-desktop-cpu", state: "refreshing", detail: "it has another build of VesnALIA's app than VesnALIA's server gives", since: now - 118_000, line: "#9 [desktop 3/9] RUN", step: { at: 3, of: 9 } },
+          { name: "tart/mac1/alia-box-macos", kind: "macos", state: "next", detail: "it is 31 days old, past its 30-day interval" },
         ],
       },
     }),
@@ -1267,7 +1267,7 @@ export const scenes = {
       await wait(300);
     },
   },
-  // Windows desktops on Proxmox, with their trial as BB machines on (#539): the form shows the switch with the Windows templates.
+  // Windows desktops on Proxmox, with their trial as VesnALIA machines on (#539): the form shows the switch with the Windows templates.
   "settings-windows-trial": {
     slot: "settings",
     width: 860,
@@ -1310,7 +1310,7 @@ export const scenes = {
           backends: [
             { id: "docker", type: "docker", enabled: true, fields: { host: "ssh://box@gpu-host" } },
             { id: "microsandbox", type: "microsandbox", enabled: true, fields: { host: "ssh://box@gpu-host" } },
-            { id: "microsandbox:mac-mini", type: "microsandbox", enabled: true, fields: { host: "bb:host_mac1", "memory-overcommit": 2 } },
+            { id: "microsandbox:mac-mini", type: "microsandbox", enabled: true, fields: { host: "alia:host_mac1", "memory-overcommit": 2 } },
           ],
           kinds: {},
           general: {},
@@ -1351,7 +1351,7 @@ export const scenes = {
             kinds: ["linux-desktop"],
             count: 1,
             have: 0,
-            reason: "pve has 182.9 GiB of memory free and keeps 256 GiB free, so a linux-desktop box with 8 GiB memory does not fit. Release a box, or lower the memory kept free in bb-box's settings.",
+            reason: "pve has 182.9 GiB of memory free and keeps 256 GiB free, so a linux-desktop box with 8 GiB memory does not fit. Release a box, or lower the memory kept free in alia-box's settings.",
           },
         ],
       },

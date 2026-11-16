@@ -2,7 +2,7 @@
 import { createElement } from "react";
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, render, renderHook, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { WorkspaceProvider, useWorkspace, type WorkspaceApi } from "./workspace-context";
 import { panelPage, publishWorkspace, useWorkspaceFor } from "./workspace-store";

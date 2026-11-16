@@ -1,4 +1,4 @@
-// argv parsing for `bb skill-manager`. Flags that take a value are listed
+// argv parsing for `alia skill-manager`. Flags that take a value are listed
 // explicitly; everything else is a boolean switch.
 export interface ParsedArgs {
   command: string | undefined;

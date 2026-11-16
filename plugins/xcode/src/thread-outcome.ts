@@ -1,5 +1,5 @@
 /**
- * Reduce BB's provider-neutral thread events to terminal shell outcomes.
+ * Reduce VesnALIA's provider-neutral thread events to terminal shell outcomes.
  *
  * Claude-style background commands have two completions: the command tool
  * first exits 0 after merely launching the task, then a later

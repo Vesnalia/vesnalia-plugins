@@ -1,4 +1,4 @@
-// bb-plugin-rephrase — frontend entry.
+// alia-plugin-rephrase — frontend entry.
 //
 // Adds a "Re-phrase" button to the prompt input. Clicking it sends the current
 // draft to an agent and writes the rewritten prompt back into the composer.
@@ -10,7 +10,7 @@ import {
   useRpc,
   type ComposerView,
   type PluginComposerApi,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type {
   ComposerScope,
@@ -163,7 +163,7 @@ function RephraseAction() {
 /**
  * The `+` menu row is host-rendered, so it has no React context to hook into.
  * It posts to the same endpoint `useRpc` posts to — a same-origin request the
- * bb app authenticates the same way.
+ * VesnALIA app authenticates the same way.
  */
 const callRephraseOverHttp: RephraseCall = async (input) => {
   const response = await fetch(`/api/v1/plugins/${PLUGIN_ID}/rpc/rephrase`, {

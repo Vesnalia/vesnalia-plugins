@@ -1,9 +1,9 @@
 #!/bin/bash
-# Last stage of a bb-box template, run as root inside the CT or VM: record
+# Last stage of a alia-box template, run as root inside the CT or VM: record
 # what is in it, remove the build's apt pins, fetch fresh package lists from
 # the Ubuntu archive, then remove SSH host keys, logs, caches, Docker state and
 # the build directory. It writes the image's record,
-# /usr/share/bb-box/image.json (049), with image-record.sh before the build
+# /usr/share/alia-box/image.json (049), with image-record.sh before the build
 # directory goes, and its size last. The builds copy it outside the image for
 # the doctor.
 #
@@ -13,7 +13,7 @@ umask 022
 
 build=$1
 kind=$2
-out=/usr/share/bb-box
+out=/usr/share/alia-box
 
 install -d -m 0755 "$out"
 dpkg-query -W -f='${Package}\t${Version}\n' >"$out/template-packages.tsv"
@@ -42,8 +42,8 @@ if [ -n "$(ls -A /var/lib/docker/containers 2>/dev/null)" ]; then
   exit 1
 fi
 
-rm -f /etc/apt/apt.conf.d/50bb-box-build-snapshot /etc/apt/sources.list.d/zz-bb-box-build-fallback.sources \
-  /etc/apt/preferences.d/bb-box-build-fallback
+rm -f /etc/apt/apt.conf.d/50bb-box-build-snapshot /etc/apt/sources.list.d/zz-alia-box-build-fallback.sources \
+  /etc/apt/preferences.d/alia-box-build-fallback
 # Package lists from the image's own sources (the Ubuntu archive, not the
 # build's snapshot), so `sudo apt-get install <package>` works on a new box
 # without an update first. Kept compressed: about 70 MiB instead of 190.
@@ -62,13 +62,13 @@ find /var/log -type f -exec truncate -s 0 {} +
 journalctl --rotate >/dev/null 2>&1 || true
 journalctl --vacuum-time=1s >/dev/null 2>&1 || true
 rm -f /root/.bash_history /home/*/.bash_history
-[ "$kind" != android ] || /usr/local/sbin/bb-box-clear-device-state "${BOX_USER:-box}"
+[ "$kind" != android ] || /usr/local/sbin/alia-box-clear-device-state "${BOX_USER:-box}"
 # Cua Driver's installation identity and markers; its config file (telemetry
 # and update check off) stays.
 find /root/.cua-driver /home/*/.cua-driver -mindepth 1 -maxdepth 1 ! -name config.json \
   -exec rm -rf {} + 2>/dev/null || true
 # Desktop state that each box makes for itself: VNC password, X logs, profiles.
-rm -rf /var/lib/bb-box/vnc-password /var/lib/bb-box/vnc.passwd /home/*/.local/share/xorg \
+rm -rf /var/lib/alia-box/vnc-password /var/lib/alia-box/vnc.passwd /home/*/.local/share/xorg \
   /home/*/.config/google-chrome /root/.config/google-chrome /home/*/.Xauthority
 # State the checks' apps leave: Mousepad's autosaved document and its session
 # in dconf, which would make a box's first Mousepad ask to restore it. No
@@ -77,8 +77,8 @@ rm -rf /home/*/.local/share/Mousepad /home/*/.config/dconf/user
 # PVE also truncates this on clone; an empty file avoids first-boot presets.
 : >/etc/machine-id
 rm -f /var/lib/dbus/machine-id
-rm -rf /var/lib/bb-box/held-network
-rm -f /etc/bb-box/identity /etc/bb-box/identity.new /var/lib/bb-box/identity-armed /var/lib/bb-box/identity-armed.new /var/lib/bb-box/identity-resets /var/lib/bb-box/identity-reset-pending /var/lib/bb-box/identity-reset-pending.new
+rm -rf /var/lib/alia-box/held-network
+rm -f /etc/alia-box/identity /etc/alia-box/identity.new /var/lib/alia-box/identity-armed /var/lib/alia-box/identity-armed.new /var/lib/alia-box/identity-resets /var/lib/alia-box/identity-reset-pending /var/lib/alia-box/identity-reset-pending.new
 # The image's size in its record, now that it is clean. A Docker image's is
 # its layers', which Docker gives: in a container, as in a Docker build or a
 # bake in a Docker box, / is the Docker host's whole filesystem (#474).

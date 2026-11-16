@@ -2,7 +2,7 @@
 // The host entry runs on the recording machine and owns the runtime install,
 // the detached bot/transcriber processes and the meeting directories
 // (docs/dev/DESIGN.md §2–§4). Every call re-reads state from disk.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   CONTROL_ACTIONS,

@@ -7,7 +7,7 @@ those is ready in under 10 s. A new clone takes about a minute, sometimes
 more, mostly Windows booting.
 
 The backend shares the Proxmox LXC backend's host settings, bridge, pool, API
-token and SSH key. How bb-box drives a box is in the
+token and SSH key. How alia-box drives a box is in the
 [architecture](../../docs/architecture.md#backends).
 
 ## Snapshots
@@ -16,7 +16,7 @@ A Windows desktop takes a snapshot of its disk while it runs. The snapshot
 includes the EFI disk and the TPM state volume, and a restore puts them back
 with the disk. The undo is another snapshot, on LVM-thin, Ceph RBD, BTRFS and
 qcow2 disks. On ZFS, take and delete work, and restore is refused: the undo
-would be a held copy, and a Windows box has no identity reset BB Box has
+would be a held copy, and a Windows box has no identity reset VesnALIA Box has
 checked. There is no snapshot of the memory, no fork and no Keep. Linux boxes
 on this backend keep the snapshots they had. The
 [snapshots guide](../../docs/guide/snapshots.md#what-each-backend-offers) has
@@ -29,12 +29,12 @@ the full table.
 | `linux/boot.sh` | Gives each Linux VM box its address at boot, and grows its disk |
 | `linux/customize-vm.sh` | Sets the Linux VM template up beyond the Proxmox LXC guest scripts |
 | `answer/autounattend.xml` | The answer file: disk, edition, user `box`, no setup screens |
-| `answer/bb-box/firstlogon.ps1` | Runs once at the first logon and sets the VM up |
-| `answer/bb-box/boot.ps1` | Gives each box its address at boot |
-| `answer/bb-box/logon.ps1` | Turns on browsers' full accessibility tree at each logon |
+| `answer/alia-box/firstlogon.ps1` | Runs once at the first logon and sets the VM up |
+| `answer/alia-box/boot.ps1` | Gives each box its address at boot |
+| `answer/alia-box/logon.ps1` | Turns on browsers' full accessibility tree at each logon |
 | [`../windows/check.ps1`](../windows/check.ps1) | Checks a clone of the new template over SSH, and a refresh's trial box |
 | [`../windows/refresh.ps1`](../windows/refresh.ps1) | Refreshes the image in a box: Windows' updates and the pinned tools ([054](../../docs/decisions/054-windows-images-are-refreshed-in-a-box-of-the-current-build.md)) |
-| [`../windows/bb-box-stream.cs`](../windows/bb-box-stream.cs) | The desktop as H.264 video, compiled in the image ([060](../../docs/decisions/060-every-desktop-streams-as-video-through-one-viewer.md)) |
+| [`../windows/alia-box-stream.cs`](../windows/alia-box-stream.cs) | The desktop as H.264 video, compiled in the image ([060](../../docs/decisions/060-every-desktop-streams-as-video-through-one-viewer.md)) |
 | [`../windows/install-stream.ps1`](../windows/install-stream.ps1) | Installs it, with Cisco's OpenH264, from the first logon and the refresh |
 
 ## What you need
@@ -58,7 +58,7 @@ the full table.
   with Microsoft's generic install key, which installs without activating:
   Windows works, with a watermark and some personalisation settings locked.
   Set `BBBOX_WINDOWS_KEY` to your own key, or `BBBOX_WINDOWS_EDITION` to the
-  edition your ISO and key are for. bb-box never ships Windows images.
+  edition your ISO and key are for. alia-box never ships Windows images.
 - **About 40 GiB free** on the box storage, and internet access from the box
   bridge: the first logon downloads OpenSSH, PowerShell 7, Git, GitHub CLI,
   Cua Driver and the build tools, about 2 GB.
@@ -73,7 +73,7 @@ the full table.
 
 It takes about 50 minutes, most of it Windows Setup. The VM's console in the
 Proxmox UI shows how far it is. At the end it clones the new template, starts
-the clone, and runs `../windows/check.ps1` in it over SSH with bb-box's key. It then
+the clone, and runs `../windows/check.ps1` in it over SSH with alia-box's key. It then
 hibernates the clone and resumes it, as the warm pool does, and checks SSH
 and Cua again:
 
@@ -85,9 +85,9 @@ ok    SSH session elevated               box, elevated
 ok    Edge page in the accessibility tree  <n> elements in <ms> ms
 ```
 
-### 2. Configure bb-box
+### 2. Configure alia-box
 
-On BB Box's settings page in BB, open Proxmox QEMU's setup. Its connection,
+On VesnALIA Box's settings page in VesnALIA, open Proxmox QEMU's setup. Its connection,
 token and SSH key, left empty, are Proxmox LXC's. Set at least:
 
 | Field | Example | Notes |
@@ -100,32 +100,32 @@ The [configuration reference](../../docs/reference/configuration.md#proxmox-qemu
 lists every field. Check tests the fields against the host; Save and turn on
 saves them.
 
-#### Windows boxes as BB machines
+#### Windows boxes as VesnALIA machines
 
-A box joins BB as a machine, as a Linux box does, so threads and terminals
-can use it. Set `windows-enrol` off to keep Windows boxes out of BB. It
+A box joins VesnALIA as a machine, as a Linux box does, so threads and terminals
+can use it. Set `windows-enrol` off to keep Windows boxes out of VesnALIA. It
 needs:
 
-- BB 0.45.0 or later, whose Windows installer each box runs in its desktop
+- VesnALIA 0.45.0 or later, whose Windows installer each box runs in its desktop
   session
 - Node.js 22.19 or later in the template, which `build.sh` installs: a
   template without it still works, but each box then installs it as it
-  joins BB, about 11 s more
+  joins VesnALIA, about 11 s more
 - an agent CLI in the template for `box_thread`: `build.sh` installs Claude
   Code, Codex and Pi
 
-A box takes about a minute to join BB, most of it BB's installer. A spare is
-a BB machine already. Give `windows-desktop` a spare in Kinds, and it waits
-hibernated, holding no memory, in the place of a warm box. BB's machine list
+A box takes about a minute to join VesnALIA, most of it VesnALIA's installer. A spare is
+a VesnALIA machine already. Give `windows-desktop` a spare in Kinds, and it waits
+hibernated, holding no memory, in the place of a warm box. VesnALIA's machine list
 names its machine "(spare, stopped)" and shows it offline while it waits. A
-box that takes it is a BB machine about 12 seconds later, and the New box
+box that takes it is a VesnALIA machine about 12 seconds later, and the New box
 form says "ready in seconds".
 
-A Windows box's machine is a machine of BB's manual provider, which bb-box
-makes and removes with the box. Removing it from BB's machine list does not
-release the box: release the box instead. "New box" in BB's new-thread
-screen cannot make a Windows box (BB request 1 in the
-[requests log](../../docs/bb-requests.md)).
+A Windows box's machine is a machine of VesnALIA's manual provider, which alia-box
+makes and removes with the box. Removing it from VesnALIA's machine list does not
+release the box: release the box instead. "New box" in VesnALIA's new-thread
+screen cannot make a Windows box (VesnALIA request 1 in the
+[requests log](../../docs/alia-requests.md)).
 
 ### 3. Linux VM boxes, if you want them
 
@@ -168,48 +168,48 @@ then have `/dev/kvm`, for VMs and emulators of their own, and the
 
 On a host with nested virtualization, `./build.sh android 9108` builds the
 Android template: the Linux template with the Android SDK, the emulator and
-a booted device for each model bb-box offers
+a booted device for each model alia-box offers
 ([063](../../docs/decisions/063-device-boxes.md)). It needs your acceptance
 of the Android SDK's licence first. The [Android template guide](../android/README.md)
 says how. Add its VMID to `android-templates`, and turn `linux-kvm` on if
-it is not. bb-box then offers android boxes, cloned from the template, once
+it is not. alia-box then offers android boxes, cloned from the template, once
 it has read the devices the template's record lists.
 
 ## Check it worked
 
 `build.sh`'s own check, above, runs in a clone of the new template. Then run
-`bb box doctor`. Its "Image of" check for each template:
+`alia box doctor`. Its "Image of" check for each template:
 
-- fails when the template keeps an older contract than bb-box needs;
+- fails when the template keeps an older contract than alia-box needs;
 - warns when the template is more than 60 days old, or was built with other
-  pins than this bb-box's `build.sh`;
-- warns when Windows boxes join BB and the template has no Node.js 22.19 or
+  pins than this alia-box's `build.sh`;
+- warns when Windows boxes join VesnALIA and the template has no Node.js 22.19 or
   later, or none of the agent CLIs;
 - warns when the template's box user's password can expire, as in templates
-  built before BB Box set it never to expire.
+  built before VesnALIA Box set it never to expire.
 
 Its fix is the `build.sh windows <vmid> --replace` command. A refresh, below,
 fixes the password too, in about the time Windows' updates take.
 
 ## Update
 
-bb-box refreshes each Windows template monthly
+alia-box refreshes each Windows template monthly
 ([054](../../docs/decisions/054-windows-images-are-refreshed-in-a-box-of-the-current-build.md)),
-in the nightly run of `bb box images refresh`. In a box cloned from the
+in the nightly run of `alia box images refresh`. In a box cloned from the
 template, [`../windows/refresh.ps1`](../windows/refresh.ps1) installs
 Windows' updates and the tools pinned in
 [`../windows/pins.json`](../windows/pins.json). The box is then made a
 template, a trial box of it runs `check.ps1`, and the new template takes the
 old one's place under its VMID only if every check passes. The old template
-stays as a rollback, at a free VMID of bb-box's range with "rollback" in its
+stays as a rollback, at a free VMID of alia-box's range with "rollback" in its
 name, until the next refresh succeeds: to go back to it, list its VMID as the
-Windows template in bb-box's settings. `bb box doctor` lists each rollback,
+Windows template in alia-box's settings. `alia box doctor` lists each rollback,
 which holds one of the range's VMIDs and box addresses meanwhile. To refresh one now, or to try a
 refresh and keep the old template:
 
 ```sh
-bb box images build proxmox-qemu/9104
-bb box images build proxmox-qemu/9104 --try
+alia box images build proxmox-qemu/9104
+alia box images build proxmox-qemu/9104 --try
 ```
 
 For a new Windows release or a broken template, build it again from the ISO
@@ -225,7 +225,7 @@ change a tool's version, change its pin in `../windows/pins.json` and its
 pin lines in `build.sh` (`NAME_VERSION=`, `NAME_SHA256=` and `NAME_URL=`),
 which a test keeps equal.
 
-bb-box refreshes each Linux template weekly, as other Linux images
+alia-box refreshes each Linux template weekly, as other Linux images
 ([057](../../docs/decisions/057-linux-boxes-can-be-proxmox-vms-for-their-own-kernel.md)).
 In a box cloned from the template it runs the Proxmox LXC template's guest
 scripts and `linux/customize-vm.sh`, with the versions a rebuild takes. The
@@ -238,13 +238,13 @@ The image must be older than the apt snapshot in
 not: a newer image has libraries the snapshot's -dev packages cannot
 match, which the desktop template installs.
 
-bb-box refreshes each Android template monthly, in a box cloned from it, as
+alia-box refreshes each Android template monthly, in a box cloned from it, as
 the [Android template guide](../android/README.md#update) says.
 
 ## Remove
 
-1. In BB, release the backend's boxes, turn the backend off and remove it on
-   BB Box's settings page.
+1. In VesnALIA, release the backend's boxes, turn the backend off and remove it on
+   VesnALIA Box's settings page.
 2. On the host, delete the templates:
    `qm set <vmid> --protection 0 && qm destroy <vmid>`.
 3. Delete the ISOs if nothing else uses them.
@@ -257,10 +257,10 @@ The host's Proxmox LXC parts stay until you remove that backend too.
   not get the VirtIO SCSI driver. Build with `--sata`.
 - **Setup stops on a screen:** the ISO is not English (United States), or the
   edition is not on it. Check `BBBOX_WINDOWS_EDITION`.
-- **A box is not logged in to its desktop, and does not join BB:** in a
-  template built before BB Box set the box user's password never to expire,
+- **A box is not logged in to its desktop, and does not join VesnALIA:** in a
+  template built before VesnALIA Box set the box user's password never to expire,
   the password expires 42 days after it was set, and Windows then shows its
-  sign-in screen. BB Box repairs such a box as it starts: it sets the
+  sign-in screen. VesnALIA Box repairs such a box as it starts: it sets the
   password never to expire and the maximum password age to unlimited, reads
   both back, then restarts Windows once, which takes about a minute. It does
   not restart a box that someone is logged in to, or one where any step
@@ -270,10 +270,10 @@ The host's Proxmox LXC parts stay until you remove that backend too.
   /maxpwage:unlimited` in it, then restart it. Refresh or rebuild the
   template, so that new boxes need no repair.
 - **A box has no address:** it reads its address at each boot, from the
-  SMBIOS serial bb-box gives it, and logs to `C:\bb-box\boot.log`.
+  SMBIOS serial alia-box gives it, and logs to `C:\alia-box\boot.log`.
 - **Anything else in a build:** run it again with `--keep`, and look at the
-  build VM's console and `C:\bb-box\firstlogon.log` in it:
-  `qm guest exec <vmid> -- powershell -Command "Get-Content C:\bb-box\firstlogon.log"`.
+  build VM's console and `C:\alia-box\firstlogon.log` in it:
+  `qm guest exec <vmid> -- powershell -Command "Get-Content C:\alia-box\firstlogon.log"`.
   A failed build also leaves a picture of its console in `/var/tmp`, named
   after the build VM.
 
@@ -288,7 +288,7 @@ The host's Proxmox LXC parts stay until you remove that backend too.
   that, and the machine's maximum password age to unlimited, as Windows'
   default of 42 days would stop the automatic logon. OneDrive is off by
   policy, so it does not start at sign-in or ask to back the box up.
-- OpenSSH Server with PowerShell 7 as its shell, bb-box's key, and its
+- OpenSSH Server with PowerShell 7 as its shell, alia-box's key, and its
   firewall rule open on every network profile. SSH sessions are elevated.
 - UTF-8 as the system code page.
 - The VirtIO drivers and the QEMU guest agent.

@@ -1,5 +1,5 @@
 ---
-title: bbBBS plugin — third-party notices
+title: aliaBBS plugin — third-party notices
 status: complete
 updated: 2026-10-04
 ---
@@ -8,7 +8,7 @@ updated: 2026-10-04
 
 The terminal uses xterm.js under MIT. The Design theme bundles **PxPlus IBM VGA 8x16** unmodified from [The Ultimate Oldschool PC Font Pack](https://int10h.org/oldschool-pc-fonts/) by VileR, licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Its [license text](src/theme/fonts/LICENSE-oldschool-pc-font-pack.txt) ships with the plugin; settings display its credit. The mock artwork and synthesised modem sounds are original. No third-party games are bundled.
 
-This inventory covers installed runtime and development npm packages, including transitive dependencies; the lockfile pins their registry sources and integrity hashes. License texts stay with the packages. Maintainers regenerate it with `npm run licenses` in the development repository. bb's host-provided SDK, React and build toolchain remain supplied by bb; SDK and React development packages appear here for attribution. The SDK package does not declare a license in its published metadata and is excluded from runtime bundles.
+This inventory covers installed runtime and development npm packages, including transitive dependencies; the lockfile pins their registry sources and integrity hashes. License texts stay with the packages. Maintainers regenerate it with `npm run licenses` in the development repository. VesnALIA's host-provided SDK, React and build toolchain remain supplied by VesnALIA; SDK and React development packages appear here for attribution. The SDK package does not declare a license in its published metadata and is excluded from runtime bundles.
 
 | Package | Version | License | Source |
 |---|---|---|---|
@@ -22,7 +22,7 @@ This inventory covers installed runtime and development npm packages, including 
 | @csstools/css-parser-algorithms | 3.0.5 | MIT | [Source](https://github.com/csstools/postcss-plugins) |
 | @csstools/css-tokenizer | 3.0.4 | MIT | [Source](https://github.com/csstools/postcss-plugins) |
 | @esbuild/linux-x64 | 0.28.2 | MIT | [Source](https://github.com/evanw/esbuild) |
-| @get-bb/plugin-sdk | 0.6.15 | Not declared in package metadata | [Source](https://github.com/get-bb/bb) |
+| @vesnalia/plugin-sdk | 0.6.15 | Not declared in package metadata | [Source](https://github.com/get-bb/bb) |
 | @testing-library/dom | 10.4.2 | MIT | [Source](https://github.com/testing-library/dom-testing-library) |
 | @testing-library/react | 16.3.3 | MIT | [Source](https://github.com/testing-library/react-testing-library) |
 | @types/aria-query | 5.0.4 | MIT | [Source](https://github.com/DefinitelyTyped/DefinitelyTyped) |

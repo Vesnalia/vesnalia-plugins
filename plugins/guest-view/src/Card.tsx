@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { experimental_copyToClipboard as copyToClipboard, experimental_Icon as Icon, useComposer } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard as copyToClipboard, experimental_Icon as Icon, useComposer } from "@vesnalia/plugin-sdk/app";
 import type { OwnerHistoryItem, OwnerPrompt, OwnerState } from "../server";
 import { Config } from "./Config";
 import { elapsedLabel, leftLabel } from "./labels";
@@ -98,7 +98,7 @@ function PromptRow({ prompt, rpc, threadId, set }: { prompt: OwnerPrompt; rpc: R
     rpc
       .call(method, { threadId, promptId: prompt.id })
       .then((next) => {
-        // Only a prompt this page really took is put in the composer (another BB page may have used it first).
+        // Only a prompt this page really took is put in the composer (another VesnALIA page may have used it first).
         after?.();
         set(next);
       })

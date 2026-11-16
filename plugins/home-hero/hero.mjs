@@ -1,6 +1,6 @@
-export const HERO_ID = "bb-hero";
-const STYLE_ID = "bb-hero-style";
-const COLUMN_ATTR = "data-bb-hero-column";
+export const HERO_ID = "alia-hero";
+const STYLE_ID = "alia-hero-style";
+const COLUMN_ATTR = "data-alia-hero-column";
 // Only a real home composer target counts: the home tree exposes `root-compose-*`,
 // so a generic `.mx-auto` on another page can never host the hero.
 const HOME_SELECTOR = '[data-testid^="root-compose"]';
@@ -11,12 +11,12 @@ const TYPE_DELAY_MS = 200;
 
 const CSS = `
 [${COLUMN_ATTR}]{min-height:100%;flex:1 1 0%;justify-content:safe center;padding-top:max(10vh,4rem);padding-bottom:4vh}
-#${HERO_ID}{display:flex;align-items:center;justify-content:center;gap:.875rem;max-width:min(100%,52rem);margin:0 auto 1.75rem;padding:0 1rem;text-align:center;user-select:none;animation:bb-hero-in 200ms ease-out both}
-#${HERO_ID} .bb-hero-icon{width:3.25rem;height:3.25rem;border-radius:.9rem;object-fit:cover;flex:none}
-#${HERO_ID} .bb-hero-greeting{font-size:clamp(24px,6vw,37px);line-height:1.15;opacity:.85;overflow-wrap:anywhere;min-width:0}
-#${HERO_ID} .bb-hero-hello{font-family:Palatino,'Palatino Linotype',serif;font-style:italic}
-#${HERO_ID} .bb-hero-name{font-family:Georgia,serif;font-weight:400;font-variant:small-caps}
-@keyframes bb-hero-in{from{opacity:0}to{opacity:1}}
+#${HERO_ID}{display:flex;align-items:center;justify-content:center;gap:.875rem;max-width:min(100%,52rem);margin:0 auto 1.75rem;padding:0 1rem;text-align:center;user-select:none;animation:alia-hero-in 200ms ease-out both}
+#${HERO_ID} .alia-hero-icon{width:3.25rem;height:3.25rem;border-radius:.9rem;object-fit:cover;flex:none}
+#${HERO_ID} .alia-hero-greeting{font-size:clamp(24px,6vw,37px);line-height:1.15;opacity:.85;overflow-wrap:anywhere;min-width:0}
+#${HERO_ID} .alia-hero-hello{font-family:Palatino,'Palatino Linotype',serif;font-style:italic}
+#${HERO_ID} .alia-hero-name{font-family:Georgia,serif;font-weight:400;font-variant:small-caps}
+@keyframes alia-hero-in{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion: reduce){#${HERO_ID}{animation:none}}
 `;
 
@@ -104,20 +104,20 @@ function render(doc, column, { displayName, iconDataUrl, hours, reducedMotion })
   hero.setAttribute("role", "presentation");
   if (iconDataUrl) {
     const icon = doc.createElement("img");
-    icon.className = "bb-hero-icon";
+    icon.className = "alia-hero-icon";
     icon.alt = "";
     icon.decoding = "async";
     icon.src = iconDataUrl;
     hero.append(icon);
   }
   const greeting = doc.createElement("div");
-  greeting.className = "bb-hero-greeting";
+  greeting.className = "alia-hero-greeting";
   // In-flow text: the centered flex row grows symmetrically as characters appear,
   // so the greeting expands from its center and pushes the icon outward.
   const hello = doc.createElement("span");
-  hello.className = "bb-hero-hello";
+  hello.className = "alia-hero-hello";
   const name = doc.createElement("span");
-  name.className = "bb-hero-name";
+  name.className = "alia-hero-name";
   greeting.append(hello, name);
   hero.append(greeting);
 

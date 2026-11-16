@@ -30,7 +30,7 @@ describe("row context menu", () => {
               thread({ id: "pin", title: "Pin", isPinned: true }),
               thread({ id: "active", title: "Active" }),
             ],
-            projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+            projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
           },
           rpc: {
             listLifecycle: () => ({

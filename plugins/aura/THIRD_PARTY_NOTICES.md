@@ -10,7 +10,7 @@ contributor. The source was retrieved from https://capy.ai/new on 2026-09-08:
 from those bundles, with template constants expanded. The GLSL is unchanged.
 The bounded rendering settings, two radial masks, center blur, bottom fades,
 blend modes, and animation values in `lib/capy-effect.ts` come from that page.
-The BB lifecycle adapter and settings wiring are new.
+The VesnALIA lifecycle adapter and settings wiring are new.
 
 The shader implementation is Paper Shaders by Paper Design, licensed under the
 Apache License, Version 2.0. A copy is included at

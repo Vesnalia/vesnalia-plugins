@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { Overview, rpcContract } from "../src/contract";
 import { clearLoadedCache } from "../src/loaded";
 import { panelSelection, panelView } from "../src/panel";
@@ -12,7 +12,7 @@ vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn() }) }))
 
 const OWN = worktree({ key: "host_1:/work/root", threadIds: ["thr_root"], root: "/work/root", uncommitted: [fileChange({ path: "notes.md" })] });
 const CHILD = worktree({
-  key: "host_1:/work/child", threadIds: ["thr_child"], root: "/work/child", branch: "bb/child",
+  key: "host_1:/work/child", threadIds: ["thr_child"], root: "/work/child", branch: "alia/child",
   ref: { kind: "workspace", environmentId: "env_child", base: "origin/main" }, uncommitted: [fileChange({ path: "src/a.ts" })],
 });
 const SIDEBAR = [
@@ -24,7 +24,7 @@ const TREE = overview({
   threads: [threadSummary({ id: "thr_root", title: "Parent" }), threadSummary({ id: "thr_child", title: "Worker", parentThreadId: "thr_root", rootThreadId: "thr_root", depth: 1 })],
   worktrees: [OWN, CHILD],
   repos: [{
-    key: "repo_child", ref: CHILD.ref, label: "Project", projectId: "proj_1", root: "/work/child", hostId: "host_1", hostName: "Laptop", branch: "bb/child",
+    key: "repo_child", ref: CHILD.ref, label: "Project", projectId: "proj_1", root: "/work/child", hostId: "host_1", hostName: "Laptop", branch: "alia/child",
     base: null, aheadCount: null, threadIds: ["thr_child"], state: "ready", message: null, files: [fileChange({ path: "src/a.ts" })], otherFiles: [],
     truncated: false, totals: { files: 1, additions: 2, deletions: 1 }, threadCommits: [],
   }],
@@ -155,11 +155,11 @@ describe("the thread's Vantage tab", () => {
     const { slot } = await mountPanel();
     const view = within(slot.container);
     fireEvent.click(chip(slot, /^Worker/));
-    await waitFor(() => expect(slot.container.querySelector("[data-testid='bb-diff']")?.getAttribute("data-overflow")).toBe("scroll"));
+    await waitFor(() => expect(slot.container.querySelector("[data-testid='alia-diff']")?.getAttribute("data-overflow")).toBe("scroll"));
     fireEvent.click(view.getByRole("button", { name: "Wrap long lines" }));
-    expect(slot.container.querySelector("[data-testid='bb-diff']")?.getAttribute("data-overflow")).toBe("wrap");
+    expect(slot.container.querySelector("[data-testid='alia-diff']")?.getAttribute("data-overflow")).toBe("wrap");
     fireEvent.click(chip(slot, "All changes"));
-    await waitFor(() => expect(slot.container.querySelector("[data-all-changes] [data-testid='bb-diff']")?.getAttribute("data-overflow")).toBe("wrap"));
+    await waitFor(() => expect(slot.container.querySelector("[data-all-changes] [data-testid='alia-diff']")?.getAttribute("data-overflow")).toBe("wrap"));
     expect(view.getByRole("button", { name: "Wrap long lines" }).getAttribute("aria-pressed")).toBe("true");
   });
 

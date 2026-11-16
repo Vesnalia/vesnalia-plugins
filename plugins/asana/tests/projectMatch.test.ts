@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { suggestProject } from "../projectMatch.ts";
 
-// The user's bb projects.
+// The user's VesnALIA projects.
 const projects = [
   "bluebird", "ios", "northwinds", "bluebird-pro-ios", "harbor", "riverside-beyond", "baker-ellis",
   "city-open-days", "copperleaf", "crescent-harbor-films", "delta-rho-delta",

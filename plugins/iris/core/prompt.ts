@@ -1,9 +1,9 @@
-import { BB_SOURCES } from "./bb-data";
+import { ALIA_SOURCES } from "./alia-data";
 // Everything agents are told about Iris, generated from the catalog so the
 // prompt, the validator and the renderers can never disagree. Kept small on
 // purpose, since every session pays for it: the rules, and an index of every
 // component with its prop names. Types, meanings and examples load on demand
-// through iris_docs and iris_examples. bb caps each instruction section at
+// through iris_docs and iris_examples. VesnALIA caps each instruction section at
 // 4,096 characters, so the index is split across those two tools.
 
 import { CATALOG, GROUPS, type ComponentSpec, type PropSpec } from "./catalog";
@@ -20,22 +20,22 @@ export function mainInstructions(stance: Stance): string {
       ? "Reach for Iris whenever any part of a reply can be shown instead of told: numbers, comparisons, trends, flows, plans, code results, tests, diffs, logs, timelines, next steps. In doubt, show it."
       : "Use Iris when a part of a reply reads better as UI than as prose: numbers, comparisons, tables, trends, flows, plans, test and build results, diffs. Short answers stay prose.";
   return `# Iris: live UI in your replies
-This chat renders \`\`\`iris blocks as live, interactive UI in the person's bb theme. ${when} The first sentence gives the verdict (\"is it ready?\" gets yes or no first); then add only what the card can't show, such as the cause. Never restate in prose the numbers, names, risks or steps the card shows. Put the block in your final message, never mid-turn.
+This chat renders \`\`\`iris blocks as live, interactive UI in the person's VesnALIA theme. ${when} The first sentence gives the verdict (\"is it ready?\" gets yes or no first); then add only what the card can't show, such as the cause. Never restate in prose the numbers, names, risks or steps the card shows. Put the block in your final message, never mid-turn.
 
 ## Syntax: JSX
 - Tags are components: <Card title="Tests">...</Card>. Strings in quotes, the rest in braces: value={486} rows={[...]} onClick={() => ...}.
 - <state seats={10} /> declares values inputs change; <let total={seats * 29} /> derives values. Inputs bind by name: <Slider bind="seats" />.
 - Expressions are JavaScript (map, filter, reduce, ternaries, template strings, arrows, JSX inside): {rows.map((r) => <Item title={r.name} />)}. Put spaces around < and >.
 - Helpers: fmt(x, "usd"|"percent"|"ms"|"bytes"|"duration"|"compact"|"date"), round(x, d), sum(list, key), avg, median, sortBy(list, key, "desc"), groupBy, countBy, unique, range(n), plural(n, "test").
-- Files: load("$BB_THREAD_STORAGE/tests.json") reads JSON, JSONL, CSV or TSV from the workspace or thread storage; load(path, {raw: true}) gives text, {fallback: x} gives x on failure; load("plugin:<id>/<name>") reads data a bb plugin publishes for Iris; load("bb:thread") and the other bb: sources read bb's own live data (iris_docs(["bb"]) lists them).
+- Files: load("$ALIA_THREAD_STORAGE/tests.json") reads JSON, JSONL, CSV or TSV from the workspace or thread storage; load(path, {raw: true}) gives text, {fallback: x} gives x on failure; load("plugin:<id>/<name>") reads data a VesnALIA plugin publishes for Iris; load("VesnALIA:thread") and the other VesnALIA: sources read VesnALIA's own live data (iris_docs(["VesnALIA"]) lists them).
 - Handlers: assign state (onClick={() => count += 1}) or act: insert(text) fills the composer, send(text) sends it, copy(text), openFile(path, line), openUrl(url), explain(topic).
 - Text between tags is Markdown. Mermaid, code, diffs, logs and traces go verbatim inside their tags.
 
 ## Rules
-- One Card per idea. state="live" on a Card re-reads its load() files every 2 s (plugin: 10 s): for running jobs, with LiveLog and LiveProgress over the files they write. A card you keep rewriting: save it to a file and write ::iris{file="$BB_THREAD_STORAGE/status.iris"} on its own line; it follows the file. iris_pin keeps one beside the chat.
+- One Card per idea. state="live" on a Card re-reads its load() files every 2 s (plugin: 10 s): for running jobs, with LiveLog and LiveProgress over the files they write. A card you keep rewriting: save it to a file and write ::iris{file="$ALIA_THREAD_STORAGE/status.iris"} on its own line; it follows the file. iris_pin keeps one beside the chat.
 - Fit the component to the data; Table is the fallback. Before/after values: Delta. Checks and results: Acceptance. Review notes: Findings. Colors: Swatches. Options to pick: Variants. Shots by device or theme: Screens. Before/after shots: Compare.
 - TeX math goes in <Math> ($inline$, $$display$$), never in Text or code.
-- Never retype data a file holds: save tool output to $BB_THREAD_STORAGE and load() it.
+- Never retype data a file holds: save tool output to $ALIA_THREAD_STORAGE and load() it.
 - Show only the facts you have: no invented severities, statuses, tones or numbers. Don't show the same fact twice in a card.
 - A question you need answered goes through ask mode, or iris_ask for a rich pick (the agent waits). Choices and FollowUps only offer optional next steps after a finished answer.
 - \`\`\`iris-react holds a TSX module (default export a React component) for apps with real logic (games, simulators, editors): sandboxed, no network. Import hooks from "react", icons from "lucide-react", and ${KIT.map((k) => k.name).join(", ")}, useStored and iris from "iris". iris_docs(["React"]) has their props.
@@ -58,21 +58,21 @@ This chat renders \`\`\`iris blocks as live, interactive UI in the person's bb t
 
 /** What iris_ask carries: when to ask with a picker and how it answers. */
 export const ASK_INSTRUCTIONS =
-  "# iris_ask\nA waiting picker for rich answers. Pass `source` (Iris markup: <state> per answer, inputs bound to them, then <Submit />), `react` (an iris-react module that calls iris.submit(value) from a click) or `html` (a full page that calls window.iris.submit(value)). Prefer `source`: it draws natively in every bb client, including the phone app; `react` and `html` run in a sandboxed frame some clients can't show. The answer arrives as a message: the submitted JSON, or a cancellation. Keep it to one decision. Pickers that fit: Variants for designs to compare, Rank for an order, MarkUp to point at an image, DocReview for a spec, ColorInput for a color, Decision for weighing options. Example source: <state pick=\"B\" note=\"\" />\\n<Radio bind=\"pick\" label=\"Which layout?\" options={[{ value: \"A\", label: \"Sidebar\" }, { value: \"B\", label: \"Tabs\", detail: \"Recommended\" }]} />\\n<TextArea bind=\"note\" label=\"Anything to change?\" />\\n<Submit />";
+  "# iris_ask\nA waiting picker for rich answers. Pass `source` (Iris markup: <state> per answer, inputs bound to them, then <Submit />), `react` (an iris-react module that calls iris.submit(value) from a click) or `html` (a full page that calls window.iris.submit(value)). Prefer `source`: it draws natively in every VesnALIA client, including the phone app; `react` and `html` run in a sandboxed frame some clients can't show. The answer arrives as a message: the submitted JSON, or a cancellation. Keep it to one decision. Pickers that fit: Variants for designs to compare, Rank for an order, MarkUp to point at an image, DocReview for a spec, ColorInput for a color, Decision for weighing options. Example source: <state pick=\"B\" note=\"\" />\\n<Radio bind=\"pick\" label=\"Which layout?\" options={[{ value: \"A\", label: \"Sidebar\" }, { value: \"B\", label: \"Tabs\", detail: \"Recommended\" }]} />\\n<TextArea bind=\"note\" label=\"Anything to change?\" />\\n<Submit />";
 
 export const CODE_WORK_INSTRUCTIONS = `# Iris for code work
-Show tool output through its Iris component, reading the file the tool saved, never pasting or retyping it. Save output in $BB_THREAD_STORAGE as you run:
-- tests: vitest run --reporter=json --outputFile=$BB_THREAD_STORAGE/tests.json (or jest --json --outputFile=..., JUnit XML), then <Tests results={load("$BB_THREAD_STORAGE/tests.json")} />
-- a build or command log: cmd > $BB_THREAD_STORAGE/build.log 2>&1, then <Logs text={load("$BB_THREAD_STORAGE/build.log", {raw: true})} command="npm run build" exit={2} />
+Show tool output through its Iris component, reading the file the tool saved, never pasting or retyping it. Save output in $ALIA_THREAD_STORAGE as you run:
+- tests: vitest run --reporter=json --outputFile=$ALIA_THREAD_STORAGE/tests.json (or jest --json --outputFile=..., JUnit XML), then <Tests results={load("$ALIA_THREAD_STORAGE/tests.json")} />
+- a build or command log: cmd > $ALIA_THREAD_STORAGE/build.log 2>&1, then <Logs text={load("$ALIA_THREAD_STORAGE/build.log", {raw: true})} command="npm run build" exit={2} />
 - lint or type errors: eslint -f json, tsc --noEmit --pretty false, SARIF, ruff check --output-format json, then <Findings items={load(...)} /> (tsc and lcov output load with {raw: true})
-- coverage: <Coverage report={load("$BB_THREAD_STORAGE/cov/lcov.info", {raw: true})} />; before and after timings: <Benchmark />; an error with a stack: <StackTrace>
+- coverage: <Coverage report={load("$ALIA_THREAD_STORAGE/cov/lcov.info", {raw: true})} />; before and after timings: <Benchmark />; an error with a stack: <StackTrace>
 - code: <Snippet path="src/a.ts" from={10} to={40} />, never pasted; a change you describe: <Diff path="src/a.ts">unified patch</Diff>
-- your work in this checkout reads live from bb, never retyped: <Changes /> (files and diffs; target="uncommitted" or a sha, paths={["src/"]}), <Commits />, <PullRequest />; subthreads you started: <Threads /> (or ids={[...]}); the project's worktrees: <Environments />
-- a CI run: gh run view <id> --json name,displayTitle,status,conclusion,jobs,url > $BB_THREAD_STORAGE/run.json, then <Pipeline run={load("$BB_THREAD_STORAGE/run.json")} />
-- a long job, live: start it writing to files, then show them; the card re-reads every 2 s while on screen. Its log: cmd > $BB_THREAD_STORAGE/job.log 2>&1, then <LiveLog file="$BB_THREAD_STORAGE/job.log" command="cmd" />. Its progress: have it rewrite $BB_THREAD_STORAGE/progress.json as {"done": 412, "total": 640, "label": "Tests", "eta": 95} (eta in seconds, optional), then <LiveProgress file=... />. Any load() inside <Card state="live"> refreshes the same way (Tests, Logs, DataGrid fill in as results land).
-- big query results or CSVs: <DataGrid rows={load("$BB_THREAD_STORAGE/q.csv")} /> (sqlite3 -csv -header, psql --csv, duckdb -csv); a module or call graph: <Graph nodes={...} edges={[[from, to]]} />
+- your work in this checkout reads live from VesnALIA, never retyped: <Changes /> (files and diffs; target="uncommitted" or a sha, paths={["src/"]}), <Commits />, <PullRequest />; subthreads you started: <Threads /> (or ids={[...]}); the project's worktrees: <Environments />
+- a CI run: gh run view <id> --json name,displayTitle,status,conclusion,jobs,url > $ALIA_THREAD_STORAGE/run.json, then <Pipeline run={load("$ALIA_THREAD_STORAGE/run.json")} />
+- a long job, live: start it writing to files, then show them; the card re-reads every 2 s while on screen. Its log: cmd > $ALIA_THREAD_STORAGE/job.log 2>&1, then <LiveLog file="$ALIA_THREAD_STORAGE/job.log" command="cmd" />. Its progress: have it rewrite $ALIA_THREAD_STORAGE/progress.json as {"done": 412, "total": 640, "label": "Tests", "eta": 95} (eta in seconds, optional), then <LiveProgress file=... />. Any load() inside <Card state="live"> refreshes the same way (Tests, Logs, DataGrid fill in as results land).
+- big query results or CSVs: <DataGrid rows={load("$ALIA_THREAD_STORAGE/q.csv")} /> (sqlite3 -csv -header, psql --csv, duckdb -csv); a module or call graph: <Graph nodes={...} edges={[[from, to]]} />
 - a review: <Findings items={[{severity, title, file, line, detail, fix}]} />
-- a release in flight: keep $BB_THREAD_STORAGE/release.json current ({version, build, platforms, checks, store, blockers, timeline}), then <Release file=... /> follows it live
+- a release in flight: keep $ALIA_THREAD_STORAGE/release.json current ({version, build, platforms, checks, store, blockers, timeline}), then <Release file=... /> follows it live
 Tests or a build that fully passed need one sentence and no block.`;
 
 function propLine(name: string, p: PropSpec): string {
@@ -105,7 +105,7 @@ function indexLine(group: string): string {
  */
 export function indexSections(): IndexSection[] {
   const heads = [
-    "# Iris components\nEvery component with its prop names (* = required). iris_docs([\"Chart\", \"Table\"]) returns their prop types, meanings and a working example; iris_docs([\"React\"]) the iris-react kit; iris_docs([\"bb\"]) the bb: live data shapes.\n",
+    "# Iris components\nEvery component with its prop names (* = required). iris_docs([\"Chart\", \"Table\"]) returns their prop types, meanings and a working example; iris_docs([\"React\"]) the iris-react kit; iris_docs([\"VesnALIA\"]) the VesnALIA: live data shapes.\n",
     "# Iris components, continued\niris_examples([\"Planning\"]) returns working examples for whole families; [\"Recipes\"] a status card that follows a file, a Variants picker, setting a card's inputs.\n",
   ];
   const lines = GROUPS.map(indexLine).filter(Boolean);
@@ -163,16 +163,16 @@ export function referenceSections(): ReferenceSection[] {
   return sections;
 }
 
-/** The bb: live data sources and what each returns. */
-export function bbDataGuide(): string {
+/** The VesnALIA: live data sources and what each returns. */
+export function aliaDataGuide(): string {
   return [
-    "# bb live data: load(\"bb:<source>\")",
-    "bb's own data, read by Iris for the card's thread and re-read every 2 s inside <Card state=\"live\">. Draw it with any component.",
-    ...BB_SOURCES.map((s) => `- bb:${s.name}: ${s.summary}`),
+    "# VesnALIA live data: load(\"VesnALIA:<source>\")",
+    "VesnALIA's own data, read by Iris for the card's thread and re-read every 2 s inside <Card state=\"live\">. Draw it with any component.",
+    ...ALIA_SOURCES.map((s) => `- alia:${s.name}: ${s.summary}`),
     "Example:",
     "```iris",
-    "<let t={load(\"bb:thread\")} />",
-    "<let kids={load(\"bb:threads?usage=1\")} />",
+    "<let t={load(\"VesnALIA:thread\")} />",
+    "<let kids={load(\"VesnALIA:threads?usage=1\")} />",
     "<Card title=\"This session\" state=\"live\">",
     "  <Row>",
     "    <Gauge label=\"Context\" value={t.context ? t.context.percent : 0} format=\"percent\" />",
@@ -191,8 +191,8 @@ export function docsFor(names: string[]): string {
       out.push(reactGuide());
       continue;
     }
-    if (/^(bb|bb:|bb data|live data)$/i.test(raw.trim())) {
-      out.push(bbDataGuide());
+    if (/^(alia|alia:|alia data|live data)$/i.test(raw.trim())) {
+      out.push(aliaDataGuide());
       continue;
     }
     const c = CATALOG.find((x) => x.name.toLowerCase() === raw.toLowerCase() || (x.aliases ?? []).some((a) => a.toLowerCase() === raw.toLowerCase()));

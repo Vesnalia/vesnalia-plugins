@@ -4,7 +4,7 @@
 // plugin's gh runner, repository discovery, and review-thread spawning
 // through `AutomationDeps` so it shares one GitHub login and one cache.
 import { randomUUID } from "node:crypto";
-import type { BbPluginApi, PluginRpcHandlers } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginRpcHandlers } from "@vesnalia/plugin-sdk";
 import type { z } from "zod";
 import {
   DEFAULT_AUTOMATION_LABEL,
@@ -120,7 +120,7 @@ const AUDIT_RETENTION = 5_000;
 const DASHBOARD_JOBS = 100;
 const DASHBOARD_AUDIT = 200;
 
-type Db = ReturnType<BbPluginApi["storage"]["database"]>;
+type Db = ReturnType<AliaPluginApi["storage"]["database"]>;
 
 export interface AutomationTrackedRepo {
   repo: string;
@@ -130,7 +130,7 @@ export interface AutomationTrackedRepo {
 
 export interface AutomationDeps {
   db: Db;
-  log: Pick<BbPluginApi["log"], "info" | "warn">;
+  log: Pick<AliaPluginApi["log"], "info" | "warn">;
   publish: (payload: unknown) => void;
   gh: (args: string[], timeoutMs?: number) => Promise<string>;
   git: (args: string[], timeoutMs?: number) => Promise<string>;
@@ -362,19 +362,19 @@ export function createAutomationEngine(deps: AutomationDeps) {
       repository = all.find((entry) => entry.repo === requested);
       if (repository === undefined) {
         throw new Error(
-          `Repository ${requested} is not tracked by GitHub+; attach its BB project or add it under Repositories first`,
+          `Repository ${requested} is not tracked by GitHub+; attach its VesnALIA project or add it under Repositories first`,
         );
       }
     } else {
       const matches = all.filter((entry) => entry.projectId === projectId);
       if (matches.length === 0) {
         throw new Error(
-          "No tracked GitHub repository is attached to the current BB project; pass repo explicitly or add the repository in GitHub+ first",
+          "No tracked GitHub repository is attached to the current VesnALIA project; pass repo explicitly or add the repository in GitHub+ first",
         );
       }
       if (matches.length > 1) {
         throw new Error(
-          `Multiple tracked repositories match the current BB project (${matches.map((entry) => entry.repo).join(", ")}); pass repo explicitly`,
+          `Multiple tracked repositories match the current VesnALIA project (${matches.map((entry) => entry.repo).join(", ")}); pass repo explicitly`,
         );
       }
       repository = matches[0]!;
@@ -705,7 +705,7 @@ export function createAutomationEngine(deps: AutomationDeps) {
     db.prepare("UPDATE automation_jobs SET status = ?, error = ?, updated_at = ? WHERE id = ?").run(status, error, now(), id);
   }
 
-  function latestAgentOutput(jobId: number, ruleId: string, index: number, kind: "bb.review" | "bb.agent"): string | null {
+  function latestAgentOutput(jobId: number, ruleId: string, index: number, kind: "alia.review" | "alia.agent"): string | null {
     const row = db
       .prepare(
         "SELECT output FROM automation_action_runs WHERE job_id = ? AND rule_id = ? AND action_index < ? AND action_kind = ? AND status = 'succeeded' ORDER BY action_index DESC LIMIT 1",
@@ -735,8 +735,8 @@ export function createAutomationEngine(deps: AutomationDeps) {
     try {
       let output: string;
       const parameters = rule.actionParameters ?? {};
-      if (action === "bb.review") {
-        if (event.prNumber === undefined) throw new Error("bb.review requires a pull request event");
+      if (action === "alia.review") {
+        if (event.prNumber === undefined) throw new Error("alia.review requires a pull request event");
         if (dryRun) {
           output = `dry-run: would start a GitHub+ review thread for ${event.repo}#${event.prNumber}`;
         } else {
@@ -746,25 +746,25 @@ export function createAutomationEngine(deps: AutomationDeps) {
             instructions: parameters.reviewPrompt,
             signal,
           });
-          audit("action", subject, "thread", `bb.review thread ${review.threadId} for ${event.repo}#${event.prNumber}`);
+          audit("action", subject, "thread", `alia.review thread ${review.threadId} for ${event.repo}#${event.prNumber}`);
           output = review.output;
         }
-      } else if (action === "bb.agent") {
+      } else if (action === "alia.agent") {
         const instructions = parameters.agentPrompt?.trim();
         if (!instructions) throw new Error("Describe what the agent should do");
         if (dryRun) {
           output = `dry-run: would start an agent for ${event.kind} on ${event.repo}:\n${instructions}`;
         } else {
           const agent = await deps.runAgent({ event, ruleName: rule.name, instructions, signal });
-          audit("action", subject, "thread", `bb.agent thread ${agent.threadId} for ${event.kind} on ${event.repo}`);
+          audit("action", subject, "thread", `alia.agent thread ${agent.threadId} for ${event.kind} on ${event.repo}`);
           output = agent.output;
         }
       } else if (action === "github.comment" || action === "github.review") {
         const number = event.issueNumber ?? event.prNumber;
         if (number === undefined) throw new Error(`${action} requires an issue or pull request event`);
         if (action === "github.review" && event.prNumber === undefined) throw new Error("github.review requires a pull request event");
-        const review = latestAgentOutput(jobId, rule.id, index, "bb.review") ?? `Automated GitHub+ action for ${event.kind}.`;
-        const agent = latestAgentOutput(jobId, rule.id, index, "bb.agent") ?? "";
+        const review = latestAgentOutput(jobId, rule.id, index, "alia.review") ?? `Automated GitHub+ action for ${event.kind}.`;
+        const agent = latestAgentOutput(jobId, rule.id, index, "alia.agent") ?? "";
         const body = renderTemplate(parameters.bodyTemplate || "{{review}}", event, review, agent);
         if (body.trim().length === 0) throw new Error(`${action} rendered an empty body`);
         if (dryRun) {
@@ -794,7 +794,7 @@ export function createAutomationEngine(deps: AutomationDeps) {
       } else if (action === "checkout.update") {
         const branch = parameters.targetBranch || repository.baseBranch;
         if (repository.checkoutPath === null) {
-          throw new Error(`${event.repo} has no local BB project checkout to update`);
+          throw new Error(`${event.repo} has no local VesnALIA project checkout to update`);
         }
         const preview = `git -C ${repository.checkoutPath} pull --ff-only origin ${branch}`;
         if (dryRun) {

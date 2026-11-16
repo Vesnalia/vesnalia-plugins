@@ -24,7 +24,7 @@ export interface Architecture {
 
 export const CODE_FILE = /\.(py|ts|tsx|js|jsx|mjs|cjs)$/;
 /** Folders that hold the coding agents' own config (mode 1), not the app's. */
-export const DEV_DIRS = [".claude", ".agents", ".codex", ".bb", ".cursor", ".github"];
+export const DEV_DIRS = [".claude", ".agents", ".codex", ".vesnalia", ".cursor", ".github"];
 
 /** App code and skills; not the coding agents' folders, tests (mock agents) or vendored code. */
 export function isAppSource(path: string): boolean {

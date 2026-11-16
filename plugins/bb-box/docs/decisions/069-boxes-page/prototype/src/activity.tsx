@@ -267,7 +267,7 @@ export function Activity({ box, now }: { box: FakeBox; now: number }) {
       </div>
       {!store.monitorOn ? (
         <p className="border-b border-border px-4 py-2 text-xs text-muted-foreground">
-          The Monitor is off, so bb-box reads nothing now. What it read before stays.{" "}
+          The Monitor is off, so alia-box reads nothing now. What it read before stays.{" "}
           <button type="button" className="cursor-pointer text-foreground underline underline-offset-2" onClick={() => go({ page: "settings", section: "monitor" })}>
             Turn it on in Monitor settings
           </button>
@@ -373,7 +373,7 @@ export function Processes({ box, now }: { box: FakeBox; now: number }) {
           ))}
         </tbody>
       </table>
-      <p className="border-t border-border px-4 py-2 text-xs text-subtle-foreground">CPU is per core: a process using four cores shows 400%. bb-box reads names and PIDs only, never arguments or environment.</p>
+      <p className="border-t border-border px-4 py-2 text-xs text-subtle-foreground">CPU is per core: a process using four cores shows 400%. alia-box reads names and PIDs only, never arguments or environment.</p>
     </section>
   );
 }

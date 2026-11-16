@@ -9,7 +9,7 @@ import { createStore } from "../src/store/store.js";
 /**
  * The shipped migration prefix is frozen, byte for byte.
  *
- * `bb.storage.migrate` uses the **statement index as the migration id**.
+ * `alia.storage.migrate` uses the **statement index as the migration id**.
  * Editing statement 3 in a later release does not re-run it — it silently
  * skips it on every existing install, so a column added by an edit exists on
  * fresh installs and nowhere else. The symptom is a `no such column` from a
@@ -67,7 +67,7 @@ describe("migrations", () => {
   });
 
   it("is additive only", () => {
-    // bb rolls a failed activation back to the previous plugin version, which
+    // VesnALIA rolls a failed activation back to the previous plugin version, which
     // then runs *old code against the new schema*. A dropped column or table
     // takes that rollback down with it; an added one is simply ignored by the
     // older code.

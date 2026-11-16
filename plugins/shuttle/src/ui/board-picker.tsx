@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { experimental_Icon as Icon, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { BoardSummary, PrView } from "../contract";
 import { BoardFormDialog } from "./boards";
 import { PANEL_PATH } from "./constants";
@@ -75,7 +75,7 @@ function BoardChoices({ pr, onCreate }: { pr: PrView; onCreate(name: string): vo
 
 /** The boards a PR is on, each opening its board, and a picker to put it on more or take it off. */
 export function BoardChips({ pr, phone }: { pr: PrView; phone: boolean }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const memberships = useShuttleQuery("boards", { archived: "include", key: pr.key });
   const [creating, setCreating] = useState<string | null>(null);
   const boards = memberships.data?.boards ?? [];

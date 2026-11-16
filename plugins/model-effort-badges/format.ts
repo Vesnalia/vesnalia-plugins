@@ -1,4 +1,4 @@
-/** What BB would run on a thread's next turn (`threads.defaultExecutionOptions`). */
+/** What VesnALIA would run on a thread's next turn (`threads.defaultExecutionOptions`). */
 export type Execution = { model: string; reasoningLevel: string };
 
 /** Display names from the provider's own model catalog. */

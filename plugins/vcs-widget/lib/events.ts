@@ -1,6 +1,6 @@
 // The command palette rows and the header button live in different React
 // trees. The request travels through this module's private scope, not the
-// event's `detail`: bb loads every plugin bundle into one window, so a detail
+// event's `detail`: VesnALIA loads every plugin bundle into one window, so a detail
 // on a window event would let any page script trigger a fetch, pull or push.
 // The window event only says "look at the pending request".
 import type { QuickActionId } from "../shared/model";

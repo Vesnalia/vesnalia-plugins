@@ -1,21 +1,15 @@
 {
-  "name": "bb-plugin-sentry-issues",
+  "name": "alia-plugin-sentry-issues",
   "version": "0.1.2",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MacHatter1/bb-sentry-issues.git",
-    "directory": "."
-  },
-  "homepage": "https://github.com/MacHatter1/bb-sentry-issues",
   "type": "module",
   "engines": {
-    "bb": ">=0.40",
-    "bbPluginSdk": ">=0.4.21"
+    "alia": ">=0.40",
+    "aliaPluginSdk": ">=0.4.21"
   },
-  "bb": {
+  "alia": {
     "name": "Sentry Issues",
-    "description": "Read-only Sentry issue browser for BB.",
+    "description": "Read-only Sentry issue browser for VesnALIA.",
     "branding": {
       "icon": "Bug"
     },
@@ -27,7 +21,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.21",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -52,8 +45,25 @@
     "vaul": "^1.1.2"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "check": "tsc --noEmit",
     "test": "node --experimental-strip-types --import ./tests/test-register.mjs --test tests/sentry-core.test.mjs tests/server-security.test.mjs tests/server-lifecycle.test.mjs tests/server-contract.test.mjs"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.21"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/sentry-issues#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/sentry-issues"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

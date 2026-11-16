@@ -13,7 +13,7 @@ var __export = (target, all) => {
 // server.ts
 import path3 from "node:path";
 import { readFile } from "node:fs/promises";
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 
 // node_modules/zod/v4/classic/external.js
 var external_exports = {};
@@ -19246,7 +19246,7 @@ async function fetchWebPreview(rawUrl, dependencies = {}) {
         signal: controller.signal,
         headers: {
           accept: "text/html,application/xhtml+xml,text/markdown,text/plain;q=0.9,*/*;q=0.1",
-          "user-agent": "BB-Wikilinks-Preview/0.1"
+          "user-agent": "ALIA-Wikilinks-Preview/0.1"
         }
       });
       if (response.status < 300 || response.status >= 400) break;
@@ -20004,21 +20004,21 @@ function relativePathWithinRoot(rootPath, absolutePath) {
   }
   return relativePath.split(rootApi.sep).join("/");
 }
-async function exactPathExists(bb, hostId, absolutePath) {
-  const result = await bb.sdk.hosts.pathsExist({
+async function exactPathExists(alia, hostId, absolutePath) {
+  const result = await alia.sdk.hosts.pathsExist({
     hostId,
     paths: [absolutePath]
   });
   return result.existence[absolutePath] ?? false;
 }
-async function resolveLocalMarkdownLink(bb, localPath, context) {
+async function resolveLocalMarkdownLink(alia, localPath, context) {
   if (isAbsoluteHostPath(localPath)) {
     const absolutePath2 = normalizeHostPath(localPath);
     const relativePath2 = relativePathWithinRoot(context.rootPath, absolutePath2);
     return {
       reference: localPath,
       target: relativePath2 ? context.targetFor(relativePath2) : { kind: "host", hostId: context.hostId, path: absolutePath2 },
-      exists: await exactPathExists(bb, context.hostId, absolutePath2)
+      exists: await exactPathExists(alia, context.hostId, absolutePath2)
     };
   }
   const currentDirectory = path3.posix.dirname(context.currentRelativePath);
@@ -20029,11 +20029,11 @@ async function resolveLocalMarkdownLink(bb, localPath, context) {
   return {
     reference: localPath,
     target: context.targetFor(relativePath),
-    exists: await exactPathExists(bb, context.hostId, absolutePath)
+    exists: await exactPathExists(alia, context.hostId, absolutePath)
   };
 }
-async function listLinkablePaths(bb, hostId, rootPath, query) {
-  const index = await bb.sdk.files.listPaths({
+async function listLinkablePaths(alia, hostId, rootPath, query) {
+  const index = await alia.sdk.files.listPaths({
     hostId,
     path: rootPath,
     includeFiles: true,
@@ -20051,16 +20051,16 @@ async function listLinkablePaths(bb, hostId, rootPath, query) {
 function wikilinkSearchQuery(reference) {
   return normalizeWikilinkReference(reference).split("#", 1)[0].trim();
 }
-async function resolveChatWikilink(bb, threadId, reference) {
-  const context = await resolveThreadContext(bb, threadId);
+async function resolveChatWikilink(alia, threadId, reference) {
+  const context = await resolveThreadContext(alia, threadId);
   if (!context) return { target: null, exists: false };
   const localPath = decodeLocalMarkdownPath(reference);
   if (localPath) {
-    const resolved2 = await resolveLocalMarkdownLink(bb, localPath, context);
+    const resolved2 = await resolveLocalMarkdownLink(alia, localPath, context);
     return { target: resolved2.target, exists: resolved2.exists };
   }
   const index = await listLinkablePaths(
-    bb,
+    alia,
     context.hostId,
     context.rootPath,
     wikilinkSearchQuery(reference)
@@ -20075,10 +20075,10 @@ async function resolveChatWikilink(bb, threadId, reference) {
     exists: resolved.exists
   };
 }
-async function resolveThreadContext(bb, threadId) {
-  const thread = await bb.sdk.threads.get({ threadId });
+async function resolveThreadContext(alia, threadId) {
+  const thread = await alia.sdk.threads.get({ threadId });
   if (thread.environmentId) {
-    const environment = await bb.sdk.environments.get({
+    const environment = await alia.sdk.environments.get({
       environmentId: thread.environmentId
     });
     if (!environment.path || !environment.hostId) {
@@ -20097,9 +20097,9 @@ async function resolveThreadContext(bb, threadId) {
       })
     };
   }
-  const hostId = (await bb.sdk.system.config()).primaryHostId;
+  const hostId = (await alia.sdk.system.config()).primaryHostId;
   if (!hostId) return null;
-  const project = await bb.sdk.projects.get({ projectId: thread.projectId });
+  const project = await alia.sdk.projects.get({ projectId: thread.projectId });
   const sources = project.sources.filter((source) => source.hostId === hostId);
   if (sources.length !== 1) return null;
   const rootPath = normalizeHostPath(sources[0].path);
@@ -20194,14 +20194,14 @@ function autocompleteScore(reference, query) {
   else if (normalizedLabel.includes(normalizedQuery)) score -= 0.4;
   return score / Math.max(1, queryTokens.length);
 }
-async function cachedAutocompleteIndex(bb, context) {
+async function cachedAutocompleteIndex(alia, context) {
   const cacheKey = `${context.hostId}\0${context.rootPath}`;
   const now = Date.now();
   const cached2 = autocompleteIndexCache.get(cacheKey);
   if (cached2) {
     if (cached2.expiresAt <= now) {
       cached2.expiresAt = now + AUTOCOMPLETE_CACHE_TTL_MS;
-      const refresh = listLinkablePaths(bb, context.hostId, context.rootPath);
+      const refresh = listLinkablePaths(alia, context.hostId, context.rootPath);
       refresh.then(
         (index) => {
           autocompleteIndexCache.set(cacheKey, {
@@ -20216,7 +20216,7 @@ async function cachedAutocompleteIndex(bb, context) {
     }
     return cached2.promise;
   }
-  const promise2 = listLinkablePaths(bb, context.hostId, context.rootPath);
+  const promise2 = listLinkablePaths(alia, context.hostId, context.rootPath);
   autocompleteIndexCache.set(cacheKey, {
     expiresAt: now + AUTOCOMPLETE_CACHE_TTL_MS,
     promise: promise2
@@ -20224,18 +20224,18 @@ async function cachedAutocompleteIndex(bb, context) {
   promise2.catch(() => autocompleteIndexCache.delete(cacheKey));
   return promise2;
 }
-async function autocompleteWikilinks(bb, threadId, query) {
+async function autocompleteWikilinks(alia, threadId, query) {
   const normalizedQuery = query.trim();
-  const context = await resolveThreadContext(bb, threadId);
+  const context = await resolveThreadContext(alia, threadId);
   if (!context) return [];
-  const index = await cachedAutocompleteIndex(bb, context);
+  const index = await cachedAutocompleteIndex(alia, context);
   if (normalizedQuery === "") return [];
   let paths = index.paths;
   if (index.truncated) {
     const longestToken = normalizeAutocompleteText(normalizedQuery).split(" ").sort((left, right) => right.length - left.length)[0];
     if (longestToken) {
       const targeted = await listLinkablePaths(
-        bb,
+        alia,
         context.hostId,
         context.rootPath,
         longestToken
@@ -20256,16 +20256,16 @@ async function autocompleteWikilinks(bb, threadId, query) {
     return left.score - right.score || left.label.length - right.label.length || left.reference.localeCompare(right.reference);
   }).slice(0, 12).map(({ score: _score, ...suggestion }) => suggestion);
 }
-async function readUtf8File(bb, hostId, absolutePath, rootPath) {
-  const file2 = await bb.sdk.files.read({
+async function readUtf8File(alia, hostId, absolutePath, rootPath) {
+  const file2 = await alia.sdk.files.read({
     hostId,
     path: absolutePath,
     rootPath
   });
   return file2.contentEncoding === "base64" ? Buffer.from(file2.content, "base64").toString("utf8") : file2.content;
 }
-async function readFileBuffer(bb, hostId, absolutePath, rootPath) {
-  const file2 = await bb.sdk.files.read({
+async function readFileBuffer(alia, hostId, absolutePath, rootPath) {
+  const file2 = await alia.sdk.files.read({
     hostId,
     path: absolutePath,
     rootPath
@@ -20275,15 +20275,15 @@ async function readFileBuffer(bb, hostId, absolutePath, rootPath) {
 function noteTitle(filePath) {
   return path3.posix.basename(filePath).replace(/\.(?:md|markdown)$/i, "");
 }
-async function readBacklinkSource(bb, context, relativePath) {
+async function readBacklinkSource(alia, context, relativePath) {
   const absolutePath = joinHostPath(context.rootPath, relativePath);
   try {
     return await readFile(absolutePath, "utf8");
   } catch {
-    return readUtf8File(bb, context.hostId, absolutePath, context.rootPath);
+    return readUtf8File(alia, context.hostId, absolutePath, context.rootPath);
   }
 }
-async function buildBacklinkIndex(bb, context, availablePaths) {
+async function buildBacklinkIndex(alia, context, availablePaths) {
   const markdownPaths = availablePaths.filter(
     (filePath) => /\.(?:md|markdown)$/i.test(filePath)
   );
@@ -20298,7 +20298,7 @@ async function buildBacklinkIndex(bb, context, availablePaths) {
         cursor += 1;
         if (!sourcePath) return;
         try {
-          const content = await readBacklinkSource(bb, context, sourcePath);
+          const content = await readBacklinkSource(alia, context, sourcePath);
           for (const occurrence of extractContextualLinks(
             content,
             sourcePath,
@@ -20328,13 +20328,13 @@ async function buildBacklinkIndex(bb, context, availablePaths) {
   }
   return backlinks;
 }
-async function contextualBacklinks(bb, context) {
+async function contextualBacklinks(alia, context) {
   const cacheKey = `${context.hostId}\0${context.rootPath}`;
   const now = Date.now();
   let cached2 = backlinkIndexCache.get(cacheKey);
   if (!cached2 || cached2.expiresAt <= now) {
-    const promise2 = cachedAutocompleteIndex(bb, context).then(
-      (index2) => buildBacklinkIndex(bb, context, index2.paths)
+    const promise2 = cachedAutocompleteIndex(alia, context).then(
+      (index2) => buildBacklinkIndex(alia, context, index2.paths)
     );
     cached2 = {
       expiresAt: now + BACKLINK_INDEX_TTL_MS,
@@ -20347,7 +20347,7 @@ async function contextualBacklinks(bb, context) {
   const all = (index.get(context.currentRelativePath.toLocaleLowerCase()) ?? []).filter(
     (entry) => entry.sourcePath.toLocaleLowerCase() !== context.currentRelativePath.toLocaleLowerCase()
   );
-  const linkIndex = await cachedAutocompleteIndex(bb, context);
+  const linkIndex = await cachedAutocompleteIndex(alia, context);
   const selected = all.slice(0, 16);
   return {
     backlinks: await Promise.all(
@@ -20363,7 +20363,7 @@ async function contextualBacklinks(bb, context) {
           context: entry.context,
           target: context.targetFor(entry.sourcePath),
           links: await resolveLinks(
-            bb,
+            alia,
             entry.context,
             sourceContext,
             linkIndex
@@ -20374,12 +20374,12 @@ async function contextualBacklinks(bb, context) {
     truncated: all.length > 16
   };
 }
-async function previewFile(bb, target, showBacklinks = false) {
+async function previewFile(alia, target, showBacklinks = false) {
   try {
-    const context = await resolveTargetContext(bb, target);
+    const context = await resolveTargetContext(alia, target);
     if (/\.tldraw$/i.test(context.absolutePath)) {
       const archive = await readFileBuffer(
-        bb,
+        alia,
         context.hostId,
         context.absolutePath,
         context.rootPath
@@ -20393,7 +20393,7 @@ async function previewFile(bb, target, showBacklinks = false) {
       };
     }
     if (showBacklinks) {
-      const result = await contextualBacklinks(bb, context);
+      const result = await contextualBacklinks(alia, context);
       return {
         content: null,
         imageDataUrl: null,
@@ -20404,19 +20404,19 @@ async function previewFile(bb, target, showBacklinks = false) {
     }
     const [content, index] = await Promise.all([
       readUtf8File(
-        bb,
+        alia,
         context.hostId,
         context.absolutePath,
         context.rootPath
       ),
-      cachedAutocompleteIndex(bb, context)
+      cachedAutocompleteIndex(alia, context)
     ]);
     const excerpt = createMarkdownExcerpt(content);
     return {
       ...excerpt,
       imageDataUrl: null,
       backlinks: null,
-      links: await resolveLinks(bb, excerpt.content, context, index)
+      links: await resolveLinks(alia, excerpt.content, context, index)
     };
   } catch {
     return {
@@ -20428,9 +20428,9 @@ async function previewFile(bb, target, showBacklinks = false) {
     };
   }
 }
-async function resolveTargetContext(bb, target) {
+async function resolveTargetContext(alia, target) {
   if (target.kind === "workspace") {
-    const environment = await bb.sdk.environments.get({
+    const environment = await alia.sdk.environments.get({
       environmentId: target.environmentId
     });
     if (!environment.path || !environment.hostId) {
@@ -20451,7 +20451,7 @@ async function resolveTargetContext(bb, target) {
   }
   if (target.kind === "thread-storage") {
     const currentRelativePath = requireRelativePath(target.path);
-    const storage = await bb.sdk.threads.storageLocation({
+    const storage = await alia.sdk.threads.storageLocation({
       threadId: target.threadId
     });
     const rootPath2 = normalizeHostPath(storage.storageRootPath);
@@ -20485,13 +20485,13 @@ async function resolveTargetContext(bb, target) {
     })
   };
 }
-async function resolveLinks(bb, content, context, index) {
+async function resolveLinks(alia, content, context, index) {
   const wikilinks = extractWikilinkReferences(content).map(
     async (reference) => {
       let availablePaths = index.paths;
       if (index.truncated) {
         const targetedIndex = await listLinkablePaths(
-          bb,
+          alia,
           context.hostId,
           context.rootPath,
           wikilinkSearchQuery(reference)
@@ -20511,14 +20511,14 @@ async function resolveLinks(bb, content, context, index) {
     }
   );
   const markdownLinks = extractLocalMarkdownPaths(content).map(
-    (localPath) => resolveLocalMarkdownLink(bb, localPath, context)
+    (localPath) => resolveLocalMarkdownLink(alia, localPath, context)
   );
   const resolved = await Promise.all([...wikilinks, ...markdownLinks]);
   return [...new Map(resolved.map((link) => [link.reference, link])).values()];
 }
-async function resolveOpenContext(bb, source, filePath) {
+async function resolveOpenContext(alia, source, filePath) {
   if (source.kind === "workspace" && source.environmentId) {
-    const environment = await bb.sdk.environments.get({
+    const environment = await alia.sdk.environments.get({
       environmentId: source.environmentId
     });
     if (!environment.path || !environment.hostId) {
@@ -20538,9 +20538,9 @@ async function resolveOpenContext(bb, source, filePath) {
     };
   }
   if (source.kind === "workspace" && source.projectId) {
-    const hostId = source.experimental_hostId ?? (await bb.sdk.system.config()).primaryHostId;
+    const hostId = source.experimental_hostId ?? (await alia.sdk.system.config()).primaryHostId;
     if (!hostId) throw new Error("This project has no primary host");
-    const project = await bb.sdk.projects.get({ projectId: source.projectId });
+    const project = await alia.sdk.projects.get({ projectId: source.projectId });
     const matchingSources = project.sources.filter(
       (projectSource) => projectSource.hostId === hostId
     );
@@ -20573,7 +20573,7 @@ async function resolveOpenContext(bb, source, filePath) {
     const absolutePath = normalizeHostPath(filePath);
     const pathApi = hostPathApi(absolutePath);
     const rootPath = pathApi.dirname(absolutePath);
-    const hostId = source.experimental_hostId ?? (await bb.sdk.system.config()).primaryHostId;
+    const hostId = source.experimental_hostId ?? (await alia.sdk.system.config()).primaryHostId;
     if (!hostId) throw new Error("This file has no host");
     const currentRelativePath = pathApi.basename(absolutePath);
     return {
@@ -20593,7 +20593,7 @@ async function resolveOpenContext(bb, source, filePath) {
       throw new Error("Thread-storage files require a thread ID");
     }
     const currentRelativePath = requireRelativePath(filePath);
-    const storage = await bb.sdk.threads.storageLocation({
+    const storage = await alia.sdk.threads.storageLocation({
       threadId: source.threadId
     });
     const rootPath = normalizeHostPath(storage.storageRootPath);
@@ -20611,11 +20611,11 @@ async function resolveOpenContext(bb, source, filePath) {
   }
   throw new Error("This Markdown source cannot be opened by Obsidian at Home");
 }
-async function plugin(bb) {
+async function plugin(alia) {
   autocompleteIndexCache.clear();
   backlinkIndexCache.clear();
   webPreviewCache.clear();
-  bb.settings.define({
+  alia.settings.define({
     documentBacklinks: {
       type: "boolean",
       label: "Show backlinks at the bottom of open notes",
@@ -20623,12 +20623,12 @@ async function plugin(bb) {
       default: true
     }
   });
-  const trailDatabase = bb.storage.database();
-  bb.storage.migrate(trailDatabase, thinkingTrailMigrations);
-  bb.rpc.register(rpcContract, {
+  const trailDatabase = alia.storage.database();
+  alia.storage.migrate(trailDatabase, thinkingTrailMigrations);
+  alia.rpc.register(rpcContract, {
     async open_markdown({ path: filePath, source }) {
-      const context = await resolveOpenContext(bb, source, filePath);
-      const file2 = await bb.sdk.files.read({
+      const context = await resolveOpenContext(alia, source, filePath);
+      const file2 = await alia.sdk.files.read({
         hostId: context.hostId,
         path: context.absolutePath,
         rootPath: context.rootPath
@@ -20640,8 +20640,8 @@ async function plugin(bb) {
       };
     },
     async refresh_markdown({ path: filePath, source, knownSha256 }) {
-      const context = await resolveOpenContext(bb, source, filePath);
-      const file2 = await bb.sdk.files.read({
+      const context = await resolveOpenContext(alia, source, filePath);
+      const file2 = await alia.sdk.files.read({
         hostId: context.hostId,
         path: context.absolutePath,
         rootPath: context.rootPath
@@ -20656,9 +20656,9 @@ async function plugin(bb) {
       };
     },
     async resolve_markdown_links({ path: filePath, source, content }) {
-      const context = await resolveOpenContext(bb, source, filePath);
-      const index = await cachedAutocompleteIndex(bb, context);
-      return { links: await resolveLinks(bb, content, context, index) };
+      const context = await resolveOpenContext(alia, source, filePath);
+      const index = await cachedAutocompleteIndex(alia, context);
+      return { links: await resolveLinks(alia, content, context, index) };
     },
     async save_markdown({
       path: filePath,
@@ -20666,8 +20666,8 @@ async function plugin(bb) {
       content,
       expectedSha256
     }) {
-      const context = await resolveOpenContext(bb, source, filePath);
-      const result = await bb.sdk.files.write({
+      const context = await resolveOpenContext(alia, source, filePath);
+      const result = await alia.sdk.files.write({
         hostId: context.hostId,
         path: context.absolutePath,
         rootPath: context.rootPath,
@@ -20686,17 +20686,17 @@ async function plugin(bb) {
       };
     },
     async resolve_chat_wikilink({ threadId, reference }) {
-      return resolveChatWikilink(bb, threadId, reference);
+      return resolveChatWikilink(alia, threadId, reference);
     },
     async preview_file({ target, backlinks }) {
-      return previewFile(bb, target, backlinks);
+      return previewFile(alia, target, backlinks);
     },
     async preview_url({ url: url2 }) {
       return cachedWebPreview(url2);
     },
     async preview_chat_wikilink({ threadId, reference, backlinks }) {
-      const resolved = await resolveChatWikilink(bb, threadId, reference);
-      const preview = resolved.target ? await previewFile(bb, resolved.target, backlinks) : {
+      const resolved = await resolveChatWikilink(alia, threadId, reference);
+      const preview = resolved.target ? await previewFile(alia, resolved.target, backlinks) : {
         content: null,
         imageDataUrl: null,
         backlinks: backlinks ? [] : null,
@@ -20710,7 +20710,7 @@ async function plugin(bb) {
       };
     },
     async autocomplete_wikilinks({ threadId, query }) {
-      return autocompleteWikilinks(bb, threadId, query);
+      return autocompleteWikilinks(alia, threadId, query);
     },
     async record_thinking_trail({ trail }) {
       return { id: recordThinkingTrail(trailDatabase, trail) };
@@ -20725,7 +20725,7 @@ async function plugin(bb) {
       };
     }
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "query_thinking_trails",
     description: "Find recent paths the user deliberately explored through linked notes and contextual backlinks. Trails preserve time, branching, dwell, and stronger click signals.",
     instructions: "Use this when earlier navigation may reveal how the user connected notes. Treat hover as curiosity and clicks as stronger interest, not endorsement.",
@@ -20748,7 +20748,7 @@ async function plugin(bb) {
       );
     }
   });
-  bb.agents.configure(() => ({
+  alia.agents.configure(() => ({
     tools: ["query_thinking_trails"],
     skills: ["obsidian-at-home"],
     instructions: "Thinking trails record note paths the user explored. Hover indicates curiosity; a clicked step is a stronger attention signal. Query them when reconstructing prior working context would help."

@@ -29,7 +29,7 @@ test("job and behavioral rules precede voice and expertise in the persona", () =
 test("the persona is never cut, even with every field at its maximum", () => {
   const value = longest();
   const text = renderSoulPersona(value);
-  assert.ok(text.length > INSTRUCTION_BUDGET, "the fixture should be larger than BB's instruction limit");
+  assert.ok(text.length > INSTRUCTION_BUDGET, "the fixture should be larger than VesnALIA's instruction limit");
   for (const line of [...value.boundaries, ...value.principles]) assert.ok(text.includes(`- ${line}`));
   assert.ok(text.includes(value.personality));
   assert.ok(text.includes(value.expertise.join(", ")));
@@ -37,7 +37,7 @@ test("the persona is never cut, even with every field at its maximum", () => {
   assert.doesNotMatch(text, /omitted|shortened|…/);
 });
 
-test("the injected instructions only point at the persona and fit BB's limit", () => {
+test("the injected instructions only point at the persona and fit VesnALIA's limit", () => {
   const value = longest();
   for (const [consent, hiring] of [[false, false], [false, true], [true, false], [true, true]]) {
     const text = renderSoulInstructions(value, consent, hiring);

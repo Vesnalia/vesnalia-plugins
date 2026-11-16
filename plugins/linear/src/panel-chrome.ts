@@ -75,7 +75,7 @@ const INITIAL: ChromeState = {
   collapsed: [],
 };
 
-const STORAGE_KEY = "bb-plugin-linear:panel";
+const STORAGE_KEY = "alia-plugin-linear:panel";
 
 function load(): ChromeState {
   try {

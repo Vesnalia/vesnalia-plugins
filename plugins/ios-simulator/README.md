@@ -1,6 +1,6 @@
-# iOS Simulator for BB
+# iOS Simulator for VesnALIA
 
-Run an iOS app beside your BB thread, tap through it yourself, and let agents
+Run an iOS app beside your VesnALIA thread, tap through it yourself, and let agents
 build, launch, and test on the same device.
 
 - **Live panel.** Choose a device and Attach to boot and stream it. Click to
@@ -36,8 +36,8 @@ build, launch, and test on the same device.
   `xcodebuild -downloadPlatform iOS` to install the platform.
 - Node.js 20 or newer on PATH. The capture helper,
   [serve-sim](https://github.com/EvanBacon/serve-sim), runs under Node.
-- BB 0.46 or newer with Plugin SDK 0.6.37 or newer.
-- The BB server runs on the Mac that has the simulators. No external service
+- VesnALIA 0.46 or newer with Plugin SDK 0.6.37 or newer.
+- The VesnALIA server runs on the Mac that has the simulators. No external service
   or additional account is required.
 
 The bundled native module targets Apple Silicon. Xcode 27 beta is the current
@@ -49,10 +49,10 @@ verified.
 From a source checkout:
 
 ```sh
-cd bb-plugin-ios-simulator
+cd alia-plugin-ios-simulator
 npm ci --include=dev
-bb plugin build
-bb plugin install .
+alia plugin build
+alia plugin install .
 ```
 
 Open a thread and use its Simulator header button, or choose **iOS Simulator**
@@ -105,8 +105,8 @@ represented by a character count in input events; video still shows the screen.
 CLI equivalents:
 
 ```sh
-bb ios-simulator session [device] --thread <thread-id>
-bb ios-simulator replay [device] --thread <thread-id>
+alia ios-simulator session [device] --thread <thread-id>
+alia ios-simulator replay [device] --thread <thread-id>
 ```
 
 ## How it works
@@ -114,7 +114,7 @@ bb ios-simulator replay [device] --thread <thread-id>
 The backend runs one serve-sim process per attached iOS device. serve-sim
 reads the framebuffer, uses the Mac's hardware H.264 encoder, and accepts HID
 input on loopback. The panel decodes video with WebCodecs; browsers without it
-use MJPEG. BB proxies the stream and input, so the panel talks to BB's own
+use MJPEG. VesnALIA proxies the stream and input, so the panel talks to VesnALIA's own
 origin. The helper's port stays on loopback.
 
 Agent tools use the same input path, `xcrun simctl`, and serve-sim's
@@ -127,8 +127,8 @@ controls it, and can interact with it yourself.
 ```sh
 npm run typecheck
 npm test
-bb plugin build
-bb plugin dev
+alia plugin build
+alia plugin dev
 ```
 
 The release includes `native/serve-sim-native.node`; a normal installation
@@ -163,7 +163,7 @@ Agent tools: `android_sim_list_devices`, `android_sim_attach`,
 `android_sim_detach`, `android_sim_screenshot`, `android_sim_tap`,
 `android_sim_swipe`, `android_sim_type`, `android_sim_press_button`,
 `android_sim_install_and_launch`, and `android_sim_launch`. APK installation
-requires an absolute `apkPath` on the BB server and an explicit `packageName`.
+requires an absolute `apkPath` on the VesnALIA server and an explicit `packageName`.
 
 Android uses the shared Agent control setting, with permission per thread and
 device for each plugin load. An emulator started by the plugin stops when its
@@ -205,5 +205,5 @@ The panel's stats line shows painted and decoded frames per second, decoder
 queue, and bandwidth. To inspect Mac CPU contention:
 
 ```sh
-bb ios-simulator diag-cpu
+alia ios-simulator diag-cpu
 ```

@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 /**
- * "Herald" in bb's thread menu: the rows on screen are read in one batch, each
+ * "Herald" in VesnALIA's thread menu: the rows on screen are read in one batch, each
  * row shows what applies to it and why, a pick is saved through the server,
  * and every row is read again when any choice changes. The menu of a sidebar
  * selection sets one pick for every selected thread.
  */
 import { act, cleanup, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginThreadAction, PluginThreadActionRegistration } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginThreadAction, PluginThreadActionRegistration } from "@vesnalia/plugin-sdk/app";
 import { useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -87,7 +87,7 @@ function server(initial: Record<string, ChoiceInputs>) {
   };
 }
 
-/** Renders the registration's `useData` as bb would, once for the app, and hands back what it returns. */
+/** Renders the registration's `useData` as VesnALIA would, once for the app, and hands back what it returns. */
 function mount(handlers: ReturnType<typeof server>["handlers"], threadIds: string[], settings: Record<string, boolean> = {}) {
   const registration = THREAD_CHOICE_ACTION as PluginThreadActionRegistration<ThreadChoicesData>;
   const seen: { data: ThreadChoicesData | null; show: (ids: string[]) => void } = { data: null, show: () => {} };
@@ -121,7 +121,7 @@ function picks(action: PluginThreadAction | null) {
 }
 
 describe("Herald's thread menu action", () => {
-  it("joins bb's state group in every thread menu, and the menu of a selection", async () => {
+  it("joins VesnALIA's state group in every thread menu, and the menu of a selection", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const action = app.threadActions.find((registered) => registered.id === "announcements");
     expect([action?.group, action?.icon, action?.placement]).toEqual(["1_state", "herald/megaphone", undefined]);
@@ -237,11 +237,11 @@ describe("Herald's thread menu action", () => {
 
   it("says when the choices cannot be read, and offers Retry", async () => {
     const fake = server({ t1: { own: "questions", inherited: null } });
-    fake.fail("bb is away");
+    fake.fail("alia is away");
     const { seen, item } = mount(fake.handlers, ["t1"]);
-    await waitFor(() => expect(seen.data?.error).toBe("bb is away"));
+    await waitFor(() => expect(seen.data?.error).toBe("alia is away"));
     const failed = item(target("t1"));
-    expect(failed).toMatchObject({ detail: "Unavailable", choices: { hint: "bb is away" } });
+    expect(failed).toMatchObject({ detail: "Unavailable", choices: { hint: "alia is away" } });
     expect(failed?.choices?.items.at(-1)).toEqual({ id: "retry", label: "Retry" });
 
     fake.fail(null);

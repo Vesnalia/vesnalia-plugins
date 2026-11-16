@@ -1,4 +1,4 @@
-/* Text colors for each category, light and dark. bb switches themes with a
+/* Text colors for each category, light and dark. alia switches themes with a
    .dark class rather than the OS setting, and this file ships as plain CSS
    (Tailwind's dark: variant would follow the OS), so the pairs live here. */
 .wou-tone-amber { color: #d97706; }

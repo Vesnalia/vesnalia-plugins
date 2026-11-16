@@ -276,7 +276,7 @@ test("Docker reports and prunes this install's unused snapshot images without ta
   const check = (await engine.doctor()).find((check) => check.id === "docker.snapshot-leftovers");
   assert.equal(check?.status, "warn");
   assert.match(check?.detail ?? "", /images without tags: 1/);
-  assert.match(check?.fix ?? "", /^Wait for BB Box's maintenance/, "the warning says what to do");
+  assert.match(check?.fix ?? "", /^Wait for ALIA Box's maintenance/, "the warning says what to do");
 
   await engine.maintain();
   const cleaned = (await engine.doctor()).find((check) => check.id === "docker.snapshot-leftovers");
@@ -317,7 +317,7 @@ test("Docker rebuilding lost records leaves a person's pause alone", async () =>
 });
 
 test("Docker snapshot changes preserve image metadata", () => {
-  const changes = commitChanges({ "bbbox.box": "source", "bbbox.image-version": "1", "bbbox.bb-app": "digest", "bbbox.image-record": "record", "bbbox.gpu-bus-id": "slot" }, {});
+  const changes = commitChanges({ "bbbox.box": "source", "bbbox.image-version": "1", "bbbox.alia-app": "digest", "bbbox.image-record": "record", "bbbox.gpu-bus-id": "slot" }, {});
 
   assert.deepEqual(changes.filter((value) => value.startsWith("LABEL")), ['LABEL bbbox.box=""']);
 });

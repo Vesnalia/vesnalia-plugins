@@ -1,11 +1,11 @@
-# bb-plugin-gitlab
+# alia-plugin-gitlab
 
-GitLab issues and merge requests inside BB, with one-click agent dispatch.
+GitLab issues and merge requests inside VesnALIA, with one-click agent dispatch.
 Self-managed instances are first-class: every host `glab` is logged into is a
 host this plugin can reach.
 
 ```sh
-bb plugin install /path/to/bb-plugin-gitlab
+alia plugin install /path/to/alia-plugin-gitlab
 ```
 
 ## What it does
@@ -22,16 +22,16 @@ bb plugin install /path/to/bb-plugin-gitlab
 - **Merge-request detail**: source → target branch, mergeability, pipeline jobs,
   approvals, reviewers, conversation notes, inline discussion threads, and
   per-file diffs rendered by the same syntax-highlighting engine as the rest of
-  BB, following the host's code theme. Deep-linkable as
+  VesnALIA, following the host's code theme. Deep-linkable as
   `#/merge_requests/<host>/<namespace/path>/<iid>`.
-- **Send agent / Review with agent**: spawns a BB worker thread on the issue (or
-  a review thread on the merge request) in the matching BB project. The item
+- **Send agent / Review with agent**: spawns a VesnALIA worker thread on the issue (or
+  a review thread on the merge request) in the matching VesnALIA project. The item
   then shows a ⚡ pill linking to the thread.
 - **Homepage section**: recent open issues with the same Send agent buttons.
 - **Mentions**: `#` completes GitLab issues, `!` completes merge requests (`@`
   does both); the selected item's title, state, and description are attached as
   agent context at send time.
-- **`bb gitlab` CLI**: `projects`, `issues [project]`, `mrs [project]`, `sync` —
+- **`alia gitlab` CLI**: `projects`, `issues [project]`, `mrs [project]`, `sync` —
   also discoverable by agents through the plugin-commands skill, alongside the
   bundled `gitlab` skill that teaches `glab` conventions.
 
@@ -45,7 +45,7 @@ tokens are stored by the plugin.
 
 ```sh
 glab auth login --hostname gitlab.example.dev
-bb plugin reload gitlab
+alia plugin reload gitlab
 ```
 
 A host's own glab config describes how it is reached, and the plugin reads that
@@ -70,25 +70,25 @@ A project is addressed by its **host-qualified ref**:
 `gitlab.example.dev/group/subgroup/app`. The host is the first segment; the rest
 is the namespace path, which may have any number of segments.
 
-- Every BB project whose git remote points at an authenticated GitLab host —
+- Every VesnALIA project whose git remote points at an authenticated GitLab host —
   including remotes that use that host's `ssh_host`, `api_host`, or subfolder
-  form. That mapping is also how "Send agent" picks the BB project to spawn in.
-  The remote comes from BB's own project record, so a checkout on an enrolled
+  form. That mapping is also how "Send agent" picks the VesnALIA project to spawn in.
+  The remote comes from VesnALIA's own project record, so a checkout on an enrolled
   remote host resolves exactly like a local one. A remote on a GitLab host glab
-  is not logged into is reported in `bb plugin logs gitlab`.
+  is not logged into is reported in `alia plugin logs gitlab`.
 - Plus the `extraProjects` setting: a comma-separated list of refs, normalized
   for you — a scheme, mixed case, a port, a subfolder, or a trailing slash are
   all accepted, and a bare `group/app` uses `defaultHost`.
-- `defaultProject`: where threads spawn for GitLab projects with no BB project.
+- `defaultProject`: where threads spawn for GitLab projects with no VesnALIA project.
 
 ```sh
-bb plugin config gitlab set extraProjects "https://Code.Example.dev:8443/gitlab/group/app, other/app"
-bb plugin config gitlab set defaultHost gitlab.example.dev
-bb plugin reload gitlab
+alia plugin config gitlab set extraProjects "https://Code.Example.dev:8443/gitlab/group/app, other/app"
+alia plugin config gitlab set defaultHost gitlab.example.dev
+alia plugin reload gitlab
 ```
 
 A background service refreshes the issue/MR cache every 5 minutes; the panel's
-Refresh button (or `bb gitlab sync`) forces it. The cache holds open items plus
+Refresh button (or `alia gitlab sync`) forces it. The cache holds open items plus
 a page of recently closed and merged ones, and the panel filters that cache in
 the browser, so `is:closed` or `is:merged` costs nothing. Detail views,
 mutations, and mention resolution always go live through `glab api`.
@@ -99,9 +99,9 @@ mutations, and mention resolution always go live through `glab api`.
 npm install --include=dev   # once
 npm run typecheck
 npm test
-bb plugin build             # dist/server.js + dist/app.js + dist/app.css
-bb plugin reload gitlab
+alia plugin build             # dist/server.js + dist/app.js + dist/app.css
+alia plugin reload gitlab
 ```
 
-`bb plugin dev` watches and reloads on every save. Plugin logs:
-`bb plugin logs gitlab -f`.
+`alia plugin dev` watches and reloads on every save. Plugin logs:
+`alia plugin logs gitlab -f`.

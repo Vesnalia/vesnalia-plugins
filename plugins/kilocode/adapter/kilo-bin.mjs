@@ -1,4 +1,4 @@
-// bb-kilocode — locating the Kilo Code CLI.
+// alia-kilocode — locating the Kilo Code CLI.
 //
 // One resolution order, shared by the adapter that spawns `kilo acp` and by
 // host.ts's health probe: an explicit `KILO_BIN` is honored exactly (a wrong

@@ -6,7 +6,7 @@ export interface Swatch {
   opacity?: number;
 }
 
-/** One colour per ticket state, shared by the Insights charts. bb's app defines no --chart-* variables, so these use the theme's named colours. */
+/** One colour per ticket state, shared by the Insights charts. VesnALIA's app defines no --chart-* variables, so these use the theme's named colours. */
 export const STATE_COLORS: Record<TicketState, Swatch> = {
   done: { fill: "var(--success, currentColor)" },
   pr_open: { fill: "var(--success, currentColor)", opacity: 0.35 },

@@ -11,13 +11,13 @@ function markdown(source: string): string {
 const gallery = (name: string) => readFileSync(new URL(`../gallery/${name}`, import.meta.url), "utf8");
 
 describe("toMarkdown: Compare", () => {
-  it("lists the reference and what it is compared with, their facts, and that the pixel views need BB", () => {
+  it("lists the reference and what it is compared with, their facts, and that the pixel views need VesnALIA", () => {
     expect(markdown(gallery("Compare.ui"))).toBe(`**Image comparison** · Approved render vs This build
 
-1. **Approved render** (reference) — \`data/compare/status-before.png\` — viewport 760 px · theme light · scale 1x · captured 2026-10-10 — Status gallery example as BB renders it
+1. **Approved render** (reference) — \`data/compare/status-before.png\` — viewport 760 px · theme light · scale 1x · captured 2026-10-10 — Status gallery example as VesnALIA renders it
 2. **This build** — \`data/compare/status-after.png\` — viewport 760 px · theme light · scale 1x · captured 2026-10-10 — The same panel after one edit
 
-_Side by side, wipe, overlay and the pixel difference with its changed regions show in BB._`);
+_Side by side, wipe, overlay and the pixel difference with its changed regions show in ALIA._`);
   });
 
   it("warns when the conditions differ, per compared image when there are several", () => {

@@ -1,12 +1,12 @@
 /** Narrow a spawned thread when the VK core advertises required session policy. */
 
-export const MANDATORY_BB_PLUGINS = ["environment-project-checkout", "project-folders"] as const;
-export const MANDATORY_MCP_SERVERS = ["bb-bridge"] as const;
+export const MANDATORY_ALIA_PLUGINS = ["environment-project-checkout", "project-folders"] as const;
+export const MANDATORY_MCP_SERVERS = ["alia-bridge"] as const;
 
 export type VkNameFilter = { mode: "allow"; names: string[] };
 
 export type RequiredSessionPolicyBody = {
-  bbPlugins?: VkNameFilter;
+  aliaPlugins?: VkNameFilter;
   skills?: VkNameFilter;
   mcpServers?: VkNameFilter;
   nativePlugins?: VkNameFilter;
@@ -21,10 +21,10 @@ export type RequiredSessionPolicySpawn = {
 };
 
 export type SessionNeed = {
-  /** Extra BB plugins; checkout/folders are always added when the provider can narrow bbPlugins. */
-  bbPlugins?: string[];
+  /** Extra VesnALIA plugins; checkout/folders are always added when the provider can narrow aliaPlugins. */
+  aliaPlugins?: string[];
   skills?: string[];
-  /** Omit to leave MCP as BB loads it; `[]` keeps only bb-bridge. */
+  /** Omit to leave MCP as VesnALIA loads it; `[]` keeps only alia-bridge. */
   mcpServers?: string[];
 };
 
@@ -42,7 +42,7 @@ function stringList(value: unknown): string[] | null {
 function advertisedFor(
   agents: Agents,
   providerId: string,
-): { groups: string[]; switches: string[]; mandatoryBbPlugins: string[]; mandatoryMcpServers: string[] } | null {
+): { groups: string[]; switches: string[]; mandatoryAliaPlugins: string[]; mandatoryMcpServers: string[] } | null {
   const advertise = agents.experimental_vkRequiredSessionPolicy;
   if (typeof advertise !== "function") return null;
   let raw: unknown;
@@ -61,13 +61,13 @@ function advertisedFor(
   const groups = stringList((groupsTable as Record<string, unknown>)[providerId]);
   const switches = stringList((switchesTable as Record<string, unknown>)[providerId]);
   if (!groups || !switches) return null;
-  const mandatoryBbPlugins = stringList(row.mandatoryBbPlugins) ?? [...MANDATORY_BB_PLUGINS];
+  const mandatoryAliaPlugins = stringList(row.mandatoryAliaPlugins) ?? [...MANDATORY_ALIA_PLUGINS];
   const mandatoryMcpServers = stringList(row.mandatoryMcpServers) ?? [...MANDATORY_MCP_SERVERS];
-  return { groups, switches, mandatoryBbPlugins, mandatoryMcpServers };
+  return { groups, switches, mandatoryAliaPlugins, mandatoryMcpServers };
 }
 
 /**
- * Spawn field for `bb.sdk.threads.spawn`. Empty object when the core has no required-policy
+ * Spawn field for `alia.sdk.threads.spawn`. Empty object when the core has no required-policy
  * API or the provider is not in the advertised tables — same spawn as today.
  */
 export function requiredSessionPolicySpawnField(
@@ -79,8 +79,8 @@ export function requiredSessionPolicySpawnField(
   const advertised = advertisedFor(agents as Agents, providerId);
   if (!advertised) return {};
   const policy: RequiredSessionPolicyBody = {};
-  if (advertised.groups.includes("bbPlugins")) {
-    policy.bbPlugins = { mode: "allow", names: unique([...advertised.mandatoryBbPlugins, ...(need.bbPlugins ?? [])]) };
+  if (advertised.groups.includes("aliaPlugins")) {
+    policy.aliaPlugins = { mode: "allow", names: unique([...advertised.mandatoryAliaPlugins, ...(need.aliaPlugins ?? [])]) };
   }
   if (advertised.groups.includes("skills")) {
     policy.skills = { mode: "allow", names: unique(need.skills ?? []) };
@@ -99,7 +99,7 @@ export function requiredSessionPolicySpawnField(
 
 /** Hidden classifier / card-writer: plugin tools only, no skill catalog, no extra MCP. */
 export function oneShotPluginNeed(pluginId: string): SessionNeed {
-  return { bbPlugins: [pluginId], skills: [], mcpServers: [] };
+  return { aliaPlugins: [pluginId], skills: [], mcpServers: [] };
 }
 
 export const CORE_REQUIRED_SESSION_ADVERTISEMENT = {
@@ -111,11 +111,11 @@ export const CORE_REQUIRED_SESSION_ADVERTISEMENT = {
   bridgeHandshakeVersion: 1,
   markerStorage: "thread-plugin-metadata",
   providerGroups: {
-    "claude-code": ["bbPlugins", "skills", "mcpServers", "nativePlugins"],
-    codex: ["bbPlugins", "skills", "mcpServers", "nativePlugins"],
-    "acp-opencode": ["bbPlugins", "skills", "mcpServers"],
-    "acp-cursor": ["bbPlugins", "skills", "mcpServers"],
-    opencode2: ["bbPlugins", "skills", "mcpServers"],
+    "claude-code": ["aliaPlugins", "skills", "mcpServers", "nativePlugins"],
+    codex: ["aliaPlugins", "skills", "mcpServers", "nativePlugins"],
+    "acp-opencode": ["aliaPlugins", "skills", "mcpServers"],
+    "acp-cursor": ["aliaPlugins", "skills", "mcpServers"],
+    opencode2: ["aliaPlugins", "skills", "mcpServers"],
   },
   instructionSwitches: {
     "claude-code": ["userInstructions", "projectInstructions", "claudeAiSync"],
@@ -124,6 +124,6 @@ export const CORE_REQUIRED_SESSION_ADVERTISEMENT = {
     "acp-cursor": ["userInstructions"],
     opencode2: ["userInstructions"],
   },
-  mandatoryBbPlugins: [...MANDATORY_BB_PLUGINS],
+  mandatoryAliaPlugins: [...MANDATORY_ALIA_PLUGINS],
   mandatoryMcpServers: [...MANDATORY_MCP_SERVERS],
 } as const;

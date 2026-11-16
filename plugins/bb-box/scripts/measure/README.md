@@ -1,7 +1,7 @@
 # Measuring a desktop's stream
 
 The harness behind [060's results](../../docs/decisions/060-results.md):
-how smooth and sharp a desktop is through BB's server, as the panel shows
+how smooth and sharp a desktop is through VesnALIA's server, as the panel shows
 it. It needs two boxes, the desktop and a Linux desktop box as the viewer.
 
 | File | What it is |
@@ -9,7 +9,7 @@ it. It needs two boxes, the desktop and a Linux desktop box as the viewer.
 | `scene.html` | The page the desktop shows full screen: a block of coloured text to drag, a key square, fixed text, coloured text, a list to scroll |
 | `web/page.html` | The viewer: noVNC or the panel's video client, logging every frame it draws: the block's edge on 40 rows, and the key square |
 | `entry.ts` | Builds `web/client.js` from the panel's own clients |
-| `proxy.mjs` | Serves `web` and passes `/bb` to BB's server |
+| `proxy.mjs` | Serves `web` and passes `/alia` to VesnALIA's server |
 | `drive.mjs` | Drives one run in headless Chrome and writes `raw-<label>.json` |
 | `batch.sh` | Several runs with one viewer, so control is taken once |
 | `analyse.mjs` | Sums up the runs, with the box's CPU per phase |
@@ -20,7 +20,7 @@ it. It needs two boxes, the desktop and a Linux desktop box as the viewer.
 1. Build the viewer:
    `npx esbuild scripts/measure/entry.ts --bundle --format=esm --outfile=scripts/measure/web/client.js --tsconfig=tsconfig.json`
 2. On the viewer box, start Chrome with `--remote-debugging-port=9222`, and
-   `node proxy.mjs server-url.txt`, where the file holds BB's server URL.
+   `node proxy.mjs server-url.txt`, where the file holds VesnALIA's server URL.
    Do not commit it.
 3. On the desktop box, open `scene.html` full screen in the box's browser
    in kiosk mode, so that it starts at the screen's top left. Take a
@@ -30,7 +30,7 @@ it. It needs two boxes, the desktop and a Linux desktop box as the viewer.
    Give the box's display `refresh` and `quality` as `REFRESH` and
    `QUALITY` where it has them, as the panel does.
 5. Once the viewer has written `connected`, give it control:
-   `bb plugin rpc call bb-box takeControl --input-file <file>`, where the
+   `alia plugin rpc call alia-box takeControl --input-file <file>`, where the
    file holds `{"threadId", "box", "viewer"}`. Then `touch go`.
 6. `CPU=<cpu log> node analyse.mjs <label>...`
 
@@ -47,8 +47,8 @@ the desktop a dark background. On a Mac, hide the Dock and turn off
 clicking the wallpaper to reveal the desktop, as the run's first click
 lands on the background.
 
-To test a stream server without BB's server, give the viewer its WebSocket
-URL as `WS`, for example through a local proxy to `bb-box-stream connect`.
+To test a stream server without VesnALIA's server, give the viewer its WebSocket
+URL as `WS`, for example through a local proxy to `alia-box-stream connect`.
 
 The scene is 1200 by 800 CSS pixels. Where a screen is smaller in points,
 as on a Tart Mac, set the browser's page zoom so that a CSS pixel is a

@@ -1,20 +1,15 @@
 {
-  "name": "bb-plugin-sops",
+  "name": "alia-plugin-sops",
   "version": "0.1.1",
-  "description": "BB plugin: edit SOPS-encrypted secrets beside your threads.",
+  "description": "VesnALIA plugin: edit SOPS-encrypted secrets beside your threads.",
   "license": "GPL-3.0-only",
   "author": "Mikhail Turilin",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mturilin/bb-plugin-sops.git"
-  },
-  "homepage": "https://github.com/mturilin/bb-plugin-sops#readme",
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49"
   },
-  "bb": {
+  "alia": {
     "name": "SOPS",
     "description": "Edit SOPS-encrypted secrets beside your threads: see the repo's encrypted files, edit them in a table or a text editor, and save them encrypted again.",
     "branding": {
@@ -44,7 +39,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -72,5 +66,22 @@
   },
   "scripts": {
     "test": "node --test --experimental-strip-types \"shared/*.test.ts\" \"server/*.test.ts\""
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/sops#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/sops"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

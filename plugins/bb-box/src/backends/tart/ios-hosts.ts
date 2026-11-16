@@ -17,7 +17,7 @@ import { claimScript, ownerText, parseFields, script, type HostState } from "./h
 import { PRODUCT } from "../../brand.ts";
 
 export const HOST_ROLE = "device-host";
-export const HOST_VM_PREFIX = "bb-box-host-";
+export const HOST_VM_PREFIX = "alia-box-host-";
 export const HOST_STARTING_MS = 55_000;
 export const SLOT_MAKING_MS = 33_000;
 export const ABANDONED_START_MS = 5 * 60_000;
@@ -663,7 +663,7 @@ export class IosHosts implements SlotLender {
     const began = performance.now();
     const boot = this.#access
       .boot(mac, vm, null, Date.now() + HOST_READY_MS, this.#stopping.signal)
-      .then(() => this.#access.log(`Shared iOS host ${vm} on ${mac.name} runs again, ${((performance.now() - began) / 1000).toFixed(1)} s after bb-box started it.`))
+      .then(() => this.#access.log(`Shared iOS host ${vm} on ${mac.name} runs again, ${((performance.now() - began) / 1000).toFixed(1)} s after alia-box started it.`))
       .finally(() => this.#boots.delete(vm));
     this.#boots.set(vm, boot);
     return boot;
@@ -687,7 +687,7 @@ export class IosHosts implements SlotLender {
     const said = (await this.#access.run(mac, hostStartClaimScript(vm, this.#access.installId, this.#instance), { signal })).stdout;
     const claim = parseFields(said);
     if (claim.live) {
-      if (this.#startsLeftTo.get(vm) !== claim.live) this.#access.log(`Shared iOS host ${vm} on ${mac.name} is being started by another bb-box instance, ${claim.live}, which said so at ${claim.beat ?? "?"}; this one waits for it.`);
+      if (this.#startsLeftTo.get(vm) !== claim.live) this.#access.log(`Shared iOS host ${vm} on ${mac.name} is being started by another alia-box instance, ${claim.live}, which said so at ${claim.beat ?? "?"}; this one waits for it.`);
       this.#startsLeftTo.set(vm, claim.live);
       return "elsewhere";
     }
@@ -732,7 +732,7 @@ export class IosHosts implements SlotLender {
     } catch (first) {
       if (signal.aborted || (first instanceof BackendError && first.code === "no_capacity")) throw first;
       const firstWords = first instanceof Error ? first.message : String(first);
-      this.#access.log(`Shared iOS host ${vm} on ${mac.name} did not start, so bb-box deletes its VM and starts a fresh clone of the iOS image, once: ${firstWords}`);
+      this.#access.log(`Shared iOS host ${vm} on ${mac.name} did not start, so alia-box deletes its VM and starts a fresh clone of the iOS image, once: ${firstWords}`);
       await this.#access.run(mac, hostFirstStartFailedScript(vm, this.#access.installId, firstWords), { signal });
       const discarded = (await this.#access.run(mac, hostCloneDiscardScript(vm, this.#access.installId), { timeoutMs: 120_000, signal })).stdout.trim();
       if (discarded !== "discarded") throw new Error(`${firstWords} Its owner file went before ${PRODUCT} could start a fresh clone.`);
@@ -1095,7 +1095,7 @@ export class IosHosts implements SlotLender {
     try {
       const signal = this.#stopping.signal;
       const app = await this.#serverApp(signal);
-      if (!app || (status?.bbAppKept && status.bbApp === app.digest)) return;
+      if (!app || (status?.aliaAppKept && status.aliaApp === app.digest)) return;
       const tried = this.#appTried.get(vm);
       if (tried?.digest === app.digest && Date.now() - tried.at < APP_TRIED_AGAIN_MS) return;
       this.#appTried.set(vm, { digest: app.digest, at: Date.now() });
@@ -1105,13 +1105,13 @@ export class IosHosts implements SlotLender {
         (input) => this.#helper(command, "keep-app", [], input, 120_000, signal),
       );
       if (!kept.kept) {
-        this.#access.log(`Shared iOS host ${vm} keeps no BB app for its slots, so each slot downloads it: ${kept.why}`);
+        this.#access.log(`Shared iOS host ${vm} keeps no VesnALIA app for its slots, so each slot downloads it: ${kept.why}`);
         return;
       }
       this.#appTried.delete(vm);
       this.#access.log(`Shared iOS host ${vm} on ${mac.name} keeps ${keptAppWords(app, kept)}.`);
     } catch (error) {
-      if (!this.#stopping.signal.aborted) this.#access.logError(`keep BB's app on shared iOS host ${vm}`, error);
+      if (!this.#stopping.signal.aborted) this.#access.logError(`keep VesnALIA's app on shared iOS host ${vm}`, error);
     } finally {
       this.#appKeeping.delete(vm);
     }
@@ -1186,8 +1186,8 @@ export class IosHosts implements SlotLender {
   }
 }
 
-export function slotAppWords(status: Pick<HostStatus, "bbApp" | "bbAppKept">): string {
-  return status.bbAppKept && status.bbApp ? `Its slots get BB's app build ${status.bbApp.slice(0, 12)} from the host.` : "It keeps no BB app for its slots, so each downloads it as it enrols.";
+export function slotAppWords(status: Pick<HostStatus, "aliaApp" | "aliaAppKept">): string {
+  return status.aliaAppKept && status.aliaApp ? `Its slots get VesnALIA's app build ${status.aliaApp.slice(0, 12)} from the host.` : "It keeps no VesnALIA app for its slots, so each downloads it as it enrols.";
 }
 
 export function slotUserOf(guest: Guest): string {

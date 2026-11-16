@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { definePluginApp, useSdk } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useSdk } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import {
   compatibilityReport,

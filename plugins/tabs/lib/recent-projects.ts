@@ -1,4 +1,4 @@
-import type { PluginSidebarProject, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarProject, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 export function latestProjectActivity(
   threads: readonly PluginSidebarThread[],

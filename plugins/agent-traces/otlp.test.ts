@@ -101,8 +101,8 @@ describe("toOtlp", () => {
   it("describes the thread on the resource", () => {
     expect(payload.resourceSpans[0].resource.attributes).toEqual(
       expect.arrayContaining([
-        { key: "service.name", value: { stringValue: "bb" } },
-        { key: "bb.thread.id", value: { stringValue: "thr_a" } },
+        { key: "service.name", value: { stringValue: "alia" } },
+        { key: "alia.thread.id", value: { stringValue: "thr_a" } },
       ]),
     );
   });

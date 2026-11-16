@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { PluginProviderOptionsContext } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { PluginProviderOptionsContext } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import polzaPlugin from "../server.js";
 import { POLZA_ENV, POLZA_PROVIDER_ID } from "./polza/contract.js";
 
 async function loadPolzaPlugin(settings: Record<string, string | boolean> = {}) {
   const host = createFakePluginHost({ pluginId: POLZA_PROVIDER_ID, settings });
-  await polzaPlugin(host.bb);
+  await polzaPlugin(host.alia);
   const declaration = host.harness.registrations.providerRegistrations.find(
     (entry) => entry.id === POLZA_PROVIDER_ID,
   );

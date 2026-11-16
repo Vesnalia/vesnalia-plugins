@@ -1,4 +1,4 @@
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { PROFILE } from './agent-entry.ts';
 import type { CopilotUsageReading } from './copilot-usage.ts';
 import {
@@ -18,7 +18,7 @@ export interface UsageSource {
 }
 
 export function registerUsageSource(
-  bb: Pick<BbPluginApi, 'rpc' | 'sdk'>,
+  alia: Pick<AliaPluginApi, 'rpc' | 'sdk'>,
   read: () => Promise<CopilotUsageReading>,
   now: () => number = Date.now
 ): UsageSource {
@@ -26,9 +26,9 @@ export function registerUsageSource(
   let pending: { refresh: boolean; promise: Promise<UsageMeasurement> } | null = null;
 
   async function localHost(): Promise<LocalHost | null> {
-    const { primaryHostId } = await bb.sdk.system.config();
+    const { primaryHostId } = await alia.sdk.system.config();
     if (!primaryHostId) return null;
-    const hosts = await bb.sdk.hosts.list();
+    const hosts = await alia.sdk.hosts.list();
     const host = hosts.find((candidate) => candidate.id === primaryHostId);
     return host ? { id: host.id, name: host.name } : null;
   }
@@ -89,7 +89,7 @@ export function registerUsageSource(
     return current.promise;
   }
 
-  bb.rpc.register(
+  alia.rpc.register(
     usageSourceRpcContract,
     {
       async [usageListMethod]() {
@@ -118,7 +118,7 @@ export function registerUsageSource(
     {
       experimental_discoverable: true,
       experimental_description:
-        "GitHub Copilot premium-request, chat, and completion quota for the Copilot CLI login on the bb server's machine. Inventory reads metadata only.",
+        "GitHub Copilot premium-request, chat, and completion quota for the Copilot CLI login on the VesnALIA server's machine. Inventory reads metadata only.",
     }
   );
 

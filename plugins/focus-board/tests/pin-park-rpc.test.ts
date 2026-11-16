@@ -3,7 +3,7 @@
 // itself — the park is written by the caller that performs the unpin, so
 // the RPC stays a dumb, testable record store.
 import { describe, expect, it } from "vitest";
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 import { setup } from "./helpers/done-fake-host";
 import { PIN_PARK_METADATA_KEY } from "../lib/pin-park";
 

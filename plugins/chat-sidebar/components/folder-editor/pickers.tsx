@@ -1,5 +1,5 @@
 // A folder's colour and icon.
-import type { PluginSidebarProject } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
 
 import { Icon } from "@/components/ui/icon";
 import { PALETTE, swatch, type ColorId } from "@/lib/colors";
@@ -119,7 +119,7 @@ export function IconPicker({
             aria-checked={selected}
             title={name}
             aria-label={name}
-            // The default icon stays stored as "no choice", so it follows bb.
+            // The default icon stays stored as "no choice", so it follows VesnALIA.
             onClick={() => onChange(icon === DEFAULT_ICONS[kind] ? null : icon)}
             className={cn(
               "grid aspect-square cursor-pointer place-items-center rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",

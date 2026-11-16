@@ -98,8 +98,8 @@ const ERROR_TEXT: Readonly<Record<BotErrorCode, { ru: string; en: string }>> = {
     en: "The meeting requires registration: register and give the bot your personal join link",
   },
   bot_blocked: {
-    ru: "Zoom не пускает ботов-гостей в эту встречу. Помогает вход под Zoom-аккаунтом (bb meetings zoom-login)",
-    en: "Zoom blocks guest bots from this meeting. Signing the bot in usually helps (bb meetings zoom-login)",
+    ru: "Zoom не пускает ботов-гостей в эту встречу. Помогает вход под Zoom-аккаунтом (VesnALIA meetings zoom-login)",
+    en: "Zoom blocks guest bots from this meeting. Signing the bot in usually helps (VesnALIA meetings zoom-login)",
   },
   browser_join_disabled: {
     ru: "Организатор запретил подключение из браузера",
@@ -122,8 +122,8 @@ const ERROR_TEXT: Readonly<Record<BotErrorCode, { ru: string; en: string }>> = {
   },
   browser_crashed: { ru: "Браузер бота аварийно завершился", en: "The bot's browser crashed" },
   dependency_missing: {
-    ru: "На машине записи не хватает компонентов. Выполните bb meetings setup",
-    en: "Runtime components are missing on the recording machine. Run bb meetings setup",
+    ru: "На машине записи не хватает компонентов. Выполните VesnALIA meetings setup",
+    en: "Runtime components are missing on the recording machine. Run alia meetings setup",
   },
   join_failed: { ru: "Не удалось подключиться к встрече", en: "Could not join the meeting" },
   recording_failed: { ru: "Не удалось записать звук встречи", en: "Could not record the meeting audio" },
@@ -282,7 +282,7 @@ export function mapRuntime(snapshot: RuntimeSnapshot, ctx: StatusContext): Mappe
       out.status = "failed";
       out.statusDetail = "Бот не запустился";
       out.errorCode = "unknown";
-      out.errorMessage = "Бот не запустился: процесс завершился, не записав состояние. Смотрите bb meetings logs";
+      out.errorMessage = "Бот не запустился: процесс завершился, не записав состояние. Смотрите VesnALIA meetings logs";
       return out;
     }
     out.activeSpeakers = bot.activeSpeakers;
@@ -357,8 +357,8 @@ export function mapRuntime(snapshot: RuntimeSnapshot, ctx: StatusContext): Mappe
     out.statusDetail = "Распознавание не удалось";
     out.transcriptStatus = "failed";
     out.transcriptError ??= stalled
-      ? "Транскрибатор не запускается. Смотрите bb meetings logs"
-      : "Транскрибатор несколько раз завершился с ошибкой. Смотрите bb meetings logs";
+      ? "Транскрибатор не запускается. Смотрите VesnALIA meetings logs"
+      : "Транскрибатор несколько раз завершился с ошибкой. Смотрите VesnALIA meetings logs";
     out.errorCode ??= "unknown";
     out.errorMessage ??= `Не удалось распознать запись: ${out.transcriptError}`;
     return out;

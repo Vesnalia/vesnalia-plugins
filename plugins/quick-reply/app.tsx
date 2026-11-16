@@ -1,4 +1,4 @@
-// bb-plugin-quick-reply — frontend entry.
+// alia-plugin-quick-reply — frontend entry.
 //
 // What: registers the two halves of Quick Reply.
 //   1. A content script (content.ts) that puts agree / disagree / tell-me-more /
@@ -10,7 +10,7 @@
 //   ordinary message from the user.
 // Design notes:
 //   - Sending goes through the composer handle (`useComposer().submit`), the
-//     same path as pressing Enter, so BB queues the message if the agent is
+//     same path as pressing Enter, so VesnALIA queues the message if the agent is
 //     still working, and the user's provider/model choices apply.
 //   - Whatever the user had typed in the message box stays: the replies are
 //     added after it and sent together. If sending fails, the message box is
@@ -19,7 +19,7 @@
 //     added while sending survives.
 
 import { useState, useSyncExternalStore } from "react";
-import { definePluginApp, useComposer } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useComposer } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { mountLineControls } from "./content.ts";
 import { formatReplies, orderMarks } from "./lib/format.ts";

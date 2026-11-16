@@ -7,7 +7,7 @@
 // nothing to do with us (private mode, quota, a disabled origin).
 import { useCallback, useState } from "react";
 
-const PREFIX = "bb-workspace-sidebar";
+const PREFIX = "alia-workspace-sidebar";
 
 /** Versioned keys: a shape change becomes a new key, not a migration. */
 export const COLLAPSED_SECTIONS_KEY = `${PREFIX}:collapsed-sections:v2`;

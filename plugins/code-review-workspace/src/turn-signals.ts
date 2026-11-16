@@ -162,7 +162,7 @@ export function alertBody(review: ReviewMeta, ready: Turn): string {
     mentioned: `${s.mentionBy ? `@${s.mentionBy}` : author} mentioned you`,
     handled: `Every thread of your feedback is resolved or answered${s.threads?.nonBlocking ? ", apart from nits" : ""}`,
     "looks-ready": "The assistant found all your feedback addressed",
-    // The thread that fixes them finished your comments: all reported, or it ran bb review ready; and what the check found.
+    // The thread that fixes them finished your comments: all reported, or it ran VesnALIA review ready; and what the check found.
     "fixes-ready": review.fixes ? cameBackText(review.fixes, review.sends?.at(-1)?.readyBy) : "The main thread finished your comments",
     "new-comments": s.newComments?.count === 1 ? `${s.newComments.by ? `@${s.newComments.by}` : "Someone"} commented on your PR`
       : `${s.newComments ? newCommentsText(s.newComments) : "New comments"} on your PR${s.newComments?.by ? `, the latest from @${s.newComments.by}` : ""}`,

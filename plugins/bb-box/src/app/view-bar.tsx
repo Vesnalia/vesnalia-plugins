@@ -76,7 +76,7 @@ export function OtherViews({ box, shown, without, onSwitch }: { box: BoxView; sh
   );
 }
 
-export const BAR_NUMBERS_SHOWN_KEY = "bb-box:bar-numbers";
+export const BAR_NUMBERS_SHOWN_KEY = "alia-box:bar-numbers";
 
 function rememberedBarNumbersShown(): boolean {
   try {

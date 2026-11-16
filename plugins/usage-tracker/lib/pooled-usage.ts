@@ -12,7 +12,7 @@ import {
 
 /**
  * Reads per-account usage from the Account Pooler plugin through its
- * `provider-usage.v1` RPC source. bb's own usage endpoint only sees the
+ * `provider-usage.v1` RPC source. VesnALIA's own usage endpoint only sees the
  * host-local login, so with several pooled accounts it reports one of them.
  */
 export const ACCOUNT_POOL_PLUGIN_ID = "account-pool";

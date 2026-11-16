@@ -72,7 +72,7 @@ function keptCheck(listed: readonly HeldSnapshot[], retained: readonly (Retained
     name: "Kept snapshots",
     status: "ok",
     detail: `${these} ${keptSpaceWords(retained, kept.length === 1)} ${PRODUCT} refuses to remove this backend while it holds them.`,
-    fix: "Delete one with bb box snapshot delete <box> <snapshot>, as bb box snapshot list --all names them.",
+    fix: "Delete one with VesnALIA box snapshot delete <box> <snapshot>, as VesnALIA box snapshot list --all names them.",
   };
 }
 
@@ -97,7 +97,7 @@ function leftoversCheck(pending: number, incomplete: number, dangling: number, v
   const fix: string[] = [];
   if (tasksLeft) {
     detail.push(`${pending} snapshot tasks await recovery; ${incomplete} copies are incomplete; images without tags: ${dangling}.`);
-    fix.push("Wait for BB Box's maintenance, which runs every few minutes: it unpauses an interrupted take once its time bound has passed, and prunes snapshot images no container uses.");
+    fix.push("Wait for VesnALIA Box's maintenance, which runs every few minutes: it unpauses an interrupted take once its time bound has passed, and prunes snapshot images no container uses.");
   }
   if (volumesLeft.length) {
     detail.push(`Maintenance could not remove the Docker volumes a restore's copy left: ${volumesLeftWords(volumesLeft)}.`);

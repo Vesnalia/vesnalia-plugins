@@ -9,7 +9,7 @@ const execFileAsync = promisify(execFile);
 
 /**
  * Claude Code reads extra reset programs from the same OAuth usage endpoint
- * BB already hits for session/weekly bars. The extra fields only appear when
+ * VesnALIA already hits for session/weekly bars. The extra fields only appear when
  * asked for: cedar_ember is the banked-grant inventory (Codex-style saved
  * resets), at_wall adds the weekly session-reset offer. skip_spend keeps the
  * body small. The protocol evolves independently of this plugin, so every
@@ -164,7 +164,7 @@ function mergeResetCredits(parts: ClaudeGrant[]): ProviderResetCredits | null {
 
 /**
  * Convert a Claude OAuth usage snapshot into provider-neutral extras.
- * Windows stay with BB — this only lifts the reset programs BB's schema
+ * Windows stay with VesnALIA — this only lifts the reset programs VesnALIA's schema
  * strips.
  */
 export function normalizeClaudeUsage(value: unknown): ProviderSupplement | null {

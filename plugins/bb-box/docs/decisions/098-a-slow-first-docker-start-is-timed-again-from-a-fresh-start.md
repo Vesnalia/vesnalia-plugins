@@ -49,7 +49,7 @@ disk load. This version estimates nothing.
   without waiting, through `sudo`, and polls until both are inactive.
   `docker.socket` keeps listening, as at boot.
 - Without systemd, in a Docker or microsandbox box, the check sends TERM to
-  `dockerd`, waits for it to end, then waits until `bb-box-start` listens
+  `dockerd`, waits for it to end, then waits until `alia-box-start` listens
   on Docker's socket again and the box user can open it.
 - A failure says which of these it is: no answer within 30 s, a connection
   refused or no socket, slow both times, or Docker did not stop for a second
@@ -74,7 +74,7 @@ disk load. This version estimates nothing.
   twice, so a build step that started Docker in the minute before can make
   the second start fail as refused.
 - The check takes at most 30 s. A second start costs about 2 s more
-  without systemd: `dockerd` takes about 1 s to stop, and `bb-box-start`
+  without systemd: `dockerd` takes about 1 s to stop, and `alia-box-start`
   waits 1 s before it listens again.
 - The box user stops Docker through `sudo`, which every image gives it. A
   command started through `sudo` is root's, so the check cannot kill it:

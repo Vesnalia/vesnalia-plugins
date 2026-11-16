@@ -1,10 +1,10 @@
-// One time budget per host call. bb cancels every server -> host call at a
+// One time budget per host call. VesnALIA cancels every server -> host call at a
 // fixed 30 s (COMMAND_TIMEOUT_MS in apps/server/src/constants.ts) and offers
 // no override, so a handler's git commands share one clock: resolve, the
 // pre-flight reads, the action itself and the overview read afterwards.
 
 export const HOST_CALL_CAP_MS = 30_000;
-/** Leaves transport headroom under bb's cap. */
+/** Leaves transport headroom under VesnALIA's cap. */
 export const DEFAULT_BUDGET_MS = 27_000;
 /** Kept back from mutations so the overview read afterwards can still run. */
 export const OVERVIEW_RESERVE_MS = 4_000;

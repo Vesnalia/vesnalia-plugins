@@ -8,7 +8,7 @@
 
 [![KodaForge in 20 seconds: watch the launch video](docs/kodaforge-launch.jpg)](docs/kodaforge-launch.mp4)
 
-<sub>20 seconds, sound on: click the image to play. Your agents code in BB. Now you can too.</sub>
+<sub>20 seconds, sound on: click the image to play. Your agents code in VesnALIA. Now you can too.</sub>
 
 ## Everything it does
 
@@ -39,27 +39,27 @@ defines, here a small email-triage app. Click anything to open its code.
 
 ![Agent Network in Coding mode, with threads, a workflow run and MCP servers orbiting Koda](docs/images/agent-network-coding.jpg)
 
-## Install in BB
+## Install in VesnALIA
 
 The quickest way is one command, pinned to the 0.x releases so updates arrive without breaking changes:
 
 ```sh
-bb plugin install 'git:https://github.com/Kodaks94/bb-plugin-kodaforge.git@>=0.4.0 <1.0.0' --yes
+alia plugin install 'git:https://github.com/Kodaks94/bb-plugin-kodaforge.git@>=0.4.0 <1.0.0' --yes
 ```
 
-Or add the marketplace once. KodaForge then appears in BB's plugin store, and future plugins
+Or add the marketplace once. KodaForge then appears in VesnALIA's plugin store, and future plugins
 from this marketplace will too:
 
 ```sh
-bb marketplace add git:github.com/Kodaks94/bb-plugin-kodaforge@main
-bb plugin install kodaforge@kodaks94
+alia marketplace add git:github.com/Kodaks94/bb-plugin-kodaforge@main
+alia plugin install kodaforge@kodaks94
 ```
 
-Update with `bb plugin update kodaforge`, and check for updates with `bb plugin outdated`.
+Update with `alia plugin update kodaforge`, and check for updates with `alia plugin outdated`.
 Every release is listed on the [Releases page](https://github.com/Kodaks94/bb-plugin-kodaforge/releases),
 with its notes from the [CHANGELOG](CHANGELOG.md).
 
-A VS Code-style IDE inside BB for any project checkout, worktree or thread workspace, on
+A VS Code-style IDE inside VesnALIA for any project checkout, worktree or thread workspace, on
 this machine or a remote one. Agent chat, threads and workflows sit beside your code, and
 Koda the bear keeps you company.
 
@@ -161,13 +161,13 @@ Click him for a tip. Every animation is off when the system asks for reduced mot
 
 ## Chat, threads and workflows (right-hand panel, ⌘⌥B)
 
-- **Chat** runs BB's own chat for a thread beside the editor. **New chat** opens BB's own
+- **Chat** runs VesnALIA's own chat for a thread beside the editor. **New chat** opens VesnALIA's own
   composer, set to reuse this workspace, so the agent edits the same files you have open.
   Untouched tabs reload as it writes, and the hash guard protects your unsaved edits.
-- **Threads** lists the project's threads with BB's status glyphs. Threads on this workspace
+- **Threads** lists the project's threads with VesnALIA's status glyphs. Threads on this workspace
   come first and are marked.
 - **Workflows** shows recent workflow runs, colour-coded by state, with their details.
-  It also runs any `.bb/workflows/<name>.js` in the workspace with one click. A run reports
+  It also runs any `.vesnalia/workflows/<name>.js` in the workspace with one click. A run reports
   back to the chat thread, which is why a thread must be picked first.
 
 ## Run and Debug (⌘⇧D, F5)
@@ -191,7 +191,7 @@ Files and folders use the [Material Icon Theme](https://github.com/material-exte
 
 ## Colour coding
 
-Every colour comes from BB's current code theme (its terminal ANSI colours), so it follows
+Every colour comes from VesnALIA's current code theme (its terminal ANSI colours), so it follows
 light and dark themes:
 - **Files:** by type, in the tree, tabs and search (TS blue, JS yellow, Python cyan,
   config red or orange, and so on).
@@ -203,7 +203,7 @@ light and dark themes:
 ## Features
 
 **Editor (phase 1)**
-- Monaco, loaded only when the IDE opens, with syntax colours for ~80 languages and BB's
+- Monaco, loaded only when the IDE opens, with syntax colours for ~80 languages and VesnALIA's
   current code theme (light and dark).
 - Tabs with dirty markers and up to four side-by-side groups (⌘\\). A file open in two
   groups shares one buffer.
@@ -247,7 +247,7 @@ light and dark themes:
   stopped after 10 idle minutes. Its state shows in the status bar; click a failed one to retry.
 
 **Terminal (phase 5)** (Ctrl+\`, or **Terminal** in the status bar)
-- xterm.js on BB's persistent terminals, starting in the workspace root. Leaving KodaForge
+- xterm.js on VesnALIA's persistent terminals, starting in the workspace root. Leaving KodaForge
   and coming back reattaches the very same terminal: the screen, scrollback, cursor and any
   full-screen program (vim, htop) are untouched, and output keeps arriving while you're away.
   After an app restart, the terminals are found again with their last 512 KB of output.
@@ -274,9 +274,9 @@ light and dark themes:
 
 ## Limits
 
-- Quick Open and the tree list at most 10,000 entries (BB's listing limit).
+- Quick Open and the tree list at most 10,000 entries (VesnALIA's listing limit).
 - Search stops after 5,000 matches or 15 seconds.
-- **Terminal output is polled.** BB has no push for terminal output, so the IDE polls by
+- **Terminal output is polled.** VesnALIA has no push for terminal output, so the IDE polls by
   sequence number: every 30 ms while text flows, backing off to 400 ms when idle.
 - **One IDE view per language server.** Opening the same workspace in a second IDE view takes
   its language servers over, and the first view's status bar shows "stopped". Click to take
@@ -289,35 +289,35 @@ light and dark themes:
   only. Use **File: Save All**.
 - Source control has no merge or rebase UI, no conflict editor and no commit history. Use the
   terminal for those.
-- Keyboard shortcuts work while the IDE has focus. Outside it, BB's own shortcuts apply.
+- Keyboard shortcuts work while the IDE has focus. Outside it, VesnALIA's own shortcuts apply.
 
 ## Security
 
-- Every path is checked twice before BB touches it. The server rejects `..` and absolute paths.
+- Every path is checked twice before VesnALIA touches it. The server rejects `..` and absolute paths.
   The host's realpath check rejects symlinks that lead outside the workspace root, even for
-  files that don't exist yet. BB's own `rootPath` confinement is a third layer. Mutations may
+  files that don't exist yet. VesnALIA's own `rootPath` confinement is a third layer. Mutations may
   not target the root itself.
 - No save is unconditional. Overwrite and Replace All are compare-and-swap against a known hash.
 - Git runs without a shell, with paths after `--`. Branch names must pass
   `git check-ref-format` and may not start with `-`.
 - Language servers, formatters, git and search run on the workspace's machine with the
   workspace root as their working directory.
-- **No new ports.** The language-server WebSocket is mounted on BB's own server
+- **No new ports.** The language-server WebSocket is mounted on VesnALIA's own server
   (`/api/v1/plugins/kodaforge/http/lsp`) and requires the plugin token. Rotate the token with
-  `bb plugin token kodaforge --rotate`.
+  `alia plugin token kodaforge --rotate`.
 
 ## Architecture
 
 | Part | Runs on | Does |
 | --- | --- | --- |
-| `app.tsx`, `components/` | BB app | The workbench UI. Monaco and xterm.js. A small LSP client (`components/lsp.ts`). |
-| `server.ts` | BB server | Workspace resolution, guarded file I/O through `bb.sdk.files`, the Monaco asset URL, the LSP WebSocket bridge, and RPCs that relay to the host. |
+| `app.tsx`, `components/` | VesnALIA app | The workbench UI. Monaco and xterm.js. A small LSP client (`components/lsp.ts`). |
+| `server.ts` | VesnALIA server | Workspace resolution, guarded file I/O through `alia.sdk.files`, the Monaco asset URL, the LSP WebSocket bridge, and RPCs that relay to the host. |
 | `host.ts`, `lib/` | The workspace's machine | Symlink guard, file watcher, search, git, language-server processes, formatters. |
 
 Workspace resolution and the path guard are adapted from
-[bb-plugin-files-editor](https://github.com/abdoutelb/bb-plugin-files-editor) (MIT). Monaco is
-served the way BB's builtin monaco-editor plugin does it: a prebuilt bundle behind
-`bb.sdk.files.createPreview`, imported on first use.
+[alia-plugin-files-editor](https://github.com/abdoutelb/bb-plugin-files-editor) (MIT). Monaco is
+served the way VesnALIA's builtin monaco-editor plugin does it: a prebuilt bundle behind
+`alia.sdk.files.createPreview`, imported on first use.
 
 **How LSP messages travel**
 
@@ -356,24 +356,24 @@ passes, and nobody can force-push or delete it.
    `git checkout main && git pull && git tag -a v0.3.0 -m "KodaForge 0.3.0" && git push origin v0.3.0`.
 4. The Release workflow checks that the tag matches `package.json`, runs the tests, and
    publishes the GitHub Release with notes from the CHANGELOG, the package tarball, and the
-   package on GitHub Packages. BB users get it from `bb plugin update kodaforge`.
+   package on GitHub Packages. VesnALIA users get it from `alia plugin update kodaforge`.
 
-`monaco/` (the prebuilt editor and icon bundle) is committed, because BB's git installs don't
+`monaco/` (the prebuilt editor and icon bundle) is committed, because VesnALIA's git installs don't
 run build scripts. CI rebuilds it and fails if the committed icon map is out of date.
 
 ## Develop from a local path
 
 ```sh
-cd bb-plugin-ide
+cd alia-plugin-ide
 npm install --include=dev
-npm run build            # bundles Monaco into ./monaco, then `bb plugin build`
-bb plugin install path:$(pwd) --yes
+npm run build            # bundles Monaco into ./monaco, then `alia plugin build`
+alia plugin install path:$(pwd) --yes
 ```
 
-While developing, run `bb plugin dev` to rebuild and reload on save. After changing
+While developing, run `alia plugin dev` to rebuild and reload on save. After changing
 `scripts/monaco-entry.js`, run `npm run build:monaco` again.
 
-Settings live in `bb plugin config kodaforge`: **Excluded directories** and **Format on save**.
+Settings live in `alia plugin config kodaforge`: **Excluded directories** and **Format on save**.
 
 ## Tests
 
@@ -403,7 +403,7 @@ The vitest suite covers:
    saves yours; **Reload** brings back the disk version.
 6. ⌘\\ opens a second group. Typing in one updates the other.
 7. ⌘⇧P → "Replace". Toggle regex (.*) and replace a pattern.
-8. Switch BB between light and dark. The editor follows.
+8. Switch VesnALIA between light and dark. The editor follows.
 9. Open a file over 2 MB. It's read-only and says so.
 
 **Phase 2: explorer**
@@ -415,7 +415,7 @@ The vitest suite covers:
 5. Delete from the context menu. It asks first, and the clean tab closes.
 6. In a git workspace, changed files are coloured with a letter, and so are their folders.
 7. The eye toggle hides and shows dotfiles. Add a folder name under Excluded directories
-   (`bb plugin config kodaforge`), reload the plugin, and it disappears.
+   (`alia plugin config kodaforge`), reload the plugin, and it disappears.
 
 **Phase 3: search**
 1. ⌘⇧F, type a word. Results are grouped by file. Clicking one opens the file with the match selected.
@@ -451,7 +451,7 @@ The vitest suite covers:
 1. ⌘⌥B opens the right-hand panel. Chat shows the thread (in a thread tab) or the composer.
 2. Start a new chat. It appears in Threads, marked "this workspace". When the agent edits a
    file you have open and clean, the tab updates.
-3. Workflows lists recent runs. Add `.bb/workflows/hello.js` and a Run button appears.
+3. Workflows lists recent runs. Add `.vesnalia/workflows/hello.js` and a Run button appears.
 
 **Koda**
 1. Save a file: Koda hops. Make a type error: he sweats. Leave the IDE idle for 3 minutes: he
@@ -466,7 +466,7 @@ The vitest suite covers:
    Console.
 
 **Terminal persistence**
-1. Run `top` in a terminal, open another BB page, come back. `top` is still on screen, live.
+1. Run `top` in a terminal, open another VesnALIA page, come back. `top` is still on screen, live.
 
 **Phase 6: source control**
 1. ⌘⇧G in a git workspace. Changed files appear under Changes, coloured.

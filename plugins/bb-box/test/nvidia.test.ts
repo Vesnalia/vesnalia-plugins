@@ -116,7 +116,7 @@ test("a shared card: the whole card's numbers, never busy; a desktop alone on it
   assert.equal(cardFoot(card, bytes), "This box: 0 MiB of 13250 MiB");
   assert.equal(cardFoot(card, bytes, false), "13250 of 97887 MiB · 285 W");
   assert.equal(cardFoot({ ...card, ownMemoryBytes: null, ownProcesses: null }, bytes), "Whole card: 13250 MiB used");
-  assert.equal(sharedCardWords(card, 1, bytes), "This box shares its GPU with other boxes or the host. Its numbers are the whole card's, every user's together. None of this box's processes use it now. BB Box cannot tell how much of the card's use is this box's, so a shared card never makes this box busy.");
+  assert.equal(sharedCardWords(card, 1, bytes), "This box shares its GPU with other boxes or the host. Its numbers are the whole card's, every user's together. None of this box's processes use it now. VesnALIA Box cannot tell how much of the card's use is this box's, so a shared card never makes this box busy.");
   assert.match(sharedCardWords(idleContext.cards[0]!, 2, bytes), /^This box shares GPU 0 with .* This box's own process uses 180 MiB of its memory\./);
   assert.equal(cardFoot(gpuReadingOf(cards, [], false)!.cards[0]!, bytes), "13250 of 97887 MiB · 285 W");
 });
@@ -208,17 +208,17 @@ test("a box read through its route shows its cards, keeps processes on the GPU i
   const ps = ["1 0.0 0.1 1000 Ss /sbin/init", "10 80.0 1.0 1000 R cc1", "11 70.0 1.0 1000 R cc1", "12 60.0 1.0 1000 R cc1", "13 50.0 1.0 1000 R cc1", "14 40.0 1.0 1000 R cc1", "15 30.0 1.0 1000 R cc1", "4242 2.0 9.0 90000 S /usr/bin/python3"].join("\n");
   const output = [
     "",
-    "@@bb-box-monitor:uname",
+    "@@alia-box-monitor:uname",
     "Linux 6.17.13 x86_64",
-    "@@bb-box-monitor:ps",
+    "@@alia-box-monitor:ps",
     ps,
-    "@@bb-box-monitor:stat",
+    "@@alia-box-monitor:stat",
     "cpu  100 0 100 800 0 0 0 0 0 0\ncpu0 50 0 50 400 0 0 0 0 0 0",
-    "@@bb-box-monitor:meminfo",
+    "@@alia-box-monitor:meminfo",
     "MemTotal: 8388608 kB\nMemAvailable: 4194304 kB",
-    "@@bb-box-monitor:nvidia",
+    "@@alia-box-monitor:nvidia",
     `0, GPU-${UUID_0}, ${BUS_0}, NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition, 97, 40000, 97887, 80, 290.00, 300.00`,
-    "@@bb-box-monitor:nvidia-pids",
+    "@@alia-box-monitor:nvidia-pids",
     pidsReport({ [BUS_0]: [[4242, "C", "/usr/bin/python3", 39000]] }),
     "",
   ].join("\n");
@@ -230,7 +230,7 @@ test("a box read through its route shows its cards, keeps processes on the GPU i
   assert.equal(snapshot.health.status, "healthy", "a card at full use is a training box doing its job, never a health issue");
   assert.deepEqual(snapshot.history.at(-1)!.gpus, [{ card: 0, usage: 97, memory: (40000 / 97887) * 100 }]);
 
-  const plain = createRouteCollector({ os: "linux", scope: "machine", refreshIntervalMs: () => 5000 }).snapshot({ sections: routeSections(output.split("@@bb-box-monitor:nvidia\n")[0]!), receivedAt: 0 });
+  const plain = createRouteCollector({ os: "linux", scope: "machine", refreshIntervalMs: () => 5000 }).snapshot({ sections: routeSections(output.split("@@alia-box-monitor:nvidia\n")[0]!), receivedAt: 0 });
   assert.equal(plain.gpus, null, "a box with no GPU has none");
   assert.equal(plain.history.at(-1)!.gpus, undefined);
   assert.deepEqual(parseProcesses(ps).top.map((process) => process.pid), [10, 11, 12, 13, 14, 15], "nothing pinned, the top six by CPU");

@@ -1,6 +1,6 @@
-# Bots for BB
+# Bots for VesnALIA
 
-Create a small team of AI bots inside BB.
+Create a small team of AI bots inside VesnALIA.
 
 Each bot has its own name, instructions, model provider, model, and reasoning
 level. Create a bot once, give it a clear job, and use it whenever you need it
@@ -12,17 +12,17 @@ works best for code.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/front-page-dark.png">
-  <img alt="The full BB window with a navigation rail, five colorful bot avatars, and a list of recent threads." src="assets/screenshots/front-page-light.png">
+  <img alt="The full VesnALIA window with a navigation rail, five colorful bot avatars, and a list of recent threads." src="assets/screenshots/front-page-light.png">
 </picture>
 
-<sub>A team of bots in the BB window. This preview uses sample data and a mock thread sidebar and composer.</sub>
+<sub>A team of bots in the VesnALIA window. This preview uses sample data and a mock thread sidebar and composer.</sub>
 
 ## Why this exists
 
 I like custom GPTs and Grok bots because they let you create a reusable persona
 for a specific job. But they are tied to one model provider.
 
-BB gives you more control. You can create your own bots, keep their instructions
+VesnALIA gives you more control. You can create your own bots, keep their instructions
 in one place, and choose the provider and model for each one.
 
 This plugin brings those two ideas together:
@@ -30,7 +30,7 @@ This plugin brings those two ideas together:
 - reusable bots with a clear purpose
 - your own instructions for every bot
 - a different model provider or model for different kinds of work
-- a familiar chat experience inside BB
+- a familiar chat experience inside VesnALIA
 
 The goal is simple: build a personal fleet of bots that work the way you work.
 
@@ -44,32 +44,32 @@ With Bots, you can:
 - connect a bot to a project when it needs repository context
 - keep bots without a project for everyday conversations
 - create drafts before making a bot available to chat with
-- keep chat history as normal BB threads
+- keep chat history as normal VesnALIA threads
 - choose an animated blob avatar or an emoji for each bot
 - expand a bot in the rail to open recent threads and see their states
 
-A bot is not a separate chat app. It lives in BB and uses BB's existing thread,
+A bot is not a separate chat app. It lives in VesnALIA and uses VesnALIA's existing thread,
 composer, attachment, archive, and delete experience.
 
 ## Install
 
-Install from the BB Community marketplace:
+Install from the VesnALIA Community marketplace:
 
 ```sh
-bb plugin install bots
+alia plugin install bots
 ```
 
 Install directly from this repository:
 
 ```sh
-bb plugin install git:https://github.com/prakashchokalingam/bb-plugin-bots.git
+alia plugin install git:https://github.com/prakashchokalingam/bb-plugin-bots.git
 ```
 
-Requires BB `>=0.48.1`.
+Requires VesnALIA `>=0.48.1`.
 
 ## Create your first bot
 
-1. Open **Bots** from the BB sidebar.
+1. Open **Bots** from the VesnALIA sidebar.
 2. Click **New bot**.
 3. Give the bot a name and write its instructions.
    Select the avatar to choose a shape, color, or emoji.
@@ -102,7 +102,7 @@ those instructions are applied automatically for that conversation.
 You can edit a bot at any time. Changes apply to future chats; an active chat
 keeps the instructions it started with.
 
-Bots can be connected to a BB project, but they do not need to be. A project
+Bots can be connected to a VesnALIA project, but they do not need to be. A project
 gives the bot access to repository context. A bot without a project is useful
 for writing, thinking, planning, and other general conversations.
 
@@ -122,10 +122,10 @@ A draft cannot start a chat until it has:
 
 Once published, the bot is ready to use from the Bots sidebar.
 
-## Chats stay in BB
+## Chats stay in VesnALIA
 
-Bot chats are normal BB threads. You can open them, archive them, delete them,
-and find them in the sidebar like any other BB conversation.
+Bot chats are normal VesnALIA threads. You can open them, archive them, delete them,
+and find them in the sidebar like any other VesnALIA conversation.
 
 Deleting a bot does not delete its existing chats. Those chats stay available,
 but they no longer receive that bot's instructions.
@@ -133,9 +133,9 @@ but they no longer receive that bot's instructions.
 ## Development
 
 ```sh
-bb plugin install .
-bb plugin dev
-bb plugin logs bots -f
+alia plugin install .
+alia plugin dev
+alia plugin logs bots -f
 
 npm test
 npm run typecheck

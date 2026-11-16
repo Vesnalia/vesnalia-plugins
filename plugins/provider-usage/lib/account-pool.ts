@@ -10,7 +10,7 @@ import {
 type JsonRecord = Record<string, unknown>;
 
 /**
- * The Account Pooler names providers the way its CLI does (`bb pool routing
+ * The Account Pooler names providers the way its CLI does (`alia pool routing
  * <claude|codex>`), which is not the dashboard's key for the same provider.
  */
 const POOL_PROVIDER_KEYS: Record<string, ProviderKey> = {
@@ -135,7 +135,7 @@ function windowsFromFlatFields(account: JsonRecord): UsageWindow[] {
 }
 
 /**
- * Turn `bb pool status --json` into per-provider account meters.
+ * Turn `alia pool status --json` into per-provider account meters.
  *
  * The pooler is experimental and says its CLI can change between releases, so
  * every field is optional here: an unreadable account degrades to a row with a
@@ -159,7 +159,7 @@ export function normalizeAccountPool(
     const poolProvider = nonEmptyString(account.provider);
     if (poolProvider === null) continue;
     const key = POOL_PROVIDER_KEYS[poolProvider];
-    // Routing off means bb still hands this provider its own credentials, so
+    // Routing off means VesnALIA still hands this provider its own credentials, so
     // the pool's numbers would describe traffic that is not flowing there.
     if (!key || routing[poolProvider] !== true) continue;
 
@@ -202,8 +202,8 @@ export function normalizeAccountPool(
 }
 
 function commandCandidates(explicit?: string): string[] {
-  const configured = explicit?.trim() || process.env.BB_CLI?.trim();
-  return [configured, "bb", "/opt/homebrew/bin/bb", "/usr/local/bin/bb"].filter(
+  const configured = explicit?.trim() || process.env.ALIA_CLI?.trim();
+  return [configured, "alia", "/opt/homebrew/bin/alia", "/usr/local/bin/alia"].filter(
     (value, index, rows): value is string =>
       Boolean(value) && rows.indexOf(value) === index,
   );
@@ -243,7 +243,7 @@ function runPoolStatus(
 }
 
 /**
- * `bb pool status` answers through the bb server, so it slows down with the
+ * `alia pool status` answers through the VesnALIA server, so it slows down with the
  * server and routinely takes several seconds on a busy machine. A timed-out
  * read is a slow pool, not a missing one: treating it as empty drops every
  * pooled provider back to its local login, which for a pool-only Claude setup
@@ -279,7 +279,7 @@ export async function readAccountPool(options?: {
       return normalizeAccountPool(read.value, nowMs);
     }
     // The CLI exists and the pool is just slow; another candidate is the same
-    // bb and would only wait out the same timeout again.
+    // VesnALIA and would only wait out the same timeout again.
     if (read.kind === "timeout") {
       return lastPoolStatus && nowMs - lastPoolStatus.atMs < POOL_STALE_AFTER_MS
         ? normalizeAccountPool(lastPoolStatus.value, nowMs)

@@ -28,7 +28,7 @@ function resolve(cwd: string) {
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(path.join(os.tmpdir(), "bb-skills-codex-"));
+  root = await mkdtemp(path.join(os.tmpdir(), "alia-skills-codex-"));
 });
 
 describe("resolveCodexSkills", () => {

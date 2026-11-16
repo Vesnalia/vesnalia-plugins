@@ -1,11 +1,11 @@
 /*
- * bbBBS theme: monitor frame + CRT effects around an xterm.js terminal.
+ * aliaBBS theme: monitor frame + CRT effects around an xterm.js terminal.
  *
  * Import once from the plugin's stylesheet (e.g. app.css):
  *   @import "./theme/theme.css";
  *
  * Every class is prefixed `bbbbs-`. The frame (bezel, status bar) follows
- * bb's light/dark theme through the host's CSS variables; the screen itself
+ * alia's light/dark theme through the host's CSS variables; the screen itself
  * is always black, like a real CRT.
  *
  * Knobs (set on .bbbbs-frame, usually by <BbsFrame>):
@@ -179,7 +179,7 @@
   padding: 2vmin 2vmin 1vmin;
   border: 0;
   border-radius: 0;
-  /* a dark room around the monitor, whatever bb's theme is */
+  /* a dark room around the monitor, whatever alia's theme is */
   --bbbbs-bezel: #111111;
   --bbbbs-bezel-edge: #333333;
   --bbbbs-ink: #eeeeee;

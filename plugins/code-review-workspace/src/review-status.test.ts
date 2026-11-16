@@ -1,8 +1,8 @@
 // reviews.v1.status (src/review-status.ts), as another plugin reads it: who each review waits on, whether you've approved
 // the code as it is now, since when, and the review that stays of a merge, through the plugin's own flows; and that it
-// agrees with the list, which All reviews, the alerts and bb review list read.
+// agrees with the list, which All reviews, the alerts and VesnALIA review list read.
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 
 const runGh = vi.hoisted(() => vi.fn(async () => ({ stdout: "", stderr: "no GitHub here", code: 1 })));
 vi.mock("./gh", async (orig) => ({ ...(await orig<any>()), runGh }));
@@ -25,7 +25,7 @@ const AT = LINES.map((_, i) => ({ file: "src/a.ts", line: i + 1, side: "RIGHT" a
 
 interface Thread { title: string; archivedAt?: number | null; environmentId?: string | null }
 
-/** BB's threads: the main thread `coder` takes what's sent at once, and has asked for nothing else. */
+/** VesnALIA's threads: the main thread `coder` takes what's sent at once, and has asked for nothing else. */
 function threadsSdk(threads: Record<string, Thread>) {
   return {
     get: async ({ threadId }: { threadId: string }) => {
@@ -44,11 +44,11 @@ function threadsSdk(threads: Record<string, Thread>) {
 }
 
 function host(threads: Record<string, Thread> = { coder: { title: "Retry uploads" } }) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: threadsSdk(threads),
     projects: { defaultExecutionOptions: async () => ({ providerId: "codex", model: "gpt-6", reasoningLevel: "low", permissionMode: "auto" }) },
   } as any });
-  return { bb, harness, threads };
+  return { alia, harness, threads };
 }
 type Harness = ReturnType<typeof host>["harness"];
 
@@ -90,9 +90,9 @@ async function pr(store: AsyncStore, over: Record<string, unknown> = {}) {
   for (const at of AT) await store.upsertDraftComment("pr-1", { ...at, body: `Fix line ${at.line}.` });
 }
 
-test("a local review waits on you; on the main thread while it fixes what you sent, idle or not; and on you once it reports them all, runs bb review ready, or is archived or deleted first", async () => {
+test("a local review waits on you; on the main thread while it fixes what you sent, idle or not; and on you once it reports them all, runs VesnALIA review ready, or is archived or deleted first", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await local(store);
   // 1. Nothing sent.
   expect(await status(h.harness, "ref-1")).toMatchObject({ waitsOn: "user", waitsOnThreadId: null, approved: false, label: "Ready", since: 1_000, archived: false, mergedInto: null });
@@ -104,7 +104,7 @@ test("a local review waits on you; on the main thread while it fixes what you se
   await cli(h.harness, "coder", "report", "c1", "done");
   await h.harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: "coder" }), lastAssistantText: null });
   expect(await status(h.harness, "ref-1")).toMatchObject({ waitsOn: "agent", label: "1 of 2 reported", since: sentAt });
-  // 3. bb review ready: back with you, since then.
+  // 3. VesnALIA review ready: back with you, since then.
   await cli(h.harness, "coder", "ready");
   const readyAt = (await store.getReview("ref-1"))!.sends![0]!.readyAt!;
   expect(await status(h.harness, "ref-1")).toMatchObject({ waitsOn: "user", label: "Ready to re-review", since: readyAt });
@@ -112,7 +112,7 @@ test("a local review waits on you; on the main thread while it fixes what you se
   // 3. Every comment reported does the same; 4. archived or deleted first, they're back with you.
   for (const end of ["report", "thread.archived", "thread.deleted"] as const) {
     const other = host();
-    const s = await startPlugin(other.bb);
+    const s = await startPlugin(other.alia);
     await local(s);
     await other.harness.behavior.callRpc("sendToSourceThread", { targetKey: "ref-1", comments: AT.slice(0, 2) });
     if (end === "report") {
@@ -126,7 +126,7 @@ test("a local review waits on you; on the main thread while it fixes what you se
 
 test("comments sent from a PR's review wait on the thread fixing them, on your PR or another's, until something since is yours", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await pr(store);
   expect(await status(h.harness, "pr-1")).toMatchObject({ waitsOn: "user", label: "Your PR", pr: { repo: "acme/web", number: 12, url: "https://github.com/acme/web/pull/12", author: "alice" }, branch: "retry-uploads" });
   // 6. Comments sent to the thread on your own PR, as on a folder's review that became its PR's.
@@ -139,7 +139,7 @@ test("comments sent from a PR's review wait on the thread fixing them, on your P
 
   // Someone else's PR: sent anyway, it waits on the thread too, until a re-request since.
   const other = host();
-  const s = await startPlugin(other.bb);
+  const s = await startPlugin(other.alia);
   await pr(s, { ownPr: false, submittedVerdict: "REQUEST_CHANGES", submittedAt: 500, submittedHeadSha: "abc1234def5678", signals: { lastReviewAt: 500, lastReviewSha: "abc1234def5678", threads: { total: 1, resolved: 0, answered: 0, questions: 0, open: 1, outdated: 0 } } });
   // 11. Before the Send it waits on the PR's author.
   expect(await status(other.harness, "pr-1")).toMatchObject({ waitsOn: "author", waitsOnThreadId: null, label: "Changes requested", since: 500 });
@@ -151,12 +151,12 @@ test("comments sent from a PR's review wait on the thread fixing them, on your P
   expect(await status(other.harness, "pr-1")).toMatchObject({ waitsOn: "user", label: "Re-requested", since: at + 1_000 });
 });
 
-/** A folder's review of env1 on MaxBook, at feat/qa, its main thread `main` there; `folder` is what bb's Git plugin reads. */
+/** A folder's review of env1 on MaxBook, at feat/qa, its main thread `main` there; `folder` is what VesnALIA's Git plugin reads. */
 async function folderReview() {
   const BODY = "@@ -1,3 +1,3 @@\n one\n-two\n+TWO\n three\n";
   const folder = { files: [{ path: "src/a.ts", body: BODY }] };
   const h = folderHost(folder, { threads: threadsSdk({ main: { title: "Snooze flaky checks", environmentId: "env1" } }) });
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   const key = featureKey("env1", "feat/qa");
   await store.saveReview({ targetKey: key, kind: "ref", gitRef: "feat/qa", title: "Snooze flaky checks", status: "ready", createdAt: 1_000, projectId: "proj_api" });
   await store.setLifecycle(key, {
@@ -192,7 +192,7 @@ test("a folder's review approved in its main thread waits on no one, approved, u
 
 test("your own PR approved in its main thread waits on no one until a teammate's comment since, or its head moves on", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await pr(store);
   for (const at of AT) await store.deleteDraftComment("pr-1", at);
   await h.harness.behavior.callRpc("sendApprovalToSourceThread", { targetKey: "pr-1", revision: await reviewRevision(store, "pr-1") });
@@ -211,7 +211,7 @@ test("your own PR approved in its main thread waits on no one until a teammate's
 
 test("a Push under way waits on the thread committing and pushing it", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await local(store);
   const push = { at: 5_000, threadId: "coder", repo: "acme/web", head: "feature" };
   // 12. Committing, then pushing.
@@ -227,7 +227,7 @@ test("a Push under way waits on the thread committing and pushing it", async () 
 
 test("a draft PR, a snooze, and a folder on another branch or removed wait on no one", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   // 13. A draft PR found on GitHub.
   await store.saveReview({ targetKey: "pr-2", kind: "pr", repo: "acme/web", number: 13, url: "https://github.com/acme/web/pull/13", author: "bob", head: "wip", status: "tracked", createdAt: 1_000 });
   await store.setLifecycle("pr-2", { ownPr: false, signals: { isDraft: true } });
@@ -246,7 +246,7 @@ test("a draft PR, a snooze, and a folder on another branch or removed wait on no
 
 test("a review merged into another names the one that stays, through every merge, until that one's deleted", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await local(store, "br-1");
   await local(store, "br-2");
   await pr(store);
@@ -263,7 +263,7 @@ test("a review merged into another names the one that stays, through every merge
 
 test("since is kept on the review, here and by the sync's pass over every review, so it holds between reads", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await local(store);
   await store.setLifecycle("ref-1", { approvalSent: { at: 3_000, threadId: "coder", title: "Retry uploads", revision: await reviewRevision(store, "ref-1") } });
   expect(await status(h.harness, "ref-1")).toMatchObject({ waitsOn: "nobody", approved: true, since: 3_000 });
@@ -280,7 +280,7 @@ test("since is kept on the review, here and by the sync's pass over every review
 
 test("an approval of an earlier diff, as one kept from before 1.10.0, ends as the plugin starts", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await local(store);
   await local(store, "ref-2");
   await local(store, "ref-3");
@@ -301,7 +301,7 @@ test("an approval of an earlier diff, as one kept from before 1.10.0, ends as th
   expect(await status(h.harness, "ref-1")).toMatchObject({ waitsOn: "user", approved: false });
 });
 
-test("the contract publishes to BB's RPC discovery: its schemas are JSON Schema with local references, and waitsOn has four values", () => {
+test("the contract publishes to VesnALIA's RPC discovery: its schemas are JSON Schema with local references, and waitsOn has four values", () => {
   for (const method of Object.values(publicContract)) {
     const output = JSON.stringify(method.output["~standard"].jsonSchema!.output({ target: "draft-2020-12" }));
     const input = JSON.stringify(method.input["~standard"].jsonSchema!.input({ target: "draft-2020-12" }));

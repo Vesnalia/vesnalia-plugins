@@ -2,13 +2,13 @@
 import React from "react";
 import { afterEach, expect, test, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { z } from "zod";
-import type { NewThreadComposerProps } from "@get-bb/plugin-sdk/app";
+import type { NewThreadComposerProps } from "@vesnalia/plugin-sdk/app";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
-vi.mock("@get-bb/plugin-sdk/app", async importOriginal => ({
-    ...await importOriginal<typeof import("@get-bb/plugin-sdk/app")>(),
+vi.mock("@vesnalia/plugin-sdk/app", async importOriginal => ({
+    ...await importOriginal<typeof import("@vesnalia/plugin-sdk/app")>(),
     ThreadChat: () => <div>Started session</div>,
     experimental_NewThreadComposer: (props: NewThreadComposerProps) => <button onClick={() => void Promise.resolve(props.onSubmit({
         projectId: "project", providerId: "claude-code", model: "chosen-model", reasoningLevel: "high", permissionMode: "auto",

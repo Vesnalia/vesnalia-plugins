@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   aggregateAnalytics,
@@ -118,10 +118,10 @@ function parseInteraction(data: unknown): TurnLifecycleEvent["interaction"] {
 }
 
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   const processStart = Date.now();
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS sessions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       thread_id TEXT NOT NULL,
@@ -266,7 +266,7 @@ export default async function plugin(bb: BbPluginApi) {
     return Boolean(row);
   }
   function publishActivityStatus() {
-    if (!disposed) bb.realtime.publish('activity-status', { active: isActive() });
+    if (!disposed) alia.realtime.publish('activity-status', { active: isActive() });
   }
   function withLock(threadId: string, work: () => Promise<void>): Promise<void> {
     const previous = locks.get(threadId) ?? Promise.resolve();
@@ -274,7 +274,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (!disposed) {
         db.transaction(() => closeIntervals(threadId, null, 'observation-failed'))();
         publishActivityStatus();
-        bb.log.warn(`activity verification failed for ${threadId}: ${String(error)}`);
+        alia.log.warn(`activity verification failed for ${threadId}: ${String(error)}`);
       }
     }).finally(() => { if (locks.get(threadId) === next) locks.delete(threadId); });
     locks.set(threadId, next);
@@ -287,29 +287,29 @@ export default async function plugin(bb: BbPluginApi) {
     let providerId = "Unknown";
     let model = "unknown";
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       projectId = thread.projectId ?? null;
       providerId = thread.providerId || "Unknown";
       if (thread.environmentId) {
         try {
-          const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+          const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
           hostId = environment.hostId ?? null;
         } catch { /* attribution remains unknown rather than guessed */ }
       }
     } catch { /* the interval remains measurable without dimensions */ }
     try {
-      const options = await bb.sdk.threads.defaultExecutionOptions({ threadId });
+      const options = await alia.sdk.threads.defaultExecutionOptions({ threadId });
       if (options?.model) model = options.model;
     } catch { /* keep the explicit unknown bucket */ }
 
     let projectName: string | null = null;
     if (projectId) {
-      try { projectName = (await bb.sdk.projects.get({ projectId })).name ?? projectId }
+      try { projectName = (await alia.sdk.projects.get({ projectId })).name ?? projectId }
       catch { projectName = projectId }
     }
     let machineName: string | null = null;
     if (hostId) {
-      try { machineName = (await bb.sdk.hosts.get({ hostId })).name ?? hostId }
+      try { machineName = (await alia.sdk.hosts.get({ hostId })).name ?? hostId }
       catch { machineName = hostId }
     }
 
@@ -330,7 +330,7 @@ export default async function plugin(bb: BbPluginApi) {
         openTurnStartedAt: open?.started_at ?? 0,
         pendingInteractionIds: pending,
       };
-      const events = await bb.sdk.threads.events.list({ threadId,
+      const events = await alia.sdk.threads.events.list({ threadId,
         types: ['turn/started', 'turn/completed', 'system/interaction/lifecycle'],
         order: 'asc', limit: '1000', signal: abort.signal,
         ...(initial.lastSeq > 0 ? { afterSeq: String(initial.lastSeq) } : {}),
@@ -391,11 +391,11 @@ export default async function plugin(bb: BbPluginApi) {
           publishActivityStatus();
           return;
         }
-        const thread = await bb.sdk.threads.get({ threadId, signal: abort.signal });
+        const thread = await alia.sdk.threads.get({ threadId, signal: abort.signal });
         if (disposed) return;
         const running = thread.status === 'active' && thread.runtime.displayStatus === 'active'
           && thread.archivedAt === null && thread.deletedAt === null;
-        const pending = running ? await bb.sdk.threads.interactions.list({ threadId, signal: abort.signal }) : [];
+        const pending = running ? await alia.sdk.threads.interactions.list({ threadId, signal: abort.signal }) : [];
         if (disposed) return;
         const cursor = cursorQuery.get(threadId) as CursorRow | undefined;
         if (!running || pending.length || !cursor?.active_turn_id
@@ -439,7 +439,7 @@ export default async function plugin(bb: BbPluginApi) {
     const events: TurnLifecycleEvent[] = [];
     let afterSeq = 0;
     for (let page = 0; page < 100; page += 1) {
-      const rows = await bb.sdk.threads.events.list({ threadId,
+      const rows = await alia.sdk.threads.events.list({ threadId,
         types: ['turn/started', 'turn/completed', 'system/interaction/lifecycle'],
         order: 'asc', limit: '1000', signal: abort.signal,
         ...(afterSeq ? { afterSeq: String(afterSeq) } : {}),
@@ -498,7 +498,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function reconcile() {
     const candidates = new Set(watched);
     for (let offset = 0; ; offset += 100) {
-      const rows = await bb.sdk.threads.list({ limit: 100, offset, includeHidden: true, signal: abort.signal });
+      const rows = await alia.sdk.threads.list({ limit: 100, offset, includeHidden: true, signal: abort.signal });
       if (disposed) return;
       for (const row of rows) if (row.status === 'active' && !row.archivedAt && !row.deletedAt) candidates.add(row.id);
       if (rows.length < 100) break;
@@ -517,11 +517,11 @@ export default async function plugin(bb: BbPluginApi) {
     for (const row of rows) closeIntervals(row.thread_id, null, 'crash-recovery');
   })();
 
-  bb.events.on('thread.active', ({ thread }) => syncThread(thread.id));
-  bb.events.on('thread.idle', ({ thread }) => syncThread(thread.id, true));
-  bb.events.on('thread.failed', ({ thread }) => syncThread(thread.id, true));
-  bb.events.on('thread.archived', ({ thread }) => syncThread(thread.id, true));
-  bb.events.on('thread.deleted', ({ thread }) => syncThread(thread.id, true));
+  alia.events.on('thread.active', ({ thread }) => syncThread(thread.id));
+  alia.events.on('thread.idle', ({ thread }) => syncThread(thread.id, true));
+  alia.events.on('thread.failed', ({ thread }) => syncThread(thread.id, true));
+  alia.events.on('thread.archived', ({ thread }) => syncThread(thread.id, true));
+  alia.events.on('thread.deleted', ({ thread }) => syncThread(thread.id, true));
 
   /** Sessions provide dimensions; only bounded turn evidence contributes time.
    * Legacy inflated session rows remain intact for audit/rollback, but cannot
@@ -562,7 +562,7 @@ export default async function plugin(bb: BbPluginApi) {
   function computeSummary(range: RangeKey, requestedTimeZone?: string) {
     const to = Date.now();
     if (requestedTimeZone !== undefined && !isValidTimeZone(requestedTimeZone)) {
-      bb.log.warn(`ignoring unrecognized timezone ${JSON.stringify(requestedTimeZone)}`);
+      alia.log.warn(`ignoring unrecognized timezone ${JSON.stringify(requestedTimeZone)}`);
     }
     const timeZone = normalizeTimeZone(requestedTimeZone);
     const earliest = db.prepare(`SELECT MIN(at) AS earliest FROM (
@@ -625,16 +625,16 @@ export default async function plugin(bb: BbPluginApi) {
     };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     getActivityStatus() { return { active: isActive() } },
     getSummary({ range, timezone }) { return computeSummary(range, timezone) },
   });
-  bb.cli.register({
-    name: "wakatime", summary: "Show honest interval-derived bb agent activity",
+  alia.cli.register({
+    name: "wakatime", summary: "Show honest interval-derived VesnALIA agent activity",
     commands: [
-      { name: "today", summary: "Today's agent activity", usage: "bb wakatime today" },
-      { name: "week", summary: "The last 7 calendar days", usage: "bb wakatime week" },
-      { name: "recheck-history", summary: "Verify legacy turn intervals against retained lifecycle events", usage: "bb wakatime recheck-history" },
+      { name: "today", summary: "Today's agent activity", usage: "alia wakatime today" },
+      { name: "week", summary: "The last 7 calendar days", usage: "alia wakatime week" },
+      { name: "recheck-history", summary: "Verify legacy turn intervals against retained lifecycle events", usage: "alia wakatime recheck-history" },
     ],
     async run(argv) {
       if (argv[0] === 'recheck-history') {
@@ -651,7 +651,7 @@ export default async function plugin(bb: BbPluginApi) {
         return minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : `${minutes}m`;
       };
       return { exitCode: 0, stdout: [
-        `bb agent activity (${summary.range.key})`,
+        `alia agent activity (${summary.range.key})`,
         `working time (union): ${format(summary.workingMs)}`,
         `agent runtime (sum): ${format(summary.agentRuntimeMs)}`,
         `agent coverage (union): ${format(summary.agentCoverageMs)}`,
@@ -662,7 +662,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
     abort.abort();
     db.transaction(() => {
@@ -672,8 +672,8 @@ export default async function plugin(bb: BbPluginApi) {
     watched.clear();
   });
   try { await reconcile() }
-  catch (error) { bb.log.warn(`startup reconciliation failed: ${String(error)}`) }
-  bb.background.service('reconciler', {
+  catch (error) { alia.log.warn(`startup reconciliation failed: ${String(error)}`) }
+  alia.background.service('reconciler', {
     async start(signal) {
       while (!signal.aborted && !disposed) {
         await new Promise<void>((resolve) => {
@@ -684,9 +684,9 @@ export default async function plugin(bb: BbPluginApi) {
         });
         if (signal.aborted || disposed) break;
         try { await reconcile() }
-        catch (error) { bb.log.warn(`periodic reconciliation failed: ${String(error)}`) }
+        catch (error) { alia.log.warn(`periodic reconciliation failed: ${String(error)}`) }
       }
     },
   });
-  bb.log.info('wakatime strict turn accounting loaded');
+  alia.log.info('wakatime strict turn accounting loaded');
 }

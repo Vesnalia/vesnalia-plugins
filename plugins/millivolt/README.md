@@ -1,11 +1,11 @@
-# bb-plugin-millivolt
+# alia-plugin-millivolt
 
-A BB plugin that installs, runs, updates and exposes
+A VesnALIA plugin that installs, runs, updates and exposes
 [millivolt](https://github.com/LLM-4-People/millivolt) — the self-hosted
 inference proxy that records what your agents send, what comes back, and what it
 cost.
 
-Open **Millivolt** in the bb sidebar and you get millivolt's own dashboard
+Open **Millivolt** in the VesnALIA sidebar and you get millivolt's own dashboard
 in-process, plus two native views over its metrics API, without a browser tab and
 without pasting an operator token.
 
@@ -18,14 +18,14 @@ without pasting an operator token.
   labels (authoritative directory and port), probes loopback ports for the
   operator challenge, and falls back to a bounded folder scan. The operator token
   is read from the deployment's own `.env`.
-- **Keeps it running with bb.** The supervisor starts millivolt on load, checks
+- **Keeps it running with VesnALIA.** The supervisor starts millivolt on load, checks
   health every 20 seconds, restarts up to three times, and leaves a manual Stop
   stopped across reloads.
-- **Keeps it current.** On each bb start, and every six hours while bb is open,
+- **Keeps it current.** On each VesnALIA start, and every six hours while VesnALIA is open,
   it pulls the newest `ghcr.io/llm-4-people/millivolt:main` image, recreates the
   container only when the image id changed, and skips the update while requests
   are in flight.
-- **Serves the dashboard in bb.** millivolt sends `frame-ancestors 'none'`, so a
+- **Serves the dashboard in VesnALIA.** millivolt sends `frame-ancestors 'none'`, so a
   second loopback listener proxies it, adding the operator credential per request
   and stripping the frame-blocking header.
 
@@ -43,15 +43,15 @@ without pasting an operator token.
 ## Install
 
 ```sh
-bb plugin install https://github.com/hv-V6/bb-plugin-millivolt.git
+alia plugin install https://github.com/hv-V6/bb-plugin-millivolt.git
 ```
 
 Development loop:
 
 ```sh
 npm install
-bb plugin build      # dist/server.js + dist/app.js
-bb plugin dev        # rebuild and reload on save
+alia plugin build      # dist/server.js + dist/app.js
+alia plugin dev        # rebuild and reload on save
 ```
 
 ## Settings
@@ -61,23 +61,23 @@ Settings are overrides; blank means "use what the plugin recorded".
 - **Compose directory** — blank: the recorded install, else discovered, else
   `~/millivolt`.
 - **Host port** — `0`: the recorded port, else the discovered one, else 8471.
-- **In-bb dashboard proxy port** — default 8472, loopback only.
+- **In-alia dashboard proxy port** — default 8472, loopback only.
 - **Operator token** — blank: the recorded token or the one in the deployment's
   `.env`.
-- **Start millivolt with bb**, **Pull updates when bb starts**, **Launch Docker
+- **Start millivolt with VesnALIA**, **Pull updates when VesnALIA starts**, **Launch Docker
   Desktop when the daemon is down**, **Docker Desktop executable**.
 
 ## Commands
 
 ```sh
-bb millivolt status [--json]
-bb millivolt setup [--dir PATH] [--port N]        # install
-bb millivolt setup --adopt --dir PATH --port N    # adopt an existing deployment
-bb millivolt discover [--json]
-bb millivolt update [--json]
-bb millivolt start | stop | restart
-bb millivolt url
-bb millivolt requests [count] [--json]
+alia millivolt status [--json]
+alia millivolt setup [--dir PATH] [--port N]        # install
+alia millivolt setup --adopt --dir PATH --port N    # adopt an existing deployment
+alia millivolt discover [--json]
+alia millivolt update [--json]
+alia millivolt start | stop | restart
+alia millivolt url
+alia millivolt requests [count] [--json]
 ```
 
 ## How discovery decides
@@ -115,7 +115,7 @@ has none, the plugin records none and the sidebar suggests setting one.
 
 ## Auto-fix
 
-`bb millivolt repair` — the **Auto-fix** button in the sidebar header — runs the
+`alia millivolt repair` — the **Auto-fix** button in the sidebar header — runs the
 diagnosis that covers the failures seen in practice, in order:
 
 1. Start Docker if the daemon is down.
@@ -141,13 +141,13 @@ replaced; both are kept as `imageId` and `previousImageId` in its state, and a
 drift between the running container and the record (an update made outside the
 plugin) is captured the same way.
 
-`bb millivolt revert` tags the previous image as
-`ghcr.io/llm-4-people/millivolt:bb-rollback`, writes a `rollback.yaml` compose
+`alia millivolt revert` tags the previous image as
+`ghcr.io/llm-4-people/millivolt:alia-rollback`, writes a `rollback.yaml` compose
 override that pins it with `pull_policy: never`, and recreates the container
 from it. The sidebar shows the pinned id and offers **Resume updates** instead
 of Check for updates.
 
-`bb millivolt resume` deletes the override, pulls the published tag again and
+`alia millivolt resume` deletes the override, pulls the published tag again and
 recreates the container from it. While a deployment is pinned, automatic
 updates are paused; a revert never deletes the image you left behind, so the
 two can be flipped back and forth.
@@ -164,7 +164,7 @@ rather than pinning a missing tag.
   request must be a top-level navigation.
 - Millivolt's listener is published on loopback only (`127.0.0.1:<port>`), as the
   upstream compose file does.
-- The plugin is full-trust code inside the bb server: it runs `docker` and reads
+- The plugin is full-trust code inside the VesnALIA server: it runs `docker` and reads
   the compose directory it is pointed at.
 
 ## Licence

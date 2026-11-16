@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-nudge",
+  "name": "alia-plugin-nudge",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Nudge",
     "description": "Continue or retry the agent without typing a message — replaces Send on empty drafts.",
     "branding": {
@@ -23,7 +23,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -48,5 +47,22 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/nudge#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/nudge"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

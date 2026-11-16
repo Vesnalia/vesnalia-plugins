@@ -84,8 +84,8 @@ test("2,000 clicks on a text field at one place keep the live shape's state the 
 });
 
 test("the agent's shape message names a place and a shape, and nothing else (105)", () => {
-  assert.equal(agentMessage({ act: "shape", x: 640.4, y: 360, shape: "hand" }), "BB_AGENT,shape,640,360,hand");
-  assert.equal(agentMessage({ act: "click", x: 640, y: 360 }), "BB_AGENT,click,640,360");
+  assert.equal(agentMessage({ act: "shape", x: 640.4, y: 360, shape: "hand" }), "ALIA_AGENT,shape,640,360,hand");
+  assert.equal(agentMessage({ act: "click", x: 640, y: 360 }), "ALIA_AGENT,click,640,360");
   assert.deepEqual(agentPlaceOf("shape,640,360,ibeam"), { act: "shape", x: 640, y: 360, shape: "ibeam" });
   assert.deepEqual(agentPlaceOf("shape,640,360,arrow"), { act: "shape", x: 640, y: 360, shape: "arrow" });
   for (const rest of ["shape,640,360", "shape,640,360,grab", "shape,640,360,hand,300", "nope,640,360"]) assert.equal(agentPlaceOf(rest), null, rest);

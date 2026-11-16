@@ -1,5 +1,5 @@
 import { Children, useState, type ReactNode } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { useThreadQueue } from "../hooks/useThreadQueue";
 import { scheduleLabel, type QueueSummary } from "../lib/thread-queue";
 import { cn } from "../lib/utils";
@@ -76,7 +76,7 @@ export function ThreadModes({ thread, children, trailing, details, onDetailsOpen
   const modes = threadModes(thread, queue);
   const hasChildren = Children.toArray(children).length > 0;
   if (!modes.length && !hasChildren && !trailing) return null;
-  return <span className={cn("bb-ws-summary grid min-w-0 w-full grid-cols-[minmax(0,1fr)_fit-content(60%)] items-start gap-x-2 pl-[42px] text-[11px]", !compact && "pb-0.5")} data-thread-summary="">
+  return <span className={cn("alia-ws-summary grid min-w-0 w-full grid-cols-[minmax(0,1fr)_fit-content(60%)] items-start gap-x-2 pl-[42px] text-[11px]", !compact && "pb-0.5")} data-thread-summary="">
     <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5" data-thread-modes="">
     {children}
     {modes.length > 0 && hasChildren ? <span aria-hidden className="shrink-0 text-muted-foreground/50">·</span> : null}

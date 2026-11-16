@@ -1,15 +1,15 @@
 {
-  "name": "bb-plugin-prompt-enhancer",
+  "name": "alia-plugin-prompt-enhancer",
   "version": "0.3.0",
   "type": "module",
   "license": "MIT",
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "Prompt Enhancer",
-    "description": "Rewrites the composer draft into a clearer, more effective prompt using a hidden bb thread.",
+    "description": "Rewrites the composer draft into a clearer, more effective prompt using a hidden VesnALIA thread.",
     "branding": {
       "icon": "AiContentGenerator01"
     },
@@ -30,7 +30,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@radix-ui/react-dialog": "^1.1.19",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
@@ -45,5 +44,22 @@
   },
   "scripts": {
     "test": "node --import tsx --test \"tests/*.test.ts\""
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/prompt-enhancer#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/prompt-enhancer"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

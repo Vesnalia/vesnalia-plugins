@@ -1,7 +1,7 @@
 import { isImagePath } from "../../shared/images";
 import { WorktreeImage } from "./image-preview";
 import type { CSSProperties } from "react";
-import { experimental_FileLink as FileLink, experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_FileLink as FileLink, experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { Environment } from "../../core/comparison-base";
 import { useWorktreeFile } from "../hooks/use-worktree";
 import { usePreferences } from "../hooks/use-preferences";

@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: {
-      "@bb/plugin-sdk/app": path.resolve(
+      "@vesnalia/plugin-sdk/app": path.resolve(
         import.meta.dirname,
         "test/plugin-sdk-app-runtime.tsx",
       ),

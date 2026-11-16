@@ -5,8 +5,8 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from 'nod
 import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { api, host, plugin, artifact } from './helpers.mjs';
-import { experimental_runBridgeConformance, experimental_formatConformanceReport } from '@get-bb/plugin-sdk/provider-bridge/testing';
-import { bridgeErrorDataSchema, threadDeltaSchema, providerRecoveryNotificationSchema } from '@get-bb/plugin-sdk/provider-bridge';
+import { experimental_runBridgeConformance, experimental_formatConformanceReport } from '@vesnalia/plugin-sdk/provider-bridge/testing';
+import { bridgeErrorDataSchema, threadDeltaSchema, providerRecoveryNotificationSchema } from '@vesnalia/plugin-sdk/provider-bridge';
 const base = resolve(process.env.ZCODE_CONNECTION_TEST_ROOT ?? '.local/implementation-3.2.2/offline'); mkdirSync(base, { recursive: true, mode: 0o700 });
 const root = () => mkdtempSync(base + '/offline-');
 const launch = (cwd, mode = 'v4', file) => ({ executable: process.execPath, args: [resolve('tests/provider/fake-v4.mjs'), mode, ...(file ? [file] : [])], cwd,
@@ -15,7 +15,7 @@ function fakeServices(cwd) {
   return { prepare: async () => ({ launch: launch(cwd, 'v4', cwd + '/sessions.json'), auth: new api.ReadOnlyAuth(cwd + '/missing'), configure: async p => { await p.request('runtime/capabilities', {}); } }),
     health: async () => ({}), installation: async () => ({}), models: async () => ({ models: [] }), validateSelection: async () => {} };
 }
-const recorded = JSON.parse(readFileSync(new URL('./fixtures/bb-real-inputs.json', import.meta.url), 'utf8')).fixtures;
+const recorded = JSON.parse(readFileSync(new URL('./fixtures/alia-real-inputs.json', import.meta.url), 'utf8')).fixtures;
 const options = { ...recorded[0].request.params.options, envVars: {} };
 test('public host imports and registration declare only the connected scope without starting native', async () => {
   assert.equal(host.experimental_host.experimental_apiVersion, 1); assert.equal(typeof host.handleLine, 'function');
@@ -74,7 +74,7 @@ test('ADR015 read-only fresh auth, empty/corrupt/cipher/identity/key change and 
   } finally { rmSync(cwd, { recursive: true }); }
 });
 test('K120 allowlist follows SDK sanitation; recording projection cannot retain synthetic auth', () => {
-  const env = api.childEnvironment({ PATH: '/safe', ANTHROPIC_BASE_URL: 'https://poison.invalid', BB_PROVIDER_BRIDGE_RECORD_DIR: '/other', SECRET: 'SYNTHETIC_SECRET' }, { HOME: '/own' });
+  const env = api.childEnvironment({ PATH: '/safe', ANTHROPIC_BASE_URL: 'https://poison.invalid', ALIA_PROVIDER_BRIDGE_RECORD_DIR: '/other', SECRET: 'SYNTHETIC_SECRET' }, { HOME: '/own' });
   assert.deepEqual(env, { PATH: '/safe', HOME: '/own', ANTHROPIC_BASE_URL: 'https://poison.invalid', SECRET: 'SYNTHETIC_SECRET' });
   for (const v of [{ id: 1, result: { requestAuth: { apiKey: 'SYNTHETIC_SECRET' } } }, { method: 'echo', params: { secret: 'SYNTHETIC_SECRET' } }, { error: { code: 401, message: 'SYNTHETIC_SECRET' } }]) assert.equal(api.recordingProjection(v).includes('SYNTHETIC_SECRET'), false);
 });
@@ -209,7 +209,7 @@ test('B06 actual EPIPE from fake child closed fd0 immediately kills owned group'
 test('B16 unknown method/id strings cannot smuggle secrets into safe recording', () => {
   assert.doesNotMatch(api.recordingProjection({ id: 'SYNTHETIC_SECRET', method: 'SYNTHETIC_SECRET', params: {} }), /SYNTHETIC_SECRET/);
 });
-test('bb model/list includes mandatory selectedOnlyModels carrier', async () => {
+test('alia model/list includes mandatory selectedOnlyModels carrier', async () => {
   const cwd = root();
   try { await rpcHarness(fakeServices(cwd), async rpc => {
     const response = await rpc('model/list', { cwd }); assert.deepEqual(response.result, { models: [], selectedOnlyModels: [] });

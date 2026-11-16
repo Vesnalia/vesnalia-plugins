@@ -1,23 +1,18 @@
 {
-  "name": "bb-autoresearch",
+  "name": "alia-plugin-bb-autoresearch",
   "version": "1.0.2",
   "type": "module",
   "description": "Long-running, measured code-optimization studies: short-lived agent workers propose changes, the plugin measures every candidate and decides what to keep.",
   "license": "MIT",
   "author": "Pascal de Ladurantaye <pascal.de.ladurantaye@gmail.com>",
-  "homepage": "https://github.com/pascal-de-ladurantaye/bb-autoresearch",
   "keywords": [
-    "bb-plugin"
+    "alia-plugin"
   ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/pascal-de-ladurantaye/bb-autoresearch.git"
-  },
   "engines": {
-    "bb": ">=0.45",
-    "bbPluginSdk": ">=0.6.14"
+    "alia": ">=0.45",
+    "aliaPluginSdk": ">=0.6.14"
   },
-  "bb": {
+  "alia": {
     "name": "Autoresearch",
     "description": "Measured code-optimization studies: agent workers propose changes, the plugin benchmarks every candidate and keeps only statistically real wins.",
     "branding": {
@@ -31,7 +26,7 @@
     "app": "./app.tsx"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -41,7 +36,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.14",
     "@radix-ui/react-dialog": "^1.1.19",
     "@radix-ui/react-popover": "^1.1.19",
     "@testing-library/react": "^16.3.3",
@@ -67,5 +61,22 @@
     "onlyBuiltDependencies": [
       "better-sqlite3"
     ]
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.14"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/bb-autoresearch#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/bb-autoresearch"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

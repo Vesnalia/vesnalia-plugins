@@ -10,7 +10,7 @@
 
 ✖ failing tests:
 
-test at ../bb-marketplace-baseline/test/marketplace.test.mjs:256:1
+test at ../alia-marketplace-baseline/test/marketplace.test.mjs:256:1
 ✖ a later entry edit does not change its first addition date (276.471285ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
   + actual - expected

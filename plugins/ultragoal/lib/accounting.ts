@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { GoalStore, StoredGoal } from "./store.js";
 import {
   peekCursorSessionTokens,
@@ -22,9 +22,9 @@ const NEW_SESSION_SCANS_PER_TICK = 8;
  * Storing each session's own total fixes that: a retired session keeps
  * contributing exactly what it spent, and a new one contributes its own growth.
  */
-export function createSessionTokenStore(db: ReturnType<BbPluginApi["storage"]["database"]>) {
+export function createSessionTokenStore(db: ReturnType<AliaPluginApi["storage"]["database"]>) {
   // Created here rather than trusting the shared migration list alone.
-  // bb.storage.migrate records progress by array index, and on this database it
+  // alia.storage.migrate records progress by array index, and on this database it
   // did not apply the appended statement on reload — accounting then threw
   // "no such table" on every pulse. Owning the table where it is used makes the
   // store self-healing and independent of that ordering scheme.
@@ -100,7 +100,7 @@ function tokenUsageFromUnknown(value: unknown, depth = 0): number | null {
 }
 
 async function listEvents(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   args: {
     threadId: string;
     types?: readonly [string, ...string[]];
@@ -109,7 +109,7 @@ async function listEvents(
   },
 ): Promise<Array<Record<string, unknown>>> {
   try {
-    const result = await bb.sdk.threads.events.list(args as never);
+    const result = await alia.sdk.threads.events.list(args as never);
     if (Array.isArray(result)) return result as unknown as Array<Record<string, unknown>>;
     const wrapped = result as { events?: unknown[]; items?: unknown[] };
     return (wrapped.events ?? wrapped.items ?? []) as Array<Record<string, unknown>>;
@@ -120,11 +120,11 @@ async function listEvents(
 
 const sessionByThread = new Map<string, string>();
 
-export async function sessionIdForThread(bb: BbPluginApi, threadId: string): Promise<string | null> {
+export async function sessionIdForThread(alia: AliaPluginApi, threadId: string): Promise<string | null> {
   const cached = sessionByThread.get(threadId);
   if (cached) return cached;
   const id = await providerSessionId(async () =>
-    listEvents(bb, {
+    listEvents(alia, {
       threadId,
       types: ["thread/identity"],
       order: "desc",
@@ -135,8 +135,8 @@ export async function sessionIdForThread(bb: BbPluginApi, threadId: string): Pro
   return id;
 }
 
-async function officialTokensIfCheap(bb: BbPluginApi, threadId: string): Promise<number | null> {
-  const usageEvents = await listEvents(bb, {
+async function officialTokensIfCheap(alia: AliaPluginApi, threadId: string): Promise<number | null> {
+  const usageEvents = await listEvents(alia, {
     threadId,
     types: ["thread/tokenUsage/updated"],
     order: "desc",
@@ -149,9 +149,9 @@ async function officialTokensIfCheap(bb: BbPluginApi, threadId: string): Promise
     if (total != null && total > 0) return total;
   }
   // Last resort for providers with no local session store: the context-window
-  // snapshot bb relays. It's the live window, not cumulative usage, so it
+  // snapshot VesnALIA relays. It's the live window, not cumulative usage, so it
   // undercounts — but it moves, and it beats a frozen zero.
-  const windowEvents = await listEvents(bb, {
+  const windowEvents = await listEvents(alia, {
     threadId,
     types: ["thread/contextWindowUsage/updated"],
     order: "desc",
@@ -167,11 +167,11 @@ async function officialTokensIfCheap(bb: BbPluginApi, threadId: string): Promise
 }
 
 export async function readThreadTokens(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
   options?: { allowScan?: boolean; allowLocalProviderData?: boolean },
 ): Promise<number | null> {
-  const sessionId = await sessionIdForThread(bb, threadId);
+  const sessionId = await sessionIdForThread(alia, threadId);
   if (
     sessionId &&
     options?.allowLocalProviderData === true &&
@@ -186,15 +186,15 @@ export async function readThreadTokens(
     if (stored != null) return stored;
   }
   if (options?.allowScan === false) return null;
-  return officialTokensIfCheap(bb, threadId);
+  return officialTokensIfCheap(alia, threadId);
 }
 
 export async function threadIsRunning(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
 ): Promise<boolean> {
   try {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     return thread.status === "active" || thread.status === "starting";
   } catch {
     return false;
@@ -202,7 +202,7 @@ export async function threadIsRunning(
 }
 
 export async function accountGoalProgress(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   store: GoalStore,
   threadId: string,
   options?: {
@@ -230,18 +230,18 @@ export async function accountGoalProgress(
     return existing;
   }
 
-  const running = options?.busy === true ? true : await threadIsRunning(bb, threadId);
+  const running = options?.busy === true ? true : await threadIsRunning(alia, threadId);
   const extras = [...new Set((options?.extraThreadIds ?? []).filter((id) => id && id !== threadId))];
   const ids = [threadId, ...extras];
-  const sessions = options?.sessionTokens ?? createSessionTokenStore(bb.storage.database());
+  const sessions = options?.sessionTokens ?? createSessionTokenStore(alia.storage.database());
   const recorded = sessions.recordedSessions(threadId);
   let sawTokens = recorded.size > 0;
 
   // Live threads are re-read every tick because their totals are still moving.
   for (const id of ids) {
-    const sessionId = await sessionIdForThread(bb, id);
+    const sessionId = await sessionIdForThread(alia, id);
     if (!sessionId) continue;
-    const tokens = await readThreadTokens(bb, id, {
+    const tokens = await readThreadTokens(alia, id, {
       allowScan: true,
       allowLocalProviderData: options?.allowLocalProviderData === true,
     });
@@ -259,10 +259,10 @@ export async function accountGoalProgress(
     let scansLeft = NEW_SESSION_SCANS_PER_TICK;
     for (const id of historical) {
       if (scansLeft <= 0) break;
-      const sessionId = await sessionIdForThread(bb, id);
+      const sessionId = await sessionIdForThread(alia, id);
       if (!sessionId || recorded.has(sessionId)) continue;
       scansLeft -= 1;
-      const tokens = await readThreadTokens(bb, id, {
+      const tokens = await readThreadTokens(alia, id, {
         allowScan: true,
         allowLocalProviderData: options?.allowLocalProviderData === true,
       });

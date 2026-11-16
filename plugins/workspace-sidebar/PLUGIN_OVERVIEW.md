@@ -1,4 +1,4 @@
-Ultra Sidebar replaces BB's thread list with collapsible sections by project or status, pinned threads on top, and subagents nested under the thread that spawned them.
+Ultra Sidebar replaces VesnALIA's thread list with collapsible sections by project or status, pinned threads on top, and subagents nested under the thread that spawned them.
 
 ## What you get
 
@@ -12,7 +12,7 @@ Ultra Sidebar replaces BB's thread list with collapsible sections by project or 
 
 Open **Settings → Appearance → Sidebar** and select Ultra Sidebar. This plugin owns the sidebar thread list; only one replacement can be active.
 
-Use `bb sidebar --help` to read and file threads from a terminal.
+Use `alia sidebar --help` to read and file threads from a terminal.
 
 ## Source
 

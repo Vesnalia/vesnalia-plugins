@@ -2,7 +2,7 @@
 // The review agent's Post form, in place of its message box: where it posts and as whom, exactly what posts, and one Post.
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { PostShown } from "../src/post-preview";
 
 afterEach(cleanup);
@@ -23,8 +23,8 @@ async function renderForm(payload: unknown = shown, submit = vi.fn(async () => {
 test("it says where it posts and as whom, then shows exactly what posts, as written, with one Post button", async () => {
   const { slot, submit } = await renderForm();
   const form = slot.getByRole("region", { name: "Post to web#42 as @casey" });
-  // Drawn in BB's composer, outside the plugin's mount, it carries the plugin's style scope itself.
-  expect(form.hasAttribute("data-bb-plugin-root")).toBe(true);
+  // Drawn in VesnALIA's composer, outside the plugin's mount, it carries the plugin's style scope itself.
+  expect(form.hasAttribute("data-alia-plugin-root")).toBe(true);
   expect(form.textContent).toContain("Approve");
   expect(slot.getByText(shown.notes[0])).toBeTruthy();
   // Raw, so nothing in it hides: a comment GitHub wouldn't render shows here.

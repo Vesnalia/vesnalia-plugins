@@ -1,6 +1,6 @@
 # Development launch and verification
 
-Use Node.js 24 and an isolated BB host. Version `0.7.0` is prepared on the PR
+Use Node.js 24 and an isolated VesnALIA host. Version `0.7.0` is prepared on the PR
 branch and is unpublished. See [candidate validation](validation-0.7.0.md) for
 cross-platform results and their limits. Never install a review build over the
 stable plugin, share its data directory, or copy its credentials into a test host.
@@ -9,7 +9,7 @@ stable plugin, share its data directory, or copy its credentials into a test hos
 
 The `Release validation` workflow runs for PRs targeting `main`, using official
 GitHub-hosted Ubuntu and Windows runners with Node 24. Both run locked installation,
-the full suite and typecheck. Ubuntu additionally prepares separate pinned BB
+the full suite and typecheck. Ubuntu additionally prepares separate pinned VesnALIA
 0.46.0 tools, runs the official full production build and `npm run verify:package`.
 The inspector checks the actual tar archive, required assets, version metadata
 and private/runtime-data exclusions. It leaves its temporary package outside Git.
@@ -38,7 +38,7 @@ The suite uses the public SDK fake hosts, synthetic fixtures and isolated
 storage. Vitest uses a serial thread pool for reliable Windows startup. A cold
 import timeout has been observed: record the failed run, investigate it and
 rerun unchanged checks; do not count a timeout as a pass. The development SDK
-pin is 0.4.34. The official BB 0.46.0 builder stamps SDK 0.6.37; these serve
+pin is 0.4.34. The official VesnALIA 0.46.0 builder stamps SDK 0.6.37; these serve
 different roles and a build notice does not authorize upgrading the pin.
 
 ## Guarded Windows helpers
@@ -47,14 +47,14 @@ The helpers intentionally require this disposable workspace layout:
 
 ```text
 <workspace>/outputs/agent-board-vnext/    candidate checkout
-<workspace>/work/bb-build-tools/         isolated official BB tools
-<workspace>/work/bb-validation-windows-data/  test data; preserve across restarts
+<workspace>/work/alia-build-tools/         isolated official ALIA tools
+<workspace>/work/alia-validation-windows-data/  test data; preserve across restarts
 ```
 
 Prepare tools outside the checkout, from `<workspace>`:
 
 ```powershell
-npm install --prefix work\bb-build-tools --ignore-scripts --no-audit --no-fund bb-app@0.46.0
+npm install --prefix work\alia-build-tools --ignore-scripts --no-audit --no-fund alia-app@0.46.0
 ```
 
 Use an environment with working native SQLite dependencies. The native Windows
@@ -66,7 +66,7 @@ validation environment work.
 From the candidate checkout, build and start in one terminal:
 
 ```powershell
-$env:BB_CLI=''
+$env:ALIA_CLI=''
 .\scripts\build-dev.ps1
 .\scripts\validation-host.ps1 start
 ```
@@ -74,7 +74,7 @@ $env:BB_CLI=''
 After the test host is healthy, in a second terminal in the same checkout:
 
 ```powershell
-$env:BB_CLI=''
+$env:ALIA_CLI=''
 .\scripts\validation-host.ps1 install
 .\scripts\validation-host.ps1 status
 ```
@@ -87,7 +87,7 @@ The build helper uses separate build data and restores the caller's environment.
 After all disposable tasks finish:
 
 ```powershell
-$env:BB_CLI=''
+$env:ALIA_CLI=''
 .\scripts\validation-host.ps1 stop
 ```
 
@@ -105,8 +105,8 @@ vendor checksums; keep it separate from system and production runtimes.
 
 ```bash
 runtime="$HOME/.local/share/agent-board-vnext-validation"
-npm install --prefix "$runtime/bb-tools" --ignore-scripts --no-audit --no-fund bb-app@0.46.0
-(cd "$runtime/bb-tools" && npm rebuild better-sqlite3)
+npm install --prefix "$runtime/alia-tools" --ignore-scripts --no-audit --no-fund alia-app@0.46.0
+(cd "$runtime/alia-tools" && npm rebuild better-sqlite3)
 bash scripts/linux-validation-host.sh build
 bash scripts/linux-validation-host.sh start
 ```
@@ -125,7 +125,7 @@ bash scripts/linux-validation-host.sh stop
 ```
 
 The older `scripts/dev-host.sh` is a workspace-layout-specific WSL helper using
-`<workspace>/work/bb-linux-tools`, `<workspace>/work/bb-wsl-data` and ports
+`<workspace>/work/alia-linux-tools`, `<workspace>/work/alia-wsl-data` and ports
 49886/49887. It does not share selectors with the native Windows or Linux
 validation hosts. Inspect selectors and prerequisites before using any helper.
 

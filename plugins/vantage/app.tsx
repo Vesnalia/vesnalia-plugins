@@ -1,4 +1,4 @@
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { createCommands, PANEL_ACTION_ID } from "./src/commands";
 import { AttentionToasts, useVantageBadge } from "./src/notify";
 import { AGENT_TAB_ID, AgentTab, PAGE_PANEL_ID, PAGE_PATH, VantageHeader, VantagePage, VantageSidebar, usePageTitle } from "./src/page";
@@ -8,7 +8,7 @@ import {
   useRowLines, useSegmentVisible,
 } from "./src/thread-surfaces";
 
-// The header slot bb 0.48 still draws for plugins built against older SDKs, which SDK 0.6.104 no longer types.
+// The header slot VesnALIA 0.48 still draws for plugins built against older SDKs, which SDK 0.6.104 no longer types.
 type HeaderSlots = { experimental_threadHeaderAction?(registration: { id: string; title: string; component: typeof VantageHeaderButton }): void };
 
 export default definePluginApp((app) => {
@@ -30,12 +30,12 @@ export default definePluginApp((app) => {
     id: "worktrees", title: "Worktrees", group: "3_git", order: 90,
     summary: SegmentSummary, details: SegmentDetails, useVisible: useSegmentVisible,
   });
-  // Before bb's Child threads section in the thread context card; the segment above hides itself while the card shows.
+  // Before VesnALIA's Child threads section in the thread context card; the segment above hides itself while the card shows.
   app.slots.experimental_threadContextCardSection({ id: "worktrees", title: "Worktrees", group: "1_related", order: 5, component: VantageCardSection });
   app.slots.experimental_threadInfoSection({ id: "worktrees", group: "2_changes", order: 90, component: VantageInfoSection });
   app.slots.experimental_threadRowMetadata({ id: "changes", order: 50, useData: useRowLines, component: RowLineItem });
   app.slots.experimental_threadAction(openAction);
-  // Our icon in the thread header, as before; a bb without that slot gets bb's labelled header action instead.
+  // Our icon in the thread header, as before; a VesnALIA without that slot gets VesnALIA's labelled header action instead.
   const legacy = app.slots as unknown as HeaderSlots;
   if (typeof legacy.experimental_threadHeaderAction === "function") legacy.experimental_threadHeaderAction({ id: "open", title: "Vantage", component: VantageHeaderButton });
   else app.slots.experimental_threadAction(headerAction);

@@ -1,13 +1,13 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { SessionManager } from "./sessions.js";
 import { registerBrowserTools } from "./tools.js";
 
-export async function createBrowserTools(bb: BbPluginApi): Promise<SessionManager> {
-  const manager = new SessionManager(bb);
+export async function createBrowserTools(alia: AliaPluginApi): Promise<SessionManager> {
+  const manager = new SessionManager(alia);
   manager.bindHostSignals();
-  registerBrowserTools(bb, manager);
+  registerBrowserTools(alia, manager);
 
-  bb.background.service("lifecycle", {
+  alia.background.service("lifecycle", {
     async start(signal) {
       await manager.reconcile();
       manager.markReady();
@@ -23,10 +23,10 @@ export async function createBrowserTools(bb: BbPluginApi): Promise<SessionManage
   });
 
   for (const event of ["thread.archived", "thread.deleted", "thread.failed"] as const) {
-    bb.events.on(event, ({ thread }) => manager.onThreadStopped(thread.id));
+    alia.events.on(event, ({ thread }) => manager.onThreadStopped(thread.id));
   }
 
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     await manager.dispose();
   });
 

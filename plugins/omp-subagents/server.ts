@@ -1,14 +1,14 @@
-// bb-plugin-omp-subagents — the bb.server entry.
+// alia-plugin-omp-subagents — the alia.server entry.
 //
-// Owns the mapping between bb threads (provider `acp-omp`) and OMP session
+// Owns the mapping between VesnALIA threads (provider `acp-omp`) and OMP session
 // artifact dirs on the thread's host: `thread/identity` events carry the OMP
 // session UUID, and the workspace path gives the directory-encoded dir.
-// All OMP filesystem reads go through this plugin's bb.host entry on the
+// All OMP filesystem reads go through this plugin's alia.host entry on the
 // thread's own host; nothing here touches `node:fs`.
 import {
   defineRpcContract,
-  type BbPluginApi,
-} from "@get-bb/plugin-sdk";
+  type AliaPluginApi,
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   agentIdSchema,
@@ -99,7 +99,7 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-// ---- bb thread → OMP session resolution --------------------------------------
+// ---- VesnALIA thread → OMP session resolution --------------------------------------
 
 type OmpBinding = {
   sessionUuid: string;
@@ -128,10 +128,10 @@ function addressedMessage(agentId: string, text: string): string {
   ].join("\n");
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     maxAgentsPerThread: {
       type: "number",
       label: "Max agents per roster",
@@ -144,7 +144,7 @@ export default async function plugin(bb: BbPluginApi) {
     maxAgentsPerThread = next.maxAgentsPerThread;
   });
 
-  const host = bb.hosts.experimental_client({
+  const host = alia.hosts.experimental_client({
     contract: hostContract,
     experimental_signals: hostSignals,
   });
@@ -152,7 +152,7 @@ export default async function plugin(bb: BbPluginApi) {
   // Host file-watch signals -> realtime channel -> the frontend refetches.
   // The host emits the bare OMP session uuid, the same one agents_list returns.
   host.experimental_onSignal("changed", ({ payload }) => {
-    bb.realtime.publish(REALTIME_CHANGED, {
+    alia.realtime.publish(REALTIME_CHANGED, {
       sessionUuid: payload.sessionUuid,
     });
   });
@@ -164,7 +164,7 @@ export default async function plugin(bb: BbPluginApi) {
   // `thread/identity` cannot be read from it. It does say the thread moved on:
   // mark the binding so its next use re-checks the identity (one cheap query)
   // instead of trusting it forever.
-  bb.events.on("experimental_thread.events", ({ thread }) => {
+  alia.events.on("experimental_thread.events", ({ thread }) => {
     const binding = bindings.get(thread.id);
     if (binding !== undefined) binding.identityStale = true;
   });
@@ -172,10 +172,10 @@ export default async function plugin(bb: BbPluginApi) {
   async function resolveThread(
     threadId: string,
   ): Promise<{ hostId: string; environmentPath: string | null } | null> {
-    const detail = await bb.sdk.threads.get({ threadId });
+    const detail = await alia.sdk.threads.get({ threadId });
     const { environmentId } = detail;
     if (environmentId === null) return null;
-    const environment = await bb.sdk.environments.get({
+    const environment = await alia.sdk.environments.get({
       environmentId,
     });
     return {
@@ -186,7 +186,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   /** The OMP session UUID: the newest `thread/identity` event for the thread. */
   async function latestIdentity(threadId: string): Promise<string | undefined> {
-    const events = await bb.sdk.threads.events.list({
+    const events = await alia.sdk.threads.events.list({
       threadId,
       types: ["thread/identity"],
       order: "desc",
@@ -208,12 +208,12 @@ export default async function plugin(bb: BbPluginApi) {
       }
       bindings.delete(threadId);
     }
-    const detail = await bb.sdk.threads.get({ threadId });
+    const detail = await alia.sdk.threads.get({ threadId });
     if (detail.providerId !== OMP_PROVIDER_ID) return null;
     const sessionUuid = await latestIdentity(threadId);
     const env = await resolveThread(threadId);
     if (sessionUuid === undefined || env === null || env.hostId === "") {
-      bb.log.warn(
+      alia.log.warn(
         `no binding for ${threadId}: uuid=${String(sessionUuid)} env=${String(env?.hostId ?? null)}`,
       );
       return null;
@@ -260,14 +260,14 @@ export default async function plugin(bb: BbPluginApi) {
     const before = bindings.get(threadId);
     const binding = await resolveBinding(threadId);
     if (binding === null) {
-      bb.log.warn(`locate(${threadId}): no binding`);
+      alia.log.warn(`locate(${threadId}): no binding`);
       return null;
     }
     const fromCache = before === binding;
     if (binding.artifactsDir === null) {
       const found = await findArtifactsDir(binding);
       if (found === null) {
-        bb.log.warn(`locate(${threadId}): uuid ${binding.sessionUuid} not found on host`);
+        alia.log.warn(`locate(${threadId}): uuid ${binding.sessionUuid} not found on host`);
         return { located: null, fromCache };
       }
       binding.artifactsDir = found;
@@ -390,14 +390,14 @@ export default async function plugin(bb: BbPluginApi) {
       agentId === null || agentId === undefined
         ? null
         : agentIdSchema.parse(agentId);
-    // Route through bb's own dispatch: send-mode "auto" starts a turn on an
+    // Route through VesnALIA's own dispatch: send-mode "auto" starts a turn on an
     // idle thread and queues/steers a running one — exactly what steering a
     // live OMP main agent needs.
-    const detail = await bb.sdk.threads.get({ threadId });
+    const detail = await alia.sdk.threads.get({ threadId });
     if (detail.providerId !== OMP_PROVIDER_ID) {
       throw notOmp(threadId);
     }
-    const result = await bb.sdk.threads.send({
+    const result = await alia.sdk.threads.send({
       threadId,
       mode: "auto",
       input: [
@@ -411,7 +411,7 @@ export default async function plugin(bb: BbPluginApi) {
     return { delivery: result.delivery };
   };
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     agents_list: ({ threadId }) => agentsList(threadId),
 
     agent_transcript: ({ threadId, agentId }) =>
@@ -427,7 +427,7 @@ export default async function plugin(bb: BbPluginApi) {
 
     sessions_list: async ({ projectId }) => {
       const threads = (
-        await bb.sdk.threads.list({
+        await alia.sdk.threads.list({
           ...(projectId === null ? {} : { projectId }),
           limit: 200,
         })
@@ -498,7 +498,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ---- Agent tools: read-only, mirroring the CLI read paths -------------------
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "omp_subagents_roster",
     description:
       "List the subagents of an OMP thread: status, tool count and task per agent. Read-only. Defaults to the current thread.",
@@ -513,7 +513,7 @@ export default async function plugin(bb: BbPluginApi) {
         .string()
         .min(1)
         .optional()
-        .describe("BB thread id of an OMP thread; default: this thread"),
+        .describe("VesnALIA thread id of an OMP thread; default: this thread"),
     }),
     async execute({ threadId }, ctx) {
       const target = threadId ?? ctx.threadId;
@@ -525,7 +525,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "omp_subagent_read",
     description:
       "Read one OMP subagent's final output or its transcript (agent ids come from omp_subagents_roster). Read-only. Defaults to the current thread.",
@@ -545,7 +545,7 @@ export default async function plugin(bb: BbPluginApi) {
         .string()
         .min(1)
         .optional()
-        .describe("BB thread id of an OMP thread; default: this thread"),
+        .describe("VesnALIA thread id of an OMP thread; default: this thread"),
     }),
     async execute({ agentId, part, threadId }, ctx) {
       const target = threadId ?? ctx.threadId;
@@ -562,14 +562,14 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ---- CLI ------------------------------------------------------------------------
 
-  // `bb omp-subagents` — what agents and shells use to inspect and steer.
+  // `alia omp-subagents` — what agents and shells use to inspect and steer.
   const usage = [
     "Usage:",
-    "  bb omp-subagents list [--json]                        Sessions on every machine, with subagent counts",
-    "  bb omp-subagents agents <thread-id> [--json]          Roster for one OMP thread",
-    "  bb omp-subagents transcript <thread-id> <agent> [--json]",
-    "  bb omp-subagents output <thread-id> <agent> [--json]  Final output artifact",
-    "  bb omp-subagents inject [--json] [--agent <id>] <thread-id> <message>",
+    "  VesnALIA omp-subagents list [--json]                        Sessions on every machine, with subagent counts",
+    "  VesnALIA omp-subagents agents <thread-id> [--json]          Roster for one OMP thread",
+    "  VesnALIA omp-subagents transcript <thread-id> <agent> [--json]",
+    "  VesnALIA omp-subagents output <thread-id> <agent> [--json]  Final output artifact",
+    "  VesnALIA omp-subagents inject [--json] [--agent <id>] <thread-id> <message>",
     "                                                        Send a message into an OMP thread; with --agent the",
     "                                                        main agent forwards it to that live subagent.",
     "                                                        Everything after <thread-id> is the message.",
@@ -578,40 +578,40 @@ export default async function plugin(bb: BbPluginApi) {
   /** Machines to list: every connected one, the primary, and each bound thread's. */
   async function listingHosts(): Promise<string[]> {
     const ids = new Set<string>();
-    const primary = await bb.sdk.system.config();
+    const primary = await alia.sdk.system.config();
     const primaryId = (primary as { primaryHostId?: string | null }).primaryHostId ?? "";
     if (primaryId !== "") ids.add(primaryId);
-    for (const known of await bb.sdk.hosts.list()) {
+    for (const known of await alia.sdk.hosts.list()) {
       if (known.status === "connected" && known.lifecycle.phase === "active") ids.add(known.id);
     }
     for (const binding of bindings.values()) ids.add(binding.hostId);
     return [...ids];
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "omp-subagents",
     summary: "Inspect and steer the subagents of OMP threads",
     commands: [
-      { name: "list", summary: "List OMP sessions on every machine", usage: "bb omp-subagents list [--json]" },
+      { name: "list", summary: "List OMP sessions on every machine", usage: "alia omp-subagents list [--json]" },
       {
         name: "agents",
         summary: "Subagent roster for a thread",
-        usage: "bb omp-subagents agents <thread-id> [--json]",
+        usage: "alia omp-subagents agents <thread-id> [--json]",
       },
       {
         name: "transcript",
         summary: "One subagent's transcript",
-        usage: "bb omp-subagents transcript <thread-id> <agent> [--json]",
+        usage: "alia omp-subagents transcript <thread-id> <agent> [--json]",
       },
       {
         name: "output",
         summary: "One subagent's final output",
-        usage: "bb omp-subagents output <thread-id> <agent> [--json]",
+        usage: "alia omp-subagents output <thread-id> <agent> [--json]",
       },
       {
         name: "inject",
         summary: "Send a message into an OMP thread, or to one of its live subagents",
-        usage: "bb omp-subagents inject [--json] [--agent <id>] <thread-id> <message>",
+        usage: "alia omp-subagents inject [--json] [--agent <id>] <thread-id> <message>",
       },
     ],
     async run(argv) {
@@ -721,8 +721,8 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     bindings.clear();
-    bb.log.info("disposed");
+    alia.log.info("disposed");
   });
 }

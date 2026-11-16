@@ -43,7 +43,7 @@ export interface SnapshotRole {
   name: string;
   title: string;
   lead: boolean;
-  /** Declared in .bb/team.yaml (false: a thread carries a role the config lost). */
+  /** Declared in .vesnalia/team.yaml (false: a thread carries a role the config lost). */
   inConfig: boolean;
   enabled: boolean;
   provider: string | null;
@@ -66,7 +66,7 @@ export interface TeamSnapshot {
   teams: string[];
   /** Config tracked by git; null when there is no config. */
   versioned: boolean | null;
-  /** The root .gitignore ignores .bb/ entirely: versioning is impossible. */
+  /** The root .gitignore ignores .vesnalia/ entirely: versioning is impossible. */
   versioningBlocked: boolean;
   configSource: string | null;
   configError: string | null;
@@ -161,7 +161,7 @@ const RUNNING_THREAD_STATUSES = ["active", "starting", "pending"];
 export function deriveExecutionState(
   input: ExecutionStateInput,
 ): RoleExecutionState | undefined {
-  const replaceHint = `bb team replace ${input.role} --dry-run`;
+  const replaceHint = `alia team replace ${input.role} --dry-run`;
   const auto = input.autoContinue;
   // An explicit auto-continue failure wins over a stuck intent: "replacing"
   // must not hide an error a human has to resolve.
@@ -181,7 +181,7 @@ export function deriveExecutionState(
         kind: "error",
         taskId: null,
         errorCode: "spawn_uncertain",
-        safeAction: `A spawn attempt is unresolved; inspect BB for a possibly-created thread, then retry ${replaceHint} or abort`,
+        safeAction: `A spawn attempt is unresolved; inspect VesnALIA for a possibly-created thread, then retry ${replaceHint} or abort`,
         atMs: input.replacement.startedAtMs,
       };
     }
@@ -198,7 +198,7 @@ export function deriveExecutionState(
       kind: "error",
       taskId: null,
       errorCode: "delivery_uncertain",
-      safeAction: `Role switched, but prompt release is uncertain; run bb team resume`,
+      safeAction: `Role switched, but prompt release is uncertain; run alia team resume`,
       atMs: input.replacement.startedAtMs,
     };
   }
@@ -272,17 +272,17 @@ function boundCause(error: string | null | undefined): string | undefined {
 function autoContinueSafeAction(role: string, errorCode: string | null): string {
   switch (errorCode) {
     case "release_failed":
-      return `Role switched, but the queued prompt could not be released; run bb team resume`;
+      return `Role switched, but the queued prompt could not be released; run alia team resume`;
     case "delivery_uncertain":
-      return `Prompt delivery is uncertain; run bb team resume`;
+      return `Prompt delivery is uncertain; run alia team resume`;
     case "replacement_unfinished":
-      return `Retry bb team replace ${role} to resume the durable intent, or --abort before the switch`;
+      return `Retry VesnALIA team replace ${role} to resume the durable intent, or --abort before the switch`;
     case "task_reassigned":
       return `The package moved to another role; no automatic replacement of the old session — inspect the tracker, then replace or re-checkpoint by hand`;
     case "spawn_uncertain":
-      return `A spawn attempt is unresolved; inspect BB for a possibly-created thread, then retry bb team replace ${role} --dry-run or abort`;
+      return `A spawn attempt is unresolved; inspect VesnALIA for a possibly-created thread, then retry VesnALIA team replace ${role} --dry-run or abort`;
     default:
-      return `Auto-continue stopped; inspect bb team doctor, then bb team replace ${role} --dry-run; the completed session is kept`;
+      return `Auto-continue stopped; inspect VesnALIA team doctor, then VesnALIA team replace ${role} --dry-run; the completed session is kept`;
   }
 }
 
@@ -368,7 +368,7 @@ const PAD = 8;
 /**
  * Lay the team out as a two-level tree: the lead thread(s) on top, every
  * executor thread below. A role without a thread becomes a "missing" node,
- * so the picture also shows what bb team create would still spawn.
+ * so the picture also shows what VesnALIA team create would still spawn.
  */
 export function layoutHierarchy(snapshot: TeamSnapshot): GraphLayout {
   const top: GraphNode[] = [];

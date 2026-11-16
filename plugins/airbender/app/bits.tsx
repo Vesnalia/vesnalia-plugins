@@ -9,7 +9,7 @@
 // another just for a chip.
 //
 // Gotchas:
-// - Colours come from BB's theme tokens, never fixed colours, so the pieces
+// - Colours come from VesnALIA's theme tokens, never fixed colours, so the pieces
 //   follow the selected theme.
 
 import type { ReactNode } from "react";
@@ -31,7 +31,7 @@ export const TAG_SELECT_CLASS =
 export const FIELD_CLASS =
   "rounded-md border border-input bg-transparent px-2 py-1 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
-/** The dashed box BB's own list pages use for loading and empty states. */
+/** The dashed box VesnALIA's own list pages use for loading and empty states. */
 export function Notice({ children }: { children: ReactNode }) {
   return (
     <div
@@ -76,7 +76,7 @@ export function Tag({
  */
 export function StatusTag({ issue }: { issue: Issue }) {
   // Someday reads as such, blocked or not: the owner set it aside
-  // (bead-bb-26g).
+  // (bead-alia-26g).
   if (issue.status === DEFERRED_STATUS) return <Tag>someday</Tag>;
   if (!isBlocked(issue)) {
     return (
@@ -102,9 +102,9 @@ export function StatusTag({ issue }: { issue: Issue }) {
 }
 
 /**
- * A chain-link icon for the Link button. Drawn here because BB's icon set
+ * A chain-link icon for the Link button. Drawn here because VesnALIA's icon set
  * has none (checked in its bundle: only ExternalLink), and an unknown name
- * would show BB's fallback icon. Takes its colour from the text around it.
+ * would show VesnALIA's fallback icon. Takes its colour from the text around it.
  */
 export function LinkIcon({ className }: { className?: string }) {
   return (
@@ -126,8 +126,8 @@ export function LinkIcon({ className }: { className?: string }) {
 
 /**
  * A robot's head, marking a step that is the agent's. Drawn here because
- * BB's icon set has no robot (checked in its bundle), and an unknown name
- * would show BB's fallback icon. Takes its colour from the text around it.
+ * VesnALIA's icon set has no robot (checked in its bundle), and an unknown name
+ * would show VesnALIA's fallback icon. Takes its colour from the text around it.
  */
 export function RobotIcon({ className }: { className?: string }) {
   return (
@@ -154,7 +154,7 @@ export function RobotIcon({ className }: { className?: string }) {
 /**
  * A person, marking a step that needs the user. Drawn here, like the robot
  * beside it, so the two are the same size and sit the same way in a tag;
- * BB's own person icon comes in a wrapper that threw the tag's line off.
+ * VesnALIA's own person icon comes in a wrapper that threw the tag's line off.
  */
 export function PersonIcon({ className }: { className?: string }) {
   return (

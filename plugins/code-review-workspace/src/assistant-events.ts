@@ -1,6 +1,6 @@
-// What BB's thread and queue events settle: a turn's end ends the asks, discussions and feedback check that waited for
+// What VesnALIA's thread and queue events settle: a turn's end ends the asks, discussions and feedback check that waited for
 // it, a queued message leaving the queue starts or withdraws them, and a guide writer that fails fails its guide.
-import type { PluginThreadEventHandler } from "@get-bb/plugin-sdk";
+import type { PluginThreadEventHandler } from "@vesnalia/plugin-sdk";
 import { assistantReview } from "./draft-comments";
 import { discussionsWaitingOn, settleDiscussions } from "./discussions";
 import { listAsks, setAsk } from "./asks";
@@ -11,7 +11,7 @@ import type { AsyncStore } from "./store-queue";
 import type { EventListeners, ServeDeps } from "./server-modules";
 
 export function register(deps: ServeDeps) {
-  const { bb, store, sync } = deps;
+  const { alia, store, sync } = deps;
   // A discussion the assistant didn't answer by the end of its turn stops waiting for it. `failed`: the turn failed.
   const settleAs = (failed: boolean) => async ({ thread }: { thread: { id: string } }) => {
     // A turn ended; an ask on the summary or a comment ends with the turn that carried it. In one turn of the queue,
@@ -23,17 +23,17 @@ export function register(deps: ServeDeps) {
         if (!("deepDive" in at)) { await setAsk(tx, reviewKey!, at, null); continue; }
         // Its chapter stops saying the agent is digging into it, and says what it found.
         await endDeepDive(tx, reviewKey!, failed);
-        bb.realtime.publish(`review:${reviewKey}`, { ts: Date.now() });
+        alia.realtime.publish(`review:${reviewKey}`, { ts: Date.now() });
       }
       return { reviewKey, checkQueued: !!asking?.verifyingMessageId, waiting: await discussionsWaitingOn(tx, thread.id) };
     });
-    const targetKey = await settleDiscussions(bb, store, thread.id, waiting);
-    if (targetKey) bb.realtime.publish(`draft:${targetKey}`, {});
+    const targetKey = await settleDiscussions(alia, store, thread.id, waiting);
+    if (targetKey) alia.realtime.publish(`draft:${targetKey}`, {});
     const review = reviewKey ? await store.getReview(reviewKey) : null;
     if (!reviewKey || !review) return;
     // A feedback check ends with the assistant's turn; an alert waiting for it can go now. A check still
     // queued behind another message hasn't run yet.
-    if (review.verifyingSince && !checkQueued && !(await bb.sdk.threads.queuedMessages.list({ threadId: thread.id }).catch(() => [])).length) {
+    if (review.verifyingSince && !checkQueued && !(await alia.sdk.threads.queuedMessages.list({ threadId: thread.id }).catch(() => [])).length) {
       await endCheck(store, reviewKey);
       await checkEnded(reviewKey);
     }
@@ -43,7 +43,7 @@ export function register(deps: ServeDeps) {
   /** Once a check's end is recorded: whose turn the review is now, and its open pages told. */
   const checkEnded = async (reviewKey: string) => {
     await sync.evaluate(reviewKey);
-    bb.realtime.publish(`feedback:${reviewKey}`, { ts: Date.now() });
+    alia.realtime.publish(`feedback:${reviewKey}`, { ts: Date.now() });
   };
   /** The review whose feedback check waits in the queue as this message. */
   const queuedCheck = async (store: AsyncStore, entry: { id: string; threadId: string }) => {
@@ -63,7 +63,7 @@ export function register(deps: ServeDeps) {
     });
   };
   // A message leaving the queue takes one turn of the store's queue as its event arrives, so the event, the turn's end,
-  // and the send that queued the message see each other whole, in the order BB told them.
+  // and the send that queued the message see each other whole, in the order VesnALIA told them.
   const dispatched: PluginThreadEventHandler<"message.dispatched"> = async ({ entry }) => {
     return store.exclusive(async (tx) => {
       const found = await queuedAsk(tx, entry);
@@ -77,7 +77,7 @@ export function register(deps: ServeDeps) {
     const checking = await store.exclusive(async (tx) => {
       const found = await queuedAsk(tx, entry);
       if (found) await setAsk(tx, found.reviewKey, found.at, null);
-      if (found && "deepDive" in found.at) bb.realtime.publish(`review:${found.reviewKey}`, { ts: Date.now() });
+      if (found && "deepDive" in found.at) alia.realtime.publish(`review:${found.reviewKey}`, { ts: Date.now() });
       // A check deleted from the queue never runs.
       const checking = await queuedCheck(tx, entry);
       if (checking) await endCheck(tx, checking);
@@ -89,13 +89,13 @@ export function register(deps: ServeDeps) {
   // A review agent's chat deleted while its tab shows: the tab reads the conversation again, and says so.
   const deleted: PluginThreadEventHandler<"thread.deleted"> = async ({ thread }) => {
     const reviewKey = await store.exclusive((tx) => assistantReview(tx, thread.id));
-    if (reviewKey) bb.realtime.publish(`conversation:${reviewKey}`, { deleted: thread.id });
+    if (reviewKey) alia.realtime.publish(`conversation:${reviewKey}`, { deleted: thread.id });
   };
   return {
     events: {
       "thread.idle": [settleAs(false)],
       "thread.deleted": [deleted],
-      "thread.failed": [settleAs(true), ({ thread, error }) => guideWorkerFailed(bb, thread.id, error)],
+      "thread.failed": [settleAs(true), ({ thread, error }) => guideWorkerFailed(alia, thread.id, error)],
       "message.dispatched": [dispatched],
       "message.cancelled": [cancelled],
     } satisfies EventListeners,

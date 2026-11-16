@@ -3,7 +3,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   // Mirror the `@/*` alias from tsconfig so component tests resolve the
-  // vendored UI the same way `bb plugin build` does.
+  // vendored UI the same way `alia plugin build` does.
   resolve: {
     alias: { "@": fileURLToPath(new URL(".", import.meta.url)) },
   },

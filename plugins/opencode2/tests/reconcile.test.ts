@@ -6,7 +6,7 @@ import { OpenCodeServer, sessions } from "./support/host-api.js";
 
 function fakeSession(id: string, startedAt: number) {
   return {
-    bbThreadId: `thr_${id}`,
+    aliaThreadId: `thr_${id}`,
     providerThreadId: id,
     active: { startedAt, promptDelivered: true },
   };

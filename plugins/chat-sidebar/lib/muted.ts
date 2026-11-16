@@ -1,7 +1,7 @@
-// Which chats bb's notifications plugin has muted, so folder badges and
+// Which chats VesnALIA's notifications plugin has muted, so folder badges and
 // Attention can leave them out the way Telegram leaves out muted chats.
 //
-// bb ships no public read of the levels for many threads at once, but the
+// VesnALIA ships no public read of the levels for many threads at once, but the
 // notifications plugin keeps each thread's own level in its thread metadata
 // (`{ notifications: { own } }` under the plugin id) and its defaults in its
 // settings, and both are readable. The rules below mirror its resolution: a
@@ -25,7 +25,7 @@ export interface NotificationDefaults {
   childLevel: NotificationLevel | "inherit";
 }
 
-/** bb's own defaults, for when the plugin's settings cannot be read. */
+/** VesnALIA's own defaults, for when the plugin's settings cannot be read. */
 export const FALLBACK_DEFAULTS: NotificationDefaults = { defaultLevel: "all", childLevel: "input-only" };
 
 export function parseDefaults(values: Record<string, unknown> | null | undefined): NotificationDefaults {

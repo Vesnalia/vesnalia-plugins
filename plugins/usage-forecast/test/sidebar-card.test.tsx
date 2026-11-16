@@ -2,7 +2,7 @@
 // The card the footer ring opens: host headings only with several hosts, a
 // shared account once with the hosts it is also on, and the band's rows.
 
-import { loadPluginApp } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp } from "@vesnalia/plugin-sdk/testing/app";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { en } from "../src/app/i18n";

@@ -1,6 +1,6 @@
 # Third-party notices
 
-The vendored bb UI scaffolding in components/ui/, lib/portal-scope.ts, lib/utils.ts, and hooks/useBrowserDimmingModal.ts is derived from [bb](https://github.com/get-bb/bb). Its MIT notice is retained below.
+The vendored VesnALIA UI scaffolding in components/ui/, lib/portal-scope.ts, lib/utils.ts, and hooks/useBrowserDimmingModal.ts is derived from [VesnALIA](https://github.com/get-bb/bb). Its MIT notice is retained below.
 
 MIT License
 

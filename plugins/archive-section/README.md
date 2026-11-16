@@ -1,19 +1,19 @@
-# Archive Section for BB
+# Archive Section for VesnALIA
 
-Moves a BB thread into an **Archived** sidebar section the moment you archive
+Moves a VesnALIA thread into an **Archived** sidebar section the moment you archive
 it, and puts it back in its old section when you unarchive it.
 
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/NickolasBenakis/bb-plugin-archive-section.git
+alia plugin install git:https://github.com/NickolasBenakis/bb-plugin-archive-section.git
 ```
 
 Or from a checkout:
 
 ```sh
 npm install --include=dev
-bb plugin install .
+alia plugin install .
 ```
 
 ## Behavior
@@ -38,21 +38,21 @@ the next archive.
 | `restoreOnUnarchive` | `true` | Return unarchived threads to their previous section |
 
 ```sh
-bb plugin config archive-section set sectionName "Old work"
-bb plugin reload archive-section
+alia plugin config archive-section set sectionName "Old work"
+alia plugin reload archive-section
 ```
 
 ## CLI
 
 ```sh
-bb archive-section status [--json]   # matched section and stragglers
-bb archive-section sweep [--json]    # move every archived thread into the section
+alia archive-section status [--json]   # matched section and stragglers
+alia archive-section sweep [--json]    # move every archived thread into the section
 ```
 
 ## Development
 
 ```sh
-npm run check   # typecheck + bb plugin build
+npm run check   # typecheck + alia plugin build
 ```
 
 ## License

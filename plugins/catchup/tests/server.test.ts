@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import Database from "better-sqlite3";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { DEFAULT_RECAP_PROMPT, MAX_AUTOMATIC_RAW_RECAP_CHARS } from "../src/recap.ts";
 import plugin from "../src/server.ts";
 import type { Recap, RecapSettings } from "../src/server.ts";
@@ -36,7 +36,7 @@ async function createHarness(options: {
     recap_display_mode_set: (input: { displayMode: RecapSettings["displayMode"] }) => Promise<{ displayMode: RecapSettings["displayMode"] }>;
   };
   const thread = (id: string) => ({ id, projectId: "p", environmentId: null, providerId: "p", status: "idle", visibility: "visible" as const, originPluginId: null, originKind: null, parentThreadId: null as string | null });
-  const bb = {
+  const alia = {
     pluginId: "catchup",
     storage: {
       database: () => db,
@@ -66,8 +66,8 @@ async function createHarness(options: {
     rpc: { register: (_: unknown, registered: typeof handlers) => { handlers = registered; } },
     cli: { register: (registered: typeof cli) => { cli = registered; } }, events: { on: (name: string, callback: (payload: unknown) => void) => { events.set(name, callback); } },
     realtime: { publish: (_: string, payload: Record<string, unknown>) => { published.push(payload); } }, log: { info: () => {}, warn: () => {} }, onDispose: (callback: typeof dispose) => { dispose = callback; },
-  } as unknown as BbPluginApi;
-  await plugin(bb);
+  } as unknown as AliaPluginApi;
+  await plugin(alia);
   return {
     db,
     settings,
@@ -392,7 +392,7 @@ test("does not submit a transcript if its thread is hidden during model lookup",
     visibility,
     originPluginId: null,
   });
-  const bb = {
+  const alia = {
     pluginId: "catchup",
     storage: {
       database: () => db,
@@ -484,9 +484,9 @@ test("does not submit a transcript if its thread is hidden during model lookup",
     onDispose: (dispose: () => void | Promise<void>) => {
       disposers.push(dispose);
     },
-  } as unknown as BbPluginApi;
+  } as unknown as AliaPluginApi;
 
-  await plugin(bb);
+  await plugin(alia);
   try {
     const generation = handlers.recap_generate({
       threadId: "source-thread",

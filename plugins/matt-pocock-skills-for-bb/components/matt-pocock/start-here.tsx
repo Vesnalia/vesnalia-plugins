@@ -22,10 +22,10 @@ function recommendation(state: MattState | undefined, canonicalId: string) {
   }
   if (
     skill.active &&
-    skill.bbName &&
+    skill.aliaName &&
     (skill.outcome === "canonical-selected" || skill.outcome === "alias-selected")
   ) {
-    return { name: `/${skill.bbName}`, available: true, reason: "" };
+    return { name: `/${skill.aliaName}`, available: true, reason: "" };
   }
   if (skill.reason === "off-master") return { name: canonicalId, available: false, reason: "Matt Pocock skills are off in this project." };
   if (skill.reason === "off-explicit" || skill.reason === "off-inherited") {
@@ -102,7 +102,7 @@ export function StartHere({
         return {
           ...skill,
           active: Boolean(available && conflict.effectiveName),
-          bbName: available ? conflict.effectiveName : null,
+          aliaName: available ? conflict.effectiveName : null,
           outcome: available ? conflict.outcome : "unknown",
           conflict: conflict && available ? conflict : {
             ...(conflict ?? skill.conflict),
@@ -160,7 +160,7 @@ export function StartHere({
         Skills © 2026 Matt Pocock, MIT, from{" "}
         <a href={mirrorConfig.upstream.url} target="_blank" rel="noreferrer" className="underline underline-offset-2">
           mattpocock/skills
-        </a>. Adapted for bb by Erik MacKinnon. Not affiliated with or endorsed by Matt Pocock or bb.
+        </a>. Adapted for VesnALIA by Erik MacKinnon. Not affiliated with or endorsed by Matt Pocock or VesnALIA.
       </p>
     </Card>
   );

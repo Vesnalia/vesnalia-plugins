@@ -1,4 +1,4 @@
-/** BB's timeline DOM, as found in bb-app 0.49. Undocumented: see AGENTS.md. */
+/** VesnALIA's timeline DOM, as found in alia-app 0.49. Undocumented: see AGENTS.md. */
 export interface Timeline {
   scroller: HTMLElement;
   /** `[data-timeline-items]`: the mounted rows and the windowing spacers. */

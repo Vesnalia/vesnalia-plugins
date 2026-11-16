@@ -73,7 +73,7 @@ export function FileDiff(props: FileDiffProps) {
   } else if (patch.data === undefined) {
     body = null;
   } else if (patch.data.binary || kind === "binary") {
-    body = <p className="gs-diff-note">Binary file. BB shows no line diff for binary content.</p>;
+    body = <p className="gs-diff-note">Binary file. VesnALIA shows no line diff for binary content.</p>;
   } else if (patch.data.patch.trim() === "") {
     body = (
       <p className="gs-diff-note">
@@ -95,7 +95,7 @@ export function FileDiff(props: FileDiffProps) {
     body = (
       <>
         {patch.data.truncated ? (
-          <Notice>The diff is larger than the read limit. BB shows only the first part.</Notice>
+          <Notice>The diff is larger than the read limit. VesnALIA shows only the first part.</Notice>
         ) : null}
         <InlineReviewDiff patch={fullPatch ?? patch.data.patch} path={path} renderLine={props.inlineReview?.renderLine} onAdd={props.inlineReview?.onAdd} />
       </>

@@ -8,7 +8,7 @@ import {
   type DragEvent,
   type ReactNode,
 } from "react";
-import type { PluginThreadPanelProps } from "@bb/plugin-sdk/app";
+import type { PluginThreadPanelProps } from "@vesnalia/plugin-sdk/app";
 import {
   useLegacyTerminalAttachment,
   type TerminalAttachment,
@@ -103,7 +103,7 @@ export async function uploadTerminalFile({
     `/api/v1/plugins/${PLUGIN_ID}/http/upload?${query.toString()}`,
     {
       method: "POST",
-      headers: { "x-bb-plugin-token": token },
+      headers: { "x-alia-plugin-token": token },
       body: file,
       signal,
     },

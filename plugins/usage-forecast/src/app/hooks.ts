@@ -1,7 +1,7 @@
 // Data hooks for the app. Reads refresh on server invalidation: the server
 // invalidates a thread on every context event (see CONTEXT_EVENT_TYPES in
 // server.ts). The intervals below are a backstop for hosts where realtime
-// does not reach the client (the phone on bb 0.49).
+// does not reach the client (the phone on VesnALIA 0.49).
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
@@ -10,7 +10,7 @@ import {
   experimental_useRpcQuery,
   useComposer,
   useSettings,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { STRINGS, type Strings } from "./i18n";
 import { createStore } from "./store";
 import { parseLang } from "../shared/language";

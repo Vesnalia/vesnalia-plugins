@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "./lib/toast";
-import type { bbSidebarRpcContract } from "./contract";
+import type { aliaSidebarRpcContract } from "./contract";
 import { useProjectColorOverrides } from "./ProjectColors";
 import { automaticProjectColor, projectColorsById } from "./project-colors";
 import { SettingRow, secondaryButtonClass } from "./settings-ui";
 
 export function ProjectColorSetting({ projectId, projectIds }: { projectId: string; projectIds: readonly string[] }) {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const { overrides, reload } = useProjectColorOverrides();
   const [draft, setDraft] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);

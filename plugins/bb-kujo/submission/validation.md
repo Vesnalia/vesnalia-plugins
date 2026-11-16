@@ -4,8 +4,8 @@
 
 ## Passed
 
-- Plugin: generated assets, TypeScript, 14 tests, native bb compiler and package contents.
-- Native bb: both-mode controls and lifecycle checks; five reloads; theme restoration and unload; editor typing/undo and terminal input/output with the disclosed isolated Monaco repair.
+- Plugin: generated assets, TypeScript, 14 tests, native VesnALIA compiler and package contents.
+- Native VesnALIA: both-mode controls and lifecycle checks; five reloads; theme restoration and unload; editor typing/undo and terminal input/output with the disclosed isolated Monaco repair.
 - Three inspected screenshots: 2880×1920, DPR 2, each below 2 MiB. See `assets.json` for sizes and hashes and `capture.json` for the real-browser receipt.
 - Exact overview copy, hashed local SVG icon, public release tag and canonical entry fields.
 - Marketplace build: 183 entries in both v1 and v2 documents.

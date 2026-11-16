@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { cursorSidebarRpcContract } from "./server";
 
 /**
- * Delete a native BB Project. This is the real native delete: the project and
+ * Delete a native VesnALIA Project. This is the real native delete: the project and
  * all of its threads go. The plugin's own order/visibility rows for it are
  * keyed by project existence elsewhere, so stale entries cannot linger.
  */
@@ -23,7 +23,7 @@ export function DeleteProjectDialog({ project, chatCount, onClose, onDeleted }: 
         <DialogHeader>
           <DialogTitle>Delete project</DialogTitle>
           <DialogDescription>
-            Delete “{project.name}” and {chatCount === 0 ? "its threads" : `all ${chatCount} of its chat${chatCount === 1 ? "" : "s"}`}? This deletes the BB project itself, not just its sidebar entry.
+            Delete “{project.name}” and {chatCount === 0 ? "its threads" : `all ${chatCount} of its chat${chatCount === 1 ? "" : "s"}`}? This deletes the VesnALIA project itself, not just its sidebar entry.
           </DialogDescription>
         </DialogHeader>
         {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}

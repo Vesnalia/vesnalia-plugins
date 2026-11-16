@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { expect, it } from 'vitest';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import { createAccountPoolPlugin } from './server.js';
 import { egressProfileSchema } from './account-egress.js';
 import { profileFingerprint } from './http-scope-acceptance.js';
@@ -11,7 +11,7 @@ it('requires a manage grant for acceptance/revocation and keeps production witho
   const dataDir=await fs.mkdtemp(path.join(os.tmpdir(),'scope-management-'));
   const host=createFakePluginHost({pluginId:'fixture-pool',dataDir,sdk:{hosts:{list:async()=>[]},system:{config:async()=>({primaryHostId:'host-one'})}}});
   try {
-    await createAccountPoolPlugin({now:()=>1000})(host.bb);
+    await createAccountPoolPlugin({now:()=>1000})(host.alia);
     const call=host.harness.behavior.callRpc;
     const key=(await fs.readFile(path.join(dataDir,'plugins','fixture-pool','secrets','accounts','management','operator.env'),'utf8')).trim().split('=')[1]!;
     const read=await call('management.unlock',{key,scope:'read',ttlSeconds:60}) as {token:string};

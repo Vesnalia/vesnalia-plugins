@@ -141,7 +141,7 @@ export function footerView(input: FooterInput): FooterView {
   });
   const tooltip = [
     `Hotspot: ${summary}`,
-    threads.length === 0 ? "No BB thread is using CPU" : `Top threads: ${threads.join(", ")}`,
+    threads.length === 0 ? "No VesnALIA thread is using CPU" : `Top threads: ${threads.join(", ")}`,
   ].join("\n");
 
   return { tone, heat, cpu, mem, title, tooltip };

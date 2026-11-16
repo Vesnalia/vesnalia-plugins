@@ -1,4 +1,4 @@
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it } from "vitest";
 import { createAutoresearchPlugin } from "../server.ts";
 import type { Engine } from "../src/engine.ts";
@@ -12,7 +12,7 @@ function text(result: unknown): string {
   return r.content?.map((c) => c.text ?? "").join("") ?? "";
 }
 
-describe("bb study CLI: --json everywhere, needs, wording, hints", () => {
+describe("alia study CLI: --json everywhere, needs, wording, hints", () => {
   let harness: Harness;
   let host: FakeHost;
   let port: FakePort;
@@ -24,8 +24,8 @@ describe("bb study CLI: --json everywhere, needs, wording, hints", () => {
     host.refs.set("main", host.commit("T0", null));
     host.metric.set("T0", 1000);
     port.addThread("thr_study");
-    const fake = createFakePluginHost({ pluginId: "bb-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
-    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0, harvestPollMs: 5 }, onEngine: (e) => (engine = e) })(fake.bb);
+    const fake = createFakePluginHost({ pluginId: "alia-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
+    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0, harvestPollMs: 5 }, onEngine: (e) => (engine = e) })(fake.alia);
     harness = fake.harness;
     const r = await harness.behavior.callAgentTool("study_propose", { spec_toml: fakeHostSpec(spec) }, { threadId: "thr_study", projectId: "proj_1" });
     expect(text(r)).toContain("Draft ready: `toy-size` · spec v1.");
@@ -59,7 +59,7 @@ describe("bb study CLI: --json everywhere, needs, wording, hints", () => {
     expect(Object.keys(await json(["list"]))).toEqual(["studies"]);
     const needs0 = await json(["needs"]);
     expect(needs0.total).toBe(1);
-    expect(needs0.studies[0].needs[0]).toMatchObject({ kind: "approve_spec", command: "bb study calibrate toy-size" });
+    expect(needs0.studies[0].needs[0]).toMatchObject({ kind: "approve_spec", command: "alia study calibrate toy-size" });
     const cal = await json(["calibrate", "toy-size", "--wait"]);
     expect(cal).toMatchObject({ ok: true, study: { slug: "toy-size" }, calibration: { status: "ready" } });
     expect(cal.message).toContain("Calibration ready");
@@ -85,10 +85,10 @@ describe("bb study CLI: --json everywhere, needs, wording, hints", () => {
       expect(r.exitCode).not.toBe(0);
       return JSON.parse(r.stdout).error as { code: string; message: string; hint: string };
     };
-    expect(await envelope(["drift", "toy-size"])).toMatchObject({ code: "study_error", message: "deterministic oracles have no drift check", hint: expect.stringContaining("bb study show toy-size") });
+    expect(await envelope(["drift", "toy-size"])).toMatchObject({ code: "study_error", message: "deterministic oracles have no drift check", hint: expect.stringContaining("alia study show toy-size") });
     expect(await json(["pause", "toy-size"])).toMatchObject({ ok: true, study: { state: "paused" } });
     expect(await json(["resume", "toy-size"])).toMatchObject({ ok: true, study: { state: "running" } });
-    expect(await envelope(["approve", "toy-size"])).toMatchObject({ message: "toy-size has no pending spec to approve", hint: expect.stringContaining("bb study show toy-size") });
+    expect(await envelope(["approve", "toy-size"])).toMatchObject({ message: "toy-size has no pending spec to approve", hint: expect.stringContaining("alia study show toy-size") });
     expect(await envelope(["harvest", "toy-size", "--publish"])).toMatchObject({ code: "removed", message: expect.stringContaining("no longer drafts or publishes"), hint: expect.stringContaining("study-harvest skill") });
     const needs = await json(["needs", "toy-size"]);
     expect(needs).toEqual({ total: 0, studies: [{ slug: "toy-size", needs: [] }] });
@@ -111,17 +111,17 @@ describe("bb study CLI: --json everywhere, needs, wording, hints", () => {
     expect(r.exitCode).not.toBe(0);
     const env = JSON.parse(r.stdout);
     expect(env.ok).toBe(false);
-    expect(env.error.hint).toContain("bb study calibrate toy-size");
+    expect(env.error.hint).toContain("alia study calibrate toy-size");
     const unknown = await cli(["show", "nope", "--json"]);
     expect(unknown.exitCode).not.toBe(0);
-    expect(JSON.parse(unknown.stdout).error).toMatchObject({ code: "not_found", hint: expect.stringContaining("bb study list") });
+    expect(JSON.parse(unknown.stdout).error).toMatchObject({ code: "not_found", hint: expect.stringContaining("alia study list") });
     const plain = await cli(["show", "nope"]);
     expect(plain.stderr).toContain("no study named");
-    expect(plain.stderr).toContain("bb study list");
+    expect(plain.stderr).toContain("alia study list");
     // A wrong-state control points at what the study waits for.
     const pause = await cli(["pause", "toy-size"]);
     expect(pause.exitCode).not.toBe(0);
-    expect(pause.stderr).toContain("bb study calibrate toy-size");
+    expect(pause.stderr).toContain("alia study calibrate toy-size");
   });
 
   it("start refusals name the current state and a safe next step without changing it", async () => {
@@ -139,7 +139,7 @@ describe("bb study CLI: --json everywhere, needs, wording, hints", () => {
       expect(r.exitCode).not.toBe(0);
       const error = JSON.parse(r.stdout).error;
       expect(error.message).toContain(message);
-      expect(error.hint).toBe(`Run \`bb study ${command} toy-size\`.`);
+      expect(error.hint).toBe(`Run \`alia study ${command} toy-size\`.`);
       expect(engine.study("toy-size").state).toBe(state);
     }
   });
@@ -161,11 +161,11 @@ describe("bb study CLI: --json everywhere, needs, wording, hints", () => {
   it("needs: text lines with the command; nothing when nothing waits", async () => {
     await setup();
     const needs = (await cli(["needs"])).stdout;
-    expect(needs).toContain("toy-size: Approve spec v1 and calibrate → `bb study calibrate toy-size`");
+    expect(needs).toContain("toy-size: Approve spec v1 and calibrate → `alia study calibrate toy-size`");
     expect((await cli(["list"])).stdout).toMatch(/toy-size\s+draft\s+1: approve spec/u);
-    expect((await cli(["show", "toy-size"])).stdout).toMatch(/Needs you\n {2}- Approve spec v1 and calibrate → `bb study calibrate toy-size`/u);
+    expect((await cli(["show", "toy-size"])).stdout).toMatch(/Needs you\n {2}- Approve spec v1 and calibrate → `alia study calibrate toy-size`/u);
     await cli(["calibrate", "toy-size", "--wait"]);
-    expect((await cli(["needs", "toy-size"])).stdout).toContain("toy-size: Calibration is ready: review it and start → `bb study start toy-size`");
+    expect((await cli(["needs", "toy-size"])).stdout).toContain("toy-size: Calibration is ready: review it and start → `alia study start toy-size`");
     await cli(["start", "toy-size"]);
     expect((await cli(["needs"])).stdout.trim()).toBe("Nothing needs you.");
     expect((await cli(["show", "toy-size"])).stdout).toMatch(/Needs you:\s+nothing/u);
@@ -208,10 +208,10 @@ describe("bb study CLI: --json everywhere, needs, wording, hints", () => {
     expect(again.harvest).toMatchObject({ state: "frozen", legacy: false, frozenRef: "refs/studies/toy-size/harvest/h1" });
     expect(again.harvest.promotions.map((p: { n: number }) => p.n)).toEqual([1]);
     // Needs you points at an agent, and the text output carries the prompt to give it.
-    expect((await cli(["needs", "toy-size"])).stdout).toContain("ask an agent to harvest it → `bb study evidence toy-size`");
+    expect((await cli(["needs", "toy-size"])).stdout).toContain("ask an agent to harvest it → `alia study evidence toy-size`");
     const text = (await cli(["harvest", "toy-size"])).stdout;
     expect(text).toContain("study-harvest skill");
-    expect(text).toContain("bb study measure toy-size <A> <B>");
+    expect(text).toContain("alia study measure toy-size <A> <B>");
   });
 
   it("JSON stays one bounded document: long arrays are trimmed, not the string", async () => {

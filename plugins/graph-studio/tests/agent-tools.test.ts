@@ -2,7 +2,7 @@
 //
 // Not the usual way round, and it needs a reason: a plugin tool can only be
 // invoked through a running host, and the SDK's host harness reaches RPC
-// methods, not `bb.agents.registerTool`. The alternative to reading the source
+// methods, not `alia.agents.registerTool`. The alternative to reading the source
 // is not a better test — it is no test, and this is the file where the fix
 // below would silently regress.
 //
@@ -77,7 +77,7 @@ describe("graph_studio_run", () => {
  * when it is absent everywhere.
  */
 describe("the help text points at the agent route", () => {
-  const help = source.slice(source.indexOf("const usageText"), source.indexOf("bb.cli.register"));
+  const help = source.slice(source.indexOf("const usageText"), source.indexOf("alia.cli.register"));
 
   it("says that the task is the run's only context", () => {
     expect(help).toMatch(/only context/i);

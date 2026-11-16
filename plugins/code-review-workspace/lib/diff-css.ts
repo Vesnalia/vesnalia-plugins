@@ -1,6 +1,6 @@
 // How Code Review Workspace draws a diff inside pierre's shadow root, on top of pierre's own styles (its `unsafeCSS`).
 // No colors of its own: every color comes from pierre's --diffs-* variables, which the theme and code theme set, or from
-// bb's theme tokens, so the same styles read in any theme, light or dark. Pierre's markup isn't its API: the selectors
+// VesnALIA's theme tokens, so the same styles read in any theme, light or dark. Pierre's markup isn't its API: the selectors
 // here are pinned by components/diff-css.test.tsx against pierre's own server renderer.
 
 /**

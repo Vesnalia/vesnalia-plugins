@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import NumberFlow from "@number-flow/react";
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
-import { useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import type { RpcOutput } from "../overlay/net";
 import { resolveState, type SpriteState } from "../src/atlas";
@@ -146,7 +146,7 @@ let particleSeq = 1;
 
 export function Habitat() {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [pet, setPet] = useState<Pet | null>(null);
   const [fleet, setFleet] = useState<Fleet | null>(null);
   /** First getOverlay settled — "no pet" only means empty after this flips. */

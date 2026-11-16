@@ -1,6 +1,6 @@
 // The Prompts manager: every queue in one place, and the snippet library.
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { hasTokens } from "../lib/template";
 import type { rpcContract } from "../lib/contract";
@@ -168,7 +168,7 @@ interface SuggestionsData {
 }
 
 /**
- * Prompts this user keeps retyping, mined from bb's own prompt history and
+ * Prompts this user keeps retyping, mined from VesnALIA's own prompt history and
  * offered as snippets.
  *
  * "Add" opens the ordinary snippet editor rather than saving straight off: a
@@ -449,7 +449,7 @@ type ManagerView = "queue" | "snippets";
 
 export function ManagerPanel({ subPath }: { subPath?: string }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   // The snippets composer button deep-links straight into the library.
   const [view, setView] = useState<ManagerView>(
     subPath === "snippets" ? "snippets" : "queue",
@@ -576,7 +576,7 @@ export function ManagerPanel({ subPath }: { subPath?: string }) {
                 })
                 .then(({ pushed, error }) => {
                   refresh();
-                  if (pushed) toast.success("Moved to bb's queue");
+                  if (pushed) toast.success("Moved to VesnALIA's queue");
                   else toast.error(error ?? "Push failed");
                 });
             }
@@ -861,7 +861,7 @@ export function ManagerPanel({ subPath }: { subPath?: string }) {
                     count={thread.prompts.length}
                     meta={
                       thread.nativeCount > 0
-                        ? `${thread.nativeCount} in bb's queue`
+                        ? `${thread.nativeCount} in VesnALIA's queue`
                         : thread.paused
                           ? "auto-send paused"
                           : undefined

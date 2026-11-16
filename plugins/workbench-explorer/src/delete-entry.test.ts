@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, rm, writeFile, readdir, symlink, stat, lstat } from "no
 import os from "node:os";
 import path from "node:path";
 import { test } from "bun:test";
-import type { ExperimentalHostClient } from "@get-bb/plugin-sdk";
+import type { ExperimentalHostClient } from "@vesnalia/plugin-sdk";
 import { hostContract } from "../host-contract";
 import { deleteEntry } from "./delete-entry";
 import { registerRoot } from "./roots";
@@ -39,18 +39,18 @@ function mockHost(rootPath: string): ExperimentalHostClient<typeof hostContract>
   return { call } as unknown as ExperimentalHostClient<typeof hostContract>;
 }
 
-function noopBb(): never {
-  // deleteEntry no longer touches bb — satisfies the parameter without any.
+function noopAlia(): never {
+  // deleteEntry no longer touches VesnALIA — satisfies the parameter without any.
   return undefined as never;
 }
 
 test("deleteEntry removes a regular file", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-delete-file-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-delete-file-"));
   try {
     await writeFile(path.join(rootPath, "a.ts"), "content");
     const rootId = registerRoot("test-host", rootPath);
     const host = mockHost(rootPath);
-    const result = await deleteEntry(noopBb(), host, {
+    const result = await deleteEntry(noopAlia(), host, {
       rootId,
       relativePath: "a.ts",
     });
@@ -62,12 +62,12 @@ test("deleteEntry removes a regular file", async () => {
 });
 
 test("deleteEntry removes a dotfile", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-delete-dotfile-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-delete-dotfile-"));
   try {
     await writeFile(path.join(rootPath, ".env"), "SECRET=1");
     const rootId = registerRoot("test-host", rootPath);
     const host = mockHost(rootPath);
-    const result = await deleteEntry(noopBb(), host, {
+    const result = await deleteEntry(noopAlia(), host, {
       rootId,
       relativePath: ".env",
     });
@@ -79,7 +79,7 @@ test("deleteEntry removes a dotfile", async () => {
 });
 
 test("deleteEntry removes a symlink without touching its target", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-delete-symlink-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-delete-symlink-"));
   try {
     const target = path.join(rootPath, "real-file.txt");
     await writeFile(target, "important");
@@ -87,7 +87,7 @@ test("deleteEntry removes a symlink without touching its target", async () => {
     await symlink(target, link);
     const rootId = registerRoot("test-host", rootPath);
     const host = mockHost(rootPath);
-    const result = await deleteEntry(noopBb(), host, {
+    const result = await deleteEntry(noopAlia(), host, {
       rootId,
       relativePath: ".shortcut",
     });
@@ -102,13 +102,13 @@ test("deleteEntry removes a symlink without touching its target", async () => {
 });
 
 test("deleteEntry removes a dotfile directory recursively", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-delete-dotdir-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-delete-dotdir-"));
   try {
     await mkdir(path.join(rootPath, ".config"));
     await writeFile(path.join(rootPath, ".config", "child.ts"), "content");
     const rootId = registerRoot("test-host", rootPath);
     const host = mockHost(rootPath);
-    const result = await deleteEntry(noopBb(), host, {
+    const result = await deleteEntry(noopAlia(), host, {
       rootId,
       relativePath: ".config",
     });
@@ -120,7 +120,7 @@ test("deleteEntry removes a dotfile directory recursively", async () => {
 });
 
 test("deleteEntry removes a symlink to a directory without touching its target", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-delete-symlink-dir-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-delete-symlink-dir-"));
   try {
     const targetDir = path.join(rootPath, "real-dir");
     await mkdir(targetDir);
@@ -129,7 +129,7 @@ test("deleteEntry removes a symlink to a directory without touching its target",
     await symlink(targetDir, link);
     const rootId = registerRoot("test-host", rootPath);
     const host = mockHost(rootPath);
-    const result = await deleteEntry(noopBb(), host, {
+    const result = await deleteEntry(noopAlia(), host, {
       rootId,
       relativePath: ".link-to-dir",
     });
@@ -143,11 +143,11 @@ test("deleteEntry removes a symlink to a directory without touching its target",
 });
 
 test("deleteEntry refuses the workspace root", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-delete-root-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-delete-root-"));
   try {
     const rootId = registerRoot("test-host", rootPath);
     const host = mockHost(rootPath);
-    const result = await deleteEntry(noopBb(), host, {
+    const result = await deleteEntry(noopAlia(), host, {
       rootId,
       relativePath: "",
     });
@@ -159,11 +159,11 @@ test("deleteEntry refuses the workspace root", async () => {
 });
 
 test("deleteEntry reports not-on-disk for a missing entry", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-delete-missing-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-delete-missing-"));
   try {
     const rootId = registerRoot("test-host", rootPath);
     const host = mockHost(rootPath);
-    const result = await deleteEntry(noopBb(), host, {
+    const result = await deleteEntry(noopAlia(), host, {
       rootId,
       relativePath: "nope.ts",
     });

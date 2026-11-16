@@ -6,7 +6,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import type { HookDefinition } from "../src/definitions.js";
 import { createRunner, decide } from "../src/runner.js";
 
-const dir = mkdtempSync(join(tmpdir(), "bb-hooks-"));
+const dir = mkdtempSync(join(tmpdir(), "alia-hooks-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 const runner = createRunner({ maxConcurrent: 2 });
@@ -19,12 +19,12 @@ const gate = (command: string, extra: Partial<HookDefinition> = {}): HookDefinit
 });
 
 describe("command hooks", () => {
-  it("delivers the payload on stdin and BB_* variables in the environment", async () => {
+  it("delivers the payload on stdin and ALIA_* variables in the environment", async () => {
     const out = join(dir, "payload.json");
     const outcome = await runner.run({
-      hook: { id: "w", event: "thread.idle", command: `cat > "$OUT"; echo "$BB_THREAD_ID/$BB_HOOK_EVENT"`, enabled: true },
+      hook: { id: "w", event: "thread.idle", command: `cat > "$OUT"; echo "$ALIA_THREAD_ID/$ALIA_HOOK_EVENT"`, enabled: true },
       payload: { event: "thread.idle", thread: { id: "thr_1" } },
-      env: { OUT: out, BB_THREAD_ID: "thr_1", BB_HOOK_EVENT: "thread.idle" },
+      env: { OUT: out, ALIA_THREAD_ID: "thr_1", ALIA_HOOK_EVENT: "thread.idle" },
       timeoutMs: 5_000,
     });
     expect(outcome).toMatchObject({ status: "ok", exitCode: 0, error: null });
@@ -92,9 +92,9 @@ describe("url hooks", () => {
     expect(call?.url).toBe("https://example.test/hook");
     const headers = call?.init.headers as Record<string, string>;
     expect(headers["x-extra"]).toBe("1");
-    expect(headers["x-bb-hooks-event"]).toBe("message.dispatch");
-    const expected = createHmac("sha256", "s3cret").update(`${headers["x-bb-hooks-timestamp"]}.${String(call?.init.body)}`).digest("hex");
-    expect(headers["x-bb-hooks-signature"]).toBe(`sha256=${expected}`);
+    expect(headers["x-alia-hooks-event"]).toBe("message.dispatch");
+    const expected = createHmac("sha256", "s3cret").update(`${headers["x-alia-hooks-timestamp"]}.${String(call?.init.body)}`).digest("hex");
+    expect(headers["x-alia-hooks-signature"]).toBe(`sha256=${expected}`);
     expect(call?.init.redirect).toBe("error");
   });
 

@@ -1,4 +1,4 @@
-import { definePluginApp, experimental_THREAD_INFO_ROW_GROUPS as INFO_ROW_GROUPS } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, experimental_THREAD_INFO_ROW_GROUPS as INFO_ROW_GROUPS } from "@vesnalia/plugin-sdk/app";
 import { useLoomBadge } from "./src/ui/badge";
 import { LoomInfoRow, TicketChip } from "./src/ui/chip";
 import { LoomPage, useLoomPageTitle } from "./src/ui/page";
@@ -16,6 +16,6 @@ export default definePluginApp((app) => {
     experimental_usePageTitle: useLoomPageTitle,
   });
   app.slots.experimental_threadHeaderAction({ id: "ticket", title: "Loom", component: TicketChip });
-  // After bb's own thread rows, which use orders 10 to 30.
+  // After VesnALIA's own thread rows, which use orders 10 to 30.
   app.slots.experimental_threadInfoRow({ id: "loom", group: INFO_ROW_GROUPS.thread, order: 40, component: LoomInfoRow });
 });

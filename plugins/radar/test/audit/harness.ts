@@ -1,7 +1,7 @@
 import { mkdtempSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 
 const dir = mkdtempSync(join(tmpdir(), "radar-audit-"));
 export const STATE = join(dir, "state.json");
@@ -33,8 +33,8 @@ export async function boot(settings: Record<string, unknown> = {}, lanes?: unkno
     pluginId: "radar",
     settings: { ghPath: join(here, "gh"), dtPath: join(here, "dt"), ...settings } as never,
   });
-  if (lanes !== undefined) await host.bb.storage.kv.set("lanes", lanes);
+  if (lanes !== undefined) await host.alia.storage.kv.set("lanes", lanes);
   const { default: plugin } = await import("../../server");
-  await plugin(host.bb);
+  await plugin(host.alia);
   return host;
 }

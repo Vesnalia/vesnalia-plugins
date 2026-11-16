@@ -1,11 +1,11 @@
 // Push (notes/design/E7-plan.md Part 2 §10): the commit you reviewed goes to GitHub, and only on your say. Push, or
-// "push" typed to the review agent, tells the main thread to commit what you reviewed and report the commit, `bb review
+// "push" typed to the review agent, tells the main thread to commit what you reviewed and report the commit, `alia review
 // report --commit <sha>`, without pushing. The review checks that commit before anything goes out: the folder is at
 // it, and each file it commits is as you reviewed it, hidden files too, so a committed .env warns. A match tells the
 // thread to push exactly that commit, `git push origin '<sha>:refs/heads/<branch>'`, never forced; a mismatch warns, and
 // waits for Push anyway or Update first. When the thread stops, the review reads GitHub: a branch that isn't at the
 // commit is flagged, and so is one that moved with no Push. The plugin runs no git: threads push, and reads go through
-// bb's Git plugin and GitHub.
+// VesnALIA's Git plugin and GitHub.
 import { z } from "zod";
 import { mainThreadLink } from "./loop";
 import { callGit, diffFilesHead, isSecretPath } from "./env-diff";
@@ -25,7 +25,7 @@ import { updateFeature } from "./feature-review";
 import { draftPr } from "./open-pr";
 
 type Run = typeof runGh;
-type Deps = Pick<ServeDeps, "bb" | "store" | "gh" | "changed">;
+type Deps = Pick<ServeDeps, "alia" | "store" | "gh" | "changed">;
 
 const short = (sha: string) => sha.slice(0, 7);
 const error = (failure: unknown) => failure instanceof Error ? failure.message : String(failure);
@@ -72,10 +72,10 @@ const MAX_COMMITS = 50;
 
 /**
  * The folder's head commit, and whether it has changes not committed; with `base`, the branch's commits since it, in
- * bb's order, and how many there are. Null when bb can't say.
+ * VesnALIA's order, and how many there are. Null when VesnALIA can't say.
  */
-export async function folderHead(deps: Pick<Deps, "bb">, environmentId: string, base?: string): Promise<{ sha: string | null; dirty: boolean; commits?: { shas: string[]; count: number } } | null> {
-  const read = await callGit(deps.bb, "workspaceStatus", { environmentId, ...base ? { mergeBaseBranch: base } : {} }, statusOutput).catch(() => null);
+export async function folderHead(deps: Pick<Deps, "alia">, environmentId: string, base?: string): Promise<{ sha: string | null; dirty: boolean; commits?: { shas: string[]; count: number } } | null> {
+  const read = await callGit(deps.alia, "workspaceStatus", { environmentId, ...base ? { mergeBaseBranch: base } : {} }, statusOutput).catch(() => null);
   if (read?.outcome !== "available" || !read.workspace) return null;
   const { workingTree, checkout, mergeBase } = read.workspace;
   return {
@@ -91,7 +91,7 @@ export async function folderHead(deps: Pick<Deps, "bb">, environmentId: string, 
  */
 async function behindGithub(deps: Deps, environmentId: string, remote: string | null | undefined): Promise<"ahead" | "unread" | false> {
   if (!remote) return false;
-  const read = await callGit(deps.bb, "workspaceStatus", { environmentId, mergeBaseBranch: remote }, statusOutput).catch(() => null);
+  const read = await callGit(deps.alia, "workspaceStatus", { environmentId, mergeBaseBranch: remote }, statusOutput).catch(() => null);
   if (read?.outcome !== "available" || !read.workspace) return "unread";
   return read.workspace.mergeBase?.behindCount === 0 ? false : "ahead";
 }
@@ -149,7 +149,7 @@ const listed = (read: z.infer<typeof filesOutput>) => read.outcome === "availabl
  * push would take to GitHub even if a later commit removes it. A read that fails can't say, so it warns too.
  */
 async function checkCommit(deps: Deps, review: ReviewMeta, place: Place, sha: string, onGithub?: string | null): Promise<Checked> {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   const cannot = (why: string, full?: string): Checked => ({ ok: false, warning: `Couldn’t check \`${short(sha)}\` against what you reviewed: ${why}`, files: [], ...full ? { sha: full } : {} });
   // What you reviewed: the folder's diff the review shows; on your PR, what Not pushed yet showed you, from this folder.
   const seen = review.notPushedSeen;
@@ -158,30 +158,30 @@ async function checkCommit(deps: Deps, review: ReviewMeta, place: Place, sha: st
   const kept = reviewed && await store.exclusive(async (tx) => tx.getSnapshotFiles(review.targetKey, reviewed.files || diffFilesHead(await tx.patchHash(review.targetKey))));
   if (!reviewed || !kept) return cannot(place.pr ? "you haven’t opened Not pushed yet for this folder, so nothing in it was reviewed. Open it first." : "the review has no record of the files it shows. Update first.");
   const head = await folderHead(deps, place.environmentId, reviewed.base);
-  if (!head?.sha) return cannot("BB couldn’t read the folder’s head commit.");
+  if (!head?.sha) return cannot("VesnALIA couldn’t read the folder’s head commit.");
   // Only a full SHA goes in the command the thread runs.
   if (!pushCommand(head.sha, place.head, place.remote)) return { ok: false, warning: UNSAFE, files: [] };
   if (!head.sha.toLowerCase().startsWith(sha.toLowerCase())) return { ok: false, warning: `The folder is at \`${short(head.sha)}\`, not \`${short(sha)}\`, the commit reported.`, files: [] };
-  const read = (target: Record<string, string>) => callGit(bb, "files", { environmentId: place.environmentId, target, ignoreWhitespace: false }, filesOutput);
+  const read = (target: Record<string, string>) => callGit(alia, "files", { environmentId: place.environmentId, target, ignoreWhitespace: false }, filesOutput);
   const included = new Set(review.includeHidden ?? []);
   let committed: Record<string, string>;
   const earlier = new Set<string>();
   try {
     const files = listed(await read({ type: "branch_committed", mergeBaseBranch: reviewed.base }));
-    if (!files) return cannot("BB couldn’t list the commit’s files whole.", head.sha);
+    if (!files) return cannot("VesnALIA couldn’t list the commit’s files whole.", head.sha);
     committed = Object.fromEntries(files.map((file) => [file.path, file.revision]));
     const commits = head.commits;
-    if (!commits) return cannot("BB couldn’t list the branch’s commits to check each for secrets.", head.sha);
-    // Oldest first, whichever way bb lists them: the folder's head is the newest.
+    if (!commits) return cannot("VesnALIA couldn’t list the branch’s commits to check each for secrets.", head.sha);
+    // Oldest first, whichever way VesnALIA lists them: the folder's head is the newest.
     const shas = commits.shas.length > 1 && commits.shas[0] === head.sha ? [...commits.shas].reverse() : commits.shas;
-    if (shas.length && shas.at(-1) !== head.sha) return cannot("BB listed the branch’s commits in an order it can’t read.", head.sha);
+    if (shas.length && shas.at(-1) !== head.sha) return cannot("VesnALIA listed the branch’s commits in an order it can’t read.", head.sha);
     // Those GitHub has already went out before.
     const pushed = onGithub ? shas.indexOf(onGithub) : -1;
     const fresh = shas.slice(pushed + 1);
-    if (pushed < 0 && shas.length !== commits.count || fresh.length > MAX_COMMITS) return cannot(`BB couldn’t list the branch’s ${pushed < 0 ? commits.count : fresh.length} commits to check each for secrets.`, head.sha);
+    if (pushed < 0 && shas.length !== commits.count || fresh.length > MAX_COMMITS) return cannot(`VesnALIA couldn’t list the branch’s ${pushed < 0 ? commits.count : fresh.length} commits to check each for secrets.`, head.sha);
     for (const commit of fresh) {
       const each = listed(await read({ type: "commit", sha: commit }));
-      if (!each) return cannot(`BB couldn’t list the files of commit \`${short(commit)}\`.`, head.sha);
+      if (!each) return cannot(`VesnALIA couldn’t list the files of commit \`${short(commit)}\`.`, head.sha);
       for (const file of each) if (file.changeKind !== "deleted" && isSecretPath(file.path) && !included.has(file.path) && !(file.path in committed)) earlier.add(file.path);
     }
   } catch (failure) {
@@ -227,8 +227,8 @@ async function swapPush(deps: Deps, key: string, from: (run: PushRun | null) => 
 
 /** Send `text` to the main thread, after its turn if it's busy, under the review's header. */
 async function tell(deps: Deps, review: ReviewMeta, threadId: string, text: string): Promise<"sent" | "queued"> {
-  const shown = await placed(deps.bb, deps.store, review);
-  const sent = await deps.bb.sdk.threads.send({ threadId, mode: "queue-if-active", input: [{ type: "text", text: `${header(shown)}\n\n${text}`, mentions: [] }] });
+  const shown = await placed(deps.alia, deps.store, review);
+  const sent = await deps.alia.sdk.threads.send({ threadId, mode: "queue-if-active", input: [{ type: "text", text: `${header(shown)}\n\n${text}`, mentions: [] }] });
   return sent?.delivery === "queued" ? "queued" : "sent";
 }
 
@@ -250,7 +250,7 @@ async function openPrAfter(deps: Deps, key: string, found = false) {
   if (!run) return;
   deps.changed(key);
   const said = found ? null : await draftPr(deps, key).catch((failure) => ({ ok: false, error: error(failure), note: undefined }));
-  if (said && !said.ok) deps.bb.log.warn(`Push and open PR on ${key} didn’t ask the review agent: ${said.error ?? said.note}`);
+  if (said && !said.ok) deps.alia.log.warn(`Push and open PR on ${key} didn’t ask the review agent: ${said.error ?? said.note}`);
   const asked = said?.ok && !said.note ? { thenOpenPr: "asked" as const } : said && !said.ok ? { thenOpenPr: "failed" as const, openPrError: said.error ?? said.note ?? "The review agent couldn’t start." } : null;
   if (asked) await swapPush(deps, key, (now) => now?.at === run.at ? null : "moved on", { ...run, ...asked });
 }
@@ -364,7 +364,7 @@ export async function startPush(deps: Deps, targetKey: string, { force = false, 
       return { ok: true, delivery: await tell(deps, review!, main.threadId, text), asked: "push" };
     }
     const delivery = await tell(deps, review!, main.threadId, [
-      "Commit the changes I reviewed, all of them, in this folder. Then run `bb review report --commit <sha>` with the commit’s SHA.",
+      "Commit the changes I reviewed, all of them, in this folder. Then run `alia review report --commit <sha>` with the commit’s SHA.",
       "Don’t push: the review checks the commit against what I reviewed first, then says how to push it.",
     ].join("\n\n"));
     return { ok: true, delivery, asked: "commit" };
@@ -374,18 +374,18 @@ export async function startPush(deps: Deps, targetKey: string, { force = false, 
 }
 
 /**
- * `bb review report --commit <sha>` with no comment: the commit Push asked for, from the main thread, or a thread under
+ * `alia review report --commit <sha>` with no comment: the commit Push asked for, from the main thread, or a thread under
  * it (`mine`, the caller and the threads above it). It's checked now, and the answer tells the thread what to do: push
  * exactly it, or wait for the reviewer.
  */
 export async function reportCommit(deps: Deps, sha: string, mine: ReadonlySet<string>): Promise<{ exitCode: number; stdout?: string; stderr?: string }> {
   const { store, gh } = deps;
   const waiting = (await store.listReviews()).filter((review) => review.push?.state === "committing" && mine.has(review.push.threadId));
-  if (!waiting.length) return { exitCode: 1, stderr: "No Push is waiting on a commit from this thread. Report a comment with its id: bb review report <id> done|declined." };
+  if (!waiting.length) return { exitCode: 1, stderr: "No Push is waiting on a commit from this thread. Report a comment with its id: VesnALIA review report <id> done|declined." };
   if (waiting.length > 1) return { exitCode: 2, stderr: `Push waits on a commit from this thread for ${waiting.length} reviews: ${waiting.map((review) => reviewIdentity(review).id).join(", ")}. Push them one at a time.` };
   const review = waiting[0]!;
   const key = review.targetKey;
-  const id = reviewIdentity(await placed(deps.bb, store, review)).id;
+  const id = reviewIdentity(await placed(deps.alia, store, review)).id;
   const place = pushPlace(review);
   if (typeof place === "string") return { exitCode: 1, stderr: place };
   const run = review.push!;
@@ -488,7 +488,7 @@ const PUSH = ["push", "push it", "just push it"];
 const PUSH_ANYWAY = ["push anyway", "push it anyway", "just push it anyway", "push it as it is"];
 
 export function register(deps: ServeDeps) {
-  const { bb, store, changed, classify } = deps;
+  const { alia, store, changed, classify } = deps;
   const handlers = {
     async push({ targetKey, force, sha, at, thenOpenPr }) {
       // Push anyway from the page goes on the warning it shows, by when it came.
@@ -520,7 +520,7 @@ export function register(deps: ServeDeps) {
     "thread.deleted": [stopped("deleted")],
   };
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "push",
     description: "Push this review's branch to GitHub when the reviewer says push: the main thread commits what they reviewed, the review checks the commit, then the main thread pushes exactly that commit. Never a force-push.",
     instructions: `Only when the reviewer's message in this review is just "push" or "push it", call push and tell them it's under way: the main thread commits, and Push in Finish review shows the check and the push. If it warns, tell them the warning in a line, with its at; call push with force: true and that at only once their message is just "push anyway". In any other turn it pushes nothing. ${ONLY_WITH_THESE_TOOLS}`,

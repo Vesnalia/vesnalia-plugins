@@ -1,12 +1,8 @@
 {
-  "name": "bb-plugin-openspec-review",
+  "name": "alia-plugin-openspec-review",
   "version": "0.1.3",
-  "description": "Browse OpenSpec specs and changes in BB and review their Markdown with comments sent to the agent.",
+  "description": "Browse OpenSpec specs and changes in VesnALIA and review their Markdown with comments sent to the agent.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nicolay-i/bb-plugin-openspec-review.git"
-  },
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -22,13 +18,13 @@
     "test:windows-cli": "bun build tests/windows-cli.ts --target=node --packages=external --outfile=.tmp/tests/windows-cli.mjs && node .tmp/tests/windows-cli.mjs",
     "test:host": "bun build tests/host.ts --target=node --packages=external --outfile=.tmp/tests/host.mjs && node .tmp/tests/host.mjs",
     "test": "bun run test:contract && bun run test:workspace && bun run test:store && bun run test:backend && bun run test:selection && bun run test:progress && bun run test:live && bun run test:quotes && bun run test:spec && bun run test:host && bun run test:windows-cli",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "engines": {
-    "bb": ">=0.47",
-    "bbPluginSdk": ">=0.6.79"
+    "alia": ">=0.47",
+    "aliaPluginSdk": ">=0.6.79"
   },
-  "bb": {
+  "alia": {
     "name": "OpenSpec Review",
     "description": "Browse OpenSpec specs and changes and review their Markdown with comments sent to the agent.",
     "branding": {
@@ -44,7 +40,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.79",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -69,5 +64,22 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.79"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/openspec-review#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/openspec-review"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

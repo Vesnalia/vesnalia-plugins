@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 test("disabled install has no external effects; CLI/RPC survive reload", async () => {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "telegram-projects",
   });
-  await plugin(bb);
+  await plugin(alia);
   const prefs = (await harness.behavior.callRpc("preferences", null)) as any;
   assert.equal(prefs.language, "ru");
   assert.ok(!("token" in prefs));

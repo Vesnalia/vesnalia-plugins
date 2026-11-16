@@ -1,7 +1,7 @@
-// The server orchestrator against a scripted stand-in for `bb.sdk`: each
+// The server orchestrator against a scripted stand-in for `alia.sdk`: each
 // fake worker thread plays a turn out as stored timeline events.
 import { describe, expect, it } from "vitest";
-import type { ThreadDelta } from "@get-bb/plugin-sdk/provider-bridge";
+import type { ThreadDelta } from "@vesnalia/plugin-sdk/provider-bridge";
 import type { Preset, PresetStore } from "../src/presets.js";
 import { memoryRoundStore } from "../src/rounds.js";
 import { MoaRuns } from "../src/runs.js";
@@ -467,7 +467,7 @@ describe("MoaRuns", () => {
 
     // The provider records the call before it reaches the plugin.
     record(aggregator.id, "item/started", {
-      item: { type: "toolCall", id: "consult-1", tool: "moa_consult", server: "bb", arguments: {}, status: "pending" },
+      item: { type: "toolCall", id: "consult-1", tool: "moa_consult", server: "alia", arguments: {}, status: "pending" },
     });
     const answer = await runs.consultAdvisors(aggregator.id, "Should I keep the cache?", new AbortController().signal);
     expect(answer).toContain("Advice A");
@@ -546,7 +546,7 @@ describe("MoaRuns", () => {
       subject: {
         kind: "tool_use",
         tool: "other",
-        presentation: { title: "bb-bridge-moa_consult: moa_consult" },
+        presentation: { title: "alia-bridge-moa_consult: moa_consult" },
       },
       availableDecisions: ["allow_once", "allow_for_session", "deny"],
     };
@@ -671,7 +671,7 @@ describe("MoaRuns", () => {
       [...threads.values()].find((thread) => thread.providerId === "claude-code" && thread.events.length >= 5),
     );
     record(aggregator.id, "item/started", {
-      item: { type: "toolCall", id: "consult-1", tool: "moa_consult", server: "bb", arguments: {}, status: "pending" },
+      item: { type: "toolCall", id: "consult-1", tool: "moa_consult", server: "alia", arguments: {}, status: "pending" },
     });
     // Cursor and Codex cancel a tool call after 60 seconds; the aggregator calls again.
     const call = new AbortController();

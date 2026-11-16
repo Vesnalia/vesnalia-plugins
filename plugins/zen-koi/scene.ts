@@ -69,13 +69,13 @@ export function mix(a: string, b: string, t: number): string {
   let value = steps[step];
   if (!value) {
     const [ar, ag, ab] = rgb(a);
-    const [br, bg, bb] = rgb(b);
+    const [br, bg, alia] = rgb(b);
     const f = step / 20;
     const channel = (x: number, y: number) =>
       Math.round(x + (y - x) * f)
         .toString(16)
         .padStart(2, "0");
-    value = `#${channel(ar, br)}${channel(ag, bg)}${channel(ab, bb)}`;
+    value = `#${channel(ar, br)}${channel(ag, bg)}${channel(ab, alia)}`;
     steps[step] = value;
   }
   return value;

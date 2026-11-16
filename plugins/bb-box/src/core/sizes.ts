@@ -1,6 +1,6 @@
 // Box sizes (028). Each kind has the presets small, medium and large, a
 // default preset and a largest custom size, the same on every offer of the
-// kind. bb-box ships them below, and the box-sizes setting changes them per
+// kind. alia-box ships them below, and the box-sizes setting changes them per
 // kind. A box is made at a preset or a custom size, where any part left out
 // comes from the preset, or else the default preset.
 
@@ -108,14 +108,14 @@ export function belowLeast(kind: string, size: MachineSize, changed: { readonly 
 }
 
 /**
- * The least memory of a custom size of a Linux kind. BB's daemon uses about
- * 260 MB in a box, and a 1 GiB box ran out of memory as it became a BB
- * machine. Every preset bb-box ships has more, and the doctor warns about a
+ * The least memory of a custom size of a Linux kind. VesnALIA's daemon uses about
+ * 260 MB in a box, and a 1 GiB box ran out of memory as it became a VesnALIA
+ * machine. Every preset alia-box ships has more, and the doctor warns about a
  * preset the box-sizes setting makes smaller.
  */
 export const LINUX_LEAST_MEMORY_GIB = 2;
 
-/** What bb-box ships, by kind. A kind with none takes linux's until its backend brings its own. */
+/** What alia-box ships, by kind. A kind with none takes linux's until its backend brings its own. */
 const SHIPPED: Readonly<Record<string, KindSizes>> = {
   linux: LINUX,
   "linux-desktop": DESKTOP,
@@ -153,7 +153,7 @@ export interface KindSizesChange {
 /** The box-sizes setting, by current kind ID. */
 export type SizeChanges = Readonly<Record<string, KindSizesChange>>;
 
-/** The sizes of a kind: what bb-box ships, changed by the box-sizes setting. */
+/** The sizes of a kind: what alia-box ships, changed by the box-sizes setting. */
 export function kindSizes(kind: string, changes: SizeChanges = {}): KindSizes {
   const id = currentKindId(kind);
   return apply(SHIPPED[id] ?? LINUX, changes[id]);
@@ -284,7 +284,7 @@ export function presetMemoryChecks(changes: SizeChanges): DoctorCheck[] {
       status: "warn" as const,
       detail:
         `The ${preset} ${kind} preset, ${describeSize(sizes.presets[preset])}, has less than ${LINUX_LEAST_MEMORY_GIB} GiB memory, ` +
-        "so its boxes can run out of memory as they become BB machines.",
+        "so its boxes can run out of memory as they become VesnALIA machines.",
       fix: `Give it at least ${LINUX_LEAST_MEMORY_GIB} GiB memory in ${PRODUCT}'s settings, under Kinds.`,
     }));
   });
@@ -396,7 +396,7 @@ export function chooseSize(kind: string, sizes: KindSizes, request: SizeRequest 
   if (request.memoryGiB !== undefined && request.memoryGiB < LINUX_LEAST_MEMORY_GIB && kindInfo(currentKindId(kind)).os === "linux") {
     return {
       ok: false,
-      message: `A ${kind} box needs at least ${LINUX_LEAST_MEMORY_GIB} GiB memory, not ${request.memoryGiB} GiB: with less it can run out of memory as it becomes a BB machine. ${presets}.`,
+      message: `A ${kind} box needs at least ${LINUX_LEAST_MEMORY_GIB} GiB memory, not ${request.memoryGiB} GiB: with less it can run out of memory as it becomes a VesnALIA machine. ${presets}.`,
     };
   }
   const base = sizes.presets[name as Preset];
@@ -437,7 +437,7 @@ export function chooseResize(kind: string, sizes: KindSizes, current: MachineSiz
   if (chosen.memoryMiB !== current.memoryMiB && chosen.memoryMiB < LINUX_LEAST_MEMORY_GIB * 1024 && kindInfo(currentKindId(kind)).os === "linux") {
     return {
       ok: false,
-      message: `A ${kind} box needs at least ${LINUX_LEAST_MEMORY_GIB} GiB memory, not ${formatMiB(chosen.memoryMiB)}: with less it can run out of memory as a BB machine. ${presets}.`,
+      message: `A ${kind} box needs at least ${LINUX_LEAST_MEMORY_GIB} GiB memory, not ${formatMiB(chosen.memoryMiB)}: with less it can run out of memory as a VesnALIA machine. ${presets}.`,
     };
   }
   const over = partsOverLargest(chosen, sizes.largest, current);

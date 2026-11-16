@@ -11,5 +11,5 @@ plugin repository is public and `v0.1.0` is tagged:
 | `../../PLUGIN_OVERVIEW.md` | `overview/human-tasks.md` |
 
 Refresh the screenshots from `/plugins/human-tasks/tasks/example`, which
-renders made-up tasks in the browser only. Collapse bb's sidebar and capture
+renders made-up tasks in the browser only. Collapse VesnALIA's sidebar and capture
 at 1280px or wider.

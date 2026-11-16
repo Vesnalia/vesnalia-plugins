@@ -1,2 +1,2 @@
-/** CSS imports are bundled by the BB plugin build. */
+/** CSS imports are bundled by the VesnALIA plugin build. */
 declare module "*.css";

@@ -1,7 +1,7 @@
 // Small presentational pieces shared by the page, the home section, and the
 // in-thread form.
 import type { ReactNode } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { TaskKind, TodoView } from "../server";
 import { Icon } from "@/components/ui/icon";
 import { HANDOFF_METHOD_LABEL, HEX_COLOR, KIND_META, dueInfo, formatWhen, isFinished, isSnoozed, timeAgo } from "@/lib/tasks";
@@ -127,7 +127,7 @@ function Chip({ onClick, title, children }: { onClick?: () => void; title: strin
 
 /** Project, bot, and thread the task came from, each a link, plus its age. */
 export function Relations({ task, showAge = true, children }: { task: TodoView; showAge?: boolean; children?: ReactNode }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const preview = usePreview();
   // Only a thread known to be live gets a link; finished tasks don't look their thread up.
   const live = task.thread !== null && task.thread.state === "live" && !preview;

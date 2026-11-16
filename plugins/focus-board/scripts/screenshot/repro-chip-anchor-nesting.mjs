@@ -77,7 +77,7 @@ await page.reload({ waitUntil: "domcontentloaded" });
 await new Promise((r) => setTimeout(r, 800));
 
 const record = {
-  issue: "cristoslc/bb-plugin-focus-board#171",
+  issue: "cristoslc/alia-plugin-focus-board#171",
   url: BASE,
   domEvidence: evidence,
   nestedAnchorConsoleErrors: consoleTrace.filter((line) =>

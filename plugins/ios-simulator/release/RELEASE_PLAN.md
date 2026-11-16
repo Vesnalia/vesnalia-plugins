@@ -7,9 +7,9 @@ Public-source verification still requires the approved release to exist.
 ## Release identity
 
 - GitHub account: **peteabu** (Peter Abu), verified read-only.
-- Repository: **peteabu/bb-plugin-ios-simulator**.
+- Repository: **peteabu/alia-plugin-ios-simulator**.
 - URL: `https://github.com/peteabu/bb-plugin-ios-simulator.git`.
-- Package: **bb-plugin-ios-simulator 0.1.0**; BB ID: **ios-simulator**.
+- Package: **alia-plugin-ios-simulator 0.1.0**; VesnALIA ID: **ios-simulator**.
 - Proposed immutable tag: **v0.1.0**; marketplace range: **^0.1.0**.
 - Final plugin commit: record its full SHA in the separate approval handoff
   after the final local documentation commit. Do not approve a moving HEAD.
@@ -20,11 +20,11 @@ Public-source verification still requires the approved release to exist.
 
 ## Verified result
 
-- **110 tests across 14 files**, TypeScript checking, and the BB plugin build
+- **110 tests across 14 files**, TypeScript checking, and the VesnALIA plugin build
   pass. The plugin reloaded successfully.
 - Explicit attachment selects the requested iPhone 17 Pro in the panel and
   promotes it as the default for subsequent tools, including reattachment.
-- Native BB Home, Lock, and the toolbar's full rotation cycle pass. Portrait,
+- Native VesnALIA Home, Lock, and the toolbar's full rotation cycle pass. Portrait,
   landscape, and return-to-portrait display align the image, device frame,
   and mask. Foreground pointer actions hit the expected asymmetric targets
   in portrait, landscape left, and landscape right; screenshots and HTTP
@@ -44,7 +44,7 @@ See `VERIFICATION.md` for the detailed live checks and their evidence.
 ## Marketplace artifacts and checks
 
 The draft under `marketplace/` matches the clean, full-history checkout at
-`/tmp/bb-ios-marketplace-review`. Its final branch diff contains exactly:
+`/tmp/alia-ios-marketplace-review`. Its final branch diff contains exactly:
 
 - `entries/ios-simulator.json`
 - `icons/ios-simulator-c4007f39.svg`
@@ -52,11 +52,11 @@ The draft under `marketplace/` matches the clean, full-history checkout at
 - `screenshots/ios-simulator/panel-eb92b3d6.png`
 
 The overview is an unchanged copy of `PLUGIN_OVERVIEW.md`. The screenshot is
-a reviewed real native BB panel crop showing Truffle's Create conversation
+a reviewed real native VesnALIA panel crop showing Truffle's Create conversation
 and Wikipedia topics, Apple device frame, picker, and footer controls. It is
 **1472×1600**, **278,376 bytes**, with no private chat or paths. The latest
 fixes do not change portrait appearance; the reviewed image remains accurate.
-The original full private BB window capture is excluded.
+The original full private VesnALIA window capture is excluded.
 
 Current checks pass with that screenshot: v2 schema, plugin ID/categories,
 content hashes, image format/width/size, no orphan screenshots, overview and
@@ -106,7 +106,7 @@ commits and commands. No publication approval has been requested or inferred.
 From the plugin checkout, substitute the approved full plugin commit SHA:
 
 ```sh
-gh repo create peteabu/bb-plugin-ios-simulator --public --source . --remote origin
+gh repo create peteabu/alia-plugin-ios-simulator --public --source . --remote origin
 git tag -a v0.1.0 FULL_APPROVED_PLUGIN_COMMIT_SHA -m 'Release v0.1.0'
 git push origin FULL_APPROVED_PLUGIN_COMMIT_SHA:refs/heads/main
 git push origin refs/tags/v0.1.0
@@ -119,7 +119,7 @@ source validation before continuing. From the prepared marketplace checkout:
 git remote add submitter https://github.com/peteabu/marketplace.git
 npm run check
 git push submitter 8bb129d4190733ddf8fcdcc059f393450ee59d00:refs/heads/submit-ios-simulator
-gh pr create --repo get-bb/marketplace --base main \
+gh pr create --repo get-alia/marketplace --base main \
   --head peteabu:submit-ios-simulator --title 'Add plugin entry: ios-simulator' \
   --body-file /ABSOLUTE/PATH/marketplace-pr-body.md
 ```

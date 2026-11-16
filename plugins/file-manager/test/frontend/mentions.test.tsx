@@ -9,9 +9,9 @@
 // prove nothing.
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginComposerApi, PluginComposerScope } from "@get-bb/plugin-sdk/app";
-import type { PluginRpcTestHandlers, RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginComposerApi, PluginComposerScope } from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcTestHandlers, RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 import type { FileEntry, FileManagerContract } from "../../contract";
 import { MENTION_PROVIDER_ID } from "../../contract";

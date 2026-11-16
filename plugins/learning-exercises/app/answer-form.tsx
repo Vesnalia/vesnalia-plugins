@@ -2,11 +2,11 @@
  * An answer form (`shared/answer-form.ts`) drawn in the exercise card, and the same answer read back in
  * the transcript and the Learning tab.
  *
- * Native form controls styled with bb's theme tokens: each is keyboard-operable as it is, every input
+ * Native form controls styled with VesnALIA's theme tokens: each is keyboard-operable as it is, every input
  * has a label tied to it (`htmlFor`, a `legend`, or an `aria-label` for a table cell), and groups are
  * `fieldset`s. The layout is a six-column grid under a container query, so `half` and `third` fields
  * share a line in a wide card and stack in a narrow one. Labels and option names are plain text; help
- * and notes are bb's Markdown, with workspace file links (`file-refs.tsx`).
+ * and notes are VesnALIA's Markdown, with workspace file links (`file-refs.tsx`).
  *
  * Every button is `type="button"`: the card is drawn inside the composer's form.
  */

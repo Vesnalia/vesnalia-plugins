@@ -8,7 +8,7 @@
  * run drill-in, `SimulatorsPanel` still owns live/stills/doctor. This file is
  * only the seam: one header, one route split, no duplicated state.
  */
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { useIsCompactViewport } from "@/components/ui/hooks/use-compact-viewport";
@@ -32,7 +32,7 @@ export function PanelRoot({ subPath = "" }: { subPath?: string }) {
  * tree, and a per-instance fetch here would double every `simctl` call.
  */
 export function PanelHeader({ subPath = "" }: { subPath?: string }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const compact = useIsCompactViewport();
   const tab = tabOf(subPath);
 

@@ -1,12 +1,12 @@
 {
-  "name": "bb-github-pr-dashboard",
+  "name": "alia-plugin-bb-github-pr-dashboard",
   "version": "0.3.3",
   "type": "module",
   "engines": {
-    "bb": ">=0.48",
-    "bbPluginSdk": ">=0.6.94"
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.94"
   },
-  "bb": {
+  "alia": {
     "name": "GitHub PR Dashboard",
     "description": "Track your GitHub PRs and review requests in one tab: why each is stuck, changed files, replies, and alerts.",
     "branding": {
@@ -20,7 +20,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.94",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -52,15 +51,24 @@
     "typecheck": "tsc"
   },
   "keywords": [
-    "bb-plugin"
+    "alia-plugin"
   ],
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.94"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/bb-github-pr-dashboard#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ahsan7162/bb-github-pr-dashboard.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/bb-github-pr-dashboard"
   },
-  "homepage": "https://github.com/ahsan7162/bb-github-pr-dashboard#readme",
   "bugs": {
-    "url": "https://github.com/ahsan7162/bb-github-pr-dashboard/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

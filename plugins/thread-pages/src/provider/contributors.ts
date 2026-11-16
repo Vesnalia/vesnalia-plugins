@@ -1,6 +1,6 @@
 // plugins.list + plugins.callRpc: `threadPagesContributions` / `threadPagesInvoke` / `threadPagesPageScript` (DESIGN §B.8, 07 §Discovery, §A page script).
 // The wire shape is byte-identical to 1.9.0's (R-X1); the namespace is the plugin id (R8.32).
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { ContributorAnswer, ContributorHost, ContributorWorkspace } from "../../core/src/host/index.ts";
 import { asRecord, errorText, httpStatus, providerError, sdkCall } from "./errors.ts";
 
@@ -26,16 +26,16 @@ export function pluginRows(listed: unknown): InstalledPluginRow[] {
     .map((p) => ({ id: p.id as string, enabled: p.enabled === true, status: typeof p.status === "string" ? p.status : "" }));
 }
 
-export function createBbContributors(bb: BbPluginApi, deps: ContributorsDeps): ContributorHost {
+export function createAliaContributors(alia: AliaPluginApi, deps: ContributorsDeps): ContributorHost {
   const folders = new Map<string, { workspace: ContributorWorkspace | null; at: number }>();
   return {
     async list() {
-      const plugins = pluginRows(await sdkCall("contributors.list", () => bb.sdk.plugins.list()));
-      const candidates = plugins.filter((p) => p.id !== bb.pluginId && p.enabled && p.status === "running");
+      const plugins = pluginRows(await sdkCall("contributors.list", () => alia.sdk.plugins.list()));
+      const candidates = plugins.filter((p) => p.id !== alia.pluginId && p.enabled && p.status === "running");
       const answers = await Promise.all(
         candidates.map(async (plugin) => {
           try {
-            const declaration = await withTimeout(DECLARATION_TIMEOUT_MS, bb.sdk.plugins.callRpc({ pluginId: plugin.id, method: CONTRIBUTIONS_RPC, outputSchema: passThrough }));
+            const declaration = await withTimeout(DECLARATION_TIMEOUT_MS, alia.sdk.plugins.callRpc({ pluginId: plugin.id, method: CONTRIBUTIONS_RPC, outputSchema: passThrough }));
             return { id: plugin.id, declaration: declaration as unknown };
           } catch (error) {
             // A 404 is a plugin that contributes nothing, the common case; anything else is worth the operator's eye.
@@ -49,7 +49,7 @@ export function createBbContributors(bb: BbPluginApi, deps: ContributorsDeps): C
 
     async invoke(contributorId, call) {
       const answer = await sdkCall("contributors.invoke", () =>
-        bb.sdk.plugins.callRpc({
+        alia.sdk.plugins.callRpc({
           pluginId: contributorId,
           method: INVOKE_RPC,
           input: { method: call.method, params: call.params, caller: call.caller, requestId: call.requestId } as never,
@@ -62,7 +62,7 @@ export function createBbContributors(bb: BbPluginApi, deps: ContributorsDeps): C
     // The ask as 07 §A page script states it; the answer goes back as it came, for the core to check (R5.88–R5.91).
     async pageScript(contributorId, ask) {
       return sdkCall("contributors.pageScript", () =>
-        bb.sdk.plugins.callRpc({
+        alia.sdk.plugins.callRpc({
           pluginId: contributorId,
           method: PAGE_SCRIPT_RPC,
           input: { caller: ask.caller, documentPath: ask.documentPath, have: ask.have } as never,
@@ -78,7 +78,7 @@ export function createBbContributors(bb: BbPluginApi, deps: ContributorsDeps): C
       if (held && Date.now() - held.at < WORKSPACE_HOLD_MS) return held.workspace;
       let thread: Record<string, unknown> | null;
       try {
-        thread = asRecord(await bb.sdk.threads.get({ threadId: sessionId }));
+        thread = asRecord(await alia.sdk.threads.get({ threadId: sessionId }));
       } catch (error) {
         const mapped = providerError(error, "contributors.workspaceOf");
         if (mapped.code === "not_found") return null;
@@ -89,7 +89,7 @@ export function createBbContributors(bb: BbPluginApi, deps: ContributorsDeps): C
       if (environmentId) {
         let got: Record<string, unknown> | null;
         try {
-          got = asRecord(await bb.sdk.environments.get({ environmentId }));
+          got = asRecord(await alia.sdk.environments.get({ environmentId }));
         } catch (error) {
           const mapped = providerError(error, "contributors.workspaceOf");
           if (mapped.code !== "not_found") throw mapped;

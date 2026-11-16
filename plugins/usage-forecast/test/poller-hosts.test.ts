@@ -2,7 +2,7 @@
 // memory, per-host back-off, departed hosts removed, and the legacy keys kept
 // for the host that owned them before 0.4.6.
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import { Poller, readHosts, toSnapshot, type HostInfo, type HostRecord } from "../src/server/poller";
 import { keys, Storage } from "../src/server/storage";
@@ -85,7 +85,7 @@ function setup(options: Options, kvFrom?: ReturnType<typeof makeKv>) {
 }
 
 function makeKv() {
-  return createFakePluginHost({ pluginId: "usage-forecast" }).bb.storage.kv;
+  return createFakePluginHost({ pluginId: "usage-forecast" }).alia.storage.kv;
 }
 
 async function dump(kv: ReturnType<typeof makeKv>): Promise<string> {
@@ -216,7 +216,7 @@ describe("poll every host", () => {
     expect((await t.storage.hostIndex())!.hosts.find((h) => h.hostId === MAC)!.connected).toBe(false);
   });
 
-  it("removes a host that left bb, or was destroyed, with its keys (R12)", async () => {
+  it("removes a host that left VesnALIA, or was destroyed, with its keys (R12)", async () => {
     const third = "host_old";
     const t = setup({
       hosts: [...twoHosts, hostInfo(third, "old")],
@@ -238,7 +238,7 @@ describe("poll every host", () => {
     let listFails = false;
     const t = setup({
       hosts: () => {
-        if (listFails) throw new Error("bb down");
+        if (listFails) throw new Error("alia down");
         return twoHosts;
       },
       answers: { "": () => codex("a", 30, 60), [SERVER]: () => codex("a", 18, 57), [MAC]: () => codex("b", 2, 5) },

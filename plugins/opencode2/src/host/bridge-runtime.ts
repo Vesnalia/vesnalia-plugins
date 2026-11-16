@@ -4,7 +4,7 @@ import {
   decodeBridgeJsonRpcResponse,
   THREAD_DELTA_NOTIFICATION_METHOD,
   type BridgeToolCallRequest,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import { timelineDeltasForEmission } from "./timeline.ts";
 import type { OpenCodeRecord } from "./types.ts";
 
@@ -62,12 +62,12 @@ export function requestRuntime<T = OpenCodeRecord>(
     const handleAbort = () => {
       pendingRuntimeRequests.delete(id);
       cleanup();
-      reject(new Error(`BB runtime request cancelled: ${method}`));
+      reject(new Error(`VesnALIA runtime request cancelled: ${method}`));
     };
     const timeout = setTimeout(() => {
       pendingRuntimeRequests.delete(id);
       cleanup();
-      reject(new Error(`BB runtime request timed out: ${method}`));
+      reject(new Error(`VesnALIA runtime request timed out: ${method}`));
     }, RUNTIME_REQUEST_TIMEOUT_MS);
     timeout.unref();
     if (options.signal?.aborted) {
@@ -83,7 +83,7 @@ export function requestRuntime<T = OpenCodeRecord>(
           new Error(
             typeof error.message === "string"
               ? error.message
-              : "BB runtime request failed",
+              : "VesnALIA runtime request failed",
           ),
         );
       } else {

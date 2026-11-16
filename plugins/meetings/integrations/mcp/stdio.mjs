@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Portable MCP transport. Uses Node builtins and the official BB CLI only.
-// Authentication stays in BB's private CLI configuration and environment.
+// Portable MCP transport. Uses Node builtins and the official VesnALIA CLI only.
+// Authentication stays in VesnALIA's private CLI configuration and environment.
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { resolve } from 'node:path';
@@ -11,10 +11,10 @@ export const MAX_RESULT_BYTES = 1024 * 1024 + 4096;
 const MAX_PENDING = 6;
 const CLI_ARGS = ['meetings', 'api', '--request-stdin', '--json'];
 
-/** BB_CLI is the official absolute CLI entrypoint override; otherwise use PATH. */
-export function runBbCli(args, { input, signal, timeoutMs = 240000 } = {}) {
+/** ALIA_CLI is the official absolute CLI entrypoint override; otherwise use PATH. */
+export function runAliaCli(args, { input, signal, timeoutMs = 240000 } = {}) {
   return new Promise((fulfill, reject) => {
-    const child = spawn(process.env.BB_CLI || 'bb', args, {
+    const child = spawn(process.env.ALIA_CLI || 'alia', args, {
       stdio: ['pipe', 'pipe', 'pipe'], env: process.env, shell: false,
     });
     const stdoutChunks = [];
@@ -65,7 +65,7 @@ const rpcError = (id, code, message, data) => ({
 const validId = id => (typeof id === 'string' && id.length <= 200) || Number.isSafeInteger(id);
 
 /** Optional integrations may inject their existing enrolled CLI launcher. */
-export async function runStdio({ input = process.stdin, output = process.stdout, cli = runBbCli, signal } = {}) {
+export async function runStdio({ input = process.stdin, output = process.stdout, cli = runAliaCli, signal } = {}) {
   const pending = new Map();
   let protocolVersion = '2025-11-25';
   let outputQueue = Promise.resolve();
@@ -118,7 +118,7 @@ export async function runStdio({ input = process.stdin, output = process.stdout,
         if (request.method === 'initialize' && typeof body.result?.protocolVersion === 'string') protocolVersion = body.result.protocolVersion;
         await write(response);
       } catch {
-        if (!controller.signal.aborted) await write(rpcError(request.id, -32603, 'BB CLI request failed. Check BB authentication and the installed Meetings plugin.'));
+        if (!controller.signal.aborted) await write(rpcError(request.id, -32603, 'VesnALIA CLI request failed. Check VesnALIA authentication and the installed Meetings plugin.'));
       } finally { pending.delete(key); }
     })();
   };

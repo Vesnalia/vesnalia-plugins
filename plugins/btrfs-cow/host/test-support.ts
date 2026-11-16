@@ -6,12 +6,12 @@ import { run } from "./process.js";
 /**
  * Reflink tests must run on a reflink-capable filesystem. os.tmpdir() is often
  * tmpfs, so default to a cache directory in $HOME; override with
- * BB_COW_TEST_ROOT.
+ * ALIA_COW_TEST_ROOT.
  */
 export async function makeTestRoot(): Promise<string> {
   const base =
-    process.env.BB_COW_TEST_ROOT ??
-    path.join(os.homedir(), ".cache", "bb-plugin-btrfs-cow-tests");
+    process.env.ALIA_COW_TEST_ROOT ??
+    path.join(os.homedir(), ".cache", "alia-plugin-btrfs-cow-tests");
   await mkdir(base, { recursive: true });
   return mkdtemp(path.join(base, "t-"));
 }

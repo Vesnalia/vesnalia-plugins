@@ -1,8 +1,8 @@
 /**
- * Which bb projects a card's repository belongs to.
+ * Which VesnALIA projects a card's repository belongs to.
  *
  * A card names the repository its work lives in (`<host>/<owner>/<name>`, see
- * `repositoryIdFor`). A bb project records its checkout's `origin` as
+ * `repositoryIdFor`). A VesnALIA project records its checkout's `origin` as
  * `gitRemoteUrl`, and that is matched first: it costs no subprocess and holds
  * for projects on every machine. Only a repository no project claims that way
  * is looked for in the other remotes — `git remote -v` — of checkouts on the
@@ -10,12 +10,12 @@
  * is load-bearing: a repository that is one project's origin and another's
  * upstream resolves to the project it is the origin of.
  *
- * The same repository is often a separate bb project per machine, so a match
+ * The same repository is often a separate VesnALIA project per machine, so a match
  * is a list; `preferredProject` picks the one the send dialog opens on.
  */
 import { normalizeRemoteUrl } from "../shared/remotes";
 
-/** The fields of a bb project this file reads. */
+/** The fields of a VesnALIA project this file reads. */
 export interface ProjectRecord {
   id: string;
   name: string;

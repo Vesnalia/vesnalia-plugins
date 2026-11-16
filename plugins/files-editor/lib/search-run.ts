@@ -9,7 +9,7 @@ import { PatternTooSlowError, type MatchExecutor } from "./regex-worker.js";
 /**
  * Where the files come from. The run itself does no I/O, so the same pipeline
  * serves a local checkout (node:fs, with a cache) and a connected machine
- * (BB's file API) — and runs in tests against a plain map.
+ * (VesnALIA's file API) — and runs in tests against a plain map.
  */
 export interface SearchSource {
   /** Workspace-relative file paths, exclusions already applied. */

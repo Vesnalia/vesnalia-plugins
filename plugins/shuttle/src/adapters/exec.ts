@@ -1,5 +1,5 @@
-// The only code that starts processes. Commands run in bb's server process with the user's
-// environment, plus the usual tool directories, since bb may start without a login shell's PATH.
+// The only code that starts processes. Commands run in VesnALIA's server process with the user's
+// environment, plus the usual tool directories, since VesnALIA may start without a login shell's PATH.
 import { spawn } from "node:child_process";
 import { homedir } from "node:os";
 import { delimiter, join } from "node:path";

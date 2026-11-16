@@ -12,16 +12,16 @@ import { withPrNote } from "./agent";
 import { failed, type ServeDeps } from "./server-modules";
 
 export function register(deps: ServeDeps) {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   /**
    * Why a thread may not read `targetKey`'s diff: only a review's own assistant or guide writer may, and not once the review
    * was merged into another. Null when it may.
    */
   async function notOwnReview(threadId: string, targetKey: string): Promise<string | null> {
-    const own = (await focusThread(bb, store, threadId))?.targetKey ?? await toolThreadReview(bb, store, threadId);
+    const own = (await focusThread(alia, store, threadId))?.targetKey ?? await toolThreadReview(alia, store, threadId);
     return own === targetKey ? await mergedAway(store, own) : `This conversation can read only its own review's diff${own ? `, targetKey ${own}` : ""}.`;
   }
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "read_review_patch",
     description: "Return the diff text of your own review, by the targetKey you were given, in pages of about 80 KB that end on file boundaries. In pages, lockfiles and generated or vendored files show as one-line stubs. Pass file to read one file's whole diff.",
     parameters: z.object({
@@ -51,7 +51,7 @@ export function register(deps: ServeDeps) {
         }));
       }
       const { patch, review } = await store.exclusive(async (tx) => ({ patch: await tx.patch(targetKey), review: await tx.getReview(targetKey) }));
-      const generated = review ? await readGeneratedFiles({ runGh, runGit, bb }, review, changedFiles(patch)) : [];
+      const generated = review ? await readGeneratedFiles({ runGh, runGit, alia }, review, changedFiles(patch)) : [];
       // The page, and its read recorded, in one turn.
       return noted(await store.exclusive(async (tx) => {
         const paged = stubSkippedFiles(patch, generated, { lockfileDigest: (await tx.getPreferences()).preferences.knobs.lockfileDigest });
@@ -65,7 +65,7 @@ export function register(deps: ServeDeps) {
       }));
     },
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "list_review_files",
     description: "List your own review's changed files, by the targetKey you were given: path, status (added, deleted, modified, \"renamed from ‹path›\" or \"copied from ‹path›\", naming the source), lines added and removed, diff size, and kind (code, test, docs, config, lockfile, generated). A large review's list comes in pages of about 40 KB that end on a file: call again with the offset it gives. offset counts files from 0; limit caps a page's files.",
     parameters: z.object({
@@ -79,7 +79,7 @@ export function register(deps: ServeDeps) {
       const { patch, review, knobs } = await store.exclusive(async (tx) => ({ patch: await tx.patch(targetKey), review: await tx.getReview(targetKey), knobs: (await tx.getPreferences()).preferences.knobs }));
       const count = splitPatchByFile(patch).length;
       if (offset && offset >= count) return failed(`offset ${offset} is past the end of the list (${count} file${count === 1 ? "" : "s"}).`);
-      return describeReviewFiles(patch, review ? await readGeneratedFiles({ runGh, runGit, bb }, review, changedFiles(patch)) : [], { testWeakening: knobs.testWeakening, lockfileDigest: knobs.lockfileDigest }, { offset, limit });
+      return describeReviewFiles(patch, review ? await readGeneratedFiles({ runGh, runGit, alia }, review, changedFiles(patch)) : [], { testWeakening: knobs.testWeakening, lockfileDigest: knobs.lockfileDigest }, { offset, limit });
     },
   });
 }

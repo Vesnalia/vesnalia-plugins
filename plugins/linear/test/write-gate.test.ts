@@ -98,7 +98,7 @@ describe("writesAllowed", () => {
 
 describe("the remedy sentence", () => {
   it("names the exact command", () => {
-    expect(WRITE_CONSENT_REMEDY).toContain("bb plugin config linear set allowWrites true");
+    expect(WRITE_CONSENT_REMEDY).toContain("alia plugin config linear set allowWrites true");
   });
 
   it("names the setting as the settings form labels it", () => {
@@ -368,7 +368,7 @@ describe("the tool sets agents actually see", () => {
         expect(offered, `${name} offered under agentWrites=${configured}`).not.toContain(name);
       }
       // Withheld is not blinded: reads stay, and so does the local-only
-      // binding pair — linear_thread_bind writes bb's table, never Linear.
+      // binding pair — linear_thread_bind writes VesnALIA's table, never Linear.
       expect(offered).toContain("linear_issue_get");
       expect(offered).toContain("linear_search");
       expect(offered).toContain("linear_thread_issue");

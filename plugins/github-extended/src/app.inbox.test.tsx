@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, createElement } from "react";
 import { cleanup, fireEvent, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { AgentComposer, AgentTaskView, AskAgent } from "./agent-task";
 import type { AutomationDashboard, JobRecord } from "./automation/domain";
 import { githubRpcContract, type DependabotAlert } from "./server";
@@ -372,7 +372,7 @@ describe("simplified GitHub workflows", () => {
       {},
       { sdk: { threads: { spawn } } },
     );
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
     await vi.waitFor(() =>
       expect(spawn).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -396,7 +396,7 @@ describe("simplified GitHub workflows", () => {
     );
     await act(async () => {});
     expect(
-      slot.getByTestId("bb-thread-chat").getAttribute("data-thread-id"),
+      slot.getByTestId("alia-thread-chat").getAttribute("data-thread-id"),
     ).toBe("agent-created");
   });
 
@@ -430,7 +430,7 @@ describe("simplified GitHub workflows", () => {
         sdk: { threads: { spawn } },
       },
     );
-    const composer = await slot.findByTestId("bb-new-thread-composer");
+    const composer = await slot.findByTestId("alia-new-thread-composer");
     expect(composer.getAttribute("data-default-project-id")).toBe(
       "attached-project",
     );
@@ -445,11 +445,11 @@ describe("simplified GitHub workflows", () => {
       "accept-edits",
     );
     fireEvent.click(slot.getByRole("button", { name: /^Fix$/ }));
-    expect(slot.getByTestId("bb-new-thread-composer-input")).toHaveProperty(
+    expect(slot.getByTestId("alia-new-thread-composer-input")).toHaveProperty(
       "value",
       "Fix pull request acme/widgets#4.",
     );
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
     await vi.waitFor(() =>
       expect(link).toHaveBeenCalledWith({
         threadId: "review-thread",

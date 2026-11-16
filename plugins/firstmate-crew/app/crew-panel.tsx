@@ -1,5 +1,5 @@
 /** What a crewmate's own thread shows: its card, and a place to leave a note for it and the first mate. */
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { useState } from "react";
 import { toast } from "sonner";
 

@@ -21,7 +21,7 @@ export function useStl(url: string | null, revision: number): LoadState {
         url,
         revision,
         message:
-          "BB cannot resolve this file source. Open the original preview instead.",
+          "VesnALIA cannot resolve this file source. Open the original preview instead.",
       });
       return () => controller.abort();
     }
@@ -56,14 +56,14 @@ export async function fetchStl(
   const response = await fetch(url, { credentials: "same-origin", signal });
   if (!response.ok)
     throw new Error(
-      `BB could not load this STL (HTTP ${response.status}). Check the file and host connection, then retry.`,
+      `VesnALIA could not load this STL (HTTP ${response.status}). Check the file and host connection, then retry.`,
     );
   const length = Number(response.headers.get("content-length"));
   if (length > MAX_BYTES) {
     await response.body?.cancel();
     throw new Error("STL exceeds the 64 MiB preview limit.");
   }
-  if (!response.body) throw new Error("BB returned an empty file response.");
+  if (!response.body) throw new Error("VesnALIA returned an empty file response.");
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;

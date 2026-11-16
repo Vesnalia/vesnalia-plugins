@@ -4,7 +4,7 @@
 // the rest of the plugin asks of one: which state is this issue in, which
 // moves are open to whom, is this move allowed.
 //
-// Why: every issue goes through a state machine to be closed (bead-bb-e2b).
+// Why: every issue goes through a state machine to be closed (bead-alia-e2b).
 // The user did not want the particular steps written into the tab or the
 // server, where they had changed four times in a day, each time as edits in
 // several places. So the tab and the server know only this interface; the
@@ -24,7 +24,7 @@
 //   background agent). See server/work.ts.
 //
 // - A workflow may let issues differ in how many of its steps they take: it
-//   names sizes, and its instructions and moves use them (bead-bb-4mb). The
+//   names sizes, and its instructions and moves use them (bead-alia-4mb). The
 //   tab and the server only store the size and show it; what a size means
 //   is the workflow's.
 //
@@ -86,7 +86,7 @@ export interface WorkflowState {
   ask: string;
   /**
    * An issue in this state has sub-issues that are worked one at a time on
-   * a branch the issue holds (bead-bb-ty5.2): the issue itself is not
+   * a branch the issue holds (bead-alia-ty5.2): the issue itself is not
    * worked, it waits until they are all closed. Not a step issues pass
    * through in the normal order, so it is left out where the steps are
    * listed, and the agent's free moves cannot enter it.

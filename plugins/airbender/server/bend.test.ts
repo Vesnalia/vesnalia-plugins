@@ -109,7 +109,7 @@ test("no bend, no tracker and no bd are told apart, in that order", async () => 
   }
   // The beads program is asked for only where the tracker is beads: a
   // folder with no tracker says that, whether or not beads is installed
-  // (choosing the tracker comes first in setup, bead-bb-c9l.6).
+  // (choosing the tracker comes first in setup, bead-alia-c9l.6).
   assert.deepEqual(await build(null).trackerFor(withBeads), {
     state: "no-bd",
     message: "no bd here",

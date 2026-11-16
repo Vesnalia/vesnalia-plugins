@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { FilterNames, ListFilter } from "./filter";
 import type { HueId } from "./layout";
 import { STATE_ORDER, type RowState } from "./status";

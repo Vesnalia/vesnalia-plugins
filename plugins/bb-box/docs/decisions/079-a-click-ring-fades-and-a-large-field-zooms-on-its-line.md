@@ -33,6 +33,6 @@ in, and the camera eases out between them.
 ## Consequences
 
 A long line that the screen really changed is still contained, even below
-1.3x, so it is not cropped. A field bb-box cannot see a line in is framed
+1.3x, so it is not cropped. A field alia-box cannot see a line in is framed
 on the caret rather than left at the whole screen. The guide says the
 same.

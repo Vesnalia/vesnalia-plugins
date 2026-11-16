@@ -1,6 +1,6 @@
 export { default } from "./usage/host.js";
-import { experimental_acpProviderBridge as acp } from "@get-bb/plugin-sdk/provider-bridge/acp";
-import { experimental_defineProviderBridge } from "@get-bb/plugin-sdk/provider-bridge";
+import { experimental_acpProviderBridge as acp } from "@vesnalia/plugin-sdk/provider-bridge/acp";
+import { experimental_defineProviderBridge } from "@vesnalia/plugin-sdk/provider-bridge";
 import { resolveBridgeLine } from "./scripts/managed-acp.mjs";
 let dataDir = "";
 export const experimental_providerBridge = experimental_defineProviderBridge({

@@ -96,7 +96,7 @@ export class RequestJournal {
     blocked:rows.filter(r=>r.guardOutcome==='blocked').length,unavailable:rows.filter(r=>['invalid_decision','rpc_failed','unavailable'].includes(r.guardOutcome??'')).length,
     durationMs:rows.reduce((sum,r)=>Math.min(Number.MAX_SAFE_INTEGER,sum+(r.durationMs??0)),0),maxDurationMs:Math.max(0,...rows.map(r=>r.durationMs??0)),lastTimeoutAt:Math.max(0,...rows.filter(r=>r.guardOutcome==='timeout').map(r=>r.at))};
   });
-  return{guardChecks,guardCoverage:'selected-model-flight-checks-retained-events-only',schema:'bb-account-pool/request-observations/1' ,coverage:'retained-events-only',maxRows:MAX_ROWS,retentionMs:TTL_MS,
+  return{guardChecks,guardCoverage:'selected-model-flight-checks-retained-events-only',schema:'alia-account-pool/request-observations/1' ,coverage:'retained-events-only',maxRows:MAX_ROWS,retentionMs:TTL_MS,
    evictedSinceStart:this.evicted,storageFailuresSinceStart:this.failures,oldestAt:this.rows[0]?.at??null,truncated:this.evicted>0||this.rows.length===MAX_ROWS,
    observedAt:now,totalRetainedRows:this.rows.length,rowsTruncated:this.rows.length>limit,providers:[...providers.values()].map(p=>({...p,accounts:[...p.accounts.values()]})),minutes:[...minutes.values()].sort((a,b)=>a.at-b.at),rows:this.rows.slice(-Math.max(1, Math.min(MAX_ROWS,limit))),history:this.history.summary()};
  }

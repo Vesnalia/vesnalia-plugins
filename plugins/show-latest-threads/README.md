@@ -15,7 +15,7 @@ last 24, 48 or 72 hours.
 - Threads are indented under project headings, with a subtle vertical guide.
 - The open thread and any thread that is running or waiting for your answer
   stay visible whatever their age.
-- Status on the right of every row, as in BB's own list: a dot for unread,
+- Status on the right of every row, as in VesnALIA's own list: a dot for unread,
   a spinner while the agent works, a question mark when it waits for your
   answer, a red cross after a failure, a clock for a queued message, a pencil
   for an unsent draft.
@@ -30,8 +30,8 @@ language (System, English, Русский).
 
 ## How it works
 
-The list reads the same live thread data as BB's own sidebar and acts through
-BB's own commands, so pin, rename, archive and delete behave as usual. Nothing
+The list reads the same live thread data as VesnALIA's own sidebar and acts through
+VesnALIA's own commands, so pin, rename, archive and delete behave as usual. Nothing
 leaves your machine and the plugin needs no account.
 
 If the list does not appear after install, pick it under Settings >
@@ -39,10 +39,10 @@ Appearance > Sidebar.
 
 ## Install
 
-In BB: Plugins > Browse > Show Latest Threads > Install. From a shell:
+In VesnALIA: Plugins > Browse > Show Latest Threads > Install. From a shell:
 
 ```sh
-bb plugin install git:https://github.com/meanwhile17/bb-plugin-show-latest-threads.git@^0.1.0
+alia plugin install git:https://github.com/meanwhile17/bb-plugin-show-latest-threads.git@^0.1.0
 ```
 
 ## Build from source
@@ -51,8 +51,8 @@ bb plugin install git:https://github.com/meanwhile17/bb-plugin-show-latest-threa
 npm install
 npm run typecheck
 npm test
-bb plugin build .
-bb plugin install . --yes
+alia plugin build .
+alia plugin install . --yes
 ```
 
 ## License

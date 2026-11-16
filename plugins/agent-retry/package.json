@@ -1,18 +1,13 @@
 {
-  "name": "bb-plugin-agent-retry",
+  "name": "alia-plugin-agent-retry",
   "version": "0.2.4",
   "type": "module",
-  "description": "Retries failed turns on a configurable growing backoff \u2014 for any failure a provider reports, including unclassified ones.",
+  "description": "Retries failed turns on a configurable growing backoff — for any failure a provider reports, including unclassified ones.",
   "license": "MIT",
   "author": "Euan Guo (https://github.com/euanguo)",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/euanguo/bb-plugin-agent-retry.git"
-  },
-  "homepage": "https://github.com/euanguo/bb-plugin-agent-retry#readme",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "retry",
     "backoff",
     "resilience",
@@ -20,12 +15,12 @@
     "provider"
   ],
   "engines": {
-    "bb": ">=0.45",
-    "bbPluginSdk": ">=0.6.23"
+    "alia": ">=0.45",
+    "aliaPluginSdk": ">=0.6.23"
   },
-  "bb": {
+  "alia": {
     "name": "Agent Retry",
-    "description": "Retries failed turns on a configurable growing backoff \u2014 for any failure a provider reports, including unclassified ones.",
+    "description": "Retries failed turns on a configurable growing backoff — for any failure a provider reports, including unclassified ones.",
     "branding": {
       "icon": "RotateCcw"
     },
@@ -38,7 +33,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.23",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -49,7 +43,7 @@
     "vitest": "^3.2.7"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -64,5 +58,22 @@
     "README.md",
     "PLUGIN_OVERVIEW.md",
     "LICENSE"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.23"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/agent-retry#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/agent-retry"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

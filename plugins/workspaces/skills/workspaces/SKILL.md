@@ -1,6 +1,6 @@
 ---
 name: multi-repo-workspaces
-description: Work safely inside a BB Workspaces multi-repository session. Use when the current working directory contains a Workspaces session.json or the user asks about the repositories available in a multi-repo workspace thread.
+description: Work safely inside a VesnALIA Workspaces multi-repository session. Use when the current working directory contains a Workspaces session.json or the user asks about the repositories available in a multi-repo workspace thread.
 ---
 
 # Multi-repository workspace sessions

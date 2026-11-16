@@ -1,7 +1,7 @@
 // Data hooks for the app: RPC calls kept fresh by the server's
 // `rewind.changed` realtime signal and by reconnects.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc, type PluginRpcClient, type PluginRpcResult } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc, type PluginRpcClient, type PluginRpcResult } from "@vesnalia/plugin-sdk/app";
 import { CHANGED_CHANNEL } from "../constants";
 import type { RpcContract } from "../rpc-contract";
 import { errorMessage } from "./labels";

@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
-// A client without BB's side panel hooks, as BB desktop apps from before 0.48.0: the review still loads, and its
+// A client without VesnALIA's side panel hooks, as VesnALIA desktop apps from before 0.48.0: the review still loads, and its
 // commands open the agent's and the main thread's chats as threads, in a split.
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { toast } from "sonner";
 import { defaultPreferences } from "../src/preferences";
 import { patchReviewState } from "../lib/panel-state";
 
-vi.mock("@get-bb/plugin-sdk/app", async (original) => ({ ...await original<typeof import("@get-bb/plugin-sdk/app")>(), experimental_useAppPanel: undefined, experimental_useTabVisible: undefined }));
+vi.mock("@vesnalia/plugin-sdk/app", async (original) => ({ ...await original<typeof import("@vesnalia/plugin-sdk/app")>(), experimental_useAppPanel: undefined, experimental_useTabVisible: undefined }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() }, Toaster: () => null }));
 vi.mock("@pierre/diffs/react", () => ({ FileDiff: () => <div data-testid="filediff" /> }));
 
@@ -41,7 +41,7 @@ async function renderReview(agentThread: string | null) {
   return { bar, page };
 }
 
-test("without BB's panel hooks, Ask agent opens the agent's chat, and Show beside review the main thread, each in a split", async () => {
+test("without VesnALIA's panel hooks, Ask agent opens the agent's chat, and Show beside review the main thread, each in a split", async () => {
   const { bar, page } = await renderReview("agent-1");
   fireEvent.click(await bar.findByRole("button", { name: "Ask agent" }));
   await waitFor(() => expect(page.inspection.navigateCalls).toContainEqual({ method: "toThread", threadId: "agent-1", options: { split: true } }));
@@ -50,9 +50,9 @@ test("without BB's panel hooks, Ask agent opens the agent's chat, and Show besid
   expect(toast.error).not.toHaveBeenCalled();
 });
 
-test("without BB's panel hooks and no agent chat yet, Ask agent says to update the BB app", async () => {
+test("without VesnALIA's panel hooks and no agent chat yet, Ask agent says to update the VesnALIA app", async () => {
   const { bar, page } = await renderReview(null);
   fireEvent.click(await bar.findByRole("button", { name: "Ask agent" }));
-  await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Update the BB app to start a review agent chat here."));
+  await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Update the VesnALIA app to start a review agent chat here."));
   expect(page.inspection.navigateCalls).toEqual([]);
 });

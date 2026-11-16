@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { EnvironmentDetail } from "../core/environments";
 import {
   checkoutFailure,
@@ -13,7 +13,7 @@ import {
   type WorkspaceEntry,
 } from "./environments";
 
-/** BB's environment record as `bb environment list --json` prints it, trimmed to what Environments reads. */
+/** VesnALIA's environment record as `alia environment list --json` prints it, trimmed to what Environments reads. */
 function environment(id: string, overrides: Partial<EnvironmentEntry> = {}): EnvironmentEntry {
   return {
     id,
@@ -86,8 +86,8 @@ const PULL_REQUEST = {
   updatedAt: "2026-10-09T12:00:00Z",
 };
 
-/** A BB with two projects: proj_a (the reply's) and proj_b (someone else's). */
-function fakeBb(options: { status?: (environmentId: string, base: string | undefined) => unknown } = {}) {
+/** A VesnALIA with two projects: proj_a (the reply's) and proj_b (someone else's). */
+function fakeAlia(options: { status?: (environmentId: string, base: string | undefined) => unknown } = {}) {
   const calls: { method: string; args: unknown }[] = [];
   const environments: Record<string, EnvironmentEntry> = {
     env_main: environment("env_main", { isWorktree: false, branchName: "main", path: "/work/app" }),
@@ -103,7 +103,7 @@ function fakeBb(options: { status?: (environmentId: string, base: string | undef
     thread("thr_wt0100", "env_wt01", { hasPendingInteraction: true, latestAttentionAt: 40, title: null, titleFallback: "  Fix the build  " }),
     thread("thr_wt0101", "env_wt01", { parentThreadId: "thr_wt0100", latestAttentionAt: 30 }),
     thread("thr_gone00", "env_gone", { latestAttentionAt: 20 }),
-    // BB lists it but it is deleted; and one of another project that a broken filter would leak.
+    // VesnALIA lists it but it is deleted; and one of another project that a broken filter would leak.
     thread("thr_dead00", "env_wt02", { deletedAt: 9, latestAttentionAt: 999 }),
     thread("thr_other0", "env_other", { projectId: "proj_b" }),
   ];
@@ -125,7 +125,7 @@ function fakeBb(options: { status?: (environmentId: string, base: string | undef
     environments: {
       list: async (args: unknown) => {
         calls.push({ method: "environments.list", args });
-        // BB leaves destroyed environments out of the default list, and a broken projectId filter would leak proj_b's.
+        // VesnALIA leaves destroyed environments out of the default list, and a broken projectId filter would leak proj_b's.
         return Object.values(environments).filter((entry) => entry.status !== "destroyed");
       },
       get: async ({ environmentId }: { environmentId: string }) => {
@@ -147,12 +147,12 @@ function fakeBb(options: { status?: (environmentId: string, base: string | undef
       },
     },
   };
-  return { source: createEnvironmentsSource(sdk as unknown as BbPluginApi["sdk"]), calls };
+  return { source: createEnvironmentsSource(sdk as unknown as AliaPluginApi["sdk"]), calls };
 }
 
 describe("environments: the list", () => {
   it("lists the thread's project's environments with their threads, other projects and deleted threads left out", async () => {
-    const { source, calls } = fakeBb();
+    const { source, calls } = fakeAlia();
     const answer = await source.environments("thr_mine00", false);
     if (!answer.ok) throw new Error(answer.message);
     expect(calls.filter((call) => call.method.endsWith(".list"))).toEqual([
@@ -165,7 +165,7 @@ describe("environments: the list", () => {
   });
 
   it("puts the running thread first, archived ones last, and counts them", async () => {
-    const { source } = fakeBb();
+    const { source } = fakeAlia();
     const answer = await source.environments("thr_mine00", false);
     if (!answer.ok) throw new Error(answer.message);
     const main = answer.environments[0]!;
@@ -180,7 +180,7 @@ describe("environments: the list", () => {
   });
 
   it("maps titles, subthreads and waiting threads", async () => {
-    const { source } = fakeBb();
+    const { source } = fakeAlia();
     const answer = await source.environments("thr_mine00", false);
     if (!answer.ok) throw new Error(answer.message);
     const worktree = answer.environments.find((entry) => entry.id === "env_wt01")!;
@@ -194,7 +194,7 @@ describe("environments: the list", () => {
   });
 
   it("keeps a destroyed environment a live thread still points at, and an environment without threads has no activity", async () => {
-    const { source } = fakeBb();
+    const { source } = fakeAlia();
     const answer = await source.environments("thr_mine00", false);
     if (!answer.ok) throw new Error(answer.message);
     expect(answer.environments.find((entry) => entry.id === "env_gone")).toMatchObject({ life: "destroyed", threadCounts: { live: 1 } });
@@ -202,13 +202,13 @@ describe("environments: the list", () => {
   });
 
   it("answers not found for an unknown thread and invalid for a malformed id", async () => {
-    const { source } = fakeBb();
+    const { source } = fakeAlia();
     expect(await source.environments("thr_nobody", false)).toMatchObject({ ok: false, reason: "not-found" });
     expect(await source.environments("../etc", false)).toMatchObject({ ok: false, reason: "invalid" });
   });
 
   it("reads the default view's details for the markdown fallback", async () => {
-    const { source } = fakeBb();
+    const { source } = fakeAlia();
     const answer = await source.environments("thr_mine00", true);
     if (!answer.ok) throw new Error(answer.message);
     // The default view: environments with live threads (env_wt02 has none).
@@ -223,7 +223,7 @@ describe("environments: the list", () => {
 
 describe("environments: one environment's detail", () => {
   it("answers not found for another project's environment, without reading its status", async () => {
-    const { source, calls } = fakeBb();
+    const { source, calls } = fakeAlia();
     expect(await source.environment("thr_mine00", "env_other")).toEqual({ ok: false, reason: "not-found", message: "No such environment in this project" });
     expect(await source.environment("thr_mine00", "env_nope")).toMatchObject({ ok: false, reason: "not-found" });
     expect(await source.environment("thr_mine00", "x")).toMatchObject({ ok: false, reason: "invalid" });
@@ -232,7 +232,7 @@ describe("environments: one environment's detail", () => {
   });
 
   it("reads a worktree's status against its base and its pull request", async () => {
-    const { source, calls } = fakeBb();
+    const { source, calls } = fakeAlia();
     const detail = (await source.environment("thr_mine00", "env_wt01")) as EnvironmentDetail;
     expect(detail.checkout).toEqual({
       ok: true,
@@ -251,7 +251,7 @@ describe("environments: one environment's detail", () => {
   });
 
   it("doesn't look for a pull request on the default branch", async () => {
-    const { source, calls } = fakeBb();
+    const { source, calls } = fakeAlia();
     const detail = (await source.environment("thr_mine00", "env_main")) as EnvironmentDetail;
     expect(detail.checkout).toMatchObject({ ok: true, onBase: true, ahead: null, behind: null });
     expect(detail.pull).toBeNull();
@@ -259,7 +259,7 @@ describe("environments: one environment's detail", () => {
   });
 
   it("says a missing workspace folder honestly", async () => {
-    const { source } = fakeBb({
+    const { source } = fakeAlia({
       status: () => ({
         outcome: "unavailable",
         failure: { code: "path_not_found", workspacePath: "/work/env_wt01", message: "Unmanaged workspace path does not exist: /work/env_wt01" },
@@ -271,14 +271,14 @@ describe("environments: one environment's detail", () => {
   });
 
   it("doesn't ask git about a destroyed environment", async () => {
-    const { source, calls } = fakeBb();
+    const { source, calls } = fakeAlia();
     const detail = (await source.environment("thr_mine00", "env_gone")) as EnvironmentDetail;
     expect(detail.checkout).toMatchObject({ ok: false, reason: "gone" });
     expect(calls.some((call) => call.method === "environments.status")).toBe(false);
   });
 
-  it("asks again with the default branch when BB has none recorded", async () => {
-    const { source, calls } = fakeBbWithoutBase();
+  it("asks again with the default branch when VesnALIA has none recorded", async () => {
+    const { source, calls } = fakeAliaWithoutBase();
     const detail = (await source.environment("thr_mine00", "env_wt01")) as EnvironmentDetail;
     expect(detail.checkout).toMatchObject({ ok: true, base: "main" });
     expect(calls.map((call) => call.args)).toEqual([{ environmentId: "env_wt01" }, { environmentId: "env_wt01", mergeBaseBranch: "main" }]);
@@ -286,8 +286,8 @@ describe("environments: one environment's detail", () => {
   });
 });
 
-/** fakeBb whose env_wt01 has neither a default nor a merge-base branch recorded. */
-function fakeBbWithoutBase() {
+/** fakeAlia whose env_wt01 has neither a default nor a merge-base branch recorded. */
+function fakeAliaWithoutBase() {
   const calls: { method: string; args: unknown }[] = [];
   const sdk = {
     threads: { get: async () => thread("thr_mine00", "env_main") },
@@ -300,11 +300,11 @@ function fakeBbWithoutBase() {
       pullRequest: async () => ({ outcome: "absent" }),
     },
   };
-  return { source: createEnvironmentsSource(sdk as unknown as BbPluginApi["sdk"]), calls };
+  return { source: createEnvironmentsSource(sdk as unknown as AliaPluginApi["sdk"]), calls };
 }
 
-describe("environments: mapping BB's records", () => {
-  it("names each kind of environment BB makes", () => {
+describe("environments: mapping VesnALIA's records", () => {
+  it("names each kind of environment VesnALIA makes", () => {
     const kind = (overrides: Partial<EnvironmentEntry>) => {
       const entry = environment("env_x", overrides);
       return environmentKind(entry, environmentLife(entry));

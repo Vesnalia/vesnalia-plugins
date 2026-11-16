@@ -46,7 +46,7 @@ describe("notification policy", () => {
     expect(chooseStormNotification([baseNotification, failed, started])).toEqual(failed);
   });
 
-  it("finds the visible bb thread without exposing other route segments", () => {
+  it("finds the visible VesnALIA thread without exposing other route segments", () => {
     expect(visibleThreadId("/projects/proj_1/threads/thr_visible")).toBe("thr_visible");
     expect(visibleThreadId("/settings/plugins/chime")).toBeNull();
   });

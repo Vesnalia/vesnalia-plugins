@@ -1,4 +1,4 @@
-import { makeTurnFailedEvent } from "@get-bb/plugin-sdk/testing";
+import { makeTurnFailedEvent } from "@vesnalia/plugin-sdk/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { settleChecks, submit } from "../src/checks";
 import type { PostRow } from "../src/db/store";
@@ -32,8 +32,8 @@ beforeEach(() => {
   h = makeCtx();
 });
 
-const spawnArgs = (n = 0) => h.bb.callsTo("spawnThread")[n]![0] as SpawnArgs;
-const callNames = () => h.bb.calls.map((call) => call.method);
+const spawnArgs = (n = 0) => h.alia.callsTo("spawnThread")[n]![0] as SpawnArgs;
+const callNames = () => h.alia.calls.map((call) => call.method);
 const kinds = (key: string) => h.store.posts(ticketOf(h, key).id).map((post) => post.kind);
 const project = () => h.store.projectBySlug("csv")!;
 const rateLimited = (over: Partial<Parameters<typeof makeTurnFailedEvent>[0]> = {}) =>
@@ -45,10 +45,10 @@ async function startBoth() {
 }
 
 describe("spawnWorker", () => {
-  it("reserves the row and claims the ticket before it calls bb, then activates the row", async () => {
+  it("reserves the row and claims the ticket before it calls VesnALIA, then activates the row", async () => {
     await seedProject(h);
     let during: unknown;
-    h.bb.spawnError = (args) => {
+    h.alia.spawnError = (args) => {
       const row = h.store.threadBySpawnToken(args.metadata.spawnToken!);
       during = { state: row?.state, thread: row?.thread_id, ticket: ticketOf(h, "CSV-1").state };
       return null;
@@ -56,7 +56,7 @@ describe("spawnWorker", () => {
     const row = await startWorker(h);
     expect(during).toEqual({ state: "spawning", thread: null, ticket: "working" });
     expect(spawnArgs()).toMatchObject({
-      bbProjectId: "proj_1",
+      aliaProjectId: "proj_1",
       hostId: "host_1",
       baseBranch: "loom/csv",
       title: "CSV-1 · Order rows",
@@ -91,7 +91,7 @@ describe("spawnWorker", () => {
     await seedProject(h);
     const row = await startWorker(h);
     expect(spawnArgs()).toEqual({
-      bbProjectId: "proj_1",
+      aliaProjectId: "proj_1",
       hostId: "host_1",
       baseBranch: "loom/csv",
       title: "CSV-1 \u00b7 Order rows",
@@ -121,7 +121,7 @@ describe("spawnWorker", () => {
         "- Call loom_note({ text }) once for each milestone, so the human can follow along on the ticket.",
         "- Call loom_submit({ summary }) when every acceptance criterion holds, then end your turn. The plugin commits your work and runs the checks; you get the result as a message.",
         "- Call loom_block({ reason, needs }) when you cannot continue without something from the human or the planner: say what is wrong and exactly what you need. Then end your turn.",
-        "- Do not commit yourself; the plugin does it. Do not run bb loom commands.",
+        "- Do not commit yourself; the plugin does it. Do not run alia loom commands.",
       ].join("\n"),
       sectionId: "sec_1",
       metadata: { project: "csv", role: "worker", ticket: "CSV-1", spawnToken: row.spawn_token },
@@ -129,12 +129,12 @@ describe("spawnWorker", () => {
       model: "sonnet",
       permissionMode: "full",
     });
-    expect(h.bb.callsTo("projectCheckout")).toEqual([]);
+    expect(h.alia.callsTo("projectCheckout")).toEqual([]);
   });
 
   it("keeps a thread id that the configure hook bound through the spawn token", async () => {
     await seedProject(h);
-    h.bb.afterSpawn = (threadId, args) => void h.projects.roleOf(threadId, { spawnToken: args.metadata.spawnToken });
+    h.alia.afterSpawn = (threadId, args) => void h.projects.roleOf(threadId, { spawnToken: args.metadata.spawnToken });
     const row = await startWorker(h);
     expect(row).toMatchObject({ state: "active", thread_id: "thr_w1" });
   });
@@ -144,23 +144,23 @@ describe("spawnWorker", () => {
     const running = project();
     h.store.setProjectState(running.id, "paused", "human");
     await spawnWorker(h.ctx, running, specOf(h.store, running), ticketOf(h, "CSV-1"));
-    expect(h.bb.callsTo("spawnThread")).toEqual([]);
+    expect(h.alia.callsTo("spawnThread")).toEqual([]);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "queued", attempt: 0, failures: 0, worker_thread_id: null });
     expect(workerRows(h, "CSV-1")).toMatchObject([{ state: "ended" }]);
   });
 
   it("starts a fresh ticket from the remote base on the pr strategy, and falls back to the base on a ref error", async () => {
     await seedProject(h, (doc) => (doc.merge = { strategy: "pr" }));
-    h.bb.spawnError = (args) => (args.baseBranch === "origin/main" ? new Error("fatal: invalid reference: origin/main") : null);
+    h.alia.spawnError = (args) => (args.baseBranch === "origin/main" ? new Error("fatal: invalid reference: origin/main") : null);
     await startWorker(h);
-    expect(h.bb.callsTo("spawnThread").map(([args]) => (args as SpawnArgs).baseBranch)).toEqual(["origin/main", "main"]);
+    expect(h.alia.callsTo("spawnThread").map(([args]) => (args as SpawnArgs).baseBranch)).toEqual(["origin/main", "main"]);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", failures: 0 });
   });
 
   it("resumes from the ticket's branch with the reply thread in the brief", async () => {
     await seedProject(h);
     const first = await startWorker(h);
-    h.bb.environments.get("env_1")!.branchName = "wt-first";
+    h.alia.environments.get("env_1")!.branchName = "wt-first";
     await blockTicket(h.ctx, ticketOf(h, "CSV-1"), { reason: "The API key is missing", needs: "A test key in the CI settings", actor: first.thread_id! });
     h.store.addPost({ project_id: project().id, ticket_id: ticketOf(h, "CSV-1").id, parent_id: null, author_kind: "human", author_thread_id: null, kind: "reply", body: "Use the key in vault/test" });
     await requeueTicket(h.ctx, "CSV-1", { note: "Key is in vault now", actor: "human", author: "human" });
@@ -178,7 +178,7 @@ describe("spawnWorker", () => {
 
   it("waits after a failed spawn, with the same row and claim, and counts failures only after three in a row", async () => {
     await seedProject(h);
-    h.bb.spawnError = () => new Error("host is unreachable");
+    h.alia.spawnError = () => new Error("host is unreachable");
     await startWorker(h).catch(() => undefined);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "queued", failures: 0, attempt: 1, worker_thread_id: null });
     expect(workerRows(h, "CSV-1")).toMatchObject([{ state: "ended", end_reason: "failed" }]);
@@ -189,7 +189,7 @@ describe("spawnWorker", () => {
 
     // Before its retry time the ticket does not start.
     await startWorker(h).catch(() => undefined);
-    expect(h.bb.callsTo("spawnThread")).toHaveLength(1);
+    expect(h.alia.callsTo("spawnThread")).toHaveLength(1);
 
     const failures: number[] = [];
     for (let n = 0; n < 5; n++) {
@@ -212,7 +212,7 @@ describe("spawnWorker", () => {
 
   it("waits without counting while the environment provider is unavailable, and starts the same attempt when it is back", async () => {
     await seedProject(h, (doc) => (doc.budget = { max_attempts: 1 }));
-    h.bb.spawnError = () => new SpawnUnavailableError("HTTP 409: No room on this machine.");
+    h.alia.spawnError = () => new SpawnUnavailableError("HTTP 409: No room on this machine.");
     await startWorker(h);
     for (let n = 0; n < 6; n++) {
       h.clock.advance(waitOf(ticketOf(h, "CSV-1"))!.until - h.clock.t);
@@ -226,7 +226,7 @@ describe("spawnWorker", () => {
       "Could not start a worker: HTTP 409: No room on this machine. Loom tries again in 1m; waiting for its provider counts no attempt, and the ticket blocks if it stays unavailable for 1h.",
     ]);
 
-    h.bb.spawnError = null;
+    h.alia.spawnError = null;
     h.clock.advance(wait.until - h.clock.t);
     const row = await startWorker(h);
     expect(workerRows(h, "CSV-1")).toHaveLength(1);
@@ -245,17 +245,17 @@ describe("spawnWorker", () => {
     expect(blockedAtStart(h.store, ticketOf(h, "CSV-2"))).toBe(false);
   });
 
-  it("blocks at once with bb's message when bb refuses the spawn", async () => {
+  it("blocks at once with VesnALIA's message when VesnALIA refuses the spawn", async () => {
     await seedProject(h);
-    h.bb.spawnError = () => new SpawnRefusedError(400, "HTTP 400: Provider pi only supports full permission mode.");
+    h.alia.spawnError = () => new SpawnRefusedError(400, "HTTP 400: Provider pi only supports full permission mode.");
     await startWorker(h);
     expect(ticketOf(h, "CSV-1")).toMatchObject({
       state: "blocked",
       failures: 1,
       worker_thread_id: null,
-      blocked_reason: "bb refused to start a worker: HTTP 400: Provider pi only supports full permission mode.",
+      blocked_reason: "alia refused to start a worker: HTTP 400: Provider pi only supports full permission mode.",
     });
-    expect(h.bb.callsTo("spawnThread")).toHaveLength(1);
+    expect(h.alia.callsTo("spawnThread")).toHaveLength(1);
     expect(project().triage_pending).toBe(1);
     expect(blockedAtStart(h.store, ticketOf(h, "CSV-1"))).toBe(true);
   });
@@ -263,10 +263,10 @@ describe("spawnWorker", () => {
   it("clears the branch and counts no failure when a resumed spawn fails", async () => {
     await seedProject(h);
     h.store.updateTicket(ticketOf(h, "CSV-1").id, { branch: "wt-old", attempt: 1 });
-    h.bb.spawnError = () => new Error("fatal: couldn't find remote ref wt-old");
+    h.alia.spawnError = () => new Error("fatal: couldn't find remote ref wt-old");
     await startWorker(h).catch(() => undefined);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "queued", branch: null, failures: 0 });
-    h.bb.spawnError = null;
+    h.alia.spawnError = null;
     await startWorker(h);
     expect(spawnArgs(1).baseBranch).toBe("loom/csv");
   });
@@ -275,9 +275,9 @@ describe("spawnWorker", () => {
 describe("spawnWorker eligibility", () => {
   const refuses = async (key: string) => {
     const running = project();
-    const before = h.bb.callsTo("spawnThread").length;
+    const before = h.alia.callsTo("spawnThread").length;
     await spawnWorker(h.ctx, running, specOf(h.store, running), ticketOf(h, key));
-    expect(h.bb.callsTo("spawnThread")).toHaveLength(before);
+    expect(h.alia.callsTo("spawnThread")).toHaveLength(before);
     expect(workerRows(h, key)).toEqual([]);
     expect(ticketOf(h, key)).toMatchObject({ state: "queued", attempt: 0, worker_thread_id: null });
     expect(kinds(key)).not.toContain("claim");
@@ -307,9 +307,9 @@ describe("spawnWorker eligibility", () => {
 
 describe("spawnWorker on a multi-repo project", () => {
   const seedRepos = (edit?: (doc: Doc) => void) => {
-    h.bb.addBbProject("proj_web", { host_1: "/src/web" });
-    h.bb.addBbProject("proj_api", { host_1: "/src/api" });
-    h.bb.addBbProject("proj_docs", { host_1: "/src/docs" });
+    h.alia.addAliaProject("proj_web", { host_1: "/src/web" });
+    h.alia.addAliaProject("proj_api", { host_1: "/src/api" });
+    h.alia.addAliaProject("proj_docs", { host_1: "/src/docs" });
     return seedProject(h, (doc) => {
       doc.scope = { protected: ["db/**"] };
       doc.repo = [
@@ -326,18 +326,18 @@ describe("spawnWorker on a multi-repo project", () => {
   };
   const otherRepos = (...lines: string[]) => ["## Other repositories (read only)", "This project also works in these repos. You may read them for context, but never edit them: changes there belong to their own tickets.", ...lines].join("\n");
 
-  it("spawns the worker in its repo's bb project on the project's machine, from the integration branch", async () => {
+  it("spawns the worker in its repo's VesnALIA project on the project's machine, from the integration branch", async () => {
     await seedRepos();
     await startWorker(h, "CSV-2");
-    expect(spawnArgs()).toMatchObject({ bbProjectId: "proj_api", hostId: "host_1", baseBranch: "loom/csv" });
+    expect(spawnArgs()).toMatchObject({ aliaProjectId: "proj_api", hostId: "host_1", baseBranch: "loom/csv" });
     expect(ticketOf(h, "CSV-2")).toMatchObject({ state: "working", worker_thread_id: "thr_w1" });
   });
 
   it("starts from the repo's remote base on the pr strategy, and falls back to the repo's base on a ref error", async () => {
     await seedRepos((doc) => (doc.merge = { strategy: "pr" }));
-    h.bb.spawnError = (args) => (args.baseBranch === "upstream/trunk" ? new Error("fatal: invalid reference: upstream/trunk") : null);
+    h.alia.spawnError = (args) => (args.baseBranch === "upstream/trunk" ? new Error("fatal: invalid reference: upstream/trunk") : null);
     await startWorker(h, "CSV-2");
-    expect(h.bb.callsTo("spawnThread").map(([args]) => [(args as SpawnArgs).bbProjectId, (args as SpawnArgs).baseBranch])).toEqual([
+    expect(h.alia.callsTo("spawnThread").map(([args]) => [(args as SpawnArgs).aliaProjectId, (args as SpawnArgs).baseBranch])).toEqual([
       ["proj_api", "upstream/trunk"],
       ["proj_api", "trunk"],
     ]);
@@ -349,21 +349,21 @@ describe("spawnWorker on a multi-repo project", () => {
     await startWorker(h);
     const prompt = spawnArgs().prompt;
     expect(prompt).toContain(
-      "## Repository\nThis ticket is in the repo \"web\", the bb project proj_web, and this worktree is a checkout of it. The scope globs and protected paths below are relative to this repo's root.\n\n## Scope",
+      "## Repository\nThis ticket is in the repo \"web\", the VesnALIA project proj_web, and this worktree is a checkout of it. The scope globs and protected paths below are relative to this repo's root.\n\n## Scope",
     );
     expect(prompt).toContain('Protected paths you must never edit:\n- "db/**"\n- "web.lock"\n');
     expect(prompt).toContain('## Checks the plugin runs when you submit\n- "npm run lint"\n- "npm run web-test"\nThey run');
     expect(prompt).not.toContain('"npm test"');
     expect(prompt).toContain(
       otherRepos(
-        '- "api" (bb project proj_api): /src/api',
-        '- "docs" (bb project proj_docs): /src/docs',
+        '- "api" (VesnALIA project proj_api): /src/api',
+        '- "docs" (VesnALIA project proj_docs): /src/docs',
         'This project\'s merged work in them is on the branch "loom/csv". Read a file from it with `git -C <path> show loom/csv:<file>`.',
         "",
         "## Rules",
       ),
     );
-    expect(h.bb.callsTo("projectCheckout")).toEqual([
+    expect(h.alia.callsTo("projectCheckout")).toEqual([
       ["proj_api", "host_1"],
       ["proj_docs", "host_1"],
     ]);
@@ -373,36 +373,36 @@ describe("spawnWorker on a multi-repo project", () => {
     await seedRepos((doc) => (doc.merge = { strategy: "pr" }));
     await startWorker(h, "CSV-2");
     const prompt = spawnArgs().prompt;
-    expect(prompt).toContain('This ticket is in the repo "api", the bb project proj_api,');
+    expect(prompt).toContain('This ticket is in the repo "api", the VesnALIA project proj_api,');
     expect(prompt).toContain('Protected paths you must never edit:\n- "db/**"\nA change');
     expect(prompt).toContain('## Checks the plugin runs when you submit\n- "npm test"\nThey run');
-    expect(prompt).toContain(otherRepos('- "web" (bb project proj_web): /src/web', '- "docs" (bb project proj_docs): /src/docs', "", "## The pull request"));
+    expect(prompt).toContain(otherRepos('- "web" (VesnALIA project proj_web): /src/web', '- "docs" (VesnALIA project proj_docs): /src/docs', "", "## The pull request"));
     expect(prompt).toContain("Loom asks you for the commit message with loom_pr");
     expect(prompt).not.toContain("merged work");
   });
 
   it("still starts the worker when another repo's checkout cannot be found, and lists that repo without a path", async () => {
     await seedRepos();
-    h.bb.checkouts.set("proj_docs", {});
+    h.alia.checkouts.set("proj_docs", {});
     await startWorker(h);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", worker_thread_id: "thr_w1", failures: 0 });
-    expect(spawnArgs().prompt).toContain('- "api" (bb project proj_api): /src/api\n- "docs" (bb project proj_docs): no checkout was found on this machine\n');
-    expect(h.bb.callsTo("log")).toContainEqual(["warn", expect.stringContaining(`CSV-1's brief lists the repo "docs" without a checkout path: Repo "docs" (bb project proj_docs) has no checkout on the machine host_1`)]);
+    expect(spawnArgs().prompt).toContain('- "api" (VesnALIA project proj_api): /src/api\n- "docs" (VesnALIA project proj_docs): no checkout was found on this machine\n');
+    expect(h.alia.callsTo("log")).toContainEqual(["warn", expect.stringContaining(`CSV-1's brief lists the repo "docs" without a checkout path: Repo "docs" (VesnALIA project proj_docs) has no checkout on the machine host_1`)]);
   });
 
-  it("still starts the worker when bb cannot look up the checkouts", async () => {
+  it("still starts the worker when VesnALIA cannot look up the checkouts", async () => {
     await seedRepos();
-    vi.spyOn(h.bb, "projectCheckout").mockRejectedValue(new Error("bb is restarting"));
+    vi.spyOn(h.alia, "projectCheckout").mockRejectedValue(new Error("alia is restarting"));
     await startWorker(h);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", worker_thread_id: "thr_w1" });
-    expect(spawnArgs().prompt).toContain('- "api" (bb project proj_api): no checkout was found on this machine\n- "docs" (bb project proj_docs): no checkout was found on this machine\n');
+    expect(spawnArgs().prompt).toContain('- "api" (VesnALIA project proj_api): no checkout was found on this machine\n- "docs" (VesnALIA project proj_docs): no checkout was found on this machine\n');
   });
 
   it("counts a failed start when the ticket names a repo the spec does not list", async () => {
     await seedRepos();
     h.store.updateTicket(ticketOf(h, "CSV-1").id, { repo: "gone" });
     await startWorker(h);
-    expect(h.bb.callsTo("spawnThread")).toEqual([]);
+    expect(h.alia.callsTo("spawnThread")).toEqual([]);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "queued", failures: 1, worker_thread_id: null });
     expect(h.store.posts(ticketOf(h, "CSV-1").id).at(-1)!.body).toContain('This spec has no repo "gone"');
   });
@@ -412,7 +412,7 @@ describe("spawnWorker on a multi-repo project", () => {
     await startWorker(h, "CSV-1");
     await startWorker(h, "CSV-2");
     expect([ticketOf(h, "CSV-1").state, ticketOf(h, "CSV-2").state]).toEqual(["working", "working"]);
-    expect(h.bb.callsTo("spawnThread").map(([args]) => (args as SpawnArgs).bbProjectId)).toEqual(["proj_web", "proj_api"]);
+    expect(h.alia.callsTo("spawnThread").map(([args]) => (args as SpawnArgs).aliaProjectId)).toEqual(["proj_web", "proj_api"]);
   });
 
   it("starts only one of two tickets with overlapping scopes in the same repo", async () => {
@@ -423,7 +423,7 @@ describe("spawnWorker on a multi-repo project", () => {
     await startWorker(h, "CSV-1");
     await spawnWorker(h.ctx, project(), specOf(h.store, project()), ticketOf(h, "CSV-2"));
     expect([ticketOf(h, "CSV-1").state, ticketOf(h, "CSV-2").state]).toEqual(["working", "queued"]);
-    expect(h.bb.callsTo("spawnThread")).toHaveLength(1);
+    expect(h.alia.callsTo("spawnThread")).toHaveLength(1);
   });
 });
 
@@ -434,8 +434,8 @@ describe("idle policy", () => {
     h.host.worktree("/wt/env_1").changed = ["src/model/a.ts"];
 
     await onWorkerIdle(h.ctx, row);
-    expect(h.bb.sent("thr_w1")).toHaveLength(1);
-    expect(h.bb.sent("thr_w1")[0]).toMatch(/^\[loom\] CSV-1: .*loom_submit.*loom_block/s);
+    expect(h.alia.sent("thr_w1")).toHaveLength(1);
+    expect(h.alia.sent("thr_w1")[0]).toMatch(/^\[loom\] CSV-1: .*loom_submit.*loom_block/s);
     expect(h.store.thread(row.id)).toMatchObject({ state: "active", idle_count: 1 });
     expect(h.host.callsTo("commitAll")).toEqual([]);
 
@@ -462,19 +462,19 @@ describe("idle policy", () => {
     const row = await startBoth();
     h.store.setProjectState(project().id, "paused", "human");
     await onWorkerIdle(h.ctx, row);
-    expect(h.bb.sent("thr_w1")).toEqual([]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
     h.store.setProjectState(project().id, "running", "human");
 
     h.store.setTicketState(ticketOf(h, "CSV-1").id, "checking", "loom");
     await onWorkerIdle(h.ctx, row);
-    expect(h.bb.sent("thr_w1")).toEqual([]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
     h.store.setTicketState(ticketOf(h, "CSV-1").id, "working", "loom");
 
     await endThread(h.ctx, row, "gone", { commit: false });
-    h.bb.calls.length = 0;
+    h.alia.calls.length = 0;
     await onWorkerIdle(h.ctx, row);
     await onWorkerIdle(h.ctx, row);
-    expect(h.bb.calls).toEqual([]);
+    expect(h.alia.calls).toEqual([]);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "queued", failures: 0 });
   });
 });
@@ -484,20 +484,20 @@ describe("endThread", () => {
     const row = await startBoth();
     const results = await Promise.all([endThread(h.ctx, row, "abandoned", { commit: true }), endThread(h.ctx, row, "timeout", { commit: true })]);
     expect(results.filter(Boolean)).toHaveLength(1);
-    expect(h.bb.callsTo("stop")).toHaveLength(1);
-    expect(h.bb.callsTo("archive")).toHaveLength(1);
+    expect(h.alia.callsTo("stop")).toHaveLength(1);
+    expect(h.alia.callsTo("archive")).toHaveLength(1);
     expect(ticketOf(h, "CSV-1").failures).toBe(1);
   });
 
   it("releases the ticket only after the thread was stopped and archived", async () => {
     const row = await startBoth();
-    h.bb.stopConfirms = false;
+    h.alia.stopConfirms = false;
     expect(await endThread(h.ctx, row, "abandoned", { commit: false })).toBe(true);
     expect(h.store.thread(row.id)).toMatchObject({ state: "ending", end_reason: "abandoned" });
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", worker_thread_id: "thr_w1" });
-    expect(h.bb.callsTo("archive")).toEqual([]);
+    expect(h.alia.callsTo("archive")).toEqual([]);
 
-    h.bb.stopConfirms = true;
+    h.alia.stopConfirms = true;
     await resumeEnding(h.ctx, h.store.thread(row.id)!);
     expect(h.store.thread(row.id)?.state).toBe("ended");
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "queued", failures: 1 });
@@ -507,34 +507,34 @@ describe("endThread", () => {
 
   it("archives anyway after ten minutes in ending, and records the final token count", async () => {
     const row = await startBoth();
-    h.bb.stopConfirms = false;
-    h.bb.tokens.set("thr_w1", 4321);
+    h.alia.stopConfirms = false;
+    h.alia.tokens.set("thr_w1", 4321);
     await endThread(h.ctx, row, "timeout", { commit: false });
     h.clock.advance(9 * 60_000);
     await resumeEnding(h.ctx, h.store.thread(row.id)!);
     expect(h.store.thread(row.id)?.state).toBe("ending");
-    expect(h.bb.callsTo("archive")).toEqual([]);
+    expect(h.alia.callsTo("archive")).toEqual([]);
 
     h.clock.advance(2 * 60_000);
     await resumeEnding(h.ctx, h.store.thread(row.id)!);
-    expect(h.bb.callsTo("archive")).toEqual([["thr_w1"]]);
+    expect(h.alia.callsTo("archive")).toEqual([["thr_w1"]]);
     expect(h.store.thread(row.id)).toMatchObject({ state: "ended", tokens: 4321 });
     expect(ticketOf(h, "CSV-1").state).toBe("queued");
-    expect(h.bb.callsTo("log").some(([level, text]) => level === "warn" && String(text).includes("did not stop"))).toBe(true);
+    expect(h.alia.callsTo("log").some(([level, text]) => level === "warn" && String(text).includes("did not stop"))).toBe(true);
   });
 
   it("leaves the ticket alone when the caller passes move null, and treats a thread that is already gone as stopped", async () => {
     const row = await startBoth();
-    h.bb.threads.delete("thr_w1");
+    h.alia.threads.delete("thr_w1");
     await endThread(h.ctx, row, "cancelled", { commit: false, move: null });
     expect(h.store.thread(row.id)?.state).toBe("ended");
-    expect(h.bb.callsTo("archive")).toEqual([]);
+    expect(h.alia.callsTo("archive")).toEqual([]);
     expect(ticketOf(h, "CSV-1").state).toBe("working");
   });
 
   it("records the worker's branch before it archives, and skips the commit when there is no path", async () => {
     const row = await startBoth();
-    h.bb.environments.get("env_1")!.path = null;
+    h.alia.environments.get("env_1")!.path = null;
     await endThread(h.ctx, row, "blocked", { commit: true });
     expect(ticketOf(h, "CSV-1").branch).toBe("wt-thr_w1");
     expect(h.host.callsTo("commitAll")).toEqual([]);
@@ -543,11 +543,11 @@ describe("endThread", () => {
 
   it("reads the branch through the thread when the row has no environment yet", async () => {
     await seedProject(h);
-    h.bb.provisionEnvironment = false;
+    h.alia.provisionEnvironment = false;
     const row = await startWorker(h);
     expect(row.environment_id).toBeNull();
-    h.bb.environments.set("env_late", { path: "/wt/late", branchName: "wt-late", hostId: "host_1" });
-    h.bb.threads.get("thr_w1")!.environmentId = "env_late";
+    h.alia.environments.set("env_late", { path: "/wt/late", branchName: "wt-late", hostId: "host_1" });
+    h.alia.threads.get("thr_w1")!.environmentId = "env_late";
     await recordBranch(h.ctx, row);
     expect(ticketOf(h, "CSV-1").branch).toBe("wt-late");
     expect(h.store.thread(row.id)?.environment_id).toBe("env_late");
@@ -564,7 +564,7 @@ describe("ending a worker on a machine of its own", () => {
     expect(h.host.calls.map((call) => `${call.method}@${call.hostId}`)).toEqual(["commitAll@host_box1", "exportChanges@host_box1", "importCommit@host_1"]);
     expect(h.host.refs.get("refs/heads/loom/csv/csv-1-home")).toBe("home1");
     expect(h.host.refs.has("refs/loom/csv/csv-1/reviewed")).toBe(false);
-    expect(h.bb.callsTo("archive")).toHaveLength(1);
+    expect(h.alia.callsTo("archive")).toHaveLength(1);
   });
 
   it("keeps the thread, stopped but not archived, while its work cannot be brought home, and ends it once the work comes home", async () => {
@@ -574,15 +574,15 @@ describe("ending a worker on a machine of its own", () => {
     h.host.scripted.importCommit = [new Error("the project's machine is offline")];
     await endThread(h.ctx, row, "blocked", { commit: true });
     expect(h.store.thread(row.id)).toMatchObject({ state: "ending", end_reason: "blocked" });
-    expect(h.bb.callsTo("stop")).toEqual([[row.thread_id]]);
-    expect(h.bb.callsTo("archive")).toEqual([]);
-    expect(h.bb.callsTo("log").map(([, text]) => text)).toContain("Could not bring CSV-1's work home before ending its thread, so Loom keeps the thread and its machine and tries again: the project's machine is offline");
+    expect(h.alia.callsTo("stop")).toEqual([[row.thread_id]]);
+    expect(h.alia.callsTo("archive")).toEqual([]);
+    expect(h.alia.callsTo("log").map(([, text]) => text)).toContain("Could not bring CSV-1's work home before ending its thread, so Loom keeps the thread and its machine and tries again: the project's machine is offline");
 
     h.clock.advance(20_000);
     await resumeEnding(h.ctx, h.store.thread(row.id)!);
     expect(h.store.thread(row.id)?.state).toBe("ended");
     expect(h.host.refs.get("refs/heads/loom/csv/csv-1-home")).toBe("home1");
-    expect(h.bb.callsTo("archive")).toEqual([[row.thread_id]]);
+    expect(h.alia.callsTo("archive")).toEqual([[row.thread_id]]);
   });
 
   it("tries to bring the work home after 15 seconds, 30, 60 and 120, then every 5 minutes, and logs an unchanged failure once", async () => {
@@ -592,7 +592,7 @@ describe("ending a worker on a machine of its own", () => {
     h.host.errors.importCommit = new Error("git ls-tree took too long: the index and tree steps ran past 300 seconds");
     await endThread(h.ctx, row, "blocked", { commit: true });
     const imports = () => h.host.callsTo("importCommit").length;
-    const warnings = () => h.bb.callsTo("log").filter(([level, text]) => level === "warn" && String(text).startsWith("Could not bring CSV-1's work home")).length;
+    const warnings = () => h.alia.callsTo("log").filter(([level, text]) => level === "warn" && String(text).startsWith("Could not bring CSV-1's work home")).length;
     expect(imports()).toBe(1);
 
     const tick = async () => {
@@ -625,12 +625,12 @@ describe("ending a worker on a machine of its own", () => {
     h.clock.advance(9 * 60_000);
     await resumeEnding(h.ctx, h.store.thread(row.id)!);
     expect(h.store.thread(row.id)?.state).toBe("ending");
-    expect(h.bb.callsTo("archive")).toEqual([]);
+    expect(h.alia.callsTo("archive")).toEqual([]);
 
     h.clock.advance(2 * 60_000);
     await resumeEnding(h.ctx, h.store.thread(row.id)!);
     expect(h.store.thread(row.id)?.state).toBe("ended");
-    expect(h.bb.callsTo("archive")).toEqual([[row.thread_id]]);
+    expect(h.alia.callsTo("archive")).toEqual([[row.thread_id]]);
     const note = h.store.posts(ticketOf(h, "CSV-1").id).find((post) => post.kind === "system" && post.body.startsWith("Loom could not bring"));
     expect(note?.body).toBe("Loom could not bring the worker's work home from its machine, so the next worker starts without the changes it made since it last submitted or saved: the project's machine is offline. Loom tried for 10 minutes before it ended the thread.");
   });
@@ -641,16 +641,16 @@ describe("ending a worker on a machine of its own", () => {
     h.host.errors.commitAll = new Error("the disk is full");
     await endThread(h.ctx, row, "blocked", { commit: true });
     expect(h.store.thread(row.id)?.state).toBe("ended");
-    expect(h.bb.callsTo("log").map(([, text]) => text)).toContain("Could not save CSV-1's work before ending its thread: the disk is full");
+    expect(h.alia.callsTo("log").map(([, text]) => text)).toContain("Could not save CSV-1's work before ending its thread: the disk is full");
   });
 });
 
 describe("resolveEnvironment", () => {
-  it("returns the environment the row already has, without asking bb for the thread", async () => {
+  it("returns the environment the row already has, without asking VesnALIA for the thread", async () => {
     const row = await startBoth();
     const environment = await resolveEnvironment(h.ctx, row);
     expect(environment).toEqual({ path: "/wt/env_1", branchName: "wt-thr_w1", hostId: "host_1" });
-    expect(h.bb.callsTo("getThread")).toEqual([]);
+    expect(h.alia.callsTo("getThread")).toEqual([]);
   });
 
   it("finds a late-provisioned environment through the thread and keeps it on the row and the ticket", async () => {
@@ -666,18 +666,18 @@ describe("resolveEnvironment", () => {
     await seedProject(h);
     const stale = await startLateWorker(h);
     await resolveEnvironment(h.ctx, stale);
-    h.bb.calls = [];
+    h.alia.calls = [];
     expect(await resolveEnvironment(h.ctx, stale)).toMatchObject({ path: "/wt/late" });
-    expect(h.bb.callsTo("getThread")).toEqual([]);
+    expect(h.alia.callsTo("getThread")).toEqual([]);
   });
 
-  it("is null when bb has no environment for the thread yet, or does not know the thread", async () => {
+  it("is null when VesnALIA has no environment for the thread yet, or does not know the thread", async () => {
     await seedProject(h);
-    h.bb.provisionEnvironment = false;
+    h.alia.provisionEnvironment = false;
     const row = await startWorker(h);
     expect(await resolveEnvironment(h.ctx, row)).toBeNull();
     expect(h.store.thread(row.id)!.environment_id).toBeNull();
-    h.bb.threads.delete("thr_w1");
+    h.alia.threads.delete("thr_w1");
     expect(await resolveEnvironment(h.ctx, row)).toBeNull();
   });
 });
@@ -806,34 +806,34 @@ describe("failed turns", () => {
         rateLimits: { kind: "subscription-window", overageReason: null, overageStatus: null, providerId: "claude", reachedReason: null, status: "blocked", windows: [{ label: "5h", providerKey: null, resetsAtMs: reset, status: "blocked" }] },
       }),
     );
-    expect(h.bb.callsTo("retryTurn")).toEqual([["thr_w1", "req_1", reset + 15_000]]);
+    expect(h.alia.callsTo("retryTurn")).toEqual([["thr_w1", "req_1", reset + 15_000]]);
     expect(h.store.thread(row.id)).toMatchObject({ state: "active", rate_limit_retries: 1 });
     expect(project().hold_until).toBe(reset + 15_000);
     expect(ticketOf(h, "CSV-1").state).toBe("working");
-    expect(h.bb.sent("thr_w1")).toEqual([]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
   });
 
   it("falls back to a growing delay without a reset time, and stops retrying after three tries", async () => {
     const row = await startBoth();
     await onTurnFailed(h.ctx, rateLimited({ attemptNumber: 2 }));
-    expect(h.bb.callsTo("retryTurn")[0]![2]).toBe(h.clock.t + 120_000);
+    expect(h.alia.callsTo("retryTurn")[0]![2]).toBe(h.clock.t + 120_000);
     h.store.updateThread(row.id, { rate_limit_retries: 3 });
     await onTurnFailed(h.ctx, rateLimited({ attemptNumber: 3 }));
-    expect(h.bb.callsTo("retryTurn")).toHaveLength(1);
-    expect(h.bb.sent("thr_w1")).toHaveLength(1);
+    expect(h.alia.callsTo("retryTurn")).toHaveLength(1);
+    expect(h.alia.sent("thr_w1")).toHaveLength(1);
   });
 
   it("does not retry a worker's rate limit while the project is paused", async () => {
     await startBoth();
     h.store.setProjectState(project().id, "paused", "human");
     await onTurnFailed(h.ctx, rateLimited());
-    expect(h.bb.callsTo("retryTurn")).toEqual([]);
+    expect(h.alia.callsTo("retryTurn")).toEqual([]);
   });
 
   it("counts any other failed turn like an idle: nudge first, then end the worker as failed", async () => {
     const row = await startBoth();
     await onTurnFailed(h.ctx, makeTurnFailedEvent({ threadId: "thr_w1", requestId: "req_1" }));
-    expect(h.bb.sent("thr_w1")).toHaveLength(1);
+    expect(h.alia.sent("thr_w1")).toHaveLength(1);
     await onTurnFailed(h.ctx, makeTurnFailedEvent({ threadId: "thr_w1", requestId: "req_2" }));
     expect(h.store.thread(row.id)).toMatchObject({ state: "ended", end_reason: "failed" });
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "queued", failures: 1 });
@@ -841,35 +841,35 @@ describe("failed turns", () => {
 
   it("blocks a ticket whose environment provider stays unavailable for an hour, counting no attempt, and approval requeues it", async () => {
     await seedProject(h);
-    h.bb.spawnError = () => new SpawnUnavailableError("No room on this machine.");
+    h.alia.spawnError = () => new SpawnUnavailableError("No room on this machine.");
     await startWorker(h);
     while (ticketOf(h, "CSV-1").state === "queued") {
       h.clock.advance(waitOf(ticketOf(h, "CSV-1"))!.until - h.clock.t);
       await startWorker(h);
     }
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "blocked", failures: 0, start_wait_json: null, blocked_reason: "no worker could start: the environment provider was unavailable for 1h: No room on this machine." });
-    expect(h.bb.callsTo("spawnThread")).toHaveLength(8);
+    expect(h.alia.callsTo("spawnThread")).toHaveLength(8);
     expect(project().triage_pending).toBe(1);
     expect(blockedAtStart(h.store, ticketOf(h, "CSV-1"))).toBe(true);
   });
 
-  it("handles a provisioning failure once, as a failed start that waits, even though bb reports it twice", async () => {
+  it("handles a provisioning failure once, as a failed start that waits, even though VesnALIA reports it twice", async () => {
     await seedProject(h);
-    h.bb.provisionEnvironment = false;
+    h.alia.provisionEnvironment = false;
     const row = await startWorker(h);
-    h.bb.systemErrors.set("thr_w1", { code: "thread_provisioning_failed", message: "Provisioning thread failed", detail: "The worktree could not be created." });
+    h.alia.systemErrors.set("thr_w1", { code: "thread_provisioning_failed", message: "Provisioning thread failed", detail: "The worktree could not be created." });
     await onTurnFailed(h.ctx, makeTurnFailedEvent({ threadId: "thr_w1", requestId: "req_1" }));
     await onTurnFailed(h.ctx, makeTurnFailedEvent({ threadId: "thr_w1", requestId: "req_1" }));
     expect(h.store.thread(row.id)).toMatchObject({ state: "ended", end_reason: "failed" });
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "queued", failures: 0 });
     expect(waitOf(ticketOf(h, "CSV-1"))).toMatchObject({ tries: 1, kind: "failed", row: row.id });
     expect(h.store.posts(ticketOf(h, "CSV-1").id).at(-1)!.body).toContain("Could not start a worker: The worktree could not be created.");
-    expect(h.bb.callsTo("archive")).toEqual([["thr_w1"]]);
-    expect(h.bb.sent("thr_w1")).toEqual([]);
+    expect(h.alia.callsTo("archive")).toEqual([["thr_w1"]]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
 
     // The retry starts the same row on a new thread, and asks for the same branch.
     h.clock.advance(60_000);
-    h.bb.provisionEnvironment = true;
+    h.alia.provisionEnvironment = true;
     await startWorker(h);
     expect(h.store.thread(row.id)).toMatchObject({ state: "active", thread_id: "thr_w2", attempt: 1 });
   });
@@ -877,9 +877,9 @@ describe("failed turns", () => {
   it("keeps the branch of a ticket whose pull request is open when its new worker cannot start", async () => {
     await seedProject(h, (doc) => (doc.merge = { strategy: "pr" }));
     h.store.updateTicket(ticketOf(h, "CSV-1").id, { branch: "wt-old", attempt: 1, pushed_sha: "abc", pr_branch: "wt-old" });
-    h.bb.provisionEnvironment = false;
+    h.alia.provisionEnvironment = false;
     await startWorker(h);
-    h.bb.systemErrors.set("thr_w1", { code: "thread_provisioning_failed", message: "Provisioning thread failed", detail: "fatal: bad ref" });
+    h.alia.systemErrors.set("thr_w1", { code: "thread_provisioning_failed", message: "Provisioning thread failed", detail: "fatal: bad ref" });
     await onTurnFailed(h.ctx, makeTurnFailedEvent({ threadId: "thr_w1", requestId: "req_1" }));
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "queued", branch: "wt-old", failures: 0 });
   });
@@ -887,16 +887,16 @@ describe("failed turns", () => {
   it("clears the branch of a resumed ticket whose thread failed before it had an environment", async () => {
     await seedProject(h);
     h.store.updateTicket(ticketOf(h, "CSV-1").id, { branch: "wt-old", attempt: 1 });
-    h.bb.provisionEnvironment = false;
+    h.alia.provisionEnvironment = false;
     await startWorker(h);
-    h.bb.systemErrors.set("thr_w1", { code: "thread_provisioning_failed", message: "Provisioning thread failed", detail: "fatal: bad ref" });
+    h.alia.systemErrors.set("thr_w1", { code: "thread_provisioning_failed", message: "Provisioning thread failed", detail: "fatal: bad ref" });
     await onTurnFailed(h.ctx, makeTurnFailedEvent({ threadId: "thr_w1", requestId: "req_1" }));
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "queued", branch: null, failures: 0, start_wait_json: null });
   });
 
   it("ignores turns of threads it does not know", async () => {
     await onTurnFailed(h.ctx, rateLimited({ threadId: "thr_other" }));
-    expect(h.bb.callsTo("retryTurn")).toEqual([]);
+    expect(h.alia.callsTo("retryTurn")).toEqual([]);
   });
 });
 
@@ -1059,7 +1059,7 @@ describe("a worker on a machine of its own after an earlier one", () => {
     await blockTicket(h.ctx, ticketOf(h, "CSV-1"), { reason: "Still stuck", needs: "help", actor: "human" });
     expect(h.host.calls.map((call) => `${call.method}@${call.hostId}`)).toEqual(["commitAll@host_box2"]);
     expect(h.host.refs.get("refs/heads/loom/csv/csv-1-home")).toBe("home1");
-    expect(h.bb.callsTo("log").map(([, text]) => text)).toContain("CSV-1's worker ended before loom_resume, so Loom kept the work brought home as it was; the worker's own changes stay committed on its machine.");
+    expect(h.alia.callsTo("log").map(([, text]) => text)).toContain("CSV-1's worker ended before loom_resume, so Loom kept the work brought home as it was; the worker's own changes stay committed on its machine.");
 
     await requeueTicket(h.ctx, "CSV-1", { note: "Try again", actor: "human", author: "human" });
     const third = await startWorker(h);
@@ -1077,7 +1077,7 @@ describe("a worker on a machine of its own after an earlier one", () => {
     await seedMachineProject(h);
     h.host.scripted.refTip = [new Error("the host is restarting")];
     await spawnWorker(h.ctx, project(), specOf(h.store, project()), ticketOf(h, "CSV-1"));
-    expect(h.bb.callsTo("spawnThread")).toEqual([]);
+    expect(h.alia.callsTo("spawnThread")).toEqual([]);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "queued", failures: 0 });
     expect(waitOf(ticketOf(h, "CSV-1"), "worker")).toMatchObject({ kind: "failed", reason: "Loom could not read the work brought home for CSV-1: the host is restarting" });
   });
@@ -1085,7 +1085,7 @@ describe("a worker on a machine of its own after an earlier one", () => {
 
 describe("a placement change between a ticket's workers", () => {
   async function placement(machine: boolean) {
-    h.bb.machineProviderList = [BOXES];
+    h.alia.machineProviderList = [BOXES];
     await h.projects.propose({
       toml: specToml((doc) => {
         doc.merge = { strategy: "pr", stack: false };
@@ -1093,7 +1093,7 @@ describe("a placement change between a ticket's workers", () => {
         else delete doc.environment;
       }),
       threadId: "thr_plan",
-      bbProjectId: "proj_1",
+      aliaProjectId: "proj_1",
       hostId: "host_1",
     });
     await h.projects.approve("csv", "human");
@@ -1104,7 +1104,7 @@ describe("a placement change between a ticket's workers", () => {
   it("resumes a worker on a new machine from the branch a worker on the project's machine left, also after a worker that never resumed", async () => {
     await seedProject(h, (doc) => (doc.merge = { strategy: "pr", stack: false }));
     const first = await startWorker(h);
-    h.bb.environments.get(first.environment_id!)!.branchName = "loom/csv/csv-1-1";
+    h.alia.environments.get(first.environment_id!)!.branchName = "loom/csv/csv-1-1";
     h.host.worktree(`/wt/${first.environment_id}`).dirty = true;
     await block("Need the schema");
     h.host.refs.set("refs/heads/loom/csv/csv-1-1", "c1");
@@ -1135,7 +1135,7 @@ describe("a placement change between a ticket's workers", () => {
     expect(spawnArgs(1).environment?.machine).toBeUndefined();
     expect(h.store.thread(second.id)!.resume_json).toBeNull();
 
-    h.bb.environments.get(second.environment_id!)!.branchName = "loom/csv/csv-1-2";
+    h.alia.environments.get(second.environment_id!)!.branchName = "loom/csv/csv-1-2";
     h.host.worktree(`/wt/${second.environment_id}`).dirty = true;
     await block("Still stuck");
     h.host.refs.set("refs/heads/loom/csv/csv-1-2", "c2");
@@ -1163,7 +1163,7 @@ describe("a placement change between a ticket's workers", () => {
 });
 
 describe("idles a move of the thread's machine caused", () => {
-  const moved = (threadId: string, seq: number) => h.bb.systemErrors.set(threadId, { code: "machine_maintenance", message: "Machine preservation is interrupting this turn.", seq, at: 0 });
+  const moved = (threadId: string, seq: number) => h.alia.systemErrors.set(threadId, { code: "machine_maintenance", message: "Machine preservation is interrupting this turn.", seq, at: 0 });
 
   it("does not count the idle after a move, consumes the event, counts the next idle, and ignores a later move again", async () => {
     await seedMachineProject(h);
@@ -1171,23 +1171,23 @@ describe("idles a move of the thread's machine caused", () => {
     moved(row.thread_id!, 7);
     await onWorkerIdle(h.ctx, row);
     expect(h.store.thread(row.id)).toMatchObject({ state: "active", idle_count: 0, maintenance_seq: 7 });
-    expect(h.bb.sent(row.thread_id!)).toEqual([]);
+    expect(h.alia.sent(row.thread_id!)).toEqual([]);
 
     await onWorkerIdle(h.ctx, h.store.thread(row.id)!);
     expect(h.store.thread(row.id)).toMatchObject({ idle_count: 1 });
-    expect(h.bb.sent(row.thread_id!)).toHaveLength(1);
+    expect(h.alia.sent(row.thread_id!)).toHaveLength(1);
 
     moved(row.thread_id!, 12);
     await onWorkerIdle(h.ctx, h.store.thread(row.id)!);
     expect(h.store.thread(row.id)).toMatchObject({ state: "active", idle_count: 1, maintenance_seq: 12 });
   });
 
-  it("counts the same idle as before on the project's machine, and asks bb nothing", async () => {
+  it("counts the same idle as before on the project's machine, and asks VesnALIA nothing", async () => {
     const row = await startBoth();
     moved(row.thread_id!, 7);
     await onWorkerIdle(h.ctx, row);
     expect(h.store.thread(row.id)).toMatchObject({ idle_count: 1, maintenance_seq: 0 });
-    expect(h.bb.callsTo("latestSystemError")).toEqual([]);
+    expect(h.alia.callsTo("latestSystemError")).toEqual([]);
   });
 });
 
@@ -1223,7 +1223,7 @@ describe("the brief of a worker on a machine of its own", () => {
     const checkouts = new Map([["api", "/src/api"]]);
     const brief = workerBrief({ project: project(), spec: spec(), ticket, posts: [], resume: false, tickets: [dep, ticket], checkouts, remote: true });
     expect(brief).not.toContain("/src/api");
-    expect(brief).toContain('- "api" (bb project proj_api): it is not on this machine');
+    expect(brief).toContain('- "api" (VesnALIA project proj_api): it is not on this machine');
     expect(brief).toContain("Its branch is origin/loom/csv/csv-1-1: read its files with `git fetch origin loom/csv/csv-1-1` and then `git show FETCH_HEAD:<file>`.");
     const local = workerBrief({ project: project(), spec: spec(), ticket, posts: [], resume: false, tickets: [dep, ticket], checkouts });
     expect(local).toContain("/src/api");

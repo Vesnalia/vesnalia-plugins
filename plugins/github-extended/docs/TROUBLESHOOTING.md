@@ -8,7 +8,7 @@ Run:
 
 ```sh
 gh auth status --hostname github.com
-bb plugin reload github-extended
+alia plugin reload github-extended
 ```
 
 If `gh` is not installed, install it from [cli.github.com](https://cli.github.com/)
@@ -16,11 +16,11 @@ and run `gh auth login`.
 
 ## A repository is missing
 
-Check that its local BB project source has a GitHub `origin` remote, or add the
+Check that its local VesnALIA project source has a GitHub `origin` remote, or add the
 repository explicitly through `Extra repositories`. Then run:
 
 ```sh
-bb github-extended sync
+alia github-extended sync
 ```
 
 ## Dependabot shows a permission or disabled-alert error
@@ -33,8 +33,8 @@ synchronise the plugin after changing access.
 ## Inspect plugin logs
 
 ```sh
-bb plugin logs github-extended -n 50
+alia plugin logs github-extended -n 50
 ```
 
-GitHub content is treated as untrusted input. Review agent changes in BB before
+GitHub content is treated as untrusted input. Review agent changes in VesnALIA before
 accepting them, and confirm the target project before starting agent work.

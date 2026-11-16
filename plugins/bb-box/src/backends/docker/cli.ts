@@ -1,4 +1,4 @@
-// The docker CLI on BB's server, which the Docker backend runs for every
+// The docker CLI on VesnALIA's server, which the Docker backend runs for every
 // call to the Docker host. The CLI speaks to the local socket and to an
 // ssh:// host alike, and its `docker exec` is a plain command line, which
 // the command transport and the desktop's route use (031).
@@ -37,7 +37,7 @@ export class DockerError extends Error {
   }
 }
 
-/** The bb-box labels on a box's container, from its first write. */
+/** The alia-box labels on a box's container, from its first write. */
 export const LABELS = {
   backend: "bbbox.backend",
   install: "bbbox.install",
@@ -52,15 +52,15 @@ export const LABELS = {
   gpuPart: "bbbox.gpu-part",
   /** On an image setup/docker/build.sh made: its layout version, which its record's contract replaces (049). */
   imageVersion: "bbbox.image-version",
-  /** On an image setup/docker/build.sh made: its record, /usr/share/bb-box/image.json, as JSON (049). */
+  /** On an image setup/docker/build.sh made: its record, /usr/share/alia-box/image.json, as JSON (049). */
   imageRecord: "bbbox.image-record",
-  /** On an image setup/docker/build.sh made: the digest of BB's app in it, or empty for none. */
-  bbApp: "bbbox.bb-app",
+  /** On an image setup/docker/build.sh made: the digest of VesnALIA's app in it, or empty for none. */
+  aliaApp: "bbbox.alia-app",
   /** On a desktop image whose start points Xorg at the GPU placed, so a GPU desktop may be privileged (#283). */
   gpuBusId: "bbbox.gpu-bus-id",
-  /** On a container bb-box builds or tries an image in (049): the install's ID, so no sweep takes it. */
+  /** On a container alia-box builds or tries an image in (049): the install's ID, so no sweep takes it. */
   imageBox: "bbbox.image-box",
-  /** On an image bb-box captured from an image box (049): the image's name. */
+  /** On an image alia-box captured from an image box (049): the image's name. */
   image: "bbbox.image",
   fromSnapshot: "bbbox.from-snapshot",
 } as const;
@@ -206,7 +206,7 @@ export interface SshReuse {
 
 /**
  * Whether the docker CLI's logins to an ssh:// host share one SSH
- * connection, by the SSH config of the user BB runs as: a ControlPath with
+ * connection, by the SSH config of the user VesnALIA runs as: a ControlPath with
  * ControlMaster and ControlPersist (#97). Null when the host is not ssh://,
  * on Windows, whose ssh cannot share, or when ssh -G cannot say.
  */
@@ -246,7 +246,7 @@ export class DockerCli {
   /** The -H address, or null for the CLI's own default. */
   readonly host: string | null;
 
-  /** Run before each command that reaches the daemon, as when the host is a BB machine's relay (042). */
+  /** Run before each command that reaches the daemon, as when the host is a VesnALIA machine's relay (042). */
   readonly #prepare: (() => Promise<void>) | null;
 
   constructor(host: string | null, binary = "docker", prepare: (() => Promise<void>) | null = null) {
@@ -258,7 +258,7 @@ export class DockerCli {
   /**
    * Makes the host ready to use, as the transport needs before its first
    * command. Throws a DockerError when it cannot, and stops waiting when
-   * `signal` aborts, as when the plugin stops, since BB may not answer then.
+   * `signal` aborts, as when the plugin stops, since VesnALIA may not answer then.
    */
   async prepare(signal?: AbortSignal): Promise<void> {
     if (!this.#prepare) return;

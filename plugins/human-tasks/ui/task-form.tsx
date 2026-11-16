@@ -1,8 +1,8 @@
 // The in-thread form for a blocking task. It replaces the composer while the
 // agent waits, so the thread shows as waiting on the user.
 import { useEffect, useState } from "react";
-import type { PluginPendingInteractionProps } from "@get-bb/plugin-sdk/app";
-import { Markdown, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import type { PluginPendingInteractionProps } from "@vesnalia/plugin-sdk/app";
+import { Markdown, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, TodoView } from "../server";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -12,7 +12,7 @@ import { NoteField, useNoteState } from "./note-field";
 
 export function TaskForm({ interaction, submit, cancel }: PluginPendingInteractionProps) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const taskId =
     typeof interaction.payload === "object" && interaction.payload !== null && "taskId" in interaction.payload
       ? String((interaction.payload as { taskId: unknown }).taskId)

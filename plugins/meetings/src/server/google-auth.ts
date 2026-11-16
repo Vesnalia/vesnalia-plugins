@@ -72,7 +72,7 @@ export function pkceChallenge(verifier: string): string {
 }
 
 /**
- * The bb origin the Meetings page runs on, when Google accepts a redirect to
+ * The VesnALIA origin the Meetings page runs on, when Google accepts a redirect to
  * it: https://…, or plain http only on localhost / 127.0.0.1. null otherwise.
  */
 export function redirectOrigin(origin: string): string | null {

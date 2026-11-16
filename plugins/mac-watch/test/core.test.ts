@@ -81,9 +81,9 @@ test("network counters of the default interface", () => {
 test("processes group helpers under their app", () => {
   const procs = parsePs(fixture("ps.txt"));
   const top = groupProcs(procs, "cpu");
-  const bb = top.find((p) => p.name === "bb");
-  assert.ok(bb);
-  assert.equal(bb.cpu, 24.5);
+  const alia = top.find((p) => p.name === "alia");
+  assert.ok(alia);
+  assert.equal(alia.cpu, 24.5);
   assert.equal(top[0]!.name, "WindowServer");
 });
 

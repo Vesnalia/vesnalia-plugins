@@ -8,7 +8,7 @@
 //
 // Why: the user wants old projects that lived in GitHub issues imported
 // with their discussion, which "may contain important context"
-// (bead-bb-apc). Beads' own `bd github sync` carries no comments, so this
+// (bead-alia-apc). Beads' own `bd github sync` carries no comments, so this
 // is a step of the plugin's on top of that command, run after it.
 //
 // Design notes:
@@ -111,7 +111,7 @@ async function read(
         headers: {
           Accept: "application/vnd.github+json",
           Authorization: `Bearer ${token}`,
-          "User-Agent": "airbender-bb-plugin",
+          "User-Agent": "airbender-alia-plugin",
           "X-GitHub-Api-Version": "2022-11-28",
         },
       },

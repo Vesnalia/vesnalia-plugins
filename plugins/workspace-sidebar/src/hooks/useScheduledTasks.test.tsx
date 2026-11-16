@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useScheduledTasks } from "./useScheduledTasks";
 
 const { rpc } = vi.hoisted(() => ({ rpc: { call: vi.fn() } }));
-vi.mock("@get-bb/plugin-sdk/app", () => ({ useRpc: () => rpc, useRealtimeConnectionState: () => "connected" }));
+vi.mock("@vesnalia/plugin-sdk/app", () => ({ useRpc: () => rpc, useRealtimeConnectionState: () => "connected" }));
 beforeEach(() => { vi.useFakeTimers(); rpc.call.mockReset(); });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 const advance = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });

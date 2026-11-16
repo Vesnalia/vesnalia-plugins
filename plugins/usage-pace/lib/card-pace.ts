@@ -1,17 +1,17 @@
-// Adds pace to bb's built-in usage card (the provider-usage plugin's sidebar
+// Adds pace to VesnALIA's built-in usage card (the provider-usage plugin's sidebar
 // footer card). That card is another plugin's React tree, so this content
 // script mostly adds nodes to it:
 //   - an even-pace tick on each window's bar, and a band between the used
 //     percent and that tick: red when ahead of pace, faint when under it;
-//   - bb's "Couldn't refresh usage" message on the failed provider's tab
+//   - VesnALIA's "Couldn't refresh usage" message on the failed provider's tab
 //     only, with that provider's error, a red dot on that tab, and a button
-//     that dismisses the message. bb shows the message on every tab when
+//     that dismisses the message. VesnALIA shows the message on every tab when
 //     one provider on the machine fails, and does not say which one. The
 //     failure comes from this plugin's own usage snapshot.
-//   - provider tabs the user hid in the settings (bb lists some providers,
+//   - provider tabs the user hid in the settings (VesnALIA lists some providers,
 //     such as Cursor, on every machine, installed or not);
 //   - the delta from even pace, as a line inside the row, under the dates.
-//     It shows while the pointer is over the row (mouse only), and when bb
+//     It shows while the pointer is over the row (mouse only), and when VesnALIA
 //     expands the row on tap, click or Enter (the touch path).
 //
 // Hover is not CSS `:hover`. The delta line makes the row taller and moves
@@ -40,29 +40,29 @@ const BAND_ATTR = "data-usage-pace-band";
 const DETAIL_ATTR = "data-usage-pace-detail";
 /** Where the `title` of a hover-open row waits until the row closes. */
 const TITLE_ATTR = "data-usage-pace-title";
-/** Hover only where a pointer can hover; touch uses bb's tap to expand. */
+/** Hover only where a pointer can hover; touch uses VesnALIA's tap to expand. */
 const HOVER_QUERY = "(hover: hover) and (pointer: fine)";
 /** Marks a provider tab that the user hid; the style hides it. */
 const HIDDEN_ATTR = "data-usage-pace-hidden";
 const SETTINGS_RPC_URL = "/api/v1/plugins/usage-pace/rpc/getCardSettings";
 const OWN_USAGE_RPC_URL = "/api/v1/plugins/usage-pace/rpc/getUsage";
-/** On bb's status message when it is a refresh or load failure. */
+/** On VesnALIA's status message when it is a refresh or load failure. */
 const FAILED_ATTR = "data-usage-pace-failed";
 /** The line that names the failed providers. */
 const FAILURE_ATTR = "data-usage-pace-failure";
 const DISMISS_ATTR = "data-usage-pace-dismiss";
 const DISMISSED_ATTR = "data-usage-pace-dismissed";
-/** On bb's failure message on a tab whose provider did not fail. */
+/** On VesnALIA's failure message on a tab whose provider did not fail. */
 const OTHER_TAB_ATTR = "data-usage-pace-other-tab";
 /** On the tab of a provider that failed: a red dot. */
 const FAILED_TAB_ATTR = "data-usage-pace-failed-tab";
 /** localStorage key: the failure the user dismissed. */
 const DISMISSED_KEY = "usage-pace:dismissed-failure";
-/** bb's texts: "Couldn’t refresh. …" and "Couldn’t load usage." */
+/** VesnALIA's texts: "Couldn’t refresh. …" and "Couldn’t load usage." */
 const FAILURE_MESSAGE = /couldn.t (refresh|load)/iu;
 const STYLE_ID = "usage-pace-card-style";
 const MACHINE_PREFIX = "Usage machine: ";
-const CARD_RPC_URL = "/api/v1/plugins/bb--provider-usage/rpc/getUsage";
+const CARD_RPC_URL = "/api/v1/plugins/alia--provider-usage/rpc/getUsage";
 const CARD_MAX_AGE_MS = 5 * 60_000;
 const REFETCH_MS = 60_000;
 
@@ -142,7 +142,7 @@ const STYLE = `
   background: var(--sidebar-foreground, currentColor);
   opacity: 0.15;
 }
-/* bb's expanded line ("Resets in 3 hr 26 min") repeats the reset time the
+/* VesnALIA's expanded line ("Resets in 3 hr 26 min") repeats the reset time the
    row already shows. Hide it while the delta is in the row. */
 button:has(> [${DETAIL_ATTR}]) > :not(:first-child):not([${DETAIL_ATTR}]) {
   display: none;
@@ -327,8 +327,8 @@ function decorateRow(
   const left = `${even.toFixed(2)}%`;
   if (tick.style.left !== left) tick.style.left = left;
 
-  // bb expands the row on tap and adds its reset line as the last child.
-  // The delta goes after it (the style hides bb's line); appendChild also
+  // VesnALIA expands the row on tap and adds its reset line as the last child.
+  // The delta goes after it (the style hides VesnALIA's line); appendChild also
   // moves it back to the end if React adds its line later. It is always right-aligned, under the dates.
   const expanded = row.getAttribute("aria-expanded") === "true";
   if (expanded || hovered) {
@@ -396,13 +396,13 @@ function toggleAttribute(element: Element, name: string, on: boolean) {
 }
 
 /**
- * Puts bb's failure message on the tab of the provider that failed only.
+ * Puts VesnALIA's failure message on the tab of the provider that failed only.
  *
- * bb shows the message on every tab of the machine. When this plugin knows
+ * VesnALIA shows the message on every tab of the machine. When this plugin knows
  * which providers failed, the message shows on their tabs, with their
  * errors, and is hidden on the other tabs, whose data is current; the
  * failed tabs get a red dot. When no failed provider is known, the message
- * shows on every tab, as bb shows it. The dismiss button hides the message
+ * shows on every tab, as VesnALIA shows it. The dismiss button hides the message
  * until the failure changes.
  */
 export function decorateFailure(
@@ -462,7 +462,7 @@ export function decorateFailure(
     button.title = "Dismiss until the failure changes";
     button.textContent = "×";
   }
-  // After bb's icon and text: the line, then the button. append() moves
+  // After VesnALIA's icon and text: the line, then the button. append() moves
   // them back to the end if React added a child later.
   if (status.lastElementChild !== button || button.previousElementSibling !== line) {
     status.append(line, button);

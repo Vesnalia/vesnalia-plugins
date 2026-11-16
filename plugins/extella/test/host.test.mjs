@@ -1,7 +1,7 @@
-// Plugin loads in bb's fake host; tools validate input and call the right endpoints. No network.
+// Plugin loads in VesnALIA's fake host; tools validate input and call the right endpoints. No network.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 
 function stubFetch(replies) {
@@ -16,8 +16,8 @@ function stubFetch(replies) {
 }
 
 async function load(settings) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "extella", settings });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "extella", settings });
+  await plugin(alia);
   return harness;
 }
 

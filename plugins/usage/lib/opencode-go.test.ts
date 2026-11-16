@@ -35,7 +35,7 @@ function runUsageCommand({
   http = 200,
   nodeOnly = false,
 }: RunCommandOptions = {}) {
-  const root = mkdtempSync(join(tmpdir(), "bb-opencode-go-"));
+  const root = mkdtempSync(join(tmpdir(), "alia-opencode-go-"));
   tempDirs.push(root);
   const dataDir = join(root, "data");
   const authPath = join(dataDir, "opencode", "auth.json");
@@ -122,11 +122,11 @@ describe("OpenCode Go command", () => {
     expect(command).toContain(OPENCODE_GO_USAGE_URL);
     expect(command).toContain("Authorization: Bearer %s");
     expect(command).toContain("-H @-");
-    expect(command).not.toContain("Authorization: Bearer $bb_usage_go_key");
+    expect(command).not.toContain("Authorization: Bearer $alia_usage_go_key");
     expect(command).toContain('has("opencode-go")');
     expect(command).toContain("no-opencode-go-credential");
-    expect(command).toContain("__BB_USAGE_BEGIN__");
-    expect(command).toContain("__BB_USAGE_END__:0");
+    expect(command).toContain("__ALIA_USAGE_BEGIN__");
+    expect(command).toContain("__ALIA_USAGE_END__:0");
     expect(command).toContain("set +x");
     expect(command).toContain("mktemp");
     expect(command).toContain("rm -f");
@@ -149,9 +149,9 @@ describe("OpenCode Go command", () => {
   it("executes the jq collector without exposing the credential", () => {
     const result = runUsageCommand();
     expect(result.status).toBe(0);
-    expect(result.output).toContain("__BB_USAGE_BEGIN__");
+    expect(result.output).toContain("__ALIA_USAGE_BEGIN__");
     expect(result.output).toContain(samplePayload);
-    expect(result.output).toContain("__BB_USAGE_END__:0");
+    expect(result.output).toContain("__ALIA_USAGE_END__:0");
     expect(result.output).not.toContain("go-test-secret-do-not-log");
     expect(result.tempFiles).toEqual([]);
   });
@@ -165,8 +165,8 @@ describe("OpenCode Go command", () => {
 
   it("hashes fingerprints with SHA-256 and rejects bad input", () => {
     expect(hashOpenCodeGoCredential("a")).toMatch(/^[0-9a-f]{64}$/);
-    expect(extractOpenCodeGoFingerprint("__BB_USAGE_BEGIN__\n{}")).toBeNull();
-    expect(extractOpenCodeGoFingerprint("__BB_GO_FINGERPRINT__:nope")).toBeNull();
+    expect(extractOpenCodeGoFingerprint("__ALIA_USAGE_BEGIN__\n{}")).toBeNull();
+    expect(extractOpenCodeGoFingerprint("__ALIA_GO_FINGERPRINT__:nope")).toBeNull();
   });
 
   it("supports the legacy api_key field through the Node.js fallback", () => {

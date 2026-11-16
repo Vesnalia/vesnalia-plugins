@@ -4,7 +4,7 @@ With **Show Farcall tasks** enabled, a worker row can show a fork icon and its
 worktree branch. This is metadata about the requested working directory, not a
 live view of the worker's shell. A worker can change directory after dispatch.
 
-Each `run` / `run_batch` task retains at most 4096 characters of `cwd` from bb's
+Each `run` / `run_batch` task retains at most 4096 characters of `cwd` from VesnALIA's
 tool-call arguments. A task's own `cwd` takes precedence over a batch-level
 `cwd`. Invalid metadata does not discard the task. Old rows without it still
 render normally. Only lexically resolvable absolute paths trigger environment

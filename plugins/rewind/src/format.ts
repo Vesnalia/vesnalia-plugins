@@ -1,6 +1,6 @@
 // Plain-text rendering for the CLI and the agent tools. Everything here is
 // bounded: callers pass the result through `capOutput`.
-import { PLUGIN_CLI_OUTPUT_MAX_BYTES } from "@get-bb/plugin-sdk";
+import { PLUGIN_CLI_OUTPUT_MAX_BYTES } from "@vesnalia/plugin-sdk";
 import type { DiffFile, RestorePlan, SkippedFile, Verification } from "./host-contract";
 import type { CheckpointDto, ForkJob, RestoreDto, RestoreOutcome, UndoneEffect } from "./rpc-contract";
 import { turnEffectsSentence, undoneEffectsSentence } from "./effect-text";
@@ -77,7 +77,7 @@ export function formatList(input: { threadId: string; checkpoints: CheckpointDto
   const lines: string[] = [];
   lines.push(`Checkpoints for ${input.threadId}${input.workspace === null ? "" : ` (${input.workspace.path})`}`);
   if (input.checkpoints.length === 0) {
-    lines.push("", "No checkpoints yet. One is taken before and after every turn, or run `bb rewind checkpoint`.");
+    lines.push("", "No checkpoints yet. One is taken before and after every turn, or run `alia rewind checkpoint`.");
     return lines.join("\n");
   }
   const groups = groupTurns(input.checkpoints).reverse();
@@ -147,7 +147,7 @@ export function formatShow(checkpoint: CheckpointDto, now = Date.now()): string 
       const counts = change.binary ? "binary" : `+${change.additions ?? 0} -${change.deletions ?? 0}`;
       lines.push(`  ${change.status} ${change.path}  ${counts}`);
     }
-    if (checkpoint.changesTruncated) lines.push("  … more changes not listed (see `bb rewind diff --stat`)");
+    if (checkpoint.changesTruncated) lines.push("  … more changes not listed (see `alia rewind diff --stat`)");
   }
   const skipped = formatSkipped(checkpoint.skipped, checkpoint.skippedCount);
   if (skipped.length > 0) lines.push("", ...skipped);
@@ -236,7 +236,7 @@ export function formatPreview(preview: {
   lines.push(...formatUndoneEffects(preview.effects ?? []));
   const skipped = formatSkipped(preview.skipped, preview.skippedCount);
   if (skipped.length > 0) lines.push("", ...skipped);
-  lines.push("", "Nothing was changed. Apply with --yes; every restore can be undone with `bb rewind undo`.");
+  lines.push("", "Nothing was changed. Apply with --yes; every restore can be undone with `alia rewind undo`.");
   return lines.join("\n");
 }
 
@@ -265,7 +265,7 @@ export function formatRestoreOutcome(outcome: RestoreOutcome, verb: "Restored" |
     ...outcome.warnings.map((warning) => `Warning: ${warning}`),
     ...formatUndoneEffects(outcome.effects),
   ];
-  if (outcome.preRestore !== null) lines.push(`Undo point: ${outcome.preRestore.id}. Run \`bb rewind undo\` to put the files back.`);
+  if (outcome.preRestore !== null) lines.push(`Undo point: ${outcome.preRestore.id}. Run \`alia rewind undo\` to put the files back.`);
   if (outcome.note !== null) lines.push("", ...formatNote(outcome.note));
   return lines.join("\n");
 }
@@ -285,12 +285,12 @@ export function formatNote(note: string): string[] {
 export function formatEditResult(edit: EditResult): string[] {
   const which = edit.message === null ? "the message" : `message ${edit.message}`;
   return edit.ok
-    ? [`Replaced ${which}: bb discarded it and every later turn, and the new message starts a turn on the restored files.`]
-    : [`The files stay restored, but bb did not edit ${which}: ${edit.error}`];
+    ? [`Replaced ${which}: VesnALIA discarded it and every later turn, and the new message starts a turn on the restored files.`]
+    : [`The files stay restored, but VesnALIA did not edit ${which}: ${edit.error}`];
 }
 
 export function formatForkJob(job: ForkJob): string {
   if (job.status === "done") return `Forked into ${job.forkThreadId} with the files of ${job.checkpointId}.`;
   if (job.status === "failed") return `Fork failed: ${job.error ?? "unknown error"}`;
-  return `Fork ${job.id} is running (${job.step ?? "starting"})${job.forkThreadId === null ? "" : `; new thread ${job.forkThreadId}`}. Check it with \`bb plugin rpc call rewind forkStatus\`.`;
+  return `Fork ${job.id} is running (${job.step ?? "starting"})${job.forkThreadId === null ? "" : `; new thread ${job.forkThreadId}`}. Check it with \`alia plugin rpc call rewind forkStatus\`.`;
 }

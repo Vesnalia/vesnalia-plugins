@@ -94,7 +94,7 @@ export function buildCss(settings: TypographySettings, tokens: Record<string, st
     const value = tokens[token];
     if (value && sizeScale !== 1) {
       root.push(`${token}:calc(${value} * ${sizeScale})`);
-      // On phones bb sizes inputs and the composer with --text-base; iOS zooms into any focused field under 16px.
+      // On phones VesnALIA sizes inputs and the composer with --text-base; iOS zooms into any focused field under 16px.
       if (token === "--text-base" && sizeScale < 1) rules.push(`@media ${COARSE_QUERY}{:root{--text-base:max(1rem, calc(${value} * ${sizeScale}))!important}}`);
     }
     const lineHeight = tokens[`${token}--line-height`];
@@ -110,7 +110,7 @@ export function buildCss(settings: TypographySettings, tokens: Record<string, st
     rules.push(`html{line-height:${ratio(1.5 * leadingScale)}!important}`);
   }
 
-  // The composer is a ProseMirror editor: its stylesheet turns ligatures off (caret placement) and bb fixes its leading at 1.7.
+  // The composer is a ProseMirror editor: its stylesheet turns ligatures off (caret placement) and VesnALIA fixes its leading at 1.7.
   const composer = [
     uiFeatures && uiFeatures !== "normal" && `font-feature-settings:${uiFeatures}${/"liga"/.test(uiFeatures) ? "" : ', "liga" 0'}!important`,
     leadingScale !== 1 && `line-height:${ratio(1.7 * leadingScale)}!important`,
@@ -140,7 +140,7 @@ export function buildCss(settings: TypographySettings, tokens: Record<string, st
   if (codeLineHeight !== null) {
     rules.push(`pre,pre code,.font-mono:not(code){line-height:${codeLineHeight}!important}`);
   }
-  // bb sets the diff viewer's size and line height inline on its wrapper.
+  // VesnALIA sets the diff viewer's size and line height inline on its wrapper.
   const diffs = [
     codeSize !== null && `--diffs-font-size:${codeSize}px!important`,
     codeLineHeight !== null && `--diffs-line-height:calc(var(--diffs-font-size) * ${codeLineHeight})!important`,

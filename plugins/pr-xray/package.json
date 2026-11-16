@@ -1,5 +1,5 @@
 {
-  "name": "bb-plugin-pr-xray",
+  "name": "alia-plugin-pr-xray",
   "version": "1.5.1",
   "license": "MIT",
   "type": "module",
@@ -11,10 +11,10 @@
     "check": "npm run lint && npm run typecheck && npm test"
   },
   "engines": {
-    "bb": ">=0.48.1",
-    "bbPluginSdk": ">=0.6.104"
+    "alia": ">=0.48.1",
+    "aliaPluginSdk": ">=0.6.104"
   },
-  "bb": {
+  "alia": {
     "name": "PR X-ray",
     "description": "Understand a pull request before you review it: grouped by concern, in reading order, with a walkthrough and diagrams.",
     "branding": {
@@ -31,7 +31,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -59,5 +58,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^5.1.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/pr-xray#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/pr-xray"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -13,7 +13,7 @@ export interface WorkspaceAppCatalogItem {
   key: string;
   /** Human-facing label used in UI Tweaks settings. */
   label: string;
-  /** Original BB menu label when `label` was disambiguated. */
+  /** Original VesnALIA menu label when `label` was disambiguated. */
   menuLabel?: string;
   category: WorkspaceAppCategory;
 }
@@ -42,7 +42,7 @@ export function normalizeWorkspaceAppLabel(label: string): string {
 }
 
 /**
- * BB's workspace dropdown renders the target label directly, while chat file
+ * VesnALIA's workspace dropdown renders the target label directly, while chat file
  * link context menus may render the same target as "Open in <label>".
  */
 export function workspaceAppTargetLabelFromMenuItem(label: string): string {

@@ -1,6 +1,6 @@
 /**
  * The view each thread's Review tab was showing, picked in its dropdown (or Go to), so coming back to
- * the thread shows it again: bb mounts the tab anew each time its thread is opened. It is kept in this
+ * the thread shows it again: VesnALIA mounts the tab anew each time its thread is opened. It is kept in this
  * browser, per thread, with the target the tab was opened on (`params`): a tab opened on another view
  * starts there instead. A view the user never picked (the first load's choice) is not kept, so the
  * tab picks again.

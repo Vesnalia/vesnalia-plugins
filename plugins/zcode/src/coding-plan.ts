@@ -39,7 +39,7 @@ type Login = {
 type Material = { token: string; apiKeyId: string; expires: number };
 
 // Only our own errors may leave this module. API bodies and credential parser
-// failures can contain secrets and must never become bb diagnostics.
+// failures can contain secrets and must never become VesnALIA diagnostics.
 class AccountError extends Error {}
 const failure = (message: string) =>
   new AccountError(`ZCode Coding Plan: ${message}`);
@@ -156,7 +156,7 @@ export class CodingPlanHost implements AccountHost {
     const current = await this.readLogin();
     if (!current || current.fingerprint !== this.login?.fingerprint) {
       this.close();
-      throw failure("desktop sign-in changed. Start a new bb session.");
+      throw failure("desktop sign-in changed. Start a new VesnALIA session.");
     }
     if (this.controller.signal.aborted) throw failure("session closed.");
   }
@@ -397,7 +397,7 @@ export class CodingPlanHost implements AccountHost {
     await this.getMaterial();
     const providerId = this.provider.providerId;
     await client.request("provider/updateAccountConfig", {
-      revision: `bb-coding-plan:${randomUUID()}`,
+      revision: `alia-coding-plan:${randomUUID()}`,
       basedOnZCodeBuiltinRevision: `zcode-builtin:${builtin.revision}:${hash(resolve(file))}`,
       providers: {
         [providerId]: {

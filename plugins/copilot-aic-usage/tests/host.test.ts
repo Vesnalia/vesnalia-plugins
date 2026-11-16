@@ -3,8 +3,8 @@ import { mkdtemp, mkdir, writeFile, appendFile, rm } from "node:fs/promises";
 import { watch } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
-import type { ExperimentalHostWatchListener } from "@get-bb/plugin-sdk";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
+import type { ExperimentalHostWatchListener } from "@vesnalia/plugin-sdk";
 import { createUsageHostEntry } from "../host";
 import { checkpoint, sessionA, sessionB, threadId } from "./fixtures";
 

@@ -4,7 +4,7 @@
 // (the only way a hold is made), case 6 arms first so it tests the availability-lookup window, not the arm gate,
 // and plugin and fake core share one clock. The last three cases are the rev 3 review's boundary tests, unchanged.
 import { expect, it } from "bun:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createPlugin } from "../server.js";
 import { CODEX_HIGH, FAILURES, FakeCore } from "./fake-core.js";
 
@@ -20,7 +20,7 @@ async function queuedFailure() {
   await core.setHostOnline("review-host", false);
   core.interruptTurn("review-thread", "host-daemon-restarted", "host-connection-lost");
   const host = createFakePluginHost({ pluginId: "provider-retry-advanced", sdk: core.sdk() as never });
-  await createPlugin({ now: () => core.now, probe: async () => ({ reachable: true, detail: "HTTP 405" }) })(host.bb);
+  await createPlugin({ now: () => core.now, probe: async () => ({ reachable: true, detail: "HTTP 405" }) })(host.alia);
   wire(core, host);
   await host.harness.runCli(["arm"]);
   expect(core.queue).toHaveLength(1);
@@ -59,7 +59,7 @@ it("classifies the final error even after 500 earlier provider errors", async ()
   for (let i = 0; i < 500; i++) core.append("review-thread", "provider/error", FAILURES.codexPooler);
   core.failTurn("review-thread", FAILURES.unauthorized);
   const host = createFakePluginHost({ pluginId: "provider-retry-advanced", sdk: core.sdk() as never });
-  await createPlugin({ now: () => core.now, probe: async () => ({ reachable: true, detail: "HTTP 405" }) })(host.bb);
+  await createPlugin({ now: () => core.now, probe: async () => ({ reachable: true, detail: "HTTP 405" }) })(host.alia);
   wire(core, host);
   await host.harness.runCli(["arm"]);
   expect(host.harness.inspection.sdk.callsTo("threads.retry")).toHaveLength(0);
@@ -80,7 +80,7 @@ it("fresh install observes overload failures until arm as promised", async () =>
   const requestId = core.startTurn("review-thread", { input: [], execution: CODEX_HIGH });
   core.failTurn("review-thread", FAILURES.overloaded);
   const host = createFakePluginHost({ pluginId: "provider-retry-advanced", sdk: core.sdk() as never });
-  await createPlugin({ now: () => core.now })(host.bb);
+  await createPlugin({ now: () => core.now })(host.alia);
   await host.harness.behavior.emitThreadEvent("turn.failed", {
     threadId: "review-thread", requestId, turnId: null, errorInfo: FAILURES.overloaded.errorInfo,
     inputAccepted: true, rateLimits: null, attemptNumber: 1,
@@ -105,7 +105,7 @@ it("honours a hold placed while a stock availability RPC is pending", async () =
       },
     },
   } as never });
-  await createPlugin({ now: () => core.now })(host.bb);
+  await createPlugin({ now: () => core.now })(host.alia);
   await host.harness.runCli(["arm"]);
   await host.harness.behavior.emitThreadEvent("turn.failed", {
     threadId: "review-thread", requestId, turnId: null, errorInfo: FAILURES.rateLimit.errorInfo,
@@ -124,7 +124,7 @@ it("does not dispatch a superseded row claimed during the first scan after reloa
   core.interruptTurn("review-reload", "host-daemon-restarted", "host-connection-lost");
   const factory = createPlugin({ probe: async () => ({ reachable: true, detail: "HTTP 405" }) });
   const host = createFakePluginHost({ pluginId: "provider-retry-advanced", sdk: core.sdk() as never });
-  await factory(host.bb);
+  await factory(host.alia);
   core.hook = (c) => host.harness.registrations.hooks["message.dispatch"]!(c as never);
   await host.harness.runCli(["arm"]);
   const row = core.queue[0]!;
@@ -158,7 +158,7 @@ it("does not require a later millisecond to identify a superseding failed reques
   const host = createFakePluginHost({ pluginId: "provider-retry-advanced", sdk: core.sdk() as never });
   // The API row and the event handler can have the same Date.now() value;
   // request sequence/identity still distinguishes the new failed request.
-  await createPlugin({ now: () => core.now, probe: async () => ({ reachable: true, detail: "HTTP 405" }) })(host.bb);
+  await createPlugin({ now: () => core.now, probe: async () => ({ reachable: true, detail: "HTTP 405" }) })(host.alia);
   core.hook = (c) => host.harness.registrations.hooks["message.dispatch"]!(c as never);
   await host.harness.runCli(["arm"]);
   core.startTurn("review-clock", { input: [], execution: CODEX_HIGH });
@@ -181,7 +181,7 @@ it("unarmed installation does not dispatch an existing automatic retry after the
   await core.retry({ threadId: "review-unarmed", turnRequestId: requestId,
     sendAt: core.now + 1000, reason: "Provider overloaded" });
   const host = createFakePluginHost({ pluginId: "provider-retry-advanced", sdk: core.sdk() as never });
-  await createPlugin({ now: () => core.now })(host.bb);
+  await createPlugin({ now: () => core.now })(host.alia);
   core.hook = (c) => host.harness.registrations.hooks["message.dispatch"]!(c as never);
   const scan = await host.harness.runCli(["scan", "--json"]);
   expect(JSON.parse(scan.stdout).armed).toBe(false);

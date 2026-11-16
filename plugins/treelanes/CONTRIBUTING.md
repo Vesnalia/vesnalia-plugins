@@ -15,11 +15,11 @@ To report a security problem, read [SECURITY.md](SECURITY.md).
 
 ## Set up
 
-You need Node.js 24, npm, and bb 0.43 or later.
+You need Node.js 24, npm, and VesnALIA 0.43 or later.
 
 ```sh
 git clone https://github.com/ahmedhesham6/bb-plugin-treelanes
-cd bb-plugin-treelanes
+cd alia-plugin-treelanes
 npm install
 npm test
 npm run typecheck
@@ -27,18 +27,18 @@ npm run build
 ```
 
 Set up is done when the last three commands pass. CI runs the same three
-checks on each pull request, and also checks `marketplace.json` against bb's
+checks on each pull request, and also checks `marketplace.json` against VesnALIA's
 marketplace schema.
 
-## Try a change in bb
+## Try a change in VesnALIA
 
 ```sh
-bb plugin install .
-bb plugin dev
+alia plugin install .
+alia plugin dev
 ```
 
-`bb plugin dev` builds the plugin again and reloads it each time that you save
-a file. Treelanes reads and changes board and sidebar data, so use a bb that
+`alia plugin dev` builds the plugin again and reloads it each time that you save
+a file. Treelanes reads and changes board and sidebar data, so use a VesnALIA that
 has no data that you need.
 
 ## Find your way
@@ -63,7 +63,7 @@ Each `*.test.ts` or `*.test.tsx` file sits next to the code that it tests.
 ├── task-kinds.ts           # task kind templates and skill IDs
 ├── task-map.ts             # task map choices, planner rule, catalog check
 ├── task-map-settings.tsx   # task map Settings section
-├── import-data.ts          # bb treelanes import
+├── import-data.ts          # alia treelanes import
 ├── marketplace.json        # store listing; its overview copies PLUGIN_OVERVIEW.md
 ├── plugin-id.ts            # plugin ID from package.json
 ├── sidebar/                # sidebar: thread list, lifecycle, titles
@@ -91,7 +91,7 @@ Each `*.test.ts` or `*.test.tsx` file sits next to the code that it tests.
    [visual-pr](https://github.com/humanlayer/skills/tree/main/plugins/visual-pr)
    format from HumanLayer: a one-sentence reason, short reviewer notes, and a
    change outline in small visual views.
-2. For a change that you can see in bb, add a screenshot.
+2. For a change that you can see in VesnALIA, add a screenshot.
 3. Wait for CI to pass.
 
 ## Releases
@@ -108,8 +108,8 @@ docs, chore, ci, test, refactor    → no release
 
 The workflow commits the new version to `package.json`, tags it `vX.Y.Z`, and
 publishes a GitHub release with notes. The marketplace entry installs the
-highest `^0` release, and `bb plugin update` moves to the next one. Publish
-each fix as a new release: bb refuses a plugin whose tag moved to another
+highest `^0` release, and `alia plugin update` moves to the next one. Publish
+each fix as a new release: VesnALIA refuses a plugin whose tag moved to another
 commit.
 
 ## License

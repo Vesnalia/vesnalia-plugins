@@ -1,12 +1,12 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { MAX_DISPLAY_NAME, validateIconDataUrl } from "./appearance.ts";
 import { appearanceSchema, rpcContract } from "./contract.ts";
 
 const ICON_ID = "icon";
 
-export default function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     displayName: {
       type: "string",
       label: "Greeting name",
@@ -16,8 +16,8 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     "CREATE TABLE IF NOT EXISTS appearance (id TEXT PRIMARY KEY, mime TEXT NOT NULL, bytes BLOB NOT NULL)",
   ]);
 
@@ -36,7 +36,7 @@ export default function plugin(bb: BbPluginApi) {
     });
   };
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     getAppearance: appearance,
     setIcon: async ({ iconDataUrl }) => {
       // Throws on invalid uploads; the stored icon is left untouched.

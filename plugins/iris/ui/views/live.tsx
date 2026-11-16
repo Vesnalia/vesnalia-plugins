@@ -1,11 +1,11 @@
 // Live project components: Changes, Commits, PullRequest, Environments and
-// Threads read the card's own thread from bb and read again when bb announces
+// Threads read the card's own thread from VesnALIA and read again when VesnALIA announces
 // a change they show;
 // Pipeline draws a CI run it is given. In the gallery (no thread) the live
 // ones draw sample data, marked as such.
 import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import type { defineRpcContract as DefineRpcContract } from "@get-bb/plugin-sdk";
-import { experimental_Diff as HostDiff, experimental_useRpcKeyedQuery, useBbNavigate, useRpc, useSdk } from "@get-bb/plugin-sdk/app";
+import type { defineRpcContract as DefineRpcContract } from "@vesnalia/plugin-sdk";
+import { experimental_Diff as HostDiff, experimental_useRpcKeyedQuery, useAliaNavigate, useRpc, useSdk } from "@vesnalia/plugin-sdk/app";
 import { z } from "zod";
 import { isPendingValue } from "../../core/evaluate";
 import { environmentChangeMatters, projectChangeMatters, threadChangeMatters, type LiveWatch } from "../../core/live-events";
@@ -54,9 +54,9 @@ function errorText(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
-// The one read of bb's GitHub PR Status plugin a card holds: while it is held, bb keeps that
+// The one read of VesnALIA's GitHub PR Status plugin a card holds: while it is held, VesnALIA keeps that
 // environment's pull request fresh from GitHub and says when it changed.
-// bb gives the frontend bundle only "@get-bb/plugin-sdk/app" at install, and a git install skips
+// VesnALIA gives the frontend bundle only "@vesnalia/plugin-sdk/app" at install, and a git install skips
 // devDependencies, so a runtime import of the SDK root fails to resolve there. defineRpcContract
 // only returns its argument; this keeps its types without the import.
 const defineRpcContract: typeof DefineRpcContract = (contract) => contract as never;
@@ -76,7 +76,7 @@ const SETTLE_MS = 250;
 const CLOCK_MS = 30_000;
 
 /**
- * Reads once, then again whenever bb announces a change the card shows (see `watchOf`), while
+ * Reads once, then again whenever VesnALIA announces a change the card shows (see `watchOf`), while
  * the card is on screen and the window is visible. A change seen while hidden reads on return.
  * A null `watchOf` reads once (a commit never changes). Without a thread (the gallery) it shows
  * `sample`.
@@ -175,7 +175,7 @@ function useLive<T>(key: string, load: (threadId: string) => Promise<T>, sample:
     };
   }, [threadId, refresh, poke]);
 
-  // bb's realtime events. A reconnect may have missed some, so it reads again too.
+  // VesnALIA's realtime events. A reconnect may have missed some, so it reads again too.
   const follows = threadId !== null && watchOf !== null;
   useEffect(() => {
     if (!follows) return;
@@ -188,11 +188,11 @@ function useLive<T>(key: string, load: (threadId: string) => Promise<T>, sample:
     return () => offs.forEach((off) => off());
   }, [follows, sdk, poke]);
 
-  // Pull requests change on GitHub, not in bb: hold bb's own read so bb keeps them fresh, and read
+  // Pull requests change on GitHub, not in VesnALIA: hold VesnALIA's own read so VesnALIA keeps them fresh, and read
   // again when it says one changed.
   const prList = watchRef.current.pullRequests;
   const prKeys = prList?.length ? [...prList].sort() : NO_KEYS;
-  const pr = experimental_useRpcKeyedQuery({ pluginId: "bb--github-pr-status", contract: prStatus, method: "pullRequests", keys: prKeys, enabled: prKeys.length > 0 });
+  const pr = experimental_useRpcKeyedQuery({ pluginId: "alia--github-pr-status", contract: prStatus, method: "pullRequests", keys: prKeys, enabled: prKeys.length > 0 });
   const prSeen = prKeys.length && pr.data ? JSON.stringify(prKeys.map((k) => pr.data?.[k] ?? null)) : null;
   const prLast = useRef<string | null>(null);
   useEffect(() => {
@@ -238,7 +238,7 @@ function Head({ icon, title, detail, live, right }: { icon: string; title: React
 }
 
 const PROBLEM_TEXT: Partial<Record<ProjectFailure["reason"], string>> = {
-  "no-thread": "This card reads its thread's project, but bb has no such thread.",
+  "no-thread": "This card reads its thread's project, but VesnALIA has no such thread.",
   "no-environment": "This thread has no environment, so there is no checkout to read.",
   "not-git": "This thread's environment isn't a git checkout.",
 };
@@ -331,7 +331,7 @@ function scopeLine(r: Extract<ChangesResult, { ok: true }>): { title: string; de
   if (s.kind === "commit") return { title: s.subject ?? `Commit ${s.sha?.slice(0, 7)}`, detail: s.subject ? (s.sha?.slice(0, 7) ?? "") : "" };
   if (s.kind === "uncommitted") return { title: "Uncommitted changes", detail: s.branch ? `on ${s.branch}` : "" };
   if (s.onBase) return { title: s.branch ?? "Changes", detail: "uncommitted work on the base branch" };
-  if (s.noBase) return { title: s.branch ?? "Changes", detail: `uncommitted work only; bb found no merge base with ${s.base ?? "the default branch"}` };
+  if (s.noBase) return { title: s.branch ?? "Changes", detail: `uncommitted work only; VesnALIA found no merge base with ${s.base ?? "the default branch"}` };
   return { title: s.branch ?? "Detached checkout", detail: s.base ? `against ${s.base}, uncommitted included` : "" };
 }
 
@@ -384,7 +384,7 @@ function ChangesBody({ target, paths, title, open, nested }: { target: ChangesTa
         {r.files.length.toLocaleString("en-US")} {r.files.length === 1 ? "file" : "files"} changed
         {paths ? ` matching ${paths.join(", ")}` : ""}
         {paths && r.totalFiles > r.files.length ? ` (${r.totalFiles} in all)` : ""}
-        {r.truncated ? ". bb cut the list short" : ""}
+        {r.truncated ? ". VesnALIA cut the list short" : ""}
       </div>
       {r.files.length ? (
         <ul className="mt-2 overflow-hidden rounded-[10px] ring-1 ring-border [&>li+li]:border-t [&>li+li]:border-border">
@@ -485,7 +485,7 @@ export function CommitsView({ props }: ViewProps) {
   const detail = r.onBase
     ? "this is the base branch"
     : r.noBase
-      ? `bb found no merge base with ${r.base ?? "the default branch"}`
+      ? `alia found no merge base with ${r.base ?? "the default branch"}`
       : [r.base ? `${ahead} ${ahead === 1 ? "commit" : "commits"} ahead of ${r.base}` : null, r.behind ? `${r.behind} behind` : null].filter(Boolean).join(", ");
   return (
     <div ref={live.ref} className="min-w-0">
@@ -579,7 +579,7 @@ export function PullRequestView() {
     return (
       <div ref={live.ref}>
         <Head icon="git-pull-request" title="Pull request" detail={r.ok ? (r.branch ?? undefined) : undefined} live={live} />
-        {!r.ok ? <Problem failure={r} /> : r.unavailable ? <Problem error={`bb couldn't ask GitHub: ${r.unavailable}`} /> : <Quiet icon="git-pull-request">No pull request for {r.branch ?? "this checkout"} yet</Quiet>}
+        {!r.ok ? <Problem failure={r} /> : r.unavailable ? <Problem error={`alia couldn't ask GitHub: ${r.unavailable}`} /> : <Quiet icon="git-pull-request">No pull request for {r.branch ?? "this checkout"} yet</Quiet>}
       </div>
     );
   }
@@ -668,7 +668,7 @@ function StatusDot({ tone, running }: { tone: Tone; running: boolean }) {
 
 export function ThreadsView({ props }: ViewProps) {
   const rpc = useRpc<RpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const parsed = parseThreadIds(props.ids);
   const ids = parsed.ok ? parsed.value : null;
   // Bad ids read nothing: the card shows why at once and follows nothing.
@@ -804,7 +804,7 @@ export function EnvironmentsView({ props }: ViewProps) {
 
 function EnvironmentRow({ e, sample }: { e: EnvironmentInfo; sample: boolean }) {
   const env = useEnv();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [all, setAll] = useState(false);
   const threads = all ? e.threads : e.threads.slice(0, 3);
   const pr = e.pullRequest;

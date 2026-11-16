@@ -1,11 +1,11 @@
 // The ✨ auto-rename's pasted-file prompt recovery (server-side only: it
-// reads bb's attachments store). A thread that opens with a composer paste
+// reads VesnALIA's attachments store). A thread that opens with a composer paste
 // carries a timeline user row with EMPTY text — the content lives in the
 // stored attachment the row's `attachments.localFilePaths` names (found
 // live on thr_eid3vv6gzt: "Pasted text.txt", 5991 bytes, and every ✨
 // option failed "has no prompt text to title from" before any service or
-// probe was called). bb's own layout is projectAttachmentDir =
-// <bb.server.experimental_dataDir>/attachments/<projectId> with
+// probe was called). VesnALIA's own layout is projectAttachmentDir =
+// <alia.server.experimental_dataDir>/attachments/<projectId> with
 // `stored_path` as the unique name under it — the recovery mirrors it.
 //
 // Fail-loud rules: a path that escapes the project's attachments dir

@@ -5,7 +5,7 @@ import { Icon } from "./ui/icon";
 export function SubthreadBadge({ locale = "en" }: { locale?: PluginLocale }) {
   const label = translate(locale, "Subthread");
   return (
-    <span className="bb-chat-tabs-subthread-badge" title={label} aria-label={label}>
+    <span className="alia-chat-tabs-subthread-badge" title={label} aria-label={label}>
       <Icon name="GitBranch" aria-hidden />
     </span>
   );

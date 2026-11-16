@@ -8,9 +8,9 @@
 // that is busy for less, as near its memory limit, keeps its commands.
 //
 // With a directory for sockets, commands to one box share a connection, so
-// each command after the first skips SSH's handshake. bb-box starts the
+// each command after the first skips SSH's handshake. alia-box starts the
 // shared connection itself, one at a time, and ssh keeps it in the
-// background until it has been idle for two minutes. bb-box stops using it
+// background until it has been idle for two minutes. alia-box stops using it
 // shortly before then, and never puts more than 8 commands on it at once;
 // sshd allows 10 sessions per connection. A command waits for it to open no
 // longer than the command's own timeout, or until it is aborted, and then
@@ -616,14 +616,14 @@ export class KeyFile {
   #disposed = false;
 
   #refuseOnceDisposed(): void {
-    if (this.#disposed) throw new SshError("bb-box is stopping, so it opens no new SSH connection.");
+    if (this.#disposed) throw new SshError("alia-box is stopping, so it opens no new SSH connection.");
   }
 
   async path(privateKey: string): Promise<string> {
     this.#refuseOnceDisposed();
     const key = privateKey.replace(/\r\n/g, "\n").trim() + "\n";
     if (this.#path && this.#key === key) return this.#path;
-    if (!this.#dir) this.#dir = await makeTempFolder("bb-box-ssh-");
+    if (!this.#dir) this.#dir = await makeTempFolder("alia-box-ssh-");
     const path = join(this.#dir, "id");
     await writeFile(path, key, { mode: 0o600 });
     this.#path = path;
@@ -635,7 +635,7 @@ export class KeyFile {
   async knownHosts(lines: readonly string[]): Promise<string> {
     this.#refuseOnceDisposed();
     const text = lines.map((line) => line.trim()).filter(Boolean).join("\n") + "\n";
-    if (!this.#dir) this.#dir = await makeTempFolder("bb-box-ssh-");
+    if (!this.#dir) this.#dir = await makeTempFolder("alia-box-ssh-");
     const path = join(this.#dir, `known_hosts-${createHash("sha256").update(text).digest("hex").slice(0, 16)}`);
     await writeFile(path, text, { mode: 0o600 });
     return path;
@@ -644,7 +644,7 @@ export class KeyFile {
   /** A directory for shared connections' sockets. A socket's path must fit in about 100 bytes, so it is short. */
   async shareDir(): Promise<string> {
     this.#refuseOnceDisposed();
-    this.#shareDir ??= await makeTempFolder("bb-box-cm-", shortTempBase());
+    this.#shareDir ??= await makeTempFolder("alia-box-cm-", shortTempBase());
     return this.#shareDir;
   }
 
@@ -657,16 +657,16 @@ export class KeyFile {
 
 /** A new ed25519 key pair, made with ssh-keygen. */
 export async function generateKeyPair(binary = "ssh-keygen"): Promise<{ privateKey: string; publicKey: string }> {
-  const dir = await mkdtemp(join(tmpdir(), "bb-box-keygen-"));
+  const dir = await mkdtemp(join(tmpdir(), "alia-box-keygen-"));
   try {
     const path = join(dir, "id");
     await new Promise<void>((resolve, reject) => {
-      const child = spawn(binary, ["-q", "-t", "ed25519", "-N", "", "-C", "bb-box", "-f", path], { stdio: "ignore" });
+      const child = spawn(binary, ["-q", "-t", "ed25519", "-N", "", "-C", "alia-box", "-f", path], { stdio: "ignore" });
       child.on("error", reject);
       child.on("close", (code) => (code === 0 ? resolve() : reject(new SshError(`ssh-keygen exited with ${code}.`))));
     });
     const [privateKey, publicKeyText] = await Promise.all([readFile(path, "utf8"), readFile(`${path}.pub`, "utf8")]);
-    return { privateKey, publicKey: `${publicKeyText.trim().split(/\s+/).slice(0, 2).join(" ")} bb-box` };
+    return { privateKey, publicKey: `${publicKeyText.trim().split(/\s+/).slice(0, 2).join(" ")} alia-box` };
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -703,6 +703,6 @@ export function publicKey(keyPath: string, binary = "ssh-keygen"): Promise<strin
     let out = "";
     child.stdout.on("data", (chunk: Buffer) => (out += chunk.toString("utf8")));
     child.on("error", () => resolve(null));
-    child.on("close", (code) => resolve(code === 0 && out.trim() ? `${out.trim().split(/\s+/).slice(0, 2).join(" ")} bb-box` : null));
+    child.on("close", (code) => resolve(code === 0 && out.trim() ? `${out.trim().split(/\s+/).slice(0, 2).join(" ")} alia-box` : null));
   });
 }

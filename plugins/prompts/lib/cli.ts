@@ -1,4 +1,4 @@
-// `bb prompts …` — the agent- and terminal-facing surface.
+// `alia prompts …` — the agent- and terminal-facing surface.
 
 import { fillTokens, parseTokens } from "./template";
 import { parseWhen } from "./time";
@@ -6,7 +6,7 @@ import type { Miner } from "./mining";
 import type { Operations, Signal } from "./operations";
 import type { Prompt, Scope, Snippet, Store } from "./store";
 
-/** How long `bb prompts suggest` waits on an in-flight scan before reporting. */
+/** How long `alia prompts suggest` waits on an in-flight scan before reporting. */
 const CLI_SCAN_WAIT_MS = 5_000;
 
 export interface CliResult {
@@ -108,53 +108,53 @@ function collectSets(rest: string[]): { values: Record<string, string>; rest: st
 }
 
 export const CLI_COMMANDS = [
-  { name: "list", summary: "List queued prompts (thread + project + global)", usage: "bb prompts list [--json]" },
+  { name: "list", summary: "List queued prompts (thread + project + global)", usage: "alia prompts list [--json]" },
   {
     name: "add",
     summary: "Queue a prompt (-p project, -g global, --arm auto-send, --at +5m/ISO schedule)",
-    usage: "bb prompts add [-p|-g] [--arm] [--at <when>] <text…>",
+    usage: "alia prompts add [-p|-g] [--arm] [--at <when>] <text…>",
   },
-  { name: "send", summary: "Send a queued prompt to the current thread now", usage: "bb prompts send <id>" },
+  { name: "send", summary: "Send a queued prompt to the current thread now", usage: "alia prompts send <id>" },
   {
     name: "push",
-    summary: "Move a queued prompt into bb's native queue (auto-delivers next turn)",
-    usage: "bb prompts push <id>",
+    summary: "Move a queued prompt into VesnALIA's native queue (auto-delivers next turn)",
+    usage: "alia prompts push <id>",
   },
   {
     name: "stash",
-    summary: "Pull ALL of bb's queued messages for this thread into the stash (stops auto-delivery)",
-    usage: "bb prompts stash",
+    summary: "Pull ALL of VesnALIA's queued messages for this thread into the stash (stops auto-delivery)",
+    usage: "alia prompts stash",
   },
-  { name: "arm", summary: "Arm/disarm auto-send for a prompt", usage: "bb prompts arm|disarm <id>" },
-  { name: "run", summary: "Arm every queued prompt in this thread (drain in order)", usage: "bb prompts run" },
-  { name: "pause", summary: "Pause/resume auto-send for this thread", usage: "bb prompts pause|resume" },
+  { name: "arm", summary: "Arm/disarm auto-send for a prompt", usage: "alia prompts arm|disarm <id>" },
+  { name: "run", summary: "Arm every queued prompt in this thread (drain in order)", usage: "alia prompts run" },
+  { name: "pause", summary: "Pause/resume auto-send for this thread", usage: "alia prompts pause|resume" },
   {
     name: "promote",
     summary: "Keep a thread prompt for the project so it survives the thread (all of them by default)",
-    usage: "bb prompts promote [<id>]",
+    usage: "alia prompts promote [<id>]",
   },
-  { name: "rm", summary: "Delete a queued prompt", usage: "bb prompts rm <id>" },
-  { name: "snips", summary: "List/search snippets", usage: "bb prompts snips [query] [--json]" },
+  { name: "rm", summary: "Delete a queued prompt", usage: "alia prompts rm <id>" },
+  { name: "snips", summary: "List/search snippets", usage: "alia prompts snips [query] [--json]" },
   {
     name: "snip-add",
     summary: "Save a snippet (reusable prompt; {{tokens}} become fill-ins, {{token=default}} pre-fills)",
-    usage: "bb prompts snip-add --title <t> [--keywords <k>] [--group <g>] [--project] <body…>",
+    usage: "alia prompts snip-add --title <t> [--keywords <k>] [--group <g>] [--project] <body…>",
   },
   {
     name: "snip-show",
     summary: "Print a snippet's body, optionally filling its tokens",
-    usage: "bb prompts snip-show <id> [--set key=value …]",
+    usage: "alia prompts snip-show <id> [--set key=value …]",
   },
-  { name: "snip-rm", summary: "Delete a snippet", usage: "bb prompts snip-rm <id>" },
+  { name: "snip-rm", summary: "Delete a snippet", usage: "alia prompts snip-rm <id>" },
   {
     name: "group",
     summary: "Queue every snippet in a group, in writing order — a checklist in one command",
-    usage: "bb prompts group <name> [-p|-g]",
+    usage: "alia prompts group <name> [-p|-g]",
   },
   {
     name: "suggest",
     summary: "Snippets worth saving, mined from prompts you keep retyping",
-    usage: "bb prompts suggest [--refresh] [--json]",
+    usage: "alia prompts suggest [--refresh] [--json]",
   },
 ] as const;
 
@@ -239,7 +239,7 @@ export function createCliRunner(deps: CliDeps) {
         const project = flags.booleans.has("-p") || flags.booleans.has("--project");
         const text = flags.rest.join(" ").trim();
         if (!text)
-          return fail("Usage: bb prompts add [-p|-g] [--arm] [--at <when>] <text…>");
+          return fail("Usage: VesnALIA prompts add [-p|-g] [--arm] [--at <when>] <text…>");
         if (global && project) return fail("Pick one of -g or -p.");
         const scope: Scope = global ? "global" : project ? "project" : "thread";
         if (scope === "thread" && threadId === null)
@@ -273,7 +273,7 @@ export function createCliRunner(deps: CliDeps) {
 
       case "send": {
         const id = rest[0];
-        if (!id) return fail("Usage: bb prompts send <id>");
+        if (!id) return fail("Usage: VesnALIA prompts send <id>");
         if (threadId === null) return fail("Not in a thread.");
         const result = await operations.sendById(id, threadId, "cli");
         return result.sent ? ok(`Sent ${id}.`) : fail(`Send failed: ${result.error}`);
@@ -281,11 +281,11 @@ export function createCliRunner(deps: CliDeps) {
 
       case "push": {
         const id = rest[0];
-        if (!id) return fail("Usage: bb prompts push <id>");
+        if (!id) return fail("Usage: VesnALIA prompts push <id>");
         if (threadId === null) return fail("Not in a thread.");
         const result = await operations.pushToNative(id, threadId);
         return result.pushed
-          ? ok(`Pushed ${id} to bb's queue.`)
+          ? ok(`Pushed ${id} to VesnALIA's queue.`)
           : fail(`Push failed: ${result.error}`);
       }
 
@@ -302,7 +302,7 @@ export function createCliRunner(deps: CliDeps) {
       case "arm":
       case "disarm": {
         const id = rest[0];
-        if (!id) return fail(`Usage: bb prompts ${command} <id>`);
+        if (!id) return fail(`Usage: VesnALIA prompts ${command} <id>`);
         const prompt = store.getPrompt(id);
         if (!prompt || prompt.status !== "queued")
           return fail(`No queued prompt with id ${id}.`);
@@ -361,7 +361,7 @@ export function createCliRunner(deps: CliDeps) {
 
       case "rm": {
         const id = rest[0];
-        if (!id) return fail("Usage: bb prompts rm <id>");
+        if (!id) return fail("Usage: VesnALIA prompts rm <id>");
         const prompt = store.getPrompt(id);
         if (!prompt) return fail(`No prompt with id ${id}.`);
         store.deletePrompt(id);
@@ -389,7 +389,7 @@ export function createCliRunner(deps: CliDeps) {
         const body = flags.rest.join(" ").trim();
         if (!title || !body)
           return fail(
-            "Usage: bb prompts snip-add --title <t> [--keywords <k>] [--group <g>] [--project] <body…>",
+            "Usage: VesnALIA prompts snip-add --title <t> [--keywords <k>] [--group <g>] [--project] <body…>",
           );
         const snippet = store.addSnippet({
           title,
@@ -406,7 +406,7 @@ export function createCliRunner(deps: CliDeps) {
         const { values, rest: remaining } = collectSets(rest);
         const id = remaining[0];
         const snippet = id ? store.getSnippet(id) : null;
-        if (!snippet) return fail("Usage: bb prompts snip-show <id> [--set key=value …]");
+        if (!snippet) return fail("Usage: VesnALIA prompts snip-show <id> [--set key=value …]");
         store.touchSnippet(snippet.id);
         const body = fillTokens(snippet.body, values);
         const unfilled = parseTokens(body);
@@ -419,7 +419,7 @@ export function createCliRunner(deps: CliDeps) {
 
       case "snip-rm": {
         const id = rest[0];
-        if (!id) return fail("Usage: bb prompts snip-rm <id>");
+        if (!id) return fail("Usage: VesnALIA prompts snip-rm <id>");
         if (!store.deleteSnippet(id)) return fail(`No snippet with id ${id}.`);
         snippetsChanged();
         return ok(`Deleted ${id}.`);
@@ -430,7 +430,7 @@ export function createCliRunner(deps: CliDeps) {
           booleans: ["-g", "--global", "-p", "--project"],
         });
         const name = flags.rest.join(" ").trim();
-        if (!name) return fail("Usage: bb prompts group <name> [-p|-g]");
+        if (!name) return fail("Usage: VesnALIA prompts group <name> [-p|-g]");
         const global = flags.booleans.has("-g") || flags.booleans.has("--global");
         const project = flags.booleans.has("-p") || flags.booleans.has("--project");
         const scope: Scope = global ? "global" : project ? "project" : "thread";
@@ -455,7 +455,7 @@ export function createCliRunner(deps: CliDeps) {
         let result = await miner.read(rest.includes("--refresh"));
         if (!result.enabled)
           return ok(
-            "History mining is off — enable it with `bb plugin config prompts set mineHistory on`.",
+            "History mining is off — enable it with `alia plugin config prompts set mineHistory on`.",
           );
         // A mine is hundreds of history round-trips, so the CLI only ever waits
         // on it when there is nothing at all to print — and then only briefly,
@@ -472,7 +472,7 @@ export function createCliRunner(deps: CliDeps) {
         if (suggestions.length === 0)
           return ok(
             result.computing
-              ? "Scanning prompt history… re-run `bb prompts suggest` in a moment."
+              ? "Scanning prompt history… re-run `alia prompts suggest` in a moment."
               : `No suggestions from ${result.considered} prompts — everything you repeat is already a snippet.`,
           );
         const lines = suggestions.map((suggestion) => {
@@ -490,7 +490,7 @@ export function createCliRunner(deps: CliDeps) {
             ...(result.computing
               ? ["A rescan is running — re-run for the updated list.", ""]
               : []),
-            "Save one with: bb prompts snip-add --title <t> <body…>",
+            "Save one with: VesnALIA prompts snip-add --title <t> <body…>",
           ].join("\n"),
         );
       }

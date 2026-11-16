@@ -108,7 +108,7 @@ export function SnoozePickerDialog({
             <p
               aria-live="polite"
               className={
-                problem ? "text-xs text-[color:var(--bb-sidebar-tone-error)]" : "text-xs text-muted-foreground"
+                problem ? "text-xs text-[color:var(--alia-sidebar-tone-error)]" : "text-xs text-muted-foreground"
               }
             >
               {problem ?? `Wakes ${formatPickedSnooze(wake!, now)}`}

@@ -1,11 +1,11 @@
-// Maximize transfer: the board's New thread composer expands into bb's main
+// Maximize transfer: the board's New thread composer expands into VesnALIA's main
 // new-thread view (the root compose surface). The stored prompt draft and the
 // composer's seeds ride along, the modal closes, and the board's stored draft
 // is kept — maximize is a close, not a spawn.
 //
 // The draft record is host-owned (apps/app `usePromptDraftStorage`): the
 // localStorage key is
-// `bb.promptbox.contents-plugin-draft-<encodeURIComponent(composerKey)>-<VERSION>`
+// `alia.promptbox.contents-plugin-draft-<encodeURIComponent(composerKey)>-<VERSION>`
 // and the value is JSON `{ text, ... }`. This plugin never passes `draftKey`
 // to `experimental_NewThreadComposer`, so the composer key is this plugin's
 // id. Version bumps leave several keys behind; the highest version wins.
@@ -15,7 +15,7 @@
 /** This plugin's composer key: the plugin id, since no draftKey is passed. */
 export const PLUGIN_COMPOSER_DRAFT_KEY = "focus-board";
 
-const DRAFT_STORAGE_KEY_PREFIX = "bb.promptbox.contents-plugin-draft-";
+const DRAFT_STORAGE_KEY_PREFIX = "alia.promptbox.contents-plugin-draft-";
 
 export type DraftStorage = Pick<Storage, "length" | "key" | "getItem">;
 
@@ -66,11 +66,11 @@ export function readNewThreadDraftText(
 }
 
 /**
- * Expand the board composer into bb's main new-thread view: navigate with
+ * Expand the board composer into VesnALIA's main new-thread view: navigate with
  * the composer's seeds and stored prompt text (the prompt focuses, matching
  * the expand intent). The stored draft KEPT — a maximize is a close, not a
  * spawn, so the board modal's saved prompt survives exactly like a plain
- * dialog close would leave it; bb's main view seeds its own draft from the
+ * dialog close would leave it; VesnALIA's main view seeds its own draft from the
  * transferred prompt (route state), and only spending the prompt on a spawn
  * ever clears a draft.
  *

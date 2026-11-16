@@ -126,12 +126,12 @@ Claude Code has no hook for such a ping, so keep-warm does not ship from this pl
 
 It does not model the extra tokens that a compacted agent spends to read files again, apart from the horizon.
 It does not model quality: a compacted thread can lose a detail that the next message needs, which the live fork test measures.
-It counts sessions of every app that runs Claude Code, but Model Pilot can only compact BB threads.
+It counts sessions of every app that runs Claude Code, but Model Pilot can only compact VesnALIA threads.
 
 ## Candidates for the live quality test
 
-These BB threads are idle Claude Code threads with an Opus context above 100k tokens.
-`bb thread list` returned the 100 most recent threads, so older threads are not in this list.
+These VesnALIA threads are idle Claude Code threads with an Opus context above 100k tokens.
+`alia thread list` returned the 100 most recent threads, so older threads are not in this list.
 
 | Thread | Session | Context | Last activity | Title |
 | --- | --- | --- | --- | --- |
@@ -153,12 +153,12 @@ python3 -I scripts/measure/wp1_sim.py --deleted --json wp1.json
 
 Run on October 19, 2026, with `scripts/measure/wp1_forks.py` on 4 idle Claude Code threads on Opus 5.5.
 The test did not use thr_k3h8tqi3kq, because that thread was running the measurement.
-Each thread was forked twice, and one fork was compacted with `bb thread compact`.
+Each thread was forked twice, and one fork was compacted with `alia thread compact`.
 Both forks then got the same follow-up as a user message.
 The follow-up asked for specific facts from early in the conversation: names, numbers, commands, file paths and the reasons for decisions.
 It also told the agent to answer from the conversation only, without tools.
 One Opus 5.5 medium judge per pair rated both answers blind, with the earlier conversation as the reference.
-The prompts, answers and verdicts are in `~/.bb/thread-storage/thr_b5s4qp9y75/measure/wp1/`, because they hold private text.
+The prompts, answers and verdicts are in `~/.vesnalia/thread-storage/thr_b5s4qp9y75/measure/wp1/`, because they hold private text.
 
 | Thread | Context | Compacted to | Full good enough | Compacted good enough | Better | Full follow-up | Compacted follow-up | Compaction, warm | Compaction, cold |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |

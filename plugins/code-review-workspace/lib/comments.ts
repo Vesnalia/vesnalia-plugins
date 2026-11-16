@@ -54,7 +54,7 @@ const UNADDRESSED = new Set<AssessmentVerdict>(["not_addressed", "partial", "dis
 // fixes: on a PR, the draft comments a Send took from your own change, and those you resolved or dismissed: they don't post.
 export type GroupId = "needs-you" | "not-submitted" | "fixes" | "on-github" | "private";
 export const GROUP_TITLE: Record<GroupId, string> = {
-  "needs-you": "Needs you", "not-submitted": "Not submitted · only in BB", fixes: "Sent to fix · won’t post", "on-github": "On GitHub", private: "Private · with the agent",
+  "needs-you": "Needs you", "not-submitted": "Not submitted · only in VesnALIA", fixes: "Sent to fix · won’t post", "on-github": "On GitHub", private: "Private · with the agent",
 };
 
 /**

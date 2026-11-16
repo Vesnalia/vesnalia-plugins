@@ -283,7 +283,7 @@ export async function deliver(ctx: Ctx, options: { force?: boolean; threadId?: s
   let sent = 0;
   for (const [threadId, built] of byThread) {
     if (options.signal?.aborted) break;
-    // Sending to an earlier thread waits on bb, and a watch turned off, or a thread no longer its owner, meanwhile gets nothing.
+    // Sending to an earlier thread waits on VesnALIA, and a watch turned off, or a thread no longer its owner, meanwhile gets nothing.
     const batch = built.filter(({ pr }) => ctx.store.watch(pr.id) !== null && ctx.store.linksOf(pr.id).some((l) => l.thread_id === threadId && l.role === "owner" && !l.archived));
     if (!batch.some((entry) => entry.due)) continue;
     try {

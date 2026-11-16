@@ -1,4 +1,4 @@
-// Hint regression test on a fixture page, no running bb needed.
+// Hint regression test on a fixture page, no running VesnALIA needed.
 //   node e2e/wrapped.mjs              # hints.ts from the working tree
 //   HINTS_REF=<git ref> node e2e/wrapped.mjs   # hints.ts from a commit (before/after)
 //   SHOT=/abs/path.png node e2e/wrapped.mjs     # screenshot with hints open

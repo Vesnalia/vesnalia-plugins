@@ -281,7 +281,7 @@ describe("composerProject", () => {
         undefined,
       ),
     ).toBeNull();
-    // A composer kind a later bb adds, even one naming a project.
+    // A composer kind a later VesnALIA adds, even one naming a project.
     expect(
       composerProject({ kind: "side-chat", projectId: "proj_a" } as never, undefined),
     ).toBeNull();
@@ -405,7 +405,7 @@ describe("projectRead", () => {
     expect(projectRead(sent, shown, "new")).toBe(false);
   });
 
-  it("is done when its answer is shown, even without the project (bb does not list it)", () => {
+  it("is done when its answer is shown, even without the project (VesnALIA does not list it)", () => {
     const sent = list("old");
     expect(projectRead(sent, sent, "ghost")).toBe(true);
   });
@@ -415,7 +415,7 @@ describe("projectRead", () => {
   });
 });
 
-// bb's realtime signals are ephemeral: one sent while the connection was
+// VesnALIA's realtime signals are ephemeral: one sent while the connection was
 // down is lost, so a view that reads on them reads again when it is back
 // (Sol B2-R2-004).
 describe("signalsBack", () => {
@@ -453,7 +453,7 @@ describe("outText on a machine in another zone (Codex ULTRA-R2-005)", () => {
   });
 });
 
-describe("listText (bb claude-switcher list)", () => {
+describe("listText (VesnALIA claude-switcher list)", () => {
   const NOW = Date.parse("2026-10-29T10:00:00.000Z");
 
   it("gives each account one aligned line, without a weekly on a Team seat, and the projects by account", () => {

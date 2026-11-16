@@ -1,4 +1,4 @@
-// Where a review thread works: the project's default workspace, bb's git worktree, or the
+// Where a review thread works: the project's default workspace, VesnALIA's git worktree, or the
 // server's own workspace (an environment provider, on the project's machine or a new one, or a
 // command that prints a path).
 import { z } from "zod";
@@ -6,7 +6,7 @@ import { shellQuote, type Runner } from "./adapters/exec";
 import type { Preset, ServerWorkspace } from "./config";
 import { ShuttleError } from "./ctx";
 import type { PrRow } from "./db/store";
-import type { BbPort, EnvironmentProviderInfo } from "./ports";
+import type { AliaPort, EnvironmentProviderInfo } from "./ports";
 import { renderTemplate } from "./templates";
 
 export type Workspace =
@@ -65,23 +65,23 @@ type InputsOwner = Pick<EnvironmentProviderInfo, "id" | "displayName" | "inputs"
 
 const named = (provider: Pick<InputsOwner, "id" | "displayName">) => `${provider.displayName} (${provider.id})`;
 
-/** The placeholders a check fills in, each a value bb would accept for its kind, so a pattern on a sha or a branch passes. */
+/** The placeholders a check fills in, each a value VesnALIA would accept for its kind, so a pattern on a sha or a branch passes. */
 const sampleVars = (server: string) => workspaceVars({ number: 1234, repo: "owner/repo", head_ref: "sample/branch", base: "main", head: "0123456789abcdef0123456789abcdef01234567", server });
 
 /**
- * Why bb would refuse these inputs, at `at` in the server's workspace, checked against the provider's JSON Schema with
+ * Why VesnALIA would refuse these inputs, at `at` in the server's workspace, checked against the provider's JSON Schema with
  * sample placeholder values. `emptyAsNone` says whether the port sends empty inputs as none, as it does for a machine.
  */
 function inputsProblems(at: string, provider: InputsOwner, inputs: Record<string, unknown>, server: string, emptyAsNone: boolean): string[] {
   if (provider.inputs === null) {
-    if (!emptyAsNone) return [`${at}: ${named(provider)} takes no inputs, and bb refuses the empty inputs Shuttle sends it`];
+    if (!emptyAsNone) return [`${at}: ${named(provider)} takes no inputs, and VesnALIA refuses the empty inputs Shuttle sends it`];
     return Object.keys(inputs).length === 0 ? [] : [`${at}: ${named(provider)} takes none`];
   }
   let schema: z.ZodType;
   try {
     schema = z.fromJSONSchema(provider.inputs as Parameters<typeof z.fromJSONSchema>[0]);
   } catch {
-    // bb still checks a schema zod cannot read when the review starts.
+    // VesnALIA still checks a schema zod cannot read when the review starts.
     return [];
   }
   const parsed = schema.safeParse(fillInputs(inputs, sampleVars(server)));
@@ -90,16 +90,16 @@ function inputsProblems(at: string, provider: InputsOwner, inputs: Record<string
 }
 
 /**
- * Where the server's reviews start, checked against the providers bb has now, for the server test. Throws with every
- * reason bb would refuse to start one there. Whether a provider has room is bb's answer when a review starts.
+ * Where the server's reviews start, checked against the providers VesnALIA has now, for the server test. Throws with every
+ * reason VesnALIA would refuse to start one there. Whether a provider has room is VesnALIA's answer when a review starts.
  */
-export async function checkWorkspace(port: Pick<BbPort, "environmentProviders" | "machineProviders">, server: string, workspace: ServerWorkspace | undefined): Promise<string> {
-  if (!workspace) return "bb's git worktree, on the machine with the project's checkout";
+export async function checkWorkspace(port: Pick<AliaPort, "environmentProviders" | "machineProviders">, server: string, workspace: ServerWorkspace | undefined): Promise<string> {
+  if (!workspace) return "VesnALIA's git worktree, on the machine with the project's checkout";
   if (workspace.kind === "command") return "a command prints the checkout's path; the test does not run it";
   const environments = await port.environmentProviders();
   const environment = environments.find((provider) => provider.id === workspace.provider);
   const ids = (providers: ReadonlyArray<{ id: string }>) => providers.map((provider) => provider.id).sort().join(", ") || "none";
-  if (!environment) throw new ShuttleError(`bb has no environment provider "${workspace.provider}"; it has ${ids(environments)}`);
+  if (!environment) throw new ShuttleError(`alia has no environment provider "${workspace.provider}"; it has ${ids(environments)}`);
   const problems: string[] = [];
   const { machine } = workspace;
   if (environment.machineProviderId !== null && machine?.provider !== environment.machineProviderId) {
@@ -110,7 +110,7 @@ export async function checkWorkspace(port: Pick<BbPort, "environmentProviders" |
   if (machine) {
     const machines = await port.machineProviders();
     const provider = machines.find((candidate) => candidate.id === machine.provider);
-    if (!provider) problems.push(`bb has no machine provider "${machine.provider}"; it has ${ids(machines)}`);
+    if (!provider) problems.push(`alia has no machine provider "${machine.provider}"; it has ${ids(machines)}`);
     else {
       problems.push(...inputsProblems("machine.inputs", provider, machine.inputs, server, true));
       where = `on a new ${provider.displayName} machine (${provider.id}) for each review`;

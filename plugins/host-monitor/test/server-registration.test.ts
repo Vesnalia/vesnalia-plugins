@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 
 import { type Fleet, type MachineSnapshot } from "../contract.ts";
 import { defaultDashboardConfig } from "../dashboard-config.ts";
 import plugin from "../server.ts";
 
-type HostRecord = Awaited<ReturnType<BbPluginApi["sdk"]["hosts"]["list"]>>[number];
+type HostRecord = Awaited<ReturnType<AliaPluginApi["sdk"]["hosts"]["list"]>>[number];
 
 function hostRecord(id: string, name: string, status: HostRecord["status"] = "connected"): HostRecord {
   return {
@@ -65,7 +65,7 @@ test("refresh represents every host, samples connected hosts, and isolates failu
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const fleet = await fake.harness.behavior.callRpc("refresh", { hostId: null }) as Fleet;
   assert.equal(fleet.machines[0]?.error, null, JSON.stringify(fake.harness.logEntries));
@@ -123,7 +123,7 @@ test("simultaneous fleet refreshes coalesce host calls", async (t) => {
     experimental_callHostRpc: () => pending,
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const first = fake.harness.behavior.callRpc("refresh", { hostId: null });
   const second = fake.harness.behavior.callRpc("refresh", { hostId: null });
@@ -147,7 +147,7 @@ test("sidebar summary lists hosts without starting samples", async (t) => {
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   assert.deepEqual(await fake.harness.behavior.callRpc("sidebarSummary", null), { connected: 1, total: 2 });
   assert.equal(fake.harness.inspection.experimental_hostRpcCalls.length, 0);
@@ -168,7 +168,7 @@ test("dashboard configuration is isolated by enrolled host and survives plugin r
   });
   const fake = factory();
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const alpha = defaultDashboardConfig();
   alpha.panels.reverse();
@@ -190,7 +190,7 @@ test("dashboard configuration is isolated by enrolled host and survives plugin r
 test("settings are passive in-page threshold guides", async (t) => {
   const fake = createFakePluginHost({ pluginId: "host-monitor", sdk: { hosts: { list: async () => [] } } });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
   const descriptors = fake.harness.inspection.registrations.settingsDescriptors;
   assert.equal(descriptors.cpuWarningPercent?.default, "90");
   assert.equal(descriptors.ramWarningPercent?.default, "90");
@@ -214,7 +214,7 @@ test("host monitor CLI rejects unknown open targets and malformed verbs", async 
     sdk: { hosts: { list: async () => [hostRecord("host-alpha", "Alpha")] } },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
   assert.equal((await fake.harness.behavior.runCli(["open", "missing"])).exitCode, 1);
   assert.equal((await fake.harness.behavior.runCli(["snapshot", "--bad"])).exitCode, 1);
 });

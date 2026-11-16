@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { ConfirmButton, useAction, useLoomWrite } from "./common";
 import type { TabBadge } from "./tab-badges";
 
@@ -7,7 +7,7 @@ const EDGE = { destructive: "border-l-destructive", warning: "border-l-warning" 
 
 /** At the top of a tab with a badge: what the badge counts, the items behind it, and what makes it go away. */
 export function BadgeNotice({ slug, tab, badge, onTicket }: { slug: string; tab: string; badge: TabBadge; onTicket(key: string): void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const ackBadge = useLoomWrite("ackBadge");
   const { busy, act } = useAction();
   const ack = badge.ack;

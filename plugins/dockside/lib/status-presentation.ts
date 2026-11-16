@@ -1,4 +1,4 @@
-import type { PluginSidebarThreadIndicator } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThreadIndicator } from "@vesnalia/plugin-sdk";
 
 export type ThreadStatusColorRole =
   | "workflow"

@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const PROVIDER_ID = "github-copilot-usage";
@@ -56,8 +56,8 @@ export const usageRpcContract = defineRpcContract({
   },
 });
 
-export default function plugin(bb: BbPluginApi): void {
-  bb.providers.register({
+export default function plugin(alia: AliaPluginApi): void {
+  alia.providers.register({
     id: PROVIDER_ID,
     displayName: "GitHub Copilot",
     icon: "Github",
@@ -82,9 +82,9 @@ export default function plugin(bb: BbPluginApi): void {
     composerActions: [],
   });
 
-  bb.rpc.register(usageRpcContract, {
+  alia.rpc.register(usageRpcContract, {
     [LIST_RESOURCES]: async () => ({
-      resources: (await bb.sdk.hosts.list())
+      resources: (await alia.sdk.hosts.list())
         .filter((host) => host.status === "connected")
         .map((host) => ({
           accountKey: null,
@@ -95,7 +95,7 @@ export default function plugin(bb: BbPluginApi): void {
         })),
     }),
     [GET_RESOURCE]: async ({ resourceId }) => {
-      const state = (await bb.sdk.system.usageLimits({ hostId: resourceId }))[PROVIDER_ID];
+      const state = (await alia.sdk.system.usageLimits({ hostId: resourceId }))[PROVIDER_ID];
       if (state === undefined) throw new Error("GitHub Copilot usage is unavailable on this host.");
       const base = { accountKey: null, observedAt: Date.now() };
       if (state.status === "ok") {
@@ -125,6 +125,6 @@ export default function plugin(bb: BbPluginApi): void {
     },
   }, {
     experimental_discoverable: true,
-    experimental_description: "Publishes GitHub Copilot resources for BB's Provider Usage plugin.",
+    experimental_description: "Publishes GitHub Copilot resources for VesnALIA's Provider Usage plugin.",
   });
 }

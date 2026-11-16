@@ -1,9 +1,9 @@
 /**
- * Each thread's choice of what Herald announces, read and written through bb:
+ * Each thread's choice of what Herald announces, read and written through VesnALIA:
  * the choice lives in Herald's plugin metadata on the thread, and a thread
  * without one inherits from the nearest thread above it that has one. The
  * rule itself is `shared/thread-choice.ts`; this module only gathers its
- * inputs, in as few calls as bb allows — one for the ancestors, one for every
+ * inputs, in as few calls as VesnALIA allows — one for the ancestors, one for every
  * thread's metadata — for the hooks (one thread per event) and for the thread
  * menu (every row on screen at once).
  */
@@ -19,7 +19,7 @@ function chunks<T>(items: readonly T[]): T[][] {
 export class ThreadChoices {
   constructor(private readonly port: ThreadChoicesPort) {}
 
-  /** The inputs for each of these threads that bb knows; unknown ids are left out. */
+  /** The inputs for each of these threads that VesnALIA knows; unknown ids are left out. */
   async inputs(threadIds: readonly string[]): Promise<Map<string, ChoiceInputs>> {
     const unique = [...new Set(threadIds)];
     const lineages: Array<{ threadId: string; ancestorIds: string[] }> = [];
@@ -32,7 +32,7 @@ export class ThreadChoices {
     return new Map(lineages.map(({ threadId, ancestorIds }) => [threadId, inputsFrom(threadId, ancestorIds, own)]));
   }
 
-  /** One thread's inputs; a thread bb does not know has no choice. */
+  /** One thread's inputs; a thread VesnALIA does not know has no choice. */
   async inputsOf(threadId: string): Promise<ChoiceInputs> {
     return (await this.inputs([threadId])).get(threadId) ?? NO_CHOICE;
   }

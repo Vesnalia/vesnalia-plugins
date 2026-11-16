@@ -4,9 +4,9 @@ Legend: ✅ done in this repo · ⏳ needs a live machine with Cua Driver · ☐
 
 ## M0 — Research (✅)
 
-- ✅ Read bb plugin SDK 0.4.16 surface: `registerTool` (image results,
+- ✅ Read VesnALIA plugin SDK 0.4.16 surface: `registerTool` (image results,
   `presentation.label`), `configure()` context (`provider.id`, `host.id`),
-  `bb.hosts.experimental_client`, host entry lifecycle, testing harnesses.
+  `alia.hosts.experimental_client`, host entry lifecycle, testing harnesses.
 - ✅ Confirm Claude Code, Codex, and Pi bridges accept dynamic plugin tools
   (`plugins/provider-*/src/bridge`).
 - ✅ Read Cua Driver docs: integration options, MCP tool catalog (56 tools),
@@ -26,15 +26,15 @@ Legend: ✅ done in this repo · ⏳ needs a live machine with Cua Driver · ☐
 - ✅ `app.tsx` settings section + test.
 - ✅ `skills/cua-computer-use/SKILL.md`.
 - ✅ Manifest, icon, LICENSE, NOTICE, README, CONTRIBUTING, CHANGELOG, CI.
-- ✅ `npm run check` green; `bb plugin build` emits server/app/host artifacts.
+- ✅ `npm run check` green; `alia plugin build` emits server/app/host artifacts.
 - ✅ Opt-in installer (`install` / `installState` host RPCs, `installChanged`
-  signal, two-step confirm in the UI, `bb cua install --yes`) and macOS
-  `grantPermissions` (`bb cua grant`) + tests.
+  signal, two-step confirm in the UI, `alia cua install --yes`) and macOS
+  `grantPermissions` (`alia cua grant`) + tests.
 
 ## M2 — Live validation (⏳, 1–2 days)
 
 - ⏳ Install Cua Driver on a macOS machine, grant permissions, run
-  `bb cua status` and confirm version/permission parsing against real
+  `alia cua status` and confirm version/permission parsing against real
   `permissions status --json` output; adjust `parsePermissions` keys.
 - ⏳ Confirm `cua-driver status` exit-code semantics for `daemonRunning`.
 - ⏳ Drive the tutorial task ("open Calculator, compute 6×7") from a Claude
@@ -44,8 +44,8 @@ Legend: ✅ done in this repo · ⏳ needs a live machine with Cua Driver · ☐
 - ⏳ Browser flow: `cua_get_browser_state` → `cua_browser_click` on Chrome.
 - ⏳ Remote machine: enroll a second host, run a thread there, confirm the
   host RPC path and idle disconnect (10 min) release the worker.
-- ⏳ Windows via WSL2 note: bb's daemon runs inside WSL2, so the Windows
-  desktop is not reachable from bb today. Document as unsupported unless the
+- ⏳ Windows via WSL2 note: VesnALIA's daemon runs inside WSL2, so the Windows
+  desktop is not reachable from VesnALIA today. Document as unsupported unless the
   daemon gains a native Windows path.
 - ⏳ Linux X11 pass on Ubuntu with AT-SPI.
 
@@ -53,7 +53,7 @@ Legend: ✅ done in this repo · ⏳ needs a live machine with Cua Driver · ☐
 
 - ☐ Create the public GitHub repository, push, tag `v0.1.0` (annotated).
 - ☐ Capture 2–3 screenshots ≥1200 px wide for `screenshots/cua-driver/`.
-- ☐ Fork `get-bb/marketplace`, add `entries/cua-driver.json` and the vendored
+- ☐ Fork `get-alia/marketplace`, add `entries/cua-driver.json` and the vendored
   icon (see `docs/MARKETPLACE.md`), run `npm ci && npm run build && npm test
   && npm run gate:v1 && npm run check`, open the PR.
 - ☐ Notify Cua (Discord / GitHub discussion) with a link; ask whether they
@@ -65,7 +65,7 @@ Legend: ✅ done in this repo · ⏳ needs a live machine with Cua Driver · ☐
   `configure()` parameter overrides.
 - ☐ Thread header chip (session state, stop button).
 - ☐ Trajectory recording panel with MP4 preview.
-- ☐ Upstream bb proposal: `provider.capabilities.supportsNativeComputerUse`.
+- ☐ Upstream VesnALIA proposal: `provider.capabilities.supportsNativeComputerUse`.
 - ☐ Per-project allowlist setting.
 - ☐ Optional in-process SDK path (`@trycua/cua-driver`) when the package is
   present on the machine, for lower latency than stdio.

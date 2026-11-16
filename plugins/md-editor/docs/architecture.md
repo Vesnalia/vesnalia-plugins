@@ -5,7 +5,7 @@ created: 2026-10-11
 updated: 2026-10-18
 status: active
 confidence: medium
-tags: [architecture, bb-plugin, markdown]
+tags: [architecture, alia-plugin, markdown]
 sources:
   - package.json
   - app.tsx
@@ -23,22 +23,22 @@ sources:
 
 # Architecture
 
-TL;DR: BB mounts a React file opener and a server plugin; the opener delegates file I/O to server RPC and composes CodeMirror, Tiptap, and Markdown-specific node views.
+TL;DR: VesnALIA mounts a React file opener and a server plugin; the opener delegates file I/O to server RPC and composes CodeMirror, Tiptap, and Markdown-specific node views.
 
 ## System Context
 
 ```mermaid
 C4Context
   title System Context
-  Person(user, "BB user", "Opens and edits Markdown")
-  System(bb, "BB", "Hosts plugin UI, RPC, navigation, and file APIs")
+  Person(user, "ALIA user", "Opens and edits Markdown")
+  System(alia, "ALIA", "Hosts plugin UI, RPC, navigation, and file APIs")
   System(plugin, "Markdown PRO", "Renders and edits Markdown files")
-  Rel(user, bb, "Opens file and edits document")
-  Rel(bb, plugin, "Mounts app and RPC plugin")
-  Rel(plugin, bb, "Calls file, preview, and navigation APIs")
+  Rel(user, alia, "Opens file and edits document")
+  Rel(alia, plugin, "Mounts app and RPC plugin")
+  Rel(plugin, alia, "Calls file, preview, and navigation APIs")
 ```
 
-The `bb` manifest declares `./app.tsx` and `./server.ts` as entry points; the server registers the RPC contract (`package.json:9-19`, `server.ts:65-78`).
+The `alia` manifest declares `./app.tsx` and `./server.ts` as entry points; the server registers the RPC contract (`package.json:9-19`, `server.ts:65-78`).
 
 ## Containers
 
@@ -49,19 +49,19 @@ C4Container
     Container(app, "File opener", "React", "Rich/source editing and save state")
     Container(rich, "Rich editor", "Tiptap", "Markdown nodes and views")
     Container(source, "Source editor", "CodeMirror", "Markdown and YAML text editing")
-    Container(server, "RPC handlers", "BB Plugin SDK", "Resolve, read, preview, and save files")
-    Container(resolver, "Location resolver", "Node path", "Map BB source to host and absolute path")
+    Container(server, "RPC handlers", "ALIA Plugin SDK", "Resolve, read, preview, and save files")
+    Container(resolver, "Location resolver", "Node path", "Map ALIA source to host and absolute path")
   }
-  System_Ext(bb, "BB APIs", "File, host, thread, environment, project, and navigation APIs")
+  System_Ext(alia, "ALIA APIs", "File, host, thread, environment, project, and navigation APIs")
   Rel(app, rich, "Mounts rich editor")
   Rel(app, source, "Mounts source editor")
   Rel(app, server, "Calls typed RPC")
   Rel(server, resolver, "Resolves file source")
-  Rel(server, bb, "Uses SDK")
-  Rel(app, bb, "Uses navigation and composer")
+  Rel(server, alia, "Uses SDK")
+  Rel(app, alia, "Uses navigation and composer")
 ```
 
-The React opener imports the rich/source editors and calls RPC (`app.tsx:7-22`, `app.tsx:193-212`). The server handler delegates source resolution to `locate` and file operations to BB SDK methods (`server.ts:77-123`, `locate.ts:91-132`).
+The React opener imports the rich/source editors and calls RPC (`app.tsx:7-22`, `app.tsx:193-212`). The server handler delegates source resolution to `locate` and file operations to VesnALIA SDK methods (`server.ts:77-123`, `locate.ts:91-132`).
 
 ## Building Blocks
 
@@ -75,12 +75,12 @@ The React opener imports the rich/source editors and calls RPC (`app.tsx:7-22`, 
 
 ```mermaid
 sequenceDiagram
-  participant BB as BB file opener
+  participant ALIA as ALIA file opener
   participant App as MarkdownFileOpener
   participant RPC as Plugin RPC
   participant Locate as locate
-  participant Files as BB file API
-  BB->>App: path and opener source
+  participant Files as ALIA file API
+  ALIA->>App: path and opener source
   App->>RPC: open(request)
   RPC->>Locate: resolve(source, path)
   Locate-->>RPC: host and absolute path
@@ -98,7 +98,7 @@ sequenceDiagram
   participant App as MarkdownFileOpener
   participant RPC as Plugin RPC
   participant Locate as locate
-  participant Files as BB file API
+  participant Files as ALIA file API
   App->>App: compose content and expected hash
   App->>RPC: save(content, expectedSha256)
   RPC->>Locate: resolve(source, path)

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.ts";
 import { createSoulStore } from "./store.ts";
 
@@ -32,14 +32,14 @@ function eventLog(initial: Row[] = []) {
 }
 
 async function setup(initial: Row[] = []) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
   const log = eventLog(initial);
   let status: Status = "idle";
   harness.inspection.sdk.stub("threads.events.list", ((args: { types?: string[]; limit?: string }) =>
     log.list(args)) as (...args: never[]) => unknown);
   harness.inspection.sdk.stub("threads.get", (() => ({ status })) as (...args: never[]) => unknown);
   harness.inspection.sdk.stub("threads.send", (() => ({ kind: "sent" })) as (...args: never[]) => unknown);
-  await plugin(bb);
+  await plugin(alia);
   const { soul } = (await harness.behavior.callRpc("souls_create", {
     draft: { name: "Hazel", role: "Reviews diffs before merge.", boundaries: ["Never approve a change she has not run."] },
     origin: "manual",
@@ -311,12 +311,12 @@ test("a pill whose message never arrives leaves the reminder owed", async (t) =>
 test("a compaction while the plugin was down still counts once it is back", async (t) => {
   const bound = 1_800_000_000_000;
   t.mock.timers.enable({ apis: ["Date"], now: bound });
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
   // The soul was bound, and Souls was watching, before it went down.
-  const earlier = createSoulStore(bb, bb.storage.database());
+  const earlier = createSoulStore(alia, alia.storage.database());
   const soul = earlier.insert({ name: "Hazel", boundaries: ["Never approve a change she has not run."] }, "manual");
   earlier.select("thread-1", soul.id);
-  await bb.storage.kv.set("watching-since", bound);
+  await alia.storage.kv.set("watching-since", bound);
   const log = eventLog([
     { seq: 1, type: "thread/compacted", createdAt: bound + 60_000 },
     { seq: 2, type: "item/started", createdAt: bound + 61_000, item: "commandExecution" },
@@ -328,7 +328,7 @@ test("a compaction while the plugin was down still counts once it is back", asyn
   try {
     // It comes back after the compaction.
     t.mock.timers.setTime(bound + 120_000);
-    await plugin(bb);
+    await plugin(alia);
     await harness.behavior.emitThreadEvent("experimental_thread.events", {
       thread: makeThreadResponse({ id: "thread-1", status: "active" }),
       sequence: 1,
@@ -340,12 +340,12 @@ test("a compaction while the plugin was down still counts once it is back", asyn
 });
 
 test("a compaction state an older build saved never breaks the banner's read", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
   // An early build saved no event sequence.
-  await bb.storage.kv.set("compaction:thread-1", { seenAt: 5, pending: true });
+  await alia.storage.kv.set("compaction:thread-1", { seenAt: 5, pending: true });
   harness.inspection.sdk.stub("threads.events.list", (() => []) as (...args: never[]) => unknown);
   try {
-    await plugin(bb);
+    await plugin(alia);
     assert.deepEqual(await harness.behavior.callRpc("souls_compaction_get", { threadId: "thread-1" }), { pending: false, seq: null });
   } finally {
     await harness.lifecycle.dispose();

@@ -15,8 +15,8 @@
 
 ## For agents and scripts
 
-`bb ultra-launcher status`, `claim`, `release`, `presets` and `restore-defaults` manage the shortcut and the presets from a terminal. A bundled skill explains each one.
+`alia ultra-launcher status`, `claim`, `release`, `presets` and `restore-defaults` manage the shortcut and the presets from a terminal. A bundled skill explains each one.
 
 ## Requirements
 
-BB 0.46 or later. The plugin takes over Cmd+N and moves BB's own New thread shortcut to Cmd+Shift+O. Turn off **Take over Ctrl/Cmd+N** in the plugin settings to give the shortcut back. Switching presets resets the environment choice, so choose the preset first. The plugin uses no external service or account.
+VesnALIA 0.46 or later. The plugin takes over Cmd+N and moves VesnALIA's own New thread shortcut to Cmd+Shift+O. Turn off **Take over Ctrl/Cmd+N** in the plugin settings to give the shortcut back. Switching presets resets the environment choice, so choose the preset first. The plugin uses no external service or account.

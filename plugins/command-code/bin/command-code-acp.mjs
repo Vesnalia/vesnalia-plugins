@@ -3,7 +3,7 @@
  * ACP agent for Command Code.
  *
  * Speaks the Agent Client Protocol on stdio and drives `cmd -p
- * --output-format json` underneath, so any ACP client (BB, Zed, JetBrains,
+ * --output-format json` underneath, so any ACP client (VesnALIA, Zed, JetBrains,
  * Neovim) can run Command Code.
  */
 

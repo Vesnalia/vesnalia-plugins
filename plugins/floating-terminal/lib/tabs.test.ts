@@ -141,7 +141,7 @@ describe("tabsReducer — snapshot ordering", () => {
     expect(synced(before, 2, ["a", "b"]).activeId).toBe("b");
   });
 
-  it("adopts a tab opened by another bb client", () => {
+  it("adopts a tab opened by another VesnALIA client", () => {
     const state = synced(synced(emptyTabs, 1, ["a"]), 2, ["a", "elsewhere"]);
     expect(ids(state)).toEqual(["a", "elsewhere"]);
   });

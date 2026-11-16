@@ -10,7 +10,7 @@ import {
   sep,
 } from "node:path";
 import { promisify } from "node:util";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import {
   hostContract,
   MAX_ATTACHMENT_BYTES,

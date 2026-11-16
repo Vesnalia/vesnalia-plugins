@@ -4,18 +4,18 @@ import {
   createFakePluginHost,
   makeMessageDispatchHookContext,
   makePluginAgentConfigurationContext,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.ts";
 import type { EvalRun } from "./eval.ts";
 
 type Harness = ReturnType<typeof createFakePluginHost>["harness"];
 
 async function load(): Promise<Harness> {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "souls",
     agentSkillIds: ["souls"],
   });
-  await plugin(bb);
+  await plugin(alia);
   return harness;
 }
 
@@ -257,7 +257,7 @@ test("the optional behavioral probe is bounded, explicitly authorized and separa
     assert.equal(run.mode, "delegation");
     assert.equal(spawns.length, 2);
     assert.ok(spawns.every((args) => args.prompt === run.prompt));
-    assert.match(run.prompt, /exactly one BB child/);
+    assert.match(run.prompt, /exactly one ALIA child/);
     assert.match(run.prompt, /independently verify/);
     assert.match(run.prompt, /17 × 19/);
     const config = await harness.behavior.resolveAgentConfiguration(

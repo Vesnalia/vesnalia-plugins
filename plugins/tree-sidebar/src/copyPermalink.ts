@@ -2,7 +2,7 @@
  * Copying a link, and saying so.
  *
  * Shared by the two surfaces that offer it — the sidebar's own row menu and the
- * item this plugin injects into bb's thread menu — so a link copied from either
+ * item this plugin injects into VesnALIA's thread menu — so a link copied from either
  * place is the same string and reports itself the same way.
  */
 import { toast } from "sonner";
@@ -10,7 +10,7 @@ import { toast } from "sonner";
 /**
  * Write text to the clipboard.
  *
- * The async Clipboard API needs a secure context, which bb always has: the
+ * The async Clipboard API needs a secure context, which VesnALIA always has: the
  * desktop app loads from `http://127.0.0.1`, treated as secure, and remote
  * access is over HTTPS. It can still be refused — a browser tab that has lost
  * focus is the usual way — so the deprecated `execCommand` path stays as a

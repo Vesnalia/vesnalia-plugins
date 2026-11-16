@@ -1,14 +1,14 @@
 /**
  * The RPCs between the app and the server. The server registers handlers for it (`server.ts`); the app
  * calls through `useRpc<typeof rpcContract>()` and reads the fleet with `experimental_useRpcQuery`, which
- * takes the contract as a value. So this module must not import the SDK at run time: bb provides the SDK
+ * takes the contract as a value. So this module must not import the SDK at run time: VesnALIA provides the SDK
  * root to the server bundle only, and a git install builds the app without it. `defineRpcContract` only
  * returns its argument; `satisfies` gives the same checks.
  *
  * Methods that take nothing take `{}`; methods that answer nothing answer `null`. A refusal is the
  * handler's own sentence, which the panel shows as-is.
  */
-import type { PluginRpcContract } from "@get-bb/plugin-sdk";
+import type { PluginRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { FleetSchema, SuggestionSchema, WatchNoteSchema, WatchSummarySchema } from "./types";

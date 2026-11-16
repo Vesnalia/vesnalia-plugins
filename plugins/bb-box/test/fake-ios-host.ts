@@ -18,7 +18,7 @@ const IOS_DEVICE = (model: string, native: string) => ({
 });
 export const IOS_HOST_DEVICES = [IOS_DEVICE("iPhone 18 Pro", "com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro"), IOS_DEVICE("iPhone 17", "com.apple.CoreSimulator.SimDeviceType.iPhone-17")];
 export const IOS_HOST_FAKES: TartBackendOptions = { sshBinary: FAKE_SSH_BINARY, sleep: async () => {}, readyTimeoutMs: 20_000, macHelper: FAKE_MAC_HELPER, fillQuietMs: 0 };
-export const IOS_HOST_SETTINGS = { "tart-ios-image": "bb-box-ios", "tart-ios-hosts-on": true, "tart-ios-hosts-most": 4, "tart-ios-hosts-ahead": 0 };
+export const IOS_HOST_SETTINGS = { "tart-ios-image": "alia-box-ios", "tart-ios-hosts-on": true, "tart-ios-hosts-most": 4, "tart-ios-hosts-ahead": 0 };
 export const IOS_IMAGE_BUILD = "build.20261027-010000-1111";
 
 function hostVmHome(home: string, device: FakeDeviceHost, sshDir: string): void {
@@ -48,8 +48,8 @@ export function fakeIosHostMac() {
   const mac = ssh.home(FAKE_MAC);
   fakeMacTools(mac);
   addImage(mac);
-  addImage(mac, "bb-box-ios");
-  writeFileSync(join(mac, ".bb-box", "tart", "images", "bb-box-ios.json"), `${imageRecord("ios", { build: IOS_IMAGE_BUILD, base: "build.20261003-021500", devices: IOS_HOST_DEVICES, tools: { idb_companion: "1.7.7" } })}\n`);
+  addImage(mac, "alia-box-ios");
+  writeFileSync(join(mac, ".alia-box", "tart", "images", "alia-box-ios.json"), `${imageRecord("ios", { build: IOS_IMAGE_BUILD, base: "build.20261003-021500", devices: IOS_HOST_DEVICES, tools: { idb_companion: "1.7.7" } })}\n`);
   const device = fakeDeviceHost();
   assert.equal(device.run(["carry"]).status, 0);
   for (let n = 2; n < 12; n++) hostVmHome(ssh.home(`192.168.64.${n}`), device, ssh.dir);

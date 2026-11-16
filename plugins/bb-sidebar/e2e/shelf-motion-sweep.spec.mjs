@@ -71,7 +71,7 @@ test("no shelf or row jumps for any shelf toggle sequence, docked or not", async
       for (const name of ["Pinned", "Active"]) await page.evaluate(probeShelfToggle, name);
       for (const target of ["Pinned", "Active", "Snoozed"]) {
         await page.evaluate(() => {
-          const row = document.querySelector('[data-bb-sidebar-root] section[aria-label="Active"] li');
+          const row = document.querySelector('[data-alia-sidebar-root] section[aria-label="Active"] li');
           const grow = document.createElement("div");
           grow.dataset.sweepGrowth = "";
           grow.style.height = "37px";

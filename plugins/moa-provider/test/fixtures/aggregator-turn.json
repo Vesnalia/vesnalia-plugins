@@ -97,7 +97,7 @@
     "id": "dac2973c6e-i1",
     "summary": [],
     "content": [
-     "For building this MOA plugin for BB, I should load the bb-plugin-authoring skill since it's directly relevant, and also check the Hermes doc page for reference before starting.\n\n"
+     "For building this MOA plugin for VesnALIA, I should load the alia-plugin-authoring skill since it's directly relevant, and also check the Hermes doc page for reference before starting.\n\n"
     ]
    }
   }
@@ -132,8 +132,8 @@
     "id": "dac2973c6e-i2",
     "tool": "Skill",
     "arguments": {
-     "skill": "bb-global-skills:bb-plugin-authoring",
-     "args": "Build a Mixture-of-Agents (MoA) plugin for BB that adds a settings page and a new Provider in the model picker, similar to Hermes Agent's MoA feature."
+     "skill": "alia-global-skills:alia-plugin-authoring",
+     "args": "Build a Mixture-of-Agents (MoA) plugin for VesnALIA that adds a settings page and a new Provider in the model picker, similar to Hermes Agent's MoA feature."
     },
     "status": "pending",
     "presentation": {
@@ -144,7 +144,7 @@
      "icon": {
       "glyph": "Zap"
      },
-     "title": "bb-global-skills:bb-plugin-authoring"
+     "title": "alia-global-skills:alia-plugin-authoring"
     }
    }
   }
@@ -163,11 +163,11 @@
     "id": "dac2973c6e-i2",
     "tool": "Skill",
     "arguments": {
-     "skill": "bb-global-skills:bb-plugin-authoring",
-     "args": "Build a Mixture-of-Agents (MoA) plugin for BB that adds a settings page and a new Provider in the model picker, similar to Hermes Agent's MoA feature."
+     "skill": "alia-global-skills:alia-plugin-authoring",
+     "args": "Build a Mixture-of-Agents (MoA) plugin for VesnALIA that adds a settings page and a new Provider in the model picker, similar to Hermes Agent's MoA feature."
     },
     "status": "completed",
-    "result": "Launching skill: bb-global-skills:bb-plugin-authoring",
+    "result": "Launching skill: alia-global-skills:alia-plugin-authoring",
     "presentation": {
      "label": {
       "pending": "Loading skill",
@@ -176,7 +176,7 @@
      "icon": {
       "glyph": "Zap"
      },
-     "title": "bb-global-skills:bb-plugin-authoring"
+     "title": "alia-global-skills:alia-plugin-authoring"
     }
    }
   }
@@ -400,7 +400,7 @@
    "item": {
     "type": "commandExecution",
     "id": "dac2973c6e-i6",
-    "command": "SK=/tmp/bb-provider-bridge-provider-claude-code-99Nz8p/skills/bb-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skills/bb-plugin-authoring; ls -la $SK $SK/references; wc -l $SK/references/*; pwd; ls -la; which bb; bb status 2>&1 | head -30; bb --version",
+    "command": "SK=/tmp/alia-provider-bridge-provider-claude-code-99Nz8p/skills/alia-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skills/alia-plugin-authoring; ls -la $SK $SK/references; wc -l $SK/references/*; pwd; ls -la; which VesnALIA; VesnALIA status 2>&1 | head -30; VesnALIA --version",
     "cwd": "",
     "status": "pending",
     "approvalStatus": null,
@@ -412,7 +412,7 @@
      "icon": {
       "glyph": "Terminal"
      },
-     "title": "SK=/tmp/bb-provider-bridge-provider-claude-code-99Nz8p/skills/bb-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skill\u2026"
+     "title": "SK=/tmp/alia-provider-bridge-provider-claude-code-99Nz8p/skills/alia-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skill\u2026"
     }
    }
   }
@@ -458,7 +458,7 @@
    "item": {
     "type": "commandExecution",
     "id": "dac2973c6e-i6",
-    "command": "SK=/tmp/bb-provider-bridge-provider-claude-code-99Nz8p/skills/bb-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skills/bb-plugin-authoring; ls -la $SK $SK/references; wc -l $SK/references/*; pwd; ls -la; which bb; bb status 2>&1 | head -30; bb --version",
+    "command": "SK=/tmp/alia-provider-bridge-provider-claude-code-99Nz8p/skills/alia-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skills/alia-plugin-authoring; ls -la $SK $SK/references; wc -l $SK/references/*; pwd; ls -la; which VesnALIA; VesnALIA status 2>&1 | head -30; VesnALIA --version",
     "cwd": "",
     "status": "completed",
     "approvalStatus": null,
@@ -472,7 +472,7 @@
      "icon": {
       "glyph": "Terminal"
      },
-     "title": "SK=/tmp/bb-provider-bridge-provider-claude-code-99Nz8p/skills/bb-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skill\u2026"
+     "title": "SK=/tmp/alia-provider-bridge-provider-claude-code-99Nz8p/skills/alia-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skill\u2026"
     }
    }
   }
@@ -570,7 +570,7 @@
    "item": {
     "type": "commandExecution",
     "id": "dac2973c6e-i8",
-    "command": "SK=/tmp/bb-provider-bridge-provider-claude-code-99Nz8p/skills/bb-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skills/bb-plugin-authoring/references; cat $SK/quickstart.md $SK/providers.md",
+    "command": "SK=/tmp/alia-provider-bridge-provider-claude-code-99Nz8p/skills/alia-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skills/alia-plugin-authoring/references; cat $SK/quickstart.md $SK/providers.md",
     "cwd": "",
     "status": "pending",
     "approvalStatus": null,
@@ -582,7 +582,7 @@
      "icon": {
       "glyph": "Terminal"
      },
-     "title": "SK=/tmp/bb-provider-bridge-provider-claude-code-99Nz8p/skills/bb-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skill\u2026"
+     "title": "SK=/tmp/alia-provider-bridge-provider-claude-code-99Nz8p/skills/alia-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skill\u2026"
     }
    }
   }
@@ -599,7 +599,7 @@
    "item": {
     "type": "commandExecution",
     "id": "dac2973c6e-i8",
-    "command": "SK=/tmp/bb-provider-bridge-provider-claude-code-99Nz8p/skills/bb-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skills/bb-plugin-authoring/references; cat $SK/quickstart.md $SK/providers.md",
+    "command": "SK=/tmp/alia-provider-bridge-provider-claude-code-99Nz8p/skills/alia-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skills/alia-plugin-authoring/references; cat $SK/quickstart.md $SK/providers.md",
     "cwd": "",
     "status": "completed",
     "approvalStatus": null,
@@ -613,7 +613,7 @@
      "icon": {
       "glyph": "Terminal"
      },
-     "title": "SK=/tmp/bb-provider-bridge-provider-claude-code-99Nz8p/skills/bb-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skill\u2026"
+     "title": "SK=/tmp/alia-provider-bridge-provider-claude-code-99Nz8p/skills/alia-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skill\u2026"
     }
    }
   }
@@ -710,7 +710,7 @@
   "data": {
    "providerThreadId": "407c7cb3-02e9-4030-bcba-71e32a3e0342",
    "itemId": "dac2973c6e-i9",
-   "delta": "Or the aggregator could implement its own agent loop, calling reference models via raw APIs or BB's helper AI services and folding their outputs into its prompt, though I'm unsure if a plugin bridge can delegate directly to another provider's bridge \u2014 maybe an ACP bridge would let the aggregator be "
+   "delta": "Or the aggregator could implement its own agent loop, calling reference models via raw APIs or VesnALIA's helper AI services and folding their outputs into its prompt, though I'm unsure if a plugin bridge can delegate directly to another provider's bridge \u2014 maybe an ACP bridge would let the aggregator be "
   }
  },
  {
@@ -743,7 +743,7 @@
     "id": "dac2973c6e-i9",
     "summary": [],
     "content": [
-     "This matters since a provider needs to speak the Provider Bridge Protocol, and BB providers are agent harnesses like Claude Code or Codex rather than raw model APIs. So I'm considering how a MoA aggregator would fit \u2014 maybe it needs its own bridge that wraps around another provider's bridge, like us"
+     "This matters since a provider needs to speak the Provider Bridge Protocol, and VesnALIA providers are agent harnesses like Claude Code or Codex rather than raw model APIs. So I'm considering how a MoA aggregator would fit \u2014 maybe it needs its own bridge that wraps around another provider's bridge, like us"
     ]
    }
   }
@@ -776,7 +776,7 @@
    "item": {
     "type": "commandExecution",
     "id": "dac2973c6e-i10",
-    "command": "SK=/tmp/bb-provider-bridge-provider-claude-code-99Nz8p/skills/bb-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skills/bb-plugin-authoring/references; cat $SK/provider-bridge-api-index.md $SK/backend-cli-agents.md",
+    "command": "SK=/tmp/alia-provider-bridge-provider-claude-code-99Nz8p/skills/alia-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skills/alia-plugin-authoring/references; cat $SK/provider-bridge-api-index.md $SK/backend-cli-agents.md",
     "cwd": "",
     "status": "pending",
     "approvalStatus": null,
@@ -788,7 +788,7 @@
      "icon": {
       "glyph": "Terminal"
      },
-     "title": "SK=/tmp/bb-provider-bridge-provider-claude-code-99Nz8p/skills/bb-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skill\u2026"
+     "title": "SK=/tmp/alia-provider-bridge-provider-claude-code-99Nz8p/skills/alia-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skill\u2026"
     }
    }
   }
@@ -805,7 +805,7 @@
    "item": {
     "type": "commandExecution",
     "id": "dac2973c6e-i10",
-    "command": "SK=/tmp/bb-provider-bridge-provider-claude-code-99Nz8p/skills/bb-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skills/bb-plugin-authoring/references; cat $SK/provider-bridge-api-index.md $SK/backend-cli-agents.md",
+    "command": "SK=/tmp/alia-provider-bridge-provider-claude-code-99Nz8p/skills/alia-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skills/alia-plugin-authoring/references; cat $SK/provider-bridge-api-index.md $SK/backend-cli-agents.md",
     "cwd": "",
     "status": "completed",
     "approvalStatus": null,
@@ -819,7 +819,7 @@
      "icon": {
       "glyph": "Terminal"
      },
-     "title": "SK=/tmp/bb-provider-bridge-provider-claude-code-99Nz8p/skills/bb-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skill\u2026"
+     "title": "SK=/tmp/alia-provider-bridge-provider-claude-code-99Nz8p/skills/alia-claude-skill-plugins-r8g83N/7d0a47cf782ff445/skill\u2026"
     }
    }
   }
@@ -877,7 +877,7 @@
   "data": {
    "providerThreadId": "407c7cb3-02e9-4030-bcba-71e32a3e0342",
    "itemId": "dac2973c6e-i11",
-   "delta": "side BB, since BB providers are full agent harnesses rather than simple text"
+   "delta": "side VesnALIA, since VesnALIA providers are full agent harnesses rather than simple text"
   }
  },
  {
@@ -903,7 +903,7 @@
   "data": {
    "providerThreadId": "407c7cb3-02e9-4030-bcba-71e32a3e0342",
    "itemId": "dac2973c6e-i11",
-   "delta": " seems to be treating an existing BB-capable agent ("
+   "delta": " seems to be treating an existing ALIA-capable agent ("
   }
  },
  {
@@ -1306,7 +1306,7 @@
   "data": {
    "providerThreadId": "407c7cb3-02e9-4030-bcba-71e32a3e0342",
    "itemId": "dac2973c6e-i11",
-   "delta": " instead. I want to check ~/.bb/plugins and the bundled first-party providers like claude-code, codex, and pi to understand their bridge architecture, and figure out if a child bridge process proxy approach is viable.\n\nThis is a significant design decision, so I should explore the actual filesystem "
+   "delta": " instead. I want to check ~/.vesnalia/plugins and the bundled first-party providers like claude-code, codex, and pi to understand their bridge architecture, and figure out if a child bridge process proxy approach is viable.\n\nThis is a significant design decision, so I should explore the actual filesystem "
   }
  },
  {
@@ -1339,7 +1339,7 @@
     "id": "dac2973c6e-i11",
     "summary": [],
     "content": [
-     "I'm thinking through how a MoA provider would actually work inside BB, since BB providers are full agent harnesses rather than simple text completions. The natural mapping seems to be treating an existing BB-capable agent (like Claude Code or Codex) as the aggregator, with references feeding convers"
+     "I'm thinking through how a MoA provider would actually work inside VesnALIA, since VesnALIA providers are full agent harnesses rather than simple text completions. The natural mapping seems to be treating an existing ALIA-capable agent (like Claude Code or Codex) as the aggregator, with references feeding convers"
     ]
    }
   }
@@ -1372,7 +1372,7 @@
    "item": {
     "type": "commandExecution",
     "id": "dac2973c6e-i12",
-    "command": "ls ~/.bb/plugins/ | head -80; echo ---; ls /Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/ ; echo ---; ls /Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/ | head -50",
+    "command": "ls ~/.vesnalia/plugins/ | head -80; echo ---; ls /Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/ ; echo ---; ls /Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/ | head -50",
     "cwd": "",
     "status": "pending",
     "approvalStatus": null,
@@ -1384,7 +1384,7 @@
      "icon": {
       "glyph": "Terminal"
      },
-     "title": "ls ~/.bb/plugins/ | head -80; echo ---; ls /Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/ ; echo ---; ls /Applications/bb.app/C\u2026"
+     "title": "ls ~/.vesnalia/plugins/ | head -80; echo ---; ls /Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/ ; echo ---; ls /Applications/alia.app/C\u2026"
     }
    }
   }
@@ -1401,7 +1401,7 @@
    "item": {
     "type": "commandExecution",
     "id": "dac2973c6e-i12",
-    "command": "ls ~/.bb/plugins/ | head -80; echo ---; ls /Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/ ; echo ---; ls /Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/ | head -50",
+    "command": "ls ~/.vesnalia/plugins/ | head -80; echo ---; ls /Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/ ; echo ---; ls /Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/ | head -50",
     "cwd": "",
     "status": "completed",
     "approvalStatus": null,
@@ -1415,7 +1415,7 @@
      "icon": {
       "glyph": "Terminal"
      },
-     "title": "ls ~/.bb/plugins/ | head -80; echo ---; ls /Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/ ; echo ---; ls /Applications/bb.app/C\u2026"
+     "title": "ls ~/.vesnalia/plugins/ | head -80; echo ---; ls /Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/ ; echo ---; ls /Applications/alia.app/C\u2026"
     }
    }
   }
@@ -1446,7 +1446,7 @@
   "data": {
    "providerThreadId": "407c7cb3-02e9-4030-bcba-71e32a3e0342",
    "itemId": "dac2973c6e-i13",
-   "delta": "Reading the BB plugin"
+   "delta": "Reading the VesnALIA plugin"
   }
  },
  {
@@ -1490,7 +1490,7 @@
    "item": {
     "type": "agentMessage",
     "id": "dac2973c6e-i13",
-    "text": "Reading the BB plugin SDK and the existing provider plugins to work out how a MoA provider can plug into the model picker."
+    "text": "Reading the VesnALIA plugin SDK and the existing provider plugins to work out how a MoA provider can plug into the model picker."
    }
   }
  },
@@ -1522,7 +1522,7 @@
    "item": {
     "type": "commandExecution",
     "id": "dac2973c6e-i14",
-    "command": "cd ~/.bb/plugins; for d in provider-acp provider-pi provider-claude-code qwen-code muse-code google-antigravity-acp pi-workflows; do echo \"=== $d\"; ls $d; done; echo; bb plugin list 2>&1 | head -80",
+    "command": "cd ~/.vesnalia/plugins; for d in provider-acp provider-pi provider-claude-code qwen-code muse-code google-antigravity-acp pi-workflows; do echo \"=== $d\"; ls $d; done; echo; VesnALIA plugin list 2>&1 | head -80",
     "cwd": "",
     "status": "pending",
     "approvalStatus": null,
@@ -1534,7 +1534,7 @@
      "icon": {
       "glyph": "Terminal"
      },
-     "title": "cd ~/.bb/plugins; for d in provider-acp provider-pi provider-claude-code qwen-code muse-code google-antigravity-acp pi-workflows; do echo \"=== $d\"; ls $d; done\u2026"
+     "title": "cd ~/.vesnalia/plugins; for d in provider-acp provider-pi provider-claude-code qwen-code muse-code google-antigravity-acp pi-workflows; do echo \"=== $d\"; ls $d; done\u2026"
     }
    }
   }
@@ -1551,7 +1551,7 @@
    "item": {
     "type": "commandExecution",
     "id": "dac2973c6e-i14",
-    "command": "cd ~/.bb/plugins; for d in provider-acp provider-pi provider-claude-code qwen-code muse-code google-antigravity-acp pi-workflows; do echo \"=== $d\"; ls $d; done; echo; bb plugin list 2>&1 | head -80",
+    "command": "cd ~/.vesnalia/plugins; for d in provider-acp provider-pi provider-claude-code qwen-code muse-code google-antigravity-acp pi-workflows; do echo \"=== $d\"; ls $d; done; echo; VesnALIA plugin list 2>&1 | head -80",
     "cwd": "",
     "status": "completed",
     "approvalStatus": null,
@@ -1565,7 +1565,7 @@
      "icon": {
       "glyph": "Terminal"
      },
-     "title": "cd ~/.bb/plugins; for d in provider-acp provider-pi provider-claude-code qwen-code muse-code google-antigravity-acp pi-workflows; do echo \"=== $d\"; ls $d; done\u2026"
+     "title": "cd ~/.vesnalia/plugins; for d in provider-acp provider-pi provider-claude-code qwen-code muse-code google-antigravity-acp pi-workflows; do echo \"=== $d\"; ls $d; done\u2026"
     }
    }
   }
@@ -1598,7 +1598,7 @@
    "item": {
     "type": "commandExecution",
     "id": "dac2973c6e-i15",
-    "command": "bb plugin list 2>&1 | sed -n '80,400p' | grep -E '^[a-z]|source' | paste - - | grep -iE 'provider|qwen|muse|pi|acp|antigravity|ultragoal|joshua|cascade|rodeo|employees|gym|shepherd' ",
+    "command": "alia plugin list 2>&1 | sed -n '80,400p' | grep -E '^[a-z]|source' | paste - - | grep -iE 'provider|qwen|muse|pi|acp|antigravity|ultragoal|joshua|cascade|rodeo|employees|gym|shepherd' ",
     "cwd": "",
     "status": "pending",
     "approvalStatus": null,
@@ -1610,7 +1610,7 @@
      "icon": {
       "glyph": "Terminal"
      },
-     "title": "bb plugin list 2>&1 | sed -n '80,400p' | grep -E '^[a-z]|source' | paste - - | grep -iE 'provider|qwen|muse|pi|acp|antigravity|ultragoal|joshua|cascade|rodeo|e\u2026"
+     "title": "alia plugin list 2>&1 | sed -n '80,400p' | grep -E '^[a-z]|source' | paste - - | grep -iE 'provider|qwen|muse|pi|acp|antigravity|ultragoal|joshua|cascade|rodeo|e\u2026"
     }
    }
   }
@@ -1627,7 +1627,7 @@
    "item": {
     "type": "commandExecution",
     "id": "dac2973c6e-i15",
-    "command": "bb plugin list 2>&1 | sed -n '80,400p' | grep -E '^[a-z]|source' | paste - - | grep -iE 'provider|qwen|muse|pi|acp|antigravity|ultragoal|joshua|cascade|rodeo|employees|gym|shepherd' ",
+    "command": "alia plugin list 2>&1 | sed -n '80,400p' | grep -E '^[a-z]|source' | paste - - | grep -iE 'provider|qwen|muse|pi|acp|antigravity|ultragoal|joshua|cascade|rodeo|employees|gym|shepherd' ",
     "cwd": "",
     "status": "completed",
     "approvalStatus": null,
@@ -1641,7 +1641,7 @@
      "icon": {
       "glyph": "Terminal"
      },
-     "title": "bb plugin list 2>&1 | sed -n '80,400p' | grep -E '^[a-z]|source' | paste - - | grep -iE 'provider|qwen|muse|pi|acp|antigravity|ultragoal|joshua|cascade|rodeo|e\u2026"
+     "title": "alia plugin list 2>&1 | sed -n '80,400p' | grep -E '^[a-z]|source' | paste - - | grep -iE 'provider|qwen|muse|pi|acp|antigravity|ultragoal|joshua|cascade|rodeo|e\u2026"
     }
    }
   }
@@ -1752,7 +1752,7 @@
    "item": {
     "type": "commandExecution",
     "id": "dac2973c6e-i17",
-    "command": "B=/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules; ls $B/@bb; ls $B/bb-app/server $B/bb-app/dist 2>/dev/null | head -40; find $B -maxdepth 4 -type d -name 'plugin-sdk*' 2>/dev/null | head; find / -maxdepth 6 -type d -path '*get-bb/plugin-sdk' 2>/dev/null | head",
+    "command": "B=/Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules; ls $B/@alia; ls $B/alia-app/server $B/alia-app/dist 2>/dev/null | head -40; find $B -maxdepth 4 -type d -name 'plugin-sdk*' 2>/dev/null | head; find / -maxdepth 6 -type d -path '*get-alia/plugin-sdk' 2>/dev/null | head",
     "cwd": "",
     "status": "pending",
     "approvalStatus": null,
@@ -1764,7 +1764,7 @@
      "icon": {
       "glyph": "Terminal"
      },
-     "title": "B=/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules; ls $B/@bb; ls $B/bb-app/server $B/bb-app/dist 2>/dev/null | head -40; find $B -maxdep\u2026"
+     "title": "B=/Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules; ls $B/@alia; ls $B/alia-app/server $B/alia-app/dist 2>/dev/null | head -40; find $B -maxdep\u2026"
     }
    }
   }
@@ -1781,7 +1781,7 @@
    "item": {
     "type": "commandExecution",
     "id": "dac2973c6e-i17",
-    "command": "B=/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules; ls $B/@bb; ls $B/bb-app/server $B/bb-app/dist 2>/dev/null | head -40; find $B -maxdepth 4 -type d -name 'plugin-sdk*' 2>/dev/null | head; find / -maxdepth 6 -type d -path '*get-bb/plugin-sdk' 2>/dev/null | head",
+    "command": "B=/Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules; ls $B/@alia; ls $B/alia-app/server $B/alia-app/dist 2>/dev/null | head -40; find $B -maxdepth 4 -type d -name 'plugin-sdk*' 2>/dev/null | head; find / -maxdepth 6 -type d -path '*get-alia/plugin-sdk' 2>/dev/null | head",
     "cwd": "",
     "status": "completed",
     "approvalStatus": null,
@@ -1795,7 +1795,7 @@
      "icon": {
       "glyph": "Terminal"
      },
-     "title": "B=/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules; ls $B/@bb; ls $B/bb-app/server $B/bb-app/dist 2>/dev/null | head -40; find $B -maxdep\u2026"
+     "title": "B=/Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules; ls $B/@alia; ls $B/alia-app/server $B/alia-app/dist 2>/dev/null | head -40; find $B -maxdep\u2026"
     }
    }
   }
@@ -1828,7 +1828,7 @@
    "item": {
     "type": "commandExecution",
     "id": "dac2973c6e-i18",
-    "command": "cd /home/user/bb-muse-code && ls -la && cat package.json && git log --oneline | head -5; echo; cd /home/user/bb-plugin-antigravity-acp && ls -la && cat package.json && git log --oneline | head -5; cat node_modules/@get-bb/plugin-sdk/package.json | head -60",
+    "command": "cd /home/user/alia-muse-code && ls -la && cat package.json && git log --oneline | head -5; echo; cd /home/user/alia-plugin-antigravity-acp && ls -la && cat package.json && git log --oneline | head -5; cat node_modules/@vesnalia/plugin-sdk/package.json | head -60",
     "cwd": "",
     "status": "pending",
     "approvalStatus": null,
@@ -1840,7 +1840,7 @@
      "icon": {
       "glyph": "Terminal"
      },
-     "title": "cd /home/user/bb-muse-code && ls -la && cat package.json && git log --oneline | head -5; echo; cd /home/user/bb-plugin-antigravity-acp && ls -l\u2026"
+     "title": "cd /home/user/alia-muse-code && ls -la && cat package.json && git log --oneline | head -5; echo; cd /home/user/alia-plugin-antigravity-acp && ls -l\u2026"
     }
    }
   }
@@ -1857,7 +1857,7 @@
    "item": {
     "type": "commandExecution",
     "id": "dac2973c6e-i18",
-    "command": "cd /home/user/bb-muse-code && ls -la && cat package.json && git log --oneline | head -5; echo; cd /home/user/bb-plugin-antigravity-acp && ls -la && cat package.json && git log --oneline | head -5; cat node_modules/@get-bb/plugin-sdk/package.json | head -60",
+    "command": "cd /home/user/alia-muse-code && ls -la && cat package.json && git log --oneline | head -5; echo; cd /home/user/alia-plugin-antigravity-acp && ls -la && cat package.json && git log --oneline | head -5; cat node_modules/@vesnalia/plugin-sdk/package.json | head -60",
     "cwd": "",
     "status": "completed",
     "approvalStatus": null,
@@ -1871,7 +1871,7 @@
      "icon": {
       "glyph": "Terminal"
      },
-     "title": "cd /home/user/bb-muse-code && ls -la && cat package.json && git log --oneline | head -5; echo; cd /home/user/bb-plugin-antigravity-acp && ls -l\u2026"
+     "title": "cd /home/user/alia-muse-code && ls -la && cat package.json && git log --oneline | head -5; echo; cd /home/user/alia-plugin-antigravity-acp && ls -l\u2026"
     }
    }
   }
@@ -1994,7 +1994,7 @@
   "data": {
    "providerThreadId": "407c7cb3-02e9-4030-bcba-71e32a3e0342",
    "itemId": "dac2973c6e-i19",
-   "delta": " option is proxy-wrapping an existing BB provider bridge \u2014 the MoA bridge would spawn the aggregator"
+   "delta": " option is proxy-wrapping an existing VesnALIA provider bridge \u2014 the MoA bridge would spawn the aggregator"
   }
  },
  {

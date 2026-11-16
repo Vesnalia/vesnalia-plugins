@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import type { PluginSidebarProject } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./components/Icon";
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "./components/Popover";
 import { ProjectFavicon } from "./ProjectFavicon";
@@ -9,7 +9,7 @@ import { cn } from "./lib/utils";
 
 const ALL_PROJECTS_LABEL = "All projects";
 const ALL_PROJECTS = "__all__";
-const GRID_ID = "bb-sidebar-project-scope-grid";
+const GRID_ID = "alia-sidebar-project-scope-grid";
 const HINT_ID = `${GRID_ID}-hint`;
 const rowId = (index: number) => `${GRID_ID}-row-${index}`;
 

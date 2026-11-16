@@ -1,4 +1,4 @@
-import { cliCommand, defineCli, defineRpcContract, type BbPluginApi } from '@get-bb/plugin-sdk';
+import { cliCommand, defineCli, defineRpcContract, type AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 
 const modeSchema = z.enum(['on', 'off', 'toggle']);
@@ -8,8 +8,8 @@ export const rpcContract = defineRpcContract({
   setMode: { input: z.object({ mode: modeSchema }).strict(), output: statusSchema },
 });
 
-export default function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     enabled: {
       type: 'boolean',
       label: 'Markdown highlighting',
@@ -28,7 +28,7 @@ export default function plugin(bb: BbPluginApi) {
     pending = result.then(() => undefined, () => undefined);
     return result;
   }
-  bb.rpc.register(rpcContract, { setMode: ({ mode }) => setMode(mode) });
+  alia.rpc.register(rpcContract, { setMode: ({ mode }) => setMode(mode) });
 
   function command(mode: z.infer<typeof modeSchema> | 'status') {
     return cliCommand({
@@ -43,9 +43,9 @@ export default function plugin(bb: BbPluginApi) {
       },
     });
   }
-  bb.cli.register(defineCli({
+  alia.cli.register(defineCli({
     name: 'md-prompt',
-    summary: 'Control live Markdown highlighting in BB composers',
+    summary: 'Control live Markdown highlighting in VesnALIA composers',
     commands: {
       status: command('status'), on: command('on'), off: command('off'), toggle: command('toggle'),
     },

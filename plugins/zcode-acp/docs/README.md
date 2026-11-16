@@ -13,7 +13,7 @@ copied verbatim: never place machine-local data there.
 
 Screenshot provenance (7 November 2026):
 
-- `model-picker.png`: a cropped capture of BB 0.49.0's real model picker, showing
+- `model-picker.png`: a cropped capture of VesnALIA 0.49.0's real model picker, showing
   Coding Plan, Start Plan and API connection labels. No prompt was submitted.
 - `plugin-installed.png`: a cropped capture of the installed local plugin's
   details, including version 0.1.0.

@@ -139,7 +139,7 @@ function StartPicker({
             value={mode}
             options={MODE_OPTIONS}
             onValueChange={selectMode}
-            className="w-full [&_.bb-segmented-item]:flex-1"
+            className="w-full [&_.alia-segmented-item]:flex-1"
           />
           {mode === "later" ? (
             <div className="triage-schedule-panel">

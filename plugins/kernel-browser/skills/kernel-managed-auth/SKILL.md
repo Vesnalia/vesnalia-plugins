@@ -5,7 +5,7 @@ description: Get a Kernel profile logged into a website using Kernel's hosted lo
 
 # Kernel Managed Auth
 
-`bb kernel-browser auth-*` gets a Kernel profile authenticated against a
+`alia kernel-browser auth-*` gets a Kernel profile authenticated against a
 domain using Kernel's own hosted login page to collect credentials — this
 plugin never sees, types, or stores a password or code itself.
 
@@ -21,14 +21,14 @@ later tasks can often skip straight to an automatic re-auth.
 
 ## Workflow
 
-1. **Reuse before creating.** `bb kernel-browser auth-list --domain <domain>`
+1. **Reuse before creating.** `alia kernel-browser auth-list --domain <domain>`
    first. If a connection with `status: AUTHENTICATED` already exists, skip to
    step 4 with its `profile_name`.
 2. **Create a connection** if none exists:
-   `bb kernel-browser auth-create <domain> --profile <name>`. Reuse an
+   `alia kernel-browser auth-create <domain> --profile <name>`. Reuse an
    existing profile name if this task's browser sessions should share
    cookies/login state with it.
-3. **Start the login flow:** `bb kernel-browser auth-login <connection-id>`.
+3. **Start the login flow:** `alia kernel-browser auth-login <connection-id>`.
    - Put `::kernel-auth-login{connection-id="<connection-id>"}` on its own
      line in your reply so the person watching sees the hosted login page
      embedded inline and can enter their own credentials there — never ask
@@ -54,7 +54,7 @@ later tasks can often skip straight to an automatic re-auth.
      get them anything new to look at and just adds confusion.
 4. **Hand off to the browser tools.** Once `auth-wait` reports
    `status: AUTHENTICATED`, open a browser against the same profile:
-   `bb kernel-browser open <url> --profile <name>`. It's now a logged-in
+   `alia kernel-browser open <url> --profile <name>`. It's now a logged-in
    session — see the `kernel-browser` skill for driving it.
 
 Kernel remembers the login and re-authenticates automatically on a schedule,
@@ -64,12 +64,12 @@ straight to step 4 once `auth-list`/`auth-get` reports `AUTHENTICATED`.
 ## Commands
 
 ```
-bb kernel-browser auth-create <domain> --profile <name> [--login-url <url>] [--allowed-domains <a.com,b.com>] [--json]
-bb kernel-browser auth-list [--domain <domain>] [--profile <name>] [--json]
-bb kernel-browser auth-get <connection-id> [--json]
-bb kernel-browser auth-login <connection-id> [--json]
-bb kernel-browser auth-wait <connection-id> [--timeout <seconds>] [--json]
-bb kernel-browser auth-delete <connection-id>
+alia kernel-browser auth-create <domain> --profile <name> [--login-url <url>] [--allowed-domains <a.com,b.com>] [--json]
+alia kernel-browser auth-list [--domain <domain>] [--profile <name>] [--json]
+alia kernel-browser auth-get <connection-id> [--json]
+alia kernel-browser auth-login <connection-id> [--json]
+alia kernel-browser auth-wait <connection-id> [--timeout <seconds>] [--json]
+alia kernel-browser auth-delete <connection-id>
 ```
 
 Native tools `kernel_auth_create`, `kernel_auth_list`, `kernel_auth_get`,

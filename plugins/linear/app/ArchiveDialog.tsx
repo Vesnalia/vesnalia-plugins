@@ -54,7 +54,7 @@ export function ArchiveDialog({
                 <br />
               </>
             )}
-            This archives the issue in Linear, for everyone — not just in bb. It is{" "}
+            This archives the issue in Linear, for everyone — not just in VesnALIA. It is{" "}
             <strong>reversible</strong> in Linear&apos;s own UI, and it is not a delete.
           </AlertDialogDescription>
         </AlertDialogHeader>

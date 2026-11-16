@@ -4,12 +4,12 @@
 // "linkedIssues" → ThreadLink[] (first entry is the primary). This is the
 // store threads and cards use when neither the title nor the branch name
 // carries a text ticket ref: the builtin GitHub plugin persists its own
-// thread↔issue links in bb.db rows under its own plugin namespace, which
-// focus-board cannot read (no cross-plugin surface in BbPluginApi), so the
+// thread↔issue links in alia.db rows under its own plugin namespace, which
+// focus-board cannot read (no cross-plugin surface in AliaPluginApi), so the
 // board keeps its own record. These helpers are pure — no host, no SDK —
-// so the RPC layer, the chip merge, and tests can drive them without a bb
+// so the RPC layer, the chip merge, and tests can drive them without a VesnALIA
 // host.
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 import { findTicketRefs, forgejoItemUrl, type TicketRef } from "./tickets";
 
 /** The board's linked-issues key inside its thread plugin-metadata namespace. */

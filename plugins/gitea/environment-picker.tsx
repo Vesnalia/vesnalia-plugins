@@ -9,7 +9,7 @@ import {
 import {
   useRpc,
   type PluginEnvironmentProviderInputsProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { giteaRpcContract } from "./server.js";
 import {
   giteaBranchInputsSchema,

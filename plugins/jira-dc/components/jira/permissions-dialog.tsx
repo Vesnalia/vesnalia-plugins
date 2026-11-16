@@ -1,5 +1,5 @@
 // Agent write permissions, one row per action. The same values are editable
-// in BB's plugin settings; this is the in-context shortcut.
+// in VesnALIA's plugin settings; this is the in-context shortcut.
 import { useState } from "react";
 import { toast } from "sonner";
 import type { JiraStatus, WriteAction } from "../../server";

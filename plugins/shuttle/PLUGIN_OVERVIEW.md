@@ -1,4 +1,4 @@
-See what each PR is waiting on and act without leaving bb. GitHub works out of the box; GitLab and other servers use command adapters.
+See what each PR is waiting on and act without leaving VesnALIA. GitHub works out of the box; GitLab and other servers use command adapters.
 
 ## Five areas
 
@@ -24,7 +24,7 @@ Start reviews from presets for the skill, model and workspace, or enable auto re
 
 Each PR's view says what it is, where it stands and what happens next in one card, then shows the rest in tabs: an overview, your review, the conversation with open threads first, every check, a summary of its commits and files, and its history. Open it as a full page or put it on boards.
 
-Git links and safely resolved bare PR numbers show cards on hover. Open the PR in its Shuttle side panel, or review, confirm, dismiss or correct matches in Insights › References. Conflicts stay unlinked. Shuttle follows your bb theme.
+Git links and safely resolved bare PR numbers show cards on hover. Open the PR in its Shuttle side panel, or review, confirm, dismiss or correct matches in Insights › References. Conflicts stay unlinked. Shuttle follows your VesnALIA theme.
 
 Merge, comment, reply, resolve, request reviewers, manage labels and post reviews as yourself. Merges and reviews run in the background, in order per server; My PRs and the Inbox's Reviewing tab list them until done. A thread's Shuttle tab shows its PRs in full. Filter any list by keyword, title matches first, then repo, then description; search every cached PR or paste a link. Layouts adapt to phones and narrow windows; lists remember their scroll, sort, filters and folds.
 
@@ -32,4 +32,4 @@ Merge, comment, reply, resolve, request reviewers, manage labels and post review
 
 GitHub uses your authenticated `gh` CLI. Configure other servers with commands that print JSON. Settings cover servers, review machines, presets, automations, agents and TOML import/export.
 
-Agents use `shuttle_link`, `shuttle_prs`, `shuttle_review_draft`, `shuttle_review_done` and `shuttle_feedback_done` for PR work, and the six `shuttle_board*` tools for saved sets. `bb shuttle` offers the same operations from the command line.
+Agents use `shuttle_link`, `shuttle_prs`, `shuttle_review_draft`, `shuttle_review_done` and `shuttle_feedback_done` for PR work, and the six `shuttle_board*` tools for saved sets. `alia shuttle` offers the same operations from the command line.

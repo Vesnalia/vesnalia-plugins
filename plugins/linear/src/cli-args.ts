@@ -2,7 +2,7 @@
  * A small argv parser, because the host hands the plugin raw `argv` and
  * parsing it is deliberately the plugin's job.
  *
- * `argv` **excludes the command name**: `bb linear issues --state started`
+ * `argv` **excludes the command name**: `alia linear issues --state started`
  * arrives as `["issues", "--state", "started"]`. Forgetting that is how a
  * subcommand table silently never matches.
  */
@@ -11,7 +11,7 @@ export interface ParsedArgs {
   readonly positional: readonly string[];
   readonly flags: Readonly<Record<string, string | true>>;
   /** Anything after a bare `--`, joined. Used by commands that take free text
-   *  (`bb linear comment ENG-1 -- text with --dashes in it`). */
+   *  (`alia linear comment ENG-1 -- text with --dashes in it`). */
   readonly rest: readonly string[];
 }
 

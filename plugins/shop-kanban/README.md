@@ -1,7 +1,7 @@
 # Shop Kanban
 
-A Kanban board for [bb](https://getbb.app) threads. It opens as an overlay at
-the bottom of the bb app and shows every non-archived top-level thread. Child
+A Kanban board for [VesnALIA](https://getbb.app) threads. It opens as an overlay at
+the bottom of the VesnALIA app and shows every non-archived top-level thread. Child
 threads roll up into their parent thread.
 
 ## Columns
@@ -42,7 +42,7 @@ the default is no limit, and the choice is kept across reloads.
   it doesn't wait on you, so Blocked threads don't count.
 - With the limit reached, a message that would start another thread (a new
   thread, a follow-up to an idle one, a retry) waits in that thread's message
-  queue, and the card stays in Queue marked "Waiting to start". bb sends it
+  queue, and the card stays in Queue marked "Waiting to start". VesnALIA sends it
   when a working thread finishes, and its queue row says "Working limit
   reached".
 - Work inside a working thread goes through: steers, follow-ups and child
@@ -62,13 +62,13 @@ the default is no limit, and the choice is kept across reloads.
 ## Threads on the board
 
 - A `[category] intent` title, e.g. `[docs site] search page`. The title is
-  written back to the bb sidebar thread title unless you rename the thread
+  written back to the VesnALIA sidebar thread title unless you rename the thread
   yourself.
 - A summary of the latest exchange: two lines, three while you hover the
   card.
 - Down the card's left edge, one column: the status mark beside the title
   (an amber petal spinner while working), the icon of the harness the thread
-  runs on in grey (omp, Pi, Codex, …; the same icon as the bb sidebar), and a
+  runs on in grey (omp, Pi, Codex, …; the same icon as the VesnALIA sidebar), and a
   pie with how full its context window is (dim grey, amber at 70%, red at
   90%). The footer has what the thread's whole tree has spent and its status
   on the left, and the updated time on the right. Working threads refresh
@@ -82,12 +82,12 @@ the default is no limit, and the choice is kept across reloads.
   ones included) and their harness subagents; the tooltip says how many
   threads it spans. omp and Pi threads are read from their transcripts on
   the thread's host (omp's sessions dir, `~/.omp/agent/sessions` unless
-  `PI_CODING_AGENT_DIR` or `XDG_DATA_HOME` moves it, and bb's Pi bridge
-  sessions in `~/.bb/pi-bridge-sessions` unless `BB_PI_BRIDGE_SESSION_DIR`
+  `PI_CODING_AGENT_DIR` or `XDG_DATA_HOME` moves it, and VesnALIA's Pi bridge
+  sessions in `~/.vesnalia/pi-bridge-sessions` unless `ALIA_PI_BRIDGE_SESSION_DIR`
   moves them). For omp, subagents at every depth (nested
   tasks, background tasks, eval agents, advisors) count; omp itself reports
   only a session's own replies and its direct tasks, and Pi reports nothing.
-  Other harnesses count what they report to bb, and so do threads on a
+  Other harnesses count what they report to VesnALIA, and so do threads on a
   disconnected host. A fork doesn't count the entries it copied from its
   source while the source's transcript is still there.
 - A `~` in front of the cost means part of it is estimated; the tooltip says
@@ -109,16 +109,16 @@ the default is no limit, and the choice is kept across reloads.
 Below 640px wide, each column takes the width of the screen with the next
 one peeking in, and a swipe snaps to the next column. The title bar gives its
 room to search, whose results span the bar. The hidden board is a bottom bar
-that reserves its own strip, so it doesn't sit on bb's composer controls. On
+that reserves its own strip, so it doesn't sit on VesnALIA's composer controls. On
 touch screens, buttons and toggles are larger and text fields use 16px text,
 so iOS doesn't zoom into them.
 
 ### omp icon
 
-An ACP providers `customAgents` entry with id `omp` replaces bb's shipped omp
-agent, and bb gives custom agents a generic toolbox glyph. The plugin
-registers bb's omp mark for the `acp-omp` provider, drawn in omp's pink
-(`#f84fcc`). The registration is app-wide, so bb's sidebar and pickers show
+An ACP providers `customAgents` entry with id `omp` replaces VesnALIA's shipped omp
+agent, and VesnALIA gives custom agents a generic toolbox glyph. The plugin
+registers VesnALIA's omp mark for the `acp-omp` provider, drawn in omp's pink
+(`#f84fcc`). The registration is app-wide, so VesnALIA's sidebar and pickers show
 the mark too, but only while this plugin is loaded.
 
 ## Model-written labels
@@ -143,8 +143,8 @@ don't replace it.
 | `labelerModels`  | `anthropic/claude-haiku-4-5` | Comma-separated models to try in order.         |
 
 ```sh
-bb plugin config shop-kanban set labelerCommand pi
-bb plugin config shop-kanban set labelerModels anthropic/claude-haiku-4-5
+alia plugin config shop-kanban set labelerCommand pi
+alia plugin config shop-kanban set labelerModels anthropic/claude-haiku-4-5
 ```
 
 With labels off, or when the CLI is unavailable, threads use heuristic titles
@@ -153,8 +153,8 @@ with this hint, and labels are retried right after either setting changes.
 
 ## Machine resources
 
-The right end of the title bar shows how close the machine bb runs on (the
-one your threads use, even when you open bb from another device) is to running
+The right end of the title bar shows how close the machine VesnALIA runs on (the
+one your threads use, even when you open VesnALIA from another device) is to running
 out of CPU, memory, disk or battery. Each gauge is a capsule in the metric's
 own color, half transparent, with a solid icon and a percentage cut out of it
 so the title bar shows through: blue CPU (chip), red memory (memory stick),
@@ -185,12 +185,12 @@ The plugin server samples every 2 seconds while a board is open, and stops
 The search bar in the board's title bar finds past threads, archived
 ones included, by what was said in them. Results show the thread title, a
 matching excerpt, an Archived badge and when the thread last changed.
-Picking a result (click, or arrow keys and Enter) opens the thread in bb and
+Picking a result (click, or arrow keys and Enter) opens the thread in VesnALIA and
 nothing else: the board is not touched, nothing is unarchived or marked read.
 
 Search runs [qmd](https://github.com/tobi/qmd) on one connected persistent
 host: the one already holding the index while it stays connected, otherwise
-the first persistent host bb lists. Ephemeral hosts are skipped, because the
+the first persistent host VesnALIA lists. Ephemeral hosts are skipped, because the
 index would go away with them. Every visible thread is exported as one
 markdown file (title, then each user turn and assistant reply) under the
 plugin's host data directory and indexed by qmd's BM25 full-text search in a
@@ -202,7 +202,7 @@ then once more when it settles, so long-working threads are searchable. Each syn
 checks which files the host actually has, so a wiped qmd index, a cleared data
 directory or a switch to another host rebuilds itself.
 
-The host needs qmd on the bb host daemon's `PATH`, and qmd needs Node.js 22 or
+The host needs qmd on the VesnALIA host daemon's `PATH`, and qmd needs Node.js 22 or
 newer (its README also asks for Homebrew's SQLite on macOS, for SQLite
 extensions). Search uses only qmd's keyword index, so qmd never downloads its
 embedding models. If the daemon's `PATH` lacks qmd (common with nvm or a
@@ -211,7 +211,7 @@ qmd's errors, such as a missing CLI, under the search bar.
 
 ```sh
 npm install -g @tobilu/qmd                       # once, on the host
-bb plugin config shop-kanban set searchCommand "$(command -v qmd)"   # only if bb cannot find qmd
+alia plugin config shop-kanban set searchCommand "$(command -v qmd)"   # only if alia cannot find qmd
 qmd --index shop-kanban search "redis timeout"   # same index from a terminal
 ```
 
@@ -235,7 +235,7 @@ toggle goes away; empty both and the list does.
 Each pull request is a two-line card:
 
 - **Line 1**: a risk chip (`LOW`, `MED`, `HIGH`) and the title. Clicking the
-  title opens bb's new-thread screen with a drafted, unsent prompt that asks
+  title opens VesnALIA's new-thread screen with a drafted, unsent prompt that asks
   the agent to explain the pull request: what changed, why, and how risky it
   is. Hover it for the model's first read.
 - **Line 2**: age, author and number, then three actions:
@@ -282,7 +282,7 @@ its forge:
 
 ```sh
 # Team: only ExP's requests on Delta
-bb plugin config shop-kanban set reviewSearchesTeam 'delta: team-review-requested:exp -author:@me -is:draft'
+alia plugin config shop-kanban set reviewSearchesTeam 'delta: team-review-requested:exp -author:@me -is:draft'
 ```
 
 The first read (`[risk] what. why. what could break.`, three sentences at
@@ -346,19 +346,19 @@ skill says the same.
 ## CLI
 
 ```sh
-bb shop-kanban list [--json]
-bb shop-kanban add <short-name> -- <prompt> [--json]  # short name: 40 characters at most
-bb shop-kanban park <thread-id> [--json]     # idle threads only; exits 1 if the thread is working
-bb shop-kanban unpark <thread-id> [--json]
-bb shop-kanban remove <thread-id> [--json]   # archives the thread; exits 1 if nothing was archived
+alia shop-kanban list [--json]
+alia shop-kanban add <short-name> -- <prompt> [--json]  # short name: 40 characters at most
+alia shop-kanban park <thread-id> [--json]     # idle threads only; exits 1 if the thread is working
+alia shop-kanban unpark <thread-id> [--json]
+alia shop-kanban remove <thread-id> [--json]   # archives the thread; exits 1 if nothing was archived
 ```
 
 ## Install
 
-From the bb plugin store, or from this repository:
+From the VesnALIA plugin store, or from this repository:
 
 ```sh
-bb plugin install git:https://github.com/muhammad-siddeek/bb-plugin-shop-kanban.git@^0.15.0
+alia plugin install git:https://github.com/muhammad-siddeek/bb-plugin-shop-kanban.git@^0.15.0
 ```
 
 ## Development
@@ -366,13 +366,13 @@ bb plugin install git:https://github.com/muhammad-siddeek/bb-plugin-shop-kanban.
 ```sh
 npm install
 npm run typecheck
-bb plugin build .
-bb plugin reload shop-kanban
+alia plugin build .
+alia plugin reload shop-kanban
 ```
 
 ## Requirements
 
-bb >= 0.47.
+VesnALIA >= 0.47.
 
 ## License
 

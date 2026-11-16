@@ -315,7 +315,7 @@ describe("the child-side shared AVCC fanout", () => {
       header(viewer.writes[2]!).getUint32(8, false),
       header(viewer.writes[2]!).getBigUint64(16, false),
     ])).toEqual(Array.from({ length: 4 }, () => [1, 100n, 2, 200n]));
-    expect(viewers[0]!.headers.get("content-type")).toBe("application/vnd.bb.sim-avcc;version=2");
+    expect(viewers[0]!.headers.get("content-type")).toBe("application/vnd.alia.sim-avcc;version=2");
 
     for (const viewer of viewers) viewer.destroy();
     await flush();

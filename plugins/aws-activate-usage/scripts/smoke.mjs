@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../dist/server.js";
 
 const host = createFakePluginHost({ pluginId: "aws-activate-usage" });
-await plugin(host.bb);
+await plugin(host.alia);
 
 const registrations = host.harness.inspection.registrations;
 assert.deepEqual(registrations.rpcMethods.sort(), ["aws_login", "credits_summary", "ui_preferences"]);

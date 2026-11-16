@@ -1,11 +1,11 @@
 // thread → SessionRecord; pending interactions → `waiting`; resolved execution options → `settings` (DESIGN §B.1 `sessionRecordOf`, `waitingOf`, `settingsOf`).
-// A pending interaction wins over `active` (X50); `stopped` is never produced on bb (D-bb-9).
+// A pending interaction wins over `active` (X50); `stopped` is never produced on VesnALIA (D-alia-9).
 import type { SessionRecord, SessionSettings, Waiting } from "../../core/src/host/index.ts";
 import { asRecord } from "./errors.ts";
 
 export type ThreadLike = Record<string, unknown>;
 export type PendingInteraction = Record<string, unknown>;
-/** What `threads.defaultExecutionOptions({ threadId })` answers: the thread's resolved per-turn options, or null before bb has resolved any. */
+/** What `threads.defaultExecutionOptions({ threadId })` answers: the thread's resolved per-turn options, or null before VesnALIA has resolved any. */
 export type ResolvedOptions = Record<string, unknown>;
 
 const WORKING = new Set(["active", "starting", "provisioning", "stopping", "waiting-for-host", "host-reconnecting"]);
@@ -19,7 +19,7 @@ export function sessionStateOf(thread: ThreadLike, pending: readonly PendingInte
   return "idle";
 }
 
-/** bb's own rule: unread when it asked for attention after the reader last looked (bb-host.ts:413–417 re-derived). */
+/** VesnALIA's own rule: unread when it asked for attention after the reader last looked (alia-host.ts:413–417 re-derived). */
 export function unreadOf(thread: ThreadLike): boolean {
   const attention = numberOf(thread.latestAttentionAt);
   const read = typeof thread.lastReadAt === "number" ? thread.lastReadAt : null;
@@ -29,7 +29,7 @@ export function unreadOf(thread: ThreadLike): boolean {
 /**
  * The thread's current settings as `threads.defaultExecutionOptions` resolves them — `model` (a `providers.models`
  * id), `reasoningLevel` (an effort id) and `permissionMode` (a `capabilities.permissionModes` id), the same ids
- * `providers.list` reports, so a page can preselect them (U50). Only string fields are taken; `null` (bb has
+ * `providers.list` reports, so a page can preselect them (U50). Only string fields are taken; `null` (VesnALIA has
  * resolved nothing for the thread yet) gives nothing: the record then carries no `settings` at all.
  */
 export function settingsOf(options: ResolvedOptions | null | undefined): SessionSettings | undefined {
@@ -62,7 +62,7 @@ export function sessionRecordOf(thread: ThreadLike, pending: readonly PendingInt
   };
   if (typeof thread.providerId === "string" && thread.providerId) record.providerId = thread.providerId;   // the row of `providers.list` a reply's settings are checked against (U47)
   const settings = settingsOf(options);
-  if (settings) record.settings = settings;   // the thread's current model, effort and mode, where bb has resolved them (U50)
+  if (settings) record.settings = settings;   // the thread's current model, effort and mode, where VesnALIA has resolved them (U50)
   return record;
 }
 
@@ -80,7 +80,7 @@ const SUBJECTS: Record<string, NonNullable<Waiting["approval"]>["subject"]> = {
 
 const DECISIONS = new Set(["allow_once", "allow_for_session", "deny"]);
 
-/** The first pending interaction (bb shows one at a time). Ids are bb's own: `i.id`, `question.id`, `option.value`. */
+/** The first pending interaction (VesnALIA shows one at a time). Ids are VesnALIA's own: `i.id`, `question.id`, `option.value`. */
 export function waitingOf(pending: readonly PendingInteraction[]): Waiting | null {
   const interaction = pending[0];
   if (!interaction) return null;

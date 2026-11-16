@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { baseRefSchema, MAX_BASE_REFS, MAX_SESSION_REPOSITORIES } from "./contracts";
 
@@ -20,7 +20,7 @@ const manifestOperationSchema = z.object({
 
 export const sessionManifestSchema = z.object({
   schemaVersion: z.literal(2),
-  owner: z.literal("bb-plugin-workspaces"),
+  owner: z.literal("alia-plugin-workspaces"),
   sessionId: z.string(),
   workspaceName: z.string(),
   instructions: z.string(),

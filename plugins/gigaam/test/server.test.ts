@@ -1,6 +1,6 @@
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it } from "vitest";
 import type { HostState } from "../src/contract.js";
 import plugin from "../server.js";
@@ -23,7 +23,7 @@ async function load(options: {
   settings?: Record<string, string | number | boolean>;
   primaryHostId?: string | null;
 }) {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "gigaam",
     settings: options.settings,
     sdk: {
@@ -42,7 +42,7 @@ async function load(options: {
       throw new Error(`unexpected ${method}`);
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   const [service] = harness.inspection.registrations.aiServiceRegistrations;
   if (service === undefined) throw new Error("no AI service registered");
   return { harness, service };
@@ -108,7 +108,7 @@ describe("GigaAM AI service", () => {
   });
 });
 
-describe("bb gigaam", () => {
+describe("alia gigaam", () => {
   it("prints the host status", async () => {
     const { harness } = await load({});
     const result = await harness.behavior.runCli(["status"]);

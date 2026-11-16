@@ -1,10 +1,10 @@
 import { test, expect } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 
 test("ping returns ok", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "guided-review" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "guided-review" });
+  await plugin(alia);
   const res = await harness.behavior.callRpc("ping", null);
   expect(res).toEqual({ ok: true });
 });

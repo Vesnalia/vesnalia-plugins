@@ -16,10 +16,10 @@ import { isIosEncoderMode, type IosEncoderMode } from "./simulator-video.ts";
 import { TestDriver } from "./test-driver.ts";
 import { deviceModel } from "../core/device.ts";
 
-const IMAGE_RECORDS = ["/usr/share/bb-box/image.json", "/usr/local/share/bb-box/image.json"];
+const IMAGE_RECORDS = ["/usr/share/alia-box/image.json", "/usr/local/share/alia-box/image.json"];
 const CONNECT_WAIT_MS = 10_000;
 const CONNECT_POLL_MS = 50;
-const LAUNCHER = join(dirname(fileURLToPath(import.meta.url)), "bb-box-device.sh");
+const LAUNCHER = join(dirname(fileURLToPath(import.meta.url)), "alia-box-device.sh");
 
 function log(line: string): void {
   process.stderr.write(`${new Date().toISOString()} ${line}\n`);
@@ -161,7 +161,7 @@ function tryConnect(path: string): Promise<Socket | null> {
 
 async function lastLog(paths: DevicePaths): Promise<string> {
   const text = await readFile(paths.log, "utf8").catch(() => "");
-  return text.trim().split("\n").filter((line) => !line.startsWith("bb-box-device: start ")).slice(-3).join(" ");
+  return text.trim().split("\n").filter((line) => !line.startsWith("alia-box-device: start ")).slice(-3).join(" ");
 }
 
 async function connect(paths: DevicePaths): Promise<void> {

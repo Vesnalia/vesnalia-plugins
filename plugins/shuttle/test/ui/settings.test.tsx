@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { fireEvent, waitFor, within } from "@testing-library/react";
-import type { PluginSettingsSectionProps } from "@get-bb/plugin-sdk/app";
+import type { PluginSettingsSectionProps } from "@vesnalia/plugin-sdk/app";
 import { DEFAULT_REVIEW_PROMPT, DEFAULT_VERIFIER_COMMAND, type Config } from "../../src/config";
 import { app, autoPostInsights, callsTo, config, handlers, mount, server, overview, shadowRepo, unmountAll, type Handlers } from "./helpers";
 
@@ -16,7 +16,7 @@ async function section(id: string, rpc: Partial<Handlers> = {}) {
 const saved = (slot: Awaited<ReturnType<typeof section>>) => callsTo(slot, "saveConfig").map((input) => (input as { config: Config }).config);
 
 describe("Shuttle settings sections", () => {
-  it("registers its four sections below bb's own fields", async () => {
+  it("registers its four sections below VesnALIA's own fields", async () => {
     const loaded = await app();
     expect(loaded.settingsSections.map((item) => [item.id, item.title])).toEqual([
       ["servers", "Servers"], ["presets", "Review presets"], ["automations", "Automations"], ["import-export", "Import and export"],
@@ -26,7 +26,7 @@ describe("Shuttle settings sections", () => {
   it("edits a preset and saves the whole config", async () => {
     const slot = await section("presets");
     const editor = await waitFor(() => slot.container.querySelector<HTMLElement>("[data-preset-editor='standard']") ?? Promise.reject(new Error("no editor")));
-    expect(within(editor).getByTestId("bb-provider-model-picker")).toBeTruthy();
+    expect(within(editor).getByTestId("alia-provider-model-picker")).toBeTruthy();
     fireEvent.change(within(editor).getByRole("textbox", { name: "Preset name" }), { target: { value: "Deep review" } });
     fireEvent.change(within(editor).getByRole("combobox", { name: "Skill" }), { target: { value: "critique" } });
     fireEvent.change(within(editor).getByRole("textbox", { name: "Model" }), { target: { value: "openai/gpt-5.2" } });
@@ -67,10 +67,10 @@ describe("Shuttle settings sections", () => {
     expect(saved(slot)[0]!.presets.map((preset) => preset.prompt)).toEqual([DEFAULT_REVIEW_PROMPT, DEFAULT_REVIEW_PROMPT]);
   });
 
-  it("puts a preset back on bb's default agent and model", async () => {
+  it("puts a preset back on VesnALIA's default agent and model", async () => {
     const slot = await section("presets");
     const editor = await waitFor(() => slot.container.querySelector<HTMLElement>("[data-preset-editor='standard']") ?? Promise.reject(new Error("no editor")));
-    fireEvent.click(within(editor).getByRole("button", { name: "Use bb default" }));
+    fireEvent.click(within(editor).getByRole("button", { name: "Use VesnALIA default" }));
     expect(editor.querySelector("[data-execution='default']")).not.toBeNull();
     fireEvent.click(slot.getByRole("button", { name: "Save presets" }));
     await waitFor(() => expect(saved(slot)).toHaveLength(1));
@@ -161,7 +161,7 @@ describe("Shuttle settings sections", () => {
     expect(saved(slot)[0]!.servers.at(-1)).toEqual({ ...lab, workspace: { kind: "provider", provider: "my-trees", inputs: { tree: "shuttle-{number}" } } });
   });
 
-  it("puts a server's reviews on a new machine from a machine provider bb has, with its inputs", async () => {
+  it("puts a server's reviews on a new machine from a machine provider VesnALIA has, with its inputs", async () => {
     const lab = { id: "lab", name: "Lab", kind: "command" as const, enabled: true, sep: "#" as const, pattern: "^https://d/(?<repo>[^/]+/[^/]+)/pull/(?<number>\\d+)", link: "https://d/{repo}/pull/{number}", commands: { view: "sh lab.sh" }, workspace: { kind: "provider" as const, provider: "my-trees", inputs: { tree: "shuttle-{number}" } } };
     const slot = await section("servers", { getConfig: () => ({ config: config({ servers: [...config().servers, lab] }) }) });
     fireEvent.click(await slot.findByRole("button", { name: "Edit Lab" }));
@@ -175,7 +175,7 @@ describe("Shuttle settings sections", () => {
     fireEvent.change(within(form).getByRole("textbox", { name: "Provider inputs" }), { target: { value: '{ "base": "origin/{head_ref}" }' } });
     fireEvent.change(within(form).getByRole("combobox", { name: "Review machine" }), { target: { value: "new" } });
     expect((within(form).getByRole("button", { name: "Save server" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(within(form).getByText("Enter the machine provider's id, as bb machine providers lists them.")).toBeTruthy();
+    expect(within(form).getByText("Enter the machine provider's id, as VesnALIA machine providers lists them.")).toBeTruthy();
     fireEvent.change(within(form).getByRole("combobox", { name: "Machine provider" }), { target: { value: "sandbox" } });
     expect(within(form).getByText("Sandbox: A sandbox machine")).toBeTruthy();
     fireEvent.change(within(form).getByRole("textbox", { name: "Machine inputs" }), { target: { value: "[1]" } });
@@ -228,7 +228,7 @@ describe("Shuttle settings sections", () => {
   it("saves the automations", async () => {
     const slot = await section("automations");
     fireEvent.click(await slot.findByRole("checkbox", { name: /I am @mentioned/u }));
-    fireEvent.change(slot.getByRole("textbox", { name: "Only these repositories" }), { target: { value: "acme/app, get-bb/*" } });
+    fireEvent.change(slot.getByRole("textbox", { name: "Only these repositories" }), { target: { value: "acme/app, get-alia/*" } });
     fireEvent.change(slot.getByRole("spinbutton", { name: "Auto reviews a day" }), { target: { value: "3" } });
     fireEvent.change(slot.getByRole("combobox", { name: "Auto review preset" }), { target: { value: "quick" } });
     const bots = slot.getByRole("textbox", { name: "Bots an agent still hears from" }) as HTMLInputElement;
@@ -240,7 +240,7 @@ describe("Shuttle settings sections", () => {
     fireEvent.click(slot.getByRole("button", { name: "Save automations" }));
     await waitFor(() => expect(saved(slot)).toHaveLength(1));
     const next = saved(slot)[0]!;
-    expect(next.autoReview).toMatchObject({ when: ["requested", "mentioned"], repos: ["acme/app", "get-bb/*"], maxPerDay: 3, preset: "quick" });
+    expect(next.autoReview).toMatchObject({ when: ["requested", "mentioned"], repos: ["acme/app", "get-alia/*"], maxPerDay: 3, preset: "quick" });
     expect(next.watch).toMatchObject({ ignoreBots: false, allowBots: ["review-bot", "*-scanner"], autoWatch: false });
     expect(next.presets).toEqual(config().presets);
   });

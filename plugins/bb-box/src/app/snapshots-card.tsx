@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { AlertDialogDescription } from "@/components/ui/alert-dialog";
 import { BoxDialog, DialogButton, DialogCancel, Refused } from "./box-dialog.tsx";
@@ -54,7 +54,7 @@ import {
 
 const FOCUS = "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 const TILE = "relative flex h-10 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-surface-recessed max-sm:h-[30px] max-sm:w-12";
-const DISMISSED_KEY = "bb-box:restored-notice-dismissed";
+const DISMISSED_KEY = "alia-box:restored-notice-dismissed";
 
 type SnapshotCall = <T>(method: string, input: unknown) => Promise<T>;
 
@@ -608,7 +608,7 @@ function ForkDialog({ box, row, now, onClose, returnTo }: { box: RowBox; row: Sn
           {check ? (
             <>
               <p>
-                A new box with {box.name}'s files as they were {whenInSentence(check.takenAt, now)}. It gets its own BB machine, address and keys, and never acts as {box.name}. Everything else on its disk comes with it: project secrets, signed-in browsers and
+                A new box with {box.name}'s files as they were {whenInSentence(check.takenAt, now)}. It gets its own VesnALIA machine, address and keys, and never acts as {box.name}. Everything else on its disk comes with it: project secrets, signed-in browsers and
                 keychains. It starts fresh: no apps are running.
               </p>
               <p>

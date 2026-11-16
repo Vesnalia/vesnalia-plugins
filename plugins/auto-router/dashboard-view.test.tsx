@@ -137,7 +137,7 @@ test("recorded usage separates cache from uncached input and describes estimate 
   assert.doesNotMatch(html, /<script>/);
 });
 
-test("new users start on Jev with an API key field and can pick a BB model instead", () => {
+test("new users start on Jev with an API key field and can pick a VesnALIA model instead", () => {
   const data = fixture();
   data.setup = {
     configured: false,
@@ -151,7 +151,7 @@ test("new users start on Jev with an API key field and can pick a BB model inste
   );
   assert.match(html, /Connect Jev/);
   assert.match(html, /aria-pressed="true"[^>]*>Jev</);
-  assert.match(html, /aria-pressed="false"[^>]*>Model in BB</);
+  assert.match(html, /aria-pressed="false"[^>]*>Model in ALIA</);
   assert.match(html, /id="ar-classifier-key" type="password"/);
   assert.match(html, /href="https:\/\/console.typesafe.ai"/);
   assert.match(html, /aria-current="page">Connection/);
@@ -168,7 +168,7 @@ test("a saved Jev key can be kept when the connection is changed", () => {
   assert.doesNotMatch(html, /type="submit" disabled=""/);
 });
 
-test("users who chose a BB model keep the catalog without an API key", () => {
+test("users who chose a VesnALIA model keep the catalog without an API key", () => {
   const html = renderToStaticMarkup(
     <ConnectionSetup {...connectionProps()} />,
   );
@@ -226,7 +226,7 @@ const catalog = [
     modelId: "model-one",
     label: "Catalog model one",
     providerLabel: "Connected Codex",
-    description: "A model from BB.",
+    description: "A model from VesnALIA.",
     reasoningEffort: "low",
   },
   {
@@ -234,7 +234,7 @@ const catalog = [
     modelId: "model-two",
     label: "Catalog model two",
     providerLabel: "Connected Claude",
-    description: "Another BB model.",
+    description: "Another VesnALIA model.",
     reasoningEffort: "low",
   },
 ] satisfies DashboardViewProps["nativeModels"];
@@ -271,7 +271,7 @@ test("models load independently and failed catalog requests offer retry", () => 
   const loading = renderToStaticMarkup(
     <ConnectionSetup {...connectionProps()} loading />,
   );
-  assert.match(loading, /Loading models from BB/);
+  assert.match(loading, /Loading models from ALIA/);
   assert.match(loading, /role="status"/);
   assert.match(loading, /disabled=""/);
   const failed = renderToStaticMarkup(
@@ -290,8 +290,8 @@ test("empty catalog explains how to connect a provider", () => {
       warnings={["Provider unavailable"]}
     />,
   );
-  assert.match(html, /No models are available from BB/);
-  assert.match(html, /Connect an agent provider in BB/);
+  assert.match(html, /No models are available from ALIA/);
+  assert.match(html, /Connect an agent provider in ALIA/);
   assert.match(html, /Provider unavailable/);
   assert.match(html, /disabled=""/);
 });
@@ -321,7 +321,7 @@ test("guide explains session persistence, classification differences, privacy, a
   assert.match(html, /not equivalent confidence measurements/);
   assert.match(html, /does not measure tokens saved/);
   assert.match(html, /selected classifier provider receives task text/);
-  assert.match(html, /BB 0.46 on macOS/);
+  assert.match(html, /ALIA 0.46 on macOS/);
   assert.match(html, /current saved connection stays active/);
 });
 
@@ -349,6 +349,6 @@ test("connection catalog remains usable when usage history fails", () => {
   );
   assert.match(html, /History unavailable/);
   assert.match(html, /Catalog model one/);
-  assert.match(html, /Select a model from BB/);
+  assert.match(html, /Select a model from ALIA/);
   assert.match(html, /Connect and test/);
 });

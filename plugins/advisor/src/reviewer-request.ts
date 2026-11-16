@@ -1,4 +1,4 @@
-import type { PluginThreadEventPayloads } from "@get-bb/plugin-sdk";
+import type { PluginThreadEventPayloads } from "@vesnalia/plugin-sdk";
 import { redactSecrets } from "./evidence.js";
 
 export type ReviewerInteraction =

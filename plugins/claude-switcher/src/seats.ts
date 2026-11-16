@@ -99,14 +99,14 @@ export interface AccountSeats {
   reserved: number;
   /** Waiting threads, first in line first. */
   queued: string[];
-  /** Seats held from outside bb (see holdExternal), by id; only when there is one. */
+  /** Seats held from outside VesnALIA (see holdExternal), by id; only when there is one. */
   external?: { id: string; until: number }[];
 }
 
 /** Longest an external hold lasts from its request, whatever its `until` says. */
 export const EXTERNAL_MAX_MS = 12 * 60 * 60_000;
 
-/** A seat held from outside bb: a `claude -p` run with the account's CLAUDE_CONFIG_DIR, which bb does not see. */
+/** A seat held from outside VesnALIA: a `claude -p` run with the account's CLAUDE_CONFIG_DIR, which VesnALIA does not see. */
 export interface ExternalHold {
   id: string;
   account: string;
@@ -166,7 +166,7 @@ export class Seats {
   }
 
   /**
-   * A seat of `account` held from outside bb until `until` (at most
+   * A seat of `account` held from outside VesnALIA until `until` (at most
    * EXTERNAL_MAX_MS from `now`), under `id`. Checked and taken in this one
    * call: nothing can take the seat in between. Taken only with a seat
    * free beyond those owed to the threads already waiting. The same id

@@ -12,13 +12,13 @@ This skill writes those from how the user has actually been choosing, then check
 the result against their history.
 
 Read `skills/magic-compose/SKILL.md` for the routing commands. Everything you
-write here lands in the user's BB settings, never in a repository.
+write here lands in the user's VesnALIA settings, never in a repository.
 
 ## 1. Look at what the user picks
 
 ```sh
-bb magic-compose history --days 14          # counts per model and effort
-bb magic-compose history --days 14 --json   # plus every thread's prompt
+alia magic-compose history --days 14          # counts per model and effort
+alia magic-compose history --days 14 --json   # plus every thread's prompt
 ```
 
 Only threads the user started from a composer are counted; review bots,
@@ -77,20 +77,20 @@ plain headings, since Jev reads them for both questions.
 Save what is there now before replacing it, so the user can go back:
 
 ```sh
-bb magic-compose rotation get --json > "$BB_THREAD_STORAGE/rotation.before.json"
-bb magic-compose preferences get --json > "$BB_THREAD_STORAGE/preferences.before.json"
+alia magic-compose rotation get --json > "$ALIA_THREAD_STORAGE/rotation.before.json"
+alia magic-compose preferences get --json > "$ALIA_THREAD_STORAGE/preferences.before.json"
 ```
 
 Then apply:
 
 ```sh
-bb magic-compose rotation set "$(cat rotation.json)"
-bb magic-compose preferences set modelInstructions "$(cat model-instructions.txt)"
+alia magic-compose rotation set "$(cat rotation.json)"
+alia magic-compose preferences set modelInstructions "$(cat model-instructions.txt)"
 ```
 
 `rotation.json` is a list of
 `{"providerId", "model", "note", "reasoningLevel"}`. Take `providerId` and
-`model` exactly as `bb provider models <provider-id> --json` spells them.
+`model` exactly as `alia provider models <provider-id> --json` spells them.
 `reasoningLevel` is only a fallback for a model that offers no choice of effort;
 set it to that model's default.
 
@@ -101,7 +101,7 @@ modes, and they start off for that reason. To change the list:
 
 ```sh
 echo '{"scope":{"reasoningLevels":["low","medium","high","xhigh"]}}' > levels.json
-bb plugin rpc call magic-compose scope_set --input-file levels.json
+alia plugin rpc call magic-compose scope_set --input-file levels.json
 ```
 
 ## 4. Backtest
@@ -111,7 +111,7 @@ get a yes first. Use `--exclude` to keep out anything that should not leave the
 machine, such as unreleased product or model names.
 
 ```sh
-bb magic-compose backtest --days 14 \
+alia magic-compose backtest --days 14 \
   --map '<regex>=<rotation model id>' \
   --exclude '<regex>' --json
 ```
@@ -145,5 +145,5 @@ Tell the user, plainly:
 - which judgment calls were yours rather than the history's;
 - where the previous settings were saved.
 
-Spot-check a handful of fresh prompts with `bb magic-compose route "<prompt>"`
+Spot-check a handful of fresh prompts with `alia magic-compose route "<prompt>"`
 before you finish. It starts nothing.

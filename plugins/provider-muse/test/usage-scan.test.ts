@@ -76,7 +76,7 @@ describe("rolling window scan", () => {
   let root: string;
 
   beforeEach(() => {
-    root = mkdtempSync(join(tmpdir(), "bb-muse-usage-"));
+    root = mkdtempSync(join(tmpdir(), "alia-muse-usage-"));
   });
 
   afterEach(() => {

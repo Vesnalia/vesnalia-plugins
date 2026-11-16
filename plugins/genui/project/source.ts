@@ -1,9 +1,9 @@
-// Reads the reply's own thread's state from BB for Changes, Commits,
+// Reads the reply's own thread's state from VesnALIA for Changes, Commits,
 // PullRequest and Threads, through the SDK only (never git). Every call acts
 // for one thread id: Changes, Commits and PullRequest read that thread's
 // environment; Threads lists only threads of that thread's project, and any
 // other id is "not found". Environments has its own source (environments.ts).
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   matchesPathFilter,
   RUNNING,
@@ -75,16 +75,16 @@ export const MAX_SUBTHREADS = 200;
 /** Patches requested per diffPatch call while filling a snapshot. */
 const PATCH_BATCH = 25;
 
-/** Most on-demand patches a snapshot asks BB for. */
+/** Most on-demand patches a snapshot asks VesnALIA for. */
 const MAX_SNAPSHOT_PATCH_FILES = 200;
 
-/** How long provider names and thread models are reused before asking BB again. */
+/** How long provider names and thread models are reused before asking VesnALIA again. */
 const CACHE_MS = 60_000;
 
 /** Most threads whose latest message is kept between reads. */
 const MESSAGE_CACHE = 500;
 
-type Sdk = BbPluginApi["sdk"];
+type Sdk = AliaPluginApi["sdk"];
 
 function failure(reason: ProjectFailure["reason"], message: string): ProjectFailure {
   return { ok: false, reason, message };
@@ -94,7 +94,7 @@ function errorMessage(cause: unknown): string {
   return cause instanceof Error ? cause.message : String(cause);
 }
 
-/** BB's answer for a checkout it couldn't read, as a failure. */
+/** VesnALIA's answer for a checkout it couldn't read, as a failure. */
 interface UnavailableOutcome {
   readonly outcome: "not_applicable" | "unavailable";
   readonly message?: string;
@@ -107,7 +107,7 @@ export function outcomeFailure(answer: UnavailableOutcome): ProjectFailure {
   if (code === "not_git_repo" || code === "workspace_type_mismatch") {
     return failure("not-git", "This thread's environment isn't a git checkout");
   }
-  return failure("unavailable", answer.failure?.message ?? answer.message ?? "BB couldn't read the checkout");
+  return failure("unavailable", answer.failure?.message ?? answer.message ?? "VesnALIA couldn't read the checkout");
 }
 
 /** A path for diffPatch: repository-relative, never absolute or climbing out. */
@@ -126,7 +126,7 @@ interface DiffFileEntry {
   readonly origin: "tracked" | "untracked";
 }
 
-/** BB's diffFiles entry as Changes shows it. */
+/** VesnALIA's diffFiles entry as Changes shows it. */
 export function changedFile(file: DiffFileEntry, inline: boolean): ChangedFile {
   return {
     path: file.path,
@@ -196,7 +196,7 @@ async function threadEnvironment(
   try {
     thread = await sdk.threads.get({ threadId });
   } catch {
-    return failure("not-found", "BB has no such thread");
+    return failure("not-found", "VesnALIA has no such thread");
   }
   if (thread.deletedAt !== null) return failure("not-found", "This thread was deleted");
   if (thread.environmentId === null) return failure("no-environment", "This thread has no environment");
@@ -218,7 +218,7 @@ async function workspaceStatus(sdk: Sdk, environmentId: string) {
   return { ok: true as const, base, workspace: status.workspace };
 }
 
-/** What BB says is checked out (environments.status `workspace.checkout`). */
+/** What VesnALIA says is checked out (environments.status `workspace.checkout`). */
 type Checkout =
   | { readonly kind: "branch"; readonly branchName: string; readonly headSha: string | null }
   | { readonly kind: "detached"; readonly headSha: string | null }
@@ -230,7 +230,7 @@ type DiffQuery =
   | { readonly target: "all"; readonly mergeBaseBranch: string }
   | { readonly target: "commit"; readonly sha: string };
 
-/** What BB is asked for, and how the header names it. */
+/** What VesnALIA is asked for, and how the header names it. */
 export function diffQuery(
   target: ChangesTarget,
   checkout: Checkout,
@@ -241,7 +241,7 @@ export function diffQuery(
     const commit = commits.find((candidate) => candidate.sha.startsWith(target.sha)) ?? null;
     return { query: { target: "commit", sha: target.sha }, scope: { kind: "commit", sha: commit?.sha ?? target.sha, subject: commit?.subject ?? null } };
   }
-  if (checkout.kind === "unknown") return failure("unavailable", `BB can't tell what is checked out: ${checkout.reason}`);
+  if (checkout.kind === "unknown") return failure("unavailable", `VesnALIA can't tell what is checked out: ${checkout.reason}`);
   const branch = checkout.kind === "detached" ? null : checkout.branchName;
   if (target.kind === "uncommitted" || checkout.kind === "unborn") {
     return { query: { target: "uncommitted" }, scope: { kind: "uncommitted", branch, unborn: checkout.kind === "unborn" } };
@@ -266,8 +266,8 @@ function patchTarget(query: DiffQuery) {
   }
 }
 
-export function createProjectSource(bb: BbPluginApi, storage: SnapshotStorage = bb.storage.kv): ProjectSource {
-  const sdk = bb.sdk;
+export function createProjectSource(alia: AliaPluginApi, storage: SnapshotStorage = alia.storage.kv): ProjectSource {
+  const sdk = alia.sdk;
   const snapshots = createSnapshots(storage);
 
   /** The diff query for a thread's target, with the environment it runs in. */
@@ -341,9 +341,9 @@ export function createProjectSource(bb: BbPluginApi, storage: SnapshotStorage = 
     if (!status.ok) return status;
     const { workspace, base } = status;
     const checkout = workspace.checkout;
-    if (checkout.kind === "unknown") return failure("unavailable", `BB can't tell what is checked out: ${checkout.reason}`);
+    if (checkout.kind === "unknown") return failure("unavailable", `VesnALIA can't tell what is checked out: ${checkout.reason}`);
     const mergeBase = workspace.mergeBase;
-    // BB lists the branch's commits oldest first (git log --reverse order); Commits shows them newest first.
+    // VesnALIA lists the branch's commits oldest first (git log --reverse order); Commits shows them newest first.
     const commits = (mergeBase?.commits ?? [])
       .map((commit) => ({
         sha: commit.sha,
@@ -410,7 +410,7 @@ export function createProjectSource(bb: BbPluginApi, storage: SnapshotStorage = 
   }
 
   /**
-   * How many threads BB runs under each parent (hidden workflow steps
+   * How many threads VesnALIA runs under each parent (hidden workflow steps
    * included). One listRunning call; a running thread's parent is read once
    * and kept while it runs.
    */
@@ -445,7 +445,7 @@ export function createProjectSource(bb: BbPluginApi, storage: SnapshotStorage = 
   }
 
   /**
-   * When the thread last did something. BB moves `updatedAt` on status
+   * When the thread last did something. VesnALIA moves `updatedAt` on status
    * changes, so a thread running for an hour would read as an hour old: a
    * running thread's latest event says when it last acted.
    */
@@ -462,7 +462,7 @@ export function createProjectSource(bb: BbPluginApi, storage: SnapshotStorage = 
       providerNames(),
       threadModel(thread.id),
       lastActivity(thread).then(async (at) => ({ at, message: await latestMessage(thread.id, at) })),
-      // Undefined: BB couldn't list the interactions.
+      // Undefined: VesnALIA couldn't list the interactions.
       flagged === true || (flagged === undefined && !archived)
         ? sdk.threads.interactions.list({ threadId: thread.id }).then(pendingAsk, () => undefined)
         : null,
@@ -473,7 +473,7 @@ export function createProjectSource(bb: BbPluginApi, storage: SnapshotStorage = 
       id: thread.id,
       title: thread.title?.trim() || thread.titleFallback?.trim() || "Untitled thread",
       status: thread.runtime.displayStatus,
-      // BB's flag where it gives one (an interaction it is still resolving counts); else whether one is pending.
+      // VesnALIA's flag where it gives one (an interaction it is still resolving counts); else whether one is pending.
       needsInput: flagged ?? (pending !== null && pending !== undefined),
       archived,
       provider: { id: thread.providerId, name: provider?.name ?? null, logoUrl: provider?.logoUrl ?? null },
@@ -501,7 +501,7 @@ export function createProjectSource(bb: BbPluginApi, storage: SnapshotStorage = 
         if (view.ok) await snapshots.writeChanges(key, threadId, view);
         return view;
       } catch (cause) {
-        return failure("unavailable", `BB couldn't read the changes: ${errorMessage(cause)}`);
+        return failure("unavailable", `VesnALIA couldn't read the changes: ${errorMessage(cause)}`);
       }
     },
 
@@ -520,7 +520,7 @@ export function createProjectSource(bb: BbPluginApi, storage: SnapshotStorage = 
         if (answer.outcome !== "available") return outcomeFailure(answer);
         return { ok: true, patches: answer.patches };
       } catch (cause) {
-        return failure("unavailable", `BB couldn't read the diff: ${errorMessage(cause)}`);
+        return failure("unavailable", `VesnALIA couldn't read the diff: ${errorMessage(cause)}`);
       }
     },
 
@@ -538,7 +538,7 @@ export function createProjectSource(bb: BbPluginApi, storage: SnapshotStorage = 
         await snapshots.writeCommits(key, threadId, stored);
         return stored;
       } catch (cause) {
-        return failure("unavailable", `BB couldn't read the commits: ${errorMessage(cause)}`);
+        return failure("unavailable", `VesnALIA couldn't read the commits: ${errorMessage(cause)}`);
       }
     },
 
@@ -558,7 +558,7 @@ export function createProjectSource(bb: BbPluginApi, storage: SnapshotStorage = 
           fetchedAt: Date.now(),
         };
       } catch (cause) {
-        return failure("unavailable", `BB couldn't read the pull request: ${errorMessage(cause)}`);
+        return failure("unavailable", `VesnALIA couldn't read the pull request: ${errorMessage(cause)}`);
       }
     },
 
@@ -569,7 +569,7 @@ export function createProjectSource(bb: BbPluginApi, storage: SnapshotStorage = 
         try {
           own = await sdk.threads.get({ threadId });
         } catch {
-          return failure("not-found", "BB has no such thread");
+          return failure("not-found", "VesnALIA has no such thread");
         }
         if (ids === null) {
           const [listed, workers] = await Promise.all([
@@ -598,7 +598,7 @@ export function createProjectSource(bb: BbPluginApi, storage: SnapshotStorage = 
         );
         return { ok: true, mode: "ids", threads, truncated: false, fetchedAt: Date.now() };
       } catch (cause) {
-        return failure("unavailable", `BB couldn't read the threads: ${errorMessage(cause)}`);
+        return failure("unavailable", `VesnALIA couldn't read the threads: ${errorMessage(cause)}`);
       }
     },
   };

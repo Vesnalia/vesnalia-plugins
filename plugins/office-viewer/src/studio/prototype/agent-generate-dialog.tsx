@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import type { DragEvent } from "react";
-import { useComposer, useRpc } from "@get-bb/plugin-sdk/app";
+import { useComposer, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";

@@ -81,7 +81,7 @@ export function idempotencyKey(threadId: string, workspace: string, memory: Memo
   const digest = createHash("sha256")
     .update(`${threadId}\n${workspace}\n${memory.title}\n${memory.content}${replaces}${entities}`)
     .digest("hex");
-  return `bb-plugin-lobu:${digest}`;
+  return `alia-plugin-lobu:${digest}`;
 }
 
 export async function saveMemories(

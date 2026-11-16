@@ -5,9 +5,9 @@
 //   host.ts  --hostSignals (jobEvent, changed)-->  server.ts
 //
 // server.ts and host.ts import this at runtime; app.tsx imports only types.
-// Only @get-bb/plugin-sdk and zod may be imported here: the host artifact
-// build rejects private @bb/* packages.
-import { defineRpcContract, type ExperimentalHostSignals } from "@get-bb/plugin-sdk";
+// Only @vesnalia/plugin-sdk and zod may be imported here: the host artifact
+// build rejects private @alia-core/* packages.
+import { defineRpcContract, type ExperimentalHostSignals } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   AGENT_ACTION_VARIANTS,
@@ -753,7 +753,7 @@ export const rpcContract = defineRpcContract({
    * fixed `AGENT_ACTIONS` texts as an ordinary user message. The one method
    * here that runs no git.
    *
-   * The caller names a variant, never the text. This route is bb's local-auth
+   * The caller names a variant, never the text. This route is VesnALIA's local-auth
    * API like every other, so a free-text field would let any local process
    * put words in the human's mouth in their own thread; a closed set of two
    * keeps the buttons the whole of what the plugin can say.
@@ -765,7 +765,7 @@ export const rpcContract = defineRpcContract({
 });
 
 // ---------------------------------------------------------------------------
-// Server -> host. Every input carries the absolute worktree path bb recorded
+// Server -> host. Every input carries the absolute worktree path VesnALIA recorded
 // for the environment; defaults are already resolved.
 // ---------------------------------------------------------------------------
 

@@ -123,7 +123,7 @@ export interface FakeBackendOptions {
   readonly shell?: string;
   /** Whether a stop keeps a guest's session, by kind, as a hibernate does (#539). Not by default. */
   readonly keepsSession?: (kind: string) => boolean;
-  /** Its desktops' pointer, as bb-box-cursor gives it on Sway 1.11 (060): the RFB display's followPointer. None by default. */
+  /** Its desktops' pointer, as alia-box-cursor gives it on Sway 1.11 (060): the RFB display's followPointer. None by default. */
   readonly pointer?: (onEvent: (event: BoxPointer) => void, signal: AbortSignal) => Promise<void>;
   readonly daemonKeptByHost?: boolean;
   readonly slots?: { readonly kinds: readonly SlotKind[]; readonly most: number };
@@ -245,7 +245,7 @@ export class FakeBackend implements Backend {
   /** Stops and starts wait here while it is set. */
   powerGate: Promise<void> | null = null;
   readonly calls: string[] = [];
-  /** What stopped() says of a guest that stopped without BB Box's request (#406). */
+  /** What stopped() says of a guest that stopped without VesnALIA Box's request (#406). */
   stopReason: StopReason | null = null;
   /** The steps a start reports, with the time each took. */
   startSteps: Readonly<Record<string, number>> = { boot: 1_200 };
@@ -282,7 +282,7 @@ export class FakeBackend implements Backend {
   readonly selkies = new FakeSelkies();
   /**
    * When set, the Selkies display's video comes from `selkies`, and this is the box's own stream server, which takes the
-   * input and sends the clipboard and the cursor's shape, as bb-box-stream.exe for a Windows VM on a Mac (#865).
+   * input and sends the clipboard and the cursor's shape, as alia-box-stream.exe for a Windows VM on a Mac (#865).
    */
   apartInput: FakeSelkies | null = null;
   resizeInBox: ((size: DisplaySize) => Promise<void | typeof LEFT_TO_STREAM_SERVER>) | null = null;
@@ -656,7 +656,7 @@ export class FakeBackend implements Backend {
     );
     const power = this.faults.silent === guest.ref ? async (): Promise<PowerState> => "unknown" : () => this.power(guest);
     const daemonKeptByHost = this.#options.daemonKeptByHost
-      ? { installerEnvironment: { BB_INSTALL_SKIP_SERVICE: "1" }, daemonPort: 38900, takeOver: async () => void this.calls.push(`take over ${guest.ref}`) }
+      ? { installerEnvironment: { ALIA_INSTALL_SKIP_SERVICE: "1" }, daemonPort: 38900, takeOver: async () => void this.calls.push(`take over ${guest.ref}`) }
       : undefined;
     const identity: { readonly tool?: string; readonly root?: string; readonly bin?: string } = this.identities.get(guest.ref) ?? { tool: this.#options.identityTool, root: this.#options.identityRoot };
     return { command: new FakeTransport(this.#home(guest.ref), power, this.#commands(guest.ref).signal, this.#options.shell, identity.tool, identity.root, identity.bin), displays, access: null, ...(daemonKeptByHost ? { daemonKeptByHost } : {}) };
@@ -823,7 +823,7 @@ export class FakeBackend implements Backend {
     return controller;
   }
 
-  /** Makes the guest's running commands fail as unreachable, as a Docker box's do when the relay to its BB machine closes (#415). */
+  /** Makes the guest's running commands fail as unreachable, as a Docker box's do when the relay to its VesnALIA machine closes (#415). */
   loseCommands(ref: string): void {
     this.#running.get(ref)?.abort(new TransportError("unreachable", "The fake box's connection closed."));
     this.#running.delete(ref);
@@ -931,7 +931,7 @@ export class FakeTransport implements CommandTransport {
   constructor(home: string, power: () => Promise<PowerState | null>, gone: AbortSignal = new AbortController().signal, shell?: string, identityTool?: string, identityRoot?: string, identityBin?: string) {
     this.#home = home;
     this.#identityTool = quote(identityTool ?? join(home, ".no-identity-tool"));
-    this.#identityState = join(home, ".bb-box-state");
+    this.#identityState = join(home, ".alia-box-state");
     this.#owned = ownedFoldersEnv([home, ...(identityRoot ? [identityRoot] : [])], join(hostStubsRootForThisProcess(), "tmp"));
     // A test's cgroup for the memory a box uses (061), which no real box sets.
     const env = {
@@ -971,7 +971,7 @@ export class FakeTransport implements CommandTransport {
     await this.#answer();
     const hashed = this.#powerShellHash(script);
     if (hashed) return hashed;
-    // A fake box has no root of its own: what BB Box runs as root runs as the test's user, never through the test machine's sudo.
+    // A fake box has no root of its own: what VesnALIA Box runs as root runs as the test's user, never through the test machine's sudo.
     const own = script.includes(`${IDENTITY_STATE}/identity-`) ? script.replaceAll(IDENTITY_STATE, this.#identityState) : script;
     return this.#line.run(withoutTestMachineFlush(own).replaceAll("sudo -n ", "").replaceAll(IDENTITY_TOOL, this.#identityTool), { ...options, signal: this.#signal(options?.signal) });
   }

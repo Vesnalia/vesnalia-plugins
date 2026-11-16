@@ -1,5 +1,5 @@
 /**
- * Palette commands for the Review tab's actions. A command runs outside the tab (bb hands it only the
+ * Palette commands for the Review tab's actions. A command runs outside the tab (VesnALIA hands it only the
  * thread in view and its side panel), so it opens the thread's Review tab and leaves the action here
  * for that tab: a showing tab of the thread takes it at once, otherwise the tab takes it when it shows.
  * An action no tab takes within a few seconds is dropped, so a stale one never fires later.

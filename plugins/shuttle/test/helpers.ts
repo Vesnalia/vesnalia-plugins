@@ -4,7 +4,7 @@ import type { z } from "zod";
 import { DEFAULT_CONFIG, parseConfig, type Config, type configSchema } from "../src/config";
 import { MIGRATIONS } from "../src/db/schema";
 import { Store } from "../src/db/store";
-import { UsageUnavailableError, type BbPort, type EnvironmentProviderInfo, type MachineProviderInfo, type ProjectInfo, type SendOptions, type SpawnArgs, type ThreadInfo, type UsageRead } from "../src/ports";
+import { UsageUnavailableError, type AliaPort, type EnvironmentProviderInfo, type MachineProviderInfo, type ProjectInfo, type SendOptions, type SpawnArgs, type ThreadInfo, type UsageRead } from "../src/ports";
 import { DEFAULT_SETTINGS, type Settings } from "../src/settings";
 import { Shuttle } from "../src/shuttle";
 
@@ -14,13 +14,13 @@ export function memoryDb(): Database.Database {
   return db;
 }
 
-export class FakePort implements BbPort {
+export class FakePort implements AliaPort {
   spawned: Array<SpawnArgs & { threadId: string }> = [];
   sent: Array<{ threadId: string; text: string; options?: SendOptions }> = [];
   outputs = new Map<string, string>();
-  /** Child threads by parent, as bb's sidebar nests them. */
+  /** Child threads by parent, as VesnALIA's sidebar nests them. */
   children = new Map<string, string[]>();
-  /** What Shuttle asked bb to do to threads, in order. */
+  /** What Shuttle asked VesnALIA to do to threads, in order. */
   lifecycle: string[] = [];
   failArchive = false;
   threads = new Map<string, ThreadInfo>();
@@ -31,7 +31,7 @@ export class FakePort implements BbPort {
   publishes = 0;
   invalidations: string[][] = [];
   logs: string[] = [];
-  /** What the next spawns throw, such as bb refusing while a machine provider has no room. */
+  /** What the next spawns throw, such as VesnALIA refusing while a machine provider has no room. */
   spawnError: Error | null = null;
   environments: EnvironmentProviderInfo[] = [];
   machines: MachineProviderInfo[] = [];
@@ -50,7 +50,7 @@ export class FakePort implements BbPort {
     return read ?? { usage: null, descendants: [] };
   }
 
-  settingsPatches: Array<Parameters<BbPort["setSettings"]>[0]> = [];
+  settingsPatches: Array<Parameters<AliaPort["setSettings"]>[0]> = [];
   notifications: Array<{ title: string; body: string }> = [];
   async notify(title: string, body: string): Promise<void> {
     this.notifications.push({ title, body });
@@ -59,11 +59,11 @@ export class FakePort implements BbPort {
   addThread(id: string, title = `Thread ${id}`, archived = false, extra: Partial<ThreadInfo> = {}): void {
     this.threads.set(id, { id, title, archived, projectId: "proj_app", status: "idle", waiting: false, branch: null, updatedAt: 0, ...extra });
   }
-  async setSettings(patch: Parameters<BbPort["setSettings"]>[0]): Promise<void> {
+  async setSettings(patch: Parameters<AliaPort["setSettings"]>[0]): Promise<void> {
     this.settingsPatches.push(patch);
   }
   private spawnHeld: { entered: () => void; until: Promise<void> } | null = null;
-  /** The next spawn waits, as while bb provisions a thread: `entered` resolves once it waits, `release` lets it go on. */
+  /** The next spawn waits, as while VesnALIA provisions a thread: `entered` resolves once it waits, `release` lets it go on. */
   holdSpawn(): { entered: Promise<void>; release: () => void } {
     let entered!: () => void;
     let release!: () => void;
@@ -88,16 +88,16 @@ export class FakePort implements BbPort {
     if (this.failSendTo.has(threadId)) throw new Error("thread is gone");
     this.sent.push(options && Object.keys(options).length ? { threadId, text, options } : { threadId, text });
   }
-  /** Threads bb refuses to stop, as when their machine is gone. */
+  /** Threads VesnALIA refuses to stop, as when their machine is gone. */
   failStop = new Set<string>();
-  /** Like bb: the thread only, which goes idle. */
+  /** Like VesnALIA: the thread only, which goes idle. */
   async stop(threadId: string): Promise<void> {
     if (this.failStop.has(threadId)) throw new Error("stop refused");
     this.lifecycle.push(`stop ${threadId}`);
     const thread = this.threads.get(threadId);
     if (thread) this.threads.set(threadId, { ...thread, status: "idle" });
   }
-  /** Like bb: the thread and every child under it. */
+  /** Like VesnALIA: the thread and every child under it. */
   async archive(threadId: string): Promise<string[]> {
     if (this.failArchive) throw new Error("archive refused");
     this.lifecycle.push(`archive ${threadId}`);
@@ -109,7 +109,7 @@ export class FakePort implements BbPort {
     }
     return ids;
   }
-  /** Like bb: the thread only; its children stay archived. */
+  /** Like VesnALIA: the thread only; its children stay archived. */
   async unarchive(threadId: string): Promise<void> {
     this.lifecycle.push(`unarchive ${threadId}`);
     const thread = this.threads.get(threadId);
@@ -135,14 +135,14 @@ export class FakePort implements BbPort {
   async getThread(threadId: string): Promise<ThreadInfo | null> {
     return this.threads.get(threadId) ?? null;
   }
-  /** Like bb with `archived: false`: live threads only, in no useful order. */
+  /** Like VesnALIA with `archived: false`: live threads only, in no useful order. */
   async listThreads(limit: number): Promise<ThreadInfo[]> {
     return [...this.threads.values()].filter((thread) => !thread.archived).slice(0, limit);
   }
   async threadsById(threadIds: readonly string[]): Promise<ThreadInfo[]> {
     return threadIds.flatMap((id) => this.threads.get(id) ?? []);
   }
-  /** Like bb: hidden threads only when asked for. */
+  /** Like VesnALIA: hidden threads only when asked for. */
   async childThreads(threadId: string, options: { hidden?: boolean } = {}): Promise<ThreadInfo[]> {
     return (this.children.get(threadId) ?? []).flatMap((id) => this.threads.get(id) ?? []).filter((thread) => !thread.archived && (options.hidden === true || thread.hidden !== true));
   }

@@ -1,6 +1,6 @@
 // Language and clock resolution shared by the plugin's frontend.
 //
-// Settings store human-readable option strings (BB renders select options
+// Settings store human-readable option strings (VesnALIA renders select options
 // verbatim), so this module maps them to a language and a 12/24-hour clock.
 // "System" follows the user's machine: the language from the browser's
 // preferred languages, the clock from the computer's own 12/24-hour switch,

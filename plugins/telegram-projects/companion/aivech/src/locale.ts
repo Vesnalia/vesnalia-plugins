@@ -10,18 +10,18 @@ export const english: Record<string, string> = {
   "⏹ Остановить": "⏹ Stop",
   Отключиться: "Disconnect",
   "📂 Все проекты": "📂 All projects",
-  "Открыть чат в BB": "Open chat in BB",
-  "⚠️ BB был перезапущен во время обработки сообщения. Исход действия не подтверждён. Открой /chats и проверь чат перед повторной отправкой.":
-    "⚠️ BB restarted while processing the message. The outcome is unconfirmed. Open /chats and check before sending again.",
-  "⚠️ Не удалось подтвердить действие. Проверь /status и /chats перед повтором; подробности доступны в BB.":
-    "⚠️ Could not confirm the action. Check /status and /chats before retrying; details are available in BB.",
+  "Открыть чат в ALIA": "Open chat in VesnALIA",
+  "⚠️ ALIA был перезапущен во время обработки сообщения. Исход действия не подтверждён. Открой /chats и проверь чат перед повторной отправкой.":
+    "⚠️ VesnALIA restarted while processing the message. The outcome is unconfirmed. Open /chats and check before sending again.",
+  "⚠️ Не удалось подтвердить действие. Проверь /status и /chats перед повтором; подробности доступны в ALIA.":
+    "⚠️ Could not confirm the action. Check /status and /chats before retrying; details are available in VesnALIA.",
   "📂 Выбери проект. Новая тема будет привязана к нему.\n\nВнутри проекта: «Новый чат» или «Чаты» → подключиться → написать сообщение.\n/tasks — задачи; /menu — управление чатом.":
     "📂 Choose a project to bind this topic.\n\nInside a project: New chat or Chats → connect → send a message.\n/tasks — tasks; /menu — chat controls.",
   "\n\nСообщение здесь продолжит этот чат. Другие чаты проекта не пересылаются.":
     "\n\nMessages here continue this chat. Other project chats are not forwarded.",
   "✚ Новый чат: напиши первое сообщение.\nНастройки: ":
     "✚ New chat: send your first message.\nSettings: ",
-  "по умолчанию BB": "BB default",
+  "по умолчанию ALIA": "VesnALIA default",
   "\nРаздел: ": "\nSection: ",
   "выбран в меню": "selected in menu",
   "корень проекта": "project root",
@@ -41,9 +41,9 @@ export const english: Record<string, string> = {
     "Choose the current chat model below. A different agent starts a new chat.",
   "Модель текущего чата": "Current chat model",
   "Другой агент → новый чат": "Different agent → new chat",
-  "🤖 Агент для нового чата. Его модели берутся из настроек BB.":
-    "🤖 Agent for the new chat. Models come from BB settings.",
-  "По умолчанию BB": "BB default",
+  "🤖 Агент для нового чата. Его модели берутся из настроек ALIA.":
+    "🤖 Agent for the new chat. Models come from VesnALIA settings.",
+  "По умолчанию ALIA": "VesnALIA default",
   "Модель ": "Model ",
   "Применится к текущему чату, когда он свободен.":
     "Applies to the current chat when it is idle.",
@@ -58,15 +58,15 @@ export const english: Record<string, string> = {
     "Unknown command. /menu — controls; /say /command — send a command as text to the agent.",
   "Транскрибация сейчас недоступна. Отправь текст.":
     "Transcription is currently unavailable. Send text.",
-  "Не удалось распознать голос. Отправь текст или проверь транскрибацию в настройках BB. Ограничение: 10 минут и 15 МБ.":
-    "Could not transcribe the recording. Send text or check BB transcription settings. Limit: 10 minutes and 15 MB.",
+  "Не удалось распознать голос. Отправь текст или проверь транскрибацию в настройках ALIA. Ограничение: 10 минут и 15 МБ.":
+    "Could not transcribe the recording. Send text or check VesnALIA transcription settings. Limit: 10 minutes and 15 MB.",
   "🎙 Распознано:\n": "🎙 Transcribed:\n",
-  "Отправь текст или голосовое сообщение. Вложения пока открывай в BB.":
-    "Send text or a voice message. Open attachments in BB for now.",
-  "В чате есть вопрос. Ответь через кнопку или ответом на его карточку. Если форма сложная — открой BB.":
-    "The chat has a question. Use a button or reply to its card. Open BB for complex forms.",
-  "📨 Сообщение принято BB. Ответ придёт сюда.\n/stop — остановить, /menu — текущий чат.":
-    "📨 BB received your message. The reply will arrive here.\n/stop — stop; /menu — current chat.",
+  "Отправь текст или голосовое сообщение. Вложения пока открывай в ALIA.":
+    "Send text or a voice message. Open attachments in VesnALIA for now.",
+  "В чате есть вопрос. Ответь через кнопку или ответом на его карточку. Если форма сложная — открой ALIA.":
+    "The chat has a question. Use a button or reply to its card. Open VesnALIA for complex forms.",
+  "📨 Сообщение принято ALIA. Ответ придёт сюда.\n/stop — остановить, /menu — текущий чат.":
+    "📨 VesnALIA received your message. The reply will arrive here.\n/stop — stop; /menu — current chat.",
   "\n\nПодключение будет пересылать новые ответы и вопросы этого чата в текущую тему.":
     "\n\nConnecting forwards new replies and questions from this chat into this topic.",
   Подключиться: "Connect",
@@ -83,28 +83,28 @@ export const english: Record<string, string> = {
     "Stop the current run? The chat and history will remain.",
   "Да, остановить": "Yes, stop",
   Назад: "Back",
-  "Команда остановки отправлена BB.": "Stop request sent to BB.",
-  "Этот вопрос уже закрыт в BB.": "This question is already closed in BB.",
-  "Ответ передан BB.": "Answer sent to BB.",
+  "Команда остановки отправлена ALIA.": "Stop request sent to VesnALIA.",
+  "Этот вопрос уже закрыт в ALIA.": "This question is already closed in VesnALIA.",
+  "Ответ передан ALIA.": "Answer sent to VesnALIA.",
   "Вопрос относится к прежнему подключению. Открой /menu.":
     "This question belongs to a previous connection. Open /menu.",
   "Этот вопрос уже закрыт.": "This question is already closed.",
-  "Для этого вопроса выбери кнопку или открой BB.":
-    "Choose a button or open BB for this question.",
-  "❓ BB ждёт ответа\n": "❓ BB needs your answer\n",
+  "Для этого вопроса выбери кнопку или открой ALIA.":
+    "Choose a button or open VesnALIA for this question.",
+  "❓ ALIA ждёт ответа\n": "❓ VesnALIA needs your answer\n",
   "Требуется разрешение\n": "Permission required\n",
   "Разрешить один раз": "Allow once",
   Отказать: "Deny",
   "\n\nМожно ответить текстом через «Ответить» на это сообщение.":
     "\n\nYou can answer by replying to this message.",
-  "\n\nНесколько вопросов: открой форму в BB.":
-    "\n\nMultiple questions: open the form in BB.",
-  "Эта форма открывается в BB.": "Open this form in BB.",
-  "⚠️ Запуск завершился ошибкой. Подробности в BB.":
-    "⚠️ The run failed. See details in BB.",
+  "\n\nНесколько вопросов: открой форму в ALIA.":
+    "\n\nMultiple questions: open the form in VesnALIA.",
+  "Эта форма открывается в ALIA.": "Open this form in VesnALIA.",
+  "⚠️ Запуск завершился ошибкой. Подробности в ALIA.":
+    "⚠️ The run failed. See details in VesnALIA.",
   "⏹ Запуск остановлен.": "⏹ Run stopped.",
   "нужен ответ": "answer needed",
-  "Чат BB": "BB chat",
+  "Чат ALIA": "VesnALIA chat",
   Управление: "Controls",
   "В планах": "Backlog",
   "К выполнению": "To do",
@@ -126,20 +126,20 @@ export const english: Record<string, string> = {
   "🧭 Навигация": "🧭 Navigation",
   "<b>🧭 Рабочее пространство Кирилла</b>\n\n":
     "<b>🧭 Kirill’s workspace</b>\n\n",
-  "\n\nВ темах проектов — чаты BB и уведомления Tasks.\n📱 SMS — коды и сообщения на телефон.\n\n/project — привязать новую тему\n/chats — чаты BB\n/model — агент и модель\n/tasks — активные задачи\n/menu — управление":
-    "\n\nProject topics contain BB chats and Tasks notifications.\n📱 SMS — phone messages and codes.\n\n/project — bind a new topic\n/chats — BB chats\n/model — agent and model\n/tasks — active tasks\n/menu — controls",
+  "\n\nВ темах проектов — чаты ALIA и уведомления Tasks.\n📱 SMS — коды и сообщения на телефон.\n\n/project — привязать новую тему\n/chats — чаты ALIA\n/model — агент и модель\n/tasks — активные задачи\n/menu — управление":
+    "\n\nProject topics contain VesnALIA chats and Tasks notifications.\n📱 SMS — phone messages and codes.\n\n/project — bind a new topic\n/chats — VesnALIA chats\n/model — agent and model\n/tasks — active tasks\n/menu — controls",
   "<b>📱 SMS</b>\n\nЗдесь будут новые сообщения на телефон и кнопки копирования кодов.":
     "<b>📱 SMS</b>\n\nNew phone messages and code-copy buttons appear here.",
-  "</b>\n\nЗдесь появляются события задач этого проекта.\n\n/menu — управление чатом BB\n/new — новая сессия\n/chats — подключиться к существующему чату\n/model — агент и модель\n/tasks — задачи проекта\n\nВ Telegram приходят только ответы подключённого чата и события Tasks.":
-    "</b>\n\nTask events for this project appear here.\n\n/menu — BB chat controls\n/new — new session\n/chats — connect to an existing chat\n/model — agent and model\n/tasks — project tasks\n\nOnly connected chat replies and Tasks events are delivered to Telegram.",
-  "Открыть BB": "Open BB",
-  "Открыть в BB": "Open in BB",
+  "</b>\n\nЗдесь появляются события задач этого проекта.\n\n/menu — управление чатом ALIA\n/new — новая сессия\n/chats — подключиться к существующему чату\n/model — агент и модель\n/tasks — задачи проекта\n\nВ Telegram приходят только ответы подключённого чата и события Tasks.":
+    "</b>\n\nTask events for this project appear here.\n\n/menu — VesnALIA chat controls\n/new — new session\n/chats — connect to an existing chat\n/model — agent and model\n/tasks — project tasks\n\nOnly connected chat replies and Tasks events are delivered to Telegram.",
+  "Открыть ALIA": "Open VesnALIA",
+  "Открыть в ALIA": "Open in VesnALIA",
   "🔌 Подключить здесь": "🔌 Connect here",
   "Открыть Telegram Projects": "Open Telegram Projects",
   "Открыть ": "Open ",
   Принято: "Received",
-  "🧭 Рабочее пространство Кирилла\n\n📂 Темы проектов — события Tasks: запуск, проверка, завершение, ошибки исполнителей и сроки.\n📱 SMS — сообщения на телефон и кнопки копирования кодов.\n\n/projects — проекты\n/tasks — активные задачи в текущей теме\n/status — состояние сервисов\n\nОбычные чаты BB сюда не пересылаются.":
-    "🧭 Kirill’s workspace\n\n📂 Project topics — Tasks events: start, review, completion, worker errors and due dates.\n📱 SMS — phone messages and code-copy buttons.\n\n/projects — projects\n/tasks — active tasks in this topic\n/status — service status\n\nOther BB chats are not forwarded here.",
+  "🧭 Рабочее пространство Кирилла\n\n📂 Темы проектов — события Tasks: запуск, проверка, завершение, ошибки исполнителей и сроки.\n📱 SMS — сообщения на телефон и кнопки копирования кодов.\n\n/projects — проекты\n/tasks — активные задачи в текущей теме\n/status — состояние сервисов\n\nОбычные чаты ALIA сюда не пересылаются.":
+    "🧭 Kirill’s workspace\n\n📂 Project topics — Tasks events: start, review, completion, worker errors and due dates.\n📱 SMS — phone messages and code-copy buttons.\n\n/projects — projects\n/tasks — active tasks in this topic\n/status — service status\n\nOther VesnALIA chats are not forwarded here.",
   "Синхронизация проектов ещё не настроена.":
     "Project sync has not been configured yet.",
   "📂 Проекты\n\n": "📂 Projects\n\n",
@@ -155,7 +155,7 @@ export const english: Record<string, string> = {
   "Активные задачи": "Active tasks",
   "Активных задач нет.": "No active tasks.",
   "\n\nЕщё ": "\n\nAnother ",
-  " — в BB.": " — in BB.",
+  " — в ALIA.": " — in VesnALIA.",
   "\n📂 Проекты: ": "\n📂 Projects: ",
   "\nСинхронизация: ": "\nSync: ",
   "\n📂 Синхронизация проектов ещё не подключена":
@@ -186,7 +186,7 @@ export const english: Record<string, string> = {
   "ожидает запуска": "pending",
   останавливается: "stopping",
   ошибка: "error",
-  "окружение BB": "BB environment",
+  "окружение ALIA": "VesnALIA environment",
   "не указан": "unspecified",
   нет: "none",
   "данные устарели": "stale data",
@@ -205,8 +205,8 @@ Object.assign(english, {
     "🖥 Where should the new chat run? Models and profiles come from that machine.",
   "На выбранном сервере для этого провайдера профили не найдены. Будет использован агент по умолчанию.":
     "No profiles were found for this provider on the selected server. The default agent will be used.",
-  "Для этой машины ещё не настроена папка проекта в BB. Добавь источник проекта и повтори выбор сервера.":
-    "This machine has no project folder configured in BB yet. Add a project source and select the server again.",
+  "Для этой машины ещё не настроена папка проекта в ALIA. Добавь источник проекта и повтори выбор сервера.":
+    "This machine has no project folder configured in VesnALIA yet. Add a project source and select the server again.",
   "Страница ": "Page ",
   "🎭 Выбери профиль агента для нового чата. Модель уже выбрана.":
     "🎭 Choose an agent profile for the new chat. The model is already selected.",

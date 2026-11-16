@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import { merge, type Attention } from "./attention";
 
 /** `loaded`: the first snapshot arrived. */

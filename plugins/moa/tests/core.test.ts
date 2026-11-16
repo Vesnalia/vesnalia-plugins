@@ -17,7 +17,7 @@ describe("MoA policy", () => {
   });
   it("preserves user text, files, images and other plugins' context", () => {
     const input: Input = [
-      { type: "text", text: "[bb-moa-reference:literal user text]", mentions: [] },
+      { type: "text", text: "[alia-moa-reference:literal user text]", mentions: [] },
       { type: "image", url: "https://example.com/a.png" },
       { type: "localFile", path: "/a.pdf" },
       { type: "text", text: "Other plugin", mentions: [], visibility: "agent-only" },

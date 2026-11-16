@@ -63,7 +63,7 @@ still leaves 25GB while 4GB free is an emergency at any percentage.
 Reclaim's icon in the navigation rail carries the percent-full figure as a small
 badge: muted while healthy, red at **warn**, a filled red pill at **critical**.
 
-At **warn** it can auto-clean. At **critical** it can hand the problem to a BB
+At **warn** it can auto-clean. At **critical** it can hand the problem to a VesnALIA
 agent with the full report and the tools to act on it. Both are off by default.
 
 Automatic cleanup has two independent triggers and one shared 6-hour cooldown:
@@ -100,7 +100,7 @@ Reclaim indexes everything and deletes almost nothing.
 ## Agents
 
 Reclaim registers three tools — `reclaim_status`, `reclaim_plan`,
-`reclaim_apply` — and a skill. They are available in **every** BB thread, not
+`reclaim_apply` — and a skill. They are available in **every** VesnALIA thread, not
 just ones about disk space, so an agent debugging an `ENOSPC` build failure can
 diagnose and fix it without being told Reclaim exists.
 
@@ -110,7 +110,7 @@ numbers and the tools; below that threshold it contributes nothing, because a
 healthy disk is not worth a line of anyone's context. The state comes from the
 guard's existing once-a-minute poll, so it costs no I/O on a turn.
 
-Tool-set and description changes apply on the **next** session start — BB never
+Tool-set and description changes apply on the **next** session start — VesnALIA never
 hot-mutates a running provider session.
 
 ## Docker
@@ -131,7 +131,7 @@ machine reports 460GB apparent, 37.6GB actual) and offers both halves:
   Docker holds, never preselected, and pointless before pruning. It reports what
   the host actually got back, measured before and after, not an estimate.
 
-The Docker CLI is resolved by path rather than trusted to `PATH` — the BB daemon
+The Docker CLI is resolved by path rather than trusted to `PATH` — the VesnALIA daemon
 does not inherit a login shell, and Docker Desktop installs outside it. A helper
 image already on the machine is preferred over pulling one; pulling a large
 image to save space would be self-defeating.
@@ -149,13 +149,13 @@ a running agent turns a cleanup into an outage.
 ## CLI
 
 ```
-bb reclaim status               # capacity, pressure, index state
-bb reclaim top --limit 20       # largest directories and files
-bb reclaim tree ~/Documents     # one directory, by size
-bb reclaim scan --wait          # rebuild the index
-bb reclaim plan                 # candidates with ids
-bb reclaim clean                # dry run
-bb reclaim clean --yes          # apply the preselected set
+alia reclaim status               # capacity, pressure, index state
+alia reclaim top --limit 20       # largest directories and files
+alia reclaim tree ~/Documents     # one directory, by size
+alia reclaim scan --wait          # rebuild the index
+alia reclaim plan                 # candidates with ids
+alia reclaim clean                # dry run
+alia reclaim clean --yes          # apply the preselected set
 ```
 
 All commands take `--json`.
@@ -165,7 +165,7 @@ All commands take `--json`.
 Everything is on the panel's **Settings** tab — authorized roots (add and
 remove), alert thresholds, automatic cleanup and its risk tier, agent
 escalation and its project, scan interval, idle-project age, Docker. The same
-values are editable from Extensions → Plugins and `bb plugin config reclaim`;
+values are editable from Extensions → Plugins and `alia plugin config reclaim`;
 the panel and the CLI are the same source of truth.
 
 **Hand to an agent** sits in the panel header, so it is available from any tab.
@@ -176,6 +176,6 @@ the panel and the CLI are the same source of truth.
 npm install
 npm test
 npm run typecheck
-bb plugin build
-bb plugin install .
+alia plugin build
+alia plugin install .
 ```

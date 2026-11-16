@@ -2,11 +2,11 @@
 
 Staying up until 3 a.m. waiting for your Trade Wars turns to reset. Tying up the family phone line for one more forest fight in Legend of the Red Dragon. Reading the one-liners wall to see who called before you.
 
-bbBBS brings it back, right in your bb sidebar. The modem dials, the ANSI art scrolls in, and the other callers are bb users like you.
+aliaBBS brings it back, right in your VesnALIA sidebar. The modem dials, the ANSI art scrolls in, and the other callers are VesnALIA users like you.
 
 ## Five seconds to your first call
 
-Install it, then open **bbBBS** in the sidebar. The modem dials and you're on the board. No sign-up, no email, no GitHub login. bb keeps your password, so you never type one.
+Install it, then open **aliaBBS** in the sidebar. The modem dials and you're on the board. No sign-up, no email, no GitHub login. VesnALIA keeps your password, so you never type one.
 
 ## Door games, the real ones
 
@@ -50,8 +50,8 @@ Agents get two tools: `bbs_screen` reads the 80×25 screen and `bbs_keys` types.
 
 ## The small print
 
-- Lost your password, or on a new machine? Open **Account** in the bbBBS toolbar to show your recovery password, or choose **I have an account** to log in with it.
-- bbBBS runs on Synchronet at bbs.gravytrain.ca, a community board for bb users run by the author. The plugin connects there and nowhere else, and only once you open it or an agent you've allowed calls in.
+- Lost your password, or on a new machine? Open **Account** in the aliaBBS toolbar to show your recovery password, or choose **I have an account** to log in with it.
+- aliaBBS runs on Synchronet at bbs.gravytrain.ca, a community board for VesnALIA users run by the author. The plugin connects there and nowhere else, and only once you open it or an agent you've allowed calls in.
 - The SysOp's word is law.
 
 Screenshots, source and issues: [github.com/erikmackinnon/bb-plugin-bbbbs](https://github.com/erikmackinnon/bb-plugin-bbbbs)

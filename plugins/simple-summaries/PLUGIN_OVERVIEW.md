@@ -10,7 +10,7 @@ Summaries are display-only: they do not replace or compact the conversation and 
 
 ## Requirements
 
-Select an available BB provider and model in the plugin settings. Generation sends conversation text to that provider and uses its normal subscription allowance or API billing. No separate summary service is required.
+Select an available VesnALIA provider and model in the plugin settings. Generation sends conversation text to that provider and uses its normal subscription allowance or API billing. No separate summary service is required.
 
 ## Credits
 

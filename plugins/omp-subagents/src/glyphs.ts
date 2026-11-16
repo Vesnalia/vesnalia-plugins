@@ -1,4 +1,4 @@
-// Every icon name this plugin draws, in one place. bb's icon set is a subset of
+// Every icon name this plugin draws, in one place. VesnALIA's icon set is a subset of
 // the usual icon libraries: a name it lacks does not error, it renders the Zap
 // (lightning bolt) fallback. Each name below was probed in the running app.
 export const GLYPHS = {
@@ -21,8 +21,8 @@ export const GLYPHS = {
 
 export type GlyphName = (typeof GLYPHS)[keyof typeof GLYPHS];
 
-/** Names confirmed to exist in bb's icon set. */
-export const VERIFIED_BB_GLYPHS = [
+/** Names confirmed to exist in VesnALIA's icon set. */
+export const VERIFIED_ALIA_GLYPHS = [
   "Bot",
   "UserRoundPlus",
   "ArrowLeft",

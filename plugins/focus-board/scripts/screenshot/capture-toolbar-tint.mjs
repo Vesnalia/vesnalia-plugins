@@ -38,7 +38,7 @@ for (const [variant, viewport] of Object.entries(VIEWPORTS)) {
     await new Promise((resolve) => setTimeout(resolve, 400));
     const background = await page.evaluate(() => {
       const el = document.querySelector(
-        'header, [data-bb-plugin="focus-board"] > div',
+        'header, [data-alia-plugin="focus-board"] > div',
       );
       const row = el?.matches("header") ? el : el?.firstElementChild;
       const band = row?.matches("header")

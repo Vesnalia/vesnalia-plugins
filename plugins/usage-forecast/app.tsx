@@ -1,7 +1,7 @@
 // App entry: the composer banner of every thread, a section of the thread
 // context card (Mac), a settings page section and the limits ring in the
 // sidebar footer.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { Banner } from "./src/app/banner";
 import { ContextCardSection } from "./src/app/context-row";
 import { IndicatorFeeder } from "./src/app/indicator-store";
@@ -9,7 +9,7 @@ import { RING_ICON, RingIcon } from "./src/app/ring-icon";
 import { SettingsSection } from "./src/app/settings-section";
 import { SidebarCard } from "./src/app/sidebar-card";
 
-/** After bb's own card sections (`1_related` … `3_storage`). */
+/** After VesnALIA's own card sections (`1_related` … `3_storage`). */
 export const CARD_SECTION_GROUP = "6_usage";
 
 export default definePluginApp((app) => {

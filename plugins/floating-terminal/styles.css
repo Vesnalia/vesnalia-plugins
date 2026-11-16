@@ -3,15 +3,15 @@
 /*
  * Everything Tailwind utilities cannot express for the floating window.
  *
- * Rules are scoped under .bb-ft-window so nothing here can reach the rest of
- * the bb app — including the xterm.css imported alongside it. The handful of
+ * Rules are scoped under .alia-ft-window so nothing here can reach the rest of
+ * the alia app — including the xterm.css imported alongside it. The handful of
  * classes used inside portaled menus and tooltips (which render outside the
- * window) carry the bb-ft- prefix instead, which is just as private.
+ * window) carry the alia-ft- prefix instead, which is just as private.
  *
  * Sizes live here rather than as utility classes for one more reason: this
  * plugin ships its own Tailwind build, and inside the host page its utility
- * layer loses to bb's app CSS for `max-*` and the text sizes. Everything
- * scoped under .bb-ft-window does apply.
+ * layer loses to alia's app CSS for `max-*` and the text sizes. Everything
+ * scoped under .alia-ft-window does apply.
  */
 
 /* ------------------------------------------------------------------ window */
@@ -24,23 +24,23 @@
  * visibility transition keeps the element interactive-none and invisible
  * after the exit lands, with no JavaScript timers involved.
  */
-.bb-ft-window {
+.alia-ft-window {
   transform-origin: 0% 100%;
-  /* Above bb's chrome; see the stacking note at the end of this file. */
+  /* Above alia's chrome; see the stacking note at the end of this file. */
   z-index: 55;
   /*
-   * bb's desktop app marks its title bar as a native window-drag region, and
+   * alia's desktop app marks its title bar as a native window-drag region, and
    * the OS resolves those regions from the page's CSS boxes, not from what is
    * painted on top. Without this, every part of the window that overlapped
-   * bb's title bar — the whole tab strip once the window was maximized or
-   * dragged to the top — moved the bb window instead of taking the click.
-   * bb's own overlays opt out the same way.
+   * alia's title bar — the whole tab strip once the window was maximized or
+   * dragged to the top — moved the alia window instead of taking the click.
+   * alia's own overlays opt out the same way.
    */
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }
 
-.bb-ft-window[data-state="closed"] {
+.alia-ft-window[data-state="closed"] {
   opacity: 0;
   pointer-events: none;
   transform: translate3d(-8px, 12px, 0) scale(0.97);
@@ -54,12 +54,12 @@
 /*
  * `none`, not an identity transform. A transform that stays on after the
  * entrance keeps the window on its own compositor layer for as long as it is
- * open; at a fractional device pixel ratio (any bb zoom level, most external
+ * open; at a fractional device pixel ratio (any alia zoom level, most external
  * displays) that layer's bottom edge lands between device pixels and the
  * seam shows as a dark line along the bottom of the window. It also kept
- * every glyph a hair softer than bb's own terminal.
+ * every glyph a hair softer than alia's own terminal.
  */
-.bb-ft-window[data-state="open"] {
+.alia-ft-window[data-state="open"] {
   opacity: 1;
   transform: none;
   transition:
@@ -69,14 +69,14 @@
 }
 
 /* A drag or resize in flight: nothing animates, nothing gets selected. */
-.bb-ft-window[data-gesture] {
+.alia-ft-window[data-gesture] {
   transition: none;
   user-select: none;
   -webkit-user-select: none;
 }
 
-.bb-ft-window[data-gesture="drag"],
-.bb-ft-window[data-gesture="drag"] * {
+.alia-ft-window[data-gesture="drag"],
+.alia-ft-window[data-gesture="drag"] * {
   cursor: grabbing !important;
 }
 
@@ -85,7 +85,7 @@
  * box, so the resize handles below can straddle the edge without sitting on
  * top of the title bar.
  */
-.bb-ft-window .bb-ft-surface {
+.alia-ft-window .alia-ft-surface {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--card);
@@ -95,7 +95,7 @@
     0 22px 56px -14px rgb(0 0 0 / 0.42);
 }
 
-.bb-ft-window[data-gesture] .bb-ft-surface {
+.alia-ft-window[data-gesture] .alia-ft-surface {
   box-shadow:
     0 0 0 0.5px color-mix(in oklab, black 22%, transparent),
     0 4px 10px -2px rgb(0 0 0 / 0.18),
@@ -104,7 +104,7 @@
 
 /* --------------------------------------------------------------- title bar */
 
-.bb-ft-window .bb-ft-tabbar {
+.alia-ft-window .alia-ft-tabbar {
   height: 40px;
   gap: 2px;
   padding: 0 6px 0 4px;
@@ -112,18 +112,18 @@
   background: color-mix(in oklab, var(--foreground) 3.5%, var(--card));
 }
 
-.bb-ft-window[data-layout="window"]:not([data-maximized]) [data-bb-ft-drag],
-.bb-ft-window[data-layout="window"]:not([data-maximized]) [data-bb-ft-grip] {
+.alia-ft-window[data-layout="window"]:not([data-maximized]) [data-alia-ft-drag],
+.alia-ft-window[data-layout="window"]:not([data-maximized]) [data-alia-ft-grip] {
   cursor: grab;
 }
 
-.bb-ft-window [data-bb-ft-grip] {
+.alia-ft-window [data-alia-ft-grip] {
   width: 14px;
   justify-content: center;
   color: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
 }
 
-.bb-ft-window .bb-ft-title {
+.alia-ft-window .alia-ft-title {
   padding: 0 6px;
   color: var(--muted-foreground);
   font-size: 12px;
@@ -140,7 +140,7 @@
  * the active tab's drop shadow somewhere to land. With none, the box was
  * exactly one tab tall and the shadow was cut off along its top and bottom.
  */
-.bb-ft-window .bb-ft-tablist {
+.alia-ft-window .alia-ft-tablist {
   gap: 2px;
   padding: 4px 2px;
   overflow-x: auto;
@@ -149,12 +149,12 @@
   overscroll-behavior-x: contain;
 }
 
-.bb-ft-window .bb-ft-tablist::-webkit-scrollbar {
+.alia-ft-window .alia-ft-tablist::-webkit-scrollbar {
   display: none;
 }
 
 /* Title-bar buttons: a 28px chip, centred in the 40px bar. */
-.bb-ft-window .bb-ft-bar-button {
+.alia-ft-window .alia-ft-bar-button {
   width: 28px;
   height: 28px;
   flex-shrink: 0;
@@ -162,14 +162,14 @@
   color: var(--muted-foreground);
 }
 
-.bb-ft-window .bb-ft-bar-button svg {
+.alia-ft-window .alia-ft-bar-button svg {
   width: 15px;
   height: 15px;
 }
 
 /* ------------------------------------------------------------------- tabs */
 
-.bb-ft-window .bb-ft-tab {
+.alia-ft-window .alia-ft-tab {
   position: relative;
   display: flex;
   flex: 0 1 auto;
@@ -190,7 +190,7 @@
     box-shadow 120ms ease;
 }
 
-.bb-ft-window .bb-ft-tab:hover {
+.alia-ft-window .alia-ft-tab:hover {
   background: color-mix(in oklab, var(--foreground) 6%, transparent);
   color: var(--foreground);
 }
@@ -200,7 +200,7 @@
  * outside the scrolling strip and was clipped to its left and right sides —
  * two stray vertical lines bracketing the tab instead of an outline.
  */
-.bb-ft-window .bb-ft-tab[data-active] {
+.alia-ft-window .alia-ft-tab[data-active] {
   background: var(--card);
   color: var(--foreground);
   box-shadow:
@@ -208,29 +208,29 @@
     0 1px 2px rgb(0 0 0 / 0.14);
 }
 
-.bb-ft-window .bb-ft-tab:focus-visible {
+.alia-ft-window .alia-ft-tab:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: -1px;
 }
 
-.bb-ft-window .bb-ft-tab[data-dragging] {
+.alia-ft-window .alia-ft-tab[data-dragging] {
   opacity: 0.55;
 }
 
-.bb-ft-window .bb-ft-tab-icon {
+.alia-ft-window .alia-ft-tab-icon {
   width: 13px;
   height: 13px;
   flex-shrink: 0;
   opacity: 0.7;
 }
 
-.bb-ft-window .bb-ft-tab[data-active] .bb-ft-tab-icon {
+.alia-ft-window .alia-ft-tab[data-active] .alia-ft-tab-icon {
   opacity: 0.9;
 }
 
 /* One 18px slot at the trailing edge: the status/activity mark, or the close
    button on hover. They share it so a tab never changes width under you. */
-.bb-ft-window .bb-ft-tab-end {
+.alia-ft-window .alia-ft-tab-end {
   position: relative;
   display: grid;
   width: 18px;
@@ -239,7 +239,7 @@
   place-items: center;
 }
 
-.bb-ft-window .bb-ft-tab-close {
+.alia-ft-window .alia-ft-tab-close {
   position: absolute;
   inset: 0;
   display: grid;
@@ -252,12 +252,12 @@
     background-color 100ms ease;
 }
 
-.bb-ft-window .bb-ft-tab-close:hover {
+.alia-ft-window .alia-ft-tab-close:hover {
   background: color-mix(in oklab, var(--foreground) 10%, transparent);
   color: var(--foreground);
 }
 
-.bb-ft-window .bb-ft-tab-close:focus-visible {
+.alia-ft-window .alia-ft-tab-close:focus-visible {
   opacity: 1;
   outline: 2px solid var(--ring);
   outline-offset: -2px;
@@ -265,16 +265,16 @@
 
 /* No mark: the active tab always shows its close button. With a mark, the
    mark wins until the pointer arrives. */
-.bb-ft-window .bb-ft-tab[data-active] .bb-ft-tab-close:not([data-has-mark]),
-.bb-ft-window .bb-ft-tab:hover .bb-ft-tab-close {
+.alia-ft-window .alia-ft-tab[data-active] .alia-ft-tab-close:not([data-has-mark]),
+.alia-ft-window .alia-ft-tab:hover .alia-ft-tab-close {
   opacity: 1;
 }
 
-.bb-ft-window .bb-ft-tab:hover .bb-ft-dot {
+.alia-ft-window .alia-ft-tab:hover .alia-ft-dot {
   opacity: 0;
 }
 
-.bb-ft-window .bb-ft-dot {
+.alia-ft-window .alia-ft-dot {
   width: 7px;
   height: 7px;
   border-radius: 999px;
@@ -282,26 +282,26 @@
   transition: opacity 100ms ease;
 }
 
-.bb-ft-window .bb-ft-dot-hollow {
+.alia-ft-window .alia-ft-dot-hollow {
   background: transparent;
   box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--muted-foreground) 80%, transparent);
 }
 
-.bb-ft-window .bb-ft-dot-error {
+.alia-ft-window .alia-ft-dot-error {
   background: var(--destructive);
 }
 
-.bb-ft-window .bb-ft-dot-bell {
+.alia-ft-window .alia-ft-dot-bell {
   background: var(--primary);
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 25%, transparent);
 }
 
-.bb-ft-window .bb-ft-dot-pulse {
+.alia-ft-window .alia-ft-dot-pulse {
   background: var(--muted-foreground);
-  animation: bb-ft-pulse 1.1s ease-in-out infinite;
+  animation: alia-ft-pulse 1.1s ease-in-out infinite;
 }
 
-@keyframes bb-ft-pulse {
+@keyframes alia-ft-pulse {
   0%,
   100% {
     opacity: 0.35;
@@ -311,7 +311,7 @@
   }
 }
 
-.bb-ft-window .bb-ft-rename {
+.alia-ft-window .alia-ft-rename {
   min-width: 0;
   flex: 1;
   height: 20px;
@@ -326,7 +326,7 @@
   font-size: 12px;
 }
 
-.bb-ft-window .bb-ft-drop-indicator {
+.alia-ft-window .alia-ft-drop-indicator {
   position: absolute;
   top: 6px;
   bottom: 6px;
@@ -339,13 +339,13 @@
 
 /* ------------------------------------------------------------------- body */
 
-.bb-ft-window .bb-ft-body {
+.alia-ft-window .alia-ft-body {
   padding: 8px 8px 4px;
   background: var(--card);
 }
 
 /* Let the terminal own the full body box; FitAddon sizes rows/cols to it. */
-.bb-ft-window .xterm {
+.alia-ft-window .xterm {
   height: 100%;
   padding: 0;
 }
@@ -362,14 +362,14 @@
  * colour the terminal resolved (see `surface` in floating-terminal.tsx), so
  * the remainder cannot differ from it by even a rounding step.
  *
- * !important because the page can carry a second xterm.css: bb lazy-loads its
+ * !important because the page can carry a second xterm.css: alia lazy-loads its
  * own terminal's stylesheet the first time one of its terminals opens, and
  * that newer copy says `.xterm:not(.allow-transparency) .xterm-viewport` —
  * the same specificity as this rule, loaded later, so it won and the strip
  * came back mid-session. Out-ranking xterm's selector of the month is a race
  * this rule would keep losing.
  */
-.bb-ft-window .xterm .xterm-viewport {
+.alia-ft-window .xterm .xterm-viewport {
   background-color: transparent !important;
 }
 
@@ -381,7 +381,7 @@
  * Android keyboard: a black bar along the bottom of the window that appeared
  * and vanished as you typed.
  */
-.bb-ft-window .xterm .composition-view {
+.alia-ft-window .xterm .composition-view {
   background: color-mix(in oklab, var(--primary) 14%, var(--card));
   color: var(--foreground);
   box-shadow: inset 0 -1.5px 0 var(--primary);
@@ -389,7 +389,7 @@
 
 /* ------------------------------------------------------------------- find */
 
-.bb-ft-window .bb-ft-find {
+.alia-ft-window .alia-ft-find {
   height: 34px;
   padding: 0 3px;
   border: 1px solid var(--border);
@@ -400,16 +400,16 @@
   backdrop-filter: blur(10px);
 }
 
-.bb-ft-window .bb-ft-find[data-missed] {
+.alia-ft-window .alia-ft-find[data-missed] {
   border-color: color-mix(in oklab, var(--destructive) 55%, var(--border));
 }
 
-.bb-ft-window .bb-ft-find-input {
+.alia-ft-window .alia-ft-find-input {
   width: 9.5rem;
   font-size: 12px;
 }
 
-.bb-ft-window .bb-ft-find-count {
+.alia-ft-window .alia-ft-find-count {
   min-width: 3.25rem;
   padding: 0 4px;
   color: var(--muted-foreground);
@@ -419,11 +419,11 @@
   white-space: nowrap;
 }
 
-.bb-ft-window .bb-ft-find[data-missed] .bb-ft-find-count {
+.alia-ft-window .alia-ft-find[data-missed] .alia-ft-find-count {
   color: var(--destructive);
 }
 
-.bb-ft-window .bb-ft-find-toggle {
+.alia-ft-window .alia-ft-find-toggle {
   height: 24px;
   min-width: 26px;
   padding: 0 5px;
@@ -433,25 +433,25 @@
   font-size: 11px;
 }
 
-.bb-ft-window .bb-ft-find-toggle:hover {
+.alia-ft-window .alia-ft-find-toggle:hover {
   background: color-mix(in oklab, var(--foreground) 7%, transparent);
   color: var(--foreground);
 }
 
-.bb-ft-window .bb-ft-find-toggle-on {
+.alia-ft-window .alia-ft-find-toggle-on {
   background: color-mix(in oklab, var(--primary) 18%, transparent);
   color: var(--foreground);
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--primary) 45%, transparent);
 }
 
-.bb-ft-window .bb-ft-find-rule {
+.alia-ft-window .alia-ft-find-rule {
   width: 1px;
   height: 16px;
   margin: 0 3px;
   background: var(--border);
 }
 
-.bb-ft-window .bb-ft-find-button {
+.alia-ft-window .alia-ft-find-button {
   width: 26px;
   height: 26px;
   border-radius: 6px;
@@ -466,7 +466,7 @@
  * Right rather than centred, because the prompt — the one line you are
  * always reading — runs from the left; clear of the scrollbar.
  */
-.bb-ft-window .bb-ft-pills {
+.alia-ft-window .alia-ft-pills {
   position: absolute;
   right: 26px;
   bottom: 12px;
@@ -476,7 +476,7 @@
   pointer-events: none;
 }
 
-.bb-ft-window .bb-ft-pill {
+.alia-ft-window .alia-ft-pill {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -496,55 +496,55 @@
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  animation: bb-ft-rise 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: alia-ft-rise 160ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.bb-ft-window button.bb-ft-pill:hover {
+.alia-ft-window button.alia-ft-pill:hover {
   background: color-mix(in oklab, var(--foreground) 6%, var(--card));
 }
 
-.bb-ft-window button.bb-ft-pill:active {
+.alia-ft-window button.alia-ft-pill:active {
   background: var(--state-active, var(--muted));
 }
 
-.bb-ft-window .bb-ft-pill[data-tone="accent"] {
+.alia-ft-window .alia-ft-pill[data-tone="accent"] {
   border-color: transparent;
   background: var(--primary);
   color: var(--primary-foreground);
 }
 
-.bb-ft-window button.bb-ft-pill[data-tone="accent"]:hover {
+.alia-ft-window button.alia-ft-pill[data-tone="accent"]:hover {
   background: color-mix(in oklab, var(--primary) 88%, var(--foreground));
 }
 
-.bb-ft-window .bb-ft-pill-quiet {
+.alia-ft-window .alia-ft-pill-quiet {
   color: var(--muted-foreground);
   pointer-events: none;
 }
 
-@keyframes bb-ft-rise {
+@keyframes alia-ft-rise {
   from {
     opacity: 0;
     transform: translateY(6px);
   }
 }
 
-.bb-ft-window .bb-ft-spinner {
+.alia-ft-window .alia-ft-spinner {
   width: 20px;
   height: 20px;
   border: 2px solid color-mix(in oklab, var(--muted-foreground) 30%, transparent);
   border-top-color: var(--foreground);
   border-radius: 999px;
-  animation: bb-ft-spin 0.75s linear infinite;
+  animation: alia-ft-spin 0.75s linear infinite;
 }
 
-.bb-ft-window .bb-ft-spinner-small {
+.alia-ft-window .alia-ft-spinner-small {
   width: 12px;
   height: 12px;
   border-width: 1.5px;
 }
 
-@keyframes bb-ft-spin {
+@keyframes alia-ft-spin {
   to {
     transform: rotate(360deg);
   }
@@ -552,7 +552,7 @@
 
 /* ------------------------------------------------------------ empty state */
 
-.bb-ft-window .bb-ft-empty-mark {
+.alia-ft-window .alia-ft-empty-mark {
   display: grid;
   width: 32px;
   height: 32px;
@@ -564,13 +564,13 @@
   color: var(--muted-foreground);
 }
 
-.bb-ft-window .bb-ft-empty-picker {
+.alia-ft-window .alia-ft-empty-picker {
   border: 1px solid var(--border);
   border-radius: 10px;
   background: color-mix(in oklab, var(--foreground) 2%, var(--card));
 }
 
-.bb-ft-window .bb-ft-hints {
+.alia-ft-window .alia-ft-hints {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -581,31 +581,31 @@
 
 /* The empty window gives the picker a whole pane; the vendored menu cap would
    strand it at 300px in the middle of it. */
-.bb-ft-window [data-bb-ft-fill] {
+.alia-ft-window [data-alia-ft-fill] {
   max-height: none;
 }
 
 /*
  * At sheet width the machine name is the least important thing in the row, but
  * "Vedrans-MacBook-Pro" is 151px of a 313px row — enough to truncate every
- * project to "bb-plugin-co…". Cap it below the same breakpoint the sheet uses;
+ * project to "alia-plugin-co…". Cap it below the same breakpoint the sheet uses;
  * wider rows have the room and keep the full name.
  */
-.bb-ft-window [data-bb-ft-host],
-[data-bb-portaled-overlay] [data-bb-ft-host] {
+.alia-ft-window [data-alia-ft-host],
+[data-alia-portaled-overlay] [data-alia-ft-host] {
   max-width: 8.5rem;
 }
 
 @media (width < 48rem) {
-  .bb-ft-window [data-bb-ft-host],
-  [data-bb-portaled-overlay] [data-bb-ft-host] {
+  .alia-ft-window [data-alia-ft-host],
+  [data-alia-portaled-overlay] [data-alia-ft-host] {
     max-width: 6rem;
   }
 }
 
 /* ------------------------------------------- shared with portaled content */
 
-.bb-ft-kbd {
+.alia-ft-kbd {
   display: inline-block;
   padding: 1px 5px;
   border: 1px solid color-mix(in oklab, currentColor 22%, transparent);
@@ -617,12 +617,12 @@
   white-space: nowrap;
 }
 
-.bb-ft-tooltip {
+.alia-ft-tooltip {
   font-size: 12px;
   line-height: 1.45;
 }
 
-.bb-ft-chip {
+.alia-ft-chip {
   padding: 1px 5px;
   border-radius: 4px;
   background: color-mix(in oklab, var(--primary) 14%, transparent);
@@ -631,14 +631,14 @@
   line-height: 1.4;
 }
 
-.bb-ft-menu-row {
+.alia-ft-menu-row {
   display: flex;
   align-items: center;
   gap: 2px;
   padding: 4px 4px 4px 8px;
 }
 
-.bb-ft-step {
+.alia-ft-step {
   display: grid;
   width: 26px;
   height: 26px;
@@ -649,21 +649,21 @@
   touch-action: manipulation;
 }
 
-.bb-ft-step:hover:not(:disabled) {
+.alia-ft-step:hover:not(:disabled) {
   background: var(--state-hover, color-mix(in oklab, var(--foreground) 7%, transparent));
   color: var(--foreground);
 }
 
-.bb-ft-step:disabled {
+.alia-ft-step:disabled {
   opacity: 0.4;
 }
 
-.bb-ft-step-on {
+.alia-ft-step-on {
   background: color-mix(in oklab, var(--primary) 18%, transparent);
   color: var(--foreground);
 }
 
-.bb-ft-step-value {
+.alia-ft-step-value {
   min-width: 30px;
   height: 26px;
   border-radius: 6px;
@@ -673,18 +673,18 @@
   text-align: center;
 }
 
-.bb-ft-step-value:hover {
+.alia-ft-step-value:hover {
   background: var(--state-hover, color-mix(in oklab, var(--foreground) 7%, transparent));
 }
 
 /* A phone has no F2 and no ⌘; the hint is noise there. */
 @media (pointer: coarse) {
-  .bb-ft-shortcut-hint {
+  .alia-ft-shortcut-hint {
     display: none;
   }
 }
 
-.bb-ft-menu-foot {
+.alia-ft-menu-foot {
   padding: 6px 8px 4px;
   color: var(--muted-foreground);
   font-size: 11px;
@@ -693,7 +693,7 @@
 
 /* -------------------------------------------------------- shortcut sheet */
 
-.bb-ft-window .bb-ft-scrim {
+.alia-ft-window .alia-ft-scrim {
   position: absolute;
   inset: 0;
   z-index: 20;
@@ -703,10 +703,10 @@
   background: color-mix(in oklab, var(--card) 55%, transparent);
   -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
-  animation: bb-ft-fade 140ms ease;
+  animation: alia-ft-fade 140ms ease;
 }
 
-.bb-ft-window .bb-ft-panel {
+.alia-ft-window .alia-ft-panel {
   width: min(100%, 26rem);
   max-height: 100%;
   overflow: auto;
@@ -714,10 +714,10 @@
   border-radius: 12px;
   background: var(--popover, var(--card));
   box-shadow: 0 18px 48px -12px rgb(0 0 0 / 0.45);
-  animation: bb-ft-rise 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: alia-ft-rise 160ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.bb-ft-window .bb-ft-shortcuts {
+.alia-ft-window .alia-ft-shortcuts {
   display: grid;
   grid-template-columns: max-content 1fr;
   gap: 7px 14px;
@@ -726,16 +726,16 @@
   font-size: 12px;
 }
 
-.bb-ft-window .bb-ft-shortcuts dt {
+.alia-ft-window .alia-ft-shortcuts dt {
   color: var(--foreground);
 }
 
-.bb-ft-window .bb-ft-shortcuts dd {
+.alia-ft-window .alia-ft-shortcuts dd {
   margin: 0;
   color: var(--muted-foreground);
 }
 
-@keyframes bb-ft-fade {
+@keyframes alia-ft-fade {
   from {
     opacity: 0;
   }
@@ -748,14 +748,14 @@
  * desktop OS's do, so grabbing one never means reaching into the title bar.
  * The top-right corner used to sit inside the window over the hide button.
  */
-.bb-ft-window .bb-ft-edge {
+.alia-ft-window .alia-ft-edge {
   position: absolute;
   touch-action: none;
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }
 
-.bb-ft-window [data-bb-ft-edge="n"] {
+.alia-ft-window [data-alia-ft-edge="n"] {
   top: -4px;
   right: 10px;
   left: 10px;
@@ -763,7 +763,7 @@
   cursor: ns-resize;
 }
 
-.bb-ft-window [data-bb-ft-edge="s"] {
+.alia-ft-window [data-alia-ft-edge="s"] {
   right: 10px;
   bottom: -4px;
   left: 10px;
@@ -771,7 +771,7 @@
   cursor: ns-resize;
 }
 
-.bb-ft-window [data-bb-ft-edge="e"] {
+.alia-ft-window [data-alia-ft-edge="e"] {
   top: 10px;
   right: -4px;
   bottom: 10px;
@@ -779,7 +779,7 @@
   cursor: ew-resize;
 }
 
-.bb-ft-window [data-bb-ft-edge="w"] {
+.alia-ft-window [data-alia-ft-edge="w"] {
   top: 10px;
   bottom: 10px;
   left: -4px;
@@ -787,33 +787,33 @@
   cursor: ew-resize;
 }
 
-.bb-ft-window [data-bb-ft-edge="ne"],
-.bb-ft-window [data-bb-ft-edge="nw"],
-.bb-ft-window [data-bb-ft-edge="se"],
-.bb-ft-window [data-bb-ft-edge="sw"] {
+.alia-ft-window [data-alia-ft-edge="ne"],
+.alia-ft-window [data-alia-ft-edge="nw"],
+.alia-ft-window [data-alia-ft-edge="se"],
+.alia-ft-window [data-alia-ft-edge="sw"] {
   width: 12px;
   height: 12px;
 }
 
-.bb-ft-window [data-bb-ft-edge="ne"] {
+.alia-ft-window [data-alia-ft-edge="ne"] {
   top: -5px;
   right: -5px;
   cursor: nesw-resize;
 }
 
-.bb-ft-window [data-bb-ft-edge="nw"] {
+.alia-ft-window [data-alia-ft-edge="nw"] {
   top: -5px;
   left: -5px;
   cursor: nwse-resize;
 }
 
-.bb-ft-window [data-bb-ft-edge="se"] {
+.alia-ft-window [data-alia-ft-edge="se"] {
   right: -5px;
   bottom: -5px;
   cursor: nwse-resize;
 }
 
-.bb-ft-window [data-bb-ft-edge="sw"] {
+.alia-ft-window [data-alia-ft-edge="sw"] {
   bottom: -5px;
   left: -5px;
   cursor: nesw-resize;
@@ -827,9 +827,9 @@
  * whether a second one followed, and a quick second tap — close two tabs, step
  * the text size — zoomed the page instead of pressing anything.
  */
-.bb-ft-window button,
-.bb-ft-window [role="tab"],
-.bb-ft-window [role="tablist"] {
+.alia-ft-window button,
+.alia-ft-window [role="tab"],
+.alia-ft-window [role="tablist"] {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
@@ -839,11 +839,11 @@
  * an iPad claimed that gesture for scrolling the page and the window never
  * moved; the strip of tabs keeps sideways panning so it still scrolls.
  */
-.bb-ft-window[data-layout="window"] [data-bb-ft-handle] {
+.alia-ft-window[data-layout="window"] [data-alia-ft-handle] {
   touch-action: none;
 }
 
-.bb-ft-window[data-layout="window"] [data-bb-ft-handle] [role="tablist"] {
+.alia-ft-window[data-layout="window"] [data-alia-ft-handle] [role="tablist"] {
   touch-action: pan-x;
 }
 
@@ -857,7 +857,7 @@
  * pointers so a mouse and a trackpad keep every native behaviour.
  */
 @media (pointer: coarse) {
-  .bb-ft-window .xterm {
+  .alia-ft-window .xterm {
     touch-action: none;
   }
 }
@@ -871,13 +871,13 @@
  * visible: there is no hover to reveal it with.
  */
 @media (pointer: coarse) {
-  .bb-ft-window .bb-ft-tabbar {
+  .alia-ft-window .alia-ft-tabbar {
     height: 50px;
     gap: 4px;
     padding: 0 6px;
   }
 
-  .bb-ft-window .bb-ft-tab {
+  .alia-ft-window .alia-ft-tab {
     height: 38px;
     min-width: 96px;
     max-width: 12rem;
@@ -886,61 +886,61 @@
     font-size: 13px;
   }
 
-  .bb-ft-window .bb-ft-tab-end {
+  .alia-ft-window .alia-ft-tab-end {
     width: 32px;
     height: 32px;
   }
 
-  .bb-ft-window .bb-ft-tab .bb-ft-tab-close {
+  .alia-ft-window .alia-ft-tab .alia-ft-tab-close {
     opacity: 1;
   }
 
-  .bb-ft-window .bb-ft-tab .bb-ft-dot {
+  .alia-ft-window .alia-ft-tab .alia-ft-dot {
     display: none;
   }
 
   /* With the close button always up, a mark rides on the icon instead. */
-  .bb-ft-window .bb-ft-tab:has(.bb-ft-dot-bell) .bb-ft-tab-icon,
-  .bb-ft-window .bb-ft-tab:has(.bb-ft-dot-error) .bb-ft-tab-icon {
+  .alia-ft-window .alia-ft-tab:has(.alia-ft-dot-bell) .alia-ft-tab-icon,
+  .alia-ft-window .alia-ft-tab:has(.alia-ft-dot-error) .alia-ft-tab-icon {
     color: var(--primary);
     opacity: 1;
   }
 
-  .bb-ft-window .bb-ft-bar-button {
+  .alia-ft-window .alia-ft-bar-button {
     width: 40px;
     height: 40px;
     border-radius: 10px;
   }
 
-  .bb-ft-window .bb-ft-bar-button svg {
+  .alia-ft-window .alia-ft-bar-button svg {
     width: 18px;
     height: 18px;
   }
 
-  .bb-ft-window .bb-ft-pill {
+  .alia-ft-window .alia-ft-pill {
     height: 40px;
     padding: 0 16px 0 13px;
     font-size: 13px;
   }
 
-  .bb-ft-window .bb-ft-find {
+  .alia-ft-window .alia-ft-find {
     height: 42px;
   }
 
-  .bb-ft-window .bb-ft-find-button,
-  .bb-ft-window .bb-ft-find-toggle {
+  .alia-ft-window .alia-ft-find-button,
+  .alia-ft-window .alia-ft-find-toggle {
     min-width: 34px;
     height: 34px;
   }
 
-  .bb-ft-window .bb-ft-find-input {
+  .alia-ft-window .alia-ft-find-input {
     width: 7rem;
     /* Under 16px, iOS zooms the page in on focus. */
     font-size: 16px;
   }
 
-  .bb-ft-step,
-  .bb-ft-step-value {
+  .alia-ft-step,
+  .alia-ft-step-value {
     min-width: 36px;
     height: 36px;
   }
@@ -964,36 +964,36 @@
  * containing block against the *large* viewport on iOS — with `bottom` the
  * sheet would sit behind the URL bar exactly when the bar is showing.
  */
-.bb-ft-window[data-layout="sheet"] {
-  --bb-ft-sheet-gap: 10px;
-  --bb-ft-sheet-top: calc(var(--bb-ft-sheet-gap) + env(safe-area-inset-top, 0px));
-  --bb-ft-sheet-bottom: calc(
-    var(--bb-ft-sheet-gap) + env(safe-area-inset-bottom, 0px)
+.alia-ft-window[data-layout="sheet"] {
+  --alia-ft-sheet-gap: 10px;
+  --alia-ft-sheet-top: calc(var(--alia-ft-sheet-gap) + env(safe-area-inset-top, 0px));
+  --alia-ft-sheet-bottom: calc(
+    var(--alia-ft-sheet-gap) + env(safe-area-inset-bottom, 0px)
   );
 
-  left: calc(var(--bb-ft-sheet-gap) + env(safe-area-inset-left, 0px));
-  right: calc(var(--bb-ft-sheet-gap) + env(safe-area-inset-right, 0px));
-  top: var(--bb-ft-sheet-top);
+  left: calc(var(--alia-ft-sheet-gap) + env(safe-area-inset-left, 0px));
+  right: calc(var(--alia-ft-sheet-gap) + env(safe-area-inset-right, 0px));
+  top: var(--alia-ft-sheet-top);
   bottom: auto;
   width: auto;
-  height: calc(100vh - var(--bb-ft-sheet-top) - var(--bb-ft-sheet-bottom));
-  height: calc(100dvh - var(--bb-ft-sheet-top) - var(--bb-ft-sheet-bottom));
+  height: calc(100vh - var(--alia-ft-sheet-top) - var(--alia-ft-sheet-bottom));
+  height: calc(100dvh - var(--alia-ft-sheet-top) - var(--alia-ft-sheet-bottom));
   /* Rises from the bottom edge rather than growing out of a corner button
      that is not on screen at this width. */
   transform-origin: 50% 100%;
 }
 
-.bb-ft-window[data-layout="sheet"] .bb-ft-surface {
+.alia-ft-window[data-layout="sheet"] .alia-ft-surface {
   border-radius: 16px;
 }
 
-.bb-ft-window[data-layout="sheet"][data-state="closed"] {
+.alia-ft-window[data-layout="sheet"][data-state="closed"] {
   transform: translate3d(0, 16px, 0) scale(0.985);
 }
 
 /* Nothing here is draggable, so the bar must not advertise that it is — no
    grab cursor, and no drag grip taking room a tab could use. */
-.bb-ft-window[data-layout="sheet"] [data-bb-ft-grip] {
+.alia-ft-window[data-layout="sheet"] [data-alia-ft-grip] {
   display: none;
 }
 
@@ -1004,27 +1004,27 @@
  * layout viewport under the visual one, and a fixed element follows the layout
  * viewport.
  */
-.bb-ft-window[data-layout="sheet"] {
-  top: calc(var(--bb-ft-viewport-top, 0px) + var(--bb-ft-sheet-top));
+.alia-ft-window[data-layout="sheet"] {
+  top: calc(var(--alia-ft-viewport-top, 0px) + var(--alia-ft-sheet-top));
   height: calc(
-    var(--bb-ft-viewport-height, 100dvh) - var(--bb-ft-sheet-top) -
-      var(--bb-ft-sheet-bottom)
+    var(--alia-ft-viewport-height, 100dvh) - var(--alia-ft-sheet-top) -
+      var(--alia-ft-sheet-bottom)
   );
 }
 
 /* The home-indicator inset is already inside the keyboard; counting it twice
    leaves a dead strip above the keys. */
-.bb-ft-window[data-layout="sheet"][data-keyboard="open"] {
-  --bb-ft-sheet-bottom: var(--bb-ft-sheet-gap);
+.alia-ft-window[data-layout="sheet"][data-keyboard="open"] {
+  --alia-ft-sheet-bottom: var(--alia-ft-sheet-gap);
 }
 
 /*
- * The scrim behind the sheet. Blurred rather than merely dimmed so the bb
+ * The scrim behind the sheet. Blurred rather than merely dimmed so the alia
  * window reads as *behind* something solid instead of just darkened — at this
  * size the sheet covers almost everything, and a flat dim leaves the edges
  * looking like a rendering bug.
  */
-.bb-ft-backdrop {
+.alia-ft-backdrop {
   position: fixed;
   inset: 0;
   z-index: 54;
@@ -1034,14 +1034,14 @@
 }
 
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .bb-ft-backdrop {
+  .alia-ft-backdrop {
     background: color-mix(in oklab, var(--background) 22%, transparent);
     -webkit-backdrop-filter: blur(16px) saturate(140%);
     backdrop-filter: blur(16px) saturate(140%);
   }
 }
 
-.bb-ft-backdrop[data-state="closed"] {
+.alia-ft-backdrop[data-state="closed"] {
   opacity: 0;
   pointer-events: none;
   transition:
@@ -1050,7 +1050,7 @@
   visibility: hidden;
 }
 
-.bb-ft-backdrop[data-state="open"] {
+.alia-ft-backdrop[data-state="open"] {
   opacity: 1;
   transition: opacity 190ms cubic-bezier(0.16, 1, 0.3, 1);
   visibility: visible;
@@ -1064,7 +1064,7 @@
  * puts on a hit target; the bar scrolls horizontally rather than wrapping, so
  * the row height never changes under a thumb.
  */
-.bb-ft-window .bb-ft-keybar {
+.alia-ft-window .alia-ft-keybar {
   overflow-x: auto;
   overscroll-behavior-x: contain;
   padding: 6px;
@@ -1072,11 +1072,11 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.bb-ft-window .bb-ft-keybar::-webkit-scrollbar {
+.alia-ft-window .alia-ft-keybar::-webkit-scrollbar {
   display: none;
 }
 
-.bb-ft-window .bb-ft-key {
+.alia-ft-window .alia-ft-key {
   flex: 0 0 auto;
   min-width: 40px;
   height: 40px;
@@ -1096,49 +1096,49 @@
   touch-action: manipulation;
 }
 
-.bb-ft-window .bb-ft-key:active {
+.alia-ft-window .alia-ft-key:active {
   background: var(--state-active, var(--muted));
   color: var(--foreground);
 }
 
-.bb-ft-window .bb-ft-key-strong {
+.alia-ft-window .alia-ft-key-strong {
   color: var(--foreground);
 }
 
 /* Armed Ctrl has to be obvious: it silently changes what the next key does. */
-.bb-ft-window .bb-ft-key-armed {
+.alia-ft-window .alia-ft-key-armed {
   border-color: var(--primary);
   background: var(--primary);
   color: var(--primary-foreground);
 }
 
 /*
- * Stacking, against bb's own layers.
+ * Stacking, against alia's own layers.
  *
- * The window shipped at z-40, and bb's floating sidebar toggle lives in a fixed
+ * The window shipped at z-40, and alia's floating sidebar toggle lives in a fixed
  * z-50 layer — so on a phone, where the sheet starts 10px from the top-left
- * corner, that button sat on top of the first tab. bb's own stack goes up to
+ * corner, that button sat on top of the first tab. alia's own stack goes up to
  * 70, which is where its dialogs and toasts live; 55 clears the chrome without
  * climbing over anything that is supposed to interrupt you. (The values sit on
- * .bb-ft-window and .bb-ft-backdrop above.)
+ * .alia-ft-window and .alia-ft-backdrop above.)
  */
 
 @media (prefers-reduced-motion: reduce) {
-  .bb-ft-window[data-state="closed"],
-  .bb-ft-window[data-state="open"],
-  .bb-ft-backdrop[data-state="closed"],
-  .bb-ft-backdrop[data-state="open"] {
+  .alia-ft-window[data-state="closed"],
+  .alia-ft-window[data-state="open"],
+  .alia-ft-backdrop[data-state="closed"],
+  .alia-ft-backdrop[data-state="open"] {
     transition: none;
   }
 
-  .bb-ft-window .bb-ft-pill,
-  .bb-ft-window .bb-ft-panel,
-  .bb-ft-window .bb-ft-scrim {
+  .alia-ft-window .alia-ft-pill,
+  .alia-ft-window .alia-ft-panel,
+  .alia-ft-window .alia-ft-scrim {
     animation: none;
   }
 
-  .bb-ft-window .bb-ft-dot-pulse,
-  .bb-ft-window .bb-ft-spinner {
+  .alia-ft-window .alia-ft-dot-pulse,
+  .alia-ft-window .alia-ft-spinner {
     animation-duration: 2.4s;
   }
 }

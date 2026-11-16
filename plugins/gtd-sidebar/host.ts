@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { gitButlerHostContract, parseGitButlerBranchSummary } from "./lib/gitbutler.ts";
 
 const execFileAsync = promisify(execFile);
@@ -20,7 +20,7 @@ export default experimental_defineHostEntry({
         return { label: parseGitButlerBranchSummary(stdout)?.label ?? null };
       } catch {
         // A regular repository, a host without `but`, and a stopped GitButler
-        // project all keep bb's own branch label. This probe is an enhancement.
+        // project all keep VesnALIA's own branch label. This probe is an enhancement.
         return { label: null };
       }
     },

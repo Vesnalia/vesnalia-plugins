@@ -1,6 +1,6 @@
 # OpenUI Live Replies
 
-A [bb](https://getbb.app) plugin that lets agents answer with live UI: [OpenUI Lang](https://www.openui.com) blocks drawn inline in chat as cards, charts, tables, forms and more. Buttons and forms send the user's answer back into the thread.
+A [VesnALIA](https://getbb.app) plugin that lets agents answer with live UI: [OpenUI Lang](https://www.openui.com) blocks drawn inline in chat as cards, charts, tables, forms and more. Buttons and forms send the user's answer back into the thread.
 
 See [PLUGIN_OVERVIEW.md](PLUGIN_OVERVIEW.md) for what it does, its requirements, and its costs.
 
@@ -11,7 +11,7 @@ See [PLUGIN_OVERVIEW.md](PLUGIN_OVERVIEW.md) for what it does, its requirements,
 
 ## Screenshots
 
-Everything below is a real reply in bb, rendered by this plugin.
+Everything below is a real reply in VesnALIA, rendered by this plugin.
 
 **Dashboards**: gauges and charts from numbers the agent already has.
 
@@ -51,7 +51,7 @@ On top of OpenUI's standard library (cards, tables, charts, forms, tabs and more
 | Heatmap | A matrix of numbers as shaded cells, e.g. errors by hour and day. |
 | Funnel | Stages of a flow as shrinking bars with the conversion from the step before. |
 | KeyValue | Facts as a list of name and value, e.g. branch, author, checks. |
-| Diagram | Flowcharts, sequences and state machines from Mermaid source, drawn by bb's renderer. |
+| Diagram | Flowcharts, sequences and state machines from Mermaid source, drawn by VesnALIA's renderer. |
 | Grid | Equal tiles side by side for comparable items (Gauges, small charts, short cards). |
 
 ### Inputs and learning
@@ -92,7 +92,7 @@ On top of OpenUI's standard library (cards, tables, charts, forms, tabs and more
 | Diff | One file's unified diff (a patch with ---/+++ and @@ hunks); language names the file type when the patch has no file headers. |
 | Compare | Before and after, or reference against candidates: images side by side, as a wipe or a blink; the first image is the reference. |
 | Hotspots | Numbered pins on an image (https URL or thread file path); selecting a pin shows its text. |
-| Sources | Numbered list of cited web pages, matching [1], [2] in the text; opens them in BB's browser. |
+| Sources | Numbered list of cited web pages, matching [1], [2] in the text; opens them in VesnALIA's browser. |
 | Entity | A product, place, person or organisation at a glance: facts is an object of label to value; image is an https URL or thread file path. |
 
 ### Workspace files
@@ -100,7 +100,7 @@ On top of OpenUI's standard library (cards, tables, charts, forms, tabs and more
 | Component | What it does |
 | --- | --- |
 | Snippet | Lines from..to (1-based, inclusive; omit for the whole file) of a file, numbered and highlighted, with a link that opens it at those lines. |
-| File | A compact link to one workspace or thread-storage file that opens it in BB, optionally at a line. |
+| File | A compact link to one workspace or thread-storage file that opens it in VesnALIA, optionally at a line. |
 | FileImage | An image file (png, jpg, gif, webp, svg, avif) from the workspace or thread storage, at its natural aspect ratio. |
 | Logs | Build or server output: source is a log file path or the text itself (ANSI and JSONL fine); errors and warnings counted and jumpable. |
 | StackTrace | An error and its stack (JS/TS, Python, Java/Kotlin, Go, Rust, Ruby): trace is the printed text or a file path. |
@@ -119,14 +119,14 @@ On top of OpenUI's standard library (cards, tables, charts, forms, tabs and more
 | Waterfall | Timings as bars on a shared time axis: spans inline (start and duration in `unit`, default ms; depth indents) or a HAR file from the thread. |
 | Provenance | What reached live, stage by stage from source, with facts (branch, sha, build, device...). |
 
-### bb project
+### VesnALIA project
 
 | Component | What it does |
 | --- | --- |
 | Changes | Files changed in this thread's environment with +/- counts, each opening its diff. |
 | Commits | This branch's commits since its base branch, newest first; each opens the files it changed. |
 | PullRequest | This thread's branch's GitHub pull request, live: title and link, state, checks, review and merge state. |
-| Threads | Live status of BB threads: title, status, opens the thread. |
+| Threads | Live status of VesnALIA threads: title, status, opens the thread. |
 | Environments | This project's environments (checkouts and worktrees): branch, its live threads, uncommitted and ahead counts, pull request. |
 
 ### Maps, media and sandbox
@@ -143,21 +143,21 @@ On top of OpenUI's standard library (cards, tables, charts, forms, tabs and more
 Add this repo as a marketplace, then install from it:
 
 ```sh
-bb marketplace add git:github.com/ahsan7162/bb-plugin-openui@main
-bb plugin install openui@ahsan7162
+alia marketplace add git:github.com/ahsan7162/bb-plugin-openui@main
+alia plugin install openui@ahsan7162
 ```
 
 Or install it directly:
 
 ```sh
-bb plugin install git:github.com/ahsan7162/bb-plugin-openui@main
+alia plugin install git:github.com/ahsan7162/bb-plugin-openui@main
 ```
 
 ## Develop
 
 ```sh
 npm install
-bb plugin install .   # register this checkout
-bb plugin dev         # rebuild and reload on save
+alia plugin install .   # register this checkout
+alia plugin dev         # rebuild and reload on save
 npm test
 ```

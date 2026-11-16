@@ -1,4 +1,4 @@
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { listRemoteTags, readPackageJsonAt } from "../src/git";
 import plugin from "../server";
@@ -18,8 +18,8 @@ interface FakePlugin {
 }
 
 /**
- * A tiny stand-in for bb's plugin registry that sdk.plugins operates on.
- * Like bb, removing a plugin deletes its settings; `failInstall` makes
+ * A tiny stand-in for VesnALIA's plugin registry that sdk.plugins operates on.
+ * Like VesnALIA, removing a plugin deletes its settings; `failInstall` makes
  * installs of matching sources throw.
  */
 function fakeRegistry(
@@ -71,7 +71,7 @@ function fakeRegistry(
         checkCalls.push(args?.pluginId);
         const failure = checkFailure(args?.pluginId);
         if (failure !== undefined) throw failure;
-        // As bb answers for a plugin it doesn't have.
+        // As VesnALIA answers for a plugin it doesn't have.
         if (args?.pluginId !== undefined && !installed.has(args.pluginId)) {
           throw new Error(`HTTP 422: unknown plugin "${args.pluginId}"`);
         }
@@ -121,7 +121,7 @@ const homepage: FakePlugin = {
   detail: { range: "^0.2.0", resolvedTag: "v0.2.5" },
   check: {
     outcome: "update-available",
-    candidate: { version: "dbcb6f5", display: "bb-homepage@v0.2.7" },
+    candidate: { version: "dbcb6f5", display: "alia-homepage@v0.2.7" },
   },
 };
 
@@ -141,8 +141,8 @@ type RpcReport = {
   badgeCount: number;
 };
 
-/** bb's version, as `bb.sdk.system.version()` reports it. */
-const runningBb = (currentVersion: string) => ({
+/** VesnALIA's version, as `alia.sdk.system.version()` reports it. */
+const runningAlia = (currentVersion: string) => ({
   version: async () => ({
     currentVersion,
     currentCommit: null,
@@ -158,17 +158,17 @@ const runningBb = (currentVersion: string) => ({
 async function load(
   registry: ReturnType<typeof fakeRegistry>,
   settings = {},
-  { jobWaitTimeoutMs = 60_000, bbVersion = undefined as string | undefined } = {},
+  { jobWaitTimeoutMs = 60_000, aliaVersion = undefined as string | undefined } = {},
 ) {
   const host = createFakePluginHost({
     pluginId: "plugin-updates",
     settings,
     sdk: {
       plugins: registry.plugins,
-      ...(bbVersion === undefined ? {} : { system: runningBb(bbVersion) }),
+      ...(aliaVersion === undefined ? {} : { system: runningAlia(aliaVersion) }),
     },
   });
-  await plugin(host.bb, { jobPollMs: 10, jobWaitTimeoutMs });
+  await plugin(host.alia, { jobPollMs: 10, jobWaitTimeoutMs });
   const rpc = async <T>(method: string, input: unknown = null) =>
     (await host.harness.behavior.callRpc(method, input)) as T;
   return { ...host, rpc };
@@ -243,7 +243,7 @@ describe("plugin-updates backend", () => {
     vi.mocked(readPackageJsonAt).mockResolvedValue("{}");
   });
 
-  it("check reports compatible updates from bb and newer releases from git", async () => {
+  it("check reports compatible updates from VesnALIA and newer releases from git", async () => {
     const registry = fakeRegistry({
       homepage: {
         source: "git:https://github.com/y/bb-homepage.git@semver:^0.2.0",
@@ -251,7 +251,7 @@ describe("plugin-updates backend", () => {
         detail: { range: "^0.2.0", resolvedTag: "v0.2.5" },
         check: {
           outcome: "update-available",
-          candidate: { version: "dbcb6f5", display: "bb-homepage@v0.2.7" },
+          candidate: { version: "dbcb6f5", display: "alia-homepage@v0.2.7" },
         },
       },
       "agent-board": {
@@ -267,11 +267,11 @@ describe("plugin-updates backend", () => {
         ? `${sha(1)}\trefs/tags/v0.7.0\n${sha(2)}\trefs/tags/v0.9.2`
         : `${sha(3)}\trefs/tags/v0.2.7`,
     );
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "plugin-updates",
       sdk: { plugins: registry.plugins },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const { report } = (await harness.behavior.callRpc("check", null)) as {
       report: { compatible: Array<{ id: string }>; outOfRange: Array<{ id: string; to: string }>; badgeCount: number };
@@ -354,7 +354,7 @@ describe("plugin-updates backend", () => {
     ).toEqual([{ badgeCount: 1 }, { badgeCount: 0 }]);
   });
 
-  it("update all starts bb jobs for compatible updates only, skipping ignored ones", async () => {
+  it("update all starts VesnALIA jobs for compatible updates only, skipping ignored ones", async () => {
     const registry = fakeRegistry({
       homepage,
       "agent-board": agentBoard,
@@ -441,7 +441,7 @@ describe("plugin-updates backend", () => {
     expect(result).toEqual({
       kind: "failed",
       error: `build failed for ${agentBoard.source}`,
-      command: `bb plugin install '${agentBoard.source}'`,
+      command: `alia plugin install '${agentBoard.source}'`,
     });
     expect(registry.installed.has("agent-board")).toBe(false);
   });
@@ -467,7 +467,7 @@ describe("plugin-updates backend", () => {
       kind: "manual",
       reason: "secret-settings",
       command:
-        "bb plugin remove agent-board && bb plugin install " +
+        "alia plugin remove agent-board && VesnALIA plugin install " +
         "'git:https://github.com/a/bb-plugin-agent-board.git@semver:^0.9.2' --subdirectory 'plugins/board'",
     });
     expect(registry.installed.get("agent-board")?.source).toBe(agentBoard.source);
@@ -707,7 +707,7 @@ describe("plugin-updates backend", () => {
       );
     });
 
-    it("an out-of-range update waits for the plugin's bb update job, then runs", async () => {
+    it("an out-of-range update waits for the plugin's VesnALIA update job, then runs", async () => {
       const registry = fakeRegistry({ a: both("a") });
       const { rpc, harness } = await load(registry);
       await rpc("check");
@@ -729,7 +729,7 @@ describe("plugin-updates backend", () => {
       ).toEqual(["queued", "waiting", "running", "done"]);
     });
 
-    it("an out-of-range update that waited reports the version the bb job left, not the queued one", async () => {
+    it("an out-of-range update that waited reports the version the VesnALIA job left, not the queued one", async () => {
       const registry = fakeRegistry({ a: both("a") });
       const { rpc, harness } = await load(registry);
       await rpc("check");
@@ -747,7 +747,7 @@ describe("plugin-updates backend", () => {
       });
     });
 
-    it("an out-of-range update gives up on a bb job that never ends, untouched, and the queue moves on", async () => {
+    it("an out-of-range update gives up on a VesnALIA job that never ends, untouched, and the queue moves on", async () => {
       const registry = fakeRegistry({ a: both("a"), b: board("b") });
       const touched: string[] = [];
       const remove = registry.plugins.remove;
@@ -789,7 +789,7 @@ describe("plugin-updates backend", () => {
       expect(registry.startedUpdates).toEqual(["a", "a"]);
     });
 
-    it("an out-of-range update goes ahead when bb's jobs can't be listed", async () => {
+    it("an out-of-range update goes ahead when VesnALIA's jobs can't be listed", async () => {
       const registry = fakeRegistry({ a: both("a") });
       registry.plugins.experimental_updateJobs.list = async () => {
         throw new Error("jobs unavailable");
@@ -893,7 +893,7 @@ describe("plugin-updates backend", () => {
     });
   });
 
-  describe("bb plugin-updates", () => {
+  describe("alia plugin-updates", () => {
     it("check and list show both kinds of update", async () => {
       vi.mocked(listRemoteTags).mockImplementation(async (url) =>
         url.includes("agent-board") ? agentBoardTags : "",
@@ -906,7 +906,7 @@ describe("plugin-updates backend", () => {
       expect(checked.exitCode).toBe(0);
       expect(listed.stdout).toBe(checked.stdout);
       expect(listed.stdout).toContain(
-        "Compatible updates:\n  homepage  git:https://github.com/y/bb-homepage.git@semver:^0.2.0 (0.2.5) → bb-homepage@v0.2.7",
+        "Compatible updates:\n  homepage  git:https://github.com/y/bb-homepage.git@semver:^0.2.0 (0.2.5) → alia-homepage@v0.2.7",
       );
       expect(listed.stdout).toContain(
         "Newer releases outside the installed range:\n  agent-board  0.7.0 → 0.9.2  https://github.com/a/bb-plugin-agent-board/compare/v0.7.0...v0.9.2",
@@ -989,7 +989,7 @@ describe("plugin-updates backend", () => {
     });
   });
   describe("engines of releases outside the range", () => {
-    type Engines = { bb?: string; bbPluginSdk?: string };
+    type Engines = { alia?: string; aliaPluginSdk?: string };
     /** Each tag's package.json engines; an Error makes reading that tag fail. */
     const manifests = (byTag: Record<string, Engines | Error>) =>
       vi.mocked(readPackageJsonAt).mockImplementation(async ({ tag }) => {
@@ -1007,24 +1007,24 @@ describe("plugin-updates backend", () => {
       releaseCheckFailures: Array<{ id: string; error: string }>;
     };
 
-    it("reports the newest release as blocked, not offered, when this bb can't run it", async () => {
+    it("reports the newest release as blocked, not offered, when this VesnALIA can't run it", async () => {
       vi.mocked(listRemoteTags).mockResolvedValue(agentBoardTags);
-      manifests({ "v0.9.2": { bb: ">=0.47" } });
-      const { rpc } = await load(fakeRegistry({ "agent-board": agentBoard }), {}, { bbVersion: "0.46.1" });
+      manifests({ "v0.9.2": { alia: ">=0.47" } });
+      const { rpc } = await load(fakeRegistry({ "agent-board": agentBoard }), {}, { aliaVersion: "0.46.1" });
 
       const { report } = await rpc<{ report: EngineReport }>("check");
 
       expect(report.outOfRange).toEqual([]);
       expect(report.blocked).toEqual([
-        { id: "agent-board", version: "0.9.2", reasons: ["requires bb >=0.47, running bb is 0.46.1"] },
+        { id: "agent-board", version: "0.9.2", reasons: ["requires VesnALIA >=0.47, running VesnALIA is 0.46.1"] },
       ]);
       expect(report.badgeCount).toBe(0);
     });
 
-    it("falls back to the newest older release outside the range that this bb runs", async () => {
+    it("falls back to the newest older release outside the range that this VesnALIA runs", async () => {
       vi.mocked(listRemoteTags).mockResolvedValue(boardTags);
-      manifests({ "v0.9.2": { bb: ">=0.47" }, "v0.8.0": { bb: ">=0.40" } });
-      const { rpc } = await load(fakeRegistry({ "agent-board": agentBoard }), {}, { bbVersion: "0.46.1" });
+      manifests({ "v0.9.2": { alia: ">=0.47" }, "v0.8.0": { alia: ">=0.40" } });
+      const { rpc } = await load(fakeRegistry({ "agent-board": agentBoard }), {}, { aliaVersion: "0.46.1" });
 
       const { report } = await rpc<{ report: EngineReport }>("check");
 
@@ -1033,19 +1033,19 @@ describe("plugin-updates backend", () => {
       ]);
       expect(report.blocked).toMatchObject([{ id: "agent-board", version: "0.9.2" }]);
       expect(report.badgeCount).toBe(1);
-      // Newest first, stopping at the first one this bb runs.
+      // Newest first, stopping at the first one this VesnALIA runs.
       expect(vi.mocked(readPackageJsonAt).mock.calls.map(([args]) => args)).toEqual([
         { url: "https://github.com/a/bb-plugin-agent-board.git", tag: "v0.9.2" },
         { url: "https://github.com/a/bb-plugin-agent-board.git", tag: "v0.8.0" },
       ]);
     });
 
-    it("ignores engines.bbPluginSdk: an SDK-only mismatch neither blocks nor refuses", async () => {
+    it("ignores engines.aliaPluginSdk: an SDK-only mismatch neither blocks nor refuses", async () => {
       vi.mocked(listRemoteTags).mockResolvedValue(agentBoardTags);
-      // bb's own install refuses an SDK it doesn't satisfy; that's left to it.
-      manifests({ "v0.9.2": { bb: ">=0.40", bbPluginSdk: ">=99.0.0" } });
+      // VesnALIA's own install refuses an SDK it doesn't satisfy; that's left to it.
+      manifests({ "v0.9.2": { alia: ">=0.40", aliaPluginSdk: ">=99.0.0" } });
       const registry = fakeRegistry({ "agent-board": agentBoard });
-      const { rpc } = await load(registry, {}, { bbVersion: "0.47.2" });
+      const { rpc } = await load(registry, {}, { aliaVersion: "0.47.2" });
 
       const { report } = await rpc<{ report: EngineReport }>("check");
       const result = await updateOutOfRange(rpc, "agent-board");
@@ -1059,7 +1059,7 @@ describe("plugin-updates backend", () => {
     it("offers a release whose package.json declares no engines", async () => {
       vi.mocked(listRemoteTags).mockResolvedValue(agentBoardTags);
       manifests({});
-      const { rpc } = await load(fakeRegistry({ "agent-board": agentBoard }), {}, { bbVersion: "0.46.1" });
+      const { rpc } = await load(fakeRegistry({ "agent-board": agentBoard }), {}, { aliaVersion: "0.46.1" });
 
       const { report } = await rpc<{ report: EngineReport }>("check");
 
@@ -1114,39 +1114,39 @@ describe("plugin-updates backend", () => {
       expect(report.badgeCount).toBe(1);
     });
 
-    it("refuses up front to move to a release this bb can't run", async () => {
+    it("refuses up front to move to a release this VesnALIA can't run", async () => {
       vi.mocked(listRemoteTags).mockResolvedValue(agentBoardTags);
       manifests({});
       const registry = fakeRegistry({ "agent-board": agentBoard });
-      const { rpc } = await load(registry, {}, { bbVersion: "0.46.1" });
+      const { rpc } = await load(registry, {}, { aliaVersion: "0.46.1" });
       await rpc("check");
-      // The release changed since the check, say, or bb was downgraded.
-      manifests({ "v0.9.2": { bb: ">=0.47" } });
+      // The release changed since the check, say, or VesnALIA was downgraded.
+      manifests({ "v0.9.2": { alia: ">=0.47" } });
 
       await expect(rpc("update_out_of_range", { id: "agent-board" })).rejects.toThrow(
-        "Can't update agent-board to 0.9.2: requires bb >=0.47, running bb is 0.46.1",
+        "Can't update agent-board to 0.9.2: requires VesnALIA >=0.47, running VesnALIA is 0.46.1",
       );
       expect(registry.installed.get("agent-board")?.source).toBe(agentBoard.source);
       expect(await queue(rpc)).toEqual([]);
     });
 
-    it("refuses a queued move whose release this bb can no longer run, untouched", async () => {
+    it("refuses a queued move whose release this VesnALIA can no longer run, untouched", async () => {
       vi.mocked(listRemoteTags).mockResolvedValue(agentBoardTags);
       let reads = 0;
       vi.mocked(readPackageJsonAt).mockImplementation(async () =>
         // Fine for the check and the preflight; not once it runs.
-        JSON.stringify({ engines: ++reads > 2 ? { bb: ">=0.47" } : {} }),
+        JSON.stringify({ engines: ++reads > 2 ? { alia: ">=0.47" } : {} }),
       );
       const registry = fakeRegistry({ "agent-board": agentBoardWithSettings });
       const remove = vi.spyOn(registry.plugins, "remove");
-      const { rpc } = await load(registry, {}, { bbVersion: "0.46.1" });
+      const { rpc } = await load(registry, {}, { aliaVersion: "0.46.1" });
       await rpc("check");
 
       const result = await updateOutOfRange(rpc, "agent-board");
 
       expect(result).toEqual({
         kind: "rolled-back",
-        error: "Can't update agent-board to 0.9.2: requires bb >=0.47, running bb is 0.46.1",
+        error: "Can't update agent-board to 0.9.2: requires VesnALIA >=0.47, running VesnALIA is 0.46.1",
       });
       expect(remove).not.toHaveBeenCalled();
       expect(registry.installed.get("agent-board")).toMatchObject({
@@ -1214,7 +1214,7 @@ describe("plugin-updates backend", () => {
     const SSL =
       "HTTP 422: git ls-remote failed (exit 128): fatal: unable to access 'https://github.com/a/bb-plugin-agent-board.git/': SSL certificate problem: self signed certificate";
 
-    /** Makes bb's update check throw: the bulk call always, a per-plugin one for `ids` (all if omitted). */
+    /** Makes VesnALIA's update check throw: the bulk call always, a per-plugin one for `ids` (all if omitted). */
     function failChecks(registry: ReturnType<typeof fakeRegistry>, ids?: string[]) {
       registry.failCheck((id) =>
         id === undefined || ids === undefined || ids.includes(id) ? new Error(SSL) : undefined,
@@ -1281,7 +1281,7 @@ describe("plugin-updates backend", () => {
       expect(Object.keys(snapshot).sort()).toEqual(["checkedAt", "report"]);
     });
 
-    it("a scheduled check logs and records the failure, and still fails for bb's status line", async () => {
+    it("a scheduled check logs and records the failure, and still fails for VesnALIA's status line", async () => {
       vi.mocked(listRemoteTags).mockResolvedValue("");
       const registry = fakeRegistry({ homepage });
       const { rpc, harness } = await load(registry);
@@ -1317,7 +1317,7 @@ describe("plugin-updates backend", () => {
       });
     });
 
-    it("when bb's bulk check fails, checks plugins one by one and saves the rest", async () => {
+    it("when VesnALIA's bulk check fails, checks plugins one by one and saves the rest", async () => {
       vi.mocked(listRemoteTags).mockImplementation(async (url) =>
         url.includes("agent-board") ? agentBoardTags : "",
       );
@@ -1380,7 +1380,7 @@ describe("plugin-updates backend", () => {
       });
     });
 
-    it("bb plugin-updates check exits 1 and shows the failure with the old results", async () => {
+    it("alia plugin-updates check exits 1 and shows the failure with the old results", async () => {
       vi.mocked(listRemoteTags).mockResolvedValue("");
       const registry = fakeRegistry({ homepage });
       const { harness } = await load(registry);
@@ -1404,7 +1404,7 @@ describe("plugin-updates backend", () => {
       });
     });
 
-    it("bb plugin-updates check exits 1 before any check has worked", async () => {
+    it("alia plugin-updates check exits 1 before any check has worked", async () => {
       vi.mocked(listRemoteTags).mockResolvedValue("");
       const registry = fakeRegistry({ homepage });
       failChecks(registry);
@@ -1415,7 +1415,7 @@ describe("plugin-updates backend", () => {
       expect(checked).toMatchObject({ exitCode: 1, stderr: `Check failed: ${SSL}` });
     });
 
-    it("bb plugin-updates lists plugins bb couldn't check", async () => {
+    it("alia plugin-updates lists plugins VesnALIA couldn't check", async () => {
       vi.mocked(listRemoteTags).mockResolvedValue("");
       const registry = fakeRegistry({ homepage, "agent-board": agentBoard });
       failChecks(registry, ["agent-board"]);
@@ -1446,11 +1446,11 @@ describe("plugin-updates backend", () => {
       it("still checks releases' engines for plugins checked one by one", async () => {
         vi.mocked(listRemoteTags).mockImplementation(async (url) => (url.includes("/a.git") ? tags : ""));
         vi.mocked(readPackageJsonAt).mockImplementation(async ({ tag }) =>
-          JSON.stringify({ engines: tag === "v0.9.2" ? { bb: ">=0.47" } : { bb: ">=0.40" } }),
+          JSON.stringify({ engines: tag === "v0.9.2" ? { alia: ">=0.47" } : { alia: ">=0.40" } }),
         );
         const registry = fakeRegistry({ homepage, a: board("a"), b: board("b") });
         failChecks(registry, ["b"]);
-        const { rpc } = await load(registry, {}, { bbVersion: "0.46.1" });
+        const { rpc } = await load(registry, {}, { aliaVersion: "0.46.1" });
 
         const snapshot = await rpc<FallbackSnapshot>("check");
 
@@ -1459,7 +1459,7 @@ describe("plugin-updates backend", () => {
         expect(snapshot.report.compatible.map(({ id }) => id)).toEqual(["homepage"]);
         expect(snapshot.report.outOfRange).toMatchObject([{ id: "a", to: "0.8.0" }]);
         expect(snapshot.report.blocked).toEqual([
-          { id: "a", version: "0.9.2", reasons: ["requires bb >=0.47, running bb is 0.46.1"] },
+          { id: "a", version: "0.9.2", reasons: ["requires VesnALIA >=0.47, running VesnALIA is 0.46.1"] },
         ]);
         expect(snapshot.report.badgeCount).toBe(2);
       });
@@ -1520,18 +1520,18 @@ describe("plugin-updates backend", () => {
           expect(await rpc<Full>("report")).toMatchObject({ report: { outOfRange: [{ id: "b" }], badgeCount: 2 } });
         });
 
-        it("still lists its releases this bb can't run as blocked", async () => {
+        it("still lists its releases this VesnALIA can't run as blocked", async () => {
           vi.mocked(listRemoteTags).mockImplementation(async (url) =>
             url.includes("/b.git") || url.includes("/c.git") ? tags : "",
           );
           vi.mocked(readPackageJsonAt).mockImplementation(async ({ url, tag }) =>
             JSON.stringify({
-              engines: url.includes("/c.git") || tag === "v0.9.2" ? { bb: ">=0.47" } : { bb: ">=0.40" },
+              engines: url.includes("/c.git") || tag === "v0.9.2" ? { alia: ">=0.47" } : { alia: ">=0.40" },
             }),
           );
           const registry = fakeRegistry({ homepage, b: board("b"), c: board("c") });
           failChecks(registry, ["b", "c"]);
-          const { rpc } = await load(registry, {}, { bbVersion: "0.46.1" });
+          const { rpc } = await load(registry, {}, { aliaVersion: "0.46.1" });
 
           const snapshot = await rpc<Full>("check");
 
@@ -1539,7 +1539,7 @@ describe("plugin-updates backend", () => {
             { id: "b", error: SSL },
             { id: "c", error: SSL },
           ]);
-          const reasons = ["requires bb >=0.47, running bb is 0.46.1"];
+          const reasons = ["requires VesnALIA >=0.47, running VesnALIA is 0.46.1"];
           expect(snapshot.report.blocked).toEqual([
             { id: "b", version: "0.9.2", reasons },
             { id: "c", version: "0.9.2", reasons },
@@ -1588,13 +1588,13 @@ describe("plugin-updates backend", () => {
           ]);
         });
 
-        it("bb plugin-updates list shows its release results beside the failure", async () => {
+        it("alia plugin-updates list shows its release results beside the failure", async () => {
           vi.mocked(listRemoteTags).mockImplementation(async (url) => {
             if (url.includes("/d.git")) throw new Error("ls-remote timed out");
             return url.includes("homepage") ? "" : tags;
           });
           vi.mocked(readPackageJsonAt).mockImplementation(async ({ tag }) =>
-            JSON.stringify({ engines: tag === "v0.9.2" ? { bb: ">=0.47" } : { bb: ">=0.40" } }),
+            JSON.stringify({ engines: tag === "v0.9.2" ? { alia: ">=0.47" } : { alia: ">=0.40" } }),
           );
           const registry = fakeRegistry({
             homepage,
@@ -1603,7 +1603,7 @@ describe("plugin-updates backend", () => {
             d: board("d"),
           });
           failChecks(registry, ["b", "c", "d"]);
-          const { harness } = await load(registry, {}, { bbVersion: "0.46.1" });
+          const { harness } = await load(registry, {}, { aliaVersion: "0.46.1" });
           await harness.behavior.runCli(["check"]);
 
           const listed = await harness.behavior.runCli(["list"]);
@@ -1619,8 +1619,8 @@ describe("plugin-updates backend", () => {
           );
           expect(listed.stdout).toContain(
             "Blocked by engine ranges:\n" +
-              "  b  0.9.2: requires bb >=0.47, running bb is 0.46.1\n" +
-              "  c  0.9.2: requires bb >=0.47, running bb is 0.46.1\n",
+              "  b  0.9.2: requires VesnALIA >=0.47, running VesnALIA is 0.46.1\n" +
+              "  c  0.9.2: requires VesnALIA >=0.47, running VesnALIA is 0.46.1\n",
           );
           expect(listed.stdout).toContain("Couldn't check for newer releases:\n  d  ls-remote timed out");
           expect(listed.stdout).toContain("2 plugins with updates, plus 1 disabled.");
@@ -1629,11 +1629,11 @@ describe("plugin-updates backend", () => {
     });
   });
 
-  // bb 0.49.0 doesn't throw when one plugin's remote fails: its checkRows
+  // VesnALIA 0.49.0 doesn't throw when one plugin's remote fails: its checkRows
   // catches the error and returns that plugin as `unavailable`, the error
-  // message as `detail`. Shapes from an isolated bb 0.49.0 (logs 34, 41) and
+  // message as `detail`. Shapes from an isolated VesnALIA 0.49.0 (logs 34, 41) and
   // the user's host (git ls-remote "Operation timed out").
-  describe("per-plugin check errors bb returns as unavailable", () => {
+  describe("per-plugin check errors VesnALIA returns as unavailable", () => {
     type Stale = { stale?: { confirmedAt: number } };
     type Snapshot = {
       report: RpcReport & {
@@ -1649,8 +1649,8 @@ describe("plugin-updates backend", () => {
     };
     const timedOut = (repo: string) =>
       `git ls-remote failed (exit 128): fatal: unable to access 'https://github.com/${repo}.git/': Failed to connect to github.com port 443 after 75002 ms: Operation timed out`;
-    const HOMEPAGE_DOWN = timedOut("y/bb-homepage");
-    const BOARD_DOWN = timedOut("a/bb-plugin-agent-board");
+    const HOMEPAGE_DOWN = timedOut("y/alia-homepage");
+    const BOARD_DOWN = timedOut("a/alia-plugin-agent-board");
     const errored = (detail: string) => ({ outcome: "unavailable", detail });
     const notes: FakePlugin = {
       source: "git:https://github.com/n/notes.git@semver:^1.0.0",
@@ -1667,7 +1667,7 @@ describe("plugin-updates backend", () => {
       });
     const ids = (items: Array<{ id: string }> = []) => items.map((i) => i.id).sort();
 
-    it("lists an errored plugin as one bb couldn't check, not under other", async () => {
+    it("lists an errored plugin as one VesnALIA couldn't check, not under other", async () => {
       remotes();
       const registry = fakeRegistry({ homepage: { ...homepage, check: errored(HOMEPAGE_DOWN) }, notes });
       const { rpc } = await load(registry);
@@ -1679,12 +1679,12 @@ describe("plugin-updates backend", () => {
       expect(snapshot).not.toHaveProperty("lastFailure");
     });
 
-    it("leaves plugins bb can't check by design under other", async () => {
+    it("leaves plugins VesnALIA can't check by design under other", async () => {
       remotes();
-      // Details bb 0.49.0 returns, rather than throws, for these.
+      // Details VesnALIA 0.49.0 returns, rather than throws, for these.
       const details = {
         a: 'no tag of https://github.com/a/a.git matches ^0.7.0 (looking for tags named "vX.Y.Z")',
-        b: `security check failed: git tag "v0.7.0" in https://github.com/a/b.git moved from ${sha(1)} to ${sha(2)}; bb will not re-resolve a tag that changed. Remove the plugin and install it again to accept the new commit`,
+        b: `security check failed: git tag "v0.7.0" in https://github.com/a/b.git moved from ${sha(1)} to ${sha(2)}; VesnALIA will not re-resolve a tag that changed. Remove the plugin and install it again to accept the new commit`,
         c: "installed from the retired remote marketplace — remove it and reinstall from Plugins → Browse plugins to switch to the bundled copy",
       };
       const registry = fakeRegistry({
@@ -1713,7 +1713,7 @@ describe("plugin-updates backend", () => {
       const registry = fakeRegistry({ homepage, "agent-board": agentBoard, notes });
       const { rpc } = await load(registry);
       const good = await rpc<Snapshot>("check");
-      remotes(["bb-homepage", "agent-board"]);
+      remotes(["alia-homepage", "agent-board"]);
       registry.installed.get("homepage")!.check = errored(HOMEPAGE_DOWN);
       registry.installed.get("agent-board")!.check = errored(BOARD_DOWN);
 
@@ -1726,7 +1726,7 @@ describe("plugin-updates backend", () => {
           { id: "agent-board", error: BOARD_DOWN },
         ]);
         expect(snapshot.report.compatible).toMatchObject([
-          { id: "homepage", to: "bb-homepage@v0.2.7", stale: { confirmedAt: good.checkedAt } },
+          { id: "homepage", to: "alia-homepage@v0.2.7", stale: { confirmedAt: good.checkedAt } },
         ]);
         expect(snapshot.report.outOfRange).toMatchObject([
           { id: "agent-board", to: "0.9.2", stale: { confirmedAt: good.checkedAt } },
@@ -1752,7 +1752,7 @@ describe("plugin-updates backend", () => {
       const snapshot = await rpc<Snapshot>("check");
 
       expect(snapshot.report.compatible).toEqual([
-        { id: "homepage", from: expect.any(String), to: "bb-homepage@v0.2.7", version: "dbcb6f5" },
+        { id: "homepage", from: expect.any(String), to: "alia-homepage@v0.2.7", version: "dbcb6f5" },
       ]);
       expect(snapshot).not.toHaveProperty("updateCheckFailures");
     });
@@ -1764,7 +1764,7 @@ describe("plugin-updates backend", () => {
       await rpc("check");
       await rpc("ignore", { id: "homepage", version: "dbcb6f5" });
       registry.installed.get("agent-board")!.enabled = false;
-      remotes(["bb-homepage", "agent-board"]);
+      remotes(["alia-homepage", "agent-board"]);
       registry.installed.get("homepage")!.check = errored(HOMEPAGE_DOWN);
       registry.installed.get("agent-board")!.check = errored(BOARD_DOWN);
 
@@ -1780,7 +1780,7 @@ describe("plugin-updates backend", () => {
       const registry = fakeRegistry({ homepage, "agent-board": agentBoard, notes });
       const { rpc } = await load(registry);
       await rpc("check");
-      remotes(["bb-homepage", "agent-board"]);
+      remotes(["alia-homepage", "agent-board"]);
       Object.assign(registry.installed.get("homepage")!, { version: "0.2.7", check: errored(HOMEPAGE_DOWN) });
       Object.assign(registry.installed.get("agent-board")!, { version: "0.7.5", check: errored(BOARD_DOWN) });
 
@@ -1793,7 +1793,7 @@ describe("plugin-updates backend", () => {
 
     describe("when every plugin that can be checked errored", () => {
       const allDown = (registry: ReturnType<typeof fakeRegistry>) => {
-        remotes(["bb-homepage", "agent-board"]);
+        remotes(["alia-homepage", "agent-board"]);
         registry.installed.get("homepage")!.check = errored(HOMEPAGE_DOWN);
         registry.installed.get("agent-board")!.check = errored(BOARD_DOWN);
       };
@@ -1825,7 +1825,7 @@ describe("plugin-updates backend", () => {
         ).toEqual([{ badgeCount: 2 }, { badgeCount: 2 }]);
       });
 
-      it("bb plugin-updates check exits 1 and lists each failure", async () => {
+      it("alia plugin-updates check exits 1 and lists each failure", async () => {
         remotes();
         const registry = fakeRegistry({ homepage, "agent-board": agentBoard, tasks });
         const { harness } = await load(registry);
@@ -1883,7 +1883,7 @@ describe("plugin-updates backend", () => {
     it("drops a plugin removed mid-check quietly, and saves the rest", async () => {
       vi.mocked(listRemoteTags).mockResolvedValue(agentBoardTags);
       const registry = fakeRegistry({ a: board("a"), fe: board("fe") });
-      // As in the isolated run: bb's bulk check throws once fe is gone, its own check and getSource 404.
+      // As in the isolated run: VesnALIA's bulk check throws once fe is gone, its own check and getSource 404.
       const checkUpdates = registry.plugins.checkUpdates;
       registry.plugins.checkUpdates = async (args) => {
         if (args?.pluginId === undefined) {
@@ -1922,7 +1922,7 @@ describe("plugin-updates backend", () => {
       vi.mocked(listRemoteTags).mockResolvedValue(agentBoardTags);
       const registry = fakeRegistry({ a: board("a"), b: board("b") });
       const held = holdInstalls(registry);
-      // While racing: listed before b's remove, checked after it, as bb's bulk check then fails.
+      // While racing: listed before b's remove, checked after it, as VesnALIA's bulk check then fails.
       const { list, checkUpdates } = registry.plugins;
       let racing = false;
       let before: Awaited<ReturnType<typeof list>> | undefined;
@@ -1955,13 +1955,13 @@ describe("plugin-updates backend", () => {
     });
   });
 
-  describe("releases bb refused for their engines on apply", () => {
+  describe("releases VesnALIA refused for their engines on apply", () => {
     type Snapshot = {
       report: RpcReport & { blocked: Array<{ id: string; version: string; reasons: string[] }> };
     };
-    // What bb 0.49.0's install job fails with (isolated run, fixture fd).
-    const SDK = "requires bb plugin SDK >=99.0.0, running SDK is 0.6.132";
-    async function refuse(error = `install failed: ${SDK}`, bbVersion: { current: string } = { current: "0.49.0" }) {
+    // What VesnALIA 0.49.0's install job fails with (isolated run, fixture fd).
+    const SDK = "requires VesnALIA plugin SDK >=99.0.0, running SDK is 0.6.132";
+    async function refuse(error = `install failed: ${SDK}`, aliaVersion: { current: string } = { current: "0.49.0" }) {
       vi.mocked(listRemoteTags).mockImplementation(async (url) => (url.includes("agent-board") ? agentBoardTags : ""));
       const registry = fakeRegistry({ "agent-board": agentBoard, notes: board("notes") });
       const install = registry.plugins.install;
@@ -1973,10 +1973,10 @@ describe("plugin-updates backend", () => {
         pluginId: "plugin-updates",
         sdk: {
           plugins: registry.plugins,
-          system: { version: async () => ({ ...(await runningBb(bbVersion.current).version()) }) },
+          system: { version: async () => ({ ...(await runningAlia(aliaVersion.current).version()) }) },
         },
       });
-      await plugin(host.bb, { jobPollMs: 10, jobWaitTimeoutMs: 60_000 });
+      await plugin(host.alia, { jobPollMs: 10, jobWaitTimeoutMs: 60_000 });
       const rpc = async <T>(method: string, input: unknown = null) =>
         (await host.harness.behavior.callRpc(method, input)) as T;
       await rpc("check");
@@ -1984,7 +1984,7 @@ describe("plugin-updates backend", () => {
       return { registry, rpc, result, harness: host.harness };
     }
 
-    it("blocks the refused release from then on, with bb's reason, uncounted", async () => {
+    it("blocks the refused release from then on, with VesnALIA's reason, uncounted", async () => {
       const { rpc, result } = await refuse();
 
       const snapshot = await rpc<Snapshot>("check");
@@ -1996,7 +1996,7 @@ describe("plugin-updates backend", () => {
       expect((await rpc<Snapshot>("report")).report.blocked).toHaveLength(1);
     });
 
-    it("also recognises bb's install-refused wording", async () => {
+    it("also recognises VesnALIA's install-refused wording", async () => {
       const { rpc } = await refuse(`install refused: plugin "agent-board" ${SDK}`);
 
       const snapshot = await rpc<Snapshot>("check");
@@ -2013,18 +2013,18 @@ describe("plugin-updates backend", () => {
       expect(snapshot.report.blocked).toEqual([]);
     });
 
-    it("forgets the refusal when bb's version changes", async () => {
+    it("forgets the refusal when VesnALIA's version changes", async () => {
       vi.useFakeTimers({ toFake: ["Date"] });
       try {
-        const bbVersion = { current: "0.49.0" };
-        const { rpc } = await refuse(undefined, bbVersion);
-        bbVersion.current = "0.50.0";
+        const aliaVersion = { current: "0.49.0" };
+        const { rpc } = await refuse(undefined, aliaVersion);
+        aliaVersion.current = "0.50.0";
         // Past the host version cache.
         vi.setSystemTime(Date.now() + 120_000);
 
         const snapshot = await rpc<Snapshot>("check");
-        // Forgotten, not just set aside: back on the old bb, it's offered too.
-        bbVersion.current = "0.49.0";
+        // Forgotten, not just set aside: back on the old VesnALIA, it's offered too.
+        aliaVersion.current = "0.49.0";
         vi.setSystemTime(Date.now() + 120_000);
         const back = await rpc<Snapshot>("check");
 

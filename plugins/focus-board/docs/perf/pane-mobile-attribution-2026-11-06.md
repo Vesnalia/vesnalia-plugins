@@ -18,7 +18,7 @@ takes):
 
 - The **prod probe harness** (`vite.probe.config.ts` → `vite preview`): React
   production, unminified, so CPU profiles keep function names. This is the
-  bundle shape bb actually serves.
+  bundle shape VesnALIA actually serves.
 - The **dev harness** (`vite.config.ts`): React development build. Its numbers
   are the repo's perf-evidence convention (the load budgets are dev-bundle
   numbers), but dev React makes every render several times more expensive
@@ -160,7 +160,7 @@ None of these scale with card count; the 74-card cell (64-125ms per gesture,
 including route push + pane mount + teardown) bounds the whole fixed cost.
 One real-phone mechanism stays unmeasured headlessly: `focusRequest` focuses
 the composer on a real phone, which raises the keyboard and resizes the
-visual viewport — that interplay is bb's surface, not measurable in this
+visual viewport — that interplay is VesnALIA's surface, not measurable in this
 harness, and worth a manual device check if Stage 2 lands and sluggishness
 remains.
 
@@ -216,7 +216,7 @@ Predicted effect, from the measured scale curve: per-gesture cost collapses
 toward the 74-card cell — open tap→present 228ms → ~64-125ms (4x/8x), close
 216ms → ~50-80ms, and the blocked main thread per gesture (443-946ms of long
 tasks at 4x/8x on 740 cards) falls away with the two board rebuilds per
-cycle. What remains is the fixed pane cost plus (on the real device) bb's
+cycle. What remains is the fixed pane cost plus (on the real device) VesnALIA's
 ThreadChat mount, the keyboard's viewport effect, and real network — the
 residual the harness cannot price.
 

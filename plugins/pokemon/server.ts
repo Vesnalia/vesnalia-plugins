@@ -1,5 +1,5 @@
 import { randomInt } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { CATCH_CHANNEL, type CatchEvent } from "./lib/catch-event";
 import { formatDexNumber, titleCaseSlug } from "./lib/format";
@@ -133,12 +133,12 @@ export function createPokemonPlugin(options: PokemonPluginOptions = {}) {
   const randomIndex = options.randomIndex ?? ((maxExclusive) => randomInt(maxExclusive));
   const now = options.now ?? Date.now;
 
-  return async function plugin(bb: BbPluginApi) {
-    const db = bb.storage.database();
-    bb.storage.migrate(db, MIGRATIONS);
+  return async function plugin(alia: AliaPluginApi) {
+    const db = alia.storage.database();
+    alia.storage.migrate(db, MIGRATIONS);
     const store = new PokedexStore(db);
     const lifetime = new AbortController();
-    bb.onDispose(() => lifetime.abort());
+    alia.onDispose(() => lifetime.abort());
 
     let speciesSync: Promise<void> | null = null;
     const syncSpecies = (): Promise<void> => {
@@ -174,7 +174,7 @@ export function createPokemonPlugin(options: PokemonPluginOptions = {}) {
             },
             (error: unknown) => {
               if (!lifetime.signal.aborted) {
-                bb.log.warn(
+                alia.log.warn(
                   `Could not load Pokédex entry ${formatDexNumber(speciesId)}: ${errorMessage(error)}`,
                 );
               }
@@ -193,11 +193,11 @@ export function createPokemonPlugin(options: PokemonPluginOptions = {}) {
       return slug === null ? `Pokémon ${formatDexNumber(speciesId)}` : titleCaseSlug(slug);
     };
 
-    bb.events.on("thread.archived", async ({ thread }) => {
+    alia.events.on("thread.archived", async ({ thread }) => {
       if (!isCatchEligible(thread) || store.hasCatchForThread(thread.id)) return;
       if (store.speciesIds().length === 0) {
         await syncSpecies().catch((error: unknown) =>
-          bb.log.warn(`Using the fallback Pokémon list: ${errorMessage(error)}`),
+          alia.log.warn(`Using the fallback Pokémon list: ${errorMessage(error)}`),
         );
         if (lifetime.signal.aborted) return;
       }
@@ -214,7 +214,7 @@ export function createPokemonPlugin(options: PokemonPluginOptions = {}) {
 
       const entry = await loadEntry(speciesId);
       if (lifetime.signal.aborted) return;
-      bb.realtime.publish(CATCH_CHANNEL, {
+      alia.realtime.publish(CATCH_CHANNEL, {
         catchId: record.id,
         speciesId,
         name: displayName(speciesId, entry),
@@ -227,7 +227,7 @@ export function createPokemonPlugin(options: PokemonPluginOptions = {}) {
       } satisfies CatchEvent);
     });
 
-    bb.rpc.register(pokemonRpcContract, {
+    alia.rpc.register(pokemonRpcContract, {
       async getProgress() {
         return {
           caughtSpecies: store.tallies().length,
@@ -273,7 +273,7 @@ export function createPokemonPlugin(options: PokemonPluginOptions = {}) {
       },
     });
 
-    bb.background.service("species-sync", {
+    alia.background.service("species-sync", {
       async start(signal) {
         while (!signal.aborted) {
           const syncedAt = store.speciesSyncedAt();
@@ -286,7 +286,7 @@ export function createPokemonPlugin(options: PokemonPluginOptions = {}) {
               delay = SPECIES_REFRESH_MS;
             } catch (error) {
               if (signal.aborted) return;
-              bb.log.warn(`Could not load the Pokémon list from PokeAPI: ${errorMessage(error)}`);
+              alia.log.warn(`Could not load the Pokémon list from PokeAPI: ${errorMessage(error)}`);
               delay = SPECIES_RETRY_MS;
             }
           }

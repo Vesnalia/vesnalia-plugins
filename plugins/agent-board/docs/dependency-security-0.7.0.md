@@ -18,10 +18,10 @@ does not exempt build/test tooling from malicious inputs or supply-chain risk.
   transitive override. Existing transitive ranges accept this patch.
 
 Only those three resolved package versions changed. Production dependencies,
-BB runtime/build version 0.46.0, SDK pin 0.4.34, Node major 24 and declared BB/SDK
+VesnALIA runtime/build version 0.46.0, SDK pin 0.4.34, Node major 24 and declared ALIA/SDK
 compatibility floors were retained. No major upgrade or forced audit fix was used.
 Locked root engine metadata was reconciled with the existing package declarations:
-BB >=0.40 and SDK >=0.4.21. Unrelated Linux libc metadata was retained.
+VesnALIA >=0.40 and SDK >=0.4.21. Unrelated Linux libc metadata was retained.
 
 ## Original eight GitHub alerts
 
@@ -66,7 +66,7 @@ These concern malicious network responses in build/test libraries; no production
 Undici dependency or claimed runtime exploit was introduced. After locked install,
 `npm audit --json` returned exit 0 with zero reported vulnerabilities.
 
-No exploit PoC, exhaustive security scan or independent Node/BB host dependency
+No exploit PoC, exhaustive security scan or independent Node/ALIA host dependency
 audit is claimed. Hosted CI uses disposable GitHub runners, read-only permissions,
 no repository secrets, no persisted checkout credentials, no `pull_request_target`
 execution and no uploaded runtime artifacts. GitHub alerts on unchanged main can

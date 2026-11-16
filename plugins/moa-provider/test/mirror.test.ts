@@ -9,9 +9,9 @@ const completed = (item: Record<string, unknown>) => ({
 describe("AggregatorMirror", () => {
   it("shows moa_consult calls but does not count or summarise them", () => {
     const mirror = new AggregatorMirror();
-    for (const tool of ["moa_consult", "mcp__bb-bridge__moa_consult"]) {
-      const event = completed({ type: "toolCall", id: tool, tool, server: "bb", arguments: {} });
-      const event2 = completed({ type: "toolCall", id: `${tool}-2`, tool, server: "bb", arguments: {}, result: "<moa_advisor_notes>…" });
+    for (const tool of ["moa_consult", "mcp__alia-bridge__moa_consult"]) {
+      const event = completed({ type: "toolCall", id: tool, tool, server: "alia", arguments: {} });
+      const event2 = completed({ type: "toolCall", id: `${tool}-2`, tool, server: "alia", arguments: {}, result: "<moa_advisor_notes>…" });
       const [close] = mirror.translate(event2);
       expect(close).toMatchObject({
         kind: "item.close",

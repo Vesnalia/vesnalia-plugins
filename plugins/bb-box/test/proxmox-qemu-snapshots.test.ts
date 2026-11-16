@@ -88,7 +88,7 @@ test("a Linux VM offers snapshots of its disk, or its disk and memory, taken whi
     lives: "host",
     price: null,
     excludes: null,
-    forkWhy: "a Windows box has no identity reset BB Box has checked, so a copy of it would keep the box's identity",
+    forkWhy: "a Windows box has no identity reset VesnALIA Box has checked, so a copy of it would keep the box's identity",
   });
   assert.equal(backend.snapshotting("android"), null);
 });
@@ -173,10 +173,10 @@ test("the plan checks every disk's storage: an EFI disk on raw files refuses the
   state.proxmox.guests.get(vmid)!.config.efidisk0 = `files:${vmid}/vm-${vmid}-disk-9.raw,efitype=4m,size=4M`;
   const plan = await state.backend.planSnapshots(guest, "linux", null);
   assert.equal(plan.take.ok, false);
-  assert.equal(plan.take.why, `Guest ${vmid}'s efidisk0 is on files, and files (directory, raw files) takes no snapshots, so BB Box takes no snapshot of it.`);
+  assert.equal(plan.take.why, `Guest ${vmid}'s efidisk0 is on files, and files (directory, raw files) takes no snapshots, so VesnALIA Box takes no snapshot of it.`);
 });
 
-test("a memory snapshot is planned on the storage Proxmox saves it to, at twice the VM's memory and 500 MiB, or refused where BB Box cannot tell", async () => {
+test("a memory snapshot is planned on the storage Proxmox saves it to, at twice the VM's memory and 500 MiB, or refused where VesnALIA Box cannot tell", async () => {
   const state = world();
   const { guest, vmid } = await linuxBox(state);
   const memoryMiB = Number(state.proxmox.guests.get(vmid)!.config.memory);
@@ -193,7 +193,7 @@ test("a memory snapshot is planned on the storage Proxmox saves it to, at twice 
   state.proxmox.guests.get(vmid)!.config.scsi1 = `second:vm-${vmid}-disk-5,size=8G`;
   const ambiguous = await state.backend.planSnapshots(guest, "linux", null);
   assert.equal(ambiguous.take.memory, null);
-  assert.equal(ambiguous.take.memoryWhy, "Proxmox would save its memory on one of local-lvm, second, and BB Box cannot tell which. Set vmstatestorage on the VM, or take one without memory.");
+  assert.equal(ambiguous.take.memoryWhy, "Proxmox would save its memory on one of local-lvm, second, and VesnALIA Box cannot tell which. Set vmstatestorage on the VM, or take one without memory.");
   assert.equal(ambiguous.take.ok, true, "a disk take is still planned");
   addStorage(state.proxmox, "ceph", "rbd", { shared: 1 });
   state.proxmox.guests.get(vmid)!.config.scsi2 = `ceph:vm-${vmid}-disk-6,size=8G`;
@@ -201,7 +201,7 @@ test("a memory snapshot is planned on the storage Proxmox saves it to, at twice 
   assert.equal(shared.take.memory?.storage.name, "ceph", "shared storage first, as Proxmox chooses");
   assert.equal(shared.take.memory?.storage.key, "proxmox:shared:ceph");
   state.proxmox.storageConfigs.delete("ceph");
-  assert.match((await state.backend.planSnapshots(guest, "linux", null)).take.memoryWhy ?? "", /^BB Box cannot read the settings of ceph, where one of its disks is/);
+  assert.match((await state.backend.planSnapshots(guest, "linux", null)).take.memoryWhy ?? "", /^ALIA Box cannot read the settings of ceph, where one of its disks is/);
 });
 
 test("a stopped VM's take is refused in words about the box, and its storage key is the pool's, as the container backend's is", async () => {
@@ -224,10 +224,10 @@ test("a VM's held copy cut short before its own labels still carries its source'
       ? { ok: false, status: 500, statusText: "Internal Server Error", text: async () => JSON.stringify({ data: null, message: "cut short" }) }
       : undefined;
   let claimed: Guest | null = null;
-  const cut = await state.backend.copySnapshot({ id: SNAPSHOT, ref: `bb${SNAPSHOT}`, guest }, { box, snapshot: SNAPSHOT, kept: "2026-11-30" }, { ...tasks().hooks, claimed: async (made) => void (claimed = made) }).catch((caught: unknown) => caught);
+  const cut = await state.backend.copySnapshot({ id: SNAPSHOT, ref: `alia${SNAPSHOT}`, guest }, { box, snapshot: SNAPSHOT, kept: "2026-11-30" }, { ...tasks().hooks, claimed: async (made) => void (claimed = made) }).catch((caught: unknown) => caught);
   state.proxmox.intercept = undefined;
   assert.ok(cut instanceof Error);
-  const part = [...state.proxmox.guests.values()].find((each) => each.vmid !== vmid && each.name.startsWith("bb-box-copy-"))!;
+  const part = [...state.proxmox.guests.values()].find((each) => each.vmid !== vmid && each.name.startsWith("alia-box-copy-"))!;
   assert.match(part.config.tags ?? "", new RegExp(`(^|;)box\\.${box}(;|$)`), "it still carries its source's tags");
   const listed = (await state.backend.held()).find((each) => each.ref === String(part.vmid));
   assert.ok(listed, "the sweep sees it");
@@ -247,9 +247,9 @@ test("070 unit 7: a VM's fork is a full copy of its snapshot's disk, disarmed fi
   const sourceUuid = /uuid=([^,]+)/.exec(source.config.smbios1 ?? "")?.[1];
   const sourceMac = /=([0-9A-F:]{17})/i.exec(source.config.net0 ?? "")?.[1];
   const forked = { boxId: "bxforkedvmaaaa", threadId: "thr_abc123", name: "calm-otter", kind: "linux", createdAt: 1_790_000_100_000, size: { ...defaultSize(kindSizes("linux")), gpu: "none" as const } };
-  const made = await state.backend.forkSnapshot({ id: SNAPSHOT, ref: `bb${SNAPSHOT}`, guest }, forked, null, quiet, new AbortController().signal);
+  const made = await state.backend.forkSnapshot({ id: SNAPSHOT, ref: `alia${SNAPSHOT}`, guest }, forked, null, quiet, new AbortController().signal);
   const clone = [...state.proxmox.calls].reverse().find((call) => call.method === "POST" && /\/clone$/.test(call.path))!;
-  assert.equal(clone.params.snapname, `bb${SNAPSHOT}`);
+  assert.equal(clone.params.snapname, `alia${SNAPSHOT}`);
   const after = state.proxmox.calls.slice(state.proxmox.calls.lastIndexOf(clone) + 1).find((call) => call.method === "PUT");
   assert.equal(after!.params.onboot, "0", "disarmed in the first request after the clone");
   assert.match(after!.params.net0 ?? "", /link_down=1/);
@@ -270,9 +270,9 @@ test("070 unit 7: a VM's fork is a full copy of its snapshot's disk, disarmed fi
 
   const clones = () => state.proxmox.calls.filter((call) => call.method === "POST" && /\/clone$/.test(call.path)).length;
   const before = clones();
-  const refused = await state.backend.forkSnapshot({ id: SNAPSHOT, ref: `bb${SNAPSHOT}`, guest }, { ...forked, kind: "windows-desktop" }, null, quiet, new AbortController().signal).catch((caught: unknown) => caught);
+  const refused = await state.backend.forkSnapshot({ id: SNAPSHOT, ref: `alia${SNAPSHOT}`, guest }, { ...forked, kind: "windows-desktop" }, null, quiet, new AbortController().signal).catch((caught: unknown) => caught);
   if (!(refused instanceof BackendError)) throw refused;
-  assert.match(refused.message, /forks no windows-desktop boxes: a Windows box has no identity reset BB Box has checked/);
+  assert.match(refused.message, /forks no windows-desktop boxes: a Windows box has no identity reset ALIA Box has checked/);
   assert.equal(clones(), before, "a refused Windows fork copies nothing");
 });
 
@@ -292,7 +292,7 @@ test("a Windows desktop on LVM-thin plans a disk snapshot and a snapshot undo, a
   assert.equal(plan.restore.way, "rollback");
   assert.equal(plan.restore.undo, "snapshot");
   assert.equal(plan.fork.ok, false);
-  assert.match(plan.fork.why ?? "", /A Windows box has no identity reset BB Box has checked/);
+  assert.match(plan.fork.why ?? "", /A Windows box has no identity reset ALIA Box has checked/);
   assert.equal(plan.keep.way, "no");
   assert.match(plan.keep.why ?? "", /keeps a snapshot past a release only when it can fork/);
 
@@ -337,7 +337,7 @@ test("a Linux VM on ZFS takes snapshots, and restore stays refused until it is c
   assert.equal(plan.take.ok, true);
   assert.equal(plan.restore.way, "none");
   assert.equal(plan.restore.undo, "none");
-  assert.equal(plan.restore.why, "local-lvm is ZFS, which restores only the newest snapshot, and BB Box restores a Linux VM there only once that is checked on one. Take, delete, fork and Keep still work here.");
+  assert.equal(plan.restore.why, "local-lvm is ZFS, which restores only the newest snapshot, and VesnALIA Box restores a Linux VM there only once that is checked on one. Take, delete, fork and Keep still work here.");
 });
 
 test("a Windows desktop on ZFS takes and deletes a snapshot, and restore is refused", async () => {
@@ -352,7 +352,7 @@ test("a Windows desktop on ZFS takes and deletes a snapshot, and restore is refu
   assert.equal(plan.restore.undo, "none");
   assert.match(plan.restore.why ?? "", /local-lvm is ZFS, which restores only the newest snapshot/);
   assert.match(plan.restore.why ?? "", /held copy/);
-  assert.match(plan.restore.why ?? "", /no identity reset BB Box has checked/);
+  assert.match(plan.restore.why ?? "", /no identity reset ALIA Box has checked/);
   assert.match(plan.restore.why ?? "", /Take and delete still work here/);
 
   const taken = await state.backend.snapshot(guest, { id: SNAPSHOT, box, memory: false }, tasks().hooks);
@@ -399,9 +399,9 @@ test("a Windows desktop restores in place to a snapshot and then to its undo, an
   assert.equal(guest.ref, String(vmid));
 
   const guests = state.proxmox.guests.size;
-  const kept = await state.backend.copySnapshot({ id: SNAPSHOT, ref: `bb${SNAPSHOT}`, guest }, { box, snapshot: SNAPSHOT, kept: "2026-11-30" }, { ...tasks().hooks, claimed: async () => {} }).catch((caught: unknown) => caught);
+  const kept = await state.backend.copySnapshot({ id: SNAPSHOT, ref: `alia${SNAPSHOT}`, guest }, { box, snapshot: SNAPSHOT, kept: "2026-11-30" }, { ...tasks().hooks, claimed: async () => {} }).catch((caught: unknown) => caught);
   if (!(kept instanceof BackendError)) throw kept;
-  assert.match(kept.message, /keeps no snapshot of a windows-desktop box past its release: a Windows box has no identity reset BB Box has checked/);
+  assert.match(kept.message, /keeps no snapshot of a windows-desktop box past its release: a Windows box has no identity reset ALIA Box has checked/);
   assert.equal(state.proxmox.guests.size, guests);
 
   await state.backend.deleteSnapshot({ id: SNAPSHOT, ref: "", guest }, tasks().hooks);

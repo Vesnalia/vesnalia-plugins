@@ -1,17 +1,17 @@
-// How long a deploy keeps bb-box's tools away (#916): agents got
-// "Unsupported tool" for 30 to 120 s at each one. BB runs the old version's
+// How long a deploy keeps alia-box's tools away (#916): agents got
+// "Unsupported tool" for 30 to 120 s at each one. VesnALIA runs the old version's
 // dispose hooks, loads the new version, and takes its tools once its setup
-// returns, or loads the new version first, as BB's test host does. bb-box logs
+// returns, or loads the new version first, as VesnALIA's test host does. alia-box logs
 // how long it took to stop, and to start, by phase, and which came first, by
-// the times each version started and stopped, kept in bb-box's storage.
+// the times each version started and stopped, kept in alia-box's storage.
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { PRODUCT } from "../brand.ts";
 
 export const STOPPED_AT_KEY = "reload/stopped-at";
 export const STARTED_AT_KEY = "reload/started-at";
 
-type Kv = BbPluginApi["storage"]["kv"];
+type Kv = AliaPluginApi["storage"]["kv"];
 
 export class ReloadTimes {
   readonly #log: (message: string) => void;
@@ -42,7 +42,7 @@ export class ReloadTimes {
     const [stoppedAt, lastStartedAt] = await Promise.all([this.#read(STOPPED_AT_KEY), this.#read(STARTED_AT_KEY)]);
     await this.#kv.set(STARTED_AT_KEY, this.#began).catch(() => undefined);
     const stoppedFirst = stoppedAt !== null && stoppedAt <= this.#began && (lastStartedAt === null || stoppedAt >= lastStartedAt);
-    const gap = stoppedFirst ? `; BB began it ${seconds(this.#began - stoppedAt)} after the last version stopped` : "";
+    const gap = stoppedFirst ? `; VesnALIA began it ${seconds(this.#began - stoppedAt)} after the last version stopped` : "";
     this.#log(`${PRODUCT} started in ${seconds(total)}: ${this.#phases.map(([phase, ms]) => `${phase} ${seconds(ms)}`).join(", ")}${gap}.`);
   }
 
@@ -55,7 +55,7 @@ export class ReloadTimes {
   async stopped(): Promise<void> {
     const now = this.#now();
     const startedAt = await this.#read(STARTED_AT_KEY);
-    const before = startedAt !== null && startedAt > this.#began ? `, ${seconds((this.#stopping ?? now) - startedAt)} after BB began the next version` : "";
+    const before = startedAt !== null && startedAt > this.#began ? `, ${seconds((this.#stopping ?? now) - startedAt)} after VesnALIA began the next version` : "";
     if (this.#stopping !== null) this.#log(`${PRODUCT} stopped in ${seconds(now - this.#stopping)}${before}.`);
     await this.#kv.set(STOPPED_AT_KEY, now).catch(() => undefined);
   }

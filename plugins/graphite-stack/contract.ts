@@ -2,12 +2,12 @@
 //
 // hostContract: server entry -> host entry. Each method runs git, gt, or gh
 // on the host that owns the environment, with argument arrays, timeouts, and
-// byte caps. The server passes an absolute `cwd` that it resolved from a BB
+// byte caps. The server passes an absolute `cwd` that it resolved from a VesnALIA
 // environment; the host never infers a directory.
 //
-// rpcContract: app -> server entry. Every method takes a BB environment id
-// (the anchor). The server resolves its host and path through bb.sdk.
-import { defineRpcContract, type ExperimentalHostSignals } from "@get-bb/plugin-sdk";
+// rpcContract: app -> server entry. Every method takes a VesnALIA environment id
+// (the anchor). The server resolves its host and path through alia.sdk.
+import { defineRpcContract, type ExperimentalHostSignals } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   absolutePathSchema,
@@ -318,7 +318,7 @@ export const hostContract = defineRpcContract({
     input: ghRepoInput
       .extend({
         number: z.number().int().positive(),
-        marker: z.string().regex(/^bb-graphite-stack:[a-z]+:[0-9a-f-]{36}$/u),
+        marker: z.string().regex(/^alia-graphite-stack:[a-z]+:[0-9a-f-]{36}$/u),
       })
       .strict(),
     output: z.object({

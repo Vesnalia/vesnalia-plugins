@@ -76,7 +76,7 @@ export class Supervisor {
   private readonly paths: Paths;
   private readonly support: PlatformSupport;
   private phase: Phase = "idle";
-  private message = "Waiting for the first request from bb";
+  private message = "Waiting for the first request from VesnALIA";
   private desired: Desired | null = null;
   /** Configuration of the running (or starting) server process. */
   private active: Desired | null = null;
@@ -361,7 +361,7 @@ export class Supervisor {
       signal.throwIfAborted();
       if (this.child !== child) {
         throw new Error(
-          "The GigaAM server exited during startup; run `bb gigaam logs` for details",
+          "The GigaAM server exited during startup; run `alia gigaam logs` for details",
         );
       }
       if (await healthy(port, signal)) {

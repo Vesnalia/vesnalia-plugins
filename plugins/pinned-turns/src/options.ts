@@ -1,4 +1,4 @@
-import { useSettings } from "@get-bb/plugin-sdk/app";
+import { useSettings } from "@vesnalia/plugin-sdk/app";
 import { DEFAULTS, DEFAULT_HALVES, HALVES, SETTING_KEYS, type Halves, type SettingKey } from "./shared";
 
 export type Options = Record<SettingKey, boolean> & {

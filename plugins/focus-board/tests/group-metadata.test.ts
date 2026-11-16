@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 import {
   GROUP_METADATA_KEY,
   GROUPS_KV_KEY,

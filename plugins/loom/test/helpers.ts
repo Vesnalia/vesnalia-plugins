@@ -1,9 +1,9 @@
 import Database from "better-sqlite3";
 import { vi, type MockInstance } from "vitest";
 import { stringify } from "smol-toml";
-import type { NewThreadRequest } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, type FakeSdkOverrides } from "@get-bb/plugin-sdk/testing";
-import { createBbPort } from "../src/bb-port";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, type FakeSdkOverrides } from "@vesnalia/plugin-sdk/testing";
+import { createAliaPort } from "../src/alia-port";
 import { MIGRATIONS } from "../src/db/schema";
 import { Store, type ProjectRow, type ThreadRow, type TicketRow } from "../src/db/store";
 import type { HostInput, HostMethod, HostOutput } from "../src/host-contract";
@@ -13,7 +13,7 @@ import { approve, settleReviews, spawnReviewers } from "../src/review";
 import { Projects } from "../src/projects";
 import type { LoomSettings } from "../src/record";
 import { specOf, spawnWorker, type EngineCtx } from "../src/workers";
-import { SectionNameConflictError, type BbPort, type BbProjectInfo, type EnvironmentFile, type EnvironmentFiles, type EnvironmentInfo, type EnvironmentPatch, type EnvironmentProviderInfo, type HostPort, type MachineProviderInfo, type PluginInfo, type SpawnArgs, type ThreadInfo } from "../src/ports";
+import { SectionNameConflictError, type AliaPort, type AliaProjectInfo, type EnvironmentFile, type EnvironmentFiles, type EnvironmentInfo, type EnvironmentPatch, type EnvironmentProviderInfo, type HostPort, type MachineProviderInfo, type PluginInfo, type SpawnArgs, type ThreadInfo } from "../src/ports";
 
 export function makeDb(): Database.Database {
   const db = new Database(":memory:");
@@ -34,7 +34,7 @@ export interface PortCall {
   args: unknown[];
 }
 
-/** bb's own git-worktree provider, as bb lists it. */
+/** VesnALIA's own git-worktree provider, as VesnALIA lists it. */
 export const GIT_WORKTREE_PROVIDER: EnvironmentProviderInfo = {
   id: "git-worktree",
   displayName: "Worktree",
@@ -46,7 +46,7 @@ export const GIT_WORKTREE_PROVIDER: EnvironmentProviderInfo = {
   unavailableReason: null,
 };
 
-export class FakePort implements BbPort {
+export class FakePort implements AliaPort {
   calls: PortCall[] = [];
   sections = new Map<string, string>();
   hostId: string | null = "host_local";
@@ -93,7 +93,7 @@ export class FakePort implements BbPort {
     this.record("log", level, message);
   }
 
-  // ---- the engine's side of bb: threads, environments and messages
+  // ---- the engine's side of VesnALIA: threads, environments and messages
   checkout: string | null = "/repo";
   threads = new Map<string, ThreadInfo>();
   environments = new Map<string, EnvironmentInfo>();
@@ -110,15 +110,15 @@ export class FakePort implements BbPort {
   afterSpawn: ((threadId: string, args: SpawnArgs) => void) | null = null;
   private nextThread = 1;
 
-  /** Checkout paths by bb project id, then host id. A project missing here has `checkout` on every host. */
+  /** Checkout paths by VesnALIA project id, then host id. A project missing here has `checkout` on every host. */
   checkouts = new Map<string, Record<string, string>>();
-  async projectCheckout(bbProjectId: string, hostId: string) {
-    this.record("projectCheckout", bbProjectId, hostId);
-    const byHost = this.checkouts.get(bbProjectId);
+  async projectCheckout(aliaProjectId: string, hostId: string) {
+    this.record("projectCheckout", aliaProjectId, hostId);
+    const byHost = this.checkouts.get(aliaProjectId);
     return byHost === undefined ? this.checkout : (byHost[hostId] ?? null);
   }
-  /** The projects bb lists; an Error makes the listing fail. The default is the project every test proposes from, with a checkout on both test hosts. */
-  bbProjects: BbProjectInfo[] | Error = [
+  /** The projects VesnALIA lists; an Error makes the listing fail. The default is the project every test proposes from, with a checkout on both test hosts. */
+  aliaProjects: AliaProjectInfo[] | Error = [
     {
       id: "proj_1",
       name: "shop",
@@ -132,14 +132,14 @@ export class FakePort implements BbPort {
   ];
   async listProjects() {
     this.record("listProjects");
-    if (this.bbProjects instanceof Error) throw this.bbProjects;
-    return this.bbProjects.map((project) => ({ ...project, sources: project.sources.map((source) => ({ ...source })) }));
+    if (this.aliaProjects instanceof Error) throw this.aliaProjects;
+    return this.aliaProjects.map((project) => ({ ...project, sources: project.sources.map((source) => ({ ...source })) }));
   }
-  /** Adds a standard bb project to the list with a checkout at each `paths` host, and the same checkouts for projectCheckout. */
-  addBbProject(id: string, paths: Record<string, string>, over: Partial<BbProjectInfo> = {}) {
-    if (this.bbProjects instanceof Error) this.bbProjects = [];
+  /** Adds a standard VesnALIA project to the list with a checkout at each `paths` host, and the same checkouts for projectCheckout. */
+  addAliaProject(id: string, paths: Record<string, string>, over: Partial<AliaProjectInfo> = {}) {
+    if (this.aliaProjects instanceof Error) this.aliaProjects = [];
     const sources = Object.entries(paths).map(([hostId, path]) => ({ hostId, path, isDefault: true }));
-    this.bbProjects.push({ id, name: id.replace(/^proj_/, ""), kind: "standard", gitRemoteUrl: `git@github.com:acme/${id}.git`, sources, ...over });
+    this.aliaProjects.push({ id, name: id.replace(/^proj_/, ""), kind: "standard", gitRemoteUrl: `git@github.com:acme/${id}.git`, sources, ...over });
     this.checkouts.set(id, { ...paths });
   }
   async spawnThread(args: SpawnArgs) {
@@ -220,7 +220,7 @@ export class FakePort implements BbPort {
     const environment = this.environments.get(environmentId);
     return environment === undefined ? null : { ...environment };
   }
-  /** Hosts bb no longer has; every other host is known. */
+  /** Hosts VesnALIA no longer has; every other host is known. */
   removedHosts = new Set<string>();
   async hostKnown(hostId: string) {
     this.record("hostKnown", hostId);
@@ -244,9 +244,9 @@ export class FakePort implements BbPort {
   }
   /** A missing id reads as "standard". */
   projectKinds = new Map<string, "standard" | "personal">();
-  async projectKind(bbProjectId: string): Promise<"standard" | "personal" | null> {
-    this.record("projectKind", bbProjectId);
-    return this.projectKinds.get(bbProjectId) ?? "standard";
+  async projectKind(aliaProjectId: string): Promise<"standard" | "personal" | null> {
+    this.record("projectKind", aliaProjectId);
+    return this.projectKinds.get(aliaProjectId) ?? "standard";
   }
   async spawnPlanner(args: { request: NewThreadRequest; title: string; kickoff: string }) {
     this.record("spawnPlanner", args);
@@ -254,27 +254,27 @@ export class FakePort implements BbPort {
     this.addThread(threadId, "active");
     return threadId;
   }
-  /** The provider ids bb has; an Error makes the listing fail. */
+  /** The provider ids VesnALIA has; an Error makes the listing fail. */
   providers: string[] | Error = ["claude", "codex", "claude-code", "pi"];
   async providerIds() {
     this.record("providerIds");
     if (this.providers instanceof Error) throw this.providers;
     return [...this.providers];
   }
-  /** The environment providers bb offers for any project; an Error makes the listing fail. */
+  /** The environment providers VesnALIA offers for any project; an Error makes the listing fail. */
   environmentProviderList: EnvironmentProviderInfo[] | Error = [GIT_WORKTREE_PROVIDER];
-  async environmentProviders(bbProjectId: string, hostId: string) {
-    this.record("environmentProviders", bbProjectId, hostId);
+  async environmentProviders(aliaProjectId: string, hostId: string) {
+    this.record("environmentProviders", aliaProjectId, hostId);
     if (this.environmentProviderList instanceof Error) throw this.environmentProviderList;
     return this.environmentProviderList.map((provider) => ({ ...provider }));
   }
-  /** The environments that make a new machine per thread, which bb lists only without a machine. */
+  /** The environments that make a new machine per thread, which VesnALIA lists only without a machine. */
   compositionList: EnvironmentProviderInfo[] = [];
-  async environmentCompositions(bbProjectId: string) {
-    this.record("environmentCompositions", bbProjectId);
+  async environmentCompositions(aliaProjectId: string) {
+    this.record("environmentCompositions", aliaProjectId);
     return this.compositionList.map((provider) => ({ ...provider }));
   }
-  /** The machine providers bb has. */
+  /** The machine providers VesnALIA has. */
   machineProviderList: MachineProviderInfo[] = [];
   async machineProviders() {
     this.record("machineProviders");
@@ -310,7 +310,7 @@ export class FakePort implements BbPort {
     const changes = this.environmentChanges.get(environmentId);
     return changes === undefined ? { outcome: "unavailable", message: `environment ${environmentId} is gone` } : { outcome: "ok", patch: changes.patches[path] ?? "", truncated: false };
   }
-  /** Registers a thread bb knows about, such as the planner's. */
+  /** Registers a thread VesnALIA knows about, such as the planner's. */
   addThread(id: string, status = "idle", environmentId: string | null = null) {
     this.threads.set(id, { id, status, archivedAt: null, deletedAt: null, environmentId });
   }
@@ -758,30 +758,30 @@ export function sdkStubs(state: SdkState): FakeSdkOverrides {
 }
 
 /**
- * A fake bb host, with the real adapter over stubbed sdk calls unless a port is given; tests register the tools or CLI they exercise.
+ * A fake VesnALIA host, with the real adapter over stubbed sdk calls unless a port is given; tests register the tools or CLI they exercise.
  * The engine runs over a FakeHost, and its kick is a no-op so nothing runs in the background.
  */
-export function makeHost(opts: { port?: BbPort; settings?: () => LoomSettings } = {}) {
+export function makeHost(opts: { port?: AliaPort; settings?: () => LoomSettings } = {}) {
   const state: SdkState = { sections: [], takenNames: new Set(), environmentId: "env_1", environmentHost: "host_env", primaryHostId: "host_primary" };
-  const { bb, harness } = createFakePluginHost({ pluginId: "loom", agentSkillIds: ["loom-plan", "loom"], sdk: sdkStubs(state) });
-  const db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+  const { alia, harness } = createFakePluginHost({ pluginId: "loom", agentSkillIds: ["loom-plan", "loom"], sdk: sdkStubs(state) });
+  const db = alia.storage.database();
+  alia.storage.migrate(db, MIGRATIONS);
   const store = new Store(db, Date.now);
-  const port = opts.port ?? createBbPort(bb);
+  const port = opts.port ?? createAliaPort(alia);
   const hostPort = new FakeHost();
-  const projects = new Projects({ store, bb: port, now: Date.now, host: hostPort, plannerInstructions: () => opts.settings?.().plannerInstructions ?? "" });
-  const engine = new Engine({ store, bb: port, now: Date.now, host: hostPort, projects, settings: opts.settings });
+  const projects = new Projects({ store, alia: port, now: Date.now, host: hostPort, plannerInstructions: () => opts.settings?.().plannerInstructions ?? "" });
+  const engine = new Engine({ store, alia: port, now: Date.now, host: hostPort, projects, settings: opts.settings });
   vi.spyOn(engine, "kick").mockImplementation(() => undefined);
-  return { bb, harness, state, store, projects, engine, hostPort };
+  return { alia, harness, state, store, projects, engine, hostPort };
 }
 
-// ---- the engine's pieces without bb: a store, a fake port, a fake host, and a clock
+// ---- the engine's pieces without VesnALIA: a store, a fake port, a fake host, and a clock
 
 export interface EngineHarness {
   ctx: EngineCtx;
   clock: Clock;
   store: Store;
-  bb: FakePort;
+  alia: FakePort;
   host: FakeHost;
   projects: Projects;
   kicks: { count: number };
@@ -792,13 +792,13 @@ export function makeCtx(): EngineHarness & { db: Database.Database } {
   const clock = new Clock();
   const db = makeDb();
   const store = new Store(db, clock.now);
-  const bb = new FakePort();
-  bb.addThread("thr_plan", "idle");
+  const alia = new FakePort();
+  alia.addThread("thr_plan", "idle");
   const host = new FakeHost();
-  const projects = new Projects({ store, bb, now: clock.now, host });
+  const projects = new Projects({ store, alia, now: clock.now, host });
   const kicks = { count: 0 };
-  const ctx: EngineCtx = { store, bb, now: clock.now, host, kick: () => void (kicks.count += 1), forgeBackoffs: new Map() };
-  return { ctx, clock, db, store, bb, host, projects, kicks };
+  const ctx: EngineCtx = { store, alia, now: clock.now, host, kick: () => void (kicks.count += 1), forgeBackoffs: new Map() };
+  return { ctx, clock, db, store, alia, host, projects, kicks };
 }
 
 /**
@@ -806,10 +806,10 @@ export function makeCtx(): EngineHarness & { db: Database.Database } {
  * proposal made to look at the repos are cleared, so a test counts only the calls after its project exists.
  */
 export async function seedProject(h: EngineHarness, edit?: (doc: Doc) => void, state: "ready" | "running" | "paused" = "running"): Promise<ProjectRow> {
-  await h.projects.propose({ toml: specToml(edit), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+  await h.projects.propose({ toml: specToml(edit), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
   await h.projects.approve("csv", "human");
   h.host.calls = [];
-  h.bb.calls = h.bb.calls.filter((call) => !["plugins", "environmentProviders", "environmentCompositions", "machineProviders", "projectCheckout"].includes(call.method));
+  h.alia.calls = h.alia.calls.filter((call) => !["plugins", "environmentProviders", "environmentCompositions", "machineProviders", "projectCheckout"].includes(call.method));
   const project = h.store.projectBySlug("csv")!;
   if (state !== "ready") h.store.setProjectState(project.id, "running", "human");
   if (state === "paused") h.store.setProjectState(project.id, "paused", "human");
@@ -817,13 +817,13 @@ export async function seedProject(h: EngineHarness, edit?: (doc: Doc) => void, s
 }
 
 /**
- * A running project over three repos, each its own bb project with a checkout on host_1: web (its own checks and a protected path),
+ * A running project over three repos, each its own VesnALIA project with a checkout on host_1: web (its own checks and a protected path),
  * api (another base and remote, the top-level checks) and docs (its own checks). CSV-1 is in web and CSV-2 in api, with no dependency.
  */
 export async function seedRepoProject(h: EngineHarness, edit?: (doc: Doc) => void, state: "ready" | "running" | "paused" = "running"): Promise<ProjectRow> {
-  h.bb.addBbProject("proj_web", { host_1: "/src/web" });
-  h.bb.addBbProject("proj_api", { host_1: "/src/api" });
-  h.bb.addBbProject("proj_docs", { host_1: "/src/docs" });
+  h.alia.addAliaProject("proj_web", { host_1: "/src/web" });
+  h.alia.addAliaProject("proj_api", { host_1: "/src/api" });
+  h.alia.addAliaProject("proj_docs", { host_1: "/src/docs" });
   return seedProject(h, (doc) => {
     doc.scope = { protected: ["db/**"] };
     doc.repo = [
@@ -838,12 +838,12 @@ export async function seedRepoProject(h: EngineHarness, edit?: (doc: Doc) => voi
   }, state);
 }
 
-/** A machine provider that gives each thread a machine of its own, which the fake bb names host_box<n>. */
+/** A machine provider that gives each thread a machine of its own, which the fake VesnALIA names host_box<n>. */
 export const BOXES: MachineProviderInfo = { id: "boxes", displayName: "Boxes", description: "A box per thread.", pluginId: "boxes", acceptsEmptyInputs: true, inputs: null };
 
 /** The base spec with every worker and reviewer on a new machine from BOXES, on the pr strategy without stacking, as Loom needs there. */
 export async function seedMachineProject(h: EngineHarness, edit?: (doc: Doc) => void, state: "ready" | "running" | "paused" = "running"): Promise<ProjectRow> {
-  h.bb.machineProviderList = [BOXES];
+  h.alia.machineProviderList = [BOXES];
   return seedProject(h, (doc) => {
     doc.merge = { strategy: "pr", stack: false };
     doc.environment = { provider: "git-worktree", machine: { provider: "boxes" } };
@@ -854,7 +854,7 @@ export async function seedMachineProject(h: EngineHarness, edit?: (doc: Doc) => 
 export const ticketOf = (h: EngineHarness, key: string): TicketRow => h.store.ticketByKey(key)!;
 export const workerRows = (h: EngineHarness, key: string): ThreadRow[] => h.store.threads({ ticketId: ticketOf(h, key).id, role: "worker" });
 
-/** A queued ticket claimed by a running worker whose thread and environment exist in the fake bb. */
+/** A queued ticket claimed by a running worker whose thread and environment exist in the fake VesnALIA. */
 export async function startWorker(h: EngineHarness, key = "CSV-1"): Promise<ThreadRow> {
   const project = h.store.projectBySlug("csv")!;
   await spawnWorker(h.ctx, project, specOf(h.store, project), ticketOf(h, key));
@@ -862,19 +862,19 @@ export async function startWorker(h: EngineHarness, key = "CSV-1"): Promise<Thre
   return rows[rows.length - 1]!;
 }
 
-/** A started worker whose environment bb attached only after spawn returned: the row has none, the thread does. */
+/** A started worker whose environment VesnALIA attached only after spawn returned: the row has none, the thread does. */
 export async function startLateWorker(h: EngineHarness, key = "CSV-1"): Promise<ThreadRow> {
-  h.bb.provisionEnvironment = false;
+  h.alia.provisionEnvironment = false;
   const row = await startWorker(h, key);
-  h.bb.threads.get(row.thread_id!)!.environmentId = "env_late";
-  h.bb.environments.set("env_late", { path: "/wt/late", branchName: "late-branch", hostId: "host_1" });
+  h.alia.threads.get(row.thread_id!)!.environmentId = "env_late";
+  h.alia.environments.set("env_late", { path: "/wt/late", branchName: "late-branch", hostId: "host_1" });
   return row;
 }
 
 /** The whole engine over the fakes. kick() is a no-op spy, so a test decides when the loop runs by calling engine.tick(). */
 export function makeEngine(): EngineHarness & { db: Database.Database; engine: Engine; kick: MockInstance<() => void> } {
   const harness = makeCtx();
-  const engine = new Engine({ store: harness.store, bb: harness.bb, now: harness.clock.now, host: harness.host, projects: harness.projects });
+  const engine = new Engine({ store: harness.store, alia: harness.alia, now: harness.clock.now, host: harness.host, projects: harness.projects });
   const kick = vi.spyOn(engine, "kick").mockImplementation(() => undefined);
   return { ...harness, ctx: engine.ctx, engine, kick };
 }

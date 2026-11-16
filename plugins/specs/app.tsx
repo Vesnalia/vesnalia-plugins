@@ -1,4 +1,4 @@
-// bb-plugin-specs — frontend entry.
+// alia-plugin-specs — frontend entry.
 //
 // A Notion/Craft-flavored document surface: sidebar of grouped specs, a calm
 // document canvas with select-to-comment, and a right rail for comments and
@@ -15,11 +15,11 @@ import {
   Markdown,
   ThreadChat,
   definePluginApp,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { usePortalScopeProps } from "./lib/portal-scope";
@@ -1417,8 +1417,8 @@ export function SpecsWorkspace({
   onOpenThread: (threadId: string) => void;
 }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
-  const bbContext = useBbContext();
+  const navigate = useAliaNavigate();
+  const aliaContext = useAliaContext();
   const [specs, setSpecs] = useState<SpecSummary[] | null>(null);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [listError, setListError] = useState<string | null>(null);
@@ -1525,7 +1525,7 @@ export function SpecsWorkspace({
   }, [selectedSlug, refetchDetail]);
 
   const draft = useSpecDraft(detail?.spec ?? null, {
-    scope: `${chrome}:${bbContext.threadId ?? ""}`,
+    scope: `${chrome}:${aliaContext.threadId ?? ""}`,
     save: (input) => rpc.call("specs_save", input),
     onSettled: (id) => {
       refetchList();
@@ -1550,14 +1550,14 @@ export function SpecsWorkspace({
       return;
     }
     autoSelectedRef.current = true;
-    const projectId = bbContext.projectId;
+    const projectId = aliaContext.projectId;
     const candidate =
       (projectId === null || projectId === undefined
         ? undefined
         : specs.find((spec) => spec.projectIds.includes(projectId))) ??
       specs[0];
     if (candidate !== undefined) onSelectSpec(candidate.id);
-  }, [chrome, selectedSlug, specs, onSelectSpec, bbContext.projectId]);
+  }, [chrome, selectedSlug, specs, onSelectSpec, aliaContext.projectId]);
 
   useEffect(() => {
     if (tabPart === "annotations") setRail("comments");
@@ -1654,7 +1654,7 @@ export function SpecsWorkspace({
   };
 
   const defaultProjectId =
-    detail?.links[0]?.projectId ?? bbContext.projectId ?? null;
+    detail?.links[0]?.projectId ?? aliaContext.projectId ?? null;
 
   // Notion/Craft-style creation: make an Untitled spec immediately, open it,
   // and put the caret in the title instead of showing a form.
@@ -2773,7 +2773,7 @@ function SpecPicker({
 
 /** The classic sidebar page: full spec list plus the workspace. */
 function SpecsPage({ subPath }: { subPath: string }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [slugPart = "", tabPart = ""] = subPath.split("/");
   return (
     <SpecsWorkspace
@@ -2797,7 +2797,7 @@ function SpecsPage({ subPath }: { subPath: string }) {
 
 /** Specs rendered as a closable tab in a thread's right panel. */
 function SpecsPanelTab({ params }: { params: unknown }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const initial =
     typeof params === "object" &&
     params !== null &&
@@ -2825,7 +2825,7 @@ function SpecsPanelTab({ params }: { params: unknown }) {
 
 /** Full-screen, chrome-less Specs surface toggled from the palette or footer. */
 function SpecsOverlay() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [open, setOpen] = useState(false);
   const [slug, setSlug] = useState("");
   const [tab, setTab] = useState<"document" | "annotations" | "chat">("document");

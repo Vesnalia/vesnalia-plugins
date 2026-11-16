@@ -159,7 +159,7 @@ export const researchContract = {
   tags: () => [RESEARCH_TAG],
  },
  health: {
-  // bb's plugin list probes an RPC named health with no input.
+  // VesnALIA's plugin list probes an RPC named health with no input.
   input: z.object({}).strict().nullish(),
   output: z.object({
    providers: z.array(providerStateSchema),

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import type { PluginBbSdk } from "@get-bb/plugin-sdk";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { PluginAliaSdk } from "@vesnalia/plugin-sdk";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import type { CollectDeps } from "../src/collect";
 import { collectAll } from "../src/collect-all";
 import { environment } from "./fixtures";
@@ -18,7 +18,7 @@ function setup(active: Thread[], archived: Thread[] = []) {
     return source.slice(args.offset ?? 0, (args.offset ?? 0) + (args.limit ?? 100));
   });
   const get = vi.fn(async ({ environmentId }: { environmentId: string }) => environment({ id: environmentId }));
-  const sdk = { threads: { list }, environments: { get } } as unknown as PluginBbSdk;
+  const sdk = { threads: { list }, environments: { get } } as unknown as PluginAliaSdk;
   return { deps: { sdk } as CollectDeps, list, get };
 }
 

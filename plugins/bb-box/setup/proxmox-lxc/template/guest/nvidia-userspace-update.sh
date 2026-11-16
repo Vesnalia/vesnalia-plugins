@@ -3,11 +3,11 @@ set -Eeuo pipefail
 umask 022
 
 die() { echo "nvidia-userspace-update: $*" >&2; exit 1; }
-root=${BB_BOX_ROOT:-}
+root=${ALIA_BOX_ROOT:-}
 mode=${1:-}
 host_driver=$root/sys/module/nvidia/version
-desktop_env=$root/etc/bb-box/desktop.env
-lock=$root/run/bb-box-nvidia-update.lock
+desktop_env=$root/etc/alia-box/desktop.env
+lock=$root/run/alia-box-nvidia-update.lock
 nvidia_base=${BBBOX_NVIDIA_BASE:-https://download.nvidia.com/XFree86/Linux-x86_64}
 
 hold_lock() {
@@ -41,7 +41,7 @@ case "$mode" in
     os_id=$(sed -n 's/^ID=//p' <<<"$os_release" | tr -d '"')
     os_version=$(sed -n 's/^VERSION_ID=//p' <<<"$os_release" | tr -d '"')
     echo "os ${os_id:-unknown} ${os_version:-unknown}"
-    if [ -e "$root/usr/share/bb-box/image.json" ]; then echo "image bb-box"; else echo "image other"; fi
+    if [ -e "$root/usr/share/alia-box/image.json" ]; then echo "image alia-box"; else echo "image other"; fi
     echo "free-mib $(df -Pm /var/tmp | awk 'NR == 2 { print $4 }')"
     echo "kernel-driver $(cat "$host_driver" 2>/dev/null || echo none)"
     packages=$(apt_packages)

@@ -72,12 +72,12 @@ function Segmented<Value extends string>({
       role="group"
       aria-label={ariaLabel}
       data-size={size}
-      className={cn("bb-segmented", className)}
+      className={cn("alia-segmented", className)}
     >
       {indicator ? (
         <span
           aria-hidden="true"
-          className="bb-segmented-indicator"
+          className="alia-segmented-indicator"
           style={{ transform: `translateX(${indicator.left}px)`, width: `${indicator.width}px` }}
         />
       ) : null}
@@ -90,15 +90,15 @@ function Segmented<Value extends string>({
             aria-pressed={active}
             title={option.hint}
             data-state={active ? "active" : "inactive"}
-            className="bb-segmented-item"
+            className="alia-segmented-item"
             onClick={() => onValueChange(option.value)}
           >
             {option.icon ? (
-              <Icon name={option.icon} className="bb-segmented-icon" aria-hidden="true" />
+              <Icon name={option.icon} className="alia-segmented-icon" aria-hidden="true" />
             ) : null}
             <span className="truncate">{option.label}</span>
             {option.count !== undefined ? (
-              <span className="bb-segmented-count tabular-nums">{option.count}</span>
+              <span className="alia-segmented-count tabular-nums">{option.count}</span>
             ) : null}
           </button>
         );

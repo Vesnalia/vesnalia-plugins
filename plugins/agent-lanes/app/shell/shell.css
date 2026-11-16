@@ -7,7 +7,7 @@
  * guides, menus) is drawn with the same tokens, type scale, radii and motion.
  *
  * Every colour comes from the timeline's palette: each root here also carries
- * `.bl-theme`, so the pane reads as one component and follows bb's theme.
+ * `.bl-theme`, so the pane reads as one component and follows alia's theme.
  */
 
 .lanes-chrome {

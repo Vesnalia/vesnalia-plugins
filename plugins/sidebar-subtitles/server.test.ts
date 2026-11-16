@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createFakePluginHost} from '@get-bb/plugin-sdk/testing';
+import {createFakePluginHost} from '@vesnalia/plugin-sdk/testing';
 import plugin from './server.ts';
 import {setNavigationHeading, readNavigationHeadings} from './headings.ts';
 import {navigationKey, orderedKeys, visibleKeys} from './navigation.ts';
@@ -10,21 +10,21 @@ function setup(order: string[], visible: string[] | null = null) {
   list: () => ({preferences: structuredClone(preferences)}),
   set: args => {const entry = preferences[args.key as keyof typeof preferences]; assert.equal(args.expectedRevision, entry.revision, 'Preference revision conflict'); entry.revision++; entry.value = args.value as string[]; return {preference: structuredClone(entry)};},
  }}}});
- plugin(host.bb); return {...host, preferences};
+ plugin(host.alia); return {...host, preferences};
 }
 test('maps SDK IDs to native preference keys, including Automations', () => {
- assert.equal(navigationKey('new-thread'), '__bb__/new-thread');
+ assert.equal(navigationKey('new-thread'), '__alia__/new-thread');
  assert.equal(navigationKey('plugin-panel:tools/main'), 'tools/main');
- assert.equal(navigationKey('plugin-panel:automations/automations'), '__bb__/automations');
+ assert.equal(navigationKey('plugin-panel:automations/automations'), '__alia__/automations');
 });
 test('respects native order and null versus all-hidden visibility', () => {
- const keys = ['__bb__/new-thread', '__bb__/search-threads', 'one/panel', 'two/panel'];
- assert.deepEqual(orderedKeys(keys, ['two/panel', '__bb_heading__/[]', 'missing/panel', 'one/panel']), ['two/panel', 'one/panel', '__bb__/new-thread', '__bb__/search-threads']);
- assert.deepEqual(visibleKeys(keys, null), ['__bb__/new-thread', 'one/panel', 'two/panel']);
+ const keys = ['__alia__/new-thread', '__alia__/search-threads', 'one/panel', 'two/panel'];
+ assert.deepEqual(orderedKeys(keys, ['two/panel', '__alia_heading__/[]', 'missing/panel', 'one/panel']), ['two/panel', 'one/panel', '__alia__/new-thread', '__alia__/search-threads']);
+ assert.deepEqual(visibleKeys(keys, null), ['__alia__/new-thread', 'one/panel', 'two/panel']);
  assert.deepEqual(visibleKeys(keys, []), []);
 });
 test('heading aliases rename and delete together without changing destination order', () => {
- const order = ['one/panel', 'two/panel', '__bb_heading__/["one/panel","Old"]', '__bb_heading__/["plugin-panel:one/panel","Current"]'];
+ const order = ['one/panel', 'two/panel', '__alia_heading__/["one/panel","Old"]', '__alia_heading__/["plugin-panel:one/panel","Current"]'];
  assert.deepEqual(Object.fromEntries(readNavigationHeadings(order)), {'one/panel': 'Current'});
  const changed = setNavigationHeading(order, 'plugin-panel:one/panel', ' Renamed ');
  assert.deepEqual(changed.slice(0, 2), ['one/panel', 'two/panel']);
@@ -62,12 +62,12 @@ test('hide/show preserves unrelated visibility and order; rejects stale toggles'
 });
 test('first hide uses native defaults and does not reveal Search', async () => {
  const h=setup([]);
- try {await h.harness.callRpc('visibility',{key:'one/panel',visible:false,keys:['__bb__/new-thread','__bb__/search-threads','one/panel'],expectedRevision:1});
- assert.deepEqual(h.preferences['sidebar.visiblePluginPanels'].value,['__bb__/new-thread']);
+ try {await h.harness.callRpc('visibility',{key:'one/panel',visible:false,keys:['__alia__/new-thread','__alia__/search-threads','one/panel'],expectedRevision:1});
+ assert.deepEqual(h.preferences['sidebar.visiblePluginPanels'].value,['__alia__/new-thread']);
  } finally {await h.harness.dispose();}
 });
 test('storage conflicts propagate without erasing saved headings', async () => {
  const initial=setNavigationHeading(['one/panel'],'one/panel','Saved');
  const h=createFakePluginHost({pluginId:'sidebar-subtitles',sdk:{system:{uiPreferences:{list:()=>({preferences:{'sidebar.pluginPanelOrder':{revision:1,value:initial},'sidebar.visiblePluginPanels':{revision:0,value:null}}}),set:()=>{throw new Error('Preference revision conflict');}}}}});
- try {plugin(h.bb);await assert.rejects(h.harness.callRpc('save',{key:'one/panel',title:'Draft'}),/conflict/);assert.deepEqual((await h.harness.callRpc('get',null) as {headings:object}).headings,{'one/panel':'Saved'});}finally{await h.harness.dispose();}
+ try {plugin(h.alia);await assert.rejects(h.harness.callRpc('save',{key:'one/panel',title:'Draft'}),/conflict/);assert.deepEqual((await h.harness.callRpc('get',null) as {headings:object}).headings,{'one/panel':'Saved'});}finally{await h.harness.dispose();}
 });

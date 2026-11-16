@@ -7,10 +7,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   experimental_Icon as HostIcon,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
   type PluginThreadHeaderActionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { KataIssue } from "@/lib/kata-types";
 import type { KataRpcContract } from "@/lib/rpc-contract";
@@ -154,7 +154,7 @@ function MenuButton({ onClick, children, disabled }: { onClick: () => void; chil
 
 export function KataThreadHeader({ threadId, isCompactViewport }: PluginThreadHeaderActionProps) {
   const rpc = useRpc<KataRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { binding, accept } = useThreadBinding(threadId);
   const [open, setOpen] = useState(false);
   const [picking, setPicking] = useState(false);

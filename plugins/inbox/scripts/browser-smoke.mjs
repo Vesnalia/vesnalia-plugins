@@ -1,10 +1,10 @@
-// Use only a fresh, isolated BB profile. This saves preferences and demo activities.
+// Use only a fresh, isolated VesnALIA profile. This saves preferences and demo activities.
 // No real Telegram credentials or messages are used.
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
-const base = process.env.NY_TEST_BB_URL;
-if (!base) throw new Error('Set NY_TEST_BB_URL to a fresh isolated BB instance, never your normal BB server.');
+const base = process.env.NY_TEST_ALIA_URL;
+if (!base) throw new Error('Set NY_TEST_ALIA_URL to a fresh isolated VesnALIA instance, never your normal VesnALIA server.');
 const shots = '.test-artifacts';
 await mkdir(shots, { recursive: true });
 async function rpc(method, input = null) {

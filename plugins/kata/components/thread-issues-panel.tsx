@@ -5,7 +5,7 @@
 // the palette) it shows that issue's project, which may differ from the
 // binding, with the issue selected. Params are untrusted (lib/refs.ts).
 import { useCallback, useMemo } from "react";
-import { useRpc, type PluginThreadPanelProps } from "@get-bb/plugin-sdk/app";
+import { useRpc, type PluginThreadPanelProps } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { KataIssue } from "@/lib/kata-types";
 import type { KataRpcContract } from "@/lib/rpc-contract";

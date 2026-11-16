@@ -45,8 +45,8 @@ const credentials = { clientId: "kCLIENTid", clientSecret: CLIENT_SECRET };
 test("a key for each machine is single-use, ephemeral, pre-approved and tagged, expires in 10 minutes, and the OAuth token is asked for once", async () => {
   const fake = fakeTailscale();
   const tailnet = new Tailnet({ credentials, fetch: fake.fetch });
-  const first = await tailnet.mintKey({ description: "BB Box mac quiet-heron (box_123)" });
-  const second = await tailnet.mintKey({ description: "BB Box host h1" });
+  const first = await tailnet.mintKey({ description: "VesnALIA Box mac quiet-heron (box_123)" });
+  const second = await tailnet.mintKey({ description: "VesnALIA Box host h1" });
   assert.equal(first.key, MINTED);
   assert.equal(first.id, "k123");
   assert.equal(first.expiresAt, Date.parse("2026-10-22T16:10:00Z"));
@@ -57,21 +57,21 @@ test("a key for each machine is single-use, ephemeral, pre-approved and tagged, 
   assert.deepEqual(JSON.parse(fake.calls[1]!.body!), {
     capabilities: { devices: { create: { reusable: false, ephemeral: true, preauthorized: true, tags: DEFAULT_TAILNET_TAGS } } },
     expirySeconds: 600,
-    description: "BB Box mac quiet-heron box 123",
+    description: "VesnALIA Box mac quiet-heron box 123",
   });
 });
 
 test("the OAuth token is asked for again once it is near its expiry, and after Tailscale refuses it", async () => {
   let now = 1_000_000;
   const fake = fakeTailscale({ tokenLifetime: 120 });
-  const tailnet = new Tailnet({ credentials, fetch: fake.fetch, now: () => now, tags: ["tag:bb-box-mac"] });
+  const tailnet = new Tailnet({ credentials, fetch: fake.fetch, now: () => now, tags: ["tag:alia-box-mac"] });
   await tailnet.mintKey({ description: "one" });
   now += 30_000;
   await tailnet.mintKey({ description: "two" });
   now += 31_000;
   await tailnet.mintKey({ description: "three" });
   assert.equal(fake.calls.filter((call) => call.path === "/api/v2/oauth/token").length, 2);
-  assert.deepEqual(JSON.parse(fake.calls.at(-1)!.body!).capabilities.devices.create.tags, ["tag:bb-box-mac"]);
+  assert.deepEqual(JSON.parse(fake.calls.at(-1)!.body!).capabilities.devices.create.tags, ["tag:alia-box-mac"]);
 });
 
 test("no error says the OAuth client's secret, the access token or a key, and each says what to check", async () => {
@@ -104,18 +104,18 @@ test("the doctor's check signs the OAuth client in and makes nothing", async () 
   assert.doesNotMatch(failed.ok ? "" : failed.reason, /SECRET/);
 });
 
-test("devices lists only the tailnet's devices with BB Box's tags, and removing one that is already gone is no error", async () => {
+test("devices lists only the tailnet's devices with VesnALIA Box's tags, and removing one that is already gone is no error", async () => {
   const fake = fakeTailscale({
     devices: [
-      { id: "1", nodeId: "nA", hostname: "bb-box-mac-quiet-heron", tags: ["tag:bb-box"], lastSeen: "2026-10-22T15:00:00Z", addresses: ["192.0.2.7", "fd7a:115c:a1e0::7"] },
+      { id: "1", nodeId: "nA", hostname: "alia-box-mac-quiet-heron", tags: ["tag:alia-box"], lastSeen: "2026-10-22T15:00:00Z", addresses: ["192.0.2.7", "fd7a:115c:a1e0::7"] },
       { id: "2", nodeId: "nB", hostname: "owners-laptop", tags: [], lastSeen: "2026-10-22T15:05:00Z" },
-      { id: "3", nodeId: "nC", name: "bb-box-host-h1.tail1234.ts.net", tags: ["tag:other", "tag:bb-box"] },
+      { id: "3", nodeId: "nC", name: "alia-box-host-h1.tail1234.ts.net", tags: ["tag:other", "tag:alia-box"] },
     ],
   });
   const tailnet = new Tailnet({ credentials, fetch: fake.fetch });
   assert.deepEqual(await tailnet.devices(), [
-    { id: "nA", hostname: "bb-box-mac-quiet-heron", tags: ["tag:bb-box"], lastSeen: Date.parse("2026-10-22T15:00:00Z"), addresses: ["192.0.2.7", "fd7a:115c:a1e0::7"] },
-    { id: "nC", hostname: "bb-box-host-h1", tags: ["tag:other", "tag:bb-box"], lastSeen: null, addresses: [] },
+    { id: "nA", hostname: "alia-box-mac-quiet-heron", tags: ["tag:alia-box"], lastSeen: Date.parse("2026-10-22T15:00:00Z"), addresses: ["192.0.2.7", "fd7a:115c:a1e0::7"] },
+    { id: "nC", hostname: "alia-box-host-h1", tags: ["tag:other", "tag:alia-box"], lastSeen: null, addresses: [] },
   ]);
   await tailnet.removeDevice("nA");
   assert.deepEqual(fake.calls.at(-1), { method: "DELETE", path: "/api/v2/device/nA", headers: { Authorization: `Bearer ${ACCESS_TOKEN}`, Accept: "application/json" }, body: undefined });
@@ -126,11 +126,11 @@ test("devices lists only the tailnet's devices with BB Box's tags, and removing 
 });
 
 test("descriptions and hostnames are what Tailscale takes", () => {
-  assert.equal(keyDescription("bb-box: Mac for thr_abc/box_1!"), "bb-box Mac for thr abc box 1");
+  assert.equal(keyDescription("alia-box: Mac for thr_abc/box_1!"), "alia-box Mac for thr abc box 1");
   assert.equal(keyDescription("x".repeat(80)).length, 50);
-  assert.equal(keyDescription("___"), "bb-box");
-  assert.equal(tailnetHostname("BB Box: Quiet_Heron!"), "bb-box-quiet-heron");
-  assert.equal(tailnetHostname("-".repeat(5)), "bb-box");
+  assert.equal(keyDescription("___"), "alia-box");
+  assert.equal(tailnetHostname("VesnALIA Box: Quiet_Heron!"), "alia-box-quiet-heron");
+  assert.equal(tailnetHostname("-".repeat(5)), "alia-box");
 });
 
 test("the join script takes the key on its input, gives it to tailscale up only as a file, and leaves no file; the leave script logs out", () => {

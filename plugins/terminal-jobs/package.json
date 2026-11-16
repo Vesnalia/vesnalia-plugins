@@ -1,21 +1,13 @@
 {
-  "name": "bb-plugin-terminal-jobs",
+  "name": "alia-plugin-terminal-jobs",
   "version": "0.2.0",
   "private": true,
-  "description": "Run durable BB terminal jobs and send completion notices.",
+  "description": "Run durable VesnALIA terminal jobs and send completion notices.",
   "license": "MIT",
   "author": "Ryan Brown",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ryanbbrown/bb-plugin-terminal-jobs.git"
-  },
-  "bugs": {
-    "url": "https://github.com/ryanbbrown/bb-plugin-terminal-jobs/issues"
-  },
-  "homepage": "https://github.com/ryanbbrown/bb-plugin-terminal-jobs#readme",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "terminal",
     "jobs",
     "automation"
@@ -23,10 +15,10 @@
   "type": "module",
   "engines": {
     "node": ">=22",
-    "bb": ">=0.41.0",
-    "bbPluginSdk": ">=0.4.34"
+    "alia": ">=0.41.0",
+    "aliaPluginSdk": ">=0.4.34"
   },
-  "bb": {
+  "alia": {
     "name": "Terminal jobs",
     "description": "Runs durable terminal jobs and sends completion notices.",
     "branding": {
@@ -39,7 +31,7 @@
     ]
   },
   "scripts": {
-    "build": "env -u BB_CLI node_modules/bb-app-host/dist/bb.js plugin build",
+    "build": "env -u ALIA_CLI node_modules/alia-app-host/dist/alia.js plugin build",
     "check": "npm run sdk:check && npm run typecheck && npm test && npm run lint:shell && npm run check:dist && npm run pack:check && npm run smoke:install",
     "check:dist": "npm run build && ./scripts/check-dist.sh",
     "lint:shell": "bash -n test/install-smoke.sh scripts/check-dist.sh && if command -v shellcheck >/dev/null 2>&1; then shellcheck test/install-smoke.sh scripts/check-dist.sh; else echo 'shellcheck not installed; syntax check passed'; fi",
@@ -60,7 +52,6 @@
     "LICENSE"
   ],
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.34",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.15.30",
     "bb-app-host": "npm:bb-app@0.41.0",
@@ -72,5 +63,22 @@
   },
   "dependencies": {
     "zod": "4.4.3"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.34"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/terminal-jobs#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/terminal-jobs"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

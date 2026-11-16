@@ -1,4 +1,4 @@
-// Icons this page needs that BB's built-in set may not include. Paths are
+// Icons this page needs that VesnALIA's built-in set may not include. Paths are
 // from Lucide (ISC license, see THIRD_PARTY_NOTICES.md). Registered under a
 // "human-tasks/" prefix.
 import type { ReactNode } from "react";

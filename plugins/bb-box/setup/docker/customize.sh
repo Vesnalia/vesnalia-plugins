@@ -1,18 +1,18 @@
 #!/bin/bash
-# bb-box: makes a Docker box image from inside, as
+# alia-box: makes a Docker box image from inside, as
 # setup/proxmox-lxc/template/build.sh does in its build CT: stages a build
 # directory, runs the template's guest scripts with BOX_RUNTIME=docker, then
-# finalize.sh. BB's app goes in a layer of its own (see the Dockerfile). Run
+# finalize.sh. ALIA's app goes in a layer of its own (see the Dockerfile). Run
 # by the Dockerfile, with the template's directory at /mnt/template, the
 # fetched artifacts at /mnt/artifacts and the fetch stage's CA certificates
 # at /mnt/ca-certificates.crt, all read-only, and the apt packages of earlier
-# builds at /var/cache/bb-box-apt, a cache on the Docker host (#96).
+# builds at /var/cache/alia-box-apt, a cache on the Docker host (#96).
 #
 # usage: customize.sh linux|desktop|desktop-wayland
 set -euo pipefail
 kind=${1:-}
 case $kind in linux | desktop | desktop-wayland) ;; *) echo "usage: customize.sh linux|desktop|desktop-wayland" >&2; exit 2 ;; esac
-build=/root/bb-box-build
+build=/root/alia-box-build
 
 # Ubuntu's container image has a user with uid 1000, which the box user takes.
 if id -u ubuntu >/dev/null 2>&1; then userdel -r ubuntu 2>/dev/null; fi
@@ -28,7 +28,7 @@ if id -u ubuntu >/dev/null 2>&1; then userdel -r ubuntu 2>/dev/null; fi
 # next build: apt checks each against the snapshot's signed index. Not apt's
 # own /var/cache/apt/archives, which Ubuntu's docker-clean and finalize.sh's
 # apt-get clean empty.
-packages=/var/cache/bb-box-apt
+packages=/var/cache/alia-box-apt
 if [ -d "$packages" ]; then
   install -d -o _apt -m 0700 "$packages/partial"
   printf 'Dir::Cache::archives "%s/";\nBinary::apt::APT::Keep-Downloaded-Packages "true";\n' "$packages" >/etc/apt/apt.conf.d/40bb-box-build-cache

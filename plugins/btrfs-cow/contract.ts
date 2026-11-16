@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const failed = z
@@ -51,7 +51,7 @@ export const cowHostContract = defineRpcContract({
       failed,
     ]),
   },
-  /** Detailed report for `bb btrfs-cow status`. */
+  /** Detailed report for `alia btrfs-cow status`. */
   status: {
     input: z.object({ path: z.string().min(1) }).strict(),
     output: z

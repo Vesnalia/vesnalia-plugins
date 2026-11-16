@@ -6,8 +6,8 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import {
   experimental_ProviderIcon as ProviderIcon,
   experimental_useProviders as useProviders,
-  useBbNavigate,
-} from "@get-bb/plugin-sdk/app";
+  useAliaNavigate,
+} from "@vesnalia/plugin-sdk/app";
 import {
   bricksPlaced,
   pieceCount,
@@ -352,7 +352,7 @@ function CrewMember({
   threadId: string | null;
   master?: boolean;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { providers } = useProviders();
   const provider = choice === null ? null : (providers.find((candidate) => candidate.id === choice.providerId) ?? { id: choice.providerId });
   const busy = status === "working";

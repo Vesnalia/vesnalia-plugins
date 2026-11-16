@@ -21,7 +21,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtemp, mkdir, readdir, readFile, realpath, rm, rmdir, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { createFakePluginHost, type FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, type FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
@@ -43,7 +43,7 @@ const CONTRACT_METHODS = Object.keys(fileManagerContract).sort();
 
 let host: FakePluginHost;
 let root = "";
-/** True when this suite is what created `<home>/.bb-file-manager`. */
+/** True when this suite is what created `<home>/.alia-file-manager`. */
 let createdRealStaging = false;
 
 async function pathExists(candidate: string): Promise<boolean> {
@@ -72,7 +72,7 @@ beforeEach(async () => {
     createdRealStaging || !(await pathExists(path.join(ROOT_PATH, STAGING_DIR_NAME)));
   host = makeHost();
   // The real factory, with the real ROOT — this is the whole point of the file.
-  await plugin(host.bb);
+  await plugin(host.alia);
   // From here on the tree under test is a temp directory.
   root = await realpath(await mkdtemp(path.join(tmpdir(), "fm-factory-")));
   await initRoot(root);
@@ -222,7 +222,7 @@ describe("end-to-end through the host", () => {
 
   it("reports the version the manifest declares, not one of its own", async () => {
     // `PLUGIN_VERSION` in server.ts and `version` in package.json are kept in
-    // sync by hand: the manifest is what bb installs and what the release tag
+    // sync by hand: the manifest is what VesnALIA installs and what the release tag
     // is cut from, while PLUGIN_VERSION is what the panel and the load line in
     // the logs show. Asserting PLUGIN_VERSION against itself — as this suite
     // did — cannot catch a bump that only landed in one of the two.
@@ -355,7 +355,7 @@ describe("end-to-end through the host", () => {
     expect((await readdir(root)).sort()).toEqual(before);
   });
 
-  it("persists preferences through bb.sdk.plugins.updateSettings", async () => {
+  it("persists preferences through alia.sdk.plugins.updateSettings", async () => {
     const saved = (await host.harness.behavior.callRpc("savePreferences", {
       showHiddenFiles: true,
       sortField: "size",

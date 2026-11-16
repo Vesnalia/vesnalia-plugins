@@ -18,7 +18,7 @@ import { ErrorLine } from "./display";
 import { keepSnapshot, resolveColor, snapshot, useFrameLoop, useGpuSlot } from "./gpu";
 import { MAX_PITCH, MAX_ZOOM, MIN_ZOOM, type Orbit } from "./sceneMath";
 import { SceneWorld, type Hint, type LabelSize } from "./sceneWorld";
-import { NO_BB_SWIPE } from "./viewer";
+import { NO_ALIA_SWIPE } from "./viewer";
 
 const DEFAULT_HEIGHT = 320;
 const MIN_HEIGHT = 120;
@@ -35,7 +35,7 @@ const MAX_PIXEL_RATIO = 2;
 const MAX_ERRORS = 4;
 
 const LABEL = "pointer-events-none absolute left-0 top-0 whitespace-nowrap font-sans leading-none";
-/** Label sizes in BB's type scale (body is the reply's text-sm). */
+/** Label sizes in VesnALIA's type scale (body is the reply's text-sm). */
 const LABEL_CLASS: Record<LabelSize, string> = {
   xs: `${LABEL} text-[11px]`,
   sm: `${LABEL} text-xs`,
@@ -276,7 +276,7 @@ export function Scene({ props }: { props: Props }) {
         ref={container}
         role="img"
         aria-label="3D scene"
-        {...(orbitable ? NO_BB_SWIPE : {})}
+        {...(orbitable ? NO_ALIA_SWIPE : {})}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerEnd}

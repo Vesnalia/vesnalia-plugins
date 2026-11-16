@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import type { Spec } from "../spec";
 import { BUTTON, HEADING, plural } from "./common";
 import { CHANGED_TAG, Commentable, DiffList, NEW_TAG, WordDiff, changeAt, kept, useReview, type ListMark } from "./spec-review-kit";

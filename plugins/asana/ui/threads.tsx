@@ -7,8 +7,8 @@ import {
   experimental_InfoSection as InfoSection,
   experimental_useAppPanel as useAppPanel,
   UrlLink,
-  useBbNavigate,
-} from "@get-bb/plugin-sdk/app";
+  useAliaNavigate,
+} from "@vesnalia/plugin-sdk/app";
 import type { LinkedThread } from "../server";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,7 @@ import { threadState, THREAD_STATE_LABEL, ThreadStateDot, useThreadLink } from "
  * first, then archived. The thread you're in is marked rather than linked.
  */
 export function TaskThreadsSection({ threads, currentThreadId }: { threads: LinkedThread[]; currentThreadId?: string }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   if (threads.length === 0) return null;
   const ordered = [...threads.filter((thread) => !thread.archived), ...threads.filter((thread) => thread.archived)];
   return (
@@ -63,7 +63,7 @@ export function TaskThreadsSection({ threads, currentThreadId }: { threads: Link
 /** The linked task in a thread's Info tab. */
 export function ThreadInfoAsana({ threadId }: { threadId: string }) {
   const link = useThreadLink(threadId);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   if (link === undefined || link === null) return null;
   return (
     <InfoSection label="Asana task">
@@ -84,7 +84,7 @@ export function ThreadInfoAsana({ threadId }: { threadId: string }) {
 }
 
 /** Asks a thread's Asana tab to show its linked task (see useOpenLinkedRequests). */
-const OPEN_LINKED = "bb-asana:open-linked";
+const OPEN_LINKED = "alia-asana:open-linked";
 
 /** Calls `open` whenever the header asks this thread's Asana tab to show its task. */
 export function useOpenLinkedRequests(threadId: string, open: () => void) {

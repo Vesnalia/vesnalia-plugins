@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { PluginFileOpenerSource } from "@get-bb/plugin-sdk/app";
+import type { PluginFileOpenerSource } from "@vesnalia/plugin-sdk/app";
 import type { HoverPreviewBacklink } from "./hover-preview.js";
 import {
   callVaultGraph,
@@ -29,7 +29,7 @@ import {
   type VaultGraphResolvedTarget,
 } from "./document-backlinks-model.js";
 
-const ACTIVE_FILE_EVENT = "bb-active-file";
+const ACTIVE_FILE_EVENT = "alia-active-file";
 const REANNOUNCE_THROTTLE_MS = 2_000;
 const SAVE_REFRESH_DELAY_MS = 1_200;
 const LOADING_INDICATOR_DELAY_MS = 400;

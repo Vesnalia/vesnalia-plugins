@@ -1,12 +1,12 @@
 ---
 name: agent-traces
-description: Explain where an agent's time went in a bb thread (slowest calls, waits, subagents, child threads, failures), group calls across turns or a project's threads, compare two turns, or export a turn as OpenTelemetry or HTML. Use when asked why a turn was slow or what took the time.
+description: Explain where an agent's time went in a VesnALIA thread (slowest calls, waits, subagents, child threads, failures), group calls across turns or a project's threads, compare two turns, or export a turn as OpenTelemetry or HTML. Use when asked why a turn was slow or what took the time.
 ---
 
 # Agent Traces
 
 Prefer the `agent_traces` tool when it is available. Otherwise use the
-`bb agent-traces` command. Both default to the current thread and to its
+`alia agent-traces` command. Both default to the current thread and to its
 last finished turn.
 
 To point the user at a trace, the Traces page lives at
@@ -16,10 +16,10 @@ To point the user at a trace, the Traces page lives at
 ## Read a trace
 
 ```sh
-bb agent-traces show [thread] [--turn n|latest|previous] [--limit 8] [--json]
-bb agent-traces turns [thread] [--json]
-bb agent-traces commands [thread] [--project] [--threads 20] [--json]
-bb agent-traces compare <a> <b> [thread] [--json]
+alia agent-traces show [thread] [--turn n|latest|previous] [--limit 8] [--json]
+alia agent-traces turns [thread] [--json]
+alia agent-traces commands [thread] [--project] [--threads 20] [--json]
+alia agent-traces compare <a> <b> [thread] [--json]
 ```
 
 - `show` splits the turn's time into phases and lists its slowest calls,
@@ -49,12 +49,12 @@ alongside the agent, so it never counts against these phases.
 ## Export
 
 ```sh
-bb agent-traces export [thread] [--turn n] [--format otlp|html]
-bb agent-traces export [thread] [--turn n] --send
+alia agent-traces export [thread] [--turn n] [--format otlp|html]
+alia agent-traces export [thread] [--turn n] --send
 ```
 
 `otlp` prints the turn as OpenTelemetry OTLP/JSON. `--send` posts it to the
-endpoint set with `bb plugin config agent-traces set otlpEndpoint <url>`.
+endpoint set with `alia plugin config agent-traces set otlpEndpoint <url>`.
 Headers go in the secret `otlpHeaders` setting as `key=value` pairs, and
 `autoExport` sends every turn as it finishes.
 

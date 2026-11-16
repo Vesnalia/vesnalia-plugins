@@ -1,18 +1,18 @@
 /**
  * Where events become entries. Four things every handler here has to get right:
  *
- * 1. **Return fast.** bb's events are announcements: a handler cannot block
- *    anything, and it runs inside the bb server's own process. Each handler
+ * 1. **Return fast.** VesnALIA's events are announcements: a handler cannot block
+ *    anything, and it runs inside the VesnALIA server's own process. Each handler
  *    looks up the thread's names, records the entry with its sentence, and
- *    returns; a failure is logged, never thrown into the bb server.
+ *    returns; a failure is logged, never thrown into the VesnALIA server.
  * 2. **Dedupe a turn's end.** A second `thread.idle` with no `thread.active`
  *    between them, inside the window, is the same turn reported twice.
  * 3. **Follow the thread, not the plugin.** An entry is the thread's last
  *    event and lives until the next one replaces it, or the thread is archived
  *    or deleted. A new turn takes back only a sentence still being written.
- *    bb's unread state decides what the panel *lists*; see `app/rows.ts`.
+ *    VesnALIA's unread state decides what the panel *lists*; see `app/rows.ts`.
  * 4. **Leave hidden threads alone.** Another plugin's background worker is not
- *    something the user is waiting on; bb keeps it out of their attention too.
+ *    something the user is waiting on; VesnALIA keeps it out of their attention too.
  */
 import type { AttentionEntry, AttentionReason, HistoryItem } from "../shared/herald";
 import type { SentenceSettings } from "../shared/settings";
@@ -35,7 +35,7 @@ export interface HookDeps {
   store: AttentionStore;
   readConfig: () => Promise<HeraldConfig>;
   events: EventsPort;
-  /** The thread's own choice from bb's thread menu, and the nearest one above it. */
+  /** The thread's own choice from VesnALIA's thread menu, and the nearest one above it. */
   choiceOf: (thread: ThreadDto) => Promise<ChoiceInputs>;
   /** Tells open clients the entries changed. */
   publish: () => void;
@@ -76,10 +76,10 @@ export const INTERRUPT_GRACE_MS = 10_000;
 
 /**
  * Whether an event is announced; otherwise it is only listed. The thread's
- * choice from bb's thread menu comes first (`effectiveChoice`): Silent, or
+ * choice from VesnALIA's thread menu comes first (`effectiveChoice`): Silent, or
  * Questions only for a finished or failed turn, keeps it quiet. Without a
  * choice of its own, a thread another thread started reports to that thread
- * — bb tells the parent when it finishes, fails or is interrupted — so unless
+ * — VesnALIA tells the parent when it finishes, fails or is interrupted — so unless
  * the user has asked for subagents too, the parent's announcement is the one
  * they hear. Then the kind of event must be switched on.
  */
@@ -273,7 +273,7 @@ export function createHooks(deps: HookDeps): Hooks {
   }
 
   /**
-   * Whether the interaction still waits on the user. Fails closed: when bb
+   * Whether the interaction still waits on the user. Fails closed: when VesnALIA
    * cannot say, the answer is no, and the entry is withdrawn rather than
    * left pending with nothing coming to settle it.
    */
@@ -298,7 +298,7 @@ export function createHooks(deps: HookDeps): Hooks {
   }
 
   /**
-   * The thread's choice, or none when bb cannot say: a lookup that fails
+   * The thread's choice, or none when VesnALIA cannot say: a lookup that fails
    * announces as Herald's settings say rather than losing the announcement.
    */
   async function choiceOf(thread: ThreadDto): Promise<ChoiceInputs> {
@@ -310,7 +310,7 @@ export function createHooks(deps: HookDeps): Hooks {
     }
   }
 
-  /** Runs a handler's async work; a failure is logged, never left to reject inside the bb server. */
+  /** Runs a handler's async work; a failure is logged, never left to reject inside the VesnALIA server. */
   async function guarded(what: string, work: () => Promise<void>): Promise<void> {
     try {
       await work();
@@ -333,7 +333,7 @@ export function createHooks(deps: HookDeps): Hooks {
     idle(thread, lastAssistantText) {
       if (thread.visibility === "hidden") return Promise.resolve();
       return guarded("thread.idle", async () => {
-        // bb assembles the turn's text itself, chunks and all; it is used as
+        // VesnALIA assembles the turn's text itself, chunks and all; it is used as
         // it comes, with nothing added between the pieces.
         const output = lastAssistantText?.trim() ?? "";
         // A turn that produced no words — a compaction, a bare tool run —

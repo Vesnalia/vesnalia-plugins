@@ -11,7 +11,7 @@ import { ZCodeClient, ProtocolError, type Frame } from "../src/client.js";
 import { resolveLaunch, workspaceRef } from "../src/launch.js";
 import { RUNTIME_PREFERENCES, record, text } from "../src/protocol.js";
 
-const root = mkdtempSync(join(tmpdir(), "bb-zcode-dwf-poc-"));
+const root = mkdtempSync(join(tmpdir(), "alia-zcode-dwf-poc-"));
 const cwd = join(root, "workspace");
 mkdirSync(cwd);
 const logPath = "/tmp/dwf-poc-events.jsonl";
@@ -62,7 +62,7 @@ const modelServer = createServer(async (request, response) => {
 
   const toolCall = (() => {
     // Main POC conversation: load the skill gate, then create the workflow.
-    if (allText.includes("BB_WF_POC")) {
+    if (allText.includes("ALIA_WF_POC")) {
       if (!hasSkillLoaded && skillToolCalls === 0) {
         skillToolCalls++;
         return { name: "Skill", input: { skill: "dynamic-workflows" } };
@@ -78,15 +78,15 @@ const modelServer = createServer(async (request, response) => {
   })();
 
   const textResponse =
-    allText.includes("ONE_OK") && !allText.includes("BB_WF_POC")
+    allText.includes("ONE_OK") && !allText.includes("ALIA_WF_POC")
       ? "ONE_OK"
-      : allText.includes("TWO_OK") && !allText.includes("BB_WF_POC")
+      : allText.includes("TWO_OK") && !allText.includes("ALIA_WF_POC")
         ? "TWO_OK"
         : "WF_POC_MAIN_DONE";
 
   // Child-agent turns are delayed so the stage 9 v2 probes can observe the
   // run while it is still active (running rows, live workspace nodes).
-  if (!allText.includes("BB_WF_POC"))
+  if (!allText.includes("ALIA_WF_POC"))
     await new Promise((resolve) => setTimeout(resolve, 6000));
   await new Promise((resolve) => setTimeout(resolve, 50));
   response.writeHead(200, { "content-type": "text/event-stream" });
@@ -168,7 +168,7 @@ writeFileSync(
         providerRules: [],
         templateRules: [
           {
-            templateId: "bb-fixture",
+            templateId: "alia-fixture",
             templateNameMap: { "en-US": "Local fixture" },
             config: {
               access: { type: "api-key" },
@@ -188,7 +188,7 @@ writeFileSync(
         builtinProviderModelRules: [],
         templateModelRules: [
           {
-            templateId: "bb-fixture",
+            templateId: "alia-fixture",
             modelId: "fixture",
             config: {
               enabled: true,
@@ -226,7 +226,7 @@ writeFileSync(
   }),
 );
 const model = {
-  providerId: "bb-poc",
+  providerId: "alia-poc",
   modelId: "fixture",
   options: { reasoningLevel: "disabled" },
 };
@@ -238,9 +238,9 @@ writeFileSync(
       providerConfigRules: {
         providerRules: [
           {
-            providerId: "bb-poc",
+            providerId: "alia-poc",
             providerName: "Local fixture",
-            templateId: "bb-fixture",
+            templateId: "alia-fixture",
             config: {
               group: "standard-personal",
               access: { type: "api-key", apiKey: "local-fixture-no-secret" },
@@ -334,7 +334,7 @@ await client.request("session/send", {
   inputId: "poc-input",
   modelSelection: model,
   content:
-    "BB_WF_POC Run a workflow for this POC: load the dynamic-workflows skill, then call CreateWorkflow with the prepared script.",
+    "ALIA_WF_POC Run a workflow for this POC: load the dynamic-workflows skill, then call CreateWorkflow with the prepared script.",
 });
 
 const runTerminal = async (): Promise<Record<string, unknown> | undefined> => {

@@ -1,6 +1,6 @@
 // Media players (VideoPlayer, AudioPlayer) and files and assets (FileTree,
 // AssetGallery, PdfViewer, FontPreview). Every file streams from the thread's
-// workspace or storage through a bb preview URL with byte ranges. Without a
+// workspace or storage through a VesnALIA preview URL with byte ranges. Without a
 // thread (the gallery) each one shows a bundled sample, marked as such.
 import { component, p } from "./spec";
 
@@ -24,7 +24,7 @@ export const PLAYERS = [
       title: p.str("Caption"),
     },
     children: "none",
-    example: `<VideoPlayer src="$BB_THREAD_STORAGE/onboarding.mp4" fps={24} chapters={[
+    example: `<VideoPlayer src="$ALIA_THREAD_STORAGE/onboarding.mp4" fps={24} chapters={[
   { at: 0, title: "Welcome" }, { at: 4, title: "Sign in" }, { at: 8, title: "First run" },
 ]} notes={[
   { at: 2.5, text: "Logo fades in late" },
@@ -51,8 +51,8 @@ export const PLAYERS = [
     },
     children: "none",
     example: `<VideoCompare offset={0.4} videos={[
-  { src: "$BB_THREAD_STORAGE/before.mp4", label: "main" },
-  { src: "$BB_THREAD_STORAGE/after.mp4", label: "This branch" },
+  { src: "$ALIA_THREAD_STORAGE/before.mp4", label: "main" },
+  { src: "$ALIA_THREAD_STORAGE/after.mp4", label: "This branch" },
 ]} notes={[{ at: 1.5, text: "Sheet opens late", tone: "warn" }]} />`,
     aliases: ["VideoDiff", "SyncedVideos", "SideBySideVideo"],
     heavy: true,
@@ -72,7 +72,7 @@ export const PLAYERS = [
       title: p.str("Caption"),
     },
     children: "none",
-    example: `<AudioPlayer src="$BB_THREAD_STORAGE/standup.m4a" title="Standup" transcript={[
+    example: `<AudioPlayer src="$ALIA_THREAD_STORAGE/standup.m4a" title="Standup" transcript={[
   { at: 0, speaker: "Ana", text: "Sync shipped to TestFlight last night." },
   { at: 3.2, speaker: "Ben", text: "Two crash reports, both in the importer." },
   { at: 6.5, speaker: "Ana", text: "I'll take the importer today." },

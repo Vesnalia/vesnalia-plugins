@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { fireEvent, waitFor, within } from "@testing-library/react";
-import { experimental_THREAD_INFO_SECTION_GROUPS, type ExperimentalThreadContextSegmentProps, type ExperimentalThreadInfoProps } from "@get-bb/plugin-sdk/app";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { experimental_THREAD_INFO_SECTION_GROUPS, type ExperimentalThreadContextSegmentProps, type ExperimentalThreadInfoProps } from "@vesnalia/plugin-sdk/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { rpcContract, type PrView, type ReferenceRecord } from "../../src/contract";
 import { ShuttlePanel } from "../../src/ui/panel";
 import { panelPrs, panelReferences, rememberPanelPr, rememberPanelReference, threadPrsOpen } from "../../src/ui/prefs";
@@ -13,9 +13,9 @@ const THREAD = "thr_1";
 const SHUTTLE_TAB_OPEN = { method: "openTab", options: { tab: { id: "shuttle", context: { kind: "thread" }, availability: "action" }, params: { threadId: THREAD } } };
 
 const owned = pr({ number: 4411, mine: true, reasons: [], links: [link({ threadId: THREAD, role: "owner" })], agent: agent({ threadId: THREAD }), watch: "act" });
-const failing = pr({ repo: "get-bb/bb", number: 4412, mine: true, reasons: [], checks: "failed", links: [link({ threadId: THREAD, role: "owner" })] });
-const changes = pr({ repo: "get-bb/bb", number: 4413, mine: true, reasons: [], review: "changes", links: [link({ threadId: THREAD, role: "owner" })] });
-const unsent = pr({ repo: "get-bb/bb", number: 4414, mine: true, reasons: [], pendingItems: 2, links: [link({ threadId: THREAD, role: "owner" })] });
+const failing = pr({ repo: "get-alia/alia", number: 4412, mine: true, reasons: [], checks: "failed", links: [link({ threadId: THREAD, role: "owner" })] });
+const changes = pr({ repo: "get-alia/alia", number: 4413, mine: true, reasons: [], review: "changes", links: [link({ threadId: THREAD, role: "owner" })] });
+const unsent = pr({ repo: "get-alia/alia", number: 4414, mine: true, reasons: [], pendingItems: 2, links: [link({ threadId: THREAD, role: "owner" })] });
 
 describe("opening a linked PR after a message reference", () => {
   it.each(["Info", "composer"])("replaces the reference with the PR selected from %s", async (source) => {
@@ -27,7 +27,7 @@ describe("opening a linked PR after a message reference", () => {
     const loaded = await app();
     const Info = loaded.threadInfoSections[0]!.component;
     const Details = loaded.threadContextSegments[0]!.details!;
-    const props = { threadId: THREAD, projectId: "prj_bb", environment: null };
+    const props = { threadId: THREAD, projectId: "prj_alia", environment: null };
     const Thread = () => <>
       <ShuttlePanel threadId={THREAD} environment={null} params={{ threadId: THREAD }} />
       <div data-entry>{source === "Info" ? <Info {...props} /> : <Details {...props} segments={[]} isExpanded onToggle={() => {}} />}</div>
@@ -39,7 +39,7 @@ describe("opening a linked PR after a message reference", () => {
     }), { sdk: { threads: { get: async () => ({ environmentId: null }) as never } } });
     await waitFor(() => expect(slot.container.querySelector("[data-panel-pr]")?.getAttribute("data-panel-pr")).toBe(referenced.key));
     const entry = within(slot.container.querySelector<HTMLElement>("[data-entry]")!);
-    fireEvent.click(await entry.findByRole("button", { name: /get-bb\/bb#4412/u }));
+    fireEvent.click(await entry.findByRole("button", { name: /get-alia\/alia#4412/u }));
     await waitFor(() => expect(slot.container.querySelector("[data-panel-pr]")?.getAttribute("data-panel-pr")).toBe(failing.key));
     expect(panelReferences.get()).toEqual({ thr_other: "b".repeat(64) });
     expect(panelPrs.get()).toEqual({ [THREAD]: failing.key });
@@ -52,7 +52,7 @@ describe("the thread Info tab's Pull requests", () => {
     const loaded = await app();
     const registration = loaded.threadInfoSections[0]!;
     expect(registration).toMatchObject({ id: "pull-requests", group: experimental_THREAD_INFO_SECTION_GROUPS.related });
-    return mount<ExperimentalThreadInfoProps>(registration.component, { threadId: THREAD, projectId: "prj_bb", environment: null }, handlers({ threadPrs: () => ({ prs, sent: [] }) }));
+    return mount<ExperimentalThreadInfoProps>(registration.component, { threadId: THREAD, projectId: "prj_alia", environment: null }, handlers({ threadPrs: () => ({ prs, sent: [] }) }));
   }
 
   it("lists every PR linked to the thread, with state and checks, and opens the Shuttle tab on the one clicked", async () => {
@@ -60,14 +60,14 @@ describe("the thread Info tab's Pull requests", () => {
     const section = await slot.findByRole("region", { name: "Pull requests" });
     expect(within(section).getByRole("heading").textContent).toBe("Pull requests2");
     const rows = within(section).getAllByRole("listitem");
-    expect(rows.map((row) => row.querySelector("button")!.textContent)).toEqual(["get-bb/bb#4411", "get-bb/bb#4412"]);
+    expect(rows.map((row) => row.querySelector("button")!.textContent)).toEqual(["get-alia/alia#4411", "get-alia/alia#4412"]);
     expect(rows[0]!.textContent).toContain("open");
     expect(rows[0]!.querySelector("[data-icon='Check']")).not.toBeNull();
     expect(rows[0]!.querySelector("[data-icon='Bot']")!.getAttribute("aria-label")).toBe("This thread is the agent");
     expect(rows[1]!.querySelector("[data-icon='Bot']")).toBeNull();
     expect(rows[1]!.textContent).toContain("open · checks failing");
     expect(rows[1]!.querySelector("[data-icon='X']")).not.toBeNull();
-    fireEvent.click(within(rows[1]!).getByRole("button", { name: "get-bb/bb#4412" }));
+    fireEvent.click(within(rows[1]!).getByRole("button", { name: "get-alia/alia#4412" }));
     expect(slot.inspection.experimental_panelCalls).toEqual([SHUTTLE_TAB_OPEN]);
     expect(panelPrs.get()).toEqual({ [THREAD]: failing.key });
   });
@@ -82,7 +82,7 @@ describe("the thread Info tab's Pull requests", () => {
 
 describe("the context segment beside the composer", () => {
   const props: ExperimentalThreadContextSegmentProps = {
-    threadId: THREAD, projectId: "prj_bb", environment: null, segments: [{ key: "shuttle/pull-requests", pluginId: "shuttle" }], isExpanded: false, onToggle: () => {},
+    threadId: THREAD, projectId: "prj_alia", environment: null, segments: [{ key: "shuttle/pull-requests", pluginId: "shuttle" }], isExpanded: false, onToggle: () => {},
   };
 
   async function segment() {
@@ -101,13 +101,13 @@ describe("the context segment beside the composer", () => {
 
   it("shows one PR's key and state", async () => {
     const slot = await summary([owned]);
-    const button = await slot.findByRole("button", { name: "Shuttle: get-bb/bb#4411, open" });
+    const button = await slot.findByRole("button", { name: "Shuttle: get-alia/alia#4411, open" });
     expect(button.querySelector("[data-shuttle-state]")?.textContent).toBe("·open");
     expect(button.querySelector("[data-icon='shuttle/shuttle']")).not.toBeNull();
     expect(button.querySelector("[data-icon='ChevronRight']")).not.toBeNull();
-    expect(button.getAttribute("title")).toContain("get-bb/bb#4411, open");
+    expect(button.getAttribute("title")).toContain("get-alia/alia#4411, open");
     const full = button.querySelector("[data-shuttle-full]")!;
-    expect(full.textContent).toBe("get-bb/bb#4411");
+    expect(full.textContent).toBe("get-alia/alia#4411");
     expect(full.className).toContain("@max-[48rem]/promptbox-shell:hidden");
     const compact = button.querySelector("[data-shuttle-compact]")!;
     expect(compact.textContent).toBe("#4411");
@@ -124,7 +124,7 @@ describe("the context segment beside the composer", () => {
     fireEvent.click(await folded.findByRole("button", { name: /^Shuttle: 2 linked PRs/u }));
     expect(toggles).toBe(1);
     expect(threadPrsOpen.get()).toBe(true);
-    expect(window.localStorage.getItem("bb-plugin-shuttle:thread-prs-open")).toBe("true");
+    expect(window.localStorage.getItem("alia-plugin-shuttle:thread-prs-open")).toBe("true");
     folded.lifecycle.unmount();
 
     toggles = 0;
@@ -161,7 +161,7 @@ describe("the context segment beside the composer", () => {
 
   it("is visible only while the thread has a linked PR", async () => {
     const registration = await segment();
-    const Probe = ({ threadId }: { threadId: string }) => <span>{registration.useVisible!({ threadId, projectId: "prj_bb", environment: null }) ? "visible" : "hidden"}</span>;
+    const Probe = ({ threadId }: { threadId: string }) => <span>{registration.useVisible!({ threadId, projectId: "prj_alia", environment: null }) ? "visible" : "hidden"}</span>;
     let prs: PrView[] = [];
     const slot = renderSlot({ component: Probe }, { threadId: THREAD }, {
       pluginId: "shuttle", experimental_rpcContract: rpcContract, rpc: handlers({ threadPrs: () => ({ prs, sent: [] }) }),

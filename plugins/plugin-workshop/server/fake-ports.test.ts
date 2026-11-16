@@ -103,7 +103,7 @@ describe("FakePorts: work worktree", () => {
     const t = await ports.spawn({ projectId: "p", environment: { kind: "new-worktree", hostId: "h" }, providerId: "x", model: "m", title: "t", prompt: "p", hidden: false, metadata: meta });
     const env = ports.threads.get(t)!.env;
     expect(await ports.worktreeDir(env)).toBe(worktreeDirOf(env));
-    expect(await ports.git.facts(worktreeDirOf(env))).toMatchObject({ hasGit: true, branch: `bb/${env}` });
+    expect(await ports.git.facts(worktreeDirOf(env))).toMatchObject({ hasGit: true, branch: `alia/${env}` });
     ports.gone.add(env);
     await expect(ports.worktreeDir(env)).rejects.toBeInstanceOf(WorktreeGone);
     ports.gone.clear();
@@ -116,15 +116,15 @@ describe("FakePorts: file system", () => {
   it("scaffold makes the nested folder with the scaffold files, not the files in tmpDir itself", async () => {
     const tmp = `${PLUGINS_ROOT}/.workshop-new/w1`;
     await ports.fs.scaffold("hello", tmp);
-    expect(await ports.fs.list(tmp)).toEqual(["bb-plugin-hello"]);
-    expect((await ports.fs.list(`${tmp}/bb-plugin-hello`)).sort()).toEqual([...SCAFFOLD_FILES].sort());
+    expect(await ports.fs.list(tmp)).toEqual(["alia-plugin-hello"]);
+    expect((await ports.fs.list(`${tmp}/alia-plugin-hello`)).sort()).toEqual([...SCAFFOLD_FILES].sort());
     expect(ports.calls).toEqual([{ effect: "scaffold", args: ["hello", tmp] }]);
   });
   it("rename moves the folder with everything inside", async () => {
     const tmp = `${PLUGINS_ROOT}/.workshop-new/w1`;
     await ports.fs.scaffold("hello", tmp);
-    await ports.fs.rename(`${tmp}/bb-plugin-hello`, pluginDir("hello"));
-    expect(await ports.fs.exists(`${tmp}/bb-plugin-hello`)).toBe(false);
+    await ports.fs.rename(`${tmp}/alia-plugin-hello`, pluginDir("hello"));
+    expect(await ports.fs.exists(`${tmp}/alia-plugin-hello`)).toBe(false);
     expect(await ports.fs.exists(`${pluginDir("hello")}/package.json`)).toBe(true);
     expect(await ports.fs.exists(tmp)).toBe(true);
     await ports.fs.remove(tmp);
@@ -139,12 +139,12 @@ describe("FakePorts: file system", () => {
     await expect(ports.fs.rename(`${PLUGINS_ROOT}/a`, "/no/such/dir/c")).rejects.toThrow();
   });
   it("remove is like rm -rf: no error on a missing path, siblings with a common prefix survive", async () => {
-    ports.fs.put("/x/bb-plugin-a/file");
-    ports.fs.put("/x/bb-plugin-ab");
-    await ports.fs.remove("/x/bb-plugin-a");
+    ports.fs.put("/x/alia-plugin-a/file");
+    ports.fs.put("/x/alia-plugin-ab");
+    await ports.fs.remove("/x/alia-plugin-a");
     await ports.fs.remove("/x/never-was");
-    expect(await ports.fs.exists("/x/bb-plugin-a/file")).toBe(false);
-    expect(await ports.fs.exists("/x/bb-plugin-ab")).toBe(true);
+    expect(await ports.fs.exists("/x/alia-plugin-a/file")).toBe(false);
+    expect(await ports.fs.exists("/x/alia-plugin-ab")).toBe(true);
   });
   it("list returns the names of direct children, [] for a missing folder", async () => {
     ports.fs.put("/d/a/deep/file");
@@ -152,10 +152,10 @@ describe("FakePorts: file system", () => {
     expect((await ports.fs.list("/d")).sort()).toEqual(["a", "b"]);
     expect(await ports.fs.list("/none")).toEqual([]);
   });
-  it("folders lists bb-plugin-* directly under the plugins root, not nested scaffolds", async () => {
+  it("folders lists alia-plugin-* directly under the plugins root, not nested scaffolds", async () => {
     ports.fs.put(pluginDir("mail"));
     ports.fs.put(`${PLUGINS_ROOT}/not-a-plugin`);
-    ports.fs.put(`${PLUGINS_ROOT}/.workshop-new/w1/bb-plugin-hello`);
+    ports.fs.put(`${PLUGINS_ROOT}/.workshop-new/w1/alia-plugin-hello`);
     ports.plugins.folderNames.set("mail", "Mail");
     expect(await ports.plugins.folders()).toEqual([{ id: "mail", dir: pluginDir("mail"), name: "Mail" }]);
   });
@@ -183,7 +183,7 @@ describe("FakePorts: install and jobs", () => {
     expect(await ports.plugins.startInstall(pluginDir("x"))).not.toBe(a);
     expect((await ports.plugins.job(a))!.error).toBeTruthy();
   });
-  it("the same folder in the other source form is a new job, queued behind the running one (bb merges by the exact string)", async () => {
+  it("the same folder in the other source form is a new job, queued behind the running one (VesnALIA merges by the exact string)", async () => {
     const j = ports.plugins.addJob({ id: "j1", source: pluginDir("x"), state: "running" });
     const id = await ports.plugins.startInstall(pluginDir("x"));
     expect(id).not.toBe(j.id);
@@ -231,7 +231,7 @@ describe("FakePorts: install and jobs", () => {
     ports.plugins.setJob(running, "succeeded");
     expect((await ports.plugins.job(running))!.state).toBe("succeeded");
   });
-  it("enable and disable of an unknown plugin fail like bb does", async () => {
+  it("enable and disable of an unknown plugin fail like VesnALIA does", async () => {
     await expect(ports.plugins.enable("ghost")).rejects.toThrow("unknown plugin");
     await expect(ports.plugins.disable("ghost")).rejects.toThrow("unknown plugin");
     expect(ports.count("enable")).toBe(0);
@@ -243,7 +243,7 @@ describe("FakePorts: install and jobs", () => {
     await ports.plugins.enable("m");
     expect(await ports.plugins.list()).toMatchObject([{ id: "m", state: "running", enabled: true }]);
   });
-  it("enable of a plugin whose folder is gone loads it from scratch as missing, without a name (as bb does)", async () => {
+  it("enable of a plugin whose folder is gone loads it from scratch as missing, without a name (as VesnALIA does)", async () => {
     ports.plugins.add({ id: "m" });
     await ports.plugins.disable("m");
     await ports.fs.remove(pluginDir("m"));
@@ -530,9 +530,9 @@ describe("FakePorts: projects, tasks, snapshots", () => {
 
 describe("sourcePath", () => {
   it("makes path:<dir>, bare path and a trailing slash the same folder; other sources are not folders", () => {
-    expect(sourcePath("path:/srv/bb/plugins/bb-plugin-x")).toBe("/srv/bb/plugins/bb-plugin-x");
-    expect(sourcePath("/srv/bb/plugins/bb-plugin-x/")).toBe("/srv/bb/plugins/bb-plugin-x");
-    expect(sourcePath("path:/srv/bb/plugins/../plugins/bb-plugin-x")).toBe("/srv/bb/plugins/bb-plugin-x");
+    expect(sourcePath("path:/srv/alia/plugins/alia-plugin-x")).toBe("/srv/alia/plugins/alia-plugin-x");
+    expect(sourcePath("/srv/alia/plugins/alia-plugin-x/")).toBe("/srv/alia/plugins/alia-plugin-x");
+    expect(sourcePath("path:/srv/alia/plugins/../plugins/alia-plugin-x")).toBe("/srv/alia/plugins/alia-plugin-x");
     expect(sourcePath("git:github.com/acme/bb-plugin-demo@main")).toBeNull();
     expect(sourcePath("builtin:account-pool")).toBeNull();
     expect(sourcePath(null)).toBeNull();

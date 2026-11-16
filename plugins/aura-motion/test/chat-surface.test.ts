@@ -29,7 +29,7 @@ test("solid paints the column opaque; translucent modes clear it and blur under 
     // Text scrolling under the composer must be hidden by tint, not only by blur.
     // Below its top fade, the footer tint is solid so no text shows beside the composer row.
     assert.match(css, /\.mx-auto::before \{[^}]*background-color:var\(--background\);/);
-    // BB's question card replaces the composer and is nearly transparent on its own.
+    // VesnALIA's question card replaces the composer and is nearly transparent on its own.
     assert.match(css, /:is\(form\[data-promptbox\], \[data-testid="user-question-banner"\]\) \{/);
     for (const [selector, percent] of [[/form\[data-promptbox\][^{]*\{[^}]*/, 95], [/\.dark [^{]*form\[data-promptbox\][^{]*\{[^}]*/, 92]] as const) {
       const fill = Number(css.match(selector)?.[0].match(/var\(--background\) (\d+)%/)?.[1]);
@@ -60,7 +60,7 @@ test("the glass sheet shows only in conversations with a translucent surface", (
 });
 
 test("the sheet follows the column on wide panels and keeps an inset on every narrow device width", () => {
-  // Panel widths for phones, tablets, laptops and large desktops; BB centers a column of at most 760px.
+  // Panel widths for phones, tablets, laptops and large desktops; VesnALIA centers a column of at most 760px.
   for (const width of [320, 360, 390, 414, 600, 768, 820, 1024, 1120, 1280, 1440, 1920, 2560]) {
     const panel = { left: 0, right: width, top: 0 };
     const columnWidth = Math.min(760, width);

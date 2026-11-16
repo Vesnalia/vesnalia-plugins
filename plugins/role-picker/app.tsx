@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { definePluginApp, useComposer, useRpc } from '@get-bb/plugin-sdk/app';
+import { definePluginApp, useComposer, useRpc } from '@vesnalia/plugin-sdk/app';
 import * as Popover from '@radix-ui/react-popover';
 import { Button } from './components/ui/button';
 import type { Role, rpcContract } from './server';

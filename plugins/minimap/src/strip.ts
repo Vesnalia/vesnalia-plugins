@@ -27,7 +27,7 @@ import { inBackground } from "./tab.ts";
 export interface Options {
   /** Hide the scroller's own scrollbar while the strip shows; the strip takes its place. */
   hideScrollbar: boolean;
-  /** Hide BB's thread-index button; off, it is moved to the left of the strip. */
+  /** Hide VesnALIA's thread-index button; off, it is moved to the left of the strip. */
   hideToc: boolean;
   /** The strip's width in px. */
   width: number;
@@ -75,7 +75,7 @@ export interface Options {
   opacity: number;
   /** 0 to 1: the opacity while faded. */
   idleOpacity: number;
-  /** With the native scrollbar kept: stop BB fading it out after scrolling. */
+  /** With the native scrollbar kept: stop VesnALIA fading it out after scrolling. */
   keepScrollbar: boolean;
   /** The viewport slider's look: round corners, line strength 0 to 1, thickness in px, "#rrggbb" or "" for the theme. */
   sliderRound: boolean;
@@ -94,7 +94,7 @@ export interface Strip {
   dispose(): void;
 }
 
-/** The room BB's thread-index button takes beside the strip when it is kept (32px and a gap). */
+/** The room VesnALIA's thread-index button takes beside the strip when it is kept (32px and a gap). */
 const TOC_ROOM = 40;
 /** What a native scrollbar takes at the edge when it is kept. */
 const BAR_ROOM = 10;
@@ -133,7 +133,7 @@ export function createStrip(threadId: string, initial: Options): Strip {
   let layout: Layout = EMPTY_LAYOUT;
   /**
    * Scroller pixels above the first row the data holds: older history that this strip has no
-   * rows for (a page not read, or one BB has loaded since). Exact whenever the first row is on
+   * rows for (a page not read, or one VesnALIA has loaded since). Exact whenever the first row is on
    * screen, estimated from the first time anything is, and kept between: the scroller's own
    * estimate for it keeps changing as rows are measured, and the strip should not move with it.
    */
@@ -219,7 +219,7 @@ export function createStrip(threadId: string, initial: Options): Strip {
     host = document.createElement("div");
     host.className = CLASS;
     // The keyword is built from two strings: written whole, the plugin build would turn the word
-    // anywhere in this folder into a page-wide rule that BB's own elements match.
+    // anywhere in this folder into a page-wide rule that VesnALIA's own elements match.
     host.style.setProperty("--minimap-pos", ["abs", "olute"].join(""));
     host.dataset.off = "";
     host.setAttribute("role", "presentation");
@@ -250,7 +250,7 @@ export function createStrip(threadId: string, initial: Options): Strip {
     request();
   };
 
-  /** BB's thread-index button, kept out of the strip's way: moved left of it, or removed from view. */
+  /** VesnALIA's thread-index button, kept out of the strip's way: moved left of it, or removed from view. */
   let toc: HTMLElement | null = null;
   const freeToc = () => {
     toc?.removeAttribute("data-minimap-toc");
@@ -364,7 +364,7 @@ export function createStrip(threadId: string, initial: Options): Strip {
       if (hide) scroller.style.setProperty("scrollbar-width", "none");
       else scroller.style.removeProperty("scrollbar-width");
     }
-    // BB shows the scrollbar only while scrolling (it sets its colour to transparent between); a colour set on the element wins over that.
+    // VesnALIA shows the scrollbar only while scrolling (it sets its colour to transparent between); a colour set on the element wins over that.
     const keep = fits && !options.hideScrollbar && options.keepScrollbar;
     if (keep !== barKept) {
       barKept = keep;
@@ -406,7 +406,7 @@ export function createStrip(threadId: string, initial: Options): Strip {
     for (const [id, measure] of foldedHeights(rows?.items ?? [], mounted)) cache.set(id, measure);
     const aboveRows = leadOf(mounted);
     layout = inScrollerPixels(buildLayout({ items: rows?.items ?? [], mounted, cache, total: frame.offsetHeight, lead: aboveRows }));
-    // BB has loaded older rows than the strip has read: ask for them, and stop once they are held.
+    // VesnALIA has loaded older rows than the strip has read: ask for them, and stop once they are held.
     const need = aboveRows > LEAD_SLACK && !!rows?.hasOlder;
     if (need !== needed) {
       needed = need;
@@ -440,7 +440,7 @@ export function createStrip(threadId: string, initial: Options): Strip {
   const place = () => {
     if (!timeline || !view) return;
     const { scroller } = timeline;
-    // The scroller's pixels are converted to the strip's own, which hold still while BB re-measures.
+    // The scroller's pixels are converted to the strip's own, which hold still while VesnALIA re-measures.
     const from = ownOf(layout, scroller.scrollTop) * scale;
     // The rows on screen are measured, so the viewport is as tall in the strip's pixels as in the scroller's.
     const h = Math.min(stripH, Math.max(10, scroller.clientHeight * scale));

@@ -2,19 +2,19 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@get-bb/plugin-sdk/provider-bridge/testing";
+import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import { afterEach, beforeEach, expect, it } from "vitest";
 
 // Live integration test: a real turn that forces kimi to use a file-writing
 // tool, proving the tool-call pipeline (item.open/close with fileChange or
 // command shapes) end to end. Spends a small amount of model tokens, so it
-// runs only when BB_KIMI_LIVE=1 is set explicitly.
-const LIVE = process.env.BB_KIMI_LIVE === "1";
+// runs only when ALIA_KIMI_LIVE=1 is set explicitly.
+const LIVE = process.env.ALIA_KIMI_LIVE === "1";
 
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-kimi-tools-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "alia-kimi-tools-"));
 });
 
 afterEach(() => {
@@ -81,7 +81,7 @@ itLive("runs a real turn with a tool call and settles it", async () => {
       await harness.flushWork();
       await new Promise((resolve) => setTimeout(resolve, 500));
       for (const message of harness.messages) {
-        // Stand in for the bb runtime: approve every permission request the
+        // Stand in for the VesnALIA runtime: approve every permission request the
         // way the "full" permission mode would.
         if (message.method === "interaction/request" && message.id !== undefined) {
           if (!answeredRequests.has(message.id)) {

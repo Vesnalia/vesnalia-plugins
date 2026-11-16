@@ -6,7 +6,7 @@
 // board-owned actions: copy the message's text, and open the thread in the
 // main view (the pane's maximize, where the pane's boundary surfaces live).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ThreadChatMessageAction } from "@get-bb/plugin-sdk/app";
+import type { ThreadChatMessageAction } from "@vesnalia/plugin-sdk/app";
 import { createElement, type ReactNode } from "react";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { ThreadPane } from "../components/thread-pane";
@@ -14,14 +14,14 @@ import { CompactViewportOverrideProvider } from "../components/ui/hooks/use-comp
 
 const mockMessageActions: Array<readonly ThreadChatMessageAction[] | undefined> = [];
 
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   ThreadChat: (props: { messageActions?: readonly ThreadChatMessageAction[] }): ReactNode => {
     mockMessageActions.push(props.messageActions);
     return null;
   },
   useSdk: () => ({ threads: { get: async () => ({}) } }),
   useRpc: () => ({ call: async () => ({ existence: {} }) }),
-  useBbNavigate: () => ({ toThread: () => {} }),
+  useAliaNavigate: () => ({ toThread: () => {} }),
   useSettings: () => ({ values: undefined, isLoading: false }),
 }));
 

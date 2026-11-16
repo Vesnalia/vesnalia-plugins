@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, within } from '@testing-library/react';
-import { loadPluginApp, renderSlot } from '@get-bb/plugin-sdk/testing/app';
+import { loadPluginApp, renderSlot } from '@vesnalia/plugin-sdk/testing/app';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Snapshot } from './collector.js';
 import { axisMax, averagingCopy, paceCopy, percent, scales, GEOMETRY } from './pace.js';

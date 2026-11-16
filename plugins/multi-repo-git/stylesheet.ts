@@ -1,7 +1,7 @@
 import { useInsertionEffect } from "react";
 
 const STYLESHEET_SELECTOR =
-  'link[data-bb-plugin-css="multi-repo-git"]';
+  'link[data-alia-plugin-css="multi-repo-git"]';
 const DISABLED_MEDIA = "not all";
 
 let consumerCount = 0;

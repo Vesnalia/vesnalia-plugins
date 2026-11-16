@@ -1,22 +1,22 @@
 {
-  "name": "bb-plugin-moa-provider",
+  "name": "alia-plugin-moa-provider",
   "version": "0.1.1",
-  "description": "Mixture of Agents for BB: advisor models answer first, then an aggregator reads their notes and does the work.",
+  "description": "Mixture of Agents for VesnALIA: advisor models answer first, then an aggregator reads their notes and does the work.",
   "type": "module",
   "license": "MIT",
   "keywords": [
-    "bb-plugin"
+    "alia-plugin"
   ],
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.5.9"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.5.9"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "bb": {
+  "alia": {
     "name": "MoA Provider",
     "description": "Adds a Mixture of Agents provider: advisor models answer first, then an aggregator reads their notes and does the work.",
     "branding": {
@@ -30,10 +30,10 @@
     ]
   },
   "dependencies": {
-    "@get-bb/plugin-sdk": "0.5.9",
     "@radix-ui/react-checkbox": "^1.3.7",
     "@radix-ui/react-slot": "^1.3.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@vesnalia/plugin-sdk": "^0.6.143"
   },
   "devDependencies": {
     "@pierre/diffs": "^1.2.9",
@@ -61,5 +61,14 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^4.1.1"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/moa-provider#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/moa-provider"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

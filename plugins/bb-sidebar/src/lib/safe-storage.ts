@@ -45,7 +45,7 @@ export function safeSetItem(key: string, value: string, storage: "local" | "sess
     }
 
     // The value still does not fit. Clear its old cache entry to leave room
-    // for bb core, without ever removing keys owned by core or other plugins.
+    // for VesnALIA core, without ever removing keys owned by core or other plugins.
     try {
       target.removeItem(key);
     } catch {

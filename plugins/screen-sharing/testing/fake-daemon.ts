@@ -1,6 +1,6 @@
 /**
- * Test support: bb's host link to other Macs, faked end to end. The plugin's
- * server runs on bb's fake plugin host; its host calls go through this fake
+ * Test support: VesnALIA's host link to other Macs, faked end to end. The plugin's
+ * server runs on VesnALIA's fake plugin host; its host calls go through this fake
  * daemon to a real HostRelay per machine, and the relay's signals come back
  * through the fake host's signal delivery. Every call and every signal is
  * delayed by `oneWayMs` each way, in order, standing in for the ≈0.3 s
@@ -8,7 +8,7 @@
  * fake one on a loopback port.
  */
 import { connect } from "node:net";
-import type { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 
 import { Pasteboard } from "../host/pasteboard";
 import { HostRelay, type HostRelayOptions } from "../host/relay";
@@ -25,7 +25,7 @@ export interface FakeDaemonOptions {
   oneWayMs: number;
   /**
    * Up to this much more on the way to the host, at random per call, so that
-   * concurrent calls overtake each other — as bb's own server lets them, since
+   * concurrent calls overtake each other — as VesnALIA's own server lets them, since
    * it awaits per call before sending each one.
    */
   callJitterMs?: number;
@@ -80,7 +80,7 @@ export class FakeDaemon {
     return commands;
   }
 
-  /** What bb's fake plugin host calls for `bb.hosts.experimental_client(...).call`. */
+  /** What VesnALIA's fake plugin host calls for `alia.hosts.experimental_client(...).call`. */
   readonly call = async ({ method, input, hostId }: Call): Promise<unknown> => {
     await sleep(this.options.oneWayMs + Math.random() * (this.options.callJitterMs ?? 0));
     await this.options.gate?.({ method, input, hostId });
@@ -131,12 +131,12 @@ export class FakeDaemon {
   signal(hostId: string, name: string, payload: unknown): void {
     setTimeout(() => {
       if (this.down.has(hostId) || this.harness === null) return;
-      // A signal that lands after the plugin stopped has nowhere to go, as in bb.
+      // A signal that lands after the plugin stopped has nowhere to go, as in VesnALIA.
       this.harness.experimental_emitHostSignal(hostId, name, payload).catch(() => {});
     }, this.options.oneWayMs);
   }
 
-  /** bb stopping the worker on a machine: its sessions end and tell the server. */
+  /** VesnALIA stopping the worker on a machine: its sessions end and tell the server. */
   stopWorker(hostId: string): void {
     this.relays.get(hostId)?.closeAll("the plugin's helper stopped");
   }

@@ -4,7 +4,7 @@ import { basename, dirname, join } from "node:path";
 import { test } from "node:test";
 
 const ROOT = join(import.meta.dirname, "..");
-/** BB agent skill registration limit (bytes/chars in frontmatter). */
+/** VesnALIA agent skill registration limit (bytes/chars in frontmatter). */
 export const SKILL_DESCRIPTION_MAX = 1024;
 
 const UNQUOTED_FORBIDDEN_START = /^[{&*!|>'"%@`]/;

@@ -1,15 +1,15 @@
-// Records the Iris demo frame by frame from the isolated dev bb (never the person's own bb).
+// Records the Iris demo frame by frame from the isolated dev VesnALIA (never the person's own VesnALIA).
 // Every frame is shot at a fixed real-time step while CSS animations run slowed to match, so each
 // lossless frame is exactly one 60 fps step, however slow capture is.
-//   PW=<playwright> BB_URL=<dev bb url> node scripts/record-demo.mjs <threadId> <framesDir>
+//   PW=<playwright> ALIA_URL=<dev VesnALIA url> node scripts/record-demo.mjs <threadId> <framesDir>
 // The thread holds three answers: a latency chart, a what-if slider and a weighted decision.
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 
 const pw = createRequire(import.meta.url)(process.env.PW ?? "playwright");
-// A separate dev bb (its own --data-dir and port), never your everyday one.
-const BASE = process.env.BB_URL ?? "http://127.0.0.1:48886";
+// A separate dev VesnALIA (its own --data-dir and port), never your everyday one.
+const BASE = process.env.ALIA_URL ?? "http://127.0.0.1:48886";
 const [thread, out] = process.argv.slice(2);
 const W = 1200, H = 1000, DPR = 2, FPS = 60, STEP = 1000 / FPS;
 // Each frame takes this much real time; CSS animations run at STEP/REAL speed, so every frame is

@@ -2,40 +2,40 @@
 
 Дополнение к корневому `AGENTS.md` рабочего пространства — читай сначала его. Здесь только то, что специфично для этого плагина.
 
-Перед правкой интерфейса читай два документа: `../../docs/DESIGN.md` (состав родных компонентов BB и правила их применения) и `DESIGN.md` рядом с этим файлом (композиция и правила экрана плагина). Свои аналоги готовых компонентов не писать.
+Перед правкой интерфейса читай два документа: `../../docs/DESIGN.md` (состав родных компонентов VesnALIA и правила их применения) и `DESIGN.md` рядом с этим файлом (композиция и правила экрана плагина). Свои аналоги готовых компонентов не писать.
 
 ## 1. Что это и где живёт
 
-- Плагин `agent-tools` (пакет `bb-plugin-agent-tools`, команда `bb tools`): MCP-серверы и навыки всех машин BB — единый каталог, канон навыков, обнаружение расхождений и синхронизация.
-- Ставится как path-плагин (`bb plugin install .`): каталог одновременно и исходники, и рабочая установка — правки видны живому BB после `bb plugin build .` и `bb plugin reload agent-tools`.
-- Работает со всеми подключёнными к BB машинами сразу: идентификаторы машин приходят из `bb.sdk.hosts.list()`, ничего не зашито в код.
+- Плагин `agent-tools` (пакет `alia-plugin-agent-tools`, команда `alia tools`): MCP-серверы и навыки всех машин VesnALIA — единый каталог, канон навыков, обнаружение расхождений и синхронизация.
+- Ставится как path-плагин (`alia plugin install .`): каталог одновременно и исходники, и рабочая установка — правки видны живому VesnALIA после `alia plugin build .` и `alia plugin reload agent-tools`.
+- Работает со всеми подключёнными к VesnALIA машинами сразу: идентификаторы машин приходят из `alia.sdk.hosts.list()`, ничего не зашито в код.
 
 ## 2. Карта модулей
 
 | Файл | Ответственность |
 | --- | --- |
-| `agents.ts` | Таблица CLI-агентов: бинари, пути конфигов, диалект, BB-провайдеры, `confirmedPath`. Новый CLI добавляется только сюда. |
+| `agents.ts` | Таблица CLI-агентов: бинари, пути конфигов, диалект, ALIA-провайдеры, `confirmedPath`. Новый CLI добавляется только сюда. |
 | `normalize.ts` | Перевод диалект ⇄ `McpServer`, сравнение (`sameServer`) и правило «машинно-зависимый» (`classifyLocal`). |
 | `toml-mcp.ts` | Чтение и текстовая правка `[mcp_servers.*]` в Codex `config.toml`. |
 | `contract.ts` | Zod-схемы и host-RPC контракт; общий для сервера, host-энтри и фронтенда. |
-| `skills.ts` | Состояния скиллов, политика папок (`LOCATION_POLICY`) и детерминированные правила (`resolveRowAction`, `planFanOut`, `planServerBbMirror`). Общий для host, сервера и интерфейса — новая папка скиллов добавляется только здесь и в `SKILL_LOCATIONS` (host.ts). |
-| `skills-sync.ts` | Git-сведение канона; его вызывают host и процесс сервера BB. |
-| `skills-server.ts` | Скан и копия в `experimental_dataDir/skills` на процессе BB-сервера. |
-| `host.ts` | Полнодоверенный код на каждой машине: сканирование и запись конфигов. Default-export через `experimental_defineHostEntry` из `@get-bb/plugin-sdk/host`. |
-| `server.ts` | Каталог, drift, план, синхронизация, расписание `sweep`, RPC, CLI `bb tools`. |
+| `skills.ts` | Состояния скиллов, политика папок (`LOCATION_POLICY`) и детерминированные правила (`resolveRowAction`, `planFanOut`, `planServerAliaMirror`). Общий для host, сервера и интерфейса — новая папка скиллов добавляется только здесь и в `SKILL_LOCATIONS` (host.ts). |
+| `skills-sync.ts` | Git-сведение канона; его вызывают host и процесс сервера VesnALIA. |
+| `skills-server.ts` | Скан и копия в `experimental_dataDir/skills` на процессе ALIA-сервера. |
+| `host.ts` | Полнодоверенный код на каждой машине: сканирование и запись конфигов. Default-export через `experimental_defineHostEntry` из `@vesnalia/plugin-sdk/host`. |
+| `server.ts` | Каталог, drift, план, синхронизация, расписание `sweep`, RPC, CLI `alia tools`. |
 | `app.tsx` | Страница «Инструменты»: устройства, матрица, приём новых, вкладка навыков, бейдж в боковой панели. |
 
 ## 3. Цепочка проверки — обязательна
 
-`npm run typecheck` → `npm test` → `bb plugin build .` → `bb plugin reload agent-tools` → проверка в живом рантайме.
+`npm run typecheck` → `npm test` → `alia plugin build .` → `alia plugin reload agent-tools` → проверка в живом рантайме.
 
-Живой рантайм — это `bb tools status` / `plan` / `scan --json` и страница `http://127.0.0.1:38886/plugins/agent-tools/catalog` (QA-Chrome: `~/.agents/bin/chrome-qa start`, порт 9333, MCP `chrome-devtools`). Статус `running` у плагина ничего не доказывает: задача закрыта только после проверки сценария, который правился.
+Живой рантайм — это `alia tools status` / `plan` / `scan --json` и страница `http://127.0.0.1:38886/plugins/agent-tools/catalog` (QA-Chrome: `~/.agents/bin/chrome-qa start`, порт 9333, MCP `chrome-devtools`). Статус `running` у плагина ничего не доказывает: задача закрыта только после проверки сценария, который правился.
 
 ## 4. Правила записи в чужие конфиги
 
 Плагин правит личные файлы пользователя на трёх машинах. Нарушать нельзя:
 
-- Перед каждой записью — резервная копия `*.bak-bb-mcp-<время>` рядом с файлом, хранятся последние 5.
+- Перед каждой записью — резервная копия `*.bak-alia-mcp-<время>` рядом с файлом, хранятся последние 5.
 - Запись атомарная: временный файл и `rename`, права исходного файла сохраняются.
 - Файл с комментариями (`opencode.jsonc`) читается, но не переписывается — `writable: false`.
 - `config.toml` Codex правится **по тексту**, а не пересериализацией: комментарии, порядок секций и посторонние настройки обязаны уцелеть. Любая правка `toml-mcp.ts` сопровождается тестом на round-trip.
@@ -45,22 +45,22 @@
   накладываются через `mergeEntry`, чтобы поля, которых нет в модели плагина
   (`tool_timeout_sec`, `bearer_token_env_var`, `cwd`, флаги конкретного CLI),
   пережили правку. Один раз это уже стоило пользователю потерянных настроек.
-- Автосинхронизация только добавляет. Удаление — отдельная явная операция `purge` / `bb tools remove`.
+- Автосинхронизация только добавляет. Удаление — отдельная явная операция `purge` / `alia tools remove`.
 - Скиллы: источник правды — канон `~/.agents/skills`, он же git-репозиторий и
   единственное, что ездит между машинами. Дома CLI — производные от него:
   политика `link` (`.claude`, `.qwen`) получает симлинки; Codex/Cursor/OpenCode
   читают канон сами (`native`); `~/.gemini/config/skills` не используется вовсе
-  (`drop`). Папка `~/.bb/skills` — политика `own`: у BB свой реестр, и он
+  (`drop`). Папка `~/.vesnalia/skills` — политика `own`: у VesnALIA свой реестр, и он
   заносит туда только реальные папки, поэтому плагин её не переписывает, а
   раскатка кладёт рядом зеркало-копию. После домов машин то же зеркало
-  пишется в `bb.server.experimental_dataDir/skills` на процессе сервера BB
-  (не `~/.bb` другой машины). Если hostname сервера совпадает с подключённой
+  пишется в `alia.server.experimental_dataDir/skills` на процессе сервера VesnALIA
+  (не `~/.vesnalia` другой машины). Если hostname сервера совпадает с подключённой
   машиной, отдельный шаг не нужен. Имена, которые уже отдают плагины-
   маркетплейсы, в дома не дублируются.
 - Ничего массового плагин не делает сам по себе: автосинк MCP, обновление скиллов
   (канон + git + дома) по расписанию включаются человеком (галочки, git-remote).
-  Кнопка «Обновить скиллы везде» и `bb tools skills-fanout` работают всегда.
-- Раскатка (`skills_fanout`, `bb tools skills-fanout`) сначала забирает в канон
+  Кнопка «Обновить скиллы везде» и `alia tools skills-fanout` работают всегда.
+- Раскатка (`skills_fanout`, `alia tools skills-fanout`) сначала забирает в канон
   более новые и новые скиллы (по mtime; равные даты с разным хешем — руками),
   затем синк git, затем дома CLI. Живую ссылку в проект не переставляем.
   Заменяемая папка уходит снимком в `~/.agents/skills-backups/<имя>/<время>/`,
@@ -92,7 +92,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **bb-plugin-agent-tools** (1723 symbols, 3788 relationships, 152 execution flows).
+This project is indexed by GitNexus as **alia-plugin-agent-tools** (1723 symbols, 3788 relationships, 152 execution flows).
 
 > Index stale? Run `node .gitnexus/run.cjs analyze --index-only` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? Bootstrap with `npx`, `bunx`, or `pnpm dlx` — e.g. `bunx gitnexus@latest analyze` (npm 11 npx crash; #1939).
 
@@ -116,10 +116,10 @@ This project is indexed by GitNexus as **bb-plugin-agent-tools** (1723 symbols, 
 
 | Resource | Use for |
 | --- | --- |
-| `gitnexus://repo/bb-plugin-agent-tools/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/bb-plugin-agent-tools/clusters` | All functional areas |
-| `gitnexus://repo/bb-plugin-agent-tools/processes` | All execution flows |
-| `gitnexus://repo/bb-plugin-agent-tools/process/{name}` | Step-by-step execution trace |
+| `gitnexus://repo/alia-plugin-agent-tools/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/alia-plugin-agent-tools/clusters` | All functional areas |
+| `gitnexus://repo/alia-plugin-agent-tools/processes` | All execution flows |
+| `gitnexus://repo/alia-plugin-agent-tools/process/{name}` | Step-by-step execution trace |
 
 ## CLI
 

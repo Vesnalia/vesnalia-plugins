@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent, ReactNode } from "react";
-import { definePluginApp, useBbContext, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaContext, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -900,7 +900,7 @@ function PhotoViewer({
 function StudioPage({ initialView = "gallery" }: { initialView?: Tab }) {
   const rpc = useRpc<typeof rpcContract>();
   const api = useMemo(() => rpcApi(rpc), [rpc]);
-  const { projectId } = useBbContext();
+  const { projectId } = useAliaContext();
   const [tab, setTab] = useState<Tab>(initialView);
   const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState<StudioSettings | null>(null);

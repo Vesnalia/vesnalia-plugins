@@ -1,4 +1,4 @@
-Run Claude Code in bb with more than one subscription and spend less time
+Run Claude Code in VesnALIA with more than one subscription and spend less time
 watching the limits. The plugin treats `~/.claude` and each subdirectory of
 your accounts directory that holds a Claude Code login as an account, and
 moves projects between them.
@@ -29,7 +29,7 @@ moves projects between them.
 - **Accounts and projects in Settings.** Choose the account each project
   runs with or let the plugin manage it, add an account by name (the plugin
   runs Claude Code's own login), and see every move with its reason. The
-  CLI does the same: `bb claude-switcher use PROJECT ACCOUNT`.
+  CLI does the same: `alia claude-switcher use PROJECT ACCOUNT`.
 
 ## How the choice is made
 
@@ -37,12 +37,12 @@ An account is a candidate only while its session and its weekly window are
 both under 100 % and the provider reports no lock. Candidates are ranked by
 the quarter their 5-hour session is in, then the closest reset for the
 model, then lowest session use. If you name a preferred model, or
-switch a thread to another model in bb's picker, only accounts that can still
+switch a thread to another model in VesnALIA's picker, only accounts that can still
 run that model are chosen; when none can, the retry waits until one can.
 
 ## Requirements
 
-bb 0.45 or later, on the machine that holds your Claude Code logins (macOS
+VesnALIA 0.45 or later, on the machine that holds your Claude Code logins (macOS
 keychain, or the credentials file on Linux). The switch is a project machine
 environment variable, so threads that run on another host do not follow it.
 Each account directory must share the session transcripts (`projects/`,

@@ -1,7 +1,7 @@
-/* Ocean Dark for BB.
+/* Ocean Dark for ALIA.
  * Palette: T3 Code's Ocean dark variant, T3 Tools Inc. (MIT).
  * Source: https://github.com/pingdotgg/t3code/blob/main/packages/shared/src/themePalettes.ts
- * BB token mapping and syntax/ANSI adaptation; no layout or font overrides.
+ * ALIA token mapping and syntax/ANSI adaptation; no layout or font overrides.
  * This is a dark-only palette, including when a client is in light mode.
  */
 :root,

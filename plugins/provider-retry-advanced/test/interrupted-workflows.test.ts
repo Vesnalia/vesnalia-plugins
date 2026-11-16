@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createPlugin } from "../server.js";
 import { WORKFLOW_TAG, workflowText } from "../src/continuations.js";
 import type { ScanReport } from "../src/recovery.js";
@@ -43,7 +43,7 @@ async function setup(options: { armed?: boolean; workflowRecovery?: boolean } = 
     core.hook = (context) => host.harness.registrations.hooks["message.dispatch"]!(context as never);
     core.onRowCancelled = (row) => host.harness.behavior.emitThreadEvent("message.cancelled", { entry: row } as never);
   };
-  await factory(host.bb);
+  await factory(host.alia);
   await wire();
   if (options.armed !== false) expect((await host.harness.runCli(["arm"])).exitCode).toBe(0);
   const t = {
@@ -58,7 +58,7 @@ async function setup(options: { armed?: boolean; workflowRecovery?: boolean } = 
       core.now += 60_000;
       return JSON.parse(result.stdout) as ScanReport;
     },
-    /** BB restarts: the plugin reloads with its stored state, core settles what the dead daemon left open. */
+    /** VesnALIA restarts: the plugin reloads with its stored state, core settles what the dead daemon left open. */
     restart: async (settle: () => void) => {
       host = await host.harness.lifecycle.reload(factory);
       await wire();
@@ -75,7 +75,7 @@ async function setup(options: { armed?: boolean; workflowRecovery?: boolean } = 
 }
 
 /** A Claude thread whose turn started an UltraCode workflow and then ended; the workflow keeps running. */
-function workflowThread(core: FakeCore, id: string, name = "bb-plugins-page-design"): string {
+function workflowThread(core: FakeCore, id: string, name = "alia-plugins-page-design"): string {
   core.addThread({ id, providerId: "claude-code" });
   core.startTurn(id, { input: [{ type: "text", text: "Design the page", mentions: [] }], execution: OPUS_ULTRACODE });
   const item = core.startBackgroundTask(id, "local_workflow", name);
@@ -100,7 +100,7 @@ function workflowRun(core: FakeCore, id: string, name: string, runId: string): v
 
 /** The message as core would have queued it (behind another plugin's wait, for example). */
 function queueWorkflowMessage(core: FakeCore, threadId: string): void {
-  const input = [{ type: "text", text: workflowText(["bb-plugins-page-design"]), mentions: [], visibility: "agent-only" }];
+  const input = [{ type: "text", text: workflowText(["alia-plugins-page-design"]), mentions: [], visibility: "agent-only" }];
   core.queue.push({
     id: `qmsg_wf_${threadId}`,
     threadId,
@@ -121,7 +121,7 @@ function entry(report: ScanReport, threadId: string) {
   return report.entries.find((e) => e.threadId === threadId);
 }
 
-describe("Claude Code workflows a BB restart killed", () => {
+describe("Claude Code workflows a VesnALIA restart killed", () => {
   it("sends one message to resume the run, with the turn's model, effort, tier and permissions", async () => {
     const t = await setup();
     workflowThread(t.core, "thr_idle");
@@ -140,7 +140,7 @@ describe("Claude Code workflows a BB restart killed", () => {
     const [message] = t.delivered("thr_idle");
     const input = message!.data.input as Array<{ text: string; visibility: string }>;
     expect(input[0]!.visibility).toBe("agent-only");
-    expect(input[0]!.text).toContain('"bb-plugins-page-design"');
+    expect(input[0]!.text).toContain('"alia-plugins-page-design"');
     expect(input[0]!.text).toContain("resumeFromRunId");
     expect(input[0]!.text).toContain("do not create a new run");
     expect(t.core.queue).toHaveLength(0);

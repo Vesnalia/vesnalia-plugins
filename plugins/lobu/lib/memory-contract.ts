@@ -1,5 +1,5 @@
 // Save to Lobu shapes shared by the server and the page. The page imports this
-// at runtime, so it must not import @get-bb/plugin-sdk (a dev-only dependency).
+// at runtime, so it must not import @vesnalia/plugin-sdk (a dev-only dependency).
 import { z } from "zod";
 
 /** Lobu's built-in memory kinds; each maps to a save_memory semantic_type. */
@@ -77,7 +77,7 @@ export const savedRecordSchema = z.object({
 });
 export type SavedRecord = z.infer<typeof savedRecordSchema>;
 
-/** A Lobu memory or note the user pinned to a bb project; every thread there starts with it. */
+/** A Lobu memory or note the user pinned to a VesnALIA project; every thread there starts with it. */
 export const pinnedMemorySchema = z.object({
   eventId: z.number().nullable(),
   workspace: z.string(),
@@ -130,7 +130,7 @@ export type ThreadLog = z.infer<typeof threadLogSchema>;
 
 const workspaceOptionSchema = z.object({ slug: z.string(), name: z.string() });
 
-/** A bb project with its Lobu link, pins, and what its new threads start with. */
+/** A VesnALIA project with its Lobu link, pins, and what its new threads start with. */
 export const projectMemorySchema = z.object({
   id: z.string(),
   name: z.string(),

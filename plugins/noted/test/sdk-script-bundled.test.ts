@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildSdkScript } from "../lib/sdk-script";
 
-// BB compiles server.ts itself, minified and with keepNames. Under keepNames,
+// VesnALIA compiles server.ts itself, minified and with keepNames. Under keepNames,
 // esbuild wraps every function in a module-level `__name` helper, so anything
 // built from Function.prototype.toString() references a helper that does not
 // exist inside the review iframe.
@@ -38,7 +38,7 @@ function runInArtifact(script: string): { errors: string[]; annotating: boolean 
   return { errors, annotating };
 }
 
-describe("buildSdkScript under BB's server bundler", () => {
+describe("buildSdkScript under VesnALIA's server bundler", () => {
   it("ships an SDK generated from the current vendor/lavish sources", () => {
     const script = new URL("../scripts/generate-lavish-sdk.mjs", import.meta.url).pathname;
     expect(() => execFileSync(process.execPath, [script, "--check"], { stdio: "pipe" })).not.toThrow();

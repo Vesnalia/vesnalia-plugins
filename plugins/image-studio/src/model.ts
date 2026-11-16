@@ -144,7 +144,7 @@ export function textureUvPickMarkerHueDegrees(markerIndex: number, reservedHues:
 
 export type GuidePaletteEntry = { color: string; name: string; share: number };
 
-/** Folder binding for `bb image-studio model generate` (same origin rules as gui/roblox). */
+/** Folder binding for `alia image-studio model generate` (same origin rules as gui/roblox). */
 export function modelCliProjectOrigin(cwd: string | undefined, projectId: string | null): {
   origin: string;
   projectName: string;
@@ -350,7 +350,7 @@ export function textureUvPaletteHint(palette: GuidePaletteEntry[]): string {
 export const MODEL_CONCEPT_VIEWS = ["front", "back", "left", "right"] as const;
 export type ModelConceptView = (typeof MODEL_CONCEPT_VIEWS)[number];
 
-/** Absolute path for bb.sdk.files on the project host (relative paths stay relative in manifests). */
+/** Absolute path for alia.sdk.files on the project host (relative paths stay relative in manifests). */
 export function hostPath(cwd: string, relOrAbs: string): string {
   const normalized = relOrAbs.trim().replace(/\\/g, "/");
   if (normalized.startsWith("/") || /^[A-Za-z]:\//.test(normalized)) return normalized;

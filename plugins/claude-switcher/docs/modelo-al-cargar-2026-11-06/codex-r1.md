@@ -17,4 +17,4 @@ Ronda inválida por el runner («Code changed during inspection»: el script de 
 ## Límites que declara
 
 - Static review only; no files edited, tests or mutants executed, or work delegated.
-- Production bb behavior was not exercised; the existing mutation-output artifact was not independently verified.
+- Production VesnALIA behavior was not exercised; the existing mutation-output artifact was not independently verified.

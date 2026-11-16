@@ -1,7 +1,7 @@
-// bb-plugin-session-history — frontend. A "Past sessions" section on the
+// alia-plugin-session-history — frontend. A "Past sessions" section on the
 // new-thread screen (scoped to the selected project) and a "Sessions" page
 // with the full list and a transcript at /sessions/<agent>/<id>, under which a
-// composer starts a BB thread that continues the session.
+// composer starts a VesnALIA thread that continues the session.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
@@ -9,12 +9,12 @@ import {
   ThreadChat,
   definePluginApp,
   experimental_NewThreadComposer as NewThreadComposer,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
   type NewThreadRequest,
   type PluginHomepageSectionProps,
   type PluginNavPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { SessionRow, TranscriptRow, rpcContract } from "./server";
 import { Button } from "@/components/ui/button";
@@ -178,7 +178,7 @@ function SessionList({
   showFolder: boolean;
   toolbarExtra?: ReactNode;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [agent, setAgent] = useState<AgentFilter>("all");
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(pageSize);
@@ -323,7 +323,7 @@ interface TranscriptData {
 
 /** Header, controls and the old messages; the newest page is shown first. */
 function SessionTranscript({ data, onBack }: { data: TranscriptData; onBack: () => void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [showTools, setShowTools] = useState(false);
   const [limit, setLimit] = useState(TRANSCRIPT_PAGE);
   const visible = useMemo(
@@ -403,7 +403,7 @@ function SessionTranscript({ data, onBack }: { data: TranscriptData; onBack: () 
 
 function TranscriptView({ agent, id }: { agent: Agent; id: string }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [data, setData] = useState<TranscriptData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const scroller = useRef<HTMLDivElement>(null);

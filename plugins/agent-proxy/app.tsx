@@ -1,5 +1,5 @@
 import "./app.css";
-import { definePluginApp, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import { CORE_STATE_STYLES } from "@/components/status-badge";
 import { mountSidebarNavStatus } from "@/components/sidebar-nav-status";
@@ -47,7 +47,7 @@ function SidebarIndicator({ status }: { status: CoreStatus | null }) {
 }
 
 function AgentProxyPanel({ subPath }: { subPath: string }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { status } = useCoreStatus();
   const activeKey = subPath.split("/")[0] ?? "";
   const active = PAGES.find((page) => page.key === activeKey) ?? PAGES[0]!;

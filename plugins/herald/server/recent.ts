@@ -1,9 +1,9 @@
 /**
  * The Herald page's history: the newest sentences of every thread, each with
- * the names bb has for its thread and project now. The names are looked up
+ * the names VesnALIA has for its thread and project now. The names are looked up
  * when the page reads, not stored with the sentence, so a renamed thread
  * shows its new title. A lookup that fails costs the row its names, never
- * its place: a thread bb no longer knows stays listed, with nothing to open.
+ * its place: a thread VesnALIA no longer knows stays listed, with nothing to open.
  */
 import type { RecentHistoryItem } from "../shared/herald";
 import type { ThreadHistoryItem } from "./history";

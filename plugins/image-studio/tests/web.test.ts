@@ -328,7 +328,7 @@ test("server.ts registers the web section: the agent tool, the CLI command and t
   assert.match(source, /name: "image_studio_web"/);
   assert.match(source, /runGuiCommand\(argv, ctx, reply, "web"\)/);
   assert.match(source, /section: "web"/);
-  assert.match(source, /bb image-studio web projects\|project\|ref\|generate\|delete/);
+  assert.match(source, /alia image-studio web projects\|project\|ref\|generate\|delete/);
   assert.match(source, /"web", slugify\(style\.name, "site"\)/);
   assert.match(source, /z\.enum\(WEB_MODES\)/);
 });

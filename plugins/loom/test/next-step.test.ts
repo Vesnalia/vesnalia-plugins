@@ -17,8 +17,8 @@ const input = (over: Partial<ProjectSummary>, board: BoardCard[], rest: Partial<
 });
 const queued = (key: string, ready: boolean) => card({ key, ready, ...(ready ? {} : { waitingOn: ["CSV-1"] }) });
 const blocked = (key: string, reason: string | null) => card({ key, state: "blocked", ready: false, blockedReason: reason });
-const refused = "bb refused to start a worker: HTTP 400: Provider pi only supports full permission mode.";
-const reviewerRefused = "bb refused to start a reviewer: HTTP 400: Unsupported provider claude";
+const refused = "alia refused to start a worker: HTTP 400: Provider pi only supports full permission mode.";
+const reviewerRefused = "alia refused to start a reviewer: HTTP 400: Unsupported provider claude";
 
 describe("nextStepOf", () => {
   it("has six stages", () => {
@@ -42,20 +42,20 @@ describe("nextStepOf", () => {
       stage: 0,
       tone: "normal",
       title: "Loom is reviewing draft v1.",
-      text: "A separate reviewer checks it against your request and for work the goal does not need. The planner revises it for each finding, and this bar asks you to approve once a review passes. To approve it now anyway, run `bb loom approve csv --skip-review`.",
+      text: "A separate reviewer checks it against your request and for work the goal does not need. The planner revises it for each finding, and this bar asks you to approve once a review passes. To approve it now anyway, run `alia loom approve csv --skip-review`.",
       action: null,
     });
     expect(draft({ kind: "changes", version: 1, round: 2, findings: [{ title: "a", detail: "b" }, { title: "c", detail: "d" }] })).toMatchObject({
       stage: 0,
       title: "The spec review found 2 problems in v1.",
-      text: "The planner is revising it (round 2 of 3 done). To approve it now anyway, run `bb loom approve csv --skip-review`.",
+      text: "The planner is revising it (round 2 of 3 done). To approve it now anyway, run `alia loom approve csv --skip-review`.",
       action: null,
     });
     expect(draft({ kind: "failed", version: 1, round: 1, reason: "the reviewer's thread was archived or deleted" })).toMatchObject({
       stage: 0,
       tone: "warning",
       title: "The spec review of v1 did not finish.",
-      text: "The reviewer's thread was archived or deleted. Ask the planner to propose again to restart it, or approve without a passed review with `bb loom approve csv --skip-review`.",
+      text: "The reviewer's thread was archived or deleted. Ask the planner to propose again to restart it, or approve without a passed review with `alia loom approve csv --skip-review`.",
       action: null,
     });
   });
@@ -76,16 +76,16 @@ describe("nextStepOf", () => {
     const board = [blocked("CSV-1", refused), blocked("CSV-2", refused), queued("CSV-3", false)];
     const step = nextStepOf(input({ state: "running", pendingVersion: 2 }, board, { startFailed: ["CSV-1", "CSV-2"] }))!;
     expect(step).toMatchObject({ stage: 4, tone: "normal", title: "Next: approve v2." });
-    expect(step.text).toBe("The planner proposed spec v2; it changes the spec, not the tickets on the board. Approving queues CSV-1 and CSV-2 again, because bb never started their workers, and tells the planner.");
+    expect(step.text).toBe("The planner proposed spec v2; it changes the spec, not the tickets on the board. Approving queues CSV-1 and CSV-2 again, because VesnALIA never started their workers, and tells the planner.");
     expect(step.action).toEqual({ control: "approve", version: 2, label: "Approve v2 · requeue 2 tickets", confirm: "Click again to approve v2" });
 
     const both = nextStepOf(input({ state: "running", pendingVersion: 2 }, [blocked("CSV-1", refused), blocked("CSV-2", reviewerRefused)], { startFailed: ["CSV-1"], reviewRefused: ["CSV-2"] }))!;
     expect(both.text).toBe(
-      "The planner proposed spec v2; it changes the spec, not the tickets on the board. Approving queues CSV-1 again, because bb never started its worker, sends CSV-2 back to review, because bb refused to start its reviewer, and tells the planner.",
+      "The planner proposed spec v2; it changes the spec, not the tickets on the board. Approving queues CSV-1 again, because VesnALIA never started its worker, sends CSV-2 back to review, because VesnALIA refused to start its reviewer, and tells the planner.",
     );
     expect(both.action).toMatchObject({ label: "Approve v2 · requeue 2 tickets" });
     const review = nextStepOf(input({ state: "running", pendingVersion: 2 }, [blocked("CSV-2", reviewerRefused)], { reviewRefused: ["CSV-2"] }))!;
-    expect(review.text).toContain(" Approving sends CSV-2 back to review, because bb refused to start its reviewer, and tells the planner.");
+    expect(review.text).toContain(" Approving sends CSV-2 back to review, because VesnALIA refused to start its reviewer, and tells the planner.");
     expect(review.action).toMatchObject({ label: "Approve v2 · requeue 1 ticket" });
 
     const plain = nextStepOf(input({ state: "ready", pendingVersion: 2 }, [queued("CSV-1", true)]))!;
@@ -99,7 +99,7 @@ describe("nextStepOf", () => {
     const pending = (specReview: NextStepInput["specReview"]) => nextStepOf(input({ state: "running", pendingVersion: 2 }, [], { specReview }))!;
     const reviewing = pending({ kind: "reviewing", version: 2, round: 1 });
     expect(reviewing).toMatchObject({ stage: 4, title: "Loom is reviewing v2.", action: null });
-    expect(reviewing.text).toContain("bb loom approve csv --version 2 --skip-review");
+    expect(reviewing.text).toContain("alia loom approve csv --version 2 --skip-review");
     expect(pending({ kind: "changes", version: 2, round: 1, findings: [{ title: "Too wide", detail: "d" }] })).toMatchObject({ stage: 4, title: "The spec review found 1 problem in v2.", action: null });
     const passed = pending({ kind: "approved", version: 2, round: 1, summary: "Holds." });
     expect(passed.text).toContain("Loom's spec review passed it.");
@@ -176,7 +176,7 @@ describe("nextStepOf", () => {
   });
 
   it("names the repos of a multi-repo project whose merged work is not landed yet in the land step", () => {
-    const repo = (name: string, toLand: boolean) => ({ name, bbProjectId: `proj_${name}`, bbProjectName: null, base: "main", branch: "loom/csv", prUrl: null, landedAt: null, toLand });
+    const repo = (name: string, toLand: boolean) => ({ name, aliaProjectId: `proj_${name}`, aliaProjectName: null, base: "main", branch: "loom/csv", prUrl: null, landedAt: null, toLand });
     const finished = (repos: ReturnType<typeof repo>[]) => input({ state: "running", ticketCounts: { done: 2, cancelled: 1 }, repos }, [card({ state: "done", ready: false })]);
 
     const two = nextStepOf(finished([repo("web", true), repo("docs", false), repo("api", true)]))!;

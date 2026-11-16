@@ -265,7 +265,7 @@ test("frecency grows with use and halves every three days", () => {
   assert.deepEqual(pushRecent(["a", "b", "c"], "b", 2), ["b", "a"]);
 });
 
-test("searchShortcuts follows bb's binding for this platform", () => {
+test("searchShortcuts follows VesnALIA's binding for this platform", () => {
   assert.deepEqual(searchShortcuts(null, "mac"), [{ key: "k", mod: true }]);
   const bindings = [
     { command: "palette.open", shortcut: { key: "p", mod: true, shift: true } },
@@ -303,7 +303,7 @@ test("a capped group ends with a Show all row into its scope", () => {
   assert.equal(group(all, "compose"), undefined);
 });
 
-test("the files scope keeps bb's order and highlights names", () => {
+test("the files scope keeps VesnALIA's order and highlights names", () => {
   const files = [
     { name: "palette.tsx", path: "src/palette.tsx" },
     { name: "palette-model.ts", path: "src/palette-model.ts" },

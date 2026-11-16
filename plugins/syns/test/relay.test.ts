@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { createHostRunner, type HostCall } from "../src/host-runner.js";
 import { SLICE, createRelay } from "../src/relay.js";
 
-/** D32: one bb host call carries at most 8 MiB of JSON either way (HOST_FACTS §12). */
+/** D32: one VesnALIA host call carries at most 8 MiB of JSON either way (HOST_FACTS §12). */
 const HOST_CALL_MAX = 8 * 1024 * 1024;
 
-/** A host half as bb runs it: the relay, a process that echoes what it was given, and bb's bound on each call. */
+/** A host half as VesnALIA runs it: the relay, a process that echoes what it was given, and VesnALIA's bound on each call. */
 function fakeHost(echo: (stdin: Buffer | string | undefined) => string, now = () => 0) {
   const relay = createRelay(now);
   const calls: string[] = [];

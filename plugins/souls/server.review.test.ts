@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.ts";
 
 type Soul = { id: string; name: string; personality: string; boundaries: string[] };
 
 async function setup() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
   harness.inspection.sdk.stub("threads.get", (() => ({ status: "idle" })) as (...args: never[]) => unknown);
-  await plugin(bb);
+  await plugin(alia);
   const { soul } = (await harness.behavior.callRpc("souls_create", {
     draft: { name: "Hazel", personality: "Blunt.", boundaries: ["Never approve a change she has not run."] },
     origin: "manual",
@@ -142,7 +142,7 @@ test("souls_propose saves a new soul only on approval", async () => {
   }
 });
 
-test("inside a thread, bb souls cannot create, update or delete a soul", async () => {
+test("inside a thread, VesnALIA souls cannot create, update or delete a soul", async () => {
   const x = await setup();
   try {
     for (const argv of [["create", "Imp"], ["update", "Hazel", "--data", '{"personality":"Sly."}'], ["delete", "Hazel"]]) {

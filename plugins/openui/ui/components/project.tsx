@@ -1,7 +1,7 @@
-// "BB project": live views of the reply's own thread, read from BB when the
+// "VesnALIA project": live views of the reply's own thread, read from VesnALIA when the
 // block is shown (never data the agent writes in): its changes, commits, pull
 // request, subthreads and the project's environments. Git reads go through
-// server/project.ts; thread status comes from BB's live sidebar view.
+// server/project.ts; thread status comes from VesnALIA's live sidebar view.
 import { useContext, useEffect, useState, type ReactNode } from "react";
 import { defineComponent } from "@openuidev/react-lang";
 import { z } from "zod/v4";
@@ -10,11 +10,11 @@ import {
   experimental_ThreadStatusGlyph as StatusGlyph,
   experimental_ThreadTitleText as ThreadTitleText,
   experimental_useSidebarThreads as useSidebarThreads,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
   UrlLink,
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { ChevronRight, FolderGit2, GitCommitHorizontal, GitPullRequest, ListTree, GitBranch } from "lucide-react";
 import type { rpcContract } from "../../server";
 import type { ChangeRow, ChangesResult, CommitsResult, EnvironmentsResult, GitTarget, PatchResult, PullRequestResult, PullRequestView } from "../../server/project";
@@ -106,7 +106,7 @@ function FileDiff({ file, target }: { file: ChangeRow; target: GitTarget }) {
     needsLoad ? rpc.call("project_patch", { threadId, target, path: file.path, revision: file.revision }) : Promise.resolve({ ok: true, patch: file.patch ?? "", truncated: file.patchTruncated }),
   );
   if (file.binary) return <p className="bbui-label bbui-project-note">Binary file, no text diff.</p>;
-  if (file.tooLarge) return <p className="bbui-label bbui-project-note">Too large to show here. Open BB’s Diff tab to read it.</p>;
+  if (file.tooLarge) return <p className="bbui-label bbui-project-note">Too large to show here. Open VesnALIA’s Diff tab to read it.</p>;
   return (
     <Region loaded={loaded} failed="This diff could not be read" lines={4}>
       {({ patch, truncated }) => (
@@ -213,7 +213,7 @@ const Changes = defineComponent({
 
 const relative = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
 function ago(at: number): string {
-  const ms = at < 1e12 ? at * 1000 : at; // git gives seconds, BB usually milliseconds
+  const ms = at < 1e12 ? at * 1000 : at; // git gives seconds, VesnALIA usually milliseconds
   const minutes = Math.round((ms - Date.now()) / 60_000);
   if (Math.abs(minutes) < 60) return relative.format(minutes, "minute");
   if (Math.abs(minutes) < 60 * 48) return relative.format(Math.round(minutes / 60), "hour");
@@ -383,7 +383,7 @@ const PullRequest = defineComponent({
 // Threads
 
 /**
- * BB's live sidebar view of threads. shortcut: BB's test runtime only provides it inside renderSlot,
+ * VesnALIA's live sidebar view of threads. shortcut: VesnALIA's test runtime only provides it inside renderSlot,
  * which scripts/check-group.tsx doesn't use; there it throws (after one useContext, so hook order holds)
  * and reads as an error. Drop the try once check-group mounts through renderSlot.
  */
@@ -419,7 +419,7 @@ export function statusWords(thread: ThreadState): string {
 }
 
 function ThreadItem({ thread }: { thread: PluginSidebarThread }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <li className="bbui-project-item">
       <button type="button" className="bbui-project-row" onClick={() => navigate.toThread(thread.id)} aria-label={`Open ${thread.displayTitle}, ${statusWords(thread)}`}>
@@ -437,7 +437,7 @@ function ThreadItem({ thread }: { thread: PluginSidebarThread }) {
 
 const Threads = defineComponent({
   name: "Threads",
-  description: "Live status of BB threads: title, status, opens the thread. ids: thread ids in this project; omit for this thread's subthreads.",
+  description: "Live status of VesnALIA threads: title, status, opens the thread. ids: thread ids in this project; omit for this thread's subthreads.",
   props: z.object({ ids: textList.optional() }),
   component: ({ props }) => {
     const fence = useContext(FenceContext);
@@ -455,7 +455,7 @@ const Threads = defineComponent({
     const waiting = found.filter((t) => t.hasPendingInteraction).length;
     const meta = [working > 0 && `${working} working`, waiting > 0 && `${waiting} need input`].filter(Boolean).join(", ");
     const title = ids === null ? "Subthreads" : "Threads";
-    const loaded: Loaded<null> = sidebar.status === "ready" ? { state: "ready", value: null } : sidebar.status === "error" ? { state: "error", error: "BB's thread list did not load" } : { state: "loading" };
+    const loaded: Loaded<null> = sidebar.status === "ready" ? { state: "ready", value: null } : sidebar.status === "error" ? { state: "error", error: "VesnALIA's thread list did not load" } : { state: "loading" };
     return (
       <Block icon={<ListTree {...ICON} />} title={title} meta={meta} label={title}>
         <Region loaded={loaded} failed="Thread status could not be read">
@@ -573,9 +573,9 @@ const Environments = defineComponent({
 });
 
 export const projectGroup: ExtraGroup = {
-  name: "BB project",
+  name: "VesnALIA project",
   notes: [
-    "These read this thread's live state from BB when shown: pass no data, only the arguments listed. Prefer them to listing files, commits or statuses by hand.",
+    "These read this thread's live state from VesnALIA when shown: pass no data, only the arguments listed. Prefer them to listing files, commits or statuses by hand.",
   ],
   components: [Changes, Commits, PullRequest, Threads, Environments],
   examples: {

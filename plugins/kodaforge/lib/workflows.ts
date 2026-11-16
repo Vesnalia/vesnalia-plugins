@@ -1,6 +1,6 @@
-// The BB workflows plugin has no RPC, so the IDE drives its CLI on the host:
+// The VesnALIA workflows plugin has no RPC, so the IDE drives its CLI on the host:
 // list recent runs, read one run's status, and start a named workflow
-// (.bb/workflows/<name>.js). Nothing else of the CLI is reachable from here.
+// (.vesnalia/workflows/<name>.js). Nothing else of the CLI is reachable from here.
 import { findBinary } from "./lsp-host.js";
 import { run } from "./run.js";
 
@@ -72,7 +72,7 @@ export function metaPhases(source: string): string[] {
   return [...block.matchAll(/title\s*:\s*(["'`])((?:(?!\1).)+)\1/g)].map((m) => m[2]!);
 }
 
-/** `bb workflows history` JSONL → the run and its calls. */
+/** `alia workflows history` JSONL → the run and its calls. */
 export function parseHistory(jsonl: string): RunHistory {
   const history: RunHistory = { name: "", status: "unknown", phase: null, error: null, createdAt: null, finishedAt: null, phases: [], calls: [], nextCursor: null };
   for (const line of jsonl.split("\n")) {
@@ -114,18 +114,18 @@ export async function runWorkflowCommand(root: string, context: WorkflowContext,
   if (request.action === "run" && context.threadId === null) {
     throw new Error("Pick a thread in the Chat panel first: a workflow reports back to a thread");
   }
-  const cli = process.env.BB_CLI ?? (await findBinary(root, ["bb"]));
-  if (cli === null) throw new Error("The bb CLI was not found on this machine");
-  const env: Record<string, string> = { BB_PROJECT_ID: context.projectId };
-  if (context.environmentId) env.BB_ENVIRONMENT_ID = context.environmentId;
-  if (context.threadId) env.BB_THREAD_ID = context.threadId;
+  const cli = process.env.ALIA_CLI ?? (await findBinary(root, ["alia"]));
+  if (cli === null) throw new Error("The VesnALIA CLI was not found on this machine");
+  const env: Record<string, string> = { ALIA_PROJECT_ID: context.projectId };
+  if (context.environmentId) env.ALIA_ENVIRONMENT_ID = context.environmentId;
+  if (context.threadId) env.ALIA_THREAD_ID = context.threadId;
   if (request.action === "history") {
     // Page until done; maxAgentCalls tops out at 1000, so at most 10 pages.
     let merged: RunHistory | null = null;
     let cursor = request.cursor ?? 0;
     for (let page = 0; page < 10; page++) {
       const out = await run(cli, workflowArgv({ ...request, cursor }), { cwd: root, env, timeoutMs: 20_000 });
-      if (out.code !== 0) throw new Error(out.stderr.trim() || `bb workflows exited with ${out.code}`);
+      if (out.code !== 0) throw new Error(out.stderr.trim() || `alia workflows exited with ${out.code}`);
       const part = parseHistory(out.stdout);
       if (merged === null) merged = part;
       else merged = { ...(merged as RunHistory), calls: [...(merged as RunHistory).calls, ...part.calls], nextCursor: part.nextCursor };
@@ -139,10 +139,10 @@ export async function runWorkflowCommand(root: string, context: WorkflowContext,
   try {
     parsed = JSON.parse(result.stdout);
   } catch {
-    throw new Error(result.stderr.trim() || `bb workflows exited with ${result.code}`);
+    throw new Error(result.stderr.trim() || `alia workflows exited with ${result.code}`);
   }
   if (parsed && typeof parsed === "object" && "ok" in parsed && (parsed as { ok: boolean }).ok === false) {
-    throw new Error((parsed as { error?: { message?: string } }).error?.message ?? "bb workflows failed");
+    throw new Error((parsed as { error?: { message?: string } }).error?.message ?? "alia workflows failed");
   }
   return parsed;
 }

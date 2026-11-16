@@ -37,12 +37,12 @@ function assertNoToken(error: unknown) {
 
 test("a create sends Hetzner's shape with the token only in the Authorization header, and the server runs once its action finishes", async () => {
   const { api, hetzner, sleeps } = setup();
-  const firewall = await hetzner.createFirewall({ name: "bb-box-inst1", labels: INSTALL, rules: [{ direction: "in", protocol: "udp", port: "41641", sourceIps: ["0.0.0.0/0", "::/0"] }] });
-  const key = await hetzner.createSshKey({ name: "bb-box-inst1", publicKey: "ssh-ed25519 AAAA bb-box", labels: INSTALL });
-  const { server, startActions: actions } = await hetzner.createServer({ ...host("bb-box-inst1-h1"), sshKeys: [key.id], firewalls: [firewall.id], userData: "#cloud-config\n", ipv6: false });
+  const firewall = await hetzner.createFirewall({ name: "alia-box-inst1", labels: INSTALL, rules: [{ direction: "in", protocol: "udp", port: "41641", sourceIps: ["0.0.0.0/0", "::/0"] }] });
+  const key = await hetzner.createSshKey({ name: "alia-box-inst1", publicKey: "ssh-ed25519 AAAA alia-box", labels: INSTALL });
+  const { server, startActions: actions } = await hetzner.createServer({ ...host("alia-box-inst1-h1"), sshKeys: [key.id], firewalls: [firewall.id], userData: "#cloud-config\n", ipv6: false });
   const create = api.calls.find((call) => call.method === "POST" && call.path === "/servers")!;
   assert.deepEqual(create.body, {
-    name: "bb-box-inst1-h1",
+    name: "alia-box-inst1-h1",
     server_type: "cpx42",
     location: "nbg1",
     image: "ubuntu-24.04",
@@ -67,43 +67,43 @@ test("a create sends Hetzner's shape with the token only in the Authorization he
 test("actions are never polled closer than a second, whatever is asked", async () => {
   const { api, hetzner, sleeps } = setup({ actionPollMs: 50 });
   api.pollsUntilCreatedServerRuns = 3;
-  const { startActions: actions } = await hetzner.createServer(host("bb-box-inst1-h2"));
+  const { startActions: actions } = await hetzner.createServer(host("alia-box-inst1-h2"));
   await hetzner.waitAction(actions[0]!);
   assert.deepEqual(sleeps, [1000, 1000]);
 });
 
 test("a second create of a name is refused as taken, and the first server is found by its name", async () => {
   const { hetzner } = setup();
-  const first = await hetzner.createServer(host("bb-box-inst1-h3"));
-  const error = await hetzner.createServer(host("bb-box-inst1-h3")).catch((e) => e);
+  const first = await hetzner.createServer(host("alia-box-inst1-h3"));
+  const error = await hetzner.createServer(host("alia-box-inst1-h3")).catch((e) => e);
   assert.ok(error instanceof HetznerError);
   assert.equal(error.status, 409);
   assert.equal(error.taken, true);
-  assert.equal((await hetzner.serverNamed("bb-box-inst1-h3"))!.id, first.server.id);
-  assert.equal(await hetzner.serverNamed("bb-box-inst1-none"), null);
+  assert.equal((await hetzner.serverNamed("alia-box-inst1-h3"))!.id, first.server.id);
+  assert.equal(await hetzner.serverNamed("alia-box-inst1-none"), null);
 });
 
 test("a create lost on the way back made the server all the same, and its name finds it", async () => {
   const { api, hetzner } = setup();
   api.intercept = (call) => (call.method === "POST" && call.path === "/servers" ? "lose" : undefined);
-  const error = await hetzner.createServer(host("bb-box-inst1-h4")).catch((e) => e);
+  const error = await hetzner.createServer(host("alia-box-inst1-h4")).catch((e) => e);
   assert.ok(error instanceof HetznerError);
   assert.equal(error.unreachable, true);
   api.intercept = undefined;
-  assert.ok(await hetzner.serverNamed("bb-box-inst1-h4"));
-  assert.equal((await hetzner.createServer(host("bb-box-inst1-h4")).catch((e) => e)).taken, true, "a retried create meets the first");
+  assert.ok(await hetzner.serverNamed("alia-box-inst1-h4"));
+  assert.equal((await hetzner.createServer(host("alia-box-inst1-h4")).catch((e) => e)).taken, true, "a retried create meets the first");
 });
 
 test("the project's server limit and a sold-out type are refused with their reasons", async () => {
   const { api, hetzner } = setup();
   api.projectServerLimit = 1;
-  await hetzner.createServer(host("bb-box-inst1-h5"));
-  const over = await hetzner.createServer(host("bb-box-inst1-h6")).catch((e) => e);
+  await hetzner.createServer(host("alia-box-inst1-h5"));
+  const over = await hetzner.createServer(host("alia-box-inst1-h6")).catch((e) => e);
   assert.equal(over.overLimit, true);
   assert.match(over.message, /resource_limit_exceeded/);
   api.projectServerLimit = 10;
   api.soldOutTypeAtLocation.add("cpx42@nbg1");
-  const sold = await hetzner.createServer(host("bb-box-inst1-h7")).catch((e) => e);
+  const sold = await hetzner.createServer(host("alia-box-inst1-h7")).catch((e) => e);
   assert.equal(sold.unavailable, true);
 });
 
@@ -141,8 +141,8 @@ test("with no requests left in the hour, the next call waits for a refill before
 test("lists follow Hetzner's pages, 50 at a time, and keep to the install's labels", async () => {
   const { api, hetzner } = setup();
   api.projectServerLimit = 200;
-  for (let i = 0; i < 120; i++) await hetzner.createServer(host(`bb-box-inst1-p${i}`));
-  await hetzner.createServer(host("bb-box-other-h1", { "bbbox-install": "other", "bbbox-role": "host" }));
+  for (let i = 0; i < 120; i++) await hetzner.createServer(host(`alia-box-inst1-p${i}`));
+  await hetzner.createServer(host("alia-box-other-h1", { "bbbox-install": "other", "bbbox-role": "host" }));
   await hetzner.createServer(host("by-hand", {}));
   const before = api.calls.length;
   const all = await hetzner.servers(INSTALL);
@@ -155,7 +155,7 @@ test("lists follow Hetzner's pages, 50 at a time, and keep to the install's labe
 
 test("a delete waits for its action, and a second finds the server gone", async () => {
   const { api, hetzner } = setup();
-  const { server } = await hetzner.createServer(host("bb-box-inst1-h8"));
+  const { server } = await hetzner.createServer(host("alia-box-inst1-h8"));
   assert.equal(await hetzner.deleteServer(server.id), "deleted");
   assert.equal(api.servers.has(server.id), false);
   assert.equal(await hetzner.deleteServer(server.id), "already gone");
@@ -164,7 +164,7 @@ test("a delete waits for its action, and a second finds the server gone", async 
 
 test("a failed action throws with Hetzner's code", async () => {
   const { api, hetzner } = setup();
-  const { startActions: actions } = await hetzner.createServer(host("bb-box-inst1-h9"));
+  const { startActions: actions } = await hetzner.createServer(host("alia-box-inst1-h9"));
   api.failActionOnNextPoll(actions[0]!, "server_error", "could not create the server");
   const error = await hetzner.waitAction(actions[0]!).catch((e) => e);
   assert.ok(error instanceof HetznerError);
@@ -175,7 +175,7 @@ test("a failed action throws with Hetzner's code", async () => {
 test("an action that never finishes stops at its timeout", async () => {
   const { api, hetzner, sleeps } = setup({ actionTimeoutMs: 5_000 });
   api.pollsUntilCreatedServerRuns = 1_000;
-  const { startActions: actions } = await hetzner.createServer(host("bb-box-inst1-h10"));
+  const { startActions: actions } = await hetzner.createServer(host("alia-box-inst1-h10"));
   const error = await hetzner.waitAction(actions[0]!).catch((e) => e);
   assert.equal(error.code, "timeout");
   assert.equal(sleeps.length, 5);
@@ -211,15 +211,15 @@ test("the token shows in no error: a refused token, a failed fetch that names it
   assertNoToken(await hetzner.servers(INSTALL).catch((e) => e));
 
   api.intercept = undefined;
-  const { startActions: actions } = await hetzner.createServer(host("bb-box-inst1-h11"));
+  const { startActions: actions } = await hetzner.createServer(host("alia-box-inst1-h11"));
   api.failActionOnNextPoll(actions[0]!, "server_error", `echo ${FAKE_HETZNER_TOKEN}`);
   assertNoToken(await hetzner.waitAction(actions[0]!).catch((e) => e));
 });
 
 test("a snapshot is taken, waited for, labelled, listed and deleted", async () => {
   const { hetzner } = setup();
-  const { server } = await hetzner.createServer(host("bb-box-inst1-build"));
-  const made = await hetzner.createSnapshot(server.id, { description: "BB Box host b1", labels: { ...INSTALL, "bbbox-build": "b1" } });
+  const { server } = await hetzner.createServer(host("alia-box-inst1-build"));
+  const made = await hetzner.createSnapshot(server.id, { description: "VesnALIA Box host b1", labels: { ...INSTALL, "bbbox-build": "b1" } });
   assert.equal(made.status, "available");
   assert.equal(made.compressedSizeGB, 4.2);
   assert.deepEqual((await hetzner.snapshots(INSTALL)).map((each) => each.id), [made.id]);
@@ -230,11 +230,11 @@ test("a snapshot is taken, waited for, labelled, listed and deleted", async () =
 
 test("SSH keys and firewalls are listed by label, and a firewall still applied is not deleted", async () => {
   const { hetzner } = setup();
-  const key = await hetzner.createSshKey({ name: "bb-box-inst1", publicKey: "ssh-ed25519 AAAA", labels: INSTALL });
+  const key = await hetzner.createSshKey({ name: "alia-box-inst1", publicKey: "ssh-ed25519 AAAA", labels: INSTALL });
   await hetzner.createSshKey({ name: "by-hand", publicKey: "ssh-ed25519 BBBB", labels: {} });
-  assert.deepEqual((await hetzner.sshKeys(INSTALL)).map((each) => each.name), ["bb-box-inst1"]);
-  const firewall = await hetzner.createFirewall({ name: "bb-box-inst1", labels: INSTALL, rules: [] });
-  const { server } = await hetzner.createServer({ ...host("bb-box-inst1-h12"), firewalls: [firewall.id] });
+  assert.deepEqual((await hetzner.sshKeys(INSTALL)).map((each) => each.name), ["alia-box-inst1"]);
+  const firewall = await hetzner.createFirewall({ name: "alia-box-inst1", labels: INSTALL, rules: [] });
+  const { server } = await hetzner.createServer({ ...host("alia-box-inst1-h12"), firewalls: [firewall.id] });
   const inUse = await hetzner.deleteFirewall(firewall.id).catch((e) => e);
   assert.equal(inUse.code, "resource_in_use");
   await hetzner.deleteServer(server.id);
@@ -254,7 +254,7 @@ test("prices come before VAT, with a public IPv4's, and a server type gives its 
 
 test("labels change on a server, and the selector sees the change", async () => {
   const { hetzner } = setup();
-  const { server } = await hetzner.createServer(host("bb-box-inst1-h13"));
+  const { server } = await hetzner.createServer(host("alia-box-inst1-h13"));
   await hetzner.setServerLabels(server.id, { ...INSTALL, "bbbox-role": "host", "bbbox-state": "deleting" });
   assert.equal((await hetzner.servers({ ...INSTALL, "bbbox-state": "deleting" })).length, 1);
 });
@@ -275,7 +275,7 @@ test("label selectors: all terms match, with =, ==, !=, presence, absence, in an
 
 test("a snapshot's wait polls every 15 s for up to an hour, within Hetzner's 3600 requests an hour", async () => {
   const { api, hetzner, sleeps } = setup();
-  const { server } = await hetzner.createServer(host("bb-box-inst1-slow"));
+  const { server } = await hetzner.createServer(host("alia-box-inst1-slow"));
   api.pollsUntilSnapshotMade = 100_000;
   const started = await hetzner.startSnapshot(server.id, { description: "slow", labels: {} });
   const before = sleeps.length;

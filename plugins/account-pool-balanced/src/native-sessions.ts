@@ -28,7 +28,7 @@ export interface NativeCaller { hostId: string; projectId: string | null; thread
 interface NativeReply {
   diagnostic?:NativeProbeInput&{sessionId:string;reservationId:string};
   released?:boolean;leaseId?:string;state?:'queued'|'active';ttlMs?:number;heartbeatMs?:number;accountId?:string;hostId?:string;
-  binding?:z.infer<typeof nativeExecutionSchema>&{schema:'bb-account-pool/native-execution/1';leaseId:string;sessionId:string;executorId:string;accountId:string;hostId:string;kind:'task'|'catalog'|'diagnostic';caller:NativeCaller};
+  binding?:z.infer<typeof nativeExecutionSchema>&{schema:'alia-account-pool/native-execution/1';leaseId:string;sessionId:string;executorId:string;accountId:string;hostId:string;kind:'task'|'catalog'|'diagnostic';caller:NativeCaller};
   unlock?:{mode:'automatic';state:string;requestId?:string;deadline?:number};
   requestId?:string;deadline?:number;stopped?:boolean;
 }
@@ -288,7 +288,7 @@ export class NativeSessions {
     lease.deadline=this.now()+NATIVE_LEASE_MS;
     return {...(lease.kind==='diagnostic'?{diagnostic:{...reservation!.input,reservationId:reservation!.reservationId,sessionId:lease.sessionId}}:{}),leaseId:lease.id,state:lease.state,ttlMs:NATIVE_LEASE_MS,heartbeatMs:5000,accountId:lease.executor.accountId,hostId:lease.executor.hostId,
       ...(lease.executor.unlock?{unlock:{mode:'automatic' as const,state:lease.unlock?.state??'idle',...(lease.unlock?{requestId:lease.unlock.requestId,deadline:lease.unlock.deadline}:{})}}:{}),
-      ...(lease.executor.execution?{binding:{schema:'bb-account-pool/native-execution/1' as const,
+      ...(lease.executor.execution?{binding:{schema:'alia-account-pool/native-execution/1' as const,
         leaseId:lease.id,sessionId:lease.sessionId,executorId:lease.executor.id,accountId:lease.executor.accountId,
         hostId:lease.executor.hostId,kind:lease.kind,caller:structuredClone(lease.caller),...structuredClone(lease.executor.execution)}}:{})};
   });}
@@ -348,7 +348,7 @@ export class NativeSessions {
       if(lease.unlock!.state!=='issued')throw new NativeSessionError(409,'native-unlock-consumed');
       lease.unlock!.state='consumed';
       return {requestId,deadline:lease.unlock!.deadline,profile:lease.executor.unlock!.profile,operation:lease.executor.unlock!.operation,
-        binding:{schema:'bb-account-pool/native-execution/1' as const,leaseId:lease.id,sessionId:lease.sessionId,
+        binding:{schema:'alia-account-pool/native-execution/1' as const,leaseId:lease.id,sessionId:lease.sessionId,
           executorId:lease.executor.id,accountId:lease.executor.accountId,hostId:lease.executor.hostId,kind:'task' as const,
           caller:structuredClone(lease.caller),...structuredClone(lease.executor.execution!)}};
     });

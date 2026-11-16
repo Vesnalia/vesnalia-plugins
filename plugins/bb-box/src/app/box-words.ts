@@ -73,8 +73,8 @@ export function actorWords(actor: Actor | null | undefined, titles: ThreadTitles
       return `by the agent in ${threadInSentence(title)}`;
     }
     case "command":
-      return "by a bb box command";
-    case "bb-box":
+      return "by a VesnALIA box command";
+    case "alia-box":
       return `by ${PRODUCT}: ${actor.why}`;
     case "outside":
       return `outside ${PRODUCT}`;
@@ -205,7 +205,7 @@ export function headline(box: BoxView, now: number, titles: ThreadTitles): Headl
     case "gone":
       return { tone: "bad", words: "Gone", detail: [`deleted outside ${PRODUCT}`] };
     case "ready":
-      return { tone: "ok", words: "Ready", detail: [`up ${span(now - upSince(box))}`, ...(box.enrol.state === "failed" ? ["Could not join BB"] : [])] };
+      return { tone: "ok", words: "Ready", detail: [`up ${span(now - upSince(box))}`, ...(box.enrol.state === "failed" ? ["Could not join VesnALIA"] : [])] };
   }
 }
 
@@ -339,10 +339,10 @@ const STEP_NAMES: Readonly<Record<string, string>> = {
   boot: "Boot",
   network: "Network",
   ssh: "SSH",
-  enrol: "Join BB",
+  enrol: "Join VesnALIA",
   spare: "Claimed a spare",
   spareResume: "Resumed it",
-  spareReconnect: "BB machine back",
+  spareReconnect: "VesnALIA machine back",
   spareSwitch: "Switched its device",
   relabel: "Named it",
   clock: "Set the clock",

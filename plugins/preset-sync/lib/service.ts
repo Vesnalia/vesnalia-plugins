@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   buildPullPlan,
   buildPushChanges,
@@ -47,9 +47,9 @@ const MAX_STAGED_BYTES = 240 * 1024;
 const DEFAULT_BACKGROUND_INTERVAL_MS = 5 * 60 * 1_000;
 const ALLOWED_BACKGROUND_INTERVALS = new Set([1, 5, 10, 15, 30, 60]);
 
-type SystemConfig = Awaited<ReturnType<BbPluginApi["sdk"]["system"]["config"]>>;
+type SystemConfig = Awaited<ReturnType<AliaPluginApi["sdk"]["system"]["config"]>>;
 
-function pluginInstallSpec(plugin: Awaited<ReturnType<BbPluginApi["sdk"]["plugins"]["list"]>>["plugins"][number]): string {
+function pluginInstallSpec(plugin: Awaited<ReturnType<AliaPluginApi["sdk"]["plugins"]["list"]>>["plugins"][number]): string {
   if (plugin.source.startsWith("builtin:")) return plugin.source;
   if (plugin.catalogEntryId !== undefined && plugin.catalogMarketplaceName !== undefined) {
     return `${plugin.catalogEntryId}@${plugin.catalogMarketplaceName}`;
@@ -58,16 +58,16 @@ function pluginInstallSpec(plugin: Awaited<ReturnType<BbPluginApi["sdk"]["plugin
 }
 
 export async function installPluginFromPreset(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   source: string,
   signal?: AbortSignal,
 ): Promise<unknown> {
   const catalogTarget = parseCatalogInstallSource(source);
   if (catalogTarget === null) {
-    return bb.sdk.plugins.install({ source });
+    return alia.sdk.plugins.install({ source });
   }
 
-  const plan = await bb.sdk.plugins.catalog.installPlan({
+  const plan = await alia.sdk.plugins.catalog.installPlan({
     ...catalogTarget,
     signal,
   });
@@ -82,13 +82,13 @@ export async function installPluginFromPreset(
     if (unresolvedReason !== undefined) {
       throw new Error(unresolvedReason);
     }
-    return bb.sdk.plugins.catalog.install({
+    return alia.sdk.plugins.catalog.install({
       ...catalogTarget,
       confirmedSource: plan.resolvedSource,
     });
   }
 
-  return bb.sdk.plugins.catalog.install(catalogTarget);
+  return alia.sdk.plugins.catalog.install(catalogTarget);
 }
 
 function settingValueMatchesDescriptor(
@@ -141,7 +141,7 @@ export class PresetSyncService {
   private backgroundWakePending = false;
 
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly getSettings: () => Promise<SyncSettings>,
   ) {}
 
@@ -155,7 +155,7 @@ export class PresetSyncService {
   }
 
   private async readStaged(): Promise<StagedPreset | null> {
-    const value = await this.bb.storage.kv.get<StagedPreset>(STAGED_KEY);
+    const value = await this.alia.storage.kv.get<StagedPreset>(STAGED_KEY);
     if (value === undefined) return null;
     return {
       snapshot: presetSnapshotSchema.parse(value.snapshot),
@@ -165,14 +165,14 @@ export class PresetSyncService {
   }
 
   private async readLastOperation(): Promise<LastOperation | null> {
-    const value = await this.bb.storage.kv.get<LastOperation>(LAST_OPERATION_KEY);
+    const value = await this.alia.storage.kv.get<LastOperation>(LAST_OPERATION_KEY);
     if (value === undefined) return null;
     const parsed = lastOperationSchema.safeParse(value);
     return parsed.success ? parsed.data : null;
   }
 
   async cachedCheck(): Promise<CachedSyncCheck | null> {
-    const value = await this.bb.storage.kv.get<unknown>(CACHED_CHECK_KEY);
+    const value = await this.alia.storage.kv.get<unknown>(CACHED_CHECK_KEY);
     if (value === undefined) return null;
     const parsed = cachedSyncCheckSchema.safeParse(value);
     return parsed.success ? parsed.data : null;
@@ -180,9 +180,9 @@ export class PresetSyncService {
 
   private async writeCachedCheck(check: CachedSyncCheck): Promise<void> {
     const previous = await this.cachedCheck();
-    await this.bb.storage.kv.set(CACHED_CHECK_KEY, check);
+    await this.alia.storage.kv.set(CACHED_CHECK_KEY, check);
     if (!sameJson(cachedCheckFingerprint(previous), cachedCheckFingerprint(check))) {
-      this.bb.realtime.publish("preset-sync-state", {
+      this.alia.realtime.publish("preset-sync-state", {
         checkedAt: check.checkedAt,
         hasError: check.error !== null,
         pullCount: check.status?.changeCount ?? 0,
@@ -192,8 +192,8 @@ export class PresetSyncService {
   }
 
   private async writeLastOperation(operation: LastOperation): Promise<void> {
-    await this.bb.storage.kv.set(LAST_OPERATION_KEY, operation);
-    this.bb.realtime.publish("preset-sync-changed", operation);
+    await this.alia.storage.kv.set(LAST_OPERATION_KEY, operation);
+    this.alia.realtime.publish("preset-sync-changed", operation);
   }
 
   private async remoteSettings(): Promise<SyncSettings> {
@@ -213,10 +213,10 @@ export class PresetSyncService {
 
   private async captureSnapshot(signal?: AbortSignal): Promise<CapturedPreset> {
     const [config, pluginList, marketplaces, version] = await Promise.all([
-      this.bb.sdk.system.config({ signal }),
-      this.bb.sdk.plugins.list({ signal }),
-      this.bb.sdk.plugins.marketplaces.list({ signal }),
-      this.bb.sdk.system.version({ force: false, signal }),
+      this.alia.sdk.system.config({ signal }),
+      this.alia.sdk.plugins.list({ signal }),
+      this.alia.sdk.plugins.marketplaces.list({ signal }),
+      this.alia.sdk.system.version({ force: false, signal }),
     ]);
     const settings = await this.getSettings();
     const warnings: string[] = [];
@@ -247,7 +247,7 @@ export class PresetSyncService {
           .filter((plugin) => plugin.id !== SELF_PLUGIN_ID && plugin.hasSettings)
           .map(async (plugin) => {
             try {
-              const response = await this.bb.sdk.plugins.getSettings({
+              const response = await this.alia.sdk.plugins.getSettings({
                 pluginId: plugin.id,
                 signal,
               });
@@ -290,7 +290,7 @@ export class PresetSyncService {
     const snapshot = presetSnapshotSchema.parse({
       schemaVersion: 1,
       capturedAt: new Date().toISOString(),
-      bbVersion: version.currentVersion,
+      aliaVersion: version.currentVersion,
       settings: {
         generalSettings: config.generalSettings,
         experiments: config.experiments,
@@ -390,7 +390,7 @@ export class PresetSyncService {
         error,
       });
       if (previous?.error !== error) {
-        this.bb.log.warn(`Background check failed: ${error}`);
+        this.alia.log.warn(`Background check failed: ${error}`);
       }
     }
   }
@@ -454,7 +454,7 @@ export class PresetSyncService {
           `Captured preset is ${bytes} bytes; the safe staging limit is ${MAX_STAGED_BYTES} bytes.`,
         );
       }
-      await this.bb.storage.kv.set(STAGED_KEY, staged);
+      await this.alia.storage.kv.set(STAGED_KEY, staged);
       await this.writeLastOperation({
         type: "capture",
         at: staged.stagedAt,
@@ -476,14 +476,14 @@ export class PresetSyncService {
       let staged = await this.readStaged();
       if (args.fresh || staged === null) {
         if (!args.fresh && staged === null) {
-          throw new Error('No staged preset. Run "bb preset capture" or use "bb preset push --fresh".');
+          throw new Error('No staged preset. Run "alia preset capture" or use "alia preset push --fresh".');
         }
         const captured = await this.captureSnapshot(args.signal);
         staged = {
           ...captured,
           stagedAt: new Date().toISOString(),
         };
-        await this.bb.storage.kv.set(STAGED_KEY, staged);
+        await this.alia.storage.kv.set(STAGED_KEY, staged);
       }
       const pushed = await pushRemotePreset(
         {
@@ -492,7 +492,7 @@ export class PresetSyncService {
           githubToken: settings.githubToken,
           authorName: settings.gitAuthorName,
           authorEmail: settings.gitAuthorEmail,
-          message: args.message?.trim() || "chore: sync BB preset",
+          message: args.message?.trim() || "chore: sync VesnALIA preset",
           signal: args.signal,
         },
         staged.snapshot,
@@ -542,7 +542,7 @@ export class PresetSyncService {
         }
       };
 
-      const currentMarketplaces = await this.bb.sdk.plugins.marketplaces.list({ signal });
+      const currentMarketplaces = await this.alia.sdk.plugins.marketplaces.list({ signal });
       const marketplaceMap = new Map(
         currentMarketplaces.map((marketplace) => [marketplace.name, marketplace]),
       );
@@ -554,14 +554,14 @@ export class PresetSyncService {
             continue;
           }
           await attempt(`Added marketplace ${marketplace.name}`, () =>
-            this.bb.sdk.plugins.marketplaces.add({ source: marketplace.source }),
+            this.alia.sdk.plugins.marketplaces.add({ source: marketplace.source }),
           );
         } else if (current.source !== marketplace.source) {
           skipped.push(`Kept marketplace ${marketplace.name} with its existing source`);
         }
       }
 
-      let pluginList = await this.bb.sdk.plugins.list({ signal });
+      let pluginList = await this.alia.sdk.plugins.list({ signal });
       let installed = new Map(pluginList.plugins.map((plugin) => [plugin.id, plugin]));
       for (const plugin of remote.snapshot.plugins) {
         if (plugin.id === SELF_PLUGIN_ID || installed.has(plugin.id)) continue;
@@ -570,11 +570,11 @@ export class PresetSyncService {
           continue;
         }
         await attempt(`Installed plugin ${plugin.id}`, () =>
-          installPluginFromPreset(this.bb, plugin.install, signal),
+          installPluginFromPreset(this.alia, plugin.install, signal),
         );
       }
 
-      pluginList = await this.bb.sdk.plugins.list({ signal });
+      pluginList = await this.alia.sdk.plugins.list({ signal });
       installed = new Map(pluginList.plugins.map((plugin) => [plugin.id, plugin]));
 
       const desiredSettings = new Map<string, PluginSettingPresetEntry[]>();
@@ -596,7 +596,7 @@ export class PresetSyncService {
           continue;
         }
         try {
-          const response = await this.bb.sdk.plugins.getSettings({ pluginId, signal });
+          const response = await this.alia.sdk.plugins.getSettings({ pluginId, signal });
           const values: Record<string, string | boolean> = {};
           for (const entry of entries) {
             const descriptor = response.schema[entry.key];
@@ -616,7 +616,7 @@ export class PresetSyncService {
           if (Object.keys(values).length > 0) {
             const ok = await attempt(
               `Updated ${Object.keys(values).length} settings for ${pluginId}`,
-              () => this.bb.sdk.plugins.updateSettings({ pluginId, values }),
+              () => this.alia.sdk.plugins.updateSettings({ pluginId, values }),
             );
             if (ok) settingsUpdated.add(pluginId);
           }
@@ -637,26 +637,26 @@ export class PresetSyncService {
             `${desired.enabled ? "Enabled" : "Disabled"} plugin ${pluginId}`,
             () =>
               desired.enabled
-                ? this.bb.sdk.plugins.enable({ pluginId })
-                : this.bb.sdk.plugins.disable({ pluginId }),
+                ? this.alia.sdk.plugins.enable({ pluginId })
+                : this.alia.sdk.plugins.disable({ pluginId }),
           );
         } else if (desired.enabled && settingsUpdated.has(pluginId)) {
           await attempt(`Reloaded plugin ${pluginId}`, () =>
-            this.bb.sdk.plugins.reload({ pluginId }),
+            this.alia.sdk.plugins.reload({ pluginId }),
           );
         }
       }
 
       if (!sameJson(local.snapshot.settings.generalSettings, remote.snapshot.settings.generalSettings)) {
-        await attempt("Updated BB general settings", () =>
-          this.bb.sdk.system.updateGeneralSettings(
+        await attempt("Updated VesnALIA general settings", () =>
+          this.alia.sdk.system.updateGeneralSettings(
             remote.snapshot.settings.generalSettings as SystemConfig["generalSettings"],
           ),
         );
       }
       if (!sameJson(local.snapshot.settings.experiments, remote.snapshot.settings.experiments)) {
-        await attempt("Updated BB experiments", () =>
-          this.bb.sdk.system.updateExperiments(
+        await attempt("Updated VesnALIA experiments", () =>
+          this.alia.sdk.system.updateExperiments(
             remote.snapshot.settings.experiments as SystemConfig["experiments"],
           ),
         );
@@ -668,15 +668,15 @@ export class PresetSyncService {
         )
       ) {
         await attempt("Updated keyboard shortcuts", () =>
-          this.bb.sdk.system.updateKeyboardSettings(
+          this.alia.sdk.system.updateKeyboardSettings(
             remote.snapshot.settings
               .keybindingOverrides as SystemConfig["keybindingOverrides"],
           ),
         );
       }
       if (!sameJson(local.snapshot.settings.appearance, remote.snapshot.settings.appearance)) {
-        await attempt("Updated BB theme", () =>
-          this.bb.sdk.theme.set(remote.snapshot.settings.appearance),
+        await attempt("Updated VesnALIA theme", () =>
+          this.alia.sdk.theme.set(remote.snapshot.settings.appearance),
         );
       }
 

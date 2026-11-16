@@ -306,7 +306,7 @@ describe("«Mockup» review fixes", () => {
     const k = kickoff(w, stageOf(7), 1);
     expect(k).toContain(`sample: \`::inline-vis{file="${mockupDir(s.key)}/index.html" height="900"}\``);
     expect(k).toContain("without backticks");
-    // The packet goes to the thread as a message: it has no directive outside backticks, so bb does not render it as «file not found».
+    // The packet goes to the thread as a message: it has no directive outside backticks, so VesnALIA does not render it as «file not found».
     for (const text of [k, back]) expect(text.replace(/`[^`]*`/g, "")).not.toContain("::inline-vis");
   });
 

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { checkCoverage, validateGuide } from "./guide";
 import { chapterAt, droppedNear, fitHunks, hunkCounts, hunksIn, keepHunks } from "./hunks";
 import { buildGenerationPrompt, generateGuide } from "./generate";
@@ -63,9 +63,9 @@ test("coverage errors say which hunks are missing, doubled, or don't exist", () 
 });
 
 test("generate_review_guide checks a split file's hunks against the diff", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, status: "generating", createdAt: 1 });
   await store.savePatch("pr-1", patch);
   const generationId = await store.beginGeneration("pr-1");
@@ -117,17 +117,17 @@ test("the guide writer's earlier chapters name their hunks, or whole files when 
   expect(prompt).toContain("- s1: s1 (a.ts hunks 1, 3, b.ts)");
   expect(prompt).toContain("- s2: s2 (a.ts hunks 2)");
 
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     spawn: async () => ({ id: "worker" }), archive: async () => {}, stop: async () => {},
     get: async () => ({ archivedAt: null, deletedAt: null, status: "idle" }), send: async () => ({}),
   } } as any });
-  const store = testStore(bb);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, headSha: "sha2", status: "ready", createdAt: 1, projectId: "p1" });
   await store.saveGuide("pr-1", earlier.guide);
   // The new commits leave a.ts with two hunks.
   await store.savePatch("pr-1", keepHunks(a, (_, i) => i < 2) + b);
   harness.inspection.sdk.stub("threads.wait", async () => ({ matched: true }));
-  await generateGuide(bb, store, "pr-1", "p1", { notify: false });
+  await generateGuide(alia, store, "pr-1", "p1", { notify: false });
   const rebuilt = spawnPrompt(harness.inspection.sdk.callsTo("threads.spawn")[0][0]);
   expect(rebuilt).toContain("- s1: s1 (a.ts, b.ts)");
   expect(rebuilt).not.toContain("- s2:");

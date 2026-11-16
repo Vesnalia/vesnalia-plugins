@@ -1,4 +1,4 @@
-// bb-plugin-agent-tv — keeping the detached monitor reachable.
+// alia-plugin-agent-tv — keeping the detached monitor reachable.
 //
 // The popout is anchored bottom-right and moved with a transform, so an
 // offset is only meaningful next to the panel's own geometry. Clamping

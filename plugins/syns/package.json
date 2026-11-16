@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-syns",
+  "name": "alia-plugin-syns",
   "version": "0.12.4",
   "type": "module",
   "private": true,
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.104"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.104"
   },
-  "bb": {
+  "alia": {
     "name": "Syns",
     "description": "Gives Thread Pages read and write access to the calling session's Syns repository, through the Syns CLI on that session's machine.",
     "branding": {
@@ -19,23 +19,35 @@
   "scripts": {
     "typecheck": "tsc -p .",
     "test": "vitest run",
-    "build": "bb plugin build && npm run build:claude",
+    "build": "alia plugin build && npm run build:claude",
     "build:claude": "rolldown hosts/claude/main.ts --platform node --format esm --file hosts/claude/bin/syns-pages.mjs"
   },
   "dependencies": {
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.104",
     "@types/node": "^22.0.0",
     "rolldown": "1.2.9",
     "typescript": "^5.7.0",
     "vitest": "^4.1.1"
   },
   "license": "MIT",
-  "description": "A bb plugin that gives Thread Pages read and write access to the session's Syns repository, through the Syns CLI.",
+  "description": "A VesnALIA plugin that gives Thread Pages read and write access to the session's Syns repository, through the Syns CLI.",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/syns#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/synsdev/syns-bb-plugin.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/syns"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

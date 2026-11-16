@@ -1,4 +1,4 @@
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { AgentRow } from "../contract";
 import { endLabel, formatDuration, noTokenUsage } from "../format";
 import type { Role } from "../states";
@@ -23,7 +23,7 @@ function ticketText(row: AgentRow): string {
 }
 
 function AgentTable({ rows, now, ended }: { rows: AgentRow[]; now: number; ended: boolean }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <div className="overflow-x-auto">
       <table className="mt-1 w-full min-w-[560px] text-left text-sm @max-xl/loom:block @max-xl/loom:min-w-0">
@@ -71,7 +71,7 @@ function AgentTable({ rows, now, ended }: { rows: AgentRow[]; now: number; ended
 }
 
 function PlannerOnCall({ rows }: { rows: AgentRow[] }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <section data-agents-planner className={CARD}>
       <h2 className={HEADING}>Planner</h2>

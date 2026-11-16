@@ -33,7 +33,7 @@ const ended = (from: string, toBlock: string): LaneHandoff => ({
 });
 
 describe("block titles", () => {
-  it("identifies confirmed user and bb inputs, leaving uncertain or relayed origins unmarked", () => {
+  it("identifies confirmed user and VesnALIA inputs, leaving uncertain or relayed origins unmarked", () => {
     const user = block("user", { initiator: "user", initiatorConfirmed: true });
     expect(blockOrigin(user)).toBe("user");
     expect(blockOrigin({ ...user, initiator: "system" })).toBe("system");
@@ -61,7 +61,7 @@ describe("block titles", () => {
     expect(out[1]).toBe(other);
   });
 
-  it("calls any other untitled bb turn an update from bb", () => {
-    expect(blockTitle(block("t1"), describeThread)).toBe("Update from bb");
+  it("calls any other untitled VesnALIA turn an update from VesnALIA", () => {
+    expect(blockTitle(block("t1"), describeThread)).toBe("Update from VesnALIA");
   });
 });

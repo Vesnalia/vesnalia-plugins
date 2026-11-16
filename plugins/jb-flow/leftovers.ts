@@ -1,4 +1,4 @@
-// Finds worktree checkouts bb no longer tracks. bb tears down the worktree it
+// Finds worktree checkouts VesnALIA no longer tracks. VesnALIA tears down the worktree it
 // created when a thread is archived, but extra checkouts an agent adds next to
 // it (cross-repo work) and the odd failed teardown stay on disk forever, often
 // with node_modules. A weekly scan lists them in the digest; merged, clean ones
@@ -7,7 +7,7 @@ import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readdir, rm, stat } from "node:fs/promises";
 import { basename, dirname, join, sep } from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { ghBin } from "./gh";
 
@@ -45,23 +45,23 @@ async function subdirs(path: string): Promise<string[]> {
   return entries.filter((entry) => entry.isDirectory() && !entry.name.startsWith(".")).map((entry) => join(path, entry.name));
 }
 
-export function createLeftovers(bb: BbPluginApi) {
-  // This bb's data dir, not ~/.bb: another instance's live worktrees are not leftovers.
-  const BB_HOME = bb.server.experimental_dataDir;
-  /** bb's old worktree root, from before worktrees moved into the plugin's host data. */
-  const LEGACY_ROOT = join(BB_HOME, "worktrees");
+export function createLeftovers(alia: AliaPluginApi) {
+  // This VesnALIA's data dir, not ~/.alia: another instance's live worktrees are not leftovers.
+  const ALIA_HOME = alia.server.experimental_dataDir;
+  /** VesnALIA's old worktree root, from before worktrees moved into the plugin's host data. */
+  const LEGACY_ROOT = join(ALIA_HOME, "worktrees");
   async function scan(): Promise<LeftoverReport> {
-    const environments = await bb.sdk.environments.list({ limit: 1000 });
+    const environments = await alia.sdk.environments.list({ limit: 1000 });
     const worktrees = environments.filter(
       (environment) => environment.isWorktree && environment.path && environment.lifecycle?.phase !== "destroyed",
     );
-    // Each worktree lives at <root>/<env folder>/<repo>; any env folder bb doesn't know is left over.
-    // Only roots inside ~/.bb count: a worktree environment some other plugin put
+    // Each worktree lives at <root>/<env folder>/<repo>; any env folder VesnALIA doesn't know is left over.
+    // Only roots inside ~/.vesnalia count: a worktree environment some other plugin put
     // elsewhere would otherwise turn an ordinary folder like ~/code into a "root".
     const liveFolders = new Set(worktrees.map((environment) => dirname(environment.path!)));
     const roots = new Set(
       [LEGACY_ROOT, ...worktrees.map((environment) => dirname(dirname(environment.path!)))].filter((root) =>
-        root.startsWith(BB_HOME + sep),
+        root.startsWith(ALIA_HOME + sep),
       ),
     );
     const items: Leftover[] = [];
@@ -76,7 +76,7 @@ export function createLeftovers(bb: BbPluginApi) {
       }
     }
     const report = { checkedAt: Date.now(), items };
-    await bb.storage.kv.set("leftovers", report);
+    await alia.storage.kv.set("leftovers", report);
     return report;
   }
 
@@ -113,7 +113,7 @@ export function createLeftovers(bb: BbPluginApi) {
   }
 
   async function read(refresh = false): Promise<LeftoverReport> {
-    const cached = await bb.storage.kv.get<LeftoverReport>("leftovers");
+    const cached = await alia.storage.kv.get<LeftoverReport>("leftovers");
     return cached && !refresh ? cached : scan();
   }
 
@@ -128,16 +128,16 @@ export function createLeftovers(bb: BbPluginApi) {
       }
       await rm(item.path, { recursive: true, force: true });
       removed.push(item.path);
-      // Drop the env folder once nothing but bb's marker files is left.
+      // Drop the env folder once nothing but VesnALIA's marker files is left.
       if ((await subdirs(dirname(item.path))).length === 0) await rm(dirname(item.path), { recursive: true, force: true });
     }
     const after = await scan();
     return { removed, kept: after.items.map((item) => item.path) };
   }
 
-  bb.background.schedule("leftover-worktrees", "0 8 * * 1", async () => {
+  alia.background.schedule("leftover-worktrees", "0 8 * * 1", async () => {
     const report = await scan();
-    bb.log.info(`leftovers: ${report.items.length} untracked checkout(s)`);
+    alia.log.info(`leftovers: ${report.items.length} untracked checkout(s)`);
   });
 
   return { read, clean };

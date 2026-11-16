@@ -26,19 +26,19 @@ export const overview = (over: Partial<ProjectSummary> = {}): ProjectSummary => 
   reason: null,
   ticketCount: 4,
   ticketCounts: { queued: 2, working: 1, done: 1 },
-  repos: [{ name: null, bbProjectId: "proj_1", bbProjectName: "shop", base: "main", branch: "loom/csv", prUrl: null, landedAt: null, toLand: true }],
+  repos: [{ name: null, aliaProjectId: "proj_1", aliaProjectName: "shop", base: "main", branch: "loom/csv", prUrl: null, landedAt: null, toLand: true }],
   createdAt: NOW - 3 * 24 * HOUR,
   updatedAt: NOW - HOUR,
   ...over,
 });
 
 /** One repo of a multi-repo project's overview: web by default, with merged work to land. */
-export const repoOverview = (over: Partial<RepoOverview> = {}): RepoOverview => ({ name: "web", bbProjectId: "proj_web", bbProjectName: "shop-web", base: "main", branch: "loom/csv", prUrl: null, landedAt: null, toLand: true, ...over });
+export const repoOverview = (over: Partial<RepoOverview> = {}): RepoOverview => ({ name: "web", aliaProjectId: "proj_web", aliaProjectName: "shop-web", base: "main", branch: "loom/csv", prUrl: null, landedAt: null, toLand: true, ...over });
 
 /** One repo of a multi-repo project's Changes view: web by default, read in its checkout. */
 export const changeRepo = (over: Partial<ChangeRepo> = {}): ChangeRepo => ({ name: "web", base: "main", remoteBase: "origin/main", branch: "loom/csv", unavailable: null, ...over });
 
-/** The helpers' base spec over two repos: web (its own checks, after-merge checks and a protected path) holds csv-model, and api (another base and remote, bb's name for it unknown) holds csv-export. */
+/** The helpers' base spec over two repos: web (its own checks, after-merge checks and a protected path) holds csv-model, and api (another base and remote, VesnALIA's name for it unknown) holds csv-export. */
 export function withRepos(doc: Doc): void {
   doc.scope = { protected: ["db/**"] };
   doc.repo = [

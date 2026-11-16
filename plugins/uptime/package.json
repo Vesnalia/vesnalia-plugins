@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-uptime",
+  "name": "alia-plugin-uptime",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Uptime",
-    "description": "Monitor website availability and response times from your BB server.",
+    "description": "Monitor website availability and response times from your VesnALIA server.",
     "branding": {
       "icon": "Activity"
     },
@@ -23,7 +23,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -54,11 +53,6 @@
     "name": "Dmitrii Kapustin",
     "url": "https://github.com/dmitriikapustin"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin.git",
-    "directory": "plugins/uptime"
-  },
   "files": [
     "server.ts",
     "app.tsx",
@@ -77,7 +71,24 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "check": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/uptime#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/uptime"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

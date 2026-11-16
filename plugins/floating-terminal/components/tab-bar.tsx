@@ -62,7 +62,7 @@ export interface TabBarProps {
 
 /** A key combination inside a tooltip, set apart from the words around it. */
 export function Shortcut({ children }: { children: ReactNode }) {
-  return <kbd className="bb-ft-kbd ml-1.5">{children}</kbd>;
+  return <kbd className="alia-ft-kbd ml-1.5">{children}</kbd>;
 }
 
 /**
@@ -72,16 +72,16 @@ export function Shortcut({ children }: { children: ReactNode }) {
 function indicator(tab: TabState): { className: string; label: string } | null {
   switch (tab.status) {
     case "connecting":
-      return { className: "bb-ft-dot bb-ft-dot-pulse", label: "Connecting" };
+      return { className: "alia-ft-dot alia-ft-dot-pulse", label: "Connecting" };
     case "exited":
-      return { className: "bb-ft-dot bb-ft-dot-hollow", label: "Exited" };
+      return { className: "alia-ft-dot alia-ft-dot-hollow", label: "Exited" };
     case "error":
-      return { className: "bb-ft-dot bb-ft-dot-error", label: "Error" };
+      return { className: "alia-ft-dot alia-ft-dot-error", label: "Error" };
     default:
       break;
   }
-  if (tab.activity === "bell") return { className: "bb-ft-dot bb-ft-dot-bell", label: "Rang the bell" };
-  if (tab.activity === "output") return { className: "bb-ft-dot", label: "New output" };
+  if (tab.activity === "bell") return { className: "alia-ft-dot alia-ft-dot-bell", label: "Rang the bell" };
+  if (tab.activity === "output") return { className: "alia-ft-dot", label: "New output" };
   return null;
 }
 
@@ -154,7 +154,7 @@ function RenameField({
       spellCheck={false}
       autoCapitalize="off"
       autoCorrect="off"
-      className="bb-ft-rename"
+      className="alia-ft-rename"
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
       onDoubleClick={(event) => event.stopPropagation()}
@@ -248,9 +248,9 @@ function TabItem({
             onStartRename();
           }}
           onKeyDown={handleKeyDown}
-          className="bb-ft-tab group"
+          className="alia-ft-tab group"
         >
-          <Icon name={icon} className="bb-ft-tab-icon" aria-hidden="true" />
+          <Icon name={icon} className="alia-ft-tab-icon" aria-hidden="true" />
           {renaming ? (
             <RenameField
               initial={name}
@@ -265,7 +265,7 @@ function TabItem({
           ) : (
             <span className="min-w-0 flex-1 truncate">{name}</span>
           )}
-          <span className="bb-ft-tab-end">
+          <span className="alia-ft-tab-end">
             {mark === null ? null : (
               <span className={mark.className} aria-hidden="true" />
             )}
@@ -278,14 +278,14 @@ function TabItem({
                 event.stopPropagation();
                 onClose();
               }}
-              className="bb-ft-tab-close"
+              className="alia-ft-tab-close"
             >
               <Icon name="X" className="size-3" aria-hidden="true" />
             </button>
           </span>
         </div>
       </TooltipTrigger>
-      <TooltipContent className="bb-ft-tooltip">
+      <TooltipContent className="alia-ft-tooltip">
         <span className="block font-medium">{name}</span>
         <span className="block font-mono opacity-80">
           {tab.hostName === "" ? tab.cwd : `${tab.hostName}:${tab.cwd}`}
@@ -323,8 +323,8 @@ export function BarButton({
           variant="ghost"
           size="icon"
           data-no-drag=""
-          data-bb-ft-action=""
-          className={cn("bb-ft-bar-button", className)}
+          data-alia-ft-action=""
+          className={cn("alia-ft-bar-button", className)}
           onClick={onClick}
           aria-label={label}
           {...props}
@@ -332,7 +332,7 @@ export function BarButton({
           <Icon name={icon} aria-hidden="true" />
         </Button>
       </TooltipTrigger>
-      <TooltipContent className="bb-ft-tooltip">{tooltip}</TooltipContent>
+      <TooltipContent className="alia-ft-tooltip">{tooltip}</TooltipContent>
     </Tooltip>
   );
 }
@@ -433,17 +433,17 @@ export function TabBar({
 
   return (
     <div
-      data-bb-ft-tabbar=""
-      className="bb-ft-tabbar flex shrink-0 select-none items-center"
+      data-alia-ft-tabbar=""
+      className="alia-ft-tabbar flex shrink-0 select-none items-center"
     >
       {/* Hidden in sheet mode from styles.css: nothing there is draggable, and
           a grip that does nothing is worse than no grip. */}
-      <span data-bb-ft-grip="" className="flex shrink-0 items-center" aria-hidden="true">
+      <span data-alia-ft-grip="" className="flex shrink-0 items-center" aria-hidden="true">
         <Icon name="DragDropVertical" className="size-3.5 shrink-0" />
       </span>
 
       {tabs.length === 0 ? (
-        <span className="bb-ft-title" aria-hidden="true">
+        <span className="alia-ft-title" aria-hidden="true">
           Terminal
         </span>
       ) : (
@@ -451,7 +451,7 @@ export function TabBar({
           ref={listRef}
           role="tablist"
           aria-label="Open shells"
-          className="bb-ft-tablist relative flex min-w-0 items-center"
+          className="alia-ft-tablist relative flex min-w-0 items-center"
           onPointerMove={onTabPointerMove}
           onPointerUp={onTabPointerUp}
           onPointerCancel={() => {
@@ -483,7 +483,7 @@ export function TabBar({
           ))}
           {dragState === null ? null : (
             <span
-              className="bb-ft-drop-indicator"
+              className="alia-ft-drop-indicator"
               style={{ transform: `translateX(${dragState.x}px)` }}
               aria-hidden="true"
             />
@@ -506,15 +506,15 @@ export function TabBar({
               variant="ghost"
               size="icon"
               data-no-drag=""
-              data-bb-ft-action=""
-              className="bb-ft-bar-button"
+              data-alia-ft-action=""
+              className="alia-ft-bar-button"
               aria-label="New shell"
             >
               <Icon name="Plus" aria-hidden="true" />
             </Button>
           </TooltipTrigger>
         </NewTabMenu>
-        <TooltipContent className="bb-ft-tooltip">
+        <TooltipContent className="alia-ft-tooltip">
           New shell
           <span className="mt-0.5 block opacity-70">
             Here <Shortcut>Ctrl+Shift+`</Shortcut>
@@ -523,7 +523,7 @@ export function TabBar({
       </Tooltip>
 
       {/* Everything left of here scrolls; this is the guaranteed drag surface. */}
-      <span data-bb-ft-drag="" className="h-full min-w-6 flex-1" />
+      <span data-alia-ft-drag="" className="h-full min-w-6 flex-1" />
 
       {maximize === null ? null : (
         <BarButton

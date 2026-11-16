@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-deepseek-harness",
+  "name": "alia-plugin-deepseek-harness",
   "version": "0.2.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49"
   },
-  "bb": {
+  "alia": {
     "name": "DeepSeek Harness",
-    "description": "Run DeepSeek Harness (dsh) in bb: Standard/Creator/Minimal modes, harness slash commands, one-command provisioning.",
+    "description": "Run DeepSeek Harness (dsh) in VesnALIA: Standard/Creator/Minimal modes, harness slash commands, one-command provisioning.",
     "branding": {
       "icon": "AiBrain01"
     },
@@ -22,7 +22,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -47,5 +46,22 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/deepseek-harness#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/deepseek-harness"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

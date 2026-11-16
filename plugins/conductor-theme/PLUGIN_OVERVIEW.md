@@ -1,6 +1,6 @@
 ## What you get
 
-Applies the Conductor workspace color palette across the entire bb interface, featuring deep roasted espresso surfaces, warm message cards, Geist typography, and high-contrast semantic accents.
+Applies the Conductor workspace color palette across the entire VesnALIA interface, featuring deep roasted espresso surfaces, warm message cards, Geist typography, and high-contrast semantic accents.
 
 ## Design system
 
@@ -13,9 +13,9 @@ Applies the Conductor workspace color palette across the entire bb interface, fe
 
 ## How it works
 
-Once installed, the Conductor theme is available directly in the bb Theme selector. Switch themes at any time from the Command Palette or the Theme Preview panel.
+Once installed, the Conductor theme is available directly in the VesnALIA Theme selector. Switch themes at any time from the Command Palette or the Theme Preview panel.
 
 ## Requirements
 
-- bb version 0.40.0 or later
+- VesnALIA version 0.40.0 or later
 - No external services or accounts required

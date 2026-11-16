@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const docs = fileURLToPath(new URL('../', import.meta.url));
 const output = path.join(docs, '.vitepress', 'dist');
-const base = process.env.DOCS_BASE || '/bb-plugin-zcode/';
+const base = process.env.DOCS_BASE || '/alia-plugin-zcode/';
 assert.ok(base.startsWith('/') && base.endsWith('/'), 'DOCS_BASE must have leading and trailing slashes');
 const list = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(item => item.isDirectory() ? list(path.join(dir, item.name)) : [path.join(dir, item.name)]);
 const languageFiles = lang => list(path.join(docs, lang)).filter(f => f.endsWith('.md')).map(f => path.relative(path.join(docs, lang), f)).sort();

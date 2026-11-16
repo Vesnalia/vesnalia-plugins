@@ -306,7 +306,7 @@ export function EditorPane({
         <div className="grid h-full place-items-center p-6 text-center text-sm text-muted-foreground bg-background">
           <div className="opacity-50 select-none">
             <Icon name="Code" className="mx-auto mb-4 h-16 w-16 stroke-[1px]" aria-hidden />
-            <p className="font-medium text-base tracking-tight">BB Files Editor</p>
+            <p className="font-medium text-base tracking-tight">VesnALIA Files Editor</p>
             <p className="mt-1 text-xs">Select a file from the explorer to begin.</p>
           </div>
         </div>

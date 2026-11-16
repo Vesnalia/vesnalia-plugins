@@ -6,11 +6,11 @@ import {
   experimental_useSidebarThreads,
   useRealtime,
   useRpc,
-  useBbContext,
+  useAliaContext,
   UrlLink,
   ThreadChat,
   Markdown,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   rpcContract,
   MapLayout,
@@ -160,7 +160,7 @@ function WorkMap() {
   const rpc = useRpc<typeof rpcContract>();
   const sidebar = experimental_useSidebarThreads();
   const actions = experimental_useSidebarThreadActions();
-  const bbContext = useBbContext();
+  const aliaContext = useAliaContext();
   const threadsRef = useRef(sidebar.threads);
   threadsRef.current = sidebar.threads;
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
@@ -393,7 +393,7 @@ function WorkMap() {
         ? `${item.task?.key ? `${item.task.key} · ` : ""}${item.title}`
         : "Work Map",
       projectId:
-        (item ? project?.linkedBbProjectId : bbContext.projectId) ?? undefined,
+        (item ? project?.linkedAliaProjectId : aliaContext.projectId) ?? undefined,
       taskId: item?.task?.id,
       prompt: item
         ? `${item.task ? `Task ${item.task.key}` : "Project"}: ${item.title}\n${item.summary}${item.nextAction ? `\nNext step: ${item.nextAction}` : ""}\n\n`
@@ -460,7 +460,7 @@ function WorkMap() {
     projectItems: items,
     threads: sidebar.threads,
     preferences,
-    workspaceId: bbContext.projectId,
+    workspaceId: aliaContext.projectId,
     blocked: settling || launcher.busy,
     onResult: async (result: ManagementResult) => {
       if (result.threadId) {
@@ -1460,7 +1460,7 @@ function WorkMap() {
     event.preventDefault();
     captureLayout();
     setDragging(false);
-    const id = event.dataTransfer.getData("application/x-bb-work-map");
+    const id = event.dataTransfer.getData("application/x-alia-work-map");
     const item = [...items, ...leaves].find((i) => i.id === id);
     if (item) void saveFocus(item, focus);
   };
@@ -1523,7 +1523,7 @@ function WorkMap() {
           onClick={() => openPreview(item)}
           draggable
           onDragStart={(event) => {
-            event.dataTransfer.setData("application/x-bb-work-map", item.id);
+            event.dataTransfer.setData("application/x-alia-work-map", item.id);
             event.dataTransfer.effectAllowed = "move";
             setDragging(true);
           }}
@@ -1677,7 +1677,7 @@ function WorkMap() {
             .join(". ")}
           draggable
           onDragStart={(event) => {
-            event.dataTransfer.setData("application/x-bb-work-map", item.id);
+            event.dataTransfer.setData("application/x-alia-work-map", item.id);
             setDragging(true);
           }}
           onDragEnd={() => setDragging(false)}
@@ -2211,7 +2211,7 @@ function WorkMap() {
           selected.threads.some((t) => t.isPinned) && (
             <p className="wm-preview-description">
               This task inherits focus from pinned sessions. Removing focus also
-              unpins those sessions in BB.
+              unpins those sessions in VesnALIA.
             </p>
           )}
         {selected.kind === "project" ? (
@@ -2474,7 +2474,7 @@ function WorkMap() {
                         ? "Latest excerpt. Chat here to reply and follow the session live."
                         : previewThread?.isArchived
                           ? "Archived session. Open the full session to view or reopen it."
-                          : "This session is not in BB's active list. Open the full session to check it."}
+                          : "This session is not in VesnALIA's active list. Open the full session to check it."}
                     </p>
                   </div>
                 )}
@@ -2786,7 +2786,7 @@ function WorkMap() {
       )}
       {sidebar.status === "error" && (
         <div role="alert" className="wm-error">
-          Session status is unavailable. Tasks remain visible; refresh BB to
+          Session status is unavailable. Tasks remain visible; refresh VesnALIA to
           reconnect.
         </div>
       )}
@@ -3020,7 +3020,7 @@ function WorkMap() {
                   }}
                   onDragStart={(event, item) => {
                     event.dataTransfer.setData(
-                      "application/x-bb-work-map",
+                      "application/x-alia-work-map",
                       item.id,
                     );
                     event.dataTransfer.effectAllowed = "move";

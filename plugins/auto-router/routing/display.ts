@@ -1,10 +1,10 @@
 /**
- * How routing decisions read in a BB thread: one row per routed message, a plan row that names
+ * How routing decisions read in a VesnALIA thread: one row per routed message, a plan row that names
  * who does each step, and a helper row that names the helper's model. Pure: no I/O here.
  *
  * @module routing/display
  */
-import type { DeltaPresentation } from "@get-bb/plugin-sdk/provider-bridge";
+import type { DeltaPresentation } from "@vesnalia/plugin-sdk/provider-bridge";
 import { z } from "zod";
 import { isGptModel, nameOf, type Delegation, type Plan, type PlanStep, type Route } from "./core.js";
 import { routeSchema } from "./router.js";
@@ -22,7 +22,7 @@ export const routeRowSchema = z.object({
 });
 export type RouteRow = z.infer<typeof routeRowSchema>;
 
-/** BB rejects a presentation detail longer than this. */
+/** VesnALIA rejects a presentation detail longer than this. */
 const DETAIL_MAX = 280;
 const WINDOW_NAMES = { "200k": "200k", "1m": "1M" } as const;
 /** The Warm Charcoal theme's orange `--primary`, darkened in light mode for contrast. */
@@ -127,7 +127,7 @@ function planTitle(plan: Plan): string {
   return `${steps} · ${helpers.length} ${helpers.length === 1 ? "helper" : "helpers"} on ${models.join(", ")}`;
 }
 
-/** One Markdown line per step, cut with "…and N more" to fit BB's detail limit. */
+/** One Markdown line per step, cut with "…and N more" to fit VesnALIA's detail limit. */
 function planDetail(plan: Plan): string {
   const lines: string[] = [];
   for (const [i, step] of plan.entries()) {

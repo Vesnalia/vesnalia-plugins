@@ -27,7 +27,7 @@ jobs:
       - name: Check process guard
         run: node --test scripts/e2e/isolation.test.mjs
       - name: Run isolated browser suite
-        # Unit tests run in their own workflow; do not run them beside bb-app.
+        # Unit tests run in their own workflow; do not run them beside alia-app.
         run: env -i PATH="$PATH" HOME="$HOME" npm run e2e
       - name: Upload failure screenshots, diffs, and traces
         if: failure()

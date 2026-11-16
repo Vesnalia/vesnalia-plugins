@@ -1,12 +1,12 @@
 /**
  * The nightly rebuilds of the standard images (049): what is due, most
  * needed first, a refresh of each in turn within a time limit, what each
- * last did, and the doctor's checks of them. `bb box images refresh`, which
- * a BB script automation runs each night, starts a run here and waits for
+ * last did, and the doctor's checks of them. `alia box images refresh`, which
+ * a VesnALIA script automation runs each night, starts a run here and waits for
  * it; the run goes on should the command's call end first. Projects'
  * images' builds are kept in order after the rebuilds (bakes.ts). After a
- * BB update, the Linux images with BB's old app are refreshed within the
- * hour rather than at night (afterBbUpdate).
+ * VesnALIA update, the Linux images with VesnALIA's old app are refreshed within the
+ * hour rather than at night (afterAliaUpdate).
  */
 import { createHash } from "node:crypto";
 import { judgeImage, prepareDigest, type ImageFacts, type PinSet } from "../backends/images.ts";
@@ -29,37 +29,37 @@ const DAY_MS = 24 * 60 * 60_000;
 const STATE = "images/state/";
 const LAST_RUN = "images/last-run";
 const LOCK = "images/lock";
-const BB_UPDATE = "images/bb-update";
+const ALIA_UPDATE = "images/alia-update";
 /**
- * After BB's server gives another build of BB's app, as after a BB update, the images that carry the old one are
- * refreshed this long after bb-box notices, rather than at night (the operator, 11 October 2026): time for BB to settle,
+ * After VesnALIA's server gives another build of VesnALIA's app, as after a VesnALIA update, the images that carry the old one are
+ * refreshed this long after alia-box notices, rather than at night (the operator, 11 October 2026): time for VesnALIA to settle,
  * and, with a look every few minutes, well within the hour.
  */
-export const BB_UPDATE_DELAY_MS = 15 * 60_000;
+export const ALIA_UPDATE_DELAY_MS = 15 * 60_000;
 
-/** A BB update bb-box noticed: the app's build, when it noticed, and when its refresh started. */
-interface BbUpdate {
+/** A VesnALIA update alia-box noticed: the app's build, when it noticed, and when its refresh started. */
+interface AliaUpdate {
   readonly app: string;
   readonly noticed: number;
   readonly started: number | null;
 }
 
-/** A refresh that starts soon, for a BB update: when, and the images it takes. */
+/** A refresh that starts soon, for a VesnALIA update: when, and the images it takes. */
 export interface DueSoon {
   readonly at: number;
   readonly names: readonly string[];
 }
 
 /** The automation that runs the job each night, as the setup guide gives it. */
-export const AUTOMATION = `bb automation create --project <project> --name "${PRODUCT} images" --cron "0 2 * * *" --timezone <zone> --script "bb box images refresh" --timeout 900000`;
+export const AUTOMATION = `alia automation create --project <project> --name "${PRODUCT} images" --cron "0 2 * * *" --timezone <zone> --script "alia box images refresh" --timeout 900000`;
 
 export interface ImageJobsDeps {
   /** The backends that are on. */
   backends(): readonly Backend[];
   /** The plugin's setup/ directory. */
   readonly setup: string;
-  /** BB's server URL, for images to have BB's app, or null. */
-  bbUrl(): string | null;
+  /** VesnALIA's server URL, for images to have VesnALIA's app, or null. */
+  aliaUrl(): string | null;
   readonly facts: ImageFacts;
   readonly storage: BackendStorage;
   /** Projects' images' builds: no bake while a run removes what runs left, and their upkeep after the rebuilds. */
@@ -67,8 +67,8 @@ export interface ImageJobsDeps {
   readonly log?: (line: string) => void;
   /** Says a run's progress changed: an image started or ended, or a build's step moved. */
   readonly changed?: () => void;
-  /** Whether a BB update starts a refresh of the images it leaves behind: General's nightly switch. Off without it. */
-  readonly afterBbUpdates?: () => boolean;
+  /** Whether a VesnALIA update starts a refresh of the images it leaves behind: General's nightly switch. Off without it. */
+  readonly afterAliaUpdates?: () => boolean;
   readonly now?: () => number;
   /** Replace refreshImage and resolveVersions, for tests. */
   readonly refresh?: typeof refreshImage;
@@ -107,7 +107,7 @@ export interface StandardImageFailure {
 }
 
 export interface ImageView {
-  /** <backend>/<ref>, as bb box images build takes it. */
+  /** <backend>/<ref>, as VesnALIA box images build takes it. */
   readonly name: string;
   readonly backend: string;
   readonly build: ImageBuild;
@@ -120,8 +120,8 @@ export interface RunOptions {
   readonly pinned?: boolean;
   readonly limitMs?: number;
   readonly log?: (line: string) => void;
-  /** "bb-app": only the images that carry another build of BB's app than BB's server gives, after a BB update; the night does the rest. */
-  readonly only?: "bb-app";
+  /** "alia-app": only the images that carry another build of VesnALIA's app than VesnALIA's server gives, after a VesnALIA update; the night does the rest. */
+  readonly only?: "alia-app";
   readonly image?: string;
 }
 
@@ -130,8 +130,8 @@ export interface RunProgress {
   readonly started: number;
   /** When it ended, or null while it runs. */
   readonly ended: number | null;
-  /** "bb-app" for a BB update's run. */
-  readonly only: "bb-app" | null;
+  /** "alia-app" for a VesnALIA update's run. */
+  readonly only: "alia-app" | null;
   /** The images it takes, in turn. */
   readonly images: readonly {
     readonly name: string;
@@ -161,7 +161,7 @@ export interface RunResult {
 function osOf(kind: string): keyof typeof INTERVAL_DAYS {
   return kind === "android" ? "android" : kind === "ios" ? "ios" : kind.startsWith("macos") ? "macos" : kind.startsWith("windows") ? "windows" : "linux";
 }
-function carriesBbApp(kind: string): boolean {
+function carriesAliaApp(kind: string): boolean {
   return osOf(kind) === "linux" || osOf(kind) === "android";
 }
 function pinSet(kind: string): PinSet {
@@ -179,7 +179,7 @@ function macosBuildBeside(build: ImageBuild, backend: Backend, standard: readonl
 
 export class ImageJobs {
   readonly #deps: ImageJobsDeps;
-  #running: { readonly started: number; readonly done: Promise<RunResult>; readonly stop: AbortController; readonly only?: "bb-app" } | null = null;
+  #running: { readonly started: number; readonly done: Promise<RunResult>; readonly stop: AbortController; readonly only?: "alia-app" } | null = null;
   #progress: RunProgress | null = null;
 
   constructor(deps: ImageJobsDeps) {
@@ -190,7 +190,7 @@ export class ImageJobs {
     return (this.#deps.now ?? Date.now)();
   }
 
-  /** The standard builds bb-box can refresh, on each backend that is on: Linux and macOS, and Windows where the backend refreshes it (054). */
+  /** The standard builds alia-box can refresh, on each backend that is on: Linux and macOS, and Windows where the backend refreshes it (054). */
   #unlistable: string[] = [];
 
   /** Backends that are on whose image list failed, from the last list. */
@@ -215,9 +215,9 @@ export class ImageJobs {
     return found;
   }
 
-  /** Whether a Linux image carries another build of BB's app than BB's server gives: one a BB update leaves behind. */
+  /** Whether a Linux image carries another build of VesnALIA's app than VesnALIA's server gives: one a VesnALIA update leaves behind. */
   #appStale(build: ImageBuild, app: string | null): boolean {
-    return carriesBbApp(build.kind) && !!app && !!build.record && build.record.bbApp !== app;
+    return carriesAliaApp(build.kind) && !!app && !!build.record && build.record.aliaApp !== app;
   }
 
   /** Why an image is due (049), in the decision's order of need, or null: [rank, reason]. */
@@ -232,12 +232,12 @@ export class ImageJobs {
     const pins = await this.#deps.facts.pins(pinSet(build.kind)).catch(() => null);
     const record = build.record;
     const pinChrome = record ? await this.#deps.facts.chrome?.(record.arch).catch(() => null) : null;
-    if (record && judgeImage(record, { os, pins, bbApp: carriesBbApp(build.kind) ? app : null, pinChrome: pinChrome ?? null, now: this.#now() }, "").status === "fail") return [1, "it fails the doctor"];
+    if (record && judgeImage(record, { os, pins, aliaApp: carriesAliaApp(build.kind) ? app : null, pinChrome: pinChrome ?? null, now: this.#now() }, "").status === "fail") return [1, "it fails the doctor"];
     if (record && os === "ios" && macosBuild && record.base !== macosBuild) return [3, `it is built on another build of the macOS image than ${macosBuild}`];
     if (!record) return [2, "it has no record, so its age is not known"];
     const days = (this.#now() - Date.parse(record.built)) / DAY_MS;
     if (days > INTERVAL_DAYS[os]) return [2, `it is ${Math.floor(days)} days old, past its ${INTERVAL_DAYS[os]}-day interval`];
-    if (carriesBbApp(build.kind) && app && record.bbApp !== app) return [4, "it has another build of BB's app than BB's server gives"];
+    if (carriesAliaApp(build.kind) && app && record.aliaApp !== app) return [4, "it has another build of VesnALIA's app than VesnALIA's server gives"];
     if (pins && record.pins !== pins) return [5, `it was built with other pins than this ${PRODUCT}'s`];
     const program = await this.#program(build, backend.id);
     if (program && record.program && record.program !== program) return [6, "its guest program or prepare script changed"];
@@ -250,7 +250,7 @@ export class ImageJobs {
 
   /** Every refreshable image, with why it is due and what its last rebuild did, most needed first. */
   async list(signal?: AbortSignal): Promise<ImageView[]> {
-    const app = await this.#deps.facts.bbApp(signal).catch(() => null);
+    const app = await this.#deps.facts.aliaApp(signal).catch(() => null);
     const views: (ImageView & { rank: number })[] = [];
     const standard = await this.#standard(signal);
     for (const { backend, build } of standard) {
@@ -299,7 +299,7 @@ export class ImageJobs {
     return failures.sort((a, b) => b.at - a.at || a.name.localeCompare(b.name));
   }
 
-  /** Where the run going on is, image by image, or the last run of this bb-box's life; null before any. */
+  /** Where the run going on is, image by image, or the last run of this alia-box's life; null before any. */
   progress(): RunProgress | null {
     return this.#progress;
   }
@@ -328,7 +328,7 @@ export class ImageJobs {
    */
   refreshAll(options: RunOptions = {}): Promise<RunResult> {
     const running = this.#running;
-    // A full run asked for during a BB update's run waits for it, then runs: that run took only the images with BB's old app.
+    // A full run asked for during a VesnALIA update's run waits for it, then runs: that run took only the images with VesnALIA's old app.
     if (running?.only && !options.only) return running.done.then(() => this.refreshAll(options));
     if (running) return running.done;
     const stop = new AbortController();
@@ -341,52 +341,52 @@ export class ImageJobs {
   }
 
   /**
-   * After a BB update (the operator, 11 October 2026): when BB's server gives another build of BB's app than Linux
-   * images carry, bb-box notes it, and BB_UPDATE_DELAY_MS later starts a refresh of those images alone, once per build
+   * After a VesnALIA update (the operator, 11 October 2026): when VesnALIA's server gives another build of VesnALIA's app than Linux
+   * images carry, alia-box notes it, and ALIA_UPDATE_DELAY_MS later starts a refresh of those images alone, once per build
    * of the app. A run going on is waited for: this is asked again every few minutes. With nothing that carries an old
    * build, it forgets what it noted. The nightly switch decides whether it is asked at all.
    */
-  async afterBbUpdate(signal?: AbortSignal): Promise<"noticed" | "started" | "waiting" | null> {
-    if (!this.#deps.afterBbUpdates?.()) return null;
-    const app = await this.#deps.facts.bbApp(signal).catch(() => null);
+  async afterAliaUpdate(signal?: AbortSignal): Promise<"noticed" | "started" | "waiting" | null> {
+    if (!this.#deps.afterAliaUpdates?.()) return null;
+    const app = await this.#deps.facts.aliaApp(signal).catch(() => null);
     if (!app) return null;
     const stale = (await this.list(signal)).filter((view) => this.#appStale(view.build, app));
-    const kept = await this.#deps.storage.get<BbUpdate>(BB_UPDATE);
+    const kept = await this.#deps.storage.get<AliaUpdate>(ALIA_UPDATE);
     if (!stale.length) {
-      if (kept) await this.#deps.storage.delete(BB_UPDATE);
+      if (kept) await this.#deps.storage.delete(ALIA_UPDATE);
       return null;
     }
     const now = this.#now();
     if (kept?.app !== app) {
-      await this.#deps.storage.set(BB_UPDATE, { app, noticed: now, started: null } satisfies BbUpdate);
+      await this.#deps.storage.set(ALIA_UPDATE, { app, noticed: now, started: null } satisfies AliaUpdate);
       this.#deps.log?.(
-        `images: BB's server gives another build of BB's app than ${stale.map((view) => view.name).join(", ")} ${stale.length === 1 ? "carries" : "carry"}, as after a BB update. A refresh of ${stale.length === 1 ? "it" : "them"} starts by ${new Date(now + BB_UPDATE_DELAY_MS).toISOString()}.`,
+        `images: VesnALIA's server gives another build of VesnALIA's app than ${stale.map((view) => view.name).join(", ")} ${stale.length === 1 ? "carries" : "carry"}, as after a VesnALIA update. A refresh of ${stale.length === 1 ? "it" : "them"} starts by ${new Date(now + ALIA_UPDATE_DELAY_MS).toISOString()}.`,
       );
       return "noticed";
     }
     if (kept.started !== null) return null;
-    if (now < kept.noticed + BB_UPDATE_DELAY_MS) return "waiting";
+    if (now < kept.noticed + ALIA_UPDATE_DELAY_MS) return "waiting";
     if (this.#running) return "waiting";
-    await this.#deps.storage.set(BB_UPDATE, { ...kept, started: now } satisfies BbUpdate);
-    this.#deps.log?.(`images: refreshing ${stale.map((view) => view.name).join(", ")}, as BB was updated.`);
-    void this.refreshAll({ only: "bb-app" }).then(
+    await this.#deps.storage.set(ALIA_UPDATE, { ...kept, started: now } satisfies AliaUpdate);
+    this.#deps.log?.(`images: refreshing ${stale.map((view) => view.name).join(", ")}, as VesnALIA was updated.`);
+    void this.refreshAll({ only: "alia-app" }).then(
       async (result) => {
-        // Another bb-box's run held the lock: this one is tried again at the next look.
-        if (result.lines[0]?.name === "images" && result.lines[0].outcome === "not started") await this.#deps.storage.set(BB_UPDATE, { ...kept, started: null } satisfies BbUpdate);
+        // Another alia-box's run held the lock: this one is tried again at the next look.
+        if (result.lines[0]?.name === "images" && result.lines[0].outcome === "not started") await this.#deps.storage.set(ALIA_UPDATE, { ...kept, started: null } satisfies AliaUpdate);
       },
       () => {},
     );
     return "started";
   }
 
-  /** The refresh a BB update will start, while it waits: when, and the images it takes; null when none waits. */
+  /** The refresh a VesnALIA update will start, while it waits: when, and the images it takes; null when none waits. */
   async dueSoon(signal?: AbortSignal): Promise<DueSoon | null> {
-    if (!this.#deps.afterBbUpdates?.()) return null;
-    const kept = await this.#deps.storage.get<BbUpdate>(BB_UPDATE);
+    if (!this.#deps.afterAliaUpdates?.()) return null;
+    const kept = await this.#deps.storage.get<AliaUpdate>(ALIA_UPDATE);
     if (!kept || kept.started !== null) return null;
     const views = await this.list(signal).catch(() => [] as ImageView[]);
     const names = views.filter((view) => this.#appStale(view.build, kept.app)).map((view) => view.name);
-    return names.length ? { at: Math.max(this.#now(), kept.noticed + BB_UPDATE_DELAY_MS), names } : null;
+    return names.length ? { at: Math.max(this.#now(), kept.noticed + ALIA_UPDATE_DELAY_MS), names } : null;
   }
 
   /**
@@ -396,7 +396,7 @@ export class ImageJobs {
   startNow(): { readonly started: boolean; readonly message: string | null } {
     const running = this.#running;
     if (running) {
-      const what = running.only === "bb-app" ? "A refresh after a BB update" : "A rebuild";
+      const what = running.only === "alia-app" ? "A refresh after a VesnALIA update" : "A rebuild";
       return { started: false, message: `${what} has gone on since ${new Date(running.started).toISOString().slice(11, 16)} UTC, one image at a time. Start another once it ends.` };
     }
     void this.refreshAll().catch(() => null);
@@ -445,11 +445,11 @@ export class ImageJobs {
         }
       });
       const versions = await (this.#deps.versions ?? resolveVersions)(this.#deps.setup, { pinned: !!options.pinned, signal }).catch(() => null);
-      const app = await this.#deps.facts.bbApp(signal).catch(() => null);
+      const app = await this.#deps.facts.aliaApp(signal).catch(() => null);
       const views = await this.list(signal);
       const limit = started + (options.limitMs ?? RUN_LIMIT_MS);
-      // After a BB update, the images with BB's old app alone; the others stay for the night.
-      const taken = (view: ImageView) => (options.image ? view.name === options.image : !!view.due && (options.only !== "bb-app" || this.#appStale(view.build, app)));
+      // After a VesnALIA update, the images with VesnALIA's old app alone; the others stay for the night.
+      const taken = (view: ImageView) => (options.image ? view.name === options.image : !!view.due && (options.only !== "alia-app" || this.#appStale(view.build, app)));
       /** A taken image's outcome, in the run's lines and its progress. */
       const note = (line: RunLine & { outcome: RunProgress["images"][number]["state"] }) => {
         lines.push(line);
@@ -466,7 +466,7 @@ export class ImageJobs {
         const pins = await this.#deps.facts.pins(pinSet(view.build.kind)).catch(() => null);
         const from = this.#builtFromNow(view.build, pins, app, versions, await this.#program(view.build, view.backend));
         if (!options.image && view.last && !view.last.ok && !view.last.waiting && view.last.from === from) {
-          note({ name: view.name, outcome: "skipped", detail: `its last rebuild failed and nothing it is built from has changed; bb box images build ${view.name} tries again` });
+          note({ name: view.name, outcome: "skipped", detail: `its last rebuild failed and nothing it is built from has changed; VesnALIA box images build ${view.name} tries again` });
           continue;
         }
         // Room for the build's boxes, as for any boxes of the kind at its default size (049): a build box and a trial box, or
@@ -512,8 +512,8 @@ export class ImageJobs {
         this.#setImage(view.name, result.ok ? { state: "refreshed", detail: `now ${result.build?.build ?? "a new build"}, in ${result.seconds} s`, line: null } : { state: "failed", detail: result.reason ?? "no reason given", line: null });
         lines.push(result.ok ? { name: view.name, outcome: "refreshed", detail: `now ${result.build?.build ?? "a new build"}, in ${result.seconds} s` } : { name: view.name, outcome: "failed", detail: result.reason ?? "no reason given" });
       }
-      if (!options.image) for (const view of views) if (!taken(view)) lines.push({ name: view.name, outcome: "skipped", detail: view.due ? "it is due for another reason than a BB update: the night refreshes it" : "not due" });
-      if (bakes && options.only !== "bb-app" && !options.image) lines.push(...(await bakes.maintain({ until: limit, signal })));
+      if (!options.image) for (const view of views) if (!taken(view)) lines.push({ name: view.name, outcome: "skipped", detail: view.due ? "it is due for another reason than a VesnALIA update: the night refreshes it" : "not due" });
+      if (bakes && options.only !== "alia-app" && !options.image) lines.push(...(await bakes.maintain({ until: limit, signal })));
       const ok = !lines.some((line) => line.outcome === "failed");
       await this.#deps.storage.set(LAST_RUN, { at: this.#now(), ok, lines });
       if (this.#progress) this.#setProgress({ ...this.#progress, ended: this.#now() });
@@ -541,8 +541,8 @@ export class ImageJobs {
       images: backend.images!,
       current: view.build,
       setup: this.#deps.setup,
-      bbUrl: this.#deps.bbUrl(),
-      bbApp: await this.#deps.facts.bbApp(options.signal).catch(() => null),
+      aliaUrl: this.#deps.aliaUrl(),
+      aliaApp: await this.#deps.facts.aliaApp(options.signal).catch(() => null),
       prepare: await prepareDigest(this.#deps.setup, backend.id).catch(() => null),
       pinned: options.pinned,
       replace: options.replace,
@@ -556,14 +556,14 @@ export class ImageJobs {
     return result;
   }
 
-  /** Rebuilds one image now, due or not, and whatever its last rebuild did: `bb box images build <name>`. */
+  /** Rebuilds one image now, due or not, and whatever its last rebuild did: `alia box images build <name>`. */
   async build(name: string, options: { pinned?: boolean; try?: boolean; signal: AbortSignal; log?: (line: string) => void }): Promise<RefreshResult> {
     const views = await this.list(options.signal);
     const view = views.find((candidate) => candidate.name === name);
-    if (!view) throw new Error(`There is no image ${name}. bb box images list names them: ${views.map((other) => other.name).join(", ") || "none"}.`);
+    if (!view) throw new Error(`There is no image ${name}. VesnALIA box images list names them: ${views.map((other) => other.name).join(", ") || "none"}.`);
     const backend = this.#deps.backends().find((candidate) => candidate.id === view.backend)!;
     const pins = await this.#deps.facts.pins(pinSet(view.build.kind)).catch(() => null);
-    const app = await this.#deps.facts.bbApp(options.signal).catch(() => null);
+    const app = await this.#deps.facts.aliaApp(options.signal).catch(() => null);
     const versions = await (this.#deps.versions ?? resolveVersions)(this.#deps.setup, { pinned: !!options.pinned, signal: options.signal }).catch(() => null);
     return this.#refreshOne(backend, view, {
       pinned: !!options.pinned,
@@ -581,7 +581,7 @@ export class ImageJobs {
     const checks: DoctorCheck[] = [];
     const last = await this.#deps.storage.get<{ at: number; ok: boolean }>(LAST_RUN);
     const days = last ? (this.#now() - last.at) / DAY_MS : null;
-    const nightlyOn = this.#deps.afterBbUpdates?.() ?? false;
+    const nightlyOn = this.#deps.afterAliaUpdates?.() ?? false;
     checks.push(
       days !== null && days <= NIGHTLY_WARN_DAYS
         ? { id: "images.nightly", name: "Nightly rebuilds", status: "ok", detail: `The last run ended ${days < 1 ? "today" : `${Math.floor(days)} days ago`}${last!.ok ? "" : ", with a failure"}.`, fix: null }
@@ -591,17 +591,17 @@ export class ImageJobs {
             id: "images.nightly",
             name: "Nightly rebuilds",
             status: "warn",
-            detail: days === null ? "No run of bb box images refresh has ended yet, so images are rebuilt only by hand." : `No run of bb box images refresh has ended for ${Math.floor(days)} days.`,
-            fix: `Turn on Rebuild each night on the Images page of BB Box's settings, or have a BB script automation run it each night: ${AUTOMATION}`,
+            detail: days === null ? "No run of VesnALIA box images refresh has ended yet, so images are rebuilt only by hand." : `No run of VesnALIA box images refresh has ended for ${Math.floor(days)} days.`,
+            fix: `Turn on Rebuild each night on the Images page of VesnALIA Box's settings, or have a VesnALIA script automation run it each night: ${AUTOMATION}`,
           },
     );
     const soon = await this.dueSoon(signal).catch(() => null);
     if (soon) {
       checks.push({
-        id: "images.bb-update",
-        name: "Refresh after a BB update",
+        id: "images.alia-update",
+        name: "Refresh after a VesnALIA update",
         status: "ok",
-        detail: `BB was updated: ${soon.names.join(", ")} ${soon.names.length === 1 ? "has" : "have"} another build of BB's app than BB's server gives. A refresh of ${soon.names.length === 1 ? "it" : "them"} starts by ${new Date(soon.at).toISOString().slice(11, 16)} UTC.`,
+        detail: `VesnALIA was updated: ${soon.names.join(", ")} ${soon.names.length === 1 ? "has" : "have"} another build of VesnALIA's app than VesnALIA's server gives. A refresh of ${soon.names.length === 1 ? "it" : "them"} starts by ${new Date(soon.at).toISOString().slice(11, 16)} UTC.`,
         fix: null,
       });
     }
@@ -615,7 +615,7 @@ export class ImageJobs {
         detail: view.last.waiting
           ? `On ${when} it waited: ${(view.last.reason ?? "").replace(/\.$/, "")}. It waits for the next night.`
           : `Its last rebuild, on ${when}, failed: ${view.last.reason ?? "no reason given"}${view.last.output.length ? ` Its last line: ${view.last.output.at(-1)}` : ""}`,
-        fix: view.last.waiting ? "Free room on the host, or lower its reserve." : `Fix the cause, then run bb box images build ${view.name}. bb box images list shows its last lines.`,
+        fix: view.last.waiting ? "Free room on the host, or lower its reserve." : `Fix the cause, then run alia box images build ${view.name}. VesnALIA box images list shows its last lines.`,
       });
     }
     return checks;

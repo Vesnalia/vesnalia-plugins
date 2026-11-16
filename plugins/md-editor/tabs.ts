@@ -1,8 +1,8 @@
-// Right-click menu for BB's side-panel tab strip: close, close others / left /
-// right / all, pin. BB has no tab-menu extension point, so this content script
-// drives the strip's own close buttons. It keys on BB's data attributes and
+// Right-click menu for VesnALIA's side-panel tab strip: close, close others / left /
+// right / all, pin. VesnALIA has no tab-menu extension point, so this content script
+// drives the strip's own close buttons. It keys on VesnALIA's data attributes and
 // degrades to doing nothing if the strip markup changes.
-import type { PluginContentScriptContext } from "@get-bb/plugin-sdk/app";
+import type { PluginContentScriptContext } from "@vesnalia/plugin-sdk/app";
 import { t } from "./i18n";
 
 const STRIP = '[data-testid="secondary-panel-tab-strip"]';
@@ -116,7 +116,7 @@ export function mountTabMenu(context: PluginContentScriptContext) {
 
     menu = document.createElement("div");
     menu.className = "mdpro-tabmenu";
-    menu.setAttribute("data-bb-ru-skip", "");
+    menu.setAttribute("data-alia-ru-skip", "");
     menu.setAttribute("role", "menu");
     for (const entry of entries) {
       if (entry === "sep") {

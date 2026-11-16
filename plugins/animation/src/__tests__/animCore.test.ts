@@ -727,13 +727,13 @@ describe("values the parser cannot use", () => {
 });
 
 describe("documented chat directives", () => {
-  // BB parses directive attributes like HTML attributes: separated by spaces.
+  // VesnALIA parses directive attributes like HTML attributes: separated by spaces.
   // A comma makes the whole line plain text, so no doc may show one.
   const VALID = /^::(scene|animation)\{file="[^"]+"( height=\d+)?\}$/;
   const root = join(__dirname, "..", "..");
 
   it.each(["README.md", "PLUGIN_OVERVIEW.md", "skills/animation/SKILL.md"])(
-    "%s shows only directives BB can parse",
+    "%s shows only directives VesnALIA can parse",
     (file) => {
       const text = readFileSync(join(root, file), "utf8");
       const directives = text.match(/::(scene|animation)\{[^}\n]*\}/g) ?? [];

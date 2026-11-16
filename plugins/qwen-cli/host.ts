@@ -1,9 +1,9 @@
-import { experimental_acpProviderBridge } from "@get-bb/plugin-sdk/provider-bridge/acp";
+import { experimental_acpProviderBridge } from "@vesnalia/plugin-sdk/provider-bridge/acp";
 import {
   threadStartParamsSchema,
   threadResumeParamsSchema,
   turnStartParamsSchema,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import { StringDecoder } from "node:string_decoder";
 import { Transform } from "node:stream";
 import { QWEN_ACP_DIALECT_ID, registerQwenAcpDialect } from "./dialect.ts";
@@ -130,7 +130,7 @@ function cleanModelNames(line: string): string {
     }
     // Clean extension state with session options
     for (const delta of Array.isArray(msg?.params?.deltas) ? msg.params.deltas : []) {
-      if (delta.kind === "extension.state" && delta.extensionKind === "bb/session-options" &&
+      if (delta.kind === "extension.state" && delta.extensionKind === "alia/session-options" &&
           Array.isArray(delta.payload?.options)) {
         for (const opt of delta.payload.options) {
           if (Array.isArray(opt.values)) {

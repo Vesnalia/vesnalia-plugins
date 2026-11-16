@@ -1,13 +1,13 @@
 /**
  * Who decides a shell's size when several windows show it.
  *
- * bb 0.48.1 lets only the socket that attached last resize a terminal and
+ * VesnALIA 0.48.1 lets only the socket that attached last resize a terminal and
  * drops the others' resize messages without a word, and this plugin keeps a
  * tab's socket open while its page is away. So the socket is not used to
  * resize. Instead the window the user is using — the one that shows the tab
- * and is shown, resized, focused or typed in — asks bb through
+ * and is shown, resized, focused or typed in — asks VesnALIA through
  * `terminals.resize`, which any client may call, and every window draws the
- * shell at the size bb reports (`session-updated`), whichever window set it.
+ * shell at the size VesnALIA reports (`session-updated`), whichever window set it.
  * A window that is not in use never asks, so two windows cannot fight; the
  * last one used wins, as in tmux.
  *
@@ -24,7 +24,7 @@ export interface SizingOptions {
   localSize(): Size;
   /** Redraws this window's terminal at `size`. */
   resizeLocal(size: Size): void;
-  /** Asks bb to size the shell (`terminals.resize`); rejects when bb cannot, such as while the machine is offline. */
+  /** Asks VesnALIA to size the shell (`terminals.resize`); rejects when VesnALIA cannot, such as while the machine is offline. */
   claim(size: Size): Promise<void>;
   warn(message: string): void;
 }
@@ -38,13 +38,13 @@ export function sameSize(a: Size | null | undefined, b: Size | null | undefined)
 
 export class TerminalSizing {
   private readonly options: SizingOptions;
-  /** The shell's size as bb last reported it; null before the first report. */
+  /** The shell's size as VesnALIA last reported it; null before the first report. */
   private session: Size | null = null;
-  /** The size to ask bb for next; null when nothing is waiting. */
+  /** The size to ask VesnALIA for next; null when nothing is waiting. */
   private wanted: Size | null = null;
   private inFlight = false;
   /**
-   * Sizes this window asked for whose report from bb has not been seen as
+   * Sizes this window asked for whose report from VesnALIA has not been seen as
    * someone else's: their reports must not undo a newer size this window has
    * already drawn (a window being resized asks for several in a row).
    */
@@ -56,12 +56,12 @@ export class TerminalSizing {
     this.options = options;
   }
 
-  /** The shell's size as bb last reported it. */
+  /** The shell's size as VesnALIA last reported it. */
   get current(): Size | null {
     return this.session;
   }
 
-  /** Whether this window draws the shell at a size other than bb's. */
+  /** Whether this window draws the shell at a size other than VesnALIA's. */
   get differs(): boolean {
     return this.session !== null && !sameSize(this.session, this.options.localSize());
   }
@@ -77,7 +77,7 @@ export class TerminalSizing {
     void this.send();
   }
 
-  /** bb reports the shell's size (`attached` or `session-updated`). */
+  /** VesnALIA reports the shell's size (`attached` or `session-updated`). */
   sessionChanged(size: Size): void {
     this.session = size;
     if (this.asked.some((entry) => sameSize(entry, size))) {

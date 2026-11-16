@@ -125,7 +125,7 @@ async function withClone<T>(
 ): Promise<T> {
   const repositoryUrl = validateRepositoryUrl(options.repositoryUrl);
   const branch = validateBranch(options.branch);
-  const tempRoot = await mkdtemp(join(tmpdir(), "bb-preset-sync-"));
+  const tempRoot = await mkdtemp(join(tmpdir(), "alia-preset-sync-"));
   const repoDir = join(tempRoot, "repo");
   try {
     await runGit(

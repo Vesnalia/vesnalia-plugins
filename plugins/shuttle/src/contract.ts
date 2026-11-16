@@ -232,7 +232,7 @@ export const gateSchema = z.object({
   }).nullable().optional(),
   at: z.number(),
   ms: z.number(),
-  /** When its findings were judged again by `bb shuttle rescore`; the draft's own holds are kept from `at`. */
+  /** When its findings were judged again by `alia shuttle rescore`; the draft's own holds are kept from `at`. */
   rescoredAt: z.number().optional(),
 });
 export type Gate = z.infer<typeof gateSchema>;
@@ -886,7 +886,7 @@ const spend = { tokens: z.number(), cost: z.number() };
  */
 export const usageSchema = z.object({
   range: z.enum(USAGE_RANGES),
-  /** Today on bb's server, YYYY-MM-DD: the latest day a period can end on. */
+  /** Today on VesnALIA's server, YYYY-MM-DD: the latest day a period can end on. */
   today: z.string(),
   /** The period's last day, YYYY-MM-DD; today for the newest one. */
   end: z.string(),
@@ -1165,7 +1165,7 @@ export const rpcContract = defineContract({
   setAgentMode: { input: z.object({ key, mode: z.enum(AGENT_MODES), backlog: z.boolean().optional() }), output: prOut },
   /** Send your text to the PR's agent thread, with the PR named; nothing is posted on the PR. */
   askAgent: { input: z.object({ key, text: body }), output: ok },
-  /** The page's own switches for Shuttle's bb settings. */
+  /** The page's own switches for Shuttle's VesnALIA settings. */
   setSettings: { input: z.object({ autoAgent: z.boolean().optional(), inboxRequests: z.boolean().optional() }), output: ok },
   setAutomationPause: { input: automationPauseSchema, output: overviewSchema },
   track: { input: z.object({ key, on: z.boolean() }), output: prOut },
@@ -1300,7 +1300,7 @@ export const rpcContract = defineContract({
     tags: PRS,
   },
   skills: { input: z.object({ projectId: z.string().max(100).optional() }), output: z.object({ skills: z.array(z.object({ id: z.string(), name: z.string(), description: z.string() })) }) },
-  /** bb's environment and machine providers, for a server's review workspace. */
+  /** VesnALIA's environment and machine providers, for a server's review workspace. */
   workspaceProviders: {
     input: z.object({}),
     output: z.object({

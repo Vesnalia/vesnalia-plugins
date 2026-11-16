@@ -1,7 +1,7 @@
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import plugin from "../server.js";
 import { hookSchema, type HookDefinition } from "../src/definitions.js";
@@ -16,7 +16,7 @@ function fixture(id: string): HookTemplate {
   return template;
 }
 
-const dir = mkdtempSync(join(tmpdir(), "bb-hooks-templates-"));
+const dir = mkdtempSync(join(tmpdir(), "alia-hooks-templates-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 function requiredParams(templateId: string): Record<string, string> {
@@ -117,9 +117,9 @@ describe("webhook body templates", () => {
     await runner.run({ hook: telegram, payload, env: {}, timeoutMs: 2_000, secrets });
 
     expect(sent[0]?.url).toBe("https://hooks.slack.test/abc");
-    expect(JSON.parse(sent[0]?.body ?? "")).toEqual({ text: 'BB thread.idle — Fix "quotes"\nDone.' });
+    expect(JSON.parse(sent[0]?.body ?? "")).toEqual({ text: 'VesnALIA thread.idle — Fix "quotes"\nDone.' });
     expect(sent[1]?.url).toBe("https://api.telegram.org/bot123:abc/sendMessage");
-    expect(JSON.parse(sent[1]?.body ?? "")).toEqual({ chat_id: "42", text: 'BB thread.idle — Fix "quotes"\nDone.' });
+    expect(JSON.parse(sent[1]?.body ?? "")).toEqual({ chat_id: "42", text: 'VesnALIA thread.idle — Fix "quotes"\nDone.' });
   });
 });
 
@@ -146,15 +146,15 @@ describe("gate templates", () => {
 
   it("follow-up does nothing for child threads", async () => {
     const hook = renderOne("follow-up", { prompt: "continue" });
-    const outcome = await runner.run({ hook, payload: {}, env: { BB_PARENT_THREAD_ID: "thr_parent", BB_THREAD_ID: "thr_child", BB_CLI: "/nonexistent/bb" }, timeoutMs: 5_000 });
+    const outcome = await runner.run({ hook, payload: {}, env: { ALIA_PARENT_THREAD_ID: "thr_parent", ALIA_THREAD_ID: "thr_child", ALIA_CLI: "/nonexistent/alia" }, timeoutMs: 5_000 });
     expect(outcome).toMatchObject({ status: "ok", exitCode: 0, stdout: "" });
   });
 });
 
-describe("bb hooks use", () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "hooks", settings: { catalogs: "" } });
+describe("alia hooks use", () => {
+  const { alia, harness } = createFakePluginHost({ pluginId: "hooks", settings: { catalogs: "" } });
   beforeAll(async () => {
-    await plugin(bb);
+    await plugin(alia);
   });
   afterAll(async () => {
     await harness.lifecycle.dispose();
@@ -190,11 +190,11 @@ describe("agent parameters", () => {
 
   it("inherit uses the triggering thread's execution from the environment", async () => {
     const hook = renderOne("follow-up", { prompt: "continue" });
-    const probe: HookDefinition = { ...hook, command: hook.command!.replace(/"\$bb" thread spawn "\$@".*$/m, 'printf "%s|" "$@"').replace(/output=\$\(.*$/m, "output=x") };
+    const probe: HookDefinition = { ...hook, command: hook.command!.replace(/"\$alia" thread spawn "\$@".*$/m, 'printf "%s|" "$@"').replace(/output=\$\(.*$/m, "output=x") };
     const outcome = await runner.run({
       hook: probe,
       payload: {},
-      env: { BB_THREAD_ID: "thr_p", BB_PROJECT_ID: "proj_p", BB_PROVIDER_ID: "claude-code", BB_MODEL: "claude-opus-5", BB_REASONING_LEVEL: "xhigh", BB_SERVICE_TIER: "default", BB_ENVIRONMENT_ID: "env_p", BB_CLI: "/nonexistent" },
+      env: { ALIA_THREAD_ID: "thr_p", ALIA_PROJECT_ID: "proj_p", ALIA_PROVIDER_ID: "claude-code", ALIA_MODEL: "claude-opus-5", ALIA_REASONING_LEVEL: "xhigh", ALIA_SERVICE_TIER: "default", ALIA_ENVIRONMENT_ID: "env_p", ALIA_CLI: "/nonexistent" },
       timeoutMs: 5_000,
     });
     expect(outcome.stdout).toBe("--project|proj_p|--parent-thread|thr_p|--environment|env_p|--provider|claude-code|--model|claude-opus-5|--reasoning-level|xhigh|--service-tier|default|");

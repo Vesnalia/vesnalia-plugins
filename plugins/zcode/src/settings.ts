@@ -53,7 +53,7 @@ export function runtimeSettings(raw: unknown) {
     automationsEnabled: p.automationsEnabled === true,
     offPeakTasksEnabled: p.offPeakTasksEnabled === true,
     dynamicWorkflowsEnabled: p.dynamicWorkflowsEnabled === true,
-    bbToolsEnabled: p.bbToolsEnabled === true,
+    aliaToolsEnabled: p.aliaToolsEnabled === true,
     preferences: {
       ...RUNTIME_PREFERENCES,
       subagentRuntimeConfigEnabled: subagents !== undefined,

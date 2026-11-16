@@ -1,7 +1,7 @@
 // Every task mutation goes through here: one place for errors, toasts, and the
 // read-only example mode.
 import { useCallback, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract, Todo, TodoStatus } from "../server";
 import { usePreview } from "./preview";

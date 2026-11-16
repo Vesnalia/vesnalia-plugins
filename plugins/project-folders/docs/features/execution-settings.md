@@ -12,7 +12,7 @@ sources:
   - server.ts
   - composer-chip.tsx
   - README.md
-  - bb-remembered.ts
+  - alia-remembered.ts
 ---
 # Execution defaults
 
@@ -20,26 +20,26 @@ TL;DR: The plugin lets users pin provider/model, reasoning, service tier, permis
 
 ## Purpose
 
-Execution defaults seed new chats with settings without replacing BB’s own defaults or the composer’s own pickers (`execution.ts:3-12`, `server.ts:469-487`).
+Execution defaults seed new chats with settings without replacing VesnALIA’s own defaults or the composer’s own pickers (`execution.ts:3-12`, `server.ts:469-487`).
 
 ## How it works
 
 1. `ExecutionEditor` derives a stable key for global, project or section scope, clears the prior view, then calls `execution_read`; while pending it displays loading, and a failed read displays an alert (`execution-ui.tsx:61-112`).
-2. `execution_read` returns the scope’s own values, effective and inherited resolutions, host, BB fallback values and agent catalog; the editor seeds its editable draft from `own` and enables the model group only when both provider and model are pinned (`server.ts:3131-3161`, `execution-ui.tsx:87-93`, `execution.ts:89-95`).
+2. `execution_read` returns the scope’s own values, effective and inherited resolutions, host, VesnALIA fallback values and agent catalog; the editor seeds its editable draft from `own` and enables the model group only when both provider and model are pinned (`server.ts:3131-3161`, `execution-ui.tsx:87-93`, `execution.ts:89-95`).
 3. The model switch controls whether the provider/model picker displays the draft or the inherited/fallback value. While off, picker reconciliation changes are ignored; switching it off clears the model, reasoning and tier fields so they are inherited (`execution-ui.tsx:85-153`, `execution-ui.tsx:181-226`).
 4. Permission mode, environment and machine each have their own switch and inherit independently. Environment choices are `folder` or `worktree`; machine choices are hosts where the project or section has a folder binding. The editor labels inherited values and uses the place’s host when no machine pin applies (`execution-ui.tsx:153-184`, `execution-ui.tsx:285-350`, `server.ts:1321-1353`).
 5. Agent selection is disabled for global scope, while saving, or when CLI Agents is absent/unsupported. Save normalizes the draft, calls `execution_save`, reloads the saved state and shows success; RPC errors render as an alert and busy state is cleared (`execution-ui.tsx:186-205`, `execution-ui.tsx:405-415`).
-6. For new chats, server-side resolution combines independently inherited field groups with BB fallback settings. Before `threads.spawn`, the server binds an applicable pinned agent; failures name the project or section that supplied it. A hand-picked composer agent or Lane Pilot profile takes precedence, and non-CLI-agent providers skip this binding (`server.ts:1431-1476`, `server.ts:3429-3447`).
+6. For new chats, server-side resolution combines independently inherited field groups with VesnALIA fallback settings. Before `threads.spawn`, the server binds an applicable pinned agent; failures name the project or section that supplied it. A hand-picked composer agent or Lane Pilot profile takes precedence, and non-CLI-agent providers skip this binding (`server.ts:1431-1476`, `server.ts:3429-3447`).
 
-### BB's remembered project defaults
+### VesnALIA's remembered project defaults
 
-BB keeps one remembered provider, model, reasoning, service tier and permission mode per project; a chat created without an explicit provider (`bb thread spawn` without `--provider`, a new chat outside a section) starts from it.
+VesnALIA keeps one remembered provider, model, reasoning, service tier and permission mode per project; a chat created without an explicit provider (`alia thread spawn` without `--provider`, a new chat outside a section) starts from it.
 
-- Saving the **project** scope writes the project's resolved setting into that row: the project's own pins, else the plugin-wide default. Fields the plugin does not pin keep BB's value for the same provider, else BB's defaults (`medium`, `default`, `auto`). With no provider pinned only the permission mode changes; with nothing pinned BB's row stays as it is (`bb-remembered.ts`).
-- **Sections never write**: a section pin applies only to chats started in that section. The **plugin-wide default does not write** either: it would overwrite every project's row. A project that inherits it shows a mismatch and a «Save to BB» button.
-- A provider without a live bridge on the project's machine is never written; the save itself still succeeds and reports «Not saved to BB».
-- The project page warns when BB's row names a provider without a bridge (chats without a flag would fail) or differs from the plugin's setting, and offers «Save to BB» (`execution_remember`).
-- Why the plugin writes BB's database itself, and what replaces it: [decision 004](../decisions.md).
+- Saving the **project** scope writes the project's resolved setting into that row: the project's own pins, else the plugin-wide default. Fields the plugin does not pin keep VesnALIA's value for the same provider, else VesnALIA's defaults (`medium`, `default`, `auto`). With no provider pinned only the permission mode changes; with nothing pinned VesnALIA's row stays as it is (`alia-remembered.ts`).
+- **Sections never write**: a section pin applies only to chats started in that section. The **plugin-wide default does not write** either: it would overwrite every project's row. A project that inherits it shows a mismatch and a «Save to VesnALIA» button.
+- A provider without a live bridge on the project's machine is never written; the save itself still succeeds and reports «Not saved to VesnALIA».
+- The project page warns when VesnALIA's row names a provider without a bridge (chats without a flag would fail) or differs from the plugin's setting, and offers «Save to VesnALIA» (`execution_remember`).
+- Why the plugin writes VesnALIA's database itself, and what replaces it: [decision 004](../decisions.md).
 
 ### Execution editor states
 
@@ -87,7 +87,7 @@ Schemas and hierarchy: `execution.ts:14-70`, `execution.ts:110-161`; offered hos
 
 - Provider and model are a single pin group: both must be present for the place to own that group (`execution.ts:39-47`, `execution.ts:89-95`).
 - An explicit `agentMode: "none"` overrides an inherited agent (`execution.ts:49-55`, `execution.ts:122-128`).
-- If no place pins a group, the plugin leaves that field absent so BB’s remembered project defaults remain in effect (`execution.ts:3-12`, `execution.ts:150-162`).
+- If no place pins a group, the plugin leaves that field absent so VesnALIA’s remembered project defaults remain in effect (`execution.ts:3-12`, `execution.ts:150-162`).
 - Environment and machine pins are independent. A section can pin `folder` to override an inherited worktree, and a pinned machine applies only when the place has a folder on that host (`execution.ts:53-63`, `execution.ts:110-121`, `server.ts:3354-3393`).
 - A pinned agent that cannot be applied blocks chat creation and reports which project or section supplied it (`server.ts:1445-1476`, `server.ts:3429-3435`).
 - CLI agent discovery supports Claude Code, Codex and OpenCode through the optional CLI Agents plugin (`execution.ts:25-34`).
@@ -96,8 +96,8 @@ Schemas and hierarchy: `execution.ts:14-70`, `execution.ts:110-161`; offered hos
 
 | RPC | Purpose | Evidence |
 |---|---|---|
-| `execution_read`, `execution_save` | Read/save pin values and resolved inheritance; on the project scope also BB's remembered row (`bb`) and the result of writing it | `server.ts` |
-| `execution_remember` | Write the project's setting into BB's remembered defaults again | `server.ts`, `bb-remembered.ts` |
+| `execution_read`, `execution_save` | Read/save pin values and resolved inheritance; on the project scope also VesnALIA's remembered row (`alia`) and the result of writing it | `server.ts` |
+| `execution_remember` | Write the project's setting into VesnALIA's remembered defaults again | `server.ts`, `alia-remembered.ts` |
 | `execution_agents` | Query native agent catalog for a provider | `server.ts:541-547` |
 | `spawn` | Start a chat with resolved composer fields | `server.ts:577-580` |
 

@@ -12,7 +12,7 @@ const result = await build({
     resolveDir: fileURLToPath(new URL("../", import.meta.url)), loader: "tsx" },
   bundle: true, write: false, outdir: "/tmp/steel-inline-check", jsx: "automatic",
   plugins: [{ name: "sdk", setup(b) {
-    b.onResolve({ filter: /^@get-bb\/plugin-sdk\/app$/ }, () => ({ path: "sdk", namespace: "mock" }));
+    b.onResolve({ filter: /^@get-alia\/plugin-sdk\/app$/ }, () => ({ path: "sdk", namespace: "mock" }));
     b.onLoad({ filter: /.*/, namespace: "mock" }, () => ({ loader: "js", contents: `
       const project={projectId:"p",projectName:"Project A",binding:null,policy:{engine:"playwright",fallback:false}};
       const rpc={call:async(method,input)=>{
@@ -26,8 +26,8 @@ const result = await build({
       export const useRpc=()=>rpc;
       export const experimental_useSidebarThreads=()=>({status:"ready",projects:[]});
       export const useSettings=()=>({values:{},isLoading:false});
-      export const useBbNavigate=()=>({openThreadPanel:()=>false});
-      export const useBbContext=()=>location.search ? {threadId:null,projectId:null} : {threadId:"t",projectId:"p"};
+      export const useAliaNavigate=()=>({openThreadPanel:()=>false});
+      export const useAliaContext=()=>location.search ? {threadId:null,projectId:null} : {threadId:"t",projectId:"p"};
       export const definePluginApp=()=>null;
     ` }));
   } }],
@@ -78,8 +78,8 @@ try {
       assert.equal(loads, 0, "mobile must not request the viewer before explicit restore");
       const collapsed = await page.locator(".steel-inline-browser").boundingBox();
       assert(collapsed.height < 100 && collapsed.width <= width - 30, "collapsed viewer fits the mobile header");
-      if (process.env.BB_THREAD_STORAGE) {
-        await page.screenshot({ path: `${process.env.BB_THREAD_STORAGE}/steel-minimized-${width}-${touch}.png` });
+      if (process.env.ALIA_THREAD_STORAGE) {
+        await page.screenshot({ path: `${process.env.ALIA_THREAD_STORAGE}/steel-minimized-${width}-${touch}.png` });
       }
       await page.getByRole("button", { name: "Restore inline browser" }).click();
       await page.frameLocator("iframe").getByRole("textbox").waitFor();
@@ -127,9 +127,9 @@ try {
     await page.getByRole("button", { name: "Restore inline browser" }).click();
     await page.frameLocator("iframe").getByRole("textbox").waitFor();
     assert.equal(loads, 3, "minimized viewers release their streams");
-    if (process.env.BB_THREAD_STORAGE) {
+    if (process.env.ALIA_THREAD_STORAGE) {
       const shot = await metrics.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
-      await writeFile(`${process.env.BB_THREAD_STORAGE}/steel-following-${width}.png`, Buffer.from(shot.data, "base64"));
+      await writeFile(`${process.env.ALIA_THREAD_STORAGE}/steel-following-${width}.png`, Buffer.from(shot.data, "base64"));
     }
     await page.locator("#thread").evaluate(element => {
       element.scrollTop = 0;
@@ -145,7 +145,7 @@ try {
     const viewport = await page.locator(".steel-inline-browser__viewport").boundingBox();
     assert(Math.abs(viewport.width - viewport.height) <= 1, "inline viewport must stay square");
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-    if (process.env.BB_THREAD_STORAGE) await page.screenshot({ path: `${process.env.BB_THREAD_STORAGE}/steel-project-inline-${width}.png` });
+    if (process.env.ALIA_THREAD_STORAGE) await page.screenshot({ path: `${process.env.ALIA_THREAD_STORAGE}/steel-project-inline-${width}.png` });
     await page.goto("http://inline.test/?no-project");
     await page.evaluate(() => window.mountSteel());
     await page.getByRole("heading", { name: "All projects" }).waitFor();

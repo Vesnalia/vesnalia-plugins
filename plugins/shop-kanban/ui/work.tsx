@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { ACCENT_BADGE, ACCENT_TEXT, CARD_EDGE, CARD_SURFACE, formatShortAge, type WorkItem, type WorkList, type WorkMark, type WorkState } from "./model";
 import type { WorkApi } from "./hooks";
 import {
@@ -12,7 +12,7 @@ import {
   RowActions,
   ShowMore,
   TYPE,
-  useBbLinks,
+  useAliaLinks,
   useRowError,
 } from "./primitives";
 
@@ -67,7 +67,7 @@ function WorkRow({ item, now, onMark }: {
   now: number;
   onMark: (item: WorkItem, mark: WorkMark, on: boolean) => Promise<void>;
 }) {
-  const links = useBbLinks();
+  const links = useAliaLinks();
   const { attempt, view: error } = useRowError();
   const meta = LIST_META[item.list];
   const at = Date.parse((item.list === "shipped" ? item.mergedAt : null) ?? item.updatedAt);

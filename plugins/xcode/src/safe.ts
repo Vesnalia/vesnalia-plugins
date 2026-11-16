@@ -1,5 +1,5 @@
 /**
- * Calls that must never crash the bb server.
+ * Calls that must never crash the VesnALIA server.
  *
  * The plugin API handle is invalidated on reload: touching it afterwards
  * throws PluginContextStaleError. Most of this plugin's work outlives its own
@@ -7,7 +7,7 @@
  * its exit, a sweep already in flight — so those calls land on a handle that
  * may have gone stale mid-flight. From a detached continuation such a throw
  * becomes an unhandled rejection, which Node raises as an uncaughtException,
- * which kills the whole bb server rather than just this plugin.
+ * which kills the whole VesnALIA server rather than just this plugin.
  *
  * Measured, not theoretical: `server.ts:702` (a stream-tail `publish`) took
  * the server down on 2026-08-10.
@@ -45,7 +45,7 @@ export function safely<TArgs extends readonly unknown[]>(
  *
  * `void promise` is not enough: an async continuation that throws — including
  * one throwing from inside its own `catch`, which is exactly what a stale
- * `bb.log` call does — produces an unhandled rejection.
+ * `alia.log` call does — produces an unhandled rejection.
  */
 export function detach(
   work: () => Promise<unknown>,

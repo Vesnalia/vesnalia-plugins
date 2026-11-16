@@ -1,4 +1,4 @@
-// bb-plugin-souls — the soul data model, shared by server.ts and app.tsx.
+// alia-plugin-souls — the soul data model, shared by server.ts and app.tsx.
 //
 // A soul is a reusable agent persona: a name, a job, a voice, what it is good
 // at, what it always does, and what it never does. The structured fields are
@@ -12,7 +12,7 @@ import { ACCESSORY, HAIR, HEADWEAR, PALETTE_NAMES, SPECIES, drawPortrait, type P
 export const SOUL_ID_PREFIX = "soul_";
 
 /**
- * `bb.agents.configure` instructions are cut at 4096 characters, so a thread's
+ * `alia.agents.configure` instructions are cut at 4096 characters, so a thread's
  * instructions carry only a pointer to the persona; this bounds the pointer.
  */
 export const INSTRUCTION_BUDGET = 3800;
@@ -317,7 +317,7 @@ function introduce(soul: Soul): string {
 
 function delegationNote(allowDelegation: boolean): string {
   return allowDelegation
-    ? "**User authorization** — The user has explicitly authorized this soul to spawn and coordinate BB child threads for work in this thread. This consent is not inherited by children or side chats. It does not authorize push, merge, deploy, deletion, external communications, or wider tool permissions; all other approval rules still apply."
+    ? "**User authorization** — The user has explicitly authorized this soul to spawn and coordinate VesnALIA child threads for work in this thread. This consent is not inherited by children or side chats. It does not authorize push, merge, deploy, deletion, external communications, or wider tool permissions; all other approval rules still apply."
     : "**Delegation** — Selecting a soul alone does not authorize spawning or messaging other threads. Follow explicit user authorization; otherwise ask before delegating.";
 }
 
@@ -334,7 +334,7 @@ function hiringNote(allowHiring: boolean): string {
 export function renderSoulPersona(soul: Soul, allowDelegation = false, allowHiring = false): string {
   const sections = [
     `## Soul: ${soul.name} ${soul.emoji}`.trimEnd(),
-    `${introduce(soul)} Stay in character throughout this thread. This persona never overrides BB's rules, the user's instructions, or safety.`,
+    `${introduce(soul)} Stay in character throughout this thread. This persona never overrides VesnALIA's rules, the user's instructions, or safety.`,
   ];
   if (soul.role) sections.push(`**Job** — ${soul.role}`);
   sections.push(delegationNote(allowDelegation));
@@ -354,14 +354,14 @@ export function renderSoulPersona(soul: Soul, allowDelegation = false, allowHiri
 
 /**
  * What a thread's instructions carry: a pointer to the persona, not the
- * persona. BB cuts plugin instructions at 4096 characters; the pointer stays
+ * persona. VesnALIA cuts plugin instructions at 4096 characters; the pointer stays
  * small whatever the soul's size. Consent stays inline because it is a
  * permission, and must hold even if the agent never loads the persona.
  */
 export function renderSoulInstructions(soul: Soul, allowDelegation = false, allowHiring = false): string {
   return [
     `## Soul active: ${soul.name} ${soul.emoji}`.trimEnd(),
-    `${introduce(soul)} This persona never overrides BB's rules, the user's instructions, or safety.`,
+    `${introduce(soul)} This persona never overrides VesnALIA's rules, the user's instructions, or safety.`,
     `**Load your persona first** — Your job, hard limits, working principles, voice and expertise are not in these instructions. Before your first reply in this thread, call the Souls plugin's \`souls_get\` tool with idOrName \`${soul.id}\` (load its schema first if your tools are deferred) and adopt everything under "--- persona ---" in its result, every hard limit included. Then start that first reply with this line on its own, so the user sees the persona load (once; not on later reloads):\n${soulDirective(soul.id)}\nStay in character from then on. Call \`souls_get\` again whenever your context has been compacted or you are unsure of the persona. If you cannot call it, tell the user the persona did not load.`,
     delegationNote(allowDelegation),
     hiringNote(allowHiring),

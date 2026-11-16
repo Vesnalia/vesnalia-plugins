@@ -13,7 +13,7 @@ import { CompactViewportOverrideProvider } from "../components/ui/hooks/use-comp
 const mockFocusRequests: Array<number | undefined> = [];
 const mockThreadIds: Array<string | undefined> = [];
 
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   ThreadChat: (props: { threadId: string; focusRequest?: number }): ReactNode => {
     mockFocusRequests.push(props.focusRequest);
     mockThreadIds.push(props.threadId);
@@ -21,7 +21,7 @@ vi.mock("@get-bb/plugin-sdk/app", () => ({
   },
   useSdk: () => ({ threads: { get: async () => ({}) } }),
   useRpc: () => ({ call: async () => ({ existence: {} }) }),
-  useBbNavigate: () => ({ toThread: () => {} }),
+  useAliaNavigate: () => ({ toThread: () => {} }),
   useSettings: () => ({ values: undefined, isLoading: false }),
 }));
 

@@ -3,11 +3,11 @@ import { Icon } from "@/components/ui/icon";
 import type { PaneContextInfo } from "@/lib/pane-context";
 import { cn } from "@/lib/utils";
 
-// Why this exists: bb's own thread page passes both an `environmentSummary`
+// Why this exists: VesnALIA's own thread page passes both an `environmentSummary`
 // and a `compactEnvironmentSummary` to its promptbox, and on a narrow
 // container the promptbox renders only the compact one. The embedded
 // `ThreadChat` the SDK hands plugin panels receives no
-// `compactEnvironmentSummary`, and bb 0.48.1 (re-verified 2026-11-04 live,
+// `compactEnvironmentSummary`, and VesnALIA 0.48.1 (re-verified 2026-11-04 live,
 // pane-parity audit Gap 10; scripts/screenshot/repro-context-row-0-48-1.mjs)
 // still paints none of the context at rest in a pane, in a changed shape:
 // the desktop footer is mounted but collapsed to height 0 (the chips stay
@@ -70,7 +70,7 @@ function paintable(element: Element): boolean {
  * Does the host's `ThreadChat` actually PAINT a composer-context element
  * (project chip, environment chip, checkout chip, or the compact
  * "Thread details …" button) inside this DOM root? Probes the exact
- * signatures bb 0.46.1's promptbox bundle emits: `[data-option-display]`
+ * signatures VesnALIA 0.46.1's promptbox bundle emits: `[data-option-display]`
  * chips whose sr-only label reads "Project: " / "Environment: " (the same
  * markup the model and provider pickers use, so foreign chips must not
  * match), the full row's `[data-promptbox-hide-branch-compact]` checkout
@@ -78,7 +78,7 @@ function paintable(element: Element): boolean {
  * paint to reach the eye, because the collapsed footer keeps everything
  * mounted at height 0 while nothing is visible.
  *
- * Signatures drift silently on bb upgrades — if this ever reads stale, the
+ * Signatures drift silently on VesnALIA upgrades — if this ever reads stale, the
  * pane falls back to a duplicate-free guess: the row shows a second context
  * line under the host's own, cheap to notice, never a missing-context
  * regression.
@@ -103,7 +103,7 @@ export function composerContextVisible(root: HTMLElement | null): boolean {
 /** How long the chat DOM must stay quiet before a probe counts. ThreadChat
  *  resolves its environment and project queries asynchronously, so an
  *  immediate probe after mount would see nothing and flash the fallback
- *  before the host row lands; and bb's footer collapse/expand is a 180ms
+ *  before the host row lands; and VesnALIA's footer collapse/expand is a 180ms
  *  CSS transition, so the settle must outlast it before the paint walk
  *  reads the settled geometry. */
 const PROBE_SETTLE_MS = 300;
@@ -111,7 +111,7 @@ const PROBE_SETTLE_MS = 300;
 /**
  * True when the given chat root has settled without the host's composer
  * context showing. The root is observed for mutations AND attribute flips
- * (bb's collapse is an attribute toggle plus a transition — no node mounts
+ * (VesnALIA's collapse is an attribute toggle plus a transition — no node mounts
  * or unmounts — so a childList-only observer would miss it forever), and
  * each burst of activity schedules one probe after the settle window.
  */
@@ -154,7 +154,7 @@ export function usePaneContextRowMissing(
 /**
  * The pane's fallback composer-context line: project, then the checkout's
  * branch, else the environment's plain name — the same order of importance
- * bb's compact chip uses.
+ * VesnALIA's compact chip uses.
  */
 export function PaneContextRow({ info }: { info: PaneContextInfo }) {
   const describe = info.branchLabel ?? info.environmentLabel;

@@ -9,7 +9,7 @@
 // Wide and narrow layouts switch on the frame's own width (container
 // queries), so a row opens at its final height without measuring first.
 import { useContext, useId, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
-import { Markdown, UrlLink } from "@get-bb/plugin-sdk/app";
+import { Markdown, UrlLink } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import {
@@ -52,7 +52,7 @@ const GROW_X: Entrance = { keyframes: [{ transform: "scaleX(0)" }, { transform: 
 
 const ACCENT = "var(--color-timeline-accent,var(--primary))";
 
-/** Notes: small prose at every width (BB's markdown sizes its own paragraphs up on phones). */
+/** Notes: small prose at every width (VesnALIA's markdown sizes its own paragraphs up on phones). */
 const SMALL_PROSE =
   "min-w-0 text-xs leading-[18px] text-foreground [overflow-wrap:anywhere] [&_li]:text-xs [&_p]:my-0 [&_p]:text-xs [&_p]:leading-[18px] [&>:first-child]:mt-0 [&>:last-child]:mb-0";
 

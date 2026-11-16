@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-show-latest-threads",
+  "name": "alia-plugin-show-latest-threads",
   "version": "0.1.2",
   "type": "module",
   "engines": {
-    "bb": ">=0.45",
-    "bbPluginSdk": ">=0.6.15"
+    "alia": ">=0.45",
+    "aliaPluginSdk": ">=0.6.15"
   },
-  "bb": {
+  "alia": {
     "name": "Show Latest Threads",
     "description": "Sidebar thread list that can show only threads active in the last 24, 48 or 72 hours.",
     "branding": {
@@ -22,7 +22,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.15",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -34,18 +33,31 @@
   "description": "Sidebar thread list that can show only threads active in the last 24, 48 or 72 hours.",
   "license": "MIT",
   "author": "Sergey Kalachev",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/meanwhile17/bb-plugin-show-latest-threads.git"
-  },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "sidebar",
     "threads"
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --test --experimental-strip-types test/*.test.ts",
-    "build": "bb plugin build ."
+    "build": "alia plugin build ."
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.15"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/show-latest-threads#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/show-latest-threads"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

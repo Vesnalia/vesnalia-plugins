@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-plugin-updates",
+  "name": "alia-plugin-plugin-updates",
   "version": "0.1.6",
   "license": "MIT",
   "type": "module",
   "engines": {
-    "bb": ">=0.47",
-    "bbPluginSdk": ">=0.6.54"
+    "alia": ">=0.47",
+    "aliaPluginSdk": ">=0.6.54"
   },
-  "bb": {
+  "alia": {
     "name": "Plugin Updates",
     "description": "Shows which plugins have updates, including releases outside their version range, and installs them.",
     "branding": {
@@ -25,7 +25,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@pierre/diffs": "~1.2.12",
     "@radix-ui/react-alert-dialog": "^1.2.1",
     "@radix-ui/react-context-menu": "^2.4.1",
@@ -59,5 +58,22 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/plugin-updates#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/plugin-updates"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,7 +1,7 @@
 // The My Tasks list: data, rows, sections, search and filters, and the sidebar badge.
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
-import { UrlLink, useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { LinkedThread, rpcContract, Task } from "../server";
 import { toast } from "sonner";
 import { projectColor } from "../colors";
@@ -84,7 +84,7 @@ export function useTasks() {
 
 /** Toasts tasks newly in your list, each with a button to open it. */
 function useNewTaskToasts() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   useRealtime("tasks-assigned", (payload) => {
     const tasks = (payload as { tasks?: unknown } | null)?.tasks;
     if (!Array.isArray(tasks)) return;
@@ -107,7 +107,7 @@ function useNewTaskToasts() {
 }
 
 /**
- * The sidebar badge: how many open tasks are overdue. bb runs this hook once
+ * The sidebar badge: how many open tasks are overdue. VesnALIA runs this hook once
  * while the plugin is loaded, so it also hosts the new-task toasts.
  */
 export function useOverdueBadge() {
@@ -171,7 +171,7 @@ function useListThreads(gids: string[]) {
  * instead of starting another.
  */
 export function OpenThreadButton({ thread }: { thread: LinkedThread }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const state = threadState(thread);
   const label = `Open thread "${thread.title}", ${THREAD_STATE_LABEL[state].toLowerCase()}`;
   return (
@@ -401,7 +401,7 @@ export function WorkspaceSwitcher({
 export function TasksView({ onOpenTask }: { onOpenTask: (gid: string) => void }) {
   const { result, error, loading, refetch } = useTasks();
   const now = useNow();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const searchId = useId();
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);

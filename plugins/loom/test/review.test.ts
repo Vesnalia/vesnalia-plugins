@@ -1,4 +1,4 @@
-import { makeTurnFailedEvent } from "@get-bb/plugin-sdk/testing";
+import { makeTurnFailedEvent } from "@vesnalia/plugin-sdk/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 import { settleChecks, submit } from "../src/checks";
 import type { PostRow, ReviewRow, ThreadRow } from "../src/db/store";
@@ -86,14 +86,14 @@ describe("reviewerBrief", () => {
     expect(brief).toContain("Round 1 · approved: Looks fine");
   });
 
-  it("names the ticket's repo, its bb project and that repo's checks on a multi-repo project", async () => {
+  it("names the ticket's repo, its VesnALIA project and that repo's checks on a multi-repo project", async () => {
     const project = await seedRepoProject(h);
     const spec = specOf(h.store, project);
     const brief = (key: string) => reviewerBrief({ project, spec, ticket: ticketOf(h, key), round: 1, diff: { stat: "", patch: "", truncated: false }, checkPost: null, earlierReviews: [] });
     expect(brief("CSV-1")).toContain(
       [
         "## Repository",
-        'This ticket is in the repo "web", the bb project proj_web, and this worktree is a checkout of it. The changes, the scope report and the check results below are about this repo only.',
+        'This ticket is in the repo "web", the VesnALIA project proj_web, and this worktree is a checkout of it. The changes, the scope report and the check results below are about this repo only.',
         "The checks of this repo, which ran after the ticket's verify commands:",
         '- "npm run web-test"',
         "",
@@ -101,7 +101,7 @@ describe("reviewerBrief", () => {
       ].join("\n"),
     );
     expect(brief("CSV-1")).not.toContain('"npm test"');
-    expect(brief("CSV-2")).toContain('This ticket is in the repo "api", the bb project proj_api,');
+    expect(brief("CSV-2")).toContain('This ticket is in the repo "api", the VesnALIA project proj_api,');
     expect(brief("CSV-2")).toContain("which ran after the ticket's verify commands:\n- \"npm test\"\n");
   });
 
@@ -168,9 +168,9 @@ const project = () => h.store.projectBySlug("csv")!;
 const reviewers = (key = "CSV-1") => h.store.threads({ ticketId: ticketOf(h, key).id, role: "reviewer" });
 const reviewsOf = (key = "CSV-1", round?: number) => h.store.reviews(ticketOf(h, key).id, round);
 const spawn = () => spawnReviewers(h.ctx, project(), specOf(h.store, project()));
-const spawnArgs = (n: number) => h.bb.callsTo("spawnThread")[n]![0] as SpawnArgs;
+const spawnArgs = (n: number) => h.alia.callsTo("spawnThread")[n]![0] as SpawnArgs;
 const postsOf = (key = "CSV-1") => h.store.posts(ticketOf(h, key).id);
-const archived = () => h.bb.callsTo("archive").map(([id]) => id);
+const archived = () => h.alia.callsTo("archive").map(([id]) => id);
 
 async function resubmit(worker: ThreadRow) {
   h.host.worktree(`/wt/${worker.environment_id}`).dirty = true;
@@ -196,7 +196,7 @@ describe("spawnReviewers", () => {
     const ticket = ticketOf(h, "CSV-1");
     const [first, second] = reviewers();
     expect(spawnArgs(1)).toMatchObject({
-      bbProjectId: "proj_1",
+      aliaProjectId: "proj_1",
       hostId: "host_1",
       baseBranch: ticket.branch,
       title: "Review CSV-1 · round 1",
@@ -224,11 +224,11 @@ describe("spawnReviewers", () => {
     expect(reviewers()).toHaveLength(2);
   });
 
-  it("reserves the row and the review before it calls bb", async () => {
+  it("reserves the row and the review before it calls VesnALIA", async () => {
     await seedProject(h);
     await reachReview(h);
     let during: unknown;
-    h.bb.spawnError = (args) => {
+    h.alia.spawnError = (args) => {
       const row = h.store.threadBySpawnToken(args.metadata.spawnToken!);
       during = { state: row?.state, thread: row?.thread_id, reviews: reviewsOf().map((review) => review.thread_row_id === row?.id) };
       return null;
@@ -261,20 +261,20 @@ describe("spawnReviewers", () => {
     await reachReview(h);
     h.store.setProjectState(project().id, "paused", "human");
     expect(await spawn()).toBe(0);
-    expect(h.bb.callsTo("spawnThread")).toHaveLength(1);
+    expect(h.alia.callsTo("spawnThread")).toHaveLength(1);
   });
 
   it("waits after a failed reviewer spawn, with the same row and review, and counts reviewers that ended only after three failures in a row", async () => {
     await seedProject(h);
     const worker = await reachReview(h);
-    h.bb.spawnError = (args) => (args.metadata.role === "reviewer" ? new Error("provider is down") : null);
+    h.alia.spawnError = (args) => (args.metadata.role === "reviewer" ? new Error("provider is down") : null);
     expect(await spawn()).toBe(0);
     expect(reviewers().map((row) => [row.state, row.end_reason])).toEqual([["ended", "unstarted"]]);
     expect(waitOf(ticketOf(h, "CSV-1"))).toMatchObject({ role: "reviewer", tries: 1, reason: "provider is down" });
     expect(postsOf().at(-1)!.body).toBe("Could not start a reviewer: provider is down. Loom tries again in 1m; a start that fails 4 times in a row counts as a failed attempt.");
     // Before the retry time nothing starts.
     expect(await spawn()).toBe(0);
-    expect(h.bb.callsTo("spawnThread").filter(([args]) => (args as SpawnArgs).metadata.role === "reviewer")).toHaveLength(1);
+    expect(h.alia.callsTo("spawnThread").filter(([args]) => (args as SpawnArgs).metadata.role === "reviewer")).toHaveLength(1);
 
     const retry = async () => {
       h.clock.advance(waitOf(ticketOf(h, "CSV-1"))!.until - h.clock.t);
@@ -299,14 +299,14 @@ describe("spawnReviewers", () => {
   it("waits without counting while the environment provider is unavailable, then starts the same reviewer", async () => {
     await seedProject(h);
     await reachReview(h);
-    h.bb.spawnError = (args) => (args.metadata.role === "reviewer" ? new SpawnUnavailableError("No free slot.") : null);
+    h.alia.spawnError = (args) => (args.metadata.role === "reviewer" ? new SpawnUnavailableError("No free slot.") : null);
     for (let n = 0; n < 7; n++) {
       await spawn();
       h.clock.advance(waitOf(ticketOf(h, "CSV-1"))!.until - h.clock.t);
     }
     expect(reviewers().map((row) => row.end_reason)).toEqual(["unstarted"]);
     expect(ticketOf(h, "CSV-1").state).toBe("review");
-    h.bb.spawnError = null;
+    h.alia.spawnError = null;
     expect(await spawn()).toBe(1);
     expect(reviewers()).toMatchObject([{ state: "active", end_reason: null }]);
     expect(reviewsOf()).toHaveLength(1);
@@ -315,7 +315,7 @@ describe("spawnReviewers", () => {
   it("blocks the ticket when the provider stays unavailable for an hour, and approving a pending version sends it back to review", async () => {
     await seedProject(h);
     await reachReview(h);
-    h.bb.spawnError = (args) => (args.metadata.role === "reviewer" ? new SpawnUnavailableError("No free slot.") : null);
+    h.alia.spawnError = (args) => (args.metadata.role === "reviewer" ? new SpawnUnavailableError("No free slot.") : null);
     await spawn();
     while (ticketOf(h, "CSV-1").state === "review") {
       h.clock.advance(waitOf(ticketOf(h, "CSV-1"))!.until - h.clock.t);
@@ -332,21 +332,21 @@ describe("spawnReviewers", () => {
     await reachReview(h);
     await spawn();
     const [row] = reviewers();
-    h.bb.systemErrors.set(row!.thread_id!, { code: "thread_provisioning_failed", message: "Provisioning thread failed", detail: "No free slot." });
+    h.alia.systemErrors.set(row!.thread_id!, { code: "thread_provisioning_failed", message: "Provisioning thread failed", detail: "No free slot." });
     await onReviewerTurnFailed(h.ctx, makeTurnFailedEvent({ threadId: row!.thread_id!, requestId: "req_1" }));
     expect(h.store.thread(row!.id)).toMatchObject({ state: "ended", end_reason: "unstarted" });
-    expect(h.bb.sent(row!.thread_id!)).toEqual([]);
-    expect(h.bb.callsTo("archive")).toContainEqual([row!.thread_id!]);
+    expect(h.alia.sent(row!.thread_id!)).toEqual([]);
+    expect(h.alia.callsTo("archive")).toContainEqual([row!.thread_id!]);
     expect(waitOf(ticketOf(h, "CSV-1"))).toMatchObject({ role: "reviewer", reason: "No free slot." });
   });
 
-  it("blocks the ticket at once, ending its worker, when bb refuses a reviewer", async () => {
+  it("blocks the ticket at once, ending its worker, when VesnALIA refuses a reviewer", async () => {
     await seedProject(h, (doc) => (doc.review = { approvals: 2 }));
     const worker = await reachReview(h);
-    h.bb.spawnError = (args) => (args.metadata.role === "reviewer" ? new SpawnRefusedError(400, "HTTP 400: Provider pi only supports full permission mode.") : null);
+    h.alia.spawnError = (args) => (args.metadata.role === "reviewer" ? new SpawnRefusedError(400, "HTTP 400: Provider pi only supports full permission mode.") : null);
     expect(await spawn()).toBe(0);
-    expect(h.bb.callsTo("spawnThread").filter(([args]) => (args as SpawnArgs).metadata.role === "reviewer")).toHaveLength(1);
-    const reason = "bb refused to start a reviewer: HTTP 400: Provider pi only supports full permission mode.";
+    expect(h.alia.callsTo("spawnThread").filter(([args]) => (args as SpawnArgs).metadata.role === "reviewer")).toHaveLength(1);
+    const reason = "alia refused to start a reviewer: HTTP 400: Provider pi only supports full permission mode.";
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "blocked", blocked_reason: reason, worker_thread_id: null });
     expect(h.store.thread(worker.id)).toMatchObject({ state: "ended", end_reason: "blocked" });
     expect(postsOf().at(-1)).toMatchObject({ kind: "block", body: reason });
@@ -362,15 +362,15 @@ describe("spawnReviewers", () => {
     expect(reviewers()).toHaveLength(0);
   });
 
-  it("pauses the project, naming its repository and the command that clones it, when the bb project has no checkout on the machine", async () => {
+  it("pauses the project, naming its repository and the command that clones it, when the VesnALIA project has no checkout on the machine", async () => {
     await seedProject(h);
     await reachReview(h);
-    h.bb.checkout = null;
+    h.alia.checkout = null;
     expect(await spawn()).toBe(0);
     expect(project()).toMatchObject({
       state: "paused",
       system_reason:
-        "Could not read the diff of CSV-1 for review: The project's repository (bb project proj_1) has no checkout on the machine host_1 that this Loom project uses. Clone it there with `bb project source add proj_1 --clone --machine host_1`, then resume.",
+        "Could not read the diff of CSV-1 for review: The project's repository (VesnALIA project proj_1) has no checkout on the machine host_1 that this Loom project uses. Clone it there with `alia project source add proj_1 --clone --machine host_1`, then resume.",
     });
     expect(h.host.callsTo("diff")).toEqual([]);
   });
@@ -381,7 +381,7 @@ describe("spawnReviewers", () => {
     h.store.updateTicket(ticketOf(h, "CSV-1").id, { branch: null });
     expect(await spawn()).toBe(1);
     expect(h.host.callsTo("diff")).toEqual([{ repo: "/repo", base: "origin/main", head: "c1", maxBytes: 60_000 }]);
-    expect(spawnArgs(1)).toMatchObject({ bbProjectId: "proj_1", hostId: "host_1", baseBranch: "origin/main" });
+    expect(spawnArgs(1)).toMatchObject({ aliaProjectId: "proj_1", hostId: "host_1", baseBranch: "origin/main" });
   });
 
   it("ends active reviewers of a round that is over, and starts reviewers for the new round", async () => {
@@ -403,26 +403,26 @@ describe("spawnReviewers", () => {
 });
 
 describe("reviewers on a multi-repo project", () => {
-  it("reads the diff from the ticket's repo checkout and starts the reviewers in that repo's bb project, from the ticket's branch", async () => {
+  it("reads the diff from the ticket's repo checkout and starts the reviewers in that repo's VesnALIA project, from the ticket's branch", async () => {
     await seedRepoProject(h);
     await reachReview(h, "CSV-1");
     expect(await spawn()).toBe(1);
-    expect(h.bb.callsTo("projectCheckout")).toContainEqual(["proj_web", "host_1"]);
+    expect(h.alia.callsTo("projectCheckout")).toContainEqual(["proj_web", "host_1"]);
     expect(h.host.calls.filter((call) => call.method === "diff")).toEqual([{ hostId: "host_1", method: "diff", input: { repo: "/src/web", base: "loom/csv", head: "c1", maxBytes: 60_000 } }]);
-    expect(spawnArgs(1)).toMatchObject({ bbProjectId: "proj_web", hostId: "host_1", baseBranch: ticketOf(h, "CSV-1").branch, metadata: { role: "reviewer", ticket: "CSV-1" } });
-    expect(spawnArgs(1).prompt).toContain('This ticket is in the repo "web", the bb project proj_web,');
+    expect(spawnArgs(1)).toMatchObject({ aliaProjectId: "proj_web", hostId: "host_1", baseBranch: ticketOf(h, "CSV-1").branch, metadata: { role: "reviewer", ticket: "CSV-1" } });
+    expect(spawnArgs(1).prompt).toContain('This ticket is in the repo "web", the VesnALIA project proj_web,');
     // The other repos' checkouts, as the worker's brief lists them, whatever environment the reviewer runs in.
     expect(spawnArgs(1).prompt).toContain(
-      ["## Other repositories (read only)", "This project also works in these repos. You may read them for context, but never edit them: changes there belong to their own tickets.", '- "api" (bb project proj_api): /src/api', '- "docs" (bb project proj_docs): /src/docs'].join("\n"),
+      ["## Other repositories (read only)", "This project also works in these repos. You may read them for context, but never edit them: changes there belong to their own tickets.", '- "api" (VesnALIA project proj_api): /src/api', '- "docs" (VesnALIA project proj_docs): /src/docs'].join("\n"),
     );
   });
 
   it("lists a repo with no checkout on the machine without a path", async () => {
     await seedRepoProject(h);
     await reachReview(h, "CSV-1");
-    h.bb.checkouts.set("proj_docs", {});
+    h.alia.checkouts.set("proj_docs", {});
     await spawn();
-    expect(spawnArgs(1).prompt).toContain('- "docs" (bb project proj_docs): no checkout was found on this machine');
+    expect(spawnArgs(1).prompt).toContain('- "docs" (VesnALIA project proj_docs): no checkout was found on this machine');
   });
 
   it("uses the repo's remote base for the diff, for a reviewer without a branch and for the verdict's worktree check, on the pr strategy", async () => {
@@ -431,7 +431,7 @@ describe("reviewers on a multi-repo project", () => {
     h.store.updateTicket(ticketOf(h, "CSV-2").id, { branch: null });
     expect(await spawn()).toBe(1);
     expect(h.host.callsTo("diff")).toEqual([{ repo: "/src/api", base: "upstream/trunk", head: "c1", maxBytes: 60_000 }]);
-    expect(spawnArgs(1)).toMatchObject({ bbProjectId: "proj_api", hostId: "host_1", baseBranch: "upstream/trunk" });
+    expect(spawnArgs(1)).toMatchObject({ aliaProjectId: "proj_api", hostId: "host_1", baseBranch: "upstream/trunk" });
 
     const reviewer = reviewers("CSV-2")[0]!;
     checkOutHead(h, reviewer);
@@ -443,12 +443,12 @@ describe("reviewers on a multi-repo project", () => {
   it("pauses the project, naming the repo and the command that clones it, when the ticket's repo has no checkout on the project's machine", async () => {
     await seedRepoProject(h);
     await reachReview(h, "CSV-1");
-    h.bb.checkouts.set("proj_web", {});
+    h.alia.checkouts.set("proj_web", {});
     expect(await spawn()).toBe(0);
     expect(project()).toMatchObject({
       state: "paused",
       system_reason:
-        'Could not read the diff of CSV-1 for review: Repo "web" (bb project proj_web) has no checkout on the machine host_1 that this Loom project uses. Clone it there with `bb project source add proj_web --clone --machine host_1`, then resume.',
+        'Could not read the diff of CSV-1 for review: Repo "web" (VesnALIA project proj_web) has no checkout on the machine host_1 that this Loom project uses. Clone it there with `alia project source add proj_web --clone --machine host_1`, then resume.',
     });
     expect(h.host.callsTo("diff")).toEqual([]);
     expect(reviewers()).toHaveLength(0);
@@ -495,7 +495,7 @@ describe("verdicts", () => {
     await settleReviews(h.ctx);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", worker_thread_id: worker.thread_id });
     expect(h.store.thread(worker.id)).toMatchObject({ clock_at: h.clock.t, idle_count: 0, state: "active" });
-    const sent = h.bb.callsTo("send").filter(([id]) => id === worker.thread_id).at(-1)![1] as { summary: string; detail: string };
+    const sent = h.alia.callsTo("send").filter(([id]) => id === worker.thread_id).at(-1)![1] as { summary: string; detail: string };
     expect(sent.summary).toBe("[loom] CSV-1: review round 1 asked for changes (2 findings). Fix them and call loom_submit again.");
     expect(sent.detail).toContain("Two things to fix");
     expect(sent.detail).toContain("1. [blocking] Off by one (src/model/a.ts:12)");
@@ -513,7 +513,7 @@ describe("verdicts", () => {
     await requestChanges(h.ctx, reviewer.thread_id!, "No", findings);
     await settleReviews(h.ctx);
     expect(h.store.thread(other.id)).toMatchObject({ state: "ended", end_reason: "superseded" });
-    expect(h.bb.callsTo("stop").map(([id]) => id)).toContain(other.thread_id);
+    expect(h.alia.callsTo("stop").map(([id]) => id)).toContain(other.thread_id);
     expect(archived()).toContain(other.thread_id);
   });
 
@@ -523,7 +523,7 @@ describe("verdicts", () => {
     await requestChanges(h.ctx, reviewer.thread_id!, "Fix it", findings);
     await settleReviews(h.ctx);
     expect(ticketOf(h, "CSV-1").state).toBe("working");
-    expect(h.bb.sent(worker.thread_id!).filter((text) => text.includes("asked for changes"))).toEqual([]);
+    expect(h.alia.sent(worker.thread_id!).filter((text) => text.includes("asked for changes"))).toEqual([]);
     expect(heldCheckResult(postsOf())).toMatchObject({ kind: "review" });
   });
 
@@ -534,10 +534,10 @@ describe("verdicts", () => {
     await requestChanges(h.ctx, reviewer.thread_id!, "Fix it", findings);
     await settleReviews(h.ctx);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "queued", worker_thread_id: null, environment_id: null });
-    expect(h.bb.sent(worker.thread_id!).filter((text) => text.includes("asked for changes"))).toEqual([]);
+    expect(h.alia.sent(worker.thread_id!).filter((text) => text.includes("asked for changes"))).toEqual([]);
 
     await startWorker(h);
-    expect(h.bb.callsTo("spawnThread").at(-1)![0]).toMatchObject({ prompt: expect.stringContaining("Changes requested (round 1): Fix it") });
+    expect(h.alia.callsTo("spawnThread").at(-1)![0]).toMatchObject({ prompt: expect.stringContaining("Changes requested (round 1): Fix it") });
   });
 
   it("blocks the ticket when changes were requested in max_rounds rounds, and ends the worker", async () => {
@@ -587,7 +587,7 @@ describe("verdicts", () => {
     await settleReviews(h.ctx);
     expect(reviewsOf().filter((review) => review.verdict === "changes_requested")).toHaveLength(1);
     expect(h.store.events(project().id).filter((event) => event.kind === "review.verdict")).toHaveLength(1);
-    expect(h.bb.sent(worker.thread_id!).filter((text) => text.includes("asked for changes"))).toHaveLength(1);
+    expect(h.alia.sent(worker.thread_id!).filter((text) => text.includes("asked for changes"))).toHaveLength(1);
     expect(ticketOf(h, "CSV-1").state).toBe("working");
   });
 
@@ -688,7 +688,7 @@ describe("the tick re-evaluates a round that already has its verdicts", () => {
     h.store.setVerdict(reviewsOf()[0]!.id, "changes_requested", "Fix it", [{ severity: "blocking", title: "Bug", detail: "It breaks." }]);
     await spawn();
     expect(ticketOf(h, "CSV-1").state).toBe("working");
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("1. [blocking] Bug");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("1. [blocking] Bug");
   });
 
   it("waits while the worker is still ending, then decides", async () => {
@@ -712,7 +712,7 @@ describe("a reviewer that stalls", () => {
     await spawn();
     const row = reviewers()[0]!;
     await onReviewerIdle(h.ctx, row);
-    expect(h.bb.sent(row.thread_id!)).toEqual([expect.stringMatching(/CSV-1.*without a verdict.*loom_approve.*loom_request_changes/s)]);
+    expect(h.alia.sent(row.thread_id!)).toEqual([expect.stringMatching(/CSV-1.*without a verdict.*loom_approve.*loom_request_changes/s)]);
     expect(h.store.thread(row.id)!.idle_count).toBe(1);
 
     await onReviewerIdle(h.ctx, h.store.thread(row.id)!);
@@ -751,7 +751,7 @@ describe("a reviewer that stalls", () => {
     const { reviewer } = await reviewerReady();
     h.store.setVerdict(reviewsOf()[0]!.id, "approved", "ok", []);
     await onReviewerIdle(h.ctx, reviewer);
-    expect(h.bb.sent(reviewer.thread_id!)).toEqual([]);
+    expect(h.alia.sent(reviewer.thread_id!)).toEqual([]);
     expect(h.store.thread(reviewer.id)).toMatchObject({ state: "ended", end_reason: "verdict" });
   });
 });
@@ -775,7 +775,7 @@ describe("loom_checkout", () => {
     await spawn();
     const reviewer = reviewers()[0]!;
     expect(ticketOf(h, "CSV-1")).toMatchObject({ head_sha: "home1", head_tree: "c1" });
-    expect(h.bb.environments.get(reviewer.environment_id!)!.hostId).toMatch(/^host_box/u);
+    expect(h.alia.environments.get(reviewer.environment_id!)!.hostId).toMatch(/^host_box/u);
     await expect(approve(h.ctx, reviewer.thread_id!, "ok")).rejects.toThrow(/Call loom_checkout first/u);
     h.host.calls = [];
     await checkOutReview(h.ctx, reviewer.thread_id!);
@@ -829,13 +829,13 @@ describe("where reviewers of work from other machines start", () => {
   });
 
   it("starts a reviewer on the project's machine from the ticket's home branch, since the worker's branch is on another machine", async () => {
-    h.bb.compositionList = [{ ...GIT_WORKTREE_PROVIDER, id: "boxed-trees", displayName: "Trees on boxes", pluginId: "boxes", machineProviderId: "boxes" }];
+    h.alia.compositionList = [{ ...GIT_WORKTREE_PROVIDER, id: "boxed-trees", displayName: "Trees on boxes", pluginId: "boxes", machineProviderId: "boxes" }];
     await seedMachineProject(h, (doc) => (doc.environment = { provider: "boxed-trees", machine: { provider: "boxes" }, reviewer: { provider: "git-worktree" } }));
     await reachReview(h);
     await spawn();
     expect(spawnArgs(1)).toMatchObject({ baseBranch: "loom/csv/csv-1-home", environment: undefined });
     const reviewer = reviewers()[0]!;
-    expect(h.bb.environments.get(reviewer.environment_id!)!.hostId).toBe("host_1");
+    expect(h.alia.environments.get(reviewer.environment_id!)!.hostId).toBe("host_1");
   });
 });
 
@@ -845,19 +845,19 @@ describe("a reviewer whose machine moved", () => {
     await reachReview(h);
     await spawn();
     const row = reviewers()[0]!;
-    h.bb.systemErrors.set(row.thread_id!, { code: "machine_maintenance", message: "Machine preservation is interrupting this turn.", seq: 3, at: 0 });
+    h.alia.systemErrors.set(row.thread_id!, { code: "machine_maintenance", message: "Machine preservation is interrupting this turn.", seq: 3, at: 0 });
     await onReviewerIdle(h.ctx, row);
     expect(h.store.thread(row.id)).toMatchObject({ state: "active", idle_count: 0, maintenance_seq: 3 });
     await onReviewerIdle(h.ctx, h.store.thread(row.id)!);
     expect(h.store.thread(row.id)).toMatchObject({ state: "active", idle_count: 1 });
-    expect(h.bb.sent(row.thread_id!).at(-1)).toContain("your turn ended without a verdict");
+    expect(h.alia.sent(row.thread_id!).at(-1)).toContain("your turn ended without a verdict");
   });
 });
 
 describe("the brief of a reviewer of work from another machine", () => {
   it("names the reviewed tree for loom_checkout, reads files from HEAD, and names no path on the project's machine", async () => {
-    h.bb.addBbProject("proj_web", { host_1: "/src/web" });
-    h.bb.addBbProject("proj_api", { host_1: "/src/api" });
+    h.alia.addAliaProject("proj_web", { host_1: "/src/web" });
+    h.alia.addAliaProject("proj_api", { host_1: "/src/api" });
     await seedMachineProject(h, (doc) => {
       doc.repo = [{ name: "web", project: "proj_web" }, { name: "api", project: "proj_api" }];
       doc.ticket[0].repo = "web";

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { Contract, MonitorSnapshot } from "../../plugin/contract.ts";
 import { createSnapshotSource } from "./snapshot-source.ts";
 import { createVisiblePoller } from "./visible-poller.ts";

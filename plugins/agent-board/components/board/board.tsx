@@ -1,4 +1,4 @@
-// bb-plugin-agent-board — the board root.
+// alia-plugin-agent-board — the board root.
 //
 // Derives the normalized snapshot, then chooses ONE of two truthful views:
 // the single-agent focus experience when exactly one logical active
@@ -7,7 +7,7 @@
 // shared by both views.
 import { useMemo } from "react";
 import type { ReactNode } from "react";
-import { useRealtimeConnectionState } from "@get-bb/plugin-sdk/app";
+import { useRealtimeConnectionState } from "@vesnalia/plugin-sdk/app";
 import type { BoardSnapshot } from "@/contract/rpc";
 import { formatElapsed } from "@/lib/board-model";
 import { buildFocusModel } from "@/lib/focus-model";

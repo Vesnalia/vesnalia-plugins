@@ -1,7 +1,7 @@
 // The tree's menus: the Diff toolbar button's (show tree, open depth, recent
 // commits) and the "Changes" row's view menu (layout, compact folders, Synced view).
 import * as Menu from "@radix-ui/react-dropdown-menu";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { OpenDepth } from "./folders";
 import { LIST_ICON, LIST_TREE_ICON, TREE_ICON } from "./icons";
 import { RECENT_COUNTS, setOption, useOptions } from "./options";

@@ -4,7 +4,7 @@
 // The band is copied from the Activity Overview plugin's burn-rate pulse
 // (thread thr_s5vbtjtgwe) so the two boards read alike. It spans exactly 10x,
 // the reference rate sits at the slow end, and the unmeasured state holds that
-// same slow end. Nothing here touches bb or the DOM: the sampler
+// same slow end. Nothing here touches VesnALIA or the DOM: the sampler
 // (lib/thread-pulse.ts) owns the reading, this module owns the arithmetic.
 
 /**

@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-dynamic-file-tree",
+  "name": "alia-plugin-dynamic-file-tree",
   "version": "1.1.2",
   "type": "module",
   "engines": {
-    "bb": ">=0.48",
-    "bbPluginSdk": ">=0.6.104"
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.104"
   },
-  "bb": {
+  "alia": {
     "name": "Dynamic File Tree",
-    "description": "Browse the active thread's project tree, Git status, and files in BB's right sidebar.",
+    "description": "Browse the active thread's project tree, Git status, and files in VesnALIA's right sidebar.",
     "branding": {
       "icon": "FolderTree"
     },
@@ -18,13 +18,12 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "dependencies": {
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@types/better-sqlite3": "^7.6.13",
@@ -39,5 +38,22 @@
     "react-dom": "^19.3.1",
     "typescript": "^5.7.0",
     "vitest": "^5.1.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/dynamic-file-tree#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/dynamic-file-tree"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

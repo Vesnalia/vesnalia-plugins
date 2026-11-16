@@ -70,7 +70,7 @@ function Item({
     <DropdownMenuItem disabled={disabled} onSelect={onSelect}>
       <Icon name={icon} className="size-4 text-muted-foreground" aria-hidden="true" />
       <span className="flex-1">{children}</span>
-      {shortcut === undefined ? null : <DropdownMenuShortcut className="bb-ft-shortcut-hint">{shortcut}</DropdownMenuShortcut>}
+      {shortcut === undefined ? null : <DropdownMenuShortcut className="alia-ft-shortcut-hint">{shortcut}</DropdownMenuShortcut>}
     </DropdownMenuItem>
   );
 }
@@ -96,7 +96,7 @@ function StepButton({
       disabled={disabled}
       aria-pressed={active}
       onClick={onClick}
-      className={cn("bb-ft-step", active ? "bb-ft-step-on" : null)}
+      className={cn("alia-ft-step", active ? "alia-ft-step-on" : null)}
     >
       <Icon name={icon} className="size-3.5" aria-hidden="true" />
     </button>
@@ -133,15 +133,15 @@ export function WindowMenu({
               variant="ghost"
               size="icon"
               data-no-drag=""
-              data-bb-ft-action=""
-              className="bb-ft-bar-button"
+              data-alia-ft-action=""
+              className="alia-ft-bar-button"
               aria-label="More actions"
             >
               <Icon name="MoreHorizontal" aria-hidden="true" />
             </Button>
           </TooltipTrigger>
         </DropdownMenuTrigger>
-        <TooltipContent className="bb-ft-tooltip">More actions</TooltipContent>
+        <TooltipContent className="alia-ft-tooltip">More actions</TooltipContent>
       </Tooltip>
       <DropdownMenuContent align="end" className="w-60" mobileTitle="Terminal actions">
         <Item icon="Edit" disabled={!hasTab} onSelect={onRename} shortcut="F2">
@@ -171,7 +171,7 @@ export function WindowMenu({
           </Item>
         )}
         <DropdownMenuSeparator />
-        <div className="bb-ft-menu-row" role="group" aria-label="Text size">
+        <div className="alia-ft-menu-row" role="group" aria-label="Text size">
           <span className="flex-1 text-xs text-muted-foreground">Text size</span>
           <StepButton
             label="Smaller text"
@@ -181,7 +181,7 @@ export function WindowMenu({
           />
           <button
             type="button"
-            className="bb-ft-step-value"
+            className="alia-ft-step-value"
             title={fontCustomised ? "Back to the default size" : "Default size"}
             onClick={() => onFontSize(null)}
           >
@@ -195,7 +195,7 @@ export function WindowMenu({
           />
         </div>
         {layout === null ? null : (
-          <div className="bb-ft-menu-row" role="group" aria-label="Layout">
+          <div className="alia-ft-menu-row" role="group" aria-label="Layout">
             <span className="flex-1 text-xs text-muted-foreground">Layout</span>
             <StepButton
               label="Left half"
@@ -236,7 +236,7 @@ export function WindowMenu({
         <Item icon="Keyboard" onSelect={onShortcuts}>
           Keyboard shortcuts
         </Item>
-        <DropdownMenuLabel className="bb-ft-menu-foot">
+        <DropdownMenuLabel className="alia-ft-menu-foot">
           Shells keep running while the window is hidden.
         </DropdownMenuLabel>
       </DropdownMenuContent>

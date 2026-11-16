@@ -1,8 +1,8 @@
 /**
- * Opens this plugin's page in bb's settings. The SDK has no call for it, so this pushes the route the
+ * Opens this plugin's page in VesnALIA's settings. The SDK has no call for it, so this pushes the route the
  * way the app's react-router history does and dispatches the `popstate` it listens for, as Herald does
- * (`herald/app/open-settings.ts`). It is an internal route: if a later bb moves it, the push lands on
- * bb's not-found page, and the caller's toast says where the settings are.
+ * (`herald/app/open-settings.ts`). It is an internal route: if a later VesnALIA moves it, the push lands on
+ * VesnALIA's not-found page, and the caller's toast says where the settings are.
  */
 
 export interface HistoryWindow {

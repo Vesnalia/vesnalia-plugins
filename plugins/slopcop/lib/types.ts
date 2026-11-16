@@ -81,7 +81,7 @@ export type TargetKind = z.infer<typeof targetKindSchema>;
 
 /**
  * The composer's resolved selections, stored verbatim and replayed at dispatch.
- * Kept loose on purpose: this round-trips through `threads.spawn` and BB owns
+ * Kept loose on purpose: this round-trips through `threads.spawn` and VesnALIA owns
  * its exact shape, so SlopCop validates only the fields it reads.
  */
 export const threadRequestSchema = z

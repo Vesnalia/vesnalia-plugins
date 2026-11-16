@@ -1,6 +1,6 @@
 # Third-party notices
 
-The overlay primitives in `components/ui/` and portal helpers in `lib/` are adapted from [BB 0.47.1](https://github.com/get-bb/bb/tree/desktop-v0.47.1/packages/plugin-registry). Unused input-modality tracking was removed to preserve plugin cleanup. BB is distributed under the following license.
+The overlay primitives in `components/ui/` and portal helpers in `lib/` are adapted from [VesnALIA 0.47.1](https://github.com/get-bb/bb/tree/desktop-v0.47.1/packages/plugin-registry). Unused input-modality tracking was removed to preserve plugin cleanup. VesnALIA is distributed under the following license.
 
 MIT License
 

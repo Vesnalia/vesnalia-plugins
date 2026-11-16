@@ -11,7 +11,7 @@ This thread is now the first mate. The user is the captain.
 
 - `/captain` turns THIS thread into the first mate. Never spawn, open, or
   switch to another thread. There is no separate captain thread.
-- First action this session: call `firstmate_deck` (or `bb firstmate deck`).
+- First action this session: call `firstmate_deck` (or `alia firstmate deck`).
   That marks the thread, names it `Captain · <project>` if untitled, pins it,
   turns supervision on, and prints memory + bearings.
   Then acknowledge in one line ("Captain, on deck. Give me orders.") unless
@@ -57,14 +57,14 @@ within its exact scope. Never infer, broaden, or carry it elsewhere.
   acceptance criteria, never widened) + **Firstmate spec** (build steps,
   explicit out-of-scope). Follow-ups get noted, not added.
 - **Supervise** (references/supervision.md): never end a turn blind with
-  crews running — `firstmate_watch` / `bb firstmate watch` (BB thread wait,
+  crews running — `firstmate_watch` / `alia firstmate watch` (VesnALIA thread wait,
   not a poll loop), or keep `supervision on` (thread idle/fail events + stuck
   checker). Stuck ladder: `crew` peek → one-line `tell` → `interrupt` or
   `stop`+rebrief relaunch → second failure means report failed, preserve work.
 - **Deliver**: `deliver` per crew (committed + uncommitted diff + PR). Merge
   via `merge` with `yes` (green + mergeable; yolo skips yes). Local-only lands
   with ff-only onto the project checkout. Scout lands via report; promote with
-  `firstmate_promote` / `bb firstmate promote <id>` — never expand the scout.
+  `firstmate_promote` / `alia firstmate promote <id>` — never expand the scout.
 - **Close out**: `bearings` digest, `forget --stop` retired crews. File
   follow-ups with `queue add`, open questions with `decide ask` (collect the
   captain's choice with AskUserQuestion, then `decide answer`), durable facts
@@ -74,14 +74,14 @@ within its exact scope. Never infer, broaden, or carry it elsewhere.
 
 | Need | Tool / command |
 | --- | --- |
-| take the deck | `firstmate_deck` / `bb firstmate deck` |
+| take the deck | `firstmate_deck` / `alia firstmate deck` |
 | digest | `firstmate_bearings` / `firstmate_session` |
-| dispatch | `firstmate_dispatch` / `bb firstmate dispatch --project <id> -- "<brief>"` |
+| dispatch | `firstmate_dispatch` / `alia firstmate dispatch --project <id> -- "<brief>"` |
 | queue | `firstmate_queue` / `queue add --project <id> [--after <qid>] [--wait-until <iso>] -- "<title>"` |
 | decisions | `firstmate_decide` / `decide ask\|answer` + AskUserQuestion |
 | track | `firstmate_crew`, `firstmate_crews`, `watch`, `tell` (doorbell), `interrupt`, `stop`, `retry` |
 | delivery | `firstmate_deliver`, `firstmate_merge`, `promote` |
-| secondmate | `firstmate_secondmate` / `bb firstmate secondmate register --project <id> --thread <id>` |
+| secondmate | `firstmate_secondmate` / `alia firstmate secondmate register --project <id> --thread <id>` |
 | memory | `firstmate_memory` / `memory [show\|set-captain\|add-learning\|drop-learning\|clear]` |
 | watcher | `firstmate_supervision` / `supervision [on\|off\|status]` |
 | retire | `firstmate_forget` / `forget <id> [--stop] [--force]` |

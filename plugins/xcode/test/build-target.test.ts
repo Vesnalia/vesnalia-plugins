@@ -16,7 +16,7 @@ const HOSTS = [
 ];
 
 describe("buildTargetFor", () => {
-  it("builds a checkout on the machine running bb right here", () => {
+  it("builds a checkout on the machine running VesnALIA right here", () => {
     expect(buildTargetFor({ hostId: "host_server" }, "host_server", HOSTS)).toEqual({
       kind: "local",
       machineName: "MacMini",
@@ -31,7 +31,7 @@ describe("buildTargetFor", () => {
     });
   });
 
-  it("still routes to a Mac bb has not named, under its id", () => {
+  it("still routes to a Mac VesnALIA has not named, under its id", () => {
     expect(buildTargetFor({ hostId: "host_ghost" }, "host_server", HOSTS)).toEqual({
       kind: "remote",
       hostId: "host_ghost",
@@ -52,8 +52,8 @@ describe("the Simulators half on a thread whose checkout is on another Mac", () 
     const { describeCheckoutLocation, locateCheckout } = await import("../src/sim/hostcheck");
     const sentence = describeCheckoutLocation(locateCheckout("host_server", "host_other", HOSTS));
     expect(sentence).toBe(
-      "This thread's checkout lives on MacBook Pro, but Stills renders on the machine running bb. " +
-        "Tracked builds (xcode_build, bb xcode run) do run on MacBook Pro.",
+      "This thread's checkout lives on MacBook Pro, but Stills renders on the machine running VesnALIA. " +
+        "Tracked builds (xcode_build, VesnALIA xcode run) do run on MacBook Pro.",
     );
     expect(describeCheckoutLocation(locateCheckout("host_server", "host_server", HOSTS))).toBeNull();
   });

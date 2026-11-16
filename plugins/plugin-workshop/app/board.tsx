@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { Board, PluginCard, workshopContract } from "../contract";
-import { CREATE_SLOW_MS, SHOW_REASON, STAGE_TITLE, STATE, bbState, btn, errCls, errText, type Created } from "./common";
+import { CREATE_SLOW_MS, SHOW_REASON, STAGE_TITLE, STATE, aliaState, btn, errCls, errText, type Created } from "./common";
 import { NewPlugin, isRefusal, sortProblems, type Draft, type Problems } from "./new-plugin";
 import { PluginSummary } from "./plugin";
 import { WorkPage } from "./work";
@@ -30,18 +30,18 @@ interface Pending {
 }
 
 function CardView({ card, onOpen }: { card: PluginCard; onOpen: () => void }) {
-  const bb = bbState(card.bbState);
+  const alia = aliaState(card.aliaState);
   const w = card.work;
   const s = w ? (STATE[w.state] ?? { text: w.state, cls: "" }) : null;
   return (
     <button
       type="button"
       onClick={onOpen}
-      className={`flex flex-col gap-1 rounded-md border bg-background p-2 text-left hover:bg-accent ${bb.alert ? "border-red-500/70" : "border-border"}`}
+      className={`flex flex-col gap-1 rounded-md border bg-background p-2 text-left hover:bg-accent ${alia.alert ? "border-red-500/70" : "border-border"}`}
     >
       <span className="text-sm font-medium leading-snug">{card.name}</span>
       <span className="font-mono text-[10px] text-muted-foreground">{card.id}</span>
-      <span className={`text-[10px] ${bb.cls}`}>● {bb.text}</span>
+      <span className={`text-[10px] ${alia.cls}`}>● {alia.text}</span>
       {card.labels.length > 0 ? (
         <span className="flex flex-wrap gap-1 text-[10px]">
           {card.labels.map((l) => (

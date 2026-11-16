@@ -3,7 +3,7 @@ import { waitFor } from "@testing-library/react";
 import {
   loadPluginApp,
   mountPluginContentScripts,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_APPEARANCE } from "../src/appearance.js";
@@ -31,7 +31,7 @@ beforeEach(() => {
     configurable: true,
     get: () => visibility,
   });
-  document.getElementById("bb-app-theme")?.remove();
+  document.getElementById("alia-app-theme")?.remove();
 });
 
 afterEach(async () => {
@@ -70,7 +70,7 @@ describe("the liquid-glass-vars content script", () => {
     // The style element appears after mount, as on a cold page load, and the
     // host fills it in the same tick.
     const style = document.createElement("style");
-    style.id = "bb-app-theme";
+    style.id = "alia-app-theme";
     document.head.appendChild(style);
     style.textContent = ":root { --canvas: black }";
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));

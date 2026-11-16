@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent, MouseEvent, RefObject } from "react";
-import { useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type { DecisionMode, DecisionOption } from "./decisions";
 import { Icon } from "@/components/ui/icon";

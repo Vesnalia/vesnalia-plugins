@@ -4,7 +4,7 @@ import { mkdirSync, realpathSync, readdirSync, statSync } from 'node:fs';
 import { join, basename, relative, dirname, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { createHash } from 'node:crypto';
-import { experimental_filterResolvedNativeRoots } from '@get-bb/plugin-sdk/host';
+import { experimental_filterResolvedNativeRoots } from '@vesnalia/plugin-sdk/host';
 import { nativePaths } from './runtime.ts';
 import { childEnvironment } from './process.ts';
 import { record } from './errors.ts';
@@ -31,7 +31,7 @@ export function catalogueRoots(value: unknown, side: 'skills' | 'commands', plug
       // SDK0.6.15 allows one plugin-like namespace and derives a command's
       // basename itself. Never publish a different name from the native CLI.
       if (side === 'commands' && (names.length > 2 || names.at(-1) !== basename(path).replace(/\.md$/i, '').toLowerCase())) {
-        process.stderr.write('ZCode optional command name cannot be represented by bb\n'); continue;
+        process.stderr.write('ZCode optional command name cannot be represented by VesnALIA\n'); continue;
       }
       if (seen.has(path)) continue;
       seen.add(path);

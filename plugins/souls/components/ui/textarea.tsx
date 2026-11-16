@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { cn } from "../../lib/utils";
 
-/** Minimal textarea in the vendored Input's chrome — the registry has no @bb/textarea worth a network fetch for one field. */
+/** Minimal textarea in the vendored Input's chrome — the registry has no @alia-core/textarea worth a network fetch for one field. */
 const Textarea = React.forwardRef<
   HTMLTextAreaElement,
   React.ComponentProps<"textarea">

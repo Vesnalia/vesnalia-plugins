@@ -4,11 +4,11 @@ import {
   experimental_Icon as Icon,
   experimental_NewThreadComposer as NewThreadComposer,
   experimental_THREAD_ACTION_GROUPS,
-  useBbNavigate,
+  useAliaNavigate,
   useSdk,
   type NewThreadRequest,
   type PluginThreadActionRegistration,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { childSpawnArgs, childThreadItem, currentChildTarget, openChildComposer, subscribeChildTarget } from "./child-thread";
 
 export const childThreadAction: PluginThreadActionRegistration = {
@@ -33,7 +33,7 @@ export const CHILD_CSS = `
 export function ChildComposer() {
   const parent = useSyncExternalStore(subscribeChildTarget, currentChildTarget);
   const sdk = useSdk();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [error, setError] = useState<string | null>(null);
   const [focus, setFocus] = useState(0);
 

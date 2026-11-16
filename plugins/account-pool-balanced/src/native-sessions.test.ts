@@ -69,7 +69,7 @@ describe('prepared native execution binding',()=>{
     const sessions=new NativeSessions(storage(),()=>1000,async()=>{},e=>{if(!allowed||e.execution?.profile.version!==1)throw Error('unprepared');});
     await sessions.initialize();await sessions.configure({...executor,execution});await sessions.setManaged(true);
     const input=acquire(),first=await sessions.request(caller,input);
-    expect(first.binding).toEqual({schema:'bb-account-pool/native-execution/1',leaseId:first.leaseId,sessionId:input.sessionId,
+    expect(first.binding).toEqual({schema:'alia-account-pool/native-execution/1',leaseId:first.leaseId,sessionId:input.sessionId,
       executorId:executor.id,accountId:executor.accountId,hostId:executor.hostId,kind:'task',caller,...execution});
     first.binding!.profile.version=99;
     expect((await sessions.request(caller,poll(first.leaseId!))).binding!.profile.version).toBe(1);

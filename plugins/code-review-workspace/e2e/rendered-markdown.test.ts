@@ -1,7 +1,7 @@
 import { expect, test, vi } from "vitest";
 import { chromium } from "playwright";
 import { mkdir } from "node:fs/promises";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "../src/store";
 import plugin from "../server";
 import { runGh } from "../src/gh";
@@ -57,11 +57,11 @@ const NEW = OLD.replace("1 hour", "15 minutes").replace("Refresh tokens are neve
   .replace("- Refresh tokens rotate.", "- Refresh tokens rotate on every use.\n- Sessions end at logout.")
   .replace("## Goals", "## Goals and limits").replace("every year", "every month").replace("(threats.md)", "(security/threats.md)").replace("nightly by", "hourly by").replace("Issue the new keys.", "Issue the new keys today.");
 
-// The running BB supplies the real app shell, BB's own Markdown, and the built plugin; its RPCs go through the
+// The running VesnALIA supplies the real app shell, VesnALIA's own Markdown, and the built plugin; its RPCs go through the
 // official test host, with GitHub mocked. A Markdown file shown rendered takes comments on its blocks, which submit at
 // the lines GitHub takes.
-test.skipIf(!process.env.BB_E2E_URL)("rendered Markdown: toggle, comment on a changed and a removed block, submit at their lines", async () => {
-  const base = loopbackUrl("BB_E2E_URL", process.env.BB_E2E_URL!);
+test.skipIf(!process.env.ALIA_E2E_URL)("rendered Markdown: toggle, comment on a changed and a removed block, submit at their lines", async () => {
+  const base = loopbackUrl("ALIA_E2E_URL", process.env.ALIA_E2E_URL!);
   vi.mocked(runGh).mockImplementation(async (args) => {
     if (args[0] === "auth") return { code: 0, stderr: "", stdout: "test-token" };
     if (args[1] === "user") return { code: 0, stderr: "", stdout: "reviewer" };
@@ -69,12 +69,12 @@ test.skipIf(!process.env.BB_E2E_URL)("rendered Markdown: toggle, comment on a ch
     if (args.includes("POST")) return { code: 0, stderr: "", stdout: '{"id":12}' };
     return { code: 0, stderr: "", stdout: JSON.stringify({ headRefOid: "sha1", state: "OPEN" }) };
   });
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     get: async () => ({ archivedAt: null, deletedAt: null, status: "idle" }),
     spawn: async () => ({ id: "e2e-hidden-agent" }), stop: async () => ({}), update: async () => ({}), archive: async () => ({}),
   } } });
-  await plugin(bb);
-  const store = queueStore(createStore(bb));
+  await plugin(alia);
+  const store = queueStore(createStore(alia));
   const key = "e2e-markdown";
   await store.saveReview({ targetKey: key, kind: "pr", number: 8, repo: "acme/web", title: "Shorten token lifetime", author: "alice", status: "ready", createdAt: Date.now(), headSha: "sha1", projectId: "test-project" });
   await store.saveGuide(key, { title: "Shorten token lifetime", intent: "Tokens live 15 minutes.", sections: [{ id: "rfc", title: "The RFC", overview: "The RFC's new lifetime.", diffs: [{ file: FILE, description: "Lifetime and rotation" }] }], unplacedFiles: [] } as any);
@@ -116,11 +116,11 @@ test.skipIf(!process.env.BB_E2E_URL)("rendered Markdown: toggle, comment on a ch
     await file.getByRole("radiogroup", { name: `How ${FILE} shows` }).getByRole("radio", { name: "Rendered" }).click();
     const rendered = file.locator("[data-md-rendered]");
     await rendered.waitFor();
-    // BB's Markdown drew each block: the table, and the code with its highlighting.
+    // VesnALIA's Markdown drew each block: the table, and the code with its highlighting.
     await rendered.locator("table").waitFor();
     expect(await rendered.locator("[data-md-status]").evaluateAll((units) => units.map((unit) => (unit as HTMLElement).dataset.mdStatus)))
       .toEqual(["unchanged", "unchanged", "changed", "unchanged", "changed", "added", "added", "added", "unchanged", "changed", "removed", "changed", "changed", "changed", "changed", "changed", "unchanged", "changed", "unchanged", "unchanged"]);
-    // The file's own HTML links are links as BB draws a Markdown link, to a new tab, with their href alone; the image in
+    // The file's own HTML links are links as VesnALIA draws a Markdown link, to a new tab, with their href alone; the image in
     // one is its words. One to a script, and a relative one in a review with no PR URL to resolve it, are words.
     const link = (name: string) => rendered.getByRole("link", { name, exact: true });
     expect(await link("Image: Acme").evaluate((a) => [a.getAttribute("href"), a.getAttribute("target")])).toEqual(["https://acme.dev/home", "_blank"]);
@@ -132,7 +132,7 @@ test.skipIf(!process.env.BB_E2E_URL)("rendered Markdown: toggle, comment on a ch
     await link("the docs").click();
     expect([(await opened).url(), page.url()]).toEqual(["https://acme.dev/docs", at]);
     await (await opened).close();
-    // BB's Markdown draws the changed words marked, in a heading, a list item, a paragraph and a quote; the table's and
+    // VesnALIA's Markdown draws the changed words marked, in a heading, a list item, a paragraph and a quote; the table's and
     // the code's changes cross their syntax, so they show whole.
     const changedBlock = (n: number) => rendered.locator('[data-md-status="changed"]').nth(n);
     const paragraph = changedBlock(2);
@@ -160,7 +160,7 @@ test.skipIf(!process.env.BB_E2E_URL)("rendered Markdown: toggle, comment on a ch
     await item.getByRole("textbox", { name: "Draft comment", exact: true }).waitFor();
     await item.getByRole("button", { name: "Cancel", exact: true }).click();
     await page.getByRole("textbox", { name: "Draft comment", exact: true }).waitFor({ state: "detached" });
-    // An ordered list's item draws with its number in the list, though its source numbers it 1, as BB's <ol start> reads it.
+    // An ordered list's item draws with its number in the list, though its source numbers it 1, as VesnALIA's <ol start> reads it.
     expect(await changedBlock(8).locator("ol").getAttribute("start")).toBe("2");
     expect(await marks(8)).toEqual([[], ["today"]]);
     // The link whose URL changed is said under its block.
@@ -212,7 +212,7 @@ test.skipIf(!process.env.BB_E2E_URL)("rendered Markdown: toggle, comment on a ch
       await page.emulateMedia({ colorScheme: scheme });
       await page.waitForTimeout(500);
       await file.screenshot({ animations: "disabled", path: `${dir}/rendered-${scheme}.png` });
-      // A changed code block hovered: its comment button and Show previous in the gutter, BB's Copy and Wrap clear.
+      // A changed code block hovered: its comment button and Show previous in the gutter, VesnALIA's Copy and Wrap clear.
       await changedBlock(4).hover();
       const code = (await changedBlock(4).boundingBox())!;
       await page.screenshot({ animations: "disabled", path: `${dir}/rendered-code-hover-${scheme}.png`, clip: { x: code.x - 56, y: code.y - 8, width: code.width + 64, height: code.height + 16 } });

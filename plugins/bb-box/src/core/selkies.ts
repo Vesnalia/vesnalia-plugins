@@ -35,7 +35,7 @@ const OPEN_TRIES = 4;
 /**
  * How far behind a viewer may fall, from a frame's send to its
  * acknowledgement, before its frames are dropped. A pause on the way through
- * BB's server, which can last half a second, is not a viewer that cannot
+ * VesnALIA's server, which can last half a second, is not a viewer that cannot
  * keep up.
  */
 export const LAG_MS = 1000;
@@ -165,7 +165,7 @@ export class SelkiesBox {
   #stopAsked = 0;
   #closed = false;
   #pinged = 0;
-  /** Who waits for each BB_PONG, by its ID. */
+  /** Who waits for each ALIA_PONG, by its ID. */
   readonly #pongs = new Map<string, () => void>();
   /** The message that last asked the box to draw its cursor into the video, or not, to send again on a new input connection. */
   #cursor: string | null = null;
@@ -209,7 +209,7 @@ export class SelkiesBox {
 
   /**
    * Whether the box's stream server has taken every message sent before this,
-   * as bb-box-stream on Windows says, answering BB_PING with BB_PONG; false
+   * as alia-box-stream on Windows says, answering ALIA_PING with ALIA_PONG; false
    * after `timeoutMs` without its answer, as from a server that does not say.
    */
   async ping(timeoutMs: number): Promise<boolean> {
@@ -220,7 +220,7 @@ export class SelkiesBox {
     this.#pongs.set(id, () => settle(true));
     try {
       // The wait starts once it is sent: opening the input connection, over SSH, is not the server's answer.
-      await this.input(`BB_PING,${id}`);
+      await this.input(`ALIA_PING,${id}`);
       wait = setTimeout(() => settle(false), timeoutMs);
       return await answered;
     } finally {
@@ -262,7 +262,7 @@ export class SelkiesBox {
    * capture at once, without a restart, and tells every page the new size.
    *
    * It moves it only while the controller wants video: otherwise it stops the
-   * capture and waits for a START_VIDEO, which bb-box's restart sends after
+   * capture and waits for a START_VIDEO, which alia-box's restart sends after
    * about a second. The input connection wants none from its STOP_VIDEO, but
    * Selkies counts it as wanting video while pages watch, until the last
    * watching page stops its video, as for a restart of the capture or a hidden
@@ -281,7 +281,7 @@ export class SelkiesBox {
 
   /**
    * Streams the display in 4:4:4 or 4:2:0. Selkies takes this from a controller only, for every page of the display, so
-   * bb-box asks for 4:4:4 while every viewer decodes it: coloured text keeps its edges, for about a tenth of a core
+   * alia-box asks for 4:4:4 while every viewer decodes it: coloured text keeps its edges, for about a tenth of a core
    * more and the same bandwidth (measured 16 October 2026). Selkies restarts the capture, from a key frame.
    */
   async fullColour(on: boolean): Promise<void> {
@@ -292,13 +292,13 @@ export class SelkiesBox {
   /**
    * Has the display's video draw the box's cursor in, or leave it out: out
    * while a person holds control, whose browser shows the cursor's shape
-   * itself, so the two do not drift apart. bb-box-stream takes BB_CURSOR
+   * itself, so the two do not drift apart. alia-box-stream takes ALIA_CURSOR
    * ("stream"); Selkies, SET_NATIVE_CURSOR_RENDERING ("selkies"), which
    * restarts its capture.
    */
   async cursorInVideo(on: boolean, how: "stream" | "selkies"): Promise<void> {
     if (this.#closed) return;
-    this.#cursor = how === "stream" ? `BB_CURSOR,${on ? 1 : 0}` : `SET_NATIVE_CURSOR_RENDERING,${on ? 1 : 0}`;
+    this.#cursor = how === "stream" ? `ALIA_CURSOR,${on ? 1 : 0}` : `SET_NATIVE_CURSOR_RENDERING,${on ? 1 : 0}`;
     // A connection that opens now says it as it opens.
     if (!this.#ready) {
       await this.#connection();
@@ -336,7 +336,7 @@ export class SelkiesBox {
           this.#onCaptureConfigured();
           this.keyframe();
         }
-        if (typeof message === "string" && message.startsWith("BB_PONG,")) this.#pongs.get(message.slice(8))?.();
+        if (typeof message === "string" && message.startsWith("ALIA_PONG,")) this.#pongs.get(message.slice(8))?.();
         else if (typeof message === "string" && this.#apart() && (CLIPBOARD_VERBS.has(verb(message)) || verb(message) === "cursor" || verb(message) === DEVICE_ANSWER_VERB)) this.#onText(message);
         if (typeof message !== "string" && this.clock.now() - this.#stopAsked > STOP_ASK_MS) {
           this.#stopAsked = this.clock.now();
@@ -360,7 +360,7 @@ export class SelkiesBox {
   }
 }
 
-/** The viewer's end: BB's plugin WebSocket, which keeps text and binary apart. */
+/** The viewer's end: VesnALIA's plugin WebSocket, which keeps text and binary apart. */
 export interface SelkiesViewer {
   send(message: Message): void;
   close(code: number, reason: string): void;
@@ -375,18 +375,18 @@ export interface SelkiesRelayOptions {
   onInput?(input: PersonInput): void;
   /** The desktop's size, from the first frame and each change. */
   onSize?(size: { readonly width: number; readonly height: number }): void;
-  /** The viewer with control asked for its size (Selkies' `r,<W>x<H>`). The relay does not pass it on: bb-box sets the size. */
+  /** The viewer with control asked for its size (Selkies' `r,<W>x<H>`). The relay does not pass it on: alia-box sets the size. */
   onResize?(size: { readonly width: number; readonly height: number }): void;
-  /** Whether the viewer's browser decodes 4:4:4, as it says once connected (bb-box's `BB_FULLCOLOR,<0|1>`, which goes no further). */
+  /** Whether the viewer's browser decodes 4:4:4, as it says once connected (alia-box's `ALIA_FULLCOLOR,<0|1>`, which goes no further). */
   onFullColour?(yes: boolean): void;
-  /** The largest frame the viewer's browser decodes, in macroblocks, as it says once connected (bb-box's `BB_DECODES,<n>`, which goes no further). */
+  /** The largest frame the viewer's browser decodes, in macroblocks, as it says once connected (alia-box's `ALIA_DECODES,<n>`, which goes no further). */
   onDecodes?(macroblocks: number): void;
   onEnd?(by: "viewer" | "box", error: Error | null): void;
   /** Each key message as it goes to the box, for a viewer that asked for the key log (a diagnostic). */
   keyLog?(line: string): void;
   /**
-   * Whether bb-box sends this viewer the box's cursor itself, from
-   * bb-box-cursor (060): then Selkies' own cursor messages, one arrow
+   * Whether alia-box sends this viewer the box's cursor itself, from
+   * alia-box-cursor (060): then Selkies' own cursor messages, one arrow
    * whatever the shape on Sway, go no further.
    */
   ownCursor?(): boolean;
@@ -566,7 +566,7 @@ export class SelkiesRelay {
     return !this.#ended && this.#wants;
   }
 
-  /** Sends the viewer a message of bb-box's own, such as the box's pointer (060), while it is connected. */
+  /** Sends the viewer a message of alia-box's own, such as the box's pointer (060), while it is connected. */
   tell(message: string): void {
     if (!this.#ended) this.#options.viewer.send(message);
   }
@@ -580,12 +580,12 @@ export class SelkiesRelay {
   /** A message from the viewer. */
   async receive(message: Message): Promise<void> {
     if (this.#ended || typeof message !== "string") return;
-    const colour = /^BB_FULLCOLOR,([01])$/.exec(message);
+    const colour = /^ALIA_FULLCOLOR,([01])$/.exec(message);
     if (colour) {
       this.#options.onFullColour?.(colour[1] === "1");
       return;
     }
-    const decodes = /^BB_DECODES,(\d{1,7})$/.exec(message);
+    const decodes = /^ALIA_DECODES,(\d{1,7})$/.exec(message);
     if (decodes) {
       this.#options.onDecodes?.(Number(decodes[1]));
       return;

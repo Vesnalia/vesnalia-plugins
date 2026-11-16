@@ -1,4 +1,4 @@
-// `bb study` — the human's controls. Output is bounded; human controls are
+// `alia study` — the human's controls. Output is bounded; human controls are
 // refused when invoked from a study's own worker or strategist thread.
 //
 // Every command takes `--json` and then prints exactly one JSON document built
@@ -8,7 +8,7 @@
 import { remoteGates } from "./single-machine.ts";
 import { remoteLines, remoteView } from "./remote/view.ts";
 import { mib, type ArtifactUsage } from "./remote/fleet.ts";
-import { PluginCliError, cliCommand, defineCli, type PluginCliContext, type PluginCliRegistration } from "@get-bb/plugin-sdk";
+import { PluginCliError, cliCommand, defineCli, type PluginCliContext, type PluginCliRegistration } from "@vesnalia/plugin-sdk";
 import { EngineError, type Caller, type Engine } from "./engine.ts";
 import { errText, evalTimes } from "./pipeline.ts";
 import { clip, formatDuration, safeJson } from "./prompts.ts";
@@ -114,7 +114,7 @@ function runOut(engine: Engine, slug: string, id: number, json: boolean | undefi
       } else if (r?.kind === "gate") {
         for (const c of r.commands) lines.push(`  ${c.ok ? (c.flaky ? "flaky" : "pass") : "FAIL"} \`${clip(c.command, 120)}\` (${formatDuration(c.seconds)})${c.ok ? "" : `\n${c.tail.split("\n").slice(-15).map((l) => `    ${l}`).join("\n")}`}`);
       }
-      if (row.state === "queued" || row.state === "running") lines.push(`Still ${row.state}. \`bb study results ${slug} r${row.seq} --wait\` waits for it.`);
+      if (row.state === "queued" || row.state === "running") lines.push(`Still ${row.state}. \`alia study results ${slug} r${row.seq} --wait\` waits for it.`);
       return lines.join("\n");
     },
     () => ({ run: v }),
@@ -157,15 +157,15 @@ function caller(ctx: PluginCliContext): Caller {
 
 /** What to run next after a refused command: the command the message names, else what the study waits for, else `show`. */
 export function errorHint(engine: Engine, message: string, slug?: string): { code: string; hint: string } {
-  if (/^no study named/u.test(message)) return { code: "not_found", hint: "Run `bb study list` to see the study slugs." };
-  const named = /`(bb study [^`]+)`/u.exec(message)?.[1];
+  if (/^no study named/u.test(message)) return { code: "not_found", hint: "Run `alia study list` to see the study slugs." };
+  const named = /`(alia study [^`]+)`/u.exec(message)?.[1];
   if (named) return { code: "study_error", hint: `Run \`${named}\`.` };
   const s = slug ? engine.ctx.store.study(slug) : undefined;
-  if (!s) return { code: "study_error", hint: "Run `bb study list`, then `bb study show <slug>`." };
+  if (!s) return { code: "study_error", hint: "Run `alia study list`, then `alia study show <slug>`." };
   const next = s.state === "archived" ? null : needsYou(engine, s).find((n) => n.command);
-  if (next) return { code: "study_error", hint: `${next.title}: run \`${next.command}\` (or see \`bb study show ${s.slug}\`).` };
-  if (s.state === "paused") return { code: "study_error", hint: `The study is paused: \`bb study resume ${s.slug}\` resumes it; \`bb study show ${s.slug}\` has details.` };
-  return { code: "study_error", hint: `The study is ${s.state}; see \`bb study show ${s.slug}\`.` };
+  if (next) return { code: "study_error", hint: `${next.title}: run \`${next.command}\` (or see \`alia study show ${s.slug}\`).` };
+  if (s.state === "paused") return { code: "study_error", hint: `The study is paused: \`alia study resume ${s.slug}\` resumes it; \`alia study show ${s.slug}\` has details.` };
+  return { code: "study_error", hint: `The study is ${s.state}; see \`alia study show ${s.slug}\`.` };
 }
 
 async function wrap(engine: Engine, slug: string | undefined, fn: () => Promise<CliOut> | CliOut): Promise<CliOut> {
@@ -254,7 +254,7 @@ function control(engine: Engine, slug: string, json: boolean | undefined, messag
 }
 
 const jsonOpt = { json: { type: "boolean", description: "Print machine-readable JSON" } } as const;
-const slugArg = [{ name: "slug", description: "Study slug (see `bb study list`)", required: true }] as const;
+const slugArg = [{ name: "slug", description: "Study slug (see `alia study list`)", required: true }] as const;
 
 export function studyCli(engine: Engine): PluginCliRegistration {
   const { store } = engine.ctx;
@@ -404,7 +404,7 @@ export function studyCli(engine: Engine): PluginCliRegistration {
             const actor = guardHuman(engine, ctx);
             const v = input.positionals.workers.trim();
             const n = v === "auto" ? null : Number(v);
-            if (n !== null && !Number.isInteger(n)) throw new PluginCliError("workers must be an integer from 1 to 64, or auto", { code: "invalid_value", hint: `For example \`bb study concurrency ${input.positionals.slug} 4\` or \`bb study concurrency ${input.positionals.slug} auto\`.` });
+            if (n !== null && !Number.isInteger(n)) throw new PluginCliError("workers must be an integer from 1 to 64, or auto", { code: "invalid_value", hint: `For example \`alia study concurrency ${input.positionals.slug} 4\` or \`alia study concurrency ${input.positionals.slug} auto\`.` });
             const text = engine.setConcurrency(input.positionals.slug, n, actor);
             await engine.auditControl(input.positionals.slug, "concurrency", caller(ctx), `max workers ${n === null ? "back to the spec" : `set to ${engine.maxWorkers(engine.study(input.positionals.slug))}${n !== engine.maxWorkers(engine.study(input.positionals.slug)) ? ` (requested ${n}, clamped)` : ""}`}`, { requested: n });
             return control(engine, input.positionals.slug, input.options.json, text);
@@ -521,14 +521,14 @@ export function studyCli(engine: Engine): PluginCliRegistration {
             if (input.options.publish) {
               throw new PluginCliError("the plugin no longer drafts or publishes PRs (1.0): an agent does, with the repository's own tools", {
                 code: "removed",
-                hint: `Ask an agent to harvest ${slug} with the study-harvest skill and to publish when you say so. It starts from \`bb study evidence ${slug} --json\`.`,
+                hint: `Ask an agent to harvest ${slug} with the study-harvest skill and to publish when you say so. It starts from \`alia study evidence ${slug} --json\`.`,
               });
             }
             const s0 = engine.study(slug);
             const seq = input.options.harvest;
             if (seq !== undefined) {
               const h = store.harvests(s0.id).find((x) => x.seq === seq);
-              if (!h) throw new PluginCliError(`${slug} has no harvest h${seq}`, { code: "not_found", hint: `\`bb study harvest ${slug}\` shows the latest.` });
+              if (!h) throw new PluginCliError(`${slug} has no harvest h${seq}`, { code: "not_found", hint: `\`alia study harvest ${slug}\` shows the latest.` });
               return respond(input.options.json, () => harvestText(engine, slug, h.id), () => harvestView(engine, s0, h.id));
             }
             const view = () => harvestView(engine, engine.study(slug));
@@ -562,7 +562,7 @@ export function studyCli(engine: Engine): PluginCliRegistration {
           ...jsonOpt,
           pairs: { type: "integer", min: 2, max: 200, description: "Pairs to measure (noisy oracles; default: the study's n_max)" },
           host: { type: "string", description: "Bench host name or id (default: the quietest free host when the run starts, each judged with its own win threshold; a remote-only study frozen for harvest waits for its machines)" },
-          detach: { type: "boolean", description: "Return at once with the run id; read it later with `bb study results <slug> <id>`" },
+          detach: { type: "boolean", description: "Return at once with the run id; read it later with `alia study results <slug> <id>`" },
           timeout: { type: "duration", defaultUnit: "m", min: 1_000, max: 30 * 60_000, default: 25 * 60_000, description: "Max wait (default 25m, max 30m); the run continues after it" },
         },
         run: (input, ctx) =>
@@ -582,7 +582,7 @@ export function studyCli(engine: Engine): PluginCliRegistration {
         ] as const,
         options: {
           ...jsonOpt,
-          detach: { type: "boolean", description: "Return at once with the run id; read it later with `bb study results <slug> <id>`" },
+          detach: { type: "boolean", description: "Return at once with the run id; read it later with `alia study results <slug> <id>`" },
           timeout: { type: "duration", defaultUnit: "m", min: 1_000, max: 30 * 60_000, default: 25 * 60_000, description: "Max wait (default 25m, max 30m); the run continues after it" },
         },
         run: (input, ctx) =>
@@ -595,7 +595,7 @@ export function studyCli(engine: Engine): PluginCliRegistration {
           }),
       }),
       results: cliCommand({
-        summary: "Measurements and gates asked for with `bb study measure|gate` (newest first), or one of them in full",
+        summary: "Measurements and gates asked for with `alia study measure|gate` (newest first), or one of them in full",
         positionals: [
           { name: "slug", description: "Study slug", required: true },
           { name: "id", description: "A run id (r3 or 3); omit for the list" },
@@ -611,7 +611,7 @@ export function studyCli(engine: Engine): PluginCliRegistration {
             const s = engine.study(slug);
             if (input.positionals.id !== undefined) {
               const seq = Number(String(input.positionals.id).replace(/^r/u, ""));
-              if (!Number.isInteger(seq) || seq < 1) throw new PluginCliError(`${JSON.stringify(input.positionals.id)} is not a run id`, { code: "invalid_value", hint: `Run ids look like r3; \`bb study results ${slug}\` lists them.` });
+              if (!Number.isInteger(seq) || seq < 1) throw new PluginCliError(`${JSON.stringify(input.positionals.id)} is not a run id`, { code: "invalid_value", hint: `Run ids look like r3; \`alia study results ${slug}\` lists them.` });
               const row = engine.adhocRun(slug, seq);
               if (input.options.wait) await engine.primitives.wait(row.id, input.options.timeout ?? 25 * 60_000);
               return runOut(engine, slug, row.id, input.options.json);
@@ -619,7 +619,7 @@ export function studyCli(engine: Engine): PluginCliRegistration {
             const runs = store.adhocRuns(s.id, { limit: 50 }).map(adhocRunView);
             return respond(
               input.options.json,
-              () => (runs.length ? [`Measurements and gates of ${slug} (newest first)`, ...runs.map((r) => `  ${r.line}`)].join("\n") : `No measurements or gates asked for yet. \`bb study measure ${slug} <A> <B>\` and \`bb study gate ${slug} <ref>\` run them.`),
+              () => (runs.length ? [`Measurements and gates of ${slug} (newest first)`, ...runs.map((r) => `  ${r.line}`)].join("\n") : `No measurements or gates asked for yet. \`alia study measure ${slug} <A> <B>\` and \`alia study gate ${slug} <ref>\` run them.`),
               () => ({ runs }),
             );
           }),
@@ -644,7 +644,7 @@ export function studyCli(engine: Engine): PluginCliRegistration {
             const text = JSON.stringify(doc);
             if (text.length <= JSON_MAX) return { exitCode: 0, stdout: `${text}\n` };
             // Too large for one CLI response: the whole document goes to a file on this machine, never trimmed.
-            const dir = await engine.ctx.bb.hostRunner(s.host_id!).writeExport(`${slug}-evidence`, [{ path: "evidence.json", content: text }]);
+            const dir = await engine.ctx.alia.hostRunner(s.host_id!).writeExport(`${slug}-evidence`, [{ path: "evidence.json", content: text }]);
             return { exitCode: 0, stdout: `${JSON.stringify({ format: doc.format, version: doc.version, file: `${dir.replace(/\/$/u, "")}/evidence.json`, bytes: text.length })}\n` };
           }),
       }),
@@ -684,7 +684,7 @@ function listStudies(engine: Engine, json: boolean | undefined): CliOut {
         "",
       );
       const waiting = sums.filter((x) => x.sum.needsYou > 0).length;
-      if (waiting) lines.push("", `${waiting} ${waiting === 1 ? "study needs" : "studies need"} you: \`bb study needs\` lists what and how.`);
+      if (waiting) lines.push("", `${waiting} ${waiting === 1 ? "study needs" : "studies need"} you: \`alia study needs\` lists what and how.`);
       return lines.join("\n");
     },
     () => ({ studies: rows.map((s) => studySummary(engine, s)) }),
@@ -719,7 +719,7 @@ function usageLine(engine: Engine, s: StudyRow): string {
 
 function segmentLine(engine: Engine, s: StudyRow): string {
   const seg = segmentView(engine, s);
-  const pending = s.pending_spec_version !== null ? ` · spec v${s.pending_spec_version} pending approval (${seg.pendingChangesOracle ? `oracle change: \`bb study calibrate ${s.slug}\`` : `no oracle change: \`bb study approve ${s.slug}\``})` : "";
+  const pending = s.pending_spec_version !== null ? ` · spec v${s.pending_spec_version} pending approval (${seg.pendingChangesOracle ? `oracle change: \`alia study calibrate ${s.slug}\`` : `no oracle change: \`alia study approve ${s.slug}\``})` : "";
   return `${seg.k}${seg.oracleHash ? ` (oracle ${seg.oracleHash}, spec v${seg.specVersion ?? "?"}, baseline ${seg.baselineSha?.slice(0, 10) ?? "?"})` : ""} · ${seg.count} segment(s)${pending}`;
 }
 
@@ -804,8 +804,8 @@ function calibrationText(engine: Engine, slug: string): string {
   const report = safeJson<{ ok: boolean; problems: string[]; warnings?: string[]; baselineSha: string; oracleHash: string; report: string }>(s.calibration_json);
   if (s.calibration_status === "running") return "Calibration: running.";
   if (!report) return `Calibration: ${s.calibration_status ?? "not run"}.`;
-  if (!report.ok) return `Calibration FAILED (study back in draft):\n${report.problems.map((p) => `- ${clip(p, 600)}`).join("\n")}\nAsk the study thread to revise the spec, then \`bb study calibrate ${slug}\`.`;
-  const next = s.calibration_approved_at === null ? `\nApprove and start with \`bb study start ${slug}\`.` : "";
+  if (!report.ok) return `Calibration FAILED (study back in draft):\n${report.problems.map((p) => `- ${clip(p, 600)}`).join("\n")}\nAsk the study thread to revise the spec, then \`alia study calibrate ${slug}\`.`;
+  const next = s.calibration_approved_at === null ? `\nApprove and start with \`alia study start ${slug}\`.` : "";
   const warnings = (report.warnings ?? []).map((w) => `\nWarning: ${clip(w, 600)}`).join("");
   return `Calibration ${s.calibration_approved_at === null ? "ready" : "approved"} (baseline ${report.baselineSha.slice(0, 10)}, oracle ${report.oracleHash}):\n${report.report}${warnings}${next}`;
 }
@@ -822,7 +822,7 @@ export function showStudy(engine: Engine, slug: string, eventCount: number): str
       ["Status", o.status],
       ["Best vs base", bestLine(o)],
       ["Needs you", o.needs.length ? `${o.needs.length} item(s), below` : "nothing"],
-      ["Harvest", hv ? `h${hv.seq} ${hv.state}${hv.headline ? ` · measured ${hv.headline.text}` : ""} · \`bb study harvest ${s.slug}\`` : null],
+      ["Harvest", hv ? `h${hv.seq} ${hv.state}${hv.headline ? ` · measured ${hv.headline.text}` : ""} · \`alia study harvest ${s.slug}\`` : null],
     ]),
   ];
   if (o.needs.length) lines.push(...section("Needs you", needsLines(o.needs, true)));
@@ -909,7 +909,7 @@ export function harvestText(engine: Engine, slug: string, harvestId?: number): s
     if (h.promotions.length) lines.push(...section(`Promotions (${h.promotions.length}, oldest first)`, h.promotions.map((p) => `  ${p.sha.slice(0, 10)} ${p.n !== null ? `c/${p.n} ` : ""}${clip(p.title, 80)}${p.effectText ? ` · ${p.effectText} when promoted` : ""} · ${p.files} file(s)`)));
     lines.push(...runsLines);
     if (h.state === "frozen") {
-      lines.push("", "Next: ask an agent to harvest it with the study-harvest skill, for example:", `  "${v.guide.prompt}"`, "It uses:", ...v.guide.commands.map((c) => `  ${c.command}  (${c.what})`), `Or \`bb study resume ${slug}\` (keep exploring) · \`bb study archive ${slug}\` (done).`);
+      lines.push("", "Next: ask an agent to harvest it with the study-harvest skill, for example:", `  "${v.guide.prompt}"`, "It uses:", ...v.guide.commands.map((c) => `  ${c.command}  (${c.what})`), `Or \`alia study resume ${slug}\` (keep exploring) · \`alia study archive ${slug}\` (done).`);
     }
     return lines.join("\n");
   }
@@ -953,7 +953,7 @@ export function harvestText(engine: Engine, slug: string, harvestId?: number): s
     "Drafted by the plugin before 1.0; read only.",
     h.exportDir ? `Dry-run export (report.md, prs/*.md, manifest.json): ${h.exportDir}` : "",
     h.published ? `Published: ${h.published.map((p) => `#${p.k} ${p.url ?? p.status}`).join(" · ")}` : "",
-    s.state === "harvesting" && h.publishState !== "published" ? `Next: ask an agent to finish it with the study-harvest skill (it can reuse these branches and drafts) · \`bb study resume ${slug}\` · \`bb study archive ${slug}\`` : "",
+    s.state === "harvesting" && h.publishState !== "published" ? `Next: ask an agent to finish it with the study-harvest skill (it can reuse these branches and drafts) · \`alia study resume ${slug}\` · \`alia study archive ${slug}\`` : "",
   ].filter(Boolean);
   lines.push(...runsLines);
   lines.push("", ...next);

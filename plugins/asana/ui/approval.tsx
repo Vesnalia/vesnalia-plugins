@@ -3,8 +3,8 @@
 // Decline writes nothing. Everything here came from Asana or the agent, so it
 // renders as plain text.
 import { useState } from "react";
-import type { PluginPendingInteractionProps } from "@get-bb/plugin-sdk/app";
-import { UrlLink } from "@get-bb/plugin-sdk/app";
+import type { PluginPendingInteractionProps } from "@vesnalia/plugin-sdk/app";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
 import { APPROVED, approvalPayloadSchema } from "../approval";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";

@@ -17,7 +17,7 @@ test("translates current OpenCode v2 text, reasoning, tool, and terminal events"
     settledTools: new Set<string>(),
   };
   const session: SessionState = {
-    bbThreadId: "bb-thread",
+    aliaThreadId: "alia-thread",
     providerThreadId: "oc-session",
     cwd: process.cwd(),
     disableSubagents: false,
@@ -187,7 +187,7 @@ test("nests a native subagent's work under its delegation row", async () => {
     settledTools: new Set<string>(),
   };
   const session: SessionState = {
-    bbThreadId: "bb-thread",
+    aliaThreadId: "alia-thread",
     providerThreadId: "ses_parent",
     cwd: process.cwd(),
     disableSubagents: false,
@@ -287,7 +287,7 @@ test("emits the turn's file patches as turn.diff before the boundary", async () 
     settledTools: new Set<string>(),
   };
   const session: SessionState = {
-    bbThreadId: "bb-thread",
+    aliaThreadId: "alia-thread",
     providerThreadId: "ses_1",
     cwd: "/repo",
     disableSubagents: true,
@@ -340,7 +340,7 @@ test("ignores terminal events from earlier work until the turn's prompt is deliv
     promptIds: new Set(["msg_prompt"]),
   };
   const session: SessionState = {
-    bbThreadId: "bb-thread",
+    aliaThreadId: "alia-thread",
     providerThreadId: "ses_1",
     cwd: "/repo",
     disableSubagents: true,
@@ -386,7 +386,7 @@ test("shows a Code Mode execute as one code row without nested rows", async () =
     settledTools: new Set<string>(),
   };
   const session: SessionState = {
-    bbThreadId: "bb-thread",
+    aliaThreadId: "alia-thread",
     providerThreadId: "ses_1",
     cwd: "/repo",
     disableSubagents: true,
@@ -422,7 +422,7 @@ test("shows a Code Mode execute as one code row without nested rows", async () =
     content: [{ type: "text", text: '"HELLO"' }],
     metadata: { toolCalls: [{ ...call, status: "completed" }] },
   });
-  // BB renders any item with a parentRef as a subagent's work.
+  // VesnALIA renders any item with a parentRef as a subagent's work.
   assert.equal(emitted.filter((delta) => delta.key?.parentRef).length, 0);
   assert.deepEqual(
     emitted.map((delta) => [delta.kind, delta.key.providerItemId]),
@@ -448,7 +448,7 @@ test("a failed permission reply never escapes as an unhandled rejection", async 
     settledTools: new Set<string>(),
   };
   const session: SessionState = {
-    bbThreadId: "bb-thread",
+    aliaThreadId: "alia-thread",
     providerThreadId: "ses_1",
     cwd: "/repo",
     permissionMode: "full",

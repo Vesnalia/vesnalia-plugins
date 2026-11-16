@@ -182,11 +182,11 @@ function scannerHarness(events, thread = {}) {
     ],
     listEvents: async (args) => {
       calls.push(args);
-      // BB itself 400s above 100; a harness that quietly served more would let
+      // VesnALIA itself 400s above 100; a harness that quietly served more would let
       // the bug that flat-lined the chart back in.
       assert.ok(
         args.limit <= 100,
-        `asked BB for ${args.limit} events, over the 100 cap`,
+        `asked VesnALIA for ${args.limit} events, over the 100 cap`,
       );
       let rows = events;
       if (args.afterSeq !== undefined) {
@@ -253,7 +253,7 @@ test("a thread created inside the window charts its whole history", async () => 
 });
 
 test("a session-total event is taken as a baseline, never charted as a spike", async () => {
-  // The shape BB's Claude Code bridge emits for a resumed thread: `last` is
+  // The shape VesnALIA's Claude Code bridge emits for a resumed thread: `last` is
   // usage since the session resumed — hours of it — not a single step. Both
   // figures are far too large to have happened inside the window.
   const events = [
@@ -469,7 +469,7 @@ test("an archived thread drops out of live throughput immediately", async () => 
   assert.equal(snapshot.windowTotals.tokens, 0);
 });
 
-test("local per-call usage is mapped back to its BB provider thread", async () => {
+test("local per-call usage is mapped back to its VesnALIA provider thread", async () => {
   const recorder = createThroughputRecorder();
   const samples = [
     {
@@ -557,7 +557,7 @@ test("an archived local thread drops out of live throughput immediately", async 
   assert.equal(snapshot.windowTotals.tokens, 0);
 });
 
-test("native BB token usage suppresses the local fallback", async () => {
+test("native VesnALIA token usage suppresses the local fallback", async () => {
   const recorder = createThroughputRecorder();
   let scans = 0;
   const scanner = createLocalThroughputScanner(recorder, {

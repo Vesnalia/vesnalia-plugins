@@ -20,8 +20,8 @@ import {
 import {
   Markdown,
   definePluginApp,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useComposer,
   useComposerView,
   useRealtime,
@@ -34,7 +34,7 @@ import {
   type PluginComposerMention,
   type PluginThreadHeaderActionProps,
   type PluginThreadPanelProps
-} from '@get-bb/plugin-sdk/app';
+} from '@vesnalia/plugin-sdk/app';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -177,11 +177,11 @@ const SOURCE_FILTER_OPTIONS = [
   'gitlab',
   'gitea'
 ] as const;
-const RIGHT_PANEL_PINNED_STORAGE_KEY = 'bb-taskboard:right-panel-pinned';
-const RIGHT_PANEL_PIN_EVENT = 'bb-taskboard:right-panel-pin-changed';
-const SIDEBAR_COLLAPSED_STORAGE_KEY = 'bb-taskboard:sidebar-collapsed';
-const SIDEBAR_WIDTH_STORAGE_KEY = 'bb-taskboard:sidebar-width';
-const LAST_PROJECT_STORAGE_KEY = 'bb-taskboard:last-project';
+const RIGHT_PANEL_PINNED_STORAGE_KEY = 'alia-taskboard:right-panel-pinned';
+const RIGHT_PANEL_PIN_EVENT = 'alia-taskboard:right-panel-pin-changed';
+const SIDEBAR_COLLAPSED_STORAGE_KEY = 'alia-taskboard:sidebar-collapsed';
+const SIDEBAR_WIDTH_STORAGE_KEY = 'alia-taskboard:sidebar-width';
+const LAST_PROJECT_STORAGE_KEY = 'alia-taskboard:last-project';
 const SIDEBAR_AUTO_COLLAPSE_WIDTH = 720;
 const SIDEBAR_DEFAULT_WIDTH = 208;
 const SIDEBAR_MIN_WIDTH = 180;
@@ -335,8 +335,8 @@ function loadSourceProjectContext(): ProjectRouteContext | null {
 
 function ManageHeaderAction({ subPath }: PluginNavPanelProps) {
   const route = parseTrackerRoute(subPath);
-  const { projectId: contextProjectId } = useBbContext();
-  const navigate = useBbNavigate();
+  const { projectId: contextProjectId } = useAliaContext();
+  const navigate = useAliaNavigate();
   const routeProjectId =
     route.kind === 'project' || route.kind === 'item'
       ? route.projectId
@@ -693,8 +693,8 @@ function CreateIssueDialog(props: CreateIssueDialogProps) {
   const assisted = props.mode === 'composer-assisted';
   const initialPrompt = assisted ? props.initialPrompt : '';
   const rpc = useRpc<TaskboardRpcContract>();
-  const navigate = useBbNavigate();
-  const bbContext = useBbContext();
+  const navigate = useAliaNavigate();
+  const aliaContext = useAliaContext();
   const formId = useId();
   const metadataErrorId = `${formId}-metadata-error`;
   const [context, setContext] = useState<CreateIssueContext>();
@@ -821,7 +821,7 @@ function CreateIssueDialog(props: CreateIssueDialogProps) {
     try {
       let result = await rpc.call('improveTicket', {
         ...request, ...before, detail: improveDetail,
-        contextThreadId: bbContext.projectId === projectId ? bbContext.threadId : null,
+        contextThreadId: aliaContext.projectId === projectId ? aliaContext.threadId : null,
         execution: taskExecution
       });
       const deadline = Date.now() + 5 * 60_000;
@@ -895,7 +895,7 @@ function CreateIssueDialog(props: CreateIssueDialogProps) {
     setCreateError(null);
     setCreateOutcomeUncertain(false);
     if (!projectId) {
-      setContextError('Choose a BB project before creating an issue.');
+      setContextError('Choose a VesnALIA project before creating an issue.');
       return;
     }
     let active = true;
@@ -1074,12 +1074,12 @@ function CreateIssueDialog(props: CreateIssueDialogProps) {
         toast.warning(result.warnings.join(' '));
       }
       onOpenChange(false);
-      const identity = { projectId: result.item.bbProjectId, source: result.item.source, locator: result.item.locator };
+      const identity = { projectId: result.item.aliaProjectId, source: result.item.source, locator: result.item.locator };
       try {
         if (startNow) {
           const { record } = await rpc.call('factoryStartTask', {
             ...identity,
-            contextThreadId: bbContext.projectId === identity.projectId ? bbContext.threadId : null,
+            contextThreadId: aliaContext.projectId === identity.projectId ? aliaContext.threadId : null,
             execution: taskExecution
           });
           const run = record.runs.at(-1);
@@ -1187,12 +1187,12 @@ function CreateIssueDialog(props: CreateIssueDialogProps) {
           projectId={projectId}
           value={taskExecution}
           onChange={next => { executionTouched.current = true; setTaskExecution(next); }}
-          threadId={bbContext.projectId === projectId ? bbContext.threadId : null}
+          threadId={aliaContext.projectId === projectId ? aliaContext.threadId : null}
           disabled={creating || improving}
           showSummary
           summaryTitle="AI for this task"
           compact
-          defaultsLabel={bbContext.projectId === projectId ? 'Thread default' : 'Project default'}
+          defaultsLabel={aliaContext.projectId === projectId ? 'Thread default' : 'Project default'}
           resetLabel="Use thread defaults"
           onDefaults={defaults => { if (!executionTouched.current) setTaskExecution(defaults); }}
         />
@@ -1285,7 +1285,7 @@ function CreateIssueDialog(props: CreateIssueDialogProps) {
           </div>
           <DialogDescription>
             {context === undefined
-              ? 'Loading the tracker configured for this BB project…'
+              ? 'Loading the tracker configured for this VesnALIA project…'
               : !context.available
                 ? `Finish setting up ${sourceName(context.source)} for this project.`
                 : !assisted
@@ -1566,7 +1566,7 @@ function DirectCreateIssueAction({
   const open = launchProjectId !== null;
   const label = projectId
     ? 'Create a new Taskboard issue'
-    : 'Choose a BB project before creating an issue';
+    : 'Choose a VesnALIA project before creating an issue';
   const button = (
     <Button
       type="button"
@@ -1616,7 +1616,7 @@ function DirectCreateIssueAction({
 function ComposerCreateIssueAction() {
   const view = useComposerView();
   const composer = useComposer();
-  const { projectId: contextProjectId } = useBbContext();
+  const { projectId: contextProjectId } = useAliaContext();
   const [capturedPrompt, setCapturedPrompt] = useState<string | null>(null);
   const [capturedImages, setCapturedImages] = useState<TicketImage[]>([]);
   const [attachmentWarning, setAttachmentWarning] = useState<string | undefined>();
@@ -1651,7 +1651,7 @@ function ComposerCreateIssueAction() {
                 onMouseDown={event => event.preventDefault()}
                 onClick={async () => {
                   if (!projectId) {
-                    toast.error('Choose a BB project before creating an issue.');
+                    toast.error('Choose a VesnALIA project before creating an issue.');
                     return;
                   }
                   if (!hasPrompt) {
@@ -1667,7 +1667,7 @@ function ComposerCreateIssueAction() {
                   try {
                     const captured = await clipboardTicketImages();
                     setCapturedImages(captured);
-                    if (view.draft.attachmentCount > captured.length) setAttachmentWarning('BB cannot expose existing composer attachments here. Paste any missing images into this ticket.');
+                    if (view.draft.attachmentCount > captured.length) setAttachmentWarning('VesnALIA cannot expose existing composer attachments here. Paste any missing images into this ticket.');
                   } catch {
                     if (view.draft.attachmentCount > 0) setAttachmentWarning('Could not read clipboard images. Paste the composer images into this ticket.');
                   } finally {
@@ -2196,7 +2196,7 @@ function TrackerSidebar({
           </div>
         ) : (
           <p className="px-2 py-1 text-xs text-muted-foreground">
-            No BB projects found.
+            No VesnALIA projects found.
           </p>
         )}
 
@@ -2362,7 +2362,7 @@ function TrackerTopbar({
             className="size-3.5 shrink-0 text-muted-foreground"
           />
           <span className="truncate font-semibold">
-            {project?.name ?? 'BB project'}
+            {project?.name ?? 'VesnALIA project'}
           </span>
           <span className="tb-topbar-pill hidden rounded-full px-2 py-0.5 text-2xs font-medium @md:inline-flex">
             Issues
@@ -2390,7 +2390,7 @@ function TrackerTopbar({
         >
           <Icon name="Folder" className="size-3.5 shrink-0" />
           <span className="truncate font-medium">
-            {project?.name ?? 'BB project'}
+            {project?.name ?? 'VesnALIA project'}
           </span>
         </button>
         <Icon
@@ -3437,7 +3437,7 @@ function WorkItemStatusMenu({
   const [loading, setLoading] = useState(false);
   const [pendingStatusId, setPendingStatusId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const identity = `${item.bbProjectId}:${item.source}:${item.locator}`;
+  const identity = `${item.aliaProjectId}:${item.source}:${item.locator}`;
 
   useEffect(() => {
     setOptions(undefined);
@@ -3450,7 +3450,7 @@ function WorkItemStatusMenu({
     setError(null);
     try {
       const result = await rpc.call('statusOptions', {
-        projectId: item.bbProjectId,
+        projectId: item.aliaProjectId,
         source: item.source,
         locator: item.locator
       });
@@ -3460,7 +3460,7 @@ function WorkItemStatusMenu({
     } finally {
       setLoading(false);
     }
-  }, [item.bbProjectId, item.locator, item.source, loading, options, rpc]);
+  }, [item.aliaProjectId, item.locator, item.source, loading, options, rpc]);
 
   const changeStatus = async (option: WorkStatusOption) => {
     const current =
@@ -3712,9 +3712,9 @@ function ListStateGroups({
         <div id={contentId} hidden={collapsed}>
           {group.items.map(item => (
             <WorkItemRow
-              key={`${item.bbProjectId}:${item.source}:${item.locator}`}
+              key={`${item.aliaProjectId}:${item.source}:${item.locator}`}
               item={item}
-              project={projectsById.get(item.bbProjectId)}
+              project={projectsById.get(item.aliaProjectId)}
               showProject={showProject}
               composerDragEnabled={composerDragEnabled}
               onMove={onMove}
@@ -3728,7 +3728,7 @@ function ListStateGroups({
 }
 
 function kanbanItemId(item: WorkItem): string {
-  return `${item.bbProjectId}:${item.source}:${item.locator}`;
+  return `${item.aliaProjectId}:${item.source}:${item.locator}`;
 }
 
 function mergeDiscoveredStatuses(
@@ -4021,7 +4021,7 @@ function KanbanBoard({
   const preloadItems = useMemo(() => {
     const representatives = new Map<string, WorkItem>();
     for (const item of workflowItems) {
-      const scope = `${item.bbProjectId}:${item.source}`;
+      const scope = `${item.aliaProjectId}:${item.source}`;
       if (!representatives.has(scope)) {
         representatives.set(scope, item);
       }
@@ -4036,7 +4036,7 @@ function KanbanBoard({
       if (existing) return existing;
       const request = rpc
         .call('statusOptions', {
-          projectId: item.bbProjectId,
+          projectId: item.aliaProjectId,
           source: item.source,
           locator: item.locator
         })
@@ -4726,7 +4726,7 @@ function TrackerList({
     () =>
       (projects ?? []).flatMap(project => {
         const projectItems = visibleItems.filter(
-          item => item.bbProjectId === project.id
+          item => item.aliaProjectId === project.id
         );
         return projectItems.length > 0
           ? [{ project, items: projectItems }]
@@ -4834,7 +4834,7 @@ function TrackerList({
   const moveItemStatus = useCallback(
     async (item: WorkItem, option: WorkStatusOption) => {
       const matches = (candidate: WorkItem) =>
-        candidate.bbProjectId === item.bbProjectId &&
+        candidate.aliaProjectId === item.aliaProjectId &&
         candidate.source === item.source &&
         candidate.locator === item.locator;
       setItems(current =>
@@ -4850,7 +4850,7 @@ function TrackerList({
       );
       try {
         const result = await rpc.call('updateItemStatus', {
-          projectId: item.bbProjectId,
+          projectId: item.aliaProjectId,
           source: item.source,
           locator: item.locator,
           statusId: option.id
@@ -5382,7 +5382,7 @@ function TrackerDetail({
   onAddToComposer?: (item: WorkItem) => void;
 }) {
   const rpc = useRpc<TaskboardRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const detailTabsId = useId();
   const [item, setItem] = useState<WorkItemDetail | null | undefined>();
   const [error, setError] = useState<string | null>(null);
@@ -5990,7 +5990,7 @@ function ProjectConfigForm({
       <fieldset disabled={saving} className="space-y-3">
         <legend className="text-sm font-semibold">External tracker</legend>
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Choose the one system this BB project uses for external work.
+          Choose the one system this VesnALIA project uses for external work.
         </p>
         <div
           className="grid gap-2 @lg:grid-cols-3"
@@ -6062,14 +6062,14 @@ function ProjectConfigForm({
                 </h3>
               </div>
               <p className="max-w-xl text-xs leading-relaxed text-muted-foreground">
-                Uses the GitHub remote from this BB project&apos;s local
+                Uses the GitHub remote from this VesnALIA project&apos;s local
                 checkout and the authenticated gh CLI. Taskboard never stores
                 a GitHub token.
               </p>
               <p className="max-w-xl text-xs leading-relaxed text-muted-foreground">
                 {config.githubRepos.length > 0
-                  ? 'Mapped repositories for this BB project'
-                  : 'No GitHub repositories are currently mapped to this BB project.'}
+                  ? 'Mapped repositories for this VesnALIA project'
+                  : 'No GitHub repositories are currently mapped to this VesnALIA project.'}
               </p>
               {config.githubRepos.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5 pt-1">
@@ -6110,7 +6110,7 @@ function ProjectConfigForm({
                 />
               </div>
               <p className="max-w-xl text-xs leading-relaxed text-muted-foreground">
-                This API key belongs only to this BB project. A team key is
+                This API key belongs only to this VesnALIA project. A team key is
                 required so the project cannot silently mix work from other
                 teams.
               </p>
@@ -6298,7 +6298,7 @@ function ProjectConfigForm({
               <Textarea
                 aria-label="Jira JQL"
                 value={config.jiraJql}
-                placeholder='project = "BB" AND statusCategory != Done'
+                placeholder='project = "VesnALIA" AND statusCategory != Done'
                 className="tb-field min-h-24 font-mono text-xs"
                 disabled={saving}
                 onChange={event => {
@@ -7134,10 +7134,10 @@ function ManageView({
               onValueChange={onProjectChange}
             >
               <SelectTrigger
-                aria-label="BB project"
+                aria-label="VesnALIA project"
                 className="tb-field h-9 w-64 max-w-full"
               >
-                <SelectValue placeholder="Choose a BB project" />
+                <SelectValue placeholder="Choose a VesnALIA project" />
               </SelectTrigger>
               <SelectContent>
                 {projects.map(project => (
@@ -7158,9 +7158,9 @@ function ManageView({
         ) : projects.length === 0 || projectId === null ? (
           <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card p-10 text-center">
             <Icon name="Folder" className="size-5 text-muted-foreground" />
-            <p className="text-sm font-medium">No BB projects found</p>
+            <p className="text-sm font-medium">No VesnALIA projects found</p>
             <p className="text-sm text-muted-foreground">
-              Create a BB project before configuring its external tracker.
+              Create a VesnALIA project before configuring its external tracker.
             </p>
           </div>
         ) : loadingConfig ||
@@ -7225,11 +7225,11 @@ function ManageView({
 function TaskboardPanel({ subPath }: PluginNavPanelProps) {
   const route = parseTrackerRoute(subPath);
   const rpc = useRpc<TaskboardRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const {
     projectId: contextProjectId,
     threadId: contextThreadId
-  } = useBbContext();
+  } = useAliaContext();
   const [sourceProjectContext] = useState(loadSourceProjectContext);
   const selectionContextProjectId = contextThreadId
     ? contextProjectId
@@ -7488,7 +7488,7 @@ function TaskboardPanel({ subPath }: PluginNavPanelProps) {
         onOpen={item =>
           go({
             kind: 'item',
-            projectId: item.bbProjectId,
+            projectId: item.aliaProjectId,
             source: item.source,
             locator: item.locator
           })
@@ -7638,7 +7638,7 @@ function TaskboardRightPanel({
 }) {
   const { values } = useSettings();
   const rpc = useRpc<TaskboardRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const composer = useComposer();
   const [itemRoute, setItemRoute] = useState<Extract<
     TrackerRoute,
@@ -7762,7 +7762,7 @@ function TaskboardRightPanel({
                 ? pinned
                   ? 'Pinned across chats'
                   : 'Open beside this chat'
-                : 'Choose a BB project'}
+                : 'Choose a VesnALIA project'}
             </p>
           </div>
           {!activeItemRoute ? (
@@ -7856,7 +7856,7 @@ function TaskboardRightPanel({
               <Icon name="Folder" className="size-5 text-muted-foreground" />
               <p className="text-sm font-medium">Choose a project</p>
               <p className="max-w-xs text-xs text-muted-foreground">
-                Select a BB project in the composer to load its Taskboard here.
+                Select a VesnALIA project in the composer to load its Taskboard here.
               </p>
             </div>
           ) : activeItemRoute ? (
@@ -7875,7 +7875,7 @@ function TaskboardRightPanel({
               onOpen={item =>
                 setItemRoute({
                   kind: 'item',
-                  projectId: item.bbProjectId,
+                  projectId: item.aliaProjectId,
                   source: item.source,
                   locator: item.locator
                 })
@@ -7891,7 +7891,7 @@ function TaskboardRightPanel({
 function TaskboardThreadPanel({ threadId }: PluginThreadPanelProps) {
   const rpc = useRpc<TaskboardRpcContract>();
   const { projectId: contextProjectId, threadId: contextThreadId } =
-    useBbContext();
+    useAliaContext();
   const fallbackProjectId =
     contextThreadId === threadId ? contextProjectId : null;
   const [projectId, setProjectId] = useState<string | null | undefined>();
@@ -7927,7 +7927,7 @@ function TaskboardThreadHeaderAction({
   threadId
 }: PluginThreadHeaderActionProps) {
   const { values } = useSettings();
-  const { openThreadPanel } = useBbNavigate();
+  const { openThreadPanel } = useAliaNavigate();
   const autoOpenedThreadRef = useRef<string | null>(null);
   const openTaskboard = useCallback(
     (showError: boolean) => {
@@ -8081,7 +8081,7 @@ function ProjectCredentialsInteractionForm({
       <div className="space-y-1">
         <p className="text-sm font-semibold">{payload.projectName}</p>
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Credentials entered here are write-only and isolated to this BB
+          Credentials entered here are write-only and isolated to this VesnALIA
           project. Existing values are never loaded into the form.
         </p>
       </div>
@@ -8237,12 +8237,12 @@ function ProjectCredentialsInteraction(props: PluginPendingInteractionProps) {
 }
 
 function TaskboardSettingsInfo() {
-  const navigate = useBbNavigate();
-  const { projectId } = useBbContext();
+  const navigate = useAliaNavigate();
+  const { projectId } = useAliaContext();
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        Each BB project has its own tracker connection, filter set, default
+        Each VesnALIA project has its own tracker connection, filter set, default
         layout, and workflow status order.
       </p>
       <Button

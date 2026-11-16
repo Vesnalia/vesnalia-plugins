@@ -2,8 +2,8 @@
 import {
   experimental_ProviderIcon as ProviderIcon,
   UrlLink,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { ReactNode } from "react";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { GoalDetails } from "./GoalDetails";
@@ -119,7 +119,7 @@ export function ThreadDetails({
         </h3>
         {status === null ? null : (
           <span
-            className={cn("shrink-0 whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-semibold leading-4", status.tone === "needs-you" ? "bb-ws-your-turn" : cn("bg-muted/70", TONE_TEXT[status.tone]))}
+            className={cn("shrink-0 whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-semibold leading-4", status.tone === "needs-you" ? "alia-ws-your-turn" : cn("bg-muted/70", TONE_TEXT[status.tone]))}
             title={status.detail}
           >{status.text}</span>
         )}

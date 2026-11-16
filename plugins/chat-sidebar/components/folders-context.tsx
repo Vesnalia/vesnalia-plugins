@@ -10,11 +10,11 @@
 // folder or going back to the default folders can be undone from the toast,
 // and the editor's history brings back any of the last layouts.
 //
-// The layout seen last is remembered on this page, so a list that bb mounts
+// The layout seen last is remembered on this page, so a list that VesnALIA mounts
 // again does not flash the default.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 
 import { useReorderDnd } from "@/hooks/use-sortable";
 import type { FolderState, HistoryEntry } from "@/lib/folder-store";

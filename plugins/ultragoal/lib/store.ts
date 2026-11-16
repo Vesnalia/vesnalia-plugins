@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { GoalSnapshot, GoalStatus } from "../contract.js";
 
 export const MAX_OBJECTIVE_CHARS = 4000;
@@ -204,9 +204,9 @@ export function validateObjective(objective: string): string | null {
   return null;
 }
 
-export function createGoalStore(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+export function createGoalStore(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS goals (
       thread_id TEXT PRIMARY KEY,
       objective TEXT NOT NULL,
@@ -336,7 +336,7 @@ export function createGoalStore(bb: BbPluginApi) {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     )`,
-    // Scheduler reservations bridge the non-transactional BB thread spawn.
+    // Scheduler reservations bridge the non-transactional VesnALIA thread spawn.
     // The unique root/item key prevents overlapping plugin generations from
     // externally spawning the same pending or abandoned in-progress work.
     `CREATE TABLE IF NOT EXISTS collab_item_reservations (
@@ -441,7 +441,7 @@ export function createGoalStore(bb: BbPluginApi) {
       BEGIN
         SELECT RAISE(ABORT, 'root worker capacity is full');
       END`,
-    // APPEND ONLY, NEVER INSERT. bb.storage.migrate records progress by array
+    // APPEND ONLY, NEVER INSERT. alia.storage.migrate records progress by array
     // INDEX, so a statement added in the middle shifts every later index: the
     // new statement lands on an index already marked applied and silently never
     // runs, while a previously-applied one re-runs under a new index. Adding

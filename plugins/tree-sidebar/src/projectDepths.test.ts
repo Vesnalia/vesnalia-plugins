@@ -20,8 +20,8 @@ describe("publishProjectDepths", () => {
   it("replaces the mapping and tells every listener", () => {
     let calls = 0;
     const off = onProjectDepths(() => calls++);
-    publishProjectDepths(new Map([["p_bb", 1]]));
-    expect(projectDepths().get("p_bb")).toBe(1);
+    publishProjectDepths(new Map([["p_alia", 1]]));
+    expect(projectDepths().get("p_alia")).toBe(1);
     expect(calls).toBe(1);
 
     off();

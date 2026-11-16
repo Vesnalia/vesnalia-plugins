@@ -27,25 +27,25 @@ describe("resolveArtifact", () => {
       .toThrow(/outside thread storage/);
   });
   it("joins a relative file with the environment path", async () => {
-    const r = await resolveArtifact(sdk(), "thr_child", "plans/plan.html", undefined, "/home/m/.bb");
+    const r = await resolveArtifact(sdk(), "thr_child", "plans/plan.html", undefined, "/home/m/.vesnalia");
     expect(r).toEqual({ hostId: "host_1", absolutePath: "/home/m/repo/plans/plan.html", sourceKind: "workspace", displayPath: "plans/plan.html" });
   });
   it("classifies thread storage and host paths", async () => {
-    const ts = await resolveArtifact(sdk(), "thr_child", "/home/m/.bb/thread-storage/thr_child/board.html", undefined, "/home/m/.bb");
+    const ts = await resolveArtifact(sdk(), "thr_child", "/home/m/.vesnalia/thread-storage/thr_child/board.html", undefined, "/home/m/.vesnalia");
     expect(ts.sourceKind).toBe("thread-storage"); expect(ts.displayPath).toBe("board.html"); expect(ts.hostId).toBeUndefined();
-    const h = await resolveArtifact(sdk(), "thr_child", "/tmp/x.html", undefined, "/home/m/.bb");
+    const h = await resolveArtifact(sdk(), "thr_child", "/tmp/x.html", undefined, "/home/m/.vesnalia");
     expect(h.sourceKind).toBe("host"); expect(h.displayPath).toBe("/tmp/x.html"); expect(h.hostId).toBe("host_1");
-    await expect(resolveArtifact({ ...sdk(), environments: { get: async () => ({ id: "env_1", hostId: "host_1", path: null }) } }, "thr_child", "rel.html", undefined, "/home/m/.bb")).rejects.toThrow(/without a workspace or cwd/);
+    await expect(resolveArtifact({ ...sdk(), environments: { get: async () => ({ id: "env_1", hostId: "host_1", path: null }) } }, "thr_child", "rel.html", undefined, "/home/m/.vesnalia")).rejects.toThrow(/without a workspace or cwd/);
   });
   it("uses the thread's storage host and confines relative paths to its root", async () => {
-    const artifact = await resolveArtifact(sdk(), "thr_child", "reports/review.html", undefined, "/home/m/.bb", "thread-storage");
+    const artifact = await resolveArtifact(sdk(), "thr_child", "reports/review.html", undefined, "/home/m/.vesnalia", "thread-storage");
     expect(artifact).toEqual({
       hostId: "storage_host",
       absolutePath: "/storage/thr_child/reports/review.html",
       sourceKind: "thread-storage",
       displayPath: "reports/review.html",
     });
-    await expect(resolveArtifact(sdk(), "thr_child", "../escape.html", undefined, "/home/m/.bb", "thread-storage"))
+    await expect(resolveArtifact(sdk(), "thr_child", "../escape.html", undefined, "/home/m/.vesnalia", "thread-storage"))
       .rejects.toThrow(/outside thread storage/);
   });
 });

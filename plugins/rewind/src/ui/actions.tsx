@@ -2,7 +2,7 @@
 // card, the turn list, and the restore history.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/icon";
@@ -258,7 +258,7 @@ function RestorePreviewBody({ threadId, checkpoint, anchorSeq, message, children
 }
 
 /**
- * Restore the files to before a message, then have bb replace the message:
+ * Restore the files to before a message, then have VesnALIA replace the message:
  * files and conversation go back together, in this thread.
  */
 export function EditMessageDialog({
@@ -289,7 +289,7 @@ export function EditMessageDialog({
       if (edit.ok) {
         announceRestore(rpc, threadId, outcome, `Files restored and ${which} replaced`);
       } else {
-        toast.warning(`Files restored, but bb did not edit ${which}`, {
+        toast.warning(`Files restored, but VesnALIA did not edit ${which}`, {
           description: `${edit.error} The restore stays; a note for your next message is ready above the message box.`,
           duration: 15_000,
         });
@@ -306,8 +306,8 @@ export function EditMessageDialog({
         <DialogHeader>
           <DialogTitle>Restore files and edit {which}</DialogTitle>
           <DialogDescription>
-            First the files go back to how they were before {which}. That part can be undone, like any restore. Then bb replaces {which} with your new text and
-            discards every turn after it; the conversation edit follows bb&apos;s rules, and Rewind cannot undo it.
+            First the files go back to how they were before {which}. That part can be undone, like any restore. Then VesnALIA replaces {which} with your new text and
+            discards every turn after it; the conversation edit follows VesnALIA&apos;s rules, and Rewind cannot undo it.
           </DialogDescription>
         </DialogHeader>
         <label className="space-y-1 text-sm">
@@ -358,7 +358,7 @@ async function followFork(rpc: Rpc, jobId: string, open: (threadId: string) => v
 
 export function ForkDialog({ threadId, checkpoint, anchorSeq, open, onOpenChange }: { threadId: string; checkpoint: CheckpointDto; anchorSeq?: number; open: boolean; onOpenChange: (open: boolean) => void }) {
   const rpc = useRewindRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [prompt, setPrompt] = useState("");
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);

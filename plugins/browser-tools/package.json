@@ -1,15 +1,15 @@
 {
-  "name": "bb-plugin-browser-tools",
+  "name": "alia-plugin-browser-tools",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.84"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.84"
   },
-  "bb": {
+  "alia": {
     "name": "Browser Tools",
-    "description": "Native browser tools over BB's desktop browser, with snapshot-versioned refs and bounded output.",
+    "description": "Native browser tools over VesnALIA's desktop browser, with snapshot-versioned refs and bounded output.",
     "branding": {
       "icon": "Globe"
     },
@@ -17,7 +17,7 @@
     "host": "./host.ts"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "check-types": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -27,7 +27,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.84",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -40,8 +39,21 @@
     "vitest": "^5.0.0"
   },
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.84"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/browser-tools#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/divyesh-puri/bb-plugin-browser-tools.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/browser-tools"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

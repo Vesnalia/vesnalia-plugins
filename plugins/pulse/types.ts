@@ -93,9 +93,9 @@ export interface Automation {
   enabled: boolean | null;
   /** Paused from the panel (kv flag), independent of the schedule setting. */
   paused?: boolean;
-  /** The schedule setting changed since load; only `bb plugin reload` applies it. */
+  /** The schedule setting changed since load; only `alia plugin reload` applies it. */
   pendingReload?: boolean;
-  /** bb refused the loaded cron, so nothing runs (the reason bb gave). */
+  /** VesnALIA refused the loaded cron, so nothing runs (the reason VesnALIA gave). */
   scheduleError?: string | null;
   /** The changed, not yet loaded cron will be refused on reload (why). */
   pendingError?: string | null;
@@ -146,7 +146,7 @@ export interface PulseSnapshot {
   parentThreadId: string | null;
   /** No project is set in the plugin settings yet. */
   needsProject?: boolean;
-  /** Loaded without a project and one was set since: runs work, bb may still list "needs configuration". */
+  /** Loaded without a project and one was set since: runs work, VesnALIA may still list "needs configuration". */
   projectSetLive?: boolean;
   /** The store directory setting changed; the panel keeps showing the loaded store until reload. */
   homePending?: boolean;

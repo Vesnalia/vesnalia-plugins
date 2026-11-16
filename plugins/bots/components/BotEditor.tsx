@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,7 +111,7 @@ function diffDraft(
 
 export function BotEditor({ botId }: { botId: string }) {
   const rpc = useBotsRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
 
   // One round trip for everything the form needs, so the pickers and the
   // existing values arrive together instead of in a waterfall.

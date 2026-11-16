@@ -1,4 +1,4 @@
-# BB Wireframe format (v2)
+# VesnALIA Wireframe format (v2)
 
 Agents read and write `*.wireframe.json` files in the thread `Prototypes/` folder. Validate against `wireframe.schema.json` in the same folder.
 
@@ -6,7 +6,7 @@ Agents read and write `*.wireframe.json` files in the thread `Prototypes/` folde
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `format` | `"bb-wireframe"` | Constant |
+| `format` | `"alia-wireframe"` | Constant |
 | `version` | `2` | Constant (v1 is migrated on load) |
 | `name` | string | Document title, 1–200 chars |
 | `pages` | array | 1–200 pages |
@@ -86,7 +86,7 @@ Use the catalog defaults when omitting props (builder uses `CATALOG` in code). H
 
 ```json
 {
-  "format": "bb-wireframe",
+  "format": "alia-wireframe",
   "version": 2,
   "name": "Login",
   "activePageId": "pg_login",
@@ -136,7 +136,7 @@ Use the catalog defaults when omitting props (builder uses `CATALOG` in code). H
 
 ```json
 {
-  "format": "bb-wireframe",
+  "format": "alia-wireframe",
   "version": 2,
   "name": "Checkout",
   "activePageId": "pg_cart",

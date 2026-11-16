@@ -34,7 +34,7 @@ afterEach(() => {
 });
 
 async function loadApp() {
-  const { loadPluginApp } = await import("@get-bb/plugin-sdk/testing/app");
+  const { loadPluginApp } = await import("@vesnalia/plugin-sdk/testing/app");
   return loadPluginApp(() => import("../app"));
 }
 
@@ -52,7 +52,7 @@ function handlers(overrides: Record<string, unknown> = {}) {
 
 describe("Operator Inbox panel", () => {
   it("renders safe Markdown and navigates to the recorded sender thread", async () => {
-    const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+    const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
     const app = await loadApp();
     const rendered = renderSlot(app.navPanels[0]!, { subPath: "" }, {
       sidebarThreads: { status: "ready", projects: [project], threads: [] },
@@ -66,7 +66,7 @@ describe("Operator Inbox panel", () => {
   });
 
   it("keeps sender navigation when the stored title is unavailable", async () => {
-    const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+    const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
     const app = await loadApp();
     const rendered = renderSlot(app.navPanels[0]!, { subPath: "" }, {
       sidebarThreads: { status: "ready", projects: [project], threads: [] },
@@ -79,7 +79,7 @@ describe("Operator Inbox panel", () => {
   });
 
   it("refreshes messages without showing a layout-shifting loading row", async () => {
-    const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+    const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
     const app = await loadApp();
     let finishRefresh!: (value: { messages: (typeof message)[] }) => void;
     const operatorMessages = vi.fn()
@@ -100,7 +100,7 @@ describe("Operator Inbox panel", () => {
   });
 
   it("records reply acceptance without claiming provider delivery or consumption", async () => {
-    const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+    const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
     const app = await loadApp();
     const rpc = handlers();
     const rendered = renderSlot(app.navPanels[0]!, { subPath: "" }, {
@@ -112,16 +112,16 @@ describe("Operator Inbox panel", () => {
     fireEvent.change(editor, { target: { value: "Proceed Tuesday" } });
     expect(window.sessionStorage.getItem("operator-inbox.drafts")).toContain("Proceed Tuesday");
     fireEvent.click(rendered.getByRole("button", { name: "Send reply" }));
-    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Reply accepted by BB (queued). Provider consumption is not observed."));
-    expect(rendered.queryByText("Reply accepted by BB (queued). Provider consumption is not observed.")).toBeNull();
-    await rendered.findByRole("region", { name: "Reply accepted by BB" });
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Reply accepted by VesnALIA (queued). Provider consumption is not observed."));
+    expect(rendered.queryByText("Reply accepted by VesnALIA (queued). Provider consumption is not observed.")).toBeNull();
+    await rendered.findByRole("region", { name: "Reply accepted by VesnALIA" });
     expect(rpc.replyToOperatorMessage).toHaveBeenCalledWith({ projectId: "project-a", messageId: 1, text: "Proceed Tuesday" });
     expect(window.sessionStorage.getItem("operator-inbox.drafts")).toBe("{}");
     expect(rendered.queryByText(/reply delivered/i)).toBeNull();
   });
 
   it("sends trimmed multiline replies with Enter and ignores repeated submits while pending", async () => {
-    const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+    const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
     let finish!: (value: unknown) => void;
     const reply = vi.fn(() => new Promise((resolve) => { finish = resolve; }));
     const rendered = renderSlot((await loadApp()).navPanels[0]!, { subPath: "" }, {
@@ -136,12 +136,12 @@ describe("Operator Inbox panel", () => {
     expect(reply).toHaveBeenCalledTimes(1);
     expect(reply).toHaveBeenCalledWith({ projectId: "project-a", messageId: 1, text: "First line\nSecond line" });
     await act(async () => finish({ ...message, replyText: "First line\nSecond line", replyAcceptedAtMs: 4, readAtMs: 4, replyDelivery: "queued" }));
-    expect(await rendered.findByRole("region", { name: "Reply accepted by BB" })).toBeTruthy();
+    expect(await rendered.findByRole("region", { name: "Reply accepted by VesnALIA" })).toBeTruthy();
     expect(window.sessionStorage.getItem("operator-inbox.drafts")).toBe("{}");
   });
 
   it("allows Shift+Enter and IME confirmation, and does not send empty or held Enter", async () => {
-    const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+    const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
     const rpc = handlers();
     const rendered = renderSlot((await loadApp()).navPanels[0]!, { subPath: "" }, {
       sidebarThreads: { status: "ready", projects: [project], threads: [] }, rpc: rpc as never,
@@ -160,7 +160,7 @@ describe("Operator Inbox panel", () => {
   });
 
   it("keeps a failed Enter reply draft and allows retry with the send button", async () => {
-    const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+    const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
     const reply = vi.fn().mockRejectedValueOnce(new Error("Offline")).mockResolvedValue({ ...message, replyText: "Retry me", replyAcceptedAtMs: 4, readAtMs: 4, replyDelivery: "queued" });
     const rendered = renderSlot((await loadApp()).navPanels[0]!, { subPath: "" }, {
       sidebarThreads: { status: "ready", projects: [project], threads: [] },
@@ -175,12 +175,12 @@ describe("Operator Inbox panel", () => {
     expect((editor as HTMLTextAreaElement).value).toBe("Retry me");
     expect(window.sessionStorage.getItem("operator-inbox.drafts")).toContain("Retry me");
     fireEvent.click(rendered.getByRole("button", { name: "Send reply" }));
-    await rendered.findByRole("region", { name: "Reply accepted by BB" });
+    await rendered.findByRole("region", { name: "Reply accepted by VesnALIA" });
     expect(reply).toHaveBeenCalledTimes(2);
   });
 
   it("does not send with Enter while a message mutation is pending", async () => {
-    const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+    const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
     let finish!: (value: unknown) => void;
     const rpc = handlers({ markOperatorMessageRead: () => new Promise((resolve) => { finish = resolve; }) });
     const rendered = renderSlot((await loadApp()).navPanels[0]!, { subPath: "" }, {
@@ -195,7 +195,7 @@ describe("Operator Inbox panel", () => {
   });
 
   it("marks read, archives, and fails closed on a foreign-project row", async () => {
-    const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+    const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
     const app = await loadApp();
     const rpc = handlers();
     const rendered = renderSlot(app.navPanels[0]!, { subPath: "" }, {
@@ -225,7 +225,7 @@ describe("Operator Inbox panel", () => {
   });
 
   it("opens a project-locked thread panel and restores its session draft", async () => {
-    const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+    const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
     const app = await loadApp();
     expect(app.threadPanelActions.map(({ id }) => id)).toContain("inbox");
     window.sessionStorage.setItem("operator-inbox.drafts", JSON.stringify({ "project-a:1": "Keep this draft" }));
@@ -242,7 +242,7 @@ describe("Operator Inbox panel", () => {
   });
 
   it("updates the navigation icon from realtime and reconnect without polling", async () => {
-    const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+    const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
     const app = await loadApp();
     expect(app.navPanels[0]!.icon).toBe("operator-inbox/inbox");
     expect(app.icons[0]!.name).toBe("operator-inbox/inbox");
@@ -268,7 +268,7 @@ describe("Operator Inbox panel", () => {
   });
 
   it("does not replace a newer count with a stale RPC response", async () => {
-    const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+    const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
     const app = await loadApp();
     let finish!: (value: { count: number }) => void;
     const countRpc = vi.fn().mockReturnValueOnce(new Promise((resolve) => { finish = resolve; })).mockResolvedValueOnce({ count: 1 });
@@ -284,7 +284,7 @@ describe("Operator Inbox panel", () => {
   });
 
   it("keeps the navigation icon at zero and caps only the visible badge at 99+", async () => {
-    const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+    const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
     const app = await loadApp();
     let count = 0;
     const countRpc = vi.fn(async () => ({ count }));
@@ -316,13 +316,13 @@ describe("Operator Inbox panel", () => {
 const fileContext = {
   hostId: "host-sender", environmentId: "env-sender", threadId: "thread-sender",
   workspacePath: "/Users/pixexid/Projects/nuvyr-landscaping-concept-2026-09-05",
-  storageRootPath: "/Users/pixexid/.bb/thread-storage/thread-sender",
+  storageRootPath: "/Users/pixexid/.vesnalia/thread-storage/thread-sender",
 };
 const png = `${fileContext.workspacePath}/showcase/demos/002-landscaping-hardscaping/evidence/qa-final/home-1440-900-true.png`;
-const report = "/Users/pixexid/.bb/thread-storage/thr_tikuhzrqy8/REPORT.md";
+const report = "/Users/pixexid/.vesnalia/thread-storage/thr_tikuhzrqy8/REPORT.md";
 
 async function renderBody(text: string, context: unknown = fileContext, openUrl = () => true) {
-  const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+  const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
   return renderSlot((await loadApp()).navPanels[0]!, { subPath: "" }, {
     sidebarThreads: { status: "ready", projects: [project], threads: [] },
     openUrl, openFilePreview: () => true,
@@ -381,7 +381,7 @@ it("blocks image/reference/HTML media and unsafe or malformed destinations with 
 });
 
 it("does not lend late sender context to another message or a reply", async () => {
-  const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+  const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
   let finish: (value: typeof fileContext) => void = () => {};
   const late = new Promise<typeof fileContext>((resolve) => { finish = resolve; });
   const second = { ...message, messageId: 2, senderThreadId: "thread-other", text: `[Second](${png})`, replyText: `[Reply](${png})`, replyAcceptedAtMs: 2 };
@@ -414,7 +414,7 @@ it("retains only a safe new-tab fallback when native URL opening declines", asyn
 });
 
 it("expands one card at a time, preserves drafts, and keeps all cards collapsed across refresh", async () => {
-  const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+  const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
   const second = { ...message, messageId: 2, text: "Second message body" };
   const rendered = renderSlot((await loadApp()).navPanels[0]!, { subPath: "" }, {
     sidebarThreads: { status: "ready", projects: [project], threads: [] },
@@ -450,7 +450,7 @@ it("keeps the message expanded when opening a native file panel", async () => {
 });
 
 it("clears unread feedback only after saving and keeps order and selection through realtime refresh", async () => {
-  const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+  const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
   let rows: Array<Omit<typeof message, "readAtMs"> & { readAtMs: number | null }> = [{ ...message }, { ...message, messageId: 2, text: "Second" }];
   let finish: () => void = () => {};
   const pending = new Promise<void>((resolve) => { finish = resolve; });
@@ -489,7 +489,7 @@ it("clears unread feedback only after saving and keeps order and selection throu
 });
 
 it("keeps a failed read unread and allows a manual retry without an automatic retry loop", async () => {
-  const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+  const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
   const read = vi.fn().mockRejectedValueOnce(new Error("Offline")).mockResolvedValue({ ...message, readAtMs: 9 });
   const rendered = renderSlot((await loadApp()).navPanels[0]!, { subPath: "" }, {
     sidebarThreads: { status: "ready", projects: [project], threads: [] },
@@ -507,7 +507,7 @@ it("keeps a failed read unread and allows a manual retry without an automatic re
 });
 
 it("archives only from the expanded message actions without marking it read", async () => {
-  const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+  const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
   const second = { ...message, messageId: 2, text: "Collapsed message" };
   const archive = vi.fn(async () => ({ ...second, archivedAtMs: 3 }));
   const rpc = handlers({ operatorMessages: async () => ({ messages: [message, second] }), archiveOperatorMessage: archive });

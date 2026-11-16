@@ -1,7 +1,7 @@
 // Phase 6: side-by-side diff in Monaco. Unstaged changes compare the index with
 // the live, editable buffer; staged changes compare HEAD with the index.
 import { useEffect, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type * as MonacoApi from "monaco-editor/esm/vs/editor/editor.api.js";
 import type { rpcContract, Scope } from "../server";
 import { diffSides, type DiffSide } from "@/lib/diff-key";

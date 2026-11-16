@@ -14,10 +14,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   experimental_NewThreadComposer as NewThreadComposer,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../server";
 import {
@@ -43,8 +43,8 @@ function isNewThreadHotkey(event: KeyboardEvent): boolean {
 }
 
 export function QuickThreadOverlay() {
-  const { projectId } = useBbContext();
-  const nav = useBbNavigate();
+  const { projectId } = useAliaContext();
+  const nav = useAliaNavigate();
   const rpc = useRpc<typeof rpcContract>();
 
   const [open, setOpen] = useState(false);

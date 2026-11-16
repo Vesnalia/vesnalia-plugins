@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { patchReviewState } from "../lib/panel-state";
 import { setNeedsYou } from "../lib/workspace-store";
@@ -39,7 +39,7 @@ function phone() {
 }
 
 const file = (path: string, line: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n@@ -1 +1 @@\n-x\n+${line}\n`;
-const patch = file("src/a.ts", "aa") + file("src/b.ts", "bb");
+const patch = file("src/a.ts", "aa") + file("src/b.ts", "alia");
 const guide = { title: "Guide", intent: "Parses rows.", unplacedFiles: [] as string[], sections: [
   { id: "c1", title: "Parsing", overview: "Reads rows.", diffs: [{ file: "src/a.ts" }] },
   { id: "c2", title: "Caching", overview: "Keeps rows.", diffs: [{ file: "src/b.ts" }] },
@@ -187,7 +187,7 @@ test("the dock makes way while you type, and for the lines you select, whose bar
   slot.lifecycle.unmount();
 });
 
-test("while the dock shows, BB's toasts at the page's bottom sit above it, and drop back when it makes way or goes", async () => {
+test("while the dock shows, VesnALIA's toasts at the page's bottom sit above it, and drop back when it makes way or goes", async () => {
   const { slot, dock } = await renderPhone();
   const group = slot.getByRole("group", { name: "Review commands" });
   const rule = () => document.head.querySelector("style[data-gr-toasts-above-dock]")?.textContent ?? null;
@@ -203,13 +203,13 @@ test("while the dock shows, BB's toasts at the page's bottom sit above it, and d
   expect(rule()).toBeNull();
 });
 
-test("the dock's Ask agent opens BB's side panel on the Review agent tab, not a sheet; typing there leaves the dock in place", async () => {
+test("the dock's Ask agent opens VesnALIA's side panel on the Review agent tab, not a sheet; typing there leaves the dock in place", async () => {
   const { slot, dock } = await renderPhone();
   const group = slot.getByRole("group", { name: "Review commands" });
   fireEvent.click(dock.getByRole("button", { name: "Ask agent" }));
   expect(panelTabCalls(slot)).toEqual(["openTab:agent"]);
   expect(slot.queryByRole("dialog")).toBeNull();
-  // A box in BB's panel, outside the review: the dock makes way only for the review's own.
+  // A box in VesnALIA's panel, outside the review: the dock makes way only for the review's own.
   const outside = document.body.appendChild(document.createElement("textarea"));
   act(() => outside.focus());
   expect(group.hidden).toBe(false);

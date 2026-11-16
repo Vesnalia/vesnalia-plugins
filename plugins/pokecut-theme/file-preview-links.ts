@@ -1,9 +1,9 @@
-// File preview links: in a "Created/Edited <file>" work row BB opens the file's
+// File preview links: in a "Created/Edited <file>" work row VesnALIA opens the file's
 // diff in the right panel, which stays empty outside git. This sends a plain
-// click to BB's shared file preview instead (the right-panel viewer). Modifier
-// clicks keep BB's own behavior, so the diff is still one Alt-click away.
+// click to VesnALIA's shared file preview instead (the right-panel viewer). Modifier
+// clicks keep VesnALIA's own behavior, so the diff is still one Alt-click away.
 
-/** Live file target as accepted by BB's experimental_openFilePreview. */
+/** Live file target as accepted by VesnALIA's experimental_openFilePreview. */
 export type FileTarget =
   | { kind: "workspace"; environmentId: string; path: string }
   | { kind: "host"; hostId: string; path: string };
@@ -14,7 +14,7 @@ export type ThreadRoot = { environmentId: string; hostId: string; path: string }
 const FILE_SEGMENT = 'span[role="link"].text-timeline-accent';
 
 /**
- * Pull the full changed path out of the row title. BB renders the title's plain
+ * Pull the full changed path out of the row title. VesnALIA renders the title's plain
  * text as `<verb> <full path> <stats>` and the segment shows the file name only.
  * Moves read `a -> b`; the destination is the file that exists now.
  */

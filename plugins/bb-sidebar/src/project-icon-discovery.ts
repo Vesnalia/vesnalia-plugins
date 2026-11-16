@@ -54,13 +54,13 @@ export function rankDiscoveredProjectIcons(paths: Iterable<string>): string[] {
 
 export function manifestProjectIconPath(file: { content: string; contentEncoding: string; sizeBytes: number }) {
   if (file.contentEncoding !== "utf8" || file.sizeBytes > PROJECT_MANIFEST_MAX_BYTES) return null;
-  let manifest: { bb?: { branding?: { icon?: unknown; logo?: { light?: unknown } } } } | null;
+  let manifest: { alia?: { branding?: { icon?: unknown; logo?: { light?: unknown } } } } | null;
   try {
     manifest = JSON.parse(file.content);
   } catch {
     return null;
   }
-  const branding = manifest?.bb?.branding;
+  const branding = manifest?.alia?.branding;
   const icon = typeof branding?.icon === "string" ? normalizeProjectIconPath(branding.icon) : null;
   if (icon) return icon;
   return typeof branding?.logo?.light === "string" ? normalizeProjectIconPath(branding.logo.light) : null;

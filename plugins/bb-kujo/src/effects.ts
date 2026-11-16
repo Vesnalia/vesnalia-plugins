@@ -4,7 +4,7 @@ import { onDispose } from './cleanup.ts';
 export function mountSignal({ signal }: { signal: AbortSignal }): () => void {
   if (signal.aborted || typeof document === 'undefined') return () => {};
   const layer = document.createElement('div');
-  layer.className = 'bb-kujo-signal';
+  layer.className = 'alia-kujo-signal';
   layer.setAttribute('aria-hidden', 'true');
   layer.inert = true;
   // Inline display:none makes the node inert when another theme is selected.

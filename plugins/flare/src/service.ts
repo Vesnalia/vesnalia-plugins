@@ -1,4 +1,4 @@
-import type { BbPluginApi, MessageDispatchHookContext, PluginThreadEventPayloads } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, MessageDispatchHookContext, PluginThreadEventPayloads } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { leadLine } from "./blocks";
 import type { Companions } from "./companion";
@@ -73,7 +73,7 @@ interface Author {
   originPluginId: string | null;
 }
 
-// Flare marks its sends with its plugin id; where bb does not carry that through, anything but a person's own
+// Flare marks its sends with its plugin id; where VesnALIA does not carry that through, anything but a person's own
 // message with Flare's prefix is taken as Flare's, so a user who pastes a note back is never refused.
 const flareAuthored = (text: string, author: Author, pluginId: string): boolean =>
   isFlareNote(text.trimStart()) && (author.originPluginId === pluginId || author.initiator !== "user");
@@ -116,7 +116,7 @@ export function flareDto(row: FlareRow, viewer: string, drawn = false): FlareDto
 
 /**
  * Everything Flare does. `send` is synchronous and only writes one row, so the agent's tool call returns at once;
- * notifications, the parent's copy and every other read of bb happen afterwards, in the background.
+ * notifications, the parent's copy and every other read of VesnALIA happen afterwards, in the background.
  */
 export class FlareService {
   private readonly pending = new Set<Promise<void>>();
@@ -125,7 +125,7 @@ export class FlareService {
   private events = 0;
 
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly store: FlareStore,
     private readonly settings: () => Promise<FlareSettings>,
     private readonly now: () => number = Date.now,
@@ -148,7 +148,7 @@ export class FlareService {
       if (repeat !== null) return { status: "duplicate", flare: repeat };
       row = this.store.insertFlare({ threadId: input.threadId, projectId: input.projectId, draft, source: input.source, now });
     } catch (error) {
-      this.bb.log.warn(`Could not save a flare for ${input.threadId}: ${message(error)}`);
+      this.alia.log.warn(`Could not save a flare for ${input.threadId}: ${message(error)}`);
       return { status: "failed", reason: message(error) };
     }
     // The row is saved, so nothing from here on may turn the result into a failure the agent would retry.
@@ -160,7 +160,7 @@ export class FlareService {
       this.invalidate([row.threadId]);
       this.defer(() => this.fanOut(row, loud));
     } catch (error) {
-      this.bb.log.warn(`A flare for ${input.threadId} was saved, but its notifications were not started: ${message(error)}`);
+      this.alia.log.warn(`A flare for ${input.threadId} was saved, but its notifications were not started: ${message(error)}`);
     }
     return { status: "sent", flare: row, notes };
   }
@@ -174,13 +174,13 @@ export class FlareService {
   }
 
   private async fanOut(row: FlareRow, loud: boolean): Promise<void> {
-    const sdk = this.bb.sdk;
+    const sdk = this.alia.sdk;
     const [thread, ancestors] = await Promise.all([
       this.thread(row.threadId),
       sdk.threads.experimental_listAncestors({ threadIds: [row.threadId] }).then(
         (result) => result.threads.find((entry) => entry.threadId === row.threadId)?.ancestorIds ?? [],
         (error) => {
-          this.bb.log.warn(`Could not read the threads above ${row.threadId}: ${message(error)}`);
+          this.alia.log.warn(`Could not read the threads above ${row.threadId}: ${message(error)}`);
           return [] as string[];
         },
       ),
@@ -220,24 +220,24 @@ export class FlareService {
   private async forward(row: FlareRow, parent: string, childTitle: string | null): Promise<void> {
     if (!(await this.working(parent))) return;
     try {
-      await this.bb.sdk.threads.send({
+      await this.alia.sdk.threads.send({
         threadId: parent,
         mode: "steer",
-        originPluginId: this.bb.pluginId,
+        originPluginId: this.alia.pluginId,
         senderThreadId: row.threadId,
         input: [{ type: "text", text: forwardText(row, childTitle), mentions: [], visibility: "agent-only" }],
       });
       this.store.markForwarded(row.id, this.now());
       this.invalidate([row.threadId, parent]);
     } catch (error) {
-      this.bb.log.warn(`Could not pass a flare from ${row.threadId} to ${parent}: ${message(error)}`);
+      this.alia.log.warn(`Could not pass a flare from ${row.threadId} to ${parent}: ${message(error)}`);
     }
   }
 
-  /** Push through bb's push notifications plugin; 0 channels when it is missing, off or reached nobody. */
+  /** Push through VesnALIA's push notifications plugin; 0 channels when it is missing, off or reached nobody. */
   private async notify(input: { title: string; body: string; threadId: string }): Promise<number> {
     try {
-      const result = await this.bb.sdk.plugins.callRpc({
+      const result = await this.alia.sdk.plugins.callRpc({
         pluginId: PUSH_PLUGIN,
         method: "notifications.send",
         input: { title: cut(input.title, 80), body: cut(input.body, 180), threadId: input.threadId },
@@ -245,7 +245,7 @@ export class FlareService {
       });
       return result.channels.length;
     } catch (error) {
-      this.bb.log.info(`No push notification for ${input.threadId}: ${message(error)}`);
+      this.alia.log.info(`No push notification for ${input.threadId}: ${message(error)}`);
       return 0;
     }
   }
@@ -256,7 +256,7 @@ export class FlareService {
    */
   private async muted(threadIds: readonly string[]): Promise<boolean> {
     try {
-      const { threads } = await this.bb.sdk.plugins.callRpc({
+      const { threads } = await this.alia.sdk.plugins.callRpc({
         pluginId: PUSH_PLUGIN,
         method: "threadNotifications.list",
         input: { threadIds: [...threadIds] },
@@ -279,7 +279,7 @@ export class FlareService {
     const thread = await this.thread(threadId);
     if (thread === null || thread.status !== "active" || thread.runtime.displayStatus !== "active") return false;
     try {
-      const interactions = await this.bb.sdk.threads.interactions.list({ threadId });
+      const interactions = await this.alia.sdk.threads.interactions.list({ threadId });
       return !interactions.some((item) => item.status === "pending");
     } catch {
       return false;
@@ -288,9 +288,9 @@ export class FlareService {
 
   private async thread(threadId: string): Promise<Thread | null> {
     try {
-      return (await this.bb.sdk.threads.get({ threadId })) as Thread;
+      return (await this.alia.sdk.threads.get({ threadId })) as Thread;
     } catch (error) {
-      this.bb.log.warn(`Could not read thread ${threadId}: ${message(error)}`);
+      this.alia.log.warn(`Could not read thread ${threadId}: ${message(error)}`);
       return null;
     }
   }
@@ -356,7 +356,7 @@ export class FlareService {
 
   /** The message that started a thread's latest turn: when it was sent and its text. */
   private async lastRequest(threadId: string): Promise<{ at: number; text: string } | null> {
-    const [event] = await this.bb.sdk.threads.events.list({ threadId, types: ["client/turn/requested"], order: "desc", limit: "1" });
+    const [event] = await this.alia.sdk.threads.events.list({ threadId, types: ["client/turn/requested"], order: "desc", limit: "1" });
     if (event === undefined || event.type !== "client/turn/requested") return null;
     const input = (event.data as { input?: { type: string; text?: string }[] }).input ?? [];
     const text = input
@@ -380,7 +380,7 @@ export class FlareService {
     const before = this.events;
     // A thread event that arrives while this runs is newer than anything read here, so it wins.
     const moved = (threadId: string): boolean => (this.lifecycle.get(threadId) ?? 0) > before;
-    const running = new Set((await this.bb.sdk.threads.listRunning()).map((entry) => entry.id));
+    const running = new Set((await this.alia.sdk.threads.listRunning()).map((entry) => entry.id));
     const now = this.now();
     const changed: string[] = [];
     for (const run of this.store.openRuns()) {
@@ -417,14 +417,14 @@ export class FlareService {
       // Counted before sending, so a slow send is never repeated by the next tick.
       this.store.recordNudge(run.id, now);
       try {
-        await this.bb.sdk.threads.send({
+        await this.alia.sdk.threads.send({
           threadId: run.threadId,
           mode: "steer",
-          originPluginId: this.bb.pluginId,
+          originPluginId: this.alia.pluginId,
           input: [{ type: "text", text: nudgeText(quietMinutes, quietSince(run, lastFlareAt) > run.startedAt), mentions: [], visibility: "agent-only" }],
         });
       } catch (error) {
-        this.bb.log.warn(`Could not remind ${run.threadId}: ${message(error)}`);
+        this.alia.log.warn(`Could not remind ${run.threadId}: ${message(error)}`);
       }
     }
   }
@@ -485,13 +485,13 @@ export class FlareService {
 
   private invalidate(threadIds: readonly string[]): void {
     if (threadIds.length === 0) return;
-    this.bb.rpc.experimental_invalidate([...new Set(threadIds)].map(threadTag));
+    this.alia.rpc.experimental_invalidate([...new Set(threadIds)].map(threadTag));
   }
 
   private defer(work: () => Promise<void>): void {
     const task: Promise<void> = new Promise<void>((resolve) => setImmediate(resolve))
       .then(work)
-      .catch((error: unknown) => this.bb.log.warn(`Flare background work failed: ${message(error)}`))
+      .catch((error: unknown) => this.alia.log.warn(`Flare background work failed: ${message(error)}`))
       .finally(() => this.pending.delete(task));
     this.pending.add(task);
   }

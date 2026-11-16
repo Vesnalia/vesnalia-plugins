@@ -56,14 +56,14 @@ export interface DraftComment {
   /** The first line's side, when it isn't `side`: a range from a removed line to an added one. */
   startSide?: "LEFT" | "RIGHT";
   chapterId?: string;
-  /** Added by an agent, through a tool or `bb review comment`. Absent once the reviewer writes or edits it in the panel. */
+  /** Added by an agent, through a tool or `alia review comment`. Absent once the reviewer writes or edits it in the panel. */
   author?: "agent";
   /** The focus label when raised; gone once the reviewer edits it in the panel. */
   focus?: string;
   severity?: Severity;
   /** The text, without its severity's label. */
   body: string;
-  /** How the agent confirmed it: what it read or ran, with file:line. Shown in BB only; never posted. Gone once the reviewer edits the comment. */
+  /** How the agent confirmed it: what it read or ran, with file:line. Shown in VesnALIA only; never posted. Gone once the reviewer edits the comment. */
   evidence?: string;
   /** False for a problem in code the PR didn't change: it shows as Pre-existing and doesn't count against Approve. */
   introduced?: false;
@@ -98,7 +98,7 @@ export const sideOrder = (side: DraftComment["side"]) => side === "LEFT" ? 0 : s
 /** The side of its diff a line is on: a LOCAL one's is the new side of Not pushed yet's diff, never the PR's. */
 export const diffSide = (side: DraftComment["side"]): "LEFT" | "RIGHT" => side === "LEFT" ? "LEFT" : "RIGHT";
 
-/** A thread's report on a comment it was sent: with `bb review report`, or inferred by Check fixes. */
+/** A thread's report on a comment it was sent: with `alia review report`, or inferred by Check fixes. */
 export interface Claim {
   outcome: "done" | "declined";
   note?: string;
@@ -168,7 +168,7 @@ export interface Draft {
   /** The review summary: the top-level comment GitHub shows with the verdict. */
   body: string;
   comments: DraftComment[];
-  /** Written by an agent, through a tool or `bb review summary`. Absent once the reviewer writes or edits it. */
+  /** Written by an agent, through a tool or `alia review summary`. Absent once the reviewer writes or edits it. */
   bodyAuthor?: "agent";
   /** The verdict the assistant suggests. Only the reviewer picks one. */
   suggestedVerdict?: Verdict;

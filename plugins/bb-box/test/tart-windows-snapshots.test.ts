@@ -36,7 +36,7 @@ afterEach(async () => {
 });
 after(() => {
   for (const mac of macs) {
-    const vms = join(mac, ".bb-box", "qemu", "vms");
+    const vms = join(mac, ".alia-box", "qemu", "vms");
     for (const vm of existsSync(vms) ? readdirSync(vms) : []) rmSync(join(vms, vm, "pid"), { force: true });
   }
 });
@@ -50,7 +50,7 @@ function windowsGuest(ssh: ReturnType<typeof fakeSsh>, qemu: string): void {
       `  *Stop-Computer*) echo off >> "$HOME/off"; [ ! -f "$HOME/unreachable" ] || exit 255; [ -f "$HOME/stuck" ] || kill "$(cat ${qemu}/vms/*/pid)"; echo "powering off";;`,
       `  *"Get-Process explorer"*) [ ! -f "$HOME/slow-desktop" ] || sleep 2; exit 0;;`,
       `  *Set-Date*|*Add-Type*|*Get-Volume*|*Get-FileHash*) exit 0;;`,
-      `  *"Test-Path -LiteralPath"*bb-box-stream.exe*) exit 3;;`,
+      `  *"Test-Path -LiteralPath"*alia-box-stream.exe*) exit 3;;`,
       `  *) exec sh -c "$1";;`,
       `esac`,
       ``,
@@ -66,7 +66,7 @@ function setup(options: Partial<TartBackendOptions> = {}) {
   fakeQemu(mac);
   addImage(mac);
   const build = addWindowsImage(mac);
-  const qemu = join(mac, ".bb-box", "qemu");
+  const qemu = join(mac, ".alia-box", "qemu");
   windowsGuest(ssh, qemu);
   const config = tartConfig({ "tart-windows-image": FAKE_WINDOWS_IMAGE, "tart-reserve-disk-gib": 0 });
   const make = () => {
@@ -232,7 +232,7 @@ test("a Windows take whose Windows does not shut down in time copies nothing and
   writeFileSync(join(guestHome, "stuck"), "");
   writeFileSync(join(mac, ".fake-qemu-no-powerdown"), "");
 
-  await assert.rejects(backend.snapshot(guest, { id: SNAP, box: box.boxId, memory: false }, recorder().hooks, signal()), (error: unknown) => error instanceof SnapshotFailed && /Windows did not shut down within 3 s, so BB Box ended QEMU/.test(error.message) && error.notResumed === null);
+  await assert.rejects(backend.snapshot(guest, { id: SNAP, box: box.boxId, memory: false }, recorder().hooks, signal()), (error: unknown) => error instanceof SnapshotFailed && /Windows did not shut down within 3 s, so ALIA Box ended QEMU/.test(error.message) && error.notResumed === null);
 
   assert.ok(!existsSync(join(snaps, SNAP)) && !existsSync(join(snaps, `${SNAP}.part`)));
   assert.equal(await backend.power(guest, signal()), "running");
@@ -249,8 +249,8 @@ test("a Windows take with too little free on the VMs' volume is refused before W
   const refused = backend.snapshot(guest, { id: SNAP, box: box.boxId, memory: false }, recorder().hooks, signal());
 
   assert.equal(plan.take.ok, false);
-  assert.match(plan.take.why ?? "", /has 10 GiB free, and BB Box copies a VM there only with at least 20 GiB free/);
-  await assert.rejects(refused, (error: unknown) => error instanceof SnapshotFailed && /10 GiB free.*BB Box stopped nothing\./.test(error.message));
+  assert.match(plan.take.why ?? "", /has 10 GiB free, and ALIA Box copies a VM there only with at least 20 GiB free/);
+  await assert.rejects(refused, (error: unknown) => error instanceof SnapshotFailed && /10 GiB free.*ALIA Box stopped nothing\./.test(error.message));
   assert.ok(!existsSync(join(guestHome, "off")), "Windows was never asked to shut down");
   assert.equal(readFileSync(join(setupQemuDir(mac), "vms", guest.ref, "pid"), "utf8"), pid, "the same QEMU runs");
   assert.ok(!existsSync(join(snaps, SNAP)));
@@ -258,7 +258,7 @@ test("a Windows take with too little free on the VMs' volume is refused before W
 });
 
 function setupQemuDir(mac: string): string {
-  return join(mac, ".bb-box", "qemu");
+  return join(mac, ".alia-box", "qemu");
 }
 
 test("a restore puts the snapshot's disk set in the VM's place, keeps the VM's ports, never resumes saved memory, and boots afresh; the undo puts the later disk back", async () => {
@@ -298,7 +298,7 @@ test("a snapshot whose image build is gone is not restored, and the plan and the
   const refused = backend.rollbackSnapshot(guest, { id: SNAP, ref: SNAP, guest }, recorder().hooks, signal());
 
   assert.equal(plan.restore.way, "none");
-  assert.match(plan.restore.why ?? "", /it stands on build 1 of the Windows image bb-box-windows, which mac1 no longer has\. Delete the snapshot\./);
+  assert.match(plan.restore.why ?? "", /it stands on build 1 of the Windows image alia-box-windows, which mac1 no longer has\. Delete the snapshot\./);
   await assert.rejects(refused, (error: unknown) => error instanceof SnapshotFailed && /stands on build 1 of the Windows image/.test(error.message));
   assert.equal(fileOnDisk(qemu, guest), "B", "the VM is as it was");
   assert.ok(existsSync(join(snaps, SNAP)));
@@ -368,7 +368,7 @@ test("a Windows restore cut short while it copied leaves the VM as it was; one s
 
   cutShort(made, guest, "swapping", { restore: "whole", aside: true, shell: `${process.pid} ${startedAt(process.pid)}` });
   assert.equal(await backend.power(guest, signal()), "stopped", "never gone while a restore runs");
-  await assert.rejects(backend.start(guest, signal()), /BB Box is putting a snapshot in the place of \S+ on the Mac, so it does not start it until that has ended/);
+  await assert.rejects(backend.start(guest, signal()), /ALIA Box is putting a snapshot in the place of \S+ on the Mac, so it does not start it until that has ended/);
   writeFileSync(join(snaps, ".rollbacks", guest.ref), `swapping ${SNAP} ${ATTEMPT} ${DEAD_SHELL}\n`);
   await backend.start(guest, signal());
   assert.equal(fileOnDisk(qemu, guest), "A", "the start put the whole copy in first");
@@ -401,7 +401,7 @@ async function windowsBox(state: ReturnType<typeof windowsWorld>["state"]) {
   return box;
 }
 
-test("through BB Box: a Windows box's take, restore and undo, with fork and Keep refused and saying why, and its snapshots deleted at its release", async () => {
+test("through VesnALIA Box: a Windows box's take, restore and undo, with fork and Keep refused and saying why, and its snapshots deleted at its release", async () => {
   const { state, qemu, snaps } = windowsWorld();
   const box = await windowsBox(state);
   writeOnDisk(qemu, box.guest!, "A");
@@ -427,7 +427,7 @@ test("through BB Box: a Windows box's take, restore and undo, with fork and Keep
   assert.deepEqual(readdirSync(snaps).filter((entry) => entry.startsWith("sn")), [], "its snapshots went with it");
 });
 
-test("through BB Box: a restart while a Windows restore waits after its undo finishes the restore from the Mac's record", async () => {
+test("through VesnALIA Box: a restart while a Windows restore waits after its undo finishes the restore from the Mac's record", async () => {
   const { state, qemu } = windowsWorld();
   const box = await windowsBox(state);
   writeOnDisk(qemu, box.guest!, "A");
@@ -452,7 +452,7 @@ function onMac(mac: string, script: string): { status: number | null; signal: No
 }
 
 function imageDir(mac: string): string {
-  return join(mac, ".bb-box", "qemu", "images", FAKE_WINDOWS_IMAGE);
+  return join(mac, ".alia-box", "qemu", "images", FAKE_WINDOWS_IMAGE);
 }
 
 function buildsOnMac(mac: string, current: string, ...builds: string[]): void {
@@ -544,7 +544,7 @@ async function waitingForTurn(mac: string, attempts: number, run: MacRun): Promi
 }
 
 async function holdTurn(mac: string): Promise<() => Promise<void>> {
-  mkdirSync(join(mac, ".bb-box"), { recursive: true });
+  mkdirSync(join(mac, ".alia-box"), { recursive: true });
   const holder = spawn("perl", ["-MFcntl=:flock", "-e", '$| = 1; open(my $h, ">>", $ARGV[0]) or die; flock($h, LOCK_EX) or die; print "held\n"; <STDIN>', join(mac, TURN_LOCK)], { stdio: ["pipe", "pipe", "inherit"] });
   await new Promise<void>((resolve) => holder.stdout.once("data", () => resolve()));
   const ended = new Promise((resolve) => holder.on("exit", resolve));
@@ -731,7 +731,7 @@ test("an operator's build of the Windows image waits for a refresh's turn to pub
 
   assert.equal(refreshed.stdout.trim(), "replaced", refreshed.stderr);
   assert.equal(published.status, 0, published.stderr);
-  assert.match(published.stdout, /waiting up to 10 minutes for BB Box's restore or image refresh on this Mac to end/);
+  assert.match(published.stdout, /waiting up to 10 minutes for ALIA Box's restore or image refresh on this Mac to end/);
   assert.equal(currentBuild(mac), operatorBuild);
   assert.equal(rollbackBuild(mac), "3");
   assert.ok(existsSync(join(imageDir(mac), operatorBuild, "disk.qcow2")), "the build the operator made current stays");
@@ -748,7 +748,7 @@ test("an operator's build of the Windows image that cannot open the turn's lock 
   const publication = onMac(mac, operatorPublication(mac, operatorBuild));
 
   assert.equal(publication.status, 1);
-  assert.match(publication.stderr, /could not open .*turn\.lock, which BB Box's restores and image refreshes on this Mac take turns by\. Check that \S+ can write to it\./);
+  assert.match(publication.stderr, /could not open .*turn\.lock, which ALIA Box's restores and image refreshes on this Mac take turns by\. Check that \S+ can write to it\./);
   assert.equal(currentBuild(mac), "1");
   assert.ok(existsSync(join(imageDir(mac), `${operatorBuild}.new`, "disk.qcow2")));
 });
@@ -796,11 +796,11 @@ test("a build's removal checks that the build is not current in its turn, so a r
 test("a new Windows VM names the build it stands on in its turn, so refreshes meanwhile keep that build", async () => {
   const { mac, qemu } = setup();
   buildsOnMac(mac, "1", "2", "3");
-  brokenFolder(join(qemu, "vms", "bb-box-on-3"), `image=${FAKE_WINDOWS_IMAGE}\nbuild=3\n`);
+  brokenFolder(join(qemu, "vms", "alia-box-on-3"), `image=${FAKE_WINDOWS_IMAGE}\nbuild=3\n`);
   countTurnAttempts(mac);
   const pause = pauseFirst(mac, "head");
 
-  const clone = runOnMac(mac, qemuCloneScript(FAKE_WINDOWS_IMAGE, "bb-box-new", 2, 4096), pause.env);
+  const clone = runOnMac(mac, qemuCloneScript(FAKE_WINDOWS_IMAGE, "alia-box-new", 2, 4096), pause.env);
   await pause.arrived();
   const refreshes = runOnMac(mac, '/bin/sh -c "$TO_2" && /bin/sh -c "$TO_3"', { TO_2: qemuReplaceScript(FAKE_WINDOWS_IMAGE, "2"), TO_3: qemuReplaceScript(FAKE_WINDOWS_IMAGE, "3") });
   await Promise.race([waitingForTurn(mac, 2, refreshes), new Promise((resolve) => setTimeout(resolve, 5_000))]);
@@ -809,7 +809,7 @@ test("a new Windows VM names the build it stands on in its turn, so refreshes me
 
   assert.equal(made.status, 0, made.stderr);
   assert.equal(refreshed.stdout.trim(), "replaced\nreplaced", refreshed.stderr);
-  assert.match(readFileSync(join(qemu, "vms", "bb-box-new", "config"), "utf8"), /^build=1$/m);
+  assert.match(readFileSync(join(qemu, "vms", "alia-box-new", "config"), "utf8"), /^build=1$/m);
   assert.ok(existsSync(join(imageDir(mac), "1", "disk.qcow2")), "the new VM's build stays");
 });
 
@@ -835,7 +835,7 @@ test("a second reader of a Windows restore cut short re-reads its record in its 
 test("an image refresh and a build's removal keep every build when a VM's or snapshot's config does not say which build it stands on", async () => {
   const { mac, qemu, snaps } = setup();
   buildsOnMac(mac, "2", "2", "3");
-  brokenFolder(join(qemu, "vms", "bb-box-broken"), `image=${FAKE_WINDOWS_IMAGE}\nbuild=\n`);
+  brokenFolder(join(qemu, "vms", "alia-box-broken"), `image=${FAKE_WINDOWS_IMAGE}\nbuild=\n`);
 
   const refresh = onMac(mac, qemuReplaceScript(FAKE_WINDOWS_IMAGE, "3"));
 
@@ -843,7 +843,7 @@ test("an image refresh and a build's removal keep every build when a VM's or sna
   assert.match(refresh.stderr, /could not read the config of every Windows VM, snapshot and restore on the Mac to tell which builds they stand on, so it kept the image's builds 1\./);
   assert.ok(existsSync(join(imageDir(mac), "1", "disk.qcow2")));
 
-  rmSync(join(qemu, "vms", "bb-box-broken"), { recursive: true });
+  rmSync(join(qemu, "vms", "alia-box-broken"), { recursive: true });
   awaitingPromotion(mac, "1", "install-1");
   brokenFolder(join(snaps, "snbroken", "vm"), `image=${FAKE_WINDOWS_IMAGE}\n`);
   const removal = onMac(mac, qemuRemoveBuildScript(FAKE_WINDOWS_IMAGE, "1", "install-1"));
@@ -883,7 +883,7 @@ test("an image refresh keeps a build that a config names, in every place a VM, s
 test("an image refresh keeps every build when it cannot read a VM's config", { skip: process.getuid?.() === 0 ? "root reads every file" : false }, () => {
   const { mac, qemu } = setup();
   buildsOnMac(mac, "2", "2", "3");
-  const folder = join(qemu, "vms", "bb-box-unread");
+  const folder = join(qemu, "vms", "alia-box-unread");
   brokenFolder(folder, `image=${FAKE_WINDOWS_IMAGE}\nbuild=1\n`);
   chmodSync(join(folder, "config"), 0o000);
 
@@ -917,7 +917,7 @@ test("an image refresh that cannot open the turn's lock refuses at once, says wh
   const refresh = onMac(mac, qemuReplaceScript(FAKE_WINDOWS_IMAGE, "3"));
 
   assert.equal(refresh.status, 1);
-  assert.match(refresh.stderr, /BB Box could not open \S+\/\.bb-box\/turn\.lock on the Mac, which restores and image refreshes take turns by\. Check that \S+ can write to it\./);
+  assert.match(refresh.stderr, /ALIA Box could not open \S+\/\.alia-box\/turn\.lock on the Mac, which restores and image refreshes take turns by\. Check that \S+ can write to it\./);
   assert.equal(currentBuild(mac), "2");
 });
 
@@ -935,7 +935,7 @@ test("a task waits for its turn only as long as its limit, then says to try agai
   await release();
 
   assert.equal(waited.stdout.trim(), "held=1");
-  assert.match(waited.stderr, /Another BB Box task on the Mac, a restore or an image refresh, has kept this one waiting for 0\.3 s\. Try again once it has ended\./);
+  assert.match(waited.stderr, /Another ALIA Box task on the Mac, a restore or an image refresh, has kept this one waiting for 0\.3 s\. Try again once it has ended\./);
 });
 
 test("a turn whose shell was killed stays with the children it started, and passes on once they end", async () => {
@@ -985,7 +985,7 @@ test("a Windows restore found in place on a build that is gone, with nothing set
   const answer = await backend.providerTask(task, signal());
 
   assert.deepEqual(answer, { state: "failed", words: "the build of the Windows image that the snapshot's disk stands on is gone from the Mac, and the Mac has no folder of the VM's own to put back. Release the box" });
-  await assert.rejects(backend.start(guest, signal()), /stands on \S+\/images\/bb-box-windows\/1\/disk\.qcow2, which the Mac no longer has, so QEMU cannot start it\. Release the box\./);
+  await assert.rejects(backend.start(guest, signal()), /stands on \S+\/images\/alia-box-windows\/1\/disk\.qcow2, which the Mac no longer has, so QEMU cannot start it\. Release the box\./);
   assert.deepEqual((await backend.findTasks(guest, "rollback", 0, signal())).map((one) => one.ref), [task.ref]);
 });
 
@@ -995,7 +995,7 @@ test("a Windows restore checks the build its copy stands on while it holds the i
 
   const refused = backend.rollbackSnapshot(guest, { id: SNAP, ref: SNAP, guest }, recorder().hooks, signal());
 
-  await assert.rejects(refused, (error: unknown) => error instanceof SnapshotFailed && /cannot restore snapshot snaaaaaaaaaaaa: Snapshot snaaaaaaaaaaaa stands on \S+\/images\/bb-box-windows\/7\/disk\.qcow2, which the Mac no longer has, so BB Box put nothing in the place of \S+\. Delete the snapshot\./.test(error.message));
+  await assert.rejects(refused, (error: unknown) => error instanceof SnapshotFailed && /cannot restore snapshot snaaaaaaaaaaaa: Snapshot snaaaaaaaaaaaa stands on \S+\/images\/alia-box-windows\/7\/disk\.qcow2, which the Mac no longer has, so ALIA Box put nothing in the place of \S+\. Delete the snapshot\./.test(error.message));
   assert.equal(fileOnDisk(qemu, guest), "B");
   assert.match(readFileSync(join(snaps, ".rollbacks", guest.ref), "utf8"), /^undone snaaaaaaaaaaaa \S+ base-gone$/m);
 });

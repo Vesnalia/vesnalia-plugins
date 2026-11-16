@@ -1,7 +1,7 @@
 /**
  * What the bundle is allowed to contain.
  *
- * `bb plugin build` inlines every third-party dependency into
+ * `alia plugin build` inlines every third-party dependency into
  * `dist/server.js`. serve-sim resolves its native addon from
  * `import.meta.url`-relative paths and `odiff-bin` resolves a
  * platform-specific optional dependency — both die if inlined. So the capture

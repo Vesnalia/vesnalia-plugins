@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "../src/server.js";
 
 let disposeCurrent: (() => Promise<void>) | undefined;
@@ -14,7 +14,7 @@ afterEach(async () => {
 
 describe("thread mention provider", () => {
   it("resolves a source thread into bounded agent context", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "thread-reference",
       sdk: {
         threads: {
@@ -46,7 +46,7 @@ describe("thread mention provider", () => {
     });
     disposeCurrent = harness.lifecycle.dispose;
 
-    await plugin(bb);
+    await plugin(alia);
     const provider = harness.inspection.registrations.mentionProviders.find(
       (candidate) => candidate.id === "thread-reference",
     );

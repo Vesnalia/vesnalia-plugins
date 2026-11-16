@@ -1,4 +1,4 @@
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import plugin from "../server";
 
@@ -63,7 +63,7 @@ async function startSession(options: {
   interactions?: unknown[];
   thread?: Record<string, unknown>;
 }) {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "voice-mode",
     settings: options.settings ?? {},
     sdk: {
@@ -91,11 +91,11 @@ async function startSession(options: {
       },
     } as never,
   });
-  plugin(bb);
+  plugin(alia);
   const browser = await harness.experimental_openWebSocket(`/session?threadId=${THREAD}`);
   await flush();
   const toBrowser = () => browser.sent.map((m) => JSON.parse(String(m)) as Record<string, unknown>);
-  return { harness, browser, toBrowser, bb };
+  return { harness, browser, toBrowser, alia };
 }
 
 describe("connection", () => {
@@ -199,7 +199,7 @@ describe("session", () => {
     expect(update!.session.instructions).not.toContain("Fix the build");
     expect(update!.session.instructions).not.toContain("Build is green");
     expect(upstream.ofType("conversation.item.create")[0]).toMatchObject({
-      item: { role: "user", content: [{ text: expect.stringMatching(/^\[bb update\].*Fix the build.*Build is green/) }] },
+      item: { role: "user", content: [{ text: expect.stringMatching(/^\[alia update\].*Fix the build.*Build is green/) }] },
     });
     expect(upstream.ofType("response.create")).toHaveLength(0);
     expect(toBrowser()).toContainEqual({ type: "READY", inputHz: 24000, outputHz: 24000 });
@@ -317,7 +317,7 @@ describe("session", () => {
     expect(outputs.find((o) => o.item.call_id === "second")!.item.output).toMatch(/^Not sent/);
   });
 
-  it("keeps one live session per bb server", async () => {
+  it("keeps one live session per VesnALIA server", async () => {
     const { harness, toBrowser } = await liveSession();
     await harness.experimental_openWebSocket(`/session?threadId=thr_other`);
     await flush();
@@ -374,11 +374,11 @@ describe("agent turns", () => {
       .filter((m) => m.item.role === "user")
       .map((m) => m.item.content![0]!.text);
 
-  it("reports a finished turn as a [bb update] the model can only talk about", async () => {
+  it("reports a finished turn as a [VesnALIA update] the model can only talk about", async () => {
     const { harness, upstream } = await liveSession();
     await harness.emitThreadEvent("thread.active", { thread: thread("active") });
     await harness.emitThreadEvent("thread.idle", { thread: thread("idle"), lastAssistantText: "All 40 tests pass." });
-    expect(userTexts(upstream).at(-1)).toMatch(/^\[bb update\] The agent finished.*All 40 tests pass/);
+    expect(userTexts(upstream).at(-1)).toMatch(/^\[alia update\] The agent finished.*All 40 tests pass/);
     expect(upstream.ofType("response.create")).toEqual([{ type: "response.create", response: { tool_choice: "none" } }]);
   });
 
@@ -405,7 +405,7 @@ describe("agent turns", () => {
       const { harness, upstream, toBrowser } = await liveSession();
       await harness.emitThreadEvent("thread.active", { thread: thread("active") });
       await harness.emitThreadEvent("interaction.pending", { thread: thread("active"), interaction: {} as never });
-      expect(userTexts(upstream).at(-1)).toMatch(/answer it in bb/);
+      expect(userTexts(upstream).at(-1)).toMatch(/answer it in alia/);
       expect(toBrowser()).toContainEqual({ type: "AGENT_STATUS", status: "waiting for you" });
       upstream.emit({ type: "response.done" });
       await vi.advanceTimersByTimeAsync(5 * 60_000 + 15_000);

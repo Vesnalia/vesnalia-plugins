@@ -4,8 +4,8 @@ Read when crews are running, stepping away, catching up, or closing out.
 
 ## Live supervision
 
-- Never end a turn blind with crews running: `firstmate_watch` / `bb firstmate
-  watch` blocks via BB `threads.wait` (do not poll status in a loop), or keep
+- Never end a turn blind with crews running: `firstmate_watch` / `alia firstmate
+  watch` blocks via ALIA `threads.wait` (do not poll status in a loop), or keep
   `supervision on` (thread idle/fail events + stuck checker). Silent waiting
   is not progress; never report unchanged fleets as news.
 - `bearings` = instant status. `watch` = blocking finish digest. Prefer events

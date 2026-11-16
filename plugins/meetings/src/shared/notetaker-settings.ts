@@ -70,6 +70,6 @@ export const agentMetaSchema = z.object({
   personalMcpPath: z.string(), personalApiPath: z.string(),
   webhookHeader: z.string(), webhookAlgorithm: z.string(),
   tools: z.array(z.string()),
-  stdio: z.object({ launcher: z.string(), command: z.string(), requiresBbAccess: z.boolean() }).optional(),
-  httpRequiresBbConnectAuth: z.boolean().optional(),
+  stdio: z.object({ launcher: z.string(), command: z.string(), requiresAliaAccess: z.boolean() }).optional(),
+  httpRequiresAliaConnectAuth: z.boolean().optional(),
 });

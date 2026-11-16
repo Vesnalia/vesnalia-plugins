@@ -22,7 +22,7 @@ export interface SkillRoots {
  * constant for the same reason; on a machine without one it reads as an absent
  * directory, which is the normal case.
  *
- * `env` is the host worker's own environment, which bb's host daemon passed
+ * `env` is the host worker's own environment, which VesnALIA's host daemon passed
  * it — not the agent's. See AGENTS.md for what that costs `CODEX_HOME` and
  * `HERMES_HOME`.
  */
@@ -40,8 +40,8 @@ export function defaultSkillRoots(env: NodeJS.ProcessEnv = process.env): SkillRo
 type Scanner = (cwd: string, roots: SkillRoots) => Promise<ScannedSkill[]>;
 
 /**
- * bb's provider ids whose skill directories are documented. Every other
- * provider still reaches the browser through bb's own skills and the list its
+ * VesnALIA's provider ids whose skill directories are documented. Every other
+ * provider still reaches the browser through VesnALIA's own skills and the list its
  * provider reports.
  */
 const SCANNERS: Readonly<Record<string, Scanner>> = {

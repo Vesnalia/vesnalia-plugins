@@ -1,13 +1,13 @@
-// bb-plugin-project-usage-sort — keeps bb's project order sorted by how often
+// alia-plugin-project-usage-sort — keeps VesnALIA's project order sorted by how often
 // each project is used.
 //
 // Usage is read from thread activity: every thread adds a weight that halves
 // every `halfLifeDays`, so a project used often and recently rises to the top.
-// The result is written to the two places bb keeps a project order:
+// The result is written to the two places VesnALIA keeps a project order:
 //   - the server's project order (`projects.reorder`), which the project
-//     pickers and plugin sidebars such as BB Sidebar list projects in;
+//     pickers and plugin sidebars such as VesnALIA Sidebar list projects in;
 //   - the built-in thread list's `sidebar.sectionOrder` UI preference.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   planReorder,
   rankProjects,
@@ -25,12 +25,12 @@ interface SortResult {
   sectionOrderChanged: boolean;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     autoSort: {
       type: "boolean",
       label: "Sort automatically every hour",
-      description: "Off keeps the current order until you run `bb project-usage-sort apply`.",
+      description: "Off keeps the current order until you run `alia project-usage-sort apply`.",
       default: true,
     },
     halfLifeDays: {
@@ -49,8 +49,8 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function listThreads(): Promise<UsageThread[]> {
     const [active, archived] = await Promise.all([
-      bb.sdk.threads.list({}),
-      bb.sdk.threads.list({ archived: true }),
+      alia.sdk.threads.list({}),
+      alia.sdk.threads.list({ archived: true }),
     ]);
     return [...active, ...archived].map((thread) => ({
       projectId: thread.projectId,
@@ -61,7 +61,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function rank(): Promise<{ currentIds: string[]; ranked: SortResult["ranked"] }> {
     const { halfLifeDays, includeChildThreads } = await settings.get();
-    const [projects, threads] = await Promise.all([bb.sdk.projects.list({}), listThreads()]);
+    const [projects, threads] = await Promise.all([alia.sdk.projects.list({}), listThreads()]);
     const names = new Map(projects.map((project) => [project.id, project.name]));
     const currentIds = projects.map((project) => project.id);
     const ranked = rankProjects(currentIds, threads, {
@@ -75,12 +75,12 @@ export default async function plugin(bb: BbPluginApi) {
   async function applySectionOrder(rankedIds: string[]): Promise<boolean> {
     // A concurrent drag in the sidebar bumps the revision; retry once on top of it.
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      const { preferences } = await bb.sdk.system.uiPreferences.list();
+      const { preferences } = await alia.sdk.system.uiPreferences.list();
       const entry = preferences[SECTION_ORDER_KEY];
       const next = rewriteSectionOrder(entry.value, rankedIds);
       if (sameOrder(entry.value, next)) return false;
       try {
-        await bb.sdk.system.uiPreferences.set({
+        await alia.sdk.system.uiPreferences.set({
           key: SECTION_ORDER_KEY,
           value: next,
           expectedRevision: entry.revision,
@@ -88,7 +88,7 @@ export default async function plugin(bb: BbPluginApi) {
         return true;
       } catch (error) {
         if (attempt === 1) throw error;
-        bb.log.warn(`sectionOrder changed while sorting; retrying: ${String(error)}`);
+        alia.log.warn(`sectionOrder changed while sorting; retrying: ${String(error)}`);
       }
     }
     return false;
@@ -100,10 +100,10 @@ export default async function plugin(bb: BbPluginApi) {
     const rankedIds = ranked.map((usage) => usage.projectId);
     const moves = planReorder(currentIds, rankedIds);
     for (const move of moves) {
-      await bb.sdk.projects.reorder(move);
+      await alia.sdk.projects.reorder(move);
     }
     const sectionOrderChanged = await applySectionOrder(rankedIds);
-    bb.log.info(`sorted projects by usage: ${moves.length} move(s), sectionOrder ${sectionOrderChanged ? "updated" : "unchanged"}`);
+    alia.log.info(`sorted projects by usage: ${moves.length} move(s), sectionOrder ${sectionOrderChanged ? "updated" : "unchanged"}`);
     return { ranked, projectMoves: moves.length, sectionOrderChanged };
   }
   // The schedule, install hook, and CLI can overlap; share one run.
@@ -114,12 +114,12 @@ export default async function plugin(bb: BbPluginApi) {
     return running;
   }
 
-  bb.background.schedule("sort-projects", "17 * * * *", async () => {
+  alia.background.schedule("sort-projects", "17 * * * *", async () => {
     if (!(await settings.get()).autoSort) return;
     await sortOnce();
   });
 
-  bb.onInstall(async () => {
+  alia.onInstall(async () => {
     await sortOnce();
   });
 
@@ -135,23 +135,23 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb project-usage-sort preview [--json]   Show the usage ranking without changing anything",
-    "  bb project-usage-sort apply [--json]     Sort the project order by usage now",
+    "  VesnALIA project-usage-sort preview [--json]   Show the usage ranking without changing anything",
+    "  VesnALIA project-usage-sort apply [--json]     Sort the project order by usage now",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "project-usage-sort",
-    summary: "Sort bb's project order by how often each project is used",
+    summary: "Sort VesnALIA's project order by how often each project is used",
     commands: [
       {
         name: "preview",
         summary: "Show the usage ranking without changing anything",
-        usage: "bb project-usage-sort preview [--json]",
+        usage: "alia project-usage-sort preview [--json]",
       },
       {
         name: "apply",
         summary: "Sort the project order by usage now",
-        usage: "bb project-usage-sort apply [--json]",
+        usage: "alia project-usage-sort apply [--json]",
       },
     ],
     async run(argv) {

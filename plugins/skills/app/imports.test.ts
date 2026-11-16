@@ -1,6 +1,6 @@
 /**
  * The app bundle must not import the SDK root at run time, directly or through
- * a shared module: bb provides `@get-bb/plugin-sdk` to the server bundle only,
+ * a shared module: VesnALIA provides `@vesnalia/plugin-sdk` to the server bundle only,
  * and a git install (production dependencies only) has no copy to bundle — the
  * build fails there and nowhere else. So the app and the shared module it
  * imports take the SDK root, the server entry and both contracts as types.
@@ -21,7 +21,7 @@ const files = [
 describe("app imports", () => {
   it.each(files)("%s takes the SDK root, the server and the contracts as types only", (file) => {
     const source = readFileSync(join(root, file), "utf8");
-    expect(source.match(/^import\s+(?!type\b)[^;]*from\s+"@get-bb\/plugin-sdk"/m)).toBeNull();
+    expect(source.match(/^import\s+(?!type\b)[^;]*from\s+"@get-alia\/plugin-sdk"/m)).toBeNull();
     expect(source.match(/^import\s+(?!type\b)[^;]*from\s+"[./]*(?:server|shared\/contract|shared\/host-contract)"/m)).toBeNull();
   });
 });

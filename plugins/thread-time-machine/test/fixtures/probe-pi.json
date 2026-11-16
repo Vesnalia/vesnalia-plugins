@@ -299,7 +299,7 @@
      "type": "commandExecution",
      "id": "dae65e7fd8-i6",
      "command": "cat probe/notes.md && ls probe",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_p7x9evagu9-1/bb-plugin-thread-time-machine",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_p7x9evagu9-1/alia-plugin-thread-time-machine",
      "status": "pending",
      "approvalStatus": null
     }
@@ -335,7 +335,7 @@
      "type": "commandExecution",
      "id": "dae65e7fd8-i6",
      "command": "cat probe/notes.md && ls probe",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_p7x9evagu9-1/bb-plugin-thread-time-machine",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_p7x9evagu9-1/alia-plugin-thread-time-machine",
      "status": "completed",
      "approvalStatus": null,
      "aggregatedOutput": "alpha\ngamma\nnotes.md\n",
@@ -423,7 +423,7 @@
      "type": "commandExecution",
      "id": "dae65e7fd8-i8",
      "command": "ls probe/does-not-exist 2>&1; true",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_p7x9evagu9-1/bb-plugin-thread-time-machine",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_p7x9evagu9-1/alia-plugin-thread-time-machine",
      "status": "pending",
      "approvalStatus": null
     }
@@ -449,7 +449,7 @@
      "type": "commandExecution",
      "id": "dae65e7fd8-i8",
      "command": "ls probe/does-not-exist 2>&1; true",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_p7x9evagu9-1/bb-plugin-thread-time-machine",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_p7x9evagu9-1/alia-plugin-thread-time-machine",
      "status": "completed",
      "approvalStatus": null,
      "aggregatedOutput": "ls: probe/does-not-exist: No such file or directory\n",

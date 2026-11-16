@@ -1,4 +1,4 @@
-import type { PluginSidebarProject, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarProject, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 export const T0 = Date.UTC(2026, 10, 12, 12, 0, 0);
 

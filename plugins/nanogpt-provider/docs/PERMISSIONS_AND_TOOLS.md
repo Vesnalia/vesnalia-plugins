@@ -1,7 +1,7 @@
 # Permissions, approvals, and tools audit
 
 Audit date: 2026-11-09. This document describes the working tree released as
-package version 0.1.6. Installed SDK: `@get-bb/plugin-sdk` 0.6.133. The initial audit changed no runtime behavior;
+package version 0.1.6. Installed SDK: `@vesnalia/plugin-sdk` 0.6.133. The initial audit changed no runtime behavior;
 follow-up implementation is described next. Baseline findings below are retained
 as historical evidence and are not the current support matrix.
 
@@ -18,18 +18,18 @@ share the supported-mode definition in `src/permissions.ts`.
 | Policy fields | The complete validated tuple is retained per request and in queued options. These local controls are not sent as NanoGPT completion parameters. |
 | Admission order | Unsupported policies are rejected before acknowledgement, queue insertion, session replacement, history retrieval, attachment reads, or generation. SDK-invalid tuples still fail schema validation. |
 | Tool denial | Native session denials and per-turn configured denials are combined, omitted from model definitions, and checked before every dispatch. No wildcard expansion is implemented. |
-| Tool catalog | Duplicate names, including duplicate history-tool identities, reject construction before an existing session is replaced. A single history definition is expected from bb's trusted plugin registration; the wire name alone cannot authenticate its owner. |
+| Tool catalog | Duplicate names, including duplicate history-tool identities, reject construction before an existing session is replaced. A single history definition is expected from VesnALIA's trusted plugin registration; the wire name alone cannot authenticate its owner. |
 | Internal history tool | Only the bridge's explicit restoration call path can use it. Returned model calls are rejected even when the tool is registered. Denial or absence fails resumed generation before a NanoGPT request. |
 | Existing protections | Plan-mode ordinary-tool blocking, unknown-name rejection, malformed-argument rejection, cancellation, and normal full-mode tool continuation remain covered. |
 | Manual approval | `confirmToolCalls` opts into a public `tool_use` approval for every eligible ordinary model call in full mode. Only SDK-valid `allow_once` with `grantedPermissions: null` executes. Internal history reads do not prompt. |
 | Remaining restriction | No workspace sandbox, generic effect classification, or automatic reviewer is implemented. Restricted modes remain rejected. |
 
-The inspected bb adapter does not forward native `disallowedTools`. The bridge
+The inspected VesnALIA adapter does not forward native `disallowedTools`. The bridge
 enforces that field when supplied, and now provides an additional public mechanism:
 the plugin's `disallowedTools` string setting is validated and derived into
 `options.providerOptions.disallowedTools` on every submitted request. The RPC ->
 provider derivation -> bridge path is integration-tested with the public SDK fake
-host. No private bb imports or modified upstream checkout are required for this
+host. No private VesnALIA imports or modified upstream checkout are required for this
 settings path. A native field supplied by another caller still needs upstream
 forwarding. Native denials and catalogs are captured on start/resume; configured
 denials and confirmation choices are captured per submitted turn. A configured
@@ -40,8 +40,8 @@ The execution decision table is deliberately narrow:
 | Policy / operation | Decision | Enforcement owner |
 | --- | --- | --- |
 | Valid unsupported policy | Reject the request before effects. | Plugin admission guard after SDK schema validation. |
-| Full / known permitted ordinary tool / confirmation off | Dispatch through bb, subject to individual tool controls. | Plugin name/denial guard, then bb tool implementation. |
-| Full / known permitted ordinary tool / confirmation on | Request a one-time manual decision before dispatch. | Plugin approval broker plus bb's public interaction service. |
+| Full / known permitted ordinary tool / confirmation off | Dispatch through VesnALIA, subject to individual tool controls. | Plugin name/denial guard, then VesnALIA tool implementation. |
+| Full / known permitted ordinary tool / confirmation on | Request a one-time manual decision before dispatch. | Plugin approval broker plus VesnALIA's public interaction service. |
 | Any model call / hidden history tool | Return a failed tool result without dispatch. | Plugin source-aware eligibility guard. |
 | Bridge restoration / permitted history tool | Read only active-thread history through the registered server tool. | Plugin guard plus server tool's thread-scoped SDK call. |
 | Missing, unknown, or denied tool | Return a failed tool result; internal restoration fails the turn. | Shared definition/dispatch eligibility rule. |
@@ -57,8 +57,8 @@ is relabelled as automatic review.
 
 Verification after the first implementation stage: **13 files / 246 tests passed**, including **31 permission/tool
 regression tests**; typecheck passed. The initial `npm run build` could not find
-`bb` on PATH; the same plugin build passed using
-`C:\Users\Alex\.bb\bin\bb.cmd plugin build .`, producing server, app, and host
+`alia` on PATH; the same plugin build passed using
+`C:\Users\Alex\.alia\bin\alia.cmd plugin build .`, producing server, app, and host
 artifacts. No plugin install/reload, real reviewer, or live daemon check was run.
 
 The subsequent controls/approval stage adds tests for the normal settings
@@ -67,7 +67,7 @@ replayed/malformed/error responses, queued settings isolation, Stop, release,
 replacement, internal history, credential redaction, and presentation limits.
 Final verification: **13 files / 280 tests passed**, including **59 bridge
 permission/control tests** plus the settings RPC and popup checks. Typecheck,
-plugin build, and `git diff --check` passed. A deployed bb interaction or daemon
+plugin build, and `git diff --check` passed. A deployed VesnALIA interaction or daemon
 restart has not been exercised.
 
 `node dev_docs/permissions-smoke.mjs` additionally exercises the built host artifact
@@ -75,7 +75,7 @@ in a real child process with JSON-RPC over stdio and synthetic completion
 transport. All four scenarios passed: allow once dispatched exactly one tool;
 deny dispatched none; Stop followed by late allow dispatched none and produced an
 interrupted boundary; configured denial dispatched none and raised no approval.
-This smoke does not establish live NanoGPT HTTP behavior or installed bb UI
+This smoke does not establish live NanoGPT HTTP behavior or installed VesnALIA UI
 interaction cleanup. It uses only a synthetic key and simulated execution results.
 The script is a local development tool: `dev_docs/` is excluded from the
 repository by `.gitignore`, so this paragraph documents how it was run rather
@@ -125,7 +125,7 @@ or executing without confirmation. A separate 12000-byte raw review cap bounds
 serialization work. Long tool calls can therefore fail with confirmations on.
 This is a material usability limit pending a larger public review-detail surface.
 
-Source inspection confirmed that bb's normal thread-stop service interrupts
+Source inspection confirmed that VesnALIA's normal thread-stop service interrupts
 pending interactions. Automated tests establish local cancellation and zero
 dispatch after late replies; they do not establish remote prompt cleanup under
 every deployed daemon release/replacement condition. Live verification remains
@@ -173,15 +173,15 @@ artifact. This tracked audit remains the durable reference.
 The follow-up audit exercised the actual bridge `handleLine()` entry point with
 the installed SDK JSON-RPC harness. It used mocked completion streams and tool
 results. These are observations of bridge dispatch, not real filesystem effects
-or evidence of a deployed bb security bypass.
+or evidence of a deployed VesnALIA security bypass.
 
 | ID | Finding | Evidence | Impact and priority |
 | --- | --- | --- | --- |
-| F1 | Valid restricted policies are accepted but do not control execution. | All five valid policy tuples were exercised through input-on-start and turn-start; every case dispatched the same synthetic tool, with zero approval requests. | Release blocker for adding `accept-edits` or `auto`. Existing normal bb dispatch is limited to the advertised `full` mode. |
-| F2 | Session `disallowedTools` is ignored in both exposure and execution. | A full-mode request denying the synthetic tool still advertised it and emitted `item/tool/call`. Resume likewise dispatched explicitly denied history retrieval and then the denied model tool. | Contract-handling defect whenever a caller supplies this field. The inspected bb adapter also needs forwarding support before normal-dispatch enforcement can be claimed. |
+| F1 | Valid restricted policies are accepted but do not control execution. | All five valid policy tuples were exercised through input-on-start and turn-start; every case dispatched the same synthetic tool, with zero approval requests. | Release blocker for adding `accept-edits` or `auto`. Existing normal VesnALIA dispatch is limited to the advertised `full` mode. |
+| F2 | Session `disallowedTools` is ignored in both exposure and execution. | A full-mode request denying the synthetic tool still advertised it and emitted `item/tool/call`. Resume likewise dispatched explicitly denied history retrieval and then the denied model tool. | Contract-handling defect whenever a caller supplies this field. The inspected VesnALIA adapter also needs forwarding support before normal-dispatch enforcement can be claimed. |
 | F3 | Queued follow-ups have the same policy loss. | A full-mode turn was held on a tool call; an `accept-edits` / `deny` steer was queued. After the first turn finished, the queued turn dispatched its tool without approval and completed. | The repair must cover steer admission and queued execution, not only session creation or ordinary turn start. |
 | F4 | Hiding the history definition did not prevent model dispatch of that registered name. | Follow-up code inspection found no source distinction in `requestToolCall()`; a new regression test now verifies a returned model call is rejected locally. | The initial audit overstated this baseline protection. Source-aware dispatch isolation is now implemented. |
-| D1 | A generic runtime automatic reviewer was not established. | Inspected runtime approval handling checks escalation denial, then delegates to `onInteractiveRequest`; tool dispatch uses a separate route. Server interaction registration stores/validates requests and does not establish an automatic reviewer in those paths. | Integration dependency for `auto`. The handshake and API documentation alone cannot justify advertising it. This is an unverified capability, not proof that no other bb component could provide it. |
+| D1 | A generic runtime automatic reviewer was not established. | Inspected runtime approval handling checks escalation denial, then delegates to `onInteractiveRequest`; tool dispatch uses a separate route. Server interaction registration stores/validates requests and does not establish an automatic reviewer in those paths. | Integration dependency for `auto`. The handshake and API documentation alone cannot justify advertising it. This is an unverified capability, not proof that no other VesnALIA component could provide it. |
 
 F1 and F3 share the policy-projection root cause. F2 has a separate root cause:
 session construction drops the denylist and both definition generation and
@@ -212,16 +212,16 @@ rejection, denylist handling, and then verified restricted execution.
 
 | Field or capability | What works now | Gap |
 | --- | --- | --- |
-| `permissionMode` | Provider declares `full`; SDK parses `accept-edits`, `auto`, and `full`. bb checks provider-supported modes before dispatch. | Bridge does not retain the parsed mode or reject unsupported valid modes itself. |
+| `permissionMode` | Provider declares `full`; SDK parses `accept-edits`, `auto`, and `full`. VesnALIA checks provider-supported modes before dispatch. | Bridge does not retain the parsed mode or reject unsupported valid modes itself. |
 | `permissionScope` | SDK validates `workspace` or `full` as part of the policy tuple. | Discarded; no workspace enforcement in dynamic-tool dispatch. |
 | `approvalReviewer` | SDK validates `user`, `automatic`, or `null` according to mode. | Discarded; bridge has no approval interaction or automatic review integration. |
 | `permissionEscalation` | SDK validates `ask`, `deny`, or `null` according to mode. | Discarded; bridge never raises policy-bearing approval interactions. |
-| `dynamicTools` | Definitions received on start/resume are stored, advertised to NanoGPT, and dispatched through bb. | No generic effect classification, workspace metadata, or approval gate. |
+| `dynamicTools` | Definitions received on start/resume are stored, advertised to NanoGPT, and dispatched through VesnALIA. | No generic effect classification, workspace metadata, or approval gate. |
 | `disallowedTools` | Declared and preserved by SDK start/resume schemas. | Plugin ignores it. The inspected normal runtime adapter does not forward it in session construction either. |
 | `tools` | Server contribution selection and NanoGPT request definitions both work. | Neither is an independent runtime permission policy; enabling modes creates no new execution tools. |
 | `/plan` | Ordinary model tool definitions are omitted and unexpected returned calls are blocked. | Plan mode is a turn behavior, not a filesystem scope or reviewer selection. |
 
-Normal bb dispatch blocks unsupported modes through its capability check. A direct
+Normal VesnALIA dispatch blocks unsupported modes through its capability check. A direct
 bridge request with a valid restricted tuple still parses, however, and receives
 no mode-specific enforcement inside this plugin. That distinction matters for
 tests, alternate callers, and any future expansion of the advertised modes.
@@ -237,16 +237,16 @@ configuration switches:
 | `auto` | `workspace` | `automatic` | `ask` or `deny` |
 | `full` | `full` | `null` | `null` |
 
-`automatic` is the bb wire value. Do not substitute `auto_review`, which belongs
+`automatic` is the VesnALIA wire value. Do not substitute `auto_review`, which belongs
 to another provider's native API. Do not invent combinations such as `full` with
 a workspace scope or `auto` with a user reviewer.
 
-bb resolves the policy and sends it in top-level `options` on `thread/start`,
+VesnALIA resolves the policy and sends it in top-level `options` on `thread/start`,
 `thread/resume`, `turn/start`, and `turn/steer`. The plugin's
 `deriveProviderOptions()` receives the resolved `permissionMode` but does not
 receive all four fields. It is unnecessary to duplicate the policy in
 `providerOptions`: the bridge wire contract already supplies the complete tuple.
-The NanoGPT completion body is a separate contract. These bb policy fields are
+The NanoGPT completion body is a separate contract. These VesnALIA policy fields are
 local execution controls and should not be added as unverified NanoGPT API
 parameters.
 
@@ -260,7 +260,7 @@ validates structure, not enforcement.
 
 1. `server.ts` registers the provider with `permissionModes: ["full"]`.
    `deriveProviderOptions()` returns `model`, `baseUrl`, and `promptMode`.
-2. bb's `toBridgeWireOptions()` independently includes all four permission fields.
+2. VesnALIA's `toBridgeWireOptions()` independently includes all four permission fields.
 3. The bridge uses SDK request schemas, which validate the complete policy.
 4. `turnOptionsOf()` copies only `model`, `reasoningLevel`, `instructions`,
    `providerOptions`, and `envVars`. All four permission fields are lost here.
@@ -271,7 +271,7 @@ validates structure, not enforcement.
    to NanoGPT unless the turn is in plan mode.
 7. The tool loop rejects malformed arguments and `requestToolCall()` rejects
    unknown names. A known name is forwarded immediately as `item/tool/call`.
-8. bb routes the call to its server/plugin implementation and returns a result.
+8. VesnALIA routes the call to its server/plugin implementation and returns a result.
    The bridge stores the result and continues generation, with at most 40 rounds.
 
 This path explains why tools still work while restricted permissions do not.
@@ -281,7 +281,7 @@ for authorization of a known tool's effects.
 
 ### Why the runtime handshake is insufficient
 
-`initialize` advertises `approvalEnforcedBy: "runtime"`. In the inspected bb
+`initialize` advertises `approvalEnforcedBy: "runtime"`. In the inspected VesnALIA
 source, runtime approval policy is applied to incoming `interaction/request`
 approval payloads, including automatic denial when escalation is `deny`.
 `item/tool/call` follows a separate path into `onToolCall()` without that approval
@@ -295,7 +295,7 @@ handshake therefore does not create an approval checkpoint for its tool loop.
 An implementation needs an explicit decision before executing effects, with
 denial and cancellation handled as terminal outcomes for that call.
 
-bb's provider API documentation describes mode-specific automatic decisions for
+VesnALIA's provider API documentation describes mode-specific automatic decisions for
 approval subjects: `accept-edits` for file changes, `auto` for commands, file
 changes and generic tool use, and `full` for all subjects. Those documented
 decisions do not classify arbitrary dynamic tools or provide a sandbox. Verify
@@ -314,8 +314,8 @@ resolver and enforcement owner still need to be demonstrated for NanoGPT.
 
 | Location | Meaning |
 | --- | --- |
-| `bb.agents.configure(...).tools` | Selects tools registered by that contributing plugin. It is not a global replacement for every other plugin's tool selection. NanoGPT currently selects its hidden history tool here. |
-| Bridge `dynamicTools` | bb's session tool catalog, with `name`, `description`, `inputSchema`, and optional `presentation`. |
+| `alia.agents.configure(...).tools` | Selects tools registered by that contributing plugin. It is not a global replacement for every other plugin's tool selection. NanoGPT currently selects its hidden history tool here. |
+| Bridge `dynamicTools` | VesnALIA's session tool catalog, with `name`, `description`, `inputSchema`, and optional `presentation`. |
 | NanoGPT request `tools` | OpenAI-compatible function definitions derived from that catalog. They allow the model to request a call; they do not execute it. |
 
 The SDK dynamic-tool schema inspected here contains no general read/write,
@@ -348,19 +348,19 @@ the historical calls. The internal path must retain its thread restriction and
 must not become a general exemption from future denylists or permission checks.
 
 Attachments are also read directly by the bridge, outside `item/tool/call`.
-Current code reads the paths bb stages for the submitted prompt. A future
+Current code reads the paths VesnALIA stages for the submitted prompt. A future
 workspace policy must explicitly address these staged attachment paths rather
 than assuming a tool-only gate covers every file read. History restoration and
 attachment transport do not establish an OS sandbox for full-trust plugin code.
 
 ## Evidence and verification
 
-The local bb source inspected was `C:\Projects\bb\src`, declaring SDK 0.6.133.
-Its `bb-plugin-sdk-provider-bridge.d.ts` matches the installed bundle:
+The local VesnALIA source inspected was `C:\Projects\alia\src`, declaring SDK 0.6.133.
+Its `alia-plugin-sdk-provider-bridge.d.ts` matches the installed bundle:
 SHA-256 `BC8802B2BC88CCC8A596791098272E7F0DFF0E79793F3CE7F28536F98D64AA8C`.
 The checkout commit could not be established because Git access to that checkout
 was denied. Bundle equality supports contract correspondence, not identity with
-a deployed bb binary.
+a deployed VesnALIA binary.
 
 Primary implementation references, relative to this repository:
 
@@ -373,7 +373,7 @@ Primary implementation references, relative to this repository:
 - `src/provider-bridge.test.ts`: functional tool-loop, plan-mode, malformed-call,
   cancellation, and history-restoration coverage.
 
-Primary bb references, relative to the inspected local checkout:
+Primary VesnALIA references, relative to the inspected local checkout:
 
 - `packages/domain/src/shared-types.ts`: `runtimePermissionPolicySchema`.
 - `packages/domain/src/provider-types.ts`: `dynamicToolSchema`.
@@ -390,7 +390,7 @@ Primary bb references, relative to the inspected local checkout:
   execution and pending-interaction routes.
 - `docs/provider-plugin-api.md`: documented approval-subject behavior.
 
-The public [bb runtime request implementation](https://github.com/get-bb/bb/blob/main/packages/agent-runtime/src/runtime-provider-requests.ts)
+The public [VesnALIA runtime request implementation](https://github.com/get-bb/bb/blob/main/packages/agent-runtime/src/runtime-provider-requests.ts)
 was also inspected online. Its retrieved revision differs from the local source;
 it supports the separate routing observation but is not a pinned compatibility
 target. Recheck source and schemas when changing the SDK version.
@@ -446,8 +446,8 @@ Line numbers below refer to the audited working tree and may move after edits:
 | `src/provider-bridge.ts:452` | Dispatch checks cancellation and known names, then sends the request. |
 | `src/provider-bridge.ts:1241` | Resume reconstructs the session without `disallowedTools`. |
 | `src/provider-bridge.ts:1297` | Steer queue entries retain only projected options. |
-| bb `packages/agent-runtime/src/runtime-provider-requests.ts:216` | Tool calls delegate to `onToolCall()`. |
-| bb `packages/agent-runtime/src/runtime-provider-requests.ts:291` | Separate interaction handler consults runtime-owned escalation policy. |
+| VesnALIA `packages/agent-runtime/src/runtime-provider-requests.ts:216` | Tool calls delegate to `onToolCall()`. |
+| VesnALIA `packages/agent-runtime/src/runtime-provider-requests.ts:291` | Separate interaction handler consults runtime-owned escalation policy. |
 
 Pre-implementation runtime SHA-256 values (historical audit snapshot; these are
 not hashes of the subsequent implementation):

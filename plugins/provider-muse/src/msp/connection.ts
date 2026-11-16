@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { createInterface, type Interface } from "node:readline";
-import { experimental_recordProviderChildIo } from "@get-bb/plugin-sdk/provider-bridge";
+import { experimental_recordProviderChildIo } from "@vesnalia/plugin-sdk/provider-bridge";
 import type { z } from "zod";
 import { mspErrorSchema, type MspError } from "./schemas.js";
 

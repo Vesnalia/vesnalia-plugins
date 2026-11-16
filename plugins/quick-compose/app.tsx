@@ -5,10 +5,10 @@ import {
   definePluginApp,
   experimental_NewThreadComposer as NewThreadComposer,
   experimental_useSidebarThreads as useSidebarThreads,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
   type NewThreadRequest,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { quickComposeRpcContract } from "./server";
 import {
   quickCompose,
@@ -33,7 +33,7 @@ function closestMatch(target: EventTarget, selector: string): boolean {
 
 function useSubmitThread(kind: QuickComposeKind) {
   const rpc = useRpc<typeof quickComposeRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return async (request: NewThreadRequest) => {
     try {
       const { threadId } = await rpc.call("createThread", { request });

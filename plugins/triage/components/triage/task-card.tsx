@@ -261,7 +261,7 @@ function TaskCard({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Triage #{task.number}?</AlertDialogTitle>
             <AlertDialogDescription>
-              “{task.title}” leaves the board. The linked BB thread is kept.
+              “{task.title}” leaves the board. The linked VesnALIA thread is kept.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

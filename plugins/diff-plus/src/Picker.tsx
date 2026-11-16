@@ -1,20 +1,20 @@
-// Diff Plus's part of BB's scope picker (the "All changes" menu): its items in
+// Diff Plus's part of VesnALIA's scope picker (the "All changes" menu): its items in
 // the order All, Uncommitted, Committed, then the commits under a heading, and
-// the recent commits BB does not list.
+// the recent commits VesnALIA does not list.
 //
-// BB lists only the commits since the merge base and drops a picked commit that
+// VesnALIA lists only the commits since the merge base and drops a picked commit that
 // is not among them, so a recent commit cannot simply be picked. Ours move the
-// merge base back (server.ts `show_recent`), wait for BB to list the commit, and
-// click BB's own item for it, so BB shows it as it shows any commit. Picking any
+// merge base back (server.ts `show_recent`), wait for VesnALIA to list the commit, and
+// click VesnALIA's own item for it, so VesnALIA shows it as it shows any commit. Picking any
 // other scope puts the base back (TabTree), so All changes keeps its meaning.
 //
-// The menu belongs to BB's React tree. Its items are only given a CSS `order`
+// The menu belongs to VesnALIA's React tree. Its items are only given a CSS `order`
 // (the menu is a column), and ours are a portal appended to it, so
-// nothing of BB's is moved. Ours are outside Radix's item collection, so the
+// nothing of VesnALIA's is moved. Ours are outside Radix's item collection, so the
 // arrow keys skip them.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { pickerItems, pickerMenu, type DiffTab, type PickerItem } from "./diff-tab";
 import type { RecentCommit } from "./recent";
@@ -22,23 +22,23 @@ import type { RecentCommit } from "./recent";
 const ORDER: Record<Exclude<PickerItem["kind"], "commit">, number> = { all: 1, uncommitted: 2, committed: 3 };
 const HEADING_ORDER = 4;
 const NOTE_ORDER = 5;
-/** Recent commits from here, newest first; other commits BB lists go after them. */
+/** Recent commits from here, newest first; other commits VesnALIA lists go after them. */
 const COMMIT_ORDER = 10;
 const OTHER_ORDER = 1000;
-/** How long to wait for BB to list a commit after the base moved. */
+/** How long to wait for VesnALIA to list a commit after the base moved. */
 const LIST_WAIT_MS = 8000;
 
 /**
  * The environments whose merge base a recent commit moved, as far as this page
  * knows. Their "Committed changes" would mean those N commits, and picking it
- * puts the base back, after which BB drops it for All changes, so it is hidden.
+ * puts the base back, after which VesnALIA drops it for All changes, so it is hidden.
  */
 const moved = new Set<string>();
 export const baseRestored = (environmentId: string) => moved.delete(environmentId);
 /** Whether this page moved the environment's merge base and has not put it back. */
 export const baseMoved = (environmentId: string) => moved.has(environmentId);
 
-/** Orders the menu's items; returns the recent commits BB lists itself and whether it lists any commit. */
+/** Orders the menu's items; returns the recent commits VesnALIA lists itself and whether it lists any commit. */
 function arrange(menu: HTMLElement, recent: readonly string[], hideCommitted: boolean): { listed: Set<string>; commits: boolean } {
   menu.setAttribute("data-diff-plus-picker", "");
   const listed = new Set<string>();
@@ -73,7 +73,7 @@ export function PickerCommits({ tab, environmentId, commits, count }: PickerProp
   const rpc = useRpc<typeof rpcContract>();
   const [menu, setMenu] = useState<HTMLElement | null>(null);
   const [listed, setListed] = useState<ReadonlySet<string>>(new Set());
-  const [bbCommits, setBbCommits] = useState(false);
+  const [aliaCommits, setAliaCommits] = useState(false);
   const [pending, setPending] = useState<{ sha: string; error: string | null } | null>(null);
   const shas = useMemo(() => commits.map((commit) => commit.sha), [commits]);
   const shasRef = useRef(shas);
@@ -83,7 +83,7 @@ export function PickerCommits({ tab, environmentId, commits, count }: PickerProp
   environmentRef.current = environmentId;
   const hideCommitted = () => environmentRef.current !== null && moved.has(environmentRef.current);
 
-  // Follows the picker opening and closing (the button's data-state) and BB
+  // Follows the picker opening and closing (the button's data-state) and VesnALIA
   // changing its items, ordering them in the same task, before a paint.
   useEffect(() => {
     let items: MutationObserver | null = null;
@@ -92,7 +92,7 @@ export function PickerCommits({ tab, environmentId, commits, count }: PickerProp
       if (!menu) return;
       const result = arrange(menu, shasRef.current, hideCommitted());
       setListed((previous) => (sameSet(previous, result.listed) ? previous : result.listed));
-      setBbCommits(result.commits);
+      setAliaCommits(result.commits);
     };
     const look = () => {
       const next = pickerMenu(tab);
@@ -144,7 +144,7 @@ export function PickerCommits({ tab, environmentId, commits, count }: PickerProp
       while (menuRef.current === menu && menu.isConnected) {
         const item = pickerItems(menu).find((item) => item.kind === "commit" && item.sha && commit.sha.startsWith(item.sha));
         if (item) return item.element.click();
-        if (Date.now() > deadline) throw new Error("BB did not list the commit in time.");
+        if (Date.now() > deadline) throw new Error("VesnALIA did not list the commit in time.");
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
       await abandon();
@@ -155,7 +155,7 @@ export function PickerCommits({ tab, environmentId, commits, count }: PickerProp
   };
 
   const missing = commits.map((commit, index) => ({ commit, index })).filter(({ commit }) => !listed.has(commit.sha));
-  if (!commits.length && !bbCommits) return null;
+  if (!commits.length && !aliaCommits) return null;
   return createPortal(
     <>
       <div className="diff-plus-picker-heading" style={{ order: HEADING_ORDER }} role="presentation">

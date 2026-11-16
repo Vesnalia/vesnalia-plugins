@@ -35,7 +35,7 @@ describe("canPark", () => {
     assert.equal(canPark({ ...quiet, hasPendingInteraction: true }), false);
   });
 
-  // The trap this whole feature has to avoid: bb has more kinds of live work
+  // The trap this whole feature has to avoid: VesnALIA has more kinds of live work
   // than a session status, and parking any of them hides running work.
   it("refuses while any work is running", () => {
     assert.equal(canPark({ ...quiet, isWorking: true }), false);
@@ -133,7 +133,7 @@ describe("wokenSettledThreadIds", () => {
     );
   });
 
-  // The row is what holds bb's archive, so a thread the shelf has already put
+  // The row is what holds VesnALIA's archive, so a thread the shelf has already put
   // back in the inbox has to give the row up too.
   it("reports a settled thread that has come back", () => {
     assert.deepEqual(
@@ -157,9 +157,9 @@ describe("wokenSettledThreadIds", () => {
     );
   });
 
-  // A thread bb no longer reports is the deletion cleanup's job, not this
+  // A thread VesnALIA no longer reports is the deletion cleanup's job, not this
   // one's: unsettling a row for a thread that is gone archives nothing.
-  it("skips a thread bb no longer reports", () => {
+  it("skips a thread VesnALIA no longer reports", () => {
     assert.deepEqual(
       wokenSettledThreadIds([row({ threadId: "a", settledAt: 500 })], () => undefined, 1_000),
       [],

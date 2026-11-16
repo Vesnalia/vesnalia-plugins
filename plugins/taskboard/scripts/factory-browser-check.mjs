@@ -10,7 +10,7 @@ const result = await build({
   plugins: [{
     name: 'preview-native-hooks',
     setup(build) {
-      build.onResolve({ filter: /^@get-bb\/plugin-sdk\/app$/ }, () => ({
+      build.onResolve({ filter: /^@get-alia\/plugin-sdk\/app$/ }, () => ({
         path: resolve(plugin, 'test/factory-preview-runtime.tsx')
       }));
       build.onLoad({ filter: /\/taskboard\/app\.tsx$/ }, async ({ path }) => ({
@@ -41,16 +41,16 @@ const fixture = {
   }]
 };
 const css = await readFile(resolve(plugin, 'dist/app.css'), 'utf8');
-// Plugin utilities come from the pinned BB host, rather than dist/app.css.
-const hostAssets = resolve('node_modules/bb-app/app/dist/assets');
+// Plugin utilities come from the pinned VesnALIA host, rather than dist/app.css.
+const hostAssets = resolve('node_modules/alia-app/app/dist/assets');
 const hostStylesheet = (await readdir(hostAssets)).find(name => /^index-.*\.css$/.test(name));
-if (!hostStylesheet) throw new Error('Pinned BB stylesheet not found.');
+if (!hostStylesheet) throw new Error('Pinned VesnALIA stylesheet not found.');
 const hostCss = await readFile(resolve(hostAssets, hostStylesheet), 'utf8');
 const html = `<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
 ${hostCss}
 :root{font:16px system-ui;--border:#ddd;--muted:#f2f3f5;--primary:#286bd4;--muted-foreground:#71757e;--canvas:#fff;--ink:#292b31;--timeline-accent:#286bd4;--success:#19714d;--destructive-text:#b13a4b}
 *{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--canvas);font-size:13px}#preview-detail{width:100%;min-width:0}#preview-manual{padding:20px}pre{font-size:11px}
-${css}</style></head><body><div id="root" data-bb-plugin="taskboard"></div><script>window.factoryFixture=${JSON.stringify(fixture)};window.empiricalOffline=false;window.empiricalLastKnown=null;window.empiricalStatus={kind:'feature',feature:'demo-live-work',revision:1,phase:'implement',status:'waiting',nextAction:'Implement the current acceptance criteria',verification:'pending',completionLevel:'none',completionMethod:null};</script><script>${result.outputFiles[0].text.replaceAll('</script>', '<\\/script>')}</script></body></html>`;
+${css}</style></head><body><div id="root" data-alia-plugin="taskboard"></div><script>window.factoryFixture=${JSON.stringify(fixture)};window.empiricalOffline=false;window.empiricalLastKnown=null;window.empiricalStatus={kind:'feature',feature:'demo-live-work',revision:1,phase:'implement',status:'waiting',nextAction:'Implement the current acceptance criteria',verification:'pending',completionLevel:'none',completionMethod:null};</script><script>${result.outputFiles[0].text.replaceAll('</script>', '<\\/script>')}</script></body></html>`;
 if (process.env.TASKBOARD_DEMO_PORT) {
   const port = Number(process.env.TASKBOARD_DEMO_PORT);
   if (!Number.isSafeInteger(port) || port < 1 || port > 65535) throw new Error('Invalid demo port.');
@@ -61,7 +61,7 @@ if (process.env.TASKBOARD_DEMO_PORT) {
 } else {
 // Attach only to the endpoint returned by this project's Steel binding.
 const endpoint = process.env.STEEL_CDP_URL;
-if (!endpoint || !process.env.BB_THREAD_STORAGE) throw new Error('Requires Steel CDP and thread storage.');
+if (!endpoint || !process.env.ALIA_THREAD_STORAGE) throw new Error('Requires Steel CDP and thread storage.');
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? 'playwright');
 const metadata = await fetch(endpoint + '/json/version').then(r => r.json());
 const ws = new URL(metadata.webSocketDebuggerUrl);
@@ -93,7 +93,7 @@ try {
     assert.equal(improvement.title, 'Fix cart total');
     assert.equal(improvement.description, 'The cart total ignores the discount.');
     await page.waitForFunction(() => document.querySelector('input[id$="-title"]')?.value === 'Improved title');
-    await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, 'taskboard-improve-insecure-webview.png') });
+    await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, 'taskboard-improve-insecure-webview.png') });
     assert.deepEqual(errors, []);
     console.log(JSON.stringify({ improve: 'passed', insecureWebview: 'passed', errors }));
     process.exit(0);
@@ -116,7 +116,7 @@ try {
         document.querySelector('#preview-detail select[aria-label="AI provider"]')?.value === 'claude:claude-sonnet');
       assert.equal(await detail.getByText('Saving AI…', { exact: true }).count(), 0);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-      await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, `taskboard-ai-${width}.png`) });
+      await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, `taskboard-ai-${width}.png`) });
     }
     assert.deepEqual(errors, []);
     console.log(JSON.stringify({ modelSelection: 'passed', desktop: 'passed', mobile: 'passed', errors }));
@@ -148,7 +148,7 @@ try {
       assert.equal(await detail.locator('[data-team-blocker]').innerText(),
         'Automatic work paused: Build needs your approval to continue.');
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-      await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, `taskboard-approve-${width}.png`) });
+      await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, `taskboard-approve-${width}.png`) });
     }
     await page.setViewportSize({ width: 390, height: 900 });
     await page.locator('#preview-detail').getByRole('button', { name: 'Approve and continue', exact: true }).click();
@@ -176,7 +176,7 @@ try {
       await detail.getByRole('button', { name: 'Continue task', exact: true }).scrollIntoViewIfNeeded();
       assert.equal(await detail.getByRole('button', { name: 'Start task', exact: true }).count(), 0);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-      await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, `taskboard-continue-${width}.png`) });
+      await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, `taskboard-continue-${width}.png`) });
     }
     assert.equal(await page.evaluate(() => window.factoryStarts), 0);
     await page.evaluate(() => {
@@ -198,7 +198,7 @@ try {
       assert.ok(head.height < 180, `Header expanded at ${width}: ${head.height}`);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
       await detail.locator('.tb-room-head').scrollIntoViewIfNeeded();
-      await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, `taskboard-continue-error-${width}.png`) });
+      await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, `taskboard-continue-error-${width}.png`) });
     }
     await page.evaluate(() => { window.factoryStartError = null; });
     await page.locator('#preview-detail').getByRole('button', { name: 'Continue task', exact: true }).click();
@@ -221,7 +221,7 @@ try {
       await dialog.getByRole('combobox', { name: 'AI provider' }).selectOption('codex:gpt-5');
       assert.equal(await page.evaluate(() => window.factoryStarts), 0);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-      await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, `taskboard-start-task-${width}.png`) });
+      await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, `taskboard-start-task-${width}.png`) });
       await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
       assert.equal(await page.evaluate(() => window.factoryStarts), 0);
     }
@@ -263,7 +263,7 @@ try {
   assert.equal(await factorySettings.getByRole('combobox', { name: 'AI provider' }).inputValue(), 'claude:claude-sonnet');
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, `taskboard-factory-settings-${width}.png`) });
+    await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, `taskboard-factory-settings-${width}.png`) });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   }
   if (process.env.TASKBOARD_SETTINGS_ONLY) {
@@ -286,7 +286,7 @@ try {
   await page.getByRole('dialog').getByRole('tab', { name: /Changes/ }).click();
   await page.getByRole('dialog').locator('summary').filter({ hasText: 'Changed files' }).click();
   await page.getByRole('dialog').locator('[data-native-diff-preview]').waitFor();
-  await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, 'taskboard-diff-preview.png') });
+  await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, 'taskboard-diff-preview.png') });
   assert.match(await page.getByRole('dialog').locator('[data-native-diff-preview]').innerText(), /\+const saved/);
   await page.getByRole('dialog').getByRole('button', { name: 'Refresh diff' }).click();
   await page.getByRole('dialog').locator('[data-native-diff-preview]').waitFor();
@@ -296,18 +296,18 @@ try {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.getByRole('dialog').getByRole('button', { name: 'Original ticket', exact: true }).click();
   assert.equal(await page.evaluate(() => window.factoryNavigation.pop()), 'item/proj_test/github/example~2Frepo~2342');
-  await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, 'taskboard-thread-progress.png') });
+  await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, 'taskboard-thread-progress.png') });
   for (const width of [390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     await page.waitForTimeout(400);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-    await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, `taskboard-progress-dialog-${width}.png`) });
+    await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, `taskboard-progress-dialog-${width}.png`) });
   }
   await page.evaluate(() => {
     document.documentElement.classList.add('dark');
     document.documentElement.style.cssText = '--canvas:#202124;--ink:#ececf0;--muted-foreground:#a2a4ae;--border:#393b42;--timeline-accent:#7ba8fa;--success:#69c69b;--warning:#e1b563;--destructive-text:#f18694;--surface-recessed-soft-solid:#292a2f';
   });
-  await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, 'taskboard-progress-dark.png') });
+  await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, 'taskboard-progress-dark.png') });
   await page.evaluate(() => {
     document.documentElement.classList.remove('dark');
     document.documentElement.style.cssText = '';
@@ -391,7 +391,7 @@ try {
   assert.equal(await page.evaluate(() => window.factoryStarts), 0);
   const startDialog = page.getByRole('dialog', { name: 'Start task' });
   await startDialog.getByRole('combobox', { name: 'AI provider' }).selectOption('codex:gpt-5');
-  await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, 'taskboard-start-task-model.png') });
+  await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, 'taskboard-start-task-model.png') });
   assert.equal(await page.evaluate(() => window.factoryStarts), 0);
   await startDialog.getByRole('button', { name: 'Start task', exact: true }).click();
   assert.equal(await page.evaluate(() => window.factoryStarts), 1);
@@ -399,7 +399,7 @@ try {
     providerId: 'codex', model: 'gpt-5', permissionMode: 'auto',
     reasoningLevel: 'medium', serviceTier: 'default'
   });
-  assert.equal(await page.evaluate(() => localStorage.getItem('bb-taskboard:right-panel-pinned')), null);
+  assert.equal(await page.evaluate(() => localStorage.getItem('alia-taskboard:right-panel-pinned')), null);
   assert.deepEqual(await page.evaluate(() => window.factoryNavigation), ['thr_investigate', 'thr_build', 'thr_coordinator']);
   await manual.getByRole('tab', { name: 'Activity', exact: true }).click();
   await manual.locator('.tb-run[data-live="true"] .tb-live-mark').waitFor();
@@ -425,7 +425,7 @@ try {
   await page.getByRole('button', { name: 'Verified', exact: true }).click();
   await empirical.getByText('done · r5').waitFor();
   await empirical.getByText('verified · workflow').waitFor();
-  await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, 'taskboard-empirical-demo.png') });
+  await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, 'taskboard-empirical-demo.png') });
   await manual.getByRole('tab', { name: 'Activity', exact: true }).click();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   assert.equal(await manual.locator('.tb-run[data-live="true"] .tb-live-mark').evaluate(el => getComputedStyle(el).animationName), 'none');
@@ -464,13 +464,13 @@ try {
           project: 'Roten Market',
           comments: 3
         });
-        await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, 'taskboard-ticket-comments-mobile.png'), fullPage: true });
+        await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, 'taskboard-ticket-comments-mobile.png'), fullPage: true });
       }
       await page.locator('#preview-detail .tb-detail-switch').getByRole('tab', { name: 'Factory' }).click();
     }
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     const name = width === 1280 ? 'desktop' : width === 800 ? 'panel' : 'mobile';
-    await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, `taskboard-progress-${name}.png`), fullPage: true });
+    await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, `taskboard-progress-${name}.png`), fullPage: true });
   }
   assert.equal(await page.getByRole('button', { name: /Generate plan|Start build|Approve revision/ }).count(), 0);
   await page.evaluate(() => {
@@ -488,7 +488,7 @@ try {
     await page.setViewportSize({ width, height: 900 });
     assert.equal(await manual.getByRole('button', { name: 'Return to Build with findings', exact: true }).isEnabled(), true);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-    await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, `taskboard-review-blocked-${width}.png`), fullPage: true });
+    await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, `taskboard-review-blocked-${width}.png`), fullPage: true });
   }
   await manual.getByRole('button', { name: 'Return to Build with findings', exact: true }).click();
   await manual.getByText('Addressing review findings in the Build workspace. Review will run again automatically.').waitFor();
@@ -510,7 +510,7 @@ try {
     await manual.getByText('Edit implementation plan', { exact: true }).click();
   }
   await manual.getByRole('textbox', { name: 'Implementation plan' }).waitFor();
-  await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, 'taskboard-review-repair-limit.png'), fullPage: true });
+  await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, 'taskboard-review-repair-limit.png'), fullPage: true });
   await page.evaluate(() => {
     const record = window.factoryFixture;
     record.automationError = null; record.stage = 'Build'; record.version++;
@@ -573,7 +573,7 @@ try {
       await page.setViewportSize({ width, height: 900 });
       await manual.locator('.tb-error-notice summary').click();
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-      await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, `taskboard-result-errors-${dark ? 'dark' : 'light'}-${width}.png`), fullPage: true });
+      await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, `taskboard-result-errors-${dark ? 'dark' : 'light'}-${width}.png`), fullPage: true });
       await manual.locator('.tb-error-notice summary').click();
     }
   }
@@ -611,7 +611,7 @@ try {
     for (const width of [1280, 390]) {
       await page.setViewportSize({ width, height: 900 });
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-      await team.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, `taskboard-team-${scenario[0].toLowerCase().replaceAll(' ', '-')}-${width}.png`) });
+      await team.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, `taskboard-team-${scenario[0].toLowerCase().replaceAll(' ', '-')}-${width}.png`) });
     }
     assert.equal(await team.locator('[data-team-blocker]').isVisible(), true);
   }
@@ -663,7 +663,7 @@ try {
     for (const width of [1280, 390]) {
       await page.setViewportSize({ width, height: 900 });
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-      await factorySettings.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, `taskboard-factory-state-${state}-${width}.png`) });
+      await factorySettings.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, `taskboard-factory-state-${state}-${width}.png`) });
     }
   }
   await page.evaluate(() => {
@@ -749,7 +749,7 @@ try {
     for (const width of [1280, 390]) {
       await page.setViewportSize({ width, height: 900 });
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-      await page.screenshot({ path: resolve(process.env.BB_THREAD_STORAGE, `taskboard-create-images-${width}.png`) });
+      await page.screenshot({ path: resolve(process.env.ALIA_THREAD_STORAGE, `taskboard-create-images-${width}.png`) });
     }
     if (start) await page.getByRole('button', { name: 'Remove image 1' }).click();
     if (start) assert.equal(await aiProvider.inputValue(), 'codex:gpt-5');

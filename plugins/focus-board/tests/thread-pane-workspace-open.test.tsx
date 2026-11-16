@@ -18,7 +18,7 @@ const { rpcCallMock, toThreadMock } = vi.hoisted(() => ({
 
 let settingsValues: Record<string, string | number | boolean> | undefined;
 
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
 	ThreadChat: (): ReactNode => null,
 	useSdk: () => ({
 		threads: {
@@ -30,7 +30,7 @@ vi.mock("@get-bb/plugin-sdk/app", () => ({
 		subscribe: () => () => {},
 	}),
 	useRpc: () => ({ call: rpcCallMock }),
-	useBbNavigate: () => ({ toThread: toThreadMock }),
+	useAliaNavigate: () => ({ toThread: toThreadMock }),
 	useSettings: () => ({ values: settingsValues, isLoading: false }),
 }));
 
@@ -289,7 +289,7 @@ describe("pane header workspace-open menu", () => {
 			fireEvent.click(
 				screen.getByRole("menuitem", { name: "Open in browser" }),
 			);
-			// The raw open is the point: on the desktop app bb's main-process
+			// The raw open is the point: on the desktop app VesnALIA's main-process
 			// window guard routes it to the user's system browser, and on the
 			// web this is the detached tab itself. noopener: the opened tab
 			// must not reach back through window.opener into this board.
@@ -333,7 +333,7 @@ describe("pane header workspace-open menu", () => {
 		const inBrowser = screen.getByRole("menuitem", {
 			name: "Open in browser",
 		});
-		// bb's own term, sitting next to the other thread destinations.
+		// VesnALIA's own term, sitting next to the other thread destinations.
 		expect(
 			maximize.compareDocumentPosition(inBrowser) &
 				Node.DOCUMENT_POSITION_FOLLOWING,

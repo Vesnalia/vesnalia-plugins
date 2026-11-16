@@ -1,4 +1,4 @@
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { SETTINGS_POPUP_ID } from "./src/provider-id.js";
 import { SettingsGear } from "./src/settings-gear.js";
 import { SettingsPopup } from "./src/settings-popup.js";

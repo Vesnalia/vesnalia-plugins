@@ -1,14 +1,14 @@
-# bb Lanes — spec
+# VesnALIA Lanes — spec
 
 Read `AGENTS.md` first: it holds our principles and the fixed opinions that
 override anything here.
 
-Lanes is a bb plugin that shows **where every agent is right now** as a live
+Lanes is a VesnALIA plugin that shows **where every agent is right now** as a live
 timeline: one lane per thread, one block per agent turn growing into "now",
 hand-off curves drawn between threads, and approvals answered right on the
-block. It is a reverse-engineered, bb-native take on affectUI's
+block. It is a reverse-engineered, alia-native take on affectUI's
 [Agent Lanes](https://www.affectui.com/components/agent-lanes) component,
-scaled up from a 760px card to a full bb pane, with the sidebar's groupings.
+scaled up from a 760px card to a full VesnALIA pane, with the sidebar's groupings.
 
 Design and interaction quality are the point of this plugin. A correct but
 ordinary timeline is a failure. Every motion, hover, and keyboard path should
@@ -49,17 +49,17 @@ Key reference mechanics worth copying exactly:
 - `prefers-reduced-motion`: everything still, only updates.
 
 `reference/sample-thread-events.json` holds redacted real
-bb thread events showing the shapes the server indexes.
+VesnALIA thread events showing the shapes the server indexes.
 
-## bb surfaces
+## VesnALIA surfaces
 
-Use the bb plugin authoring skill references at
-`/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/bb-guide/skills/bb-plugin-authoring/`
+Use the VesnALIA plugin authoring skill references at
+`/Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/server/dist/builtin-plugins/alia-guide/skills/alia-plugin-authoring/`
 (`SKILL.md`, then `references/frontend-core-slots.md`,
 `frontend-hooks-and-ui.md`, `frontend-registration.md`, `backend-sdk.md`,
 `backend-events.md`, `testing.md`). The SDK declarations in
-`node_modules/@get-bb/plugin-sdk/bundled-types/` are the contract. bb's own
-source is checked out at `~/repos/get-bb/bb` (read-only reference: the
+`node_modules/@vesnalia/plugin-sdk/bundled-types/` are the contract. VesnALIA's own
+source is checked out at `~/repos/get-alia/alia` (read-only reference: the
 native sidebar, theme tokens, status colours, and builtin plugins such as
 `plugins/github` show house style).
 
@@ -69,7 +69,7 @@ native sidebar, theme tokens, status colours, and builtin plugins such as
    ("3" running, with an amber "1" when someone is needed).
 2. **threadPanelAction `team-lanes`** (flush layout): the same timeline scoped
    to the current thread, its descendants, and anyone it handed off to.
-3. **CLI `bb lanes`**: `bb lanes now` prints a bounded text table of what
+3. **CLI `alia lanes`**: `alia lanes now` prints a bounded text table of what
    is running / waiting right now (useful to agents), plus a skill in
    `skills/lanes/SKILL.md`.
 
@@ -82,9 +82,9 @@ native sidebar, theme tokens, status colours, and builtin plugins such as
   `experimental_useSidebarThreadActions()` (open, open in split, pin, read,
   archive).
 - Turn history comes from our server (`shared/model.ts`,
-  `shared/rpc.ts`). The server indexes bb thread events into blocks and
+  `shared/rpc.ts`). The server indexes VesnALIA thread events into blocks and
   hand-offs, keeps them in plugin SQLite storage, stays live with
-  `bb.sdk.subscribe`, and publishes `lanes-changed` signals.
+  `alia.sdk.subscribe`, and publishes `lanes-changed` signals.
 - Event → model mapping (see the sample events):
   - `turn/started` (scope.turnId) opens a block; `turn/completed`
     closes it (`data.status`: completed → done, failed → failed,
@@ -101,7 +101,7 @@ native sidebar, theme tokens, status colours, and builtin plugins such as
     command, `fileChange` → edit, `toolCall` → tool (Skill → skill, mcp →
     mcp, web search → web), `delegation` → delegation, `agentMessage` →
     messages.
-  - A turn still open on a thread whose live status is idle (bb restarted
+  - A turn still open on a thread whose live status is idle (VesnALIA restarted
     mid-turn) is closed as interrupted at the thread's `updatedAt`.
 
 ## Experience
@@ -114,7 +114,7 @@ native sidebar, theme tokens, status colours, and builtin plugins such as
 │ ┌ card ───────────────────────────────────────────────────────────────────────────────┐ │
 │ │ Group: Project ▾   All · Active · Needs you · Failed      ⌕ Search  /         ⋯     │ │
 │ │                         −25m      −20m      −15m      −10m      −5m          now ▏ │ │
-│ │ ▾ bb-lanes  3 · ▲1                                                                  │ │
+│ │ ▾ alia-lanes  3 · ▲1                                                                  │ │
 │ │   ◉ Spec the pane        Opus 5.5   ███▒▒▒ Competitor… ╮                          ▏ │ │
 │ │   ├ ◉ Backend indexer    GPT-6.1    ╰──── ████████ Draft index… ░░shimmer░░░░░░▏ │ │
 │ │   └ ◉ Timeline engine    Opus 5.5         ▓▓▓▓▓▓▓▓▓▓▓▓▓ Needs you ▲          ▏ │ │
@@ -123,7 +123,7 @@ native sidebar, theme tokens, status colours, and builtin plugins such as
 └──────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- Tray-and-card from the reference, mapped onto bb theme tokens so custom
+- Tray-and-card from the reference, mapped onto VesnALIA theme tokens so custom
   palettes work (no hard-coded greys; derive tints with `color-mix` from
   host variables). Light and dark both first class.
 - Sticky time ruler at the top of the card; sticky names column on the left
@@ -158,7 +158,7 @@ native sidebar, theme tokens, status colours, and builtin plugins such as
   Tool glyphs (≤3) before the title. Blocks narrower than ~28px drop the
   label; narrower than 6px still render as a 6px sliver.
 - A confirmed user input has a hollow blue dot at the turn's start; a
-  confirmed bb input has a hollow red dot. No line accompanies these dots.
+  confirmed VesnALIA input has a hollow red dot. No line accompanies these dots.
   Incoming hand-offs keep their existing marker instead. Uncertain and
   provisional origins stay unmarked. Hover names the origin; the turn's
   popover and accessible label also identify it.
@@ -208,13 +208,13 @@ native sidebar, theme tokens, status colours, and builtin plugins such as
 | `server.ts`, `server/**`, `server.test.ts`, `skills/**` | backend | indexer, storage, RPC, realtime, CLI |
 | `app/timeline/**` | timeline | the engine implementing `TimelineProps`, its CSS, fixtures, dev harness |
 | `app.tsx`, `app/shell/**` | shell | registration, data hooks, grouping, header cells, toolbar, header content, accessory, team panel |
-| `components/ui/**`, `lib/**`, `hooks/**` | shell | vendored shadcn; add with `npx shadcn add @bb/<name>` |
+| `components/ui/**`, `lib/**`, `hooks/**` | shell | vendored shadcn; add with `npx shadcn add @alia-core/<name>` |
 | `reference/**` | — | read only |
 
 ## Verification
 
-- `npx tsc --noEmit`, `bb plugin build`, tests with vitest and the SDK
-  testing harness (`@get-bb/plugin-sdk/testing`, `/testing/app`).
-- Live: `bb plugin install path:<worktree>` is NOT for workers (the
+- `npx tsc --noEmit`, `alia plugin build`, tests with vitest and the SDK
+  testing harness (`@vesnalia/plugin-sdk/testing`, `/testing/app`).
+- Live: `alia plugin install path:<worktree>` is NOT for workers (the
   coordinator owns the installed copy). Workers verify with tests, the
   build, and the timeline's standalone fixture harness.

@@ -1,28 +1,28 @@
-# bb-plugin-higgsfield
+# alia-plugin-higgsfield
 
-**Higgsfield Credits** for [BB](https://getbb.app): your Higgsfield credit
-balance, next reset, burn forecast, and per-model consumption in the BB
+**Higgsfield Credits** for [VesnALIA](https://getbb.app): your Higgsfield credit
+balance, next reset, burn forecast, and per-model consumption in the VesnALIA
 sidebar. Community plugin, not affiliated with Higgsfield.
 
 ## Install
 
-Install from the BB Community marketplace, or from source:
+Install from the VesnALIA Community marketplace, or from source:
 
 ```
-bb plugin install git:https://github.com/VladPolet/bb-plugin-higgsfield.git
+alia plugin install git:https://github.com/VladPolet/bb-plugin-higgsfield.git
 ```
 
-Requires the Higgsfield CLI on the BB host. Sign in from the dashboard or with
+Requires the Higgsfield CLI on the VesnALIA host. Sign in from the dashboard or with
 `higgsfield auth login`.
 
 ## Architecture
 
-- `host.ts` — `bb.host` worker on the user's machine; runs the `higgsfield`
+- `host.ts` — `alia.host` worker on the user's machine; runs the `higgsfield`
   CLI with `--json` (account status, transactions, generate list, workspace
   status, auth login/logout).
 - `contract.ts` — typed server↔host RPC contract and `authChanged` signal.
 - `normalize.ts` — tolerant parsing of CLI JSON plus usage aggregation.
-- `server.ts` — `dashboard`/`login`/`logout` RPC, `bb higgsfield` CLI,
+- `server.ts` — `dashboard`/`login`/`logout` RPC, `alia higgsfield` CLI,
   60s cache.
 - `app.tsx` — the sidebar dashboard page.
 
@@ -60,9 +60,9 @@ MIT
 ```
 npm install --include=dev
 npm run typecheck && npm test
-bb plugin install .
-bb plugin dev
+alia plugin install .
+alia plugin dev
 ```
 
-If a number is missing, compare `bb higgsfield raw status` with the field
+If a number is missing, compare `alia higgsfield raw status` with the field
 lists in `normalize.ts`.

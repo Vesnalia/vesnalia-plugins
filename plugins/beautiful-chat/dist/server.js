@@ -6,16 +6,16 @@ var __filename = __fileURLToPath(import.meta.url);
 var __dirname = __pathDirname(__filename);
 
 // settings.ts
-var LOADERS = ["drive", "dots", "orbit", "coins", "bb"];
+var LOADERS = ["drive", "dots", "orbit", "coins", "alia"];
 var CHIP_STYLES = ["surface", "outline", "plain"];
 
 // server.ts
-async function plugin(bb) {
-  bb.settings.define({
+async function plugin(alia) {
+  alia.settings.define({
     loader: {
       type: "select",
       label: "Loading animation",
-      description: "Icon on pending work rows. drive: pixel grid sweep; dots: round pixels; orbit: pixels circling the edge; coins: a ring of tumbling coins; bb: BB's own icon.",
+      description: "Icon on pending work rows. drive: pixel grid sweep; dots: round pixels; orbit: pixels circling the edge; coins: a ring of tumbling coins; VesnALIA: VesnALIA's own icon.",
       options: [...LOADERS],
       default: "drive"
     },
@@ -105,7 +105,7 @@ async function plugin(bb) {
       default: true
     }
   });
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }
 export {
   plugin as default

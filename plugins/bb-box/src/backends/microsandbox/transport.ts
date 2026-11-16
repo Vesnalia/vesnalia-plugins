@@ -30,10 +30,10 @@ export const BOX_HOME = `/home/${BOX_USER}`;
 
 const PRELUDE =
   "set -a; [ ! -r /etc/environment ] || . /etc/environment; " +
-  "[ ! -r /run/bb-box/display.env ] || . /run/bb-box/display.env; set +a; ";
+  "[ ! -r /run/alia-box/display.env ] || . /run/alia-box/display.env; set +a; ";
 
 /** What msb or the msb client says when the command never ran in the box. */
-const NOT_RUN = /^error: |bb-box could not run msb|is not running|sandbox not found|ssh: |Connection (refused|closed)/im;
+const NOT_RUN = /^error: |alia-box could not run msb|is not running|sandbox not found|ssh: |Connection (refused|closed)/im;
 
 const ENV = ["-e", "SHELL=/bin/bash", "-e", `USER=${BOX_USER}`, "-e", `LOGNAME=${BOX_USER}`, "-e", "LANG=C.UTF-8"];
 

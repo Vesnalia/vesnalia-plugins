@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useBbContext, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaContext, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { openWorkspaceFile } from "@/lib/open-preview";
 import { surfaceNavigation } from "@/lib/surface-navigation";
@@ -32,7 +32,7 @@ type TreeModel = ReturnType<typeof useWorkspaceTree>;
  */
 export function useFileSearch(tree: TreeModel) {
   const rpc = useRpc<typeof rpcContract>();
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [isSearching, setIsSearching] = useState(false);

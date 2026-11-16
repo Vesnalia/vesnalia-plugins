@@ -1,4 +1,4 @@
-import { type BbPluginApi } from "@get-bb/plugin-sdk";
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { rpcContract } from "./contract";
 import {
   buildClaudeAuthStatusCommand,
@@ -179,10 +179,10 @@ function parseTerminalOwnership(value: unknown): Map<string, string> {
   return records;
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   const hostLocks = new HostReservations();
   const ownedTerminals = parseTerminalOwnership(
-    await bb.storage.kv.get<unknown>(TERMINAL_OWNERSHIP_KEY),
+    await alia.storage.kv.get<unknown>(TERMINAL_OWNERSHIP_KEY),
   );
   const activeSwitches = new Map<string, ActiveSwitch>();
   const finishedSwitches = new Map<string, FinishedSwitch>();
@@ -246,9 +246,9 @@ export default async function plugin(bb: BbPluginApi) {
       .catch(() => undefined)
       .then(async () => {
         if (records.length === 0) {
-          await bb.storage.kv.delete(TERMINAL_OWNERSHIP_KEY);
+          await alia.storage.kv.delete(TERMINAL_OWNERSHIP_KEY);
         } else {
-          await bb.storage.kv.set(TERMINAL_OWNERSHIP_KEY, records);
+          await alia.storage.kv.set(TERMINAL_OWNERSHIP_KEY, records);
         }
         durableOwnershipRevision = Math.max(durableOwnershipRevision, revision);
       });
@@ -263,7 +263,7 @@ export default async function plugin(bb: BbPluginApi) {
     terminalId: string,
     mode: "force" | "if-clean",
   ): Promise<LoginTerminal> {
-    return bb.sdk.terminals.close({ terminalId, mode });
+    return alia.sdk.terminals.close({ terminalId, mode });
   }
 
   async function settleTerminal(terminalId: string): Promise<void> {
@@ -287,7 +287,7 @@ export default async function plugin(bb: BbPluginApi) {
     const existingHostId = ownedTerminals.get(terminalId);
     if (existingHostId !== undefined) {
       if (existingHostId !== hostId) {
-        throw new Error("BB reported one Claude helper on two machines.");
+        throw new Error("VesnALIA reported one Claude helper on two machines.");
       }
       if (!terminalOwnershipIsDurable()) await persistTerminalOwnership();
       return;
@@ -348,7 +348,7 @@ export default async function plugin(bb: BbPluginApi) {
     } finally {
       hostLocks.release(terminal.hostId, cleanupLease);
     }
-    throw new Error("BB opened the Claude helper on a different machine.");
+    throw new Error("VesnALIA opened the Claude helper on a different machine.");
   }
 
   async function reconcileFailedCleanup(
@@ -356,11 +356,11 @@ export default async function plugin(bb: BbPluginApi) {
     signal: AbortSignal,
   ): Promise<void> {
     if (signal.aborted) {
-      throw new Error("Claude login was cancelled. This BB session was not changed.");
+      throw new Error("Claude login was cancelled. This VesnALIA session was not changed.");
     }
     while (true) {
       if (signal.aborted) {
-        throw new Error("Claude login was cancelled. This BB session was not changed.");
+        throw new Error("Claude login was cancelled. This VesnALIA session was not changed.");
       }
       const terminalIds = [...ownedTerminals]
         .filter(([, terminalHostId]) => terminalHostId === hostId)
@@ -390,7 +390,7 @@ export default async function plugin(bb: BbPluginApi) {
     hostId: string,
     signal: AbortSignal,
   ): Promise<string> {
-    const status = await bb.sdk.hosts.providerCliStatus({ hostId, signal });
+    const status = await alia.sdk.hosts.providerCliStatus({ hostId, signal });
     const providerStatuses = status as unknown as Record<
       string,
       | {
@@ -406,12 +406,12 @@ export default async function plugin(bb: BbPluginApi) {
       typeof executablePath !== "string" ||
       !executablePath.startsWith("/")
     ) {
-      throw new Error("BB could not resolve Claude Code on this session's machine.");
+      throw new Error("VesnALIA could not resolve Claude Code on this session's machine.");
     }
     return executablePath;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async attachSwitch({ operationId, threadId }) {
       purgeFinishedSwitches();
       const active = activeSwitches.get(threadId);
@@ -450,7 +450,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
 
     async inspectThread({ threadId }) {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       return { isClaude: thread.providerId === "claude-code" };
     },
 
@@ -511,7 +511,7 @@ export default async function plugin(bb: BbPluginApi) {
           {
             close: closeTerminal,
             create: async () => {
-              const terminal = await bb.sdk.terminals.create({
+              const terminal = await alia.sdk.terminals.create({
                 cols: 80,
                 rows: 8,
                 scope: {
@@ -544,7 +544,7 @@ export default async function plugin(bb: BbPluginApi) {
                 throw error;
               }
             },
-            get: (terminalId, signal) => bb.sdk.terminals.get({ signal, terminalId }),
+            get: (terminalId, signal) => alia.sdk.terminals.get({ signal, terminalId }),
             onCleanupFailed: adoptTerminal,
             onSettled: settleTerminal,
           },
@@ -575,7 +575,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       active.loginCodeSubmitting = true;
       try {
-        await bb.sdk.terminals.input({
+        await alia.sdk.terminals.input({
           dataBase64: Buffer.from(`${code}\n`, "utf8").toString("base64"),
           terminalId: terminal.id,
         });
@@ -648,7 +648,7 @@ export default async function plugin(bb: BbPluginApi) {
       let executablePath: Promise<string> | undefined;
       const getClaudeExecutable = (hostId: string, signal: AbortSignal) => {
         if (executableHostId !== undefined && executableHostId !== hostId) {
-          throw new Error("This session changed before BB could run Claude Code.");
+          throw new Error("This session changed before VesnALIA could run Claude Code.");
         }
         executableHostId = hostId;
         executablePath ??= resolveClaudeExecutable(hostId, signal);
@@ -661,7 +661,7 @@ export default async function plugin(bb: BbPluginApi) {
             await switchClaudeAccount(
               {
                 getThread: async (targetThreadId, signal) => {
-                  const target = await bb.sdk.threads.get({
+                  const target = await alia.sdk.threads.get({
                     include: "environment",
                     signal,
                     threadId: targetThreadId,
@@ -681,7 +681,7 @@ export default async function plugin(bb: BbPluginApi) {
                     {
                       close: closeTerminal,
                       create: async (targetId) => {
-                        const terminal = await bb.sdk.terminals.create({
+                        const terminal = await alia.sdk.terminals.create({
                           cols: 80,
                           rows: 24,
                           scope: { cwd: null, hostId, kind: "host_path" },
@@ -694,11 +694,11 @@ export default async function plugin(bb: BbPluginApi) {
                         return adoptCreatedTerminal(terminal, hostId, onSuccess);
                       },
                       get: (terminalId, signal) =>
-                        bb.sdk.terminals.get({ signal, terminalId }),
+                        alia.sdk.terminals.get({ signal, terminalId }),
                       onCleanupFailed: adoptTerminal,
                       onSettled: settleTerminal,
                       output: async (terminalId, signal) => {
-                        const output = await bb.sdk.terminals.output({
+                        const output = await alia.sdk.terminals.output({
                           limitChunks: 8,
                           signal,
                           tailBytes: 4_096,
@@ -737,7 +737,7 @@ export default async function plugin(bb: BbPluginApi) {
                 reconcileCleanup: reconcileFailedCleanup,
                 stopThread: async (targetThreadId) => {
                   await closeAuthorizationActions(active);
-                  await bb.sdk.threads.stop({ threadId: targetThreadId });
+                  await alia.sdk.threads.stop({ threadId: targetThreadId });
                 },
                 verifySubscription: async (targetThreadId, hostId, signal) => {
                   const claudeExecutable = await getClaudeExecutable(hostId, signal);
@@ -745,7 +745,7 @@ export default async function plugin(bb: BbPluginApi) {
                     {
                       close: closeTerminal,
                       create: async (targetId) => {
-                        const terminal = await bb.sdk.terminals.create({
+                        const terminal = await alia.sdk.terminals.create({
                           cols: 80,
                           rows: 8,
                           scope: { cwd: null, hostId, kind: "host_path" },
@@ -758,11 +758,11 @@ export default async function plugin(bb: BbPluginApi) {
                         return adoptCreatedTerminal(terminal, hostId);
                       },
                       get: (terminalId, signal) =>
-                        bb.sdk.terminals.get({ signal, terminalId }),
+                        alia.sdk.terminals.get({ signal, terminalId }),
                       onCleanupFailed: adoptTerminal,
                       onSettled: settleTerminal,
                       output: async (terminalId, signal) => {
-                        const output = await bb.sdk.terminals.output({
+                        const output = await alia.sdk.terminals.output({
                           limitChunks: 8,
                           signal,
                           tailBytes: 4_096,
@@ -825,7 +825,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     const switches = [...activeSwitches.values()];
     for (const active of switches) {
       if (active.phase === "cancellable") active.phase = "cancelling";

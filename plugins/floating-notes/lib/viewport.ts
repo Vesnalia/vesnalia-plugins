@@ -1,12 +1,12 @@
 // Where the *visible* viewport actually is, which on iOS is not where CSS says.
 //
-// Ported from bb-plugin-floating-terminal. Opening the software keyboard does
+// Ported from alia-plugin-floating-terminal. Opening the software keyboard does
 // not change the layout viewport, so a fixed sheet keeps its full height and
 // the editor's caret ends up behind the keys. visualViewport is the only thing
 // that reports the truth, so the sheet's height and offset come from here.
 
-const HEIGHT_VAR = "--bb-fn-viewport-height";
-const TOP_VAR = "--bb-fn-viewport-top";
+const HEIGHT_VAR = "--alia-fn-viewport-height";
+const TOP_VAR = "--alia-fn-viewport-top";
 
 /**
  * Below this the shortfall is browser chrome (a URL bar collapsing), above it

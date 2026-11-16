@@ -70,7 +70,7 @@ const steps = {
     await field(page, "Memory kept free (MiB)").fill("6144");
     await page.waitForTimeout(200);
     await shot(page, "03-backend-two-edits", false);
-    await panel(page, async () => { await page.getByRole("button", { name: "An agent runs bb box config apply" }).click(); });
+    await panel(page, async () => { await page.getByRole("button", { name: "An agent runs VesnALIA box config apply" }).click(); });
     await page.waitForTimeout(400);
     await page.getByText("Changed elsewhere to").first().scrollIntoViewIfNeeded();
     note("conflict-shown", { notes: await page.getByText("Changed elsewhere to").count(), node: await field(page, "Node").inputValue(), bar: await page.locator("[role=region][aria-label^=Save] [role=status]").innerText() });
@@ -81,7 +81,7 @@ const steps = {
     await page.getByRole("button", { name: "Replace the API token secret" }).first().evaluate((el) => el.scrollIntoView({ block: "center" }));
     await page.getByRole("button", { name: "Replace the API token secret" }).first().click();
     await page.getByLabel("API token secret").first().fill("new-token");
-    await panel(page, async () => { await page.getByRole("button", { name: "An agent runs bb box config apply" }).click(); });
+    await panel(page, async () => { await page.getByRole("button", { name: "An agent runs VesnALIA box config apply" }).click(); });
     await page.waitForTimeout(400);
     note("secret-conflict", { text: (await page.getByText(/Replaced elsewhere while you edited/).first().innerText().catch(() => "none")) });
     await page.getByText(/Replaced elsewhere while you edited/).first().scrollIntoViewIfNeeded();
@@ -99,7 +99,7 @@ const steps = {
     await field(page, "Node").fill("pve-4");
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await page.waitForTimeout(200);
-    await panel(page, async () => { await page.getByRole("button", { name: "An agent runs bb box config apply" }).click(); });
+    await panel(page, async () => { await page.getByRole("button", { name: "An agent runs VesnALIA box config apply" }).click(); });
     await page.waitForTimeout(1800);
     note("rebased", { bar: await page.locator("[role=region][aria-label^=Save] [role=status]").innerText().catch(() => "gone") });
     await page.close();
@@ -156,7 +156,7 @@ const steps = {
     await page.getByLabel("API token secret").first().fill("pasted-secret");
     await page.getByRole("button", { name: "General", exact: true }).click();
     await page.waitForTimeout(300);
-    await page.getByRole("button", { name: "BB Box", exact: true }).click();
+    await page.getByRole("button", { name: "VesnALIA Box", exact: true }).click();
     await page.waitForTimeout(400);
     note("overview-chip", { chips: await page.getByText("Unsaved changes").count() });
     await shot(page, "11-unsaved-chip", false);
@@ -216,7 +216,7 @@ const steps = {
       await page.close();
     }
     const page = await fresh({ scenario: "First run" });
-    await page.getByRole("button", { name: "Use Docker on bb-1" }).click();
+    await page.getByRole("button", { name: "Use Docker on alia-1" }).click();
     await page.waitForTimeout(6500);
     note("after-docker", { status: await page.locator("section[aria-label=Status] p").first().innerText().catch(() => "none") });
     await shot(page, "22-docker-ready");
@@ -295,10 +295,10 @@ const steps = {
   },
   async monitorRow() {
     const page = await fresh();
-    await page.getByRole("switch", { name: "Monitor: machine status in BB's sidebar" }).click();
+    await page.getByRole("switch", { name: "Monitor: machine status in VesnALIA's sidebar" }).click();
     await page.waitForTimeout(1100);
     note("monitor-row", { note: await page.getByText("The sidebar's machine status changes").innerText().catch(() => "none") });
-    await page.getByRole("switch", { name: "Monitor: machine status in BB's sidebar" }).scrollIntoViewIfNeeded();
+    await page.getByRole("switch", { name: "Monitor: machine status in VesnALIA's sidebar" }).scrollIntoViewIfNeeded();
     await shot(page, "31-monitor-row", false);
     await page.close();
   },
@@ -314,7 +314,7 @@ const steps = {
   async tailnet() {
     const page = await fresh();
     await open(page, /^Network/);
-    await page.getByRole("radio", { name: "No: BB is reached without one" }).click();
+    await page.getByRole("radio", { name: "No: VesnALIA is reached without one" }).click();
     await page.waitForTimeout(200);
     note("tailnet-staged", { bar: await page.locator("[role=region][aria-label^=Save] [role=status]").innerText() });
     await shot(page, "33-tailnet-staged", false);

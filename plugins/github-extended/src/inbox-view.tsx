@@ -3,7 +3,7 @@ import {
   experimental_Icon as Icon,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { DependabotAlert, githubRpcContract } from "./server.js";
 import type { Item, RepoStatus, Route } from "./app-logic.js";
 import { AskAgent } from "./agent-task.js";

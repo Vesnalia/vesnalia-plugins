@@ -30,7 +30,7 @@ import {
 import {
   definePluginApp,
   Markdown,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
   useSdk,
@@ -38,7 +38,7 @@ import {
   type PluginNavPanelProps,
   type ExperimentalThreadTabProps,
   type ExperimentalThreadContextSegmentProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { z } from "zod";
 import { toast } from "sonner";
 import type { gitlabRpcContract } from "./server";
@@ -157,7 +157,7 @@ interface ProjectInfo {
   project: string;
   host: string;
   path: string;
-  bbProjectId: string | null;
+  aliaProjectId: string | null;
 }
 
 interface Item {
@@ -321,7 +321,7 @@ function errorText(error: unknown): string {
 }
 
 // ---------------------------------------------------------------------------
-// Panel memory. bb unmounts the panel when you switch to a thread and back,
+// Panel memory. VesnALIA unmounts the panel when you switch to a thread and back,
 // which used to throw away the open page, the tab, filters, and scroll. The
 // last route survives reloads (localStorage); the rest lives for the session.
 // ---------------------------------------------------------------------------
@@ -471,13 +471,13 @@ function routeToSubPath(route: Route): string {
 }
 
 function useSubPathRoute(subPath: string): [Route, (route: Route) => void] {
-  const bbNavigate = useBbNavigate();
+  const aliaNavigate = useAliaNavigate();
   const route = useMemo(() => parseSubPath(subPath), [subPath]);
   const navigate = useCallback(
     (next: Route) => {
-      bbNavigate.toPluginPanel(PANEL_PATH, { subPath: routeToSubPath(next) });
+      aliaNavigate.toPluginPanel(PANEL_PATH, { subPath: routeToSubPath(next) });
     },
-    [bbNavigate],
+    [aliaNavigate],
   );
   return [route, navigate];
 }
@@ -565,7 +565,7 @@ function useSpawn(): {
   spawningKey: string | null;
 } {
   const rpc = useRpc<typeof gitlabRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [spawningKey, setSpawningKey] = useState<string | null>(null);
   const spawn = useCallback(
     (kind: Kind, project: string, iid: number) => {
@@ -812,7 +812,7 @@ function LabelTags({ labels, max }: { labels: string[]; max?: number }) {
 }
 
 function ThreadPills({ links }: { links: ThreadLink[] | undefined }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   if (links === undefined || links.length === 0) return null;
   return (
     <>
@@ -820,7 +820,7 @@ function ThreadPills({ links }: { links: ThreadLink[] | undefined }) {
         <button
           key={link.threadId}
           type="button"
-          title={`Open BB thread ${link.threadId}`}
+          title={`Open VesnALIA thread ${link.threadId}`}
           onClick={(event) => {
             event.stopPropagation();
             navigate.toThread(link.threadId);
@@ -2212,8 +2212,8 @@ let hostCodeThemeObserver: MutationObserver | null = null;
 
 function getHostCodeTheme(): CodeTheme {
   hostCodeTheme ??= {
-    dark: document.documentElement.dataset.bbCodeThemeDark ?? "pierre-dark",
-    light: document.documentElement.dataset.bbCodeThemeLight ?? "pierre-light",
+    dark: document.documentElement.dataset.aliaCodeThemeDark ?? "pierre-dark",
+    light: document.documentElement.dataset.aliaCodeThemeLight ?? "pierre-light",
   };
   return hostCodeTheme;
 }
@@ -2224,8 +2224,8 @@ function subscribeHostCodeTheme(onStoreChange: () => void): () => void {
   hostCodeThemeObserver ??= new MutationObserver(() => {
     const current = getHostCodeTheme();
     const next: CodeTheme = {
-      dark: document.documentElement.dataset.bbCodeThemeDark ?? "pierre-dark",
-      light: document.documentElement.dataset.bbCodeThemeLight ?? "pierre-light",
+      dark: document.documentElement.dataset.aliaCodeThemeDark ?? "pierre-dark",
+      light: document.documentElement.dataset.aliaCodeThemeLight ?? "pierre-light",
     };
     if (next.dark === current.dark && next.light === current.light) return;
     hostCodeTheme = next;
@@ -2233,7 +2233,7 @@ function subscribeHostCodeTheme(onStoreChange: () => void): () => void {
   });
   hostCodeThemeObserver.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ["data-bb-code-theme-dark", "data-bb-code-theme-light"],
+    attributeFilter: ["data-alia-code-theme-dark", "data-alia-code-theme-light"],
   });
   return () => {
     hostCodeThemeListeners.delete(onStoreChange);
@@ -2689,13 +2689,13 @@ function shortSha(sha: string): string {
 }
 
 function useOpenPipeline(): (project: string, id: number) => void {
-  const bbNavigate = useBbNavigate();
+  const aliaNavigate = useAliaNavigate();
   return useCallback(
     (project: string, id: number) =>
-      bbNavigate.toPluginPanel(PANEL_PATH, {
+      aliaNavigate.toPluginPanel(PANEL_PATH, {
         subPath: routeToSubPath({ view: "pipeline", project, id }),
       }),
-    [bbNavigate],
+    [aliaNavigate],
   );
 }
 
@@ -3018,7 +3018,7 @@ function PipelineDetailView({
   onBack: () => void;
 }) {
   const rpc = useRpc<typeof gitlabRpcContract>();
-  const bbNavigate = useBbNavigate();
+  const aliaNavigate = useAliaNavigate();
   type PipelineData = {
     pipeline: PipelineDetail;
     jobs: PipelineJob[];
@@ -3083,7 +3083,7 @@ function PipelineDetailView({
               className="inline-flex"
               title={`Open merge request !${mergeRequestIid}`}
               onClick={() =>
-                bbNavigate.toPluginPanel(PANEL_PATH, {
+                aliaNavigate.toPluginPanel(PANEL_PATH, {
                   subPath: routeToSubPath({ view: "merge_request", project, iid: mergeRequestIid }),
                 })
               }
@@ -3463,7 +3463,7 @@ function BranchesView({
   projects: ProjectInfo[];
 }) {
   const rpc = useRpc<typeof gitlabRpcContract>();
-  const bbNavigate = useBbNavigate();
+  const aliaNavigate = useAliaNavigate();
   const openPipeline = useOpenPipeline();
   const [picked, setProject] = useSticky<string | null>("branches:project", null);
   const project = picked ?? projects[0]?.project ?? "";
@@ -3634,7 +3634,7 @@ function BranchesView({
                 const createUrl = newMergeRequestUrl(branch);
                 const openMr = () =>
                   branch.mergeRequest !== null &&
-                  bbNavigate.toPluginPanel(PANEL_PATH, {
+                  aliaNavigate.toPluginPanel(PANEL_PATH, {
                     subPath: routeToSubPath({
                       view: "merge_request",
                       project,
@@ -5083,7 +5083,7 @@ function CommitsTab({
   promo: PromotionState;
 }) {
   const rpc = useRpc<typeof gitlabRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState<Set<string>>(new Set());
   // A button that appears under the pointer is not clickable for a moment, so
@@ -6345,7 +6345,7 @@ function GitlabRoutedBody({
   if (status !== null && status.glabOk && status.projects.length === 0) {
     return (
       <Callout icon="💡">
-        No GitLab projects tracked yet. Create a BB project whose checkout has a
+        No GitLab projects tracked yet. Create a VesnALIA project whose checkout has a
         GitLab origin remote, or add projects with the extraProjects plugin
         setting.
       </Callout>
@@ -6421,12 +6421,12 @@ function ViewerScope({ children }: { children: React.ReactNode }) {
 }
 
 function GitlabPanel({ subPath }: PluginNavPanelProps) {
-  const bbNavigate = useBbNavigate();
+  const aliaNavigate = useAliaNavigate();
   // Opening the panel with no target lands where you left it.
   const restoreTo = subPath === "" ? readStored(ROUTE_KEY) : null;
   useEffect(() => {
     if (restoreTo !== null && restoreTo !== "") {
-      bbNavigate.toPluginPanel(PANEL_PATH, { subPath: restoreTo });
+      aliaNavigate.toPluginPanel(PANEL_PATH, { subPath: restoreTo });
     }
     // Only on first render of this mount.
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -6497,7 +6497,7 @@ function GitlabPanel({ subPath }: PluginNavPanelProps) {
 const HOMEPAGE_ROWS = 5;
 
 function RecentIssuesSection({ projectId }: PluginHomepageSectionProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const status = useStatus();
   const { spawn, spawningKey } = useSpawn();
   // A homepage project with no GitLab remote (and the no-project case) shows
@@ -6505,7 +6505,7 @@ function RecentIssuesSection({ projectId }: PluginHomepageSectionProps) {
   const scoped =
     projectId === null
       ? null
-      : (status?.projects.find((entry) => entry.bbProjectId === projectId)
+      : (status?.projects.find((entry) => entry.aliaProjectId === projectId)
           ?.project ?? null);
   const { items, error } = useItems({
     kind: "issue",
@@ -6975,7 +6975,7 @@ const HOME_TONE: Record<string, string> = {
 
 /**
  * Moves the New thread composer to the bottom of the page and centres what is
- * above it. bb draws that page; these selectors are its stable test ids, and
+ * above it. VesnALIA draws that page; these selectors are its stable test ids, and
  * the style lives only while the dashboard is mounted with the setting on.
  */
 const COMPOSER_AT_BOTTOM_CSS = `
@@ -6998,7 +6998,7 @@ function useComposerAtBottom(on: boolean) {
 
 function HomeDashboard({ projectId }: PluginHomepageSectionProps) {
   const rpc = useRpc<typeof gitlabRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const status = useStatus();
   const settings = useUiSettings();
   useComposerAtBottom(settings.homeComposerAtBottom);
@@ -7007,7 +7007,7 @@ function HomeDashboard({ projectId }: PluginHomepageSectionProps) {
   const scoped =
     projectId === null
       ? null
-      : (status?.projects.find((entry) => entry.bbProjectId === projectId)?.project ?? null);
+      : (status?.projects.find((entry) => entry.aliaProjectId === projectId)?.project ?? null);
   const heatmapHost = scoped?.split("/")[0] ?? status?.hosts[0] ?? null;
   const heatmap = <ContributionCalendar key={heatmapHost ?? ""} host={heatmapHost} />;
   const groups = settings.homeGroups.filter((id): id is HomeGroup => id in HOME_GROUPS);
@@ -7224,7 +7224,7 @@ function useGitlabWorkflowVisible({ projectId, environment }: ExperimentalThread
     setVisible(false);
     let cancelled = false;
     rpc.call("status", null).then(
-      (result) => { if (!cancelled) setVisible(result.projects.some((project) => project.bbProjectId === projectId)); },
+      (result) => { if (!cancelled) setVisible(result.projects.some((project) => project.aliaProjectId === projectId)); },
       () => { if (!cancelled) setVisible(false); },
     );
     return () => { cancelled = true; };
@@ -7244,7 +7244,7 @@ function GitlabWorkflowSummary() {
 function GitlabWorkflowAction({ threadId, projectId, environment }: ExperimentalThreadContextSegmentProps) {
   const rpc = useRpc<typeof gitlabRpcContract>();
   const sdk = useSdk();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [remote, setRemote] = useState<{
     branch: string;
     project: string | null;
@@ -7255,7 +7255,7 @@ function GitlabWorkflowAction({ threadId, projectId, environment }: Experimental
   const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState(0);
   // The checkout is read by this plugin's server with git, so the strip does
-  // not depend on the bb--git plugin being on.
+  // not depend on the alia--git plugin being on.
   const [local, setLocal] = useState<{ branch: string | null; headSha: string | null; dirty: boolean; aheadCount: number } | null>(null);
   const [localError, setLocalError] = useState(false);
   const environmentId = environment?.id ?? null;

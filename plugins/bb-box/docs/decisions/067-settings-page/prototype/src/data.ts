@@ -158,7 +158,7 @@ export interface BackendLive {
   readonly changedRevision: number;
   readonly warmShort?: readonly WarmShort[];
   readonly building?: string;
-  readonly bbMachine?: { readonly name: string; readonly connected: boolean; readonly facts: string };
+  readonly aliaMachine?: { readonly name: string; readonly connected: boolean; readonly facts: string };
 }
 
 export interface DockerMachine {
@@ -221,10 +221,10 @@ const BACKENDS: readonly BackendConfig[] = [
     },
     warm: { linux: 1, "linux-desktop": 1 },
   },
-  { id: "tart", type: "tart", enabled: true, fields: { "ssh-private-key": secret(true), "linux-image": "bb-box-linux", "ios-image": "bb-box-ios", "windows-image": "windows-11-arm", "ios-hosts-on": true }, hosts: [{ name: "mac-1", enabled: true, fields: { address: "192.0.2.30", user: "admin", "host-keys": "192.0.2.30 ssh-ed25519 AAAAC3Nza...example" } }], warm: { macos: 1, "macos-desktop": 1, "windows-arm64-desktop": 1 } },
+  { id: "tart", type: "tart", enabled: true, fields: { "ssh-private-key": secret(true), "linux-image": "alia-box-linux", "ios-image": "alia-box-ios", "windows-image": "windows-11-arm", "ios-hosts-on": true }, hosts: [{ name: "mac-1", enabled: true, fields: { address: "192.0.2.30", user: "admin", "host-keys": "192.0.2.30 ssh-ed25519 AAAAC3Nza...example" } }], warm: { macos: 1, "macos-desktop": 1, "windows-arm64-desktop": 1 } },
   { id: "ssh-pool", type: "ssh-pool", enabled: true, fields: { machines: "build-1 192.0.2.21 linux\nmac-2 192.0.2.31 macos,macos-desktop,ios", "known-hosts": "192.0.2.21 ssh-ed25519 AAAAC3Nza...example\n192.0.2.31 ssh-ed25519 AAAAC3Nza...example", "ssh-private-key": secret(false) } },
   { id: "docker", type: "docker", enabled: true, fields: { host: "ssh://box@192.0.2.40" } },
-  { id: "docker:pc-1", type: "docker", enabled: true, fields: { host: "bb:host_pc1example" } },
+  { id: "docker:pc-1", type: "docker", enabled: true, fields: { host: "alia:host_pc1example" } },
   { id: "microsandbox:mac-1", type: "microsandbox", enabled: true, fields: { host: "ssh://admin@192.0.2.30" } },
   { id: "proxmox-qemu", type: "proxmox-qemu", enabled: true, fields: { "windows-templates": "9104", "android-templates": "9106", "linux-templates": "9105" }, warm: { "windows-desktop": 1 } },
   { id: "hetzner", type: "hetzner", enabled: true, fields: { token: secret(true), "arm-server-type": "cax31" } },
@@ -246,7 +246,7 @@ export function initialDocument(firstRun: boolean): Document {
       encoderLedger: true,
       iosEncoder: "auto",
       files: firstRun ? [] : [{ path: ".pi/agent/models.json", content: secret(true, "r150") }],
-      tailnet: firstRun ? { mode: "off", tags: "tag:bb-box", clientId: secret(false), clientSecret: secret(false) } : { mode: "oauth", tags: "tag:bb-box", clientId: secret(true, "r120"), clientSecret: secret(true, "r120") },
+      tailnet: firstRun ? { mode: "off", tags: "tag:alia-box", clientId: secret(false), clientSecret: secret(false) } : { mode: "oauth", tags: "tag:alia-box", clientId: secret(true, "r120"), clientSecret: secret(true, "r120") },
     },
     monitor: { enabled: true, refreshIntervalSeconds: 5, backgroundMonitoring: false, pressureNotifications: true },
     images: firstRun
@@ -259,7 +259,7 @@ export function initialDocument(firstRun: boolean): Document {
             bake: "auto",
             script: "#!/bin/sh\nset -e\napt-get update\napt-get install -y postgresql-client redis-tools\nnpm install -g pnpm@9",
             check: "psql --version && redis-cli --version && pnpm --version",
-            source: ".bb/box-setup.sh and .bb/box-check.sh",
+            source: ".vesnalia/box-setup.sh and .vesnalia/box-check.sh",
             updated: "26 October",
             builds: "Built ahead after 2 boxes in 14 days; last built 27 October for Linux on Proxmox LXC",
           },
@@ -297,21 +297,21 @@ export function healthyChecks(backend: BackendConfig): Health {
       return {
         summary: "Tart 2.40 and QEMU 11.1 on mac-1",
         checkedAt: at,
-        checks: [ok("mac", "Mac mac-1", "Answers over SSH; Tart 2.40, QEMU 11.1."), ok("vms", "VMs", "1 of 2 VMs in use."), ok("memory", "Memory", "41 GiB free, 16 GiB kept back."), ok("images", "Images", "bb-box-macos, bb-box-linux, bb-box-ios and windows-11-arm are on mac-1."), ok("ios", "Shared iOS hosts", "1 host, 6 slots, 1 ready.")],
+        checks: [ok("mac", "Mac mac-1", "Answers over SSH; Tart 2.40, QEMU 11.1."), ok("vms", "VMs", "1 of 2 VMs in use."), ok("memory", "Memory", "41 GiB free, 16 GiB kept back."), ok("images", "Images", "alia-box-macos, alia-box-linux, alia-box-ios and windows-11-arm are on mac-1."), ok("ios", "Shared iOS hosts", "1 host, 6 slots, 1 ready.")],
       };
     case "ssh-pool":
       return {
         summary: "2 machines, 2 free",
         checkedAt: at,
         checks: [ok("build-1", "Machine build-1", "Linux, answers, free."), ok("mac-2", "Machine mac-2", "macOS 26.1, answers, free; lends iOS slots.")],
-        notes: ["Give this public key to setup.sh and setup-mac.sh:\nssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExampleKeyOnly bb-box"],
+        notes: ["Give this public key to setup.sh and setup-mac.sh:\nssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExampleKeyOnly alia-box"],
       };
     case "docker":
       return backend.id === "docker"
         ? { summary: "Docker 29.8 on docker-1", checkedAt: at, checks: [ok("daemon", "Docker", "29.8.2 on docker-1, 32 cores, 64 GiB."), ok("images", "Images", "bbbox/linux:1, bbbox/linux-desktop:1 and bbbox/linux-desktop-wayland:1 are built."), ok("network", "Network", "bbbox exists.")] }
-        : { summary: "Docker 29.8 on pc-1", checkedAt: at, checks: [ok("relay", "BB machine pc-1", "Connected; Docker answers through BB."), ok("daemon", "Docker", "29.8.1, 16 cores, 93 GiB."), ok("images", "Images", "bbbox/linux:1 is built.")] };
+        : { summary: "Docker 29.8 on pc-1", checkedAt: at, checks: [ok("relay", "VesnALIA machine pc-1", "Connected; Docker answers through VesnALIA."), ok("daemon", "Docker", "29.8.1, 16 cores, 93 GiB."), ok("images", "Images", "bbbox/linux:1 is built.")] };
     case "microsandbox":
-      return { summary: "msb 0.7.7 on mac-1", checkedAt: at, checks: [ok("host", "Host mac-1", "Answers over SSH; macOS on Apple silicon."), ok("msb", "msb", "0.7.7, installed by bb-box."), ok("images", "Images", "bbbox/linux:1-arm64 is imported.")] };
+      return { summary: "msb 0.7.7 on mac-1", checkedAt: at, checks: [ok("host", "Host mac-1", "Answers over SSH; macOS on Apple silicon."), ok("msb", "msb", "0.7.7, installed by alia-box."), ok("images", "Images", "bbbox/linux:1-arm64 is imported.")] };
     case "proxmox-qemu":
       return { summary: "Proxmox VE 9.2 on pve-1", checkedAt: at, checks: [ok("api", "Proxmox API", "Uses Proxmox LXC's connection."), ok("t9104", "Windows template 9104", "Built 20 October."), ok("t9105", "Linux template 9105", "Built 24 October; /dev/kvm off."), ok("t9106", "Android template 9106", "Built 22 October; Pixel 8 and Pixel Fold booted once.")] };
     case "hetzner":
@@ -349,8 +349,8 @@ export const BOX_COUNTS: Record<string, number> = { "proxmox-lxc": 4, tart: 1, "
 export const DOCKER_MACHINES: readonly DockerMachine[] = [
   { id: "host_pc1example", name: "pc-1", docker: "29.8.1", facts: "16 cores · 93 GiB memory", connected: true },
   { id: "host_pc2example", name: "pc-2", docker: "29.8.1", facts: "64 cores · 128 GiB memory", connected: true },
-  { id: "host_pc3example", name: "pc-3", docker: "28.1.1", facts: "8 cores · 32 GiB memory", connected: true, fault: "Docker answers, but cannot start a container: permission denied on /var/run/docker.sock. Add BB's user on pc-3 to the docker group, then check again." },
-  { id: "host_bb1example", name: "bb-1", docker: null, facts: "", connected: true },
+  { id: "host_pc3example", name: "pc-3", docker: "28.1.1", facts: "8 cores · 32 GiB memory", connected: true, fault: "Docker answers, but cannot start a container: permission denied on /var/run/docker.sock. Add VesnALIA's user on pc-3 to the docker group, then check again." },
+  { id: "host_bb1example", name: "alia-1", docker: null, facts: "", connected: true },
   { id: "host_mac1example", name: "mac-1", docker: null, facts: "", connected: true },
   { id: "host_mac2example", name: "mac-2", docker: null, facts: "", connected: true },
   { id: "host_build1example", name: "build-1", docker: null, facts: "", connected: true },
@@ -360,7 +360,7 @@ export const STANDARD_IMAGES: readonly StandardImage[] = [
   { name: "Linux template 9100", backend: "Proxmox LXC on pve-1", age: "4 days", due: null, last: "Rebuilt last night", lastState: "refreshed" },
   { name: "GPU desktop template 9101", backend: "Proxmox LXC on pve-1", age: "4 days", due: null, last: "Rebuilt last night", lastState: "refreshed" },
   { name: "bbbox/linux:1", backend: "Docker on docker-1", age: "9 days", due: "over a week old", last: "Waited last night: docker-1 had no room", lastState: "waiting" },
-  { name: "bb-box-macos", backend: "Tart on mac-1", age: "16 days", due: "macOS 26.1 is out", last: "Failed last night: Tart could not clone it, as mac-1's disk was full", lastState: "failed" },
+  { name: "alia-box-macos", backend: "Tart on mac-1", age: "16 days", due: "macOS 26.1 is out", last: "Failed last night: Tart could not clone it, as mac-1's disk was full", lastState: "failed" },
   { name: "Windows template 9104", backend: "Proxmox QEMU on pve-1", age: "8 days", due: null, last: "Skipped last night: built within the week", lastState: "skipped" },
 ];
 
@@ -372,8 +372,8 @@ export const SETUP_GROUPS: readonly { readonly title: string; readonly descripti
 ];
 
 export const NEEDS: Record<string, string> = {
-  docker: "Docker on BB's server, a host over SSH, or a BB machine.",
-  microsandbox: "A Linux host with KVM, or a Mac. bb-box installs msb.",
+  docker: "Docker on VesnALIA's server, a host over SSH, or a VesnALIA machine.",
+  microsandbox: "A Linux host with KVM, or a Mac. alia-box installs msb.",
   "ssh-pool": "Linux machines or Macs you can reach over SSH, set up with setup.sh.",
   "proxmox-lxc": "A Proxmox VE host and four setup scripts run on it.",
   "proxmox-qemu": "Proxmox LXC set up first, and a template from build.sh.",

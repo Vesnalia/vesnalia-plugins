@@ -100,7 +100,7 @@ export function cardReachLine(gpuChosen: boolean, hosts: readonly { readonly car
 export function gpuWaysLine(gpu: GpuResizing, form: string | null, part: GpuPart | null = null): string {
   const share = gpu.share === "live" ? "Shared and whole card switch at once where the card allows it." : gpu.share === "no" ? "Shared and whole card cannot switch here." : "Shared and whole card switch with a restart.";
   const fixed = gpu.add === "no" && gpu.move === "no";
-  const reach = form === "Docker" && part !== null && part !== "none" ? ", and every box with Docker in it can open every card. None and Whole card are what BB Box places, not what a box can reach" : "";
+  const reach = form === "Docker" && part !== null && part !== "none" ? ", and every box with Docker in it can open every card. None and Whole card are what VesnALIA Box places, not what a box can reach" : "";
   const rest = fixed
     ? form === "Docker"
       ? ` On Docker a GPU cannot be added, removed or moved${reach}.`

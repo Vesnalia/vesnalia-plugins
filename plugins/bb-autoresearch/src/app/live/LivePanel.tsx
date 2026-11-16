@@ -3,7 +3,7 @@
 // a threadPanelAction; it resolves its study from the thread it was opened
 // on (the study thread or a worker thread), or from `params.slug` when the
 // study page or the header badge opened it.
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -22,7 +22,7 @@ export function slugFromParams(params: unknown): string | null {
 
 export function LivePanel({ threadId, params }: { threadId: string; params: unknown }) {
   const rpc = useStudyRpc();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const fromParams = slugFromParams(params);
   const [resolved, setResolved] = useState<{ slug: string; workerKey: number | null } | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);

@@ -5,7 +5,7 @@ description: Configure or troubleshoot the Letta Agents sidebar plugin, its loca
 
 # Letta Agents
 
-This plugin displays local Letta agents in BB's sidebar and synchronizes their providers through the enabled `bb--provider-acp-next` adapter. It does not provision Letta or expose a `bb letta` command.
+This plugin displays local Letta agents in VesnALIA's sidebar and synchronizes their providers through the enabled `alia--provider-acp-next` adapter. It does not provision Letta or expose a `alia letta` command.
 
 Read the plugin README before setup or troubleshooting. Configure `container`, `dockerExecutable`, and `appServerUrl` for the user's installation. New chats additionally require existing `projectId`, `hostId`, and `environmentProviderId` values. Never copy another installation's IDs.
 
@@ -22,6 +22,6 @@ The plugin backend reads the fixed `/root/.letta/` container layout using local 
 
 ## Troubleshooting
 
-For stale roster warnings, check Docker access, container layout, and app-server connectivity without displaying credentials. For new-chat target errors, obtain the user's existing BB project, host, and workspace-provider IDs. A saved, ownership-verified conversation may resume despite an unavailable backend; a new chat requires current synchronization.
+For stale roster warnings, check Docker access, container layout, and app-server connectivity without displaying credentials. For new-chat target errors, obtain the user's existing VesnALIA project, host, and workspace-provider IDs. A saved, ownership-verified conversation may resume despite an unavailable backend; a new chat requires current synchronization.
 
-Use `npm test` and `npm run typecheck` for isolated source checks. These do not establish live sidebar, streaming, or installation correctness. Follow BB's browser and plugin authoring guidance for live verification; ask before build/reload or release operations.
+Use `npm test` and `npm run typecheck` for isolated source checks. These do not establish live sidebar, streaming, or installation correctness. Follow VesnALIA's browser and plugin authoring guidance for live verification; ask before build/reload or release operations.

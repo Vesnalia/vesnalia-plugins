@@ -164,7 +164,7 @@ export function mountSwitcher(options: {
   const consume = (e: KeyboardEvent) => { e.preventDefault(); e.stopImmediatePropagation(); };
   const down = (e: KeyboardEvent) => {
     // Track physical modifier state, not the lifetime of one event dispatch.
-    // BB may invoke its command after a microtask checkpoint.
+    // VesnALIA may invoke its command after a microtask checkpoint.
     activeModifier = heldKey(e);
     if (!root) return;
     if (e.key === 'Escape') { consume(e); close(); }

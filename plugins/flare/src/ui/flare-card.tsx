@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Markdown, experimental_copyToClipboard, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { Markdown, experimental_copyToClipboard, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -22,7 +22,7 @@ export function KindIcon({ kind, className }: { kind: FlareDto["kind"]; classNam
 }
 
 export function ChildLink({ child, compact = false }: { child: NonNullable<FlareDto["fromChild"]>; compact?: boolean }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <button
       type="button"

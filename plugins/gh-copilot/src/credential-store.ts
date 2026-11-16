@@ -7,7 +7,7 @@ export type CommandRunner = (
 const SECRET_TIMEOUT_MS = 5_000;
 const WINDOWS_SECRET_TIMEOUT_MS = 15_000;
 const GH_TIMEOUT_MS = 5_000;
-const TARGETS_ENV = 'BB_COPILOT_CREDENTIAL_TARGETS';
+const TARGETS_ENV = 'ALIA_COPILOT_CREDENTIAL_TARGETS';
 
 export function windowsCredentialTargets(service: string, account: string): string[] {
   return [`${service}/${account}`, `${account}.${service}`];
@@ -30,7 +30,7 @@ Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 using FILETIME = System.Runtime.InteropServices.ComTypes.FILETIME;
-public static class BbCopilotCredential {
+public static class AliaCopilotCredential {
   [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
   private struct CREDENTIAL {
     public int Flags; public int Type; public string TargetName; public string Comment;
@@ -59,7 +59,7 @@ public static class BbCopilotCredential {
 '@
 foreach ($target in ($env:${TARGETS_ENV} -split "\`n")) {
   if ($target) {
-    $blob = [BbCopilotCredential]::Read($target)
+    $blob = [AliaCopilotCredential]::Read($target)
     if ($blob) { [Console]::Out.Write($blob); exit 0 }
   }
 }

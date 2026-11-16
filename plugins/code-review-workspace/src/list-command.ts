@@ -6,14 +6,14 @@ import { reviewIdentity } from "../lib/review-identity";
 import type { TurnGroup } from "../lib/turn";
 
 export const LIST_USAGE = [
-  "usage: bb review list [--json]",
+  "usage: VesnALIA review list [--json]",
   "",
-  "Lists your reviews in this bb as All reviews orders them: Needs review first, as it's ordered, then Waiting on author, Reviewed, and Archive, each latest first.",
+  "Lists your reviews in this VesnALIA as All reviews orders them: Needs review first, as it's ordered, then Waiting on author, Reviewed, and Archive, each latest first.",
   "  --json  each review's key, id, title, the name you gave it, whose turn, status, and its agent's thread",
-  "          (agentThreadId, for bb thread tell; null with no agent yet: use bb review ask) as JSON",
+  "          (agentThreadId, for VesnALIA thread tell; null with no agent yet: use VesnALIA review ask) as JSON",
 ].join("\n");
 
-/** The refusal a review's own agent gets for `bb review list`, as it may work only on its own review. */
+/** The refusal a review's own agent gets for `alia review list`, as it may work only on its own review. */
 export const NOT_LISTED = "This agent works only on its own review, so it can't list reviews.";
 
 const SECTION: Record<TurnGroup, string> = { needs: "Needs review", waiting: "Waiting on author", reviewed: "Reviewed", archive: "Archive" };
@@ -21,7 +21,7 @@ const STATUS: Record<string, string> = { ready: "guide ready", generating: "guid
 
 type CliResult = { exitCode: number; stdout?: string; stderr?: string };
 
-/** `bb review list`: the reviews, decorated with their turns as the panel gets them, in All reviews' order. `agents`: each review's agent thread, by its key. */
+/** `alia review list`: the reviews, decorated with their turns as the panel gets them, in All reviews' order. `agents`: each review's agent thread, by its key. */
 export function runListCommand(reviews: ReviewItem[], argv: string[], agents: ReadonlyMap<string, string> = new Map()): CliResult {
   let json = false;
   for (const arg of argv) {
@@ -48,7 +48,7 @@ export function runListCommand(reviews: ReviewItem[], argv: string[], agents: Re
     ...(review.url ? { url: review.url } : {}),
   })));
   if (json) return { exitCode: 0, stdout: JSON.stringify({ reviews: rows.map((row) => ({ ...row, agentThreadId: agents.get(row.key) ?? null })) }, null, 2) };
-  if (!rows.length) return { exitCode: 0, stdout: "No reviews yet. Start one with `bb review <pr-url | git-ref>`." };
+  if (!rows.length) return { exitCode: 0, stdout: "No reviews yet. Start one with `alia review <pr-url | git-ref>`." };
   // A PR's title is its author's words, quoted so an agent reads it as data, whatever it says; the name too.
   return { exitCode: 0, stdout: rows.map((row) => `${row.id}  ${row.key}  ${JSON.stringify(row.title)}${row.name ? ` named ${JSON.stringify(row.name)}` : ""} · ${row.whoseTurn} (${row.turn}) · ${row.status}`).join("\n") };
 }

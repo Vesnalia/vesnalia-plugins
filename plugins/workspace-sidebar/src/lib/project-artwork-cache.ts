@@ -1,4 +1,4 @@
-// Ported from the bb-homepage plugin (MIT, Copyright (c) 2026 Yusuf Akbulut):
+// Ported from the alia-homepage plugin (MIT, Copyright (c) 2026 Yusuf Akbulut):
 // https://github.com/yusuf8834/bb-homepage
 
 export interface ProjectIconCacheOptions {

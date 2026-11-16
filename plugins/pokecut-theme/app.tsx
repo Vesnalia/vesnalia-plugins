@@ -1,10 +1,10 @@
-// bb-plugin-pokecut-theme — app side of the chat layer. The styling itself is in
+// alia-plugin-pokecut-theme — app side of the chat layer. The styling itself is in
 // the theme CSS (themes/pokecut.css), switched per feature by attributes on <html>
 // that mirror the stored preferences. The overlay renders nothing; the settings
 // section is the bilingual editor for those preferences.
 import "./app.css";
 import { useEffect } from "react";
-import { definePluginApp, useBbContext, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaContext, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { usePrefs } from "./prefs";
 import { useThemeActive } from "./theme-active";
 import { rootAttributes } from "./settings";
@@ -24,8 +24,8 @@ const ROOT_ATTRIBUTES = ["data-pk-loader", "data-pk-chips", "data-pk-off"];
 
 function PokecutChatLayer() {
   const { prefs, rpc } = usePrefs();
-  const { threadId } = useBbContext();
-  // Everything below touches BB's DOM, so it runs only while the Pokecut theme is
+  const { threadId } = useAliaContext();
+  // Everything below touches VesnALIA's DOM, so it runs only while the Pokecut theme is
   // selected; with any other theme the plugin leaves the interface alone.
   const active = useThemeActive();
   const { loader, chips, off } = rootAttributes(prefs ?? {});
@@ -84,13 +84,13 @@ function PokecutChatLayer() {
   return null;
 }
 
-// BB accepts file-preview intents only from components rendered inside the thread
+// VesnALIA accepts file-preview intents only from components rendered inside the thread
 // view, so this lives in a (render-nothing) thread header slot, not the overlay.
 function FilePreviewLinks() {
   const { rpc } = usePrefs();
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const active = useThemeActive();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   useEffect(
     () =>
       active && threadId

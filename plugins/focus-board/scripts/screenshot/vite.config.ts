@@ -30,7 +30,7 @@ export default defineConfig({
     alias: [
       // The harness renders the real app against a simulated SDK.
       {
-        find: /^@get-bb\/plugin-sdk\/app$/,
+        find: /^@get-alia\/plugin-sdk\/app$/,
         replacement: fileURLToPath(new URL("./mock-sdk.tsx", import.meta.url)),
       },
       { find: "@", replacement: repoRoot },

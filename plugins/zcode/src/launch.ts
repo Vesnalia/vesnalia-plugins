@@ -37,7 +37,7 @@ export function resolveLaunch(
   env: NodeJS.ProcessEnv = process.env,
 ): LaunchSpec {
   const options = launchOptionsSchema.parse(raw ?? {});
-  const explicit = options.executable.trim() || env.BB_ZCODE_EXECUTABLE?.trim();
+  const explicit = options.executable.trim() || env.ALIA_ZCODE_EXECUTABLE?.trim();
   const bundle = "/Applications/ZCode.app/Contents/Resources/glm/zcode.cjs";
   const executable =
     explicit ||
@@ -81,7 +81,7 @@ export function resolveLaunch(
   }
   return {
     command: isScript
-      ? env.BB_ZCODE_NODE_EXECUTABLE || options.nodeExecutable
+      ? env.ALIA_ZCODE_NODE_EXECUTABLE || options.nodeExecutable
       : executable,
     args: [
       ...(isScript ? [executable] : []),
@@ -97,5 +97,5 @@ export function resolveLaunch(
 
 export function workspaceRef(cwd: string) {
   const workspacePath = resolve(cwd || homedir());
-  return { workspacePath, workspaceKey: `bb:${workspacePath}` };
+  return { workspacePath, workspaceKey: `alia:${workspacePath}` };
 }

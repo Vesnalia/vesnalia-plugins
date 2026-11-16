@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { ComposerDraftSnapshot, PluginComposerApi } from "@get-bb/plugin-sdk/app";
+import type { ComposerDraftSnapshot, PluginComposerApi } from "@vesnalia/plugin-sdk/app";
 import { makePrompt, writePrompt, writePromptAfterSearch } from "../composer.ts";
 import { readFileSync } from "node:fs";
 import ts from "typescript";

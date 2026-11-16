@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { UrlLink, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../../src/rpc-contract";
 import type { MergeNote, ReviewLifecycle } from "../../src/store";
@@ -70,7 +70,7 @@ export function becameText(became: NonNullable<ReviewLifecycle["became"]>, id: s
  */
 export function usePrNotices(targetKey: string, review: PrReviewed | null, onChanged: () => void, onNeedsYou: () => void): Notice[] {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const container = useFullscreenPortalContainer();
   const [busy, setBusy] = useState<string | null>(null);
   if (!review) return [];

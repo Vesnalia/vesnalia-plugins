@@ -32,7 +32,7 @@ describe("--version", () => {
     expect(result.stdout.trim()).toMatch(/^\d+\.\d+\.\d+$/u);
   });
 
-  it("accepts the short form BB's probe may use", async () => {
+  it("accepts the short form VesnALIA's probe may use", async () => {
     const result = await runAdapter(["-v"], env({ KILO_BIN: kilo }));
     expect(result.code).toBe(0);
     expect(result.stdout.trim()).toBe("7.8.3");

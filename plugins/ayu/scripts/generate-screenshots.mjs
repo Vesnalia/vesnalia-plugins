@@ -2,23 +2,23 @@
 //
 //   npm run screenshots
 //
-// No BB instance is involved and no BB data is read. The page below loads
+// No VesnALIA instance is involved and no VesnALIA data is read. The page below loads
 // `themes/<id>.css` verbatim on top of a small base layer that reproduces the
-// handful of token derivations BB performs but the plugin deliberately leaves
+// handful of token derivations VesnALIA performs but the plugin deliberately leaves
 // alone (`--foreground`, `--ring`, the `--sh-*` defaults, …). Every colour that
 // lands on screen is therefore a colour the plugin actually ships — the layout
-// is a stand-in for BB's chrome, the palette is not a stand-in for anything.
+// is a stand-in for VesnALIA's chrome, the palette is not a stand-in for anything.
 //
-// The code block is highlighted by sugar-high, the same library BB highlights
+// The code block is highlighted by sugar-high, the same library VesnALIA highlights
 // chat code blocks with, so the `--sh-*` mapping is exercised for real rather
 // than approximated by hand-written spans.
 //
-// Class names here must not collide with Tailwind utility names: `bb plugin
+// Class names here must not collide with Tailwind utility names: `alia plugin
 // build` runs its Tailwind scan over the whole repo except dist/ and
 // node_modules/, so a bare `grow` or `hidden` in this file ships a dead rule in
 // the plugin's own dist/app.css.
 //
-// Fonts: BB asks for Inter and falls back to the platform sans. This script
+// Fonts: VesnALIA asks for Inter and falls back to the platform sans. This script
 // pins the fallback to the system UI stack so a machine without Inter installed
 // still produces a clean render.
 
@@ -76,7 +76,7 @@ export const readThemeCss = (id) => readFile(resolve(repoRoot, `themes/${id}.css
 
 // --- base layer --------------------------------------------------------------
 
-// The tokens BB derives and the plugin's stylesheet never touches. Mirrors
+// The tokens VesnALIA derives and the plugin's stylesheet never touches. Mirrors
 // apps/app/src/components/ui/theme.css and markdown-code-highlight.css; the
 // neutral anchors here exist only so the page renders if a theme fails to load.
 const BASE_TOKENS = `
@@ -106,8 +106,8 @@ const BASE_TOKENS = `
 }
 
 /* sugar-high's own defaults. The plugin overrides the seven hue tokens and
-   leaves identifier/sign/space to BB — which is what these lines supply. */
-.bb-code-highlight {
+   leaves identifier/sign/space to VesnALIA — which is what these lines supply. */
+.alia-code-highlight {
   --sh-space: inherit;
   --sh-identifier: var(--foreground);
   --sh-sign: var(--muted-foreground);
@@ -119,7 +119,7 @@ const BASE_TOKENS = `
   --sh-entity: oklch(0.47 0.13 292);
   --sh-jsxliterals: oklch(0.47 0.13 292);
 }
-.dark .bb-code-highlight {
+.dark .alia-code-highlight {
   --sh-keyword: oklch(0.74 0.14 18);
   --sh-string: oklch(0.78 0.12 150);
   --sh-class: oklch(0.76 0.11 250);
@@ -419,7 +419,7 @@ export function appHtml(theme) {
 <div class="frame app" style="width:1000px;height:760px">
   <aside class="sidebar">
     <div class="brand">
-      <span class="mark">b</span><span class="name">bb</span>
+      <span class="mark">b</span><span class="name">VesnALIA</span>
       <span class="fill"></span><span class="kbd">⌘K</span>
     </div>
     <div class="side-label">Projects</div>
@@ -442,7 +442,7 @@ export function appHtml(theme) {
         <div class="prose">Added <code>rateLimit()</code> in front of the router. Buckets are keyed per client and refill on read, so an idle client keeps its full burst.</div>
         <div class="block">
           <div class="block-head"><span class="file">src/limiter.ts</span><span class="tag">typescript</span></div>
-          <pre class="code bb-code-highlight">${highlight(CODE_SAMPLE)}</pre>
+          <pre class="code alia-code-highlight">${highlight(CODE_SAMPLE)}</pre>
         </div>
         <div class="block">
           <div class="block-head"><span>zsh</span><span class="tag">npm test</span></div>

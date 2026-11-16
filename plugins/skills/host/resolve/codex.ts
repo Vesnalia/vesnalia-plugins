@@ -20,7 +20,7 @@ export interface CodexResolveOptions {
  * `/etc/codex/skills`.
  *
  * `.codex/skills` is read alongside each `.agents/skills` and at `$CODEX_HOME`
- * because older Codex builds looked there and bb's own skill list still counts
+ * because older Codex builds looked there and VesnALIA's own skill list still counts
  * `~/.codex/skills` as a Codex root. It sits second within each scope, so when
  * a name lives in both the documented directory wins.
  *

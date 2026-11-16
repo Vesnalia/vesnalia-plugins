@@ -1,5 +1,5 @@
 // An on-screen keyboard covers the bottom of the page without resizing it (iOS shrinks only the visual viewport), so
-// what's under it, such as the comment box you're typing in, can't be scrolled into view. BB may shrink its pane to
+// what's under it, such as the comment box you're typing in, can't be scrolled into view. VesnALIA may shrink its pane to
 // what shows above the keyboard itself, so the keyboard covers none of the workspace: it's up all the same.
 import { useEffect } from "react";
 import { TEXT_FIELD } from "./review-shortcuts";
@@ -98,7 +98,7 @@ export function useKeyboardInset(el: HTMLElement | null) {
       else if (lastField) { cancelAnimationFrame(frame); clearTimeout(timer); }
     };
     update();
-    // BB resizing its pane after the keyboard came up, rather than the keyboard covering it.
+    // VesnALIA resizing its pane after the keyboard came up, rather than the keyboard covering it.
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
     observer?.observe(el);
     viewport.addEventListener("resize", update);

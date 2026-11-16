@@ -1,10 +1,10 @@
-// bb-plugin-show-latest-threads - backend entry.
+// alia-plugin-show-latest-threads - backend entry.
 //
 // Declares the plugin settings (language, recent-only filter and its
 // window) and one RPC method the sidebar list calls when the user flips the
 // filter or picks 24/48/72 hours in the list itself. Settings stay the single
 // store, so the Settings page and every open window agree.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const LANGUAGE_OPTIONS = ["System", "English", "Русский"];
@@ -22,8 +22,8 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     recentOnly: {
       type: "boolean",
       label: "Show only recent threads / Только недавние треды",
@@ -46,7 +46,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     set_view: async ({ recentOnly, windowHours }) => {
       await settings.experimental_set({
         ...(recentOnly === undefined ? {} : { recentOnly }),
@@ -56,6 +56,6 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info("loaded");
-  bb.onDispose(() => bb.log.info("disposed"));
+  alia.log.info("loaded");
+  alia.onDispose(() => alia.log.info("disposed"));
 }

@@ -1,6 +1,6 @@
 // Data layer for the Prompts plugin: queue + snippets over one SQLite db.
 // Pure db-in/db-out functions so the unit tests can drive them against a
-// plain better-sqlite3 handle without a bb host.
+// plain better-sqlite3 handle without a VesnALIA host.
 //
 // A prompt lives in exactly one of three scopes:
 // - thread  — belongs to one thread; the only scope that can arm or schedule.
@@ -104,7 +104,7 @@ export type UsedVia =
   | "cli"
   | "scheduled"
   | "cross-thread"
-  | "bb-queue"
+  | "alia-queue"
   | "tool";
 
 export interface Prompt {

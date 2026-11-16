@@ -21,7 +21,7 @@ import {
   transportErrorCode,
 } from "./upstream-transport.js";
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { registerPoolCli } from "./cli.js";
 import { ExternalClients, combinedTokens } from "./external-clients.js";
 import {
@@ -115,91 +115,91 @@ export function helloResponse(): Response {
 export function createAccountPoolPlugin(
   options: AccountPoolPluginOptions = {},
 ) {
-  return async function accountPoolPlugin(bb: BbPluginApi): Promise<void> {
+  return async function accountPoolPlugin(alia: AliaPluginApi): Promise<void> {
     let currentSettings = accountPoolConfigSchema.parse(
-      (await bb.storage.kv.get("config")) ?? {},
+      (await alia.storage.kv.get("config")) ?? {},
     );
     // Persist the sanitized configuration so retired switches are not retained.
-    await bb.storage.kv.set("config",currentSettings);
+    await alia.storage.kv.set("config",currentSettings);
     let onAdmissionLimitsChanged = () => {};
     const config: AccountPoolConfigController = {
       get: () => currentSettings,
       set: async (input) => {
         const update = accountPoolConfigSetInputSchema.parse(input);
-        if(update.browserHostId && !(await bb.sdk.hosts.list()).some(h=>h.id===update.browserHostId))throw Error('Account browser host must be enrolled.');
+        if(update.browserHostId && !(await alia.sdk.hosts.list()).some(h=>h.id===update.browserHostId))throw Error('Account browser host must be enrolled.');
         const next = accountPoolConfigSchema.parse({
           ...currentSettings,
           ...update,
         });
-        await bb.storage.kv.set("config", next);
+        await alia.storage.kv.set("config", next);
         const limitChanged = next.maxConcurrentRequestsPerAccount !== currentSettings.maxConcurrentRequestsPerAccount || next.claudeRequestStartIntervalMs !== currentSettings.claudeRequestStartIntervalMs;
         currentSettings = next;
         if (limitChanged) onAdmissionLimitsChanged();
-        bb.realtime.publish(ACCOUNT_POOL_CONFIG_CHANGED, {});
+        alia.realtime.publish(ACCOUNT_POOL_CONFIG_CHANGED, {});
         return next;
       },
     };
     const secretDir = path.join(
-      bb.server.experimental_dataDir,
+      alia.server.experimental_dataDir,
       "plugins",
-      bb.pluginId,
+      alia.pluginId,
       "secrets",
       "accounts",
     );
-    const accounts = new AccountStore(bb.storage.kv, secretDir);
+    const accounts = new AccountStore(alia.storage.kv, secretDir);
     await accounts.initialize();
     const now = options.now ?? Date.now;
     const management = new ManagementAccess(path.join(secretDir, 'management'), now);
-    await management.initialize().catch(() => bb.log.warn('Management access is unavailable; account administration remains locked.'));
-    bb.onDispose(() => management.close());
+    await management.initialize().catch(() => alia.log.warn('Management access is unavailable; account administration remains locked.'));
+    alia.onDispose(() => management.close());
     let maintenanceActivity=()=>0;
-    const maintenance = new PoolMaintenance(value=>bb.storage.kv.set('model-maintenance-v1',value),now,()=>maintenanceActivity());
-    await maintenance.initialize(await bb.storage.kv.get('model-maintenance-v1'));
-    const update = new PoolUpdate(bb,now);
-    const nativeSessions=new NativeSessions(bb.storage.kv,now,async(hostId,caller)=>{
+    const maintenance = new PoolMaintenance(value=>alia.storage.kv.set('model-maintenance-v1',value),now,()=>maintenanceActivity());
+    await maintenance.initialize(await alia.storage.kv.get('model-maintenance-v1'));
+    const update = new PoolUpdate(alia,now);
+    const nativeSessions=new NativeSessions(alia.storage.kv,now,async(hostId,caller)=>{
       if(!(await routing.isProviderEnabled('agy')))throw Error('Native AGY routing disabled');
-      if(!(await bb.sdk.hosts.list()).some(host=>host.id===hostId))throw Error('Native executor host not enrolled');
+      if(!(await alia.sdk.hosts.list()).some(host=>host.id===hostId))throw Error('Native executor host not enrolled');
       if(currentSettings.vpnGuardEnabled){
         await createGuardNetworkCheck(async(provider,signal)=>bindGuardNetworkDecision(
-          await bb.sdk.plugins.callRpc({pluginId:'vpn-guard',method:'networkDecisionV2',input:{hostId,provider},outputSchema:hostGuardDecisionSchema,signal}),hostId))('agy');
+          await alia.sdk.plugins.callRpc({pluginId:'vpn-guard',method:'networkDecisionV2',input:{hostId,provider},outputSchema:hostGuardDecisionSchema,signal}),hostId))('agy');
       }else if(currentSettings.vpnOnlyProviders.includes('agy'))throw Error('Native protected host requires its Guard decision');
       if(caller.threadId&&await routing.isBypassed(caller.threadId))throw new NativeSessionError(403,'native-thread-bypassed');
     },executor=>{if(executor.execution){try{egress.validateNativeProfile(executor.execution.profile,executor.hostId);}
       catch{throw new NativeSessionError(503,'native-execution-unprepared');}}},async(requestId,signal)=>{
-      await bb.sdk.plugins.callRpc({pluginId:'oxi-op',method:'runPreparedTask',input:{requestId},
+      await alia.sdk.plugins.callRpc({pluginId:'oxi-op',method:'runPreparedTask',input:{requestId},
         outputSchema:z.object({completed:z.literal(true)}).strict(),signal});
     });
     nativeSessions.admissionCheck=()=>{if(maintenance.status().lease)throw new NativeSessionError(503,'POOL_MAINTENANCE');};
     await nativeSessions.initialize();
-    registerNativeUnlockRpc(bb,nativeSessions);
-    bb.onDispose(()=>nativeSessions.close());
+    registerNativeUnlockRpc(alia,nativeSessions);
+    alia.onDispose(()=>nativeSessions.close());
     const hubTokens = new HubTokenStore(secretDir, now);
     await hubTokens.initialize();
-    const enrolledHosts = await bb.sdk.hosts.list();
+    const enrolledHosts = await alia.sdk.hosts.list();
     await hubTokens.prune(enrolledHosts.map((host) => host.id));
     const externalClients = new ExternalClients(path.join(secretDir, "external-clients"));
     await externalClients.tokens.initialize();
-    const routing = new RoutingStore(bb.storage.kv, now);
-    // bb resolves provider env with a null thread and project when it lists models.
+    const routing = new RoutingStore(alia.storage.kv, now);
+    // VesnALIA resolves provider env with a null thread and project when it lists models.
     const isThreadBypassed = async (context: ProviderEnvScope) =>
       context.threadId !== null && (await routing.isBypassed(context.threadId));
     const scopedHubToken = (context: ProviderEnvScope) =>
       context.threadId === null
         ? hubTokens.forProject(context.hostId, context.projectId)
         : hubTokens.forThread(context.hostId, context.projectId, context.threadId);
-    const db = bb.storage.database();
-    bb.storage.migrate(db, QUOTA_MIGRATIONS);
+    const db = alia.storage.database();
+    alia.storage.migrate(db, QUOTA_MIGRATIONS);
     const quotas = new QuotaStore(db, now);
-    const journal=new RequestJournal(path.join(bb.server.experimental_dataDir,'plugins',bb.pluginId,'request-metadata','recent.json'),now);
+    const journal=new RequestJournal(path.join(alia.server.experimental_dataDir,'plugins',alia.pluginId,'request-metadata','recent.json'),now);
     await journal.initialize();
-    bb.onDispose(()=>journal.close());
-    const egress=new AccountEgress(bb.storage.kv,async()=>{const id=(await bb.sdk.system.config()).primaryHostId;if(!id)throw Error("Pool server machine unknown");return id;},async id=>{const account=await accounts.get(id);return account?.provider==='claude'||account?.provider==='codex';},new ProxySecrets(path.join(secretDir,'account-proxies')),now,options.httpScopeEnforcement??createManagedConnectSource(now));
+    alia.onDispose(()=>journal.close());
+    const egress=new AccountEgress(alia.storage.kv,async()=>{const id=(await alia.sdk.system.config()).primaryHostId;if(!id)throw Error("Pool server machine unknown");return id;},async id=>{const account=await accounts.get(id);return account?.provider==='claude'||account?.provider==='codex';},new ProxySecrets(path.join(secretDir,'account-proxies')),now,options.httpScopeEnforcement??createManagedConnectSource(now));
     await egress.initialize();
-    bb.onDispose(()=>egress.close());
+    alia.onDispose(()=>egress.close());
     const transport =
       options.fetch === undefined ? createUpstreamTransport() : null;
     const upstreamFetch = options.fetch ?? transport?.fetch;
-    // BB HTTP registrations are exact paths. Cache only validated model IDs,
+    // VesnALIA HTTP registrations are exact paths. Cache only validated model IDs,
     // never credentials, and derive routes from authenticated provider catalogs.
     const agyModels=new Set<string>();
     const registerAgyModels=async(ids:string[])=>{
@@ -208,15 +208,15 @@ export function createAccountPoolPlugin(
       if(next.size>512)throw Error('Antigravity registered model limit reached');
       for(const id of next){
         if(agyModels.has(id))continue;
-        for(const action of ['generateContent','streamGenerateContent'])bb.http.route('POST',`/agy/v1beta/models/${id}:${action}`,context=>hub.handle(context.req.raw,'agy'),{auth:'none'});
+        for(const action of ['generateContent','streamGenerateContent'])alia.http.route('POST',`/agy/v1beta/models/${id}:${action}`,context=>hub.handle(context.req.raw,'agy'),{auth:'none'});
         agyModels.add(id);
       }
-      await bb.storage.kv.set('agy-model-ids-v1',[...agyModels]);
+      await alia.storage.kv.set('agy-model-ids-v1',[...agyModels]);
     };
-    await registerAgyModels((await bb.storage.kv.get<string[]>('agy-model-ids-v1'))??[]);
+    await registerAgyModels((await alia.storage.kv.get<string[]>('agy-model-ids-v1'))??[]);
     const guardAccess:GuardServerAccess={
-      serverHost:async(signal)=>(await bb.sdk.system.config({signal})).primaryHostId,
-      decision:(hostId,provider,signal)=>bb.sdk.plugins.callRpc({pluginId:'vpn-guard',method:'networkDecisionV2',input:{hostId,provider},outputSchema:hostGuardDecisionSchema,signal}),
+      serverHost:async(signal)=>(await alia.sdk.system.config({signal})).primaryHostId,
+      decision:(hostId,provider,signal)=>alia.sdk.plugins.callRpc({pluginId:'vpn-guard',method:'networkDecisionV2',input:{hostId,provider},outputSchema:hostGuardDecisionSchema,signal}),
     };
     const hub = createHub({
       maintenance,
@@ -224,7 +224,7 @@ export function createAccountPoolPlugin(
       pinnedRouteAccount:sessionKey=>egress.pinnedAccount(sessionKey),
       nativeAgyManaged:()=>nativeSessions.managed(),
       agyModels:registerAgyModels,
-      route: hubBasePath(bb.pluginId),
+      route: hubBasePath(alia.pluginId),
       accounts,
       quotas,
       journal,
@@ -235,7 +235,7 @@ export function createAccountPoolPlugin(
       vpnPayload: options.vpnPayload,
       guardCheck:createGuardNetworkCheck(serverGuardRead(guardAccess),undefined,event=>{
         if(event.attempt===1&&(event.outcome==='allowed'||event.outcome==='direct'))return;
-        bb.log.warn('Account Pooler Guard permission '+JSON.stringify(event));
+        alia.log.warn('Account Pooler Guard permission '+JSON.stringify(event));
       }),
       now,
       refreshUrl: options.refreshUrl,
@@ -254,29 +254,29 @@ export function createAccountPoolPlugin(
       maxAffinityBindings: options.maxAffinityBindings,
       onUpstreamError: (provider, error, context) => {
         const diagnostic = describeTransportError(error);
-        bb.log.warn(
+        alia.log.warn(
           `Account Pooler ${provider} transport failed: ${diagnostic.category==='policy'?diagnostic.code:transportErrorCode(error)}. ` +
           JSON.stringify({ ...diagnostic, ...context }),
         );
       },
       onAccountsChanged: () =>
-        bb.realtime.publish(ACCOUNT_POOL_ACCOUNTS_CHANGED, {}),
+        alia.realtime.publish(ACCOUNT_POOL_ACCOUNTS_CHANGED, {}),
     });
     onAdmissionLimitsChanged = () => hub.admissionLimitsChanged();
     if (transport !== null) {
-      bb.providers.experimental_contributeEnv("acp-oxi-devin-pool", async context => {
+      alia.providers.experimental_contributeEnv("acp-oxi-devin-pool", async context => {
         if (!(await operations.isRoutingEnabled("devin")) || await isThreadBypassed(context)) return [];
         return [
           { name: "OXI_DEVIN_POOL_TOKEN", value: await scopedHubToken(context), reason: "Project-bound Account Pooler token" },
-          { name: "OXI_DEVIN_POOL_URL", value: { serverPath: hubBasePath(bb.pluginId) }, reason: "Account Pooler route" },
+          { name: "OXI_DEVIN_POOL_URL", value: { serverPath: hubBasePath(alia.pluginId) }, reason: "Account Pooler route" },
         ];
       });
-      bb.onDispose(async () => {
+      alia.onDispose(async () => {
         await hub.stop();
         await transport.destroy();
       });
     }
-    bb.background.service("network-policy",{async start(signal){
+    alia.background.service("network-policy",{async start(signal){
       while(!signal.aborted){await hub.enforceNetworkPolicy();await new Promise<void>(resolve=>{
         const done=()=>{clearTimeout(timer);signal.removeEventListener("abort",done);resolve();};
         const timer=setTimeout(done,1000);signal.addEventListener("abort",done,{once:true});if(signal.aborted)done();
@@ -288,11 +288,11 @@ export function createAccountPoolPlugin(
       hub,
       hubTokens,
       routing,
-      () => bb.sdk.hosts.list(),
+      () => alia.sdk.hosts.list(),
       async (hostId) =>
-        (await bb.sdk.system.providerStates({ hostId })).providers,
+        (await alia.sdk.system.providerStates({ hostId })).providers,
       now,
-      () => bb.realtime.publish(ACCOUNT_POOL_ACCOUNTS_CHANGED, {}),
+      () => alia.realtime.publish(ACCOUNT_POOL_ACCOUNTS_CHANGED, {}),
       (accountId) => hub.refreshUsage(accountId, true),
     );
     const retryProviders:Readonly<Record<string,PoolProvider>>={
@@ -301,7 +301,7 @@ export function createAccountPoolPlugin(
       'acp-agy':'agy','acp-opencode-neuraldeep':'neuraldeep','acp-opencode-go':'opencode-go','acp-opencode-kimi':'kimi',
       'acp-opencode-kimi-highspeed':'kimi',
     };
-    await registerNetworkRetry(bb,async(threadId,providerId)=>{
+    await registerNetworkRetry(alia,async(threadId,providerId)=>{
       const provider=retryProviders[providerId];
       return !!provider && !await routing.isBypassed(threadId) &&
         await operations.isRoutingEnabled(provider) && await operations.hasUsableEnabledAccount(provider);
@@ -336,21 +336,21 @@ export function createAccountPoolPlugin(
       addAccount: (authenticated) => operations.addCodexOAuth(authenticated),
     });
     if ((await accounts.list()).every((account) => !account.enabled)) {
-      bb.status.needsConfiguration(
-        "Add and enable a Claude or Codex account with `bb pool account add`.",
+      alia.status.needsConfiguration(
+        "Add and enable a Claude or Codex account with `alia pool account add`.",
       );
     }
-    const browserHost=bb.hosts.experimental_client({contract:browserHostContract});
+    const browserHost=alia.hosts.experimental_client({contract:browserHostContract});
     const browser=createBrowserRouter({
       getHostId:()=>config.get().browserHostId,
       proxyForAccount:id=>egress.browserProxy(id),
       routedAccountIds:()=>Object.keys(egress.snapshot().bindings),
-      listHosts:()=>bb.sdk.hosts.list(),accounts:()=>operations.list(),
+      listHosts:()=>alia.sdk.hosts.list(),accounts:()=>operations.list(),
       callHost:(method,input,hostId)=>method==='open'
         ? browserHost.call('open',browserHostContract.open.input.parse(input),{hostId,timeoutMs:60000})
         : browserHost.call('list',browserHostContract.list.input.parse(input),{hostId,timeoutMs:10000}),
-      localOpen:async(query,url)=>openAccountBrowser({accounts:await operations.list(),routedAccountIds:Object.keys(egress.snapshot().bindings),query,url,proxyUrl:await egress.browserProxy(query),dataDir:bb.server.experimental_dataDir,pluginId:bb.pluginId,vpnStatusFile:config.get().vpnStatusFile}),
-      localList:async()=>listBrowserProfiles({accounts:await operations.list(),routedAccountIds:Object.keys(egress.snapshot().bindings),dataDir:bb.server.experimental_dataDir,pluginId:bb.pluginId}),
+      localOpen:async(query,url)=>openAccountBrowser({accounts:await operations.list(),routedAccountIds:Object.keys(egress.snapshot().bindings),query,url,proxyUrl:await egress.browserProxy(query),dataDir:alia.server.experimental_dataDir,pluginId:alia.pluginId,vpnStatusFile:config.get().vpnStatusFile}),
+      localList:async()=>listBrowserProfiles({accounts:await operations.list(),routedAccountIds:Object.keys(egress.snapshot().bindings),dataDir:alia.server.experimental_dataDir,pluginId:alia.pluginId}),
     });
     maintenanceActivity=()=>hub.maintenanceActivity();
     const maintenanceApi = {
@@ -360,9 +360,9 @@ export function createAccountPoolPlugin(
       release:(owner:string)=>maintenance.release(owner),
       interrupt:async(owner:string)=>{hub.interruptForMaintenance(owner);return maintenance.status();},
     };
-    registerManagementRpc(bb, management,
+    registerManagementRpc(alia, management,
       createRpcHandlers(operations, login, codexLogin, config, async (threadId) => {
-        const thread = await bb.sdk.threads.get({ threadId, include: "environment" });
+        const thread = await alia.sdk.threads.get({ threadId, include: "environment" });
         const provider:PoolProvider|null = ({codex:'codex','claude-code':'claude','acp-oxi-cursor':'cursor','acp-oxi-devin-pool':'devin','acp-opencode-zai':'zai','acp-agy':'agy','acp-opencode-neuraldeep':'neuraldeep','acp-opencode-go':'opencode-go','acp-opencode-kimi':'kimi','acp-opencode-kimi-highspeed':'kimi'} as Record<string,PoolProvider>)[thread.providerId]??null;
         const empty = { account: null, lastUsedAt: null };
         if (provider === null) return { state: "unsupported", ...empty };
@@ -373,7 +373,7 @@ export function createAccountPoolPlugin(
         const direct=hub.threadObservation(provider,hostId,threadId,thread.projectId);
         if(direct!==null){const account=(await operations.list()).find(item=>item.id===direct.accountId)??null;return {state:'observed',account,lastUsedAt:direct.lastUsedAt};}
         if(provider!=='codex'&&provider!=='claude')return {state:'unobserved',...empty};
-        const events = await bb.sdk.threads.events.list({ threadId, order: "desc", limit: "5", types: ["thread/started", "thread/identity", "turn/started"] });
+        const events = await alia.sdk.threads.events.list({ threadId, order: "desc", limit: "5", types: ["thread/started", "thread/identity", "turn/started"] });
         let sessionId: string | null = null;
         for (const event of events) {
           const data = event.data;
@@ -386,15 +386,15 @@ export function createAccountPoolPlugin(
         if (observation === null) return { state: "unobserved", ...empty };
         const account = (await operations.list()).find((item) => item.id === observation.accountId) ?? null;
         return { state: "observed", account, lastUsedAt: observation.lastUsedAt };
-      }, async () => (await bb.sdk.projects.list({ includePersonal: true })).map(project => ({ id: project.id, name: project.name })), async ({ accountId, url }) => {
+      }, async () => (await alia.sdk.projects.list({ includePersonal: true })).map(project => ({ id: project.id, name: project.name })), async ({ accountId, url }) => {
         const inventory = await operations.list();
         if (!inventory.some(account => account.id === accountId)) throw new Error("Account no longer exists");
         await browser.open(accountId,url);
         return { opened: true };
       }, agyLogin, url=>browser.openAgyLogin(url),egress,()=>nativeSessions.accounts(),(accountId,projects,revision)=>nativeSessions.setProjects(accountId,projects,revision),(executorId,revision)=>nativeSessions.prefer(executorId,revision),maintenanceApi,update,input=>nativeSessions.updateAccount(input),input=>nativeSessions.probe(input,async()=>{try{return (await browserHost.call('nativeProbeCapabilities',{executorId:input.executorId},{hostId:input.hostId,timeoutMs:5000})).protocol===1;}catch{return false;}},request=>browserHost.call('nativeProbe',request,{hostId:input.hostId,timeoutMs:125000}))),
     );
-    registerPoolCli(managementCli(bb, management), operations, login, codexLogin, config, externalClients,browser,nativeSessions,egress,input=>runGuardProbe(guardAccess,input),(threadId,requestId)=>hub.cursorStreamProbe(threadId,requestId),maintenanceApi,input=>nativeSessions.preflight(input,()=>browserHost.call('nativeProbeCapabilities',{executorId:input.executorId},{hostId:input.hostId,timeoutMs:5000})));
-    registerUsageSource(bb, hub, false);
+    registerPoolCli(managementCli(alia, management), operations, login, codexLogin, config, externalClients,browser,nativeSessions,egress,input=>runGuardProbe(guardAccess,input),(threadId,requestId)=>hub.cursorStreamProbe(threadId,requestId),maintenanceApi,input=>nativeSessions.preflight(input,()=>browserHost.call('nativeProbeCapabilities',{executorId:input.executorId},{hostId:input.hostId,timeoutMs:5000})));
+    registerUsageSource(alia, hub, false);
     const proxiedHealth = async (provider: PoolProvider, context: {hostId: string; projectId?: string | null}) => {
       const readiness = await operations.providerReadiness(provider, context.projectId ?? null);
       if (readiness.reason === "routing-disabled") return null;
@@ -402,8 +402,8 @@ export function createAccountPoolPlugin(
       if (!("projectId" in context)) return null;
       return {status: "unavailable" as const, label: "Unavailable", statusMessage: "Provider access is unavailable."};
     };
-    if (transport !== null) bb.providers.experimental_contributeEnvHealth("acp-oxi-devin-pool", context => proxiedHealth("devin", context));
-    bb.providers.experimental_contributeEnv("claude-code", async (context) => {
+    if (transport !== null) alia.providers.experimental_contributeEnvHealth("acp-oxi-devin-pool", context => proxiedHealth("devin", context));
+    alia.providers.experimental_contributeEnv("claude-code", async (context) => {
       if (
         !(await operations.isRoutingEnabled("claude")) ||
         (await isThreadBypassed(context))
@@ -417,7 +417,7 @@ export function createAccountPoolPlugin(
       return [
         {
           name: "ANTHROPIC_BASE_URL",
-          value: { serverPath: hubBasePath(bb.pluginId) },
+          value: { serverPath: hubBasePath(alia.pluginId) },
           reason: "Routed through the Account Pooler hub",
         },
         {
@@ -439,10 +439,10 @@ export function createAccountPoolPlugin(
         },
       ];
     });
-    bb.providers.experimental_contributeEnvHealth("claude-code", context =>
+    alia.providers.experimental_contributeEnvHealth("claude-code", context =>
       proxiedHealth("claude", context),
     );
-    bb.providers.experimental_contributeEnv("codex", async (context) => {
+    alia.providers.experimental_contributeEnv("codex", async (context) => {
       if (
         !(await operations.isRoutingEnabled("codex")) ||
         (await isThreadBypassed(context))
@@ -453,7 +453,7 @@ export function createAccountPoolPlugin(
       return [
         {
           name: "CODEX_OPENAI_BASE_URL",
-          value: { serverPath: `${hubBasePath(bb.pluginId)}/v1` },
+          value: { serverPath: `${hubBasePath(alia.pluginId)}/v1` },
           reason: "Routed through the Account Pooler hub",
         },
         {
@@ -463,13 +463,13 @@ export function createAccountPoolPlugin(
         },
       ];
     });
-    bb.providers.experimental_contributeEnvHealth("codex", context =>
+    alia.providers.experimental_contributeEnvHealth("codex", context =>
       proxiedHealth("codex", context),
     );
-    bb.http.route('GET','/agy/v1beta/models',context=>hub.handle(context.req.raw,'agy'),{auth:'none'});
-    bb.http.route('POST','/native/agy',context=>nativeHttp(context.req.raw,nativeSessions,
+    alia.http.route('GET','/agy/v1beta/models',context=>hub.handle(context.req.raw,'agy'),{auth:'none'});
+    alia.http.route('POST','/native/agy',context=>nativeHttp(context.req.raw,nativeSessions,
       async token=>{const caller=await combinedTokens(hubTokens,externalClients.tokens).authenticateContext(token);return caller?.accountScope?null:caller;}),{auth:'none'});
-    bb.providers.experimental_contributeEnv('acp-agy',async context=>{
+    alia.providers.experimental_contributeEnv('acp-agy',async context=>{
       if(nativeSessions.managed()){
         const catalog=context.threadId===null;
         const executorId=!(await operations.isRoutingEnabled('agy'))||await isThreadBypassed(context)?null:
@@ -477,16 +477,16 @@ export function createAccountPoolPlugin(
         // Missing admission never restores local fallback or old gateway auth.
         return [{name:'OXI_AGY_NATIVE_REQUIRED',value:'1',reason:'Official native AGY managed by Pooler'},
           {name:'OXI_AGY_NATIVE_EXECUTOR',value:executorId??'',reason:'Explicit host and project executor'},
-          {name:'OXI_AGY_NATIVE_URL',value:{serverPath:`${hubBasePath(bb.pluginId)}/native/agy`},reason:'Session admission only; no Google tokens'},
+          {name:'OXI_AGY_NATIVE_URL',value:{serverPath:`${hubBasePath(alia.pluginId)}/native/agy`},reason:'Session admission only; no Google tokens'},
           {name:'OXI_AGY_NATIVE_CATALOG_ONLY',value:catalog?'1':'0',reason:'Catalog admission never grants task access'},
           {name:'OXI_AGY_NATIVE_TOKEN',value:catalog?'':await scopedHubToken(context),reason:'Task credential or explicit private catalog pointer; never sent to AGY'}];
       }
       if(!(await operations.isRoutingEnabled('agy'))||await isThreadBypassed(context))return [];
       const token=await scopedHubToken(context);
-      return [{name:'OXI_AGY_POOL_BASE_URL',value:{serverPath:`${hubBasePath(bb.pluginId)}/agy`},reason:'Native Antigravity gateway through Pooler'},
+      return [{name:'OXI_AGY_POOL_BASE_URL',value:{serverPath:`${hubBasePath(alia.pluginId)}/agy`},reason:'Native Antigravity gateway through Pooler'},
         {name:'OXI_AGY_POOL_AUTH_TOKEN',value:token,reason:'Pool credential only; Google OAuth remains server-side'}];
     });
-    bb.providers.experimental_contributeEnvHealth('acp-agy',async context=>{
+    alia.providers.experimental_contributeEnvHealth('acp-agy',async context=>{
       if(!nativeSessions.managed())return proxiedHealth('agy',context);
       const projectId='projectId' in context&&typeof context.projectId==='string'?context.projectId:null;
       const executor=projectId?await nativeSessions.executorFor({hostId:context.hostId,projectId}):await nativeSessions.catalogExecutorFor(context.hostId);
@@ -526,7 +526,7 @@ export function createAccountPoolPlugin(
     // answers that itself instead of forwarding: it hands the machine back its own pool
     // token, so the real subscription credential never leaves this host, and every later
     // request arrives bearing a token the hub can recognise and swap for a minted one.
-    bb.http.route(
+    alia.http.route(
       "POST",
       `/${CURSOR_MOUNT_PREFIX}${CURSOR_EXCHANGE_PATH}`,
       async (context) => {
@@ -543,7 +543,7 @@ export function createAccountPoolPlugin(
       { auth: "none" },
     );
     for (const method of ["POST", "GET"] as const) {
-      bb.http.route(method, "/cursor/rpc", (context) => {
+      alia.http.route(method, "/cursor/rpc", (context) => {
         if (!isCursorRpcPath(context.req.raw.headers.get(CURSOR_RPC_PATH_HEADER) ?? "")) {
           return Response.json({ error: "Invalid Cursor RPC path." }, { status: 400 });
         }
@@ -553,7 +553,7 @@ export function createAccountPoolPlugin(
     for (const path of CURSOR_PROXIED_PATHS) {
       if (path === CURSOR_EXCHANGE_PATH) continue;
       for (const method of ["POST", "GET"] as const) {
-        bb.http.route(
+        alia.http.route(
           method,
           `/${CURSOR_MOUNT_PREFIX}${path}`,
           (context) => hub.handle(context.req.raw, "cursor"),
@@ -562,7 +562,7 @@ export function createAccountPoolPlugin(
       }
     }
     for (const rpcPath of DEVIN_PROXIED_PATHS) {
-      bb.http.route(
+      alia.http.route(
         "POST",
         `/${DEVIN_MOUNT_PREFIX}${rpcPath}`,
         async (context) =>
@@ -573,7 +573,7 @@ export function createAccountPoolPlugin(
       );
     }
     for (const cursorProviderId of ["acp-oxi-cursor"]) {
-      bb.providers.experimental_contributeEnv(cursorProviderId, async (context) => {
+      alia.providers.experimental_contributeEnv(cursorProviderId, async (context) => {
       if (
         !(await operations.isRoutingEnabled("cursor")) ||
         (await isThreadBypassed(context))
@@ -585,7 +585,7 @@ export function createAccountPoolPlugin(
         {
           name: "CURSOR_API_ENDPOINT",
           value: {
-            serverPath: `${hubBasePath(bb.pluginId)}/${CURSOR_MOUNT_PREFIX}`.replace(
+            serverPath: `${hubBasePath(alia.pluginId)}/${CURSOR_MOUNT_PREFIX}`.replace(
               /\/$/u,
               "",
             ),
@@ -613,7 +613,7 @@ export function createAccountPoolPlugin(
         },
       ];
     });
-      bb.providers.experimental_contributeEnvHealth(cursorProviderId, context =>
+      alia.providers.experimental_contributeEnvHealth(cursorProviderId, context =>
         proxiedHealth("cursor", context),
       );
     }
@@ -621,14 +621,14 @@ export function createAccountPoolPlugin(
       // OpenCode Go multiplexes Anthropic Messages next to Chat Completions
       // and Responses on the same base URL — route all three wires through.
       for (const route of (entry.provider === "neuraldeep" ? ["chat/completions", "models"] : entry.provider === "opencode-go" ? ["chat/completions", "responses", "messages", "models"] : ["chat/completions", "responses", "models"])) {
-        bb.http.route(
+        alia.http.route(
           entry.provider === "neuraldeep" && route === "models" ? "GET" : "POST",
           `/${entry.mountPrefix}v1/${route}`,
           (context) => hub.handle(context.req.raw, entry.provider),
           { auth: "none" },
         );
       }
-      bb.providers.experimental_contributeEnv(
+      alia.providers.experimental_contributeEnv(
         entry.providerId,
         async (context) => {
           if (
@@ -642,7 +642,7 @@ export function createAccountPoolPlugin(
             {
               name: entry.baseUrlEnv,
               value: {
-                serverPath: `${hubBasePath(bb.pluginId)}/${entry.mountPrefix}v1`,
+                serverPath: `${hubBasePath(alia.pluginId)}/${entry.mountPrefix}v1`,
               },
               reason: "Routed through the Account Pooler hub",
             },
@@ -654,7 +654,7 @@ export function createAccountPoolPlugin(
           ];
         },
       );
-      bb.providers.experimental_contributeEnvHealth(entry.providerId, context =>
+      alia.providers.experimental_contributeEnvHealth(entry.providerId, context =>
         proxiedHealth(entry.provider, context),
       );
     }
@@ -662,7 +662,7 @@ export function createAccountPoolPlugin(
       "acp-opencode-kimi",
       "acp-opencode-kimi-highspeed",
     ]) {
-      bb.providers.experimental_contributeEnv(providerId, async (context) => {
+      alia.providers.experimental_contributeEnv(providerId, async (context) => {
         if (
           !(await operations.isRoutingEnabled("kimi")) ||
           (await isThreadBypassed(context))
@@ -674,7 +674,7 @@ export function createAccountPoolPlugin(
           {
             name: "OXI_KIMI_BASE_URL",
             value: {
-              serverPath: `${hubBasePath(bb.pluginId)}/${KIMI_MOUNT_PREFIX}v1`,
+              serverPath: `${hubBasePath(alia.pluginId)}/${KIMI_MOUNT_PREFIX}v1`,
             },
             reason: "Routed through the Account Pooler hub",
           },
@@ -685,16 +685,16 @@ export function createAccountPoolPlugin(
           },
         ];
       });
-      bb.providers.experimental_contributeEnvHealth(providerId, context =>
+      alia.providers.experimental_contributeEnvHealth(providerId, context =>
         proxiedHealth("kimi", context),
       );
     }
-    bb.onDispose(async () => {
+    alia.onDispose(async () => {
       agyLogin.dispose();
       codexLogin.dispose();
       let timer: ReturnType<typeof setTimeout> | null = null;
       try {
-        const inspection = inspectDisableState(bb, operations);
+        const inspection = inspectDisableState(alia, operations);
         const timeout = new Promise<typeof DISPOSE_INSPECTION_TIMEOUT>(
           (resolve) => {
             timer = setTimeout(
@@ -706,34 +706,34 @@ export function createAccountPoolPlugin(
         );
         const result = await Promise.race([inspection, timeout]);
         if (result === DISPOSE_INSPECTION_TIMEOUT) {
-          bb.log.debug("Account Pooler disable inspection timed out.");
+          alia.log.debug("Account Pooler disable inspection timed out.");
           return;
         }
-        if (result !== null) bb.log.warn(result);
+        if (result !== null) alia.log.warn(result);
       } catch (error) {
-        bb.log.debug(
+        alia.log.debug(
           `Account Pooler disable inspection skipped: ${error instanceof Error ? error.message : String(error)}`,
         );
       } finally {
         if (timer !== null) clearTimeout(timer);
       }
     });
-    for(const provider of ADDITIONAL_BUDGET_PROVIDERS)bb.http.route('GET',`/budget/${provider}`,async context=>
+    for(const provider of ADDITIONAL_BUDGET_PROVIDERS)alia.http.route('GET',`/budget/${provider}`,async context=>
       hub.providerBudget(context.req.raw,provider,await routing.isProviderEnabled(provider),threadId=>routing.isBypassed(threadId)),{auth:'none'});
-    bb.http.route("GET", "/budget/codex", async context => hub.codexBudget(
+    alia.http.route("GET", "/budget/codex", async context => hub.codexBudget(
       context.req.raw, await routing.isProviderEnabled("codex"), threadId => routing.isBypassed(threadId),
     ), { auth: "none" });
-    bb.http.route("GET", "/budget/zai", async context => {
+    alia.http.route("GET", "/budget/zai", async context => {
       try {return await hub.zaiBudget(context.req.raw,await routing.isProviderEnabled('zai'),threadId=>routing.isBypassed(threadId));}
       catch {return Response.json({error:'Pool budget evidence unavailable.'},{status:503,headers:{'cache-control':'no-store'}});}
     }, {auth:'none'});
-    bb.http.route(
+    alia.http.route(
       "POST",
       "/v1/messages",
       (context) => hub.handle(context.req.raw, "claude"),
       { auth: "none" },
     );
-    bb.http.route(
+    alia.http.route(
       "POST",
       "/v1/messages/count_tokens",
       (context) => hub.handle(context.req.raw, "claude"),
@@ -745,14 +745,14 @@ export function createAccountPoolPlugin(
       "/v1/images/edits",
       "/v1/alpha/search",
     ]) {
-      bb.http.route(
+      alia.http.route(
         "POST",
         route,
         (context) => hub.handle(context.req.raw, "codex"),
         { auth: "none" },
       );
     }
-    bb.http.route(
+    alia.http.route(
       "GET",
       "/v1/models",
       (context) => hub.handle(context.req.raw, "codex"),
@@ -762,34 +762,34 @@ export function createAccountPoolPlugin(
       `/${KIMI_MOUNT_PREFIX}v1/messages`,
       `/${KIMI_MOUNT_PREFIX}v1/messages/count_tokens`,
     ]) {
-      bb.http.route(
+      alia.http.route(
         "POST",
         route,
         (context) => hub.handle(context.req.raw, "kimi"),
         { auth: "none" },
       );
     }
-    bb.http.route("HEAD", "/api/hello", () => helloResponse(), {
+    alia.http.route("HEAD", "/api/hello", () => helloResponse(), {
       auth: "none",
     });
-    bb.background.service("hub", {
+    alia.background.service("hub", {
       start: (signal) => hub.start(signal),
     });
   };
 }
 
 async function inspectDisableState(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   operations: PoolOperations,
 ): Promise<string | null> {
-  const installed = await bb.sdk.plugins.list();
+  const installed = await alia.sdk.plugins.list();
   const disabled =
-    installed.plugins.find((plugin) => plugin.id === bb.pluginId)?.enabled ===
+    installed.plugins.find((plugin) => plugin.id === alia.pluginId)?.enabled ===
     false;
   if (!disabled) return null;
   const warnings = await operations.routedThreadsWithoutLocalLogin();
   if (warnings.length === 0) return null;
-  return `Account Pooler disabled with ${warnings.length} recently routed thread${warnings.length === 1 ? "" : "s"} on machines without a local Claude login. Run bb pool status before disabling to inspect them.`;
+  return `Account Pooler disabled with ${warnings.length} recently routed thread${warnings.length === 1 ? "" : "s"} on machines without a local Claude login. Run alia pool status before disabling to inspect them.`;
 }
 
 export default createAccountPoolPlugin();

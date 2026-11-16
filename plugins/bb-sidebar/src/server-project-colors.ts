@@ -11,7 +11,7 @@ export function createServerProjectColors(ctx: ServerContext) {
       return { colors: Object.fromEntries(rows.map((row) => [row.project_id, row.color])) };
     },
     async setProjectColor({ projectId, color }) {
-      await ctx.bb.sdk.projects.get({ projectId });
+      await ctx.alia.sdk.projects.get({ projectId });
       if (color === null) {
         ctx.db.prepare("DELETE FROM project_colors WHERE project_id = ?").run(projectId);
       } else {
@@ -21,7 +21,7 @@ export function createServerProjectColors(ctx: ServerContext) {
           )
           .run(projectId, color);
       }
-      ctx.bb.realtime.publish(PROJECT_COLORS_CHANNEL, { projectId });
+      ctx.alia.realtime.publish(PROJECT_COLORS_CHANNEL, { projectId });
       return { ok: true };
     },
   } satisfies Pick<ServerHandlers, "getProjectColors" | "setProjectColor">;

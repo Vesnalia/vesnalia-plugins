@@ -2,7 +2,7 @@
 // shown for an empty query, frecency and shortcut matching. Pure (no React, no
 // SDK at runtime) so node:test covers it; palette.tsx renders the sections this
 // returns and owns every side effect.
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { PrStatus } from "./prs";
 import type { FlowState } from "./server";
 import { needsMe } from "./needs-me.ts";
@@ -218,7 +218,7 @@ export type PaletteFlow = Pick<FlowState, "awaiting" | "readyToGo" | "running" |
 /** An action the palette can rank; palette.tsx keeps what it runs, by id. */
 export type PaletteAction = { id: string; title: string; keywords?: string; thread?: boolean };
 export type Snippet = { text: string; ranges: Range[] };
-/** A thread bb's full-text search found, with the message that matched. */
+/** A thread VesnALIA's full-text search found, with the message that matched. */
 export type ServerHit = {
   threadId: string;
   title: string;
@@ -246,7 +246,7 @@ export type PaletteInput = {
   frecency: Frecency;
   actions: readonly PaletteAction[];
   server: readonly ServerHit[] | null;
-  /** The open thread's checkout files matching the query, from bb's quick open; null outside the files scope. */
+  /** The open thread's checkout files matching the query, from VesnALIA's quick open; null outside the files scope. */
   files: readonly { name: string; path: string }[] | null;
   now: number;
 };
@@ -622,7 +622,7 @@ export function search(input: PaletteInput, scope: Scope, raw: string): Section[
   }
 
   if (scope === "files") {
-    // bb's quick open already ranked these; keep its order and highlight what matches.
+    // VesnALIA's quick open already ranked these; keep its order and highlight what matches.
     input.files?.forEach((file, order) => {
       const match = matchFields(tokens, [
         { key: "title", text: file.name, weight: 1 },
@@ -747,9 +747,9 @@ type Keybinding = { command: string; shortcut: Shortcut; when?: { all?: readonly
 const PLATFORM_FLAG: Record<Platform, string> = { mac: "macPlatform", windows: "windowsPlatform", linux: "linuxPlatform" };
 
 /**
- * The keys bb's "Search threads" is bound to on this platform. The palette
+ * The keys VesnALIA's "Search threads" is bound to on this platform. The palette
  * takes over exactly those, so a rebinding moves it and unbinding turns it off.
- * Without bb's config (older hosts, a failed read) it assumes the default.
+ * Without VesnALIA's config (older hosts, a failed read) it assumes the default.
  */
 export function searchShortcuts(keybindings: readonly Keybinding[] | null | undefined, platform: Platform): Shortcut[] {
   if (!keybindings) return [DEFAULT_SEARCH_SHORTCUT];

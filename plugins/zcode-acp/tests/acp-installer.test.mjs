@@ -134,7 +134,7 @@ test("verification uses the final executable path before activating the installa
   assert.equal(managedInstallation(f.root).executable, verifiedPath);
 });
 
-test("the built BB bridge launches managed Rust for model discovery and thread construction", async t => {
+test("the built VesnALIA bridge launches managed Rust for model discovery and thread construction", async t => {
   const f = fixture(t);
   const { runJson } = await import("../scripts/native-cli.mjs");
   const real = resolveCommand(process.env.ZCODE_ACP_BIN || "zcode-acp");

@@ -27,7 +27,7 @@ describe("parking threads", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "thr_done", title: "Finished work" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({
@@ -49,8 +49,8 @@ describe("parking threads", () => {
     expect(screen.queryByText("Finished work")).toBeNull();
     fireEvent.click(within(shelf).getByRole("button", { expanded: false }));
     expect(within(shelf).getByText("Finished work")).toBeDefined();
-    expect(within(shelf).getByRole("listitem").textContent).toMatch(/bb\s*·\s*Finished work/);
-    expect(within(shelf).getByLabelText("bb · Finished work")).toBeDefined();
+    expect(within(shelf).getByRole("listitem").textContent).toMatch(/alia\s*·\s*Finished work/);
+    expect(within(shelf).getByLabelText("VesnALIA · Finished work")).toBeDefined();
   });
 
   it("keeps a working thread out of the shelves and offers no park action", async () => {
@@ -70,7 +70,7 @@ describe("parking threads", () => {
             },
           }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       // Settled in the store, but still working: it must stay visible.
       rpc: {
@@ -103,7 +103,7 @@ describe("parking threads", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "thr_busy", title: "Not done", ...overrides })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({
@@ -130,7 +130,7 @@ describe("parking threads", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "thr_park", title: "Quiet" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: { listLifecycle: () => ({ rows: [] }), park, resume },
     });
@@ -190,7 +190,7 @@ describe("parking threads", () => {
             updatedAt: Date.now() - 2 * 60_000,
           }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: { listLifecycle: () => ({ rows: [] }), snooze, settle },
     });
@@ -230,7 +230,7 @@ describe("parking threads", () => {
             thread({ id: "asking", title: "Asking work", indicator: "runtime", hasPendingInteraction: true }),
             thread({ id: "idle", title: "Idle work" }),
           ],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         },
         rpc: {
           // Fixture threads are old; keep them all in Active.
@@ -265,7 +265,7 @@ describe("parking threads", () => {
             thread({ id: "parent", title: "Parent work", indicator: "runtime" }),
             thread({ id: "child", parentThreadId: "parent", title: "Child work", indicator: "runtime" }),
           ],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         },
         rpc: {
           getSidebarSettings: () => ({
@@ -306,7 +306,7 @@ describe("parking threads", () => {
           thread({ id: "done", title: "Done parent" }),
           thread({ id: "done-child", parentThreadId: "done", title: "Done child" }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         getSidebarSettings: () => ({
@@ -354,7 +354,7 @@ describe("parking threads", () => {
           thread({ id: "parent", title: "Pinned parent", isPinned: true }),
           thread({ id: "child", parentThreadId: "parent", indicator: "runtime" }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         getSidebarSettings: () => ({
@@ -384,7 +384,7 @@ describe("parking threads", () => {
             thread({ id: "done", title: "Done work", indicator: "unread-success", isUnread: true }),
             thread({ id: "pinned", title: "Pinned busy", indicator: "runtime", isPinned: true }),
           ],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         },
         rpc: {
           getSidebarSettings: () => ({
@@ -422,7 +422,7 @@ describe("parking threads", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "open", title: "Open work" }), thread({ id: "done", title: "Settled work" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         getSidebarSettings: () => ({

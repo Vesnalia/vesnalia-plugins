@@ -1,17 +1,17 @@
 // Local bench provider: implements the bench provider contract against local
 // temp directories and child processes. A "machine" is a directory on this
 // machine; nothing is isolated and nothing costs anything. It exists for
-// bb-autoresearch's tests and live smoke tests, and as a worked example of the
+// alia-autoresearch's tests and live smoke tests, and as a worked example of the
 // contract (contract.ts is a copy of the repo's src/bench-provider/contract.ts).
 //
-// All logic lives here so tests can drive it without BB; server.ts only
+// All logic lives here so tests can drive it without VesnALIA; server.ts only
 // registers the handlers.
 import { spawn, type ChildProcess } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
-import type { ExperimentalPluginRpcHandlerContext } from "@get-bb/plugin-sdk";
+import type { ExperimentalPluginRpcHandlerContext } from "@vesnalia/plugin-sdk";
 import type { z } from "zod";
 import {
   BENCH_PROVIDER_CALLER,
@@ -28,11 +28,11 @@ import {
 } from "./contract.ts";
 
 export interface LocalBenchProviderOptions {
-  /** Where machines and the registry live. Default `<tmpdir>/bb-bench-provider-local`. */
+  /** Where machines and the registry live. Default `<tmpdir>/alia-bench-provider-local`. */
   root?: string;
   /** Clock in ms for expiresAt, expiry and provisioning. Default Date.now. */
   now?: () => number;
-  /** Plugin id accepted as caller. Default "bb-autoresearch". */
+  /** Plugin id accepted as caller. Default "alia-autoresearch". */
   allowedCaller?: string;
   /** Live (not gone) machines at once. Default 4. */
   maxHosts?: number;
@@ -69,7 +69,7 @@ type Handler<M extends BenchProviderMethod> = (
 export type LocalBenchProviderHandlers = { [M in BenchProviderMethod]: Handler<M> };
 
 export interface LocalBenchProvider {
-  /** Keyed by contract method name; pass to `bb.rpc.register(benchProviderContract, handlers)`. */
+  /** Keyed by contract method name; pass to `alia.rpc.register(benchProviderContract, handlers)`. */
   handlers: LocalBenchProviderHandlers;
   readonly root: string;
   /** Stop timers and kill running execs. Machines and state.json stay. */
@@ -127,7 +127,7 @@ const METHODS = Object.keys(benchProviderContract) as BenchProviderMethod[];
 const EXEC_ID_RE = /^lbx_[0-9a-f]{8,64}$/u;
 
 export function createLocalBenchProvider(opts: LocalBenchProviderOptions = {}): LocalBenchProvider {
-  const root = resolve(opts.root ?? join(os.tmpdir(), "bb-bench-provider-local"));
+  const root = resolve(opts.root ?? join(os.tmpdir(), "alia-bench-provider-local"));
   const now = opts.now ?? Date.now;
   const allowedCaller = opts.allowedCaller ?? BENCH_PROVIDER_CALLER;
   const maxHosts = opts.maxHosts ?? 4;

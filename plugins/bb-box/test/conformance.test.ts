@@ -11,7 +11,7 @@ import { NamespaceBackend } from "../src/backends/namespace/backend.ts";
 import { ProxmoxLxcBackend } from "../src/backends/proxmox-lxc/backend.ts";
 import { TartBackend } from "../src/backends/tart/backend.ts";
 import type { CommandTransport } from "../src/transports/types.ts";
-import { conformance, type ConformanceBb } from "./conformance/suite.ts";
+import { conformance, type ConformanceAlia } from "./conformance/suite.ts";
 import { FakeBackend } from "./fake-backend.ts";
 import { dockerConfig, fakeDockerHost } from "./fake-docker.ts";
 import { hetznerConfig, hetznerWorld } from "./fake-hetzner-world.ts";
@@ -24,8 +24,8 @@ import { FAKE_MAC_HELPER, FAKE_SSH_BINARY, MemoryStorage, fakeSsh, lxcConfig, te
 const root = tempDir("fake-backend");
 const machineSize = "the fake box is a directory on the test machine, so it has the machine's cores and memory";
 
-/** Stands in for BB: a box is connected while it answers, once bootstrap has run in it. */
-function fakeBb(): ConformanceBb {
+/** Stands in for VesnALIA: a box is connected while it answers, once bootstrap has run in it. */
+function fakeAlia(): ConformanceAlia {
   const daemons = new Map<string, CommandTransport>();
   return {
     enrol: async (box, command) => {
@@ -48,7 +48,7 @@ await conformance({
   create: (storage, installId) => new FakeBackend({ root, storage, host: virtualHost, installId, id: "fake-virtual", resize: "backend", wayland: true }),
   // The fake numbers its guests g1, g2 and so on from a counter.
   reuse: async (_storage, ref) => virtualHost.set("counter", Number(ref.slice(1)) - 1),
-  bb: fakeBb(),
+  alia: fakeAlia(),
   skip: { size: machineSize },
   timeoutMs: 20_000,
   testDevice: process.platform === "linux",
@@ -59,7 +59,7 @@ await conformance({
   name: "fake real backend",
   storage: new MemoryStorage(),
   create: (storage, installId) => new FakeBackend({ root, storage, host: realHost, installId, id: "fake-real", nature: "real", machines: 2 }),
-  bb: fakeBb(),
+  alia: fakeAlia(),
   skip: { size: machineSize },
   timeoutMs: 20_000,
 });
@@ -170,7 +170,7 @@ await conformance({
   name: "Docker on a fake host",
   storage: new MemoryStorage(),
   create: (storage, installId) => new DockerBackend(dockerSettings, testContext(storage, installId), { binary: docker.binary, readyTimeoutMs: 20_000, selkiesLauncher: "/bin/sh" }),
-  bb: fakeBb(),
+  alia: fakeAlia(),
   skip: {
     fork: "the fake docker runs commands on the test machine, which has no identity reset; test/docker-forks.test.ts checks forks",
     arch: "the fake docker runs commands on the test machine",
@@ -189,7 +189,7 @@ await conformance({
   name: "Hetzner Cloud on a fake API and fake Docker hosts",
   storage: new MemoryStorage(),
   create: (storage, installId) => hetzner.backend(hetznerConfig(), storage, installId),
-  bb: fakeBb(),
+  alia: fakeAlia(),
   skip: {
     fork: "the fake docker runs commands on the test machine, which has no identity reset",
     arch: "the fake docker runs commands on the test machine",
@@ -210,7 +210,7 @@ await conformance({
   name: "microsandbox on a fake msb host",
   storage: new MemoryStorage(),
   create: (storage, installId) => new MsbBackend(msbSettings, testContext(storage, installId), { dir: msb.dir, script: msb.script, readyTimeoutMs: 20_000 }),
-  bb: fakeBb(),
+  alia: fakeAlia(),
   skip: {
     fork: "the fake msb runs commands on the test machine, which has no identity reset",
     arch: "the fake msb runs commands on the test machine",
@@ -230,7 +230,7 @@ const namespaceDockerHosts = new Map<string, DockerCli>();
 const namespaceDocker = (instance: string): DockerCli => {
   let cli = namespaceDockerHosts.get(instance);
   if (!cli) {
-    cli = new DockerCli(`unix:///run/bb-box/namespace/${instance}.sock`, fakeDockerHost({ name: instance, cpus: 4, memoryMiB: 16 * 1024 }).binary, async () => {});
+    cli = new DockerCli(`unix:///run/alia-box/namespace/${instance}.sock`, fakeDockerHost({ name: instance, cpus: 4, memoryMiB: 16 * 1024 }).binary, async () => {});
     namespaceDockerHosts.set(instance, cli);
   }
   return cli;
@@ -264,7 +264,7 @@ await conformance({
     "computer-use": "the fake Mac and the fake container have no computer-use driver",
     "desktop-session": "the fake ssh runs commands on the test machine, which has no launchctl",
     size: "the fake ssh and the fake docker run commands on the test machine",
-    images: "Namespace's Macs start from its own macOS images, and its Linux boxes from images BB Box builds into the workspace's registry, which test/namespace-linux-images.test.ts checks",
+    images: "Namespace's Macs start from its own macOS images, and its Linux boxes from images VesnALIA Box builds into the workspace's registry, which test/namespace-linux-images.test.ts checks",
     "exact-size": "Namespace's Macs come only in fixed shapes, so a box gets the smallest with at least its cores and memory",
   },
   timeoutMs: 20_000,

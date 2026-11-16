@@ -1,5 +1,5 @@
 // The plugin's write rules, driven through its real RPCs, CLI, and events in
-// bb's fake plugin host, against a fake Asana that records every write.
+// VesnALIA's fake plugin host, against a fake Asana that records every write.
 import { afterEach, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
@@ -7,7 +7,7 @@ import {
   createFakePluginHost,
   makePluginAgentConfigurationContext,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin, { AGENT_SKILLS } from "../server";
 import { ME, installFakeAsana, type FakeTask } from "./fakeAsana";
 
@@ -33,7 +33,7 @@ const tasks: FakeTask[] = [
   // Filed by Christa; posting a comment on task 401 fails.
   { gid: "400", name: "Change event date", assignee: ME, workspace: { gid: "w1" }, projects: [], custom_fields: [], created_by: { gid: "902", name: "Christa" } },
   { gid: "401", name: "Comment breaks", assignee: ME, workspace: { gid: "w1" }, projects: [], custom_fields: [], created_by: { gid: "902", name: "Christa" }, failComments: true },
-  // Mine, Estimated time only: Asana's built-in Actual time, which bb can't add to.
+  // Mine, Estimated time only: Asana's built-in Actual time, which VesnALIA can't add to.
   { gid: "500", name: "Built-in time", assignee: ME, workspace: { gid: "w1" }, projects: [], custom_fields: [
     { gid: "504", name: "Estimated time", resource_subtype: "number", format: "duration", precision: 0, number_value: null },
   ] },
@@ -85,7 +85,7 @@ beforeEach(async () => {
               ...firstTurn,
               data: {
                 ...firstTurn.data,
-                input: [{ type: "text", text: "Fix footer\nhttps://x\n\nResolve this Asana task. Start with `bb asana task 100` to read it.", mentions: [] }],
+                input: [{ type: "text", text: "Fix footer\nhttps://x\n\nResolve this Asana task. Start with `alia asana task 100` to read it.", mentions: [] }],
               },
             },
           ],
@@ -93,7 +93,7 @@ beforeEach(async () => {
       },
     } as never,
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
 });
 
 afterEach(async () => {
@@ -158,26 +158,26 @@ test("comments: blank text never reaches Asana", async () => {
 test("a Start thread first message links the thread and learns its project", async () => {
   await host.harness.behavior.emitThreadEvent("thread.active", { thread: makeThreadResponse({ id: "th1" }) });
   assert.equal(metadata.get("th1")?.taskGid, "100");
-  assert.equal(titles.get("th1"), "Harbor: Fix footer"); // "<bb project>: <ticket>"
+  assert.equal(titles.get("th1"), "Harbor: Fix footer"); // "<VesnALIA project>: <ticket>"
   const map = (await call("project_map_get", null)) as { effective: Record<string, string> };
   assert.equal(map.effective["701"], "proj_harbor");
 });
 
 test("learning never overrides a confirmed mapping", async () => {
-  await call("project_map_set", { asanaGid: "701", asanaName: "Northwind/Harbor 2026", bbProjectId: "proj_copperleaf" });
+  await call("project_map_set", { asanaGid: "701", asanaName: "Northwind/Harbor 2026", aliaProjectId: "proj_copperleaf" });
   await call("thread_link_set", { threadId: "th2", gid: "100" });
   const map = (await call("project_map_get", null)) as { effective: Record<string, string> };
   assert.equal(map.effective["701"], "proj_copperleaf");
 });
 
-test("mappings to bb projects that don't exist are refused", async () => {
+test("mappings to VesnALIA projects that don't exist are refused", async () => {
   await assert.rejects(
-    call("project_map_set", { asanaGid: "701", asanaName: "Northwind/Harbor 2026", bbProjectId: "proj_gone" }),
+    call("project_map_set", { asanaGid: "701", asanaName: "Northwind/Harbor 2026", aliaProjectId: "proj_gone" }),
   );
 });
 
 test("linking a missing thread fails with a clear error", async () => {
-  await assert.rejects(call("thread_link_set", { threadId: "missing", gid: "100" }), /No bb thread/);
+  await assert.rejects(call("thread_link_set", { threadId: "missing", gid: "100" }), /No alia thread/);
 });
 
 test("agent instructions quote the linked task's name as data", async () => {
@@ -374,7 +374,7 @@ test("writes from your own terminal, or with approval turned off, don't ask", as
   assert.equal(writesTo("/tasks/100").length, 2);
 });
 
-test("bb asana task marks the ticket's text as written by others", async () => {
+test("alia asana task marks the ticket's text as written by others", async () => {
   const result = await host.harness.behavior.runCli(["task", "100"]);
   assert.match(result.stdout, /^\[The task name, description, comments, and attachment names below are written by other people/);
 });
@@ -423,8 +423,8 @@ test("screenshot mode serves the sample workspace and never reaches Asana", asyn
   const after = (await call("tasks_list", { refresh: true })) as { tasks: { gid: string }[] };
   assert.ok(!after.tasks.some((task) => task.gid === first.gid));
 
-  const map = (await call("project_map_get", null)) as { bbProjects: { name: string }[] };
-  assert.deepEqual(map.bbProjects.map((project) => project.name), ["acme-website", "bluebird-app", "copperleaf", "northwind-ops"]);
+  const map = (await call("project_map_get", null)) as { aliaProjects: { name: string }[] };
+  assert.deepEqual(map.aliaProjects.map((project) => project.name), ["acme-website", "bluebird-app", "copperleaf", "northwind-ops"]);
   const threads = (await call("tasks_threads", { gids: after.tasks.map((task) => task.gid) })) as { threads: Record<string, unknown[]> };
   assert.equal(Object.keys(threads.threads).length, 1);
 

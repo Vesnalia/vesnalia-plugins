@@ -1,8 +1,8 @@
 // Skill name resolution for crew.yaml's `skills: [...]` field (BBP-29).
 //
-// Names are matched against SKILL.md frontmatter under BB's roots (the two
-// global directories in ~/.bb, `skills` and `skills-generated`, and the
-// project's own `.bb/skills`) and Claude Code's (`~/.claude/skills`,
+// Names are matched against SKILL.md frontmatter under VesnALIA's roots (the two
+// global directories in ~/.vesnalia, `skills` and `skills-generated`, and the
+// project's own `.vesnalia/skills`) and Claude Code's (`~/.claude/skills`,
 // `<project>/.claude/skills`): members running on claude-code load those too,
 // so a name found only there is not "unknown". Filesystem access is injected
 // so this stays testable without touching disk.
@@ -51,20 +51,20 @@ async function scanRoot(fs: SkillsFs, root: string): Promise<string[]> {
 }
 
 export type SkillsRoots = {
-  /** The user's home directory; global roots are `<homeDir>/.bb/skills`, `<homeDir>/.bb/skills-generated` and `<homeDir>/.claude/skills`. */
+  /** The user's home directory; global roots are `<homeDir>/.vesnalia/skills`, `<homeDir>/.vesnalia/skills-generated` and `<homeDir>/.claude/skills`. */
   homeDir: string;
-  /** The project's local checkout path; its roots are `<projectPath>/.bb/skills` and `<projectPath>/.claude/skills`. Null skips them. */
+  /** The project's local checkout path; its roots are `<projectPath>/.vesnalia/skills` and `<projectPath>/.claude/skills`. Null skips them. */
   projectPath: string | null;
 };
 
-/** All skill names known here: global (~/.bb/skills, ~/.bb/skills-generated, ~/.claude/skills) and project (<projectPath>/.bb/skills, <projectPath>/.claude/skills). */
+/** All skill names known here: global (~/.vesnalia/skills, ~/.vesnalia/skills-generated, ~/.claude/skills) and project (<projectPath>/.vesnalia/skills, <projectPath>/.claude/skills). */
 export async function resolveSkillsCatalog(roots: SkillsRoots, fs: SkillsFs = nodeSkillsFs): Promise<SkillsCatalog> {
   const dirs = [
-    join(roots.homeDir, ".bb", "skills"),
-    join(roots.homeDir, ".bb", "skills-generated"),
+    join(roots.homeDir, ".vesnalia", "skills"),
+    join(roots.homeDir, ".vesnalia", "skills-generated"),
     join(roots.homeDir, ".claude", "skills"),
   ];
-  if (roots.projectPath) dirs.push(join(roots.projectPath, ".bb", "skills"), join(roots.projectPath, ".claude", "skills"));
+  if (roots.projectPath) dirs.push(join(roots.projectPath, ".vesnalia", "skills"), join(roots.projectPath, ".claude", "skills"));
   const names = new Set<string>();
   for (const dir of dirs) {
     for (const name of await scanRoot(fs, dir)) names.add(name);

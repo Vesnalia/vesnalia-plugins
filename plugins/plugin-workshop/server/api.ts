@@ -1,7 +1,7 @@
 // What the plugin serves to the interface and the CLI: the board (a card is a plugin), the plugin summary, the work page. Assembled from the catalog,
-// the engine and Rollout; no state of its own. The board reads git from the catalog cache and asks bb for the lists once for all cards, not per card.
+// the engine and Rollout; no state of its own. The board reads git from the catalog cache and asks VesnALIA for the lists once for all cards, not per card.
 import type { AvailabilityView, Board, PilotView, PluginCard, PluginView, WorkView } from "../contract";
-import { bbStateOf, columnOf, labelsOf, reworkBlockers, type Catalog, type PluginFacts } from "./catalog";
+import { aliaStateOf, columnOf, labelsOf, reworkBlockers, type Catalog, type PluginFacts } from "./catalog";
 import { attemptView, type Engine } from "./engine";
 import type { Availability, Rollout } from "./rollout";
 import { COLUMNS } from "./stages";
@@ -12,12 +12,12 @@ import type { PilotRow, Store, WorkRow } from "./store";
 
 /** A board card from the facts and the availability of actions. Why the plugin is gone is shown as a label: it does not leave «Retired». */
 export function cardOf(f: PluginFacts, availability: Availability): PluginCard {
-  const { state, stale } = bbStateOf(f);
+  const { state, stale } = aliaStateOf(f);
   const labels = labelsOf(f);
   if (f.row.gone_reason !== null) labels.push(`gone: ${f.row.gone_reason}`);
   const w = f.work;
   return {
-    id: f.row.id, name: f.row.name, column: columnOf(f), bbState: state, stateStale: stale, labels, reworkBlockers: reworkBlockers(f), availability,
+    id: f.row.id, name: f.row.name, column: columnOf(f), aliaState: state, stateStale: stale, labels, reworkBlockers: reworkBlockers(f), availability,
     work: w ? { id: w.id, key: w.task_key, stage: w.stage, state: w.state, reason: w.state_reason, stale: w.stale === 1, pilot: f.pilot ?? null } : null,
   };
 }

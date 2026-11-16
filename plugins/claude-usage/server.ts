@@ -1,4 +1,4 @@
-// bb-plugin-claude-usage: AI coding usage by session, day and model, from
+// alia-plugin-claude-usage: AI coding usage by session, day and model, from
 // ccusage (every agent CLI it detects: Claude Code, Codex, Gemini CLI, ...),
 // plus Claude plan limits.
 //
@@ -13,7 +13,7 @@ import { createRequire } from "node:module";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { rpcContract, type Session } from "./contract";
 import { foldLine, lineOf, newState, placeOf, titleOf } from "./sessions";
@@ -33,7 +33,7 @@ type Limits = z.infer<(typeof rpcContract)["limits"]["output"]>;
 type Command = { file: string; prefix: string[] };
 
 /**
- * The native ccusage binary. bb's git installs run `npm install --omit=optional`, so the
+ * The native ccusage binary. VesnALIA's git installs run `npm install --omit=optional`, so the
  * platform binary that npm would add as an optional dependency is missing there: it is then
  * downloaded once from the npm registry into the plugin's data folder, checked against the
  * pinned sha512 above, and unpacked with the system tar. npx is the last resort.
@@ -86,20 +86,20 @@ async function ends(path: string, size: number): Promise<string[]> {
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   const home = homedir();
   const claudeRoot = process.env.CLAUDE_CONFIG_DIR ?? join(home, ".claude");
   const stop = new AbortController();
-  bb.onDispose(() => stop.abort());
-  // The binary lives beside the plugin's own database, in its bb data folder.
-  const dataDir = dirname(bb.storage.database().name);
+  alia.onDispose(() => stop.abort());
+  // The binary lives beside the plugin's own database, in its VesnALIA data folder.
+  const dataDir = dirname(alia.storage.database().name);
   let command: Promise<Command> | null = null;
   const ccusage = () => {
     command ??= ccusageCommand(dataDir, stop.signal);
     command.catch(() => (command = null)); // a failed download is retried on the next read
     return command;
   };
-  // A bb launched from the Dock has a minimal PATH; npx (the fallback) lives in one of these.
+  // A VesnALIA launched from the Dock has a minimal PATH; npx (the fallback) lives in one of these.
   const env = { ...process.env, PATH: [process.env.PATH, "/opt/homebrew/bin", "/usr/local/bin"].filter(Boolean).join(":"), NO_COLOR: "1" };
 
   // One ccusage run at a time: each reads every log on the machine.
@@ -148,8 +148,8 @@ export default async function plugin(bb: BbPluginApi) {
     const place = placeOf(file.folder, state.cwd, home);
     const meta: Meta = {
       title: titleOf(state),
-      project: place.kind === "bb" ? "bb thread" : place.kind === "desktop" ? "Claude desktop" : place.worktree ? `${place.name} · ${place.worktree}` : place.name,
-      threadId: place.kind === "bb" ? place.threadId : null,
+      project: place.kind === "alia" ? "alia thread" : place.kind === "desktop" ? "Claude desktop" : place.worktree ? `${place.name} · ${place.worktree}` : place.name,
+      threadId: place.kind === "alia" ? place.threadId : null,
     };
     metas.set(key, meta);
     return meta;
@@ -170,7 +170,7 @@ export default async function plugin(bb: BbPluginApi) {
           JSON.parse(text); // only a whole list replaces the saved one
           await writeFile(priceFile, text);
         } catch (cause) {
-          bb.log.warn(`Refreshing model prices failed: ${String(cause)}`);
+          alia.log.warn(`Refreshing model prices failed: ${String(cause)}`);
         }
       }
       return JSON.parse(await readFile(priceFile, "utf8").catch(() => "{}")) as unknown;
@@ -240,7 +240,7 @@ export default async function plugin(bb: BbPluginApi) {
     return { plan: creds.plan, windows };
   }
 
-  const bbUsage = z.object({
+  const aliaUsage = z.object({
     machines: z.array(
       z.object({
         providers: z.array(
@@ -259,13 +259,13 @@ export default async function plugin(bb: BbPluginApi) {
     ),
   });
 
-  /** The fallback: bb's own provider-usage plugin, which reads the same endpoint its own way. */
-  async function fromBb(): Promise<{ plan: string | null; windows: Window[] }> {
-    const result = await bb.sdk.plugins.callRpc({
-      pluginId: "bb--provider-usage",
+  /** The fallback: VesnALIA's own provider-usage plugin, which reads the same endpoint its own way. */
+  async function fromAlia(): Promise<{ plan: string | null; windows: Window[] }> {
+    const result = await alia.sdk.plugins.callRpc({
+      pluginId: "alia--provider-usage",
       method: "getUsage",
       input: { force: false, machineIds: null, providerIds: ["claude-code"], maxAgeMs: FRESH_MS },
-      outputSchema: bbUsage,
+      outputSchema: aliaUsage,
       signal: AbortSignal.any([stop.signal, AbortSignal.timeout(30_000)]),
     });
     for (const machine of result.machines) {
@@ -286,7 +286,7 @@ export default async function plugin(bb: BbPluginApi) {
         };
       }
     }
-    throw new Error("bb has no Claude Code usage either.");
+    throw new Error("alia has no Claude Code usage either.");
   }
 
   async function burn(): Promise<Limits["burn"]> {
@@ -302,8 +302,8 @@ export default async function plugin(bb: BbPluginApi) {
       fromAnthropic()
         .then((q) => ({ ...q, source: "anthropic" as const, error: null }))
         .catch((own: unknown) =>
-          fromBb()
-            .then((q) => ({ ...q, source: "bb" as const, error: null }))
+          fromAlia()
+            .then((q) => ({ ...q, source: "alia" as const, error: null }))
             .catch(() => ({ plan: null, windows: [], source: null, error: own instanceof Error ? own.message : String(own) })),
         ),
       burn(),
@@ -313,7 +313,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   let limits: { at: number; value: Promise<Limits> } | null = null;
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     report: ({ range, timeZone, refresh }) => {
       if (!isTimeZone(timeZone)) throw new Error(`Unknown time zone ${JSON.stringify(timeZone)}`);
       const key = `${range}|${timeZone}`;
@@ -323,7 +323,7 @@ export default async function plugin(bb: BbPluginApi) {
       reports.set(key, { at: Date.now(), value });
       value.catch((cause: unknown) => {
         reports.delete(key);
-        bb.log.warn(`ccusage report failed: ${String(cause)}`);
+        alia.log.warn(`ccusage report failed: ${String(cause)}`);
       });
       return value;
     },

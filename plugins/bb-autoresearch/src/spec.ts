@@ -170,14 +170,14 @@ export const specSchema = z
         noise: z.enum(NOISE_CLASSES),
         /**
          * "local" measures in plugin checkouts of the project repo on the edit
-         * host (no transfer). Any other entry is a BB host id or name, the
+         * host (no transfer). Any other entry is a VesnALIA host id or name, the
          * server's own machine included: it gets a bench-owned clone that
          * receives commits only as git bundles (the remote path).
          */
         bench_hosts: z.array(z.string().trim().min(1).max(200)).max(16).default([]),
         /**
          * Remote bench hosts lent by a bench provider plugin (docs/bench-providers.md):
-         * short-lived machines bb-autoresearch drives over the provider's RPC. Each entry
+         * short-lived machines alia-autoresearch drives over the provider's RPC. Each entry
          * keeps `hosts` machines measuring at a time, each its own bench host with its own
          * calibration. With remote hosts and an empty `bench_hosts`, no local host measures.
          */
@@ -204,7 +204,7 @@ export const specSchema = z
         quiet_bench: z.boolean().default(false),
         /**
          * A bench host whose calibrated noise floor is more than this many times
-         * the median of its peers' (the other bench hosts') is not used: a BB
+         * the median of its peers' (the other bench hosts') is not used: a VesnALIA
          * machine or the edit host is taken out of the dispatch set, a remote
          * machine is replaced. 0 turns it off. Which hosts measure, not how a
          * commit is judged: not part of the oracle hash.
@@ -315,7 +315,7 @@ export const specSchema = z
           .string()
           .regex(/^\d{4}-\d{2}-\d{2}/u, "deadline: YYYY-MM-DD")
           .optional(),
-        /** Total tokens the study's threads may use (workers, plus the study thread since start), read from BB's per-thread usage. */
+        /** Total tokens the study's threads may use (workers, plus the study thread since start), read from VesnALIA's per-thread usage. */
         max_tokens: z.number().int().min(1000).max(1e12).optional(),
         /** Budget shares that raise a notice once each (percent of every limit). */
         notify_at: z.array(z.number().min(1).max(100)).max(5).default([50, 80]),
@@ -411,7 +411,7 @@ export function parseSpec(toml: string): SpecResult {
   return validateSemantics(parsed.data);
 }
 
-/** Cross-field rules zod can't express directly. Bench host names are resolved against BB later (engine). */
+/** Cross-field rules zod can't express directly. Bench host names are resolved against VesnALIA later (engine). */
 export function validateSemantics(spec: StudySpec): SpecResult {
   const errors: string[] = [];
   const warnings: string[] = [];

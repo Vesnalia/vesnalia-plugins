@@ -1,23 +1,23 @@
-/* Agent Tools in the Pokecut look. Kit: BB-сервис docs/design/pokecut-plugin.css; rules: docs/DESIGN.md. */
+/* Agent Tools in the Pokecut look. Kit: ALIA-сервис docs/design/pokecut-plugin.css; rules: docs/DESIGN.md. */
 /*
- * Pokecut plugin kit: the brand layer for BB-сервис plugin screens.
- * Rules: docs/DESIGN.md. Reference implementation: plugins/bb-plugin-lane-pilot/app.css.
+ * Pokecut plugin kit: the brand layer for ALIA-сервис plugin screens.
+ * Rules: docs/DESIGN.md. Reference implementation: plugins/alia-plugin-lane-pilot/app.css.
  *
  * Copy into the plugin's app.css after the Tailwind imports, then replace
- *   agent-tools -> the plugin id from package.json (bb.id), e.g. lane-pilot
+ *   agent-tools -> the plugin id from package.json (alia.id), e.g. lane-pilot
  *   at-  -> a short plugin prefix, e.g. lp-
  * The prefix matters: these classes are not scoped by the build, so two
  * plugins with the same class name would style each other's screens.
  *
  * The --at-* tokens read the Pokecut theme's --pk-* tokens and fall back to
- * BB's own palette, so the screen stays tidy under any BB theme, light or dark.
+ * ALIA's own palette, so the screen stays tidy under any ALIA theme, light or dark.
  * Radii: 8px rows, buttons, inputs; 6px segments in a 9px track; 12px inner
  * cards; 14px single cards and the header strip; 16px panels; 20px dialogs.
  * Rules sit in the components layer, so a Tailwind utility on an element wins.
  */
 
-[data-bb-plugin="agent-tools"],
-[data-bb-plugin-root]:not([data-bb-plugin]) {
+[data-alia-plugin="agent-tools"],
+[data-alia-plugin-root]:not([data-alia-plugin]) {
   --at-well: var(--pk-well, color-mix(in oklab, var(--muted) 45%, var(--card)));
   --at-card: var(--pk-card, var(--card));
   --at-outline: var(--pk-outline, var(--input));
@@ -160,7 +160,7 @@
     box-shadow: var(--at-drop);
   }
 
-  /* Apply to @bb/switch. */
+  /* Apply to @alia-core/switch. */
   .at-switch[data-state="checked"] {
     background-color: var(--primary);
     background-image: var(--at-accent);

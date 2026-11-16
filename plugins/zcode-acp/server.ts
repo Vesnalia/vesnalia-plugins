@@ -1,4 +1,4 @@
-import type { BbPluginApi, JsonValue } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, JsonValue } from "@vesnalia/plugin-sdk";
 import registerUsageSource from "./usage/server.js";
 import { acpRpcContract } from "./acp-contract.js";
 import { hostContract } from "./contract.js";
@@ -12,11 +12,11 @@ export function launchSpec(values: Readonly<Record<string, unknown>>) {
   return {
     displayName: "ZCode CLI", command, args: [],
     env: native ? { ZCODE_NATIVE_ENTRY: native } : {},
-    permissionCli: { full: ["--bb-permission=full"], workspaceWrite: ["--bb-permission=accept-edits"] },
+    permissionCli: { full: ["--alia-permission=full"], workspaceWrite: ["--alia-permission=accept-edits"] },
   };
 }
-export default async function plugin(bb: BbPluginApi): Promise<void> {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi): Promise<void> {
+  const settings = alia.settings.define({
     acpCommand: {
       type: "string",
       label: "ACP executable / Исполняемый файл ACP",
@@ -33,7 +33,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
   let registered: { dispose(): void } | undefined;
   const register = (values: Readonly<Record<string, unknown>>) => {
     registered?.dispose();
-    registered = bb.providers.register({
+    registered = alia.providers.register({
       id: ZCODE_CLI_PROVIDER_ID, displayName: "ZCode CLI", icon: "./icons/zcode.svg", family: "acp",
       strings: {
         signInHint: "Sign in through ZCode Desktop on the agent machine.",
@@ -56,14 +56,14 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
   };
   register(await settings.get());
   settings.onChange(values => register(values));
-  bb.onDispose(() => registered?.dispose());
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  alia.onDispose(() => registered?.dispose());
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   const connectedHost = async (hostId: string) => {
-    const machine = (await bb.sdk.hosts.list()).find(item => item.id === hostId && item.type !== "ephemeral");
+    const machine = (await alia.sdk.hosts.list()).find(item => item.id === hostId && item.type !== "ephemeral");
     if (!machine || machine.status !== "connected") throw new Error("Select a connected computer / Выберите подключённый компьютер");
   };
-  bb.rpc.register(acpRpcContract, {
-    "acp.hosts": async () => ({ hosts: (await bb.sdk.hosts.list()).filter(item => item.type !== "ephemeral").map(item => ({ id: item.id, name: item.name, connected: item.status === "connected" })) }),
+  alia.rpc.register(acpRpcContract, {
+    "acp.hosts": async () => ({ hosts: (await alia.sdk.hosts.list()).filter(item => item.type !== "ephemeral").map(item => ({ id: item.id, name: item.name, connected: item.status === "connected" })) }),
     "acp.status": async ({ hostId, refresh }) => {
       await connectedHost(hostId);
       return host.call("acpStatus", { acpCommand: String((await settings.get()).acpCommand ?? "").trim(), refresh }, { hostId, timeoutMs: 45_000 });
@@ -80,7 +80,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
       return { ok: true as const };
     },
   }, { experimental_discoverable: true });
-  registerUsageSource(bb,
+  registerUsageSource(alia,
     async () => String((await settings.get()).nativeEntry ?? "").trim(),
     async () => String((await settings.get()).acpCommand ?? "").trim());
 }

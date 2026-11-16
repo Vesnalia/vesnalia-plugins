@@ -23,7 +23,7 @@ test('M493 Spotlight and both Applications directories: deterministic, validated
     assert.equal(found.bundle, bundles[0]); assert.equal(found.method, 'mdfind'); assert.equal(found.candidates.length, 2);
     rmSync(bundles[0], { recursive: true }); assert.equal(api.findZCode({ ...options, spotlight: () => [other] }).bundle, other);
     writeFileSync(join(other, 'Contents/Info.plist'), 'unrelated'); assert.equal(api.findZCode({ ...options, spotlight: () => [other, '/stale.app', 'relative.app'] }).bundle, null);
-    assert.equal(api.bbBundle('/Elsewhere/My bb.app/Contents/MacOS/bb'), '/Elsewhere/My bb.app'); assert.equal(api.bbBundle('/usr/bin/node'), null);
+    assert.equal(api.aliaBundle('/Elsewhere/My alia.app/Contents/MacOS/alia'), '/Elsewhere/My alia.app'); assert.equal(api.aliaBundle('/usr/bin/node'), null);
   } finally { rmSync(root, { recursive: true }); }
 });
 

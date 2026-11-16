@@ -18,10 +18,10 @@ import { DeviceServers } from "../../../src/plugin/devices.ts";
 import type { ByteChannel } from "../../../src/transports/types.ts";
 
 const ROOT = join(import.meta.dirname, "..", "..", "..");
-const LAUNCHER = join(homedir(), ".bb-box", "device", "current", "src", "device", "bb-box-device.sh");
-const RECORDS = ["/usr/share/bb-box/image.json", "/usr/share/bb-box/android-devices.json"];
-const SERVER_UNIT = "bb-box-device.service";
-const OUT = "/tmp/bb-box-computer";
+const LAUNCHER = join(homedir(), ".alia-box", "device", "current", "src", "device", "alia-box-device.sh");
+const RECORDS = ["/usr/share/alia-box/image.json", "/usr/share/alia-box/android-devices.json"];
+const SERVER_UNIT = "alia-box-device.service";
+const OUT = "/tmp/alia-box-computer";
 
 const { positionals, values } = parseArgs({
   allowPositionals: true,

@@ -422,7 +422,7 @@ test("typed text never reaches the log, and secret typing is told by its role, i
   assert.ok(looksLikeSecret("sk-ant-1234"));
   assert.ok(looksLikeSecret("ghp_abcdefghijklmnop"));
   assert.ok(looksLikeSecret("Xk9#mP2$vL7!qR4w"));
-  assert.ok(!looksLikeSecret("Hello from bb-box. This note is typed by an agent."));
+  assert.ok(!looksLikeSecret("Hello from alia-box. This note is typed by an agent."));
   assert.ok(!isSecretTyping("text", "Search", "weather in Lisbon"));
   const inputs = new RecordingInputs(() => 1_000);
   inputs.begin("box", 0, "linux");
@@ -908,7 +908,7 @@ test("typing into a large text area zooms on where the text appears, or on the p
   assert.ok(cameraAt(camera, 3.4).zoom > 1.5, "the click and the typing after it stay zoomed in");
 });
 
-test("typing by reference on Linux, whose place BB Box cannot know, zooms only to a change seen on the screen, never to the pointer or a caret guessed from it (102)", () => {
+test("typing by reference on Linux, whose place VesnALIA Box cannot know, zooms only to a change seen on the screen, never to the pointer or a caret guessed from it (102)", () => {
   const window = { x: 16, y: 128, width: 700, height: 500 };
   const parked = [{ at: 1000, x: 1800, y: 900, buttons: 0 }];
   const typed: InputEvent = { at: 1003, by: "agent", type: "typing", characters: 5, space: "screen", area: null, secret: false, role: null, window, placeUnknown: true };
@@ -1172,7 +1172,7 @@ test("a key pill lasts its own time even where a caption's hold freezes the clip
   assert.ok(pill.to - pill.from <= 1.2 + 0.001, `${pill.to - pill.from} s`);
 });
 
-test("where Cua draws the agent's own pointer, as on macOS, BB Box draws only the real pointer, from when it first moves, and still rings each click (073)", () => {
+test("where Cua draws the agent's own pointer, as on macOS, VesnALIA Box draws only the real pointer, from when it first moves, and still rings each click (073)", () => {
   const clicks = [{ at: 3, x: 700, y: 400, button: "left" as const, count: 1 as const, area: null }];
   const parked = planPointer(scene({ clicks, samples: [{ at: 0, x: 0, y: 0, buttons: 0 }], agentCursor: true }));
   assert.equal(parked.visibleFrom, null, "a pointer parked in the corner all along is not drawn");
@@ -1204,7 +1204,7 @@ function pressed(events: readonly InputEvent[], style: "mac" | "pc" = "pc"): str
   return events.map((event) => (event.type === "keys" ? chordWords(event.chord, style) : event.type));
 }
 
-test("typing whose field BB Box cannot tell, a person's or a single key's, is kept secret: no Typing pill and no zoom (073)", () => {
+test("typing whose field VesnALIA Box cannot tell, a person's or a single key's, is kept secret: no Typing pill and no zoom (073)", () => {
   const inputs = new RecordingInputs(() => 1_003_000);
   inputs.begin("box", 0, "linux");
   for (const keysym of [0x31, 0x32, 0x33, 0x34]) {
@@ -1553,7 +1553,7 @@ test("the stop reads the brightness grid, a line a second of each cell's brightn
 test("where the driver's agent cursor was hidden for the whole recording, the clip draws the agent's pointer as on Linux, gliding to its clicks (073)", () => {
   assert.deepEqual((["linux", "macos", "windows"] as const).map(driverDrawsAgentCursor), [false, true, true]);
   const prepared: Prepared = { ended: "stopped", recorded: 10, width: 1920, height: 1080, start: 1000, cuts: [], events: [], scene: facts({ agentCursor: true, samples: [{ at: 1000, x: 100, y: 100, buttons: 0 }], inputs: [click(4, 900, 600)] }) };
-  assert.equal(withAgentCursorHidden(prepared, false).scene?.agentCursor, true, "the driver's cursor stayed, so BB Box draws only the real pointer");
+  assert.equal(withAgentCursorHidden(prepared, false).scene?.agentCursor, true, "the driver's cursor stayed, so VesnALIA Box draws only the real pointer");
   const hidden = withAgentCursorHidden(prepared, true);
   assert.equal(hidden.scene?.agentCursor, false);
   assert.ok(planClip(hidden, 1).scene!.pointer.glides.length > 0, "the pointer glides to the agent's click");

@@ -1,4 +1,4 @@
-import { createFakePluginHost, makePluginAgentConfigurationContext, makeThreadResponse, makeTurnFailedEvent } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makePluginAgentConfigurationContext, makeThreadResponse, makeTurnFailedEvent } from "@vesnalia/plugin-sdk/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createLoomPlugin } from "../server";
 import type { HostMethod } from "../src/host-contract";
@@ -18,7 +18,7 @@ async function load(deps?: Parameters<typeof createLoomPlugin>[0]) {
     experimental_callHostRpc: (call) => fakeHost.call(call.hostId, call.method as HostMethod, call.input as never),
     sdk: sdkStubs(state),
   });
-  await createLoomPlugin(deps)(host.bb);
+  await createLoomPlugin(deps)(host.alia);
   return host;
 }
 
@@ -66,7 +66,7 @@ async function loadEngine(over: { tickMs?: number } = {}) {
       },
     },
   });
-  await createLoomPlugin({ now: Date.now, ...over })(host.bb);
+  await createLoomPlugin({ now: Date.now, ...over })(host.alia);
   return { ...host, threads, fakeHost };
 }
 
@@ -80,7 +80,7 @@ type Harness = Awaited<ReturnType<typeof load>>["harness"];
 
 const callPropose = (harness: Harness, threadId = "thr_plan") => harness.callAgentTool("loom_propose", { spec_toml: specToml() }, { threadId, projectId: "proj_1" });
 
-/** Proposes, and has the spec reviewer bb started pass the draft, so the human can approve it. */
+/** Proposes, and has the spec reviewer VesnALIA started pass the draft, so the human can approve it. */
 const proposeReviewed = async (harness: Harness) => {
   await callPropose(harness);
   await harness.callAgentTool("loom_spec_approve", { summary: "Fits the request." }, { threadId: "thr_spec1", projectId: "proj_1" });
@@ -143,30 +143,30 @@ describe("Loom plugin", () => {
     await callPropose(first.harness);
     const reloaded = await first.harness.reload(createLoomPlugin());
     expect(JSON.parse((await reloaded.harness.behavior.runCli(["list", "--json"])).stdout)).toMatchObject([{ slug: "csv" }]);
-    const db = reloaded.bb.storage.database();
+    const db = reloaded.alia.storage.database();
     expect(() => db.prepare("UPDATE events SET kind = 'x'").run()).toThrow("events is append-only");
     expect(() => db.prepare("DELETE FROM events").run()).toThrow("events is append-only");
   });
 
   it("ends the planner row when its thread is deleted", async () => {
-    const { bb, harness } = await load();
+    const { alia, harness } = await load();
     await callPropose(harness);
     const emitted = await harness.emitThreadEvent("thread.deleted", { thread: makeThreadResponse({ id: "thr_plan" }) });
     expect(emitted.errors).toEqual([]);
-    const row = bb.storage.database().prepare("SELECT state, end_reason FROM threads WHERE thread_id = 'thr_plan'").get();
+    const row = alia.storage.database().prepare("SELECT state, end_reason FROM threads WHERE thread_id = 'thr_plan'").get();
     expect(row).toEqual({ state: "ended", end_reason: "deleted" });
   });
 
-  it("logs a warning instead of throwing into bb when a handler fails", async () => {
-    const { bb, harness } = await load();
+  it("logs a warning instead of throwing into VesnALIA when a handler fails", async () => {
+    const { alia, harness } = await load();
     await callPropose(harness);
-    bb.storage.database().exec("DROP TABLE threads");
+    alia.storage.database().exec("DROP TABLE threads");
     const emitted = await harness.emitThreadEvent("thread.deleted", { thread: makeThreadResponse({ id: "thr_plan" }) });
     expect(emitted.errors).toEqual([]);
     expect(harness.logEntries.some((entry) => entry.level === "warn" && entry.message.startsWith("thread.deleted:"))).toBe(true);
   });
 
-  it("takes an injected bb port and clock", async () => {
+  it("takes an injected VesnALIA port and clock", async () => {
     const port = new FakePort();
     const { harness } = await load({ port: () => port, now: () => 1_900_000_000_000 });
     await callPropose(harness);
@@ -177,7 +177,7 @@ describe("Loom plugin", () => {
   });
 
   it("runs a project end to end through the sdk: the service spawns a worker, two idles end it and requeue its ticket", async () => {
-    const { bb, harness, threads, fakeHost } = await loadEngine({ tickMs: 20 });
+    const { alia, harness, threads, fakeHost } = await loadEngine({ tickMs: 20 });
     await proposeReviewed(harness);
     await harness.behavior.runCli(["approve", "csv"]);
     const started = await harness.behavior.runCli(["start", "csv"]);
@@ -192,8 +192,8 @@ describe("Loom plugin", () => {
     const spawn = workerSpawns(harness)[0]![0] as { title: string; sectionId: string; pluginMetadata: Record<string, string>; environment: { workspace: { baseBranch: { name: string } } } };
     expect(spawn).toMatchObject({ title: "CSV-1 · Order rows", sectionId: "sec_1", pluginMetadata: { project: "csv", role: "worker", ticket: "CSV-1" } });
     expect(spawn.environment.workspace.baseBranch.name).toBe("loom/csv");
-    const row = () => bb.storage.database().prepare("SELECT state, end_reason FROM threads WHERE thread_id = 'thr_w1'").get();
-    const ticket = () => bb.storage.database().prepare("SELECT state, failures, branch FROM tickets WHERE key = 'CSV-1'").get() as { state: string; failures: number; branch: string | null };
+    const row = () => alia.storage.database().prepare("SELECT state, end_reason FROM threads WHERE thread_id = 'thr_w1'").get();
+    const ticket = () => alia.storage.database().prepare("SELECT state, failures, branch FROM tickets WHERE key = 'CSV-1'").get() as { state: string; failures: number; branch: string | null };
     expect(row()).toEqual({ state: "active", end_reason: null });
 
     fakeHost.worktree("/wt/env_w1").dirty = true;
@@ -214,7 +214,7 @@ describe("Loom plugin", () => {
   });
 
   it("routes archived, failed-turn and rate-limit events to the engine, and stops on dispose", async () => {
-    const { bb, harness, threads } = await loadEngine({ tickMs: 20 });
+    const { alia, harness, threads } = await loadEngine({ tickMs: 20 });
     await proposeReviewed(harness);
     await harness.behavior.runCli(["approve", "csv"]);
     await harness.behavior.runCli(["start", "csv"]);
@@ -230,7 +230,7 @@ describe("Loom plugin", () => {
 
     threads.get("thr_w1")!.archivedAt = 5;
     await harness.emitThreadEvent("thread.archived", { thread: makeThreadResponse({ id: "thr_w1" }) });
-    const row = () => bb.storage.database().prepare("SELECT state, end_reason FROM threads WHERE thread_id = 'thr_w1'").get();
+    const row = () => alia.storage.database().prepare("SELECT state, end_reason FROM threads WHERE thread_id = 'thr_w1'").get();
     await until(() => (row() as { state: string }).state === "ended");
     expect(row()).toEqual({ state: "ended", end_reason: "gone" });
     expect(harness.logEntries.filter((entry) => entry.level === "error")).toEqual([]);
@@ -249,7 +249,7 @@ describe("Loom plugin", () => {
     first.threads.delete("thr_w1");
     const reloaded = await first.harness.reload(createLoomPlugin({ tickMs: 20 }));
     const again = reloaded.harness.runService("engine");
-    const db = reloaded.bb.storage.database();
+    const db = reloaded.alia.storage.database();
     await until(() => (db.prepare("SELECT state FROM threads WHERE thread_id = 'thr_w1'").get() as { state: string } | undefined)?.state === "ended");
     expect(db.prepare("SELECT end_reason FROM threads WHERE thread_id = 'thr_w1'").get()).toEqual({ end_reason: "gone" });
     again.controller.abort();

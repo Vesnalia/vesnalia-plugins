@@ -14,7 +14,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import {
   hostContract,
   type HostUsageResult,
@@ -27,7 +27,7 @@ const REQUEST_TIMEOUT_MS = 20_000;
 /** Ollama allows 10 requests a minute per user, shared by every key and
  * device, and recommends polling at most once a minute. */
 const CACHE_TTL_MS = 60_000;
-const USER_AGENT = "bb-ollama-usage/0.1.0";
+const USER_AGENT = "alia-ollama-usage/0.1.0";
 
 interface KeyLookup {
   key: string | null;

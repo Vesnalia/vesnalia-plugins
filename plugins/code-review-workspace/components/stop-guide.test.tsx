@@ -1,7 +1,7 @@
 // Stop, while a guide builds: on the building card, and on a rebuild's notice; a rebuild goes back to the guide you had.
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { toast } from "sonner";
 import { defaultKnobs } from "../lib/knobs";
 import { settingsOffRpc } from "./settings-off.test-support";

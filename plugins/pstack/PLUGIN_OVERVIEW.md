@@ -1,6 +1,6 @@
 ## Getting started
 
-Install the plugin, then run `/setup-pstack`. It lists the providers this host can reach with `bb provider models` and asks which model each pstack role should use. bb keeps one provider and model per project and applies a choice per spawn, so that mapping is intent you pass along with `--provider` and `--model` when a worker starts.
+Install the plugin, then run `/setup-pstack`. It lists the providers this host can reach with `alia provider models` and asks which model each pstack role should use. VesnALIA keeps one provider and model per project and applies a choice per spawn, so that mapping is intent you pass along with `--provider` and `--model` when a worker starts.
 
 After that, `/poteto-mode` is the way in.
 
@@ -24,11 +24,11 @@ Skills are user-invoked. Each one carries `disable-model-invocation`, so it stay
 
 Every skill belongs to the plugin, so each one has its own switch. Settings shows a master switch and one row per skill.
 
-The skills discover the harness they run in. On bb, parallel skills use `bb thread spawn` with `bb thread wait` and `bb thread output`. A worker can take its own environment with `--new-environment worktree`. Loops use `bb automation create` instead of sleeping inside a thread.
+The skills discover the harness they run in. On VesnALIA, parallel skills use `alia thread spawn` with `alia thread wait` and `alia thread output`. A worker can take its own environment with `--new-environment worktree`. Loops use `alia automation create` instead of sleeping inside a thread.
 
 ## Requirements
 
-bb 0.43 or newer, with the `bb` CLI that ships beside it.
+VesnALIA 0.43 or newer, with the `alia` CLI that ships beside it.
 
 Some skills expect things this plugin does not provide. Those include a connected evidence source such as MCP servers for `/why`, a webhook service for `/make-bot-ui`, and a Node or Bun toolchain for the orchestration scripts under `poteto-mode/scripts`. [CAPABILITIES.md](https://github.com/wy3z/bb-plugin-pstack/blob/main/CAPABILITIES.md) lists each one and what the skill does instead.
 

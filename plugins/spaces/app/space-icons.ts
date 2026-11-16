@@ -1,5 +1,5 @@
 // Icons offered in Edit Spaces: three rows of 11 — work, making things, life.
-// Plain names are bb's built-in icons; "Spaces…" names are registered by this
+// Plain names are VesnALIA's built-in icons; "Spaces…" names are registered by this
 // plugin (app/custom-icons.tsx). An unknown name falls back to a lightning
 // bolt, so names that left this list still render for spaces that use them.
 export const SPACE_ICONS = [

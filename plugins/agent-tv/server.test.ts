@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin, { rpcContract } from "./server";
 import {
   FLEET_CHANNEL,
@@ -240,7 +240,7 @@ async function load(rows: Row[], settings?: Record<string, string | number | boo
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   return host;
 }
 
@@ -318,7 +318,7 @@ describe("the fleet pump", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
     const frame = frameOf(
       await host.harness.behavior.callRpc("fleet_snapshot", { threadIds: ["thr_a"] }),
     );
@@ -345,7 +345,7 @@ describe("the fleet pump", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
     const output = await host.harness.behavior.runCli(["status", "--json"]);
     const row = frameOf(JSON.parse(output.stdout)).rows[0];
     expect(row?.model).toBe("gpt-5.6-luna");
@@ -370,7 +370,7 @@ describe("the fleet pump", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
     host.harness.behavior.emitThreadEvent("experimental_thread.events", {
       thread: makeThreadResponse({
         id: "thr_a",
@@ -538,7 +538,7 @@ describe("the fleet pump", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
     host.harness.behavior.emitThreadEvent("experimental_thread.events", {
       thread: makeThreadResponse({ id: "thr_a", status: "active" }),
       sequence: 1,
@@ -580,7 +580,7 @@ describe("the fleet pump", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
     for (let index = 0; index < 80; index += 1) {
       host.harness.behavior.emitThreadEvent("experimental_thread.events", {
         thread: makeThreadResponse({
@@ -658,7 +658,7 @@ describe("the fleet pump", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
     host.harness.behavior.emitThreadEvent("experimental_thread.events", {
       thread: makeThreadResponse({ id: "thr_a", status: "active" }),
       sequence: 9,
@@ -717,7 +717,7 @@ describe("the fleet pump", () => {
       thr_b: longLog(400),
     });
     host = recorder.host;
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     await host.harness.behavior.callRpc("fleet_snapshot", { threadIds: ["thr_a"] });
     recorder.reads.length = 0;
@@ -743,7 +743,7 @@ describe("the fleet pump", () => {
       thr_b: longLog(400),
     });
     host = recorder.host;
-    await plugin(host.bb);
+    await plugin(host.alia);
     // Hold a watch lease, but on a different thread.
     await host.harness.behavior.callRpc("fleet_snapshot", { threadIds: ["thr_a"] });
     recorder.reads.length = 0;
@@ -823,7 +823,7 @@ describe("the fleet pump", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     await host.harness.behavior.callRpc("fleet_snapshot", { threadIds: ["thr_a"] });
     expect(reads).toHaveLength(1);
@@ -861,7 +861,7 @@ describe("the fleet pump", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
     const out = await host.harness.behavior.runCli([
       "status",
       "--json",
@@ -877,7 +877,7 @@ describe("the fleet pump", () => {
     await load([command(1, "i1", "npm test")]);
     const help = await host.harness.behavior.runCli(["help"]);
     expect(help.exitCode).toBe(0);
-    expect(help.stdout).toContain("bb agent-tv status");
+    expect(help.stdout).toContain("alia agent-tv status");
     expect(help.stdout).not.toContain("AGENT TV \u2014");
   });
 
@@ -1013,7 +1013,7 @@ describe("the fleet pump", () => {
       thr_hidden: longLog(50),
     });
     host = recorder.host;
-    await plugin(host.bb);
+    await plugin(host.alia);
     await host.harness.behavior.callRpc("fleet_snapshot", { threadIds: ["thr_a"] });
     recorder.reads.length = 0;
 
@@ -1077,7 +1077,7 @@ describe("catching up with a thread that outruns the reader", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
     await host.harness.behavior.callRpc("fleet_snapshot", { threadIds: ["thr_a"] });
 
     rows.push(...longLog(1_000).slice(20));
@@ -1125,7 +1125,7 @@ describe("catching up with a thread that outruns the reader", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
     await host.harness.behavior.callRpc("fleet_snapshot", { threadIds: ["thr_a"] });
     const settledFirst = frameOf(
       await host.harness.behavior.callRpc("fleet_snapshot", { threadIds: [] }),
@@ -1165,7 +1165,7 @@ describe("catching up with a thread that outruns the reader", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
     await host.harness.behavior.runCli(["status"]);
 
     // The thread keeps working, but no notification reaches us and its row's
@@ -1227,7 +1227,7 @@ describe("catching up with a thread that outruns the reader", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     // --limit 3 scans only six threads. They have to be the right six.
     const out = await host.harness.behavior.runCli(["status", "--json", "--limit", "3"]);
@@ -1257,7 +1257,7 @@ describe("a feed the pump cannot read", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
     const start = Date.now();
     for (let attempt = 0; attempt < 6; attempt += 1) {
       // Step well past any backoff, so this measures "gave up", not "waited".
@@ -1285,7 +1285,7 @@ describe("a feed the pump cannot read", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
     const start = Date.now();
     for (let attempt = 0; attempt < 12; attempt += 1) {
       // Step past each backoff so the retries are not merely rate-limited.
@@ -1316,7 +1316,7 @@ describe("a feed the pump cannot read", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
     host.harness.behavior.emitThreadEvent("experimental_thread.events", {
       thread: makeThreadResponse({ id: "thr_fat", status: "active" }),
       sequence: 30,
@@ -1372,7 +1372,7 @@ describe("the CLI's project scope", () => {
 
   it("shows only the calling thread's project", async () => {
     host = twoProjects();
-    await plugin(host.bb);
+    await plugin(host.alia);
     const out = await host.harness.behavior.runCli(["status", "--json"], {
       projectId: "proj_mine",
       threadId: "thr_mine",
@@ -1383,7 +1383,7 @@ describe("the CLI's project scope", () => {
 
   it("widens to the whole machine only when asked", async () => {
     host = twoProjects();
-    await plugin(host.bb);
+    await plugin(host.alia);
     const out = await host.harness.behavior.runCli(
       ["status", "--json", "--all-projects"],
       { projectId: "proj_mine", threadId: "thr_mine" },
@@ -1395,7 +1395,7 @@ describe("the CLI's project scope", () => {
 
   it("shows everything to a terminal with no thread context", async () => {
     host = twoProjects();
-    await plugin(host.bb);
+    await plugin(host.alia);
     const out = await host.harness.behavior.runCli(["status", "--json"]);
     const ids = frameOf(JSON.parse(out.stdout)).rows.map((row) => row.id);
     expect(ids).toContain("thr_mine");
@@ -1404,7 +1404,7 @@ describe("the CLI's project scope", () => {
 
   it("answers --help without reading the fleet", async () => {
     host = twoProjects();
-    await plugin(host.bb);
+    await plugin(host.alia);
     const help = await host.harness.behavior.runCli(["--help"]);
     expect(help.exitCode).toBe(0);
     expect(help.stdout).toContain("--all-projects");

@@ -1,14 +1,14 @@
-// bb-plugin-doc-review — frontend entry.
+// alia-plugin-doc-review — frontend entry.
 //
 // One file opener for Markdown, PDF, Word, PowerPoint, Excel, and HTML: files open
 // in a panel tab beside the chat, where they can be read and commented on
 // (see ui/review-opener.tsx). In the desktop app, a Review button beside the
-// address bar of bb's browser does the same on a live site (ui/web-review.tsx).
+// address bar of VesnALIA's browser does the same on a live site (ui/web-review.tsx).
 // The sidebar page lists files and sites with comments, recent files, and a
 // folder browser. Files attached in the chat open from a message's action bar
-// into a Doc Review tab beside the chat (ui/attachment-tab.tsx): bb shows an
+// into a Doc Review tab beside the chat (ui/attachment-tab.tsx): VesnALIA shows an
 // attachment's chip in its own preview, which no file opener reaches.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import "./app.css";
 import { defineMessages, messagesNow } from "./lib/i18n";
 import {

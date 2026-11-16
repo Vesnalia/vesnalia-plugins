@@ -4,7 +4,7 @@ import {
   createFakePluginHost,
   makePluginAgentConfigurationContext,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin, { formatFmMeta } from "./server.ts";
 
 const SKILLS = ["captain", "firstmate", "afk", "ahoy", "bearings", "quiet", "stow"] as const;
@@ -14,7 +14,7 @@ async function load() {
     pluginId: "firstmate",
     agentSkillIds: SKILLS,
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   return host;
 }
 
@@ -23,9 +23,9 @@ test("cli help lists dispatch and deck", async () => {
   try {
     const result = await host.harness.behavior.runCli([]);
     assert.equal(result.exitCode, 0);
-    assert.match(result.stdout, /bb firstmate dispatch/);
-    assert.match(result.stdout, /bb firstmate deck/);
-    assert.match(result.stdout, /bb firstmate fm/);
+    assert.match(result.stdout, /alia firstmate dispatch/);
+    assert.match(result.stdout, /alia firstmate deck/);
+    assert.match(result.stdout, /alia firstmate fm/);
   } finally {
     await host.harness.lifecycle.dispose();
   }
@@ -117,7 +117,7 @@ test("dispatch spawns an isolated ship worktree", async () => {
   }
 });
 
-test("formatFmMeta matches fm-spawn bb keys", () => {
+test("formatFmMeta matches fm-spawn VesnALIA keys", () => {
   const scout = formatFmMeta({
     id: "abc12def",
     threadId: "thr_x",
@@ -130,14 +130,14 @@ test("formatFmMeta matches fm-spawn bb keys", () => {
   assert.match(scout, /^endpoint_task_id=abc12def$/m);
   assert.match(scout, /^worktree=\/wt$/m);
   assert.match(scout, /^project=\/repo$/m);
-  assert.match(scout, /^harness=bb$/m);
+  assert.match(scout, /^harness=alia$/m);
   assert.match(scout, /^kind=scout$/m);
   assert.match(scout, /^tasktmp=\/tmp\/fm-abc12def$/m);
   assert.match(scout, /^model=default$/m);
   assert.match(scout, /^effort=default$/m);
   assert.match(scout, /^spawn_gen=s1$/m);
-  assert.match(scout, /^backend=bb$/m);
-  assert.match(scout, /^bb_thread_id=thr_x$/m);
+  assert.match(scout, /^backend=alia$/m);
+  assert.match(scout, /^alia_thread_id=thr_x$/m);
   assert.doesNotMatch(scout, /^mode=/m);
   assert.doesNotMatch(scout, /^yolo=/m);
 
@@ -172,7 +172,7 @@ test("dispatch with fmHome writes state meta and forget drops it", async () => {
     agentSkillIds: SKILLS,
     settings: { fmHome: "/tmp/fm-home" },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   try {
     const hostCommands: string[] = [];
     host.harness.sdk.stub("threadSections.list", async () => []);
@@ -203,7 +203,7 @@ test("dispatch with fmHome writes state meta and forget drops it", async () => {
       { projectId: "proj_1" },
     );
     assert.equal(result.exitCode, 0, result.stderr);
-    assert.match(result.stdout, /fm: bb firstmate fm peek -- /);
+    assert.match(result.stdout, /fm: alia firstmate fm peek -- /);
     const idMatch = /Dispatched ship crew (\S+)/.exec(result.stdout);
     assert.ok(idMatch);
     const crewId = idMatch[1]!;
@@ -213,7 +213,7 @@ test("dispatch with fmHome writes state meta and forget drops it", async () => {
     assert.match(writeCmd, new RegExp(`endpoint_task_id=${crewId}`));
     assert.match(writeCmd, /worktree=\/wt/);
     assert.match(writeCmd, /project=\/repo/);
-    assert.match(writeCmd, /backend=bb/);
+    assert.match(writeCmd, /backend=alia/);
     assert.match(writeCmd, /kind=ship/);
     assert.match(writeCmd, /mode=direct-PR/);
     assert.match(writeCmd, /yolo=off/);
@@ -317,7 +317,7 @@ function sendCalls(host: Awaited<ReturnType<typeof load>>) {
 }
 
 async function seedCrew(host: Awaited<ReturnType<typeof load>>) {
-  await host.bb.storage.kv.set("crews", [
+  await host.alia.storage.kv.set("crews", [
     {
       id: "c1",
       task: "fix login",
@@ -370,12 +370,12 @@ test("a protocol verdict does not nudge; supervision still pings the captain", a
     stubIdleSdk(host);
     await seedCrew(host);
     await host.harness.behavior.setSettings({ supervisionEnabled: true });
-    const emitted = await emitIdle(host, "ACK: on it\n\nDONE: shipped branch bb/nudge");
+    const emitted = await emitIdle(host, "ACK: on it\n\nDONE: shipped branch alia/nudge");
     assert.deepEqual(emitted.errors, []);
     const sends = sendCalls(host);
     assert.equal(sends.length, 1);
     assert.equal(sends[0]?.threadId, "thr_cap");
-    assert.match(sends[0]?.text ?? "", /DONE: shipped branch bb\/nudge/);
+    assert.match(sends[0]?.text ?? "", /DONE: shipped branch alia\/nudge/);
     assert.doesNotMatch(sends[0]?.text ?? "", /TURN ENDED WITHOUT A STATUS VERDICT/);
   } finally {
     await host.harness.lifecycle.dispose();
@@ -413,7 +413,7 @@ test("cooldown blocks a second nudge; the cap then surfaces NEEDS DECISION", asy
     assert.equal(sendCalls(host).filter((send) => send.threadId === "thr_crew").length, 1);
 
     await host.harness.behavior.setSettings({ nudgeMaxPerCrew: 2, nudgeCooldownSeconds: 0 });
-    await host.bb.storage.kv.set("protocol-nudges", {
+    await host.alia.storage.kv.set("protocol-nudges", {
       c1: { generation: "2026-09-18T00:00:00.000Z", count: 1, lastAt: 0, exhausted: false },
     });
     await emitIdle(host, "still working");
@@ -458,7 +458,7 @@ test("provider-turn-idle still nudges; afk nudges the crew and holds the captain
     host.harness.sdk.stub("threads.events.list", async () => [
       { data: { reason: "provider-turn-idle" } },
     ]);
-    await host.bb.storage.kv.set("afk", {
+    await host.alia.storage.kv.set("afk", {
       on: true,
       words: "out",
       since: "2026-09-18T00:00:00.000Z",
@@ -473,7 +473,7 @@ test("provider-turn-idle still nudges; afk nudges the crew and holds the captain
     const exhausted = await emitIdle(host, "no verdict");
     assert.deepEqual(exhausted.errors, []);
     assert.equal(sendCalls(host).filter((send) => send.threadId === "thr_cap").length, 0);
-    const afk = (await host.bb.storage.kv.get("afk")) as { held?: string[] };
+    const afk = (await host.alia.storage.kv.get("afk")) as { held?: string[] };
     assert.match(afk.held?.join("\n") ?? "", /NEEDS DECISION/);
   } finally {
     await host.harness.lifecycle.dispose();

@@ -1,4 +1,4 @@
-import type { useProviders } from "./bb-sdk";
+import type { useProviders } from "./alia-sdk";
 import type { CSSProperties } from "react";
 
 import { cn } from "./lib/utils";
@@ -21,7 +21,7 @@ function providerMaskStyle(logoUrl: string): CSSProperties {
 }
 
 /**
- * The agent a thread runs on, resolved from bb's live provider directory.
+ * The agent a thread runs on, resolved from VesnALIA's live provider directory.
  *
  * Ends the card's third line or a compact row. A provider without a served
  * logo, or one missing from the current directory, gets a neutral dot.
@@ -48,12 +48,12 @@ export function ProviderGlyph({
           <>
             <span
               aria-hidden
-              className="bb-sidebar-theme-light-only size-3"
+              className="alia-sidebar-theme-light-only size-3"
               style={{ ...maskStyle, backgroundColor: tint.light }}
             />
             <span
               aria-hidden
-              className="bb-sidebar-theme-dark-only hidden size-3"
+              className="alia-sidebar-theme-dark-only hidden size-3"
               style={{ ...maskStyle, backgroundColor: tint.dark }}
             />
           </>

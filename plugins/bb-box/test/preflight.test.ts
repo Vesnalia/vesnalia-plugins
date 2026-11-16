@@ -15,16 +15,16 @@ const PREFLIGHT = fileURLToPath(new URL("./preflight.mjs", import.meta.url));
 const CHECK = fileURLToPath(new URL("./check-test-machine.mjs", import.meta.url));
 const A_TEST_FILE = "test/sizes.test.ts";
 const MACHINE_CHECK_IMPORT = 'import "./check-test-machine.mjs";';
-const NOWHERE = "/nonexistent/bb-box-image.json";
+const NOWHERE = "/nonexistent/alia-box-image.json";
 const QUICK_PROBE = { answerWithinMs: 300, killAfterMs: 300 };
 const LONGEST_QUICK_PROBE_MS = 3_000;
 const A_KILL_TAKES_EFFECT_WITHIN_MS = 5_000;
 const KILL_POLL_MS = 20;
 
 const A_DEVELOPERS_MACHINE: TestMachineFacts = { root: false, sudo: SUDO_ANSWERS.noPassword, tailscale: "/usr/bin/tailscale", box: false, githubActions: false, override: false, noExemptions: false };
-const REFUSAL = /^BB Box's tests will not run on this machine: this user can run sudo without a password, and Tailscale is installed, at \/usr\/bin\/tailscale\. A test that goes wrong could change this machine: one once logged a machine out of its tailnet\. Run the tests in a BB Box box or on GitHub Actions\. To run them here anyway, at the risk of changing this machine, set BBBOX_TESTS_MAY_BREAK_THIS_MACHINE=1\.$/;
-const REFUSED = /BB Box's tests will not run on this machine: (.+, and )?this user can run sudo without a password/;
-const COULD_NOT_TELL = /BB Box's tests will not run on this machine: (.+, and )?BB Box could not tell whether this user can run sudo without a password/;
+const REFUSAL = /^ALIA Box's tests will not run on this machine: this user can run sudo without a password, and Tailscale is installed, at \/usr\/bin\/tailscale\. A test that goes wrong could change this machine: one once logged a machine out of its tailnet\. Run the tests in a ALIA Box box or on GitHub Actions\. To run them here anyway, at the risk of changing this machine, set BBBOX_TESTS_MAY_BREAK_THIS_MACHINE=1\.$/;
+const REFUSED = /ALIA Box's tests will not run on this machine: (.+, and )?this user can run sudo without a password/;
+const COULD_NOT_TELL = /ALIA Box's tests will not run on this machine: (.+, and )?ALIA Box could not tell whether this user can run sudo without a password/;
 const NOT_ROOT = 1000;
 const ROOT = 0;
 const A_TEST_PASSED = /pass [1-9]|^ok /m;
@@ -82,19 +82,19 @@ function testFilesLackingTheMachineCheck(testRoot: string): string[] {
 
 test("the tests refuse a machine where this user can run sudo without a password or Tailscale is installed, and say what to do", () => {
   assert.match(testMachineRefusal(A_DEVELOPERS_MACHINE) ?? "", REFUSAL);
-  assert.match(testMachineRefusal({ ...A_DEVELOPERS_MACHINE, sudo: SUDO_ANSWERS.needsPassword }) ?? "", /^BB Box's tests will not run on this machine: Tailscale is installed, at \/usr\/bin\/tailscale\./);
-  assert.match(testMachineRefusal({ ...A_DEVELOPERS_MACHINE, tailscale: null }) ?? "", /^BB Box's tests will not run on this machine: this user can run sudo without a password\./);
-  assert.match(testMachineRefusal({ ...A_DEVELOPERS_MACHINE, sudo: SUDO_ANSWERS.absent, tailscale: null, root: true }) ?? "", /^BB Box's tests will not run on this machine: the tests run as root\./);
+  assert.match(testMachineRefusal({ ...A_DEVELOPERS_MACHINE, sudo: SUDO_ANSWERS.needsPassword }) ?? "", /^ALIA Box's tests will not run on this machine: Tailscale is installed, at \/usr\/bin\/tailscale\./);
+  assert.match(testMachineRefusal({ ...A_DEVELOPERS_MACHINE, tailscale: null }) ?? "", /^ALIA Box's tests will not run on this machine: this user can run sudo without a password\./);
+  assert.match(testMachineRefusal({ ...A_DEVELOPERS_MACHINE, sudo: SUDO_ANSWERS.absent, tailscale: null, root: true }) ?? "", /^ALIA Box's tests will not run on this machine: the tests run as root\./);
 });
 
 test("a sudo that does not answer, or fails, counts as a risk, and the refusal names the variable to run anyway", () => {
   const refusal = testMachineRefusal({ ...A_DEVELOPERS_MACHINE, sudo: SUDO_ANSWERS.inconclusive, tailscale: null }) ?? "";
 
-  assert.match(refusal, /^BB Box's tests will not run on this machine: BB Box could not tell whether this user can run sudo without a password, as sudo -n true did not answer in time or failed\./);
+  assert.match(refusal, /^ALIA Box's tests will not run on this machine: ALIA Box could not tell whether this user can run sudo without a password, as sudo -n true did not answer in time or failed\./);
   assert.match(refusal, /set BBBOX_TESTS_MAY_BREAK_THIS_MACHINE=1\.$/);
 });
 
-test("the tests run on a machine with none of those risks, in a BB Box box, on GitHub Actions, or when a person accepts the risk", () => {
+test("the tests run on a machine with none of those risks, in a VesnALIA Box box, on GitHub Actions, or when a person accepts the risk", () => {
   assert.equal(testMachineRefusal({ ...A_DEVELOPERS_MACHINE, sudo: SUDO_ANSWERS.needsPassword, tailscale: null }), null);
   assert.equal(testMachineRefusal({ ...A_DEVELOPERS_MACHINE, sudo: SUDO_ANSWERS.absent, tailscale: null }), null);
   assert.equal(testMachineRefusal({ ...A_DEVELOPERS_MACHINE, box: true }), null);
@@ -144,7 +144,7 @@ test("the machine's facts come from the uid it runs as, its sudo, its Tailscale 
   assert.deepEqual(tools.ran(), ["sudo -n true", "sudo -n true"], "only sudo -n true ran, to ask whether sudo needs a password");
 });
 
-test("the box marker counts only as a BB Box image record of a contract and kind BB Box knows, that its owner alone can change, not as a link or as other text", () => {
+test("the box marker counts only as a VesnALIA Box image record of a contract and kind VesnALIA Box knows, that its owner alone can change, not as a link or as other text", () => {
   const dir = tempDir("marker");
   const own = process.getuid!();
   const record = join(dir, "record.json");

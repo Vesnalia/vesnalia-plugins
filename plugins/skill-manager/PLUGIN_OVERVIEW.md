@@ -14,5 +14,5 @@ Sources are recorded in `skills-lock.json`, the same file `npx skills` writes,
 so update checks work for skills installed by either tool and local edits are
 never overwritten without confirmation.
 
-Agents get the same power through `bb skill-manager`: `search`, `install`,
+Agents get the same power through `alia skill-manager`: `search`, `install`,
 `check`, `update`, `sync`, `adopt`, `diff`, and `doctor`.

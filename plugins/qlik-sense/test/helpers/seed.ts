@@ -19,7 +19,7 @@ export async function seedApp(engine: string): Promise<Seed> {
   const ret = async (handle: number, method: string, params: Record<string, unknown>): Promise<EngineValue> =>
     (await c.call(handle, method, params)).qReturn;
 
-  const { qAppId } = await c.call(-1, "CreateApp", { qAppName: `bb-qlik-sense-test-${Date.now()}` });
+  const { qAppId } = await c.call(-1, "CreateApp", { qAppName: `alia-qlik-sense-test-${Date.now()}` });
   const doc = (await ret(-1, "OpenDoc", { qDocName: qAppId })).qHandle;
 
   const regions = ["North", "South", "East", "West"];

@@ -7,7 +7,7 @@ Date: 11 November 2026
 
 A Namespace Linux box is a container on a machine of its own, and Namespace
 bills the machine by the minute until it is destroyed or reaches its
-deadline. BB Box moves the deadline on while the box is recorded.
+deadline. VesnALIA Box moves the deadline on while the box is recorded.
 
 Snapshots on Namespace ([082](082-docker-snapshots.md), item 8) stay on the
 box's machine. A restore makes a new container there and removes the old
@@ -19,7 +19,7 @@ machine either way.
 
 Once snapshots are in use, the machine can also outlive its box's container:
 a restore that stopped part way, or a container removed by hand, leaves a
-machine that costs minutes and holds nothing. And BB Box cannot always ask:
+machine that costs minutes and holds nothing. And VesnALIA Box cannot always ask:
 the machine's Docker may not answer.
 
 Three questions had to be settled:
@@ -27,7 +27,7 @@ Three questions had to be settled:
 - What a release ends.
 - What keeps a machine with snapshots alive, in particular a box whose
   container has stopped.
-- How long BB Box keeps a machine alive while its Docker does not answer.
+- How long VesnALIA Box keeps a machine alive while its Docker does not answer.
 
 ## Decision
 
@@ -40,23 +40,23 @@ Three questions had to be settled:
 - A whole-box release on Namespace records its intent before it destroys the
   machine. If the destroy fails, the sweep finishes it, and the sweep never
   adopts that box again, even when the box's record is lost.
-- On a machine whose box has taken a snapshot, BB Box moves the deadline on
+- On a machine whose box has taken a snapshot, VesnALIA Box moves the deadline on
   while a container a box record names exists there, running or stopped. A
   stopped box keeps its machine, and its disk, so the person ends the cost
-  by releasing it. BB Box never lets a stopped box's machine expire on its
+  by releasing it. VesnALIA Box never lets a stopped box's machine expire on its
   own while promising that the disk stays.
 - The sweep destroys a machine with snapshots where no container a box
   record names exists, and marks its box gone.
-- When the machine's Docker does not answer, BB Box treats the machine as
+- When the machine's Docker does not answer, VesnALIA Box treats the machine as
   unknown, not empty. It moves the deadline on for one hour after a
   container of the box last answered, and then stops. The last answer is
-  stored, so a restart of BB keeps it.
+  stored, so a restart of VesnALIA keeps it.
 - A machine with snapshots but no stored last answer, such as one set up
   before the time was stored, gets its hour from the first sweep at which
   Docker does not answer. That time is stored at once, so a restart does not
   start the hour again. A later answer replaces it.
 - A machine whose box has taken no snapshot keeps the behaviour from before
-  this record: BB Box does not ask its Docker, and moves its deadline on
+  this record: VesnALIA Box does not ask its Docker, and moves its deadline on
   while the box is recorded.
 
 ## Consequences
@@ -68,7 +68,7 @@ Three questions had to be settled:
   The Namespace guide says so.
 - A machine with snapshots and no container of its box costs minutes for at
   most one sweep after the container goes.
-- When Docker stops answering, BB Box moves a machine's deadline on for at
+- When Docker stops answering, VesnALIA Box moves a machine's deadline on for at
   most one hour. The machine then ends at the deadline its last extension
   set.
 - The empty-machine rule covers only machines whose box has taken a

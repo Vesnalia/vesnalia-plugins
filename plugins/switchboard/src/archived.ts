@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { FilterNames } from "./filter";
 
 export function archivedThreads(threads: readonly PluginSidebarThread[], query: string,

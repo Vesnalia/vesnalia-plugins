@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-goals",
+  "name": "alia-plugin-goals",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Goals",
     "description": "Keep your personal priorities available when you ask an agent to evaluate an idea or plan.",
     "branding": {
@@ -23,7 +23,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -54,11 +53,6 @@
     "name": "Dmitrii Kapustin",
     "url": "https://github.com/dmitriikapustin"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin.git",
-    "directory": "plugins/goals"
-  },
   "files": [
     "server.ts",
     "app.tsx",
@@ -77,8 +71,25 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "check": "tsc --noEmit",
     "test": "node --experimental-strip-types --test server.test.ts"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/goals#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/goals"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

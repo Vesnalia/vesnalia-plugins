@@ -1,9 +1,9 @@
-// BB's built-in icon names, vendored from BB's shared-ui (`CORE_ICON_MAP` keys
+// VesnALIA's built-in icon names, vendored from VesnALIA's shared-ui (`CORE_ICON_MAP` keys
 // in components/ui/icon.tsx and `EXTENDED_ICON_NAMES` in icon-registry.ts).
-// BB draws any other name as its Zap fallback, so names a spec writes are
+// VesnALIA draws any other name as its Zap fallback, so names a spec writes are
 // resolved here first: models write lucide/heroicons names in any case.
 
-const BB_ICON_NAMES = [
+const ALIA_ICON_NAMES = [
   // CORE_ICON_MAP
   "AlertCircle",
   "AlertTriangle",
@@ -184,18 +184,18 @@ const BB_ICON_NAMES = [
   "ZoomOut",
 ] as const;
 
-export type BbIconName = (typeof BB_ICON_NAMES)[number];
+export type AliaIconName = (typeof ALIA_ICON_NAMES)[number];
 
-/** Every BB name keyed with case and separators dropped: "git-branch", "git_branch" and "gitBranch" all key as "gitbranch". */
-const BY_KEY: ReadonlyMap<string, BbIconName> = new Map(
-  BB_ICON_NAMES.map((name) => [name.toLowerCase(), name]),
+/** Every VesnALIA name keyed with case and separators dropped: "git-branch", "git_branch" and "gitBranch" all key as "gitbranch". */
+const BY_KEY: ReadonlyMap<string, AliaIconName> = new Map(
+  ALIA_ICON_NAMES.map((name) => [name.toLowerCase(), name]),
 );
 
 /**
- * Common lucide and heroicons names that BB spells differently, keyed the
- * same way. Real BB names win over these (`x` is BB's X).
+ * Common lucide and heroicons names that VesnALIA spells differently, keyed the
+ * same way. Real VesnALIA names win over these (`x` is VesnALIA's X).
  */
-const ALIASES: Record<string, BbIconName> = {
+const ALIASES: Record<string, AliaIconName> = {
   trash: "Trash2",
   trashcan: "Trash2",
   delete: "Trash2",
@@ -308,8 +308,8 @@ const ALIASES: Record<string, BbIconName> = {
 };
 
 /**
- * The BB icon a spec's icon name means, or null when BB has no such icon
- * (callers then draw nothing rather than BB's Zap fallback). Accepts any
+ * The VesnALIA icon a spec's icon name means, or null when VesnALIA has no such icon
+ * (callers then draw nothing rather than VesnALIA's Zap fallback). Accepts any
  * case and separator, lucide/heroicons spellings, and a trailing "Icon".
  */
 export function resolveIconName(name: string): string | null {

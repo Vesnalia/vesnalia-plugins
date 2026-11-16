@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
-import { experimental_Icon as Icon, type PluginSidebarProject } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, type PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
 import { HUE_IDS, type HueId, type SortMode } from "./layout";
 import type { Group } from "./tree";
 import { Hint } from "./hint";

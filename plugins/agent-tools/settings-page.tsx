@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { getLang, t, tp, applyUiLang, setUiLangChoice, type UiLangChoice } from "./i18n";
 import { Switch } from "@/components/ui/switch";
@@ -135,11 +135,11 @@ export function SettingsPage() {
           </p>
         </div>
         <div className="at-panel-body p-4">
-          <Field label={t("Язык")} hint={t("«Как в BB» учитывает Русификатор и тему Pokecut.")}>
+          <Field label={t("Язык")} hint={t("«Как в ALIA» учитывает Русификатор и тему Pokecut.")}>
             <div role="group" aria-label={t("Язык интерфейса")} className="at-seg">
               {(
                 [
-                  ["auto", t("Как в BB")],
+                  ["auto", t("Как в ALIA")],
                   ["ru", "Русский"],
                   ["en", "English"],
                 ] as const
@@ -164,11 +164,11 @@ export function SettingsPage() {
         <div className="at-panel-head">
           <h2 className="text-sm font-medium">{t("Классификатор навыков")}</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {t("Новые навыки без категории по одному уходят в скрытый тред BB с этой моделью; она выбирает или создаёт категорию.")}
+            {t("Новые навыки без категории по одному уходят в скрытый тред ALIA с этой моделью; она выбирает или создаёт категорию.")}
           </p>
         </div>
         <div className="at-panel-body space-y-5 p-4">
-          <Field label={t("Провайдер")} hint={t("Агент BB, в котором работает тред классификатора.")} htmlFor="at-cls-provider">
+          <Field label={t("Провайдер")} hint={t("Агент ALIA, в котором работает тред классификатора.")} htmlFor="at-cls-provider">
             <select
               id="at-cls-provider"
               className={selectClass}
@@ -244,7 +244,7 @@ export function SettingsPage() {
         <div className="at-panel-head">
           <h2 className="text-sm font-medium">{t("Навыки на машинах")}</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {t("Канон навыков — хаб BB: он отдаёт навыки в каждую сессию на любой машине.")}
+            {t("Канон навыков — хаб ALIA: он отдаёт навыки в каждую сессию на любой машине.")}
           </p>
         </div>
         <div className="at-panel-body space-y-5 p-4">

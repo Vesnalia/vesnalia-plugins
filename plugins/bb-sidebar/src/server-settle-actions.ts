@@ -38,7 +38,7 @@ export function createServerSettleActions(
       previous: Array<{ threadId: string; parentThreadId: string | null; row: StoredLifecycleRow | null }>;
     }
   >();
-  ctx.bb.onDispose(() => settleUndos.clear());
+  ctx.alia.onDispose(() => settleUndos.clear());
   let lastManualSettleAt = 0;
 
   const matchesSettle = (row: StoredLifecycleRow | null, settledAt: number) =>
@@ -65,7 +65,7 @@ export function createServerSettleActions(
         try {
           for (const thread of tree) {
             if (thread.pinnedAt === null) continue;
-            await ctx.bb.sdk.threads.unpin({ threadId: thread.id });
+            await ctx.alia.sdk.threads.unpin({ threadId: thread.id });
             unpinned.push(thread);
           }
           const currentTree = await loadSettleTree(threadId);
@@ -111,7 +111,7 @@ export function createServerSettleActions(
           const failed: string[] = [];
           for (const original of unpinned.reverse()) {
             try {
-              const current = await ctx.bb.sdk.threads.get({ threadId: original.id });
+              const current = await ctx.alia.sdk.threads.get({ threadId: original.id });
               // Preserve subsequent native pins, parent changes and shelf choices.
               if (
                 current.pinnedAt !== null ||
@@ -119,9 +119,9 @@ export function createServerSettleActions(
                 !sameLifecycle(readOne(original.id), beforeRows.get(original.id)!)
               )
                 continue;
-              await ctx.bb.sdk.threads.pin({ threadId: original.id });
+              await ctx.alia.sdk.threads.pin({ threadId: original.id });
               const index = pins.findIndex((thread) => thread.id === original.id);
-              await ctx.bb.sdk.threads.reorderPinned({
+              await ctx.alia.sdk.threads.reorderPinned({
                 threadId: original.id,
                 previousThreadId: pins[index - 1]?.id ?? null,
                 nextThreadId: pins[index + 1]?.id ?? null,

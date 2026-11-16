@@ -1,10 +1,10 @@
-# Antigravity Usage for BB
+# Antigravity Usage for VesnALIA
 
-Adds weekly Antigravity quota windows to BB's Provider Usage panel.
+Adds weekly Antigravity quota windows to VesnALIA's Provider Usage panel.
 
 ## Requirements
 
-- BB 0.43 or newer.
+- VesnALIA 0.43 or newer.
 - An existing, working Antigravity ACP provider (`acp-antigravity`). This project does **not** install or replace an ACP provider.
 - A local Antigravity login at `~/.gemini/antigravity-cli/antigravity-oauth-token`.
 
@@ -15,5 +15,5 @@ The plugin reads the local login token only to make the quota request. It does n
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/defacid/bb-antigravity-usage.git
+alia plugin install git:https://github.com/defacid/bb-antigravity-usage.git
 ```

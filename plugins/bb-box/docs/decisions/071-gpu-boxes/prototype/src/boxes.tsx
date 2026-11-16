@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Badge, StatusDot } from "@/src/app/common.tsx";
 import { MonitorGlyph, ServerGlyph } from "@/src/app/glyphs.tsx";

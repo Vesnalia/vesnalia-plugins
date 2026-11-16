@@ -1,4 +1,4 @@
-import type { PluginRpcClient } from "@get-bb/plugin-sdk/app";
+import type { PluginRpcClient } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, SessionAuth, LiveEvent } from "./contract";
 import type { Focus } from "./policy";
 // Module ownership keeps media independent of routed panels and their remounts.
@@ -39,7 +39,7 @@ const initial: State = {
   details: false,
   error: null,
   notice: null,
-  focus: { kind: "global", id: null, label: "All of BB", explicit: false },
+  focus: { kind: "global", id: null, label: "All of VesnALIA", explicit: false },
   events: [],
   pending: [],
   auth: null,
@@ -83,7 +83,7 @@ export async function refreshConfig() {
   try {
     patch(await rpc.call("config"));
   } catch {
-    patch({ error: "Cannot reach BB. Check your connection." });
+    patch({ error: "Cannot reach VesnALIA. Check your connection." });
   }
 }
 function release() {
@@ -110,7 +110,7 @@ function release() {
     audio = null;
   }
 }
-export async function end(notice = "Voice ended. Your BB work continues.") {
+export async function end(notice = "Voice ended. Your VesnALIA work continues.") {
   ++generation;
   const auth = state.auth;
   stream?.getTracks().forEach((t) => t.stop());
@@ -166,7 +166,7 @@ export async function start(threadId: string | null, projectId: string | null) {
   });
   try {
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia)
-      throw new Error("Microphone access requires BB over HTTPS.");
+      throw new Error("Microphone access requires VesnALIA over HTTPS.");
     // Create and prime the element synchronously in the tap gesture for Safari playback.
     audio = document.createElement("audio");
     audio.autoplay = true;
@@ -209,7 +209,7 @@ export async function start(threadId: string | null, projectId: string | null) {
           patch({ status: "listening" });
         }
         if (data.type === "session.closed")
-          void end("Voice connection ended. Your BB work continues.");
+          void end("Voice connection ended. Your VesnALIA work continues.");
         if (data.type === "error")
           patch({ error: "The voice connection reported an error." });
       } catch {}
@@ -225,14 +225,14 @@ export async function start(threadId: string | null, projectId: string | null) {
         disconnect = setTimeout(
           () =>
             failure(
-              "Voice disconnected. Tap Start voice to reconnect; your BB work continues.",
+              "Voice disconnected. Tap Start voice to reconnect; your VesnALIA work continues.",
             ),
           10000,
         );
       }
       if (connection.connectionState === "failed")
         failure(
-          "Voice disconnected. Tap Start voice to reconnect; your BB work continues.",
+          "Voice disconnected. Tap Start voice to reconnect; your VesnALIA work continues.",
         );
     };
     await connection.setLocalDescription(await connection.createOffer());
@@ -271,7 +271,7 @@ export async function start(threadId: string | null, projectId: string | null) {
     heartbeat = setInterval(() => {
       void rpc
         .call("control", { ...auth, command: "heartbeat" })
-        .catch(() => failure("BB connection lost. Your BB work continues."));
+        .catch(() => failure("VesnALIA connection lost. Your VesnALIA work continues."));
     }, 10000);
     await refresh();
   } catch (error) {
@@ -311,7 +311,7 @@ async function refresh() {
   } catch {
     if (state.auth)
       failure(
-        "The voice session ended or BB reloaded. Your BB work continues.",
+        "The voice session ended or VesnALIA reloaded. Your VesnALIA work continues.",
       );
   } finally {
     polling = false;
@@ -409,7 +409,7 @@ export function attachLifecycle() {
       (state.auth || state.status === "connecting")
     )
       void end(
-        "Voice paused while BB was in the background. Tap Start voice to resume.",
+        "Voice paused while VesnALIA was in the background. Tap Start voice to resume.",
       );
   };
   window.addEventListener("keydown", keydown);
@@ -423,6 +423,6 @@ export function attachLifecycle() {
     window.removeEventListener("blur", blur);
     window.removeEventListener("pagehide", pagehide);
     document.removeEventListener("visibilitychange", visibility);
-    void end("BB Live reloaded. Your work continues.");
+    void end("VesnALIA Live reloaded. Your work continues.");
   };
 }

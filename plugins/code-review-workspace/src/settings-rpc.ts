@@ -10,12 +10,12 @@ import { learningStats } from "./learning";
 import type { RpcHandlers, ServeDeps } from "./server-modules";
 
 export function register(deps: ServeDeps) {
-  const { bb, store, suggester, sync } = deps;
+  const { alia, store, suggester, sync } = deps;
   const handlers = {
     async getSetupStatus() {
       const [cli, user, scopes, providers, projects] = await Promise.all([
         runGh(["--version"]), runGh(["api", "user", "--jq", ".login"]), missingScopes(runGh),
-        bb.sdk.providers.list().catch(() => null), bb.sdk.projects.list({ includePersonal: true }).catch(() => null),
+        alia.sdk.providers.list().catch(() => null), alia.sdk.projects.list({ includePersonal: true }).catch(() => null),
       ]);
       return { githubCli: cli.code === 0, account: user.code === 0 ? user.stdout.trim() || null : null, missingScopes: scopes, agentAvailable: providers ? providers.some(p => p.available) : null, projectAvailable: projects ? projects.length > 0 : null };
     },
@@ -28,7 +28,7 @@ export function register(deps: ServeDeps) {
           // Old pages omit agent. New pages always send it, including null, so reset can omit instructions.
           return focus.agent === undefined ? { ...previous, ...focus, agent: previous?.agent ?? null } : { ...focus, agent: focus.agent };
         }) ?? before.focuses.focuses } }, revision);
-        bb.realtime.publish("preferences", {});
+        alia.realtime.publish("preferences", {});
         // These are in the assistants' instructions; whether they may run the repo's checks depends on the last two. So
         // are the agent checks the knobs turn on, and whether it acts when asked, which chooses its tools too.
         const refresh = (["assistantInstructions", "runRepoChecks", "unattendedAuthors"] as const).some((key) => result.preferences[key] !== before[key])
@@ -37,16 +37,16 @@ export function register(deps: ServeDeps) {
         return { result, refresh };
       });
       // Started after the block, which its reads of the store would wait for.
-      if (refresh) void refreshAssistants(bb, store).catch((error) => bb.log.warn(`Could not restart the idle review assistants: ${String(error)}`));
+      if (refresh) void refreshAssistants(alia, store).catch((error) => alia.log.warn(`Could not restart the idle review assistants: ${String(error)}`));
       return result;
     },
     async getAgentDefaults() {
       // Panel-started reviews run in the personal project (see startReview).
       try {
-        const projectId = await personalProjectId(bb);
-        const d = projectId ? await bb.sdk.projects.defaultExecutionOptions({ projectId }) : null;
+        const projectId = await personalProjectId(alia);
+        const d = projectId ? await alia.sdk.projects.defaultExecutionOptions({ projectId }) : null;
         // A custom guide writer starts at the mode it runs at on the defaults.
-        const { permissionMode: writerMode } = projectId && d ? await guideWriterMode(bb, projectId, d) : {};
+        const { permissionMode: writerMode } = projectId && d ? await guideWriterMode(alia, projectId, d) : {};
         return { defaults: d && { providerId: d.providerId, model: d.model, reasoningLevel: d.reasoningLevel, permissionMode: d.permissionMode, serviceTier: d.serviceTier }, ...(writerMode ? { guideWriterMode: writerMode } : {}) };
       } catch {
         return { defaults: null };
@@ -54,14 +54,14 @@ export function register(deps: ServeDeps) {
     },
     async getProviderModes({ hostId }) {
       try {
-        const providers = await bb.sdk.providers.list(hostId ? { hostId } : undefined);
+        const providers = await alia.sdk.providers.list(hostId ? { hostId } : undefined);
         return { providers: providers.map((provider) => ({ id: provider.id, name: provider.displayName, permissionModes: [...provider.capabilities.permissionModes] })) };
       } catch {
         return { providers: [] };
       }
     },
     async listMachines() {
-      return { machines: await listMachines(bb) };
+      return { machines: await listMachines(alia) };
     },
     async getAgentLearning() { return store.exclusive(async (tx) => { return { ...await learningStats(tx), canSuggest: await suggester.possible(tx), suggestion: suggester.current() }; }); },
     async suggestAssistantInstructions() { return await suggester.start(); },
@@ -69,12 +69,12 @@ export function register(deps: ServeDeps) {
     async listFilterViews() { return { views: await store.listFilterViews() }; },
     async saveFilterView(view) {
       await store.saveFilterView(view);
-      bb.realtime.publish("filter-views", { ts: Date.now() });
+      alia.realtime.publish("filter-views", { ts: Date.now() });
       return { ok: true as const };
     },
     async deleteFilterView({ id }) {
       await store.deleteFilterView(id);
-      bb.realtime.publish("filter-views", { ts: Date.now() });
+      alia.realtime.publish("filter-views", { ts: Date.now() });
       return { ok: true as const };
     },
     // GitHub account indicator + switcher
@@ -85,7 +85,7 @@ export function register(deps: ServeDeps) {
       const r = await switchGhAccount(runGh, login);
       if (r.ok) {
         await sync.resetViewer();
-        bb.realtime.publish("gh-account", { active: r.active });
+        alia.realtime.publish("gh-account", { active: r.active });
       }
       return r;
     },

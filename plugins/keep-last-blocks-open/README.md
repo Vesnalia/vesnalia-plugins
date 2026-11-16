@@ -1,6 +1,6 @@
-# bb-plugin-keep-last-blocks-open
+# alia-plugin-keep-last-blocks-open
 
-A BB plugin that keeps the newest work blocks of a thread expanded and folds
+A VesnALIA plugin that keeps the newest work blocks of a thread expanded and folds
 the older ones.
 
 While a thread runs, the newest **5** blocks stay open, counted across all
@@ -18,7 +18,7 @@ Open the plugin's settings page (Settings → Installed plugins → Keep Last Bl
 | Open blocks after the final answer | 1 | 0–3 | Newest blocks kept open after the final answer. `0` turns this mode off. |
 | Count Thought as a block | on | on / off | Whether "Thought" (reasoning) rows count toward the quota. |
 
-With a count of `0`, bb's own fold state is left as it is in that mode.
+With a count of `0`, VesnALIA's own fold state is left as it is in that mode.
 Changes apply at once; no reload is needed.
 
 ## What counts as a block
@@ -41,7 +41,7 @@ warning notices are never blocks.
 
 ## How it works
 
-- `keep-open.ts` runs as a trusted content script in the bb app shell. It reads
+- `keep-open.ts` runs as a trusted content script in the VesnALIA app shell. It reads
   the timeline DOM (`data-timeline-row-id`, `data-thread-window`, the
   `aria-expanded` toggles, and the "Stop run" button) and clicks a block's
   toggle only when that block's target changes.
@@ -52,7 +52,7 @@ warning notices are never blocks.
 
 ## Limits
 
-- The plugin depends on bb's timeline markup. A bb update that renames the
+- The plugin depends on VesnALIA's timeline markup. A VesnALIA update that renames the
   attributes or the "Stop run" label can make it stop acting, or act on the
   wrong rows. Unknown markup is skipped rather than thrown, but not every
   partial markup change has been tested.
@@ -66,9 +66,9 @@ warning notices are never blocks.
 ```sh
 npm install
 npx tsc -p tsconfig.json   # typecheck
-bb plugin build .          # build dist/
-bb plugin install . --yes  # install from this checkout (path source)
-bb plugin reload keep-last-blocks-open
+alia plugin build .          # build dist/
+alia plugin install . --yes  # install from this checkout (path source)
+alia plugin reload keep-last-blocks-open
 ```
 
 ## License

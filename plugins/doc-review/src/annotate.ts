@@ -4,7 +4,7 @@
 // comment as its text and a numbered badge in its picture; closing pages list
 // every comment and its replies by number, for viewers that hide annotation
 // text; and the comments themselves ride along as an attachment that Doc
-// Review in another bb imports (src/share.ts). Exporting a PDF that came from
+// Review in another VesnALIA imports (src/share.ts). Exporting a PDF that came from
 // an export first takes the earlier additions out, so a file can go back and
 // forth. The source file is never touched.
 import { inflateSync } from "node:zlib";
@@ -51,7 +51,7 @@ export interface ExportOptions {
   kind: DocKind;
   /** The file's name: the title of the list, and the file the comments are on. */
   name: string;
-  /** The name this bb's user signs their comments with; null leaves them unsigned. */
+  /** The name this VesnALIA's user signs their comments with; null leaves them unsigned. */
   signer: string | null;
   /** Without them the list falls back to a Latin-only built-in font. */
   fonts: ExportFonts | null;
@@ -742,7 +742,7 @@ function dropUnreachable(pdf: PDFDocument): void {
   }
 }
 
-/** Comments of an earlier export, as this bb would hold them, to carry into the next one. */
+/** Comments of an earlier export, as this VesnALIA would hold them, to carry into the next one. */
 function carried(earlier: SharedReview): ReviewComment[] {
   return earlier.comments.map((shared) => ({
     id: shared.id,
@@ -838,7 +838,7 @@ export async function annotatePdf(
     await addList(pdf, placed, file.name, file.kind, options.signer, options.fonts, options.lang ?? "en");
     await pdf.attach(new TextEncoder().encode(JSON.stringify(shared)), SHARE_FILE, {
       mimeType: "application/json",
-      description: "Review comments for Doc Review in bb (getbb.app)",
+      description: "Review comments for Doc Review in VesnALIA (getbb.app)",
       creationDate: now,
       modificationDate: now,
     });

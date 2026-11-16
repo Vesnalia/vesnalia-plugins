@@ -22,7 +22,7 @@ export async function resolveWorkspaceKey(
   const result = await runGit(["rev-parse", "--git-common-dir"], cwd);
   if (result.code !== 0 || !result.stdout.trim()) {
     const reason = result.failedToSpawn
-      ? "The git CLI was not found on the BB server host."
+      ? "The git CLI was not found on the VesnALIA server host."
       : result.timedOut
         ? "Git timed out while identifying the repository common directory."
         : result.stderr.trim().split("\n").pop() ||
@@ -37,7 +37,7 @@ export async function resolveWorkspaceKey(
   } catch {
     return {
       key: null,
-      error: "Git's repository common directory does not exist on the BB server host.",
+      error: "Git's repository common directory does not exist on the VesnALIA server host.",
     };
   }
 }

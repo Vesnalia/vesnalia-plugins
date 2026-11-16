@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 const hosts: ReturnType<typeof createFakePluginHost>[] = [];
 afterEach(async () => {
@@ -28,7 +28,7 @@ function setup() {
     },
   });
   hosts.push(host);
-  plugin(host.bb);
+  plugin(host.alia);
   return host.harness;
 }
 describe("main-thread storage", () => {
@@ -58,7 +58,7 @@ describe("main-thread storage", () => {
     });
   });
 
-  it("still refuses a directory that BB does not classify as a worktree", async () => {
+  it("still refuses a directory that VesnALIA does not classify as a worktree", async () => {
     const h = setup();
     h.inspection.sdk.stub(
       "environments.get",

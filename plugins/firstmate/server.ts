@@ -1,9 +1,9 @@
-// bb-plugin-firstmate — firstmate-style crews native to BB.
+// alia-plugin-firstmate — firstmate-style crews native to VesnALIA.
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { type BbPluginApi } from "@get-bb/plugin-sdk";
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   afkShouldSend,
@@ -440,7 +440,7 @@ export function formatFmMeta(input: {
     `endpoint_task_id=${input.id}`,
     `worktree=${input.worktree}`,
     `project=${input.project}`,
-    "harness=bb",
+    "harness=alia",
     `kind=${input.kind}`,
   ];
   if (input.kind === "ship" && input.mode !== undefined && input.mode !== "") {
@@ -453,8 +453,8 @@ export function formatFmMeta(input: {
   lines.push(`model=${input.model ?? "default"}`);
   lines.push("effort=default");
   lines.push(`spawn_gen=${spawnGen}`);
-  lines.push("backend=bb");
-  lines.push(`bb_thread_id=${input.threadId}`);
+  lines.push("backend=alia");
+  lines.push(`alia_thread_id=${input.threadId}`);
   return `${lines.join("\n")}\n`;
 }
 
@@ -479,10 +479,10 @@ function isBlankTitle(title: unknown): boolean {
   return typeof title !== "string" || title.trim() === "";
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     firstmateRepo: {
       type: "string",
       label: "Firstmate repo URL (used by init --real)",
@@ -495,7 +495,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     defaultProvider: {
       type: "string",
-      label: "Default crew provider id (blank = BB resolves)",
+      label: "Default crew provider id (blank = VesnALIA resolves)",
       default: "",
     },
     defaultPermissionMode: {
@@ -537,7 +537,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   async function readList<T>(key: string, schema: z.ZodType<T>, cap: number): Promise<T[]> {
-    const raw = await bb.storage.kv.get<unknown>(key);
+    const raw = await alia.storage.kv.get<unknown>(key);
     if (!Array.isArray(raw)) return [];
     const out: T[] = [];
     for (const entry of raw) {
@@ -548,7 +548,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function writeCrews(crews: Crew[]): Promise<void> {
-    await bb.storage.kv.set(CREWS_KEY, crews.slice(0, MAX_CREWS));
+    await alia.storage.kv.set(CREWS_KEY, crews.slice(0, MAX_CREWS));
   }
   async function readCrews(): Promise<Crew[]> {
     return readList(CREWS_KEY, crewSchema, MAX_CREWS);
@@ -557,23 +557,23 @@ export default async function plugin(bb: BbPluginApi) {
     return readList(QUEUE_KEY, queueItemSchema, MAX_QUEUE);
   }
   async function writeQueue(items: QueueItem[]): Promise<void> {
-    await bb.storage.kv.set(QUEUE_KEY, items.slice(0, MAX_QUEUE));
+    await alia.storage.kv.set(QUEUE_KEY, items.slice(0, MAX_QUEUE));
   }
   async function readDecisions(): Promise<Decision[]> {
     return readList(DECISIONS_KEY, decisionSchema, MAX_DECISIONS);
   }
   async function writeDecisions(items: Decision[]): Promise<void> {
-    await bb.storage.kv.set(DECISIONS_KEY, items.slice(0, MAX_DECISIONS));
+    await alia.storage.kv.set(DECISIONS_KEY, items.slice(0, MAX_DECISIONS));
   }
   async function readDone(): Promise<DoneEntry[]> {
     return readList(DONE_KEY, doneSchema, MAX_DONE);
   }
   async function recordDone(entry: Omit<DoneEntry, "id" | "at">): Promise<void> {
     const full: DoneEntry = { ...entry, id: randomUUID().slice(0, 8), at: new Date().toISOString() };
-    await bb.storage.kv.set(DONE_KEY, [full, ...(await readDone())].slice(0, MAX_DONE));
+    await alia.storage.kv.set(DONE_KEY, [full, ...(await readDone())].slice(0, MAX_DONE));
   }
   async function readPostures(): Promise<Record<string, Posture>> {
-    const raw = asRecord(await bb.storage.kv.get<unknown>(POSTURES_KEY));
+    const raw = asRecord(await alia.storage.kv.get<unknown>(POSTURES_KEY));
     const out: Record<string, Posture> = {};
     for (const [key, value] of Object.entries(raw)) {
       const parsed = postureSchema.safeParse(value);
@@ -589,17 +589,17 @@ export default async function plugin(bb: BbPluginApi) {
     return readList(SECONDMATES_KEY, secondmateSchema, 50);
   }
   async function writeSecondmates(items: Secondmate[]): Promise<void> {
-    await bb.storage.kv.set(SECONDMATES_KEY, items.slice(0, 50));
+    await alia.storage.kv.set(SECONDMATES_KEY, items.slice(0, 50));
   }
   async function readAfk(): Promise<AfkState | null> {
-    const parsed = afkSchema.safeParse(await bb.storage.kv.get<unknown>(AFK_KEY));
+    const parsed = afkSchema.safeParse(await alia.storage.kv.get<unknown>(AFK_KEY));
     return parsed.success && parsed.data.on ? parsed.data : parsed.success ? parsed.data : null;
   }
   async function writeAfk(state: AfkState | null): Promise<void> {
-    await bb.storage.kv.set(AFK_KEY, state);
+    await alia.storage.kv.set(AFK_KEY, state);
   }
   async function isQuiet(): Promise<boolean> {
-    return (await bb.storage.kv.get<unknown>(QUIET_KEY)) === true;
+    return (await alia.storage.kv.get<unknown>(QUIET_KEY)) === true;
   }
   async function markQueueForCrew(crewId: string, status: "done"): Promise<void> {
     const items = await readQueue();
@@ -620,7 +620,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function publishFleet(): Promise<void> {
     try {
-      await bb.realtime.publish("fleet", { at: Date.now() });
+      await alia.realtime.publish("fleet", { at: Date.now() });
     } catch {
       // best effort
     }
@@ -662,12 +662,12 @@ export default async function plugin(bb: BbPluginApi) {
     else if (output !== null && output !== "") lines.push(truncate(output.replace(/\n/g, " "), 400));
     lines.push(
       kind === "error"
-        ? `next: bb firstmate retry|tell|forget ${crew.id}`
+        ? `next: VesnALIA firstmate retry|tell|forget ${crew.id}`
         : kind === "needs-decision"
-          ? `next: bb firstmate tell|stop|forget ${crew.id}`
+          ? `next: VesnALIA firstmate tell|stop|forget ${crew.id}`
           : kind === "idle" || kind === "review"
-            ? `next: bb firstmate deliver ${crew.id}`
-            : `next: bb firstmate crew ${crew.id}`,
+            ? `next: VesnALIA firstmate deliver ${crew.id}`
+            : `next: VesnALIA firstmate crew ${crew.id}`,
     );
     const text = lines.join("\n").slice(0, 1500);
     if (hold && afk !== null) {
@@ -676,20 +676,20 @@ export default async function plugin(bb: BbPluginApi) {
       return;
     }
     try {
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.send({
         threadId: crew.parentThreadId,
         mode: "auto",
         input: [{ type: "text", text, mentions: [] }],
       });
     } catch {
-      bb.log.warn(`notify failed for crew ${crew.id}`);
+      alia.log.warn(`notify failed for crew ${crew.id}`);
     }
     await publishFleet();
   }
 
   async function crewStatus(crew: Crew): Promise<string> {
     try {
-      const thread = await bb.sdk.threads.get({ threadId: crew.threadId });
+      const thread = await alia.sdk.threads.get({ threadId: crew.threadId });
       return threadField(thread, "status");
     } catch {
       return "unknown";
@@ -698,7 +698,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function crewOutput(crew: Crew, max = MAX_OUTPUT): Promise<string | null> {
     try {
-      const result = await bb.sdk.threads.output({ threadId: crew.threadId });
+      const result = await alia.sdk.threads.output({ threadId: crew.threadId });
       const text = asRecord(result)["output"];
       return typeof text === "string" ? truncate(text, max) : null;
     } catch {
@@ -708,7 +708,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function threadEnv(threadId: string): Promise<string | null> {
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       const envId = asRecord(thread)["environmentId"];
       return typeof envId === "string" ? envId : null;
     } catch {
@@ -723,7 +723,7 @@ export default async function plugin(bb: BbPluginApi) {
       const envId = await threadEnv(threadId);
       if (envId !== null) {
         try {
-          const env = await bb.sdk.environments.get({ environmentId: envId });
+          const env = await alia.sdk.environments.get({ environmentId: envId });
           const path = env.path;
           if (typeof path === "string" && path !== "") return path;
         } catch {
@@ -737,14 +737,14 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function projectCheckoutPath(projectId: string): Promise<string | null> {
     try {
-      const listed = await bb.sdk.environments.list({ projectId });
+      const listed = await alia.sdk.environments.list({ projectId });
       const preferred = listed.find((e) => !e.isWorktree && e.status === "ready" && typeof e.path === "string" && e.path !== "");
       if (preferred?.path) return preferred.path;
     } catch {
       // try project sources
     }
     try {
-      const project = await bb.sdk.projects.get({ projectId });
+      const project = await alia.sdk.projects.get({ projectId });
       const def = project.sources.find((s) => s.isDefault) ?? project.sources[0];
       if (def !== undefined && def.path !== "") return def.path;
     } catch {
@@ -766,7 +766,7 @@ export default async function plugin(bb: BbPluginApi) {
       try {
         hostId = await resolveHostForProject(input.crew.projectId, input.crew.parentThreadId ?? undefined);
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `fm meta skipped: no host crew=${input.crew.id} ${error instanceof Error ? error.message : String(error)}`,
         );
         return false;
@@ -799,15 +799,15 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       const result = await runOnHost(hostId, script, 20_000);
       if (result.exitCode !== 0) {
-        bb.log.warn(
+        alia.log.warn(
           `fm meta write failed crew=${input.crew.id} exit=${result.exitCode} ${result.output.slice(0, 500)}`,
         );
         return false;
       }
-      bb.log.info(`fm meta written crew=${input.crew.id} path=${dest}`);
+      alia.log.info(`fm meta written crew=${input.crew.id} path=${dest}`);
       return true;
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `fm meta write failed crew=${input.crew.id} ${error instanceof Error ? error.message : String(error)}`,
       );
       return false;
@@ -827,10 +827,10 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       const result = await runOnHost(hostId, `rm -f ${shQuote(dest)}`, 15_000);
       if (result.exitCode !== 0) {
-        bb.log.warn(`fm meta drop failed crew=${crew.id} exit=${result.exitCode}`);
+        alia.log.warn(`fm meta drop failed crew=${crew.id} exit=${result.exitCode}`);
       }
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `fm meta drop failed crew=${crew.id} ${error instanceof Error ? error.message : String(error)}`,
       );
     }
@@ -839,7 +839,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function parentPermission(parentThreadId: string | undefined): Promise<PermissionMode | undefined> {
     if (parentThreadId === undefined) return undefined;
     try {
-      const opts = await bb.sdk.threads.defaultExecutionOptions({ threadId: parentThreadId });
+      const opts = await alia.sdk.threads.defaultExecutionOptions({ threadId: parentThreadId });
       return toPermissionMode(asRecord(opts)["permissionMode"]);
     } catch {
       return undefined;
@@ -850,7 +850,7 @@ export default async function plugin(bb: BbPluginApi) {
     const envId = await threadEnv(crew.threadId);
     if (envId === null) return prFacts(null);
     try {
-      return prFacts(await bb.sdk.environments.pullRequest({ environmentId: envId }));
+      return prFacts(await alia.sdk.environments.pullRequest({ environmentId: envId }));
     } catch {
       return prFacts(null);
     }
@@ -860,7 +860,7 @@ export default async function plugin(bb: BbPluginApi) {
     const crews = await readCrews();
     const known = new Set(crews.map((c) => c.threadId));
     try {
-      const found = await bb.sdk.threads.list({
+      const found = await alia.sdk.threads.list({
         originPluginId: "firstmate",
         includeHidden: true,
         limit: 50,
@@ -885,7 +885,7 @@ export default async function plugin(bb: BbPluginApi) {
         missing.map(async (row): Promise<Crew | null> => {
           try {
             const meta = asRecord(
-              await bb.sdk.threads.getPluginMetadata({ threadId: row.threadId, pluginId: "firstmate" }),
+              await alia.sdk.threads.getPluginMetadata({ threadId: row.threadId, pluginId: "firstmate" }),
             );
             if (!metaFlag(meta, "crew")) return null;
             const id = typeof meta["crewId"] === "string" ? meta["crewId"] : row.threadId.slice(0, 8);
@@ -937,7 +937,7 @@ export default async function plugin(bb: BbPluginApi) {
       const envId = await threadEnv(parentThreadId);
       if (envId !== null) {
         try {
-          const env = await bb.sdk.environments.get({ environmentId: envId });
+          const env = await alia.sdk.environments.get({ environmentId: envId });
           const hostId = asRecord(env)["hostId"];
           if (typeof hostId === "string" && hostId !== "") return hostId;
         } catch {
@@ -945,7 +945,7 @@ export default async function plugin(bb: BbPluginApi) {
         }
       }
     }
-    const listed = await bb.sdk.environments.list({ projectId });
+    const listed = await alia.sdk.environments.list({ projectId });
     const preferred = listed.find((e) => e.isWorktree === false && e.status === "ready" && e.hostId !== "");
     const any = listed.find((e) => e.status === "ready" && e.hostId !== "");
     const pick = preferred ?? any;
@@ -974,7 +974,7 @@ export default async function plugin(bb: BbPluginApi) {
     const mates = await readSecondmates();
     const mate = mates.find((m) => m.projectId === input.projectId);
     if (mate !== undefined && mate.threadId !== input.parentThreadId) {
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.send({
         threadId: mate.threadId,
         mode: "auto",
         input: [
@@ -1014,7 +1014,7 @@ export default async function plugin(bb: BbPluginApi) {
     };
     const capped = capPermission(input.permissionMode, await parentPermission(input.parentThreadId));
     let hostId: string | undefined;
-    let environment: Parameters<typeof bb.sdk.threads.spawn>[0]["environment"];
+    let environment: Parameters<typeof alia.sdk.threads.spawn>[0]["environment"];
     if (input.worktree) {
       hostId = await resolveHostForProject(input.projectId, input.parentThreadId);
       environment = {
@@ -1025,7 +1025,7 @@ export default async function plugin(bb: BbPluginApi) {
     } else {
       environment = { type: "project-default" };
     }
-    const spawned = await bb.sdk.threads.spawn({
+    const spawned = await alia.sdk.threads.spawn({
       projectId: input.projectId,
       environment,
       prompt: crewPrompt({
@@ -1063,7 +1063,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (isSecondmateRoute(crew) && interrupt) {
       throw new Error(`Crew ${crew.id} is a secondmate route — do not interrupt the domain captain thread.`);
     }
-    await bb.sdk.threads.send({
+    await alia.sdk.threads.send({
       threadId: crew.threadId,
       mode: interrupt ? "steer" : "queue-if-active",
       input: [{ type: "text", text: message.slice(0, MAX_TASK), mentions: [] }],
@@ -1080,8 +1080,8 @@ export default async function plugin(bb: BbPluginApi) {
     if (st === "idle" || st === "error" || st === "unknown") return st;
     try {
       await Promise.race([
-        bb.sdk.threads.wait({ threadId: crew.threadId, status: "idle", timeoutMs, signal }),
-        bb.sdk.threads.wait({ threadId: crew.threadId, status: "error", timeoutMs, signal }),
+        alia.sdk.threads.wait({ threadId: crew.threadId, status: "idle", timeoutMs, signal }),
+        alia.sdk.threads.wait({ threadId: crew.threadId, status: "error", timeoutMs, signal }),
       ]);
       return await crewStatus(crew);
     } catch {
@@ -1100,9 +1100,9 @@ export default async function plugin(bb: BbPluginApi) {
       };
     }
     const [envRes, uncommittedRes, prRes] = await Promise.allSettled([
-      bb.sdk.environments.get({ environmentId: envId }),
-      bb.sdk.environments.diffFiles({ environmentId: envId, target: "uncommitted" }),
-      bb.sdk.environments.pullRequest({ environmentId: envId }),
+      alia.sdk.environments.get({ environmentId: envId }),
+      alia.sdk.environments.diffFiles({ environmentId: envId, target: "uncommitted" }),
+      alia.sdk.environments.pullRequest({ environmentId: envId }),
     ]);
     const envRec = envRes.status === "fulfilled" ? asRecord(envRes.value) : {};
     const branch = envRec["branchName"] ?? envRec["branch"] ?? envRec["name"] ?? "unknown";
@@ -1113,7 +1113,7 @@ export default async function plugin(bb: BbPluginApi) {
       null;
     let committed: string[] = [];
     if (base !== null) {
-      const committedRes = await bb.sdk.environments
+      const committedRes = await alia.sdk.environments
         .diffFiles({ environmentId: envId, target: "branch_committed", mergeBaseBranch: base })
         .catch(() => null);
       committed = committedRes === null ? [] : extractPaths(committedRes);
@@ -1133,10 +1133,10 @@ export default async function plugin(bb: BbPluginApi) {
         ? "uncommitted: none"
         : `uncommitted (${uncommitted.length}): ${uncommitted.slice(0, 20).join(", ")}`,
       `PR: ${pr}`,
-      `posture: ${crew.posture}${posture.yolo ? "+yolo" : ""} — merge: bb firstmate merge ${crew.id}${posture.yolo ? "" : " --yes"}`,
+      `posture: ${crew.posture}${posture.yolo ? "+yolo" : ""} — merge: VesnALIA firstmate merge ${crew.id}${posture.yolo ? "" : " --yes"}`,
     ];
     try {
-      const thread = await bb.sdk.threads.get({ threadId: crew.threadId });
+      const thread = await alia.sdk.threads.get({ threadId: crew.threadId });
       const queued = asRecord(thread)["queuedMessageCount"];
       if (typeof queued === "number" && queued > 0) {
         lines.push(`inbox: ${queued} queued message(s)`);
@@ -1145,7 +1145,7 @@ export default async function plugin(bb: BbPluginApi) {
       // best effort
     }
     if (pr === "none" && crew.shape === "ship" && crew.posture !== "local-only") {
-      lines.push(`create: open a PR from the crew branch, or bb environment pull-request show ${envId}`);
+      lines.push(`create: open a PR from the crew branch, or VesnALIA environment pull-request show ${envId}`);
     }
     if (output !== null) {
       const outcome = parseOutcome(output);
@@ -1212,10 +1212,10 @@ export default async function plugin(bb: BbPluginApi) {
         .filter((row) => row.status === "idle" && row.prUrl !== "")
         .map(
           (row) =>
-            `PR ready ${row.id}: ${row.prUrl} — merge: bb firstmate merge ${row.id} --yes`,
+            `PR ready ${row.id}: ${row.prUrl} — merge: VesnALIA firstmate merge ${row.id} --yes`,
         ),
       ...dispatchable.map(
-        (q) => `○ ${q.id} [${q.shape}] :: ${truncate(q.title, 70)} — dispatchable: bb firstmate queue dispatch ${q.id}`,
+        (q) => `○ ${q.id} [${q.shape}] :: ${truncate(q.title, 70)} — dispatchable: VesnALIA firstmate queue dispatch ${q.id}`,
       ),
     ];
     const landed = done.map(
@@ -1280,8 +1280,8 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function sessionDigest(): Promise<string> {
-    const cap = await bb.storage.kv.get<unknown>(MEM_CAPTAIN_KEY);
-    const learn = await bb.storage.kv.get<unknown>(MEM_LEARNINGS_KEY);
+    const cap = await alia.storage.kv.get<unknown>(MEM_CAPTAIN_KEY);
+    const learn = await alia.storage.kv.get<unknown>(MEM_LEARNINGS_KEY);
     const capText = typeof cap === "string" && cap !== "" ? cap : "(empty)";
     const learnText = typeof learn === "string" && learn !== "" ? learn : "(empty)";
     const afk = await readAfk();
@@ -1300,7 +1300,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function captainLabel(projectId: unknown): Promise<string> {
     if (typeof projectId !== "string" || projectId === "") return "Captain";
     try {
-      const project = await bb.sdk.projects.get({ projectId });
+      const project = await alia.sdk.projects.get({ projectId });
       if (project.kind !== "personal" && project.name.trim() !== "") {
         return `Captain · ${project.name}`;
       }
@@ -1313,7 +1313,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function isCaptainThread(threadId: string): Promise<boolean> {
     try {
       const meta = asRecord(
-        await bb.sdk.threads.getPluginMetadata({ threadId, pluginId: "firstmate" }),
+        await alia.sdk.threads.getPluginMetadata({ threadId, pluginId: "firstmate" }),
       );
       return metaFlag(meta, "captain");
     } catch {
@@ -1322,7 +1322,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function settleDeck(threadId: string): Promise<void> {
-    await bb.sdk.threads.updatePluginMetadata({
+    await alia.sdk.threads.updatePluginMetadata({
       threadId,
       set: { captain: "true" },
     });
@@ -1332,20 +1332,20 @@ export default async function plugin(bb: BbPluginApi) {
       // settings may already be on
     }
     try {
-      const thread = asRecord(await bb.sdk.threads.get({ threadId }));
+      const thread = asRecord(await alia.sdk.threads.get({ threadId }));
       const patch: { threadId: string; title?: string; visibility?: "visible" } = { threadId };
       if (isBlankTitle(thread["title"])) {
         patch.title = await captainLabel(thread["projectId"]);
       }
       if (thread["visibility"] !== "visible") patch.visibility = "visible";
       if (patch.title !== undefined || patch.visibility !== undefined) {
-        await bb.sdk.threads.update(patch);
+        await alia.sdk.threads.update(patch);
       }
       if (thread["pinnedAt"] == null) {
-        await bb.sdk.threads.pin({ threadId });
+        await alia.sdk.threads.pin({ threadId });
       }
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `deck settle failed thread=${threadId} ${error instanceof Error ? error.message : String(error)}`,
       );
     }
@@ -1363,7 +1363,7 @@ export default async function plugin(bb: BbPluginApi) {
     const posture = await postureOf(crew.projectId);
     if (!posture.yolo && !yes) {
       throw new Error(
-        `Needs captain's word: re-run with --yes, or set yolo (bb firstmate posture set --project ${crew.projectId} --yolo on).`,
+        `Needs captain's word: re-run with --yes, or set yolo (VesnALIA firstmate posture set --project ${crew.projectId} --yolo on).`,
       );
     }
     const envId = await threadEnv(crew.threadId);
@@ -1375,14 +1375,14 @@ export default async function plugin(bb: BbPluginApi) {
     if (local) return mergeLocal(crew, envId);
     if (crew.posture === "no-mistakes" || posture.mode === "no-mistakes") {
       const dirty = extractPaths(
-        await bb.sdk.environments.diffFiles({ environmentId: envId, target: "uncommitted" }).catch(() => null),
+        await alia.sdk.environments.diffFiles({ environmentId: envId, target: "uncommitted" }).catch(() => null),
       );
       if (dirty.length > 0) {
         throw new Error(`no-mistakes: ${dirty.length} uncommitted file(s) remain (${dirty.slice(0, 5).join(", ")}).`);
       }
     }
-    const f = prFacts(await bb.sdk.environments.pullRequest({ environmentId: envId }));
-    if (!f.available) throw new Error(`No PR for crew ${crew.id}. For local-only: bb firstmate posture set --project ${crew.projectId} --mode local-only then merge.`);
+    const f = prFacts(await alia.sdk.environments.pullRequest({ environmentId: envId }));
+    if (!f.available) throw new Error(`No PR for crew ${crew.id}. For local-only: VesnALIA firstmate posture set --project ${crew.projectId} --mode local-only then merge.`);
     if (f.state === "merged") {
       await retireLanded(crew, "merged (already landed)", f.url);
       return `Already merged: ${f.url}\nCrew ${crew.id} retired.`;
@@ -1392,18 +1392,18 @@ export default async function plugin(bb: BbPluginApi) {
       throw new Error(`Refusing: checks ${f.checksState} (passed ${f.passed}, failed ${f.failed}, pending ${f.pending}).`);
     }
     if (f.mergeable !== "MERGEABLE") throw new Error(`Refusing: PR not mergeable (${f.mergeable}).`);
-    await bb.sdk.environments.mergePullRequest({ environmentId: envId, method: "merge" });
+    await alia.sdk.environments.mergePullRequest({ environmentId: envId, method: "merge" });
     const output = await crewOutput(crew, 300);
     await retireLanded(crew, parseOutcome(output) ?? "merged", f.url);
     return `Merged ${f.url}\nCrew ${crew.id} retired (landed).`;
   }
 
   async function mergeLocal(crew: Crew, envId: string): Promise<string> {
-    const env = asRecord(await bb.sdk.environments.get({ environmentId: envId }));
+    const env = asRecord(await alia.sdk.environments.get({ environmentId: envId }));
     const branch = typeof env["branchName"] === "string" ? env["branchName"] : "";
     if (branch === "") throw new Error("Crew environment has no branch.");
     const projectId = crew.projectId;
-    const listed = await bb.sdk.environments.list({ projectId });
+    const listed = await alia.sdk.environments.list({ projectId });
     const main = listed.find((e) => e.isWorktree === false && e.status === "ready" && e.path);
     if (main === undefined || main.path === null) {
       throw new Error("No project checkout to fast-forward (need a non-worktree ready environment).");
@@ -1426,8 +1426,8 @@ export default async function plugin(bb: BbPluginApi) {
     await markQueueForCrew(crew.id, "done");
     await writeCrews((await readCrews()).filter((c) => c.id !== crew.id));
     if (!(await isCaptainThread(crew.threadId))) {
-      try { await bb.sdk.threads.archive({ threadId: crew.threadId }); } catch { /* best effort */ }
-      try { await bb.sdk.threads.stop({ threadId: crew.threadId }); } catch { /* best effort */ }
+      try { await alia.sdk.threads.archive({ threadId: crew.threadId }); } catch { /* best effort */ }
+      try { await alia.sdk.threads.stop({ threadId: crew.threadId }); } catch { /* best effort */ }
     }
     await publishFleet();
   }
@@ -1437,14 +1437,14 @@ export default async function plugin(bb: BbPluginApi) {
     let crew = crews.find((entry) => entry.id === id);
     if (crew === undefined) {
       const recovered = await findCrew(id);
-      if (recovered === undefined) throw new Error(`No crew ${id}. Run "bb firstmate crews".`);
+      if (recovered === undefined) throw new Error(`No crew ${id}. Run "alia firstmate crews".`);
       if (stop && (await isCaptainThread(recovered.threadId))) {
         throw new Error(
           "Refusing to archive the captain thread. Forget the crew without --stop.",
         );
       }
       try {
-        await bb.sdk.threads.updatePluginMetadata({
+        await alia.sdk.threads.updatePluginMetadata({
           threadId: recovered.threadId,
           set: { crew: "false" },
           remove: ["crewId"],
@@ -1453,8 +1453,8 @@ export default async function plugin(bb: BbPluginApi) {
         // metadata-only
       }
       if (stop) {
-        try { await bb.sdk.threads.archive({ threadId: recovered.threadId }); } catch { /* */ }
-        try { await bb.sdk.threads.stop({ threadId: recovered.threadId }); } catch { /* */ }
+        try { await alia.sdk.threads.archive({ threadId: recovered.threadId }); } catch { /* */ }
+        try { await alia.sdk.threads.stop({ threadId: recovered.threadId }); } catch { /* */ }
       }
       await dropFmMeta(recovered);
       return `Forgot crew ${id} (was metadata-only)`;
@@ -1474,7 +1474,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (!force) {
         const envId = await threadEnv(crew.threadId);
         if (envId !== null) {
-          const diff = await bb.sdk.environments
+          const diff = await alia.sdk.environments
             .diffFiles({ environmentId: envId, target: "uncommitted" })
             .catch(() => null);
           const dirty = diff === null ? [] : extractPaths(diff);
@@ -1486,8 +1486,8 @@ export default async function plugin(bb: BbPluginApi) {
           }
         }
       }
-      try { await bb.sdk.threads.archive({ threadId: crew.threadId }); } catch { /* */ }
-      try { await bb.sdk.threads.stop({ threadId: crew.threadId }); } catch { /* */ }
+      try { await alia.sdk.threads.archive({ threadId: crew.threadId }); } catch { /* */ }
+      try { await alia.sdk.threads.stop({ threadId: crew.threadId }); } catch { /* */ }
     }
     try {
       if ((await crewStatus(crew)) === "idle") {
@@ -1512,7 +1512,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function resolveHostId(machineFlag: string | undefined, ctx: unknown): Promise<string> {
     if (machineFlag !== undefined) {
-      const hosts = await bb.sdk.hosts.list();
+      const hosts = await alia.sdk.hosts.list();
       const rows: unknown[] = Array.isArray(hosts)
         ? hosts
         : Array.isArray(asRecord(hosts)["hosts"])
@@ -1523,14 +1523,14 @@ export default async function plugin(bb: BbPluginApi) {
         return rec["id"] === machineFlag || rec["name"] === machineFlag;
       });
       const id = match === undefined ? undefined : asRecord(match)["id"];
-      if (typeof id !== "string") throw new Error(`No machine ${machineFlag}. See bb machine list.`);
+      if (typeof id !== "string") throw new Error(`No machine ${machineFlag}. See VesnALIA machine list.`);
       return id;
     }
     const threadId = asRecord(ctx)["threadId"];
-    if (typeof threadId !== "string") throw new Error("No machine: pass --machine <id-or-name> (see bb machine list).");
+    if (typeof threadId !== "string") throw new Error("No machine: pass --machine <id-or-name> (see VesnALIA machine list).");
     const envId = await threadEnv(threadId);
     if (envId === null) throw new Error("No machine: pass --machine <id-or-name>.");
-    const env = await bb.sdk.environments.get({ environmentId: envId });
+    const env = await alia.sdk.environments.get({ environmentId: envId });
     const hostId = asRecord(env)["hostId"];
     if (typeof hostId !== "string") throw new Error("No machine: pass --machine <id-or-name>.");
     return hostId;
@@ -1560,7 +1560,7 @@ export default async function plugin(bb: BbPluginApi) {
     stdin?: string,
   ): Promise<{ exitCode: number | null; output: string }> {
     const stdinBytes = stdin === undefined ? null : Buffer.byteLength(stdin, "utf8");
-    const session = await bb.sdk.terminals.create({
+    const session = await alia.sdk.terminals.create({
       cols: 120,
       rows: 30,
       scope: { kind: "host_path", hostId, cwd: "/tmp" },
@@ -1577,11 +1577,11 @@ export default async function plugin(bb: BbPluginApi) {
       for (;;) {
         if (signal?.aborted) throw new Error("Aborted.");
         if (Date.now() >= deadline) throw new Error("Timed out waiting for host command.");
-        const cur = await bb.sdk.terminals.get({ terminalId });
+        const cur = await alia.sdk.terminals.get({ terminalId });
         const status = asRecord(cur)["status"];
         if (status === "disconnected") throw new Error("Terminal disconnected.");
         try {
-          const chunk = await bb.sdk.terminals.output({
+          const chunk = await alia.sdk.terminals.output({
             terminalId,
             sinceSeq: nextSeq,
             tailBytes: 65536,
@@ -1590,7 +1590,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (typeof rec["nextSeq"] === "number") nextSeq = rec["nextSeq"];
           output += decodeChunks(chunk);
         } catch (error) {
-          bb.log.debug(
+          alia.log.debug(
             `host terminal output terminal=${terminalId} status=${status} ${error instanceof Error ? error.message : String(error)}`,
           );
         }
@@ -1599,7 +1599,7 @@ export default async function plugin(bb: BbPluginApi) {
           stdinBytes !== null &&
           (stripAnsi(output).includes(HOST_STDIN_READY) || Date.now() - started > 2000)
         ) {
-          await bb.sdk.terminals.input({
+          await alia.sdk.terminals.input({
             terminalId,
             dataBase64: Buffer.from(stdin ?? "", "utf8").toString("base64"),
           });
@@ -1615,14 +1615,14 @@ export default async function plugin(bb: BbPluginApi) {
       }
     } finally {
       try {
-        await bb.sdk.terminals.close({ terminalId, mode: "force" });
+        await alia.sdk.terminals.close({ terminalId, mode: "force" });
       } catch {
         // best effort
       }
     }
   }
 
-  async function installBbBackend(
+  async function installAliaBackend(
     hostId: string,
     home: string,
     projectId: string | undefined,
@@ -1630,7 +1630,7 @@ export default async function plugin(bb: BbPluginApi) {
     signal?: AbortSignal,
   ): Promise<string> {
     const overlayHome = OVERLAY_DIR;
-    const installer = join(overlayHome, "install-bb-backend.py");
+    const installer = join(overlayHome, "install-alia-backend.py");
     const localProbe = await runOnHost(
       hostId,
       `[ -f ${shQuote(installer)} ] && echo FM_OVERLAY_LOCAL || echo FM_OVERLAY_REMOTE`,
@@ -1645,30 +1645,30 @@ export default async function plugin(bb: BbPluginApi) {
         signal,
       );
       if (result.exitCode !== 0) {
-        throw new Error(`BB backend overlay failed:\n${truncate(result.output, 1500)}`);
+        throw new Error(`VesnALIA backend overlay failed:\n${truncate(result.output, 1500)}`);
       }
       return result.output;
     }
     const files: Record<string, string> = {
-      "bin/backends/bb.sh": overlayBytes("bin/backends/bb.sh"),
-      "docs/bb-backend.md": overlayBytes("docs/bb-backend.md"),
-      "firstmate-bb-backend.patch": overlayBytes("firstmate-bb-backend.patch"),
-      "firstmate-bb-teardown.patch": overlayBytes("firstmate-bb-teardown.patch"),
-      "install-bb-backend.py": overlayBytes("install-bb-backend.py"),
+      "bin/backends/alia.sh": overlayBytes("bin/backends/alia.sh"),
+      "docs/alia-backend.md": overlayBytes("docs/alia-backend.md"),
+      "firstmate-alia-backend.patch": overlayBytes("firstmate-alia-backend.patch"),
+      "firstmate-alia-teardown.patch": overlayBytes("firstmate-alia-teardown.patch"),
+      "install-alia-backend.py": overlayBytes("install-alia-backend.py"),
     };
     const py = [
       "import base64, json, os, pathlib, subprocess, sys, tempfile",
       "home = pathlib.Path(sys.argv[1])",
       "project_id = sys.argv[2] if len(sys.argv) > 2 else ''",
       "files = json.loads(sys.stdin.read())",
-      "overlay = pathlib.Path(tempfile.mkdtemp(prefix='fm-bb-overlay-'))",
+      "overlay = pathlib.Path(tempfile.mkdtemp(prefix='fm-alia-overlay-'))",
       "for rel, b64 in files.items():",
       "    dest = overlay / rel",
       "    dest.parent.mkdir(parents=True, exist_ok=True)",
       "    dest.write_bytes(base64.b64decode(b64))",
-      "os.chmod(overlay / 'bin/backends/bb.sh', 0o755)",
-      "os.chmod(overlay / 'install-bb-backend.py', 0o755)",
-      "cmd = [sys.executable, str(overlay / 'install-bb-backend.py'), '--home', str(home), '--overlay', str(overlay)]",
+      "os.chmod(overlay / 'bin/backends/alia.sh', 0o755)",
+      "os.chmod(overlay / 'install-alia-backend.py', 0o755)",
+      "cmd = [sys.executable, str(overlay / 'install-alia-backend.py'), '--home', str(home), '--overlay', str(overlay)]",
       "if project_id:",
       "    cmd += ['--project-id', project_id]",
       "raise SystemExit(subprocess.call(cmd))",
@@ -1676,7 +1676,7 @@ export default async function plugin(bb: BbPluginApi) {
     const command = `python3 -c ${shQuote(py)} ${shQuote(home)}${projectId === undefined ? "" : ` ${shQuote(projectId)}`}`;
     const result = await runOnHost(hostId, command, timeoutMs, signal, JSON.stringify(files));
     if (result.exitCode !== 0) {
-      throw new Error(`BB backend overlay failed:\n${truncate(result.output, 1500)}`);
+      throw new Error(`VesnALIA backend overlay failed:\n${truncate(result.output, 1500)}`);
     }
     return result.output;
   }
@@ -1696,11 +1696,11 @@ export default async function plugin(bb: BbPluginApi) {
     const prelude = [
       `export FM_HOME=${shQuote(input.fmHome)}`,
       `export FM_ROOT=${shQuote(input.fmHome)}`,
-      "export FM_BACKEND=bb",
-      input.projectId !== undefined ? `export FM_BB_PROJECT_ID=${shQuote(input.projectId)}` : "",
-      input.parentThreadId !== undefined ? `export FM_BB_PARENT_THREAD_ID=${shQuote(input.parentThreadId)}` : "",
-      `export FM_BB_MACHINE=${shQuote(input.hostId)}`,
-      "export FM_BB_VISIBLE=1",
+      "export FM_BACKEND=VesnALIA",
+      input.projectId !== undefined ? `export FM_ALIA_PROJECT_ID=${shQuote(input.projectId)}` : "",
+      input.parentThreadId !== undefined ? `export FM_ALIA_PARENT_THREAD_ID=${shQuote(input.parentThreadId)}` : "",
+      `export FM_ALIA_MACHINE=${shQuote(input.hostId)}`,
+      "export FM_ALIA_VISIBLE=1",
       `if [ ! -f ${shQuote(scriptPath)} ]; then echo "error: missing ${scriptPath}" >&2; exit 127; fi`,
       `${shQuote(scriptPath)} ${input.args.map(shQuote).join(" ")}`,
     ]
@@ -1714,7 +1714,7 @@ export default async function plugin(bb: BbPluginApi) {
     const current = await settings.get();
     const stuckMs = Math.min(480, Math.max(5, Number(current.supervisionStuckMin) || 30)) * 60000;
     const crews = (await listCrews()).filter((c) => c.parentThreadId !== null).slice(0, 20);
-    const parsed = watchStateSchema.safeParse(await bb.storage.kv.get<unknown>("watch"));
+    const parsed = watchStateSchema.safeParse(await alia.storage.kv.get<unknown>("watch"));
     const state: Record<string, { status: string; hash: string; at: number; stuck: boolean }> =
       parsed.success ? parsed.data : {};
     const now = Date.now();
@@ -1746,52 +1746,52 @@ export default async function plugin(bb: BbPluginApi) {
     for (const id of Object.keys(state)) {
       if (!seen.has(id)) delete state[id];
     }
-    await bb.storage.kv.set("watch", state);
-    await bb.storage.kv.set("watch-meta", { lastPassAt: now, checked: crews.length, notified });
+    await alia.storage.kv.set("watch", state);
+    await alia.storage.kv.set("watch-meta", { lastPassAt: now, checked: crews.length, notified });
     return { checked: crews.length, notified };
   }
 
   function guideText(repo: string): string {
     return [
-      "firstmate inside BB — two planes, one runtime:",
-      "1. Native deck (plugin SDK / Fleet UI): bb firstmate deck, then dispatch/tell/watch/merge.",
-      "2. Real firstmate bin/ scripts: bb firstmate init --real, then bb firstmate fm <script> …",
+      "firstmate inside VesnALIA — two planes, one runtime:",
+      "1. Native deck (plugin SDK / Fleet UI): VesnALIA firstmate deck, then dispatch/tell/watch/merge.",
+      "2. Real firstmate bin/ scripts: VesnALIA firstmate init --real, then VesnALIA firstmate fm <script> …",
       "   Scripts keep policy (brief, gate, inbox, watch, merge, afk, bearings, backlog).",
-      "   BB is the session backend (threads + managed-worktree), like tmux/orca — not a rewrite of bin/.",
+      "   VesnALIA is the session backend (threads + managed-worktree), like tmux/orca — not a rewrite of bin/.",
       "Native dispatch (writes state/<id>.meta when fmHome is set, so peek/send/teardown see Fleet crews):",
-      "  bb firstmate dispatch --project <proj> -- \"fix flaky login test\"",
+      "  VesnALIA firstmate dispatch --project <proj> -- \"fix flaky login test\"",
       "Script spawn (after init --real):",
-      "  bb firstmate fm spawn -- --mode direct-PR -- ship \"fix flaky login test\"",
-      `Optional clone: bb firstmate init --real  (repo ${repo}; overlays backends/bb.sh, sets config/backend=bb)`,
+      "  VesnALIA firstmate fm spawn -- --mode direct-PR -- ship \"fix flaky login test\"",
+      `Optional clone: VesnALIA firstmate init --real  (repo ${repo}; overlays backends/alia.sh, sets config/backend=VesnALIA)`,
     ].join("\n");
   }
 
   const usage = [
     "Usage:",
-    "  bb firstmate guide [--json]",
-    "  bb firstmate init [--real] [--machine m] [--path p] [--name n] [--json]",
-    "  bb firstmate fm [--timeout s] <script> [args...]   # real bin/fm-<script>.sh with FM_BACKEND=bb",
-    "  bb firstmate deck | session [--json]",
-    '  bb firstmate dispatch --project <id> [--task t ...] [--shape ship|scout] [--mode m] [--title t] [--provider p] [--model m] [--permission-mode m] [--shared-env] [--worktree] [--hidden] [--send-at ms] -- "<task>"',
-    "  bb firstmate crews | crew <id> | watch [id ...] [--timeout s] [--json]",
-    '  bb firstmate tell <id> -- "<message>" | interrupt <id> | stop <id> | retry <id>',
-    "  bb firstmate bearings | deliver <id> | merge <id> [--yes] | promote <id>",
-    '  bb firstmate queue add --project <id> [--shape s] [--mode m] [--after <qid>] [--wait-until <iso>] -- "<title>"',
-    "  bb firstmate queue [list|next|dispatch <qid>|done <qid>|drop <qid>]",
-    '  bb firstmate decide ask [--option o ...] [--crew <id>] -- "<question>"',
-    "  bb firstmate decide [list|answer <id>|defer <id>|drop <id>]",
-    "  bb firstmate posture [set --project <id> [--mode m] [--yolo on|off]]",
-    "  bb firstmate memory [show|set-captain|add-learning|drop-learning <n>|clear <captain|learnings>]",
-    "  bb firstmate afk [on|off|status] [-- \"words\"]",
-    "  bb firstmate quiet [on|off|status]",
-    "  bb firstmate secondmate [list|register --project <id> --thread <id>|drop <project>]",
-    "  bb firstmate supervision [on|off|status]",
-    "  bb firstmate forget <id> [--stop] [--force]",
+    "  VesnALIA firstmate guide [--json]",
+    "  VesnALIA firstmate init [--real] [--machine m] [--path p] [--name n] [--json]",
+    "  VesnALIA firstmate fm [--timeout s] <script> [args...]   # real bin/fm-<script>.sh with FM_BACKEND=VesnALIA",
+    "  VesnALIA firstmate deck | session [--json]",
+    '  VesnALIA firstmate dispatch --project <id> [--task t ...] [--shape ship|scout] [--mode m] [--title t] [--provider p] [--model m] [--permission-mode m] [--shared-env] [--worktree] [--hidden] [--send-at ms] -- "<task>"',
+    "  VesnALIA firstmate crews | crew <id> | watch [id ...] [--timeout s] [--json]",
+    '  VesnALIA firstmate tell <id> -- "<message>" | interrupt <id> | stop <id> | retry <id>',
+    "  VesnALIA firstmate bearings | deliver <id> | merge <id> [--yes] | promote <id>",
+    '  VesnALIA firstmate queue add --project <id> [--shape s] [--mode m] [--after <qid>] [--wait-until <iso>] -- "<title>"',
+    "  VesnALIA firstmate queue [list|next|dispatch <qid>|done <qid>|drop <qid>]",
+    '  VesnALIA firstmate decide ask [--option o ...] [--crew <id>] -- "<question>"',
+    "  VesnALIA firstmate decide [list|answer <id>|defer <id>|drop <id>]",
+    "  VesnALIA firstmate posture [set --project <id> [--mode m] [--yolo on|off]]",
+    "  VesnALIA firstmate memory [show|set-captain|add-learning|drop-learning <n>|clear <captain|learnings>]",
+    "  VesnALIA firstmate afk [on|off|status] [-- \"words\"]",
+    "  VesnALIA firstmate quiet [on|off|status]",
+    "  VesnALIA firstmate secondmate [list|register --project <id> --thread <id>|drop <project>]",
+    "  VesnALIA firstmate supervision [on|off|status]",
+    "  VesnALIA firstmate forget <id> [--stop] [--force]",
   ].join("\n");
 
   const dispatchParams = z.object({
     task: z.string().min(1).max(MAX_TASK),
-    projectId: z.string().optional().describe("BB project id; defaults to the current thread's project"),
+    projectId: z.string().optional().describe("VesnALIA project id; defaults to the current thread's project"),
     title: z.string().max(120).optional(),
     providerId: z.string().optional(),
     model: z.string().optional(),
@@ -1800,7 +1800,7 @@ export default async function plugin(bb: BbPluginApi) {
     mode: modeSchema.optional(),
     worktree: z.boolean().optional(),
     sharedEnv: z.boolean().optional().describe("Ship on the project checkout instead of an isolated worktree"),
-    visible: z.boolean().optional().describe("Show in the BB sidebar as a nested subagent (default true)"),
+    visible: z.boolean().optional().describe("Show in the VesnALIA sidebar as a nested subagent (default true)"),
     sendAt: z.number().int().optional().describe("Epoch ms to start the crew (queued until then)"),
   });
 
@@ -1808,10 +1808,10 @@ export default async function plugin(bb: BbPluginApi) {
     return { content: [{ type: "text" as const, text }], isError: true };
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_dispatch",
     description:
-      "Dispatch a firstmate-style crewmate: spawns a child BB thread for one task (ship crews get an isolated worktree by default) and records it as a crew.",
+      "Dispatch a firstmate-style crewmate: spawns a child VesnALIA thread for one task (ship crews get an isolated worktree by default) and records it as a crew.",
     presentation: { label: { pending: "Dispatching crewmate", completed: "Dispatched crewmate" } },
     parameters: dispatchParams,
     async execute({ task, projectId, title, providerId, model, permissionMode, shape, mode, worktree, sharedEnv, visible, sendAt }, ctx) {
@@ -1843,11 +1843,11 @@ export default async function plugin(bb: BbPluginApi) {
         sendAt,
       });
       const warn = wt.sharedOverride ? " WARN: ship crew on shared env." : "";
-      return `Dispatched ${crew.shape} crew ${crew.id} as thread ${crew.threadId} (${await crewStatus(crew)}, ${crew.posture}).${warn} Track with: bb firstmate crew ${crew.id}`;
+      return `Dispatched ${crew.shape} crew ${crew.id} as thread ${crew.threadId} (${await crewStatus(crew)}, ${crew.posture}).${warn} Track with: VesnALIA firstmate crew ${crew.id}`;
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_deck",
     description: "Mark this thread as the firstmate captain and return the session digest (memory, bearings, afk).",
     presentation: { label: { pending: "Taking the deck", completed: "On deck" } },
@@ -1860,7 +1860,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_tell",
     description: "Doorbell a crew: queues if the turn is active, starts a turn if idle. Use firstmate_interrupt to hard-stop.",
     parameters: z.object({ crewId: z.string(), message: z.string().min(1).max(MAX_TASK) }),
@@ -1875,9 +1875,9 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_watch",
-    description: "Wait until the given crews finish (idle or error) using BB thread wait — do not poll.",
+    description: "Wait until the given crews finish (idle or error) using VesnALIA thread wait — do not poll.",
     parameters: z.object({
       crewIds: z.array(z.string()).max(MAX_WATCH_CREWS).optional(),
       timeoutSec: z.number().int().min(10).max(1800).optional(),
@@ -1899,7 +1899,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_bearings",
     description: "Fleet digest: Captain's Call, Recently Landed, Ready, Underway, Charted Next.",
     parameters: z.object({}),
@@ -1908,7 +1908,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_deliver",
     description: "Crew delivery: outcome + committed/uncommitted diff + PR state.",
     parameters: z.object({ crewId: z.string() }),
@@ -1919,7 +1919,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_merge",
     description: "Merge a crew PR (green+mergeable) or ff-only local-only land. Needs yes=true or yolo posture.",
     parameters: z.object({ crewId: z.string(), yes: z.boolean().optional() }),
@@ -1934,7 +1934,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_decide",
     description: "Durable captain decisions. ask stores a question; answer tells the linked crew.",
     parameters: z.object({
@@ -1976,7 +1976,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (d.crewId !== null) {
           const crew = await findCrew(d.crewId);
           if (crew !== undefined) {
-            await bb.sdk.threads.send({
+            await alia.sdk.threads.send({
               threadId: crew.threadId,
               mode: "steer",
               input: [{ type: "text", text: `Captain's decision: ${answer.slice(0, MAX_TASK)}`, mentions: [] }],
@@ -2000,7 +2000,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_crew",
     description: "Show one crew: status, parsed DONE/BLOCKED/FAILED, last output.",
     parameters: z.object({ crewId: z.string() }),
@@ -2016,7 +2016,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_stop",
     description: "Stop a crew thread (keeps the record).",
     parameters: z.object({ crewId: z.string() }),
@@ -2025,24 +2025,24 @@ export default async function plugin(bb: BbPluginApi) {
       if (crew === undefined) return toolError(`No crew ${crewId}.`);
       if (isSecondmateRoute(crew)) return toolError(`Crew ${crewId} is a secondmate route — do not stop the domain captain.`);
       if (await isCaptainThread(crew.threadId)) return toolError("Refusing to stop the captain thread.");
-      await bb.sdk.threads.stop({ threadId: crew.threadId });
+      await alia.sdk.threads.stop({ threadId: crew.threadId });
       return `Stopped crew ${crewId}`;
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_retry",
     description: "Re-submit a crew's failed turn.",
     parameters: z.object({ crewId: z.string(), reason: z.string().optional() }),
     async execute({ crewId, reason }) {
       const crew = await findCrew(crewId);
       if (crew === undefined) return toolError(`No crew ${crewId}.`);
-      await bb.sdk.threads.retry({ threadId: crew.threadId, reason: reason ?? `firstmate retry crew ${crewId}` });
+      await alia.sdk.threads.retry({ threadId: crew.threadId, reason: reason ?? `firstmate retry crew ${crewId}` });
       return `Retried crew ${crewId}`;
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_promote",
     description: "Promote a finished scout into a new ship crew carrying the scout report. Never expand the scout in place.",
     parameters: z.object({ crewId: z.string(), mode: modeSchema.optional() }),
@@ -2077,7 +2077,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_afk",
     description: "Away posture: on holds routine done-pings for the return brief; off prints the brief then clears.",
     parameters: z.object({
@@ -2111,7 +2111,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_interrupt",
     description: "Hard-stop a crew's current action without teardown. Doorbell/tell does not interrupt.",
     parameters: z.object({ crewId: z.string() }),
@@ -2130,7 +2130,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_crews",
     description: "List recorded crews with live thread status.",
     parameters: z.object({}),
@@ -2142,7 +2142,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_session",
     description: "Session digest: memory, bearings, afk/quiet.",
     parameters: z.object({}),
@@ -2151,20 +2151,20 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_quiet",
     description: "Batch routine done-pings while the captain is present. Failures and review-ready PRs still surface.",
     parameters: z.object({ action: z.enum(["on", "off", "status"]) }),
     async execute({ action }) {
       if (action === "on" || action === "off") {
-        await bb.storage.kv.set(QUIET_KEY, action === "on");
+        await alia.storage.kv.set(QUIET_KEY, action === "on");
         return `Quiet ${action}`;
       }
       return `quiet: ${(await isQuiet()) ? "on" : "off"}`;
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_queue",
     description: "Backlog with deps/time gates. add files work; dispatch starts a crew when ungated.",
     parameters: z.object({
@@ -2249,7 +2249,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_forget",
     description: "Drop a crew record. stop=true archives the thread (refuses dirty work unless force).",
     parameters: z.object({
@@ -2266,7 +2266,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_memory",
     description: "Captain prefs and dated fleet learnings.",
     parameters: z.object({
@@ -2277,42 +2277,42 @@ export default async function plugin(bb: BbPluginApi) {
     }),
     async execute({ action, text, n, which }) {
       if (action === "show") {
-        const cap = await bb.storage.kv.get<unknown>(MEM_CAPTAIN_KEY);
-        const learn = await bb.storage.kv.get<unknown>(MEM_LEARNINGS_KEY);
+        const cap = await alia.storage.kv.get<unknown>(MEM_CAPTAIN_KEY);
+        const learn = await alia.storage.kv.get<unknown>(MEM_LEARNINGS_KEY);
         const capText = typeof cap === "string" ? cap : "";
         const learnText = typeof learn === "string" ? learn : "";
         return `== captain ==\n${capText !== "" ? capText : "(empty)"}\n== learnings ==\n${learnText !== "" ? learnText : "(empty)"}`;
       }
       if (action === "set-captain") {
         if (text === undefined || text.trim() === "") return toolError("Need text.");
-        await bb.storage.kv.set(MEM_CAPTAIN_KEY, text.slice(0, 4000));
+        await alia.storage.kv.set(MEM_CAPTAIN_KEY, text.slice(0, 4000));
         return "Captain preferences saved.";
       }
       if (action === "add-learning") {
         if (text === undefined || text.trim() === "") return toolError("Need text.");
-        const prev = await bb.storage.kv.get<unknown>(MEM_LEARNINGS_KEY);
+        const prev = await alia.storage.kv.get<unknown>(MEM_LEARNINGS_KEY);
         const line = `- ${new Date().toISOString().slice(0, 10)}: ${text}`;
         const next = `${typeof prev === "string" && prev !== "" ? `${prev}\n` : ""}${line}`.slice(-4000);
-        await bb.storage.kv.set(MEM_LEARNINGS_KEY, next);
+        await alia.storage.kv.set(MEM_LEARNINGS_KEY, next);
         return "Learning stored.";
       }
       if (action === "drop-learning") {
-        const prev = await bb.storage.kv.get<unknown>(MEM_LEARNINGS_KEY);
+        const prev = await alia.storage.kv.get<unknown>(MEM_LEARNINGS_KEY);
         const lines = typeof prev === "string" ? prev.split("\n").filter((l) => l !== "") : [];
         if (n === undefined || !Number.isInteger(n) || n < 1 || n > lines.length) {
           return toolError(`No learning #${n ?? ""} (1-${lines.length}).`);
         }
         lines.splice(n - 1, 1);
-        await bb.storage.kv.set(MEM_LEARNINGS_KEY, lines.join("\n"));
+        await alia.storage.kv.set(MEM_LEARNINGS_KEY, lines.join("\n"));
         return `Dropped learning #${n}.`;
       }
       if (which !== "captain" && which !== "learnings") return toolError("Need which=captain|learnings.");
-      await bb.storage.kv.set(which === "captain" ? MEM_CAPTAIN_KEY : MEM_LEARNINGS_KEY, "");
+      await alia.storage.kv.set(which === "captain" ? MEM_CAPTAIN_KEY : MEM_LEARNINGS_KEY, "");
       return `Cleared ${which}.`;
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_secondmate",
     description: "Register a domain-captain thread. Dispatch to that project routes there instead of spawning.",
     parameters: z.object({
@@ -2350,7 +2350,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_posture",
     description: "Per-project delivery mode (direct-PR / no-mistakes / local-only) and yolo merge authority.",
     parameters: z.object({
@@ -2375,12 +2375,12 @@ export default async function plugin(bb: BbPluginApi) {
       const cur = all[pid] ?? { mode: "direct-PR" as DeliveryMode, yolo: false };
       const next = { mode: toMode(mode, cur.mode), yolo: yolo ?? cur.yolo };
       all[pid] = next;
-      await bb.storage.kv.set(POSTURES_KEY, all);
+      await alia.storage.kv.set(POSTURES_KEY, all);
       return `Posture ${pid}: ${next.mode}${next.yolo ? "+yolo" : ""}`;
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_supervision",
     description: "Event pings (idle/fail/interaction) plus stuck checker. Deck turns this on.",
     parameters: z.object({ action: z.enum(["on", "off", "status"]) }),
@@ -2390,15 +2390,15 @@ export default async function plugin(bb: BbPluginApi) {
         return `Supervision ${action}`;
       }
       const current = await settings.get();
-      const meta = asRecord(await bb.storage.kv.get<unknown>("watch-meta"));
+      const meta = asRecord(await alia.storage.kv.get<unknown>("watch-meta"));
       return `supervision: ${current.supervisionEnabled === true ? "on" : "off"} (events for done/fail, stuck every ${current.supervisionIntervalMin}m after ${current.supervisionStuckMin}m)\nlast stuck pass: ${typeof meta["lastPassAt"] === "number" ? new Date(meta["lastPassAt"]).toISOString() : "never"}`;
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "firstmate_fm",
     description:
-      "Run a real firstmate bin/fm-<script>.sh with FM_BACKEND=bb (policy scripts, not a TypeScript port). Requires init --real.",
+      "Run a real firstmate bin/fm-<script>.sh with FM_BACKEND=VesnALIA (policy scripts, not a TypeScript port). Requires init --real.",
     parameters: z.object({
       script: z.string().min(1).max(80).describe("Stem of bin/fm-<script>.sh, e.g. spawn, peek, send, watch, bearings-snapshot"),
       args: z.array(z.string()).max(40).optional(),
@@ -2406,7 +2406,7 @@ export default async function plugin(bb: BbPluginApi) {
     }),
     async execute({ script, args, timeoutSec }, ctx) {
       const current = await settings.get();
-      if (current.fmHome === "") return toolError("No firstmate home. Run bb firstmate init --real.");
+      if (current.fmHome === "") return toolError("No firstmate home. Run alia firstmate init --real.");
       try {
         const hostId = await resolveHostId(undefined, ctx);
         const result = await runFmScript({
@@ -2426,7 +2426,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const meta = asRecord(context.pluginMetadata);
     if (metaFlag(meta, "crew")) {
       return {
@@ -2446,13 +2446,13 @@ export default async function plugin(bb: BbPluginApi) {
     };
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async fleet() {
       return (await bearingsSnapshot()).rpc;
     },
   });
 
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: "crew",
     label: "Crews",
     triggers: ["@"],
@@ -2502,7 +2502,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function readNudgeState(): Promise<Record<string, NudgeRow>> {
-    const parsed = nudgeStateSchema.safeParse(await bb.storage.kv.get<unknown>(NUDGE_KEY));
+    const parsed = nudgeStateSchema.safeParse(await alia.storage.kv.get<unknown>(NUDGE_KEY));
     return parsed.success ? parsed.data : {};
   }
 
@@ -2517,7 +2517,7 @@ export default async function plugin(bb: BbPluginApi) {
   }): Promise<boolean> {
     if (thread.status === "stopping" || thread.runtime?.displayStatus === "stopping") return true;
     try {
-      const rows = await bb.sdk.threads.events.list({
+      const rows = await alia.sdk.threads.events.list({
         threadId: thread.id,
         order: "desc",
         limit: "1",
@@ -2545,7 +2545,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (row.count >= limits.max) {
       row.exhausted = true;
       state[crew.id] = row;
-      await bb.storage.kv.set(NUDGE_KEY, state);
+      await alia.storage.kv.set(NUDGE_KEY, state);
       await notifyCaptain(
         crew,
         "needs-decision",
@@ -2569,12 +2569,12 @@ export default async function plugin(bb: BbPluginApi) {
     row.count += 1;
     row.lastAt = now;
     state[crew.id] = row;
-    await bb.storage.kv.set(NUDGE_KEY, state);
+    await alia.storage.kv.set(NUDGE_KEY, state);
     clearNudgeTimer(crew.id);
     try {
       await tellCrew(crew, protocolNudgeText(row.count, limits.max), false);
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `protocol nudge failed for crew ${crew.id}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
@@ -2585,7 +2585,7 @@ export default async function plugin(bb: BbPluginApi) {
     const crew = await findCrew(crewId);
     if (crew === undefined) return;
     try {
-      const thread = await bb.sdk.threads.get({ threadId: crew.threadId });
+      const thread = await alia.sdk.threads.get({ threadId: crew.threadId });
       if (await turnWasStopped(thread)) return;
       if (thread.status === "active" || thread.status === "starting") return;
     } catch {
@@ -2596,15 +2596,15 @@ export default async function plugin(bb: BbPluginApi) {
     await applyProtocolNudge(crew);
   }
 
-  bb.events.on("thread.created", async ({ thread }) => {
+  alia.events.on("thread.created", async ({ thread }) => {
     if (!isCaptainSpawn(thread)) return;
     await settleDeck(thread.id);
   });
-  bb.events.on("thread.active", async ({ thread }) => {
+  alia.events.on("thread.active", async ({ thread }) => {
     if (!isCaptainSpawn(thread)) return;
     await settleDeck(thread.id);
   });
-  bb.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
     const crew = await findCrewByThread(thread.id);
     if (crew === undefined) return;
     const stopped = await turnWasStopped(thread);
@@ -2616,21 +2616,21 @@ export default async function plugin(bb: BbPluginApi) {
     if (current.supervisionEnabled !== true) return;
     await notifyCaptain(crew, "idle", lastAssistantText);
   });
-  bb.events.on("thread.failed", async ({ thread, error }) => {
+  alia.events.on("thread.failed", async ({ thread, error }) => {
     const current = await settings.get();
     if (current.supervisionEnabled !== true) return;
     const crew = await findCrewByThread(thread.id);
     if (crew === undefined) return;
     await notifyCaptain(crew, "error", error);
   });
-  bb.events.on("interaction.pending", async ({ thread }) => {
+  alia.events.on("interaction.pending", async ({ thread }) => {
     const current = await settings.get();
     if (current.supervisionEnabled !== true) return;
     const crew = await findCrewByThread(thread.id);
     if (crew === undefined) return;
     await notifyCaptain(crew, "interaction", "crew is waiting on an approval or credential");
   });
-  bb.events.on("turn.failed", async ({ threadId, requestId, errorInfo }) => {
+  alia.events.on("turn.failed", async ({ threadId, requestId, errorInfo }) => {
     const current = await settings.get();
     if (current.supervisionEnabled !== true) return;
     const crew = await findCrewByThread(threadId);
@@ -2639,36 +2639,36 @@ export default async function plugin(bb: BbPluginApi) {
     await notifyCaptain(crew, "error", detail);
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "firstmate",
     summary: "Run firstmate-style crews: dispatch crewmate threads, track them, bring back results",
     commands: [
-      { name: "guide", summary: "Setup guide for firstmate inside BB", usage: "bb firstmate guide [--json]" },
-      { name: "init", summary: "Native deck setup (add --real to clone firstmate and overlay the BB backend)", usage: "bb firstmate init [--real] [--json]" },
-      { name: "fm", summary: "Run a real firstmate bin/ script with FM_BACKEND=bb", usage: "bb firstmate fm [--timeout s] <script> [args...]" },
-      { name: "deck", summary: "Mark this thread captain + session digest", usage: "bb firstmate deck [--json]" },
-      { name: "session", summary: "Session digest: memory + bearings + afk", usage: "bb firstmate session [--json]" },
-      { name: "dispatch", summary: "Dispatch crewmate child threads", usage: 'bb firstmate dispatch --project <id> -- "<task>"' },
-      { name: "crews", summary: "List recorded crews with live status", usage: "bb firstmate crews [--json]" },
-      { name: "crew", summary: "Show one crew with last output", usage: "bb firstmate crew <crew-id> [--json]" },
-      { name: "watch", summary: "Wait for crews via bb thread wait", usage: "bb firstmate watch [crew-id ...] [--timeout <sec>] [--json]" },
-      { name: "tell", summary: "Steer a running crew", usage: 'bb firstmate tell <crew-id> -- "<message>"' },
-      { name: "interrupt", summary: "Steer a hard stop without teardown", usage: "bb firstmate interrupt <crew-id>" },
-      { name: "stop", summary: "Stop a crew thread", usage: "bb firstmate stop <crew-id>" },
-      { name: "retry", summary: "Re-submit a failed turn", usage: "bb firstmate retry <crew-id>" },
-      { name: "bearings", summary: "Fleet digest", usage: "bb firstmate bearings [--json]" },
-      { name: "deliver", summary: "Outcome + committed/uncommitted diff + PR", usage: "bb firstmate deliver <crew-id>" },
-      { name: "merge", summary: "Merge PR or local-only ff-only land", usage: "bb firstmate merge <crew-id> [--yes]" },
-      { name: "promote", summary: "Scout → new ship carrying the report", usage: "bb firstmate promote <crew-id>" },
-      { name: "queue", summary: "Backlog with deps/time gates", usage: 'bb firstmate queue add --project <id> -- "<title>"' },
-      { name: "decide", summary: "Durable decisions", usage: 'bb firstmate decide ask -- "<question>"' },
-      { name: "posture", summary: "Per-project delivery mode + yolo", usage: "bb firstmate posture set --project <id> [--mode m]" },
-      { name: "memory", summary: "Captain prefs + learnings", usage: "bb firstmate memory show" },
-      { name: "afk", summary: "Away posture", usage: "bb firstmate afk on|off|status" },
-      { name: "quiet", summary: "Batch routine pings while present", usage: "bb firstmate quiet on|off|status" },
-      { name: "secondmate", summary: "Register a domain captain thread", usage: "bb firstmate secondmate list|register|drop" },
-      { name: "supervision", summary: "Event pings + stuck checker", usage: "bb firstmate supervision on|off|status" },
-      { name: "forget", summary: "Drop a crew record", usage: "bb firstmate forget <crew-id> [--stop] [--force]" },
+      { name: "guide", summary: "Setup guide for firstmate inside VesnALIA", usage: "alia firstmate guide [--json]" },
+      { name: "init", summary: "Native deck setup (add --real to clone firstmate and overlay the VesnALIA backend)", usage: "alia firstmate init [--real] [--json]" },
+      { name: "fm", summary: "Run a real firstmate bin/ script with FM_BACKEND=VesnALIA", usage: "alia firstmate fm [--timeout s] <script> [args...]" },
+      { name: "deck", summary: "Mark this thread captain + session digest", usage: "alia firstmate deck [--json]" },
+      { name: "session", summary: "Session digest: memory + bearings + afk", usage: "alia firstmate session [--json]" },
+      { name: "dispatch", summary: "Dispatch crewmate child threads", usage: 'alia firstmate dispatch --project <id> -- "<task>"' },
+      { name: "crews", summary: "List recorded crews with live status", usage: "alia firstmate crews [--json]" },
+      { name: "crew", summary: "Show one crew with last output", usage: "alia firstmate crew <crew-id> [--json]" },
+      { name: "watch", summary: "Wait for crews via VesnALIA thread wait", usage: "alia firstmate watch [crew-id ...] [--timeout <sec>] [--json]" },
+      { name: "tell", summary: "Steer a running crew", usage: 'alia firstmate tell <crew-id> -- "<message>"' },
+      { name: "interrupt", summary: "Steer a hard stop without teardown", usage: "alia firstmate interrupt <crew-id>" },
+      { name: "stop", summary: "Stop a crew thread", usage: "alia firstmate stop <crew-id>" },
+      { name: "retry", summary: "Re-submit a failed turn", usage: "alia firstmate retry <crew-id>" },
+      { name: "bearings", summary: "Fleet digest", usage: "alia firstmate bearings [--json]" },
+      { name: "deliver", summary: "Outcome + committed/uncommitted diff + PR", usage: "alia firstmate deliver <crew-id>" },
+      { name: "merge", summary: "Merge PR or local-only ff-only land", usage: "alia firstmate merge <crew-id> [--yes]" },
+      { name: "promote", summary: "Scout → new ship carrying the report", usage: "alia firstmate promote <crew-id>" },
+      { name: "queue", summary: "Backlog with deps/time gates", usage: 'alia firstmate queue add --project <id> -- "<title>"' },
+      { name: "decide", summary: "Durable decisions", usage: 'alia firstmate decide ask -- "<question>"' },
+      { name: "posture", summary: "Per-project delivery mode + yolo", usage: "alia firstmate posture set --project <id> [--mode m]" },
+      { name: "memory", summary: "Captain prefs + learnings", usage: "alia firstmate memory show" },
+      { name: "afk", summary: "Away posture", usage: "alia firstmate afk on|off|status" },
+      { name: "quiet", summary: "Batch routine pings while present", usage: "alia firstmate quiet on|off|status" },
+      { name: "secondmate", summary: "Register a domain captain thread", usage: "alia firstmate secondmate list|register|drop" },
+      { name: "supervision", summary: "Event pings + stuck checker", usage: "alia firstmate supervision on|off|status" },
+      { name: "forget", summary: "Drop a crew record", usage: "alia firstmate forget <crew-id> [--stop] [--force]" },
     ],
     async run(argv, ctx) {
       if (argv[0] === "fm") {
@@ -2678,9 +2678,9 @@ export default async function plugin(bb: BbPluginApi) {
         try {
           const current = await settings.get();
           const fmHome = flagFromArgv(argv, "home") ?? (current.fmHome !== "" ? current.fmHome : undefined);
-          if (fmHome === undefined) return fail("No firstmate home. Run: bb firstmate init --real");
+          if (fmHome === undefined) return fail("No firstmate home. Run: VesnALIA firstmate init --real");
           const parsed = parseFmArgv(argv.slice(1));
-          if (parsed.script === undefined) return fail("Usage: bb firstmate fm [--timeout s] <script> [args...]\nExample: bb firstmate fm spawn -- --mode direct-PR -- ship \"fix login\"");
+          if (parsed.script === undefined) return fail("Usage: VesnALIA firstmate fm [--timeout s] <script> [args...]\nExample: VesnALIA firstmate fm spawn -- --mode direct-PR -- ship \"fix login\"");
           const hostId = await resolveHostId(flagFromArgv(argv, "machine"), ctx);
           const ctxRecord = asRecord(ctx);
           const result = await runFmScript({
@@ -2726,7 +2726,7 @@ export default async function plugin(bb: BbPluginApi) {
             return reply({ guide: guideText(repo) }, guideText(repo));
           }
           case "deck": {
-            if (ctxThread === undefined) return fail("No thread: run this from a BB thread.");
+            if (ctxThread === undefined) return fail("No thread: run this from a VesnALIA thread.");
             await markDeck(ctxThread);
             const digest = await sessionDigest();
             return reply({ captain: true, threadId: ctxThread, digest }, `Captain, on deck.\n${digest}`);
@@ -2755,7 +2755,7 @@ export default async function plugin(bb: BbPluginApi) {
             const path = flagStr(flags, "path") ?? `${home}/firstmate`;
             const tools = await runOnHost(
               hostId,
-              "command -v git; command -v gh; command -v bb; command -v python3; gh auth status 2>&1 | head -n 3",
+              "command -v git; command -v gh; command -v VesnALIA; command -v python3; gh auth status 2>&1 | head -n 3",
               30000,
               signal,
             );
@@ -2770,17 +2770,17 @@ export default async function plugin(bb: BbPluginApi) {
             const existed = clone.output.includes("FM_EXISTS");
             let projectId: string;
             try {
-              const created = await bb.sdk.projects.create({ name, source: { type: "local_path", hostId, path } });
+              const created = await alia.sdk.projects.create({ name, source: { type: "local_path", hostId, path } });
               projectId = asRecord(created)["id"] as string;
             } catch {
-              const projects = await bb.sdk.projects.list();
+              const projects = await alia.sdk.projects.list();
               const rows: unknown[] = Array.isArray(projects) ? projects : [];
               const match = rows.find((p) => asRecord(p)["name"] === name);
               const id = match === undefined ? undefined : asRecord(match)["id"];
               if (typeof id !== "string") throw new Error(`Project create failed and no project named ${name} found.`);
               projectId = id;
             }
-            const overlayOut = await installBbBackend(hostId, path, projectId, timeoutMs, signal);
+            const overlayOut = await installAliaBackend(hostId, path, projectId, timeoutMs, signal);
             try {
               await settings.experimental_set({ fmHome: path });
             } catch {
@@ -2790,12 +2790,12 @@ export default async function plugin(bb: BbPluginApi) {
               `host: ${hostId}`,
               `path: ${path} (${existed ? "existed" : "cloned"})`,
               `project: ${projectId}`,
-              `backend: bb (overlay installed; config/backend=bb)`,
-              `fm: bb firstmate fm spawn -- --mode direct-PR -- ship "<task>"`,
+              `backend: VesnALIA (overlay installed; config/backend=VesnALIA)`,
+              `fm: VesnALIA firstmate fm spawn -- --mode direct-PR -- ship "<task>"`,
               `overlay:\n${truncate(overlayOut, 800)}`,
               `tools:\n${truncate(tools.output, 500)}`,
             ].join("\n");
-            return reply({ hostId, path, existed, projectId, backend: "bb", tools: tools.output, overlay: overlayOut }, summary);
+            return reply({ hostId, path, existed, projectId, backend: "alia", tools: tools.output, overlay: overlayOut }, summary);
           }
           case "dispatch": {
             const tasks =
@@ -2805,7 +2805,7 @@ export default async function plugin(bb: BbPluginApi) {
             if (tasks.length === 0) return fail(`Empty task.\n${usage}`);
             if (tasks.length > MAX_FANOUT) return fail(`Too many tasks (max ${MAX_FANOUT}).`);
             const projectId = flagStr(flags, "project") ?? ctxProject;
-            if (projectId === undefined) return fail("No project: pass --project <id> (see bb project list).");
+            if (projectId === undefined) return fail("No project: pass --project <id> (see VesnALIA project list).");
             const shape = toShape(flagStr(flags, "shape"));
             const wt = resolveWorktree({
               shape,
@@ -2845,7 +2845,7 @@ export default async function plugin(bb: BbPluginApi) {
             }
             if (current.fmHome.trim() !== "") {
               hints.push(
-                `fm: bb firstmate fm peek -- ${dispatched.map((c) => c.id).join(" ")}`,
+                `fm: VesnALIA firstmate fm peek -- ${dispatched.map((c) => c.id).join(" ")}`,
               );
             }
             return reply(
@@ -2853,7 +2853,7 @@ export default async function plugin(bb: BbPluginApi) {
               [
                 ...dispatched.map(
                   (c) =>
-                    `Dispatched ${c.shape} crew ${c.id} as thread ${c.threadId} [${c.status}] (${c.worktree ? "worktree" : "shared-env"}, ${c.posture})\nTrack: bb firstmate crew ${c.id}`,
+                    `Dispatched ${c.shape} crew ${c.id} as thread ${c.threadId} [${c.status}] (${c.worktree ? "worktree" : "shared-env"}, ${c.posture})\nTrack: VesnALIA firstmate crew ${c.id}`,
                 ),
                 ...hints,
               ].join("\n"),
@@ -2868,7 +2868,7 @@ export default async function plugin(bb: BbPluginApi) {
             const id = rest[0];
             if (id === undefined || rest.length !== 1) return fail(usage);
             const crew = await findCrew(id);
-            if (crew === undefined) return fail(`No crew ${id}. Run "bb firstmate crews".`);
+            if (crew === undefined) return fail(`No crew ${id}. Run "alia firstmate crews".`);
             const status = await crewStatus(crew);
             const output = await crewOutput(crew);
             const outcome = parseOutcome(output);
@@ -2887,7 +2887,7 @@ export default async function plugin(bb: BbPluginApi) {
             if (targets.length === 0) return fail("No matching crews.");
             if (ids !== null) {
               const missing = ids.filter((id) => !targets.some((c) => c.id === id));
-              if (missing.length > 0) return fail(`No crew ${missing[0]}. Run "bb firstmate crews".`);
+              if (missing.length > 0) return fail(`No crew ${missing[0]}. Run "alia firstmate crews".`);
             }
             const rows = await Promise.all(
               targets.map(async (crew) => {
@@ -2918,7 +2918,7 @@ export default async function plugin(bb: BbPluginApi) {
                 : (flagStr(flags, "message") ?? rest.slice(1).join(" ").trim());
             if (id === undefined || message === "") return fail(usage);
             const crew = await findCrew(id);
-            if (crew === undefined) return fail(`No crew ${id}. Run "bb firstmate crews".`);
+            if (crew === undefined) return fail(`No crew ${id}. Run "alia firstmate crews".`);
             const text = await tellCrew(crew, message, command === "interrupt");
             return reply({ told: true, id, interrupt: command === "interrupt" }, text);
           }
@@ -2929,7 +2929,7 @@ export default async function plugin(bb: BbPluginApi) {
             if (crew === undefined) return fail(`No crew ${id}.`);
             if (isSecondmateRoute(crew)) return fail(`Crew ${id} is a secondmate route — do not stop the domain captain.`);
             if (await isCaptainThread(crew.threadId)) return fail("Refusing to stop the captain thread.");
-            await bb.sdk.threads.stop({ threadId: crew.threadId });
+            await alia.sdk.threads.stop({ threadId: crew.threadId });
             return reply({ stopped: true, id }, `Stopped crew ${id}`);
           }
           case "retry": {
@@ -2937,7 +2937,7 @@ export default async function plugin(bb: BbPluginApi) {
             if (id === undefined) return fail(usage);
             const crew = await findCrew(id);
             if (crew === undefined) return fail(`No crew ${id}.`);
-            await bb.sdk.threads.retry({
+            await alia.sdk.threads.retry({
               threadId: crew.threadId,
               reason: flagStr(flags, "reason") ?? `firstmate retry crew ${id}`,
             });
@@ -3001,8 +3001,8 @@ export default async function plugin(bb: BbPluginApi) {
                 `Supervision ${sub}${sub === "on" ? " (done/fail via thread events; stuck checker still polls output)" : ""}`,
               );
             }
-            const meta = asRecord(await bb.storage.kv.get<unknown>("watch-meta"));
-            const tracked = Object.keys(asRecord(await bb.storage.kv.get<unknown>("watch"))).length;
+            const meta = asRecord(await alia.storage.kv.get<unknown>("watch-meta"));
+            const tracked = Object.keys(asRecord(await alia.storage.kv.get<unknown>("watch"))).length;
             const lastPass = meta["lastPassAt"];
             const info = {
               enabled: current.supervisionEnabled,
@@ -3052,7 +3052,7 @@ export default async function plugin(bb: BbPluginApi) {
           case "quiet": {
             const sub = rest[0] ?? "status";
             if (sub === "on" || sub === "off") {
-              await bb.storage.kv.set(QUIET_KEY, sub === "on");
+              await alia.storage.kv.set(QUIET_KEY, sub === "on");
               return reply({ quiet: sub === "on" }, `Quiet ${sub}`);
             }
             const q = await isQuiet();
@@ -3128,7 +3128,7 @@ export default async function plugin(bb: BbPluginApi) {
               const open = items.filter((q) => q.status === "queued" && queueGate(q, items, now) === null);
               if (open.length === 0) return reply([], "Nothing dispatchable.");
               const first = [...open].reverse()[0] as QueueItem;
-              return reply(first, `${first.id} [${first.shape}] ${first.projectId} :: ${first.title}\nDispatch: bb firstmate queue dispatch ${first.id}`);
+              return reply(first, `${first.id} [${first.shape}] ${first.projectId} :: ${first.title}\nDispatch: VesnALIA firstmate queue dispatch ${first.id}`);
             }
             if (sub === "dispatch") {
               const qid = rest[1];
@@ -3186,7 +3186,7 @@ export default async function plugin(bb: BbPluginApi) {
               await writeDecisions([d, ...all]);
               return reply(
                 d,
-                `Decision ${d.id}: ${truncate(question, 100)}${d.options.length > 0 ? `\nOptions: ${d.options.join(" / ")}` : ""}\nAsk the captain with AskUserQuestion, then: bb firstmate decide answer ${d.id} -- "<answer>"`,
+                `Decision ${d.id}: ${truncate(question, 100)}${d.options.length > 0 ? `\nOptions: ${d.options.join(" / ")}` : ""}\nAsk the captain with AskUserQuestion, then: VesnALIA firstmate decide answer ${d.id} -- "<answer>"`,
               );
             }
             if (sub === "list") {
@@ -3209,7 +3209,7 @@ export default async function plugin(bb: BbPluginApi) {
               if (d.crewId !== null) {
                 const crew = await findCrew(d.crewId);
                 if (crew !== undefined) {
-                  await bb.sdk.threads.send({
+                  await alia.sdk.threads.send({
                     threadId: crew.threadId,
                     mode: "steer",
                     input: [{ type: "text", text: `Captain's decision: ${answer.slice(0, MAX_TASK)}`, mentions: [] }],
@@ -3247,7 +3247,7 @@ export default async function plugin(bb: BbPluginApi) {
               const yoloRaw = flagStr(flags, "yolo");
               const yolo = yoloRaw === undefined ? cur.yolo : yoloRaw === "on" || yoloRaw === "true";
               all[projectId] = { mode, yolo };
-              await bb.storage.kv.set(POSTURES_KEY, all);
+              await alia.storage.kv.set(POSTURES_KEY, all);
               return reply({ projectId, mode, yolo }, `Posture ${projectId}: ${mode}${yolo ? "+yolo" : ""}`);
             }
             const all = await readPostures();
@@ -3263,8 +3263,8 @@ export default async function plugin(bb: BbPluginApi) {
           case "memory": {
             const sub = rest[0] ?? "show";
             if (sub === "show") {
-              const cap = await bb.storage.kv.get<unknown>(MEM_CAPTAIN_KEY);
-              const learn = await bb.storage.kv.get<unknown>(MEM_LEARNINGS_KEY);
+              const cap = await alia.storage.kv.get<unknown>(MEM_CAPTAIN_KEY);
+              const learn = await alia.storage.kv.get<unknown>(MEM_LEARNINGS_KEY);
               const capText = typeof cap === "string" ? cap : "";
               const learnText = typeof learn === "string" ? learn : "";
               return reply(
@@ -3275,31 +3275,31 @@ export default async function plugin(bb: BbPluginApi) {
             if (sub === "set-captain") {
               const text = rest.slice(1).join(" ").trim();
               if (text === "") return fail(usage);
-              await bb.storage.kv.set(MEM_CAPTAIN_KEY, text.slice(0, 4000));
+              await alia.storage.kv.set(MEM_CAPTAIN_KEY, text.slice(0, 4000));
               return reply({ set: true }, "Captain preferences saved.");
             }
             if (sub === "add-learning") {
               const text = rest.slice(1).join(" ").trim();
               if (text === "") return fail(usage);
-              const prev = await bb.storage.kv.get<unknown>(MEM_LEARNINGS_KEY);
+              const prev = await alia.storage.kv.get<unknown>(MEM_LEARNINGS_KEY);
               const line = `- ${new Date().toISOString().slice(0, 10)}: ${text}`;
               const next = `${typeof prev === "string" && prev !== "" ? `${prev}\n` : ""}${line}`.slice(-4000);
-              await bb.storage.kv.set(MEM_LEARNINGS_KEY, next);
+              await alia.storage.kv.set(MEM_LEARNINGS_KEY, next);
               return reply({ added: true }, "Learning stored.");
             }
             if (sub === "drop-learning") {
               const n = Number(rest[1]);
-              const prev = await bb.storage.kv.get<unknown>(MEM_LEARNINGS_KEY);
+              const prev = await alia.storage.kv.get<unknown>(MEM_LEARNINGS_KEY);
               const lines = typeof prev === "string" ? prev.split("\n").filter((l) => l !== "") : [];
               if (!Number.isInteger(n) || n < 1 || n > lines.length) return fail(`No learning #${rest[1] ?? ""} (1-${lines.length}).`);
               lines.splice(n - 1, 1);
-              await bb.storage.kv.set(MEM_LEARNINGS_KEY, lines.join("\n"));
+              await alia.storage.kv.set(MEM_LEARNINGS_KEY, lines.join("\n"));
               return reply({ dropped: true }, `Dropped learning #${n}.`);
             }
             if (sub === "clear") {
               const which = rest[1];
               if (which !== "captain" && which !== "learnings") return fail(usage);
-              await bb.storage.kv.set(which === "captain" ? MEM_CAPTAIN_KEY : MEM_LEARNINGS_KEY, "");
+              await alia.storage.kv.set(which === "captain" ? MEM_CAPTAIN_KEY : MEM_LEARNINGS_KEY, "");
               return reply({ cleared: true }, `Cleared ${which}.`);
             }
             return fail(usage);
@@ -3319,14 +3319,14 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.background.service("crew-watch", {
+  alia.background.service("crew-watch", {
     async start(signal) {
       while (!signal.aborted) {
         try {
           const s = await settings.get();
           if (s.supervisionEnabled === true) await stuckPass();
         } catch (error) {
-          bb.log.warn(error instanceof Error ? `supervise: ${error.message}` : "supervise failed");
+          alia.log.warn(error instanceof Error ? `supervise: ${error.message}` : "supervise failed");
         }
         const s = await settings.get().catch(() => null);
         const mins = s === null ? 5 : Math.min(60, Math.max(1, Number(s.supervisionIntervalMin) || 5));
@@ -3345,9 +3345,9 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     for (const timer of nudgeTimers.values()) clearTimeout(timer);
     nudgeTimers.clear();
-    bb.log.info("disposed");
+    alia.log.info("disposed");
   });
 }

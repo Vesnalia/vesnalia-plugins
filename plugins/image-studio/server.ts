@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { chmod, mkdir, readFile, rm, unlink, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join } from "node:path";
-import { defineRpcContract, type BbPluginApi, type PluginRpcHandlers } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi, type PluginRpcHandlers } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   FAL_ENDPOINTS,
@@ -644,11 +644,11 @@ function restAfter(argv: string[], command: string): string {
   return out.join(" ").trim();
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const blenderHost = bb.hosts.experimental_client({ contract: hostContract });
-  const rootDir = join(bb.server.experimental_dataDir, "plugins", bb.pluginId);
+  const blenderHost = alia.hosts.experimental_client({ contract: hostContract });
+  const rootDir = join(alia.server.experimental_dataDir, "plugins", alia.pluginId);
   const secretsFile = join(rootDir, "secrets.json");
 
   async function ensureRoot(): Promise<void> {
@@ -656,24 +656,24 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function migrateNanoBananaGatewayKie(): Promise<void> {
-    const moved = await bb.storage.kv.get<boolean>(DEFAULT_GATEWAY_KIE);
+    const moved = await alia.storage.kv.get<boolean>(DEFAULT_GATEWAY_KIE);
     if (moved === true) return;
-    await bb.storage.kv.set(DEFAULT_GATEWAY_KIE, true);
-    const settings = mergeSettings(await bb.storage.kv.get<unknown>(SETTINGS_KEY));
+    await alia.storage.kv.set(DEFAULT_GATEWAY_KIE, true);
+    const settings = mergeSettings(await alia.storage.kv.get<unknown>(SETTINGS_KEY));
     if (settings.defaultGateway !== "kie") {
       await writeSettings({ ...settings, defaultGateway: "kie" });
     }
-    const last = parseLastChoice(await bb.storage.kv.get<unknown>(LAST_GENERATE_KEY));
+    const last = parseLastChoice(await alia.storage.kv.get<unknown>(LAST_GENERATE_KEY));
     if (last && !modelFalOnly(last.model) && last.gateway === "fal") {
-      await bb.storage.kv.set(LAST_GENERATE_KEY, { ...last, gateway: "kie" });
+      await alia.storage.kv.set(LAST_GENERATE_KEY, { ...last, gateway: "kie" });
     }
   }
 
   async function migrateEnableQwen21(): Promise<void> {
-    const moved = await bb.storage.kv.get<boolean>(ENABLE_QWEN_21);
+    const moved = await alia.storage.kv.get<boolean>(ENABLE_QWEN_21);
     if (moved === true) return;
-    await bb.storage.kv.set(ENABLE_QWEN_21, true);
-    const settings = mergeSettings(await bb.storage.kv.get<unknown>(SETTINGS_KEY));
+    await alia.storage.kv.set(ENABLE_QWEN_21, true);
+    const settings = mergeSettings(await alia.storage.kv.get<unknown>(SETTINGS_KEY));
     if (settings.qwenImage21 !== true) {
       await writeSettings({ ...settings, qwenImage21: true });
     }
@@ -694,14 +694,14 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function readSettings(): Promise<StudioSettings> {
     await migrationsReady();
-    const settings = mergeSettings(await bb.storage.kv.get<unknown>(SETTINGS_KEY));
+    const settings = mergeSettings(await alia.storage.kv.get<unknown>(SETTINGS_KEY));
     providerLimiter.setLimit(settings.concurrency);
     return settings;
   }
 
   async function writeSettings(next: StudioSettings): Promise<void> {
-    await bb.storage.kv.set(SETTINGS_KEY, next);
-    bb.realtime.publish(CHANGED, { kind: "settings" });
+    await alia.storage.kv.set(SETTINGS_KEY, next);
+    alia.realtime.publish(CHANGED, { kind: "settings" });
   }
 
   async function readSecrets(): Promise<{ falApiKey: string; kieApiKey: string }> {
@@ -720,7 +720,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function catalogValue(name: string): Promise<string> {
-    const record = await bb.sdk.plugins.callRpc({
+    const record = await alia.sdk.plugins.callRpc({
       pluginId: ENV_CATALOG_PLUGIN_ID,
       method: "env_get_value",
       input: { name },
@@ -731,7 +731,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function catalogKeys(): Promise<{ available: boolean; names: string[] }> {
     try {
-      const record = await bb.sdk.plugins.callRpc({
+      const record = await alia.sdk.plugins.callRpc({
         pluginId: ENV_CATALOG_PLUGIN_ID,
         method: "env_list",
         input: { kind: "secret" },
@@ -772,10 +772,10 @@ export default async function plugin(bb: BbPluginApi) {
 
   // Profiles, gallery lists and the last choice are single KV values: every change is read-modify-write
   // inside a lock, so parallel jobs cannot overwrite each other.
-  const profileStore = createProfileStore(bb.storage.kv, () => bb.realtime.publish(CHANGED, { kind: "profiles" }));
+  const profileStore = createProfileStore(alia.storage.kv, () => alia.realtime.publish(CHANGED, { kind: "profiles" }));
   const readProfileList = (): Promise<PersonProfile[]> => profileStore.list();
   const withProfiles = <T>(work: (profiles: PersonProfile[]) => Promise<T> | T): Promise<T> => profileStore.mutate(work);
-  const galleryStore = createGalleryStore<Generation>(bb.storage.kv, GALLERY_MAX);
+  const galleryStore = createGalleryStore<Generation>(alia.storage.kv, GALLERY_MAX);
   const lastChoiceLock = new Mutex();
   const settingsLock = new Mutex();
   /** Provider calls running at once, across the panel, chat, CLI and sheet builds. */
@@ -796,13 +796,13 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function readLastUnlocked(): Promise<LastChoice | null> {
     await migrationsReady();
-    const last = parseLastChoice(await bb.storage.kv.get<unknown>(LAST_GENERATE_KEY));
-    const moved = await bb.storage.kv.get<boolean>(LAST_GENERATE_RES_2K);
+    const last = parseLastChoice(await alia.storage.kv.get<unknown>(LAST_GENERATE_KEY));
+    const moved = await alia.storage.kv.get<boolean>(LAST_GENERATE_RES_2K);
     if (moved === true) return last;
-    await bb.storage.kv.set(LAST_GENERATE_RES_2K, true);
+    await alia.storage.kv.set(LAST_GENERATE_RES_2K, true);
     if (last?.resolution === "1K") {
       const next = { ...last, resolution: "2K" as const };
-      await bb.storage.kv.set(LAST_GENERATE_KEY, next);
+      await alia.storage.kv.set(LAST_GENERATE_KEY, next);
       return next;
     }
     return last;
@@ -816,12 +816,12 @@ export default async function plugin(bb: BbPluginApi) {
   function rememberChoice(work: (last: LastChoice | null) => LastChoice | null): Promise<void> {
     return lastChoiceLock.run(async () => {
       const next = work(await readLastUnlocked());
-      if (next) await bb.storage.kv.set(LAST_GENERATE_KEY, next);
+      if (next) await alia.storage.kv.set(LAST_GENERATE_KEY, next);
     });
   }
 
   async function readGenerations(projectId: string): Promise<Generation[]> {
-    const raw = await bb.storage.kv.get<unknown>(generationsKey(projectId));
+    const raw = await alia.storage.kv.get<unknown>(generationsKey(projectId));
     if (!Array.isArray(raw)) return [];
     let dirty = false;
     const items: Generation[] = [];
@@ -839,7 +839,7 @@ export default async function plugin(bb: BbPluginApi) {
   /** Writes sizes of old records back. Re-reads inside the gallery lock, so a record added meanwhile is kept. */
   function persistDimensions(projectId: string): Promise<void> {
     return galleryStore.withLock(async () => {
-      const raw = await bb.storage.kv.get<unknown>(generationsKey(projectId));
+      const raw = await alia.storage.kv.get<unknown>(generationsKey(projectId));
       if (!Array.isArray(raw)) return;
       let changed = false;
       const next: unknown[] = [];
@@ -853,7 +853,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (sized.width && sized.height) changed = true;
         next.push(sized);
       }
-      if (changed) await bb.storage.kv.set(generationsKey(projectId), next);
+      if (changed) await alia.storage.kv.set(generationsKey(projectId), next);
     });
   }
 
@@ -892,9 +892,9 @@ export default async function plugin(bb: BbPluginApi) {
     if (collected.length === 0) return [];
     // Seed only if still empty once we hold the lock: a job may have added a record meanwhile.
     await galleryStore.withLock(async () => {
-      const again = await bb.storage.kv.get<unknown>(generationsKey(STUDIO_GALLERY));
+      const again = await alia.storage.kv.get<unknown>(generationsKey(STUDIO_GALLERY));
       if (!Array.isArray(again) || again.length === 0) {
-        await bb.storage.kv.set(generationsKey(STUDIO_GALLERY), fitGallery(collected));
+        await alia.storage.kv.set(generationsKey(STUDIO_GALLERY), fitGallery(collected));
       }
     });
     return collected;
@@ -999,7 +999,7 @@ export default async function plugin(bb: BbPluginApi) {
       } else {
         const path = isAbsolute(ref) || !cwd ? ref : join(cwd, ref);
         try {
-          const file = await bb.sdk.files.read({ path, hostId });
+          const file = await alia.sdk.files.read({ path, hostId });
           bytes = Buffer.from(file.content, file.contentEncoding === "base64" ? "base64" : "utf8");
         } catch (error) {
           throw new Error(`Could not read the source image ${path}: ${describe(error)}`);
@@ -1296,10 +1296,10 @@ export default async function plugin(bb: BbPluginApi) {
     return running;
   }
 
-  /** Logging must never fail a job: after a reload the old `bb` handle throws on every call. */
+  /** Logging must never fail a job: after a reload the old `VesnALIA` handle throws on every call. */
   function warn(message: string): void {
     try {
-      bb.log.warn(message);
+      alia.log.warn(message);
     } catch {
       // stale handle
     }
@@ -1312,7 +1312,7 @@ export default async function plugin(bb: BbPluginApi) {
     gallery: galleryStore,
     profiles: profileStore,
     onAdopted: (entry) => {
-      bb.realtime.publish(CHANGED, entry.kind === "generation" ? { kind: "generations", projectId: entry.record.projectId } : { kind: "profiles" });
+      alia.realtime.publish(CHANGED, entry.kind === "generation" ? { kind: "generations", projectId: entry.record.projectId } : { kind: "profiles" });
     },
     warn,
   });
@@ -1356,7 +1356,7 @@ export default async function plugin(bb: BbPluginApi) {
     } else if (input.cwd) {
       const dest = join(input.cwd, "image-studio", filename);
       try {
-        await bb.sdk.files.write({
+        await alia.sdk.files.write({
           path: dest,
           rootPath: input.cwd,
           content: display.toString("base64"),
@@ -1409,7 +1409,7 @@ export default async function plugin(bb: BbPluginApi) {
       await writePending(id, { kind: "generation", record });
       await galleryStore.add(projectId, record);
       if (input.gui?.styleId) await addGuiGeneration(input.gui.styleId, record);
-      bb.realtime.publish(CHANGED, { kind: "generations", projectId });
+      alia.realtime.publish(CHANGED, { kind: "generations", projectId });
       await clearPending(id);
     } catch (error) {
       if (isStaleHandleError(error)) throw new SavedAfterReload(record, error);
@@ -1445,7 +1445,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   /** Styles are one KV list (small: text and file names), changed under a lock like the profiles. */
   const guiLock = new Mutex();
-  const readStoredStyles = async (): Promise<GuiStyle[]> => parseGuiStyles(await bb.storage.kv.get<unknown>(GUI_STYLES_KEY));
+  const readStoredStyles = async (): Promise<GuiStyle[]> => parseGuiStyles(await alia.storage.kv.get<unknown>(GUI_STYLES_KEY));
   // Projects are read only after the one-time move of GUI and Characters projects into Roblox games.
   let gamesMigration: Promise<void> | null = null;
   function gamesReady(): Promise<void> {
@@ -1466,8 +1466,8 @@ export default async function plugin(bb: BbPluginApi) {
     return guiLock.run(async () => {
       const styles = await readStoredStyles();
       const result = await change(styles);
-      await bb.storage.kv.set(GUI_STYLES_KEY, styles);
-      bb.realtime.publish(CHANGED, { kind: "gui" });
+      await alia.storage.kv.set(GUI_STYLES_KEY, styles);
+      alia.realtime.publish(CHANGED, { kind: "gui" });
       return result;
     });
   }
@@ -1487,7 +1487,7 @@ export default async function plugin(bb: BbPluginApi) {
   const guiGenLock = new Mutex();
   /** A project's generations; the first read after the update adopts its records still in the shared gallery. */
   async function readGuiGenerations(styleId: string): Promise<Generation[]> {
-    const raw = await bb.storage.kv.get<unknown>(GUI_GEN_PREFIX + styleId);
+    const raw = await alia.storage.kv.get<unknown>(GUI_GEN_PREFIX + styleId);
     if (Array.isArray(raw)) {
       return raw.flatMap((item) => {
         const parsed = generationSchema.safeParse(item);
@@ -1500,29 +1500,29 @@ export default async function plugin(bb: BbPluginApi) {
     return guiGenLock.run(async () => {
       const list = (await readGuiGenerations(styleId)).filter((item) => item.id !== record.id);
       // The composed prompt is kilobytes of wrapper; the shared gallery keeps it, the project list does not.
-      await bb.storage.kv.set(GUI_GEN_PREFIX + styleId, fitGallery([{ ...record, composedPrompt: "" }, ...list], GUI_GEN_MAX));
+      await alia.storage.kv.set(GUI_GEN_PREFIX + styleId, fitGallery([{ ...record, composedPrompt: "" }, ...list], GUI_GEN_MAX));
     });
   }
 
   const modelTakeLock = new Mutex();
   async function readModelTakes(styleId: string): Promise<ModelTakeRecord[]> {
-    const raw = await bb.storage.kv.get<unknown>(modelTakeKvKey(styleId));
+    const raw = await alia.storage.kv.get<unknown>(modelTakeKvKey(styleId));
     return parseModelTakeRecords(raw);
   }
   function addModelTake(styleId: string, record: ModelTakeRecord): Promise<void> {
     return modelTakeLock.run(async () => {
       const list = (await readModelTakes(styleId)).filter((item) => item.id !== record.id);
-      await bb.storage.kv.set(modelTakeKvKey(styleId), [record, ...list].slice(0, MODEL_TAKE_MAX));
+      await alia.storage.kv.set(modelTakeKvKey(styleId), [record, ...list].slice(0, MODEL_TAKE_MAX));
     });
   }
 
   const itemLock = new Mutex();
   async function readItemIndex(styleId: string) {
-    const raw = await bb.storage.kv.get<unknown>(itemIndexKvKey(styleId));
+    const raw = await alia.storage.kv.get<unknown>(itemIndexKvKey(styleId));
     return parseItemIndex(raw);
   }
   async function writeItemIndex(styleId: string, rows: ReturnType<typeof parseItemIndex>): Promise<void> {
-    await bb.storage.kv.set(itemIndexKvKey(styleId), rows);
+    await alia.storage.kv.set(itemIndexKvKey(styleId), rows);
   }
   async function readItemJson(cwd: string, hostId: string, style: GuiStyle, itemId: string): Promise<Item | null> {
     const rel = join("image-studio", "model", slugify(style.name, "model"), "items", slugify(itemId, "item"), "item.json");
@@ -1740,7 +1740,7 @@ export default async function plugin(bb: BbPluginApi) {
       : join(rootDir, "generations", projectId, ...base, folder);
     const write = async (path: string, bytes: Buffer): Promise<void> => {
       if (input.cwd) {
-        await bb.sdk.files.write({
+        await alia.sdk.files.write({
           path,
           rootPath: input.cwd,
           content: bytes.toString("base64"),
@@ -2037,7 +2037,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   /**
-   * The project a run writes to: the named one; else the latest project bound to this folder (or BB project);
+   * The project a run writes to: the named one; else the latest project bound to this folder (or VesnALIA project);
    * else a new project named after the folder. "Make GUI from this place" therefore always lands in one project.
    */
   async function resolveGuiProject(input: {
@@ -2067,7 +2067,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (input.styleId) {
       const found = findGuiStyle(inSection(await readGuiStyles()), input.styleId, input.origin);
       const sectionCli = section === "gui" ? "gui" : section === "roblox" ? "roblox" : section === "model" ? "model" : section === "web" ? "web" : "character";
-      if (!found) throw new Error(`No ${SECTION_WORD[section]} project "${input.styleId}". Run bb image-studio ${sectionCli} projects.`);
+      if (!found) throw new Error(`No ${SECTION_WORD[section]} project "${input.styleId}". Run alia image-studio ${sectionCli} projects.`);
       return found;
     }
     return withGuiStyles((styles) => {
@@ -2114,13 +2114,13 @@ export default async function plugin(bb: BbPluginApi) {
 
   /** Moves the GUI and Characters projects made before games existed into games, once. */
   async function migrateGames(): Promise<void> {
-    if (await bb.storage.kv.get<boolean>(GAMES_MIGRATED_KEY)) return;
+    if (await alia.storage.kv.get<boolean>(GAMES_MIGRATED_KEY)) return;
     await lockedStyles((styles) => {
       const plan = planGameMigration(styles, new Date().toISOString(), () => randomUUID().slice(0, 8));
       styles.push(...plan.games);
       for (const style of styles) if (plan.links[style.id]) style.gameId = plan.links[style.id]!;
     });
-    await bb.storage.kv.set(GAMES_MIGRATED_KEY, true);
+    await alia.storage.kv.set(GAMES_MIGRATED_KEY, true);
   }
 
   async function runGui(input: {
@@ -2138,7 +2138,7 @@ export default async function plugin(bb: BbPluginApi) {
     accessories?: string;
     cwd?: string;
     hostId?: string;
-    /** Name for a project created for this place (BB project name); the folder name otherwise. */
+    /** Name for a project created for this place (VesnALIA project name); the folder name otherwise. */
     originLabel?: string;
     /** GUI / Characters of this Roblox game. */
     gameId?: string;
@@ -2261,12 +2261,12 @@ export default async function plugin(bb: BbPluginApi) {
     return { generations, errors, style, jobs };
   }
 
-  /** The folder the thread works in (a section of a big BB project), so its GUI lands in that folder's project. */
+  /** The folder the thread works in (a section of a big VesnALIA project), so its GUI lands in that folder's project. */
   async function threadFolder(threadId: string, projectId: string | null): Promise<{ cwd?: string; hostId?: string }> {
     try {
-      const thread = (await bb.sdk.threads.get({ threadId })) as { environmentId?: string | null };
+      const thread = (await alia.sdk.threads.get({ threadId })) as { environmentId?: string | null };
       if (thread.environmentId) {
-        const env = (await bb.sdk.environments.get({ environmentId: thread.environmentId })) as { path?: string; hostId?: string };
+        const env = (await alia.sdk.environments.get({ environmentId: thread.environmentId })) as { path?: string; hostId?: string };
         if (env.path) return { cwd: env.path, hostId: env.hostId };
       }
     } catch (error) {
@@ -2278,7 +2278,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function projectSource(projectId: string | null | undefined): Promise<{ cwd?: string; hostId?: string; name?: string }> {
     if (!projectId) return {};
     try {
-      const project = await bb.sdk.projects.get({ projectId });
+      const project = await alia.sdk.projects.get({ projectId });
       const source = project.sources[0];
       return { cwd: source?.path, hostId: source?.hostId, name: project.name };
     } catch (error) {
@@ -2307,13 +2307,13 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function readHostBytes(path: string, cwd: string, hostId?: string): Promise<Buffer> {
     const absolute = hostPath(cwd, path);
-    const file = await bb.sdk.files.read({ path: absolute, hostId });
+    const file = await alia.sdk.files.read({ path: absolute, hostId });
     return Buffer.from(file.content, file.contentEncoding === "base64" ? "base64" : "utf8");
   }
 
   async function writeHostBytes(path: string, cwd: string, hostId: string | undefined, bytes: Buffer): Promise<void> {
     const absolute = hostPath(cwd, path);
-    await bb.sdk.files.write({
+    await alia.sdk.files.write({
       path: absolute,
       content: bytes.toString("base64"),
       contentEncoding: "base64",
@@ -3080,7 +3080,7 @@ export default async function plugin(bb: BbPluginApi) {
     const current = await readSecrets();
     current[slot] = value.trim();
     await writeSecrets(current);
-    bb.realtime.publish(CHANGED, { kind: "secrets" });
+    alia.realtime.publish(CHANGED, { kind: "secrets" });
     return { saved: true };
   };
   const save_profile: RpcHandlers["save_profile"] = async (input) =>
@@ -3191,7 +3191,7 @@ export default async function plugin(bb: BbPluginApi) {
     let hostId: string | undefined;
     if (input.projectId) {
       try {
-        const project = await bb.sdk.projects.get({ projectId: input.projectId });
+        const project = await alia.sdk.projects.get({ projectId: input.projectId });
         const source = project.sources[0];
         cwd = source?.path;
         hostId = source?.hostId;
@@ -3281,7 +3281,7 @@ export default async function plugin(bb: BbPluginApi) {
       // A deleted game's GUI and Characters projects stay, back in their own tabs.
       for (const style of styles) if (style.gameId === id) style.gameId = "";
       await rm(guiDir(id), { recursive: true, force: true });
-      await bb.storage.kv.set(GUI_GEN_PREFIX + id, []);
+      await alia.storage.kv.set(GUI_GEN_PREFIX + id, []);
       return { removed: true };
     });
   const add_gui_ref: RpcHandlers["add_gui_ref"] = async ({ styleId, role, generationId, filename, base64 }) => {
@@ -3292,7 +3292,7 @@ export default async function plugin(bb: BbPluginApi) {
       let bytes: Buffer;
       try {
         if (!item.guiMode || !item.projectPath) throw new Error("no full-size copy");
-        const file = await bb.sdk.files.read({ path: item.projectPath });
+        const file = await alia.sdk.files.read({ path: item.projectPath });
         bytes = Buffer.from(file.content, file.contentEncoding === "base64" ? "base64" : "utf8");
       } catch {
         bytes = await readFile(generationPath(item.projectId, item.filename));
@@ -3480,7 +3480,7 @@ export default async function plugin(bb: BbPluginApi) {
   };
 
   // Shorthand on purpose: GitNexus links the panel's api.<method>() calls to these named handlers.
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     snapshot,
     update_settings,
     set_secret,
@@ -3512,89 +3512,89 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb image-studio generate --prompt <text> [--model nano-banana-2|nano-banana-2.1|nano-banana-pro|muse-image|gpt-image-2.5-flare|…]",
+    "  VesnALIA image-studio generate --prompt <text> [--model nano-banana-2|nano-banana-2.1|nano-banana-pro|muse-image|gpt-image-2.5-flare|…]",
     "                           [--gateway fal|kie] [--profile <name>] [--refs auto|all|<slot,slot>]",
     "                           [--image <path|gallery id|url>]… [--aspect 1:1] [--count N] [--batch jobs.jsonl] [--seed N] [--json]",
-    "  bb image-studio profiles [--json]",
-    "  bb image-studio refs --profile <name> --prompt <text> [--model <id>] [--image <n>]… [--json]   (preview of the reference choice; free)",
-    "  bb image-studio sheet --profile <name> [--slots a,b] [--model <id>] [--accept] [--parallel N] [--dry-run] [--json]   (paid: one generation per slot)",
-    "  bb image-studio models [--json]",
-    "  bb image-studio gui projects [--json]   (* marks the project of this folder)",
-    "  bb image-studio gui project [--name <name>] [--rename <new>] [--theme <text>] [--tags cartoon,gothic,…] [--palette background=#1A1026,button=#C0203A,…] [--notes <text>]",
-    "  bb image-studio gui ref [--project <name>] --image <path|gallery id> [--role concept|art]",
-    "  bb image-studio gui generate --mode ideas|screen|elements|kit [--project <name>] [--states] [--image <path>]… --prompt <text> [--json]",
-    "  bb image-studio gui delete --project <name>   (the list and references; saved files stay)",
-    "  bb image-studio gui cut --sheet <path> [--elements \"a; b; c\"] [--states] [--json]   (re-cut a green-key sheet; free)",
-    "  bb image-studio character projects|project|ref|delete …   (the same options as gui; --tags stylized,blocky,chibi,…)",
-    "  bb image-studio character generate --mode ideas|model|turnaround|equipment|accessories [--project <name>] [--name soldier] [--body humanoid|blocky|quadruped|winged|legless]",
+    "  VesnALIA image-studio profiles [--json]",
+    "  VesnALIA image-studio refs --profile <name> --prompt <text> [--model <id>] [--image <n>]… [--json]   (preview of the reference choice; free)",
+    "  VesnALIA image-studio sheet --profile <name> [--slots a,b] [--model <id>] [--accept] [--parallel N] [--dry-run] [--json]   (paid: one generation per slot)",
+    "  VesnALIA image-studio models [--json]",
+    "  VesnALIA image-studio gui projects [--json]   (* marks the project of this folder)",
+    "  VesnALIA image-studio gui project [--name <name>] [--rename <new>] [--theme <text>] [--tags cartoon,gothic,…] [--palette background=#1A1026,button=#C0203A,…] [--notes <text>]",
+    "  VesnALIA image-studio gui ref [--project <name>] --image <path|gallery id> [--role concept|art]",
+    "  VesnALIA image-studio gui generate --mode ideas|screen|elements|kit [--project <name>] [--states] [--image <path>]… --prompt <text> [--json]",
+    "  VesnALIA image-studio gui delete --project <name>   (the list and references; saved files stay)",
+    "  VesnALIA image-studio gui cut --sheet <path> [--elements \"a; b; c\"] [--states] [--json]   (re-cut a green-key sheet; free)",
+    "  VesnALIA image-studio character projects|project|ref|delete …   (the same options as gui; --tags stylized,blocky,chibi,…)",
+    "  VesnALIA image-studio character generate --mode ideas|model|turnaround|equipment|accessories [--project <name>] [--name soldier] [--body humanoid|blocky|quadruped|winged|legless]",
     "                                     [--equipment \"rifle; knife\"] [--accessories \"helmet; left pauldron\"] [--image <design picture>]… --prompt <who the character is> [--json]",
-    "  bb image-studio character cut --sheet <path> [--grid 1x2 | --items \"rifle; knife\"] [--json]   (re-cut a white sheet; free)",
-    "  bb image-studio roblox projects|project|ref|delete …   (games; the same options as gui; --tags simulator,stylized,lowpoly,…)",
-    "  bb image-studio model projects|project|ref|delete …   (texture-by-UV projects; same theme options as gui)",
-    "  bb image-studio model generate --mode texture-uv --file <model.fbx|glb|blend> [--object NAME] [--size 1024|2048] [--variants 1-4] [--image <concept|style>]… [--subject …] [--concept-note …] [--project-concept true|false] [--concept-view front|back|left|right] [--parts \"mat=part; …\"] --prompt <style> [--project <name>] [--json]",
-    "  bb image-studio model generate --mode blueprint --image <concept> [--views front,side,back] [--sheet-style clay+wire|clean-line] [--soft \"rags; rope\"] [--rigid \"…\"] [--subject \"fire mop\"] [--project <name>] [--json]",
-    "  bb image-studio roblox generate --mode icon|thumbnail|logo|loading|badges|passes|products|items|props|texture|skybox|decal|vfx|flipbook",
+    "  VesnALIA image-studio character cut --sheet <path> [--grid 1x2 | --items \"rifle; knife\"] [--json]   (re-cut a white sheet; free)",
+    "  VesnALIA image-studio roblox projects|project|ref|delete …   (games; the same options as gui; --tags simulator,stylized,lowpoly,…)",
+    "  VesnALIA image-studio model projects|project|ref|delete …   (texture-by-UV projects; same theme options as gui)",
+    "  VesnALIA image-studio model generate --mode texture-uv --file <model.fbx|glb|blend> [--object NAME] [--size 1024|2048] [--variants 1-4] [--image <concept|style>]… [--subject …] [--concept-note …] [--project-concept true|false] [--concept-view front|back|left|right] [--parts \"mat=part; …\"] --prompt <style> [--project <name>] [--json]",
+    "  VesnALIA image-studio model generate --mode blueprint --image <concept> [--views front,side,back] [--sheet-style clay+wire|clean-line] [--soft \"rags; rope\"] [--rigid \"…\"] [--subject \"fire mop\"] [--project <name>] [--json]",
+    "  VesnALIA image-studio roblox generate --mode icon|thumbnail|logo|loading|badges|passes|products|items|props|texture|skybox|decal|vfx|flipbook",
     "                                  [--project <game>] [--variants 1-4] [--frames 4|16] [--aspect 1:1|16:9|…] [--image <path>]… --prompt <what> [--json]",
     "                                  (list modes take the list in --prompt or --items: \"VIP; 2x Coins\")",
-    "  bb image-studio web projects|project|ref|delete …   (sites; the same options as gui; --tags minimal,corporate,playful,editorial,brutalist,dark-tech,luxury,flat-illustration,clay-3d)",
-    "  bb image-studio web generate --mode ideas|page|mobile|block|logo|favicon|og|hero|cover|illustrations|icons|background|pattern",
+    "  VesnALIA image-studio web projects|project|ref|delete …   (sites; the same options as gui; --tags minimal,corporate,playful,editorial,brutalist,dark-tech,luxury,flat-illustration,clay-3d)",
+    "  VesnALIA image-studio web generate --mode ideas|page|mobile|block|logo|favicon|og|hero|cover|illustrations|icons|background|pattern",
     "                               [--project <site>] [--variants 1-4] [--image <path>]… --prompt <what> [--json]",
     "                               (illustrations and icons take the list in --prompt or --items: \"empty state; 404 page\")",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "image-studio",
-    summary: "Generate images for the current BB project through fal.ai or kie.ai",
+    summary: "Generate images for the current VesnALIA project through fal.ai or kie.ai",
     commands: [
       {
         name: "generate",
         summary: "Generate or edit an image and save it under the project",
-        usage: "bb image-studio generate --prompt <text> [--model nano-banana-2] [--profile Name] [--refs auto|all|face-front,body-back] [--count N] [--batch jobs.jsonl] [--image path]",
+        usage: "alia image-studio generate --prompt <text> [--model nano-banana-2] [--profile Name] [--refs auto|all|face-front,body-back] [--count N] [--batch jobs.jsonl] [--image path]",
       },
       {
         name: "profiles",
         summary: "List people profiles and their filled reference slots",
-        usage: "bb image-studio profiles [--json]",
+        usage: "alia image-studio profiles [--json]",
       },
       {
         name: "refs",
         summary: "Preview which reference photos a prompt would send (Jev or keyword rules); generates nothing",
-        usage: "bb image-studio refs --profile <name> --prompt <text> [--model nano-banana-2.1] [--json]",
+        usage: "alia image-studio refs --profile <name> --prompt <text> [--model nano-banana-2.1] [--json]",
       },
       {
         name: "sheet",
         summary: "Build the missing reference-sheet slots of a profile (costs one generation per slot)",
-        usage: "bb image-studio sheet --profile <name> [--slots body-back,chest] [--model <id>] [--accept] [--parallel N] [--dry-run] [--json]",
+        usage: "alia image-studio sheet --profile <name> [--slots body-back,chest] [--model <id>] [--accept] [--parallel N] [--dry-run] [--json]",
       },
       {
         name: "models",
         summary: "Show enabled models and whether keys are present",
-        usage: "bb image-studio models [--json]",
+        usage: "alia image-studio models [--json]",
       },
       {
         name: "gui",
-        summary: "GUI section: game interface — styles, 4 mockup ideas, screens, element sheets cut into PNGs, UI kits (Muse Image, English labels); site interfaces go to image_studio_web / bb image-studio web",
-        usage: "bb image-studio gui projects|project|ref|generate|cut|delete …",
+        summary: "GUI section: game interface — styles, 4 mockup ideas, screens, element sheets cut into PNGs, UI kits (Muse Image, English labels); site interfaces go to image_studio_web / VesnALIA image-studio web",
+        usage: "alia image-studio gui projects|project|ref|generate|cut|delete …",
       },
       {
         name: "character",
         summary: "Characters section: game characters for 3D — ideas, an A-pose front view with empty hands, a front-and-back turnaround, held items and worn accessories on their own sheets",
-        usage: "bb image-studio character projects|project|ref|generate|cut|delete …",
+        usage: "alia image-studio character projects|project|ref|generate|cut|delete …",
       },
       {
         name: "roblox",
         summary: "Roblox games: icon, thumbnails, logo, badges, passes, products, item icons, props for 3D, textures, skyboxes, decals, VFX — fitted to Roblox sizes",
-        usage: "bb image-studio roblox projects|project|ref|generate|delete …",
+        usage: "alia image-studio roblox projects|project|ref|generate|delete …",
       },
       {
         name: "model",
         summary: "Texture by model UV: bake a UV guide in Blender, repaint with Muse, apply back and save color/guide/mask/preview",
-        usage: "bb image-studio model projects|project|ref|generate|delete …",
+        usage: "alia image-studio model projects|project|ref|generate|delete …",
       },
       {
         name: "web",
         summary: "Web section: site graphics — landing ideas, page and section mockups, logo, the favicon set, og card, hero, cover, illustrations, icons, background, seamless pattern (Muse Image)",
-        usage: "bb image-studio web projects|project|ref|generate|delete …",
+        usage: "alia image-studio web projects|project|ref|generate|delete …",
       },
     ],
     async run(argv, ctx) {
@@ -3862,7 +3862,7 @@ export default async function plugin(bb: BbPluginApi) {
             let text: string;
             try {
               const absolute = isAbsolute(batchPath) || !ctx.cwd ? batchPath : join(ctx.cwd, batchPath);
-              const file = await bb.sdk.files.read({ path: absolute });
+              const file = await alia.sdk.files.read({ path: absolute });
               text = file.contentEncoding === "base64" ? Buffer.from(file.content, "base64").toString("utf8") : file.content;
             } catch (error) {
               return { exitCode: 1, stderr: `Could not read the batch file ${batchPath}: ${describe(error)}` };
@@ -3994,7 +3994,7 @@ export default async function plugin(bb: BbPluginApi) {
         return reply(saved, `${existing ? "Updated" : "Created"} ${word} project ${saved.name} (${saved.id}). Presets for --tags: ${presetIds.join(", ")}.`);
       }
       case "delete": {
-        if (!projectFlag) return { exitCode: 1, stderr: `Name the project: bb image-studio ${command} delete --project <name>` };
+        if (!projectFlag) return { exitCode: 1, stderr: `Name the project: VesnALIA image-studio ${command} delete --project <name>` };
         const style = findGuiStyle(await readStyles(), projectFlag, origin);
         if (!style) return { exitCode: 1, stderr: `No ${word} project "${projectFlag}".` };
         await delete_gui_style({ id: style.id });
@@ -4050,7 +4050,7 @@ export default async function plugin(bb: BbPluginApi) {
         const sheet = flag(argv, "--sheet");
         if (!sheet) return { exitCode: 1, stderr: usage };
         const path = isAbsolute(sheet) || !ctx.cwd ? sheet : join(ctx.cwd, sheet);
-        const file = await bb.sdk.files.read({ path });
+        const file = await alia.sdk.files.read({ path });
         const bytes = Buffer.from(file.content, file.contentEncoding === "base64" ? "base64" : "utf8");
         if (section === "characters") {
           // A turnaround (--grid 1x2, the default; 2x1 for winged) or an equipment sheet (--items, in the sheet's order).
@@ -4066,7 +4066,7 @@ export default async function plugin(bb: BbPluginApi) {
           const cut = cutOnWhite(await decodeRgba(bytes), layout);
           const dir = join(path, "..", turnaround ? "views" : "parts");
           for (const part of cut.parts) {
-            await bb.sdk.files.write({
+            await alia.sdk.files.write({
               path: join(dir, `${part.name}.png`),
               content: (await encodePng(part.image)).toString("base64"),
               contentEncoding: "base64",
@@ -4083,7 +4083,7 @@ export default async function plugin(bb: BbPluginApi) {
         const cut = cutSheet(keyGreen(await decodeRgba(bytes)), layout);
         const dir = join(path, "..", "parts");
         for (const part of cut.parts) {
-          await bb.sdk.files.write({
+          await alia.sdk.files.write({
             path: join(dir, `${part.name}.png`),
             content: (await encodePng(part.image)).toString("base64"),
             contentEncoding: "base64",
@@ -4161,7 +4161,7 @@ export default async function plugin(bb: BbPluginApi) {
         return reply(saved, `Added ${role === "art" ? "an art" : "a concept"} reference to ${saved.name}: ${saved.refs.length} of ${GUI_MAX_REFS}.`);
       }
       case "delete": {
-        if (!projectFlag) return { exitCode: 1, stderr: `Name the project: bb image-studio model delete --project <name>` };
+        if (!projectFlag) return { exitCode: 1, stderr: `Name the project: VesnALIA image-studio model delete --project <name>` };
         const style = findGuiStyle(await readStyles(), projectFlag, origin);
         if (!style) return { exitCode: 1, stderr: `No ${word} project "${projectFlag}".` };
         await delete_gui_style({ id: style.id });
@@ -4394,12 +4394,12 @@ export default async function plugin(bb: BbPluginApi) {
     return { exitCode: 1, stderr: usage };
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "image_studio_gui",
     description:
       "Game GUI through Image Studio's GUI section, one GUI project per folder (Muse Image, English labels, picked frame size). Modes: ideas (4 mockups of a screen: 4 style directions for a fresh style, 4 takes inside a fixed one), screen (one mockup), elements (a list of separate elements on one sheet, cut into named transparent PNGs; states: normal/hover/pressed/disabled), kit (the standard UI kit of the style in two sheets, cut). For website interfaces and site graphics call image_studio_web instead. Runs at once, no Send form.",
     instructions:
-      "For game interface work (GUI, HUD, menus, buttons, frames, UI icons) call image_studio_gui instead of image_studio_generate; for website interfaces (site pages, sections, site icons) and other site graphics call image_studio_web. Generations go to the GUI project of this thread's folder (created on first use, named after the folder); pass project only to write into another one (`bb image-studio gui projects`). In a Roblox game's folder the game's GUI lands in that game. A project with nothing fixed yet makes ideas explore 4 preset directions; once it has presets, palette or references, ideas are 4 takes inside its style. prompt: ideas/screen — what the screen holds (\"settings window: tabs Graphics, Audio; sliders; Save button\"); elements — the list, one per line or separated by \";\" (\"Play button with the label 'PLAY'; gold coin icon\"); kit — optional extra wishes. Do not describe the style in prompt: the plugin adds the style's theme, palette, presets and reference pictures. Report the saved paths and parts folders to the user. To make an approved picture the project's style reference: bb image-studio gui ref --image <path or gallery id>. Set theme/presets/palette: bb image-studio gui project --theme … --tags … --palette ….",
+      "For game interface work (GUI, HUD, menus, buttons, frames, UI icons) call image_studio_gui instead of image_studio_generate; for website interfaces (site pages, sections, site icons) and other site graphics call image_studio_web. Generations go to the GUI project of this thread's folder (created on first use, named after the folder); pass project only to write into another one (`alia image-studio gui projects`). In a Roblox game's folder the game's GUI lands in that game. A project with nothing fixed yet makes ideas explore 4 preset directions; once it has presets, palette or references, ideas are 4 takes inside its style. prompt: ideas/screen — what the screen holds (\"settings window: tabs Graphics, Audio; sliders; Save button\"); elements — the list, one per line or separated by \";\" (\"Play button with the label 'PLAY'; gold coin icon\"); kit — optional extra wishes. Do not describe the style in prompt: the plugin adds the style's theme, palette, presets and reference pictures. Report the saved paths and parts folders to the user. To make an approved picture the project's style reference: VesnALIA image-studio gui ref --image <path or gallery id>. Set theme/presets/palette: VesnALIA image-studio gui project --theme … --tags … --palette ….",
     presentation: {
       label: { pending: "Generating GUI", completed: "Generated GUI" },
       icon: { glyph: "Palette" },
@@ -4433,12 +4433,12 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "image_studio_character",
     description:
       "Game characters for 3D through Image Studio's Characters section, one Characters project per folder (Muse Image). Modes: ideas (4 concepts, each the full body from the front and the back on one picture, straight-on; may hold their equipment), model (the front view for image-to-3D and rigging: symmetric A-pose, empty hands, plain white, orthographic), turnaround (front and back side by side, cut into views/front.png and views/back.png), equipment (the held items alone on one sheet, side view, cut into parts/*.png), accessories (worn pieces — helmet, hair, pauldrons, wings, cape — alone on one sheet, cut into parts/*.png). body blocky = a Roblox R15 block avatar with flat-painted clothing whose turnaround the toolkit's roblox_blocky.py builds in Blender. Runs at once, no Send form.",
     instructions:
-      "For a game character meant for a 3D model (Hunyuan3D / TRELLIS on gpu3d, Roblox Avatar Setup, UniRig) call image_studio_character, not image_studio_generate. Split the request: prompt = who the character is and what it wears (helmet, mask, vest, pouches, boots stay on the body); equipment = everything held in the hands or carried apart (rifle, axe, torch, shield, backpack if it should come off), \";\"-separated. The plugin keeps equipment out of model and turnaround and draws it with mode equipment, so a weapon never grows into the body mesh. name = a short file name (\"soldier\"). body = humanoid (default; also zombies, robots, anything on two legs with arms) | quadruped (horse, wolf, beast on four legs; its 3D picture is a three-quarter view) | winged (wings spread out: harpy, dragon, bat) | legless (serpent, slime, ghost, floating body) | blocky (a Roblox R15 block avatar: exact block proportions, arms down, clothing painted flat on the block faces; put helmets, hair, pauldrons, wings, capes in accessories and draw them with mode accessories; the turnaround goes to Roblox/toolkit assets3d/roblox_blocky.py, which builds the 15 R15 blocks in Blender with the views projected onto them): it picks the neutral rigging pose. Flow: ideas → the user picks one → model with images=[that picture] → turnaround (front and back) with images=[the model front.png] → equipment with images=[the idea picture]. Do not describe the pose, background, camera or art style in prompt: the plugin adds the A-pose, white background, orthographic camera and the project's theme, presets and approved characters. Set the look: bb image-studio character project --theme … --tags stylized|blocky|chibi|lowpoly|realistic|toon|painted; make an approved character a reference: bb image-studio character ref --image <path>. Report front.png, views/ and parts/ paths; the front.png (or views/front.png) is the image-to-3D input.",
+      "For a game character meant for a 3D model (Hunyuan3D / TRELLIS on gpu3d, Roblox Avatar Setup, UniRig) call image_studio_character, not image_studio_generate. Split the request: prompt = who the character is and what it wears (helmet, mask, vest, pouches, boots stay on the body); equipment = everything held in the hands or carried apart (rifle, axe, torch, shield, backpack if it should come off), \";\"-separated. The plugin keeps equipment out of model and turnaround and draws it with mode equipment, so a weapon never grows into the body mesh. name = a short file name (\"soldier\"). body = humanoid (default; also zombies, robots, anything on two legs with arms) | quadruped (horse, wolf, beast on four legs; its 3D picture is a three-quarter view) | winged (wings spread out: harpy, dragon, bat) | legless (serpent, slime, ghost, floating body) | blocky (a Roblox R15 block avatar: exact block proportions, arms down, clothing painted flat on the block faces; put helmets, hair, pauldrons, wings, capes in accessories and draw them with mode accessories; the turnaround goes to Roblox/toolkit assets3d/roblox_blocky.py, which builds the 15 R15 blocks in Blender with the views projected onto them): it picks the neutral rigging pose. Flow: ideas → the user picks one → model with images=[that picture] → turnaround (front and back) with images=[the model front.png] → equipment with images=[the idea picture]. Do not describe the pose, background, camera or art style in prompt: the plugin adds the A-pose, white background, orthographic camera and the project's theme, presets and approved characters. Set the look: VesnALIA image-studio character project --theme … --tags stylized|blocky|chibi|lowpoly|realistic|toon|painted; make an approved character a reference: VesnALIA image-studio character ref --image <path>. Report front.png, views/ and parts/ paths; the front.png (or views/front.png) is the image-to-3D input.",
     presentation: {
       label: { pending: "Drawing a character", completed: "Drew a character" },
       icon: { glyph: "UserRound" },
@@ -4480,7 +4480,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "image_studio_item",
     description:
       "Manage a model-section item (concept → blueprint → model → uv-guide → texture → preview): create, list, show status, attach files or runs by reference, select an entry.",
@@ -4626,7 +4626,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "image_studio_model",
     description:
       "Game model textures and modeling blueprints (Muse Image). Mode texture-uv: Blender bakes a colour guide on the project host, Muse repaints each UV island, the result is applied back with a before/after preview. Mode blueprint: orthographic clay wireframe views cut from one sheet for a 3D artist (decorative reference, not a mesh). Runs at once, no Send form.",
@@ -4720,12 +4720,12 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "image_studio_roblox",
     description:
       "Roblox game assets through Image Studio's Roblox section, one game per folder (Muse Image), fitted to what Roblox takes. Modes: icon (512×512), thumbnail (1920×1080; variants 3-4 make a set of different shots), logo (transparent title logo), loading (loading screen art), badges / passes / products (opaque 512×512 icons composed for the circle crop, cut from one sheet), items (transparent item icons), props (props and buildings on white, cut for image-to-3D), texture (seamless color.png + normal.png 1024), skybox (the six Sky faces), decal (a flat picture for a surface), vfx (glowing particle textures, transparent), flipbook (a 2×2 or 4×4 particle animation). Runs at once, no Send form.",
     instructions:
-      "For Roblox game art call image_studio_roblox: the game icon, thumbnails, logo, badges, game passes, developer products, item icons, props for 3D, textures, skyboxes, decals and particle effects. The game's GUI goes to image_studio_gui and its characters to image_studio_character: in a game's folder they land in that game and share its look. Generations go to the game of this thread's folder (created on first use, named after the folder); pass project only for another game (`bb image-studio roblox projects`). prompt: what the picture shows (icon, thumbnail, decal, flipbook), the surface (texture), the sky (skybox), the name in quotes (logo); for badges, passes, products, items, props and vfx the list, one per line or separated by \";\" (\"VIP; 2x Coins; Speed boost\"). variants 1-4 draws takes of single pictures; frames 4|16 for flipbook; aspect for decal. Do not describe the art style: the plugin adds the game's theme, art style and approved art. Report the finished files (icon.png, thumbnail.png, parts/, SkyboxFt.png…) and manifest.json, which says where each goes in Roblox. Set the look: bb image-studio roblox project --theme … --tags simulator|stylized|lowpoly|realistic|anime|horror|cartoon|voxel; make approved art a reference: bb image-studio roblox ref --image <path>.",
+      "For Roblox game art call image_studio_roblox: the game icon, thumbnails, logo, badges, game passes, developer products, item icons, props for 3D, textures, skyboxes, decals and particle effects. The game's GUI goes to image_studio_gui and its characters to image_studio_character: in a game's folder they land in that game and share its look. Generations go to the game of this thread's folder (created on first use, named after the folder); pass project only for another game (`alia image-studio roblox projects`). prompt: what the picture shows (icon, thumbnail, decal, flipbook), the surface (texture), the sky (skybox), the name in quotes (logo); for badges, passes, products, items, props and vfx the list, one per line or separated by \";\" (\"VIP; 2x Coins; Speed boost\"). variants 1-4 draws takes of single pictures; frames 4|16 for flipbook; aspect for decal. Do not describe the art style: the plugin adds the game's theme, art style and approved art. Report the finished files (icon.png, thumbnail.png, parts/, SkyboxFt.png…) and manifest.json, which says where each goes in Roblox. Set the look: VesnALIA image-studio roblox project --theme … --tags simulator|stylized|lowpoly|realistic|anime|horror|cartoon|voxel; make approved art a reference: VesnALIA image-studio roblox ref --image <path>.",
     presentation: {
       label: { pending: "Drawing Roblox assets", completed: "Drew Roblox assets" },
       icon: { glyph: "Palette" },
@@ -4765,12 +4765,12 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "image_studio_web",
     description:
       "Website graphics through Image Studio's Web section, one site project per folder (Muse Image), fitted to what a site takes. Modes: ideas (4 desktop landing-page directions, 1536×1024), page (a full-length page mockup), mobile (a phone-screen mockup), block (one section at desktop width), logo (a transparent wordmark), favicon (favicon.ico 16/32/48 + favicon-16/32 + icon-192/512 + apple-touch-icon 180 + maskable icon + site.webmanifest, all cut from one mark), og (a 1200×630 social share card), hero (1920×1080 with a calm area for the headline), cover (1600×900 article cover), illustrations (spot illustrations cut into transparent PNGs, at most 6), icons (one series cut into transparent squares, at most 16), background (1920×1080, no text), pattern (a seamless 1024 tile). Every folder gets manifest.json saying where each file goes on the site. Runs at once, no Send form.",
     instructions:
-      "For site graphics call image_studio_web: page and section mockups (desktop and mobile), the logo, the favicon set, the og share card, hero and cover pictures, spot illustrations, icon series, backgrounds and seamless patterns. Generations go to the site project of this thread's folder (created on first use, named after the folder); pass project only for another site (`bb image-studio web projects`). prompt: what the picture shows (hero, og, cover, background, pattern, the logo's name in quotes); for illustrations and icons the list, one per line or separated by \";\" (\"empty state: no posts; 404: lost astronaut\"). variants 1-4 draws takes of single pictures. Do not describe the style in prompt: the plugin adds the site's theme, palette, style presets and approved references. Report the finished files and manifest.json, which pairs every file with its place on the site (public/favicon.ico, public/og.png…) and the html tag that shows it. Set the look: bb image-studio web project --theme … --tags minimal|corporate|playful|editorial|brutalist|dark-tech|luxury|flat-illustration|clay-3d --palette background=#0A0A12,…; make approved art a reference: bb image-studio web ref --image <path>.",
+      "For site graphics call image_studio_web: page and section mockups (desktop and mobile), the logo, the favicon set, the og share card, hero and cover pictures, spot illustrations, icon series, backgrounds and seamless patterns. Generations go to the site project of this thread's folder (created on first use, named after the folder); pass project only for another site (`alia image-studio web projects`). prompt: what the picture shows (hero, og, cover, background, pattern, the logo's name in quotes); for illustrations and icons the list, one per line or separated by \";\" (\"empty state: no posts; 404: lost astronaut\"). variants 1-4 draws takes of single pictures. Do not describe the style in prompt: the plugin adds the site's theme, palette, style presets and approved references. Report the finished files and manifest.json, which pairs every file with its place on the site (public/favicon.ico, public/og.png…) and the html tag that shows it. Set the look: VesnALIA image-studio web project --theme … --tags minimal|corporate|playful|editorial|brutalist|dark-tech|luxury|flat-illustration|clay-3d --palette background=#0A0A12,…; make approved art a reference: VesnALIA image-studio web ref --image <path>.",
     presentation: {
       label: { pending: "Drawing site graphics", completed: "Drew site graphics" },
       icon: { glyph: "Palette" },
@@ -4804,12 +4804,12 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "image_studio_generate",
     description:
       "Generate a project photo through Image Studio, or edit existing pictures passed in images (file path, gallery id, or URL). Always call this instead of the CLI when chatting with the user: it opens buttons for model, aspect ratio, and size with the last choice preselected. Nano Banana size defaults to 2K. With a profile, the plugin attaches the reference sheet photos it needs (refs: auto by default). Wait for Send.",
     instructions:
-      "Not for game interfaces (GUI, HUD, buttons, UI kits — image_studio_gui), website interfaces and site graphics (image_studio_web), or game characters, their turnarounds or weapons (image_studio_character): those run at once without the Send form, at the sizes their section fixes, and need no confirmation. When the user wants a photo, call image_studio_generate with the scene prompt (and profile name if they named a person). To change an existing picture, pass it in images and write an edit prompt. Do not pass model/aspect/size unless the user named them this turn. Do not describe the person's face or body in prompt: the plugin injects the identity and the reference photos. Pass refs only to force slots (\"all\", or e.g. \"face-front,body-back\"); leave it out for the automatic choice. The result lists the reference slots that were sent. Do not run bb image-studio generate in chat — that skips the picker. Wait until the user presses Send.",
+      "Not for game interfaces (GUI, HUD, buttons, UI kits — image_studio_gui), website interfaces and site graphics (image_studio_web), or game characters, their turnarounds or weapons (image_studio_character): those run at once without the Send form, at the sizes their section fixes, and need no confirmation. When the user wants a photo, call image_studio_generate with the scene prompt (and profile name if they named a person). To change an existing picture, pass it in images and write an edit prompt. Do not pass model/aspect/size unless the user named them this turn. Do not describe the person's face or body in prompt: the plugin injects the identity and the reference photos. Pass refs only to force slots (\"all\", or e.g. \"face-front,body-back\"); leave it out for the automatic choice. The result lists the reference slots that were sent. Do not run alia image-studio generate in chat — that skips the picker. Wait until the user presses Send.",
     presentation: {
       label: { pending: "Waiting to generate a photo", completed: "Generated a photo" },
       icon: { glyph: "Palette" },
@@ -4843,7 +4843,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       let result;
       try {
-        result = await bb.ui.requestInput(
+        result = await alia.ui.requestInput(
           {
             threadId: ctx.threadId,
             rendererId: GENERATE_PICKER_ID,
@@ -4898,7 +4898,7 @@ export default async function plugin(bb: BbPluginApi) {
       let hostId: string | undefined;
       if (ctx.projectId) {
         try {
-          const project = await bb.sdk.projects.get({ projectId: ctx.projectId });
+          const project = await alia.sdk.projects.get({ projectId: ctx.projectId });
           const source = project.sources[0];
           cwd = source?.path;
           hostId = source?.hostId;
@@ -4947,7 +4947,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.configure(() => ({
+  alia.agents.configure(() => ({
     tools: ["image_studio_generate", "image_studio_gui", "image_studio_character", "image_studio_roblox", "image_studio_web", "image_studio_item", "image_studio_model"],
     skills: ["image-studio"],
   }));
@@ -4966,7 +4966,7 @@ export default async function plugin(bb: BbPluginApi) {
   recoveryTimer.unref?.();
   void recoverPending().catch(() => undefined);
 
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     draining = true;
     clearInterval(recoveryTimer);
     if (inFlight.size > 0) {

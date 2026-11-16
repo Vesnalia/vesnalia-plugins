@@ -199,7 +199,7 @@ not at the end.
   `git add -A`.
 - The commit message names the bead by **id and description**:
   - Subject line: the bead's id, then its title, for example
-    `bead-bb-un8: Show design, acceptance criteria, notes and comments in an opened issue`.
+    `bead-alia-un8: Show design, acceptance criteria, notes and comments in an opened issue`.
   - Body: what the bead asked for and what was done, taken from the bead's
     description and from the hand-over comment.
   - A commit that has to cover several beads lists each one in the body as

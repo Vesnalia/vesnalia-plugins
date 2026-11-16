@@ -53,7 +53,7 @@ function fakeEndpoint(replies: Reply[]) {
 
 const FINDING = (title: string, severity = "major") => `### FINDING\nseverity: ${severity}\nlines: 1-2\ntitle: ${title}\nBecause reasons.\n`;
 
-async function setup(replies: Reply[], options: { configured?: boolean; bb?: () => ReviewEngine; currentReviewer?: ((threadId: string | null) => Promise<ReviewerSnapshot>) | null; config?: () => Promise<{ baseUrl: string; model: string; apiKey: string; timeoutMs: number } | null>; threadProject?: (threadId: string) => Promise<string | null> } = {}) {
+async function setup(replies: Reply[], options: { configured?: boolean; alia?: () => ReviewEngine; currentReviewer?: ((threadId: string | null) => Promise<ReviewerSnapshot>) | null; config?: () => Promise<{ baseUrl: string; model: string; apiKey: string; timeoutMs: number } | null>; threadProject?: (threadId: string) => Promise<string | null> } = {}) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "egm-eng-")));
   await fs.mkdir(path.join(root, "docs"), { recursive: true });
   await fs.writeFile(path.join(root, "docs/spec.md"), "# Spec\n\nFirst version.\n");
@@ -69,7 +69,7 @@ async function setup(replies: Reply[], options: { configured?: boolean; bb?: () 
   const engine = new Engine({
     store,
     goldfish,
-    reviewer: options.bb,
+    reviewer: options.alia,
     ...(options.currentReviewer === null ? {} : { currentReviewer: options.currentReviewer ?? (async () => ({ engine: "goldfish" as const, provider: "http://fake/v1", model: "m", environmentId: null })) }),
     threadProject: options.threadProject ?? (async () => "proj"),
     projectRoot: async () => root,
@@ -848,18 +848,18 @@ for (const terminal of ["failed", "cancelled"] as const) {
   });
 }
 
-/** Fake BB reviewer: records each worker launch, honors a gate on the first one. */
-function fakeBb(replies: string[], firstGate?: Promise<void>) {
+/** Fake VesnALIA reviewer: records each worker launch, honors a gate on the first one. */
+function fakeAlia(replies: string[], firstGate?: Promise<void>) {
   const launches: { provider: string | null; model: string | null; environmentId: string | null }[] = [];
   const waiters: { n: number; resolve: () => void }[] = [];
   const reviewer: ReviewEngine = {
-    engine: "bb",
-    status: async () => ({ engine: "bb", ready: true, reason: null, model: null, endpoint: null }),
+    engine: "alia",
+    status: async () => ({ engine: "alia", ready: true, reason: null, model: null, endpoint: null }),
     complete: async (_messages, _signal, call: ReviewerCall) => {
       launches.push({ provider: call.provider, model: call.model, environmentId: call.environmentId });
       for (const w of waiters.filter((w) => launches.length >= w.n)) w.resolve();
       if (launches.length === 1 && firstGate) await firstGate;
-      return { ok: true, text: replies.shift() ?? "NO FINDINGS", model: call.model ?? "bb-worker", truncated: false };
+      return { ok: true, text: replies.shift() ?? "NO FINDINGS", model: call.model ?? "alia-worker", truncated: false };
     },
   };
   const started = (n: number): Promise<void> => {
@@ -871,32 +871,32 @@ function fakeBb(replies: string[], firstGate?: Promise<void>) {
   return { launches, started, reviewer: () => reviewer };
 }
 
-test("revoking BB consent mid-run fails the next stage with no fallback and pins intact", async () => {
+test("revoking VesnALIA consent mid-run fails the next stage with no fallback and pins intact", async () => {
   const gate = Promise.withResolvers<void>();
-  const bb = fakeBb([FINDING("Gap A")], gate.promise);
-  const { engine, spec, store, endpoint } = await setup([], { bb: bb.reviewer });
+  const alia = fakeAlia([FINDING("Gap A")], gate.promise);
+  const { engine, spec, store, endpoint } = await setup([], { alia: alia.reviewer });
   store.grantReviewerConsent();
   const run = await engine.startRun(spec.id, { preset: "full", context: [], maxRounds: 3, threadId: null });
-  await bb.started(1);
+  await alia.started(1);
   store.revokeReviewerConsent();
   gate.resolve();
   await engine.settle();
   const failed = store.getRun(run.id)!;
   assert.equal(failed.state, "failed");
-  assert.match(failed.stateReason ?? "", /consent was revoked; no BB worker was launched/);
-  assert.equal(bb.launches.length, 1);
+  assert.match(failed.stateReason ?? "", /consent was revoked; no ALIA worker was launched/);
+  assert.equal(alia.launches.length, 1);
   assert.equal(endpoint.requests.length, 0);
   const stages = store.listStages(run.id);
   assert.equal(stages.filter((s) => s.state === "completed").length, 1);
-  assert.equal(stages.filter((s) => s.state === "failed" && s.error === "BB reviewer consent was revoked").length, 1);
+  assert.equal(stages.filter((s) => s.state === "failed" && s.error === "VesnALIA reviewer consent was revoked").length, 1);
   assert.equal(stages.filter((s) => s.state === "skipped").length, stages.length - 2);
-  assert.equal(stages[0]!.model, "bb-worker");
+  assert.equal(stages[0]!.model, "alia-worker");
   assert.equal(stages[0]!.provider, null);
 });
 
-test("revoking BB consent after the first round blocks the automatic next round", async () => {
-  const bb = fakeBb([FINDING("Gap A")]);
-  const { engine, spec, store, review } = await setup([], { bb: bb.reviewer });
+test("revoking VesnALIA consent after the first round blocks the automatic next round", async () => {
+  const alia = fakeAlia([FINDING("Gap A")]);
+  const { engine, spec, store, review } = await setup([], { alia: alia.reviewer });
   store.grantReviewerConsent();
   const run = await review("implementation");
   const [finding] = store.listFindingsForRun(run.id);
@@ -906,14 +906,14 @@ test("revoking BB consent after the first round blocks the automatic next round"
   await engine.settle();
   const failed = store.getRun(run.id)!;
   assert.equal(failed.state, "failed");
-  assert.match(failed.stateReason ?? "", /next round could not start: BB reviewer consent was revoked/);
+  assert.match(failed.stateReason ?? "", /next round could not start: ALIA reviewer consent was revoked/);
   assert.equal(store.listRuns(spec.id).filter((child) => child.parentRunId === run.id).length, 0);
-  assert.equal(bb.launches.length, 1);
+  assert.equal(alia.launches.length, 1);
 });
 
-test("revoking BB consent blocks restart reconciliation continuations", async () => {
-  const bb = fakeBb([FINDING("Gap A")]);
-  const { root, engine, spec, store, review } = await setup([], { bb: bb.reviewer });
+test("revoking VesnALIA consent blocks restart reconciliation continuations", async () => {
+  const alia = fakeAlia([FINDING("Gap A")]);
+  const { root, engine, spec, store, review } = await setup([], { alia: alia.reviewer });
   store.grantReviewerConsent();
   const run = await review("implementation");
   const [finding] = store.listFindingsForRun(run.id);
@@ -928,15 +928,15 @@ test("revoking BB consent blocks restart reconciliation continuations", async ()
   await engine.settle();
   const failed = store.getRun(run.id)!;
   assert.equal(failed.state, "failed");
-  assert.match(failed.stateReason ?? "", /next round could not start: BB reviewer consent was revoked/);
+  assert.match(failed.stateReason ?? "", /next round could not start: ALIA reviewer consent was revoked/);
   assert.equal(store.listRuns(spec.id).filter((child) => child.parentRunId === run.id).length, 0);
-  assert.equal(bb.launches.length, 1);
+  assert.equal(alia.launches.length, 1);
 });
 
-test("a continuation whose BB thread moved projects fails without another worker", async () => {
+test("a continuation whose VesnALIA thread moved projects fails without another worker", async () => {
   let threadProject = "proj";
-  const bb = fakeBb([FINDING("Gap A")]);
-  const { engine, spec, store } = await setup([], { bb: bb.reviewer, threadProject: async () => threadProject });
+  const alia = fakeAlia([FINDING("Gap A")]);
+  const { engine, spec, store } = await setup([], { alia: alia.reviewer, threadProject: async () => threadProject });
   store.grantReviewerConsent();
   const run = await engine.startRun(spec.id, { preset: "implementation", context: [], maxRounds: 3, threadId: "thread-a" });
   await engine.settle();
@@ -949,7 +949,7 @@ test("a continuation whose BB thread moved projects fails without another worker
   assert.equal(failed.state, "failed");
   assert.match(failed.stateReason ?? "", /thread no longer belongs to this project/);
   assert.equal(store.listRuns(spec.id).filter((child) => child.parentRunId === run.id).length, 0);
-  assert.equal(bb.launches.length, 1);
+  assert.equal(alia.launches.length, 1);
 });
 
 test("a pinned provider that differs from the live endpoint is never contacted", async () => {
@@ -1079,33 +1079,33 @@ test("a first-ever ad hoc apply pins the configured goldfish reviewer", async ()
   assert.equal(run.model, "pinned-model");
 });
 
-test("a first-ever ad hoc apply with BB selected launches BB only with consent", async () => {
-  const bb = fakeBb(["NO FINDINGS"]);
-  const currentReviewer = async () => ({ engine: "bb" as const, provider: null, model: null, environmentId: null });
-  const refused = await setup([], { bb: bb.reviewer, currentReviewer });
+test("a first-ever ad hoc apply with VesnALIA selected launches VesnALIA only with consent", async () => {
+  const alia = fakeAlia(["NO FINDINGS"]);
+  const currentReviewer = async () => ({ engine: "alia" as const, provider: null, model: null, environmentId: null });
+  const refused = await setup([], { alia: alia.reviewer, currentReviewer });
   const proposal = await refused.engine.propose(refused.spec.id, [], "# Spec\n\nAd hoc.\n", "change", "thr");
-  await refused.engine.applyProposal(proposal.id, proposal.baseHash, "ad-hoc-bb-refused");
+  await refused.engine.applyProposal(proposal.id, proposal.baseHash, "ad-hoc-alia-refused");
   await refused.engine.settle();
   assert.deepEqual(refused.store.listRuns(refused.spec.id), []);
-  assert.equal(bb.launches.length, 0);
+  assert.equal(alia.launches.length, 0);
   assert.ok(refused.store.listEvents(refused.spec.id).some((e) => e.kind === "proposal.review_failed" && /consent/.test(e.message)));
 
-  const allowed = await setup([], { bb: bb.reviewer, currentReviewer });
+  const allowed = await setup([], { alia: alia.reviewer, currentReviewer });
   allowed.store.grantReviewerConsent();
   const second = await allowed.engine.propose(allowed.spec.id, [], "# Spec\n\nAd hoc two.\n", "change", "thr");
-  await allowed.engine.applyProposal(second.id, second.baseHash, "ad-hoc-bb-allowed");
+  await allowed.engine.applyProposal(second.id, second.baseHash, "ad-hoc-alia-allowed");
   await allowed.engine.settle();
   const run = allowed.store.listRuns(allowed.spec.id)[0]!;
-  assert.equal(run.engine, "bb");
+  assert.equal(run.engine, "alia");
   assert.ok(allowed.store.getAdHocReviewTask(second.id)!.runId);
-  assert.equal(bb.launches.length, 5);
+  assert.equal(alia.launches.length, 5);
 });
 
 test("an ad hoc apply on a spec with a prior run reuses that run's reviewer without consulting settings", async () => {
   const calls: (string | null)[] = [];
   const currentReviewer = async (threadId: string | null) => {
     calls.push(threadId);
-    return { engine: "bb" as const, provider: null, model: null, environmentId: null };
+    return { engine: "alia" as const, provider: null, model: null, environmentId: null };
   };
   const { engine, spec, store, review } = await setup([{ content: "NO FINDINGS" }], { currentReviewer });
   const prior = await review("implementation");
@@ -1129,9 +1129,9 @@ test("a reviewer snapshot failure aborts the ad hoc apply before any mutation", 
   assert.equal(await fs.readFile(path.join(root, "docs/spec.md"), "utf8"), "# Spec\n\nFirst version.\n");
 });
 
-test("a crash after the intent still starts the pinned engine even after settings flip to BB", async () => {
-  const bb = fakeBb(["NO FINDINGS"]);
-  const { root, engine, spec, store } = await setup([], { bb: bb.reviewer, currentReviewer: async () => ({ engine: "bb" as const, provider: null, model: null, environmentId: null }) });
+test("a crash after the intent still starts the pinned engine even after settings flip to VesnALIA", async () => {
+  const alia = fakeAlia(["NO FINDINGS"]);
+  const { root, engine, spec, store } = await setup([], { alia: alia.reviewer, currentReviewer: async () => ({ engine: "alia" as const, provider: null, model: null, environmentId: null }) });
   const content = "# Spec\n\nRecovered ad hoc change.\n";
   const proposal = await engine.propose(spec.id, [], content, "change", "thr");
   const target = path.join(root, "docs/spec.md");
@@ -1145,7 +1145,7 @@ test("a crash after the intent still starts the pinned engine even after setting
   const run = store.listRuns(spec.id)[0]!;
   assert.equal(run.engine, "goldfish");
   assert.equal(run.model, "crash-model");
-  assert.equal(bb.launches.length, 0);
+  assert.equal(alia.launches.length, 0);
   assert.deepEqual(store.listApplyIntents(), []);
 });
 

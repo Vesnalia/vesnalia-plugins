@@ -1,23 +1,14 @@
 {
-  "name": "bb-plugin-taskboard",
+  "name": "alia-plugin-taskboard",
   "version": "0.3.7",
   "private": true,
-  "description": "Bring each BB project\u2019s GitHub, GitLab, Gitea, Linear, or Jira issues into one focused taskboard.",
+  "description": "Bring each VesnALIA project’s GitHub, GitLab, Gitea, Linear, or Jira issues into one focused taskboard.",
   "type": "module",
   "license": "MIT",
   "author": "Mateo Cerquetella",
-  "homepage": "https://github.com/MateoCerquetella/bb-plugins/tree/main/plugins/taskboard#readme",
-  "bugs": {
-    "url": "https://github.com/MateoCerquetella/bb-plugins/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MateoCerquetella/bb-plugins.git",
-    "directory": "plugins/taskboard"
-  },
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "taskboard",
     "task-management",
     "github",
@@ -28,12 +19,12 @@
     "gitea"
   ],
   "engines": {
-    "bb": ">=0.40.0",
-    "bbPluginSdk": ">=0.4.21"
+    "alia": ">=0.40.0",
+    "aliaPluginSdk": ">=0.4.21"
   },
-  "bb": {
+  "alia": {
     "name": "Taskboard",
-    "description": "Bring each BB project\u2019s GitHub, GitLab, Gitea, Linear, or Jira issues into one focused taskboard.",
+    "description": "Bring each VesnALIA project’s GitHub, GitLab, Gitea, Linear, or Jira issues into one focused taskboard.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -50,7 +41,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.21",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -66,7 +56,6 @@
     "@types/jsdom": "^30.0.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
-    "bb-app": "0.40.0",
     "better-sqlite3": "^12.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -79,13 +68,30 @@
     "vaul": "^1.1.2"
   },
   "scripts": {
-    "build": "node scripts/run-isolated-bb-cli.mjs plugin build .",
-    "dev": "bb plugin dev .",
+    "build": "node scripts/run-isolated-alia-cli.mjs plugin build .",
+    "dev": "alia plugin dev .",
     "typecheck": "tsc --noEmit",
-    "types:check": "node scripts/run-isolated-bb-cli.mjs plugin types --check .",
-    "types:refresh": "node scripts/run-isolated-bb-cli.mjs plugin types .",
+    "types:check": "node scripts/run-isolated-alia-cli.mjs plugin types --check .",
+    "types:refresh": "node scripts/run-isolated-alia-cli.mjs plugin types .",
     "test": "node --test --experimental-strip-types test/*.test.ts",
     "verify:build": "node scripts/verify-build.mjs",
     "check": "npm run types:check && npm run typecheck && npm test && npm run build && npm run verify:build"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.21"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/taskboard#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/taskboard"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

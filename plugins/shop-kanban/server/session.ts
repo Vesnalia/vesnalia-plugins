@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { piSessionIdInput, sessionIdInput } from "../contract";
 import { hostClient } from "./hosts";
 import type { BoardSession } from "./schema";
@@ -9,10 +9,10 @@ import type { ProviderSessions, ThreadReader } from "./threads";
 // Per-card session facts for the harness popover: the thread's current model, thinking level,
 // service tier and access, how full its context window is, and what the card's whole tree has spent.
 //
-// The tree is the thread, every descendant bb thread (hidden and archived ones included), and each
+// The tree is the thread, every descendant VesnALIA thread (hidden and archived ones included), and each
 // thread's harness subagents. omp reports only its own replies plus its direct `task` children, and Pi
 // reports nothing, so omp and Pi threads are read from their transcripts on the thread's host instead
-// (omp's subagents at every depth included). Other harnesses count as bb reports them.
+// (omp's subagents at every depth included). Other harnesses count as VesnALIA reports them.
 
 /** Refresh cadence: working threads spend tokens mid-turn without bumping `updatedAt`. */
 const RUNNING_REFRESH_MS = 5_000;
@@ -68,14 +68,14 @@ function labelMap(list: ReadonlyArray<{ id: string; label?: string }> | null | u
   return new Map((list ?? []).filter((entry) => entry.label).map((entry) => [entry.id, entry.label!]));
 }
 
-export function createSessionInfo(bb: BbPluginApi, reader: ThreadReader) {
+export function createSessionInfo(alia: AliaPluginApi, reader: ThreadReader) {
   const threads = new Map<string, Entry<Raw>>();
   const catalogs = new Map<string, Entry<Catalog>>();
   const trees = new Map<string, Entry<TreeCost>>();
   /** Thread ids in each card's tree, as last listed; keeps `spends` of archived descendants across board refreshes. */
   const treeIds = new Map<string, string[]>();
   const spends = new Map<string, ThreadSpend>();
-  const host = hostClient(bb);
+  const host = hostClient(alia);
 
   /**
    * Stale-while-revalidate: only the very first read for a key waits on the fetch. A failed fetch (null or thrown)
@@ -108,8 +108,8 @@ export function createSessionInfo(bb: BbPluginApi, reader: ThreadReader) {
 
   async function fetchRaw(threadId: string): Promise<Raw> {
     const [options, context] = await Promise.all([
-      safe(() => bb.sdk.threads.defaultExecutionOptions({ threadId })),
-      safe(() => bb.sdk.threads.context({ threadId })),
+      safe(() => alia.sdk.threads.defaultExecutionOptions({ threadId })),
+      safe(() => alia.sdk.threads.context({ threadId })),
     ]);
     const usage = context?.usage ?? null;
     return {
@@ -121,7 +121,7 @@ export function createSessionInfo(bb: BbPluginApi, reader: ThreadReader) {
   }
 
   async function fetchCatalog(providerId: string, hostId: string | null): Promise<Catalog | null> {
-    const result = await safe(() => bb.sdk.providers.models(hostId ? { providerId, hostId } : { providerId }));
+    const result = await safe(() => alia.sdk.providers.models(hostId ? { providerId, hostId } : { providerId }));
     if (!result || result.models.length === 0) return null;
     const provider = result.providers.find((entry) => entry.id === providerId);
     return {
@@ -152,7 +152,7 @@ export function createSessionInfo(bb: BbPluginApi, reader: ThreadReader) {
     const known = spends.get(thread.id);
     if (known && known.key === thread.updatedAt && !isRunningSelf(thread)) return known;
     const [context, sessions] = await Promise.all([
-      safe(() => bb.sdk.threads.context({ threadId: thread.id })),
+      safe(() => alia.sdk.threads.context({ threadId: thread.id })),
       spender ? reader.providerSessions(thread.id, known?.sessions ?? null) : null,
     ]);
     const spend: ThreadSpend = {
@@ -167,10 +167,10 @@ export function createSessionInfo(bb: BbPluginApi, reader: ThreadReader) {
   /**
    * Spend per harness session (keyed `method:id`), from the transcripts on each thread's host; omp's include its
    * subagents. A call to a disconnected host would wait out the SDK's 30s timeout, so its threads are skipped and
-   * count what bb reports; every host is tried when the host list can't be read.
+   * count what VesnALIA reports; every host is tried when the host list can't be read.
    */
   async function transcriptSpends(tree: readonly TreeThread[]): Promise<Map<string, SessionSpend>> {
-    const hosts = await safe(() => bb.sdk.hosts.list());
+    const hosts = await safe(() => alia.sdk.hosts.list());
     const offline = new Set(hosts?.flatMap((entry) => (entry.status === "connected" ? [] : [entry.id])));
     const groups = new Map<string, { method: SpendMethod; hostId: string; ids: Set<string> }>();
     for (const { thread, spender, spend } of tree) {
@@ -185,7 +185,7 @@ export function createSessionInfo(bb: BbPluginApi, reader: ThreadReader) {
       const list = [...ids];
       for (let start = 0; start < list.length; start += SESSIONS_PAGE) {
         const sessionIds = list.slice(start, start + SESSIONS_PAGE);
-        // A failed call or a missing harness finds nothing: those threads count what bb reports.
+        // A failed call or a missing harness finds nothing: those threads count what VesnALIA reports.
         const result = await safe(() => host.call(method, { sessionIds }, { hostId, timeoutMs: SPEND_CALL_TIMEOUT_MS }));
         for (const [id, spend] of Object.entries(result?.spends ?? {})) bySession.set(`${method}:${id}`, spend);
       }
@@ -194,7 +194,7 @@ export function createSessionInfo(bb: BbPluginApi, reader: ThreadReader) {
   }
 
   /**
-   * The card's tree spend. Each omp or Pi thread counts what its transcripts hold, or what bb reports when none of
+   * The card's tree spend. Each omp or Pi thread counts what its transcripts hold, or what VesnALIA reports when none of
    * its sessions has one on its host (a disconnected host, a transcript `omp gc` removed). Spend in another
    * currency than the first one found is left out.
    */
@@ -236,7 +236,7 @@ export function createSessionInfo(bb: BbPluginApi, reader: ThreadReader) {
   }
 
   /**
-   * Session facts for a card, or null when bb has recorded neither options nor usage yet and the tree has spent
+   * Session facts for a card, or null when VesnALIA has recorded neither options nor usage yet and the tree has spent
    * nothing. `descendants` are the live ones on the board, for the refresh cadence; the tree cost reads archived
    * ones too. The tree cost never holds up the board: it shows up on a later poll.
    */

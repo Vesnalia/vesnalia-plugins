@@ -9,13 +9,13 @@
 
 **Move a whole session between agents and machines, in both directions.**
 
-Hand a bb thread off to Codex, Claude Code, Kimi, opencode, Cursor and more,<br>
-or adopt a terminal session that never ran in bb at all.
+Hand a VesnALIA thread off to Codex, Claude Code, Kimi, opencode, Cursor and more,<br>
+or adopt a terminal session that never ran in VesnALIA at all.
 
 <a href="https://github.com/vburojevic/bb-plugin-handoff/releases/latest"><img src="https://img.shields.io/github/v/release/vburojevic/bb-plugin-handoff?style=flat-square&color=57606a&label=release" alt="Latest release"></a>
-<a href="https://getbb.app"><img src="https://img.shields.io/badge/bb-%E2%89%A5%200.49-57606a?style=flat-square" alt="Requires bb 0.49 or newer"></a>
+<a href="https://getbb.app"><img src="https://img.shields.io/badge/bb-%E2%89%A5%200.49-57606a?style=flat-square" alt="Requires VesnALIA 0.49 or newer"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-57606a?style=flat-square" alt="MIT license"></a>
-<a href="https://github.com/get-bb/marketplace"><img src="https://img.shields.io/badge/BB%20Community-marketplace-57606a?style=flat-square" alt="Listed in the BB Community marketplace"></a>
+<a href="https://github.com/get-bb/marketplace"><img src="https://img.shields.io/badge/BB%20Community-marketplace-57606a?style=flat-square" alt="Listed in the VesnALIA Community marketplace"></a>
 
 </div>
 
@@ -26,22 +26,22 @@ or adopt a terminal session that never ran in bb at all.
   <img src="assets/screenshots/handoff-panel.png" width="100%" alt="The Hand off panel beside a Claude Code thread: Codex picked as the target, with model, thinking effort and workspace below">
 </picture>
 
-<p align="center"><sub>Every screenshot on this page is a real bb window, shot against a throwaway demo project.</sub></p>
+<p align="center"><sub>Every screenshot on this page is a real VesnALIA window, shot against a throwaway demo project.</sub></p>
 
 ## Install
 
 ```sh
-bb plugin install handoff
+alia plugin install handoff
 ```
 
 Or straight from this repository:
 
 ```sh
-bb plugin install git:https://github.com/vburojevic/bb-plugin-handoff.git
+alia plugin install git:https://github.com/vburojevic/bb-plugin-handoff.git
 ```
 
 > [!NOTE]
-> Requires bb 0.49 or newer. No keys, no configuration, no external services: it only talks to your own bb and the session files already on your disks. Older bb keeps the last release it supports, because bb only updates a plugin to a release whose engine range it meets.
+> Requires VesnALIA 0.49 or newer. No keys, no configuration, no external services: it only talks to your own VesnALIA and the session files already on your disks. Older VesnALIA keeps the last release it supports, because VesnALIA only updates a plugin to a release whose engine range it meets.
 
 ## Why
 
@@ -51,17 +51,17 @@ That's the whole idea, applied in both directions:
 
 |              | From                                                                 | To                                                        |
 | ------------ | -------------------------------------------------------------------- | --------------------------------------------------------- |
-| **Hand off** | a bb thread on any provider                                          | a new thread on any other provider, any enrolled machine |
-| **Adopt**    | a Claude Code, Codex, Gemini, OpenCode or Pi session in your terminal | a bb thread in the same directory, with its history       |
+| **Hand off** | a VesnALIA thread on any provider                                          | a new thread on any other provider, any enrolled machine |
+| **Adopt**    | a Claude Code, Codex, Gemini, OpenCode or Pi session in your terminal | a VesnALIA thread in the same directory, with its history       |
 
 ```mermaid
 flowchart LR
-  T["bb thread<br>any provider"] -->|hand off| D["handoff document<br>transcript + working state"]
-  D --> N["new bb thread<br>any provider, any machine"]
-  S["terminal session<br>Claude Code, Codex,<br>Gemini CLI, OpenCode, Pi"] -->|adopt| A["bb thread<br>same directory, full history"]
+  T["alia thread<br>any provider"] -->|hand off| D["handoff document<br>transcript + working state"]
+  D --> N["new alia thread<br>any provider, any machine"]
+  S["terminal session<br>Claude Code, Codex,<br>Gemini CLI, OpenCode, Pi"] -->|adopt| A["alia thread<br>same directory, full history"]
 ```
 
-## Hand off: bb thread to any agent
+## Hand off: VesnALIA thread to any agent
 
 Open any thread's right panel (<kbd>⌘</kbd> <kbd>J</kbd>) and add the **Hand off** tab. Pick a target; everything else has a sane default.
 
@@ -71,7 +71,7 @@ Open any thread's right panel (<kbd>⌘</kbd> <kbd>J</kbd>) and add the **Hand o
 
 #### Any installed provider is a target
 
-The panel reads bb's live catalog, so Codex, Claude Code, Kimi Code, opencode, Cursor, Pi, Hermes and anything else you've installed show up, with the unavailable ones sunk to the bottom rather than hidden.
+The panel reads VesnALIA's live catalog, so Codex, Claude Code, Kimi Code, opencode, Cursor, Pi, Hermes and anything else you've installed show up, with the unavailable ones sunk to the bottom rather than hidden.
 
 </td>
 <td width="50%" valign="top">
@@ -107,7 +107,7 @@ Before the transfer, the outgoing agent writes a short status note (current stat
   <img src="assets/screenshots/handoff-document.png" width="100%" alt="The handoff document preview: source thread, provider and workspace, then how-to-continue instructions for the next agent">
 </picture>
 
-**Preview** renders the document byte for byte before anything is spawned: source thread and provider, workspace and branch, a link to the source provider's own raw session file, explicit "how to continue" instructions, and the full transcript. That means every user and assistant message, tool call with its arguments and result, command output, reasoning summary, plan and file change, pulled from bb's provider-independent event log rather than from any one agent's format.
+**Preview** renders the document byte for byte before anything is spawned: source thread and provider, workspace and branch, a link to the source provider's own raw session file, explicit "how to continue" instructions, and the full transcript. That means every user and assistant message, tool call with its arguments and result, command output, reasoning summary, plan and file change, pulled from VesnALIA's provider-independent event log rather than from any one agent's format.
 
 Oversized transcripts are budgeted, not truncated blindly: the opening request and the recent tail are kept, and the oldest middle is dropped first.
 
@@ -133,7 +133,7 @@ Pick a different enrolled machine and the whole panel re-scopes to it: its provi
 | `worktree` | isolated worktree, default branch | isolated worktree, based on the thread's branch when it exists there  |
 | `personal` | blank workspace                   | blank workspace over there                                            |
 
-A personal-workspace handoff lands in bb's own Personal project, since bb only creates personal workspaces there.
+A personal-workspace handoff lands in VesnALIA's own Personal project, since VesnALIA only creates personal workspaces there.
 
 A machine hop is the one case where a transcript alone would mislead: the files it discusses are on a disk the next agent can't see. So the handoff also:
 
@@ -142,9 +142,9 @@ A machine hop is the one case where a transcript alone would mislead: the files 
 - rewrites the document so the source path and raw session file are named as living on the *other* machine, not offered as readable,
 - warns when the thread's branch doesn't exist over there and falls back to the default branch instead of failing.
 
-## Adopt: terminal session to bb thread
+## Adopt: terminal session to VesnALIA thread
 
-The other direction. You've been working in a plain terminal, it's turning into real work, and you want it in bb, with its history, in its own directory.
+The other direction. You've been working in a plain terminal, it's turning into real work, and you want it in VesnALIA, with its history, in its own directory.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/adopt-session-dark.png">
@@ -165,17 +165,17 @@ Or just browse recent sessions per project and tap one.
 | ----------- | ---------------------------------------------- | ------------------------------------- |
 | Claude Code | `~/.claude/projects/<cwd-slug>/*.jsonl`        | `claude-code`                         |
 | Codex CLI   | `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` | `codex`                               |
-| Gemini CLI  | `~/.gemini/tmp/<sha256(cwd)>/chats/*.json`     | `claude-code` (no bb Gemini provider) |
+| Gemini CLI  | `~/.gemini/tmp/<sha256(cwd)>/chats/*.json`     | `claude-code` (no VesnALIA Gemini provider) |
 | OpenCode    | `~/.local/share/opencode/opencode.db` (SQLite) | `acp-opencode`                        |
 | Pi          | `~/.pi/agent/sessions/--<cwd>--/*.jsonl`       | `pi`                                  |
 
 - **Claude Code profiles.** Claude Code's store moves with `CLAUDE_CONFIG_DIR`. Adoption reads the configured directory, the default `~/.claude`, and any sibling profile directory (`~/.claude-work`, `~/.claude-personal`), so sessions started under a non-default profile are adoptable too, on this machine and on another one.
-- **Pi sessions.** Adoption imports the last persisted branch, not abandoned alternatives. User and assistant text, tool-call summaries, compactions and branch summaries carry over; system prompts, thinking, tool output, image bytes and extension state do not. Context edits on that branch are honored, and the source files stay untouched. Local discovery respects `PI_CODING_AGENT_DIR` and `PI_CODING_AGENT_SESSION_DIR` in the **bb server process**. Remote discovery reads the default `~/.pi/agent/sessions` store; per-invocation `--session-dir` paths and Pi settings-file overrides are not discovered.
+- **Pi sessions.** Adoption imports the last persisted branch, not abandoned alternatives. User and assistant text, tool-call summaries, compactions and branch summaries carry over; system prompts, thinking, tool output, image bytes and extension state do not. Context edits on that branch are honored, and the source files stay untouched. Local discovery respects `PI_CODING_AGENT_DIR` and `PI_CODING_AGENT_SESSION_DIR` in the **VesnALIA server process**. Remote discovery reads the default `~/.pi/agent/sessions` store; per-invocation `--session-dir` paths and Pi settings-file overrides are not discovered.
 - **Same directory.** The new thread starts **in the session's own directory**, so the files are exactly where you left them.
-- **Clean timeline.** The transcript rides along as agent-only context: your bb timeline stays clean, the agent gets the full history.
+- **Clean timeline.** The transcript rides along as agent-only context: your VesnALIA timeline stays clean, the agent gets the full history.
 - **Project matching.** The project is matched from the directory (longest project-source prefix). If nothing covers it, one is created.
 - **Live sessions.** A session with activity in the last ~10 minutes is flagged as "may still be running", both in the session list and to the new agent, which watches for concurrent edits.
-- **Other machines.** `--machine <host>` adopts from another enrolled machine and runs the thread over there. Claude, Codex and Pi resolve from a session id alone; Gemini and OpenCode need `--cwd`, since their ids live inside a file and a SQLite row. The panel has the same axis: a **From machine** picker appears once a second machine is enrolled. And `bb handoff adopt` run from a bb thread that lives on another machine follows that machine automatically: its directory is over there, so that is where the sessions are read.
+- **Other machines.** `--machine <host>` adopts from another enrolled machine and runs the thread over there. Claude, Codex and Pi resolve from a session id alone; Gemini and OpenCode need `--cwd`, since their ids live inside a file and a SQLite row. The panel has the same axis: a **From machine** picker appears once a second machine is enrolled. And `alia handoff adopt` run from a VesnALIA thread that lives on another machine follows that machine automatically: its directory is over there, so that is where the sessions are read.
 
 > [!TIP]
 > Agents get both directions through the bundled `handoff` skill. Asking an agent to "continue this in Codex" or "adopt my terminal session" is enough to trigger it.
@@ -187,29 +187,29 @@ Or just browse recent sessions per project and tap one.
 
 ```sh
 # Hand off
-bb handoff --self --to codex                     # the current thread
-bb handoff <thread-id> --to acp-opencode \
+alia handoff --self --to codex                     # the current thread
+alia handoff <thread-id> --to acp-opencode \
   --model <model> --effort high --workspace worktree \
   --instructions "Finish the tests first"
-bb handoff <thread-id> --to codex --briefing     # ask the source agent for a note first
-bb handoff <thread-id> --to codex --up-to-seq <n>   # only up to one message
-bb handoff <thread-id> --to codex --machine mini    # continue on another machine
-bb handoff <thread-id> --dry-run                 # capture stats only
+alia handoff <thread-id> --to codex --briefing     # ask the source agent for a note first
+alia handoff <thread-id> --to codex --up-to-seq <n>   # only up to one message
+alia handoff <thread-id> --to codex --machine mini    # continue on another machine
+alia handoff <thread-id> --dry-run                 # capture stats only
 
-bb handoff export --self --out handoff.md        # for use outside bb entirely:
+alia handoff export --self --out handoff.md        # for use outside alia entirely:
 codex exec - < handoff.md                        #   pipe the document anywhere
 
-bb handoff targets [--machine <host>] [--json]   # providers per machine, + machines
-bb handoff list [--json]                         # past handoffs (last 100)
+alia handoff targets [--machine <host>] [--json]   # providers per machine, + machines
+alia handoff list [--json]                         # past handoffs (last 100)
 
 # Adopt: run inside a live terminal session, or paste an id
-bb handoff adopt                                 # newest session for this directory
-bb handoff adopt 9ace2fd5                        # by id or prefix, any directory
-bb handoff adopt "claude --resume 9ace2fd5-…"    # or the whole resume command
-bb handoff adopt "pi --session 11111111-…"       # Pi ids and resume commands too
-bb handoff adopt list --agent pi --cwd <path>    # only Pi sessions
-bb handoff adopt list --cwd <path>               # what's adoptable here
-bb handoff adopt list --machine mini --cwd <path>   # …and over there
+alia handoff adopt                                 # newest session for this directory
+alia handoff adopt 9ace2fd5                        # by id or prefix, any directory
+alia handoff adopt "claude --resume 9ace2fd5-…"    # or the whole resume command
+alia handoff adopt "pi --session 11111111-…"       # Pi ids and resume commands too
+alia handoff adopt list --agent pi --cwd <path>    # only Pi sessions
+alia handoff adopt list --cwd <path>               # what's adoptable here
+alia handoff adopt list --machine mini --cwd <path>   # …and over there
 ```
 
 `--effort` takes `none`, `low`, `medium`, `high`, `xhigh`, `ultracode`, `max` or `ultra`; the levels a model accepts vary by model, so omit it to use the target model's own default.
@@ -223,11 +223,11 @@ bb handoff adopt list --machine mini --cwd <path>   # …and over there
 capture.ts  handoff.ts   handing off: event-log capture → document → spawn
 machines.ts              the machine axis: target host + workspace planning,
                          working-tree capture, patch delivery
-adopt/                   adopting: external session stores → bb thread
+adopt/                   adopting: external session stores → alia thread
   agents/                one adapter per agent (list / find / parse)
   transcript.ts          shared block model + budgeted markdown rendering
   adopt-core.ts          query parsing, global lookup, adoption engine
-  remote.ts              the same stores read over bb's host file API and a
+  remote.ts              the same stores read over alia's host file API and a
                          short-lived host terminal
 ```
 
@@ -243,13 +243,13 @@ npm install
 npm test            # 205 unit tests: capture/render, transfer planning,
                     # adopt engine + adapters, remote store readers, CLI guards
 npm run typecheck
-bb plugin install . # register this checkout with your bb
-bb plugin dev       # watch loop: rebuild + reload on save
+alia plugin install . # register this checkout with your alia
+alia plugin dev       # watch loop: rebuild + reload on save
 ```
 
-The plugin builds against the [`@get-bb/plugin-sdk`](https://www.npmjs.com/package/@get-bb/plugin-sdk) package; `bb plugin types .` keeps its pin and the shimmed packages in step with your bb.
+The plugin builds against the [`@vesnalia/plugin-sdk`](https://www.npmjs.com/package/@get-bb/plugin-sdk) package; `alia plugin types .` keeps its pin and the shimmed packages in step with your VesnALIA.
 
-`components/ui/` is vendored shadcn-model source from the BB component registry (pinned in `components.json`). Edit freely, and update with `npx shadcn add @bb/<name>`.
+`components/ui/` is vendored shadcn-model source from the VesnALIA component registry (pinned in `components.json`). Edit freely, and update with `npx shadcn add @alia-core/<name>`.
 
 </details>
 
@@ -268,4 +268,4 @@ The plugin builds against the [`@get-bb/plugin-sdk`](https://www.npmjs.com/packa
 
 <br>
 
-<p align="center"><sub>More plugins for bb: <a href="https://github.com/vburojevic/bb-plugins"><b>vburojevic/bb-plugins</b></a></sub></p>
+<p align="center"><sub>More plugins for VesnALIA: <a href="https://github.com/vburojevic/bb-plugins"><b>vburojevic/alia-plugins</b></a></sub></p>

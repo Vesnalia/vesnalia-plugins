@@ -1,4 +1,4 @@
-## Measured (0.5.9 injected into the BB web UI, 1440x900, browser QA @thr_8u3wjqmgsb)
+## Measured (0.5.9 injected into the VesnALIA web UI, 1440x900, browser QA @thr_8u3wjqmgsb)
 All good except one thing: nav rows (`[data-testid="plugin-nav-sidebar-items"]` buttons, e.g. «Новый тред») span x 20..312 — 8px from the sidebar surface's left edge (12) and from the inset's left edge (320), same as the footer card (20..312). But the project-folders list `.pf-tree` (container 20..312) has computed padding `8px 12px 16px` from the project-folders plugin's own CSS, so the «Новый проект» button (`.pf-tree > button:first-child`) and the `.pf-project` cards sit at 32..300 — 20px from each edge. Nav rows and the list use different insets.
 
 ## Fix

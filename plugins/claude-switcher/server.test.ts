@@ -6,11 +6,11 @@ import {
   makeMessageDispatchHookContext,
   makeThreadResponse,
   makeTurnFailedEvent,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import type {
   PluginThreadEventPayloads,
   PluginTurnFailedEvent,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 
 type ThreadResponse = PluginThreadEventPayloads["thread.created"]["thread"];
 import {
@@ -253,7 +253,7 @@ function fakeLoginIo(
   return { loginIo, logins, made, links };
 }
 
-/** A row of bb's raw thread log; `data` as bb stores it. */
+/** A row of VesnALIA's raw thread log; `data` as VesnALIA stores it. */
 interface LoggedEvent {
   seq: number;
   type: string;
@@ -261,7 +261,7 @@ interface LoggedEvent {
   [field: string]: unknown;
 }
 
-/** attemptNumber of each failed request seen, so the fake retry can stamp bb's `attempt`. */
+/** attemptNumber of each failed request seen, so the fake retry can stamp VesnALIA's `attempt`. */
 const attemptOf = new Map<string, number>();
 
 function failure(
@@ -303,7 +303,7 @@ interface EnvCall {
   note?: string;
 }
 
-/** A project's machine variables as bb lists them (values are never returned). */
+/** A project's machine variables as VesnALIA lists them (values are never returned). */
 type EnvVar = { name: string; note: string | null; secret: true; value: null };
 
 /** The part of a queued row this plugin looks at. */
@@ -319,9 +319,9 @@ interface QueuedRow {
         retryOfTurnRequestId: string;
       };
   sendAt: number | null;
-  /** bb's reason a row will not run (measured: "Thread is archived"). */
+  /** VesnALIA's reason a row will not run (measured: "Thread is archived"). */
   failureReason?: string | null;
-  /** What the row waits on, as bb says it; a plugin's hold names the plugin. */
+  /** What the row waits on, as VesnALIA says it; a plugin's hold names the plugin. */
   waitingOn?: { kind: "time" } | { kind: "plugin"; pluginId: string; reason: string } | null;
   createdAt?: number;
   /** The model the row runs with (a retry: the failed turn's). */
@@ -331,24 +331,24 @@ interface QueuedRow {
 interface HostOptions {
   settings?: Record<string, string | number | boolean>;
   /**
-   * The projects bb lists, by id (default: proj-1, proj-2 and, on request,
+   * The projects VesnALIA lists, by id (default: proj-1, proj-2 and, on request,
    * personal). Every refresh moves a listed project off an account that
    * cannot run (rescueStranded): a test about another move lists only the
    * projects it looks at.
    */
   listed?: string[];
-  /** More projects bb lists, after proj-1 and proj-2. */
+  /** More projects VesnALIA lists, after proj-1 and proj-2. */
   extraProjects?: { id: string; name: string }[];
   presetEnv?: Record<string, EnvVar[]>;
   /** Rows already queued (e.g. by provider-retry) when the plugin acts. */
   queued?: QueuedRow[];
-  /** What threads.retry does: default queues a row; "conflict" throws like bb's 409; "fail-once" fails the first call (a 5xx); "fail" fails every call. */
+  /** What threads.retry does: default queues a row; "conflict" throws like VesnALIA's 409; "fail-once" fails the first call (a 5xx); "fail" fails every call. */
   retryBehaviour?: "queue" | "conflict" | "fail-once" | "fail" | "answer-lost" | "restore-answer-lost";
-  /** threads.retry throws this, shaped like bb's BbHttpError. */
+  /** threads.retry throws this, shaped like VesnALIA's AliaHttpError. */
   retryError?: { message: string; code?: string; status?: number };
-  /** deleteMachineEnvironmentVariable throws for these projects (deleted meanwhile, or a bb hiccup). */
+  /** deleteMachineEnvironmentVariable throws for these projects (deleted meanwhile, or a VesnALIA hiccup). */
   failDelete?: string[];
-  /** queuedMessages.delete throws this (the row left the queue between list and delete); `landed`: bb removed the row first, and only its answer was lost. */
+  /** queuedMessages.delete throws this (the row left the queue between list and delete); `landed`: VesnALIA removed the row first, and only its answer was lost. */
   deleteRowError?: { message: string; code?: string; status?: number; landed?: boolean };
   dirs?: () => string[];
   /** Accounts whose login store cannot be read (see fakes). */
@@ -370,13 +370,13 @@ interface HostOptions {
   beforeThreadGet?: () => Promise<void>;
   /** Runs before threads.list answers (a list that never answers, Astra SEATS-R2-001). */
   beforeThreadsList?: (args?: { archived?: boolean }) => Promise<void>;
-  /** Runs as queuedMessages.delete starts, before it lands or fails (bb's events meanwhile). */
+  /** Runs as queuedMessages.delete starts, before it lands or fails (VesnALIA's events meanwhile). */
   beforeDelete?: () => Promise<void>;
   /** Runs before queuedMessages.list answers (the plugin's look for a queued retry). */
   beforeQueuedList?: (threadId: string) => Promise<unknown>;
-  /** bb's raw log per thread, as threads.events.list answers it. */
+  /** VesnALIA's raw log per thread, as threads.events.list answers it. */
   threadEvents?: Record<string, LoggedEvent[]>;
-  /** threads.events.list throws this (a bb hiccup). */
+  /** threads.events.list throws this (a VesnALIA hiccup). */
   threadEventsError?: string;
   /** Plugin storage answers every read with this error while the plugin loads. */
   kvReadError?: string;
@@ -392,9 +392,9 @@ interface HostOptions {
   failSet?: string[];
   /** Runs as each setMachineEnvironmentVariable starts, before it lands. */
   beforeSet?: () => Promise<unknown>;
-  /** Runs once each setMachineEnvironmentVariable has landed, before bb answers. */
+  /** Runs once each setMachineEnvironmentVariable has landed, before VesnALIA answers. */
   afterSet?: () => Promise<unknown>;
-  /** machineEnvironment throws for these projects (a bb hiccup), or never answers. */
+  /** machineEnvironment throws for these projects (a VesnALIA hiccup), or never answers. */
   failEnvRead?: string[];
   hangEnvRead?: string[];
   /** Runs as each projects.list starts, before it answers. */
@@ -403,7 +403,7 @@ interface HostOptions {
   beforeProjectGet?: () => Promise<unknown>;
   /** Runs as each machineEnvironment read starts, before it answers. */
   beforeEnvRead?: (projectId: string) => Promise<unknown>;
-  /** Runs once each machineEnvironment read has its answer, before bb returns it (the answer is then stale). */
+  /** Runs once each machineEnvironment read has its answer, before VesnALIA returns it (the answer is then stale). */
   afterEnvRead?: (projectId: string) => Promise<unknown>;
   /** The plugin process's environment, as the login inherits it. */
   env?: Record<string, string>;
@@ -413,7 +413,7 @@ interface HostOptions {
   sessionsIo?: SessionsIo;
   /** What environments.list answers per project (its paths on every host). */
   environments?: Record<string, { path: string | null; status?: string; id?: string; hostId?: string }[]>;
-  /** What hosts.list answers (the machines bb knows). */
+  /** What hosts.list answers (the machines VesnALIA knows). */
   hosts?: { id: string; name: string }[];
 }
 
@@ -509,7 +509,7 @@ async function host(
             ...options.threadsLive?.[threadId],
           });
         },
-        // Like bb: every thread, as threads.get answers for it; with
+        // Like VesnALIA: every thread, as threads.get answers for it; with
         // `archived`, only those archived or only those not.
         list: async (args?: { archived?: boolean }) => {
           await options.beforeThreadsList?.(args);
@@ -532,7 +532,7 @@ async function host(
             );
         },
         events: {
-          // Like bb: only the asked types, oldest first unless desc, then the limit.
+          // Like VesnALIA: only the asked types, oldest first unless desc, then the limit.
           list: async (args: {
             threadId: string;
             types?: readonly string[];
@@ -561,7 +561,7 @@ async function host(
             const { message, ...rest } = options.retryError;
             throw Object.assign(new Error(message), rest);
           }
-          // Like bb (retryFailedTurn): one queued retry per chain, keyed by its first request.
+          // Like VesnALIA (retryFailedTurn): one queued retry per chain, keyed by its first request.
           const logged = (options.threadEvents?.[args.threadId] ?? []).find(
             (row) =>
               row.type === "client/turn/requested" &&
@@ -613,7 +613,7 @@ async function host(
           if (options.retryBehaviour === "fail-once" && retryFailures++ === 0) {
             throw new Error("HTTP 503: internal error");
           }
-          // The first fails before bb does anything; the second (the wait put back) lands, its answer lost.
+          // The first fails before VesnALIA does anything; the second (the wait put back) lands, its answer lost.
           let answerLost = false;
           if (options.retryBehaviour === "restore-answer-lost" && retryFailures < 2) {
             if (retryFailures++ === 0) throw new Error("HTTP 503: internal error");
@@ -628,7 +628,7 @@ async function host(
               threadId: args.threadId,
               payload: {
                 kind: "retry",
-                // Like bb: the failed turn's attempt in the thread's log, plus one.
+                // Like VesnALIA: the failed turn's attempt in the thread's log, plus one.
                 attempt:
                   (logged !== undefined
                     ? ((logged.data.retryAttempt as number | undefined) ?? 1)
@@ -652,7 +652,7 @@ async function host(
           };
         },
         queue: {
-          // Like bb with no filter: every live row in the workspace.
+          // Like VesnALIA with no filter: every live row in the workspace.
           list: async () => [...queued],
         },
         queuedMessages: {
@@ -662,7 +662,7 @@ async function host(
           },
           send: async ({ queuedMessageId }: { queuedMessageId: string }) => {
             sent.push(queuedMessageId);
-            // Dispatched rows leave the queue, as in bb.
+            // Dispatched rows leave the queue, as in VesnALIA.
             const at = queued.findIndex((row) => row.id === queuedMessageId);
             if (at !== -1) queued.splice(at, 1);
             return { ok: true };
@@ -697,7 +697,7 @@ async function host(
           })),
       },
       projects: {
-        // Like bb: the personal project ("Don't work in a project") only on request.
+        // Like VesnALIA: the personal project ("Don't work in a project") only on request.
         list: async (args?: { includePersonal?: boolean }) =>
           (await options.beforeProjectsList?.(),
           [
@@ -768,17 +768,17 @@ async function host(
     },
   });
   for (const [key, value] of Object.entries(options.kvPreset ?? {}))
-    await fake.bb.storage.kv.set(key, value);
-  const kvGet = fake.bb.storage.kv.get;
-  const kvDelete = fake.bb.storage.kv.delete;
-  const database = fake.bb.storage.database;
+    await fake.alia.storage.kv.set(key, value);
+  const kvGet = fake.alia.storage.kv.get;
+  const kvDelete = fake.alia.storage.kv.delete;
+  const database = fake.alia.storage.database;
   if (options.kvDeleteError !== undefined) {
-    fake.bb.storage.kv.delete = async () => {
+    fake.alia.storage.kv.delete = async () => {
       throw new Error(options.kvDeleteError);
     };
   }
   if (options.historialWriteError !== undefined) {
-    fake.bb.storage.database = ((...args: Parameters<typeof database>) => {
+    fake.alia.storage.database = ((...args: Parameters<typeof database>) => {
       const db = database(...args);
       return new Proxy(db, {
         get(target, prop, receiver) {
@@ -792,7 +792,7 @@ async function host(
     }) as typeof database;
   }
   if (options.kvReadError !== undefined) {
-    fake.bb.storage.kv.get = async () => {
+    fake.alia.storage.kv.get = async () => {
       throw new Error(options.kvReadError);
     };
   }
@@ -808,10 +808,10 @@ async function host(
       ? {}
       : { sessionsIo: options.sessionsIo }),
   };
-  await createPlugin(fake.bb, pluginDeps);
-  fake.bb.storage.kv.get = kvGet;
-  fake.bb.storage.kv.delete = kvDelete;
-  fake.bb.storage.database = database;
+  await createPlugin(fake.alia, pluginDeps);
+  fake.alia.storage.kv.get = kvGet;
+  fake.alia.storage.kv.delete = kvDelete;
+  fake.alia.storage.database = database;
   // The seats counted after the load, as they are by the time a user sends
   // a message, unless the test holds the count: a message meanwhile waits
   // at once (Astra SEATS-R4-002).
@@ -847,7 +847,7 @@ const ALL_FREE = {
   work: () => Response.json(payload(5, 20)),
 };
 
-/** A visible Claude Code thread the user opened, as bb reports it. */
+/** A visible Claude Code thread the user opened, as VesnALIA reports it. */
 function thread(overrides: Partial<ThreadResponse> = {}): ThreadResponse {
   return makeThreadResponse({
     providerId: "claude-code",
@@ -857,7 +857,7 @@ function thread(overrides: Partial<ThreadResponse> = {}): ThreadResponse {
   });
 }
 
-/** bb asks the plugin before sending a message of the thread (its dispatch checkpoint); no model named. */
+/** VesnALIA asks the plugin before sending a message of the thread (its dispatch checkpoint); no model named. */
 function sent(
   h: { harness: { registrations: { hooks: Record<string, ((ctx: unknown) => Promise<unknown>) | undefined> } } },
   threadId: string,
@@ -898,7 +898,7 @@ function oneSessionIo(order: string[], link?: () => Promise<void>): SessionsIo {
 }
 const SITE = { "proj-1": [{ path: "/home/someone/site" }] };
 
-/** host() with bb listing only the projects `listed` (see HostOptions.listed). */
+/** host() with VesnALIA listing only the projects `listed` (see HostOptions.listed). */
 function hostListing(listed: string[]): typeof host {
   return (usage, options = {}) => host(usage, { listed, ...options });
 }
@@ -1027,9 +1027,9 @@ describe("claude accounts plugin", () => {
     ).rejects.toThrow(/no longer exists/);
   });
 
-  it("takes bb's word when it already has a retry of the failed turn, instead of failing the handler", async () => {
+  it("takes VesnALIA's word when it already has a retry of the failed turn, instead of failing the handler", async () => {
     // 2026-10-04: a retry of each failed turn was on its way before this
-    // plugin judged the failure; bb answered 409 and the handler failed.
+    // plugin judged the failure; VesnALIA answered 409 and the handler failed.
     const h = await host(ALL_FREE, {
       retryError: {
         message:
@@ -1100,7 +1100,7 @@ describe("claude accounts plugin", () => {
     ).toBe(true);
   });
 
-  it("replaces the retry provider-retry already queued by its own, which bb dispatches through its checkpoint, instead of sending it as it is", async () => {
+  it("replaces the retry provider-retry already queued by its own, which VesnALIA dispatches through its checkpoint, instead of sending it as it is", async () => {
     const h = await host(ALL_FREE, {
       queued: [
         {
@@ -1158,7 +1158,7 @@ describe("claude accounts plugin", () => {
       ],
     });
     dispose = () => h.harness.dispose();
-    // bb reports the failed RETRY's id, not the chain's original.
+    // VesnALIA reports the failed RETRY's id, not the chain's original.
     const { errors } = await h.harness.behavior.emitThreadEvent(
       "turn.failed",
       failure({ requestId: "creq_retry_2", attemptNumber: 2 }),
@@ -1238,7 +1238,7 @@ describe("claude accounts plugin", () => {
     expect(r.queued.map((row) => row.id)).toEqual(["r-old"]);
   });
 
-  it("when bb rejects a second retry for the turn, replaces the one queued meanwhile by its own, once; a third one is left to bb", async () => {
+  it("when VesnALIA rejects a second retry for the turn, replaces the one queued meanwhile by its own, once; a third one is left to VesnALIA", async () => {
     const h = await host(ALL_FREE);
     dispose = () => h.harness.dispose();
     // provider-retry wins the race between our list and our retry.
@@ -1266,7 +1266,7 @@ describe("claude accounts plugin", () => {
     expect(h.sent).toEqual([]);
     expect(h.deleted).toEqual(["late"]);
     expect(h.retries.map((r) => r.reason)).toEqual(["Switched to account work"]);
-    // Queued yet again after that replacement: left to bb, which dispatches
+    // Queued yet again after that replacement: left to VesnALIA, which dispatches
     // it through its checkpoint at its own time; the turn is never without a retry.
     const again = await host(ALL_FREE, { retryBehaviour: "conflict" });
     const disposeFirst = dispose;
@@ -1341,7 +1341,7 @@ describe("claude accounts plugin", () => {
     expect(h.envSet).toEqual([]);
   });
 
-  it("when the row to replace left the queue between list and delete, leaves it at that (bb refuses a retry of a running thread)", async () => {
+  it("when the row to replace left the queue between list and delete, leaves it at that (VesnALIA refuses a retry of a running thread)", async () => {
     const h = await host(
       {
         main: () => Response.json(payload(100, 40, 100)),
@@ -1478,7 +1478,7 @@ describe("claude accounts plugin", () => {
     ]);
   });
 
-  it("treats bb's answers for a row already on its way as done when replacing it (sent meanwhile, or being sent), and keeps the original error when restoring fails too", async () => {
+  it("treats VesnALIA's answers for a row already on its way as done when replacing it (sent meanwhile, or being sent), and keeps the original error when restoring fails too", async () => {
     const row = {
       id: "pr-1",
       threadId: "thread-1",
@@ -1490,7 +1490,7 @@ describe("claude accounts plugin", () => {
       },
       sendAt: NOW + 2 * HOUR,
     };
-    // bb's two answers for a row that is already on its way (sent by
+    // VesnALIA's two answers for a row that is already on its way (sent by
     // another caller, or being sent right now): nothing to replace, and the
     // turn is not retried a second time.
     for (const deleteRowError of [
@@ -1616,7 +1616,7 @@ describe("claude accounts plugin", () => {
     ]);
   });
 
-  it("goes on with its own retry when the delete of the replaced row fails for any other reason: landed with its answer lost, ours is queued; not landed, bb refuses ours and the row stays (Sol r3, BM-INSPECT-R3-001)", async () => {
+  it("goes on with its own retry when the delete of the replaced row fails for any other reason: landed with its answer lost, ours is queued; not landed, VesnALIA refuses ours and the row stays (Sol r3, BM-INSPECT-R3-001)", async () => {
     const row = {
       id: "pr-1",
       threadId: "thread-1",
@@ -1643,8 +1643,8 @@ describe("claude accounts plugin", () => {
       { threadId: "thread-1", turnRequestId: "creq_1", reason: "Switched to account work" },
     ]);
     expect(landed.queued).toEqual([]);
-    // Not landed: the row is still there, bb refuses ours (one retry per
-    // turn) and the row is left to bb, which dispatches it through its
+    // Not landed: the row is still there, VesnALIA refuses ours (one retry per
+    // turn) and the row is left to VesnALIA, which dispatches it through its
     // checkpoint at its own time.
     const kept = await host(ALL_FREE, {
       queued: [row],
@@ -1706,7 +1706,7 @@ describe("claude accounts plugin", () => {
       async ({ threadId }: { threadId: string }) => {
         if (h.deleted.length > 0 && !failed) {
           failed = true;
-          throw new Error("HTTP 503: bb is busy");
+          throw new Error("HTTP 503: VesnALIA is busy");
         }
         return h.queued.filter((r) => r.threadId === threadId);
       },
@@ -1735,7 +1735,7 @@ describe("claude accounts plugin", () => {
     expect(warns).toContainEqual(expect.stringContaining("restoring the one queued before"));
   });
 
-  it("does not call a restore failed when bb has the turn: ours landed with its answer lost, and bb refuses the row put back (code-reviewer r4, CR4-01)", async () => {
+  it("does not call a restore failed when VesnALIA has the turn: ours landed with its answer lost, and VesnALIA refuses the row put back (code-reviewer r4, CR4-01)", async () => {
     const h = await host(ALL_FREE, {
       retryBehaviour: "answer-lost",
       queued: [
@@ -1769,12 +1769,12 @@ describe("claude accounts plugin", () => {
     ).toEqual([]);
     expect(
       h.harness.logEntries.filter((e) => e.level === "info").map((e) => e.message),
-    ).toContainEqual(expect.stringContaining("bb has the turn"));
+    ).toContainEqual(expect.stringContaining("alia has the turn"));
   });
 
-  it("does not try to restore the replaced row when bb refused ours because it has the turn and the second look at the queue failed (code-reviewer 0.2.18 r1, CR1-03)", async () => {
+  it("does not try to restore the replaced row when VesnALIA refused ours because it has the turn and the second look at the queue failed (code-reviewer 0.2.18 r1, CR1-03)", async () => {
     const h = await host(ALL_FREE, {
-      // Every retry: bb already has one of the turn (the delete did not land).
+      // Every retry: VesnALIA already has one of the turn (the delete did not land).
       retryError: {
         message: "HTTP 409: Turn creq_1 already has a retry waiting on thread thread-1.",
         code: "retry_already_queued",
@@ -1801,7 +1801,7 @@ describe("claude accounts plugin", () => {
       async ({ threadId }: { threadId: string }) => {
         if (h.deleted.length > 0 && !failed) {
           failed = true;
-          throw new Error("HTTP 503: bb is busy");
+          throw new Error("HTTP 503: VesnALIA is busy");
         }
         return h.queued.filter((r) => r.threadId === threadId);
       },
@@ -1820,11 +1820,11 @@ describe("claude accounts plugin", () => {
     expect(warns).not.toContainEqual(expect.stringContaining("restoring the one queued before"));
     expect(
       h.harness.logEntries.filter((e) => e.level === "info").map((e) => e.message),
-    ).toContainEqual(expect.stringContaining("bb already has a retry of the turn"));
+    ).toContainEqual(expect.stringContaining("alia already has a retry of the turn"));
   });
 
-  it("a retry bb refuses because a newer turn replaced the failed one is no failure: logged, not thrown", async () => {
-    // bb's answer on 2026-10-02 (thr_2stddgrdfb): a message sent after the
+  it("a retry VesnALIA refuses because a newer turn replaced the failed one is no failure: logged, not thrown", async () => {
+    // VesnALIA's answer on 2026-10-02 (thr_2stddgrdfb): a message sent after the
     // failed turn started a newer one, whose own failure is handled apart.
     const h = await host(ALL_FREE, {
       retryError: {
@@ -2186,7 +2186,7 @@ describe("claude accounts plugin", () => {
   });
 
   it("a turn announced while its account was still being read, then ended, is forgotten: the late read writes nothing", async () => {
-    // bb says `thread.active`, the plugin asks for the project's account,
+    // VesnALIA says `thread.active`, the plugin asks for the project's account,
     // and the turn ends (`thread.idle`) before the answer arrives. The
     // answer must not revive the start: the next failure, with no new turn
     // announced, is the project's account's (code-reviewer r12).
@@ -2555,10 +2555,10 @@ describe("claude accounts plugin", () => {
   });
 
   it("a move completed between the send of a turn and its announcement makes the start unknown: the refusal marks nobody", async () => {
-    // Codex IR16-001: bb reads the account as it starts the turn and
+    // Codex IR16-001: VesnALIA reads the account as it starts the turn and
     // announces `thread.active` after; a pick by hand moved the
     // project in between, so the announcement reads the new account, which
-    // is not where the turn runs. Anchored to the project's state when bb
+    // is not where the turn runs. Anchored to the project's state when VesnALIA
     // asked to send the message, the start is unknown: the new account is
     // not marked for the refusal, and the thread runs again there.
     let clock = NOW;
@@ -2578,7 +2578,7 @@ describe("claude accounts plugin", () => {
         attempt: "start-turn",
       }),
     );
-    // A pick by hand moves the project to work before bb announces thread-3.
+    // A pick by hand moves the project to work before VesnALIA announces thread-3.
     await h.harness.behavior.callRpc("project_set_account", { projectId: "proj-1", account: "work" });
     expect(h.envSet.map((e) => e.value)).toEqual([`${ACCOUNTS}/work`]);
     await h.harness.behavior.emitThreadEvent("thread.active", {
@@ -2683,7 +2683,7 @@ describe("claude accounts plugin", () => {
   });
 
   it("a start whose account could not be read is unknown: the refusal marks nobody", async () => {
-    // A bb hiccup on the read as the turn is announced: the start is
+    // A VesnALIA hiccup on the read as the turn is announced: the start is
     // unknown, not missing; a missing start would make the refusal the
     // project's account's (code-reviewer r16).
     let hiccup = true;
@@ -2697,7 +2697,7 @@ describe("claude accounts plugin", () => {
         beforeEnvRead: () => {
           if (!hiccup) return Promise.resolve();
           hiccup = false;
-          return Promise.reject(new Error("bb hiccup"));
+          return Promise.reject(new Error("alia hiccup"));
         },
       },
     );
@@ -2733,7 +2733,7 @@ describe("claude accounts plugin", () => {
   });
 
   it("a turn announced with no send seen (a queued row sent by hand) is unknown: its refusal marks nobody", async () => {
-    // bb skips its dispatch checkpoint when a queued row is sent explicitly
+    // VesnALIA skips its dispatch checkpoint when a queued row is sent explicitly
     // (Codex IR17-001): the plugin has no anchor for the turn, so the
     // account read at the announcement is not trusted as where it started.
     const h = await host({
@@ -2771,8 +2771,8 @@ describe("claude accounts plugin", () => {
     );
   });
 
-  it("a retry the plugin queues after moving the project is dispatched through bb's checkpoint and starts on the new account: its refusal marks that account", async () => {
-    // provider-retry's row is replaced, never sent explicitly: bb dispatches
+  it("a retry the plugin queues after moving the project is dispatched through VesnALIA's checkpoint and starts on the new account: its refusal marks that account", async () => {
+    // provider-retry's row is replaced, never sent explicitly: VesnALIA dispatches
     // the retry through its checkpoint, which anchors the send after the
     // move, so the start reads as work and a refusal there marks work.
     const h = await host(ALL_FREE, {
@@ -2921,7 +2921,7 @@ describe("claude accounts plugin", () => {
   });
 
   it("a start read while the project's move is still being written is unknown", async () => {
-    // Codex IR15-001: bb had applied main → work but not answered yet; a
+    // Codex IR15-001: VesnALIA had applied main → work but not answered yet; a
     // turn announced then read "work", and its refusal marked work. The
     // move under way makes the start unknown: no account marked.
     let clock = NOW;
@@ -3236,7 +3236,7 @@ describe("claude accounts plugin", () => {
   it("still retries the turn when recording the switch in storage fails", async () => {
     const h = await host(ALL_FREE);
     dispose = () => h.harness.dispose();
-    h.bb.storage.kv.set = async () => {
+    h.alia.storage.kv.set = async () => {
       throw new Error("disk full");
     };
     const { errors } = await h.harness.behavior.emitThreadEvent(
@@ -3440,7 +3440,7 @@ describe("claude accounts plugin", () => {
       environments: {
         "proj-1": [
           { path: project },
-          // A path of another machine (the Mac), and one bb tore down.
+          // A path of another machine (the Mac), and one VesnALIA tore down.
           { path: "/Users/someone/elsewhere" },
           { path: "/gone", status: "destroyed" },
         ],
@@ -3490,7 +3490,7 @@ describe("claude accounts plugin", () => {
     const ok = await h.harness.behavior.runCli(["use", "Website", "spare"]);
     expect(ok.exitCode).toBe(0);
     expect(h.envSet.map((e) => e.value)).toEqual([`${ACCOUNTS}/spare`]);
-    // And when bb cannot list the project's environments.
+    // And when VesnALIA cannot list the project's environments.
     h.harness.sdk.stub("environments.list", broken);
     const again = await h.harness.behavior.runCli(["use", "Website", "work"]);
     expect(again.exitCode).toBe(0);
@@ -3526,7 +3526,7 @@ describe("claude accounts plugin", () => {
   });
 
   it.each([
-    ["bb's list of the project's environments", "environments"],
+    ["VesnALIA's list of the project's environments", "environments"],
     ["a link on the filesystem", "link"],
   ])(
     "gives up sharing after 2 s when %s never answers, and moves the project",
@@ -4061,7 +4061,7 @@ describe("placing a project before a new thread's first turn", () => {
   it("leaves hidden threads, other providers, external variables and autoSwitch off alone", async () => {
     const cases: Array<[Partial<ThreadResponse>, HostOptions]> = [
       [{ visibility: "hidden" }, FABLE],
-      [{ visibility: "hidden", originPluginId: "bb-recap" }, FABLE],
+      [{ visibility: "hidden", originPluginId: "alia-recap" }, FABLE],
       [{ providerId: "codex" }, FABLE],
       [{}, { settings: { preferredModel: "Fable", autoSwitch: false } }],
       [
@@ -4100,7 +4100,7 @@ describe("placing a project before a new thread's first turn", () => {
     };
 
     /**
-     * bb's checkpoint before the first message of a thread it has just
+     * VesnALIA's checkpoint before the first message of a thread it has just
      * created (still `pending`); `again`: the same message, queued by a wait
      * and asked about again.
      */
@@ -4121,7 +4121,7 @@ describe("placing a project before a new thread's first turn", () => {
       );
     }
 
-    it("places a new project at its first message's checkpoint, before bb announces the thread, and not again when it does", async () => {
+    it("places a new project at its first message's checkpoint, before VesnALIA announces the thread, and not again when it does", async () => {
       const h = await host(NO_DEFAULT_LOGIN, FABLE);
       dispose = () => h.harness.dispose();
       expect(
@@ -4142,7 +4142,7 @@ describe("placing a project before a new thread's first turn", () => {
       expect(h.envSet).toHaveLength(1);
     });
 
-    it("places it also when bb has not resolved the model of the first message", async () => {
+    it("places it also when VesnALIA has not resolved the model of the first message", async () => {
       const h = await host(NO_DEFAULT_LOGIN, FABLE);
       dispose = () => h.harness.dispose();
       expect(await dispatched(h, "thr-new", "proj-3", null)).toEqual({
@@ -4153,7 +4153,7 @@ describe("placing a project before a new thread's first turn", () => {
       ]);
     });
 
-    it("has the first message wait while the new project's placement takes long, and asks bb again once it is placed", async () => {
+    it("has the first message wait while the new project's placement takes long, and asks VesnALIA again once it is placed", async () => {
       const h = await host(NO_DEFAULT_LOGIN, FABLE);
       dispose = () => h.harness.dispose();
       vi.useFakeTimers();
@@ -4188,7 +4188,7 @@ describe("placing a project before a new thread's first turn", () => {
           ["proj-3", `${ACCOUNTS}/work`],
         ]);
         expect(h.harness.recheckCount).toBe(1);
-        // bb asks again: the turn goes, on the account just chosen.
+        // VesnALIA asks again: the turn goes, on the account just chosen.
         expect(
           await dispatched(h, "thr-new", "proj-3", "claude-haiku-5-5"),
         ).toEqual({ action: "proceed" });
@@ -4228,7 +4228,7 @@ describe("placing a project before a new thread's first turn", () => {
       ).toEqual({
         action: "reject",
         message:
-          "Claude Switcher: no account assigned to this project and the default account (main) has no login. Assign one with: bb claude-switcher use proj-3 <account>",
+          "Claude Switcher: no account assigned to this project and the default account (main) has no login. Assign one with: VesnALIA claude-switcher use proj-3 <account>",
       });
       expect(h.envSet).toEqual([]);
     });
@@ -4268,7 +4268,7 @@ describe("placing a project before a new thread's first turn", () => {
       expect(h.envDeleted).toEqual([]);
     });
 
-    it("refuses also when bb names no Claude model for the message, none or an alias, and no account has a login (Astra E44-R1)", async () => {
+    it("refuses also when VesnALIA names no Claude model for the message, none or an alias, and no account has a login (Astra E44-R1)", async () => {
       for (const model of [null, "opusplan"]) {
         const h = await host(NO_LOGIN_AT_ALL, FABLE);
         expect(await dispatched(h, "thr-new", "proj-3", model)).toMatchObject({
@@ -4380,7 +4380,7 @@ describe("placing a project before a new thread's first turn", () => {
         expect(answers.at(-1)).toEqual({
           action: "reject",
           message:
-            "Claude Switcher: no account assigned to this project and the default account (main) has a login that could not be checked. Assign one with: bb claude-switcher use proj-1 <account>",
+            "Claude Switcher: no account assigned to this project and the default account (main) has a login that could not be checked. Assign one with: VesnALIA claude-switcher use proj-1 <account>",
         });
       } finally {
         vi.useRealTimers();
@@ -4477,7 +4477,7 @@ describe("placing a project before a new thread's first turn", () => {
       expect(answers.at(-1)).toEqual({
         action: "reject",
         message:
-          "Claude Switcher: no account assigned to this project and the default account (main) has a login that could not be checked. Assign one with: bb claude-switcher use proj-1 <account>",
+          "Claude Switcher: no account assigned to this project and the default account (main) has a login that could not be checked. Assign one with: VesnALIA claude-switcher use proj-1 <account>",
       });
       expect(h.envSet).toEqual([]);
     });
@@ -4550,7 +4550,7 @@ describe("placing a project before a new thread's first turn", () => {
       ).toMatchObject({ action: "wait" });
     });
 
-    it("lets a project with an account of its own start a message whose model bb does not name while the default's login is still unknown (Astra E44-R3-02)", async () => {
+    it("lets a project with an account of its own start a message whose model VesnALIA does not name while the default's login is still unknown (Astra E44-R3-02)", async () => {
       const h = await host(
         {
           ...NO_DEFAULT_LOGIN,
@@ -4595,7 +4595,7 @@ describe("failures this plugin must not act on", () => {
   it("ignores a failed turn of a hidden thread, whoever opened it", async () => {
     for (const threads of [
       { "thread-1": { visibility: "hidden" as const } },
-      { "thread-1": { visibility: "hidden" as const, originPluginId: "bb-recap" } },
+      { "thread-1": { visibility: "hidden" as const, originPluginId: "alia-recap" } },
     ]) {
       const h = await host(ALL_FREE, { threads });
       const { errors } = await h.harness.behavior.emitThreadEvent(
@@ -4802,7 +4802,7 @@ describe("placement: the cases the first review found", () => {
     clock = NOW + 120_000;
     let fail = true;
     h.harness.sdk.stub("projects.machineEnvironment", async () => {
-      if (fail) throw new Error("HTTP 503: bb is busy");
+      if (fail) throw new Error("HTTP 503: VesnALIA is busy");
       return { builtInGit: { status: "disabled" as const, statusMessage: "" }, inheritedVariables: [], variables: [] };
     });
     await expect(list()).rejects.toThrow(/503/);
@@ -4855,7 +4855,7 @@ describe("placement: the cases the first review found", () => {
       ["proj-1", "proj-2", "proj-3", "proj-4", "personal"],
     ]);
     expect(h.envReads).toHaveLength(5);
-    // A project bb does not list is read for once per shared read, not on
+    // A project VesnALIA does not list is read for once per shared read, not on
     // every ask.
     h.envReads.length = 0;
     expect(ids(await list({ project: "ghost" }))).not.toContain("ghost");
@@ -4902,7 +4902,7 @@ describe("placement: the cases the first review found", () => {
       release = resolve;
     });
     let holding = true;
-    // Like bb: a read answers with what was there when it started.
+    // Like VesnALIA: a read answers with what was there when it started.
     h.harness.sdk.stub(
       "projects.machineEnvironment",
       async ({ projectId }: { projectId: string }) => {
@@ -5023,7 +5023,7 @@ describe("placement: the cases the first review found", () => {
     );
   });
 
-  it("still acts when bb leaves out a thread's origin, and on a failed turn whatever provider id the thread row carries", async () => {
+  it("still acts when VesnALIA leaves out a thread's origin, and on a failed turn whatever provider id the thread row carries", async () => {
     const h = await host(OUT, {
       ...FABLE,
       threads: { "thread-1": { providerId: "claude-code-v2", originPluginId: undefined } },
@@ -5309,7 +5309,7 @@ describe("the account shown in each thread's header", () => {
     expect(refreshed.accounts.find((a) => a.name === "work")?.problem).toEqual({
       kind: "unauthenticated",
     });
-    // As in bb, the leftover's turn announced itself when it started on main.
+    // As in VesnALIA, the leftover's turn announced itself when it started on main.
     await sent(h, "thread-1", "proj-1");
     await h.harness.behavior.emitThreadEvent("thread.active", {
       thread: thread({ id: "thread-1", projectId: "proj-1" }),
@@ -5327,7 +5327,7 @@ describe("the account shown in each thread's header", () => {
     });
     dispose = () => h.harness.dispose();
     await h.harness.behavior.callRpc("accounts_refresh", null);
-    // As in bb, the leftover's turn announced itself when it started on main.
+    // As in VesnALIA, the leftover's turn announced itself when it started on main.
     await sent(h, "thread-1", "proj-1");
     await h.harness.behavior.emitThreadEvent("thread.active", {
       thread: thread({ id: "thread-1", projectId: "proj-1" }),
@@ -5563,7 +5563,7 @@ describe("the account shown in each thread's header", () => {
     expect(changes()).toBe(before);
   });
 
-  it("announces nothing for a pick bb refused to write, or of a variable set outside the plugin", async () => {
+  it("announces nothing for a pick VesnALIA refused to write, or of a variable set outside the plugin", async () => {
     const accounts = {
       main: () => Response.json(payload(100, 40)),
       spare: () => Response.json(payload(10, 60)),
@@ -5646,7 +5646,7 @@ describe("the history of moves", () => {
       ["proj-1", "main", "work", "Switched to account work"],
     ]);
     // Persisted: a fresh plugin over the same storage lists the same.
-    const stored = await h.bb.storage.kv.get("switch-history");
+    const stored = await h.alia.storage.kv.get("switch-history");
     const again = await host(ALL_FREE, { kvPreset: { "switch-history": stored } });
     const after = (await again.harness.behavior.callRpc("accounts_list", null)) as State;
     expect(after.history.map((r) => r.reason)).toEqual([
@@ -5800,7 +5800,7 @@ describe("the forecast of each window", () => {
     });
     expect(later.forecasts.work?.weekly).toEqual({ kind: "steady" });
     // The samples survive a reload of the plugin.
-    const stored = await h.bb.storage.kv.get("usage-series");
+    const stored = await h.alia.storage.kv.get("usage-series");
     const again = await host(
       { main: () => Response.json(payload(10, 70, 20)), spare: () => Response.json(payload(10, 60)), work: () => Response.json(payload(5, 20)) },
       { clock: () => NOW + 25 * HOUR, kvPreset: { "usage-series": stored } },
@@ -5892,7 +5892,7 @@ describe("the forecast of each window", () => {
     clock = NOW + HOUR;
     const state = (await h.harness.behavior.callRpc("accounts_refresh", null)) as State;
     expect(Object.keys(state.forecasts).sort()).toEqual(["main", "spare"]);
-    const stored = (await h.bb.storage.kv.get("usage-series")) as Record<string, unknown>;
+    const stored = (await h.alia.storage.kv.get("usage-series")) as Record<string, unknown>;
     expect(Object.keys(stored).sort()).toEqual(["main", "spare"]);
   });
 });
@@ -6179,7 +6179,7 @@ describe("moving a project ahead of the limit for a thread in another model", ()
     expect(h.envSet).toEqual([]);
   });
 
-  /** bb's log for thread-1: its latest turn was requested with `model`. */
+  /** VesnALIA's log for thread-1: its latest turn was requested with `model`. */
   const logged = (model: string | null): Record<string, LoggedEvent[]> => ({
     "thread-1": [
       {
@@ -6194,7 +6194,7 @@ describe("moving a project ahead of the limit for a thread in another model", ()
     ],
   });
 
-  it("reads the thread's model from bb's log first: last sent with Opus through the checkpoint, its latest turn (a Send now) ran Fable, so it stays", async () => {
+  it("reads the thread's model from VesnALIA's log first: last sent with Opus through the checkpoint, its latest turn (a Send now) ran Fable, so it stays", async () => {
     let clock = NOW;
     const h = await host(TEAM_AHEAD, {
       settings: { preferredModel: "Fable", switchAheadPercent: 0, switchAheadOtherPercent: 95 },
@@ -6209,7 +6209,7 @@ describe("moving a project ahead of the limit for a thread in another model", ()
     expect(h.envSet).toEqual([]);
   });
 
-  it("judges a thread it never saw sent (the plugin restarted) by bb's log: an Opus thread moves", async () => {
+  it("judges a thread it never saw sent (the plugin restarted) by VesnALIA's log: an Opus thread moves", async () => {
     let clock = NOW;
     const h = await host(TEAM_AHEAD, {
       settings: { preferredModel: "Fable", switchAheadPercent: 0, switchAheadOtherPercent: 95 },
@@ -6609,7 +6609,7 @@ describe("moving a project ahead of the limit, after a turn", () => {
     // proj-3 was created after the plugin was installed: new until handled.
     await idle(h, "thread-9", "proj-3");
     expect(h.envSet.map((e) => [e.projectId, e.note])).toEqual([["proj-3", ownNote("spare")]]);
-    expect(await h.bb.storage.kv.get("handled-projects")).toContain("proj-3");
+    expect(await h.alia.storage.kv.get("handled-projects")).toContain("proj-3");
     // Its next turn runs on spare: a failure there is spare's, judged with a fresh measurement.
     const before = h.usageCalls.length;
     await h.harness.behavior.emitThreadEvent(
@@ -6636,7 +6636,7 @@ describe("moving a project ahead of the limit, after a turn", () => {
     );
     dispose = () => h.harness.dispose();
     await h.harness.behavior.callRpc("accounts_refresh", null);
-    const before = await h.bb.storage.kv.get("usage-series");
+    const before = await h.alia.storage.kv.get("usage-series");
     expect(Object.keys(before as object).sort()).toEqual(["main", "spare", "work"]);
     gated = true;
     clock = NOW + 5 * 60_000;
@@ -6646,7 +6646,7 @@ describe("moving a project ahead of the limit, after a turn", () => {
     await h.harness.behavior.setSettings({ accountsDir: "/Users/someone/elsewhere" });
     release();
     await pending;
-    const after = (await h.bb.storage.kv.get("usage-series")) as object;
+    const after = (await h.alia.storage.kv.get("usage-series")) as object;
     expect(Object.keys(after).sort()).toEqual(["main", "spare", "work"]);
   });
 
@@ -6700,7 +6700,7 @@ describe("moving a project ahead of the limit, after a turn", () => {
   });
 });
 
-describe("adding an account by logging in from bb", () => {
+describe("adding an account by logging in from VesnALIA", () => {
   const tick = () => new Promise((r) => setTimeout(r, 0));
   const withTeam = {
     ...ALL_FREE,
@@ -7053,7 +7053,7 @@ describe("the model a thread's turn runs on", () => {
   };
   const FABLE = { settings: { preferredModel: "Fable" } };
 
-  /** What bb asks before a message reaches the provider, answered by the plugin. */
+  /** What VesnALIA asks before a message reaches the provider, answered by the plugin. */
   function dispatch(
     h: Awaited<ReturnType<typeof host>>,
     model: string | null,
@@ -7165,7 +7165,7 @@ describe("the model a thread's turn runs on", () => {
       dispose = () => h.harness.dispose();
       await h.harness.behavior.callRpc("accounts_refresh", null);
       await dispatch(h, "claude-fable-5-1");
-      // bb asks when the message is queued, and again when it sends it.
+      // VesnALIA asks when the message is queued, and again when it sends it.
       await dispatch(h, "claude-opus-5-5", {
         thread: thread({ id: "thread-1", projectId: "proj-1", status }),
       });
@@ -7178,7 +7178,7 @@ describe("the model a thread's turn runs on", () => {
     },
   );
 
-  it("does not move the project for a message queued behind a running turn; it does when bb sends the message", async () => {
+  it("does not move the project for a message queued behind a running turn; it does when VesnALIA sends the message", async () => {
     const h = await host(OPUS_ELSEWHERE, FABLE);
     dispose = () => h.harness.dispose();
     await h.harness.behavior.callRpc("accounts_refresh", null);
@@ -7192,7 +7192,7 @@ describe("the model a thread's turn runs on", () => {
     ]);
   });
 
-  /** The project's variable as the plugin last set it, read from bb. */
+  /** The project's variable as the plugin last set it, read from VesnALIA. */
   function environmentOf(h: Awaited<ReturnType<typeof host>>) {
     const last = h.envSet.at(-1);
     return {
@@ -7241,7 +7241,7 @@ describe("the model a thread's turn runs on", () => {
     ]);
   });
 
-  it("waits for a read of bb that takes a second and places the turn", async () => {
+  it("waits for a read of VesnALIA that takes a second and places the turn", async () => {
     const h = await host(OPUS_ELSEWHERE, FABLE);
     dispose = () => h.harness.dispose();
     await h.harness.behavior.callRpc("accounts_refresh", null);
@@ -7322,7 +7322,7 @@ describe("the model a thread's turn runs on", () => {
       .callRpc("accounts_refresh", null)
       .catch(() => {});
     // Its seat unknown, it waits a few times; then it goes (Astra SEATS-R01).
-    // bb asks again about the message it holds (Astra SEATS-R2-005).
+    // VesnALIA asks again about the message it holds (Astra SEATS-R2-005).
     // A Fable turn: since 2026-11-06 an Opus turn keeps waiting while the
     // project may be on a Max account (below; Codex r1 high 1).
     const fable = "claude-fable-5-1";
@@ -7379,7 +7379,7 @@ describe("the model a thread's turn runs on", () => {
     expect(hanging.envSet).toEqual([]);
   });
 
-  it("moves nothing for a message that joins a running turn, a model bb has not resolved or that is not a Claude model id, hidden threads, other providers, external variables and autoSwitch off", async () => {
+  it("moves nothing for a message that joins a running turn, a model VesnALIA has not resolved or that is not a Claude model id, hidden threads, other providers, external variables and autoSwitch off", async () => {
     type Case = [
       string | null,
       Parameters<typeof makeMessageDispatchHookContext>[0],
@@ -7493,7 +7493,7 @@ describe("the model a thread's turn runs on", () => {
   });
 
   /**
-   * A message as bb logs it: the row of a real thread read on 2026-10-02
+   * A message as VesnALIA logs it: the row of a real thread read on 2026-10-02
    * (thr_dgciuctr8n, seq 3923), its text cut and its model a parameter.
    */
   function requested(seq: number, model: string | null): LoggedEvent {
@@ -7526,7 +7526,7 @@ describe("the model a thread's turn runs on", () => {
     };
   }
 
-  it("judges a failed turn it never saw sent (the plugin reloaded meanwhile) against the model of the thread's latest message in bb's log: an Opus thread switches instead of waiting for the preferred model", async () => {
+  it("judges a failed turn it never saw sent (the plugin reloaded meanwhile) against the model of the thread's latest message in VesnALIA's log: an Opus thread switches instead of waiting for the preferred model", async () => {
     const h = await host(
       { ...OPUS_ELSEWHERE, main: usage(50, 30, 0) },
       {
@@ -7551,7 +7551,7 @@ describe("the model a thread's turn runs on", () => {
     ]);
   });
 
-  it("falls back to the preferred model when bb's log cannot be read, is empty, or its latest message names no Claude model", async () => {
+  it("falls back to the preferred model when VesnALIA's log cannot be read, is empty, or its latest message names no Claude model", async () => {
     const cases: [HostOptions, number][] = [
       [{ threadEventsError: "HTTP 503: internal error" }, 1],
       [{ threadEvents: {} }, 0],
@@ -7576,7 +7576,7 @@ describe("the model a thread's turn runs on", () => {
     }
   });
 
-  it("reads bb's log first for a failed turn and falls back to the model it saw sent when the log cannot be read", async () => {
+  it("reads VesnALIA's log first for a failed turn and falls back to the model it saw sent when the log cannot be read", async () => {
     const h = await host(
       { ...OPUS_ELSEWHERE, main: seat(50, 30, 0) },
       { ...FABLE, threadEventsError: "HTTP 503: internal error" },
@@ -7593,7 +7593,7 @@ describe("the model a thread's turn runs on", () => {
     ).toHaveLength(1);
   });
 
-  it("judges a failed turn by the model bb logged for that very turn: sent with Fable through the checkpoint, the turn that failed (a Send now) ran Opus, so it switches to an account with Opus", async () => {
+  it("judges a failed turn by the model VesnALIA logged for that very turn: sent with Fable through the checkpoint, the turn that failed (a Send now) ran Opus, so it switches to an account with Opus", async () => {
     const h = await host(
       { ...OPUS_ELSEWHERE, main: usage(50, 30, 0) },
       { ...FABLE, threadEvents: { "thread-1": [requested(1, "claude-opus-5-5")] } },
@@ -7625,7 +7625,7 @@ describe("the model a thread's turn runs on", () => {
     ]);
   });
 
-  it("judges a failed turn whose request bb's log no longer lists among the latest 20 by the latest message", async () => {
+  it("judges a failed turn whose request VesnALIA's log no longer lists among the latest 20 by the latest message", async () => {
     const h = await host(
       { ...OPUS_ELSEWHERE, main: usage(50, 30, 0) },
       {
@@ -7668,8 +7668,8 @@ describe("the model a thread's turn runs on", () => {
     });
 });
 
-describe("a limit the provider enforced before bb reported it blocked", () => {
-  it("moves the project and retries when the turn failed for a limit and bb's latest report only warned", async () => {
+describe("a limit the provider enforced before VesnALIA reported it blocked", () => {
+  it("moves the project and retries when the turn failed for a limit and VesnALIA's latest report only warned", async () => {
     const h = await host({
       main: () => Response.json(payload(40, 96)),
       spare: () => Response.json(payload(10, 20)),
@@ -7677,7 +7677,7 @@ describe("a limit the provider enforced before bb reported it blocked", () => {
     });
     dispose = () => h.harness.dispose();
     await h.harness.behavior.callRpc("accounts_refresh", null);
-    // As bb sent it on 2026-10-02 at 02:12 (thr_pqzfkcgihq): the provider
+    // As VesnALIA sent it on 2026-10-02 at 02:12 (thr_pqzfkcgihq): the provider
     // refused the turn, and the thread's latest stored report was a warning.
     const warned = failure({
       errorInfo: {
@@ -7719,7 +7719,7 @@ describe("an account that refuses the turn", () => {
     spare: () => Response.json(payload(10, 60)),
     work: () => Response.json(payload(5, 20)),
   };
-  /** As bb reported it: no rate-limit report comes with it. */
+  /** As VesnALIA reported it: no rate-limit report comes with it. */
   function refused(
     overrides: Partial<PluginTurnFailedEvent> = {},
   ): PluginTurnFailedEvent {
@@ -7796,7 +7796,7 @@ describe("an account that refuses the turn", () => {
   });
 
   it("retries the first turn of a thread it placed on the new account, when the old account refused it", async () => {
-    // The real case of 2026-09-30: bb started the turn on the old account
+    // The real case of 2026-09-30: VesnALIA started the turn on the old account
     // while the plugin was placing the project.
     const h = await host(
       { ...MAIN_BEST, main: () => Response.json(payload(10, 40)) },
@@ -7927,7 +7927,7 @@ describe("a wait another account can end sooner", () => {
   // could not be measured when the wait was chosen). After each refresh, a
   // project whose account is measured out for a waiting thread's model moves
   // to an account that can run it now, and the wait is replaced by a retry
-  // bb dispatches at once, through every plugin's checkpoint.
+  // VesnALIA dispatches at once, through every plugin's checkpoint.
   const FABLE = { preferredModel: "Fable" };
   const FABLE_ID = "claude-fable-5-1";
   const OPUS_ID = "claude-opus-5-5";
@@ -7958,7 +7958,7 @@ describe("a wait another account can end sooner", () => {
       model: FABLE_ID,
     };
   }
-  /** A turn as bb logs it: its request, and the retry chain it belongs to. */
+  /** A turn as VesnALIA logs it: its request, and the retry chain it belongs to. */
   function turnRequested(
     threadId: string,
     requestId: string,
@@ -7981,7 +7981,7 @@ describe("a wait another account can end sooner", () => {
       },
     };
   }
-  /** Each row's thread as bb leaves it after a failed turn: in error, its latest turn the one the row retries. */
+  /** Each row's thread as VesnALIA leaves it after a failed turn: in error, its latest turn the one the row retries. */
   function waitingHost(
     usage: Record<string, () => Response>,
     rows: QueuedRow[],
@@ -8018,7 +8018,7 @@ describe("a wait another account can end sooner", () => {
     run.controller.abort();
     await run.done;
   }
-  /** The retry bb dispatches at once for a released wait. */
+  /** The retry VesnALIA dispatches at once for a released wait. */
   function retriedNow(threadId: string, turnRequestId: string) {
     return {
       threadId,
@@ -8027,7 +8027,7 @@ describe("a wait another account can end sooner", () => {
     };
   }
 
-  it("moves the project to an account that can run the thread now and has bb retry the turn at once, never sending the row itself", async () => {
+  it("moves the project to an account that can run the thread now and has VesnALIA retry the turn at once, never sending the row itself", async () => {
     const h = await waitingHost(MAIN_OUT, [waiting("r1", "thread-1")]);
     dispose = () => h.harness.dispose();
     await onePass(h);
@@ -8054,7 +8054,7 @@ describe("a wait another account can end sooner", () => {
       to: "spare",
     });
     expect(state.lastSwitch?.reason).toMatch(/spare/);
-    expect(await h.bb.storage.kv.get("handled-projects")).toEqual(["proj-1"]);
+    expect(await h.alia.storage.kv.get("handled-projects")).toEqual(["proj-1"]);
   });
 
   it("moves a project once for all its waiting threads and retries every one", async () => {
@@ -8083,7 +8083,7 @@ describe("a wait another account can end sooner", () => {
     h.harness.sdk.stub("threads.get", async (args: { threadId: string }) => {
       if (args.threadId === "thread-3" && failThread3) {
         failThread3 = false;
-        throw new Error("HTTP 503: bb is busy");
+        throw new Error("HTTP 503: VesnALIA is busy");
       }
       return thread({ id: args.threadId, projectId: "proj-1", status: "error" });
     });
@@ -8123,7 +8123,7 @@ describe("a wait another account can end sooner", () => {
       expect(h.retries).toEqual([]);
       h.harness.dispose();
     }
-    // Sent between the look and the delete: bb has it, nothing to retry.
+    // Sent between the look and the delete: VesnALIA has it, nothing to retry.
     const h = await waitingHost(MAIN_OUT, [waiting("r1", "thread-1")], {
       deleteRowError: {
         message: "HTTP 404: Queued message not found",
@@ -8198,7 +8198,7 @@ describe("a wait another account can end sooner", () => {
     expect(h.deleted).toEqual([]);
   });
 
-  it("looks again in a later pass at a wait queued back after bb did not take its retry", async () => {
+  it("looks again in a later pass at a wait queued back after VesnALIA did not take its retry", async () => {
     // Codex r2 (R2-03): the wait put back is newer than the move, but it is
     // still the one that waited on the old account.
     const h = await waitingHost(MAIN_OUT, [waiting("r1", "thread-1")], {
@@ -8218,7 +8218,7 @@ describe("a wait another account can end sooner", () => {
     expect(h.queued).toEqual([]);
   });
 
-  it("puts nothing back when bb already has a retry of the turn, or the thread no longer has a failed turn", async () => {
+  it("puts nothing back when VesnALIA already has a retry of the turn, or the thread no longer has a failed turn", async () => {
     for (const code of ["retry_already_queued", "no_failed_turn"]) {
       const h = await waitingHost(MAIN_OUT, [waiting("r1", "thread-1")], {
         retryError: { message: "HTTP 409: Conflict", code, status: 409 },
@@ -8233,7 +8233,7 @@ describe("a wait another account can end sooner", () => {
     }
   });
 
-  it("says loudly that a wait is lost when bb takes neither the retry nor the wait put back", async () => {
+  it("says loudly that a wait is lost when VesnALIA takes neither the retry nor the wait put back", async () => {
     const h = await waitingHost(MAIN_OUT, [waiting("r1", "thread-1")], {
       retryBehaviour: "fail",
     });
@@ -8258,7 +8258,7 @@ describe("a wait another account can end sooner", () => {
     h.harness.sdk.stub("threads.get", async (args: { threadId: string }) => {
       if (args.threadId === "thread-3" && failThread3) {
         failThread3 = false;
-        throw new Error("HTTP 503: bb is busy");
+        throw new Error("HTTP 503: VesnALIA is busy");
       }
       return thread({ id: args.threadId, projectId: "proj-1", status: "error" });
     });
@@ -8302,8 +8302,8 @@ describe("a wait another account can end sooner", () => {
     );
   });
 
-  it("still has bb retry the turn when the wait was removed but bb's answer was lost", async () => {
-    // Codex r3 (IR-001): bb deletes the row before it answers; a lost answer
+  it("still has VesnALIA retry the turn when the wait was removed but VesnALIA's answer was lost", async () => {
+    // Codex r3 (IR-001): VesnALIA deletes the row before it answers; a lost answer
     // must not lose the wait with it.
     const h = await waitingHost(MAIN_OUT, [waiting("r1", "thread-1")], {
       deleteRowError: { message: "socket hang up", landed: true },
@@ -8317,7 +8317,7 @@ describe("a wait another account can end sooner", () => {
     ).toEqual([]);
   });
 
-  it("does not call a wait lost when bb took the retry and only its answer was lost", async () => {
+  it("does not call a wait lost when VesnALIA took the retry and only its answer was lost", async () => {
     const h = await waitingHost(MAIN_OUT, [waiting("r1", "thread-1")], {
       retryBehaviour: "answer-lost",
     });
@@ -8330,7 +8330,7 @@ describe("a wait another account can end sooner", () => {
     ).toEqual([]);
   });
 
-  it("looks again at a wait put back whose answer bb lost", async () => {
+  it("looks again at a wait put back whose answer VesnALIA lost", async () => {
     // Codex r4 (IR4-001): the wait is queued again but its id never comes
     // back; it still waited on the old account.
     const h = await waitingHost(MAIN_OUT, [waiting("r1", "thread-1")], {
@@ -8413,7 +8413,7 @@ describe("a wait another account can end sooner", () => {
     expect(h.queued).toEqual([]);
   });
 
-  it("marks the row put back and looks for it when bb lost the restore's answer, so a later pass still releases it (Codex Sol 0.2.18 r1, R0218-CODEX-001)", async () => {
+  it("marks the row put back and looks for it when VesnALIA lost the restore's answer, so a later pass still releases it (Codex Sol 0.2.18 r1, R0218-CODEX-001)", async () => {
     let spareFable = 100;
     const h = await host(
       {
@@ -8472,7 +8472,7 @@ describe("a wait another account can end sooner", () => {
 
   it("keeps the mark of a row put back while a pass was reading the queue, so the next pass still releases it (Codex Sol 0.2.18 r1, R0218-CODEX-002)", async () => {
     let spareFable = 100;
-    // bb takes the snapshot for the pass between the delete of the row and
+    // VesnALIA takes the snapshot for the pass between the delete of the row and
     // its restore (at the second look at the thread's queue, after ours
     // failed): neither row is in it. It answers once the turn is handled.
     let snapshot: QueuedRow[] | null = null;
@@ -8710,11 +8710,11 @@ describe("a wait another account can end sooner", () => {
     ]);
   });
 
-  it("judges afresh a thread whose wait bb was already sending when the project moved for it", async () => {
+  it("judges afresh a thread whose wait VesnALIA was already sending when the project moved for it", async () => {
     // Not released by the plugin: only the move's cause says its next
     // failure is the new account's.
     const h = await waitingHost(MAIN_OUT, [waiting("r1", "thread-1")], {
-      // Gone from the queue: bb is sending it.
+      // Gone from the queue: VesnALIA is sending it.
       deleteRowError: {
         message: "HTTP 404: Queued message not found",
         status: 404,
@@ -8857,8 +8857,8 @@ describe("a wait another account can end sooner", () => {
     // once); after the fifth, neither provider-retry nor this plugin looked
     // at them again, and they sat in error all night while two accounts had
     // room from 03:40. A thread in error with no retry queued is judged again
-    // on every refresh, from bb's log alone (it survives a restart).
-    /** bb's log of a thread whose turn failed on a limit: the request, the error and (unless `reported: false`) the limit report. */
+    // on every refresh, from VesnALIA's log alone (it survives a restart).
+    /** VesnALIA's log of a thread whose turn failed on a limit: the request, the error and (unless `reported: false`) the limit report. */
     function failedLog(
       threadId: string,
       requestId: string,
@@ -8867,7 +8867,7 @@ describe("a wait another account can end sooner", () => {
         retry?: { of: string; attempt: number };
         category?: string;
         reported?: boolean;
-        /** bb refused the turn at the door for this reason: no provider error in the log. */
+        /** VesnALIA refused the turn at the door for this reason: no provider error in the log. */
         rejected?: string;
         /** When the turn was sent (default an hour before NOW). */
         at?: number;
@@ -8980,8 +8980,8 @@ describe("a wait another account can end sooner", () => {
       );
       dispose = () => h.harness.dispose();
       const writes: unknown[] = [];
-      const set = h.bb.storage.kv.set;
-      h.bb.storage.kv.set = async (key: string, value: unknown) => {
+      const set = h.alia.storage.kv.set;
+      h.alia.storage.kv.set = async (key: string, value: unknown) => {
         if (key === "advice-bases") writes.push(value);
         return set(key, value);
       };
@@ -9103,7 +9103,7 @@ describe("a wait another account can end sooner", () => {
       ]);
     });
 
-    it("retries it on an account that can run it, from bb's log alone", async () => {
+    it("retries it on an account that can run it, from VesnALIA's log alone", async () => {
       const h = await host(MAIN_OUT, stuck(failedLog("thread-1", "creq_1", FABLE_ID)));
       dispose = () => h.harness.dispose();
       await onePass(h);
@@ -9269,7 +9269,7 @@ describe("a wait another account can end sooner", () => {
     });
 
     it("marks no account for a refusal in its log: the one that refuses again marks itself", async () => {
-      // code-reviewer r6 (M1), Codex r8 (IR8-001, IR8-005): neither bb's log
+      // code-reviewer r6 (M1), Codex r8 (IR8-001, IR8-005): neither VesnALIA's log
       // nor this plugin's history can say which account refused, so the
       // thread is retried where the project sits; a fresh refusal there
       // marks that account, and two accounts without a login are marked one
@@ -9451,8 +9451,8 @@ describe("a wait another account can end sooner", () => {
       expect(h.envSet).toEqual([]);
     });
 
-    it("rescues a turn bb refused at the door for a limit, which leaves no provider error", async () => {
-      // Codex r6 (IR6-003): bb's own failure event reads the rejection.
+    it("rescues a turn VesnALIA refused at the door for a limit, which leaves no provider error", async () => {
+      // Codex r6 (IR6-003): VesnALIA's own failure event reads the rejection.
       const h = await host(
         MAIN_OUT,
         stuck(failedLog("thread-1", "creq_1", FABLE_ID, { rejected: "rate_limited" })),
@@ -9563,7 +9563,7 @@ describe("a wait another account can end sooner", () => {
       expect(h.envSet).toEqual([]);
     });
 
-    it("switched off while the rescue of a retry reads bb's log, at any of its reads (the retry chain's included), moves nothing and queues nothing (Sol B2-R3-005)", async () => {
+    it("switched off while the rescue of a retry reads VesnALIA's log, at any of its reads (the retry chain's included), moves nothing and queues nothing (Sol B2-R3-005)", async () => {
       // Every account out of Fable, main's weekly too: the rescue of
       // creq_1b, the second attempt of creq_1, waits on spare (moving the
       // project there) and tells Opus.
@@ -9573,7 +9573,7 @@ describe("a wait another account can end sooner", () => {
         work: () => Response.json(asTeam(payload(1, 1, 100))),
       };
       const log = failedLog("thread-1", "creq_1b", FABLE_ID, { retry: { of: "creq_1", attempt: 2 } });
-      /** One pass, the automatic choice switched off as bb's log is read for the `offAt`-th time (0: never). */
+      /** One pass, the automatic choice switched off as VesnALIA's log is read for the `offAt`-th time (0: never). */
       async function pass(offAt: number) {
         let reads = 0;
         const options: HostOptions = {
@@ -9619,7 +9619,7 @@ describe("a wait another account can end sooner", () => {
       dispose = () => h.harness.dispose();
       await onePass(h);
       expect(h.retries.map((r) => r.reason)).toEqual([`Waiting for Fable on spare. ${toOpus("spare")}`]);
-      // bb sends the timed retry, the chain's third attempt: it fails the same way.
+      // VesnALIA sends the timed retry, the chain's third attempt: it fails the same way.
       log.push({ ...turnRequested("thread-1", "creq_1c", FABLE_ID, { of: "creq_1", attempt: 3 }), seq: 4 });
       h.queued.length = 0;
       await h.harness.behavior.emitThreadEvent(
@@ -9658,7 +9658,7 @@ describe("a wait another account can end sooner", () => {
     });
 
     it("leaves alone a thread whose queued retry the user cancelled by hand, across a restart", async () => {
-      // Codex r7 (IR7-004): bb's queued card deletes the row and leaves the
+      // Codex r7 (IR7-004): VesnALIA's queued card deletes the row and leaves the
       // thread in error; the rescue took that for a thread left for dead.
       const theirs = {
         id: "pr-1",
@@ -9671,7 +9671,7 @@ describe("a wait another account can end sooner", () => {
       await h.harness.behavior.emitThreadEvent("message.cancelled", { entry: theirs as never });
       await onePass(h);
       expect(h.retries).toEqual([]);
-      expect(await h.bb.storage.kv.get("cancelled-retries")).toEqual({ "thread-1": "creq_1" });
+      expect(await h.alia.storage.kv.get("cancelled-retries")).toEqual({ "thread-1": "creq_1" });
       // Loaded again (a restart): still left alone; a thread whose cancelled
       // retry was of an earlier chain is judged.
       const again = await host(MAIN_OUT, {
@@ -9690,7 +9690,7 @@ describe("a wait another account can end sooner", () => {
     });
 
     it("judges a turn the user retried by hand after cancelling its retry, once that fails too", async () => {
-      // code-reviewer r8 (M3): keyed by the chain, the mark outlived bb's
+      // code-reviewer r8 (M3): keyed by the chain, the mark outlived VesnALIA's
       // own Retry button, and the thread was never rescued again.
       const log: Record<string, LoggedEvent[]> = {
         "thread-1": failedLog("thread-1", "creq_1", FABLE_ID),
@@ -9736,7 +9736,7 @@ describe("a wait another account can end sooner", () => {
           payload: { kind: "retry", attempt: 3, reason: "provider-retry", retryOfTurnRequestId: "creq_1" },
         } as never,
       });
-      expect(await h.bb.storage.kv.get("cancelled-retries")).toEqual({ "thread-1": "creq_1b" });
+      expect(await h.alia.storage.kv.get("cancelled-retries")).toEqual({ "thread-1": "creq_1b" });
       await onePass(h);
       expect(h.retries).toEqual([]);
       log["thread-1"] = failedLog("thread-1", "creq_1c", FABLE_ID, { retry: { of: "creq_1", attempt: 3 } });
@@ -9757,7 +9757,7 @@ describe("a wait another account can end sooner", () => {
           payload: { kind: "retry", attempt: 2, reason: "provider-retry", retryOfTurnRequestId: "creq_1" },
         } as never,
       });
-      expect(await h.bb.storage.kv.get("cancelled-retries")).toBeUndefined();
+      expect(await h.alia.storage.kv.get("cancelled-retries")).toBeUndefined();
       await onePass(h);
       expect(h.retries.map((r) => r.turnRequestId)).toEqual(["creq_2"]);
     });
@@ -9777,14 +9777,14 @@ describe("a wait another account can end sooner", () => {
           payload: { kind: "retry", attempt: 2, reason: "provider-retry", retryOfTurnRequestId: "creq_1" },
         } as never,
       });
-      expect(await h.bb.storage.kv.get("cancelled-retries")).toBeUndefined();
+      expect(await h.alia.storage.kv.get("cancelled-retries")).toBeUndefined();
     });
 
     it("judges the thread again when the cancelled retry's turn cannot be read", async () => {
       // Rather than left for dead: the user can cancel again.
       const h = await host(MAIN_OUT, {
         ...stuck(failedLog("thread-1", "creq_1", FABLE_ID)),
-        threadEventsError: "bb hiccup",
+        threadEventsError: "alia hiccup",
       });
       dispose = () => h.harness.dispose();
       await h.harness.behavior.emitThreadEvent("message.cancelled", {
@@ -9795,7 +9795,7 @@ describe("a wait another account can end sooner", () => {
           payload: { kind: "retry", attempt: 2, reason: "provider-retry", retryOfTurnRequestId: "creq_1" },
         } as never,
       });
-      expect(await h.bb.storage.kv.get("cancelled-retries")).toBeUndefined();
+      expect(await h.alia.storage.kv.get("cancelled-retries")).toBeUndefined();
       expect(
         h.harness.logEntries.some(
           (entry) => entry.level === "warn" && /latest turn could not be read/.test(entry.message),
@@ -9818,15 +9818,15 @@ describe("a wait another account can end sooner", () => {
             payload: { kind: "retry", attempt: 2, reason: "provider-retry", retryOfTurnRequestId: "creq_1" },
           } as never,
         });
-        expect(await h.bb.storage.kv.get("cancelled-retries")).toEqual({ "thread-1": "creq_1" });
+        expect(await h.alia.storage.kv.get("cancelled-retries")).toEqual({ "thread-1": "creq_1" });
         await h.harness.behavior.emitThreadEvent(event, {
           thread: thread({ id: "thread-1", projectId: "proj-1", status: "error" }),
         });
-        expect(await h.bb.storage.kv.get("cancelled-retries")).toEqual({});
+        expect(await h.alia.storage.kv.get("cancelled-retries")).toEqual({});
       });
 
     it("does not take its own deletion of a wait for a cancellation by hand", async () => {
-      // Codex r7 (IR7-004): releasing a wait deletes its row, and bb fires
+      // Codex r7 (IR7-004): releasing a wait deletes its row, and VesnALIA fires
       // the same event for that.
       const h = await waitingHost(MAIN_OUT, [waiting("r1", "thread-1")]);
       dispose = () => h.harness.dispose();
@@ -9844,11 +9844,11 @@ describe("a wait another account can end sooner", () => {
           payload: { kind: "retry", attempt: 2, reason: "Waiting", retryOfTurnRequestId: "creq_r1" },
         } as never,
       });
-      expect(await h.bb.storage.kv.get("cancelled-retries")).toBeUndefined();
+      expect(await h.alia.storage.kv.get("cancelled-retries")).toBeUndefined();
     });
 
-    it("does not take bb's cancellation for its own deletion for the user's, though it comes before bb's answer", async () => {
-      // Codex r8 (IR8-002): bb fires the event before the deletion answers.
+    it("does not take VesnALIA's cancellation for its own deletion for the user's, though it comes before VesnALIA's answer", async () => {
+      // Codex r8 (IR8-002): VesnALIA fires the event before the deletion answers.
       let h: Awaited<ReturnType<typeof host>> | null = null;
       h = await waitingHost(MAIN_OUT, [waiting("r1", "thread-1")], {
         beforeDelete: async () => {
@@ -9869,12 +9869,12 @@ describe("a wait another account can end sooner", () => {
       });
       await onePass(h);
       expect(h.deleted).toEqual(["r1"]);
-      expect(await h.bb.storage.kv.get("cancelled-retries")).toBeUndefined();
+      expect(await h.alia.storage.kv.get("cancelled-retries")).toBeUndefined();
     });
 
     it("reads a cancellation come while its own deletion failed (the row was gone before) as the user's", async () => {
       // Codex r8 (IR8-002), code-reviewer r8 (M1): the user removed the wait
-      // as this plugin went to replace it; its event, come before bb's 404,
+      // as this plugin went to replace it; its event, come before VesnALIA's 404,
       // was swallowed as this plugin's own and the thread was rescued again.
       let h: Awaited<ReturnType<typeof host>> | null = null;
       h = await waitingHost(MAIN_OUT, [waiting("r1", "thread-1")], {
@@ -9897,7 +9897,7 @@ describe("a wait another account can end sooner", () => {
       });
       await onePass(h);
       expect(h.retries).toEqual([]);
-      expect(await h.bb.storage.kv.get("cancelled-retries")).toEqual({ "thread-1": "creq_r1" });
+      expect(await h.alia.storage.kv.get("cancelled-retries")).toEqual({ "thread-1": "creq_r1" });
     });
 
     it("leaves a thread whose failure was not a limit", async () => {
@@ -9911,7 +9911,7 @@ describe("a wait another account can end sooner", () => {
       expect(h.envSet).toEqual([]);
     });
 
-    it("archived while its rescue reads bb's log, the judgment does not put back the banner the archiving took away (Sol B2-R2-003)", async () => {
+    it("archived while its rescue reads VesnALIA's log, the judgment does not put back the banner the archiving took away (Sol B2-R2-003)", async () => {
       let meanwhile: (() => Promise<unknown>) | null = null;
       const h = await host(
         {
@@ -10015,7 +10015,7 @@ describe("a wait another account can end sooner", () => {
 
   it("leaves a retry of an earlier turn: the user wrote meanwhile, or its chain has moved on", async () => {
     const latest = [
-      // The user's message after it failed too: bb would retry that one.
+      // The user's message after it failed too: VesnALIA would retry that one.
       turnRequested("thread-1", "creq_new", FABLE_ID),
       // The same chain, already one attempt further.
       turnRequested("thread-1", "creq_r1c", FABLE_ID, {
@@ -10035,7 +10035,7 @@ describe("a wait another account can end sooner", () => {
     }
   });
 
-  it("queues the wait again as it was when bb does not take the retry", async () => {
+  it("queues the wait again as it was when VesnALIA does not take the retry", async () => {
     const h = await waitingHost(MAIN_OUT, [waiting("r1", "thread-1")], {
       retryBehaviour: "fail-once",
     });
@@ -10137,9 +10137,9 @@ describe("a wait another account can end sooner", () => {
         { threads: { "thread-1": { status: "error", visibility: "hidden" } } },
         1,
       ],
-      // bb retries only a thread whose latest turn failed.
+      // VesnALIA retries only a thread whose latest turn failed.
       [row, { threads: { "thread-1": { status: "idle" } } }, 1],
-      // bb refuses to retry an archived thread: its wait would be lost.
+      // VesnALIA refuses to retry an archived thread: its wait would be lost.
       [row, { threads: { "thread-1": { status: "error", archivedAt: NOW } } }, 1],
       [row, { threads: { "thread-1": { status: "error", deletedAt: NOW } } }, 1],
     ];
@@ -10229,7 +10229,7 @@ describe("a wait another account can end sooner", () => {
     const h = await waitingHost(MAIN_OUT, [waiting("r1", "thread-1")]);
     dispose = () => h.harness.dispose();
     h.harness.sdk.stub("threads.queue.list", async () => {
-      throw new Error("HTTP 503: bb is restarting");
+      throw new Error("HTTP 503: VesnALIA is restarting");
     });
     await onePass(h);
     expect(h.envSet).toEqual([]);
@@ -10542,7 +10542,7 @@ describe("an Opus turn on a Max account that keeps Fable", () => {
     dispose = () => h.harness.dispose();
     await h.harness.behavior.callRpc("accounts_refresh", null);
     options.failEnvRead = ["proj-1"];
-    // bb asks again about the message it holds, past both retry caps
+    // VesnALIA asks again about the message it holds, past both retry caps
     // (MAX_START_WAITS, then the seat read's): it never goes.
     for (let i = 0; i < MAX_START_WAITS + 6; i++)
       expect(
@@ -10628,8 +10628,8 @@ describe("an Opus turn on a Max account that keeps Fable", () => {
         dispose = () => h.harness.dispose();
         await h.harness.behavior.callRpc("accounts_refresh", null);
         let hung = false;
-        const set = h.bb.storage.kv.set.bind(h.bb.storage.kv);
-        h.bb.storage.kv.set = async (key: string, value: unknown) => {
+        const set = h.alia.storage.kv.set.bind(h.alia.storage.kv);
+        h.alia.storage.kv.set = async (key: string, value: unknown) => {
           if (key === "last-switch" && !hung) {
             hung = true;
             return new Promise<never>(() => {});
@@ -10680,7 +10680,7 @@ describe("an Opus turn on a Max account that keeps Fable", () => {
       await started(h);
       for (const other of [
         thread({ id: "thread-c", projectId: "proj-1", providerId: "codex" }),
-        thread({ id: "thread-h", projectId: "proj-1", visibility: "hidden", originPluginId: "bb-recap" }),
+        thread({ id: "thread-h", projectId: "proj-1", visibility: "hidden", originPluginId: "alia-recap" }),
       ])
         await h.harness.behavior.emitThreadEvent("thread.active", { thread: other });
       await ended(h);
@@ -10917,7 +10917,7 @@ describe("an Opus turn never retried, released or placed on a Max account that k
       model: OPUS_ID,
     };
   }
-  /** thread-1 as bb leaves it after that failed turn: in error, its latest turn the one the row retries. */
+  /** thread-1 as VesnALIA leaves it after that failed turn: in error, its latest turn the one the row retries. */
   const WAITING_OPUS: Pick<HostOptions, "threads" | "threadEvents"> = {
     threads: { "thread-1": { status: "error" } },
     threadEvents: {
@@ -11020,7 +11020,7 @@ describe("an Opus turn never retried, released or placed on a Max account that k
       const h = await host(FABLE_WAITS_ON_MAIN, {
         ...FABLE,
         clock: () => clock,
-        // bb's log says thread-2's turn was sent with Opus: it never passed
+        // VesnALIA's log says thread-2's turn was sent with Opus: it never passed
         // the checkpoint, so the plugin did not see it sent.
         threadEvents: {
           "thread-2": [
@@ -11070,7 +11070,7 @@ describe("an Opus turn never retried, released or placed on a Max account that k
   });
 
   describe("races with a move whose answer is still pending (Sol r1)", () => {
-    /** One-shot hold of the next env write after `arm()`: the write lands, bb's answer waits. */
+    /** One-shot hold of the next env write after `arm()`: the write lands, VesnALIA's answer waits. */
     function heldSet() {
       let armed = false;
       const gate = envGate();
@@ -11105,7 +11105,7 @@ describe("an Opus turn never retried, released or placed on a Max account that k
           afterSet: hold.afterSet,
           presetEnv: { "proj-1": [{ name: ENV_VAR, note: ownNote("spare"), secret: true, value: null }] },
           threadEvents: {
-            // bb's log says thread-3's turn was sent with Opus: it never
+            // VesnALIA's log says thread-3's turn was sent with Opus: it never
             // passed the checkpoint, so the plugin did not see it sent.
             "thread-3": [
               {
@@ -11220,7 +11220,7 @@ describe("an Opus turn never retried, released or placed on a Max account that k
       });
     });
 
-    it("an Opus retry provider-retry queued is never sent past bb's checkpoint: once the Fable turn took the project home meanwhile, the retry is queued through it and placed on the seat again (Astra r2, BM-INSPECT-R2-001)", async () => {
+    it("an Opus retry provider-retry queued is never sent past VesnALIA's checkpoint: once the Fable turn took the project home meanwhile, the retry is queued through it and placed on the seat again (Astra r2, BM-INSPECT-R2-001)", async () => {
       let workSession = 100;
       // Out of Fable as thread-3 starts: since 2026-11-03 an Opus turn is
       // held off a Max account that keeps Fable, never started there.
@@ -11236,7 +11236,7 @@ describe("an Opus turn never retried, released or placed on a Max account that k
         {
           ...FABLE,
           threadEvents: {
-            // bb's log says thread-3's turn was sent with Opus: it never
+            // VesnALIA's log says thread-3's turn was sent with Opus: it never
             // passed the checkpoint, so the plugin did not see it sent.
             "thread-3": [
               {
@@ -11304,7 +11304,7 @@ describe("an Opus turn never retried, released or placed on a Max account that k
       gate.release();
       expect((await failed).errors).toEqual([]);
       // Not sent as it is (an explicit send skips the checkpoint and would
-      // run Opus on spare): replaced by a retry bb dispatches through it.
+      // run Opus on spare): replaced by a retry VesnALIA dispatches through it.
       expect(h.sent).toEqual([]);
       expect(h.deleted).toEqual(["pr-3"]);
       expect(h.retries.at(-1)).toEqual({
@@ -11599,7 +11599,7 @@ describe("an Opus turn never retried, released or placed on a Max account that k
       await h.harness.behavior.emitThreadEvent("thread.active", {
         thread: thread({ id: "thread-3", projectId: "proj-1" }),
       });
-      expect(await h.bb.storage.kv.get("pins")).toEqual({ "proj-1": "main" });
+      expect(await h.alia.storage.kv.get("pins")).toEqual({ "proj-1": "main" });
       await onePass(h);
       expect(h.retries).toEqual([
         { threadId: "thread-1", turnRequestId: "creq_r1", reason: expect.stringMatching(/^Moved to account work, which can run the waiting turn now/) },
@@ -11717,7 +11717,7 @@ describe("an Opus turn never retried, released or placed on a Max account that k
   });
 });
 
-// D3 (2026-10-17): bb takes no model on a retry, so a Fable thread that no
+// D3 (2026-10-17): VesnALIA takes no model on a retry, so a Fable thread that no
 // account can run is told to switch to Opus: on its queued retry when it
 // waits, and in the history (once) whatever the decision.
 describe("a Fable thread no account can run is told to switch to Opus (D3)", () => {
@@ -11807,7 +11807,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
     ]);
   });
 
-  /** bb's log of thread-1, oldest first: [request, the first request of its retry chain, its attempt]. */
+  /** VesnALIA's log of thread-1, oldest first: [request, the first request of its retry chain, its attempt]. */
   const chainLog = (rows: [string, string?, number?][]) => ({
     "thread-1": rows.map(([requestId, of, attempt], i) => ({
       id: `evt_${requestId}`,
@@ -11874,7 +11874,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
     f.rateLimits!.windows[0]!.resetsAtMs = NOW + 9 * HOUR;
     await h.harness.behavior.emitThreadEvent("turn.failed", f);
     const first = `Waiting for Fable on spare. ${told}`;
-    // bb sends the timed retry; it fails on spare, whose report now resets
+    // VesnALIA sends the timed retry; it fails on spare, whose report now resets
     // last: the wait moves the project on to main.
     h.queued.length = 0;
     const g = failure({ requestId: "creq_1b", attemptNumber: 2 });
@@ -11916,10 +11916,10 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
     ]);
   });
 
-  it("bb's log unreadable: a new turn's first failure is still its own chain, and gets its own row (code-reviewer r4, L3)", async () => {
+  it("VesnALIA's log unreadable: a new turn's first failure is still its own chain, and gets its own row (code-reviewer r4, L3)", async () => {
     const h = await host(NO_FABLE, {
       settings: { preferredModel: "Fable", maximumWaitHours: 1 },
-      threadEventsError: "bb hiccup",
+      threadEventsError: "alia hiccup",
     });
     dispose = () => h.harness.dispose();
     await h.harness.behavior.emitThreadEvent("turn.failed", failure());
@@ -11930,7 +11930,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
     ]);
   });
 
-  it("a retry's failure reads bb's log once, for the model its turn was sent with and its retry chain (code-reviewer r4, L3)", async () => {
+  it("a retry's failure reads VesnALIA's log once, for the model its turn was sent with and its retry chain (code-reviewer r4, L3)", async () => {
     let reads = 0;
     const h = await host(NO_FABLE, {
       settings: { preferredModel: "Fable", maximumWaitHours: 1 },
@@ -12109,7 +12109,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
   });
 
   describe("switched off while a failure is judged, the judgment writes no row telling the thread to switch to Opus (code-reviewer r3, N2)", () => {
-    /** A host whose next read of bb's log, once `armed`, switches the automatic choice off first. */
+    /** A host whose next read of VesnALIA's log, once `armed`, switches the automatic choice off first. */
     async function offHost(settings: Record<string, unknown>) {
       const switchOff = { armed: false };
       const h = await host(NO_FABLE, {
@@ -12263,8 +12263,8 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
           });
           dispose = () => h.harness.dispose();
           if (during !== "the project's move") {
-            const set = h.bb.storage.kv.set;
-            h.bb.storage.kv.set = async (key: string, value: unknown) => {
+            const set = h.alia.storage.kv.set;
+            h.alia.storage.kv.set = async (key: string, value: unknown) => {
               if (key === "last-switch") await fire();
               return set(key, value);
             };
@@ -12435,7 +12435,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
     });
   });
 
-  // Sol B2-R4-001: a declined thread whose retry bb's provider-retry keeps
+  // Sol B2-R4-001: a declined thread whose retry VesnALIA's provider-retry keeps
   // queued is never judged again until that retry runs (the rescue leaves
   // a thread with anything queued alone), while the account an Opus turn
   // would go to changes with the numbers. Its banner is asked again after
@@ -12957,7 +12957,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
       expect(
         h.harness.logEntries.some((e) => e.message === "thread thr-2: no switch (beyond-maximum-wait)"),
       ).toBe(true);
-      expect(Object.keys((await h.bb.storage.kv.get<object>("advice-bases")) ?? {})).toEqual([]);
+      expect(Object.keys((await h.alia.storage.kv.get<object>("advice-bases")) ?? {})).toEqual([]);
       const before = h.envReads.length;
       await refreshed(h);
       expect(h.envReads.slice(before)).toEqual(["proj-1", "proj-2", "personal"]);
@@ -13279,7 +13279,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
 
   // Sol B2-R5-002: what a declined thread's banner is asked on is kept in
   // the plugin's storage. After a restart, the first refresh asks it again
-  // once bb says the thread still waits on the turn it judged (in error,
+  // once VesnALIA says the thread still waits on the turn it judged (in error,
   // its latest turn that one or a retry of its chain); a thread that moved
   // on while the plugin was away keeps no banner, and nothing is kept for
   // it. Only the banner: the queue is left as it is.
@@ -13300,7 +13300,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
     /** Everything the plugin stored, as a restart finds it. */
     async function storage(h: Awaited<ReturnType<typeof host>>) {
       const out: Record<string, unknown> = {};
-      for (const key of await h.bb.storage.kv.list()) out[key] = await h.bb.storage.kv.get(key);
+      for (const key of await h.alia.storage.kv.list()) out[key] = await h.alia.storage.kv.get(key);
       return out;
     }
     /** thread-1 declined (provider-retry's retry queued), then the plugin restarted: the new host. */
@@ -13366,7 +13366,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
         await refreshed(h);
         // The state the refresh answers with, nothing for the thread.
         expect(h.envReads.slice(before)).toEqual(["proj-1", "proj-2", "personal"]);
-        expect(await h.bb.storage.kv.get("advice-bases")).toEqual({});
+        expect(await h.alia.storage.kv.get("advice-bases")).toEqual({});
       });
 
     it("a turn of the thread that starts before the first refresh ends it", async () => {
@@ -13415,7 +13415,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
         ),
       ).toBe(true);
       // Written again without them.
-      expect(Object.keys((await h.bb.storage.kv.get<object>("advice-bases")) ?? {})).toEqual(["thread-1"]);
+      expect(Object.keys((await h.alia.storage.kv.get<object>("advice-bases")) ?? {})).toEqual(["thread-1"]);
     });
 
     it("storage of a shape that cannot be read: said in the log once, and written again empty, so the next start says nothing (code-reviewer r6, N1)", async () => {
@@ -13426,9 +13426,9 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
       const first = await host(NO_FABLE, { kvPreset: { "advice-bases": ["thread-1"] } });
       expect(warned(first)).toBe(true);
       await vi.waitFor(async () => {
-        expect(await first.bb.storage.kv.get("advice-bases")).toEqual({});
+        expect(await first.alia.storage.kv.get("advice-bases")).toEqual({});
       });
-      const kept = await first.bb.storage.kv.get("advice-bases");
+      const kept = await first.alia.storage.kv.get("advice-bases");
       await first.harness.dispose();
       const h = await host(NO_FABLE, { kvPreset: { "advice-bases": kept } });
       dispose = () => h.harness.dispose();
@@ -13448,7 +13448,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
         },
       },
     });
-    /** A row of bb's log of thread-1, at `seq`. */
+    /** A row of VesnALIA's log of thread-1, at `seq`. */
     const logged = (seq: number, type: string, data: Record<string, unknown>): LoggedEvent => ({
       id: `evt_${seq}`,
       scope: { kind: "thread" },
@@ -13458,7 +13458,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
       type,
       data,
     });
-    /** How a turn of thread-1 failed, as bb logs it (`category` of its error, or the reason bb refused it at the door). */
+    /** How a turn of thread-1 failed, as VesnALIA logs it (`category` of its error, or the reason VesnALIA refused it at the door). */
     const failedRow = (seq: number, how: { category: string } | { rejected: string }) =>
       "rejected" in how
         ? logged(seq, "client/turn/rejected", { requestId: "creq_1b", reason: how.rejected })
@@ -13469,7 +13469,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
             errorInfo: { category: how.category, providerCode: null, httpStatusCode: null },
           });
     /**
-     * bb's log of thread-1 after the plugin was away: its turn failed on the
+     * VesnALIA's log of thread-1 after the plugin was away: its turn failed on the
      * session, provider-retry's retry of it ran (sent in `model`, null: none
      * named; as attempt `attempt`) and failed as `how` says (null: not in
      * the log yet), then the limit report.
@@ -13545,7 +13545,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
     // Sol B2-R6-001: with the plugin running, the start of that retry would
     // have ended the banner, and only its failure's judgment could put one
     // back. Read back, the basis stands for a later attempt of the chain
-    // only if bb's log says that attempt was sent in the model judged and
+    // only if VesnALIA's log says that attempt was sent in the model judged and
     // failed in a way a failure's judgment takes up (a limit, a refusal).
     for (const [what, retry] of [
       ["failed on something other than a limit (the connection)", { how: { category: "connection-failed" } }],
@@ -13556,25 +13556,25 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
         const h = await restarted(NO_FABLE, { threadEvents: retriedLog(retry) });
         await refreshed(h);
         expect(await banner(h)).toBeNull();
-        expect(await h.bb.storage.kv.get("advice-bases")).toEqual({});
+        expect(await h.alia.storage.kv.get("advice-bases")).toEqual({});
         const before = h.envReads.length;
         await refreshed(h);
         // The state the refresh answers with, nothing for the thread.
         expect(h.envReads.slice(before)).toEqual(["proj-1", "proj-2", "personal"]);
       });
 
-    it("provider-retry's retry ran and bb's log does not say yet how it failed: no banner, the basis kept, and the banner comes back once the log says it (Sol B2-R6-001)", async () => {
+    it("provider-retry's retry ran and VesnALIA's log does not say yet how it failed: no banner, the basis kept, and the banner comes back once the log says it (Sol B2-R6-001)", async () => {
       const log = retriedLog({ how: null });
       const h = await restarted(NO_FABLE, { threadEvents: log });
       await refreshed(h);
       expect(await banner(h)).toBeNull();
-      expect(Object.keys((await h.bb.storage.kv.get<object>("advice-bases")) ?? {})).toEqual(["thread-1"]);
+      expect(Object.keys((await h.alia.storage.kv.get<object>("advice-bases")) ?? {})).toEqual(["thread-1"]);
       log["thread-1"].push(failedRow(6, { category: "rate-limit" }));
       await refreshed(h);
       expect(await banner(h)).toBe(told);
     });
 
-    it("judged where bb's log named no chain: its latest turn the request judged, the banner comes back", async () => {
+    it("judged where VesnALIA's log named no chain: its latest turn the request judged, the banner comes back", async () => {
       const h = await host(NO_FABLE, { ...stillWaiting, kvPreset: storedBasis("creq_1b", null) });
       dispose = () => h.harness.dispose();
       await refreshed(h);
@@ -13590,7 +13590,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
       dispose = () => h.harness.dispose();
       await refreshed(h);
       expect(await banner(h)).toBeNull();
-      expect(await h.bb.storage.kv.get("advice-bases")).toEqual({});
+      expect(await h.alia.storage.kv.get("advice-bases")).toEqual({});
     });
 
     it("the thread could not be read back: no banner yet, the log says why, and the next refresh asks again", async () => {
@@ -13599,7 +13599,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
         ...stillWaiting,
         kvPreset: storedBasis("creq_1", "creq_1"),
         beforeThreadGet: async () => {
-          if (broken) throw new Error("bb is restarting");
+          if (broken) throw new Error("alia is restarting");
         },
       });
       dispose = () => h.harness.dispose();
@@ -13609,7 +13609,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
         h.harness.logEntries.some(
           (e) =>
             e.level === "warn" &&
-            e.message === "thread thread-1: its banner not asked again (the thread or its log could not be read: bb is restarting)",
+            e.message === "thread thread-1: its banner not asked again (the thread or its log could not be read: VesnALIA is restarting)",
         ),
       ).toBe(true);
       broken = false;
@@ -13634,11 +13634,11 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
       expect(gets).toBe(1);
     });
 
-    // code-reviewer r6, CR-L2: a basis read back is checked against bb
+    // code-reviewer r6, CR-L2: a basis read back is checked against VesnALIA
     // before anything else is asked of it, and only for so long: one judged
     // more than 7 days before is dropped without reading the thread, and
     // one whose check could not tell 5 refreshes in a row (the thread could
-    // not be read, or bb's log does not say how its retry failed) is
+    // not be read, or VesnALIA's log does not say how its retry failed) is
     // dropped at the fifth.
     for (const [what, usage, settings] of [
       ["Fable no longer the preferred model", NO_FABLE, { preferredModel: "", maximumWaitHours: 1 }],
@@ -13658,7 +13658,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
         dispose = () => h.harness.dispose();
         await refreshed(h);
         expect(await banner(h)).toBeNull();
-        expect(await h.bb.storage.kv.get("advice-bases")).toEqual({});
+        expect(await h.alia.storage.kv.get("advice-bases")).toEqual({});
       });
 
     for (const [age, kept] of [
@@ -13685,14 +13685,14 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
               "thread thread-1: what its banner was asked on is dropped (judged more than 7 days ago)",
           ),
         ).toBe(!kept);
-        expect(Object.keys((await h.bb.storage.kv.get<object>("advice-bases")) ?? {})).toEqual(
+        expect(Object.keys((await h.alia.storage.kv.get<object>("advice-bases")) ?? {})).toEqual(
           kept ? ["thread-1"] : [],
         );
       });
 
     for (const [what, unreadable, threadEvents] of [
       ["the thread cannot be read", true, retriedLog()],
-      ["bb's log never says how its retry failed", false, retriedLog({ how: null })],
+      ["VesnALIA's log never says how its retry failed", false, retriedLog({ how: null })],
     ] as const)
       it(`${what}, refresh after refresh: the basis is kept for four, dropped at the fifth, and the thread is not read again (code-reviewer r6, CR-L2)`, async () => {
         let gets = 0;
@@ -13708,10 +13708,10 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
         dispose = () => h.harness.dispose();
         for (let i = 0; i < 4; i += 1) await refreshed(h);
         expect(gets).toBe(4);
-        expect(Object.keys((await h.bb.storage.kv.get<object>("advice-bases")) ?? {})).toEqual(["thread-1"]);
+        expect(Object.keys((await h.alia.storage.kv.get<object>("advice-bases")) ?? {})).toEqual(["thread-1"]);
         await refreshed(h);
         expect(gets).toBe(5);
-        expect(await h.bb.storage.kv.get("advice-bases")).toEqual({});
+        expect(await h.alia.storage.kv.get("advice-bases")).toEqual({});
         // Said at info (code-reviewer r7, N4).
         expect(
           h.harness.logEntries.some(
@@ -13737,7 +13737,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
       const h = await host(NO_FABLE, {
         ...stillWaiting,
         threads: { "thread-1": { status: "error" }, "thread-3": { status: "error" } },
-        // thread-1's retry: bb's log never says how it failed. thread-3's
+        // thread-1's retry: VesnALIA's log never says how it failed. thread-3's
         // turn, judged: the pass reads where proj-1 sits for it.
         threadEvents: {
           ...retriedLog({ how: null }),
@@ -13776,7 +13776,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
         },
       });
       dispose = () => h.harness.dispose();
-      const kept = async () => Object.keys((await h.bb.storage.kv.get<object>("advice-bases")) ?? {});
+      const kept = async () => Object.keys((await h.alia.storage.kv.get<object>("advice-bases")) ?? {});
       // Five passes in the first refresh: four reads of proj-1 crossed.
       crosses = 4;
       await refreshed(h);
@@ -13807,7 +13807,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
       await refreshed(h);
       expect(armed).toBeNull();
       expect(await banner(h)).toBe(told);
-      expect(await h.bb.storage.kv.get("advice-bases")).toMatchObject({
+      expect(await h.alia.storage.kv.get("advice-bases")).toMatchObject({
         "thread-1": { requestId: "creq_2" },
       });
     });
@@ -13890,7 +13890,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
       await h.harness.behavior.setSettings({ autoSwitch: true });
       await refreshed(h);
       expect(await banner(h)).toBeNull();
-      expect(await h.bb.storage.kv.get("advice-bases")).toEqual({});
+      expect(await h.alia.storage.kv.get("advice-bases")).toEqual({});
     });
 
     it("a later judgment that is no decline takes it out of storage too", async () => {
@@ -13901,23 +13901,23 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
       );
       dispose = () => h.harness.dispose();
       await h.harness.behavior.emitThreadEvent("turn.failed", failure());
-      expect(Object.keys((await h.bb.storage.kv.get("advice-bases")) as object)).toEqual(["thread-1"]);
+      expect(Object.keys((await h.alia.storage.kv.get("advice-bases")) as object)).toEqual(["thread-1"]);
       workFable = 30;
       await h.harness.behavior.emitThreadEvent(
         "turn.failed",
         failure({ requestId: "creq_1b", attemptNumber: 2 }),
       );
       expect(h.retries.map((r) => r.reason)).toContain("Switched to account work (Fable)");
-      expect(await h.bb.storage.kv.get("advice-bases")).toEqual({});
+      expect(await h.alia.storage.kv.get("advice-bases")).toEqual({});
     });
 
     it("the automatic choice switched off takes it out of storage too", async () => {
       const h = await host(NO_FABLE, { settings: { preferredModel: "Fable", maximumWaitHours: 1 } });
       dispose = () => h.harness.dispose();
       await h.harness.behavior.emitThreadEvent("turn.failed", failure());
-      expect(Object.keys((await h.bb.storage.kv.get("advice-bases")) as object)).toEqual(["thread-1"]);
+      expect(Object.keys((await h.alia.storage.kv.get("advice-bases")) as object)).toEqual(["thread-1"]);
       await h.harness.behavior.setSettings({ autoSwitch: false });
-      expect(await h.bb.storage.kv.get("advice-bases")).toEqual({});
+      expect(await h.alia.storage.kv.get("advice-bases")).toEqual({});
     });
   });
 
@@ -13935,7 +13935,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
     // The state the refresh answers with, nothing for the thread.
     expect(h.envReads.slice(before)).toEqual(["proj-1", "proj-2", "personal"]);
     expect(await banner(h)).toBeNull();
-    expect(await h.bb.storage.kv.get("advice-bases")).toEqual({});
+    expect(await h.alia.storage.kv.get("advice-bases")).toEqual({});
   });
 
   it("a turn of the thread that starts while its failure is judged takes the banner away, and the judgment does not put it back when its reads end (Sol B2-R2-003)", async () => {
@@ -13951,7 +13951,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
     dispose = () => h.harness.dispose();
     await h.harness.behavior.emitThreadEvent("turn.failed", failure());
     expect(await banner(h)).toBe(told);
-    // Its retry fails; while bb's log is read for that failure, a turn of
+    // Its retry fails; while VesnALIA's log is read for that failure, a turn of
     // the thread starts (switched to Opus and sent by hand).
     meanwhile = () => active(h, "thread-1");
     await h.harness.behavior.emitThreadEvent(
@@ -14457,7 +14457,7 @@ describe("a Fable thread no account can run is told to switch to Opus (D3)", () 
 });
 
 describe("seats per account: threads wait for a free one", () => {
-  /** bb asks before a thread's turn starts: what the plugin answers. */
+  /** VesnALIA asks before a thread's turn starts: what the plugin answers. */
   const ask = (h: Awaited<ReturnType<typeof host>>, id: string, projectId = "proj-1") =>
     sent(h, id, projectId) as Promise<{ action: string; reason?: string; sendAt?: number }>;
   const seatsOf = async (h: Awaited<ReturnType<typeof host>>) =>
@@ -14485,7 +14485,7 @@ describe("seats per account: threads wait for a free one", () => {
     });
   });
 
-  it("a turn that ends frees its seat for the first in line, and bb is asked again at once", async () => {
+  it("a turn that ends frees its seat for the first in line, and VesnALIA is asked again at once", async () => {
     const h = await host(ALL_FREE, { settings: { ...OFF, seatsMax: 1 } });
     dispose = () => h.harness.dispose();
     await ask(h, "t1");
@@ -14522,7 +14522,7 @@ describe("seats per account: threads wait for a free one", () => {
     expect(await ask(h, "t3")).toEqual({ action: "proceed" });
   });
 
-  it("a reload counts the threads bb says are running, on their project's account", async () => {
+  it("a reload counts the threads VesnALIA says are running, on their project's account", async () => {
     const h = await host(ALL_FREE, {
       settings: { ...OFF, seatsMax: 2 },
       threads: {
@@ -14550,7 +14550,7 @@ describe("seats per account: threads wait for a free one", () => {
     );
     // Its project moves while it works: the turn keeps running on main.
     expect((await h.harness.behavior.runCli(["use", "proj-1", "spare"])).exitCode).toBe(0);
-    const again = await h.harness.lifecycle.reload((bb) => createPlugin(bb, h.pluginDeps));
+    const again = await h.harness.lifecycle.reload((alia) => createPlugin(alia, h.pluginDeps));
     await vi.waitFor(async () =>
       expect(again.harness.logEntries.some((e) => e.message.startsWith("seats counted after loading"))).toBe(true),
     );
@@ -14572,7 +14572,7 @@ describe("seats per account: threads wait for a free one", () => {
     await vi.waitFor(async () =>
       expect((await seatsOf(h))?.main).toMatchObject({ running: 1 }),
     );
-    expect(await h.bb.storage.kv.get("running-seats")).toEqual({ r1: "uuid-main" });
+    expect(await h.alia.storage.kv.get("running-seats")).toEqual({ r1: "uuid-main" });
   });
 
   it("a start stored by the account's name, before its login was known, still counts there (Codex RS-001)", async () => {
@@ -14594,7 +14594,7 @@ describe("seats per account: threads wait for a free one", () => {
       threads: { r1: { status: "active" } },
       kvPreset: { "running-seats": { r1: "uuid-spare" } },
       beforeThreadsList: async () => {
-        throw new Error("bb is down");
+        throw new Error("alia is down");
       },
     });
     dispose = () => h.harness.dispose();
@@ -14603,7 +14603,7 @@ describe("seats per account: threads wait for a free one", () => {
         expect(h.harness.logEntries.some((e) => e.message.startsWith("seats counted after loading"))).toBe(true),
       { timeout: 20_000 },
     );
-    expect(await h.bb.storage.kv.get("running-seats")).toEqual({ r1: "uuid-spare" });
+    expect(await h.alia.storage.kv.get("running-seats")).toEqual({ r1: "uuid-spare" });
   });
 
   it("a turn stored on an account's name follows it to its login once known (Codex RS-004)", async () => {
@@ -14611,15 +14611,15 @@ describe("seats per account: threads wait for a free one", () => {
     dispose = () => first.harness.dispose();
     // work's login not known after a reload: its seats go by its name.
     first.files[`${ACCOUNTS}/work/.claude.json`] = JSON.stringify({});
-    const h = await first.harness.lifecycle.reload((bb) => createPlugin(bb, first.pluginDeps));
+    const h = await first.harness.lifecycle.reload((alia) => createPlugin(alia, first.pluginDeps));
     await h.harness.behavior.callRpc("accounts_refresh", null);
     expect((await h.harness.behavior.runCli(["use", "proj-1", "work"])).exitCode).toBe(0);
     expect((await ask(h, "t1")).action).toBe("proceed");
     await h.harness.behavior.emitThreadEvent("thread.active", { thread: thread({ id: "t1", projectId: "proj-1" }) });
-    await vi.waitFor(async () => expect(await h.bb.storage.kv.get("running-seats")).toEqual({ t1: "work" }));
+    await vi.waitFor(async () => expect(await h.alia.storage.kv.get("running-seats")).toEqual({ t1: "work" }));
     first.files[`${ACCOUNTS}/work/.claude.json`] = claudeJson("work@example.com", "uuid-work");
     await h.harness.behavior.callRpc("accounts_refresh", null);
-    await vi.waitFor(async () => expect(await h.bb.storage.kv.get("running-seats")).toEqual({ t1: "uuid-work" }));
+    await vi.waitFor(async () => expect(await h.alia.storage.kv.get("running-seats")).toEqual({ t1: "uuid-work" }));
   });
 
   it("a login found while a reload counts a turn renames its key before it is counted (Codex RS-006)", async () => {
@@ -14630,7 +14630,7 @@ describe("seats per account: threads wait for a free one", () => {
       settings: { ...OFF, seatsMax: 1 },
       clock: () => clock,
       threads: { r1: { status: "active", projectId: "proj-1" } },
-      // The project's read takes long: the count asks bb again for the turn.
+      // The project's read takes long: the count asks VesnALIA again for the turn.
       beforeEnvRead: async () => {
         if (racing) clock += 2_000; // SEAT_COUNT_RETRY_MS
       },
@@ -14648,14 +14648,14 @@ describe("seats per account: threads wait for a free one", () => {
     );
     // r1 started on work, by its name (its login not known then).
     first.files[`${ACCOUNTS}/work/.claude.json`] = JSON.stringify({});
-    await first.bb.storage.kv.set("running-seats", { r1: "work" });
+    await first.alia.storage.kv.set("running-seats", { r1: "work" });
     racing = true;
-    h = await first.harness.lifecycle.reload((bb) => createPlugin(bb, first.pluginDeps));
+    h = await first.harness.lifecycle.reload((alia) => createPlugin(alia, first.pluginDeps));
     await vi.waitFor(() =>
       expect(h!.harness.logEntries.some((e) => e.message.startsWith("seats counted after loading"))).toBe(true),
     );
     expect(racing).toBe(false);
-    expect(await h.bb.storage.kv.get("running-seats")).toEqual({ r1: "uuid-work" });
+    expect(await h.alia.storage.kv.get("running-seats")).toEqual({ r1: "uuid-work" });
     // work is full: a thread of a project put on work waits.
     expect((await h.harness.behavior.runCli(["use", "proj-2", "work"])).exitCode).toBe(0);
     expect((await ask(h, "t2", "proj-2")).action).toBe("wait");
@@ -14671,14 +14671,14 @@ describe("seats per account: threads wait for a free one", () => {
     dispose = () => h.harness.dispose();
     // The next load cannot read storage at first.
     let get: (key: string) => Promise<unknown> = async () => undefined;
-    const again = await h.harness.lifecycle.reload((bb) => {
-      const real = bb.storage.kv.get.bind(bb.storage.kv);
+    const again = await h.harness.lifecycle.reload((alia) => {
+      const real = alia.storage.kv.get.bind(alia.storage.kv);
       get = real;
-      bb.storage.kv.get = (async (key: string) => {
+      alia.storage.kv.get = (async (key: string) => {
         if (failing && key === "running-seats") throw new Error("storage is slow");
         return real(key);
-      }) as typeof bb.storage.kv.get;
-      return createPlugin(bb, h.pluginDeps);
+      }) as typeof alia.storage.kv.get;
+      return createPlugin(alia, h.pluginDeps);
     });
     await vi.waitFor(() =>
       expect(again.harness.logEntries.some((e) => e.message.startsWith("seats counted after loading"))).toBe(true),
@@ -14807,7 +14807,7 @@ describe("seats hold through every way a turn starts (Astra SEATS-R01..R09)", ()
   const seatsOf = async (h: Awaited<ReturnType<typeof host>>) =>
     ((await h.harness.behavior.callRpc("accounts_list", null)) as State).seats;
   const OFF = { autoSwitch: false };
-  /** bb asking again about the message it holds (queued on the plugin's wait). */
+  /** VesnALIA asking again about the message it holds (queued on the plugin's wait). */
   const again = (h: Awaited<ReturnType<typeof host>>, id: string, projectId = "proj-1") =>
     h.harness.registrations.hooks["message.dispatch"]!(
       makeMessageDispatchHookContext({
@@ -14881,7 +14881,7 @@ describe("seats hold through every way a turn starts (Astra SEATS-R01..R09)", ()
     expect((await ask(h, "t1")).reason).toBe(unread);
   });
 
-  it("R02: a dispatch while the seats are counted after a reload waits; once counted, the threads bb said run fill the account", async () => {
+  it("R02: a dispatch while the seats are counted after a reload waits; once counted, the threads VesnALIA said run fill the account", async () => {
     const gate = envGate();
     let held = true;
     const h = await host(ALL_FREE, {
@@ -14996,7 +14996,7 @@ describe("seats hold through every way a turn starts (Astra SEATS-R01..R09)", ()
       expect(await ask(h, "t9")).toEqual({ action: "proceed" });
     });
 
-  it("R04: reserved on main, the project moved to spare before bb announces the turn: the seat stays on main", async () => {
+  it("R04: reserved on main, the project moved to spare before VesnALIA announces the turn: the seat stays on main", async () => {
     const h = await host(ALL_FREE, { settings: { ...OFF, seatsMax: 1 } });
     dispose = () => h.harness.dispose();
     await h.harness.behavior.callRpc("accounts_refresh", null);
@@ -15228,8 +15228,8 @@ describe("seats: the cases the third inspection found (Astra SEATS-R3)", () => {
     await h.harness.behavior.callRpc("accounts_refresh", null);
     // thr-2 takes spare's only seat.
     expect(await opus(h, "thr-2", "proj-2")).toEqual({ action: "proceed" });
-    const set = h.bb.storage.kv.set.bind(h.bb.storage.kv);
-    h.bb.storage.kv.set = async (key: string, value: unknown) => {
+    const set = h.alia.storage.kv.set.bind(h.alia.storage.kv);
+    h.alia.storage.kv.set = async (key: string, value: unknown) => {
       if (hold && key === "switch-history") {
         hold = false;
         gate.captured();
@@ -15372,7 +15372,7 @@ describe("seats: the cases the fourth inspection found (Astra SEATS-R4)", () => 
         h.harness.logEntries.some((e) => e.message.startsWith("seats counted after loading")),
       ).toBe(true),
     );
-  /** Each slow read of bb takes this long, on the fake clock. */
+  /** Each slow read of VesnALIA takes this long, on the fake clock. */
   const SLOW_MS = 2_900;
   const slow = () => new Promise((resolve) => setTimeout(resolve, SLOW_MS));
   /** The plugin's clock, NOW until `follow()`, then the fake timers' time since. */
@@ -15403,7 +15403,7 @@ describe("seats: the cases the fourth inspection found (Astra SEATS-R4)", () => 
     vi.useRealTimers();
   });
 
-  it("R4-002: while the seats are counted after a reload the message waits at once; bb is asked again once they are counted", async () => {
+  it("R4-002: while the seats are counted after a reload the message waits at once; VesnALIA is asked again once they are counted", async () => {
     const clock = fakeClock();
     clock.follow();
     const h = await host(ALL_FREE, {
@@ -15428,7 +15428,7 @@ describe("seats: the cases the fourth inspection found (Astra SEATS-R4)", () => 
     expect(h.harness.recheckCount).toBe(before + 1);
   });
 
-  it("R4-002: every read of bb slow, the dispatch answers within DISPATCH_BUDGET_MS, and waits rather than going late", async () => {
+  it("R4-002: every read of VesnALIA slow, the dispatch answers within DISPATCH_BUDGET_MS, and waits rather than going late", async () => {
     const clock = fakeClock();
     let slowNow = false;
     const h = await host(ALL_FREE, {
@@ -15473,7 +15473,7 @@ describe("seats: the cases the fourth inspection found (Astra SEATS-R4)", () => 
           pickGate.captured();
           await pickGate.held;
         },
-        // The placement's write has landed; bb's answer is slow.
+        // The placement's write has landed; VesnALIA's answer is slow.
         afterSet: async () => {
           if (!holdPlace) return;
           holdPlace = false;
@@ -15736,7 +15736,7 @@ describe("a project whose account has its seats full moves to one with a free se
     expect(h.envSet).toEqual([]);
   });
 
-  it("after a reload, a hidden thread bb lists as running keeps its project where it is (Codex PLAZAS-R2-003)", async () => {
+  it("after a reload, a hidden thread VesnALIA lists as running keeps its project where it is (Codex PLAZAS-R2-003)", async () => {
     const h = await host(FABLE_EVERYWHERE, {
       settings: { preferredModel: "Fable", seatsMax: 1 },
       presetEnv: { "proj-1": on("main"), "proj-2": on("main") },
@@ -15803,7 +15803,7 @@ describe("a project whose account has its seats full moves to one with a free se
 
 // Aitor 2026-11-03: siloeads held 25 projects for its 4 seats. One pass
 // spreads the projects with no thread at work by the accounts' weekly.
-describe("bb claude-switcher rebalance", () => {
+describe("alia claude-switcher rebalance", () => {
   const resets = new Date(NOW + 3 * 24 * HOUR).toISOString();
   const ultra = (weekly: number): Payload => ({
     limits: [{ kind: "weekly_all", percent: weekly, resets_at: resets }],
@@ -15940,7 +15940,7 @@ describe("bb claude-switcher rebalance", () => {
     dispose = () => h.harness.dispose();
     await h.harness.behavior.callRpc("accounts_refresh", null);
     // As the first move writes, a hidden thread of p8 starts and ends a
-    // turn; bb's list has not caught up with it.
+    // turn; VesnALIA's list has not caught up with it.
     let first = true;
     options.beforeSet = async () => {
       if (!first) return;
@@ -16091,7 +16091,7 @@ describe("seats follow each account's load", () => {
   });
 });
 
-describe("bb claude-switcher seats", () => {
+describe("alia claude-switcher seats", () => {
   it("prints each account's seats and every usage sample with the seats taken then", async () => {
     const h = await host(ALL_FREE, { settings: { autoSwitch: false, seatsMax: 2 } });
     dispose = () => h.harness.dispose();
@@ -16172,7 +16172,7 @@ describe("bb claude-switcher seats", () => {
     clock = NOW + 2 * DAY;
     await h.harness.behavior.callRpc("accounts_refresh", null);
     // Stored in the seat history now (0.2.43): kv keeps none.
-    expect(await h.bb.storage.kv.get("seat-samples")).toBeUndefined();
+    expect(await h.alia.storage.kv.get("seat-samples")).toBeUndefined();
     const stored = JSON.parse((await h.harness.behavior.runCli(["history", "--dias", "7", "--json"])).stdout) as {
       samples: { at: number; account: string }[];
     };
@@ -16182,7 +16182,7 @@ describe("bb claude-switcher seats", () => {
     const text = (await h.harness.behavior.runCli(["seats"])).stdout;
     expect(text).not.toContain(new Date(NOW - 6 * DAY).toISOString());
     expect(text).toContain(new Date(NOW + 2 * DAY).toISOString());
-    expect(text).toContain("Older samples, a week of them: bb claude-switcher history --dias N");
+    expect(text).toContain("Older samples, a week of them: VesnALIA claude-switcher history --dias N");
     // Listed six days on, nothing measured: main's of 2 days before load is gone.
     clock = NOW + 6 * DAY + 1;
     expect((await listed()).main).not.toContainEqual(sample(NOW - 2 * DAY));
@@ -16206,7 +16206,7 @@ describe("bb claude-switcher seats", () => {
     await h.harness.behavior.callRpc("accounts_refresh", null);
     clock = NOW + 6 * DAY;
     await h.harness.behavior.callRpc("accounts_refresh", null);
-    const again = await h.harness.lifecycle.reload((bb) => createPlugin(bb, h.pluginDeps));
+    const again = await h.harness.lifecycle.reload((alia) => createPlugin(alia, h.pluginDeps));
     const json = JSON.parse((await again.harness.behavior.runCli(["history", "--dias", "7", "--json"])).stdout) as {
       samples: { at: number; account: string; running: number; waiting: number | null; capacity: number | null }[];
     };
@@ -16228,7 +16228,7 @@ describe("bb claude-switcher seats", () => {
     );
     dispose = () => h.harness.dispose();
     await h.harness.behavior.callRpc("accounts_refresh", null);
-    const again = await h.harness.lifecycle.reload((bb) => createPlugin(bb, h.pluginDeps));
+    const again = await h.harness.lifecycle.reload((alia) => createPlugin(alia, h.pluginDeps));
     const json = JSON.parse((await again.harness.behavior.runCli(["history", "--dias", "1", "--json"])).stdout) as {
       samples: { account: string; weekly: number | null; preferredWeekly: number | null }[];
     };
@@ -16238,7 +16238,7 @@ describe("bb claude-switcher seats", () => {
     ]);
   });
 
-  it("a sample keeps its bb reservations and its holds from outside bb apart: the same before and after a reload (Codex ASIENTOS-003)", async () => {
+  it("a sample keeps its VesnALIA reservations and its holds from outside VesnALIA apart: the same before and after a reload (Codex ASIENTOS-003)", async () => {
     const h = await host(ALL_FREE, { settings: { autoSwitch: false, seatsMax: 2 } });
     dispose = () => h.harness.dispose();
     const until = new Date(NOW + HOUR).toISOString().replace("Z", "+00:00");
@@ -16248,7 +16248,7 @@ describe("bb claude-switcher seats", () => {
       (JSON.parse((await x.harness.behavior.runCli(["seats", "--json"])).stdout) as { samples: Record<string, unknown[][]> }).samples.main;
     const before = await mainOf(h);
     expect(before).toEqual([[NOW, 0, 0, 100, 40, expect.anything(), expect.anything()]]);
-    const again = await h.harness.lifecycle.reload((bb) => createPlugin(bb, h.pluginDeps));
+    const again = await h.harness.lifecycle.reload((alia) => createPlugin(alia, h.pluginDeps));
     expect(await mainOf(again)).toEqual(before);
     // The hour's seats taken count the hold: 1 of 2.
     expect((await again.harness.behavior.runCli(["history", "--dias", "1"])).stdout).toMatch(/\tmain\t1\/2\t0\t100\t40\n/);
@@ -16265,7 +16265,7 @@ describe("bb claude-switcher seats", () => {
     dispose = () => h.harness.dispose();
     const json = JSON.parse((await h.harness.behavior.runCli(["seats", "--json"])).stdout) as { samples: Record<string, unknown[]> };
     expect(json.samples.main).toEqual([old]);
-    expect(await h.bb.storage.kv.get("seat-samples")).toEqual({ main: [old] });
+    expect(await h.alia.storage.kv.get("seat-samples")).toEqual({ main: [old] });
   });
 
   it("a kv that cannot let go of 0.2.42's samples still loads the week from the history (Codex ASIENTOS-002)", async () => {
@@ -16276,12 +16276,12 @@ describe("bb claude-switcher seats", () => {
     // A sample of now, in the history only.
     await h.harness.behavior.callRpc("accounts_refresh", null);
     // An old one back in kv, which cannot be deleted on the next load.
-    await h.bb.storage.kv.set("seat-samples", { main: [old] });
-    const again = await h.harness.lifecycle.reload((bb) => {
-      bb.storage.kv.delete = async () => {
+    await h.alia.storage.kv.set("seat-samples", { main: [old] });
+    const again = await h.harness.lifecycle.reload((alia) => {
+      alia.storage.kv.delete = async () => {
         throw new Error("storage is down");
       };
-      return createPlugin(bb, h.pluginDeps);
+      return createPlugin(alia, h.pluginDeps);
     });
     expect(again.harness.logEntries.some((e) => e.message.startsWith("could not delete the seat samples 0.2.42 kept"))).toBe(true);
     const json = JSON.parse((await again.harness.behavior.runCli(["seats", "--json"])).stdout) as { samples: Record<string, unknown[][]> };
@@ -16327,7 +16327,7 @@ describe("bb claude-switcher seats", () => {
   });
 });
 
-// Aitor 2026-10-30, Añadido 2: bb greys out the composer of a project whose
+// Aitor 2026-10-30, Añadido 2: VesnALIA greys out the composer of a project whose
 // account is at its limit (Fable at 100 %),
 // so no turn reaches the checkpoint that would move it. Every refresh moves
 // such a project, and one on an account without a login, to the best
@@ -16558,7 +16558,7 @@ describe("no project is left on an account out of the preferred model or without
     dispose = () => h.harness.dispose();
     await h.harness.behavior.callRpc("accounts_refresh", null);
     expect(await sent(h, "thr-2", "proj-2")).toEqual({ action: "proceed" });
-    // As bb asks it: the message names its model.
+    // As VesnALIA asks it: the message names its model.
     const fable = await h.harness.registrations.hooks["message.dispatch"]!(
       makeMessageDispatchHookContext({
         thread: thread({ id: "thr-1", projectId: "proj-1" }),
@@ -17274,7 +17274,7 @@ describe("background work and the day's pace (SPEC 2026-10-30 §2)", () => {
     });
   });
 
-  it("keeps as the day's first reading one bb's usage panel made (Codex ULTRA-R03)", async () => {
+  it("keeps as the day's first reading one VesnALIA's usage panel made (Codex ULTRA-R03)", async () => {
     let clock = NOW;
     let workWeekly = 30;
     const h = await host(
@@ -17285,7 +17285,7 @@ describe("background work and the day's pace (SPEC 2026-10-30 §2)", () => {
     // 12:00 in Madrid: the panel reads work at 30 %, the refresh a minute later at 55 %.
     await h.harness.behavior.callRpc(usageFetchMethod, { resourceId: "work", refresh: true });
     await vi.waitFor(async () => {
-      const stored = (await h.bb.storage.kv.get("pace-day")) as Record<string, { usedPercent: number }> | undefined;
+      const stored = (await h.alia.storage.kv.get("pace-day")) as Record<string, { usedPercent: number }> | undefined;
       expect(stored?.work?.usedPercent).toBe(30);
     });
     clock = NOW + 60_000;
@@ -17293,7 +17293,7 @@ describe("background work and the day's pace (SPEC 2026-10-30 §2)", () => {
     await h.harness.behavior.callRpc("accounts_refresh", null);
     const s = (await h.harness.behavior.callRpc("accounts_list", null)) as State;
     expect(s.accounts.find((a) => a.name === "work")?.pace).toMatchObject({ spent: 25 });
-    const stored = (await h.bb.storage.kv.get("pace-day")) as Record<string, { usedPercent: number }>;
+    const stored = (await h.alia.storage.kv.get("pace-day")) as Record<string, { usedPercent: number }>;
     expect(stored.work?.usedPercent).toBe(30);
   });
 
@@ -17315,7 +17315,7 @@ describe("background work and the day's pace (SPEC 2026-10-30 §2)", () => {
     s = (await h.harness.behavior.callRpc("accounts_list", null)) as State;
     expect(s.accounts.find((a) => a.name === "work")?.pace).toMatchObject({ spent: 25 });
     await vi.waitFor(async () => {
-      const stored = (await h.bb.storage.kv.get("pace-day")) as Record<string, { usedPercent: number }>;
+      const stored = (await h.alia.storage.kv.get("pace-day")) as Record<string, { usedPercent: number }>;
       expect(stored.work?.usedPercent).toBe(30);
     });
   });
@@ -17347,7 +17347,7 @@ describe("background work and the day's pace (SPEC 2026-10-30 §2)", () => {
     dispose = () => h.harness.dispose();
     await h.harness.behavior.callRpc("accounts_refresh", null);
     await vi.waitFor(async () => {
-      const stored = (await h.bb.storage.kv.get("pace-day")) as Record<string, unknown>;
+      const stored = (await h.alia.storage.kv.get("pace-day")) as Record<string, unknown>;
       expect(stored.work).toBeDefined();
       expect(stored.spare).toBeUndefined();
     });
@@ -17373,7 +17373,7 @@ describe("background work and the day's pace (SPEC 2026-10-30 §2)", () => {
     s = (await h.harness.behavior.callRpc("accounts_list", null)) as State;
     expect(s.accounts.find((a) => a.name === "work")?.pace).toMatchObject({ spent: 20 });
     await vi.waitFor(async () => {
-      const stored = (await h.bb.storage.kv.get("pace-day")) as Record<string, { usedPercent: number }>;
+      const stored = (await h.alia.storage.kv.get("pace-day")) as Record<string, { usedPercent: number }>;
       expect(stored.work?.usedPercent).toBe(30);
     });
   });
@@ -17383,7 +17383,7 @@ describe("background work and the day's pace (SPEC 2026-10-30 §2)", () => {
     dispose = () => h.harness.dispose();
     await h.harness.behavior.callRpc("accounts_refresh", null);
     await vi.waitFor(async () => {
-      const stored = (await h.bb.storage.kv.get("pace-day")) as Record<string, { usedPercent: number }>;
+      const stored = (await h.alia.storage.kv.get("pace-day")) as Record<string, { usedPercent: number }>;
       expect(stored?.work?.usedPercent).toBe(30);
     });
   });
@@ -17430,7 +17430,7 @@ describe("the brake on background work, off by default (paceHoldsBackground; Ait
       expect(work.usage?.session.absent).toBe(true);
       expect(work.pace).toMatchObject({ spent: 64, dayPercent: 200, background: false });
       expect(s.paceHoldsBackground).toBe(settings === cases[1][1]);
-      expect(await h.bb.storage.kv.get("pace-day")).toMatchObject({ work: { usedPercent: 0 } });
+      expect(await h.alia.storage.kv.get("pace-day")).toMatchObject({ work: { usedPercent: 0 } });
       await h.harness.dispose();
     }
   });
@@ -17571,7 +17571,7 @@ describe("the brake on background work, off by default (paceHoldsBackground; Ait
   }
 });
 
-describe("bb claude-switcher health (SPEC 2026-10-30 §4)", () => {
+describe("alia claude-switcher health (SPEC 2026-10-30 §4)", () => {
   // Aitor 2026-11-07: «fable se queda sin gastar» (0.2.48).
   it("gives each Max or Ultra account its huecoOpus and fablePerdida, a Team seat null", async () => {
     const h = await host(
@@ -17657,13 +17657,13 @@ describe("bb claude-switcher health (SPEC 2026-10-30 §4)", () => {
   });
 });
 
-describe("bb claude-switcher reserve / unreserve: a seat held from outside bb", () => {
+describe("alia claude-switcher reserve / unreserve: a seat held from outside VesnALIA", () => {
   const OFF = { autoSwitch: false };
   const until = (ms: number) => new Date(ms).toISOString().replace("Z", "+00:00");
   const ask = (h: Awaited<ReturnType<typeof host>>, id: string) =>
     sent(h, id, "proj-1") as Promise<{ action: string; reason?: string }>;
 
-  it("holds a free seat, shows it in list, seats and health, and a bb thread then waits its turn", async () => {
+  it("holds a free seat, shows it in list, seats and health, and a VesnALIA thread then waits its turn", async () => {
     const h = await host(ALL_FREE, { settings: { ...OFF, seatsMax: 2 } });
     dispose = () => h.harness.dispose();
     const r = await h.harness.behavior.runCli(["reserve", "main", "--id", "night", "--until", until(NOW + HOUR), "--json"]);
@@ -17729,8 +17729,8 @@ describe("bb claude-switcher reserve / unreserve: a seat held from outside bb", 
     /** The writes of the holds fail while `failing`; `gate`, when set, holds each until it opens. */
     function storage(h: Awaited<ReturnType<typeof host>>) {
       const ctl = { failing: true, gate: null as Promise<void> | null };
-      const set = h.bb.storage.kv.set.bind(h.bb.storage.kv);
-      h.bb.storage.kv.set = async (key: string, value: unknown) => {
+      const set = h.alia.storage.kv.set.bind(h.alia.storage.kv);
+      h.alia.storage.kv.set = async (key: string, value: unknown) => {
         if (key === "external-seats") {
           const failing = ctl.failing;
           if (ctl.gate !== null) await ctl.gate;
@@ -17780,7 +17780,7 @@ describe("bb claude-switcher reserve / unreserve: a seat held from outside bb", 
       expect((await first).exitCode).not.toBe(0);
       expect((await second).exitCode).toBe(0);
       expect(await externals(h)).toEqual([{ id: "night", until: NOW + 2 * HOUR }]);
-      expect(await h.bb.storage.kv.get("external-seats")).toEqual([
+      expect(await h.alia.storage.kv.get("external-seats")).toEqual([
         expect.objectContaining({ id: "night", until: NOW + 2 * HOUR }),
       ]);
     });
@@ -17797,7 +17797,7 @@ describe("bb claude-switcher reserve / unreserve: a seat held from outside bb", 
       expect(await externals(h)).toEqual([{ id: "night", until: NOW + HOUR }]);
       // The seat is still the hold's: a thread waits.
       expect(await ask(h, "t1")).toMatchObject({ action: "wait" });
-      expect(await h.bb.storage.kv.get("external-seats")).toEqual([expect.objectContaining({ id: "night" })]);
+      expect(await h.alia.storage.kv.get("external-seats")).toEqual([expect.objectContaining({ id: "night" })]);
     });
   });
 
@@ -17917,7 +17917,7 @@ describe("bb claude-switcher reserve / unreserve: a seat held from outside bb", 
     let clock = NOW;
     const first = await host(ALL_FREE, { settings: { ...OFF, seatsMax: 1 } });
     await first.harness.behavior.runCli(["reserve", "main", "--id", "night", "--until", until(NOW + HOUR)]);
-    const stored = await first.bb.storage.kv.get("external-seats");
+    const stored = await first.alia.storage.kv.get("external-seats");
     first.harness.dispose();
     const h = await host(ALL_FREE, {
       settings: { ...OFF, seatsMax: 1 },
@@ -18039,7 +18039,7 @@ describe("caminos 2026-11-04", () => {
   });
 
   describe("T5 an account out of the model takes no new turn while another can run it", () => {
-    it("a bb that fails every write does not hold the turn for ever: 10 tries, then it starts, says so, and fails where the user is told", async () => {
+    it("a VesnALIA that fails every write does not hold the turn for ever: 10 tries, then it starts, says so, and fails where the user is told", async () => {
       let clock = NOW;
       const h = await host(
         {
@@ -18147,7 +18147,7 @@ describe("caminos 2026-11-04", () => {
       expect((await dispatch(h, "t1", "proj-1", FABLE_ID, true)).action).toBe("proceed");
     });
 
-    it("admitted, with the capacity lowered since: its seat is its own, and it does not ask bb again for ever", async () => {
+    it("admitted, with the capacity lowered since: its seat is its own, and it does not ask VesnALIA again for ever", async () => {
       const h = await host(
         {
           main: () => Response.json(payload(13, 88, 100)),
@@ -18211,7 +18211,7 @@ describe("caminos 2026-11-04", () => {
       expect(h.envSet.filter((e) => e.projectId === "proj-1")).toEqual([]);
     });
 
-    it("goes there when that seat frees, and asks bb again", async () => {
+    it("goes there when that seat frees, and asks VesnALIA again", async () => {
       const h = await out();
       expect((await dispatch(h, "t1", "proj-1", FABLE_ID)).action).toBe("wait");
       await h.harness.behavior.emitThreadEvent("thread.idle", {
@@ -18272,7 +18272,7 @@ describe("caminos 2026-11-04", () => {
       return h;
     };
     const stored = (h: Awaited<ReturnType<typeof host>>) =>
-      h.bb.storage.kv.get<Record<string, string>>("project-models");
+      h.alia.storage.kv.get<Record<string, string>>("project-models");
     /** One pass of the refresh, whose rescue judges every project. */
     const pass = async (h: Awaited<ReturnType<typeof host>>) => {
       const before = h.usageCalls.length;
@@ -18361,9 +18361,9 @@ describe("caminos 2026-11-04", () => {
       dispose = () => h.harness.dispose();
       teamLogin(h, "spare", "work");
       await h.harness.behavior.callRpc("accounts_refresh", null);
-      const set = h.bb.storage.kv.set.bind(h.bb.storage.kv);
+      const set = h.alia.storage.kv.set.bind(h.alia.storage.kv);
       let failing = true;
-      h.bb.storage.kv.set = async (key: string, value: unknown) => {
+      h.alia.storage.kv.set = async (key: string, value: unknown) => {
         if (key === "project-models" && failing) throw new Error("storage down");
         return set(key, value);
       };
@@ -18586,11 +18586,11 @@ describe("caminos 2026-11-04", () => {
         expect(log(h)).not.toMatch(/moved from/i);
       });
 
-      it("a read of bb that fails is said once and the project is judged as before; the load and a turn go on", async () => {
+      it("a read of VesnALIA that fails is said once and the project is judged as before; the load and a turn go on", async () => {
         const h = await seeded({
           threads: { t1: { projectId: "proj-1", updatedAt: NOW - HOUR } },
           threadEvents: { t1: [turn(1, OPUS)] },
-          threadEventsError: "bb hiccup",
+          threadEventsError: "alia hiccup",
         });
         await pass(h);
         const warned = h.harness.logEntries.filter(
@@ -18674,7 +18674,7 @@ describe("caminos 2026-11-04", () => {
     });
   });
 
-  it("T2 a pin to a free Team seat delivers the message waiting on a full account: bb is asked again at once, well within 2 minutes", async () => {
+  it("T2 a pin to a free Team seat delivers the message waiting on a full account: VesnALIA is asked again at once, well within 2 minutes", async () => {
     const h = await incident();
     expect(h.harness.recheckCount).toBe(0);
     // work full too: the message waits on spare's queue, its project on the Ultra.
@@ -18727,7 +18727,7 @@ describe("caminos 2026-11-04", () => {
     const asked = h.harness.recheckCount;
     await h.harness.behavior.runCli(["use", "proj-1", "work"]);
     await vi.waitFor(() => expect(h.harness.recheckCount).toBeGreaterThan(asked));
-    // bb answers a recheck by asking again about the row it holds.
+    // VesnALIA answers a recheck by asking again about the row it holds.
     clock = NOW + 1_000;
     expect(await dispatch(h, "t1", "proj-1", OPUS, true)).toEqual({ action: "proceed" });
     expect(h.envSet.at(-1)).toMatchObject({ projectId: "proj-1", note: ownNote("work") });
@@ -18787,7 +18787,7 @@ describe("caminos 2026-11-04", () => {
       await run.done;
     };
 
-    it("from when the plugin began to hold it, not from when bb queued it: 9:59 no, 10:00 yes", async () => {
+    it("from when the plugin began to hold it, not from when VesnALIA queued it: 9:59 no, 10:00 yes", async () => {
       const { h, at } = await stuck();
       at(10 * 60_000 - 1);
       expect((await report(h)).atascos).toEqual([]);
@@ -18810,7 +18810,7 @@ describe("caminos 2026-11-04", () => {
       const { h, at } = await stuck();
       at(10 * 60_000);
       await pass(h);
-      // Not asked again for 10 min here (in bb, every 30 s), its place in the
+      // Not asked again for 10 min here (in VesnALIA, every 30 s), its place in the
       // queue has lapsed: the holder said is then the project's account.
       expect(lines(h)).toEqual(["STUCK: main holds thread t2 (Opus) 10 min, work is free"]);
       at(19 * 60_000);
@@ -18911,7 +18911,7 @@ describe("caminos 2026-11-04", () => {
       expect(t2.map((a) => a.libres)).toEqual([["work"]]);
     });
 
-    it("a row bb says has failed is not stuck", async () => {
+    it("a row VesnALIA says has failed is not stuck", async () => {
       const { h, at } = await stuck(held({ failureReason: "Thread is archived" }));
       at(10 * 60_000);
       expect((await report(h)).atascos).toEqual([]);
@@ -19057,7 +19057,7 @@ describe("caminos 2026-11-04", () => {
       expect((await report(h)).atascos).toHaveLength(1);
     });
 
-    it("a row bb hides while it asks again keeps its age; gone 10 minutes with no ask, the wait is over", async () => {
+    it("a row VesnALIA hides while it asks again keeps its age; gone 10 minutes with no ask, the wait is over", async () => {
       const { h, at } = await stuck();
       const rows = [...h.queued];
       h.queued.splice(0);
@@ -19116,7 +19116,7 @@ describe("caminos 2026-11-04", () => {
     it("an unreadable queue is `null`, never «nothing stuck»", async () => {
       const { h } = await stuck();
       h.harness.sdk.stub("threads.queue.list", async () => {
-        throw new Error("bb is down");
+        throw new Error("alia is down");
       });
       expect((await report(h)).atascos).toBeNull();
       const text = await h.harness.behavior.runCli(["seats"]);
@@ -19202,7 +19202,7 @@ describe("caminos 2026-11-04", () => {
     );
   });
 
-  it("T12 a seat held from outside bb is refused on a full Team seat, and overtakes no thread waiting", async () => {
+  it("T12 a seat held from outside VesnALIA is refused on a full Team seat, and overtakes no thread waiting", async () => {
     const h = await incident();
     expect((await dispatch(h, "t1", "proj-1", OPUS)).action).toBe("proceed");
     expect((await dispatch(h, "t2", "proj-3", OPUS)).action).toBe("wait");
@@ -20178,7 +20178,7 @@ describe("caminos 2026-11-04", () => {
     expect(h.envSet.filter((e) => e.projectId === "proj-1").map((e) => e.note)).toEqual([ownNote("work")]);
     // The pick is kept, for Fable.
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(await h.bb.storage.kv.get("pins")).toEqual({ "proj-1": "main" });
+    expect(await h.alia.storage.kv.get("pins")).toEqual({ "proj-1": "main" });
     // Its next Fable turn goes back to the Ultra picked by hand, and stays.
     await h.harness.behavior.emitThreadEvent("thread.idle", { thread: thread({ id: "t1", projectId: "proj-1" }) });
     const deletes = h.envDeleted.length;
@@ -20186,7 +20186,7 @@ describe("caminos 2026-11-04", () => {
     expect(h.envDeleted.length).toBe(deletes + 1);
     expect(h.envDeleted.at(-1)).toMatchObject({ projectId: "proj-1" });
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(await h.bb.storage.kv.get("pins")).toEqual({ "proj-1": "main" });
+    expect(await h.alia.storage.kv.get("pins")).toEqual({ "proj-1": "main" });
   });
 
   // Codex r1 (docs/opus-por-team-2026-11-06/codex-r1.md): an Opus or Sonnet
@@ -20383,7 +20383,7 @@ describe("caminos 2026-11-04", () => {
         h.envSet.filter((e) => e.projectId === "proj-1").map((e) => e.note),
       ).toEqual([ownNote("work"), ownNote("spare")]);
       await new Promise((resolve) => setTimeout(resolve, 20));
-      expect(await h.bb.storage.kv.get("pins")).toEqual({ "proj-1": "main" });
+      expect(await h.alia.storage.kv.get("pins")).toEqual({ "proj-1": "main" });
       // Both Opus turns end: the next Fable turn goes back to main.
       for (const id of ["t1", "t2"])
         await h.harness.behavior.emitThreadEvent("thread.idle", {
@@ -20433,7 +20433,7 @@ describe("caminos 2026-11-04", () => {
       });
       expect(h.envSet.map((e) => e.note)).toEqual([ownNote("spare")]);
       await new Promise((resolve) => setTimeout(resolve, 20));
-      expect(await h.bb.storage.kv.get("pins")).toEqual({ "proj-1": "main" });
+      expect(await h.alia.storage.kv.get("pins")).toEqual({ "proj-1": "main" });
     });
 
     it("r3-2 the refresh rescues a project out of Fable to the pick by hand, not to the best other account", async () => {
@@ -20606,7 +20606,7 @@ describe("caminos 2026-11-04", () => {
       expect(h.envSet.at(-1)).toMatchObject({ projectId: "proj-1", note: ownNote("work") });
     });
 
-    it("a tick already in bb's queue is not refused: that would leave a failed row for the watcher", async () => {
+    it("a tick already in VesnALIA's queue is not refused: that would leave a failed row for the watcher", async () => {
       const h = await outOfFable();
       const r = await send(h, "t1", "proj-1", FABLE_ID, TICK, { queued: true });
       expect(r).toEqual({ action: "proceed" });
@@ -20879,7 +20879,7 @@ describe("noche 2026-11-05: atascos con hermanos en marcha", () => {
       const { h, askUntil } = await start({ workBusy: true, main: [60, 60], settings: { seatsMax: 1, otherModelUpTo: 50 } });
       expect((await askUntil(0)).every((w) => w.action === "wait")).toBe(true);
       const before = h.harness.recheckCount;
-      // Asking again while it waits asks bb nothing: only a seat that ends does.
+      // Asking again while it waits asks VesnALIA nothing: only a seat that ends does.
       expect((await askUntil(2 * MINUTE)).every((w) => w.action === "wait")).toBe(true);
       await new Promise((r) => setTimeout(r, 20));
       expect(h.harness.recheckCount).toBe(before);
@@ -20971,8 +20971,8 @@ describe("noche 2026-11-05: atascos con hermanos en marcha", () => {
       let c: Promise<{ action: string; reason?: string }> | null = null;
       // One seat each: spare (a's), work and team.
       const { h } = await start({ third: true });
-      const set = h.bb.storage.kv.set.bind(h.bb.storage.kv);
-      h.bb.storage.kv.set = async (key: string, value: unknown) => {
+      const set = h.alia.storage.kv.set.bind(h.alia.storage.kv);
+      h.alia.storage.kv.set = async (key: string, value: unknown) => {
         if (armed && key === "handled-projects" && c === null) {
           c = dispatch(h, "c", "proj-1");
           await c;
@@ -20980,7 +20980,7 @@ describe("noche 2026-11-05: atascos con hermanos en marcha", () => {
         return set(key, value);
       };
       // proj-1 is new to the handled list: its move writes it.
-      await h.bb.storage.kv.delete("handled-projects");
+      await h.alia.storage.kv.delete("handled-projects");
       armed = true;
       const before = h.harness.recheckCount;
       const b = await dispatch(h, "b", "proj-1");
@@ -20995,7 +20995,7 @@ describe("noche 2026-11-05: atascos con hermanos en marcha", () => {
 
     it("no move of any kind while a move for a seat is being recorded (Astra ASIENTOS-R5-001)", async () => {
       // spare (2 seats) runs a and a2; work and team have one seat each held
-      // from outside bb: b moves proj-1 to team (first by name). While it
+      // from outside VesnALIA: b moves proj-1 to team (first by name). While it
       // is recorded, c reads team full and would move it again, to work.
       // (Until 2026-11-06 the second move was «Team primero» from an Ultra;
       // an Opus turn no longer goes to one.)
@@ -21008,15 +21008,15 @@ describe("noche 2026-11-05: atascos con hermanos en marcha", () => {
         expect(
           (await h.harness.behavior.runCli(["reserve", account, "--id", id, "--until", new Date(NOW + 60 * MINUTE).toISOString()])).exitCode,
         ).toBe(0);
-      const set = h.bb.storage.kv.set.bind(h.bb.storage.kv);
-      h.bb.storage.kv.set = async (key: string, value: unknown) => {
+      const set = h.alia.storage.kv.set.bind(h.alia.storage.kv);
+      h.alia.storage.kv.set = async (key: string, value: unknown) => {
         if (armed && key === "handled-projects" && c === null) {
           c = dispatch(h, "c", "proj-1");
           await c;
         }
         return set(key, value);
       };
-      await h.bb.storage.kv.delete("handled-projects");
+      await h.alia.storage.kv.delete("handled-projects");
       armed = true;
       const b = await dispatch(h, "b", "proj-1");
       armed = false;
@@ -21654,8 +21654,8 @@ describe("reparto por hueco 2026-11-07", () => {
       teamLogin(h, "team");
       await h.harness.behavior.callRpc("accounts_refresh", null);
       let opus: Promise<{ action: string; reason?: string }> | null = null;
-      const set = h.bb.storage.kv.set.bind(h.bb.storage.kv);
-      h.bb.storage.kv.set = async (key: string, value: unknown) => {
+      const set = h.alia.storage.kv.set.bind(h.alia.storage.kv);
+      h.alia.storage.kv.set = async (key: string, value: unknown) => {
         if (key === "last-switch" && opus === null) {
           opus = dispatch(h, "o", "proj-1", OPUS);
           await opus;
@@ -21694,8 +21694,8 @@ describe("reparto por hueco 2026-11-07", () => {
       teamLogin(h, "team");
       await h.harness.behavior.callRpc("accounts_refresh", null);
       let opus: Promise<{ action: string; reason?: string }> | null = null;
-      const set = h.bb.storage.kv.set.bind(h.bb.storage.kv);
-      h.bb.storage.kv.set = async (key: string, value: unknown) => {
+      const set = h.alia.storage.kv.set.bind(h.alia.storage.kv);
+      h.alia.storage.kv.set = async (key: string, value: unknown) => {
         const done = await set(key, value as never);
         if (key === "last-switch" && opus === null) {
           // The history is stored; the look at main is still held.
@@ -22057,8 +22057,8 @@ describe("reparto por hueco 2026-11-07", () => {
       teamLogin(h, "team");
       await h.harness.behavior.callRpc("accounts_refresh", null);
       let hung = false;
-      const set = h.bb.storage.kv.set.bind(h.bb.storage.kv);
-      h.bb.storage.kv.set = async (key: string, value: unknown) => {
+      const set = h.alia.storage.kv.set.bind(h.alia.storage.kv);
+      h.alia.storage.kv.set = async (key: string, value: unknown) => {
         if (key === "last-switch" && !hung) {
           hung = true;
           return new Promise<never>(() => {});
@@ -22220,7 +22220,7 @@ describe("reparto por hueco 2026-11-07", () => {
     });
 
     // Astra r3 medium 3: told to start on main past the hour, its message is
-    // held by another plugin and bb asks again 1 ms later, before the turn
+    // held by another plugin and VesnALIA asks again 1 ms later, before the turn
     // starts: it still goes, the hour is not counted anew. Once a turn of it
     // has run, the next one waits from zero.
     it("let out past maximumWaitHours, asked again 1 ms later before it starts: it still proceeds (Astra r3 medium 3)", async () => {
@@ -23272,7 +23272,7 @@ describe("reparto por hueco 2026-11-07", () => {
 describe("a turn that failed for want of a session on its machine (2026-11-10)", () => {
   // Aitor, 2026-11-10 12:46: «tengo un par de hilos que no corren porque no
   // ha cambiado de cuenta». A project moved to an account with room but no
-  // Claude Code session on the machine its thread runs on; bb logged
+  // Claude Code session on the machine its thread runs on; VesnALIA logged
   // «Not logged in · Please run /login» with no errorInfo, and nothing moved
   // it nor retried it.
   const ROOM = {
@@ -23283,7 +23283,7 @@ describe("a turn that failed for want of a session on its machine (2026-11-10)",
   const NOT_LOGGED_IN = "Not logged in · Please run /login";
   const EXPIRED =
     "Failed to authenticate: this login reached its time limit and cannot be renewed. Run `claude auth login` to sign in again";
-  /** bb's log of a turn of `threadId` that failed with `detail`, no errorInfo. */
+  /** VesnALIA's log of a turn of `threadId` that failed with `detail`, no errorInfo. */
   function lostLog(threadId: string, requestId: string, detail: string, seq = 1): LoggedEvent[] {
     return [
       {
@@ -23298,7 +23298,7 @@ describe("a turn that failed for want of a session on its machine (2026-11-10)",
       },
     ];
   }
-  /** The failure bb announces for it: no errorInfo, no limit report. */
+  /** The failure VesnALIA announces for it: no errorInfo, no limit report. */
   const lost = (overrides: Partial<PluginTurnFailedEvent> = {}) =>
     failure({ errorInfo: null, rateLimits: null, ...overrides });
 
@@ -23317,7 +23317,7 @@ describe("a turn that failed for want of a session on its machine (2026-11-10)",
     extraProjects: [{ id: "proj-3", name: "Third" }],
     projectCreatedAt: { "proj-3": NOW - 24 * HOUR },
   };
-  /** bb asks before a turn of `threadId` in `projectId`, in Opus. */
+  /** VesnALIA asks before a turn of `threadId` in `projectId`, in Opus. */
   const before = (h: Awaited<ReturnType<typeof host>>, threadId: string, projectId: string) =>
     h.harness.registrations.hooks["message.dispatch"]!(
       makeMessageDispatchHookContext({
@@ -23578,7 +23578,7 @@ describe("a turn that failed for want of a session on its machine (2026-11-10)",
     dispose = () => h.harness.dispose();
     let reads = 0;
     h.harness.sdk.stub("environments.list", async ({ projectId }: { projectId: string }) => {
-      if (reads++ === 0) throw new Error("bb is busy");
+      if (reads++ === 0) throw new Error("alia is busy");
       return (MACHINES.environments?.[projectId] ?? []).map((e) => ({ projectId, status: "ready", ...e }));
     });
     await h.harness.behavior.emitThreadEvent("turn.failed", lost());
@@ -23669,7 +23669,7 @@ describe("a turn that failed for want of a session on its machine (2026-11-10)",
     ]);
   });
 
-  it("moves a project whose thread waits on the account off it, and has bb retry the turn there at once (moveUpWait)", async () => {
+  it("moves a project whose thread waits on the account off it, and has VesnALIA retry the turn there at once (moveUpWait)", async () => {
     const h = await lostOnMac({
       threads: { "thread-1": { environmentId: "env-1" }, "thr-2": { status: "error", environmentId: "env-2" } },
       threadEvents: {
@@ -23930,7 +23930,7 @@ describe("a turn under way since before a reload: where it runs is unknown, its 
 
   /** Its project's account unreadable while `down.on`: a turn announced then leaves where it started unknown. */
   const envDown = (down: { on: boolean }) => () =>
-    down.on ? Promise.reject(new Error("bb is down")) : Promise.resolve();
+    down.on ? Promise.reject(new Error("alia is down")) : Promise.resolve();
   const countsDone = (h: Awaited<ReturnType<typeof host>>, n: number) =>
     vi.waitFor(
       () =>
@@ -23945,7 +23945,7 @@ describe("a turn under way since before a reload: where it runs is unknown, its 
     const list = { down: true };
     const h = await reloaded(ALL_FREE, {
       beforeThreadsList: async () => {
-        if (list.down) throw new Error("bb is down");
+        if (list.down) throw new Error("alia is down");
       },
     });
     await countsDone(h, 1);
@@ -23962,11 +23962,11 @@ describe("a turn under way since before a reload: where it runs is unknown, its 
     const h = await reloaded(ALL_FREE, {
       threads,
       beforeThreadsList: async () => {
-        if (list.down) throw new Error("bb is down");
+        if (list.down) throw new Error("alia is down");
       },
     });
     await countsDone(h, 1);
-    // thread-9 starts and ends a turn, then one is sent that bb refuses at
+    // thread-9 starts and ends a turn, then one is sent that VesnALIA refuses at
     // the door; the list, read on a refresh meanwhile, shows it under way.
     expect(await sent(h, "thread-9", "proj-1")).toEqual({ action: "proceed" });
     await h.harness.behavior.emitThreadEvent("thread.active", {
@@ -24016,7 +24016,7 @@ describe("a turn under way since before a reload: where it runs is unknown, its 
     const h = await reloaded(ALL_FREE, { threads, beforeEnvRead: envDown(down) });
     await countsDone(h, 1);
     down.on = false;
-    // thread-9 starts and ends a turn, then one is sent that bb refuses at
+    // thread-9 starts and ends a turn, then one is sent that VesnALIA refuses at
     // the door; a second count shows it under way.
     expect(await sent(h, "thread-9", "proj-1")).toEqual({ action: "proceed" });
     await h.harness.behavior.emitThreadEvent("thread.active", {
@@ -24305,7 +24305,7 @@ describe("the marks of a usage limit, and the threads they hold (2026-11-11)", (
 describe("a refusal that is the machine's network, not the account (2026-11-13)", () => {
   // Aitor, 2026-11-13 ~12:50: «hay cuota pero todas esperan team3». From
   // 10:47 to 11:17 Cloudflare blocked one machine's network: every turn
-  // there failed with this 403, bb's category «unauthorized», and five
+  // there failed with this 403, VesnALIA's category «unauthorized», and five
   // accounts were set aside for 6 h in 2 min 47 s, one after the other.
   const CLOUDFLARE =
     "Failed to authenticate. API Error: 403 Attention Required! | Cloudflare";
@@ -24348,7 +24348,7 @@ describe("a refusal that is the machine's network, not the account (2026-11-13)"
     extraProjects: [{ id: "proj-3", name: "Third" }],
     projectCreatedAt: { "proj-3": NOW - 24 * HOUR },
   };
-  /** bb's log of `threadId`: each turn requested in Fable, and its provider error with `detail`. */
+  /** VesnALIA's log of `threadId`: each turn requested in Fable, and its provider error with `detail`. */
   function refusedLog(
     threadId: string,
     turns: Array<[requestId: string, detail: string]>,
@@ -24377,7 +24377,7 @@ describe("a refusal that is the machine's network, not the account (2026-11-13)"
       },
     ]);
   }
-  /** The failure bb announces for it: the 403 as bb categorized it, no limit report. */
+  /** The failure VesnALIA announces for it: the 403 as VesnALIA categorized it, no limit report. */
   const refused = (overrides: Partial<PluginTurnFailedEvent> = {}) =>
     failure({
       errorInfo: {
@@ -24457,7 +24457,7 @@ describe("a refusal that is the machine's network, not the account (2026-11-13)"
         refused({ requestId: `creq_${n}`, attemptNumber: n }),
       );
       await settled();
-      // Dispatched: its queued retry leaves the queue, as in bb.
+      // Dispatched: its queued retry leaves the queue, as in VesnALIA.
       h.queued.length = 0;
       clock += 10_000;
     }
@@ -24902,7 +24902,7 @@ describe("the circuit breaker: three accounts refusing on one machine within 5 m
       ["creq_5", API_403],
     ];
     let clock = NOW;
-    // bb's log as it grows: each failure's text is its own turn's.
+    // VesnALIA's log as it grows: each failure's text is its own turn's.
     const log = { "thread-1": refusedLog("thread-1", turns.slice(0, 1)) };
     const h = await host(FIVE, {
       ...MACHINES,
@@ -25213,7 +25213,7 @@ it("refusals on a machine unknown neither count towards a run nor open one: set 
     expect(h.envSet.map((e) => e.projectId)).toEqual(["proj-1", "proj-1"]);
   });
 });
-describe("bb claude-switcher unblock: an account set aside, back by hand without a reload (0.2.54)", () => {
+describe("alia claude-switcher unblock: an account set aside, back by hand without a reload (0.2.54)", () => {
   const own = (account: string) => [
     {
       name: ENV_VAR,
@@ -25410,7 +25410,7 @@ it("history counts no stuck thread for an unblock: it shows it apart, as a note,
 
 describe("a turn the network refused, not its account (2026-11-13)", () => {
   // Aitor, 2026-11-13: «si hay cuentas libres haga un repaso para redirigir
-  // nuevos hilos y que no fallen». bb's log that day: for half an hour every
+  // nuevos hilos y que no fallen». VesnALIA's log that day: for half an hour every
   // turn failed with Cloudflare's block page (HTTP 403, errorInfo
   // unauthorized), read as each account's refusal: five accounts with quota
   // were chosen for nothing for 6 h, and turns that then ended well on them
@@ -25422,7 +25422,7 @@ describe("a turn the network refused, not its account (2026-11-13)", () => {
     work: () => Response.json(payload(5, 20)),
   };
   const CLOUDFLARE = "Failed to authenticate. API Error: 403 Attention Required! | Cloudflare";
-  /** bb's log of thread-1's turn creq_1, failed with `detail`, as on 2026-11-13. */
+  /** VesnALIA's log of thread-1's turn creq_1, failed with `detail`, as on 2026-11-13. */
   const logOf = (detail: string): Record<string, LoggedEvent[]> => ({
     "thread-1": [
       { seq: 1, type: "client/turn/requested", data: { requestId: "creq_1", execution: { model: "claude-opus-5-5" } } },
@@ -25439,7 +25439,7 @@ describe("a turn the network refused, not its account (2026-11-13)", () => {
       },
     ],
   });
-  /** As bb announces it: unauthorized, HTTP 403, no limit report. */
+  /** As VesnALIA announces it: unauthorized, HTTP 403, no limit report. */
   const refused = (overrides: Partial<PluginTurnFailedEvent> = {}) =>
     failure({
       errorInfo: { category: "unauthorized", providerCode: null, httpStatusCode: 403 },
@@ -25502,7 +25502,7 @@ describe("a turn the network refused, not its account (2026-11-13)", () => {
     expect(h.envSet.map((e) => e.projectId)).toEqual(["proj-1", "proj-3"]);
   });
 
-  /** bb asks before a turn of `threadId` in `projectId`. */
+  /** VesnALIA asks before a turn of `threadId` in `projectId`. */
   const before = (h: Awaited<ReturnType<typeof host>>, threadId: string, projectId: string) =>
     h.harness.registrations.hooks["message.dispatch"]!(
       makeMessageDispatchHookContext({

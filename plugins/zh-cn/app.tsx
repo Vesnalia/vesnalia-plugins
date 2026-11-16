@@ -1,4 +1,4 @@
-import { definePluginApp } from '@get-bb/plugin-sdk/app';
+import { definePluginApp } from '@vesnalia/plugin-sdk/app';
 import dictionary from './dictionary.json';
 import templateRules from './template-rules.json';
 import contextRules from './context-rules.json';

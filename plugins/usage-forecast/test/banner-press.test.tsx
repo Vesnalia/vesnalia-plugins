@@ -2,7 +2,7 @@
 // Press to switch: a press on a reset time switches every row between the
 // countdown and the exact time, a press on a percent between used and left.
 
-import { loadPluginApp } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp } from "@vesnalia/plugin-sdk/testing/app";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { formatResetAt, formatResetIn } from "../src/app/format";

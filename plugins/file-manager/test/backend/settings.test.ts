@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promis
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createFakePluginHost, type FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, type FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 
 import { MAX_CHUNK_BYTES, MIN_CHUNK_BYTES, PLUGIN_ID } from "../../contract";
 import { isFileManagerError } from "../../src/errors";
@@ -104,7 +104,7 @@ describe("settingsDescriptors", () => {
 
   it("registers those descriptors with the host", async () => {
     const host = makeHost();
-    await createSettings(host.bb);
+    await createSettings(host.alia);
     expect(Object.keys(host.harness.registrations.settingsDescriptors)).toEqual(
       Object.keys(settingsDescriptors),
     );
@@ -115,7 +115,7 @@ describe("settingsDescriptors", () => {
 describe("defaults and derived values", () => {
   it("exposes the declared defaults as preferences", async () => {
     const host = makeHost();
-    const settings = await createSettings(host.bb);
+    const settings = await createSettings(host.alia);
     expect(settings.preferences()).toEqual({
       showHiddenFiles: false,
       confirmOnDelete: true,
@@ -137,7 +137,7 @@ describe("defaults and derived values", () => {
     ["64", 64 * MIB],
   ])("turns uploadChunkMiB %s into %d bytes", async (uploadChunkMiB, expected) => {
     const host = makeHost({ uploadChunkMiB });
-    const settings = await createSettings(host.bb);
+    const settings = await createSettings(host.alia);
     expect(settings.chunkSizeBytes()).toBe(expected);
     expect(settings.chunkSizeBytes()).toBeGreaterThanOrEqual(MIN_CHUNK_BYTES);
     expect(settings.chunkSizeBytes()).toBeLessThanOrEqual(MAX_CHUNK_BYTES);
@@ -151,7 +151,7 @@ describe("defaults and derived values", () => {
       sortDirection: "sideways",
       viewMode: "carousel",
     });
-    const settings = await createSettings(host.bb);
+    const settings = await createSettings(host.alia);
     expect(settings.preferences()).toMatchObject({
       sortField: "name",
       sortDirection: "asc",
@@ -162,7 +162,7 @@ describe("defaults and derived values", () => {
 
   it("reads a stored gallery view back as a preference", async () => {
     const host = makeHost({ viewMode: "gallery" });
-    const settings = await createSettings(host.bb);
+    const settings = await createSettings(host.alia);
     expect(settings.preferences().viewMode).toBe("gallery");
     await host.harness.dispose();
   });
@@ -174,7 +174,7 @@ describe("resolveStartFolder", () => {
     host: FakePluginHost;
   }> {
     const host = makeHost(stored);
-    return { settings: await createSettings(host.bb), host };
+    return { settings: await createSettings(host.alia), host };
   }
 
   it("returns a valid folder under the root", async () => {
@@ -211,7 +211,7 @@ describe("resolveStartFolder", () => {
 describe("savePreferences", () => {
   it("sends exactly the changed keys to sdk.plugins.updateSettings", async () => {
     const host = makeHost();
-    const settings = await createSettings(host.bb);
+    const settings = await createSettings(host.alia);
 
     const result = await settings.savePreferences({ showHiddenFiles: true, sortField: "size" });
 
@@ -239,7 +239,7 @@ describe("savePreferences", () => {
     await mkdir(path.join(root, "real"));
     await symlink(path.join(root, "real"), path.join(root, "alias"));
     const host = makeHost();
-    const settings = await createSettings(host.bb);
+    const settings = await createSettings(host.alia);
 
     const result = await settings.savePreferences({ startFolder: path.join(root, "alias") });
 
@@ -253,7 +253,7 @@ describe("savePreferences", () => {
 
   it("refuses an escaping or unusable start folder without writing anything", async () => {
     const host = makeHost();
-    const settings = await createSettings(host.bb);
+    const settings = await createSettings(host.alia);
 
     await expectCode(settings.savePreferences({ startFolder: "/etc" }), "path_escape");
     await expectCode(settings.savePreferences({ startFolder: outside }), "path_escape");
@@ -273,7 +273,7 @@ describe("savePreferences", () => {
 
   it("writes the view mode and reflects it straight away", async () => {
     const host = makeHost();
-    const settings = await createSettings(host.bb);
+    const settings = await createSettings(host.alia);
 
     const result = await settings.savePreferences({ viewMode: "gallery" });
 
@@ -288,7 +288,7 @@ describe("savePreferences", () => {
 
   it("updates the chunk size and the cached values", async () => {
     const host = makeHost();
-    const settings = await createSettings(host.bb);
+    const settings = await createSettings(host.alia);
 
     const result = await settings.savePreferences({ uploadChunkMiB: "64" });
     expect(result.chunkSizeBytes).toBe(64 * MIB);
@@ -299,7 +299,7 @@ describe("savePreferences", () => {
 
   it("writes nothing when no key was supplied", async () => {
     const host = makeHost();
-    const settings = await createSettings(host.bb);
+    const settings = await createSettings(host.alia);
     const result = await settings.savePreferences({});
     expect(host.harness.sdk.callsTo("plugins.updateSettings")).toHaveLength(0);
     expect(result.preferences).toEqual(settings.preferences());
@@ -308,7 +308,7 @@ describe("savePreferences", () => {
 
   it("keeps the cache fresh when settings change outside this module", async () => {
     const host = makeHost();
-    const settings = await createSettings(host.bb);
+    const settings = await createSettings(host.alia);
     expect(settings.preferences().confirmOnDelete).toBe(true);
     await host.harness.setSettings({ confirmOnDelete: false, uploadChunkMiB: "4" });
     expect(settings.preferences().confirmOnDelete).toBe(false);

@@ -1,11 +1,11 @@
-// bb-plugin-souls — the soul store.
+// alia-plugin-souls — the soul store.
 //
 // One SQLite table in the plugin's own database, plus a per-thread selection.
-// Every read is synchronous because `bb.agents.configure` runs on the
+// Every read is synchronous because `alia.agents.configure` runs on the
 // thread-start path and cannot await: better-sqlite3 (what
-// `bb.storage.database()` returns) is sync by nature, so the whole store is.
+// `alia.storage.database()` returns) is sync by nature, so the whole store is.
 import { randomUUID } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { evalRunSchema, type EvalRun } from "./eval.ts";
 import {
@@ -22,7 +22,7 @@ import {
   type SoulResolution,
 } from "./shared.ts";
 
-export type Database = ReturnType<BbPluginApi["storage"]["database"]>;
+export type Database = ReturnType<AliaPluginApi["storage"]["database"]>;
 type Row = { id: string; body: string };
 type ThreadRow = { thread_id: string; soul_id: string; allow_delegation: number };
 
@@ -54,8 +54,8 @@ export class ChildSoulQueueFull extends Error {
   }
 }
 
-export function createSoulStore(bb: BbPluginApi, db: Database) {
-  bb.storage.migrate(db, [
+export function createSoulStore(alia: AliaPluginApi, db: Database) {
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS souls (
        id TEXT PRIMARY KEY,
        name TEXT NOT NULL,
@@ -121,12 +121,12 @@ export function createSoulStore(bb: BbPluginApi, db: Database) {
     try {
       const parsed = soulSchema.safeParse(JSON.parse(row.body));
       if (!parsed.success) {
-        bb.log.warn(`soul ${row.id} failed validation and was skipped`);
+        alia.log.warn(`soul ${row.id} failed validation and was skipped`);
         return null;
       }
       return parsed.data;
     } catch (cause) {
-      bb.log.warn(`soul ${row.id} is unreadable: ${String(cause)}`);
+      alia.log.warn(`soul ${row.id} is unreadable: ${String(cause)}`);
       return null;
     }
   }
@@ -324,7 +324,7 @@ export function createSoulStore(bb: BbPluginApi, db: Database) {
       if (soul !== null) recordChildUsage(soul.id, childThreadId, parentThreadId);
       db.prepare(`DELETE FROM child_intents WHERE id = ?`).run(intent.id);
       if (soul === null) {
-        bb.log.warn(
+        alia.log.warn(
           `child intent ${intent.id} names missing soul ${intent.soul_id}; dropped`,
         );
       }

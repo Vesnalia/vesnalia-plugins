@@ -1,6 +1,6 @@
 // hooks/useThreadWorkspace.ts — "where does this thread's code live?" (§10.3).
 //
-// The panel tab is the one surface bb names a thread for, so it is the one
+// The panel tab is the one surface VesnALIA names a thread for, so it is the one
 // surface that can offer a jump into that thread's checkout. The answer is a
 // backend lookup (thread → environment → checkout) with three ordinary "no"
 // answers — no environment, no checkout, a checkout outside the home folder —
@@ -8,7 +8,7 @@
 //
 // The lookup runs on mount rather than on click, because the toolbar has to
 // know whether to offer the jump *before* the user reaches for it. A lookup
-// that failed outright is the one state that stays clickable: "bb did not
+// that failed outright is the one state that stays clickable: "alia did not
 // answer" is not "there is nowhere to go", so the click retries it.
 import { useCallback, useEffect, useRef, useState } from "react";
 

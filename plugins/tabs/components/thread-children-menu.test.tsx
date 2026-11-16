@@ -97,7 +97,7 @@ describe("Subthread menu", () => {
     );
     openMenu();
     const parent = await screen.findByRole("menuitem", { name: /Parent/ });
-    fireEvent.click(parent.querySelector(".bb-chat-tabs-child-expand")!);
+    fireEvent.click(parent.querySelector(".alia-chat-tabs-child-expand")!);
     expect(await screen.findByRole("menuitem", { name: "Grandchild" })).toBeTruthy();
     expect(onOpen).not.toHaveBeenCalled();
   });
@@ -145,17 +145,17 @@ describe("Subthread menu", () => {
     );
     openMenu();
     const item = await screen.findByRole("menuitem", { name: "Busy. Working · Unread." });
-    const indicators = item.querySelector(".bb-chat-tabs-child-indicators")!;
+    const indicators = item.querySelector(".alia-chat-tabs-child-indicators")!;
     expect(item.firstElementChild).toBe(indicators);
-    expect(indicators.querySelector(".bb-chat-tab-working")).not.toBeNull();
-    expect(indicators.querySelector(".bb-chat-tabs-child-unread")).not.toBeNull();
+    expect(indicators.querySelector(".alia-chat-tab-working")).not.toBeNull();
+    expect(indicators.querySelector(".alia-chat-tabs-child-unread")).not.toBeNull();
     expect(
-      indicators.nextElementSibling?.querySelector(".bb-chat-tabs-child-title")?.textContent,
+      indicators.nextElementSibling?.querySelector(".alia-chat-tabs-child-title")?.textContent,
     ).toBe("Busy");
     expect(
       screen
         .getByRole("menuitem", { name: "Calm" })
-        .querySelector(".bb-chat-tabs-child-indicators"),
+        .querySelector(".alia-chat-tabs-child-indicators"),
     ).toBeNull();
   });
 
@@ -178,15 +178,15 @@ describe("Subthread menu", () => {
     expect(trigger.textContent).toBe("");
     expect(trigger.getAttribute("title")).toBe(trigger.getAttribute("aria-label"));
     expect(trigger.hasAttribute("data-attention")).toBe(false);
-    expect(trigger.querySelector(".bb-chat-tabs-child-unread")).toBeNull();
+    expect(trigger.querySelector(".alia-chat-tabs-child-unread")).toBeNull();
     openMenu();
     const item = await screen.findByRole("menuitem", { name: "Parent" });
-    expect(item.querySelector(".bb-chat-tabs-child-count")).toBeNull();
-    expect(item.querySelector(".bb-chat-tabs-child-unread")).not.toBeNull();
+    expect(item.querySelector(".alia-chat-tabs-child-count")).toBeNull();
+    expect(item.querySelector(".alia-chat-tabs-child-unread")).not.toBeNull();
     fireEvent.keyDown(item, { key: "ArrowRight" });
     const leaf = await screen.findByRole("menuitem", { name: "Unread. Непрочитанное." });
-    expect(leaf.querySelector(".bb-chat-tabs-child-unread")).not.toBeNull();
-    expect(view.container.querySelector(".bb-chat-tab-working")).toBeNull();
+    expect(leaf.querySelector(".alia-chat-tabs-child-unread")).not.toBeNull();
+    expect(view.container.querySelector(".alia-chat-tab-working")).toBeNull();
     view.rerender(
       <ThreadChildrenMenu
         title="Root"
@@ -217,11 +217,11 @@ describe("Subthread menu", () => {
     const item = await screen.findByRole("menuitem", {
       name: "User title. Нужен ответ · Непрочитанное.",
     });
-    const indicators = item.querySelector(".bb-chat-tabs-child-indicators")!;
+    const indicators = item.querySelector(".alia-chat-tabs-child-indicators")!;
     expect(indicators.getAttribute("title")).toBe("Нужен ответ · Непрочитанное");
-    expect(indicators.querySelector(".bb-chat-tab-waiting")?.textContent).toBe("?");
-    expect(indicators.querySelector(".bb-chat-tabs-child-unread")).not.toBeNull();
-    expect(indicators.querySelector(".bb-chat-tab-working")).toBeNull();
+    expect(indicators.querySelector(".alia-chat-tab-waiting")?.textContent).toBe("?");
+    expect(indicators.querySelector(".alia-chat-tabs-child-unread")).not.toBeNull();
+    expect(indicators.querySelector(".alia-chat-tab-working")).toBeNull();
     expect(screen.getByText("User title")).toBeTruthy();
   });
 });

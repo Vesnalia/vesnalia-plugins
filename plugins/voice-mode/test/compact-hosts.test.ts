@@ -34,7 +34,7 @@ describe("planCompactHosts", () => {
   });
 
   it("renders nothing when a composer has no compact form yet", () => {
-    // Mid-render: the composer exists before bb's form does.
+    // Mid-render: the composer exists before VesnALIA's form does.
     expect(planCompactHosts([thread("a"), thread("b")], 1)).toBeNull();
   });
 

@@ -1,6 +1,6 @@
 /**
  * An in-app confirmation instead of window.confirm, which looks like the
- * operating system rather than BB. Callers await an answer; one host
+ * operating system rather than VesnALIA. Callers await an answer; one host
  * component draws whichever request is pending.
  */
 export interface ConfirmRequest {

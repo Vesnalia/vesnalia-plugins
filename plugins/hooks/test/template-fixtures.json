@@ -22,7 +22,7 @@
         "key": "title",
         "label": "Notification title",
         "type": "string",
-        "default": "BB"
+        "default": "ALIA"
       },
       {
         "key": "sound",
@@ -32,8 +32,8 @@
         "default": ""
       }
     ],
-    "command": "title={{title}}; sound={{sound}}\ncase \"$BB_HOOK_EVENT\" in\n  interaction.pending) msg=\"Needs you: $BB_THREAD_TITLE\" ;;\n  thread.idle) msg=\"Finished: $BB_THREAD_TITLE\" ;;\n  thread.failed) msg=\"Failed: $BB_THREAD_TITLE\" ;;\n  turn.failed) msg=\"Turn failed: $BB_THREAD_TITLE\" ;;\n  *) msg=\"$BB_HOOK_EVENT: $BB_THREAD_TITLE\" ;;\nesac\nesc() { printf '%s' \"$1\" | tr '\\n' ' ' | sed 's/[\"\\\\]/\\\\&/g'; }\nif command -v osascript >/dev/null 2>&1; then\n  script=\"display notification \\\"$(esc \"$msg\")\\\" with title \\\"$(esc \"$title\")\\\"\"\n  [ -n \"$sound\" ] && script=\"$script sound name \\\"$(esc \"$sound\")\\\"\"\n  osascript -e \"$script\"\nelif command -v notify-send >/dev/null 2>&1; then\n  notify-send \"$title\" \"$msg\"\nelse\n  echo \"no notifier found (needs osascript or notify-send)\" >&2; exit 1\nfi",
-    "notes": "macOS (osascript) or Linux (notify-send) on the machine running the BB server."
+    "command": "title={{title}}; sound={{sound}}\ncase \"$ALIA_HOOK_EVENT\" in\n  interaction.pending) msg=\"Needs you: $ALIA_THREAD_TITLE\" ;;\n  thread.idle) msg=\"Finished: $ALIA_THREAD_TITLE\" ;;\n  thread.failed) msg=\"Failed: $ALIA_THREAD_TITLE\" ;;\n  turn.failed) msg=\"Turn failed: $ALIA_THREAD_TITLE\" ;;\n  *) msg=\"$ALIA_HOOK_EVENT: $ALIA_THREAD_TITLE\" ;;\nesac\nesc() { printf '%s' \"$1\" | tr '\\n' ' ' | sed 's/[\"\\\\]/\\\\&/g'; }\nif command -v osascript >/dev/null 2>&1; then\n  script=\"display notification \\\"$(esc \"$msg\")\\\" with title \\\"$(esc \"$title\")\\\"\"\n  [ -n \"$sound\" ] && script=\"$script sound name \\\"$(esc \"$sound\")\\\"\"\n  osascript -e \"$script\"\nelif command -v notify-send >/dev/null 2>&1; then\n  notify-send \"$title\" \"$msg\"\nelse\n  echo \"no notifier found (needs osascript or notify-send)\" >&2; exit 1\nfi",
+    "notes": "macOS (osascript) or Linux (notify-send) on the machine running the VesnALIA server."
   },
   {
     "id": "slack",
@@ -64,8 +64,8 @@
       }
     ],
     "url": "{{webhookUrl}}",
-    "body": "{\"text\":\"BB {{event}} \u2014 {{thread.title}}\\n{{lastAssistantText|500}}{{error|500}}\"}",
-    "notes": "Create the webhook at api.slack.com/apps \u2192 Incoming Webhooks. The URL is stored encrypted (bb hooks secrets)."
+    "body": "{\"text\":\"ALIA {{event}} \u2014 {{thread.title}}\\n{{lastAssistantText|500}}{{error|500}}\"}",
+    "notes": "Create the webhook at api.slack.com/apps \u2192 Incoming Webhooks. The URL is stored encrypted (VesnALIA hooks secrets)."
   },
   {
     "id": "telegram",
@@ -104,8 +104,8 @@
       }
     ],
     "url": "https://api.telegram.org/bot{{botToken}}/sendMessage",
-    "body": "{\"chat_id\":\"{{chatId}}\",\"text\":\"BB {{event}} \u2014 {{thread.title}}\\n{{lastAssistantText|500}}{{error|500}}\"}",
-    "notes": "The bot token is stored encrypted (bb hooks secrets)."
+    "body": "{\"chat_id\":\"{{chatId}}\",\"text\":\"ALIA {{event}} \u2014 {{thread.title}}\\n{{lastAssistantText|500}}{{error|500}}\"}",
+    "notes": "The bot token is stored encrypted (VesnALIA hooks secrets)."
   },
   {
     "id": "log-to-file",
@@ -128,7 +128,7 @@
     "params": [
       {
         "key": "path",
-        "label": "File path (on the BB server)",
+        "label": "File path (on the VesnALIA server)",
         "type": "string",
         "required": true
       }
@@ -238,9 +238,9 @@
         "default": "inherit"
       }
     ],
-    "command": "prompt={{prompt}}\nmode={{agent.mode}}; provider={{agent.providerId}}; model={{agent.model}}; reasoning={{agent.reasoningLevel}}; tier={{agent.serviceTier}}\nbb=\"${BB_CLI:-bb}\"\n# Only top-level threads chain, so a follow-up never triggers another follow-up.\n[ -n \"$BB_PARENT_THREAD_ID\" ] && exit 0\noutput=$(\"$bb\" thread output \"$BB_THREAD_ID\" 2>/dev/null | head -c 20000)\nset -- --project \"$BB_PROJECT_ID\" --parent-thread \"$BB_THREAD_ID\"\n[ -n \"$BB_ENVIRONMENT_ID\" ] && set -- \"$@\" --environment \"$BB_ENVIRONMENT_ID\"\n# \"inherit\" reuses the triggering thread's provider, model and reasoning (BB_MODEL etc. come from the plugin).\nif [ \"$mode\" = \"inherit\" ]; then provider=\"$BB_PROVIDER_ID\"; model=\"$BB_MODEL\"; reasoning=\"$BB_REASONING_LEVEL\"; tier=\"$BB_SERVICE_TIER\"; fi\n[ -n \"$provider\" ] && set -- \"$@\" --provider \"$provider\"\n[ -n \"$model\" ] && set -- \"$@\" --model \"$model\"\n[ -n \"$reasoning\" ] && [ \"$reasoning\" != \"none\" ] && set -- \"$@\" --reasoning-level \"$reasoning\"\n[ -n \"$tier\" ] && set -- \"$@\" --service-tier \"$tier\"\n\"$bb\" thread spawn \"$@\" --prompt \"$(printf '%s\\n\\n---\\nOutput of thread %s:\\n%s' \"$prompt\" \"$BB_THREAD_ID\" \"$output\")\"",
+    "command": "prompt={{prompt}}\nmode={{agent.mode}}; provider={{agent.providerId}}; model={{agent.model}}; reasoning={{agent.reasoningLevel}}; tier={{agent.serviceTier}}\nbb=\"${ALIA_CLI:-alia}\"\n# Only top-level threads chain, so a follow-up never triggers another follow-up.\n[ -n \"$ALIA_PARENT_THREAD_ID\" ] && exit 0\noutput=$(\"$alia\" thread output \"$ALIA_THREAD_ID\" 2>/dev/null | head -c 20000)\nset -- --project \"$ALIA_PROJECT_ID\" --parent-thread \"$ALIA_THREAD_ID\"\n[ -n \"$ALIA_ENVIRONMENT_ID\" ] && set -- \"$@\" --environment \"$ALIA_ENVIRONMENT_ID\"\n# \"inherit\" reuses the triggering thread's provider, model and reasoning (ALIA_MODEL etc. come from the plugin).\nif [ \"$mode\" = \"inherit\" ]; then provider=\"$ALIA_PROVIDER_ID\"; model=\"$ALIA_MODEL\"; reasoning=\"$ALIA_REASONING_LEVEL\"; tier=\"$ALIA_SERVICE_TIER\"; fi\n[ -n \"$provider\" ] && set -- \"$@\" --provider \"$provider\"\n[ -n \"$model\" ] && set -- \"$@\" --model \"$model\"\n[ -n \"$reasoning\" ] && [ \"$reasoning\" != \"none\" ] && set -- \"$@\" --reasoning-level \"$reasoning\"\n[ -n \"$tier\" ] && set -- \"$@\" --service-tier \"$tier\"\n\"$alia\" thread spawn \"$@\" --prompt \"$(printf '%s\\n\\n---\\nOutput of thread %s:\\n%s' \"$prompt\" \"$ALIA_THREAD_ID\" \"$output\")\"",
     "timeoutMs": 120000,
-    "notes": "Uses the bb CLI from the server (BB_CLI). Only top-level threads trigger it, so chains stop after one hop. Add --title or --project filters to scope it."
+    "notes": "Uses the VesnALIA CLI from the server (ALIA_CLI). Only top-level threads trigger it, so chains stop after one hop. Add --title or --project filters to scope it."
   },
   {
     "id": "review",
@@ -274,7 +274,7 @@
         "default": "inherit"
       }
     ],
-    "command": "prompt={{prompt}}\nmode={{agent.mode}}; provider={{agent.providerId}}; model={{agent.model}}; reasoning={{agent.reasoningLevel}}; tier={{agent.serviceTier}}\nbb=\"${BB_CLI:-bb}\"\n# Only top-level threads chain, so a follow-up never triggers another follow-up.\n[ -n \"$BB_PARENT_THREAD_ID\" ] && exit 0\noutput=$(\"$bb\" thread output \"$BB_THREAD_ID\" 2>/dev/null | head -c 20000)\nset -- --project \"$BB_PROJECT_ID\" --parent-thread \"$BB_THREAD_ID\"\n[ -n \"$BB_ENVIRONMENT_ID\" ] && set -- \"$@\" --environment \"$BB_ENVIRONMENT_ID\"\n# \"inherit\" reuses the triggering thread's provider, model and reasoning (BB_MODEL etc. come from the plugin).\nif [ \"$mode\" = \"inherit\" ]; then provider=\"$BB_PROVIDER_ID\"; model=\"$BB_MODEL\"; reasoning=\"$BB_REASONING_LEVEL\"; tier=\"$BB_SERVICE_TIER\"; fi\n[ -n \"$provider\" ] && set -- \"$@\" --provider \"$provider\"\n[ -n \"$model\" ] && set -- \"$@\" --model \"$model\"\n[ -n \"$reasoning\" ] && [ \"$reasoning\" != \"none\" ] && set -- \"$@\" --reasoning-level \"$reasoning\"\n[ -n \"$tier\" ] && set -- \"$@\" --service-tier \"$tier\"\n\"$bb\" thread spawn \"$@\" --prompt \"$(printf '%s\\n\\n---\\nOutput of thread %s:\\n%s' \"$prompt\" \"$BB_THREAD_ID\" \"$output\")\"",
+    "command": "prompt={{prompt}}\nmode={{agent.mode}}; provider={{agent.providerId}}; model={{agent.model}}; reasoning={{agent.reasoningLevel}}; tier={{agent.serviceTier}}\nbb=\"${ALIA_CLI:-alia}\"\n# Only top-level threads chain, so a follow-up never triggers another follow-up.\n[ -n \"$ALIA_PARENT_THREAD_ID\" ] && exit 0\noutput=$(\"$alia\" thread output \"$ALIA_THREAD_ID\" 2>/dev/null | head -c 20000)\nset -- --project \"$ALIA_PROJECT_ID\" --parent-thread \"$ALIA_THREAD_ID\"\n[ -n \"$ALIA_ENVIRONMENT_ID\" ] && set -- \"$@\" --environment \"$ALIA_ENVIRONMENT_ID\"\n# \"inherit\" reuses the triggering thread's provider, model and reasoning (ALIA_MODEL etc. come from the plugin).\nif [ \"$mode\" = \"inherit\" ]; then provider=\"$ALIA_PROVIDER_ID\"; model=\"$ALIA_MODEL\"; reasoning=\"$ALIA_REASONING_LEVEL\"; tier=\"$ALIA_SERVICE_TIER\"; fi\n[ -n \"$provider\" ] && set -- \"$@\" --provider \"$provider\"\n[ -n \"$model\" ] && set -- \"$@\" --model \"$model\"\n[ -n \"$reasoning\" ] && [ \"$reasoning\" != \"none\" ] && set -- \"$@\" --reasoning-level \"$reasoning\"\n[ -n \"$tier\" ] && set -- \"$@\" --service-tier \"$tier\"\n\"$alia\" thread spawn \"$@\" --prompt \"$(printf '%s\\n\\n---\\nOutput of thread %s:\\n%s' \"$prompt\" \"$ALIA_THREAD_ID\" \"$output\")\"",
     "timeoutMs": 120000,
     "notes": "Same mechanics as follow-up. Scope it with --title '^feat' or --project so not every thread gets reviewed."
   }

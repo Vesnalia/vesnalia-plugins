@@ -1,6 +1,6 @@
 // Checks a block the way a person would meet it: every tag known, every
 // required prop present, every expression evaluated, and every input moved to
-// its extremes. Used by the iris_check tool, `bb iris check`, and tests.
+// its extremes. Used by the iris_check tool, `alia iris check`, and tests.
 
 import { betterWay } from "./better";
 import { normalizeTone } from "./tones";

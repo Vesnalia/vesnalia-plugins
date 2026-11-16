@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
 const label = process.argv[2] ?? "run";
 const shots = join(process.env.LIVE_SHOTS ?? join(process.cwd(), "shots"), `${label}-sizes`);
 const thread = process.env.LIVE_THREAD;
@@ -45,7 +45,7 @@ for (const width of [1440, 760, 390]) {
     page.setDefaultTimeout(20_000);
     const tag = `${width}-${scheme}`;
     try {
-      await page.goto(`${base}/plugins/bb-box/desktop`, { waitUntil: "domcontentloaded" });
+      await page.goto(`${base}/plugins/alia-box/desktop`, { waitUntil: "domcontentloaded" });
       for (const [tab, boxes] of [["Machines", [names.machine, names.machineDesktop]], ["Threads", [names.threadBox, names.threadDesktop]]]) {
         await page.getByRole("tab", { name: new RegExp(`^${tab}`) }).or(page.getByRole("button", { name: new RegExp(`^${tab}\\s*\\d`) })).first().click();
         await page.getByRole("button", { name: `${boxes[0]} actions`, exact: true }).waitFor();

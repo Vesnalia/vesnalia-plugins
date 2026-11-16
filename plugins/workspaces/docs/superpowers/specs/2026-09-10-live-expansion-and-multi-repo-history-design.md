@@ -2,13 +2,13 @@
 
 **Status:** Approved design, ready for implementation planning  
 **Date:** 2026-09-10  
-**Scope:** BB Workspaces plugin, a generic upstream Git History enhancement, and their integration
+**Scope:** VesnALIA Workspaces plugin, a generic upstream Git History enhancement, and their integration
 
 ## Context
 
-The Workspaces plugin can define a group of repositories and start one BB thread with an isolated worktree for each selected repository. The first implementation proved the core workflow, but three product gaps remain:
+The Workspaces plugin can define a group of repositories and start one VesnALIA thread with an isolated worktree for each selected repository. The first implementation proved the core workflow, but three product gaps remain:
 
-1. BB displays the hidden real repository used as the thread's owning project in the sidebar.
+1. VesnALIA displays the hidden real repository used as the thread's owning project in the sidebar.
 2. Git History assumes the thread environment root is one Git repository, while a workspace session stores repositories below `repos/<alias>`.
 3. An active agent cannot safely add a newly discovered dependency repository to its current session.
 
@@ -32,16 +32,16 @@ This design supersedes the original design wherever the two differ. In particula
 - Letting an agent add an arbitrary local path or clone an arbitrary remote.
 - Moving existing threads to the synthetic owner.
 - Adding a repository from another host to an active session.
-- Automatically deleting the shared synthetic BB project on workspace deletion or plugin uninstall.
+- Automatically deleting the shared synthetic VesnALIA project on workspace deletion or plugin uninstall.
 - Coupling the Git History plugin to Workspaces-specific files or APIs.
 
 ## User experience
 
 ### Neutral thread ownership
 
-New workspace threads belong to one plugin-managed BB project named `🧩 Workspaces`. The sidebar therefore shows that name above titles such as `🧩 Workspace · Fix login flow`, instead of showing the first selected repository.
+New workspace threads belong to one plugin-managed VesnALIA project named `🧩 Workspaces`. The sidebar therefore shows that name above titles such as `🧩 Workspace · Fix login flow`, instead of showing the first selected repository.
 
-The project is an implementation anchor required by BB, not a "primary" repository. Real repositories remain peers. Existing threads retain their current project ownership.
+The project is an implementation anchor required by VesnALIA, not a "primary" repository. Real repositories remain peers. Existing threads retain their current project ownership.
 
 ### Git History repository selector
 
@@ -65,7 +65,7 @@ The operation adds a new isolated worktree below the existing session root, upda
 
 ### Agent-proposed expansion
 
-A workspace agent receives a session-specific tool for requesting another repository. It supplies the repository alias and a short reason. Under the default `ask` policy, BB presents a native approval card with three outcomes:
+A workspace agent receives a session-specific tool for requesting another repository. It supplies the repository alias and a short reason. Under the default `ask` policy, VesnALIA presents a native approval card with three outcomes:
 
 1. **Add this repo** — approve this addition only.
 2. **Add and auto-approve more** — approve this addition and set this session's expansion policy to `auto`.
@@ -79,7 +79,7 @@ If the workspace has been deleted, or the requested repository is no longer a cu
 
 ### 1. Synthetic workspace project
 
-The plugin maintains one stable synthetic BB project named `🧩 Workspaces`.
+The plugin maintains one stable synthetic VesnALIA project named `🧩 Workspaces`.
 
 The host process exposes an operation that ensures a plugin-owned anchor directory exists on a selected host. The server stores the synthetic project ID in plugin storage. Before creating a thread, it:
 
@@ -152,7 +152,7 @@ active
       -> auto policy ---------------------------> provisioning
 ```
 
-The approval uses `bb.ui.requestInput` with a plugin renderer for the pending interaction, so it appears as a first-class BB approval card rather than an agent-authored chat question. Approval records include the requester, reason, selected action, and time.
+The approval uses `alia.ui.requestInput` with a plugin renderer for the pending interaction, so it appears as a first-class VesnALIA approval card rather than an agent-authored chat question. Approval records include the requester, reason, selected action, and time.
 
 The successful tool result returns the new relative and absolute repository paths and tells the agent that the repository is ready. The refreshed `AGENTS.md` also lists it for subsequent turns. Tool registration changes naturally affect newly started provider sessions; the manual UI remains available when an already-running provider has not received the tool definition.
 
@@ -164,7 +164,7 @@ The UI disables an item while it is being provisioned, handles duplicate clicks 
 
 ### 6. Generic Git History extension
 
-The Git History change is developed in a normal fork of its upstream repository, not in BB's installed plugin cache. It remains generic and does not read the Workspaces manifest.
+The Git History change is developed in a normal fork of its upstream repository, not in VesnALIA's installed plugin cache. It remains generic and does not read the Workspaces manifest.
 
 The host adds repository discovery with bounded behavior:
 

@@ -381,7 +381,7 @@ describe("[[repo]]", () => {
     const result = multi((doc) => doc.repo.push({ name: "web", project: "proj_api" }));
     expect(result.errors).toEqual([
       'repo[2].name: "web" is also the name of repo[0]. Give every repo a unique name.',
-      'repo[2].project: "proj_api" is also the project of repo[1]. List each bb project in one [[repo]] table only.',
+      'repo[2].project: "proj_api" is also the project of repo[1]. List each VesnALIA project in one [[repo]] table only.',
     ]);
   });
 
@@ -581,8 +581,8 @@ describe("forges, integration worktrees and environments", () => {
   it("refuses a worktree on the pull request strategy, an unknown placeholder, and malformed ids", () => {
     expect(run((doc) => (doc.merge = { strategy: "pr", worktree: { command: "prep" } })).errors).toEqual(['merge.worktree: only the integration strategy has an integration worktree, and merge.strategy is "pr". Remove merge.worktree, or use merge.strategy = "integration".']);
     expect(run((doc) => (doc.environment = { provider: "trees", inputs: { tree: "{ticket}" } })).errors).toEqual(["environment.inputs: {ticket} is not a Loom placeholder. Use {branch} or {base}, or write the value out."]);
-    expect(run((doc) => (doc.environment = { provider: "Trees!" })).errors[0]).toMatch(/^environment\.provider: must be a bb environment provider id/u);
-    expect(run((doc) => (doc.merge.worktree = { plugin: "bad id", command: "x" })).errors[0]).toMatch(/^merge\.worktree\.plugin: must be a bb plugin id/u);
+    expect(run((doc) => (doc.environment = { provider: "Trees!" })).errors[0]).toMatch(/^environment\.provider: must be a alia environment provider id/u);
+    expect(run((doc) => (doc.merge.worktree = { plugin: "bad id", command: "x" })).errors[0]).toMatch(/^merge\.worktree\.plugin: must be a alia plugin id/u);
   });
 
   it("parses who writes each pull request, squashing and the fix-round limit on the pr strategy, and a forge's feedback command", () => {
@@ -752,7 +752,7 @@ describe("threads on new machines", () => {
   });
 
   it("refuses a malformed machine provider id and an unknown placeholder in machine inputs", () => {
-    expect(run((doc) => ((doc.merge = pr), (doc.environment = { provider: "git-worktree", machine: { provider: "Big Box" } }))).errors[0]).toMatch(/^environment\.machine\.provider: must be a bb machine provider id/u);
+    expect(run((doc) => ((doc.merge = pr), (doc.environment = { provider: "git-worktree", machine: { provider: "Big Box" } }))).errors[0]).toMatch(/^environment\.machine\.provider: must be a alia machine provider id/u);
     expect(run((doc) => ((doc.merge = pr), (doc.environment = { provider: "git-worktree", machine: { provider: "x", inputs: { name: "{ticket}" } } }))).errors).toEqual([
       "environment.machine.inputs: {ticket} is not a Loom placeholder. Use {branch} or {base}, or write the value out.",
     ]);

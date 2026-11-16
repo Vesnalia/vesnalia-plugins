@@ -4,7 +4,7 @@
  * thread's composer shows up, delivered once, dropped after the timeout.
  */
 import { act, cleanup, waitFor } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { toastError } = vi.hoisted(() => ({ toastError: vi.fn() }));

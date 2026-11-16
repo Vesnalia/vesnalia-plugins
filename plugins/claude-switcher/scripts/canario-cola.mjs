@@ -1,16 +1,16 @@
 #!/usr/bin/env node
-// Canario de la cola de plazas: cada 10 minutos, en el servidor de bb (una
-// `bb automation`), avisa si el plugin retiene un mensaje 10 minutos o más
+// Canario de la cola de plazas: cada 10 minutos, en el servidor de VesnALIA (una
+// `alia automation`), avisa si el plugin retiene un mensaje 10 minutos o más
 // con una cuenta usable y con plaza libre que podría correrlo, vista en dos
 // pasadas seguidas (una plaza recién soltada no es un atasco); si lo retiene 2
 // horas o más sin ninguna que pueda («Esperar siempre» sigue esperando, pero no
 // en silencio); y si un mensaje que falla lleva 10 minutos parado.
 //
 // No usa la lógica del plugin: el fallo del 2026-11-03 fue justo que el plugin
-// daba por bueno su veto. Solo lee lo que bb enseña por fuera:
-// `bb thread queue list --json` y `bb claude-switcher health --json`.
+// daba por bueno su veto. Solo lee lo que VesnALIA enseña por fuera:
+// `alia thread queue list --json` y `alia claude-switcher health --json`.
 //
-// Una lectura que falla sale con código 1 (visible en `bb automation runs`) y,
+// Una lectura que falla sale con código 1 (visible en `alia automation runs`) y,
 // si dura media hora, también avisa: nunca «todo bien» sin haber mirado.
 import { execFile } from "node:child_process";
 import { realpathSync } from "node:fs";
@@ -22,16 +22,16 @@ import { promisify } from "node:util";
 
 export const UMBRAL_MS = 10 * 60_000;
 export const REAVISO_MS = 60 * 60_000;
-/** Una fila que bb no enseña este rato se da por ida: mientras la reevalúa la oculta, y su antigüedad no se pierde por eso. */
+/** Una fila que VesnALIA no enseña este rato se da por ida: mientras la reevalúa la oculta, y su antigüedad no se pierde por eso. */
 export const OLVIDO_MS = 20 * 60_000;
 /** Retenida este rato sin ninguna cuenta que pueda correrla: avisa aunque sea «Esperar siempre». */
 export const SIN_DESTINO_MS = 2 * 60 * 60_000;
 /** Un solo aviso agrupado cada este rato: esperar toda una noche no son ocho avisos por hora. */
 export const REAVISO_SIN_DESTINO_MS = 6 * 60 * 60_000;
-/** El vigilante lleva este rato sin poder mirar: avisa. Un fallo suelto solo queda en `bb automation runs`. */
+/** El vigilante lleva este rato sin poder mirar: avisa. Un fallo suelto solo queda en `alia automation runs`. */
 export const FALLO_MS = 30 * 60_000;
-/** Lo que puede tardar cada llamada a bb: colgada, el vigilante no podría decir que no ve (Astra IR3-001). */
-const BB_MS = Number(process.env.CANARIO_BB_MS ?? 60_000);
+/** Lo que puede tardar cada llamada a VesnALIA: colgada, el vigilante no podría decir que no ve (Astra IR3-001). */
+const ALIA_MS = Number(process.env.CANARIO_ALIA_MS ?? 60_000);
 const SIN_DESTINO = "sin-destino";
 const PLUGIN = "claude-switcher";
 /** Lo único por lo que una fila fallida no espera nada (cola real del servidor, 2026-11-04). */
@@ -94,7 +94,7 @@ export function judge({ filas, health, estado, ahora }) {
   const vista = {};
   const conLibre = {};
   const avisos = [];
-  // Las que bb no enseña en esta lectura, un rato: siguen con su antigüedad.
+  // Las que VesnALIA no enseña en esta lectura, un rato: siguen con su antigüedad.
   for (const [id, cuando] of Object.entries(estado.vista ?? {}))
     if (ahora - cuando < OLVIDO_MS && estado.primeraVez?.[id] !== undefined) {
       primeraVez[id] = estado.primeraVez[id];
@@ -104,7 +104,7 @@ export function judge({ filas, health, estado, ahora }) {
   for (const [hilo, cuando] of Object.entries(estado.avisado ?? {}))
     if (ahora - cuando < (hilo === SIN_DESTINO ? REAVISO_SIN_DESTINO_MS : REAVISO_MS))
       avisado[hilo] = cuando;
-  // Lo visto con destino libre, como la antigüedad: una fila que bb oculta en
+  // Lo visto con destino libre, como la antigüedad: una fila que VesnALIA oculta en
   // una pasada no vuelve a empezar la cuenta.
   for (const [hilo, cuando] of Object.entries(estado.conLibre ?? {}))
     if (ahora - cuando < OLVIDO_MS && !vivas.some((f) => f.threadId === hilo))
@@ -158,7 +158,7 @@ export function judge({ filas, health, estado, ahora }) {
     });
   }
   // Sin nadie retenido que lleve ese tiempo, el próximo que llegue no espera
-  // las 6 horas. Quien lo lleva sigue en el caso aunque bb lo oculte un momento
+  // las 6 horas. Quien lo lleva sigue en el caso aunque VesnALIA lo oculte un momento
   // o en esta pasada se vea una plaza suelta; una fila que falla no es del caso.
   if (sinDestino.size === 0) {
     const fallidas = new Set(vivas.filter((f) => (f.failureReason ?? null) !== null).map((f) => f.id));
@@ -188,11 +188,11 @@ export function textoAviso(a) {
 
 const run = promisify(execFile);
 
-async function bb(args) {
+async function alia(args) {
   const candidatos = [
-    process.env.BB_CLI,
-    "bb",
-    join(homedir(), ".local/bin/bb"),
+    process.env.ALIA_CLI,
+    "alia",
+    join(homedir(), ".local/bin/alia"),
   ].filter(Boolean);
   let ultimo;
   for (const binario of candidatos) {
@@ -200,7 +200,7 @@ async function bb(args) {
       return (
         await run(binario, args, {
           maxBuffer: 64 * 1024 * 1024,
-          timeout: BB_MS,
+          timeout: ALIA_MS,
           killSignal: "SIGKILL",
         })
       ).stdout;
@@ -218,7 +218,7 @@ async function enviar(dir, mensaje) {
   const entrada = join(dir, "canario-cola-aviso.json");
   await writeFile(entrada, JSON.stringify(mensaje));
   const respuesta = JSON.parse(
-    await bb([
+    await alia([
       "plugin", "rpc", "call", "--json", "--input-file", entrada,
       "push-notifications", "notifications.send",
     ]),
@@ -240,7 +240,7 @@ async function leerEstado(ruta) {
 
 const FICHERO_FALLO = "canario-cola-fallo.json";
 
-/** La lectura falló: tras FALLO_MS seguidos lo dice una vez por hora, si bb deja. */
+/** La lectura falló: tras FALLO_MS seguidos lo dice una vez por hora, si VesnALIA deja. */
 export async function avisarFallo({ dir = process.cwd(), ahora = Date.now(), motivo }) {
   const ruta = join(dir, FICHERO_FALLO);
   const fallo = await leerEstado(ruta);
@@ -261,8 +261,8 @@ export async function avisarFallo({ dir = process.cwd(), ahora = Date.now(), mot
 }
 
 export async function main({ dir = process.cwd(), ahora = Date.now() } = {}) {
-  const filas = JSON.parse(await bb(["thread", "queue", "list", "--json"]));
-  const health = JSON.parse(await bb(["claude-switcher", "health", "--json"]));
+  const filas = JSON.parse(await alia(["thread", "queue", "list", "--json"]));
+  const health = JSON.parse(await alia(["claude-switcher", "health", "--json"]));
   if (!Array.isArray(filas) || !Array.isArray(health.cuentas))
     throw new Error("la cola o la salud no tienen la forma esperada");
   const ruta = join(dir, "canario-cola-estado.json");

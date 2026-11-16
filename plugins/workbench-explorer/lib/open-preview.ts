@@ -1,16 +1,16 @@
-import type { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import type { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { Workspace } from "../shared";
 import { recordRecentFile } from "./recent-files";
 
-type Navigate = ReturnType<typeof useBbNavigate>;
+type Navigate = ReturnType<typeof useAliaNavigate>;
 
 /**
- * Open a file in bb's shared preview panel.
+ * Open a file in VesnALIA's shared preview panel.
  *
  * A reveal can re-root the tree onto another project, and that root is not the
  * thread's environment — its `environmentId` is null. A workspace target built
  * from such a root resolves the relative path against the thread's own
- * checkout, where the file does not exist, and bb opens a tab reading "Failed
+ * checkout, where the file does not exist, and VesnALIA opens a tab reading "Failed
  * to load file" rather than refusing, so there is nothing left to fall back
  * from. Only a root that really is this thread's environment may use the
  * workspace target; every other root goes to the host by absolute path.
@@ -27,7 +27,7 @@ export function openWorkspaceFile(
   recordRecentFile(workspace, relativePath);
   const location = line === null ? null : { kind: "line" as const, line, column: null };
   if (navigate === null) {
-    report("open unavailable: this BB surface has no file preview navigation");
+    report("open unavailable: this VesnALIA surface has no file preview navigation");
     return false;
   }
   const root = workspace.rootPath.replace(/\/+$/u, "");

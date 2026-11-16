@@ -1,5 +1,5 @@
 // The isometric scenes: the main model on its baseplate and each bag's part
-// on the table. Free of host APIs so they can also render outside bb.
+// on the table. Free of host APIs so they can also render outside VesnALIA.
 import { useMemo, type CSSProperties } from "react";
 import type { BagState, BookState } from "../book";
 import { attachOrder, layoutModel, type DesignBrick, type ModelLayout } from "../designs";

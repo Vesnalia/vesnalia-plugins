@@ -1,7 +1,7 @@
 // Per-host storage: the legacy owner keeps the pre-0.4.6 keys, every other
 // host has its own keys, and the host index stays bounded.
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import {
   keys,
@@ -15,7 +15,7 @@ import { HOUR_MS } from "../src/shared/windows";
 import { MIN, NOW } from "./helpers";
 
 function setup() {
-  const kv = createFakePluginHost({ pluginId: "usage-forecast" }).bb.storage.kv;
+  const kv = createFakePluginHost({ pluginId: "usage-forecast" }).alia.storage.kv;
   return { kv, storage: new Storage(kv) };
 }
 

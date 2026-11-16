@@ -39,5 +39,5 @@ jobs:
       - name: Verify production dependency closure
         run: npm ci --omit=dev --omit=optional --ignore-scripts
 
-      - name: Build with BB 0.38.0
-        run: npm exec --yes --package=bb-app@0.38.0 -- bb plugin build .
+      - name: Build with ALIA 0.38.0
+        run: npm exec --yes --package=alia-app@0.38.0 -- alia plugin build .

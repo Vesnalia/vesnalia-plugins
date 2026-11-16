@@ -2,7 +2,7 @@
 // recent syncs, the failed one step by step, what its command printed, and the week's failures.
 import { useState } from "react";
 import { toast } from "sonner";
-import { experimental_copyToClipboard, experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard, experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { ServerStatus, SyncHistory, SyncRun, SyncState, SyncStep } from "../contract";
 import { failureAdvice, primaryStep, STEP_LABELS } from "../failures";
 import { BUTTON, BUTTON_GHOST, BUTTON_GHOST_SMALL, BUTTON_PRIMARY, CARD, ErrorNote, HEADING, Pill, ServerBadge, TONE_PANEL, TONE_TEXT, type Tone } from "./common";

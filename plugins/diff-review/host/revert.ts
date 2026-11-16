@@ -2,9 +2,9 @@
  * Reverting an uncommitted change in the checkout, on the machine that holds it: a whole file back to
  * `HEAD` (a new file removed, a deleted one put back), or some of its hunks.
  *
- * It acts only on the version the user reviewed. The tab sends the file's revision as bb's Git plugin
+ * It acts only on the version the user reviewed. The tab sends the file's revision as VesnALIA's Git plugin
  * listed it, `oldMode:oldBlob:newMode:newBlob`. This reads the working file's bytes once, hashes those
- * bytes as bb does (`git hash-object --path`, so the file's attributes and line-ending rules apply),
+ * bytes as VesnALIA does (`git hash-object --path`, so the file's attributes and line-ending rules apply),
  * whatever blob git's diff reported, and refuses unless the revision is the tab's. Every later step is
  * bound to that byte snapshot: just before the file is replaced (an exclusive temporary file, then a
  * rename) or removed, a synchronous check, with no await in between, compares the file's bytes with it,
@@ -169,12 +169,12 @@ async function entryOf(run: RunGit, root: string, path: string, absolute: string
   return { oldMode: "000000", oldBlob: "0".repeat(40), newMode: file.mode };
 }
 
-/** The blob git makes of `bytes` at `path`, its attributes applied, as bb's `git hash-object -- <path>`. */
+/** The blob git makes of `bytes` at `path`, its attributes applied, as VesnALIA's `git hash-object -- <path>`. */
 async function hashAt(run: RunGit, root: string, path: string, bytes: Buffer): Promise<string> {
   return (await run(root, ["hash-object", "--stdin", `--path=${path}`], { input: bytes })).stdout.trim();
 }
 
-/** The revision of a snapshot, as bb's Git plugin lists it for the uncommitted view. */
+/** The revision of a snapshot, as VesnALIA's Git plugin lists it for the uncommitted view. */
 async function revisionOf(run: RunGit, root: string, path: string, entry: Entry, snapshot: Snapshot | null): Promise<string> {
   const newBlob = entry.newMode === "000000" || snapshot === null ? "0".repeat(entry.oldBlob.length) : await hashAt(run, root, path, snapshot.bytes);
   return `${entry.oldMode}:${entry.oldBlob}:${entry.newMode}:${newBlob}`;
@@ -269,7 +269,7 @@ function restore(checkout: Checkout, path: string, absolute: string, bytes: Buff
   dropTemporary(checkout, path, temporary);
 }
 
-/** The file's revision now, as bb's Git plugin lists it for the uncommitted view. */
+/** The file's revision now, as VesnALIA's Git plugin lists it for the uncommitted view. */
 export async function currentRevision(run: RunGit, root: string, path: string): Promise<string> {
   const absolute = inside(root, path);
   const entry = await entryOf(run, root, path, absolute);
@@ -287,7 +287,7 @@ export async function revert(run: RunGit, request: RevertRequest, options: Rever
   if ([entry.oldMode, entry.newMode].some((mode) => mode === "120000" || mode === "160000")) {
     throw new RevertRefused(`${path} is a symlink or a submodule, which is not reverted here; use git.`);
   }
-  // The bytes reviewed: read once, hashed as bb hashes them, and every later check is against them.
+  // The bytes reviewed: read once, hashed as VesnALIA hashes them, and every later check is against them.
   const snapshot = entry.newMode === "000000" ? null : working(absolute);
   if (entry.newMode !== "000000" && (snapshot === null || snapshot.mode === "120000" || snapshot.mode === "040000")) throw CHANGED(path);
   if ((await revisionOf(run, checkout.real, path, entry, snapshot)) !== request.revision) throw CHANGED(path);

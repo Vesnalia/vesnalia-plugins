@@ -120,8 +120,8 @@ export function shortcutChips(shortcut: ParsedShortcut): string[] {
   return chips;
 }
 
-/** bb's default bindings (users can rebind them; this is only a heads-up). */
-const BB_DEFAULT_BINDINGS: Record<string, string> = {
+/** VesnALIA's default bindings (users can rebind them; this is only a heads-up). */
+const ALIA_DEFAULT_BINDINGS: Record<string, string> = {
   "mod+shift+p": "Command palette",
   "mod+shift+o": "New thread",
   "mod+n": "New thread",
@@ -154,9 +154,9 @@ const BB_DEFAULT_BINDINGS: Record<string, string> = {
   "alt+shift+t": "Cycle reasoning backward",
 };
 
-/** Name of the bb command that uses this combo by default, if any. */
-export function bbDefaultBindingFor(shortcut: ParsedShortcut): string | null {
-  return BB_DEFAULT_BINDINGS[serializeShortcut(shortcut)] ?? null;
+/** Name of the VesnALIA command that uses this combo by default, if any. */
+export function aliaDefaultBindingFor(shortcut: ParsedShortcut): string | null {
+  return ALIA_DEFAULT_BINDINGS[serializeShortcut(shortcut)] ?? null;
 }
 
 export function formatShortcut(shortcut: ParsedShortcut): string {

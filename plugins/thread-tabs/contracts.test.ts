@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 
 test("source and tests use public SDK entrypoints and declared dependencies", () => {
     const scan = experimental_scanPublicSdkOnly(fileURLToPath(new URL(".", import.meta.url)), {

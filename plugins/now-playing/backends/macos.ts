@@ -119,7 +119,7 @@ export function osascript(
         if (detail.includes("-1743") || /not authori[sz]ed/i.test(detail)) {
           return reject(
             new Error(
-              "macOS blocked bb from controlling the music app. Allow it in System Settings → Privacy & Security → Automation.",
+              "macOS blocked VesnALIA from controlling the music app. Allow it in System Settings → Privacy & Security → Automation.",
             ),
           );
         }
@@ -137,7 +137,7 @@ export async function musicArtwork(key: string): Promise<string | null> {
   );
   const match = /^«data (.{4})([0-9A-Fa-f]+)»$/.exec(raw);
   if (match === null) return null;
-  const dir = await mkdtemp(join(tmpdir(), "bb-now-playing-"));
+  const dir = await mkdtemp(join(tmpdir(), "alia-now-playing-"));
   try {
     const source = join(dir, "artwork");
     const target = join(dir, "artwork.jpg");

@@ -1,8 +1,8 @@
-// bb-plugin-calm backend. Watches bb's thread lifecycle events, keeps one
+// alia-plugin-calm backend. Watches VesnALIA's thread lifecycle events, keeps one
 // mood per thread in memory, counts each turn's agent steps, follows each
 // thread's child threads (its crew), and tells the open strips about changes
 // over realtime. The strip asks for the current state when it mounts.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { ON_STRIP, STEP_ITEMS, type CrewMember } from "./src/crew";
 import {
@@ -75,23 +75,23 @@ export type CrewSignal = { threadId: string; crew: CrewMember[] };
 
 interface ThreadFacts { id: string; status: string; projectId?: string; parentThreadId: string | null; title: string | null; titleFallback: string | null; archivedAt?: number | null; updatedAt?: number }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   // The scene and evening choices, set from Calm's settings section.
   const PREFS_KEY = "prefs";
-  const readPrefs = async () => cleanPrefs(await bb.storage.kv.get(PREFS_KEY));
+  const readPrefs = async () => cleanPrefs(await alia.storage.kv.get(PREFS_KEY));
 
   // Each thread's own choice from its header. Only threads with a choice are kept.
   const THREADS_KEY = "thread-prefs", MAX_THREAD_PREFS = 2000;
   let threadPrefs = new Map<string, ThreadPrefs>(
-    Object.entries((await bb.storage.kv.get<Record<string, unknown>>(THREADS_KEY)) ?? {}).map(([id, p]) => [id, cleanThreadPrefs(p)]),
+    Object.entries((await alia.storage.kv.get<Record<string, unknown>>(THREADS_KEY)) ?? {}).map(([id, p]) => [id, cleanThreadPrefs(p)]),
   );
-  const saveThreadPrefs = () => bb.storage.kv.set(THREADS_KEY, Object.fromEntries(threadPrefs));
+  const saveThreadPrefs = () => alia.storage.kv.set(THREADS_KEY, Object.fromEntries(threadPrefs));
 
   const moods = new Map<string, Mood>();
   // Each thread's run count, kept across restarts so "a new one each time"
-  // never repeats a scene after bb restarts. Capped to the newest threads.
+  // never repeats a scene after VesnALIA restarts. Capped to the newest threads.
   const RUNS_KEY = "runs", MAX_RUNS = 2000;
-  const runs = new Map<string, number>(Object.entries((await bb.storage.kv.get<Record<string, number>>(RUNS_KEY)) ?? {}));
+  const runs = new Map<string, number>(Object.entries((await alia.storage.kv.get<Record<string, number>>(RUNS_KEY)) ?? {}));
   let runsSave: ReturnType<typeof setTimeout> | null = null;
   function rememberRun(threadId: string, run: number) {
     if (runs.get(threadId) === run) return;
@@ -100,25 +100,25 @@ export default async function plugin(bb: BbPluginApi) {
     rememberRunsChanged();
   }
   function rememberRunsChanged() {
-    runsSave ??= setTimeout(() => { runsSave = null; void bb.storage.kv.set(RUNS_KEY, Object.fromEntries(runs)); }, 3000);
+    runsSave ??= setTimeout(() => { runsSave = null; void alia.storage.kv.set(RUNS_KEY, Object.fromEntries(runs)); }, 3000);
   }
   const baseMood = (id: string): Mood => moods.get(id) ?? { ...IDLE, run: runs.get(id) ?? 0 };
 
   // Failed helpers you have opened, kept across reloads and restarts so their
   // alert stays gone: child id -> when it was opened. An entry lasts until
   // Calm sees that helper running again (an event, or a rebuild that finds it
-  // active), so its next failure alerts afresh. bb's record has no stable id
+  // active), so its next failure alerts afresh. VesnALIA's record has no stable id
   // for one failure, and its update time moves with any edit, so it can't
   // tell an old failure from a new one.
   const DISMISSED_KEY = "dismissed", MAX_DISMISSED = 500;
-  const dismissed = new Map<string, number>(Object.entries((await bb.storage.kv.get<Record<string, number>>(DISMISSED_KEY)) ?? {}));
-  const saveDismissed = () => bb.storage.kv.set(DISMISSED_KEY, Object.fromEntries(dismissed)).catch((e) => {
-    bb.log.warn(`couldn't save dismissed alerts: ${e instanceof Error ? e.message : String(e)}`);
+  const dismissed = new Map<string, number>(Object.entries((await alia.storage.kv.get<Record<string, number>>(DISMISSED_KEY)) ?? {}));
+  const saveDismissed = () => alia.storage.kv.set(DISMISSED_KEY, Object.fromEntries(dismissed)).catch((e) => {
+    alia.log.warn(`couldn't save dismissed alerts: ${e instanceof Error ? e.message : String(e)}`);
   });
   const isDismissed = (id: string) => dismissed.has(id);
   /** The helper is running again: forget its dismissal. */
   const undismiss = (id: string) => { if (dismissed.delete(id)) void saveDismissed(); };
-  /** Opening a failed helper, from the alert or from anywhere in bb, ends its alert. */
+  /** Opening a failed helper, from the alert or from anywhere in VesnALIA, ends its alert. */
   function dismissFailure(id: string) {
     const m = moods.get(id);
     if (m?.kind !== "error" || isDismissed(id)) return;
@@ -150,16 +150,16 @@ export default async function plugin(bb: BbPluginApi) {
       stats.calls++; stats.ms += performance.now() - t0; stats.byKind[kind] = (stats.byKind[kind] ?? 0) + 1;
     }
   }
-  bb.background.schedule("cost-log", "* * * * *", () => {
+  alia.background.schedule("cost-log", "* * * * *", () => {
     if (stats.calls === 0) return;
-    bb.log.debug(`sdk calls/min ${stats.calls} (${Math.round(stats.ms)} ms) ${JSON.stringify(stats.byKind)}`);
+    alia.log.debug(`sdk calls/min ${stats.calls} (${Math.round(stats.ms)} ms) ${JSON.stringify(stats.byKind)}`);
     stats.calls = 0; stats.ms = 0; stats.byKind = {};
   });
 
-  /** When a failed thread failed, as bb records it, so a rebuilt failure keeps its time. */
+  /** When a failed thread failed, as VesnALIA records it, so a rebuilt failure keeps its time. */
   const failedAt = (t: ThreadFacts) => (typeof t.updatedAt === "number" && t.updatedAt > 0 ? Math.min(t.updatedAt, Date.now()) : Date.now());
 
-  /** Remember a thread's parent, project, and title from any thread record bb hands us. */
+  /** Remember a thread's parent, project, and title from any thread record VesnALIA hands us. */
   function note(t: ThreadFacts) {
     titles.set(t.id, (t.title ?? t.titleFallback ?? "Child thread").slice(0, 80));
     if (typeof t.projectId === "string" && t.projectId) projects.set(t.id, t.projectId);
@@ -201,7 +201,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function publishCrew(parentId: string) {
-    bb.realtime.publish(CREW_CHANNEL, { threadId: parentId, crew: crewOf(parentId) } satisfies CrewSignal);
+    alia.realtime.publish(CREW_CHANNEL, { threadId: parentId, crew: crewOf(parentId) } satisfies CrewSignal);
   }
 
   // Bumped on every mood change, so a slow read can tell it was overtaken.
@@ -218,34 +218,34 @@ export default async function plugin(bb: BbPluginApi) {
     const after = nextMood(before, event, at);
     if (after.run) rememberRun(threadId, after.run);
     if (after === before) return;
-    bb.log.debug(`${threadId}: ${event.type} -> ${after.kind}, run ${after.run ?? 0}`);
+    alia.log.debug(`${threadId}: ${event.type} -> ${after.kind}, run ${after.run ?? 0}`);
     if (after.turnStartedAt !== before.turnStartedAt && after.kind === "working") steps.set(threadId, 0);
     moods.set(threadId, after);
     revs.set(threadId, rev(threadId) + 1);
     if (after.kind === "working") undismiss(threadId);   // running again: its next failure alerts
-    bb.realtime.publish(MOOD_CHANNEL, { threadId, mood: after } satisfies MoodSignal);
+    alia.realtime.publish(MOOD_CHANNEL, { threadId, mood: after } satisfies MoodSignal);
     const parent = parentOf.get(threadId);
     if (parent) publishCrew(parent);
   }
 
   async function hasPendingInteraction(threadId: string): Promise<boolean> {
-    const pending = await sdk("interactions.list", () => bb.sdk.threads.interactions.list({ threadId }));
+    const pending = await sdk("interactions.list", () => alia.sdk.threads.interactions.list({ threadId }));
     return pending.some((i) => !("status" in i) || i.status === "pending");
   }
 
-  bb.events.on("thread.created", ({ thread }) => {
+  alia.events.on("thread.created", ({ thread }) => {
     note(thread);
     if (thread.parentThreadId) publishCrew(thread.parentThreadId);
   });
-  bb.events.on("thread.active", ({ thread }) => { note(thread); apply(thread.id, { type: "active" }); });
-  bb.events.on("thread.idle", ({ thread }) => { note(thread); apply(thread.id, { type: "idle" }); });
-  bb.events.on("thread.failed", ({ thread }) => { note(thread); apply(thread.id, { type: "failed" }, failedAt(thread)); });
-  bb.events.on("interaction.pending", ({ thread }) => {
+  alia.events.on("thread.active", ({ thread }) => { note(thread); apply(thread.id, { type: "active" }); });
+  alia.events.on("thread.idle", ({ thread }) => { note(thread); apply(thread.id, { type: "idle" }); });
+  alia.events.on("thread.failed", ({ thread }) => { note(thread); apply(thread.id, { type: "failed" }, failedAt(thread)); });
+  alia.events.on("interaction.pending", ({ thread }) => {
     note(thread);
     revs.set(thread.id, rev(thread.id) + 1);   // any read of open questions started before this is out of date
     apply(thread.id, { type: "pending" });
   });
-  bb.events.on("turn.failed", (event) => {
+  alia.events.on("turn.failed", (event) => {
     if (event.errorInfo?.category !== "rate-limit") return;
     apply(event.threadId, {
       type: "rate-limited",
@@ -253,15 +253,15 @@ export default async function plugin(bb: BbPluginApi) {
     });
   });
   for (const gone of ["thread.archived", "thread.deleted"] as const) {
-    bb.events.on(gone, ({ thread }) => forget(thread.id));
+    alia.events.on(gone, ({ thread }) => forget(thread.id));
   }
 
-  // bb coalesces new thread events to at most one notification per second
-  // (an experimental bb event). Each one marks the thread active. Only a
+  // VesnALIA coalesces new thread events to at most one notification per second
+  // (an experimental VesnALIA event). Each one marks the thread active. Only a
   // thread already waiting on you re-reads its open interactions, to notice
   // the answer; a new question arrives as interaction.pending. Steps are
   // counted from the last seen event, and only for threads someone watches.
-  // The event is registered defensively: if a future bb renames it, Calm
+  // The event is registered defensively: if a future VesnALIA renames it, Calm
   // still loads, the waiting check below still clears answered questions,
   // and steps simply stop counting.
   const onThreadEvents = async ({ thread, sequence }: { thread: ThreadFacts; sequence: number }) => {
@@ -278,9 +278,9 @@ export default async function plugin(bb: BbPluginApi) {
     scheduleCount(thread.id);
   };
   try {
-    bb.events.on("experimental_thread.events", onThreadEvents);
+    alia.events.on("experimental_thread.events", onThreadEvents);
   } catch (e) {
-    bb.log.warn(`thread events unavailable; steps won't be counted: ${e instanceof Error ? e.message : String(e)}`);
+    alia.log.warn(`thread events unavailable; steps won't be counted: ${e instanceof Error ? e.message : String(e)}`);
   }
 
   /** A thread waiting on you: has the question been answered? A new question that lands meanwhile wins. */
@@ -300,7 +300,7 @@ export default async function plugin(bb: BbPluginApi) {
       // A watched thread, or a helper on a watched parent's strip or alert.
       const parent = parentOf.get(id);
       if (m.kind !== "waiting" || !(isWatched(id) || (parent !== undefined && isWatched(parent)))) continue;
-      await recheckWaiting(id).catch((e) => bb.log.warn(`waiting check failed: ${e instanceof Error ? e.message : String(e)}`));
+      await recheckWaiting(id).catch((e) => alia.log.warn(`waiting check failed: ${e instanceof Error ? e.message : String(e)}`));
     }
   }
 
@@ -317,7 +317,7 @@ export default async function plugin(bb: BbPluginApi) {
   const chains = new Map<string, Promise<void>>();
   function serial(threadId: string, job: () => Promise<void>): Promise<void> {
     const next = (chains.get(threadId) ?? Promise.resolve()).then(job).catch((e) => {
-      bb.log.warn(`step count failed: ${e instanceof Error ? e.message : String(e)}`);
+      alia.log.warn(`step count failed: ${e instanceof Error ? e.message : String(e)}`);
     });
     chains.set(threadId, next);
     void next.then(() => { if (chains.get(threadId) === next) chains.delete(threadId); });
@@ -331,13 +331,13 @@ export default async function plugin(bb: BbPluginApi) {
       void serial(threadId, () => countSteps(threadId));
     }, ms));
   }
-  // bb stops this service when the plugin unloads; clear any batched reads then.
-  bb.background.service("step-counter", {
+  // VesnALIA stops this service when the plugin unloads; clear any batched reads then.
+  alia.background.service("step-counter", {
     start: (signal) => new Promise<void>((resolve) => {
       waitCheck = setInterval(() => void checkWaiting(), WAIT_CHECK_MS);
       signal.addEventListener("abort", () => {
         if (waitCheck) { clearInterval(waitCheck); waitCheck = null; }
-        if (runsSave) { clearTimeout(runsSave); runsSave = null; void bb.storage.kv.set(RUNS_KEY, Object.fromEntries(runs)); }
+        if (runsSave) { clearTimeout(runsSave); runsSave = null; void alia.storage.kv.set(RUNS_KEY, Object.fromEntries(runs)); }
         for (const t of pendingCount.values()) clearTimeout(t);
         pendingCount.clear();
         resolve();
@@ -350,7 +350,7 @@ export default async function plugin(bb: BbPluginApi) {
     const before = steps.get(threadId) ?? 0;
     const total = replace ? n : before + n;
     steps.set(threadId, total);
-    bb.realtime.publish(STEP_CHANNEL, { threadId, steps: total } satisfies StepSignal);
+    alia.realtime.publish(STEP_CHANNEL, { threadId, steps: total } satisfies StepSignal);
   }
 
   /** Which run a mood belongs to: the current run, or the one that just ended (an idle mood remembers its start). */
@@ -367,9 +367,9 @@ export default async function plugin(bb: BbPluginApi) {
     const g = gen(threadId), run = runOf(moods.get(threadId));
     let n = 0, from = after;
     try {
-      // bb returns at most 100 events per call; page through the rest.
+      // VesnALIA returns at most 100 events per call; page through the rest.
       for (let page = 0; page < 20; page++) {
-        const rows = await sdk("events.list", () => bb.sdk.threads.events.list({
+        const rows = await sdk("events.list", () => alia.sdk.threads.events.list({
           threadId, afterSeq: String(from), types: ["item/completed"], limit: "100", order: "asc",
         }));
         for (const row of rows) {
@@ -380,7 +380,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (rows.length < 100) break;
       }
     } catch (e) {
-      bb.log.warn(`step count failed, retrying: ${e instanceof Error ? e.message : String(e)}`);
+      alia.log.warn(`step count failed, retrying: ${e instanceof Error ? e.message : String(e)}`);
       if (isWatched(threadId)) scheduleCount(threadId, RETRY_MS);
       return;
     }
@@ -412,7 +412,7 @@ export default async function plugin(bb: BbPluginApi) {
     let n = 0, before: number | undefined, top: number | undefined;
     try {
       for (let page = 0; page < 20; page++) {
-        const rows = await sdk("events.list", () => bb.sdk.threads.events.list({
+        const rows = await sdk("events.list", () => alia.sdk.threads.events.list({
           threadId, types: ["item/completed"], limit: "100", order: "desc",
           ...(before === undefined ? {} : { beforeSeq: String(before) }),
         }));
@@ -427,7 +427,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (done) break;
       }
     } catch (e) {
-      bb.log.warn(`step backfill failed, retrying: ${e instanceof Error ? e.message : String(e)}`);
+      alia.log.warn(`step backfill failed, retrying: ${e instanceof Error ? e.message : String(e)}`);
       if (isWatched(threadId)) scheduleCount(threadId, RETRY_MS);   // with no mark yet, the retry backfills
       return;
     }
@@ -456,14 +456,14 @@ export default async function plugin(bb: BbPluginApi) {
   /** The thread's project, for "one scene per project": from memory, else one read. */
   async function projectOf(threadId: string): Promise<string | null> {
     if (!projects.has(threadId)) {
-      try { note(await sdk("threads.get", () => bb.sdk.threads.get({ threadId }))); }
-      catch (e) { bb.log.warn(`project lookup failed: ${e instanceof Error ? e.message : String(e)}`); }
+      try { note(await sdk("threads.get", () => alia.sdk.threads.get({ threadId }))); }
+      catch (e) { alia.log.warn(`project lookup failed: ${e instanceof Error ? e.message : String(e)}`); }
     }
     return projects.get(threadId) ?? null;
   }
   async function reconcile(threadId: string): Promise<Mood> {
     const g = gen(threadId);
-    const thread = await sdk("threads.get", () => bb.sdk.threads.get({ threadId }));
+    const thread = await sdk("threads.get", () => alia.sdk.threads.get({ threadId }));
     note(thread);
     let mood = moodFromStatus(threadId, thread.status, Date.now(), failedAt(thread));
     if (mood.kind === "working" && (await hasPendingInteraction(threadId))) mood = nextMood(mood, { type: "pending" }, Date.now());
@@ -489,7 +489,7 @@ export default async function plugin(bb: BbPluginApi) {
     const now = Date.now(), g = gen(parentId), began = forgetTick;
     const gone = (id: string) => gen(id) > began;   // archived or deleted while we read
     for (let offset = 0, page = 0; page < 10; page++, offset += 100) {
-      const kids = await sdk("threads.list", () => bb.sdk.threads.list({ parentThreadId: parentId, archived: false, limit: 100, offset }));
+      const kids = await sdk("threads.list", () => alia.sdk.threads.list({ parentThreadId: parentId, archived: false, limit: 100, offset }));
       if (gen(parentId) !== g) return;   // the parent was archived or deleted meanwhile
       for (const kid of kids) {
         if (gone(kid.id)) continue;
@@ -507,11 +507,11 @@ export default async function plugin(bb: BbPluginApi) {
 
   let prefsQueue: Promise<unknown> = Promise.resolve();
   let threadQueue: Promise<unknown> = Promise.resolve();
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     state_get: async ({ threadId }) => {
       if (!moods.has(threadId)) await reconcile(threadId);
       dismissFailure(threadId);   // you opened this thread: if it is a failed helper, its alert is done
-      await seedCrew(threadId).catch((e) => bb.log.warn(`crew lookup failed: ${e instanceof Error ? e.message : String(e)}`));
+      await seedCrew(threadId).catch((e) => alia.log.warn(`crew lookup failed: ${e instanceof Error ? e.message : String(e)}`));
       if (!threadPrefs.get(threadId)?.off) await watch(threadId);   // Calm off here: no step counting
       const projectId = await projectOf(threadId);
       // Read everything now, after the awaits, so nothing older than an event that arrived meanwhile goes out.
@@ -533,14 +533,14 @@ export default async function plugin(bb: BbPluginApi) {
         all.delete(threadId);
         if (next.off || next.scene) all.set(threadId, next);   // the default needs no entry
         while (all.size > MAX_THREAD_PREFS) all.delete(all.keys().next().value!);
-        await bb.storage.kv.set(THREADS_KEY, Object.fromEntries(all));
+        await alia.storage.kv.set(THREADS_KEY, Object.fromEntries(all));
         threadPrefs = all;
         if (next.off) {   // muted: stop counting its steps, including a count already queued
           watched.delete(threadId); lastSeq.delete(threadId);
           const t = pendingCount.get(threadId); if (t) { clearTimeout(t); pendingCount.delete(threadId); }
         }
         else if (change.off === false) void watch(threadId).catch(() => {});   // back on: count from this run's start
-        bb.realtime.publish(THREAD_PREFS_CHANNEL, { threadId, prefs: next } satisfies ThreadPrefsSignal);
+        alia.realtime.publish(THREAD_PREFS_CHANNEL, { threadId, prefs: next } satisfies ThreadPrefsSignal);
         return next;
       });
       threadQueue = save.catch(() => undefined);
@@ -551,8 +551,8 @@ export default async function plugin(bb: BbPluginApi) {
       const save = prefsQueue.then(async () => {
         const now = await readPrefs();
         const next = cleanPrefs({ ...now, ...change, features: { ...now.features, ...change.features } });
-        await bb.storage.kv.set(PREFS_KEY, next);
-        bb.realtime.publish(PREFS_CHANNEL, next);
+        await alia.storage.kv.set(PREFS_KEY, next);
+        alia.realtime.publish(PREFS_CHANNEL, next);
         return next;
       });
       prefsQueue = save.catch(() => undefined);

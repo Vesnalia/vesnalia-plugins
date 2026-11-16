@@ -1,4 +1,4 @@
-// A small Proxmox VE client for the calls bb-box makes on containers or VMs,
+// A small Proxmox VE client for the calls alia-box makes on containers or VMs,
 // authenticated with an API token. Each client works on one type of guest.
 // Every call goes through one `fetch`, so tests pass a fake API. The token
 // secret appears only in the Authorization header, never in errors.
@@ -87,7 +87,7 @@ export class ProxmoxError extends Error {
   }
 
   /**
-   * The guest is not there. The token's rights come from bb-box's pool, so
+   * The guest is not there. The token's rights come from alia-box's pool, so
    * Proxmox answers 403 for a VMID outside it, as for one deleted.
    */
   get gone(): boolean {
@@ -130,7 +130,7 @@ export interface GuestSettings {
   readonly tags?: readonly string[];
   readonly description?: string;
   readonly onboot?: boolean;
-  /** Whether Proxmox refuses to delete it, as bb-box's templates do. */
+  /** Whether Proxmox refuses to delete it, as alia-box's templates do. */
   readonly protection?: boolean;
   /** A VM's EFI variable store, such as "local-lvm:1,efitype=4m" for a new one on that storage. */
   readonly efidisk0?: string;

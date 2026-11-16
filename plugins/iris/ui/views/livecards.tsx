@@ -62,7 +62,7 @@ function LiveChip({ state, children }: { state: "live" | "paused" | "waiting" | 
 const SAMPLE_LOG = [
   "\u001b[2m$ npm run build\u001b[0m",
   "> iris@0.2.0 build",
-  "> node scripts/build-chunks.mjs && bb plugin build",
+  "> node scripts/build-chunks.mjs && VesnALIA plugin build",
   "\u001b[36minfo\u001b[0m  bundling chunks: icons, katex, graph",
   "\u001b[32m✓\u001b[0m icons-B5NALR6F.js  \u001b[2m454 KB, 80 KB br\u001b[0m",
   "\u001b[32m✓\u001b[0m katex-GIAPZIAV.js  \u001b[2m268 KB, 64 KB br\u001b[0m",

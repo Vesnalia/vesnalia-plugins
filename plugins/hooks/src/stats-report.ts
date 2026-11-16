@@ -24,7 +24,7 @@ export async function sendInstallReport(body: InstallReport, options: ReportOpti
   try {
     const challengeUrl = new URL(`${counter.replace(/\/$/, "")}/challenge`);
     challengeUrl.searchParams.set("template", body.template);
-    const issued = await fetchImpl(challengeUrl, { redirect: "error", signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS), headers: { "user-agent": "bb-plugin-hooks" } });
+    const issued = await fetchImpl(challengeUrl, { redirect: "error", signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS), headers: { "user-agent": "alia-plugin-hooks" } });
     if (!issued.ok) return false;
     const { token, difficulty } = (await issued.json()) as { token?: unknown; difficulty?: unknown };
     if (typeof token !== "string" || token.length > 512 || typeof difficulty !== "number" || !Number.isInteger(difficulty) || difficulty < 0) return false;
@@ -32,7 +32,7 @@ export async function sendInstallReport(body: InstallReport, options: ReportOpti
     const nonce = await solveChallenge(token, difficulty);
     const response = await fetchImpl(counter, {
       method: "POST",
-      headers: { "content-type": "application/json", "user-agent": "bb-plugin-hooks" },
+      headers: { "content-type": "application/json", "user-agent": "alia-plugin-hooks" },
       body: JSON.stringify({ ...body, token, nonce }),
       // Redirects could carry the report somewhere the plugin didn't choose.
       redirect: "error",

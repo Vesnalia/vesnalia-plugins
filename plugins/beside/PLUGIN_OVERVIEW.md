@@ -12,8 +12,8 @@ A snoozed or settled thread comes back to the Inbox when it finishes, fails or a
 
 ## Everyday use
 
-- Hover a row to snooze it, settle it, or open bb's own thread menu.
-- Drag pinned threads into the order you want. bb's own list keeps the same order.
+- Hover a row to snooze it, settle it, or open VesnALIA's own thread menu.
+- Drag pinned threads into the order you want. VesnALIA's own list keeps the same order.
 - Child threads sit under their parent and move with it.
 - Each shelf has a menu for bulk actions with Undo: Settle all, Snooze all, Wake all, Archive all and more.
 
@@ -25,4 +25,4 @@ A snoozed or settled thread comes back to the Inbox when it finishes, fails or a
 
 ## Requirements
 
-Beside needs bb 0.46 or later. It replaces bb's sidebar thread list; you can switch back in Settings at any time. It uses bb's experimental plugin APIs, so a bb update can change how it behaves.
+Beside needs VesnALIA 0.46 or later. It replaces VesnALIA's sidebar thread list; you can switch back in Settings at any time. It uses VesnALIA's experimental plugin APIs, so a VesnALIA update can change how it behaves.

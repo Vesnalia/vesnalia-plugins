@@ -13,13 +13,13 @@ import {
   definePluginApp,
   experimental_Icon as Icon,
   experimental_usePluginId,
-  useBbNavigate,
+  useAliaNavigate,
   useComposer,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginRpcResult, PluginThreadPanelProps } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcResult, PluginThreadPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server.ts";
 import {
   ageLabel,
@@ -56,7 +56,7 @@ import { ambience } from "./sound.ts";
 
 type PondState = PluginRpcResult<(typeof rpcContract)["getPond"]>;
 
-// Declared in package.json under bb.branding.experimental_icons.
+// Declared in package.json under alia.branding.experimental_icons.
 const KOI_ICON = "zen-koi/koi";
 const PAGE_PATH = "pond";
 const SETTINGS_ACTION = "pond-settings";
@@ -773,9 +773,9 @@ function CatchSummary({
 // ---------------------------------------------------------------- strip
 
 /**
- * A slot right above the chat input. Banners render at the top of bb's card
+ * A slot right above the chat input. Banners render at the top of VesnALIA's card
  * stack, so the pond portals here to sit next to the chat input instead. Null
- * when bb's markup is not recognized; the pond then stays in the banner.
+ * when VesnALIA's markup is not recognized; the pond then stays in the banner.
  */
 function useComposerSlot(
   markerRef: RefObject<HTMLElement | null>,
@@ -814,7 +814,7 @@ function ThreadPond({
   compact: boolean;
 }) {
   const pluginId = experimental_usePluginId();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const reducedMotion = useReducedMotion();
   const { config, recordScoop } = usePondState();
   const session = useSession(threadId);

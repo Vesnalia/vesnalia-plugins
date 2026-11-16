@@ -1,18 +1,18 @@
-# Jira Board for bb
+# Jira Board for VesnALIA
 
 The Jira tickets assigned to you, in a calm list you can filter, group and work through without
-leaving [bb](https://getbb.app).
+leaving [VesnALIA](https://getbb.app).
 
 ```
-bb plugin install git:https://github.com/ahsan7162/bb-plugin-my-jira.git@^0.4.0
+alia plugin install git:https://github.com/ahsan7162/bb-plugin-my-jira.git@^0.4.0
 ```
 
-Or install **Jira Board** from bb's plugin store. Click **Connect Jira** and sign in with Atlassian
+Or install **Jira Board** from VesnALIA's plugin store. Click **Connect Jira** and sign in with Atlassian
 in the browser; there is nothing to configure. See [Requirements](#requirements).
 
 ## What you get
 
-- **Your tickets in one tab.** A **My Tickets** page in the bb rail with **Open** and **Done**,
+- **Your tickets in one tab.** A **My Tickets** page in the VesnALIA rail with **Open** and **Done**,
   50 per page, one row per ticket: type, key, title, epic, status, priority and age.
 - **Filters beside the tabs.** Status chips (the busiest three inline, the rest in a menu) and a
   **Type** menu. Pick several; statuses and types combine. Search by key, words or epic.
@@ -36,8 +36,8 @@ in the browser; there is nothing to configure. See [Requirements](#requirements)
 The plugin signs in through Atlassian's Rovo MCP server (`mcp.atlassian.com/v2/mcp`). Its OAuth
 server supports dynamic client registration and PKCE, so each install registers itself on the
 first **Connect Jira**: no app to create, no shared secret in the code. The refresh token is kept
-in a secret plugin setting on the machine running bb; the access token only in memory. Requests go
-from bb to Atlassian, and nowhere else. Disconnect removes the token.
+in a secret plugin setting on the machine running VesnALIA; the access token only in memory. Requests go
+from VesnALIA to Atlassian, and nowhere else. Disconnect removes the token.
 
 To add another site later, Disconnect, then Connect again and grant both.
 
@@ -45,8 +45,8 @@ To add another site later, Disconnect, then Connect again and grant both.
 
 ```
 npm install
-bb plugin install .
-bb plugin dev        # rebuild and reload on save
+alia plugin install .
+alia plugin dev        # rebuild and reload on save
 npm test && npm run typecheck
 ```
 
@@ -56,7 +56,7 @@ npm test && npm run typecheck
   priorities, groupings). Both are covered by `jira.test.ts`.
 - `app.tsx` (the list), `detail.tsx` (one ticket), `parts.tsx` (shared pieces; the design system
   is in `MASTER.md`).
-- `repo.test.ts` keeps media and files over 1 MB out of every branch and tag, because bb clones
+- `repo.test.ts` keeps media and files over 1 MB out of every branch and tag, because VesnALIA clones
   the whole repository on install. Put README images in as GitHub attachments, never in git.
 
 ## License

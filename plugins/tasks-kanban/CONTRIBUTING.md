@@ -1,32 +1,32 @@
 # Contributing
 
-Thanks for helping make BB Tasks easier to work with. This guide covers the
+Thanks for helping make VesnALIA Tasks easier to work with. This guide covers the
 development setup, the rules the code follows, and how releases ship.
 
 ## Development setup
 
-You need **Node.js 22.19+ / 24+** and the **bb CLI** (any recent version):
+You need **Node.js 22.19+ / 24+** and the **VesnALIA CLI** (any recent version):
 
 ```sh
-npm install --global bb-app
+npm install --global alia-app
 ```
 
 Then:
 
 ```sh
-npm ci                # install dependencies (incl. @get-bb/plugin-sdk)
-bb plugin build .     # compile server.ts + app.tsx into dist/
-bb plugin dev .       # optional: watch mode, rebuild + reload on change
+npm ci                # install dependencies (incl. @vesnalia/plugin-sdk)
+alia plugin build .     # compile server.ts + app.tsx into dist/
+alia plugin dev .       # optional: watch mode, rebuild + reload on change
 ```
 
 To try the board on your machine:
 
 ```sh
-bb plugin install . --yes
+alia plugin install . --yes
 ```
 
 The panel appears in the left sidebar (Workflow icon). If you have several
-BB Tasks projects, the switcher in the toolbar lists them all.
+VesnALIA Tasks projects, the switcher in the toolbar lists them all.
 
 ## Tests
 
@@ -36,10 +36,10 @@ node test/marketplace.test.mjs      # marketplace.json vs the official v2 schema
 ```
 
 The server tests import the **built** `dist/server.js` and drive its factory
-with a mocked `bb.sdk.plugins.callRpc`. They assert the exact method names
+with a mocked `alia.sdk.plugins.callRpc`. They assert the exact method names
 and inputs forwarded to the built-in tasks plugin, the reshaping of results,
 and that the realtime channel is published exactly on successful writes.
-Rebuild (`bb plugin build .`) before running them when you change
+Rebuild (`alia plugin build .`) before running them when you change
 `server.ts`.
 
 When the tasks plugin's contracts change (new statuses, DTO fields, method
@@ -53,17 +53,17 @@ together.
 server.ts            Backend: board_* RPC contract, proxy into the tasks plugin
 app.tsx              Frontend: Kanban UI (lanes, cards, dialogs, drag & drop)
 lib/i18n.ts          en/ru dictionaries + locale detection
-lib/utils.ts, components/, hooks/   UI primitives from the BB plugin scaffold
-skills/board/SKILL.md  Agent skill for working the board via `bb tasks`
+lib/utils.ts, components/, hooks/   UI primitives from the ALIA plugin scaffold
+skills/board/SKILL.md  Agent skill for working the board via `alia tasks`
 test/                node:test suites
-marketplace.json     Self-hosted marketplace catalog (BB schema v2)
+marketplace.json     Self-hosted marketplace catalog (ALIA schema v2)
 ```
 
 ### Architecture rules
 
 - **The board is a proxy, never a store.** Do not add plugin storage for
   task data. Every read/write must go through the built-in tasks plugin's
-  RPC (`bb.sdk.plugins.callRpc`), so the board and `bb tasks` stay identical.
+  RPC (`alia.sdk.plugins.callRpc`), so the board and `alia tasks` stay identical.
 - **Mirrored schemas in `server.ts`** validate the tasks plugin's DTOs on the
   wire. If you add a field to a DTO, add it to the schema *and* to a test
   fixture.
@@ -88,7 +88,7 @@ string. Rules:
 ## Pull requests
 
 - Small, focused PRs; describe the user-visible change in the PR body.
-- `npm ci && bb plugin build . && node --test test/server.test.mjs` must pass
+- `npm ci && alia plugin build . && node --test test/server.test.mjs` must pass
   locally before you open the PR (CI runs the same, plus the marketplace
   validation).
 - Update `CHANGELOG.md` under `Unreleased` when the change is user-visible.
@@ -111,11 +111,11 @@ Releases are Git tags; the marketplace entry tracks a semver range
    ```
 
 5. Verify: `git ls-remote --tags https://github.com/levkovalenko/bb-tasks-kanban.git`
-   and `bb plugin outdated` on a machine with the plugin installed.
+   and `alia plugin outdated` on a machine with the plugin installed.
 
 Breaking changes to the `board_*` RPC contract or the panel's paths are
 major bumps. If you change the package name, the plugin id, the icon, or the
-marketplace entry itself, a new reviewed pull request against the BB
+marketplace entry itself, a new reviewed pull request against the VesnALIA
 Community marketplace is required.
 
 ## Reporting issues
@@ -124,9 +124,9 @@ Use the [issue templates](.github/ISSUE_TEMPLATE/). For board glitches, the
 fastest diagnosis is:
 
 ```sh
-bb plugin logs tasks-kanban     # the plugin's own log
-bb tasks show <KEY> --json      # the ground-truth task state
+alia plugin logs tasks-kanban     # the plugin's own log
+alia tasks show <KEY> --json      # the ground-truth task state
 ```
 
-and the BB version (`bb --version`). Plugins run with full trust inside the
-BB server — please don't paste tokens or private task content into issues.
+and the VesnALIA version (`alia --version`). Plugins run with full trust inside the
+VesnALIA server — please don't paste tokens or private task content into issues.

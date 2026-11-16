@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-captains-deck",
+  "name": "alia-plugin-captains-deck",
   "version": "0.3.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.44",
-    "bbPluginSdk": ">=0.5.29"
+    "alia": ">=0.44",
+    "aliaPluginSdk": ">=0.5.29"
   },
-  "bb": {
+  "alia": {
     "name": "Captain's Deck",
     "description": "A kanban board for first-mate driven work: charted tasks, what is underway, captain's calls you answer in place, merges waiting for you, and landings.",
     "branding": {
@@ -21,7 +21,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.29",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -47,11 +46,23 @@
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
   },
-  "description": "Captain's Deck: a kanban board for work a first mate runs in bb.",
+  "description": "Captain's Deck: a kanban board for work a first mate runs in VesnALIA.",
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.29"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/captains-deck#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/deimantasnork/bb-plugin-captains-deck.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/captains-deck"
   },
-  "homepage": "https://github.com/deimantasnork/bb-plugin-captains-deck"
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

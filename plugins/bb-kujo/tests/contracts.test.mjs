@@ -14,10 +14,10 @@ const luminance = hex => {
 };
 const contrast=(a,b)=>(Math.max(luminance(a),luminance(b))+.05)/(Math.min(luminance(a),luminance(b))+.05);
 test('manifest has canonical, unique native theme and existing local assets',async()=>{
- assert.equal(manifest.bb.name,'Kujo');
- assert.equal(new Set(manifest.bb.themes.map(t=>t.id)).size,manifest.bb.themes.length);
- const t=manifest.bb.themes[0]; assert.equal(t.id,'kujo');
- for(const f of [manifest.bb.server,manifest.bb.app,manifest.bb.branding.icon,t.css,t.codeTheme.dark,t.codeTheme.light]) assert.ok((await stat(new URL(f,root))).isFile());
+ assert.equal(manifest.alia.name,'Kujo');
+ assert.equal(new Set(manifest.alia.themes.map(t=>t.id)).size,manifest.alia.themes.length);
+ const t=manifest.alia.themes[0]; assert.equal(t.id,'kujo');
+ for(const f of [manifest.alia.server,manifest.alia.app,manifest.alia.branding.icon,t.css,t.codeTheme.dark,t.codeTheme.light]) assert.ok((await stat(new URL(f,root))).isFile());
  assert.deepEqual(Object.keys(t.codeTheme),['dark','light']);
  assert.ok(css.length<256000);
 });

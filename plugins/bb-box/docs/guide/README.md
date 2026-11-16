@@ -1,6 +1,6 @@
-# BB Box user guide
+# VesnALIA Box user guide
 
-BB Box gives each BB thread computers of its own, called boxes. A box can run Linux, macOS or Windows, as a server you reach through a terminal or as a desktop you can see and use. This guide is for people who use boxes day to day.
+VesnALIA Box gives each VesnALIA thread computers of its own, called boxes. A box can run Linux, macOS or Windows, as a server you reach through a terminal or as a desktop you can see and use. This guide is for people who use boxes day to day.
 
 A box belongs to a thread. It stays until you release it, or until its thread is archived or deleted. A machine is a box of your own that belongs to no thread and stays until you remove it.
 
@@ -21,13 +21,13 @@ A box belongs to a thread. It stays until you release it, or until its thread is
 - [Files](files.md): copy files to and from a box, and put files in every box
 - [Spare boxes](spares.md): boxes made ahead, so a thread has one at once
 - [Sound and the microphone on Mac boxes](mac-sound.md): feed speech to an app, and what agents' apps may use
-- [The Monitor](monitor.md): see how BB's server, your machines and boxes are doing, open a box's views and threads, and get told when BB's server is under pressure
+- [The Monitor](monitor.md): see how VesnALIA's server, your machines and boxes are doing, open a box's views and threads, and get told when VesnALIA's server is under pressure
 - [Settings](settings.md): set up backends, choose the kinds and sizes on offer, and the general settings
 - [A cloud server as a Docker host](cloud-docker-host.md): rent a server, such as one on Hetzner Cloud, and make Docker boxes there
-- [Linux boxes on Hetzner Cloud](hetzner.md): Docker hosts BB Box makes in Hetzner Cloud as boxes need them, and deletes once idle
+- [Linux boxes on Hetzner Cloud](hetzner.md): Docker hosts VesnALIA Box makes in Hetzner Cloud as boxes need them, and deletes once idle
 - [Mac and Linux boxes on Namespace](namespace.md): rent a Mac or a Linux machine for each box by the minute
 - [Linux boxes on boat.dev](boat.md): rent a Linux VM for each box by the second
-- [Joining cloud machines to your tailnet](tailnet.md): let the machines BB Box rents reach a BB server on a Tailscale tailnet
+- [Joining cloud machines to your tailnet](tailnet.md): let the machines VesnALIA Box rents reach a VesnALIA server on a Tailscale tailnet
 
 ## Reference
 

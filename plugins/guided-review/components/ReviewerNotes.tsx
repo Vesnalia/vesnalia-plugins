@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
@@ -69,7 +69,7 @@ export function ReviewerNotes({ targetKey }: { targetKey: string }) {
     } catch { if (mounted.current) { setStatus("Couldn’t load the saved version. Your edits are still here."); setError(true); } }
   }
   return <section aria-label="Private reviewer notes" className="space-y-3 p-3">
-    <p className="text-xs leading-relaxed text-muted-foreground">Your scratchpad for questions, checks, and decisions. Saved in BB, never included in GitHub submissions or assistant prompts.</p>
+    <p className="text-xs leading-relaxed text-muted-foreground">Your scratchpad for questions, checks, and decisions. Saved in VesnALIA, never included in GitHub submissions or assistant prompts.</p>
     <Textarea aria-label="Private reviewer notes" rows={8} maxLength={100000} disabled={!loaded} value={body} placeholder="What do you want to verify before you finish?" onChange={(event) => {
       const value = event.target.value;
       setBody(value); state.current.body = value; state.current.dirty = true;

@@ -1,8 +1,8 @@
-// bb-plugin-message-date-time - backend entry.
+// alia-plugin-message-date-time - backend entry.
 //
 // Declares the two settings the frontend reads (app.tsx) and tells it the
 // computer's own clock settings. Everything else runs in the app window.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { readSystemClock } from "./lib/system-clock";
 
@@ -16,8 +16,8 @@ export const rpcContract = defineRpcContract({
 export const LANGUAGE_OPTIONS = ["System", "English", "Русский"];
 export const TIME_FORMAT_OPTIONS = ["System", "12-hour (2:30 PM)", "24-hour (14:30)"];
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     language: {
       type: "select",
       label: "Language / Язык",
@@ -33,7 +33,7 @@ export default async function plugin(bb: BbPluginApi) {
       default: "System",
     },
   });
-  bb.rpc.register(rpcContract, { system_clock: () => readSystemClock() });
-  bb.log.info("loaded");
-  bb.onDispose(() => bb.log.info("disposed"));
+  alia.rpc.register(rpcContract, { system_clock: () => readSystemClock() });
+  alia.log.info("loaded");
+  alia.onDispose(() => alia.log.info("disposed"));
 }

@@ -1,26 +1,26 @@
-import type { NewThreadRequest } from "@get-bb/plugin-sdk";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Store } from "../src/db/store";
-import type { BbProjectInfo } from "../src/ports";
+import type { AliaProjectInfo } from "../src/ports";
 import { LoomError, Projects } from "../src/projects";
 import { specSummary } from "../src/rpc";
 import { Clock, FakeHost, FakePort, makeDb, specToml, type Doc } from "./helpers";
 
 let clock: Clock;
 let store: Store;
-let bb: FakePort;
+let alia: FakePort;
 let projects: Projects;
 let host: FakeHost;
 
 beforeEach(() => {
   clock = new Clock();
   store = new Store(makeDb(), clock.now);
-  bb = new FakePort();
+  alia = new FakePort();
   host = new FakeHost();
-  projects = new Projects({ store, bb, now: clock.now, host });
+  projects = new Projects({ store, alia, now: clock.now, host });
 });
 
-const propose = (edit?: (doc: Doc) => void, threadId = "thr_plan") => projects.propose({ toml: specToml(edit), threadId, bbProjectId: "proj_1", hostId: "host_local" });
+const propose = (edit?: (doc: Doc) => void, threadId = "thr_plan") => projects.propose({ toml: specToml(edit), threadId, aliaProjectId: "proj_1", hostId: "host_local" });
 
 async function failure(promise: Promise<unknown>): Promise<LoomError> {
   const error = await promise.then(
@@ -39,12 +39,12 @@ describe("propose", () => {
     expect(result).toEqual({ slug: "csv", version: 1, state: "draft", warnings: [], pending: false, change: "created" });
 
     const project = store.projectBySlug("csv")!;
-    expect(project).toMatchObject({ name: "CSV export", key: "CSV", state: "draft", bb_project_id: "proj_1", host_id: "host_local", section_id: "sec_1", planner_thread_id: "thr_plan", approved_version: null });
+    expect(project).toMatchObject({ name: "CSV export", key: "CSV", state: "draft", alia_project_id: "proj_1", host_id: "host_local", section_id: "sec_1", planner_thread_id: "thr_plan", approved_version: null });
     expect(store.threadByThreadId("thr_plan")).toMatchObject({ role: "planner", state: "active", project_id: project.id });
     expect(store.specVersion(project.id, 1)).toMatchObject({ proposed_by: "thr_plan" });
-    expect(bb.callsTo("ensureSection")).toEqual([[null, "Loom · CSV export (csv)"]]);
-    expect(bb.callsTo("moveThread")).toEqual([["thr_plan", "sec_1"]]);
-    expect(bb.callsTo("setMetadata")).toEqual([["thr_plan", { project: "csv", role: "planner" }]]);
+    expect(alia.callsTo("ensureSection")).toEqual([[null, "Loom · CSV export (csv)"]]);
+    expect(alia.callsTo("moveThread")).toEqual([["thr_plan", "sec_1"]]);
+    expect(alia.callsTo("setMetadata")).toEqual([["thr_plan", { project: "csv", role: "planner" }]]);
     expect(eventKinds(project.id)).toEqual(["project.created", "spec.proposed"]);
   });
 
@@ -54,11 +54,11 @@ describe("propose", () => {
     expect(error.message).toContain("Spec not saved.");
     expect(error.message).toMatch(/\n1\. project\.key: /);
     expect(store.projects()).toEqual([]);
-    expect(bb.callsTo("ensureSection")).toEqual([]);
+    expect(alia.callsTo("ensureSection")).toEqual([]);
   });
 
-  it("refuses a worker or reviewer provider bb does not have, naming the ids it has", async () => {
-    bb.providers = ["pi", "codex", "claude-code"];
+  it("refuses a worker or reviewer provider VesnALIA does not have, naming the ids it has", async () => {
+    alia.providers = ["pi", "codex", "claude-code"];
     const error = await failure(
       propose((doc) => {
         doc.agents.worker = { provider: "codex" };
@@ -66,22 +66,22 @@ describe("propose", () => {
       }),
     );
     expect(error.code).toBe("loom_invalid_spec");
-    expect(error.message).toContain('\n1. agents.reviewer.provider: bb has no provider "claude". Use one of: claude-code, codex, pi.');
+    expect(error.message).toContain('\n1. agents.reviewer.provider: VesnALIA has no provider "claude". Use one of: claude-code, codex, pi.');
     expect(store.projects()).toEqual([]);
 
     const both = await failure(propose((doc) => (doc.agents.reviewer = { provider: "gemini" })));
-    expect(both.message).toContain('1. agents.worker.provider: bb has no provider "claude".');
-    expect(both.message).toContain('2. agents.reviewer.provider: bb has no provider "gemini".');
+    expect(both.message).toContain('1. agents.worker.provider: VesnALIA has no provider "claude".');
+    expect(both.message).toContain('2. agents.reviewer.provider: VesnALIA has no provider "gemini".');
   });
 
-  it("checks no provider when the spec sets none, and accepts the spec when bb's providers cannot be read or bb lists none", async () => {
-    bb.providers = [];
+  it("checks no provider when the spec sets none, and accepts the spec when VesnALIA's providers cannot be read or VesnALIA lists none", async () => {
+    alia.providers = [];
     await propose((doc) => (doc.agents = {}));
-    expect(bb.callsTo("providerIds")).toEqual([]);
+    expect(alia.callsTo("providerIds")).toEqual([]);
     expect(await propose((doc) => (doc.project.goal = "Export orders as CSV, with a delimiter and a date range filter."))).toMatchObject({ version: 2 });
-    bb.providers = new Error("bb is restarting");
+    alia.providers = new Error("alia is restarting");
     expect(await propose((doc) => (doc.project.goal = "Export orders as CSV, with a delimiter the person can choose."))).toMatchObject({ version: 3 });
-    expect(bb.callsTo("log").some(([level, text]) => level === "warn" && String(text).includes("bb is restarting"))).toBe(true);
+    expect(alia.callsTo("log").some(([level, text]) => level === "warn" && String(text).includes("alia is restarting"))).toBe(true);
   });
 
   it("revising a draft adds a version and keeps the old one", async () => {
@@ -96,7 +96,7 @@ describe("propose", () => {
     expect(projects.spec("csv")).toMatchObject({ version: 2, status: "draft" });
     expect((await failure(projects.approve("csv", "human", 1))).message).toContain("is not the one waiting for approval (version 2)");
     expect(await projects.approve("csv", "human")).toMatchObject({ version: 2, applied: "draft" });
-    expect(bb.callsTo("ensureSection")).toEqual([
+    expect(alia.callsTo("ensureSection")).toEqual([
       [null, "Loom · CSV export (csv)"],
       ["sec_1", "Loom · CSV export (csv)"],
     ]);
@@ -109,7 +109,7 @@ describe("propose", () => {
       doc.project.key = "ORD";
     });
     expect(store.projectBySlug("csv")).toMatchObject({ name: "Orders CSV", key: "ORD" });
-    expect(bb.callsTo("renameSection")).toEqual([["sec_1", "Loom · Orders CSV (csv)"]]);
+    expect(alia.callsTo("renameSection")).toEqual([["sec_1", "Loom · Orders CSV (csv)"]]);
   });
 
   it("proposing an identical spec is a no-op that returns the existing version", async () => {
@@ -192,13 +192,13 @@ describe("propose", () => {
     expect(error.message).toContain("Workers and reviewers cannot propose projects.");
   });
 
-  it("refuses when bb already has a section with that name, and creates nothing", async () => {
-    bb.takenNames.add("Loom · CSV export (csv)");
+  it("refuses when VesnALIA already has a section with that name, and creates nothing", async () => {
+    alia.takenNames.add("Loom · CSV export (csv)");
     const error = await failure(propose());
     expect(error.code).toBe("loom_invalid_spec");
     expect(error.message).toContain('1. A sidebar section named "Loom · CSV export (csv)" already exists. Rename it, or choose another slug.');
     expect(store.projects()).toEqual([]);
-    expect(bb.callsTo("moveThread")).toEqual([]);
+    expect(alia.callsTo("moveThread")).toEqual([]);
   });
 
   it("deletes the section it just made when saving the project fails", async () => {
@@ -208,17 +208,17 @@ describe("propose", () => {
     };
     await expect(propose()).rejects.toThrow("disk full");
     store.createProject = original;
-    expect(bb.callsTo("deleteSection")).toEqual([["sec_1"]]);
+    expect(alia.callsTo("deleteSection")).toEqual([["sec_1"]]);
   });
 
   it("keeps the project when moving the thread fails, and logs a warning", async () => {
-    bb.moveThread = async () => {
-      throw new Error("bb is down");
+    alia.moveThread = async () => {
+      throw new Error("alia is down");
     };
     const result = await propose();
     expect(result.state).toBe("draft");
     expect(store.projectBySlug("csv")).not.toBeNull();
-    expect(bb.callsTo("log").some(([level, text]) => level === "warn" && String(text).includes("bb is down"))).toBe(true);
+    expect(alia.callsTo("log").some(([level, text]) => level === "warn" && String(text).includes("alia is down"))).toBe(true);
   });
 });
 
@@ -239,13 +239,13 @@ describe("repos", () => {
   const ticketRepos = () => store.tickets(store.projectBySlug("csv")!.id).map((ticket) => [ticket.key, ticket.repo]);
 
   beforeEach(() => {
-    bb.addBbProject("proj_web", { host_local: "/src/web" });
-    bb.addBbProject("proj_api", { host_local: "/src/api", host_other: "/elsewhere/api" });
+    alia.addAliaProject("proj_web", { host_local: "/src/web" });
+    alia.addAliaProject("proj_api", { host_local: "/src/api", host_other: "/elsewhere/api" });
   });
 
-  it("accepts repos that are standard bb projects checked out on the proposer's machine, reading bb's projects once, and stores each ticket's repo", async () => {
+  it("accepts repos that are standard VesnALIA projects checked out on the proposer's machine, reading VesnALIA's projects once, and stores each ticket's repo", async () => {
     expect(await multi()).toMatchObject({ slug: "csv", version: 1, state: "draft", change: "created" });
-    expect(bb.callsTo("listProjects")).toHaveLength(1);
+    expect(alia.callsTo("listProjects")).toHaveLength(1);
     await projects.approve("csv", "human");
     expect(ticketRepos()).toEqual([
       ["CSV-1", "web"],
@@ -258,66 +258,66 @@ describe("repos", () => {
     await propose((doc) => (doc.project.goal = "Export orders as CSV, with a delimiter the person can choose."));
     await projects.approve("csv", "human");
     await propose((doc) => (doc.project.goal = "Export orders as CSV, with a delimiter and a date range filter."));
-    expect(bb.callsTo("listProjects")).toEqual([]);
+    expect(alia.callsTo("listProjects")).toEqual([]);
     expect(ticketRepos()).toEqual([
       ["CSV-1", null],
       ["CSV-2", null],
     ]);
   });
 
-  it("refuses a bb project bb does not know and lists the standard projects as name (id), leaving the personal one out", async () => {
-    bb.addBbProject("proj_personal", {}, { name: "Personal", kind: "personal" });
+  it("refuses a VesnALIA project VesnALIA does not know and lists the standard projects as name (id), leaving the personal one out", async () => {
+    alia.addAliaProject("proj_personal", {}, { name: "Personal", kind: "personal" });
     const error = await failure(multi((doc) => (doc.repo[1].project = "proj_nope")));
     expect(error.code).toBe("loom_invalid_spec");
-    expect(error.message).toContain(`\n1. repo[1].project: bb has no project "proj_nope". Use the id of one of bb's projects: shop (proj_1), web (proj_web), api (proj_api).`);
+    expect(error.message).toContain(`\n1. repo[1].project: VesnALIA has no project "proj_nope". Use the id of one of VesnALIA's projects: shop (proj_1), web (proj_web), api (proj_api).`);
     expect(error.message).not.toContain("proj_personal");
     expect(error.message).not.toMatch(/\n2\. /);
     expect(store.projects()).toEqual([]);
   });
 
   it("lists at most 20 known projects", async () => {
-    for (let n = 1; n <= 25; n += 1) bb.addBbProject(`proj_x${n}`, { host_local: `/src/x${n}` });
+    for (let n = 1; n <= 25; n += 1) alia.addAliaProject(`proj_x${n}`, { host_local: `/src/x${n}` });
     const error = await failure(multi((doc) => (doc.repo[0].project = "proj_nope")));
-    const listed = error.message.match(/Use the id of one of bb's projects: (.*)\.$/m)![1]!;
+    const listed = error.message.match(/Use the id of one of alia's projects: (.*)\.$/m)![1]!;
     expect(listed.split(", ").filter((entry) => / \(proj_\w+\)$/.test(entry))).toHaveLength(20);
     expect(listed).toMatch(/^shop \(proj_1\), web \(proj_web\), api \(proj_api\), x1 \(proj_x1\), /);
     expect(listed).toContain("x17 (proj_x17), and 8 more");
     expect(listed).not.toContain("proj_x18");
   });
 
-  it("refuses bb's personal project", async () => {
-    bb.addBbProject("proj_personal", {}, { name: "Personal", kind: "personal" });
+  it("refuses VesnALIA's personal project", async () => {
+    alia.addAliaProject("proj_personal", {}, { name: "Personal", kind: "personal" });
     const error = await failure(multi((doc) => (doc.repo[0].project = "proj_personal")));
-    expect(error.message).toContain(`1. repo[0].project: "proj_personal" is bb's personal project, which has no git checkout. Use the id of one of bb's projects: shop (proj_1), web (proj_web), api (proj_api).`);
+    expect(error.message).toContain(`1. repo[0].project: "proj_personal" is VesnALIA's personal project, which has no git checkout. Use the id of one of VesnALIA's projects: shop (proj_1), web (proj_web), api (proj_api).`);
   });
 
-  it("refuses a bb project with no checkout on the proposer's machine and gives the command that clones it there", async () => {
-    bb.addBbProject("proj_docs", { host_other: "/src/docs" });
+  it("refuses a VesnALIA project with no checkout on the proposer's machine and gives the command that clones it there", async () => {
+    alia.addAliaProject("proj_docs", { host_other: "/src/docs" });
     const error = await failure(
       multi((doc) => {
         doc.repo.push({ name: "docs", project: "proj_docs" });
         doc.ticket[1].repo = "docs";
       }),
     );
-    expect(error.message).toContain("1. repo[2].project: bb project docs (proj_docs) has no checkout on this machine (host_local), where the project's workers run. Clone it here with `bb project source add proj_docs --clone --machine host_local`, then call loom_propose again.");
+    expect(error.message).toContain("1. repo[2].project: VesnALIA project docs (proj_docs) has no checkout on this machine (host_local), where the project's workers run. Clone it here with `alia project source add proj_docs --clone --machine host_local`, then call loom_propose again.");
     expect(error.message).not.toMatch(/\n2\. /);
     expect(store.projects()).toEqual([]);
   });
 
-  it("refuses the spec and says to try again when bb's projects cannot be read", async () => {
-    bb.bbProjects = new Error("bb is restarting");
+  it("refuses the spec and says to try again when VesnALIA's projects cannot be read", async () => {
+    alia.aliaProjects = new Error("alia is restarting");
     const error = await failure(multi());
     expect(error.code).toBe("loom_invalid_spec");
-    expect(error.message).toContain("1. repo: Loom could not read bb's projects to check the [[repo]] tables (bb is restarting), and the project could not start without a checkout of every repo. Call loom_propose again in a moment.");
+    expect(error.message).toContain("1. repo: Loom could not read VesnALIA's projects to check the [[repo]] tables (VesnALIA is restarting), and the project could not start without a checkout of every repo. Call loom_propose again in a moment.");
     expect(store.projects()).toEqual([]);
-    expect(bb.callsTo("ensureSection")).toEqual([]);
+    expect(alia.callsTo("ensureSection")).toEqual([]);
   });
 
-  it("refuses a multi-repo spec when bb cannot say which machine the proposer runs on", async () => {
-    const error = await failure(projects.propose({ toml: specToml(withRepos), threadId: "thr_plan", bbProjectId: "proj_1", hostId: null }));
-    expect(error.message).toContain("1. repo: bb did not say which machine this thread runs on");
-    expect(bb.callsTo("listProjects")).toEqual([]);
-    expect(await projects.propose({ toml: specToml(), threadId: "thr_plan", bbProjectId: "proj_1", hostId: null })).toMatchObject({ change: "created" });
+  it("refuses a multi-repo spec when VesnALIA cannot say which machine the proposer runs on", async () => {
+    const error = await failure(projects.propose({ toml: specToml(withRepos), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: null }));
+    expect(error.message).toContain("1. repo: VesnALIA did not say which machine this thread runs on");
+    expect(alia.callsTo("listProjects")).toEqual([]);
+    expect(await projects.propose({ toml: specToml(), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: null })).toMatchObject({ change: "created" });
   });
 
   describe("after approval", () => {
@@ -328,15 +328,15 @@ describe("repos", () => {
     const pendingVersion = () => store.projectBySlug("csv")!.pending_version;
 
     it("saves a revision that only adds a repo as a pending version", async () => {
-      bb.addBbProject("proj_docs", { host_local: "/src/docs" });
+      alia.addAliaProject("proj_docs", { host_local: "/src/docs" });
       const result = await multi((doc) => doc.repo.push({ name: "docs", project: "proj_docs" }));
       expect(result).toMatchObject({ version: 2, pending: true, change: "pending" });
       expect(pendingVersion()).toBe(2);
     });
 
-    it("still checks an added repo against bb", async () => {
+    it("still checks an added repo against VesnALIA", async () => {
       const error = await failure(multi((doc) => doc.repo.push({ name: "docs", project: "proj_nope" })));
-      expect(error.message).toContain('repo[2].project: bb has no project "proj_nope".');
+      expect(error.message).toContain('repo[2].project: VesnALIA has no project "proj_nope".');
       expect(pendingVersion()).toBeNull();
     });
 
@@ -364,7 +364,7 @@ describe("repos", () => {
     });
 
     it("refuses to change a repo's project, base or remote", async () => {
-      bb.addBbProject("proj_site", { host_local: "/src/site" });
+      alia.addAliaProject("proj_site", { host_local: "/src/site" });
       const project = await failure(multi((doc) => (doc.repo[0].project = "proj_site")));
       expect(project.message).toContain('1. repo[0].project: repo "web" cannot change from "proj_web" to "proj_site" after approval, because its tickets, branches and worktrees already use it. Keep the project; for work in another repository, add a new [[repo]] table.');
 
@@ -403,18 +403,18 @@ describe("ensureProjectSection", () => {
   const expectRepaired = (expectedId: string) => {
     const project = store.projectBySlug("csv")!;
     expect(project.section_id).toBe(expectedId);
-    expect(bb.sections.has(expectedId)).toBe(true);
-    expect(bb.sections.get(expectedId)).toBe("Loom · CSV export (csv)");
-    expect(bb.callsTo("moveThread").at(-1)).toEqual(["thr_plan", expectedId]);
+    expect(alia.sections.has(expectedId)).toBe(true);
+    expect(alia.sections.get(expectedId)).toBe("Loom · CSV export (csv)");
+    expect(alia.callsTo("moveThread").at(-1)).toEqual(["thr_plan", expectedId]);
   };
 
   it("proposing an unchanged spec recreates a deleted section and moves the planner into it", async () => {
     await propose();
-    bb.sections.delete("sec_1");
+    alia.sections.delete("sec_1");
     const result = await propose();
     expect(result).toMatchObject({ change: "unchanged", version: 1 });
     expectRepaired("sec_2");
-    expect(bb.callsTo("moveThread")).toEqual([
+    expect(alia.callsTo("moveThread")).toEqual([
       ["thr_plan", "sec_1"],
       ["thr_plan", "sec_2"],
     ]);
@@ -422,18 +422,18 @@ describe("ensureProjectSection", () => {
 
   it("repairs the section when a draft revision renames the project", async () => {
     await propose();
-    bb.sections.delete("sec_1");
+    alia.sections.delete("sec_1");
     await propose((doc) => (doc.project.name = "Orders CSV"));
     const project = store.projectBySlug("csv")!;
     expect(project).toMatchObject({ name: "Orders CSV", section_id: "sec_2" });
-    expect([...bb.sections]).toEqual([["sec_2", "Loom · Orders CSV (csv)"]]);
-    expect(bb.callsTo("moveThread").at(-1)).toEqual(["thr_plan", "sec_2"]);
+    expect([...alia.sections]).toEqual([["sec_2", "Loom · Orders CSV (csv)"]]);
+    expect(alia.callsTo("moveThread").at(-1)).toEqual(["thr_plan", "sec_2"]);
   });
 
   it("repairs the section when an approved project gets a pending version", async () => {
     await propose();
     await projects.approve("csv", "human");
-    bb.sections.delete("sec_1");
+    alia.sections.delete("sec_1");
     const result = await propose((doc) => (doc.project.goal = "Export orders as CSV, with a delimiter the person can choose."));
     expect(result.change).toBe("pending");
     expectRepaired("sec_2");
@@ -444,34 +444,34 @@ describe("ensureProjectSection", () => {
     expect(await projects.ensureProjectSection(store.projectBySlug("csv")!)).toBe("sec_1");
     await propose();
     expect(store.projectBySlug("csv")?.section_id).toBe("sec_1");
-    expect(bb.callsTo("moveThread")).toEqual([["thr_plan", "sec_1"]]);
+    expect(alia.callsTo("moveThread")).toEqual([["thr_plan", "sec_1"]]);
   });
 
   it("returns the new id for a caller such as the engine", async () => {
     await propose();
-    bb.sections.delete("sec_1");
+    alia.sections.delete("sec_1");
     expect(await projects.ensureProjectSection(store.projectBySlug("csv")!)).toBe("sec_2");
     expect(store.projectBySlug("csv")?.section_id).toBe("sec_2");
   });
 
-  it("logs a warning and returns the stored id when bb refuses", async () => {
+  it("logs a warning and returns the stored id when VesnALIA refuses", async () => {
     await propose();
-    bb.sections.delete("sec_1");
-    bb.takenNames.add("Loom · CSV export (csv)");
+    alia.sections.delete("sec_1");
+    alia.takenNames.add("Loom · CSV export (csv)");
     const result = await propose();
     expect(result.change).toBe("unchanged");
     expect(await projects.ensureProjectSection(store.projectBySlug("csv")!)).toBe("sec_1");
     expect(store.projectBySlug("csv")?.section_id).toBe("sec_1");
-    expect(bb.callsTo("moveThread")).toEqual([["thr_plan", "sec_1"]]);
-    expect(bb.callsTo("log").some(([level, text]) => level === "warn" && String(text).includes("Could not repair the project's section"))).toBe(true);
+    expect(alia.callsTo("moveThread")).toEqual([["thr_plan", "sec_1"]]);
+    expect(alia.callsTo("log").some(([level, text]) => level === "warn" && String(text).includes("Could not repair the project's section"))).toBe(true);
   });
 
   it("does not give an archived project a new section", async () => {
     await propose();
     await projects.archive("csv", "human");
-    const calls = bb.callsTo("ensureSection").length;
+    const calls = alia.callsTo("ensureSection").length;
     expect(await projects.ensureProjectSection(store.projectBySlug("csv")!)).toBeNull();
-    expect(bb.callsTo("ensureSection")).toHaveLength(calls);
+    expect(alia.callsTo("ensureSection")).toHaveLength(calls);
   });
 
   const finish = async () => {
@@ -484,37 +484,37 @@ describe("ensureProjectSection", () => {
 
   it("removes a done project's section once", async () => {
     await projects.removeFinishedSection(await finish());
-    expect(bb.callsTo("deleteSection")).toEqual([["sec_1"]]);
+    expect(alia.callsTo("deleteSection")).toEqual([["sec_1"]]);
     expect(store.projectBySlug("csv")?.section_id).toBeNull();
-    expect(bb.sections.has("sec_1")).toBe(false);
-    const calls = bb.calls.length;
+    expect(alia.sections.has("sec_1")).toBe(false);
+    const calls = alia.calls.length;
     await projects.removeFinishedSection(store.projectBySlug("csv")!);
-    expect(bb.calls).toHaveLength(calls);
+    expect(alia.calls).toHaveLength(calls);
   });
 
   it("leaves a running project's section alone", async () => {
     await propose();
     await projects.approve("csv", "human");
     await projects.start("csv", "human");
-    const calls = bb.calls.length;
+    const calls = alia.calls.length;
     await projects.removeFinishedSection(store.projectBySlug("csv")!);
-    expect(bb.calls).toHaveLength(calls);
+    expect(alia.calls).toHaveLength(calls);
     expect(store.projectBySlug("csv")?.section_id).toBe("sec_1");
   });
 
-  it("keeps the section id and logs a warning when bb refuses the deletion", async () => {
+  it("keeps the section id and logs a warning when VesnALIA refuses the deletion", async () => {
     const done = await finish();
-    bb.deleteSectionError = new Error("bb is down");
+    alia.deleteSectionError = new Error("alia is down");
     await projects.removeFinishedSection(done);
     expect(store.projectBySlug("csv")?.section_id).toBe("sec_1");
-    expect(bb.callsTo("log").some(([level, text]) => level === "warn" && String(text).includes("Could not delete the project's section"))).toBe(true);
+    expect(alia.callsTo("log").some(([level, text]) => level === "warn" && String(text).includes("Could not delete the project's section"))).toBe(true);
   });
 
   it("does not give a done project a new section", async () => {
     await projects.removeFinishedSection(await finish());
-    const calls = bb.callsTo("ensureSection").length;
+    const calls = alia.callsTo("ensureSection").length;
     await propose();
-    expect(bb.callsTo("ensureSection")).toHaveLength(calls);
+    expect(alia.callsTo("ensureSection")).toHaveLength(calls);
     expect(store.projectBySlug("csv")?.section_id).toBeNull();
     expect(await projects.ensureProjectSection(store.projectBySlug("csv")!)).toBeNull();
   });
@@ -570,7 +570,7 @@ describe("approve", () => {
     const result = await projects.approve("csv", "human", 2);
     expect(result).toEqual({ slug: "csv", state: "ready", version: 2, applied: "pending", tickets: [] });
     expect(store.projectBySlug("csv")).toMatchObject({ approved_version: 2, pending_version: null, name: "Orders CSV" });
-    expect(bb.callsTo("renameSection")).toEqual([["sec_1", "Loom · Orders CSV (csv)"]]);
+    expect(alia.callsTo("renameSection")).toEqual([["sec_1", "Loom · Orders CSV (csv)"]]);
     expect(store.tickets(store.projectBySlug("csv")!.id)).toHaveLength(2);
   });
 
@@ -597,22 +597,22 @@ describe("lifecycle", () => {
   it("start and resume make a missing section again and move the planner into it", async () => {
     await propose();
     await projects.approve("csv", "human");
-    bb.sections.delete("sec_1");
+    alia.sections.delete("sec_1");
     expect(await projects.start("csv", "human")).toMatchObject({ state: "running", section_id: "sec_2" });
     expect(store.projectBySlug("csv")?.section_id).toBe("sec_2");
-    expect(bb.callsTo("moveThread").at(-1)).toEqual(["thr_plan", "sec_2"]);
+    expect(alia.callsTo("moveThread").at(-1)).toEqual(["thr_plan", "sec_2"]);
     await projects.pause("csv", "human");
-    bb.sections.delete("sec_2");
+    alia.sections.delete("sec_2");
     expect(await projects.resume("csv", "human")).toMatchObject({ state: "running", section_id: "sec_3" });
-    expect(bb.callsTo("moveThread").at(-1)).toEqual(["thr_plan", "sec_3"]);
+    expect(alia.callsTo("moveThread").at(-1)).toEqual(["thr_plan", "sec_3"]);
   });
 
   it("start leaves a section that still exists alone", async () => {
     await propose();
     await projects.approve("csv", "human");
-    const moves = bb.callsTo("moveThread").length;
+    const moves = alia.callsTo("moveThread").length;
     expect(await projects.start("csv", "human")).toMatchObject({ section_id: "sec_1" });
-    expect(bb.callsTo("moveThread")).toHaveLength(moves);
+    expect(alia.callsTo("moveThread")).toHaveLength(moves);
   });
 
   it("records pause --now in the event", async () => {
@@ -629,7 +629,7 @@ describe("lifecycle", () => {
     const start = await failure(projects.start("csv", "human"));
     expect(start.code).toBe("loom_invalid_state");
     expect(start.message).toContain("draft");
-    expect(start.hint).toContain("bb loom approve csv");
+    expect(start.hint).toContain("alia loom approve csv");
     expect((await failure(projects.pause("csv", "human"))).message).toContain("draft");
     await projects.approve("csv", "human");
     expect((await failure(projects.resume("csv", "human"))).message).toContain("ready");
@@ -645,7 +645,7 @@ describe("lifecycle", () => {
     const project = store.projectBySlug("csv")!;
     expect(project).toMatchObject({ state: "archived", section_id: null });
     expect(store.tickets(project.id).map((ticket) => ticket.state)).toEqual(["cancelled", "cancelled"]);
-    expect(bb.callsTo("deleteSection")).toEqual([["sec_1"]]);
+    expect(alia.callsTo("deleteSection")).toEqual([["sec_1"]]);
     expect((await failure(projects.archive("csv", "human"))).message).toContain("archived");
   });
 
@@ -826,22 +826,22 @@ describe("repos in the views", () => {
     doc.ticket[1].depends_on = [];
   };
   async function multiRepo() {
-    bb.addBbProject("proj_web", { host_local: "/src/web" }, { name: "Shop web" });
-    bb.addBbProject("proj_api", { host_local: "/src/api" }, { name: "Shop API" });
+    alia.addAliaProject("proj_web", { host_local: "/src/web" }, { name: "Shop web" });
+    alia.addAliaProject("proj_api", { host_local: "/src/api" }, { name: "Shop API" });
     await propose(withRepos);
     await projects.approve("csv", "human");
     const project = store.projectBySlug("csv")!;
     store.setProjectState(project.id, "running", "human");
     return project;
   }
-  const repo = (over: Record<string, unknown>) => ({ bbProjectName: null, branch: "loom/csv", prUrl: null, landedAt: null, toLand: false, ...over });
+  const repo = (over: Record<string, unknown>) => ({ aliaProjectName: null, branch: "loom/csv", prUrl: null, landedAt: null, toLand: false, ...over });
 
-  it("a single-repo project has one repo, named null, in the Loom project's bb project, with its last land from the events", async () => {
+  it("a single-repo project has one repo, named null, in the Loom project's VesnALIA project, with its last land from the events", async () => {
     await propose();
     await projects.approve("csv", "human");
     const project = store.projectBySlug("csv")!;
     store.setProjectState(project.id, "running", "human");
-    expect(projects.overview("csv").repos).toEqual([repo({ name: null, bbProjectId: "proj_1", base: "main" })]);
+    expect(projects.overview("csv").repos).toEqual([repo({ name: null, aliaProjectId: "proj_1", base: "main" })]);
     expect(projects.tickets("csv").map((ticket) => ticket.repo)).toEqual([null, null]);
     expect(projects.ticketView("CSV-1").repo).toBeNull();
 
@@ -860,9 +860,9 @@ describe("repos in the views", () => {
     expect(projects.overview("csv").repos[0]).toMatchObject({ prUrl: url, landedAt: clock.now() });
   });
 
-  it("a multi-repo project has one repo per [[repo]] table, in the spec's order, with its bb project, base and last land", async () => {
+  it("a multi-repo project has one repo per [[repo]] table, in the spec's order, with its VesnALIA project, base and last land", async () => {
     const project = await multiRepo();
-    expect(projects.overview("csv").repos).toEqual([repo({ name: "web", bbProjectId: "proj_web", base: "main" }), repo({ name: "api", bbProjectId: "proj_api", base: "trunk" })]);
+    expect(projects.overview("csv").repos).toEqual([repo({ name: "web", aliaProjectId: "proj_web", base: "main" }), repo({ name: "api", aliaProjectId: "proj_api", base: "trunk" })]);
     expect(projects.tickets("csv").map((ticket) => [ticket.key, ticket.repo])).toEqual([
       ["CSV-1", "web"],
       ["CSV-2", "api"],
@@ -877,13 +877,13 @@ describe("repos in the views", () => {
     const url = "https://github.com/acme/web/pull/1";
     store.updateProjectRepo(project.id, "web", { pr_url: url, landed_sha: "abc", landed_at: clock.now() }, "human", { url, sha: "abc", created: true });
     const [web, api] = projects.overview("csv").repos;
-    expect(web).toEqual(repo({ name: "web", bbProjectId: "proj_web", base: "main", prUrl: url, landedAt: clock.now() }));
+    expect(web).toEqual(repo({ name: "web", aliaProjectId: "proj_web", base: "main", prUrl: url, landedAt: clock.now() }));
     expect(api).toMatchObject({ name: "api", prUrl: null, landedAt: null, toLand: true });
   });
 
   it("a pull request strategy project has no integration branch and nothing to land", async () => {
-    bb.addBbProject("proj_web", { host_local: "/src/web" });
-    bb.addBbProject("proj_api", { host_local: "/src/api" });
+    alia.addAliaProject("proj_web", { host_local: "/src/web" });
+    alia.addAliaProject("proj_api", { host_local: "/src/api" });
     await propose((doc) => {
       withRepos(doc);
       doc.merge = { strategy: "pr" };
@@ -896,21 +896,21 @@ describe("repos in the views", () => {
     ]);
   });
 
-  it("namedOverview and namedList name each repo's bb project, and leave the name null when bb cannot list its projects", async () => {
+  it("namedOverview and namedList name each repo's VesnALIA project, and leave the name null when VesnALIA cannot list its projects", async () => {
     await multiRepo();
-    expect((await projects.namedOverview("csv")).repos.map((entry) => [entry.bbProjectId, entry.bbProjectName])).toEqual([
+    expect((await projects.namedOverview("csv")).repos.map((entry) => [entry.aliaProjectId, entry.aliaProjectName])).toEqual([
       ["proj_web", "Shop web"],
       ["proj_api", "Shop API"],
     ]);
-    expect((await projects.namedList())[0]!.repos.map((entry) => entry.bbProjectName)).toEqual(["Shop web", "Shop API"]);
-    expect(bb.callsTo("listProjects").length).toBeGreaterThan(0);
+    expect((await projects.namedList())[0]!.repos.map((entry) => entry.aliaProjectName)).toEqual(["Shop web", "Shop API"]);
+    expect(alia.callsTo("listProjects").length).toBeGreaterThan(0);
 
-    bb.bbProjects = new Error("bb is restarting");
-    expect((await projects.namedOverview("csv")).repos.map((entry) => [entry.bbProjectId, entry.bbProjectName])).toEqual([
+    alia.aliaProjects = new Error("alia is restarting");
+    expect((await projects.namedOverview("csv")).repos.map((entry) => [entry.aliaProjectId, entry.aliaProjectName])).toEqual([
       ["proj_web", null],
       ["proj_api", null],
     ]);
-    expect(bb.callsTo("log").at(-1)).toEqual(["warn", "Could not read bb's projects, so repos show their bb project id: bb is restarting"]);
+    expect(alia.callsTo("log").at(-1)).toEqual(["warn", "Could not read VesnALIA's projects, so repos show their VesnALIA project id: VesnALIA is restarting"]);
     await expect(projects.namedOverview("nope")).rejects.toThrow(/No Loom project/);
   });
 });
@@ -926,12 +926,12 @@ describe("planning", () => {
     environment: { type: "project-default" },
     input: [{ type: "text", text, mentions: [] }],
   });
-  const spawned = () => bb.callsTo("spawnPlanner").map(([args]) => args as { request: NewThreadRequest; title: string; kickoff: string });
+  const spawned = () => alia.callsTo("spawnPlanner").map(([args]) => args as { request: NewThreadRequest; title: string; kickoff: string });
   const title = "Let people export their orders as CSV.";
 
   it("startPlanning spawns a planner titled with the goal's first line and the kickoff, records the session, and returns its thread id", async () => {
     expect(await projects.startPlanning({ request: request(), merge: "integration", reviewer: "codex, gpt-5" })).toEqual({ threadId: "thr_p1" });
-    expect(bb.callsTo("projectKind")).toEqual([["proj_1"]]);
+    expect(alia.callsTo("projectKind")).toEqual([["proj_1"]]);
     expect(spawned()).toHaveLength(1);
     const { request: forwarded, title: threadTitle, kickoff } = spawned()[0]!;
     expect(forwarded).toEqual(request());
@@ -943,7 +943,7 @@ describe("planning", () => {
     expect(kickoff).toContain('strategy = "integration"');
     expect(kickoff).toContain("[agents.reviewer]");
     expect(kickoff).toContain(JSON.stringify("codex, gpt-5"));
-    expect(store.planning("thr_p1")).toMatchObject({ bb_project_id: "proj_1", title, started_at: clock.t, ended_at: null });
+    expect(store.planning("thr_p1")).toMatchObject({ alia_project_id: "proj_1", title, started_at: clock.t, ended_at: null });
   });
 
   it("leaves the merge and reviewer sentences out when the merge is ask and the reviewer is empty", async () => {
@@ -958,10 +958,10 @@ describe("planning", () => {
   it("refuses blank text with loom_invalid_input, and a personal or unknown project with loom_no_checkout, and spawns none of them", async () => {
     const blank = await failure(projects.startPlanning({ request: request("  \n "), merge: "ask", reviewer: "" }));
     expect(blank).toMatchObject({ code: "loom_invalid_input", message: "Describe what should exist when the project is done." });
-    bb.projectKinds.set("proj_personal", "personal");
+    alia.projectKinds.set("proj_personal", "personal");
     const personal = await failure(projects.startPlanning({ request: request(undefined, "proj_personal"), merge: "ask", reviewer: "" }));
-    expect(personal).toMatchObject({ code: "loom_no_checkout", message: "Loom needs a bb project with a git checkout. Pick a project in the composer." });
-    bb.projectKind = async () => null;
+    expect(personal).toMatchObject({ code: "loom_no_checkout", message: "Loom needs a VesnALIA project with a git checkout. Pick a project in the composer." });
+    alia.projectKind = async () => null;
     expect((await failure(projects.startPlanning({ request: request(), merge: "ask", reviewer: "" }))).code).toBe("loom_no_checkout");
     expect(spawned()).toEqual([]);
     expect(store.openPlanning()).toEqual([]);
@@ -973,12 +973,12 @@ describe("planning", () => {
     "The human reviews, approves and starts the draft on the Loom page, so point them there when you hand over.",
   ];
   const withRepos = () => {
-    bb.addBbProject("proj_api", { host_local: "/api" }, { name: "shop-api" });
-    bb.addBbProject("proj_docs", {}, { name: "docs" });
-    bb.addBbProject("proj_personal", {}, { name: "Personal", kind: "personal" });
+    alia.addAliaProject("proj_api", { host_local: "/api" }, { name: "shop-api" });
+    alia.addAliaProject("proj_docs", {}, { name: "docs" });
+    alia.addAliaProject("proj_personal", {}, { name: "Personal", kind: "personal" });
   };
 
-  it("sends the same kickoff as before when no repos are picked, or only the composer's own project, and does not ask bb for its projects", async () => {
+  it("sends the same kickoff as before when no repos are picked, or only the composer's own project, and does not ask VesnALIA for its projects", async () => {
     await projects.startPlanning({ request: request(), merge: "ask", reviewer: "" });
     await projects.startPlanning({ request: request(), merge: "ask", reviewer: "", repos: [] });
     await projects.startPlanning({ request: request(), merge: "ask", reviewer: "", repos: ["proj_1"] });
@@ -991,7 +991,7 @@ describe("planning", () => {
         'The human asked for this reviewer model: "codex, gpt-5". Write it into [agents.reviewer] as provider and model; ask only if it is unclear.',
       ].join("\n"),
     );
-    expect(bb.callsTo("listProjects")).toEqual([]);
+    expect(alia.callsTo("listProjects")).toEqual([]);
   });
 
   it("lists the picked repos by name and id in the order picked, without repeats or the composer's project, and tells the planner what to do with them", async () => {
@@ -1001,48 +1001,48 @@ describe("planning", () => {
     expect(lines.slice(0, 4)).toEqual([...KICKOFF, 'The merge plan is already chosen: strategy = "pr" in [merge], so do not ask about it.']);
     expect(lines.slice(4)).toEqual([
       "The human picked these repos for the work, besides this thread's own project: docs (proj_docs), shop-api (proj_api).",
-      "List each repo the work changes in its own [[repo]] table, with its bb project id as project, and include this thread's own project when the work changes it too.",
-      "Every repo needs a checkout on this machine, where the workers run: `bb project list --json` shows each project's checkouts by machine, and `bb status` names this machine. For a repo with no checkout here, offer to clone it with `bb project source add <id> --clone --machine <this machine>`, and run that once the human agrees.",
-      "The picked repos are a starting point, not a limit: you may find other repos with `bb project list` and `bb project discover`, and add any the work also changes.",
+      "List each repo the work changes in its own [[repo]] table, with its VesnALIA project id as project, and include this thread's own project when the work changes it too.",
+      "Every repo needs a checkout on this machine, where the workers run: `alia project list --json` shows each project's checkouts by machine, and `alia status` names this machine. For a repo with no checkout here, offer to clone it with `alia project source add <id> --clone --machine <this machine>`, and run that once the human agrees.",
+      "The picked repos are a starting point, not a limit: you may find other repos with `alia project list` and `alia project discover`, and add any the work also changes.",
     ]);
     expect(spawned()[0]!.request).toEqual(request());
-    expect(store.planning("thr_p1")).toMatchObject({ bb_project_id: "proj_1" });
+    expect(store.planning("thr_p1")).toMatchObject({ alia_project_id: "proj_1" });
 
     await projects.startPlanning({ request: request(), merge: "ask", reviewer: "", repos: ["proj_api"] });
     expect(spawned()[1]!.kickoff.split("\n")[3]).toBe("The human picked this repo for the work, besides this thread's own project: shop-api (proj_api).");
   });
 
-  it("refuses an unknown or personal picked repo with loom_invalid_input naming each, more than 10 repos, and a list bb cannot read, and spawns none of them", async () => {
+  it("refuses an unknown or personal picked repo with loom_invalid_input naming each, more than 10 repos, and a list VesnALIA cannot read, and spawns none of them", async () => {
     withRepos();
     const unknown = await failure(projects.startPlanning({ request: request(), merge: "ask", reviewer: "", repos: ["proj_api", "proj_gone"] }));
-    expect(unknown).toMatchObject({ code: "loom_invalid_input", message: 'bb has no project "proj_gone". Pick the repos from bb\'s standard projects.' });
+    expect(unknown).toMatchObject({ code: "loom_invalid_input", message: 'alia has no project "proj_gone". Pick the repos from VesnALIA\'s standard projects.' });
     const personal = await failure(projects.startPlanning({ request: request(), merge: "ask", reviewer: "", repos: ["proj_personal"] }));
-    expect(personal).toMatchObject({ code: "loom_invalid_input", message: '"proj_personal" is bb\'s personal project, which has no git checkout. Pick the repos from bb\'s standard projects.' });
+    expect(personal).toMatchObject({ code: "loom_invalid_input", message: '"proj_personal" is VesnALIA\'s personal project, which has no git checkout. Pick the repos from VesnALIA\'s standard projects.' });
     const both = await failure(projects.startPlanning({ request: request(), merge: "ask", reviewer: "", repos: ["proj_gone", "proj_personal"] }));
-    expect(both.message).toMatch(/^bb has no project "proj_gone"\. "proj_personal" is bb's personal project/);
+    expect(both.message).toMatch(/^alia has no project "proj_gone"\. "proj_personal" is alia's personal project/);
 
     const many = await failure(projects.startPlanning({ request: request(), merge: "ask", reviewer: "", repos: Array.from({ length: 11 }, (_, n) => `proj_${n}`) }));
     expect(many).toMatchObject({ code: "loom_invalid_input", message: "Pick at most 10 repos; 11 were picked." });
 
-    bb.bbProjects = new Error("bb is restarting");
+    alia.aliaProjects = new Error("alia is restarting");
     const unread = await failure(projects.startPlanning({ request: request(), merge: "ask", reviewer: "", repos: ["proj_api"] }));
-    expect(unread).toMatchObject({ code: "loom_unavailable", message: "Loom could not read bb's projects to check the picked repos: bb is restarting. Try again in a moment." });
+    expect(unread).toMatchObject({ code: "loom_unavailable", message: "Loom could not read VesnALIA's projects to check the picked repos: VesnALIA is restarting. Try again in a moment." });
     expect(spawned()).toEqual([]);
     expect(store.openPlanning()).toEqual([]);
   });
 
-  it("bbProjectChoices lists bb's standard projects by name with the machines that have a checkout, and says when bb cannot list them", async () => {
+  it("aliaProjectChoices lists VesnALIA's standard projects by name with the machines that have a checkout, and says when VesnALIA cannot list them", async () => {
     withRepos();
-    bb.addBbProject("proj_web", { host_local: "/web", host_1: "/web" }, { name: "Shop-web" });
-    (bb.bbProjects as BbProjectInfo[]).find((project) => project.id === "proj_web")!.sources.push({ hostId: "host_1", path: "/web-2", isDefault: false });
-    expect(await projects.bbProjectChoices()).toEqual([
+    alia.addAliaProject("proj_web", { host_local: "/web", host_1: "/web" }, { name: "Shop-web" });
+    (alia.aliaProjects as AliaProjectInfo[]).find((project) => project.id === "proj_web")!.sources.push({ hostId: "host_1", path: "/web-2", isDefault: false });
+    expect(await projects.aliaProjectChoices()).toEqual([
       { id: "proj_docs", name: "docs", hostIds: [] },
       { id: "proj_1", name: "shop", hostIds: ["host_local", "host_1"] },
       { id: "proj_api", name: "shop-api", hostIds: ["host_local"] },
       { id: "proj_web", name: "Shop-web", hostIds: ["host_local", "host_1"] },
     ]);
-    bb.bbProjects = new Error("bb is restarting");
-    expect(await failure(projects.bbProjectChoices())).toMatchObject({ code: "loom_unavailable", message: "Loom could not read bb's projects to list the repos: bb is restarting. Try again in a moment." });
+    alia.aliaProjects = new Error("alia is restarting");
+    expect(await failure(projects.aliaProjectChoices())).toMatchObject({ code: "loom_unavailable", message: "Loom could not read VesnALIA's projects to list the repos: VesnALIA is restarting. Try again in a moment." });
   });
 
   it("lists the open sessions newest first, and a session gets its slug and project state once its thread proposes", async () => {
@@ -1112,8 +1112,8 @@ describe("summaries", () => {
     // A project as it was stored before summaries existed: the approved spec has no project.summary.
     const db = makeDb();
     const old = new Store(db, clock.now);
-    const oldProjects = new Projects({ store: old, bb, now: clock.now, host });
-    const proposeOld = (edit?: (doc: Doc) => void) => oldProjects.propose({ toml: specToml(edit), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_local" });
+    const oldProjects = new Projects({ store: old, alia, now: clock.now, host });
+    const proposeOld = (edit?: (doc: Doc) => void) => oldProjects.propose({ toml: specToml(edit), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_local" });
     await proposeOld();
     await oldProjects.approve("csv", "human");
     const id = old.projectBySlug("csv")!.id;

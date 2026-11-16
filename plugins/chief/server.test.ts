@@ -1,12 +1,12 @@
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, test } from "vitest";
-import type { PluginAgentConfigurationContext } from "@get-bb/plugin-sdk";
+import type { PluginAgentConfigurationContext } from "@vesnalia/plugin-sdk";
 import {
   createFakePluginHost,
   experimental_scanPublicSdkOnly,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 
 const disposals: Array<() => Promise<void>> = [];
@@ -34,7 +34,7 @@ async function setup() {
   const live = new Map<string, ReturnType<typeof makeThreadResponse>>();
   const sent: any[] = [];
   const spawned: any[] = [];
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "chief",
     agentSkillIds: ["chief", "chief-worker"],
     sdk: {
@@ -98,7 +98,7 @@ async function setup() {
       },
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   disposals.push(() => harness.lifecycle.dispose());
 
   async function supervisorCycle() {

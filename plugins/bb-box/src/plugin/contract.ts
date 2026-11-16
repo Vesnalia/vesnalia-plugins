@@ -4,7 +4,7 @@ import type { FilesTree } from "../core/files-tree.ts";
 import type { Busy } from "../monitor/busy.ts";
 import type { MachineAccessProblem, MachineSetup } from "./setup-offer.ts";
 import type { RunProgress } from "./images.ts";
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import type { FilesHome, FilesList, FilesNames, FilesOk, FilesRange, FilesRead, FilesSearch, FilesWrite } from "../core/box-fs.ts";
 import { z } from "zod";
 import { isMachineName } from "../core/names.ts";
@@ -33,12 +33,12 @@ export interface PanelState {
   readonly boxes: readonly BoxView[];
   readonly kinds: readonly KindView[];
   readonly backends: readonly BackendView[];
-  /** The desktop relay's WebSocket path on the BB server. */
+  /** The desktop relay's WebSocket path on the VesnALIA server. */
   readonly desktopPath: string;
-  /** The terminal's WebSocket path on the BB server. */
+  /** The terminal's WebSocket path on the VesnALIA server. */
   readonly terminalPath: string;
   /**
-   * The box whose BB machine this thread runs on, when it is not one of the
+   * The box whose VesnALIA machine this thread runs on, when it is not one of the
    * thread's own boxes (036): one of your machines, or another thread's box.
    */
   readonly runsOn: { readonly box: BoxView; readonly owner: "yours" | "thread"; /** The thread that holds it, when another thread's. */ readonly threadId: string | null } | null;
@@ -46,7 +46,7 @@ export interface PanelState {
   readonly imageOffer: boolean;
   /** The projects' images a box of the thread can choose (049), the project's own marked `mine`. "standard" is a choice too. */
   readonly images: readonly ImageOptionView[];
-  /** A BB machine whose Docker desktop image is off, which New box can build first (the setup plan's PR 4). Absent or null for none. */
+  /** A VesnALIA machine whose Docker desktop image is off, which New box can build first (the setup plan's PR 4). Absent or null for none. */
   readonly desktopOnDemand?: DesktopOnDemandView | null;
   /** Why the desktop box this thread asked to build first was not made once its image was built, and when; absent or null for none. */
   readonly desktopProblem?: { readonly message: string; readonly at: number } | null;
@@ -133,7 +133,7 @@ export interface BoxEntry {
   readonly activeAt?: number;
 }
 
-/** One of your machines (036), and the threads on its BB machine. */
+/** One of your machines (036), and the threads on its VesnALIA machine. */
 export interface MachineEntry {
   readonly box: BoxView;
   readonly threads: readonly ThreadOnBox[];
@@ -144,7 +144,7 @@ export interface BoxResult {
   /** Null when the box is gone, for example once released. */
   readonly box: BoxView | null;
   readonly error: string | null;
-  /** Threads working on the box's BB machine, when a release or stop left it alone for them. Ask, then send `force`. */
+  /** Threads working on the box's VesnALIA machine, when a release or stop left it alone for them. Ask, then send `force`. */
   readonly threads?: readonly ThreadOnBox[];
 }
 
@@ -184,7 +184,7 @@ export interface ResizeResult {
   } | null;
   /** It changed the box. */
   readonly changed: boolean;
-  /** What a live change of cores means for BB's count of the machine's processors and its thread limit, or null. */
+  /** What a live change of cores means for VesnALIA's count of the machine's processors and its thread limit, or null. */
   readonly machine: string | null;
   /** Refused only because a part needs a restart, which the panel asks about, then sends `restart`. */
   readonly needsRestart: boolean;
@@ -196,7 +196,7 @@ export interface ResizeResult {
   readonly error: string | null;
 }
 
-/** A thread that runs on a box's BB machine. */
+/** A thread that runs on a box's VesnALIA machine. */
 export interface ThreadOnBox {
   readonly id: string;
   readonly title: string | null;
@@ -243,7 +243,7 @@ const snapshotRequest = z.string().regex(/^[A-Za-z0-9_-]{8,64}$/);
 const oneBox = thread.extend({ box: z.string().min(1) });
 /** The viewer ID names one viewer, such as a panel tab, of a box's desktop. */
 const viewerId = z.string().regex(/^[A-Za-z0-9_-]{8,64}$/);
-/** The longest text, in UTF-16 code units, that a paste through bb-box's own commands carries (#464). */
+/** The longest text, in UTF-16 code units, that a paste through alia-box's own commands carries (#464). */
 export const MAX_PASTE_LENGTH = 1_000_000;
 const viewer = oneBox.extend({ viewer: viewerId });
 const boxResult = z.custom<BoxResult>();
@@ -265,7 +265,7 @@ const size = z.object({ preset: z.string().min(1).optional(), cores: whole, memo
  */
 const resizing = z.object({ size: size.optional(), check: z.boolean().optional(), restart: z.boolean().optional(), force: z.boolean().optional() });
 
-/** A whole configuration document as JSON (029). bb-box checks it. */
+/** A whole configuration document as JSON (029). alia-box checks it. */
 const draft = z.unknown();
 /** Where a box goes (044): one provider, or a list for the first with room among them. */
 const providers = z.union([z.string().min(1), z.array(z.string().min(1)).min(1)]);
@@ -277,7 +277,7 @@ export const contract = defineRpcContract({
    * `image` is an image's name or "standard" (049); without it, the thread's project's image for the kind.
    */
   acquire: { input: thread.extend({ kind: z.string().min(1), size: size.optional(), on: providers.optional(), image: z.string().min(1).optional(), device: z.string().min(1).optional(), dedicated: z.boolean().optional(), shared: z.boolean().optional() }), output: boxResult },
-  /** The projects' images a box can choose (049), marked as the thread's or the project's own, for BB's new-thread inputs, where there is no thread yet. */
+  /** The projects' images a box can choose (049), marked as the thread's or the project's own, for VesnALIA's new-thread inputs, where there is no thread yet. */
   images: { input: z.object({ threadId: z.string().min(1).optional(), projectId: z.string().min(1).optional() }), output: z.custom<ImageOptionView[]>() },
   /** Without `force`, a box a thread is working on is left alone, and the answer names the threads. */
   release: { input: forceable.extend({ deleteKept: z.boolean().optional() }), output: boxResult },
@@ -290,13 +290,13 @@ export const contract = defineRpcContract({
   desktop: { input: oneBox, output: z.custom<DesktopState>() },
   /** Puts the box's desktop at high resolution, or not: twice the pixels at twice Xfce's scale. Refused, with why, where it cannot be. */
   "desktop.sharp": { input: oneBox.extend({ on: z.boolean() }), output: z.custom<{ readonly error: string | null }>() },
-  /** Answers at once: the viewer times it, for its round trip to BB's server (056). */
+  /** Answers at once: the viewer times it, for its round trip to VesnALIA's server (056). */
   ping: { input: z.null(), output: z.null() },
   /**
-   * A CPU profile of BB's server process, which runs bb-box, for 1 to 60 s, summed up in lines that are logged too:
+   * A CPU profile of VesnALIA's server process, which runs alia-box, for 1 to 60 s, summed up in lines that are logged too:
    * functions' names, files, lines and times only, and the long garbage collections meanwhile. `keep` keeps the
-   * profile as a .cpuprofile file in bb-box's own folder of BB's data, the last five. `allocations` samples the heap's
-   * allocations meanwhile, kept as a .heapprofile. `snapshot` writes a full heap snapshot after: it holds BB's server
+   * profile as a .cpuprofile file in alia-box's own folder of VesnALIA's data, the last five. `allocations` samples the heap's
+   * allocations meanwhile, kept as a .heapprofile. `snapshot` writes a full heap snapshot after: it holds VesnALIA's server
    * still for as long as that takes, seconds or more on a large heap, and needs as much free memory as the heap uses,
    * or it is refused.
    */
@@ -338,7 +338,7 @@ export const contract = defineRpcContract({
   "snapshots.bulk": { input: z.object({ snapshots: z.array(z.string().min(1)).min(1).max(200), change: z.enum(["keep", "delete"]), ...keepDate }), output: z.custom<BulkDone>() },
   "snapshot.forkCheck": { input: z.object({ box: z.string().min(1), snapshot: z.string().min(1), asMachine: z.boolean().optional(), gpu: z.enum(["none", "shared", "whole"]).optional() }), output: z.custom<ForkPreview>() },
   "snapshot.fork": { input: z.object({ box: z.string().min(1), snapshot: z.string().min(1), name: z.string().max(32).refine((name) => name === "" || isMachineName(name)).optional(), asMachine: z.boolean().optional(), gpu: z.enum(["none", "shared", "whole"]).optional(), request: snapshotRequest }), output: z.custom<ForkStarted>() },
-  /** Your machines (036), oldest first, and the kinds that can be yours: on offer, and able to become BB machines. */
+  /** Your machines (036), oldest first, and the kinds that can be yours: on offer, and able to become VesnALIA machines. */
   "machines.list": { input: z.null(), output: z.custom<MachinesState>() },
   /** Adds one: returns once it is recorded, and the "changed" signal for "operator" follows its progress. */
   "machines.add": {
@@ -350,19 +350,19 @@ export const contract = defineRpcContract({
   "machines.stop": { input: machineRef.extend({ force: z.boolean().optional() }), output: boxResult },
   "machines.start": { input: machineRef, output: boxResult },
   "machines.resize": { input: machineRef.merge(resizing), output: z.custom<ResizeResult>() },
-  /** The kinds on offer now, for "New box" in BB's new-thread screen. */
+  /** The kinds on offer now, for "New box" in VesnALIA's new-thread screen. */
   /** A provider's profile for the form's (i): data the plugin has, and one capacity call to the provider. Asked only when opened. */
   provider: { input: z.object({ backend: z.string().min(1) }), output: z.custom<ProviderProfile>() },
   rooms: { input: z.object({ kind: z.string().min(1), size: size.optional() }), output: z.custom<OfferRoom[]>() },
   "kind.cards": { input: z.object({ kind: z.string().min(1) }), output: z.custom<KindCards[]>() },
   kinds: { input: z.null(), output: z.custom<KindView[]>() },
   projects: { input: z.null(), output: z.custom<{ readonly id: string; readonly name: string }[]>() },
-  /** Starts a child thread on a box's BB machine. */
+  /** Starts a child thread on a box's VesnALIA machine. */
   thread: { input: oneBox.extend({ prompt: z.string().min(1) }), output: z.custom<ThreadResult>() },
   backends: { input: z.null(), output: z.custom<BackendView[]>() },
   doctor: { input: z.null(), output: z.custom<DoctorView>() },
   /** The configuration, its defaults and problems, and each backend's state (029). */
-  /** The standard images bb-box rebuilds, most needed first, with why each is due (Rebuild now). Lists each backend's images. */
+  /** The standard images alia-box rebuilds, most needed first, with why each is due (Rebuild now). Lists each backend's images. */
   "images.list": { input: z.null(), output: z.custom<{ readonly images: ImagesStatus["images"] }>() },
   /** Where a refresh run is, image by image, at once: the run going on, or the last one. */
   "images.progress": { input: z.null(), output: z.custom<Pick<ImagesStatus, "progress" | "running" | "failures">>() },
@@ -383,15 +383,15 @@ export const contract = defineRpcContract({
     output: z.custom<ApplyResult>(),
   },
   "config.migrated.remove": { input: z.null(), output: z.custom<{ readonly removed: boolean; readonly state: ConfigState }>() },
-  /** BB machines that can host Docker boxes, with Docker as it answers through bb-box's relay (042). `recheck` asks that machine's Docker again rather than taking what it said in the last minute. */
+  /** VesnALIA machines that can host Docker boxes, with Docker as it answers through alia-box's relay (042). `recheck` asks that machine's Docker again rather than taking what it said in the last minute. */
   "docker.hosts": { input: z.object({ recheck: z.string().min(1).max(64).optional() }).nullish(), output: z.custom<{ hosts: DockerHostView[] }>() },
-  /** What each BB machine offers first-run setup, the server's first, and what stands in the way of boxes joining BB, if anything. */
+  /** What each VesnALIA machine offers first-run setup, the server's first, and what stands in the way of boxes joining VesnALIA, if anything. */
   "setup.offer": { input: z.null(), output: z.custom<{ machines: MachineSetup[]; access: MachineAccessProblem | null }>() },
   "setup.desktop": { input: thread.extend({ hostId: z.string().min(1), kind: z.enum(["linux-desktop-cpu", "linux-desktop-wayland-cpu"]).optional(), size: size.optional(), name: z.string().min(1).optional() }), output: z.custom<{ result: ApplyResult }>() },
-  /** First-run setup: turns on Docker on BB machine `hostId` with the Linux image alone, which then builds. */
+  /** First-run setup: turns on Docker on VesnALIA machine `hostId` with the Linux image alone, which then builds. */
   "setup.docker": { input: z.object({ hostId: z.string().min(1) }), output: z.custom<{ result: ApplyResult; machines: MachineSetup[] }>() },
   /**
-   * Turns a BB machine on or off as a Docker host: on adds a Docker backend
+   * Turns a VesnALIA machine on or off as a Docker host: on adds a Docker backend
    * on it, last in acquire order; off removes it, or turns it off while it
    * has boxes. Answers with the configuration's answer and the list again.
    */

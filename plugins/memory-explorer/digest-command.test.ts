@@ -24,37 +24,37 @@ test("runDigestCommand runs a script with node and keeps the environment", async
   const calls: Call[] = [];
   await runDigestCommand("/tools/digest.mjs prefs digest", {
     node: "/n/node",
-    baseEnv: { PATH: "/x", BB_CLI: "/custom/bb" },
-    bbCli: "/data/bin/bb",
+    baseEnv: { PATH: "/x", ALIA_CLI: "/custom/alia" },
+    aliaCli: "/data/bin/alia",
     run: recorder(calls),
     log: () => assert.fail("no log expected"),
   });
   assert.equal(calls.length, 1);
   assert.equal(calls[0]!.file, "/n/node");
   assert.deepEqual(calls[0]!.args, ["/tools/digest.mjs", "prefs", "digest"]);
-  // An existing BB_CLI wins over the server's guess.
-  assert.equal(calls[0]!.env.BB_CLI, "/custom/bb");
+  // An existing ALIA_CLI wins over the server's guess.
+  assert.equal(calls[0]!.env.ALIA_CLI, "/custom/alia");
   assert.equal(calls[0]!.env.PATH, "/x");
 });
 
-test("runDigestCommand runs any other program as it is and sets BB_CLI when missing", async () => {
+test("runDigestCommand runs any other program as it is and sets ALIA_CLI when missing", async () => {
   const calls: Call[] = [];
   await runDigestCommand("/usr/local/bin/rebuild-digest --quiet", {
     node: "/n/node",
     baseEnv: {},
-    bbCli: "/data/bin/bb",
+    aliaCli: "/data/bin/alia",
     run: recorder(calls),
   });
   assert.equal(calls[0]!.file, "/usr/local/bin/rebuild-digest");
   assert.deepEqual(calls[0]!.args, ["--quiet"]);
-  assert.equal(calls[0]!.env.BB_CLI, "/data/bin/bb");
+  assert.equal(calls[0]!.env.ALIA_CLI, "/data/bin/alia");
 });
 
-test("runDigestCommand leaves BB_CLI unset when nothing names it", async () => {
+test("runDigestCommand leaves ALIA_CLI unset when nothing names it", async () => {
   const calls: Call[] = [];
   await runDigestCommand("script.cjs", { node: "/n/node", baseEnv: {}, run: recorder(calls) });
   assert.equal(calls[0]!.file, "/n/node");
-  assert.equal("BB_CLI" in calls[0]!.env, false);
+  assert.equal("ALIA_CLI" in calls[0]!.env, false);
 });
 
 test("runDigestCommand does nothing for a blank command", async () => {
@@ -80,9 +80,9 @@ test("nodeRuntime is the server's own node outside Electron", () => {
   assert.equal(nodeRuntime(NO_ENV), "/n/node");
 });
 
-test("nodeRuntime under Electron prefers BB_NODE, then an installed node", () => {
+test("nodeRuntime under Electron prefers ALIA_NODE, then an installed node", () => {
   const electron = { ...NO_ENV, electron: true };
-  assert.equal(nodeRuntime({ ...electron, env: { BB_NODE: "/mine/node" } }), "/mine/node");
+  assert.equal(nodeRuntime({ ...electron, env: { ALIA_NODE: "/mine/node" } }), "/mine/node");
   assert.equal(
     nodeRuntime({ ...electron, exists: (p) => p === "/usr/local/bin/node" }),
     "/usr/local/bin/node",

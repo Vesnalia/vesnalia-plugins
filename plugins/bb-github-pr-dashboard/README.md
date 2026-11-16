@@ -1,7 +1,7 @@
 
-# GitHub PR Dashboard for bb
+# GitHub PR Dashboard for VesnALIA
 
-See why each pull request is stuck, and get it unstuck, without leaving [bb](https://getbb.app).
+See why each pull request is stuck, and get it unstuck, without leaving [VesnALIA](https://getbb.app).
 
 
 
@@ -9,15 +9,15 @@ https://github.com/user-attachments/assets/fffbf9cf-a736-4072-aa56-5df9be84210c
 
 
 ```
-bb plugin install git:https://github.com/ahsan7162/bb-github-pr-dashboard.git@^0.3.0
+alia plugin install git:https://github.com/ahsan7162/bb-github-pr-dashboard.git@^0.3.0
 ```
 
-Or install **GitHub PR Dashboard** from bb's plugin store. It uses your GitHub CLI
+Or install **GitHub PR Dashboard** from VesnALIA's plugin store. It uses your GitHub CLI
 login (`gh auth login`) or a token; see [Requirements](#requirements).
 
 ## What you get
 
-- **Every pull request you are part of, in one tab.** A **My PRs** page in the bb
+- **Every pull request you are part of, in one tab.** A **My PRs** page in the VesnALIA
   rail with **Open**, **Review requested** (you or your teams), **Reviewed**,
   **Assigned**, **Merged** and **Closed**, grouped by repository, newest first.
 - **Know when a review needs redoing.** **Reviewed** keeps the open pull requests you
@@ -27,7 +27,7 @@ login (`gh auth login`) or a token; see [Requirements](#requirements).
   blockers: draft, stacked on another pull request, merge conflicts, failing CI
   with the failing jobs named, CI running, changes requested, unresolved comments,
   or waiting on a review. A coloured stripe shows the worst one at a glance.
-- **Fix it from bb.** Read the failing checks, walk the changed files with review
+- **Fix it from VesnALIA.** Read the failing checks, walk the changed files with review
   threads under their lines, reply, comment on a line or a range, submit a review,
   mark it ready for review, and close or reopen it. Or hand a review comment or a failed job to
   an agent with **Fix with agent**.
@@ -36,7 +36,7 @@ login (`gh auth login`) or a token; see [Requirements](#requirements).
 - **Move by keyboard.** From the list to a pull request, between its files and
   comments, and on to the next pull request.
 - **Hear about changes.** Alerts when CI starts failing or someone comments.
-- **PR links open here.** Click a github.com pull request link anywhere in bb (an
+- **PR links open here.** Click a github.com pull request link anywhere in VesnALIA (an
   agent's message, the PR link beside the composer or in the Info tab) and it opens
   in My PRs, or on GitHub if My PRs cannot load it. Cmd/Ctrl-click and "Open on
   GitHub" links still go to GitHub.
@@ -78,7 +78,7 @@ beside the title edits it, when GitHub lets you. **Previous** and **Next** step 
   then the comments and reviews in order, as Markdown, with a box for your own comment.
 - **Checks**: every check by pipeline and job, failing first, with the error
   annotations from the run and a link to the logs.
-- **Files**: a file list beside the diff, bb's syntax-highlighted diff viewer inline
+- **Files**: a file list beside the diff, VesnALIA's syntax-highlighted diff viewer inline
   or side by side, and every review thread as a band under its line.
 - **Commits**: every commit, newest first, with its CI result and a link to it on
   GitHub. If you reviewed before, the commits pushed since your latest review are
@@ -103,11 +103,11 @@ request's link, repository and branch, then either the file, line or range, the 
 with every reply and who wrote each, or the job's name, its error annotations and its
 log link.
 
-- If a bb thread is working on the pull request's branch in its repository, the prompt
+- If a VesnALIA thread is working on the pull request's branch in its repository, the prompt
   goes to that thread (queued if it is busy) and a toast links to it. The newest such
-  thread wins. bb's GitHub PR Status confirms the environment's pull request when it
+  thread wins. VesnALIA's GitHub PR Status confirms the environment's pull request when it
   knows it; otherwise the project's git remote has to match the repository.
-- Otherwise bb's New thread screen opens with the prompt filled in, in the
+- Otherwise VesnALIA's New thread screen opens with the prompt filled in, in the
   pull request's project (see below), so you choose where it runs.
 
 <img width="2880" height="1800" alt="5-checks" src="https://github.com/user-attachments/assets/821c7618-4b3c-476d-a86c-9329785f350e" />
@@ -116,7 +116,7 @@ log link.
 
 ### The ⋯ menu
 
-- **Link to thread**: pick any bb thread (the PR's branch thread and its project's threads come first) and send it
+- **Link to thread**: pick any VesnALIA thread (the PR's branch thread and its project's threads come first) and send it
   the pull request's link, title and branches as context.
 - **Ask a question** and **Explain this PR** open New thread with the pull request filled in.
 - **Fix findings in a thread** sends every unresolved review thread and failed job at once, the way Fix with agent
@@ -132,7 +132,7 @@ New threads start in the pull request's project: the one whose git remote is the
 ### Jira
 
 Jira issue keys in the title and Markdown (only for projects the pull request names in its title, branch or a Jira
-link, so `UTF-8` never becomes one) and Jira issue links open in bb's **My Jira** plugin when it is installed and
+link, so `UTF-8` never becomes one) and Jira issue links open in VesnALIA's **My Jira** plugin when it is installed and
 running, or on your Jira site otherwise.
 
 ### Reviewing
@@ -165,24 +165,24 @@ controls.
 
 Every 5 minutes, the plugin checks your open pull requests and alerts you when a CI
 job starts failing, or when someone else comments or reviews. Each alert shows as a
-bb toast, adds a count to the My PRs icon, and waits in the "New since you last
-looked" list. Each check also sends one desktop notification through bb's built-in
+VesnALIA toast, adds a count to the My PRs icon, and waits in the "New since you last
+looked" list. Each check also sends one desktop notification through VesnALIA's built-in
 Push notifications plugin (several alerts become one summary), to the channels turned
-on there: desktop, web and registered phones. Clicking it opens bb; the toast's
+on there: desktop, web and registered phones. Clicking it opens VesnALIA; the toast's
 **Open** goes to the pull request. If Push notifications is disabled, the toast and
 badge still work and the plugin log says why nothing was sent. GitHub bot accounts
 are skipped. The bell on My PRs opens the settings, where **Send test notification**
 checks delivery:
 
 ```
-bb plugin config bb-github-pr-dashboard set notifyCi false
-bb plugin config bb-github-pr-dashboard set notifyComments false
-bb plugin config bb-github-pr-dashboard set showToasts false    # no bb toasts
-bb plugin config bb-github-pr-dashboard set showDesktop false   # no desktop notifications
-bb plugin config bb-github-pr-dashboard set showBadge false     # no count on My PRs
-bb plugin config bb-github-pr-dashboard set ignoreAuthors "some-review-bot, ci-helper"
-bb plugin config bb-github-pr-dashboard set checkEveryMinutes 10
-bb plugin rpc call bb-github-pr-dashboard alerts_test   # send a test alert and notification
+alia plugin config alia-github-pr-dashboard set notifyCi false
+alia plugin config alia-github-pr-dashboard set notifyComments false
+alia plugin config alia-github-pr-dashboard set showToasts false    # no alia toasts
+alia plugin config alia-github-pr-dashboard set showDesktop false   # no desktop notifications
+alia plugin config alia-github-pr-dashboard set showBadge false     # no count on My PRs
+alia plugin config alia-github-pr-dashboard set ignoreAuthors "some-review-bot, ci-helper"
+alia plugin config alia-github-pr-dashboard set checkEveryMinutes 10
+alia plugin rpc call alia-github-pr-dashboard alerts_test   # send a test alert and notification
 ```
 
 The first check for an account only records a baseline. Hiding a repository in the
@@ -191,33 +191,33 @@ list does not mute its alerts.
 ## Requirements
 
 - A GitHub account on github.com (GitHub Enterprise Server is not supported yet).
-- By default, the [GitHub CLI](https://cli.github.com) login on the machine running bb
+- By default, the [GitHub CLI](https://cli.github.com) login on the machine running VesnALIA
   (`gh auth login`), so each user sees their own pull requests. If gh has more than
   one github.com account, a picker on My PRs chooses which one the plugin uses; gh's
   own active account is left alone.
 - Or a personal access token:
 
   ```
-  bb plugin config bb-github-pr-dashboard set token <token>
+  alia plugin config alia-github-pr-dashboard set token <token>
   ```
 
   A classic token needs `repo`. A fine-grained one needs Pull requests read and
   write (write only for comments, replies, resolving threads, deletes, reviews, edits, ready or draft, close and reopen) and Checks read.
   For organizations that enforce SAML SSO, authorize the token for them, or their
   pull requests are left out.
-- Alerts run while the bb server runs. Desktop notifications need bb's Push
-  notifications plugin enabled; its desktop and web banners appear while a bb window
+- Alerts run while the VesnALIA server runs. Desktop notifications need VesnALIA's Push
+  notifications plugin enabled; its desktop and web banners appear while a VesnALIA window
   is open (any page, not only My PRs), and registered phones get them regardless.
 
 ## What it sends
 
-Requests go to GitHub only for what you open, all from the bb server: one GraphQL
+Requests go to GitHub only for what you open, all from the VesnALIA server: one GraphQL
 request for the tab you open (with every tab's count), one for a pull request, one
 REST request when you open its Files tab, the Merged or Closed history only when you
-search or filter it, and one per alert check. **Fix with agent** asks bb, not GitHub, which thread is on the
-branch (bb's GitHub PR Status may check with GitHub). Alerts and their state stay in this
-plugin's storage on your bb server. Desktop notifications hand each alert's headline
-(repository, number, who) and pull request title to bb's Push notifications plugin,
+search or filter it, and one per alert check. **Fix with agent** asks VesnALIA, not GitHub, which thread is on the
+branch (VesnALIA's GitHub PR Status may check with GitHub). Alerts and their state stay in this
+plugin's storage on your VesnALIA server. Desktop notifications hand each alert's headline
+(repository, number, who) and pull request title to VesnALIA's Push notifications plugin,
 which forwards them to registered phones through its push relay (Expo by default);
 turn `showDesktop` off to keep them on the server. The page loads 130 KB of script and 103 KB of CSS
 (31 KB and 10 KB gzipped); an install takes about 11 MB on disk.
@@ -227,19 +227,19 @@ turn `showDesktop` off to keep them on the server. The page loads 130 KB of scri
 ```
 npm install
 npm test
-bb plugin install .
-bb plugin dev          # rebuild and reload on save
+alia plugin install .
+alia plugin dev          # rebuild and reload on save
 echo '{"tab":"open"}' > tab.json   # open, review, assigned, merged or closed
-bb plugin rpc call bb-github-pr-dashboard prs_list --input-file tab.json
+alia plugin rpc call alia-github-pr-dashboard prs_list --input-file tab.json
 echo '{"repo":"owner/name","number":1}' > in.json
-bb plugin rpc call bb-github-pr-dashboard pr_detail --input-file in.json
+alia plugin rpc call alia-github-pr-dashboard pr_detail --input-file in.json
 ```
 
 - `server.ts`: `accounts` and `account_select` (which gh login to use), the `prs_list`, `prs_history`, `pr_detail` and `pr_files` RPCs; the
   writes `pr_reply`, `pr_comment`, `pr_line_comment`, `pr_submit_review`,
   `pr_discard_review`, `pr_delete_comment`, `pr_edit` (title and description) and `pr_set_state` (close,
   reopen, ready, draft), each sent only on an explicit click;
-  `pr_agent_target`, which finds the bb thread on a pull request's branch, its project and the threads to link;
+  `pr_agent_target`, which finds the VesnALIA thread on a pull request's branch, its project and the threads to link;
   `jira_link`, which asks My Jira whether it runs; the `watch` background service, which sends desktop notifications through
   push-notifications' `notifications.send`; and the `alerts_*` RPCs. Gets a token
   from the `token` setting, else from `gh auth token`.
@@ -251,16 +251,16 @@ bb plugin rpc call bb-github-pr-dashboard pr_detail --input-file in.json
   the alert listener, badge, strip and settings section.
 - `MASTER.md`: the design system; `tokens.css` holds its values as CSS variables.
 - `PLUGIN_OVERVIEW.md`: the store listing text; keep it in step with
-  `bb.description` in `package.json`.
+  `alia.description` in `package.json`.
 
 ## Release
 
-Bump `version` in `package.json`, run `npm test` and `bb plugin build`, commit, then
-tag `vX.Y.Z` and push the tag. Never move a published tag; bb refuses a tag that
+Bump `version` in `package.json`, run `npm test` and `alia plugin build`, commit, then
+tag `vX.Y.Z` and push the tag. Never move a published tag; VesnALIA refuses a tag that
 points at a different commit. A new 0.x minor (0.3 to 0.4) also needs the install
 range above and the store entry's range raised, since `^0.3.0` does not reach 0.4.
 
-Keep media out of git: bb runs a full `git clone` of this repository on every
+Keep media out of git: VesnALIA runs a full `git clone` of this repository on every
 install, so every branch and tag ships. Add README media by dragging it into the
 README in GitHub's web editor, which stores it as an attachment outside git.
 `npm test` fails if a media file or anything over 1 MB is reachable from any branch

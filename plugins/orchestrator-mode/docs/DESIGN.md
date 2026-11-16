@@ -3,7 +3,7 @@
 ## State and dispatch
 
 The plugin's KV store holds authoritative thread state. The synchronous
-`bb.agents.configure` callback reads only the thread metadata mirror. Before
+`alia.agents.configure` callback reads only the thread metadata mirror. Before
 each message dispatch, the plugin refreshes that mirror from its own state;
 editing the mirror alone does not disable a tracked thread. A mirror refresh
 failure logs a warning and allows dispatch to proceed.
@@ -32,7 +32,7 @@ through `threads.get`, including every sender in a grouped queue re-attempt.
 Groups containing a user, a system notice or an unrelated sender proceed.
 Lookup errors fail open, as other dispatch-checkpoint errors do.
 
-BB owns the durable queue, retrying and claims. On queue events, the plugin uses
+VesnALIA owns the durable queue, retrying and claims. On queue events, the plugin uses
 `queuedMessages.reorder` and `setGroupBoundary` to collect compatible updates
 from the leading child into one native group. It preserves each child's order,
 including when children are interleaved, and all original row contents. A
@@ -53,14 +53,14 @@ dispatch claims a row before grouping completes, the hook allows one preparatory
 wait so the original rows can be requeued and grouped. A persisted wait reason
 bounds this extra retry; persistent SDK failures leave the original rows
 deliverable individually. Otherwise an idle retry proceeds. Disabling
-the mode or choosing `immediate` also releases the hold on recheck. BB's manual
+the mode or choosing `immediate` also releases the hold on recheck. VesnALIA's manual
 Send-now operation bypasses plugin policy. Only `start-turn` attempts reset the
 per-turn delegation budget; waits and `join-turn` attempts retain it.
 
-Automatic child system notices use BB's separate parent-system delivery path,
+Automatic child system notices use VesnALIA's separate parent-system delivery path,
 including when a notice was queued for a pending interaction. That path bypasses
 `message.dispatch`, so this policy currently applies to direct child messages.
-BB's grouping envelope also requires one sender per group, so reports from
+VesnALIA's grouping envelope also requires one sender per group, so reports from
 different children remain separate dispatches. Tool results returned by
 synchronous delegation are unaffected.
 
@@ -71,7 +71,7 @@ head. Older work is not judged. A provider session cannot have its instructions
 replaced while it is running, so mode changes send steering messages to active
 turns. Idle threads receive session configuration on their next construction.
 Some providers retain the original native tool list on resume. The CLI
-`bb orchestrator-mode delegate` invokes the same delegation handler and remains
+`alia orchestrator-mode delegate` invokes the same delegation handler and remains
 usable in those sessions.
 
 The watchdog therefore grants one grace turn when enabled while idle. When
@@ -89,7 +89,7 @@ File changes and image generation count as work. Command rows count unless they
 delegate through the plugin CLI or the read-only command setting allows them.
 Delegation command checks respect quoted briefs and reject executable
 substitutions, output redirections and mixed chains that perform direct work.
-Worker follow-ups through `bb thread tell`/`message` are delegation only when
+Worker follow-ups through `alia thread tell`/`message` are delegation only when
 the literal target ID is in this parent's retained delegation records, even
 when read-only exploration is disabled. The watchdog refreshes that worker
 list after reading the timeline so newly recorded workers are included.
@@ -100,10 +100,10 @@ their names; this is a heuristic, not a complete description of their effects.
 
 Recognised research includes reads, searches, web fetches, plans and questions.
 Native subagent launches resolve through `orchestratorSubagents`. Provider
-identity scopes the compatibility adapters: BB 0.46.1's Claude display detail
+identity scopes the compatibility adapters: VesnALIA 0.46.1's Claude display detail
 retains the requested role, and Codex's fixed presentation labels distinguish
 launches from waiting, messaging, resuming and closing. Display names never grant
-read-only access. BB currently supplies no launch-bound resolved definition,
+read-only access. VesnALIA currently supplies no launch-bound resolved definition,
 capabilities or revision. Its context API returns stored usage telemetry, which
 can predate a custom override or a session change. Even a cached `built-in`
 entry therefore grants no exemption. Native reading support remains blocked
@@ -127,12 +127,12 @@ and tags, changing remotes and rewriting reflogs count as work.
 In `instruct`, no watchdog classification runs. In `guard`, new violations are
 recorded and the thread receives corrective messages up to the nudge cap, with
 at most one nudge per offending turn. The review gate draws on the same cap, so
-one budget covers both kinds of correction; `status` reports the split. In `block`, the plugin also asks BB to
+one budget covers both kinds of correction; `status` reports the split. In `block`, the plugin also asks VesnALIA to
 stop the offending turn, at most once per turn, even after the nudge cap.
 
 Thread events coalesce scans with a 750 ms delay; idle events use 250 ms. These
 are scheduling delays, not a guaranteed detection latency. Timeline access,
-scan duration and BB's stop handling add time. A write can complete before
+scan duration and VesnALIA's stop handling add time. A write can complete before
 the stop request. This plugin is a coordination aid, not a security boundary.
 
 ## Worker lifecycle
@@ -146,8 +146,8 @@ and `--model`) are trimmed and validated at the input boundary. Conflicting
 provider aliases or a model incompatible with a pinned provider are refused.
 Execution is passed to `threads.spawn` with explicit provenance, before the
 worker's first turn, never through a later update. Omitted fields resolve
-through presets, scoped worker settings and BB's defaults. The plugin checks
-its provider/model catalog and BB validates availability. A failed spawn
+through presets, scoped worker settings and VesnALIA's defaults. The plugin checks
+its provider/model catalog and VesnALIA validates availability. A failed spawn
 creates no delegation record and is never retried unpinned; a configured
 retry target may still apply.
 
@@ -209,5 +209,5 @@ an invariant rather than a hope: the budget test builds the largest contract
 every combination of the two can produce — the longest model id the catalog accepts, presets in
 every kind, five reminders, an appended section at the cap — and asserts it fits
 and that the tail survives. That test is what sets the append cap, and the
-render clamps the append as its last resort rather than handing BB a block it
+render clamps the append as its last resort rather than handing VesnALIA a block it
 would cut.

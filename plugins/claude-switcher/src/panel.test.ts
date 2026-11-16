@@ -341,7 +341,7 @@ describe("accountRow", () => {
     const free = ultra("f", 50, "2026-11-02T09:00:00+01:00", { budget: 10, spent: 1 });
     expect(accountRow(free, seats(1, 4), ES).state).toBe("working");
     expect(accountRow(free, seats(0, 4), ES).state).toBe("free");
-    // A seat held from outside bb (`reserve`) is work too.
+    // A seat held from outside VesnALIA (`reserve`) is work too.
     expect(
       accountRow(free, { ...seats(0, 4), external: [{ id: "x", until: NOW + H }] }, ES).state,
     ).toBe("working");

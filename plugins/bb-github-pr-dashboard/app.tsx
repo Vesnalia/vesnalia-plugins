@@ -1,8 +1,8 @@
-// bb-github-pr-dashboard — frontend entry: the "My PRs" page in the nav rail.
+// alia-github-pr-dashboard — frontend entry: the "My PRs" page in the nav rail.
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { ReactNode } from "react";
-import { UrlLink, definePluginApp, experimental_usePluginId, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, definePluginApp, experimental_usePluginId, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { matchesSearch, prFromUrl, type Pr, type PrList } from "./prs";
 import "./tokens.css";
@@ -40,7 +40,7 @@ const EMPTY: Record<Tab, string> = {
   closed: "No closed pull requests.",
 };
 
-// Survives remounts (bb remounts the page on resize or when you come back to
+// Survives remounts (VesnALIA remounts the page on resize or when you come back to
 // it), so the last result shows at once while a refresh runs.
 let cachedLists: Partial<Record<Tab, PrList>> = {};
 let cachedCounts: Record<Tab, number> | null = null;
@@ -54,9 +54,9 @@ let listScroll = 0;
 let lastOpened: string | null = null;
 
 // Repos you chose not to see, on every tab; kept across restarts. A hide list, so a new repo shows up.
-const HIDDEN_KEY = "bb-github-pr-dashboard:hidden-repos";
+const HIDDEN_KEY = "alia-github-pr-dashboard:hidden-repos";
 // Repo groups you folded, as "tab:owner/name", so each tab keeps its own.
-const COLLAPSED_KEY = "bb-github-pr-dashboard:collapsed-repos";
+const COLLAPSED_KEY = "alia-github-pr-dashboard:collapsed-repos";
 function loadList(key: string): string[] {
   try {
     const v: unknown = JSON.parse(localStorage.getItem(key) ?? "[]");
@@ -797,7 +797,7 @@ function PrsPageBody({ subPath }: { subPath: string }) {
     setTabState(next);
   };
   const prs = usePrs(tab);
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const route = parseRoute(subPath);
   // A PR can be in two lists (e.g. review requested and assigned); keep one copy.
   const all = [...new Map(Object.values(prs.lists).flatMap((l) => l.items.map((p) => [p.id, p] as const))).values()];
@@ -852,14 +852,14 @@ function PrsPageBody({ subPath }: { subPath: string }) {
 }
 
 /**
- * A plain click on a github.com PR link anywhere in bb opens the PR here instead.
- * bb has no hook to take over links, so this reads clicks on real `<a href>` anchors. Only UrlLink is
+ * A plain click on a github.com PR link anywhere in VesnALIA opens the PR here instead.
+ * VesnALIA has no hook to take over links, so this reads clicks on real `<a href>` anchors. Only UrlLink is
  * documented as one; that Markdown links and github-pr-status's PR links (beside the composer, Info tab)
- * are anchors is observed in bb's bundles, not documented. Controls that call openUrl() with no href
+ * are anchors is observed in VesnALIA's bundles, not documented. Controls that call openUrl() with no href
  * (the context card's PR row, "Open on GitHub" menu items) cannot be reached and still go to GitHub.
  */
 function PrLinkListener() {
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -869,7 +869,7 @@ function PrLinkListener() {
       if (/\bon github/i.test(a.getAttribute("aria-label") ?? a.textContent ?? "")) return;
       const pr = prFromUrl(a.href);
       if (!pr) return;
-      // Capture phase on document runs before bb's own handlers; stopping here keeps them from also opening GitHub.
+      // Capture phase on document runs before VesnALIA's own handlers; stopping here keeps them from also opening GitHub.
       e.preventDefault();
       e.stopPropagation();
       openedFromLink.add(`${pr.repo}#${pr.number}`);

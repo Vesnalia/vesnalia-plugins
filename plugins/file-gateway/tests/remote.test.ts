@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createServer} from 'node:net';
 import FtpSrv from 'ftp-srv';
-import {createFakePluginHost} from '@get-bb/plugin-sdk/testing';
+import {createFakePluginHost} from '@vesnalia/plugin-sdk/testing';
 import plugin from '../server.js';
 import {encodeReference,decodeReference} from '../explorer-contract.js';
 import {remotePath,withRemote,downloadBounded} from '../remote.js';
@@ -14,7 +14,7 @@ import type {Connection} from '../connections-contract.js';
 const base:Connection={id:randomUUID(),name:'Test site',protocol:'ftp',hostname:'127.0.0.1',port:21,username:'fixture',root:'/',enabled:true};
 test('remote reference preserves special characters and distinguishes hosts',()=>{const path='/папка/a [1] #?.txt';assert.deepEqual(decodeReference(encodeReference({hostId:'one',path})),{hostId:'one',path});assert.notEqual(encodeReference({hostId:'one',path}),encodeReference({hostId:'two',path}));assert.throws(()=>decodeReference('invalid'));assert.throws(()=>encodeReference({hostId:'x',path:'/a\nspoof'}));});
 test('remote roots reject escapes and command injection',()=>{const c={...base,root:'/site'};for(const p of ['/site-other/a','/site/../etc/passwd','/site/a\r\nDELE file'])assert.throws(()=>remotePath(c,p));assert.equal(remotePath(c,'/site/a/../file'),'/site/file');});
-test('mention resolves address only and revoked reference blocks sending',async t=>{const {bb,harness}=createFakePluginHost({pluginId:'file-gateway',settings:{connectionVault:JSON.stringify({[base.id]:'fixture-password'})}});plugin(bb);t.after(()=>harness.lifecycle.dispose());await bb.storage.kv.set('connections-v1',[base]);const provider=harness.registrations.mentionProviders[0];assert.ok(provider);const result=await provider.resolve(encodeReference({hostId:'remote_'+base.id,path:'/hello.txt'}));assert.match(result.context,/remote_/);assert.ok(!result.context.includes('fixture-password'));await bb.storage.kv.set('connections-v1',[]);await assert.rejects(Promise.resolve().then(()=>provider.resolve(encodeReference({hostId:'remote_'+base.id,path:'/hello.txt'}))));});
+test('mention resolves address only and revoked reference blocks sending',async t=>{const {alia,harness}=createFakePluginHost({pluginId:'file-gateway',settings:{connectionVault:JSON.stringify({[base.id]:'fixture-password'})}});plugin(alia);t.after(()=>harness.lifecycle.dispose());await alia.storage.kv.set('connections-v1',[base]);const provider=harness.registrations.mentionProviders[0];assert.ok(provider);const result=await provider.resolve(encodeReference({hostId:'remote_'+base.id,path:'/hello.txt'}));assert.match(result.context,/remote_/);assert.ok(!result.context.includes('fixture-password'));await alia.storage.kv.set('connections-v1',[]);await assert.rejects(Promise.resolve().then(()=>provider.resolve(encodeReference({hostId:'remote_'+base.id,path:'/hello.txt'}))));});
 test('FTP real server lists, downloads, enforces byte cap and rejects bad auth',async t=>{
  const root=await mkdtemp(join(tmpdir(),'gateway-ftp-'));await writeFile(join(root,'hello.txt'),'remote fixture');await writeFile(join(root,'large.bin'),Buffer.alloc(1024,1));
  const reservation=createServer();await new Promise<void>(r=>reservation.listen(0,'127.0.0.1',r));const port=(reservation.address() as {port:number}).port;await new Promise<void>(r=>reservation.close(()=>r()));

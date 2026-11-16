@@ -57,15 +57,15 @@ export function shimPaths(dataDir: string): ShimPaths {
 /**
  * The shim script.
  *
- * Deliberately POSIX `sh` with no dependency on bb, node, or the network: it
+ * Deliberately POSIX `sh` with no dependency on VesnALIA, node, or the network: it
  * sits in front of every build a developer runs, so it must be trivially
  * auditable and must never be the reason a build fails. Any unexpected
  * condition falls through to exec'ing the real tool unchanged.
  */
 export function shimScript(bundleDir: string): string {
   return `#!/bin/sh
-# bb xcode shim — records a result bundle for each build so the tracker can
-# report real outcomes. Remove with: bb xcode shim uninstall
+# VesnALIA xcode shim — records a result bundle for each build so the tracker can
+# report real outcomes. Remove with: VesnALIA xcode shim uninstall
 #
 # Falls through to the real xcodebuild unchanged whenever it is not a build,
 # already has a result bundle, or anything looks unusual.
@@ -73,7 +73,7 @@ export function shimScript(bundleDir: string): string {
 REAL=${shellQuote(REAL_XCODEBUILD)}
 BUNDLES=${shellQuote(bundleDir)}
 
-[ -x "$REAL" ] || { echo "bb xcode shim: $REAL missing" >&2; exit 127; }
+[ -x "$REAL" ] || { echo "alia xcode shim: $REAL missing" >&2; exit 127; }
 
 # Already instrumented by the caller — do not add a second bundle.
 for arg in "$@"; do
@@ -154,7 +154,7 @@ export async function listShimBundles(dataDir: string): Promise<string[]> {
  * They are also worth much less than history: everything the tracker needs is
  * extracted into the database on the first sweep. A bundle only has to outlive
  * the gap between the build finishing and the sweep reading it, plus enough
- * slack to survive a bb restart. Two days is generous for that.
+ * slack to survive a VesnALIA restart. Two days is generous for that.
  */
 export interface BundleRetention {
   maxAgeMs: number;

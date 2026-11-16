@@ -1,5 +1,5 @@
 /**
- * bb validates every `rpc.call` input before it serializes it, and it walks the
+ * VesnALIA validates every `rpc.call` input before it serializes it, and it walks the
  * object with `Object.entries` — which yields keys that are *present but
  * undefined*. `undefined` is not a JSON value, so `{ threadId, upToSeq }` with
  * an unset `upToSeq` is rejected client-side with

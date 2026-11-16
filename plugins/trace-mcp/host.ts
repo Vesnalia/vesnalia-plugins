@@ -1,7 +1,7 @@
 import { stat } from 'node:fs/promises';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { experimental_defineHostEntry } from '@get-bb/plugin-sdk/host';
+import { experimental_defineHostEntry } from '@vesnalia/plugin-sdk/host';
 import { z } from 'zod';
 import { traceHostContract } from './contract.js';
 
@@ -17,7 +17,7 @@ async function connect(path: string): Promise<Client> {
   if (!sessions.has(path)) {
     const pending = (async () => {
       if (!(await stat(path)).isDirectory())
-        throw new Error('bb environment path is not a directory');
+        throw new Error('alia environment path is not a directory');
       const windows = process.platform === 'win32';
       const transport = new StdioClientTransport({
         command: windows ? 'cmd.exe' : 'npm',
@@ -35,7 +35,7 @@ async function connect(path: string): Promise<Client> {
         cwd: path,
         stderr: 'inherit',
       });
-      const client = new Client({ name: 'bb-plugin-trace-mcp', version: '0.2.0' });
+      const client = new Client({ name: 'alia-plugin-trace-mcp', version: '0.2.0' });
       client.onclose = () => sessions.delete(path);
       try {
         await client.connect(transport);

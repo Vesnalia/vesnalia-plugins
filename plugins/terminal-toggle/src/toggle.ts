@@ -3,7 +3,7 @@ import {
   OperationError,
   actionResult,
 } from "./compatibility";
-import type { PluginCommandContext } from "@get-bb/plugin-sdk";
+import type { PluginCommandContext } from "@vesnalia/plugin-sdk";
 import {
   blocked,
   classify,
@@ -111,7 +111,7 @@ export class Toggle {
           "The focused terminal does not belong to the active panel.",
         );
       if (!actionResult(surface.panel.close(), "TT_PANEL"))
-        throw new OperationError("BB could not hide the terminal panel.");
+        throw new OperationError("VesnALIA could not hide the terminal panel.");
       surface.composer.focus();
       return;
     }
@@ -153,7 +153,7 @@ export class Toggle {
         )
           throw new CompatibilityError(
             "TT_SESSION",
-            "bb returned an unrecognized terminal creation result. No focus action was performed.",
+            "alia returned an unrecognized terminal creation result. No focus action was performed.",
           );
         if (operation.cancelled || this.disposed || this.runtime.blocked())
           return;
@@ -165,7 +165,7 @@ export class Toggle {
           !actionResult(current.surface!.openTerminal(session), "TT_SESSION")
         ) {
           throw new OperationError(
-            "BB could not open the new terminal in this chat pane.",
+            "VesnALIA could not open the new terminal in this chat pane.",
           );
         }
         target = { id: session.id, key: "" };
@@ -179,7 +179,7 @@ export class Toggle {
         if (!sameSurface(current.surface, surface)) return;
         if (this.runtime.now() >= deadline)
           throw new OperationError(
-            "BB did not focus the terminal. Its session has been left open.",
+            "VesnALIA did not focus the terminal. Its session has been left open.",
           );
         const actual = this.runtime.focus(current);
         if (actual.kind === "terminal" && actual.terminalId === target.id) {
@@ -237,7 +237,7 @@ function matchesShortcut(event: KeyboardEvent, commands: Commands): boolean {
   )
     throw new CompatibilityError(
       "TT_SHORTCUT",
-      "bb returned an unrecognized keyboard binding.",
+      "alia returned an unrecognized keyboard binding.",
     );
   const physicalDefault =
     shortcut.key === "`" &&
@@ -256,7 +256,7 @@ function matchesShortcut(event: KeyboardEvent, commands: Commands): boolean {
   if (matched !== null && typeof matched !== "string")
     throw new CompatibilityError(
       "TT_SHORTCUT",
-      "bb returned an unrecognized shortcut match.",
+      "alia returned an unrecognized shortcut match.",
     );
   return matched === COMMAND;
 }
@@ -275,7 +275,7 @@ export function createShortcutHandler(
       if (!commands)
         throw new CompatibilityError(
           "TT_COMMANDS",
-          "Cannot access bb's keyboard dispatcher.",
+          "Cannot access VesnALIA's keyboard dispatcher.",
         );
       if (matchesShortcut(event, commands)) captureShortcut(event, readHost());
     } catch (cause) {

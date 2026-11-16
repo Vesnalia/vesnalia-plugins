@@ -31,8 +31,8 @@ export async function activityFixture(context, { rows: initialRows = [listRow()]
     finally { await host.harness.lifecycle.dispose(); }
   }
   context.after(dispose);
-  await host.bb.storage.kv.set("config-v1", config ?? { projects: [{ id: "p1", enabled: true, connectedAt: 1 }], launcher: [], sharedPool: true });
-  await plugin(host.bb);
+  await host.alia.storage.kv.set("config-v1", config ?? { projects: [{ id: "p1", enabled: true, connectedAt: 1 }], launcher: [], sharedPool: true });
+  await plugin(host.alia);
   service = host.harness.behavior.runService("activity");
   return {
     host, calls, callbacks, signals,

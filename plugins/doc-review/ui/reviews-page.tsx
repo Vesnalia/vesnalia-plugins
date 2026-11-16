@@ -3,11 +3,11 @@
 // full-page view of one file.
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import {
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   type PluginFileOpenerSource,
   type PluginNavPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
@@ -141,7 +141,7 @@ function FileRow({ path, title, detail, onOpen }: { path: string; title: string;
 function DocList() {
   const t = useMessages(messages);
   const rpc = useReviewRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [docs, setDocs] = useState<DocSummary[] | null>(null);
   const [recents, setRecents] = useState<RecentDocument[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -338,7 +338,7 @@ function DocList() {
 function DocPage({ docId }: { docId: string }) {
   const t = useMessages(messages);
   const rpc = useReviewRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [doc, setDoc] = useState<ReviewDoc | null>(null);
   const [error, setError] = useState<string | null>(null);
   useDocVersion(doc, setDoc);

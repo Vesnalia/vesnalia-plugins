@@ -1,14 +1,14 @@
 ---
 type: Incident
-title: "kimi 2.3.0 сломал fork в bb: session lock запрещает кросс-процессный fork живой сессии"
-description: Почему thread fork для kimi-code перестал работать и в conformance, и вживую — kimi 2.3.0 держит эксклюзивный лок сессии на процесс, а bb форкает новым процессом; декларация и bridge handshake сужены до fork none, fork-правило исключено из conformance.
+title: "kimi 2.3.0 сломал fork в VesnALIA: session lock запрещает кросс-процессный fork живой сессии"
+description: Почему thread fork для kimi-code перестал работать и в conformance, и вживую — kimi 2.3.0 держит эксклюзивный лок сессии на процесс, а VesnALIA форкает новым процессом; декларация и bridge handshake сужены до fork none, fork-правило исключено из conformance.
 status: stable
-tags: [bb, kimi, incident, fork, session-lock, acp]
+tags: [VesnALIA, kimi, incident, fork, session-lock, acp]
 generated: { by: zcode, at: "2026-10-22T19:35:00Z" }
 verified: { by: zcode, at: "2026-10-22T19:35:00Z" }
 sources:
   - id: live-conformance-23
-    resource: BB_KIMI_LIVE=1 npx vitest run kimi-live, 2026-10-22
+    resource: ALIA_KIMI_LIVE=1 npx vitest run kimi-live, 2026-10-22
     title: session/fork-identity падает с SESSION_OCCUPIED против kimi 2.3.0
     author: zcode
   - id: two-process-probe
@@ -20,14 +20,14 @@ sources:
     title: sessionLock.ts из agent-core-v2; нет env/флага/конфига для отключения session lock
     author: zcode
   - id: sdk-bundles
-    resource: "@get-bb/plugin-sdk dist 0.6.49 и 0.6.68, provider-bridge-acp(-next).js, 2026-10-22"
+    resource: "@vesnalia/plugin-sdk dist 0.6.49 и 0.6.68, provider-bridge-acp(-next).js, 2026-10-22"
     title: 'initialize-ответ bridge хардкодит fork: "tip" в обеих версиях SDK'
     author: zcode
 ---
 
 # Симптом
 
-`BB_KIMI_LIVE=1 npx vitest run kimi-live` после тихого самообновления kimi CLI
+`ALIA_KIMI_LIVE=1 npx vitest run kimi-live` после тихого самообновления kimi CLI
 2.2.0 → 2.3.0: правило conformance `session/fork-identity` падает с
 `{"code":-32000, ... "This session is in use by another Kimi Code process.
 Stop the session in that process or exit it, then try again."}`. Отдельно
@@ -42,9 +42,9 @@ kimi 2.3.0 (движок agent-core-v2) вводит **эксклюзивный 
 Лок проверяет живость pid: после смерти владельца fork и resume из нового
 процесса работают.[^two-process-probe]
 
-bb (acp-next bridge) форкает иначе: **новый** процесс агента на новый тред и
+VesnALIA (acp-next bridge) форкает иначе: **новый** процесс агента на новый тред и
 ему — `session/fork` исходной сессии, которая ещё жива в своём процессе. Итог:
-fork живого треда всегда падает. Это не только тест — в реальном bb bridge
+fork живого треда всегда падает. Это не только тест — в реальном VesnALIA bridge
 держит все сессии тредов в одном процессе, и fork из UI попадает в тот же
 конфликт.[^two-process-probe]
 
@@ -84,12 +84,12 @@ fork живого треда всегда падает. Это не только
 
 Остаточное: расходимости handshake↔декларации больше нет (обёртка), но причина
 на месте — initialize SDK хардкодит `fork: "tip"` без проверки агента и без
-хука сужения; кандидат в issue к get-bb/plugin-sdk (обёртка — обход, не фикс
+хука сужения; кандидат в issue к get-alia/plugin-sdk (обёртка — обход, не фикс
 апстрима).
 
 # Урок
 
-Кросс-процессная модель fork'а bb и per-process session locks агента
+Кросс-процессная модель fork'а VesnALIA и per-process session locks агента
 несовместимы в принципе; при падении `session/fork-identity` сначала пробей
 двумя процессами (живой/мёртвый владелец), чтобы отделить регрессию агента от
 бага моста, и проверь, что initialize моста не перезаявляет capability.
@@ -110,10 +110,10 @@ takeover лока. Живая проверка на 2.4.1 двухпроцесс
 Решение: `fork: "none"` остаётся. Выключатель снимает защиту целостности
 сессии для всего процесса: при fork'е mid-turn сессии возможна torn-копия
 (чтение истории под конкурентной записью владельца); лок существует ровно
-против этого. bb уже умеет форкать после смерти владельца (probe 2026-10-22),
+против этого. VesnALIA уже умеет форкать после смерти владельца (probe 2026-10-22),
 демон вычищает простаивающие процессы (~33 мин). Вернуться к `fork: "tip"`
 стоит, когда апстрим даст явный кросс-процессный fork API, уважающий лок,
-или bb — чекпоинт-fork'и; тогда: env в launch spec, `fork: "tip"` в
+или VesnALIA — чекпоинт-fork'и; тогда: env в launch spec, `fork: "tip"` в
 server.ts, снять `narrowInitializeForkOnBridge`, вернуть fork-правило в
 conformance.
 

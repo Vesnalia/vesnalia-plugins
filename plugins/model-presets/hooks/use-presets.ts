@@ -4,7 +4,7 @@ import {
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { Preset, rpcContract } from "@/server";
 import { DEFAULT_SHORTCUT, PRESETS_CHANGED } from "@/shared/constants";
 

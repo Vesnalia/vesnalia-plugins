@@ -1,4 +1,4 @@
-// bb-plugin-hmm-floating-terminal — frontend.
+// alia-plugin-hmm-floating-terminal — frontend.
 //
 // Three registrations drive one window: a launcher in the thread header's
 // action row, a launcher in the sidebar footer that is reachable with no
@@ -9,7 +9,7 @@
 // leaving a project hides it and returning shows that project's own tabs again
 // with its dev script still running. A project's shells outlive its threads.
 //
-// No project on screen means no window: BB gives every thread a project, so a
+// No project on screen means no window: VesnALIA gives every thread a project, so a
 // projectless route is the home screen, settings, or a panel — nowhere a shell
 // belongs to.
 //
@@ -23,10 +23,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import {
   definePluginApp,
-  useBbContext,
+  useAliaContext,
   useRpc,
   type PluginThreadHeaderActionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import type { rpcContract } from "./server";
@@ -72,7 +72,7 @@ function decodeBase64(value: string): Uint8Array {
 }
 
 /** The host serves the terminal socket from the same origin that served this
- *  bundle — including through `bb connect`, where that origin is remote. */
+ *  bundle — including through `alia connect`, where that origin is remote. */
 function socketUrl(terminalId: string): string {
   const url = new URL(window.location.href);
   url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
@@ -201,7 +201,7 @@ function TerminalPane({
 
 function FloatingTerminalWindow() {
   const rpc = useRpc<typeof rpcContract>();
-  const { projectId } = useBbContext();
+  const { projectId } = useAliaContext();
   // Openness is per project, so navigating hides and shows the window on its
   // own instead of leaving one project's shells over another's — or over a
   // screen that has no project at all.
@@ -268,7 +268,7 @@ function FloatingTerminalWindow() {
 
   // The project's live sessions become the tabs; an empty scope gets its first.
   // This refires on every scope change, so returning to a project reads its
-  // shells back from BB rather than trusting anything cached here.
+  // shells back from VesnALIA rather than trusting anything cached here.
   useEffect(() => {
     if (!isOpen || projectId === null) return;
     let cancelled = false;
@@ -323,7 +323,7 @@ function FloatingTerminalWindow() {
 
   const closeTab = (terminalId: string) => {
     // Optimistic: the pane unmounts now, and a failed close only leaves an
-    // orphan session that BB's own terminal panel can still reach. The active
+    // orphan session that VesnALIA's own terminal panel can still reach. The active
     // tab is derived from `tabs`, so it falls back on its own.
     const remaining = tabs.filter((tab) => tab.terminalId !== terminalId);
     setLoaded({ scope: scopeKey, tabs: remaining });

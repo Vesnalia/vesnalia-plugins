@@ -1,6 +1,6 @@
 # Aura Motion
 
-Video, animated GIF and photo backgrounds for BB, with Capy's dithering effect, seven
+Video, animated GIF and photo backgrounds for VesnALIA, with Capy's dithering effect, seven
 texture patterns, five photo motions, four dither styles, six saved slots, and an
 optional GitHub activity overview. Open **Settings → Aura Motion Motion**, or
 **+ → Actions → Aura Motion** in a thread panel.
@@ -21,7 +21,7 @@ global when switching slots or resetting a background. Composer centering stays
 active with the overview or wallpaper disabled; short windows and long drafts
 remain scrollable. The overview is part of Aura Motion, with no extra plugin required.
 
-The BB server needs an authenticated [GitHub CLI](https://cli.github.com/): run
+The VesnALIA server needs an authenticated [GitHub CLI](https://cli.github.com/): run
 `gh auth login` directly on that server if necessary. Aura Motion invokes `gh api` against
 GitHub; credentials stay in the CLI and are never sent to the browser. The
 overview makes no activity requests while disabled. Results are cached for five
@@ -93,18 +93,18 @@ Select **Apply background** to save the setting.
   **Reset to default** restores the noise effect while keeping your saved slots
   and global scope/enabled preferences.
 
-Settings and slots are shared across this BB server and its remote clients.
+Settings and slots are shared across this VesnALIA server and its remote clients.
 The current window updates immediately; other windows refresh on focus or within
 15 seconds. Images stay in plugin-owned SQLite and are served through a
-BB-authenticated image route. Images are not sent to Capy or included in prompts.
+ALIA-authenticated image route. Images are not sent to Capy or included in prompts.
 
 ## Install
 
-Requires BB 0.40+ and SDK 0.4.21+. Uninstall Aura first if you use it
-(`bb plugin remove aura`; this deletes Aura's saved slots).
+Requires VesnALIA 0.40+ and SDK 0.4.21+. Uninstall Aura first if you use it
+(`alia plugin remove aura`; this deletes Aura's saved slots).
 
 ```sh
-bb plugin install git:https://github.com/NickolasBenakis/bb-plugin-aura-motion.git@^0.3.0
+alia plugin install git:https://github.com/NickolasBenakis/bb-plugin-aura-motion.git@^0.3.0
 ```
 
 From a checkout:
@@ -112,8 +112,8 @@ From a checkout:
 ```sh
 npm install
 npm run check
-bb plugin install . --yes
-bb plugin reload aura-motion
+alia plugin install . --yes
+alia plugin reload aura-motion
 ```
 
 ## Releasing
@@ -124,24 +124,24 @@ section to `CHANGELOG.md` in your pull request. When it merges, the Release
 workflow runs the checks, tags `vX.Y.Z` and publishes a GitHub release with
 those notes. A merge without a version bump releases nothing.
 
-The BB marketplace entry tracks a semver range of these tags. While the plugin
+The VesnALIA marketplace entry tracks a semver range of these tags. While the plugin
 is 0.x, `^0.3.0` covers 0.3.x patches only; a new minor such as 0.4.0 needs a
 marketplace pull request that raises the range.
 
 ## CLI
 
 ```sh
-bb aura-motion status --json
-bb aura-motion slots
-bb aura-motion use 1
-bb aura-motion new-thread-only on
-bb aura-motion new-thread-only off
-bb aura-motion overview on
-bb aura-motion overview off
-bb aura-motion chat glass
-bb aura-motion enable
-bb aura-motion disable
-bb aura-motion reset
+alia aura-motion status --json
+alia aura-motion slots
+alia aura-motion use 1
+alia aura-motion new-thread-only on
+alia aura-motion new-thread-only off
+alia aura-motion overview on
+alia aura-motion overview off
+alia aura-motion chat glass
+alia aura-motion enable
+alia aura-motion disable
+alia aura-motion reset
 ```
 
 Use the settings UI to upload and save slots. CLI output contains metadata,
@@ -159,9 +159,9 @@ The New thread composer stays centered, with the optional overview below it.
 Short windows and long drafts remain scrollable. Background styling follows
 Aura Motion's enable/scope settings; composer centering stays independent of them.
 
-On phones (the bb mobile app or a phone browser), the New thread Recent list and
+On phones (the VesnALIA mobile app or a phone browser), the New thread Recent list and
 project row sit on a frosted card, and Sheer chats use Glass's fill, so text
-stays readable when the wallpaper fills the screen. These rules use BB's own
+stays readable when the wallpaper fills the screen. These rules use VesnALIA's own
 touch test (`max-width: 767px` with a coarse pointer); desktop is unchanged.
 
 ## Effect and verification
@@ -169,10 +169,10 @@ touch test (`max-width: 767px` with a coarse pointer); desktop is unchanged.
 The shader and fade masks come from [Capy](https://capy.ai/new). Source URLs and
 the Paper Shaders Apache-2.0 license are recorded in
 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md). Wallpaper requests stay local;
-the optional overview requests GitHub activity from the BB server.
+the optional overview requests GitHub activity from the VesnALIA server.
 
-Aura Motion decorates BB's `root-compose-main-panel` and `thread-detail-timeline-panel`
-DOM containers. Recheck these host names when upgrading BB. Canvas/GL resources,
+Aura Motion decorates VesnALIA's `root-compose-main-panel` and `thread-detail-timeline-panel`
+DOM containers. Recheck these host names when upgrading VesnALIA. Canvas/GL resources,
 observers and listeners are disposed when disabling or reloading. Noise and photo animation
 run at the chosen FPS and pause off-screen, when hidden, and for reduced motion.
 GIF frames keep their own timing and are decoded with WebCodecs' `ImageDecoder`;
@@ -186,7 +186,7 @@ To check the chat glass across eight device sizes in light and dark (read-only;
 set Behind your messages to Glass or Sheer first):
 
 ```sh
-BB_THREAD_ID=thr_… BB_SCREENSHOT_DIR=/tmp/aura-shots npm run test:responsive
+ALIA_THREAD_ID=thr_… ALIA_SCREENSHOT_DIR=/tmp/aura-shots npm run test:responsive
 ```
 
 Unit tests cover atomic apply/rejection, six-slot persistence and replacement,
@@ -198,4 +198,4 @@ Activity tests cover UTC date ranges, gaps/ties/streaks, actual response parsing
 auth/source failures, scoped queries, discovery bounds, cache expiry/coalescing,
 late responses, retry and disabled/empty/unavailable states. The component tests
 use the SDK's isolated slot harness; installed-host screenshots require a
-signed-in BB browser session.
+signed-in VesnALIA browser session.

@@ -1,4 +1,4 @@
-// What the page remembers on this device, so a visit elsewhere in bb does not lose the place: the last route, each
+// What the page remembers on this device, so a visit elsewhere in VesnALIA does not lose the place: the last route, each
 // project's tab, how far each view was scrolled and the sidebar's fold. Shared by the page, its sidebar and its title.
 import { useCallback, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 
@@ -23,7 +23,7 @@ function read(key: string): unknown {
 }
 
 /**
- * A value this device remembers, followed across bb windows. A stored value that no longer parses, such as one an older
+ * A value this device remembers, followed across VesnALIA windows. A stored value that no longer parses, such as one an older
  * version wrote, reads as `initial`. `delay` batches frequent writes, such as scroll positions, into one.
  */
 export function createStored<T>(name: string, initial: T, parse: (value: unknown) => T | null, delay = 0) {
@@ -49,7 +49,7 @@ export function createStored<T>(name: string, initial: T, parse: (value: unknown
     value = load();
     notify();
   };
-  // Another bb window wrote; without this, the next write here would put back what that window changed.
+  // Another VesnALIA window wrote; without this, the next write here would put back what that window changed.
   const onStorage = (event: StorageEvent) => {
     if (event.key === key || event.key === null) reload();
   };

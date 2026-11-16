@@ -12,8 +12,8 @@ can act on a guest that is not its own:
 
 | Case | What goes wrong |
 | --- | --- |
-| Two BB servers, or a smoke run and a BB server, use one Proxmox pool and VMID range | `held()` lists every guest in the pool. The sweep releases any guest whose box it has no record of when BB returns 404 for the owner thread. Each install deletes the other's boxes within one sweep, 3 min, and they take each other's warm guests. |
-| A provider reuses references | Proxmox reuses a VMID once the range wraps. A box whose guest was deleted outside bb-box reads `running` again when its VMID holds a new box. The old thread's commands run there, and releasing the old box deletes the new one. |
+| Two VesnALIA servers, or a smoke run and a VesnALIA server, use one Proxmox pool and VMID range | `held()` lists every guest in the pool. The sweep releases any guest whose box it has no record of when VesnALIA returns 404 for the owner thread. Each install deletes the other's boxes within one sweep, 3 min, and they take each other's warm guests. |
+| A provider reuses references | Proxmox reuses a VMID once the range wraps. A box whose guest was deleted outside alia-box reads `running` again when its VMID holds a new box. The old thread's commands run there, and releasing the old box deletes the new one. |
 | A crash between the claim and the clone | The claim records a VMID before the clone. If another install takes that VMID first, the record names the other install's guest, and releasing it deletes that guest. |
 
 [016](016-changes-from-building-v1.md) protects real pools with a reset
@@ -21,7 +21,7 @@ generation. Virtual backends have no such check.
 
 ## Decision
 
-- **Install ID.** Each bb-box install makes a random ID the first time it
+- **Install ID.** Each alia-box install makes a random ID the first time it
   starts, for example `k3v9q2m7xa`, and keeps it in plugin storage.
   `BackendContext` gains `installId: string`.
 - **Recorded on every guest.** A backend records the install ID with the
@@ -51,7 +51,7 @@ generation. Virtual backends have no such check.
   per ID.
 - **Lost storage.** An install that lost its storage gets a new ID and
   leaves its old guests alone. The doctor note shows the old ID, and an
-  operator command (for example `bb box install-id --set <id>`) takes it
+  operator command (for example `alia box install-id --set <id>`) takes it
   back. The next sweep then adopts or releases those guests as before.
 - **Smoke runs.** `scripts/smoke.ts` uses the install ID `smoke`. It releases
   any guest of that install before it starts, so one smoke run at a time
@@ -63,7 +63,7 @@ generation. Virtual backends have no such check.
 
 ## Consequences
 
-- A development and a production BB server can share one pool and range.
+- A development and a production VesnALIA server can share one pool and range.
   They still compete for its capacity, and each shows the other's guests
   in the doctor.
 - A deleted guest stays gone, even when its reference is reused. A stale

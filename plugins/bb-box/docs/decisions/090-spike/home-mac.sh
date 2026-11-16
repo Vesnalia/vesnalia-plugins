@@ -7,7 +7,7 @@ export PATH LC_ALL
 
 HERE=$(cd "$(dirname "$0")" && pwd)
 CLONE_TREE=${BBBOX_CLONE_TREE:-$HERE/clone-tree}
-STATE=${BBBOX_STATE:-/var/db/bb-box-spike}
+STATE=${BBBOX_STATE:-/var/db/alia-box-spike}
 STORE=$STATE/home-snapshots
 LOGINWINDOW=/Library/Preferences/com.apple.loginwindow
 CONTRACT=1
@@ -55,7 +55,7 @@ make_user() {
   user=${1:-} uid=${2:-} with_home=${3:-home}
   valid_name "$user" || quit "$EXIT_USAGE" "usage: make-user <user> <uid>"
   password=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 24)
-  printf '%s\n' "$password" | sysadminctl -addUser "$user" -fullName "bb-box $user" -UID "$uid" -password - -home "/Users/$user" >/dev/null 2>&1
+  printf '%s\n' "$password" | sysadminctl -addUser "$user" -fullName "alia-box $user" -UID "$uid" -password - -home "/Users/$user" >/dev/null 2>&1
   [ "$(uid_of "$user")" = "$uid" ] || fail "sysadminctl did not make $user."
   dscl . -create "/Users/$user" IsHidden 1
   dseditgroup -o edit -a "$user" -t user _developer >/dev/null 2>&1
@@ -175,15 +175,15 @@ restore() {
 
 identity_left_in() {
   home=$1
-  for each in "$home"/.bb-machines/*/host-id "$home"/.bb-machines/*/auth.json "$home"/.bb-machines/*/config.json "$home"/.config/bb-box/env "$home"/Library/LaunchAgents/app.getbb.* "$home"/Library/Keychains/login.keychain-db "$home"/Library/Keychains/????????-????-????-????-???????????? "$home"/.ssh/id_* "$home"/.config/gh/hosts.yml; do
+  for each in "$home"/.alia-machines/*/host-id "$home"/.alia-machines/*/auth.json "$home"/.alia-machines/*/config.json "$home"/.config/alia-box/env "$home"/Library/LaunchAgents/app.getbb.* "$home"/Library/Keychains/login.keychain-db "$home"/Library/Keychains/????????-????-????-????-???????????? "$home"/.ssh/id_* "$home"/.config/gh/hosts.yml; do
     [ -e "$each" ] && printf '%s\n' "${each#"$home"/}"
   done
 }
 
 reset_identity() {
   home=$1
-  rm -rf "$home"/.bb-machines/*/host-id "$home"/.bb-machines/*/auth.json "$home"/.bb-machines/*/config.json "$home"/.bb-machines/*/daemon.lock
-  rm -f "$home"/.config/bb-box/env "$home"/Library/LaunchAgents/app.getbb.*
+  rm -rf "$home"/.alia-machines/*/host-id "$home"/.alia-machines/*/auth.json "$home"/.alia-machines/*/config.json "$home"/.alia-machines/*/daemon.lock
+  rm -f "$home"/.config/alia-box/env "$home"/Library/LaunchAgents/app.getbb.*
   rm -rf "$home"/Library/Keychains/login.keychain-db "$home"/Library/Keychains/????????-????-????-????-????????????
 }
 

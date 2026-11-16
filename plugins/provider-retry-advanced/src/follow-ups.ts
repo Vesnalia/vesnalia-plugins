@@ -1,4 +1,4 @@
-import type { BbPluginApi, PluginTurnFailedEvent } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginTurnFailedEvent } from "@vesnalia/plugin-sdk";
 import {
   hasPendingInteraction,
   isAutomaticRetry,
@@ -21,7 +21,7 @@ import {
 import { isRateLimitFailure } from "./retry-policy.js";
 import { classifyFailedTurn } from "./transport.js";
 
-/** BB Workflows owns its hidden workers. */
+/** VesnALIA Workflows owns its hidden workers. */
 const WORKFLOW_ENGINE_PLUGIN_ID = "workflows";
 
 /** An unfinished request older than this is no longer followed up. */
@@ -96,7 +96,7 @@ export interface FollowUps {
   pendingUnfinished(): number;
 }
 
-export function createFollowUps(bb: BbPluginApi, options: FollowUpOptions): FollowUps {
+export function createFollowUps(alia: AliaPluginApi, options: FollowUpOptions): FollowUps {
   const unfinished = new Map<string, UnfinishedRecord>();
   const nudged = new Map<string, string>();
   const log: FollowUpEntry[] = [];
@@ -108,15 +108,15 @@ export function createFollowUps(bb: BbPluginApi, options: FollowUpOptions): Foll
 
   async function drop(threadId: string, reason: string): Promise<void> {
     unfinished.delete(threadId);
-    await bb.storage.kv.delete(`unfinished:${threadId}`);
+    await alia.storage.kv.delete(`unfinished:${threadId}`);
     note({ threadId, kind: "unfinished", action: "dropped", reason });
   }
 
   /** Whether the failed request's turn failed for a reason the retry policies handle (connectivity, overload, rate limit). */
   async function retryableFailure(event: PluginTurnFailedEvent, request: TurnRequest): Promise<boolean> {
     if (event.errorInfo?.category === "overloaded" || isRateLimitFailure(event)) return true;
-    const thread = (await bb.sdk.threads.get({ threadId: event.threadId })) as unknown as { providerId: string };
-    const terminals = await listEvents(bb, {
+    const thread = (await alia.sdk.threads.get({ threadId: event.threadId })) as unknown as { providerId: string };
+    const terminals = await listEvents(alia, {
       threadId: event.threadId,
       types: ["turn/completed", "system/thread/interrupted"],
       afterSeq: request.seq,
@@ -131,7 +131,7 @@ export function createFollowUps(bb: BbPluginApi, options: FollowUpOptions): Foll
       return classifyFailedTurn({ providerId: thread.providerId, events: [terminal] }).kind === "transport";
     }
     const previous = terminals.filter((e) => e.type === "turn/completed" && e.seq < terminal.seq).at(-1);
-    const [decisive] = await listEvents(bb, {
+    const [decisive] = await listEvents(alia, {
       threadId: event.threadId,
       types: ["provider/error"],
       afterSeq: previous?.seq ?? request.seq,
@@ -155,7 +155,7 @@ export function createFollowUps(bb: BbPluginApi, options: FollowUpOptions): Foll
       await drop(threadId, "expired");
       return false;
     }
-    const after = await requestsAfter(bb, threadId, record.requestSeq);
+    const after = await requestsAfter(alia, threadId, record.requestSeq);
     if (after.length === 0) {
       await drop(threadId, "nothing-superseded-it");
       return false;
@@ -171,7 +171,7 @@ export function createFollowUps(bb: BbPluginApi, options: FollowUpOptions): Foll
         await drop(threadId, "retried");
         return false;
       }
-      const [completion] = await listEvents(bb, { threadId, types: ["turn/completed"], afterSeq: lastAttempt.seq, order: "asc", limit: 1 });
+      const [completion] = await listEvents(alia, { threadId, types: ["turn/completed"], afterSeq: lastAttempt.seq, order: "asc", limit: 1 });
       if ((completion?.data as { status?: unknown } | undefined)?.status === "completed") {
         await drop(threadId, "retried");
         return false;
@@ -179,17 +179,17 @@ export function createFollowUps(bb: BbPluginApi, options: FollowUpOptions): Foll
     }
     // Something else will run on the thread first, or it waits for a person: decide on a later idle.
     if ((thread.queuedMessageCount ?? 0) > 0) return false;
-    if (await hasPendingInteraction(bb, threadId)) return false;
-    if ((thread.activeBackgroundAgentCount ?? 0) > 0 || (await openBackgroundWork(bb, threadId)) > 0) return false;
+    if (await hasPendingInteraction(alia, threadId)) return false;
+    if ((thread.activeBackgroundAgentCount ?? 0) > 0 || (await openBackgroundWork(alia, threadId)) > 0) return false;
     unfinished.delete(threadId);
-    await bb.storage.kv.delete(`unfinished:${threadId}`);
-    await sendAgentOnly(bb, {
+    await alia.storage.kv.delete(`unfinished:${threadId}`);
+    await sendAgentOnly(alia, {
       threadId,
       text: unfinishedText({ failedAt: record.failedAt, automation: record.automation, accepted: record.accepted, input: record.input }),
       execution: record.execution,
     });
     note({ threadId, kind: "unfinished", action: "sent", reason: `request ${record.requestId} was superseded by system notifications` });
-    bb.log.info(`Unfinished request: ${record.requestId} on ${threadId} failed and was superseded by system notifications; sent it back once.`);
+    alia.log.info(`Unfinished request: ${record.requestId} on ${threadId} failed and was superseded by system notifications; sent it back once.`);
     return true;
   }
 
@@ -200,39 +200,39 @@ export function createFollowUps(bb: BbPluginApi, options: FollowUpOptions): Foll
    */
   async function checkContinuation(thread: IdleThread, text: string | null): Promise<void> {
     const threadId = thread.id;
-    const request = await latestRequest(bb, threadId);
+    const request = await latestRequest(alia, threadId);
     if (request === null) return;
     const automatic = isAutomaticRetry(request) || request.text.startsWith(STALL_TAG) || request.text.startsWith(UNFINISHED_TAG);
     if (!automatic || nudged.get(threadId) === request.requestId) return;
     if (!looksLikeOnlyAPromise(text)) return;
     const skip = (reason: string) => note({ threadId, kind: "continuation", action: "skipped", reason });
-    if ((await countToolItems(bb, threadId, request.seq)) > MAX_TOOLS_BEFORE_PROMISE) return skip("did-real-work");
+    if ((await countToolItems(alia, threadId, request.seq)) > MAX_TOOLS_BEFORE_PROMISE) return skip("did-real-work");
     if ((thread.queuedMessageCount ?? 0) > 0) return skip("queued-message-continues");
-    if (await hasPendingInteraction(bb, threadId)) return skip("waiting-for-user");
-    if ((thread.activeBackgroundAgentCount ?? 0) > 0 || (await openBackgroundWork(bb, threadId)) > 0) return skip("background-work-open");
-    if ((await runningChildren(bb, threadId)) > 0) return skip("waiting-for-child-threads");
+    if (await hasPendingInteraction(alia, threadId)) return skip("waiting-for-user");
+    if ((thread.activeBackgroundAgentCount ?? 0) > 0 || (await openBackgroundWork(alia, threadId)) > 0) return skip("background-work-open");
+    if ((await runningChildren(alia, threadId)) > 0) return skip("waiting-for-child-threads");
     nudged.set(threadId, request.requestId);
-    await bb.storage.kv.set(`nudge:${threadId}`, request.requestId);
-    await sendAgentOnly(bb, { threadId, text: NUDGE_TEXT, execution: request.execution });
+    await alia.storage.kv.set(`nudge:${threadId}`, request.requestId);
+    await sendAgentOnly(alia, { threadId, text: NUDGE_TEXT, execution: request.execution });
     note({ threadId, kind: "continuation", action: "sent", reason: `turn ${request.requestId} ended with only a promise to continue` });
-    bb.log.info(`Continuation check: ${threadId} ended its resumed turn ${request.requestId} with only a promise to continue; sent one more continue.`);
+    alia.log.info(`Continuation check: ${threadId} ended its resumed turn ${request.requestId} with only a promise to continue; sent one more continue.`);
   }
 
   return {
     async init() {
-      for (const key of await bb.storage.kv.list("unfinished:")) {
-        const record = await bb.storage.kv.get<UnfinishedRecord>(key);
+      for (const key of await alia.storage.kv.list("unfinished:")) {
+        const record = await alia.storage.kv.get<UnfinishedRecord>(key);
         if (record !== undefined) unfinished.set(key.slice("unfinished:".length), record);
       }
-      for (const key of await bb.storage.kv.list("nudge:")) {
-        const requestId = await bb.storage.kv.get<string>(key);
+      for (const key of await alia.storage.kv.list("nudge:")) {
+        const requestId = await alia.storage.kv.get<string>(key);
         if (typeof requestId === "string") nudged.set(key.slice("nudge:".length), requestId);
       }
     },
     async noteFailure(event) {
       if (!options.unfinishedFollowUp()) return;
       // A notification can take the thread's turn within seconds, so look a few requests back.
-      const recentRequests = await listEvents(bb, { threadId: event.threadId, types: ["client/turn/requested"], order: "desc", limit: 10 });
+      const recentRequests = await listEvents(alia, { threadId: event.threadId, types: ["client/turn/requested"], order: "desc", limit: 10 });
       const found = recentRequests.map(parseRequest).find((r) => r.requestId === event.requestId);
       if (found === undefined) return;
       const request = found;
@@ -245,13 +245,13 @@ export function createFollowUps(bb: BbPluginApi, options: FollowUpOptions): Foll
         originalRequestId: request.requestId,
         requestSeq: request.seq,
         failedAt: request.createdAt || options.now(),
-        automation: request.text.startsWith("[bb automation"),
+        automation: request.text.startsWith("[VesnALIA automation"),
         accepted: event.inputAccepted,
         input: event.inputAccepted ? "" : request.text.slice(0, 20_000),
         execution: request.execution,
       };
       unfinished.set(event.threadId, record);
-      await bb.storage.kv.set(`unfinished:${event.threadId}`, record);
+      await alia.storage.kv.set(`unfinished:${event.threadId}`, record);
       note({ threadId: event.threadId, kind: "unfinished", action: "tracked", reason: `request ${request.requestId} failed` });
     },
     async onIdle(thread, lastAssistantText) {

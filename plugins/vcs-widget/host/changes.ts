@@ -81,7 +81,7 @@ async function worktreeFile(context: ActionContext, path: string): Promise<strin
 
 /**
  * The patch for one file on one side (HEAD → index, or index → working
- * tree) plus, when textual and small, both complete sides so bb's viewer
+ * tree) plus, when textual and small, both complete sides so VesnALIA's viewer
  * can expand context. An untracked file diffs against /dev/null.
  */
 export async function diffFile(

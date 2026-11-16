@@ -1,4 +1,4 @@
-// Runtime tests against a fake host: no BB server, no models, no network.
+// Runtime tests against a fake host: no VesnALIA server, no models, no network.
 // These are the tests that matter, because the runtime is where a cycle can
 // run away and where a guard has to hold.
 import { describe, expect, it } from "vitest";
@@ -63,7 +63,7 @@ function fakeHost(replies: Record<string, string | string[]>) {
  * A host for dialogue nodes, modelled on how a real thread behaves: the last
  * message only changes once an answer has been sent into it. That is what
  * makes the interrupt replay testable — a node re-entered from the top reads
- * the same message it read before, exactly as it would against BB.
+ * the same message it read before, exactly as it would against VesnALIA.
  */
 function fakeDialogHost(script: string[]) {
   const spawned: string[] = [];
@@ -763,7 +763,7 @@ describe("dynamic fan-out", () => {
     expect(join).toContain("reviewed: c.ts");
   });
 
-  // Each element is its own BB thread, so an unbounded list is an unbounded
+  // Each element is its own VesnALIA thread, so an unbounded list is an unbounded
   // number of threads. Truncating and saying so beats both failing the run and
   // spawning 200 workers.
   it("caps the branch count at maxFanOut and says what it dropped", async () => {

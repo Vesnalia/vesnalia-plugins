@@ -20,12 +20,12 @@ in seconds. The options were containers, full VMs and microVMs.
   by linked clone from one CT template per kind: `linux-headless` and
   `linux-desktop`.
 - Root builds each template once with a script in this repository, including
-  nesting and the GPU devices. bb-box's API token can only clone, configure,
+  nesting and the GPU devices. alia-box's API token can only clone, configure,
   start, stop and delete in its own resource pool and guest ID range.
 - Each box gets a static address derived from its guest ID, from a range in
   the settings, so there is no DHCP wait.
 - Ownership is kept in Proxmox tags on the guest (box, thread and kind), so
-  the sweep can find every box even if bb-box's storage is lost.
+  the sweep can find every box even if alia-box's storage is lost.
 - The Proxmox API client is shared with the planned QEMU backend for Windows.
 - microVM runtimes such as microsandbox are possible backends, not the first.
 

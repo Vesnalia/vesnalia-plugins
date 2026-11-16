@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { test, expect, afterEach, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { panelTabCalls, renderPanelTab } from "./panel-tabs.test-support";
 import { patchReviewState } from "../lib/panel-state";
@@ -45,11 +45,11 @@ function renderWorkspace(review: Record<string, unknown>, rpc: Record<string, (i
     markSeen: () => ({ ok: true }),
     snoozeReview: () => ({ ok: true }),
   } as any,
-  // Like BB, the host opens the link's URL itself; otherwise the link navigates, which jsdom doesn't implement.
+  // Like VesnALIA, the host opens the link's URL itself; otherwise the link navigates, which jsdom doesn't implement.
   openUrl: () => true }));
 }
 type Slot = Awaited<ReturnType<typeof renderWorkspace>>;
-/** BB's Review agent tab beside the review, before its conversation starts. */
+/** VesnALIA's Review agent tab beside the review, before its conversation starts. */
 async function agentTab() {
   const app = await loadPluginApp(() => import("../app"));
   return renderPanelTab(app, "agent", "pr-42", { rpc: {
@@ -70,13 +70,13 @@ test.each([false, true])("a PR review's title on its Overview opens the pull req
   await waitFor(() => expect(slot.queryByRole("heading", { name: "Fix token refresh race" })).toBeNull());
   const breadcrumb = within(slot.getByRole("navigation", { name: "Breadcrumb" }));
   if (fallback) await breadcrumb.findByRole("button", { name: "web#42 Fix token refresh race" });
-  // Without BB's title bar, the fallback appends the review title to this button's name.
+  // Without VesnALIA's title bar, the fallback appends the review title to this button's name.
   fireEvent.click(breadcrumb.getByRole("button", { name: /^web#42(?: |$)/ }));
   expect(await slot.findByRole("heading", { name: "Fix token refresh race" })).toBeTruthy();
   slot.lifecycle.unmount();
 });
 
-test("a renamed review's Overview leads with your name, still opening the PR, with the PR's title under it, and BB's title bar says your name", async () => {
+test("a renamed review's Overview leads with your name, still opening the PR, with the PR's title under it, and VesnALIA's title bar says your name", async () => {
   const slot = await renderWorkspace({ kind: "pr", number: 42, repo: "acme/web", title: "Fix token refresh race", name: "Token lock", url });
   const link = await slot.findByRole("link", { name: "Token lock" });
   expect(link.getAttribute("href")).toBe(url);
@@ -295,7 +295,7 @@ test("a failing Actions check's Ask agent reads the end of its log, then quotes 
   expect(getCheckLog).toHaveBeenCalledWith({ targetKey: "pr-42", runId: 123 });
   expect(checks.getByRole("button", { name: "Reading the log…" })).toBeTruthy();
   answer({ ok: true, log: "test\tnpm test\t```\ntest\tnpm test\tFAIL src/auth.test.ts" });
-  // BB's side panel opens on the Review agent tab, which takes the quote.
+  // VesnALIA's side panel opens on the Review agent tab, which takes the quote.
   await waitFor(() => expect(panelTabCalls(slot)).toEqual(["openTab:agent"]));
   const tab = await agentTab();
   const agent = within(await tab.findByRole("region", { name: "Review agent" }));

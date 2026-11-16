@@ -4,9 +4,9 @@
  * threads; whole-file and whole-diff ones go into the body; one that cannot be posted says why. Agents'
  * drafts on GitHub's threads are listed apart, each left out until ticked, and go in as replies (a
  * resolving one resolves its thread once the review is in). It posts as the GitHub CLI's account on
- * the bb server's machine, only from this button.
+ * the VesnALIA server's machine, only from this button.
  */
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -43,7 +43,7 @@ export function SubmitReviewDialog({
   onSubmitted(): void;
 }) {
   const rpc = useRpc<RpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [plan, setPlan] = useState<{
     lines: { reviewThreadId: string; location: string; body: string }[];
     body: { reviewThreadId: string; location: string; body: string }[];
@@ -144,7 +144,7 @@ export function SubmitReviewDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Submit a review of #{pullNumber}</DialogTitle>
-          <DialogDescription>Posted to GitHub as the GitHub CLI's account on the bb server's machine.</DialogDescription>
+          <DialogDescription>Posted to GitHub as the GitHub CLI's account on the VesnALIA server's machine.</DialogDescription>
         </DialogHeader>
         <div className="flex gap-1.5" role="radiogroup" aria-label="Verdict">
           {VERDICTS.map((verdict) => (

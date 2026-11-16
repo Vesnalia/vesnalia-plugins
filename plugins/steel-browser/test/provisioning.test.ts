@@ -5,10 +5,10 @@ import { bindingReady, ensureViewerShare, provisionProjectInstance, viewerOrigin
 
 const project = "proj_fixture";
 const hash = createHash("sha256").update(project).digest("hex");
-const name = `bb-steel-${hash.slice(0, 24)}`;
+const name = `alia-steel-${hash.slice(0, 24)}`;
 const image = "ghcr.io/steel-dev/steel-browser@sha256:f5cd68fbc2cb27e5d7766269860fd0fb29cbe5fe506245a49c82f85ba210e7da";
 const instance = () => ({
-  Config: { Image: image, Labels: { "bb.steel.project": project },
+  Config: { Image: image, Labels: { "alia.steel.project": project },
     Env: ["DOMAIN=viewer.test", "USE_SSL=true", "CHROME_USER_DATA_DIR=/profiles/chrome"] },
   HostConfig: { Dns: ["1.1.1.1", "8.8.8.8"], PortBindings: {
     "3000/tcp": [{HostIp: "127.0.0.1", HostPort: "3200"}],
@@ -30,7 +30,7 @@ test("missing viewer share validates the container then exposes only API on the 
       calls.push(["verify"]);
     },
     run: async (cmd, args) => {
-      assert.equal(cmd, "bb");
+      assert.equal(cmd, "alia");
       calls.push(args);
       if (args.includes("shares")) return JSON.stringify({ shares: [{ port: 9300, url: "https://unrelated.test" }] });
       return binding.viewerUrl;
@@ -126,16 +126,16 @@ test("new setup skips occupied/shared ports and exposes only API on the server h
     run: async (cmd, args) => {
       calls.push([cmd, args]);
       if (args.includes("shares")) return JSON.stringify({ shares: [{port: start + 1}] });
-      if (cmd === "bb") return "https://viewer.test\n";
+      if (cmd === "alia") return "https://viewer.test\n";
       return "";
     },
   });
   assert.equal(result.apiUrl, `http://127.0.0.1:${start + 4}`);
   assert.equal(result.cdpUrl, `http://127.0.0.1:${start + 5}`);
-  assert.deepEqual(calls.find(([, a]) => a.includes("expose")), ["bb", ["connect", "expose", String(start + 4), "--host", "server-host"]]);
+  assert.deepEqual(calls.find(([, a]) => a.includes("expose")), ["alia", ["connect", "expose", String(start + 4), "--host", "server-host"]]);
   const docker = calls.find(([, a]) => a[0] === "run")![1];
   assert(docker.includes(`${name}-profile:/profiles`));
-  assert(docker.includes(`bb.steel.project=${project}`));
+  assert(docker.includes(`alia.steel.project=${project}`));
   assert(docker.includes(image));
   assert(ready);
   assert.equal(docker[docker.indexOf("--dns") + 1], "1.1.1.1");
@@ -150,7 +150,7 @@ test("existing project with inherited DNS is recreated with the same profile", a
     ready: async () => {},
     run: async (cmd, args) => {
       calls.push(args);
-      if (cmd === "bb") return "https://viewer.test";
+      if (cmd === "alia") return "https://viewer.test";
       if (args[0] === "ps") return name;
       if (args[0] === "inspect") return JSON.stringify([existing]);
       return "";
@@ -174,7 +174,7 @@ test("dead CDP on a validated project triggers one scoped repair", async () => {
     ready: async () => { if (++attempts === 1) throw new Error("CDP unavailable"); },
     run: async (cmd, args) => {
       calls.push(args);
-      if (cmd === "bb") return "https://viewer.test";
+      if (cmd === "alia") return "https://viewer.test";
       if (args[0] === "ps") return name;
       if (args[0] === "inspect") return JSON.stringify([instance()]);
       return "";
@@ -191,7 +191,7 @@ test("persistent CDP failure is bounded to one recovery attempt", async () => {
     ready: async () => { throw new Error("CDP unavailable"); },
     run: async (cmd, args) => {
       calls.push(args);
-      if (cmd === "bb") return "https://viewer.test";
+      if (cmd === "alia") return "https://viewer.test";
       if (args[0] === "ps") return name;
       if (args[0] === "inspect") return JSON.stringify([instance()]);
       return "";
@@ -210,7 +210,7 @@ test("shared profile or changed saved binding cannot trigger destructive repair"
       ready: async () => { throw new Error("CDP unavailable"); },
       run: async (cmd, args) => {
         calls.push(args);
-        if (cmd === "bb") return "https://viewer.test";
+        if (cmd === "alia") return "https://viewer.test";
         if (args.some(arg => arg.startsWith("volume="))) return `${name}\nforeign-container`;
         if (args[0] === "ps") return name;
         if (args[0] === "inspect") return JSON.stringify([instance()]);
@@ -229,7 +229,7 @@ test("existing stopped project is validated and resumed without replacing its pr
     ready: async () => {},
     run: async (cmd, args) => {
       calls.push(args);
-      if (cmd === "bb") return "https://viewer.test";
+      if (cmd === "alia") return "https://viewer.test";
       if (args[0] === "ps") return name;
       if (args[0] === "inspect") return JSON.stringify([existing]);
       return "";
@@ -241,14 +241,14 @@ test("existing stopped project is validated and resumed without replacing its pr
 
 test("foreign profile and Connect errors fail closed", async () => {
   const existing = instance();
-  existing.Config.Labels["bb.steel.project"] = "another-project";
+  existing.Config.Labels["alia.steel.project"] = "another-project";
   await assert.rejects(provisionProjectInstance(project, {
     run: async (_cmd, args) => args[0] === "ps" ? name : JSON.stringify([existing]),
   }), /refusing replacement/);
   await assert.rejects(provisionProjectInstance(project, {
     available: async () => true,
     run: async (cmd) => {
-      if (cmd === "bb") throw new Error("Connect unavailable");
+      if (cmd === "alia") throw new Error("Connect unavailable");
       return "";
     },
   }), /Connect unavailable/);
@@ -268,7 +268,7 @@ test("Docker port inspection requests only bounded port metadata", async () => {
     ready: async () => {},
     run: async (cmd, args) => {
       if (args.includes("shares")) return '{"shares":[]}';
-      if (cmd === "bb") return "https://viewer.test";
+      if (cmd === "alia") return "https://viewer.test";
       if (args.includes("{{json .ID}}")) return '"container-id"\n';
       if (args[0] === "inspect") {
         assert.deepEqual(args, ["inspect", "--format", "{{json .HostConfig.PortBindings}}", "container-id"]);

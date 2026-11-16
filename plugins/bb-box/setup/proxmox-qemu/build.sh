@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds bb-box's Windows template on a Proxmox host, as root.
+# Builds alia-box's Windows template on a Proxmox host, as root.
 #
 #   build.sh windows <vmid> [--replace] [--keep] [--sata]
 #
@@ -15,13 +15,13 @@
 # checks a linked clone of it over SSH with ../windows/check.ps1. About 50 minutes, nearly
 # all of it Windows Setup, OpenSSH from Windows Update and the build tools.
 #
-# Options: --replace  <vmid> may be a bb-box Windows template already. The new
+# Options: --replace  <vmid> may be a alia-box Windows template already. The new
 #                     one is built and checked in another VM (BBBOX_BUILD_VMID,
 #                     or the next free VMID) and only then takes its place.
 #          --keep     leave the build VM when the build fails, to look at it.
 #          --sata     put the disk on SATA, should Windows not boot from VirtIO
 #                     SCSI (INACCESSIBLE_BOOT_DEVICE on the console).
-# Settings: /etc/bb-box/bb-box.env (see ../proxmox-lxc/host/bb-box.env.example),
+# Settings: /etc/alia-box/alia-box.env (see ../proxmox-lxc/host/alia-box.env.example),
 # and these, with their defaults:
 #   BBBOX_WINDOWS_ISO=local:iso/win11.iso      Windows 11 x64, English (United States)
 #   BBBOX_VIRTIO_ISO=local:iso/virtio-win.iso  the virtio-win drivers
@@ -71,7 +71,7 @@ LLVM_VERSION=23.1.2
 LLVM_SHA256=E9D9141524F2C9FE4BF9F37012EFE34F0AA745617BE9E21FFACE9104703C55E5
 RUSTUP_VERSION=1.29.1
 RUSTUP_SHA256=6F4BEF66261261FCB43131BE8720BAB817D403A09EDEC7455C371974B90BDB7E
-# Node.js, which BB's installer for Windows needs (#539), as Linux boxes have it.
+# Node.js, which ALIA's installer for Windows needs (#539), as Linux boxes have it.
 NODE_VERSION=24.21.0
 NODE_SHA256=158F7685B44DE51F6C0DF1D153526CBCD3E1BC739A8DFC607721CEF75DE9E541
 # The agent CLIs, as Linux boxes pin them, for threads on the box (#561).
@@ -85,7 +85,7 @@ PI_SHA256=AAB2BA67BAF8FF97A52D05B62D88E9E65A840C6EA8FA1029A28D62D210D4E5FC
 FFMPEG_VERSION=9.0.2
 FFMPEG_URL=https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-30-13-08/ffmpeg-n9.0.2-17-g2a571b6068-win64-gpl-9.0.zip
 FFMPEG_SHA256=A0E45723C72141975F51D8666302E614711745F3102B704CA3F82C897A58D278
-# bb-box-stream.exe's H.264 encoder (060): Cisco's own binary, which its licence
+# alia-box-stream.exe's H.264 encoder (060): Cisco's own binary, which its licence
 # covers only when fetched from Cisco, so the build downloads it.
 OPENH264_VERSION=2.6.0
 OPENH264_URL=https://ciscobinary.openh264.org/openh264-2.6.0-win64.dll.bz2
@@ -108,15 +108,15 @@ in_use() { qm config "$1" >/dev/null 2>&1 || pct config "$1" >/dev/null 2>&1; }
 # template's volume once made; elsewhere it needs the template's base volume.
 thin=
 [ "$(pvesh get "/storage/$BBBOX_STORAGE" --output-format json 2>/dev/null | jq -r .type)" != lvmthin ] || thin=1
-# The template's record (049): in it, C:\bb-box\image.json, which the first
+# The template's record (049): in it, C:\alia-box\image.json, which the first
 # logon writes from build.json, and on its description's second line, where
-# bb-box's doctor reads it. The pins' SHA-256 is of this script's pin lines.
+# alia-box's doctor reads it. The pins' SHA-256 is of this script's pin lines.
 record=$(jq -cn --arg build "$build" --arg built "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg os "$BBBOX_WINDOWS_EDITION" \
   --arg pins "$(grep -E '^[A-Z0-9_]+_(VERSION|SHA256|URL)=' "$here/build.sh" | sha256sum | cut -d' ' -f1)" \
   --arg pwsh "$PWSH_VERSION" --arg git "$GIT_VERSION" --arg gh "$GH_VERSION" --arg cua "$CUA_VERSION" \
   --arg vs "$VS_VERSION" --arg llvm "$LLVM_VERSION" --arg rustup "$RUSTUP_VERSION" --arg node "$NODE_VERSION" --arg claude "$CLAUDE_VERSION" --arg codex "$CODEX_VERSION" --arg pi "$PI_VERSION" --arg ffmpeg "$FFMPEG_VERSION" --arg openh264 "$OPENH264_VERSION" \
   '{contract: 1, image: "standard", kind: "windows-desktop", arch: "x86_64", build: $build, built: $built, base: null, os: $os,
-    aptSnapshot: null, pins: $pins, bbApp: null,
+    aptSnapshot: null, pins: $pins, aliaApp: null,
     tools: {pwsh: $pwsh, git: $git, gh: $gh, "cua-driver": $cua, "vs-buildtools": $vs, llvm: $llvm, rustup: $rustup, node: $node, "claude-code": $claude, codex: $codex, pi: $pi, ffmpeg: $ffmpeg, openh264: $openh264, "hardware-cursor": "1", "password-never-expires": "1"},
     nvidia: null, layer: null, sizeGiB: null}')
 linked_clones() { # vmid
@@ -129,10 +129,10 @@ linked_clones() { # vmid
 # replaces <vmid> only once it is checked, so a failure leaves the old one.
 vm=$vmid
 if in_use "$vmid"; then
-  [ -n "$replace" ] || die "VMID $vmid is already in use (--replace replaces a bb-box Windows template)"
+  [ -n "$replace" ] || die "VMID $vmid is already in use (--replace replaces a alia-box Windows template)"
   config=$(qm config "$vmid" 2>/dev/null || true)
-  grep -q '^template: 1' <<<"$config" && grep -q '^description: bb-box windows template' <<<"$config" ||
-    die "$vmid is not a bb-box Windows template; --replace replaces only those"
+  grep -q '^template: 1' <<<"$config" && grep -q '^description: alia-box windows template' <<<"$config" ||
+    die "$vmid is not a alia-box Windows template; --replace replaces only those"
   clones=$(linked_clones "$vmid")
   [ -z "$clones" ] || die "boxes are linked clones of template $vmid and need it ($clones); release them first"
   vm=${BBBOX_BUILD_VMID:-$(pvesh get /cluster/nextid)}
@@ -142,9 +142,9 @@ fi
 
 # The answer disc. build.json holds the password, so the disc lives only as
 # long as the build, and the first logon deletes its copy in the VM.
-work=$(mktemp -d /var/tmp/bb-box-windows-XXXXXX)
+work=$(mktemp -d /var/tmp/alia-box-windows-XXXXXX)
 iso_store=${BBBOX_WINDOWS_ISO%%:*}
-answer_name=bb-box-answer-$vm.iso
+answer_name=alia-box-answer-$vm.iso
 answer_iso=$(dirname "$windows_iso")/$answer_name
 check_vm=
 done_ok=
@@ -175,9 +175,9 @@ trap 'exit 1' INT TERM
 
 password=$(python3 -c 'import secrets, string; a = string.ascii_letters + string.digits; print("".join(secrets.choice(a) for _ in range(24)))')
 cp -r "$here/answer" "$work/answer"
-# bb-box-stream.exe's source (060), which the first logon compiles with the C# compiler Windows has, and the
+# alia-box-stream.exe's source (060), which the first logon compiles with the C# compiler Windows has, and the
 # script that turns on the display's hardware cursor, so it can leave the pointer out of the video.
-cp "$here/../windows/bb-box-stream.cs" "$here/../windows/install-stream.ps1" "$here/../windows/hardware-cursor.ps1" "$work/answer/bb-box/"
+cp "$here/../windows/alia-box-stream.cs" "$here/../windows/install-stream.ps1" "$here/../windows/hardware-cursor.ps1" "$work/answer/alia-box/"
 python3 - "$work/answer/autounattend.xml" "$password" "$BBBOX_WINDOWS_EDITION" "$BBBOX_WINDOWS_KEY" <<'EOF'
 import sys
 from xml.sax.saxutils import escape
@@ -187,7 +187,7 @@ for name, value in (("PASSWORD", password), ("EDITION", edition), ("PRODUCT_KEY"
     text = text.replace(f"@{name}@", escape(value))
 open(path, "w").write(text)
 EOF
-python3 - "$work/answer/bb-box/build.json" "$record" <<EOF
+python3 - "$work/answer/alia-box/build.json" "$record" <<EOF
 import json, sys
 json.dump({
     "record": sys.argv[2],
@@ -236,12 +236,12 @@ fi
 # clock is UTC, as Windows' time zone is: Proxmox would otherwise give a
 # Windows guest the host's local time, and every box would start that far off.
 log "creating build VM $vm ($BBBOX_WINDOWS_EDITION from $(basename "$windows_iso"), disk on $bus)"
-qm create "$vm" --name "bb-box-windows-$vm" --pool "$BBBOX_POOL" --ostype win11 --machine q35 --bios ovmf \
+qm create "$vm" --name "alia-box-windows-$vm" --pool "$BBBOX_POOL" --ostype win11 --machine q35 --bios ovmf \
   --cpu host --cores 4 --memory 8192 --balloon 0 --localtime 0 \
   --efidisk0 "$BBBOX_STORAGE:1,efitype=4m,pre-enrolled-keys=1" --tpmstate0 "$BBBOX_STORAGE:1,version=v2.0" \
   "${disk[@]}" --net0 "virtio,bridge=$BBBOX_BRIDGE" --vga virtio --agent enabled=1 \
   --ide2 "$BBBOX_WINDOWS_ISO,media=cdrom" --ide0 "$BBBOX_VIRTIO_ISO,media=cdrom" --ide3 "$iso_store:iso/$answer_name,media=cdrom" \
-  --boot "order=ide2;$boot_disk" --tags "bbbox;windows;$build" --description "bb-box windows template being built, $(date -u +%F)"
+  --boot "order=ide2;$boot_disk" --tags "bbbox;windows;$build" --description "alia-box windows template being built, $(date -u +%F)"
 created=1
 qm start "$vm"
 # The ISO boots first and waits a few seconds for a key ("Press any key to
@@ -273,14 +273,14 @@ wait_for() { # what seconds interval command...
   log "$what after $(($(date +%s) - start)) s"
 }
 screen() { # vmid: the console as a PPM image, for a failed build
-  echo "screendump $work/../bb-box-windows-$1.ppm" | qm monitor "$1" >/dev/null 2>&1 &&
-    echo "console of VM $1: /var/tmp/bb-box-windows-$1.ppm"
+  echo "screendump $work/../alia-box-windows-$1.ppm" | qm monitor "$1" >/dev/null 2>&1 &&
+    echo "console of VM $1: /var/tmp/alia-box-windows-$1.ppm"
 }
 # Exit 0 once installed, restarted and logged on with Cua; 2 if the first
 # logon failed; 1 while it is not there yet.
-installed() { gexec "$vm" 20 'if (Test-Path C:\bb-box\firstlogon-failed) { exit 2 }; if ((Test-Path C:\bb-box\firstlogon-done) -and (Get-Service sshd).Status -eq "Running" -and (Get-Process cua-driver -ErrorAction SilentlyContinue | Where-Object SessionId -gt 0)) { exit 0 } else { exit 1 }'; }
+installed() { gexec "$vm" 20 'if (Test-Path C:\alia-box\firstlogon-failed) { exit 2 }; if ((Test-Path C:\alia-box\firstlogon-done) -and (Get-Service sshd).Status -eq "Running" -and (Get-Process cua-driver -ErrorAction SilentlyContinue | Where-Object SessionId -gt 0)) { exit 0 } else { exit 1 }'; }
 
-log "Windows Setup, then the first logon (C:\\bb-box\\firstlogon.log in the VM)"
+log "Windows Setup, then the first logon (C:\\alia-box\\firstlogon.log in the VM)"
 start=$(date +%s)
 while :; do
   state=0
@@ -288,17 +288,17 @@ while :; do
   [ "$state" != 0 ] || break
   if [ "$state" = 2 ] || [ $(($(date +%s) - start)) -ge 6000 ]; then
     screen "$vm"
-    gexec "$vm" 30 'Get-Content C:\bb-box\firstlogon.log -Tail 20' || true
+    gexec "$vm" 30 'Get-Content C:\alia-box\firstlogon.log -Tail 20' || true
     die "Windows did not finish installing in VM $vm (above)"
   fi
   sleep 20
 done
 log "installed, restarted and logged on after $(($(date +%s) - start)) s"
-gexec "$vm" 30 'Select-String -Path C:\bb-box\firstlogon.log -Pattern "^\d\d:\d\d:\d\d " | ForEach-Object Line'
+gexec "$vm" 30 'Select-String -Path C:\alia-box\firstlogon.log -Pattern "^\d\d:\d\d:\d\d " | ForEach-Object Line'
 
 # The template: no build address (clones take theirs from the SMBIOS serial),
 # no CD drives, stopped.
-gexec "$vm" 60 '$n = Get-NetAdapter -Physical | Select-Object -First 1; Remove-NetRoute -InterfaceIndex $n.ifIndex -DestinationPrefix 0.0.0.0/0 -Confirm:$false -ErrorAction SilentlyContinue; Get-NetIPAddress -InterfaceIndex $n.ifIndex -AddressFamily IPv4 | Remove-NetIPAddress -Confirm:$false; Set-NetIPInterface -InterfaceIndex $n.ifIndex -Dhcp Enabled; Clear-Content C:\bb-box\boot.log' >/dev/null ||
+gexec "$vm" 60 '$n = Get-NetAdapter -Physical | Select-Object -First 1; Remove-NetRoute -InterfaceIndex $n.ifIndex -DestinationPrefix 0.0.0.0/0 -Confirm:$false -ErrorAction SilentlyContinue; Get-NetIPAddress -InterfaceIndex $n.ifIndex -AddressFamily IPv4 | Remove-NetIPAddress -Confirm:$false; Set-NetIPInterface -InterfaceIndex $n.ifIndex -Dhcp Enabled; Clear-Content C:\alia-box\boot.log' >/dev/null ||
   die "could not clear the build address in VM $vm"
 qm shutdown "$vm" --timeout 300
 qm set "$vm" --delete ide0,ide2,ide3 --boot "order=$boot_disk" >/dev/null
@@ -310,7 +310,7 @@ log "VM $vm is a template; checking a linked clone of it"
 # over SSH as the backend reaches a box.
 check_vm=${BBBOX_CHECK_VMID:-$(pvesh get /cluster/nextid)}
 if in_use "$check_vm"; then taken=$check_vm check_vm=; die "VMID $taken for the check is already in use; set BBBOX_CHECK_VMID to a free one"; fi
-qm clone "$vm" "$check_vm" --name bb-box-windows-check --pool "$BBBOX_POOL" >/dev/null
+qm clone "$vm" "$check_vm" --name alia-box-windows-check --pool "$BBBOX_POOL" >/dev/null
 serial=$(printf '%s/%s %s' "$BBBOX_BUILD_ADDRESS" "$BBBOX_PREFIX" "$BBBOX_GATEWAY" | base64 -w0)
 qm set "$check_vm" --smbios1 "base64=1,uuid=$(cat /proc/sys/kernel/random/uuid),serial=$serial" >/dev/null
 ssh_box() { ssh -i "$BBBOX_SSH_KEY" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=3 "box@$BBBOX_BUILD_ADDRESS" "$@"; }
@@ -324,9 +324,9 @@ log "a clone's clock is $offset s off the host's"
 [ "${offset#-}" -le 120 ] || die "a clone's clock is $offset s off the host's"
 wait_for "a clone's desktop has Cua" 300 1 desktop_up || die "Cua did not start in a clone's desktop session"
 scp -q -i "$BBBOX_SSH_KEY" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
-  "$here/../windows/check.ps1" "box@$BBBOX_BUILD_ADDRESS:C:/bb-box/check.ps1"
+  "$here/../windows/check.ps1" "box@$BBBOX_BUILD_ADDRESS:C:/alia-box/check.ps1"
 checked=0
-ssh_box '& C:\bb-box\check.ps1' || checked=$?
+ssh_box '& C:\alia-box\check.ps1' || checked=$?
 # The warm pool hibernates boxes and resumes them (039), so the clone must too.
 if [ "$checked" = 0 ]; then
   start=$(date +%s%N)
@@ -345,13 +345,13 @@ qm destroy "$check_vm" --purge 1 >/dev/null
 check_vm=
 [ "$checked" = 0 ] || die "the check failed (above)"
 
-description="bb-box windows template, built $(date -u +%F) from $(basename "$windows_iso"): $BBBOX_WINDOWS_EDITION, PowerShell $PWSH_VERSION, Git $GIT_VERSION, GitHub CLI $GH_VERSION, Cua Driver $CUA_VERSION, VS Build Tools $VS_VERSION, LLVM $LLVM_VERSION, rustup $RUSTUP_VERSION, Node.js $NODE_VERSION, Claude Code $CLAUDE_VERSION, Codex $CODEX_VERSION, Pi $PI_VERSION, ffmpeg $FFMPEG_VERSION, OpenH264 $OPENH264_VERSION.
+description="alia-box windows template, built $(date -u +%F) from $(basename "$windows_iso"): $BBBOX_WINDOWS_EDITION, PowerShell $PWSH_VERSION, Git $GIT_VERSION, GitHub CLI $GH_VERSION, Cua Driver $CUA_VERSION, VS Build Tools $VS_VERSION, LLVM $LLVM_VERSION, rustup $RUSTUP_VERSION, Node.js $NODE_VERSION, Claude Code $CLAUDE_VERSION, Codex $CODEX_VERSION, Pi $PI_VERSION, ffmpeg $FFMPEG_VERSION, OpenH264 $OPENH264_VERSION.
 $record"
 # The pool's ACL lets the plugin's token delete guests in it; protection keeps
 # it from deleting templates. Clones inherit the flag, so the plugin clears it
 # on each box (delete=protection) when it configures the box.
 if [ "$vm" = "$vmid" ]; then
-  qm set "$vmid" --name "bb-box-windows" --description "$description" --protection 1 >/dev/null
+  qm set "$vmid" --name "alia-box-windows" --description "$description" --protection 1 >/dev/null
 else
   # Puts the checked template in <vmid>'s place. On LVM-thin the new one is a
   # linked clone of the build, which takes seconds; elsewhere a full copy.
@@ -360,9 +360,9 @@ else
   start=$(date +%s%N)
   qm destroy "$vmid" || { qm set "$vmid" --protection 1 >/dev/null; die "could not remove template $vmid"; }
   if [ -n "$thin" ]; then
-    qm clone "$vm" "$vmid" --name bb-box-windows --pool "$BBBOX_POOL" >/dev/null
+    qm clone "$vm" "$vmid" --name alia-box-windows --pool "$BBBOX_POOL" >/dev/null
   else
-    qm clone "$vm" "$vmid" --name bb-box-windows --pool "$BBBOX_POOL" --full 1 --storage "$BBBOX_STORAGE" >/dev/null
+    qm clone "$vm" "$vmid" --name alia-box-windows --pool "$BBBOX_POOL" --full 1 --storage "$BBBOX_STORAGE" >/dev/null
   fi
   qm template "$vmid"
   echo "template $vmid was missing for $((($(date +%s%N) - start) / 1000000)) ms"

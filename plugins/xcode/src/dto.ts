@@ -43,7 +43,7 @@ export interface RunDto {
   threadId: string | null;
   /** The enrolled Mac a remote build ran on; null for this machine. */
   hostId: string | null;
-  /** That Mac's name, when bb knows it. */
+  /** That Mac's name, when VesnALIA knows it. */
   hostName: string | null;
   destinationLabel: string | null;
   workerCount: number | null;

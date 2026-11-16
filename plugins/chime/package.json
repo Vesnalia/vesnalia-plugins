@@ -1,20 +1,20 @@
 {
-  "name": "bb-plugin-chime",
+  "name": "alia-plugin-chime",
   "version": "0.1.0",
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "generate:sounds": "node scripts/generate-sounds.mjs",
     "smoke:live": "node scripts/smoke-live.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "engines": {
-    "bb": ">=0.38",
-    "bbPluginSdk": ">=0.4.6"
+    "alia": ">=0.38",
+    "aliaPluginSdk": ">=0.4.6"
   },
-  "bb": {
+  "alia": {
     "name": "Chime",
     "description": "Calm, configurable sounds for AI turns and attention events.",
     "branding": {
@@ -31,7 +31,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.6",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -45,5 +44,22 @@
     "react-dom": "^19.0.0",
     "typescript": "^5.7.0",
     "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.6"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/chime#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/chime"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

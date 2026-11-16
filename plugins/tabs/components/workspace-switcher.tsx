@@ -6,7 +6,7 @@ import {
   experimental_useSidebarThreadActions,
   type PluginRpcClient,
   type PluginSidebarThreadActions,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../server";
 import { MAX_WORKSPACES, validateWorkspaceName, type WorkspaceInfo } from "../lib/workspaces";
@@ -257,7 +257,7 @@ export function WorkspaceSwitcher({
 
   return (
     <div
-      className="bb-chat-tabs-workspace-switcher"
+      className="alia-chat-tabs-workspace-switcher"
       data-compact={compact ? "true" : undefined}
       lang={locale}
       dir={locale === "ar" ? "rtl" : undefined}
@@ -276,7 +276,7 @@ export function WorkspaceSwitcher({
           <button
             ref={triggerRef}
             type="button"
-            className="bb-chat-tabs-workspace-trigger"
+            className="alia-chat-tabs-workspace-trigger"
             aria-label={t("Workspace")}
             aria-description={selectedLabel}
             title={selectedLabel}
@@ -302,19 +302,19 @@ export function WorkspaceSwitcher({
               clearHoverTimers();
             }}
           >
-            <span className="bb-chat-tabs-workspace-initial" aria-hidden="true">
+            <span className="alia-chat-tabs-workspace-initial" aria-hidden="true">
               {initialFor(selectedLabel)}
             </span>
-            <span className="bb-chat-tabs-workspace-label" aria-hidden="true">
+            <span className="alia-chat-tabs-workspace-label" aria-hidden="true">
               {selectedLabel}
             </span>
-            <Icon name="ChevronDown" className="bb-chat-tabs-workspace-chevron" aria-hidden />
+            <Icon name="ChevronDown" className="alia-chat-tabs-workspace-chevron" aria-hidden />
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
           <DropdownMenu.Content
             ref={menuRef}
-            className="bb-chat-tabs-workspace-menu"
+            className="alia-chat-tabs-workspace-menu"
             align="start"
             sideOffset={6}
             collisionPadding={8}
@@ -335,7 +335,7 @@ export function WorkspaceSwitcher({
             onInteractOutside={(event) => {
               if (
                 event.target instanceof Element &&
-                event.target.closest(".bb-chat-tabs-workspace-trigger")
+                event.target.closest(".alia-chat-tabs-workspace-trigger")
               )
                 event.preventDefault();
             }}
@@ -346,11 +346,11 @@ export function WorkspaceSwitcher({
               clearHoverTimers();
             }}
           >
-            <DropdownMenu.Label className="bb-chat-tabs-workspace-menu-label">
+            <DropdownMenu.Label className="alia-chat-tabs-workspace-menu-label">
               {t("Workspace")}
             </DropdownMenu.Label>
             <DropdownMenu.RadioGroup
-              className="bb-chat-tabs-workspace-menu-list"
+              className="alia-chat-tabs-workspace-menu-list"
               value={selection.workspaceId ?? ""}
               onValueChange={(id) => {
                 if (store.getSnapshot().workspaces.some((item) => item.id === id))
@@ -363,28 +363,28 @@ export function WorkspaceSwitcher({
                   <DropdownMenu.RadioItem
                     key={workspace.id}
                     value={workspace.id}
-                    className="bb-chat-tabs-workspace-menu-item"
+                    className="alia-chat-tabs-workspace-menu-item"
                     aria-label={name}
                     onPointerMove={(event) => {
                       if (openedByHover.current) event.preventDefault();
                     }}
                   >
-                    <span className="bb-chat-tabs-workspace-menu-badge" aria-hidden="true">
+                    <span className="alia-chat-tabs-workspace-menu-badge" aria-hidden="true">
                       {initialFor(name)}
                     </span>
-                    <span className="bb-chat-tabs-workspace-menu-name" title={name}>
+                    <span className="alia-chat-tabs-workspace-menu-name" title={name}>
                       {name}
                     </span>
-                    <DropdownMenu.ItemIndicator className="bb-chat-tabs-workspace-menu-check">
+                    <DropdownMenu.ItemIndicator className="alia-chat-tabs-workspace-menu-check">
                       <Icon name="Check" aria-hidden />
                     </DropdownMenu.ItemIndicator>
                   </DropdownMenu.RadioItem>
                 );
               })}
             </DropdownMenu.RadioGroup>
-            <DropdownMenu.Separator className="bb-chat-tabs-workspace-menu-separator" />
+            <DropdownMenu.Separator className="alia-chat-tabs-workspace-menu-separator" />
             <DropdownMenu.Item
-              className="bb-chat-tabs-workspace-menu-item"
+              className="alia-chat-tabs-workspace-menu-item"
               onPointerMove={(event) => {
                 if (openedByHover.current) event.preventDefault();
               }}
@@ -393,17 +393,17 @@ export function WorkspaceSwitcher({
                 window.setTimeout(() => changeDialogOpen(true), 0);
               }}
             >
-              <Icon name="Settings" className="bb-chat-tabs-workspace-menu-settings" aria-hidden />
-              <span className="bb-chat-tabs-workspace-menu-name">{t("Manage workspaces")}…</span>
+              <Icon name="Settings" className="alia-chat-tabs-workspace-menu-settings" aria-hidden />
+              <span className="alia-chat-tabs-workspace-menu-name">{t("Manage workspaces")}…</span>
             </DropdownMenu.Item>
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
       <Dialog.Root open={open} onOpenChange={changeDialogOpen}>
         <Dialog.Portal>
-          <Dialog.Overlay className="bb-chat-tab-rename-overlay bb-chat-tabs-workspace-overlay" />
+          <Dialog.Overlay className="alia-chat-tab-rename-overlay alia-chat-tabs-workspace-overlay" />
           <Dialog.Content
-            className="bb-chat-tab-rename-dialog bb-chat-tabs-workspace-dialog"
+            className="alia-chat-tab-rename-dialog alia-chat-tabs-workspace-dialog"
             onCloseAutoFocus={(event) => {
               event.preventDefault();
               triggerRef.current?.focus();
@@ -411,21 +411,21 @@ export function WorkspaceSwitcher({
             lang={locale}
             dir={locale === "ar" ? "rtl" : undefined}
           >
-            <div className="bb-chat-tabs-workspace-dialog-header">
-              <Dialog.Title className="bb-chat-tab-rename-title">{t("Workspaces")}</Dialog.Title>
-              <Dialog.Description className="bb-chat-tab-rename-description">
+            <div className="alia-chat-tabs-workspace-dialog-header">
+              <Dialog.Title className="alia-chat-tab-rename-title">{t("Workspaces")}</Dialog.Title>
+              <Dialog.Description className="alia-chat-tab-rename-description">
                 {t(
                   "A workspace is a set of tabs you can switch to in one click. Selection applies to this window only.",
                 )}
               </Dialog.Description>
             </div>
             {error ? (
-              <p role="alert" className="bb-chat-tab-rename-error">
+              <p role="alert" className="alia-chat-tab-rename-error">
                 {error}
               </p>
             ) : null}
-            <div className="bb-chat-tabs-workspace-dialog-body">
-              <ul className="bb-chat-tabs-workspace-list">
+            <div className="alia-chat-tabs-workspace-dialog-body">
+              <ul className="alia-chat-tabs-workspace-list">
                 {selection.workspaces.map((workspace) => (
                   <li
                     key={workspace.id}
@@ -434,7 +434,7 @@ export function WorkspaceSwitcher({
                   >
                     {deleteTarget?.id === workspace.id ? (
                       <div
-                        className="bb-chat-tabs-workspace-confirm"
+                        className="alia-chat-tabs-workspace-confirm"
                         role="group"
                         aria-label={t("Delete workspace")}
                       >
@@ -442,17 +442,17 @@ export function WorkspaceSwitcher({
                           {t("Delete workspace “{name}”? Tabs will stay in history.", {
                             name: label(workspace),
                           })}
-                          <span className="bb-chat-tabs-workspace-sr-only">
+                          <span className="alia-chat-tabs-workspace-sr-only">
                             {t(
                               "Delete workspace “{name}”? Only its tabs and favorites will be removed. Chats and shared history will stay.",
                               { name: label(workspace) },
                             )}
                           </span>
                         </p>
-                        <div className="bb-chat-tabs-workspace-confirm-actions">
+                        <div className="alia-chat-tabs-workspace-confirm-actions">
                           <button
                             type="button"
-                            className="bb-chat-tab-dialog-button"
+                            className="alia-chat-tab-dialog-button"
                             autoFocus
                             disabled={pending}
                             onClick={() => {
@@ -464,7 +464,7 @@ export function WorkspaceSwitcher({
                           </button>
                           <button
                             type="button"
-                            className="bb-chat-tab-dialog-button bb-chat-tab-dialog-button-primary"
+                            className="alia-chat-tab-dialog-button alia-chat-tab-dialog-button-primary"
                             disabled={pending}
                             onClick={() => void remove()}
                           >
@@ -474,18 +474,18 @@ export function WorkspaceSwitcher({
                       </div>
                     ) : editingId === workspace.id ? (
                       <form
-                        className="bb-chat-tabs-workspace-edit"
+                        className="alia-chat-tabs-workspace-edit"
                         onSubmit={(event) => void submit(event, workspace.id, value)}
                       >
                         <label
-                          className="bb-chat-tabs-workspace-sr-only"
+                          className="alia-chat-tabs-workspace-sr-only"
                           htmlFor={`${nameId}-rename`}
                         >
                           {t("Rename workspace")}: {label(workspace)}
                         </label>
                         <input
                           id={`${nameId}-rename`}
-                          className="bb-chat-tab-rename-input"
+                          className="alia-chat-tab-rename-input"
                           value={value}
                           maxLength={160}
                           autoFocus
@@ -494,7 +494,7 @@ export function WorkspaceSwitcher({
                         />
                         <button
                           type="submit"
-                          className="bb-chat-tabs-workspace-action bb-chat-tabs-workspace-action-primary"
+                          className="alia-chat-tabs-workspace-action alia-chat-tabs-workspace-action-primary"
                           aria-label={t("Save")}
                           title={t("Save")}
                           disabled={pending}
@@ -503,7 +503,7 @@ export function WorkspaceSwitcher({
                         </button>
                         <button
                           type="button"
-                          className="bb-chat-tabs-workspace-action"
+                          className="alia-chat-tabs-workspace-action"
                           aria-label={t("Cancel")}
                           title={t("Cancel")}
                           disabled={pending}
@@ -518,15 +518,15 @@ export function WorkspaceSwitcher({
                       </form>
                     ) : (
                       <>
-                        <span className="bb-chat-tabs-workspace-row-name" title={label(workspace)}>
+                        <span className="alia-chat-tabs-workspace-row-name" title={label(workspace)}>
                           {label(workspace)}
                         </span>
                         {workspace.id === selection.workspaceId ? (
-                          <span className="bb-chat-tabs-workspace-current">{t("Current")}</span>
+                          <span className="alia-chat-tabs-workspace-current">{t("Current")}</span>
                         ) : null}
                         <button
                           type="button"
-                          className="bb-chat-tabs-workspace-action"
+                          className="alia-chat-tabs-workspace-action"
                           aria-label={`${t("Rename workspace")}: ${label(workspace)}`}
                           title={t("Rename workspace")}
                           disabled={pending}
@@ -541,7 +541,7 @@ export function WorkspaceSwitcher({
                         </button>
                         <button
                           type="button"
-                          className="bb-chat-tabs-workspace-action"
+                          className="alia-chat-tabs-workspace-action"
                           aria-label={`${t("Delete workspace")}: ${label(workspace)}`}
                           title={t("Delete workspace")}
                           disabled={pending || selection.workspaces.length === 1}
@@ -560,15 +560,15 @@ export function WorkspaceSwitcher({
                 ))}
               </ul>
               <form
-                className="bb-chat-tabs-workspace-add"
+                className="alia-chat-tabs-workspace-add"
                 onSubmit={(event) => void submit(event, null, newValue)}
               >
-                <label className="bb-chat-tabs-workspace-sr-only" htmlFor={nameId}>
+                <label className="alia-chat-tabs-workspace-sr-only" htmlFor={nameId}>
                   {t("Workspace name")}
                 </label>
                 <input
                   id={nameId}
-                  className="bb-chat-tab-rename-input"
+                  className="alia-chat-tab-rename-input"
                   placeholder={t("New workspace")}
                   value={newValue}
                   maxLength={160}
@@ -577,7 +577,7 @@ export function WorkspaceSwitcher({
                 />
                 <button
                   type="submit"
-                  className="bb-chat-tab-dialog-button"
+                  className="alia-chat-tab-dialog-button"
                   disabled={pending || selection.workspaces.length >= MAX_WORKSPACES}
                 >
                   <Icon name="Plus" aria-hidden />
@@ -588,11 +588,11 @@ export function WorkspaceSwitcher({
                 <p role="status">{t("Workspace limit reached (20).")}</p>
               ) : null}
             </div>
-            <div className="bb-chat-tabs-workspace-dialog-footer">
+            <div className="alia-chat-tabs-workspace-dialog-footer">
               <Dialog.Close asChild>
                 <button
                   type="button"
-                  className="bb-chat-tab-dialog-button bb-chat-tab-dialog-button-primary"
+                  className="alia-chat-tab-dialog-button alia-chat-tab-dialog-button-primary"
                   disabled={pending}
                 >
                   {t("Done")}

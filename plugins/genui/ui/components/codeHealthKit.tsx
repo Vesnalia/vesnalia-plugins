@@ -3,7 +3,7 @@
 // through `runtime.readText`, the code excerpt with its marked lines, and the
 // small controls both use (segmented switch, disclosure row, text buttons).
 import { createContext, useContext, useEffect, useId, useState, type ReactNode } from "react";
-import { useSdk } from "@get-bb/plugin-sdk/app";
+import { useSdk } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -67,7 +67,7 @@ export function useShownPath(): (path: string) => string {
   return (path) => displayPath(path, root, common);
 }
 
-/** How `path` opens in BB: the path BB opens, and `open` at a line (a toast when it fails); null where BB can't open it. */
+/** How `path` opens in VesnALIA: the path VesnALIA opens, and `open` at a line (a toast when it fails); null where VesnALIA can't open it. */
 export function useFileOpener(path: string): { readonly target: string; open(line: number | null): Promise<void> } | null {
   const { openFile } = useUiRuntime();
   const { root } = useContext(ReportPathsContext);
@@ -87,7 +87,7 @@ export function useFileOpener(path: string): { readonly target: string; open(lin
   };
 }
 
-/** An icon that opens `path` in BB at `line`, where BB can open it; nothing elsewhere. */
+/** An icon that opens `path` in VesnALIA at `line`, where VesnALIA can open it; nothing elsewhere. */
 export function OpenFileButton({ path, line, label }: { path: string; line: number | null; label?: string }) {
   const file = useFileOpener(path);
   if (file === null) return null;

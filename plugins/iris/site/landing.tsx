@@ -1,7 +1,7 @@
 // The playground's front page: what Iris is, the real renderer to try, the moments
 // it is made for, and how to install it. Every card on it is live.
 import { useState } from "react";
-import { BB_SOURCES } from "../core/bb-data";
+import { ALIA_SOURCES } from "../core/alia-data";
 import { CATALOG, GROUPS } from "../core/catalog";
 import { IrisBlock } from "../ui/block";
 import { IrisMark } from "../ui/brand";
@@ -24,10 +24,10 @@ export const ESTIMATE = `<state seats={10} plan="Pro" />
   </Row>
 </Card>`;
 
-const LIVE = `<let u={load("bb:usage")} />
-<let m={load("bb:machines")} />
-<let p={load("bb:plugins")} />
-<Card title="Your bb, live" icon="activity" state="live" status="Live">
+const LIVE = `<let u={load("VesnALIA:usage")} />
+<let m={load("VesnALIA:machines")} />
+<let p={load("VesnALIA:plugins")} />
+<Card title="Your VesnALIA, live" icon="activity" state="live" status="Live">
   <Row>
     <Metric label="Machines online" value={m.filter((x) => x.status == "connected").length} unit={"of " + m.length} />
     <Metric label="Plugins healthy" value={p.filter((x) => x.status == "running").length} unit={"of " + p.length} />
@@ -63,7 +63,7 @@ const MOMENTS: { label: string; icon: string; name: string; line: string }[] = [
   { label: "Spend and limits", icon: "gauge", name: "Budget", line: "Every line against its cap, with the burn rate and when it runs out." },
 ];
 
-const BB_SOURCE_NAMES = BB_SOURCES.map((s) => `bb:${s.name}`);
+const ALIA_SOURCE_NAMES = ALIA_SOURCES.map((s) => `alia:${s.name}`);
 
 const byName = (n: string) => CATALOG.find((c) => c.name === n);
 
@@ -143,7 +143,7 @@ function DemoVideo() {
       loop
       playsInline
       preload="auto"
-      aria-label="A bb thread where an agent answers with Iris cards: the person hovers a latency chart, drags a what-if slider, and tunes the weights of a decision until the ranking changes"
+      aria-label="A VesnALIA thread where an agent answers with Iris cards: the person hovers a latency chart, drags a what-if slider, and tunes the weights of a decision until the ranking changes"
     />
   );
 }
@@ -155,12 +155,12 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
       <section className="site-hero" aria-labelledby="hero-title">
         <div className="site-wrap">
           <p className="site-pill">
-            <IrisMark size={16} />A plugin for <a href="https://getbb.app">bb</a>
+            <IrisMark size={16} />A plugin for <a href="https://getbb.app">VesnALIA</a>
           </p>
           <h1 id="hero-title">
             Live, interactive UI
             <br />
-            in your bb chat.
+            in your VesnALIA chat.
           </h1>
           <p className="site-hero-lead">Agents answer with charts, plans, test runs, decisions and small apps instead of walls of text. {CATALOG.length} components, drawn in your theme, live as you read.</p>
           <div className="site-cta">
@@ -178,7 +178,7 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
         <div className="site-wrap site-demo-wrap">
           <figure className="site-demo">
             <DemoVideo />
-            <figcaption>A real bb thread: an agent answers with Iris cards, and the person explores them.</figcaption>
+            <figcaption>A real VesnALIA thread: an agent answers with Iris cards, and the person explores them.</figcaption>
           </figure>
         </div>
       </section>
@@ -186,7 +186,7 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
       <section className="site-section" aria-labelledby="try-title">
         <div className="site-wrap">
           <SectionHead id="try-title" kicker="How it works" title="A few lines of markup. A real card.">
-            The agent writes JSX-style markup with live values in an <code>```iris</code> block, and bb draws it as the reply streams in. This is the real renderer: move the slider.
+            The agent writes JSX-style markup with live values in an <code>```iris</code> block, and VesnALIA draws it as the reply streams in. This is the real renderer: move the slider.
           </SectionHead>
           <div className="site-split">
             <div className="site-split-code">
@@ -219,7 +219,7 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
             <li>
               <span className="site-step-n">3</span>
               <div>
-                <b>bb draws it, live.</b> Tags render as they stream in, inputs recompute in place and live cards re-read their files every 2 seconds.
+                <b>alia draws it, live.</b> Tags render as they stream in, inputs recompute in place and live cards re-read their files every 2 seconds.
               </div>
             </li>
           </ol>
@@ -239,7 +239,7 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
         <div className="site-wrap site-two">
           <div>
             <SectionHead id="theme-title" kicker="Your theme" title="Every card wears your theme.">
-              Colors come only from your bb theme: the accent is its primary, tones use its success, warning and danger colors, and nothing carries a palette of its own. Pick one and the whole page follows.
+              Colors come only from your VesnALIA theme: the accent is its primary, tones use its success, warning and danger colors, and nothing carries a palette of its own. Pick one and the whole page follows.
             </SectionHead>
             <div className="site-themes" role="radiogroup" aria-label="Theme">
               {(Object.keys(THEMES) as ThemeName[]).map((t) => (
@@ -264,11 +264,11 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
             <Live source={LIVE} />
           </div>
           <div>
-            <SectionHead id="live-title" kicker="Live data" title="Cards that read bb itself.">
-              <code>load("bb:...")</code> reads bb's own live data, scoped to the card's thread. Inside a live card it re-reads every 2 seconds. The live project cards, Changes, Commits, PullRequest, Threads and Environments, update the moment bb reports a change. Any plugin can feed cards too, through a public data contract.
+            <SectionHead id="live-title" kicker="Live data" title="Cards that read VesnALIA itself.">
+              <code>load("VesnALIA:...")</code> reads VesnALIA's own live data, scoped to the card's thread. Inside a live card it re-reads every 2 seconds. The live project cards, Changes, Commits, PullRequest, Threads and Environments, update the moment VesnALIA reports a change. Any plugin can feed cards too, through a public data contract.
             </SectionHead>
-            <ul className="site-chips" aria-label="bb data sources">
-              {BB_SOURCE_NAMES.map((s) => (
+            <ul className="site-chips" aria-label="alia data sources">
+              {ALIA_SOURCE_NAMES.map((s) => (
                 <li key={s}>
                   <code>{s}</code>
                 </li>
@@ -284,7 +284,7 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
           <ul className="site-facts site-facts-3">
             <li>
               <Glyph name="pin" size={18} />
-              <b>Pin it beside the chat.</b> Up to five cards per thread stay live next to the conversation, behind a "2 pinned" chip above the composer and on bb's home page with every other thread's pins. A pin can alert you when its condition turns true, such as a build that fails.
+              <b>Pin it beside the chat.</b> Up to five cards per thread stay live next to the conversation, behind a "2 pinned" chip above the composer and on VesnALIA's home page with every other thread's pins. A pin can alert you when its condition turns true, such as a build that fails.
             </li>
             <li>
               <Glyph name="message-square-plus" size={18} />
@@ -364,7 +364,7 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
         <div className="site-wrap">
           <IrisMark size={44} />
           <h2 id="install-title">Install Iris</h2>
-          <p className="site-lead">On a Mac running bb. New agent sessions learn Iris on their own.</p>
+          <p className="site-lead">On a Mac running VesnALIA. New agent sessions learn Iris on their own.</p>
           <InstallLine />
           <div className="site-cta">
             <a className="site-button site-button-primary" href="#/play">
@@ -384,7 +384,7 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
             Iris is open source under Apache-2.0. <a href={`${REPO}/releases/tag/v${__IRIS_VERSION__}`}>Version {__IRIS_VERSION__}</a>
           </span>
           <span>
-            <a href={REPO}>GitHub</a> · <a href="https://getbb.app">bb</a>
+            <a href={REPO}>GitHub</a> · <a href="https://getbb.app">VesnALIA</a>
           </span>
         </div>
       </footer>

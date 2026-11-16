@@ -8,14 +8,14 @@ import {
   type ServiceTier,
   type RuntimePermissionPolicy,
   buildShellEnvOverrides,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import { z } from "zod";
 import {
   toClaudePermissionMode,
   type ClaudePermissionMode,
 } from "./interactive-contract.js";
 // polza: provider options carry the Polza key and routing; they become
-// Claude CLI environment merged over bb's contributed `envVars`.
+// Claude CLI environment merged over VesnALIA's contributed `envVars`.
 import { polzaProviderOptionsSchema } from "./polza/contract.js";
 import { buildPolzaSessionEnv } from "./polza/env.js";
 

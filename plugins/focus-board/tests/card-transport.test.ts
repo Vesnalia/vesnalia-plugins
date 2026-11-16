@@ -7,7 +7,7 @@
 // (jsdom for the one DOM test — firstRealCard's ghost skip; the rest is pure
 // data and runs fine either way)
 import { describe, expect, it } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import {
   laneSignature,
   planLaneTransports,

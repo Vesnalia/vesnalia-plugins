@@ -2,7 +2,7 @@ Long agent responses often need several separate comments: refine one step in a 
 
 ## Review as you read
 
-Select exact text in an assistant response and choose **Feedback** from BB's native selection menu. Add a **Comment** or mark the passage for **Remove** without leaving the thread. Return saves a comment, while Shift+Return inserts a new line.
+Select exact text in an assistant response and choose **Feedback** from VesnALIA's native selection menu. Add a **Comment** or mark the passage for **Remove** without leaving the thread. Return saves a comment, while Shift+Return inserts a new line.
 
 ## Keep the source visible
 
@@ -14,7 +14,7 @@ The collapsed **Feedback** banner appears after the first annotation. Expand it 
 
 ## Storage and requirements
 
-Each thread has its own server-side draft. Drafts survive navigation, browser reloads, and BB restarts. Inline Review uses no external service and requires no additional account. It supports BB 0.43.1 and later with Plugin SDK 0.4.87 or later.
+Each thread has its own server-side draft. Drafts survive navigation, browser reloads, and VesnALIA restarts. Inline Review uses no external service and requires no additional account. It supports VesnALIA 0.43.1 and later with Plugin SDK 0.4.87 or later.
 
 ## Focused scope
 

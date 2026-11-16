@@ -1,12 +1,12 @@
-// The microsandbox release bb-box runs, and the scripts it runs on an msb
+// The microsandbox release alia-box runs, and the scripts it runs on an msb
 // host (053): install that release, report on the host, give Docker's IDs
-// of images there, and import an image from Docker. The same scripts run on BB's server, over ssh://, and
-// on a BB machine through bb-box's host entry, which runs no others.
+// of images there, and import an image from Docker. The same scripts run on VesnALIA's server, over ssh://, and
+// on a VesnALIA machine through alia-box's host entry, which runs no others.
 //
-// msb is beta, so bb-box pins one release and checks its SHA-256 against
+// msb is beta, so alia-box pins one release and checks its SHA-256 against
 // the one it was tested with. msb, its guest agent and libkrunfw are one
-// release, kept under bb-box's own data folder with msb's state and images
-// (MSB_HOME), apart from a user's ~/.microsandbox. bb-box never runs
+// release, kept under alia-box's own data folder with msb's state and images
+// (MSB_HOME), apart from a user's ~/.microsandbox. alia-box never runs
 // `msb self update`: a new release is a change here that passes the
 // conformance suite first.
 
@@ -25,10 +25,10 @@ export const MSB_ARCHIVES: Readonly<Record<string, { readonly file: string; read
 export const MSB_DOWNLOAD = `https://github.com/superradcompany/microsandbox/releases/download/v${MSB_VERSION}`;
 
 /**
- * Where bb-box keeps msb on a host where no folder is given: on BB's server
- * and over ssh://. A BB machine's host entry gives its own data folder.
+ * Where alia-box keeps msb on a host where no folder is given: on VesnALIA's server
+ * and over ssh://. A VesnALIA machine's host entry gives its own data folder.
  */
-export const MSB_DEFAULT_DIR = "$HOME/.local/share/bb-box/microsandbox";
+export const MSB_DEFAULT_DIR = "$HOME/.local/share/alia-box/microsandbox";
 
 /**
  * msb puts its sockets under MSB_HOME, at up to 50 bytes more, and a unix
@@ -37,16 +37,16 @@ export const MSB_DEFAULT_DIR = "$HOME/.local/share/bb-box/microsandbox";
  */
 export const MSB_HOME_MAX = 57;
 
-/** An image reference as bb-box passes it to docker and msb: no spaces or quotes, and no leading "-". */
+/** An image reference as alia-box passes it to docker and msb: no spaces or quotes, and no leading "-". */
 export const IMAGE_REF = /^[A-Za-z0-9][A-Za-z0-9._/:@-]{0,254}$/;
 
-/** The scripts a host runs for bb-box, by name. */
+/** The scripts a host runs for alia-box, by name. */
 export type MsbScript = "install" | "status" | "images" | "import" | "undisk" | "disks" | "memory" | "oom" | "transfer" | "retag" | "snapshots" | "keep";
 
 /** A builder microVM's name (#build in backend.ts). */
-export const BUILDER_NAME = /^bb-box-builder-[a-z0-9]{1,32}$/;
+export const BUILDER_NAME = /^alia-box-builder-[a-z0-9]{1,32}$/;
 
-/** What the oom script sets each bb-box microVM's oom_score_adj to, so the kernel ends a box before BB's daemon (#557). */
+/** What the oom script sets each alia-box microVM's oom_score_adj to, so the kernel ends a box before VesnALIA's daemon (#557). */
 export const OOM_SCORE_ADJ = 500;
 
 /** A box's Docker disk's name: its microVM's. */
@@ -56,7 +56,7 @@ export const MSB_SNAPSHOT_ID = /^snap_[0-9a-f]{32}$/;
 
 export const KEEP_DATE = /^([0-9]{4}-[0-9]{2}-[0-9]{2}|none)$/;
 
-/** Sets `dir` to bb-box's msb folder: BBBOX_MSB_DIR, or MSB_DEFAULT_DIR. */
+/** Sets `dir` to alia-box's msb folder: BBBOX_MSB_DIR, or MSB_DEFAULT_DIR. */
 const PRELUDE = `set -eu
 dir=\${BBBOX_MSB_DIR:-${MSB_DEFAULT_DIR}}
 version=${MSB_VERSION}
@@ -64,7 +64,7 @@ msb=$dir/bin/msb
 `;
 
 /**
- * bin/msb, which every call runs: the pinned msb, with MSB_HOME in bb-box's
+ * bin/msb, which every call runs: the pinned msb, with MSB_HOME in alia-box's
  * folder, or a link to it when that path is too long for msb's sockets.
  */
 function wrapper(): string {
@@ -75,11 +75,11 @@ home=$dir/home
 mkdir -p "$home"
 link=$home
 if [ \${#home} -gt ${MSB_HOME_MAX} ]; then
-  link=/tmp/bb-box-msb-$(id -u)
+  link=/tmp/alia-box-msb-$(id -u)
   if [ "$(readlink "$link" 2>/dev/null)" != "$home" ]; then
     if [ -e "$link" ] || [ -L "$link" ]; then
       if [ "$(ls -ldn "$link" | awk '{print $3}')" != "$(id -u)" ]; then
-        echo "bb-box: $link belongs to another user, so msb cannot use it as its home." >&2
+        echo "alia-box: $link belongs to another user, so msb cannot use it as its home." >&2
         exit 125
       fi
       rm -f "$link"
@@ -161,7 +161,7 @@ echo "free_kib=$(df -Pk "$dir/home/." | awk 'NR==2 {print $4}')"
 echo "disk_kib=$(df -Pk "$dir/home/." | awk 'NR==2 {print $2}')"
 echo "used_kib=$(du -sk "$dir/home" "$dir/disks" 2>/dev/null | awk '{s+=$1} END {print s+0}')"
 probe=$(mktemp "$dir/home/.reflink.XXXXXX")
-echo bb-box >"$probe"
+echo alia-box >"$probe"
 if cp --reflink=always "$probe" "$probe.copy" 2>/dev/null || cp -c "$probe" "$probe.copy" 2>/dev/null; then echo "reflink=1"; else echo "reflink=0"; fi
 rm -f "$probe" "$probe.copy"
 if command -v docker >/dev/null && docker version --format '{{.Server.Version}}' >/dev/null 2>&1; then echo "docker=$(docker version --format '{{.Server.Version}}')"; else echo "docker="; fi
@@ -219,9 +219,9 @@ fi
 `,
 
   /**
-   * Raises each bb-box microVM's oom_score_adj to OOM_SCORE_ADJ, on Linux,
+   * Raises each alia-box microVM's oom_score_adj to OOM_SCORE_ADJ, on Linux,
    * where msb runs each as `msb machine --name <name>`, so that a host
-   * that runs out of memory ends a box before BB's daemon (#557). Raising
+   * that runs out of memory ends a box before VesnALIA's daemon (#557). Raising
    * it needs no privilege. Prints `adjusted=<count>`.
    */
   oom: () => `${PRELUDE}set +e
@@ -291,8 +291,8 @@ export function scriptValues(stdout: string): Record<string, string> {
   return values;
 }
 
-/** `sh -c` of script `name` with `args`, for a command line on BB's server or over ssh://. */
+/** `sh -c` of script `name` with `args`, for a command line on VesnALIA's server or over ssh://. */
 export function scriptCommand(name: MsbScript, args: readonly string[], dir?: string): string {
   const env = dir ? `BBBOX_MSB_DIR=${quote(dir)} ` : "";
-  return `${env}sh -c ${quote(msbScript(name))} bb-box-msb ${args.map(quote).join(" ")}`.trimEnd();
+  return `${env}sh -c ${quote(msbScript(name))} alia-box-msb ${args.map(quote).join(" ")}`.trimEnd();
 }

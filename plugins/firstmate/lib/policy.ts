@@ -173,7 +173,7 @@ export function crewPrompt(input: {
     isolated
       ? "Workspace: you MUST work only in this isolated worktree. If this is the project's primary checkout, STOP and report BLOCKED: not isolated."
       : "Workspace: stay inside your assigned environment. If you find yourself editing outside it, STOP and report BLOCKED.",
-    "Do not dispatch other crews. Do not run bb firstmate dispatch. One task, then report.",
+    "Do not dispatch other crews. Do not run alia firstmate dispatch. One task, then report.",
     "",
     "Status protocol: when finished, your final message MUST start with exactly one of these lines:",
     "  DONE: <one-line outcome>",

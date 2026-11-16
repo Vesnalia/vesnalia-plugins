@@ -21,7 +21,7 @@ function identity(): BoxIdentity {
 function part(name: string) {
   const fake = fakeDockerHost({ name });
   const prepared: string[] = [];
-  const socket = `unix:///run/bb-box/hosts/${name}.sock`;
+  const socket = `unix:///run/alia-box/hosts/${name}.sock`;
   const cli = new DockerCli(socket, fake.binary, async () => {
     prepared.push(name);
   });
@@ -65,10 +65,10 @@ test("two Docker backends, each with its own host's CLI and storage, keep their 
 
 test("a host its CLI cannot prepare is one that did not answer, with the reason, and nothing reaches its daemon", async () => {
   const fake = fakeDockerHost({ name: "cloud-h4" });
-  const cli = new DockerCli("unix:///run/bb-box/hosts/cloud-h4.sock", fake.binary, async () => {
+  const cli = new DockerCli("unix:///run/alia-box/hosts/cloud-h4.sock", fake.binary, async () => {
     throw new Error("the SSH forward to cloud-h4 is not up");
   });
-  const backend = new DockerBackend(dockerConfig({ host: "unix:///run/bb-box/hosts/cloud-h4.sock" }), testContext(new MemoryStorage()), { cliReachingAHostAnotherBackendMade: cli, readyTimeoutMs: 2_000 });
+  const backend = new DockerBackend(dockerConfig({ host: "unix:///run/alia-box/hosts/cloud-h4.sock" }), testContext(new MemoryStorage()), { cliReachingAHostAnotherBackendMade: cli, readyTimeoutMs: 2_000 });
   const capacity = await backend.capacity("linux", SMALL, [], signal());
   assert.equal(capacity.ok, false);
   assert.match(capacity.message ?? "", /did not answer: the SSH forward to cloud-h4 is not up/);

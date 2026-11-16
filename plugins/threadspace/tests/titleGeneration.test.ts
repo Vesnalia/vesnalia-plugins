@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { createTitleRegenerator, sanitizeGeneratedTitle, type TitleGenerationSdk } from "../src/titleGeneration";
 import plugin from "../server";
 
@@ -7,7 +7,7 @@ type AiServices = Awaited<ReturnType<TitleGenerationSdk["system"]["aiServices"]>
 type Host = ReturnType<typeof createFakePluginHost>;
 const hosts: Host[] = [];
 const regenerators: ReturnType<typeof createTitleRegenerator>[] = [];
-const cloud: AiServices["services"][number] = { id: "bb", pluginId: "bb-ai", displayName: "bb cloud", automaticRank: 0, status: { ready: true }, tasks: ["thread-title"] };
+const cloud: AiServices["services"][number] = { id: "alia", pluginId: "alia-ai", displayName: "alia cloud", automaticRank: 0, status: { ready: true }, tasks: ["thread-title"] };
 const local: AiServices["services"][number] = { ...cloud, id: "local", pluginId: "local-ai", displayName: "Local AI", automaticRank: 200 };
 function services(selection: AiServices["selections"]["thread-title"] = { mode: "automatic" }, available: AiServices["services"] = [cloud]): AiServices {
   return { selections: { "thread-title": selection, "commit-message": { mode: "automatic" }, voice: { mode: "automatic" } }, services: available };
@@ -18,7 +18,7 @@ function deferred<T>() {
   return { promise, resolve };
 }
 function fetchCalls(host: Host): unknown[][] {
-  return host.harness.sdk.callsTo("plugins.callRpc").filter(([args]) => (args as { pluginId: string }).pluginId === "bb-account");
+  return host.harness.sdk.callsTo("plugins.callRpc").filter(([args]) => (args as { pluginId: string }).pluginId === "alia-account");
 }
 function fixture(options: Parameters<typeof createTitleRegenerator>[1] = {}) {
   let view = services();
@@ -39,10 +39,10 @@ function fixture(options: Parameters<typeof createTitleRegenerator>[1] = {}) {
   const host = createFakePluginHost({ pluginId: "threadspace", sdk: {
     system: { aiServices },
     threads: { get, timeline, update },
-    plugins: { callRpc: async args => args.pluginId === "bb-ai" && args.method === "overview" ? overview() : complete(args) },
+    plugins: { callRpc: async args => args.pluginId === "alia-ai" && args.method === "overview" ? overview() : complete(args) },
   } });
   hosts.push(host);
-  const regenerator = createTitleRegenerator(host.bb.sdk, options);
+  const regenerator = createTitleRegenerator(host.alia.sdk, options);
   regenerators.push(regenerator);
   return { host, regenerator, get, timeline, overview, complete, update, titles, setRows: (next: unknown[]) => { rows = next; }, setServices: (next: AiServices) => { view = next; } };
 }
@@ -59,8 +59,8 @@ describe("thread title regeneration backend", () => {
     const { sdk } = f.host.harness.inspection;
     expect(sdk.callsTo("threads.timeline")).toEqual([[expect.objectContaining({ threadId: "chosen", segmentLimit: "6", includeNestedRows: "true", summaryOnly: "false", deferContent: "false", signal: expect.any(AbortSignal) })]]);
     expect(sdk.callsTo("plugins.callRpc")).toEqual([
-      [expect.objectContaining({ pluginId: "bb-ai", method: "overview", input: null, signal: expect.any(AbortSignal) })],
-      [expect.objectContaining({ pluginId: "bb-account", method: "bb-account.v1.fetch", signal: expect.any(AbortSignal), input: expect.objectContaining({ target: "api", method: "POST", path: "/api/ai/v1/complete", timeoutMs: 7_000 }) })],
+      [expect.objectContaining({ pluginId: "alia-ai", method: "overview", input: null, signal: expect.any(AbortSignal) })],
+      [expect.objectContaining({ pluginId: "alia-account", method: "alia-account.v1.fetch", signal: expect.any(AbortSignal), input: expect.objectContaining({ target: "api", method: "POST", path: "/api/ai/v1/complete", timeoutMs: 7_000 }) })],
     ]);
     expect(sdk.callsTo("threads.update")).toEqual([[{ threadId: "chosen", title: "Authentication redirect fix" }]]);
     expect(f.titles.get("other")).toBe("Other title");
@@ -257,7 +257,7 @@ describe("thread title regeneration backend", () => {
 describe("thread title RPC lifecycle", () => {
   it("validates the thread id and rejects extra fields at the public RPC boundary", async () => {
     const f = fixture();
-    await plugin(f.host.bb);
+    await plugin(f.host.alia);
     for (const input of [{ threadId: "" }, { threadId: "a".repeat(201) }, { threadId: "chosen", model: "unapproved-override" }, {}]) {
       await expect(f.host.harness.behavior.callRpc("title_regenerate", input)).rejects.toThrow();
     }
@@ -268,7 +268,7 @@ describe("thread title RPC lifecycle", () => {
 
   it("connects plugin disposal to in-flight generation cancellation", async () => {
     const f = fixture(), pending = deferred<{ status: number; body: { text: string } }>();
-    await plugin(f.host.bb);
+    await plugin(f.host.alia);
     f.complete.mockReturnValueOnce(pending.promise);
     const result = f.host.harness.behavior.callRpc("title_regenerate", { threadId: "chosen" });
     await vi.waitFor(() => expect(f.complete).toHaveBeenCalledTimes(1));

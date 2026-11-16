@@ -13,11 +13,11 @@ let fake: FakePort;
 beforeEach(() => {
   fake = new FakePort();
   host = makeHost({ port: fake });
-  host.bb.cli.register(createCli(host.projects, host.engine, host.store, Date.now));
+  host.alia.cli.register(createCli(host.projects, host.engine, host.store, Date.now));
 });
 
 const run = (argv: string[], threadId?: string) => host.harness.runCli(argv, threadId === undefined ? undefined : { threadId });
-const propose = (edit?: (doc: Doc) => void) => host.projects.propose({ toml: specToml(edit), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_env" });
+const propose = (edit?: (doc: Doc) => void) => host.projects.propose({ toml: specToml(edit), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_env" });
 const errorOf = (stdout: string) => (JSON.parse(stdout) as { ok: false; error: { code: string; message: string; hint?: string } }).error;
 const humanEvents = () => host.store.events(host.store.projectBySlug("csv")!.id).filter((event) => event.kind === "human.action").map((event) => JSON.parse(event.data_json) as Record<string, unknown>);
 
@@ -98,9 +98,9 @@ describe("read commands", () => {
     expect(draft).toContain("CSV export (csv) · draft");
     expect(draft).toContain("Let people export their orders");
     expect(draft).toContain("integration branch loom/csv");
-    expect(draft).toContain("bb loom approve csv");
+    expect(draft).toContain("alia loom approve csv");
     await host.projects.approve("csv", "human");
-    expect((await run(["show", "csv"])).stdout).toContain("bb loom start csv");
+    expect((await run(["show", "csv"])).stdout).toContain("alia loom start csv");
     expect(JSON.parse((await run(["show", "csv", "--json"])).stdout)).toMatchObject({ slug: "csv", state: "ready", ticketCount: 2, ticketCounts: { queued: 2 } });
   });
 
@@ -163,7 +163,7 @@ describe("approve and the spec review", () => {
     const refused = await run(["approve", "csv", "--json"]);
     expect(refused.exitCode).toBe(1);
     expect(errorOf(refused.stdout)).toMatchObject({ code: "loom_invalid_state", message: "Draft v1 of csv is still in its spec review (round 1 of 3)." });
-    expect(errorOf(refused.stdout).hint).toContain("bb loom approve csv --skip-review");
+    expect(errorOf(refused.stdout).hint).toContain("alia loom approve csv --skip-review");
 
     const approved = await run(["approve", "csv", "--skip-review"]);
     expect(approved.exitCode).toBe(0);
@@ -179,7 +179,7 @@ describe("human commands", () => {
     const out = await run(["approve", "csv"]);
     expect(out.exitCode).toBe(0);
     expect(out.stdout).toContain("CSV-1, CSV-2");
-    expect(out.stdout).toContain("bb loom start csv");
+    expect(out.stdout).toContain("alia loom start csv");
     expect(errorOf((await run(["approve", "csv", "--json"])).stdout).code).toBe("loom_invalid_state");
   });
 
@@ -199,11 +199,11 @@ describe("human commands", () => {
     host.store.setTicketState(id, "blocked", "loom", { reason: START_FAILED });
     const reviewed = host.store.ticketByKey("CSV-2")!.id;
     for (const state of ["working", "checking", "review", "blocked"] as const) host.store.setTicketState(reviewed, state, "loom");
-    host.store.updateTicket(reviewed, { head_sha: "abc1234", review_round: 1, blocked_reason: "bb refused to start a reviewer: HTTP 400: Unsupported provider claude" });
+    host.store.updateTicket(reviewed, { head_sha: "abc1234", review_round: 1, blocked_reason: "alia refused to start a reviewer: HTTP 400: Unsupported provider claude" });
     await propose((doc) => (doc.project.name = "Orders CSV"));
     const out = await run(["approve", "csv", "--version", "2"]);
-    expect(out.stdout).toContain("Queued again, because bb never started its worker: CSV-1.");
-    expect(out.stdout).toContain("Back in review, because bb refused to start its reviewer: CSV-2.");
+    expect(out.stdout).toContain("Queued again, because VesnALIA never started its worker: CSV-1.");
+    expect(out.stdout).toContain("Back in review, because VesnALIA refused to start its reviewer: CSV-2.");
     expect(host.store.ticketByKey("CSV-1")!.state).toBe("queued");
     expect(host.store.ticketByKey("CSV-2")!.state).toBe("review");
   });
@@ -230,7 +230,7 @@ describe("human commands", () => {
     const error = errorOf(out.stdout);
     expect(error.code).toBe("loom_invalid_state");
     expect(error.message).toContain("draft");
-    expect(error.hint).toContain("bb loom approve csv");
+    expect(error.hint).toContain("alia loom approve csv");
     expect(humanEvents()).toEqual([]);
   });
 
@@ -273,7 +273,7 @@ describe("human commands", () => {
     await approved();
     await run(["block", "CSV-1", "Reviewers are down"]);
     const refused = errorOf((await run(["requeue", "CSV-1", "--review", "--json"])).stdout);
-    expect(refused).toMatchObject({ code: "loom_invalid_state", message: expect.stringContaining("A plain requeue starts a new worker"), hint: expect.stringContaining("bb loom requeue CSV-1` without --review") });
+    expect(refused).toMatchObject({ code: "loom_invalid_state", message: expect.stringContaining("A plain requeue starts a new worker"), hint: expect.stringContaining("alia loom requeue CSV-1` without --review") });
     expect(host.store.ticketByKey("CSV-1")?.state).toBe("blocked");
 
     const ticket = host.store.ticketByKey("CSV-1")!;
@@ -310,7 +310,7 @@ describe("human commands", () => {
     expect(host.store.threadByThreadId("thr_w1")?.state).toBe("ended");
   });
 
-  it("start is refused with loom_no_checkout when the bb project has no checkout", async () => {
+  it("start is refused with loom_no_checkout when the VesnALIA project has no checkout", async () => {
     await approved();
     fake.checkout = null;
     const out = await run(["start", "csv", "--json"]);
@@ -388,7 +388,7 @@ describe("land", () => {
     const text = await run(["land", "csv", "--direct"]);
     expect(text).toMatchObject({ exitCode: 0 });
     expect(text.stdout).toContain("Landed csv on origin/main at ");
-    expect(text.stdout).toContain("bb loom land --direct");
+    expect(text.stdout).toContain("alia loom land --direct");
     const json = await run(["land", "csv", "--direct", "--json"]);
     expect(JSON.parse(json.stdout)).toMatchObject({ url: null, pushed: "origin/main", done: false });
     expect(host.hostPort.callsTo("prCreate")).toEqual([]);
@@ -436,10 +436,10 @@ describe("land", () => {
   });
 
   it("show says to land once every ticket is finished, while the project is running or paused", async () => {
-    const land = "Next: Every ticket is finished. Land it with `bb loom land csv`, which pushes the integration branch and opens one pull request.";
+    const land = "Next: Every ticket is finished. Land it with `alia loom land csv`, which pushes the integration branch and opens one pull request.";
     await running();
     doneTicket("CSV-1");
-    expect((await run(["show", "csv"])).stdout).toContain("Next: Pause it with `bb loom pause csv`.");
+    expect((await run(["show", "csv"])).stdout).toContain("Next: Pause it with `alia loom pause csv`.");
     host.store.setTicketState(host.store.ticketByKey("CSV-2")!.id, "cancelled", "human");
     expect((await run(["show", "csv"])).stdout).toContain(land);
     await run(["pause", "csv"]);
@@ -471,8 +471,8 @@ describe("land on a multi-repo project", () => {
   const landEvents = () => humanEvents().filter((event) => event.action === "land");
 
   async function running() {
-    fake.addBbProject("proj_web", { host_env: "/src/web" });
-    fake.addBbProject("proj_api", { host_env: "/src/api" });
+    fake.addAliaProject("proj_web", { host_env: "/src/web" });
+    fake.addAliaProject("proj_api", { host_env: "/src/api" });
     await propose(withRepos);
     await host.projects.approve("csv", "human");
     await run(["start", "csv"]);
@@ -482,7 +482,7 @@ describe("land on a multi-repo project", () => {
     await running();
     doneTicket("CSV-1");
     const text = await run(["land", "csv"]);
-    expect(text).toMatchObject({ exitCode: 0, stdout: `Landed the repo "web": ${PR(1)}\nRun \`bb loom land csv\` again after more tickets merge to push them too.\n` });
+    expect(text).toMatchObject({ exitCode: 0, stdout: `Landed the repo "web": ${PR(1)}\nRun \`alia loom land csv\` again after more tickets merge to push them too.\n` });
 
     doneTicket("CSV-2");
     const json = await run(["land", "csv", "--json"]);
@@ -508,7 +508,7 @@ describe("land on a multi-repo project", () => {
     doneTicket("CSV-1");
     doneTicket("CSV-2");
     const text = await run(["land", "csv", "--repo", "web"]);
-    expect(text.stdout).toBe(`Landed the repo "web": ${PR(1)}\nStill to land: the repo "api" has merged work that is not landed yet. Run \`bb loom land csv\` to land every repo with merged work.\n`);
+    expect(text.stdout).toBe(`Landed the repo "web": ${PR(1)}\nStill to land: the repo "api" has merged work that is not landed yet. Run \`alia loom land csv\` to land every repo with merged work.\n`);
     expect(host.hostPort.callsTo("push").map((push) => push.repo)).toEqual(["/src/web"]);
     expect(landEvents()).toEqual([{ action: "land", slug: "csv", repo: "web" }]);
     expect(host.store.projectBySlug("csv")?.state).toBe("running");
@@ -539,7 +539,7 @@ describe("land on a multi-repo project", () => {
     expect(host.hostPort.callsTo("push")).toEqual([]);
 
     host = makeHost({ port: (fake = new FakePort()) });
-    host.bb.cli.register(createCli(host.projects, host.engine, host.store, Date.now));
+    host.alia.cli.register(createCli(host.projects, host.engine, host.store, Date.now));
     await approved();
     await run(["start", "csv"]);
     doneTicket("CSV-1");
@@ -565,7 +565,7 @@ describe("land on a multi-repo project", () => {
     expect(errorOf(out.stdout)).toEqual({
       code: "loom_unavailable",
       message: `Landed web (${PR(1)}); api did not land. The repo "api" failed: git push to upstream failed: rejected`,
-      hint: "Fix that, then run `bb loom land csv --repo api`.",
+      hint: "Fix that, then run `alia loom land csv --repo api`.",
     });
   });
 });
@@ -586,8 +586,8 @@ describe("repos in show, tickets and ticket", () => {
     doc.ticket[1].depends_on = [];
   };
   async function running() {
-    fake.addBbProject("proj_web", { host_env: "/src/web" }, { name: "shop-web" });
-    fake.addBbProject("proj_api", { host_env: "/src/api" }, { name: "shop-api" });
+    fake.addAliaProject("proj_web", { host_env: "/src/web" }, { name: "shop-web" });
+    fake.addAliaProject("proj_api", { host_env: "/src/api" }, { name: "shop-api" });
     await propose(withRepos);
     await host.projects.approve("csv", "human");
     await run(["start", "csv"]);
@@ -611,7 +611,7 @@ describe("repos in show, tickets and ticket", () => {
         "Spec: approved v1.",
         "Tickets: 2 (queued 1, blocked 1)",
         "Planner thread: thr_plan",
-        "Next: Pause it with `bb loom pause csv`.",
+        "Next: Pause it with `alia loom pause csv`.",
         "",
       ].join("\n"),
     );
@@ -621,7 +621,7 @@ describe("repos in show, tickets and ticket", () => {
     expect(ticket.join("\n")).not.toContain("Repo");
   });
 
-  it("show lists each repo of a multi-repo project with its bb project, base, integration branch and landed pull request", async () => {
+  it("show lists each repo of a multi-repo project with its VesnALIA project, base, integration branch and landed pull request", async () => {
     await running();
     const lines = await showLines();
     expect(lines.slice(0, 6)).toEqual([
@@ -629,58 +629,58 @@ describe("repos in show, tickets and ticket", () => {
       "Goal: Let people export their orders as a CSV file from the admin page.",
       "Key CSV · base main · integration branch loom/csv",
       "Repos:",
-      "  web · bb project shop-web (proj_web) · base main · integration branch loom/csv · not landed yet",
-      "  api · bb project shop-api (proj_api) · base trunk · integration branch loom/csv · not landed yet",
+      "  web · VesnALIA project shop-web (proj_web) · base main · integration branch loom/csv · not landed yet",
+      "  api · VesnALIA project shop-api (proj_api) · base trunk · integration branch loom/csv · not landed yet",
     ]);
     expect(lines[6]).toBe("Spec: approved v1.");
 
     doneTicket("CSV-1");
     doneTicket("CSV-2");
     expect((await showLines()).find((line) => line.startsWith("Next:"))).toBe(
-      'Next: Every ticket is finished, and the repos "web" and "api" have merged work that is not landed yet. Land them with `bb loom land csv`, which pushes each repo\'s integration branch and opens its pull request.',
+      'Next: Every ticket is finished, and the repos "web" and "api" have merged work that is not landed yet. Land them with `alia loom land csv`, which pushes each repo\'s integration branch and opens its pull request.',
     );
     await run(["land", "csv", "--repo", "web"]);
     const landedAt = host.store.projectRepo(host.store.projectBySlug("csv")!.id, "web")!.landed_at!;
     expect(await repoBlock()).toEqual([
       "Repos:",
-      `  web · bb project shop-web (proj_web) · base main · integration branch loom/csv · pull request ${PR(1)} · landed ${minute(landedAt)}`,
-      "  api · bb project shop-api (proj_api) · base trunk · integration branch loom/csv · not landed yet · merged work to land",
+      `  web · VesnALIA project shop-web (proj_web) · base main · integration branch loom/csv · pull request ${PR(1)} · landed ${minute(landedAt)}`,
+      "  api · VesnALIA project shop-api (proj_api) · base trunk · integration branch loom/csv · not landed yet · merged work to land",
     ]);
     expect((await showLines()).find((line) => line.startsWith("Next:"))).toBe(
-      'Next: Every ticket is finished, and the repo "api" has merged work that is not landed yet. Land it with `bb loom land csv`, which pushes each repo\'s integration branch and opens its pull request.',
+      'Next: Every ticket is finished, and the repo "api" has merged work that is not landed yet. Land it with `alia loom land csv`, which pushes each repo\'s integration branch and opens its pull request.',
     );
 
     const json = JSON.parse((await run(["show", "csv", "--json"])).stdout) as { repos: unknown[] };
     expect(json.repos).toEqual([
-      { name: "web", bbProjectId: "proj_web", bbProjectName: "shop-web", base: "main", branch: "loom/csv", prUrl: PR(1), landedAt, toLand: false },
-      { name: "api", bbProjectId: "proj_api", bbProjectName: "shop-api", base: "trunk", branch: "loom/csv", prUrl: null, landedAt: null, toLand: true },
+      { name: "web", aliaProjectId: "proj_web", aliaProjectName: "shop-web", base: "main", branch: "loom/csv", prUrl: PR(1), landedAt, toLand: false },
+      { name: "api", aliaProjectId: "proj_api", aliaProjectName: "shop-api", base: "trunk", branch: "loom/csv", prUrl: null, landedAt: null, toLand: true },
     ]);
     expect(JSON.parse((await run(["list", "--json"])).stdout)[0].repos).toEqual(json.repos);
   });
 
-  it("show prints a repo's bb project id when bb cannot name it, and --json leaves the name null", async () => {
+  it("show prints a repo's VesnALIA project id when VesnALIA cannot name it, and --json leaves the name null", async () => {
     await running();
-    fake.bbProjects = new Error("bb is restarting");
+    fake.aliaProjects = new Error("alia is restarting");
     expect((await repoBlock()).slice(1)).toEqual([
-      "  web · bb project proj_web · base main · integration branch loom/csv · not landed yet",
-      "  api · bb project proj_api · base trunk · integration branch loom/csv · not landed yet",
+      "  web · VesnALIA project proj_web · base main · integration branch loom/csv · not landed yet",
+      "  api · VesnALIA project proj_api · base trunk · integration branch loom/csv · not landed yet",
     ]);
-    const json = JSON.parse((await run(["show", "csv", "--json"])).stdout) as { repos: Array<{ bbProjectName: string | null }> };
-    expect(json.repos.map((entry) => entry.bbProjectName)).toEqual([null, null]);
+    const json = JSON.parse((await run(["show", "csv", "--json"])).stdout) as { repos: Array<{ aliaProjectName: string | null }> };
+    expect(json.repos.map((entry) => entry.aliaProjectName)).toEqual([null, null]);
 
-    fake.bbProjects = [];
-    fake.addBbProject("proj_web", { host_env: "/src/web" }, { name: "shop-web" });
-    expect((await repoBlock())[2]).toBe("  api · bb project proj_api · base trunk · integration branch loom/csv · not landed yet");
+    fake.aliaProjects = [];
+    fake.addAliaProject("proj_web", { host_env: "/src/web" }, { name: "shop-web" });
+    expect((await repoBlock())[2]).toBe("  api · VesnALIA project proj_api · base trunk · integration branch loom/csv · not landed yet");
   });
 
-  it("show on the pull request strategy lists each repo's bb project and base only", async () => {
-    fake.addBbProject("proj_web", { host_env: "/src/web" }, { name: "shop-web" });
-    fake.addBbProject("proj_api", { host_env: "/src/api" }, { name: "shop-api" });
+  it("show on the pull request strategy lists each repo's VesnALIA project and base only", async () => {
+    fake.addAliaProject("proj_web", { host_env: "/src/web" }, { name: "shop-web" });
+    fake.addAliaProject("proj_api", { host_env: "/src/api" }, { name: "shop-api" });
     await propose((doc) => {
       withRepos(doc);
       doc.merge = { strategy: "pr" };
     });
-    expect(await repoBlock()).toEqual(["Repos:", "  web · bb project shop-web (proj_web) · base main", "  api · bb project shop-api (proj_api) · base trunk"]);
+    expect(await repoBlock()).toEqual(["Repos:", "  web · VesnALIA project shop-web (proj_web) · base main", "  api · VesnALIA project shop-api (proj_api) · base trunk"]);
   });
 
   it("says landing finishes the project when every ticket is finished and every repo with merged work is landed", async () => {
@@ -688,7 +688,7 @@ describe("repos in show, tickets and ticket", () => {
     doneTicket("CSV-1");
     await run(["land", "csv"]);
     host.store.setTicketState(host.store.ticketByKey("CSV-2")!.id, "cancelled", "human");
-    expect((await showLines()).find((line) => line.startsWith("Next:"))).toBe("Next: Every ticket is finished, and every repo with merged work is landed. Run `bb loom land csv` to finish the project.");
+    expect((await showLines()).find((line) => line.startsWith("Next:"))).toBe("Next: Every ticket is finished, and every repo with merged work is landed. Run `alia loom land csv` to finish the project.");
     await run(["land", "csv"]);
     expect(host.store.projectBySlug("csv")!.state).toBe("done");
   });
@@ -719,7 +719,7 @@ describe("report", () => {
   beforeEach(() => {
     hook = "";
     host = makeHost({ port: fake, settings: () => ({ doneHook: hook, doneRecord: "full" }) });
-    host.bb.cli.register(createCli(host.projects, host.engine, host.store, Date.now));
+    host.alia.cli.register(createCli(host.projects, host.engine, host.store, Date.now));
   });
 
   it("prints the project's record as Markdown, and --json prints { slug, markdown }", async () => {
@@ -757,7 +757,7 @@ describe("readyToLand", () => {
   const project = (over: Partial<Parameters<typeof readyToLand>[0]> = {}) => ({ state: "running", strategy: "integration", ticketCounts: { done: 2, cancelled: 1 }, ...over });
 
   it("counts a multi-repo project whose tickets are all finished and which still has a repo to land", () => {
-    const repo = (name: string, toLand: boolean) => ({ name, bbProjectId: `proj_${name}`, bbProjectName: null, base: "main", branch: "loom/csv", prUrl: null, landedAt: toLand ? null : 1, toLand });
+    const repo = (name: string, toLand: boolean) => ({ name, aliaProjectId: `proj_${name}`, aliaProjectName: null, base: "main", branch: "loom/csv", prUrl: null, landedAt: toLand ? null : 1, toLand });
     const multi = { ...project({ ticketCounts: { done: 2 } }), repos: [repo("web", false), repo("api", true)] };
     expect(readyToLand(multi)).toBe(true);
     expect(readyToLand({ ...multi, ticketCounts: { done: 1, working: 1 } })).toBe(false);
@@ -826,7 +826,7 @@ describe("rollout and live", () => {
       { action: "unlive", slug: "csv", milestone: "traffic-low" },
     ]);
     const twice = errorOf((await run(["live", "csv", "CSV-1", "--json"])).stdout);
-    expect(twice).toMatchObject({ code: "loom_invalid_state", message: expect.stringMatching(/^CSV-1 is already live: marked by human at /), hint: "Undo it with `bb loom live csv CSV-1 --undo` first to mark it again." });
+    expect(twice).toMatchObject({ code: "loom_invalid_state", message: expect.stringMatching(/^CSV-1 is already live: marked by human at /), hint: "Undo it with `alia loom live csv CSV-1 --undo` first to mark it again." });
     expect(errorOf((await run(["live", "csv", "nope", "--json"])).stdout)).toMatchObject({ code: "loom_not_found" });
     expect(JSON.parse((await run(["rollout", "csv", "--json"])).stdout)).toMatchObject({ counts: { steps: 2, live: 1 } });
   });

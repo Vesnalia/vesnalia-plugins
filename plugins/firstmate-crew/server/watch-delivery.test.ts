@@ -70,7 +70,7 @@ describe("createDeliver", () => {
     await expect(readFile(join(home, path), "utf8")).resolves.toBe("watch output");
   });
 
-  it("has bb compact a first mate that autocompact would compact now before the note", async () => {
+  it("has VesnALIA compact a first mate that autocompact would compact now before the note", async () => {
     const { threads, store, deliver } = setup({ ...defaultSettings(), mateAutoCompact: true });
     const mate = threads.add({ status: "idle" });
     await store.setMateThreadId(mate.id);

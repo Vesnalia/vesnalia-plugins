@@ -4,7 +4,7 @@ import type {
   ExperimentalHostRpcContext,
   ExperimentalHostWatchSubscription,
   ExperimentalHostWatchEvent,
-} from "@get-bb/plugin-sdk/host";
+} from "@vesnalia/plugin-sdk/host";
 import type { hostSignals } from "./host-contract";
 import {
   OpenSpecIndex,

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { commentsKey, SUMMARY_AT } from "../src/draft";
 import type { DraftProviderProps } from "./DraftProvider";
 
@@ -72,7 +72,7 @@ test("the summary shows images as links, whoever wrote it, since Move to summary
   const body = "Mine.\n\n- On `src/a.ts:1` (an earlier diff): See ![chart](https://attacker.example/c.png) <img src=\"https://attacker.example/d.png\">";
   const slot = await renderTray("moved", { getDraft: () => ({ draft: draftOf({ body }) }) });
   await summary(slot).findByText("Summary · not submitted");
-  expect(summary(slot).getByTestId("bb-markdown").textContent).toBe("Mine.\n\n- On `src/a.ts:1` (an earlier diff): See [Image: chart](https://attacker.example/c.png) [Image](https://attacker.example/d.png)");
+  expect(summary(slot).getByTestId("alia-markdown").textContent).toBe("Mine.\n\n- On `src/a.ts:1` (an earlier diff): See [Image: chart](https://attacker.example/c.png) [Image](https://attacker.example/d.png)");
   expect(slot.container.querySelector("img[src^='https://attacker.example']")).toBeNull();
   slot.lifecycle.unmount();
 });

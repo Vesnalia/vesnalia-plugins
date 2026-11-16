@@ -4,9 +4,9 @@ import { museConfigDir } from "../msp/paths.js";
 
 /**
  * Muse reads its MCP servers from `settings.json` in its config directory, and
- * `muse serve` takes no per-session tool channel. Writing bb's proxy into the
- * user's own config would leak bb tools into their terminal sessions and mutate
- * a file bb does not own, so the bridge builds a private config directory
+ * `muse serve` takes no per-session tool channel. Writing VesnALIA's proxy into the
+ * user's own config would leak VesnALIA tools into their terminal sessions and mutate
+ * a file VesnALIA does not own, so the bridge builds a private config directory
  * instead: the user's settings plus one added MCP server, with everything else
  * — credentials first of all — symlinked back to the real directory so the
  * session is the same account, the same skills, and the same session store.
@@ -25,7 +25,7 @@ export interface PrepareConfigHomeArgs {
   sourceConfigDir?: string;
 }
 
-const MCP_SERVER_NAME = "bb-bridge";
+const MCP_SERVER_NAME = "alia-bridge";
 
 export async function prepareMuseConfigHome(
   args: PrepareConfigHomeArgs,
@@ -51,7 +51,7 @@ export async function prepareMuseConfigHome(
     try {
       await symlink(join(sourceDir, entry), join(configDir, entry));
     } catch {
-      /** A link bb cannot make is a file Muse will simply do without. */
+      /** A link VesnALIA cannot make is a file Muse will simply do without. */
     }
   }
 

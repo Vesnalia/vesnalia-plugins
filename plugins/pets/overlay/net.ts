@@ -2,14 +2,14 @@
 //
 // The overlay mounts through `experimental_appOverlay`, so it reads the plugin
 // backend through the same SDK hooks as every slot: `useRpc` for calls,
-// `useRealtime` for the "pets" channel, `useBbContext` for the thread in view
-// and `useBbNavigate` for navigation. This file only keeps the shared types
+// `useRealtime` for the "pets" channel, `useAliaContext` for the thread in view
+// and `useAliaNavigate` for navigation. This file only keeps the shared types
 // and a call helper that accepts an omitted input for `z.null()` methods.
 import type {
   PluginRpcClient,
   StandardSchemaV1InferInput,
   StandardSchemaV1InferOutput,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 
 type Contract = typeof rpcContract;

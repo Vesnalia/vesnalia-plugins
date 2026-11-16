@@ -12,7 +12,7 @@
 //   once.
 
 import { useEffect, useState, type ReactNode } from "react";
-import { experimental_Diff as Diff } from "@get-bb/plugin-sdk/app";
+import { experimental_Diff as Diff } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

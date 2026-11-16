@@ -6,7 +6,7 @@ const holders = new Set<string>();
  *  same host body padding — when this rail closes but the sibling is still
  *  open, we must not clear `paddingRight` or the chat loses its rail
  *  reservation mid-transition. */
-const SIBLING_RAIL_STORAGE_KEY = "bb-plugin-git:rail-open";
+const SIBLING_RAIL_STORAGE_KEY = "alia-plugin-git:rail-open";
 
 function siblingRailOpen(): boolean {
   try {
@@ -18,7 +18,7 @@ function siblingRailOpen(): boolean {
 
 function syncBodyPadding(): void {
   if (holders.size > 0) {
-    // In a framed window the rail card keeps BB's lip to the window edge.
+    // In a framed window the rail card keeps VesnALIA's lip to the window edge.
     const frame = getWindowFrame();
     const width = `${getRailWidthPx()}px`;
     document.body.style.paddingRight = frame === null ? width : `calc(${width} + ${frame.lip})`;

@@ -40,12 +40,12 @@ contributors*.
 
 ## Getting started
 
-- bb 0.43 or later, with Thread Pages 1.10.0 or later. Earlier Thread Pages
+- VesnALIA 0.43 or later, with Thread Pages 1.10.0 or later. Earlier Thread Pages
   pass no session folder, so every call answers `no_repo`.
 - The Syns CLI, 0.3.25 or later, installed and logged
   in (`syns login`), on each machine whose sessions should reach a repository
-  (`syns upgrade`). If bb does not find `syns`, set its absolute path with
-  `bb plugin config syns set synsPath <path>`.
+  (`syns upgrade`). If VesnALIA does not find `syns`, set its absolute path with
+  `alia plugin config syns set synsPath <path>`.
 - Then install this plugin. New sessions are told about `syns.*`
   automatically; turn that off with
-  `bb plugin config syns set agentInstructions false`.
+  `alia plugin config syns set agentInstructions false`.

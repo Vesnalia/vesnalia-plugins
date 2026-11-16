@@ -5,10 +5,10 @@
  * sentence beside each turn. Re-read on every entries nudge — a sentence
  * landing is also a change to the entries.
  *
- * bb keeps a closed panel's tab mounted, so while the tab is not showing its
+ * VesnALIA keeps a closed panel's tab mounted, so while the tab is not showing its
  * clock stops and a nudge is only noted; the tab reads again when it shows.
  */
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/icon";
@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 
 import type { RpcContract } from "../shared/contract";
 import { ENTRIES_CHANNEL, type HistoryItem } from "../shared/herald";
-import { useTabVisible } from "./bb-features";
+import { useTabVisible } from "./alia-features";
 import { HERALD_ICONS } from "./icons";
 import { lookOf, readAgain, relativeTime, useNow } from "./panel";
 import { canPlaySpeech } from "./speech";

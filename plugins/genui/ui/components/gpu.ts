@@ -146,7 +146,7 @@ let pixel: CanvasRenderingContext2D | null = null;
 
 /**
  * A token or `#rrggbb` as sRGB components 0–1 (not linearized), resolved against
- * `element`'s styles (BB's variables, light or dark). Unknown names read as
+ * `element`'s styles (VesnALIA's variables, light or dark). Unknown names read as
  * the accent. Re-resolve when `useDarkTheme()` flips.
  */
 export function resolveColor(element: HTMLElement, color: string): [number, number, number] {
@@ -161,7 +161,7 @@ export function resolveColor(element: HTMLElement, color: string): [number, numb
   pixel.canvas.width = 1;
   pixel.canvas.height = 1;
   pixel.clearRect(0, 0, 1, 1);
-  // The canvas reads any colour syntax (BB's are oklch and color-mix) back as sRGB.
+  // The canvas reads any colour syntax (VesnALIA's are oklch and color-mix) back as sRGB.
   pixel.fillStyle = computed;
   pixel.fillRect(0, 0, 1, 1);
   const [red, green, blue] = pixel.getImageData(0, 0, 1, 1).data;

@@ -1,15 +1,15 @@
-// bb-plugin-ui-scale — frontend entry.
+// alia-plugin-ui-scale — frontend entry.
 //
-// Scales the bb UI on this device only. The bb app sizes text and spacing in
+// Scales the VesnALIA UI on this device only. The VesnALIA app sizes text and spacing in
 // rem, so the plugin sets the root font size. The value lives in
 // localStorage: every browser, desktop window, and phone keeps its own scale.
 import { useEffect, useState } from "react";
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 
-const STORAGE_KEY = "bb-plugin-ui-scale:percent";
+const STORAGE_KEY = "alia-plugin-ui-scale:percent";
 /** Same-tab change signal; the `storage` event only fires in other tabs. */
-const CHANGE_EVENT = "bb-plugin-ui-scale:change";
+const CHANGE_EVENT = "alia-plugin-ui-scale:change";
 const MIN = 50;
 const MAX = 200;
 const STEP = 5;
@@ -161,7 +161,7 @@ export default definePluginApp((app) => {
   app.slots.settingsSection({
     id: "scale",
     title: "UI scale",
-    description: "Make the bb interface bigger or smaller on this device.",
+    description: "Make the VesnALIA interface bigger or smaller on this device.",
     component: ScaleSettings,
   });
 });

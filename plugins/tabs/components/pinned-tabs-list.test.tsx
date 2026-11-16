@@ -33,7 +33,7 @@ describe("Pinned tabs localization", () => {
     );
     const root = screen.getByRole("button", { name: "Root. Проект: API." });
     const child = screen.getByRole("button", { name: "Child. Проект: API." });
-    expect(root.querySelector(".bb-chat-tabs-subthread-badge")).toBeNull();
+    expect(root.querySelector(".alia-chat-tabs-subthread-badge")).toBeNull();
     expect(child.querySelector('[data-icon="GitBranch"]')).not.toBeNull();
     expect(child.getAttribute("aria-description")).toBe("Сабтред");
   });
@@ -73,7 +73,7 @@ describe("Pinned tabs localization", () => {
       }),
     ).toBeTruthy();
     expect(
-      document.querySelector('.bb-chat-tabs-homepage-pinned-status[data-status="waiting"]'),
+      document.querySelector('.alia-chat-tabs-homepage-pinned-status[data-status="waiting"]'),
     ).not.toBeNull();
   });
 

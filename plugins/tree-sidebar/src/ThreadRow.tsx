@@ -3,7 +3,7 @@ import {
   experimental_useSidebarThreadActions as useSidebarThreadActions,
   experimental_useSidebarThreadSplit as useSidebarThreadSplit,
   type PluginSidebarThread,
-} from "@bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { RowContextMenu } from "./RowContextMenu";
@@ -19,7 +19,7 @@ import {
 } from "./layout";
 
 /**
- * One thread. The anchor carries both DOM attributes bb's thread shortcuts
+ * One thread. The anchor carries both DOM attributes VesnALIA's thread shortcuts
  * look for — they find rows by query selector, not by React state, so
  * `thread.next`, `thread.previous`, and the numbered shortcuts stop working
  * without them.

@@ -1,10 +1,10 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { LaneBlock } from "../../../shared/model";
 import type { LaneFilter, LaneState, ThreadActivity } from "./types";
 
 /**
  * The lane's own state, from the sidebar's live view first (it updates the
- * moment bb does) and the turn history second. Precedence: someone is needed,
+ * moment VesnALIA does) and the turn history second. Precedence: someone is needed,
  * then work in progress, then anything stuck before or after it.
  */
 export function laneState(

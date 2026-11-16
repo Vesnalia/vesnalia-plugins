@@ -2,16 +2,16 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { BRIDGE_JSON_RPC_ERRORS, bridgeCapabilitiesSchema } from "@get-bb/plugin-sdk/provider-bridge";
+import { BRIDGE_JSON_RPC_ERRORS, bridgeCapabilitiesSchema } from "@vesnalia/plugin-sdk/provider-bridge";
 import {
   experimental_createBridgeDeltaEventCollector as createBridgeDeltaEventCollector,
   experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import type {
   BridgeJsonRpcObject,
   BridgeJsonRpcTestHarness,
   ThreadEvent,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import { handleLine } from "./provider-bridge.js";
 import { decodeContextCheckpoint, HISTORY_TOOL_NAME } from "./history-protocol.js";
 import { restoreNanoGptHistory } from "./history-adapter.js";
@@ -481,7 +481,7 @@ describe("the NanoGPT bridge", () => {
     expect(deltaNotifications()).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "provider.error", message: expect.stringContaining("No tools were run") })]));
   });
 
-  it("returns unknown-tool errors locally without forwarding them to bb", async () => {
+  it("returns unknown-tool errors locally without forwarding them to VesnALIA", async () => {
     responses.push(sseResponse([chunk({ choices: [{ delta: { tool_calls: [{ index: 0, id: "unknown", function: { name: "undeclared", arguments: "{}" } }] }, finish_reason: "tool_calls" }] })]), answerResponse("recovered"));
     const providerThreadId = await startThread();
     await startTurn("go", "creq_abcdefghx2", providerThreadId);
@@ -878,7 +878,7 @@ describe("the NanoGPT bridge", () => {
     expect(fetchCalls).toHaveLength(0);
   });
 
-  it("lists the live catalog when bb passes a key", async () => {
+  it("lists the live catalog when VesnALIA passes a key", async () => {
     responses.push(
       new Response(
         JSON.stringify({

@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { createRoot } from "react-dom/client";
-import type * as PluginSdkApp from "@get-bb/plugin-sdk/app";
+import type * as PluginSdkApp from "@vesnalia/plugin-sdk/app";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useThreadActions, type ThreadActions } from "./Fence";
 
-// BB's runtime is replaced by one thread: a workspace, a thread storage and a host.
-const STORAGE = "/Users/me/.bb/thread-storage/thr_1";
+// VesnALIA's runtime is replaced by one thread: a workspace, a thread storage and a host.
+const STORAGE = "/Users/me/.vesnalia/thread-storage/thr_1";
 const WORKSPACE = "/Users/me/Projects/site";
 const openFilePreview = vi.fn((_options: unknown) => true);
 const sdk = {
@@ -15,11 +15,11 @@ const sdk = {
     storageLocation: vi.fn(async () => ({ storageRootPath: STORAGE, hostId: "host_1" })),
   },
 };
-vi.mock("@get-bb/plugin-sdk/app", async (importOriginal) => ({
+vi.mock("@vesnalia/plugin-sdk/app", async (importOriginal) => ({
   ...(await importOriginal<typeof PluginSdkApp>()),
   useComposers: () => [],
   useSdk: () => sdk,
-  useBbNavigate: () => ({ experimental_openFilePreview: openFilePreview }),
+  useAliaNavigate: () => ({ experimental_openFilePreview: openFilePreview }),
 }));
 
 let actions: ThreadActions | null = null;
@@ -54,8 +54,8 @@ describe("opening a file a spec names", () => {
     });
   });
 
-  it("opens $BB_THREAD_STORAGE/ paths in the thread's storage", async () => {
-    expect(await opened("$BB_THREAD_STORAGE/hero.png")).toEqual({
+  it("opens $ALIA_THREAD_STORAGE/ paths in the thread's storage", async () => {
+    expect(await opened("$ALIA_THREAD_STORAGE/hero.png")).toEqual({
       opened: true,
       target: { kind: "thread-storage", threadId: "thr_1", path: "hero.png" },
     });

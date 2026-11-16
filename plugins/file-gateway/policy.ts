@@ -3,7 +3,7 @@ import { lstat, realpath } from 'node:fs/promises';
 import type { z } from 'zod';
 import type { policySchema } from './contract.js';
 export type Policy = z.infer<typeof policySchema>;
-const sensitive = /^(?:\.ssh|\.gnupg|\.aws|\.azure|\.kube|\.bb|\.bb-machines|\.codex|\.claude|\.config|\.local|\.git|\.npmrc|\.netrc|\.env(?:\..*)?|.*\.(?:pem|key|p12|pfx|session)|cookies?(?:\..*)?|login data|keychains|secrets?|credentials?(?:\..*)?|id_rsa|id_ed25519)$/i;
+const sensitive = /^(?:\.ssh|\.gnupg|\.aws|\.azure|\.kube|\.alia|\.alia-machines|\.codex|\.claude|\.config|\.local|\.git|\.npmrc|\.netrc|\.env(?:\..*)?|.*\.(?:pem|key|p12|pfx|session)|cookies?(?:\..*)?|login data|keychains|secrets?|credentials?(?:\..*)?|id_rsa|id_ed25519)$/i;
 export function within(root: string, target: string) {
   const rel = path.relative(root, target);
   return rel === '' || (!rel.startsWith('..'+path.sep) && rel !== '..' && !path.isAbsolute(rel));
@@ -16,8 +16,8 @@ export function lexicalAllowed(target: string, policy: Policy) {
   const parts = normalized.split(path.sep);
   const isPrivateComponent = (part: string, index: number) => {
     if (!sensitive.test(part)) return false;
-    // Share conversation artifacts without exposing BB databases, sessions or history.
-    if (part === '.bb' && parts[index+1] === 'chats' && /^thr_[a-z0-9]+$/.test(parts[index+2] ?? '') && ['artifacts','notes','tmp'].includes(parts[index+3] ?? '')) return false;
+    // Share conversation artifacts without exposing VesnALIA databases, sessions or history.
+    if (part === '.vesnalia' && parts[index+1] === 'chats' && /^thr_[a-z0-9]+$/.test(parts[index+2] ?? '') && ['artifacts','notes','tmp'].includes(parts[index+3] ?? '')) return false;
     return true;
   };
   if (parts.some(isPrivateComponent) || /\/Library\/(?:Application Support|Cookies|Keychains|Safari)(?:\/|$)/i.test(normalized) || /^\/(?:proc|sys|dev)(?:\/|$)/.test(normalized)) throw new Error('Sensitive or special path is excluded');

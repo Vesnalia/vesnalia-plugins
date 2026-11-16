@@ -1,21 +1,12 @@
 {
-  "name": "@smsunarto/bb-plugin-gtd-sidebar",
+  "name": "@smsunarto/alia-plugin-gtd-sidebar",
   "version": "0.4.2",
   "description": "An action-oriented sidebar that groups threads by who can act next.",
   "license": "MIT",
   "author": "Scott Sunarto",
-  "homepage": "https://github.com/smsunarto/bb-plugins/tree/main/plugins/gtd-sidebar#readme",
-  "bugs": {
-    "url": "https://github.com/smsunarto/bb-plugins/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/smsunarto/bb-plugins.git",
-    "directory": "plugins/gtd-sidebar"
-  },
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "sidebar",
     "inbox",
     "threads",
@@ -26,10 +17,10 @@
   },
   "type": "module",
   "engines": {
-    "bb": ">=0.40.0 <1.0.0",
-    "bbPluginSdk": ">=0.4.21"
+    "alia": ">=0.40.0 <1.0.0",
+    "aliaPluginSdk": ">=0.4.21"
   },
-  "bb": {
+  "alia": {
     "name": "GTD Sidebar",
     "description": "An action-oriented sidebar that groups threads by who can act next.",
     "branding": {
@@ -66,10 +57,10 @@
     "@hugeicons/react": "^1.1.6",
     "clsx": "^2.1.1",
     "tailwind-merge": "^3.4.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@vesnalia/plugin-sdk": "^0.6.143"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.21",
     "@radix-ui/react-context-menu": "^2.3.3",
     "@radix-ui/react-select": "^2.3.3",
     "@types/better-sqlite3": "^7.6.12",
@@ -81,9 +72,18 @@
   },
   "scripts": {
     "dev": "bun ../../scripts/dev-plugin.ts",
-    "build": "bb plugin build .",
+    "build": "alia plugin build .",
     "typecheck": "tsc --noEmit",
     "test": "bun test --timeout=30000 test/*.test.ts",
     "clean": "rm -rf dist"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/gtd-sidebar#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/gtd-sidebar"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,5 +1,5 @@
 Namespace Mac, 28 October 2026, 02:58-03:40 UTC: macOS 26.3.1, Apple M5 Max (Virtual), 6 cores (6 performance), 14 GiB.
-Xcode 26.1.1; iOS 26.2 runtime; iPhone 17 Pro (1206x2622); idb_companion 1.7.7; bb-box-h264 built here in 6 s
+Xcode 26.1.1; iOS 26.2 runtime; iPhone 17 Pro (1206x2622); idb_companion 1.7.7; alia-box-h264 built here in 6 s
 (x264 0.165 b35605a from source, OpenH264 2.6.0 Cisco mac-arm64). Busy = flip.html?busy in Safari.
 
 VideoToolbox (vtprobe.swift): a session requiring hardware opened. One session: 141 fps at 1206x2622, 398 at 604x1312.
@@ -7,7 +7,7 @@ idb H.264 stream, two busy devices: 57.2 and 53.8 fps at a half; 56.7 and 57.1 a
 
 idb raw stream formats at a half: 0 h264 ok; 1 rbga 603x1311 BGRA rows of 2432 bytes; 2 mjpeg ~25 KB; 4 is H.264 again, not I420.
 
-idb rbga -> Node -> bb-box-h264 x264 (one busy device):
+idb rbga -> Node -> alia-box-h264 x264 (one busy device):
  third     402x874   57.2 fps  enc 1.28 ms  companion 0.25 helper 0.09 node 0.27 cores  taps 62 ms median (8)
  half      602x1310  58.1 fps  enc 3.06 ms  companion 0.58 helper 0.21 node 0.60       taps 75 ms
  two-thirds 804x1748 35.5 fps  enc 5.13 ms  companion 0.57 helper 0.23 node 0.66       taps 167 ms
@@ -16,7 +16,7 @@ idb rbga -> Node -> bb-box-h264 x264 (one busy device):
  No encode, full: 11.4-18 fps whatever the HTTP/2 window (1, 4, 32 MiB) or frame size (1, 16 MiB); no thread saturated.
 idb rbga, two busy devices, x264: third 56.7/56.3 fps, taps 56/52 ms; half 50.1/50.4, 137 ms; two-thirds 28.5/28.5, 209 ms; ~1.2 cores a device at a half.
 
-Framebuffer IOSurface read by bb-box-h264 --simulator (one busy device, 12 s):
+Framebuffer IOSurface read by alia-box-h264 --simulator (one busy device, 12 s):
  x264      third 46.0 fps 0.10 cores enc 1.99 ms | half 49.2, 0.22, 4.02 | two-thirds 50.6, 0.32, 5.85 | full 53.2, 0.56, 11.19
  openh264  third 48.1, 0.14, 2.73 | half 48.5, 0.22, 4.56 | two-thirds 50.6, 0.37, 7.22 | full 49.4, 0.63, 10.97
 Two busy devices, both by framebuffer, x264, 15 s:
@@ -26,12 +26,12 @@ Two busy devices, both by framebuffer, x264, 15 s:
  full       50.7/50.5, 0.45 each, 8.9 ms, 34-35 ms, 6.8 Mbit/s; 43-65% idle
 First frame from the reader's start: 123-145 ms. A still page still changes the surface's seed about 6 times a second.
 
-Tart box (dedicated ios, macOS 27.0, Apple M4 Max (Virtual), 6 cores), hardware not used: bb-box-h264 --simulator, one busy iPhone 18 Pro, 12 s:
+Tart box (dedicated ios, macOS 27.0, Apple M4 Max (Virtual), 6 cores), hardware not used: alia-box-h264 --simulator, one busy iPhone 18 Pro, 12 s:
  x264      third 402x872 43.0 fps 0.14 cores enc 3.2 ms | half 43.6, 0.21, 4.45 | two-thirds 44.2, 0.28, 6.27 | full 45.6, 0.37, 8.2; first frame 82-90 ms
  openh264  third 43.5, 0.16, 3.52 | half 43.7, 0.21, 4.46 | two-thirds 44.3, 0.29, 6.05 | full 46.7, 0.45, 8.18; first frame 89-101 ms
  Xcode 27 keeps SimulatorKit in Contents/SharedFrameworks, not Contents/Developer/Library/PrivateFrameworks.
 
-B through a fresh BB's panel (npx bb-app 0.47.1, no account), bb-box from the B branch, an SSH host pool whose Mac is the Tart dedicated ios box (M4 Max VM, 6 cores),
+B through a fresh VesnALIA's panel (npx alia-app 0.47.1, no account), alia-box from the B branch, an SSH host pool whose Mac is the Tart dedicated ios box (M4 Max VM, 6 cores),
 general.iosEncoder software; one slot box, its device busy (flip.html?busy); headless Chromium (Playwright) in the same VM; frames counted by wrapping drawImage;
 taps = click while in control, to first drawn frame whose probe pixel flips; 20 s a step, 15 taps:
  third 600x700@1   402x872   44.6 fps, worst gap 88 ms, taps 64 / 89 ms (median / p95), encoder 0.11 cores, VM 69% idle
@@ -40,11 +40,11 @@ taps = click while in control, to first drawn frame whose probe pixel flips; 20 
  full  1100x1600@2 1206x2622 51.0 fps, 249 ms, taps 116 / 355 ms, 0.64 cores, 24% idle (earlier run: 48.7 fps, taps 73 / 88 ms, 0.43 cores)
  ledger (doctor): "On this Mac: video encoded in software, about 0.2 of the 1.5 cores it may use. 1 stream in software."
  rotate left/right in the panel: drawn correctly turned; frames stay the framebuffer's portrait size.
- A on the fresh BB: "iOS devices on mac-1: The iOS Simulator (Xcode 27.0, iOS 27.0); video by its hardware H.264 encoder, software (x264 0.165) as the fallback. Measured on the Mac, an Apple M4 Max (Virtual)".
+ A on the fresh VesnALIA: "iOS devices on mac-1: The iOS Simulator (Xcode 27.0, iOS 27.0); video by its hardware H.264 encoder, software (x264 0.165) as the fallback. Measured on the Mac, an Apple M4 Max (Virtual)".
 
-B through a fresh BB's panel on a Namespace Mac, 28 Oct ~05:45 UTC: macOS 26.3.1, Apple M4 Pro (Virtual), 6 cores, 14 GiB, Xcode 26.1.1, iOS 26.2 (23C54).
+B through a fresh VesnALIA's panel on a Namespace Mac, 28 Oct ~05:45 UTC: macOS 26.3.1, Apple M4 Pro (Virtual), 6 cores, 14 GiB, Xcode 26.1.1, iOS 26.2 (23C54).
 Pool Mac = the Namespace Mac itself, set up by setup-mac.sh (its sshd on 127.0.0.1:2222, as Namespace's agent holds port 22 and Remote Login is off) and this branch's mac-ios.sh:
- the iOS 26.2 list (the 27.0 list's 112 labels) made a seed with every label off; devices.tsv filtered to the iPhone 17 (no iPhone 18 Pro in Xcode 26.1.1); bb-box-h264 built with OpenH264.
+ the iOS 26.2 list (the 27.0 list's 112 labels) made a seed with every label off; devices.tsv filtered to the iPhone 17 (no iPhone 18 Pro in Xcode 26.1.1); alia-box-h264 built with OpenH264.
  doctor: "iOS devices on mac-1: The iOS Simulator (Xcode 26.1.1, iOS 17.5 ... 26.2); video by its hardware H.264 encoder, software (openh264 2.6.0) as the fallback. Measured on the Mac, an Apple M4 Pro (Virtual)".
  iosEncoder software; one slot box (iPhone 17), busy page; headless Chromium in the same VM; 20 s a step, 15 taps:
  third 600x700@1   402x872   37.6 fps, worst gap 522 ms, taps 89 / 1501 ms (14 of 15 shown), encoder 0.10 cores, Mac 23% idle  [first run; again later: 45.3 fps, 117 ms, taps 78 / 94 ms]

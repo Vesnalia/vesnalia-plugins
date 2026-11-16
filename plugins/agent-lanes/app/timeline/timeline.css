@@ -1,5 +1,5 @@
 /*
- * bb Lanes timeline: affectUI's Agent Lanes, grown into a full pane.
+ * alia Lanes timeline: affectUI's Agent Lanes, grown into a full pane.
  *
  * Fidelity first. Every upstream rule is carried over with its values; the
  * mapping is mechanical: `.ui-al` → `.bl`, `.ui-al__x` → `.bl-x`, and
@@ -9,12 +9,12 @@
  *
  * `.bl-theme` carries the palette alone, so the shell's tray, bar, cells and
  * menus share it. Dark mode follows `.dark` or `data-theme="dark"` on an
- * ancestor, which is how bb itself switches theme.
+ * ancestor, which is how alia itself switches theme.
  *
- * Neutrals follow bb's `--canvas`, so a tinted bb theme tints every surface
+ * Neutrals follow alia's `--canvas`, so a tinted alia theme tints every surface
  * coherently: each `--bl-host-*` mixes the canvas towards black (light) or
- * white (dark) by exactly the amount that turns bb's default canvas into
- * upstream's value. Outside bb `--canvas` is unset, a `--bl-host-*` is then
+ * white (dark) by exactly the amount that turns alia's default canvas into
+ * upstream's value. Outside alia `--canvas` is unset, a `--bl-host-*` is then
  * invalid, and the upstream literal after it applies. State colours are
  * upstream's own and stay literal.
  */

@@ -5,7 +5,7 @@ import {
   loadPluginApp,
   renderSlot,
   type PluginRpcTestHandlers,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import { toast } from "sonner";
 import { beforeEach, expect, test, vi } from "vitest";
 import type { rpcContract } from "../contract";
@@ -55,7 +55,7 @@ async function renderAction(
   );
 }
 
-test("the account switch icon has BB's native tooltip", async () => {
+test("the account switch icon has VesnALIA's native tooltip", async () => {
   const slot = await renderAction();
 
   try {
@@ -214,7 +214,7 @@ test("a host-busy admission does not claim that login has started", async () => 
       "already open on this machine",
     );
     expect(
-      slot.queryByText(/BB opens one automatic Chrome Incognito handoff/i),
+      slot.queryByText(/ALIA opens one automatic Chrome Incognito handoff/i),
     ).toBeNull();
     expect(attachSwitch).not.toHaveBeenCalled();
   } finally {
@@ -359,7 +359,7 @@ test("the browser handoff keeps only actionable controls and status", async () =
     );
     expect(await slot.findByText("Checking session…")).not.toBeNull();
     expect(
-      slot.queryByText(/BB opens one automatic Chrome Incognito handoff/i),
+      slot.queryByText(/ALIA opens one automatic Chrome Incognito handoff/i),
     ).toBeNull();
     acceptSwitch({ outcome: "accepted" });
     expect(
@@ -904,7 +904,7 @@ test("a remounted action keeps tracking the phase after code input is ready", as
     phase = "committed";
 
     expect(
-      await slot.findByText("Claude login changed. BB is finishing the switch…"),
+      await slot.findByText("Claude login changed. VesnALIA is finishing the switch…"),
     ).not.toBeNull();
     fireEvent.click(await slot.findByRole("button", { name: "Close account switch" }));
     expect(cancelSwitch).not.toHaveBeenCalled();
@@ -956,7 +956,7 @@ test("closing a committed switch keeps a later changed-login result visible", as
       await slot.findByRole("button", { name: "Sign in to another account" }),
     );
     expect(
-      await slot.findByText("Claude login changed. BB is finishing the switch…"),
+      await slot.findByText("Claude login changed. VesnALIA is finishing the switch…"),
     ).not.toBeNull();
     fireEvent.click(await slot.findByRole("button", { name: "Close account switch" }));
     expect(cancelSwitch).not.toHaveBeenCalled();
@@ -1012,16 +1012,16 @@ test("closing a committed switch keeps a later attachment error visible", async 
     );
     fireEvent.click(await slot.findByRole("button", { name: "Use current login" }));
     expect(
-      await slot.findByText("Claude login changed. BB is finishing the switch…"),
+      await slot.findByText("Claude login changed. VesnALIA is finishing the switch…"),
     ).not.toBeNull();
     fireEvent.click(await slot.findByRole("button", { name: "Close account switch" }));
     expect(cancelSwitch).not.toHaveBeenCalled();
 
-    rejectSwitch(new Error("BB could not release this session's runtime."));
+    rejectSwitch(new Error("VesnALIA could not release this session's runtime."));
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(
-        "BB could not release this session's runtime.",
+        "VesnALIA could not release this session's runtime.",
       );
     });
   } finally {
@@ -1066,7 +1066,7 @@ test("reopening a committed switch restores inline failure feedback", async () =
     );
     fireEvent.click(await slot.findByRole("button", { name: "Use current login" }));
     expect(
-      await slot.findByText("Claude login changed. BB is finishing the switch…"),
+      await slot.findByText("Claude login changed. VesnALIA is finishing the switch…"),
     ).not.toBeNull();
     fireEvent.click(await slot.findByRole("button", { name: "Close account switch" }));
     fireEvent.click(
@@ -1075,10 +1075,10 @@ test("reopening a committed switch restores inline failure feedback", async () =
       }),
     );
 
-    rejectSwitch(new Error("BB could not release this session's runtime."));
+    rejectSwitch(new Error("VesnALIA could not release this session's runtime."));
 
     expect((await slot.findByRole("alert")).textContent).toContain(
-      "BB could not release this session's runtime.",
+      "VesnALIA could not release this session's runtime.",
     );
     expect(toast.error).not.toHaveBeenCalled();
   } finally {
@@ -1213,11 +1213,11 @@ test("a post-commit failure stays visible after the dialog closes", async () => 
     fireEvent.click(await slot.findByRole("button", { name: "Cancel" }));
     await completing;
 
-    rejectSwitch(new Error("BB could not release this session's runtime."));
+    rejectSwitch(new Error("VesnALIA could not release this session's runtime."));
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(
-        "BB could not release this session's runtime.",
+        "VesnALIA could not release this session's runtime.",
       );
     });
   } finally {

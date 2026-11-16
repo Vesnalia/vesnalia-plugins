@@ -49,13 +49,13 @@ describe("submitting a review", () => {
       createComment: vi.fn(async () => posted),
       updateCommentBody: vi.fn(async () => undefined),
     };
-    const bb = {
+    const alia = {
       realtime: { publish: vi.fn() },
       log: { warn: vi.fn() },
       agents: { registerTool: vi.fn() },
       events: { on: vi.fn() },
     };
-    const comments = createComments({ bb, store, github, models: {} } as unknown as Parameters<typeof createComments>[0]);
+    const comments = createComments({ alia, store, github, models: {} } as unknown as Parameters<typeof createComments>[0]);
     return { comments, rows, store, github };
   }
 
@@ -121,7 +121,7 @@ describe("submitting a review", () => {
     expect(store.insertComment).toHaveBeenCalledWith(expect.objectContaining({ headSha: "seen" }));
   });
 
-  it("keeps tags in bb and never edits the GitHub comment", async () => {
+  it("keeps tags in VesnALIA and never edits the GitHub comment", async () => {
     const { comments, store, github } = setup([]);
     await comments.setTag("cm_1", "bug");
     expect(store.updateComment).toHaveBeenCalledWith("cm_1", { tag: "bug" });
@@ -168,9 +168,9 @@ describe("diagram comments", () => {
       updateComment: vi.fn(),
       insertComment: vi.fn((input: object) => input),
     };
-    const bb = { realtime: { publish: vi.fn() }, agents: { registerTool: vi.fn() }, events: { on: vi.fn() } };
-    const comments = createComments({ bb, store, github: {}, models: {} } as unknown as Parameters<typeof createComments>[0]);
-    return { comments, store, bb };
+    const alia = { realtime: { publish: vi.fn() }, agents: { registerTool: vi.fn() }, events: { on: vi.fn() } };
+    const comments = createComments({ alia, store, github: {}, models: {} } as unknown as Parameters<typeof createComments>[0]);
+    return { comments, store, alia };
   }
 
   // A gone analysis, one with no result yet, and one from before PR Lens that has no diagrams.
@@ -178,10 +178,10 @@ describe("diagram comments", () => {
 
   it("leaves pins alone when the analysis is gone or has no diagrams", () => {
     noDiagrams.forEach((analysis) => {
-      const { comments, store, bb } = setup([pin("node-gone", "architecture-overview", "payment-gateway")], analysis);
+      const { comments, store, alia } = setup([pin("node-gone", "architecture-overview", "payment-gateway")], analysis);
       comments.reconcileDiagramPins("an_2");
       expect(store.updateComment).not.toHaveBeenCalled();
-      expect(bb.realtime.publish).not.toHaveBeenCalled();
+      expect(alia.realtime.publish).not.toHaveBeenCalled();
     });
   });
 
@@ -241,7 +241,7 @@ describe("AI tagging", () => {
       comment: vi.fn((id: string) => (id === comment.id ? comment : null)),
       updateComment: vi.fn((_id: string, patch: { tag: string }) => Object.assign(comment, patch)),
     };
-    const bb = {
+    const alia = {
       realtime: { publish: vi.fn() },
       agents: { registerTool: vi.fn((tool) => tools.push(tool)) },
       events: { on: vi.fn((name: string, handler: (event: { thread: { id: string } }) => void) => handlers.set(name, handler)) },
@@ -251,16 +251,16 @@ describe("AI tagging", () => {
       },
     };
     const models = { selected: vi.fn(async () => null) };
-    const comments = createComments({ bb, store, github: {}, models } as unknown as Parameters<typeof createComments>[0]);
+    const comments = createComments({ alia, store, github: {}, models } as unknown as Parameters<typeof createComments>[0]);
     const tool = tools[0]!;
     const idle = (threadId: string) => handlers.get("thread.idle")!({ thread: { id: threadId } });
-    return { comments, bb, store, tool, idle, comment };
+    return { comments, alia, store, tool, idle, comment };
   }
 
   it("lets the worker tag only its own comment, then finishes when the worker goes idle", async () => {
-    const { comments, bb, tool, idle, comment } = setup();
+    const { comments, alia, tool, idle, comment } = setup();
     const tagging = comments.autoTag("cm_1");
-    await vi.waitFor(() => expect(bb.sdk.threads.spawn).toHaveBeenCalled());
+    await vi.waitFor(() => expect(alia.sdk.threads.spawn).toHaveBeenCalled());
 
     await expect(tool.execute({ tags: [{ commentId: "cm_1", tag: "bug" }] }, { threadId: "elsewhere" })).resolves.toMatchObject({ isError: true });
     await expect(tool.execute({ tags: [{ commentId: "cm_1", tag: "bug" }] }, {})).resolves.toMatchObject({ isError: true });
@@ -272,14 +272,14 @@ describe("AI tagging", () => {
 
     await expect(tagging).resolves.toBeUndefined();
     expect(comment.tag).toBe("bug");
-    expect(bb.sdk.threads.archive).toHaveBeenCalledWith({ threadId: "worker" });
-    expect(bb.sdk.threads.stop).toHaveBeenCalledWith({ threadId: "worker" });
+    expect(alia.sdk.threads.archive).toHaveBeenCalledWith({ threadId: "worker" });
+    expect(alia.sdk.threads.stop).toHaveBeenCalledWith({ threadId: "worker" });
   });
 
   it("fails when the worker finishes without a tag", async () => {
-    const { comments, bb, idle } = setup();
+    const { comments, alia, idle } = setup();
     const tagging = comments.autoTag("cm_1");
-    await vi.waitFor(() => expect(bb.sdk.threads.spawn).toHaveBeenCalled());
+    await vi.waitFor(() => expect(alia.sdk.threads.spawn).toHaveBeenCalled());
     idle("unrelated");
     idle("worker");
     await expect(tagging).rejects.toThrow("AI tagging did not pick a tag.");
@@ -288,39 +288,39 @@ describe("AI tagging", () => {
   it("gives up when the worker never goes idle, and cleans up its thread", async () => {
     vi.useFakeTimers();
     try {
-      const { comments, bb } = setup();
+      const { comments, alia } = setup();
       const tagging = comments.autoTag("cm_1");
       const outcome = expect(tagging).rejects.toThrow("AI tagging did not pick a tag.");
-      await vi.waitFor(() => expect(bb.sdk.threads.spawn).toHaveBeenCalled());
+      await vi.waitFor(() => expect(alia.sdk.threads.spawn).toHaveBeenCalled());
       await vi.advanceTimersByTimeAsync(3 * 60_000);
       await outcome;
-      expect(bb.sdk.threads.archive).toHaveBeenCalledWith({ threadId: "worker" });
+      expect(alia.sdk.threads.archive).toHaveBeenCalledWith({ threadId: "worker" });
     } finally {
       vi.useRealTimers();
     }
   });
 
   it("refuses to tag a comment that is gone", async () => {
-    const { comments, bb } = setup();
+    const { comments, alia } = setup();
     await expect(comments.autoTag("cm_gone")).rejects.toThrow("That comment no longer exists.");
-    expect(bb.sdk.threads.spawn).not.toHaveBeenCalled();
+    expect(alia.sdk.threads.spawn).not.toHaveBeenCalled();
   });
 
   it("describes a diff comment by file and line to the worker", async () => {
-    const { comments, bb, idle } = setup();
+    const { comments, alia, idle } = setup();
     const tagging = comments.autoTag("cm_1").catch(() => undefined);
-    await vi.waitFor(() => expect(bb.sdk.threads.spawn).toHaveBeenCalled());
+    await vi.waitFor(() => expect(alia.sdk.threads.spawn).toHaveBeenCalled());
     idle("worker");
     await tagging;
-    const prompt = (bb.sdk.threads.spawn.mock.calls[0] as unknown as [{ prompt: string }])[0].prompt;
+    const prompt = (alia.sdk.threads.spawn.mock.calls[0] as unknown as [{ prompt: string }])[0].prompt;
     expect(prompt).toContain('"where":"a.ts:3"');
     expect(prompt).toContain('"body":"Leaks memory."');
   });
 
   it("fails when the comment is deleted while the worker tags it", async () => {
-    const { comments, bb, store, idle } = setup();
+    const { comments, alia, store, idle } = setup();
     const tagging = comments.autoTag("cm_1");
-    await vi.waitFor(() => expect(bb.sdk.threads.spawn).toHaveBeenCalled());
+    await vi.waitFor(() => expect(alia.sdk.threads.spawn).toHaveBeenCalled());
     store.comment.mockReturnValue(null);
     idle("worker");
     await expect(tagging).rejects.toThrow("AI tagging did not pick a tag.");
@@ -342,9 +342,9 @@ describe("design comments are only for the PR's author", () => {
 
   function setup(isOwnPr: boolean) {
     const store = { comment: (id: string) => Object.values(saved).find((comment) => comment.id === id) ?? null };
-    const bb = { realtime: { publish: vi.fn() }, agents: { registerTool: vi.fn() }, events: { on: vi.fn() } };
+    const alia = { realtime: { publish: vi.fn() }, agents: { registerTool: vi.fn() }, events: { on: vi.fn() } };
     const loadPr = vi.fn(async () => ({ isOwnPr }));
-    return createComments({ bb, store, github: {}, models: {}, loadPr } as unknown as Parameters<typeof createComments>[0]);
+    return createComments({ alia, store, github: {}, models: {}, loadPr } as unknown as Parameters<typeof createComments>[0]);
   }
 
   it("refuses design comments on someone else's PR", async () => {

@@ -9,7 +9,7 @@
 //   build-2 192.0.2.22:2222 linux via=jump@bastion.example.com reset=machine labels=fast
 //   mac-mini bbbox-admin@192.0.2.30 macos,macos-desktop
 //
-// The user is bb-box's admin user on the machine, bbbox-admin by default,
+// The user is alia-box's admin user on the machine, bbbox-admin by default,
 // which setup/ssh-pool/setup.sh makes. "via" is a jump host, reached with the
 // same key. "reset=machine" says the machine has a whole-machine reset, so
 // its boxes have Docker, which gives root (041). The pool's linux boxes have
@@ -19,7 +19,7 @@
 // reset (047). setup.sh and setup-mac.sh print each machine's line and its
 // host keys.
 
-import type { PluginSettingDescriptor } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptor } from "@vesnalia/plugin-sdk";
 import { kindRequest } from "../kinds.ts";
 import { MOST_SLOTS } from "../../core/slot-sizing.ts";
 import { normalisePrivateKey } from "../../transports/ssh.ts";
@@ -62,7 +62,7 @@ export interface SshPoolHost {
 export interface SshPoolMachine {
   /** Unique in the pool. Stored with each box as its reference. */
   readonly name: string;
-  /** bb-box's admin user on the machine. */
+  /** alia-box's admin user on the machine. */
   readonly admin: SshPoolHost;
   readonly jump: SshPoolHost | null;
   readonly kinds: readonly SshPoolKind[];
@@ -80,7 +80,7 @@ export interface SshPoolConfig {
   readonly machines: readonly SshPoolMachine[];
   /** known_hosts lines for every machine and jump host. */
   readonly knownHosts: readonly string[];
-  /** A null key means bb-box generates one and shows its public key. */
+  /** A null key means alia-box generates one and shows its public key. */
   readonly privateKey: string | null;
   readonly slots: PoolSlotsConfig;
 }
@@ -268,7 +268,7 @@ function parseMachine(line: string, lineNumber: number, problems: { push(message
 
 export const SSH_POOL_PREFIX = "ssh-pool-";
 
-/** The backend's fields in bb-box's configuration (029): the settings above without the prefix. */
+/** The backend's fields in alia-box's configuration (029): the settings above without the prefix. */
 export const SSH_POOL_FIELDS: Readonly<Record<string, FieldDescriptor>> = Object.fromEntries(
   ([
     [SSH_POOL_KEYS.machines, "boxes"],
@@ -292,7 +292,7 @@ export function parseSshPoolSettings(values: Readonly<Record<string, unknown>>):
   return { enabled: true, ok: true, config: config! };
 }
 
-/** The SSH host pool's part of bb-box's configuration (029), with each problem at its field. */
+/** The SSH host pool's part of alia-box's configuration (029), with each problem at its field. */
 export function parseSshPoolPart(part: BackendPart): ParsedBackend<SshPoolConfig> {
   const values: Record<string, unknown> = {};
   for (const [field, value] of Object.entries(part.fields)) values[SSH_POOL_PREFIX + field] = value;

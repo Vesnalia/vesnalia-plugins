@@ -1,7 +1,7 @@
 import { catalogSchema, type Catalog } from './contract';
 import { ModelVisibilityMenu } from './menu';
 
-export const SETTINGS_CHANGED_EVENT = 'bb-model-visibility:changed';
+export const SETTINGS_CHANGED_EVENT = 'alia-model-visibility:changed';
 const REFRESH_MS = 15_000;
 
 /** SPA navigation to the plugin settings page, preserving unsent drafts. */

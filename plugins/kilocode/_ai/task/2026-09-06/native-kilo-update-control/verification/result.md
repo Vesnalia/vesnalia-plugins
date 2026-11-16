@@ -23,6 +23,6 @@ The measured normal and narrow layouts had no horizontal menu overflow. Existing
 
 ## Production wiring and limits
 
-The production source routes the footer action through BB provider maintenance, exact post-install version checks, and guarded BB-owned activation. It refuses downgrades, unsupported versions, foreign ownership, conflicting maintenance, and busy activation; busy work leaves a restart-pending action instead of interrupting sessions.
+The production source routes the footer action through VesnALIA provider maintenance, exact post-install version checks, and guarded ALIA-owned activation. It refuses downgrades, unsupported versions, foreign ownership, conflicting maintenance, and busy activation; busy work leaves a restart-pending action instead of interrupting sessions.
 
-**NOT VERIFIED:** actual installed-BB integration, a real global KiloCode upgrade, and live BB activation. The screenshots are controlled real-candidate harness evidence, not an installed BB session and not evidence of a real download or upgrade. No live CLI, server, plugin, configuration, session, credential, or OpenChamber mutation occurred during this verification.
+**NOT VERIFIED:** actual installed-ALIA integration, a real global KiloCode upgrade, and live VesnALIA activation. The screenshots are controlled real-candidate harness evidence, not an installed VesnALIA session and not evidence of a real download or upgrade. No live CLI, server, plugin, configuration, session, credential, or OpenChamber mutation occurred during this verification.

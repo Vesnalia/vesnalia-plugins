@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import type { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { cn } from "../lib/utils";
 import type { ReviewMenuItem } from "./ReviewActions";
 import { TOUCH_CONTROL } from "./touch";
@@ -9,7 +9,7 @@ import { Icon } from "./ui/icon";
 /**
  * The bar of a page with no band: back (to All reviews, or as `back` says), the page's title, and its menu
  * (`children`). A review without a guide (tracked, building, failed) and Settings have it, so leaving and the review's
- * actions are always a tap away, where the review itself has them in its band and BB's title bar.
+ * actions are always a tap away, where the review itself has them in its band and VesnALIA's title bar.
  */
 export function PageBar({ back = "All reviews", onBack, backDisabled = false, title, children }: {
   back?: string;
@@ -38,6 +38,6 @@ export function PageBar({ back = "All reviews", onBack, backDisabled = false, ti
 }
 
 /** Review settings…, for the menu of a review page without a guide: Settings' back comes to the review. */
-export function reviewSettingsItem(navigate: ReturnType<typeof useBbNavigate>, targetKey: string): ReviewMenuItem {
+export function reviewSettingsItem(navigate: ReturnType<typeof useAliaNavigate>, targetKey: string): ReviewMenuItem {
   return { label: "Review settings…", icon: "Settings", onSelect: () => navigate.toPluginPanel("review", { subPath: `settings/${targetKey}` }) };
 }

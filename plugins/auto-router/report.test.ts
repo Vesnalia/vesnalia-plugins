@@ -182,7 +182,7 @@ test("unknown models and malformed history suppress savings claims", () => {
   assert.equal(summary.records.ignored, 1);
 });
 
-test("real BB ledger counts cumulative Codex totals once", () => {
+test("real VesnALIA ledger counts cumulative Codex totals once", () => {
   const history: unknown[] = [
     {
       at: 1792067828612,

@@ -1,21 +1,21 @@
 # Branch Graph
 
-A read-only BB navigation page for registered Git project sources, local branches, worktrees, and BB threads. The plugin does **not** switch, prune, remove, or create Git data.
+A read-only VesnALIA navigation page for registered Git project sources, local branches, worktrees, and VesnALIA threads. The plugin does **not** switch, prune, remove, or create Git data.
 
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/t-i-m-b-r-i-g-g-s/bb-plugin-branch-graph.git@^0.1.0
+alia plugin install git:https://github.com/t-i-m-b-r-i-g-g-s/bb-plugin-branch-graph.git@^0.1.0
 ```
 
-BB will show the resolved source and ask for confirmation before running third-party plugin code. The optional GitHub PR lookup requires `gh` and GitHub authentication; the graph itself does not. See [LICENSE](LICENSE) for the MIT license.
+VesnALIA will show the resolved source and ask for confirmation before running third-party plugin code. The optional GitHub PR lookup requires `gh` and GitHub authentication; the graph itself does not. See [LICENSE](LICENSE) for the MIT license.
 
 ## What the graph means
 
-- Solid connections show repository → local branch → checked-out worktree → BB thread whose registered environment path matches that worktree.
-- Dashed connections group BB threads without a registered Git checkout. They do **not** imply Git ancestry or repository ownership.
+- Solid connections show repository → local branch → checked-out worktree → VesnALIA thread whose registered environment path matches that worktree.
+- Dashed connections group VesnALIA threads without a registered Git checkout. They do **not** imply Git ancestry or repository ownership.
 - Branches with no checkout, detached worktrees, and prunable worktrees stay visible. “Review signals” only highlights them; it does not assert they are safe to delete.
-- Archived and active BB threads have separate node markers. The status bar counts all listed threads, including archived ones.
+- Archived and active VesnALIA threads have separate node markers. The status bar counts all listed threads, including archived ones.
 - All nodes remain rendered. Search and focus controls dim nonmatches; repository/section buttons pan to their positions. Drag or scroll to pan, Ctrl/Cmd+scroll to zoom, or use the zoom controls.
 - The graph scans local branches, not remotes or branch ancestry. Snapshot data updates on **Refresh**, not continuously.
 
@@ -30,11 +30,11 @@ The server verifies the project source before dispatch; the host independently c
 ```sh
 npm install
 npx tsc --noEmit -p tsconfig.json
-bb plugin build .
+alia plugin build .
 node --test tests/graph.test.mjs
-bb plugin install . --yes # initial installation only
-bb plugin reload branch-graph --json # after changes
-bb branch-graph snapshot --json
+alia plugin install . --yes # initial installation only
+alia plugin reload branch-graph --json # after changes
+alia branch-graph snapshot --json
 ```
 
-The CLI snapshot is a JSON representation of the same graph. The page is **Branch Graph** in BB’s sidebar. `bb.skills` is empty; the scaffold example-todos skill is not registered.
+The CLI snapshot is a JSON representation of the same graph. The page is **Branch Graph** in VesnALIA’s sidebar. `alia.skills` is empty; the scaffold example-todos skill is not registered.

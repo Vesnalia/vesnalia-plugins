@@ -1,10 +1,10 @@
 // Three-way sync between roles (this plugin's SQLite), Claude Code subagent
 // files (~/.claude/agents/<slug>.md) and Tasks delegation presets (builtin
-// Tasks plugin, reached through the `bb tasks preset` CLI because plugins
+// Tasks plugin, reached through the `alia tasks preset` CLI because plugins
 // cannot call each other's RPC).
 //
 // The file is the durable/exportable form; the role is the richest form
-// (colour, description); the preset is what `bb tasks dispatch` needs. Any
+// (colour, description); the preset is what `alia tasks dispatch` needs. Any
 // of the three may be edited; the last snapshot of each (a hash per side,
 // kept in `sync_state`) tells which side changed since the previous sync,
 // and that side wins. Deleting a role in the UI or deleting the file removes
@@ -124,29 +124,29 @@ function parseFrontmatter(text: string): { data: Record<string, unknown>; rawLin
   return { data, rawLines };
 }
 
-const KNOWN_KEYS = new Set(["name", "description", "model", "tools", "bb"]);
+const KNOWN_KEYS = new Set(["name", "description", "model", "tools", "alia"]);
 
 export function parseAgentFile(slug: string, text: string, mtimeMs: number): AgentFile {
   const fm = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(text);
   if (!fm) throw new Error("missing frontmatter");
   const { data, rawLines } = parseFrontmatter(fm[1]!);
-  const bb = (typeof data.bb === "object" && data.bb && !Array.isArray(data.bb) ? data.bb : {}) as Record<string, string>;
+  const alia = (typeof data.alia === "object" && data.alia && !Array.isArray(data.alia) ? data.alia : {}) as Record<string, string>;
   const str = (v: unknown) => (typeof v === "string" ? v : Array.isArray(v) ? v.join(" ") : "");
-  // A non-claude provider keeps its model under `bb.model`; Claude Code reads the top-level key.
-  let model: string | null = (bb.model ?? "").trim() || str(data.model).trim() || null;
+  // A non-claude provider keeps its model under `alia.model`; Claude Code reads the top-level key.
+  let model: string | null = (alia.model ?? "").trim() || str(data.model).trim() || null;
   if (model && model.toLowerCase() === "inherit") model = null;
   if (model && MODEL_ALIASES[model.toLowerCase()]) model = MODEL_ALIASES[model.toLowerCase()]!;
-  const providerId = (bb.provider ?? "").trim() || (model ? "claude-code" : null);
-  const reasoning = (bb.reasoning ?? "").trim();
-  const permission = (bb.permission ?? "").trim();
-  const color = (bb.color ?? "").trim();
+  const providerId = (alia.provider ?? "").trim() || (model ? "claude-code" : null);
+  const reasoning = (alia.reasoning ?? "").trim();
+  const permission = (alia.permission ?? "").trim();
+  const color = (alia.color ?? "").trim();
   const extraLines: string[] = [];
   for (const [k, l] of rawLines) if (!KNOWN_KEYS.has(k)) extraLines.push(...l);
   const tools = Array.isArray(data.tools) ? (data.tools as string[]) : null;
   return {
     canon: {
       slug,
-      name: (bb.title ?? "").trim() || titleCase(slug),
+      name: (alia.title ?? "").trim() || titleCase(slug),
       description: str(data.description).trim(),
       instructions: fm[2]!.trim(),
       providerId,
@@ -168,13 +168,13 @@ export function serializeAgentFile(c: Canon, keep: { tools: string[] | null; ext
   if (c.description) out.push(`description: ${quote(c.description)}`);
   if (c.model && (c.providerId === null || c.providerId === "claude-code")) out.push(`model: ${quote(c.model)}`);
   if (keep?.tools?.length) out.push(`tools: [${keep.tools.join(", ")}]`);
-  const bb: string[] = [`  title: ${quote(c.name)}`];
-  if (c.providerId) bb.push(`  provider: ${c.providerId}`);
-  if (c.model && c.providerId && c.providerId !== "claude-code") bb.push(`  model: ${quote(c.model)}`);
-  if (c.reasoningLevel) bb.push(`  reasoning: ${c.reasoningLevel}`);
-  if (c.permissionMode) bb.push(`  permission: ${c.permissionMode}`);
-  if (c.color && c.color !== "gray") bb.push(`  color: ${c.color}`);
-  out.push("bb:", ...bb);
+  const alia: string[] = [`  title: ${quote(c.name)}`];
+  if (c.providerId) alia.push(`  provider: ${c.providerId}`);
+  if (c.model && c.providerId && c.providerId !== "claude-code") alia.push(`  model: ${quote(c.model)}`);
+  if (c.reasoningLevel) alia.push(`  reasoning: ${c.reasoningLevel}`);
+  if (c.permissionMode) alia.push(`  permission: ${c.permissionMode}`);
+  if (c.color && c.color !== "gray") alia.push(`  color: ${c.color}`);
+  out.push("alia:", ...alia);
   if (keep?.extraLines.length) out.push(...keep.extraLines);
   out.push("---", "", c.instructions.trim(), "");
   return out.join("\n");
@@ -209,7 +209,7 @@ export async function readAgentFiles(dir: string): Promise<{ files: Map<string, 
 }
 
 // ---------------------------------------------------------------------------
-// Tasks presets through the bb CLI
+// Tasks presets through the VesnALIA CLI
 // ---------------------------------------------------------------------------
 
 export interface Preset {
@@ -229,26 +229,26 @@ export interface TasksCli {
   remove(id: string): Promise<void>;
 }
 
-function findBbBinary(override: string): string {
-  const candidates = [override.trim(), process.env.BB_CLI ?? "", "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/host-daemon/dist/bb"].filter(Boolean);
+function findAliaBinary(override: string): string {
+  const candidates = [override.trim(), process.env.ALIA_CLI ?? "", "/Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/host-daemon/dist/alia"].filter(Boolean);
   for (const c of candidates) if (existsSync(c)) return c;
-  return "bb";
+  return "alia";
 }
 
-/** Runs `bb tasks <args> --json` against this server and returns the parsed JSON. */
-export type BbTasksRunner = (args: string[]) => Promise<Record<string, unknown>>;
+/** Runs `alia tasks <args> --json` against this server and returns the parsed JSON. */
+export type AliaTasksRunner = (args: string[]) => Promise<Record<string, unknown>>;
 
-export function makeBbTasksRunner(opts: { serverUrl: () => string; bbBinary: string }): BbTasksRunner {
+export function makeAliaTasksRunner(opts: { serverUrl: () => string; aliaBinary: string }): AliaTasksRunner {
   return (args) =>
     new Promise((resolve, reject) => {
       let url = "";
       try { url = opts.serverUrl(); } catch { /* not listening yet */ }
       execFile(
-        findBbBinary(opts.bbBinary),
+        findAliaBinary(opts.aliaBinary),
         ["tasks", ...args, "--json"],
-        { env: { ...process.env, ...(url ? { BB_SERVER_URL: url } : {}) }, maxBuffer: 8 * 1024 * 1024, timeout: 30_000 },
+        { env: { ...process.env, ...(url ? { ALIA_SERVER_URL: url } : {}) }, maxBuffer: 8 * 1024 * 1024, timeout: 30_000 },
         (err, stdout, stderr) => {
-          if (err) return reject(new Error(`bb tasks ${args.slice(0, 2).join(" ")}: ${stderr.trim() || err.message}`));
+          if (err) return reject(new Error(`alia tasks ${args.slice(0, 2).join(" ")}: ${stderr.trim() || err.message}`));
           const text = String(stdout);
           const at = text.indexOf("{");
           try { resolve(JSON.parse(at >= 0 ? text.slice(at) : text)); } catch { resolve({}); }
@@ -257,7 +257,7 @@ export function makeBbTasksRunner(opts: { serverUrl: () => string; bbBinary: str
     });
 }
 
-export function makeTasksCli(run: BbTasksRunner): TasksCli {
+export function makeTasksCli(run: AliaTasksRunner): TasksCli {
   const flags = (p: Partial<Omit<Preset, "id">>) => [
     ...(p.name !== undefined ? ["--name", p.name] : []),
     ...(p.providerId !== undefined ? ["--provider", p.providerId] : []),
@@ -278,7 +278,7 @@ export function makeTasksCli(run: BbTasksRunner): TasksCli {
 // Tasks records (the lightweight "job" a role spawn creates)
 // ---------------------------------------------------------------------------
 
-export interface TasksProject { id: string; name: string; prefix: string; linkedBbProjectId: string | null }
+export interface TasksProject { id: string; name: string; prefix: string; linkedAliaProjectId: string | null }
 export interface TaskRecord {
   id: string; key: string; title: string; description: string; status: string; priority: string;
   projectId: string; labelIds: string[]; createdAt: string; updatedAt: string;
@@ -292,7 +292,7 @@ export interface TaskDetail {
 
 export const ROLE_LABEL_PREFIX = "role:";
 
-export function makeTaskOps(run: BbTasksRunner) {
+export function makeTaskOps(run: AliaTasksRunner) {
   const labelCache = new Map<string, Set<string>>();
   const ops = {
     projects: async (): Promise<TasksProject[]> => ((await run(["project", "list"])).projects as TasksProject[] | undefined) ?? [],
@@ -416,8 +416,8 @@ export async function runSync(io: {
 
       // Deletions: a side we synced before and that is now gone wins.
       if (st && !role && st.roleHash) {
-        if (file) { await fs.unlink(path.join(io.agentsDir, `${slug}.md`)); act(slug, "file deleted", "role removed in BB"); }
-        if (preset && presetsOk && st.presetId === preset.id) { await io.tasks.remove(preset.id); act(slug, "preset deleted", "role removed in BB"); }
+        if (file) { await fs.unlink(path.join(io.agentsDir, `${slug}.md`)); act(slug, "file deleted", "role removed in VesnALIA"); }
+        if (preset && presetsOk && st.presetId === preset.id) { await io.tasks.remove(preset.id); act(slug, "preset deleted", "role removed in VesnALIA"); }
         io.store.remove(slug);
         continue;
       }

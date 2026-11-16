@@ -3,7 +3,7 @@ import {
   useRealtime,
   useRpc,
   useRealtimeConnectionState,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { sidebarRpcContract } from "./server";
 import type { ThreadGroup } from "./groups";

@@ -1,6 +1,6 @@
 ## What you get
 
-Machine Status adds a configurable status disclosure to BB’s sidebar. It lists
+Machine Status adds a configurable status disclosure to VesnALIA’s sidebar. It lists
 each connected machine's battery charge, used memory, and used local storage.
 
 By default, connected machines without a selected status are hidden. You can
@@ -11,7 +11,7 @@ low-battery threshold (20% by default).
 Memory and storage status turn red when their used percentage reaches their
 configurable high-usage thresholds (90% by default).
 
-The status refreshes when a metric's integer percentage changes or when its BB machine entry changes.
+The status refreshes when a metric's integer percentage changes or when its VesnALIA machine entry changes.
 
 ## How it works
 
@@ -23,4 +23,4 @@ through PowerShell on Windows.
 
 ## Requirements
 
-Requires BB 0.43 or later, Plugin SDK 0.4.104 or later, and an enrolled BB machine. Memory and storage work on any supported machine; battery status needs a machine with a battery interface its operating system exposes. No external account or paid service is required.
+Requires VesnALIA 0.43 or later, Plugin SDK 0.4.104 or later, and an enrolled VesnALIA machine. Memory and storage work on any supported machine; battery status needs a machine with a battery interface its operating system exposes. No external account or paid service is required.

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useBbContext, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaContext, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { createThreadHistoryStore } from "@/lib/thread-history";
 
 const store = createThreadHistoryStore(
@@ -21,8 +21,8 @@ export function stepThreadHistory(offset: -1 | 1): boolean {
 }
 
 export function ThreadHistoryBridge() {
-  const { threadId } = useBbContext();
-  const navigate = useBbNavigate();
+  const { threadId } = useAliaContext();
+  const navigate = useAliaNavigate();
 
   useEffect(() => {
     const toThread = (id: string) => navigate.toThread(id);

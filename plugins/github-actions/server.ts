@@ -1,7 +1,7 @@
-// bb-plugin-github-actions — GitHub Actions runs for the repositories of your BB
+// alia-plugin-github-actions — GitHub Actions runs for the repositories of your VesnALIA
 // projects: live status, rerun / cancel, and a one-click agent thread that
 // investigates a failed run.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   createGithubClient,
@@ -267,8 +267,8 @@ function toJob(job: WorkflowJob): Job {
   };
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     githubToken: {
       type: "string",
       label: "GitHub token (optional; falls back to `gh auth token`)",
@@ -276,7 +276,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     useProjectRepos: {
       type: "boolean",
-      label: "Watch the GitHub repositories of BB projects",
+      label: "Watch the GitHub repositories of VesnALIA projects",
       default: true,
     },
     extraRepos: {
@@ -299,7 +299,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     fallbackProject: {
       type: "project",
-      label: "Project for investigations of repositories without a BB project",
+      label: "Project for investigations of repositories without a VesnALIA project",
     },
     analysisModel: {
       type: "string",
@@ -327,7 +327,7 @@ export default async function plugin(bb: BbPluginApi) {
     const { useProjectRepos, extraRepos } = await settings.get();
     const repos = new Map<string, WatchedRepo>();
     if (useProjectRepos) {
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       for (const project of projects) {
         if (project.gitRemoteUrl === null) continue;
         const ref = parseGithubRepo(project.gitRemoteUrl);
@@ -346,7 +346,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (line.trim() === "") continue;
       const ref = parseGithubRepo(line);
       if (ref === null) {
-        bb.log.warn(`ignoring invalid repo in settings: ${line}`);
+        alia.log.warn(`ignoring invalid repo in settings: ${line}`);
         continue;
       }
       const key = repoKey(ref).toLowerCase();
@@ -367,7 +367,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function analyses(): Promise<Record<string, string>> {
-    return (await bb.storage.kv.get<Record<string, string>>(ANALYSES_KEY)) ?? {};
+    return (await alia.storage.kv.get<Record<string, string>>(ANALYSES_KEY)) ?? {};
   }
   const analysisKey = (repo: string, runId: number, attempt: number) =>
     `${repo.toLowerCase()}#${runId}#${attempt}`;
@@ -430,7 +430,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (cause instanceof GithubError && cause.status === 401) {
             authError = message;
           }
-          bb.log.warn(`listing runs failed for ${key}: ${message}`);
+          alia.log.warn(`listing runs failed for ${key}: ${message}`);
           return { watched, runs: [] as WorkflowRun[], error: message };
         }
       }),
@@ -513,7 +513,7 @@ export default async function plugin(bb: BbPluginApi) {
       const repo = watched.get(run.repo.toLowerCase());
       if (targets.length === 0 || repo === undefined) continue;
       await sendRun(repo, run.id, targets, "A new CI/CD run failed:", true).catch(
-        (cause) => bb.log.warn(`auto-send failed: ${String(cause)}`),
+        (cause) => alia.log.warn(`auto-send failed: ${String(cause)}`),
       );
     }
   }
@@ -526,7 +526,7 @@ export default async function plugin(bb: BbPluginApi) {
         const signature = JSON.stringify({ ...next, fetchedAt: null });
         if (signature !== lastSignature) {
           lastSignature = signature;
-          bb.realtime.publish(RUNS_CHANGED, {
+          alia.realtime.publish(RUNS_CHANGED, {
             active: next.runs.filter((run) => run.state === "active").length,
           });
         }
@@ -632,7 +632,7 @@ export default async function plugin(bb: BbPluginApi) {
     const failed: { threadId: string; error: string }[] = [];
     for (const threadId of new Set(targets)) {
       try {
-        await bb.sdk.threads.send({
+        await alia.sdk.threads.send({
           threadId,
           mode: "auto",
           input: [{ type: "text", text, mentions: [] }],
@@ -645,7 +645,7 @@ export default async function plugin(bb: BbPluginApi) {
         });
       }
     }
-    bb.log.info(
+    alia.log.info(
       `run ${repoKey(watched.ref)}#${runId} sent to ${sent.length} thread(s), ${failed.length} failed`,
     );
     return { sent, failed };
@@ -770,7 +770,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     const inputs = validateInputs(spec, values);
     await github.dispatch(watched.ref, workflowId, gitRef, inputs);
-    bb.log.info(`dispatched ${workflow.path} on ${repoKey(watched.ref)}@${gitRef}`);
+    alia.log.info(`dispatched ${workflow.path} on ${repoKey(watched.ref)}@${gitRef}`);
     // GitHub needs a moment before the new run shows up in the list.
     for (const delay of [2_000, 6_000]) {
       setTimeout(() => void refresh().catch(() => {}), delay);
@@ -780,7 +780,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function subscriptions(): Promise<Record<string, string[]>> {
     return (
-      (await bb.storage.kv.get<Record<string, string[]>>(SUBSCRIPTIONS_KEY)) ?? {}
+      (await alia.storage.kv.get<Record<string, string[]>>(SUBSCRIPTIONS_KEY)) ?? {}
     );
   }
 
@@ -792,7 +792,7 @@ export default async function plugin(bb: BbPluginApi) {
       : null;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     run_send: async ({ repo, runId, threadIds: targets, note, includeLogs }) => {
       const watched = await resolveRepo(repo);
       return sendRun(watched, runId, targets, note, includeLogs);
@@ -821,8 +821,8 @@ export default async function plugin(bb: BbPluginApi) {
     },
     threads_list: async () => {
       const [threads, projects] = await Promise.all([
-        bb.sdk.threads.list({ archived: false, limit: 200 }),
-        bb.sdk.projects.list({ includePersonal: true }),
+        alia.sdk.threads.list({ archived: false, limit: 200 }),
+        alia.sdk.projects.list({ includePersonal: true }),
       ]);
       const names = new Map(projects.map((project) => [project.id, project.name]));
       return {
@@ -865,7 +865,7 @@ export default async function plugin(bb: BbPluginApi) {
       const next = { ...(await subscriptions()) };
       if (targets.length === 0) delete next[key];
       else next[key] = [...new Set(targets)];
-      await bb.storage.kv.set(SUBSCRIPTIONS_KEY, next);
+      await alia.storage.kv.set(SUBSCRIPTIONS_KEY, next);
       return { threadIds: next[key] ?? [] };
     },
     runs_list: async (input) => {
@@ -882,7 +882,7 @@ export default async function plugin(bb: BbPluginApi) {
     run_rerun: async ({ repo, runId, failedOnly }) => {
       const watched = await resolveRepo(repo);
       await github.rerun(watched.ref, runId, failedOnly);
-      bb.log.info(`rerun requested for ${repo}#${runId} (failedOnly=${failedOnly})`);
+      alia.log.info(`rerun requested for ${repo}#${runId} (failedOnly=${failedOnly})`);
       void refresh().catch(() => {});
       return { ok: true as const };
     },
@@ -902,7 +902,7 @@ export default async function plugin(bb: BbPluginApi) {
       const projectId = await projectFor(watched);
       if (projectId === null) {
         throw new Error(
-          `Repository ${repo} has no BB project. Set "Project for investigations" in the plugin settings.`,
+          `Repository ${repo} has no VesnALIA project. Set "Project for investigations" in the plugin settings.`,
         );
       }
       const { prompt, run } = await buildAnalysisPrompt(watched, runId);
@@ -912,7 +912,7 @@ export default async function plugin(bb: BbPluginApi) {
         return { threadId: existing, created: false };
       }
       const { analysisModel } = await settings.get();
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         projectId,
         environment: { type: "project-default" },
         prompt,
@@ -920,7 +920,7 @@ export default async function plugin(bb: BbPluginApi) {
         ...(analysisModel.trim() !== "" ? { model: analysisModel.trim() } : {}),
         pluginMetadata: { repo: repoKey(watched.ref), runId, attempt: run.run_attempt ?? 1 },
       });
-      await bb.storage.kv.set(ANALYSES_KEY, {
+      await alia.storage.kv.set(ANALYSES_KEY, {
         ...(await analyses()),
         [key]: thread.id,
       });
@@ -933,41 +933,41 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb github-actions list [--active|--failed] [--json]",
-    "  bb github-actions rerun <owner/repo> <run-id> [--all]",
-    "  bb github-actions cancel <owner/repo> <run-id>",
-    "  bb github-actions workflows <owner/repo> [--json]",
-    "  bb github-actions run <owner/repo> <workflow-id|file|name> [--ref <branch>] [name=value ...]",
+    "  VesnALIA github-actions list [--active|--failed] [--json]",
+    "  VesnALIA github-actions rerun <owner/repo> <run-id> [--all]",
+    "  VesnALIA github-actions cancel <owner/repo> <run-id>",
+    "  VesnALIA github-actions workflows <owner/repo> [--json]",
+    "  VesnALIA github-actions run <owner/repo> <workflow-id|file|name> [--ref <branch>] [name=value ...]",
   ].join("\n");
-  bb.cli.register({
+  alia.cli.register({
     name: "github-actions",
     summary: "GitHub Actions runs of the watched repositories",
     commands: [
       {
         name: "list",
         summary: "List recent workflow runs",
-        usage: "bb github-actions list [--active|--failed] [--json]",
+        usage: "alia github-actions list [--active|--failed] [--json]",
       },
       {
         name: "rerun",
         summary: "Rerun failed jobs of a run (--all reruns every job)",
-        usage: "bb github-actions rerun <owner/repo> <run-id> [--all]",
+        usage: "alia github-actions rerun <owner/repo> <run-id> [--all]",
       },
       {
         name: "cancel",
         summary: "Cancel an active run",
-        usage: "bb github-actions cancel <owner/repo> <run-id>",
+        usage: "alia github-actions cancel <owner/repo> <run-id>",
       },
       {
         name: "workflows",
         summary: "List workflows and their manual-run inputs",
-        usage: "bb github-actions workflows <owner/repo> [--json]",
+        usage: "alia github-actions workflows <owner/repo> [--json]",
       },
       {
         name: "run",
         summary: "Start a workflow_dispatch run with inputs",
         usage:
-          "bb github-actions run <owner/repo> <workflow-id|file|name> [--ref <branch>] [name=value ...]",
+          "alia github-actions run <owner/repo> <workflow-id|file|name> [--ref <branch>] [name=value ...]",
       },
     ],
     async run(argv) {
@@ -1049,7 +1049,7 @@ export default async function plugin(bb: BbPluginApi) {
               item.name.toLowerCase() === needle,
           );
           if (workflow === undefined) {
-            return { exitCode: 1, stderr: `No workflow "${selector}" in ${repo}. Run "bb github-actions workflows ${repo}".` };
+            return { exitCode: 1, stderr: `No workflow "${selector}" in ${repo}. Run "alia github-actions workflows ${repo}".` };
           }
           const values: Record<string, string> = {};
           for (const pair of pairs) {
@@ -1082,7 +1082,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ---- Poller ----
 
-  bb.background.service("poll-runs", {
+  alia.background.service("poll-runs", {
     async start(signal) {
       let warmed = false;
       while (!signal.aborted) {
@@ -1096,7 +1096,7 @@ export default async function plugin(bb: BbPluginApi) {
             );
           }
         } catch (cause) {
-          bb.log.warn(`poll failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+          alia.log.warn(`poll failed: ${cause instanceof Error ? cause.message : String(cause)}`);
         }
         const { pollSeconds } = await settings.get();
         // Poll faster while something is running.

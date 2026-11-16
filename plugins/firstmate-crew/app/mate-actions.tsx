@@ -3,7 +3,7 @@
  * gear that opens FirstMate's settings page. Compact and Restart go only while the first mate is idle or
  * errored — the server refuses mid-turn too — and not while a message to it is on its way.
  */
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { useState } from "react";
 import { toast } from "sonner";
 

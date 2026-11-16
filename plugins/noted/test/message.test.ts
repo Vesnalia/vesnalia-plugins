@@ -19,7 +19,7 @@ describe("buildFeedbackMessage", () => {
     expect(msg).toContain('2. td `#tbl tr:nth-of-type(2) > td:nth-of-type(2)` (row "A", column "Cost") — "Low" → Replace with a real range.');
     expect(msg).toContain('3. text in `#para-b`: "embed Lavish server" → Drop this option.');
     expect(msg).toContain("4. message → Overall: shorter.");
-    expect(msg.trimEnd().endsWith("Edit the file in place. Reply in chat or with `bb noted reply <text>`; the reviewer is watching the panel.")).toBe(true);
+    expect(msg.trimEnd().endsWith("Edit the file in place. Reply in chat or with `alia noted reply <text>`; the reviewer is watching the panel.")).toBe(true);
   });
   it("adds the review location and the end-session line", () => {
     const msg = buildFeedbackMessage({ displayPath: "packet.html", revisionNumber: 1, items: [], freeform: "ship it", endSession: true, reviewedInThreadId: "thr_v", replyThreadId: "thr_p" });

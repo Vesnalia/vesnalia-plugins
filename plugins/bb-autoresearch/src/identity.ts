@@ -24,7 +24,7 @@ export async function resolveCommitIdentity(runner: Pick<HostRunner, "gitIdentit
   return { ...PLUGIN_IDENTITY, source: "fallback" };
 }
 
-/** One sentence for the calibration report, notices and `bb study show`. */
+/** One sentence for the calibration report, notices and `alia study show`. */
 export function identityText(id: CommitIdentity): string {
   const who = `${id.name} <${id.email}>`;
   if (id.source === "repo") return `Commits in the repository are authored as ${who}, the repository's git identity.`;

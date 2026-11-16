@@ -44,7 +44,7 @@ const STOPPED_REPORT_GRACE_MS = 30_000;
 
 export const AGENT_INSTRUCTIONS =
   "When an Xcode build or test is needed, prefer the `xcode_build` tool — it runs xcodebuild, waits, and returns a real pass/fail verdict with the errors and failed tests. " +
-  "If you start a build another way, `bb xcode run -- xcodebuild …` tracks it and `bb xcode wait <run-id>` blocks for its verdict; never write your own poll loop. " +
+  "If you start a build another way, `alia xcode run -- xcodebuild …` tracks it and `alia xcode wait <run-id>` blocks for its verdict; never write your own poll loop. " +
   "Use xcode_status instead of parsing build logs when checking whether a run passed. " +
   "Live builds render themselves in the prompt stack above the composer, so never announce that a build started and never paste build status into chat — the user is already looking at it.";
 

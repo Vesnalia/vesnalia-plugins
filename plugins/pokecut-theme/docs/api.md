@@ -5,7 +5,7 @@ created: 2026-10-14
 updated: 2026-10-18
 status: active
 confidence: high
-tags: [api, rpc, bb-plugin]
+tags: [api, rpc, alia-plugin]
 sources:
   - contract.ts
   - server.ts
@@ -22,15 +22,15 @@ sources:
 
 # Plugin API
 
-TL;DR: The plugin registers five typed BB RPC methods for chat preferences, message timestamps, and thread environment roots; preference changes also publish a global realtime event.
+TL;DR: The plugin registers five typed VesnALIA RPC methods for chat preferences, message timestamps, and thread environment roots; preference changes also publish a global realtime event.
 
 ## Purpose
 
-The server registers handlers against `rpcContract` (`server.ts:21-54`). The contract declares five methods and their Zod input/output schemas (`contract.ts:24-36`). Calls are made by this plugin's app through the BB SDK (`prefs.ts:8-26`, `app.tsx:55-56`).
+The server registers handlers against `rpcContract` (`server.ts:21-54`). The contract declares five methods and their Zod input/output schemas (`contract.ts:24-36`). Calls are made by this plugin's app through the VesnALIA SDK (`prefs.ts:8-26`, `app.tsx:55-56`).
 
 ## How it works
 
-1. BB invokes the plugin server entry point and provides `BbPluginApi` (`server.ts:1-13`).
+1. VesnALIA invokes the plugin server entry point and provides `AliaPluginApi` (`server.ts:1-13`).
 2. The server registers handlers using the shared contract (`server.ts:21-22`).
 3. The app obtains the typed RPC client through `useRpc` and calls methods from settings or mounted helpers (`prefs.ts:8-17`, `settings-section.tsx:37-47`).
 4. Preference mutations write the normalized value before publishing `prefs-changed` globally (`server.ts:15-19`).
@@ -39,11 +39,11 @@ The server registers handlers against `rpcContract` (`server.ts:21-54`). The con
 
 | Method | Input | Output | Caller and purpose | Auth |
 |---|---|---|---|---|
-| `getPrefs` | Empty object | Complete `Prefs` | App preference hook reads plugin settings (`prefs.ts:8-17`) | BB plugin RPC; no method-specific authorization branch in handler (`server.ts:21-23`) |
-| `setPrefs` | Partial `Prefs` | Complete `Prefs` | Settings UI saves a patch (`settings-section.tsx:37-47`) | BB plugin RPC; no method-specific authorization branch in handler (`server.ts:21-24`) |
-| `resetPrefs` | Empty object | Complete `Prefs` | Settings UI restores defaults (`settings-section.tsx:107-109`) | BB plugin RPC; no method-specific authorization branch in handler (`server.ts:21-24`) |
-| `messageTimes` | 1–8 nonempty thread IDs, each ≤200 chars; `includeHistory` boolean; strict object | Message records: id, numeric `createdAt`, direction `sent`/`received` | Thread view fetches timestamps (`app.tsx:51-59`) | BB plugin RPC; no method-specific authorization branch in handler (`contract.ts:28-31`, `server.ts:28-45`) |
-| `threadRoot` | Nonempty `threadId` ≤200 chars; strict object | Environment id, host id, and path, or `null` | Thread header file-preview helper resolves path (`app.tsx:84-100`) | BB plugin RPC; no method-specific authorization branch in handler (`contract.ts:32-35`, `server.ts:48-53`) |
+| `getPrefs` | Empty object | Complete `Prefs` | App preference hook reads plugin settings (`prefs.ts:8-17`) | VesnALIA plugin RPC; no method-specific authorization branch in handler (`server.ts:21-23`) |
+| `setPrefs` | Partial `Prefs` | Complete `Prefs` | Settings UI saves a patch (`settings-section.tsx:37-47`) | VesnALIA plugin RPC; no method-specific authorization branch in handler (`server.ts:21-24`) |
+| `resetPrefs` | Empty object | Complete `Prefs` | Settings UI restores defaults (`settings-section.tsx:107-109`) | VesnALIA plugin RPC; no method-specific authorization branch in handler (`server.ts:21-24`) |
+| `messageTimes` | 1–8 nonempty thread IDs, each ≤200 chars; `includeHistory` boolean; strict object | Message records: id, numeric `createdAt`, direction `sent`/`received` | Thread view fetches timestamps (`app.tsx:51-59`) | VesnALIA plugin RPC; no method-specific authorization branch in handler (`contract.ts:28-31`, `server.ts:28-45`) |
+| `threadRoot` | Nonempty `threadId` ≤200 chars; strict object | Environment id, host id, and path, or `null` | Thread header file-preview helper resolves path (`app.tsx:84-100`) | VesnALIA plugin RPC; no method-specific authorization branch in handler (`contract.ts:32-35`, `server.ts:48-53`) |
 
 ## Business rules
 
@@ -64,17 +64,17 @@ The server registers handlers against `rpcContract` (`server.ts:21-54`). The con
 ## Failure behavior
 
 - Storage write errors prevent the realtime event because publish follows the awaited KV write (`server.ts:15-19`).
-- `threadRoot` uses `null` for missing environment context; the caller falls back to BB's Alt-click behavior (`server.ts:48-53`, `file-preview-links.ts:54-59`).
+- `threadRoot` uses `null` for missing environment context; the caller falls back to VesnALIA's Alt-click behavior (`server.ts:48-53`, `file-preview-links.ts:54-59`).
 - Timestamp errors propagate through RPC; the UI helper catches fetch failures and retries on a later refresh (`message-times.ts:80-92`).
 
 ## Gotchas
 
-- There are no HTTP routes in this package's manifest or server registration; the exposed API is BB plugin RPC (`package.json:16-27`, `server.ts:21-54`).
-- Auth is supplied by the BB plugin RPC runtime; handlers contain no per-method permission checks (`server.ts:21-54`).
+- There are no HTTP routes in this package's manifest or server registration; the exposed API is VesnALIA plugin RPC (`package.json:16-27`, `server.ts:21-54`).
+- Auth is supplied by the VesnALIA plugin RPC runtime; handlers contain no per-method permission checks (`server.ts:21-54`).
 - The history cap is a server constant and equals 12 timeline pages (`server.ts:10`, `server.ts:33-43`).
 
 <!-- lane-pilot:backlinks -->
 ## Referenced by
 
 - [Architecture](architecture.md)
-- [Pokecut Theme for BB overview](overview.md)
+- [Pokecut Theme for VesnALIA overview](overview.md)

@@ -1,5 +1,5 @@
 import "./check-test-machine.mjs";
-// bb-box-stream's qemu mode against a real QEMU's D-Bus display (#885): QEMU with no guest still shows a
+// alia-box-stream's qemu mode against a real QEMU's D-Bus display (#885): QEMU with no guest still shows a
 // placeholder screen, which it shares as memory with the listener, as it shares a Windows VM's. A QEMU whose D-Bus
 // display stops sharing, or changes its protocol, fails here. It runs where QEMU and swiftc are, as on the Macs that
 // run Windows boxes, and is skipped elsewhere.
@@ -28,11 +28,11 @@ async function until(what: string, check: () => boolean, ms = 30_000): Promise<v
   }
 }
 
-test("bb-box-stream's qemu mode maps QEMU's shared screen through its D-Bus display, and streams it as video (#885)", { skip: !can && "needs macOS, QEMU and swiftc", timeout: 240_000 }, async () => {
+test("alia-box-stream's qemu mode maps QEMU's shared screen through its D-Bus display, and streams it as video (#885)", { skip: !can && "needs macOS, QEMU and swiftc", timeout: 240_000 }, async () => {
   // A short path of its own: Unix sockets have a short limit, and this test needs no other helper.
   const dir = mkdtempSync(join(tmpdir(), "bbbox-qd-"));
   after(() => rmSync(dir, { recursive: true, force: true }));
-  const binary = join(dir, "bb-box-stream");
+  const binary = join(dir, "alia-box-stream");
   const built = spawnSync("xcrun", ["swiftc", "-O", "-o", binary, SWIFT], { encoding: "utf8" });
   assert.equal(built.status, 0, built.stderr);
   const display = 100 + Math.floor(Math.random() * 400);
@@ -47,7 +47,7 @@ test("bb-box-stream's qemu mode maps QEMU's shared screen through its D-Bus disp
   const stream = spawn(binary, ["qemu", String(5900 + display), socket, qmp], { stdio: ["ignore", "ignore", "pipe"] });
   children.push(stream);
   stream.stderr!.on("data", (data) => (log += data));
-  // QEMU shares the screen: a ScanoutMap, whose file descriptor bb-box-stream maps.
+  // QEMU shares the screen: a ScanoutMap, whose file descriptor alia-box-stream maps.
   await until("the shared screen", () => /D-Bus: the desktop is \d+x\d+, shared/.test(log));
   assert.match(log, /serving QEMU's D-Bus display at /);
   const [, width, height] = /the desktop is (\d+)x(\d+), shared/.exec(log)!.map(Number);

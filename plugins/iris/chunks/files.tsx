@@ -1,8 +1,8 @@
 // FileTree, AssetGallery and FontPreview (chunk "assets"). Rules live in
 // core/files.ts and core/font.ts. Listings come from the server (folder_files);
-// sizes, images and font bytes stream from the folder's bb preview URL.
+// sizes, images and font bytes stream from the folder's VesnALIA preview URL.
 
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { Chip, Glyph, InlineError, Shimmer, cn, num, str, useEnv } from "@iris/ui";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { isPendingValue } from "../core/evaluate";
@@ -276,7 +276,7 @@ export function FileTreeView({ props }: ViewProps) {
         )}
       </div>
       {truncated ? <div className="text-[11.5px] text-muted-foreground">Showing the first {limit} files; raise limit (up to 2000) or pick a smaller folder.</div> : null}
-      {folder.status === "ok" && !folder.base ? <div className="text-[11.5px] text-muted-foreground">bb couldn't serve this folder, so sizes are missing.</div> : null}
+      {folder.status === "ok" && !folder.base ? <div className="text-[11.5px] text-muted-foreground">alia couldn't serve this folder, so sizes are missing.</div> : null}
     </div>
   );
 }
@@ -723,7 +723,7 @@ export function FontPreviewView({ props }: ViewProps) {
       </div>
       <div className="grid min-w-0 grid-cols-1 gap-2 @lg/iris:grid-cols-3">
         {[
-          ["Aa Bb Cc", 28],
+          ["Aa VesnALIA Cc", 28],
           ["0123456789", 22],
           ["!?&@#%(){}", 22],
         ].map(([t, s]) => (

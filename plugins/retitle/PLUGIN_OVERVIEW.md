@@ -1,4 +1,4 @@
-bb writes a thread title one time, from your first message. When the work
+alia writes a thread title one time, from your first message. When the work
 moves on, the title stays behind. Retitle writes the title from the
 conversation instead.
 
@@ -8,7 +8,7 @@ conversation instead.
   and writes a short title, one time per thread.
 - **⌘⌥R to rename again.** Press it in any thread, click the pencil button in
   the thread header, or run "Retitle: rename thread from the conversation"
-  from the quick palette. `bb retitle` does the
+  from the quick palette. `alia retitle` does the
   same from a terminal or an agent.
 - **Optional emoji.** Titles can start with one emoji that fits the topic, for
   example "🐛 Fix flaky login test".
@@ -20,7 +20,7 @@ conversation instead.
 ## How it works
 
 For each rename, the plugin starts a short hidden helper thread in the same
-environment as the renamed thread, so bb makes no new worktree. The helper
+environment as the renamed thread, so VesnALIA makes no new worktree. The helper
 reads the start of each message in the conversation, answers with a title, and
 is deleted.
 

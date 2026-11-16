@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   changeRows,
   commitsView,
@@ -18,7 +18,7 @@ import {
   type Workspace,
 } from "./project";
 
-// Shaped like `bb git status <env> --json` on a feature branch.
+// Shaped like `alia git status <env> --json` on a feature branch.
 const workspace: Workspace = {
   checkout: { kind: "branch", branchName: "fix/names", headSha: "dd540cb56147801d7499be67d44ba8120251425b" },
   branch: { currentBranch: "fix/names", defaultBranch: "master" },
@@ -118,7 +118,7 @@ test("environment rows say why figures are missing", () => {
   );
 });
 
-// A fake bb.sdk: one thread on env_a in proj_1; bb--git and bb--github-pr-status answer from fixtures.
+// A fake alia.sdk: one thread on env_a in proj_1; alia--git and alia--github-pr-status answer from fixtures.
 function fakeSdk(calls: { pluginId: string; method: string; input: unknown }[]) {
   const pr = {
     number: 7,
@@ -159,7 +159,7 @@ function fakeSdk(calls: { pluginId: string; method: string; input: unknown }[]) 
       },
     },
   };
-  return sdk as unknown as BbPluginApi["sdk"];
+  return sdk as unknown as AliaPluginApi["sdk"];
 }
 
 test("changes and patches read only the reply thread's environment", async () => {
@@ -168,11 +168,11 @@ test("changes and patches read only the reply thread's environment", async () =>
   const changes = await readChanges(sdk, "thr_1", undefined, undefined);
   assert.ok(changes.ok);
   assert.equal(changes.files[0]!.patch, null);
-  assert.deepEqual(calls[1], { pluginId: "bb--git", method: "files", input: { environmentId: "env_a", target: { type: "all", mergeBaseBranch: "master" }, ignoreWhitespace: false } });
+  assert.deepEqual(calls[1], { pluginId: "alia--git", method: "files", input: { environmentId: "env_a", target: { type: "all", mergeBaseBranch: "master" }, ignoreWhitespace: false } });
   const patch = await readPatch(sdk, "thr_1", changes.target, "src/a.ts", "rev-src/a.ts");
   assert.deepEqual(patch, { ok: true, patch: "@@ -1 +1 @@", truncated: false });
   assert.deepEqual((calls[2]!.input as { keys: string[] }).keys, [JSON.stringify(["env_a", { type: "all", mergeBaseBranch: "master" }, false, "src/a.ts", "rev-src/a.ts"])]);
-  assert.deepEqual(await readChanges(sdk, "thr_unknown", undefined, undefined), { ok: false, error: "BB has no such thread" });
+  assert.deepEqual(await readChanges(sdk, "thr_unknown", undefined, undefined), { ok: false, error: "VesnALIA has no such thread" });
 });
 
 test("pull request and environments map, other projects never appear", async () => {
@@ -201,9 +201,9 @@ test("a plain folder is NOT_GIT, which the components show as a state", async ()
 test("a failing builtin plugin is a value, not a throw", async () => {
   const sdk = fakeSdk([]);
   (sdk.plugins as { callRpc: unknown }).callRpc = async () => {
-    throw new Error("plugin bb--git is disabled");
+    throw new Error("plugin alia--git is disabled");
   };
-  assert.deepEqual(await readCommits(sdk, "thr_1", 10), { ok: false, error: "BB couldn't read the commits: plugin bb--git is disabled" });
+  assert.deepEqual(await readCommits(sdk, "thr_1", 10), { ok: false, error: "VesnALIA couldn't read the commits: plugin alia--git is disabled" });
   const envs = await readEnvironments(sdk, "thr_1");
   assert.ok(envs.ok);
   assert.equal(envs.environments[0]!.note, "Git status unavailable");

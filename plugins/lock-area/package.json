@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-lock-area",
+  "name": "alia-plugin-lock-area",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Lock Area",
     "description": "Use native pane locking, or initialize a tested enhancement with backup and restore.",
     "branding": {
@@ -24,7 +24,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -55,11 +54,6 @@
     "url": "https://github.com/dmitriikapustin"
   },
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin.git",
-    "directory": "plugins/lock-area"
-  },
   "files": [
     "server.ts",
     "app.tsx",
@@ -80,7 +74,24 @@
   ],
   "scripts": {
     "check": "tsc --noEmit",
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "node --experimental-strip-types --test initializer.test.ts"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/lock-area#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/lock-area"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,6 +1,6 @@
 ## What you get
 
-One button in a thread's header copies what you point at in a BB Browser tab. Click
+One button in a thread's header copies what you point at in a VesnALIA Browser tab. Click
 **Copy Browser Element**, pick an element in the page, and its details or picture land on
 your clipboard — ready to paste into a message, an issue, or an agent.
 
@@ -57,7 +57,7 @@ screen, so an image of a secret field is possible. Pick deliberately.
 
 ## Requirements
 
-- BB desktop with the native Browser and Plugin SDK 0.4.48 or newer. The plugin needs
+- VesnALIA desktop with the native Browser and Plugin SDK 0.4.48 or newer. The plugin needs
   `experimental_desktopBrowsers` to attach to a tab. The header button appears only in the
   desktop app: picking an element means clicking it in the native Browser view, which a
   browser client cannot do, so the control is not offered on the web client.

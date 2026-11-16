@@ -113,7 +113,7 @@ describe("My PRs", () => {
     });
     const banner = await find(slot.container, "[data-auto-agent='off']");
     expect(banner.textContent).toContain("1 of your 5 open PRs has no agent");
-    expect(banner.textContent).toContain("1 of them was opened by a bb thread");
+    expect(banner.textContent).toContain("1 of them was opened by a VesnALIA thread");
     fireEvent.click(within(banner).getByRole("button", { name: "Turn on auto agent" }));
     await waitFor(() => expect(callsTo(slot, "setSettings")).toEqual([{ autoAgent: true }]));
     await find(slot.container, "[data-auto-agent='on']");
@@ -139,7 +139,7 @@ describe("My PRs", () => {
     const banner = await find(view, "[data-status]");
     fireEvent.click(within(banner).getByRole("button", { name: "Nudge reviewers" }));
     route(formatRoute({ view: "mine", key: asking.key }));
-    const box = within(view).getByRole("textbox", { name: "Comment on bb#4" }) as HTMLTextAreaElement;
+    const box = within(view).getByRole("textbox", { name: "Comment on VesnALIA#4" }) as HTMLTextAreaElement;
     await waitFor(() => expect(box.value).toBe("@wnagele could one of you take a look when you have a moment? It is a M change: +86 −12."));
     expect(document.activeElement).toBe(box);
   });

@@ -3,7 +3,7 @@ import * as path from "node:path";
 import { describe, expect, it } from "vitest";
 
 // The frontend bundler cannot resolve server-only modules, so a value import
-// from src/server or bare @get-bb/plugin-sdk breaks the marketplace build.
+// from src/server or bare @vesnalia/plugin-sdk breaks the marketplace build.
 const ROOT = path.resolve(__dirname, "..");
 
 function sources(dir: string): string[] {
@@ -23,7 +23,7 @@ describe("browser bundle", () => {
   it("never value-imports server code from the app or shared modules", () => {
     const offenders = [...sources(path.join(ROOT, "app")), ...sources(path.join(ROOT, "shared"))].flatMap((file) =>
       valueImports(file)
-        .filter((spec) => spec === "@get-bb/plugin-sdk" || /(^|\/)server(\/|$)/.test(spec))
+        .filter((spec) => spec === "@vesnalia/plugin-sdk" || /(^|\/)server(\/|$)/.test(spec))
         .map((spec) => `${path.relative(ROOT, file)} -> ${spec}`),
     );
     expect(offenders).toEqual([]);

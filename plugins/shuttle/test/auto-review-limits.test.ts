@@ -201,7 +201,7 @@ describe("auto reviews at once", () => {
     const held = h.port.holdSpawn();
     const retry = h.shuttle.onThreadFailed(first, { error: "Provisioning thread failed", environmentId: null });
     await held.entered;
-    // bb is still setting up the new thread: the place is taken.
+    // VesnALIA is still setting up the new thread: the place is taken.
     await h.shuttle.sync();
     expect(h.shuttle.inbox().autoQueue.map((p) => p.number)).toEqual([4]);
     held.release();
@@ -253,15 +253,15 @@ describe("stopping reviews", () => {
     expect(h.port.threads.get(a!)?.archived).toBe(false);
   });
 
-  it("ends the review even when bb will not stop its thread, and says so", async () => {
+  it("ends the review even when VesnALIA will not stop its thread, and says so", async () => {
     const h = harness(testConfig({ autoReview: AUTO }));
     const [a] = await running(h, [3]);
     h.port.failStop.add(a!);
     const result = await h.shuttle.stopReviews();
     expect(result.failed).toEqual([{ threadId: a, step: "stop", error: "stop refused" }]);
     expect(h.store.reviewsOf(idOf(h, 3)).map((r) => r.ended_by)).toEqual(["stopped"]);
-    expect(h.shuttle.activity().find((e) => e.kind === "review_stopped")?.text).toBe("You stopped the review of acme/app#3; bb could not stop \u201cReview acme/app#3\u201d: stop refused");
-    // Stopping it again tries bb once more.
+    expect(h.shuttle.activity().find((e) => e.kind === "review_stopped")?.text).toBe("You stopped the review of acme/app#3; VesnALIA could not stop \u201cReview acme/app#3\u201d: stop refused");
+    // Stopping it again tries VesnALIA once more.
     h.port.failStop.clear();
     const again = await h.shuttle.stopReviews(["forge:acme/app#3"]);
     expect(again).toMatchObject({ stopped: [{ number: 3 }], failed: [] });
@@ -279,7 +279,7 @@ describe("stopping reviews", () => {
     const result = await h.shuttle.stopReviews(undefined, true);
     expect(h.port.lifecycle).toEqual(["stop thr_c1", `stop ${a}`]);
     expect(result.failed).toEqual([{ threadId: "thr_c2", step: "stop", error: "stop refused" }, { threadId: a, step: "archive", error: "archive refused" }]);
-    expect(h.shuttle.activity(1)[0]!.text).toBe("You stopped the review of acme/app#3; bb could not archive \u201cReview acme/app#3\u201d: archive refused; bb could not stop a thread under it: stop refused");
+    expect(h.shuttle.activity(1)[0]!.text).toBe("You stopped the review of acme/app#3; VesnALIA could not archive \u201cReview acme/app#3\u201d: archive refused; VesnALIA could not stop a thread under it: stop refused");
   });
 
   it("leaves alone a review that starts in the thread while the threads under it are listed", async () => {

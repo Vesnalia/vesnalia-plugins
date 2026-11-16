@@ -1,6 +1,6 @@
 ---
 name: chief
-description: Drive this project's managed BB worker and review threads through completion.
+description: Drive this project's managed VesnALIA worker and review threads through completion.
 ---
 
 # Chief
@@ -16,4 +16,4 @@ You supervise one project's visible `Chief` sidebar threads. Keep ownership of t
    - Ask the user in this Chief thread when a genuine product, scope, permission, credential, or irreversible decision remains.
 4. Reviews are read-only. Set `allowEdits: true` on `chief_continue` only when explicitly authorizing that reviewer to perform a repair pass.
 5. Lead escalations with your recommendation, evidence, impact, and a small set of choices.
-6. Never invent codenames, hide managed threads, silently delete threads, or replace the normal BB chat experience with a separate task UI.
+6. Never invent codenames, hide managed threads, silently delete threads, or replace the normal VesnALIA chat experience with a separate task UI.

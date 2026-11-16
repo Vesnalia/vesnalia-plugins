@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useBbNavigate, useRpc } from "@bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { ReloadIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { rpcContract } from "../../server";
@@ -523,7 +523,7 @@ function ProjectLabel({
   path: string;
   threadId: string | null;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   if (!threadId) {
     return <span title={path || undefined}>{name}</span>;
   }

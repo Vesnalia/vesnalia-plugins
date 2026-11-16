@@ -5,8 +5,8 @@
 // threads.update({ parentThreadId }). The host owns the write itself, so the
 // record store here is only a stub of the two SDK methods the handler uses.
 import { describe, expect, it } from "vitest";
-import type { FakePluginHost } from "@get-bb/plugin-sdk/testing";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { FakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 
 type Row = { id: string; parentThreadId: string | null; isArchived?: boolean };
@@ -34,7 +34,7 @@ async function setup(rows: Row[]): Promise<RpcHost> {
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   return {
     host,
     updates,

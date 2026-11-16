@@ -3,7 +3,7 @@
 // (Quiz, Flashcards, Walkthrough). Styles: inputs.css. Pure logic: inputs/logic.ts.
 import { useEffect, useId, useState } from "react";
 import { defineComponent, reactive, useStateField } from "@openuidev/react-lang";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { z } from "zod/v4";
 import { ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, Copy, CornerDownRight, Minus, Pause, Play, Plus, RotateCcw, Star, X } from "lucide-react";
 import { Button, cx, useAsk, useStreaming } from "./kit";

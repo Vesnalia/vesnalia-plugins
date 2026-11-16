@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const projectIdSchema = z.string().regex(/^[a-zA-Z0-9_-]+$/).max(128);
@@ -20,27 +20,27 @@ export const rpcContract = defineRpcContract({
   reset: { input: z.object({ projectId: projectIdSchema }).strict(), output: z.null() },
 });
 
-export default function plugin(bb: BbPluginApi) {
-  bb.rpc.register(rpcContract, {
+export default function plugin(alia: AliaPluginApi) {
+  alia.rpc.register(rpcContract, {
     list: async () => {
-      const keys = await bb.storage.kv.list("theme:");
+      const keys = await alia.storage.kv.list("theme:");
       const entries = await Promise.all(keys.map(async (key) => {
         const id = projectIdSchema.safeParse(key.slice(6));
-        const theme = storedThemeSchema.safeParse(await bb.storage.kv.get(key));
+        const theme = storedThemeSchema.safeParse(await alia.storage.kv.get(key));
         return id.success && theme.success ? [[id.data, theme.data] as const] : [];
       }));
       return { themes: Object.fromEntries(entries.flat()) };
     },
     save: async ({ projectId, theme }) => {
-      await bb.sdk.projects.get({ projectId });
-      await bb.storage.kv.set(`theme:${projectId}`, theme);
-      bb.realtime.publish("themes-changed", { projectId });
+      await alia.sdk.projects.get({ projectId });
+      await alia.storage.kv.set(`theme:${projectId}`, theme);
+      alia.realtime.publish("themes-changed", { projectId });
       return theme;
     },
     reset: async ({ projectId }) => {
-      await bb.sdk.projects.get({ projectId });
-      await bb.storage.kv.delete(`theme:${projectId}`);
-      bb.realtime.publish("themes-changed", { projectId });
+      await alia.sdk.projects.get({ projectId });
+      await alia.storage.kv.delete(`theme:${projectId}`);
+      alia.realtime.publish("themes-changed", { projectId });
       return null;
     },
   });

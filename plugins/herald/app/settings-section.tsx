@@ -6,7 +6,7 @@
  * stored configuration. So does the length of the Herald page's history,
  * stored beside them.
  */
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -92,7 +92,7 @@ function ModelSentence({ config, onSave }: { config: StoredConfig; onSave: (next
     <section className="space-y-3">
       <Heading title="Model-written sentences">
         Applies while <em>Write each sentence with a model</em> is on above. The tool must be installed and logged in on the Mac running
-        bb; it runs there once per announcement with the prompt on standard input, and the last paragraph of its standard output becomes
+        VesnALIA; it runs there once per announcement with the prompt on standard input, and the last paragraph of its standard output becomes
         the sentence.
       </Heading>
       <div className="space-y-1">
@@ -115,7 +115,7 @@ function ModelSentence({ config, onSave }: { config: StoredConfig; onSave: (next
           <p className="text-xs font-semibold">Custom command</p>
           <p className="text-xs text-muted-foreground">
             Filled in from the tool you had selected, to start from. No shell runs it: quote as in a shell, but ~ and $VARIABLES are not
-            expanded, and it sees the bb server&apos;s environment. Blank means the plain sentence.
+            expanded, and it sees the VesnALIA server&apos;s environment. Blank means the plain sentence.
           </p>
           <TextField label="Custom command" stored={config.sentenceCommand} rows={3} onSave={(sentenceCommand) => onSave({ sentenceCommand })} />
         </div>
@@ -221,7 +221,7 @@ export function HeraldSettingsSection() {
       {canPlaySpeech() ? (
         <section className="space-y-3">
           <Heading title="Voices">
-            Shared by every device. To add Mac voices, install them on the Mac running bb under System Settings → Accessibility →
+            Shared by every device. To add Mac voices, install them on the Mac running VesnALIA under System Settings → Accessibility →
             Spoken Content.
           </Heading>
           <div className="space-y-1">
@@ -237,7 +237,7 @@ export function HeraldSettingsSection() {
                 onChange={(say) => saveVoices({ ...config.voices, say })}
               />
             ) : (
-              <p className="text-xs text-muted-foreground">bb does not run on a Mac here, so the browser voice is used.</p>
+              <p className="text-xs text-muted-foreground">alia does not run on a Mac here, so the browser voice is used.</p>
             )}
           </div>
           <div className="space-y-1">

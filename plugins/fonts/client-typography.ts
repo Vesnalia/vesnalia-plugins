@@ -43,7 +43,7 @@ export class TypographyController {
 
   constructor(private readonly root: HTMLElement = document.documentElement) {
     this.styleElement = document.createElement("style");
-    this.styleElement.dataset.bbFonts = "";
+    this.styleElement.dataset.aliaFonts = "";
     document.head.appendChild(this.styleElement);
   }
 
@@ -51,7 +51,7 @@ export class TypographyController {
     this.styleElement.textContent = "";
     const computed = getComputedStyle(this.root);
     const themeProperties = Object.fromEntries(ROOT_TOKENS.map((token) => [token, computed.getPropertyValue(token).trim()]));
-    themeProperties["--bb-interface-line-height"] = measureTokenLineHeight("--text-sm", "--text-sm--line-height");
+    themeProperties["--alia-interface-line-height"] = measureTokenLineHeight("--text-sm", "--text-sm--line-height");
     const plan = buildTypographyPlan(config, themeProperties);
     this.current = config;
     const rootRule = Object.entries(plan.rootProperties)

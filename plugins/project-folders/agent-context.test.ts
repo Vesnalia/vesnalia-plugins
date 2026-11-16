@@ -7,7 +7,7 @@ const rules = () => "Section rule: deploy after edits.";
 describe("agentConfiguration", () => {
   it("gives an owner's chat the chat-files line, the section rules and the skill", () => {
     const out = agentConfiguration({ ...base, origin: { kind: null, pluginId: null } }, rules);
-    expect(out.instructions).toContain("/w/.bb/chats/thr_a");
+    expect(out.instructions).toContain("/w/.vesnalia/chats/thr_a");
     expect(out.instructions).toContain("Section rule");
     expect(out.skills).toEqual(["project-folders"]);
   });

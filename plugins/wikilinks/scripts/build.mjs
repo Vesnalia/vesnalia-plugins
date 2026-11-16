@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const result = spawnSync(process.env.BB_CLI || "bb", ["plugin", "build"], {
+const result = spawnSync(process.env.ALIA_CLI || "alia", ["plugin", "build"], {
   cwd: fileURLToPath(new URL("..", import.meta.url)),
   stdio: "inherit",
 });

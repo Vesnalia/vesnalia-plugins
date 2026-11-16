@@ -13,9 +13,9 @@
  *
  * This mirrors the SDK's `experimental_readProcessIdentity` (same `ps` fields,
  * same arithmetic, plus `-ww`). It is reimplemented rather than imported because that
- * function lives on the `@get-bb/plugin-sdk/host` subpath, which would make
+ * function lives on the `@vesnalia/plugin-sdk/host` subpath, which would make
  * the SDK a runtime dependency of the host bundle; the root helpers this entry
- * uses are stubbed in by bb's builder.
+ * uses are stubbed in by VesnALIA's builder.
  */
 
 import { execFile } from "node:child_process";

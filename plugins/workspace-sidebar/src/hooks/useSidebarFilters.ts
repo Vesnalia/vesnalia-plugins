@@ -3,7 +3,7 @@ import { PROJECT_FILTER_KEY } from "./useViewState";
 
 // v2: the workspace dimension is gone, so a stored v1 filter would narrow the
 // list to a container that no longer exists.
-export const SIDEBAR_FILTERS_KEY = "bb-workspace-sidebar:filters:v2";
+export const SIDEBAR_FILTERS_KEY = "alia-workspace-sidebar:filters:v2";
 
 interface SidebarFilters {
   projectIds: string[];
@@ -12,7 +12,7 @@ interface SidebarFilters {
 const ALL: SidebarFilters = { projectIds: [] };
 
 // Validated by hand: pulling zod into the frontend bundle costs ~450 KB, which
-// delays the sidebar replacing bb's list on every load.
+// delays the sidebar replacing VesnALIA's list on every load.
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
 }

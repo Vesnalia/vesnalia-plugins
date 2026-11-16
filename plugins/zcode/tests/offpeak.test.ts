@@ -73,10 +73,10 @@ function fakeClient(options?: {
 
 let dir: string;
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), "bb-zcode-offpeak-"));
+  dir = mkdtempSync(join(tmpdir(), "alia-zcode-offpeak-"));
 });
 afterEach(() => {
-  delete process.env.BB_BRIDGE_DIR;
+  delete process.env.ALIA_BRIDGE_DIR;
 });
 
 // ---- Wire client shapes.
@@ -190,7 +190,7 @@ it("creates a queued task with a taken ticket and classifies failures", async ()
   expect(client.taken).toHaveLength(1);
   // Gateway refusal classes map to the native error contract.
   const limited = createOffPeakService({
-    storeDir: mkdtempSync(join(tmpdir(), "bb-zcode-offpeak-")),
+    storeDir: mkdtempSync(join(tmpdir(), "alia-zcode-offpeak-")),
     client: fakeClient({
       takeTicketResult: () =>
         Promise.reject(new OffPeakServerError("quota", 429, 3103, 999)),
@@ -232,7 +232,7 @@ it("lists workspace-scoped tasks with the protocol snapshot shape", async () => 
   expect(listA.tasks[0].sessionId).toBeUndefined();
   expect(listA.tasks[0].queuePosition).toBe(4);
   await expect(s.handle("offPeak/list", {}, {})).rejects.toThrow(
-    /No active bb session/,
+    /No active alia session/,
   );
 });
 
@@ -385,7 +385,7 @@ function offPeakHarness(
   credentialsMode: "ok" | "throw" = "ok",
   attachBackgroundJob = false,
 ) {
-  const cwd = mkdtempSync(join(tmpdir(), "bb-zcode-offpeak-bridge-"));
+  const cwd = mkdtempSync(join(tmpdir(), "alia-zcode-offpeak-bridge-"));
   const messages: Record<string, unknown>[] = [];
   const calls: Array<{ method: string; params: Record<string, unknown> }> = [];
   const native = new Map<string, { cb?: ClientCallbacks; closed?: boolean }>();
@@ -541,7 +541,7 @@ const offPeakOptions = {
 };
 
 it("dispatches a ready idle-time task with the idle-plan execution block", async () => {
-  process.env.BB_BRIDGE_DIR = dir;
+  process.env.ALIA_BRIDGE_DIR = dir;
   const harness = offPeakHarness(dir);
   const { bridge, calls, native, cwd, until, rpc } = harness;
   await rpc("thread/start", {
@@ -616,7 +616,7 @@ it("dispatches a ready idle-time task with the idle-plan execution block", async
 });
 
 it("continues a task after a 3102 window expiry with the resume prompt", async () => {
-  process.env.BB_BRIDGE_DIR = dir;
+  process.env.ALIA_BRIDGE_DIR = dir;
   const harness = offPeakHarness(dir);
   const { bridge, calls, native, cwd, until, rpc } = harness;
   await rpc("thread/start", {
@@ -744,7 +744,7 @@ it("retakes tickets the gateway reports as not_found", async () => {
 });
 
 it("completes a task whose successful reply merely mentions 3102", async () => {
-  process.env.BB_BRIDGE_DIR = dir;
+  process.env.ALIA_BRIDGE_DIR = dir;
   const harness = offPeakHarness(
     dir,
     "Fixed issue 3102 and ticket 31020 today",
@@ -818,7 +818,7 @@ it("busy deferrals back off from 30s and never burn failure strikes", async () =
 });
 
 it("fails a task when reading credentials throws instead of stranding the claim", async () => {
-  process.env.BB_BRIDGE_DIR = dir;
+  process.env.ALIA_BRIDGE_DIR = dir;
   const harness = offPeakHarness(dir, "done", "throw");
   const { bridge, calls, native, cwd, until, rpc } = harness;
   await rpc("thread/start", {
@@ -896,7 +896,7 @@ it("a cancelled task stays cancelled when dispatch markers arrive late", async (
 });
 
 it("a creation whose persistence fails never becomes dispatchable", async () => {
-  const dir2 = mkdtempSync(join(tmpdir(), "bb-zcode-offpeak-persist-"));
+  const dir2 = mkdtempSync(join(tmpdir(), "alia-zcode-offpeak-persist-"));
   const client = fakeClient();
   const s = createOffPeakService({ storeDir: dir2, client });
   // First create succeeds so the store loads and the file exists.
@@ -929,7 +929,7 @@ it("a creation whose persistence fails never becomes dispatchable", async () => 
 });
 
 it("rolls the in-memory state back when a marker write fails", async () => {
-  const dir2 = mkdtempSync(join(tmpdir(), "bb-zcode-offpeak-marker-"));
+  const dir2 = mkdtempSync(join(tmpdir(), "alia-zcode-offpeak-marker-"));
   const s = createOffPeakService({ storeDir: dir2, client: fakeClient() });
   const created = record(
     await s.handle(
@@ -995,7 +995,7 @@ it("polls ticket status in gateway-sized batches and preserves concurrent cancel
 });
 
 it("does not send a task into a thread that was rebound to another session", async () => {
-  process.env.BB_BRIDGE_DIR = dir;
+  process.env.ALIA_BRIDGE_DIR = dir;
   const harness = offPeakHarness(dir);
   const { bridge, calls, native, cwd, until, rpc } = harness;
   await rpc("thread/start", {
@@ -1039,7 +1039,7 @@ it("does not send a task into a thread that was rebound to another session", asy
 });
 
 it("keeps the dispatcher-owned child alive while a run's background work is active", async () => {
-  process.env.BB_BRIDGE_DIR = dir;
+  process.env.ALIA_BRIDGE_DIR = dir;
   const harness = offPeakHarness(dir, "done", "ok", true);
   const { bridge, calls, native, cwd, until, rpc } = harness;
   // The fake snapshot gains a running background job after the off-peak
@@ -1083,7 +1083,7 @@ it("keeps the dispatcher-owned child alive while a run's background work is acti
 });
 
 it("dispatches a /compact prompt natively instead of compacting without the ticket", async () => {
-  process.env.BB_BRIDGE_DIR = dir;
+  process.env.ALIA_BRIDGE_DIR = dir;
   const harness = offPeakHarness(dir);
   const { bridge, calls, native, cwd, until, rpc } = harness;
   await rpc("thread/start", {
@@ -1136,7 +1136,7 @@ it("dispatches a /compact prompt natively instead of compacting without the tick
 });
 
 it("dispatches a management-command prompt natively instead of intercepting it", async () => {
-  process.env.BB_BRIDGE_DIR = dir;
+  process.env.ALIA_BRIDGE_DIR = dir;
   const harness = offPeakHarness(dir);
   const { bridge, calls, native, cwd, until, rpc } = harness;
   await rpc("thread/start", {
@@ -1184,7 +1184,7 @@ it("dispatches a management-command prompt natively instead of intercepting it",
 // ---- Review round 9: cold-dispatch rebind, background settle release, single-flight retake.
 
 it("fails a cold dispatch when the thread was rebound and released", async () => {
-  process.env.BB_BRIDGE_DIR = dir;
+  process.env.ALIA_BRIDGE_DIR = dir;
   const harness = offPeakHarness(dir);
   const { bridge, calls, native, cwd, until, rpc } = harness;
   await rpc("thread/start", {
@@ -1234,7 +1234,7 @@ it("fails a cold dispatch when the thread was rebound and released", async () =>
 });
 
 it("releases a dispatcher-owned child once its background work settles", async () => {
-  process.env.BB_BRIDGE_DIR = dir;
+  process.env.ALIA_BRIDGE_DIR = dir;
   const harness = offPeakHarness(dir, "done", "ok", true);
   const { bridge, calls, native, cwd, until, rpc, background } = harness;
   await rpc("thread/start", {
@@ -1452,7 +1452,7 @@ it("a 3102 expiry for an already-replaced ticket keeps the replacement", async (
 // ---- Review round 12: slot leak on throwing permanent-failure persistence.
 
 it("releases the dispatch slot even when recording a permanent failure throws", async () => {
-  process.env.BB_BRIDGE_DIR = dir;
+  process.env.ALIA_BRIDGE_DIR = dir;
   const harness = offPeakHarness(dir, "done", "ok");
   const { bridge, calls, native, cwd, until, rpc, client } = harness;
   await rpc("thread/start", {

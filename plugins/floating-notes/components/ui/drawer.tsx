@@ -51,8 +51,8 @@ const DrawerOverlay = React.forwardRef<
       className,
     )}
     // Inline: arbitrary z utilities do not resolve at this portal boundary
-    // (bb wraps plugin utilities in @scope), and this must clear the
-    // floating sheet's [53,64] band while staying under bb dialogs (70).
+    // (VesnALIA wraps plugin utilities in @scope), and this must clear the
+    // floating sheet's [53,64] band while staying under VesnALIA dialogs (70).
     style={{ zIndex: 66, ...style }}
     {...props}
   />

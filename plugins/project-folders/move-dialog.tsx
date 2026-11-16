@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useRpc, useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRpc, useRealtime } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Folder } from "./server";
 import {
   Dialog,
@@ -193,7 +193,7 @@ export function MoveDialog({
               <>
                 <p className="text-sm text-muted-foreground mb-3">
                   {t(
-                    "Вся папка переедет вместе со скрытыми файлами и архивом. Старый путь останется ссылкой для существующих чатов. История в базе BB остаётся в BB.",
+                    "Вся папка переедет вместе со скрытыми файлами и архивом. Старый путь останется ссылкой для существующих чатов. История в базе ALIA остаётся в ALIA.",
                   )}
                 </p>
                 <p className="text-sm text-muted-foreground mb-3">

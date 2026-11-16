@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 interface WorkflowAgent {
   id: string;
@@ -22,7 +22,7 @@ export interface WorkflowAgentsEntry {
   unavailable: boolean;
 }
 
-/** Present workflow-owned threads to the existing tree without changing BB ownership. */
+/** Present workflow-owned threads to the existing tree without changing VesnALIA ownership. */
 export function withWorkflowThreads(
   threads: readonly PluginSidebarThread[],
   entries: ReadonlyMap<string, WorkflowAgentsEntry>,
@@ -62,7 +62,7 @@ export function withWorkflowThreads(
         isUnread: false, isPinned: false, pinnedAt: null, pinSortKey: null,
         isArchived: false, archivedAt: null,
         href: `/projects/${origin.projectId}/threads/${id}`,
-        // bb keeps workflow workers out of its own list; this row exists so the
+        // VesnALIA keeps workflow workers out of its own list; this row exists so the
         // tree can nest them under the thread that runs them.
         isHidden: true,
         // Workflow workers reuse their origin's environment by contract.

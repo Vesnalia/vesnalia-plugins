@@ -1,7 +1,7 @@
 // Wires server.ts to the real host entry through the SDK fake host. Only
-// BB thread/environment identity comes from fixtures; git and gt are real.
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+// VesnALIA thread/environment identity comes from fixtures; git and gt are real.
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { createHostEntry } from "../host";
 import type { Runner } from "../lib/process";
 import plugin from "../server";
@@ -48,7 +48,7 @@ export async function startServer(world: World, runner: Runner = testRunner) {
     experimental_watch: async () => ({ dispose: async () => {} }),
   });
   const notFound = (what: string) => Object.assign(new Error(`${what} not found`), { status: 404 });
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "graphite-stack",
     experimental_hostEntry: true,
     sdk: {
@@ -79,10 +79,10 @@ export async function startServer(world: World, runner: Runner = testRunner) {
     experimental_callHostRpc: ({ method, input, signal }) =>
       hostHarness.experimental_call(method as never, input as never, signal ? { signal } : undefined),
   });
-  await plugin(bb);
+  await plugin(alia);
   const call = <T = any>(method: string, input?: unknown) => harness.behavior.callRpc(method, input) as Promise<T>;
   return {
-    bb,
+    alia,
     harness,
     call,
     dispose: async () => {

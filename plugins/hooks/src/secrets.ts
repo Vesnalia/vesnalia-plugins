@@ -37,7 +37,7 @@ export function referencedSecrets(hooks: readonly HookDefinition[]): Set<string>
 
 /** Environment variable a command hook reads a secret from. */
 export function envNameFor(name: string): string {
-  return `BB_SECRET_${name.toUpperCase().replace(/[^A-Z0-9]+/g, "_")}`;
+  return `ALIA_SECRET_${name.toUpperCase().replace(/[^A-Z0-9]+/g, "_")}`;
 }
 
 export function generateKey(): string {
@@ -75,7 +75,7 @@ export const SECRET_MIGRATIONS = [
 
 export interface SecretInfo {
   name: string;
-  /** Created by `bb hooks use` for a template parameter; removed with its hooks. */
+  /** Created by `alia hooks use` for a template parameter; removed with its hooks. */
   managed: boolean;
   updatedAt: number;
 }

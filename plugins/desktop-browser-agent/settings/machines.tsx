@@ -39,7 +39,7 @@ function setupChecks(host: Host, testedVersion: string): SetupCheck[] {
   const checks: SetupCheck[] = [
     {
       label: "Machine connection",
-      detail: host.status === "connected" ? undefined : "Bring this machine online in bb",
+      detail: host.status === "connected" ? undefined : "Bring this machine online in VesnALIA",
       state: host.status === "connected" ? "complete" : "required",
     },
     {

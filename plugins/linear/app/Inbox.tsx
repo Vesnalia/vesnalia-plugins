@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { useBbNavigate, useRealtime } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -20,7 +20,7 @@ import { useAsync, useLinearRpc } from "./rpc.js";
  */
 export function InboxSegment() {
   const rpc = useLinearRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
 
   const inbox = useAsync(
     useCallback(async () => rpc.call("inbox", {}), [rpc]),

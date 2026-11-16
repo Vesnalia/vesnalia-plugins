@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -13,8 +13,8 @@ import { testStore } from "./test-store.test-support";
 const dirs: string[] = [];
 afterEach(async () => { await Promise.all(dirs.splice(0).map((path) => rm(path, { recursive: true, force: true }))); });
 function setup() {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { spawn: async () => { throw new Error("fixture worker"); } } } });
-  return { bb, store: testStore(bb), gh: { runGit, runGh: vi.fn() } };
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { spawn: async () => { throw new Error("fixture worker"); } } } });
+  return { alia, store: testStore(alia), gh: { runGit, runGh: vi.fn() } };
 }
 async function repository() {
   const cwd = await mkdtemp(join(tmpdir(), "code-review-workspace-"));
@@ -57,7 +57,7 @@ test("--base before the target parses correctly and option errors never invoke g
   expect(git).not.toHaveBeenCalled();
 });
 
-test("missing cwd cannot accidentally review the BB server working directory", async () => {
+test("missing cwd cannot accidentally review the VesnALIA server working directory", async () => {
   const deps = setup();
   const git = vi.fn();
   expect((await runReviewCommand({ ...deps, gh: { ...deps.gh, runGit: git } }, ["HEAD"], { projectId: "p1" })).exitCode).toBe(2);
@@ -65,9 +65,9 @@ test("missing cwd cannot accidentally review the BB server working directory", a
 });
 
 test("checkForUpdates says when a local review's code changed since its guide, unless its switch is off or its checkout is gone", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   const cwd = await repository();
   await store.saveReview({ targetKey: "local", kind: "ref", gitRef: "HEAD", cwd, status: "ready", createdAt: 1, projectId: "p1" });
   await store.savePatch("local", ensureGitHeaders((await runGit(gitDiffArgs("HEAD"), { cwd })).stdout));

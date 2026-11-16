@@ -1,5 +1,5 @@
 import { useEffect, useState, type ChangeEvent } from 'react';
-import { definePluginApp, useSettings } from '@get-bb/plugin-sdk/app';
+import { definePluginApp, useSettings } from '@vesnalia/plugin-sdk/app';
 import { TypewriterAudio, mountTyping, type Preferences } from './audio';
 import { loadPack, readPack, savePack, type Sample } from './samples';
 import { bundledSoundPack, withBundledSounds } from './bundled';
@@ -48,7 +48,7 @@ function SoundSettings() {
     finally { setBusy(false); }
   }
   return <section className="typewriter-settings">
-    <p>Mechanical clicks for typing inside BB. No microphone access or macOS Input Monitoring permission is needed.</p>
+    <p>Mechanical clicks for typing inside VesnALIA. No microphone access or macOS Input Monitoring permission is needed.</p>
     <p>IBM Selectric WAV sounds are included and enabled on a new install. Turn off other typewriter helpers to avoid duplicate clicks.</p>
     <div className="typewriter-pack">
       <strong>{pack.length ? 'Custom WAV pack' : 'IBM Selectric (included)'}</strong>

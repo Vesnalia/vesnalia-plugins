@@ -15,7 +15,7 @@ behind.
   browse-and-search picker over the plugin's curated MIT-licensed HugeIcons
   pool. The custom JSON remains available for CLI and advanced use. Changes
   need no code edit or reload.
-- **A `bb preset-buttons` command** to inspect the active presets and switch
+- **A `alia preset-buttons` command** to inspect the active presets and switch
   sets from a terminal or an agent.
 
 ## What a preset can set
@@ -35,7 +35,7 @@ and the plugin says so rather than pretending it succeeded.
 ## How it works
 
 The buttons are a plugin composer customization scoped to the New thread
-composer. Applying a preset uses BB's own `experimental_setSelection`, so the
+composer. Applying a preset uses VesnALIA's own `experimental_setSelection`, so the
 result is identical to the user picking the same values by hand — including
 every reconciliation the pickers normally apply.
 
@@ -48,4 +48,4 @@ that truncates under pressure, not the strip.
 ## For agents
 
 The bundled skill tells an agent to read the active presets with
-`bb preset-buttons list` and switch sets with `bb preset-buttons use`.
+`alia preset-buttons list` and switch sets with `alia preset-buttons use`.

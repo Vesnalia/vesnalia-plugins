@@ -1,14 +1,14 @@
 # Distribution and marketplace
 
-Public repository: https://github.com/kujolang/bb-kujo. The root is directly installable as a bb plugin; generated assets are committed. `marketplace.json` uses the current **schemaVersion 2**, supporting categories and screenshots. The native manifest, bounded engines, local icon, attribution and package allowlist are included.
+Public repository: https://github.com/kujolang/bb-kujo. The root is directly installable as a VesnALIA plugin; generated assets are committed. `marketplace.json` uses the current **schemaVersion 2**, supporting categories and screenshots. The native manifest, bounded engines, local icon, attribution and package allowlist are included.
 
 ```sh
-bb marketplace add https://raw.githubusercontent.com/kujolang/bb-kujo/main/marketplace.json
-bb plugin install bb-kujo@kujo
-bb theme set plugin:bb-kujo:kujo
+alia marketplace add https://raw.githubusercontent.com/kujolang/bb-kujo/main/marketplace.json
+alia plugin install alia-kujo@kujo
+alia theme set plugin:alia-kujo:kujo
 ```
 
-This is a self-hosted Kujo catalog. It is not an approved listing in bb-community. Community submission/review remains a separate external action. Adding a catalog installs nothing.
+This is a self-hosted Kujo catalog. It is not an approved listing in alia-community. Community submission/review remains a separate external action. Adding a catalog installs nothing.
 
 Regenerate metadata and audit packaging:
 

@@ -1,9 +1,9 @@
 // Shared fake-host scaffolding for the link-RPC test suites: a
 // createFakePluginHost host with an in-memory metadata namespace stubbing
 // the threads.* SDK methods, plus a links reader for assertions.
-import type { JsonValue } from "@get-bb/plugin-sdk";
-import type { FakePluginHost } from "@get-bb/plugin-sdk/testing";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
+import type { FakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../../server";
 import { LINK_METADATA_KEY, parseLinkedIssues } from "../../lib/link-metadata";
 
@@ -54,7 +54,7 @@ export async function setup(opts: {
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   return {
     host,
     harness: host.harness,

@@ -1,31 +1,31 @@
 # Noted
 
-Noted is a [bb](https://getbb.app) plugin for reviewing HTML and Markdown artifacts inside the thread side panel. Select an element or a text range, queue feedback, and send the batch to a bb thread.
+Noted is a [VesnALIA](https://getbb.app) plugin for reviewing HTML and Markdown artifacts inside the thread side panel. Select an element or a text range, queue feedback, and send the batch to a VesnALIA thread.
 
-Noted is built on [Lavish](https://github.com/kunchenguid/lavish-axi) by Kun Chen. It vendors Lavish's in-artifact annotation SDK unchanged and connects the review loop to bb threads.
+Noted is built on [Lavish](https://github.com/kunchenguid/lavish-axi) by Kun Chen. It vendors Lavish's in-artifact annotation SDK unchanged and connects the review loop to VesnALIA threads.
 
 ## Status
 
 v0.2 supports:
 
-- HTML and rendered Markdown review in the bb side panel.
+- HTML and rendered Markdown review in the VesnALIA side panel.
 - Element and text-range annotations, with annotation mode toggled by
   Cmd/Ctrl+I or the **Annotate** switch.
 - Queue and steer feedback delivery.
 - Revision capture after agent turns.
 - Optional review windows and Markdown source editing.
-- The `bb noted` CLI, including knowledge-base export.
+- The `alia noted` CLI, including knowledge-base export.
 
-The review loop works in the macOS bb app when it connects to a remote server and in a browser through bb Connect.
+The review loop works in the macOS VesnALIA app when it connects to a remote server and in a browser through VesnALIA Connect.
 
 ## Requirements
 
-- bb 0.40 or later.
+- VesnALIA 0.40 or later.
 
 ## Install
 
 ```sh
-bb plugin install git:github.com/mpiv-ai/noted@^0.2.0
+alia plugin install git:github.com/mpiv-ai/noted@^0.2.0
 ```
 
 To install from a checkout:
@@ -34,7 +34,7 @@ To install from a checkout:
 git clone https://github.com/mpiv-ai/noted.git
 cd noted
 npm ci
-bb plugin install .
+alia plugin install .
 ```
 
 ## Use
@@ -42,27 +42,27 @@ bb plugin install .
 Run these commands from an agent thread:
 
 ```sh
-bb noted open plan.html
-bb noted open notes.md
-bb noted open packet.html --view parent
-bb noted reply "Applied the three changes."
-bb noted status
-bb noted file plan.html --to <vault-folder> --title "Plan A" --summary "..."
+alia noted open plan.html
+alia noted open notes.md
+alia noted open packet.html --view parent
+alia noted reply "Applied the three changes."
+alia noted status
+alia noted file plan.html --to <vault-folder> --title "Plan A" --summary "..."
 ```
 
 Feedback arrives in the selected thread as a message that starts with `Noted: feedback on ...`.
 
 Noted registers as a file opener for `.html`, `.htm`, `.md`, and `.markdown`.
-Opening one of those files normally keeps BB's rendered preview visible with a
-**Review with Noted** button above it. As with every BB file opener, a user can
-pin BB Preview or another installed opener for an extension in Settings.
+Opening one of those files normally keeps VesnALIA's rendered preview visible with a
+**Review with Noted** button above it. As with every VesnALIA file opener, a user can
+pin VesnALIA Preview or another installed opener for an extension in Settings.
 
 ## Review windows and Markdown editing
 
 For Markdown, right-click the linked filename and choose **Open in → Default
-App** to use the operating system's default Markdown editor. BB supplies the
+App** to use the operating system's default Markdown editor. VesnALIA supplies the
 same file menu in its web and macOS clients. It opens the saved original file;
-unsaved Noted edits remain in Noted. This requires BB's connected local helper
+unsaved Noted edits remain in Noted. This requires VesnALIA's connected local helper
 and a file on the user's machine. In a browser, enable **Settings → Files →
 Local editor integration** if the menu has no external apps. Files on other hosts need a compatible remote
 editor from the menu. The `markdownEditing` setting controls this choice.
@@ -70,14 +70,14 @@ editor from the menu. The `markdownEditing` setting controls this choice.
 These features are disabled by default until enabled in the plugin settings:
 
 ```sh
-bb plugin config noted set newWindow true
-bb plugin config noted set markdownEditing true
+alia plugin config noted set newWindow true
+alia plugin config noted set markdownEditing true
 ```
 
 **New window** opens the same HTML or Markdown review in a separate browser
 window, with its annotations and feedback controls. Browser popup permissions
-apply. BB desktop sends the link to the system browser; this does not create a
-native BB desktop window.
+apply. VesnALIA desktop sends the link to the system browser; this does not create a
+native VesnALIA desktop window.
 
 **Edit Markdown** opens a source editor for `.md` and `.markdown` reviews.
 **Save** updates the original file on its owning host and refreshes other
@@ -90,7 +90,7 @@ Disabling Markdown editing also rejects saves on the server.
 
 ## Agent skills
 
-Installing Noted contributes two skills to new bb agent sessions:
+Installing Noted contributes two skills to new VesnALIA agent sessions:
 
 - `reviewable-html` makes a branded, annotation-friendly HTML page the default
   for substantial visual plans, reports, comparisons, and decision artifacts.
@@ -105,7 +105,7 @@ receive skill changes mid-session.
 
 ## Trust and data
 
-BB plugins run with full trust. Noted reads only artifacts and assets that you open. When Markdown editing is enabled, saving writes to the original reviewed file with a source-hash conflict check. It stores sessions, revisions, and feedback in BB-managed SQLite. The `bb noted file --to` command writes exports only to the destination that you provide. Noted sends feedback to the BB thread that you select and adds no independent telemetry.
+VesnALIA plugins run with full trust. Noted reads only artifacts and assets that you open. When Markdown editing is enabled, saving writes to the original reviewed file with a source-hash conflict check. It stores sessions, revisions, and feedback in ALIA-managed SQLite. The `alia noted file --to` command writes exports only to the destination that you provide. Noted sends feedback to the VesnALIA thread that you select and adds no independent telemetry.
 
 Review the [security policy](SECURITY.md) before reporting a vulnerability.
 
@@ -114,7 +114,7 @@ Review the [security policy](SECURITY.md) before reporting a vulnerability.
 ```sh
 npm ci
 npm run check
-bb plugin dev .
+alia plugin dev .
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution requirements.

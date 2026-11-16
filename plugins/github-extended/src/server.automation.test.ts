@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import type { AutomationDashboard, AutomationRule } from "./automation/domain";
 import plugin from "./server";
 import { automationRpcMethods } from "./automation/schemas";
@@ -50,7 +50,7 @@ const openPr = {
 };
 
 beforeEach(() => {
-  binDir = mkdtempSync(join(tmpdir(), "bb-github-automation-"));
+  binDir = mkdtempSync(join(tmpdir(), "alia-github-automation-"));
   callLog = join(binDir, "gh-calls.log");
   openPrsFile = join(binDir, "open-prs.json");
   closedPrsFile = join(binDir, "closed-prs.json");
@@ -124,7 +124,7 @@ async function loadPlugin(
       ...sdk,
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const dashboard = async () => (await host.harness.callRpc("automationDashboard")) as AutomationDashboard;
   const enableRepo = () => host.harness.callRpc("automationSetRepository", { repo: "acme/widgets", enabled: true });
   const pollNow = async () =>
@@ -162,7 +162,7 @@ describe("GitHub+ automation", () => {
     await saveRules([{
       id: "issue-triage", name: "Triage new bugs", enabled: true, order: 1,
       events: ["issue.opened"], repos: ["acme/widgets"], filters: { labels: ["bug"] }, conditionGroups: [],
-      actions: ["bb.agent", "github.comment", "github.label"],
+      actions: ["alia.agent", "github.comment", "github.label"],
       actionParameters: { agentPrompt: "Investigate the issue and summarize the cause.", bodyTemplate: "Issue {{issueNumber}} ({{number}}): {{agent}}", label: "triaged" },
       approvalRequired: true,
     }]);
@@ -192,10 +192,10 @@ describe("GitHub+ automation", () => {
   });
 
   it("adopts issue polling on an existing PR cursor without replaying historical issues", async () => {
-    const { bb, harness, dashboard, enableRepo, pollNow } = await loadPlugin();
+    const { alia, harness, dashboard, enableRepo, pollNow } = await loadPlugin();
     await enableRepo();
     await pollNow();
-    bb.storage.database().prepare("DELETE FROM automation_state WHERE key = ?").run("issue_poll_snapshot:acme/widgets");
+    alia.storage.database().prepare("DELETE FROM automation_state WHERE key = ?").run("issue_poll_snapshot:acme/widgets");
     writeFileSync(openIssuesFile, JSON.stringify([{
       number: 8, title: "Old issue", body: "Old", state: "OPEN", author: { login: "alex" }, labels: [], assignees: [],
       createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z", closedAt: null,
@@ -236,7 +236,7 @@ describe("GitHub+ automation", () => {
       name: "Issue review", events: ["issue.edited"], actions: ["github.review"], repo: "acme/widgets",
     }, { projectId: "project-1" })).rejects.toThrow();
     await harness.behavior.callAgentTool("github_extended_create_rule", {
-      name: "Issue triage", events: ["issue.labeled"], actions: ["bb.agent"], repo: "acme/widgets",
+      name: "Issue triage", events: ["issue.labeled"], actions: ["alia.agent"], repo: "acme/widgets",
       actionParameters: { agentPrompt: "Investigate the issue." },
     }, { projectId: "project-1" });
     expect((await dashboard()).rules).toContainEqual(expect.objectContaining({
@@ -279,8 +279,8 @@ describe("GitHub+ automation", () => {
   });
 
   it("keeps older pending approvals visible after more than 100 newer jobs", async () => {
-    const { bb, dashboard } = await loadPlugin();
-    const db = bb.storage.database();
+    const { alia, dashboard } = await loadPlugin();
+    const db = alia.storage.database();
     const delivery = db.prepare("INSERT INTO automation_deliveries (delivery_id, event_name, payload_json, received_at) VALUES (?, 'issue.opened', '{}', ?)");
     const insert = db.prepare("INSERT INTO automation_jobs (delivery_id, repo, event_json, status, created_at, updated_at) VALUES (?, 'acme/widgets', ?, ?, ?, ?)");
     for (let index = 0; index < 102; index++) {
@@ -296,8 +296,8 @@ describe("GitHub+ automation", () => {
   });
 
   it("pages all stored runs after applying repository scope, including older audit details", async () => {
-    const { bb, harness, dashboard } = await loadPlugin();
-    const db = bb.storage.database();
+    const { alia, harness, dashboard } = await loadPlugin();
+    const db = alia.storage.database();
     const at = "2026-10-20T12:00:00Z";
     const delivery = db.prepare("INSERT INTO automation_deliveries (delivery_id, event_name, payload_json, received_at) VALUES (?, 'issue.opened', '{}', ?)");
     const insert = db.prepare("INSERT INTO automation_jobs (delivery_id, repo, event_json, status, created_at, updated_at) VALUES (?, ?, ?, 'succeeded', ?, ?)");
@@ -388,7 +388,7 @@ describe("GitHub+ automation", () => {
       const done = await waitForJob(dashboard, jobId, "succeeded");
       expect(done.approved).toBe(true);
       expect(done.actions.map((run) => [run.actionKind, run.status])).toEqual([
-        ["bb.review", "succeeded"],
+        ["alia.review", "succeeded"],
         ["github.review", "succeeded"],
       ]);
       expect(done.actions[0]?.output).toContain("dry-run");
@@ -489,7 +489,7 @@ describe("GitHub+ automation", () => {
     const worker = harness.runService("automation-worker");
     try {
       const job = await waitForJob(dashboard, jobId, "succeeded");
-      expect(job.actions[0]).toMatchObject({ actionKind: "bb.review", status: "succeeded", output: "Looks good; one nit in src/index.ts." });
+      expect(job.actions[0]).toMatchObject({ actionKind: "alia.review", status: "succeeded", output: "Looks good; one nit in src/index.ts." });
     } finally {
       worker.controller.abort();
       await worker.done;
@@ -519,7 +519,7 @@ describe("GitHub+ automation", () => {
     await saveRules([{
       id: "custom", name: "Update documentation", enabled: true, order: 1,
       events: [kind], repos: ["acme/widgets"], filters: {}, conditionGroups: [],
-      actions: kind === "pr.opened" ? ["bb.agent", "github.comment"] : ["bb.agent"],
+      actions: kind === "pr.opened" ? ["alia.agent", "github.comment"] : ["alia.agent"],
       actionParameters: { agentPrompt: "Update documentation for the change.", bodyTemplate: "{{agent}}" },
       approvalRequired: false,
     }]);
@@ -530,7 +530,7 @@ describe("GitHub+ automation", () => {
     const worker = harness.runService("automation-worker");
     try {
       const job = await waitForJob(dashboard, jobId, "succeeded");
-      expect(job.actions[0]).toMatchObject({ actionKind: "bb.agent", status: "succeeded", output: "Updated the documentation." });
+      expect(job.actions[0]).toMatchObject({ actionKind: "alia.agent", status: "succeeded", output: "Updated the documentation." });
       await harness.callRpc("automationReplayJob", { jobId, approve: true });
       await waitForJob(dashboard, jobId, "succeeded");
       expect(harness.sdk.callsTo("threads.spawn")).toHaveLength(1);
@@ -548,7 +548,7 @@ describe("GitHub+ automation", () => {
     expect(spawn).toMatchObject({ prompt: expect.stringContaining(`|   "event": "${kind}"`) });
     expect(spawn).toMatchObject({ prompt: expect.stringContaining("BEGIN UNTRUSTED GITHUB AUTOMATION EVENT") });
     expect(harness.sdk.callsTo("threads.wait")[0]?.[0]).toMatchObject({ threadId: "custom-thread", status: "idle" });
-    expect((await dashboard()).audit).toContainEqual(expect.objectContaining({ outcome: "thread", detail: expect.stringContaining("bb.agent thread custom-thread") }));
+    expect((await dashboard()).audit).toContainEqual(expect.objectContaining({ outcome: "thread", detail: expect.stringContaining("alia.agent thread custom-thread") }));
     if (kind === "pr.opened") {
       expect(ghCalls().filter((call) => call.startsWith("pr comment"))).toEqual(["pr comment 5 -R acme/widgets --body Updated the documentation."]);
       await expect(harness.callRpc("listLinks")).resolves.toMatchObject({ links: { "pr:acme/widgets#5": [expect.objectContaining({ threadId: "custom-thread" })] } });
@@ -561,7 +561,7 @@ describe("GitHub+ automation", () => {
     await pollNow();
     await saveRules([{
       id: "custom", name: "Summarize", enabled: true, order: 1, events: ["pr.opened"],
-      repos: [], filters: {}, conditionGroups: [], actions: ["bb.agent"],
+      repos: [], filters: {}, conditionGroups: [], actions: ["alia.agent"],
       actionParameters: { agentPrompt: "Summarize the change." }, approvalRequired: true,
     }]);
     writeFileSync(openPrsFile, JSON.stringify([openPr]));
@@ -584,16 +584,16 @@ describe("GitHub+ automation", () => {
 
   it("requires instructions for custom actions through both the editor RPC and agent tool", async () => {
     const { harness, dashboard } = await loadPlugin();
-    const rule = { ...(await dashboard()).rules[0]!, actions: ["bb.agent"], actionParameters: {} };
+    const rule = { ...(await dashboard()).rules[0]!, actions: ["alia.agent"], actionParameters: {} };
     await expect(harness.callRpc("automationSaveRules", { rules: [rule] })).rejects.toMatchObject({ code: "invalid_input" });
     await expect(harness.behavior.callAgentTool("github_extended_create_rule", {
-      name: "Custom", events: ["pr.opened"], actions: ["bb.agent"], repo: "acme/widgets", actionParameters: { agentPrompt: "   " },
+      name: "Custom", events: ["pr.opened"], actions: ["alia.agent"], repo: "acme/widgets", actionParameters: { agentPrompt: "   " },
     }, { projectId: "project-1" })).rejects.toThrow();
     await harness.behavior.callAgentTool("github_extended_create_rule", {
-      name: "Custom", events: ["pr.opened"], actions: ["bb.agent"], repo: "acme/widgets", actionParameters: { agentPrompt: "Summarize CI failures." },
+      name: "Custom", events: ["pr.opened"], actions: ["alia.agent"], repo: "acme/widgets", actionParameters: { agentPrompt: "Summarize CI failures." },
     }, { projectId: "project-1" });
     expect((await dashboard()).rules).toContainEqual(expect.objectContaining({
-      name: "Custom", actions: ["bb.agent"], actionParameters: { agentPrompt: "Summarize CI failures." },
+      name: "Custom", actions: ["alia.agent"], actionParameters: { agentPrompt: "Summarize CI failures." },
       enabled: false, approvalRequired: true,
     }));
   });
@@ -628,8 +628,8 @@ describe("GitHub+ automation", () => {
     await expect(
       harness.callRpc("automationSaveRules", {
         rules: [
-          { id: "dup", name: "a", enabled: true, order: 1, events: ["pr.opened"], actions: ["bb.review"] },
-          { id: "dup", name: "b", enabled: true, order: 2, events: ["pr.opened"], actions: ["bb.review"] },
+          { id: "dup", name: "a", enabled: true, order: 1, events: ["pr.opened"], actions: ["alia.review"] },
+          { id: "dup", name: "b", enabled: true, order: 2, events: ["pr.opened"], actions: ["alia.review"] },
         ],
       }),
     ).rejects.toThrow(/Duplicate rule id/);
@@ -675,7 +675,7 @@ describe("GitHub+ automation", () => {
     await expect(
       harness.behavior.callAgentTool(
         "github_extended_create_rule",
-        { name: "No repo", events: ["pr.opened"], actions: ["bb.review"] },
+        { name: "No repo", events: ["pr.opened"], actions: ["alia.review"] },
         { projectId: "project-1" },
       ),
     ).rejects.toThrow(/No tracked GitHub repository/);

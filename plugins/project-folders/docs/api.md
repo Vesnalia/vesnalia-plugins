@@ -30,23 +30,23 @@ sources:
 ---
 # API and commands
 
-TL;DR: The plugin exposes typed BB plugin RPC, a read-only section-list RPC for other plugins, BB host operations and a `bb project-folders` CLI command group; it does not define standalone HTTP routes (`server.ts:173-630`, `server.ts:3579-3602`, `server.ts:3783-4084`).
+TL;DR: The plugin exposes typed VesnALIA plugin RPC, a read-only section-list RPC for other plugins, VesnALIA host operations and a `alia project-folders` CLI command group; it does not define standalone HTTP routes (`server.ts:173-630`, `server.ts:3579-3602`, `server.ts:3783-4084`).
 
 ## How it works
 
-1. The server defines the main plugin methods in `rpcContract` and registers their handlers with BB. Its `list` operation returns folders, project roots, environment bindings, manual placements, export errors and connected machine identities (`server.ts:2484-2544`). A separately registered, discoverable, read-only `sections_list` contract returns section metadata to other plugins and accepts an optional project ID (`server.ts:155-172`, `server.ts:3579-3602`).
-2. Plugin UI surfaces call those RPC operations through the BB SDK (`app.tsx:60-70`, `composer-chip.tsx:154-180`).
-3. Server handlers and move coordinators dispatch device-specific filesystem, remote and inventory work through `moveHostContract`, with a target host ID in BB call options (`server.ts:911-913`, `server.ts:2472-2474`, `project-move.ts:172-175`, `session-policy-server.ts:228-231`, `host.ts:5-16`).
-4. BB registers the CLI command group `project-folders`; its handler validates args and calls the same domain operations (`server.ts:3783-3892`, `server.ts:3895-4084`).
+1. The server defines the main plugin methods in `rpcContract` and registers their handlers with VesnALIA. Its `list` operation returns folders, project roots, environment bindings, manual placements, export errors and connected machine identities (`server.ts:2484-2544`). A separately registered, discoverable, read-only `sections_list` contract returns section metadata to other plugins and accepts an optional project ID (`server.ts:155-172`, `server.ts:3579-3602`).
+2. Plugin UI surfaces call those RPC operations through the VesnALIA SDK (`app.tsx:60-70`, `composer-chip.tsx:154-180`).
+3. Server handlers and move coordinators dispatch device-specific filesystem, remote and inventory work through `moveHostContract`, with a target host ID in VesnALIA call options (`server.ts:911-913`, `server.ts:2472-2474`, `project-move.ts:172-175`, `session-policy-server.ts:228-231`, `host.ts:5-16`).
+4. VesnALIA registers the CLI command group `project-folders`; its handler validates args and calls the same domain operations (`server.ts:3783-3892`, `server.ts:3895-4084`).
 
 ## Modes
 
 | Surface | Method | Path/name | Caller | Auth |
 |---|---|---|---|---|
-| Plugin RPC | `BB RPC` | `<rpc-name>` | Plugin app, composer, settings and lifecycle handlers | BB plugin RPC boundary; no per-method user-auth check is defined in this plugin contract |
-| Cross-plugin RPC | `BB RPC` | `sections_list` | Other BB plugins, including section-aware integrations | BB plugin RPC boundary; read-only contract |
-| Host API | `BB host contract` | `<operation>` | Plugin server via the selected host ID | BB host dispatch to the connected device; no separate plugin credential in this contract |
-| CLI | `BB CLI` | `bb project-folders <command>` | Local BB CLI user or agent | BB CLI/plugin command registration |
+| Plugin RPC | `ALIA RPC` | `<rpc-name>` | Plugin app, composer, settings and lifecycle handlers | VesnALIA plugin RPC boundary; no per-method user-auth check is defined in this plugin contract |
+| Cross-plugin RPC | `ALIA RPC` | `sections_list` | Other VesnALIA plugins, including section-aware integrations | VesnALIA plugin RPC boundary; read-only contract |
+| Host API | `ALIA host contract` | `<operation>` | Plugin server via the selected host ID | VesnALIA host dispatch to the connected device; no separate plugin credential in this contract |
+| CLI | `ALIA CLI` | `alia project-folders <command>` | Local VesnALIA CLI user or agent | VesnALIA CLI/plugin command registration |
 
 ## Public API
 
@@ -58,33 +58,33 @@ The path column names each operation in the registered plugin RPC contract; thes
 
 | Method | Path | Caller | Purpose | Auth |
 |---|---|---|---|---|
-| BB RPC | `list` | Sidebar, management page, composer | Load folders, roots, bindings, placements, errors and hosts | BB plugin RPC |
-| BB RPC | `machines` | Project/section pickers | List connected host identities | BB plugin RPC |
-| BB RPC | `project_browse` | New project dialog | Browse directories on a host | BB plugin RPC |
-| BB RPC | `project_create` | New project dialog | Create a BB project from host and path | BB plugin RPC |
-| BB RPC | `project_delete` | Project management UI | Remove project, keeping or archiving files | BB plugin RPC |
-| BB RPC | `create` | Section dialog | Create section folder and tree record | BB plugin RPC |
-| BB RPC | `group_create`, `group_delete` | Tree management UI | Add or remove folderless tree group | BB plugin RPC |
-| BB RPC | `folder_edit` | Folder browser | Create/delete an empty directory on host | BB plugin RPC |
-| BB RPC | `locations`, `browse` | Section creation dialog | Select an available host and browse its folders | BB plugin RPC |
-| BB RPC | `rename` | Tree menu/card | Rename a project or section label | BB plugin RPC |
-| BB RPC | `reorder`, `section_reparent` | Management page | Reorder projects/sections or change tree parent | BB plugin RPC |
-| BB RPC | `copy_add`, `copy_remove`, `copy_edit` | Project card and copies dialog | Add, remove or repath a project copy | BB plugin RPC |
+| VesnALIA RPC | `list` | Sidebar, management page, composer | Load folders, roots, bindings, placements, errors and hosts | VesnALIA plugin RPC |
+| VesnALIA RPC | `machines` | Project/section pickers | List connected host identities | VesnALIA plugin RPC |
+| VesnALIA RPC | `project_browse` | New project dialog | Browse directories on a host | VesnALIA plugin RPC |
+| VesnALIA RPC | `project_create` | New project dialog | Create a VesnALIA project from host and path | VesnALIA plugin RPC |
+| VesnALIA RPC | `project_delete` | Project management UI | Remove project, keeping or archiving files | VesnALIA plugin RPC |
+| VesnALIA RPC | `create` | Section dialog | Create section folder and tree record | VesnALIA plugin RPC |
+| VesnALIA RPC | `group_create`, `group_delete` | Tree management UI | Add or remove folderless tree group | VesnALIA plugin RPC |
+| VesnALIA RPC | `folder_edit` | Folder browser | Create/delete an empty directory on host | VesnALIA plugin RPC |
+| VesnALIA RPC | `locations`, `browse` | Section creation dialog | Select an available host and browse its folders | VesnALIA plugin RPC |
+| VesnALIA RPC | `rename` | Tree menu/card | Rename a project or section label | VesnALIA plugin RPC |
+| VesnALIA RPC | `reorder`, `section_reparent` | Management page | Reorder projects/sections or change tree parent | VesnALIA plugin RPC |
+| VesnALIA RPC | `copy_add`, `copy_remove`, `copy_edit` | Project card and copies dialog | Add, remove or repath a project copy | VesnALIA plugin RPC |
 
 Contract schemas: `server.ts:287-376`; project-copy checks and operations: `server.ts:2642-2722`.
 
-`project_delete` accepts `files: "keep" | "archive"`; the handler delegates to `deleteProject`, which performs pending-work, chat-activity and filesystem-ownership checks before removing plugin rows and the BB project (`server.ts:308-317`, `server.ts:2641`, `project-delete.ts:27-124`). See [Project and section tree](features/project-tree.md) for the deletion rules.
+`project_delete` accepts `files: "keep" | "archive"`; the handler delegates to `deleteProject`, which performs pending-work, chat-activity and filesystem-ownership checks before removing plugin rows and the VesnALIA project (`server.ts:308-317`, `server.ts:2641`, `project-delete.ts:27-124`). See [Project and section tree](features/project-tree.md) for the deletion rules.
 
 ### Moves, placements and archives
 
 | Method | Path | Caller | Purpose | Auth |
 |---|---|---|---|---|
-| BB RPC | `project_move`, `pending_moves` | Project card/move dialog | Relocate project root and list pending relocations | BB plugin RPC |
-| BB RPC | `section_move`, `pending_section_moves` | Section path dialog | Move/re-link section and list pending operations | BB plugin RPC |
-| BB RPC | `thread_move` | Thread row/menu or drag/drop | Move chat workspace and dedicated storage | BB plugin RPC |
-| BB RPC | `thread_place`, `thread_place_clear` | Thread menu or tree filing UI | Change tree filing without changing workspace | BB plugin RPC |
-| BB RPC | `archive_list`, `archive_matches`, `archive`, `restore`, `forget` | Archive page and section menu | Find, archive and restore section subtrees | BB plugin RPC |
-| BB RPC | `section_remove` | Section delete dialog | Archive, unbind or purge a section | BB plugin RPC |
+| VesnALIA RPC | `project_move`, `pending_moves` | Project card/move dialog | Relocate project root and list pending relocations | VesnALIA plugin RPC |
+| VesnALIA RPC | `section_move`, `pending_section_moves` | Section path dialog | Move/re-link section and list pending operations | VesnALIA plugin RPC |
+| VesnALIA RPC | `thread_move` | Thread row/menu or drag/drop | Move chat workspace and dedicated storage | VesnALIA plugin RPC |
+| VesnALIA RPC | `thread_place`, `thread_place_clear` | Thread menu or tree filing UI | Change tree filing without changing workspace | VesnALIA plugin RPC |
+| VesnALIA RPC | `archive_list`, `archive_matches`, `archive`, `restore`, `forget` | Archive page and section menu | Find, archive and restore section subtrees | VesnALIA plugin RPC |
+| VesnALIA RPC | `section_remove` | Section delete dialog | Archive, unbind or purge a section | VesnALIA plugin RPC |
 
 Contract schemas: `server.ts:195-286`, `server.ts:357-406`; CLI equivalents call the same functions (`server.ts:3982-3998`, `server.ts:3783-3892`).
 
@@ -92,18 +92,18 @@ Contract schemas: `server.ts:195-286`, `server.ts:357-406`; CLI equivalents call
 
 | Method | Path | Caller | Purpose | Auth |
 |---|---|---|---|---|
-| BB RPC | `agents_apply` | Rules settings | Apply managed templates to eligible folders | BB plugin RPC |
-| BB RPC | `rules_read`, `rules_save`, `rules_settings_save` | Project/section rules editor | Read/write rule files and settings | BB plugin RPC |
-| BB RPC | `agents_config`, `agents_config_save` | Plugin-wide rules settings | Read/write shared templates and custom rule settings | BB plugin RPC |
-| BB RPC | `execution_read`, `execution_save` | Provider/agent settings card | Read/save execution pins and their effective inheritance | BB plugin RPC |
-| BB RPC | `execution_remember` | Project provider card | Write the project's setting into BB's remembered project defaults | BB plugin RPC |
-| BB RPC | `execution_overrides` | Plugin settings page | List projects and sections that pin their own model or agent | BB plugin RPC; read-only |
-| BB RPC | `execution_reset_all` | Plugin settings page «Reset everywhere» | Drop every project and section model and agent pin (machine, environment and access stay); write BB remembered defaults for reset projects | BB plugin RPC |
-| BB RPC | `execution_agents` | Execution editor | List native agents for a provider | BB plugin RPC |
-| BB RPC | `session_policy_capability`, `session_policy_read`, `session_policy_save`, `session_policy_inventory` | Session-context editor and BB experimental hook | Report support, read/write rules and inventory names | BB plugin RPC |
-| BB RPC | `section_pick` | BB composer environment picker | Remember the selected section for the composer | BB plugin RPC |
-| BB RPC | `spawn` | Plugin new-chat composer | Start a thread with resolved project/section and composer values | BB plugin RPC |
-| BB RPC | `thread_section` | Thread section label | Resolve section label and path for a thread | BB plugin RPC |
+| VesnALIA RPC | `agents_apply` | Rules settings | Apply managed templates to eligible folders | VesnALIA plugin RPC |
+| VesnALIA RPC | `rules_read`, `rules_save`, `rules_settings_save` | Project/section rules editor | Read/write rule files and settings | VesnALIA plugin RPC |
+| VesnALIA RPC | `agents_config`, `agents_config_save` | Plugin-wide rules settings | Read/write shared templates and custom rule settings | VesnALIA plugin RPC |
+| VesnALIA RPC | `execution_read`, `execution_save` | Provider/agent settings card | Read/save execution pins and their effective inheritance | VesnALIA plugin RPC |
+| VesnALIA RPC | `execution_remember` | Project provider card | Write the project's setting into VesnALIA's remembered project defaults | VesnALIA plugin RPC |
+| VesnALIA RPC | `execution_overrides` | Plugin settings page | List projects and sections that pin their own model or agent | VesnALIA plugin RPC; read-only |
+| VesnALIA RPC | `execution_reset_all` | Plugin settings page «Reset everywhere» | Drop every project and section model and agent pin (machine, environment and access stay); write VesnALIA remembered defaults for reset projects | VesnALIA plugin RPC |
+| VesnALIA RPC | `execution_agents` | Execution editor | List native agents for a provider | VesnALIA plugin RPC |
+| VesnALIA RPC | `session_policy_capability`, `session_policy_read`, `session_policy_save`, `session_policy_inventory` | Session-context editor and VesnALIA experimental hook | Report support, read/write rules and inventory names | VesnALIA plugin RPC |
+| VesnALIA RPC | `section_pick` | VesnALIA composer environment picker | Remember the selected section for the composer | VesnALIA plugin RPC |
+| VesnALIA RPC | `spawn` | Plugin new-chat composer | Start a thread with resolved project/section and composer values | VesnALIA plugin RPC |
+| VesnALIA RPC | `thread_section` | Thread section label | Resolve section label and path for a thread | VesnALIA plugin RPC |
 
 Contract schemas: `server.ts:422-580`; execution resolution: `execution.ts:97-129`; session policy registration: `session-policy-server.ts:151-157`.
 
@@ -113,19 +113,19 @@ Detailed `makeSessionPolicies` steps, scope modes, inheritance, hook registratio
 |---|---|---|
 | Read | Resolve scope placement, load own value, compute inherited/effective policy and report the user-instructions file path/existence (`session-policy-server.ts:159-179`). | Invalid JSON or schema data becomes an empty policy (`session-policy-server.ts:83-93`). |
 | Save | Validate scope placement and store normalized value; empty values delete the key (`session-policy-server.ts:88-95`, `session-policy-server.ts:174-177`). | Placement or database errors propagate from the save call (`session-policy-server.ts:88-95`, `session-policy-server.ts:174-177`). |
-| Inventory | Gather plugin contributions, BB plugins, project skills and host MCP/CLI names for non-global scopes (`session-policy-server.ts:185-241`). | Optional plugin, skill and host sources fail independently to empty results (`session-policy-server.ts:201-231`). |
+| Inventory | Gather plugin contributions, VesnALIA plugins, project skills and host MCP/CLI names for non-global scopes (`session-policy-server.ts:185-241`). | Optional plugin, skill and host sources fail independently to empty results (`session-policy-server.ts:201-231`). |
 | Core enforcement | Register `experimental_vkSessionPolicy` only when present, resolving each thread against its matching project, host and deepest section (`session-policy-server.ts:131-150`). | The `available` value is the hook-presence check; the resolver branch is skipped when it is false (`session-policy-server.ts:66-68`, `session-policy-server.ts:144-153`). |
 
 ### Preferences and history
 
 | Method | Path | Caller | Purpose | Auth |
 |---|---|---|---|---|
-| BB RPC | `prefs_get`, `prefs_save` | Appearance and chat-list settings | Read/save shared preferences and optionally replace item styles | BB plugin RPC |
-| BB RPC | `item_style_save` | Project/section appearance editor | Upsert/delete one item style | BB plugin RPC |
-| BB RPC | `sync` | Thread actions/settings | Export one thread’s timeline to files | BB plugin RPC |
-| BB RPC | `backup_export`, `backup_import` | Transfer settings and CLI | Export/import durable plugin tables as JSON | BB plugin RPC |
-| BB RPC | `cache_keepalive_get`, `cache_keepalive_save` | Cache settings | Read/save cache keepalive configuration | BB plugin RPC |
-| BB RPC | `auto_archive_get`, `auto_archive_save`, `auto_archive_run` | Auto-archive settings | Read/save inactive-chat threshold and run a sweep | BB plugin RPC |
+| VesnALIA RPC | `prefs_get`, `prefs_save` | Appearance and chat-list settings | Read/save shared preferences and optionally replace item styles | VesnALIA plugin RPC |
+| VesnALIA RPC | `item_style_save` | Project/section appearance editor | Upsert/delete one item style | VesnALIA plugin RPC |
+| VesnALIA RPC | `sync` | Thread actions/settings | Export one thread’s timeline to files | VesnALIA plugin RPC |
+| VesnALIA RPC | `backup_export`, `backup_import` | Transfer settings and CLI | Export/import durable plugin tables as JSON | VesnALIA plugin RPC |
+| VesnALIA RPC | `cache_keepalive_get`, `cache_keepalive_save` | Cache settings | Read/save cache keepalive configuration | VesnALIA plugin RPC |
+| VesnALIA RPC | `auto_archive_get`, `auto_archive_save`, `auto_archive_run` | Auto-archive settings | Read/save inactive-chat threshold and run a sweep | VesnALIA plugin RPC |
 
 Contract schemas: `server.ts:574-647`. Auto-archive behavior and eligibility rules are documented in [Section archive and restore](features/archive-and-restore.md#automatic-chat-archiving) (`auto-archive.ts:92-172`).
 
@@ -135,7 +135,7 @@ Contract schemas: `server.ts:574-647`. Auto-archive behavior and eligibility rul
 
 | Method | Path | Caller | Purpose | Auth |
 |---|---|---|---|---|
-| BB RPC | `sections_list` | Other plugins | Return section ID, project ID, parent, name, home path and host, kind, and the folder on each device (`paths`); optional project filter | BB plugin RPC; read-only |
+| VesnALIA RPC | `sections_list` | Other plugins | Return section ID, project ID, parent, name, home path and host, kind, and the folder on each device (`paths`); optional project filter | VesnALIA plugin RPC; read-only |
 
 The separate contract is declared and registered in `server.ts:155-172`, `server.ts:3579-3602`.
 
@@ -143,13 +143,13 @@ The separate contract is declared and registered in `server.ts:155-172`, `server
 
 | Method | Path | Caller | Purpose | Auth | Evidence |
 |---|---|---|---|---|---|
-| BB host contract | `folder_edit` | Server folder browser RPC | Create/delete an empty directory | BB host dispatch to connected device | `host.ts:7-16`, `folder-files.ts:3-41` |
-| BB host contract | `inspect` | Project/section move modules | Inspect paths and detect completed move/link | BB host dispatch to connected device | `host.ts:7-16`, `move-files.ts:14-73` |
-| BB host contract | `move` | Project/section move modules | Move a directory and create compatibility path | BB host dispatch to connected device | `host.ts:8-18`, `move-files.ts:74-95` |
-| BB host contract | `link` | Section move module | Link a folder renamed outside BB | BB host dispatch to connected device | `host.ts:8-18`, `section-move.ts:298-304`, `move-files.ts:96-118` |
-| BB host contract | `github_remotes` | Project tree metadata refresh | Resolve GitHub remote metadata for compatibility | BB host dispatch to connected device | `host.ts:8-18`, `github-remote.ts:1-30` |
-| BB host contract | `repo_remotes` | Project tree metadata refresh | Resolve supported repository remote metadata | BB host dispatch to connected device | `host.ts:8-18`, `repo-remote.ts:187-198` |
-| BB host contract | `session_inventory` | Session policy editor | List host MCP servers and native CLI plugins | BB host dispatch to connected device | `host.ts:7-16`, `session-inventory.ts:1-45` |
+| VesnALIA host contract | `folder_edit` | Server folder browser RPC | Create/delete an empty directory | VesnALIA host dispatch to connected device | `host.ts:7-16`, `folder-files.ts:3-41` |
+| VesnALIA host contract | `inspect` | Project/section move modules | Inspect paths and detect completed move/link | VesnALIA host dispatch to connected device | `host.ts:7-16`, `move-files.ts:14-73` |
+| VesnALIA host contract | `move` | Project/section move modules | Move a directory and create compatibility path | VesnALIA host dispatch to connected device | `host.ts:8-18`, `move-files.ts:74-95` |
+| VesnALIA host contract | `link` | Section move module | Link a folder renamed outside VesnALIA | VesnALIA host dispatch to connected device | `host.ts:8-18`, `section-move.ts:298-304`, `move-files.ts:96-118` |
+| VesnALIA host contract | `github_remotes` | Project tree metadata refresh | Resolve GitHub remote metadata for compatibility | VesnALIA host dispatch to connected device | `host.ts:8-18`, `github-remote.ts:1-30` |
+| VesnALIA host contract | `repo_remotes` | Project tree metadata refresh | Resolve supported repository remote metadata | VesnALIA host dispatch to connected device | `host.ts:8-18`, `repo-remote.ts:187-198` |
+| VesnALIA host contract | `session_inventory` | Session policy editor | List host MCP servers and native CLI plugins | VesnALIA host dispatch to connected device | `host.ts:7-16`, `session-inventory.ts:1-45` |
 
 The host contract operations are typed in `move-contract.ts:10-63`.
 
@@ -161,22 +161,22 @@ Project relocation’s call sequence, preflight branches, journal outcomes and f
 
 ### `deleteProject`
 
-1. It rejects a pending project move or section archive, fetches the project, and refuses a missing project or BB personal inbox (`project-delete.ts:27-48`).
+1. It rejects a pending project move or section archive, fetches the project, and refuses a missing project or VesnALIA personal inbox (`project-delete.ts:27-48`).
 2. It lists hidden plus visible threads for archived and unarchived states in 200-item pages. Any active/starting/stopping/pending thread, queued work or positive activity stops deletion (`project-delete.ts:1-25`, `project-delete.ts:49-61`).
-3. With `files: "keep"`, it leaves all local folders in place. With `files: "archive"`, at least one local-path source is required; it rejects a source containing another BB project or a path also used as another project’s section (`project-delete.ts:62-105`).
-4. The archive branch makes one UUID for all local copies and moves each source to a sibling `.bb/archive/projects/<id>/folder`, retaining the first destination as `archivePath`. It then drops plugin rows, deletes the BB project, emits `changed` and returns `{ok, files, archivePath}` (`project-delete.ts:106-124`).
+3. With `files: "keep"`, it leaves all local folders in place. With `files: "archive"`, at least one local-path source is required; it rejects a source containing another VesnALIA project or a path also used as another project’s section (`project-delete.ts:62-105`).
+4. The archive branch makes one UUID for all local copies and moves each source to a sibling `.vesnalia/archive/projects/<id>/folder`, retaining the first destination as `archivePath`. It then drops plugin rows, deletes the VesnALIA project, emits `changed` and returns `{ok, files, archivePath}` (`project-delete.ts:106-124`).
 
 | Mode or failure | Result |
 |---|---|
-| `keep` | Remove the BB project and plugin rows while leaving its directories in place (`project-delete.ts:62-63`, `project-delete.ts:120-124`). |
+| `keep` | Remove the VesnALIA project and plugin rows while leaving its directories in place (`project-delete.ts:62-63`, `project-delete.ts:120-124`). |
 | `archive` | Move every local source into the project archive tree before deleting the project; return the first moved destination (`project-delete.ts:64-118`). |
 | Busy move/archive or active chat | Reject before removing project rows (`project-delete.ts:37-61`). |
 | No local source or path ownership conflict | Reject before any archive move (`project-delete.ts:64-105`). |
-| Filesystem or BB delete failure | Propagate the error. Archive moves are sequential and precede plugin-row/project deletion; this function contains no compensation for an earlier successful move (`project-delete.ts:106-124`). |
+| Filesystem or VesnALIA delete failure | Propagate the error. Archive moves are sequential and precede plugin-row/project deletion; this function contains no compensation for an earlier successful move (`project-delete.ts:106-124`). |
 
 ### `rpcContract` validation and outputs
 
-`rpcContract` declares the input and output schema for each RPC name, and `bb.rpc.register` binds that contract to the matching handler object (`server.ts:194-257`, `server.ts:3392-3393`). Its branches in this range are:
+`rpcContract` declares the input and output schema for each RPC name, and `alia.rpc.register` binds that contract to the matching handler object (`server.ts:194-257`, `server.ts:3392-3393`). Its branches in this range are:
 
 | Operation | Input branch | Output / failure behavior |
 |---|---|---|
@@ -216,31 +216,31 @@ Missing or unreadable files become empty input, and JSON parsing accepts line co
 
 | Method | Path | Purpose |
 |---|---|---|
-| BB CLI | `bb project-folders list` | List sections |
-| BB CLI | `bb project-folders create <project-id> <parent-id-or-dash> <name> <relative-path> [host-id]` | Create section |
-| BB CLI | `bb project-folders place-chat <thread-id> <project-id> <folder-id-or-dash>` | File chat in tree |
-| BB CLI | `bb project-folders unplace-chat <thread-id>` | Remove manual placement |
-| BB CLI | `bb project-folders move-chat <thread-id> <project-id> <folder-id-or-dash> <host-id>` | Move chat and storage |
-| BB CLI | `bb project-folders move-section <folder-id> <absolute-path>` | Move or re-link section |
-| BB CLI | `bb project-folders archives` | List archive records |
-| BB CLI | `bb project-folders archive <folder-id>` | Archive section subtree |
-| BB CLI | `bb project-folders remove-section <folder-id> archive\|unbind\|purge` | Remove a section with the selected retention mode (`server.ts:3866-3870`, `server.ts:3982-3986`) |
-| BB CLI | `bb project-folders backup [--out file]` | Export plugin data as JSON, printing it or writing it to the `--out` path (`server.ts:3825-3827`, `server.ts:3996-4004`) |
-| BB CLI | `bb project-folders restore <archive-id\|file> [--merge]` | Restore a section archive or import a backup file (`server.ts:3818-3822`, `server.ts:3987-3995`) |
-| BB CLI | `bb project-folders copy-add <project-id> <host-id> <path>` | Add working copy |
-| BB CLI | `bb project-folders copy-remove <project-id> <host-id>` | Remove working copy |
-| BB CLI | `bb project-folders forget <folder-id>` | Compatibility alias for `archive` |
-| BB CLI | `bb project-folders delete-project <project-id> keep\|archive` | Delete project record and select file behavior |
-| BB CLI | `bb project-folders rules show\|set <project-id> <folder-id-or-dash> [options]` | Read/save rules |
-| BB CLI | `bb project-folders sync <thread-id>` | Export chat history |
+| VesnALIA CLI | `alia project-folders list` | List sections |
+| VesnALIA CLI | `alia project-folders create <project-id> <parent-id-or-dash> <name> <relative-path> [host-id]` | Create section |
+| VesnALIA CLI | `alia project-folders place-chat <thread-id> <project-id> <folder-id-or-dash>` | File chat in tree |
+| VesnALIA CLI | `alia project-folders unplace-chat <thread-id>` | Remove manual placement |
+| VesnALIA CLI | `alia project-folders move-chat <thread-id> <project-id> <folder-id-or-dash> <host-id>` | Move chat and storage |
+| VesnALIA CLI | `alia project-folders move-section <folder-id> <absolute-path>` | Move or re-link section |
+| VesnALIA CLI | `alia project-folders archives` | List archive records |
+| VesnALIA CLI | `alia project-folders archive <folder-id>` | Archive section subtree |
+| VesnALIA CLI | `alia project-folders remove-section <folder-id> archive\|unbind\|purge` | Remove a section with the selected retention mode (`server.ts:3866-3870`, `server.ts:3982-3986`) |
+| VesnALIA CLI | `alia project-folders backup [--out file]` | Export plugin data as JSON, printing it or writing it to the `--out` path (`server.ts:3825-3827`, `server.ts:3996-4004`) |
+| VesnALIA CLI | `alia project-folders restore <archive-id\|file> [--merge]` | Restore a section archive or import a backup file (`server.ts:3818-3822`, `server.ts:3987-3995`) |
+| VesnALIA CLI | `alia project-folders copy-add <project-id> <host-id> <path>` | Add working copy |
+| VesnALIA CLI | `alia project-folders copy-remove <project-id> <host-id>` | Remove working copy |
+| VesnALIA CLI | `alia project-folders forget <folder-id>` | Compatibility alias for `archive` |
+| VesnALIA CLI | `alia project-folders delete-project <project-id> keep\|archive` | Delete project record and select file behavior |
+| VesnALIA CLI | `alia project-folders rules show\|set <project-id> <folder-id-or-dash> [options]` | Read/save rules |
+| VesnALIA CLI | `alia project-folders sync <thread-id>` | Export chat history |
 
 Command definitions and argument parsing: `server.ts:3783-3892`, `server.ts:3895-4084`.
 
 ## Failures
 
 - Zod validation rejects invalid RPC and CLI inputs before their handlers run (`server.ts:194-207`, `server.ts:3895-4084`).
-- BB and host SDK errors return through RPC/CLI error handling; filesystem moves preserve journals for retry (`section-move.ts:358-364`, `project-move.ts:228-246`).
-- Session-context settings can be stored even if the BB extension is unavailable, but no enforcement hook is installed (`session-policy-server.ts:52-75`).
+- VesnALIA and host SDK errors return through RPC/CLI error handling; filesystem moves preserve journals for retry (`section-move.ts:358-364`, `project-move.ts:228-246`).
+- Session-context settings can be stored even if the VesnALIA extension is unavailable, but no enforcement hook is installed (`session-policy-server.ts:52-75`).
 
 ## Business rules
 
@@ -249,11 +249,11 @@ Command definitions and argument parsing: `server.ts:3783-3892`, `server.ts:3895
 - CLI commands validate required arguments and call the domain handlers; `--json` is removed from the argument list before parsing (`server.ts:3895-4084`).
 - Section removal rejects active chats, queued work, pending chat moves, pending section moves or archives; `purge` also refuses shared paths and project/environment ownership conflicts (`section-remove.ts:66-150`, `section-remove.ts:187-197`).
 - Backup import defaults to `replace`; `merge` inserts rows without replacing local rows, and both modes reject while a move or archive is in progress (`server.ts:3547-3560`, `backup.ts:127-165`, `backup.ts:179-190`).
-- Host operations target a host through BB call options; the host ID is not part of the `moveHostContract` operation payload (`project-move.ts:172-175`, `server.ts:2472-2474`, `move-contract.ts:10-56`).
+- Host operations target a host through VesnALIA call options; the host ID is not part of the `moveHostContract` operation payload (`project-move.ts:172-175`, `server.ts:2472-2474`, `move-contract.ts:10-56`).
 
 ## Gotchas
 
-- RPC operation names are contract names, not stable HTTP paths; the BB plugin RPC transport owns the wire route (`server.ts:173-630`, `server.ts:3579`).
+- RPC operation names are contract names, not stable HTTP paths; the VesnALIA plugin RPC transport owns the wire route (`server.ts:173-630`, `server.ts:3579`).
 - The `forget` RPC and CLI compatibility names archive a section; they do not permanently delete it (`server.ts:410`, `server.ts:2973-2978`, `server.ts:3860-3864`, `server.ts:3978-3981`).
 
 ## Related pages

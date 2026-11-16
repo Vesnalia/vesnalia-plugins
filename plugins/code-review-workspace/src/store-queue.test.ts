@@ -1,5 +1,5 @@
 import { test, expect } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore, type ReviewMeta, type Store } from "./store";
 import { queueStore, StoreDisposedError } from "./store-queue";
 
@@ -178,9 +178,9 @@ test("afterTurn runs inside each turn, after its call or block and before its ca
 });
 
 test("afterTurn's throw or rejection leaves the call's own result, and the queue runs on", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
   let turns = 0;
-  const store = queueStore(createStore(bb), {
+  const store = queueStore(createStore(alia), {
     afterTurn() {
       turns++;
       if (turns === 1) throw new Error("hook threw");
@@ -235,8 +235,8 @@ test("dispose with nothing queued resolves", async () => {
 });
 
 test("over the Store, it gives each method's result, its own calls between methods included", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const backend = createStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const backend = createStore(alia);
   const store = queueStore(backend);
   for (const name of Object.keys(backend)) expect(typeof (store as unknown as Record<string, unknown>)[name], name).toBe("function");
   await store.saveReview(review("pr-1"));

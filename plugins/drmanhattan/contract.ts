@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const RUN_ID_PATTERN = /^[0-9A-Za-z][0-9A-Za-z._-]{0,199}$/;
@@ -37,7 +37,7 @@ export const runSchema = z
     exit: z.number().int().nullable(),
     errorLine: z.string().nullable(),
     log: z.string().nullable(),
-    /** The bb thread that queued it, when one did. */
+    /** The VesnALIA thread that queued it, when one did. */
     threadId: z.string().nullable(),
   })
   .strict();

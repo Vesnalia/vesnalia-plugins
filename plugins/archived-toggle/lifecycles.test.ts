@@ -21,7 +21,7 @@ describe('archived toggle', () => {
     expect(nextLifecycles(['archived'])).toEqual(['active']);
   });
 
-  it("writes bb's thread-list threadLifecycles preference", async () => {
+  it("writes VesnALIA's thread-list threadLifecycles preference", async () => {
     const list = fakeThreadList(['active']);
     expect(await toggleArchived(list.fetcher)).toBe(true);
     expect(list.current()).toEqual(['active', 'archived']);

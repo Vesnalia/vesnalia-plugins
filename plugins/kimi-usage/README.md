@@ -1,13 +1,13 @@
 # Kimi Usage
 
-Shows Kimi Code plan limits in BB's **Settings → Plugins → Provider usage**
+Shows Kimi Code plan limits in VesnALIA's **Settings → Plugins → Provider usage**
 view, next to the other usage sources, and in a sidebar footer card when that
 option is on.
 
-BB's ACP provider plugin reads plan limits for opencode and Cursor only, so a
+VesnALIA's ACP provider plugin reads plan limits for opencode and Cursor only, so a
 Kimi Code subscription shows no limits at all. This plugin fills that gap
 without touching the provider: it registers the same
-`provider-usage.v1.*` RPC resources that BB's built-in Provider usage plugin
+`provider-usage.v1.*` RPC resources that VesnALIA's built-in Provider usage plugin
 discovers on any loaded plugin.
 
 ## How it works
@@ -28,7 +28,7 @@ reports one, and the monthly quota.
 ## Requirements
 
 - Kimi Code CLI signed in on the host: `kimi login`.
-- bb 0.49 or newer.
+- VesnALIA 0.49 or newer.
 
 A host without credentials reports "unauthenticated", one whose token refresh
 fails reports "expired"; both are normal states of the usage contract.
@@ -36,7 +36,7 @@ fails reports "expired"; both are normal states of the usage contract.
 ## Command
 
 ```
-bb kimi-usage show [--host <host-id>] [--json]
+alia kimi-usage show [--host <host-id>] [--json]
 ```
 
 Prints the same numbers from a terminal and forces a fresh measurement.

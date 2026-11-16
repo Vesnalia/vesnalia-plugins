@@ -9,7 +9,7 @@ import type { FailingEntry } from "../shared/channels";
  * set: so nothing more is sent while it stays failing, a job that recovers (or
  * whose failure is acknowledged) leaves the set and notifies again the next
  * time it fails, and turning the setting on, reloading the plugin or
- * restarting bb sends nothing for a job that was already failing. With no
+ * restarting VesnALIA sends nothing for a job that was already failing. With no
  * stored set at all (the first count ever), the count is only recorded.
  *
  * The set is re-read from storage on every count rather than cached, so a
@@ -22,7 +22,7 @@ export interface FailurePushDeps {
   /** The stored `hostId/id` keys, or undefined before the first count. */
   load(): Promise<string[] | undefined>;
   save(keys: string[]): Promise<void>;
-  /** Sends one push notification; throws when it could not (an older bb, push notifications off). */
+  /** Sends one push notification; throws when it could not (an older VesnALIA, push notifications off). */
   send(notification: { title: string; body: string }): Promise<void>;
   warn(message: string): void;
 }
@@ -45,7 +45,7 @@ export function notificationFor(entry: FailingEntry): { title: string; body: str
 export function createFailurePush(deps: FailurePushDeps) {
   let chain: Promise<void> = Promise.resolve();
   let disposed = false;
-  /** Set once a send has failed, so an older bb or push notifications being off is logged once. */
+  /** Set once a send has failed, so an older VesnALIA or push notifications being off is logged once. */
   let unavailable = false;
 
   async function step(failing: readonly FailingEntry[], unanswered: readonly string[]): Promise<void> {
@@ -68,7 +68,7 @@ export function createFailurePush(deps: FailurePushDeps) {
         if (unavailable) continue;
         unavailable = true;
         const message = error instanceof Error ? error.message : String(error);
-        deps.warn(`could not send a push notification for a failing job (needs bb 0.48.1 or newer with Push notifications on): ${message}`);
+        deps.warn(`could not send a push notification for a failing job (needs VesnALIA 0.48.1 or newer with Push notifications on): ${message}`);
       }
     }
   }

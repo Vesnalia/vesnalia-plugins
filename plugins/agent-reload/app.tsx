@@ -6,7 +6,7 @@ import {
   experimental_Icon as Icon,
   useRpc,
   type PluginThreadHeaderActionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { usePortalScopeProps } from "./lib/portal-scope";
 import type { rpcContract } from "./server";
 

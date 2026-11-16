@@ -36,8 +36,8 @@ export interface GpuProcess {
 
 export type UpdateCheck = { readonly ok: true; readonly processes: readonly GpuProcess[] } | { readonly ok: false; readonly why: string; readonly transient?: boolean };
 
-export const UPDATE_DIR = "/var/tmp/bb-box-nvidia-update";
-export const UPDATE_LOCK = "/run/bb-box-nvidia-update.lock";
+export const UPDATE_DIR = "/var/tmp/alia-box-nvidia-update";
+export const UPDATE_LOCK = "/run/alia-box-nvidia-update.lock";
 export const UPDATE_SCRIPT = `${UPDATE_DIR}/nvidia-userspace-update.sh`;
 export const UPDATE_FREE_MIB = 2048;
 export const USERSPACE_INSTALL_SECONDS = 60;
@@ -50,7 +50,7 @@ const LIBRARY = /libnvidia-ml\.so\.(\d+(?:\.\d+)+)$/;
 
 export const USERSPACE_READ =
   `u=${UPDATE_LOCK}; if [ -e "$u" ]; then flock -n -s -E 75 "$u" true 2>/dev/null; if [ $? = 75 ]; then echo '${UPDATE_RUNNING}'; fi; fi; ` +
-  "f=/usr/share/bb-box/nvidia-version; " +
+  "f=/usr/share/alia-box/nvidia-version; " +
   `if [ -r "$f" ]; then printf 'file %s\\n' "$(head -c 64 "$f" | tr -d '\\n')"; else echo 'file none'; fi; ` +
   "l=; for d in /usr/lib/x86_64-linux-gnu /usr/lib64 /usr/lib; do if [ -e \"$d/libnvidia-ml.so.1\" ]; then l=$(readlink -f \"$d/libnvidia-ml.so.1\"); break; fi; done; " +
   `printf 'library %s\\n' "\${l:-none}"; echo '${READ_DONE}'`;
@@ -132,7 +132,7 @@ export function updateFilesCommand(root = setupDir()): string {
   const files: readonly [string, string][] = [
     [UPDATE_SCRIPT, join(guest, "nvidia-userspace-update.sh")],
     [`${UPDATE_DIR}/guest/nvidia-userspace.sh`, join(guest, "nvidia-userspace.sh")],
-    [`${UPDATE_DIR}/guest/bb-box-nvidia-drivers.sh`, join(guest, "bb-box-nvidia-drivers.sh")],
+    [`${UPDATE_DIR}/guest/alia-box-nvidia-drivers.sh`, join(guest, "alia-box-nvidia-drivers.sh")],
   ];
   return [`install -d -m 0755 ${UPDATE_DIR}/guest`, ...files.map(([to, from]) => `printf '%s' '${base64Of(from)}' | base64 -d >${to}`)].join(" && ");
 }
@@ -164,7 +164,7 @@ export function judgeUpdateCheck(output: string, driver: string): UpdateCheck {
   }
   const arch = valueAfter(lines, "arch");
   if (arch !== "x86_64") return { ok: false, why: `runs on ${arch || "an unknown architecture"}, and NVIDIA's userspace is for x86_64 boxes only` };
-  if (valueAfter(lines, "os") !== "ubuntu 24.04" || valueAfter(lines, "image") !== "bb-box") {
+  if (valueAfter(lines, "os") !== "ubuntu 24.04" || valueAfter(lines, "image") !== "alia-box") {
     return { ok: false, why: `is not on ${PRODUCT}'s own Linux image (Ubuntu 24.04 on x86_64), where ${PRODUCT} knows NVIDIA's installer works` };
   }
   const free = Number(valueAfter(lines, "free-mib"));
@@ -284,17 +284,17 @@ export const DESKTOP_READY_WAIT_S = 30;
 export const SELKIES_PROCESS = "[s]elkies --addr=127.0.0.1 --port=5980";
 
 export const DESKTOP_GPU_CHECK =
-  `r=\${BB_BOX_ROOT:-}; w=\${BB_BOX_READY_WAIT_S:-${DESKTOP_READY_WAIT_S}}; d=$(( $(date +%s%3N) + w * 1000 )); ` +
+  `r=\${ALIA_BOX_ROOT:-}; w=\${ALIA_BOX_READY_WAIT_S:-${DESKTOP_READY_WAIT_S}}; d=$(( $(date +%s%3N) + w * 1000 )); ` +
   `left() { echo $(( d - $(date +%s%3N) )); }; secs() { printf '%d.%03d' $(( $1 / 1000 )) $(( $1 % 1000 )); }; ` +
-  `while [ ! -s "$r/run/bb-box/display-mode" ] && [ "$(left)" -gt 500 ]; do sleep 0.5; done; ` +
+  `while [ ! -s "$r/run/alia-box/display-mode" ] && [ "$(left)" -gt 500 ]; do sleep 0.5; done; ` +
   `s=000; while :; do l=$(left); [ "$l" -gt 0 ] || break; [ "$l" -le 2000 ] || l=2000; s=$(curl -s -o /dev/null -m "$(secs "$l")" -w '%{http_code}' http://127.0.0.1:5980/); [ "$s" = 200 ] && break; [ "$(left)" -gt 500 ] || break; sleep 0.5; done; ` +
   `printf 'ready-wait %s\\n' "$w"; ` +
-  `printf 'display-mode %s\\n' "$(cat "$r/run/bb-box/display-mode" 2>/dev/null || echo none)"; ` +
-  `printf 'display-reason %s\\n' "$(cat "$r/run/bb-box/display-reason" 2>/dev/null)"; ` +
+  `printf 'display-mode %s\\n' "$(cat "$r/run/alia-box/display-mode" 2>/dev/null || echo none)"; ` +
+  `printf 'display-reason %s\\n' "$(cat "$r/run/alia-box/display-reason" 2>/dev/null)"; ` +
   `printf 'selkies-http %s\\n' "$s"; ` +
   `sc() { nvidia-smi --query-gpu=encoder.stats.sessionCount --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' '; }; ` +
   `o=$(mktemp); b=$(sc); m=; v=; while :; do l=$(left); [ "$l" -ge 1500 ] || break; t=$(( l - 500 )); [ "$t" -le 3000 ] || t=3000; q=$(( t / 2 )); [ "$q" -le 1000 ] || q=1000; ` +
-  `timeout "$(secs $(( t + 400 )))" node /usr/local/libexec/bb-box/selkies-probe.mjs 5980 "$(secs "$t")" > "$o" 2>&1 & p=$!; sleep "$(secs "$q")"; m=$(sc); wait "$p"; ` +
+  `timeout "$(secs $(( t + 400 )))" node /usr/local/libexec/alia-box/selkies-probe.mjs 5980 "$(secs "$t")" > "$o" 2>&1 & p=$!; sleep "$(secs "$q")"; m=$(sc); wait "$p"; ` +
   `v=$(tail -1 "$o"); case "$v" in *'"frames":0,'*) ;; *'"frames":'*) break ;; esac; done; ` +
   `printf 'video %s\\n' "$v"; rm -f "$o"; printf 'nvenc-sessions %s %s\\n' "\${b:-none}" "\${m:-none}"; ` +
   `n=no; for p in $(pgrep -u "$(id -un)" -f '${SELKIES_PROCESS}'); do grep -q libnvidia-encode "/proc/$p/maps" 2>/dev/null && n=yes; done; ` +

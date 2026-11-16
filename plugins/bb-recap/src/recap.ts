@@ -44,7 +44,7 @@ export function isVisibleThread(visibility: unknown): boolean {
   return visibility === "visible";
 }
 
-/** BB execution statuses that mean a thread has not finished its turn. */
+/** VesnALIA execution statuses that mean a thread has not finished its turn. */
 const RUNNING_THREAD_STATUSES = new Set(["active", "starting", "stopping"]);
 
 export function isRunningThreadStatus(status: unknown): boolean {
@@ -211,7 +211,7 @@ function isUserConversation(row: UnknownRecord, threadId?: string): boolean {
     (threadId === undefined || row.threadId === threadId);
 }
 
-/** Convert BB timeline rows into a bounded transcript for the recap worker. */
+/** Convert VesnALIA timeline rows into a bounded transcript for the recap worker. */
 export function buildConversationText(
   rows: unknown[],
   maxChars = MAX_TRANSCRIPT_CHARS,

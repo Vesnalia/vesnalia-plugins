@@ -149,7 +149,7 @@ describe("a host link", () => {
     links.keepalive();
     links.keepalive();
     expect(method("keepalive")).toHaveLength(1);
-    // A keepalive that hangs counts as lost after its own short timeout, not bb's default 30 s.
+    // A keepalive that hangs counts as lost after its own short timeout, not VesnALIA's default 30 s.
     expect(method("keepalive")[0]?.options).toEqual({ hostId: "host_laptop", timeoutMs: 10_000 });
     method("keepalive")[0]?.resolve({ open: true });
     await flush();

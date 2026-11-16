@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import type * as PluginSdkApp from "@get-bb/plugin-sdk/app";
+import type * as PluginSdkApp from "@vesnalia/plugin-sdk/app";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppBlock } from "./AppBlock";
 import { APPS_STORAGE_BUDGET, parseAppMessage, parseStorageItems, readAppStorage, saveAppStorage } from "./appBridge";
@@ -12,12 +12,12 @@ declare const jsdom: { window: Window & typeof globalThis };
 
 const openUrl = vi.hoisted(() => vi.fn(() => true));
 
-// BB's runtime is replaced by a thread with no composer on screen.
-vi.mock("@get-bb/plugin-sdk/app", async (importOriginal) => ({
+// VesnALIA's runtime is replaced by a thread with no composer on screen.
+vi.mock("@vesnalia/plugin-sdk/app", async (importOriginal) => ({
   ...(await importOriginal<typeof PluginSdkApp>()),
   useComposers: () => [],
   useSdk: () => ({}),
-  useBbNavigate: () => ({ openUrl }),
+  useAliaNavigate: () => ({ openUrl }),
   useRpc: () => ({ call: vi.fn() }),
   useSettings: () => ({ values: { animations: true }, isLoading: false }),
   experimental_Icon: () => <span aria-hidden="true" />,
@@ -236,7 +236,7 @@ describe("an app on screen", () => {
     expect(container.textContent).toContain("Plan B");
   });
 
-  it("notes a dialog it can't show, and opens https links in BB", () => {
+  it("notes a dialog it can't show, and opens https links in VesnALIA", () => {
     const post = mount({ kind: "gallery" });
     post({ type: "blocked", what: "alert" });
     expect(container.textContent).toContain("alert()");

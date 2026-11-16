@@ -1,13 +1,13 @@
-# Backlog board for BB
+# Backlog board for VesnALIA
 
-Build `bb-plugin-backlog`: a light-only Kanban page in BB's left navigation, with all BB projects in a right-hand rail, live filesystem updates, and task details in a modal. Operate directly on Backlog.md files without requiring its CLI.
+Build `alia-plugin-backlog`: a light-only Kanban page in VesnALIA's left navigation, with all VesnALIA projects in a right-hand rail, live filesystem updates, and task details in a modal. Operate directly on Backlog.md files without requiring its CLI.
 
 ## Product behavior
 
-- Register a Backlog navigation entry using BB's `navPanel` surface. Let BB own its application shell.
+- Register a Backlog navigation entry using VesnALIA's `navPanel` surface. Let VesnALIA own its application shell.
 - Use a white canvas, pale gray lane backgrounds, dark text, fine neutral borders, and restrained status colors. No gradients or dark theme. Scope styling to the plugin and its modal.
 - Suggested tokens: canvas `#FFFFFF`, lanes `#F5F6F8`, border `#DDE1E6`, text `#20252B`, secondary text `#626B77`, selection `#235DC1`. Use the host sans-serif family, with 14px controls and 15px card titles. Keep task prose comfortably readable with a limited line length.
-- Main layout: BB navigation | task board | project rail. Within the plugin, reserve a compact left section navigation area for future Tasks, Decisions, Docs, and Plans. Initially expose Tasks only.
+- Main layout: VesnALIA navigation | task board | project rail. Within the plugin, reserve a compact left section navigation area for future Tasks, Decisions, Docs, and Plans. Initially expose Tasks only.
 - Board toolbar: project name, search, filters, and project-specific folder settings. Show every configured status, including empty columns. Preserve visibility of tasks with an unrecognized status and identify the configuration mismatch.
 - Cards show ID, title, priority, assignees, labels, and checklist progress. Lane headers show counts. Avoid unnecessary card decoration.
 - Drag between columns to persist status changes; drag within a column to persist Backlog's `ordinal` ordering. Include a keyboard-accessible move action.
@@ -20,11 +20,11 @@ Build `bb-plugin-backlog`: a light-only Kanban page in BB's left navigation, wit
 
 ## Project and folder discovery
 
-List BB projects including Personal. Projects without a usable source remain visible with a clear setup or unavailable state. Do not create backlog directories merely by viewing a project.
+List VesnALIA projects including Personal. Projects without a usable source remain visible with a clear setup or unavailable state. Do not create backlog directories merely by viewing a project.
 
 Resolve the selected project's folder in this order:
 
-1. Explicit plugin folder override saved per BB project.
+1. Explicit plugin folder override saved per VesnALIA project.
 2. Backlog's root `backlog.config.yml` and its `backlog_directory` setting.
 3. Existing `backlog/` or `.backlog/` at the project root, including legacy config inside that directory.
 
@@ -32,13 +32,13 @@ If both default folders exist, display a folder-selection state. Do not combine 
 
 ## Technical approach
 
-- TypeScript server and React frontend, plus a BB host entry for watching files where the checkout lives. Verify exact signatures against installed SDK declarations before implementation.
-- Scaffold with `bb plugin new backlog`. Pin Bun through mise before writing implementation code; define `dev`, `test`, and `build` tasks. Use Bun for dependencies. Run long-lived development processes in named tmux sessions.
-- Use typed RPC for project discovery, board snapshots, task detail, settings, and field mutations. Store only plugin settings in BB storage; Markdown files remain authoritative for task data.
-- Read/write through BB host-aware file APIs using explicit host identity, folder confinement, and `expectedSha256` conflict protection.
+- TypeScript server and React frontend, plus a VesnALIA host entry for watching files where the checkout lives. Verify exact signatures against installed SDK declarations before implementation.
+- Scaffold with `alia plugin new backlog`. Pin Bun through mise before writing implementation code; define `dev`, `test`, and `build` tasks. Use Bun for dependencies. Run long-lived development processes in named tmux sessions.
+- Use typed RPC for project discovery, board snapshots, task detail, settings, and field mutations. Store only plugin settings in VesnALIA storage; Markdown files remain authoritative for task data.
+- Read/write through VesnALIA host-aware file APIs using explicit host identity, folder confinement, and `expectedSha256` conflict protection.
 - Parse YAML using a document-preserving parser. Implement bounded patches for known Markdown sections rather than regenerating the whole task. Preserve unknown frontmatter, custom sections, comments, markers, and line endings.
 - Validate structured values and project-configured choices. Detect malformed files, duplicate IDs, and ambiguous section markers; keep readable information visible and block unsafe mutations with a specific error.
-- Watch selected task directories and config on their host. Handle creation, deletion, moves, and atomic-save renames. Coalesce bursts, publish changed snapshots through BB realtime, and reconcile on reconnect plus periodically for missed notifications.
+- Watch selected task directories and config on their host. Handle creation, deletion, moves, and atomic-save renames. Coalesce bursts, publish changed snapshots through VesnALIA realtime, and reconcile on reconnect plus periodically for missed notifications.
 - Target visible updates within one second after a stable filesystem change on a connected local host. Measure that target during verification; do not promise literal instantaneous delivery.
 - External updates refresh cards and non-edited modal fields. Preserve active input drafts. On save conflicts, merge only provably disjoint field edits; otherwise show the current file value alongside the user's draft for resolution.
 - If an agent changes the task's status to In Progress, the card moves after the file change. Starting an agent process alone is not evidence that task status changed.
@@ -50,7 +50,7 @@ If both default folders exist, display a folder-selection state. Do not combine 
 
 Likely files: `package.json`, `mise.toml`, `server.ts`, `app.tsx`, `app.css`.
 
-Acceptance: plugin builds; Backlog appears in BB navigation; right rail lists all projects and handles an empty project. Verify generated SDK types, type checking, build, and a live navigation check. Dependency: none.
+Acceptance: plugin builds; Backlog appears in VesnALIA navigation; right rail lists all projects and handles an empty project. Verify generated SDK types, type checking, build, and a live navigation check. Dependency: none.
 
 ### 2. Folder discovery and configuration
 
@@ -94,7 +94,7 @@ Acceptance: external status edits move cards without refresh; create/delete/rena
 
 Likely files: `README.md`, `skills/backlog/SKILL.md`, `tests/backlog-flow.test.ts`, `package.json`.
 
-Acceptance: mise test/build tasks pass; plugin installs and reloads; the full workflow works without Backlog CLI installed. Verify local and connected-host paths, light styling inside a dark BB shell, archive filtering, directory overrides, two simultaneous writers, and project switching. Document supported Backlog format revision, limitations, and troubleshooting. Dependencies: all preceding slices.
+Acceptance: mise test/build tasks pass; plugin installs and reloads; the full workflow works without Backlog CLI installed. Verify local and connected-host paths, light styling inside a dark VesnALIA shell, archive filtering, directory overrides, two simultaneous writers, and project switching. Document supported Backlog format revision, limitations, and troubleshooting. Dependencies: all preceding slices.
 
 ## Later sections
 
@@ -105,6 +105,6 @@ Add Decisions, Docs, and Plans as separate entries in the plugin's left section 
 - [Backlog CLI documentation](https://github.com/MrLesk/Backlog.md/blob/main/CLI-INSTRUCTIONS.md)
 - [Example backlog](https://github.com/MrLesk/Backlog.md/tree/main/backlog)
 - [Task parser](https://github.com/MrLesk/Backlog.md/blob/main/src/markdown/parser.ts)
-- Installed BB plugin authoring references: navPanel, project listing including Personal, host entries, and hash-guarded file writes.
+- Installed VesnALIA plugin authoring references: navPanel, project listing including Personal, host entries, and hash-guarded file writes.
 
 Implementation has not started. Exact installed SDK contracts and watcher transport remain implementation verification gates.

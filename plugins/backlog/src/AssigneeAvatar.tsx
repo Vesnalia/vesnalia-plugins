@@ -1,4 +1,4 @@
-import { experimental_ProviderIcon as ProviderIcon, experimental_useProviders as useProviders } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderIcon as ProviderIcon, experimental_useProviders as useProviders } from "@vesnalia/plugin-sdk/app";
 import { assigneeProvider, initials } from "./task-relations";
 
 function AgentMark({ id, name }: { id: string; name: string }) {

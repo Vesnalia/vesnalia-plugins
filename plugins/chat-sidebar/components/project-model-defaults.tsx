@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { useComposer, useSdk } from "@get-bb/plugin-sdk/app";
+import { useComposer, useSdk } from "@vesnalia/plugin-sdk/app";
 
 import { ChatProvider, useT } from "./chat-context";
 
-/** Project defaults take precedence over bb's client-wide model preference. */
+/** Project defaults take precedence over VesnALIA's client-wide model preference. */
 function ApplyProjectModelDefaults() {
   const composer = useComposer();
   const sdk = useSdk();

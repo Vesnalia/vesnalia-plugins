@@ -4,9 +4,9 @@
  * A thread whose checkout is on a MacBook builds there in ways no tool call
  * routes through this plugin: Xcode.app's Build and Test, a terminal, Xcode's
  * own agent tools (`BuildProject`, `RunSomeTests`, which build inside
- * Xcode.app). On the machine running bb those are seen by the probe and the
+ * Xcode.app). On the machine running VesnALIA those are seen by the probe and the
  * DerivedData sweep. This is the same probe and sweep for another Mac: a
- * `Collector` per watched Mac, reading through that Mac's `bb.host` worker
+ * `Collector` per watched Mac, reading through that Mac's `alia.host` worker
  * (`src/host/watch.ts`) instead of this machine's disk, folding into the same
  * store and engine under that Mac's host id. So its builds land in the
  * thread's live row and on the plugin page exactly as local ones do.
@@ -59,7 +59,7 @@ export class RemoteMachine implements MachineIO {
      * carry years of history across the network; null for all of them.
      */
     private readonly notBefore: () => number | null = () => null,
-    /** Aborts calls in flight when the Mac stops being watched or bb reloads. */
+    /** Aborts calls in flight when the Mac stops being watched or VesnALIA reloads. */
     private readonly signal?: AbortSignal,
   ) {}
 
@@ -155,7 +155,7 @@ export class RemoteMachine implements MachineIO {
 /**
  * The Macs to watch: those with a thread checkout active or recently active,
  * those the person opted in, and those with a watched build still open.
- * Never the machine running bb, which its own probe already covers.
+ * Never the machine running VesnALIA, which its own probe already covers.
  */
 export function selectHostsToWatch(input: {
   scopeHosts: readonly string[];
@@ -163,7 +163,7 @@ export function selectHostsToWatch(input: {
   openRunHosts: readonly string[];
   serverHostId: string | null;
 }): string[] {
-  // Without bb's word on which machine this is, a Mac named in the setting
+  // Without VesnALIA's word on which machine this is, a Mac named in the setting
   // could be this one, watched twice over under two identities. Scopes are
   // already null-hosted then (`ScopeSync.hostOf`), so this costs nothing new.
   if (input.serverHostId === null) return [];

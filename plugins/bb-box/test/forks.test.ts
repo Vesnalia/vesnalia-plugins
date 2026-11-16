@@ -17,7 +17,7 @@ import { forkPreview, forkWhyOf } from "../src/plugin/snapshot-card.ts";
 import { IDENTITY_TOOL, forkCheckScript, forkSafetyOf, forkSafetyScript, forkVerdict, parseForkSeen, type ForkSeen } from "../src/core/identity.ts";
 import { COMMAND, THREAD, flushing, identityGuest, readIn, readyBox, rejection, standing, withIdentitySource, world, writeIn, type World } from "./snapshot-world.ts";
 
-const IDENTITY_SCRIPT = fileURLToPath(new URL("../setup/proxmox-lxc/template/guest/bb-box-identity.sh", import.meta.url));
+const IDENTITY_SCRIPT = fileURLToPath(new URL("../setup/proxmox-lxc/template/guest/alia-box-identity.sh", import.meta.url));
 const SOURCE_MAC = "bc:24:11:aa:f1:b6";
 const SOURCE_MACHINE_ID = "0123456789abcdef0123456789abcdef";
 const SOURCE_HOST_KEY = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIsourcekey source";
@@ -34,7 +34,7 @@ function toolFor(root: string): { readonly tool: string; readonly bin: string } 
   const bin = join(dir, "bin");
   mkdirSync(bin);
   writeFileSync(join(bin, "ip"), `#!/bin/sh\nif [ "$1" = -o ]; then cat ${quote(join(root, "ip-addr.txt"))} 2>/dev/null; exit 0; fi\nexec cat ${quote(join(root, "ip-link.json"))}\n`, { mode: 0o755 });
-  const tool = join(dir, "bb-box-identity");
+  const tool = join(dir, "alia-box-identity");
   writeFileSync(tool, `#!/bin/sh\nPATH=${quote(bin)}:$PATH BBBOX_IDENTITY_ROOT=${quote(root)} BBBOX_IDENTITY_NIC_WAIT_SECONDS=0 BBBOX_IDENTITY_SETTLE_SECONDS=0 exec bash ${quote(IDENTITY_SCRIPT)} "$@"\n`, { mode: 0o755 });
   return { tool, bin };
 }
@@ -48,10 +48,10 @@ function withIdentity(root: string): void {
     mkdirSync(join(root, path, ".."), { recursive: true });
     writeFileSync(join(root, path), text);
   };
-  write("home/box/.bb-machines/bb.example/host-id", "host_source\n");
-  write("home/box/.bb-machines/bb.example/auth.json", '{"token":"source"}\n');
-  write("home/box/.bb-machines/bb.example/host-artifact.sha256", "abc\n");
-  write("home/box/.config/bb-box/env", "GH_TOKEN=source\n");
+  write("home/box/.alia-machines/alia.example/host-id", "host_source\n");
+  write("home/box/.alia-machines/alia.example/auth.json", '{"token":"source"}\n');
+  write("home/box/.alia-machines/alia.example/host-artifact.sha256", "abc\n");
+  write("home/box/.config/alia-box/env", "GH_TOKEN=source\n");
   write("etc/machine-id", `${SOURCE_MACHINE_ID}\n`);
   write("etc/ssh/ssh_host_ed25519_key", "private\n");
   write("etc/ssh/ssh_host_ed25519_key.pub", `${SOURCE_HOST_KEY}\n`);
@@ -72,10 +72,10 @@ function withLease(root: string, clientId: string): void {
   writeFileSync(join(root, "run/systemd/netif/leases/2"), `# This is private data. Do not parse.\nADDRESS=10.0.0.5\nCLIENTID=${clientId}\n`);
 }
 
-function forkWorld(options: { readonly forkWaitMs?: number; readonly markersOn?: boolean; readonly wholeCards?: boolean; readonly projectsFromBb?: boolean } = {}): Forks {
+function forkWorld(options: { readonly forkWaitMs?: number; readonly markersOn?: boolean; readonly wholeCards?: boolean; readonly projectsFromAlia?: boolean } = {}): Forks {
   const source = identityGuest();
   withIdentity(source.root);
-  const state = world({ identityTool: source.tool, identityRoot: source.root, forkWaitMs: options.forkWaitMs ?? 300, ...(options.markersOn === false ? { markersOn: false } : {}), ...(options.wholeCards !== undefined ? { wholeCards: options.wholeCards } : {}), ...(options.projectsFromBb ? { projectsFromBb: true } : {}) });
+  const state = world({ identityTool: source.tool, identityRoot: source.root, forkWaitMs: options.forkWaitMs ?? 300, ...(options.markersOn === false ? { markersOn: false } : {}), ...(options.wholeCards !== undefined ? { wholeCards: options.wholeCards } : {}), ...(options.projectsFromAlia ? { projectsFromAlia: true } : {}) });
   withIdentitySource(state, "eth");
   const macs = new Map<string, string>();
   const roots = new Map<string, string>();
@@ -120,7 +120,7 @@ async function forked(state: World, box: BoxRecord | null): Promise<BoxRecord> {
   return settled;
 }
 
-test("070 unit 7, G14: a fork resets at its first boot, BB Box checks that before it is ready, writes its own marker, and its source keeps its identity", async () => {
+test("070 unit 7, G14: a fork resets at its first boot, VesnALIA Box checks that before it is ready, writes its own marker, and its source keeps its identity", async () => {
   const forks = forkWorld();
   const { state, source } = forks;
   const box = await readyBox(state);
@@ -152,15 +152,15 @@ test("070 unit 7, G14: a fork resets at its first boot, BB Box checks that befor
   assert.equal(typeof fork.timings.identity, "number");
   assert.deepEqual(fork.fork?.source, { id: box.id, name: box.name, threadId: THREAD, macs: [SOURCE_MAC.toUpperCase()], address: null });
   const root = forks.roots.get(fork.guest!.ref)!;
-  assert.match(fileOf(root, "etc/bb-box/identity") ?? "", new RegExp(`^bb-box identity 1\\nbox ${fork.id}\\nsource eth\\nmac bc:24:11:0f:01:2c\\n$`), "its own marker, written once the check passed");
-  assert.equal(fileOf(root, "home/box/.bb-machines/bb.example/host-id"), null);
-  assert.equal(fileOf(root, "home/box/.bb-machines/bb.example/auth.json"), null);
-  assert.equal(fileOf(root, "home/box/.config/bb-box/env"), null, "the source's access file is gone, and BB Box writes none before the check");
+  assert.match(fileOf(root, "etc/alia-box/identity") ?? "", new RegExp(`^alia-box identity 1\\nbox ${fork.id}\\nsource eth\\nmac bc:24:11:0f:01:2c\\n$`), "its own marker, written once the check passed");
+  assert.equal(fileOf(root, "home/box/.alia-machines/alia.example/host-id"), null);
+  assert.equal(fileOf(root, "home/box/.alia-machines/alia.example/auth.json"), null);
+  assert.equal(fileOf(root, "home/box/.config/alia-box/env"), null, "the source's access file is gone, and VesnALIA Box writes none before the check");
   assert.notEqual(fileOf(root, "etc/machine-id"), `${SOURCE_MACHINE_ID}\n`);
   assert.notEqual(fileOf(root, "etc/ssh/ssh_host_ed25519_key.pub"), `${SOURCE_HOST_KEY}\n`);
-  assert.match(fileOf(root, "var/lib/bb-box/identity-resets") ?? "", /BB machines removed: host_source$/m);
-  assert.equal(fileOf(source.root, "home/box/.bb-machines/bb.example/host-id"), "host_source\n", "the source keeps its BB machine");
-  assert.match(fileOf(source.root, "etc/bb-box/identity") ?? "", new RegExp(`box ${box.id}`));
+  assert.match(fileOf(root, "var/lib/alia-box/identity-resets") ?? "", /ALIA machines removed: host_source$/m);
+  assert.equal(fileOf(source.root, "home/box/.alia-machines/alia.example/host-id"), "host_source\n", "the source keeps its VesnALIA machine");
+  assert.match(fileOf(source.root, "etc/alia-box/identity") ?? "", new RegExp(`box ${box.id}`));
   const operation = state.store.operation(answer.operation.id)!;
   assert.equal(operation.state, "done");
   assert.equal(state.store.pins().has(taken.id), false, "the pin ends with the fork");
@@ -189,14 +189,14 @@ test("070 unit 7, G14: a fork is never handed over when its first boot did not r
     assert.equal(fork.fork?.source.address, SOURCE_ADDRESS);
     assert.equal(fork.state, "failed", each.firstBoot);
     assert.match(fork.error ?? "", each.why, each.firstBoot);
-    assert.match(fork.error ?? "", /BB Box released it, so nothing of it acts as /);
+    assert.match(fork.error ?? "", /ALIA Box released it, so nothing of it acts as /);
     assert.equal(fork.guest, null);
     assert.equal(state.backend.identities.size, 1);
     const [ref] = [...state.backend.identities.keys()];
     assert.equal(await state.backend.power({ ref: ref!, host: null, address: null, size: null, data: { box: fork.id } }), null, `${each.firstBoot}: the fork's guest is gone`);
     assert.equal(state.store.operation(answer.operation.id)?.state, "failed");
     assert.deepEqual(state.kinds(box!.id).filter((kind) => kind.startsWith("fork")), ["fork-asked", "fork-failed"]);
-    assert.equal(fileOf(forks.source.root, "home/box/.bb-machines/bb.example/host-id"), "host_source\n");
+    assert.equal(fileOf(forks.source.root, "home/box/.alia-machines/alia.example/host-id"), "host_source\n");
   }
 });
 
@@ -215,7 +215,7 @@ test("where addresses are leased, a fork on its stopped source's last address is
     { name: "running, on its recorded address", source: { power: "running", leased: "10.0.0.8" }, held: true, fork: FORK_CLIENT_ID, why: /it holds \S+'s address 10\.0\.0\.5, so it would take/ },
     { name: "running, on its lease", source: { power: "running", leased: SOURCE_ADDRESS }, recorded: "10.0.0.8", held: true, fork: FORK_CLIENT_ID, why: /it holds \S+'s address 10\.0\.0\.5, so it would take/ },
     { name: "suspended, on its recorded address", source: { power: "suspended", leased: null }, held: true, fork: FORK_CLIENT_ID, why: /it holds \S+'s address 10\.0\.0\.5, so it would take/ },
-    { name: "unreadable", source: "unreadable", held: true, fork: FORK_CLIENT_ID, why: /it could not read the address \S+ holds now, so it cannot tell that the fork does not take it: Reading it failed: the Mac did not answer\. BB Box released it/ },
+    { name: "unreadable", source: "unreadable", held: true, fork: FORK_CLIENT_ID, why: /it could not read the address \S+ holds now, so it cannot tell that the fork does not take it: Reading it failed: the Mac did not answer\. ALIA Box released it/ },
     { name: "static", source: "static", held: true, fork: FORK_CLIENT_ID, why: /it holds \S+'s address 10\.0\.0\.5, so it would take/ },
   ];
   for (const each of cases) {
@@ -317,7 +317,7 @@ test("a fork that asked for its address with its source's DHCP client ID is refu
   const same = forkVerdict(parseForkSeen(seenLines([...WHOLE, `dhcp_client_id=${sourceClientId}`]), 0), expected);
   assert.equal(same.is, "refused");
   assert.match((same as { why: string }).why, /^it asked for its address with amber-fox's DHCP client ID, so a DHCP server takes it for amber-fox and may give it amber-fox's address$/);
-  assert.deepEqual(forkVerdict(parseForkSeen(seenLines([...WHOLE, `dhcp_client_id=${sourceClientId}`]), 0), EXPECTED), { is: "ready" }, "a snapshot that held no client ID, from before BB Box read them, is checked as before");
+  assert.deepEqual(forkVerdict(parseForkSeen(seenLines([...WHOLE, `dhcp_client_id=${sourceClientId}`]), 0), EXPECTED), { is: "ready" }, "a snapshot that held no client ID, from before VesnALIA Box read them, is checked as before");
   const unreadable = forkVerdict(parseForkSeen(seenLines([...WHOLE, "unreadable=/run/systemd/netif/leases/2"]), 0), expected);
   assert.match((unreadable as { why: string }).why, /could not read \/run\/systemd\/netif\/leases\/2 in it/);
 });
@@ -346,10 +346,10 @@ test("the identity a snapshot holds and the fork check read the DHCP client ID o
   put(join(root, "etc/ssh/ssh_host_ed25519_key.pub"), `${SOURCE_HOST_KEY}\n`);
   put(join(root, "run/systemd/netif/leases/2"), "# This is private data. Do not parse.\nADDRESS=192.168.64.5\nSERVER_ADDRESS=192.168.64.1\nLIFETIME=1h\nCLIENTID=01f6839d58e72c\n");
   put(join(root, "run/systemd/netif/leases/3"), "ADDRESS=10.0.0.9\n");
-  put(join(root, "etc/bb-box/identity"), "bb-box identity 1\nsource eth\nmac bc:24:11:0f:01:2c\n");
-  put(join(bin, "bb-box-identity"), `#!/bin/sh\nprintf '${STATUS_RESET.replaceAll("\n", "\\n")}\\n'\n`, 0o755);
+  put(join(root, "etc/alia-box/identity"), "alia-box identity 1\nsource eth\nmac bc:24:11:0f:01:2c\n");
+  put(join(bin, "alia-box-identity"), `#!/bin/sh\nprintf '${STATUS_RESET.replaceAll("\n", "\\n")}\\n'\n`, 0o755);
   put(join(bin, "id"), "#!/bin/sh\necho 0\n", 0o755);
-  const run = (script: string) => spawnSync("/bin/sh", ["-c", script.replaceAll(IDENTITY_TOOL, join(bin, "bb-box-identity"))], { encoding: "utf8", env: { BBBOX_IDENTITY_ROOT: root, PATH: `${bin}:${process.env.PATH ?? ""}` } });
+  const run = (script: string) => spawnSync("/bin/sh", ["-c", script.replaceAll(IDENTITY_TOOL, join(bin, "alia-box-identity"))], { encoding: "utf8", env: { BBBOX_IDENTITY_ROOT: root, PATH: `${bin}:${process.env.PATH ?? ""}` } });
   const clientId = createHash("sha256").update("01f6839d58e72c").digest("hex");
   const held = run(forkSafetyScript());
   assert.deepEqual(forkSafetyOf(held.stdout, held.status).identity?.dhcpClientIds, [clientId], held.stderr);
@@ -366,7 +366,7 @@ test("070 unit 7: a fork whose card comes after its first boot is held until its
   await state.snapshots.take(COMMAND, box, standing(box), { name: "set up" });
   const fork = await forked(state, (await state.snapshots.fork(COMMAND, box, standing(box), "set up")).box);
   assert.equal(fork.state, "ready", fork.error ?? "");
-  assert.match(fileOf(forks.roots.get(fork.guest!.ref)!, "run/bb-box-identity/boot") ?? "", /^reset/);
+  assert.match(fileOf(forks.roots.get(fork.guest!.ref)!, "run/alia-box-identity/boot") ?? "", /^reset/);
 });
 
 test("070 unit 7, G14: a snapshot taken without a working identity reset never forks, and nothing is copied", async () => {
@@ -378,7 +378,7 @@ test("070 unit 7, G14: a snapshot taken without a working identity reset never f
   assert.equal(taken.identity, null);
   const refused = await rejection(state.snapshots.fork(COMMAND, box, standing(box), "unarmed"));
   assert.equal(refused.code, "unsupported");
-  assert.equal(refused.message, `${box.name} had no working identity reset when "unarmed" was taken, so BB Box does not fork it: a copy of it would not give up ${box.name}'s identity, and could act as ${box.name}.`);
+  assert.equal(refused.message, `${box.name} had no working identity reset when "unarmed" was taken, so VesnALIA Box does not fork it: a copy of it would not give up ${box.name}'s identity, and could act as ${box.name}.`);
   assert.equal(state.provider.order.some((step) => step.startsWith("fork")), false);
   assert.deepEqual(state.store.operations({ box: box.id, kind: "fork" }), []);
   assert.deepEqual((await state.boxes.all()).map((each) => each.id), [box.id]);
@@ -459,7 +459,7 @@ test("070 unit 7: a fork starts with up to 180 s for its first boot, and a fork 
   assert.equal(taken.forkSafe, 9);
   assert.equal(taken.unflushed, "sync: Input/output error");
   const check = await state.snapshots.checkFork(COMMAND, box, standing(box), "unflushed");
-  assert.match(forkCheckText(check), /\nThe snapshot may miss what the box wrote in its last seconds before it: BB Box could not flush the box's writes to its disk before it \(sync: Input\/output error\), so the fork may lack them too\.\n/);
+  assert.match(forkCheckText(check), /\nThe snapshot may miss what the box wrote in its last seconds before it: ALIA Box could not flush the box's writes to its disk before it \(sync: Input\/output error\), so the fork may lack them too\.\n/);
   state.provider.order.length = 0;
   const answer = await state.snapshots.fork(COMMAND, box, standing(box), "unflushed");
   const fork = await forked(state, answer.box);
@@ -491,7 +491,7 @@ test("070 unit 7 reviews: the check before ready needs every observation read, i
     ["no address of its own", WHOLE.filter((line) => line !== "address=10.0.0.6"), /it does not hold its own address 10\.0\.0\.6, nor any other/],
     ["another box's address", [...WHOLE, "address=10.0.0.7"], /it holds 10\.0\.0\.7, another box's address/],
     ["a marker not armed", WHOLE.map((line) => line.replace("armed=yes", "armed=no")), /its identity marker is not armed/],
-    ["an older version", WHOLE.map((line) => line.replace("version=7", "version=6")), /it has version 6 of the identity reset, and BB Box forks only from version 7 there/],
+    ["an older version", WHOLE.map((line) => line.replace("version=7", "version=6")), /it has version 6 of the identity reset, and ALIA Box forks only from version 7 there/],
     ["the reset off", WHOLE.map((line) => line.replace("enabled=yes", "enabled=no")), /its identity reset is off/],
   ];
   for (const [name, lines, why] of cases) {
@@ -519,11 +519,11 @@ test("070 unit 7 reviews: a snapshot from an identity reset older than its backe
   (state.backend as unknown as Record<string, unknown>).snapshotting = () => ({ ...offered, forkSafeFrom: 10 });
   const refused = await rejection(state.snapshots.fork(COMMAND, box, standing(box), "older"));
   assert.equal(refused.code, "unsupported");
-  assert.match(refused.message, new RegExp(`^${box.name} had version 9 of the identity reset when "older" was taken, and BB Box forks .+ only from version 10`));
+  assert.match(refused.message, new RegExp(`^${box.name} had version 9 of the identity reset when "older" was taken, and VesnALIA Box forks .+ only from version 10`));
   assert.equal(state.provider.order.some((step) => step.startsWith("fork")), false);
   assert.match(forkWhyOf(state.store.record(taken.id)!, backend.snapshotting!(box.kind)) ?? "", /had an identity reset older than version 10 when it was taken/);
   const ofBox = await rejection(state.snapshots.checkForkOfBox(COMMAND, box, standing(box)));
-  assert.match(ofBox.message, /has version 9 of the identity reset, and BB Box forks .+ only from version 10/);
+  assert.match(ofBox.message, /has version 9 of the identity reset, and ALIA Box forks .+ only from version 10/);
 });
 
 test("070 unit 7 reviews: a fork whose guest cannot be deleted keeps its guest and its operation unsettled, says so, and the sweep deletes it later", async () => {
@@ -537,7 +537,7 @@ test("070 unit 7 reviews: a fork whose guest cannot be deleted keeps its guest a
   const fork = await forked(state, answer.box);
   assert.equal(fork.state, "failed");
   assert.ok(fork.guest, "the guest is kept on the record, so it is not lost");
-  assert.match(fork.error ?? "", /BB Box could not delete its guest \S+ yet \(CT is locked \(clone\)\), so it stopped it\. It tries again at each sweep, and never hands the fork over\.$/);
+  assert.match(fork.error ?? "", /ALIA Box could not delete its guest \S+ yet \(CT is locked \(clone\)\), so it stopped it\. It tries again at each sweep, and never hands the fork over\.$/);
   assert.doesNotMatch(fork.error ?? "", /released it/);
   assert.equal(await state.backend.power(fork.guest!), "stopped");
   assert.equal(state.store.operation(answer.operation.id)?.state, "unknown");
@@ -547,7 +547,7 @@ test("070 unit 7 reviews: a fork whose guest cannot be deleted keeps its guest a
   await state.boxes.sweep();
   const after = (await state.boxes.find(fork.id))!;
   assert.equal(after.guest, null);
-  assert.match(after.error ?? "", /BB Box released it, so nothing of it acts as /);
+  assert.match(after.error ?? "", /ALIA Box released it, so nothing of it acts as /);
   assert.equal(await state.backend.power(fork.guest!), null);
   assert.equal(state.store.operation(answer.operation.id)?.state, "failed");
   assert.equal(state.store.pins().has(taken.id), false);
@@ -585,7 +585,7 @@ test("070 unit 7 reviews: before box_fork takes a snapshot, the box is checked a
   state.provider.forkWhy = "The Proxmox token lacks VM.Clone on /pool/bbbox.";
   assert.match((await rejection(state.snapshots.checkForkOfBox(agent, box, standing(box)))).message, /lacks VM\.Clone/);
   state.provider.forkWhy = null;
-  writeFileSync(join(forks.source.root, "etc/bb-box/identity"), "garbled\n");
+  writeFileSync(join(forks.source.root, "etc/alia-box/identity"), "garbled\n");
   assert.match((await rejection(state.snapshots.checkForkOfBox(agent, box, standing(box)))).message, /has no working identity reset now/);
   assert.equal(state.store.records({ box: box.id }).length, 0, "the checks take nothing");
 });
@@ -600,9 +600,9 @@ function probedFork(): { readonly root: string; readonly breakTool: (name: strin
   };
   put(join(root, "etc/machine-id"), "fedcba9876543210fedcba9876543210\n");
   put(join(root, "etc/ssh/ssh_host_ed25519_key.pub"), "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAInewkey fork\n");
-  put(join(root, "etc/bb-box/identity"), "mac bc:24:11:0f:01:2c\n");
+  put(join(root, "etc/alia-box/identity"), "mac bc:24:11:0f:01:2c\n");
   put(join(root, "var/lib/tailscale/tailscaled.state"), '{"_current-profile":"cHJvZmlsZQ=="}\n');
-  const tool = join(bin, "bb-box-identity");
+  const tool = join(bin, "alia-box-identity");
   put(tool, `#!/bin/sh\nprintf '%s\\n' ${quote(STATUS_RESET)}\n`, 0o755);
   put(join(bin, "id"), "#!/bin/sh\necho 0\n", 0o755);
   put(join(bin, "ip"), `#!/bin/sh\necho ${quote(addressLine("10.0.0.6").trim())}\n`, 0o755);
@@ -639,7 +639,7 @@ test("070 unit 7 re-review: a probe that fails to read the fork's Tailscale stat
   }
 });
 
-test("070 unit 7 re-review: a fork cut off by BB Box stopping during its first start keeps its guest on its record, and recovery deletes that guest before it copies the snapshot again", async () => {
+test("070 unit 7 re-review: a fork cut off by VesnALIA Box stopping during its first start keeps its guest on its record, and recovery deletes that guest before it copies the snapshot again", async () => {
   const forks = forkWorld();
   const { state } = forks;
   const box = await readyBox(state);
@@ -666,7 +666,7 @@ test("070 unit 7 re-review: a fork cut off by BB Box stopping during its first s
   assert.equal(await state.backend.power(cut), "running");
   await state.restart();
   forks.macsAfterRestart();
-  assert.equal(await state.backend.power(cut), "running", "BB Box's restart leaves the guest as it was");
+  assert.equal(await state.backend.power(cut), "running", "VesnALIA Box's restart leaves the guest as it was");
   const copy = state.provider.onForked!;
   let cutAtCopy: string | null = "not copied again";
   state.provider.onForked = async (made, ref) => {
@@ -698,7 +698,7 @@ test("070 unit 7 re-review: box_fork's check before its take refuses a fork with
   for (const caller of [agent, COMMAND]) {
     state.backend.capacity = async () => ({ ok: false, message: "Every GPU is full. Release a desktop box, or raise the desktops per GPU.", warm: null, hosts: [] });
     const full = await rejection(state.snapshots.checkForkOfBox(caller, box, standing(box), { gpu: "shared" }));
-    assert.match(full.message, /^Not forked: .*Every GPU is full\. Fork it with gpu none, or ask the user\. BB Box copied nothing\.$/);
+    assert.match(full.message, /^Not forked: .*Every GPU is full\. Fork it with gpu none, or ask the user\. ALIA Box copied nothing\.$/);
     assert.doesNotMatch(full.message, /Release|raise|settings/);
   }
   state.backend.capacity = capacity;
@@ -718,15 +718,15 @@ test("071 unit 8: a fork's room refused by its provider reaches an agent in the 
     return {
       ok: false,
       message: 'No card on pve is free for a whole card now: card 0 has lone-pine (in thread "Train the model") running. Release a box on one of the cards, ask for gpu shared, or ask for gpu none.',
-      agentMessage: "Not made: no card on pve is free for a whole card now: card 0 has lone-pine running. Ask for gpu shared, or ask the user. BB Box changed nothing.",
+      agentMessage: "Not made: no card on pve is free for a whole card now: card 0 has lone-pine running. Ask for gpu shared, or ask the user. VesnALIA Box changed nothing.",
       warm: null,
       hosts: [],
     };
   };
   const refused = await rejection(state.snapshots.checkForkOfBox(agent, box, standing(box), { gpu: "whole" }));
   assert.equal(refused.code, "no_capacity");
-  assert.match(refused.message, /lone-pine \(in thread "Train the model"\) running\. Fork it with gpu shared or none, or ask the user\. BB Box copied nothing\.$/);
-  assert.equal((refused as BoxError).agentMessage, "Not forked: Fake host has no room for the fork: no card on pve is free for a whole card now: card 0 has lone-pine running. Fork it with gpu shared or none, or ask the user. BB Box copied nothing.");
+  assert.match(refused.message, /lone-pine \(in thread "Train the model"\) running\. Fork it with gpu shared or none, or ask the user\. ALIA Box copied nothing\.$/);
+  assert.equal((refused as BoxError).agentMessage, "Not forked: Fake host has no room for the fork: no card on pve is free for a whole card now: card 0 has lone-pine running. Fork it with gpu shared or none, or ask the user. VesnALIA Box copied nothing.");
   assert.deepEqual(asked, [THREAD]);
   const person = await rejection(state.snapshots.checkForkOfBox(COMMAND, box, standing(box), { gpu: "whole" }));
   assert.equal((person as BoxError).agentMessage, null, "the person's refusal carries no agent's words");
@@ -740,13 +740,13 @@ test("071 unit 8, lead: a fork with a whole card is refused while whole cards ar
   const records = state.store.records().length;
   const live = await rejection(state.snapshots.checkForkOfBox(agent, box, standing(box), { gpu: "whole" }));
   assert.equal(live.code, "unsupported");
-  assert.equal(live.message, "Not forked: whole cards are off on this install. Fork it with gpu shared or none, or turn Whole cards on in the backend's GPUs section in BB Box's settings, or with bb box backend set <backend> --field whole-cards=true. BB Box copied nothing.");
-  assert.equal((live as BoxError).agentMessage, "Not forked: whole cards are off on this install. Fork it with gpu shared or none, or ask the user. BB Box copied nothing.");
+  assert.equal(live.message, "Not forked: whole cards are off on this install. Fork it with gpu shared or none, or turn Whole cards on in the backend's GPUs section in VesnALIA Box's settings, or with VesnALIA box backend set <backend> --field whole-cards=true. VesnALIA Box copied nothing.");
+  assert.equal((live as BoxError).agentMessage, "Not forked: whole cards are off on this install. Fork it with gpu shared or none, or ask the user. VesnALIA Box copied nothing.");
   assert.equal(state.store.records().length, records, "nothing was taken");
   assert.equal((await state.boxes.list(THREAD)).length, 1, "no fork's record was made");
   await state.snapshots.take(agent, box, standing(box), { name: "set up" });
   const ofSnapshot = await rejection(state.snapshots.checkFork(agent, box, standing(box), "set up", { gpu: "whole" }));
-  assert.equal(ofSnapshot.message, "Not forked: whole cards are off on this install. Fork it with gpu shared or none, or ask the user. BB Box copied nothing.");
+  assert.equal(ofSnapshot.message, "Not forked: whole cards are off on this install. Fork it with gpu shared or none, or ask the user. VesnALIA Box copied nothing.");
 });
 
 test("070 unit 7 re-review: a fork's guest is disarmed before each attempt to delete it, when the fork fails and at each sweep after", async () => {
@@ -764,7 +764,7 @@ test("070 unit 7 re-review: a fork's guest is disarmed before each attempt to de
   assert.deepEqual(steps, [`disarm ${ref}`, `release ${ref}`, `disarm ${ref}`, `release ${ref}`]);
 });
 
-test("070 unit 8, G15: Keep, release, restart bb-box, then fork the kept snapshot from its held copy: the fork is one of your machines, resets, and has the file written before the take", async () => {
+test("070 unit 8, G15: Keep, release, restart alia-box, then fork the kept snapshot from its held copy: the fork is one of your machines, resets, and has the file written before the take", async () => {
   const forks = forkWorld();
   const { state } = forks;
   const box = await readyBox(state);
@@ -790,7 +790,7 @@ test("070 unit 8, G15: Keep, release, restart bb-box, then fork the kept snapsho
   assert.equal(fork.fork?.snapshot.from, "held-copy");
   assert.equal(readIn(state, fork, "work/state.txt"), "written before the take");
   const root = forks.roots.get(fork.guest!.ref)!;
-  assert.equal(fileOf(root, "home/box/.bb-machines/bb.example/host-id"), null, "it reset");
+  assert.equal(fileOf(root, "home/box/.alia-machines/alia.example/host-id"), null, "it reset");
   assert.equal(state.store.operation(answer.operation.id)?.state, "done");
   assert.equal(state.store.pins().has(taken.id), false);
   assert.deepEqual(state.kinds(box.id).filter((kind) => kind === "fork-asked" || kind === "forked"), ["fork-asked", "forked"]);
@@ -823,12 +823,12 @@ test("070 unit 11b: on a backend whose identity source is a value, the check bef
     ["the source's value", whole.map((line) => line.replace("marker_value=bxfork00000001", "marker_value=bxsource")), /its identity marker holds amber-fox's value, so its identity reset did not tell it is a copy/],
     ["no value", whole.filter((line) => !line.startsWith("marker_value=")), /its identity marker holds no value, not its own bxfork00000001/],
     ["the marker still names a box", whole.map((line) => line.replace("box=", "box=bxsource")), /its identity marker names box bxsource, amber-fox, which a reset would have removed/],
-    ["BB's machine still there", [...whole, "bb_file=/home/box/.bb-machines/bb.example.com/host-id"], /BB's machine credentials are still on its disk/],
-    ["the access file still there", [...whole, "access_file=/home/box/.config/bb-box/env"], /the thread's access file is still on its disk/],
+    ["VesnALIA's machine still there", [...whole, "alia_file=/home/box/.alia-machines/alia.example.com/host-id"], /ALIA's machine credentials are still on its disk/],
+    ["the access file still there", [...whole, "access_file=/home/box/.config/alia-box/env"], /the thread's access file is still on its disk/],
     ["a tailnet node", whole.map((line) => line.replace("tailnet_node=no", "tailnet_node=yes")), /its Tailscale state still holds a tailnet node/],
     ["the source's machine ID", whole.map((line) => line.replace(`machine_id=${HASH_B}`, `machine_id=${HASH_A}`)), /its machine ID is amber-fox's/],
     ["the source's host key", whole.map((line) => line.replace(`host_key=${HASH_B}`, `host_key=${HASH_A}`)), /it has amber-fox's SSH host keys/],
-    ["version 7", whole.map((line) => line.replace("version=8", "version=7")), /it has version 7 of the identity reset, and BB Box forks only from version 8 there/],
+    ["version 7", whole.map((line) => line.replace("version=8", "version=7")), /it has version 7 of the identity reset, and ALIA Box forks only from version 8 there/],
   ];
   for (const [name, lines, why] of cases) {
     const verdict = forkVerdict(parseForkSeen(seenLines(lines), 0), expected);
@@ -870,18 +870,18 @@ test("071 unit 7 round 2, Astra 4: a fork whose card the backend refuses keeps t
   const box = await readyBox(state);
   await state.snapshots.take(COMMAND, box, standing(box), { name: "set up" });
   (state.backend as unknown as Record<string, unknown>).placeForkGpu = async () => {
-    throw new BackendError("no_capacity", "Not forked: no card has room. Release a desktop box. BB Box copied nothing.", "Not forked: no card has room. Fork it with gpu none, or ask the user. BB Box copied nothing.");
+    throw new BackendError("no_capacity", "Not forked: no card has room. Release a desktop box. VesnALIA Box copied nothing.", "Not forked: no card has room. Fork it with gpu none, or ask the user. VesnALIA Box copied nothing.");
   };
   const answer = await state.snapshots.fork(COMMAND, box, standing(box), "set up");
   const fork = await forked(state, answer.box);
   assert.equal(fork.state, "failed");
   assert.match(fork.error ?? "", /^Not forked: no card has room\. Release a desktop box\./);
-  assert.match(errorForAgent(fork) ?? "", /^Not forked: no card has room\. Fork it with gpu none, or ask the user\. BB Box copied nothing\. BB Box released it, so nothing of it acts as /);
+  assert.match(errorForAgent(fork) ?? "", /^Not forked: no card has room\. Fork it with gpu none, or ask the user\. ALIA Box copied nothing\. ALIA Box released it, so nothing of it acts as /);
   assert.doesNotMatch(errorForAgent(fork) ?? "", /release a desktop/i);
 });
 
 test("a fork of a box or a snapshot on a backend kept for other projects goes to no thread outside them, the check refusing as the fork would; the person may still fork it as one of their machines (#1458)", async () => {
-  const forks = forkWorld({ projectsFromBb: true });
+  const forks = forkWorld({ projectsFromAlia: true });
   const { state } = forks;
   const box = await readyBox(state);
   await state.snapshots.take(COMMAND, box, standing(box), { name: "set up" });
@@ -891,7 +891,7 @@ test("a fork of a box or a snapshot on a backend kept for other projects goes to
 
   for (const projectId of [null, "proj_home"]) {
     state.threadProjects.set(THREAD, projectId);
-    assert.match((await rejection(state.snapshots.checkFork(agent, box, standing(box), "set up", { projectId: "proj_work" }))).message, keptForOthers, "the project BB gives now, not one the caller says");
+    assert.match((await rejection(state.snapshots.checkFork(agent, box, standing(box), "set up", { projectId: "proj_work" }))).message, keptForOthers, "the project VesnALIA gives now, not one the caller says");
     assert.match((await rejection(state.snapshots.fork(agent, box, standing(box), "set up", { projectId: "proj_work" }))).message, keptForOthers);
     assert.match((await rejection(state.snapshots.checkForkOfBox(agent, box, standing(box), { projectId: "proj_work" }))).message, keptForOthers);
   }
@@ -914,8 +914,8 @@ test("a fork of a box or a snapshot on a backend kept for other projects goes to
   assert.equal(work.projectId, "proj_work");
 });
 
-test("a command's or the panel's fork of a box whose thread moved out of the project its backend is kept for is refused, though the box was made in that project, and one BB cannot place has no project (#1458)", async () => {
-  const forks = forkWorld({ projectsFromBb: true });
+test("a command's or the panel's fork of a box whose thread moved out of the project its backend is kept for is refused, though the box was made in that project, and one VesnALIA cannot place has no project (#1458)", async () => {
+  const forks = forkWorld({ projectsFromAlia: true });
   const { state } = forks;
   state.threadProjects.set(THREAD, "proj_work");
   state.keptFor = ["proj_work"];
@@ -926,7 +926,7 @@ test("a command's or the panel's fork of a box whose thread moved out of the pro
   const keptForOthers = /is kept for certain projects, and this thread('s project is not one of them| has no project), so a fork there cannot be this thread's box\./;
   assert.equal((await state.snapshots.checkFork(COMMAND, box!, standing(box!), "set up")).threadId, THREAD, "allowed while the thread is in the project");
 
-  for (const now of ["proj_home", new Error("BB did not answer")]) {
+  for (const now of ["proj_home", new Error("VesnALIA did not answer")]) {
     state.threadProjects.set(THREAD, now);
     for (const caller of [COMMAND, person]) {
       assert.match((await rejection(state.snapshots.checkFork(caller, box!, standing(box!), "set up"))).message, keptForOthers);

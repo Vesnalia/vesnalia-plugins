@@ -20,7 +20,7 @@ async function writeSkill(dir: string, name: string): Promise<void> {
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(path.join(os.tmpdir(), "bb-skills-bounded-"));
+  root = await mkdtemp(path.join(os.tmpdir(), "alia-skills-bounded-"));
 });
 
 // A workspace can plant any of these; discovery runs whenever a composer's

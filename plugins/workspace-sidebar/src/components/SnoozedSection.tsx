@@ -11,7 +11,7 @@ import { DockAction, DockHeader, DockRow } from "./DockRow";
 import { ProjectIcon } from "./ProjectIcon";
 import { StatusIcon } from "./StatusIcon";
 
-const SNOOZED_EXPANDED_KEY = "bb-workspace-sidebar:snoozed-expanded:v1";
+const SNOOZED_EXPANDED_KEY = "alia-workspace-sidebar:snoozed-expanded:v1";
 
 /**
  * The threads a person has parked until later. They leave the list, but not
@@ -30,7 +30,7 @@ export function SnoozedSection({ entries, now }: { entries: readonly SnoozedEntr
             className="shrink-0 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/header:opacity-100 pointer-coarse:opacity-100"
             onClick={() => entries.forEach(entry => sidebar.setSnoozed(entry.thread.id, null))}>Wake all</button>
         : undefined} />
-    {expanded && <ul id={sectionId} className="bb-ws-section-tree max-h-48 overflow-y-auto pb-1">
+    {expanded && <ul id={sectionId} className="alia-ws-section-tree max-h-48 overflow-y-auto pb-1">
       {entries.map(entry => <SnoozedRow key={entry.thread.id} entry={entry} now={now} />)}
     </ul>}
   </section>;

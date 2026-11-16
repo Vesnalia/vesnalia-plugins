@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginSidebarThread, PluginThreadListProps } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginSidebarThread, PluginThreadListProps } from "@vesnalia/plugin-sdk/app";
 import { assistant, fixture, thread } from "./fixtures";
 
 const slots: { lifecycle: { unmount(): void } }[] = [];
@@ -65,7 +65,7 @@ describe("Integrated Recent sidebar", () => {
     const link = await slot.findByRole("link", { name: /Synthetic chat.*Unread.*Work in progress/ });
     expect(link.querySelector('[data-thread-status-glyph="runtime"]')).not.toBeNull();
     expect(link.querySelector('[data-thread-status-glyph="unread-success"]')).not.toBeNull();
-    expect(link.querySelector(".bb-thread-title")?.classList.contains("font-semibold")).toBe(true);
+    expect(link.querySelector(".alia-thread-title")?.classList.contains("font-semibold")).toBe(true);
   });
   it.each([false, true])("retains an unread badge when the host prioritizes work (draft=%s)", async draft => {
     const { slot } = await page(fixture(), [{ ...sidebarThread(), runtimeStatus: "active", indicator: "runtime" }],
@@ -74,7 +74,7 @@ describe("Integrated Recent sidebar", () => {
     expect(link.querySelector(`[data-thread-status-glyph="${draft ? "working-draft" : "runtime"}"]`)).not.toBeNull();
     const unread = link.querySelector('[data-thread-status-glyph="unread-success"]');
     expect(unread?.parentElement?.classList.contains("flex")).toBe(true);
-    expect(link.querySelector(".bb-thread-title")?.parentElement?.contains(unread)).toBe(true);
+    expect(link.querySelector(".alia-thread-title")?.parentElement?.contains(unread)).toBe(true);
   });
   it.each([true, false])("reflects child generation=%s on an idle unread parent outside the Recent result", async running => {
     const parent = sidebarThread();
@@ -85,7 +85,7 @@ describe("Integrated Recent sidebar", () => {
     expect(!!link.querySelector('[data-thread-status-glyph="runtime"]')).toBe(running);
     expect(link.getAttribute("aria-label")?.includes("Work in progress")).toBe(running);
     expect(link.querySelector('[data-thread-status-glyph="unread-success"]')).not.toBeNull();
-    expect(link.querySelector(".bb-thread-title")?.classList.contains("font-semibold")).toBe(true);
+    expect(link.querySelector(".alia-thread-title")?.classList.contains("font-semibold")).toBe(true);
     expect(slot.getAllByRole("link")).toHaveLength(1);
     expect(slot.container.querySelector('[data-sidebar-thread-id="thr_child"]')).toBeNull();
   });

@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
-import { agentResult, agentStart, bb, boxes, containerOf, docker, expect, home, makeReport, pause, rpc, skipSetup, waitFor } from "./live-lib.mjs";
+import { agentResult, agentStart, alia, boxes, containerOf, docker, expect, home, makeReport, pause, rpc, skipSetup, waitFor } from "./live-lib.mjs";
 
 const label = process.argv[2] ?? "run";
 const only = new Set((process.env.LIVE_ONLY ?? "").split(",").filter(Boolean));
@@ -198,14 +198,14 @@ if (section("history-off")) {
     await openList();
     await waitFor(async () => (await lineOf(names.L).textContent()).includes("Busy"), "the row's busy words", 30_000);
     const off = Date.now();
-    bb(["box", "option", "set", "monitor.boxHistory=false"]);
+    alia(["box", "option", "set", "monitor.boxHistory=false"]);
     await waitFor(async () => !(await lineOf(names.L).textContent()).includes("Busy"), "no busy words on the row", 60_000);
     const row = (Date.now() - off) / 1000;
     await page.goto(`${boxes}/box/${loaded.box.id}`);
     await page.locator("h1[data-page-heading]").waitFor();
     await pause(1500);
     const onPage = await page.locator("[data-busy]").count();
-    bb(["box", "option", "set", "monitor.boxHistory=true"]);
+    alia(["box", "option", "set", "monitor.boxHistory=true"]);
     docker(["exec", container, "pkill", "yes"]);
     expect(onPage === 0, "the page still says busy");
     return `the row lost its busy words ${row.toFixed(1)} s after the switch; the page says nothing`;

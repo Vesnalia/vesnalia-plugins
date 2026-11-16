@@ -107,7 +107,7 @@ export function makeStillsHandlers(ctx: Ctx) {
           // `false` covers both a person declining and no thread existing to
           // ask; the sentence must not accuse a person who never saw a dialog.
           throw new Error(
-            "The preview render was not confirmed. If no dialog appeared, run this from an active bb thread so someone can approve it.",
+            "The preview render was not confirmed. If no dialog appeared, run this from an active VesnALIA thread so someone can approve it.",
           );
         }
         const enqueued = await ctx.stills.enqueue(scope, device ?? null);
@@ -123,7 +123,7 @@ export function makeStillsHandlers(ctx: Ctx) {
 
     async stillsLatest({ lookId }: { lookId?: string }) {
       // An explicit id is not scope-filtered: it came from a directive in a
-      // message in this user's own bb, and a record that refuses to render
+      // message in this user's own VesnALIA, and a record that refuses to render
       // because you have since switched project is not a record.
       if (lookId !== undefined) {
         const look = getLook(ctx.db, lookId);

@@ -7,7 +7,7 @@ import { execFileOutput } from "./skills-sync.ts";
 /**
  * Machine side of the hub canon: pack a draft for publishing, unpack a hub
  * skill into the drafts folder, and clear the CLI skill folders that would
- * otherwise show every hub skill twice in BB sessions.
+ * otherwise show every hub skill twice in VesnALIA sessions.
  */
 
 /** CLI folders a machine keeps skills in. `keep` entries belong to the CLI itself. */
@@ -15,7 +15,7 @@ export const MACHINE_SKILL_HOMES = [
   { id: "agents", path: ".agents/skills", keep: [] as string[] },
   { id: "claude", path: ".claude/skills", keep: ["synced"] },
   { id: "codex", path: ".codex/skills", keep: [] as string[] },
-  { id: "bb", path: ".bb/skills", keep: [] as string[] },
+  { id: "alia", path: ".vesnalia/skills", keep: [] as string[] },
   { id: "gemini-config", path: ".gemini/config/skills", keep: [] as string[] },
   { id: "gemini", path: ".gemini/skills", keep: [] as string[] },
   { id: "opencode", path: ".config/opencode/skills", keep: [] as string[] },
@@ -169,19 +169,19 @@ export type FoundSkill = { name: string; path: string; home: string; mtime: numb
 /**
  * Every skill folder (with SKILL.md) the CLI folders hold, links resolved to
  * their real folder, one entry per name: the newest copy wins. This is what a
- * machine would lose from BB sessions if it is not on the hub.
+ * machine would lose from VesnALIA sessions if it is not on the hub.
  */
-/** Real folders that belong to a CLI or to BB itself, never to the user. */
+/** Real folders that belong to a CLI or to VesnALIA itself, never to the user. */
 const OWNED_ROOTS = [
   ".codex/skills/.system",
   ".claude/skills/synced",
   ".claude/plugins",
   ".codex/plugins",
-  ".bb-machines",
-  ".bb/plugins",
+  ".alia-machines",
+  ".vesnalia/plugins",
 ];
-/** Skills BB writes on every machine by itself. */
-const BB_OWN_SKILLS = new Set(["bb-cli"]);
+/** Skills VesnALIA writes on every machine by itself. */
+const ALIA_OWN_SKILLS = new Set(["alia-cli"]);
 
 export async function listMachineSkills(home = os.homedir(), protect: ProtectEntry[] = []): Promise<FoundSkill[]> {
   const roots = await protectedRoots(protect);
@@ -193,7 +193,7 @@ export async function listMachineSkills(home = os.homedir(), protect: ProtectEnt
     const dir = path.join(home, location.path);
     if (await isProtected(dir, roots)) continue;
     for (const name of await entriesOf(dir, location.keep)) {
-      if (BB_OWN_SKILLS.has(name)) continue;
+      if (ALIA_OWN_SKILLS.has(name)) continue;
       const real = await realpath(path.join(dir, name)).catch(() => null);
       if (real === null || owned.some((root) => `${real}${path.sep}`.startsWith(root))) continue;
       const info = await stat(path.join(real, "SKILL.md")).catch(() => null);
@@ -255,13 +255,13 @@ export async function cleanupSkillHomes(dryRun: boolean, home = os.homedir(), pr
     await mkdir(path.join(home, ".agents"), { recursive: true });
     await writeFile(
       path.join(home, ".agents", HUB_MARKER),
-      "Skills on this machine live on the BB hub. Installers: publish with `bb tools skills-publish <folder>` instead of copying into ~/.agents/skills or ~/.claude/skills.\n",
+      "Skills on this machine live on the VesnALIA hub. Installers: publish with `alia tools skills-publish <folder>` instead of copying into ~/.agents/skills or ~/.claude/skills.\n",
     ).catch((cause: unknown) => errors.push(`${HUB_MARKER}: ${String(cause)}`));
   }
   if (!dryRun && moved.length > 0) {
     await writeFile(
       path.join(backup, "README.txt"),
-      "Skills moved out of CLI folders by Agent Tools: the canon now lives on the BB hub.\n" +
+      "Skills moved out of CLI folders by Agent Tools: the canon now lives on the VesnALIA hub.\n" +
         "Each subfolder is one CLI folder (agents = ~/.agents/skills, claude = ~/.claude/skills, ...).\n",
     ).catch(() => undefined);
   }

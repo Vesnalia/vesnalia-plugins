@@ -86,7 +86,7 @@ const menuRead = await page.evaluate(() => {
 });
 await page.screenshot({ path: `${OUT}lane-menu-open.png` });
 // The hover affordance: the pointer parked on the lane's name+caret pair
-// (the menu closed first — the backdrop click), bb's interactive-state fill
+// (the menu closed first — the backdrop click), VesnALIA's interactive-state fill
 // plus the caret at full ink (the stronger-hover ruling replaced the chips'
 // `hover:bg-accent` tint; see docs/screenshots/lane-name-hover/).
 await page.mouse.click(640, 500);

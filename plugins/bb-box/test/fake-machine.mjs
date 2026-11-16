@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // A stand-in for the SSH pool's helper, setup/ssh-pool/machine.sh, in tests.
-// It speaks the same protocol, keeping its state in $HOME/.bb-box-state, so
+// It speaks the same protocol, keeping its state in $HOME/.alia-box-state, so
 // with test/fake-ssh.mjs each fake host is a pool machine. It makes no users.
 // With the macos flag it stands in for machine-mac.sh: status says what a
 // Mac's does, display gives the box's sign-in, and there is no `machine`
-// mode. Files in .bb-box-state/flags/ change what it does:
+// mode. Files in .alia-box-state/flags/ change what it does:
 //
 //   helper           the helper version status reports instead of 1
 //   arch, missing    what status reports instead of x86_64 and nothing missing
@@ -33,12 +33,12 @@
 //   sip-off          status says System Integrity Protection is off (058), and grant grants
 //   display-user     the user display gives instead of the box user
 //   no-signing       granted says the box user has no signing identity
-//   stream           status says the Mac has bb-box-stream, its desktop as video (060)
+//   stream           status says the Mac has alia-box-stream, its desktop as video (060)
 import { existsSync, linkSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const EXIT = { ok: 0, failed: 1, usage: 2, held: 3, notOurs: 4, dirty: 5, moved: 6, protected: 7, refused: 8, restoring: 10 };
-const state = join(process.env.HOME, ".bb-box-state");
+const state = join(process.env.HOME, ".alia-box-state");
 const flags = join(state, "flags");
 mkdirSync(flags, { recursive: true });
 
@@ -172,7 +172,7 @@ function grant() {
     if (["accessibility", "screen-recording", "input-monitoring", "microphone", "camera", "system-audio", "automation"].includes(permission)) {
       writeFileSync(join(state, "grants"), `${read("grants") ?? ""}${permission}\t${client}\tUNUSED\n`);
       console.log(`granted=${permission}`);
-    } else console.log(`refused=${permission} bb-box grants accessibility, screen-recording, input-monitoring, microphone, camera, system-audio and automation.`);
+    } else console.log(`refused=${permission} alia-box grants accessibility, screen-recording, input-monitoring, microphone, camera, system-audio and automation.`);
   }
   console.log(`client=${client}`);
 }
@@ -207,7 +207,7 @@ function vm(verb) {
   const lines = readFileSync(0, "utf8").split("\n");
   const program = lines.find((line) => line.startsWith("program="))?.slice("program=".length) ?? "";
   if (flag("sip-off") === null) quit(EXIT.protected, "System Integrity Protection is on, so macOS lets no program grant permissions.");
-  if (flag("tcc-unknown") !== null) quit(EXIT.protected, "TCC's database on this Mac has columns bb-box does not know, as a newer macOS may have, so it writes nothing there.");
+  if (flag("tcc-unknown") !== null) quit(EXIT.protected, "TCC's database on this Mac has columns alia-box does not know, as a newer macOS may have, so it writes nothing there.");
   if (!/^\/(Users|Applications)\//.test(program)) quit(EXIT.refused, `${program} is not in the box user's home or /Applications.`);
   const client = program.endsWith(".app") ? `dev.example.${program.split("/").pop().slice(0, -4).toLowerCase()}` : program;
   for (const permission of lines.filter((line) => line.startsWith("permission=")).map((line) => line.slice("permission=".length))) {
@@ -285,7 +285,7 @@ function release(expected, mode) {
   }
   const text = read(kind);
   if (kind === "owner" && !values.box) quit(EXIT.notOurs, "A box holds the machine.");
-  if (field(text, "install") !== values.install) quit(EXIT.notOurs, "Another bb-box install holds the machine.");
+  if (field(text, "install") !== values.install) quit(EXIT.notOurs, "Another alia-box install holds the machine.");
   if (values.box && field(text, "box") !== values.box) quit(EXIT.notOurs, "Another box holds the machine.");
   if (field(text, "generation") !== expected) quit(EXIT.notOurs, "The machine has moved on to a later box.");
   finish(kind, mode);
@@ -300,7 +300,7 @@ function reset(mode) {
     writeFileSync(join(state, "resetting"), `install=${values.install ?? ""}\ngeneration=${generation() ?? 0}\n`);
     kind = "resetting";
   }
-  if (values.install && field(read(kind), "install") !== values.install) quit(EXIT.notOurs, "Another bb-box install holds the machine.");
+  if (values.install && field(read(kind), "install") !== values.install) quit(EXIT.notOurs, "Another alia-box install holds the machine.");
   finish(kind, mode);
 }
 

@@ -4,7 +4,7 @@ import { createFxModelCatalogProxy } from "./src/model-catalog.js";
 import {
   experimental_acpLaunchSpecSchema,
   experimental_acpProviderBridge,
-} from "@get-bb/plugin-sdk/provider-bridge/acp";
+} from "@vesnalia/plugin-sdk/provider-bridge/acp";
 import { runFxAcp } from "./src/fx-acp.js";
 
 const adapterFlag = "--fx-acp-adapter";
@@ -14,7 +14,7 @@ const modelCatalogMode =
   process.argv[1] === modulePath && process.argv[2] === modelCatalogFlag;
 const modelCatalog = createFxModelCatalogProxy(modulePath, modelCatalogFlag);
 
-// BB normally imports this artifact. Only a direct invocation by the shared
+// VesnALIA normally imports this artifact. Only a direct invocation by the shared
 // bridge starts the adapter, using the same self-contained artifact on each host.
 if (process.argv[1] === modulePath && process.argv[2] === adapterFlag) {
   const command = process.argv[3];

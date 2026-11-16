@@ -117,7 +117,7 @@ describe("project icon policy", () => {
         },
         readFile: async ({ path }) => {
           const content = path === "package.json"
-            ? JSON.stringify({ bb: { branding: { icon: "brand.svg" } } })
+            ? JSON.stringify({ alia: { branding: { icon: "brand.svg" } } })
             : '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"/></svg>';
           return {
             content,
@@ -135,7 +135,7 @@ describe("project icon policy", () => {
     expect(searches).toBe(0);
   });
 
-  it("returns a declared BB glyph without searching project files", async () => {
+  it("returns a declared VesnALIA glyph without searching project files", async () => {
     let searches = 0;
     const artwork = await findProjectArtwork(
       {
@@ -145,7 +145,7 @@ describe("project icon policy", () => {
         },
         readFile: async () => {
           const content = JSON.stringify({
-            bb: { branding: { icon: "GridView" } },
+            alia: { branding: { icon: "GridView" } },
           });
           return {
             content,
@@ -172,7 +172,7 @@ describe("project icon policy", () => {
         readFile: async ({ path }) => {
           if (path === "package.json") {
             const content = JSON.stringify({
-              bb: { branding: { icon: "NotABbIcon" } },
+              alia: { branding: { icon: "NotABbIcon" } },
             });
             return {
               content,

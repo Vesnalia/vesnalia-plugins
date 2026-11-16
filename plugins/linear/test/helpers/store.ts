@@ -14,7 +14,7 @@ import type { MemberRow, WorkflowStateRow } from "../../src/store/rows.js";
  */
 export function createTestStore(): Store {
   const db = new Database(":memory:");
-  // The host applies these through `bb.storage.migrate`, which tracks a
+  // The host applies these through `alia.storage.migrate`, which tracks a
   // statement index. A fresh database needs no bookkeeping — but running them
   // one at a time still proves the invariant the host relies on: every entry
   // is exactly one statement.

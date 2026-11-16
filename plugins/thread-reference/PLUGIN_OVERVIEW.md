@@ -1,6 +1,6 @@
-# BB Thread Reference
+# VesnALIA Thread Reference
 
-Move context between BB conversations with a gesture.
+Move context between VesnALIA conversations with a gesture.
 
 ## What it does
 
@@ -26,7 +26,7 @@ source thread is not treated as an instruction to the destination agent.
 
 ```sh
 npm install
-bb plugin install .
+alia plugin install .
 ```
 
 After installation, drag the six-dot grip handle on a sidebar thread directly

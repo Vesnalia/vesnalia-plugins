@@ -8,7 +8,7 @@ vi.mock("sonner", async () => (await import("./test-inbox")).sonnerMock());
 
 await loadInboxApp();
 
-describe("BB Sidebar registration", () => {
+describe("VesnALIA Sidebar registration", () => {
   it("opens project settings and confirms project edits from the card menu", async () => {
     const renameProject = vi.fn(() => ({ ok: true }));
     const removeProject = vi.fn(() => ({ ok: true }));
@@ -18,7 +18,7 @@ describe("BB Sidebar registration", () => {
         status: "ready",
         threads: [thread({ title: "Project card" })],
         projects: [
-          { id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "/settings/projects/proj_1" },
+          { id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "/settings/projects/proj_1" },
         ],
       },
       context: { projectId: "proj_other", threadId: "thr_other" },
@@ -36,14 +36,14 @@ describe("BB Sidebar registration", () => {
       return (await screen.findByText("Project settings")).closest<HTMLElement>('[role="menu"]')!;
     };
     const settingsMenu = await openMenu();
-    expect(settingsMenu.hasAttribute("data-bb-plugin-root")).toBe(true);
+    expect(settingsMenu.hasAttribute("data-alia-plugin-root")).toBe(true);
     expect(within(settingsMenu).getByText("Project settings").getAttribute("href")).toBe("/settings/projects/proj_1");
     fireEvent.keyDown(settingsMenu, { key: "Escape" });
 
     fireEvent.click(within(await openMenu()).getByText("Rename project"));
     let dialog = await screen.findByRole("dialog", { name: "Rename project" });
-    expect(dialog.hasAttribute("data-bb-plugin-root")).toBe(true);
-    expect(dialog.hasAttribute("data-bb-portaled-overlay")).toBe(true);
+    expect(dialog.hasAttribute("data-alia-plugin-root")).toBe(true);
+    expect(dialog.hasAttribute("data-alia-portaled-overlay")).toBe(true);
     fireEvent.change(within(dialog).getByLabelText("Project name"), { target: { value: "Renamed" } });
     fireEvent.click(within(dialog).getByText("Save"));
     await waitFor(() => expect(renameProject).toHaveBeenCalledWith({ projectId: "proj_1", name: "Renamed" }));
@@ -53,10 +53,10 @@ describe("BB Sidebar registration", () => {
     await waitFor(() => expect(within(menu).getByText("Add local path").getAttribute("data-disabled")).toBeNull());
     fireEvent.click(within(menu).getByText("Add local path"));
     dialog = await screen.findByRole("dialog", { name: "Add local path" });
-    fireEvent.change(within(dialog).getByLabelText("Folder path"), { target: { value: "/workspace/bb" } });
+    fireEvent.change(within(dialog).getByLabelText("Folder path"), { target: { value: "/workspace/alia" } });
     fireEvent.click(within(dialog).getByText("Save"));
     await waitFor(() =>
-      expect(addProjectPath).toHaveBeenCalledWith({ projectId: "proj_1", hostId: "host_2", path: "/workspace/bb" }),
+      expect(addProjectPath).toHaveBeenCalledWith({ projectId: "proj_1", hostId: "host_2", path: "/workspace/alia" }),
     );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 
@@ -67,16 +67,16 @@ describe("BB Sidebar registration", () => {
     expect(removeProject).not.toHaveBeenCalled();
     fireEvent.click(within(await openMenu()).getByText("Remove project"));
     dialog = await screen.findByRole("dialog", { name: "Remove project" });
-    fireEvent.change(within(dialog).getByLabelText("Project name"), { target: { value: "bb" } });
+    fireEvent.change(within(dialog).getByLabelText("Project name"), { target: { value: "alia" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Remove project" }));
-    await waitFor(() => expect(removeProject).toHaveBeenCalledWith({ projectId: "proj_1", confirmation: "bb" }));
+    await waitFor(() => expect(removeProject).toHaveBeenCalledWith({ projectId: "proj_1", confirmation: "alia" }));
     expect(rendered.navigateCalls).toEqual([]);
   });
 
   it("registers exactly one thread list", () => {
     expect(app.threadLists).toHaveLength(1);
     expect(inbox.id).toBe("inbox");
-    expect(inbox.title).toBe("BB Sidebar");
+    expect(inbox.title).toBe("VesnALIA Sidebar");
   });
 
   it("registers one custom settings page", () => {
@@ -89,7 +89,7 @@ describe("BB Sidebar registration", () => {
 describe("Project settings menu item", () => {
   const project = {
     id: "proj_1",
-    name: "bb",
+    name: "alia",
     isPersonal: false,
     href: "/projects/proj_1",
     settingsHref: "/settings/projects/proj_1",
@@ -113,7 +113,7 @@ describe("Project settings menu item", () => {
     return { row, item };
   }
 
-  it("links Project settings to bb's settings route, not the legacy redirect", async () => {
+  it("links Project settings to VesnALIA's settings route, not the legacy redirect", async () => {
     const { item } = await openProjectSettingsItem();
     expect(item.getAttribute("href")).toBe("/settings/projects/proj_1");
   });

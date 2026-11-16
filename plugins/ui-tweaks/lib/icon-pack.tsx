@@ -4,7 +4,7 @@ import {
   useSyncExternalStore,
   type ComponentType,
 } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { ICON_BODIES } from "./icon-data.js";
 import {
   parseIconPack,
@@ -134,9 +134,9 @@ function PackGlyph({ body, className }: { body: string; className?: string }) {
  * One registered component per icon name. It reads the selected appearance at
  * render time, so switching repaints mounted icons without reloading the app.
  *
- * For BB Default, or a name the selected pack does not map, render the same
+ * For VesnALIA Default, or a name the selected pack does not map, render the same
  * name through the host Icon. The host's recursion guard then draws that name's
- * real built-in artwork, so packs never need a copy of BB's Hugeicons.
+ * real built-in artwork, so packs never need a copy of VesnALIA's Hugeicons.
  */
 function createPackIcon(name: string): ComponentType<{ className?: string }> {
   function PackIcon({ className }: { className?: string }) {

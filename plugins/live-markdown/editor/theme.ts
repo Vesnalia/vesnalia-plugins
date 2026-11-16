@@ -1,4 +1,4 @@
-// Editor look, built only from BB's theme variables so it follows the active
+// Editor look, built only from VesnALIA's theme variables so it follows the active
 // palette (light, dark, and custom themes) without a second color source.
 import { EditorView } from "@codemirror/view";
 

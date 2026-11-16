@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 export const statusLabels = {
   failed: "Сбой",
@@ -8,7 +8,7 @@ export const statusLabels = {
   inactive: "Неактивен",
 } as const;
 
-/** Match BB's explicit attention indicators before broader runtime activity. */
+/** Match VesnALIA's explicit attention indicators before broader runtime activity. */
 export function threadStatus(thread: Pick<PluginSidebarThread,
   "indicator" | "hasPendingInteraction" | "isUnread" | "activity"
 >): keyof typeof statusLabels {

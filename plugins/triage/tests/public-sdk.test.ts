@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 
 test("plugin imports use public SDK and declared dependencies", () => {
   const root = fileURLToPath(new URL("..", import.meta.url));

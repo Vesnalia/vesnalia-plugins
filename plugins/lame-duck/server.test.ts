@@ -3,7 +3,7 @@ import {
   makeMessageDispatchHookContext,
   makeThreadResponse,
   makeQueueEntry,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import plugin from "./server.js";
 
@@ -13,7 +13,7 @@ async function setup() {
     pluginId: "lame-duck",
     sdk: { threads: { listRunning: async () => running, queue: { list: async () => [] } } },
   });
-  await plugin(fake.bb);
+  await plugin(fake.alia);
   function dispatch(attempt: "start-turn" | "join-turn" = "start-turn") {
     const hook = fake.harness.registrations.hooks["message.dispatch"];
     if (!hook) throw new Error("Missing dispatch hook");
@@ -132,8 +132,8 @@ describe("lame-duck", () => {
   it("rejects malformed persisted state instead of silently enabling sends", async () => {
     const fake = createFakePluginHost({ pluginId: "lame-duck" });
     try {
-      await fake.bb.storage.kv.set("paused", "true");
-      await expect(plugin(fake.bb)).rejects.toThrow();
+      await fake.alia.storage.kv.set("paused", "true");
+      await expect(plugin(fake.alia)).rejects.toThrow();
     } finally {
       await fake.harness.lifecycle.dispose();
     }

@@ -1,7 +1,7 @@
 import { imageUrl, snapshotSchema, type ChatSurface, type Snapshot } from "./model.ts";
 import { CAPY_CSS, mountCapyEffect, type CapyEffect } from "./capy-effect.ts";
 
-export const LOCAL_CHANGE = "bb:aura-motion:changed";
+export const LOCAL_CHANGE = "alia:aura-motion:changed";
 export const TARGETS = ':is([id="thread-detail-timeline-panel"], [id="root-compose-main-panel"])';
 export const NEW_THREAD_TARGET = '[id="root-compose-main-panel"]';
 export function targetsFor(snapshot: Snapshot): string { return snapshot.settings.newThreadOnly ? NEW_THREAD_TARGET : TARGETS; }
@@ -111,12 +111,12 @@ export const COMPOSE_LAYOUT = `${COMPOSE_CENTER}
   }
 }
 `;
-// Phones: the same test BB uses for its touch sizing, so a narrow desktop
+// Phones: the same test VesnALIA uses for its touch sizing, so a narrow desktop
 // window driven by a mouse keeps the desktop look.
 export const PHONE_MEDIA = "(max-width:767px) and (pointer:coarse)";
 // On a phone the content covers the whole wallpaper, so New thread's recents
 // and project row get their own glass card instead of sitting on bare video,
-// and BB's opaque band around the composer clears so the wallpaper reads as
+// and VesnALIA's opaque band around the composer clears so the wallpaper reads as
 // one picture. Sheer chats get Glass's fill: a bright frame behind a
 // full-width column otherwise washes out muted text.
 export const PHONE_LAYOUT = `
@@ -159,7 +159,7 @@ export function readingSurface(surface: ChatSurface): string {
   const FOOTER = `${PANEL} [data-scroll-footer] > .bg-background > .mx-auto`;
   const TABLE = `${PANEL} [data-markdown-preview] div:has(> table)`;
   const HEADER = `${PANEL} header:has(> [data-testid="app-page-header-content-row"])`;
-  // The composer, and the question card BB shows in its place, which is only
+  // The composer, and the question card VesnALIA shows in its place, which is only
   // 6% opaque because it expects the host's opaque footer behind it.
   const PROMPT = `${PANEL} :is(form[data-promptbox], [data-testid="user-question-banner"])`;
   const paint = surface === "solid"
@@ -228,7 +228,7 @@ ${PANEL} [data-scroll-footer] > .bg-background:has(> .mx-auto) {
 ${PANEL} [data-scroll-footer] > .bg-background:has(> .mx-auto) > [data-overflow-fade] {
   left:50%; right:auto; width:min(760px,100%); transform:translateX(-50%);
 }
-/* BB intentionally lets wide Markdown tables extend beyond the text column.
+/* VesnALIA intentionally lets wide Markdown tables extend beyond the text column.
    Paint the whole scrollable table surface, including its overflow area. */
 ${paint}
 `;
@@ -258,7 +258,7 @@ export function mountBackground(signal: AbortSignal): () => void {
     if (!current?.settings.enabled) return;
     for (const element of document.querySelectorAll<HTMLElement>(targetsFor(current))) {
       const existing = effects.get(element);
-      // BB can reuse the same panel element when navigating between a
+      // VesnALIA can reuse the same panel element when navigating between a
       // conversation and New thread. Reapply its surface-specific dimming.
       if (existing) existing.update(current.settings, imageUrl(current.image));
       else effects.set(element, mountCapyEffect(element, current.settings, imageUrl(current.image)));

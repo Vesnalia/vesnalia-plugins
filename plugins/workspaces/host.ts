@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostContract } from "./src/host-contract";
 import {
   addRepository,
@@ -13,8 +13,8 @@ import {
   resolveSessionDataRoot,
 } from "./src/worktrees";
 
-// bb refuses thread workspaces inside its plugin data dirs, so session worktrees live outside bb storage.
-const SESSIONS_DATA_ROOT = join(homedir(), ".bb-workspaces");
+// VesnALIA refuses thread workspaces inside its plugin data dirs, so session worktrees live outside VesnALIA storage.
+const SESSIONS_DATA_ROOT = join(homedir(), ".alia-workspaces");
 
 export default experimental_defineHostEntry({
   contract: hostContract,

@@ -1,4 +1,4 @@
-# Release Spoke — bb-plugin-focus-board
+# Release Spoke — alia-plugin-focus-board
 
 How to ship a new Focus Board version. The pipeline has a fixed shape: user
 work appends bullets to the changelog's `[Unreleased]` group when it merges
@@ -31,9 +31,9 @@ merging into `dev`, releasing, changelog writing, or tagging.
     `package.json` and `APP_VERSION`. The `-dev` suffix marks the number as
     a guess; the finalize commit makes it real.
 - The **main checkout**
-  (`/Users/cristos/Documents/code/bb-plugin-focus-board`) is checked out on
-  `dev` — that registered path is what the running bb serves, so dev is
-  what bb points at. `main` has no permanent local checkout; releases
+  (`/Users/cristos/Documents/code/alia-plugin-focus-board`) is checked out on
+  `dev` — that registered path is what the running VesnALIA serves, so dev is
+  what VesnALIA points at. `main` has no permanent local checkout; releases
   create a temporary one (section 4).
 - **`dev` only ever advances through a pull request on the remote.** Thread
   branches base on it, rebase onto it, and ship via PR; a thread merging a
@@ -265,7 +265,7 @@ else should ride in it.
   and dev have diverged — stop and reconcile instead of papering over it
   with a merge commit.
 - Tag the finalize commit (which is now main's tip):
-  `git tag -a vX.Y.Z -m "Release X.Y.Z: <summary>"`. Never move a tag: bb
+  `git tag -a vX.Y.Z -m "Release X.Y.Z: <summary>"`. Never move a tag: VesnALIA
   records the tag plus the commit it pointed at and refuses the plugin if a
   tag is ever retargeted. A fix after tagging is a new version, not a
   retag. Tag signing is automatic (section 7a).
@@ -277,7 +277,7 @@ else should ride in it.
   heading to `## Focus Board X.Y.Z (date)` — closed by a
   `**Full changelog**: .../compare/v<PREVIOUS>...vX.Y.Z` compare link
   against the previous tag (v0.5.21's release is the pattern). No package
-  binaries: the tag itself is the package, since bb installs it by semver
+  binaries: the tag itself is the package, since VesnALIA installs it by semver
   range. Confirm with `gh release view vX.Y.Z`.
 - **A demo gif per demonstrable feature.** The notes are not done when the
   section is pasted: every Added/Changed bullet (and any Fixed one an
@@ -296,7 +296,7 @@ else should ride in it.
 
 ## 4a. Marketplace entry check
 
-Focus Board is listed on the bb community marketplace
+Focus Board is listed on the VesnALIA community marketplace
 (https://getbb.app/marketplace/focus-board). The listing is an entry file,
 `entries/focus-board.json` in https://github.com/get-bb/marketplace, and
 marketplace installs resolve through its `source.git.range` — every cut
@@ -305,12 +305,12 @@ therefore includes a marketplace check before the cut is reported done:
 - Verify the release reaches marketplace installs: fetch
   `https://raw.githubusercontent.com/get-bb/marketplace/main/entries/focus-board.json`
   and confirm `source.git.range` covers the version being tagged. The range
-  is a tracking contract, not a per-release pin: the marketplace README says "Use a new marketplace pull request for a source, name, or brand change", and the bb `submit-a-plugin` skill says "A compatible release within an existing tracking range usually needs no new marketplace pull request" — compatible releases are meant to flow without any marketplace PR. Whether a bump is required follows caret semantics, which differ by major: on 0.x a caret pins the minor (`^0.3.1` means `>=0.3.1 <0.4.0` — the "`^0.3.1` covers everything below 1.0.0" assumption written here first was wrong, caught the same day by this check), so every 0.x minor cut must raise the range; from 1.0 on, a caret pins only the major, so `^1.0.0` already covers 1.1.0 and every later 1.x cut. Bump the range only when the released version falls outside it: every 0.x minor, each major, and any deliberate floor raise. The per-cut bump mandate that stood here until v1.1.0 (2026-10-09) was leftover 0.x rigor — the file-manager and doc-review entries that carried the pattern (`^0.9.1`, `^0.3.0`) were cut while their plugins were 0.x, where the bump was functionally required; PR #481's `^0.3.1` → `^0.9.0` bump rode v0.9.0 before this repo hit 1.0.
+  is a tracking contract, not a per-release pin: the marketplace README says "Use a new marketplace pull request for a source, name, or brand change", and the VesnALIA `submit-a-plugin` skill says "A compatible release within an existing tracking range usually needs no new marketplace pull request" — compatible releases are meant to flow without any marketplace PR. Whether a bump is required follows caret semantics, which differ by major: on 0.x a caret pins the minor (`^0.3.1` means `>=0.3.1 <0.4.0` — the "`^0.3.1` covers everything below 1.0.0" assumption written here first was wrong, caught the same day by this check), so every 0.x minor cut must raise the range; from 1.0 on, a caret pins only the major, so `^1.0.0` already covers 1.1.0 and every later 1.x cut. Bump the range only when the released version falls outside it: every 0.x minor, each major, and any deliberate floor raise. The per-cut bump mandate that stood here until v1.1.0 (2026-10-09) was leftover 0.x rigor — the file-manager and doc-review entries that carried the pattern (`^0.9.1`, `^0.3.0`) were cut while their plugins were 0.x, where the bump was functionally required; PR #481's `^0.3.1` → `^0.9.0` bump rode v0.9.0 before this repo hit 1.0.
 - Verify the listing still describes the release: the entry's short `description` and the `overview/<plugin-id>.md` it references, checked against the section being renamed in §3. This is a drift check, not a churn obligation — an in-range release needs no PR when the listing already covers it. The lever that keeps it that way: `PLUGIN_OVERVIEW.md` is written as a fixed set of capability pillars — "What you get" is a handful of bold-led bullets, rewritten only when a release opens a capability the page lacks, never one bullet per feature; each bullet is an invitation, not a specification — a bold lead, at most two short sentences, no parenthetical inventories, no semicolon chains, and per-release detail lives in CHANGELOG.md and the What's-new feed, and the page links the repo README — the free-to-update front door (screenshots, feature list, install) whose own README links the CHANGELOG, so marketplace-frozen copy never points at a page that itself needs a review to change (the page said so itself since the 2026-10-09 rewrite, 3524 → 2841 chars against the marketplace's hard 4000-char overview cap). The Oct 8 link-chip landing drift the marketplace copy ("`link list|set|clear`" missing from its CLI line) is the cautionary example: it required a listing fix one release later. When drift is user-visible wrong (the store page names a command or behavior that shipped or vanished), open the marketplace PR in the same cut: copy this repo's `PLUGIN_OVERVIEW.md` (kept beside `package.json` for exactly this — it is the author-owned long-form description) verbatim to `overview/focus-board.md`, and refresh the short `description` to match. Only those two fields ever move for a feature refresh; source/brand/tag changes are a fresh review.
 - Marketplace-repo mechanics (learned on the 2026-10-05 refresh, PR #481):
   a changed entry is validated with `npm ci --ignore-scripts && npm run
   build && npm test && npm run check` (`gate:v1` is informational for a
-  declared change); a `description` edit is a frozen-v1 field change (the frozen-v1 document holds only `id`, `displayName`, `description`, `icon`, `tags`, `author`, `source`), so a PR touching one of those needs the `v1-change` label; an `overview/`-only edit is not a v1 field and passes the gate without it — batch a description refresh with the overview copy when both drift, since one PR carrying both costs one review. The submitter has no label rights on `get-bb/marketplace`, so when the `v1-change` label is needed, request it in the PR body, which must state what the plugin does, the release source and range, the checks that passed, permissions/security facts, and the overview's source commit. Push the submission under a fresh branch name per cut (`submit-focus-board-<date>`), never force-push the original submission branch.
+  declared change); a `description` edit is a frozen-v1 field change (the frozen-v1 document holds only `id`, `displayName`, `description`, `icon`, `tags`, `author`, `source`), so a PR touching one of those needs the `v1-change` label; an `overview/`-only edit is not a v1 field and passes the gate without it — batch a description refresh with the overview copy when both drift, since one PR carrying both costs one review. The submitter has no label rights on `get-alia/marketplace`, so when the `v1-change` label is needed, request it in the PR body, which must state what the plugin does, the release source and range, the checks that passed, permissions/security facts, and the overview's source commit. Push the submission under a fresh branch name per cut (`submit-focus-board-<date>`), never force-push the original submission branch.
 
 ## 5. What's-new derivation (`WHATS_NEW` in `lib/whats-new.ts`)
 
@@ -362,7 +362,7 @@ since only version stamps move):
 
 ## 7. Pull down, then reload the running plugin
 
-bb runs focus-board from the main checkout (its registered plugin path),
+VesnALIA runs focus-board from the main checkout (its registered plugin path),
 and that checkout sits on `dev`, so the running plugin serves dev. After a
 PR merged on the remote:
 
@@ -370,13 +370,13 @@ PR merged on the remote:
    origin/dev` — after checking the tree is clean and no merge is
    mid-flight in it (section 0's coordination rule).
 1. `npm run build` in the main checkout (on `dev`).
-2. `bb plugin reload focus-board`.
-3. Confirm with `bb plugin list` (version reads `X.Y.Z` right after a
+2. `alia plugin reload focus-board`.
+3. Confirm with `alia plugin list` (version reads `X.Y.Z` right after a
    release, or the `-dev` candidate once §6 lands) and open the board; the
    What's-new gift button should pulse for the new version after a release
    and stay quiet once the prep commit lands.
 
-This is part of every landing, not a release-only step. bb does
+This is part of every landing, not a release-only step. VesnALIA does
 not watch the plugin's `dist/` — a rebuilt bundle keeps serving the
 previously loaded code until the reload runs, so a merged-but-unreloaded
 PR looks unshipped: new behavior absent and the gift silent even though
@@ -386,7 +386,7 @@ only the reload). Run steps 0–2 before reporting a landing as done, and
 treat a missing pulse after a changelog-carrying landing as the symptom of a
 stale bundle first, a code bug second.
 
-`bb plugin dev` is the watch-mode alternative for iterating, not for
+`alia plugin dev` is the watch-mode alternative for iterating, not for
 releases.
 
 ## 7a. Tag signing (plain key file)

@@ -1,4 +1,4 @@
-// bb-plugin-uptime — frontend entry.
+// alia-plugin-uptime — frontend entry.
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import {
@@ -6,7 +6,7 @@ import {
   UrlLink,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Site, Check } from "./server";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -298,7 +298,7 @@ function MonitorPage() {
           <EmptyState>Loading…</EmptyState>
         ) : sites.length === 0 ? (
           <EmptyState>
-            No sites. Add one above or run <code>bb uptime add example.com</code>.
+            No sites. Add one above or run <code>alia uptime add example.com</code>.
           </EmptyState>
         ) : (
           <ul className="space-y-3">

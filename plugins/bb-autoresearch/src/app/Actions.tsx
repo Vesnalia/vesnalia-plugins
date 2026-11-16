@@ -2,7 +2,7 @@
 // start, start a harvest, archive), each behind a dialog that says exactly
 // what will happen, plus the "Needs you" list that offers them. In-app and
 // CLI approval are equivalent and audited the same way (threat model).
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -51,7 +51,7 @@ export function ApproveSpecDialog({ o, version, changesOracle, rpc, open, onOpen
         )}
       </ul>
       <p className="text-xs text-muted-foreground">
-        CLI equivalent (same approval and audit log): <Mono>{draft || changesOracle ? `bb study calibrate ${o.slug}` : `bb study approve ${o.slug}`}</Mono>
+        CLI equivalent (same approval and audit log): <Mono>{draft || changesOracle ? `alia study calibrate ${o.slug}` : `alia study approve ${o.slug}`}</Mono>
       </p>
     </ConfirmDialog>
   );
@@ -87,7 +87,7 @@ export function StartDialog({ o, rpc, open, onOpenChange, onDone }: { o: Overvie
         <li>Nothing is pushed anywhere. You can pause, steer the ideas, or lower concurrency at any time.</li>
       </ul>
       <p className="text-xs text-muted-foreground">
-        CLI equivalent (same approval and audit log): <Mono>bb study start {o.slug}</Mono>
+        CLI equivalent (same approval and audit log): <Mono>alia study start {o.slug}</Mono>
       </p>
     </ConfirmDialog>
   );
@@ -115,11 +115,11 @@ export function HarvestDialog({ slug, promotions, refreeze, rpc, open, onOpenCha
       <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
         <li>No new workers start and submissions close; candidates in flight finish first, so best is final.</li>
         <li>Best ({promotions} promotion{promotions === 1 ? "" : "s"}) is pinned as <Mono>refs/studies/{slug}/harvest/h&lt;N&gt;</Mono>.</li>
-        <li>Then ask an agent to harvest it with the <Mono>study-harvest</Mono> skill. Its measurements (<Mono>bb study measure</Mono>) use bench time and count toward the bench budget.</li>
+        <li>Then ask an agent to harvest it with the <Mono>study-harvest</Mono> skill. Its measurements (<Mono>alia study measure</Mono>) use bench time and count toward the bench budget.</li>
         <li>Nothing is pushed unless you ask the agent to publish. Resume to keep exploring at any time.</li>
       </ul>
       <p className="text-xs text-muted-foreground">
-        CLI equivalent: <Mono>bb study harvest {slug}{refreeze ? " --refreeze" : ""}</Mono>
+        CLI equivalent: <Mono>alia study harvest {slug}{refreeze ? " --refreeze" : ""}</Mono>
       </p>
     </ConfirmDialog>
   );
@@ -155,7 +155,7 @@ export function ArchiveDialog({ slug, rpc, open, onOpenChange, onDone }: { slug:
         Also archive the study thread
       </label>
       <p className="text-xs text-muted-foreground">
-        CLI equivalent: <Mono>bb study archive {slug}{archiveThread ? " --archive-thread" : ""}</Mono>
+        CLI equivalent: <Mono>alia study archive {slug}{archiveThread ? " --archive-thread" : ""}</Mono>
       </p>
     </ConfirmDialog>
   );
@@ -163,7 +163,7 @@ export function ArchiveDialog({ slug, rpc, open, onOpenChange, onDone }: { slug:
 
 /** The "Needs you" list: what waits for the human, each with the action that resolves it. */
 export function NeedsYou({ o, rpc, onChanged, go }: { o: OverviewResult; rpc: Rpc; onChanged: () => void; go: (t: Tab) => void }) {
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const [dialog, setDialog] = useState<null | { kind: "approve"; version: number; changesOracle: boolean } | { kind: "start" } | { kind: "harvest" }>(null);
   const resume = async () => {
     try {

@@ -2,10 +2,10 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { BbPluginApi, PluginCliRegistration } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginCliRegistration } from "@vesnalia/plugin-sdk";
 import plugin from "../server";
 
-// Runs the real plugin server against a fake bb host, a fake `lobu` CLI, and a
+// Runs the real plugin server against a fake VesnALIA host, a fake `lobu` CLI, and a
 // fake Lobu that stores memories in memory. All identifiers are synthetic.
 const TOKEN = "synthetic-token-0123456789abcdef";
 
@@ -399,7 +399,7 @@ async function startPlugin(overrides: Record<string, unknown> = {}) {
   const formRequests: unknown[] = [];
   const mentionProviders: { id: string; search: (ctx: unknown) => Promise<unknown[]>; resolve: (id: string) => Promise<unknown> }[] = [];
   const values = { autoSave: true, recapOnArchive: false, ...overrides };
-  const bb = {
+  const alia = {
     pluginId: "lobu",
     settings: {
       define: () => ({
@@ -450,7 +450,7 @@ async function startPlugin(overrides: Record<string, unknown> = {}) {
     log: { info: () => undefined, warn: () => undefined },
     onDispose: () => undefined,
   };
-  await plugin(bb as unknown as BbPluginApi);
+  await plugin(alia as unknown as AliaPluginApi);
   // Let the startup project listing settle.
   await new Promise((resolve) => setTimeout(resolve, 20));
   const call = (name: string, params: unknown, threadId = "thread-1", projectId = "proj-1") =>
@@ -572,13 +572,13 @@ describe("the memory loop", () => {
     const final = { saved: await savedIn("thread-1") };
     expect(final.saved.map((r) => r.eventId)).not.toContain(preference.eventId);
 
-    // The setup check sees the CLI, the login bb uses, and its personal workspace.
+    // The setup check sees the CLI, the login VesnALIA uses, and its personal workspace.
     const status = (await rpc.setupStatus!({})) as { cli: { state: string }; login: { context: string; account: string; personal: string; problem: null } };
     expect(status.cli.state).toBe("ready");
     expect(status.login).toMatchObject({ context: "work", account: "someone@example.com", personal: "me", problem: null });
     expect(status).toMatchObject({ starting: false });
 
-    // "Open in Lobu" lands on the events page filtered to what bb saved and has not undone.
+    // "Open in Lobu" lands on the events page filtered to what VesnALIA saved and has not undone.
     const { url } = (await rpc.savedLink!({})) as { url: string };
     expect(url.startsWith(`http://localhost:${server.port}/me/events?content_ids=`)).toBe(true);
     expect(url).not.toContain(String(preference.eventId));
@@ -607,14 +607,14 @@ describe("the memory loop", () => {
     }
   });
 
-  test("supersedes stale memories, exposes bb lobu CLI for ACP agents, shares to team, and reconciles Lobu edits", async () => {
+  test("supersedes stale memories, exposes VesnALIA lobu CLI for ACP agents, shares to team, and reconciles Lobu edits", async () => {
     lobu.memories.length = 0;
     lobu.searches.length = 0;
     lobu.nextId = 2000;
 
     const { rpc, call, runCli, brief } = await startPlugin();
 
-    // 1. Save an initial memory via bb lobu remember CLI (the ACP agent fallback).
+    // 1. Save an initial memory via VesnALIA lobu remember CLI (the ACP agent fallback).
     const firstCli = await runCli(
       [
         "remember",
@@ -639,7 +639,7 @@ describe("the memory loop", () => {
     // Brief includes the memory and its eventId so later sessions can supersede it.
     expect(brief("thread-acp-2")).toContain(`Staging uses port 8080 (memory ${firstId})`);
 
-    // 2. Search via bb lobu search CLI logs the lookup and increments usage count.
+    // 2. Search via VesnALIA lobu search CLI logs the lookup and increments usage count.
     const searchCli = await runCli(["search", "staging port", "--json"], "thread-acp-2");
     expect(searchCli.exitCode).toBe(0);
     const searchParsed = JSON.parse(searchCli.stdout ?? "{}") as { ok: boolean; results: { eventId: number }[] };
@@ -687,7 +687,7 @@ describe("the memory loop", () => {
     expect(shared.workspace).toBe("team");
     expect(lobu.memories.find((m) => m.id === shared.eventId)?.workspace).toBe("team");
 
-    // 5. External save in linked team workspace + external edit & tombstone in Lobu sync back into bb.
+    // 5. External save in linked team workspace + external edit & tombstone in Lobu sync back into VesnALIA.
     const teammateId = lobu.nextId++;
     lobu.memories.push({
       id: teammateId,
@@ -1042,7 +1042,7 @@ describe("the memory loop", () => {
     expect((await tabResolve("tab:me:479:999")).context).toContain("no longer open");
   });
 
-  test("ambient browser context prioritizes BB desktop browser tabs over external Chrome", async () => {
+  test("ambient browser context prioritizes VesnALIA desktop browser tabs over external Chrome", async () => {
     const { call, brief } = await startPlugin({
       sdk: {
         hosts: { list: async () => [{ id: "host-1" }] },
@@ -1057,8 +1057,8 @@ describe("the memory loop", () => {
       },
     });
     // Save memory so the project brief is active
-    await call("lobu_remember", { memories: [deployGotcha] }, "thread-bb");
-    const text = brief("thread-bb");
+    await call("lobu_remember", { memories: [deployGotcha] }, "thread-alia");
+    const text = brief("thread-alia");
     expect(text).toContain("Active browser tab: App Docs (http://localhost:3000/docs)");
   });
 
@@ -1118,7 +1118,7 @@ describe("the memory loop", () => {
           {
             memories: [
               {
-                title: "Hand off BB stack state to Dmitry's agents through PR comments",
+                title: "Hand off VesnALIA stack state to Dmitry's agents through PR comments",
                 content: "Post the stack state as a PR comment so Dmitry's agents pick it up.",
                 kind: "preference",
                 evidence: "User: hand it off in the PR",
@@ -1153,7 +1153,7 @@ describe("the memory loop", () => {
       );
       const linksOf = (title: string) => [...(lobu.memories.find((m) => m.title === title)?.entityIds ?? [])].sort();
       // A first name and a partial-name hit link nothing, and the project's repo is not linked unasked.
-      expect(linksOf("Hand off BB stack state to Dmitry's agents through PR comments")).toEqual([]);
+      expect(linksOf("Hand off VesnALIA stack state to Dmitry's agents through PR comments")).toEqual([]);
       // A unique exact name links; a duplicated name and a member do not.
       expect(linksOf("Priya Raman owns the webhook signing keys")).toEqual([5106]);
       // The project's repo links when the memory is about it.

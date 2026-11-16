@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { BEZEL_PARTS, type BezelPart, type DeviceBezel } from "../lib/device-bezel";
 import type { Exec, Simctl } from "./simctl";
 
@@ -214,7 +214,7 @@ export class DeviceBezels {
   }
 
   private temporaryDirectory(): Promise<string> {
-    return this.directory ??= mkdtemp(join(tmpdir(), "bb-device-bezels-"));
+    return this.directory ??= mkdtemp(join(tmpdir(), "alia-device-bezels-"));
   }
 
   private pdfRenderer(): Promise<string | null> {
@@ -270,13 +270,13 @@ export class DeviceBezels {
   }
 }
 
-export function registerDeviceBezels(bb: BbPluginApi, dependencies: BezelDependencies): void {
+export function registerDeviceBezels(alia: AliaPluginApi, dependencies: BezelDependencies): void {
   const bezels = new DeviceBezels(dependencies);
-  bb.http.route("GET", "/bezel", async (c) => c.json(await bezels.geometry(c.req.query("udid") ?? "")));
-  bb.http.route("GET", "/bezel/image", async (c) => {
+  alia.http.route("GET", "/bezel", async (c) => c.json(await bezels.geometry(c.req.query("udid") ?? "")));
+  alia.http.route("GET", "/bezel/image", async (c) => {
     const png = await bezels.image(c.req.query("udid") ?? "", c.req.query("part") ?? "", Number(c.req.query("rotation") ?? 0));
     return png ? new Response(new Uint8Array(png), { headers: { "content-type": "image/png", "cache-control": "private, max-age=3600" } })
       : c.json({ error: "The local Xcode bezel is unavailable." }, 404);
   });
-  bb.onDispose(() => bezels.dispose());
+  alia.onDispose(() => bezels.dispose());
 }

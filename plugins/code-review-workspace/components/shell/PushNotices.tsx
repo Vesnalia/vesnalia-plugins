@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../../src/rpc-contract";
 import type { ReviewLifecycle } from "../../src/store";
@@ -57,7 +57,7 @@ export function usePrDraftToast(targetKey: string, review: Pick<ReviewLifecycle,
  */
 export function usePushNotices(targetKey: string, review: Pick<ReviewLifecycle, "push"> & { kind?: "pr" | "ref" } | null, onChanged: () => void): Notice[] {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [busy, setBusy] = useState(false);
   const run = review?.push;
   const text = pushFlagText(run);

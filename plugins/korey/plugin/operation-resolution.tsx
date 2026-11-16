@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { PluginPendingInteractionProps } from "@get-bb/plugin-sdk/app";
+import type { PluginPendingInteractionProps } from "@vesnalia/plugin-sdk/app";
 import { operationResolutionPayloadSchema } from "./contracts.js";
 
 export function OperationResolution({

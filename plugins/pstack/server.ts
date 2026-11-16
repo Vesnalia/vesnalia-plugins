@@ -1,17 +1,17 @@
-// bb-plugin-pstack - the pstack skill library, delivered as a BB plugin.
+// alia-plugin-pstack - the pstack skill library, delivered as a VesnALIA plugin.
 //
 // Every skills/<name>/SKILL.md in this package is imported by the manifest
-// (bb.skills) and becomes a plugin-tier skill: a slash command plus an entry
-// in the agent skill list on every provider. bb.agents.configure() then
+// (alia.skills) and becomes a plugin-tier skill: a slash command plus an entry
+// in the agent skill list on every provider. alia.agents.configure() then
 // selects which of those names are active for each thread resolution, which
 // is what makes the settings below a master switch plus one switch per skill.
 //
 // Upstream: cursor/plugins pstack, MIT, (c) 2026 Lauren Tan. See README.md and
 // MANIFEST.md for the pinned commit and the adaptations applied.
-import type { BbPluginApi, PluginSettingDescriptor } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginSettingDescriptor } from "@vesnalia/plugin-sdk";
 
 // Literal on purpose: a renamed or removed skill fails this plugin's selection
-// closed (bb rejects unknown names), instead of silently dropping it.
+// closed (VesnALIA rejects unknown names), instead of silently dropping it.
 const SKILL_NAMES = [
   "architect",
   "automate-me",
@@ -115,7 +115,7 @@ const SKILL_SUMMARIES: Record<SkillName, string> = {
   "why": "Use for 'why does X work this way', 'why we picked Y', design rationale, regressions, postmortems, or data-backed thresholds.",
 };
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   const descriptors: Record<string, PluginSettingDescriptor> = {
     skills: {
       type: "boolean",
@@ -134,13 +134,13 @@ export default async function plugin(bb: BbPluginApi) {
     };
   }
 
-  const settings = bb.settings.define(descriptors);
+  const settings = alia.settings.define(descriptors);
   let current = await settings.get();
   settings.onChange((next) => {
     current = next;
   });
 
-  bb.agents.configure(() => {
+  alia.agents.configure(() => {
     if (current.skills !== true) return { tools: [], skills: [] };
     return {
       tools: [],
@@ -149,7 +149,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   const enabled = SKILL_NAMES.filter((name) => current[name] === true).length;
-  bb.log.info(
+  alia.log.info(
     `loaded: pstack skills ${current.skills === true ? `on (${enabled}/${SKILL_NAMES.length})` : "off"}`
   );
 }

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { withoutToolHelp } from "./agents";
 import { commandMissing, hostClient, indexHostId } from "./hosts";
@@ -25,7 +25,7 @@ const FIRST_BATCH_SIZE = 10;
 const BATCH_SIZE = 50;
 /** The host contract's cap on deletions per write. */
 const REMOVE_BATCH = 1_000;
-/** The host runs `qmd collection add` and `qmd update` for up to 120s each; bb's default call timeout is 30s. */
+/** The host runs `qmd collection add` and `qmd update` for up to 120s each; VesnALIA's default call timeout is 30s. */
 const INDEX_CALL_TIMEOUT_MS = 150_000;
 const MESSAGE_MAX_CHARS = 6_000;
 /** Below the host contract's 200k cap. */
@@ -36,7 +36,7 @@ const ROLE_HEADINGS: Record<ThreadMessage["role"], string> = { user: "User", ass
 const ROLE_HEADING_LINE = /^#{1,6}\s+(User|Assistant|Message)\s*$/;
 
 const NO_HOST =
-  "Thread search keeps its index on a connected persistent bb host, and none is connected (ephemeral hosts are skipped).";
+  "Thread search keeps its index on a connected persistent VesnALIA host, and none is connected (ephemeral hosts are skipped).";
 
 /** Which threads the index holds on `hostId`: thread id → the exported `updatedAt`, or null when exported mid-run. */
 const indexStateSchema = z.object({ hostId: z.string().nullable(), synced: z.record(z.string(), z.number().nullable()) });
@@ -86,8 +86,8 @@ function cleanSnippet(snippet: string | null, heading: string | null): string | 
   return text ? clip(text, SNIPPET_MAX_CHARS) : null;
 }
 
-export function createSearchIndex(bb: BbPluginApi, reader: ThreadReader) {
-  const settings = bb.settings.define({
+export function createSearchIndex(alia: AliaPluginApi, reader: ThreadReader) {
+  const settings = alia.settings.define({
     searchCommand: {
       type: "string",
       label: "Search command",
@@ -96,7 +96,7 @@ export function createSearchIndex(bb: BbPluginApi, reader: ThreadReader) {
       default: "qmd",
     },
   });
-  const host = hostClient(bb);
+  const host = hostClient(alia);
   let state: IndexState | null = null;
   let syncing = false;
   let syncAgain = false;
@@ -116,7 +116,7 @@ export function createSearchIndex(bb: BbPluginApi, reader: ThreadReader) {
 
   async function loadState(): Promise<IndexState> {
     if (state) return state;
-    const raw = await safe(() => bb.storage.kv.get<unknown>(INDEX_KEY));
+    const raw = await safe(() => alia.storage.kv.get<unknown>(INDEX_KEY));
     state = indexStateSchema.safeParse(raw).data ?? { hostId: null, synced: {} };
     return state;
   }
@@ -124,12 +124,12 @@ export function createSearchIndex(bb: BbPluginApi, reader: ThreadReader) {
   async function saveState(next: IndexState) {
     state = next;
     try {
-      await bb.storage.kv.set(INDEX_KEY, next);
+      await alia.storage.kv.set(INDEX_KEY, next);
       saveErrorLogged = null;
     } catch (error) {
       // The index keeps working from memory; a restart re-exports what was not saved.
       const text = errorMessage(error);
-      if (text !== saveErrorLogged) bb.log.info(`saving the search index state failed: ${text}`);
+      if (text !== saveErrorLogged) alia.log.info(`saving the search index state failed: ${text}`);
       saveErrorLogged = text;
     }
   }
@@ -160,7 +160,7 @@ export function createSearchIndex(bb: BbPluginApi, reader: ThreadReader) {
       return;
     }
     const previous = await loadState();
-    const hostId = await indexHostId(bb, previous.hostId);
+    const hostId = await indexHostId(alia, previous.hostId);
     if (!hostId) {
       syncError = NO_HOST;
       return;
@@ -242,7 +242,7 @@ export function createSearchIndex(bb: BbPluginApi, reader: ThreadReader) {
   async function search(query: string): Promise<SearchResponse> {
     const current = await loadState();
     const command = (await settings.get()).searchCommand.trim();
-    const hostId = command ? await indexHostId(bb, current.hostId) : null;
+    const hostId = command ? await indexHostId(alia, current.hostId) : null;
     // A host that does not hold the index yet has nothing to search until the first batch lands there; a failing
     // first sync (qmd missing, say) never claims it, so its error must show here rather than "Indexing".
     const moving = hostId !== null && hostId !== current.hostId;

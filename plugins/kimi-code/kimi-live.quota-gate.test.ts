@@ -2,9 +2,9 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { ProviderUsageResult } from "@get-bb/plugin-sdk/provider-bridge";
-import { experimental_acpProviderBridge as acpProviderBridge } from "@get-bb/plugin-sdk/provider-bridge/acp-next";
-import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@get-bb/plugin-sdk/provider-bridge/testing";
+import type { ProviderUsageResult } from "@vesnalia/plugin-sdk/provider-bridge";
+import { experimental_acpProviderBridge as acpProviderBridge } from "@vesnalia/plugin-sdk/provider-bridge/acp-next";
+import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import { afterEach, beforeEach, expect, it } from "vitest";
 
 import { mapPlanPromptMode } from "./src/prompt-mode.js";
@@ -15,14 +15,14 @@ import { gateQuotaExhaustedTurns } from "./src/quota-gate.js";
 // account's real quota) spawns a real `kimi acp` child, starts a thread, and
 // must fail turn/start with a typed rateLimited recovery hint instead of
 // letting kimi swallow the 429 into a bare end_turn (the silent-turn bug this
-// gate exists for). Needs the kimi binary on PATH; BB_KIMI_LIVE=1 to run.
-const LIVE = process.env.BB_KIMI_LIVE === "1";
+// gate exists for). Needs the kimi binary on PATH; ALIA_KIMI_LIVE=1 to run.
+const LIVE = process.env.ALIA_KIMI_LIVE === "1";
 const itLive = LIVE ? it : it.skip;
 
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-kimi-quota-gate-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "alia-kimi-quota-gate-"));
 });
 
 afterEach(() => {

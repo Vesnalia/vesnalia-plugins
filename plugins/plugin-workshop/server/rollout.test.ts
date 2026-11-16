@@ -31,7 +31,7 @@ async function ready(o: { installed?: boolean; enabled?: boolean; migrations?: b
 const args = async (r: Rig, force = false) => ({ expectedVersion: await versionOf(r), force });
 const current = (r: Rig) => r.store.currentAttempt("hello")!;
 const plugin = async (r: Rig) => (await r.ports.plugins.list()).find((p) => p.id === "hello");
-/** bb finished all running install jobs. */
+/** VesnALIA finished all running install jobs. */
 async function finishJobs(r: Rig, state: "succeeded" | "failed" | "cancelled" = "succeeded"): Promise<void> {
   for (const j of await r.ports.plugins.jobs()) if (["queued", "running", "cancelling"].includes(j.state)) r.ports.plugins.setJob(j.id, state);
 }
@@ -195,7 +195,7 @@ describe("Rollout: rollout", () => {
 
   test("an install of about a second finishes within the same pass: no minute pause on «installed»", async () => {
     const r = await ready();
-    // bb finishes the job a second after the start; the fake's time is moved only by the attempt's poll (`sleep`).
+    // VesnALIA finishes the job a second after the start; the fake's time is moved only by the attempt's poll (`sleep`).
     const start = r.ports.plugins.startInstall.bind(r.ports.plugins);
     r.ports.plugins.startInstall = async (dir) => {
       const id = await start(dir);
@@ -340,7 +340,7 @@ describe("Rollout: rollout", () => {
     expect(r.ports.count("startInstall")).toBe(1);
   });
 
-  test("a job that vanished from bb's list is an unknown outcome; the lock is kept until no install of the folder runs", async () => {
+  test("a job that vanished from VesnALIA's list is an unknown outcome; the lock is kept until no install of the folder runs", async () => {
     const r = await ready();
     await r.rollout.enter(r.id, await args(r));
     r.ports.plugins.forgetJob("job_1");
@@ -356,7 +356,7 @@ describe("Rollout: rollout", () => {
     const r = await ready();
     r.ports.lock.occupy(true);
     await r.rollout.enter(r.id, await args(r));
-    // While the attempt waited for the lock, someone ran `bb plugin install` on the same folder: bb returns that job, which may have built old files.
+    // While the attempt waited for the lock, someone ran `alia plugin install` on the same folder: VesnALIA returns that job, which may have built old files.
     r.ports.plugins.addJob({ id: "j1", source: `path:${r.dir}`, state: "running" });
     r.ports.lock.occupy(false);
     await r.rollout.advance(current(r).id);
@@ -1074,7 +1074,7 @@ describe("Rollout: acceptance, «Disable» and «Enable»", () => {
     expect(current(u).resolved_at).toBeNull();
   });
 
-  test("«Enable» is offered by enabled === false, also when bb says missing", async () => {
+  test("«Enable» is offered by enabled === false, also when VesnALIA says missing", async () => {
     const r = await ready();
     r.ports.plugins.add({ id: "hello", enabled: false, state: "missing", name: null });
     await r.ports.fs.remove(r.dir);
@@ -1102,7 +1102,7 @@ describe("Rollout: crash points", () => {
   const counts = (r: Rig) => COUNTED.map((e) => r.ports.count(e));
 
   /**
-   * The old instance runs until it crashes at the effect (bb manages to finish the install job); then a «restart» —
+   * The old instance runs until it crashes at the effect (VesnALIA manages to finish the install job); then a «restart» —
    * a new instance finishes the attempt by its record. `enable` gets into the rollout flow only if the install left the plugin disabled.
    */
   async function crash(r: Rig, start: () => Promise<unknown>, effect: string, when: "before" | "after"): Promise<void> {

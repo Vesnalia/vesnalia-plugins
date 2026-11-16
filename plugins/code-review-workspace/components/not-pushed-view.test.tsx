@@ -4,7 +4,7 @@
 // the PR's head still has a comment in the PR's diff, and one outside it says where to comment instead.
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { toast } from "sonner";
 import { defaultPreferences } from "../src/preferences";
 import { patchReviewState } from "../lib/panel-state";
@@ -31,9 +31,9 @@ const guide = { title: "Guide", intent: "Retries uploads.", unplacedFiles: [] as
 /** Your own PR acme/web#12, its main thread a fixer in a folder on MaxBook. */
 const review = {
   targetKey: "pr-12", kind: "pr", status: "ready", createdAt: 1, title: "Retry uploads", repo: "acme/web", number: 12, headSha: SHA, url: "https://github.com/acme/web/pull/12",
-  author: "me", ownPr: true, projectId: "p1", mainThread: { threadId: "fresh", environmentId: "env_fix", origin: "fresh", since: 1, branch: "bb/fixes-thr_x" },
+  author: "me", ownPr: true, projectId: "p1", mainThread: { threadId: "fresh", environmentId: "env_fix", origin: "fresh", since: 1, branch: "alia/fixes-thr_x" },
 };
-const available = { state: "available", patch: folder, base: SHA, onReviewHead: true, branch: "bb/fixes-thr_x", machine: "MaxBook", threadId: "fresh", hidden: [], notice: null, views: [] };
+const available = { state: "available", patch: folder, base: SHA, onReviewHead: true, branch: "alia/fixes-thr_x", machine: "MaxBook", threadId: "fresh", hidden: [], notice: null, views: [] };
 
 async function renderReview(rpc: Record<string, unknown> = {}, activeId = "c1", comments: any[] = [], over: Record<string, unknown> = {}) {
   patchReviewState(review.targetKey, { activeId });
@@ -74,7 +74,7 @@ test("Not pushed yet is a page after the chapters: how many files on which machi
   const view = await notPushed(page);
   expect(await view.findByRole("heading", { name: "1 file on MaxBook isn’t on GitHub yet" })).toBeTruthy();
   // "PR #12" never breaks between its words.
-  expect(view.getByText(/^Branch/).textContent).toBe("Branch bb/fixes-thr_x · compared with PR\u00a0#12 (1f2e3d4)");
+  expect(view.getByText(/^Branch/).textContent).toBe("Branch alia/fixes-thr_x · compared with PR\u00a0#12 (1f2e3d4)");
   expect(view.getByRole("region", { name: "src/a.ts" })).toBeTruthy();
   // Its row in the navigator says how many files, as its heading does.
   expect(page.getByRole("button", { name: "Not pushed yet · 1 file" }).getAttribute("aria-current")).toBe("page");

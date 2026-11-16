@@ -32,7 +32,7 @@ describe("shape hints", () => {
   it("point device and theme captions at Screens, and before and after shots at Compare", () => {
     const shots = ["Home, iPhone light", "Home, iPhone dark", "Settings, iPad light"].map((caption, k) => ({ src: `s/${k}.png`, caption }));
     expect(shapeHint("Gallery", { images: shots })).toContain("<Screens");
-    expect(shapeHint("Gallery", { images: ["$BB_THREAD_STORAGE/before.png", "$BB_THREAD_STORAGE/after.png"] })).toContain("<Compare");
+    expect(shapeHint("Gallery", { images: ["$ALIA_THREAD_STORAGE/before.png", "$ALIA_THREAD_STORAGE/after.png"] })).toContain("<Compare");
     expect(shapeHint("Gallery", { images: [{ src: "a.png", caption: "Mood one" }, { src: "b.png", caption: "Mood two" }] })).toBeNull();
   });
 });

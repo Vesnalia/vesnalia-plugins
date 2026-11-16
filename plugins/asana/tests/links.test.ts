@@ -20,7 +20,7 @@ test("finds the task in the button's prompt", () => {
 test("still links when the user edited the prompt's middle", () => {
   assert.equal(
     taskGidFromFirstTurn(
-      withText("Resolve this Asana task: Banner\nsee link\n\nPlease look at `bb asana task 42` first."),
+      withText("Resolve this Asana task: Banner\nsee link\n\nPlease look at `alia asana task 42` first."),
     ),
     "42",
   );
@@ -29,14 +29,14 @@ test("still links when the user edited the prompt's middle", () => {
 test("finds the task in the current prompt, which leads with the ticket name", () => {
   assert.equal(
     taskGidFromFirstTurn(
-      withText("Fix footer overlap\nhttps://app.asana.com/0/0/77\n\nResolve this Asana task. Start with `bb asana task 77` to read it."),
+      withText("Fix footer overlap\nhttps://app.asana.com/0/0/77\n\nResolve this Asana task. Start with `alia asana task 77` to read it."),
     ),
     "77",
   );
 });
 
 test("ignores other first messages", () => {
-  assert.equal(taskGidFromFirstTurn(withText("Fix the banner. Run `bb asana task 42`.")), null);
+  assert.equal(taskGidFromFirstTurn(withText("Fix the banner. Run `alia asana task 42`.")), null);
   assert.equal(taskGidFromFirstTurn(withText("Resolve this Asana task: no command here")), null);
 });
 
@@ -50,7 +50,7 @@ test("ignores malformed or missing events", () => {
   assert.equal(taskGidFromFirstTurn({ type: "client/thread/start", data: {} }), null);
 });
 
-test("thread titles lead with the bb project, title-cased", () => {
+test("thread titles lead with the VesnALIA project, title-cased", () => {
   assert.equal(threadTitle("harbor", "Nightly export file is blank"), "Harbor: Nightly export file is blank");
   assert.equal(threadTitle("crescent-harbor-films", "New font file"), "Crescent Harbor Films: New font file");
   assert.equal(threadTitle("Bluebird", "PostHog setup"), "Bluebird: PostHog setup");

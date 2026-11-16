@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 const HOME = process.env.HOME;
 const RUN = join(HOME, "run");
 const run = promisify(execFile);
-const Database = createRequire(join(HOME, "bb-box", "package.json"))("better-sqlite3");
+const Database = createRequire(join(HOME, "alia-box", "package.json"))("better-sqlite3");
 const TICKS = Number(execFileSync("getconf", ["CLK_TCK"], { encoding: "utf8" }).trim());
 const MINUTE = 60_000;
 const plan = JSON.parse(readFileSync(join(RUN, "plan.json"), "utf8"));
@@ -151,7 +151,7 @@ const steps = [
   { at: 490, name: "the Monitor on again", run: () => bbc("box", "option", "set", "monitor.enabled=true") },
   { at: 500, name: "history off for 3 minutes", run: () => bbc("box", "option", "set", "monitor.boxHistory=false") },
   { at: 503, name: "history on after 3 minutes", run: () => bbc("box", "option", "set", "monitor.boxHistory=true") },
-  { at: 720, name: "bb-box restarted half way", run: () => bbc("plugin", "reload", "bb-box") },
+  { at: 720, name: "alia-box restarted half way", run: () => bbc("plugin", "reload", "alia-box") },
   { at: 1440, name: "24 hours", run: async () => undefined },
 ];
 

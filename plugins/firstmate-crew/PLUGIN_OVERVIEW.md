@@ -1,8 +1,8 @@
-You tell the first mate what you want done; it sends each task to a worker, a bb thread in its own git worktree, so parallel work on one repository never collides. It writes the worker's instructions, supervises it to the end, and brings back finished branches and pull requests, investigation findings, and only the decisions that are really yours. You are the captain.
+You tell the first mate what you want done; it sends each task to a worker, a VesnALIA thread in its own git worktree, so parallel work on one repository never collides. It writes the worker's instructions, supervises it to the end, and brings back finished branches and pull requests, investigation findings, and only the decisions that are really yours. You are the captain.
 
 ## What you get
 
-- **A first mate in bb's own chat.** It is an ordinary pinned thread, so you read its tool calls and talk to it like any other thread. Its workers appear under it in the sidebar.
+- **A first mate in VesnALIA's own chat.** It is an ordinary pinned thread, so you read its tool calls and talk to it like any other thread. Its workers appear under it in the sidebar.
 - **A board of the crew.** A FirstMate tab on the first mate's thread sorts every worker into Queued, Working, Blocked, Parked, Done, Failed and Idle, with its last word on what it is doing and a link to its pull request.
 - **Control from each card.** Steer a worker with a word, interrupt its turn, relaunch it in the same worktree, or end it. Ending a worker whose task is not done asks first.
 - **Answers on held cards.** A card waiting on your call carries a button for each answer the first mate expects, and a box to type your own; either goes straight to the first mate.
@@ -14,19 +14,19 @@ You tell the first mate what you want done; it sends each task to a worker, a bb
 
 ## How it works
 
-The first mate never merges without your word unless you have said a project may. It writes only in its own home folder, by default ~/FirstMate: its charter, your standing orders, its backlog and its records, all plain files you can read and edit in bb's file panel. Your projects are read-only to it; every change is a worker's job. When the plugin's charter improves and you have edited yours, the new one is put beside it for you to compare.
+The first mate never merges without your word unless you have said a project may. It writes only in its own home folder, by default ~/FirstMate: its charter, your standing orders, its backlog and its records, all plain files you can read and edit in VesnALIA's file panel. Your projects are read-only to it; every change is a worker's job. When the plugin's charter improves and you have edited yours, the new one is put beside it for you to compare.
 
-Watches are small scripts in the home that run on a schedule while bb is running and tell the first mate when they have something to say. A pull request watch is built in: within about five minutes the first mate hears that a pull request on its backlog was merged or closed, got a review or a comment, or had its checks turn red or green. You can add watches of your own, or ask the first mate to write one and approve it first.
+Watches are small scripts in the home that run on a schedule while VesnALIA is running and tell the first mate when they have something to say. A pull request watch is built in: within about five minutes the first mate hears that a pull request on its backlog was merged or closed, got a review or a comment, or had its checks turn red or green. You can add watches of your own, or ask the first mate to write one and approve it first.
 
 ## Requirements
 
-- bb 0.47 or newer.
+- VesnALIA 0.47 or newer.
 - A capable model for the first mate, such as Claude Sonnet or better. Workers use the provider and model you set in the settings, or the first mate chooses.
 - `git` for your projects, and for the pull request watch the `gh` command, logged in.
 
 ## Good to know
 
-- The home and the watches live on the machine running the bb server, and watches run only while bb does.
-- Ending a worker removes its worktree after bb's grace period, so only committed work can be restored.
-- A worker waiting on a permission or question shows as Blocked, and bb tells the first mate it needs attention.
-- A request sent with `/fm` or `bb firstmate-crew tell` is marked as relayed. The first mate may start or steer work for it, but merges, anything destructive or irreversible, publishing, credentials and settings wait for your word in its own chat.
+- The home and the watches live on the machine running the VesnALIA server, and watches run only while VesnALIA does.
+- Ending a worker removes its worktree after VesnALIA's grace period, so only committed work can be restored.
+- A worker waiting on a permission or question shows as Blocked, and VesnALIA tells the first mate it needs attention.
+- A request sent with `/fm` or `alia firstmate-crew tell` is marked as relayed. The first mate may start or steer work for it, but merges, anything destructive or irreversible, publishing, credentials and settings wait for your word in its own chat.

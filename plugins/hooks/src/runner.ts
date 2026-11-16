@@ -1,5 +1,5 @@
-// Executes one hook: a shell command on the BB server (event JSON on stdin,
-// BB_HOOK_* in the environment) or an HTTP POST to a webhook. Pure of the bb
+// Executes one hook: a shell command on the VesnALIA server (event JSON on stdin,
+// ALIA_HOOK_* in the environment) or an HTTP POST to a webhook. Pure of the VesnALIA
 // API so it can be tested against real processes and a fake fetch.
 import { spawn, type ChildProcess } from "node:child_process";
 import { createHmac } from "node:crypto";
@@ -194,16 +194,16 @@ export function createRunner(options: RunnerOptions = {}): Runner {
     request.signal?.addEventListener("abort", onAbort, { once: true });
     const headers: Record<string, string> = {
       "content-type": "application/json",
-      "user-agent": "bb-plugin-hooks",
-      "x-bb-hooks-event": request.hook.event,
-      "x-bb-hooks-id": request.hook.id,
+      "user-agent": "alia-plugin-hooks",
+      "x-alia-hooks-event": request.hook.event,
+      "x-alia-hooks-id": request.hook.id,
       ...Object.fromEntries(Object.entries(request.hook.headers ?? {}).map(([key, value]) => [key, raw(value)])),
     };
     if (request.webhookSecret !== undefined && request.webhookSecret !== "") {
       const timestamp = String(Math.floor(started / 1000));
       const digest = createHmac("sha256", request.webhookSecret).update(`${timestamp}.${body}`).digest("hex");
-      headers["x-bb-hooks-timestamp"] = timestamp;
-      headers["x-bb-hooks-signature"] = `sha256=${digest}`;
+      headers["x-alia-hooks-timestamp"] = timestamp;
+      headers["x-alia-hooks-signature"] = `sha256=${digest}`;
     }
     try {
       // A redirect would send the payload, and any secret in it, to a different host.
@@ -249,7 +249,7 @@ export function createRunner(options: RunnerOptions = {}): Runner {
       for (const name of hookSecretRefs(request.hook)) {
         const value = request.secrets?.(name);
         if (value === undefined) {
-          return { status: "error", exitCode: null, httpStatus: null, stdout: "", stderr: "", durationMs: 0, error: `missing secret "${name}" (set it with: bb hooks secrets set ${name} <value>)` };
+          return { status: "error", exitCode: null, httpStatus: null, stdout: "", stderr: "", durationMs: 0, error: `missing secret "${name}" (set it with: VesnALIA hooks secrets set ${name} <value>)` };
         }
         secretValues[name] = value;
         secretEnv[envNameFor(name)] = value;

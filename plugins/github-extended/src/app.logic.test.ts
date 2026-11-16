@@ -158,7 +158,7 @@ describe("github panel routes", () => {
       { view: "dependabot" },
       { view: "new" },
       { view: "issue", repo: "acme/widgets", number: 7 },
-      { view: "pull", repo: "get-bb/bb", number: 42 },
+      { view: "pull", repo: "get-alia/alia", number: 42 },
       { view: "dependabot-alert", repo: "acme/widgets", number: 9 },
     ];
 

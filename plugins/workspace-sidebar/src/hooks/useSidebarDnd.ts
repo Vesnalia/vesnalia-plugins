@@ -2,7 +2,7 @@
 // from "what is under the pointer" to "what the drop does".
 //
 // dnd-kit moves the rows; the rules live in lib/dnd.ts. What this hook adds
-// is the sidebar's coexistence with bb's own drag-to-split gesture: a press
+// is the sidebar's coexistence with VesnALIA's own drag-to-split gesture: a press
 // that heads sideways before it has moved down is left to the host, and once
 // the host engages it dispatches Escape, which dnd-kit treats as cancel.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";

@@ -6,13 +6,13 @@ Validated by the user on the in-plugin preview, 2026-10-30; hierarchy pass (Inbo
 
 ## Visual thesis
 
-A calm, airy, rounded panel on bb's own neutrals and font, where colour appears only to carry meaning,
+A calm, airy, rounded panel on VesnALIA's own neutrals and font, where colour appears only to carry meaning,
 once per dimension. The issue type keeps Jira's familiar hue in a rounded-square icon chip. The status
 category is a round progress-ring glyph and pill. Every priority has a colour: urgent ones as a tinted tag
 with 6px corners, the rest as coloured text. A group header takes a soft tint of what it groups. Shape keeps
 type and status apart where their hues are the same family. Chrome stays neutral: segmented controls, stat
-labels, avatars and the sign-in panel use bb's neutrals and only their small icons carry colour.
-bb's primary colour fills only Connect Jira (Create ticket is an outline button). Amber is for warnings, bb's destructive tone
+labels, avatars and the sign-in panel use VesnALIA's neutrals and only their small icons carry colour.
+VesnALIA's primary colour fills only Connect Jira (Create ticket is an outline button). Amber is for warnings, VesnALIA's destructive tone
 for errors. "Not plain" comes from rounding, the ring glyphs and motion, not from more colour.
 
 ## Hierarchy thesis (Inbox)
@@ -58,7 +58,7 @@ assigned" empty state.
 
 ### Host-owned (never restyled)
 `--background`, `--card`, `--border`, `--muted`, `--muted-foreground`, `--foreground`, `--primary`,
-`--ring`, `--destructive`, and the font. Dark mode follows the OS colour scheme, as bb compiles `dark:`.
+`--ring`, `--destructive`, and the font. Dark mode follows the OS colour scheme, as VesnALIA compiles `dark:`.
 
 ### Status category (`STATUS` in parts.tsx)
 | Category | Ring glyph | Pill |
@@ -84,12 +84,12 @@ Security rose (SecurityCheck), Subtask cyan (ChildThread). Boards are teal, like
 Plain text (14px semibold, nested 13px medium), no band; the colour is the heading's glyph: status ring, initiative or
 epic chip, teal board icon. Rows of a group sit in one surface (`ROWS`: bg-card, hairline border, hairline dividers).
 
-### Contrast (measured on bb, both themes)
+### Contrast (measured on VesnALIA, both themes)
 Text pairs 4.5:1 or more, glyphs and chips 3:1 or more. Light-theme fixes applied: in-progress ring sky-600
 (was sky-500, 2.7:1), done ring emerald-600 (was 2.5:1), High tag text orange-800 (was 4.4:1).
 
 ### Type
-bb's sans, no custom face (the panel lives inside bb). 20px semibold ticket titles (`text-xl`), 14px medium
+VesnALIA's sans, no custom face (the panel lives inside VesnALIA). 20px semibold ticket titles (`text-xl`), 14px medium
 summaries (`text-sm font-medium`), 12px muted meta (`text-xs text-muted-foreground`), monospace only for
 issue keys.
 

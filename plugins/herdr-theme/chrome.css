@@ -1,4 +1,4 @@
-/* Bounded to native BB prompts and pane tabs. The content script removes
+/* Bounded to native ALIA prompts and pane tabs. The content script removes
    data-herdr-theme on theme switch, reload, and plugin disposal. */
 :root[data-herdr-theme] [data-promptbox] {
   border-radius: 0;
@@ -65,7 +65,7 @@
   background: var(--primary);
   color: var(--primary-foreground);
 }
-/* TabPill is shared across BB's native pane tab strips. */
+/* TabPill is shared across ALIA's native pane tab strips. */
 :root[data-herdr-theme] .group\/tab-pill,
 :root[data-herdr-theme] .group\/tab-pill > button {
   border-radius: 2px;

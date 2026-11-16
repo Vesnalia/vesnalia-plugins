@@ -7,11 +7,11 @@ import {
   definePluginApp,
   experimental_NewThreadComposer as NewThreadComposer,
   ThreadChat,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { ChatSummary, quickChatRpcContract } from "./server";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -243,7 +243,7 @@ function QuickChatWindow({
   focusRequest: number;
 }) {
   const rpc = useRpc<typeof quickChatRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const title = useChatTitle(threadId);
   const windowRef = useRef<HTMLElement>(null);
   const drag = useDraggableWindow(windowRef);

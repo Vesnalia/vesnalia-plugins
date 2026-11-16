@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createPluginUpdates } from "./plugin-updates";
 
 /** `busy` stands for background review work, such as a guide generating; `advance` moves the clock, by an hour and a bit unless told. */
@@ -8,16 +8,16 @@ function setup() {
   const background = { busy: false };
   const check = vi.fn(async () => [{ id: "code-review-workspace", outcome: "update-available", installed: { display: "0.2.0", version: "old" }, candidate: { display: "0.2.1", version: "new" } }]);
   const apply = vi.fn(async () => ({ outcome: "updated", applied: true, from: { display: "0.2.0", version: "old" }, to: { display: "0.2.1", version: "new" } }));
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { plugins: { checkUpdates: check, applyUpdate: apply } } });
-  const updates = createPluginUpdates(bb, () => background.busy, () => now);
-  return { bb, updates, check, apply, background, advance: (ms = 3_600_001) => { now += ms; } };
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { plugins: { checkUpdates: check, applyUpdate: apply } } });
+  const updates = createPluginUpdates(alia, () => background.busy, () => now);
+  return { alia, updates, check, apply, background, advance: (ms = 3_600_001) => { now += ms; } };
 }
 
 test("automatic updates default off, persist opt-in, and wait for open views to close", async () => {
-  const { bb, updates, check, apply, advance } = setup();
+  const { alia, updates, check, apply, advance } = setup();
   advance(); await updates.tick(); expect(check).not.toHaveBeenCalled();
   updates.setAutomatic(true);
-  expect(createPluginUpdates(bb, () => false).status().automatic).toBe(true);
+  expect(createPluginUpdates(alia, () => false).status().automatic).toBe(true);
   updates.presence("review-tab", true); advance(); await updates.tick(); expect(apply).not.toHaveBeenCalled();
   updates.presence("review-tab", false); advance(); await updates.tick(); expect(apply).toHaveBeenCalledTimes(1);
 });

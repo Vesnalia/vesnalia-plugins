@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { definePluginApp, UrlLink, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, UrlLink, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 
 let mounts = 0;
 
 function Probe() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [mount] = useState(() => ++mounts);
   const [hash, setHash] = useState(() => window.location.hash);
   const [count, setCount] = useState(0);
@@ -28,8 +28,8 @@ function Probe() {
       <button type="button" data-act="assign" onClick={() => { window.location.hash = "option/monitor"; }}>assign hash</button>{" "}
       <button type="button" data-act="replace" onClick={() => { window.history.replaceState(window.history.state, "", "#backend/new"); setHash(window.location.hash); }}>replace</button>{" "}
       <UrlLink href="/settings/plugins/hashprobe#from-link/1" data-act="urllink-self">link to self with hash</UrlLink>{" "}
-      <UrlLink href="/settings/plugins/bb-box#backend/docker" data-act="urllink-bbbox">link to bb-box with hash</UrlLink>{" "}
-      <button type="button" data-act="openurl" onClick={() => { (window as unknown as { __openUrl?: boolean }).__openUrl = navigate.openUrl(`${window.location.origin}/settings/plugins/bb-box#kind/linux`); }}>openUrl with hash</button>
+      <UrlLink href="/settings/plugins/alia-box#backend/docker" data-act="urllink-bbbox">link to alia-box with hash</UrlLink>{" "}
+      <button type="button" data-act="openurl" onClick={() => { (window as unknown as { __openUrl?: boolean }).__openUrl = navigate.openUrl(`${window.location.origin}/settings/plugins/alia-box#kind/linux`); }}>openUrl with hash</button>
     </div>
   );
 }

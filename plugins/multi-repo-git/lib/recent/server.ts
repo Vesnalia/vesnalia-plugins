@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { join } from "node:path";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { latestSchema, pageInputSchema, type PageInput } from "./schema.js";
 
@@ -17,15 +17,15 @@ const workerMessage = z.discriminatedUnion("phase", [
 type Result = z.infer<typeof latestSchema>;
 type Failure = "aborted" | "timeout" | "spawn-error" | "worker-error" | "invalid-output";
 
-export default function registerRecent(bb: BbPluginApi): void {
+export default function registerRecent(alia: AliaPluginApi): void {
   let workerPath: string | undefined;
-  const database = join(bb.server.experimental_dataDir, "bb.db");
+  const database = join(alia.server.experimental_dataDir, "alia.db");
   const workers = new Set<ChildProcess>();
   const subscriptions: (() => void)[] = [];
   let requestId = 0, maxWorkers = 0, revision = 0;
   let watching = false, disposed = false;
   const flights = new Map<string, { revision: number; controller: AbortController; promise: Promise<Result>; readers: number }>();
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     disposed = true;
     for (const flight of flights.values()) flight.controller.abort();
     for (const off of subscriptions) off();
@@ -38,17 +38,17 @@ export default function registerRecent(bb: BbPluginApi): void {
   async function execute(signal: AbortSignal, input: PageInput): Promise<Result> {
     if (signal.aborted || disposed) throw new Error("Request cancelled.");
     if (!workerPath) {
-      const installed = (await bb.sdk.plugins.list()).plugins.find(plugin => plugin.id === bb.pluginId);
+      const installed = (await alia.sdk.plugins.list()).plugins.find(plugin => plugin.id === alia.pluginId);
       if (!installed?.rootDir) throw new Error("Installed Atrium source not found.");
       workerPath = join(installed.rootDir, "lib", "recent", "query-worker.mjs");
     }
     if (signal.aborted || disposed) throw new Error("Request cancelled.");
     const started = performance.now(), id = ++requestId;
-    // OS process isolation is required: node:sqlite must not share BB's process
+    // OS process isolation is required: node:sqlite must not share VesnALIA's process
     // with its independent native SQLite driver. Do not replace this with Worker.
     const worker = spawn(process.execPath, ["--no-warnings", workerPath, database], {
       stdio: ["ignore", "ignore", "ignore", "ipc"], windowsHide: true,
-      env: { ...process.env, NODE_OPTIONS: "" }, // Do not inherit BB preloads into the isolated reader.
+      env: { ...process.env, NODE_OPTIONS: "" }, // Do not inherit VesnALIA preloads into the isolated reader.
     });
     workers.add(worker); maxWorkers = Math.max(maxWorkers, workers.size);
     const activeAtStart = workers.size;
@@ -59,7 +59,7 @@ export default function registerRecent(bb: BbPluginApi): void {
       const finish = (reason: Failure | null, result?: Result) => {
         if (settled) return;
         settled = true; clearTimeout(timer); signal.removeEventListener("abort", abort);
-        if (!disposed) bb.log.info("recent-query " + JSON.stringify({ id, elapsedMs: Math.round(performance.now() - started),
+        if (!disposed) alia.log.info("recent-query " + JSON.stringify({ id, elapsedMs: Math.round(performance.now() - started),
           reason: reason ?? "success", activeAtStart, maxWorkersSinceReload: maxWorkers, workerPid: worker.pid, workerSpawnedMs, workerStartedMs, telemetry }));
         if (reason) reject(new Error("Could not load recent chats. Retry using Refresh."));
         else resolve(result!);
@@ -92,20 +92,20 @@ export default function registerRecent(bb: BbPluginApi): void {
       worker.on("error", () => finish("spawn-error"));
       worker.on("close", code => {
         workers.delete(worker);
-        if (!disposed) bb.log.info("recent-worker-exit " + JSON.stringify({ id, code, activeWorkers: workers.size }));
+        if (!disposed) alia.log.info("recent-worker-exit " + JSON.stringify({ id, code, activeWorkers: workers.size }));
         finish("worker-error"); // A result-less exit is never an empty successful list.
       });
       if (signal.aborted) abort();
     });
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     recent_latest: (input, { experimental_signal: signal }) => {
       if (signal.aborted || disposed) return Promise.reject(new Error("Request cancelled."));
       if (!watching) {
         // Never share a snapshot across a persisted-data invalidation.
-        subscriptions.push(bb.sdk.subscribe({ event: "thread:changed", callback: () => { revision++; } }));
-        subscriptions.push(bb.sdk.subscribe({ event: "project:changed", callback: () => { revision++; } }));
+        subscriptions.push(alia.sdk.subscribe({ event: "thread:changed", callback: () => { revision++; } }));
+        subscriptions.push(alia.sdk.subscribe({ event: "project:changed", callback: () => { revision++; } }));
         watching = true;
       }
       const key = JSON.stringify({ ...input, search: input.search.toLowerCase() });

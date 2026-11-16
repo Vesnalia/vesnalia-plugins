@@ -1,18 +1,18 @@
-# Kata for bb
+# Kata for VesnALIA
 
 A keyboard-first viewer and editor for the local [kata](https://www.katatracker.com)
-issue tracker inside bb, modelled on `kata tui`. You get one tab per kata project
+issue tracker inside VesnALIA, modelled on `kata tui`. You get one tab per kata project
 you choose, the issue list on the left, and the issue detail on the right. It
-updates live from the kata daemon. There is also a `bb kata` CLI and a set of
-agent tools, so bb threads can work with kata issues directly.
+updates live from the kata daemon. There is also a `alia kata` CLI and a set of
+agent tools, so VesnALIA threads can work with kata issues directly.
 
 Developer notes (file map, data flow, what was verified) are in
 [PLUGIN_OVERVIEW.md](PLUGIN_OVERVIEW.md).
 
 ## Requirements
 
-- bb ≥ 0.43 on a machine with `kata` installed (on `PATH` or at
-  `~/.local/bin/kata`). The plugin runs in the bb server and talks to the kata
+- VesnALIA ≥ 0.43 on a machine with `kata` installed (on `PATH` or at
+  `~/.local/bin/kata`). The plugin runs in the VesnALIA server and talks to the kata
   daemon over its unix socket. No account or token is needed.
 - A running kata daemon. The plugin finds it with `kata daemon locate` (or
   `KATA_SERVER`). Like any kata command, this starts the daemon on first use. After
@@ -22,10 +22,10 @@ Developer notes (file map, data flow, what was verified) are in
 ## Install
 
 ```sh
-cd bb-plugin-kata
+cd alia-plugin-kata
 npm install --include=dev
-bb plugin build
-bb plugin install . --yes      # afterwards: bb plugin reload kata
+alia plugin build
+alia plugin install . --yes      # afterwards: alia plugin reload kata
 ```
 
 ## Using the viewer
@@ -104,7 +104,7 @@ close menu, which reopens.
 
 A thread is **kata-bound** when a `.kata.toml` (`[project] name = "…"`, as
 `kata init` writes it) is found. The plugin looks in the thread's environment
-directory first (a git worktree or other checkout), then in its bb project's
+directory first (a git worktree or other checkout), then in its VesnALIA project's
 default source directory, and in the ancestors of each. The nearest file wins.
 In a bound thread:
 
@@ -122,15 +122,15 @@ In a bound thread:
   action "Kata: open issue from selection" finds refs in the text you select.
 - Palette: "Kata: open issue…" (by ref) and "Kata: link issue to this thread".
 
-## `bb kata`
+## `alia kata`
 
-Available in any bb terminal or thread. The project comes from `--project`, a
+Available in any VesnALIA terminal or thread. The project comes from `--project`, a
 qualified ref, or the thread's binding. Every command has `--help`, and most
 take `--json`.
 
 | Command | Does |
 | --- | --- |
-| `projects` | kata projects, which are viewer tabs, bound bb projects |
+| `projects` | kata projects, which are viewer tabs, bound VesnALIA projects |
 | `list [--status open\|closed\|all] [--priority N] [--label L]… [--owner A \| --unowned] [--limit 50]` | Issues sorted by priority, then last update |
 | `ready [--label L]… [--limit N]` | Open issues with no open blockers |
 | `search <query…>` | Title, body and comments; open and closed |
@@ -167,8 +167,8 @@ work `needs-review` instead, and never to delete anything.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| `includedProjects` | `[]` | JSON array of kata project uids shown as tabs, in order. Tab drags, `alt-[` / `alt-]`, the `+` tab and `bb kata include` / `exclude` all edit it |
-| `actor` | empty | Name recorded on changes made from bb. Empty means `$KATA_AUTHOR`, then `$USER` |
+| `includedProjects` | `[]` | JSON array of kata project uids shown as tabs, in order. Tab drags, `alt-[` / `alt-]`, the `+` tab and `alia kata include` / `exclude` all edit it |
+| `actor` | empty | Name recorded on changes made from VesnALIA. Empty means `$KATA_AUTHOR`, then `$USER` |
 
 ## When the daemon is down
 
@@ -183,7 +183,7 @@ plugin loads uses `kata daemon locate`, which starts a stopped daemon.
 ## Testing against real data
 
 Do not smoke-test mutations on real projects. Use a scratch kata project (this
-repo used `bb-plugin-kata-scratch`) and reach it without adding it as a tab:
+repo used `alia-plugin-kata-scratch`) and reach it without adding it as a tab:
 open one of its issues with "Kata: open issue…" (it shows as an unsaved,
 *visiting* tab), or open a thread whose working directory has a `.kata.toml`
 naming it.

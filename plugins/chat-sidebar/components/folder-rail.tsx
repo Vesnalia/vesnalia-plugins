@@ -111,7 +111,7 @@ export function FolderRail({
   folders: readonly Folder[];
   rows: readonly Chat[];
   active: FolderId;
-  /** The visible height of bb's scroll area: the rail fills it and scrolls inside. */
+  /** The visible height of VesnALIA's scroll area: the rail fills it and scrolls inside. */
   height: number;
   onSelect: (id: FolderId) => void;
   /** Sits above the folders on the search row's level, so both columns start together. */

@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { IconButton, StatusDot } from "@/src/app/common.tsx";
@@ -100,7 +100,7 @@ export function ViewPage({ id, view: shown, fromSettings = false }: { id: string
   const closed = unreachableWhy(box) ?? whyClosed(view);
   const from = cameFrom();
   const back = fromSettings ? () => go({ page: "settings", section: "machines" }) : () => goBackOr({ page: "box", id }, ["list", "box"], true);
-  const backWords = fromSettings ? "Back to BB Box settings" : from === "list" ? "Back to boxes" : `Back to ${view.name}`;
+  const backWords = fromSettings ? "Back to VesnALIA Box settings" : from === "list" ? "Back to boxes" : `Back to ${view.name}`;
   const mine = view.control?.owner === "human" && view.control.holder === "this-tab";
   const others = openingsOf(view).filter((opening) => opening.view !== shown && opening.closedBecause === null);
   const screen = shown !== "terminal";

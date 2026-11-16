@@ -1,7 +1,7 @@
 import { mkdtemp, readFile, rm, writeFile, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { afterEach, describe, expect, it } from "vitest";
 import { copyName, createAttachments, filesInInput, filesOnMessage, numbered } from "./attachments";
 import type { DocFiles } from "./files";
@@ -48,7 +48,7 @@ describe("copying an attachment for review", () => {
   async function setup(bytes: string) {
     root = await mkdtemp(path.join(tmpdir(), "doc-review-attach-"));
     const kv = new Map<string, unknown>();
-    const bb = {
+    const alia = {
       sdk: {
         threads: {
           get: async () => ({ id: "thr_1", projectId: "proj_1" }),
@@ -66,9 +66,9 @@ describe("copying an attachment for review", () => {
           set: async (key: string, value: unknown) => void kv.set(key, value),
         },
       },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
     const files = { canonicalHost: async () => null } as unknown as DocFiles;
-    return { attachments: createAttachments({ bb, files }), kv, root };
+    return { attachments: createAttachments({ alia, files }), kv, root };
   }
 
   it("copies into the thread's storage and opens the same copy again, edits and all", async () => {

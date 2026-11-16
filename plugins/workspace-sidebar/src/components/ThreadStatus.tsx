@@ -7,7 +7,7 @@
 // ones that are merely in motion, then the ones that are finished.
 //
 // A timestamp is the fallback — what you show when there is nothing to say.
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import type { ThreadPullRequest } from "@/hooks/useThreadPullRequests";
 import type { ManualStatus } from "@/lib/status";
@@ -42,7 +42,7 @@ export const TONE_TEXT: Record<StatusTone, string> = {
   idle: "text-muted-foreground",
 };
 
-// bb adds indicator kinds over time; anything unknown falls through to the
+// VesnALIA adds indicator kinds over time; anything unknown falls through to the
 // pull request, then to the timestamp.
 const BY_INDICATOR: Record<string, Status> = {
   "waiting-for-input": {

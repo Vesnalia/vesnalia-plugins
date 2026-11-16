@@ -1,4 +1,4 @@
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import { AutoCompactor, SUMMARY_STARTED } from "../src/server/auto-compact";
 import { createCli, formatDuration, formatStatus, formatThread, formatTime } from "../src/server/cli";
@@ -27,8 +27,8 @@ function setup(over: Parameters<typeof settingsOf>[0] = {}) {
   });
   const compactor = new AutoCompactor({ threads, storage, settings, invalidate: () => {}, log: { info() {}, warn() {} }, now: clock.now });
   const service = createService({ threads, storage, settings, poller, compactor, invalidateThread: () => {}, now: clock.now });
-  const { bb, harness } = createFakePluginHost({ pluginId: "usage-forecast" });
-  bb.cli.register(createCli(service, clock.now));
+  const { alia, harness } = createFakePluginHost({ pluginId: "usage-forecast" });
+  alia.cli.register(createCli(service, clock.now));
   return { clock, threads, storage, service, harness, run: (...argv: string[]) => harness.runCli(argv) };
 }
 
@@ -261,7 +261,7 @@ describe("pace state word", () => {
   });
 });
 
-describe("bb usage-forecast", () => {
+describe("alia usage-forecast", () => {
   it("status prints the polled limits with a forecast, and JSON on request", async () => {
     const t = setup();
     const before = await t.run("status");
@@ -412,8 +412,8 @@ describe("tokens command (UF-12 R10)", () => {
       now: base.clock.now,
       sleep: async () => undefined,
     });
-    const { bb, harness } = createFakePluginHost({ pluginId: "usage-forecast" });
-    bb.cli.register(
+    const { alia, harness } = createFakePluginHost({ pluginId: "usage-forecast" });
+    alia.cli.register(
       createCli(base.service, base.clock.now, async () => [], {
         counter,
         timeZone: () => "Asia/Yerevan",
@@ -441,7 +441,7 @@ describe("tokens command (UF-12 R10)", () => {
     const text = await run("tokens");
     expect(text.stdout).toBe(
       [
-        "Tokens in BB threads without cache reads (with them in brackets); day and month in Asia/Yerevan.",
+        "Tokens in VesnALIA threads without cache reads (with them in brackets); day and month in Asia/Yerevan.",
         "  claude-code: today 186k (5.2M), month 286k (9.2M)",
         "  codex: today 2.35k (12.3k), month 2.35k (12.3k)",
         "Recent threads:",

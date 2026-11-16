@@ -63,7 +63,7 @@ test("publish adds a skill, commits and pushes; history follows", async () => {
   assert.equal(state.dirty, 0);
 });
 
-test("publish refuses what BB would reject and leaves the hub untouched", async () => {
+test("publish refuses what VesnALIA would reject and leaves the hub untouched", async () => {
   const { root } = setup();
   const before = readFileSync(path.join(root, "ru-text", "SKILL.md"), "utf8");
   const broken = archiveOf(root, "ru-text", { "SKILL.md": "---\nname: ru-text\ndescription: Use when: x\n---\n" });

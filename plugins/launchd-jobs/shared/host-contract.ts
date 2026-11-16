@@ -3,7 +3,7 @@
  * runs on the Mac whose jobs are being managed. Each method acts on that
  * machine's `~/Library/LaunchAgents`, its launchd and its files.
  */
-import { defineRpcContract, type ExperimentalHostSignals } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type ExperimentalHostSignals } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { FailingJobSchema, JobListSchema, JobSchema, JobSpecSchema, LogChunkSchema } from "./jobs";

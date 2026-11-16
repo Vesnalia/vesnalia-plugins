@@ -263,7 +263,7 @@ function opencodeCompletedAt(record: unknown, fallback: number): number {
 }
 
 /**
- * Exact per-call samples for opencode sessions launched by BB. The source
+ * Exact per-call samples for opencode sessions launched by VesnALIA. The source
  * keeps a small overlap because opencode inserts a zero-token assistant row
  * when a call starts, then updates that same row with final usage on finish.
  */

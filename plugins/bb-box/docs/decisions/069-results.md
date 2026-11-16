@@ -16,7 +16,7 @@ does changes.
   box…, Resize… and the Release confirmation.
 - It takes the box, whose it is, where its views open, and whether its
   Resize dialog is open. A thread's box brings its thread, whether it is
-  the thread's own BB machine (held), whether New thread is offered, and the
+  the thread's own VesnALIA machine (held), whether New thread is offered, and the
   row's way to Start, Stop, Release and Check now. A machine of your own
   brings whether Open in browser is offered and the row's Start, Stop and
   Remove.
@@ -45,7 +45,7 @@ in each place:
 - the panel stops and starts a box that can, and not one that cannot (a
   real box's whole menu);
 - a row starts a child thread on its box, and opens it; a box that is not a
-  BB machine offers no thread;
+  VesnALIA machine offers no thread;
 - the Boxes page's Threads tab (a thread box's whole menu, with no New
   thread) and its Machines tab (Open in browser, Remove… and its dialog);
 - the box this thread runs on, without Release or Stop (its whole menu);
@@ -64,7 +64,7 @@ On a fresh Linux box, 8 cores, on the commits delivered, rebased onto main
 | vitest | 306 pass, in 4 files |
 | `test/docs.test.ts`, `test/site.test.ts` and `scripts/reference.ts --check` | pass; the reference is unchanged |
 
-On the live check's box, once that BB and its desktops ran there, one
+On the live check's box, once that VesnALIA and its desktops ran there, one
 server test, "High resolution doubles a Linux desktop's pixels with Xfce at
 2x…", failed 3 times in 3 on main `c108795e` and on this branch alike; it
 passed there before, and passes on the fresh box.
@@ -72,33 +72,33 @@ passed there before, and passes on the fresh box.
 The live check below ran with the branch rebased onto `c108795e`; main's
 next commit, `66682093`, changes none of this unit's files.
 
-### Live check on a separate BB
+### Live check on a separate VesnALIA
 
-A Linux box with Docker, 8 cores, 16 GiB, ran a fresh `npx bb-app` 0.48.0
+A Linux box with Docker, 8 cores, 16 GiB, ran a fresh `npx alia-app` 0.48.0
 with no account, its own data folder and ports, started with `env -i`,
-`HOME` and `PATH` only. bb-box was installed with `bb plugin install` of a
+`HOME` and `PATH` only. alia-box was installed with `alia plugin install` of a
 path: first main `c108795e` ("before"), then this branch ("after"), over
 the same data, so the same boxes. A Docker backend on the box's own Docker
-ran bb-box's Linux and Linux desktop images, built with
-`setup/docker/build.sh`. A project and a thread were made with `bb project
-create` and `bb thread spawn`; the thread's agent has no login, so it
+ran alia-box's Linux and Linux desktop images, built with
+`setup/docker/build.sh`. A project and a thread were made with `alia project
+create` and `alia thread spawn`; the thread's agent has no login, so it
 stopped at once, idle.
 
-Boxes, made through bb-box's CLI as a thread or a person would:
+Boxes, made through alia-box's CLI as a thread or a person would:
 
 - for the thread: ready-heron (Linux) and bright-sparrow (Linux desktop);
 - machines of your own: workbench (Linux) and studio (Linux desktop);
 - for each run, two more boxes for the thread and one more machine, to be
   released and removed through the menu.
 
-None joined BB as a machine: a BB with no account cannot (bb connect needs
-one), so each row says "Could not join BB".
+None joined VesnALIA as a machine: a VesnALIA with no account cannot (VesnALIA connect needs
+one), so each row says "Could not join VesnALIA".
 
 [`live-check.mjs`](069-boxes-page/unit-1a/live-check.mjs) drives headless
 Chromium at 1440 by 1000. In each place it opens each box's menu, records
 its items, which are disabled and its separators, takes a screenshot, then
 uses every item and checks what it did through the page, the clipboard,
-new browser tabs, the RPCs the page sent, and bb-box's own state. Both runs
+new browser tabs, the RPCs the page sent, and alia-box's own state. Both runs
 passed, every item doing the same:
 
 | Place | Box | Item | What it did, before and after alike |
@@ -106,9 +106,9 @@ passed, every item doing the same:
 | Box panel | ready-heron | Copy address | the clipboard held its address |
 | | | Check now | sent `refresh` with the thread and the box |
 | | | Resize… | opened "Resize ready-heron", which asked `resize` with the thread |
-| | | Stop, then Start | stopped, then ready, as bb-box's state said |
+| | | Stop, then Start | stopped, then ready, as alia-box's state said |
 | | | Open terminal | a panel tab "Terminal: ready-heron", connected |
-| | bright-sparrow | Open in browser | a new browser tab at `/plugins/bb-box/desktop/<thread>/<box>` |
+| | bright-sparrow | Open in browser | a new browser tab at `/plugins/alia-box/desktop/<thread>/<box>` |
 | | | Open desktop | a panel tab "Desktop", streaming the box's desktop |
 | | the first spare | Release… | asked "Release …? Its disk and everything on it will be deleted…", then released it |
 | Boxes page, Threads | ready-heron | Copy address, Check now, Resize…, Stop, Start | as in the panel |
@@ -120,10 +120,10 @@ passed, every item doing the same:
 | | | Resize… | opened "Resize workbench", which asked `machines.resize`, with no thread |
 | | | Stop, then Start | stopped, then ready |
 | | | Open terminal | the page went to `operator/<box>/terminal` |
-| | studio | Open in browser | a new browser tab at `/plugins/bb-box/desktop/operator/<box>` |
+| | studio | Open in browser | a new browser tab at `/plugins/alia-box/desktop/operator/<box>` |
 | | | Open desktop | the page went to `operator/<box>` |
-| | the spare machine | Remove… | asked "Remove …? Its machine leaves BB…", then removed it |
-| BB Box settings | | | no box menu on the page, before or after |
+| | the spare machine | Remove… | asked "Remove …? Its machine leaves VesnALIA…", then removed it |
+| VesnALIA Box settings | | | no box menu on the page, before or after |
 
 The 13 menus recorded, items in order, were the same in both runs, with
 the same disabled items (none) and the same 2 separators each, once each
@@ -177,20 +177,20 @@ the button.
 
 ### Not checked live, and why
 
-- New thread on this box…: offered only for a box that joined BB, which a
-  BB with no account cannot do. The item and its dialog moved unchanged;
+- New thread on this box…: offered only for a box that joined VesnALIA, which a
+  VesnALIA with no account cannot do. The item and its dialog moved unchanged;
   "a row starts a child thread on its box, and opens it" covers it.
 - Open simulator and Open emulator: they need a device box, on a Mac or a
   Linux host with KVM. They are made by the same code as Open desktop
   (`screensOf`); F-19's test covers them.
-- The thread's own BB machine in the panel (held), which needs a box that
-  joined BB: its test covers its menu, item by item.
+- The thread's own VesnALIA machine in the panel (held), which needs a box that
+  joined VesnALIA: its test covers its menu, item by item.
 
 ### Deviations from 069
 
 - 069's row for unit 1a names the menu "in settings". Settings has had no
   box menu since 067 unit 1 moved your machines to the Boxes page's
-  Machines tab; the live check found none on BB Box's settings page, before
+  Machines tab; the live check found none on VesnALIA Box's settings page, before
   and after. `MachineRow` keeps its settings form (`from="settings"`:
   views with a way back to settings, no Open in browser), which nothing
   renders now; `BoxMenu` keeps it too.
@@ -209,7 +209,7 @@ Built on 29 October 2026, on main `9676abb5`.
 
 ### What it adds
 
-- **Two files beside bb-box's `data.db`.** `box-log.db` and `box-history.db`
+- **Two files beside alia-box's `data.db`.** `box-log.db` and `box-history.db`
   are attached to the SDK's handle as `boxlog` and `boxhistory` at start,
   each in WAL mode with a 4 MB journal limit, and capped at 8 MB and 64 MB.
   Each keeps its migrations in its own `_migrations` table, by the SDK's
@@ -219,9 +219,9 @@ Built on 29 October 2026, on main `9676abb5`.
   48 MB, and the box log keeps at most 1,000 events. `box-history.db` has
   no tables yet: unit 3 adds them.
 - **The box log**, `boxlog.box_events`: box, thread, name, time, kind, who
-  (the person, an agent with its thread, a command, bb-box with why,
-  outside bb-box, or unknown), and words of at most 1 KB. A failed stop,
-  start, resize or release carries what bb-box then observed of the box,
+  (the person, an agent with its thread, a command, alia-box with why,
+  outside alia-box, or unknown), and words of at most 1 KB. A failed stop,
+  start, resize or release carries what alia-box then observed of the box,
   when, and from which backend; a resize carries the parts that changed,
   read back from the backend after a failure. "Release asked" is written
   before the backend is called and "released" only once it confirms; a
@@ -233,10 +233,10 @@ Built on 29 October 2026, on main `9676abb5`.
   the view claims nothing older than it. The doctor reports the failed
   writes.
 - **The reach check.** A box that does not answer a command (the Monitor's
-  Live readings through its route included), a Live reading through BB's
+  Live readings through its route included), a Live reading through VesnALIA's
   host entry, or a terminal, is checked again by itself after 1
-  minute, after 5, then every 15 minutes: through BB's connection state for
-  a BB machine, then one command through its route. It never calls a
+  minute, after 5, then every 15 minutes: through VesnALIA's connection state for
+  a VesnALIA machine, then one command through its route. It never calls a
   backend's API. A command to a box it knows does not answer reads no
   power. Check now (`refresh`) checks at once, and reads the box's power at
   most once a minute while it does not answer.
@@ -247,10 +247,10 @@ Built on 29 October 2026, on main `9676abb5`.
   with since, the error, the host, attempts and the next check; or its
   backend not in settings).
 - **Who asks**, through every way in: the panel's RPC as the person, the
-  tools as the agent with its thread, `bb box` as a command, and bb-box's
+  tools as the agent with its thread, `alia box` as a command, and alia-box's
   own work with why (spares, an ended thread, a crashed VM started again).
   A claimed spare names whoever asked for the box.
-  New commands: `bb box stop`, `bb box start` and `bb box forget`; a new
+  New commands: `alia box stop`, `alia box start` and `alia box forget`; a new
   RPC, `forget`.
 - The doctor has a Box log section: where each file is, its events and
   room, its cap read back from the plugin's own connection, and failed
@@ -268,38 +268,38 @@ passed, and the reference check passes. The new tests
 are in `test/box-log.test.ts` (the files and the store, with a set clock
 for 24 hours and 7 days), `test/box-events.test.ts` (the registry's events
 and the reach check's schedule), and two in `test/plugin.test.ts` (who,
-through the panel, a tool and `bb box`; the reach check with the Monitor
+through the panel, a tool and `alia box`; the reach check with the Monitor
 off).
 
 | Gate | Test |
 | --- | --- |
 | G4 | Both files made and migrated on a fresh start, nothing run again on a second, each `max_page_count` and journal as set; a changed statement refused; `box-history.db` filled past its cap leaves the Monitor's `pressure_logs` and the box log writable; with `ATTACH` refused, the tables in `data.db`, its cap 48 MB, kept by the Monitor's store, and 3,000 events of 1.1 KB words taking under 4 MB of it |
-| G5 | 10,000 events of 1.1 KB words keep `box-log.db` within its 8 MB cap, each cut to 1 KB; with the file read-only, 4 failed writes, the doctor's fail, and no last stop or start in the view, also after a restart; a failed release keeps its record and logs no "released" until a later release confirms; a restart after the guest was deleted finishes the release by observing it, with no second release, and removes its BB machine; Forget refused while the backend is built, and once it is not, "forgotten", no "released", no stop |
-| G6 | A stop that fails records "running, checked then"; the guest stopping later is "stopped" by the asker from the confirmed time, not a stop bb-box did not ask for, unless the backend says its VM crashed, which is started again; a start whose VM runs but never answers SSH records "running", and with its power unreadable "unknown"; a resize refused after its memory changed names memory and puts the size read back on the record |
+| G5 | 10,000 events of 1.1 KB words keep `box-log.db` within its 8 MB cap, each cut to 1 KB; with the file read-only, 4 failed writes, the doctor's fail, and no last stop or start in the view, also after a restart; a failed release keeps its record and logs no "released" until a later release confirms; a restart after the guest was deleted finishes the release by observing it, with no second release, and removes its VesnALIA machine; Forget refused while the backend is built, and once it is not, "forgotten", no "released", no stop |
+| G6 | A stop that fails records "running, checked then"; the guest stopping later is "stopped" by the asker from the confirmed time, not a stop alia-box did not ask for, unless the backend says its VM crashed, which is started again; a start whose VM runs but never answers SSH records "running", and with its power unreadable "unknown"; a resize refused after its memory changed names memory and puts the size read back on the record |
 | G7 | A box that does not answer, over a set hour: checks at 1, 6, 21, 36 and 51 minutes, at most 6 lines logged, no backend call; each next check shown is when it comes; Check now reads power at most once a minute; with the Monitor off, the same, through the plugin |
 
-### Live check on a separate BB
+### Live check on a separate VesnALIA
 
-A fresh `npx bb-app` 0.48.0 with no account, its own data folder and ports,
-started with `env -i`, `HOME`, `PATH` and `BB_BOX_LIVE_CHECKS=1` only, in a
-Linux box with Docker 29.1.3 (8 cores, 16 GiB). bb-box was installed from
-this branch with `bb plugin install path:`, and Docker on the box set up
-with `bb box setup docker`, its Linux image built in 4 minutes. A `docker`
-shim first on BB's `PATH`, [`docker-shim.sh`](069-boxes-page/unit-1b/docker-shim.sh),
-logs every call bb-box makes, and on a flag fails one stop or holds one
-removal. The agent is a custom ACP agent registered in BB's
+A fresh `npx alia-app` 0.48.0 with no account, its own data folder and ports,
+started with `env -i`, `HOME`, `PATH` and `ALIA_BOX_LIVE_CHECKS=1` only, in a
+Linux box with Docker 29.1.3 (8 cores, 16 GiB). alia-box was installed from
+this branch with `alia plugin install path:`, and Docker on the box set up
+with `alia box setup docker`, its Linux image built in 4 minutes. A `docker`
+shim first on VesnALIA's `PATH`, [`docker-shim.sh`](069-boxes-page/unit-1b/docker-shim.sh),
+logs every call alia-box makes, and on a flag fails one stop or holds one
+removal. The agent is a custom ACP agent registered in VesnALIA's
 `provider-acp` settings, [`acp-agent.mjs`](069-boxes-page/unit-1b/acp-agent.mjs):
-it calls BB's own box tools, through the MCP server BB gives it, as a
+it calls VesnALIA's own box tools, through the MCP server VesnALIA gives it, as a
 prompt names them. The person clicks in headless Chromium at 1440 by 1000.
 The script is [`live-check.mjs`](069-boxes-page/unit-1b/live-check.mjs).
 
-**Files.** On the first start BB's log said "Opened box-log.db, attached
-to bb-box's database: ran 3 migrations." and "Opened box-history.db,
-attached to bb-box's database: no migration to run."; both files were
-beside `data.db`. `bb box doctor` read the caps back from the plugin's
+**Files.** On the first start VesnALIA's log said "Opened box-log.db, attached
+to alia-box's database: ran 3 migrations." and "Opened box-history.db,
+attached to alia-box's database: no migration to run."; both files were
+beside `data.db`. `alia box doctor` read the caps back from the plugin's
 connection: "24 KB used of its cap of 8.0 MB", and "box-history.db,
-attached to bb-box's database, capped at 64.0 MB". After `bb plugin reload
-bb-box`, both said "no migration to run". BB 0.48.0's handle took `ATTACH`,
+attached to alia-box's database, capped at 64.0 MB". After `alia plugin reload
+alia-box`, both said "no migration to run". ALIA 0.48.0's handle took `ATTACH`,
 so the fallback ran in tests only.
 
 **Who stopped it.** One box, made by the agent's `box_acquire`; each row is
@@ -310,39 +310,39 @@ what the view (`allBoxes`) and `box-log.db` then said:
 | The agent's `box_acquire` | last start by the agent in its thread, the first | made by the agent; ready |
 | The person: Stop on the Boxes page | stopped, last stop by the person | stop asked, stopped, by the person |
 | The person: Start on the Boxes page | last start by the person, ready 248 ms after it was asked | start asked, started, by the person |
-| A command: `bb box stop`, then `bb box start --json` | last stop by a command; last start by a command, ready after 249 ms | stop asked, stopped, start asked, started, by the command |
+| A command: `alia box stop`, then `alia box start --json` | last stop by a command; last start by a command, ready after 249 ms | stop asked, stopped, start asked, started, by the command |
 | The agent: `box_stop`, then `box_start` | last stop and start by the agent in its thread | the same four, by the agent, with its thread |
-| Outside bb-box: `docker stop` on the host, then `bb box sweep` | stopped, last stop by outside bb-box, not asked; the row's line "It stopped without a request from bb-box at 22:14:55 UTC." | stopped without being asked, outside |
-| `bb plugin reload bb-box` | the same last start and stop | all 17 events kept |
+| Outside alia-box: `docker stop` on the host, then `alia box sweep` | stopped, last stop by outside alia-box, not asked; the row's line "It stopped without a request from alia-box at 22:14:55 UTC." | stopped without being asked, outside |
+| `alia plugin reload alia-box` | the same last start and stop | all 17 events kept |
 
 ![The Boxes page after the stop from outside](069-boxes-page/unit-1b/live-outside-stopped.png)
 
-**Outcomes and releases**, on a second fresh BB set up the same way in the
-same box, with machines of its own made by `bb box machines add`. These
+**Outcomes and releases**, on a second fresh VesnALIA set up the same way in the
+same box, with machines of its own made by `alia box machines add`. These
 ran on the change before an independent code review of it; after the
-review's fixes, bb-box was installed again on this BB from this branch
+review's fixes, alia-box was installed again on this VesnALIA from this branch
 (`0acd5011`, the same change before its last rebases), and the stops above
 (15 events, each with the same who), the stop that times out and the
 interrupted release ran again, with the same results:
 
 | Step | Result |
 | --- | --- |
-| A stop that times out, then succeeds: the shim failed `docker container stop` with "timed out waiting for the container to stop" and stopped it 8 s later | Logged "stop failed", observed running, checked then by Docker on the box. The container exited; `bb box sweep` then logged "stopped" by the command, at the time it confirmed it, and no "stopped without being asked"; the failure left the view |
-| The box log made read-only: BB stopped, `chmod 444 box-log.db`, BB started | bb-box started; its prune and writes failed and said so. The person's Stop on the Boxes page stopped the box (the container exited). The view gave no last stop, although the log held an earlier stop by the person; the doctor failed: "bb-box could not write 2 events to its box log …". With the file writable again and BB restarted, writes worked and the view still claimed nothing from before the failed writes |
-| BB killed between the container's removal and the record's: the shim held `docker container rm` for 40 s after removing it, and `kill -9` stopped BB's server then | The container gone, the record `releasing`, "release asked" with no "released". BB's own supervisor started the server again in 2 s, before its BB machine reconnected, so the first sweep could not reach Docker and logged "release did not finish: sunny-canyon is offline in BB", keeping the record. The next sweep, 3 minutes later, found the guest gone and logged "released" by the command that asked, "bb-box found its guest gone after a restart", with no second `docker rm` |
+| A stop that times out, then succeeds: the shim failed `docker container stop` with "timed out waiting for the container to stop" and stopped it 8 s later | Logged "stop failed", observed running, checked then by Docker on the box. The container exited; `alia box sweep` then logged "stopped" by the command, at the time it confirmed it, and no "stopped without being asked"; the failure left the view |
+| The box log made read-only: VesnALIA stopped, `chmod 444 box-log.db`, VesnALIA started | alia-box started; its prune and writes failed and said so. The person's Stop on the Boxes page stopped the box (the container exited). The view gave no last stop, although the log held an earlier stop by the person; the doctor failed: "alia-box could not write 2 events to its box log …". With the file writable again and VesnALIA restarted, writes worked and the view still claimed nothing from before the failed writes |
+| VesnALIA killed between the container's removal and the record's: the shim held `docker container rm` for 40 s after removing it, and `kill -9` stopped VesnALIA's server then | The container gone, the record `releasing`, "release asked" with no "released". VesnALIA's own supervisor started the server again in 2 s, before its VesnALIA machine reconnected, so the first sweep could not reach Docker and logged "release did not finish: sunny-canyon is offline in VesnALIA", keeping the record. The next sweep, 3 minutes later, found the guest gone and logged "released" by the command that asked, "alia-box found its guest gone after a restart", with no second `docker rm` |
 | Forget while the backend is in settings | Refused: "release the box instead" |
-| Forget after Docker was removed from the configuration (with BB stopped, from the stored document, as the settings refuse to remove a backend with boxes) | The view said `not-in-settings`. `bb box forget` logged "forgotten" by the command, with the box's name, its backend and its last state, ready; no "released", no stop. The record went; the container still ran |
+| Forget after Docker was removed from the configuration (with VesnALIA stopped, from the stored document, as the settings refuse to remove a backend with boxes) | The view said `not-in-settings`. `alia box forget` logged "forgotten" by the command, with the box's name, its backend and its last state, ready; no "released", no stop. The record went; the container still ran |
 
 **A box that does not answer, for an hour.** The script,
 [`reach-hour.mjs`](069-boxes-page/unit-1b/reach-hour.mjs), paused the box's
 container with `docker pause` (Docker then reads its power as unknown, so
-the box stays ready), ran one `bb box run`, and read the view every 20 s
+the box stays ready), ran one `alia box run`, and read the view every 20 s
 for 62 minutes. The Monitor was on for the first half and off for the
 second; box history does not exist until unit 3.
 
 | Time (UTC) | What happened | Docker calls on the box |
 | --- | --- | --- |
-| 22:16:26 | Paused; `bb box run` failed: "Box modest-lantern is running but does not answer. The box … did not answer through docker exec." The view: not answering, next check 22:17:26.206 | the command's 2 `exec`, and 1 `container inspect`, the failed command's own power reading |
+| 22:16:26 | Paused; `alia box run` failed: "Box modest-lantern is running but does not answer. The box … did not answer through docker exec." The view: not answering, next check 22:17:26.206 | the command's 2 `exec`, and 1 `container inspect`, the failed command's own power reading |
 | 22:17:26.223 | Check 1 | 1 `exec` |
 | 22:22:26.243 | Check 2, 5 minutes later | 1 `exec` |
 | 22:37:26.262 | Check 3, 15 minutes later | 1 `exec` |
@@ -353,11 +353,11 @@ second; box history does not exist until unit 3.
 | 23:18:29 | Check now again, at once | 1 `exec`, no power reading |
 | 23:18:29 | Unpaused, then Check now | 1 `exec`: answers |
 
-- In the hour, 6 lines for the box in BB's log: the first failure and
+- In the hour, 6 lines for the box in VesnALIA's log: the first failure and
   checks 1 to 5, at 1, 6, 21, 36 and 51 minutes.
 - Each check came within 20 ms of the next check the view gave before it
   (22:17:26.206, 22:22:26.223, 22:37:26.243, 22:52:26.262, 23:07:26.281).
-- From 22:16:27 until Check now, bb-box made no Docker call about the box
+- From 22:16:27 until Check now, alia-box made no Docker call about the box
   but one `exec` a check. Its backend's listing, one `container ls` every
   3 minutes for all its boxes, went on as before.
 - The checks went on the same with the Monitor off.
@@ -367,26 +367,26 @@ second; box history does not exist until unit 3.
 
 ### Deviations from 069
 
-- `bb box stop`, `bb box start` and `bb box forget`, and an RPC `forget`,
-  are new: 069 names a stop by a `bb box` command and Forget, but no such
+- `alia box stop`, `alia box start` and `alia box forget`, and an RPC `forget`,
+  are new: 069 names a stop by a `alia box` command and Forget, but no such
   command or call existed. Forget is refused while the box's backend is in
   the settings.
 - A failed stop whose box is found stopped within 5 minutes of the
   failure, before any other stop or start, is logged as the asker's stop,
-  not as one bb-box did not ask for, unless the backend says the VM
+  not as one alia-box did not ask for, unless the backend says the VM
   crashed. Before, such a stop was recorded as unrequested (#406).
 - A claimed spare logs "made" by whoever asked for the box, with the
-  spare's name, so its last start names them, not bb-box's spares.
+  spare's name, so its last start names them, not alia-box's spares.
 - The reach check keeps "last answered" in memory only, so after a restart
-  of bb-box it is unknown until a command answers. For a BB machine it asks
-  BB's connection state first, and when BB says it is connected, runs one
-  command too, so a box that BB sees but bb-box cannot reach is still found.
+  of alia-box it is unknown until a command answers. For a VesnALIA machine it asks
+  VesnALIA's connection state first, and when VesnALIA says it is connected, runs one
+  command too, so a box that VesnALIA sees but alia-box cannot reach is still found.
 - Check now's limit of one power reading a minute applies only while the
   box does not answer; otherwise Check now reads its power as before.
 - The sweep still lists each backend's guests every 3 minutes, one call per
   backend, as before; the reach check adds no call per box.
 - After a restart in the middle of a release, a sweep that cannot read the
-  guest's power, as while its BB machine reconnects, tries the release and
+  guest's power, as while its VesnALIA machine reconnects, tries the release and
   logs it as not finished; the next sweep finishes it.
 
 ### Open questions
@@ -419,7 +419,7 @@ open the page.
 - **Paths.** The Boxes page reads its path with `routeOf` in
   `src/app/box-route.ts`:
 
-  | Path under `/plugins/bb-box/desktop/` | Shows |
+  | Path under `/plugins/alia-box/desktop/` | Shows |
   | --- | --- |
   | (none), `threads`, `machines` | The list, as before |
   | `box/<boxId>` | The box's page |
@@ -428,7 +428,7 @@ open the page.
   | `<threadId>/<boxId>[/device\|/terminal][/from-settings]` | As before |
 
   A path that is none of these opens the list.
-- **Where each entry was opened from.** BB's plugin SDK 0.6.15 gives
+- **Where each entry was opened from.** VesnALIA's plugin SDK 0.6.15 gives
   `toPluginPanel(path, { subPath, replace })` and no state, as 069 said,
   so the origin is in the path (G8). The list's quick icons and menu items
   open views with `from-list`; the page's view buttons add `from-box`
@@ -439,12 +439,12 @@ open the page.
   entry that move came from, it goes back in history; otherwise it
   replaces the entry with the origin the path names. With no origin, a
   view goes back to the box's page and the page to the list.
-  `from-settings` goes back to BB Box settings. A view's back arrow says
-  where: "Back to boxes", "Back to happy-beacon" or "Back to BB Box
+  `from-settings` goes back to VesnALIA Box settings. A view's back arrow says
+  where: "Back to boxes", "Back to happy-beacon" or "Back to VesnALIA Box
   settings". The box's name in a view's bar is a link to its page.
 - **`boxPage`**, a new RPC: one box by ID, for any owner, with its view,
   its thread and whether it works (`holderOf`, new in `setup.ts`), the
-  threads on its BB machine, its Monitor machine or why the Monitor cannot
+  threads on its VesnALIA machine, its Monitor machine or why the Monitor cannot
   read it, a device that did not boot, and, for a box released or
   forgotten in the last 24 hours, `app.boxLog.ended`. The `changed`
   signal for its thread, or `operator`, refreshes it.
@@ -459,8 +459,8 @@ open the page.
 - **Every state and notice of section 7 but busy**: ready, starting the
   first time and again, stopping, stopped with when and by whom, stopped
   without being asked, a stop, start or resize that failed with what
-  bb-box then observed, a release that did not finish, a backend not in
-  settings, a box that does not answer with when bb-box checks again, a
+  alia-box then observed, a release that did not finish, a backend not in
+  settings, a box that does not answer with when alia-box checks again, a
   device that did not boot, a failed join, failed, releasing, gone,
   released, forgotten, and a link to a box that is not here. Words leave
   out a time or an actor the box log does not have.
@@ -481,12 +481,12 @@ open the page.
   stopped, started or released. Its mark clears as soon as its record
   moves out of ready, or it answers.
 - **G3.** The panel's `stop` and `release` RPCs ask first when the box's
-  own thread is working, as well as when a thread works on its BB machine,
-  its own thread first, and when BB cannot say whether the thread works
-  ("bb-box could not ask BB whether … is working on calm-otter"). A resize
+  own thread is working, as well as when a thread works on its VesnALIA machine,
+  its own thread first, and when VesnALIA cannot say whether the thread works
+  ("alia-box could not ask VesnALIA whether … is working on calm-otter"). A resize
   that needs a restart asks under the same guard. The question names the
   threads: "Fix the sign-in flow is working on calm-otter." The agent's
-  tools and `bb box` are unchanged. A machine of your own keeps today's
+  tools and `alia box` are unchanged. A machine of your own keeps today's
   guard.
 - **Entries.** "Page" is the first item of the Monitor's Open menu, which
   now shows for a box with no view too; "N more on the Boxes page" opens
@@ -494,7 +494,7 @@ open the page.
 - `MachineRow`'s settings mode is gone (the lead's answer: settings names
   no machine since 067, and gets no new entry).
 - The guide's Box panel and Boxes page chapter has a section on the page.
-  `docs/bb-requests.md` has request 37 (below).
+  `docs/alia-requests.md` has request 37 (below).
 
 Files: new `src/app/box-route.ts`, `box-nav.tsx`, `box-words.ts` and
 `box-page.tsx`; changed `box-menu.tsx`, `box-actions.tsx`, `box-row.tsx`,
@@ -513,7 +513,7 @@ tests among them; vitest 332 tests passed in 4 files;
   and written back, a wrong path opens the list, the way back for each
   origin, and the words of section 7 and 11 with a set clock.
 - `test/plugin.test.ts`: G3 through the panel's RPCs, with the box's own
-  thread working, then also a thread on its BB machine, then forced, then
+  thread working, then also a thread on its VesnALIA machine, then forced, then
   idle; `boxPage` for a box, a box whose release failed (listed by
   `allBoxes`), a released box, an unknown ID and a machine.
 - `test/app.test.tsx`: the page's header, links, menu, facts, threads and
@@ -525,41 +525,41 @@ tests among them; vitest 332 tests passed in 4 files;
   `test/monitor-app.test.tsx`: Page first, the views' new paths, and "N
   more" opening the box's page.
 
-### Live check on a separate BB
+### Live check on a separate VesnALIA
 
-A Linux box with Docker 29.1.3, 8 cores, 16 GiB, ran a fresh `npx bb-app`
+A Linux box with Docker 29.1.3, 8 cores, 16 GiB, ran a fresh `npx alia-app`
 0.48.0 with no account, its own data folder and ports, started with
 `env -i`, `HOME` and `PATH` only, set up by
-[`live-setup.sh`](069-boxes-page/unit-1c/live-setup.sh). bb-box was
-installed from this branch with `bb plugin install path:`, and Docker on
-the box set up with `bb box setup docker`. So that boxes join BB without an
-account, BB listened on all addresses, closed to the network outside the
+[`live-setup.sh`](069-boxes-page/unit-1c/live-setup.sh). alia-box was
+installed from this branch with `alia plugin install path:`, and Docker on
+the box set up with `alia box setup docker`. So that boxes join VesnALIA without an
+account, VesnALIA listened on all addresses, closed to the network outside the
 box by its firewall, with Machine access set to Manual at the box's own
-address: every box joined BB. A shim first on BB's `PATH`,
+address: every box joined VesnALIA. A shim first on VesnALIA's `PATH`,
 [`docker-shim.sh`](069-boxes-page/unit-1c/docker-shim.sh), logs every
 Docker call; on a flag it fails one start, one stop or one removal, makes
 `docker exec` into one container hang, as a hung box does, or makes
 `docker container ls` fail, as a Docker daemon that does not answer does.
-The agent is unit 1b's custom ACP agent, which calls BB's box tools as a
+The agent is unit 1b's custom ACP agent, which calls VesnALIA's box tools as a
 prompt names them, driven by
 [`agent-call.sh`](069-boxes-page/unit-1c/agent-call.sh). The boxes, made
-through bb-box:
+through alia-box:
 
 - for the thread, by the agent's `box_acquire`: clear-finch (the page's
   box), polite-dune (the one that hangs), and in each run two more, one
   released from its page and one whose start fails and which is then
   forgotten;
-- a machine of your own, by `bb box machines add`: workbench.
+- a machine of your own, by `alia box machines add`: workbench.
 
 [`live-check.mjs`](069-boxes-page/unit-1c/live-check.mjs), with
 [`live-lib.mjs`](069-boxes-page/unit-1c/live-lib.mjs) and
 [`runs.sh`](069-boxes-page/unit-1c/runs.sh), drives headless Chromium at
-1440 by 1000 and checks each result through the page and bb-box's own
+1440 by 1000 and checks each result through the page and alia-box's own
 state. Three runs in a row on the commit delivered each passed 33 of 33
 checks: [run 1](069-boxes-page/unit-1c/run-1.md),
 [run 2](069-boxes-page/unit-1c/run-2.md),
 [run 3](069-boxes-page/unit-1c/run-3.md). (The first delivery's three runs
-passed its 31 checks each, on a first fresh BB.)
+passed its 31 checks each, on a first fresh VesnALIA.)
 
 | Check | Result, each run |
 | --- | --- |
@@ -568,19 +568,19 @@ passed its 31 checks each, on a first fresh BB.)
 | The Monitor's Open menu | Page, Open terminal, then the thread; Page opens the page |
 | The box's name in a view's bar | the page, keeping the view's origin: `box/<id>/from-list` |
 | An old path, `<thread>/<box>/terminal` | its back arrow, "Back to clear-finch", replaces it with the page |
-| An old path with `from-settings` | its back arrow is a link to BB Box settings |
+| An old path with `from-settings` | its back arrow is a link to VesnALIA Box settings |
 | Reload | the page again, its name focused |
 | Page, Terminal, browser Back, Forward, then the view's back arrow | Back, Forward and the arrow agree, and nothing is pushed twice: the history's length stays |
 | A reload on the view, then its back arrow | replaced with the page; Back then goes to the entry before the view |
 | Ctrl-click on Terminal | a new tab at `box/<id>/terminal/from-box`, whose back arrow replaces it with the page |
 | Keyboard only | Tab from the name: Box ID, Copy link, the thread, Terminal, Stop, the menu, then the facts; Shift-Tab reaches the trail; Enter on Terminal opens it; in the terminal, 12 presses of Shift-Tab stay in the shell (an open question below); the browser's Back returns to the page with focus on its name |
 | Working now | with the page open on clear-finch, "idle" turned to "working now" within 15 s of the agent starting a `box_run` there, with no reload |
-| Stop, Start and Release from the page | stopped "just now, today at 2:21 AM, by you", started, "Last started … by you: ready in 0.3 s"; released, "Released just now, … by you", also after a reload and after `bb plugin reload bb-box` |
-| A failed stop, then the box stopped outside bb-box | "Stop failed just now"; after `docker stop` and `bb box sweep`, "Stopped" and no failure beside it |
+| Stop, Start and Release from the page | stopped "just now, today at 2:21 AM, by you", started, "Last started … by you: ready in 0.3 s"; released, "Released just now, … by you", also after a reload and after `alia plugin reload alia-box` |
+| A failed stop, then the box stopped outside alia-box | "Stop failed just now"; after `docker stop` and `alia box sweep`, "Stopped" and no failure beside it |
 | A start that fails | "Start failed just now", Docker's words, "It is still stopped (checked 2:22 AM)."; Start again starts it |
 | A failure, said | the page's one announcer said "Stop failed. …" once, and nothing on opening; no notice has a live part |
 | A release that does not finish | "Release did not finish", Docker's words, on the page and the row, with Release again…, which then released it |
-| A backend removed from settings, with bb-box off, from its stored configuration | "Not checked · last seen ready", the notice with Open BB Box settings and Forget…; Forget…: "… was forgotten: bb-box removed its record. Its box was not deleted and may still run on crisp-petrel", its container still running; the same after a reload and after `bb plugin reload bb-box`; the container then removed and the configuration put back |
+| A backend removed from settings, with alia-box off, from its stored configuration | "Not checked · last seen ready", the notice with Open VesnALIA Box settings and Forget…; Forget…: "… was forgotten: alia-box removed its record. Its box was not deleted and may still run on crisp-petrel", its container still running; the same after a reload and after `alia plugin reload alia-box`; the container then removed and the configuration put back |
 
 | Gate | Result | What each run did |
 | --- | --- | --- |
@@ -591,7 +591,7 @@ passed its 31 checks each, on a first fresh BB.)
 
 ### Screenshots
 
-At 1440, 760 and 390 px, light and dark, from the live BB: the
+At 1440, 760 and 390 px, light and dark, from the live VesnALIA: the
 [ready page](069-boxes-page/unit-1c/ready-1440-light.png)
 ([dark](069-boxes-page/unit-1c/ready-1440-dark.png),
 [760](069-boxes-page/unit-1c/ready-760-light.png),
@@ -629,7 +629,7 @@ stopped page's.
 - The Starting card: a Docker box starts in under a second. Its test
   covers the first start and a start again.
 - A failed join, and a gone box: here every box joined, and none was
-  deleted outside bb-box. Their tests cover them.
+  deleted outside alia-box. Their tests cover them.
 - Focus back on the row after a view's way back, which is unit 1d's G9:
   here it goes back to the list, where 1d keeps the row.
 
@@ -639,8 +639,8 @@ stopped page's.
   chose to add none. `from-settings` works on every path, new and old,
   and G8's settings case ran from such a link opened from the settings
   page. `MachineRow`'s settings mode went.
-- The way back to settings is a link, so it pushes BB Box settings rather
-  than replacing the entry: BB offers no replace for its own app paths.
+- The way back to settings is a link, so it pushes VesnALIA Box settings rather
+  than replacing the entry: VesnALIA offers no replace for its own app paths.
 - "Its host does not answer" names the box, as "calm-cedar does not
   answer", with its host in the words, as the reach check tests the box
   itself and cannot tell a host that does not answer from a box that does
@@ -657,9 +657,9 @@ stopped page's.
   waits for unit 2's readings.
 - Open in browser still opens the old path, which keeps working.
 - The page's links stop a click with Ctrl, Command, Shift or Alt held, or
-  another button, going further: BB 0.48.0 routes every link to an app
+  another button, going further: VesnALIA 0.48.0 routes every link to an app
   path in its panel in the same tab, so the browser could not open the
-  new tab (request 37 in `docs/bb-requests.md`).
+  new tab (request 37 in `docs/alia-requests.md`).
 
 ### Open questions
 
@@ -672,8 +672,8 @@ stopped page's.
 
 - Unit 1d: a row's click, name and chevron open the page, with
   `from-list`, and focus returns to the row.
-- Unit 2: Activity can read `boxPage`'s `monitor`; an offline BB machine
-  gets the words "is not a BB machine" there now.
+- Unit 2: Activity can read `boxPage`'s `monitor`; an offline VesnALIA machine
+  gets the words "is not a VesnALIA machine" there now.
 - A view whose box's backend is not in settings, or which does not answer,
   still tries to connect; it could say why first, as the page does.
 - A forgotten box whose guest still runs comes back when its backend is put
@@ -690,12 +690,12 @@ fix has a test; the lead decided points 1 to 3.
 
 | # | Finding | Fix | Test |
 | --- | --- | --- | --- |
-| 1 | G20 turned off Stop, Start and Resize for a box that does not answer, though they go through its backend | Only a backend not in settings or not answering turns them off. bb-box now records a backend whose listing fails in the sweep (`Boxes.backendSilence`), and the box's view says `backend-silent`. A box that does not answer keeps them, and its mark clears when its record moves out of ready (`ReachCheck.settled`). Its notice: "bb-box cannot reach it …, so it cannot read it or run commands in it. You can still stop, start or release it: those go through Docker on devpc." Section 7 and G20 of 069 say so, as the lead's decision | `plugin.test.ts`: a box that does not answer stops through its backend and its mark clears; a backend whose listing fails, then lists again. `box-route.test.ts` and `app.test.tsx`: the words, the menus and the page |
-| 2 | The G3 guard let Stop and Release through when BB's thread lookup failed | `holderOf` throws on any error but a missing thread; the guard then asks, saying bb-box could not ask BB. `boxPage` still shows no thread then | `plugin.test.ts`: with BB's lookup failing, Stop and Release ask; with the thread gone, Stop goes on. `app.test.tsx`: the question's words |
+| 1 | G20 turned off Stop, Start and Resize for a box that does not answer, though they go through its backend | Only a backend not in settings or not answering turns them off. alia-box now records a backend whose listing fails in the sweep (`Boxes.backendSilence`), and the box's view says `backend-silent`. A box that does not answer keeps them, and its mark clears when its record moves out of ready (`ReachCheck.settled`). Its notice: "alia-box cannot reach it …, so it cannot read it or run commands in it. You can still stop, start or release it: those go through Docker on devpc." Section 7 and G20 of 069 say so, as the lead's decision | `plugin.test.ts`: a box that does not answer stops through its backend and its mark clears; a backend whose listing fails, then lists again. `box-route.test.ts` and `app.test.tsx`: the words, the menus and the page |
+| 2 | The G3 guard let Stop and Release through when VesnALIA's thread lookup failed | `holderOf` throws on any error but a missing thread; the guard then asks, saying alia-box could not ask VesnALIA. `boxPage` still shows no thread then | `plugin.test.ts`: with VesnALIA's lookup failing, Stop and Release ask; with the thread gone, Stop goes on. `app.test.tsx`: the question's words |
 | 3 | A resize with a restart did not ask while the box's own thread worked | Its `beforeRestart` uses the same guard as Stop and Release | `plugin.test.ts`: it asks, then restarts when forced. The resize dialog's words name the thread |
 | 4 | "Starting again" showed the last start's steps, and Total, as done | A start clears the last start's `start.*` timings when it is asked; the card shows only what it waits on; `startSteps` leaves out Total | `plugin.test.ts`: no step of the last start while one is under way. `app.test.tsx`: the card |
 | 5 | Notices were live regions whose words changed with the clock | Notices are sections with a heading. One polite announcer, always in the page, says a notice once when it appears or changes in substance, never on opening and never as the time moves; the countdown is plain text apart from the words | `app.test.tsx`: no live part in a notice; a new failure said once; 61 s later the announcer says nothing new |
-| 6 | A failed stop or start stayed beside a state that contradicted it | A failure shows only while the box is still as bb-box observed it then, and until a later stop or start | `box-route.test.ts`; live: a failed stop, then `docker stop` outside bb-box, and the notice goes |
+| 6 | A failed stop or start stayed beside a state that contradicted it | A failure shows only while the box is still as alia-box observed it then, and until a later stop or start | `box-route.test.ts`; live: a failed stop, then `docker stop` outside alia-box, and the notice goes |
 | 7 | A release whose failure the log lost showed "Releasing…" for ever | A releasing box with an error is a release that did not finish: its words, and Release again… | `box-route.test.ts`, `app.test.tsx` |
 | 8 | Disabled reasons were only a hover title | The reasons are words beside the actions ("Terminal and Stop are off: its backend is not in settings."), linked to the buttons with `aria-describedby`; a notice's disabled button has its reason beside it | `app.test.tsx`; live |
 | 9 | Working now and the threads went out of date | An open page asks `boxPage` again every 15 s while it is shown | `app.test.tsx`; live: "working now" appeared within 15 s of the agent starting, with no reload |
@@ -709,7 +709,7 @@ files; `scripts/reference.ts --check` passes. The live check below ran on
 the same code before that rebase, whose only change beside it is in the
 boat backend.
 
-The live check ran again on a second fresh BB 0.48.0 set up the same way,
+The live check ran again on a second fresh VesnALIA 0.48.0 set up the same way,
 now by [`live-setup.sh`](069-boxes-page/unit-1c/live-setup.sh) with
 [`agent-call.sh`](069-boxes-page/unit-1c/agent-call.sh). The shim gained
 two flags: one makes `docker exec` into one container hang, as a hung box
@@ -801,16 +801,16 @@ The live check below ran on the same code before the rebases onto
 `1e8de9d9` and `635707e5`, which change the docs site, guides, demo and
 the Monitor's machine threads, none of this unit's files.
 
-### Live check on a separate BB
+### Live check on a separate VesnALIA
 
-A Linux box with Docker, 8 cores, 28 GiB, ran a fresh `npx bb-app` 0.48.0
+A Linux box with Docker, 8 cores, 28 GiB, ran a fresh `npx alia-app` 0.48.0
 with no account, its own data folder and ports, started with `env -i`,
 `HOME` and `PATH` only, set up by
 [`live-setup.sh`](069-boxes-page/unit-1d/live-setup.sh), as unit 1c's
-was. bb-box was installed from this branch with `bb plugin install path:`.
+was. alia-box was installed from this branch with `alia plugin install path:`.
 Unit 1b's custom ACP agent, driven by unit 1c's `agent-call.sh`, made the
-boxes through BB's box tools: three threads with three Docker boxes each,
-and `bb box machines add` made workbench. (The box first had 16 GiB, which
+boxes through VesnALIA's box tools: three threads with three Docker boxes each,
+and `alia box machines add` made workbench. (The box first had 16 GiB, which
 held 7 of these boxes; it was grown to 28 GiB and the last two made by
 hand with the same commands.)
 
@@ -853,7 +853,7 @@ chevron is never reached by Tab.
 
 ### Screenshots
 
-From the live BB, the list kept and scrolled after a return, at 1440 by
+From the live VesnALIA, the list kept and scrolled after a return, at 1440 by
 640: [light](069-boxes-page/unit-1d/list-1440-light.png),
 [dark](069-boxes-page/unit-1d/list-1440-dark.png); 760:
 [light](069-boxes-page/unit-1d/list-760-light.png),
@@ -869,7 +869,7 @@ the list: [light](069-boxes-page/unit-1d/page-from-list-1440-light.png).
 
 ### Not checked live, and why
 
-- The Machines tab's ways back: the live BB had one machine, so its list
+- The Machines tab's ways back: the live VesnALIA had one machine, so its list
   cannot scroll. Its row's click, name, chevron and thread chips are
   covered by tests, and the same code keeps the place for both tabs.
 - A device box's row: it needs a Mac or a Linux host with KVM. Its quick
@@ -889,13 +889,13 @@ the list: [light](069-boxes-page/unit-1d/page-from-list-1440-light.png).
 - The lines between rows now run the card's full width, as in the
   prototype, since the hover shade runs edge to edge.
 - Focus returns once: the first time the list opens again on the tab a
-  row was left from, by any way, BB's sidebar included. After that,
+  row was left from, by any way, VesnALIA's sidebar included. After that,
   opening the list moves no focus.
 
 ### Open questions
 
-- A thread with no title of its own heads its card with its ID, as BB's
-  thread title is empty until it has one; BB's sidebar shows the first
+- A thread with no title of its own heads its card with its ID, as VesnALIA's
+  thread title is empty until it has one; VesnALIA's sidebar shows the first
   prompt instead. This predates 1d. Should the card fall back to the same
   words as the sidebar?
 
@@ -941,7 +941,7 @@ processes. The lead chose Live only until unit 3 brings box history (see
     "Held at 5:18:24 AM while you read it".
   - Not read: the Monitor off, with "Turn it on in Monitor settings"
     (linking to `#option/monitor`); a stopped box, "amber-coral is
-    stopped, so bb-box is not reading it. It stopped 3 min ago, today at
+    stopped, so alia-box is not reading it. It stopped 3 min ago, today at
     5:18 AM."; a box it cannot read, with the Monitor's words. A reading
     that fails after one worked keeps the numbers under "Can't reach
     amber-coral. Showing data from 5:18 AM."
@@ -949,7 +949,7 @@ processes. The lead chose Live only until unit 3 brings box history (see
     `src/plugin/monitor.ts`), so Live goes on until the stop is confirmed.
 - **Top processes**: name, PID, CPU and memory; 100% or more in amber;
   the PID column goes below 640 px; long names cut in the middle; the
-  note that CPU is per core and that bb-box reads names and PIDs only.
+  note that CPU is per core and that alia-box reads names and PIDs only.
 - **A shared slot** (G1, G2). Its reading adds `own` (its user's CPU in
   cores and memory) to the snapshot and to each history point, and
   `slot.share`: the Mac's cores and memory divided by the slots it can
@@ -975,17 +975,17 @@ processes. The lead chose Live only until unit 3 brings box history (see
   reader starts a new baseline (see the decision's section).
 - **The follow-ups from unit 1c's look in production**:
   - Activity reads the Monitor data the page already has; an enrolled box
-    whose BB machine is offline and has no shell route now says "its BB
-    machine is not answering BB", not "it is not a BB machine".
+    whose VesnALIA machine is offline and has no shell route now says "its VesnALIA
+    machine is not answering VesnALIA", not "it is not a VesnALIA machine".
   - The two "up" times: the Monitor's label for a box now says whose clock
     it counts, "system up" or, for a container or shared slot, "host up";
     the page's "up" stays from the last start. The guide says so.
   - How it started for a claimed spare: a spare that keeps its name is
     named after it is ready, so that step leaves the bar and the longest
-    steps, and a line says "Once it was ready, bb-box named it for its
+    steps, and a line says "Once it was ready, alia-box named it for its
     thread in 0.3 s." (`namedAfterReady`).
   - A thread with no title: the SDK 0.6.15 gives a thread's
-    `titleFallback`, which BB's sidebar shows (its first prompt), so the
+    `titleFallback`, which VesnALIA's sidebar shows (its first prompt), so the
     Threads tab's card is headed by it, then by the ID only when it has
     neither.
 - The page's headings, the box's name and notices' titles are set at
@@ -1029,13 +1029,13 @@ check's timing, #1301, its G7 test failed here once in 9 runs.) New tests:
 - `test/monitor.test.ts` and `test/plugin.test.ts`: a slot's share in the
   reading; `boxPage`'s `monitor.is` and the offline machine's words.
 
-### Live check on a separate BB
+### Live check on a separate VesnALIA
 
-A Linux box, 8 cores, 16 GiB, ran a fresh `npx bb-app` 0.48.1 with no
+A Linux box, 8 cores, 16 GiB, ran a fresh `npx alia-app` 0.48.1 with no
 account, set up by [`live-setup.sh`](069-boxes-page/unit-2/live-setup.sh)
-as unit 1c's was, with bb-box installed from a clone of this branch and
+as unit 1c's was, with alia-box installed from a clone of this branch and
 Docker on the box as its backend. The agent's `box_acquire` made
-amber-coral, a Docker box of 4 cores and 2 GiB, and a BB machine.
+amber-coral, a Docker box of 4 cores and 2 GiB, and a VesnALIA machine.
 [`live-check.mjs`](069-boxes-page/unit-2/live-check.mjs) drives headless
 Chromium. [Run 1](069-boxes-page/unit-2/run-1.md), on a first build
 before the slot reader's and the chart's fixes, passed its 9 checks;
@@ -1047,8 +1047,8 @@ of 10 each, the tenth being the untitled thread's card.
 | --- | --- | --- |
 | CPU: `stress-ng --cpu 2`, typed into the page's own Terminal view with `top -d 5` beside it, against `top -b -d 5` in the box over 40 s. `top`'s figure is every process's %CPU over the box's 4 cores; its `%Cpu(s)` line is the host's, not the container's | page 48.2% (9 readings), `top` 47.7% (8 frames): 0.5 points | page 49.2%, `top` 49.9%: 0.7 points |
 | Processes | stress-ng twice, at 97.5% and 92.0% | the same |
-| The Monitor off, then on (`bb box option set monitor.enabled=…`) | the off words and the settings link within seconds, the processes gone; Live back on | the same |
-| G16: Stop with Docker's stop slowed by 20 s | "Read at 5:18:37 AM", then "Read at 5:18:47 AM" while Stopping; then "amber-coral is stopped, so bb-box is not reading it. It stopped just now, today at 5:18 AM." | the same |
+| The Monitor off, then on (`alia box option set monitor.enabled=…`) | the off words and the settings link within seconds, the processes gone; Live back on | the same |
+| G16: Stop with Docker's stop slowed by 20 s | "Read at 5:18:37 AM", then "Read at 5:18:47 AM" while Stopping; then "amber-coral is stopped, so alia-box is not reading it. It stopped just now, today at 5:18 AM." | the same |
 | Started again | Live back on its own | the same |
 | A failed reading (`docker pause`) | "Can't reach amber-coral. Showing data from 5:18 AM.", the last numbers kept | the same |
 | The keyboard | role `application`, "chart"; held while focused; End "5:18:24 AM: CPU 45%, Memory 19%", Left the reading before; Page Down did not scroll | the same |
@@ -1087,8 +1087,8 @@ reach the page through the desktop tool's key names; they are checked in
 Chromium.
 
 VoiceOver was not checked: a Mac desktop box on Tart cannot reach the
-separate BB's network, the Namespace and pool Macs were not free as
-desktops, and a fresh BB on a Mac box has no backend to make a box with.
+separate VesnALIA's network, the Namespace and pool Macs were not free as
+desktops, and a fresh VesnALIA on a Mac box has no backend to make a box with.
 NVDA stands in, with the attributes VoiceOver reads (`application`,
 `aria-roledescription` "chart", the summary by `aria-describedby`, a
 polite live region) under test.
@@ -1113,19 +1113,19 @@ From run 2, at 1440, 760 and 390 px, light and dark: under load
 with `top` ([1440](069-boxes-page/unit-2/terminal-top-1440.png)); and the
 Threads tab ([1440](069-boxes-page/unit-2/threads-1440-light.png)). The
 others of each set are in the same folder. No shared slot is shown: none
-was read by the separate BB.
+was read by the separate VesnALIA.
 
 ### Not checked live, and why
 
-- A shared slot's page in a browser: the separate BB has no Mac. Its
+- A shared slot's page in a browser: the separate VesnALIA has no Mac. Its
   numbers were measured in real slots with this branch's collector; its
   tiles and words are covered by tests.
 - VoiceOver: above.
 - A GPU tile, and a box read through its command route rather than as a
-  BB machine: the box here was a BB machine with no GPU. Their tests
+  VesnALIA machine: the box here was a VesnALIA machine with no GPU. Their tests
   cover them.
 - The spare named after ready, and the Monitor's "system up" and "host
-  up": no spares were kept on the separate BB, and the Monitor's machine
+  up": no spares were kept on the separate VesnALIA, and the Monitor's machine
   status was not opened there. Both have tests, and both show in
   production: a claimed Windows spare this thread used said "naming it
   for its owner 0.3 s" after its total.
@@ -1149,12 +1149,12 @@ was read by the separate BB.
   network only. Unit 3's history has disk.
 - The line under a slot's tiles says "one of up to 3 slots there", the
   slots the Mac can hold, not how many other slots are held now, which
-  bb-box knows only for its own install.
+  alia-box knows only for its own install.
 
 ### Open questions
 
-- For VoiceOver in a later unit: should a separate BB for a Mac check run
-  on a Mac box with a backend it can reach, or should the live BB's box
+- For VoiceOver in a later unit: should a separate VesnALIA for a Mac check run
+  on a Mac box with a backend it can reach, or should the live VesnALIA's box
   get a route a Tart VM can reach?
 
 ### After the independent review
@@ -1189,7 +1189,7 @@ again only every 10 minutes; its tests cover it.
 ## Unit 3: box history and the page's 1 h, 24 h and 7 d
 
 Built on 30 October 2026, on main `7bd9f833`, and rebased onto `354ec2a6`
-on 31 October. bb-box now reads every running box once a minute, keeps
+on 31 October. alia-box now reads every running box once a minute, keeps
 what it read, and a box's page shows it over 1 hour, 24 hours and 7 days.
 Every budget of 069's section 10 was met over the 24-hour run, so box
 history stays on by default.
@@ -1203,8 +1203,8 @@ history stays on by default.
   066's limits (`cpu.max`, `cpuset.cpus.effective`, the CPUs it sees,
   `memory.max`), CPU and memory pressure, `/proc/loadavg`, `df -Pk /`, its
   default interface's bytes and its boot time. Through a box's route it is
-  one command whose answer is about 600 bytes; for a BB machine, one call
-  to a new `monitor.light` in bb-box's host entry. A container's CPU and
+  one command whose answer is about 600 bytes; for a VesnALIA machine, one call
+  to a new `monitor.light` in alia-box's host entry. A container's CPU and
   memory are measured with 066's `containerCapacity` and
   `containerMemory`, unchanged. A shared slot's reading is its own user's
   processes, as unit 2 reads them, and one slot a minute also reads its
@@ -1265,9 +1265,9 @@ history stays on by default.
   heading's range group has its own line below 640 px in every state.
 - **The switch**: "Keep each box's history" under Monitor in settings,
   `monitor.boxHistory`, on by default, saved through 067's write engine;
-  `bb box option set monitor.boxHistory=false` from a terminal. The doctor's
+  `alia box option set monitor.boxHistory=false` from a terminal. The doctor's
   Box history check says whether it reads, how many boxes, and this hour's
-  and the last's coverage. `bb box monitor history` reports each hour's
+  and the last's coverage. `alia box monitor history` reports each hour's
   tallies, each box's newest point and the file's room.
 
 Files: new `src/monitor/light.ts`, `light-local.ts`, `box-history.ts`,
@@ -1297,7 +1297,7 @@ New tests:
   | Gate | Test |
   | --- | --- |
   | G10 | A 2-core, 4 GiB LXC box's route answer (`cpu.max` `max 100000`, a two-CPU cpuset, `memory.max` `max`, `MemTotal` 4 GiB) reads 100% with 2 cores busy and 75% at 3 GiB; an uncapped child cgroup of 16 CPUs reads 6.25% with one busy; a quota of `50000 100000` reads 100% at half a core; a live resize from 2 to 4 cores starts a new baseline, and the next point is against 4 cores |
-  | G11 | 30 boxes 2 s apart; 30 boxes whose readings all take 9.9 s, over an hour: 99.78% taken on time (1,795 of 1,799 due, the other 4 still running when the test stopped), none skipped, up to 7 at once; a box that does not answer counted apart (60 not tried); 3 failures pause a box and ask the reach check once, it is read again once the reach check finds it answers, and one that answers waits 15 minutes; a reading that could not be kept is not a failed reading; the read path takes the host entry of a connected BB machine, falls back to the route when the host entry cannot answer, and tells the reach check of a box that does not answer, with no backend call |
+  | G11 | 30 boxes 2 s apart; 30 boxes whose readings all take 9.9 s, over an hour: 99.78% taken on time (1,795 of 1,799 due, the other 4 still running when the test stopped), none skipped, up to 7 at once; a box that does not answer counted apart (60 not tried); 3 failures pause a box and ask the reach check once, it is read again once the reach check finds it answers, and one that answers waits 15 minutes; a reading that could not be kept is not a failed reading; the read path takes the host entry of a connected VesnALIA machine, falls back to the route when the host entry cannot answer, and tells the reach check of a box that does not answer, with no backend call |
   | G12 | Counters older than 150 s, from before the box's last start, from another boot, or lower, start a baseline; through a real file: a restart of 30 s loses no point (the reading after it covers both minutes, and every minute shows 25%), one of 4 minutes loses one, and a box restarted inside shows no negative or huge CPU |
   | G13 | The Monitor off for 10 minutes: no reading; box history off for 3 minutes then on: those minutes, and the Monitor's 10, say Not read after the file is opened again |
   | G14 | 20 minutes at 90% in an hour: 90%, 1,200 s covered, partly read, the hours after it Stopped; a point across an hour is split by its seconds; each 10 minutes keeps its busiest minute |
@@ -1318,7 +1318,7 @@ New tests:
   full file; the Monitor off; a slot's lines, and its line on 24 h and 7 d
   about work shorter than a minute; disk hidden at first; a box
   that cannot be read with and without kept history; the range kept when
-  BB draws the page again.
+  VesnALIA draws the page again.
 - `test/activity-words.test.ts`: ticks in local time; the summary with the
   busiest minute and gaps; the read-out's words.
 - `test/settings-drafts.test.ts`: the switch saved while the Monitor's
@@ -1326,35 +1326,35 @@ New tests:
   lands on the other's revision and both are kept.
 - `test/monitor.test.ts`: the setting's default, bounds and doctor words.
 
-### Live check on a separate BB: G19's run
+### Live check on a separate VesnALIA: G19's run
 
-A fresh `npx bb-app` 0.48.1 with no account in keen-birch, a Proxmox LXC
+A fresh `npx alia-app` 0.48.1 with no account in keen-birch, a Proxmox LXC
 box of 16 cores and 32 GiB, set up by [`live-setup.sh`](069-boxes-page/unit-3/live-setup.sh),
-with bb-box from this branch and Docker on the box as its first backend.
+with alia-box from this branch and Docker on the box as its first backend.
 The lead added Proxmox LXC and QEMU backends with their own VMIDs and
 addresses, and later Namespace for the Mac part. [`make-boxes.sh`](069-boxes-page/unit-3/make-boxes.sh)
 made 30 boxes through an agent's `box_acquire`; [`boxes.mjs`](069-boxes-page/unit-3/boxes.mjs)
 gave each its role.
 
-| Backend | Boxes | BB machines (read through the host entry) | Read through their route |
+| Backend | Boxes | VesnALIA machines (read through the host entry) | Read through their route |
 | --- | --- | --- | --- |
-| Docker on the BB's own box, 2 cores and 2 GiB each | 13 | 4 | 9 (`docker exec`) |
+| Docker on the VesnALIA's own box, 2 cores and 2 GiB each | 13 | 4 | 9 (`docker exec`) |
 | Proxmox LXC, 2 cores and 4 GiB each | 16 | 6 | 10 (SSH) |
 | Proxmox QEMU, a VM of 2 cores and 4 GiB | 1 | 0 | 1 (SSH) |
 | In all | 30 | 10 | 20 |
 
-[`run.mjs`](069-boxes-page/unit-3/run.mjs) samples every minute: BB's
+[`run.mjs`](069-boxes-page/unit-3/run.mjs) samples every minute: VesnALIA's
 server process (the one with `box-history.db` open: its own CPU, its
 waited-for children's and its memory), every `ssh` process, Docker's
 daemons, each container's cgroup CPU, and `box-history.db` read-only (each
 box's newest point, the tallies, the file and its log); `docker events`
-logs every `docker exec`. In three boxes, a quiet LXC BB machine, a quiet
+logs every `docker exec`. In three boxes, a quiet LXC VesnALIA machine, a quiet
 routed LXC box and the VM, [`in-box-sampler.sh`](069-boxes-page/unit-3/in-box-sampler.sh)
 logs the box's own CPU each minute. [`report.mjs`](069-boxes-page/unit-3/report.mjs)
 turns them into the numbers below. The run started at 07:18:29 UTC on
 `35c3f75f`, this unit's first commit before its rebases, after two false
 starts in its first 18 minutes (a write-ahead log that sat at its limit,
-then the review's fixes). At 16:48 and 16:51 bb-box was installed again
+then the review's fixes). At 16:48 and 16:51 alia-box was installed again
 from the delivered build (the page's first frame and the rebase onto
 `78e74984`); the server code of history did not change.
 
@@ -1363,7 +1363,7 @@ wise-cedar stopped 09:48:30 to 10:48:30; hardy-prairie loaded 11:18:30 to
 11:28:30; ready-cedar's host cut off 11:48:30 to 12:48:30; five pages open
 on Live 13:18:30 to 14:18:30; the Monitor off 15:18:30 to 15:28:30 and
 again, at a quiet time, 16:30:30 to 16:40:30; history off 15:38:30 to
-15:43:19; bb-box restarted at 19:18:30; five pages open with history off
+15:43:19; alia-box restarted at 19:18:30; five pages open with history off
 20:18:30 to 21:18:30, then on to 22:18:30; the run ends at 07:18:30 on 31
 October.
 
@@ -1371,12 +1371,12 @@ October.
 
 | Budget | Measured | How, and what limits it |
 | --- | --- | --- |
-| bb-box's server under 1% of one core over an hour, its SSH and `docker exec` children included | 0.64% of one core: own +0.26, `docker exec` children +0.32, `ssh` about +0.03. Over the quiet hours 15 to 23, 1.23% to 1.44%, a mean of 1.30%: about 0.66% above hour 1 | Hour 2 (history on, 1.273%) against hour 1 (off, 0.636%), the same 30 boxes, BB's whole server process with its children; each hour is the difference of two samples an hour apart. Hour 0 read 0.87% above hour 1, as it held the plugin's start and my first look at the page. The hours above the quiet ones held the pages (6, 13 and 14), installs of bb-box (9), the half-way reload (12) and the Mac part (7 and 8). Docker's daemons spent another 0.14% serving the execs, outside the server. The ssh figure is the live ssh processes' CPU, so it drops when a control master ends; it is under 0.06% either way |
-| Under 30 MB more memory | No difference: 563 to 574 MiB off, 568 to 570 on | The server's RSS, sampled each minute; history's own state is 30 counters and 200 durations. After the half-way reload the RSS rose from 459 to 588 MiB by hour 21 and stayed at 587 to 600 MiB to the end; it is BB's whole server, so the rise cannot be put on history, whose state does not grow |
-| A box under 0.2% of one core over a minute, children included, on a 2-core box | Docker, route: 0.0235% (0.0014% off); Docker BB machine: 0.0984% (0.0915% off); LXC BB machine: 0.094% (0.0995% off); LXC, route: 0.030% (0.011% off); VM, route: 0.035% (0.025% off) | Each box's whole CPU, from its cgroup or `/proc/stat`, over the same two hours. History's share is the difference, 0.010% to 0.022% through a route and within a BB machine's own idle work through the host entry. Over hours 15 to 23, an idle routed Docker box read 0.026% to 0.028% and a Docker BB machine 0.10% to 0.14%, its BB daemon included |
+| alia-box's server under 1% of one core over an hour, its SSH and `docker exec` children included | 0.64% of one core: own +0.26, `docker exec` children +0.32, `ssh` about +0.03. Over the quiet hours 15 to 23, 1.23% to 1.44%, a mean of 1.30%: about 0.66% above hour 1 | Hour 2 (history on, 1.273%) against hour 1 (off, 0.636%), the same 30 boxes, VesnALIA's whole server process with its children; each hour is the difference of two samples an hour apart. Hour 0 read 0.87% above hour 1, as it held the plugin's start and my first look at the page. The hours above the quiet ones held the pages (6, 13 and 14), installs of alia-box (9), the half-way reload (12) and the Mac part (7 and 8). Docker's daemons spent another 0.14% serving the execs, outside the server. The ssh figure is the live ssh processes' CPU, so it drops when a control master ends; it is under 0.06% either way |
+| Under 30 MB more memory | No difference: 563 to 574 MiB off, 568 to 570 on | The server's RSS, sampled each minute; history's own state is 30 counters and 200 durations. After the half-way reload the RSS rose from 459 to 588 MiB by hour 21 and stayed at 587 to 600 MiB to the end; it is VesnALIA's whole server, so the rise cannot be put on history, whose state does not grow |
+| A box under 0.2% of one core over a minute, children included, on a 2-core box | Docker, route: 0.0235% (0.0014% off); Docker VesnALIA machine: 0.0984% (0.0915% off); LXC VesnALIA machine: 0.094% (0.0995% off); LXC, route: 0.030% (0.011% off); VM, route: 0.035% (0.025% off) | Each box's whole CPU, from its cgroup or `/proc/stat`, over the same two hours. History's share is the difference, 0.010% to 0.022% through a route and within a VesnALIA machine's own idle work through the host entry. Over hours 15 to 23, an idle routed Docker box read 0.026% to 0.028% and a Docker VesnALIA machine 0.10% to 0.14%, its VesnALIA daemon included |
 | A Mac with 3 shared slots: one Mac reading and 3 slot readings a minute under 0.5% of one core | Met, as the lead decided, from one slot's readings: about 0.14% of one core | Not a 3-slot run, as Namespace gave one slot (a known gap, below). A slot's reading with its Mac's part took 37.5 ms of CPU and one without it 24.5 ms, each the mean of 20 runs in the slot under `time`; one reading with the Mac's part and two without is 86.5 ms a minute, 0.14% of one core. It leaves out the admin session's `sudo`, `launchctl asuser` and SSH channel around each command, which a slot user cannot measure |
-| One command a minute for each box read through its route; one host call a minute for each BB machine | 60 `docker exec` an hour for each routed Docker box, none for a Docker BB machine | `docker events`, hour 0. The tallies count one reading a minute for every box, each one command or one call |
-| At least 99% of due readings taken within 10 s of their second; skipped and failed apart; boxes that do not answer apart | 39,371 of 39,378, 99.982%; none skipped; 7 failed; 65 not tried while their box did not answer | History's own hourly tallies over 26 hours, from `bb box monitor history --json --hours 26`. Every hour after the first, which held the false starts, was 99.83% or more, and 22 of the 26 were 100%. Readings took 27 to 48 ms on average; the slowest were the cut-off box's 10 s timeouts; two workers were enough throughout |
+| One command a minute for each box read through its route; one host call a minute for each VesnALIA machine | 60 `docker exec` an hour for each routed Docker box, none for a Docker VesnALIA machine | `docker events`, hour 0. The tallies count one reading a minute for every box, each one command or one call |
+| At least 99% of due readings taken within 10 s of their second; skipped and failed apart; boxes that do not answer apart | 39,371 of 39,378, 99.982%; none skipped; 7 failed; 65 not tried while their box did not answer | History's own hourly tallies over 26 hours, from `alia box monitor history --json --hours 26`. Every hour after the first, which held the false starts, was 99.83% or more, and 22 of the 26 were 100%. Readings took 27 to 48 ms on average; the slowest were the cut-off box's 10 s timeouts; two workers were enough throughout |
 | Every box that answers has a point under 2 minutes old | 38,077 of 38,077 box-minutes | Each minute's sample of every box's newest point, leaving out the stopped, cut-off, off and restart windows |
 | With 5 pages open, the server within the first row's budget | History adds 0.53% of one core with 5 pages open: 3.51% with history on (21:20 to 22:18) against 2.98% with it off (20:20 to 21:18); own +0.43, `docker exec` children +0.07, `ssh` +0.03 | The same server process, 58 minutes each, the same 5 pages on Live throughout. The pages' own cost, about 2.3% against hour 1's 0.64% with neither, is Live's readings, 5 boxes every 5 s, as unit 2 and 066 read them; it is not history's. Docker's daemons spent another 0.25% with history on |
 | `box-history.db` under 10 MB after 7 days, its log under 4 MB | 2.7 MB after 7 days of 30 boxes, the log at most 1.0 MB; in the run, 1.85 MB after 24 hours (38,579 minute points and 781 hours), the log at most 0.40 MB | [`storage-week.ts`](069-boxes-page/unit-3/storage-week.ts) writes 7 days of 30 boxes through the store with a set clock, pruning each minute as the reader does. Before each minute's pruning truncated the log, it sat at its 4 MiB limit |
@@ -1385,13 +1385,13 @@ October.
 
 | Gate | Result |
 | --- | --- |
-| G10 | On two 2-core, 4 GiB Proxmox LXC boxes, one a BB machine and one read through its route, both with `cpu.max` `max 100000`, a two-CPU cpuset, `memory.max` `max` and LXCFS's 4 GiB: two busy cores read 100.0% and 99.9% for whole minutes; a 3 GiB allocation read 76.7% through the route (its idle 1.2% plus 75%) and 82.7% on the BB machine (its BB daemon's 6.4 to 7.1% plus 75%) |
+| G10 | On two 2-core, 4 GiB Proxmox LXC boxes, one a VesnALIA machine and one read through its route, both with `cpu.max` `max 100000`, a two-CPU cpuset, `memory.max` `max` and LXCFS's 4 GiB: two busy cores read 100.0% and 99.9% for whole minutes; a 3 GiB allocation read 76.7% through the route (its idle 1.2% plus 75%) and 82.7% on the VesnALIA machine (its VesnALIA daemon's 6.4 to 7.1% plus 75%) |
 | G11 | The coverage above. ready-cedar, cut off, failed 3 readings (10 s timeouts at 11:48:42, 11:49:42 and 11:50:42) and was then not tried until it answered: the 65 not tried |
 | G7 with history on | ready-cedar's host cut off for an hour: history paused it and asked the reach check at 11:51:22; the reach check's attempts came at 11:51:24, 11:56:26, 12:11:28, 12:26:30 and 12:41:32, five in the hour, each within 2 s of the time it gave; it answered check 6 at 12:56:32, and history read it again at its next second. A reading that times out is not a transport error, so a box is marked as not answering by the reach check, after history's three tries |
-| G13 | With the Monitor off 16:30:30 to 16:40:30, no `docker exec` to any box (90 in the 10 minutes before) and no reading due or point written; the routed LXC boxes' commands share one kept SSH connection, so their own logs cannot show it either way. The first window, at 15:18:30, held one burst of an exec in every Docker box at 15:19:43: bb-box refreshing each box's capabilities 6 s after I released the Namespace slot, as at 14:28 after other Namespace changes; never after a switch of the Monitor or history. The times history and the Monitor were off are kept and show as Not read (the screenshots below) |
+| G13 | With the Monitor off 16:30:30 to 16:40:30, no `docker exec` to any box (90 in the 10 minutes before) and no reading due or point written; the routed LXC boxes' commands share one kept SSH connection, so their own logs cannot show it either way. The first window, at 15:18:30, held one burst of an exec in every Docker box at 15:19:43: alia-box refreshing each box's capabilities 6 s after I released the Namespace slot, as at 14:28 after other Namespace changes; never after a switch of the Monitor or history. The times history and the Monitor were off are kept and show as Not read (the screenshots below) |
 | G14 | In the run's 7 d of happy-moss, the 08:00 hour, read for 1,068 s before history was turned off, is marked partly read; 09:00, read for 2,472 s, is not; 07:00, which held G10's 5 minutes at 100%, has a mean of 8.6% and 100% as its busiest minute |
 | G2, history's part | Passed with the limit the lead decided: a 115 s build of 4,000 files read 89% of its CPU above idle, within 20%; builds of 16 and 18 s were missed, and a slot's 24 h and 7 d now say that work shorter than a minute may not show and that Live shows it |
-| G12 | bb-box reloaded half way, at 19:18:30: from 19:08:30 to 19:28:30, all 30 boxes' minute points run on with no hole between them, and none longer than 60 s, so no point was lost |
+| G12 | alia-box reloaded half way, at 19:18:30: from 19:08:30 to 19:28:30, all 30 boxes' minute points run on with no hole between them, and none longer than 60 s, so no point was lost |
 | G18 | In tests |
 | G19 | Run for 24 hours as above, every budget met; the Mac's budget from one slot's readings (below) |
 
@@ -1401,7 +1401,7 @@ October.
 points again from 10:50.
 
 **The Mac part, with one slot, not three.** The lead added Namespace to the
-separate BB. A Namespace host first needs a measured Mac: a macOS box
+separate VesnALIA. A Namespace host first needs a measured Mac: a macOS box
 there measured it, then was released. The first ios box became slot 1 of
 4 on a Namespace Mac (6 cores, 14 GB) at 14:34; the second and third were
 refused, each after 5 minutes, "The Namespace host gave box … no slot within
@@ -1444,7 +1444,7 @@ A first try of the delivered build moved everything by 26 px at 390 px:
 
 ### Screenshots
 
-From the run's BB, on the delivered build, at 1440, 760 and 390 px, light and dark:
+From the run's VesnALIA, on the delivered build, at 1440, 760 and 390 px, light and dark:
 1 h of tidy-fern ([1440](069-boxes-page/unit-3/ready-1h-1440-light.png),
 [dark](069-boxes-page/unit-3/ready-1h-1440-dark.png),
 [760](069-boxes-page/unit-3/ready-1h-760-light.png),
@@ -1481,7 +1481,7 @@ facts name a Proxmox node ([1440](069-boxes-page/unit-3/cut-24h-1440-light.png),
 ([1440](069-boxes-page/unit-3/ready-live-1440-light.png)); and Monitor
 settings with the switch ([1440](069-boxes-page/unit-3/settings-monitor-1440-light.png),
 [dark](069-boxes-page/unit-3/settings-monitor-1440-dark.png)). The windows are
-tall enough to hold the whole page, as BB's own layout scrolls inside the
+tall enough to hold the whole page, as VesnALIA's own layout scrolls inside the
 window.
 
 ### After the independent review
@@ -1500,14 +1500,14 @@ with a test that fails without its fix:
 | Summaries averaged steps and invented a minute | Each step weighted by the time read, for each measure; the busiest minute or highest value named by its step | One minute at 100% and an hour at 0% averages 2%, not 50%; "busiest minute 78% between … and …" |
 | Repeated hours lost their ticks | Ticks found every 15 minutes of elapsed time and kept at local tick times; a time shown twice carries its zone | America/New_York on 1 November 2026: all 9 quarter hours from 1:00 EDT to 2:00 EST, each told apart; 24 h on 0, 6, 12 and 18 local; 7 d on each local midnight |
 
-The fixes are in the reader and the page only. The run on the separate BB
+The fixes are in the reader and the page only. The run on the separate VesnALIA
 goes on with the build it started with, so its numbers measure the
 reading's cost, which the fixes do not change. The only new work is that
 the minute's pruning also runs while history is off.
 
 ### The review's fixes, live
 
-After the run, the fixed build went onto the separate BB, with its 13
+After the run, the fixed build went onto the separate VesnALIA, with its 13
 Docker boxes; the Proxmox boxes were released at the run's end. With
 [`live-fixes.mjs`](069-boxes-page/unit-3/live-fixes.mjs) for the page:
 
@@ -1529,14 +1529,14 @@ Docker boxes; the Proxmox boxes were released at the run's end. With
 ### Not checked live, and why
 
 - Three shared slots on one Mac, a known gap: Namespace gave no second
-  slot (above), and no Tart shared host was reachable from the separate BB
+  slot (above), and no Tart shared host was reachable from the separate VesnALIA
   without production's settings. The Mac's budget is met from one slot's
   readings, as the lead decided, not from a run of 3 slots, so 3 slots
   reading their Mac in turn and their admin session's commands are not
   measured together.
 - G12's 4-minute restart and G18's full file: tested with a set clock and
   a real `box-history.db`; the run's restarts are quick ones.
-- A slot's counters across a restart of bb-box: not kept in the file (a
+- A slot's counters across a restart of alia-box: not kept in the file (a
   deviation below).
 - Screen readers: the range group is a radio group whose roles and keys
   are tested; the chart is unit 2's, which NVDA read.
@@ -1553,7 +1553,7 @@ Docker boxes; the Proxmox boxes were released at the run's end. With
   read; the write-ahead log is truncated each minute; a slot's counters
   stay in memory. All in the decision's section.
 - The box page keeps one frame in every state, at the owner's request: 069
-  section 4 said a box bb-box can never read shows the Monitor's words
+  section 4 said a box alia-box can never read shows the Monitor's words
   instead of a chart, and section 7 that a stopped box shows no processes.
   Both now keep their cards, with why in them.
 - The tiles and processes stay while a box is read, whatever range is
@@ -1563,7 +1563,7 @@ Docker boxes; the Proxmox boxes were released at the run's end. With
 - With box history off and its file full, the chart's line says only that
   it is off, as nothing is written then.
 - The doctor's coverage covers this hour and the last, as tallies are kept
-  by the hour. `bb box monitor history` is new.
+  by the hour. `alia box monitor history` is new.
 - A Mac read through its route has no CPU in history, as decided; a
   slot's Mac CPU line is there for a Mac reached through the host entry.
 
@@ -1582,12 +1582,12 @@ None now. The lead answered the two this run raised, and both are in
 
 - Namespace's shared host gives no second slot (twice in unit 2, twice
   here); not part of unit 3.
-- The Docker backend on a BB machine that is itself an LXC container pins
+- The Docker backend on a VesnALIA machine that is itself an LXC container pins
   each box to cpus by the host's numbering, which may fall outside the
   container's own cpuset: on keen-birch, boxes of 2 cores ran on 1 CPU,
   and some on all 16. Not part of unit 3; history measures each box
   against what it can use, as 066 does.
-- bb-box refreshes every box's capabilities, one command in each, when its
+- alia-box refreshes every box's capabilities, one command in each, when its
   kinds change, as when a Namespace host comes or goes.
 
 ## Unit 5: the view's bar
@@ -1632,7 +1632,7 @@ the box's CPU and memory now.
   terminal, Ctrl+Shift+Up comes here." as their tooltip.
 - **A slot's host is named by its Mac** (the lead's addition). Activity's
   tiles, its network label and the Monitor's "on" pill named a Tart
-  slot's host by the host VM's own name, `bb-box-host-` and an ID, which
+  slot's host by the host VM's own name, `alia-box-host-` and an ID, which
   cut off in the tiles and wrapped the network label to four lines. The
   box's record names the Mac it is on (`guest.host`), so the Monitor's
   slot reading and a new `slotHost` in the box's view now use it
@@ -1694,17 +1694,17 @@ New tests:
   Escape, Ctrl+B) stays in the terminal; the input's description and the
   tooltip.
 
-### Live check on a separate BB
+### Live check on a separate VesnALIA
 
 A Linux box of 8 cores and 16 GiB on Proxmox LXC ran a
-fresh `npx bb-app` 0.48.1 with no account, set up by
-[`live-setup.sh`](069-boxes-page/unit-5/live-setup.sh), with bb-box
+fresh `npx alia-app` 0.48.1 with no account, set up by
+[`live-setup.sh`](069-boxes-page/unit-5/live-setup.sh), with alia-box
 installed from a clone of this branch. Its backends: Docker on the box,
 with the desktop image built, and Proxmox QEMU with only the Android
 template, set up by the lead (2 VMIDs and 2 addresses, KVM on). The
 agent's `box_acquire` made polite-prairie, a Linux desktop (CPU) on
 Docker, 4 cores and 4 GiB, and zesty-acorn, an Android emulator (Pixel 8)
-VM, 8 cores and 16 GiB, ready in 45 s. Both joined BB.
+VM, 8 cores and 16 GiB, ready in 45 s. Both joined VesnALIA.
 [`live-check.mjs`](069-boxes-page/unit-5/live-check.mjs) drives headless
 Chromium; [`runs.sh`](069-boxes-page/unit-5/runs.sh) ran it twice.
 [Run 1](069-boxes-page/unit-5/run-1.md) and
@@ -1759,7 +1759,7 @@ then Take control and the menu.
 
 ### Not checked live, and why
 
-- A shared slot's bar and its Mac's name: the separate BB has no Mac.
+- A shared slot's bar and its Mac's name: the separate VesnALIA has no Mac.
   Tests cover the numbers against a share, the label and the name.
 - A failed reading in the bar ("at 5:18 AM" and "Not answering"): the
   check did not make a box stop answering. Its words come from unit 2's
@@ -1817,14 +1817,14 @@ list sorts by Last active.
   last start, else when it was ready or made) and when it was last active
   (the latest of that, and its thread's last activity, or for a machine any
   thread on it; a thread working now counts as now). `allBoxes` also gives
-  each thread's box its thread, with whether it works, asked of BB once per
+  each thread's box its thread, with whether it works, asked of VesnALIA once per
   thread for each call.
 - **The row's second line** (`rowLine` in `src/app/row-line.ts`,
   `RowStatus` in `src/app/row-status.tsx`), on both tabs of the Boxes page:
   the state, then what needs attention in 069's order (a failed operation,
   a backend not in settings, a host that does not answer, busy, a person's
   control, a failed join), then how long and the cores and memory. A box
-  joining BB again after a failed try says "Joining BB, try 3 of 5" in
+  joining VesnALIA again after a failed try says "Joining VesnALIA, try 3 of 5" in
   amber, with when the next try starts and why the last failed as its
   reason, from main's join retries. Rows
   keep one unit of time. The line wraps to 2 lines at most; what needs
@@ -1844,7 +1844,7 @@ list sorts by Last active.
   "Working", "Idle" in its first minute, then "Idle 3 h". The card's title
   comes with `allBoxes`, so it is there in the first frame.
 - **The list asks again every 15 s while the window is shown**, both tabs'
-  answers, as BB sends no signal when a thread starts or finishes.
+  answers, as VesnALIA sends no signal when a thread starts or finishes.
 - **Last active** in Sort (`src/app/boxes-filter.ts`), most recent first
   when chosen; the sort's label says "most recent first" or "least recent
   first".
@@ -1872,11 +1872,11 @@ passed again. The same suite passed on the two bases before. New tests:
 | `test/app.test.tsx` | The line's tooltip on the name's keyboard focus, closed by Escape and on blur; each row of section 9's table in `rowLine`'s words, with the reasons; a join's retries and a given-up join without settings advice; the attention order with four at once; the busy words for CPU, CPU pressure, memory pressure, load, a slot's share, disk, and over an hour; a failed join on the list: no paragraph, the mark, the name's description and the tooltip; a card's Working and Idle 3 h, a row's busy words, and the 15 s recheck; Last active's order and first direction; the page's busy words, and none when calm |
 | `test/plugin.test.ts` | `allBoxes` gives a box its thread, whether it works, its last start and last activity and no busy flag without history; `boxPage` too; `machines.list` makes a machine with a working thread active now |
 
-### Live check on a separate BB
+### Live check on a separate VesnALIA
 
 A Linux box of 8 cores and 16 GiB on Proxmox LXC, its disk grown to
-64 GiB, ran a fresh `npx bb-app` with no account, set up by
-[`live-setup.sh`](069-boxes-page/unit-4/live-setup.sh), with bb-box
+64 GiB, ran a fresh `npx alia-app` with no account, set up by
+[`live-setup.sh`](069-boxes-page/unit-4/live-setup.sh), with alia-box
 installed from a clone of this branch, and Docker on the box. The agent's
 `box_acquire` made lively-plover, a Linux box of 2 cores and 4 GiB, and
 lively-maple, a Linux desktop (CPU) of 2 cores and 4 GiB, after the
@@ -1900,8 +1900,8 @@ row's joining words. Every run passed every check it ran.
 | The row while busy, at 1440 px | "Ready · Busy: CPU 99% for 5 min · up 30 min · 2 cores · 4 GiB memory" | the same, up 44 min |
 | At 390 px, the busy words whole inside the row's clipped line | Shown whole on 2 lines: "Ready", then "Busy: CPU 99% for 5 min" | the same |
 | The page's header while busy | "Ready · up 30 min · Busy: CPU 99% for 5 min"; Tab reached the busy words and Enter moved focus to Top processes | the same |
-| G15: box history turned off with `bb box option set monitor.boxHistory=false` while busy | The row lost its busy words 0.7 s after the switch (the setting's change signal refreshed it); the page said nothing | not run again |
-| A thread works: the agent's `box_run` of `sleep 45` on lively-plover | Its card said Working 0.4 s after the call and Idle as its result came, both from bb-box's own change signals | Working 14.9 s after the call and "Idle" 14.5 s after its result, from the 15 s recheck |
+| G15: box history turned off with `alia box option set monitor.boxHistory=false` while busy | The row lost its busy words 0.7 s after the switch (the setting's change signal refreshed it); the page said nothing | not run again |
+| A thread works: the agent's `box_run` of `sleep 45` on lively-plover | Its card said Working 0.4 s after the call and Idle as its result came, both from alia-box's own change signals | Working 14.9 s after the call and "Idle" 14.5 s after its result, from the 15 s recheck |
 | A person takes control of lively-maple's desktop from the page, then goes back to the list | "Ready · You have control · up 2 min · 2 cores · 4 GiB memory"; nothing once handed back | the same, up 15 min |
 
 Run 3, on the commit delivered: the first frame held one shape for 301
@@ -1962,7 +1962,7 @@ with a test that fails on the code before it:
 | A sighted keyboard user could not read a row's reason | The line's tooltip opens while the name has the keyboard's focus, by the lead's decision | Focus by keyboard shows it, a pointer's focus does not, Escape hides it, blur clears it |
 | A failed operation was dropped when the backend or host also did not answer | The line says both, the failure first: "Last seen ready · Stop failed · Its backend is not in settings · 2 d ago" | Both combinations, with both reasons |
 
-Run 4, on the commit delivered, on a second separate BB set up the same
+Run 4, on the commit delivered, on a second separate VesnALIA set up the same
 way with one Linux box, rosy-river ([report](069-boxes-page/unit-4/run-4.md),
 [focus](069-boxes-page/unit-4/run-4-focus.md)): the first frame held one
 shape for 302 frames; the thread said Working 14.9 s after the agent's
@@ -1970,7 +1970,7 @@ call and "Idle" 14.5 s after its result; Tab reached the name with its
 line as its description. Then rosy-river's container was stopped with
 `docker stop`: its line said "Stopped · Unexpected stop · 4 min ago · 2
 cores · 4 GiB memory" with the mark, and keyboard focus on its name showed
-"Unexpected stop: It stopped without a request from bb-box at … Its
+"Unexpected stop: It stopped without a request from alia-box at … Its
 backend does not record why." below the line
 ([light](069-boxes-page/unit-4/focus-tooltip-1440-light.png),
 [dark](069-boxes-page/unit-4/focus-tooltip-1440-dark.png)); Escape hid it,
@@ -1979,18 +1979,18 @@ pointer elsewhere showed none. The tooltip first opened above the line,
 over the focused name, and now opens below it.
 
 The full suite also caught that the app imported a value from a file that
-leads to server-only modules, which BB's frontend build cannot bundle: the
+leads to server-only modules, which VesnALIA's frontend build cannot bundle: the
 busy timings are now in `src/monitor/busy-times.ts`, which imports
 nothing.
 
 ### Not checked live, and why
 
 - Busy by load on a VM, and a slot against its loaded neighbour: the
-  separate BB has Docker only, and a Docker box has no kernel of its own;
+  separate VesnALIA has Docker only, and a Docker box has no kernel of its own;
   no Mac slot was free to borrow. Both are under test against a real
   history file; 066 and unit 2 checked a slot's own numbers live.
 - A failed join and a failed stop on the list: each is a row's words and
-  reasons, under test; the live boxes all joined BB. An unexpected stop
+  reasons, under test; the live boxes all joined VesnALIA. An unexpected stop
   was checked live in run 4.
 - A busy flag expiring after failed refreshes, and overlapping polls: under
   test with a set clock; the live runs had no failed refresh or slow answer.
@@ -2010,7 +2010,7 @@ nothing.
   "Decided during unit 4".
 - A box's own error with no failed operation in the box log says "Error"
   with the error as its reason, as the paragraph it replaces did.
-- An unexpected stop says "Unexpected stop" on the line, with bb-box's
+- An unexpected stop says "Unexpected stop" on the line, with alia-box's
   words as its reason.
 
 ### Open questions

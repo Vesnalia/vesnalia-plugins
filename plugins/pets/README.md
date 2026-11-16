@@ -1,12 +1,12 @@
 <h1 align="center">Pets</h1>
 
-<p align="center"><b>A pixel companion that lives in your <a href="https://getbb.app">bb</a> window, reacts to your agents, and levels up from real work.</b><br>Hatch your own with AI, or start with the one in the box.</p>
+<p align="center"><b>A pixel companion that lives in your <a href="https://getbb.app">VesnALIA</a> window, reacts to your agents, and levels up from real work.</b><br>Hatch your own with AI, or start with the one in the box.</p>
 
 <p align="center">
 <a href="https://github.com/vburojevic/bb-plugin-pets/releases/latest"><img src="https://img.shields.io/github/v/release/vburojevic/bb-plugin-pets?style=flat-square&label=release&color=57606a" alt="Latest release"></a>
-<img src="https://img.shields.io/badge/bb-%E2%89%A5%200.49-57606a?style=flat-square" alt="Requires bb 0.49 or later">
+<img src="https://img.shields.io/badge/bb-%E2%89%A5%200.49-57606a?style=flat-square" alt="Requires VesnALIA 0.49 or later">
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-57606a?style=flat-square" alt="MIT license"></a>
-<a href="https://github.com/get-bb/marketplace"><img src="https://img.shields.io/badge/BB%20Community-marketplace-57606a?style=flat-square" alt="Listed in the BB Community marketplace"></a>
+<a href="https://github.com/get-bb/marketplace"><img src="https://img.shields.io/badge/BB%20Community-marketplace-57606a?style=flat-square" alt="Listed in the VesnALIA Community marketplace"></a>
 </p>
 
 <picture>
@@ -16,35 +16,35 @@
 
 <p align="center"><sub>A thread failed. The pet walks over, says so, and puts a ring around it in the sidebar.</sub></p>
 
-Inspired by [Hermes pets](https://hermes-agent.nousresearch.com/docs/user-guide/features/pets), rebuilt around what bb actually is: a fleet of agents.
+Inspired by [Hermes pets](https://hermes-agent.nousresearch.com/docs/user-guide/features/pets), rebuilt around what VesnALIA actually is: a fleet of agents.
 
 ## Install
 
 ```sh
-bb plugin install pets
+alia plugin install pets
 ```
 
 Or straight from this repository:
 
 ```sh
-bb plugin install git:https://github.com/vburojevic/bb-plugin-pets
+alia plugin install git:https://github.com/vburojevic/bb-plugin-pets
 ```
 
 > [!TIP]
 > It works the moment it lands. A bundled starter pet ships with the plugin (Pixel, the axolotl in these pictures): no keys, no setup.
 
 > [!NOTE]
-> Requires bb 0.49 or later. v0.2.4 is the last release that supports older bb.
+> Requires VesnALIA 0.49 or later. v0.2.4 is the last release that supports older VesnALIA.
 
 To hatch your own, add an OpenAI API key (and optionally a Retro Diffusion key) in the plugin's settings. The Hatchery spells out what each key unlocks. Keys can also be set from the CLI:
 
 ```sh
-bb plugin config pets set openaiApiKey sk-…
+alia plugin config pets set openaiApiKey sk-…
 ```
 
 ## It mirrors your fleet
 
-A pixel creature roams the bottom of your bb window and reflects what your agents are doing:
+A pixel creature roams the bottom of your VesnALIA window and reflects what your agents are doing:
 
 | Your fleet | The pet |
 | --- | --- |
@@ -152,7 +152,7 @@ You can also tap the Habitat ground or pick a named spot from the menu to send i
 
 ## The Pets panel
 
-Four tabs in bb's navigation rail: the pet's home, its paperwork, and its birthplace.
+Four tabs in VesnALIA's navigation rail: the pet's home, its paperwork, and its birthplace.
 
 <table>
 <tr>
@@ -215,7 +215,7 @@ Four tabs in bb's navigation rail: the pet's home, its paperwork, and its birthp
 
 ### On a phone
 
-The floating pet stays off below bb's compact breakpoint, so none of its loops run on phones. The Habitat tab is where it lives there. To see the floating pet on a small screen anyway, turn off **Hide on small viewports**.
+The floating pet stays off below VesnALIA's compact breakpoint, so none of its loops run on phones. The Habitat tab is where it lives there. To see the floating pet on a small screen anyway, turn off **Hide on small viewports**.
 
 </td>
 </tr>
@@ -241,17 +241,17 @@ The pack is a setting. **Re-animate** in the Den upgrades an older pet to the cu
 ## Reference
 
 <details>
-<summary><b>CLI</b>: <code>bb pets</code></summary>
+<summary><b>CLI</b>: <code>VesnALIA pets</code></summary>
 
 | Command | What it does |
 | --- | --- |
-| `bb pets status` | Active pet, stage, XP, and fleet mood |
-| `bb pets list` | All pets in the den |
-| `bb pets select <name\|id>` | Make a den pet the active companion |
-| `bb pets rename <name\|id> <new-name>` | Rename a pet |
-| `bb pets on` | Enable the overlay |
-| `bb pets off` | Disable the overlay |
-| `bb pets reset` | Dev: wipe den, XP, art, drafts and reseed the starter |
+| `alia pets status` | Active pet, stage, XP, and fleet mood |
+| `alia pets list` | All pets in the den |
+| `alia pets select <name\|id>` | Make a den pet the active companion |
+| `alia pets rename <name\|id> <new-name>` | Rename a pet |
+| `alia pets on` | Enable the overlay |
+| `alia pets off` | Disable the overlay |
+| `alia pets reset` | Dev: wipe den, XP, art, drafts and reseed the starter |
 
 </details>
 
@@ -265,7 +265,7 @@ Roaming, pointing missions, waiting pip, celebrations, failure reactions, dig wh
 <details>
 <summary><b>Settings</b></summary>
 
-Set these in bb under **Settings → Plugins → Pets**, or with `bb plugin config pets set <key> <value>`.
+Set these in VesnALIA under **Settings → Plugins → Pets**, or with `alia plugin config pets set <key> <value>`.
 
 | Key | Setting | Default | What it does |
 | --- | --- | --- | --- |
@@ -276,7 +276,7 @@ Set these in bb under **Settings → Plugins → Pets**, or with `bb plugin conf
 | `bubbles` | Speech bubbles | `normal` | How chatty the pet is about your fleet: `off`, `rare`, `normal`, `chatty`. |
 | `reactivity` | Reactivity | `hybrid` | `hybrid`: mirror the viewed thread, fleet aggregate elsewhere. `aggregate`: always the whole fleet. `viewed-thread`: only the open thread. |
 | `reducedMotion` | Reduced motion | `auto` | `auto` follows the system prefers-reduced-motion setting, or `on`. |
-| `hideOnCompact` | Hide on small viewports | `true` | Keep the floating pet off below bb's compact breakpoint. |
+| `hideOnCompact` | Hide on small viewports | `true` | Keep the floating pet off below VesnALIA's compact breakpoint. |
 | `pointing` | Point at threads | `true` | Walk over and point at sidebar threads that need you. |
 | `walkSpeed` | Walk speed | `normal` | `chill`, `normal`, `zoomies`. |
 | `sounds` | Sounds | `false` | Tiny synth chirps for greetings, evolutions, and pets. |
@@ -293,7 +293,7 @@ Set these in bb under **Settings → Plugins → Pets**, or with `bb plugin conf
 | `personalityFunny` | Personality: funny | `true` | Observational one-liners and the occasional dance break. |
 | `personalityChaotic` | Personality: chaotic | `true` | Zoomies, cursor chasing, edge peek-a-boo, digging at the sidebar. |
 | `personalitySarcastic` | Personality: sarcastic | `true` | Dry commentary on failures, marathon turns, and your thread hoard. |
-| `personalityHelpful` | Personality: helpful | `true` | Nudges about waiting threads and a bb tip now and then. |
+| `personalityHelpful` | Personality: helpful | `true` | Nudges about waiting threads and a VesnALIA tip now and then. |
 | `personalityCozy` | Personality: cozy | `true` | Wandering, sitting nearby, naps when you go idle, welcome-backs. |
 | `activityLevel` | Activity level | `lively` | How often the pet does things on its own: `calm`, `normal`, `lively`, `unhinged`. |
 | `highContrast` | High-contrast accents | `false` | Thicker, brighter highlight ring and a stronger emotion badge. |
@@ -309,7 +309,7 @@ Set these in bb under **Settings → Plugins → Pets**, or with `bb plugin conf
 <details>
 <summary><b>Architecture notes</b></summary>
 
-- The overlay is an **app-wide overlay slot** (`app.slots.experimental_appOverlay`), so it reads through the same SDK hooks as every other surface: `useRpc` for calls, `useRealtime` for the `pets` channel, `useBbContext` for the thread in view, and `useBbNavigate` to open threads and panels. Below bb's compact breakpoint it renders nothing unless **Hide on small viewports** is off, so by default none of its loops run on phones.
+- The overlay is an **app-wide overlay slot** (`app.slots.experimental_appOverlay`), so it reads through the same SDK hooks as every other surface: `useRpc` for calls, `useRealtime` for the `pets` channel, `useAliaContext` for the thread in view, and `useAliaNavigate` to open threads and panels. Below VesnALIA's compact breakpoint it renders nothing unless **Hide on small viewports** is off, so by default none of its loops run on phones.
 - Sprites render on a **canvas** (integer source rects, smoothing off). CSS background-position sprites bleed adjacent frames at fractional sizes.
 - **Fleet state lives server-side** (lifecycle events plus `thread:changed` interaction metadata, seeded from `threads.list`), so XP accrues and the CLI works with zero windows open.
 - **Generation** (`src/spritegen.ts`): heroes and drafts come from **gpt-image-2** with an automatic magenta chroma-key fallback (the model drops native transparency often enough that keying is the reliable path). Animation strips come from **Retro Diffusion**'s pixel-native animation API when an `rdpk-` key is set: 16-frame walk and idle loops, 8 frames elsewhere, native 64 px. Otherwise they come from gpt-image strips (one row of four; models miscount larger grids) with flood-deglow.
@@ -338,13 +338,13 @@ flowchart LR
 
 ```sh
 npm install
-bb plugin dev        # watch: rebuild the app bundle and reload on save
+alia plugin dev        # watch: rebuild the app bundle and reload on save
 npx tsc --noEmit     # typecheck
 npm test             # unit tests
 ```
 
 </details>
 
-## More bb plugins
+## More VesnALIA plugins
 
-See every bb plugin I publish at [**vburojevic/bb-plugins**](https://github.com/vburojevic/bb-plugins).
+See every VesnALIA plugin I publish at [**vburojevic/alia-plugins**](https://github.com/vburojevic/bb-plugins).

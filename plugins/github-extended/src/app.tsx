@@ -3,12 +3,12 @@ import {
   definePluginApp,
   experimental_Icon as Icon,
   experimental_Diff as Diff,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
   type PluginNavPanelProps,
   type PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   buildSuggestions,
   isSafeExternalUrl,
@@ -212,13 +212,13 @@ function relativeTime(iso: string): string {
 const PANEL_PATH = "github";
 
 function useSubPathRoute(subPath: string): [Route, (route: Route) => void] {
-  const bbNavigate = useBbNavigate();
+  const aliaNavigate = useAliaNavigate();
   const route = useMemo(() => parseSubPath(subPath), [subPath]);
   const navigate = useCallback(
     (next: Route) => {
-      bbNavigate.toPluginPanel(PANEL_PATH, { subPath: routeToSubPath(next) });
+      aliaNavigate.toPluginPanel(PANEL_PATH, { subPath: routeToSubPath(next) });
     },
-    [bbNavigate],
+    [aliaNavigate],
   );
   return [route, navigate];
 }
@@ -485,7 +485,7 @@ function StateBadge({ kind, state }: { kind: "issue" | "pr"; state: string }) {
 }
 
 function ThreadPills({ links }: { links: ThreadLink[] | undefined }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   if (links === undefined || links.length === 0) return null;
   return (
     <span className="flex shrink-0 items-center gap-1">
@@ -493,8 +493,8 @@ function ThreadPills({ links }: { links: ThreadLink[] | undefined }) {
         <button
           key={link.threadId}
           type="button"
-          title={`Open BB thread ${link.threadId}`}
-          aria-label={`Open BB thread ${link.threadId}`}
+          title={`Open VesnALIA thread ${link.threadId}`}
+          aria-label={`Open VesnALIA thread ${link.threadId}`}
           onClick={(event) => {
             event.stopPropagation();
             navigate.toThread(link.threadId);
@@ -902,7 +902,7 @@ function StatusCell({ item }: { item: Item }) {
 }
 
 function RowMenu({ item }: { item: Item }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const viewer = useViewer();
   const { setIssueState, setAssignees } = useIssueMutations();
   const assignedToMe = viewer !== null && item.assignees.includes(viewer);
@@ -3395,7 +3395,7 @@ function RepositoryManager({
       ) : null}
       {status.repos.length === 0 ? (
         <p className="px-4 py-3 text-sm text-muted-foreground">
-          No repositories yet. Add an owner/repo above or attach a BB project with a GitHub origin.
+          No repositories yet. Add an owner/repo above or attach a VesnALIA project with a GitHub origin.
         </p>
       ) : (
         <div className="gh-repo-results">
@@ -3436,7 +3436,7 @@ function RepositoryManager({
                     ) : <span className="min-w-0 truncate text-sm font-medium text-foreground">{entry.repo}</span>}
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {entry.projectId !== null ? "Connected to a BB project" : "Added manually"} · {repoHealthText(health)}
+                    {entry.projectId !== null ? "Connected to a VesnALIA project" : "Added manually"} · {repoHealthText(health)}
                   </p>
                   {dependabotError !== null ? (
                     <DependabotSyncErrorNotice compact repo={entry.repo} message={dependabotError} />

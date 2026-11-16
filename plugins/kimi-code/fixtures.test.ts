@@ -1,11 +1,11 @@
 import { readFileSync } from "node:fs";
 
-import { experimental_assembleCapturedThreadEvents as assembleCapturedThreadEvents } from "@get-bb/plugin-sdk/provider-bridge/testing";
+import { experimental_assembleCapturedThreadEvents as assembleCapturedThreadEvents } from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import { describe, expect, it } from "vitest";
 
 // Committed replay fixture: the bridge's outbound notifications from a real
 // `kimi acp` 2.3.0 turn that called the Agent tool (recorded by
-// kimi-live.delegation.test.ts with BB_KIMI_FIXTURE_RECORD; workspace path and
+// kimi-live.delegation.test.ts with ALIA_KIMI_FIXTURE_RECORD; workspace path and
 // session id redacted). Replaying it through the real delta assembler pins
 // the delegation classification against SDK assembler drift.
 const fixture = readFileSync("recordings/agent-delegation.ndjson", "utf8")

@@ -1,4 +1,4 @@
-// Argument parsing for the `bb productive` command.
+// Argument parsing for the `alia productive` command.
 //
 // Split out of server.ts so it can be tested directly: reading positional args
 // off a raw argv without knowing which flags consume a value silently

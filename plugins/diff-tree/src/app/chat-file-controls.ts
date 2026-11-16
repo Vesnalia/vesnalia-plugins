@@ -5,7 +5,7 @@ export const chatFileControlSelector = '[data-message-column] a[href], [data-mes
 // GenUI 0.1.0 Changes/Commits uses an Open button beside an expandable
 // filename, rather than a semantic anchor. Match its accessible structure and
 // confirm the full path against the adjacent filename; never guess from text.
-// Source: ComicBit/bb-plugin-genui, ui/components/changes.tsx (FileRow).
+// Source: ComicBit/alia-plugin-genui, ui/components/changes.tsx (FileRow).
 function changesButtonPath(button: HTMLButtonElement): string | null {
   if (button.classList.contains("dt-chat-open") || button.disabled) return null;
   const label = button.getAttribute("aria-label");

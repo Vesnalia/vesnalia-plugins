@@ -6,7 +6,7 @@ import { join } from "node:path";
 import Database from "better-sqlite3";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@get-bb/plugin-sdk", () => ({}));
+vi.mock("@vesnalia/plugin-sdk", () => ({}));
 
 import plugin from "./server";
 
@@ -15,7 +15,7 @@ async function boot() {
   const kv = new Map<string, unknown>();
   const rpc: Record<string, (input: unknown) => unknown> = {};
   let cli: { run: (argv: string[], ctx: Record<string, unknown>) => Promise<{ exitCode: number; stdout?: string; stderr?: string }> } | null = null;
-  const bb = {
+  const alia = {
     settings: {
       define: () => ({
         get: async () => ({
@@ -59,7 +59,7 @@ async function boot() {
     agents: { registerTool: () => {} },
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await plugin(bb as any);
+  await plugin(alia as any);
   return { db, rpc, cli: cli! };
 }
 
@@ -230,7 +230,7 @@ describe("server smoke", () => {
       note: { id: string };
     };
     await first.rpc.trashNote({ id: trashedNote.note.id });
-    const dir = mkdtempSync(join(tmpdir(), "bb-notes-smoke-"));
+    const dir = mkdtempSync(join(tmpdir(), "alia-notes-smoke-"));
     try {
       const exported = await first.cli.run(["export", dir], {});
       expect(exported.exitCode).toBe(0);
@@ -257,7 +257,7 @@ describe("server smoke", () => {
       expect(listed.notes[0]!.title).toBe("Export me");
       expect(listed.notes[0]!.tags).toEqual(["work"]);
       // Export from the second instance, tweak, re-import: updates in place.
-      const dir2 = mkdtempSync(join(tmpdir(), "bb-notes-smoke2-"));
+      const dir2 = mkdtempSync(join(tmpdir(), "alia-notes-smoke2-"));
       try {
         await second.cli.run(["export", dir2], {});
         const name = readdirSync(dir2).find((f) => f.endsWith(".md"))!;

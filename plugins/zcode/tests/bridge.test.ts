@@ -5,12 +5,12 @@ import { afterEach, expect, it } from "vitest";
 import {
   experimental_runBridgeConformance,
   experimental_formatConformanceReport,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import {
   threadDeltaNotificationParamsSchema,
   interactionRequestPayloadSchema,
   approvalInteractionOutcomeSchema,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import { createBridge } from "../src/bridge.js";
 import { record } from "../src/protocol.js";
 
@@ -34,12 +34,12 @@ function harness(extra: Parameters<typeof createBridge>[0] = {}) {
     write: (message) => messages.push(message),
     env: {
       ...process.env,
-      BB_ZCODE_EXECUTABLE: fixture,
-      BB_ZCODE_NODE_EXECUTABLE: process.execPath,
+      ALIA_ZCODE_EXECUTABLE: fixture,
+      ALIA_ZCODE_NODE_EXECUTABLE: process.execPath,
     },
   });
   cleanup.push(bridge.close);
-  const cwd = mkdtempSync(join(tmpdir(), "bb-zcode-test-"));
+  const cwd = mkdtempSync(join(tmpdir(), "alia-zcode-test-"));
   let nextId = 0;
   async function until(predicate: () => boolean, timeout = 5000) {
     const end = Date.now() + timeout;
@@ -74,7 +74,7 @@ function harness(extra: Parameters<typeof createBridge>[0] = {}) {
   return { bridge, messages, rpc, start, until, cwd, deltas };
 }
 
-it("passes bb canonical bridge conformance using a real child process and synthetic ZCode peer", async () => {
+it("passes VesnALIA canonical bridge conformance using a real child process and synthetic ZCode peer", async () => {
   const h = harness();
   const report = await experimental_runBridgeConformance({
     transport: {

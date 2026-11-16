@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import plugin from '../server.ts';
-import { experimental_acpLaunchSpecSchema } from '@get-bb/plugin-sdk/provider-bridge/acp';
+import { experimental_acpLaunchSpecSchema } from '@vesnalia/plugin-sdk/provider-bridge/acp';
 
 test('registers a native ACP provider without changing credentials or bypassing approvals', async () => {
   const declarations = [];

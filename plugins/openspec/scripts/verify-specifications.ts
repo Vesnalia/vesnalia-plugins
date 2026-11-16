@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { projectSpecification, parseDelta } from "../src/specification-projection";
 const exec = promisify(execFile);
-const fixture = await realpath(await mkdtemp(path.join(tmpdir(), "bb-openspec-projection-")));
+const fixture = await realpath(await mkdtemp(path.join(tmpdir(), "alia-openspec-projection-")));
 const env = { ...process.env, XDG_CONFIG_HOME: path.join(fixture, "config"), XDG_DATA_HOME: path.join(fixture, "data"), OPENSPEC_TELEMETRY: "0", DO_NOT_TRACK: "1" };
 const requirement = (name: string, body = name) => `### Requirement: ${name}\nThe system SHALL ${body}.\n\n#### Scenario: ${name}\n- **WHEN** requested\n- **THEN** ${body}`;
 const baseline = `# Fixture Specification\n\n## Purpose\nVerify the complete read-only projection against the public CLI.\n\n## Requirements\n\n${requirement("Keep ##")}\n\n${requirement("Old")}\n\n${requirement("Remove")}\n`;

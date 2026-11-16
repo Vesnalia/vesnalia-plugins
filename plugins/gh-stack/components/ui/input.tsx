@@ -9,7 +9,7 @@ import { cn } from "../../lib/utils";
 import { CONTROL_HOVER_TRANSITION } from "./motion.js";
 
 // The edge is --border, not --input. A theme may define --input as the well's
-// fill rather than an edge color (bb's own token contract says exactly that:
+// fill rather than an edge color (VesnALIA's own token contract says exactly that:
 // "the fill is the load-bearing role … the visible edge comes from --border /
 // --ring"), in which case border-input paints a different line from every
 // other bordered surface in the panel — the file tree above all, which this

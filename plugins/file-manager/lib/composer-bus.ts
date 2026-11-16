@@ -1,7 +1,7 @@
 // lib/composer-bus.ts — the only way the host-rendered "+" row can reach a
 // component of ours.
 //
-// A `plusMenu` item is drawn by bb, not by this plugin: `run({ composer })` is
+// A `plusMenu` item is drawn by VesnALIA, not by this plugin: `run({ composer })` is
 // a callback, not a React tree, so it has nowhere to mount a dialog. The
 // two surfaces `composer.customize` does mount are `actions` and `banners`,
 // and only one of them is usable here:
@@ -17,7 +17,7 @@
 // to it. Banners are mounted once per composer on screen (a thread and a
 // queued message being edited in it can both be live), so a request names the
 // composer scope it came from and only the banner in that scope answers.
-import type { PluginComposerScope } from "@get-bb/plugin-sdk/app";
+import type { PluginComposerScope } from "@vesnalia/plugin-sdk/app";
 
 /**
  * Stable identity for one composer, mirroring the host's own scope key.

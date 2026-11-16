@@ -7,10 +7,10 @@ import {
   experimental_useRpcKeyedQuery,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type * as MonacoApi from "monaco-editor/esm/vs/editor/editor.api.js";
 import { z } from "zod";
-import type { PluginRpcContract } from "@get-bb/plugin-sdk";
+import type { PluginRpcContract } from "@vesnalia/plugin-sdk";
 import type { ResolvedScope, rpcContract, Scope } from "../server";
 import { AGENTS_TAB, editorReducer, initialEditorState, isVirtualTab, openPaths } from "@/lib/editor-state";
 import { Icon } from "@/components/ui/icon";
@@ -73,7 +73,7 @@ const VIEWS: { id: View; icon: string; label: string; keys: string; hue: Hue }[]
   { id: "settings", icon: "Settings", label: "Settings", keys: "⌘,", hue: "magenta" },
 ];
 
-/** Browser surfaces the design has to own too: scrollbars and selection, from BB's theme variables. */
+/** Browser surfaces the design has to own too: scrollbars and selection, from VesnALIA's theme variables. */
 const CHROME_CSS = `
 .kf-root ::selection { background: color-mix(in srgb, var(--primary) 30%, transparent); }
 .kf-root * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--muted-foreground) 35%, transparent) transparent; }
@@ -609,7 +609,7 @@ export function Workbench({
   const rootRef = useRef<HTMLDivElement>(null);
   const identity = useRef(Symbol("workbench")).current;
   // When focus falls back to <body> (a clicked button disappeared), keys would
-  // reach BB instead; route them here if this workbench was used last.
+  // reach VesnALIA instead; route them here if this workbench was used last.
   const keyHandler = useRef<(event: React.KeyboardEvent) => void>(() => undefined);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -717,7 +717,7 @@ export function Workbench({
   keyHandler.current = onKeyDownCapture;
 
   const git = experimental_useRpcKeyedQuery({
-    pluginId: "bb--git",
+    pluginId: "alia--git",
     contract: gitContract,
     method: "status",
     keys: resolved?.environmentId ? [resolved.environmentId] : [],
@@ -782,7 +782,7 @@ export function Workbench({
     setSideOpen(true);
   };
 
-  // Named workflows the side panel can run: .bb/workflows/<name>.js.
+  // Named workflows the side panel can run: .vesnalia/workflows/<name>.js.
   const [workflowFiles, setWorkflowFiles] = useState<string[]>([]);
   useEffect(() => {
     if (!sideOpen) return;
@@ -790,7 +790,7 @@ export function Workbench({
       ({ paths }) =>
         setWorkflowFiles(
           paths
-            .map((path) => /^\.bb\/workflows\/([a-z0-9][a-z0-9-]{0,63})\.js$/.exec(path)?.[1])
+            .map((path) => /^\.alia\/workflows\/([a-z0-9][a-z0-9-]{0,63})\.js$/.exec(path)?.[1])
             .filter((name): name is string => name !== undefined),
         ),
       () => setWorkflowFiles([]),

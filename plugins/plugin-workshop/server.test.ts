@@ -2,7 +2,7 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { setTimeout as delay } from "node:timers/promises";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
-import { createFakePluginHost, makePluginAgentConfigurationContext, makeThreadResponse, type FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makePluginAgentConfigurationContext, makeThreadResponse, type FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { workshopContract } from "./contract";
 import plugin from "./server";
@@ -30,7 +30,7 @@ type Boot = FakePluginHost & {
   unsubscribe: ReturnType<typeof vi.fn>;
 };
 
-/** The plugin on top of a fake bb and FakePorts; the test touches neither the real lock folders nor the SDK ports. */
+/** The plugin on top of a fake VesnALIA and FakePorts; the test touches neither the real lock folders nor the SDK ports. */
 async function boot(o: { settings?: Record<string, string | number | boolean>; seed?: (store: Store, ports: FakePorts) => void; sweepFails?: boolean; minGapMs?: number } = {}): Promise<Boot> {
   const ports = new FakePorts();
   const root = mkdtempSync(join(tmpdir(), "workshop-wire-"));
@@ -44,13 +44,13 @@ async function boot(o: { settings?: Record<string, string | number | boolean>; s
     sdk: { subscribe: ((args: { event: string; callback: (event?: unknown) => void }) => (subscriptions.push(args), unsubscribe)) as never },
   });
   // Database rows go in before the plugin loads: the migrations are applied again afterwards, harmlessly.
-  const db = host.bb.storage.database();
-  host.bb.storage.migrate(db, MIGRATIONS);
+  const db = host.alia.storage.database();
+  host.alia.storage.migrate(db, MIGRATIONS);
   const store = new Store(db);
   o.seed?.(store, ports);
   if (o.sweepFails) vi.spyOn(ports.lock, "sweep").mockRejectedValue(new Error("disk"));
-  const w = await wire(host.bb, {
-    ports: (_bb, onChange) => {
+  const w = await wire(host.alia, {
+    ports: (_alia, onChange) => {
       const record = ports.changed.bind(ports);
       ports.changed = (workId: string) => (record(workId), onChange(workId));
       return ports;
@@ -69,9 +69,9 @@ function install(b: Boot, id: string, repo: { head?: string; dirtyCount?: number
   b.ports.git.setRepo(pluginDir(id), repo);
 }
 const TASKS = { tasksProject: "tp1" };
-/** The bb event "the plugin list changed". */
+/** The VesnALIA event "the plugin list changed". */
 const SYSTEM_PLUGINS = { entity: "system", type: "changed", changes: ["plugins-changed"] };
-type CardRow = { id: string; column: string; bbState: string; stateStale: boolean };
+type CardRow = { id: string; column: string; aliaState: string; stateStale: boolean };
 /** A column title as the CLI prints it, escaped for a RegExp. */
 const column = (key: Column) => COLUMNS.find((c) => c.key === key)!.title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const card = async (b: Boot, id: string) => ((await rpc(b, "board")) as { plugins: CardRow[] }).plugins.find((p) => p.id === id)!;
@@ -239,7 +239,7 @@ describe("new plugin and rework", () => {
 
   it("creates the plugin and its work: the card is on the board, the task goes to the tracker project from the setting", async () => {
     const b = await boot({ settings: TASKS });
-    const out = (await rpc(b, "newPlugin", { name: "Hello", id: "hello", request: "a bb hello command" })) as { workId: string; error: string | null };
+    const out = (await rpc(b, "newPlugin", { name: "Hello", id: "hello", request: "a VesnALIA hello command" })) as { workId: string; error: string | null };
     expect(out.error).toBeNull();
     expect(b.ports.calls.map((c) => c.effect).slice(0, 5)).toEqual(["scaffold", "rename", "initCommit", "projects.create", "tasks.create"]);
     expect([...b.ports.taskRows.values()][0]).toMatchObject({ projectId: "tp1" });
@@ -442,7 +442,7 @@ describe("owner buttons", () => {
     const b = await boot();
     install(b, "mail", { dirtyCount: 2 });
     await b.w.catalog.sync();
-    expect(await rpc(b, "plugin", { pluginId: "mail" })).toMatchObject({ id: "mail", dirtyCount: 2, bbState: "running", column: "live" });
+    expect(await rpc(b, "plugin", { pluginId: "mail" })).toMatchObject({ id: "mail", dirtyCount: 2, aliaState: "running", column: "live" });
     await expect(rpc(b, "plugin", { pluginId: "nobody" })).rejects.toThrow("plugin nobody is not on the board");
     await b.harness.lifecycle.dispose();
   });
@@ -474,7 +474,7 @@ describe("RPC callers", () => {
     expect((await b.ports.plugins.list()).find((p) => p.id === "mail")!.enabled).not.toBe(false);
     expect(((await asPlugin(b, "board", null)) as { plugins: unknown[] }).plugins.length).toBeGreaterThan(0);
     expect(await asPlugin(b, "work", { workId })).toMatchObject({ work: { id: workId } });
-    // A client — the panel, the bb CLI, an agent's `bb plugin rpc call` — is the owner as far as the plugin can tell.
+    // A client — the panel, the VesnALIA CLI, an agent's `alia plugin rpc call` — is the owner as far as the plugin can tell.
     await rpc(b, "pilotStart", { workId, notes: "" });
     expect(b.store.pilot(workId)!.state).toBe("on");
     await b.harness.lifecycle.dispose();
@@ -496,8 +496,8 @@ describe("path settings", () => {
 
   it("a valid path is used without the trailing slash and raises nothing", async () => {
     try {
-      const b = await boot({ settings: { pluginsRoot: "/srv/bb-plugins/" } });
-      expect(PLUGINS_ROOT).toBe("/srv/bb-plugins");
+      const b = await boot({ settings: { pluginsRoot: "/srv/alia-plugins/" } });
+      expect(PLUGINS_ROOT).toBe("/srv/alia-plugins");
       expect(b.harness.needsConfigurationMessages).toEqual([]);
       await b.harness.lifecycle.dispose();
     } finally {
@@ -506,16 +506,16 @@ describe("path settings", () => {
   });
 });
 
-describe("card and bb: reconciling a single plugin", () => {
+describe("card and VesnALIA: reconciling a single plugin", () => {
   it("after «Disable» and «Enable» the card shows the new column and state at once", async () => {
     const b = await boot();
     install(b, "mail");
     await b.w.catalog.sync();
-    expect(await card(b, "mail")).toMatchObject({ column: "live", bbState: "running" });
+    expect(await card(b, "mail")).toMatchObject({ column: "live", aliaState: "running" });
     await rpc(b, "setEnabled", { pluginId: "mail", on: false });
-    expect(await card(b, "mail")).toMatchObject({ column: "off", bbState: "disabled", stateStale: false });
+    expect(await card(b, "mail")).toMatchObject({ column: "off", aliaState: "disabled", stateStale: false });
     await rpc(b, "setEnabled", { pluginId: "mail", on: true });
-    expect(await card(b, "mail")).toMatchObject({ column: "live", bbState: "running" });
+    expect(await card(b, "mail")).toMatchObject({ column: "live", aliaState: "running" });
     await b.harness.lifecycle.dispose();
   });
 
@@ -525,7 +525,7 @@ describe("card and bb: reconciling a single plugin", () => {
     await b.w.catalog.sync();
     b.ports.plugins.items.get("mail")!.state = "degraded";
     await expect(rpc(b, "rollback", { pluginId: "mail", reason: "broke" })).rejects.toThrow("no rollback point");
-    expect(await card(b, "mail")).toMatchObject({ bbState: "degraded" });
+    expect(await card(b, "mail")).toMatchObject({ aliaState: "degraded" });
     await b.harness.lifecycle.dispose();
   });
 
@@ -540,7 +540,7 @@ describe("card and bb: reconciling a single plugin", () => {
     await b.harness.lifecycle.dispose();
   });
 
-  it("a change of a work re-reads the state of its plugin from bb, then tells the interface", async () => {
+  it("a change of a work re-reads the state of its plugin from VesnALIA, then tells the interface", async () => {
     const b = await boot({ settings: TASKS });
     install(b, "mail");
     await b.w.catalog.sync();
@@ -550,20 +550,20 @@ describe("card and bb: reconciling a single plugin", () => {
     b.ports.plugins.items.get("mail")!.state = "degraded";
     b.ports.changed(workId);
     await vi.waitFor(() => expect(b.harness.realtimeSignals.length).toBeGreaterThan(before));
-    expect(await card(b, "mail")).toMatchObject({ bbState: "degraded" });
+    expect(await card(b, "mail")).toMatchObject({ aliaState: "degraded" });
     await b.harness.lifecycle.dispose();
   });
 
-  it("after a failed installation the card shows the state bb reports, not the old one", async () => {
+  it("after a failed installation the card shows the state VesnALIA reports, not the old one", async () => {
     const b = await boot({ settings: TASKS });
     const s = await atVerify(b);
     expect(await rpc(b, "enter", { workId: s.id, expectedVersion: await versionOf(s), force: false })).toMatchObject({ ok: true });
-    expect(await card(b, "mail")).toMatchObject({ bbState: "running" });
+    expect(await card(b, "mail")).toMatchObject({ aliaState: "running" });
     b.ports.plugins.setJob("job_1", "succeeded");
     b.ports.plugins.items.get("mail")!.state = "error";
     await b.w.tick();
     expect(b.store.currentAttempt("mail")).toMatchObject({ status: "failed" });
-    await vi.waitFor(async () => expect(await card(b, "mail")).toMatchObject({ bbState: "error", stateStale: false }));
+    await vi.waitFor(async () => expect(await card(b, "mail")).toMatchObject({ aliaState: "error", stateStale: false }));
     await b.harness.lifecycle.dispose();
   });
 
@@ -575,7 +575,7 @@ describe("card and bb: reconciling a single plugin", () => {
     b.ports.plugins.items.get("mail")!.state = "needs-configuration";
     await b.w.tick();
     expect(b.store.currentAttempt("mail")).toMatchObject({ status: "done" });
-    await vi.waitFor(async () => expect(await card(b, "mail")).toMatchObject({ bbState: "needs-configuration", column: "live" }));
+    await vi.waitFor(async () => expect(await card(b, "mail")).toMatchObject({ aliaState: "needs-configuration", column: "live" }));
     await b.harness.lifecycle.dispose();
   });
 
@@ -689,8 +689,8 @@ describe("stopping while an attempt polls", () => {
     expect(b.store.currentAttempt("mail")).toMatchObject({ step: "locking", status: "running" });
     let next!: Wiring;
     const t0 = Date.now();
-    const host = await b.harness.lifecycle.reload(async (bb) => {
-      next = await wire(bb, { ports: () => b.ports, lockDirs: b.lockDirs, debounceMs: 20, minGapMs: 0 });
+    const host = await b.harness.lifecycle.reload(async (alia) => {
+      next = await wire(alia, { ports: () => b.ports, lockDirs: b.lockDirs, debounceMs: 20, minGapMs: 0 });
     });
     await entered;
     expect(Date.now() - t0).toBeLessThan(1_000);
@@ -978,8 +978,8 @@ describe("reconcile", () => {
   });
 });
 
-describe("CLI «bb plugin-workshop»", () => {
-  it("list: column, id, state in bb, work", async () => {
+describe("CLI «VesnALIA plugin-workshop»", () => {
+  it("list: column, id, state in VesnALIA, work", async () => {
     const b = await boot({ settings: TASKS });
     install(b, "mail");
     install(b, "notes");

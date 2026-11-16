@@ -1,6 +1,6 @@
 // The one RPC the app reads, shared by server.ts and app.tsx.
 // Type-only: the SDK root is server-side and does not resolve in the app bundle.
-import type { PluginRpcContract } from "@get-bb/plugin-sdk";
+import type { PluginRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const imageSchema = z.object({

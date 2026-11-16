@@ -3,17 +3,17 @@
 // SDK 0.6 retired `experimental_useSidebarThreadActions`, whose imperative
 // `open`/`setPinned`/`setRead`/`rename`/`archive`/`requestDelete` bundle this
 // sidebar used. Writes now go through the public SDK client and navigation,
-// while archive and delete go through bb's own thread actions so their
+// while archive and delete go through VesnALIA's own thread actions so their
 // confirmations, cascade and pane cleanup stay the host's.
 import { useCallback, useContext, useMemo, useRef } from "react";
 import {
   experimental_useThreadActions,
-  useBbNavigate,
+  useAliaNavigate,
   useSdk,
   type PluginBoundThreadAction,
   type PluginSidebarThread,
   type PluginThreadActionTarget,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { openSidebarThread, ThreadRoutingContext, type ThreadRouting } from "./lead-tabs";
 
 export interface ThreadMutations {
@@ -27,7 +27,7 @@ export interface ThreadMutations {
 }
 
 export function useThreadMutations(routing?: ThreadRouting | null): ThreadMutations {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const sdk = useSdk();
   const provided = useContext(ThreadRoutingContext);
   const routeRef = useRef<ThreadRouting | null>(null);
@@ -57,7 +57,7 @@ export function useThreadMutations(routing?: ThreadRouting | null): ThreadMutati
   );
 }
 
-/** The thread fields bb's own thread actions read, from one sidebar row. */
+/** The thread fields VesnALIA's own thread actions read, from one sidebar row. */
 export function threadActionTarget(
   thread: PluginSidebarThread,
 ): PluginThreadActionTarget {
@@ -80,22 +80,22 @@ export function threadActionTarget(
 }
 
 /**
- * One of bb's own thread actions (`bb--core/archive`, `bb--core/delete`) bound
- * to this row: the same confirmations, child cascade and pane cleanup bb's
- * list gets. Null when bb no longer contributes that action.
+ * One of VesnALIA's own thread actions (`alia--core/archive`, `alia--core/delete`) bound
+ * to this row: the same confirmations, child cascade and pane cleanup VesnALIA's
+ * list gets. Null when VesnALIA no longer contributes that action.
  */
 export function useCoreThreadAction(
   thread: PluginSidebarThread,
   id: "archive" | "delete",
 ): PluginBoundThreadAction | null {
   const entries = experimental_useThreadActions(threadActionTarget(thread));
-  return entries.find((entry) => entry.key === `bb--core/${id}`)?.action ?? null;
+  return entries.find((entry) => entry.key === `alia--core/${id}`)?.action ?? null;
 }
 
 /**
- * Archive one row the way bb's own list does: through bb's archive action, so
+ * Archive one row the way VesnALIA's own list does: through VesnALIA's archive action, so
  * the child cascade, confirmation and pane cleanup stay the host's. Falls back
- * to a plain archive when bb stops contributing the action.
+ * to a plain archive when VesnALIA stops contributing the action.
  */
 export function useArchiveThread(thread: PluginSidebarThread): () => void {
   const archive = useCoreThreadAction(thread, "archive");

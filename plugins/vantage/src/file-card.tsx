@@ -2,7 +2,7 @@ import { memo, useEffect, useRef, useState, type RefObject } from "react";
 import {
   experimental_Diff as Diff, experimental_FileLink as FileLink, experimental_Icon as Icon, experimental_ImageLightbox as ImageLightbox,
   type CodeOverflowMode, type ExperimentalLiveFileTarget,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   FileChange, FileSidesOutput, ImageOutput, PatchOutput, PatchRequest, PatchScope, RecordedEditsInput, RecordedEditsOutput, Repo, ThreadSummary,
 } from "./contract";
@@ -74,7 +74,7 @@ const SMALL_BUTTON = "inline-flex h-6 shrink-0 cursor-pointer items-center gap-1
 export function fileTarget(repo: FileRepo | null, file: FileChange): ExperimentalLiveFileTarget | null {
   if (repo === null || file.status === "deleted") return null;
   const { ref } = repo;
-  // A workspace read with git lists paths from its repository root, which bb would join to a folder below the root.
+  // A workspace read with git lists paths from its repository root, which VesnALIA would join to a folder below the root.
   if (ref.kind === "workspace" && ref.root !== undefined && ref.hostId !== undefined) return { kind: "host", hostId: ref.hostId, path: `${ref.root}/${file.path}` };
   if (ref.kind === "workspace") return { kind: "workspace", environmentId: ref.environmentId, path: file.path };
   if (ref.kind === "checkout") return { kind: "host", hostId: ref.hostId, path: `${ref.root}/${file.path}` };
@@ -229,7 +229,7 @@ export function StatusLetter({ file }: { file: FileChange }) {
   return <span title={STATUS_TITLE[file.status]} className={`w-3 shrink-0 text-center font-mono text-[11px] font-bold ${STATUS_TONE[file.status]}`}>{STATUS_LETTER[file.status]}</span>;
 }
 
-// bb's diff draws its lines inside a shadow root, and `contains` does not look past one.
+// VesnALIA's diff draws its lines inside a shadow root, and `contains` does not look past one.
 export function containsAcrossShadow(root: Node, node: Node | null): boolean {
   for (let current: Node | null = node; current !== null; current = current instanceof ShadowRoot ? current.host : current.parentNode) {
     if (current === root) return true;

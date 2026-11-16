@@ -29,7 +29,7 @@ test('journal rotation, budget, daily gate, legacy cleanup preserve history and 
   const root = mkdtempSync(join(tmpdir(), 'm495-')), now = Date.now();
   const put = (name, text) => { const path = join(root, name); mkdirSync(join(path, '..'), { recursive: true }); writeFileSync(path, text); return path; };
   try {
-    const binding = put('sessions/own/bb-binding.json', 'IDENTITY');
+    const binding = put('sessions/own/alia-binding.json', 'IDENTITY');
     const history = put('sessions/own/db.sqlite', 'HISTORY');
     put('service-evidence.ndjson', '01234567890'); put('auth-metadata.ndjson', '01234567890');
     put('data/cli/debug/model-io-own.jsonl', 'PROMPT'); put('data/cli/debug/keep.jsonl', 'KEEP');
@@ -58,7 +58,7 @@ test('problem report whitelist excludes synthetic key, token, prompt and workspa
       { event: 'native-startup', apiKey: secrets[0], token: secrets[1], prompt: secrets[2], cwd: secrets[3] },
       { event: secrets[2], code: secrets[0] }, { event: 'protocol-diagnostic', code: secrets[1] },
     ].map(JSON.stringify).join('\n'));
-    const output = formatProblemReport({ bb: '0.45.0', ZCode: '3.14.4', CLI: '0.16.9', plugin: '0.0.0', macOS: '26.0',
+    const output = formatProblemReport({ alia: '0.45.0', ZCode: '3.14.4', CLI: '0.16.9', plugin: '0.0.0', macOS: '26.0',
       state: 'installed', ZCodePath: '/Applications/ZCode.app', cliLogin: 'set', events: reportEvents(root), prompt: secrets[2] },
       { backupKey: secrets[0], token: secrets[1], prompt: secrets[2], cwd: secrets[3], authMode: secrets[2] });
     for (const secret of secrets) assert.equal(output.includes(secret), false);

@@ -1,7 +1,7 @@
 export function navigationKey(id: string): string {
-  if (id === 'plugin-panel:automations/automations') return '__bb__/automations';
+  if (id === 'plugin-panel:automations/automations') return '__alia__/automations';
   if (id.startsWith('plugin-panel:')) return id.slice('plugin-panel:'.length);
-  if (['new-thread', 'search-threads', 'extensions', 'skills', 'automations'].includes(id)) return `__bb__/${id}`;
+  if (['new-thread', 'search-threads', 'extensions', 'skills', 'automations'].includes(id)) return `__alia__/${id}`;
   return id;
 }
 
@@ -11,7 +11,7 @@ export function orderedKeys(keys: readonly string[], order: readonly string[]): 
 }
 
 export function visibleKeys(keys: readonly string[], visible: readonly string[] | null): string[] {
-  return visible === null ? keys.filter(key => key !== '__bb__/search-threads') : [...new Set(visible.map(navigationKey))];
+  return visible === null ? keys.filter(key => key !== '__alia__/search-threads') : [...new Set(visible.map(navigationKey))];
 }
 
 export function moveBefore(order: readonly string[], available: readonly string[], key: string, target: string): string[] {

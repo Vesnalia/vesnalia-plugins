@@ -1,5 +1,5 @@
 // The reference demo's provider marks (Claude, OpenAI, Gemini), drawn by the
-// harness's stand-in for bb's ProviderIcon so avatars match upstream's.
+// harness's stand-in for VesnALIA's ProviderIcon so avatars match upstream's.
 import { useId } from "react";
 
 export type LogoProvider = "anthropic" | "openai" | "google";

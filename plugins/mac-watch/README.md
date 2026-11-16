@@ -1,6 +1,6 @@
-# bb-plugin-mac-watch
+# alia-plugin-mac-watch
 
-Мониторинг Мака, на котором работает BB-сервер. Страница в сайдбаре, CLI `bb mac-watch` и навык для агентов.
+Мониторинг Мака, на котором работает ALIA-сервер. Страница в сайдбаре, CLI `alia mac-watch` и навык для агентов.
 
 Описание для пользователей: [PLUGIN_OVERVIEW.md](PLUGIN_OVERVIEW.md) (English, для маркетплейса) и [PLUGIN_OVERVIEW.ru.md](PLUGIN_OVERVIEW.ru.md) (по-русски).
 
@@ -10,8 +10,8 @@
 npm install
 npm test            # разбор вывода утилит на реальных фикстурах (test/fixtures)
 npm run typecheck
-bb plugin build
-bb plugin install "$PWD" --yes   # или bb plugin reload mac-watch
+alia plugin build
+alia plugin install "$PWD" --yes   # или alia plugin reload mac-watch
 ```
 
 - `core.ts`: чистые парсеры, предупреждения, вердикт «уснёт ли Мак», форматирование.

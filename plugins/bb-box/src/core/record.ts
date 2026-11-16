@@ -88,7 +88,7 @@ function run(argv) {
 }
 `;
 
-const WAYLAND_CURSOR = "/usr/local/libexec/bb-box/cursor";
+const WAYLAND_CURSOR = "/usr/local/libexec/alia-box/cursor";
 
 /** What the start script exits with. */
 export const RECORD_START_EXITS = { started: 0, running: 3, noRecorder: 4, noDisplay: 5, failed: 6 } as const;
@@ -115,7 +115,7 @@ export function recordStartScript(os: GuestOs = "linux", position: CaptionPositi
   if (os === "windows") return windowsStart(position);
   return String.raw`d="$HOME/${RECORD_DIR}"; mkdir -p "$d"
 if [ -s "$d/pid" ] && kill -0 "$(cat "$d/pid")" 2>/dev/null; then exit ${RECORD_START_EXITS.running}; fi
-set -a; [ ! -r /run/bb-box/display.env ] || . /run/bb-box/display.env; set +a
+set -a; [ ! -r /run/alia-box/display.env ] || . /run/alia-box/display.env; set +a
 if [ -s "$d/pointer.pid" ]; then kill "$(cat "$d/pointer.pid")" 2>/dev/null; fi
 rm -f "$d/capture.mkv" "$d/clip.mp4" "$d/log" "$d/events" "$d/pointer" "$d/pointer.pid" "$d/pointer-mode" "$d/analysis.log" "$d/${GRID_FILE}"
 find "$d" -maxdepth 1 \( -name 'pill-*' -o -name 'ring-*' -o -name '*.png' -o -name '*.cmd' -o -name '*.graph' -o -name '*.bundle' \) -exec rm -f {} +
@@ -917,26 +917,26 @@ function Now { '{0:f3}' -f ([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() / 
 
 const WINDOWS_SAMPLER = String.raw`param($Out, $Limit)
 [Threading.Thread]::CurrentThread.CurrentCulture = [Globalization.CultureInfo]::InvariantCulture
-Add-Type -Namespace BbBox -Name Pointer -MemberDefinition @'
+Add-Type -Namespace AliaBox -Name Pointer -MemberDefinition @'
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)] public struct Spot { public int X; public int Y; }
 [System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool GetCursorPos(out Spot spot);
 [System.Runtime.InteropServices.DllImport("user32.dll")] public static extern short GetAsyncKeyState(int key);
 [System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
 [System.Runtime.InteropServices.DllImport("user32.dll")] public static extern int GetSystemMetrics(int index);
 '@
-[void][BbBox.Pointer]::SetProcessDPIAware()
+[void][AliaBox.Pointer]::SetProcessDPIAware()
 $writer = [IO.StreamWriter]::new($Out, $false)
 $writer.AutoFlush = $true
-$writer.WriteLine("screen $([BbBox.Pointer]::GetSystemMetrics(0)) $([BbBox.Pointer]::GetSystemMetrics(1))")
+$writer.WriteLine("screen $([AliaBox.Pointer]::GetSystemMetrics(0)) $([AliaBox.Pointer]::GetSystemMetrics(1))")
 $end = [DateTime]::UtcNow.AddSeconds([double]$Limit)
 $last = ''
-$spot = New-Object BbBox.Pointer+Spot
+$spot = New-Object AliaBox.Pointer+Spot
 while ([DateTime]::UtcNow -lt $end) {
-  if ([BbBox.Pointer]::GetCursorPos([ref]$spot)) {
+  if ([AliaBox.Pointer]::GetCursorPos([ref]$spot)) {
     $buttons = 0
-    if ([BbBox.Pointer]::GetAsyncKeyState(1) -band 0x8000) { $buttons = $buttons -bor 1 }
-    if ([BbBox.Pointer]::GetAsyncKeyState(4) -band 0x8000) { $buttons = $buttons -bor 2 }
-    if ([BbBox.Pointer]::GetAsyncKeyState(2) -band 0x8000) { $buttons = $buttons -bor 4 }
+    if ([AliaBox.Pointer]::GetAsyncKeyState(1) -band 0x8000) { $buttons = $buttons -bor 1 }
+    if ([AliaBox.Pointer]::GetAsyncKeyState(4) -band 0x8000) { $buttons = $buttons -bor 2 }
+    if ([AliaBox.Pointer]::GetAsyncKeyState(2) -band 0x8000) { $buttons = $buttons -bor 4 }
     $now = "$($spot.X) $($spot.Y) $buttons"
     if ($now -ne $last) { $writer.WriteLine(('{0:f3} {1}' -f ([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() / 1000), $now)); $last = $now }
   }
@@ -1237,7 +1237,7 @@ export function recordPage(title: string, mp4: string, chapters: readonly Chapte
 `;
 }
 
-/** The preview's height in BB, for a clip of `size` (WxH) shown about 640 wide. */
+/** The preview's height in VesnALIA, for a clip of `size` (WxH) shown about 640 wide. */
 export const STEP_ROWS_SHOWN = 4;
 const STEP_ROW_PX = 46;
 const STEP_LIST_PAD_PX = 16;

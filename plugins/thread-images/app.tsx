@@ -9,7 +9,7 @@ import {
   experimental_useRpcQuery as useRpcQuery,
   type ExperimentalMessageMetadataProps,
   type ExperimentalThreadContextCardProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { rpcContract, type ReadImage, type ThreadImages } from "./contract";
 import { imagesAbove, threadGallery } from "./placement";
 
@@ -94,7 +94,7 @@ function useCollapsed(): [boolean, () => void] {
   return [collapsed, toggle];
 }
 
-// bb's icon set has no picture glyph; this one follows its 24px, 1.5-stroke style.
+// VesnALIA's icon set has no picture glyph; this one follows its 24px, 1.5-stroke style.
 function PictureIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground max-md:pointer-coarse:size-4">

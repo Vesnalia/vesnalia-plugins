@@ -1,7 +1,7 @@
 import { test, loadPluginApp, renderSlot, createElement, act, waitFor } from '../helpers/dom.mjs';
 import { deferred } from '../helpers/deferred.mjs';
 import assert from 'node:assert/strict';
-const { definePluginApp } = await import('@get-bb/plugin-sdk/app');
+const { definePluginApp } = await import('@vesnalia/plugin-sdk/app');
 const { useDashboardSnapshot } = await import('../../hooks/use-dashboard-snapshot.ts');
 const config = { projects: [{ id: 'p1', enabled: true, connectedAt: 100 }], launcher: [], sharedPool: true };
 const snapshot = (changes = {}) => ({ config: structuredClone(config), tracked: [], syncError: null, syncedAt: 150, ...changes });

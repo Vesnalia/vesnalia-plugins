@@ -11,7 +11,7 @@
  *    it carries an icon and a word too, so the state survives colourblindness,
  *    greyscale printing, and forced-colours mode.
  *
- * Colours are BB theme tokens rather than literals, so light and dark are the
+ * Colours are VesnALIA theme tokens rather than literals, so light and dark are the
  * host's already-designed pairs instead of an automatic flip.
  */
 import type { PressureLevel, Risk } from "./contract";

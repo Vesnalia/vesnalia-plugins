@@ -5,7 +5,7 @@
 // issue's link to a GitHub issue is read, and how the text of
 // `bd github sync` is taken apart.
 // Why: the window lists and marks issues from the first two, and shows the
-// owner what a sync would do from the third (bead-bb-rh3). The lines the
+// owner what a sync would do from the third (bead-alia-rh3). The lines the
 // command prints are taken from its source (beads 1.3.1).
 
 import assert from "node:assert/strict";

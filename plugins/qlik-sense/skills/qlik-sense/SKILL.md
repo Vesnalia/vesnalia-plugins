@@ -24,7 +24,7 @@ the general advice below, follow the guide.
    sheet whose note matches the question.
 2. No sheet fits? `qlik_list_sheets` shows every sheet of an enabled app.
 3. The app is not enabled? You cannot read it. Ask the user to tick it in the
-   bb sidebar → Qlik Sense → Reports, or to paste its link under "Can't find a
+   VesnALIA sidebar → Qlik Sense → Reports, or to paste its link under "Can't find a
    report?" — the panel tells them whether their account can open it and how to
    ask for access.
 

@@ -1,5 +1,5 @@
 // polza: running ruble estimate for one bridge attachment.
-import type { ThreadEventTokenUsageBreakdown } from "@get-bb/plugin-sdk/provider-bridge";
+import type { ThreadEventTokenUsageBreakdown } from "@vesnalia/plugin-sdk/provider-bridge";
 import {
   estimatePolzaCostRub,
   type PolzaCostState,

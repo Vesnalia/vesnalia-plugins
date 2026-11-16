@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRealtime } from "@vesnalia/plugin-sdk/app";
 import type { MeetingAnalysis, SummaryTemplate } from "../shared/analysis";
 import { Button } from "@/components/ui/button";
 import { AgentPrompt } from "./ask-panel";

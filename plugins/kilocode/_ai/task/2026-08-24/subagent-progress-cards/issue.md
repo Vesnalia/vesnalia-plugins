@@ -2,13 +2,13 @@
 
 ## Original GitHub Issue
 
-Add KiloCode subagent work to the BB chat session using native BB UI where possible. While a subagent runs, show its task and a compact stream of recent events; keep older activity collapsed; show the final output when complete. Use OpenChamber as UX reference, preserve the plugin's architecture, and keep scope small.
+Add KiloCode subagent work to the VesnALIA chat session using native VesnALIA UI where possible. While a subagent runs, show its task and a compact stream of recent events; keep older activity collapsed; show the final output when complete. Use OpenChamber as UX reference, preserve the plugin's architecture, and keep scope small.
 
 ## Acceptance Criteria
 
-- A running KiloCode subagent is represented inline in its parent BB chat session.
+- A running KiloCode subagent is represented inline in its parent VesnALIA chat session.
 - The representation identifies the subagent task and shows a bounded list of its most recent meaningful events.
-- Older events do not expand the chat indefinitely and remain available through a compact disclosure when supported by native BB UI.
+- Older events do not expand the chat indefinitely and remain available through a compact disclosure when supported by native VesnALIA UI.
 - Completion replaces or resolves live progress into one final output without duplicate chat content.
 - Missing, delayed, or unsupported subagent events degrade safely without disrupting ordinary KiloCode messages.
 - Existing non-subagent streaming behavior remains unchanged.
@@ -17,7 +17,7 @@ Add KiloCode subagent work to the BB chat session using native BB UI where possi
 
 ### Happy Path: Follow a subagent from work to result
 
-Given an KiloCode assistant delegates work to a subagent in a BB chat session
+Given an KiloCode assistant delegates work to a subagent in a VesnALIA chat session
 When the subagent emits work events and then completes
 Then the parent chat shows its task, a bounded view of recent activity, and one final output without flooding the transcript
 
@@ -26,7 +26,7 @@ Then the parent chat shows its task, a bounded view of recent activity, and one 
 ### Edge Path: Preserve chat when subagent activity is incomplete
 
 Given a subagent event is delayed, missing, or not recognized
-When BB renders the parent chat session
+When VesnALIA renders the parent chat session
 Then ordinary messages remain usable and the subagent area stays stable without duplicate or broken output
 
 ## Research Index
@@ -41,7 +41,7 @@ Then ordinary messages remain usable and the subagent area stays stable without 
 
 ### A. Native delegation projection — recommended
 
-Keep the existing BB `delegation` item and `parentRef` nesting. Filter child projection to operational activity; leave child prose/reasoning out so the parent Task summary is the single final Output. No plugin frontend code.
+Keep the existing VesnALIA `delegation` item and `parentRef` nesting. Filter child projection to operational activity; leave child prose/reasoning out so the parent Task summary is the single final Output. No plugin frontend code.
 
 - Complexity: low
 - Estimate: 30–60 minutes including tests
@@ -52,7 +52,7 @@ Keep the existing BB `delegation` item and `parentRef` nesting. Filter child pro
 Build a React/content-script clone of OpenChamber and poll an RPC for child activity.
 
 - Complexity: high
-- Rejected: duplicates BB state/UI, relies on host DOM, adds polling and accessibility work.
+- Rejected: duplicates VesnALIA state/UI, relies on host DOM, adds polling and accessibility work.
 - Regression probe: custom and native cards never duplicate one Task.
 
 ### C. Server-collapsed synthetic summary
@@ -67,6 +67,6 @@ Replace nested deltas with a custom rolling summary payload rendered by a plugin
 
 Selected A after independent Kimi 3 and Grok 4.6 critiques.
 
-- Agreement: retain BB native delegation; reject custom frontend/RPC/polling.
+- Agreement: retain VesnALIA native delegation; reject custom frontend/RPC/polling.
 - Revision: suppress all four child prose/reasoning variants across snapshot and `session.next` paths, and avoid prose-only empty turns.
 - Guardrail: preserve unknown non-prose operational events and keep the parent Task close summary as the only Output source.

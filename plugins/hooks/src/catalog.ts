@@ -76,7 +76,7 @@ export async function fetchCatalog(
   const onAbort = () => controller.abort(new Error("cancelled"));
   options.signal?.addEventListener("abort", onAbort, { once: true });
   try {
-    const headers: Record<string, string> = { accept: "application/json", "user-agent": "bb-plugin-hooks" };
+    const headers: Record<string, string> = { accept: "application/json", "user-agent": "alia-plugin-hooks" };
     if (options.etag) headers["if-none-match"] = options.etag;
     const response = await fetchImpl(url, { headers, signal: controller.signal, redirect: "follow" });
     if (response.status === 304) return { status: "not-modified" };
@@ -174,7 +174,7 @@ export function createCatalogCache(db: Database.Database): CatalogCache {
 }
 
 export interface RegistryEntry {
-  /** What `bb hooks use` takes: the bare id for bundled templates, `catalog/id` otherwise. */
+  /** What `alia hooks use` takes: the bare id for bundled templates, `catalog/id` otherwise. */
   ref: string;
   source: "bundled" | string;
   sourceUrl: string | null;
@@ -208,7 +208,7 @@ export function createRegistry(bundled: readonly HookTemplate[], catalogs: () =>
       const bare = entries.filter((entry) => entry.template.id === ref);
       if (bare.length === 1) return { entry: bare[0]! };
       if (bare.length > 1) return { error: `"${ref}" is ambiguous; use one of ${bare.map((entry) => entry.ref).join(", ")}` };
-      return { error: `No template "${ref}". Run "bb hooks templates" or "bb hooks marketplace search <query>".` };
+      return { error: `No template "${ref}". Run "alia hooks templates" or "alia hooks marketplace search <query>".` };
     },
     search(query) {
       const needle = query.trim().toLowerCase();
@@ -227,7 +227,7 @@ export function createRegistry(bundled: readonly HookTemplate[], catalogs: () =>
 export function starterCatalogJson(name = "my-hooks"): string {
   const catalog: Catalog = {
     name,
-    description: "Hook templates for the BB Hooks plugin.",
+    description: "Hook templates for the VesnALIA Hooks plugin.",
     version: "1.0.0",
     author: "your-github-login",
     templates: [
@@ -238,8 +238,8 @@ export function starterCatalogJson(name = "my-hooks"): string {
         kind: "observe",
         events: ["thread.idle"],
         params: [{ key: "voice", label: "Voice", type: "string", default: "Samantha" }],
-        command: 'say -v {{voice}} "Finished $BB_THREAD_TITLE"',
-        notes: "Publish this file as hooks-catalog.json in a GitHub repo; users add it with `bb hooks marketplace add owner/repo`.",
+        command: 'say -v {{voice}} "Finished $ALIA_THREAD_TITLE"',
+        notes: "Publish this file as hooks-catalog.json in a GitHub repo; users add it with `alia hooks marketplace add owner/repo`.",
       },
     ],
   };

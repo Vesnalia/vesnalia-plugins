@@ -7,7 +7,7 @@
 
 export type Tab = { terminalId: string; label: string; cwd: string };
 
-/** The tab list loaded from BB, tagged with the scope it was loaded for. */
+/** The tab list loaded from VesnALIA, tagged with the scope it was loaded for. */
 export type LoadedTabs = { scope: string; tabs: readonly Tab[] } | null;
 
 export type ScopeView = { tabs: readonly Tab[]; activeId: string | null };

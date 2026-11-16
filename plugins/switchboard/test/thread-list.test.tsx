@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginThreadListProps } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginThreadListProps } from "@vesnalia/plugin-sdk/app";
 import type { RpcContract } from "../src/rpc";
 import { isCollapseKey, type CollapseKey } from "../src/layout";
 import { layoutWriteFakes, sidebarProject, sidebarSection, sidebarThread } from "./fixtures";
@@ -47,7 +47,7 @@ async function mount(extra: Record<string, unknown> = {}, slotProps: PluginThrea
     sidebarShortcuts: { pin: { label: "⌘1", ariaKeyshortcuts: "Meta+1" } },
     sidebarRowStatuses: { pin: { icon: "Check", label: "Checked", tone: "success" } },
     sidebarDraftThreadIds: ["loose"],
-    threadActions: () => [{ key: "bb--core/archive", pluginId: "bb--core", group: "thread", action: {
+    threadActions: () => [{ key: "alia--core/archive", pluginId: "alia--core", group: "thread", action: {
       label: "Archive", icon: "Archive", run: async () => {},
     } }],
     ...extra,
@@ -96,7 +96,7 @@ describe("Switchboard sidebar", () => {
     slot.unmount();
   });
 
-  it("opens bb's menus, invokes navigation and focuses the filter with slash", async () => {
+  it("opens VesnALIA's menus, invokes navigation and focuses the filter with slash", async () => {
     const slot = await mount();
     fireEvent.click(screen.getAllByRole("button", { name: "Thread actions" })[0]);
     expect(screen.getByRole("menuitem", { name: "Archive" })).toBeTruthy();

@@ -1,8 +1,8 @@
-// bb-plugin-chat-sidebar — backend. The list lives in the frontend; the
-// backend declares the settings bb shows on the plugin's page and keeps what
+// alia-plugin-chat-sidebar — backend. The list lives in the frontend; the
+// backend declares the settings VesnALIA shows on the plugin's page and keeps what
 // syncs across devices: the colour picked for each project, the folders, the
 // icons picked for chats, and the quick buttons on a row.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import { MAX_CHAT_ICONS, sanitizeChatIconState, type ChatIconState } from "./lib/chat-icons";
 import { isColorId } from "./lib/colors";
@@ -28,11 +28,11 @@ const CHAT_ICONS_KEY = "chat-icons";
 /** One key per folder: a picture is up to 200KB and a value at most 256KB. */
 const IMAGE_PREFIX = "folder-image:";
 
-export default function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define(SETTINGS);
+export default function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define(SETTINGS);
 
   const read = async (): Promise<ProjectColorMap> => {
-    const stored = await bb.storage.kv.get<Record<string, unknown>>(COLORS_KEY);
+    const stored = await alia.storage.kv.get<Record<string, unknown>>(COLORS_KEY);
     const colors: ProjectColorMap = {};
     for (const [projectId, color] of Object.entries(stored ?? {})) {
       if (isColorId(color)) colors[projectId] = color;
@@ -50,8 +50,8 @@ export default function plugin(bb: BbPluginApi) {
       if (ids.length > MAX_PROJECT_COLORS) {
         for (const id of ids.slice(0, ids.length - MAX_PROJECT_COLORS)) delete colors[id];
       }
-      await bb.storage.kv.set(COLORS_KEY, colors);
-      bb.realtime.publish(COLORS_CHANNEL, colors);
+      await alia.storage.kv.set(COLORS_KEY, colors);
+      alia.realtime.publish(COLORS_CHANNEL, colors);
       return colors;
     });
     queue = write.catch(() => undefined);
@@ -60,7 +60,7 @@ export default function plugin(bb: BbPluginApi) {
 
   // --- chat icons picked by hand
 
-  const readIcons = async (): Promise<ChatIconState> => sanitizeChatIconState(await bb.storage.kv.get<unknown>(CHAT_ICONS_KEY));
+  const readIcons = async (): Promise<ChatIconState> => sanitizeChatIconState(await alia.storage.kv.get<unknown>(CHAT_ICONS_KEY));
 
   let iconQueue: Promise<unknown> = Promise.resolve();
   const setIcon = (threadId: string, icon: string | null): Promise<ChatIconState> => {
@@ -72,8 +72,8 @@ export default function plugin(bb: BbPluginApi) {
       const ids = Object.keys(icons);
       for (const id of ids.slice(0, Math.max(0, ids.length - MAX_CHAT_ICONS))) delete icons[id];
       const next = { revision: revision + 1, icons };
-      await bb.storage.kv.set(CHAT_ICONS_KEY, next);
-      bb.realtime.publish(CHAT_ICONS_CHANNEL, next);
+      await alia.storage.kv.set(CHAT_ICONS_KEY, next);
+      alia.realtime.publish(CHAT_ICONS_CHANNEL, next);
       return next;
     });
     iconQueue = write.catch(() => undefined);
@@ -82,12 +82,12 @@ export default function plugin(bb: BbPluginApi) {
 
   // --- folder pictures (experimental)
 
-  const imageKeys = async () => (await bb.storage.kv.list(IMAGE_PREFIX)).filter((key) => key.startsWith(IMAGE_PREFIX));
+  const imageKeys = async () => (await alia.storage.kv.list(IMAGE_PREFIX)).filter((key) => key.startsWith(IMAGE_PREFIX));
 
   const readImages = async (): Promise<FolderImageMap> => {
     const images: FolderImageMap = {};
     for (const key of await imageKeys()) {
-      const image = await bb.storage.kv.get<unknown>(key);
+      const image = await alia.storage.kv.get<unknown>(key);
       if (isFolderImage(image)) images[key.slice(IMAGE_PREFIX.length)] = image;
     }
     return images;
@@ -97,14 +97,14 @@ export default function plugin(bb: BbPluginApi) {
   const setImage = (folderId: string, image: string | null): Promise<FolderImageMap> => {
     const write = imageQueue.then(async () => {
       if (image === null) {
-        await bb.storage.kv.delete(IMAGE_PREFIX + folderId);
+        await alia.storage.kv.delete(IMAGE_PREFIX + folderId);
       } else {
         const keys = await imageKeys();
         if (!keys.includes(IMAGE_PREFIX + folderId) && keys.length >= MAX_FOLDER_IMAGES) throw new Error(`Up to ${MAX_FOLDER_IMAGES} folder pictures`);
-        await bb.storage.kv.set(IMAGE_PREFIX + folderId, image);
+        await alia.storage.kv.set(IMAGE_PREFIX + folderId, image);
       }
       const images = await readImages();
-      bb.realtime.publish(FOLDER_IMAGES_CHANNEL, images);
+      alia.realtime.publish(FOLDER_IMAGES_CHANNEL, images);
       return images;
     });
     imageQueue = write.catch(() => undefined);
@@ -123,7 +123,7 @@ export default function plugin(bb: BbPluginApi) {
   // at a time and read what is current when they run, not what set them off.
   let syncQueue: Promise<unknown> = Promise.resolve();
   const inStep = (task: () => Promise<void>, failure: string) => {
-    syncQueue = syncQueue.then(task).catch((cause: unknown) => bb.log.warn(`${failure}: ${String(cause)}`));
+    syncQueue = syncQueue.then(task).catch((cause: unknown) => alia.log.warn(`${failure}: ${String(cause)}`));
   };
   // Settings written here to follow the layout, until their change comes back:
   // that change is not the user's and must not move the layout again.
@@ -150,12 +150,12 @@ export default function plugin(bb: BbPluginApi) {
       }
     }, "folder settings not synced");
 
-  const folders = createFolderStore(bb.storage.kv, (state) => {
-    bb.realtime.publish(FOLDERS_CHANNEL, state);
+  const folders = createFolderStore(alia.storage.kv, (state) => {
+    alia.realtime.publish(FOLDERS_CHANNEL, state);
     syncSettings();
   });
 
-  // And the other way: a setting changed on bb's settings page shows or hides the folder.
+  // And the other way: a setting changed on VesnALIA's settings page shows or hides the folder.
   settings.onChange((next, prev) => {
     if (keyOf(legacy(next)) === keyOf(legacy(prev))) return;
     const own = ownWrites.indexOf(keyOf(legacy(next)));
@@ -174,17 +174,17 @@ export default function plugin(bb: BbPluginApi) {
     }, "folders not updated from settings");
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     folders_get: () => folders.get(),
     folders_set: ({ layout, baseRevision }) => folders.save(layout, baseRevision),
     folders_history: () => folders.history(),
     folders_restore: ({ revision }) => folders.restore(revision),
     rowactions_get: async () => {
-      return sanitizeRowActions(await bb.storage.kv.get<unknown>(ROW_ACTIONS_KEY));
+      return sanitizeRowActions(await alia.storage.kv.get<unknown>(ROW_ACTIONS_KEY));
     },
     rowactions_set: async ({ keys }) => {
-      await bb.storage.kv.set(ROW_ACTIONS_KEY, keys);
-      bb.realtime.publish(ROW_ACTIONS_CHANNEL, keys);
+      await alia.storage.kv.set(ROW_ACTIONS_KEY, keys);
+      alia.realtime.publish(ROW_ACTIONS_CHANNEL, keys);
       return keys;
     },
     settings_set: async ({ folderLayout, phoneFolderLayout, folderNames }) => {

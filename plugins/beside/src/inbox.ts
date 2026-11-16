@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import { mostUrgentIndicator } from "./statusRollup";
 
 /**
@@ -46,7 +46,7 @@ export function filterByProject(
   return threads.filter((thread) => thread.projectId === projectId);
 }
 
-/** Archived threads, and the hidden helper threads bb's own list leaves out. */
+/** Archived threads, and the hidden helper threads VesnALIA's own list leaves out. */
 export function visibleInboxThreads(
   threads: readonly PluginSidebarThread[],
 ): PluginSidebarThread[] {

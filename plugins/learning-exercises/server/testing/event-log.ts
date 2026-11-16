@@ -1,10 +1,10 @@
 /**
- * bb's thread event list as the tests serve it: newest first, paged by `beforeSeq`, and refusing a page
- * larger than bb takes, with bb's own message, so a read that asks for more fails here as it does live.
+ * VesnALIA's thread event list as the tests serve it: newest first, paged by `beforeSeq`, and refusing a page
+ * larger than VesnALIA takes, with VesnALIA's own message, so a read that asks for more fails here as it does live.
  */
 
-/** bb 0.48.1's `THREAD_EVENT_LIST_PAGE_SIZE`: a larger `limit` is an HTTP 400. */
-export const BB_EVENT_PAGE_MAX = 100;
+/** VesnALIA 0.48.1's `THREAD_EVENT_LIST_PAGE_SIZE`: a larger `limit` is an HTTP 400. */
+export const ALIA_EVENT_PAGE_MAX = 100;
 
 export interface LogRow {
   seq: number;
@@ -23,10 +23,10 @@ export interface EventListInput {
   beforeSeq?: string;
 }
 
-/** One `threads.events.list` call over `rows`, as bb answers it. */
+/** One `threads.events.list` call over `rows`, as VesnALIA answers it. */
 export function listEvents(rows: readonly LogRow[], input: EventListInput) {
-  const limit = input.limit === undefined ? BB_EVENT_PAGE_MAX : Number(input.limit);
-  if (!(limit <= BB_EVENT_PAGE_MAX)) throw new Error(`HTTP 400: Thread event limit cannot exceed ${BB_EVENT_PAGE_MAX}`);
+  const limit = input.limit === undefined ? ALIA_EVENT_PAGE_MAX : Number(input.limit);
+  if (!(limit <= ALIA_EVENT_PAGE_MAX)) throw new Error(`HTTP 400: Thread event limit cannot exceed ${ALIA_EVENT_PAGE_MAX}`);
   if (input.order !== "desc") throw new Error("the fake event log serves newest first only");
   const before = input.beforeSeq === undefined ? Infinity : Number(input.beforeSeq);
   return rows

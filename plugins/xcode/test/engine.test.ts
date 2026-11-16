@@ -152,7 +152,7 @@ describe("lifecycle: running → finishing → ended", () => {
     engine.foldSnapshot([activity()], 1_000_000);
     const orphan = store.listRuns({ limit: 1 })[0]!.id;
 
-    // bb restarts. The build is long gone, but the row still says `running`
+    // VesnALIA restarts. The build is long gone, but the row still says `running`
     // and still names pid 100 — which the OS has since handed to a new build.
     const second = new Engine(store, hooks);
     second.hydrate(9_000_000);
@@ -845,7 +845,7 @@ describe("foldThreadCommandExit", () => {
     expect(store.getRun(id)!.status).toBe("failed");
   });
 
-  // Production, 2026-08-10: bb reports `cwd: ""` on every commandExecution
+  // Production, 2026-08-10: VesnALIA reports `cwd: ""` on every commandExecution
   // item and the agent wrote a RELATIVE script path, so the old path-matching
   // arm had no absolute path to find and the build sat at "ended" forever.
   // The same build resolved fine when the agent happened to write
@@ -900,7 +900,7 @@ describe("foldThreadCommandExit", () => {
     expect(VERDICT_STATUSES.has(store.getRun(id)!.status)).toBe(false);
   });
 
-  it("ignores a bb xcode status poll loop", () => {
+  it("ignores a VesnALIA xcode status poll loop", () => {
     const id = startThreadRun();
     retire(1_002_000);
 
@@ -909,7 +909,7 @@ describe("foldThreadCommandExit", () => {
         taskId: "task_build",
         threadId: "thr_build",
         command:
-          'until ! bb xcode status 2>/dev/null | grep -q "^Active (1)"; do sleep 5; done',
+          'until ! VesnALIA xcode status 2>/dev/null | grep -q "^Active (1)"; do sleep 5; done',
         cwd: "",
         startedAt: 990_000,
         endedAt: 1_060_000,

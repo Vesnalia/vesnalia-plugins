@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { definePluginApp, Markdown, UrlLink, useBbNavigate, useRpc, type PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, Markdown, UrlLink, useAliaNavigate, useRpc, type PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { ProjectPageData, rpcContract } from "./server";
 import { mountProjectTitleLinks } from "./title-link";
 import "./app.css";
 
 function ProjectTitleLinks() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   useEffect(() => mountProjectTitleLinks(document, projectId => navigate.toPluginPanel("home", { subPath: projectId })), [navigate]);
   return null;
 }
@@ -13,7 +13,7 @@ function ProjectTitleLinks() {
 function ProjectPage({ subPath }: PluginNavPanelProps) {
   const projectId = subPath.replace(/^\/+|\/+$/g, "");
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [projects, setProjects] = useState<{ id: string; name: string }[] | null>(null);
   const [data, setData] = useState<ProjectPageData | null>(null);
   const [error, setError] = useState<string | null>(null);

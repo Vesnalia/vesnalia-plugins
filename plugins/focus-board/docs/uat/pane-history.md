@@ -4,7 +4,7 @@ _Generated 2026-11-06T15:50:32.446Z by `npm run uat`._
 
 ## pane-history
 
-Source: `/Users/cristos/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_4qh62ybyi5-1/bb-plugin-focus-board/tests/manual/uat-pane-history.yaml` · theme dark
+Source: `/Users/cristos/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_4qh62ybyi5-1/alia-plugin-focus-board/tests/manual/uat-pane-history.yaml` · theme dark
 
 | Step | Result | Detail |
 | --- | --- | --- |
@@ -12,7 +12,7 @@ Source: `/Users/cristos/.bb/plugins/environment-git-worktree/host-data/worktrees
 | Switching cards pushes, so each opened pane is one history entry | pass | ✓ pane shows thr_rpc_auth; ✓ url ends with /board/t/thr_rpc_auth |
 | Back reopens the previous card's pane — the card you lost track of | pass | ✓ pane shows thr_uat_queue; ✓ active card is thr_uat_queue; ✓ url ends with /board/t/thr_uat_queue |
 | Back from the first opened card closes the pane at the panel root | pass | ✓ pane closed; ✓ active card is (none); ✓ url ends with ?groupBy=status |
-| The bb back-arrow case — out to another surface, back, pane restored | pass | ✓ pane shows thr_uat_queue; ✓ active card is thr_uat_queue; ✓ url ends with /board/t/thr_uat_queue |
+| The VesnALIA back-arrow case — out to another surface, back, pane restored | pass | ✓ pane shows thr_uat_queue; ✓ active card is thr_uat_queue; ✓ url ends with /board/t/thr_uat_queue |
 | Escape closes the pane by pushing the root — back after a close reopens | pass | ✓ pane closed; ✓ active card is (none); ✓ url ends with /board |
 | Back after a close reopens the last pane — close is not lost work | pass | ✓ pane shows thr_uat_queue; ✓ url ends with /board/t/thr_uat_queue |
 | A deep link to the panel's thread subPath opens the board with that pane | pass | ✓ pane shows thr_rpc_auth; ✓ active card is thr_rpc_auth |

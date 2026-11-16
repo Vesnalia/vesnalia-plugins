@@ -47,7 +47,7 @@ export function neverDelete(): Set<string> {
       `${home}/.ssh`,
       `${home}/.gnupg`,
       `${home}/.config`,
-      `${home}/.bb`,
+      `${home}/.vesnalia`,
       `${home}/.claude`,
     ].map((path) => normalize(path)),
   );

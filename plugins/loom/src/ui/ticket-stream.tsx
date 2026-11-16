@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
-import { experimental_Icon as Icon, Markdown, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, Markdown, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { ActivityItem, Attempt, ChecksItem, Mark, PostDto, TicketDetail } from "../contract";
 import { formatDuration, plural } from "../format";
 import { BUTTON, FIELD } from "./common";
@@ -115,7 +115,7 @@ function Composer({ ctx, postId }: { ctx: StreamCtx; postId: number }) {
 }
 
 function PostCard({ ctx, post, withReplies }: { ctx: StreamCtx; post: PostDto; withReplies: boolean }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const expanded = ctx.expanded.has(post.id);
   const { ref, long } = useLong(post.body, expanded);
   const tag = KIND_TAGS[post.kind];
@@ -293,7 +293,7 @@ function Pulse() {
 
 /** What the newest attempt is doing now. Checking needs none: the running check card shows it. */
 function LiveRow({ ctx, attempt }: { ctx: StreamCtx; attempt: Attempt }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { ticket, now } = ctx;
   const reviewer = ticket.threads.filter((thread) => thread.role === "reviewer" && thread.state !== "ended" && thread.threadId !== null && thread.reviewRound === ticket.reviewRound).at(-1);
   const row = (live: boolean, text: ReactNode, action?: ReactNode) => (
@@ -349,7 +349,7 @@ function LiveRow({ ctx, attempt }: { ctx: StreamCtx; attempt: Attempt }) {
 }
 
 function AttemptCard({ ctx, attempt, newest, open, onToggle, openFailed }: { ctx: StreamCtx; attempt: Attempt; newest: boolean; open: boolean; onToggle(): void; openFailed: ChecksItem | null }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const outcome = OUTCOMES[attempt.outcome];
   const unstarted = attempt.threadId === null && attempt.endedAt !== null;
   return (
@@ -431,7 +431,7 @@ const holds = (attempt: Attempt, postId: number) => attempt.items.some((item) =>
 
 /** Every attempt as a card, newest first by default, with the planning group after them; the newest attempt starts open. */
 export function Stream({ ticket, now, busy, onReply, onBrief, jumpTo }: { ticket: TicketDetail; now: number; busy: boolean; onReply(body: string, parentId?: number): Promise<boolean>; onBrief(): void; jumpTo: { postId: number; seq: number } | null }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const root = useRef<HTMLDivElement>(null);
   const [order, setOrder] = useState<"newest" | "oldest">("newest");
   const [opened, setOpened] = useState<Record<number, boolean>>({});

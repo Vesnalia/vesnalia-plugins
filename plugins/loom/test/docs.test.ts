@@ -9,13 +9,13 @@ import { makeHost } from "./helpers";
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const host = makeHost();
 // Each command as it is typed, such as "forge check", from the start of its usage line.
-const commands = createCli(host.projects, host.engine, host.store, Date.now).commands!.map((command) => command.usage.replace(/^bb loom /, "").split(/ [<[]/)[0]!);
+const commands = createCli(host.projects, host.engine, host.store, Date.now).commands!.map((command) => command.usage.replace(/^alia loom /, "").split(/ [<[]/)[0]!);
 const tools = [...new Set([...ORDINARY_TOOLS, ...PLANNER_TOOLS, ...WORKER_TOOLS, ...REVIEWER_TOOLS, ...SPEC_REVIEWER_TOOLS, ...FINAL_REVIEWER_TOOLS])];
 
 describe("the plugin's own documents", () => {
-  it("declares skill roots the way bb reads them, so configure() can select every skill", () => {
-    // bb reads each manifest skills entry as a directory of skill directories; a skill directory itself loads nothing.
-    const roots: string[] = JSON.parse(read("package.json")).bb.skills;
+  it("declares skill roots the way VesnALIA reads them, so configure() can select every skill", () => {
+    // VesnALIA reads each manifest skills entry as a directory of skill directories; a skill directory itself loads nothing.
+    const roots: string[] = JSON.parse(read("package.json")).alia.skills;
     const found = roots.flatMap((root) =>
       readdirSync(new URL(`../${root}/`, import.meta.url), { withFileTypes: true })
         .filter((entry) => entry.isDirectory() && existsSync(new URL(`../${root}/${entry.name}/SKILL.md`, import.meta.url)))
@@ -24,8 +24,8 @@ describe("the plugin's own documents", () => {
     for (const id of Object.values(SKILLS)) expect(found, id).toContain(id);
   });
 
-  it("keeps each skill's frontmatter within what bb registers, so configure() finds every skill", () => {
-    // bb drops a skill whose description is over 1,024 characters, and configure() then fails for every Loom agent.
+  it("keeps each skill's frontmatter within what VesnALIA registers, so configure() finds every skill", () => {
+    // VesnALIA drops a skill whose description is over 1,024 characters, and configure() then fails for every Loom agent.
     for (const id of Object.values(SKILLS)) {
       const frontmatter = /^---\n([\s\S]*?)\n---/u.exec(read(`skills/${id}/SKILL.md`))?.[1] ?? "";
       const name = /^name:\s*(.+)$/mu.exec(frontmatter)?.[1]?.trim();
@@ -37,10 +37,10 @@ describe("the plugin's own documents", () => {
     }
   });
 
-  it("README names every bb loom command and every agent tool", () => {
+  it("README names every VesnALIA loom command and every agent tool", () => {
     const readme = read("README.md");
     expect(commands.length).toBeGreaterThanOrEqual(17);
-    for (const command of commands) expect(readme, command).toContain(`bb loom ${command}`);
+    for (const command of commands) expect(readme, command).toContain(`alia loom ${command}`);
     for (const tool of tools) expect(readme, tool).toContain(tool);
   });
 
@@ -80,7 +80,7 @@ describe("the plugin's own documents", () => {
   it("README and the loom skill describe the report and the done hook", () => {
     for (const path of ["README.md", "skills/loom/SKILL.md"]) {
       const text = read(path);
-      for (const phrase of ["bb loom report", "done hook"]) expect(text, `${path}: ${phrase}`).toContain(phrase);
+      for (const phrase of ["alia loom report", "done hook"]) expect(text, `${path}: ${phrase}`).toContain(phrase);
     }
     const readme = read("README.md");
     for (const phrase of ["doneHook", "doneRecord", "LOOM_PROJECT_SLUG", "LOOM_PROJECT_NAME", "LOOM_PROJECT_KEY", "LOOM_PROJECT_URL", "LOOM_RECORD"]) expect(readme, phrase).toContain(phrase);
@@ -157,7 +157,7 @@ describe("the plugin's own documents", () => {
   it("README and the loom skill say a reply on a blocked ticket reaches the planner, providers are checked, and approval sends a refused reviewer's ticket back to review", () => {
     for (const path of ["README.md", "skills/loom/SKILL.md"]) {
       const text = read(path).replace(/\s+/g, " ");
-      for (const phrase of ["reply on a blocked ticket", "back to review", "bb provider id"]) expect(text, `${path}: ${phrase}`).toContain(phrase);
+      for (const phrase of ["reply on a blocked ticket", "back to review", "alia provider id"]) expect(text, `${path}: ${phrase}`).toContain(phrase);
     }
     for (const path of ["skills/loom/references/spec.md", "skills/loom-plan/SKILL.md"]) expect(read(path), path).toContain("claude-code");
   });
@@ -181,7 +181,7 @@ describe("the plugin's own documents", () => {
 
   it("README, the loom skill and the overview describe the direct land, and README and the skill the home page's search and Finished group", () => {
     for (const path of ["README.md", "skills/loom/SKILL.md"]) {
-      expect(read(path), path).toContain("bb loom land <slug> --direct");
+      expect(read(path), path).toContain("alia loom land <slug> --direct");
       expect(read(path), path).toContain("Finished");
     }
     expect(read("PLUGIN_OVERVIEW.md")).toContain("--direct");
@@ -198,7 +198,7 @@ describe("the plugin's own documents", () => {
     expect(table).toContain("### [[repo]]");
     for (const key of ["name", "project", "base", "remote", "checks", "after_merge", "protected"]) expect(table, key).toContain(`| \`${key}\` |`);
     expect(spec).toMatch(/^\| `repo` \| string \|/m);
-    for (const phrase of ["the same `name`", "has no `repo`", "bb project source add <id> --clone --machine <host>", "removes or renames an approved repo"]) expect(spec, phrase).toContain(phrase);
+    for (const phrase of ["the same `name`", "has no `repo`", "alia project source add <id> --clone --machine <host>", "removes or renames an approved repo"]) expect(spec, phrase).toContain(phrase);
 
     const examples = [...spec.matchAll(/```toml\n([\s\S]*?)```/g)].map((match) => parseSpec(match[1]!));
     expect(examples.length).toBeGreaterThanOrEqual(2);
@@ -225,7 +225,7 @@ describe("the plugin's own documents", () => {
 
   it("the loom-plan skill says how to find repos, offers to clone a missing checkout, and splits cross-repo work per repo", () => {
     const plan = read("skills/loom-plan/SKILL.md");
-    for (const phrase of ["bb project list", "bb project discover", "--clone", "bb project create --root <path> --machine <host>", "only after they agree", "one ticket per repo", "starting point, not a limit"]) {
+    for (const phrase of ["alia project list", "alia project discover", "--clone", "alia project create --root <path> --machine <host>", "only after they agree", "one ticket per repo", "starting point, not a limit"]) {
       expect(plan, phrase).toContain(phrase);
     }
   });
@@ -258,7 +258,7 @@ describe("the plugin's own documents", () => {
       for (const name of ["LOOM_EVENT", "LOOM_TICKET_KEY", "LOOM_URL", "[[hook]]"]) expect(text, `${path}: ${name}`).toContain(name);
     }
     for (const path of ["README.md", "skills/loom-plan/SKILL.md"]) expect(read(path), path).toMatch(/Planner instructions/);
-    expect(read("README.md")).toContain("bb plugin config loom set plannerInstructions");
+    expect(read("README.md")).toContain("alia plugin config loom set plannerInstructions");
   });
 
   it("the README's safety rules name the default permission mode", () => {
@@ -267,9 +267,9 @@ describe("the plugin's own documents", () => {
 
   it("the skill names every command, says what the page and the metrics are, and forbids calling Loom's RPC", () => {
     const skill = read("skills/loom/SKILL.md");
-    for (const command of commands) expect(skill, command).toContain(`bb loom ${command}`);
+    for (const command of commands) expect(skill, command).toContain(`alia loom ${command}`);
     for (const heading of ["## The Loom page", "## Metrics"]) expect(skill, heading).toContain(heading);
     expect(skill).toMatch(/NEVER call Loom's RPC/);
-    expect(skill).toContain("bb plugin rpc");
+    expect(skill).toContain("alia plugin rpc");
   });
 });

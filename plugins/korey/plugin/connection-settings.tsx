@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import {
   CONNECTION_SIGNAL_CHANNEL,
   type ConnectionView,
@@ -24,11 +24,11 @@ function describeAccount(view: ConnectionView): string {
 
 function describeToken(view: ConnectionView): string {
   if (view.method === "oauth") {
-    return "A personal access token is also saved. bb uses it only while your Korey account is disconnected.";
+    return "A personal access token is also saved. VesnALIA uses it only while your Korey account is disconnected.";
   }
   return view.account === null
-    ? "bb is using the saved personal access token."
-    : `bb is using the saved personal access token for ${view.account}.`;
+    ? "alia is using the saved personal access token."
+    : `alia is using the saved personal access token for ${view.account}.`;
 }
 
 export function ConnectionSettings() {
@@ -39,7 +39,7 @@ export function ConnectionSettings() {
   useEffect(() => {
     rpcRef.current = rpc;
   });
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [view, setView] = useState<ConnectionView | null>(null);
   const [authorizationUrl, setAuthorizationUrl] = useState<string | null>(null);
   const [redirectUrl, setRedirectUrl] = useState("");
@@ -186,7 +186,7 @@ export function ConnectionSettings() {
           {confirmingRemoval ? (
             <div className="space-y-2">
               <p>
-                Remove the token from bb? It stays valid in Korey until you
+                Remove the token from VesnALIA? It stays valid in Korey until you
                 revoke it there.
               </p>
               <div className="flex gap-2">

@@ -28,14 +28,14 @@ test("catalog adds several projects without closing or switching the current cha
     snapshot: () => ({ config: serverConfig, tracked: [], syncError: null, syncedAt: 150 }),
     catalog_change: operation => { serverConfig = applyCatalogChange(serverConfig, operation, 200); return structuredClone(serverConfig); },
   } });
-  const chat = await slot.findByTestId("bb-thread-chat");
+  const chat = await slot.findByTestId("alia-thread-chat");
   const dialog = await showCatalog(slot);
   for (const target of [secondProject, third]) {
     const row = within(dialog).getByRole("listitem", { name: target.name });
     await act(async () => fireEvent.click(within(row).getByRole("checkbox")));
     assert.equal(slot.getByRole("dialog"), dialog);
     assert.equal(row.dataset.added, "true");
-    assert.equal(slot.getByTestId("bb-thread-chat"), chat);
+    assert.equal(slot.getByTestId("alia-thread-chat"), chat);
     assert.equal(slot.container.querySelector('.db-project-tab[aria-selected="true"]').id, "db-project-tab-p1");
   }
   assert.deepEqual(serverConfig.projects.filter(p => p.enabled).map(p => p.id), ["p1", "p2", "p3"]);
@@ -47,16 +47,16 @@ test("catalog adds several projects without closing or switching the current cha
 
 test("catalog tabs and search preserve the native chat draft and selection", async () => {
   const slot = mount({ language: "en", connected: true, projects: [project, secondProject], threads: [thread("a", "p1", "Alpha")] });
-  const chat = await slot.findByTestId("bb-thread-chat");
+  const chat = await slot.findByTestId("alia-thread-chat");
   const editor = document.createElement("textarea"); editor.value = "Draft retained"; chat.append(editor); editor.setSelectionRange(2, 7);
   const dialog = await showCatalog(slot);
   fireEvent.change(within(dialog).getByRole("searchbox"), { target: { value: "no matches" } });
   assert.ok(within(dialog).getByText("No matches. Try a different name."));
   fireEvent.click(within(dialog).getByRole("tab", { name: "Applications" }));
-  assert.equal(slot.getByTestId("bb-thread-chat"), chat);
+  assert.equal(slot.getByTestId("alia-thread-chat"), chat);
   assert.equal(editor.value, "Draft retained"); assert.equal(editor.selectionStart, 2); assert.equal(editor.selectionEnd, 7);
   fireEvent.click(within(dialog).getByRole("button", { name: "Done" }));
-  assert.equal(slot.getByTestId("bb-thread-chat"), chat);
+  assert.equal(slot.getByTestId("alia-thread-chat"), chat);
 });
 
 test("catalog has only two tabs and searches original app names", async () => {
@@ -146,11 +146,11 @@ test("a missing language preference uses English even with a Russian document la
 
 test("switching language preserves mounted chat and catalog search and tab", async () => {
  const slot=mount({language:"en",connected:true,threads:[thread("t1","p1","Thread")]});
- const chat=await slot.findByTestId("bb-thread-chat"); const dialog=await showCatalog(slot);
+ const chat=await slot.findByTestId("alia-thread-chat"); const dialog=await showCatalog(slot);
  fireEvent.click(within(dialog).getByRole("tab",{name:"Applications"}));
  fireEvent.change(within(dialog).getByRole("searchbox"),{target:{value:"notes"}});
  await slot.setLanguage("ru");
- assert.equal(slot.getByTestId("bb-thread-chat"),chat);
+ assert.equal(slot.getByTestId("alia-thread-chat"),chat);
  assert.equal(slot.getByRole("searchbox").value,"notes");
  assert.equal(slot.getByRole("tab",{name:"Приложения"}).getAttribute("aria-selected"),"true");
 });

@@ -6,7 +6,7 @@ import { createDecipheriv, createHash } from 'node:crypto';
 import { homedir, platform, userInfo } from 'node:os';
 import { readFileSync, openSync, fstatSync, closeSync, constants } from 'node:fs';
 import { record } from './errors.ts';
-import { experimental_BridgeRecoveryError } from '@get-bb/plugin-sdk/provider-bridge';
+import { experimental_BridgeRecoveryError } from '@vesnalia/plugin-sdk/provider-bridge';
 import { signInHint } from './applications.ts';
 import { ProjectTokenResolver, ProjectTokenError, tokenRequest } from './project-token.ts';
 import type { TokenRequest } from './project-token.ts';

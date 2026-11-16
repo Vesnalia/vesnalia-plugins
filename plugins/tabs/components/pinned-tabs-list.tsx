@@ -54,8 +54,8 @@ export function PinnedTabsList({
     // built-in heading, which the current slot API cannot hide declaratively.
     return (
       <div
-        className="bb-chat-tabs-homepage-pinned-list"
-        data-testid="bb-chat-tabs-homepage-pinned-list"
+        className="alia-chat-tabs-homepage-pinned-list"
+        data-testid="alia-chat-tabs-homepage-pinned-list"
         data-visible="false"
         aria-hidden="true"
       />
@@ -63,21 +63,21 @@ export function PinnedTabsList({
   }
 
   const header = (
-    <div className="bb-chat-tabs-homepage-header">
-      <h2 className="bb-chat-tabs-homepage-pinned-heading">{t(heading)}</h2>
+    <div className="alia-chat-tabs-homepage-header">
+      <h2 className="alia-chat-tabs-homepage-pinned-heading">{t(heading)}</h2>
       {headerActions}
     </div>
   );
   if (loading || tabs.length === 0) {
     return (
       <div
-        className="bb-chat-tabs-homepage-pinned-list"
+        className="alia-chat-tabs-homepage-pinned-list"
         lang={locale}
-        data-testid="bb-chat-tabs-homepage-pinned-list"
+        data-testid="alia-chat-tabs-homepage-pinned-list"
         data-visible="true"
       >
         {header}
-        <p className="bb-chat-tabs-homepage-pinned-empty" role={loading ? "status" : undefined}>
+        <p className="alia-chat-tabs-homepage-pinned-empty" role={loading ? "status" : undefined}>
           {loading ? t("Loading tabs…") : t(emptyMessage)}
         </p>
       </div>
@@ -86,23 +86,23 @@ export function PinnedTabsList({
 
   return (
     <div
-      className="bb-chat-tabs-homepage-pinned-list"
+      className="alia-chat-tabs-homepage-pinned-list"
       lang={locale}
-      data-testid="bb-chat-tabs-homepage-pinned-list"
+      data-testid="alia-chat-tabs-homepage-pinned-list"
       data-visible="true"
     >
       {header}
-      <ul className="bb-chat-tabs-homepage-pinned-items" aria-label={t(heading)}>
+      <ul className="alia-chat-tabs-homepage-pinned-items" aria-label={t(heading)}>
         {tabs.map((tab) => {
           const status = chatStatusFor(tab, locale);
           const removed = removedThreadIds?.has(tab.threadId) ?? false;
           const isFavorite = removeLabel === "Remove from favorites";
           const action = removed ? (isFavorite ? "Add to favorites" : "Pin") : removeLabel;
           return (
-            <li key={tab.threadId} className="bb-chat-tabs-homepage-pinned-item">
+            <li key={tab.threadId} className="alia-chat-tabs-homepage-pinned-item">
               <button
                 type="button"
-                className="bb-chat-tabs-homepage-pinned-button"
+                className="alia-chat-tabs-homepage-pinned-button"
                 aria-description={tab.isSubthread ? t("Subthread") : undefined}
                 aria-label={
                   status === null
@@ -111,22 +111,22 @@ export function PinnedTabsList({
                 }
                 onClick={() => onOpenThread(tab.threadId)}
               >
-                <span className="bb-chat-tabs-homepage-pinned-copy">
-                  <span className="bb-chat-tabs-homepage-pinned-title" title={tab.title}>
+                <span className="alia-chat-tabs-homepage-pinned-copy">
+                  <span className="alia-chat-tabs-homepage-pinned-title" title={tab.title}>
                     {tab.title}
                   </span>
-                  <span className="bb-chat-tabs-homepage-pinned-meta">
+                  <span className="alia-chat-tabs-homepage-pinned-meta">
                     {tab.isSubthread ? <SubthreadBadge locale={locale} /> : null}
-                    <span className="bb-chat-tabs-homepage-pinned-project" title={tab.projectName}>
+                    <span className="alia-chat-tabs-homepage-pinned-project" title={tab.projectName}>
                       {tab.projectName}
                     </span>
                     {status !== null ? (
                       <span
-                        className="bb-chat-tabs-homepage-pinned-status"
+                        className="alia-chat-tabs-homepage-pinned-status"
                         data-status={status.kind}
                         title={status.text}
                       >
-                        <span className="bb-chat-tabs-homepage-pinned-status-dot" aria-hidden />
+                        <span className="alia-chat-tabs-homepage-pinned-status-dot" aria-hidden />
                         {status.text}
                       </span>
                     ) : null}
@@ -136,7 +136,7 @@ export function PinnedTabsList({
               {onRemoveThread !== undefined ? (
                 <button
                   type="button"
-                  className="bb-chat-tabs-homepage-remove"
+                  className="alia-chat-tabs-homepage-remove"
                   aria-label={`${t(action)}: ${tab.title}`}
                   title={t(action)}
                   data-removed={removed}

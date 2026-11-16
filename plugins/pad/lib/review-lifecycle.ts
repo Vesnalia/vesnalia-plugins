@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { PluginBbSdk, PluginKvStorage } from "@get-bb/plugin-sdk";
+import type { PluginAliaSdk, PluginKvStorage } from "@vesnalia/plugin-sdk";
 import { dateKey } from "./outline.ts";
 import { reviewPrompt, type ReviewNote } from "./review.ts";
 
@@ -15,7 +15,7 @@ interface ReviewState {
   retryAt: number;
 }
 
-type Threads = Pick<PluginBbSdk["threads"],
+type Threads = Pick<PluginAliaSdk["threads"],
   "list" | "experimental_listPluginMetadata" | "spawn" | "send" | "updatePluginMetadata">;
 
 interface ReviewHost {
@@ -79,7 +79,7 @@ export function createReviewLifecycle(host: ReviewHost) {
     }
     const projectId = await host.projectId();
     if (projectId === null) {
-      throw new Error("No project for the review thread. Set it with `bb plugin config pad set reviewProject <project-id>`.");
+      throw new Error("No project for the review thread. Set it with `alia plugin config pad set reviewProject <project-id>`.");
     }
     const signature = createHash("sha256").update(JSON.stringify(notes)).digest("hex");
     const metadata = { kind: "daily-review", file: host.file, reviewDay: today, signature, notes: notes.length };

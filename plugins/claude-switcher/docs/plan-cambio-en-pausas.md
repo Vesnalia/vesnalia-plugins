@@ -38,9 +38,9 @@ Detalle de cada una:
 
 ## La opción T
 
-Un tic es el mensaje con el que Calor mantiene viva una caché a los 24 min: `calor: tic de caché #<uuid>. Responde exactamente «calor ok»…` (`bb-plugin-calor/src/textos.ts:23`). Mover el proyecto para que corra un tic reescribe el contexto entero en la cuenta nueva a cambio de nada: su único fin es mantener una caché que, justo por moverse, ya no existe.
+Un tic es el mensaje con el que Calor mantiene viva una caché a los 24 min: `calor: tic de caché #<uuid>. Responde exactamente «calor ok»…` (`alia-plugin-calor/src/textos.ts:23`). Mover el proyecto para que corra un tic reescribe el contexto entero en la cuenta nueva a cambio de nada: su único fin es mantener una caché que, justo por moverse, ya no existe.
 
-Medido en los 7 días (se identifica cada tic por su evento `client/turn/requested` en `bb.db`, `tics-bb.py`, y su envío por el registro de Calor):
+Medido en los 7 días (se identifica cada tic por su evento `client/turn/requested` en `alia.db`, `tics-alia.py`, y su envío por el registro de Calor):
 
 - 8 cachés matadas (34,75 $) las pagó un tic.
 - En 5 (21,05 $) el propio tic movió el proyecto, en el mismo segundo en que Calor lo envió: es lo que T evita.
@@ -59,8 +59,8 @@ En el `message.dispatch` del plugin, solo si se cumplen las tres cosas: `attempt
 
 Efecto de un rechazo, leído en el código y no probado todavía en un rechazo real:
 
-- `bb` lanza `ApiError 409 dispatch_rejected` antes de que el mensaje pase al hilo (`bb-app 0.48.1, server/dist/start-server.js:65553` y `:97966`); nada se guarda ni se ve.
-- Calor lo captura, lo registra («no se pudo enviar») y a los 5 min sin petición manda otro con opId nuevo (`bb-plugin-calor/server.ts:888-895`). Dejará de hacerlo cuando la caché caduque a la hora. Hasta unos 7 rechazos por caché, sin coste. Si entretanto la cuenta recupera plaza o cuota, el tic pasa y la caché se salva: una ganancia que la simulación no cuenta.
+- `alia` lanza `ApiError 409 dispatch_rejected` antes de que el mensaje pase al hilo (`alia-app 0.48.1, server/dist/start-server.js:65553` y `:97966`); nada se guarda ni se ve.
+- Calor lo captura, lo registra («no se pudo enviar») y a los 5 min sin petición manda otro con opId nuevo (`alia-plugin-calor/server.ts:888-895`). Dejará de hacerlo cuando la caché caduque a la hora. Hasta unos 7 rechazos por caché, sin coste. Si entretanto la cuenta recupera plaza o cuota, el tic pasa y la caché se salva: una ganancia que la simulación no cuenta.
 - El siguiente turno real se coloca como siempre.
 
 ### Lo que no cambia
@@ -93,7 +93,7 @@ Interfaces: `isCalorTick(text: string): boolean` (pura, `src/switch.ts`), que ca
 
 Costuras donde se prueba (ninguna más):
 
-- **`message.dispatch` del plugin, en `server.test.ts`**, con el arnés que ya existe: comprueba la decisión, la variable del proyecto, el historial, las plazas. Caza el comportamiento entero; no ve lo que hace bb con el rechazo.
+- **`message.dispatch` del plugin, en `server.test.ts`**, con el arnés que ya existe: comprueba la decisión, la variable del proyecto, el historial, las plazas. Caza el comportamiento entero; no ve lo que hace VesnALIA con el rechazo.
 - **`isCalorTick`**, en `src/switch.test.ts`. Caza la marca: literal de Calor, sin UUID, mayúsculas, cierre. No ve el camino.
 
 Pruebas, con el estado real de cada caso del registro:
@@ -116,10 +116,10 @@ Mutantes (al estilo de `docs/revision-2026-11-04/mutantes.py`; cada uno debe rom
 
 ## Llegada
 
-- `npm run check` (ahora 1210 pruebas), `tsc`, `oxlint`, mutantes todos cazados y `dist` con `bb plugin build`, versión 0.2.40.
+- `npm run check` (ahora 1210 pruebas), `tsc`, `oxlint`, mutantes todos cazados y `dist` con `alia plugin build`, versión 0.2.40.
 - Codex en cada ronda hasta dos sin `high`, tope 8; pasada final de Fable antes de fusionar.
-- Se instala en el servidor de bb con la cola de Opus vacía, o se avisa (PARA Y ESPERA 2 del encargo). Vuelta atrás: reinstalar 0.2.39.
-- 24 h en vivo: `grep "Calor's tick refused"` en el registro del plugin, comprobar en `bb thread log` que el rechazo no deja rastro visible en el hilo y que su caché no se escribió en otra cuenta, y que el vigilante no avisó de ninguna retención nueva.
+- Se instala en el servidor de VesnALIA con la cola de Opus vacía, o se avisa (PARA Y ESPERA 2 del encargo). Vuelta atrás: reinstalar 0.2.39.
+- 24 h en vivo: `grep "Calor's tick refused"` en el registro del plugin, comprobar en `alia thread log` que el rechazo no deja rastro visible en el hilo y que su caché no se escribió en otra cuenta, y que el vigilante no avisó de ninguna retención nueva.
 - Lo de Calor (los 3 tics que T no alcanza y sus 18 falsos «fría») va a su buzón en el Optimizador. No se toca aquí.
 <!-- fin del plan revisado -->
 
@@ -140,7 +140,7 @@ sed '/^<!-- fin del plan revisado -->$/,$d' docs/plan-cambio-en-pausas.md | sha2
 
 - La guarda es `queuedMessages` vacío y la marca. Para `attempt`, basta con que `beforeStart` solo corre en `start-turn`; un tic que se une a un turno o con el cambio automático apagado anota su modelo como cualquier mensaje. Dos pruebas más que las 13 del plan lo fijan.
 - La «actualización de cuota» de la prueba 12 tiene que ser una pasada real del servicio `usage-refresh`: la RPC `accounts_refresh` no ejecuta `rescueStranded` y la prueba pasaba sin comprobar nada. Corregida antes de confiar en ella; su mutante muere.
-- Encontrado al implementar, sin cambio de código: con la cuota agotada, la siguiente pasada de `rescueStranded` mueve el proyecto parado aunque el tic se haya rechazado. La caché se pierde igual, pero el reintento del tic no reescribe en la cuenta nueva si Calor lo frena con su regla de cuenta distinta (`bb-plugin-calor/src/decisor.ts:354-364`, leído). De ese freno depende el ahorro en los casos de cuota. En los 7 días hubo 3 tics que escribieron en otra cuenta sin que los moviera el propio tic, sin causa aclarada: se comprueba en vivo.
+- Encontrado al implementar, sin cambio de código: con la cuota agotada, la siguiente pasada de `rescueStranded` mueve el proyecto parado aunque el tic se haya rechazado. La caché se pierde igual, pero el reintento del tic no reescribe en la cuenta nueva si Calor lo frena con su regla de cuenta distinta (`alia-plugin-calor/src/decisor.ts:354-364`, leído). De ese freno depende el ahorro en los casos de cuota. En los 7 días hubo 3 tics que escribieron en otra cuenta sin que los moviera el propio tic, sin causa aclarada: se comprueba en vivo.
 - Corregido tras la inspección de código (`T-004`): `parsear-registro.py` leía como hora de Madrid las fechas de agotamiento, que el plugin escribe en UTC. Recalculado sobre los mismos registros, solo cambia F: con 30 min salva 0 (no 2/9,70 $), con 60 min 1/4,68 $ (no 3/15,84 $) y con 120 min 4/20,53 $ (no 5/25,47 $). T, A, B, C, D, E y G quedan iguales, y el veredicto de cada opción también; F sale aún peor. La tabla de arriba es la que revisó Astra y no se reescribe.
 - Corregido tras la inspección final (`CACHE-F-001`): F contaba como salvadas cachés que habrían caducado antes del reset. Exigiendo que el turno vuelva con la caché viva, F salva 0 con cualquier espera de 5 a 120 min (las cifras de la línea anterior quedan sustituidas). `comprobar.py` lleva ese caso como canario. Esto refuerza el descarte de F.
 - El historial de `main` se reescribió durante este trabajo (484 commits, `origin/main` 4a53435 en vez de dbc8053). Los commits se pasaron a un clon nuevo, como pide el encargo.
@@ -160,7 +160,7 @@ Las cuatro son lectura estática. Falta la pasada final de Fable y todo lo que s
 
 ## Pasada final de Fable (2026-11-05 00:05, sobre 2721368): sin high
 
-- **medium, atendido:** `isCalorTick` solo reconoce el texto del tic de `bb-plugin-calor`. Si Calor lo cambia, el switcher vuelve a mover proyectos por un tic sin que nadie lo vea. Ahora `src/switch.test.ts` lee `textoTic` del propio `bb-plugin-calor/src/textos.ts` y falla si deja de casar; se comprobó cambiando el texto en una copia. Límite: la prueba solo corre donde está el repo de Calor (`CALOR_REPO`, el directorio vecino o `~/Desarrollo/bb-plugins/`). En la CI de GitHub se salta, y si Calor cambia su texto no salta hasta que se pasen las pruebas del switcher. El tic de las sesiones interactivas («calor v2: tic de caché (sesión …)») no pasa por bb y no hace falta reconocerlo.
+- **medium, atendido:** `isCalorTick` solo reconoce el texto del tic de `alia-plugin-calor`. Si Calor lo cambia, el switcher vuelve a mover proyectos por un tic sin que nadie lo vea. Ahora `src/switch.test.ts` lee `textoTic` del propio `alia-plugin-calor/src/textos.ts` y falla si deja de casar; se comprobó cambiando el texto en una copia. Límite: la prueba solo corre donde está el repo de Calor (`CALOR_REPO`, el directorio vecino o `~/Desarrollo/alia-plugins/`). En la CI de GitHub se salta, y si Calor cambia su texto no salta hasta que se pasen las pruebas del switcher. El tic de las sesiones interactivas («calor v2: tic de caché (sesión …)») no pasa por VesnALIA y no hace falta reconocerlo.
 - **low, se aclara:** rechazar un tic no deshace nada. `placeTurn` devuelve lo mismo que cuando el proyecto se queda (`{ account: fromName, writes }`): un cambio de cuenta ya escrito antes de ese punto por otro camino sigue escrito. Lo que el rechazo garantiza es que el tic no escribe ninguno nuevo, no reserva plaza y no entra en cola.
 - **low, se aclara:** un tic con mensajes en cola detrás (`queuedMessages` no vacío) se trata como un turno real y puede mover el proyecto. Es a propósito: rechazarlo dejaría filas fallidas en la cola y el vigilante avisaría (riesgo 3).
 - **nota de Fable, comprobada en el diff:** `noteTurn()` solo corre cuando el tic no se rechaza, en las tres ramas.

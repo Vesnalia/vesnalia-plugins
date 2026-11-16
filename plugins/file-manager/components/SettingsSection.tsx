@@ -1,7 +1,7 @@
 // components/SettingsSection.tsx — the `app.slots.settingsSection` body on the
 // plugin's detail page in Tools.
 //
-// It exists because bb's declarative settings form can only render the four
+// It exists because VesnALIA's declarative settings form can only render the four
 // descriptor types (string / select / boolean / project) and none of them is a
 // path picker: `startFolder` therefore shows up above this section as a bare
 // text field. This section is the same setting with a folder browser attached —
@@ -16,7 +16,7 @@
 // Slot props are deliberately empty in V1, and the host mounts this outside the
 // panel's subtree, so everything it renders comes from `getState`.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSettings, type PluginSettingsSectionProps } from "@get-bb/plugin-sdk/app";
+import { useSettings, type PluginSettingsSectionProps } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import { errorToastText } from "../lib/errors";
@@ -98,7 +98,7 @@ export function SettingsSection(_props: PluginSettingsSectionProps) {
    * A change signal, never something to render.
    *
    * `startFolder` has three other writers — the text field above this section,
-   * the panel's "Set as start folder" action and `bb plugin config` — and every
+   * the panel's "Set as start folder" action and `alia plugin config` — and every
    * effective change makes the server broadcast `plugins-changed`
    * (apps/server/src/services/plugins/plugin-service.ts#updateSettings), which
    * the app turns into an invalidation of this very query
@@ -245,7 +245,7 @@ export function SettingsSection(_props: PluginSettingsSectionProps) {
     };
   }, [refresh]);
 
-  // The root is the home directory of whoever runs bb, so only the backend
+  // The root is the home directory of whoever runs VesnALIA, so only the backend
   // knows it: `getClientRoot()` is still "/" until the *panel* mounts, and this
   // section can be the first thing rendered in a fresh app. Everything that
   // needs it therefore stays null until `getState` answers — the actions are

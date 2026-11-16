@@ -10,6 +10,6 @@ cp -c -R of the device folder (APFS clones)   0.96 s, 346 MB as du counts it
 xcrun simctl boot of the clone, to booted     2.50 s; the default was there
 the clone shut down and deleted, the copy removed
 
-bb-box's device server had booted the box's own device again by itself
+alia-box's device server had booted the box's own device again by itself
 before the script did. simctl has no saved state of a booted device: these
 are copies of a shut-down device's disk.

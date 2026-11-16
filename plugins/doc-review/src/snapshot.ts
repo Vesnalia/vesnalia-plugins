@@ -1,6 +1,6 @@
 // Pictures of HTML pages with a drawing on top, for the agent. The panel
 // sends the page as it stood when the user drew on it (the bridge serializes
-// the live DOM, scripts removed); a headless Chrome on the bb server opens it
+// the live DOM, scripts removed); a headless Chrome on the VesnALIA server opens it
 // at the same viewport, scrolls where the user was, lays the strokes over it,
 // and takes a screenshot.
 //

@@ -5,9 +5,9 @@
 // - working: a turn, background agents, commands, workflows, plan mode.
 // - done: finished and not looked at yet.
 //
-// bb adds indicator and status kinds over time; anything unknown reads as
+// VesnALIA adds indicator and status kinds over time; anything unknown reads as
 // "quiet" (null) rather than guessing.
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 import type { MessageKey, Params } from "./i18n";
 

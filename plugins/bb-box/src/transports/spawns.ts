@@ -1,6 +1,6 @@
 // How long starting each child process holds the event loop. On Linux, libuv
 // starts one with fork, on the loop's thread, and the fork's time grows with
-// the parent's memory: BB's server, which runs bb-box, held 3.5 GB after ten
+// the parent's memory: VesnALIA's server, which runs alia-box, held 3.5 GB after ten
 // days. The loop watch tells the count and the time each minute, and the
 // memory each hour, so a stall can be laid at a spawn's door or not. Each
 // hour it tells too how many the helper started (forker.ts), and which started
@@ -17,7 +17,7 @@ export interface SpawnTotals {
   readonly count: number;
   /** Milliseconds the spawn calls took, all told. */
   readonly ms: number;
-  /** Of them, the children the helper started, so BB's server did not fork. */
+  /** Of them, the children the helper started, so VesnALIA's server did not fork. */
   readonly helped?: number;
   /** Children started, ever, by their site and the work they were for. */
   readonly byCaller?: ReadonlyMap<string, number>;

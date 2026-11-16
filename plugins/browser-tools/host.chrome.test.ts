@@ -3,7 +3,7 @@ import { createServer, type ServerResponse } from "node:http";
 import type { Socket } from "node:net";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import puppeteer, { type Browser } from "puppeteer-core";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { createHostEntry } from "./host.js";
 import { chromeExecutablePath, startFixture, type Fixture } from "./test/browser-fixture.js";
 

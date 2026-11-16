@@ -9,7 +9,7 @@ import { createFakeThreadPort } from "../lib/thread-port";
 
 export const PROJECT = "proj_1";
 
-export function setup(options: { bbLimit?: number | null; graphsRpc?: GraphsRpc | null } = {}) {
+export function setup(options: { aliaLimit?: number | null; graphsRpc?: GraphsRpc | null } = {}) {
   const db = new Database(":memory:");
   migrateInPlace(db);
   // A realistic epoch, so rendered timestamps look like dates. The store ticks
@@ -28,7 +28,7 @@ export function setup(options: { bbLimit?: number | null; graphsRpc?: GraphsRpc 
     git,
     tasks,
     graphsRpc: options.graphsRpc ?? null,
-    bbLimit: async () => options.bbLimit ?? null,
+    aliaLimit: async () => options.aliaLimit ?? null,
     newId: () => `op_${++ids}`,
     newMessageId: (prefix) => `${prefix}_${++messageIds}`,
     newShortId: (prefix) => `${prefix}_${++shortIds}`,

@@ -77,7 +77,7 @@ export function OutOfRangeDialog({
             Update {item.id} {item.from} → {item.to}?
           </DialogTitle>
           <DialogDescription>
-            {item.to} is outside the range {item.id} was installed with, so bb can't update it in
+            {item.to} is outside the range {item.id} was installed with, so VesnALIA can't update it in
             place. This removes the plugin and installs the new release. Settings are restored;
             its storage and schedules may reset. If the install fails, the old version is
             reinstalled.

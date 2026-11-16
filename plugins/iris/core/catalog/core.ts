@@ -200,7 +200,7 @@ export const CONTENT = [
     name: "Link",
     group: "Content",
     summary: "A link to a URL or a workspace file.",
-    props: { href: p.str("https:// URL"), file: p.str("Workspace file path; opens in bb"), line: p.num("Line in the file") },
+    props: { href: p.str("https:// URL"), file: p.str("Workspace file path; opens in VesnALIA"), line: p.num("Line in the file") },
     children: "text",
     example: `<Link file="src/engine/stream.ts" line={42}>stream.ts:42</Link>`,
     aliases: ["A", "FileLink"],
@@ -217,7 +217,7 @@ export const CONTENT = [
       fit: p.oneOf(["contain", "cover"], "How it fills its box", { def: "contain" }),
     },
     children: "none",
-    example: `<Image src="$BB_THREAD_STORAGE/shots/home-dark.png" alt="Home screen in dark mode" />`,
+    example: `<Image src="$ALIA_THREAD_STORAGE/shots/home-dark.png" alt="Home screen in dark mode" />`,
     aliases: ["Img", "Screenshot"],
   }),
   component({

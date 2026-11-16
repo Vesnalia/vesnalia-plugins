@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginRpcResult } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcResult } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server.js";
 import { squarify } from "./treemap.js";
 
@@ -485,7 +485,7 @@ function DiskUsagePanel() {
       <main className="mx-auto w-full max-w-4xl p-4 md:p-6">
         <header className="mb-4 flex flex-col gap-3 pt-12 sm:flex-row sm:items-end sm:justify-between md:pt-0">
           <p className="text-sm text-muted-foreground">
-            What's taking up space on the bb server host. Click a directory to drill in.
+            What's taking up space on the VesnALIA server host. Click a directory to drill in.
           </p>
           <form
             className="flex items-center gap-2"

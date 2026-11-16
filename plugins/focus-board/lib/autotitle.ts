@@ -1,11 +1,11 @@
 // Pure helpers behind the thread pane's ✨ auto-rename button (see the
 // thread_autotitle RPC in server.ts for the call wiring). The design brief:
-// serve titles with WHATEVER AI service bb's own thread-title task is set
-// to — bb routes titles and commit messages to a user-picked plugin service
+// serve titles with WHATEVER AI service VesnALIA's own thread-title task is set
+// to — VesnALIA routes titles and commit messages to a user-picked plugin service
 // through Settings → AI services, and this plugin rides that selection via
 // the cross-plugin RPC bridge instead of carrying its own key.
 
-/** The trimmed prompt history rows `bb.sdk.threads.promptHistory` returns. */
+/** The trimmed prompt history rows `alia.sdk.threads.promptHistory` returns. */
 export interface AutotitleHistoryEntry {
   createdAt?: number;
   input: ReadonlyArray<{
@@ -15,12 +15,12 @@ export interface AutotitleHistoryEntry {
   }>;
 }
 
-/** The slice of bb's AI-services state the ✨ rename path needs. */
+/** The slice of VesnALIA's AI-services state the ✨ rename path needs. */
 export interface AutotitleSelection {
   "thread-title": { mode: string; pluginId?: string; serviceId?: string };
 }
 
-/** One registered AI service in bb's aiServices() response. */
+/** One registered AI service in VesnALIA's aiServices() response. */
 export interface AutotitleServiceEntry {
   pluginId: string;
   id: string;
@@ -39,7 +39,7 @@ export interface AutotitleTargetDescriptor {
   displayName: string;
   ready: boolean;
   message: string | null;
-  /** ✨ bridge classification (server post-processes; bb's services[] has no such field). Absent = unknown, treated as blocked. */
+  /** ✨ bridge classification (server post-processes; VesnALIA's services[] has no such field). Absent = unknown, treated as blocked. */
   bridge?: boolean;
   bridgeReason?: string | null;
 }
@@ -89,9 +89,9 @@ export type TitleSelectionOutcome =
   | { ok: false; reason: string };
 
 /**
- * bb's automatic mode resolves the ready service among registered ones at
- * title-generation time, inside bb core; a plugin cannot invoke that
- * decision, and bb cloud's completion runs only inside bb. So the ✨ path
+ * VesnALIA's automatic mode resolves the ready service among registered ones at
+ * title-generation time, inside VesnALIA core; a plugin cannot invoke that
+ * decision, and VesnALIA cloud's completion runs only inside VesnALIA. So the ✨ path
  * serves exactly what the operator pinned: a plugin service, whose plugin
  * is reachable over the RPC bridge. Anything else is refused with the fix
  * named in the message.
@@ -104,7 +104,7 @@ export function resolveTitleSelection(state: {
     return {
       ok: false,
       reason:
-        "Title task is not set to a plugin AI service. Choose one under Settings → AI services → thread-title (bb cloud and automatic run inside bb and cannot be invoked from plugins).",
+        "Title task is not set to a plugin AI service. Choose one under Settings → AI services → thread-title (VesnALIA cloud and automatic run inside VesnALIA and cannot be invoked from plugins).",
     };
   }
   if (typeof selection.serviceId !== "string") {
@@ -144,7 +144,7 @@ export function resolveTitleTarget(
   if (entry === undefined) {
     return {
       ok: false,
-      reason: `No AI service ${pluginId}/${serviceId} is registered in bb`,
+      reason: `No AI service ${pluginId}/${serviceId} is registered in VesnALIA`,
     };
   }
   if (!entry.tasks?.includes("thread-title")) {
@@ -164,9 +164,9 @@ export function resolveTitleTarget(
 }
 
 /**
- * bb's aiServices bridge cap on the `complete` prompt, live-proven: calling
+ * VesnALIA's aiServices bridge cap on the `complete` prompt, live-proven: calling
  * it with a >4000-char prompt answers "Too big: expected string to have
- * <=4000 characters" (bb core's own schema; the openrouter-inference fork
+ * <=4000 characters" (VesnALIA core's own schema; the openrouter-inference fork
  * passes the call through). The built title prompt — instructions PLUS task
  * text — must fit under this in full: clamping only the task text to
  * AUTOTITLE_PROMPT_MAX_CHARS and then adding the instruction block overflowed
@@ -184,11 +184,11 @@ export const AUTOTITLE_TITLE_MAX_CHARS = 120;
 /**
  * The thread's originating prompt, text parts only: images/files say
  * nothing titling can use, and agent-only parts are injected scaffolding,
- * not user intent. bb titles from the first prompt the same way — and bb's
+ * not user intent. VesnALIA titles from the first prompt the same way — and VesnALIA's
  * prompt-history queries return rows NEWEST-first (desc createdAt /
  * requestSequence / id), so "first" means the chronologically OLDEST entry
  * with visible text, not entries[0]. A stable ascending sort keeps ties in
- * arrival order (bb tie-breaks equal stamps by requestSequence-desc
+ * arrival order (VesnALIA tie-breaks equal stamps by requestSequence-desc
  * internally, which the SDK rows do not expose).
  */
 export function promptTextFromHistory(
@@ -222,9 +222,9 @@ export function clampPromptText(
 }
 
 /**
- * The ✨ title prompt: bb's own generateThreadMetadata guidance, then the
+ * The ✨ title prompt: VesnALIA's own generateThreadMetadata guidance, then the
  * thread text as the payload. Models follow a trailing payload better than
- * a trailing instruction for this shape. The TOTAL stays under bb's
+ * a trailing instruction for this shape. The TOTAL stays under VesnALIA's
  * aiServices bridge cap (AUTOTITLE_BRIDGE_PROMPT_MAX_CHARS): the task text
  * is clamped to whatever budget the instruction block leaves, so long
  * openers shorten instead of failing the bridge's input validation.

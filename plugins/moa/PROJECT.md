@@ -1,5 +1,5 @@
 ---
-title: Mixture of Agents for BB — agent reference
+title: Mixture of Agents for VesnALIA — agent reference
 updated: 2026-10-11
 sources:
   - package.json
@@ -12,11 +12,11 @@ sources:
   - docs/gotchas.md
   - docs/deployment.md
 ---
-# Mixture of Agents for BB — agent reference
+# Mixture of Agents for VesnALIA — agent reference
 
 ## Identity
 
-- BB plugin: two independent advisor sessions provide private reference context to the acting chat model. See [overview](docs/overview.md).
+- VesnALIA plugin: two independent advisor sessions provide private reference context to the acting chat model. See [overview](docs/overview.md).
 - Compatibility range and package entry points: [package.json](package.json), [deployment](docs/deployment.md).
 
 ## Entry points
@@ -46,9 +46,9 @@ sources:
 
 ## Useful commands
 
-- Install locally: `npm ci && bb plugin build && bb plugin install . --yes`.
-- Verify locally: `npm run check && bb plugin types --check`.
-- Chat operations: `bb moa status THREAD_ID --json`, `bb moa on THREAD_ID`, `bb moa off THREAD_ID`, `bb moa retry THREAD_ID RUN_ID`.
+- Install locally: `npm ci && alia plugin build && alia plugin install . --yes`.
+- Verify locally: `npm run check && alia plugin types --check`.
+- Chat operations: `alia moa status THREAD_ID --json`, `alia moa on THREAD_ID`, `alia moa off THREAD_ID`, `alia moa retry THREAD_ID RUN_ID`.
 - More [deployment and rollback details](docs/deployment.md).
 
 ## Where to look next

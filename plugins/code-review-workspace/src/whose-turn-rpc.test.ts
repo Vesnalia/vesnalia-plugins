@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 
 const runGh = vi.hoisted(() => vi.fn());
 vi.mock("./gh", async (orig) => ({ ...(await orig<any>()), runGh, runGit: vi.fn(async () => ({ stdout: "", stderr: "", code: 0 })) }));
@@ -39,12 +39,12 @@ async function setup() {
     return { stdout: "", stderr: "", code: 0 };
   });
   const published: any[] = [];
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: { get: async () => ({ archivedAt: null, deletedAt: null, status: "idle", title: "Review agent: pr-1" }), send: async () => ({}), stop: async () => ({}), update: async () => ({}), archive: async () => ({}) },
     plugins: { callRpc: async ({ method, input }: any) => (method === "activityCapabilities" ? { version: 1 } : (published.push({ method, input }), { accepted: true, id: "a", duplicate: false, ok: true })) },
   } as any });
   // The plugin's own queue, so what the test calls takes its turns among the plugin's.
-  const store = await startPlugin(bb);
+  const store = await startPlugin(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, url: "https://github.com/acme/web/pull/1", base: "main", head: "cache", headSha: "sha2", createdAt: 1, status: "ready", projectId: "p1" });
   await store.savePatch("pr-1", now);
   await store.saveGuide("pr-1", { title: "T", intent: "I", sections: [{ id: "c", title: "Cache", overview: "o", diffs: [{ file: "a.ts", summary: "s" }] }], unplacedFiles: [] });
@@ -57,7 +57,7 @@ async function setup() {
   await store.setAssistantThread("pr-1", "assistant");
   const call = (method: string, input: unknown) => harness.behavior.callRpc(method, input) as Promise<any>;
   const tool = (name: string, input: unknown) => harness.behavior.callAgentTool(name, input, { threadId: "assistant" }) as Promise<any>;
-  return { bb, harness, store, call, tool, published };
+  return { alia, harness, store, call, tool, published };
 }
 
 test("reviews leave the server with whose turn they are", async () => {
@@ -253,7 +253,7 @@ test("submitting records the review's GitHub id, and the sync recognizes it", as
   const meta = { targetKey: "pr-1", kind: "pr" as const, status: "ready" as const, createdAt: 1, submittedVerdict: "COMMENT" as const, submittedAt: 10_000, submittedHeadSha: "sha2", submittedReviewId: "PRR_new" };
   const base = { targetKey: "pr-1", repo: "acme/web", number: 1, state: "OPEN" as const, isDraft: false, title: "T", url: "u", author: "alice", baseRefName: "main", headRefName: "h",
     headSha: "sha2", updatedAt: 1, ci: "pass" as const, otherOpinions: [], requests: [], size: null, requestPending: null, mention: null, commits: ["sha1", "sha2"] };
-  // GitHub's clock says the comment came 3s before bb stamped it; the id still matches, and changes requested stands.
+  // GitHub's clock says the comment came 3s before VesnALIA stamped it; the id still matches, and changes requested stands.
   const mine = [{ id: "PRR_old", state: "CHANGES_REQUESTED" as const, submittedAt: 1_000, sha: "sha1", body: "Fix it" }, { id: "PRR_new", state: "COMMENTED" as const, submittedAt: 7_000, sha: "sha2", body: "Still waiting" }];
   expect(factsUpdate(meta, { ...base, myReviews: mine }, "me", 20_000, 20_000)).toMatchObject({ submittedVerdict: "REQUEST_CHANGES", submittedAt: 7_000, submittedReviewId: null });
   // Until GitHub reports it, the local receipt stands.
@@ -279,8 +279,8 @@ test("a read whose last 30 reviews of yours hold no real review keeps your last 
 });
 
 test("a check queued behind another message isn't over when the assistant's current turn ends", async () => {
-  const { bb, harness, store } = await setup();
-  const { makeThreadResponse } = await import("@get-bb/plugin-sdk/testing");
+  const { alia, harness, store } = await setup();
+  const { makeThreadResponse } = await import("@vesnalia/plugin-sdk/testing");
   await store.setLifecycle("pr-1", { verifyingSince: Date.now(), verifyingHead: "sha2" });
   harness.inspection.sdk.stub("threads.queuedMessages.list", async () => [{ id: "q1" }]);
   await harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: "assistant" }), lastAssistantText: null });
@@ -288,17 +288,17 @@ test("a check queued behind another message isn't over when the assistant's curr
   harness.inspection.sdk.stub("threads.queuedMessages.list", async () => []);
   await harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: "assistant" }), lastAssistantText: null });
   expect(await store.getReview("pr-1")).toMatchObject({ verifyingSince: null, verifyingHead: null, preparedAt: expect.any(Number) });
-  void bb;
+  void alia;
 });
 
 test("a check queued behind another message ends with its own turn, not with an idle before it dispatched", async () => {
-  const { bb, harness, store } = await setup();
-  const { makeThreadResponse, makeQueueEntry } = await import("@get-bb/plugin-sdk/testing");
+  const { alia, harness, store } = await setup();
+  const { makeThreadResponse, makeQueueEntry } = await import("@vesnalia/plugin-sdk/testing");
   const { startVerification } = await import("./verification");
   const idle = () => harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: "assistant" }), lastAssistantText: null });
   const row = makeQueueEntry({ id: "q-check", threadId: "assistant" });
   harness.inspection.sdk.stub("threads.send", async () => ({ ok: true, delivery: "queued", queuedMessage: row }));
-  expect(await startVerification(bb, store, "pr-1", "the author pushed", "automatic")).toBe(true);
+  expect(await startVerification(alia, store, "pr-1", "the author pushed", "automatic")).toBe(true);
   expect((await store.getReview("pr-1"))?.verifyingMessageId).toBe("q-check");
   // The earlier turn's idle, heard after the queue let the check go but before it dispatched.
   harness.inspection.sdk.stub("threads.queuedMessages.list", async () => []);
@@ -313,61 +313,61 @@ test("a check queued behind another message ends with its own turn, not with an 
   expect(await store.getReview("pr-1")).toMatchObject({ verifyingSince: null, verifyingHead: null, preparedAt: expect.any(Number) });
 });
 
-test("a check BB dispatches before its send returns ends with the turn that runs it (70-review #3)", async () => {
-  const { bb, harness, store } = await setup();
-  const { makeThreadResponse, makeQueueEntry } = await import("@get-bb/plugin-sdk/testing");
+test("a check VesnALIA dispatches before its send returns ends with the turn that runs it (70-review #3)", async () => {
+  const { alia, harness, store } = await setup();
+  const { makeThreadResponse, makeQueueEntry } = await import("@vesnalia/plugin-sdk/testing");
   const { startVerification } = await import("./verification");
   const row = makeQueueEntry({ id: "q-early", threadId: "assistant" });
-  // BB lets the check go, and says so, before the send that queued it returns.
+  // VesnALIA lets the check go, and says so, before the send that queued it returns.
   harness.inspection.sdk.stub("threads.send", async () => {
     await harness.behavior.emitThreadEvent("message.dispatched", { entry: row });
     return { ok: true, delivery: "queued", queuedMessage: row };
   });
   harness.inspection.sdk.stub("threads.queuedMessages.list", async () => []);
-  expect(await startVerification(bb, store, "pr-1", "the author pushed", "automatic")).toBe(true);
+  expect(await startVerification(alia, store, "pr-1", "the author pushed", "automatic")).toBe(true);
   expect(await store.getReview("pr-1")).toMatchObject({ verifyingSince: expect.any(Number), verifyingMessageId: null });
   await harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: "assistant" }), lastAssistantText: null });
   expect(await store.getReview("pr-1")).toMatchObject({ verifyingSince: null, verifyingHead: null });
 });
 
-test("a check BB dispatches before its send returns, telling the plugin without waiting for it, ends with the turn that runs it", async () => {
-  const { bb, harness, store } = await setup();
-  const { makeThreadResponse, makeQueueEntry } = await import("@get-bb/plugin-sdk/testing");
+test("a check VesnALIA dispatches before its send returns, telling the plugin without waiting for it, ends with the turn that runs it", async () => {
+  const { alia, harness, store } = await setup();
+  const { makeThreadResponse, makeQueueEntry } = await import("@vesnalia/plugin-sdk/testing");
   const { startVerification } = await import("./verification");
   const row = makeQueueEntry({ id: "q-early", threadId: "assistant" });
-  // As BB delivers events: the handler starts, and the send returns without waiting for it.
+  // As VesnALIA delivers events: the handler starts, and the send returns without waiting for it.
   harness.inspection.sdk.stub("threads.send", async () => {
     void harness.behavior.emitThreadEvent("message.dispatched", { entry: row });
     return { ok: true, delivery: "queued", queuedMessage: row };
   });
   harness.inspection.sdk.stub("threads.queuedMessages.list", async () => []);
-  expect(await startVerification(bb, store, "pr-1", "the author pushed", "automatic")).toBe(true);
+  expect(await startVerification(alia, store, "pr-1", "the author pushed", "automatic")).toBe(true);
   expect(await store.getReview("pr-1")).toMatchObject({ verifyingSince: expect.any(Number), verifyingMessageId: null });
   await harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: "assistant" }), lastAssistantText: null });
   expect(await store.getReview("pr-1")).toMatchObject({ verifyingSince: null, verifyingHead: null });
 });
 
 test("a check deleted from the queue before its send returns never waits (95-recheck P3)", async () => {
-  const { bb, harness, store } = await setup();
-  const { makeQueueEntry } = await import("@get-bb/plugin-sdk/testing");
+  const { alia, harness, store } = await setup();
+  const { makeQueueEntry } = await import("@vesnalia/plugin-sdk/testing");
   const { startVerification } = await import("./verification");
   const row = makeQueueEntry({ id: "q-gone", threadId: "assistant" });
   harness.inspection.sdk.stub("threads.send", async () => {
     await harness.behavior.emitThreadEvent("message.cancelled", { entry: row });
     return { ok: true, delivery: "queued", queuedMessage: row };
   });
-  expect(await startVerification(bb, store, "pr-1", "the author pushed", "automatic")).toBe(true);
+  expect(await startVerification(alia, store, "pr-1", "the author pushed", "automatic")).toBe(true);
   const review = await store.getReview("pr-1");
   expect([review?.verifyingSince ?? null, review?.verifyingMessageId ?? null]).toEqual([null, null]);
 });
 
 test("a queued check deleted from the queue stops the wait for it", async () => {
-  const { bb, harness, store } = await setup();
-  const { makeQueueEntry } = await import("@get-bb/plugin-sdk/testing");
+  const { alia, harness, store } = await setup();
+  const { makeQueueEntry } = await import("@vesnalia/plugin-sdk/testing");
   const { startVerification } = await import("./verification");
   const row = makeQueueEntry({ id: "q-check", threadId: "assistant" });
   harness.inspection.sdk.stub("threads.send", async () => ({ ok: true, delivery: "queued", queuedMessage: row }));
-  await startVerification(bb, store, "pr-1", "the author pushed", "automatic");
+  await startVerification(alia, store, "pr-1", "the author pushed", "automatic");
   await harness.behavior.emitThreadEvent("message.cancelled", { entry: makeQueueEntry({ id: "someone-else", threadId: "assistant" }) });
   expect((await store.getReview("pr-1"))?.verifyingSince).toEqual(expect.any(Number));
   await harness.behavior.emitThreadEvent("message.cancelled", { entry: row });

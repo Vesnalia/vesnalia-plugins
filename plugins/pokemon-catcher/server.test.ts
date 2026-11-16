@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin, { chooseFallbackPokemonNumber, rarityForEncounterChance, rarityForPokemon } from "./server";
 import { starterEvolutionChains, starters } from "./pokemon";
 import { generationForPokemon } from "./lib/pokemon/generation";
@@ -38,8 +38,8 @@ describe("Pokemon Catcher server", () => {
 			if (url.includes("pokemon-species")) return { ok: true, json: async () => ({ hatch_counter: 20, is_legendary: false, is_mythical: false, flavor_text_entries: [] }) };
 			return { ok: true, json: async () => ({ name: "testmon", height: 12, weight: 34, types: [{ type: { name: "grass" } }], cries: { latest: "https://example.invalid/testmon.ogg" } }) };
 		}));
-		const { bb, harness } = createFakePluginHost({ pluginId: "pokemon-catcher", hasHostEntry: true, agentSkillIds: ["pokemon-catcher"] });
-		await plugin(bb);
+		const { alia, harness } = createFakePluginHost({ pluginId: "pokemon-catcher", hasHostEntry: true, agentSkillIds: ["pokemon-catcher"] });
+		await plugin(alia);
 		await harness.behavior.callAgentTool("pokemon_record_milestone", {
 			milestone: "commit_created", source: "git", reference: "national-dex", title: "National encounter",
 		});
@@ -57,7 +57,7 @@ describe("Pokemon Catcher server", () => {
 		vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
 		let totalTokens = 10_000;
 		let lastTokens = 10_000;
-		const { bb, harness } = createFakePluginHost({
+		const { alia, harness } = createFakePluginHost({
 			pluginId: "pokemon-catcher",
 			hasHostEntry: true,
 			agentSkillIds: ["pokemon-catcher"],
@@ -83,7 +83,7 @@ describe("Pokemon Catcher server", () => {
 				},
 			},
 		});
-		await plugin(bb);
+		await plugin(alia);
 		await harness.behavior.callRpc("starter_select", { starterId: "fennekin" });
 		const starterCollection = await harness.behavior.callRpc("collection_get", null) as { captures: Array<{ pokemonId: string; rarity: string; isEgg: boolean }> };
 		expect(starterCollection.captures.find((capture) => capture.pokemonId === "fennekin")).toMatchObject({ rarity: "rare", isEgg: false });
@@ -157,12 +157,12 @@ describe("Pokemon Catcher server", () => {
 
 	it("records concurrent reports of one milestone only once", async () => {
 		vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
-		const { bb, harness } = createFakePluginHost({
+		const { alia, harness } = createFakePluginHost({
 			pluginId: "pokemon-catcher",
 			hasHostEntry: true,
 			agentSkillIds: ["pokemon-catcher"],
 		});
-		await plugin(bb);
+		await plugin(alia);
 		const milestone = {
 			milestone: "commit_created" as const,
 			source: "Git",
@@ -182,7 +182,7 @@ describe("Pokemon Catcher server", () => {
 	it("baselines Git state, then rewards a newly detected terminal branch once", async () => {
 		vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
 		let scan = 0;
-		const { bb, harness } = createFakePluginHost({
+		const { alia, harness } = createFakePluginHost({
 			pluginId: "pokemon-catcher",
 			hasHostEntry: true,
 			agentSkillIds: ["pokemon-catcher"],
@@ -204,7 +204,7 @@ describe("Pokemon Catcher server", () => {
 				}],
 			}),
 		});
-		await plugin(bb);
+		await plugin(alia);
 
 		await harness.behavior.emitThreadEvent("thread.active", { thread: makeThreadResponse({ id: "thr_1" }) });
 		await vi.waitFor(() => expect(scan).toBe(1));
@@ -222,7 +222,7 @@ describe("Pokemon Catcher server", () => {
 	it("rewards a branch and its subsequently created worktree only once", async () => {
 		vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
 		let scan = 0;
-		const { bb, harness } = createFakePluginHost({
+		const { alia, harness } = createFakePluginHost({
 			pluginId: "pokemon-catcher",
 			hasHostEntry: true,
 			agentSkillIds: ["pokemon-catcher"],
@@ -241,15 +241,15 @@ describe("Pokemon Catcher server", () => {
 				return {
 					repositories: [{
 						root: "/repo", repoId: "/repo/.git",
-						branches: currentScan === 0 ? ["main"] : ["feature/bb-worktree", "main"],
+						branches: currentScan === 0 ? ["main"] : ["feature/alia-worktree", "main"],
 						worktrees: currentScan < 2
 							? [{ path: "/repo", branch: "main" }]
-							: [{ path: "/repo", branch: "main" }, { path: "/worktree", branch: "feature/bb-worktree" }],
+							: [{ path: "/repo", branch: "main" }, { path: "/worktree", branch: "feature/alia-worktree" }],
 					}],
 				};
 			},
 		});
-		await plugin(bb);
+		await plugin(alia);
 
 		for (let expectedScan = 1; expectedScan <= 3; expectedScan += 1) {
 			await harness.behavior.emitThreadEvent("thread.active", { thread: makeThreadResponse({ id: "thr_1" }) });
@@ -278,13 +278,13 @@ describe("Pokemon Catcher server", () => {
 			}
 			return { ok: false, status: 404, json: async () => ({}) };
 		}));
-		const { bb, harness } = createFakePluginHost({
+		const { alia, harness } = createFakePluginHost({
 			pluginId: "pokemon-catcher",
 			hasHostEntry: true,
 			agentSkillIds: ["pokemon-catcher"],
 			settings: { githubToken: "secret-token" },
 		});
-		await plugin(bb);
+		await plugin(alia);
 		expect(harness.inspection.registrations.settingsDescriptors.githubToken).toMatchObject({ secret: true });
 		const initial = await harness.behavior.callRpc("settings_get", null) as { repositories: Array<{ fullName: string }>; connections: { github: { account: string } } };
 		expect(initial).toMatchObject({ repositories: [{ fullName: "acme/pokedex" }], connections: { github: { account: "misty" } } });

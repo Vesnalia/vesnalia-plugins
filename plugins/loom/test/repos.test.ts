@@ -42,7 +42,7 @@ describe("isMultiRepo", () => {
     const stored = JSON.parse(JSON.stringify(spec())) as Spec;
     expect("repo" in stored).toBe(false);
     expect(isMultiRepo(stored)).toBe(false);
-    expect(repoSettings(stored, null).bbProjectId).toBeNull();
+    expect(repoSettings(stored, null).aliaProjectId).toBeNull();
   });
 });
 
@@ -50,7 +50,7 @@ describe("repoSettings", () => {
   it("gives the project's own repo the top-level values in a single-repo spec", () => {
     expect(repoSettings(spec(topLevel), null)).toStrictEqual({
       name: null,
-      bbProjectId: null,
+      aliaProjectId: null,
       base: "develop",
       remote: "origin",
       branch: "loom/csv",
@@ -70,7 +70,7 @@ describe("repoSettings", () => {
   it("takes base, remote, checks and after_merge from the top level when the repo does not set them", () => {
     expect(repoSettings(multi(), "web")).toStrictEqual({
       name: "web",
-      bbProjectId: "proj_web",
+      aliaProjectId: "proj_web",
       base: "develop",
       remote: "origin",
       branch: "loom/csv",
@@ -90,7 +90,7 @@ describe("repoSettings", () => {
   it("uses the repo's own values when it sets them, and adds its protected globs to the top-level ones", () => {
     expect(repoSettings(multi(), "api")).toStrictEqual({
       name: "api",
-      bbProjectId: "proj_api",
+      aliaProjectId: "proj_api",
       base: "trunk",
       remote: "upstream",
       branch: "loom/csv",

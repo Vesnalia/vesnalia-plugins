@@ -1,12 +1,12 @@
-import { type BbPluginApi } from "@get-bb/plugin-sdk";
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 // Resolve the current thread's host + workspace root so tools can address the
 // project's files with proper confinement.
 export async function resolveHost(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
 ): Promise<{ hostId: string; rootPath: string | undefined; environmentId?: string }> {
-  const thread = await bb.sdk.threads.get({ threadId, include: "environment" });
+  const thread = await alia.sdk.threads.get({ threadId, include: "environment" });
   const hostId = "environment" in thread ? thread.environment?.hostId : undefined;
   const rootPath = "environment" in thread ? (thread.environment?.path ?? undefined) : undefined;
   const environmentId = "environment" in thread ? (thread.environment?.id ?? undefined) : undefined;

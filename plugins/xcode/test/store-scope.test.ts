@@ -20,7 +20,7 @@ const NOW = 1_700_000_000_000;
 
 const SCOPE = {
   threadId: "th_app",
-  path: "/Users/me/.bb/worktrees/env_q29t/App",
+  path: "/Users/me/.vesnalia/worktrees/env_q29t/App",
   branch: "feature/login",
   hostId: null as string | null,
 };
@@ -117,7 +117,7 @@ const CASES: Array<{ why: string; run: Run; inScope: boolean }> = [
   {
     why: "an underscore in the path is a literal, not a LIKE wildcard",
     run: run("r:wildcard", {
-      cwd: "/Users/me/.bb/worktrees/envXq29t/App/Sources",
+      cwd: "/Users/me/.vesnalia/worktrees/envXq29t/App/Sources",
     }),
     inScope: false,
   },

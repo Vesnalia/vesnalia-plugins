@@ -3,11 +3,11 @@
  * The slots render, list a thread's skills in precedence order, read one and
  * add its command to the thread's message box — never sending anything: no
  * slot here is given a `useSdk()` fake, so a send would throw. A throwing slot
- * shows as a "plugin crashed" chip in bb, so a render here is the cheapest
+ * shows as a "plugin crashed" chip in VesnALIA, so a render here is the cheapest
  * check that none of them throw.
  */
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import {
   type ComposerMention,
   type ExperimentalComposerCommandRegistration,
@@ -16,7 +16,7 @@ import {
   type PluginAppSlots,
   type PluginCommandRegistration,
   useComposer,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { type ComponentType, useState } from "react";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -54,7 +54,7 @@ const LIST: SkillList = {
   scanned: true,
   cwd: "/work/example",
   skills: [
-    entry("bb-helper", "bb", "bb plugin · example-plugin"),
+    entry("alia-helper", "alia", "alia plugin · example-plugin"),
     entry("deploy", "personal", "Personal"),
     entry("helper-only", "project", "Project", { userInvocable: false }),
     entry("tidy-imports", "project", "Project"),
@@ -165,9 +165,9 @@ describe("registrations", () => {
   });
 });
 
-describe("the Skills tab on bb 0.45 and 0.46", () => {
-  it("registers through threadPanelAction when bb has no experimental_tab", () => {
-    // bb 0.46's slots, as SDK 0.6.37 types them: no `experimental_tab`.
+describe("the Skills tab on VesnALIA 0.45 and 0.46", () => {
+  it("registers through threadPanelAction when VesnALIA has no experimental_tab", () => {
+    // VesnALIA 0.46's slots, as SDK 0.6.37 types them: no `experimental_tab`.
     const legacy: unknown[] = [];
     registerSkillsTab({
       threadPanelAction: (registration: unknown) => legacy.push(registration),
@@ -181,7 +181,7 @@ describe("the panel", () => {
     renderPanel();
     await screen.findByText("tidy-imports");
     const headings = screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
-    expect(headings).toEqual(["Project", "Personal", "bb plugin · example-plugin", "Built-in skills", "Built-in commands"]);
+    expect(headings).toEqual(["Project", "Personal", "alia plugin · example-plugin", "Built-in skills", "Built-in commands"]);
   });
 
   it("filters on name and description", async () => {
@@ -223,7 +223,7 @@ describe("the panel", () => {
     expect(screen.getByRole("button", { name: "Copy path" })).toBeTruthy();
   });
 
-  it("copies a skill's path through bb's clipboard", async () => {
+  it("copies a skill's path through VesnALIA's clipboard", async () => {
     const success = vi.spyOn(toast, "success").mockImplementation(() => 0);
     const { inspection } = renderPanel();
     fireEvent.click(await screen.findByText("tidy-imports"));
@@ -233,7 +233,7 @@ describe("the panel", () => {
     success.mockRestore();
   });
 
-  it("says to select the path when bb could not copy it", async () => {
+  it("says to select the path when VesnALIA could not copy it", async () => {
     const error = vi.spyOn(toast, "error").mockImplementation(() => 0);
     renderSlot<{ threadId: string; params: JsonValue }, RpcContract>(
       { component: SkillsPanel },
@@ -252,7 +252,7 @@ describe("the panel", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Add to chat" }));
 
     expect(inspection.composer.text).toBe("/tidy-imports look at auth.ts");
-    // The pill bb's own / menu inserts for a skill from the workspace.
+    // The pill VesnALIA's own / menu inserts for a skill from the workspace.
     expect(inspection.composer.draft.mentions).toEqual([
       {
         kind: "command",
@@ -373,7 +373,7 @@ describe("the panel", () => {
 });
 
 /**
- * Stands in for bb's popup host: patches the composer handle every component in
+ * Stands in for VesnALIA's popup host: patches the composer handle every component in
  * this slot shares, so a test sees what the button and the popup ask of it.
  * The harness itself draws no popup.
  */
@@ -429,7 +429,7 @@ describe("the composer button", () => {
     expect((await screen.findByRole("button", { name: "Skills: 6" })).getAttribute("type")).toBe("button");
   });
 
-  it("opens bb's composer popup, and closes it again", async () => {
+  it("opens VesnALIA's composer popup, and closes it again", async () => {
     const { host } = renderComposer(SkillsComposerButton);
     const button = await screen.findByRole("button", { name: "Skills: 6" });
     fireEvent.click(button);
@@ -467,9 +467,9 @@ describe("the composer popup", () => {
     fireEvent.click(screen.getByRole("button", { name: "open the popup" }));
     // No "Loading skills…" while the popup's own scan runs.
     expect(screen.queryByText("Loading skills…")).toBeNull();
-    expect(screen.getByText("bb-helper")).toBeTruthy();
+    expect(screen.getByText("alia-helper")).toBeTruthy();
     expect(await screen.findByRole("button", { name: "Skills: 5" })).toBeTruthy();
-    expect(screen.queryByText("bb-helper")).toBeNull();
+    expect(screen.queryByText("alia-helper")).toBeNull();
     expect(inspection.rpcCalls.map((call) => call.method)).toEqual(["list", "list"]);
   });
 
@@ -539,7 +539,7 @@ describe("the composer popup", () => {
     expect(inspection.composer.submits).toEqual([]);
   });
 
-  // bb draws the popup inside the composer's form.
+  // VesnALIA draws the popup inside the composer's form.
   it("has no submit button anywhere", async () => {
     renderComposer(SkillsPopup);
     fireEvent.click(await screen.findByText("deploy"));
@@ -547,7 +547,7 @@ describe("the composer popup", () => {
     for (const button of screen.getAllByRole("button")) expect(button.getAttribute("type")).toBe("button");
   });
 
-  // bb closes the popup on Escape from the composer's form, so the focus has to
+  // VesnALIA closes the popup on Escape from the composer's form, so the focus has to
   // stay inside it when a screen change removes the button that had it.
   it("keeps the focus inside as it changes screens, where Escape reaches the composer", async () => {
     let escapes = 0;
@@ -589,7 +589,7 @@ describe("the composer popup", () => {
     expect(screen.getByTestId("skills-popup").getAttribute("tabindex")).toBe("-1");
   });
 
-  it("says so when bb will not open it", () => {
+  it("says so when VesnALIA will not open it", () => {
     const spy = vi.spyOn(toast, "error").mockImplementation(() => 0);
     const refused: string[] = [];
     toggleSkillsPopup({

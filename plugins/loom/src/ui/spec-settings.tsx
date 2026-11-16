@@ -772,7 +772,7 @@ const REPO_OWN = [
 ] as const;
 
 /** One [[repo]]: where it is and its checks, with every other setting behind a Settings disclosure that opens itself on a change, a comment or a finding. */
-function RepoItem({ spec, repo, index, bbProjectNames }: { spec: Spec; repo: RepoSpec; index: number; bbProjectNames: Readonly<Record<string, string>> }) {
+function RepoItem({ spec, repo, index, aliaProjectNames }: { spec: Spec; repo: RepoSpec; index: number; aliaProjectNames: Readonly<Record<string, string>> }) {
   const review = useReview();
   const { project, merge, checks } = spec;
   const at = `repo[${index}]`;
@@ -788,8 +788,8 @@ function RepoItem({ spec, repo, index, bbProjectNames }: { spec: Spec; repo: Rep
         <Commentable as="span" target={{ paths: [at, `${at}.name`], label: `Repo ${repo.name}`, kind: "text" }} className="inline-flex items-center">
           <RepoChip name={repo.name} />
         </Commentable>
-        <Commentable as="span" target={value(`${at}.project`, `${repo.name} › bb project`, "text", repo.project)} className="min-w-0 [overflow-wrap:anywhere]">
-          <span data-repo-project>bb project {bbProjectNames[repo.project] ?? <code className={CODE}>{repo.project}</code>}</span>
+        <Commentable as="span" target={value(`${at}.project`, `${repo.name} › VesnALIA project`, "text", repo.project)} className="min-w-0 [overflow-wrap:anywhere]">
+          <span data-repo-project>alia project {aliaProjectNames[repo.project] ?? <code className={CODE}>{repo.project}</code>}</span>
         </Commentable>
         <Commentable as="span" target={value(`${at}.base`, `${repo.name} › base`, "text", base)} className="text-muted-foreground">
           base <code className={CODE}>{base}</code>
@@ -1114,7 +1114,7 @@ function HookList({ spec }: { spec: Spec }) {
 }
 
 /** How Loom runs the project: merging, workers, reviewers, checks, the scope guard, repos, the deploy order, hooks, and limits and triage. */
-export function SettingsSection({ spec, bbProjectNames, onShowAll, onJump }: { spec: Spec; bbProjectNames: Readonly<Record<string, string>>; onShowAll(): void; onJump(section: "tickets" | "guardrails"): void }) {
+export function SettingsSection({ spec, aliaProjectNames, onShowAll, onJump }: { spec: Spec; aliaProjectNames: Readonly<Record<string, string>>; onShowAll(): void; onJump(section: "tickets" | "guardrails"): void }) {
   const review = useReview();
   const { merge, agents, review: rules, checks, scope, budget, project } = spec;
   const repos = spec.repo ?? [];
@@ -1170,7 +1170,7 @@ export function SettingsSection({ spec, bbProjectNames, onShowAll, onJump }: { s
               <>
                 <Row label="Landing" paths={["merge.strategy"]}>
                   <span className="text-xs text-muted-foreground">
-                    You land it with <code className={`${CODE} whitespace-nowrap`}>bb loom land</code>: {repos.length > 0 ? "one pull request per repo" : "one pull request"}, or onto {repos.length > 0 ? "each base" : project.base} with <code className={`${CODE} whitespace-nowrap`}>--direct</code>.
+                    You land it with <code className={`${CODE} whitespace-nowrap`}>alia loom land</code>: {repos.length > 0 ? "one pull request per repo" : "one pull request"}, or onto {repos.length > 0 ? "each base" : project.base} with <code className={`${CODE} whitespace-nowrap`}>--direct</code>.
                   </span>
                 </Row>
                 {drafts}
@@ -1228,7 +1228,7 @@ export function SettingsSection({ spec, bbProjectNames, onShowAll, onJump }: { s
                 </Row>
                 <Row label="Idle workers" paths={["merge.release_workers"]}>
                   <Commentable as="span" target={value("merge.release_workers", "Release idle workers", "bool", merge.release_workers ?? true)}>
-                    {(merge.release_workers ?? true) ? "Released while their pull requests wait, so bb frees their environments" : "Kept, with their environments, until their pull requests merge"}
+                    {(merge.release_workers ?? true) ? "Released while their pull requests wait, so VesnALIA frees their environments" : "Kept, with their environments, until their pull requests merge"}
                   </Commentable>
                 </Row>
                 <Row label="Fresh pull requests" paths={["merge.refresh_behind"]}>
@@ -1436,11 +1436,11 @@ export function SettingsSection({ spec, bbProjectNames, onShowAll, onJump }: { s
             body: (
               <ul className="divide-y divide-border-seam">
                 {repos.map((repo, index) => (
-                  <RepoItem key={repo.name} spec={spec} repo={repo} index={index} bbProjectNames={bbProjectNames} />
+                  <RepoItem key={repo.name} spec={spec} repo={repo} index={index} aliaProjectNames={aliaProjectNames} />
                 ))}
                 {goneRepos.map((table) => (
                   <RemovedRow key={table.at} table={table} label={`Repo ${oldText(table, "name")} (removed)`}>
-                    <b className="font-mono text-xs">{oldText(table, "name")}</b> bb project {bbProjectNames[oldText(table, "project")] ?? oldText(table, "project")}
+                    <b className="font-mono text-xs">{oldText(table, "name")}</b> alia project {aliaProjectNames[oldText(table, "project")] ?? oldText(table, "project")}
                   </RemovedRow>
                 ))}
               </ul>

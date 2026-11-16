@@ -1,7 +1,7 @@
 // The box's pointer drawn over a desktop's picture for a viewer without control
-// (060): on a Wayland desktop with bb-box-cursor neither stream has it in its
-// picture, so people watching the agent would not see where it points. bb-box
-// sends its image (Selkies' cursor message) and where it is (BB_POINTER), to
+// (060): on a Wayland desktop with alia-box-cursor neither stream has it in its
+// picture, so people watching the agent would not see where it points. alia-box
+// sends its image (Selkies' cursor message) and where it is (ALIA_POINTER), to
 // video viewers on their stream and to VNC viewers on a stream of their own.
 
 import { POINTER_VERB } from "../core/pointer.ts";
@@ -28,7 +28,7 @@ export interface Picture {
   readonly desktopHeight: number;
 }
 
-/** The box's pointer over the picture: its image, scaled and placed as the picture is, at where bb-box says it is. */
+/** The box's pointer over the picture: its image, scaled and placed as the picture is, at where alia-box says it is. */
 export class BoxPointer {
   #image: { readonly url: string; readonly width: number; readonly height: number; readonly hotX: number; readonly hotY: number } | null = null;
   #at: { readonly x: number; readonly y: number } | null = null;
@@ -45,7 +45,7 @@ export class BoxPointer {
     this.#image = size && { url: `data:image/png;base64,${curdata}`, ...size, hotX, hotY };
   }
 
-  /** Where the box's pointer is, from bb-box's `BB_POINTER,<x>,<y>` (its text after the verb); null while it is off the desktop. */
+  /** Where the box's pointer is, from alia-box's `ALIA_POINTER,<x>,<y>` (its text after the verb); null while it is off the desktop. */
   at(rest: string): void {
     const [x, y] = rest.split(",").map(Number);
     this.#at = rest && Number.isFinite(x) && Number.isFinite(y) ? { x: x!, y: y! } : null;

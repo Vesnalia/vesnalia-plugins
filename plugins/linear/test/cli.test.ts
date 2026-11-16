@@ -5,7 +5,7 @@ import { createCliRunner, type CliEnvironment } from "../src/cli.js";
 import { connectedState } from "../src/select/connection.js";
 import type { StatusReport } from "../src/select/status.js";
 import type { ViewerResult } from "../src/linear/types.js";
-import type { PluginCliContext } from "@get-bb/plugin-sdk";
+import type { PluginCliContext } from "@vesnalia/plugin-sdk";
 
 const NOW = 1_700_000_000_000;
 
@@ -73,7 +73,7 @@ const CTX: PluginCliContext = { cwd: undefined, threadId: undefined, projectId: 
 
 describe("parseArgs", () => {
   it("knows argv excludes the command name", () => {
-    // `bb linear issues --state started` arrives as
+    // `alia linear issues --state started` arrives as
     // ["issues", "--state", "started"]. Forgetting that is how a subcommand
     // table silently never matches.
     const args = parseArgs(["issues", "--state", "started"]);
@@ -130,7 +130,7 @@ describe("output shaping", () => {
   });
 });
 
-describe("bb linear", () => {
+describe("alia linear", () => {
   it("refuses a set with no fields rather than spending a request on nothing", async () => {
     const result = await createCliRunner(
       environment({
@@ -162,9 +162,9 @@ describe("bb linear", () => {
     expect(seen["addLabel"]).toBe("bug");
   });
 
-  it("reads set --project as the Linear project, not the bb project", async () => {
-    // Found live: `--project` was also read as the bb project, so the issue was
-    // looked up in a bb project named after the Linear one and never found.
+  it("reads set --project as the Linear project, not the VesnALIA project", async () => {
+    // Found live: `--project` was also read as the VesnALIA project, so the issue was
+    // looked up in a VesnALIA project named after the Linear one and never found.
     let seen: Record<string, unknown> = {};
     await createCliRunner(
       environment({
@@ -178,9 +178,9 @@ describe("bb linear", () => {
     expect(seen["projectId"]).toBe("proj_from_cwd");
   });
 
-  it("reads set --bb-project as the bb project, over the one it was run from", async () => {
-    // Run from outside any bb project with several bound, `set` has nothing
-    // to infer the bb project from, and `--project` is already the Linear one.
+  it("reads set --alia-project as the VesnALIA project, over the one it was run from", async () => {
+    // Run from outside any VesnALIA project with several bound, `set` has nothing
+    // to infer the VesnALIA project from, and `--project` is already the Linear one.
     let seen: Record<string, unknown> = {};
     await createCliRunner(
       environment({
@@ -189,7 +189,7 @@ describe("bb linear", () => {
           return { ok: true, message: "ok" };
         },
       }),
-    )(["set", "ENG-1", "--project", "Q4 Roadmap", "--bb-project", "proj_named"], CTX);
+    )(["set", "ENG-1", "--project", "Q4 Roadmap", "--alia-project", "proj_named"], CTX);
     expect(seen["project"]).toBe("Q4 Roadmap");
     expect(seen["projectId"]).toBe("proj_named");
   });
@@ -197,7 +197,7 @@ describe("bb linear", () => {
   it("needs a title to create an issue", async () => {
     const result = await createCliRunner(environment())(["create"], CTX);
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain("bb linear create");
+    expect(result.stderr).toContain("alia linear create");
   });
 
   it("takes the whole rest of the line as the title", async () => {
@@ -231,8 +231,8 @@ describe("bb linear", () => {
 
   it("scopes to the project it was run from, not just to --project", async () => {
     // Found live: every project-scoped command fell through to "the only
-    // project", which does not exist in a bb with fifteen of them. The symptom
-    // was `bb linear issues` reporting no binding from inside a bound project.
+    // project", which does not exist in a VesnALIA with fifteen of them. The symptom
+    // was `alia linear issues` reporting no binding from inside a bound project.
     let seen: string | undefined = "unset";
     await createCliRunner(
       environment({
@@ -302,7 +302,7 @@ describe("bb linear", () => {
   it("needs both an issue and a url to attach", async () => {
     const result = await createCliRunner(environment())(["attach", "ENG-1"], CTX);
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain("bb linear attach");
+    expect(result.stderr).toContain("alia linear attach");
   });
 
   it("refreshes the workspace, which is a different question from the key working", async () => {
@@ -325,7 +325,7 @@ describe("bb linear", () => {
   it("prints usage with no arguments", async () => {
     const result = await createCliRunner(environment())([], CTX);
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("bb linear status");
+    expect(result.stdout).toContain("alia linear status");
   });
 
   it("fails on an unknown command instead of doing something surprising", async () => {

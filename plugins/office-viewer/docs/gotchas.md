@@ -30,7 +30,7 @@ TL;DR: The sharp edges come from file ownership context, format-specific edit pa
 
 **Problem:** A path is resolved against its thread, environment, project or host context; missing context raises a `LocateError` (`src/server/locate.ts:91-133`).
 **Risk:** A file path that exists on a different machine is not silently found there.
-**Workaround:** Pass the opener's BB `source` fields intact (`src/media/media.tsx:57-70`).
+**Workaround:** Pass the opener's VesnALIA `source` fields intact (`src/media/media.tsx:57-70`).
 
 ### Spreadsheet save can conflict with a concurrent edit
 
@@ -62,8 +62,8 @@ TL;DR: The sharp edges come from file ownership context, format-specific edit pa
 
 ### Experimental chat image editor requires an optional slot
 
-**Problem:** The app registers the chat image editor only when BB exposes `experimental_vkImageEditor` (`app.tsx:69-75`).
-**Risk:** BB image-preview editing is unavailable without that optional function.
+**Problem:** The app registers the chat image editor only when VesnALIA exposes `experimental_vkImageEditor` (`app.tsx:69-75`).
+**Risk:** VesnALIA image-preview editing is unavailable without that optional function.
 **Workaround:** Open the image through the regular file opener to use its editor; the chat attachment editor requires the optional slot (`app.tsx:69-75`; `src/media/media.tsx:161-168`).
 
 ### Presentation parsing has explicit legacy behavior

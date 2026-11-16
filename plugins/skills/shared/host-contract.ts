@@ -7,15 +7,15 @@
  * The server fills every field from the thread itself — the app never names a
  * provider, a directory or a path.
  */
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { SkillDocumentSchema, SkillEntrySchema } from "./skills";
 
 const Workspace = { provider: z.string().min(1), cwd: z.string().min(1) };
 
-// Both only read files, so bb may send either again when the host's answer is
-// lost (`experimental_retryable`, bb 0.47.1; older bb ignores the key).
+// Both only read files, so VesnALIA may send either again when the host's answer is
+// lost (`experimental_retryable`, VesnALIA 0.47.1; older VesnALIA ignores the key).
 export const hostContract = defineRpcContract({
   discover: {
     experimental_retryable: true,

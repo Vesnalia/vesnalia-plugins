@@ -89,14 +89,14 @@ function realOrSame(path) {
 
 const LONGEST_TEMP_BASE = 40;
 
-function shortTempBaseAsBbBoxChoosesIt() {
+function shortTempBaseAsAliaBoxChoosesIt() {
   return tmpdir().length > LONGEST_TEMP_BASE ? "/tmp" : tmpdir();
 }
 
 let rootsOfThisProcess = null;
 
 export function testMadeRoots() {
-  rootsOfThisProcess ??= [...new Set([tmpdir(), shortTempBaseAsBbBoxChoosesIt()].flatMap((base) => [base, realOrSame(base)]))];
+  rootsOfThisProcess ??= [...new Set([tmpdir(), shortTempBaseAsAliaBoxChoosesIt()].flatMap((base) => [base, realOrSame(base)]))];
   return rootsOfThisProcess;
 }
 

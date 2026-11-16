@@ -232,7 +232,7 @@ export function resolveScope(input: string, known: string[]): string {
   if (matches.length === 1) return matches[0]!;
   if (matches.length > 1) throw new Error(`"${input}" is ambiguous: ${matches.join(", ")}.`);
   if (isArea(value) || /^[\w.-]+\/[\w.-]+$/.test(value)) return value;
-  throw new Error(`Unknown repo or area "${input}". Run bb radar scopes to list them.`);
+  throw new Error(`Unknown repo or area "${input}". Run alia radar scopes to list them.`);
 }
 
 /** One line for status output. */

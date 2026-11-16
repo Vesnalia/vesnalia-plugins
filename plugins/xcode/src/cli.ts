@@ -1,12 +1,12 @@
 /**
- * `bb xcode …`.
+ * `alia xcode …`.
  *
  * The CLI is the agent-facing surface as much as the human one, so its output
  * is the same text `xcode_status` returns — see `present.ts`. Everything here
  * is thin: the work belongs to the store, the collector and `wrapped.ts`.
  */
 
-import { PLUGIN_CLI_OUTPUT_MAX_BYTES } from "@get-bb/plugin-sdk";
+import { PLUGIN_CLI_OUTPUT_MAX_BYTES } from "@vesnalia/plugin-sdk";
 import { realpath } from "node:fs/promises";
 import { resolve } from "node:path";
 
@@ -66,7 +66,7 @@ export interface CliDeps {
  * Longest a `--wait` may block.
  *
  * The build is detached either way, so a timeout here abandons the *watching*,
- * never the build. Twenty minutes covers a cold archive; past that, `bb xcode
+ * never the build. Twenty minutes covers a cold archive; past that, `alia xcode
  * status` is the right tool.
  */
 const MAX_WAIT_MS = 20 * 60_000;
@@ -75,34 +75,34 @@ export const CLI_COMMANDS = [
   {
     name: "status",
     summary: "What Xcode is doing right now",
-    usage: "bb xcode status",
+    usage: "alia xcode status",
   },
   {
     name: "runs",
     summary: "Recent builds and test runs",
-    usage: "bb xcode runs [--project <id>] [--kind build|test] [--limit N]",
+    usage: "alia xcode runs [--project <id>] [--kind build|test] [--limit N]",
   },
-  { name: "show", summary: "Detail for one run", usage: "bb xcode show <run-id>" },
-  { name: "roots", summary: "Discovered DerivedData roots", usage: "bb xcode roots" },
+  { name: "show", summary: "Detail for one run", usage: "alia xcode show <run-id>" },
+  { name: "roots", summary: "Discovered DerivedData roots", usage: "alia xcode roots" },
   {
     name: "run",
     summary: "Start xcodebuild with live tracking, detached from this command",
-    usage: "bb xcode run [--wait] -- xcodebuild -scheme App build",
+    usage: "alia xcode run [--wait] -- xcodebuild -scheme App build",
   },
   {
     name: "wait",
     summary: "Block until a tracked run reports its verdict",
-    usage: "bb xcode wait <run-id> [--timeout <seconds>]",
+    usage: "alia xcode wait <run-id> [--timeout <seconds>]",
   },
   {
     name: "stop",
     summary: "Stop a running tracked build",
-    usage: "bb xcode stop <run-id>",
+    usage: "alia xcode stop <run-id>",
   },
   {
     name: "shim",
     summary: "PATH shim so every xcodebuild records real pass/fail",
-    usage: "bb xcode shim [status|install|uninstall]",
+    usage: "alia xcode shim [status|install|uninstall]",
   },
 ] as const;
 
@@ -128,7 +128,7 @@ export function createCli(deps: CliDeps) {
     if (scope === null) return null;
     if (ctx.projectId !== undefined && scope.projectId !== ctx.projectId) return null;
     // Compare real paths. The OS reports the invoking process's cwd
-    // physically, so a checkout bb knows through a symlink (`/tmp` on macOS,
+    // physically, so a checkout VesnALIA knows through a symlink (`/tmp` on macOS,
     // a symlinked `~/Git`) never matched its own builds. A path that does not
     // exist on this machine (a checkout on another host) keeps its resolved
     // form, exactly as before.
@@ -146,7 +146,7 @@ export function createCli(deps: CliDeps) {
     id: string | undefined,
     scope: InvocationScope = undefined,
   ): CliResult {
-    if (!id) return { exitCode: 1, stderr: "Usage: bb xcode show <run-id>\n" };
+    if (!id) return { exitCode: 1, stderr: "Usage: VesnALIA xcode show <run-id>\n" };
     const run = deps.store.getRun(id);
     // Deliberately do not distinguish an absent run from one outside the
     // invoking thread. The distinction is itself a cross-thread oracle.
@@ -220,7 +220,7 @@ export function createCli(deps: CliDeps) {
     if (commandArgs.length === 0) {
       return {
         exitCode: 1,
-        stderr: "Usage: bb xcode run [--wait] -- xcodebuild -scheme App build\n",
+        stderr: "Usage: VesnALIA xcode run [--wait] -- xcodebuild -scheme App build\n",
       };
     }
 
@@ -240,7 +240,7 @@ export function createCli(deps: CliDeps) {
         return {
           exitCode: 1,
           stderr:
-            "Tracked builds require a bb thread so the checkout security boundary can be enforced.\n",
+            "Tracked builds require a VesnALIA thread so the checkout security boundary can be enforced.\n",
         };
       }
       const resolved = await scopeForInvocation(ctx);
@@ -293,7 +293,7 @@ export function createCli(deps: CliDeps) {
           ? [
               `Build started on ${target.machineName} as ${started.runId}.`,
               "It keeps running if this command disconnects.",
-              `Wait for it with: bb xcode wait ${started.runId} (stop it with: bb xcode stop ${started.runId}).`,
+              `Wait for it with: VesnALIA xcode wait ${started.runId} (stop it with: VesnALIA xcode stop ${started.runId}).`,
               "It also appears in the live row above the composer.",
               "",
               `result bundle (on ${target.machineName}): ${started.bundlePath}`,
@@ -301,7 +301,7 @@ export function createCli(deps: CliDeps) {
           : [
               "Build started; the background probe will assign its run id.",
               "It keeps running if this command disconnects.",
-              "Watch it with: bb xcode status (then stop it with: bb xcode stop <run-id>).",
+              "Watch it with: VesnALIA xcode status (then stop it with: VesnALIA xcode stop <run-id>).",
               "It also appears in the live row above the composer.",
               "",
               `result bundle: ${started.bundlePath}`,
@@ -346,7 +346,7 @@ export function createCli(deps: CliDeps) {
     if (!id) {
       return {
         exitCode: 1,
-        stderr: "Usage: bb xcode wait <run-id> [--timeout <seconds>]\n",
+        stderr: "Usage: VesnALIA xcode wait <run-id> [--timeout <seconds>]\n",
       };
     }
     const scope = await scopeForInvocation(ctx);
@@ -381,7 +381,7 @@ export function createCli(deps: CliDeps) {
     id: string | undefined,
     ctx: CliContext,
   ): Promise<CliResult> {
-    if (!id) return { exitCode: 1, stderr: "Usage: bb xcode stop <run-id>\n" };
+    if (!id) return { exitCode: 1, stderr: "Usage: VesnALIA xcode stop <run-id>\n" };
     const scope = await scopeForInvocation(ctx);
     const target = deps.store.getRun(id);
     if (!mayReadRun(target, scope)) {
@@ -403,7 +403,7 @@ export function createCli(deps: CliDeps) {
     /**
      * Only signal a pid the probe can still see.
      *
-     * A row can say `running` while its process is long gone — bb killed
+     * A row can say `running` while its process is long gone — VesnALIA killed
      * mid-build leaves exactly that — and by then the OS may have handed the
      * pid to something else entirely. Checking the live snapshot first means
      * the worst case is refusing to stop a build, not SIGTERMing a stranger.
@@ -421,7 +421,7 @@ export function createCli(deps: CliDeps) {
       return {
         exitCode: 1,
         stderr:
-          "Stopping a host build requires a bb thread so a person can confirm it.\n",
+          "Stopping a host build requires a VesnALIA thread so a person can confirm it.\n",
       };
     }
     const approved = await deps.confirmHostAction(ctx.threadId, {
@@ -454,7 +454,7 @@ export function createCli(deps: CliDeps) {
       return {
         exitCode: 1,
         stderr:
-          "Stopping a host build requires a bb thread so a person can confirm it.\n",
+          "Stopping a host build requires a VesnALIA thread so a person can confirm it.\n",
       };
     }
     const machine = deps.machineName(target.hostId!) ?? target.hostId!;
@@ -517,7 +517,7 @@ export function createCli(deps: CliDeps) {
           lines.push(
             "",
             "Xcode writes no build log for CLI builds; pass/fail is only",
-            "recoverable from a result bundle. Install with: bb xcode shim install",
+            "recoverable from a result bundle. Install with: VesnALIA xcode shim install",
           );
         }
         return { exitCode: 0, stdout: `${lines.join("\n")}\n` };
@@ -617,7 +617,7 @@ export function createCli(deps: CliDeps) {
             return {
               exitCode: 1,
               stderr:
-                "Shim changes require a bb thread so a person can confirm them.\n",
+                "Shim changes require a VesnALIA thread so a person can confirm them.\n",
             };
           }
           if (action === "install" || action === "uninstall") {

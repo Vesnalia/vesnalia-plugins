@@ -1,8 +1,8 @@
 // Hook definitions: the user-authored shape, its validation, the event
-// catalog, and matching. Pure module — no bb API, so it is unit-testable.
+// catalog, and matching. Pure module — no VesnALIA API, so it is unit-testable.
 import { z } from "zod";
 
-/** Observe-only lifecycle events a hook can subscribe to (bb.events.on). */
+/** Observe-only lifecycle events a hook can subscribe to (alia.events.on). */
 export const OBSERVE_EVENTS = [
   "thread.created",
   "thread.active",
@@ -20,7 +20,7 @@ export const OBSERVE_EVENTS = [
   "experimental_terminal.input",
 ] as const;
 
-/** The gating checkpoint (bb.experimental_hooks): the hook's answer is acted on. */
+/** The gating checkpoint (alia.experimental_hooks): the hook's answer is acted on. */
 export const GATE_EVENTS = ["message.dispatch"] as const;
 
 export const HOOK_EVENTS = [...OBSERVE_EVENTS, ...GATE_EVENTS] as const;
@@ -48,7 +48,7 @@ export const EVENT_CATALOG: readonly EventInfo[] = [
   { event: "message.cancelled", kind: "observe", summary: "A queued message was removed before it dispatched." },
   { event: "turn.failed", kind: "observe", summary: "A turn failed; payload has the request id, error info and rate limits." },
   { event: "experimental_thread.events", kind: "observe", summary: "The thread's event log advanced (at most once per second per thread). Noisy." },
-  { event: "experimental_terminal.input", kind: "observe", summary: "A user typed into a BB terminal (no keystroke contents)." },
+  { event: "experimental_terminal.input", kind: "observe", summary: "A user typed into a VesnALIA terminal (no keystroke contents)." },
   { event: "message.dispatch", kind: "gate", summary: "GATE: decide whether a message may reach the provider. Exit 0 proceeds, 2 rejects, 3 waits." },
 ];
 
@@ -94,9 +94,9 @@ export const hookSchema = z
   .object({
     id: z.string().regex(HOOK_ID_PATTERN, "id must be lowercase letters, digits and dashes (max 64)"),
     event: z.enum(HOOK_EVENTS),
-    /** Shell command run on the BB server with the event JSON on stdin. */
+    /** Shell command run on the VesnALIA server with the event JSON on stdin. */
     command: z.string().min(1).max(8192).optional(),
-    /** Working directory for the command, on the BB server. */
+    /** Working directory for the command, on the VesnALIA server. */
     cwd: z.string().min(1).optional(),
     /** HTTP(S) endpoint that receives the event JSON as a POST body; may contain `{{secret:NAME}}`. */
     url: z.string().min(1).max(2048).optional(),
@@ -108,14 +108,14 @@ export const hookSchema = z
      * Without it the whole event JSON is sent.
      */
     body: z.string().min(1).max(16_384).optional(),
-    /** Set by `bb hooks use`: which template produced this hook and with what values. */
+    /** Set by `alia hooks use`: which template produced this hook and with what values. */
     template: z
       .object({
         id: z.string().min(1),
         /** Catalog name, or "bundled". */
         source: z.string().min(1).optional(),
         params: z.record(z.string(), z.string()),
-        /** Secret parameters: param key → secret name (`bb hooks secrets`). */
+        /** Secret parameters: param key → secret name (`alia hooks secrets`). */
         secrets: z.record(z.string(), z.string()).optional(),
       })
       .strict()

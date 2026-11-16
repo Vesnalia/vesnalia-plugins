@@ -58,20 +58,20 @@ describe("macAppOwnsLocal", () => {
   let home: string;
   afterEach(() => rmSync(home, { recursive: true, force: true }));
 
-  test("true when only the Mac app's data dir is here, so bb must not start it", () => {
+  test("true when only the Mac app's data dir is here, so VesnALIA must not start it", () => {
     home = mkdtempSync(join(tmpdir(), "lobu-local-"));
     const folders = localFolders(home);
     mkdirSync(join(folders.macApp, "data"), { recursive: true });
     expect(macAppOwnsLocal(folders)).toBe(true);
   });
 
-  test("false once bb has its own project", () => {
+  test("false once VesnALIA has its own project", () => {
     home = mkdtempSync(join(tmpdir(), "lobu-local-"));
     const folders = localFolders(home);
     mkdirSync(join(folders.macApp, "data"), { recursive: true });
     expect(macAppOwnsLocal(folders)).toBe(true);
-    mkdirSync(folders.bb, { recursive: true });
-    writeFileSync(join(folders.bb, ".env"), "ENCRYPTION_KEY=abc\n");
+    mkdirSync(folders.alia, { recursive: true });
+    writeFileSync(join(folders.alia, ".env"), "ENCRYPTION_KEY=abc\n");
     expect(macAppOwnsLocal(folders)).toBe(false);
   });
 
@@ -91,10 +91,10 @@ describe("startLocal", () => {
     mkdirSync(join(folders.macApp, "data"), { recursive: true });
     const serve = () => Promise.reject(new Error("must not start"));
     await expect(startLocal({ serve }, folders, LOCAL_PORT)).rejects.toThrow("Open the Lobu app");
-    expect(existsSync(folders.bb)).toBe(false);
+    expect(existsSync(folders.alia)).toBe(false);
   });
 
-  test("creates bb's project with a private key once, then runs lobu run in it", async () => {
+  test("creates VesnALIA's project with a private key once, then runs lobu run in it", async () => {
     home = mkdtempSync(join(tmpdir(), "lobu-local-"));
     const folders = localFolders(home);
     const runs: { args: string[]; cwd: string; env: Record<string, string> }[] = [];
@@ -103,7 +103,7 @@ describe("startLocal", () => {
       return {} as never;
     };
     await startLocal({ serve }, folders, 8795);
-    const env = join(folders.bb, ".env");
+    const env = join(folders.alia, ".env");
     const key = readFileSync(env, "utf8");
     expect(key).toMatch(/^ENCRYPTION_KEY=[0-9a-f]{64}\n$/);
     expect(statSync(env).mode & 0o777).toBe(0o600);
@@ -111,8 +111,8 @@ describe("startLocal", () => {
     expect(readFileSync(env, "utf8")).toBe(key);
     expect(runs[0]).toEqual({
       args: ["run", "--port", "8795"],
-      cwd: folders.bb,
-      env: { DATABASE_URL: `file://${join(folders.bb, "data")}`, HOST: "127.0.0.1", LOBU_CONTEXT: "local" },
+      cwd: folders.alia,
+      env: { DATABASE_URL: `file://${join(folders.alia, "data")}`, HOST: "127.0.0.1", LOBU_CONTEXT: "local" },
     });
   });
 });

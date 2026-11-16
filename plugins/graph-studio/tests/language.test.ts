@@ -95,15 +95,15 @@ function sourceFiles(): string[] {
 describe("the plugin ships in English", () => {
   /**
    * The manifest was missed by three passes of this test, because the test
-   * only ever looked at source files. `bb.name` and `bb.description` are what
+   * only ever looked at source files. `alia.name` and `alia.description` are what
    * the plugin list shows — as much a user-facing string as any label, just
    * not in a `.ts` file.
    */
   it("has no German in the manifest the plugin list shows", () => {
     const manifest = JSON.parse(readFileSync("package.json", "utf8")) as {
-      bb?: { name?: string; description?: string };
+      alia?: { name?: string; description?: string };
     };
-    const shown = [manifest.bb?.name ?? "", manifest.bb?.description ?? ""];
+    const shown = [manifest.alia?.name ?? "", manifest.alia?.description ?? ""];
     const offenders = shown.filter((text) => PATTERN.test(text));
     expect(offenders).toEqual([]);
   });

@@ -4,7 +4,7 @@ import { setup } from "./helpers";
 
 const fixtures = fileURLToPath(new URL("./fixtures", import.meta.url));
 
-describe("bb agent-icons", () => {
+describe("alia agent-icons", () => {
   it("import-set creates a set named after the folder argument with icon names from file names", async () => {
     const t = await setup();
     const result = await t.harness.behavior.runCli(["import-set", "Team", "set"], { cwd: fixtures });
@@ -60,7 +60,7 @@ describe("bb agent-icons", () => {
     expect(missing.stderr).toContain('set "Nope" not found');
   });
 
-  it("list shows assignments, including providers absent from bb (R6)", async () => {
+  it("list shows assignments, including providers absent from VesnALIA (R6)", async () => {
     const t = await setup([
       { id: "codex", displayName: "Codex" },
       { id: "acp-beta", displayName: "Beta" },
@@ -71,7 +71,7 @@ describe("bb agent-icons", () => {
     expect(exitCode).toBe(0);
     expect(stdout).toContain("acp-beta (Beta): builtin:Calendar, light #af3029");
     expect(stdout).toContain("codex (Codex): original icon");
-    expect(stdout).toMatch(/Not in bb:\n {2}acp-old: builtin:Archive/);
+    expect(stdout).toMatch(/Not in alia:\n {2}acp-old: builtin:Archive/);
   });
 
   it("list names the icons in each set and the builtins that assign accepts", async () => {

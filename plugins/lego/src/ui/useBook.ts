@@ -1,7 +1,7 @@
 // Live book state for the inline card and the side panel: fetch over RPC,
 // refetch on the server's "book" signal and after a realtime reconnect.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useBbNavigate, useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../../server";
 import type { BookState } from "../book";
 
@@ -11,9 +11,9 @@ export const BOOK_ID = /^lb_[a-z0-9]{6,24}$/u;
 export const PANEL_ACTION_ID = "build";
 
 /**
- * The last copy of each book this window fetched. BB remounts the banner and
+ * The last copy of each book this window fetched. VesnALIA remounts the banner and
  * panel when you switch threads or tabs; starting from the cached copy keeps
- * them on screen while the refetch is in flight, which matters when BB is slow.
+ * them on screen while the refetch is in flight, which matters when VesnALIA is slow.
  */
 const CACHE_LIMIT = 40;
 const cache = new Map<string, BookState | null>();
@@ -84,7 +84,7 @@ export function useBook(bookId: string | null) {
  * where the surface has no side panel, such as a chat embedded in a plugin.
  */
 export function useOpenBuildPanel() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return useCallback(
     (book: { id: string; setNumber: number }) =>
       navigate.openThreadPanel({

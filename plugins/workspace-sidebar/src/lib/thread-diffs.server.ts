@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const threadDiffSchema = z.object({
@@ -10,7 +10,7 @@ export const threadDiffSchema = z.object({
 
 type Diff = Omit<z.infer<typeof threadDiffSchema>, "threadId">;
 type Target = { threadId: string; environmentId: string };
-type Environments = Pick<BbPluginApi["sdk"]["environments"], "get" | "status" | "diffFiles">;
+type Environments = Pick<AliaPluginApi["sdk"]["environments"], "get" | "status" | "diffFiles">;
 
 const CACHE_MS = 10_000;
 const MAX_CACHE_ENTRIES = 1_000;

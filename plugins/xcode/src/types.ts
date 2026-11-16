@@ -1,8 +1,8 @@
 /**
  * Shared domain types for the Xcode activity tracker.
  *
- * Kept free of any `@bb/plugin-sdk` or node imports so the pure logic modules
- * that use them stay unit-testable without a bb server.
+ * Kept free of any `@vesnalia/plugin-sdk` or node imports so the pure logic modules
+ * that use them stay unit-testable without a VesnALIA server.
  */
 
 export type { RunKind, RunStatus } from "./model";
@@ -12,7 +12,7 @@ import type { RunKind, RunStatus } from "./model";
 export type RootDiscovery =
   | "process" // learned from a live compiler invocation
   | "default" // ~/Library/Developer/Xcode/DerivedData
-  | "project-scan" // found by scanning a bb project worktree
+  | "project-scan" // found by scanning a VesnALIA project worktree
   | "manual"; // user-configured via settings
 
 export interface DerivedRoot {

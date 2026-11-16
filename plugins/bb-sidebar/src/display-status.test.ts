@@ -3,8 +3,8 @@ import type {
   PluginSidebarThread,
   PluginSidebarThreadIndicator,
   PluginSidebarThreadRowStatus,
-} from "@get-bb/plugin-sdk/app";
-import { resolveThreadStatus } from "./bb-sdk";
+} from "@vesnalia/plugin-sdk/app";
+import { resolveThreadStatus } from "./alia-sdk";
 import { childStatusKind, childSubtree, isKnownIndicator, threadAsksForInput } from "./child-status";
 import { isThreadWorking } from "./lifecycle";
 import { threadRowStatus, threadShortStatus, threadWithDraft } from "./StatusSlot";
@@ -12,15 +12,15 @@ import { idleSidebarThreadFields } from "./test-fixtures";
 import { isThreadWorkingForDisplay, isWorkingTree } from "./working-tree";
 
 /**
- * Every combination of the fields bb's status rule reads, run through the
- * sidebar's rules from before it used bb's resolver (frozen below) and
+ * Every combination of the fields VesnALIA's status rule reads, run through the
+ * sidebar's rules from before it used VesnALIA's resolver (frozen below) and
  * through today's code. The table of differences is the whole of the
  * behaviour change: a thread that is not running yet or whose machine is
  * disconnected stops counting as working for display, and another plugin's
  * running status starts to. Anything else fails the test.
  */
 
-// The sidebar's rules before bb's resolver, frozen as the baseline.
+// The sidebar's rules before VesnALIA's resolver, frozen as the baseline.
 const OLD = {
   isWorkingIndicator(indicator: PluginSidebarThreadIndicator): boolean {
     return ["runtime", "workflow", "background-agent", "background-command", "plan-mode", "working-draft"].includes(
@@ -88,7 +88,7 @@ const OLD = {
 /**
  * What the row's status slot draws, as StatusOrTime does: the provider-limit
  * warning, another plugin's status, the sidebar's short status (with the
- * glyph a compact row adds to a running one), bb's glyph for a kind this
+ * glyph a compact row adds to a running one), VesnALIA's glyph for a kind this
  * build does not know, or the age.
  */
 function drawSlot(
@@ -99,7 +99,7 @@ function drawSlot(
   if (limited && !folded.hasPendingInteraction && folded.indicator !== "runtime") return "provider limit";
   if (shownRowStatus) return `plugin status: ${shownRowStatus.label}`;
   const status = threadShortStatus(folded);
-  if (status === null) return isKnownIndicator(folded.indicator) ? "age" : `bb's glyph: ${folded.indicatorLabel}`;
+  if (status === null) return isKnownIndicator(folded.indicator) ? "age" : `alia's glyph: ${folded.indicatorLabel}`;
   return status.showsDuration ? `${status.label} [${folded.indicator} glyph]` : status.label;
 }
 
@@ -112,7 +112,7 @@ function slot(
   return drawSlot(threadWithDraft(listed, hasDraft), threadRowStatus(listed, rowStatus, limited, hasDraft), limited);
 }
 
-/** The sidebar's own priorities, which sit above bb's indicator. */
+/** The sidebar's own priorities, which sit above VesnALIA's indicator. */
 const SIDEBAR_PRIORITIES = ["Needs you", "Send failed", "Queued", "provider limit"];
 
 function slotReason(listed: PluginSidebarThread, hasDraft: boolean, before: string, after: string): string {
@@ -120,19 +120,19 @@ function slotReason(listed: PluginSidebarThread, hasDraft: boolean, before: stri
     return "unexpected: one of the sidebar's own priorities changed";
   if (!hasDraft) return "unexpected";
   if (listed.indicator === "runtime" && after.startsWith("plugin status"))
-    return "owner: bb shows another plugin's status over a working draft";
+    return "owner: VesnALIA shows another plugin's status over a working draft";
   if (
     (listed.indicator === "unread-success" || listed.indicator === "queued-failed") &&
     after.includes("working-draft")
   )
-    return "owner: bb's working-draft over an unread result";
+    return "owner: VesnALIA's working-draft over an unread result";
   return "unexpected";
 }
 
 const STATUSES = ["pending", "idle", "starting", "active", "stopping", "error"] as const;
 const RUNTIME_STATUSES = [...STATUSES, "provisioning", "waiting-for-host"] as const;
 /**
- * The pairs bb 0.49.0 emits: its server sets `runtimeStatus` to `status`,
+ * The pairs VesnALIA 0.49.0 emits: its server sets `runtimeStatus` to `status`,
  * or to "waiting-for-host" for an active thread whose host is disconnected.
  * The type allows the rest, so they are enumerated too, in their own group.
  */
@@ -171,7 +171,7 @@ function* threads(): Generator<PluginSidebarThread> {
                     planMode: (counts >> 3) & 1,
                   },
                 } as PluginSidebarThread;
-                // bb's host computes the listed indicator with this resolver.
+                // VesnALIA's host computes the listed indicator with this resolver.
                 const { indicator, label } = resolveThreadStatus({
                   thread: fields,
                   hiddenThreads: [],
@@ -212,7 +212,7 @@ function reason(thread: PluginSidebarThread, rowStatus: string, before: unknown,
     !emitted(thread.status, thread.runtimeStatus) &&
     (thread.runtimeStatus === "idle" || thread.runtimeStatus === "error")
   )
-    return `an in-flight status over runtimeStatus ${thread.runtimeStatus}, which bb never emits`;
+    return `an in-flight status over runtimeStatus ${thread.runtimeStatus}, which VesnALIA never emits`;
   return "unexpected";
 }
 
@@ -249,7 +249,7 @@ function differences() {
     }
     // What the row's status slot shows (as StatusOrTime draws it), with and
     // without a draft. An indicator this build does not know cannot be built
-    // here: in bb the resolver that set it is the one the sidebar calls, so
+    // here: in VesnALIA the resolver that set it is the one the sidebar calls, so
     // draft-status.test.ts covers that case instead.
     // The folded indicator and its label, which the hover card draws.
     const before = OLD.withDraft(thread);
@@ -262,7 +262,7 @@ function differences() {
       add(
         pair,
         `draft indicator (${level}, listed ${thread.indicator})`,
-        owner ? "owner: bb's working-draft over an unread result or a failed send" : "unexpected",
+        owner ? "owner: VesnALIA's working-draft over an unread result or a failed send" : "unexpected",
         before.indicator,
         after.indicator,
       );
@@ -285,10 +285,10 @@ function differences() {
   return Object.fromEntries([...table].sort());
 }
 
-describe("display status against the rules before bb's resolver", () => {
+describe("display status against the rules before VesnALIA's resolver", () => {
   it("differs only where the change means to", () => {
-    // "pair": whether bb 0.49.0 emits the status and runtimeStatus pair.
-    // "owner": cases where the sidebar now shows what bb's resolver does with
+    // "pair": whether VesnALIA 0.49.0 emits the status and runtimeStatus pair.
+    // "owner": cases where the sidebar now shows what VesnALIA's resolver does with
     // a draft: another plugin's status over a working draft, and
     // "working-draft" over an unread result on a thread with a background
     // agent or command. A failed send there still reads "Send failed".
@@ -300,49 +300,49 @@ describe("display status against the rules before bb's resolver", () => {
       "emitted | display working (top-level) | D2: another plugin's running status counts as working | false -> true": 6,
       "emitted | display working (top-level) | D2: runtimeStatus pending no longer counts as working | true -> false": 16,
       "emitted | display working (top-level) | D2: runtimeStatus waiting-for-host no longer counts as working | true -> false": 16,
-      'emitted | draft indicator (child, listed queued-failed) | owner: bb\'s working-draft over an unread result or a failed send | "queued-failed" -> "working-draft"': 24,
-      'emitted | draft indicator (top-level, listed queued-failed) | owner: bb\'s working-draft over an unread result or a failed send | "queued-failed" -> "working-draft"': 21,
-      'emitted | draft indicator (top-level, listed unread-success) | owner: bb\'s working-draft over an unread result or a failed send | "unread-success" -> "working-draft"': 6,
+      'emitted | draft indicator (child, listed queued-failed) | owner: VesnALIA\'s working-draft over an unread result or a failed send | "queued-failed" -> "working-draft"': 24,
+      'emitted | draft indicator (top-level, listed queued-failed) | owner: VesnALIA\'s working-draft over an unread result or a failed send | "queued-failed" -> "working-draft"': 21,
+      'emitted | draft indicator (top-level, listed unread-success) | owner: VesnALIA\'s working-draft over an unread result or a failed send | "unread-success" -> "working-draft"': 6,
       "emitted | idle parent of this child working (child) | D2: another plugin's running status counts as working | false -> true": 8,
       "emitted | idle parent of this child working (child) | D2: runtimeStatus pending no longer counts as working | true -> false": 16,
       "emitted | idle parent of this child working (child) | D2: runtimeStatus waiting-for-host no longer counts as working | true -> false": 16,
-      'emitted | row (child, listed runtime) | owner: bb shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin done"': 96,
-      'emitted | row (child, listed runtime) | owner: bb shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin failed"': 96,
-      'emitted | row (child, listed runtime) | owner: bb shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin status"': 96,
-      'emitted | row (child, listed runtime) | owner: bb shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Waiting for CI"': 96,
-      'emitted | row (top-level, listed runtime) | owner: bb shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin done"': 96,
-      'emitted | row (top-level, listed runtime) | owner: bb shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin failed"': 96,
-      'emitted | row (top-level, listed runtime) | owner: bb shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin status"': 96,
-      'emitted | row (top-level, listed runtime) | owner: bb shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Waiting for CI"': 96,
-      'emitted | row (top-level, listed unread-success) | owner: bb\'s working-draft over an unread result | "Unread" -> "Drafting [working-draft glyph]"': 6,
+      'emitted | row (child, listed runtime) | owner: VesnALIA shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin done"': 96,
+      'emitted | row (child, listed runtime) | owner: VesnALIA shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin failed"': 96,
+      'emitted | row (child, listed runtime) | owner: VesnALIA shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin status"': 96,
+      'emitted | row (child, listed runtime) | owner: VesnALIA shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Waiting for CI"': 96,
+      'emitted | row (top-level, listed runtime) | owner: VesnALIA shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin done"': 96,
+      'emitted | row (top-level, listed runtime) | owner: VesnALIA shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin failed"': 96,
+      'emitted | row (top-level, listed runtime) | owner: VesnALIA shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin status"': 96,
+      'emitted | row (top-level, listed runtime) | owner: VesnALIA shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Waiting for CI"': 96,
+      'emitted | row (top-level, listed unread-success) | owner: VesnALIA\'s working-draft over an unread result | "Unread" -> "Drafting [working-draft glyph]"': 6,
       'never emitted | child status kind (child) | D2: another plugin\'s running status counts as working | null -> "working"': 80,
       "never emitted | display working (child) | D2: another plugin's running status counts as working | false -> true": 24,
       "never emitted | display working (child) | D2: runtimeStatus pending no longer counts as working | true -> false": 48,
       "never emitted | display working (child) | D2: runtimeStatus waiting-for-host no longer counts as working | true -> false": 48,
-      "never emitted | display working (child) | an in-flight status over runtimeStatus error, which bb never emits | true -> false": 64,
-      "never emitted | display working (child) | an in-flight status over runtimeStatus idle, which bb never emits | true -> false": 64,
+      "never emitted | display working (child) | an in-flight status over runtimeStatus error, which VesnALIA never emits | true -> false": 64,
+      "never emitted | display working (child) | an in-flight status over runtimeStatus idle, which VesnALIA never emits | true -> false": 64,
       "never emitted | display working (top-level) | D2: another plugin's running status counts as working | false -> true": 18,
       "never emitted | display working (top-level) | D2: runtimeStatus pending no longer counts as working | true -> false": 48,
       "never emitted | display working (top-level) | D2: runtimeStatus waiting-for-host no longer counts as working | true -> false": 48,
-      "never emitted | display working (top-level) | an in-flight status over runtimeStatus error, which bb never emits | true -> false": 64,
-      "never emitted | display working (top-level) | an in-flight status over runtimeStatus idle, which bb never emits | true -> false": 64,
-      'never emitted | draft indicator (child, listed queued-failed) | owner: bb\'s working-draft over an unread result or a failed send | "queued-failed" -> "working-draft"': 120,
-      'never emitted | draft indicator (top-level, listed queued-failed) | owner: bb\'s working-draft over an unread result or a failed send | "queued-failed" -> "working-draft"': 111,
-      'never emitted | draft indicator (top-level, listed unread-success) | owner: bb\'s working-draft over an unread result or a failed send | "unread-success" -> "working-draft"': 18,
+      "never emitted | display working (top-level) | an in-flight status over runtimeStatus error, which VesnALIA never emits | true -> false": 64,
+      "never emitted | display working (top-level) | an in-flight status over runtimeStatus idle, which VesnALIA never emits | true -> false": 64,
+      'never emitted | draft indicator (child, listed queued-failed) | owner: VesnALIA\'s working-draft over an unread result or a failed send | "queued-failed" -> "working-draft"': 120,
+      'never emitted | draft indicator (top-level, listed queued-failed) | owner: VesnALIA\'s working-draft over an unread result or a failed send | "queued-failed" -> "working-draft"': 111,
+      'never emitted | draft indicator (top-level, listed unread-success) | owner: VesnALIA\'s working-draft over an unread result or a failed send | "unread-success" -> "working-draft"': 18,
       "never emitted | idle parent of this child working (child) | D2: another plugin's running status counts as working | false -> true": 24,
       "never emitted | idle parent of this child working (child) | D2: runtimeStatus pending no longer counts as working | true -> false": 48,
       "never emitted | idle parent of this child working (child) | D2: runtimeStatus waiting-for-host no longer counts as working | true -> false": 48,
-      "never emitted | idle parent of this child working (child) | an in-flight status over runtimeStatus error, which bb never emits | true -> false": 64,
-      "never emitted | idle parent of this child working (child) | an in-flight status over runtimeStatus idle, which bb never emits | true -> false": 64,
-      'never emitted | row (child, listed runtime) | owner: bb shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin done"': 672,
-      'never emitted | row (child, listed runtime) | owner: bb shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin failed"': 672,
-      'never emitted | row (child, listed runtime) | owner: bb shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin status"': 672,
-      'never emitted | row (child, listed runtime) | owner: bb shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Waiting for CI"': 672,
-      'never emitted | row (top-level, listed runtime) | owner: bb shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin done"': 608,
-      'never emitted | row (top-level, listed runtime) | owner: bb shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin failed"': 608,
-      'never emitted | row (top-level, listed runtime) | owner: bb shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin status"': 608,
-      'never emitted | row (top-level, listed runtime) | owner: bb shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Waiting for CI"': 608,
-      'never emitted | row (top-level, listed unread-success) | owner: bb\'s working-draft over an unread result | "Unread" -> "Drafting [working-draft glyph]"': 18,
+      "never emitted | idle parent of this child working (child) | an in-flight status over runtimeStatus error, which VesnALIA never emits | true -> false": 64,
+      "never emitted | idle parent of this child working (child) | an in-flight status over runtimeStatus idle, which VesnALIA never emits | true -> false": 64,
+      'never emitted | row (child, listed runtime) | owner: VesnALIA shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin done"': 672,
+      'never emitted | row (child, listed runtime) | owner: VesnALIA shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin failed"': 672,
+      'never emitted | row (child, listed runtime) | owner: VesnALIA shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin status"': 672,
+      'never emitted | row (child, listed runtime) | owner: VesnALIA shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Waiting for CI"': 672,
+      'never emitted | row (top-level, listed runtime) | owner: VesnALIA shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin done"': 608,
+      'never emitted | row (top-level, listed runtime) | owner: VesnALIA shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin failed"': 608,
+      'never emitted | row (top-level, listed runtime) | owner: VesnALIA shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Plugin status"': 608,
+      'never emitted | row (top-level, listed runtime) | owner: VesnALIA shows another plugin\'s status over a working draft | "Drafting [working-draft glyph]" -> "plugin status: Waiting for CI"': 608,
+      'never emitted | row (top-level, listed unread-success) | owner: VesnALIA\'s working-draft over an unread result | "Unread" -> "Drafting [working-draft glyph]"': 18,
     });
   });
 });

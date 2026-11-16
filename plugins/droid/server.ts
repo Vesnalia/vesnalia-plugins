@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   accessSync,
   chmodSync,
@@ -113,15 +113,15 @@ function writeLegacyAgents(dataDir: string, agents: CustomAgent[]): boolean {
   return true;
 }
 
-export default function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     factoryApiKey: {
       type: "string",
       label: "Factory API key",
       secret: true,
     },
   });
-  const clearUsageCache = registerUsageSource(bb, async () => {
+  const clearUsageCache = registerUsageSource(alia, async () => {
     const { factoryApiKey } = await settings.get();
     if (factoryApiKey?.trim()) return factoryApiKey;
     const setting = await readSettingAgents();
@@ -131,20 +131,20 @@ export default function plugin(bb: BbPluginApi) {
 
   async function dataDir(): Promise<string> {
     try {
-      const config = await bb.sdk.system.config();
+      const config = await alia.sdk.system.config();
       if (config.dataDir.length > 0) return config.dataDir;
     } catch (error) {
-      bb.log.warn(`Could not resolve bb data directory through the SDK: ${String(error)}`);
+      alia.log.warn(`Could not resolve VesnALIA data directory through the SDK: ${String(error)}`);
     }
-    return process.env.BB_DATA_DIR ?? join(homedir(), ".bb");
+    return process.env.ALIA_DATA_DIR ?? join(homedir(), ".vesnalia");
   }
 
   async function readSettingAgents(): Promise<SettingAgents | null> {
     const { setting, failures } = await readActiveAcpSetting(
-      async (pluginId) => (await bb.sdk.plugins.getSettings({ pluginId })).values,
+      async (pluginId) => (await alia.sdk.plugins.getSettings({ pluginId })).values,
     );
     if (setting === null) {
-      bb.log.warn(`Could not read ACP customAgents from any adapter: ${failures.join("; ")}`);
+      alia.log.warn(`Could not read ACP customAgents from any adapter: ${failures.join("; ")}`);
     }
     return setting;
   }
@@ -164,7 +164,7 @@ export default function plugin(bb: BbPluginApi) {
 
   async function writeSettingAgents(pluginId: AcpPluginId, agents: CustomAgent[]): Promise<boolean> {
     const serialized = agents.length === 0 ? "" : stringifyCustomAgents(agents);
-    await bb.sdk.plugins.updateSettings({
+    await alia.sdk.plugins.updateSettings({
       pluginId,
       values: { customAgents: serialized },
     });
@@ -193,7 +193,7 @@ export default function plugin(bb: BbPluginApi) {
     } else {
       const next = upsertAgent(legacyAgents, managed);
       if (next.changed && writeLegacyAgents(root, next.agents)) {
-        await bb.sdk.system.reloadConfig();
+        await alia.sdk.system.reloadConfig();
         changed = true;
       }
       return { changed, binary };
@@ -201,7 +201,7 @@ export default function plugin(bb: BbPluginApi) {
 
     const stripped = removeAgent(legacyAgents);
     if (stripped.changed && writeLegacyAgents(root, stripped.agents)) {
-      await bb.sdk.system.reloadConfig();
+      await alia.sdk.system.reloadConfig();
       changed = true;
     }
     return { changed, binary };
@@ -220,7 +220,7 @@ export default function plugin(bb: BbPluginApi) {
     }
     const stripped = removeAgent(readLegacyAgents(root));
     if (stripped.changed && writeLegacyAgents(root, stripped.agents)) {
-      await bb.sdk.system.reloadConfig();
+      await alia.sdk.system.reloadConfig();
       changed = true;
     }
     return changed;
@@ -229,32 +229,32 @@ export default function plugin(bb: BbPluginApi) {
   settings.onChange(() => {
     clearUsageCache();
     void provision().catch((error) => {
-      bb.log.error(`Failed to apply Factory API key: ${String(error)}`);
+      alia.log.error(`Failed to apply Factory API key: ${String(error)}`);
     });
   });
 
-  bb.background.service("provision", {
+  alia.background.service("provision", {
     async start() {
       try {
         const result = await provision(true);
-        bb.log.info(
+        alia.log.info(
           result.changed
             ? `registered ${PROFILE.providerId} with ${result.binary}`
             : `${PROFILE.providerId} is already configured`,
         );
       } catch (error) {
         const message = String(error);
-        bb.log.error(message);
-        bb.status.needsConfiguration(message);
+        alia.log.error(message);
+        alia.status.needsConfiguration(message);
       }
     },
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: PROFILE.id,
     summary: `Manage the ${PROFILE.displayName} ACP provider.`,
     commands: [
-      { name: "status", summary: "Check the CLI and bb provider registration", usage: `${PROFILE.id} status` },
+      { name: "status", summary: "Check the CLI and VesnALIA provider registration", usage: `${PROFILE.id} status` },
       { name: "repair", summary: "Rewrite and reload the managed ACP configuration", usage: `${PROFILE.id} repair` },
       { name: "unregister", summary: "Remove this plugin's managed ACP configuration", usage: `${PROFILE.id} unregister` },
     ],
@@ -293,7 +293,7 @@ export default function plugin(bb: BbPluginApi) {
         const apiKey = Boolean(factoryApiKey) || Boolean(envApiKey(entry?.env)) || Boolean(envApiKey(process.env));
         let registered = false;
         try {
-          registered = (await bb.sdk.providers.list()).some((provider) => provider.id === PROFILE.providerId);
+          registered = (await alia.sdk.providers.list()).some((provider) => provider.id === PROFILE.providerId);
         } catch {}
         const settingEntry = setting === null
           ? "no running ACP adapter"
@@ -301,24 +301,24 @@ export default function plugin(bb: BbPluginApi) {
         const legacy = legacyAgents.some(isOwnAgent) ? "present" : "absent";
         const ready = Boolean(binary && entry && registered && (apiKey || loginPath !== null));
         const hint = !ready
-          ? "Factory is not authenticated for ACP. Run `droid` to log in, or set the Factory API key plugin setting and `bb droid repair`."
+          ? "Factory is not authenticated for ACP. Run `droid` to log in, or set the Factory API key plugin setting and `alia droid repair`."
           : apiKey
             ? null
-            : "Interactive droid login is present. If a thread fails with \"Internal error: Agent error\" or \"No active ACP session\", run `bb thread stop <id>` then `bb thread tell --mode auto <id> continue`.";
+            : "Interactive droid login is present. If a thread fails with \"Internal error: Agent error\" or \"No active ACP session\", run `alia thread stop <id>` then `alia thread tell --mode auto <id> continue`.";
         return {
           exitCode: ready ? 0 : 1,
           stdout: [
             `CLI: ${binary ?? "NOT FOUND"}`,
             `ACP customAgents entry: ${settingEntry}`,
             `legacy config.json entry: ${legacy}`,
-            `bb provider ${PROFILE.providerId}: ${registered ? "registered" : "NOT registered"}`,
+            `alia provider ${PROFILE.providerId}: ${registered ? "registered" : "NOT registered"}`,
             `Factory login file: ${loginPath ?? "MISSING"}`,
             `FACTORY_API_KEY: ${apiKey ? "set" : "not set"}`,
             ...(hint ? [hint] : []),
           ].join("\n") + "\n",
         };
       }
-      return { exitCode: 2, stderr: `Unknown subcommand "${command}". Use "bb ${PROFILE.id} status".\n` };
+      return { exitCode: 2, stderr: `Unknown subcommand "${command}". Use "VesnALIA ${PROFILE.id} status".\n` };
     },
   });
 }

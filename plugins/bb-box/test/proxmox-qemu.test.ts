@@ -129,8 +129,8 @@ test("the driver makes VMs, and its kind is a Windows desktop that runs PowerShe
   assert.deepEqual(kind!.capabilities.command, { transport: "ssh", shell: "powershell", admin: true, inDesktopSession: false, streaming: true });
   assert.equal(kind!.capabilities.os, "windows");
   assert.equal(kind!.capabilities.arch, "x86_64");
-  assert.equal(kind!.capabilities.enrol, true, "its boxes join BB unless the switch is set off (#539)");
-  // The desktop as video (060), which a box's transports include only where its image has bb-box-stream.
+  assert.equal(kind!.capabilities.enrol, true, "its boxes join VesnALIA unless the switch is set off (#539)");
+  // The desktop as video (060), which a box's transports include only where its image has alia-box-stream.
   assert.deepEqual(kind!.capabilities.displays, [
     { id: "desktop", protocol: "rfb", resizable: true, clipboard: "commands" },
     { id: "video", protocol: "selkies", resizable: true, cursor: "stream" },
@@ -309,7 +309,7 @@ test("acquire claims the VMID before it clones, then configures and starts the b
   assert.equal(vm.config.protection, undefined, "the template's protection is dropped");
   assert.equal(proxmox.calls.some((call) => call.path.endsWith("/resize")), false, "the template's disk is kept");
   const tags = parseTags(vm.config.tags);
-  assert.deepEqual(tags.slice(0, 2), ["bb-box", "install.test"]);
+  assert.deepEqual(tags.slice(0, 2), ["alia-box", "install.test"]);
   assert.equal(tags.at(-1), "template.9104");
   assert.deepEqual(ownerFromTags(tags), { boxId: box.boxId, threadId: box.threadId, name: null, kind: KIND, createdAt: box.createdAt });
   assert.equal(installFromDescription(vm.config.description), "test", "the clone's description names the install");
@@ -339,7 +339,7 @@ test("with Linux templates, linux boxes are VMs from them, with their own kernel
   assert.ok(linux, "offered beside windows-desktop");
   assert.deepEqual(linux.capabilities.features, ["docker", "kernel"], "no KVM unless the settings say the host allows it");
   assert.equal(linux.capabilities.os, "linux");
-  assert.equal(linux.capabilities.enrol, true, "it joins BB as other Linux boxes do");
+  assert.equal(linux.capabilities.enrol, true, "it joins VesnALIA as other Linux boxes do");
   assert.equal((await backend.capacity("linux", sized(), [])).ok, true);
   const report = await backend.doctor();
   const check = report.checks.find((one) => one.id === "template.9120");
@@ -381,8 +381,8 @@ test("a Windows box shows its desktop as video, through its pipe over SSH, only 
   const displaysOf = async (tools: Record<string, string> | null) => {
     const { backend, proxmox } = setup();
     if (tools) {
-      const record = { contract: 1, image: "standard", kind: "windows-desktop", arch: "x86_64", build: "build.20261017-030000-1a2b", built: "2026-10-17T03:00:00Z", os: "Windows 11 Pro", pins: "p".repeat(64), bbApp: null, tools };
-      proxmox.guests.get(9104)!.config.description = `bb-box windows template, built 2026-10-17.\n${JSON.stringify(record)}`;
+      const record = { contract: 1, image: "standard", kind: "windows-desktop", arch: "x86_64", build: "build.20261017-030000-1a2b", built: "2026-10-17T03:00:00Z", os: "Windows 11 Pro", pins: "p".repeat(64), aliaApp: null, tools };
+      proxmox.guests.get(9104)!.config.description = `alia-box windows template, built 2026-10-17.\n${JSON.stringify(record)}`;
     }
     const guest = await backend.acquire(identity(), null, hooks().value, signal());
     assert.equal(guest.data?.template, 9104);
@@ -399,14 +399,14 @@ test("a Windows box shows its desktop as video, through its pipe over SSH, only 
   assert.equal(video!.cursor, undefined, "an image without the hardware cursor has the pointer in its image, so its video cannot leave it out");
   const [, withCursor] = await displaysOf({ pwsh: "7.6.6", openh264: "2.6.0", "hardware-cursor": "1" });
   assert.equal(withCursor!.cursor, "stream", "an image with it can");
-  assert.deepEqual((await displaysOf({ pwsh: "7.6.6", "hardware-cursor": "1" })).map((display) => display.protocol), ["rfb"], "nor any video without bb-box-stream");
+  assert.deepEqual((await displaysOf({ pwsh: "7.6.6", "hardware-cursor": "1" })).map((display) => display.protocol), ["rfb"], "nor any video without alia-box-stream");
   const opened = await video!.open();
   assert.deepEqual(opened.auth, { type: "none" });
   assert.equal(opened.route.type, "command");
   const script = opened.route.type === "command" ? opened.route.argv.at(-1)! : "";
-  assert.match(script, /NamedPipeClientStream\]::new\('\.', 'bb-box-stream'/, "pwsh joins the channel to the server's pipe");
-  assert.match(script, /if \(-not \[IO\.File\]::Exists\('\\\\\.\\pipe\\bb-box-stream'\)\) \{ schtasks\.exe \/run \/tn bb-box-stream \| Out-Null \}; \$p\.Connect\(15000\)/, "asks the pipe's name whether the server runs, not a connect that waits 500 ms to fail (#916)");
-  assert.match(script, /schtasks\.exe \/run \/tn bb-box-stream/, "starting it through its task when it is not running");
+  assert.match(script, /NamedPipeClientStream\]::new\('\.', 'alia-box-stream'/, "pwsh joins the channel to the server's pipe");
+  assert.match(script, /if \(-not \[IO\.File\]::Exists\('\\\\\.\\pipe\\alia-box-stream'\)\) \{ schtasks\.exe \/run \/tn alia-box-stream \| Out-Null \}; \$p\.Connect\(15000\)/, "asks the pipe's name whether the server runs, not a connect that waits 500 ms to fail (#916)");
+  assert.match(script, /schtasks\.exe \/run \/tn alia-box-stream/, "starting it through its task when it is not running");
 });
 
 test("the desktop resizes to the viewer's size, else to the listed mode that best covers it, set by Windows in the box user's session, and gives Windows' reason when it cannot", async () => {
@@ -424,22 +424,22 @@ test("the desktop resizes to the viewer's size, else to the listed mode that bes
   // The acquire compiles the helper into a file, and the first resize waits for it.
   await desktop!.resize!({ width: 1500, height: 900 });
   const compiled = readFileSync(join(home, "compiled"), "utf8");
-  const dll = /'bb-box', '(display-[0-9a-f]{12}\.dll)'\)\n/.exec(compiled)?.[1];
+  const dll = /'alia-box', '(display-[0-9a-f]{12}\.dll)'\)\n/.exec(compiled)?.[1];
   assert.ok(dll, "named for its source, in the box user's local app data");
-  assert.match(compiled, /\n    Add-Type -OutputAssembly \$bbTemp -TypeDefinition @'\n/);
+  assert.match(compiled, /\n    Add-Type -OutputAssembly \$aliaTemp -TypeDefinition @'\n/);
   const task = readFileSync(join(home, "desktop"), "utf8");
-  assert.match(task, /\$bbTask\.Principal\.LogonType = 3\n/, "a task in the box user's session");
-  assert.match(task, /\$bbClock\.ElapsedMilliseconds -ge 15000\)/, "that ends if it hangs");
+  assert.match(task, /\$aliaTask\.Principal\.LogonType = 3\n/, "a task in the box user's session");
+  assert.match(task, /\$aliaClock\.ElapsedMilliseconds -ge 15000\)/, "that ends if it hangs");
   const run = Buffer.from(/FromBase64String\(''([A-Za-z0-9+\/=]+)''\)/.exec(task)![1]!, "base64").toString("utf8");
   assert.match(run, /ChangeDisplaySettingsEx\(null, ref mode, IntPtr\.Zero, 1, IntPtr\.Zero\)/, "keeps the mode for the next logon");
   assert.match(run, /DateTime\.UtcNow\.AddSeconds\(seconds\)/, "waits a moment for the driver to take the size");
   assert.ok(run.startsWith(compiled), "loads the same file, compiling it if it is missing");
-  assert.match(run, /\n\$bbRefused = \$bbDisplay::Fit\(1500, 900, 2\)\n/, "for up to 2 s");
+  assert.match(run, /\n\$aliaRefused = \$aliaDisplay::Fit\(1500, 900, 2\)\n/, "for up to 2 s");
 
   writeFileSync(join(home, "exit"), `echo "Windows refused 1500x900 and the modes it lists, with -2." >&2; exit 1\n`);
   await assert.rejects(desktop!.resize!({ width: 1500, height: 900 }), { message: "Windows could not set the desktop to 1500x900: Windows refused 1500x900 and the modes it lists, with -2." });
-  writeFileSync(join(home, "exit"), `echo "bb-box: there is no desktop session to join: box is not logged in to the desktop." >&2; exit 69\n`);
-  await assert.rejects(desktop!.resize!({ width: 1280, height: 800 }), /^Error: Windows could not set the desktop to 1280x800: bb-box: there is no desktop session to join/);
+  writeFileSync(join(home, "exit"), `echo "alia-box: there is no desktop session to join: box is not logged in to the desktop." >&2; exit 69\n`);
+  await assert.rejects(desktop!.resize!({ width: 1280, height: 800 }), /^Error: Windows could not set the desktop to 1280x800: alia-box: there is no desktop session to join/);
   writeFileSync(join(home, "exit"), "exit 3\n");
   await assert.rejects(desktop!.resize!({ width: 1280, height: 800 }), { message: "Windows could not set the desktop to 1280x800: exit code 3." });
 
@@ -473,7 +473,7 @@ test("a stop hibernates the VM, and a start resumes it and sets Windows' clock, 
   assert.deepEqual(steps, ["resume true", "network true", "ssh true", "password true", "clock true"], "with the time each step took");
   const clock = readFileSync(join(home, "clock"), "utf8");
   const ms = Number(/FromUnixTimeMilliseconds\((\d+)\)/.exec(clock)?.[1]);
-  assert.ok(ms >= before && ms <= after, "set to BB's server's time");
+  assert.ok(ms >= before && ms <= after, "set to VesnALIA's server's time");
   assert.match(clock, /\[Diagnostics\.Process\]::GetCurrentProcess\(\)\.StartTime\)/, "plus the time PowerShell took to start");
 
   // A VM shut down from Windows boots.
@@ -585,7 +585,7 @@ test("a box that never answers on SSH is deleted, pointing to the template's key
   assert.equal(proxmox.guests.has(9700), false);
 
   const closed = setup({}, new MemoryStorage(), { portCheck: async () => false });
-  await assert.rejects(closed.backend.acquire(identity(), null, hooks().value, signal()), /Nothing answered on port 22 of 192\.0\.2\.150.*C:\\bb-box\\boot\.log/);
+  await assert.rejects(closed.backend.acquire(identity(), null, hooks().value, signal()), /Nothing answered on port 22 of 192\.0\.2\.150.*C:\\alia-box\\boot\.log/);
 });
 
 test("the desktop is the VM's console, through a VNC proxy of the API's on its token and certificate", async () => {
@@ -665,8 +665,8 @@ test("release deletes the VM, and held lists this install's VMs with their owner
   const { backend, proxmox, make } = setup();
   const box = identity();
   const guest = await backend.acquire(box, null, hooks().value, signal());
-  proxmox.guests.set(9705, { vmid: 9705, type: "qemu", name: "theirs", pool: "bbbox", status: "running", template: false, config: { tags: "bb-box;install.other;box.box_y" } });
-  proxmox.guests.set(9706, { vmid: 9706, name: "a-container", pool: "bbbox", status: "running", template: false, config: { tags: "bb-box;install.test;box.box_z" } });
+  proxmox.guests.set(9705, { vmid: 9705, type: "qemu", name: "theirs", pool: "bbbox", status: "running", template: false, config: { tags: "alia-box;install.other;box.box_y" } });
+  proxmox.guests.set(9706, { vmid: 9706, name: "a-container", pool: "bbbox", status: "running", template: false, config: { tags: "alia-box;install.test;box.box_z" } });
   const held = await make().held();
   assert.deepEqual(
     held.map((one) => [one.ref, one.owner?.boxId, one.power, one.data?.template]),
@@ -713,14 +713,14 @@ test("a Linux VM box takes its box's name inside: at its acquire, at each start 
   const { backend: windows, ssh: windowsSsh } = setup();
   const desktop = await windows.acquire(identity(), null, hooks().value, signal());
   await windows.relabel(desktop, { ...identity(), name: "build-2" }, desktop.ref, signal());
-  assert.equal(windowsSsh.log().filter((entry) => entry.command.includes("bb-box-boot")).length, 0);
+  assert.equal(windowsSsh.log().filter((entry) => entry.command.includes("alia-box-boot")).length, 0);
 });
 
-test("vmNameScript renames a Linux VM from its template's build name, its hosts line too, and leaves a machine with no BB Box boot script, or already named, as it is", () => {
+test("vmNameScript renames a Linux VM from its template's build name, its hosts line too, and leaves a machine with no VesnALIA Box boot script, or already named, as it is", () => {
   const dir = tempDir("vm-name");
   const bin = join(dir, "bin");
   const etc = join(dir, "etc");
-  const marker = join(dir, "bb-box-boot");
+  const marker = join(dir, "alia-box-boot");
   mkdirSync(bin);
   mkdirSync(etc);
   writeFileSync(join(bin, "hostname"), `#!/bin/sh\nif [ $# -eq 0 ]; then cat '${dir}/kernel'; else printf '%s\\n' "$1" > '${dir}/kernel'; fi\n`);
@@ -734,15 +734,15 @@ test("vmNameScript renames a Linux VM from its template's build name, its hosts 
     assert.equal(ran.status, 0, ran.stderr);
     return [readFileSync(join(dir, "kernel"), "utf8"), readFileSync(join(etc, "hostname"), "utf8"), readFileSync(join(etc, "hosts"), "utf8")];
   };
-  assert.deepEqual(run("bb-box-linux-build"), ["bb-box-linux-build\n", "bb-box-linux-build\n", "127.0.0.1 localhost\n127.0.1.1 bb-box-linux-build\n"], "no boot script: not a BB Box VM");
+  assert.deepEqual(run("alia-box-linux-build"), ["alia-box-linux-build\n", "alia-box-linux-build\n", "127.0.0.1 localhost\n127.0.1.1 alia-box-linux-build\n"], "no boot script: not a VesnALIA Box VM");
   writeFileSync(marker, "#!/bin/sh\n");
   chmodSync(marker, 0o755);
-  assert.deepEqual(run("bb-box-linux-build"), ["calm-otter\n", "calm-otter\n", "127.0.0.1 localhost\n127.0.1.1 calm-otter\n"]);
+  assert.deepEqual(run("alia-box-linux-build"), ["calm-otter\n", "calm-otter\n", "127.0.0.1 localhost\n127.0.1.1 calm-otter\n"]);
   writeFileSync(join(bin, "sudo"), "#!/bin/sh\necho 'not again' >&2\nexit 1\n");
   assert.deepEqual(run("calm-otter")[0], "calm-otter\n", "already named: nothing to do, so no sudo");
 });
 
-test("doctor passes on a complete setup, and warns that a template from build.sh lacks a key BB Box made", async () => {
+test("doctor passes on a complete setup, and warns that a template from build.sh lacks a key VesnALIA Box made", async () => {
   const { backend, storage } = setup({ "ssh-private-key": "" });
   const report = await backend.doctor();
   assert.equal(report.ok, true, JSON.stringify(report, null, 2));
@@ -767,7 +767,7 @@ test("doctor passes on a complete setup, and warns that a template from build.sh
   assert.match(report.checks.at(-1)!.fix!, /^Paste BBBOX_SSH_KEY, the key build\.sh put in the template, here or in Proxmox LXC's settings\./);
   const notes = report.notes.join("\n");
   assert.match(notes, /^This install's ID is test\. Its VMs carry the tag install\.test\.$/m);
-  assert.match(notes, /C:\\ProgramData\\ssh\\administrators_authorized_keys: ssh-ed25519 \S+ bb-box$/m);
+  assert.match(notes, /C:\\ProgramData\\ssh\\administrators_authorized_keys: ssh-ed25519 \S+ alia-box$/m);
   const stored = await storage.get<{ privateKey: string; publicKey: string }>("ssh-key");
   assert.ok(stored?.privateKey.startsWith("-----BEGIN OPENSSH PRIVATE KEY-----"));
   assert.doesNotMatch(JSON.stringify(report), /PRIVATE KEY|s3cret-token-value/);
@@ -788,7 +788,7 @@ test("doctor names the snapshot right a VM token lacks, and what Ceph RBD, ZFS a
   const snapshots = report.checks.find((check) => check.id === "proxmox.snapshots")!;
   assert.deepEqual([snapshots.status, snapshots.detail, snapshots.fix], [
     "warn",
-    "The token lacks VM.Snapshot.Rollback on /pool/bbbox, so BB Box cannot restore snapshots. " +
+    "The token lacks VM.Snapshot.Rollback on /pool/bbbox, so VesnALIA Box cannot restore snapshots. " +
       "ceph (Ceph RBD) restores any snapshot. tank (ZFS) restores only the newest snapshot. files (NFS, qcow2 files) restores any snapshot.",
     "Run host/setup-token.sh from the Proxmox LXC setup guide again, as root on pve. It keeps the token and its secret, and adds the missing rights to the token's role.",
   ]);
@@ -808,30 +808,30 @@ test("doctor says a VM's raw disk on directory storage takes no snapshots (070)"
   ]);
 });
 
-test("doctor judges each Windows template's image by the record in its description, and that its boxes can join BB (049, #539)", async () => {
+test("doctor judges each Windows template's image by the record in its description, and that its boxes can join VesnALIA (049, #539)", async () => {
   const { proxmox, context, make } = setup({ "windows-templates": "9104 9105 9106" });
   proxmox.addVmTemplate(9106);
   const day = 24 * 60 * 60 * 1000;
   const pins = "w".repeat(64);
-  const images = { pins: async (set: string) => (set === "windows" ? pins : null), bbApp: async () => "a".repeat(64) };
+  const images = { pins: async (set: string) => (set === "windows" ? pins : null), aliaApp: async () => "a".repeat(64) };
   const record = (days: number, changes: Record<string, unknown> = {}) =>
-    JSON.stringify({ contract: 1, image: "standard", kind: "windows-desktop", arch: "x86_64", build: "build.20261003-021500-3f9c", built: new Date(Date.now() - days * day).toISOString(), os: "Windows 11 Pro", pins, bbApp: null, tools: { pwsh: "7.6.6" }, ...changes });
-  // Its boxes join BB, so it carries Node.js and the agent CLIs (#539, #581).
+    JSON.stringify({ contract: 1, image: "standard", kind: "windows-desktop", arch: "x86_64", build: "build.20261003-021500-3f9c", built: new Date(Date.now() - days * day).toISOString(), os: "Windows 11 Pro", pins, aliaApp: null, tools: { pwsh: "7.6.6" }, ...changes });
+  // Its boxes join VesnALIA, so it carries Node.js and the agent CLIs (#539, #581).
   const tools = { pwsh: "7.6.6", node: "24.21.0", "claude-code": "2.1.283", codex: "0.157.1", pi: "0.87.1", "password-never-expires": "1" };
-  proxmox.guests.get(9104)!.config.description = `bb-box windows template, built 2026-10-03 from win11.iso: Windows 11 Pro.\n${record(2, { tools })}`;
-  proxmox.guests.get(9106)!.config.description = `bb-box windows template, built 2026-10-03 from win11.iso: Windows 11 Pro.\n${record(2, { tools: { pwsh: "7.6.6", node: "20.11.0" } })}`;
-  proxmox.guests.get(9105)!.config.description = `bb-box windows template, built 2026-08-01 from win11.iso: Windows 11 Pro.\n${record(61, { pins: "o".repeat(64) })}`;
+  proxmox.guests.get(9104)!.config.description = `alia-box windows template, built 2026-10-03 from win11.iso: Windows 11 Pro.\n${record(2, { tools })}`;
+  proxmox.guests.get(9106)!.config.description = `alia-box windows template, built 2026-10-03 from win11.iso: Windows 11 Pro.\n${record(2, { tools: { pwsh: "7.6.6", node: "20.11.0" } })}`;
+  proxmox.guests.get(9105)!.config.description = `alia-box windows template, built 2026-08-01 from win11.iso: Windows 11 Pro.\n${record(61, { pins: "o".repeat(64) })}`;
   const report = await make({ ...context, images }).doctor();
   const image = (vmid: number) => report.checks.find((check) => check.id === `template.${vmid}.image`)!;
-  // A Windows image carries no build of BB's app, so a record without it is whole.
+  // A Windows image carries no build of VesnALIA's app, so a record without it is whole.
   assert.deepEqual([image(9104).status, image(9104).fix], ["ok", null], image(9104).detail);
   assert.match(image(9104).detail, /^Standard image build\.20261003-021500-3f9c, built \d+ \w+ \(2 days ago\): Windows 11 Pro, pwsh 7\.6\.6, /);
   // An image without them: its boxes install Node.js as they join, and box_thread refuses them.
   assert.equal(image(9106).status, "warn");
-  assert.match(image(9106).detail, /It has Node\.js 20\.11\.0, and BB's installer needs 22\.19\.0 or later, so each box installs it as it joins BB, about 11 s more\./);
-  assert.match(image(9106).detail, /It has none of the agent CLIs BB runs threads with, Claude Code, Codex, Pi, so box_thread refuses its boxes \(#561\)\./);
+  assert.match(image(9106).detail, /It has Node\.js 20\.11\.0, and ALIA's installer needs 22\.19\.0 or later, so each box installs it as it joins ALIA, about 11 s more\./);
+  assert.match(image(9106).detail, /It has none of the agent CLIs ALIA runs threads with, Claude Code, Codex, Pi, so box_thread refuses its boxes \(#561\)\./);
   assert.equal(image(9105).status, "warn");
-  assert.match(image(9105).detail, /It is 61 days old, more than 60, .* It was built with other pins than this BB Box's/);
+  assert.match(image(9105).detail, /It is 61 days old, more than 60, .* It was built with other pins than this ALIA Box's/);
   assert.equal(image(9105).fix, "Rebuild it with the setup guide's setup/proxmox-qemu/build.sh, as root on pve: build.sh windows 9105 --replace.");
 });
 
@@ -840,7 +840,7 @@ test("doctor passes the key from the settings", async () => {
   const report = await setup({ "ssh-private-key": privateKey }).backend.doctor();
   const key = report.checks.find((check) => check.id === "ssh.key")!;
   assert.equal(key.status, "ok", JSON.stringify(key));
-  assert.equal(key.detail, "From BB Box's settings; its public key is below.");
+  assert.equal(key.detail, "From VesnALIA Box's settings; its public key is below.");
 });
 
 test("doctor says what is missing", async () => {
@@ -945,9 +945,9 @@ test("the warm pool keeps hibernated VMs at the kind's default size, each filled
   await backend.maintain(signal());
   const vm = proxmox.guests.get(9700)!;
   assert.deepEqual([vm.status, vm.config.lock], ["stopped", "suspended"], "hibernated");
-  assert.deepEqual(parseTags(vm.config.tags), ["bb-box", "install.test", "warm", "template.9104", "bb-box-starting"]);
+  assert.deepEqual(parseTags(vm.config.tags), ["alia-box", "install.test", "warm", "template.9104", "alia-box-starting"]);
   assert.equal(vm.config.cpuunits, "10", "a low CPU weight until a box takes it and it is ready (#888)");
-  assert.equal(vm.name, "bb-box-warm");
+  assert.equal(vm.name, "alia-box-warm");
   assert.deepEqual([vm.config.cores, vm.config.memory, vm.config.onboot], ["4", "8192", "0"], "and not started at the node's boot");
   assert.equal(installFromDescription(vm.config.description), "test");
   assert.equal(ownerFromDescription(vm.config.description), null);
@@ -981,14 +981,14 @@ test("a claim resumes a warm VM as the box, gives it the box's tags and name, se
   assert.equal(tags.includes("warm"), false);
   // Its low CPU weight held through the claim, and went back once it was ready (#888).
   const relabelled = proxmox.calls.find((call) => call.method === "PUT" && call.path === "/nodes/pve/qemu/9700/config" && String(call.params.tags ?? "").includes("box."));
-  assert.ok(parseTags(String(relabelled?.params.tags)).includes("bb-box-starting"), "kept as the claim relabels it");
+  assert.ok(parseTags(String(relabelled?.params.tags)).includes("alia-box-starting"), "kept as the claim relabels it");
   assert.equal(vm.config.cpuunits, undefined);
-  assert.equal(tags.includes("bb-box-starting"), false);
+  assert.equal(tags.includes("alia-box-starting"), false);
   assert.deepEqual(ownerFromTags(tags), { boxId: box.boxId, threadId: box.threadId, name: null, kind: KIND, createdAt: box.createdAt });
   assert.equal(tags.at(-1), "template.9104");
   assert.equal(ownerFromDescription(vm.config.description)?.boxId, box.boxId);
   const ms = Number(/FromUnixTimeMilliseconds\((\d+)\)/.exec(readFileSync(join(ssh.home("192.0.2.150"), "clock"), "utf8"))?.[1]);
-  assert.ok(ms >= before && ms <= Date.now(), "the clock is set to BB's server's time");
+  assert.ok(ms >= before && ms <= Date.now(), "the clock is set to VesnALIA's server's time");
 
   // The claim began a fill: this waits for its clone, then joins it.
   for (let tries = 0; !proxmox.guests.has(9701) && tries < 300; tries++) await new Promise((resolve) => setTimeout(resolve, 10));
@@ -1054,7 +1054,7 @@ test("the pool deletes warm VMs beyond the count, from a replaced build or a tem
   for (const vmid of [9104, 9105]) proxmox.guests.get(vmid)!.config.tags = "bbbox;windows;build.20260920-000000-aaaa";
   await backend.maintain(signal());
   assert.deepEqual(warmVms(proxmox), [9700, 9701]);
-  assert.deepEqual(parseTags(proxmox.guests.get(9701)!.config.tags).slice(-3), ["template.9105", "build.20260920-000000-aaaa", "bb-box-starting"]);
+  assert.deepEqual(parseTags(proxmox.guests.get(9701)!.config.tags).slice(-3), ["template.9105", "build.20260920-000000-aaaa", "alia-box-starting"]);
 
   warm[KIND] = 1;
   await backend.maintain(signal());
@@ -1067,7 +1067,7 @@ test("the pool deletes warm VMs beyond the count, from a replaced build or a tem
   await backend.maintain(signal());
   assert.deepEqual(deleted(proxmox), [9701, 9700]);
   assert.deepEqual(warmVms(proxmox), [9703]);
-  assert.deepEqual(parseTags(proxmox.guests.get(9703)!.config.tags).slice(-3), ["template.9104", "build.20260925-000000-bbbb", "bb-box-starting"], "filled from the new build");
+  assert.deepEqual(parseTags(proxmox.guests.get(9703)!.config.tags).slice(-3), ["template.9104", "build.20260925-000000-bbbb", "alia-box-starting"], "filled from the new build");
 
   const changes = [
     (vm: { status: string; config: Record<string, string> }) => (vm.config.cores = "8"),
@@ -1098,8 +1098,8 @@ test("the pool deletes warm VMs beyond the count, from a replaced build or a tem
 
 test("warm VMs of another install, and a warm VM a fill was cut short making, are left for their owners and the registry", async () => {
   const { backend, proxmox } = warmSetup(0);
-  proxmox.guests.set(9705, { vmid: 9705, type: "qemu", name: "bb-box-warm", pool: "bbbox", status: "stopped", template: false, config: { tags: "bb-box;install.other;warm;template.9104", cores: "4", memory: "8192" } });
-  proxmox.guests.set(9706, { vmid: 9706, type: "qemu", name: "bb-box-warm", pool: "bbbox", status: "running", template: false, config: { tags: "bb-box;install.test;filling;template.9104", description: "bb-box warm windows-desktop\ninstall test", cores: "4", memory: "8192" } });
+  proxmox.guests.set(9705, { vmid: 9705, type: "qemu", name: "alia-box-warm", pool: "bbbox", status: "stopped", template: false, config: { tags: "alia-box;install.other;warm;template.9104", cores: "4", memory: "8192" } });
+  proxmox.guests.set(9706, { vmid: 9706, type: "qemu", name: "alia-box-warm", pool: "bbbox", status: "running", template: false, config: { tags: "alia-box;install.test;filling;template.9104", description: "alia-box warm windows-desktop\ninstall test", cores: "4", memory: "8192" } });
   await backend.maintain(signal());
   assert.deepEqual(deleted(proxmox), []);
   // The registry releases a guest that names no box.
@@ -1117,7 +1117,7 @@ test("a fill whose desktop never comes up is deleted, with the reason", async ()
   assert.deepEqual(warmVms(proxmox), []);
 });
 
-const REPAIRED = `${EXPIRED_ON} Windows did not log the box user in to the desktop, so BB Box set the password never to expire and restarted Windows.`;
+const REPAIRED = `${EXPIRED_ON} Windows did not log the box user in to the desktop, so VesnALIA Box set the password never to expire and restarted Windows.`;
 
 function expiringPassword(ssh: ReturnType<typeof fakeSsh>, host: string, ...state: ("no-desktop" | "password-expired" | "password-stuck")[]): string {
   const home = ssh.home(host);
@@ -1288,7 +1288,7 @@ test("dispose stops a warm fill", async () => {
     if (call.path.endsWith("/status/start")) disposed ??= backend.dispose();
     return undefined;
   };
-  await assert.rejects(backend.maintain(), /BB Box is stopping/);
+  await assert.rejects(backend.maintain(), /ALIA Box is stopping/);
   await disposed;
   assert.equal(proxmox.guests.has(9700), false, "the VM it was filling is deleted");
 });
@@ -1300,7 +1300,7 @@ function imageSetup(record: Record<string, unknown>) {
     mkdirSync(env.ssh.home(`192.0.2.${last}`), { recursive: true });
     env.ssh.powershell(
       `192.0.2.${last}`,
-      `case "$1" in\n  *"Get-Process explorer"*) exit 0;;\n  *Set-Date*) exit 0;;\n  *"Get-Content C:\\\\bb-box\\\\image.json"*) echo '${JSON.stringify(record)}'; exit 0;;\n  *Clear-Content*) printf cleared > "$HOME/boot-log"; exit 0;;\n  *) exec sh -c "$1";;\nesac\n`,
+      `case "$1" in\n  *"Get-Process explorer"*) exit 0;;\n  *Set-Date*) exit 0;;\n  *"Get-Content C:\\\\alia-box\\\\image.json"*) echo '${JSON.stringify(record)}'; exit 0;;\n  *Clear-Content*) printf cleared > "$HOME/boot-log"; exit 0;;\n  *) exec sh -c "$1";;\nesac\n`,
     );
   }
   return env;
@@ -1321,7 +1321,7 @@ test("with Linux desktop templates, linux-desktop-cpu boxes are VMs whose deskto
   assert.match(report.checks.find((check) => check.id === "template.9121.image")!.fix!, /build\.sh linux-desktop 9121 --replace\.$/);
 
   // The display service says its mode once the desktop is up.
-  const run = join(ssh.home("192.0.2.150"), "run", "bb-box");
+  const run = join(ssh.home("192.0.2.150"), "run", "alia-box");
   mkdirSync(run, { recursive: true });
   writeFileSync(join(run, "display-mode"), "cpu\n");
   writeFileSync(join(run, "display-reason"), "DISPLAY_MODE=cpu\n");
@@ -1346,14 +1346,14 @@ test("image operations on a Linux template: its build box has no Windows steps, 
   const { backend, proxmox, ssh } = setup({ "linux-templates": "9120" });
   proxmox.addVmTemplate(9120);
   const template = proxmox.guests.get(9120)!;
-  template.name = template.config.name = "bb-box-linux";
+  template.name = template.config.name = "alia-box-linux";
   template.config.tags = "bbbox;linux;build.20261011-090550-3ca0";
-  template.config.description = "bb-box linux vm template, built 2026-10-11 from Ubuntu 24.04's cloud image 20260926.";
+  template.config.description = "alia-box linux vm template, built 2026-10-11 from Ubuntu 24.04's cloud image 20260926.";
   for (let last = 150; last <= 159; last++) {
     const host = `192.0.2.${last}`;
     rmSync(join(ssh.dir, "windows", host), { force: true });
     mkdirSync(ssh.home(host), { recursive: true });
-    ssh.powershell(host, `case "$1" in\n  *"cat /usr/share/bb-box/image.json"*) echo '${JSON.stringify(record)}';;\n  *) exec sh -c "$1";;\nesac\n`);
+    ssh.powershell(host, `case "$1" in\n  *"cat /usr/share/alia-box/image.json"*) echo '${JSON.stringify(record)}';;\n  *) exec sh -c "$1";;\nesac\n`);
   }
   const images = backend.images;
   const standard = (await images.list()).builds.find((build) => build.ref === "9120")!;
@@ -1371,20 +1371,20 @@ test("image operations on a Linux template: its build box has no Windows steps, 
   const captured = await images.capture(box, standard, "standard", signal());
   assert.deepEqual([captured.kind, captured.build, captured.record?.build], ["linux", "build.20261012-030000-1a2b", "build.20261012-030000-1a2b"]);
   const vm = proxmox.guests.get(9700)!;
-  assert.deepEqual([vm.template, vm.name], [true, "bb-box-linux"]);
+  assert.deepEqual([vm.template, vm.name], [true, "alia-box-linux"]);
   assert.ok(parseTags(vm.config.tags).includes("kind.linux"));
 
   const replaced = await images.replace(captured, standard, signal());
   assert.deepEqual([replaced.ref, replaced.build], ["9120", "build.20261012-030000-1a2b"]);
-  assert.match(proxmox.guests.get(9120)!.config.description!, /^bb-box linux vm template, refreshed \d{4}-\d{2}-\d{2} from Ubuntu 24\.04's cloud image 20260926\.\n\{"contract":1,/);
+  assert.match(proxmox.guests.get(9120)!.config.description!, /^alia-box linux vm template, refreshed \d{4}-\d{2}-\d{2} from Ubuntu 24\.04's cloud image 20260926\.\n\{"contract":1,/);
   const rollback = [...proxmox.guests.values()].find((guest) => parseTags(guest.config.tags).includes("image.rollback"))!;
-  assert.equal(rollback.name, "bb-box-linux-rollback");
-  assert.match(rollback.config.description!, /^BB Box rollback of Linux template 9120, build\.20261011-090550-3ca0, kept until its next refresh\. To use it, list \d+ as the Linux template in BB Box's settings\.\n$/);
+  assert.equal(rollback.name, "alia-box-linux-rollback");
+  assert.match(rollback.config.description!, /^ALIA Box rollback of Linux template 9120, build\.20261011-090550-3ca0, kept until its next refresh\. To use it, list \d+ as the Linux template in ALIA Box's settings\.\n$/);
   // The doctor lists it, as it holds a box's VMID and address (054, 057).
   const notes = (await backend.doctor()).notes.join("\n");
   assert.match(
     notes,
-    new RegExp(`^VMID ${rollback.vmid} is the rollback of Linux template 9120, build\\.20261011-090550-3ca0\\. It holds a box's VMID and address until the template's next refresh replaces it\\. To go back to it, list ${rollback.vmid} as the Linux template in BB Box's settings\\.$`, "m"),
+    new RegExp(`^VMID ${rollback.vmid} is the rollback of Linux template 9120, build\\.20261011-090550-3ca0\\. It holds a box's VMID and address until the template's next refresh replaces it\\. To go back to it, list ${rollback.vmid} as the Linux template in VesnALIA Box's settings\\.$`, "m"),
   );
 });
 
@@ -1392,9 +1392,9 @@ test("image operations: a box from the Windows template, its capture as a templa
   const record = { contract: 1, image: "standard", kind: KIND, arch: "x86_64", build: "build.20261007-030000-5e1f", built: "2026-10-07T03:00:00Z", os: "Windows 11 Pro", pins: "p".repeat(64), tools: { node: "24.21.0" } };
   const { backend, proxmox, ssh } = imageSetup(record);
   const template = proxmox.guests.get(9104)!;
-  template.name = template.config.name = "bb-box-windows";
+  template.name = template.config.name = "alia-box-windows";
   template.config.tags = "bbbox;windows;build.20260901-020000-77aa";
-  template.config.description = "bb-box windows template, built 2026-09-01 from win11.iso: Windows 11 Pro, PowerShell 7.6.6.";
+  template.config.description = "alia-box windows template, built 2026-09-01 from win11.iso: Windows 11 Pro, PowerShell 7.6.6.";
   const images = backend.images;
   assert.equal(images.windows, true);
 
@@ -1408,7 +1408,7 @@ test("image operations: a box from the Windows template, its capture as a templa
   const box = await images.box(standard, "refresh of 9104", signal());
   assert.equal(box.ref, "9700");
   const vm = proxmox.guests.get(9700)!;
-  assert.deepEqual([vm.status, vm.name, parseTags(vm.config.tags)], ["running", "bb-box-image", ["bb-box", "install.test", "image-box", "template.9104"]]);
+  assert.deepEqual([vm.status, vm.name, parseTags(vm.config.tags)], ["running", "alia-box-image", ["alia-box", "install.test", "image-box", "template.9104"]]);
   assert.match(vm.config.smbios1!, /serial=/, "the box's address, as a box has it");
   assert.equal(installFromDescription(vm.config.description), "test");
   assert.deepEqual(await backend.held(), [], "not a box's guest");
@@ -1417,12 +1417,12 @@ test("image operations: a box from the Windows template, its capture as a templa
   // The capture: stopped, a template configured as the one it came from, with no address, the record and the build's tags.
   const captured = await images.capture(box, standard, "standard", signal());
   assert.deepEqual([captured.ref, captured.build, captured.current, captured.record?.build], ["9700", "build.20261007-030000-5e1f", false, "build.20261007-030000-5e1f"]);
-  assert.deepEqual([vm.template, vm.status, vm.name, vm.config.protection, vm.config.onboot], [true, "stopped", "bb-box-windows", "1", "0"]);
+  assert.deepEqual([vm.template, vm.status, vm.name, vm.config.protection, vm.config.onboot], [true, "stopped", "alia-box-windows", "1", "0"]);
   assert.match(vm.config.smbios1!, /^uuid=[0-9a-f-]{36}$/, "no address in the template");
   // A new EFI variable store with the old one's options, as deleted records pile up in OVMF's at each build's boots (060).
   assert.match(vm.config.efidisk0!, /^local-lvm:vm-9700-disk-\d+,efitype=4m,ms-cert=2023k,pre-enrolled-keys=1,size=4M$/);
   assert.deepEqual(Object.keys(vm.config).filter((key) => key.startsWith("unused")), [], "the old store goes");
-  assert.deepEqual(parseTags(vm.config.tags), ["bb-box", "install.test", "image.standard", "kind.windows-desktop", "template.9104", "build.20261007-030000-5e1f"]);
+  assert.deepEqual(parseTags(vm.config.tags), ["alia-box", "install.test", "image.standard", "kind.windows-desktop", "template.9104", "build.20261007-030000-5e1f"]);
   assert.deepEqual(recordInDescription(vm.config.description!), parseImageRecord(record));
   assert.equal(readFileSync(join(ssh.home("192.0.2.150"), "boot-log"), "utf8"), "cleared", "clones start with an empty boot log");
   assert.deepEqual(await backend.held(), []);
@@ -1442,9 +1442,9 @@ test("image operations: a box from the Windows template, its capture as a templa
   assert.deepEqual([replaced.ref, replaced.current, replaced.build], ["9104", true, "build.20261007-030000-5e1f"]);
   assert.equal(proxmox.guests.has(9700), false);
   const now = proxmox.guests.get(9104)!;
-  assert.deepEqual([now.template, now.name, now.config.protection], [true, "bb-box-windows", "1"]);
+  assert.deepEqual([now.template, now.name, now.config.protection], [true, "alia-box-windows", "1"]);
   assert.deepEqual(parseTags(now.config.tags), ["bbbox", "windows", "build.20261007-030000-5e1f"]);
-  assert.match(now.config.description!, /^bb-box windows template, refreshed \d{4}-\d{2}-\d{2} from win11\.iso: Windows 11 Pro, PowerShell 7\.6\.6\.\n\{"contract":1,/);
+  assert.match(now.config.description!, /^alia-box windows template, refreshed \d{4}-\d{2}-\d{2} from win11\.iso: Windows 11 Pro, PowerShell 7\.6\.6\.\n\{"contract":1,/);
   assert.deepEqual(
     proxmox.calls
       .slice(before)
@@ -1455,9 +1455,9 @@ test("image operations: a box from the Windows template, its capture as a templa
   // The rollback: the old template as it was, at a free VMID of the range, until the next replace.
   const rollback = [...proxmox.guests.values()].find((guest) => parseTags(guest.config.tags).includes("image.rollback"))!;
   assert.equal(rollback.vmid, 9702);
-  assert.deepEqual([rollback.template, rollback.name, rollback.config.protection], [true, "bb-box-windows-rollback", "1"]);
-  assert.deepEqual(parseTags(rollback.config.tags), ["bb-box", "install.test", "image.rollback", "kind.windows-desktop", "template.9104", "build.20260901-020000-77aa"]);
-  assert.match(rollback.config.description!, /^BB Box rollback of Windows template 9104, build\.20260901-020000-77aa, kept until its next refresh\. To use it, list 9702 as the Windows template in BB Box's settings\.\n$/);
+  assert.deepEqual([rollback.template, rollback.name, rollback.config.protection], [true, "alia-box-windows-rollback", "1"]);
+  assert.deepEqual(parseTags(rollback.config.tags), ["alia-box", "install.test", "image.rollback", "kind.windows-desktop", "template.9104", "build.20260901-020000-77aa"]);
+  assert.match(rollback.config.description!, /^ALIA Box rollback of Windows template 9104, build\.20260901-020000-77aa, kept until its next refresh\. To use it, list 9702 as the Windows template in ALIA Box's settings\.\n$/);
   assert.deepEqual(
     (await images.list()).builds.map((one) => [one.ref, one.image, one.current]),
     [["9104", "standard", true], ["9702", "rollback", false]],
@@ -1492,7 +1492,7 @@ test("a capture without the refresh's record is refused, and a failed image box 
   const { backend, proxmox } = imageSetup({});
   const standard = (await backend.images.list()).builds[0]!;
   const box = await backend.images.box(standard, "refresh of 9104", signal());
-  await assert.rejects(backend.images.capture(box, standard, "standard", signal()), /Image box 9700 has no image record in C:\\bb-box\\image\.json/);
+  await assert.rejects(backend.images.capture(box, standard, "standard", signal()), /Image box 9700 has no image record in C:\\alia-box\\image\.json/);
   await backend.images.remove(box.ref, signal());
   assert.equal(proxmox.guests.has(9700), false);
 
@@ -1594,7 +1594,7 @@ function linuxDiskTools(ssh: ReturnType<typeof fakeSsh>, address: string): { log
   };
 }
 
-test("a Linux VM's root file system is grown over a disk larger than its template's by BB Box after its first boot, not left to its boot script alone", async () => {
+test("a Linux VM's root file system is grown over a disk larger than its template's by VesnALIA Box after its first boot, not left to its boot script alone", async () => {
   const { backend, proxmox, ssh } = setup({ "linux-templates": "9120" });
   proxmox.addVmTemplate(9120);
   const tools = linuxDiskTools(ssh, "192.0.2.150");
@@ -1654,14 +1654,14 @@ test("an Android template with KVM off offers no kind, but its image is listed, 
   const { backend, proxmox, ssh } = setup({ "android-templates": "9108" });
   proxmox.addVmTemplate(9108);
   const template = proxmox.guests.get(9108)!;
-  template.name = template.config.name = "bb-box-android";
+  template.name = template.config.name = "alia-box-android";
   template.config.tags = "bbbox;android;build.20261020-030000-77aa";
-  template.config.description = `bb-box android vm template, built 2026-10-20 from Ubuntu 24.04's cloud image 20260911.\n${JSON.stringify(record)}`;
+  template.config.description = `alia-box android vm template, built 2026-10-20 from Ubuntu 24.04's cloud image 20260911.\n${JSON.stringify(record)}`;
   for (let last = 150; last <= 159; last++) {
     const host = `192.0.2.${last}`;
     rmSync(join(ssh.dir, "windows", host), { force: true });
     mkdirSync(ssh.home(host), { recursive: true });
-    ssh.powershell(host, `case "$1" in\n  *"cat /usr/share/bb-box/image.json"*) echo '${JSON.stringify(record)}';;\n  *) exec sh -c "$1";;\nesac\n`);
+    ssh.powershell(host, `case "$1" in\n  *"cat /usr/share/alia-box/image.json"*) echo '${JSON.stringify(record)}';;\n  *) exec sh -c "$1";;\nesac\n`);
   }
   assert.ok(!backend.kinds().some((kind) => kind.id === "android"), "not offered while KVM is off");
   const [withheld] = await backend.withheldKinds("android");
@@ -1692,15 +1692,15 @@ test("an Android template with KVM off offers no kind, but its image is listed, 
   const replaced = await images.replace(captured, standard, signal());
   assert.equal(replaced.ref, "9108");
   const rollback = [...proxmox.guests.values()].find((guest) => parseTags(guest.config.tags).includes("image.rollback"))!;
-  assert.equal(rollback.name, "bb-box-android-rollback");
-  assert.match(rollback.config.description!, /^BB Box rollback of Android template 9108, build\.20261020-030000-77aa, kept until its next refresh\./);
+  assert.equal(rollback.name, "alia-box-android-rollback");
+  assert.match(rollback.config.description!, /^ALIA Box rollback of Android template 9108, build\.20261020-030000-77aa, kept until its next refresh\./);
   const withKvm = setup({ "android-templates": "9108", "linux-kvm": true });
   withKvm.proxmox.addVmTemplate(9108);
   assert.equal((await withKvm.backend.doctor()).checks.find((one) => one.id === "proxmox.android-kvm")?.status, "ok");
 
   const noDevices = setup({ "android-templates": "9108" });
   noDevices.proxmox.addVmTemplate(9108);
-  noDevices.proxmox.guests.get(9108)!.config.description = `bb-box android vm template.\n${JSON.stringify({ ...record, devices: undefined })}`;
+  noDevices.proxmox.guests.get(9108)!.config.description = `alia-box android vm template.\n${JSON.stringify({ ...record, devices: undefined })}`;
   const judged = (await noDevices.backend.doctor()).checks.find((one) => one.id === "template.9108.image")!;
   assert.equal(judged.status, "fail");
   assert.match(judged.detail, /It offers no Android devices in its record/);
@@ -1712,7 +1712,7 @@ test("an Android template with KVM off offers no kind, but its image is listed, 
 function setupWithKvmAndNoDevices(record: Record<string, unknown>) {
   const { backend, proxmox } = setup({ "android-templates": "9108", "linux-kvm": true });
   proxmox.addVmTemplate(9108);
-  proxmox.guests.get(9108)!.config.description = `bb-box android vm template.\n${JSON.stringify({ ...record, devices: undefined })}`;
+  proxmox.guests.get(9108)!.config.description = `alia-box android vm template.\n${JSON.stringify({ ...record, devices: undefined })}`;
   return backend;
 }
 
@@ -1725,7 +1725,7 @@ test("with an Android template and KVM on, android boxes are offered once its re
   const record = { contract: 1, image: "standard", kind: "android", arch: "x86_64", build: "build.20261026-051500-1a2b", built: new Date().toISOString(), os: "Ubuntu 24.04", pins: "p".repeat(64), tools: {}, devices };
   const { backend, proxmox, ssh, context } = setup({ "android-templates": "9108", "linux-kvm": true });
   proxmox.addVmTemplate(9108);
-  proxmox.guests.get(9108)!.config.description = `bb-box android vm template.\n${JSON.stringify(record)}`;
+  proxmox.guests.get(9108)!.config.description = `alia-box android vm template.\n${JSON.stringify(record)}`;
   proxmox.guests.get(9108)!.config.tags = "bbbox;android;build.20261026-051500-1a2b";
   const host = "192.0.2.150";
   rmSync(join(ssh.dir, "windows", host), { force: true });
@@ -1756,7 +1756,7 @@ test("with an Android template and KVM on, android boxes are offered once its re
   await backend.start(guest, signal(), (step) => steps.push(step));
   assert.deepEqual(steps, ["resume", "network", "ssh", "clock"]);
   const set = Number(/date -u -s @([\d.]+)/.exec(readFileSync(join(ssh.home(host), "clock"), "utf8"))?.[1]);
-  assert.ok(set >= before - 1 && set <= Date.now() / 1000 + 1, "set to BB's server's time");
+  assert.ok(set >= before - 1 && set <= Date.now() / 1000 + 1, "set to VesnALIA's server's time");
 });
 
 function recordingWarm<T extends { warm(kind: string): number }>(context: T): { context: T; asked: Set<string> } {

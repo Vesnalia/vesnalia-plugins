@@ -1,36 +1,36 @@
 /**
- * bb's light/dark mode is a client-side setting (`localStorage["bb.theme"]`,
+ * VesnALIA's light/dark mode is a client-side setting (`localStorage["alia.theme"]`,
  * read through a jotai `atomWithStorage`). The originating tab never receives
  * its own `storage` event, so a synthetic one is dispatched — exactly what the
  * marketplace Theme Toggle plugin does.
  */
-export type BbThemeMode = "light" | "dark" | "system";
+export type AliaThemeMode = "light" | "dark" | "system";
 
-export const BB_THEME_KEY = "bb.theme";
+export const ALIA_THEME_KEY = "alia.theme";
 
 /** Same-window nudge from the settings section to the content script. */
 export const APPEARANCE_EVENT = "liquid-glass:appearance";
 
-export function readBbThemeMode(): BbThemeMode {
+export function readAliaThemeMode(): AliaThemeMode {
   try {
-    const stored = localStorage.getItem(BB_THEME_KEY);
+    const stored = localStorage.getItem(ALIA_THEME_KEY);
     return stored === "light" || stored === "dark" ? stored : "system";
   } catch {
     return "system";
   }
 }
 
-export function writeBbThemeMode(mode: BbThemeMode): void {
+export function writeAliaThemeMode(mode: AliaThemeMode): void {
   let previous: string | null = null;
   try {
-    previous = localStorage.getItem(BB_THEME_KEY);
-    localStorage.setItem(BB_THEME_KEY, mode);
+    previous = localStorage.getItem(ALIA_THEME_KEY);
+    localStorage.setItem(ALIA_THEME_KEY, mode);
   } catch {
     /* private mode — the class toggle below still applies */
   }
   window.dispatchEvent(
     new StorageEvent("storage", {
-      key: BB_THEME_KEY,
+      key: ALIA_THEME_KEY,
       oldValue: previous,
       newValue: mode,
       storageArea: globalThis.localStorage,

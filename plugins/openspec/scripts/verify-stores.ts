@@ -10,7 +10,7 @@ import { SourceResolver } from "../src/source-resolver";
 
 const exec = promisify(execFile);
 const fixture = await realpath(
-  await mkdtemp(path.join(tmpdir(), "bb-openspec-stores-")),
+  await mkdtemp(path.join(tmpdir(), "alia-openspec-stores-")),
 );
 const env = {
   ...process.env,

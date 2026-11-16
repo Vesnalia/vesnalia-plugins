@@ -39,8 +39,8 @@ function setup(warm: Record<string, number> = { macos: 1 }) {
     return backend;
   };
   const vms = () => readdirSync(vmsDir).filter((name) => !name.startsWith(".") && name !== FAKE_IMAGE);
-  const warmVms = () => vms().filter((name) => name.startsWith("bb-box-warm-"));
-  const owners = join(mac, ".bb-box", "tart", "owners");
+  const warmVms = () => vms().filter((name) => name.startsWith("alia-box-warm-"));
+  const owners = join(mac, ".alia-box", "tart", "owners");
   const owner = (vm: string) => readFileSync(join(owners, vm), "utf8");
   const suspended = (vm: string) => existsSync(join(vmsDir, vm, "state.vzvmsave")) && !existsSync(join(vmsDir, vm, "running"));
   /** The address the fake Mac gives the next VM to ask for one. */
@@ -144,13 +144,13 @@ test("a box at the default size takes a warm VM, and the pool fills again", asyn
   await backend.release(guest, releasing);
 });
 
-test("where boxes become BB machines, a fill readies the box's access before the suspend, so the claim's enrolment finds it done; a clone leaves it to the enrolment", async () => {
+test("where boxes become VesnALIA machines, a fill readies the box's access before the suspend, so the claim's enrolment finds it done; a clone leaves it to the enrolment", async () => {
   const { ssh, make, warmVms, contexts, nextAddress } = setup();
   const backend = make();
   Object.assign(contexts[0]!, { enrols: () => true });
   const address = nextAddress();
   await backend.maintain();
-  const done = (home: string) => readdirSync(join(home, ".config", "bb-box")).filter((name) => /^access-[0-9a-f]{12}$/.test(name));
+  const done = (home: string) => readdirSync(join(home, ".config", "alia-box")).filter((name) => /^access-[0-9a-f]{12}$/.test(name));
   assert.equal(done(ssh.home(address)).length, 1, "the fill ran the access setup to its end");
   const recorded = hooks();
   const guest = await backend.acquire(identity(), null, recorded.hooks, signal());
@@ -182,7 +182,7 @@ test("a warm VM filled with another Mac helper gets its grants again at its clai
 test("a warm VM whose fill could not make its grants gets them at its claim (058)", async () => {
   const { ssh, make, warmVms, owner, nextAddress } = setup();
   // The helper in the next VM says it made no signing identity.
-  const flags = join(ssh.home(nextAddress()), ".bb-box-state", "flags");
+  const flags = join(ssh.home(nextAddress()), ".alia-box-state", "flags");
   mkdirSync(flags, { recursive: true });
   writeFileSync(join(flags, "no-signing"), "");
   const backend = make();
@@ -210,7 +210,7 @@ test("a refusal names a claimed warm VM by its box, not by its warm name (#599)"
   assert.equal(capacity.ok, false);
   assert.match(capacity.message!, /Two macOS VMs already run on mac1, Apple's limit \(box /);
   for (const named of [box, clone]) assert.match(capacity.message!, new RegExp(`box ${named.name} of thread thr_abc123[,)]`));
-  assert.doesNotMatch(capacity.message!, /bb-box-warm-/);
+  assert.doesNotMatch(capacity.message!, /alia-box-warm-/);
   await backend.release(guest, releasing);
   await backend.release(other, releasing);
 });
@@ -222,7 +222,7 @@ test("a box at another size clones, and leaves the warm VM", async () => {
   const [warm] = warmVms();
   const box = identity("macos", MEDIUM);
   const guest = await backend.acquire(box, null, hooks().hooks, signal());
-  assert.equal(guest.ref, `bb-box-${box.boxId}`);
+  assert.equal(guest.ref, `alia-box-${box.boxId}`);
   assert.deepEqual(guest.size, { ...MEDIUM, diskGiB: 59 });
   assert.ok(suspended(warm!));
   await backend.release(guest, releasing);
@@ -236,7 +236,7 @@ test("a warm VM that does not restore gives way to a clone, and goes", async () 
   writeFileSync(join(vmsDir, warm!, "state.vzvmsave"), "corrupt");
   const box = identity();
   const guest = await backend.acquire(box, null, hooks().hooks, signal());
-  assert.equal(guest.ref, `bb-box-${box.boxId}`);
+  assert.equal(guest.ref, `alia-box-${box.boxId}`);
   assert.ok(!existsSync(join(vmsDir, warm!)), "the warm VM that failed is deleted");
   assert.ok(contexts[0]!.errors.some((error) => /could not use warm VM [^,]+, saved \d+ min ago, [\s\S]*failed to restore/.test(error)), contexts[0]!.errors.join("\n"));
   await backend.maintain();
@@ -256,9 +256,9 @@ test("after a warm VM that does not restore, the box clones rather than trying a
   }
   const box = identity();
   const guest = await backend.acquire(box, null, hooks().hooks, signal());
-  assert.equal(guest.ref, `bb-box-${box.boxId}`);
+  assert.equal(guest.ref, `alia-box-${box.boxId}`);
   await until(() => spares.every((warm) => !existsSync(join(vmsDir, warm))), "the other warm VM to be retired");
-  assert.ok(contexts[0]!.errors.some((error) => /Warm VM bb-box-warm-\w+ on mac1, saved \d+ min ago, is retired, as one saved after it failed to restore/.test(error)), contexts[0]!.errors.join("\n"));
+  assert.ok(contexts[0]!.errors.some((error) => /Warm VM alia-box-warm-\w+ on mac1, saved \d+ min ago, is retired, as one saved after it failed to restore/.test(error)), contexts[0]!.errors.join("\n"));
   await backend.release(guest, releasing);
 });
 
@@ -273,7 +273,7 @@ test("after a warm VM that does not restore, one saved after it stays", async ()
   for (const warm of [first!, second!]) writeFileSync(join(vmsDir, warm, "state.vzvmsave"), "corrupt");
   const box = identity();
   const guest = await backend.acquire(box, null, hooks().hooks, signal());
-  assert.equal(guest.ref, `bb-box-${box.boxId}`);
+  assert.equal(guest.ref, `alia-box-${box.boxId}`);
   assert.ok(!existsSync(join(vmsDir, first!)), "the warm VM that failed is deleted");
   await new Promise((resolve) => setTimeout(resolve, 500));
   assert.ok(existsSync(join(vmsDir, second!)), "the warm VM saved after it stays");
@@ -357,7 +357,7 @@ test("a box whose saved state does not restore boots afresh from its disk", asyn
 test("a fill cut short by a restart is listed with no owner, so the sweep releases it", async () => {
   const { make, vmsDir, owners } = setup({});
   const backend = make();
-  const vm = "bb-box-warm-0123456789ab";
+  const vm = "alia-box-warm-0123456789ab";
   mkdirSync(join(vmsDir, vm), { recursive: true });
   writeFileSync(join(vmsDir, vm, "config.json"), JSON.stringify({ os: "darwin", cpuCount: 4, memorySize: 8 * 2 ** 30 }));
   addVmFiles(join(vmsDir, vm));
@@ -426,7 +426,7 @@ test("an acquire that meets a fill holding the last slot takes it over at the fi
     } else {
       const guest = await acquiring;
       up(address);
-      assert.equal(guest.ref, `bb-box-${box.boxId}`, "a box of another size clones");
+      assert.equal(guest.ref, `alia-box-${box.boxId}`, "a box of another size clones");
       assert.ok(!warmVms().includes(fill!), "the fill was stopped and its VM deleted");
       await backend.release(guest, releasing);
     }
@@ -442,10 +442,10 @@ test("a VM that answers as another is refused", async () => {
   const guest = await backend.acquire(identity("macos", MEDIUM), null, hooks().hooks, signal());
   await backend.stop(guest);
   // Another VM has the address now.
-  const marker = join(ssh.home(guest.address!), ".config", "bb-box", "vm");
+  const marker = join(ssh.home(guest.address!), ".config", "alia-box", "vm");
   assert.equal(readFileSync(marker, "utf8").trim(), guest.ref, "the VM keeps its own name");
-  writeFileSync(marker, "bb-box-someone-else\n");
-  await assert.rejects(backend.start(guest), /The VM that answers is bb-box-someone-else, not bb-box-/);
+  writeFileSync(marker, "alia-box-someone-else\n");
+  await assert.rejects(backend.start(guest), /The VM that answers is alia-box-someone-else, not alia-box-/);
   await backend.release(guest, releasing);
 });
 
@@ -453,7 +453,7 @@ test("a VM that keeps no name is named only when the Mac's ARP table gives its M
   const { ssh, vmsDir, make } = setup({});
   const backend = make();
   const guest = await backend.acquire(identity("macos", MEDIUM), null, hooks().hooks, signal());
-  const marker = join(ssh.home(guest.address!), ".config", "bb-box", "vm");
+  const marker = join(ssh.home(guest.address!), ".config", "alia-box", "vm");
   // As a box made before names were kept: its own address, so it is named.
   rmSync(marker);
   await backend.stop(guest);
@@ -468,7 +468,7 @@ test("a VM that keeps no name is named only when the Mac's ARP table gives its M
   addVmFiles(intruder);
   writeFileSync(join(intruder, "lease"), guest.address!);
   utimesSync(join(intruder, "lease"), new Date(), new Date(Date.now() + 60_000));
-  await assert.rejects(backend.start(guest), /keeps no name, and its MAC address is a:b:c:d:e:f, not bb-box-/);
+  await assert.rejects(backend.start(guest), /keeps no name, and its MAC address is a:b:c:d:e:f, not alia-box-/);
   assert.ok(!existsSync(marker), "nothing is written into a VM that is not the box's");
   rmSync(intruder, { recursive: true });
   await backend.release(guest, releasing);
@@ -518,7 +518,7 @@ test("two installs never share warm VMs", async () => {
   assert.deepEqual((await other.capacity("macos", SMALL, [])).warm, { ready: 0, target: 0 });
   const box = identity();
   const guest = await other.acquire(box, null, hooks().hooks, signal());
-  assert.equal(guest.ref, `bb-box-${box.boxId}`);
+  assert.equal(guest.ref, `alia-box-${box.boxId}`);
   assert.ok(suspended(warm!));
   await other.release(guest, releasing);
 });
@@ -529,7 +529,7 @@ test("a cloned macOS box records its image's build, which tells a spare of an ol
   const guest = await backend.acquire(identity(), null, hooks().hooks, signal());
   assert.equal(guest.data?.build, "build.20261003-021500");
   assert.equal(await backend.fromCurrentBuild(guest, "macos"), true);
-  writeFileSync(join(mac, ".bb-box", "tart", "images", `${FAKE_IMAGE}.json`), `${JSON.stringify({ contract: 1, image: "standard", kind: "macos", arch: "arm64", build: "build.20261101-021500", built: new Date().toISOString(), os: "fake OS", tools: {} })}\n`);
+  writeFileSync(join(mac, ".alia-box", "tart", "images", `${FAKE_IMAGE}.json`), `${JSON.stringify({ contract: 1, image: "standard", kind: "macos", arch: "arm64", build: "build.20261101-021500", built: new Date().toISOString(), os: "fake OS", tools: {} })}\n`);
   assert.equal(await backend.fromCurrentBuild(guest, "macos"), false);
   assert.equal(await backend.fromCurrentBuild({ ...guest, data: { box: guest.data!.box! } }, "macos"), null, "a box made before builds were recorded cannot tell");
   assert.equal(backend.savedSessionRestoresWithinMs("macos"), 4 * 3_600_000);

@@ -1,6 +1,6 @@
 // Small presentational pieces shared across the page.
 import { useState, type CSSProperties, type ReactNode } from "react";
-import { experimental_ProviderIcon as ProviderIcon, experimental_useProviders as useProviders } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderIcon as ProviderIcon, experimental_useProviders as useProviders } from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import { CELL_META, isDrifted } from "../lib/meta";
 import type { Agent, CellState, Skill } from "../lib/types";
@@ -26,7 +26,7 @@ export function CellDot({ state, className }: { state: CellState; className?: st
   return <Dot tone={CELL_META[state].tone} hollow={state === "missing"} className={className} />;
 }
 
-/** The agent's harness logo via BB's provider artwork, or its initial. */
+/** The agent's harness logo via VesnALIA's provider artwork, or its initial. */
 export function AgentLogo({ agent, className }: { agent: Agent; className?: string }) {
   const { providers } = useProviders();
   if (agent.providerId !== undefined) {

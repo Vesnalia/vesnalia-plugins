@@ -3,9 +3,9 @@
 // that frees an account (moving the project to it), or leave the failure
 // alone.
 //
-// Buffer, jitter and attempt cap mirror bb's built-in provider-retry plugin
+// Buffer, jitter and attempt cap mirror VesnALIA's built-in provider-retry plugin
 // so a wait scheduled here lands where that plugin would have put it.
-import type { PluginTurnFailedEvent } from "@get-bb/plugin-sdk";
+import type { PluginTurnFailedEvent } from "@vesnalia/plugin-sdk";
 import {
   canRunModel,
   chooseAccount,
@@ -27,7 +27,7 @@ import {
 export const RESET_BUFFER_MS = 15_000;
 export const RESET_JITTER_MS = 30_000;
 export const MAX_ATTEMPTS = 5;
-/** bb provider id whose accounts this plugin manages. */
+/** VesnALIA provider id whose accounts this plugin manages. */
 export const CLAUDE_CODE_PROVIDER = "claude-code";
 
 export type DeclineReason =
@@ -127,7 +127,7 @@ export function isRefusal(failure: PluginTurnFailedEvent): boolean {
 
 /**
  * What Claude Code says when the account has no working session on the
- * machine the turn ran on (bb's log, 2026-11-10: a provider/error with no
+ * machine the turn ran on (VesnALIA's log, 2026-11-10: a provider/error with no
  * errorInfo, the text in its detail): no login there, a login past its
  * time limit, or a token the API no longer takes. A 401 only as a status:
  * «messages.401.content» is a 400 of a long thread (code-reviewer r1, low 4);
@@ -144,7 +144,7 @@ export function isSessionLoss(text: string): boolean {
 
 /**
  * Cloudflare's block page in front of the API: the network (its IP) was
- * refused, not the account (bb's log, 2026-11-13: «API Error: 403 Attention
+ * refused, not the account (VesnALIA's log, 2026-11-13: «API Error: 403 Attention
  * Required! | Cloudflare», errorInfo unauthorized, five accounts with quota
  * vetoed in three minutes). Its title, its challenge page, or Cloudflare
  * named with a 403; never a text that says a session is lost.
@@ -177,7 +177,7 @@ export const SESSION_LOST_INFO: NonNullable<PluginTurnFailedEvent["errorInfo"]> 
 };
 
 /**
- * The failure, judged as the refusal it is: bb sends it with no errorInfo,
+ * The failure, judged as the refusal it is: VesnALIA sends it with no errorInfo,
  * which is no business of this plugin (see SESSION_LOST_INFO).
  */
 export function sessionLost(failure: PluginTurnFailedEvent): PluginTurnFailedEvent {
@@ -206,7 +206,7 @@ export function declineReason(
   if (failure.errorInfo?.category !== "rate-limit") return "not-rate-limit";
   const rateLimits = failure.rateLimits;
   if (rateLimits === null) return stuck ? null : "no-rate-limit-state";
-  // bb sends the thread's latest stored report: when the provider refuses a
+  // VesnALIA sends the thread's latest stored report: when the provider refuses a
   // turn before reporting the limit reached, that is still a warning. Left
   // in error, that report may be an earlier turn's (allowed, unknown): the
   // measurements decide, as when there is none.
@@ -222,7 +222,7 @@ export function declineReason(
   return null;
 }
 
-/** The mark of Calor's tick (bb-plugin-calor, `src/textos.ts`); its closing message is real work, and is not one. */
+/** The mark of Calor's tick (alia-plugin-calor, `src/textos.ts`); its closing message is real work, and is not one. */
 const CALOR_TICK =
   /^\s*calor: tic de caché #[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\./;
 
@@ -236,12 +236,12 @@ export function isCalorTick(text: string): boolean {
 }
 
 /**
- * The usage API's name for the model a bb model id runs
+ * The usage API's name for the model a VesnALIA model id runs
  * ("claude-opus-5-5" → "Opus"), or null when the id is not a Claude model id
  * (none resolved yet): the preferred model decides then. An alias is that
- * model: `bb thread tell --model opus` keeps `opus` on its row, and read as
+ * model: `alia thread tell --model opus` keeps `opus` on its row, and read as
  * no model it ran past the reserve on the project's account (2026-11-03,
- * `bb thread queue list --json`).
+ * `alia thread queue list --json`).
  */
 export function modelFamily(modelId: string | null): string | null {
   const id = modelId ?? "";

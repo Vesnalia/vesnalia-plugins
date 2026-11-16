@@ -3,18 +3,18 @@
  * they are, with Skip, "Make it more specific" and Pause. It holds the pause the upstream skill asks the
  * model to keep: the agent's turn is over while the card is open, and nothing suggests an answer.
  *
- * bb draws it where the composer is, so while it is open the user answers it, skips it or pauses the
+ * VesnALIA draws it where the composer is, so while it is open the user answers it, skips it or pauses the
  * session (spike S3). Every button is `type="button"`. When the agent sent an answer form, its controls
  * replace the text box (`answer-form.tsx`); a form this build cannot read falls back to the text box. File references in the question and the files to open
- * are links that open the file in bb, at a line or range when they name one (`file-refs.tsx`).
+ * are links that open the file in VesnALIA, at a line or range when they name one (`file-refs.tsx`).
  *
  * What the learner has typed but not sent is saved with the question as they go and restored when the card
  * mounts again (`draft.ts`): leaving the thread, a reload or another device keeps it.
  *
- * Above the question, the agent's reply to the previous one (`previous`): its feedback, which bb folds
+ * Above the question, the agent's reply to the previous one (`previous`): its feedback, which VesnALIA folds
  * away with the turn that wrote it once the turn ends with this card. It is open, and can be closed.
  */
-import type { PluginPendingInteractionProps } from "@get-bb/plugin-sdk/app";
+import type { PluginPendingInteractionProps } from "@vesnalia/plugin-sdk/app";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";

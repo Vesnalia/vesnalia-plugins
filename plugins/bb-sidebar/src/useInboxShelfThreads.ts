@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { LifecycleApi } from "./useLifecycle";
 import {
   filterByProjects,
@@ -97,7 +97,7 @@ export function useInboxShelfThreads({
     const allSplit = partitionPinned(allVisible);
     return {
       activeListThreadId: activeRepresentativeThreadId(threads, activeThreadId, visible),
-      // BB supplies pinned rows in the user's persisted pin order.
+      // VesnALIA supplies pinned rows in the user's persisted pin order.
       pinnedBase: split.pinned,
       inboxBase: sortByCreatedAtDescending(activeUnpinned),
       workingBase: sortByCreatedAtDescending(working),

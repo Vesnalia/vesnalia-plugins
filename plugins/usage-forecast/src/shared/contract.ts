@@ -2,7 +2,7 @@
 // Account identifiers (`accountEmail`, `accountKey`) never appear here: the
 // server drops them before anything is stored or returned.
 
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { LIMITS_SHOW } from "./limits-show";
 import { PACE_STATES } from "./pace";
@@ -27,14 +27,14 @@ export const POLL_DEFAULT_MINUTES = 2;
  * The working context limit in tokens: the point the context bar and the
  * auto-compact threshold are measured against, capped by the model window.
  * Quality drops well before a large window is full, so the default follows
- * bb-plugin-context-meter: 150 000 tokens.
+ * alia-plugin-context-meter: 150 000 tokens.
  */
 export const CONTEXT_LIMIT_MIN_TOKENS = 10_000;
 export const CONTEXT_LIMIT_MAX_TOKENS = 2_000_000;
 export const CONTEXT_LIMIT_DEFAULT_TOKENS = 150_000;
 /**
  * Providers with their own working-limit setting. `0` (the default) means
- * auto: the provider's own compaction point when bb reports it, else the
+ * auto: the provider's own compaction point when VesnALIA reports it, else the
  * global `contextLimitTokens`.
  */
 export const PROVIDER_LIMIT_SETTINGS = {
@@ -211,7 +211,7 @@ export const contextCategorySchema = z.object({
 /**
  * Where the working limit comes from, in order of precedence: `thread` (the
  * thread's override), `provider` (the per-provider setting), `reported` (the
- * provider's own compaction point as bb reports it), `settings` (the global
+ * provider's own compaction point as VesnALIA reports it), `settings` (the global
  * limit). `window` replaces any of them when the model window is smaller.
  */
 export const CONTEXT_LIMIT_SOURCES = ["settings", "thread", "window", "provider", "reported"] as const;
@@ -230,7 +230,7 @@ export const threadContextSchema = z.object({
   estimated: z.boolean(),
   /**
    * Where the provider compacts on its own, in tokens: from this thread's
-   * snapshot, or the last value bb reported for the same provider and
+   * snapshot, or the last value VesnALIA reported for the same provider and
    * window. Null when unknown (Codex reports none).
    */
   autoCompactAtTokens: z.number().nullable(),

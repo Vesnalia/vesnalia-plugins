@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   consumeCodexRateLimitResetCredit,
@@ -172,8 +172,8 @@ export const usageRpcContract = defineRpcContract({
   },
 });
 
-export default function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     enableClaudeCode: {
       type: "boolean",
       label: "Enable Claude Code",
@@ -184,7 +184,7 @@ export default function plugin(bb: BbPluginApi) {
       type: "string",
       label: "Claude Keychain service",
       description:
-        "macOS only. Set when Claude Code runs with CLAUDE_CONFIG_DIR, which stores credentials under `Claude Code-credentials-<hash>` instead of BB's default `Claude Code-credentials`. Leave empty to use BB's usage data.",
+        "macOS only. Set when Claude Code runs with CLAUDE_CONFIG_DIR, which stores credentials under `Claude Code-credentials-<hash>` instead of VesnALIA's default `Claude Code-credentials`. Leave empty to use VesnALIA's usage data.",
       default: "",
     },
     enableCodex: {
@@ -227,7 +227,7 @@ export default function plugin(bb: BbPluginApi) {
       type: "string",
       label: "DeepSeek API key",
       description:
-        "Stored in BB's plugin secrets and read only by the plugin server. Leave empty to use DEEPSEEK_API_KEY.",
+        "Stored in VesnALIA's plugin secrets and read only by the plugin server. Leave empty to use DEEPSEEK_API_KEY.",
       secret: true,
       default: "",
     },
@@ -249,12 +249,12 @@ export default function plugin(bb: BbPluginApi) {
 
   const resetGate = createResetActionGate(consumeCodexRateLimitResetCredit);
 
-  const resetSources = createResetSources(bb);
+  const resetSources = createResetSources(alia);
 
   let lastKnownCodexResetCount: number | null = null;
   let lastKnownCodexAccountEmail: string | null = null;
 
-  bb.rpc.register(usageRpcContract, {
+  alia.rpc.register(usageRpcContract, {
     async getPreferences() {
       const preferences = await settings.get();
       return {
@@ -273,7 +273,7 @@ export default function plugin(bb: BbPluginApi) {
       const deepSeekBudget = parseDeepSeekBudget(preferences.deepSeekBudget);
       const [snapshot, deepSeek] = await Promise.all([
         loadUsageSnapshot(
-          bb.sdk,
+          alia.sdk,
           new Date(),
           claudeKeychainService === ""
             ? Promise.resolve({})
@@ -307,7 +307,7 @@ export default function plugin(bb: BbPluginApi) {
         try {
           lastKnownCodexResetCount = await readCodexResetCredits();
         } catch {
-          bb.log.warn("Codex usage reset availability could not be loaded.");
+          alia.log.warn("Codex usage reset availability could not be loaded.");
         }
         lastKnownCodexAccountEmail = await readCodexAccountEmail().catch(() => null);
       } else {

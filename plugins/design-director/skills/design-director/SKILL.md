@@ -32,19 +32,19 @@ anything else.
 Spot check needs no permission; it is the price of touching a screen. Review
 and Redesign go through the gate.
 
-## Runtime: Claude Code or bb
+## Runtime: Claude Code or VesnALIA
 
 This skill runs in Claude Code, where it asks with AskUserQuestion and runs
-critics as subagents, and in the bb agent orchestrator, where it runs on
+critics as subagents, and in the VesnALIA agent orchestrator, where it runs on
 whatever provider the thread is on — Claude Code, Codex, Pi, or an ACP agent.
 
-**Detect it first:** `BB_THREAD_ID` is set in every bb thread. Set means bb;
+**Detect it first:** `ALIA_THREAD_ID` is set in every VesnALIA thread. Set means VesnALIA;
 unset means Claude Code, and everything below applies as written.
 
-In bb, read `references/runtime-bb.md` **before spawning anything and before
+In VesnALIA, read `references/runtime-alia.md` **before spawning anything and before
 asking the gate question**. It is the only reference allowed before the gate,
 because the gate itself needs it: it maps every question, spawn and model
-alias onto bb's CLI, and it says which provider the critics run on.
+alias onto VesnALIA's CLI, and it says which provider the critics run on.
 
 ## Gate: confirm before spending anything beyond a spot check
 
@@ -52,7 +52,7 @@ Even at Review this process costs real tokens. **Do not read any reference
 file, run any script, build any direction, or spawn any subagent until the
 user has answered this question.** Ask it with the runtime's question
 mechanism — AskUserQuestion in Claude Code, a numbered list in plain chat on
-a bb provider without native questions, per `runtime-bb.md` — as the very
+a VesnALIA provider without native questions, per `runtime-alia.md` — as the very
 first action after the skill loads, even when the user typed the skill name
 themselves. The exception is a spot check, which runs without asking.
 
@@ -92,7 +92,7 @@ user declined a brief for this surface, don't ask again.
 
 **Ask when there is none.** Add a second question to the same question as the
 gate — one AskUserQuestion call in Claude Code, both lists in one chat
-message on bb — so the user answers both at once:
+message on VesnALIA — so the user answers both at once:
 
 - Question: "This surface has no inspiration brief. How should I make one?"
 - Options, in this order, dropping the two that use the current page when
@@ -192,8 +192,8 @@ Read `references/reference-brief.md` when the brief check calls for a brief
 (inspiration images, the current page, or both), or when the user hands over
 inspiration mid-task.
 
-One `fable` pass over the inspiration set (in bb,
-`scripts/bb-critics.sh --role brief`) writes the reference read, a
+One `fable` pass over the inspiration set (in VesnALIA,
+`scripts/alia-critics.sh --role brief`) writes the reference read, a
 translation into UI terms, and three to five checkable rules. When the
 product defines its colors in code, collect those tokens first and pass
 them in; the brief uses the code values instead of estimating colors from a
@@ -263,10 +263,10 @@ Each round:
    re-shoot before spending the critic.
 3. **Spawn the critic three times**, fresh context each, in parallel;
    critics are cheap. In Claude Code, as `opus` subagents (fall back to a
-   second `opus` attempt, not `sonnet`; Sonnet's scores are unstable). In bb,
-   `scripts/bb-critics.sh --role critic --repeats 3 --image <png>
+   second `opus` attempt, not `sonnet`; Sonnet's scores are unstable). In VesnALIA,
+   `scripts/alia-critics.sh --role critic --repeats 3 --image <png>
    --prompt-file <prompt> --out-dir <dir>`. Each critic gets: the preamble
-   (Read-only in Claude Code, "the screenshot is attached" in bb), the
+   (Read-only in Claude Code, "the screenshot is attached" in VesnALIA), the
    screenshot, the aesthetic statement, and the **brief text** if one exists.
    No inspiration images, code, implementation notes, previous critiques,
    round number, or effort.
@@ -294,9 +294,9 @@ Stopping rules, fixed before round one:
   the layout or go back to Discover.
 - **Never tell the critic the target score or the baseline.**
 - **Scores compare only within one configuration**: same prompt, same
-  critic model, same brief hash, and in bb the same provider. Changing any
-  of them starts a new baseline row; say so in the record. In bb, log the
-  configuration string `bb-critics.sh` prints next to every score.
+  critic model, same brief hash, and in VesnALIA the same provider. Changing any
+  of them starts a new baseline row; say so in the record. In VesnALIA, log the
+  configuration string `alia-critics.sh` prints next to every score.
 
 When four or more professional examples of the same surface exist, the
 ranking variant in the critic prompt is a better baseline round than the
@@ -382,8 +382,8 @@ In a repo that keeps decision records, design decisions go in `docs/design/`.
 Read `references/spot-check.md`. It starts with the brief check above:
 use the surface's brief, or ask once if it has none and no recorded decline.
 Then one `sonnet` call at the end of any task that changed a screen, whether
-or not the skill was otherwise invoked (in bb,
-`scripts/bb-critics.sh --role spot --repeats 1`):
+or not the skill was otherwise invoked (in VesnALIA,
+`scripts/alia-critics.sh --role spot --repeats 1`):
 pairwise against the last screenshot of that surface, the brief's rules
 tally, and at most two nudges. No score. Apply the top nudge if it is a
 one-line change. Escalate to a Review when the pairwise verdict is clearly
@@ -431,7 +431,7 @@ when spawning a subagent. Where `fable` is unavailable, use `opus` for the
 reference brief. Never substitute `sonnet` for a scoring critic, and never
 use `haiku` as an implementer.
 
-In bb the aliases resolve per `references/runtime-bb.md`: on the `claude-code`
+In VesnALIA the aliases resolve per `references/runtime-alia.md`: on the `claude-code`
 provider they map to the catalog ids, and on any other provider to that
 catalog's equivalent. A non-Claude provider is an **uncalibrated
 configuration** — the table above was measured on Claude models, so its

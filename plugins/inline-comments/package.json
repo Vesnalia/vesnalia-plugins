@@ -1,5 +1,5 @@
 {
-  "name": "bb-plugin-inline-comments",
+  "name": "alia-plugin-inline-comments",
   "version": "0.1.3",
   "description": "Comment on passages of agent replies and send them with your next message.",
   "license": "WTFPL",
@@ -7,27 +7,19 @@
     "name": "Boros Máté",
     "url": "https://github.com/qwadrox"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/qwadrox/bb-plugin-inline-comments.git"
-  },
-  "homepage": "https://github.com/qwadrox/bb-plugin-inline-comments#readme",
-  "bugs": {
-    "url": "https://github.com/qwadrox/bb-plugin-inline-comments/issues"
-  },
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "comments",
     "annotations",
     "voice-input"
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.37"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.37"
   },
-  "bb": {
+  "alia": {
     "name": "Inline Comments",
     "description": "Select text in a reply, choose Add to chat, and send any number of quoted comments together with your next message.",
     "branding": {
@@ -41,7 +33,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -69,6 +60,23 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/inline-comments#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/inline-comments"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

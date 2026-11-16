@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { fireEvent, render, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { formatPlan } from "../lib/format";
 import { validateCrew } from "../lib/spec";
 import { buildCrewCanvas, TopologyLegend } from "../components/crew-topology";
@@ -290,7 +290,7 @@ describe("crew sidepanel chrome (BBP-79)", () => {
     fireEvent.click(slot.getByRole("button", { name: "New" }));
     expect(slot.navigateCalls.map((call) => call.method)).toEqual(["toPluginPanel"]);
 
-    expect(slot.getByText("bb crew apply trio")).toBeTruthy();
+    expect(slot.getByText("alia crew apply trio")).toBeTruthy();
     const preview = slot.getByText("Preview");
     const canvas = slot.container.querySelector('[aria-label="Topology"]')!;
     expect(preview.compareDocumentPosition(canvas) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -585,7 +585,7 @@ describe("crew header", () => {
 });
 
 describe("add member form", () => {
-  it("uses BB's picker: without a pick no provider/model is sent (the lead's apply), with a pick the choice is sent", async () => {
+  it("uses VesnALIA's picker: without a pick no provider/model is sent (the lead's apply), with a pick the choice is sent", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const sent: Record<string, unknown>[] = [];
     const slot = renderSlot(app.navPanels[0]!, { subPath: "" }, {
@@ -638,7 +638,7 @@ describe("crew file editor", () => {
     slot.lifecycle.unmount();
   });
 
-  it("the preview shows exactly the lines of bb crew plan, and Apply sends the edited file", async () => {
+  it("the preview shows exactly the lines of VesnALIA crew plan, and Apply sends the edited file", async () => {
     // The real service computes the plan, so the preview is compared with the CLI's own lines.
     const env = setup();
     await running(env.service, env.port);
@@ -669,13 +669,13 @@ describe("crew file editor", () => {
     slot.lifecycle.unmount();
   });
 
-  it("the form uses BB's provider/model picker per member and writes its choice into the YAML", async () => {
+  it("the form uses VesnALIA's provider/model picker per member and writes its choice into the YAML", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const slot = renderSlot(app.navPanels[0]!, { subPath: "" }, { rpc: backend({ getCrewFile: () => ({ yaml: trioYaml(), version: 2 }) }) });
     await openCrew(slot, "Edit crew file");
     await slot.findByLabelText("Crew file YAML");
     fireEvent.click(slot.getByRole("tab", { name: "Form" }));
-    const pickers = slot.getAllByTestId("bb-provider-model-picker");
+    const pickers = slot.getAllByTestId("alia-provider-model-picker");
     expect(pickers).toHaveLength(3);
     // Negative: the old free-text fields are gone.
     expect(slot.queryByLabelText("dev-impl provider")).toBeNull();

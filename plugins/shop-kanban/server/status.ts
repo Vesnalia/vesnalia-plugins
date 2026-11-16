@@ -1,4 +1,4 @@
-import type { BbPluginApi, PluginThreadEventPayloads } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginThreadEventPayloads } from "@vesnalia/plugin-sdk";
 import type { Status } from "./schema";
 import { capped, oneLine } from "./text";
 
@@ -24,7 +24,7 @@ export type LiveThread = {
 };
 
 /** A `threads.list` row; the SDK exports no name for it. */
-type ThreadListRow = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["list"]>>[number];
+type ThreadListRow = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["list"]>>[number];
 /** A thread as `threads.get`, `threads.spawn` and thread events return it; the SDK names it only through events. */
 type ThreadResponse = PluginThreadEventPayloads["thread.created"]["thread"];
 
@@ -135,7 +135,7 @@ export function isWorking(thread: LiveThread, descendants: LiveThread[]): boolea
 /**
  * The card's state, why, and its description. `error` is the message of the thread's last failure, if the board
  * spawned it. `parkedAt` is when the user parked the thread; it stays parked until it settles or fails again, either
- * of which moves bb's attention time past it.
+ * of which moves VesnALIA's attention time past it.
  */
 export function deriveStatus(
   thread: LiveThread,

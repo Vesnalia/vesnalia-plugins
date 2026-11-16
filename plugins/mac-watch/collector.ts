@@ -78,7 +78,7 @@ export class Collector {
   private lastAt = 0;
   private slow: { at: number; disk: { total: number; free: number; used: number } | null; top: Snapshot["top"]; thermal: Snapshot["thermal"]; missing: string[] } | null = null;
 
-  /** Values that never change while BB runs. */
+  /** Values that never change while VesnALIA runs. */
   private async loadStatic(): Promise<Static> {
     if (this.staticInfo) return this.staticInfo;
     const [name, model, version, memsize] = await Promise.all([

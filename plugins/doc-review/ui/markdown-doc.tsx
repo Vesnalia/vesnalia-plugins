@@ -1,4 +1,4 @@
-// Markdown view: renders the file block by block with bb's own Markdown
+// Markdown view: renders the file block by block with VesnALIA's own Markdown
 // component, turns a text selection into a line-anchored comment, and marks
 // existing comments with highlights and numbered pins in the margin.
 import {
@@ -14,7 +14,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { defineMessages, useMessages } from "@/lib/i18n";
@@ -49,7 +49,7 @@ interface Pin {
   status: ReviewComment["status"];
 }
 
-/** Where the document lives, so bb opens its relative file links from the document's folder. */
+/** Where the document lives, so VesnALIA opens its relative file links from the document's folder. */
 export type MarkdownDocument = ComponentProps<typeof Markdown>["experimental_document"];
 
 const Block = memo(function Block({ block, linkDocument }: { block: MdBlock; linkDocument: MarkdownDocument }) {
@@ -330,7 +330,7 @@ export function MarkdownDoc({
     }
   };
 
-  // bb sends "#section" links to the browser; scroll to the heading here instead.
+  // VesnALIA sends "#section" links to the browser; scroll to the heading here instead.
   const onClickCapture = (event: ReactMouseEvent<HTMLDivElement>) => {
     const element = root.current;
     const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
@@ -356,7 +356,7 @@ export function MarkdownDoc({
   return (
     <div
       ref={root}
-      // While text is selected here, a sideways drag is not bb's sidebar swipe.
+      // While text is selected here, a sideways drag is not VesnALIA's sidebar swipe.
       data-sidebar-swipe-selectable=""
       className="doc-review-md relative mx-auto w-full max-w-3xl py-5 pl-10 pr-5"
       style={covered > 0 ? { paddingBottom: covered + 20 } : undefined}

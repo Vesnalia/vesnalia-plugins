@@ -1,5 +1,5 @@
 import { useEffect, useState, type ComponentType } from "react";
-import type { PluginThreadPanelProps } from "@get-bb/plugin-sdk/app";
+import type { PluginThreadPanelProps } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { useT } from "../shared/i18n";

@@ -100,7 +100,7 @@ the VM's cases loaded the same host's disk for part of this.
 ### A Docker box, without systemd
 
 2 cores and 4 GiB, docker.io 29.1.3. Before each run after the first, the
-check's own steps stopped `dockerd` and waited for `bb-box-start` to listen
+check's own steps stopped `dockerd` and waited for `alia-box-start` to listen
 again.
 
 | Start | Condition | Runs | Times | Result |

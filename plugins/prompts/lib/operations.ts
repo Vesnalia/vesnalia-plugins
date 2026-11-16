@@ -1,9 +1,9 @@
 // Everything that does something, in one place.
 //
-// Three callers reach these: the RPC handlers, the `bb prompts` CLI, and the
-// agent tools. They used to hold three copies of "stash bb's queue" and two of
+// Three callers reach these: the RPC handlers, the `alia prompts` CLI, and the
+// agent tools. They used to hold three copies of "stash VesnALIA's queue" and two of
 // "push a prompt", which drifted. The host boundary is a narrow interface so
-// tests can drive all of it without a bb server.
+// tests can drive all of it without a VesnALIA server.
 
 import {
   errorText,
@@ -29,7 +29,7 @@ export interface ProjectInfo {
   name: string;
 }
 
-/** The slice of bb this plugin touches, as plain functions. */
+/** The slice of VesnALIA this plugin touches, as plain functions. */
 export interface PromptsHost {
   send(threadId: string, text: string): Promise<void>;
   getThread(threadId: string): Promise<ThreadInfo | null>;
@@ -202,7 +202,7 @@ export function createOperations(deps: OperationsDeps) {
     return sendPrompt(next, threadId, "auto-send");
   }
 
-  // ---- bb's native queue ----
+  // ---- VesnALIA's native queue ----
 
   async function listNative(
     threadId: string,
@@ -226,7 +226,7 @@ export function createOperations(deps: OperationsDeps) {
     id: string,
     threadId: string,
   ): Promise<{ pushed: boolean; error: string | null }> {
-    const claimed = store.claimPrompt(id, "bb-queue");
+    const claimed = store.claimPrompt(id, "alia-queue");
     if (!claimed) return { pushed: false, error: "Prompt is no longer queued." };
     try {
       await host.createQueuedMessage(threadId, claimed.text);
@@ -310,7 +310,7 @@ export function createOperations(deps: OperationsDeps) {
       stashDeps(threadId, projectId),
     );
     if (outcome.stashed === 0)
-      return { prompt: null, error: "bb would not release that message." };
+      return { prompt: null, error: "alia would not release that message." };
     // The stash appends, so the newest tail entry is the one just written.
     const queue = store.listQueued({ scope: "thread", threadId });
     notify({ topic: "queue", kind: "changed", threadId, projectId });

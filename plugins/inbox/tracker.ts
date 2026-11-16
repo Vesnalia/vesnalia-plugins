@@ -1,6 +1,6 @@
 // Thin client for the sibling `tracker` plugin, reached over cross-plugin RPC.
 // Lets the Telegram bot add / list / complete daily tasks from the phone.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const TRACKER_ID = "tracker";
@@ -19,11 +19,11 @@ export type TrackerTask = z.infer<typeof zTask>;
 export type TrackerView = "today" | "upcoming" | "all" | "done";
 
 export async function trackerAdd(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   title: string,
   dueDate: string | null = null,
 ): Promise<TrackerTask> {
-  const out = await bb.sdk.plugins.callRpc({
+  const out = await alia.sdk.plugins.callRpc({
     pluginId: TRACKER_ID,
     method: "addTask",
     input: { title, dueDate },
@@ -33,10 +33,10 @@ export async function trackerAdd(
 }
 
 export async function trackerList(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   view: TrackerView,
 ): Promise<{ today: string; tasks: TrackerTask[] }> {
-  return bb.sdk.plugins.callRpc({
+  return alia.sdk.plugins.callRpc({
     pluginId: TRACKER_ID,
     method: "listTasks",
     input: { view },
@@ -46,13 +46,13 @@ export async function trackerList(
 
 /** Complete an open task by its short seq (#). Returns null if not found. */
 export async function trackerComplete(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   seq: number,
 ): Promise<TrackerTask | null> {
-  const { tasks } = await trackerList(bb, "all");
+  const { tasks } = await trackerList(alia, "all");
   const target = tasks.find((t) => t.seq === seq);
   if (!target) return null;
-  const out = await bb.sdk.plugins.callRpc({
+  const out = await alia.sdk.plugins.callRpc({
     pluginId: TRACKER_ID,
     method: "setStatus",
     input: { id: target.id, status: "done" },

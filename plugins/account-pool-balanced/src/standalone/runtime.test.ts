@@ -71,7 +71,7 @@ it.each(["/v1/messages", "/agents/devin/sessions"])("denies %s at standalone adm
   cleanups.push(() => server.close());
   const response = await fetch(`${server.url}${route}`, { method: "POST", headers: { authorization: `Bearer ${token}` }, body: "{}" });
   expect(response.status).toBe(403);
-  expect(response.headers.get("x-bb-pool-error")).toBe("VPN_REQUIRED");
+  expect(response.headers.get("x-alia-pool-error")).toBe("VPN_REQUIRED");
 });
 
 it("preserves VPN_REQUIRED when Devin is blocked after standalone admission", async () => {
@@ -85,7 +85,7 @@ it("preserves VPN_REQUIRED when Devin is blocked after standalone admission", as
   try {
     const response = await fetch(`${server.url}/agents/devin/sessions`, { method: "POST", headers: { authorization: `Bearer ${token}` }, body: JSON.stringify({ prompt: "test" }) });
     expect(response.status).toBe(403);
-    expect(response.headers.get("x-bb-pool-error")).toBe("VPN_REQUIRED");
+    expect(response.headers.get("x-alia-pool-error")).toBe("VPN_REQUIRED");
     expect(gate).toHaveBeenCalledTimes(2);
   } finally { gate.mockRestore(); }
 });
@@ -101,9 +101,9 @@ it("authenticates generic and direct Cursor routes and answers exchange locally"
   const token = await pool.tokens.forHost("external-cursor");
   const server = await listenPool(pool, { port: 0 });
   cleanups.push(() => server.close());
-  const headers = { authorization: `Bearer ${token}`, "x-bb-cursor-rpc-path": "aiserver.v2.FutureService/NewTool" };
-  expect((await fetch(`${server.url}/cursor/rpc`, { method: "POST", headers: { "x-bb-cursor-rpc-path": headers["x-bb-cursor-rpc-path"] } })).status).toBe(401);
-  expect((await fetch(`${server.url}/cursor/rpc`, { method: "POST", headers: { ...headers, "x-bb-cursor-rpc-path": "https://other.example/path" } })).status).toBe(400);
+  const headers = { authorization: `Bearer ${token}`, "x-alia-cursor-rpc-path": "aiserver.v2.FutureService/NewTool" };
+  expect((await fetch(`${server.url}/cursor/rpc`, { method: "POST", headers: { "x-alia-cursor-rpc-path": headers["x-alia-cursor-rpc-path"] } })).status).toBe(401);
+  expect((await fetch(`${server.url}/cursor/rpc`, { method: "POST", headers: { ...headers, "x-alia-cursor-rpc-path": "https://other.example/path" } })).status).toBe(400);
   const exchanged = await fetch(`${server.url}/cursor/auth/exchange_user_api_key`, { method: "POST", headers, body: "{}" });
   expect(await exchanged.json()).toEqual({ accessToken: token, refreshToken: token });
   const payload = Buffer.from([0, 128, 255]);
@@ -119,8 +119,8 @@ it("authenticates generic and direct Cursor routes and answers exchange locally"
   ]);
 });
 
-it("refuses unrelated nonempty directories, including BB state", async () => {
+it("refuses unrelated nonempty directories, including VesnALIA state", async () => {
   const dir = await directory();
-  await writeFile(path.join(dir, "bb.db"), "synthetic marker");
+  await writeFile(path.join(dir, "alia.db"), "synthetic marker");
   await expect(openPool(dir)).rejects.toThrow(/empty directory/);
 });

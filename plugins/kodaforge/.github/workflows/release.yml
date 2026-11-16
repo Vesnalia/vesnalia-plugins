@@ -32,13 +32,13 @@ jobs:
           awk -v v="$version" '$0 ~ "^## \\[?"v"\\]?" {on=1; next} /^## / && on {exit} on' CHANGELOG.md > notes.md
           cat >> notes.md <<NOTES
 
-          ### Install in BB
+          ### Install in ALIA
 
           \`\`\`sh
-          bb plugin install git:https://github.com/${GITHUB_REPOSITORY}.git@^${version} --yes
+          alia plugin install git:https://github.com/${GITHUB_REPOSITORY}.git@^${version} --yes
           \`\`\`
 
-          Already installed? \`bb plugin update kodaforge\`
+          Already installed? \`alia plugin update kodaforge\`
           NOTES
       - name: Package
         run: npm pack
@@ -50,5 +50,5 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
         run: |
-          npm pkg set name="@kodaks94/bb-plugin-kodaforge"
+          npm pkg set name="@kodaks94/alia-plugin-kodaforge"
           npm publish --ignore-scripts

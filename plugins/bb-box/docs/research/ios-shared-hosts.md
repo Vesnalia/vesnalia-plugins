@@ -1,6 +1,6 @@
 # Several iOS Simulators in one macOS VM
 
-How bb-box could run several iOS Simulator devices in one macOS VM, each
+How alia-box could run several iOS Simulator devices in one macOS VM, each
 serving a different ios box, so a Mac holds more than the two devices that
 Apple's limit of two macOS VMs allows today; and what each box gives up
 against a VM of its own.
@@ -69,7 +69,7 @@ about 4 at full size, or 11 at half. That is the first open question.
 
 | | A: one user, several devices | B: a user per box | C: a VM per box (today) |
 | --- | --- | --- | --- |
-| What a box is | a device in the VM user's one device set | a standard macOS user in a shared VM, with its own device set | a Tart VM cloned from `bb-box-ios`, with one device |
+| What a box is | a device in the VM user's one device set | a standard macOS user in a shared VM, with its own device set | a Tart VM cloned from `alia-box-ios`, with one device |
 | Boxes a Mac holds | as many as the VM holds | as many as the VM holds | 2, Apple's limit |
 | Root, `brew install` | shared: one user, with sudo | no | yes |
 | One box sees another's device, files, keychain | yes | no | no |
@@ -98,7 +98,7 @@ Scripts and raw results are in [ios-shared-hosts](ios-shared-hosts/):
   with ffmpeg and reads one pixel's shade, at (60, 1700) in the device's
   pixels, in every frame. Tap to frame is from the HID event leaving the
   client to the arrival of the first frame whose shade there changed. It
-  is measured in the VM, as 063's 53 to 64 ms were: BB's relay, the
+  is measured in the VM, as 063's 53 to 64 ms were: VesnALIA's relay, the
   network and the browser are not in it.
 - [devices.sh](ios-shared-hosts/devices.sh) makes slim clones of the
   image's iPhone 18 Pro, boots them, starts one idb_companion each and
@@ -269,7 +269,7 @@ streaming ([results/isolation.txt](ios-shared-hosts/results/isolation.txt)):
 So B keeps one box's device, files, keychain and input from another, and
 does not keep apart their network or what `ps` shows. That is what the
 pool's Mac gives too (047): boxes are not a security boundary. Two more
-from 047 hold here: the VM's own user, which runs bb-box's machine and
+from 047 hold here: the VM's own user, which runs alia-box's machine and
 has sudo, has a home other users can list unless it is made `700`; and a
 box user must not be an administrator, or removing it is no reset.
 
@@ -350,7 +350,7 @@ was not tried. Where launchd_sim keeps the disabled labels is still not
 known (the slimming note's open question 4); a quick search of the user's
 `Library` and the device's folder did not find it.
 
-## 5. Fit with bb-box
+## 5. Fit with alia-box
 
 ### A sketch: a device host
 
@@ -395,7 +395,7 @@ has it: the model, the state, the controls and the panel do not change.
 
 ### The device server: one per box
 
-- **Per box, as now.** Each slot's user runs its own `bb-box-device`,
+- **Per box, as now.** Each slot's user runs its own `alia-box-device`,
   with its socket in its own home, reached by `connect` over that user's
   SSH. That keeps 063's lease, versions and recovery per box, and the
   server's permission to its companion is the user's own.
@@ -495,7 +495,7 @@ Against a VM of its own (C), a box in option B:
    past its limit stopped the idb_companions it had started with `nohup`,
    which cut the first 12-device run short. Long runs go in a job that
    returns at once.
-4. **bb-box restarts a stopped device server.** Booting it out was not
+4. **alia-box restarts a stopped device server.** Booting it out was not
    enough: on its next look the plugin started it again and it booted the
    default device. It had to be disabled and its LaunchAgent moved away.
 
@@ -512,7 +512,7 @@ Against a VM of its own (C), a box in option B:
 - Option B was measured with 4 users. Its streams, CPU and memory matched
   A's at 4, and nothing in B is shared but what A shares, so its knee is
   taken to be A's. 6 and 8 users were not run.
-- Tap to frame is in the VM. Through BB, add about 25 ms (060).
+- Tap to frame is in the VM. Through VesnALIA, add about 25 ms (060).
 - 30 s per run, one run per point, except where two are given. The
   encoder's slow state came and went between runs.
 
@@ -539,20 +539,20 @@ Against a VM of its own (C), a box in option B:
 
 ## Rerunning the measurements
 
-In an ios box, with this folder and `src/` copied to `~/bb-box`, and its
+In an ios box, with this folder and `src/` copied to `~/alia-box`, and its
 device server stopped:
 
 ```sh
-launchctl disable gui/$(id -u)/app.bb-box.device
-launchctl bootout gui/$(id -u)/app.bb-box.device
-mv ~/Library/LaunchAgents/app.bb-box.device.plist ~/app.bb-box.device.plist.off
-cd ~/bb-box/docs/research/ios-shared-hosts
+launchctl disable gui/$(id -u)/app.alia-box.device
+launchctl bootout gui/$(id -u)/app.alia-box.device
+mv ~/Library/LaunchAgents/app.alia-box.device.plist ~/app.alia-box.device.plist.off
+cd ~/alia-box/docs/research/ios-shared-hosts
 nohup python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/http.log 2>&1 &
 ./devices.sh make 8 4
 nohup ./sweep.sh m6 1 2 4 6 8 >~/shared/sweep.log 2>&1 &
 ```
 
-For option B, copy the repository to `/Users/Shared/bb-box` readable by
+For option B, copy the repository to `/Users/Shared/alia-box` readable by
 all, then `./users.sh key`, `./users.sh make sbu1 sbu2 sbu3 sbu4`,
 `./user-device.sh create sbu1` for each, and
 `./users-run.sh b4 sbu1 sbu2 sbu3 sbu4`. ffmpeg is in the image.

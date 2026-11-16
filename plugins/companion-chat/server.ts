@@ -1,8 +1,8 @@
 import {
   defineRpcContract,
-  type BbPluginApi,
+  type AliaPluginApi,
   type NewThreadRequest,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const instanceIdSchema = z.string().min(1).max(100);
@@ -161,17 +161,17 @@ function providerRouting(request: NewThreadRequest) {
 }
 
 async function normalizeExecutionOptions(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   request: NewThreadRequest,
 ): Promise<NewThreadRequest> {
   const routing = providerRouting(request);
-  const providers = await bb.sdk.providers.list(routing);
+  const providers = await alia.sdk.providers.list(routing);
   const provider = providers.find(({ id }) => id === request.providerId);
   if (provider === undefined || !provider.available) {
     throw new Error(`Provider "${request.providerId}" is not available.`);
   }
 
-  const catalog = await bb.sdk.providers.models({
+  const catalog = await alia.sdk.providers.models({
     ...routing,
     providerId: provider.id,
   });
@@ -217,7 +217,7 @@ async function normalizeExecutionOptions(
 
   const executionInputSources = { ...request.executionInputSources };
   if (executionInputSources.providerId === undefined) {
-    // BB ignores a provided field when executionInputSources contains no
+    // VesnALIA ignores a provided field when executionInputSources contains no
     // source for it. The composer can omit this source after switching away
     // from the main thread's provider, which otherwise restores that provider.
     executionInputSources.providerId =
@@ -230,7 +230,7 @@ async function normalizeExecutionOptions(
     executionInputSources.reasoningLevel = "client-preference";
   }
   if (!provider.capabilities.supportsServiceTier) {
-    // Omitting this field lets BB reuse a stored project preference such as
+    // Omitting this field lets VesnALIA reuse a stored project preference such as
     // "fast". Explicitly select the neutral tier so non-tier providers start
     // with the host-supported "default" value instead.
     executionInputSources.serviceTier = "client-preference";
@@ -249,11 +249,11 @@ async function normalizeExecutionOptions(
   };
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   const pendingCreates = new Map<string, Promise<{ threadId: string }>>();
 
   async function readRecord(instanceId: string) {
-    const value = await bb.storage.kv.get<unknown>(recordKey(instanceId));
+    const value = await alia.storage.kv.get<unknown>(recordKey(instanceId));
     return value === undefined ? null : companionRecordSchema.parse(value);
   }
 
@@ -265,19 +265,19 @@ export default async function plugin(bb: BbPluginApi) {
     return record;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async getCompanion({ sourceThreadId, instanceId }) {
-      const source = await bb.sdk.threads.get({ threadId: sourceThreadId });
+      const source = await alia.sdk.threads.get({ threadId: sourceThreadId });
       if (source.environmentId === null) {
         throw new Error("Source thread must have a ready environment.");
       }
       let record = await assertInstanceSource(instanceId, sourceThreadId);
       if (record !== null) {
-        const companion = await bb.sdk.threads.get({
+        const companion = await alia.sdk.threads.get({
           threadId: record.companionThreadId,
         });
         if (companion.deletedAt !== null) {
-          await bb.storage.kv.delete(recordKey(instanceId));
+          await alia.storage.kv.delete(recordKey(instanceId));
           record = null;
         }
       }
@@ -296,16 +296,16 @@ export default async function plugin(bb: BbPluginApi) {
       if (pending !== undefined) return pending;
 
       const create = (async () => {
-        await bb.sdk.threads.get({ threadId: sourceThreadId });
+        await alia.sdk.threads.get({ threadId: sourceThreadId });
         const normalizedRequest = await normalizeExecutionOptions(
-          bb,
+          alia,
           request as NewThreadRequest,
         );
-        const thread = await bb.sdk.threads.spawn({
+        const thread = await alia.sdk.threads.spawn({
           ...normalizedRequest,
           visibility: "hidden",
         });
-        await bb.storage.kv.set(recordKey(instanceId), {
+        await alia.storage.kv.set(recordKey(instanceId), {
           sourceThreadId,
           companionThreadId: thread.id,
         });

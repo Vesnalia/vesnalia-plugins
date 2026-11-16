@@ -1,19 +1,19 @@
-// A review's work as BB draws a thread's on its rows, with BB's own glyph in BB's thread list and All reviews: its review
-// agent's status, derived from its hidden thread as BB derives a thread's (the server reads it, src/agent-status.ts, as
-// BB's live thread list in the browser leaves hidden threads out), or a spinner while its guide is built.
-import type { PluginSidebarThreadIndicator } from "@get-bb/plugin-sdk";
+// A review's work as VesnALIA draws a thread's on its rows, with VesnALIA's own glyph in VesnALIA's thread list and All reviews: its review
+// agent's status, derived from its hidden thread as VesnALIA derives a thread's (the server reads it, src/agent-status.ts, as
+// VesnALIA's live thread list in the browser leaves hidden threads out), or a spinner while its guide is built.
+import type { PluginSidebarThreadIndicator } from "@vesnalia/plugin-sdk";
 
-/** The statuses a review shows, in BB's order, most pressing first, as BB's list picks one for a row. */
+/** The statuses a review shows, in VesnALIA's order, most pressing first, as VesnALIA's list picks one for a row. */
 const PRECEDENCE = ["unread-error", "waiting-for-input", "plan-mode", "goal", "runtime", "workflow", "queued-failed", "unread-success", "background-agent", "background-command", "queued-waiting"] as const satisfies readonly PluginSidebarThreadIndicator[];
 export type ReviewIndicatorKind = typeof PRECEDENCE[number];
 
-/** The review agent's status in BB, and whether BB counts its thread unread. */
+/** The review agent's status in VesnALIA, and whether VesnALIA counts its thread unread. */
 export interface AgentStatus {
   indicator: ReviewIndicatorKind;
   unread: boolean;
 }
 
-/** What BB's thread list reads of a thread, as BB's API lists it. */
+/** What VesnALIA's thread list reads of a thread, as VesnALIA's API lists it. */
 export interface ThreadRow {
   parentThreadId: string | null;
   status: string;
@@ -25,7 +25,7 @@ export interface ThreadRow {
   activity: { activeWorkflowCount: number; activeBackgroundAgentCount: number; activeBackgroundCommandCount: number; activePlanModeCount: number; activeGoalCount: number };
 }
 
-/** The status BB's thread list derives from a thread's row (BB 0.48), but a draft, which only a browser knows; null for none. */
+/** The status VesnALIA's thread list derives from a thread's row (VesnALIA 0.48), but a draft, which only a browser knows; null for none. */
 export function agentStatus(row: ThreadRow): AgentStatus | null {
   const unread = (row.lastReadAt ?? 0) < row.latestAttentionAt;
   // A turn that ended since you last looked; a child thread's never shows.
@@ -47,7 +47,7 @@ export function agentStatus(row: ThreadRow): AgentStatus | null {
   return indicator && { indicator, unread };
 }
 
-/** Screen readers' words for the agent's status on a review's row, where BB's say "thread". */
+/** Screen readers' words for the agent's status on a review's row, where VesnALIA's say "thread". */
 const WORDS: Record<ReviewIndicatorKind, string> = {
   "unread-error": "Review agent failed",
   "waiting-for-input": "Review agent needs your input",

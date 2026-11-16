@@ -118,7 +118,7 @@ describe("the person's input, from the input connection", () => {
     const viewer = await open("viewer", {
       onText: (text) => {
         const parsed = parseDeviceServerMessage(text);
-        if (parsed.ok && parsed.value.verb === "BB_DEVICE_TOUCH") echoes.push(parsed.value);
+        if (parsed.ok && parsed.value.verb === "ALIA_DEVICE_TOUCH") echoes.push(parsed.value);
       },
     });
     const input = await open("input");
@@ -126,7 +126,7 @@ describe("the person's input, from the input connection", () => {
     await until("the lift", () => touches().length >= 3);
     assert.deepEqual(touches(), [[{ id: 0, x: 100, y: 200 }], [{ id: 0, x: 110, y: 230 }], []]);
     await until("the echo", () => echoes.length >= 3);
-    assert.deepEqual(echoes[0], { verb: "BB_DEVICE_TOUCH", contacts: [{ id: 0, x: 100, y: 200 }], by: "person", generation });
+    assert.deepEqual(echoes[0], { verb: "ALIA_DEVICE_TOUCH", contacts: [{ id: 0, x: 100, y: 200 }], by: "person", generation });
     assert.deepEqual(echoes.at(-1)!.contacts, []);
     await viewer.close();
     await input.close();

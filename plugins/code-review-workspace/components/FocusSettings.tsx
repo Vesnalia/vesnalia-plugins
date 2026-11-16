@@ -1,5 +1,5 @@
 import { useState, type ComponentProps } from "react";
-import { experimental_ProviderModelPicker as ProviderModelPicker, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderModelPicker as ProviderModelPicker, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 import type { AgentExecution, Focus, FocusSettings as Settings } from "../lib/review-preferences";
 import { focusInstructions, focusTemplates } from "../lib/focus-templates";

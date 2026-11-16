@@ -1,7 +1,7 @@
 // server.ts through the fake host: RPC, schedule, thread events, settings and
 // invalidation tags.
 
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import plugin, { CONTEXT_INVALIDATE_MIN_MS, POLL_SCHEDULE } from "../server";
 import { LIMITS_TAG, threadTag, TOKENS_TAG, type LimitsSnapshot, type ThreadState, type Tokens } from "../src/shared/contract";
@@ -18,7 +18,7 @@ type ThreadChanged = { entity: "thread"; id?: string; metadata?: { eventTypes?: 
 async function load(settings: Record<string, boolean | number> = {}, limits: () => unknown = () => claudeLimits(40, 20)) {
   const threads = new FakeThreads();
   const subscriptions: { event: string; callback: (event: ThreadChanged) => void }[] = [];
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "usage-forecast",
     settings,
     sdk: {
@@ -39,7 +39,7 @@ async function load(settings: Record<string, boolean | number> = {}, limits: () 
       },
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   const invalidations = () => harness.inspection.experimental_rpcInvalidations;
   return { harness, threads, invalidations, subscriptions };
 }
@@ -311,7 +311,7 @@ describe("token totals wiring", () => {
   it("runs the first collection at load over the listed threads", async () => {
     const threads = new FakeThreads();
     threads.thread("thr_x", "claude-code", null).tokenEvent("thr_x", NOW - HOUR_MS, { totalTokens: 500 });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "usage-forecast",
       sdk: {
         subscribe: (() => () => undefined) as never,
@@ -323,7 +323,7 @@ describe("token totals wiring", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     // The collection pauses BACKFILL_PAUSE_MS after each thread.
     await settle(150);
     const tokens = (await harness.callRpc("tokens", { threadId: "thr_x", dayStart: 0, monthStart: 0 })) as Tokens;

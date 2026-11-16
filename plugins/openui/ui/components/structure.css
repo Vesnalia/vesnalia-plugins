@@ -1,4 +1,4 @@
-/* Hallmark · shape: app screen · scope: structure group · genre: modern-minimal · theme: BB (by request: BB's own tokens) · states: 8 · v2.0.0 */
+/* Hallmark · shape: app screen · scope: structure group · genre: modern-minimal · theme: ALIA (by request: ALIA's own tokens) · states: 8 · v2.0.0 */
 /* Structure and media: Tree, Json, Diff, Compare, Hotspots, Sources, Entity. Tokens from kit.css only (DESIGN.md). */
 /* Tree and Json rows are 28px, not 32px: they are full-width list rows, so the row itself is the wide hit area and a 20-file tree stays scannable. */
 /* Hotspot pins (24px) and the wipe knob (12 by 32px) are smaller than 32px controls so they cover less of the image; both get a 44px hit area. */

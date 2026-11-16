@@ -40,7 +40,7 @@ import { WHOLE_CARDS_OFF_FOR_FORK, gpuStayWords, isGpuPart, snapshotGpuOf, users
 import { currentKindId } from "../backends/kinds.ts";
 import { notForkSafeWords, readForkSafe, readsForkSafetyAtStop, type ForkSafety } from "./identity.ts";
 import { pictureOfScreen, withinWait, type ScreenPicture } from "./snapshot-picture.ts";
-import { UNKNOWN_ACTOR, BY_OUTSIDE, byBbBox, type Actor, type BoxEventKind, type BoxLog } from "./box-log.ts";
+import { UNKNOWN_ACTOR, BY_OUTSIDE, byAliaBox, type Actor, type BoxEventKind, type BoxLog } from "./box-log.ts";
 import { ceilingOf, SNAPSHOT_LIMITS, snapshotConfig, type SnapshotConfig } from "./document.ts";
 import { accountAtFullPrice, billedRate, ceilingVerdict, heldRate, pastCeiling, pendingOn, spentThisMonth, type HeldRate } from "./snapshot-cost.ts";
 import {
@@ -443,7 +443,7 @@ const RESTORE_STEP_WORDS: Readonly<Record<RestoreStep, string>> = {
   size: "reading its size",
   access: "writing its access file",
   labels: "writing its labels",
-  machine: "its BB machine",
+  machine: "its VesnALIA machine",
   "swap-back": "putting its old guest back",
   "claim-back": "giving its GPU claim back to its old guest",
   done: "the end",
@@ -477,7 +477,7 @@ function stepsWords(took: readonly (readonly [string, number])[]): string {
 }
 
 function accessFailedWords(error: unknown): string {
-  return `It was restored and started, but ${sentence(message(error)).replace(/^./, (first) => first.toLowerCase())} ${PRODUCT} did not start its BB machine again; its next command writes the access file first, as every command does. What the box itself started at boot may have read the access file the snapshot held, as it can after any restore.`;
+  return `It was restored and started, but ${sentence(message(error)).replace(/^./, (first) => first.toLowerCase())} ${PRODUCT} did not start its VesnALIA machine again; its next command writes the access file first, as every command does. What the box itself started at boot may have read the access file the snapshot held, as it can after any restore.`;
 }
 
 function texts(value: unknown): string[] {
@@ -826,7 +826,7 @@ export class Snapshots {
       if (this.#stopping.signal.aborted) throw error;
       const good = this.#bills.get(backend.id)?.good ?? null;
       this.#bills.set(backend.id, { at, bill: null, good });
-      this.#deps.log?.(`Could not read what ${backend.label} bills for snapshots, so bb-box takes, undoes and keeps no paid snapshot there until it can: ${message(error)}`);
+      this.#deps.log?.(`Could not read what ${backend.label} bills for snapshots, so alia-box takes, undoes and keeps no paid snapshot there until it can: ${message(error)}`);
     }
   }
 
@@ -1027,7 +1027,7 @@ export class Snapshots {
     const victim = operation ? ledger.record(consentOf(operation).evicts ?? "") : null;
     let answer: { readonly evicted: { readonly name: string; readonly id: string } | null; readonly evictionRefused: string | null } = { evicted: null, evictionRefused: null };
     if (victim) {
-      const why = byBbBox(`the limit of ${perBox} snapshots a box: the agent's new snapshot "${record.name}" took its place`);
+      const why = byAliaBox(`the limit of ${perBox} snapshots a box: the agent's new snapshot "${record.name}" took its place`);
       try {
         await this.#delete(victim.id, why, "evict-limit", null);
         answer = { evicted: { name: victim.name, id: victim.id }, evictionRefused: null };
@@ -1140,7 +1140,7 @@ export class Snapshots {
     if (!outcome) return;
     try {
       const kept = outcome.picture ? this.#deps.ledger.putPicture({ snapshot: snapshotId, jpeg: outcome.picture.jpeg, width: outcome.picture.width, height: outcome.picture.height, at: this.#now() }) : true;
-      if (!kept) this.#deps.log?.(`Kept no picture of box ${box.name}'s screen: pictures of kept snapshots fill the 48 MB bb-box holds for them.`);
+      if (!kept) this.#deps.log?.(`Kept no picture of box ${box.name}'s screen: pictures of kept snapshots fill the 48 MB alia-box holds for them.`);
       this.#deps.ledger.updateRecord(snapshotId, { picture: kept ? outcome.state : "failed" });
     } catch (error) {
       this.#deps.logError("keep a snapshot's picture", error);
@@ -1531,7 +1531,7 @@ export class Snapshots {
   async #dropWithRelease(box: BoxRecord, backend: Backend): Promise<void> {
     const stays = (why: string) =>
       new ReleaseWaits("unreachable", `Box ${box.name}'s snapshots live ${this.#apart(backend).where}, not on the box, and ${this.#apart(backend).stays} after its release, so ${PRODUCT} released nothing: ${why} Release the box again.`);
-    const words = await this.#dropProviderSnapshots(backend, box.id, box.guest!, byBbBox("its box was released"));
+    const words = await this.#dropProviderSnapshots(backend, box.id, box.guest!, byAliaBox("its box was released"));
     if (words) throw stays(words);
   }
 
@@ -1587,7 +1587,7 @@ export class Snapshots {
       if (kept(held.id, held.keptUntil) || (!ledger.problem && ledger.record(held.id))) continue;
       try {
         await backend.deleteSnapshot({ id: held.id, ref: held.ref, guest: held.guest }, { submitting: async () => {}, task: async () => {} }, this.#stopping.signal);
-        this.#deps.log?.(`Deleted snapshot ${held.id} of box ${boxId} on ${backend.label}, which bb-box had no record of, with its box.`);
+        this.#deps.log?.(`Deleted snapshot ${held.id} of box ${boxId} on ${backend.label}, which alia-box had no record of, with its box.`);
       } catch (error) {
         if (this.#stopping.signal.aborted) throw error;
         return `${PRODUCT} could not delete snapshot ${held.id}: ${sentence(message(error))}`;
@@ -1660,7 +1660,7 @@ export class Snapshots {
       const now = this.#now();
       const outlive = boxId ? ledger.records({ box: boxId }).filter((record) => record.guest === "held-copy" && record.boxGone === null) : [];
       if (!gone.length && !outlive.length) return;
-      const by = byBbBox(`its guest ${guestRef} was released: ${why.replace(/\.$/, "")}`);
+      const by = byAliaBox(`its guest ${guestRef} was released: ${why.replace(/\.$/, "")}`);
       ledger.transaction(() => {
         for (const record of gone) {
           ledger.removeRecord(record.id);
@@ -1782,7 +1782,7 @@ export class Snapshots {
         const task = partial && partial.ref !== source.ref ? await this.#copyTaskSeen(operation, copier, source) : null;
         if (partial && task === "ok" && copier.labelCopy) {
           try {
-            this.#deps.log?.(`Guest ${partial.ref}, the copy of snapshot ${record.id} of box ${record.box.name}, which ${copier.label} finished as bb-box's wait for it ran out, becomes its held copy now.`);
+            this.#deps.log?.(`Guest ${partial.ref}, the copy of snapshot ${record.id} of box ${record.box.name}, which ${copier.label} finished as alia-box's wait for it ran out, becomes its held copy now.`);
             const labelled = await copier.labelCopy(partial, label, signal);
             step({ step: "copy-cloned", guests: { old: source, new: labelled } });
             await makeTemplate(labelled);
@@ -1849,13 +1849,13 @@ export class Snapshots {
     if (!plan) return unsure(`${PRODUCT} could not read its copy, guest ${copy.ref}.`);
     if (plan.state === "template") return { made: this.#copyMade(record, operation, copy, `confirmed${after}`) };
     if (plan.state === "copy" && clonedWell && waitedOut && !plan.running && backend.labelCopy) {
-      this.#deps.log?.(`Guest ${copy.ref}, the copy of snapshot ${record.id} of box ${record.box.name} that ${backend.label} finished after bb-box's wait for it ran out, becomes its held copy now.`);
+      this.#deps.log?.(`Guest ${copy.ref}, the copy of snapshot ${record.id} of box ${record.box.name} that ${backend.label} finished after alia-box's wait for it ran out, becomes its held copy now.`);
       return { finish: copy };
     }
     if (plan.state === "copy") {
-      if (plan.running) this.#event(record, "held-copy-started", byBbBox("its held copy ran before it was a template"), `"${record.name}" (${record.id}): its copy, guest ${copy.ref}, was running before it was a template. ${PRODUCT} deletes it and makes it again from the snapshot.`);
+      if (plan.running) this.#event(record, "held-copy-started", byAliaBox("its held copy ran before it was a template"), `"${record.name}" (${record.id}): its copy, guest ${copy.ref}, was running before it was a template. ${PRODUCT} deletes it and makes it again from the snapshot.`);
       if (!(await this.#dropCopy(backend, copy, record))) unsure(`${PRODUCT} could not delete its copy, guest ${copy.ref}, which is not a template yet and so not trusted.`);
-      this.#deps.log?.(`Deleted guest ${copy.ref}, the held copy of snapshot ${record.id} of box ${record.box.name}: it was not a template yet${after}, so it is not trusted. bb-box makes it again from the snapshot.`);
+      this.#deps.log?.(`Deleted guest ${copy.ref}, the held copy of snapshot ${record.id} of box ${record.box.name}: it was not a template yet${after}, so it is not trusted. alia-box makes it again from the snapshot.`);
     }
     return null;
   }
@@ -2009,7 +2009,7 @@ export class Snapshots {
       return null;
     });
     if (now !== kept.mark) {
-      this.#deps.log?.(`Box ${box.name}'s guest ran or changed since bb-box stopped it, so bb-box's reading of its identity reset is no longer its own and the snapshot is not fork-safe.`);
+      this.#deps.log?.(`Box ${box.name}'s guest ran or changed since alia-box stopped it, so alia-box's reading of its identity reset is no longer its own and the snapshot is not fork-safe.`);
       return { ...none, why: "unread" };
     }
     return { version: kept.version, identity: kept.identity, why: kept.version === null ? "reset-off" : null };
@@ -2111,7 +2111,7 @@ export class Snapshots {
     }
     ledger.updateOperation(operation.id, { state: "unknown", error: words });
     this.#deps.log?.(`Could not confirm the take of snapshot ${record.id} of box ${record.box.name}: ${words}`);
-    return new BoxError("unreachable", `${PRODUCT} could not confirm the take of snapshot "${record.name}" of box ${record.box.name}: ${words} It checks again at its next sweep, within a few minutes; bb box snapshot list says how it ended.`);
+    return new BoxError("unreachable", `${PRODUCT} could not confirm the take of snapshot "${record.name}" of box ${record.box.name}: ${words} It checks again at its next sweep, within a few minutes; VesnALIA box snapshot list says how it ended.`);
   }
 
   async delete(caller: Caller, standing: Standing, ref: string, options: { readonly request?: string } = {}): Promise<DeleteAnswer> {
@@ -2247,7 +2247,7 @@ export class Snapshots {
     if (left.length || !backend.deleteCopy) return;
     try {
       await backend.deleteCopy(record.livesOn, this.#stopping.signal);
-      this.#event(record, "snapshot-deleted", byBbBox("the last snapshot on an earlier guest went"), `The earlier guest ${record.livesOn.ref} of box ${record.box.name} is deleted: its last snapshot went.`);
+      this.#event(record, "snapshot-deleted", byAliaBox("the last snapshot on an earlier guest went"), `The earlier guest ${record.livesOn.ref} of box ${record.box.name} is deleted: its last snapshot went.`);
     } catch (error) {
       if (this.#stopping.signal.aborted) throw error;
       this.#deps.log?.(`Could not delete the earlier guest ${record.livesOn.ref} of box ${record.box.name}, whose last snapshot went: ${message(error)} The next sweep tries again.`);
@@ -2305,12 +2305,12 @@ export class Snapshots {
             continue;
           }
           ledger.removeRecord(record.id);
-          ledger.insertOperation(this.#settled(record, byBbBox("its box was released"), now));
+          ledger.insertOperation(this.#settled(record, byAliaBox("its box was released"), now));
           gone.push(record);
         }
       });
-      for (const record of gone) if (heldByProvider(record)) this.#event(record, "snapshot-deleted", byBbBox("its box was released"), `"${record.name}" (${record.id}): it went with its box.`);
-      if (outlives.length) this.#deps.log?.(`Box ${box.name} was ${how} with ${outlives.length} of its snapshots still ${this.#apartOf(outlives[0]!).where}: bb-box deletes them at its next sweep.`);
+      for (const record of gone) if (heldByProvider(record)) this.#event(record, "snapshot-deleted", byAliaBox("its box was released"), `"${record.name}" (${record.id}): it went with its box.`);
+      if (outlives.length) this.#deps.log?.(`Box ${box.name} was ${how} with ${outlives.length} of its snapshots still ${this.#apartOf(outlives[0]!).where}: alia-box deletes them at its next sweep.`);
       this.#notify(box.threadId);
     } catch (error) {
       this.#deps.logError(`settle the snapshots of box ${box.name}`, error);
@@ -2803,7 +2803,7 @@ export class Snapshots {
   #restoreHolding(box: BoxRecord): BoxError | null {
     const cutShort = this.#deps.ledger.unsettled().find((operation) => operation.box === box.id && operation.kind === "restore" && !this.#running.has(operation.id));
     if (cutShort) {
-      return new BoxError("not_ready", `${PRODUCT} could not confirm ${operationWords(cutShort)} on box ${box.name}: ${cutShort.error ?? "it was cut short"} It checks again at each sweep; bb box sweep checks now, and bb box doctor says why.`);
+      return new BoxError("not_ready", `${PRODUCT} could not confirm ${operationWords(cutShort)} on box ${box.name}: ${cutShort.error ?? "it was cut short"} It checks again at each sweep; VesnALIA box sweep checks now, and VesnALIA box doctor says why.`);
     }
     return box.restoring ? new BoxError("not_ready", restoringWords(box, box.restoring)) : null;
   }
@@ -2927,7 +2927,7 @@ export class Snapshots {
     const guard: RestoreGuard = this.#deps.guard ? await this.#deps.guard(box) : { threads: [], threadsUnread: null, control: false, terminals: 0 };
     if (guard.threads === null) {
       return {
-        refusal: `${PRODUCT} could not tell which threads run on box ${box.name} (${(guard.threadsUnread ?? "BB did not answer").replace(/\.$/, "")}), so it restores nothing: a restore would take their work with it.`,
+        refusal: `${PRODUCT} could not tell which threads run on box ${box.name} (${(guard.threadsUnread ?? "VesnALIA did not answer").replace(/\.$/, "")}), so it restores nothing: a restore would take their work with it.`,
         onAMachine: true,
         working: [],
         losses: [],
@@ -2946,8 +2946,8 @@ export class Snapshots {
     const losses: Loss[] = guard.threads.map((thread) => ({ key: `thread:${thread.id}`, words: `"${thread.title}" runs on it: its worktree, uncommitted files and session there go` }));
     if (runsOn && !guard.threads.length) losses.push({ key: "thread:asking", words: "the thread asking runs on it: its worktree, uncommitted files and session there go" });
     if (guard.control) losses.push({ key: "control", words: "a person holds control of its desktop" });
-    if (guard.terminals === null) losses.push({ key: "terminals:unknown", words: `${PRODUCT} could not tell whether a BB terminal is open on it` });
-    else if (guard.terminals > 0) losses.push({ key: `terminals:${guard.terminals}`, words: guard.terminals === 1 ? "a BB terminal is open on it" : `${guard.terminals} BB terminals are open on it` });
+    if (guard.terminals === null) losses.push({ key: "terminals:unknown", words: `${PRODUCT} could not tell whether a VesnALIA terminal is open on it` });
+    else if (guard.terminals > 0) losses.push({ key: `terminals:${guard.terminals}`, words: guard.terminals === 1 ? "a VesnALIA terminal is open on it" : `${guard.terminals} VesnALIA terminals are open on it` });
     return { refusal: null, onAMachine, working: guard.threads.filter((thread) => thread.running), losses };
   }
 
@@ -3444,7 +3444,7 @@ export class Snapshots {
       return true;
     }
     const gone = await this.#confirmGone(backend, made, box);
-    if (gone) this.#deps.log?.(`Deleted guest ${made.ref}, the new guest part made for the restore of box ${box.name}. bb-box makes it again, or puts the box back.`);
+    if (gone) this.#deps.log?.(`Deleted guest ${made.ref}, the new guest part made for the restore of box ${box.name}. alia-box makes it again, or puts the box back.`);
     return gone;
   }
 
@@ -3562,7 +3562,7 @@ export class Snapshots {
       );
       if (!victim) return replaced;
       try {
-        await this.#delete(victim.id, byBbBox("a newer undo replaced it"), "replace-undo", null);
+        await this.#delete(victim.id, byAliaBox("a newer undo replaced it"), "replace-undo", null);
         replaced.push(victim.name);
       } catch (error) {
         this.#deps.log?.(`Did not replace undo ${victim.id} of box ${victim.box.name}: ${message(error)}`);
@@ -3657,7 +3657,7 @@ export class Snapshots {
     this.#deps.log?.(`Could not confirm the restore of box ${box.name} to snapshot ${context.target.id}, at ${RESTORE_STEP_WORDS[step]}: ${words}`);
     return new BoxError(
       "unreachable",
-      `${PRODUCT} could not confirm the restore of box ${box.name} to ${quoted(context.target)}: it was at ${RESTORE_STEP_WORDS[step]}, and ${words.replace(/^./, (first) => first.toLowerCase())} It checks again at its next sweep, within a few minutes; bb box sweep checks now.`,
+      `${PRODUCT} could not confirm the restore of box ${box.name} to ${quoted(context.target)}: it was at ${RESTORE_STEP_WORDS[step]}, and ${words.replace(/^./, (first) => first.toLowerCase())} It checks again at its next sweep, within a few minutes; VesnALIA box sweep checks now.`,
     );
   }
 
@@ -3750,7 +3750,7 @@ export class Snapshots {
       }
       if (state === "copy" && copy) {
         await backend.deleteCopy(copy, signal);
-        this.#deps.log?.(`Deleted guest ${copy.ref}, the undo's copy for the restore of box ${box.name}: bb-box restarted before it was a template, so it is not trusted. bb-box makes it again from the stopped box.`);
+        this.#deps.log?.(`Deleted guest ${copy.ref}, the undo's copy for the restore of box ${box.name}: alia-box restarted before it was a template, so it is not trusted. alia-box makes it again from the stopped box.`);
       }
       ledger.transaction(() => {
         ledger.updateRecord(undo.id, { ref: null, livesOn: box.guest!, host: box.guest!.host });
@@ -3817,7 +3817,7 @@ export class Snapshots {
       const operation = ledger.operation(mark.operation);
       if (operation && (operation.state === "running" || operation.state === "unknown")) continue;
       await this.#deps.boxes.update(box, (current) => (current.restoring?.operation === mark.operation ? { restoring: null } : {}));
-      this.#deps.log?.(`Cleared box ${box.name}'s mark of a restore to "${mark.name}": ${operation ? `that restore ${operation.state === "done" ? "is done" : "failed"}` : "bb-box has no record of that restore"}, so nothing holds the box any more.`);
+      this.#deps.log?.(`Cleared box ${box.name}'s mark of a restore to "${mark.name}": ${operation ? `that restore ${operation.state === "done" ? "is done" : "failed"}` : "alia-box has no record of that restore"}, so nothing holds the box any more.`);
     }
   }
 
@@ -4068,7 +4068,7 @@ export class Snapshots {
         const state = held.state === "complete" ? "ready" : held.state === "incomplete" ? "incomplete" : record.state;
         const back = record.boxGone && boxes.has(record.box.id) ? { boxGone: null, foundAt: null } : {};
         const later = held.keptUntil !== null && held.keptUntil > now && (record.keptUntil === null || held.keptUntil > record.keptUntil);
-        if (later) this.#deps.log?.(`Took the keep date of snapshot ${record.id} of box ${record.box.name}, ${utcDay(held.keptUntil!)}, from its label on ${where(record)}: it is later than bb-box's record${record.keptUntil === null ? ", which had none" : ` of ${utcDay(record.keptUntil)}`}.`);
+        if (later) this.#deps.log?.(`Took the keep date of snapshot ${record.id} of box ${record.box.name}, ${utcDay(held.keptUntil!)}, from its label on ${where(record)}: it is later than alia-box's record${record.keptUntil === null ? ", which had none" : ` of ${utcDay(record.keptUntil)}`}.`);
         const change = {
           ...(state !== record.state ? { state, stateAt: now, error: held.state === "incomplete" ? (held.words ?? null) : null } : {}),
           ...(record.missingSince !== null ? { missingSince: null } : {}),
@@ -4108,7 +4108,7 @@ export class Snapshots {
       touched.add(restored.box.thread);
       this.#deps.log?.(
         restored.foundAt !== null
-          ? `Found snapshot ${held.id} of box ${held.box} on ${restored.host ?? backend.label}, which is not in bb-box's records and whose box is gone. It is listed until you delete it.`
+          ? `Found snapshot ${held.id} of box ${held.box} on ${restored.host ?? backend.label}, which is not in alia-box's records and whose box is gone. It is listed until you delete it.`
           : `Found snapshot ${held.id} of box ${restored.box.name} on ${restored.host ?? backend.label} without a record, and gave it one again${restored.keptUntil !== null ? ", as kept" : ""}.`,
       );
     }
@@ -4182,11 +4182,11 @@ export class Snapshots {
       }
       if (record.state === "lost" && now - record.stateAt >= LOST_KEPT_MS) {
         ledger.removeRecord(record.id);
-        this.#deps.log?.(`Removed bb-box's record of snapshot ${record.id} of box ${record.box.name}, lost for 7 days.`);
+        this.#deps.log?.(`Removed alia-box's record of snapshot ${record.id} of box ${record.box.name}, lost for 7 days.`);
         continue;
       }
-      if (eligible(record, "expire", { pin: null, now }).ok) automatic.push({ record, change: "expire", by: byBbBox("its keep ended") });
-      else if (record.boxGone?.how === "released" && record.keptUntil === null && this.#onProvider(record) && eligible(record, "delete", { pin: null, now }).ok) automatic.push({ record, change: "delete", by: byBbBox("its box was released") });
+      if (eligible(record, "expire", { pin: null, now }).ok) automatic.push({ record, change: "expire", by: byAliaBox("its keep ended") });
+      else if (record.boxGone?.how === "released" && record.keptUntil === null && this.#onProvider(record) && eligible(record, "delete", { pin: null, now }).ok) automatic.push({ record, change: "delete", by: byAliaBox("its box was released") });
     }
     for (const { record, change, by } of automatic) {
       signal?.throwIfAborted();
@@ -4224,10 +4224,10 @@ export class Snapshots {
       ledger.transaction(() => {
         for (const record of all) {
           ledger.removeRecord(record.id);
-          ledger.insertOperation(this.#settled(record, byBbBox("its box was released"), now));
+          ledger.insertOperation(this.#settled(record, byAliaBox("its box was released"), now));
         }
       });
-      for (const record of all) this.#event(record, "snapshot-deleted", byBbBox("its box was released"), `"${record.name}" (${record.id}): it went with ${record.guest === "held-copy" ? "its held copy" : "its box's earlier guest"}, guest ${record.livesOn.ref}.`);
+      for (const record of all) this.#event(record, "snapshot-deleted", byAliaBox("its box was released"), `"${record.name}" (${record.id}): it went with ${record.guest === "held-copy" ? "its held copy" : "its box's earlier guest"}, guest ${record.livesOn.ref}.`);
     }
   }
 
@@ -4260,7 +4260,7 @@ export class Snapshots {
         if (!plan || plan.storage.percentFull <= roomThresholds(this.settings.roomPercent).sweep) break;
         candidates.shift();
         const why = `${first.host ? `${first.host}'s ` : ""}storage ${plan.storage.name} was ${Math.round(plan.storage.percentFull)}% full`;
-        if (await this.#deleteAutomatically(first, "evict-room", byBbBox(why))) deleted++;
+        if (await this.#deleteAutomatically(first, "evict-room", byAliaBox(why))) deleted++;
       }
     }
   }
@@ -4286,7 +4286,7 @@ export class Snapshots {
         found = await backend.outsideRollbacks(since, signal);
       } catch (error) {
         if (signal?.aborted) throw error;
-        this.#deps.log?.(`Could not read ${backend.label}'s rollback tasks, so bb-box checked for no restore made outside it: ${message(error)}`);
+        this.#deps.log?.(`Could not read ${backend.label}'s rollback tasks, so alia-box checked for no restore made outside it: ${message(error)}`);
         continue;
       }
       const boxes = (await this.#deps.boxes.all()).filter((box) => box.backend === backend.id && box.guest);
@@ -4370,7 +4370,7 @@ export class Snapshots {
     if ((await backend.power(box.guest, this.#stopping.signal)) === "running" && box.state === "ready") {
       await this.#deps.boxes.writeAccess(box, this.#stopping.signal);
       done.push("wrote its access file");
-      if (this.#deps.boxes.machineBack(box)) done.push("started its BB machine again");
+      if (this.#deps.boxes.machineBack(box)) done.push("started its VesnALIA machine again");
     } else {
       done.push("writes its access file when it next starts");
     }
@@ -4406,7 +4406,7 @@ export class Snapshots {
         name: `Restore of ${name}`,
         status: "fail",
         detail: `${PRODUCT} could not confirm ${operationWords(operation)} on box ${name}: ${operation.error ?? "it was cut short"}`,
-        fix: `${PRODUCT} checks again at each sweep, and bb box sweep checks now. Until it can confirm the restore, it keeps the snapshots it used, and the box stays as the restore left it.`,
+        fix: `${PRODUCT} checks again at each sweep, and VesnALIA box sweep checks now. Until it can confirm the restore, it keeps the snapshots it used, and the box stays as the restore left it.`,
       });
     }
     const ids = [...new Set(ledger.records().filter((record) => record.boxGone === null).map((record) => record.box.id))];

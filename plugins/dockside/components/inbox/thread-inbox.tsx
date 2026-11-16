@@ -13,7 +13,7 @@ import {
   useSettings,
   type PluginSidebarThread,
   type PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { docksideRpcContract } from "@/server";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -112,7 +112,7 @@ export function ThreadInbox({
   }, []);
   const now = nowMinute * 60_000;
 
-  // Settling archives a thread in bb, so the host list alone cannot draw the
+  // Settling archives a thread in VesnALIA, so the host list alone cannot draw the
   // settled shelf. Merge the plugin's bounded archived read back in first.
   const { threads: settledThreads, rowsPending: settledRowsPending } =
     useSettledThreads(now);

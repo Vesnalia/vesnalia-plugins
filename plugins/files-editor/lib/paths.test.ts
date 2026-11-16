@@ -64,14 +64,14 @@ describe("routes", () => {
     });
   });
 
-  it("writes path separators raw, so BB does the encoding exactly once", () => {
+  it("writes path separators raw, so VesnALIA does the encoding exactly once", () => {
     expect(formatRoute({ kind: "project", id: "proj_1" }, "config/auth.php")).toBe(
       "project/proj_1/config/auth.php",
     );
   });
 
-  it("reads back a path BB percent-encoded on the way out", () => {
-    // What BB hands back for a file literally named `a b&c.ts`.
+  it("reads back a path VesnALIA percent-encoded on the way out", () => {
+    // What VesnALIA hands back for a file literally named `a b&c.ts`.
     expect(parseRoute("project/proj_1/src/a%20b%26c.ts").filePath).toBe(
       "src/a b&c.ts",
     );
@@ -107,7 +107,7 @@ describe("routes", () => {
 
 describe("resolveWithinRoot on a Windows root written with forward slashes", () => {
   it("resolves rather than reporting an escape", () => {
-    // BB reports whatever the host stored; a drive-letter root can arrive with
+    // VesnALIA reports whatever the host stored; a drive-letter root can arrive with
     // either separator, and the containment check is textual.
     expect(resolveWithinRoot("C:/Users/dev/app", "README.md")).toBe(
       "C:\\Users\\dev\\app\\README.md",

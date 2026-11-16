@@ -167,7 +167,7 @@ async function sopsCommand(
   const sops = await findProgram("sops", sopsOverride);
   if (sops === null) {
     throw new Error(
-      "sops is not installed on the machine BB runs on. Install it (for example with mise), or set its path in this plugin's settings.",
+      "sops is not installed on the machine VesnALIA runs on. Install it (for example with mise), or set its path in this plugin's settings.",
     );
   }
   return { command: sops, prefix: [] };
@@ -297,7 +297,7 @@ async function saveSopsNow(
     throw new Error(`${basename(file)} is no longer encrypted by sops.`);
   }
 
-  const scratch = await mkdtemp(join(tmpdir(), "bb-sops-"));
+  const scratch = await mkdtemp(join(tmpdir(), "alia-sops-"));
   try {
     // sops splits EDITOR into words and adds the temporary file's path:
     // $0 is the marker, $1 the file to fill. The marker path has no spaces

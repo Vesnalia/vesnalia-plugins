@@ -1,6 +1,6 @@
 # Waiting On You
 
-A bb plugin that pins a "Needs you" block above the sidebar thread list. It
+A VesnALIA plugin that pins a "Needs you" block above the sidebar thread list. It
 lists threads where an agent waits on your reply (a question or an approval)
 and threads that failed while you weren't looking. Opening a thread marks it
 read, so it leaves the block on its own.
@@ -8,11 +8,11 @@ read, so it leaves the block on its own.
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/qwent71/bb-plugin-waiting-on-you.git@^0.1.0
+alia plugin install git:https://github.com/qwent71/bb-plugin-waiting-on-you.git@^0.1.0
 ```
 
-bb clones the repository, installs its dependencies, and builds it. Releases
-are `vX.Y.Z` tags, so `bb plugin update` moves you to later 0.x releases.
+VesnALIA clones the repository, installs its dependencies, and builds it. Releases
+are `vX.Y.Z` tags, so `alia plugin update` moves you to later 0.x releases.
 
 ## Use
 
@@ -23,9 +23,9 @@ are `vX.Y.Z` tags, so `bb plugin update` moves you to later 0.x releases.
 - Hold `⌥⌘` and press 1–9 to open that row. The modifier is a plugin setting.
 - Settings → Waiting On You has a live preview, styles, quick picks per part
   of the block, and every detail under "Fine-tune". Changes apply on Save.
-- `bb waiting-on-you export` prints the settings as JSON;
-  `bb waiting-on-you import --json "$(cat file.json)"` applies a whole or
-  partial file; `bb waiting-on-you reset` restores the defaults.
+- `alia waiting-on-you export` prints the settings as JSON;
+  `alia waiting-on-you import --json "$(cat file.json)"` applies a whole or
+  partial file; `alia waiting-on-you reset` restores the defaults.
 
 ## How it decides
 
@@ -36,7 +36,7 @@ are `vX.Y.Z` tags, so `bb plugin update` moves you to later 0.x releases.
 | Done, unseen | finished and not opened since (optional) |
 | Working | busy right now (counter only) |
 
-A question's time is the moment it was asked, not bb's `latestAttentionAt`,
+A question's time is the moment it was asked, not VesnALIA's `latestAttentionAt`,
 which doesn't move while a thread waits mid-turn.
 
 ## Files
@@ -51,16 +51,16 @@ which doesn't move while a thread waits mid-turn.
 - `lib/` — sorting threads, settings (type, defaults, parsing, migration),
   presets and quick picks, shortcuts.
 - `server.ts` — stores settings, validates every change, and serves the
-  `bb waiting-on-you` command.
+  `alia waiting-on-you` command.
 
 ## Notes
 
-- bb has no slot above the thread list, so the block is portaled into a node
-  placed before the sidebar's scroll area. If bb changes that markup the block
+- VesnALIA has no slot above the thread list, so the block is portaled into a node
+  placed before the sidebar's scroll area. If VesnALIA changes that markup the block
   stops showing; nothing else breaks.
-- Settings live in plugin storage, not `bb.settings`, so the settings page can
+- Settings live in plugin storage, not `alia.settings`, so the settings page can
   put its preview above the controls.
-- Everything runs on your bb server. Nothing leaves it; no account or API key
+- Everything runs on your VesnALIA server. Nothing leaves it; no account or API key
   is needed.
 
 ## Develop
@@ -68,8 +68,8 @@ which doesn't move while a thread waits mid-turn.
 ```sh
 npm install --include=dev
 npm run check          # typecheck, build, and the checks in test/
-bb plugin install .
-bb plugin reload waiting-on-you
+alia plugin install .
+alia plugin reload waiting-on-you
 ```
 
 ## License

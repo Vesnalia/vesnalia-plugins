@@ -1,11 +1,11 @@
-Give BB a little terminal character.
+Give VesnALIA a little terminal character.
 
 Herdr Theme frames conversations like terminal panes, keeps transcripts full
 width, and draws child threads as a connected tree. Pick from eleven color
 families, each with a light and a dark version. Turn on branch names to see the
 Git branch under each project thread.
 
-JetBrains Mono is bundled, so nothing is fetched from a font service. BB's
+JetBrains Mono is bundled, so nothing is fetched from a font service. VesnALIA's
 editor, attachments, voice controls, menus, and shortcuts stay in place.
 Pick another theme and the extra styling goes away.
 

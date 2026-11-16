@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import Database from "better-sqlite3";
 import { z } from "zod";
 import { ENV_REQUEST_RENDERER_ID, envRequestResponseSchema } from "./contracts.js";
@@ -171,13 +171,13 @@ function inferService(name: string, kind?: CredentialKind): string | undefined {
   return undefined;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("Starting Env Catalog plugin");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("Starting Env Catalog plugin");
 
   // Setup encryption master key in plugin directory
   const dataDir =
-    bb.server.experimental_dataDir ??
-    join(process.env.HOME ?? "~", ".bb");
+    alia.server.experimental_dataDir ??
+    join(process.env.HOME ?? "~", ".vesnalia");
   const pluginStorageDir = join(dataDir, "plugins", "env-catalog");
   mkdirSync(pluginStorageDir, { recursive: true });
 
@@ -219,8 +219,8 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   // Database initialization
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS env_variables (
       name TEXT PRIMARY KEY,
       encrypted_value TEXT NOT NULL,
@@ -373,7 +373,7 @@ export default async function plugin(bb: BbPluginApi) {
       now
     );
 
-    bb.realtime.publish(ENV_CATALOG_CHANGED, { name: cleanName, action: "save", kind });
+    alia.realtime.publish(ENV_CATALOG_CHANGED, { name: cleanName, action: "save", kind });
   }
 
   async function deleteVariable(name: string): Promise<boolean> {
@@ -382,7 +382,7 @@ export default async function plugin(bb: BbPluginApi) {
     const info = stmt.run(cleanName);
     const deleted = info.changes > 0;
     if (deleted) {
-      bb.realtime.publish(ENV_CATALOG_CHANGED, { name: cleanName, action: "delete" });
+      alia.realtime.publish(ENV_CATALOG_CHANGED, { name: cleanName, action: "delete" });
     }
     return deleted;
   }
@@ -509,14 +509,14 @@ export default async function plugin(bb: BbPluginApi) {
     }
 
     if (count > 0) {
-      bb.realtime.publish(ENV_CATALOG_CHANGED, { action: "import", count });
+      alia.realtime.publish(ENV_CATALOG_CHANGED, { action: "import", count });
     }
     return count;
   }
 
   async function importFromMachineEnvironment(): Promise<number> {
     const keyFile = join(dataDir, "machine-environment-key");
-    const mainDbFile = join(dataDir, "bb.db");
+    const mainDbFile = join(dataDir, "alia.db");
 
     if (!existsSync(keyFile) || !existsSync(mainDbFile)) {
       return 0;
@@ -567,11 +567,11 @@ export default async function plugin(bb: BbPluginApi) {
           });
           count++;
         } catch (err) {
-          bb.log.warn(`Failed to decrypt machine environment variable: ${String(err)}`);
+          alia.log.warn(`Failed to decrypt machine environment variable: ${String(err)}`);
         }
       }
       if (count > 0) {
-        bb.realtime.publish(ENV_CATALOG_CHANGED, {
+        alia.realtime.publish(ENV_CATALOG_CHANGED, {
           action: "import-machine-env",
           count,
         });
@@ -595,15 +595,15 @@ export default async function plugin(bb: BbPluginApi) {
   async function threadInfo(threadId: string, knownProjectId?: string | null): Promise<ThreadInfo> {
     const info: ThreadInfo = { title: null, projectId: knownProjectId ?? null, projectName: null };
     try {
-      const thread = await bb.sdk.threads.get({ threadId, signal: AbortSignal.timeout(3000) });
+      const thread = await alia.sdk.threads.get({ threadId, signal: AbortSignal.timeout(3000) });
       info.title = thread.title ?? thread.titleFallback ?? null;
       info.projectId = info.projectId ?? thread.projectId ?? null;
     } catch (err) {
-      bb.log.warn(`journal: thread lookup failed for ${threadId}: ${String(err)}`);
+      alia.log.warn(`journal: thread lookup failed for ${threadId}: ${String(err)}`);
     }
     if (info.projectId) {
       try {
-        const project = (await bb.sdk.projects.get({
+        const project = (await alia.sdk.projects.get({
           projectId: info.projectId,
           signal: AbortSignal.timeout(3000),
         })) as { name?: string | null };
@@ -629,11 +629,11 @@ export default async function plugin(bb: BbPluginApi) {
         projectId: info?.projectId ?? who.projectId ?? null,
         projectName: info?.projectName ?? null,
       });
-    })().catch((err: unknown) => bb.log.warn(`journal: write failed: ${String(err)}`));
+    })().catch((err: unknown) => alia.log.warn(`journal: write failed: ${String(err)}`));
   }
 
   // Register RPC Handlers for Frontend UI
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     env_list: async ({ query, kind }) => ({
       variables: await listSummaries(query, kind),
     }),
@@ -674,7 +674,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // Register Agent Tools
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "env_get",
     description:
       "Retrieve a credential from Env Catalog by exact name: API key, FTP/SFTP account, SSH key, or site login. Returns the value at once, no approval step. Do not echo the secret in chat.",
@@ -702,7 +702,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       recordAccess(
         { name: item.name, outcome: "issued", via: "tool", purpose },
-        { threadId: ctx?.threadId || process.env.BB_THREAD_ID, projectId: ctx?.projectId },
+        { threadId: ctx?.threadId || process.env.ALIA_THREAD_ID, projectId: ctx?.projectId },
       );
       return JSON.stringify({
         found: true,
@@ -716,7 +716,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "env_list",
     description:
       "List credential names in Env Catalog (API keys, FTP, SSH, logins). Values are omitted. Filter with query or kind.",
@@ -749,7 +749,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "env_set",
     description:
       "Store or update a credential in Env Catalog: API key (kind=secret), FTP/FTPS/SFTP, SSH host+private key, or a site login. Available to every enrolled machine.",
@@ -830,7 +830,7 @@ export default async function plugin(bb: BbPluginApi) {
       });
       recordAccess(
         { name: name.trim(), outcome: "saved", via: "tool" },
-        { threadId: ctx?.threadId || process.env.BB_THREAD_ID, projectId: ctx?.projectId },
+        { threadId: ctx?.threadId || process.env.ALIA_THREAD_ID, projectId: ctx?.projectId },
       );
       return JSON.stringify({
         success: true,
@@ -841,7 +841,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "env_delete",
     description: "Delete an environment variable from the Env Catalog.",
     parameters: z.object({
@@ -858,7 +858,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (deleted) {
         recordAccess(
           { name: name.trim(), outcome: "deleted", via: "tool" },
-          { threadId: ctx?.threadId || process.env.BB_THREAD_ID, projectId: ctx?.projectId },
+          { threadId: ctx?.threadId || process.env.ALIA_THREAD_ID, projectId: ctx?.projectId },
         );
       }
       return JSON.stringify({
@@ -890,7 +890,7 @@ export default async function plugin(bb: BbPluginApi) {
         ? `Add ${options.fields[0].name} to Env Catalog`
         : `Add secrets to Env Catalog (${options.fields.length} variables)`;
 
-    const result = await bb.ui.requestInput(
+    const result = await alia.ui.requestInput(
       {
         threadId: options.threadId,
         rendererId: ENV_REQUEST_RENDERER_ID,
@@ -954,7 +954,7 @@ export default async function plugin(bb: BbPluginApi) {
     return savedNames;
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "env_request",
     description:
       "Securely prompt the user for credentials (API key, FTP, SSH key, or login) via a masked in-app form. Use whenever access is missing from Env Catalog instead of asking in chat. Values are encrypted and never appear in the transcript.",
@@ -996,7 +996,7 @@ export default async function plugin(bb: BbPluginApi) {
       },
     },
     async execute(params, ctx) {
-      const targetThreadId = ctx.threadId || process.env.BB_THREAD_ID;
+      const targetThreadId = ctx.threadId || process.env.ALIA_THREAD_ID;
       if (!targetThreadId) {
         return JSON.stringify({
           success: false,
@@ -1055,8 +1055,8 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // Dynamic Instructions for Agents
-  bb.agents.contributeInstructions(() => {
-    return "Env Catalog is active. It stores API keys, FTP/FTPS/SFTP accounts, SSH private keys, and site logins encrypted on the BB server for every enrolled machine. Before asking the user: env_list (optional query or kind=secret|ftp|ssh|login), then env_get with the exact name; the value comes back at once, no approval step (or `bb env-catalog get NAME --raw` in the shell). env_get returns value and/or access fields (host, username, password, privateKey). Do not repeat secrets in chat and do not copy a value into a file: ask env_get each time. If access is missing, env_request with name and kind (the owner types it into a masked form). If the user pastes a credential into the chat, save it with env_set (kind + fields) and do not repeat it. Reads, saves and deletes are written to the issuance journal (thread, project, name, time; never the value). File Gateway FTP is only for browsing site files in BB; use Env Catalog when a script, SSH session, or API call needs the credential.";
+  alia.agents.contributeInstructions(() => {
+    return "Env Catalog is active. It stores API keys, FTP/FTPS/SFTP accounts, SSH private keys, and site logins encrypted on the VesnALIA server for every enrolled machine. Before asking the user: env_list (optional query or kind=secret|ftp|ssh|login), then env_get with the exact name; the value comes back at once, no approval step (or `alia env-catalog get NAME --raw` in the shell). env_get returns value and/or access fields (host, username, password, privateKey). Do not repeat secrets in chat and do not copy a value into a file: ask env_get each time. If access is missing, env_request with name and kind (the owner types it into a masked form). If the user pastes a credential into the chat, save it with env_set (kind + fields) and do not repeat it. Reads, saves and deletes are written to the issuance journal (thread, project, name, time; never the value). File Gateway FTP is only for browsing site files in VesnALIA; use Env Catalog when a script, SSH session, or API call needs the credential.";
   });
 
   // CLI Command Registration
@@ -1064,16 +1064,16 @@ export default async function plugin(bb: BbPluginApi) {
     "Env Catalog CLI",
     "",
     "Usage:",
-    "  bb env-catalog list [--query <text>] [--kind secret|ftp|ssh|login] [--json]",
-    "  bb env-catalog get <NAME> [--raw] [--purpose <text>]",
-    "  bb env-catalog set <NAME> <VALUE> [--desc <text>] [--service <text>]",
-    "  bb env-catalog set <NAME> --kind ftp --host <h> --user <u> --password <p> [--protocol ftp|ftps|sftp] [--port <n>] [--root <path>] [--fingerprint <hex>]",
-    "  bb env-catalog set <NAME> --kind ssh --host <h> --user <u> --private-key <pem> [--port 22] [--passphrase <p>] [--fingerprint <hex>]",
-    "  bb env-catalog set <NAME> --kind login --user <u> --password <p> [--url <url>] [--host <h>]",
-    "  bb env-catalog request <NAME...> [--kind secret|ftp|ssh|login] [--purpose <text>] [--describe <NAME> <text>] [--service <text>]",
-    "  bb env-catalog delete <NAME>",
-    "  bb env-catalog export [--format env|json]",
-    "  bb env-catalog import-machine-env",
+    "  VesnALIA env-catalog list [--query <text>] [--kind secret|ftp|ssh|login] [--json]",
+    "  VesnALIA env-catalog get <NAME> [--raw] [--purpose <text>]",
+    "  VesnALIA env-catalog set <NAME> <VALUE> [--desc <text>] [--service <text>]",
+    "  VesnALIA env-catalog set <NAME> --kind ftp --host <h> --user <u> --password <p> [--protocol ftp|ftps|sftp] [--port <n>] [--root <path>] [--fingerprint <hex>]",
+    "  VesnALIA env-catalog set <NAME> --kind ssh --host <h> --user <u> --private-key <pem> [--port 22] [--passphrase <p>] [--fingerprint <hex>]",
+    "  VesnALIA env-catalog set <NAME> --kind login --user <u> --password <p> [--url <url>] [--host <h>]",
+    "  VesnALIA env-catalog request <NAME...> [--kind secret|ftp|ssh|login] [--purpose <text>] [--describe <NAME> <text>] [--service <text>]",
+    "  VesnALIA env-catalog delete <NAME>",
+    "  VesnALIA env-catalog export [--format env|json]",
+    "  VesnALIA env-catalog import-machine-env",
   ].join("\n");
 
   function parseCliRequest(args: string[]): {
@@ -1139,46 +1139,46 @@ export default async function plugin(bb: BbPluginApi) {
     return { names, purpose, descriptions, services, defaultService, threadId, kind };
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "env-catalog",
     summary: "Manage encrypted API keys, FTP, SSH, and logins in Env Catalog",
     commands: [
       {
         name: "list",
         summary: "List stored environment variables",
-        usage: "bb env-catalog list [--query <text>] [--kind secret|ftp|ssh|login] [--json]",
+        usage: "alia env-catalog list [--query <text>] [--kind secret|ftp|ssh|login] [--json]",
       },
       {
         name: "get",
         summary: "Get decrypted value of a secret (returned at once, written to the issuance journal)",
-        usage: "bb env-catalog get <NAME> [--raw] [--purpose <text>]",
+        usage: "alia env-catalog get <NAME> [--raw] [--purpose <text>]",
       },
       {
         name: "set",
         summary: "Store or update a secret",
         usage:
-          "bb env-catalog set <NAME> <VALUE> | --kind ftp|ssh|login --host … --user …",
+          "alia env-catalog set <NAME> <VALUE> | --kind ftp|ssh|login --host … --user …",
       },
       {
         name: "request",
         summary: "Securely request secrets from user via masked form in thread",
         usage:
-          "bb env-catalog request <NAME...> [--kind secret|ftp|ssh|login] [--purpose <text>]",
+          "alia env-catalog request <NAME...> [--kind secret|ftp|ssh|login] [--purpose <text>]",
       },
       {
         name: "delete",
         summary: "Delete a secret",
-        usage: "bb env-catalog delete <NAME>",
+        usage: "alia env-catalog delete <NAME>",
       },
       {
         name: "export",
         summary: "Export secrets as .env or JSON",
-        usage: "bb env-catalog export [--format env|json]",
+        usage: "alia env-catalog export [--format env|json]",
       },
       {
         name: "import-machine-env",
-        summary: "Import and decrypt all keys from BB Machine Environment",
-        usage: "bb env-catalog import-machine-env",
+        summary: "Import and decrypt all keys from VesnALIA Machine Environment",
+        usage: "alia env-catalog import-machine-env",
       },
     ],
     async run(argv, ctx) {
@@ -1198,7 +1198,7 @@ export default async function plugin(bb: BbPluginApi) {
       });
 
       // A shell inside an agent session carries a thread id; the journal records it.
-      const who = { threadId: ctx.threadId || process.env.BB_THREAD_ID, projectId: ctx.projectId };
+      const who = { threadId: ctx.threadId || process.env.ALIA_THREAD_ID, projectId: ctx.projectId };
 
       switch (command) {
         case undefined:
@@ -1237,7 +1237,7 @@ export default async function plugin(bb: BbPluginApi) {
 
         case "get": {
           const name = args[0];
-          if (!name) return error("Variable name required: bb env-catalog get <NAME>");
+          if (!name) return error("Variable name required: VesnALIA env-catalog get <NAME>");
           const item = await getVariable(name);
           if (!item) return error(`Variable '${name}' not found.`);
           const pIdx = args.indexOf("--purpose");
@@ -1256,7 +1256,7 @@ export default async function plugin(bb: BbPluginApi) {
         case "set": {
           const name = args[0];
           if (!name) {
-            return error("Name required: bb env-catalog set <NAME> …");
+            return error("Name required: VesnALIA env-catalog set <NAME> …");
           }
           const take = (flag: string) => {
             const idx = args.indexOf(flag);
@@ -1268,7 +1268,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (kind === "secret") {
             const value = args[1]?.startsWith("--") ? undefined : args[1];
             if (value === undefined) {
-              return error("Name and value required: bb env-catalog set <NAME> <VALUE>");
+              return error("Name and value required: VesnALIA env-catalog set <NAME> <VALUE>");
             }
             await saveVariable({ name, kind, value, description, service });
           } else {
@@ -1297,15 +1297,15 @@ export default async function plugin(bb: BbPluginApi) {
         case "request": {
           const { names, purpose, descriptions, services, defaultService, threadId, kind } =
             parseCliRequest(args);
-          const targetThreadId = threadId || ctx.threadId || process.env.BB_THREAD_ID;
+          const targetThreadId = threadId || ctx.threadId || process.env.ALIA_THREAD_ID;
           if (!targetThreadId) {
             return error(
-              "bb env-catalog request must be run from an active BB thread where the secure form can be displayed, or specify --thread <id>."
+              "alia env-catalog request must be run from an active VesnALIA thread where the secure form can be displayed, or specify --thread <id>."
             );
           }
           if (names.length === 0) {
             return error(
-              "Specify at least one variable name: bb env-catalog request <NAME...> [--purpose <text>]"
+              "Specify at least one variable name: VesnALIA env-catalog request <NAME...> [--purpose <text>]"
             );
           }
 
@@ -1338,7 +1338,7 @@ export default async function plugin(bb: BbPluginApi) {
 
         case "delete": {
           const name = args[0];
-          if (!name) return error("Variable name required: bb env-catalog delete <NAME>");
+          if (!name) return error("Variable name required: VesnALIA env-catalog delete <NAME>");
           const deleted = await deleteVariable(name);
           if (!deleted) return error(`Variable '${name}' not found.`);
           recordAccess({ name, outcome: "deleted", via: "cli" }, who);
@@ -1359,7 +1359,7 @@ export default async function plugin(bb: BbPluginApi) {
           const count = await importFromMachineEnvironment();
           return reply(
             { importedCount: count },
-            `Successfully imported and decrypted ${count} keys from BB Machine Environment.`
+            `Successfully imported and decrypted ${count} keys from VesnALIA Machine Environment.`
           );
         }
       }
@@ -1368,7 +1368,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("Env Catalog disposed");
+  alia.onDispose(() => {
+    alia.log.info("Env Catalog disposed");
   });
 }

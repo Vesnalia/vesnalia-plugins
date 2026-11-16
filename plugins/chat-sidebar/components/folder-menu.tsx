@@ -2,7 +2,7 @@
 // "mark all as read", and the right-click menu.
 import { useCallback, type ReactNode } from "react";
 import { toast } from "sonner";
-import { useBbNavigate, useSdk } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useSdk } from "@vesnalia/plugin-sdk/app";
 
 import {
   ContextMenu,
@@ -63,7 +63,7 @@ function useMarkFolderRead(rows: readonly Chat[]) {
 export function FolderMenu({ folder, rows, children }: { folder: Folder; rows: readonly Chat[]; children: ReactNode }) {
   const t = useT();
   const markRead = useMarkFolderRead(rows);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { openEditor } = useFolders();
   const { imageOf, pickImage, removeImage } = useFolderImages();
   const label = useFolderLabel();

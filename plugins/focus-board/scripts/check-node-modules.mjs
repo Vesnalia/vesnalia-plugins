@@ -1,7 +1,7 @@
 /**
  * Preflight guard: repo-root node_modules must never be a symlink.
  *
- * Regression background: bb serves this plugin from the main checkout and
+ * Regression background: VesnALIA serves this plugin from the main checkout and
  * rebuilds the frontend bundle on reload. When node_modules there became a
  * symlink (the worktrees' shared-deps shortcut run with cwd set to the main
  * checkout), every import failed to resolve and the board silently vanished.
@@ -35,7 +35,7 @@ export function inspectNodeModules(root) {
       `node_modules is a symlink to ${JSON.stringify(readlinkSync(nodeModules))} ` +
       `(lstat ${JSON.stringify(nodeModules)}). A node_modules symlink breaks the ` +
       `frontend bundle: every dependency import fails to resolve and the plugin ` +
-      `board silently disappears from bb. Repair with: rm node_modules && npm ci. ` +
+      `board silently disappears from VesnALIA. Repair with: rm node_modules && npm ci. ` +
       `Never create node_modules symlinks in this repo (see AGENTS.md, ` +
       `"node_modules — never a symlink in any checkout").`,
   };

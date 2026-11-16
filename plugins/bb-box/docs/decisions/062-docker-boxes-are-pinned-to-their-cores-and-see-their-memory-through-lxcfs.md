@@ -16,13 +16,13 @@ host core on 2 cores' worth of time, and a tool that takes a share of
 "total memory" asks for more than the box may use and is killed.
 
 Proxmox LXC, microsandbox and the VMs show the box's own numbers already.
-Docker boxes are the exception, on every Docker host bb-box meets:
+Docker boxes are the exception, on every Docker host alia-box meets:
 
 - a person's own Docker host, reached over SSH or a local socket, which
-  bb-box does not administer, and which may be rootless Docker or Docker
+  alia-box does not administer, and which may be rootless Docker or Docker
   Desktop's VM;
-- Docker on a BB machine, through BB's relay, also the person's machine;
-- the Hetzner Cloud hosts bb-box makes (055), whose host image bb-box
+- Docker on a VesnALIA machine, through VesnALIA's relay, also the person's machine;
+- the Hetzner Cloud hosts alia-box makes (055), whose host image alia-box
   builds.
 
 Placement counts memory and boxes, not cores: boxes share a host's cores,
@@ -102,19 +102,19 @@ by giving their cpusets the least-used CPUs, overlapping when it must.
 ## Decision
 
 1. **Every Docker box is pinned to as many CPUs as it has cores**, with
-   `--cpuset-cpus`, as well as its `--cpus` quota. bb-box allots the CPUs
+   `--cpuset-cpus`, as well as its `--cpus` quota. alia-box allots the CPUs
    when it places the box:
    - The host's CPUs are those a probe container sees in
      `/sys/fs/cgroup/cpuset.cpus.effective`: the CPUs the daemon may give
      its containers, wherever it runs. Measured on rootful Docker, on
      rootless Docker, and on Docker in a Proxmox LXC container (below).
-   - A box takes the CPUs that the fewest of the host's running bb-box
-     boxes are pinned to, the lowest-numbered first among equals. bb-box
+   - A box takes the CPUs that the fewest of the host's running alia-box
+     boxes are pinned to, the lowest-numbered first among equals. alia-box
      reads each container's pinning from `docker inspect`
      (`HostConfig.CpusetCpus`), so the allotment needs no state of its own
-     and survives a restart of bb-box, and other installs' boxes count.
+     and survives a restart of alia-box, and other installs' boxes count.
    - Two boxes placed on one host at once must not both take the same
-     least-used CPUs. bb-box allots under the host's placement lock, which
+     least-used CPUs. alia-box allots under the host's placement lock, which
      already places one acquire at a time, from `docker inspect` and the
      boxes it is making there but has not yet created.
    - When boxes ask for more cores than the host has, cpusets overlap,
@@ -123,7 +123,7 @@ by giving their cpusets the least-used CPUs, overlapping when it must.
    - A resize changes the cpuset live with `docker update` (061): it
      grows by the least-used CPUs, and shrinks by dropping the CPUs that
      the most other boxes share.
-   - When a box is released or shrinks, CPUs come free. Then bb-box moves
+   - When a box is released or shrinks, CPUs come free. Then alia-box moves
      each box whose CPUs other boxes share onto CPUs no box uses, keeping
      its count, with `docker update`, so overlaps do not outlive the
      overcommit that caused them. A box's processes see how many CPUs they
@@ -139,20 +139,20 @@ by giving their cpusets the least-used CPUs, overlapping when it must.
    `/proc/swaps`, `/proc/loadavg`, `/proc/diskstats` and
    `/sys/devices/system/cpu/online`, as Proxmox does. With the cpuset,
    LXCFS's defaults are right, so it needs no `--enable-cfs`.
-   - bb-box sees whether a host serves LXCFS with its survey's probe
+   - alia-box sees whether a host serves LXCFS with its survey's probe
      container: `/var/lib/lxcfs/proc/meminfo` mounted read-only and read.
      A box gets the mounts only while that probe passes, so a host
      without LXCFS still makes boxes.
-   - **Hetzner Cloud hosts:** bb-box installs LXCFS in its host image and
+   - **Hetzner Cloud hosts:** alia-box installs LXCFS in its host image and
      runs it with systemd. That changes the host image's fingerprint, so
      the next build after this change rebuilds it. Package upgrades on the
      host must not restart LXCFS under running boxes: the image holds the
      package, and a systemd drop-in with `RefuseManualStop=yes` makes
      systemd refuse any restart of it, measured below.
-   - **A person's own Docker host and a BB machine's:** bb-box does not
+   - **A person's own Docker host and a VesnALIA machine's:** alia-box does not
      install it. The doctor names the hosts without it, says what boxes
      there see (`free` and `/proc/cpuinfo` say the host's), and how to
-     add it: `apt install lxcfs`, or the distribution's package. bb-box
+     add it: `apt install lxcfs`, or the distribution's package. alia-box
      cannot add it to Docker Desktop's VM; the doctor says that instead.
    - **A Docker host that is itself an LXC container**, as on Proxmox VE,
      cannot run LXCFS (below). The LXCFS of the machine that runs it
@@ -161,7 +161,7 @@ by giving their cpusets the least-used CPUs, overlapping when it must.
    - **An LXCFS restart** breaks the files in boxes already running, so
      the doctor checks each running box's `/proc/meminfo` on a host with
      LXCFS. A box whose read fails is named, with "restart it to see its
-     memory again". bb-box does not restart it unasked (061). The doctor
+     memory again". alia-box does not restart it unasked (061). The doctor
      and the guide say that LXCFS should be reloaded, not restarted.
 
 3. **A Docker box that cannot be pinned gets `OMP_NUM_THREADS`** set to
@@ -169,8 +169,8 @@ by giving their cpusets the least-used CPUs, overlapping when it must.
    above). That also caps OpenMP programs' threads at the box's cores,
    which they cannot use beyond anyway. A container's environment cannot
    change, so after a resize the variable keeps its first value until the
-   box is made again. Elsewhere bb-box leaves `OMP_NUM_THREADS` alone.
-   bb-box adds no variables of its own for the size: they would go stale
+   box is made again. Elsewhere alia-box leaves `OMP_NUM_THREADS` alone.
+   alia-box adds no variables of its own for the size: they would go stale
    at the first live resize, and `box_status` gives the size. `NPROC` is
    no name any tool reads.
 
@@ -226,7 +226,7 @@ with 2 or 4 GiB.
 - dockerd keeps the set it had when it started. It refused a CPU the
   container had, and took one the container no longer had, whose box then
   saw the whole parent set: `nproc` 8.
-- bb-box learns dockerd's set from its refusal, pins to CPUs both allow,
+- alia-box learns dockerd's set from its refusal, pins to CPUs both allow,
   and the doctor warns while the two differ.
 - The sweep probes again before the probes are 10 minutes old, and moves
   boxes off CPUs that left the set. Live, with the set narrowed under a
@@ -273,7 +273,7 @@ and starts.
 **Hetzner Cloud**, after the host image was built with LXCFS (#1093 to
 #1096, #1103 to #1110). The x86 image was built from Ubuntu 26.04.1 and
 made at 16:11 UTC, and the Arm image at 16:45. Each build carried on
-across bb-box's reloads, on the same build server.
+across alia-box's reloads, on the same build server.
 
 - A 2-core, 4 GiB linux box was ready in 63.4 s, with its host: 60.0 s
   to make the host from the new snapshot, then 3.4 s for the box.

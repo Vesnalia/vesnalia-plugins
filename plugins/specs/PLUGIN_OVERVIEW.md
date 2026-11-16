@@ -15,7 +15,7 @@ so a fifty-spec project adds a handful of lines, not fifty pages.
 come back from `specs_read` as review feedback, and replies stay attached to
 the exact text.
 
-**Chat that can edit.** Each spec has its own BB thread. The agent reads the
+**Chat that can edit.** Each spec has its own VesnALIA thread. The agent reads the
 spec before answering. One Send action continues the conversation; proposed
 changes are reviewed before applying. Revision checks protect intervening edits.
 
@@ -38,10 +38,10 @@ document, with revision checks and draft recovery.
 
 Threads expose `specs_search`, `specs_read`, `specs_write`, `specs_create`,
 `specs_annotate`, `specs_attach`, `specs_detach`, and `specs_delete`, plus the
-`bb specs` command line for scripts. The thread action **Spec context** shows
+`alia specs` command line for scripts. The thread action **Spec context** shows
 exactly which specs a thread receives and lets you attach or exclude one.
 
 ## Requirements
 
-BB 0.43 or newer. Everything runs inside your BB install: no account, no
+VesnALIA 0.43 or newer. Everything runs inside your VesnALIA install: no account, no
 external service, no extra install.

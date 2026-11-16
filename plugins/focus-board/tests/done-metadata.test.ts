@@ -6,7 +6,7 @@ import {
   stampDone,
   type DoneRecord,
 } from "../lib/done-metadata";
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 
 describe("parseDoneRecord", () => {
   it("accepts a valid record", () => {

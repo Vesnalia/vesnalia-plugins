@@ -1,9 +1,9 @@
-// bb-plugin-bots — backend entry.
+// alia-plugin-bots — backend entry.
 //
 // A "bot" is a name, an emoji, a block of instructions, and a model. Chatting
-// with one spawns an ordinary BB thread; bb.agents.contributeInstructions then
+// with one spawns an ordinary VesnALIA thread; alia.agents.contributeInstructions then
 // injects that bot's persona into every turn of that thread.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   clampInstructions,
@@ -70,14 +70,14 @@ const ChatSchema = z.object({
   title: z.string().nullable(),
   status: z.string(),
   updatedAt: z.number().int(),
-  // Mirror threadListResponseSchema's own field names (bb-plugin-sdk.d.ts)
+  // Mirror threadListResponseSchema's own field names (alia-plugin-sdk.d.ts)
   // exactly, both nullable: an unpinned/unarchived thread has null, not 0 or
   // false, so the frontend can tell "never pinned" from "pinned at epoch 0".
   pinnedAt: z.number().int().nullable(),
   archivedAt: z.number().int().nullable(),
 });
 
-// Mirrors the host's `promptInputSchema` (bb-plugin-sdk-app.d.ts) exactly.
+// Mirrors the host's `promptInputSchema` (alia-plugin-sdk-app.d.ts) exactly.
 // This is the part that carries images, so it's spelled out rather than
 // left opaque like `environment`/`executionInputSources` below.
 const PromptInputSchema = z.discriminatedUnion("type", [
@@ -222,9 +222,9 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+export default async function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS bots (
        id              TEXT PRIMARY KEY,
        name            TEXT NOT NULL,
@@ -250,7 +250,7 @@ export default async function plugin(bb: BbPluginApi) {
   ]);
 
   // contributeInstructions is synchronous and sits on the thread-start path,
-  // so SQLite is the durable store and these maps are the read path. A BB
+  // so SQLite is the durable store and these maps are the read path. A VesnALIA
   // plugin is one in-process module, so caching here is safe.
   const botsById = new Map<string, Bot>();
   const botIdByThreadId = new Map<string, string>();
@@ -263,13 +263,13 @@ export default async function plugin(bb: BbPluginApi) {
     .all() as { thread_id: string; bot_id: string }[]) {
     botIdByThreadId.set(row.thread_id, row.bot_id);
   }
-  bb.log.info(
+  alia.log.info(
     `loaded ${botsById.size} bots across ${botIdByThreadId.size} threads`,
   );
 
   // The whole point of the plugin. Returning null for unmapped threads is
-  // load-bearing: without it every thread in BB would inherit a bot persona.
-  bb.agents.contributeInstructions(({ threadId }) => {
+  // load-bearing: without it every thread in VesnALIA would inherit a bot persona.
+  alia.agents.contributeInstructions(({ threadId }) => {
     const botId = botIdByThreadId.get(threadId);
     if (botId === undefined) return null;
     const bot = botsById.get(botId);
@@ -284,10 +284,10 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function announce() {
-    bb.realtime.publish("bots", { changedAt: Date.now() });
+    alia.realtime.publish("bots", { changedAt: Date.now() });
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     listBots: () => ({
       bots: [...botsById.values()].sort((a, b) => b.updatedAt - a.updatedAt),
     }),
@@ -433,13 +433,13 @@ export default async function plugin(bb: BbPluginApi) {
       );
       if (mine.size === 0) return { chats: [], archivedChats: [] };
       const [activeThreads, archivedThreads] = await Promise.all([
-        bb.sdk.threads.list({
-          originPluginId: bb.pluginId,
+        alia.sdk.threads.list({
+          originPluginId: alia.pluginId,
           limit: 200,
           archived: false,
         }),
-        bb.sdk.threads.list({
-          originPluginId: bb.pluginId,
+        alia.sdk.threads.list({
+          originPluginId: alia.pluginId,
           limit: 200,
           archived: true,
         }),
@@ -483,8 +483,8 @@ export default async function plugin(bb: BbPluginApi) {
       // Excludes archived threads: an archived chat is put away on purpose,
       // so it must not resurface as the rail's subtitle or bump
       // lastActivityAt back to the top of the bot list.
-      const threads = await bb.sdk.threads.list({
-        originPluginId: bb.pluginId,
+      const threads = await alia.sdk.threads.list({
+        originPluginId: alia.pluginId,
         limit: 200,
         archived: false,
       });
@@ -547,18 +547,18 @@ export default async function plugin(bb: BbPluginApi) {
         environment: request.environment,
         input: request.input,
         // Deliberately omitted: title is optional in CreateThreadRequest and
-        // BB auto-titles the thread from its first message. Passing bot.name
+        // VesnALIA auto-titles the thread from its first message. Passing bot.name
         // here used to make every chat literally named after the bot.
       };
-      const thread = await bb.sdk.threads.spawn(
-        spawnArgs as Parameters<typeof bb.sdk.threads.spawn>[0],
+      const thread = await alia.sdk.threads.spawn(
+        spawnArgs as Parameters<typeof alia.sdk.threads.spawn>[0],
       );
 
       db.prepare(
         "INSERT INTO bot_threads (thread_id, bot_id, created_at) VALUES (?, ?, ?)",
       ).run(thread.id, bot.id, Date.now());
       botIdByThreadId.set(thread.id, bot.id);
-      bb.log.info(`started chat ${thread.id} for bot ${bot.id}`);
+      alia.log.info(`started chat ${thread.id} for bot ${bot.id}`);
       return { threadId: thread.id };
     },
 
@@ -576,16 +576,16 @@ export default async function plugin(bb: BbPluginApi) {
       if (botIdByThreadId.get(threadId) === undefined) {
         throw new Error(`Unknown chat: ${threadId}`);
       }
-      await bb.sdk.threads.unarchive({ threadId });
+      await alia.sdk.threads.unarchive({ threadId });
       announce();
       return { ok: true };
     },
 
     listOptions: async () => {
       const [providers, projects, allProjects] = await Promise.all([
-        bb.sdk.providers.list(),
-        bb.sdk.projects.list(),
-        bb.sdk.projects.list({ includePersonal: true }),
+        alia.sdk.providers.list(),
+        alia.sdk.projects.list(),
+        alia.sdk.projects.list({ includePersonal: true }),
       ]);
       const personal = allProjects.find(
         (project) => project.kind === "personal",
@@ -605,7 +605,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
 
     listModels: async ({ providerId }) => {
-      const options = await bb.sdk.providers.models({ providerId });
+      const options = await alia.sdk.providers.models({ providerId });
       return {
         models: options.models.map((model) => ({
           id: model.id,
@@ -623,10 +623,10 @@ export default async function plugin(bb: BbPluginApi) {
 
   // Keep the mapping from growing without bound. Archived threads are still
   // resumable, so only deletion drops the persona link.
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     if (!botIdByThreadId.delete(thread.id)) return;
     db.prepare("DELETE FROM bot_threads WHERE thread_id = ?").run(thread.id);
-    // Without this, a second open BB window keeps showing a chat that was
+    // Without this, a second open VesnALIA window keeps showing a chat that was
     // just deleted from the first window until its next unrelated refresh.
     announce();
   });
@@ -634,10 +634,10 @@ export default async function plugin(bb: BbPluginApi) {
   // Deliberately does NOT touch bot_threads: archiving just puts a chat away,
   // it doesn't end it, so the persona mapping must survive until the thread
   // comes back via unarchiveChat (or is actually deleted). Only announce for
-  // threads that are ours — bb archives threads belonging to every plugin
+  // threads that are ours — VesnALIA archives threads belonging to every plugin
   // and to no plugin at all, and this channel exists solely to tell this
   // plugin's own panels to refresh.
-  bb.events.on("thread.archived", ({ thread }) => {
+  alia.events.on("thread.archived", ({ thread }) => {
     if (botIdByThreadId.get(thread.id) === undefined) return;
     announce();
   });

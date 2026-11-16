@@ -16,7 +16,7 @@ import type { AutotitleTarget } from "@/lib/autotitle";
  * modal names the failure reason and offers the paths out of it — generate
  * with a different registered AI service (the ready ones clickable, the
  * not-ready ones disabled with their blocker named), the thread's active
- * chat model as an explicitly disabled row (bb exposes no plugin path to
+ * chat model as an explicitly disabled row (VesnALIA exposes no plugin path to
  * it; refusing to fake it is the honest surface), or a plain typed rename.
  */
 export function AutotitleFallbackModal({
@@ -160,7 +160,7 @@ export function AutotitleFallbackModal({
                 })}
                 {alternatives.length === 0 ? (
                   <li className="text-muted-foreground">
-                    No other AI services are registered in bb.
+                    No other AI services are registered in VesnALIA.
                   </li>
                 ) : null}
               </ul>
@@ -182,7 +182,7 @@ export function AutotitleFallbackModal({
               <p className="mt-1 text-xs text-muted-foreground">
                 {state.data.threadModel.available
                   ? "Generates in a hidden probe thread on this thread's model when one resolves, else on the same default a new thread here gets; the probe is deleted when done."
-                  : `The thread's model is unavailable: ${state.data.threadModel.reason ?? "no reason given"}. bb plugins cannot invoke a thread's chat model directly — the probe path needs a resolved provider/model or a project to inherit one from.`}
+                  : `The thread's model is unavailable: ${state.data.threadModel.reason ?? "no reason given"}. VesnALIA plugins cannot invoke a thread's chat model directly — the probe path needs a resolved provider/model or a project to inherit one from.`}
               </p>
             </div>
           </div>

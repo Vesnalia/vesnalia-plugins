@@ -6,8 +6,8 @@
 // do in the list, because they are the same handlers.
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@vesnalia/plugin-sdk/testing/app";
 
 import { PREVIEW_TTL_MS, type FileEntry, type FileManagerContract } from "../../contract";
 
@@ -389,7 +389,7 @@ describe("the gestures are the list's own", () => {
     expect(labels.some((label) => label.startsWith("Download"))).toBe(true);
   });
 
-  it("double-clicks a file into bb's preview panel", async () => {
+  it("double-clicks a file into VesnALIA's preview panel", async () => {
     const slot = await mountGallery();
 
     fireEvent.doubleClick(tileFor(slot, SHOT.path));

@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, rmSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { api, snapshot, rows } from './helpers.mjs';
-const options = { ...JSON.parse(readFileSync(new URL('./fixtures/bb-real-inputs.json', import.meta.url), 'utf8')).fixtures[0].request.params.options, envVars: {} };
+const options = { ...JSON.parse(readFileSync(new URL('./fixtures/alia-real-inputs.json', import.meta.url), 'utf8')).fixtures[0].request.params.options, envVars: {} };
 const base = resolve(process.env.ZCODE_CONNECTION_TEST_ROOT ?? '.local/M2/offline');
 mkdirSync(base, { recursive: true });
 async function harness(fn) {

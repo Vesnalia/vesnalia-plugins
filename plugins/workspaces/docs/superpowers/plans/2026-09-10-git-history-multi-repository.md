@@ -2,17 +2,17 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Extend the Git History BB plugin so one thread environment can expose several independently selectable Git worktrees without changing its single-repository experience.
+**Goal:** Extend the Git History VesnALIA plugin so one thread environment can expose several independently selectable Git worktrees without changing its single-repository experience.
 
 **Architecture:** The server continues to resolve the thread's host and environment, but the host becomes responsible for bounded repository discovery and safe resolution of an opaque relative repository key. The frontend first discovers repositories, hides selection for one result, and scopes every history/detail/patch request to the selected key while cancelling stale UI results.
 
-**Tech Stack:** TypeScript, React 19, Zod 4, BB Plugin SDK 0.4.47, Node 22 host entry, Git CLI, Vitest, Testing Library.
+**Tech Stack:** TypeScript, React 19, Zod 4, VesnALIA Plugin SDK 0.4.47, Node 22 host entry, Git CLI, Vitest, Testing Library.
 
-**Spec:** `../bb-plugin-workspaces/docs/superpowers/specs/2026-09-10-live-expansion-and-multi-repo-history-design.md`
+**Spec:** `../alia-plugin-workspaces/docs/superpowers/specs/2026-09-10-live-expansion-and-multi-repo-history-design.md`
 
 ## Global Constraints
 
-- Develop in a normal fork/clone at `../bb-plugin-git-history`; never edit BB's installed cache.
+- Develop in a normal fork/clone at `../alia-plugin-git-history`; never edit VesnALIA's installed cache.
 - Discover only the environment root or immediate directories below `<environment>/repos`; never recursively scan.
 - Repository RPC inputs use a validated relative key; clients never select an arbitrary absolute path.
 - Every candidate is canonicalized, confined to the environment root, and verified as a Git worktree root.
@@ -31,7 +31,7 @@
 - `server.ts` — resolves thread environment metadata and forwards environment root plus repository key.
 - `server.test.ts` — validates routing, unavailable responses, and safe keys across all RPCs.
 - `app.tsx` — repository loading/selection shell and propagation into history, details, and diff views.
-- `app.css` — compact selector styling using existing BB theme tokens.
+- `app.css` — compact selector styling using existing VesnALIA theme tokens.
 - `app.test.tsx` — single-repository compatibility and multi-repository switching behavior.
 - `README.md` / `CHANGELOG.md` — user documentation and an unreleased change note; upstream owns release versioning.
 
@@ -40,12 +40,12 @@
 ### Task 1: Create the Upstream Fork Checkout
 
 **Files:**
-- Create checkout: `../bb-plugin-git-history`
-- Verify: `../bb-plugin-git-history/package.json`
+- Create checkout: `../alia-plugin-git-history`
+- Verify: `../alia-plugin-git-history/package.json`
 
 **Interfaces:**
-- Consumes: upstream `yusuf8834/bb-git-history` at release `v0.4.0` or its current default branch if newer.
-- Produces: clean branch `feature/multi-repo-workspaces` with `origin` pointing to the user's fork and `upstream` pointing to `yusuf8834/bb-git-history`.
+- Consumes: upstream `yusuf8834/alia-git-history` at release `v0.4.0` or its current default branch if newer.
+- Produces: clean branch `feature/multi-repo-workspaces` with `origin` pointing to the user's fork and `upstream` pointing to `yusuf8834/alia-git-history`.
 
 - [ ] **Step 1: Verify GitHub authentication and fork ownership**
 
@@ -53,8 +53,8 @@ Run:
 
 ```bash
 rtk gh auth status
-rtk gh repo view yusuf8834/bb-git-history --json defaultBranchRef,url
-rtk gh repo fork yusuf8834/bb-git-history --clone=false
+rtk gh repo view yusuf8834/alia-git-history --json defaultBranchRef,url
+rtk gh repo fork yusuf8834/alia-git-history --clone=false
 ```
 
 Expected: GitHub authentication succeeds and the fork command returns the user's fork URL (or reports that the fork already exists).
@@ -64,8 +64,8 @@ Expected: GitHub authentication succeeds and the fork command returns the user's
 Run from the shared environment root:
 
 ```bash
-rtk git clone https://github.com/alexbart/bb-git-history.git bb-plugin-git-history
-cd bb-plugin-git-history
+rtk git clone https://github.com/alexbart/bb-git-history.git alia-plugin-git-history
+cd alia-plugin-git-history
 rtk git remote add upstream https://github.com/yusuf8834/bb-git-history.git
 rtk git fetch upstream
 rtk git switch -c feature/multi-repo-workspaces upstream/main
@@ -73,13 +73,13 @@ rtk git switch -c feature/multi-repo-workspaces upstream/main
 
 Expected: `rtk git status --short --branch` shows a clean `feature/multi-repo-workspaces` branch.
 
-- [ ] **Step 3: Pin the current BB SDK declarations and establish the baseline**
+- [ ] **Step 3: Pin the current VesnALIA SDK declarations and establish the baseline**
 
 Run:
 
 ```bash
 rtk npm install --include=dev
-rtk bb plugin types --check
+rtk alia plugin types --check
 rtk npm test
 rtk npm run typecheck
 rtk npm run build
@@ -90,8 +90,8 @@ Expected: the existing suite, typecheck, and plugin build pass before changes. I
 ### Task 2: Add Safe Repository Discovery
 
 **Files:**
-- Create: `../bb-plugin-git-history/repository-discovery.ts`
-- Create: `../bb-plugin-git-history/repository-discovery.test.ts`
+- Create: `../alia-plugin-git-history/repository-discovery.ts`
+- Create: `../alia-plugin-git-history/repository-discovery.test.ts`
 
 **Interfaces:**
 - Consumes: `runGit(cwd, args, signal)`-compatible Git executor and an absolute thread environment path.
@@ -173,9 +173,9 @@ rtk git commit -m "feat: discover thread repositories safely"
 ### Task 3: Make Host RPCs Repository-Aware
 
 **Files:**
-- Modify: `../bb-plugin-git-history/contracts.ts`
-- Modify: `../bb-plugin-git-history/host.ts`
-- Modify: `../bb-plugin-git-history/host.test.ts`
+- Modify: `../alia-plugin-git-history/contracts.ts`
+- Modify: `../alia-plugin-git-history/host.ts`
+- Modify: `../alia-plugin-git-history/host.test.ts`
 
 **Interfaces:**
 - Consumes: `resolveRepositorySelection()` from Task 2.
@@ -275,9 +275,9 @@ rtk git commit -m "feat: route git history by repository key"
 ### Task 4: Add Server Repository Routing
 
 **Files:**
-- Modify: `../bb-plugin-git-history/contracts.ts`
-- Modify: `../bb-plugin-git-history/server.ts`
-- Modify: `../bb-plugin-git-history/server.test.ts`
+- Modify: `../alia-plugin-git-history/contracts.ts`
+- Modify: `../alia-plugin-git-history/server.ts`
+- Modify: `../alia-plugin-git-history/server.test.ts`
 
 **Interfaces:**
 - Consumes: Task 3 host contract.
@@ -362,9 +362,9 @@ rtk git commit -m "feat: expose repositories for thread history"
 ### Task 5: Add Repository Selection to the Panel
 
 **Files:**
-- Modify: `../bb-plugin-git-history/app.tsx`
-- Modify: `../bb-plugin-git-history/app.css`
-- Modify: `../bb-plugin-git-history/app.test.tsx`
+- Modify: `../alia-plugin-git-history/app.tsx`
+- Modify: `../alia-plugin-git-history/app.css`
+- Modify: `../alia-plugin-git-history/app.test.tsx`
 
 **Interfaces:**
 - Consumes: Task 4 public RPC contract.
@@ -472,8 +472,8 @@ rtk git commit -m "feat: select repository in git history"
 ### Task 6: Document, Install, and Submit Upstream
 
 **Files:**
-- Modify: `../bb-plugin-git-history/README.md`
-- Modify: `../bb-plugin-git-history/CHANGELOG.md`
+- Modify: `../alia-plugin-git-history/README.md`
+- Modify: `../alia-plugin-git-history/CHANGELOG.md`
 
 **Interfaces:**
 - Consumes: verified implementation from Tasks 1–5.
@@ -486,7 +486,7 @@ Add a README section explaining root-repository behavior, bounded `repos/*` disc
 - [ ] **Step 2: Run the final immutable verification set**
 
 ```bash
-rtk bb plugin types --check
+rtk alia plugin types --check
 rtk npm test
 rtk npm run typecheck
 rtk npm run build
@@ -503,17 +503,17 @@ rtk git add README.md CHANGELOG.md
 rtk git commit -m "docs: describe multi-repository history"
 ```
 
-- [ ] **Step 4: Switch the live BB installation to the verified local checkout**
+- [ ] **Step 4: Switch the live VesnALIA installation to the verified local checkout**
 
 Capture current settings and source first:
 
 ```bash
-rtk bb plugin config git-history
-rtk bb plugin list --json
-rtk bb plugin install /Users/alexbart/.bb/personal-workspaces/env_82s8ksh6yi/bb-plugin-git-history --yes
-rtk bb plugin reload git-history
-rtk bb plugin config git-history
-rtk bb plugin list --json
+rtk alia plugin config git-history
+rtk alia plugin list --json
+rtk alia plugin install /Users/alexbart/.vesnalia/personal-workspaces/env_82s8ksh6yi/alia-plugin-git-history --yes
+rtk alia plugin reload git-history
+rtk alia plugin config git-history
+rtk alia plugin list --json
 ```
 
 Expected: `git-history` is running from the local path, its two existing settings retain their values, and its bundle reports SDK 0.4.47 compatibility. Do not remove the plugin as part of the switch because removal may discard plugin-owned data.
@@ -524,7 +524,7 @@ Open Git History on an ordinary thread and on a disposable Workspaces thread. Ve
 
 - [ ] **Step 6: Push and open the upstream pull request**
 
-Create `/tmp/bb-git-history-pr.md` with `apply_patch` using this body:
+Create `/tmp/alia-git-history-pr.md` with `apply_patch` using this body:
 
 ```markdown
 ## Summary
@@ -545,8 +545,8 @@ Then run:
 
 ```bash
 rtk git push -u origin feature/multi-repo-workspaces
-rtk gh pr create --repo yusuf8834/bb-git-history --base main --head alexbart:feature/multi-repo-workspaces --title "feat: support multi-repository thread workspaces" --body-file /tmp/bb-git-history-pr.md
-rtk gh pr checks --repo yusuf8834/bb-git-history
+rtk gh pr create --repo yusuf8834/alia-git-history --base main --head alexbart:feature/multi-repo-workspaces --title "feat: support multi-repository thread workspaces" --body-file /tmp/alia-git-history-pr.md
+rtk gh pr checks --repo yusuf8834/alia-git-history
 ```
 
 The PR body must summarize the generic discovery contract, confinement protections, single-repository compatibility, UI selector, and exact test/build commands. If GitHub refuses fork/push/PR creation, keep the local commits and provide `https://github.com/yusuf8834/bb-git-history/compare/main...alexbart:bb-git-history:feature/multi-repo-workspaces` plus the failure text.

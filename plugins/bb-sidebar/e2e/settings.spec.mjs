@@ -5,7 +5,7 @@ test("sidebar settings change snooze shortcuts and persist after reload", async 
   await reset(request);
   await open(page);
   await page.getByRole("button", { name: /^Settings \(/ }).click();
-  await page.getByRole("link", { name: "BB Sidebar", exact: true }).click();
+  await page.getByRole("link", { name: "VesnALIA Sidebar", exact: true }).click();
   const shortcuts = page.getByRole("textbox", { name: "Snooze shortcuts", exact: true });
   await expect(shortcuts).toHaveValue(fixture.defaultSettings.snoozePresets);
   await shortcuts.fill("E2E break=45m, 2h");

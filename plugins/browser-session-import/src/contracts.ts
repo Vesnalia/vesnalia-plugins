@@ -1,4 +1,4 @@
-import type { PluginRpcContract } from "@get-bb/plugin-sdk";
+import type { PluginRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const idSchema = z.string().min(1).max(256);

@@ -6,7 +6,7 @@
 // tests/attention-freeze.test.ts for the pin model itself.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Board } from "../components/board";
 import { ParentLaneBoard } from "../components/parent-lane-board";
 import { buildColumns } from "../components/grouping";

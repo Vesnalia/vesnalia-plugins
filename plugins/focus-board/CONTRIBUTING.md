@@ -15,7 +15,7 @@ Focus Board is MIT licensed. A contribution is accepted under the same license. 
 Use the **Bug report** form. A report needs these sections, in this order, and a section with nothing to say is filled with "None" or "None known", never dropped:
 
 1. Related issues or pull requests (number plus title)
-2. Environment (Focus Board version, bb version, OS, desktop app or browser)
+2. Environment (Focus Board version, VesnALIA version, OS, desktop app or browser)
 3. Reproduction steps (numbered, minimal, deterministic, starting from a known state)
 4. Expected result
 5. Actual result (error text and logs quoted verbatim in code blocks)
@@ -44,7 +44,7 @@ Describe the problem first, because the best fix is not always the feature you h
 
 ```bash
 git clone https://github.com/cristoslc/bb-plugin-focus-board.git
-cd bb-plugin-focus-board
+cd alia-plugin-focus-board
 git checkout dev
 npm ci
 ```
@@ -56,7 +56,7 @@ Never create or retarget a `node_modules` symlink, in the main checkout or in a 
 - `main` is the stable public branch. It only ever moves by fast-forward at release time. Never open a pull request against `main`.
 - `dev` is the integration branch. Branch from it, and open every pull request against it.
 - `dev` is also GitHub's default branch, so a new pull request defaults to the right base, and a `Fixes #N` link closes its issue when the pull request lands on `dev` (the fix reaches a shipped release at the next release).
-- Name your branch for the change: `fix-chip-overflow`, `add-group-filter`. Maintainer threads use `bb/<slug>-thr_<id>`, which you can ignore.
+- Name your branch for the change: `fix-chip-overflow`, `add-group-filter`. Maintainer threads use `alia/<slug>-thr_<id>`, which you can ignore.
 - Fork the repo if you do not have write access. Rebase onto the latest `origin/dev` before you open the pull request, never after:
 
 ```bash
@@ -111,7 +111,7 @@ Using an AI agent to write code, tests, or reports is fine. The rules are the sa
 
 - A person is accountable for every contribution. That person has read the diff and run the checks.
 - Disclose agent involvement in the pull request or issue. The templates have a field for it.
-- Any issue, pull request, or comment written wholly or mostly by an agent ends with the signature line `> AGENT GENERATED CONTENT`, as a markdown blockquote on its own last line, like bb adds to agent-written threads. The line goes on the written content itself, not a commit message or checklist field.
+- Any issue, pull request, or comment written wholly or mostly by an agent ends with the signature line `> AGENT GENERATED CONTENT`, as a markdown blockquote on its own last line, like VesnALIA adds to agent-written threads. The line goes on the written content itself, not a commit message or checklist field.
 - Do not paste unverified agent output. A bug report needs a real reproduction. A fix needs a test that failed first.
 - Agents must not mark a pull request ready for review, request reviewers, merge, or close issues unless the person they work for says to.
 - Agents must read [AGENTS.md](AGENTS.md) and the files it links before touching the repo.

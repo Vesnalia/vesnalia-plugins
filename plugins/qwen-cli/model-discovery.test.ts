@@ -80,7 +80,7 @@ test("both launch shapes merge policy and custom metadata without storing creden
     await mkdir(join(root, ".qwen"));
     await writeFile(join(root, ".qwen", "settings.json"), JSON.stringify({ modelProviders: { openai: [{ baseUrl: base }] } }));
     const published = process.env.QWEN_CODE_SYSTEM_SETTINGS_PATH;
-    assert.ok(published && published.includes("bb-qwen-models-"), "success path publishes the overlay env to the worker");
+    assert.ok(published && published.includes("alia-qwen-models-"), "success path publishes the overlay env to the worker");
     assert.equal(await prepareModelOverlay(request), request);
     await writeFile(system, '{"env":{"SYSTEM_POLICY":"preserve-precedence"}}');
     assert.equal(await prepareModelOverlay(request), request);

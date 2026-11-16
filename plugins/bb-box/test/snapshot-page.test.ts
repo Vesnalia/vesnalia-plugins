@@ -187,7 +187,7 @@ test("the take check plans and refuses as a take would, and changes nothing", as
   assert.equal(await checks.why(box), null, "a changed setting reads the plan again");
 });
 
-test("the box page's view: counts, rows newest first, the restore's notice for 24 hours with its undo, and a restore BB Box could not confirm", async () => {
+test("the box page's view: counts, rows newest first, the restore's notice for 24 hours with its undo, and a restore VesnALIA Box could not confirm", async () => {
   const state = world();
   const box = await readyBox(state);
   await state.snapshots.take(COMMAND, box, standing(box), { name: "older" });
@@ -318,7 +318,7 @@ test("the page's view keeps a failed restore with its reason for 24 hours, a res
   state.guard = { threads: [], threadsUnread: null, control: false, terminals: 2 };
   const moved = await restorePreview(state.snapshots, box, "one");
   assert.notEqual(moved.token, first.token, "a terminal opened since changes it");
-  assert.deepEqual(moved.check?.anyway, ["2 BB terminals are open on it"]);
+  assert.deepEqual(moved.check?.anyway, ["2 VesnALIA terminals are open on it"]);
   state.guard = { threads: [], threadsUnread: null, control: false, terminals: 0 };
 
   const transports = state.backend.transports.bind(state.backend);

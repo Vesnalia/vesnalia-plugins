@@ -1,12 +1,12 @@
-// bb-plugin-higgsfield — credits balance and consumption dashboard.
+// alia-plugin-higgsfield — credits balance and consumption dashboard.
 //
 // Auth is delegated to the Higgsfield CLI (`higgsfield auth login`, OAuth 2.0
 // PKCE in the browser — pick "Continue with Google" there). The host worker
 // (host.ts) runs the CLI on the user's machine; this server entry turns its
 // JSON into one dashboard payload shared by the sidebar page (app.tsx), the
-// `bb higgsfield` CLI, and agents (skills/higgsfield-usage). Range-dependent
+// `alia higgsfield` CLI, and agents (skills/higgsfield-usage). Range-dependent
 // numbers are computed with `summarize()` from normalize.ts on both sides.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { hostContract, hostSignals, type CliResult } from "./contract.js";
 import {
@@ -90,8 +90,8 @@ const DAY_MS = 86_400_000;
 
 const emptyForecast = forecast({ transactions: [], credits: null, cycle: null });
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     cliPath: {
       type: "string",
       label: "Higgsfield CLI path",
@@ -111,23 +111,23 @@ export default async function plugin(bb: BbPluginApi) {
   settings.onChange((next) => {
     current = next;
     cache = null;
-    bb.realtime.publish(CHANGED, { reason: "settings" });
+    alia.realtime.publish(CHANGED, { reason: "settings" });
   });
 
-  const host = bb.hosts.experimental_client({
+  const host = alia.hosts.experimental_client({
     contract: hostContract,
     experimental_signals: hostSignals,
   });
   host.experimental_onSignal("authChanged", ({ payload }) => {
-    bb.log.info(`auth changed: ${payload.message}`);
+    alia.log.info(`auth changed: ${payload.message}`);
     cache = null;
-    bb.realtime.publish(CHANGED, { reason: "auth" });
+    alia.realtime.publish(CHANGED, { reason: "auth" });
   });
 
   async function hostId(): Promise<string> {
-    const config = await bb.sdk.system.config();
+    const config = await alia.sdk.system.config();
     if (config.primaryHostId === null) {
-      throw new Error("This BB server has no local host to run the Higgsfield CLI on.");
+      throw new Error("This VesnALIA server has no local host to run the Higgsfield CLI on.");
     }
     return config.primaryHostId;
   }
@@ -138,7 +138,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
   /** Model name → media type from `higgsfield model list`, cached for 12h. */
   async function modelCatalog(id: string): Promise<ModelCatalog> {
-    const stored = storedCatalogSchema.safeParse(await bb.storage.kv.get<unknown>(CATALOG_KEY));
+    const stored = storedCatalogSchema.safeParse(await alia.storage.kv.get<unknown>(CATALOG_KEY));
     if (stored.success && Date.now() - stored.data.at < CATALOG_TTL_MS) {
       return stored.data.catalog;
     }
@@ -150,7 +150,7 @@ export default async function plugin(bb: BbPluginApi) {
     );
     const catalog = buildCatalog(Object.fromEntries(results) as Partial<Record<Media, unknown>>);
     if (Object.keys(catalog).length > 0) {
-      await bb.storage.kv.set(CATALOG_KEY, { at: Date.now(), catalog });
+      await alia.storage.kv.set(CATALOG_KEY, { at: Date.now(), catalog });
       return catalog;
     }
     return stored.success ? stored.data.catalog : {};
@@ -166,7 +166,7 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<Record<string, number>> {
     const stored = z
       .record(z.string(), z.number())
-      .safeParse(await bb.storage.kv.get<unknown>(SLOTS_KEY));
+      .safeParse(await alia.storage.kv.get<unknown>(SLOTS_KEY));
     const since = (iso: string) => transactions.filter((tx) => tx.at !== null && tx.at >= iso);
     const recent = cycleStart ?? new Date(Date.now() - 30 * DAY_MS).toISOString();
     const ranked = [
@@ -176,7 +176,7 @@ export default async function plugin(bb: BbPluginApi) {
       ]),
     ];
     const next = assignSlots(stored.success ? stored.data : {}, ranked);
-    await bb.storage.kv.set(SLOTS_KEY, next);
+    await alia.storage.kv.set(SLOTS_KEY, next);
     return next;
   }
 
@@ -245,7 +245,7 @@ export default async function plugin(bb: BbPluginApi) {
     const account = normalizeAccount(status.data);
     const warnings: string[] = [];
     if (account.credits === null) {
-      warnings.push("Could not find a credit balance in `higgsfield account status`. Run `bb higgsfield raw status` to inspect it.");
+      warnings.push("Could not find a credit balance in `higgsfield account status`. Run `alia higgsfield raw status` to inspect it.");
     }
 
     const since = new Date(Date.now() - HISTORY_DAYS * DAY_MS);
@@ -312,13 +312,13 @@ export default async function plugin(bb: BbPluginApi) {
   async function logout() {
     const result = await host.call("logout", { binary: current.cliPath }, { hostId: await hostId() });
     cache = null;
-    bb.realtime.publish(CHANGED, { reason: "auth" });
+    alia.realtime.publish(CHANGED, { reason: "auth" });
     return result.ok
       ? { ok: true, message: "Signed out of Higgsfield." }
       : { ok: false, message: result.message };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     dashboard: (input) => dashboard(input?.force === true),
     login: () => login(),
     logout: () => logout(),
@@ -351,7 +351,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  registerCli(bb, { dashboard, login, logout, raw });
+  registerCli(alia, { dashboard, login, logout, raw });
 }
 
 // ---------------------------------------------------------------------- CLI
@@ -379,7 +379,7 @@ function rangeFrom(range: string, d: Dashboard): Date | null {
 function notReadyText(d: Dashboard): string {
   const hint =
     d.state === "signed-out"
-      ? "\nRun `bb higgsfield login` (or `higgsfield auth login`) to sign in."
+      ? "\nRun `alia higgsfield login` (or `higgsfield auth login`) to sign in."
       : "";
   return `Higgsfield: ${d.state}${d.message === null ? "" : ` — ${d.message}`}${hint}`;
 }
@@ -434,29 +434,29 @@ function truncate(text: string, max = 60_000): string {
   return text.length <= max ? text : `${text.slice(0, max)}\n… (truncated)`;
 }
 
-function registerCli(bb: BbPluginApi, deps: CliDeps) {
+function registerCli(alia: AliaPluginApi, deps: CliDeps) {
   const usage = [
     "Usage:",
-    "  bb higgsfield status [--refresh] [--json]   Balance, reset, burn, forecast, per-model summary",
-    "  bb higgsfield models [--range cycle|7d|30d|90d] [--json]   Generations and credits per model",
-    "  bb higgsfield transactions [--limit N] [--json]",
-    "  bb higgsfield jobs [--limit N] [--json]",
-    "  bb higgsfield login                          Start browser sign-in (Google works)",
-    "  bb higgsfield logout",
-    "  bb higgsfield raw <status|transactions [cursor]|jobs|workspace|models [kind]>",
+    "  VesnALIA higgsfield status [--refresh] [--json]   Balance, reset, burn, forecast, per-model summary",
+    "  VesnALIA higgsfield models [--range cycle|7d|30d|90d] [--json]   Generations and credits per model",
+    "  VesnALIA higgsfield transactions [--limit N] [--json]",
+    "  VesnALIA higgsfield jobs [--limit N] [--json]",
+    "  VesnALIA higgsfield login                          Start browser sign-in (Google works)",
+    "  VesnALIA higgsfield logout",
+    "  VesnALIA higgsfield raw <status|transactions [cursor]|jobs|workspace|models [kind]>",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "higgsfield",
     summary: "Higgsfield credits, consumption, and sign-in",
     commands: [
-      { name: "status", summary: "Credits, next reset, burn rate, forecast", usage: "bb higgsfield status [--refresh] [--json]" },
-      { name: "models", summary: "Generations and credits per model", usage: "bb higgsfield models [--range cycle|7d|30d|90d] [--json]" },
-      { name: "transactions", summary: "List recent credit transactions", usage: "bb higgsfield transactions [--limit N] [--json]" },
-      { name: "jobs", summary: "List recent generation jobs", usage: "bb higgsfield jobs [--limit N] [--json]" },
-      { name: "login", summary: "Sign in through the browser", usage: "bb higgsfield login" },
-      { name: "logout", summary: "Sign out", usage: "bb higgsfield logout" },
-      { name: "raw", summary: "Print raw CLI JSON for debugging", usage: "bb higgsfield raw <status|transactions|jobs|workspace|models>" },
+      { name: "status", summary: "Credits, next reset, burn rate, forecast", usage: "alia higgsfield status [--refresh] [--json]" },
+      { name: "models", summary: "Generations and credits per model", usage: "alia higgsfield models [--range cycle|7d|30d|90d] [--json]" },
+      { name: "transactions", summary: "List recent credit transactions", usage: "alia higgsfield transactions [--limit N] [--json]" },
+      { name: "jobs", summary: "List recent generation jobs", usage: "alia higgsfield jobs [--limit N] [--json]" },
+      { name: "login", summary: "Sign in through the browser", usage: "alia higgsfield login" },
+      { name: "logout", summary: "Sign out", usage: "alia higgsfield logout" },
+      { name: "raw", summary: "Print raw CLI JSON for debugging", usage: "alia higgsfield raw <status|transactions|jobs|workspace|models>" },
     ],
     async run(argv) {
       const json = argv.includes("--json");

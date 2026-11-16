@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   definePluginApp,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRpc,
   type ExperimentalThreadTabProps,
   type PluginNavPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 // Statically imported so the explorer's folder/file glyphs paint on the first
 // frame instead of flashing empty while the extended registry loads.
@@ -28,8 +28,8 @@ const LAST_SCOPE_KEY = "files-editor:last-scope";
  * file, so back/forward walk the files you opened and a link survives a reload.
  */
 function FilesPage({ subPath }: PluginNavPanelProps) {
-  const navigate = useBbNavigate();
-  const context = useBbContext();
+  const navigate = useAliaNavigate();
+  const context = useAliaContext();
   const rpc = useRpc<typeof rpcContract>();
   const route = useMemo(() => parseRoute(subPath), [subPath]);
 
@@ -76,7 +76,7 @@ function FilesPage({ subPath }: PluginNavPanelProps) {
   const onOpenPath = useCallback(
     (path: string | null) => {
       if (scope === null) return;
-      // Compare structurally, not against `subPath`: BB hands the subPath back
+      // Compare structurally, not against `subPath`: VesnALIA hands the subPath back
       // percent-encoded while formatRoute writes raw segments, so a string
       // compare misses for any path with a space, bracket or non-ASCII name and
       // pushes a duplicate history entry every time that tab is clicked.
@@ -163,7 +163,7 @@ function storeLastScope(scope: ScopeRef): void {
 
 /**
  * Rendered on the plugin's own page in Tools, beside the declarative settings.
- * BB has no manifest field for a screenshot, so a plugin that wants to show
+ * VesnALIA has no manifest field for a screenshot, so a plugin that wants to show
  * what it looks like has to draw its own section.
  */
 function PreviewSection() {

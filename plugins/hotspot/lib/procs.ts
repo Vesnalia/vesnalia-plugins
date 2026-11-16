@@ -1,5 +1,5 @@
 /**
- * The process table, attributed to BB threads.
+ * The process table, attributed to VesnALIA threads.
  *
  * Adapted from Ballast's `lib/procs.ts`
  * (https://github.com/braedonsaunders/bb-plugin-ballast).
@@ -8,8 +8,8 @@
  * Changes from the original: memory classification, kill-candidate rules and
  * byte formatting are gone (the sampler never touches a process; the kill
  * rules live in lib/kill.ts; resident memory is only summed per thread). `ps` also
- * prints each process's environment (`-E`), because BB exports
- * `BB_THREAD_ID` to every agent it launches and almost nothing else carries
+ * prints each process's environment (`-E`), because VesnALIA exports
+ * `ALIA_THREAD_ID` to every agent it launches and almost nothing else carries
  * the id. A bare `thr_…` anywhere in argv no longer counts, only a worktree
  * path. A process with no id of its own inherits its nearest ancestor's, so
  * a compiler forked by an agent is billed to that agent's thread. Rows are
@@ -49,7 +49,7 @@ export const systemProcessSource: ProcessSource = {
     return stdout;
   },
   async readEnviron(pid) {
-    // Only readable for processes this user owns, which covers BB's own.
+    // Only readable for processes this user owns, which covers VesnALIA's own.
     return readFile(`/proc/${pid}/environ`, "utf8").catch(() => null);
   },
   async readStat(pid) {
@@ -88,7 +88,7 @@ export interface ProcessRow {
    */
   key: string | null;
   /**
-   * argv[0]'s basename, for the rules that recognise BB, terminals and
+   * argv[0]'s basename, for the rules that recognise VesnALIA, terminals and
    * shells. It may hold more of the command line, so it is never shown:
    * every name shown, stored or returned is `label`.
    */
@@ -97,8 +97,8 @@ export interface ProcessRow {
   label: string;
   /** The thread named by this process itself (environment or argv). */
   threadId: string | null;
-  /** One of BB's own processes (isBbCommand). */
-  bb: boolean;
+  /** One of VesnALIA's own processes (isAliaCommand). */
+  alia: boolean;
   /** The command line without the environment. Kept in memory for naming (lib/proc-name.ts); never stored or sent. */
   argv: string;
 }
@@ -112,12 +112,12 @@ export interface ThreadCpu {
 }
 
 /**
- * BB's own processes: the app, its helpers, its server and daemons (all
- * `bb.app/Contents/…` on macOS), bridges and the `bb` CLI. The kill rules
- * treat these as walls (lib/kill.ts); the BB total counts them as the app.
+ * VesnALIA's own processes: the app, its helpers, its server and daemons (all
+ * `alia.app/Contents/…` on macOS), bridges and the `VesnALIA` CLI. The kill rules
+ * treat these as walls (lib/kill.ts); the VesnALIA total counts them as the app.
  */
-export function isBbCommand(argv: string, name: string): boolean {
-  return /\/bb\.app\/Contents\//i.test(argv) || /^bb(?: Helper\b.*)?$/i.test(name);
+export function isAliaCommand(argv: string, name: string): boolean {
+  return /\/alia\.app\/Contents\//i.test(argv) || /^alia(?: Helper\b.*)?$/i.test(name);
 }
 
 /**
@@ -133,16 +133,16 @@ export function splitEnvironment(command: string): { argv: string; env: string }
   return { argv: command.slice(0, boundary.index), env: command.slice(boundary.index + 1) };
 }
 
-const ENV_THREAD = /(?:^|[\s\0])BB_THREAD_ID=(thr_[a-z0-9]{8,})(?![a-z0-9])/;
-/** A thread id as a path segment directly under a BB worktree or workspace directory. */
+const ENV_THREAD = /(?:^|[\s\0])ALIA_THREAD_ID=(thr_[a-z0-9]{8,})(?![a-z0-9])/;
+/** A thread id as a path segment directly under a VesnALIA worktree or workspace directory. */
 const WORKTREE_THREAD = /\/(?:worktrees|workspaces)\/(thr_[a-z0-9]{8,})(?:-\d+)?(?=\/|\s|$)/;
 
 /**
- * The BB thread a process names itself, if any.
+ * The VesnALIA thread a process names itself, if any.
  *
- * `BB_THREAD_ID` in the process's own environment wins: BB exports it to
+ * `ALIA_THREAD_ID` in the process's own environment wins: VesnALIA exports it to
  * every agent it launches, and children inherit it. Otherwise only a
- * worktree path in argv counts (BB names each worktree after its thread). A
+ * worktree path in argv counts (VesnALIA names each worktree after its thread). A
  * bare `thr_…` in argv (`grep thr_x`) or a path in some other variable
  * (`PWD`, `OLDPWD`) names nothing.
  */
@@ -196,7 +196,7 @@ export function parsePsLine(line: string): ProcessRow | null {
     name,
     label: friendlyName(argv),
     threadId: parseThreadId(command),
-    bb: isBbCommand(argv, name),
+    alia: isAliaCommand(argv, name),
     argv,
   };
 }
@@ -215,7 +215,7 @@ export function parsePs(stdout: string): ProcessRow[] {
  * environments. Throws when `ps` itself fails.
  *
  * Environments are only visible for processes owned by the same user, which
- * is every process BB launches. Root daemons simply carry no thread id.
+ * is every process VesnALIA launches. Root daemons simply carry no thread id.
  */
 export async function readProcesses(
   source: ProcessSource = systemProcessSource,
@@ -243,7 +243,7 @@ export async function readProcesses(
         name: processName(argv),
         label: friendlyName(argv),
         threadId: threadIdFrom(argv, env),
-        bb: isBbCommand(argv, processName(argv)),
+        alia: isAliaCommand(argv, processName(argv)),
         argv,
       };
     }),
@@ -258,7 +258,7 @@ type AttributableRow = Pick<ProcessRow, "pid" | "ppid" | "threadId">;
  *
  * Walking up is what bills `node vitest` to the agent that ran it even when
  * the test runner was started with a relative path and an environment that
- * dropped `BB_THREAD_ID`.
+ * dropped `ALIA_THREAD_ID`.
  */
 export function attributeThreads(rows: AttributableRow[]): Map<number, string | null> {
   const byPid = new Map<number, AttributableRow>();
@@ -295,7 +295,7 @@ export function attributeThreads(rows: AttributableRow[]): Map<number, string | 
   return resolved;
 }
 
-/** Regroup the process table by BB thread, busiest first. */
+/** Regroup the process table by VesnALIA thread, busiest first. */
 export function groupByThread(
   rows: ProcessRow[],
   attribution: Map<number, string | null> = attributeThreads(rows),
@@ -334,21 +334,21 @@ export interface ProcessTotal {
 }
 
 /**
- * Everything BB is running, in two parts that never overlap: `threads` is
- * every process attributed to a BB thread (attributeThreads), and `app` is
- * every other process of BB's own (isBbCommand). A BB process that carries
- * a thread's id, such as the `bb` CLI an agent runs, counts in its thread.
- * Processes that are neither, including children of BB that no thread
+ * Everything VesnALIA is running, in two parts that never overlap: `threads` is
+ * every process attributed to a VesnALIA thread (attributeThreads), and `app` is
+ * every other process of VesnALIA's own (isAliaCommand). A VesnALIA process that carries
+ * a thread's id, such as the `VesnALIA` CLI an agent runs, counts in its thread.
+ * Processes that are neither, including children of VesnALIA that no thread
  * claims, are left out.
  */
-export function bbTotals(
-  rows: readonly Pick<ProcessRow, "pid" | "cpuPercent" | "rssBytes" | "bb">[],
+export function aliaTotals(
+  rows: readonly Pick<ProcessRow, "pid" | "cpuPercent" | "rssBytes" | "alia">[],
   attribution: Map<number, string | null>,
 ): { app: ProcessTotal; threads: ProcessTotal } {
   const app: ProcessTotal = { cpuPercent: 0, rssBytes: 0, processes: 0 };
   const threads: ProcessTotal = { cpuPercent: 0, rssBytes: 0, processes: 0 };
   for (const row of rows) {
-    const part = (attribution.get(row.pid) ?? null) !== null ? threads : row.bb ? app : null;
+    const part = (attribution.get(row.pid) ?? null) !== null ? threads : row.alia ? app : null;
     if (part === null) continue;
     part.cpuPercent += row.cpuPercent;
     part.rssBytes += row.rssBytes;

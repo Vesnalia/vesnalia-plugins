@@ -15,11 +15,11 @@ test("a build's whole output goes to its own file, and only a step's first line 
     "#14 12.4 Get:318 https://snapshot.ubuntu.com/ubuntu resolute/main amd64 fonts-noto-cjk",
     "#14 [linux 4/9] RUN apt-get update",
     "#14 DONE 98.1s",
-    "#15 [linux 5/9] COPY docker/start /usr/local/sbin/bb-box-start",
+    "#15 [linux 5/9] COPY docker/start /usr/local/sbin/alia-box-start",
     "\u001b[1mbuilt bbbox/linux:1\u001b[0m",
     "",
   ].map((line) => log.write(line));
-  assert.deepEqual(given, ["#14 [linux 4/9] RUN apt-get update", null, null, null, null, "#15 [linux 5/9] COPY docker/start /usr/local/sbin/bb-box-start", "built bbbox/linux:1", null]);
+  assert.deepEqual(given, ["#14 [linux 4/9] RUN apt-get update", null, null, null, null, "#15 [linux 5/9] COPY docker/start /usr/local/sbin/alia-box-start", "built bbbox/linux:1", null]);
   assert.equal(readFileSync(log.path, "utf8").split("\n").filter(Boolean).length, 7, "every line but the empty one is in the file");
   assert.match(log.path, /bbbox-linux-1-2026-10-25T18-00-00-000Z\.log$/);
 });

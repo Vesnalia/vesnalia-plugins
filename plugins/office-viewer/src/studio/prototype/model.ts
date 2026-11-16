@@ -5,7 +5,7 @@ import { localizeProps } from "../localize.ts";
 import { normalizePageElements } from "./containers.ts";
 import type { Interaction } from "./interactions.ts";
 
-export const WIREFRAME_FORMAT = "bb-wireframe" as const;
+export const WIREFRAME_FORMAT = "alia-wireframe" as const;
 export const WIREFRAME_VERSION = 2;
 export const WIREFRAME_VERSION_LEGACY = 1;
 export const SNAP = 8;

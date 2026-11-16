@@ -75,7 +75,7 @@ describe("artifact store", () => {
   });
 });
 
-describe("artifact size line (bb study bench)", () => {
+describe("artifact size line (VesnALIA study bench)", () => {
   it("says a cleanup deleted nothing instead of a size", async () => {
     const { artifactLine } = await import("../src/cli.ts");
     const base = { seeds: { files: 1, bytes: 2048 }, bases: { files: 1, bytes: 2048 }, study: { files: 2, bytes: 4096 } };

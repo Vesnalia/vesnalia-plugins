@@ -1,5 +1,5 @@
-// Install guard: bb installs git plugins with `npm install --omit=dev` and then
-// rebuilds dist/ from the bb.server and bb.app entries. Every package those
+// Install guard: VesnALIA installs git plugins with `npm install --omit=dev` and then
+// rebuilds dist/ from the alia.server and alia.app entries. Every package those
 // entries import at runtime must therefore be a production dependency, or the
 // install fails with "Could not resolve" (issue #1: zod sat in devDependencies).
 import assert from "node:assert/strict";
@@ -12,12 +12,12 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 
-// Supplied by the bb host at runtime, never bundled from node_modules. The
-// frontend packages below are runtime-shimmed by bb (dist/app.meta.json lists
-// them as runtimeSlots), so `bb plugin types` pins them as type-only
+// Supplied by the VesnALIA host at runtime, never bundled from node_modules. The
+// frontend packages below are runtime-shimmed by VesnALIA (dist/app.meta.json lists
+// them as runtimeSlots), so `alia plugin types` pins them as type-only
 // devDependencies.
 const HOST_PROVIDED = new Set([
-  "@get-bb/plugin-sdk",
+  "@vesnalia/plugin-sdk",
   "react",
   "react-dom",
   "@radix-ui/react-alert-dialog",
@@ -81,10 +81,10 @@ function runtimePackages(entries: string[]): { found: Map<string, string>; unres
 }
 
 describe("runtime dependencies", () => {
-  const entries = [pkg.bb.server, pkg.bb.app].filter(Boolean);
+  const entries = [pkg.alia.server, pkg.alia.app].filter(Boolean);
   const { found: packages, unresolved } = runtimePackages(entries);
 
-  it("walks the whole bb.server and bb.app import graph", () => {
+  it("walks the whole alia.server and alia.app import graph", () => {
     assert.deepEqual(entries, ["./server.ts", "./app.tsx"]);
     assert.deepEqual(unresolved, [], "the walker could not follow these local imports");
     assert.ok(packages.has("zod"), "expected server.ts to import zod");

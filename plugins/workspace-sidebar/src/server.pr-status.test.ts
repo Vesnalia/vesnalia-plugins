@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 
-type PullRequestResult = Awaited<ReturnType<BbPluginApi["sdk"]["environments"]["pullRequest"]>>;
+type PullRequestResult = Awaited<ReturnType<AliaPluginApi["sdk"]["environments"]["pullRequest"]>>;
 type AvailablePullRequest = Extract<PullRequestResult, { outcome: "available" }>["pullRequest"];
 
 function pullRequest(state: AvailablePullRequest["state"]): PullRequestResult {
@@ -43,14 +43,14 @@ async function setup(initial: PullRequestResult) {
     id: "thread", projectId: "project", environmentId: "environment", title: "Fix sidebar status",
   });
   const readPull = vi.fn(async () => initial);
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "workspace-sidebar",
     sdk: {
       threads: { list: async () => [thread], events: { list: async () => [] } },
       environments: { pullRequest: readPull },
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   return { harness, readPull };
 }
 
@@ -120,7 +120,7 @@ describe("sidebar CLI pull request status", () => {
 
   it("lists threads without an environment without attempting a PR lookup", async () => {
     const readPull = vi.fn();
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "workspace-sidebar",
       sdk: {
         threads: {
@@ -133,7 +133,7 @@ describe("sidebar CLI pull request status", () => {
       },
     });
     try {
-      await plugin(bb);
+      await plugin(alia);
       expect(await harness.behavior.runCli(["list", "--json"])).toMatchObject({
         exitCode: 0, stdout: JSON.stringify(listedRow("in-progress")),
       });
@@ -151,7 +151,7 @@ describe("sidebar CLI pull request status", () => {
         id: `thread-${i}`, projectId: "project", environmentId: `environment-${i}`,
       })),
     ];
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "workspace-sidebar",
       sdk: {
         threads: { list: async () => threads, events: { list: async () => [] } },
@@ -159,7 +159,7 @@ describe("sidebar CLI pull request status", () => {
       },
     });
     try {
-      await plugin(bb);
+      await plugin(alia);
       expect(await harness.behavior.runCli(["list", "--project", "project", "--json"])).toMatchObject({ exitCode: 0 });
       expect(readPull).toHaveBeenCalledTimes(200);
       expect(readPull).not.toHaveBeenCalledWith({ environmentId: "other-environment" });

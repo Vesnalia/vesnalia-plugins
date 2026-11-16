@@ -7,7 +7,7 @@ const rootDir = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   // Mirrors `paths: { "@/*": ["./*"] }` in tsconfig.json, which esbuild reads
-  // during `bb plugin build` but vitest does not.
+  // during `alia plugin build` but vitest does not.
   resolve: { alias: { "@": rootDir } },
   test: {
     include: ["**/*.test.ts"],

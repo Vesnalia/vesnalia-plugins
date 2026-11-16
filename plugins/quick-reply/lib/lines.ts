@@ -1,13 +1,13 @@
 // lib/lines.ts — splits a rendered agent reply into reviewable "lines".
 //
-// What: walks the HTML BB renders for an assistant message and returns the
+// What: walks the HTML VesnALIA renders for an assistant message and returns the
 //   elements a person would react to one by one, with their text.
 // Why: rendered Markdown has no fixed lines (wrapping depends on window
 //   width), so a "line" is a structural unit: a paragraph, a list item, a
 //   table row, or a code block. Headings and rules only organize the reply
 //   and get no controls.
 // Design notes:
-//   - Works on BB's DOM as it is today (observed on bb 0.46): the reply's
+//   - Works on VesnALIA's DOM as it is today (observed on VesnALIA 0.46): the reply's
 //     Markdown root is `[data-markdown-preview]`, and paragraphs, lists,
 //     tables, block quotes and code blocks are its descendants. Unknown
 //     wrapper elements are handled generically: a wrapper holding a code

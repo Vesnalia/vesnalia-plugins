@@ -1,22 +1,18 @@
 {
-  "name": "bb-plugin-browser-copy",
+  "name": "alia-plugin-browser-copy",
   "version": "0.2.3",
   "private": true,
   "type": "module",
-  "description": "Click any element in a BB Browser tab and copy it as text or an image.",
+  "description": "Click any element in a VesnALIA Browser tab and copy it as text or an image.",
   "author": {
     "name": "GantisStorm",
     "url": "https://github.com/GantisStorm"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/GantisStorm/bb-plugin-browser-copy.git"
-  },
   "engines": {
-    "bb": ">=0.42.2-0",
-    "bbPluginSdk": ">=0.4.48"
+    "alia": ">=0.42.2-0",
+    "aliaPluginSdk": ">=0.4.48"
   },
-  "bb": {
+  "alia": {
     "name": "Browser Copy",
     "description": "Click a Browser element and copy it as text or an image",
     "branding": {
@@ -35,7 +31,6 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.48",
     "@radix-ui/react-dropdown-menu": "^2.1.20",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -48,5 +43,22 @@
     "tailwind-merge": "^3.4.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.48"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/browser-copy#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/browser-copy"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

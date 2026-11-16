@@ -1,7 +1,7 @@
 name: Release
 
 # Tags and publishes a release whenever main has a package.json version
-# without a matching vX.Y.Z tag. The BB marketplace tracks those tags.
+# without a matching vX.Y.Z tag. The ALIA marketplace tracks those tags.
 on:
   push:
     branches: [main]
@@ -66,6 +66,6 @@ jobs:
           {
             echo "Released v$VERSION."
             echo
-            echo "BB users on the marketplace range pick this up as an update when it matches."
+            echo "ALIA users on the marketplace range pick this up as an update when it matches."
             echo "For 0.x, a new minor (0.4.0) needs the marketplace entry range raised to ^0.4.0."
           } >> "$GITHUB_STEP_SUMMARY"

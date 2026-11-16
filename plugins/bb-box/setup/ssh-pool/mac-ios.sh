@@ -8,12 +8,12 @@ ROOT=
 
 die() { printf 'mac-ios.sh: %s\n' "$*" >&2; exit 1; }
 step() { printf 'mac-ios.sh: %s\n' "$*" >&2; }
-[ $# -eq 2 ] || die "usage: mac-ios.sh <the folder of setup-mac.sh> <bb-box's admin user>"
+[ $# -eq 2 ] || die "usage: mac-ios.sh <the folder of setup-mac.sh> <alia-box's admin user>"
 here=$1
 admin=$2
 ios=$here/../tart/ios
-share=/usr/local/share/bb-box
-libexec=/usr/local/libexec/bb-box
+share=/usr/local/share/alia-box
+libexec=/usr/local/libexec/alia-box
 helper=$libexec/device-host
 companion_root=/usr/local/lib
 
@@ -108,7 +108,7 @@ make_seed() {
   grep . "$ios/slim/$list.txt" | sort -u >"$sorted"
   step "making the seed for $list: the $model, made as $admin and slimmed twice, which takes a few minutes"
   simctl list devices >/dev/null 2>&1 || die "simctl did not run as $admin"
-  udid=$(simctl create "bb-box seed" "$type" "$runtime" | tail -n 1)
+  udid=$(simctl create "alia-box seed" "$type" "$runtime" | tail -n 1)
   case $udid in ????????-????-????-????-????????????) ;; *) die "simctl could not make a $model on $runtime as $admin" ;; esac
   made=no
   if boot_and_wait "$udid" && apply_list "$udid" "$sorted" && simctl shutdown "$udid" >/dev/null && boot_and_wait "$udid" && apply_list "$udid" "$sorted"; then
@@ -129,7 +129,7 @@ make_seed() {
 slot_clipboard_works() {
   model=$(head -n 1 "$ROOT$share/ios/devices.tsv" | cut -f 1)
   type=$(head -n 1 "$ROOT$share/ios/devices.tsv" | cut -f 2)
-  udid=$(simctl create "bb-box clipboard check" "$type" "$runtime" 2>/dev/null | tail -n 1)
+  udid=$(simctl create "alia-box clipboard check" "$type" "$runtime" 2>/dev/null | tail -n 1)
   case $udid in ????????-????-????-????-????????????) ;; *) echo "simctl could not make a $model as $admin to check it with"; return 1 ;; esac
   worked=no
   if boot_and_wait "$udid" >/dev/null 2>&1; then
@@ -165,15 +165,15 @@ install_companion
 install_software_encoder() {
   h264=$here/../android/build-h264.sh
   if [ ! -f "$h264" ]; then
-    step "found no setup/android beside setup/ssh-pool, so no bb-box-h264: iOS video here needs the Mac's hardware encoder"
+    step "found no setup/android beside setup/ssh-pool, so no alia-box-h264: iOS video here needs the Mac's hardware encoder"
     return 0
   fi
   if [ "${H264_WITH_X264:-no}" = yes ]; then
-    step "building bb-box-h264, with x264 from its pinned source, for iOS video should the Mac's hardware encoder fail"
-    bash "$h264" "$ROOT/usr/local" --with-x264 >&2 || die "bb-box-h264 did not build"
+    step "building alia-box-h264, with x264 from its pinned source, for iOS video should the Mac's hardware encoder fail"
+    bash "$h264" "$ROOT/usr/local" --with-x264 >&2 || die "alia-box-h264 did not build"
   else
-    step "building bb-box-h264, with Cisco's OpenH264, for iOS video should the Mac's hardware encoder fail"
-    bash "$h264" "$ROOT/usr/local" >&2 || die "bb-box-h264 did not build"
+    step "building alia-box-h264, with Cisco's OpenH264, for iOS video should the Mac's hardware encoder fail"
+    bash "$h264" "$ROOT/usr/local" >&2 || die "alia-box-h264 did not build"
   fi
 }
 install_software_encoder
@@ -188,10 +188,10 @@ set -- $(newest_ios_runtime)
 [ $# -eq 3 ] || die "Xcode has no iOS Simulator runtime: run xcodebuild -downloadPlatform iOS, then run setup-mac.sh again"
 runtime=$1 os=$2 build=$3
 list=ios-$os-$build
-[ -s "$ios/slim/$list.txt" ] || die "bb-box has no slimming list for iOS $os ($build), so it lends no iOS slot on this Mac: make one as docs/research/ios-simulator-slimming.md says, as setup/tart/ios/slim/$list.txt"
+[ -s "$ios/slim/$list.txt" ] || die "alia-box has no slimming list for iOS $os ($build), so it lends no iOS slot on this Mac: make one as docs/research/ios-simulator-slimming.md says, as setup/tart/ios/slim/$list.txt"
 install -m 0644 "$ios/slim/$list.txt" "$ROOT$share/ios/$list.txt"
 models_xcode_has >"$ROOT$share/ios/devices.tsv.new"
-[ -s "$ROOT$share/ios/devices.tsv.new" ] || die "this Mac's Xcode can make none of bb-box's devices in $ios/devices.tsv"
+[ -s "$ROOT$share/ios/devices.tsv.new" ] || die "this Mac's Xcode can make none of alia-box's devices in $ios/devices.tsv"
 chmod 0644 "$ROOT$share/ios/devices.tsv.new"
 mv -f "$ROOT$share/ios/devices.tsv.new" "$ROOT$share/ios/devices.tsv"
 seed=$ROOT$share/ios/$list.disabled.plist
@@ -208,10 +208,10 @@ chmod -R a+rX "$ROOT$share/ios" "$ROOT$share/slot-home"
 
 /bin/sh "$ROOT$helper" install </dev/null >/dev/null
 if [ -n "${HOST_SETTINGS:-}" ]; then
-  step "writing device-host's daemons and setting it up as a host bb-box deletes after its last box"
+  step "writing device-host's daemons and setting it up as a host alia-box deletes after its last box"
   printf '%s\n' "$HOST_SETTINGS" | /bin/sh "$ROOT$helper" init >/dev/null
 else
-  step "writing device-host's daemons and setting it up as a kept host, closed until bb-box opens it"
+  step "writing device-host's daemons and setting it up as a kept host, closed until alia-box opens it"
   printf 'kept=yes\nmost=12\nahead=1\nresetting-most=4\ndisk-reserve-gib=40\n' | /bin/sh "$ROOT$helper" init >/dev/null
 fi
 if [ -z "${HOST_SETTINGS:-}" ]; then

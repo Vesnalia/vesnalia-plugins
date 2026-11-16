@@ -160,6 +160,6 @@ test("REPRO: a thread that the shifting list skipped is read when the list is ta
   expect(found).toEqual([["t2", 5]]);
 });
 
-test("a completion without its root turn/started does not count, as BB does not end a run on it", () => {
+test("a completion without its root turn/started does not count, as VesnALIA does not end a run on it", () => {
   expect(result(message("orphan", 2), completed("orphan", 3))).toBeNull();
 });

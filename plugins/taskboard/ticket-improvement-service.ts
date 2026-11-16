@@ -1,4 +1,4 @@
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import type { z } from 'zod';
 import type { FactoryExecution } from './factory/contract.js';
 import { threadExecution } from './factory/native-dispatch.js';
@@ -12,7 +12,7 @@ type Record = Result & { threadId: string | null; startedAt: number };
 const prefix = 'ticket-improvement:';
 const timeout = 5 * 60_000;
 
-export function createTicketImprovementService(bb: Pick<BbPluginApi, 'sdk' | 'storage' | 'log'>) {
+export function createTicketImprovementService(alia: Pick<AliaPluginApi, 'sdk' | 'storage' | 'log'>) {
   const locks = new Map<string, Promise<unknown>>();
   const key = (input: Identity) => `${prefix}${JSON.stringify([input.projectId, input.requestId])}`;
   async function locked<T>(input: Identity, action: () => Promise<T>): Promise<T> {
@@ -21,9 +21,9 @@ export function createTicketImprovementService(bb: Pick<BbPluginApi, 'sdk' | 'st
     locks.set(id, next);
     try { return await next; } finally { if (locks.get(id) === next) locks.delete(id); }
   }
-  const read = (input: Identity) => bb.storage.kv.get<Record>(key(input));
+  const read = (input: Identity) => alia.storage.kv.get<Record>(key(input));
   async function save(input: Identity, record: Record) {
-    await bb.storage.kv.set(key(input), record);
+    await alia.storage.kv.set(key(input), record);
     return improvementResultSchema.parse({
       status: record.status, draft: record.draft, error: record.error
     });
@@ -31,12 +31,12 @@ export function createTicketImprovementService(bb: Pick<BbPluginApi, 'sdk' | 'st
   async function cleanup(record: Record, stop: boolean) {
     if (!record.threadId) return true;
     try {
-      if (stop) await bb.sdk.threads.stop({ threadId: record.threadId });
-      await bb.sdk.threads.archive({ threadId: record.threadId });
+      if (stop) await alia.sdk.threads.stop({ threadId: record.threadId });
+      await alia.sdk.threads.archive({ threadId: record.threadId });
       record.threadId = null;
       return true;
     } catch {
-      bb.log.warn(`Ticket improvement helper cleanup pending: ${record.threadId}`);
+      alia.log.warn(`Ticket improvement helper cleanup pending: ${record.threadId}`);
       return false;
     }
   }
@@ -54,9 +54,9 @@ export function createTicketImprovementService(bb: Pick<BbPluginApi, 'sdk' | 'st
     }
     if (input.contextThreadId) {
       try {
-        const context = await bb.sdk.threads.get({ threadId: input.contextThreadId });
+        const context = await alia.sdk.threads.get({ threadId: input.contextThreadId });
         if (context.projectId === input.projectId && !context.deletedAt && !context.archivedAt) {
-          const threadDefaults = await bb.sdk.threads.defaultExecutionOptions({ threadId: context.id });
+          const threadDefaults = await alia.sdk.threads.defaultExecutionOptions({ threadId: context.id });
           if (threadDefaults) {
             return {
               ...threadExecution(context.providerId, threadDefaults),
@@ -71,7 +71,7 @@ export function createTicketImprovementService(bb: Pick<BbPluginApi, 'sdk' | 'st
         // Fall through to project defaults when the thread settings are unavailable.
       }
     }
-    return bb.sdk.projects.defaultExecutionOptions({ projectId: input.projectId });
+    return alia.sdk.projects.defaultExecutionOptions({ projectId: input.projectId });
   }
   return {
     start(input: Identity & {
@@ -92,7 +92,7 @@ export function createTicketImprovementService(bb: Pick<BbPluginApi, 'sdk' | 'st
         };
         await save(input, record);
         try {
-          const thread = await bb.sdk.threads.spawn({
+          const thread = await alia.sdk.threads.spawn({
             ...execution,
             projectId: input.projectId,
             environment: { type: 'project-default' },
@@ -123,10 +123,10 @@ export function createTicketImprovementService(bb: Pick<BbPluginApi, 'sdk' | 'st
           await cleanup(record, true);
           return save(input, record);
         }
-        const thread = await bb.sdk.threads.get({ threadId: record.threadId });
+        const thread = await alia.sdk.threads.get({ threadId: record.threadId });
         if (thread.projectId !== input.projectId) throw new Error('Helper project mismatch.');
         if (thread.status === 'idle') {
-          const { output } = await bb.sdk.threads.output({ threadId: record.threadId });
+          const { output } = await alia.sdk.threads.output({ threadId: record.threadId });
           if (!output) return save(input, record);
           try {
             record.draft = parseTicketImprovement(output);
@@ -162,7 +162,7 @@ export function createTicketImprovementService(bb: Pick<BbPluginApi, 'sdk' | 'st
       });
     },
     async sweep() {
-      for (const id of await bb.storage.kv.list(prefix)) {
+      for (const id of await alia.storage.kv.list(prefix)) {
         const [projectId, requestId] = JSON.parse(id.slice(prefix.length)) as [string, string];
         const input = { projectId, requestId };
         await locked(input, async () => {
@@ -176,7 +176,7 @@ export function createTicketImprovementService(bb: Pick<BbPluginApi, 'sdk' | 'st
           if (record.status !== 'running' && record.threadId) await cleanup(record, true);
           await save(input, record);
           if (!record.threadId && Date.now() - record.startedAt > 24 * 60 * 60_000) {
-            await bb.storage.kv.delete(id);
+            await alia.storage.kv.delete(id);
           }
         });
       }

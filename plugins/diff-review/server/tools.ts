@@ -1,11 +1,11 @@
 /**
- * The `diff_review_*` agent tools, for the threads AI runs start. `bb.agents.configure` offers them only
+ * The `diff_review_*` agent tools, for the threads AI runs start. `alia.agents.configure` offers them only
  * to a thread whose plugin metadata names a run (`server.ts`); every call is then checked against the
- * store by the calling thread's id, which bb supplies, so a thread that set that metadata itself gains
- * nothing it could not already do with `bb diff-review`. Refusals come back as tool errors the agent
+ * store by the calling thread's id, which VesnALIA supplies, so a thread that set that metadata itself gains
+ * nothing it could not already do with `alia diff-review`. Refusals come back as tool errors the agent
  * can act on.
  */
-import type { BbPluginApi, PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginAgentToolResult } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { BODY_MAX_CHARS, GENERAL_PATH, describeLocation, severitySchema, sideSchema } from "../shared/types";
@@ -26,15 +26,15 @@ async function guarded(work: () => Promise<string>): Promise<PluginAgentToolResu
   }
 }
 
-export function registerTools(bb: BbPluginApi, review: ReviewService, runs: RunService): void {
-  // A run's thread can call in before bb has told the plugin which thread it is: bind it first.
+export function registerTools(alia: AliaPluginApi, review: ReviewService, runs: RunService): void {
+  // A run's thread can call in before VesnALIA has told the plugin which thread it is: bind it first.
   const forCaller = (threadId: string, work: () => Promise<string>) =>
     guarded(async () => {
       await runs.bindIfPending(threadId);
       return work();
     });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: TOOL.threads,
     description: "List the Diff Review comment threads you may answer (for an AI review, every thread of the review), with every comment.",
     presentation: { label: { pending: "Reading review threads", completed: "Read review threads" } },
@@ -46,7 +46,7 @@ export function registerTools(bb: BbPluginApi, review: ReviewService, runs: RunS
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: TOOL.comment,
     description:
       "Leave a review comment on lines of a file in the diff under review (AI review runs only). Lines are counted on the side given: `new` for added or kept code, `old` for removed code. startLine 0 comments on the whole file.",
@@ -73,7 +73,7 @@ export function registerTools(bb: BbPluginApi, review: ReviewService, runs: RunS
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: TOOL.generalComment,
     description: "Leave a review comment about the whole diff (AI review runs only).",
     presentation: { label: { pending: "Adding a review summary", completed: "Added a review summary" } },
@@ -91,7 +91,7 @@ export function registerTools(bb: BbPluginApi, review: ReviewService, runs: RunS
     { name: TOOL.dismiss, action: "dismiss", description: "Close a Diff Review comment thread you will not act on, with the reason.", what: "Why it needs no change", pending: "Dismissing a review thread", completed: "Dismissed a review thread" },
   ];
   for (const tool of answers) {
-    bb.agents.registerTool({
+    alia.agents.registerTool({
       name: tool.name,
       description: tool.description,
       presentation: { label: { pending: tool.pending, completed: tool.completed } },

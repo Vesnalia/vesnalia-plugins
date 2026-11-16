@@ -3,10 +3,10 @@ import { readFile } from "node:fs/promises";
 import { dirname, extname, join, posix, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import type {
-  BbPluginApi,
+  AliaPluginApi,
   PluginCliResult,
-} from "@get-bb/plugin-sdk";
-import { bbOfficeRpcContract } from "./office-config-contract";
+} from "@vesnalia/plugin-sdk";
+import { aliaOfficeRpcContract } from "./office-config-contract";
 import {
   type OfficeConfigToolParameters,
   type OfficeEdit,
@@ -24,7 +24,7 @@ export function resolveAssetDirectory(moduleUrl: string): string {
   if (existsSync(adjacentDirectory)) return adjacentDirectory;
   const parentDirectory = join(moduleDirectory, "..", "assets");
   if (existsSync(parentDirectory)) return parentDirectory;
-  throw new Error(`BB Office assets are missing beside ${moduleDirectory}`);
+  throw new Error(`VesnALIA Office assets are missing beside ${moduleDirectory}`);
 }
 
 const ASSET_DIRECTORY = resolveAssetDirectory(import.meta.url);
@@ -218,13 +218,13 @@ function parsePreviewArgs(argv: readonly string[]): {
 }
 
 const CLI_HELP = `Usage:
-  bb office show
-  bb office preview --revision N [changes]
-  bb office apply PROPOSAL_ID --revision N
-  bb office reset --revision N
+  VesnALIA office show
+  VesnALIA office preview --revision N [changes]
+  VesnALIA office apply PROPOSAL_ID --revision N
+  VesnALIA office reset --revision N
 
 Changes:
-  --appearance follow-bb|neutral|original
+  --appearance follow-alia|neutral|original
   --leave-after 5..240
   --meeting-relations same-worktree,siblings,parent-child|none
   --ambient rare|off
@@ -294,72 +294,72 @@ async function runCli(
         ),
       };
     }
-    throw new Error(`Unknown BB Office command ${command}`);
+    throw new Error(`Unknown VesnALIA Office command ${command}`);
   } catch (error) {
     return {
       exitCode: 1,
-      stderr: `${error instanceof Error ? error.message : "BB Office command failed"}\n`,
+      stderr: `${error instanceof Error ? error.message : "VesnALIA Office command failed"}\n`,
     };
   }
 }
 
-export default function bbOffice(bb: BbPluginApi) {
+export default function aliaOffice(alia: AliaPluginApi) {
   const officeConfig = createOfficeConfigModule({
-    kv: bb.storage.kv,
+    kv: alia.storage.kv,
     publish: (revision) => {
-      bb.realtime.publish("office-config-changed", { revision });
+      alia.realtime.publish("office-config-changed", { revision });
     },
   });
   const officeUsage = createOfficeUsageModule({
     usageLimits: ({ hostId, providerId }) =>
-      bb.sdk.system.usageLimits({
+      alia.sdk.system.usageLimits({
         ...(hostId === null ? {} : { hostId }),
         providerId,
       }),
   });
-  bb.rpc.register(bbOfficeRpcContract, {
+  alia.rpc.register(aliaOfficeRpcContract, {
     readOfficeConfig: () => officeConfig.read(),
     previewOfficeConfig: (command) => officeConfig.preview(command),
     applyOfficeConfig: (command) => officeConfig.apply(command),
     readOfficeUsage: (input) => officeUsage.read(input),
   });
-  bb.cli.register({
+  alia.cli.register({
     name: "office",
-    summary: "Inspect and safely customize the BB Office",
+    summary: "Inspect and safely customize the VesnALIA Office",
     commands: [
-      { name: "show", summary: "Show the current office configuration", usage: "bb office show" },
-      { name: "preview", summary: "Validate a proposed office change", usage: "bb office preview --revision N [changes]" },
-      { name: "apply", summary: "Apply a validated office proposal", usage: "bb office apply PROPOSAL_ID --revision N" },
-      { name: "reset", summary: "Preview a reset to the factory office", usage: "bb office reset --revision N" },
-      { name: "export", summary: "Export the portable office configuration", usage: "bb office export" },
+      { name: "show", summary: "Show the current office configuration", usage: "alia office show" },
+      { name: "preview", summary: "Validate a proposed office change", usage: "alia office preview --revision N [changes]" },
+      { name: "apply", summary: "Apply a validated office proposal", usage: "alia office apply PROPOSAL_ID --revision N" },
+      { name: "reset", summary: "Preview a reset to the factory office", usage: "alia office reset --revision N" },
+      { name: "export", summary: "Export the portable office configuration", usage: "alia office export" },
     ],
     run: (argv) => runCli(officeConfig, argv),
   });
-  bb.agents.registerTool({
-    name: "configure_bb_office",
+  alia.agents.registerTool({
+    name: "configure_alia_office",
     description:
-      "Inspect, preview, apply, or reset the global BB Office appearance, behavior, and decor. Always inspect first, preview changes, explain the exact proposal, and apply only after the user approves it.",
+      "Inspect, preview, apply, or reset the global VesnALIA Office appearance, behavior, and decor. Always inspect first, preview changes, explain the exact proposal, and apply only after the user approves it.",
     instructions:
       "Use action=inspect first. Use action=preview with expectedRevision and requested changes. Show the proposal summary to the user. Use action=apply with the returned proposalId and baseRevision only after approval. Use action=reset to preview factory defaults.",
     parameters: officeConfigToolParametersSchema,
     presentation: {
       label: {
-        pending: "Updating the BB Office",
-        completed: "Updated the BB Office",
+        pending: "Updating the VesnALIA Office",
+        completed: "Updated the VesnALIA Office",
       },
-      icon: { glyph: "bb-office/floor-plan" },
+      icon: { glyph: "alia-office/floor-plan" },
     },
     execute: (params) => runTool(officeConfig, params),
   });
-  bb.agents.configure(() => ({
-    tools: ["configure_bb_office"],
-    skills: ["bb-office-customization"],
+  alia.agents.configure(() => ({
+    tools: ["configure_alia_office"],
+    skills: ["alia-office-customization"],
   }));
   const assets = collectAssets(ASSET_DIRECTORY);
   for (const asset of assets) {
-    bb.http.route("GET", asset.routePath, () => assetResponse(asset));
+    alia.http.route("GET", asset.routePath, () => assetResponse(asset));
   }
-  bb.log.info(
-    `BB Office loaded the pinned Pixel Agents engine with ${assets.length} assets`,
+  alia.log.info(
+    `VesnALIA Office loaded the pinned Pixel Agents engine with ${assets.length} assets`,
   );
 }

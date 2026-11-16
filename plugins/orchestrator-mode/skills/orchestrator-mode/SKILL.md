@@ -1,6 +1,6 @@
 ---
 name: orchestrator-mode
-description: "Use when a thread is in orchestrator mode and must delegate every unit of work instead of doing it, or when the user asks to turn orchestrator mode on or off, check what direct work a thread did, or change how new threads start. Covers the composer toggle and the `bb orchestrator-mode` CLI."
+description: "Use when a thread is in orchestrator mode and must delegate every unit of work instead of doing it, or when the user asks to turn orchestrator mode on or off, check what direct work a thread did, or change how new threads start. Covers the composer toggle and the `alia orchestrator-mode` CLI."
 ---
 
 # Orchestrator mode
@@ -11,7 +11,7 @@ actual work goes to a worker thread.
 
 ## Recognise it
 
-The composer shows a delegation icon, which BB may group under More plugin
+The composer shows a delegation icon, which VesnALIA may group under More plugin
 actions. While the mode is on, a strip above the input names the enforcement
 level and any direct work already caught. The thread's own instructions carry
 the full contract, so if you are reading an "# ORCHESTRATOR MODE IS ON" block,
@@ -20,17 +20,17 @@ the mode is on for you.
 ## Commands
 
 ```
-bb orchestrator-mode status [--thread <id>] [--json]
-bb orchestrator-mode delegate --task <brief> [--title <title>] [--provider <id>] [--model <id>] [--no-wait] [--timeout <seconds>] [--hidden] [--thread <id>] [--json]
-bb orchestrator-mode on [--thread <id>] [--enforcement instruct|guard|block] [--json]
-bb orchestrator-mode off [--thread <id>] [--json]
-bb orchestrator-mode violations [--thread <id>] [--clear] [--json]
-bb orchestrator-mode default [on|off] [--json]
-bb orchestrator-mode worker [--provider <id>] [--model <id>] [--preset <name>] [--json]
-bb orchestrator-mode contract [--thread <id>] [--rules <text>] [--clear-rules] [--json]
-bb orchestrator-mode scope [--project <id>] [--max-parallel <n>] [--inherit <key>] [--inherit-all] [--json]
-bb orchestrator-mode scope --global|--project <id> [--child-messages queued|immediate] [--json]
-bb orchestrator-mode scope --global|--project <id> [--orchestrator-subagents read-only|all|none] [--worker-subagents blocked|allowed]
+alia orchestrator-mode status [--thread <id>] [--json]
+alia orchestrator-mode delegate --task <brief> [--title <title>] [--provider <id>] [--model <id>] [--no-wait] [--timeout <seconds>] [--hidden] [--thread <id>] [--json]
+alia orchestrator-mode on [--thread <id>] [--enforcement instruct|guard|block] [--json]
+alia orchestrator-mode off [--thread <id>] [--json]
+alia orchestrator-mode violations [--thread <id>] [--clear] [--json]
+alia orchestrator-mode default [on|off] [--json]
+alia orchestrator-mode worker [--provider <id>] [--model <id>] [--preset <name>] [--json]
+alia orchestrator-mode contract [--thread <id>] [--rules <text>] [--clear-rules] [--json]
+alia orchestrator-mode scope [--project <id>] [--max-parallel <n>] [--inherit <key>] [--inherit-all] [--json]
+alia orchestrator-mode scope --global|--project <id> [--child-messages queued|immediate] [--json]
+alia orchestrator-mode scope --global|--project <id> [--orchestrator-subagents read-only|all|none] [--worker-subagents blocked|allowed]
 ```
 
 `--thread` defaults to the thread running the command, so an agent can inspect
@@ -39,16 +39,16 @@ Session configuration is refreshed when the provider session is next
 constructed, but resuming may retain its original tool list.
 
 Direct messages from child threads queue by default until the orchestrator's
-current turn ends. BB retains their content and sender. Compatible queued
+current turn ends. VesnALIA retains their content and sender. Compatible queued
 updates from one child arrive together, preserving every update and its order.
 Interleaved children are batched in order of their first pending update. Matching
 execution settings are required; user messages, other waits and existing groups
-can prevent batching across a boundary. BB requires one sender per queued group,
+can prevent batching across a boundary. VesnALIA requires one sender per queued group,
 so reports from different children remain separate dispatches. Send now overrides the hold. The
 `childMessageDelivery` scope setting selects `queued` or `immediate`; use
 `--inherit childMessageDelivery` to clear a project's override. User messages,
 unrelated senders and idle orchestrators proceed immediately. Automatic child
-completion/failure/attention notices use BB's separate system delivery path
+completion/failure/attention notices use VesnALIA's separate system delivery path
 and cannot be held by this plugin; waiting delegation tool results also return
 directly. Finish the current turn after delegating async work so queued child
 messages can reach you.
@@ -71,7 +71,7 @@ on, at a user-initiated dispatch. Existing threads, child workers and side chats
 are left alone.
 
 Read-only shell commands (`ls`, `cat`, `rg`, `git status`, `git diff`,
-`git log`, `find`, `wc`, `bb status`, `bb provider list`, `bb provider models`)
+`git log`, `find`, `wc`, `alia status`, `alia provider list`, `alia provider models`)
 do not count as work while "Let the orchestrator read with shell commands" is
 on and the contract is not `delegate-only`. Chained commands are allowed when
 every segment is read-only. Literal stderr suppression (`2>/dev/null` or
@@ -83,7 +83,7 @@ branches or tags, change remotes, or rewrite reflogs also count as work.
 
 Your provider's own subagents follow the scope's **Orchestrator subagents**
 policy. Under the default `read-only`, only reading definitions with
-launch-specific provenance and capability proof can be allowed. BB currently
+launch-specific provenance and capability proof can be allowed. VesnALIA currently
 exposes no such proof, so native launches remain unverified work, including
 Explore and Plan. Familiar names and cached context snapshots confer no trust.
 `none` prohibits launches, while `all` allows identified subagents, including
@@ -95,7 +95,7 @@ Delegate unverified units with `orchestrator_delegate` instead.
 ## Delegating
 
 Use the `orchestrator_delegate` tool, which the mode selects for the thread.
-If it is unavailable, use `bb orchestrator-mode delegate --task 'complete brief'`.
+If it is unavailable, use `alia orchestrator-mode delegate --task 'complete brief'`.
 The CLI runs the same worker creation, recording and result handling. It is
 allowed even when read-only shell exploration is disabled. Quote the brief
 safely; `--no-wait` lets you start independent workers without waiting.
@@ -125,14 +125,14 @@ delegation in that case.
 
 ### Following up with a worker
 
-`bb thread tell <worker-id> ...` (alias `message`) counts as delegation when
+`alia thread tell <worker-id> ...` (alias `message`) counts as delegation when
 the target is in this orchestrator's retained delegation records. It remains
 allowed when read-only shell exploration is disabled. Literal quoted messages
 and `--message-file <path>` can carry the follow-up. For stdin, use a quoted
 heredoc delimiter so the shell cannot execute substitutions in the message:
 
 ```sh
-bb thread tell <worker-id> --model <model-id> --mode steer --message-file - <<'FOLLOWUP'
+alia thread tell <worker-id> --model <model-id> --mode steer --message-file - <<'FOLLOWUP'
 Review the implementation and add the missing tests in your worker thread.
 FOLLOWUP
 ```
@@ -186,7 +186,7 @@ When the plugin has a retry target configured, it re-delegates a failed worker
 once on that provider and model before you hear about the failure, so do not
 re-run a failed unit by hand.
 
-Valid ids come from `bb provider list` and `bb provider models <provider>`, both
+Valid ids come from `alia provider list` and `alia provider models <provider>`, both
 read-only. A model the catalog does not offer is refused with the available ids
 named, so pass a model you have seen there rather than guessing.
 

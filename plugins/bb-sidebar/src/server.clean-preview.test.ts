@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import {
   createFakePluginHost,
@@ -29,8 +29,8 @@ describe("lifecycle RPC", () => {
     const safe = projectThread({ id: "thr_safe" });
     const empty = projectThread({ id: "thr_empty" });
     const later = () => projectThread({ id: "thr_later", status: laterActive ? "active" : "idle" });
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: { list: async () => projectsWith([settled, active, safe, empty, later()]) },
         threads: {
@@ -54,7 +54,7 @@ describe("lifecycle RPC", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
     await harness.behavior.callRpc("settle", { threadId: "thr_settled" });
     await harness.behavior.callRpc("settle", { threadId: "thr_later" });
@@ -117,8 +117,8 @@ describe("lifecycle RPC", () => {
       status: "active",
       visibility: "hidden",
     });
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       experimental_callHostRpc: async ({ method, input }) => {
         if (method === "resolveRoots")
           return { roots: (input as { roots: Array<{ environmentId: string; path: string }> }).roots };
@@ -157,7 +157,7 @@ describe("lifecycle RPC", () => {
         terminals: { list: async () => ({ sessions: [] }) },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
     await harness.behavior.callRpc("settle", { threadId: "thr_owner" });
 
@@ -205,8 +205,8 @@ describe("lifecycle RPC", () => {
     let working = false;
     let terminalLists = 0;
     const closed: string[] = [];
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           list: async () => projectsWith([projectThread({ id: "thr_race", status: working ? "active" : "idle" })]),
@@ -231,7 +231,7 @@ describe("lifecycle RPC", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
     await harness.behavior.callRpc("settle", { threadId: "thr_race" });
     const preview = (await harness.behavior.callRpc("previewSettledCleanup", { threadIds: ["thr_race"] })) as {
@@ -258,8 +258,8 @@ describe("lifecycle RPC", () => {
       environmentPath: "/workspace/shared/",
       status: "active",
     });
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       experimental_callHostRpc: async ({ method, input }) => {
         if (method === "resolveRoots")
           return {
@@ -284,7 +284,7 @@ describe("lifecycle RPC", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
     await harness.behavior.callRpc("settle", { threadId: "thr_owner" });
     const closesBefore = harness.inspection.sdk.callsTo("terminals.close").length;
@@ -314,8 +314,8 @@ describe("lifecycle RPC", () => {
         environmentPath: "/workspace/one",
         queuedWork: queued ? "waiting" : "none",
       });
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       experimental_callHostRpc: async ({ method, input }) => {
         if (method === "resolveRoots") return { roots: (input as { roots: unknown[] }).roots };
         if (method === "scan") return { ports: [] };
@@ -347,7 +347,7 @@ describe("lifecycle RPC", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
     await harness.behavior.callRpc("settle", { threadId: "thr_owner" });
     const preview = (await harness.behavior.callRpc("previewSettledCleanup", { threadIds: ["thr_owner"] })) as {
@@ -369,8 +369,8 @@ describe("lifecycle RPC", () => {
       environmentHostId: "host_1",
       environmentPath: "/workspace/one",
     });
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       experimental_callHostRpc: async ({ method, input }) => {
         if (method === "resolveRoots") return { roots: (input as { roots: unknown[] }).roots };
         if (method === "scan") throw new Error("Port scan unavailable");
@@ -400,7 +400,7 @@ describe("lifecycle RPC", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
     await harness.behavior.callRpc("settle", { threadId: "thr_owner" });
     const preview = (await harness.behavior.callRpc("previewSettledCleanup", { threadIds: ["thr_owner"] })) as {
@@ -431,8 +431,8 @@ describe("lifecycle RPC", () => {
       environmentPath: "/workspace/shared",
       status: "active",
     });
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       experimental_callHostRpc: async ({ method, input }) => {
         if (method === "resolveRoots") return { roots: (input as { roots: unknown[] }).roots };
         if (method === "scan") return { ports: [] };
@@ -466,7 +466,7 @@ describe("lifecycle RPC", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
     await harness.behavior.callRpc("settle", { threadId: "thr_owner" });
     const closesBefore = harness.inspection.sdk.callsTo("terminals.close").length;

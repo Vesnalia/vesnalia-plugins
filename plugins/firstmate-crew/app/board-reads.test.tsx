@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 /**
- * How the FirstMate tab reads the fleet: through bb's live reads, again when the server invalidates the
+ * How the FirstMate tab reads the fleet: through VesnALIA's live reads, again when the server invalidates the
  * `fleet` tag, and not at all while the tab cannot be seen.
  */
 import { cleanup, screen, waitFor } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { rpcContract } from "../shared/contract";

@@ -6,10 +6,10 @@ marketplace. Model connectivity remains a separate verification boundary.
 
 ## Automations: live end-to-end scheduled run (2026-10-24)
 
-On the user's installed bb (plugin v0.10.1 from the marketplace Git source),
+On the user's installed VesnALIA (plugin v0.10.1 from the marketplace Git source),
 `automationsEnabled` was turned on and a one-shot schedule (`maxRuns: 1`,
 cron every minute, bound to an existing thread's native session) was seeded
-into `~/.bb/plugins/zcode/bridge-data/automations.json`. Observed cycle:
+into `~/.vesnalia/plugins/zcode/bridge-data/automations.json`. Observed cycle:
 
 - The scheduler started with the next session construction (the setting
   applies to new sessions, as documented) and detected the due task.
@@ -39,17 +39,17 @@ repeated alias collisions, connectivity dispatch, native background turns,
 resume before a prompt, failed submissions, accepted model changes and native
 projection refreshes. Tests reproduced the failures before their fixes.
 
-The installed ZCode CLI 0.17.0 (desktop 3.16.2), Node 26.5.0 and bb builder
+The installed ZCode CLI 0.17.0 (desktop 3.16.2), Node 26.5.0 and VesnALIA builder
 0.46.1 were used for a fresh `npm run test:live`. The isolated fixture reported
 `RUNTIME_VERIFIED`, **27 synthetic model requests** and one automatic native
 background follow-up. Both usage and the context meter kept the selected
 256,000-token reporting budget through cold resume and background completion.
 
-A new disposable bb 0.46.1 server/daemon installed the candidate from the PR
+A new disposable VesnALIA 0.46.1 server/daemon installed the candidate from the PR
 worktree path and executed its immutable built artifact. The full fixture also
-passed: `bbThreadVerified`, `installedForkContextVerified` and
+passed: `aliaThreadVerified`, `installedForkContextVerified` and
 `installedRewindContextVerified` were true, with **43 synthetic model
-requests**. The installed bb context meter received the native 1M window;
+requests**. The installed VesnALIA context meter received the native 1M window;
 fork/rewind, tools, skills, subagents and background-task controls also passed.
 This is candidate-installation proof, separate from a published marketplace
 Git-cache installation.
@@ -65,19 +65,19 @@ window. Paid production inference and Linux/Windows remain **UNVERIFIED**.
 
 | Component                           | Verified version          |
 | ----------------------------------- | ------------------------- |
-| bb desktop / bundled plugin builder | 0.46.1                    |
-| Published `@get-bb/plugin-sdk`      | 0.6.49                    |
+| VesnALIA desktop / bundled plugin builder | 0.46.1                    |
+| Published `@vesnalia/plugin-sdk`      | 0.6.49                    |
 | Installed ZCode CLI                 | 0.16.9; 0.17.0 re-checked |
 | ZCode protocol reported by the CLI  | ZCode Protocol, version 1 |
-| bb bridge / deltas                  | Protocol 2 / grammar 3    |
-| Node used for the full bb smoke     | 26.5.0                    |
+| VesnALIA bridge / deltas                  | Protocol 2 / grammar 3    |
+| Node used for the full VesnALIA smoke     | 26.5.0                    |
 
-The real CLI client/bridge smoke was also run with Node 24. The full bb test
+The real CLI client/bridge smoke was also run with Node 24. The full VesnALIA test
 used Node 26.5.0. Linux and Windows runtime behavior remains unverified.
 
 Reference source snapshots:
 
-- [bb commit 6a639cf](https://github.com/get-bb/bb/tree/6a639cfc0d66e0c789a1bd7309266973228d1a80)
+- [VesnALIA commit 6a639cf](https://github.com/get-bb/bb/tree/6a639cfc0d66e0c789a1bd7309266973228d1a80)
 - [ZCode commit aac4755](https://github.com/zai-org/ZCode/tree/aac4755666d09fdcd70272fcf063c077a639015f)
 
 The published SDK and installed applications, rather than an assumed source
@@ -96,9 +96,9 @@ execution, bridge text prompt and effort selection, stable checkpoints,
 native fork continuation and cold checkpoint fork, background Bash
 list/output/cancel with the automatic native follow-up, file preview and
 temporary-fixture rollback, release and cold resume, Coding Plan authorization
-with one authenticated model request, and the bb tool, skill, Bash-output and
-custom subagent paths. The disposable-bb part (`bbThreadVerified`) was not
-run; it requires the opt-in `BB_SMOKE_*` environment.
+with one authenticated model request, and the VesnALIA tool, skill, Bash-output and
+custom subagent paths. The disposable-alia part (`aliaThreadVerified`) was not
+run; it requires the opt-in `ALIA_SMOKE_*` environment.
 
 Upstream `main` still declares `ZCODE_PROTOCOL_VERSION = 1` and keeps the
 legacy session methods the adapter uses, under deletion-boundary comments,
@@ -107,12 +107,12 @@ with v4 wire version 3 coexisting. Paid production inference remains
 
 ## v0.5.0: background management and history controls
 
-The candidate passed **138 automated tests across 11 files**, including bb's
+The candidate passed **138 automated tests across 11 files**, including VesnALIA's
 canonical bridge conformance, plus formatting, marketplace consistency,
-TypeScript checking and the plugin build. A disposable bb 0.46.1 server/daemon
+TypeScript checking and the plugin build. A disposable VesnALIA 0.46.1 server/daemon
 explicitly reinstalled the candidate's immutable build before executing native
 checkpoint forks, edit-message/rewind and background list/output/cancel commands.
-The full fixture reported `RUNTIME_VERIFIED`, `bbThreadVerified: true`, 43
+The full fixture reported `RUNTIME_VERIFIED`, `aliaThreadVerified: true`, 43
 synthetic model requests and one native background notification follow-up.
 Existing tool/skill/custom-agent, attachment, queue, context and compaction
 checks also passed. These installed candidate checks are distinct from a
@@ -134,8 +134,8 @@ checkpoints, paginated target lookup, stale/rejected/invalid acknowledgements,
 restart epoch rebinding, active-tip rejection, different target workspaces,
 release-before-notification and interrupt/crash settlement. Background agent
 delegation mapping has synthetic projection coverage; the real background-work
-fixture uses Bash. Native bb rewind is tested as a staged checkpoint fork
-followed by a tip fork into the original idle bb thread.
+fixture uses Bash. Native VesnALIA rewind is tested as a staged checkpoint fork
+followed by a tip fork into the original idle VesnALIA thread.
 
 The v0.5.0 adapter uses read-only v4 row queries and compare-and-swap commands;
 it keeps legacy session streaming for model turns. Checkpoint persistence is
@@ -144,35 +144,35 @@ and watermarks after native restart. No full v4 fragmented subscription decoder
 or physical replay transport is claimed.
 
 Source contracts were refreshed against [ZCode 0a1fc56](https://github.com/zai-org/ZCode/tree/0a1fc56d279fd1001f78387bd81aec1c26767411)
-and [bb 9937c46](https://github.com/get-bb/bb/tree/9937c46f5c7e369de3563eb864c8cbc4c3b9c231).
+and [VesnALIA 9937c46](https://github.com/get-bb/bb/tree/9937c46f5c7e369de3563eb864c8cbc4c3b9c231).
 The runtime checks use the installed versions listed above, deterministic
 loopback model/account services and isolated temporary workspaces. Paid
 production inference and other operating systems remain **UNVERIFIED**.
 
-## v0.4.0: bb extensions and custom subagents
+## v0.4.0: VesnALIA extensions and custom subagents
 
 On 2026-10-18, **96 automated tests**, formatting, marketplace consistency,
-TypeScript checking and the plugin build passed. Tests include bb tool
+TypeScript checking and the plugin build passed. Tests include VesnALIA tool
 forwarding, text/image responses, failures, unauthenticated and unknown calls,
 stop/crash settlement order, duplicate/denied tools, default MCP inheritance,
 skill catalog validation/resume, subagent configuration and startup identity,
 nested tool references, streamed input reconstruction and command output.
 
 The expanded real ZCode CLI 0.16.9 fixture exercises the authenticated local
-MCP bridge, a native custom subagent asking a question through bb, native Read
-loading a bb skill after cold resume, and a Bash command whose final output is
-retained in bb's command row. It also repeats the existing attachments,
+MCP bridge, a native custom subagent asking a question through VesnALIA, native Read
+loading a VesnALIA skill after cold resume, and a Bash command whose final output is
+retained in VesnALIA's command row. It also repeats the existing attachments,
 follow-up queue, usage/context, compaction, configured stdio MCP, account-auth
 fixtures and cold-resume checks.
 
-A fresh disposable bb 0.46.1 instance installed the v0.4.0 candidate and a
+A fresh disposable VesnALIA 0.46.1 instance installed the v0.4.0 candidate and a
 synthetic companion plugin. Its native dispatcher executed that plugin's tool,
 loaded its selected skill file, and created a configured custom subagent. The
-full run reported `RUNTIME_VERIFIED`, `bbThreadVerified: true`, 30 model
+full run reported `RUNTIME_VERIFIED`, `aliaThreadVerified: true`, 30 model
 requests, one installed tool result, one installed skill read and three
 custom-agent model requests (direct and installed checks combined).
 
-The bb tool bridge is opt-in. The default preserves native CLI MCP inheritance;
+The VesnALIA tool bridge is opt-in. The default preserves native CLI MCP inheritance;
 when enabled, the host-supplied MCP list replaces that CLI list. Additional
 custom servers must be listed in the plugin's MCP setting. Native plugin MCP
 servers are still composed by ZCode. Skill support is a catalog of original
@@ -197,11 +197,11 @@ model/account services. It verified PNG and text-file attachments, two queued
 follow-ups, usage/context deltas, compaction completion, stdio MCP startup and
 actual MCP tool execution, release and cold resume.
 
-A fresh disposable bb 0.46.1 server/daemon installed and loaded the v0.3.0
-candidate. The full check used bb's native CLI to create a thread, submit a
+A fresh disposable VesnALIA 0.46.1 server/daemon installed and loaded the v0.3.0
+candidate. The full check used VesnALIA's native CLI to create a thread, submit a
 follow-up while it was running, correlate both accepted inputs and completions,
 upload an image and text file, compact the thread and read its context meter.
-The final smoke reported `bbThreadVerified: true` with 13 synthetic model
+The final smoke reported `aliaThreadVerified: true` with 13 synthetic model
 requests. These checks used loopback ports 56392/56393 and a separate data
 directory. They did not send a production inference request.
 
@@ -214,7 +214,7 @@ certified by enabling them.
 
 ## CONFIG_VALIDATED
 
-`npm run check` runs TypeScript checking, 80 automated tests, and bb's plugin
+`npm run check` runs TypeScript checking, 80 automated tests, and VesnALIA's plugin
 builder. The suite covers:
 
 - The published SDK's bridge conformance suite and public-SDK-only import scan.
@@ -243,14 +243,14 @@ subscription, mode changes, a streamed turn, process shutdown, and cold resume.
 It repeats prompt/streaming/release/resume through the plugin bridge and checks
 that an empty session is not advertised as durable.
 
-A separate bb server/daemon was started on loopback ports 49836/49837 with its
+A separate VesnALIA server/daemon was started on loopback ports 49836/49837 with its
 own data directory. The plugin was built, installed, and loaded there with
-status `running`. The optional full bb smoke verified:
+status `running`. The optional full VesnALIA smoke verified:
 
 1. Changing plugin launch settings reaches sessionless model discovery.
-2. bb receives the native `bb-smoke/fixture` model and reasoning choices.
-3. bb creates a project and ZCode thread and completes a turn through the plugin.
-4. `bb thread output` returns exactly `Hello from the local fixture.`
+2. VesnALIA receives the native `alia-smoke/fixture` model and reasoning choices.
+3. VesnALIA creates a project and ZCode thread and completes a turn through the plugin.
+4. `alia thread output` returns exactly `Hello from the local fixture.`
 
 Final observed smoke summary:
 
@@ -260,29 +260,29 @@ Final observed smoke summary:
   "protocol": { "name": "ZCode Protocol", "version": 1 },
   "modelCount": 1,
   "modelRequests": 3,
-  "bbThreadVerified": true,
+  "aliaThreadVerified": true,
   "modelBackend": "synthetic loopback fixture",
   "realProviderAuthenticationTested": false
 }
 ```
 
-To repeat the full bb check with a disposable instance on these ports, replace
+To repeat the full VesnALIA check with a disposable instance on these ports, replace
 the data-directory placeholder with that instance's absolute path:
 
 ```sh
-BB_HOST_DAEMON_PORT=49837 \
-BB_SMOKE_SERVER_URL=http://127.0.0.1:49836 \
-BB_SMOKE_DATA_DIR=/absolute/path/to/disposable-bb-data \
+ALIA_HOST_DAEMON_PORT=49837 \
+ALIA_SMOKE_SERVER_URL=http://127.0.0.1:49836 \
+ALIA_SMOKE_DATA_DIR=/absolute/path/to/disposable-alia-data \
 npm run test:live
 ```
 
-That bb instance was disposable. The opt-in test changes its ZCode executable
-setting; do not use a normal bb profile for this command. The test prints its
+That VesnALIA instance was disposable. The opt-in test changes its ZCode executable
+setting; do not use a normal VesnALIA profile for this command. The test prints its
 isolated evidence directory and retains it locally for inspection.
 
 ## UNVERIFIED and current limits
 
-The isolated bb server and daemon were stopped after validation; neither test
+The isolated VesnALIA server and daemon were stopped after validation; neither test
 port was listening afterward. Retained temporary directories are evidence only.
 
 - Personal provider authentication, paid model connectivity, and real coding
@@ -291,7 +291,7 @@ port was listening afterward. Retained temporary directories are evidence only.
   paid inference, Start Plan, and Team-plan authentication are not verified.
 - Real native approval prompts are covered by synthetic protocol fixtures, not
   the live model fixture. Live mode changes were verified.
-- Forks, in-flight guidance, rich tool views, bb-injected tools/skills, browser
+- Forks, in-flight guidance, rich tool views, alia-injected tools/skills, browser
   host control, interactive plugin UI, and workflow/scheduler services remain
   outside this version's supported scope. Queued follow-ups and manual
   compaction are supported in v0.3.0.
@@ -326,25 +326,25 @@ paid inference. No production credentials enter this fixture.
 The local runtime run observed efforts `disabled`, `high`, `high` across the
 direct CLI, personal-provider bridge, and Coding Plan bridge turns. One account
 authorization and one authenticated model request completed. Raw child-I/O
-recording is disabled in the plugin to keep auth responses out of bb traces.
+recording is disabled in the plugin to keep auth responses out of VesnALIA traces.
 
 ## RUNTIME_VERIFIED: published native marketplace
 
-On 2026-10-17, a fresh isolated bb 0.46.1 server/daemon accepted the published
+On 2026-10-17, a fresh isolated VesnALIA 0.46.1 server/daemon accepted the published
 Git source `git:https://github.com/dpolishuk/bb-zcode.git@main`, resolved commit
 `20634f1da5c6a94b62c51c8b8f65c3ca68b51e3b`, and reported one catalog entry with
 no refresh error.
 
-After removing that test catalog, the HTTPS source was added through bb's
+After removing that test catalog, the HTTPS source was added through VesnALIA's
 **Settings → Plugin marketplaces** UI:
 
 ```text
 https://raw.githubusercontent.com/dpolishuk/bb-zcode/main/marketplace.json
 ```
 
-Native search reported `zcode@bb-zcode` as compatible, with its author,
-overview, and resolved Git source. Running `bb plugin install zcode@bb-zcode`
-through the native CLI downloaded and built the published commit into bb's
+Native search reported `zcode@alia-zcode` as compatible, with its author,
+overview, and resolved Git source. Running `alia plugin install zcode@alia-zcode`
+through the native CLI downloaded and built the published commit into VesnALIA's
 managed cache. The result reported:
 
 ```json
@@ -353,7 +353,7 @@ managed cache. The result reported:
   "version": "0.1.0",
   "provenance": "catalog",
   "catalogEntryId": "zcode",
-  "catalogMarketplaceName": "bb-zcode",
+  "catalogMarketplaceName": "alia-zcode",
   "enabled": true,
   "status": "running",
   "providerIds": ["zcode"]
@@ -361,9 +361,9 @@ managed cache. The result reported:
 ```
 
 The ordinary repository-page URL was also tested and rejected with HTTP 422:
-GitHub page data is not a bb marketplace manifest. This confirms the need for
-the raw manifest URL or `git:` form on bb 0.46.1.
+GitHub page data is not a VesnALIA marketplace manifest. This confirms the need for
+the raw manifest URL or `git:` form on VesnALIA 0.46.1.
 
 These are published-source catalog and managed-install checks. They do not
 change the model-authentication limits documented above, and they did not
-install or reconfigure the user's normal bb profile.
+install or reconfigure the user's normal VesnALIA profile.

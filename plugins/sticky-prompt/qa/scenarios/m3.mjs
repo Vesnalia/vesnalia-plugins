@@ -15,7 +15,7 @@ export default async (page) => {
   const check = (name, pass, detail) => results.push({ name, pass: !!pass, detail });
   await open(page, A); await page.waitForTimeout(1500);
 
-  // S12: click from the bottom, where BB is attached to the end
+  // S12: click from the bottom, where VesnALIA is attached to the end
   let c = await barCenter(page);
   await page.mouse.click(c.x, c.y); await page.waitForTimeout(1500);
   let g1 = await geo(page, U(219)); await page.waitForTimeout(1000); let g2 = await geo(page, U(219));

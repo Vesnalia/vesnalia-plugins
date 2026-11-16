@@ -1,6 +1,6 @@
 /**
  * Keeping a list's active row in sight by scrolling the list itself, never
- * with `scrollIntoView`, which scrolls every ancestor that can scroll — bb's
+ * with `scrollIntoView`, which scrolls every ancestor that can scroll — VesnALIA's
  * containers and the dialog around the list included.
  */
 

@@ -1,4 +1,4 @@
-// A smoke test of a real backend, without BB: it acquires a box, runs a
+// A smoke test of a real backend, without VesnALIA: it acquires a box, runs a
 // command in it, releases it, and prints how long each step took. For a
 // desktop kind it also opens the desktop the way the viewer's relay does,
 // answering its VNC password, shows the box's display facts, and asks the
@@ -6,9 +6,9 @@
 //
 //   node scripts/smoke.ts <settings.json> [--kind <kind>] [--size <preset>] [--command <script>] [--doctor] [--json]
 //
-// The settings file is bb-box's configuration as bb box config show --json
-// prints it, with each secret as a string, or one JSON object of BB's
-// settings from before the configuration, which bb-box moves the same way.
+// The settings file is alia-box's configuration as VesnALIA box config show --json
+// prints it, with each secret as a string, or one JSON object of VesnALIA's
+// settings from before the configuration, which alia-box moves the same way.
 // A value can come from a file instead, with a path relative to the
 // settings file:
 //
@@ -18,8 +18,8 @@
 // scripts/smoke.example.json reads the setup guide's token file and SSH key
 // this way. Keep your own settings file out of the repository.
 //
-// The box belongs to thread thr_smoke, which is not a BB thread. Smoke runs
-// are their own install, with the ID "smoke" (018): a bb-box install on the
+// The box belongs to thread thr_smoke, which is not a VesnALIA thread. Smoke runs
+// are their own install, with the ID "smoke" (018): a alia-box install on the
 // same backend leaves their boxes alone, and each run first releases the
 // boxes an earlier run left.
 
@@ -105,7 +105,7 @@ function isFileRef(value: unknown): value is { file: string; key?: string } {
 
 /**
  * The configuration a settings file gives: a configuration document with
- * its secrets inline, or BB's settings from before it, moved as bb-box
+ * its secrets inline, or VesnALIA's settings from before it, moved as alia-box
  * moves them.
  */
 export function toConfiguration(
@@ -249,7 +249,7 @@ export async function smoke(values: Readonly<Record<string, unknown>>, options: 
           const { command } = await boxes.transports(box);
           if (!command?.spawn) throw new Error("The box's command transport cannot start the computer-use driver.");
           const channel = await command.spawn(driverCommand(box.capabilities.os, driver.socket), AbortSignal.timeout(15_000));
-          session = await McpSession.open(channel, { client: { name: "bb-box-smoke", version: "1" }, timeoutMs: 15_000 });
+          session = await McpSession.open(channel, { client: { name: "alia-box-smoke", version: "1" }, timeoutMs: 15_000 });
           const listed = await session.call("list_windows", {}, { timeoutMs: 30_000 });
           const windows = listed.structuredContent?.windows;
           if (listed.isError || !Array.isArray(windows)) throw new Error(`The driver did not list the windows: ${listed.content.map((part) => part.text ?? "").join(" ")}`);

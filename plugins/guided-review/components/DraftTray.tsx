@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useId, useRef, useState } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../src/rpc-contract";
 import { reviewState, type ReviewItem } from "../lib/review-state";
@@ -271,7 +271,7 @@ export const DraftTray = memo(function DraftTray({ targetKey, activeChapterId, a
               </div>
               <Button className="w-full" disabled={busy || !hasReview || !!body.trim()} onClick={() => void submit()}>{busy ? "Saving…" : "Submit to GitHub"}</Button>
             </>}
-            <p className="text-xs leading-relaxed text-muted-foreground">{isLocal ? "Local review. Comments and notes stay in this BB installation." : body.trim() ? "Add the comment you’re writing to the draft before submitting." : "Drafts stay in BB until you submit."}</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">{isLocal ? "Local review. Comments and notes stay in this VesnALIA installation." : body.trim() ? "Add the comment you’re writing to the draft before submitting." : "Drafts stay in VesnALIA until you submit."}</p>
           </div>
         </section>}
     </div>

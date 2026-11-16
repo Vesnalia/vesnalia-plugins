@@ -50,7 +50,7 @@ test("other users, groups and foreign callbacks are ignored", () => {
   });
   assert.deepEqual(cb, { kind: "ignore", callbackId: "9" });
 });
-test("/tasks is answered by the plugin; bb: callbacks and new topics reach the bridge", () => {
+test("/tasks is answered by the plugin; VesnALIA: callbacks and new topics reach the bridge", () => {
   assert.deepEqual(
     routeUpdate({
       update_id: 3,
@@ -69,11 +69,11 @@ test("/tasks is answered by the plugin; bb: callbacks and new topics reach the b
     callback_query: {
       id: "8",
       from,
-      data: "bb:menu",
+      data: "alia:menu",
       message: { message_id: 2, chat, message_thread_id: 5 },
     },
   });
-  assert.equal(cb.kind === "chat" && cb.input.callback, "bb:menu");
+  assert.equal(cb.kind === "chat" && cb.input.callback, "alia:menu");
   assert.equal(cb.kind === "chat" && cb.callbackId, "8");
   const created = routeUpdate({
     update_id: 5,

@@ -28,7 +28,7 @@ const SUBCOMMAND_PROGRAMS = new Set([
   "kubectl",
   "cargo",
   "go",
-  "bb",
+  "alia",
   "make",
   "uv",
   "pip",
@@ -71,8 +71,8 @@ const WRAPPERS = new Set([
 ]);
 const SHELLS = new Set(["bash", "sh", "zsh"]);
 const RUN_SUBCOMMANDS = new Set(["run", "exec", "x", "dlx"]);
-// CLIs whose commands are two words deep: `bb thread wait`, `gh pr view`.
-const TWO_LEVEL_PROGRAMS = new Set(["bb", "gh", "gcloud", "aws", "az"]);
+// CLIs whose commands are two words deep: `alia thread wait`, `gh pr view`.
+const TWO_LEVEL_PROGRAMS = new Set(["alia", "gh", "gcloud", "aws", "az"]);
 const VALUED_OPTIONS: Record<string, Set<string>> = {
   git: new Set(["-C", "-c", "--git-dir", "--work-tree"]),
   pnpm: new Set(["-C", "--dir", "--filter", "-F"]),

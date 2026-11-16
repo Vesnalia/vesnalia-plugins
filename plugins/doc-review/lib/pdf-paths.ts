@@ -1,5 +1,5 @@
 // Pure path helpers shared by the backend. Kept free of the plugin API so
-// they can be unit-tested without a bb server.
+// they can be unit-tested without a VesnALIA server.
 
 /** The last segment of a POSIX-ish path, or the path itself when it has none. */
 export function baseName(path: string): string {

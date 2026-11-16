@@ -1,6 +1,6 @@
 /**
  * Concurrency helpers: a limiter for provider calls, a mutex for read-modify-write state,
- * and retry with backoff for rate limits. No dependency on the BB SDK, so they are unit-tested.
+ * and retry with backoff for rate limits. No dependency on the VesnALIA SDK, so they are unit-tested.
  */
 
 export const MIN_CONCURRENCY = 1;
@@ -148,7 +148,7 @@ export async function retryWhile<T>(
   return value;
 }
 
-/** The host throws this after a plugin reload or disable, on any use of the old `bb` handle. */
+/** The host throws this after a plugin reload or disable, on any use of the old `VesnALIA` handle. */
 export function isStaleHandleError(error: unknown): boolean {
   let current: unknown = error;
   for (let depth = 0; depth < 5 && current; depth += 1) {

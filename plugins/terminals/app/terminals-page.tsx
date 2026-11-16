@@ -1,6 +1,6 @@
 /**
  * The Terminals page: a strip of tabs, one shell each, with "+" at its end.
- * The strip is bb's own (app/bb-tab-strip/): drag a tab to move it, for every
+ * The strip is VesnALIA's own (app/alia-tab-strip/): drag a tab to move it, for every
  * window.
  *
  * The tab list comes from the server and is the same in every window; which
@@ -11,13 +11,13 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   experimental_useCodeTheme,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
   useSdk,
   type PluginNavPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 import type { RpcContract } from "../shared/contract";
 import { plusAction } from "../shared/host-choice";
@@ -29,7 +29,7 @@ import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
 import { AddToChatDialog, type AddToChatRequest } from "./add-to-chat-dialog";
-import { TabStrip, type StripTab, type TabReorderRequest } from "./bb-tab-strip/tab-strip";
+import { TabStrip, type StripTab, type TabReorderRequest } from "./alia-tab-strip/tab-strip";
 import { DELIVERY_TIMEOUT_MS, windowDeliveries, type DeliveryTarget } from "./chat-delivery";
 import { terminalBlock } from "./chat-text";
 import type { ConnectionStatus } from "./connection";
@@ -90,7 +90,7 @@ const OPENING_STATUS: ConnectionStatus = { state: "connecting", exitCode: null }
 const noSubscription = () => () => undefined;
 
 /**
- * The tab's live connection status. A tab whose shell bb is still opening has
+ * The tab's live connection status. A tab whose shell VesnALIA is still opening has
  * no terminal yet: attaching now would hear "not found" and end it.
  */
 function useConnectionStatus(terminalId: string, opening: boolean): ConnectionStatus {
@@ -137,7 +137,7 @@ function useConnectionStatuses(tabs: readonly TabView[] | null): ReadonlyMap<str
 }
 
 /**
- * bb's terminal calls, for the tabs' terminals. The same object on every
+ * VesnALIA's terminal calls, for the tabs' terminals. The same object on every
  * render, so the effects that take it do not reattach the terminal.
  */
 function useTerminalsBackend(): TerminalsBackend {
@@ -154,8 +154,8 @@ function useTerminalsBackend(): TerminalsBackend {
 }
 
 /**
- * bb's "Copy on select" setting, read when the page opens and again as soon
- * as bb says its settings were saved; also when the window comes back to the
+ * VesnALIA's "Copy on select" setting, read when the page opens and again as soon
+ * as VesnALIA says its settings were saved; also when the window comes back to the
  * front, after the realtime link reconnects (a change event may have been
  * missed) and as each selection starts (app/copy-on-select.ts).
  */
@@ -166,7 +166,7 @@ function useCopyOnSelect(): CopyOnSelectSetting {
   useEffect(() => {
     if (connection === "connected") void setting.refresh();
   }, [setting, connection]);
-  // bb saved its settings: read again at once, not after the freshness window.
+  // VesnALIA saved its settings: read again at once, not after the freshness window.
   useEffect(() => sdk.subscribe({ event: "system:config-changed", callback: () => void setting.reload() }), [sdk, setting]);
   useEffect(() => {
     const refresh = () => {
@@ -215,7 +215,7 @@ export function TerminalsPage(_props: PluginNavPanelProps) {
     releaseClosedTerminals(new Set(tabIds));
   }, [tabs, tabIds, backend]);
 
-  // A shell bb is still opening (here, in another window, or for a reloaded copy of the plugin):
+  // A shell VesnALIA is still opening (here, in another window, or for a reloaded copy of the plugin):
   // look again until it runs.
   const anyOpening = tabs?.some((tab) => isPending(tab.status)) ?? false;
   useEffect(() => {
@@ -226,7 +226,7 @@ export function TerminalsPage(_props: PluginNavPanelProps) {
 
   const { mode, name } = experimental_useCodeTheme();
   useEffect(() => {
-    // After bb has applied the new theme's variables, which it may do after this render.
+    // After VesnALIA has applied the new theme's variables, which it may do after this render.
     const frame = requestAnimationFrame(applyThemeToAll);
     return () => cancelAnimationFrame(frame);
   }, [mode, name]);
@@ -262,7 +262,7 @@ export function TerminalsPage(_props: PluginNavPanelProps) {
       return;
     }
     const action = plusAction(hosts);
-    if (action.kind === "none") setNotice("No machine is connected to bb right now.");
+    if (action.kind === "none") setNotice("No machine is connected to VesnALIA right now.");
     else if (action.kind === "open") await openOn(action.hostId);
     else setHostMenu(action.hosts);
   }, [opening, openOn, rpc]);
@@ -387,7 +387,7 @@ export function TerminalsPage(_props: PluginNavPanelProps) {
               type="button"
               variant="ghost"
               size="sm"
-              // bb's new tab button, as its panels draw it after their tab strip.
+              // VesnALIA's new tab button, as its panels draw it after their tab strip.
               className={cn(
                 COARSE_POINTER_COMPACT_ICON_BUTTON_CLASS,
                 "shrink-0 text-muted-foreground/70 hover:text-foreground focus:ring-1 focus:ring-ring",
@@ -486,7 +486,7 @@ function TabNameEditor({ initial, label, onDone }: { initial: string; label: str
       className="h-5 min-w-0 rounded-sm border border-input bg-background px-1 text-xs text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring max-md:pointer-coarse:h-7 max-md:pointer-coarse:text-sm"
       onChange={(event) => setValue(event.target.value)}
       onKeyDown={(event) => {
-        // Keep Enter and Escape from bb's own shortcuts (Escape leaves the page).
+        // Keep Enter and Escape from VesnALIA's own shortcuts (Escape leaves the page).
         if (event.key === "Enter") {
           event.preventDefault();
           event.stopPropagation();
@@ -522,7 +522,7 @@ function TerminalView({
   const container = useRef<HTMLDivElement>(null);
   const status = useConnectionStatus(terminalId, false);
   const backend = useTerminalsBackend();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [terminal, setTerminal] = useState<LiveTerminal | null>(null);
   const { selection, dismiss, onPointerDown } = useTerminalSelection(terminal, view, copyOnSelect);
   const [request, setRequest] = useState<AddToChatRequest | null>(null);

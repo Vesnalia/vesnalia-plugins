@@ -66,7 +66,7 @@ describe("apply", () => {
     expect((port.calls[0]!.args as SpawnRequest).permissions).toBe("full");
   });
 
-  it("marks a member failed when BB resolved a different model", async () => {
+  it("marks a member failed when VesnALIA resolved a different model", async () => {
     const { service, port } = setup();
     port.modelOverride.set("dev-impl@trio", "claude-sonnet-5");
     const { results, crew } = await service.apply(PROJECT, trioYaml());
@@ -77,12 +77,12 @@ describe("apply", () => {
     expect(crew.status).toBe("degraded");
   });
 
-  it("says so when BB does not report the model, instead of calling it verified", async () => {
+  it("says so when VesnALIA does not report the model, instead of calling it verified", async () => {
     const { service, port } = setup();
     port.model = async () => null;
     const { results } = await service.apply(PROJECT, trioYaml());
     expect(results.map((r) => [r.result, r.detail])).toEqual(
-      Array(3).fill(["spawned", "model not verifiable: BB did not report it"]),
+      Array(3).fill(["spawned", "model not verifiable: VesnALIA did not report it"]),
     );
   });
 
@@ -209,7 +209,7 @@ describe("plan", () => {
 describe("crash recovery", () => {
   it("intent written, thread exists with opId, no done → next apply binds it, no duplicate", async () => {
     const { service, port, store } = setup();
-    // Simulate: apply got as far as journal step 1 and BB created the thread,
+    // Simulate: apply got as far as journal step 1 and VesnALIA created the thread,
     // then the process died before step 3.
     const { crew } = store.saveCrewFile(PROJECT, "trio", trioYaml());
     const leadRow = store.upsertMember(crew.id, {

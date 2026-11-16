@@ -3,7 +3,7 @@
 // work items are fetched), so this is almost a verbatim port.
 //
 // Adaptations for Productive:
-// - `bbProjectIdSchema` is defined here instead of imported from
+// - `aliaProjectIdSchema` is defined here instead of imported from
 //   contract.ts: contract.ts imports `projectBoardSettingsSchema` from this
 //   file, so importing back from contract.ts would be a cycle. This file
 //   must stay self-contained.
@@ -16,7 +16,7 @@ import { DEFAULT_WORKFLOW_STATUS_ORDER } from './browse.js';
 
 export { DEFAULT_WORKFLOW_STATUS_ORDER } from './browse.js';
 
-export const bbProjectIdSchema = z.string().startsWith('proj_');
+export const aliaProjectIdSchema = z.string().startsWith('proj_');
 
 export const trackerViewSchema = z.enum(['list', 'kanban']);
 export type TrackerView = z.infer<typeof trackerViewSchema>;
@@ -49,7 +49,7 @@ function uniqueNormalizedStrings(values: readonly string[]): boolean {
 
 export const projectBoardSettingsSchema = z
   .object({
-    projectId: bbProjectIdSchema,
+    projectId: aliaProjectIdSchema,
     defaultView: trackerViewSchema,
     enabledFilters: z.array(workItemFilterFieldSchema),
     statusOrder: z.array(z.string().trim().min(1).max(80)).min(1).max(50)

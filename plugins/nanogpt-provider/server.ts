@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { checkApiKey, createApiKeyGate } from "./src/api-key-gate.js";
 import { normalizeBaseUrl } from "./src/base-url.js";
 import { configuredToolDenials, NANO_GPT_PERMISSION_MODES, toolControlsSchema } from "./src/permissions.js";
@@ -28,8 +28,8 @@ export { nanoGptSettingsContract };
 const SETUP_HINT =
   "Click the gear in the composer, or open the NanoGPT provider plugin settings, and paste an API key from https://nano-gpt.com/api.";
 
-export default function plugin(bb: BbPluginApi) {
-  bb.agents.registerTool({
+export default function plugin(alia: AliaPluginApi) {
+  alia.agents.registerTool({
     name: HISTORY_TOOL_NAME,
     description: "Read a page of this thread's saved conversation events for provider context restoration.",
     parameters: historyPageRequestSchema,
@@ -42,7 +42,7 @@ export default function plugin(bb: BbPluginApi) {
       context.signal.throwIfAborted();
       let throughSeq = args.throughSeq;
       if (throughSeq === null) {
-        const latest = await bb.sdk.threads.events.list({
+        const latest = await alia.sdk.threads.events.list({
           threadId: context.threadId,
           order: "desc",
           limit: "1",
@@ -50,7 +50,7 @@ export default function plugin(bb: BbPluginApi) {
         });
         throughSeq = latest[0]?.seq ?? 0;
       }
-      const rows = await bb.sdk.threads.events.list({
+      const rows = await alia.sdk.threads.events.list({
         threadId: context.threadId,
         ...(args.afterSeq === null ? {} : { afterSeq: String(args.afterSeq) }),
         beforeSeq: String(throughSeq + 1),
@@ -81,12 +81,12 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.configure((context) => ({
+  alia.agents.configure((context) => ({
     tools: context.provider.id === NANO_GPT_PROVIDER_ID ? [HISTORY_TOOL_NAME] : [],
     skills: [],
   }));
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     disallowedTools: {
       type: "string",
       label: "Disallowed tools",
@@ -118,7 +118,7 @@ export default function plugin(bb: BbPluginApi) {
   const gate = createApiKeyGate((args) =>
     checkApiKey({
       ...args,
-      log: (detail) => bb.log.info(`key check: ${detail}`),
+      log: (detail) => alia.log.info(`key check: ${detail}`),
     }),
   );
   settings.onChange(() => {
@@ -138,10 +138,10 @@ export default function plugin(bb: BbPluginApi) {
         baseUrl = normalizeBaseUrl(rawBaseUrl);
       } catch {
         // A base URL saved through a path this plugin does not validate (for
-        // example bb's native settings page) must not break getStatus, env
+        // example VesnALIA's native settings page) must not break getStatus, env
         // contribution or provider options. Ignore it and fall back to the
         // default endpoint; the key stays untouched.
-        bb.log.warn(
+        alia.log.warn(
           `Ignoring a saved NanoGPT base URL that is not a valid endpoint: ${rawBaseUrl.slice(0, 120)}`,
         );
       }
@@ -172,10 +172,10 @@ export default function plugin(bb: BbPluginApi) {
   }
 
   function announce(next: NanoGptStatus): void {
-    bb.realtime.publish(REALTIME_KEY_STATE_CHANNEL, next);
+    alia.realtime.publish(REALTIME_KEY_STATE_CHANNEL, next);
   }
 
-  bb.rpc.register(nanoGptSettingsContract, {
+  alia.rpc.register(nanoGptSettingsContract, {
     async getToolSettings() {
       const values = await settings.get();
       return {
@@ -193,7 +193,7 @@ export default function plugin(bb: BbPluginApi) {
     async saveKey({ apiKey, baseUrl }) {
       const proposedBaseUrl = baseUrl === "" ? null : baseUrl;
       const state = await gate.verdict(apiKey, proposedBaseUrl);
-      bb.log.info(`saveKey: verdict ${state}`);
+      alia.log.info(`saveKey: verdict ${state}`);
       if (state === "invalid") {
         return {
           saved: false,
@@ -227,7 +227,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.providers.register({
+  alia.providers.register({
     id: NANO_GPT_PROVIDER_ID,
     displayName: "NanoGPT",
     icon: "./assets/icon.svg",
@@ -268,7 +268,7 @@ export default function plugin(bb: BbPluginApi) {
         } catch {
           // Same guard as readSaved: an invalid saved endpoint must not
           // break option derivation for the whole provider.
-          bb.log.warn("Ignoring an invalid saved NanoGPT base URL during option derivation.");
+          alia.log.warn("Ignoring an invalid saved NanoGPT base URL during option derivation.");
         }
       }
       return {
@@ -283,7 +283,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.providers.experimental_contributeEnv(NANO_GPT_PROVIDER_ID, async () => {
+  alia.providers.experimental_contributeEnv(NANO_GPT_PROVIDER_ID, async () => {
     const credentials = await usableCredentials();
     if (credentials === null) {
       return [];
@@ -306,7 +306,7 @@ export default function plugin(bb: BbPluginApi) {
     ];
   });
 
-  bb.providers.experimental_contributeEnvHealth(
+  alia.providers.experimental_contributeEnvHealth(
     NANO_GPT_PROVIDER_ID,
     async () => {
       const credentials = await usableCredentials();

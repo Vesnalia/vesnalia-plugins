@@ -1,4 +1,4 @@
-import { PluginCliError, cliCommand, defineCli, type PluginCliRegistration, type PluginCliResult } from "@get-bb/plugin-sdk";
+import { PluginCliError, cliCommand, defineCli, type PluginCliRegistration, type PluginCliResult } from "@vesnalia/plugin-sdk";
 import { readFile } from "node:fs/promises";
 import { AGENT_MODES, AREAS, USAGE_RANGES, type UsageRange, boardAddInputSchema, boardCreateInputSchema, boardInputSchema, boardRemoveInputSchema, boardsInputSchema, boardUpdateInputSchema, type AgentMode, type Area } from "./contract";
 import { errText } from "./ctx";
@@ -247,7 +247,7 @@ export function createCli(shuttle: Shuttle): PluginCliRegistration {
         positionals: [PR],
         options: {
           preset: { type: "string", description: "A preset id." },
-          project: { type: "string", description: "The bb project for a new thread; matched from the repository by default." },
+          project: { type: "string", description: "The VesnALIA project for a new thread; matched from the repository by default." },
           note: { type: "string", description: "A note for the reviewer." },
           "new-thread": { type: "boolean", description: "Start a new thread even when the PR has a review thread of Shuttle's to bring back." },
           json,
@@ -267,7 +267,7 @@ export function createCli(shuttle: Shuttle): PluginCliRegistration {
           }),
       }),
       stop: cliCommand({
-        summary: "Stop running AI reviews, every one or those of these PRs: bb stops each review thread and the threads at work under it",
+        summary: "Stop running AI reviews, every one or those of these PRs: VesnALIA stops each review thread and the threads at work under it",
         positionals: [{ name: "pr", description: "PR links or keys; every running review without one.", required: false, variadic: true }],
         options: { archive: { type: "boolean", description: "Archive the review threads Shuttle started too, with their child threads." }, json },
         run: ({ options, positionals }) =>
@@ -278,7 +278,7 @@ export function createCli(shuttle: Shuttle): PluginCliRegistration {
             if (result.stopped.length === 0) return out("No AI review was running.");
             const lines = [`Stopped ${result.stopped.length === 1 ? "the review" : `${result.stopped.length} reviews`} of ${result.stopped.map((pr) => pr.key).join(", ")}.`];
             const verb = { stop: "stop", find: "find the threads under", archive: "archive" } as const;
-            for (const failure of result.failed) lines.push(`  bb could not ${verb[failure.step]} thread ${failure.threadId}: ${failure.error}`);
+            for (const failure of result.failed) lines.push(`  VesnALIA could not ${verb[failure.step]} thread ${failure.threadId}: ${failure.error}`);
             return out(lines.join("\n"));
           }),
       }),
@@ -306,7 +306,7 @@ export function createCli(shuttle: Shuttle): PluginCliRegistration {
             const checked = shuttle.detail(known.key).draft;
             const gate = checked?.gate ?? null;
             if (options.json) return out(toJson(gate === null ? null : { ...gate, autoPost: checked?.autoPost ?? null }));
-            if (gate === null) return out(`Auto post did not check the draft on ${known.key}; see bb shuttle show ${known.key} for its activity.`);
+            if (gate === null) return out(`Auto post did not check the draft on ${known.key}; see VesnALIA shuttle show ${known.key} for its activity.`);
             const lines = [`Auto post would ${gate.decision === "post" ? `post ${gate.posting.length} finding${gate.posting.length === 1 ? "" : "s"}` : "hold the draft"} on ${known.key}, in ${(gate.ms / 1000).toFixed(1)}s. The check posted nothing.`];
             const plan = checked?.autoPost ?? null;
             if (plan) {

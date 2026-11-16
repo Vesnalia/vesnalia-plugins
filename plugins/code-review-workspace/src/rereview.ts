@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { reanchorDraft, type ReviewMeta } from "./store";
 import { ensureGitHeaders } from "./patch";
 import { beginGuide, guideWriterUnavailable } from "./generate";
@@ -12,17 +12,17 @@ import type { AsyncStore } from "./store-queue";
 import { readForGuide } from "./feature-review";
 
 interface Deps {
-  bb: BbPluginApi; store: AsyncStore;
+  alia: AliaPluginApi; store: AsyncStore;
   gh: { runGh: typeof import("./gh").runGh; runGit: typeof import("./gh").runGit };
 }
 
-const rerunning = new WeakMap<BbPluginApi, Set<string>>();
+const rerunning = new WeakMap<AliaPluginApi, Set<string>>();
 
 /** Re-read the target and regenerate its guide. `notify: false` leaves alerts to the turn that asked for it. */
 export async function rerunReview(deps: Deps, targetKey: string, options: { notify?: boolean; unattended?: boolean } = {}): Promise<{ ok: boolean; error?: string }> {
   // A re-review already reading the target starts the guide for both callers.
-  const running = rerunning.get(deps.bb) ?? new Set<string>();
-  rerunning.set(deps.bb, running);
+  const running = rerunning.get(deps.alia) ?? new Set<string>();
+  rerunning.set(deps.alia, running);
   if (running.has(targetKey)) return { ok: true };
   running.add(targetKey);
   try {
@@ -35,7 +35,7 @@ export async function rerunReview(deps: Deps, targetKey: string, options: { noti
 async function rerun(deps: Deps, targetKey: string, options: { notify?: boolean; unattended?: boolean }): Promise<{ ok: boolean; error?: string }> {
   const m = await deps.store.getReview(targetKey);
   if (!m || !m.projectId) return { ok: false, error: "Unknown review or missing project." };
-  const unavailable = await guideWriterUnavailable(deps.bb, deps.store);
+  const unavailable = await guideWriterUnavailable(deps.alia, deps.store);
   if (unavailable) return { ok: false, error: unavailable };
 
   let patch = "";
@@ -46,7 +46,7 @@ async function rerun(deps: Deps, targetKey: string, options: { notify?: boolean;
       // Unattended, the head read now reaches the guide writer only from a trusted author, or one you started agents on.
       if (options.unattended && await deps.store.exclusive(async (tx) => {
         if (mayRunUnattended(m, (await tx.getPreferences()).preferences, snapshot.pr.headRefOid)) return false;
-        await skipRun(deps.bb, tx, targetKey, "guide", snapshot.pr.headRefOid);
+        await skipRun(deps.alia, tx, targetKey, "guide", snapshot.pr.headRefOid);
         return true;
       })) {
         return { ok: false, error: "The PR's author isn't trusted to start agents on its new commits; it waits for your click." };
@@ -61,12 +61,12 @@ async function rerun(deps: Deps, targetKey: string, options: { notify?: boolean;
     }
   } else if (m.feature && m.kind === "ref") {
     // A folder's review reads its folder, on whichever machine it's on, and keeps what it read with the guide.
-    const read = await readForGuide(deps.bb, m);
+    const read = await readForGuide(deps.alia, m);
     if (!read || "error" in read) return { ok: false, error: read?.error ?? "Review has no re-runnable target." };
     patch = read.patch;
     saveRead = read.save;
   } else if (m.kind === "ref" && m.gitRef) {
-    if (!m.cwd) return { ok: false, error: "Rebuilding a local review's guide needs its original working dir; re-run `bb review` in the terminal." };
+    if (!m.cwd) return { ok: false, error: "Rebuilding a local review's guide needs its original working dir; re-run `alia review` in the terminal." };
     const diff = await deps.gh.runGit(gitDiffArgs(m.gitRef), { cwd: m.cwd });
     if (diff.code !== 0) return { ok: false, error: diff.stderr || "git diff failed" };
     patch = diff.stdout;
@@ -81,7 +81,7 @@ async function rerun(deps: Deps, targetKey: string, options: { notify?: boolean;
     return await deps.store.exclusive(async (tx) => {
       // The review may have been deleted while GitHub answered; don't bring it back.
       if (!await tx.getReview(targetKey)) return { ok: false, error: "This review was deleted." };
-      // A guide started while GitHub or git answered, as by bb review, is building this review already: one writer, not two.
+      // A guide started while GitHub or git answered, as by VesnALIA review, is building this review already: one writer, not two.
       if ((await tx.getReview(targetKey))?.status === "generating") return { ok: true };
       run = await rebuildReview(deps, tx, { ...m, projectId }, patch, options);
       await saveRead?.(tx);
@@ -97,7 +97,7 @@ async function rerun(deps: Deps, targetKey: string, options: { notify?: boolean;
  * fails and moving the draft comments. It begins the guide (beginGuide), so call it last in the block, and start the
  * run it returns once the block has ended.
  */
-export async function rebuildReview(deps: Pick<Deps, "bb" | "store">, tx: AsyncStore, m: ReviewMeta & { projectId: string }, patch: string, options: { notify?: boolean; unattended?: boolean } = {}): Promise<() => Promise<void>> {
+export async function rebuildReview(deps: Pick<Deps, "alia" | "store">, tx: AsyncStore, m: ReviewMeta & { projectId: string }, patch: string, options: { notify?: boolean; unattended?: boolean } = {}): Promise<() => Promise<void>> {
   const targetKey = m.targetKey;
   const previous = await tx.patch(targetKey);
   // If the new guide fails, the current one comes back.
@@ -109,7 +109,7 @@ export async function rebuildReview(deps: Pick<Deps, "bb" | "store">, tx: AsyncS
   // Unsent draft comments follow their lines into the new diff; ones whose lines are gone stay flagged.
   await tx.rebaseDraftComments(targetKey, await reanchorDraft(tx, targetKey, previous, next));
   await pruneDiffs(tx, (await tx.getReview(targetKey))!);
-  return beginGuide(deps.bb, tx, deps.store, targetKey, m.projectId, options);
+  return beginGuide(deps.alia, tx, deps.store, targetKey, m.projectId, options);
 }
 
 /**
@@ -120,7 +120,7 @@ export async function updateReview(deps: Pick<Deps, "store" | "gh">, targetKey: 
   const m = await deps.store.getReview(targetKey);
   if (!m) return { ok: false, error: "This review no longer exists." };
   if (m.kind !== "ref" || !m.gitRef) return { ok: false, error: "Only a local review updates without its guide. Use Update guide." };
-  if (!m.cwd) return { ok: false, error: "Updating a local review needs its original working dir; re-run `bb review` in the terminal." };
+  if (!m.cwd) return { ok: false, error: "Updating a local review needs its original working dir; re-run `alia review` in the terminal." };
   const diff = await deps.gh.runGit(gitDiffArgs(m.gitRef), { cwd: m.cwd });
   if (diff.code !== 0) return { ok: false, error: diff.stderr || "git diff failed" };
   if (!diff.stdout.trim()) return { ok: false, error: "No changes found." };

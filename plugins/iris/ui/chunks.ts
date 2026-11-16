@@ -1,19 +1,19 @@
 // Loads a chunk from Iris's own HTTP route with a plain dynamic import, the
-// same way bb loads app.js. Hashed file names make the response immutable.
+// same way VesnALIA loads app.js. Hashed file names make the response immutable.
 //
 // Chunks that render React import "react", "react/jsx-runtime",
-// "@get-bb/plugin-sdk/app" and "@iris/ui" (ui/chunk-api.ts).
+// "@vesnalia/plugin-sdk/app" and "@iris/ui" (ui/chunk-api.ts).
 // scripts/build-chunks.mjs maps those to the holder below, keyed by plugin id
 // (a dev copy and the live Iris each get their own) and replaced on every
 // evaluation of this bundle, so a plugin reload re-points loaded chunks.
 import * as React from "react";
 import * as jsxRuntime from "react/jsx-runtime";
-import * as sdk from "@get-bb/plugin-sdk/app";
+import * as sdk from "@vesnalia/plugin-sdk/app";
 import manifest from "../dist/chunks/manifest.json";
 import { CHUNK_API } from "./chunk-api";
 
-declare const __BB_PLUGIN_ID__: string | undefined;
-const PLUGIN_ID = typeof __BB_PLUGIN_ID__ === "string" ? __BB_PLUGIN_ID__ : "iris";
+declare const __ALIA_PLUGIN_ID__: string | undefined;
+const PLUGIN_ID = typeof __ALIA_PLUGIN_ID__ === "string" ? __ALIA_PLUGIN_ID__ : "iris";
 
 /** Keep in sync with SHARED_KEY in scripts/build-chunks.mjs. Bump the suffix when the shape changes. */
 const SHARED_KEY = "__iris_shared_v1";
@@ -46,7 +46,7 @@ export function loadChunk<T>(name: ChunkName): Promise<T> {
     }
     const file = (manifest.entries as Record<string, string>)[name];
     const url = chunkUrl(file);
-    // A computed specifier keeps bb's bundler from inlining the chunk.
+    // A computed specifier keeps VesnALIA's bundler from inlining the chunk.
     p = import(/* @vite-ignore */ url);
     loading.set(name, p);
     p.catch(() => loading.delete(name));

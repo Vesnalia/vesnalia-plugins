@@ -46,7 +46,7 @@ const READ_PARTS = [
   "cmd device_state print-state",
   "dumpsys connectivity | grep -E '^Active default network:|^  NetworkAgentInfo[{]'",
 ] as const;
-const PART_MARK = "@@bb-box@@";
+const PART_MARK = "@@alia-box@@";
 
 export function asRoot(script: string): string {
   return `su 0 sh -c '${script.replaceAll("'", "'\\''")}' 2>/dev/null`;
@@ -142,7 +142,7 @@ export interface AndroidDeviceAccess {
   setBattery(to: Battery, signal: AbortSignal): Promise<void>;
 }
 
-interface SetByBbBox {
+interface SetByAliaBox {
   readonly appearance: Appearance;
   readonly fontScale: AndroidFontScale;
   readonly network: NetworkPreset;
@@ -152,12 +152,12 @@ interface SetByBbBox {
 
 interface ModelSettings {
   readonly statusBar: Override<"clean">;
-  readonly setByBbBox: SetByBbBox;
+  readonly setByAliaBox: SetByAliaBox;
 }
 
 const FRESH: ModelSettings = {
   statusBar: { set: null, at: null },
-  setByBbBox: { appearance: "light", fontScale: ANDROID_DEFAULT_FONT_SCALE, network: "online", location: null, battery: null },
+  setByAliaBox: { appearance: "light", fontScale: ANDROID_DEFAULT_FONT_SCALE, network: "online", location: null, battery: null },
 };
 
 const NOT_READ = { known: false as const, why: "Not read from the device yet." };
@@ -227,11 +227,11 @@ export class AndroidSettingsKeeper {
   async #change(change: Partial<ModelSettings>): Promise<void> {
     if (!this.#model) return;
     this.#all = { ...this.#all, [this.#model]: { ...this.#own(), ...change } };
-    await this.#save().catch((error) => this.#options.log(`settings: could not keep what bb-box set: ${error instanceof Error ? error.message : String(error)}`));
+    await this.#save().catch((error) => this.#options.log(`settings: could not keep what alia-box set: ${error instanceof Error ? error.message : String(error)}`));
   }
 
-  async #setBy(change: Partial<SetByBbBox>): Promise<void> {
-    await this.#change({ setByBbBox: { ...this.#own().setByBbBox, ...change } });
+  async #setBy(change: Partial<SetByAliaBox>): Promise<void> {
+    await this.#change({ setByAliaBox: { ...this.#own().setByAliaBox, ...change } });
   }
 
   get awake(): boolean | null {
@@ -255,14 +255,14 @@ export class AndroidSettingsKeeper {
     this.#model = model;
     const own = this.#own();
     if (own.statusBar.set === "clean") {
-      this.#options.log("settings: bb-box set a clean status bar on this device, so it sets it again, as a cold boot clears it");
-      await this.#demo(own.setByBbBox.battery ?? CLEAN_STATUS_BAR_BATTERY, signal);
+      this.#options.log("settings: alia-box set a clean status bar on this device, so it sets it again, as a cold boot clears it");
+      await this.#demo(own.setByAliaBox.battery ?? CLEAN_STATUS_BAR_BATTERY, signal);
     }
   }
 
   async read(signal: AbortSignal): Promise<void> {
     const at = this.#options.now();
-    const own = this.#own().setByBbBox;
+    const own = this.#own().setByAliaBox;
     const [printed, gps, battery] = await Promise.all([
       this.#options.device.shell(readScript(), signal),
       this.#options.device.gps(signal).catch(() => null),
@@ -270,21 +270,21 @@ export class AndroidSettingsKeeper {
     ]);
     const read = parseReading(printed);
     this.#appearance = read.appearance
-      ? { known: true, value: read.appearance, at, by: read.appearance === own.appearance ? "bb-box" : "outside" }
+      ? { known: true, value: read.appearance, at, by: read.appearance === own.appearance ? "alia-box" : "outside" }
       : { known: false, why: "Android reads its night mode as neither yes nor no." };
     const scale = read.fontScale === null ? null : fontScaleStep(read.fontScale);
     this.#fontScale =
       scale !== null
-        ? { known: true, value: scale, at, by: scale === own.fontScale ? "bb-box" : "outside" }
+        ? { known: true, value: scale, at, by: scale === own.fontScale ? "alia-box" : "outside" }
         : { known: false, why: `Android's font scale is ${read.fontScale ?? "unread"}, which is not one of ${PRODUCT}'s steps: ${ANDROID_FONT_SCALES.join(", ")}.` };
-    this.#location = gps ? { known: true, value: gps, at, by: own.location && !sameSpot(own.location, gps) ? "outside" : "bb-box" } : { known: false, why: "The emulator did not say where it is." };
-    this.#battery = battery ? { known: true, value: battery, at, by: own.battery && !sameBattery(own.battery, battery) ? "outside" : "bb-box" } : { known: false, why: "The emulator did not say how its battery is." };
+    this.#location = gps ? { known: true, value: gps, at, by: own.location && !sameSpot(own.location, gps) ? "outside" : "alia-box" } : { known: false, why: "The emulator did not say where it is." };
+    this.#battery = battery ? { known: true, value: battery, at, by: own.battery && !sameBattery(own.battery, battery) ? "outside" : "alia-box" } : { known: false, why: "The emulator did not say how its battery is." };
     this.#networkWords = read.networkWords;
     this.#radiosOn = read.radiosOn;
     this.#network = read.network
-      ? { known: true, value: read.network, at, by: read.network === own.network ? "bb-box" : "outside" }
+      ? { known: true, value: read.network, at, by: read.network === own.network ? "alia-box" : "outside" }
       : { known: false, why: notANetworkPreset(read.networkWords) };
-    this.#posture = read.posture ? { known: true, value: read.posture, at, by: "bb-box" } : { known: false, why: "Android did not say how the device is folded." };
+    this.#posture = read.posture ? { known: true, value: read.posture, at, by: "alia-box" } : { known: false, why: "Android did not say how the device is folded." };
     if (read.awake !== null) this.#awake = read.awake;
   }
 
@@ -352,7 +352,7 @@ export class AndroidSettingsKeeper {
   }
 
   async setStatusBar(to: "clean" | "live", signal: AbortSignal): Promise<void> {
-    if (to === "clean") await this.#demo(this.#own().setByBbBox.battery ?? CLEAN_STATUS_BAR_BATTERY, signal);
+    if (to === "clean") await this.#demo(this.#own().setByAliaBox.battery ?? CLEAN_STATUS_BAR_BATTERY, signal);
     else await this.#options.device.shell(`${DEMO_EXIT} >/dev/null; settings put global sysui_demo_allowed 0`, signal);
     await this.#change({ statusBar: to === "clean" ? { set: "clean", at: this.#options.now() } : { set: null, at: this.#options.now() } });
   }
@@ -369,7 +369,7 @@ export class AndroidSettingsKeeper {
   }
 
   async waitNetworkAfterBoot(signal: AbortSignal): Promise<void> {
-    const wanted = this.#own().setByBbBox.network;
+    const wanted = this.#own().setByAliaBox.network;
     const reached = () => this.#network.known && this.#network.value === wanted;
     const reads = () => (this.#network.known ? this.#network.value : this.#networkWords);
     const bootMs = this.#options.settleMs?.boot ?? BOOT_NETWORK_MS;
@@ -409,7 +409,7 @@ export class AndroidSettingsKeeper {
       checks++;
       await wait(POLL_MS * 5, signal);
     }
-    if (checks > 0) this.#options.log(`network: Android wrote ${EMULATOR_WIFI} to its Wi-Fi store on disk ${((performance.now() - began) / 1000).toFixed(1)} s after bb-box first looked`);
+    if (checks > 0) this.#options.log(`network: Android wrote ${EMULATOR_WIFI} to its Wi-Fi store on disk ${((performance.now() - began) / 1000).toFixed(1)} s after alia-box first looked`);
   }
 
   async waitPosture(to: Posture, signal: AbortSignal): Promise<void> {

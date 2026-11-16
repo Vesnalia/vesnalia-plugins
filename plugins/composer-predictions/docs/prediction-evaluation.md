@@ -63,7 +63,7 @@ a faithful prompt comparison. Keep that file and outputs out of public PRs.
 
 This evaluates the plugin's prediction instructions and conversation wrapper
 through direct, tool-free inference. It does not reproduce a provider CLI's
-default system prompt, BB's environment instructions, helper lifecycle or UI.
+default system prompt, VesnALIA's environment instructions, helper lifecycle or UI.
 The production helper may receive those additional instructions. Results are
 specific to the model, effort, fixture and samples used; they are not an
 estimate of acceptance rate in normal use. Model output is nondeterministic,

@@ -10,7 +10,7 @@
 //   plugin polls once for everyone and messages the thread when checks finish,
 //   reviews/comments arrive, or the PR merges. A thread that is still working
 //   is left alone; its news arrives as one message once it goes idle.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { applyCiChanges, isGoneError, isThreadGone, MAX_SEND_FAILURES, runCiCycle, visibleChange, type CiWatch, type PrState } from "./ci-watch";
 import { gh as runGh, GH_MISSING } from "./gh";
@@ -35,7 +35,7 @@ export const releaseWatchSchema = z.object({
 });
 export type ReleaseWatchConfig = z.infer<typeof releaseWatchSchema>;
 
-type Thread = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["get"]>>;
+type Thread = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["get"]>>;
 /** The fields release tracking needs; satisfied by both threads.get and threads.list rows. */
 type ThreadRef = Pick<Thread, "id" | "projectId" | "updatedAt">;
 
@@ -74,7 +74,7 @@ function truncate(text: string, max: number): string {
 }
 
 export function createWatchers(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   releaseConfig: Record<string, ReleaseWatchConfig>,
   /** Per thread: its own switch in the thread monitor, else the plugin setting. */
   autoContinueEnabled: (threadId: string) => Promise<boolean>,
@@ -82,11 +82,11 @@ export function createWatchers(
   /** The PRs a thread created, for cross-repo release waits. */
   threadPrs: (threadId: string) => Promise<ThreadPrRef[]> = async () => [],
 ) {
-  const kv = bb.storage.kv;
+  const kv = alia.storage.kv;
   // Aborted on dispose: a running gh is killed, and a cycle stops before its
-  // next bb call instead of hitting the old, dead handle.
+  // next VesnALIA call instead of hitting the old, dead handle.
   const lifetime = new AbortController();
-  bb.onDispose(() => lifetime.abort());
+  alia.onDispose(() => lifetime.abort());
   const gh = (args: string[], timeout = 30_000) => runGh(args, { timeout, signal: lifetime.signal });
   const get = async <T>(key: string, fallback: T): Promise<T> => (await kv.get<T>(key)) ?? fallback;
   // Read-modify-write of one kv record, one at a time per key: a CI check runs
@@ -104,7 +104,7 @@ export function createWatchers(
   }
 
   async function tell(threadId: string, text: string, sendAt?: number) {
-    return bb.sdk.threads.send({
+    return alia.sdk.threads.send({
       threadId,
       mode: "queue-if-active",
       input: [{ type: "text", text, mentions: [] }],
@@ -113,7 +113,7 @@ export function createWatchers(
   }
 
   async function projectFor(thread: Pick<Thread, "projectId">) {
-    const project = await bb.sdk.projects.get({ projectId: thread.projectId });
+    const project = await alia.sdk.projects.get({ projectId: thread.projectId });
     return { name: project.name, slug: repoSlug(project.gitRemoteUrl) };
   }
 
@@ -134,7 +134,7 @@ export function createWatchers(
           queuedMessageId: result.delivery === "queued" ? result.queuedMessage.id : null,
         };
       });
-      bb.log.info(`auto-continue ${thread.id} at ${new Date(sendAt).toISOString()}`);
+      alia.log.info(`auto-continue ${thread.id} at ${new Date(sendAt).toISOString()}`);
       return;
     }
     if (releaseWaitStated(text)) await registerReleaseWaiter(thread);
@@ -148,7 +148,7 @@ export function createWatchers(
     await update<Record<string, ReleaseWaiter>>("releaseWaiters", {}, (all) => {
       for (const key of Object.keys(all)) if (all[key]!.threadId === threadId) delete all[key];
     });
-    bb.log.info(`release waiter cleared: ${threadId}`);
+    alia.log.info(`release waiter cleared: ${threadId}`);
     changed();
   }
 
@@ -174,7 +174,7 @@ export function createWatchers(
     });
     // Until it is actually sent (90s after the reset), it can still be taken back.
     if (entry.queuedMessageId !== null && Date.now() < entry.resetsAt + CONTINUE_DELAY_MS) {
-      await bb.sdk.threads.queuedMessages
+      await alia.sdk.threads.queuedMessages
         .delete({ threadId: thread.id, queuedMessageId: entry.queuedMessageId })
         .catch(() => undefined);
     }
@@ -227,18 +227,18 @@ export function createWatchers(
         const told = await tell(thread.id, releasedMessage(name, latest, [])).then(
           () => true,
           (error) => {
-            bb.log.warn(`release catch-up ${thread.id}: ${String(error)}`);
+            alia.log.warn(`release catch-up ${thread.id}: ${String(error)}`);
             return false;
           },
         );
         if (told) {
-          bb.log.info(`release ${latest.key}: caught up ${thread.id}`);
+          alia.log.info(`release ${latest.key}: caught up ${thread.id}`);
           continue;
         }
         // Couldn't tell it: keep it waiting, so at least the next release reaches it.
       }
       added[key] = { threadId: thread.id, projectName: name, since };
-      bb.log.info(`release waiter: ${thread.id} (${name})`);
+      alia.log.info(`release waiter: ${thread.id} (${name})`);
     }
     if (Object.keys(added).length > 0) {
       await update<Record<string, ReleaseWaiter>>("releaseWaiters", {}, (all) => {
@@ -252,7 +252,7 @@ export function createWatchers(
   async function releaseRepo(projectName: string): Promise<string | null> {
     const config = releaseConfig[projectName];
     if (config?.repo) return config.repo;
-    const projects = await bb.sdk.projects.list();
+    const projects = await alia.sdk.projects.list();
     const project = projects.find((candidate) => candidate.name === projectName);
     return repoSlug(project?.gitRemoteUrl ?? null);
   }
@@ -285,7 +285,7 @@ export function createWatchers(
       const response = await fetch(check.url, { cache: "no-store", signal: AbortSignal.timeout(20_000) });
       return response.ok ? readField(await response.json(), check.field) : null;
     } catch (error) {
-      bb.log.warn(`release delivery check ${check.url}: ${String(error)}`);
+      alia.log.warn(`release delivery check ${check.url}: ${String(error)}`);
       return null;
     }
   }
@@ -315,7 +315,7 @@ export function createWatchers(
       if (!releaseConfig[projectName] || !repo) continue;
       // 1. New releases become pending until their workflows finish.
       const releases = await recentReleases(projectName).catch((error) => {
-        bb.log.warn(`release-watch ${projectName}: ${String(error)}`);
+        alia.log.warn(`release-watch ${projectName}: ${String(error)}`);
         return null;
       });
       if (releases === null) continue;
@@ -338,7 +338,7 @@ export function createWatchers(
         release.sha === null
           ? "[]"
           : await gh(["run", "list", "-R", repo, "--commit", release.sha, "--json", "name,status,conclusion,url"]).catch((error) => {
-              bb.log.warn(`release-watch ${key}: ${String(error)}`);
+              alia.log.warn(`release-watch ${key}: ${String(error)}`);
               return null;
             });
       if (runList === null) continue;
@@ -370,27 +370,27 @@ export function createWatchers(
               .join(", ")}. Check whether that affects you before continuing.`;
       const delivery = await deliverToWaiters(targets, {
         send: (threadId) => tell(threadId, message),
-        threadGone: (threadId) => isThreadGone(() => bb.sdk.threads.get({ threadId })),
+        threadGone: (threadId) => isThreadGone(() => alia.sdk.threads.get({ threadId })),
         settle: async (waiterId) => {
           await update<Record<string, ReleaseWaiter>>("releaseWaiters", {}, (all) => {
             delete all[waiterId];
           });
         },
-        warn: (text) => bb.log.warn(text),
+        warn: (text) => alia.log.warn(text),
       });
       // Anyone not told stays registered; the release stays pending to try again.
       if (delivery.failed > 0) {
         const sendFailures = (release.sendFailures ?? 0) + 1;
         if (sendFailures < MAX_SEND_FAILURES) {
           pending[key] = { ...release, sendFailures };
-          bb.log.info(`release ${key}: notified ${delivery.notified}, ${delivery.failed} to retry`);
+          alia.log.info(`release ${key}: notified ${delivery.notified}, ${delivery.failed} to retry`);
           continue;
         }
-        bb.log.warn(`release ${key}: gave up on ${delivery.failed} thread(s) after ${sendFailures} attempts`);
+        alia.log.warn(`release ${key}: gave up on ${delivery.failed} thread(s) after ${sendFailures} attempts`);
       }
       seen[key] = release.mergedAt;
       delete pending[key];
-      bb.log.info(`release ${key}: notified ${delivery.notified} thread(s)`);
+      alia.log.info(`release ${key}: notified ${delivery.notified} thread(s)`);
     }
     // Most cycles find nothing new; don't rewrite storage or wake every window for that.
     if (fingerprint() === before) return;
@@ -405,13 +405,13 @@ export function createWatchers(
     threadId: string,
     options: { pr?: number; watchFor?: CiWatch["watchFor"]; repo?: string },
   ) {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     const slug = options.repo ?? (await projectFor(thread)).slug;
     if (!slug) throw new Error("This project has no GitHub remote.");
     let pr = options.pr;
     if (pr === undefined) {
       const environment = thread.environmentId
-        ? await bb.sdk.environments.get({ environmentId: thread.environmentId })
+        ? await alia.sdk.environments.get({ environmentId: thread.environmentId })
         : null;
       if (!environment?.branchName) throw new Error("No PR number given and the thread has no branch.");
       const found = JSON.parse(
@@ -458,7 +458,7 @@ export function createWatchers(
       now: () => Date.now(),
       threadState: async (threadId) => {
         try {
-          const thread = await bb.sdk.threads.get({ threadId });
+          const thread = await alia.sdk.threads.get({ threadId });
           if (thread.archivedAt !== null || thread.deletedAt !== null) return "gone";
           return BUSY_STATUSES.has(thread.status) ? "busy" : "idle";
         } catch (error) {
@@ -473,8 +473,8 @@ export function createWatchers(
       me: () => (me ??= gh(["api", "user", "-q", ".login"]).then((login) => login.trim(), () => "")),
       failedLog,
       send: (threadId, text) => tell(threadId, text),
-      threadGone: (threadId) => isThreadGone(() => bb.sdk.threads.get({ threadId })),
-      warn: (message) => bb.log.warn(message),
+      threadGone: (threadId) => isThreadGone(() => alia.sdk.threads.get({ threadId })),
+      warn: (message) => alia.log.warn(message),
     });
     // Disposed meanwhile: the next load checks again from what's stored.
     if (lifetime.signal.aborted) return;
@@ -486,9 +486,9 @@ export function createWatchers(
 
   // --- wiring ----------------------------------------------------------------
 
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) => onIdle(thread, lastAssistantText));
-  bb.events.on("thread.active", ({ thread }) => onActive(thread));
-  bb.events.on("thread.archived", async ({ thread }) => {
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) => onIdle(thread, lastAssistantText));
+  alia.events.on("thread.active", ({ thread }) => onActive(thread));
+  alia.events.on("thread.archived", async ({ thread }) => {
     await update<Record<string, AutoContinue>>("autoContinue", {}, (all) => {
       delete all[thread.id];
     });
@@ -504,7 +504,7 @@ export function createWatchers(
 
   // Register threads that were already waiting before these rules existed. Bump
   // the version when RELEASE_WAIT or the config changes.
-  bb.background.service("release-backfill", {
+  alia.background.service("release-backfill", {
     async start(signal) {
       // Waiters used to be keyed by thread id alone; move them to thread@project.
       const stored = await get<Record<string, ReleaseWaiter>>("releaseWaiters", {});
@@ -518,12 +518,12 @@ export function createWatchers(
         await kv.set("releaseWaiters", stored);
       }
       if ((await get<number>("releaseBackfill", 0)) !== RELEASE_BACKFILL_VERSION) {
-        const threads = await listLiveThreads(bb, { signal });
+        const threads = await listLiveThreads(alia, { signal });
         for (const thread of threads) {
           if (signal.aborted) return;
           if (thread.status !== "idle" || thread.parentThreadId !== null) continue;
-          const output = await bb.sdk.threads.output({ threadId: thread.id, signal }).catch(() => null);
-          if (releaseWaitStated(output?.output ?? "")) await registerReleaseWaiter(thread).catch((error) => bb.log.warn(`release backfill ${thread.id}: ${String(error)}`));
+          const output = await alia.sdk.threads.output({ threadId: thread.id, signal }).catch(() => null);
+          if (releaseWaitStated(output?.output ?? "")) await registerReleaseWaiter(thread).catch((error) => alia.log.warn(`release backfill ${thread.id}: ${String(error)}`));
         }
         if (!signal.aborted) await kv.set("releaseBackfill", RELEASE_BACKFILL_VERSION);
       }
@@ -538,14 +538,14 @@ export function createWatchers(
   let ciRun: Promise<void> | null = null;
   const checkCi = (force = false) => (ciRun ??= checkCiNow(force).finally(() => (ciRun = null)));
 
-  bb.background.schedule("release-watch", "*/3 * * * *", async () => {
+  alia.background.schedule("release-watch", "*/3 * * * *", async () => {
     if (releaseRun !== null || lifetime.signal.aborted || Object.keys(releaseConfig).length === 0) return;
     const waiters = await get<Record<string, ReleaseWaiter>>("releaseWaiters", {});
     const pending = await get<Record<string, Pending>>("pendingReleases", {});
     if (Object.keys(waiters).length + Object.keys(pending).length === 0) return;
     await checkReleases();
   });
-  bb.background.schedule("ci-watch", "*/2 * * * *", async () => {
+  alia.background.schedule("ci-watch", "*/2 * * * *", async () => {
     if (ciRun !== null || lifetime.signal.aborted || Object.keys(await get<Record<string, CiWatch>>("ciWatches", {})).length === 0) return;
     await checkCi();
   });

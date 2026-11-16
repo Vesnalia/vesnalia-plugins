@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { scopeFor } from "../bindings.js";
 import { describeError } from "../linear/errors.js";
 import type { LinearClient } from "../linear/client.js";
@@ -15,7 +15,7 @@ import {
 } from "./spawn.js";
 
 /**
- * The impure half of "start a thread from an issue": the preconditions bb has
+ * The impure half of "start a thread from an issue": the preconditions VesnALIA has
  * to be asked about, the spawn, the link, and the status move.
  *
  * Split from `spawn.ts` so the decisions — which environment, which title,
@@ -36,9 +36,9 @@ export interface StartResult {
 }
 
 export interface StartDeps {
-  readonly bb: BbPluginApi;
+  readonly alia: AliaPluginApi;
   /** The key that can reach a given issue. A Linear key is scoped to one
-   *  workspace, and this bb may hold several. */
+   *  workspace, and this VesnALIA may hold several. */
   readonly clientForIssue: (issueId: string) => LinearClient;
   /** Resolve one issue through only the credentials represented by the
    *  selected project's read scope. */
@@ -56,7 +56,7 @@ export interface StartDeps {
 }
 
 /**
- * Ask bb what it knows about this project's branches.
+ * Ask VesnALIA what it knows about this project's branches.
  *
  * `branchesTruncated` is the field that matters: a branch absent from a
  * truncated list is not a branch that does not exist. The issue's own branch
@@ -69,7 +69,7 @@ async function checkPreconditions(
   projectId: string,
   branchName: string,
 ): Promise<SpawnPreconditions> {
-  const project = await deps.bb.sdk.projects.get({ projectId });
+  const project = await deps.alia.sdk.projects.get({ projectId });
   const hostId = project.sources?.find((source) => source.isDefault)?.hostId ?? null;
   const path = project.sources?.find((source) => source.isDefault)?.path ?? null;
 
@@ -83,7 +83,7 @@ async function checkPreconditions(
     };
   }
 
-  const branches = await deps.bb.sdk.projects.branches({
+  const branches = await deps.alia.sdk.projects.branches({
     projectId,
     hostId,
     query: branchName,
@@ -104,7 +104,7 @@ export async function startThreadFromIssue(
 ): Promise<StartResult> {
   const bindings = deps.bindings();
 
-  // Resolve only after a bb project establishes the read scope. An identifier
+  // Resolve only after a VesnALIA project establishes the read scope. An identifier
   // such as ENG-42 is not globally unique once two Linear workspaces are
   // connected; singular lookup before this point lets SQLite pick which
   // company's issue gets a thread — and, optionally, a status move.
@@ -124,7 +124,7 @@ export async function startThreadFromIssue(
       return {
         ok: false,
         threadId: null,
-        message: "No bb project is bound to a readable Linear team. Bind one first.",
+        message: "No VesnALIA project is bound to a readable Linear team. Bind one first.",
         note: null,
       };
     }
@@ -132,7 +132,7 @@ export async function startThreadFromIssue(
       return {
         ok: false,
         threadId: null,
-        message: "More than one bb project could own this issue. Say which one.",
+        message: "More than one VesnALIA project could own this issue. Say which one.",
         note: null,
       };
     }
@@ -212,7 +212,7 @@ export async function startThreadFromIssue(
     preconditions,
   });
 
-  const thread = await deps.bb.sdk.threads.spawn(plan.request as never);
+  const thread = await deps.alia.sdk.threads.spawn(plan.request as never);
 
   // Written before the spawn call's result reaches any surface, so the
   // composer banner and the thread header chip are correct on the thread's

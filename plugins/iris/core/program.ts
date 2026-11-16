@@ -81,7 +81,7 @@ interface LoadEntry {
   fetchedAt?: number;
 }
 
-/** Plugin sources are read from bb's page over HTTP: live cards re-read them at most this often. */
+/** Plugin sources are read from VesnALIA's page over HTTP: live cards re-read them at most this often. */
 export const PLUGIN_REFRESH_MS = 10_000;
 
 export class CardRuntime implements Host {
@@ -299,7 +299,7 @@ export class CardRuntime implements Host {
       const raw = key.startsWith("raw:");
       const tail = key.startsWith("tail:");
       const path = raw ? key.slice(4) : tail ? key.slice(5) : key;
-      // Another plugin's data costs bb an HTTP round trip: it refreshes every PLUGIN_REFRESH_MS, not every tick.
+      // Another plugin's data costs VesnALIA an HTTP round trip: it refreshes every PLUGIN_REFRESH_MS, not every tick.
       if (path.startsWith("plugin:") && entry.fetchedAt !== undefined && now - entry.fetchedAt < PLUGIN_REFRESH_MS) continue;
       this.fetch(key, path, raw, tail, entry);
     }

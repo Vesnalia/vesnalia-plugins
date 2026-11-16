@@ -1,6 +1,6 @@
 /**
  * Where subscription usage comes from. Codex answers on request through its app server. Claude
- * Code has no such request, so the bridge records the usage reports that BB sends during each
+ * Code has no such request, so the bridge records the usage reports that VesnALIA sends during each
  * turn, and the router reads the latest one.
  *
  * @module routing/usage-sources
@@ -94,8 +94,8 @@ export function codexUsage(reply: z.infer<typeof codexRateLimitsReplySchema>, no
   return { provider: "codex", status: "allowed", reason: null, resetsAtMs: null, checkedAtMs: now };
 }
 
-/** BB's usage report for a provider, as a turn delta carries it. */
-export const bbRateLimitsSchema = z.object({
+/** VesnALIA's usage report for a provider, as a turn delta carries it. */
+export const aliaRateLimitsSchema = z.object({
   providerId: z.string(),
   status: z.enum(["allowed", "warning", "blocked", "unknown"]),
   kind: z.string(),
@@ -109,11 +109,11 @@ export const bbRateLimitsSchema = z.object({
   reachedReason: z.string().nullable(),
 });
 
-const BB_PROVIDERS = { "claude-code": "claude", codex: "codex" } as const;
+const ALIA_PROVIDERS = { "claude-code": "claude", codex: "codex" } as const;
 
-/** BB's report as usage; null for a provider the router does not use or an unknown status. */
-export function bbUsage(report: z.infer<typeof bbRateLimitsSchema>, now: number): ProviderUsage | null {
-  const provider = BB_PROVIDERS[report.providerId as keyof typeof BB_PROVIDERS];
+/** VesnALIA's report as usage; null for a provider the router does not use or an unknown status. */
+export function aliaUsage(report: z.infer<typeof aliaRateLimitsSchema>, now: number): ProviderUsage | null {
+  const provider = ALIA_PROVIDERS[report.providerId as keyof typeof ALIA_PROVIDERS];
   if (provider === undefined || report.status === "unknown") return null;
   const limited = report.windows.filter((window) => window.status === report.status);
   const resets = limited.flatMap((window) => window.resetsAtMs ?? []);

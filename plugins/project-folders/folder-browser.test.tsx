@@ -6,7 +6,7 @@ const { call, rpc } = vi.hoisted(() => {
   const call = vi.fn().mockResolvedValue({ path: "/work/New" });
   return { call, rpc: { call } };
 });
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   useRpc: () => rpc,
   useRealtime: vi.fn(),
 }));

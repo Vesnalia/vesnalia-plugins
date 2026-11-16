@@ -1,6 +1,6 @@
 import { basename, dirname } from "node:path";
 
-import type { ExperimentalHostWatchListener, ExperimentalHostWatchOptions } from "@get-bb/plugin-sdk";
+import type { ExperimentalHostWatchListener, ExperimentalHostWatchOptions } from "@vesnalia/plugin-sdk";
 
 /**
  * Follow mode: a native watch on the directory holding a job's log, which

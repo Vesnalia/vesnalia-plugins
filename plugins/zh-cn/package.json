@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-zh-cn",
+  "name": "alia-plugin-zh-cn",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "简体中文语言包",
-    "description": "翻译 bb 界面文案，保留 project、Git、API 等英文术语。停用后恢复英文。",
+    "description": "翻译 alia 界面文案，保留 project、Git、API 等英文术语。停用后恢复英文。",
     "branding": {
       "icon": "Globe"
     },
@@ -16,9 +16,7 @@
     "app": "./app.tsx",
     "skills": []
   },
-  "dependencies": {},
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0",
     "jsdom": "^26.1.0"
@@ -26,16 +24,26 @@
   "scripts": {
     "test": "node --test test.mjs",
     "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
-    "build": "bb plugin build ."
+    "build": "alia plugin build ."
   },
   "private": true,
   "license": "MIT",
   "author": "YuuseiP",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/zh-cn#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/YuuseiP/bb-plugin-zh-cn.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/zh-cn"
   },
   "bugs": {
-    "url": "https://github.com/YuuseiP/bb-plugin-zh-cn/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

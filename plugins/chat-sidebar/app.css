@@ -1,6 +1,6 @@
 /* Colour does one job here: it says what an agent is doing. One hue per
  * lane, mixed into currentColor for text so it reads in light and dark
- * themes alike; everything else stays on bb's theme tokens. */
+ * themes alike; everything else stays on alia's theme tokens. */
 .chat-sidebar {
   --chat-attention: #e8a317;
   --chat-working: #3987e5;
@@ -8,15 +8,15 @@
   --chat-error: #e5484d;
 }
 .chat-sidebar [data-lane="attention"],
-[data-bb-plugin="chat-sidebar"] [data-lane="attention"] {
+[data-alia-plugin="chat-sidebar"] [data-lane="attention"] {
   --chat-lane: var(--chat-attention, #e8a317);
 }
 .chat-sidebar [data-lane="working"],
-[data-bb-plugin="chat-sidebar"] [data-lane="working"] {
+[data-alia-plugin="chat-sidebar"] [data-lane="working"] {
   --chat-lane: var(--chat-working, #3987e5);
 }
 .chat-sidebar [data-lane="done"],
-[data-bb-plugin="chat-sidebar"] [data-lane="done"] {
+[data-alia-plugin="chat-sidebar"] [data-lane="done"] {
   --chat-lane: var(--chat-done, #1f9d55);
 }
 .chat-lane-text {
@@ -43,7 +43,7 @@
   color: var(--muted-foreground, currentColor);
 }
 
-/* Working: a spinning ring, like bb's own. */
+/* Working: a spinning ring, like alia's own. */
 .chat-spinner {
   border: 1.5px solid color-mix(in srgb, var(--chat-lane) 30%, transparent);
   border-top-color: var(--chat-lane);

@@ -32,7 +32,7 @@ import type { ArchiveEntry, ArchiveEntryKind, ArchiveStopReason } from "../contr
  * CP866's upper half, bytes 0x80–0xFF: the DOS "OEM" code page of Russian
  * Windows, which is what Explorer's "Send to → Compressed folder" writes. A
  * table rather than `TextDecoder("ibm866")` so the answer does not depend on
- * how much ICU the Node build that runs bb happens to carry.
+ * how much ICU the Node build that runs VesnALIA happens to carry.
  */
 const CP866_HIGH =
   "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ" +

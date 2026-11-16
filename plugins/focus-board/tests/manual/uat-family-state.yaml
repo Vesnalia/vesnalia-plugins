@@ -10,7 +10,7 @@
 #
 # Run: npm run uat -- tests/manual/uat-family-state.yaml
 #
-# The harness holds ONE page, so two real bb windows and a second machine are
+# The harness holds ONE page, so two real alia windows and a second machine are
 # out of reach here. The write payload, the localStorage-free commit, and the
 # mount read from the seeded server row are the strongest real-browser
 # evidence the one-page harness can give; the live cross-window convergence is

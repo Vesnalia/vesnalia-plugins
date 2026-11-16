@@ -10,12 +10,12 @@ import {
   useRealtime,
   useRpc,
   useSettings,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   PluginHomepageSectionProps,
   PluginSidebarProject,
   PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { buildNewChatActivityByProject } from "./src/activity.js";
 import {
   buildProjectAttention,
@@ -50,9 +50,9 @@ import {
 type AvailableWorkspaceStatus = Extract<WorkspaceStatus, { kind: "available" }>;
 
 const PROJECT_ICON_URL = "/api/v1/plugins/homepage/http/project-icon";
-const RANKING_STORAGE_KEY = "bb-plugin-homepage:ranking-mode";
-const MANUAL_ORDER_STORAGE_KEY = "bb-plugin-homepage:manual-project-order";
-const COLLAPSED_GROUPS_STORAGE_KEY = "bb-plugin-homepage:collapsed-project-groups";
+const RANKING_STORAGE_KEY = "alia-plugin-homepage:ranking-mode";
+const MANUAL_ORDER_STORAGE_KEY = "alia-plugin-homepage:manual-project-order";
+const COLLAPSED_GROUPS_STORAGE_KEY = "alia-plugin-homepage:collapsed-project-groups";
 const DRAG_ACTIVATION_DISTANCE = 8;
 let hasAnimatedProjectLauncher = false;
 
@@ -205,7 +205,7 @@ function FolderIcon() {
   );
 }
 
-/** Draw a server-rendered BB glyph as a mask so it inherits the tile's text color. */
+/** Draw a server-rendered VesnALIA glyph as a mask so it inherits the tile's text color. */
 function GlyphIcon({ svg }: { svg: string }) {
   const mask = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
   return (
@@ -284,7 +284,7 @@ function ProjectIcon({
       data-letter={useMonogram ? projectMonogramLetter(name) : undefined}
       className={`flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md ${
         useMonogram
-          ? `bb-homepage-monogram bb-homepage-monogram-${projectMonogramColor(name)} text-sm font-semibold leading-none`
+          ? `alia-homepage-monogram alia-homepage-monogram-${projectMonogramColor(name)} text-sm font-semibold leading-none`
           : useTile
           ? "bg-muted text-muted-foreground group-hover:text-foreground"
           : "bg-transparent"
@@ -630,7 +630,7 @@ function WorkspaceHoverCard({
       <HoverCard.Trigger asChild>{children}</HoverCard.Trigger>
       <HoverCard.Portal>
         <HoverCard.Content
-          data-bb-plugin="homepage"
+          data-alia-plugin="homepage"
           align="start"
           side="bottom"
           sideOffset={6}
@@ -1730,7 +1730,7 @@ function ProjectChatLauncher({ projectId }: PluginHomepageSectionProps) {
           </div>
         </ContextMenu.Trigger>
         <ContextMenu.Portal>
-          <ContextMenu.Content data-bb-plugin="homepage" className="z-50 min-w-[10rem] rounded-md border border-border bg-card p-1 shadow-md">
+          <ContextMenu.Content data-alia-plugin="homepage" className="z-50 min-w-[10rem] rounded-md border border-border bg-card p-1 shadow-md">
             <ContextMenu.Item
               className={menuItemClassName}
               onSelect={() => {
@@ -1776,7 +1776,7 @@ function ProjectChatLauncher({ projectId }: PluginHomepageSectionProps) {
                 <span aria-hidden="true">›</span>
               </ContextMenu.SubTrigger>
               <ContextMenu.Portal>
-                <ContextMenu.SubContent data-bb-plugin="homepage" className="z-50 min-w-[10rem] rounded-md border border-border bg-card p-1 shadow-md">
+                <ContextMenu.SubContent data-alia-plugin="homepage" className="z-50 min-w-[10rem] rounded-md border border-border bg-card p-1 shadow-md">
                   <ContextMenu.Item
                     className={menuItemClassName}
                     disabled={currentGroupId === null}
@@ -2312,14 +2312,14 @@ export default definePluginApp((app) => {
     id: "hide-homepage-recent-chats",
     mount() {
       const style = document.createElement("style");
-      style.dataset.bbHomepageHideRecents = "";
+      style.dataset.aliaHomepageHideRecents = "";
       style.textContent = `
         [data-root-compose-mobile-recents] {
           display: none !important;
         }
 
         /*
-         * bb's compact home anchors a short scroll viewport just above the
+         * VesnALIA's compact home anchors a short scroll viewport just above the
          * composer (sized for its own recent-chats list), which leaves the
          * top of the screen empty once that list is hidden. Extend the
          * viewport up to the host's minimum toolbar clearance so the project

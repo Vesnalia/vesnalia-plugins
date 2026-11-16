@@ -2,10 +2,10 @@
 // the thread-header badge for study and worker threads, and the Live panel
 // in a thread's right split pane.
 //
-// Compiled by `bb plugin build` into dist/app.js + dist/app.css. React and
-// @get-bb/plugin-sdk/app are provided by the BB app at load time (never
-// bundled). components/ui/ is vendored shadcn source from the BB registry.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+// Compiled by `alia plugin build` into dist/app.js + dist/app.css. React and
+// @vesnalia/plugin-sdk/app are provided by the VesnALIA app at load time (never
+// bundled). components/ui/ is vendored shadcn source from the VesnALIA registry.
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { StudiesAccessory, StudiesPanel } from "./src/app/StudiesPage.tsx";
 import { ThreadBadge } from "./src/app/ThreadBadge.tsx";
 import { LivePanel } from "./src/app/live/LivePanel.tsx";

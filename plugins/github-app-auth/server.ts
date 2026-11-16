@@ -1,4 +1,4 @@
-// bb-plugin-github-app-auth — server entry.
+// alia-plugin-github-app-auth — server entry.
 //
 // For every agent command (start, resume, fork, turn) in an enabled project,
 // contribute a fresh GitHub App installation token as GH_TOKEN and
@@ -8,20 +8,20 @@
 // used token warm so the per-command resolver stays fast.
 //
 // Credentials come from three places, most specific first: a project's own
-// stored credentials (`bb github-app-auth set-app`, kept in the plugin's
+// stored credentials (`alia github-app-auth set-app`, kept in the plugin's
 // server-side storage and never sent to an agent), the plugin settings, and
-// the bb server process environment. Project credentials are the way to scope
+// the VesnALIA server process environment. Project credentials are the way to scope
 // one GitHub App to one project without exposing it to any other project.
 import {
   PluginCliError,
   cliCommand,
   defineCli,
   defineRpcContract,
-  type BbPluginApi,
+  type AliaPluginApi,
   type ExperimentalPluginProviderEnvContext,
   type ExperimentalPluginProviderEnvEntry,
   type PluginCliContext,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { buildEnvEntries } from "./lib/env.js";
 import {
@@ -128,8 +128,8 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     appId: {
       type: "string",
       label: "Default GitHub App ID",
@@ -184,7 +184,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // The default app fills any project that has no stored app of its own. Its
-  // credentials come from plugin settings, then the bb server environment.
+  // credentials come from plugin settings, then the VesnALIA server environment.
   async function loadConfig(): Promise<ResolvedConfig> {
     const values = await settings.get();
     const env = process.env;
@@ -217,7 +217,7 @@ export default async function plugin(bb: BbPluginApi) {
     const key = configKey(app);
     let existing = sources.get(key);
     if (existing === undefined) {
-      existing = new InstallationTokenSource(app, config.refreshMarginMs, bb.log);
+      existing = new InstallationTokenSource(app, config.refreshMarginMs, alia.log);
       sources.set(key, existing);
     }
     return existing;
@@ -232,13 +232,13 @@ export default async function plugin(bb: BbPluginApi) {
     privateKeyPath: z.string().min(1),
   });
   async function projectApp(projectId: string): Promise<AppConfig | null> {
-    const stored = await bb.storage.kv.get<unknown>(APP_PREFIX + projectId);
+    const stored = await alia.storage.kv.get<unknown>(APP_PREFIX + projectId);
     if (stored === undefined) return null;
     const parsed = appConfigSchema.safeParse(stored);
     return parsed.success ? parsed.data : null;
   }
   async function listProjectApps(): Promise<Array<{ projectId: string; app: AppConfig }>> {
-    const keys = await bb.storage.kv.list(APP_PREFIX);
+    const keys = await alia.storage.kv.list(APP_PREFIX);
     const rows: Array<{ projectId: string; app: AppConfig }> = [];
     for (const key of keys) {
       const projectId = key.slice(APP_PREFIX.length);
@@ -248,15 +248,15 @@ export default async function plugin(bb: BbPluginApi) {
     return rows;
   }
   async function storeApp(projectId: string, app: AppConfig): Promise<void> {
-    await bb.storage.kv.set(APP_PREFIX + projectId, app);
+    await alia.storage.kv.set(APP_PREFIX + projectId, app);
     sources.delete(configKey(app));
-    bb.realtime.publish(APPS_CHANGED, {});
+    alia.realtime.publish(APPS_CHANGED, {});
   }
   async function removeApp(projectId: string): Promise<boolean> {
     const existing = await projectApp(projectId);
-    await bb.storage.kv.delete(APP_PREFIX + projectId);
+    await alia.storage.kv.delete(APP_PREFIX + projectId);
     if (existing !== null) sources.delete(configKey(existing));
-    bb.realtime.publish(APPS_CHANGED, {});
+    alia.realtime.publish(APPS_CHANGED, {});
     return existing !== null;
   }
   // A serialisable token status for one app, or null when nothing is cached.
@@ -274,13 +274,13 @@ export default async function plugin(bb: BbPluginApi) {
   settings.onChange(async () => {
     config = await loadConfig();
     sources.clear();
-    bb.log.info("settings changed; token cache cleared");
+    alia.log.info("settings changed; token cache cleared");
   });
 
-  const hasProjectApps = (await bb.storage.kv.list(APP_PREFIX)).length > 0;
+  const hasProjectApps = (await alia.storage.kv.list(APP_PREFIX)).length > 0;
   if (config.app === null && !hasProjectApps) {
-    bb.status.needsConfiguration(
-      "Store a per-project app with `bb github-app-auth set-app`, or set appId, installationId and privateKeyPath (or export GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID and GITHUB_APP_PRIVATE_KEY_PATH for the bb server) and run `bb plugin reload github-app-auth`.",
+    alia.status.needsConfiguration(
+      "Store a per-project app with `alia github-app-auth set-app`, or set appId, installationId and privateKeyPath (or export GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID and GITHUB_APP_PRIVATE_KEY_PATH for the VesnALIA server) and run `alia plugin reload github-app-auth`.",
     );
   }
 
@@ -292,11 +292,11 @@ export default async function plugin(bb: BbPluginApi) {
       return cached.name;
     }
     try {
-      const project = await bb.sdk.projects.get({ projectId });
+      const project = await alia.sdk.projects.get({ projectId });
       projectNames.set(projectId, { name: project.name, at: Date.now() });
       return project.name;
     } catch (error) {
-      bb.log.warn(`could not read project ${projectId}: ${String(error)}`);
+      alia.log.warn(`could not read project ${projectId}: ${String(error)}`);
       return cached?.name ?? null;
     }
   }
@@ -314,14 +314,14 @@ export default async function plugin(bb: BbPluginApi) {
       return cached.present;
     }
     try {
-      const env = await bb.sdk.projects.machineEnvironment({ projectId });
+      const env = await alia.sdk.projects.machineEnvironment({ projectId });
       const present = env.variables.some(
         (entry) => entry.name === config.enableEnvVarName,
       );
       envVarProjects.set(projectId, { present, at: Date.now() });
       return present;
     } catch (error) {
-      bb.log.warn(`could not read env for project ${projectId}: ${String(error)}`);
+      alia.log.warn(`could not read env for project ${projectId}: ${String(error)}`);
       return cached?.present ?? false;
     }
   }
@@ -357,7 +357,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       identity = await tokenSource.getIdentity();
     } catch (error) {
-      bb.log.warn(`could not resolve app identity: ${String(error)}`);
+      alia.log.warn(`could not resolve app identity: ${String(error)}`);
     }
     return buildEnvEntries(token, identity, {
       appId: app.appId,
@@ -373,7 +373,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       return await resolveEntries(context.projectId);
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `no GitHub token for thread ${context.threadId}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return [];
@@ -381,11 +381,11 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   for (const providerId of config.providerIds) {
-    bb.providers.experimental_contributeEnv(providerId, contributeEnv);
+    alia.providers.experimental_contributeEnv(providerId, contributeEnv);
   }
 
   // A new thread in an enabled project warms its token before the first turn.
-  bb.events.on("thread.created", async ({ thread }) => {
+  alia.events.on("thread.created", async ({ thread }) => {
     const app = await appForProject(thread.projectId);
     if (app === null) return;
     const tokenSource = getSourceFor(app);
@@ -395,7 +395,7 @@ export default async function plugin(bb: BbPluginApi) {
     ]);
   });
 
-  bb.background.service("token-refresh", {
+  alia.background.service("token-refresh", {
     async start(signal) {
       while (!signal.aborted) {
         await new Promise<void>((resolve) => {
@@ -433,7 +433,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (projectId === undefined) {
       throw new PluginCliError("no project in context", {
         code: "project_required",
-        hint: "Add --project <id> (run `bb status` to see the current project id).",
+        hint: "Add --project <id> (run `alia status` to see the current project id).",
       });
     }
     return projectId;
@@ -444,7 +444,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (app === null) {
       throw new PluginCliError(`project ${projectId} has no GitHub App`, {
         code: "project_not_enabled",
-        hint: "Store one with `bb github-app-auth set-app`, add the project to the projects setting, or define the GITHUB_APP_ID environment variable on the project.",
+        hint: "Store one with `alia github-app-auth set-app`, add the project to the projects setting, or define the GITHUB_APP_ID environment variable on the project.",
       });
     }
     return getSourceFor(app);
@@ -459,7 +459,7 @@ export default async function plugin(bb: BbPluginApi) {
     description: "Emit machine-readable JSON",
   } as const;
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "github-app-auth",
       summary: "Store, inspect and refresh the GitHub App credentials injected into agent turns",
@@ -558,7 +558,7 @@ export default async function plugin(bb: BbPluginApi) {
             "key-path": {
               type: "string",
               required: true,
-              description: "Private key PEM path on the bb server (~ allowed)",
+              description: "Private key PEM path on the VesnALIA server (~ allowed)",
             },
             json: jsonOption,
           },
@@ -640,9 +640,9 @@ export default async function plugin(bb: BbPluginApi) {
     }),
   );
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     projects_list: async () => {
-      const list = await bb.sdk.projects.list({});
+      const list = await alia.sdk.projects.list({});
       return {
         projects: list
           .map((project) => ({ id: project.id, name: project.name }))
@@ -685,7 +685,7 @@ export default async function plugin(bb: BbPluginApi) {
     app_unset: async ({ projectId }) => ({ removed: await removeApp(projectId) }),
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     sources.clear();
   });
 }

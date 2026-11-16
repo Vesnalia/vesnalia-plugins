@@ -66,7 +66,7 @@ test("070 unit 10: msb 0.7.7's recorded answers parse: a full snapshot that depe
   assert.deepEqual(parseInspect("Source Sandbox:       bbbox-bx6shhmycajhqm-k3j9\nLabels:               bbbox.box=bx6shhmycajhqm, bbbox.install=inst-1a2b\n").labels, { "bbbox.box": "bx6shhmycajhqm", "bbbox.install": "inst-1a2b" });
 });
 
-test("070 unit 10: BB Box's microsandbox snapshots are pinned to the msb whose snapshots its checks measured, and any other msb turns them off with words", async () => {
+test("070 unit 10: VesnALIA Box's microsandbox snapshots are pinned to the msb whose snapshots its checks measured, and any other msb turns them off with words", async () => {
   assert.equal(SNAPSHOTS_CHECKED_WITH, MSB_VERSION, "moving msb past the release the snapshot checks measured needs them run again (docs/research/box-snapshots/microsandbox-unit-10.sh), then this constant moved");
   assert.ok(readFileSync(new URL("../docs/research/box-snapshots/microsandbox-unit-10.sh", import.meta.url), "utf8").includes(`msb ${SNAPSHOTS_CHECKED_WITH}`));
   assert.equal(versionRefusal("0.7.7"), null);
@@ -184,7 +184,7 @@ test("070 close-out: a Mac host's microsandbox boxes take and delete snapshots, 
   await assert.rejects(backend.snapshot(guest, { id: snapshotId(), box: box.boxId, memory: false, forkSafe: 7 }, QUIET, signal()), (error: unknown) => error instanceof SnapshotFailed && /this host has msb 0\.8\.0/.test(error.message));
 });
 
-test("070 close-out: where msb's home is reached through a link, as BB Box's wrapper reaches a long one and a Mac's /tmp always is, msb refuses a snapshot's ID, so BB Box names each by group and member to inspect, restore, fork and delete it", async () => {
+test("070 close-out: where msb's home is reached through a link, as VesnALIA Box's wrapper reaches a long one and a Mac's /tmp always is, msb refuses a snapshot's ID, so VesnALIA Box names each by group and member to inspect, restore, fork and delete it", async () => {
   const { fake, backend } = setup();
   fake.set({ homeThroughLink: true });
   const box = identity();
@@ -265,7 +265,7 @@ test("070 unit 10: a box made before, whose Docker disk is a file of the host's,
   const guest: Guest = { ref: name, host: null, address: null, size: SMALL, data: { box: box.boxId } };
   const plan = await backend.planSnapshots(guest, "linux", null, signal());
   assert.equal(plan.take.ok, false);
-  assert.equal(plan.take.why, "It was made before BB Box could snapshot a box's Docker disk: its Docker data is on a file of the host's, which msb leaves out of a snapshot and cannot give a restored box. A new box can.");
+  assert.equal(plan.take.why, "It was made before VesnALIA Box could snapshot a box's Docker disk: its Docker data is on a file of the host's, which msb leaves out of a snapshot and cannot give a restored box. A new box can.");
   assert.ok(plan.take.why!.includes(HOST_FILE_DOCKER.slice(1)));
   assert.equal(plan.busy, null, "a refusal, not a wait");
   await assert.rejects(backend.snapshot(guest, { id: snapshotId(), box: box.boxId, memory: false }, QUIET, signal()), (error: unknown) => error instanceof SnapshotFailed && error.message.includes(HOST_FILE_DOCKER.slice(1)));
@@ -295,7 +295,7 @@ test("070 unit 10: a delete removes a snapshot others depend on with --force, as
   assert.deepEqual(fake.calls().filter((call) => call[0] === "snapshot" && call[1] === "remove").at(-1), ["snapshot", "remove", "--quiet", `bbbox-${box}:${snapshotName("test", ids[2]!, 7)}`], "no --force for a snapshot nothing depends on");
   await backend.deleteSnapshot({ id: ids[2]!, ref: taken[2]!.ref, guest }, QUIET, signal());
   const other = new MsbBackend(msbConfig(), testContext(undefined, "other"), { dir: fake.dir, script: fake.script, readyTimeoutMs: 2_000 });
-  await assert.rejects(other.deleteSnapshot({ id: ids[1]!, ref: taken[1]!.ref, guest }, QUIET, signal()), (error: unknown) => error instanceof SnapshotFailed && /is not BB Box's snapshot .* of this install's/.test(error.message));
+  await assert.rejects(other.deleteSnapshot({ id: ids[1]!, ref: taken[1]!.ref, guest }, QUIET, signal()), (error: unknown) => error instanceof SnapshotFailed && /is not ALIA Box's snapshot .* of this install's/.test(error.message));
   assert.deepEqual(await other.heldSnapshots(signal()), []);
 });
 
@@ -315,7 +315,7 @@ test("070 unit 10: a restore makes the box a new microVM from the snapshot, with
   assert.deepEqual(claimed, [fresh.ref, fresh.ref], "claimed before msb is asked");
   const restore = fake.calls().find((call) => call[0] === "snapshot" && call[1] === "restore")!;
   assert.deepEqual([restore[2], after(restore, "--name")[0], after(restore, "--cpus")[0], after(restore, "--memory")[0], restore.includes("--disk-only")], [`bbbox-${box.boxId}:${snapshotName("test", diskId, 7)}`, fresh.ref, "2", "4096M", false]);
-  assert.deepEqual([after(restore, "--net-default"), after(restore, "--net-rule")], [["deny"], ["allow@dns,allow@public,allow@private,allow:ingress@any"]], "the box's own network profiles, as msb's create made them, which a restore does not keep: without private it cannot reach BB on a private address (found live)");
+  assert.deepEqual([after(restore, "--net-default"), after(restore, "--net-rule")], [["deny"], ["allow@dns,allow@public,allow@private,allow:ingress@any"]], "the box's own network profiles, as msb's create made them, which a restore does not keep: without private it cannot reach VesnALIA on a private address (found live)");
   const made = fake.inspect(fresh.ref);
   assert.equal(made.config.labels["bbbox.box"], box.boxId);
   assert.equal(made.config.labels["bbbox.thread"], box.threadId);
@@ -334,7 +334,7 @@ test("070 unit 10: a restore makes the box a new microVM from the snapshot, with
   assert.equal(fake.inspect(back.ref).config.labels["bbbox.box"], box.boxId);
 });
 
-test("070 unit 10: a part-made restored microVM, before BB Box labelled it, is deleted by a release and counted by power, and a fork's leftover is made again", async () => {
+test("070 unit 10: a part-made restored microVM, before VesnALIA Box labelled it, is deleted by a release and counted by power, and a fork's leftover is made again", async () => {
   const { fake, backend } = setup();
   const box = identity();
   const guest = await backend.acquire(box, null, acquiring(), signal());
@@ -373,7 +373,7 @@ test("070 unit 10: a fork boots a new microVM from the snapshot's disk only, nev
   assert.equal(config.labels["bbbox.box"], fork.boxId);
   assert.ok(config.env.includes(`BBBOX_IDENTITY=${fork.boxId}`), "a value new to the fork, which its marker does not hold, so it resets");
   assert.ok(!config.env.includes(`BBBOX_IDENTITY=${source.boxId}`));
-  assert.ok(!existsSync(join(fake.dir, "..", "sandboxes", made.ref, "run", "bb-box", "ready")), "no memory, so nothing of the source runs: BB Box starts it");
+  assert.ok(!existsSync(join(fake.dir, "..", "sandboxes", made.ref, "run", "alia-box", "ready")), "no memory, so nothing of the source runs: VesnALIA Box starts it");
   assert.equal(readFileSync(join(fake.home(made.ref), "work.txt"), "utf8"), "set up");
   const taken = identity();
   await new MsbCli(null, null, undefined, { dir: fake.dir }).ok(["create", "bbbox/linux:1", "--name", sandboxName(taken.boxId), "--label", "bbbox.backend=microsandbox", "--label", "bbbox.install=test", "--label", "bbbox.box=bx999999999998", "--cpus", "1", "--memory", "512M", "--root-disk", "8G"]);
@@ -407,15 +407,15 @@ test("070 unit 10: in an image with no ip command, as microsandbox's, the fork c
   };
   put(join(root, "etc/machine-id"), "fedcba9876543210fedcba9876543210\n");
   put(join(root, "etc/ssh/ssh_host_ed25519_key.pub"), "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAInewkey fork\n");
-  put(join(root, "etc/bb-box/identity"), "bb-box identity 1\nsource value\nvalue bxfork0000001\n");
-  put(join(bin, "bb-box-identity"), "#!/bin/sh\nprintf 'version=7\\nenabled=yes\\nboot=reset\\nmarker=matches\\narmed=yes\\npending=no\\nbox=\\nsource=value\\n'\n", 0o755);
+  put(join(root, "etc/alia-box/identity"), "alia-box identity 1\nsource value\nvalue bxfork0000001\n");
+  put(join(bin, "alia-box-identity"), "#!/bin/sh\nprintf 'version=7\\nenabled=yes\\nboot=reset\\nmarker=matches\\narmed=yes\\npending=no\\nbox=\\nsource=value\\n'\n", 0o755);
   put(join(bin, "id"), "#!/bin/sh\necho 0\n", 0o755);
   put(join(bin, "hostname"), "#!/bin/sh\necho 172.16.0.6 172.16.1.1 fd42:6d73:62::2\n", 0o755);
   for (const tool of ["sh", "sha256sum", "cut", "sed", "grep", "cat"]) {
     const found = spawnSync("sh", ["-c", `command -v ${tool}`], { encoding: "utf8" }).stdout.trim();
     symlinkSync(found, join(bin, tool));
   }
-  const ran = spawnSync("/bin/sh", ["-c", forkCheckScript().replaceAll(IDENTITY_TOOL, join(bin, "bb-box-identity"))], { encoding: "utf8", env: { BBBOX_IDENTITY_ROOT: root, PATH: bin } });
+  const ran = spawnSync("/bin/sh", ["-c", forkCheckScript().replaceAll(IDENTITY_TOOL, join(bin, "alia-box-identity"))], { encoding: "utf8", env: { BBBOX_IDENTITY_ROOT: root, PATH: bin } });
   const seen = parseForkSeen(ran.stdout, ran.status);
   assert.deepEqual([seen.addresses, seen.markerValue, seen.unreadable], [["172.16.0.6", "172.16.1.1"], "bxfork0000001", []]);
   const expected = { forkMacs: [], forkValue: "bxfork0000001", sourceMacs: [], sourceBox: "bxsource00001", sourceName: "amber-fox", sourceAddresses: [], freedSourceAddresses: [], ownAddress: null, boxAddresses: [], held: { machineId: "c".repeat(64), hostKeys: [] }, safeFrom: 7 };
@@ -425,12 +425,12 @@ test("070 unit 10: in an image with no ip command, as microsandbox's, the fork c
 test("070 unit 10: each start puts /run in memory again and the box's own hostname, which msb's restore does not keep", () => {
   assert.match(RUN_IN_MEMORY, /\$2 == "\/run"/);
   assert.match(RUN_IN_MEMORY, /mount -t tmpfs -o mode=0755,nosuid,nodev tmpfs \/run/);
-  assert.match(RUN_IN_MEMORY, /rm -rf "\$held" \/run\/bb-box \/run\/bb-box-started/);
+  assert.match(RUN_IN_MEMORY, /rm -rf "\$held" \/run\/alia-box \/run\/alia-box-started/);
   assert.match(OWN_HOSTNAME, /h=\$\{BBBOX_HOSTNAME:-\}/);
   assert.match(OWN_HOSTNAME, /hostname "\$h"; printf '%s\\n' "\$h" >\/etc\/hostname/);
 });
 
-test("070 unit 10: through BB Box's own snapshots, a restore swaps the box to a new microVM that keeps its ID and records, the old one goes, the snapshots outlive it, and a release deletes those nobody kept", async () => {
+test("070 unit 10: through VesnALIA Box's own snapshots, a restore swaps the box to a new microVM that keeps its ID and records, the old one goes, the snapshots outlive it, and a release deletes those nobody kept", async () => {
   const fake = fakeMsbHost();
   const state = world({ markersOn: false, backend: (storage) => new MsbBackend(msbConfig(), testContext(storage, "test", { id: "fake" }), { dir: fake.dir, script: fake.script, readyTimeoutMs: 2_000 }) });
   const box = await readyBox(state);
@@ -474,7 +474,7 @@ test("070 unit 10: through BB Box's own snapshots, a restore swaps the box to a 
   assert.deepEqual(fake.snapshots(), []);
 });
 
-test("070 unit 10 review (Astra 1): BB Box restarting after a restore's new microVM took its access file, before its image's command ran, starts it again on recovery, and deletes the old microVM only once the new one is ready", async () => {
+test("070 unit 10 review (Astra 1): VesnALIA Box restarting after a restore's new microVM took its access file, before its image's command ran, starts it again on recovery, and deletes the old microVM only once the new one is ready", async () => {
   const fake = fakeMsbHost();
   const state = world({ markersOn: false, backend: (storage) => new MsbBackend(msbConfig(), testContext(storage, "test", { id: "fake" }), { dir: fake.dir, script: fake.script, readyTimeoutMs: 2_000 }) });
   const box = await readyBox(state);
@@ -494,7 +494,7 @@ test("070 unit 10 review (Astra 1): BB Box restarting after a restore's new micr
   for (let i = 0; i < 500 && !answered; i++) await new Promise((resolve) => setTimeout(resolve, 10));
   assert.ok(answered, "the access file was written before the image's command ran");
   const fresh = state.store.unsettled().find((operation) => operation.kind === "restore")!.guests!.new!.ref;
-  assert.ok(!existsSync(join(fake.root, "sandboxes", fresh, "run", "bb-box", "ready")), "the new microVM is not ready yet");
+  assert.ok(!existsSync(join(fake.root, "sandboxes", fresh, "run", "alia-box", "ready")), "the new microVM is not ready yet");
   await state.restart();
   await held;
   const cut = state.store.unsettled().find((operation) => operation.kind === "restore")!;
@@ -504,17 +504,17 @@ test("070 unit 10 review (Astra 1): BB Box restarting after a restore's new micr
   const after = (await state.boxes.find(box.id))!;
   assert.equal(after.state, "ready");
   assert.equal(after.guest!.ref, fresh);
-  assert.ok(existsSync(join(fake.root, "sandboxes", fresh, "run", "bb-box", "ready")), "its image's command ran, and it said it was ready");
+  assert.ok(existsSync(join(fake.root, "sandboxes", fresh, "run", "alia-box", "ready")), "its image's command ran, and it said it was ready");
   assert.equal(readFileSync(join(fake.home(fresh), "work.txt"), "utf8"), "before");
   assert.ok(!fake.sandboxes().includes(old), "only then is the old microVM deleted");
   assert.equal(state.store.operation(cut.id)!.state, "done");
 });
 
-test("070 unit 10 review (Opus 4): the upkeep removes the Docker disk template an earlier BB Box made on a host without mkfs.ext4, and the status script no longer counts it", () => {
+test("070 unit 10 review (Opus 4): the upkeep removes the Docker disk template an earlier VesnALIA Box made on a host without mkfs.ext4, and the status script no longer counts it", () => {
   const dir = join(tempDir("msb-templates"), "microsandbox");
   mkdirSync(join(dir, "templates"), { recursive: true });
   writeFileSync(join(dir, "templates", "docker-64G.ext4"), Buffer.alloc(4 * 1024 * 1024, 1));
-  const run = (name: "status" | "disks") => spawnSync("sh", ["-c", msbScript(name), "bb-box-msb"], { encoding: "utf8", env: { ...process.env, BBBOX_MSB_DIR: dir } });
+  const run = (name: "status" | "disks") => spawnSync("sh", ["-c", msbScript(name), "alia-box-msb"], { encoding: "utf8", env: { ...process.env, BBBOX_MSB_DIR: dir } });
   assert.ok(Number(scriptValues(run("status").stdout).used_kib) < 1024, "the template's 4 MiB are not counted");
   assert.equal(run("disks").status, 0);
   assert.ok(!existsSync(join(dir, "templates")), "the template goes with the upkeep's sweep of Docker disks");

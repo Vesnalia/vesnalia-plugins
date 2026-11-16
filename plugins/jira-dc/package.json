@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-jira-dc",
+  "name": "alia-plugin-jira-dc",
   "version": "0.1.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.5.9"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.5.9"
   },
-  "bb": {
+  "alia": {
     "name": "Jira Data Center",
-    "description": "Search, read, create, edit, transition, comment on, assign, and delete Jira Data Center issues in BB, with per-action approval for agent writes.",
+    "description": "Search, read, create, edit, transition, comment on, assign, and delete Jira Data Center issues in VesnALIA, with per-action approval for agent writes.",
     "branding": {
       "icon": "ListTodo"
     },
@@ -26,7 +26,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.9",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -53,16 +52,16 @@
     "vaul": "^1.1.2",
     "vitest": "^4.1.1"
   },
-  "description": "Search, read, create, edit, transition, comment on, assign, and delete Jira Data Center issues in BB, with per-action approval for agent writes.",
+  "description": "Search, read, create, edit, transition, comment on, assign, and delete Jira Data Center issues in VesnALIA, with per-action approval for agent writes.",
   "license": "MIT",
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build": "bb plugin build ."
+    "build": "alia plugin build ."
   },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "jira",
     "jira-data-center",
     "atlassian"
@@ -71,12 +70,21 @@
     "name": "Michael Verkhovykh",
     "url": "https://github.com/mihver1"
   },
-  "homepage": "https://github.com/mihver1/bb-plugin-jira-dc#readme",
-  "bugs": {
-    "url": "https://github.com/mihver1/bb-plugin-jira-dc/issues"
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.9"
   },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/jira-dc#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mihver1/bb-plugin-jira-dc.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/jira-dc"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

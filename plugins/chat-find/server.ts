@@ -1,5 +1,5 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-export default function chatFind(bb: BbPluginApi) {
-  bb.log.info("Chat Find loaded");
+export default function chatFind(alia: AliaPluginApi) {
+  alia.log.info("Chat Find loaded");
 }

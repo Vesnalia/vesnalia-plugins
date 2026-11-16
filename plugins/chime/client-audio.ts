@@ -13,8 +13,8 @@ import { StormBuffer } from "./storm-buffer";
 const POLL_MS = 500;
 const STORM_WINDOW_MS = 1_000;
 const LEASE_MS = 2_000;
-const LEASE_KEY = "bb-plugin-chime:leader";
-const AUDIO_STATUS_KEY = "bb-plugin-chime:audio-status";
+const LEASE_KEY = "alia-plugin-chime:leader";
+const AUDIO_STATUS_KEY = "alia-plugin-chime:audio-status";
 
 interface PollResponse {
   cursor: number;

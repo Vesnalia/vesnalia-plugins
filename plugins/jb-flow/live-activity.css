@@ -349,7 +349,7 @@
   [aria-label^="Collapse workflow"] {
   display: none;
 }
-/* Git is still BB's native control, with the entire diff/merge-base UI intact. */
+/* Git is still ALIA's native control, with the entire diff/merge-base UI intact. */
 .jb-flow-shell
   [data-app-composer]
   :is(section, div):has(> div > button[id="thread-prompt-banner-git-toggle"]) {

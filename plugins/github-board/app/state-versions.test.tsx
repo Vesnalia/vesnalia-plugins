@@ -5,7 +5,7 @@
  * they can land, through the SDK's app harness.
  */
 import { act, cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { PromptSettings } from "../shared/board";

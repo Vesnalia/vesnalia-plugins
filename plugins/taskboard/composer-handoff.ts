@@ -1,8 +1,8 @@
-import type { PluginComposerMention } from '@get-bb/plugin-sdk/app';
+import type { PluginComposerMention } from '@vesnalia/plugin-sdk/app';
 import type { WorkItem } from './contract.js';
 
 export const TASKBOARD_COMPOSER_MIME =
-  'application/x-bb-taskboard-mention+json';
+  'application/x-alia-taskboard-mention+json';
 
 const TASKBOARD_MENTION_PROVIDER = 'external-work-item';
 const MAX_DRAG_PAYLOAD_LENGTH = 2_048;
@@ -13,7 +13,7 @@ const UNSAFE_DISPLAY_CONTROL =
 
 type TaskboardMentionSource = Pick<
   WorkItem,
-  'bbProjectId' | 'source' | 'locator' | 'key'
+  'aliaProjectId' | 'source' | 'locator' | 'key'
 >;
 
 function validBoundedText(value: unknown, maxLength: number): value is string {
@@ -52,7 +52,7 @@ export function taskboardComposerMention(
 ): PluginComposerMention {
   return {
     provider: TASKBOARD_MENTION_PROVIDER,
-    id: `${item.bbProjectId}:${item.source}:${item.locator}`,
+    id: `${item.aliaProjectId}:${item.source}:${item.locator}`,
     label: item.key
   };
 }

@@ -1,34 +1,34 @@
 # Agent Board
 
-Agent Board is a generic BB execution-observability plugin with two complementary surfaces:
+Agent Board is a generic VesnALIA execution-observability plugin with two complementary surfaces:
 
-- **Global operations dashboard** — open **Agent Board** from BB navigation to see bounded active work, structured unresolved attention, and recent terminal executions across projects.
+- **Global operations dashboard** — open **Agent Board** from VesnALIA navigation to see bounded active work, structured unresolved attention, and recent terminal executions across projects.
 - **Thread-scoped board** — open the thread panel action for the existing focused/Kanban view of one thread tree and its optional public plugin sources:
-- **Execution timeline** — use **Timeline** from either surface to lazily load the latest bounded chronological operational events for one BB thread, Redteam scan, or Fleet job.
+- **Execution timeline** — use **Timeline** from either surface to lazily load the latest bounded chronological operational events for one VesnALIA thread, Redteam scan, or Fleet job.
 
 - **Single-agent focus** — when exactly one logical execution is active (a running thread, one Redteam scan, one delegation, one workflow, or a plan), the board shows that execution alone: a pipeline/progress track of truthful discrete states, a hero card with live activity, bounded recent activity, completed work, and the up-next queue. Failures and waiting states stay visible; empty sections collapse away.
 - **Three-column Kanban** (fallback) — when zero or several executions are active, the classic columns return:
   - **PLAN / QUEUED** — explicit plan steps, queued messages, waiting threads, and pending pipeline phases.
-  - **ACTIVE AGENTS** — running BB threads/workflows and active external operations.
+  - **ACTIVE AGENTS** — running VesnALIA threads/workflows and active external operations.
   - **OUTPUTS / DONE** — completed, failed, interrupted, and skipped work with bounded summaries.
 
 The mode is derived from the normalized snapshot by a pure view model (`lib/focus-model.ts`); no source-specific logic lives in the UI. The board is derived from authoritative sources on demand. It stores no duplicate board state and never renders reasoning/thinking events, fabricated progress percentages, or raw tool output.
 
-The global page uses the stable public `app.slots.navPanel` surface and `useBbNavigate().toThread(...)`. `lib/global-model.ts` collapses normalized source cards into independent logical executions, derives attention only from explicit structured metadata, and removes resolved conditions automatically. It does not inspect assistant prose to infer attention. Phase 1 adds public-activity age and recent/quiet reporting labels; these never prove a stall or change execution status. Completion verification is explicitly agent-reported. See [the vnext design](vnext-design.md).
+The global page uses the stable public `app.slots.navPanel` surface and `useAliaNavigate().toThread(...)`. `lib/global-model.ts` collapses normalized source cards into independent logical executions, derives attention only from explicit structured metadata, and removes resolved conditions automatically. It does not inspect assistant prose to infer attention. Phase 1 adds public-activity age and recent/quiet reporting labels; these never prove a stall or change execution status. Completion verification is explicitly agent-reported. See [the vnext design](vnext-design.md).
 
 ## Sources
 
-### BB
+### VesnALIA
 
 The built-in source observes the root thread, bounded descendants, workflows, delegations, plans, queue entries, tool activity, outputs, failures, model/provider, goal, context use, and timing through the public Plugin SDK.
 
-Timeline reads are lazy. Opening one BB timeline performs a single Agent Board RPC backed by one bounded public `threads.timeline` request and one tightly allowlisted lifecycle-event tail. The normalizer emits safe execution, phase, tool, public-update, waiting/resumed, interaction, child, delegation, and proven model-selection events. It never requests reasoning event kinds and never renders `activeThinking`, raw tool results, terminal output, file contents, user/system/developer text, or raw event JSON.
+Timeline reads are lazy. Opening one VesnALIA timeline performs a single Agent Board RPC backed by one bounded public `threads.timeline` request and one tightly allowlisted lifecycle-event tail. The normalizer emits safe execution, phase, tool, public-update, waiting/resumed, interaction, child, delegation, and proven model-selection events. It never requests reasoning event kinds and never renders `activeThinking`, raw tool results, terminal output, file contents, user/system/developer text, or raw event JSON.
 
 ### Redteam (optional)
 
-When `bb-plugin-redteam` exposes the public `observability_snapshot` RPC (schema version 1), Agent Board calls it through the SDK 0.4.21-supported `bb.sdk.plugins.callRpc(...)` mechanism. `lib/redteam-source.ts` owns a small local Zod wire schema and normalizes the response into ordinary board cards with `source: "redteam"`; no Redteam module or DTO reaches React.
+When `alia-plugin-redteam` exposes the public `observability_snapshot` RPC (schema version 1), Agent Board calls it through the SDK 0.4.21-supported `alia.sdk.plugins.callRpc(...)` mechanism. `lib/redteam-source.ts` owns a small local Zod wire schema and normalizes the response into ordinary board cards with `source: "redteam"`; no Redteam module or DTO reaches React.
 
-Redteam is optional. Missing/disabled/older plugins, `unknown_method`, malformed/partial responses, and RPC failures are isolated and never break the BB board. The adapter accepts only operational fields; prompt, reasoning, report, evidence, and raw tool-output fields are absent from its schema.
+Redteam is optional. Missing/disabled/older plugins, `unknown_method`, malformed/partial responses, and RPC failures are isolated and never break the VesnALIA board. The adapter accepts only operational fields; prompt, reasoning, report, evidence, and raw tool-output fields are absent from its schema.
 
 Pending real phases map to PLAN, the active phase/current operation maps to ACTIVE, and completed/failed/cancelled phases map to OUTPUTS. Actual model, tool, target, task, and activity appear only when Redteam supplied them. Findings remain compact aggregate metadata; there is no findings column.
 
@@ -36,9 +36,9 @@ Redteam timelines reuse the same public observability snapshot and generic UI. O
 
 ## Realtime and polling
 
-BB changes use the existing public thread lifecycle/entity stream, a 400 ms coalescing watcher, and the plugin's `agent-board-changed` frontend signal.
+VesnALIA changes use the existing public thread lifecycle/entity stream, a 400 ms coalescing watcher, and the plugin's `agent-board-changed` frontend signal.
 
-SDK 0.4.21 has no supported cross-plugin realtime subscription. BB changes therefore opportunistically re-check Redteam. After a snapshot discovers a queued/running Redteam scan, a server-side fallback probes that project/global snapshot every 3 seconds. Requests share the Redteam source's inflight guard and 1.5-second TTL and never overlap. Polling stops when observed scans are terminal or the watched lease expires. While the global page is mounted, one slow 20-second snapshot refresh discovers brand-new Redteam work that has no BB event; unmounting clears that timer. BB thread changes remain event-driven.
+SDK 0.4.21 has no supported cross-plugin realtime subscription. VesnALIA changes therefore opportunistically re-check Redteam. After a snapshot discovers a queued/running Redteam scan, a server-side fallback probes that project/global snapshot every 3 seconds. Requests share the Redteam source's inflight guard and 1.5-second TTL and never overlap. Polling stops when observed scans are terminal or the watched lease expires. While the global page is mounted, one slow 20-second snapshot refresh discovers brand-new Redteam work that has no VesnALIA event; unmounting clears that timer. VesnALIA thread changes remain event-driven.
 
 ## Bounds
 
@@ -52,17 +52,17 @@ The shared Timeline uses the existing responsive dialog/drawer primitive. Rows a
 
 ## Compatibility
 
-- BB engine: `>=0.40`
+- VesnALIA engine: `>=0.40`
 - Runtime Plugin SDK floor: `>=0.4.21`
 - Current development types: 0.4.34
 
-Server modules use relative imports and avoid `@/` aliases so the BB 0.40 daemon loader can load source when artifact SDK versions differ. Newer lifecycle names are registered opportunistically, and missing newer thread fields degrade gracefully.
+Server modules use relative imports and avoid `@/` aliases so the VesnALIA 0.40 daemon loader can load source when artifact SDK versions differ. Newer lifecycle names are registered opportunistically, and missing newer thread fields degrade gracefully.
 
 ## Commands
 
 ```bash
-bb agent-board show <thread-id>
-bb agent-board show <thread-id> --json
+alia agent-board show <thread-id>
+alia agent-board show <thread-id> --json
 ```
 
 ## Develop and verify
@@ -70,27 +70,27 @@ bb agent-board show <thread-id> --json
 ```bash
 npm test
 npm run typecheck
-bb plugin build
+alia plugin build
 ```
 
-The Vitest suite includes a public-SDK-only scan that rejects private `@bb/*` dependencies and package-escaping imports.
+The Vitest suite includes a public-SDK-only scan that rejects private `@alia-core/*` dependencies and package-escaping imports.
 
 ## Install or reload
 
 ```bash
-cd bb-plugin-agent-board
-bb plugin install . --yes
-bb plugin reload agent-board
+cd alia-plugin-agent-board
+alia plugin install . --yes
+alia plugin reload agent-board
 ```
 
-Open **Agent Board** in BB navigation for the global dashboard, or open a thread panel and select the **Agent Board** action. Global attention, active work, and recent sections stack vertically on mobile; active cards use a two-column grid only from the `md` breakpoint.
+Open **Agent Board** in VesnALIA navigation for the global dashboard, or open a thread panel and select the **Agent Board** action. Global attention, active work, and recent sections stack vertically on mobile; active cards use a two-column grid only from the `md` breakpoint.
 
 ## Optional Ollama Fleet workers (0.6.0)
 
 Agent Board consumes only Fleet's public `fleet_observability_snapshot` RPC
-through `bb.sdk.plugins.callRpc`, with its own Zod schema in `lib/fleet-source.ts`.
+through `alia.sdk.plugins.callRpc`, with its own Zod schema in `lib/fleet-source.ts`.
 Fleet may be absent, disabled, older, unavailable, or return malformed data;
-BB and Redteam collection continues. Fleet source/types/storage are never imported.
+VesnALIA and Redteam collection continues. Fleet source/types/storage are never imported.
 
 The adapter requests at most 20 jobs. Exact thread/project origin links workers
 to their parent; a null origin becomes a standalone Fleet execution. The scoped
@@ -104,8 +104,8 @@ compact list (four visible, +N overflow), without replacing the parent's model
 or creating extra global Recent rows. Linked failures stay in scoped details;
 the parent's outcome controls global attention. Orphan failures can create one
 standalone attention item. Parent tool events remain operational activity, not
-extra worker cards. If the bounded BB page omits a known active parent, jobs
-remain grouped under their exact origin thread as `BB delegated work`.
+extra worker cards. If the bounded VesnALIA page omits a known active parent, jobs
+remain grouped under their exact origin thread as `ALIA delegated work`.
 
 Execution Timeline includes route delegation/start, actual-model observation,
 and terminal lifecycle events. Fleet v1 has no model-selection timestamp or
@@ -130,5 +130,5 @@ request is retained until settlement to prevent overlapping retries. Source
 failures show no stale workers and recover on normal discovery. A truncated
 20-job Fleet snapshot can omit workers; scoped/global views report partial data.
 
-Reinstall locally with `bb plugin install .`
+Reinstall locally with `alia plugin install .`
 after installing Fleet. Tests include the public-SDK-only dependency scan.

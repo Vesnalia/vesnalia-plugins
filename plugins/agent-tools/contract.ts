@@ -1,5 +1,5 @@
 // Wire schemas shared by the server entry, the host entry, and the frontend.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const transportSchema = z.enum(["stdio", "http", "sse"]);
@@ -102,9 +102,9 @@ export const skillsScanSchema = z.object({
               hasSkillMd: z.boolean(),
               /** Размер дерева; 0 у старых снимков, пока не пересканировали. */
               bytes: z.number().nonnegative().default(0),
-              /** Размер и число файлов так, как их считает BB (с мусором). */
-              bbBytes: z.number().nonnegative().default(0),
-              bbFiles: z.number().nonnegative().default(0),
+              /** Размер и число файлов так, как их считает VesnALIA (с мусором). */
+              aliaBytes: z.number().nonnegative().default(0),
+              aliaFiles: z.number().nonnegative().default(0),
               /** Внутри есть node_modules / .venv / __pycache__ … */
               junk: z.boolean().default(false),
             }),
@@ -148,7 +148,7 @@ export const skillStateSchema = z.enum([
   "diverged", // копия с тем же именем, но другим содержимым
   "only-here", // есть только в этой папке — кандидат в канон
   "stray-link", // ссылка в папке, которую мы не используем (Gemini/Antigravity)
-  "bb-registry", // ссылка на ~/.bb/skills — BB подставляет этот скилл в свои сессии сам
+  "alia-registry", // ссылка на ~/.vesnalia/skills — VesnALIA подставляет этот скилл в свои сессии сам
   "canonical-source", // канон ссылается сюда симлинком — реальное хранилище
 ]);
 export type SkillState = z.infer<typeof skillStateSchema>;
@@ -321,7 +321,7 @@ export const openCodeModelItemSchema = z.object({
   providerName: z.string(),
   isDefaultInOpenCode: z.boolean(),
   isSmallInOpenCode: z.boolean(),
-  isBbPreselected: z.boolean(),
+  isAliaPreselected: z.boolean(),
 });
 export type OpenCodeModelItem = z.infer<typeof openCodeModelItemSchema>;
 
@@ -344,7 +344,7 @@ export const openCodeOverviewSchema = z.object({
   ),
   providers: z.array(openCodeProviderRowSchema),
   availableModels: z.array(openCodeModelItemSchema),
-  bbPreselectedModel: z.string().nullable(),
+  aliaPreselectedModel: z.string().nullable(),
   drift: z.array(
     z.object({
       hostId: z.string(),
@@ -407,7 +407,7 @@ export const hostContract = defineRpcContract({
     }),
   },
   /**
-   * Раскатка канона по домам CLI: ссылки для Claude Code, зеркало для BB,
+   * Раскатка канона по домам CLI: ссылки для Claude Code, зеркало для VesnALIA,
    * архив для всего, что при этом заменяется или пропадает.
    */
   skills_fanout: {
@@ -433,7 +433,7 @@ export const hostContract = defineRpcContract({
       message: z.string().max(600).nullable(),
     }),
   },
-  /** Pack one canon skill so the BB server process can write dataDir/skills. */
+  /** Pack one canon skill so the VesnALIA server process can write dataDir/skills. */
   skills_archive: {
     input: z.object({ name: z.string().min(1).max(120) }),
     output: z.object({

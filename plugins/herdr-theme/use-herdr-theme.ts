@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-/** Follow the palette BB has applied, including changes in another window. */
+/** Follow the palette VesnALIA has applied, including changes in another window. */
 export function useHerdrTheme() {
   const [id, setId] = useState<string | null>(null);
   useEffect(() => {

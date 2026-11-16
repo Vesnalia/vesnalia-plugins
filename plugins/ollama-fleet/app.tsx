@@ -4,7 +4,7 @@ import {
   definePluginApp,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 import type {
   Endpoint,
@@ -400,7 +400,7 @@ function FleetPage() {
 
             <p className="mt-1 text-sm text-muted-foreground">
               Discover and monitor Ollama inference servers
-              available to bb. Health refreshes every 60 seconds.
+              available to VesnALIA. Health refreshes every 60 seconds.
             </p>
           </div>
 

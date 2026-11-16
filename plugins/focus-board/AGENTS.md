@@ -1,4 +1,4 @@
-# AGENTS.md — bb-plugin-focus-board
+# AGENTS.md — alia-plugin-focus-board
 
 ## Test command
 
@@ -22,7 +22,7 @@ This machine's npm wrapper blocks install scripts that `package.json`'s `allowSc
 
 ## node_modules — never a symlink in any checkout
 
-Never create or retarget a `node_modules` symlink inside this repo's checkouts. The worktrees' shared-deps shortcut (`ln -s <main>/node_modules node_modules`) is exactly what made the plugin board vanish three times: when that command runs with its cwd set to the main checkout, `node_modules` points at itself, every import in the frontend bundle fails to resolve, and bb serves a board that silently disappears. If a worktree needs dependencies, run `npm ci` there. If the board vanishes, check `ls -la <main>/node_modules` for a symlink (especially one pointing at itself), then `rm node_modules && npm ci && bb plugin reload focus-board`. The guard test `tests/node-modules-guard.test.ts` fails loudly whenever repo-root `node_modules` is a symlink. The `pretest`/`prebuild`/`preuat` hooks also run `scripts/check-node-modules.mjs`, so any `npm test`, `npm run build`, or `npm run uat` in a corrupted checkout aborts before doing real work. The bb script automation `focus-board node_modules watchdog` (id `auto_xwmnn7ilkd8`, every 5 minutes, silent when healthy) additionally self-heals the one main checkout — `/Users/cristos/Documents/code/bb-plugin-focus-board`, which bb loads the plugin from; `/Users/cristos/code/bb-plugin-focus-board` is the same directory via a symlink alias, not a second checkout: it removes a symlinked or missing node_modules, runs `npm ci` + `npm run build`, and reloads the plugin, skipping any checkout mid-install (npm `.staging` marker). Repairs are visible in `bb automation runs`; do not help it by recreating node_modules symlinks. Source lives at `scripts/node-modules-watchdog.sh`; after editing it, refresh the stored copy with `bb automation update auto_xwmnn7ilkd8 --project proj_p4562js7v2 --script-file scripts/node-modules-watchdog.sh --host host_yat733yf8z --interpreter bash --working-directory project --timeout 600000`.
+Never create or retarget a `node_modules` symlink inside this repo's checkouts. The worktrees' shared-deps shortcut (`ln -s <main>/node_modules node_modules`) is exactly what made the plugin board vanish three times: when that command runs with its cwd set to the main checkout, `node_modules` points at itself, every import in the frontend bundle fails to resolve, and VesnALIA serves a board that silently disappears. If a worktree needs dependencies, run `npm ci` there. If the board vanishes, check `ls -la <main>/node_modules` for a symlink (especially one pointing at itself), then `rm node_modules && npm ci && alia plugin reload focus-board`. The guard test `tests/node-modules-guard.test.ts` fails loudly whenever repo-root `node_modules` is a symlink. The `pretest`/`prebuild`/`preuat` hooks also run `scripts/check-node-modules.mjs`, so any `npm test`, `npm run build`, or `npm run uat` in a corrupted checkout aborts before doing real work. The VesnALIA script automation `focus-board node_modules watchdog` (id `auto_xwmnn7ilkd8`, every 5 minutes, silent when healthy) additionally self-heals the one main checkout — `/Users/cristos/Documents/code/alia-plugin-focus-board`, which VesnALIA loads the plugin from; `/Users/cristos/code/alia-plugin-focus-board` is the same directory via a symlink alias, not a second checkout: it removes a symlinked or missing node_modules, runs `npm ci` + `npm run build`, and reloads the plugin, skipping any checkout mid-install (npm `.staging` marker). Repairs are visible in `alia automation runs`; do not help it by recreating node_modules symlinks. Source lives at `scripts/node-modules-watchdog.sh`; after editing it, refresh the stored copy with `alia automation update auto_xwmnn7ilkd8 --project proj_p4562js7v2 --script-file scripts/node-modules-watchdog.sh --host host_yat733yf8z --interpreter bash --working-directory project --timeout 600000`.
 
 ## Release
 
@@ -48,7 +48,7 @@ summary the old merge-commit subjects held), link the PR to the focus board
 --merge` — a merge commit, never squash/rebase, so the dev lineage's
 bullet-carrying commits stay real), delete the merged head branch, then in
 the main checkout `git fetch && git merge --ff-only origin/dev` and rebuild
-+ `bb plugin reload focus-board` — bb keeps serving the previously loaded
++ `alia plugin reload focus-board` — VesnALIA keeps serving the previously loaded
 bundle otherwise, so an unreloaded PR looks unshipped (no new behavior,
 silent What's-new gift). Before touching the main checkout, check no other
 thread's merge is in flight in it (`.git/MERGE_HEAD` present) and the tree
@@ -85,7 +85,7 @@ condensed WHATS_NEW entry), then fast-forward main in a temporary
 worktree, tag annotated (SSH-signed) `vX.Y.Z` on that commit, push,
 publish the matching GitHub Release page — title `Focus Board X.Y.Z`, notes
 are that release's changelog section verbatim plus a Full-changelog compare
-link, no binary assets (the tag itself is the package; bb installs it by
+link, no binary assets (the tag itself is the package; VesnALIA installs it by
 semver range) — then a
 dev-only prep commit bumps to the next `-dev`. The finalize and prep
 commits ride PRs like everything else that writes `dev`; main itself moves

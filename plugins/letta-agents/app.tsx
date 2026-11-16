@@ -1,8 +1,8 @@
-// bb-plugin-letta-agents — frontend entry.
+// alia-plugin-letta-agents — frontend entry.
 //
 // Replaces the sidebar's thread list with one unified view: a list of agents
-// section on top, the normal threads below. React and @get-bb/plugin-sdk/app
-// are provided by the BB app at load time.
+// section on top, the normal threads below. React and @vesnalia/plugin-sdk/app
+// are provided by the VesnALIA app at load time.
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import {
@@ -16,15 +16,15 @@ import {
   experimental_useSidebarThreads,
   experimental_useThreadActions,
   ThreadTitle,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
   useSettings,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   PluginSidebarThread,
   PluginThreadActionTarget,
   PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { cn } from "@/lib/utils";
 import { providerPickerCss } from "./lib/picker";
@@ -195,7 +195,7 @@ const WORKING_INDICATORS = new Set([
   "working-draft",
 ]);
 
-// Dot color per non-working indicator, mirroring bb's bundled
+// Dot color per non-working indicator, mirroring VesnALIA's bundled
 // ThreadStatusGlyph tone palette (unread-error/queued-failed → destructive,
 // running/success → success, attention (waiting/queued) → warning, like the
 // sidebar machines attention badge). Idle stays muted.
@@ -315,7 +315,7 @@ function AgentRow({
   );
 }
 
-/** The thread a bb thread action/menu is evaluated for, from a sidebar thread. */
+/** The thread a VesnALIA thread action/menu is evaluated for, from a sidebar thread. */
 function threadActionTarget(thread: PluginSidebarThread): PluginThreadActionTarget {
   return {
     id: thread.id,
@@ -332,14 +332,14 @@ function threadActionTarget(thread: PluginSidebarThread): PluginThreadActionTarg
   };
 }
 
-// Right edge of one thread row, mirroring bb's bundled row: the status dot
-// swaps for a hover-only action strip — an Archive quick action (bb's default
-// rowActions) plus the ellipsis that opens bb's full thread actions menu.
+// Right edge of one thread row, mirroring VesnALIA's bundled row: the status dot
+// swaps for a hover-only action strip — an Archive quick action (VesnALIA's default
+// rowActions) plus the ellipsis that opens VesnALIA's full thread actions menu.
 // Right-click / touch long-press opens the same menu via the context wrapper.
 //
-// Zero-jump hover: both layers are absolutely positioned (like bb's bundled
+// Zero-jump hover: both layers are absolutely positioned (like VesnALIA's bundled
 // rows, which overlay hover actions on right padding reserved up front via
-// --bb-sidebar-hover-actions-inset). The dot fades out instead of being
+// --alia-sidebar-hover-actions-inset). The dot fades out instead of being
 // display-toggled, and the row reserves pr-[3.75rem] for the strip, so hover
 // changes only opacity/visibility — never layout.
 // Hover tooltip for row action buttons: delayed ~2s like a desktop title,
@@ -365,7 +365,7 @@ function RowTooltip({ label, children }: { label: string; children: ReactNode })
 
 function ThreadRowControls({ thread }: { thread: PluginSidebarThread }) {
   const target = useMemo(() => threadActionTarget(thread), [thread]);
-  const [archive] = experimental_useThreadActions(target, { keys: ["bb--core/archive"] });
+  const [archive] = experimental_useThreadActions(target, { keys: ["alia--core/archive"] });
   // While the kebab's menu is open the strip must stay mounted: if the pointer
   // leaves the row (e.g. into the chat), the hover-only display:none would
   // unmount the menu's trigger and Radix's popper loses its anchor, visibly
@@ -456,7 +456,7 @@ function ThreadRowControls({ thread }: { thread: PluginSidebarThread }) {
   );
 }
 
-// Thread and dispatched-task rows navigate in place and retain bb actions.
+// Thread and dispatched-task rows navigate in place and retain VesnALIA actions.
 function ThreadRow({
   thread,
   isActive,
@@ -476,7 +476,7 @@ function ThreadRow({
   expanded?: boolean;
   onToggle?: () => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const target = useMemo(() => threadActionTarget(thread), [thread]);
   return (
     <ThreadActionsContextMenu thread={target}>
@@ -524,7 +524,7 @@ function ThreadRow({
 function SidebarList(props: PluginThreadListProps) {
   const { agents, avatars, error: agentsError, warning, loading, refetch } = useAgents();
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { threads, sections } = experimental_useSidebarThreads();
   const [starting, setStarting] = useState<Set<string>>(() => new Set());
   const pending = useRef(new Set<string>());
@@ -554,7 +554,7 @@ function SidebarList(props: PluginThreadListProps) {
         // Latest agent intent wins; external/manual navigation invalidates the
         // request too. The synchronous per-agent pending set still deduplicates.
         // Overtake semantics: plain toThread() navigates in place. Passing
-        // { split: true } here hands the open to bb's split placement rules
+        // { split: true } here hands the open to VesnALIA's split placement rules
         // (right split by default), which is what flung agent chats into
         // their own pane instead of replacing the current view.
         if (!mounted.current || requestIntent !== intent.current || requestActive !== active.current) return;
@@ -720,7 +720,7 @@ function SidebarList(props: PluginThreadListProps) {
 
 // App-wide owner: settings/provider hooks stay reactive even when the sidebar
 // is unmounted. React owns the style node, so reload/disable removes it.
-// UI-only workaround: BB currently has no picker-only visibility API. Keep
+// UI-only workaround: VesnALIA currently has no picker-only visibility API. Keep
 // this scoped to the inspected provider-icon row, never sidebar buttons.
 function ProviderPickerVisibility() {
   const { values } = useSettings();

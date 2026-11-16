@@ -5,11 +5,11 @@
 // the tabs at its start and end, and nothing is started where the issues
 // are synced with nothing.
 // Why: the plugin used to run the syncs itself; what is left must not grow
-// a timer or a second opinion again (bead-bb-c9l.16).
+// a timer or a second opinion again (bead-alia-c9l.16).
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { SyncEntry, SyncState } from "../sync/types.ts";
 import type { Tracker, Trackers } from "./bend.ts";
 import type { Store } from "./store.ts";
@@ -62,11 +62,11 @@ function made(answers: { state?: SyncState; noTracker?: boolean } = {}) {
     },
   } as unknown as Tracker;
   const sync = createSync({
-    bb: {
+    alia: {
       log: { info: () => {}, warn: () => {} },
       realtime: { publish: () => did.push("tabs told") },
       storage: { kv: { delete: async (key: string) => void did.push(`forgot ${key}`) } },
-    } as unknown as BbPluginApi,
+    } as unknown as AliaPluginApi,
     store: { stale: () => did.push("list stale") } as unknown as Store,
     trackers: {
       trackerFor: async () =>

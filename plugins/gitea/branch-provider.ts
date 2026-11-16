@@ -1,9 +1,9 @@
 import type {
-  BbPluginApi,
+  AliaPluginApi,
   JsonValue,
   PluginRpcHandlers,
-} from "@get-bb/plugin-sdk";
-import type { PluginEnvironmentProviderCreateResult } from "@get-bb/plugin-sdk/environment-provider";
+} from "@vesnalia/plugin-sdk";
+import type { PluginEnvironmentProviderCreateResult } from "@vesnalia/plugin-sdk/environment-provider";
 import {
   GITEA_BRANCH_ENVIRONMENT_PROVIDER_ID,
   giteaBranchHostContract,
@@ -61,15 +61,15 @@ function errorMessage(error: unknown): string {
  * handlers its picker uses.
  */
 export function registerBranchProvider(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   deps: BranchProviderDeps,
 ): PluginRpcHandlers<typeof branchRpcContract> {
-  const host = bb.hosts.experimental_client({
+  const host = alia.hosts.experimental_client({
     contract: giteaBranchHostContract,
   });
 
   async function checkoutSource(projectId: string, hostId: string | null) {
-    const projects = await bb.sdk.projects.list();
+    const projects = await alia.sdk.projects.list();
     const sources = (
       projects.find((project) => project.id === projectId)?.sources ?? []
     ).filter((source) => source.type === "local_path");
@@ -206,7 +206,7 @@ export function registerBranchProvider(
     }
   }
 
-  bb.experimental_environments.register({
+  alia.experimental_environments.register({
     id: GITEA_BRANCH_ENVIRONMENT_PROVIDER_ID,
     displayName: "Gitea",
     description: "Work on a Gitea branch in a worktree.",
@@ -215,7 +215,7 @@ export function registerBranchProvider(
     inputs: giteaBranchInputsSchema,
     policy: { pathKeys: "per-attempt" },
     async availability(context) {
-      // The checkout's own origin wins over the remote URL BB recorded for the
+      // The checkout's own origin wins over the remote URL VesnALIA recorded for the
       // project, which can be out of date after a repository moves to Gitea.
       const repo =
         context.projectCheckout !== null

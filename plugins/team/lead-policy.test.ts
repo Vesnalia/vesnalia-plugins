@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { loadRolePrompt, type Role, type Workspace } from "./core";
 import { leadAutonomyPolicy, sessionHandoffPolicy } from "./messages";
 import type { Strings } from "./strings";
@@ -16,7 +16,7 @@ const mockT = {
     `missing prompt file for ${role}: ${path}`,
 } as unknown as Strings;
 
-function mockBb(files: Record<string, string> = {}): BbPluginApi {
+function mockAlia(files: Record<string, string> = {}): AliaPluginApi {
   return {
     sdk: {
       files: {
@@ -27,7 +27,7 @@ function mockBb(files: Record<string, string> = {}): BbPluginApi {
         },
       },
     },
-  } as unknown as BbPluginApi;
+  } as unknown as AliaPluginApi;
 }
 
 function occurrences(text: string, needle: string): number {
@@ -48,16 +48,16 @@ describe("loadRolePrompt lead policy (bbt-er6.2)", () => {
   it("custom executor preserves its text and receives the deferred handoff path once", async () => {
     const original = "  Custom executor.\n";
     const role = { name: "developer", prompt: original } as unknown as Role;
-    const result = await loadRolePrompt(mockBb(), workspace, role, false, "en", mockT);
+    const result = await loadRolePrompt(mockAlia(), workspace, role, false, "en", mockT);
     expect(result.startsWith(original)).toBe(true);
     expect(result).toContain(sessionHandoffPolicy("en"));
-    const repeated = await loadRolePrompt(mockBb(), workspace, { ...role, prompt: result }, false, "ru", mockT);
+    const repeated = await loadRolePrompt(mockAlia(), workspace, { ...role, prompt: result }, false, "ru", mockT);
     expect(repeated).toBe(result);
     expect(occurrences(repeated, "Team session handoff:")).toBe(1);
   });
   it("appends the lead policy once to a custom inline lead prompt", async () => {
     const role = { name: "lead", kind: "lead", prompt: "You are my custom lead." } as unknown as Role;
-    const result = await loadRolePrompt(mockBb(), workspace, role, true, "en", mockT);
+    const result = await loadRolePrompt(mockAlia(), workspace, role, true, "en", mockT);
 
     expect(result).toContain("You are my custom lead.");
     expect(result).toContain(leadAutonomyPolicy("en"));
@@ -68,10 +68,10 @@ describe("loadRolePrompt lead policy (bbt-er6.2)", () => {
     const role = {
       name: "lead",
       kind: "lead",
-      promptFile: ".bb/teams/core/lead.md",
+      promptFile: ".vesnalia/teams/core/lead.md",
     } as unknown as Role;
-    const bb = mockBb({ "/ws/demo/.bb/teams/core/lead.md": "Custom lead prompt from file." });
-    const result = await loadRolePrompt(bb, workspace, role, true, "en", mockT);
+    const alia = mockAlia({ "/ws/demo/.vesnalia/teams/core/lead.md": "Custom lead prompt from file." });
+    const result = await loadRolePrompt(alia, workspace, role, true, "en", mockT);
 
     expect(result).toContain("Custom lead prompt from file.");
     expect(result).toContain(leadAutonomyPolicy("en"));
@@ -80,7 +80,7 @@ describe("loadRolePrompt lead policy (bbt-er6.2)", () => {
 
   it("builtin lead prompt already contains the policy exactly once", async () => {
     const role = { name: "lead", kind: "lead" } as unknown as Role;
-    const result = await loadRolePrompt(mockBb(), workspace, role, true, "en", mockT);
+    const result = await loadRolePrompt(mockAlia(), workspace, role, true, "en", mockT);
 
     expect(result).toContain(leadAutonomyPolicy("en"));
     expect(occurrences(result, policyMarker("en"))).toBe(1);
@@ -92,7 +92,7 @@ describe("loadRolePrompt lead policy (bbt-er6.2)", () => {
       kind: "lead",
       prompt: `${leadAutonomyPolicy("en")}\n\nMy extra rules.`,
     } as unknown as Role;
-    const result = await loadRolePrompt(mockBb(), workspace, role, true, "en", mockT);
+    const result = await loadRolePrompt(mockAlia(), workspace, role, true, "en", mockT);
 
     expect(result).toContain("My extra rules.");
     expect(occurrences(result, policyMarker("en"))).toBe(1);
@@ -100,7 +100,7 @@ describe("loadRolePrompt lead policy (bbt-er6.2)", () => {
 
   it("non-lead roles do not receive the lead policy", async () => {
     const role = { name: "developer", kind: "developer" } as unknown as Role;
-    const result = await loadRolePrompt(mockBb(), workspace, role, false, "en", mockT);
+    const result = await loadRolePrompt(mockAlia(), workspace, role, false, "en", mockT);
 
     expect(result).not.toContain(leadAutonomyPolicy("en"));
     expect(occurrences(result, policyMarker("en"))).toBe(0);
@@ -108,7 +108,7 @@ describe("loadRolePrompt lead policy (bbt-er6.2)", () => {
 
   it("builtin lead prompt in Russian contains the policy exactly once", async () => {
     const role = { name: "lead", kind: "lead" } as unknown as Role;
-    const result = await loadRolePrompt(mockBb(), workspace, role, true, "ru", mockT);
+    const result = await loadRolePrompt(mockAlia(), workspace, role, true, "ru", mockT);
 
     expect(result).toContain(leadAutonomyPolicy("ru"));
     expect(occurrences(result, policyMarker("ru"))).toBe(1);
@@ -116,9 +116,9 @@ describe("loadRolePrompt lead policy (bbt-er6.2)", () => {
 
   it("executor prompt instructs checkpoint before review", async () => {
     const role = { name: "developer", kind: "developer" } as unknown as Role;
-    const result = await loadRolePrompt(mockBb(), workspace, role, false, "en", mockT);
+    const result = await loadRolePrompt(mockAlia(), workspace, role, false, "en", mockT);
 
-    expect(result).toContain("bb team checkpoint");
+    expect(result).toContain("alia team checkpoint");
     expect(result).toContain("goal, criteria[]");
     expect(result).toContain("decisions[{what,why}]");
     expect(result).toContain("Do not copy the last output");

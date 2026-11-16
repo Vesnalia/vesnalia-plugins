@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PluginBrowserBbSdk } from "@get-bb/plugin-sdk";
+import type { PluginBrowserAliaSdk } from "@vesnalia/plugin-sdk";
 import type { Overview, OverviewInput, OverviewTarget, ShellInput } from "../src/contract";
 import { createVantageStore } from "../src/store";
 import { branchRepo, fileChange, overview, repo, sharedFile, threadSummary, worktree } from "./fixtures";
@@ -20,7 +20,7 @@ function setup(options: { refreshDelayMs?: number; target?: OverviewTarget; incl
         unsubscribed.push(args.event);
       };
     }),
-  } as unknown as Pick<PluginBrowserBbSdk, "subscribe">;
+  } as unknown as Pick<PluginBrowserAliaSdk, "subscribe">;
   const calls: PendingCall[] = [];
   const shells: PendingShell[] = [];
   const shell = vi.fn((input: ShellInput) => new Promise<Overview>((resolve, reject) => {
@@ -78,9 +78,9 @@ describe("loading", () => {
 
   it("reports a failed first load and recovers when refreshed", async () => {
     const { store, calls } = setup();
-    calls[0]!.reject(new Error("bb is down"));
+    calls[0]!.reject(new Error("alia is down"));
     await vi.advanceTimersByTimeAsync(0);
-    expect(store.getSnapshot()).toMatchObject({ status: "error", overview: null, error: "bb is down" });
+    expect(store.getSnapshot()).toMatchObject({ status: "error", overview: null, error: "alia is down" });
     store.refresh();
     expect(store.getSnapshot()).toMatchObject({ status: "loading", error: null });
     calls[1]!.resolve(tree);

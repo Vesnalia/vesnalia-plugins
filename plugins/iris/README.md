@@ -7,14 +7,14 @@
 
 <p align="center">
 <a href="https://github.com/vburojevic/bb-plugin-iris/releases/latest"><img src="https://img.shields.io/github/v/release/vburojevic/bb-plugin-iris?style=flat-square&label=release&color=57606a" alt="Latest release"></a>
-<a href="https://getbb.app"><img src="https://img.shields.io/badge/bb-0.48%2B-57606a?style=flat-square" alt="Needs bb 0.48 or later"></a>
+<a href="https://getbb.app"><img src="https://img.shields.io/badge/bb-0.48%2B-57606a?style=flat-square" alt="Needs VesnALIA 0.48 or later"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-57606a?style=flat-square" alt="Apache-2.0 license"></a>
-<a href="https://github.com/get-bb/marketplace"><img src="https://img.shields.io/badge/BB%20Community-marketplace-57606a?style=flat-square" alt="Listed in the BB Community marketplace"></a>
+<a href="https://github.com/get-bb/marketplace"><img src="https://img.shields.io/badge/BB%20Community-marketplace-57606a?style=flat-square" alt="Listed in the VesnALIA Community marketplace"></a>
 </p>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/hero-dark.png">
-  <img src="docs/hero-light.png" width="100%" alt="Iris: live, interactive UI in your bb chat. Cards for a migration forecast, a ranked decision and session spend">
+  <img src="docs/hero-light.png" width="100%" alt="Iris: live, interactive UI in your VesnALIA chat. Cards for a migration forecast, a ranked decision and session spend">
 </picture>
 
 <p align="center">
@@ -22,33 +22,33 @@
   <a href="https://vburojevic.github.io/bb-plugin-iris/#/play"><b>Playground</b></a>&nbsp;·
   <a href="#install"><b>Install</b></a>&nbsp;·
   <a href="#components"><b>Components</b></a>&nbsp;·
-  <a href="#live-data-from-bb-itself"><b>Live data</b></a>&nbsp;·
+  <a href="#live-data-from-alia-itself"><b>Live data</b></a>&nbsp;·
   <a href="#for-agents"><b>For agents</b></a>
 </p>
 
-**Iris** is a [bb](https://getbb.app) plugin that lets agents answer with live, interactive UI instead of walls of text. An agent writes a short ```` ```iris ```` block, and bb draws it as a real card inside the reply: charts you can hover, sliders that recompute, tables you can sort, test runs that fill in while they run, pickers that wait for your answer. Every card wears your bb theme and follows it when you switch.
+**Iris** is a [VesnALIA](https://getbb.app) plugin that lets agents answer with live, interactive UI instead of walls of text. An agent writes a short ```` ```iris ```` block, and alia draws it as a real card inside the reply: charts you can hover, sliders that recompute, tables you can sort, test runs that fill in while they run, pickers that wait for your answer. Every card wears your alia theme and follows it when you switch.
 
 <p align="center">
-  <a href="https://vburojevic.github.io/bb-plugin-iris/"><img src="docs/demo.webp" alt="A bb thread where an agent answers with Iris cards: the person hovers a latency chart, drags a what-if slider, and tunes the weights of a decision until the ranking changes" width="768"></a>
+  <a href="https://vburojevic.github.io/bb-plugin-iris/"><img src="docs/demo.webp" alt="A alia thread where an agent answers with Iris cards: the person hovers a latency chart, drags a what-if slider, and tunes the weights of a decision until the ranking changes" width="768"></a>
   <br>
-  <sub>A real bb thread at 60 fps: the person hovers a chart, drags a what-if slider and tunes a decision. <a href="https://vburojevic.github.io/bb-plugin-iris/">Watch it in full resolution</a>.</sub>
+  <sub>A real alia thread at 60 fps: the person hovers a chart, drags a what-if slider and tunes a decision. <a href="https://vburojevic.github.io/bb-plugin-iris/">Watch it in full resolution</a>.</sub>
 </p>
 
 ## Install
 
-Iris is listed in the [BB Community marketplace](https://github.com/get-bb/marketplace), so bb installs it by name. On a Mac running bb 0.48 or later:
+Iris is listed in the [ALIA Community marketplace](https://github.com/get-bb/marketplace), so alia installs it by name. On a Mac running alia 0.48 or later:
 
 ```sh
-bb plugin install iris
+VesnALIA plugin install iris
 ```
 
 Or straight from this repository, following its release tags:
 
 ```sh
-bb plugin install "git:https://github.com/vburojevic/bb-plugin-iris.git@^1.0.0"
+VesnALIA plugin install "git:https://github.com/vburojevic/bb-plugin-iris.git@^1.0.0"
 ```
 
-That's it. New agent sessions learn Iris on their own, and the gallery appears in bb's sidebar under **Iris**. Sessions that were already running pick it up when they next start or resume. Iris adds about 3,600 tokens of instructions to each session it reaches: its rules and an index of every component. Prop details and examples load only when an agent asks for them.
+That's it. New agent sessions learn Iris on their own, and the gallery appears in alia's sidebar under **Iris**. Sessions that were already running pick it up when they next start or resume. Iris adds about 3,600 tokens of instructions to each session it reaches: its rules and an index of every component. Prop details and examples load only when an agent asks for them.
 
 > [!TIP]
 > Try every component in your browser first: the [playground](https://vburojevic.github.io/bb-plugin-iris/#/play) runs Iris's real renderer, with a live editor and links you can share.
@@ -72,19 +72,19 @@ That's it. New agent sessions learn Iris on their own, and the gallery appears i
 <td width="50%" valign="top">
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/icons/dark/palette.svg"><img src="docs/icons/light/palette.svg" width="32" height="32" alt=""></picture>
 
-**Your theme, live.** Colors come only from your bb theme: the accent is its primary, tones use its success, warning and danger colors, and nothing has a palette of its own.
+**Your theme, live.** Colors come only from your alia theme: the accent is its primary, tones use its success, warning and danger colors, and nothing has a palette of its own.
 </td>
 <td width="50%" valign="top">
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/icons/dark/activity.svg"><img src="docs/icons/light/activity.svg" width="32" height="32" alt=""></picture>
 
-**Live data.** A live card re-reads its files every 2 seconds. `load("bb:...")` reads bb itself, and any plugin can feed cards through a [public data contract](#for-plugin-authors-live-data-in-iris-cards).
+**Live data.** A live card re-reads its files every 2 seconds. `load("alia:...")` reads alia itself, and any plugin can feed cards through a [public data contract](#for-plugin-authors-live-data-in-iris-cards).
 </td>
 </tr>
 <tr>
 <td width="50%" valign="top">
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/icons/dark/mouse-pointer-click.svg"><img src="docs/icons/light/mouse-pointer-click.svg" width="32" height="32" alt=""></picture>
 
-**Interactive both ways.** Inputs recompute cards in place, buttons put text in your composer, and `iris_ask` opens a rich picker that waits for your answer, like bb's own ask mode: ranked checklists with badges, design variants you flip through in a large preview, a color with its contrast, boxes and notes drawn on a screenshot, comments on a spec, or a list to put in order.
+**Interactive both ways.** Inputs recompute cards in place, buttons put text in your composer, and `iris_ask` opens a rich picker that waits for your answer, like alia's own ask mode: ranked checklists with badges, design variants you flip through in a large preview, a color with its contrast, boxes and notes drawn on a screenshot, comments on a spec, or a list to put in order.
 </td>
 <td width="50%" valign="top">
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/icons/dark/app-window.svg"><img src="docs/icons/light/app-window.svg" width="32" height="32" alt=""></picture>
@@ -108,7 +108,7 @@ That's it. New agent sessions learn Iris on their own, and the gallery appears i
 
 ## How it works
 
-An agent writes JSX-style markup with live values, and bb renders it as you read.
+An agent writes JSX-style markup with live values, and alia renders it as you read.
 
 ```iris
 <state seats={10} plan="Pro" />
@@ -130,14 +130,14 @@ An agent writes JSX-style markup with live values, and bb renders it as you read
   <source media="(prefers-color-scheme: dark)" srcset="docs/estimate-dark.webp">
   <img src="docs/estimate-light.webp" alt="The Estimate card: a plan toggle, a seats slider and two metrics that recompute as you move them" width="100%">
 </picture>
-<sub>That block, as bb draws it. Try it, and change it, in the <a href="https://vburojevic.github.io/bb-plugin-iris/#/play">playground</a>.</sub>
+<sub>That block, as alia draws it. Try it, and change it, in the <a href="https://vburojevic.github.io/bb-plugin-iris/#/play">playground</a>.</sub>
 
 From the agent's reply to a card you can use:
 
 ```mermaid
 flowchart LR
   A["Agent writes<br>an iris block"] --> B["iris_check<br>reads its files, moves every<br>input, outlines the card"]
-  B --> C["bb streams the reply;<br>each tag draws<br>as it arrives"]
+  B --> C["alia streams the reply;<br>each tag draws<br>as it arrives"]
   C --> D["You use the card:<br>inputs recompute,<br>live cards re-read every 2 s"]
   D -- "a button or a picker" --> E["Your answer goes<br>back to the agent"]
 ```
@@ -158,7 +158,7 @@ A broken part shows a readable error with an **Ask to fix** button while the res
 
 ### Every component, by family
 
-Open a family to see each card as it renders in bb. Every picture links to its live page in the [playground](https://vburojevic.github.io/bb-plugin-iris/), with its code and every prop.
+Open a family to see each card as it renders in alia. Every picture links to its live page in the [playground](https://vburojevic.github.io/bb-plugin-iris/), with its code and every prop.
 
 <details>
 <summary><b>Layout</b> · 8 components: Card, Stack, Row, Grid, Tabs, Tab, Details, Divider</summary>
@@ -223,7 +223,7 @@ Open a family to see each card as it renders in bb. Every picture links to its l
 <br>
 
 <table>
-<tr><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Code"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Code.webp"><img src="docs/atlas/dark/Code.webp" alt="Code: A code block with syntax highlighting in bb's code theme." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Code"><b>Code</b></a><br><sub>A code block with syntax highlighting in bb's code theme.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Snippet"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Snippet.webp"><img src="docs/atlas/dark/Snippet.webp" alt="Snippet: Lines of a real file from the workspace, read when the card renders; clicking opens the file." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Snippet"><b>Snippet</b></a><br><sub>Lines of a real file from the workspace, read when the card renders; clicking opens the file.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Diff"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Diff.webp"><img src="docs/atlas/dark/Diff.webp" alt="Diff: A unified diff for one file in bb's diff viewer, unified or split." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Diff"><b>Diff</b></a><br><sub>A unified diff for one file in bb's diff viewer, unified or split.</sub></td></tr>
+<tr><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Code"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Code.webp"><img src="docs/atlas/dark/Code.webp" alt="Code: A code block with syntax highlighting in alia's code theme." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Code"><b>Code</b></a><br><sub>A code block with syntax highlighting in alia's code theme.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Snippet"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Snippet.webp"><img src="docs/atlas/dark/Snippet.webp" alt="Snippet: Lines of a real file from the workspace, read when the card renders; clicking opens the file." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Snippet"><b>Snippet</b></a><br><sub>Lines of a real file from the workspace, read when the card renders; clicking opens the file.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Diff"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Diff.webp"><img src="docs/atlas/dark/Diff.webp" alt="Diff: A unified diff for one file in alia's diff viewer, unified or split." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Diff"><b>Diff</b></a><br><sub>A unified diff for one file in alia's diff viewer, unified or split.</sub></td></tr>
 <tr><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Logs"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Logs.webp"><img src="docs/atlas/dark/Logs.webp" alt="Logs: Command output with real ANSI colors, line numbers, a filter and error lines marked." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Logs"><b>Logs</b></a><br><sub>Command output with real ANSI colors, line numbers, a filter and error lines marked.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/StackTrace"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/StackTrace.webp"><img src="docs/atlas/dark/StackTrace.webp" alt="StackTrace: An error and its stack with your own frames highlighted and clickable; library frames fold away." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/StackTrace"><b>StackTrace</b></a><br><sub>An error and its stack with your own frames highlighted and clickable; library frames fold away.</sub></td><td></td></tr>
 </table>
 
@@ -237,7 +237,7 @@ Open a family to see each card as it renders in bb. Every picture links to its l
 <tr><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Tests"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Tests.webp"><img src="docs/atlas/dark/Tests.webp" alt="Tests: A test run: counts, failures first with messages and file links." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Tests"><b>Tests</b></a><br><sub>A test run: counts, failures first with messages and file links.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Findings"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Findings.webp"><img src="docs/atlas/dark/Findings.webp" alt="Findings: Review, lint or type errors grouped by severity, each with file, line, detail and fix." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Findings"><b>Findings</b></a><br><sub>Review, lint or type errors grouped by severity, each with file, line, detail and fix.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Coverage"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Coverage.webp"><img src="docs/atlas/dark/Coverage.webp" alt="Coverage: Code coverage per file with the weakest files first." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Coverage"><b>Coverage</b></a><br><sub>Code coverage per file with the weakest files first.</sub></td></tr>
 <tr><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Benchmark"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Benchmark.webp"><img src="docs/atlas/dark/Benchmark.webp" alt="Benchmark: Before and after timings with the change and whether it improved." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Benchmark"><b>Benchmark</b></a><br><sub>Before and after timings with the change and whether it improved.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Delta"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Delta.webp"><img src="docs/atlas/dark/Delta.webp" alt="Delta: Before and after for any values: each row's change, its percent and whether it went the right way, with a tally of better, worse and same." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Delta"><b>Delta</b></a><br><sub>Before and after for any values: each row's change, its percent and whether it went the right way, with a tally of better, worse and same.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/TestHistory"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/TestHistory.webp"><img src="docs/atlas/dark/TestHistory.webp" alt="TestHistory: Pass and fail per test across runs, with flaky tests (pass and fail flipping, or passing on retry) marked first, then failing ones and since when, then fixed ones." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/TestHistory"><b>TestHistory</b></a><br><sub>Pass and fail per test across runs, with flaky tests (pass and fail flipping, or passing on retry) marked first, then failing ones and since when, then fixed ones.</sub></td></tr>
 <tr><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Changes"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Changes.webp"><img src="docs/atlas/dark/Changes.webp" alt="Changes: Files changed in this thread's checkout with +/- counts; each expands to its diff." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Changes"><b>Changes</b></a><br><sub>Files changed in this thread's checkout with +/- counts; each expands to its diff.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Commits"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Commits.webp"><img src="docs/atlas/dark/Commits.webp" alt="Commits: This branch's commits since the default branch, newest first; each opens its changes." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Commits"><b>Commits</b></a><br><sub>This branch's commits since the default branch, newest first; each opens its changes.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/PullRequest"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/PullRequest.webp"><img src="docs/atlas/dark/PullRequest.webp" alt="PullRequest: This branch's pull request: state, checks, review status, mergeability and a link." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/PullRequest"><b>PullRequest</b></a><br><sub>This branch's pull request: state, checks, review status, mergeability and a link.</sub></td></tr>
-<tr><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Environments"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Environments.webp"><img src="docs/atlas/dark/Environments.webp" alt="Environments: This project's worktrees: branch, threads in each, changed file count and pull request." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Environments"><b>Environments</b></a><br><sub>This project's worktrees: branch, threads in each, changed file count and pull request.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Threads"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Threads.webp"><img src="docs/atlas/dark/Threads.webp" alt="Threads: Live status of bb threads: running, waiting on the person, done, failed." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Threads"><b>Threads</b></a><br><sub>Live status of bb threads: running, waiting on the person, done, failed.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Pipeline"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Pipeline.webp"><img src="docs/atlas/dark/Pipeline.webp" alt="Pipeline: A CI run: runs, jobs and steps with status and duration, failures open." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Pipeline"><b>Pipeline</b></a><br><sub>A CI run: runs, jobs and steps with status and duration, failures open.</sub></td></tr>
+<tr><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Environments"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Environments.webp"><img src="docs/atlas/dark/Environments.webp" alt="Environments: This project's worktrees: branch, threads in each, changed file count and pull request." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Environments"><b>Environments</b></a><br><sub>This project's worktrees: branch, threads in each, changed file count and pull request.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Threads"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Threads.webp"><img src="docs/atlas/dark/Threads.webp" alt="Threads: Live status of alia threads: running, waiting on the person, done, failed." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Threads"><b>Threads</b></a><br><sub>Live status of alia threads: running, waiting on the person, done, failed.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Pipeline"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Pipeline.webp"><img src="docs/atlas/dark/Pipeline.webp" alt="Pipeline: A CI run: runs, jobs and steps with status and duration, failures open." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Pipeline"><b>Pipeline</b></a><br><sub>A CI run: runs, jobs and steps with status and duration, failures open.</sub></td></tr>
 </table>
 
 </details>
@@ -510,7 +510,7 @@ Open a family to see each card as it renders in bb. Every picture links to its l
 
 <!-- atlas:end -->
 
-## Live data from bb itself
+## Live data from alia itself
 
 <table>
 <tr>
@@ -519,35 +519,35 @@ Open a family to see each card as it renders in bb. Every picture links to its l
 </tr>
 </table>
 
-Cards read bb's own live data with `load("bb:<source>")`, scoped to the card's thread (its project and the threads it started), and draw it with any component. Inside `<Card state="live">` it re-reads every 2 seconds; `iris_check` reads the real values, so the agent sees what the card will. The live project components, `<Changes>`, `<Commits>`, `<PullRequest>`, `<Threads>` and `<Environments>`, read bb themselves and update as soon as bb reports a change.
+Cards read alia's own live data with `load("alia:<source>")`, scoped to the card's thread (its project and the threads it started), and draw it with any component. Inside `<Card state="live">` it re-reads every 2 seconds; `iris_check` reads the real values, so the agent sees what the card will. The live project components, `<Changes>`, `<Commits>`, `<PullRequest>`, `<Threads>` and `<Environments>`, read alia themselves and update as soon as alia reports a change.
 
 ```iris
-<let t={load("bb:thread")} />
-<let kids={load("bb:threads?usage=1")} />
+<let t={load("VesnALIA:thread")} />
+<let kids={load("VesnALIA:threads?usage=1")} />
 <Card title="This session" state="live">
   <Gauge label="Context" value={t.context ? t.context.percent : 0} format="percent" />
   <Table rows={kids} columns={["title", "status", {key: "waitingOnYou", label: "Needs you"}]} />
 </Card>
 ```
 
-`<ContextMeter thread={load("bb:thread")} />` draws the context window split by category, with model and cost; in a live card it keeps the readings it sees as a history line, where compactions show as drops. Given `load("bb:threads?usage=1")` it totals context and cost by model.
+`<ContextMeter thread={load("alia:thread")} />` draws the context window split by category, with model and cost; in a live card it keeps the readings it sees as a history line, where compactions show as drops. Given `load("alia:threads?usage=1")` it totals context and cost by model.
 
 <details>
-<summary><b>Every <code>bb:</code> source</b></summary>
+<summary><b>Every <code>alia:</code> source</b></summary>
 <br>
 
 | Source | What it returns |
 |---|---|
-| `bb:thread` | This thread: title, status, waiting on you, queued messages, context window use (tokens, percent, model, categories), cost |
-| `bb:threads` | Threads this thread started; `?scope=project` for the project's top-level threads; `?usage=1` adds context and cost |
-| `bb:usage` | Plan usage windows per provider: used percent, resets at, spend and limit |
-| `bb:pr` | This branch's pull request: state, checks, review, mergeability |
-| `bb:commits` | This branch's commits since its base, ahead and behind |
-| `bb:changes` | Files changed on this branch, uncommitted included, with line counts |
-| `bb:environments` | The project's worktrees with their threads, changed files and pull requests |
-| `bb:machines` | bb machines and whether they're connected |
-| `bb:plugins` | Installed plugins and their health |
-| `bb:terminals` | This thread's terminals: title, status, exit code; `?output=1` adds the tail of what each prints, for a live `<Logs>` |
+| `alia:thread` | This thread: title, status, waiting on you, queued messages, context window use (tokens, percent, model, categories), cost |
+| `alia:threads` | Threads this thread started; `?scope=project` for the project's top-level threads; `?usage=1` adds context and cost |
+| `alia:usage` | Plan usage windows per provider: used percent, resets at, spend and limit |
+| `alia:pr` | This branch's pull request: state, checks, review, mergeability |
+| `alia:commits` | This branch's commits since its base, ahead and behind |
+| `alia:changes` | Files changed on this branch, uncommitted included, with line counts |
+| `alia:environments` | The project's worktrees with their threads, changed files and pull requests |
+| `alia:machines` | alia machines and whether they're connected |
+| `alia:plugins` | Installed plugins and their health |
+| `alia:terminals` | This thread's terminals: title, status, exit code; `?output=1` adds the tail of what each prints, for a live `<Logs>` |
 
 </details>
 
@@ -560,29 +560,29 @@ A live card keeps showing its last good values when a refresh fails, with a quie
 Hover any card in a thread and press the pin button: the card stays in view while the chat scrolls on, still live. A thread keeps up to five pins, each marked with who pinned it and with its own Unpin, and pins follow the thread to your other devices. They show in four places:
 
 - **Above the composer**, as a "2 pinned" chip. A click opens the pinned cards right there; on a phone this is the quickest way to them.
-- **On bb's home page**, under Pinned cards: every open thread's pins, live, the most recently pinned first. A thread's title opens it.
-- **In the thread context card** at the pane's upper right, when that is on in bb (Settings, Experiments, Thread context card). The chip hides itself there.
+- **On alia's home page**, under Pinned cards: every open thread's pins, live, the most recently pinned first. A thread's title opens it.
+- **In the thread context card** at the pane's upper right, when that is on in alia (Settings, Experiments, Thread context card). The chip hides itself there.
 - **In the thread's right panel** (Info tab, under Pinned cards).
 
 The thread's agent can pin too, for a status it keeps current:
 
-- `iris_pin` pins a card from its source, or from a file such as `$BB_THREAD_STORAGE/status.iris`. A file pin re-reads the file every 3 seconds, so the agent updates the card by rewriting the file. The card is checked first; one with errors isn't pinned. Pinning again with the same `id` replaces the pin in place.
+- `iris_pin` pins a card from its source, or from a file such as `$ALIA_THREAD_STORAGE/status.iris`. A file pin re-reads the file every 3 seconds, so the agent updates the card by rewriting the file. The card is checked first; one with errors isn't pinned. Pinning again with the same `id` replaces the pin in place.
 - `iris_unpin` and `iris_pins` remove and list the thread's pins.
-- From a shell: `bb iris pin <file> [--id fleet] [--title ...] [--once] [--alert-when ...] [--alert-message ...]`, `bb iris unpin <id>|--all` and `bb iris pins [--json]`. These act on the thread they run in only.
-- Any client can use the same pins through `bb plugin rpc call iris pins.list|pins.all|pins.set|pins.ack|pins.remove` (listed by `bb plugin rpc list iris`).
+- From a shell: `alia iris pin <file> [--id fleet] [--title ...] [--once] [--alert-when ...] [--alert-message ...]`, `alia iris unpin <id>|--all` and `alia iris pins [--json]`. These act on the thread they run in only.
+- Any client can use the same pins through `alia plugin rpc call iris pins.list|pins.all|pins.set|pins.ack|pins.remove` (listed by `alia plugin rpc list iris`).
 
 ### Pins that alert you
 
 A pin can carry a condition over its card's own names, for example `iris_pin` with `alert_when: 'build.state == "failed"'` on a card that loads `build` from a status file. Iris checks it every 30 seconds, reading the card's files and feeds as the card would. When it turns true:
 
 - the pin shows the alert with Dismiss, and the chip above the composer reads "2 pinned · 1 alert";
-- every open bb window shows a toast with Open (bb keeps it in its notification center);
-- bb's desktop app shows a system notification when bb may already show them and its window isn't in front;
+- every open alia window shows a toast with Open (alia keeps it in its notification center);
+- alia's desktop app shows a system notification when alia may already show them and its window isn't in front;
 - the thread is marked unread, so it stands out in the sidebar on every device.
 
 It asks again only after the condition clears and holds again. A source that is still loading or can't be read leaves the alert as it was. Alerts never message the thread or wake the agent.
 
-Phone pushes aren't possible: bb gives plugins no notification API, and bb's push notifications fire only when an agent finishes a turn or asks a question. On the phone, an alert shows as the thread's unread mark and on the pin itself.
+Phone pushes aren't possible: alia gives plugins no notification API, and alia's push notifications fire only when an agent finishes a turn or asks a question. On the phone, an alert shows as the thread's unread mark and on the pin itself.
 
 ### Copy a card as an image
 
@@ -590,35 +590,35 @@ Every card's toolbar, and every pin, has Copy as image: the card is drawn to a P
 
 ### A card that lives in a file
 
-An agent can keep a card in a file and show it inline: it writes the markup to `$BB_THREAD_STORAGE/status.iris` and puts `::iris{file="$BB_THREAD_STORAGE/status.iris"}` on its own line in a reply. The card follows the file, read again every 3 seconds while it is on screen, so rewriting the file updates the card in place. A failed read keeps the last good card with a note. The same file can be pinned with `iris_pin` to keep it in view.
+An agent can keep a card in a file and show it inline: it writes the markup to `$ALIA_THREAD_STORAGE/status.iris` and puts `::iris{file="$ALIA_THREAD_STORAGE/status.iris"}` on its own line in a reply. The card follows the file, read again every 3 seconds while it is on screen, so rewriting the file updates the card in place. A failed read keeps the last good card with a note. The same file can be pinned with `iris_pin` to keep it in view.
 
 ### Read back what the person set, and set it
 
-`iris_cards` (or `bb iris cards [--json]`, or the `cards.list` RPC) lists the thread's cards, newest last, with what the person set in each: a slider's value, a pick, typed notes, stored values. An agent can act on a card's state without asking again.
+`iris_cards` (or `alia iris cards [--json]`, or the `cards.list` RPC) lists the thread's cards, newest last, with what the person set in each: a slider's value, a pick, typed notes, stored values. An agent can act on a card's state without asking again.
 
-`iris_card_set` sets those inputs instead: `{card: "<id>", values: {seats: 20}}` with the card's id from `iris_cards` (or its number), `bb iris set <id> seats=20`, or the `cards.set` RPC. Each value must be a `<state>` the card declares and keep its type; the card is checked with the new values first, and an open card redraws with them at once. The agent can show the person another scenario in the card they already have.
+`iris_card_set` sets those inputs instead: `{card: "<id>", values: {seats: 20}}` with the card's id from `iris_cards` (or its number), `alia iris set <id> seats=20`, or the `cards.set` RPC. Each value must be a `<state>` the card declares and keep its type; the card is checked with the new values first, and an open card redraws with them at once. The agent can show the person another scenario in the card they already have.
 
 ### Checks that read the real data
 
-iris_check and `bb iris check` read the card's files, bb data and plugin feeds (`plugin:` sources, up to 5 seconds each) the way the card will, and warn when a required prop comes out empty, naming the fields the data does have (`<Metric value> is empty: it has no field "ship"; its fields are ships, status`).
+iris_check and `alia iris check` read the card's files, alia data and plugin feeds (`plugin:` sources, up to 5 seconds each) the way the card will, and warn when a required prop comes out empty, naming the fields the data does have (`<Metric value> is empty: it has no field "ship"; its fields are ships, status`).
 
 They also warn when a Table or Gallery holds data a more specific component draws better, with the rewrite built from the card's own columns: before and after values point at Delta, checks with results at Acceptance, severity and file at Findings, colors at Swatches or Variants, screenshots captioned by device or theme at Screens, and before and after shots at Compare (`<Table> reads as before and after (case, before, after): <Delta rows={rows.map((r) => ({ label: r.case, before: r.before, after: r.after }))} />`). Warnings never block a card.
 
 ### Ask for a card, or take one to the browser
 
 - **Show as an Iris card.** In a message's menu, this asks the agent to redo that answer as a card. Select part of a message first to ask about just that part. The composer has the same command.
-- **Open in the web playground.** A card's toolbar opens it in the [playground](https://vburojevic.github.io/bb-plugin-iris/#/play), ready to edit and share. The card's source travels after the `#` in the link, so no server sees it. Files and bb data the card loads stay on your Mac, so they show as pending there.
-- **Iris: open the playground** in bb's command palette opens an empty editor.
+- **Open in the web playground.** A card's toolbar opens it in the [playground](https://vburojevic.github.io/bb-plugin-iris/#/play), ready to edit and share. The card's source travels after the `#` in the link, so no server sees it. Files and alia data the card loads stay on your Mac, so they show as pending there.
+- **Iris: open the playground** in alia's command palette opens an empty editor.
 
 ## For plugin authors: live data in Iris cards
 
-Any bb plugin can feed live data to Iris cards without Iris knowing about it. Serve read-only JSON (or CSV) under the `/iris/` prefix of your plugin's HTTP routes:
+Any alia plugin can feed live data to Iris cards without Iris knowing about it. Serve read-only JSON (or CSV) under the `/iris/` prefix of your plugin's HTTP routes:
 
 ```ts
-bb.http.route("GET", "/iris/status", (c) => Response.json(statusFor(c.req.query("thread"))), { auth: "local" });
+alia.http.route("GET", "/iris/status", (c) => Response.json(statusFor(c.req.query("thread"))), { auth: "local" });
 ```
 
-Cards then read it with `load("plugin:<your-plugin-id>/status")`. Check a feed the way a card reads it with `bb iris feed check <your-plugin-id>/status`: whether it answers, its content type, size and time, caching, and the fields a card can use. Iris fetches `/api/v1/plugins/<id>/http/iris/status?thread=<threadId>` from bb's own page, parses it by content type, and re-reads it every 2 seconds inside a `<Card state="live">`. Only the `/iris/` prefix is ever read, answers are capped at 4 MB, and query keys pass through (`plugin:notes/today?tag=work`). Teach your plugin's agents to draw it with a line in your own instructions; Iris needs no change. Iris serves a sample at `plugin:iris/example`.
+Cards then read it with `load("plugin:<your-plugin-id>/status")`. Check a feed the way a card reads it with `alia iris feed check <your-plugin-id>/status`: whether it answers, its content type, size and time, caching, and the fields a card can use. Iris fetches `/api/v1/plugins/<id>/http/iris/status?thread=<threadId>` from alia's own page, parses it by content type, and re-reads it every 2 seconds inside a `<Card state="live">`. Only the `/iris/` prefix is ever read, answers are capped at 4 MB, and query keys pass through (`plugin:notes/today?tag=work`). Teach your plugin's agents to draw it with a line in your own instructions; Iris needs no change. Iris serves a sample at `plugin:iris/example`.
 
 > [!IMPORTANT]
 > Treat everything under `/iris/` as readable by any card in any thread. The `thread` parameter is a hint for scoping, not access control, so publish only what any agent may show. Cards can't send it to a place of their choosing: they make no network requests of their own, and a web image or media file loads only when its full URL is written in the block. With `webLookups` on, a map's places and a photo's search words do go to OpenStreetMap, Photon and Wikimedia Commons through Iris's server, so don't feed private data into those. A card choosing among several written URLs can still signal which one it picked, so don't publish secrets.
@@ -648,13 +648,13 @@ Agents get these tools, and the same checks run from a shell. `iris_examples(["R
 
 | Command | What it does |
 |---|---|
-| `bb iris check <file>` | Checks a block or iris-react app from a file and prints what the person will see |
-| `bb iris components` | Lists every component with its one-line summary |
-| `bb iris docs <Name>` | Every prop and an example for the named components |
-| `bb iris try "<prompt>"` | Runs a prompt in a subthread that knows Iris |
-| `bb iris pin <file>`, `bb iris unpin <id>`, `bb iris pins` | Pin, unpin and list this thread's pinned cards |
-| `bb iris cards`, `bb iris set <n> name=value` | List this thread's cards with their inputs, and set a card's inputs |
-| `bb iris feed check <plugin>/<name>` | Checks a plugin's Iris data feed the way a card reads it |
+| `alia iris check <file>` | Checks a block or iris-react app from a file and prints what the person will see |
+| `alia iris components` | Lists every component with its one-line summary |
+| `alia iris docs <Name>` | Every prop and an example for the named components |
+| `alia iris try "<prompt>"` | Runs a prompt in a subthread that knows Iris |
+| `alia iris pin <file>`, `alia iris unpin <id>`, `alia iris pins` | Pin, unpin and list this thread's pinned cards |
+| `alia iris cards`, `alia iris set <n> name=value` | List this thread's cards with their inputs, and set a card's inputs |
+| `alia iris feed check <plugin>/<name>` | Checks a plugin's Iris data feed the way a card reads it |
 
 </details>
 
@@ -669,19 +669,19 @@ Iris reaches every top-level thread, whoever started it, and leaves threads that
 | Setting | Values | Default |
 |---|---|---|
 | `stance` | `eager` shows anything that can be shown; `balanced` keeps short answers as prose | `eager` |
-| `rollout` | `everywhere` (every top-level thread), or `trial` for threads started with `bb iris try` only | `everywhere` |
+| `rollout` | `everywhere` (every top-level thread), or `trial` for threads started with `alia iris try` only | `everywhere` |
 | `workers` | Teach threads that agents spawn under a top-level thread too (about 3,600 tokens of instructions per session) | `false` |
 | `skipPlugins` | Plugin ids, comma-separated, whose own top-level threads skip Iris | empty |
 | `webLookups` | Maps, place search and photos through Iris's server (OpenStreetMap, Photon, Wikimedia Commons) | `true` |
 
-Change one with `bb plugin config iris set <key> <value>`, then `bb plugin reload iris`.
+Change one with `alia plugin config iris set <key> <value>`, then `alia plugin reload iris`.
 
 </details>
 
 ## Security
 
 - Expressions run in a tree-walking interpreter: no `eval`, no globals, no prototype access, and a step budget per evaluation. Only functions Iris registers can be called.
-- `load()`, `<Snippet>` and `<Image>` read only the thread's workspace and thread storage (and other threads' storage folders), through the plugin's server, up to 8 MB. Players, PDFs and fonts stream through a bb preview lease scoped to that same root, which bb checks on every request and which expires after an hour.
+- `load()`, `<Snippet>` and `<Image>` read only the thread's workspace and thread storage (and other threads' storage folders), through the plugin's server, up to 8 MB. Players, PDFs and fonts stream through a alia preview lease scoped to that same root, which alia checks on every request and which expires after an hour.
 - Cards make no network requests of their own. With `webLookups` on (the default), Iris's server looks up map places and tiles (OpenStreetMap, Photon) and photos (Wikimedia Commons) for `<Map>` and `<PhotoSearch>`, so the place names and search words written in those cards reach those services. Turn `webLookups` off to keep every card offline.
 - ```` ```iris-app ```` pages and ```` ```iris-react ```` apps run in a sandboxed iframe with an opaque origin and a no-network content policy injected before any of their markup. Sending a message never happens from the page alone: Iris shows the exact text in a bar outside the frame, and only a click on its Send button sends it. A picker answer goes back at once only right after a click inside the page; any other answer waits in that bar. Insert, copy and open a link act only right after a click inside the page.
 
@@ -690,7 +690,7 @@ Change one with `bb plugin config iris set <key> <value>`, then `bb plugin reloa
 
 ## Evals
 
-`npm run eval` runs 35 generic chat moments (status reports, mid-task progress updates, proof that something is done, PR and CI state, data to decide on, rich questions for the person, cards kept in view) through Claude Code headless with exactly the instructions and tools Iris gives agents in bb (`iris_docs`, `iris_examples`, `iris_check`, and stand-ins for `iris_ask` and `iris_pin` that log their calls, served by `evals/mcp-server.ts`). Each answer is scored on Iris being used (a block, a `::iris{file}` card, or a picker or pin), every card checking clean, a fitting component and tool, and no markdown tables, plus a 1 to 5 judgment of fit. Every case runs twice and scores the mean, so one unlucky answer moves the suite less. `npm run release:check` runs the tests, the type check, the site build and the eval gate, which fails when the score drops more than 3 points below `evals/baseline.json` and names the cases that fell most.
+`npm run eval` runs 35 generic chat moments (status reports, mid-task progress updates, proof that something is done, PR and CI state, data to decide on, rich questions for the person, cards kept in view) through Claude Code headless with exactly the instructions and tools Iris gives agents in alia (`iris_docs`, `iris_examples`, `iris_check`, and stand-ins for `iris_ask` and `iris_pin` that log their calls, served by `evals/mcp-server.ts`). Each answer is scored on Iris being used (a block, a `::iris{file}` card, or a picker or pin), every card checking clean, a fitting component and tool, and no markdown tables, plus a 1 to 5 judgment of fit. Every case runs twice and scores the mean, so one unlucky answer moves the suite less. `npm run release:check` runs the tests, the type check, the site build and the eval gate, which fails when the score drops more than 3 points below `evals/baseline.json` and names the cases that fell most.
 
 ## Develop
 
@@ -704,12 +704,12 @@ npm test                          # engine, catalog, reports, prompt size
 npx tsc --noEmit
 node scripts/build-chunks.mjs     # when a chunk changes; commit dist/chunks/
 node scripts/brand.mjs            # regenerates the icon and logos
-bb plugin install . && bb plugin dev
+VesnALIA plugin install . && VesnALIA plugin dev
 ```
 
-Develop against the one installed Iris: install the checkout once (`bb plugin install .`) and run `bb plugin dev`, which rebuilds and reloads on every save. Don't install extra copies under other ids.
+Develop against the one installed Iris: install the checkout once (`alia plugin install .`) and run `alia plugin dev`, which rebuilds and reloads on every save. Don't install extra copies under other ids.
 
-The playground is the real gallery with bb's SDK swapped for a stand-in (`site/`). `node scripts/build-site.mjs` builds it into `site-dist/`; `scripts/capture-site-css.mjs` refreshes bb's CSS from a running bb, `scripts/capture-atlas.mjs` re-shoots the component pictures from the built site, `npx tsx scripts/readme-atlas.ts` rewrites the atlas above, `node scripts/readme-icons.mjs` redraws the feature icons, and `scripts/record-demo.mjs` with `scripts/encode-demo.sh` re-records the demo frame by frame from a separate dev bb.
+The playground is the real gallery with VesnALIA's SDK swapped for a stand-in (`site/`). `node scripts/build-site.mjs` builds it into `site-dist/`; `scripts/capture-site-css.mjs` refreshes VesnALIA's CSS from a running VesnALIA, `scripts/capture-atlas.mjs` re-shoots the component pictures from the built site, `npx tsx scripts/readme-atlas.ts` rewrites the atlas above, `node scripts/readme-icons.mjs` redraws the feature icons, and `scripts/record-demo.mjs` with `scripts/encode-demo.sh` re-records the demo frame by frame from a separate dev VesnALIA.
 
 </details>
 
@@ -722,5 +722,5 @@ The playground is the real gallery with bb's SDK swapped for a stand-in (`site/`
 <p align="center">
   <a href="https://vburojevic.github.io/bb-plugin-iris/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/mark-dark.svg"><img src="docs/mark-light.svg" width="40" height="40" alt="Iris"></picture></a>
   <br>
-  <sub>Made for <a href="https://getbb.app">bb</a> by <a href="https://github.com/vburojevic">Vedran Burojević</a>. <a href="https://vburojevic.github.io/bb-plugin-iris/#/play">Open the playground</a>.</sub>
+  <sub>Made for <a href="https://getbb.app">VesnALIA</a> by <a href="https://github.com/vburojevic">Vedran Burojević</a>. <a href="https://vburojevic.github.io/bb-plugin-iris/#/play">Open the playground</a>.</sub>
 </p>

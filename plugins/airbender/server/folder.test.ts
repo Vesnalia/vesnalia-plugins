@@ -3,7 +3,7 @@
 // What: checks hasUncommittedChanges, which decides whether an issue may be
 // started in a new branch, against a real throwaway git repository.
 //
-// Why: the user's rule (bead-bb-jqn.1) is that a branch cannot be started
+// Why: the user's rule (bead-alia-jqn.1) is that a branch cannot be started
 // over uncommitted changes. Files git does not track must not count, or a
 // repository that keeps a few of them around could never start a branch.
 //
@@ -15,7 +15,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { createFolders } from "./folder.ts";
 
 const root = mkdtempSync(join(tmpdir(), "airbender-folder-"));
@@ -40,7 +40,7 @@ const git = (...args: string[]) =>
 
 const { hasUncommittedChanges, mainBranch, mainFolder, deleteMergedBranch } =
   createFolders({
-  bb: {} as BbPluginApi,
+  alia: {} as AliaPluginApi,
   bdCandidates: [],
   bendCandidates: [],
 });

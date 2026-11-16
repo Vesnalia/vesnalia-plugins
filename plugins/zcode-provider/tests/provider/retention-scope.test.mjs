@@ -40,7 +40,7 @@ test('M1 actual bridge retention is diagnostic, not a pre-send gate: ' + mutatio
     const turn = { threadId: 'own', providerThreadId: s.result.providerThreadId, clientRequestId: 'creq_2222222222', options, input: [{ type: 'text', text: 'hello', mentions: [] }] };
     assert.ok((await rpc('turn/start', turn)).result);
     for (let i = 0; i < 200 && !output.some(m => m.params?.deltas?.some(d => d.kind === 'turn.boundary')); i++) await delay(10);
-    const next = await rpc('turn/start', { ...turn, options: { ...options, envVars: { BB_RETENTION_FIXTURE: 'next' } } });
+    const next = await rpc('turn/start', { ...turn, options: { ...options, envVars: { ALIA_RETENTION_FIXTURE: 'next' } } });
     const preserved = ['keys', 'clocks'].includes(mutation);
     assert.ok(next.result, JSON.stringify(next));
     const retention = evidence.find(e => e.event === 'replacement-retention'); assert.equal(retention.retained, preserved); assert.equal(retention.beforeRows, retention.afterRows);

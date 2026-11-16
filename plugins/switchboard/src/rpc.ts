@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { HUE_IDS, isCollapseKey, MAX_ENTRIES, MAX_KEY_LENGTH } from "./layout";
 

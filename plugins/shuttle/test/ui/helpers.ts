@@ -1,4 +1,4 @@
-import { loadPluginApp, renderSlot, type PluginRpcTestHandlers, type RenderSlotOptions, type RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot, type PluginRpcTestHandlers, type RenderSlotOptions, type RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { createElement, type ComponentType } from "react";
 import { afterEach, beforeEach, vi } from "vitest";
 import { DEFAULT_CONFIG, type Config } from "../../src/config";
@@ -79,7 +79,7 @@ export function mergeRun(overrides: Partial<MergeView> = {}): MergeView {
 }
 
 export function pr(overrides: Partial<PrView> = {}): PrView {
-  const repo = overrides.repo ?? "get-bb/bb";
+  const repo = overrides.repo ?? "get-alia/alia";
   const number = overrides.number ?? 4411;
   const server = overrides.server ?? "github";
   const sep = overrides.sep ?? "#";
@@ -152,11 +152,11 @@ export const agent = (overrides: Partial<AgentView> = {}): AgentView => ({
   threadId: "thr_agent", title: "CF token containment 2: retry WAF deletes", mode: "fix", status: "idle", auto: false, lastSent: null, ...overrides,
 });
 
-export const link = (overrides: Partial<LinkView> = {}): LinkView => ({ threadId: "thr_1", title: "Review get-bb/bb#4411", role: "review", archived: false, ...overrides });
+export const link = (overrides: Partial<LinkView> = {}): LinkView => ({ threadId: "thr_1", title: "Review get-alia/alia#4411", role: "review", archived: false, ...overrides });
 
 export function draft(overrides: Partial<ReviewDraft> = {}): ReviewDraft {
   return {
-    id: 7, threadId: "thr_review", threadTitle: "Review get-bb/bb#4411", preset: "Standard review", trigger: "auto", head: "4be81d0aa", at: NOW - 55 * 60_000,
+    id: 7, threadId: "thr_review", threadTitle: "Review get-alia/alia#4411", preset: "Standard review", trigger: "auto", head: "4be81d0aa", at: NOW - 55 * 60_000,
     summary: "Thanks, this unblocks the header. One race and an ordering bug.", verdict: "changes",
     findings: [
       { id: "a", severity: "high", path: "src/header/actions.tsx", line: 88, body: "The compact prop never reaches the overflow menu." },
@@ -317,7 +317,7 @@ export function handlers(overrides: Partial<Handlers> = {}): Handlers {
     threadPrs: () => ({ prs: [], sent: [] }),
     sendUnread: () => ({ sent: 0 }),
     threads: () => ({ threads: [] }),
-    projects: () => ({ projects: [{ id: "prj_bb", name: "bb" }], suggested: "prj_bb" }),
+    projects: () => ({ projects: [{ id: "prj_alia", name: "alia" }], suggested: "prj_alia" }),
     refreshProjects: () => ({ count: 1, fetchedAt: NOW }),
     getConfig: () => ({ config: config() }),
     saveConfig: ({ config: next }) => ({ config: next as Config }),
@@ -408,7 +408,7 @@ export function unmountAll() {
 
 export const callsTo = (slot: RenderedSlot, method: string) => slot.inspection.rpcCalls.filter((call) => call.method === method).map((call) => call.input);
 
-/** The page at a subPath, and what bb's router does after a navigation: the same page with the new subPath. */
+/** The page at a subPath, and what VesnALIA's router does after a navigation: the same page with the new subPath. */
 export async function page(subPath: string, rpc: Partial<Handlers> = {}, options: Omit<RenderSlotOptions<typeof rpcContract>, "rpc"> & { invalidateWrites?: boolean } = {}) {
   const loaded = await app();
   const panel = loaded.navPanels[0]!;

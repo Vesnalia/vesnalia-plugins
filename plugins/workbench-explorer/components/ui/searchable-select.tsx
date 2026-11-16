@@ -39,7 +39,7 @@ export interface SearchableSelectProps {
  *
  * The popover renders through Radix's portal, so it escapes the rail's clipping;
  * `usePortalScopeProps` is mandatory there — the plugin's stylesheet is scoped to
- * `[data-bb-plugin-root]`, and a portaled node without that attribute renders
+ * `[data-alia-plugin-root]`, and a portaled node without that attribute renders
  * unstyled and effectively invisible.
  *
  * `useId` gives each instance a unique listbox id so two selects on the same

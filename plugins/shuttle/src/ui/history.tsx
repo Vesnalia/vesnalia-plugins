@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { ConversationItem, EventView, PrDetails, PrView, TimelineEvent } from "../contract";
 import { useActions } from "./actions";
 import { lookOf, TONE_ICON } from "./activity";

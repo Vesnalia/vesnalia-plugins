@@ -16,17 +16,17 @@ import { flush, startTestMonitor } from "./monitor-helpers.ts";
 
 const NO_TAILNET = async () => null;
 
-test("a box whose BB machine is known is not called no BB machine when that machine is offline, and one still joining is not called offline", () => {
+test("a box whose VesnALIA machine is known is not called no VesnALIA machine when that machine is offline, and one still joining is not called offline", () => {
   assert.equal(unreadReason("calm-otter", { state: "enrolled", hostId: "host_1" }), offlineMachineWords("calm-otter"));
   assert.equal(unreadReason("calm-otter", { state: "failed", hostId: "host_1" }), offlineMachineWords("calm-otter"));
   assert.equal(unreadReason("calm-otter", { state: "failed", hostId: null }), unreadableWords("calm-otter"));
   assert.equal(unreadReason("calm-otter", { state: "enrolling", hostId: "host_1" }), stillJoiningWords("calm-otter"));
   assert.equal(unreadReason("calm-otter", { state: "enrolling", hostId: null }), stillJoiningWords("calm-otter"));
   assert.equal(unreadReason("calm-otter", { state: "off", hostId: null }), unreadableWords("calm-otter"));
-  assert.equal(stillJoiningWords("calm-otter").includes("is still joining BB"), true);
+  assert.equal(stillJoiningWords("calm-otter").includes("is still joining VesnALIA"), true);
   assert.equal(stillJoiningWords("calm-otter").includes("not answering"), false);
-  assert.equal(unreadableWords("calm-otter").includes("not a BB machine"), true);
-  assert.equal(offlineMachineWords("calm-otter").includes("not a BB machine"), false);
+  assert.equal(unreadableWords("calm-otter").includes("not a VesnALIA machine"), true);
+  assert.equal(offlineMachineWords("calm-otter").includes("not a VesnALIA machine"), false);
   assert.equal(readableState("ready"), true);
 });
 
@@ -241,7 +241,7 @@ test("the background monitor's light sample in a container leaves out the host's
 
 function routeOutput(sections: Record<string, string>): string {
   return Object.entries(sections)
-    .map(([name, body]) => `\n@@bb-box-monitor:${name}\n${body}`)
+    .map(([name, body]) => `\n@@alia-box-monitor:${name}\n${body}`)
     .join("");
 }
 
@@ -261,7 +261,7 @@ function lxcOutput(uptime: number, usage: number): string {
   });
 }
 
-test("a box read through BB Box's route: an LXC box's own CPU, cores and memory, and no host load", () => {
+test("a box read through VesnALIA Box's route: an LXC box's own CPU, cores and memory, and no host load", () => {
   const collector = createRouteCollector({ os: "linux", scope: "machine", refreshIntervalMs: () => 5000 });
   const first = collector.snapshot({ sections: routeSections(lxcOutput(1000, 9_000_000)), receivedAt: 0 });
   assert.equal(first.cpu.usagePercent, null);
@@ -293,7 +293,7 @@ test("a shared ios slot read through the route: its own processes, its host's lo
     uname: "Darwin 25.1.0 arm64",
     hostname: "slot-host",
     df: "/dev/disk3s1 488245288 300000000 188245288 62% /",
-    ps: " 501 30.0 2.0 400000 S /Applications/Xcode.app/Contents/Developer/Applications/Simulator.app/Contents/MacOS/Simulator\n 502 1.0 0.5 10000 S bb-box-device",
+    ps: " 501 30.0 2.0 400000 S /Applications/Xcode.app/Contents/Developer/Applications/Simulator.app/Contents/MacOS/Simulator\n 502 1.0 0.5 10000 S alia-box-device",
     ncpu: "8",
     memsize: String(32 * 1024 ** 3),
     loadavg: "{ 3.10 2.80 2.50 }",
@@ -325,12 +325,12 @@ test("a shared slot never takes the shared host's load as its own issue, even wh
 
 const SERVER_HOST = "host_server";
 const HOSTS: MonitorHost[] = [
-  { id: "host_box", name: "glad-coral", connected: true, machineProviderId: "bb-box" },
+  { id: "host_box", name: "glad-coral", connected: true, machineProviderId: "alia-box" },
   { id: "host_mac", name: "laptop", connected: true, machineProviderId: "manual" },
-  { id: SERVER_HOST, name: "bb", connected: true, machineProviderId: null },
+  { id: SERVER_HOST, name: "alia", connected: true, machineProviderId: null },
   { id: "host_gone", name: "old-laptop", connected: false, machineProviderId: "manual" },
   { id: "host_build", name: "build-server", connected: true, machineProviderId: "manual" },
-  { id: "host_slot", name: "keen-iris", connected: true, machineProviderId: "bb-box" },
+  { id: "host_slot", name: "keen-iris", connected: true, machineProviderId: "alia-box" },
 ];
 
 const box = (patch: Partial<MonitoredBox> & Pick<MonitoredBox, "id" | "name">): MonitoredBox => ({ ready: true, hostId: null, os: "linux", commands: true, slot: null, ...patch });
@@ -348,7 +348,7 @@ test("lists the server first, then own machines, then boxes, and hides offline m
   assert.deepEqual(
     listMachines(HOSTS, SERVER_HOST, BOXES).map(({ id, name, isServer, isBox }) => ({ id, name, isServer, isBox })),
     [
-      { id: SERVER_HOST, name: "bb", isServer: true, isBox: false },
+      { id: SERVER_HOST, name: "alia", isServer: true, isBox: false },
       { id: "host_build", name: "build-server", isServer: false, isBox: false },
       { id: "host_mac", name: "laptop", isServer: false, isBox: false },
       { id: "box:bx_offline_slot", name: "bold-fern", isServer: false, isBox: true },
@@ -359,7 +359,7 @@ test("lists the server first, then own machines, then boxes, and hides offline m
   );
 });
 
-test("each machine that is a box names its box, whether it is a BB machine or read through the route; other machines name none", () => {
+test("each machine that is a box names its box, whether it is a VesnALIA machine or read through the route; other machines name none", () => {
   assert.deepEqual(
     Object.fromEntries(listMachines(HOSTS, SERVER_HOST, BOXES).map(({ id, boxId }) => [id, boxId])),
     {
@@ -374,7 +374,7 @@ test("each machine that is a box names its box, whether it is a BB machine or re
   );
 });
 
-test("each kind of box takes its path: a BB machine through the host entry, a slot's as its own user, the rest through BB Box's route", async (t) => {
+test("each kind of box takes its path: a VesnALIA machine through the host entry, a slot's as its own user, the rest through VesnALIA Box's route", async (t) => {
   const hostCalls: { hostId: string; scope: string }[] = [];
   const ranIn: string[] = [];
   const hostEntry = monitorHandlers();
@@ -461,7 +461,7 @@ test("the host entry returns a valid reading, keeps CPU history between calls, a
   }
 });
 
-test("the bb server's host ID is looked up once, not on every poll", async (t) => {
+test("the VesnALIA server's host ID is looked up once, not on every poll", async (t) => {
   let lookups = 0;
   const { monitor } = await startTestMonitor(t, {
     deps: {

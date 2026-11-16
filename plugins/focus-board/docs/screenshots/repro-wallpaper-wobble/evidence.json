@@ -29,7 +29,7 @@
       "backgroundSize": "cover",
       "backgroundPosition": "50% 50%",
       "transform": "none",
-      "file": "/Users/cristos/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_srbbvvacx9-1/bb-plugin-focus-board/docs/screenshots/repro-wallpaper-wobble/A-pane-closed.png"
+      "file": "/Users/cristos/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_srbbvvacx9-1/alia-plugin-focus-board/docs/screenshots/repro-wallpaper-wobble/A-pane-closed.png"
     },
     {
       "label": "B-pane-open",
@@ -64,7 +64,7 @@
       "backgroundSize": "cover",
       "backgroundPosition": "50% 50%",
       "transform": "none",
-      "file": "/Users/cristos/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_srbbvvacx9-1/bb-plugin-focus-board/docs/screenshots/repro-wallpaper-wobble/B-pane-open.png"
+      "file": "/Users/cristos/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_srbbvvacx9-1/alia-plugin-focus-board/docs/screenshots/repro-wallpaper-wobble/B-pane-open.png"
     },
     {
       "label": "C-pane-closed-again",
@@ -94,7 +94,7 @@
       "backgroundSize": "cover",
       "backgroundPosition": "50% 50%",
       "transform": "none",
-      "file": "/Users/cristos/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_srbbvvacx9-1/bb-plugin-focus-board/docs/screenshots/repro-wallpaper-wobble/C-pane-closed-again.png"
+      "file": "/Users/cristos/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_srbbvvacx9-1/alia-plugin-focus-board/docs/screenshots/repro-wallpaper-wobble/C-pane-closed-again.png"
     }
   ],
   "frameViolations": []

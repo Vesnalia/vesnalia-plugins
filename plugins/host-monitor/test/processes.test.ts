@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import test from "node:test";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { processRowSchema } from "../contract.ts";
 import hostEntry from "../host.ts";
 import {
@@ -170,10 +170,10 @@ test("Windows collection proves ownership without requiring elevated Get-Process
   const metricsOnly = windowsProcessInvocation(false);
   const ownerBearing = windowsProcessInvocation(true);
   assert.deepEqual(metricsOnly.env, {
-    BB_HOST_MONITOR_INCLUDE_OWNER_PROOF: "0",
+    ALIA_HOST_MONITOR_INCLUDE_OWNER_PROOF: "0",
   });
   assert.deepEqual(ownerBearing.env, {
-    BB_HOST_MONITOR_INCLUDE_OWNER_PROOF: "1",
+    ALIA_HOST_MONITOR_INCLUDE_OWNER_PROOF: "1",
   });
   assert.equal(metricsOnly.timeoutMs, 4_000);
   assert.equal(ownerBearing.timeoutMs, 10_000);
@@ -262,8 +262,8 @@ test("Windows force script rechecks StartTime and kills the validated object", (
   assert.equal(invocation.args.includes("42"), false);
   assert.equal(invocation.args.includes("1000"), false);
   assert.deepEqual(invocation.env, {
-    BB_HOST_MONITOR_PROCESS_PID: "42",
-    BB_HOST_MONITOR_PROCESS_STARTED_AT_MS: "1000",
+    ALIA_HOST_MONITOR_PROCESS_PID: "42",
+    ALIA_HOST_MONITOR_PROCESS_STARTED_AT_MS: "1000",
   });
   assert.equal(
     resolveWindowsPowerShellPath("D:\\Windows"),

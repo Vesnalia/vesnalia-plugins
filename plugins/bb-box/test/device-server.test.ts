@@ -75,7 +75,7 @@ describe("the device server", () => {
     const later = await open("control", { started: 200, instance: "later" });
     assert.equal(later.hello.lease, true);
     for (let tries = 0; !earlierClosed && tries < 100; tries++) await new Promise((resolve) => setTimeout(resolve, 10));
-    assert.deepEqual(earlierClosed, { superseded: true, words: "superseded: a BB Box instance started later holds this box's device" });
+    assert.deepEqual(earlierClosed, { superseded: true, words: "superseded: a VesnALIA Box instance started later holds this box's device" });
     assert.deepEqual(server.leaseHolder, { started: 200, instance: "later" });
     await assert.rejects(open("control", { started: 150, instance: "earlier" }), (error: unknown) => error instanceof DeviceLinkError && /superseded/.test(error.message));
     assert.deepEqual(server.leaseHolder, { started: 200, instance: "later" });
@@ -164,7 +164,7 @@ describe("the device server", () => {
     await control.close();
   });
 
-  test("a settings request reads the device's settings at once and answers with them, so a change made outside BB Box shows with no viewer watching (F-7)", async () => {
+  test("a settings request reads the device's settings at once and answers with them, so a change made outside VesnALIA Box shows with no viewer watching (F-7)", async () => {
     class OutsideDriver extends TestDriver {
       changedOutside = false;
       seen = false;
@@ -337,7 +337,7 @@ describe("the device server", () => {
       onFrame: (frame) => frames.push(frame),
       onText: (text) => {
         const parsed = parseDeviceServerMessage(text);
-        if (parsed.ok && parsed.value.verb === "BB_DEVICE_STILL") stills.push({ png: parsed.value.png, generation: parsed.value.generation, at: performance.now() });
+        if (parsed.ok && parsed.value.verb === "ALIA_DEVICE_STILL") stills.push({ png: parsed.value.png, generation: parsed.value.generation, at: performance.now() });
       },
     });
     await viewer.send(stillsRequestText(true));
@@ -407,9 +407,9 @@ async function eventually(what: string, check: () => boolean, ms = 3_000): Promi
 describe("the device server's video at the viewer's size (064, unit 1)", () => {
   test("reads a viewer's drawn size, and picks the smallest step that covers it, less 5%", () => {
     assert.deepEqual(viewAsked(viewRequestText({ width: 603.4, height: 1311.6 })), { width: 603, height: 1312 });
-    assert.equal(viewAsked('BB_DEVICE_VIEW {"width":0,"height":10}'), null);
-    assert.equal(viewAsked('BB_DEVICE_VIEW {"width":20000,"height":10}'), null);
-    assert.equal(viewAsked("BB_DEVICE_VIEW {}"), null);
+    assert.equal(viewAsked('ALIA_DEVICE_VIEW {"width":0,"height":10}'), null);
+    assert.equal(viewAsked('ALIA_DEVICE_VIEW {"width":20000,"height":10}'), null);
+    assert.equal(viewAsked("ALIA_DEVICE_VIEW {}"), null);
     const phone = screensOf(deviceModel("iPhone 18 Pro"));
     const stepOf = (width: number, height: number) => stepCovering(drawnShare({ width, height }, phone));
     assert.equal(stepOf(402, 874), "third");
@@ -587,7 +587,7 @@ describe("the device server's reports to the encoder ledger (064, unit 6)", () =
     await eventually("a new viewer told at once", () => told.includes(`later: ${words}`));
     assert.equal((await control.request({ type: "cap", most: null, words: null })).ok, true);
     await eventually("the words cleared", () => told.includes(null));
-    assert.equal((await control.request({ type: "cap", most: null })).ok, true, "a cap with no words, as an older BB Box sends, still reads");
+    assert.equal((await control.request({ type: "cap", most: null })).ok, true, "a cap with no words, as an older VesnALIA Box sends, still reads");
     await later.close();
     await viewer.close();
     await eventually("no want reported", () => reports.at(-1)?.wants.length === 0);

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const CONTINUE_THRESHOLD = 0.95;
@@ -144,7 +144,7 @@ function textFromBlocks(value: unknown, visibleOnly: boolean): string {
   }).join("\n").trim();
 }
 
-/** Build the complete top-level visible user/assistant transcript from raw BB events. */
+/** Build the complete top-level visible user/assistant transcript from raw VesnALIA events. */
 export function buildConversation(events: readonly EventRow[]): ConversationMessage[] {
   const visibleRequestText = new Map<string, string>();
   for (const event of events) {
@@ -274,8 +274,8 @@ export async function askJev(
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     typesafeApiKey: {
       type: "string",
       label: "TypeSafe API key",
@@ -303,7 +303,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
   if (resolveJevRoutes(await settings.get()).length === 0) {
-    bb.status.needsConfiguration("Set a TypeSafe, Vercel AI Gateway, or OpenRouter API key and reload the plugin.");
+    alia.status.needsConfiguration("Set a TypeSafe, Vercel AI Gateway, or OpenRouter API key and reload the plugin.");
   }
 
   const locks = new Map<string, Promise<void>>();
@@ -321,9 +321,9 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function updateStats(patch: (stats: Stats) => void): Promise<void> {
     const run = statsLock.then(async () => {
-      const stats = readStats(await bb.storage.kv.get(STATS_KEY));
+      const stats = readStats(await alia.storage.kv.get(STATS_KEY));
       patch(stats);
-      await bb.storage.kv.set(STATS_KEY, stats);
+      await alia.storage.kv.set(STATS_KEY, stats);
     });
     statsLock = run.catch(() => undefined);
     await run;
@@ -333,7 +333,7 @@ export default async function plugin(bb: BbPluginApi) {
     const all: EventRow[] = [];
     let afterSeq: string | undefined;
     for (;;) {
-      const page = await bb.sdk.threads.events.list({
+      const page = await alia.sdk.threads.events.list({
         threadId,
         order: "asc",
         limit: EVENT_PAGE_SIZE,
@@ -350,20 +350,20 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function hasPendingWork(threadId: string): Promise<boolean> {
     const [interactions, queued] = await Promise.all([
-      bb.sdk.threads.interactions.list({ threadId }),
-      bb.sdk.threads.queuedMessages.list({ threadId }),
+      alia.sdk.threads.interactions.list({ threadId }),
+      alia.sdk.threads.queuedMessages.list({ threadId }),
     ]);
     return interactions.some((interaction) => interaction.status === "pending" || interaction.status === "resolving") || queued.length > 0;
   }
 
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) => serialized(thread.id, async () => {
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) => serialized(thread.id, async () => {
     await updateStats((stats) => { stats.idleEvents += 1; });
     if (thread.archivedAt !== null || thread.deletedAt !== null || !lastAssistantText?.trim()) return;
 
     const assistantHash = hash(lastAssistantText.trim());
     const idleKey = hash(`${thread.updatedAt}\0${assistantHash}`);
     const stateKey = `thread:${thread.id}`;
-    const previous = await bb.storage.kv.get<ThreadState>(stateKey);
+    const previous = await alia.storage.kv.get<ThreadState>(stateKey);
     if (previous?.version === 1 && previous.lastIdleKey === idleKey) return;
 
     const state: ThreadState = {
@@ -371,7 +371,7 @@ export default async function plugin(bb: BbPluginApi) {
       lastIdleKey: idleKey,
       lastProceedAssistantHash: previous?.version === 1 ? previous.lastProceedAssistantHash : null,
     };
-    await bb.storage.kv.set(stateKey, state);
+    await alia.storage.kv.set(stateKey, state);
 
     if (state.lastProceedAssistantHash === assistantHash) {
       await updateStats((stats) => { stats.repeatedStops += 1; });
@@ -397,19 +397,19 @@ export default async function plugin(bb: BbPluginApi) {
         return;
       }
 
-      const current = await bb.sdk.threads.get({ threadId: thread.id });
+      const current = await alia.sdk.threads.get({ threadId: thread.id });
       if (current.status !== "idle" || current.updatedAt !== thread.updatedAt || current.archivedAt !== null || current.deletedAt !== null || await hasPendingWork(thread.id)) {
         await updateStats((stats) => { stats.races += 1; });
         return;
       }
 
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.send({
         threadId: thread.id,
         mode: "start",
         input: [{ type: "text", text: "please proceed", mentions: [], visibility: "agent-only" }],
       });
       state.lastProceedAssistantHash = assistantHash;
-      await bb.storage.kv.set(stateKey, state);
+      await alia.storage.kv.set(stateKey, state);
       await updateStats((stats) => {
         stats.proceeds += 1;
         stats.lastDecisionAt = decidedAt;
@@ -418,22 +418,22 @@ export default async function plugin(bb: BbPluginApi) {
       });
     } catch {
       await updateStats((stats) => { stats.errors += 1; });
-      bb.log.warn(`Jev continuation failed for thread ${thread.id}`);
+      alia.log.warn(`Jev continuation failed for thread ${thread.id}`);
     }
   }));
 
-  bb.cli.register({
+  alia.cli.register({
     name: "jev-please-proceed",
     summary: "Inspect Jev automatic-continuation status",
     commands: [
-      { name: "status", summary: "Show configuration and aggregate decisions", usage: "bb jev-please-proceed status [--json]" },
-      { name: "check", summary: "Test the configured Jev route with synthetic text", usage: "bb jev-please-proceed check [--json]" },
+      { name: "status", summary: "Show configuration and aggregate decisions", usage: "alia jev-please-proceed status [--json]" },
+      { name: "check", summary: "Test the configured Jev route with synthetic text", usage: "alia jev-please-proceed check [--json]" },
     ],
     async run(argv) {
       const json = argv.includes("--json");
       const command = argv.find((arg) => arg !== "--json") ?? "status";
       if (command !== "status" && command !== "check") {
-        return { exitCode: 1, stderr: "Usage: bb jev-please-proceed <status|check> [--json]" };
+        return { exitCode: 1, stderr: "Usage: VesnALIA jev-please-proceed <status|check> [--json]" };
       }
       const config = await settings.get();
       const routes = resolveJevRoutes(config);
@@ -466,7 +466,7 @@ export default async function plugin(bb: BbPluginApi) {
           return { exitCode: 1, stderr: json ? JSON.stringify({ ok: false, error: message }) : message };
         }
       }
-      const stats = readStats(await bb.storage.kv.get(STATS_KEY));
+      const stats = readStats(await alia.storage.kv.get(STATS_KEY));
       const output = {
         configured: routes.length > 0,
         providerMode: config.jevProvider,

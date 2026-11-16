@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { posix as path } from "node:path";
 import { z } from "zod";
 import { rpcContract } from "./src/contract";
@@ -28,8 +28,8 @@ function markdownTitle(content: string, file: string) {
   const heading = content.match(/^#\s+(.+?)\s*#*\s*$/m)?.[1]?.trim();
   return heading || path.basename(file).replace(/\.md$/i, "").replace(/[-_]+/g, " ");
 }
-export default function plugin(bb: BbPluginApi) {
-  const host = bb.hosts.experimental_client({ contract: watchContract, experimental_signals: watchSignals });
+export default function plugin(alia: AliaPluginApi) {
+  const host = alia.hosts.experimental_client({ contract: watchContract, experimental_signals: watchSignals });
   const watches = new Map<string, string>();
   const changedAt = new Map<string, number>();
   const queues = new Map<string, Promise<unknown>>();
@@ -40,18 +40,18 @@ export default function plugin(bb: BbPluginApi) {
     try { return await work; } finally { if (queues.get(key) === work) queues.delete(key); }
   }
   async function selection(projectId: string): Promise<Selection | null> {
-    const value = await bb.storage.kv.get(`selection:${projectId}`);
+    const value = await alia.storage.kv.get(`selection:${projectId}`);
     const parsed = settingsSchema.safeParse(value);
     return parsed.success ? parsed.data : null;
   }
   async function projectInfo(projectId: string) {
-    const project = await bb.sdk.projects.get({ projectId });
+    const project = await alia.sdk.projects.get({ projectId });
     const saved = await selection(projectId);
     const source = saved ? project.sources.find(s => s.id === saved.sourceId && s.hostId === saved.hostId && s.path === saved.root) : project.sources.length === 1 ? project.sources[0] : undefined;
     return { project, source, saved };
   }
   async function projects(): Promise<Project[]> {
-    const all = await bb.sdk.projects.list({ includePersonal: true });
+    const all = await alia.sdk.projects.list({ includePersonal: true });
     return Promise.all(all.map(async p => {
       const saved = await selection(p.id);
       const source = saved ? p.sources.find(s => s.id === saved.sourceId && s.hostId === saved.hostId && s.path === saved.root) : p.sources.length === 1 ? p.sources[0] : undefined;
@@ -59,7 +59,7 @@ export default function plugin(bb: BbPluginApi) {
     }));
   }
   async function read(hostId: string, file: string, rootPath: string) {
-    const result = await bb.sdk.files.read({ hostId, path: file, rootPath });
+    const result = await alia.sdk.files.read({ hostId, path: file, rootPath });
     if (result.contentEncoding !== "utf8") throw new Error(`Not a UTF-8 text file: ${file}`);
     if (result.sizeBytes > 512 * 1024) throw new Error(`Markdown file exceeds the 512 KiB editing limit: ${file}`);
     return { raw: result.content, revision: result.sha256 };
@@ -69,7 +69,7 @@ export default function plugin(bb: BbPluginApi) {
     if (!info.source) throw new Error("Choose a project source in folder settings.");
     const source = info.source;
     const result = await discover({
-      exists: async paths => (await bb.sdk.hosts.pathsExist({ hostId: source.hostId, paths })).existence,
+      exists: async paths => (await alia.sdk.hosts.pathsExist({ hostId: source.hostId, paths })).existence,
       read: async file => (await read(source.hostId, file, path.dirname(file))).raw,
     }, source.path, info.saved?.folder ?? null);
     return { ...info, source, result };
@@ -137,7 +137,7 @@ export default function plugin(bb: BbPluginApi) {
     const empty: Board = { projectId, sourceId: null, folder: null, state: "unavailable", choices: {}, message: "", candidates: [], statuses: [], lastChangeAt: changedAt.get(projectId) ?? null, tasks: [], warnings: [] };
     try {
       const info = await projectInfo(projectId);
-      if (!info.source) return { ...empty, state: info.project.sources.length ? "select-source" : "unavailable", message: info.project.sources.length ? "Choose which checkout to use in folder settings." : "This project has no checkout. Add a source in BB project settings." };
+      if (!info.source) return { ...empty, state: info.project.sources.length ? "select-source" : "unavailable", message: info.project.sources.length ? "Choose which checkout to use in folder settings." : "This project has no checkout. Add a source in VesnALIA project settings." };
       const { source, result } = await resolve(projectId);
       const base = { ...empty, sourceId: source.id, folder: result.folder, state: result.state, message: result.message, candidates: result.candidates, statuses: result.config.statuses, choices: { priority: result.config.priorities, type: result.config.types, project: result.config.projects } };
       if (result.state !== "ready" || !result.folder) return base;
@@ -178,11 +178,11 @@ export default function plugin(bb: BbPluginApi) {
     const identity = parseTask(current.raw, { path: task.path, revision: current.revision, storage: task.storage });
     if (identity.id !== task.id) throw new Error("Task identity changed while saving. Your draft has been kept.");
     const content = patchTask(current.raw, edits);
-    const result = await bb.sdk.files.write({ hostId, path: task.path, rootPath: folder, content, expectedSha256: current.revision, createParents: false });
+    const result = await alia.sdk.files.write({ hostId, path: task.path, rootPath: folder, content, expectedSha256: current.revision, createParents: false });
     if (result.outcome === "conflict") throw new Error("The file changed while saving. Your draft has been kept; review the current value and retry.");
     return parseTask(content, { path: task.path, revision: result.sha256, storage: task.storage });
   }
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: "task", label: "Backlog tasks",
     search: async ({ projectId, query }) => {
       if (!projectId) return [];
@@ -230,7 +230,7 @@ export default function plugin(bb: BbPluginApi) {
       } catch (error) { throw new Error(`Backlog mention: ${message(error)} Check the task and host availability, then retry.`); }
     },
   });
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     projects,
     board: ({ projectId }) => board(projectId),
     markdownRecords: ({ projectId }) => markdownRecords(projectId),
@@ -238,13 +238,13 @@ export default function plugin(bb: BbPluginApi) {
     saveMarkdownRecord: input => serial(input.projectId, async () => {
       const context = await markdownRecord(input.projectId, input.kind, input.path);
       if (context.record.revision !== input.revision) return { record: context.record, conflict: true, message: "This file changed while you were editing. Review the current version and keep your draft." };
-      const result = await bb.sdk.files.write({ hostId: context.source.hostId, path: context.record.path, rootPath: context.folder, content: input.content, expectedSha256: input.revision, createParents: false });
+      const result = await alia.sdk.files.write({ hostId: context.source.hostId, path: context.record.path, rootPath: context.folder, content: input.content, expectedSha256: input.revision, createParents: false });
       if (result.outcome === "conflict") {
         const latest = await markdownRecord(input.projectId, input.kind, input.path);
         return { record: latest.record, conflict: true, message: "This file changed while you were editing. Review the current version and keep your draft." };
       }
       const record = { ...context.record, title: markdownTitle(input.content, context.record.path), revision: result.sha256, content: input.content };
-      bb.realtime.publish("backlog-changed", { projectId: input.projectId });
+      alia.realtime.publish("backlog-changed", { projectId: input.projectId });
       return { record, conflict: false, message: "" };
     }),
     settings: input => serial(input.projectId, async () => {
@@ -252,16 +252,16 @@ export default function plugin(bb: BbPluginApi) {
       const source = project.sources.find(s => s.id === input.sourceId);
       if (!source) throw new Error("Choose an available project source.");
       const folder = input.folder?.trim() ? absoluteFolder(source.path, input.folder) : null;
-      await bb.storage.kv.set(`selection:${project.id}`, { sourceId: source.id, hostId: source.hostId, root: source.path, folder });
-      try { await unwatch(project.id); } catch (error) { bb.log.warn(`Watch release: ${message(error)}`); }
-      bb.realtime.publish("backlog-changed", { projectId: project.id });
+      await alia.storage.kv.set(`selection:${project.id}`, { sourceId: source.id, hostId: source.hostId, root: source.path, folder });
+      try { await unwatch(project.id); } catch (error) { alia.log.warn(`Watch release: ${message(error)}`); }
+      alia.realtime.publish("backlog-changed", { projectId: project.id });
       return null;
     }),
     browse: async ({ projectId, sourceId }) => {
       const { project } = await projectInfo(projectId);
       const source = project.sources.find(s => s.id === sourceId);
       if (!source) throw new Error("Choose an available project source.");
-      return (await bb.sdk.hosts.pickFolder({ hostId: source.hostId, clientHostId: source.hostId })).path;
+      return (await alia.sdk.hosts.pickFolder({ hostId: source.hostId, clientHostId: source.hostId })).path;
     },
     save: input => serial(input.projectId, async () => {
       const context = await mutationContext(input);
@@ -269,7 +269,7 @@ export default function plugin(bb: BbPluginApi) {
       try {
         if (context.task.revision !== input.revision && input.edits.some(edit => edit.kind === "section" && edit.key.startsWith("comment "))) throw new Error("The task changed while editing a comment. Review its current metadata before retrying.");
         const task = await guardedWrite(context.source.hostId, input.folder, context.task, input.edits);
-        bb.realtime.publish("backlog-changed", { projectId: input.projectId });
+        alia.realtime.publish("backlog-changed", { projectId: input.projectId });
         return { task, conflict: false, message: "" };
       } catch (error) {
         const current = await read(context.source.hostId, context.file, input.folder);
@@ -301,20 +301,20 @@ export default function plugin(bb: BbPluginApi) {
         { kind: "field", key: "status", before: context.task.fields.status as string ?? null, value: input.status },
         { kind: "field", key: "ordinal", before: context.task.fields.ordinal as number ?? null, value: ordinal },
       ]);
-      bb.realtime.publish("backlog-changed", { projectId: input.projectId });
+      alia.realtime.publish("backlog-changed", { projectId: input.projectId });
       return null;
     }),
     release: async () => null, // Shared project watches expire without heartbeats; another window may still use one.
   });
   const unsubscribe = host.experimental_onSignal("changed", ({ payload }) => {
     changedAt.set(payload.key, Date.now());
-    if (payload.error) bb.log.warn(`Watch: ${payload.error}`);
-    bb.realtime.publish("backlog-changed", { projectId: payload.key });
+    if (payload.error) alia.log.warn(`Watch: ${payload.error}`);
+    alia.realtime.publish("backlog-changed", { projectId: payload.key });
   });
   const workerExit = host.experimental_onWorkerExit(({ hostId }) => {
-    for (const [projectId, watchedHost] of watches) if (hostId === watchedHost) bb.realtime.publish("backlog-changed", { projectId });
+    for (const [projectId, watchedHost] of watches) if (hostId === watchedHost) alia.realtime.publish("backlog-changed", { projectId });
   });
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     unsubscribe(); workerExit();
     await Promise.allSettled([...watches].map(([key, hostId]) => host.call("unwatch", { key }, { hostId })));
     watches.clear();

@@ -1,7 +1,7 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { BUTTON, Tip, usePortalScope } from "./common";
 
 /** A phone's menu: a sheet from the bottom with a handle, a title and Done. Escape and the scrim close it. */
@@ -12,7 +12,7 @@ function BottomSheet({ title, onClose, children }: { title: string; onClose(): v
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented) return;
-      // bb's "Back to app" also listens for Escape; this sheet owns it while open.
+      // VesnALIA's "Back to app" also listens for Escape; this sheet owns it while open.
       event.preventDefault();
       close.current();
     };
@@ -20,7 +20,7 @@ function BottomSheet({ title, onClose, children }: { title: string; onClose(): v
     return () => document.removeEventListener("keydown", onKey);
   }, []);
   const scope = usePortalScope();
-  // In a portal, like bb's own menus, so no scrolling or transformed ancestor can clip it.
+  // In a portal, like VesnALIA's own menus, so no scrolling or transformed ancestor can clip it.
   return createPortal(
     <div {...scope} className="fixed inset-0 z-50">
       <div data-scrim className="absolute inset-0 bg-background/70" onClick={onClose} />
@@ -45,7 +45,7 @@ interface PickerContext {
 const Context = createContext<PickerContext>({ mode: "menu", close: () => {} });
 
 /**
- * A menu of choices: bb's Radix dropdown in a portal on a desktop, a bottom sheet on a phone.
+ * A menu of choices: VesnALIA's Radix dropdown in a portal on a desktop, a bottom sheet on a phone.
  * The children mount only while it is open, so they can load what they offer then.
  */
 export function Picker({ phone, title, trigger, triggerClassName, triggerLabel, tip, disabled = false, disabledReason, align = "end", width = "w-80", open: shown, onOpenChange, onCloseAutoFocus, children }: {

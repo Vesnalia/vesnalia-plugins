@@ -24,10 +24,10 @@ import {
 } from "./backup";
 import {
   defineRpcContract,
-  type BbPluginApi,
+  type AliaPluginApi,
   type PluginRpcHandlers,
-} from "@get-bb/plugin-sdk";
-import type { NewThreadRequest } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk/app";
 import { z } from "zod";
 import { makeArchives, archiveSchema } from "./archive";
 import { makeSessionPolicies } from "./session-policy-server";
@@ -85,15 +85,15 @@ import {
   type ExecutionLayer,
 } from "./execution";
 import {
-  bbDatabasePath,
-  bbDefaultsSchema,
-  bbSyncSchema,
+  aliaDatabasePath,
+  aliaDefaultsSchema,
+  aliaSyncSchema,
   parseRemembered,
   sameRemembered,
   wantedRemembered,
   writeRemembered,
-  type BbSync,
-} from "./bb-remembered";
+  type AliaSync,
+} from "./alia-remembered";
 
 const defaultAgentsTemplate = `# Section rules
 
@@ -503,21 +503,21 @@ export const rpcContract = defineRpcContract({
       hostId: z.string().nullable(),
       /** Machines this place can pin: home host plus path copies, or every host globally. */
       hosts: z.array(z.object({ id: z.string(), name: z.string() })),
-      /** Every BB host, so a pin outside the offered list still has a name. */
+      /** Every VesnALIA host, so a pin outside the offered list still has a name. */
       knownHosts: z.array(z.object({ id: z.string(), name: z.string() })),
-      /** What BB itself would start with here: shown, and used as the seed. */
+      /** What VesnALIA itself would start with here: shown, and used as the seed. */
       fallback: executionFallbackSchema.nullable(),
       agents: agentCatalogSchema,
-      /** The project page only: BB's remembered row beside the plugin's pins. */
-      bb: bbDefaultsSchema.nullable().optional(),
+      /** The project page only: VesnALIA's remembered row beside the plugin's pins. */
+      alia: aliaDefaultsSchema.nullable().optional(),
     }),
   },
   execution_save: {
     input: z.object({ scope: executionScopeSchema, value: executionSchema }),
     output: z.object({
       ok: z.literal(true),
-      /** A project save also writes BB's remembered defaults; this is how it went. */
-      bb: bbSyncSchema.optional(),
+      /** A project save also writes VesnALIA's remembered defaults; this is how it went. */
+      alia: aliaSyncSchema.optional(),
     }),
   },
   /** Projects and sections that pin their own model or agent over the plugin-wide default. */
@@ -544,12 +544,12 @@ export const rpcContract = defineRpcContract({
     input: z.object({}).strict(),
     output: z.object({ ok: z.literal(true), places: z.number().int() }),
   },
-  /** Writes the project's plugin setting into BB's remembered defaults again. */
+  /** Writes the project's plugin setting into VesnALIA's remembered defaults again. */
   execution_remember: {
     input: z.object({ projectId: z.string().min(1) }),
-    output: bbSyncSchema,
+    output: aliaSyncSchema,
   },
-  /** Whether the running BB can enforce session context rules at all. */
+  /** Whether the running VesnALIA can enforce session context rules at all. */
   session_policy_capability: {
     input: z.null(),
     output: z.object({ available: z.boolean() }),
@@ -573,15 +573,15 @@ export const rpcContract = defineRpcContract({
   session_policy_inventory: {
     input: z.object({ scope: executionScopeSchema }),
     output: z.record(
-      z.enum(["bbPlugins", "skills", "mcpServers", "nativePlugins"]),
+      z.enum(["aliaPlugins", "skills", "mcpServers", "nativePlugins"]),
       z.array(
         z.object({
           name: z.string(),
           label: z.string(),
-          /** For BB plugins: what the plugin adds to agent sessions. */
+          /** For VesnALIA plugins: what the plugin adds to agent sessions. */
           adds: z
             .object({
-              /** BB says no rule can leave this plugin out. */
+              /** VesnALIA says no rule can leave this plugin out. */
               required: z.boolean().optional(),
               instructions: z.boolean(),
               configure: z.boolean(),
@@ -702,8 +702,8 @@ export const rpcContract = defineRpcContract({
   },
 });
 /**
- * The bundle runs from dist/server.js. Newer BB (checked: 0.48.1) copies
- * package.json into dist/, BB 0.43 does not, and a throw here fails the whole
+ * The bundle runs from dist/server.js. Newer VesnALIA (checked: 0.48.1) copies
+ * package.json into dist/, VesnALIA 0.43 does not, and a throw here fails the whole
  * plugin load. So the plugin root is read too, and a missing file never stops
  * the plugin.
  */
@@ -737,11 +737,11 @@ export function resolveFolderPath(root: string, relative: string) {
     path.isAbsolute(relative) ||
     relative
       .split(/[\\/]/)
-      .some((p) => p === ".." || p === ".bb" || p === ".git") ||
+      .some((p) => p === ".." || p === ".vesnalia" || p === ".git") ||
     /[\x00-\x1f]/.test(relative)
   )
     throw new Error(
-      "Enter a relative path inside the section; .bb and .git are reserved.",
+      "Enter a relative path inside the section; .vesnalia and .git are reserved.",
     );
   const result = path.resolve(root, relative);
   if (
@@ -751,7 +751,7 @@ export function resolveFolderPath(root: string, relative: string) {
     throw new Error("The folder must be inside its parent section.");
   return result;
 }
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   /** Pre-0.4.1 declarative fields: read once to migrate, then no longer registered. */
   const legacyDescriptors = {
     agents_auto_create: {
@@ -790,7 +790,7 @@ export default async function plugin(bb: BbPluginApi) {
       type: "string",
       label: "Куда применять свои правила",
       description:
-        "file — дописывать в AGENTS.md и CLAUDE.md, они действуют и в консоли; session — отдавать инструкциями агенту, запущенному из BB, не трогая файлы; both — и то и другое.",
+        "file — дописывать в AGENTS.md и CLAUDE.md, они действуют и в консоли; session — отдавать инструкциями агенту, запущенному из ALIA, не трогая файлы; both — и то и другое.",
       experimental_schema: z.enum(["file", "session", "both"]),
       default: "file",
     },
@@ -804,8 +804,8 @@ export default async function plugin(bb: BbPluginApi) {
       default: "",
     },
   } as const;
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE folders (id TEXT PRIMARY KEY, projectId TEXT NOT NULL, hostId TEXT NOT NULL, parentId TEXT, name TEXT NOT NULL, path TEXT NOT NULL, UNIQUE(projectId,hostId,path))`,
     `CREATE TABLE exports (threadId TEXT PRIMARY KEY, path TEXT, error TEXT, updatedAt INTEGER)`,
     `CREATE TABLE folder_archives (id TEXT PRIMARY KEY, createdAt INTEGER NOT NULL, data TEXT NOT NULL)`,
@@ -817,7 +817,7 @@ export default async function plugin(bb: BbPluginApi) {
     `CREATE TABLE project_rules (projectId TEXT PRIMARY KEY, mode TEXT NOT NULL, projectTemplate TEXT NOT NULL, sectionTemplate TEXT NOT NULL)`,
     `ALTER TABLE folder_rules ADD COLUMN custom TEXT NOT NULL DEFAULT ''`,
     `ALTER TABLE project_rules ADD COLUMN custom TEXT NOT NULL DEFAULT ''`,
-    // Where custom rules go: the files, the BB session instructions, or both.
+    // Where custom rules go: the files, the VesnALIA session instructions, or both.
     `ALTER TABLE folder_rules ADD COLUMN customTarget TEXT NOT NULL DEFAULT 'file'`,
     `ALTER TABLE project_rules ADD COLUMN customTarget TEXT NOT NULL DEFAULT 'file'`,
     // One-shot text appended to the first message of a new chat here.
@@ -855,17 +855,17 @@ export default async function plugin(bb: BbPluginApi) {
   let currentKeepaliveConfig = loadCacheKeepaliveConfig();
   const keepaliveStore = createSqliteKeepaliveStore(db);
   const cacheKeepalive = createCacheKeepalive({
-    pluginId: bb.pluginId,
-    sdk: bb.sdk,
+    pluginId: alia.pluginId,
+    sdk: alia.sdk,
     store: keepaliveStore,
     getConfig: () => currentKeepaliveConfig,
-    log: bb.log,
+    log: alia.log,
   });
-  bb.onDispose(() => cacheKeepalive.dispose());
-  bb.events.on("thread.idle", ({ thread }) => cacheKeepalive.onThreadIdle(thread));
-  bb.events.on("thread.archived", ({ thread }) => cacheKeepalive.onThreadRemoved(thread.id));
-  bb.events.on("thread.deleted", ({ thread }) => cacheKeepalive.onThreadRemoved(thread.id));
-  // Quiet chats older than N days go to BB's archive; off by default.
+  alia.onDispose(() => cacheKeepalive.dispose());
+  alia.events.on("thread.idle", ({ thread }) => cacheKeepalive.onThreadIdle(thread));
+  alia.events.on("thread.archived", ({ thread }) => cacheKeepalive.onThreadRemoved(thread.id));
+  alia.events.on("thread.deleted", ({ thread }) => cacheKeepalive.onThreadRemoved(thread.id));
+  // Quiet chats older than N days go to VesnALIA's archive; off by default.
   const loadAutoArchiveConfig = (): AutoArchiveConfig => {
     const row = db
       .prepare("SELECT data FROM preferences WHERE key='auto_archive'")
@@ -874,11 +874,11 @@ export default async function plugin(bb: BbPluginApi) {
   };
   let currentAutoArchiveConfig = loadAutoArchiveConfig();
   const autoArchive = createAutoArchive({
-    sdk: bb.sdk,
+    sdk: alia.sdk,
     getConfig: () => currentAutoArchiveConfig,
-    log: bb.log,
+    log: alia.log,
   });
-  bb.onDispose(() => autoArchive.dispose());
+  alia.onDispose(() => autoArchive.dispose());
   type AgentsSettings = {
     agents_auto_create: boolean;
     agents_project_template: string;
@@ -925,14 +925,14 @@ export default async function plugin(bb: BbPluginApi) {
   let shared: AgentsSettings;
   if (agentsRow) shared = parseAgents(safeJson(agentsRow.data));
   else {
-    // Rules used to be declarative plugin settings, which BB renders as a raw
+    // Rules used to be declarative plugin settings, which VesnALIA renders as a raw
     // block above the plugin's own settings screen. Copy them once; from the
     // next load the fields are no longer registered and the block disappears.
     let legacy: unknown = null;
     try {
-      legacy = await bb.settings.define(legacyDescriptors).get();
+      legacy = await alia.settings.define(legacyDescriptors).get();
     } catch (e) {
-      bb.log.warn(`Legacy settings migration: ${String(e)}`);
+      alia.log.warn(`Legacy settings migration: ${String(e)}`);
     }
     shared = parseAgents(legacy);
     saveAgents(shared);
@@ -1025,7 +1025,7 @@ export default async function plugin(bb: BbPluginApi) {
   };
   // Legacy internal names and RPC fields remain compatible with older integrations.
   const visibility = createRepoVisibilityCache();
-  bb.onDispose(() => { visibility.dispose(); });
+  alia.onDispose(() => { visibility.dispose(); });
   const repoChecksEnabled = () => {
     const row = db.prepare("SELECT data FROM preferences WHERE key='ui'").get() as { data: string } | undefined;
     return parsePrefs(row ? safeJson(row.data) : null).projects.checkRepoVisibility;
@@ -1047,7 +1047,7 @@ export default async function plugin(bb: BbPluginApi) {
   const refreshGithubHost = async (hostId: string, paths: string[]) => {
     let dirty = false;
     try {
-      const result = await bb.hosts
+      const result = await alia.hosts
         .experimental_client({ contract: moveHostContract })
         .call("repo_remotes", { paths }, { hostId });
       const now = Date.now();
@@ -1117,7 +1117,7 @@ export default async function plugin(bb: BbPluginApi) {
         .finally(() => githubRefreshing.delete(hostId));
     }
   };
-  /** Where custom rules apply: the AGENTS.md files, BB sessions, or both. */
+  /** Where custom rules apply: the AGENTS.md files, VesnALIA sessions, or both. */
   type RuleTarget = "file" | "session" | "both";
   type FolderRule = {
     mode: string;
@@ -1203,7 +1203,7 @@ export default async function plugin(bb: BbPluginApi) {
   /**
    * Nearest individual ("custom") rules from the folder upwards, else the
    * project's, else the shared ones. A rule counts only for the channel it is
-   * addressed to: the AGENTS.md files, the BB session instructions, or both.
+   * addressed to: the AGENTS.md files, the VesnALIA session instructions, or both.
    */
   const effectiveCustom = (
     f: Folder | null,
@@ -1318,7 +1318,7 @@ export default async function plugin(bb: BbPluginApi) {
     resolveExecution(executionLayers(f, projectId));
   /**
    * Which CLI the agent list belongs to: the pin that applies here, else the
-   * project's own remembered choice — the same provider BB would start with.
+   * project's own remembered choice — the same provider VesnALIA would start with.
    */
   const executionProvider = async (
     scope: ExecutionScope,
@@ -1326,13 +1326,13 @@ export default async function plugin(bb: BbPluginApi) {
   ) => {
     if (resolved.model) return resolved.model.providerId;
     if (scope.kind === "global") return "";
-    const remembered = await bb.sdk.projects.defaultExecutionOptions({
+    const remembered = await alia.sdk.projects.defaultExecutionOptions({
       projectId: scope.projectId,
     });
     return remembered?.providerId ?? "";
   };
   /**
-   * What BB would start with when nothing here is pinned: the project's
+   * What VesnALIA would start with when nothing here is pinned: the project's
    * remembered execution defaults, else the catalog default of the first
    * available provider on this machine. Shown as the inherited value, and
    * used as the seed the moment a group is switched on.
@@ -1361,7 +1361,7 @@ export default async function plugin(bb: BbPluginApi) {
     };
     if (scope.kind !== "global") {
       try {
-        const remembered = await bb.sdk.projects.defaultExecutionOptions({
+        const remembered = await alia.sdk.projects.defaultExecutionOptions({
           projectId: scope.projectId,
         });
         if (remembered) {
@@ -1372,10 +1372,10 @@ export default async function plugin(bb: BbPluginApi) {
     }
     try {
       const routing = hostId ? { hostId } : {};
-      const providers = await bb.sdk.providers.list(routing);
+      const providers = await alia.sdk.providers.list(routing);
       const provider = providers.find((p) => p.available) ?? providers[0];
       if (!provider) return null;
-      const options = await bb.sdk.providers.models({
+      const options = await alia.sdk.providers.models({
         ...routing,
         providerId: provider.id,
       });
@@ -1394,25 +1394,25 @@ export default async function plugin(bb: BbPluginApi) {
   };
   /** The provider is registered and has a live bridge on that machine. */
   const providerLive = async (hostId: string | null, providerId: string) => {
-    const providers = await bb.sdk.providers.list(hostId ? { hostId } : {});
+    const providers = await alia.sdk.providers.list(hostId ? { hostId } : {});
     return providers.some((p) => p.id === providerId && p.available);
   };
   const rememberedNow = async (projectId: string) => {
     try {
       return parseRemembered(
-        await bb.sdk.projects.defaultExecutionOptions({ projectId }),
+        await alia.sdk.projects.defaultExecutionOptions({ projectId }),
       );
     } catch {
       return null;
     }
   };
   /**
-   * BB's remembered row against the plugin's project setting: the project's
-   * own pins, else the plugin-wide default. Sections never count here — BB
+   * VesnALIA's remembered row against the plugin's project setting: the project's
+   * own pins, else the plugin-wide default. Sections never count here — VesnALIA
    * keeps one row per project, and a chat started without a section lands in
    * the project root.
    */
-  const bbDefaultsFor = async (projectId: string, hostId: string | null) => {
+  const aliaDefaultsFor = async (projectId: string, hostId: string | null) => {
     const remembered = await rememberedNow(projectId);
     const wanted = wantedRemembered(
       effectiveExecution(null, projectId),
@@ -1435,12 +1435,12 @@ export default async function plugin(bb: BbPluginApi) {
     };
   };
   /**
-   * Writes the project setting into BB's remembered defaults, so a chat made
+   * Writes the project setting into VesnALIA's remembered defaults, so a chat made
    * without an explicit provider starts on the same provider and model. A
-   * provider without a live bridge is never written: BB would hand every such
+   * provider without a live bridge is never written: VesnALIA would hand every such
    * chat to a provider that cannot run it.
    */
-  const rememberInBb = async (projectId: string): Promise<BbSync> => {
+  const rememberInAlia = async (projectId: string): Promise<AliaSync> => {
     const remembered = await rememberedNow(projectId);
     const wanted = wantedRemembered(
       effectiveExecution(null, projectId),
@@ -1458,14 +1458,14 @@ export default async function plugin(bb: BbPluginApi) {
         };
       const status = writeRemembered(
         db.constructor as Parameters<typeof writeRemembered>[0],
-        bbDatabasePath(bb.server.experimental_dataDir),
+        aliaDatabasePath(alia.server.experimental_dataDir),
         projectId,
         wanted,
       );
       return { status, providerId, message: null };
     } catch (e) {
-      bb.log.warn(
-        `Could not write BB's remembered defaults for ${projectId}: ${String(e)}`,
+      alia.log.warn(
+        `Could not write VesnALIA's remembered defaults for ${projectId}: ${String(e)}`,
       );
       return {
         status: "failed",
@@ -1492,7 +1492,7 @@ export default async function plugin(bb: BbPluginApi) {
         throw new Error("This section belongs to another project.");
       return { folder, hostId: folder.hostId };
     }
-    const project = (await bb.sdk.projects.list()).find(
+    const project = (await alia.sdk.projects.list()).find(
       (p) => p.id === scope.projectId,
     );
     const source =
@@ -1500,7 +1500,7 @@ export default async function plugin(bb: BbPluginApi) {
     return { folder: null, hostId: source?.hostId ?? null };
   };
   const executionKnownHosts = async () =>
-    (await bb.sdk.hosts.list()).map((h) => ({ id: h.id, name: h.name }));
+    (await alia.sdk.hosts.list()).map((h) => ({ id: h.id, name: h.name }));
   /** Devices a place can pin: home host plus path copies, or every host globally. */
   const executionHosts = async (
     scope: ExecutionScope,
@@ -1523,7 +1523,7 @@ export default async function plugin(bb: BbPluginApi) {
         ),
       );
     }
-    const project = (await bb.sdk.projects.list()).find(
+    const project = (await alia.sdk.projects.list()).find(
       (p) => p.id === scope.projectId,
     );
     const sources = (project?.sources ?? []).filter(
@@ -1540,7 +1540,7 @@ export default async function plugin(bb: BbPluginApi) {
    */
   const cliAgentsRunning = async () => {
     try {
-      const list = await bb.sdk.plugins.list();
+      const list = await alia.sdk.plugins.list();
       return (
         list.plugins.find((p) => p.id === CLI_AGENTS_PLUGIN_ID)?.status ===
         "running"
@@ -1554,7 +1554,7 @@ export default async function plugin(bb: BbPluginApi) {
     input: unknown,
     outputSchema: z.ZodType<T>,
   ) =>
-    bb.sdk.plugins.callRpc({
+    alia.sdk.plugins.callRpc({
       pluginId: CLI_AGENTS_PLUGIN_ID,
       method,
       input: input as never,
@@ -1722,7 +1722,7 @@ export default async function plugin(bb: BbPluginApi) {
     return merged === (existing ?? "") ? null : merged;
   };
   async function roots() {
-    const projects = await bb.sdk.projects.list();
+    const projects = await alia.sdk.projects.list();
     const order = new Map(
       (
         db.prepare("SELECT projectId, sort FROM project_order").all() as {
@@ -1764,7 +1764,7 @@ export default async function plugin(bb: BbPluginApi) {
         "Project relocation is pending. Finish or retry it before changing the project.",
       );
     if (!input.folderId && input.hostId) {
-      const project = (await bb.sdk.projects.list()).find(
+      const project = (await alia.sdk.projects.list()).find(
         (p) => p.id === input.projectId,
       );
       const source = project?.sources.find(
@@ -1772,7 +1772,7 @@ export default async function plugin(bb: BbPluginApi) {
       );
       if (!project || !source || source.type !== "local_path")
         throw new Error(
-          "This project has no folder on the selected device. Add a project source in BB.",
+          "This project has no folder on the selected device. Add a project source in VesnALIA.",
         );
       return {
         id: project.id,
@@ -1841,12 +1841,12 @@ export default async function plugin(bb: BbPluginApi) {
     const p = path.resolve(input);
     if (
       p === path.parse(p).root ||
-      p.split(path.sep).some((s) => s === ".bb" || s === ".git")
+      p.split(path.sep).some((s) => s === ".vesnalia" || s === ".git")
     )
       throw new Error(
-        "Choose a folder, not the disk root; .bb and .git are reserved.",
+        "Choose a folder, not the disk root; .vesnalia and .git are reserved.",
       );
-    const projects = await bb.sdk.projects.list();
+    const projects = await alia.sdk.projects.list();
     for (const project of projects)
       for (const s of project.sources) {
         if (s.type !== "local_path" || s.hostId !== hostId) continue;
@@ -1865,14 +1865,14 @@ export default async function plugin(bb: BbPluginApi) {
       }
     return p;
   }
-  const changed = () => bb.realtime.publish("changed", {});
+  const changed = () => alia.realtime.publish("changed", {});
   notifyGithubChange = changed;
   const agentsFile = (f: Folder) => path.join(f.path, "AGENTS.md");
   const isMissing = (e: unknown) =>
     /not.found|ENOENT|does not exist/i.test(String(e));
   async function readAgents(f: Folder, name = "AGENTS.md") {
     try {
-      const raw: unknown = await bb.sdk.files.read({
+      const raw: unknown = await alia.sdk.files.read({
         hostId: f.hostId,
         path: path.join(f.path, name),
         rootPath: f.path,
@@ -1886,7 +1886,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
   async function writeAgents(f: Folder, content: string) {
-    const r = await bb.sdk.files.write({
+    const r = await alia.sdk.files.write({
       hostId: f.hostId,
       rootPath: f.path,
       path: agentsFile(f),
@@ -1913,13 +1913,13 @@ export default async function plugin(bb: BbPluginApi) {
   async function syncClaudeCustom(f: Folder, custom: string) {
     // Claude Code reads AGENTS.md itself when there is no CLAUDE.md (2.1.277+); a CLAUDE.md bridge with
     // `@AGENTS.md` breaks the root rules for every section, because Claude Code does not expand an import
-    // above the session's folder without an approval a BB session never gets (Клиенты, 2026-10-09).
+    // above the session's folder without an approval a VesnALIA session never gets (Клиенты, 2026-10-09).
     // So only a CLAUDE.md the user keeps gets the custom block; none is created.
     const existing = await readAgents(f, "CLAUDE.md");
     if (existing === null) return;
     const merged = applyCustomBlock(existing, custom);
     if (merged !== null)
-      await bb.sdk.files.write({
+      await alia.sdk.files.write({
         hostId: f.hostId,
         rootPath: f.path,
         path: path.join(f.path, "CLAUDE.md"),
@@ -1996,15 +1996,15 @@ export default async function plugin(bb: BbPluginApi) {
             }) as { m: number }
         ).m + 1,
     };
-    await bb.sdk.files.mkdir({
+    await alia.sdk.files.mkdir({
       hostId: folder.hostId,
       path: folder.path,
       ...(external ? {} : { rootPath: parent.path }),
       recursive: true,
     });
-    await bb.sdk.files.mkdir({
+    await alia.sdk.files.mkdir({
       hostId: folder.hostId,
-      path: path.join(folder.path, ".bb/chats"),
+      path: path.join(folder.path, ".vesnalia/chats"),
       rootPath: folder.path,
       recursive: true,
     });
@@ -2013,17 +2013,17 @@ export default async function plugin(bb: BbPluginApi) {
     ).run(folder);
     writePath(folder.id, folder.hostId, folder.path);
     await seedAgents(folder, input.folderId ? node : null).catch((e) =>
-      bb.log.warn(`AGENTS.md template for ${folder.path}: ${String(e)}`),
+      alia.log.warn(`AGENTS.md template for ${folder.path}: ${String(e)}`),
     );
     forgetGithub(folder.hostId, folder.path);
     changed();
     return folder;
   }
   async function locate(threadId: string) {
-    const t = await bb.sdk.threads.get({ threadId });
+    const t = await alia.sdk.threads.get({ threadId });
     if (!t.environmentId)
       throw new Error("The chat does not have an environment yet.");
-    const env = await bb.sdk.environments.get({
+    const env = await alia.sdk.environments.get({
       environmentId: t.environmentId,
     });
     const root = await target({
@@ -2055,9 +2055,9 @@ export default async function plugin(bb: BbPluginApi) {
    * project root and for a folder the tree does not know.
    */
   async function naturalPlace(threadId: string): Promise<string | null> {
-    const t = await bb.sdk.threads.get({ threadId });
+    const t = await alia.sdk.threads.get({ threadId });
     if (!t.environmentId) return null;
-    const env = await bb.sdk.environments.get({
+    const env = await alia.sdk.environments.get({
       environmentId: t.environmentId,
     });
     const workspace = canonicalPath(env.hostId, env.path ?? "");
@@ -2072,9 +2072,9 @@ export default async function plugin(bb: BbPluginApi) {
   const exportedHeads = new Map<string, { digest: string; snapshot: string }>();
   async function exportChat(threadId: string, automatic = false) {
     const { t, f } = await locate(threadId);
-    const dir = path.join(f.path, ".bb/chats", threadId);
+    const dir = path.join(f.path, ".vesnalia/chats", threadId);
     const write = async (name: string, content: string) => {
-      await bb.sdk.files.write({
+      await alia.sdk.files.write({
         hostId: f.hostId,
         rootPath: f.path,
         path: path.join(dir, name),
@@ -2085,7 +2085,7 @@ export default async function plugin(bb: BbPluginApi) {
     const snapshot = randomUUID();
     let previous: string | null = null;
     try {
-      const old = await bb.sdk.files.read({
+      const old = await alia.sdk.files.read({
         hostId: f.hostId,
         rootPath: f.path,
         path: path.join(dir, "history/index.json"),
@@ -2097,7 +2097,7 @@ export default async function plugin(bb: BbPluginApi) {
       )
         previous = index.snapshot;
     } catch {}
-    const first = await bb.sdk.threads.timeline({
+    const first = await alia.sdk.threads.timeline({
       threadId,
       segmentLimit: "20",
       includeNestedRows: "true",
@@ -2124,7 +2124,7 @@ export default async function plugin(bb: BbPluginApi) {
           folderId: f.id,
           workspace: f.path,
           exportedAt: new Date().toISOString(),
-          canonicalStorage: "BB database",
+          canonicalStorage: "VesnALIA database",
         },
         null,
         2,
@@ -2134,7 +2134,7 @@ export default async function plugin(bb: BbPluginApi) {
     let page = 0;
     do {
       const timeline: typeof first = cursor
-        ? await bb.sdk.threads.timeline({
+        ? await alia.sdk.threads.timeline({
             threadId,
             segmentLimit: "20",
             includeNestedRows: "true",
@@ -2166,20 +2166,20 @@ export default async function plugin(bb: BbPluginApi) {
       ),
     );
     if (previous)
-      await bb.sdk.files
+      await alia.sdk.files
         .remove({
           hostId: f.hostId,
           rootPath: f.path,
           path: path.join(dir, "history", previous),
           recursive: true,
         })
-        .catch((e) => bb.log.debug(String(e)));
+        .catch((e) => alia.log.debug(String(e)));
     await write(
       "README.md",
       "# Chat files\n\nthread.json contains chat metadata. history/index.json indexes the full history (newest pages first).\nartifacts/ holds documents and results, notes/ holds notes, tmp/ holds temporary files.\nBB remains the canonical chat store; this is an automatically updated copy.\n",
     );
     for (const name of ["artifacts", "notes", "tmp"])
-      await bb.sdk.files.mkdir({
+      await alia.sdk.files.mkdir({
         hostId: f.hostId,
         rootPath: f.path,
         path: path.join(dir, name),
@@ -2204,7 +2204,7 @@ export default async function plugin(bb: BbPluginApi) {
       return Promise.resolve({ path: "" });
     const active = syncing.get(threadId);
     if (active) return automatic ? active : active.then(() => sync(threadId));
-    const task = bb.sdk.threads
+    const task = alia.sdk.threads
       .get({ threadId })
       .then((t) =>
         moves.busy(t.projectId)
@@ -2229,10 +2229,10 @@ export default async function plugin(bb: BbPluginApi) {
     syncing.set(threadId, task);
     return task;
   }
-  const moves = makeProjectMoves(bb, changed, () =>
+  const moves = makeProjectMoves(alia, changed, () =>
     Promise.allSettled([...syncing.values()]),
   );
-  const archives = makeArchives(bb, {
+  const archives = makeArchives(alia, {
     canonical: canonicalPath,
     projectMoving: moves.busy,
     folders,
@@ -2293,7 +2293,7 @@ export default async function plugin(bb: BbPluginApi) {
     dropProjectRows,
     changed,
   };
-  const threadMoves = makeThreadMoves(bb, {
+  const threadMoves = makeThreadMoves(alia, {
     target,
     canonical: canonicalPath,
     allowed: (threadId, folder) => {
@@ -2326,7 +2326,7 @@ export default async function plugin(bb: BbPluginApi) {
       );
     },
   });
-  const sectionMoves = makeSectionMoves(bb, {
+  const sectionMoves = makeSectionMoves(alia, {
     folders,
     changed,
     pendingExports: () => Promise.allSettled([...syncing.values()]),
@@ -2340,17 +2340,17 @@ export default async function plugin(bb: BbPluginApi) {
     canonical: canonicalPath,
     detached,
   });
-  bb.experimental_hooks.on("message.dispatch", (ctx) =>
+  alia.experimental_hooks.on("message.dispatch", (ctx) =>
     handleMessageDispatch(ctx, {
       threadMoves,
       moves,
       sectionMoves,
       archives,
-      log: bb.log,
+      log: alia.log,
     }),
   );
   const sessionPolicies = makeSessionPolicies({
-    bb,
+    alia,
     db,
     folders,
     canonicalPath,
@@ -2373,7 +2373,7 @@ export default async function plugin(bb: BbPluginApi) {
       return result;
     },
     thread_section: async ({ threadId }) => {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (!thread.environmentId) return { section: null, pending: true };
       const located = await locate(threadId).catch(() => null);
       if (!located) return { section: null, pending: false };
@@ -2381,7 +2381,7 @@ export default async function plugin(bb: BbPluginApi) {
       const all = folders();
       if (!all.some((x) => x.id === f.id))
         return { section: null, pending: false };
-      const project = (await bb.sdk.projects.list()).find(
+      const project = (await alia.sdk.projects.list()).find(
         (p) => p.id === f.projectId,
       );
       if (!project) return { section: null, pending: false };
@@ -2458,7 +2458,7 @@ export default async function plugin(bb: BbPluginApi) {
       return { ok: true as const };
     },
     thread_place: async ({ threadId, projectId, folderId }) => {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (thread.projectId !== projectId)
         throw new Error("Choose a section in this chat's project.");
       const all = folders();
@@ -2587,7 +2587,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     section_remove: (input) =>
       removeSection(
-        bb,
+        alia,
         {
           folders,
           root: (projectId, hostId) =>
@@ -2645,7 +2645,7 @@ export default async function plugin(bb: BbPluginApi) {
       return archives.restore(id);
     },
     list: async () => {
-      const all = await bb.sdk.environments.list();
+      const all = await alia.sdk.environments.list();
       const fs = folders();
       const projectRoots = await roots();
       const bindings: Record<string, string> = {};
@@ -2678,7 +2678,7 @@ export default async function plugin(bb: BbPluginApi) {
         .prepare("SELECT threadId, folderId FROM thread_places")
         .all() as { threadId: string; folderId: string | null }[])
         places[row.threadId] = row.folderId ?? "";
-      const machines = await bb.sdk.hosts.list();
+      const machines = await alia.sdk.hosts.list();
       const listedFolders = fs.map((f) => withGithubUrl(withPaths(f)));
       const listedRoots = projectRoots.map(withGithubUrl);
       scheduleGithubRefresh(
@@ -2707,7 +2707,7 @@ export default async function plugin(bb: BbPluginApi) {
       };
     },
     machines: async () => ({
-      machines: (await bb.sdk.hosts.list()).map((h) => ({
+      machines: (await alia.sdk.hosts.list()).map((h) => ({
         id: h.id,
         name: h.name,
         connected: h.status === "connected",
@@ -2721,14 +2721,14 @@ export default async function plugin(bb: BbPluginApi) {
         /[\\/\x00-\x1f]/.test(input.name)
       )
         throw new Error("Invalid folder name.");
-      const host = (await bb.sdk.hosts.list()).find(
+      const host = (await alia.sdk.hosts.list()).find(
         (h) => h.id === input.hostId && h.status === "connected",
       );
       if (!host) throw new Error("The device is offline.");
       let protectedPaths: string[] = [];
       if (input.action === "delete") {
         const target = path.resolve(input.parent, input.name);
-        const projects = await bb.sdk.projects.list();
+        const projects = await alia.sdk.projects.list();
         protectedPaths = [
           ...folders()
             .filter((f) => f.hostId === host.id)
@@ -2756,16 +2756,16 @@ export default async function plugin(bb: BbPluginApi) {
             "This folder belongs to a project or section. Use its archive action.",
           );
       }
-      return bb.hosts
+      return alia.hosts
         .experimental_client({ contract: moveHostContract })
         .call("folder_edit", { ...input, protectedPaths }, { hostId: host.id });
     },
     project_browse: async (input) => {
-      const h = (await bb.sdk.hosts.list()).find(
+      const h = (await alia.sdk.hosts.list()).find(
         (h) => h.id === input.hostId && h.status === "connected",
       );
       if (!h) throw new Error("The device is offline.");
-      const d = await bb.sdk.hosts.directory(input);
+      const d = await alia.sdk.hosts.directory(input);
       return {
         path: d.directory,
         parent: d.parent,
@@ -2778,11 +2778,11 @@ export default async function plugin(bb: BbPluginApi) {
       if (!path.isAbsolute(input.path) || /[\x00-\x1f]/.test(input.path))
         throw new Error("Enter an absolute project folder path.");
       const p = path.normalize(input.path);
-      const h = (await bb.sdk.hosts.list()).find(
+      const h = (await alia.sdk.hosts.list()).find(
         (h) => h.id === input.hostId && h.status === "connected",
       );
       if (!h) throw new Error("The device is offline.");
-      const projects = await bb.sdk.projects.list();
+      const projects = await alia.sdk.projects.list();
       if (
         projects.some((project) =>
           project.sources.some(
@@ -2791,8 +2791,8 @@ export default async function plugin(bb: BbPluginApi) {
         )
       )
         throw new Error("This folder is already connected as a project.");
-      await bb.sdk.files.mkdir({ hostId: h.id, path: p, recursive: true });
-      const project = await bb.sdk.projects.create({
+      await alia.sdk.files.mkdir({ hostId: h.id, path: p, recursive: true });
+      const project = await alia.sdk.projects.create({
         name: input.name,
         source: { type: "local_path", hostId: h.id, path: p },
       });
@@ -2804,11 +2804,11 @@ export default async function plugin(bb: BbPluginApi) {
         name: input.name,
         path: p,
         sort: 0,
-      }).catch((e) => bb.log.warn(`AGENTS.md template for ${p}: ${String(e)}`));
+      }).catch((e) => alia.log.warn(`AGENTS.md template for ${p}: ${String(e)}`));
       changed();
       return { id: project.id };
     },
-    project_delete: (input) => deleteProject(bb, projectDeleteDeps, input),
+    project_delete: (input) => deleteProject(alia, projectDeleteDeps, input),
     copy_add: async (input) => {
       if (moves.busy(input.projectId))
         throw new Error(
@@ -2817,11 +2817,11 @@ export default async function plugin(bb: BbPluginApi) {
       const p = path.normalize(input.path);
       if (!path.isAbsolute(p) || /[\x00-\x1f]/.test(p))
         throw new Error("Enter an absolute project folder path.");
-      const h = (await bb.sdk.hosts.list()).find(
+      const h = (await alia.sdk.hosts.list()).find(
         (h) => h.id === input.hostId && h.status === "connected",
       );
       if (!h) throw new Error("The device is offline.");
-      const project = (await bb.sdk.projects.list()).find(
+      const project = (await alia.sdk.projects.list()).find(
         (x) => x.id === input.projectId,
       );
       if (!project) throw new Error("Project not found.");
@@ -2832,15 +2832,15 @@ export default async function plugin(bb: BbPluginApi) {
       )
         throw new Error("This project already has a copy on this device.");
       if (
-        (await bb.sdk.projects.list()).some((x) =>
+        (await alia.sdk.projects.list()).some((x) =>
           x.sources.some(
             (s) => s.type === "local_path" && s.hostId === h.id && s.path === p,
           ),
         )
       )
         throw new Error("This folder is already connected as a project.");
-      await bb.sdk.files.mkdir({ hostId: h.id, path: p, recursive: true });
-      await bb.sdk.projects.sources.add({
+      await alia.sdk.files.mkdir({ hostId: h.id, path: p, recursive: true });
+      await alia.sdk.projects.sources.add({
         projectId: project.id,
         type: "local_path",
         hostId: h.id,
@@ -2854,7 +2854,7 @@ export default async function plugin(bb: BbPluginApi) {
         name: project.name,
         path: p,
         sort: 0,
-      }).catch((e) => bb.log.warn(`AGENTS.md template for ${p}: ${String(e)}`));
+      }).catch((e) => alia.log.warn(`AGENTS.md template for ${p}: ${String(e)}`));
       changed();
       return { ok: true as const };
     },
@@ -2863,7 +2863,7 @@ export default async function plugin(bb: BbPluginApi) {
         throw new Error(
           "Project relocation is pending. Finish or retry it before changing the project.",
         );
-      const project = (await bb.sdk.projects.list()).find(
+      const project = (await alia.sdk.projects.list()).find(
         (x) => x.id === input.projectId,
       );
       const source = project?.sources.find(
@@ -2884,14 +2884,14 @@ export default async function plugin(bb: BbPluginApi) {
           "This copy still has sections in the tree. Archive or remove them first.",
         );
       if (
-        (await bb.sdk.environments.list()).some(
+        (await alia.sdk.environments.list()).some(
           (e) => e.projectId === project.id && e.hostId === input.hostId,
         )
       )
         throw new Error(
           "This copy still has chats. Move or archive them first.",
         );
-      await bb.sdk.projects.sources.delete({
+      await alia.sdk.projects.sources.delete({
         projectId: project.id,
         sourceId: source.id,
       });
@@ -2906,11 +2906,11 @@ export default async function plugin(bb: BbPluginApi) {
       const p = path.normalize(input.path);
       if (!path.isAbsolute(p) || /[\x00-\x1f]/.test(p))
         throw new Error("Enter an absolute project folder path.");
-      const h = (await bb.sdk.hosts.list()).find(
+      const h = (await alia.sdk.hosts.list()).find(
         (h) => h.id === input.hostId && h.status === "connected",
       );
       if (!h) throw new Error("The device is offline.");
-      const project = (await bb.sdk.projects.list()).find(
+      const project = (await alia.sdk.projects.list()).find(
         (x) => x.id === input.projectId,
       );
       const source = project?.sources.find(
@@ -2920,7 +2920,7 @@ export default async function plugin(bb: BbPluginApi) {
         throw new Error("This project has no copy on this device.");
       if (source.path === p) return { ok: true as const };
       if (
-        (await bb.sdk.projects.list()).some((x) =>
+        (await alia.sdk.projects.list()).some((x) =>
           x.sources.some(
             (s) => s.type === "local_path" && s.hostId === h.id && s.path === p,
           ),
@@ -2938,7 +2938,7 @@ export default async function plugin(bb: BbPluginApi) {
           forgetGithub(f.hostId, f.path);
       const remap = (q: string) =>
         withinTree(q, oldRoot) ? p + q.slice(oldRoot.length) : q;
-      await bb.sdk.projects.sources.update({
+      await alia.sdk.projects.sources.update({
         projectId: project.id,
         sourceId: source.id,
         type: "local_path",
@@ -3006,7 +3006,7 @@ export default async function plugin(bb: BbPluginApi) {
     section_path_set: async (input) => {
       const folder = folders().find((f) => f.id === input.folderId);
       if (!folder || isGroup(folder)) throw new Error("Section not found.");
-      const host = (await bb.sdk.hosts.list()).find(
+      const host = (await alia.sdk.hosts.list()).find(
         (h) => h.id === input.hostId && h.status === "connected",
       );
       if (!host) throw new Error("The device is offline.");
@@ -3015,14 +3015,14 @@ export default async function plugin(bb: BbPluginApi) {
         input.hostId,
         input.path,
       );
-      await bb.sdk.files.mkdir({
+      await alia.sdk.files.mkdir({
         hostId: input.hostId,
         path: p,
         recursive: true,
       });
-      await bb.sdk.files.mkdir({
+      await alia.sdk.files.mkdir({
         hostId: input.hostId,
-        path: path.join(p, ".bb/chats"),
+        path: path.join(p, ".vesnalia/chats"),
         rootPath: p,
         recursive: true,
       });
@@ -3033,7 +3033,7 @@ export default async function plugin(bb: BbPluginApi) {
       await seedAgents(
         { ...folder, hostId: input.hostId, path: p },
         null,
-      ).catch((e) => bb.log.warn(`AGENTS.md template for ${p}: ${String(e)}`));
+      ).catch((e) => alia.log.warn(`AGENTS.md template for ${p}: ${String(e)}`));
       changed();
       return { ok: true as const, path: p };
     },
@@ -3063,8 +3063,8 @@ export default async function plugin(bb: BbPluginApi) {
     },
     create,
     locations: async (input) => {
-      const hosts = await bb.sdk.hosts.list();
-      const project = (await bb.sdk.projects.list()).find(
+      const hosts = await alia.sdk.hosts.list();
+      const project = (await alia.sdk.projects.list()).find(
         (p) => p.id === input.projectId,
       );
       if (!project) throw new Error("Project not found.");
@@ -3106,7 +3106,7 @@ export default async function plugin(bb: BbPluginApi) {
       const p = input.relative
         ? resolveFolderPath(f.path, input.relative)
         : f.path;
-      const d = await bb.sdk.hosts.directory({ hostId: f.hostId, path: p });
+      const d = await alia.sdk.hosts.directory({ hostId: f.hostId, path: p });
       return {
         relative: input.relative,
         directories: d.entries
@@ -3125,7 +3125,7 @@ export default async function plugin(bb: BbPluginApi) {
           f.id,
         );
       else
-        await bb.sdk.projects.update({
+        await alia.sdk.projects.update({
           projectId: f.projectId,
           name: input.name,
         });
@@ -3135,7 +3135,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     forget: async (input) => {
       if (!input.folderId)
-        throw new Error("Archive the project separately using BB.");
+        throw new Error("Archive the project separately using VesnALIA.");
       await archives.archive(input.folderId);
       return { ok: true };
     },
@@ -3200,7 +3200,7 @@ export default async function plugin(bb: BbPluginApi) {
           "Rules are available only for projects and sections, not groups.",
         );
       const file = input.file ?? "AGENTS.md";
-      const r = await bb.sdk.files.write({
+      const r = await alia.sdk.files.write({
         hostId: f.hostId,
         rootPath: f.path,
         path: path.join(f.path, file),
@@ -3277,7 +3277,7 @@ export default async function plugin(bb: BbPluginApi) {
           }
         } catch (e) {
           failed.push(t.path);
-          bb.log.warn(`Custom rules for ${t.path}: ${String(e)}`);
+          alia.log.warn(`Custom rules for ${t.path}: ${String(e)}`);
         }
       }
       if (failed.length)
@@ -3308,9 +3308,9 @@ export default async function plugin(bb: BbPluginApi) {
         hosts: await executionHosts(scope, place, knownHosts),
         knownHosts,
         fallback: await executionFallback(scope, place.hostId),
-        bb:
+        alia:
           scope.kind === "project"
-            ? await bbDefaultsFor(scope.projectId, place.hostId)
+            ? await aliaDefaultsFor(scope.projectId, place.hostId)
             : null,
         agents:
           scope.kind === "global" || !providerId
@@ -3351,16 +3351,16 @@ export default async function plugin(bb: BbPluginApi) {
       }
       saveExecution(executionKey(scope), value);
       changed();
-      // Sections and the plugin-wide default leave BB's row alone: a section
+      // Sections and the plugin-wide default leave VesnALIA's row alone: a section
       // pin applies only to chats started in that section, and the
       // plugin-wide one would overwrite every project's remembered choice.
       if (scope.kind !== "project") return { ok: true as const };
-      return { ok: true as const, bb: await rememberInBb(scope.projectId) };
+      return { ok: true as const, alia: await rememberInAlia(scope.projectId) };
     },
     execution_overrides: async () => {
       const names = new Map<string, string>();
       try {
-        for (const p of await bb.sdk.projects.list()) names.set(p.id, p.name);
+        for (const p of await alia.sdk.projects.list()) names.set(p.id, p.name);
       } catch {
         // ids only
       }
@@ -3393,13 +3393,13 @@ export default async function plugin(bb: BbPluginApi) {
           agentId: undefined,
         });
       changed();
-      // A project's pin also lived in BB's remembered defaults: write the
+      // A project's pin also lived in VesnALIA's remembered defaults: write the
       // plugin-wide choice there now, as a project save does.
       for (const { key } of reset)
-        if (key.startsWith("p:")) await rememberInBb(key.slice(2));
+        if (key.startsWith("p:")) await rememberInAlia(key.slice(2));
       return { ok: true as const, places: reset.length };
     },
-    execution_remember: ({ projectId }) => rememberInBb(projectId),
+    execution_remember: ({ projectId }) => rememberInAlia(projectId),
     section_pick: ({ projectId, hostId, folderId }) => {
       const folder = folders().find((f) => f.id === folderId);
       if (!folder || folder.projectId !== projectId)
@@ -3601,7 +3601,7 @@ export default async function plugin(bb: BbPluginApi) {
           "A section chat uses that section’s device and folder. Select a working copy on its device.",
         );
       if (req.environment.type === "reuse") {
-        const e = await bb.sdk.environments.get({
+        const e = await alia.sdk.environments.get({
           environmentId: req.environment.environmentId,
         });
         if (
@@ -3620,7 +3620,7 @@ export default async function plugin(bb: BbPluginApi) {
             req.environment.machine.hostId !== pinnedHost))
       ) {
         const hostName = (
-          (await bb.sdk.hosts.list()) as { id: string; name?: string }[]
+          (await alia.sdk.hosts.list()) as { id: string; name?: string }[]
         ).find((h) => h.id === f.hostId)?.name;
         throw new Error(
           `This section lives on the "${hostName ?? f.hostId}" device. Pick that device for the chat, or create a section on the target server.`,
@@ -3651,7 +3651,7 @@ export default async function plugin(bb: BbPluginApi) {
         ...(startup ? [agentOnly(startup)] : []),
         ...(agentMark ? [agentOnly(agentMark)] : []),
       ];
-      const t = await bb.sdk.threads.spawn({
+      const t = await alia.sdk.threads.spawn({
         ...req,
         input: startupInput,
         projectId: f.projectId,
@@ -3732,7 +3732,7 @@ export default async function plugin(bb: BbPluginApi) {
         }
       })();
       syncRepoVisibility();
-      bb.realtime.publish("prefs", {});
+      alia.realtime.publish("prefs", {});
       changed();
       return { ok: true as const };
     },
@@ -3743,7 +3743,7 @@ export default async function plugin(bb: BbPluginApi) {
           "INSERT INTO item_styles (key, data) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET data=excluded.data",
         ).run(key, JSON.stringify(clean));
       else db.prepare("DELETE FROM item_styles WHERE key=?").run(key);
-      bb.realtime.publish("prefs", {});
+      alia.realtime.publish("prefs", {});
       return { ok: true as const };
     },
     backup_export: () => ({
@@ -3765,7 +3765,7 @@ export default async function plugin(bb: BbPluginApi) {
         ? parseAgents(safeJson(agentsRow.data))
         : agentsDefaults;
       changed();
-      bb.realtime.publish("prefs", {});
+      alia.realtime.publish("prefs", {});
       return Object.keys(parsed.settings).length > 0
         ? { ...counts, settingsNotRestored: true }
         : counts;
@@ -3790,9 +3790,9 @@ export default async function plugin(bb: BbPluginApi) {
     },
     auto_archive_run: async () => ({ archived: await autoArchive.sweep() }),
   };
-  bb.rpc.register(rpcContract, handlers);
+  alia.rpc.register(rpcContract, handlers);
   // Read-only section tree for other plugins (Lane Pilot scopes its settings by section).
-  bb.rpc.register(
+  alia.rpc.register(
     sectionsContract,
     {
       sections_list: ({ projectId }) => ({
@@ -3816,14 +3816,14 @@ export default async function plugin(bb: BbPluginApi) {
         "Project sections with their folders, for plugins that work per section.",
     },
   );
-  bb.agents.configure((ctx) =>
+  alia.agents.configure((ctx) =>
     agentConfiguration(ctx, () => {
-      // Custom rules addressed to BB sessions: the files on disk never see them.
+      // Custom rules addressed to VesnALIA sessions: the files on disk never see them.
       try {
         const folder = folderAt(ctx.host.id, ctx.environment.path);
         return effectiveCustom(folder, folder?.projectId ?? ctx.project.id, shared.agents_custom, "session");
       } catch (e) {
-        bb.log.warn(`Session rules for ${ctx.thread.id}: ${String(e)}`);
+        alia.log.warn(`Session rules for ${ctx.thread.id}: ${String(e)}`);
         return "";
       }
     }),
@@ -3851,10 +3851,10 @@ export default async function plugin(bb: BbPluginApi) {
       db.prepare("DELETE FROM pending_exports WHERE threadId=?").run(threadId);
     },
     failed(threadId, error) {
-      bb.log.debug(`Chat export ${threadId}: ${String(error)}`);
+      alia.log.debug(`Chat export ${threadId}: ${String(error)}`);
     },
   });
-  bb.onDispose(() => exportQueue.stop());
+  alia.onDispose(() => exportQueue.stop());
   for (const row of db
     .prepare("SELECT threadId FROM pending_exports")
     .all() as { threadId: string }[])
@@ -3864,7 +3864,7 @@ export default async function plugin(bb: BbPluginApi) {
     "thread.archived",
     "thread.created",
   ] as const)
-    bb.events.on(event, ({ thread }) => enqueueExport(thread.id));
+    alia.events.on(event, ({ thread }) => enqueueExport(thread.id));
   function enqueueExport(threadId: string) {
     db.prepare("INSERT OR IGNORE INTO pending_exports VALUES (?)").run(
       threadId,
@@ -3872,7 +3872,7 @@ export default async function plugin(bb: BbPluginApi) {
     exportQueue.enqueue(threadId);
   }
   /**
-   * A place to run, offered to BB's own New thread screen. Without it the
+   * A place to run, offered to VesnALIA's own New thread screen. Without it the
    * native composer knows projects only: it has a project picker and no idea
    * that a project is a tree of folders, so a chat started there lands in the
    * project root. With it, "Project section" appears in the environment picker
@@ -3882,7 +3882,7 @@ export default async function plugin(bb: BbPluginApi) {
    * stays false so retiring a chat's environment never touches a section.
    */
   /**
-   * The section is usually chosen in the control BB renders beside the
+   * The section is usually chosen in the control VesnALIA renders beside the
    * provider. It can also be chosen from the composer's own action, which
    * only switches the environment — the inputs control may never mount. That
    * pick is remembered here for the moment between the click and the send.
@@ -3931,7 +3931,7 @@ export default async function plugin(bb: BbPluginApi) {
       return { message: "This section is being archived." };
     return { folder: bound };
   };
-  bb.experimental_environments.register({
+  alia.experimental_environments.register({
     id: SECTION_ENVIRONMENT_ID,
     displayName: "Project section",
     description: "Work in the folder of a section of this project.",
@@ -3979,7 +3979,7 @@ export default async function plugin(bb: BbPluginApi) {
       return false;
     }
   };
-  bb.cli.register({
+  alia.cli.register({
     name: "project-folders",
     summary: "Project sections and chat history",
     commands: [
@@ -3987,105 +3987,105 @@ export default async function plugin(bb: BbPluginApi) {
         name: "place-chat",
         summary: "List a chat under a section, leaving its folder alone",
         usage:
-          "bb project-folders place-chat <thread-id> <project-id> <folder-id-or-dash>",
+          "alia project-folders place-chat <thread-id> <project-id> <folder-id-or-dash>",
       },
       {
         name: "unplace-chat",
         summary: "List a chat under the folder it works in again",
-        usage: "bb project-folders unplace-chat <thread-id>",
+        usage: "alia project-folders unplace-chat <thread-id>",
       },
       {
         name: "move-chat",
         summary:
           "Move an idle chat and its dedicated storage (needs the core directory-update API)",
         usage:
-          "bb project-folders move-chat <thread-id> <project-id> <folder-id-or-dash> <host-id>",
+          "alia project-folders move-chat <thread-id> <project-id> <folder-id-or-dash> <host-id>",
       },
       {
         name: "move-section",
         summary: "Move a section to a new path, or re-link a renamed folder",
-        usage: "bb project-folders move-section <folder-id> <absolute-path>",
+        usage: "alia project-folders move-section <folder-id> <absolute-path>",
       },
       {
         name: "archives",
         summary: "List section archives",
-        usage: "bb project-folders archives",
+        usage: "alia project-folders archives",
       },
       {
         name: "archive",
         summary: "Move a section into its project archive",
-        usage: "bb project-folders archive <folder-id>",
+        usage: "alia project-folders archive <folder-id>",
       },
       {
         name: "restore",
         summary:
           "Restore a section from the archive, or plugin data from a backup file",
         usage:
-          "bb project-folders restore <archive-id|file> [--merge]",
+          "alia project-folders restore <archive-id|file> [--merge]",
       },
       {
         name: "backup",
         summary: "Export all plugin data to a JSON backup",
-        usage: "bb project-folders backup [--out file]",
+        usage: "alia project-folders backup [--out file]",
       },
       {
         name: "list",
         summary: "List sections",
-        usage: "bb project-folders list",
+        usage: "alia project-folders list",
       },
       {
         name: "create",
         usage:
-          "bb project-folders create <project-id> <parent-id-or-dash> <name> <relative-path> [host-id]",
+          "alia project-folders create <project-id> <parent-id-or-dash> <name> <relative-path> [host-id]",
         summary: "Create a section in a project or parent section",
       },
       {
         name: "copy-add",
         summary: "Add a project working copy on another device",
-        usage: "bb project-folders copy-add <project-id> <host-id> <path>",
+        usage: "alia project-folders copy-add <project-id> <host-id> <path>",
       },
       {
         name: "copy-remove",
         summary: "Remove the project working copy on a device",
-        usage: "bb project-folders copy-remove <project-id> <host-id>",
+        usage: "alia project-folders copy-remove <project-id> <host-id>",
       },
       {
         name: "path-set",
         summary: "Set a section folder on a device",
-        usage: "bb project-folders path-set <folder-id> <host-id> <path>",
+        usage: "alia project-folders path-set <folder-id> <host-id> <path>",
       },
       {
         name: "path-remove",
         summary: "Remove a section folder from a device",
-        usage: "bb project-folders path-remove <folder-id> <host-id>",
+        usage: "alia project-folders path-remove <folder-id> <host-id>",
       },
       {
         name: "forget",
         summary: "Compatibility alias for archiving a section",
-        usage: "bb project-folders forget <folder-id>",
+        usage: "alia project-folders forget <folder-id>",
       },
       {
         name: "remove-section",
         summary:
           "Remove a section: archive, unbind from the tree, or delete files and chats",
         usage:
-          "bb project-folders remove-section <folder-id> archive|unbind|purge",
+          "alia project-folders remove-section <folder-id> archive|unbind|purge",
       },
       {
         name: "delete-project",
-        summary: "Remove a project from BB; keep files or move them to archive",
-        usage: "bb project-folders delete-project <project-id> keep|archive",
+        summary: "Remove a project from VesnALIA; keep files or move them to archive",
+        usage: "alia project-folders delete-project <project-id> keep|archive",
       },
       {
         name: "rules",
         summary:
           "Read or set the AGENTS.md rules of a project or a section, the way its card does",
         usage:
-          "bb project-folders rules show|set <project-id> <folder-id-or-dash> [--mode default|custom|own-file] [--template TEXT|--template-file PATH] [--sections-template TEXT|--sections-template-file PATH] [--custom TEXT|--custom-file PATH] [--target file|session|both] [--startup TEXT] [--host HOST_ID]",
+          "alia project-folders rules show|set <project-id> <folder-id-or-dash> [--mode default|custom|own-file] [--template TEXT|--template-file PATH] [--sections-template TEXT|--sections-template-file PATH] [--custom TEXT|--custom-file PATH] [--target file|session|both] [--startup TEXT] [--host HOST_ID]",
       },
       {
         name: "sync",
-        usage: "bb project-folders sync <thread-id>",
+        usage: "alia project-folders sync <thread-id>",
         summary: "Export chat history: sync <thread-id>",
       },
     ],
@@ -4207,7 +4207,7 @@ export default async function plugin(bb: BbPluginApi) {
         } else if (args[0] === "archives") {
           value = archives.list();
         } else if (args[0] === "delete-project") {
-          value = await deleteProject(bb, projectDeleteDeps, {
+          value = await deleteProject(alia, projectDeleteDeps, {
             projectId: z.string().min(1).parse(args[1]),
             files: z.enum(["keep", "archive"]).parse(args[2]),
           });
@@ -4232,7 +4232,7 @@ export default async function plugin(bb: BbPluginApi) {
             if (inline !== undefined) return inline;
             const file = flag(`${name}-file`);
             if (file === undefined) return undefined;
-            const raw: unknown = await bb.sdk.files.read({
+            const raw: unknown = await alia.sdk.files.read({
               hostId,
               path: file,
               rootPath: root,
@@ -4296,7 +4296,7 @@ export default async function plugin(bb: BbPluginApi) {
           return {
             exitCode: 0,
             stdout:
-              "bb project-folders list | create <project-id> <parent-id-or-dash> <name> <relative-path> [host-id] | rules show|set <project-id> <folder-id-or-dash> [flags] | sync <thread-id> | archives | archive <folder-id> | restore <archive-id|file> [--merge] | backup [--out file] | place-chat <thread-id> <project-id> <folder-id-or-dash> | unplace-chat <thread-id> | move-section <folder-id> <absolute-path> | delete-project <project-id> keep|archive",
+              "alia project-folders list | create <project-id> <parent-id-or-dash> <name> <relative-path> [host-id] | rules show|set <project-id> <folder-id-or-dash> [flags] | sync <thread-id> | archives | archive <folder-id> | restore <archive-id|file> [--merge] | backup [--out file] | place-chat <thread-id> <project-id> <folder-id-or-dash> | unplace-chat <thread-id> | move-section <folder-id> <absolute-path> | delete-project <project-id> keep|archive",
           };
         return { exitCode: 0, stdout: JSON.stringify(value, null, 2) };
       } catch (e) {

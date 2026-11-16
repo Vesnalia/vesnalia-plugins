@@ -1,5 +1,5 @@
 // Pure global-dashboard derivation. Source adapters supply normalized cards;
-// this module groups operational state without knowing BB or Redteam DTOs.
+// this module groups operational state without knowing VesnALIA or Redteam DTOs.
 import type {
   AttentionItem,
   AttentionType,
@@ -98,7 +98,7 @@ export function buildGlobalExecution(group: GlobalExecutionGroup): GlobalExecuti
   const completedAt = primary?.completedAt ?? null;
   const durationMs = primary?.durationMs ??
     (startedAt !== null && completedAt !== null ? Math.max(0, completedAt - startedAt) : null);
-  const sourceLabel = group.source === "bb" ? "BB" : group.source === "ollama-fleet" ? "Ollama Fleet" : "Redteam";
+  const sourceLabel = group.source === "alia" ? "ALIA" : group.source === "ollama-fleet" ? "Ollama Fleet" : "Redteam";
   const latestPublicUpdate = pickLatestPublicUpdate(group.cards);
   const activityTimes = [...group.cards, ...workers].map(c => c.lastActivityAt ?? c.activity?.at).filter((at): at is number => typeof at === "number" && Number.isFinite(at));
 
@@ -106,12 +106,12 @@ export function buildGlobalExecution(group: GlobalExecutionGroup): GlobalExecuti
     key: `global:${group.key}`,
     parentKey: null,
     depth: 0,
-    kind: group.source === "bb" ? "thread" : "phase",
+    kind: group.source === "alia" ? "thread" : "phase",
     source: group.source,
     title: group.title,
     subtitle: sourceLabel,
     status,
-    column: columnForStatus(status, group.source === "bb" ? "thread" : "phase"),
+    column: columnForStatus(status, group.source === "alia" ? "thread" : "phase"),
     threadId: primary?.threadId ?? group.threadId,
     providerId: primary?.providerId ?? null,
     providerLabel: primary?.providerLabel ?? null,

@@ -1,7 +1,7 @@
-// Diagram renderer: hands the Mermaid source to BB's own chat Markdown as a
-// ```mermaid fence, so BB draws it like any Mermaid block in a reply (its
+// Diagram renderer: hands the Mermaid source to VesnALIA's own chat Markdown as a
+// ```mermaid fence, so VesnALIA draws it like any Mermaid block in a reply (its
 // theme, source toggle and full-screen view), with no Mermaid in this bundle.
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { useIsStreaming, type ComponentRenderer } from "@openuidev/react-lang";
 import { mermaidFence } from "./mermaidFence";
 

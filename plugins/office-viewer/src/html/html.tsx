@@ -2,10 +2,10 @@
 // like real screens (phones, tablets, monitors or a custom size, in portrait or
 // landscape) and scaled down to fit the panel; several devices can stand side by
 // side. The plugin server serves the file's folder, so relative CSS, scripts and
-// images load. BB's own preview with the source stays one click away.
+// images load. VesnALIA's own preview with the source stays one click away.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ComponentType, PointerEvent as ReactPointerEvent, ReactNode, RefObject } from "react";
-import { useComposer, useRpc, type PluginFileOpenerProps } from "@get-bb/plugin-sdk/app";
+import { useComposer, useRpc, type PluginFileOpenerProps } from "@vesnalia/plugin-sdk/app";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
   ArrowReloadHorizontalIcon,
@@ -481,7 +481,7 @@ export type Page = {
   subtitle: string | null;
 };
 
-/** Where pages come from: a file on a BB machine, or a site on the web. */
+/** Where pages come from: a file on a VesnALIA machine, or a site on the web. */
 export type PageSource = {
   load(): Promise<Page>;
   /** A file of the page's own site, for screenshots; the caller has checked it lies inside the site. */

@@ -1,6 +1,6 @@
-// Explicit primary BB thread link for one Graphite branch.
+// Explicit primary VesnALIA thread link for one Graphite branch.
 import { useState } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { LayerView, LinkStatus, StackView, ThreadSummary } from "../contract";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -27,7 +27,7 @@ export function ThreadLinks({
   /** The thread that hosts this panel, or null on the project page. */
   currentThreadId: string | null;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const link = layer.link;
@@ -62,8 +62,8 @@ export function ThreadLinks({
   };
 
   return (
-    <section aria-label="Linked BB thread" className="gs-links">
-      <SectionLabel>Linked BB thread</SectionLabel>
+    <section aria-label="Linked VesnALIA thread" className="gs-links">
+      <SectionLabel>Linked VesnALIA thread</SectionLabel>
       {link ? (
         <div className="gs-link-row">
           <Icon name="MessageSquare" className="size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -129,7 +129,7 @@ export function ThreadLinks({
           </Button>
         ) : null}
         {!layer.trunk ? (
-          <Button size="sm" variant="ghost" onClick={newThread} aria-description="Opens the BB composer. You create the thread there.">
+          <Button size="sm" variant="ghost" onClick={newThread} aria-description="Opens the VesnALIA composer. You create the thread there.">
             <Icon name="Plus" aria-hidden />
             New thread…
           </Button>

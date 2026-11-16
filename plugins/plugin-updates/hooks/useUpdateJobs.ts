@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { DEFERRED_UPDATE } from "../src/channels";
 import type { UpdateJob, rpcContract } from "../src/contract";
 import { toastJobEnd } from "@/lib/toasts";
 
 const isActive = (job: UpdateJob) => job.state === "queued" || job.state === "running";
 
-/** bb's background update jobs: polled while any is active, re-check when one ends. */
+/** VesnALIA's background update jobs: polled while any is active, re-check when one ends. */
 export function useUpdateJobs(onSettled: () => void) {
   const rpc = useRpc<typeof rpcContract>();
   const [jobs, setJobs] = useState<UpdateJob[]>([]);

@@ -112,7 +112,7 @@ check_unknown_snapshot() {
   expect "restoring a snapshot that is not there exits 4" 4 $?
 }
 
-export BBBOX_STATE=${BBBOX_STATE:-/var/lib/bb-box}
+export BBBOX_STATE=${BBBOX_STATE:-/var/lib/alia-box}
 check_describe
 check_take_is_idempotent
 check_restore

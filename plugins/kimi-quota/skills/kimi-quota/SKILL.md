@@ -1,25 +1,25 @@
 ---
 name: kimi-quota
-description: Check the user's Kimi Code membership quota (5-hour window, monthly coding/total limits) inside BB, either from the UI usage panel or with `bb kimi-quota`.
+description: Check the user's Kimi Code membership quota (5-hour window, monthly coding/total limits) inside VesnALIA, either from the UI usage panel or with `alia kimi-quota`.
 ---
 
 # Kimi Quota
 
-This plugin surfaces the Kimi Code membership quota in BB's usage panel (the
+This plugin surfaces the Kimi Code membership quota in VesnALIA's usage panel (the
 same surface that shows Codex/Claude usage) and exposes a CLI command.
 
-Select the BB server's machine in Usage: Kimi appears alongside that machine's
-other provider limits. No separate Kimi source selection is needed. If BB
+Select the VesnALIA server's machine in Usage: Kimi appears alongside that machine's
+other provider limits. No separate Kimi source selection is needed. If VesnALIA
 cannot resolve its primary host, the plugin falls back to a separate Kimi Code
-source. The login is read on the BB server, not on remote enrolled machines.
+source. The login is read on the VesnALIA server, not on remote enrolled machines.
 
 ## For agents
 
 Run:
 
 ```
-bb kimi-quota            # human-readable bars
-bb kimi-quota --json     # full measurement JSON
+alia kimi-quota            # human-readable bars
+alia kimi-quota --json     # full measurement JSON
 ```
 
 The numbers come from the Kimi Code CLI login on this machine

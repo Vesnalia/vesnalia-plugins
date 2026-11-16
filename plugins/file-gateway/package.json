@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-file-gateway",
+  "name": "alia-plugin-file-gateway",
   "version": "0.1.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "File Gateway",
-    "description": "Browse BB machines and FTP/SFTP sites, add remote file mentions to chats, and let agents read or download the right file.",
+    "description": "Browse VesnALIA machines and FTP/SFTP sites, add remote file mentions to chats, and let agents read or download the right file.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -29,7 +29,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@radix-ui/react-select": "^2.3.7",
     "@testing-library/react": "^16.3.0",
     "@types/node": "^22.0.0",
@@ -54,13 +53,13 @@
   "scripts": {
     "test": "tsx --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test:ui": "vitest run tests/*.test.tsx"
   },
-  "description": "Browse BB machines and FTP/SFTP sites, insert remote file mentions into chat, and let agents read or transfer files securely over host RPC.",
+  "description": "Browse VesnALIA machines and FTP/SFTP sites, insert remote file mentions into chat, and let agents read or transfer files securely over host RPC.",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "file-gateway",
     "file-transfer",
     "sftp",
@@ -76,12 +75,21 @@
     "name": "VKirill",
     "url": "https://github.com/VKirill"
   },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/file-gateway#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/VKirill/bb-plugin-file-gateway.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/file-gateway"
   },
-  "homepage": "https://github.com/VKirill/bb-plugin-file-gateway#readme",
   "bugs": {
-    "url": "https://github.com/VKirill/bb-plugin-file-gateway/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

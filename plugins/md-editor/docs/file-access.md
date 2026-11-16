@@ -5,7 +5,7 @@ created: 2026-10-11
 updated: 2026-10-18
 status: active
 confidence: high
-tags: [files, rpc, bb-plugin]
+tags: [files, rpc, alia-plugin]
 sources:
   - server.ts
   - locate.ts
@@ -16,11 +16,11 @@ sources:
 
 # Markdown file access
 
-TL;DR: The frontend sends a BB opener source and path to four typed RPC operations; the server resolves the owning host and delegates reads, previews, and conditional writes to BB’s SDK.
+TL;DR: The frontend sends a VesnALIA opener source and path to four typed RPC operations; the server resolves the owning host and delegates reads, previews, and conditional writes to VesnALIA’s SDK.
 
 ## Purpose
 
-The server plugin advertises the `markdown-pro` skill and registers `open`, `stat`, `assetBase`, and `save` in BB RPC (`server.ts:65-78`). The app converts BB’s file-opener context into this contract and displays the returned file (`app.tsx:193-218`).
+The server plugin advertises the `markdown-pro` skill and registers `open`, `stat`, `assetBase`, and `save` in VesnALIA RPC (`server.ts:65-78`). The app converts VesnALIA’s file-opener context into this contract and displays the returned file (`app.tsx:193-218`).
 
 ## How it works
 
@@ -29,7 +29,7 @@ The server plugin advertises the `markdown-pro` skill and registers `open`, `sta
 3. `open` reads UTF-8 content from that host and returns content, SHA-256, modification time, host identity, absolute path, and root path (`server.ts:77-95`).
 4. `stat` reads the file to probe its current hash and maps not-found errors to `{exists:false}` (`server.ts:97-106`).
 5. `assetBase` requests a one-hour preview URL rooted at the document root for relative image assets (`server.ts:108-112`).
-6. `save` calls BB file write with the expected hash; a changed file returns `conflict`, while a successful write returns its new hash (`server.ts:114-122`).
+6. `save` calls VesnALIA file write with the expected hash; a changed file returns `conflict`, while a successful write returns its new hash (`server.ts:114-122`).
 7. While the document is open, the app periodically polls `stat` when the page is visible and no save is running. A changed hash sets the external-change state when local content is dirty; otherwise the app reloads the file (`app.tsx:412-427`).
 
 | Source kind | Resolution | Boundary and failure |
@@ -43,7 +43,7 @@ The server plugin advertises the `markdown-pro` skill and registers `open`, `sta
 - RPC inputs are strict Zod objects; source kind is one of `host`, `thread-storage`, or `workspace`, and locale is `en` or `ru` (`server.ts:11-21`).
 - Open rejects non-UTF-8 files and files over 5 MiB; save content is limited to 5 MiB (`server.ts:9-34`, `server.ts:81-86`, `server.ts:44-49`).
 - Save uses `expectedSha256` for compare-and-swap; a conflict is a normal discriminated result, not a successful write (`server.ts:44-49`, `server.ts:114-122`).
-- A save with `expectedSha256: null` asks BB to create parent directories; non-null hashes do not (`server.ts:114-118`).
+- A save with `expectedSha256: null` asks VesnALIA to create parent directories; non-null hashes do not (`server.ts:114-118`).
 - `within` resolves a relative candidate and rejects lexical `..` escapes outside the supplied root (`locate.ts:48-56`). Workspace source resolution calls it for relative paths but accepts an absolute path directly (`locate.ts:112-115`).
 - Relative file links resolve against the document path and remain within the associated root; URL and anchor links take separate navigation paths (`app.tsx:435-452`, `links.ts:47-88`).
 
@@ -55,7 +55,7 @@ The server plugin advertises the `markdown-pro` skill and registers `open`, `sta
 | `stat` | `server.ts:37-38`, `server.ts:97-106` | File reference → existence and current SHA-256. |
 | `assetBase` | `server.ts:39-43`, `server.ts:108-112` | File reference → temporary preview base URL and root. |
 | `save` | `server.ts:44-50`, `server.ts:114-122` | File reference, content, expected hash → written hash or conflict result. |
-| `MAX_BYTES`, `rpcContract`, `plugin` | `server.ts:9-51`, `server.ts:65-124` | File size limit, typed RPC schemas, and BB server registration. |
+| `MAX_BYTES`, `rpcContract`, `plugin` | `server.ts:9-51`, `server.ts:65-124` | File size limit, typed RPC schemas, and VesnALIA server registration. |
 | `OpenerSource`, `Location`, `LocateSdk`, `LocateError`, `Lang`, `cleanRelative`, `within`, `locate` | `locate.ts:6-56`, `locate.ts:91-135` | Source and resolved location types, boundary validation, and source resolution. |
 
 ## Failures
@@ -70,7 +70,7 @@ The server plugin advertises the `markdown-pro` skill and registers `open`, `sta
 
 ## Gotchas
 
-A workspace file can be looked up under the nearest enclosing Git root when BB supplied a repo-relative changed-file path, but the fallback probes the same host and checks the candidate’s existence (`locate.ts:70-89`).
+A workspace file can be looked up under the nearest enclosing Git root when VesnALIA supplied a repo-relative changed-file path, but the fallback probes the same host and checks the candidate’s existence (`locate.ts:70-89`).
 
 <!-- lane-pilot:backlinks -->
 ## Referenced by

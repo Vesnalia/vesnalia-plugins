@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { LifecycleApi } from "./useLifecycle";
 
 export function threadNeedsAttention(thread: PluginSidebarThread): boolean {

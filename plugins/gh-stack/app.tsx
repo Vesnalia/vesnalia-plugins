@@ -1,4 +1,4 @@
-// @smsunarto/bb-plugin-gh-stack — frontend: a thread panel that visualizes the
+// @smsunarto/alia-plugin-gh-stack — frontend: a thread panel that visualizes the
 // thread's stacked PRs (gh stack) and runs sync / submit / create.
 //
 // Layout: one rail. Uncommitted work sits at the top, then a composer row
@@ -12,7 +12,7 @@ import {
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "./server";
 import { Button } from "@/components/ui/button";

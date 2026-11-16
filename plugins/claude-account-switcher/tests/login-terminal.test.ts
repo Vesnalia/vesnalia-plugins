@@ -90,11 +90,11 @@ test("the login command uses a compact self-contained bootstrap", () => {
   assert.match(command, /node:zlib/);
   assert.match(command, /gunzipSync/);
   assert.match(command, /base64/);
-  assert.doesNotMatch(command, /BB_CLAUDE_LOGIN_INPUT_READY/);
+  assert.doesNotMatch(command, /ALIA_CLAUDE_LOGIN_INPUT_READY/);
   assert.doesNotMatch(command, /\/opt\/trusted claude\/bin\/claude/);
 });
 
-test("the login command fits BB's terminal command limit", () => {
+test("the login command fits VesnALIA's terminal command limit", () => {
   const command = buildClaudeLoginCommand(
     "/Users/davidbeyer/.local/share/claude/versions/2.1.246",
   );
@@ -106,13 +106,13 @@ test("the login command fits BB's terminal command limit", () => {
 });
 
 test("authorization capture opens Chrome only when requested", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login."));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login."));
   const fakeBrowser = join(fixtureRoot, "chrome");
   const browserArgs = join(fixtureRoot, "browser-args");
   const launcherPath = join(fixtureRoot, "open-chrome-incognito");
   await writeFile(
     fakeBrowser,
-    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" > "$BB_SWITCH_BROWSER_ARGS"'].join(
+    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" > "$ALIA_SWITCH_BROWSER_ARGS"'].join(
       "\n",
     ),
   );
@@ -121,7 +121,7 @@ test("authorization capture opens Chrome only when requested", async () => {
   try {
     await writeFile(launcherPath, buildChromeIncognitoLauncher(fakeBrowser));
     await chmod(launcherPath, 0o700);
-    const env = { ...process.env, BB_SWITCH_BROWSER_ARGS: browserArgs };
+    const env = { ...process.env, ALIA_SWITCH_BROWSER_ARGS: browserArgs };
     const capture = spawnSync(launcherPath, [LOOPBACK_OAUTH_URL], {
       encoding: "utf8",
       env,
@@ -149,13 +149,13 @@ test("authorization capture opens Chrome only when requested", async () => {
 });
 
 test("explicit authorization reopen uses the saved URL without consuming another automatic callback", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login."));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login."));
   const fakeBrowser = join(fixtureRoot, "chrome");
   const browserArgs = join(fixtureRoot, "browser-args");
   const launcherPath = join(fixtureRoot, "open-chrome-incognito");
   await writeFile(
     fakeBrowser,
-    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" >> "$BB_SWITCH_BROWSER_ARGS"'].join(
+    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" >> "$ALIA_SWITCH_BROWSER_ARGS"'].join(
       "\n",
     ),
   );
@@ -164,7 +164,7 @@ test("explicit authorization reopen uses the saved URL without consuming another
   try {
     await writeFile(launcherPath, buildChromeIncognitoLauncher(fakeBrowser));
     await chmod(launcherPath, 0o700);
-    const env = { ...process.env, BB_SWITCH_BROWSER_ARGS: browserArgs };
+    const env = { ...process.env, ALIA_SWITCH_BROWSER_ARGS: browserArgs };
 
     assert.equal(
       spawnSync(launcherPath, [VALID_OAUTH_URL], { encoding: "utf8", env }).status,
@@ -197,13 +197,13 @@ test("explicit authorization reopen uses the saved URL without consuming another
 });
 
 test("a native loopback callback replaces an earlier manual fallback", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login."));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login."));
   const fakeBrowser = join(fixtureRoot, "chrome");
   const browserArgs = join(fixtureRoot, "browser-args");
   const launcherPath = join(fixtureRoot, "open-chrome-incognito");
   await writeFile(
     fakeBrowser,
-    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" > "$BB_SWITCH_BROWSER_ARGS"'].join(
+    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" > "$ALIA_SWITCH_BROWSER_ARGS"'].join(
       "\n",
     ),
   );
@@ -212,7 +212,7 @@ test("a native loopback callback replaces an earlier manual fallback", async () 
   try {
     await writeFile(launcherPath, buildChromeIncognitoLauncher(fakeBrowser));
     await chmod(launcherPath, 0o700);
-    const env = { ...process.env, BB_SWITCH_BROWSER_ARGS: browserArgs };
+    const env = { ...process.env, ALIA_SWITCH_BROWSER_ARGS: browserArgs };
 
     assert.equal(
       spawnSync(launcherPath, [VALID_OAUTH_URL], { encoding: "utf8", env }).status,
@@ -245,13 +245,13 @@ test("a native loopback callback replaces an earlier manual fallback", async () 
 });
 
 test("automatic authorization opens its selected snapshot instead of rereading the saved URL", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login."));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login."));
   const fakeBrowser = join(fixtureRoot, "chrome");
   const browserArgs = join(fixtureRoot, "browser-args");
   const launcherPath = join(fixtureRoot, "open-chrome-incognito");
   await writeFile(
     fakeBrowser,
-    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" > "$BB_SWITCH_BROWSER_ARGS"'].join(
+    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" > "$ALIA_SWITCH_BROWSER_ARGS"'].join(
       "\n",
     ),
   );
@@ -260,7 +260,7 @@ test("automatic authorization opens its selected snapshot instead of rereading t
   try {
     await writeFile(launcherPath, buildChromeIncognitoLauncher(fakeBrowser));
     await chmod(launcherPath, 0o700);
-    const env = { ...process.env, BB_SWITCH_BROWSER_ARGS: browserArgs };
+    const env = { ...process.env, ALIA_SWITCH_BROWSER_ARGS: browserArgs };
 
     assert.equal(
       spawnSync(launcherPath, [VALID_OAUTH_URL], { encoding: "utf8", env }).status,
@@ -270,7 +270,7 @@ test("automatic authorization opens its selected snapshot instead of rereading t
       spawnSync(launcherPath, [LOOPBACK_OAUTH_URL], { encoding: "utf8", env }).status,
       0,
     );
-    const open = spawnSync(launcherPath, ["--bb-open-authorization", VALID_OAUTH_URL], {
+    const open = spawnSync(launcherPath, ["--alia-open-authorization", VALID_OAUTH_URL], {
       encoding: "utf8",
       env,
     });
@@ -290,7 +290,7 @@ test("automatic authorization opens its selected snapshot instead of rereading t
 });
 
 test("authorization reopen reports not ready before Claude supplies the URL", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login."));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login."));
   const fakeBrowser = join(fixtureRoot, "chrome");
   const launcherPath = join(fixtureRoot, "open-chrome-incognito");
   await writeFile(fakeBrowser, ["#!/bin/sh", "exit 0"].join("\n"));
@@ -311,13 +311,13 @@ test("authorization reopen reports not ready before Claude supplies the URL", as
 });
 
 test("the Incognito launcher rejects HTTPS URLs outside Claude consent", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-consent-url-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-consent-url-"));
   const fakeBrowser = join(fixtureRoot, "chrome");
   const browserArgs = join(fixtureRoot, "browser-args");
   const launcherPath = join(fixtureRoot, "open-chrome-incognito");
   await writeFile(
     fakeBrowser,
-    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" > "$BB_SWITCH_BROWSER_ARGS"'].join(
+    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" > "$ALIA_SWITCH_BROWSER_ARGS"'].join(
       "\n",
     ),
   );
@@ -380,7 +380,7 @@ test("the Incognito launcher rejects HTTPS URLs outside Claude consent", async (
     ]) {
       const result = spawnSync(launcherPath, [candidate], {
         encoding: "utf8",
-        env: { ...process.env, BB_SWITCH_BROWSER_ARGS: browserArgs },
+        env: { ...process.env, ALIA_SWITCH_BROWSER_ARGS: browserArgs },
       });
       assert.equal(result.status, 78, candidate);
     }
@@ -391,7 +391,7 @@ test("the Incognito launcher rejects HTTPS URLs outside Claude consent", async (
 });
 
 test("concurrent authorization callbacks prefer the native loopback without opening Chrome", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-incognito-once-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-incognito-once-"));
   const fakeBrowser = join(fixtureRoot, "chrome");
   const browserArgs = join(fixtureRoot, "browser-args");
   const launcherPath = join(fixtureRoot, "open-chrome-incognito");
@@ -399,7 +399,7 @@ test("concurrent authorization callbacks prefer the native loopback without open
     fakeBrowser,
     [
       "#!/bin/sh",
-      '/usr/bin/printf \'%s\\n\' "$@" >> "$BB_SWITCH_BROWSER_ARGS"',
+      '/usr/bin/printf \'%s\\n\' "$@" >> "$ALIA_SWITCH_BROWSER_ARGS"',
       "exit 99",
     ].join("\n"),
   );
@@ -408,7 +408,7 @@ test("concurrent authorization callbacks prefer the native loopback without open
   try {
     await writeFile(launcherPath, buildChromeIncognitoLauncher(fakeBrowser));
     await chmod(launcherPath, 0o700);
-    const env = { ...process.env, BB_SWITCH_BROWSER_ARGS: browserArgs };
+    const env = { ...process.env, ALIA_SWITCH_BROWSER_ARGS: browserArgs };
     const capture = (url: string) =>
       new Promise<number | null>((resolve, reject) => {
         const child = spawn(launcherPath, [url], {
@@ -434,7 +434,7 @@ test("concurrent authorization callbacks prefer the native loopback without open
 });
 
 test("authorization reopen can retry after the browser command fails", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login."));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login."));
   const fakeBrowser = join(fixtureRoot, "chrome");
   const browserArgs = join(fixtureRoot, "browser-args");
   const failedOnce = join(fixtureRoot, "failed-once");
@@ -443,9 +443,9 @@ test("authorization reopen can retry after the browser command fails", async () 
     fakeBrowser,
     [
       "#!/bin/sh",
-      '/usr/bin/printf \'%s\\n\' "$@" >> "$BB_SWITCH_BROWSER_ARGS"',
-      'if test ! -f "$BB_SWITCH_BROWSER_FAILED_ONCE"; then',
-      '  : > "$BB_SWITCH_BROWSER_FAILED_ONCE"',
+      '/usr/bin/printf \'%s\\n\' "$@" >> "$ALIA_SWITCH_BROWSER_ARGS"',
+      'if test ! -f "$ALIA_SWITCH_BROWSER_FAILED_ONCE"; then',
+      '  : > "$ALIA_SWITCH_BROWSER_FAILED_ONCE"',
       "  exit 42",
       "fi",
       "exit 0",
@@ -458,8 +458,8 @@ test("authorization reopen can retry after the browser command fails", async () 
     await chmod(launcherPath, 0o700);
     const env = {
       ...process.env,
-      BB_SWITCH_BROWSER_ARGS: browserArgs,
-      BB_SWITCH_BROWSER_FAILED_ONCE: failedOnce,
+      ALIA_SWITCH_BROWSER_ARGS: browserArgs,
+      ALIA_SWITCH_BROWSER_FAILED_ONCE: failedOnce,
     };
     const capture = spawnSync(launcherPath, [VALID_OAUTH_URL], {
       encoding: "utf8",
@@ -490,13 +490,13 @@ test("authorization reopen can retry after the browser command fails", async () 
 });
 
 test("the Incognito launcher rejects non-HTTPS browser targets", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-incognito-url-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-incognito-url-"));
   const fakeBrowser = join(fixtureRoot, "chrome");
   const browserArgs = join(fixtureRoot, "browser-args");
   const launcherPath = join(fixtureRoot, "open-chrome-incognito");
   await writeFile(
     fakeBrowser,
-    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" > "$BB_SWITCH_BROWSER_ARGS"'].join(
+    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" > "$ALIA_SWITCH_BROWSER_ARGS"'].join(
       "\n",
     ),
   );
@@ -507,7 +507,7 @@ test("the Incognito launcher rejects non-HTTPS browser targets", async () => {
     await chmod(launcherPath, 0o700);
     const result = spawnSync(launcherPath, ["file:///etc/passwd"], {
       encoding: "utf8",
-      env: { ...process.env, BB_SWITCH_BROWSER_ARGS: browserArgs },
+      env: { ...process.env, ALIA_SWITCH_BROWSER_ARGS: browserArgs },
     });
 
     assert.equal(result.status, 78, result.stderr);
@@ -518,7 +518,7 @@ test("the Incognito launcher rejects non-HTTPS browser targets", async () => {
 });
 
 test("the complete login command launches Chrome Incognito and removes its helper", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login-command-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login-command-"));
   const fakeClaude = join(fixtureRoot, "claude");
   const fakeBrowser = join(fixtureRoot, "chrome");
   const fakeStty = join(fixtureRoot, "stty");
@@ -534,7 +534,7 @@ test("the complete login command launches Chrome Incognito and removes its helpe
   );
   await writeFile(
     fakeBrowser,
-    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" > "$BB_SWITCH_BROWSER_ARGS"'].join(
+    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" > "$ALIA_SWITCH_BROWSER_ARGS"'].join(
       "\n",
     ),
   );
@@ -552,7 +552,7 @@ test("the complete login command launches Chrome Incognito and removes its helpe
       encoding: "utf8",
       env: {
         ...process.env,
-        BB_SWITCH_BROWSER_ARGS: browserArgs,
+        ALIA_SWITCH_BROWSER_ARGS: browserArgs,
         TMPDIR: fixtureRoot,
       },
       timeout: 5_000,
@@ -561,7 +561,7 @@ test("the complete login command launches Chrome Incognito and removes its helpe
     assert.equal(result.status, 0, result.stderr);
     assert.match(
       result.stdout,
-      /BB_CLAUDE_LOGIN_AUTHORIZATION_READY:.*\/bb-claude-login\.[^/]+\/open-chrome-incognito/,
+      /ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:.*\/alia-claude-login\.[^/]+\/open-chrome-incognito/,
     );
     assert.doesNotMatch(result.stdout, /https:\/\//);
     assert.deepEqual((await readFile(browserArgs, "utf8")).trim().split("\n"), [
@@ -569,7 +569,7 @@ test("the complete login command launches Chrome Incognito and removes its helpe
       VALID_OAUTH_URL,
     ]);
     assert.equal(
-      (await readdir(fixtureRoot)).some((name) => name.startsWith("bb-claude-login.")),
+      (await readdir(fixtureRoot)).some((name) => name.startsWith("alia-claude-login.")),
       false,
     );
   } finally {
@@ -578,7 +578,7 @@ test("the complete login command launches Chrome Incognito and removes its helpe
 });
 
 test("the login command opens Claude's printed fallback URL when BROWSER is not called", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login-fallback-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login-fallback-"));
   const fakeClaude = join(fixtureRoot, "claude");
   const fakeBrowser = join(fixtureRoot, "chrome");
   const fakeStty = join(fixtureRoot, "stty");
@@ -593,7 +593,7 @@ test("the login command opens Claude's printed fallback URL when BROWSER is not 
   );
   await writeFile(
     fakeBrowser,
-    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" > "$BB_SWITCH_BROWSER_ARGS"'].join(
+    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" > "$ALIA_SWITCH_BROWSER_ARGS"'].join(
       "\n",
     ),
   );
@@ -616,7 +616,7 @@ test("the login command opens Claude's printed fallback URL when BROWSER is not 
         encoding: "utf8",
         env: {
           ...process.env,
-          BB_SWITCH_BROWSER_ARGS: browserArgs,
+          ALIA_SWITCH_BROWSER_ARGS: browserArgs,
           TMPDIR: fixtureRoot,
         },
         timeout: 5_000,
@@ -635,7 +635,7 @@ test("the login command opens Claude's printed fallback URL when BROWSER is not 
 });
 
 test("Claude's native loopback authorization wins when its manual fallback is printed first", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login-deduped-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login-deduped-"));
   const fakeClaude = join(fixtureRoot, "claude");
   const fakeBrowser = join(fixtureRoot, "chrome");
   const fakeStty = join(fixtureRoot, "stty");
@@ -651,7 +651,7 @@ test("Claude's native loopback authorization wins when its manual fallback is pr
   );
   await writeFile(
     fakeBrowser,
-    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" >> "$BB_SWITCH_BROWSER_ARGS"'].join(
+    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" >> "$ALIA_SWITCH_BROWSER_ARGS"'].join(
       "\n",
     ),
   );
@@ -674,7 +674,7 @@ test("Claude's native loopback authorization wins when its manual fallback is pr
         encoding: "utf8",
         env: {
           ...process.env,
-          BB_SWITCH_BROWSER_ARGS: browserArgs,
+          ALIA_SWITCH_BROWSER_ARGS: browserArgs,
           TMPDIR: fixtureRoot,
         },
         timeout: 5_000,
@@ -687,11 +687,11 @@ test("Claude's native loopback authorization wins when its manual fallback is pr
       LOOPBACK_OAUTH_URL,
     ]);
     assert.equal(
-      result.stdout.match(/BB_CLAUDE_LOGIN_AUTHORIZATION_READY:/g)?.length,
+      result.stdout.match(/ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:/g)?.length,
       1,
     );
     assert.equal(
-      (await readdir(fixtureRoot)).some((name) => name.startsWith("bb-claude-login.")),
+      (await readdir(fixtureRoot)).some((name) => name.startsWith("alia-claude-login.")),
       false,
     );
   } finally {
@@ -700,7 +700,7 @@ test("Claude's native loopback authorization wins when its manual fallback is pr
 });
 
 test("a late native loopback callback supersedes an already-opened manual fallback", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login-late-loopback-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login-late-loopback-"));
   const fakeClaude = join(fixtureRoot, "claude");
   const fakeBrowser = join(fixtureRoot, "chrome");
   const fakeStty = join(fixtureRoot, "stty");
@@ -716,7 +716,7 @@ test("a late native loopback callback supersedes an already-opened manual fallba
   );
   await writeFile(
     fakeBrowser,
-    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" >> "$BB_SWITCH_BROWSER_ARGS"'].join(
+    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" >> "$ALIA_SWITCH_BROWSER_ARGS"'].join(
       "\n",
     ),
   );
@@ -739,7 +739,7 @@ test("a late native loopback callback supersedes an already-opened manual fallba
         encoding: "utf8",
         env: {
           ...process.env,
-          BB_SWITCH_BROWSER_ARGS: browserArgs,
+          ALIA_SWITCH_BROWSER_ARGS: browserArgs,
           TMPDIR: fixtureRoot,
         },
         timeout: 5_000,
@@ -758,7 +758,7 @@ test("a late native loopback callback supersedes an already-opened manual fallba
 });
 
 test("a delayed manual publication cannot reappear after the native callback wins", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login-monotonic-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login-monotonic-"));
   const fakeClaude = join(fixtureRoot, "claude");
   const fakeBrowser = join(fixtureRoot, "chrome");
   const fakeNode = join(fixtureRoot, "node");
@@ -776,7 +776,7 @@ test("a delayed manual publication cannot reappear after the native callback win
   );
   await writeFile(
     fakeBrowser,
-    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" >> "$BB_SWITCH_BROWSER_ARGS"'].join(
+    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" >> "$ALIA_SWITCH_BROWSER_ARGS"'].join(
       "\n",
     ),
   );
@@ -810,7 +810,7 @@ test("a delayed manual publication cannot reappear after the native callback win
         encoding: "utf8",
         env: {
           ...process.env,
-          BB_SWITCH_BROWSER_ARGS: browserArgs,
+          ALIA_SWITCH_BROWSER_ARGS: browserArgs,
           PATH: `${fixtureRoot}:${process.env.PATH ?? ""}`,
           TMPDIR: fixtureRoot,
         },
@@ -830,7 +830,7 @@ test("a delayed manual publication cannot reappear after the native callback win
 });
 
 test("the login observer preserves manual authorization-code input", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login-input-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login-input-"));
   const fakeClaude = join(fixtureRoot, "claude");
   const fakeBrowser = join(fixtureRoot, "chrome");
   const fakeStty = join(fixtureRoot, "stty");
@@ -869,7 +869,7 @@ test("the login observer preserves manual authorization-code input", async () =>
 });
 
 test("the login command does not report authorization ready before it has a URL", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login-not-ready-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login-not-ready-"));
   const fakeClaude = join(fixtureRoot, "claude");
   const fakeBrowser = join(fixtureRoot, "chrome");
   const fakeStty = join(fixtureRoot, "stty");
@@ -898,14 +898,14 @@ test("the login command does not report authorization ready before it has a URL"
     );
 
     assert.equal(result.status, 1, result.stderr);
-    assert.doesNotMatch(result.stdout, /BB_CLAUDE_LOGIN_AUTHORIZATION_READY:/);
+    assert.doesNotMatch(result.stdout, /ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:/);
   } finally {
     await rm(fixtureRoot, { force: true, recursive: true });
   }
 });
 
 test("the login fallback waits for a complete ANSI-wrapped URL", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login-framed-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login-framed-"));
   const fakeClaude = join(fixtureRoot, "claude");
   const fakeBrowser = join(fixtureRoot, "chrome");
   const fakeStty = join(fixtureRoot, "stty");
@@ -926,7 +926,7 @@ test("the login fallback waits for a complete ANSI-wrapped URL", async () => {
   );
   await writeFile(
     fakeBrowser,
-    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" > "$BB_SWITCH_BROWSER_ARGS"'].join(
+    ["#!/bin/sh", '/usr/bin/printf \'%s\\n\' "$@" > "$ALIA_SWITCH_BROWSER_ARGS"'].join(
       "\n",
     ),
   );
@@ -949,7 +949,7 @@ test("the login fallback waits for a complete ANSI-wrapped URL", async () => {
         encoding: "utf8",
         env: {
           ...process.env,
-          BB_SWITCH_BROWSER_ARGS: browserArgs,
+          ALIA_SWITCH_BROWSER_ARGS: browserArgs,
           TMPDIR: fixtureRoot,
         },
         timeout: 5_000,
@@ -968,7 +968,7 @@ test("the login fallback waits for a complete ANSI-wrapped URL", async () => {
 });
 
 test("the login fallback does not wait for a newly launched browser to quit", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login-long-browser-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login-long-browser-"));
   const fakeClaude = join(fixtureRoot, "claude");
   const fakeBrowser = join(fixtureRoot, "chrome");
   const fakeStty = join(fixtureRoot, "stty");
@@ -983,7 +983,7 @@ test("the login fallback does not wait for a newly launched browser to quit", as
     fakeBrowser,
     [
       "#!/bin/sh",
-      '/usr/bin/printf \'%s\\n\' "$$" > "$BB_SWITCH_BROWSER_PID"',
+      '/usr/bin/printf \'%s\\n\' "$$" > "$ALIA_SWITCH_BROWSER_PID"',
       "exec /bin/sleep 30",
     ].join("\n"),
   );
@@ -1005,7 +1005,7 @@ test("the login fallback does not wait for a newly launched browser to quit", as
       detached: true,
       env: {
         ...process.env,
-        BB_SWITCH_BROWSER_PID: browserPidFile,
+        ALIA_SWITCH_BROWSER_PID: browserPidFile,
         TMPDIR: fixtureRoot,
       },
       stdio: ["ignore", "pipe", "pipe"],
@@ -1057,7 +1057,7 @@ test("the login fallback does not wait for a newly launched browser to quit", as
 });
 
 test("cancelling login does not wait for a long-lived fallback browser", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login-cancel-browser-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login-cancel-browser-"));
   const fakeClaude = join(fixtureRoot, "claude");
   const fakeBrowser = join(fixtureRoot, "chrome");
   const fakeStty = join(fixtureRoot, "stty");
@@ -1074,7 +1074,7 @@ test("cancelling login does not wait for a long-lived fallback browser", async (
     fakeBrowser,
     [
       "#!/bin/sh",
-      '/usr/bin/printf \'%s\\n\' "$$" > "$BB_SWITCH_BROWSER_PID"',
+      '/usr/bin/printf \'%s\\n\' "$$" > "$ALIA_SWITCH_BROWSER_PID"',
       "exec /bin/sleep 30",
     ].join("\n"),
   );
@@ -1096,7 +1096,7 @@ test("cancelling login does not wait for a long-lived fallback browser", async (
       detached: true,
       env: {
         ...process.env,
-        BB_SWITCH_BROWSER_PID: browserPidFile,
+        ALIA_SWITCH_BROWSER_PID: browserPidFile,
         TMPDIR: fixtureRoot,
       },
       stdio: ["ignore", "pipe", "pipe"],
@@ -1140,7 +1140,7 @@ test("cancelling login does not wait for a long-lived fallback browser", async (
 });
 
 test("a failed Claude browser callback stops with a safe error", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-login-browser-error-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-login-browser-error-"));
   const fakeClaude = join(fixtureRoot, "claude");
   const fakeBrowser = join(fixtureRoot, "chrome");
   const fakeStty = join(fixtureRoot, "stty");
@@ -1158,7 +1158,7 @@ test("a failed Claude browser callback stops with a safe error", async () => {
     fakeBrowser,
     [
       "#!/bin/sh",
-      "/usr/bin/printf 'called\\n' >> \"$BB_SWITCH_BROWSER_CALLS\"",
+      "/usr/bin/printf 'called\\n' >> \"$ALIA_SWITCH_BROWSER_CALLS\"",
       "exit 42",
     ].join("\n"),
   );
@@ -1180,7 +1180,7 @@ test("a failed Claude browser callback stops with a safe error", async () => {
       detached: true,
       env: {
         ...process.env,
-        BB_SWITCH_BROWSER_CALLS: browserCalls,
+        ALIA_SWITCH_BROWSER_CALLS: browserCalls,
         TMPDIR: fixtureRoot,
       },
       stdio: ["ignore", "pipe", "pipe"],
@@ -1205,7 +1205,7 @@ test("a failed Claude browser callback stops with a safe error", async () => {
     });
 
     assert.equal(exitCode, 78);
-    assert.match(stdout, /BB_CLAUDE_LOGIN_BROWSER_FAILED/);
+    assert.match(stdout, /ALIA_CLAUDE_LOGIN_BROWSER_FAILED/);
     assert.doesNotMatch(stdout, /https:\/\//);
     assert.equal((await readFile(browserCalls, "utf8")).trim(), "called");
   } finally {
@@ -1241,7 +1241,7 @@ test("the auth-status command emits only safe classification fields", () => {
 });
 
 test("the auth-status helper stays readable, then self-exits if cleanup is lost", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-auth-status-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-auth-status-"));
   const fakeClaude = join(fixtureRoot, "claude");
   await writeFile(
     fakeClaude,
@@ -1309,7 +1309,7 @@ test("the auth-status helper stays readable, then self-exits if cleanup is lost"
 });
 
 test("the auth-status helper kills a hung Claude status command", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-auth-hang-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-auth-hang-"));
   const fakeClaude = join(fixtureRoot, "claude");
   await writeFile(fakeClaude, ["#!/bin/sh", "exec /bin/sleep 10"].join("\n"));
   await chmod(fakeClaude, 0o755);
@@ -1348,7 +1348,7 @@ test("the auth-status helper kills a hung Claude status command", async () => {
   }
 });
 
-test("auth status accepts the CRLF output produced by a BB terminal", () => {
+test("auth status accepts the CRLF output produced by a VesnALIA terminal", () => {
   const parse = Reflect.get(loginHostCommand, "parseClaudeAuthStatus") as unknown;
   assert.equal(typeof parse, "function");
 
@@ -1381,7 +1381,7 @@ test("auth status accepts a first-party Claude login without subscriptionType", 
 });
 
 test("the auth-status helper supports Claude accounts without subscriptionType", async () => {
-  const fixtureRoot = await mkdtemp(join(tmpdir(), "bb-claude-auth-no-plan-"));
+  const fixtureRoot = await mkdtemp(join(tmpdir(), "alia-claude-auth-no-plan-"));
   const fakeClaude = join(fixtureRoot, "claude");
   await writeFile(
     fakeClaude,
@@ -1431,7 +1431,7 @@ test("auth status fails closed on unsafe or incomplete output", () => {
   }
 });
 
-test("auth verification reads safe output before BB discards exited terminal output", async () => {
+test("auth verification reads safe output before VesnALIA discards exited terminal output", async () => {
   const runStatus = Reflect.get(loginTerminal, "runClaudeAuthStatus") as unknown;
   assert.equal(typeof runStatus, "function");
   const closes: Array<"force" | "if-clean"> = [];
@@ -1488,7 +1488,7 @@ test("a browser-launch failure is surfaced without waiting for login timeout", a
         create: async () => terminal("running"),
         get: async () => terminal("running"),
         output: async () =>
-          "BB_CLAUDE_LOGIN_INPUT_READY\nBB_CLAUDE_LOGIN_BROWSER_FAILED\n",
+          "ALIA_CLAUDE_LOGIN_INPUT_READY\nBB_CLAUDE_LOGIN_BROWSER_FAILED\n",
       },
       "thread_1",
       { sleep: async () => undefined },
@@ -1526,7 +1526,7 @@ test("authorization-code input becomes available only after terminal echo is hid
       get: async () => terminal("exited", 0),
       output: async () => {
         outputReads += 1;
-        return "BB_CLAUDE_LOGIN_INPUT_READY\n";
+        return "ALIA_CLAUDE_LOGIN_INPUT_READY\n";
       },
     },
     "thread_1",
@@ -1542,7 +1542,7 @@ test("authorization-code input becomes available only after terminal echo is hid
 
 test("authorization return becomes available from the parent launcher marker", async () => {
   const ready: Array<{ terminalId: string; launcherPath: string }> = [];
-  const launcherPath = "/private/tmp/bb-claude-login.A1b2C3/open-chrome-incognito";
+  const launcherPath = "/private/tmp/alia-claude-login.A1b2C3/open-chrome-incognito";
 
   await runClaudeLogin(
     {
@@ -1550,7 +1550,7 @@ test("authorization return becomes available from the parent launcher marker", a
       create: async () => terminal("running"),
       get: async () => terminal("exited", 0),
       output: async () =>
-        `BB_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nBB_CLAUDE_LOGIN_INPUT_READY\n`,
+        `ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:${launcherPath}\nBB_CLAUDE_LOGIN_INPUT_READY\n`,
     },
     "thread_1",
     {
@@ -1572,7 +1572,7 @@ test("authorization return rejects an untrusted launcher marker", async () => {
         create: async () => terminal("running"),
         get: async () => terminal("running"),
         output: async () =>
-          "BB_CLAUDE_LOGIN_AUTHORIZATION_READY:/private/tmp/not-the-login-helper\n",
+          "ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:/private/tmp/not-the-login-helper\n",
       },
       "thread_1",
       {

@@ -1,8 +1,8 @@
 import { preparationRequestGate } from './request-gate.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useComposer,
   useComposerView,
   useRpc,
@@ -10,7 +10,7 @@ import {
   type PluginNewThreadPanelProps,
   type PluginThreadPanelProps,
   type PluginThreadHeaderActionProps
-} from '@get-bb/plugin-sdk/app';
+} from '@vesnalia/plugin-sdk/app';
 import { preparationRpc, sandboxHtml, type Preparation } from './contract.js';
 import { taskboardRpcContract, type WorkItem } from '../contract.js';
 import { Button } from '../components/ui/button.js';
@@ -144,7 +144,7 @@ function PrepareNew(props: PluginNewThreadPanelProps) {
 }
 function PrepareNewBody({ projectId }: PluginNewThreadPanelProps) {
   const rpc = useRpc<typeof preparationRpc>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [list, setList] = useState<
     {
       id: string;
@@ -287,7 +287,7 @@ function PrepareThread({ threadId }: PluginThreadPanelProps) {
 }
 function PrepareHeader({ threadId }: PluginThreadHeaderActionProps) {
   const rpc = useRpc<typeof preparationRpc>();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const opened = useRef<string | null>(null);
   const [visible, setVisible] = useState(false);
   useEffect(() => {
@@ -331,7 +331,7 @@ function TaskLink({
 }) {
   const rpc = useRpc<typeof preparationRpc>();
   const tasks = useRpc<typeof taskboardRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [items, setItems] = useState<WorkItem[]>([]);
   const [label, setLabel] = useState('Taskboard connection');
   const [error, setError] = useState('');
@@ -483,7 +483,7 @@ function PreparationWorkspace({
   projectId: string;
 }) {
   const rpc = useRpc<typeof preparationRpc>();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const { p, setP, error: loadError } = usePreparation(id, projectId);
   const [tab, setTab] = useState('brief');
   const [title, setTitle] = useState('');

@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent } from "react";
-import { useComposer, useRpc } from "@get-bb/plugin-sdk/app";
+import { useComposer, useRpc } from "@vesnalia/plugin-sdk/app";
 import { STATE_LABEL, useKeyStatus } from "./key-status.js";
 import type { nanoGptSettingsContract } from "./settings-contract.js";
 import { ToolSettingsPanel } from "./tool-settings.js";

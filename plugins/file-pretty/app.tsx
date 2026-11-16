@@ -1,11 +1,11 @@
-// bb-plugin-pretty — a BB plugin frontend entry.
+// alia-plugin-pretty — a VesnALIA plugin frontend entry.
 //
-// Opens JSON, JSON Lines, YAML, TOML, and XML files in a formatted view. BB's
-// built-in editor also opens json, yaml, toml, and xml. BB registers openers in
+// Opens JSON, JSON Lines, YAML, TOML, and XML files in a formatted view. VesnALIA's
+// built-in editor also opens json, yaml, toml, and xml. VesnALIA registers openers in
 // plugin-id order, and this plugin's id (file-pretty) sorts before
-// monaco-editor, so Pretty is the first opener. Compiled by `bb plugin build` into
-// dist/app.js + dist/app.css. React and @get-bb/plugin-sdk/app are provided by
-// the BB app at load time, so this file must be loaded by BB, not imported.
+// monaco-editor, so Pretty is the first opener. Compiled by `alia plugin build` into
+// dist/app.js + dist/app.css. React and @vesnalia/plugin-sdk/app are provided by
+// the VesnALIA app at load time, so this file must be loaded by VesnALIA, not imported.
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
@@ -13,8 +13,8 @@ import {
   experimental_copyToClipboard,
   experimental_SourceCode as SourceCode,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginFileOpenerProps } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginFileOpenerProps } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { detectFormat, FORMAT_NAMES, INDENTABLE } from "./src/formatters";
 import type { FormatKind } from "./src/formatters";
@@ -25,7 +25,7 @@ const EXTENSIONS = ["json", "jsonc", "jsonl", "ndjson", "yaml", "yml", "toml", "
 
 function PrettyFileOpener(props: PluginFileOpenerProps) {
   const format = detectFormat(props.path);
-  // Files the registration matched but this plugin cannot format fall back to BB's preview.
+  // Files the registration matched but this plugin cannot format fall back to VesnALIA's preview.
   if (format === null) return <props.Original />;
   return <FormatView {...props} format={format} />;
 }

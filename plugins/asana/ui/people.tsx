@@ -1,7 +1,7 @@
 // Picking a person: the people on the task first (who filed it, followers,
 // the current assignee), then "Someone else…" to search the workspace.
 import { useEffect, useId, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, TaskDetail } from "../server";
 import { cn } from "@/lib/utils";
 import { CONTROL_CLASS, QUIET_CONTROL_CLASS } from "./shared";

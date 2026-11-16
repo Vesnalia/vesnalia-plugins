@@ -1,5 +1,5 @@
-// The frontend bundle must not reach the server SDK: bb 0.46.1 refuses to resolve `@get-bb/plugin-sdk` in a frontend build
-// (only `@get-bb/plugin-sdk/app` is there). Walks the runtime imports from `app.tsx`; `import type` is erased and does not count.
+// The frontend bundle must not reach the server SDK: VesnALIA 0.46.1 refuses to resolve `@vesnalia/plugin-sdk` in a frontend build
+// (only `@vesnalia/plugin-sdk/app` is there). Walks the runtime imports from `app.tsx`; `import type` is erased and does not count.
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -43,7 +43,7 @@ test("the frontend reaches no server-only module at run time", () => {
       else external.add(spec);
     }
   }
-  expect([...external].filter((s) => s === "@get-bb/plugin-sdk" || (s.startsWith("@get-bb/plugin-sdk/") && s !== "@get-bb/plugin-sdk/app"))).toEqual([]);
+  expect([...external].filter((s) => s === "@vesnalia/plugin-sdk" || (s.startsWith("@vesnalia/plugin-sdk/") && s !== "@vesnalia/plugin-sdk/app"))).toEqual([]);
   expect([...seen].map((f) => f.slice(root.length + 1)).filter((f) => f === "contract.ts" || f === "server/models.ts")).toEqual([]);
 });
 

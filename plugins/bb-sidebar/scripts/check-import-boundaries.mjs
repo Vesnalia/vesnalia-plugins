@@ -113,17 +113,17 @@ for (const input of files) {
   const browser = matches(file, appIncludes);
   const browserOrShared = browser || shared;
   function checkSdkImport(node) {
-    if (!browser || file === "src/bb-sdk.ts" || !ts.isStringLiteralLike(node.moduleSpecifier)) return;
-    if (node.moduleSpecifier.text !== "@get-bb/plugin-sdk/app") return;
+    if (!browser || file === "src/alia-sdk.ts" || !ts.isStringLiteralLike(node.moduleSpecifier)) return;
+    if (node.moduleSpecifier.text !== "@vesnalia/plugin-sdk/app") return;
     const bindings = ts.isExportDeclaration(node) ? node.exportClause : node.importClause?.namedBindings;
     if (bindings && (ts.isNamedImports(bindings) || ts.isNamedExports(bindings))) {
       for (const element of bindings.elements) {
         if ((element.propertyName ?? element.name).text.startsWith("experimental_")) {
-          report(file, source, element, "Import experimental SDK APIs through src/bb-sdk.ts.");
+          report(file, source, element, "Import experimental SDK APIs through src/alia-sdk.ts.");
         }
       }
     } else {
-      report(file, source, node, "Use named SDK imports; experimental APIs belong in src/bb-sdk.ts.");
+      report(file, source, node, "Use named SDK imports; experimental APIs belong in src/alia-sdk.ts.");
     }
   }
   function checkSpecifier(specifier, typeOnly = false) {
@@ -152,8 +152,8 @@ for (const input of files) {
       if (node.moduleSpecifier) checkSdkImport(node);
       checkSpecifier(node.moduleSpecifier, isTypeOnly(node));
     } else if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
-      if (browser && file !== "src/bb-sdk.ts" && node.arguments.at(0)?.text === "@get-bb/plugin-sdk/app") {
-        report(file, source, node, "Use named SDK imports; experimental APIs belong in src/bb-sdk.ts.");
+      if (browser && file !== "src/alia-sdk.ts" && node.arguments.at(0)?.text === "@vesnalia/plugin-sdk/app") {
+        report(file, source, node, "Use named SDK imports; experimental APIs belong in src/alia-sdk.ts.");
       }
       checkSpecifier(node.arguments.at(0));
     }

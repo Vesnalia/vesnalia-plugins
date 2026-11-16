@@ -13,12 +13,12 @@ the user wrote in the plugin's settings.
 ## Commands
 
 ```sh
-bb magic-compose route "<prompt>" --json
-bb magic-compose spawn "<prompt>" --json
-bb magic-compose machines --json
-bb magic-compose rotation get --json
-bb magic-compose preferences get --json
-bb magic-compose history --days 14 --json
+alia magic-compose route "<prompt>" --json
+alia magic-compose spawn "<prompt>" --json
+alia magic-compose machines --json
+alia magic-compose rotation get --json
+alia magic-compose preferences get --json
+alia magic-compose history --days 14 --json
 ```
 
 - `route` reports where the prompt would go and starts nothing. Each of
@@ -33,7 +33,7 @@ bb magic-compose history --days 14 --json
 - `machines` prints what Jev is told about each connected machine: operating
   system, CPU load, memory, free disk, and running agent threads.
 - `preferences get|set` reads and writes the routing instructions and the other
-  preferences. They are not BB plugin settings, so `bb plugin config` does not
+  preferences. They are not VesnALIA plugin settings, so `alia plugin config` does not
   reach them; only the API keys and the choice of gateway are.
 - `rotation get|set`, `history`, and `backtest` read and tune the model
   preferences; the `tune-magic-compose` skill explains how to use them together.

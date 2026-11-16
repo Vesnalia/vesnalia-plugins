@@ -23,13 +23,13 @@ sources:
   - host-skills.ts
 ---
 # Agent Tools API and commands
-The plugin exposes BB plugin RPC methods, machine-local host RPC methods, and the `bb tools` CLI; this repository registers no plugin-owned HTTP routes (`server.ts:2045-2255`, `server.ts:2343-2363`).
+The plugin exposes VesnALIA plugin RPC methods, machine-local host RPC methods, and the `alia tools` CLI; this repository registers no plugin-owned HTTP routes (`server.ts:2045-2255`, `server.ts:2343-2363`).
 
 ## How it works
 
-1. The plugin UI calls a named server RPC, or BB invokes the `tools` CLI handler (`app.tsx:115-139`, `server.ts:2143-2156`).
+1. The plugin UI calls a named server RPC, or VesnALIA invokes the `tools` CLI handler (`app.tsx:115-139`, `server.ts:2143-2156`).
 2. `rpcContract` validates the UI/server method inputs, while `hostContract` defines the methods and payloads the server can call on a selected host (`server.ts:201-434`, `contract.ts:355-452`).
-3. The server handler reads stored state or orchestrates host calls through a client bound to `hostContract`; each host call supplies a target BB `hostId` (`server.ts:545-550`, `server.ts:592-600`).
+3. The server handler reads stored state or orchestrates host calls through a client bound to `hostContract`; each host call supplies a target VesnALIA `hostId` (`server.ts:545-550`, `server.ts:592-600`).
 4. The host performs the requested scan or file operation and returns a typed result; write calls return per-operation outcomes and backups (`host.ts:783-785`, `host.ts:1118-1189`).
 5. The server returns the result to the UI/CLI and publishes refreshed overview state after mutations (`server.ts:1071-1075`, `server.ts:2045-2255`, `server.ts:2470-2902`).
 
@@ -55,40 +55,40 @@ Detailed startup, RPC-contract and Skills page branches are documented in [RPC r
 
 ## Authentication and transport
 
-- **UI-to-server:** the BB plugin UI calls RPC method names such as `overview` and `rescan`; the plugin registers them with `bb.rpc.register` (`app.tsx:115-139`, `server.ts:2045-2050`). No per-method authentication check is implemented in this plugin (`server.ts:2045-2255`).
-- **Server-to-host:** the plugin creates `bb.hosts.experimental_client({ contract: hostContract })`; calls supply the target BB `hostId`, and methods are handled by the registered host entry (`server.ts:545-550`, `server.ts:586-594`, `host.ts:789-795`).
-- **CLI:** BB registers the `tools` command group and invokes its `run(argv)` handler inside the plugin runtime (`server.ts:2343-2346`, `server.ts:2456-2465`).
+- **UI-to-server:** the VesnALIA plugin UI calls RPC method names such as `overview` and `rescan`; the plugin registers them with `alia.rpc.register` (`app.tsx:115-139`, `server.ts:2045-2050`). No per-method authentication check is implemented in this plugin (`server.ts:2045-2255`).
+- **Server-to-host:** the plugin creates `alia.hosts.experimental_client({ contract: hostContract })`; calls supply the target VesnALIA `hostId`, and methods are handled by the registered host entry (`server.ts:545-550`, `server.ts:586-594`, `host.ts:789-795`).
+- **CLI:** VesnALIA registers the `tools` command group and invokes its `run(argv)` handler inside the plugin runtime (`server.ts:2343-2346`, `server.ts:2456-2465`).
 - **HTTP:** no Hono app or route registration is present in the plugin entry; `hono` is a development dependency only (`package.json:61-72`).
 
 ## UI/server RPC
 
-All methods use BB RPC names rather than HTTP method/path pairs. Each method accepts the Zod input shown in `rpcContract`; the caller is the plugin UI unless noted.
+All methods use VesnALIA RPC names rather than HTTP method/path pairs. Each method accepts the Zod input shown in `rpcContract`; the caller is the plugin UI unless noted.
 
 | Area | Method | Caller | Purpose | Auth |
 |---|---|---|---|---|
-| Overview | `overview` | UI | Return inventory, drift, pending entries, skills, plugins, and OpenCode view | BB plugin RPC (`server.ts:134-151`, `server.ts:1104-1127`, `server.ts:2082-2086`) |
-| Overview | `rescan` | UI | Scan all connected machines, or the given `hostId`; refresh MetaMCP | BB plugin RPC (`server.ts:217`, `server.ts:2047-2050`) |
-| Catalogue | `adopt` | UI | Add pending server names with global/local-only scope | BB plugin RPC (`server.ts:218-224`, `server.ts:2051-2054`) |
-| Catalogue | `ignore`, `unignore` | UI | Hide pending names or show them again | BB plugin RPC (`server.ts:734-750`, `server.ts:2094-2104`) |
-| Catalogue | `catalog_update`, `catalog_remove` | UI | Change scope, target agents, server spec, or remove a catalogue row | BB plugin RPC (`server.ts:227-236`, `server.ts:2067-2082`) |
-| Catalogue | `purge` | UI | Remove a server from selected host(s), optionally gateway configs; supports dry run | BB plugin RPC (`server.ts:237-250`, `server.ts:2083-2091`) |
-| Catalogue | `plan`, `sync` | UI | Return proposed operations; apply additions/updates with dry-run and include-different flags | BB plugin RPC (`server.ts:252-264`, `server.ts:2093-2099`) |
-| Catalogue | `probe` | UI | Handshake selected server(s) and return result counts | BB plugin RPC (`server.ts:268-274`, `server.ts:2100-2103`) |
-| Catalogue | `set_server_enabled` | UI | Enable/disable a server where its dialect supports the flag | BB plugin RPC (`server.ts:276-288`, `server.ts:2104-2107`) |
-| Gateway | `gateway_add` | UI | Parse JSON and add entries to a host's existing MetaMCP config | BB plugin RPC (`server.ts:289-301`, `server.ts:2108-2110`) |
-| Schedule/language | `set_auto_sync`, `set_skills_fanout_auto`, `set_language` | UI | Change scheduled MCP sync and UI/CLI language; legacy skill setter is a no-op | BB plugin RPC (`server.ts:272`, `server.ts:2197-2201`, `server.ts:2292-2299`) |
-| Skills | `skill_adopt`, `skill_adopt_bulk` | UI | Apply explicit per-home actions | BB plugin RPC (`server.ts:289-317`, `server.ts:2112-2150`) |
-| Skills (legacy RPC) | `skills_fanout` | Older UI clients | Retained machine-canon rollout handler; current CLI rejects the former workflow | BB plugin RPC (`server.ts:343-351`, `server.ts:2203-2206`, `server.ts:2730-2739`) |
-| Skills | `skills_backups`, `skills_backup_restore` | UI | List snapshots or restore a selected snapshot | BB plugin RPC (`server.ts:353-370`, `server.ts:2162-2167`) |
-| Skills (legacy RPC) | `skills_sync` | Older UI clients | Legacy handler rejects because no machine-canon Git remote is configured | BB plugin RPC (`server.ts:391-399`, `server.ts:2214-2219`, `server.ts:546-548`) |
-| OpenCode | `opencode_sync` | UI | Copy selected providers, models, and enabled state from source to connected target(s) | BB plugin RPC (`server.ts:395-407`, `server.ts:2176-2181`) |
-| OpenCode | `opencode_clean` | UI | Remove named or known-stale providers; supports dry run | BB plugin RPC (`server.ts:408-419`, `server.ts:2178-2185`) |
-| OpenCode | `opencode_apply` | UI | Apply provider/model/enabled operations to one host | BB plugin RPC (`server.ts:420-433`, `server.ts:2186-2207`) |
-| OpenCode | `opencode_set_default_model` | UI | Update BB's default and/or OpenCode's model defaults | BB plugin RPC (`server.ts:434-448`, `server.ts:2208-2242`) |
+| Overview | `overview` | UI | Return inventory, drift, pending entries, skills, plugins, and OpenCode view | VesnALIA plugin RPC (`server.ts:134-151`, `server.ts:1104-1127`, `server.ts:2082-2086`) |
+| Overview | `rescan` | UI | Scan all connected machines, or the given `hostId`; refresh MetaMCP | VesnALIA plugin RPC (`server.ts:217`, `server.ts:2047-2050`) |
+| Catalogue | `adopt` | UI | Add pending server names with global/local-only scope | VesnALIA plugin RPC (`server.ts:218-224`, `server.ts:2051-2054`) |
+| Catalogue | `ignore`, `unignore` | UI | Hide pending names or show them again | VesnALIA plugin RPC (`server.ts:734-750`, `server.ts:2094-2104`) |
+| Catalogue | `catalog_update`, `catalog_remove` | UI | Change scope, target agents, server spec, or remove a catalogue row | VesnALIA plugin RPC (`server.ts:227-236`, `server.ts:2067-2082`) |
+| Catalogue | `purge` | UI | Remove a server from selected host(s), optionally gateway configs; supports dry run | VesnALIA plugin RPC (`server.ts:237-250`, `server.ts:2083-2091`) |
+| Catalogue | `plan`, `sync` | UI | Return proposed operations; apply additions/updates with dry-run and include-different flags | VesnALIA plugin RPC (`server.ts:252-264`, `server.ts:2093-2099`) |
+| Catalogue | `probe` | UI | Handshake selected server(s) and return result counts | VesnALIA plugin RPC (`server.ts:268-274`, `server.ts:2100-2103`) |
+| Catalogue | `set_server_enabled` | UI | Enable/disable a server where its dialect supports the flag | VesnALIA plugin RPC (`server.ts:276-288`, `server.ts:2104-2107`) |
+| Gateway | `gateway_add` | UI | Parse JSON and add entries to a host's existing MetaMCP config | VesnALIA plugin RPC (`server.ts:289-301`, `server.ts:2108-2110`) |
+| Schedule/language | `set_auto_sync`, `set_skills_fanout_auto`, `set_language` | UI | Change scheduled MCP sync and UI/CLI language; legacy skill setter is a no-op | VesnALIA plugin RPC (`server.ts:272`, `server.ts:2197-2201`, `server.ts:2292-2299`) |
+| Skills | `skill_adopt`, `skill_adopt_bulk` | UI | Apply explicit per-home actions | VesnALIA plugin RPC (`server.ts:289-317`, `server.ts:2112-2150`) |
+| Skills (legacy RPC) | `skills_fanout` | Older UI clients | Retained machine-canon rollout handler; current CLI rejects the former workflow | VesnALIA plugin RPC (`server.ts:343-351`, `server.ts:2203-2206`, `server.ts:2730-2739`) |
+| Skills | `skills_backups`, `skills_backup_restore` | UI | List snapshots or restore a selected snapshot | VesnALIA plugin RPC (`server.ts:353-370`, `server.ts:2162-2167`) |
+| Skills (legacy RPC) | `skills_sync` | Older UI clients | Legacy handler rejects because no machine-canon Git remote is configured | VesnALIA plugin RPC (`server.ts:391-399`, `server.ts:2214-2219`, `server.ts:546-548`) |
+| OpenCode | `opencode_sync` | UI | Copy selected providers, models, and enabled state from source to connected target(s) | VesnALIA plugin RPC (`server.ts:395-407`, `server.ts:2176-2181`) |
+| OpenCode | `opencode_clean` | UI | Remove named or known-stale providers; supports dry run | VesnALIA plugin RPC (`server.ts:408-419`, `server.ts:2178-2185`) |
+| OpenCode | `opencode_apply` | UI | Apply provider/model/enabled operations to one host | VesnALIA plugin RPC (`server.ts:420-433`, `server.ts:2186-2207`) |
+| OpenCode | `opencode_set_default_model` | UI | Update VesnALIA's default and/or OpenCode's model defaults | VesnALIA plugin RPC (`server.ts:434-448`, `server.ts:2208-2242`) |
 
 ### Hub skills UI/server RPC
 
-`SkillsPage` uses these RPC methods to manage the BB server's hub library. The contract validates payloads and result shapes; the handlers live in `createSkillsHubService` (`skills-page.tsx:140-210`, `skills-hub-service.ts:150-213`, `skills-hub-service.ts:567-683`).
+`SkillsPage` uses these RPC methods to manage the VesnALIA server's hub library. The contract validates payloads and result shapes; the handlers live in `createSkillsHubService` (`skills-page.tsx:140-210`, `skills-hub-service.ts:150-213`, `skills-hub-service.ts:567-683`).
 
 | Method | Input | Result / effect |
 |---|---|---|
@@ -104,7 +104,7 @@ All methods use BB RPC names rather than HTTP method/path pairs. Each method acc
 | `skills_remove` | `name` (max 120) | Archives and removes a hub skill; returns `{ok,error,hub}`. |
 | `skills_pull` | `name`, `hostId`, nullable `target` max 500 | Copies a hub skill to a connected host; returns `{ok,path,error}`. |
 | `skills_publish` | `hostId`, `path` max 500, required `dryRun` | Packs a host skill and publishes it to the hub; returns validation and Git result. |
-| `skills_machines_refresh` | `null` | Refreshes skill-home counts and discovered skills for every host in BB host listing; returns hub state (`skills-hub-service.ts:444-475`). |
+| `skills_machines_refresh` | `null` | Refreshes skill-home counts and discovered skills for every host in VesnALIA host listing; returns hub state (`skills-hub-service.ts:444-475`). |
 | `skills_machines_import` | `hostId`, nullable `names` list (up to 3,000 names; each max 200) | Copies selected discovered skills that are missing from the hub; returns per-skill validation results and hub state. |
 | `skills_machines_cleanup` | `hostId`, required `dryRun` | Explicitly previews or archives machine skill-home entries; the UI offer setting does not gate this RPC or CLI command. Returns moved counts, errors and hub state (`skills-hub-service.ts:728-735`, `settings-page.tsx:188-199`). |
 | `skills_settings` | `null` | Returns classifier provider/model/project, automatic classification and cleanup-offer settings, plus provider/project choices. |
@@ -119,25 +119,25 @@ The `hostContract` is executed by the registered host entry (`contract.ts:355-49
 
 | Method | Caller | Purpose | Auth |
 |---|---|---|---|
-| `scan` | Server | Read CLI binaries and MCP configuration on one host | BB host RPC channel (`contract.ts:355-357`, `host.ts:785-818`) |
-| `apply` | Server | Upsert/remove MCP entries; dry-run supported | BB host RPC channel (`contract.ts:356-360`, `host.ts:1118-1189`) |
-| `probe` | Server | Connect to selected MCP server definitions with bounded timeout | BB host RPC channel (`contract.ts:361-367`, `host.ts:839-869`) |
-| `skills_scan` | Server | Legacy inventory of machine canon and skill homes | BB host RPC channel (`contract.ts:368`, `host.ts:374-435`, `host.ts:871`) |
-| `skills_adopt`, `skills_adopt_bulk` | Server | Adopt, take, link, delete, or unlink skills by location | BB host RPC channel (`contract.ts:369-403`, `host.ts:873-882`) |
-| `skills_fanout` | Server | Apply planned links, mirrors, pulls, drops, and retirements | BB host RPC channel (`contract.ts:409-418`, `host.ts:885-975`) |
-| `skills_backups_list`, `skills_backup_restore` | Server | List and restore skill snapshots | BB host RPC channel (`contract.ts:420-430`, `host.ts:982-1061`) |
-| `skills_sync` | Legacy server handler | Machine-canon Git synchronization (no configured remote in the current server) | BB host RPC channel (`contract.ts:432-439`, `host.ts:1060-1084`, `server.ts:546-548`, `server.ts:1282-1293`) |
-| `skills_archive` | Server | Pack one canon skill for transfer to the BB server process; archive omits recognized junk and fails when tar is unavailable or the archive exceeds 8 MiB | BB host RPC channel (`contract.ts:440-448`, `host.ts:1086-1115`, `server.ts:1484-1492`) |
-| `opencode_scan`, `opencode_apply` | Server | Read or write OpenCode JSON config | BB host RPC channel (`contract.ts:449-450`, `host.ts:574-698`, `host.ts:1191-1193`) |
-| `skill_pack` / `skill_unpack` | Skills hub service | Pack a machine folder for hub publishing, or copy a hub skill to a machine target | BB host RPC channel (`contract.ts:456-470`, `host-skills.ts:48-98`, `skills-hub-service.ts:564-590`) |
-| `skill_homes_count` | Skills hub service | Count homes and return discovered skills; see [machine skill discovery](features/machine-skill-discovery.md) for filtering, duplicate selection, and failures (`host-skills.ts:144-163`) | BB host RPC channel (`contract.ts:473-481`, `host.ts:1216`) |
-| `skill_homes_cleanup` | Skills hub service | Preview or move machine skill-home entries into a dated backup (`host-skills.ts:172-223`) | BB host RPC channel (`contract.ts:483-490`, `host.ts:1218`) |
-| `plugins_scan` | Server | Inventory installed CLI plugins | BB host RPC channel (`contract.ts:492-494`, `host.ts:700-780`, `host.ts:1220-1224`) |
+| `scan` | Server | Read CLI binaries and MCP configuration on one host | VesnALIA host RPC channel (`contract.ts:355-357`, `host.ts:785-818`) |
+| `apply` | Server | Upsert/remove MCP entries; dry-run supported | VesnALIA host RPC channel (`contract.ts:356-360`, `host.ts:1118-1189`) |
+| `probe` | Server | Connect to selected MCP server definitions with bounded timeout | VesnALIA host RPC channel (`contract.ts:361-367`, `host.ts:839-869`) |
+| `skills_scan` | Server | Legacy inventory of machine canon and skill homes | VesnALIA host RPC channel (`contract.ts:368`, `host.ts:374-435`, `host.ts:871`) |
+| `skills_adopt`, `skills_adopt_bulk` | Server | Adopt, take, link, delete, or unlink skills by location | VesnALIA host RPC channel (`contract.ts:369-403`, `host.ts:873-882`) |
+| `skills_fanout` | Server | Apply planned links, mirrors, pulls, drops, and retirements | VesnALIA host RPC channel (`contract.ts:409-418`, `host.ts:885-975`) |
+| `skills_backups_list`, `skills_backup_restore` | Server | List and restore skill snapshots | VesnALIA host RPC channel (`contract.ts:420-430`, `host.ts:982-1061`) |
+| `skills_sync` | Legacy server handler | Machine-canon Git synchronization (no configured remote in the current server) | VesnALIA host RPC channel (`contract.ts:432-439`, `host.ts:1060-1084`, `server.ts:546-548`, `server.ts:1282-1293`) |
+| `skills_archive` | Server | Pack one canon skill for transfer to the VesnALIA server process; archive omits recognized junk and fails when tar is unavailable or the archive exceeds 8 MiB | VesnALIA host RPC channel (`contract.ts:440-448`, `host.ts:1086-1115`, `server.ts:1484-1492`) |
+| `opencode_scan`, `opencode_apply` | Server | Read or write OpenCode JSON config | VesnALIA host RPC channel (`contract.ts:449-450`, `host.ts:574-698`, `host.ts:1191-1193`) |
+| `skill_pack` / `skill_unpack` | Skills hub service | Pack a machine folder for hub publishing, or copy a hub skill to a machine target | VesnALIA host RPC channel (`contract.ts:456-470`, `host-skills.ts:48-98`, `skills-hub-service.ts:564-590`) |
+| `skill_homes_count` | Skills hub service | Count homes and return discovered skills; see [machine skill discovery](features/machine-skill-discovery.md) for filtering, duplicate selection, and failures (`host-skills.ts:144-163`) | VesnALIA host RPC channel (`contract.ts:473-481`, `host.ts:1216`) |
+| `skill_homes_cleanup` | Skills hub service | Preview or move machine skill-home entries into a dated backup (`host-skills.ts:172-223`) | VesnALIA host RPC channel (`contract.ts:483-490`, `host.ts:1218`) |
+| `plugins_scan` | Server | Inventory installed CLI plugins | VesnALIA host RPC channel (`contract.ts:492-494`, `host.ts:700-780`, `host.ts:1220-1224`) |
 
 ### Host contract request flow and branches
 
 1. `defineRpcContract` declares each method's Zod input and output. Invalid payloads fail contract validation before the host handler runs (`contract.ts:355-414`).
-2. The server creates the host client with `hostContract` and calls it with the selected machine's `hostId`; registered host handlers receive the BB RPC context, including its abort signal (`server.ts:545-550`, `server.ts:592-604`, `host.ts:789-795`).
+2. The server creates the host client with `hostContract` and calls it with the selected machine's `hostId`; registered host handlers receive the VesnALIA RPC context, including its abort signal (`server.ts:545-550`, `server.ts:592-604`, `host.ts:789-795`).
 3. The handler returns the declared output shape. Some methods report operation failures inside that shape; an uncaught exception or aborted signal rejects the host call.
 
 | Method | Branches and limits | Output and failure behavior |
@@ -150,7 +150,7 @@ The `hostContract` is executed by the registered host entry (`contract.ts:355-49
 
 ### Plugin initialization
 
-1. The plugin reads `lang` from BB KV. `isLang` retains supported `ru` or `en`; absent or invalid values select English, then update the shared dictionary (`server.ts:484-490`).
+1. The plugin reads `lang` from VesnALIA KV. `isLang` retains supported `ru` or `en`; absent or invalid values select English, then update the shared dictionary (`server.ts:484-490`).
 2. It defines MetaMCP and classifier settings, creates `readConfig` as a live `settings.get()` call, then creates the host client and skills-hub service with config read/write callbacks (`server.ts:492-561`).
 3. It defines catalogue, ignored-name, auto-sync, and probe readers. Missing stored arrays read as `[]`; absent `autoSync` reads as `false` (`server.ts:564-573`).
 4. It registers classifier-thread configuration and later registers RPC handlers, including the skills-hub handler map (`server.ts:552-562`, `server.ts:2082-2086`).
@@ -179,38 +179,38 @@ The initial language read, settings definition, and host-client construction hav
 
 ## CLI commands
 
-All commands are registered under `bb tools`; `--json` returns JSON for the read/report commands listed with that option (`server.ts:2143-2255`, `server.ts:2256-2272`).
+All commands are registered under `alia tools`; `--json` returns JSON for the read/report commands listed with that option (`server.ts:2143-2255`, `server.ts:2256-2272`).
 
 | Area | Command | Caller | Purpose | Auth |
 |---|---|---|---|---|
-| Overview | `bb tools status [--json]` | BB CLI user | Print current inventory and drift | BB CLI runtime (`server.ts:2147`, `server.ts:2277-2280`) |
-| Overview | `bb tools scan [--host <id>]` | BB CLI user | Rescan one or all connected hosts | BB CLI runtime (`server.ts:2148`, `server.ts:2281-2285`) |
-| Catalogue | `bb tools catalog [--json]` | BB CLI user | List catalogue rows | BB CLI runtime (`server.ts:2149`, `server.ts:2286-2299`) |
-| Catalogue | `bb tools pending [--json]` | BB CLI user | List unknown configured servers | BB CLI runtime (`server.ts:2150`, `server.ts:2300-2312`) |
-| Catalogue | `bb tools adopt <name...>` | BB CLI user | Adopt pending servers using inferred scope | BB CLI runtime (`server.ts:2151`, `server.ts:2314-2319`) |
-| Catalogue | `bb tools ignore <name...>` / `bb tools unignore <name...>` | BB CLI user | Hide or restore pending suggestions | BB CLI runtime (`server.ts:2152-2156`, `server.ts:2320-2335`) |
-| Catalogue | `bb tools plan [--host <id>]` | BB CLI user | Show planned operations | BB CLI runtime (`server.ts:2158`, `server.ts:2336-2345`) |
-| Catalogue | `bb tools sync [--host <id>] [--dry-run] [--with-different]` | BB CLI user | Apply or preview catalogue sync | BB CLI runtime (`server.ts:2159-2163`, `server.ts:2347-2353`) |
-| Catalogue | `bb tools forget <name>` | BB CLI user | Remove only the catalogue row | BB CLI runtime (`server.ts:2165-2167`, `server.ts:2355-2365`) |
-| Catalogue | `bb tools remove <name> [--host <id>] [--with-gateways] [--dry-run]` | BB CLI user | Remove from machine configs; dry run available | BB CLI runtime (`server.ts:2169-2173`, `server.ts:2366-2387`) |
-| Catalogue | `bb tools probe [<name>] [--host <id>]` | BB CLI user | Run live MCP checks | BB CLI runtime (`server.ts:2175-2177`, `server.ts:2389-2409`) |
-| Catalogue | `bb tools enable <name> [--host <id>]` / `bb tools disable <name> [--host <id>]` | BB CLI user | Toggle supported server configs | BB CLI runtime (`server.ts:2179-2187`, `server.ts:2411-2421`) |
-| Settings | `bb tools auto on|off` | BB CLI user | Enable or disable scheduled MCP sync | BB CLI runtime (`server.ts:2189`, `server.ts:2423-2429`) |
-| Gateway | `bb tools gateway-add <file.json> --host <id>` | BB CLI user | Import JSON server entries into the existing gateway config | BB CLI runtime (`server.ts:2191-2194`, `server.ts:2430-2454`) |
-| Language | `bb tools lang [ru|en]` | BB CLI user | Read or set interface and CLI language | BB CLI runtime (`server.ts:2195-2199`, `server.ts:2455-2470`) |
-| Legacy skills | `skills`, `skills-adopt`, `skills-fanout`, `skills-backups`, `skills-restore`, `skills-sync` | BB CLI user | These former machine-canon commands return a migration error directing users to `bb tools skills-hub` | BB CLI runtime (`server.ts:2730-2739`) |
-| Hub skills | `bb tools skills-hub [--json]` / `bb tools skills-tree [--skills] [--json]` | BB CLI user | Show hub skills, category assignments, validation problems, Git state, or the category tree | Plugin CLI runtime (`skills-hub-service.ts:705-742`, `skills-hub-service.ts:836-846`) |
-| Hub skills | `bb tools skills-publish <folder> [--host <id>] [--dry-run]` | BB CLI user | Validate and publish one host skill folder to the hub | Plugin CLI runtime (`skills-hub-service.ts:744-764`, `skills-hub-service.ts:836-846`) |
-| Hub skills | `bb tools skills-pull <name> [--to <folder>] [--host <id>]` | BB CLI user | Copy one hub skill to a connected host | Plugin CLI runtime (`skills-hub-service.ts:766-771`, `skills-hub-service.ts:836-846`) |
-| Hub skills | `bb tools skills-move <name> "<section>/<subsection>"` / `bb tools skills-classify [--wait]` | BB CLI user | Set a manual category or classify unplaced skills | Plugin CLI runtime (`skills-hub-service.ts:773-793`, `skills-hub-service.ts:836-846`) |
-| Hub skills | `bb tools skills-remove <name>` | BB CLI user | Archive and remove a skill from the hub | Plugin CLI runtime (`skills-hub-service.ts:794-799`, `skills-hub-service.ts:836-846`) |
-| Hub skills | `bb tools skills-machines` / `bb tools skills-import --host <id> [<name...>] [--dry-run]` | BB CLI user | Inspect machine skill folders or copy selected skills missing from the hub; import leaves originals in place | Plugin CLI runtime (`skills-hub-service.ts:593-609`, `skills-hub-service.ts:855-880`, `skills-hub-service.ts:904-914`) |
-| Hub skills | `bb tools skills-cleanup --host <id> [--dry-run]` | BB CLI user | Explicitly preview or archive machine skill-home entries; available regardless of the UI offer setting | Plugin CLI runtime (`host-skills.ts:172-223`, `skills-hub-service.ts:882-895`, `skills-hub-service.ts:913-914`) |
-| Plugins | `bb tools plugins [--json]` | BB CLI user | Show installed CLI plugins across hosts | BB CLI runtime (`server.ts:2231-2234`, `server.ts:2584-2609`) |
-| OpenCode | `bb tools opencode [--json]` | BB CLI user | Report model/provider state and drift | BB CLI runtime (`server.ts:2235-2239`, `server.ts:2611-2637`) |
-| OpenCode | `bb tools opencode-sync [--from <host>] [--to <host>] [--dry-run] [--json]` | BB CLI user | Copy full provider/model/enabled state from source to other host(s) | BB CLI runtime (`server.ts:2241-2244`, `server.ts:2638-2655`) |
-| OpenCode | `bb tools opencode-clean [--host <id>] [--dry-run] [--json]` | BB CLI user | Remove known stale providers | BB CLI runtime (`server.ts:2246-2249`, `server.ts:2657-2664`) |
-| OpenCode | `bb tools opencode-set-default <modelId>` | BB CLI user | Set BB and host OpenCode default model | BB CLI runtime (`server.ts:2251-2254`, `server.ts:2665-2687`) |
+| Overview | `alia tools status [--json]` | VesnALIA CLI user | Print current inventory and drift | VesnALIA CLI runtime (`server.ts:2147`, `server.ts:2277-2280`) |
+| Overview | `alia tools scan [--host <id>]` | VesnALIA CLI user | Rescan one or all connected hosts | VesnALIA CLI runtime (`server.ts:2148`, `server.ts:2281-2285`) |
+| Catalogue | `alia tools catalog [--json]` | VesnALIA CLI user | List catalogue rows | VesnALIA CLI runtime (`server.ts:2149`, `server.ts:2286-2299`) |
+| Catalogue | `alia tools pending [--json]` | VesnALIA CLI user | List unknown configured servers | VesnALIA CLI runtime (`server.ts:2150`, `server.ts:2300-2312`) |
+| Catalogue | `alia tools adopt <name...>` | VesnALIA CLI user | Adopt pending servers using inferred scope | VesnALIA CLI runtime (`server.ts:2151`, `server.ts:2314-2319`) |
+| Catalogue | `alia tools ignore <name...>` / `alia tools unignore <name...>` | VesnALIA CLI user | Hide or restore pending suggestions | VesnALIA CLI runtime (`server.ts:2152-2156`, `server.ts:2320-2335`) |
+| Catalogue | `alia tools plan [--host <id>]` | VesnALIA CLI user | Show planned operations | VesnALIA CLI runtime (`server.ts:2158`, `server.ts:2336-2345`) |
+| Catalogue | `alia tools sync [--host <id>] [--dry-run] [--with-different]` | VesnALIA CLI user | Apply or preview catalogue sync | VesnALIA CLI runtime (`server.ts:2159-2163`, `server.ts:2347-2353`) |
+| Catalogue | `alia tools forget <name>` | VesnALIA CLI user | Remove only the catalogue row | VesnALIA CLI runtime (`server.ts:2165-2167`, `server.ts:2355-2365`) |
+| Catalogue | `alia tools remove <name> [--host <id>] [--with-gateways] [--dry-run]` | VesnALIA CLI user | Remove from machine configs; dry run available | VesnALIA CLI runtime (`server.ts:2169-2173`, `server.ts:2366-2387`) |
+| Catalogue | `alia tools probe [<name>] [--host <id>]` | VesnALIA CLI user | Run live MCP checks | VesnALIA CLI runtime (`server.ts:2175-2177`, `server.ts:2389-2409`) |
+| Catalogue | `alia tools enable <name> [--host <id>]` / `alia tools disable <name> [--host <id>]` | VesnALIA CLI user | Toggle supported server configs | VesnALIA CLI runtime (`server.ts:2179-2187`, `server.ts:2411-2421`) |
+| Settings | `alia tools auto on|off` | VesnALIA CLI user | Enable or disable scheduled MCP sync | VesnALIA CLI runtime (`server.ts:2189`, `server.ts:2423-2429`) |
+| Gateway | `alia tools gateway-add <file.json> --host <id>` | VesnALIA CLI user | Import JSON server entries into the existing gateway config | VesnALIA CLI runtime (`server.ts:2191-2194`, `server.ts:2430-2454`) |
+| Language | `alia tools lang [ru|en]` | VesnALIA CLI user | Read or set interface and CLI language | VesnALIA CLI runtime (`server.ts:2195-2199`, `server.ts:2455-2470`) |
+| Legacy skills | `skills`, `skills-adopt`, `skills-fanout`, `skills-backups`, `skills-restore`, `skills-sync` | VesnALIA CLI user | These former machine-canon commands return a migration error directing users to `alia tools skills-hub` | VesnALIA CLI runtime (`server.ts:2730-2739`) |
+| Hub skills | `alia tools skills-hub [--json]` / `alia tools skills-tree [--skills] [--json]` | VesnALIA CLI user | Show hub skills, category assignments, validation problems, Git state, or the category tree | Plugin CLI runtime (`skills-hub-service.ts:705-742`, `skills-hub-service.ts:836-846`) |
+| Hub skills | `alia tools skills-publish <folder> [--host <id>] [--dry-run]` | VesnALIA CLI user | Validate and publish one host skill folder to the hub | Plugin CLI runtime (`skills-hub-service.ts:744-764`, `skills-hub-service.ts:836-846`) |
+| Hub skills | `alia tools skills-pull <name> [--to <folder>] [--host <id>]` | VesnALIA CLI user | Copy one hub skill to a connected host | Plugin CLI runtime (`skills-hub-service.ts:766-771`, `skills-hub-service.ts:836-846`) |
+| Hub skills | `alia tools skills-move <name> "<section>/<subsection>"` / `alia tools skills-classify [--wait]` | VesnALIA CLI user | Set a manual category or classify unplaced skills | Plugin CLI runtime (`skills-hub-service.ts:773-793`, `skills-hub-service.ts:836-846`) |
+| Hub skills | `alia tools skills-remove <name>` | VesnALIA CLI user | Archive and remove a skill from the hub | Plugin CLI runtime (`skills-hub-service.ts:794-799`, `skills-hub-service.ts:836-846`) |
+| Hub skills | `alia tools skills-machines` / `alia tools skills-import --host <id> [<name...>] [--dry-run]` | VesnALIA CLI user | Inspect machine skill folders or copy selected skills missing from the hub; import leaves originals in place | Plugin CLI runtime (`skills-hub-service.ts:593-609`, `skills-hub-service.ts:855-880`, `skills-hub-service.ts:904-914`) |
+| Hub skills | `alia tools skills-cleanup --host <id> [--dry-run]` | VesnALIA CLI user | Explicitly preview or archive machine skill-home entries; available regardless of the UI offer setting | Plugin CLI runtime (`host-skills.ts:172-223`, `skills-hub-service.ts:882-895`, `skills-hub-service.ts:913-914`) |
+| Plugins | `alia tools plugins [--json]` | VesnALIA CLI user | Show installed CLI plugins across hosts | VesnALIA CLI runtime (`server.ts:2231-2234`, `server.ts:2584-2609`) |
+| OpenCode | `alia tools opencode [--json]` | VesnALIA CLI user | Report model/provider state and drift | VesnALIA CLI runtime (`server.ts:2235-2239`, `server.ts:2611-2637`) |
+| OpenCode | `alia tools opencode-sync [--from <host>] [--to <host>] [--dry-run] [--json]` | VesnALIA CLI user | Copy full provider/model/enabled state from source to other host(s) | VesnALIA CLI runtime (`server.ts:2241-2244`, `server.ts:2638-2655`) |
+| OpenCode | `alia tools opencode-clean [--host <id>] [--dry-run] [--json]` | VesnALIA CLI user | Remove known stale providers | VesnALIA CLI runtime (`server.ts:2246-2249`, `server.ts:2657-2664`) |
+| OpenCode | `alia tools opencode-set-default <modelId>` | VesnALIA CLI user | Set VesnALIA and host OpenCode default model | VesnALIA CLI runtime (`server.ts:2251-2254`, `server.ts:2665-2687`) |
 
 See the [feature pages](features/mcp-catalog.md), [hub skills and categories](features/skills-hub.md), [legacy machine skills](features/skills.md), [OpenCode](features/opencode.md), and [CLI plugins](features/cli-plugins.md) for behavior details.
 

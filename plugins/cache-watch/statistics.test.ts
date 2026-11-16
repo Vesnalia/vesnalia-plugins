@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { createFakePluginHost, makeThreadResponse } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost, makeThreadResponse } from '@vesnalia/plugin-sdk/testing';
 import plugin from './server';
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { PING } from './core';
 
-type Rows = Awaited<ReturnType<BbPluginApi['sdk']['threads']['events']['list']>>;
+type Rows = Awaited<ReturnType<AliaPluginApi['sdk']['threads']['events']['list']>>;
 const threadId = 'thr_statistics123';
 const thread = makeThreadResponse({ id: threadId, providerId: 'codex' });
 const counts = (inputTokens: number, cachedInputTokens: number, outputTokens: number, cacheWriteInputTokens: number | undefined = 0) =>
@@ -27,7 +27,7 @@ async function setup(data: Rows, providerId = 'codex') {
       return filtered.slice(0, Number(args.limit ?? 100));
     } },
   } } });
-  hosts.push(host); await plugin(host.bb); return host;
+  hosts.push(host); await plugin(host.alia); return host;
 }
 const twoTurns = () => rows([
   request(1), start(2, 't1'), usage(3, 't1', counts(100, 0, 10)), usage(4, 't1', counts(100, 0, 10)), done(5, 't1'),
@@ -44,7 +44,7 @@ describe('durable session statistics', () => {
       turn: { firstReadTokens: 0, readTokens: 0, steps: [{ readTokens: 0 }] } });
     expect(await h.harness.behavior.callRpc('turn', { threadId, turnId: 't2' })).toMatchObject({ keepalive: true, turn: { firstReadTokens: 200 } });
     expect(await h.harness.behavior.callRpc('session', { threadId })).toEqual(result);
-    expect(JSON.stringify(h.bb.storage.database().prepare('SELECT body FROM cache_events').all())).not.toContain('PRIVATE PROMPT');
+    expect(JSON.stringify(h.alia.storage.database().prepare('SELECT body FROM cache_events').all())).not.toContain('PRIVATE PROMPT');
   });
   it('survives plugin reloads and ingests new usage automatically without an open panel', async () => {
     const data = twoTurns();
@@ -55,7 +55,7 @@ describe('durable session statistics', () => {
     data.push(...rows([request(10), start(11, 't3'), usage(12, 't3', counts(900, 600, 60), counts(500, 400, 30)), done(13, 't3')]));
     await reloaded.harness.behavior.emitThreadEvent('experimental_thread.events', { thread, sequence: 13 });
     expect(await reloaded.harness.behavior.callRpc('session', { threadId })).toMatchObject({ totalTurns: 3, input: { known: 900 }, read: { known: 600 } });
-    expect(JSON.stringify(reloaded.bb.storage.database().prepare('SELECT body FROM cache_events').all())).not.toContain('PRIVATE ANSWER');
+    expect(JSON.stringify(reloaded.alia.storage.database().prepare('SELECT body FROM cache_events').all())).not.toContain('PRIVATE ANSWER');
   });
   it('counts unreported token fields and unknown costs instead of silently zeroing them', async () => {
     const data = twoTurns();
@@ -91,8 +91,8 @@ it('keeps completed turns with no retained telemetry explicitly unknown and purg
     turns: [{ completed: true, turn: { note: 'No usage reports available for this completed turn.' } }],
   });
   await h.harness.behavior.emitThreadEvent('thread.deleted', { thread });
-  expect(h.bb.storage.database().prepare('SELECT count(*) AS count FROM cache_turns').get()).toEqual({ count: 0 });
-  expect(h.bb.storage.database().prepare('SELECT count(*) AS count FROM cache_events').get()).toEqual({ count: 0 });
+  expect(h.alia.storage.database().prepare('SELECT count(*) AS count FROM cache_turns').get()).toEqual({ count: 0 });
+  expect(h.alia.storage.database().prepare('SELECT count(*) AS count FROM cache_events').get()).toEqual({ count: 0 });
 });
 
 it('persists Claude Code token categories, write-range cost, pricing source and provider through reload and counter restarts', async () => {
@@ -127,7 +127,7 @@ it('persists Claude Code token categories, write-range cost, pricing source and 
   expect(await reloaded.harness.behavior.callRpc('session', { threadId })).toEqual(before);
   expect(await reloaded.harness.behavior.callRpc('turn', { threadId, turnId: 't2' })).toEqual(stored);
   // Upgrade already-saved unsupported-provider snapshots even without new events.
-  const db = reloaded.bb.storage.database();
+  const db = reloaded.alia.storage.database();
   db.prepare('DELETE FROM cache_statistics_versions').run();
   db.prepare("UPDATE cache_turns SET body=json_set(body, '$.cost.minUsd', NULL, '$.cost.note', 'Codex providers only')").run();
   expect(await reloaded.harness.behavior.callRpc('turn', { threadId, turnId: 't2' })).toEqual(stored);
@@ -161,7 +161,7 @@ it('backfills THREAD-scoped request metadata across page boundaries and a pre-te
   const h = await setup(data, 'claude-code-telemetry');
   const before = await h.harness.behavior.callRpc('turn', { threadId, turnId: 't1' });
   expect(before).toMatchObject({ turn: { firstReadTokens: 0, steps: [{ source: 'request', messageId: 'real-request', model: 'claude-opus-5-5', incomplete: false }] } });
-  const db = h.bb.storage.database();
+  const db = h.alia.storage.database();
   expect(JSON.stringify(db.prepare('SELECT body FROM cache_events').all())).not.toContain('PRIVATE EXTENSION');
   // Old collectors already advanced past these metadata but did not persist them.
   db.prepare("DELETE FROM cache_events WHERE json_extract(body, '$.type') = 'thread/extensionState/updated'").run();
@@ -184,14 +184,14 @@ it('saves cache-write lifetimes and totals them for the session, re-reading even
   expect(await h.harness.behavior.callRpc('turn', { threadId, turnId: 't1' })).toMatchObject({
     turn: { writeLifetimes: { fiveMinuteTokens: 1, oneHourTokens: 4, unknownTokens: 0 } } });
   // Revision 2 stored telemetry without the breakdown; upgrading re-reads retained events.
-  const db = h.bb.storage.database();
+  const db = h.alia.storage.database();
   db.prepare("UPDATE cache_events SET body = json_remove(body, '$.data.payload.cacheWriteBreakdown')").run();
   db.prepare('UPDATE cache_statistics_versions SET revision=2').run();
   const reloaded = await h.harness.lifecycle.reload(plugin); hosts.push(reloaded);
   expect(await reloaded.harness.behavior.callRpc('session', { threadId })).toMatchObject(expected);
 });
 
-it('keeps per-request usage in status after BB drops all but the last usage report of a finished turn', async () => {
+it('keeps per-request usage in status after VesnALIA drops all but the last usage report of a finished turn', async () => {
   const a = { ...counts(2, 31730, 3, 31730), cacheReadInputTokens: 0 };
   const b = { ...counts(2, 37602, 20, 5872), cacheReadInputTokens: 31730 };
   const remainder = { ...counts(0, 0, 155, 0), cacheReadInputTokens: 0 };
@@ -203,7 +203,7 @@ it('keeps per-request usage in status after BB drops all but the last usage repo
   const h = await setup(data, 'claude-code-telemetry');
   h.harness.sdk.stub('threads.context', async () => ({ usage: null }) as never);
   await h.harness.behavior.callRpc('status', { threadId: 'thr_statistics123' });
-  // The turn finishes; BB retains only the final aggregate remainder report.
+  // The turn finishes; VesnALIA retains only the final aggregate remainder report.
   data.splice(0, data.length, ...rows([request(1, 'claude-sonnet-5-5'), start(2, 't1'), meta(3, a), meta(5, b), meta(7, remainder, 'aggregate-remainder'),
     usage(8, 't1', { ...b, ...counts(4, 69332, 178, 37602) }, remainder), done(9, 't1')]));
   const status = await h.harness.behavior.callRpc('status', { threadId: 'thr_statistics123' }) as { turn: { readTokens: number; writeTokens: number; outputTokens: number; firstReadTokens: number; steps: unknown[] } };

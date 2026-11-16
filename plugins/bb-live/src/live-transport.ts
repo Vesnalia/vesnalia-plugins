@@ -143,7 +143,7 @@ export const transport: LiveTransport = {
         text: {
           format: {
             type: "json_schema",
-            name: "bb_intent",
+            name: "alia_intent",
             strict: true,
             schema: z.toJSONSchema(intentSchema),
           },

@@ -1,7 +1,7 @@
 # Third-party notices
 
-Attention detection includes work from [bb-plugin-attention](https://github.com/slogsdon/bb-plugin-attention).
-Notification deduplication and BB Connect links include work from [bb-plugin-ntfy](https://github.com/slogsdon/bb-plugin-ntfy).
+Attention detection includes work from [alia-plugin-attention](https://github.com/slogsdon/bb-plugin-attention).
+Notification deduplication and VesnALIA Connect links include work from [alia-plugin-ntfy](https://github.com/slogsdon/bb-plugin-ntfy).
 Both projects are by Shane Logsdon and use the following MIT license:
 
 MIT License

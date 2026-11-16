@@ -1,4 +1,4 @@
-// Append-only: bb stores a hash of every statement by its index. Do not edit or reorder — only append.
+// Append-only: VesnALIA stores a hash of every statement by its index. Do not edit or reorder — only append.
 // The schema starts from scratch: the database is new and carries no legacy tables.
 export const MIGRATIONS: string[] = [
   // A work is one pass over one plugin. created = 0 until the creation steps (scaffold, git, project, task) are finished;
@@ -53,7 +53,7 @@ export const MIGRATIONS: string[] = [
   `ALTER TABLE attempts ADD COLUMN origin_id TEXT;`,
   // Rollback: the owner's reason — the work goes back to the implementer with it in the outcome transaction, also after a restart.
   `ALTER TABLE attempts ADD COLUMN note TEXT;`,
-  // The install job's final state, recorded together with the released step: the reconcile reads it even after bb has forgotten the job.
+  // The install job's final state, recorded together with the released step: the reconcile reads it even after VesnALIA has forgotten the job.
   `ALTER TABLE attempts ADD COLUMN job_state TEXT;`,
   // Where the main branch moves from (the copy's HEAD at recording time) when the rollback point is inherited from a failed rollout;
   // NULL — the branch moves from before_sha.
@@ -80,7 +80,7 @@ export const MIGRATIONS: string[] = [
      quiet INTEGER NOT NULL DEFAULT 0, error_ticks INTEGER NOT NULL DEFAULT 0,
      acted_at INTEGER, actions INTEGER NOT NULL DEFAULT 0, reds INTEGER NOT NULL DEFAULT 0, thread_failures INTEGER NOT NULL DEFAULT 0,
      report TEXT, started_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, stopped_at INTEGER);`,
-  // «Hide from board»: a gone plugin (neither in bb nor a folder) is hidden from the board; the row and history stay, the id stays taken. If it reappears, it comes back.
+  // «Hide from board»: a gone plugin (neither in VesnALIA nor a folder) is hidden from the board; the row and history stay, the id stays taken. If it reappears, it comes back.
   `ALTER TABLE plugins ADD COLUMN hidden_at INTEGER;`,
   // The work's agent models, selected at start (JSON `WorkModels`); NULL — the defaults.
   `ALTER TABLE works ADD COLUMN models TEXT;`,

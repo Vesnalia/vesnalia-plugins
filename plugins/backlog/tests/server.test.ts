@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { rpcContract } from "../src/contract";
 import { parseTask } from "../src/task-format";
@@ -31,7 +31,7 @@ async function setup(initial = raw) {
    },
   },
  }, experimental_callHostRpc: async ({ method }) => method === "inventory" ? { files: [...files.keys()].map(path => ({ path, storage: "active" })), warnings: [] } : method === "markdownInventory" ? { documents: ["/repo/backlog/docs/doc-1.md"], decisions: [], warnings: [] } : null });
- await plugin(fake.bb);
+ await plugin(fake.alia);
  disposals.push(() => fake.harness.lifecycle.dispose());
  const input = { projectId: "p", sourceId: "s", folder: "/repo/backlog", path: taskPath, taskId: "T-1", revision: hash(initial) };
  const save = async (edits: Edit[], overrides = {}) => rpcContract.save.output.parse(await fake.harness.behavior.callRpc("save", { ...input, edits, ...overrides }));

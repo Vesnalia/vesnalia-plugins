@@ -2,12 +2,12 @@
 // can be tried before it ships. Values usually come from Iris inputs
 // (ColorInput, Slider, Select) and follow them live. Every value is checked
 // before it reaches CSS: no url(), no escapes, nothing that ends the
-// declaration. A token that isn't given falls back to bb's own theme.
+// declaration. A token that isn't given falls back to VesnALIA's own theme.
 
 export const THEME_TOKENS = ["primary", "primaryForeground", "background", "foreground", "card", "muted", "mutedForeground", "border", "accent", "radius", "font", "mono"] as const;
 export type ThemeToken = (typeof THEME_TOKENS)[number];
 
-/** What a token falls back to: the surrounding bb theme. */
+/** What a token falls back to: the surrounding VesnALIA theme. */
 export const THEME_FALLBACK: Record<ThemeToken, string> = {
   primary: "var(--primary)",
   primaryForeground: "",

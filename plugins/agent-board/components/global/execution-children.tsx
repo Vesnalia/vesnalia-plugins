@@ -1,4 +1,4 @@
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { GlobalExecution } from "@/contract/rpc";
 import { cardElapsedMs, formatElapsed } from "@/lib/board-model";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { StatusChip } from "@/components/board/status-chip";
 import { ExecutionTimelineDialog, timelineTargetForCard } from "@/components/timeline/execution-timeline-dialog";
 
 export function ExecutionChildren({ execution, now }: { execution: GlobalExecution; now: number }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const children = execution.children ?? [];
   if (!children.length) return null;
   return <details className="mt-2 min-w-0 border-t border-border/60 pt-2">

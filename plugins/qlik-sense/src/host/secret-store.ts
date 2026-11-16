@@ -29,7 +29,7 @@ async function nonEmptyFile(file: string): Promise<boolean> {
   }
 }
 
-const SERVICE = "bb-qlik-sense";
+const SERVICE = "alia-qlik-sense";
 const ACCOUNT = "default";
 
 interface RunResult {

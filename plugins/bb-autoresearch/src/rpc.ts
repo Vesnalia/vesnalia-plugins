@@ -1,19 +1,19 @@
-// bb.rpc: the study page's data plane. Reads return view models from
+// alia.rpc: the study page's data plane. Reads return view models from
 // views.ts; writes are human controls (pause, resume, concurrency, the idea
 // board) and are refused when another plugin calls them. The frontend
 // refetches on the "study-changed" realtime signal.
 //
-// Trust: BB reports every non-plugin caller (the app, the `bb` CLI, agents)
-// as "client", so an agent can reach these through `bb plugin rpc call`.
+// Trust: VesnALIA reports every non-plugin caller (the app, the `VesnALIA` CLI, agents)
+// as "client", so an agent can reach these through `alia plugin rpc call`.
 // Writes are therefore bounded to the approved spec (concurrency can only go
 // down, priorities are clamped), and every write is audited as an event and
 // a notice with whatever caller information exists (see the threat model in
 // docs/design.md). Approval (spec, calibration), harvest and archiving are
 // deliberate steps: the call must carry `confirm: true`, which the page only
 // sends from a dialog that states exactly what will happen. In-app and CLI
-// approval are equivalent (BB can't tell an agent from a human on either
+// approval are equivalent (VesnALIA can't tell an agent from a human on either
 // path); both are audited the same way.
-import { defineRpcContract, type BbPluginApi, type ExperimentalPluginRpcHandlerContext } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi, type ExperimentalPluginRpcHandlerContext } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { EngineError, type Caller, type Engine } from "./engine.ts";
 import { studyReport } from "./report.ts";
@@ -132,9 +132,9 @@ function humanOnly(ctx: ExperimentalPluginRpcHandlerContext | undefined): Caller
   return { via: "rpc" };
 }
 
-export function registerRpc(bb: BbPluginApi, engine: Engine): void {
+export function registerRpc(alia: AliaPluginApi, engine: Engine): void {
   const { store } = engine.ctx;
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     "studies.list": () => ({ studies: store.studies().slice(0, 200).map((s) => studySummary(engine, s)) }),
     "study.overview": ({ slug }) => overview(engine, engine.study(slug)),
     "study.ideas": ({ slug }) => ({ ideas: ideasView(engine, engine.study(slug)) }),

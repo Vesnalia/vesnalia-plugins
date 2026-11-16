@@ -1,4 +1,4 @@
-// bb-plugin-read-aloud — frontend entry.
+// alia-plugin-read-aloud — frontend entry.
 //
 // Two registrations:
 //   messageAction           -> the speaker button in each message's action row,
@@ -15,14 +15,14 @@ import type { ReactNode } from "react";
 import { useSyncExternalStore } from "react";
 import {
   definePluginApp,
-  useBbContext,
+  useAliaContext,
   useRealtime,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { COARSE_POINTER_COMPACT_ICON_BUTTON_CLASS } from "@/components/ui/coarse-pointer-sizing";
 import { cn } from "@/lib/utils";
 
-/** Routes are namespaced by plugin id; auth "local" accepts the BB app origin. */
+/** Routes are namespaced by plugin id; auth "local" accepts the VesnALIA app origin. */
 const PLUGIN_ROUTE = "/api/v1/plugins/read-aloud/http";
 const STOP_CHANNEL = "read-aloud/stop";
 const SEEK_SECONDS = 10;
@@ -64,7 +64,7 @@ const APPEND_FLUSH_MS = 200;
  * preference the user toggles mid-sentence. This persists instantly and per
  * device, which is what "remember my speed" actually means here.
  */
-const RATE_KEY = "bb-read-aloud.playbackRate";
+const RATE_KEY = "alia-read-aloud.playbackRate";
 const RATE_PRESETS = [0.75, 1, 1.25, 1.5, 1.75, 2] as const;
 
 function loadRate(): number {
@@ -195,7 +195,7 @@ function ensureAudio(): HTMLAudioElement {
     if (element.getAttribute("src") === null) return;
     setState({
       status: "error",
-      error: "Playback failed. Check `bb read-aloud status`.",
+      error: "Playback failed. Check `alia read-aloud status`.",
     });
   });
   audio = element;
@@ -494,12 +494,12 @@ function formatClock(seconds: number): string {
 
 /**
  * The same mark as assets/speaker.svg, which is this plugin's manifest icon and
- * therefore the glyph BB draws on the message action button. Kept inline and in
+ * therefore the glyph VesnALIA draws on the message action button. Kept inline and in
  * sync deliberately: the pill's status icon has to read as "this is the read
  * aloud thing", not as a second play button competing with the real one.
  *
- * Both hand-drawn glyphs here carry `data-icon`, the marker bb's Icon component
- * puts on every glyph it draws. Anything that finds bb's icons by that marker
+ * Both hand-drawn glyphs here carry `data-icon`, the marker VesnALIA's Icon component
+ * puts on every glyph it draws. Anything that finds VesnALIA's icons by that marker
  * (the Fat Fingers plugin, a theme) then treats these the same as the Pause and
  * Stop glyphs beside them, instead of scaling two of the five and not the rest.
  */
@@ -522,7 +522,7 @@ function SpeakerGlyph({ className }: { className?: string }) {
 /**
  * Circular arrow with the jump size inside it, mirrored for forward. Sized
  * directly, like the Pause and Stop glyphs beside it, so the button centers it
- * and anything that enlarges bb's icons grows the glyph rather than a wrapper.
+ * and anything that enlarges VesnALIA's icons grows the glyph rather than a wrapper.
  */
 function SeekGlyph({ forward }: { forward: boolean }) {
   return (
@@ -600,7 +600,7 @@ function TransportButton({
 /** The floating transport. Renders nothing unless audio is active. */
 function ReadAloudPlayer() {
   const player = useSyncExternalStore(subscribe, getState, getState);
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
 
   // Apply the stored speed once, before anything plays.
   useEffect(() => {

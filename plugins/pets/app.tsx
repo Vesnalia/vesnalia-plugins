@@ -1,11 +1,11 @@
-// bb-plugin-pets — frontend entry.
+// alia-plugin-pets — frontend entry.
 //
 // Surfaces: the floating companion overlay (an app-wide overlay slot), the
 // Pets nav panel (den / hatchery / stats), and a slim settings section that
 // points there.
 import "./app.css";
 import { useEffect, useState } from "react";
-import { definePluginApp, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { Overlay } from "./overlay/Overlay";
 import { PetsPanel } from "./panel/PetsPanel";
@@ -13,12 +13,12 @@ import { rpc, type RpcOutput } from "./overlay/net";
 import { useMediaQuery } from "@/components/ui/hooks/use-media-query";
 import { Button } from "@/components/ui/button";
 
-/** bb's own compact breakpoint — the overlay never mounts below it. */
+/** VesnALIA's own compact breakpoint — the overlay never mounts below it. */
 const COMPACT_QUERY = "(max-width: 767px)";
 
 function PetsSettingsSection() {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [den, setDen] = useState<RpcOutput<"listDen">["pets"] | null>(null);
 
   useEffect(() => {

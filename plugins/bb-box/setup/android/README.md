@@ -7,12 +7,12 @@ template with:
 - the Android SDK's command-line tools, the emulator and platform-tools
 - the Android 15 (API 35) Google APIs system image for x86_64, with no Google
   Play
-- an AVD for each device bb-box offers: Pixel 8, Pixel Fold and Pixel Tablet,
+- an AVD for each device alia-box offers: Pixel 8, Pixel Fold and Pixel Tablet,
   each booted once and saved to its snapshot
-- `bb-box-h264`, the device's frame encoder
+- `alia-box-h264`, the device's frame encoder
 - the device's firewall, which keeps the emulator's ports to the box
 
-bb-box offers android boxes from the template once it is listed in Proxmox
+alia-box offers android boxes from the template once it is listed in Proxmox
 QEMU's settings, `linux-kvm` is on, and the template's record lists its
 devices. A box clones the template, and its device server boots the box's
 device from its snapshot, as [below](#a-box-from-the-template).
@@ -34,7 +34,7 @@ device from its snapshot, as [below](#a-box-from-the-template).
 ### 1. Accept the Android SDK's licence
 
 The SDK, the emulator and the system image are Google's, under the Android
-Software Development Kit License Agreement. bb-box does not pass them on:
+Software Development Kit License Agreement. alia-box does not pass them on:
 each template downloads them from Google, and stays in your install. You
 accept the terms, once, as root on the Proxmox host:
 
@@ -44,9 +44,9 @@ cd setup/android
 ```
 
 It shows the terms, as Google's repository manifest gives them, and checks
-that they are the terms bb-box pins. Type `yes` to accept them. It then
-writes `/etc/bb-box/android-sdk-license`, which the build needs. The
-template keeps your acceptance, and its refreshes use it. If a bb-box update
+that they are the terms alia-box pins. Type `yes` to accept them. It then
+writes `/etc/alia-box/android-sdk-license`, which the build needs. The
+template keeps your acceptance, and its refreshes use it. If a alia-box update
 pins other terms, a refresh stops and says so: run this step again, then
 build the template again.
 
@@ -64,15 +64,15 @@ It builds the Linux VM template as `build.sh linux` does, then runs
 the SDK, each part pinned by URL and SHA-256 in [`pins.json`](pins.json),
 then boots each device cold, sets its defaults, and saves its snapshot. It
 removes Java, which only `avdmanager` needs. At the end it checks a clone of
-the new template with `bb-box-check-android`: each device boots from its
-snapshot, its screens' pixels match bb-box's model table, its defaults hold,
+the new template with `alia-box-check-android`: each device boots from its
+snapshot, its screens' pixels match alia-box's model table, its defaults hold,
 its gRPC refuses no token and a wrong one, and its ports are closed. Then it
 hibernates and resumes the clone.
 
-`bb-box-h264` uses Cisco's OpenH264 binary, downloaded from Cisco. To use
+`alia-box-h264` uses Cisco's OpenH264 binary, downloaded from Cisco. To use
 x264, built from source in the template, add `--with-x264`. The same
 `build-h264.sh` builds it on macOS on arm64, for iOS devices on a Mac
-without a hardware encoder: there `bb-box-h264 --simulator <udid>` reads a
+without a hardware encoder: there `alia-box-h264 --simulator <udid>` reads a
 booted device's screen itself
 ([065](../../docs/decisions/065-macs-say-what-they-offer-and-ios-streams-in-software-where-they-must.md)). x264 takes about
 two thirds of OpenH264's time a frame, for a better picture
@@ -81,10 +81,10 @@ A refresh keeps the encoder the template has.
 
 `--replace` and `--keep` work as for the other templates.
 
-### 3. Configure bb-box
+### 3. Configure alia-box
 
 Add the template's VMID to `android-templates` in Proxmox QEMU's settings.
-Then run `bb box doctor`. Its checks for an Android template:
+Then run `alia box doctor`. Its checks for an Android template:
 
 - **Android template**: the template is there, on storage with room.
 - **Image of Android template**: its age, pins and tools, and that its record
@@ -128,25 +128,25 @@ Keys from a hardware keyboard reach apps as typed: "Hello idb 123", "teh",
 "adn" and a double space arrived unchanged, with no capital added, so the
 template leaves Gboard's own settings as they are.
 
-The emulator is started by `bb-box-emulator`, with no window, its gRPC on
+The emulator is started by `alia-box-emulator`, with no window, its gRPC on
 port 8554, and a token made new at each start, which the emulator writes to
 its discovery file under `/run/user/<uid>/avd/running/`. With a token, the
 pinned emulator listens for gRPC on loopback only. Its console, adb and
 adb's server listen on loopback too.
 
-`bb-box-emulator` knows its emulator by its process ID and the time that
+`alia-box-emulator` knows its emulator by its process ID and the time that
 process started. Both stay the same while the launcher replaces itself with
 QEMU, when the process's command line reads empty for up to a millisecond.
-If the emulator ends before Android has booted, `bb-box-emulator start` says
+If the emulator ends before Android has booted, `alia-box-emulator start` says
 how it ended, with its exit status or the signal that killed it, then the
 last 20 lines of its log, or that it wrote nothing. The image's check shows
 all of it.
 
 ## A box from the template
 
-bb-box delivers its device server to each android box, as a service of the
-box user's, `bb-box-device.service`. The server starts the emulator in a
-service of its own, `bb-box-emulator@<avd>.service`, so a restart of the
+alia-box delivers its device server to each android box, as a service of the
+box user's, `alia-box-device.service`. The server starts the emulator in a
+service of its own, `alia-box-emulator@<avd>.service`, so a restart of the
 server leaves the device running, and reattaches to it. The service checks
 the device's firewall before each start. Stopping it saves the device's
 snapshot, as `adb emu kill` does, so a switch of model, a stop of the box
@@ -156,14 +156,14 @@ the device cold, in about 15 s, as its snapshot would lose what was written
 since it was saved.
 
 The server reads the screen from the emulator's gRPC, by shared memory in
-`~/.bb-box/device/frames`, and encodes it with `bb-box-h264`. Its log is
-`~/.bb-box/device/server.log`, and the emulator's
-`~/.bb-box/device/emulator.log`.
+`~/.alia-box/device/frames`, and encodes it with `alia-box-h264`. Its log is
+`~/.alia-box/device/server.log`, and the emulator's
+`~/.alia-box/device/emulator.log`.
 
 ## The tree server
 
 The device server reads an Android device's elements through a small Java
-program of bb-box's own, run in the device by `app_process`:
+program of alia-box's own, run in the device by `app_process`:
 `setup/android/tree-server/TreeServer.java`, delivered as
 `src/device/tree-server.dex`. It is not part of the template. After a
 change to the Java, build the dex again on a Linux box with the Android
@@ -179,35 +179,35 @@ first. The same source gives the same dex.
 
 ## The device's firewall
 
-`bb-box-device-firewall.service` loads a table of bb-box's own, `inet
-bb_box_device`, at each boot, before the network. Its input hook, at
+`alia-box-device-firewall.service` loads a table of alia-box's own, `inet
+alia_box_device`, at each boot, before the network. Its input hook, at
 priority -300, accepts loopback and drops TCP ports 5037, 5554 to 5585 and
 8554 on every other interface, over IPv4 and IPv6. Docker and Tailscale
-write their own tables, never this one. `bb-box-emulator` checks the table
+write their own tables, never this one. `alia-box-emulator` checks the table
 before each start, and refuses to start the device without it. To check it
 by hand:
 
 ```sh
-bb-box-device-firewall check && echo in place
+alia-box-device-firewall check && echo in place
 ```
 
 ## Update
 
-bb-box refreshes each Android template monthly, in the nightly run of `bb
+alia-box refreshes each Android template monthly, in the nightly run of `VesnALIA
 box images refresh`. In a box cloned from the template it runs the Linux
 template's guest scripts, then `customize-android.sh`, which installs any
 SDK part whose pin changed and makes each device's AVD and snapshot again.
-The trial box runs `bb-box-check-android`, and the new template takes the
+The trial box runs `alia-box-check-android`, and the new template takes the
 old one's place only if every check passes. The old one stays as a
 rollback, as for the other templates. To refresh one now, or to try a
 refresh:
 
 ```sh
-bb box images build proxmox-qemu/9108
-bb box images build proxmox-qemu/9108 --try
+alia box images build proxmox-qemu/9108
+alia box images build proxmox-qemu/9108 --try
 ```
 
-The pins move with bb-box's releases. To change one, change its URL,
+The pins move with alia-box's releases. To change one, change its URL,
 SHA-1 and SHA-256 in [`pins.json`](pins.json): the SHA-1 is the one Google's
 repository manifest lists, and the SHA-256 is of the file it names.
 
@@ -221,7 +221,7 @@ repository manifest lists, and the SHA-256 is of the file it names.
   to the emulator and may be to the host's CPU. The image record names both
   for each device. Refresh the template on the host its boxes run on.
 - **An android box's device does not boot:** `box_status` gives the
-  device's state in words. In the box, `~/.bb-box/device/server.log` and
-  `~/.bb-box/device/emulator.log` have the rest.
+  device's state in words. In the box, `~/.alia-box/device/server.log` and
+  `~/.alia-box/device/emulator.log` have the rest.
 - **Anything else:** build again with `--keep`, and look in the build VM.
-  `~/.bb-box/device/emulator/emulator.log` has the last emulator's output.
+  `~/.alia-box/device/emulator/emulator.log` has the last emulator's output.

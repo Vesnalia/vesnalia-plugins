@@ -1,13 +1,13 @@
 /**
- * The Skills list in bb's own composer popup, opened by the composer button
- * and by the "browse skills" composer command. bb places it above or below the
+ * The Skills list in VesnALIA's own composer popup, opened by the composer button
+ * and by the "browse skills" composer command. VesnALIA places it above or below the
  * composer as it does the mention menu, uses a drawer on a narrow window,
  * closes it on Escape or a click outside, and gives the editor its focus back
  * when it closes. Inside it, `useComposer()` is the composer that opened it.
  *
  * A button at the top opens the full panel, on the skill being shown if any.
  */
-import { useBbNavigate, useComposer } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useComposer } from "@vesnalia/plugin-sdk/app";
 import { type MouseEvent, useCallback, useRef } from "react";
 import { toast } from "sonner";
 
@@ -35,7 +35,7 @@ export function toggleSkillsPopup(composer: {
 }
 
 /**
- * bb draws the popup inside the composer's form, and a press anywhere in that
+ * VesnALIA draws the popup inside the composer's form, and a press anywhere in that
  * form that is not on a control moves the focus to the editor — which closes
  * the popup. Kept here, a press on the list's text, a skill's body or the
  * scroll bar leaves the popup open, as the popover it replaced did. The root
@@ -56,7 +56,7 @@ function SkillsPopupContent({ threadId }: { threadId: string }) {
   // Mounted each time the popup opens, so each opening scans again; the
   // button's count follows, through the shared list.
   const { state } = useSkillList(threadId);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const composer = useComposer();
 
   // The skill whose detail the popup shows, if any: **Open in panel** opens
@@ -109,7 +109,7 @@ function SkillsPopupContent({ threadId }: { threadId: string }) {
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         {/* The composer under this popup is already the thread's, so after
-            Add to chat the popup only has to close; bb gives the editor its
+            Add to chat the popup only has to close; VesnALIA gives the editor its
             focus back as it does. */}
         <SkillBrowser
           threadId={threadId}

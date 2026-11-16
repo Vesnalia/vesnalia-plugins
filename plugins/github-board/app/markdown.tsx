@@ -1,11 +1,11 @@
 /**
  * Draws what `app/markdown-parse.ts` parsed. Every image goes through the
- * caller's `renderImage`, and every link through `isOpenableLink` and bb's
+ * caller's `renderImage`, and every link through `isOpenableLink` and VesnALIA's
  * `UrlLink`, so nothing in a body is requested or opened behind the panel's
  * back.
  */
 import { useState, type ReactNode } from "react";
-import { UrlLink } from "@get-bb/plugin-sdk/app";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
 
 import { cn } from "@/lib/utils";
 import { isOpenableLink } from "./link";

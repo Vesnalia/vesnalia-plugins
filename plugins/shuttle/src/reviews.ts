@@ -43,7 +43,7 @@ export function promptVars(ctx: Ctx, pr: PrRow, extra: { skill?: string; note?: 
 export async function projectFor(ctx: Ctx, pr: PrRow, explicit?: string): Promise<string> {
   if (explicit) return explicit;
   const projectId = matchProject(pr.repo, await ctx.projects(), ctx.settings().defaultProject || null);
-  if (!projectId) throw new ShuttleError(`no bb project matches ${pr.repo}; pick one, or set "Project for review threads" in Shuttle's settings`);
+  if (!projectId) throw new ShuttleError(`no VesnALIA project matches ${pr.repo}; pick one, or set "Project for review threads" in Shuttle's settings`);
   return projectId;
 }
 
@@ -64,7 +64,7 @@ export interface ReviewStarted {
 }
 
 /** `attempt` above 1: Shuttle starts the review again after a thread that could not set up its workspace (review-runs.ts). */
-/** Auto reviews whose thread bb is starting, by store: they hold a place before their run is recorded. */
+/** Auto reviews whose thread VesnALIA is starting, by store: they hold a place before their run is recorded. */
 const starting = new WeakMap<object, number>();
 
 /** The places `maxRunning` counts: auto reviews running, and those whose thread is starting. */
@@ -72,7 +72,7 @@ export function autoPlacesTaken(ctx: Ctx): number {
   return ctx.store.runningAutoReviews() + (starting.get(ctx.store) ?? 0);
 }
 
-/** Starts an auto review holding its place while bb starts the thread, so a start elsewhere meanwhile sees it taken. */
+/** Starts an auto review holding its place while VesnALIA starts the thread, so a start elsewhere meanwhile sees it taken. */
 export async function startAutoReview(ctx: Ctx, input: ReviewInput, attempt = 1): Promise<ReviewStarted> {
   starting.set(ctx.store, (starting.get(ctx.store) ?? 0) + 1);
   try {

@@ -10,7 +10,7 @@ iCloud Mail is IMAP (`imap.mail.me.com:993`) and iCloud Calendar is CalDAV
 
 That matters on macOS: reading the **local** stores (`~/Library/Mail`, `~/Library/Calendars`,
 Group Containers) needs Full Disk Access, and driving Mail.app or Calendar.app over AppleScript
-needs an Automation grant that bb's Node process cannot be given, because the Node binary ships
+needs an Automation grant that VesnALIA's Node process cannot be given, because the Node binary ships
 hardened without `com.apple.security.automation.apple-events`. The AppleEvent dies with `-1712`.
 The network path needs neither permission, so it sidesteps the problem instead of fighting it.
 

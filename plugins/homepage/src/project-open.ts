@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-// BB's local helper contract: packages/host-daemon-contract/src/local.ts.
-// Keep launches in the client so remote BB servers open apps on the user's machine.
+// VesnALIA's local helper contract: packages/host-daemon-contract/src/local.ts.
+// Keep launches in the client so remote VesnALIA servers open apps on the user's machine.
 const statusSchema = z.object({ hostId: z.string().min(1), serverUrl: z.string() });
 const targetsSchema = z.object({
   targets: z.array(z.object({
@@ -27,7 +27,7 @@ export interface ProjectOpenApps {
 
 async function readJson(url: string, signal: AbortSignal): Promise<unknown> {
   const response = await fetch(url, { signal });
-  if (!response.ok) throw new Error(`BB app discovery failed: HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`VesnALIA app discovery failed: HTTP ${response.status}`);
   return response.json();
 }
 
@@ -50,7 +50,7 @@ export async function discoverProjectApps(
   const connection = available.find(({ status }) => {
     try { return new URL(status.serverUrl).origin === serverOrigin; } catch { return false; }
   }) ?? available[0];
-  if (!connection) throw new Error("Open the BB desktop app to choose an app.");
+  if (!connection) throw new Error("Open the VesnALIA desktop app to choose an app.");
   const isLocal = connection.status.hostId === source.hostId;
   const context: ProjectOpenApps["context"] = isLocal
     ? { kind: "local" }

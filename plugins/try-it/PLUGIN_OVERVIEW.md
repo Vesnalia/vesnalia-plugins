@@ -8,4 +8,4 @@ Stop writing "open this link and check that". An agent hands you the build with 
 
 ## How it works
 
-The agent calls the `try_it` tool and carries on when you answer. Nothing leaves your BB server. Screenshots still go through the normal composer after you send.
+The agent calls the `try_it` tool and carries on when you answer. Nothing leaves your VesnALIA server. Screenshots still go through the normal composer after you send.

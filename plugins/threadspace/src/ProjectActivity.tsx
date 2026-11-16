@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { ThreadIndicator } from "./ThreadIndicator";
 import { projectActivity, projectActivityLabel, type ThreadStatusPresentation } from "./threadStatus";
 import { useLanguage } from "./i18n";

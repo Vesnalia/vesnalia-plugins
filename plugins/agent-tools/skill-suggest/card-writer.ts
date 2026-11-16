@@ -60,7 +60,7 @@ SKILL.md (truncated):
 
 export function cardWriterIntro(): string {
   return [
-    "You write routing cards for BB agent skills so a small classifier can pick the right skill for a user request.",
+    "You write routing cards for VesnALIA agent skills so a small classifier can pick the right skill for a user request.",
     `For every skill in the message, call ${TOOL_CARD_SAVE} exactly once with that skill's name and card.`,
     "Write English only, except triggers_ru. Do not read files, run commands or use other tools. Reply with one short line after the tool calls.",
   ].join("\n");

@@ -7,7 +7,7 @@ import {
   experimental_formatConformanceReport as formatConformanceReport,
   experimental_runBridgeConformance as runBridgeConformance,
   type CapturedBridgeJsonRpcOutput,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { handleLine, replyFor } from "../src/bridge";
 import { NOT_AN_AGENT, RENDER_MARKER, parseRenderPrompt, renderPrompt } from "../src/provider";
@@ -26,7 +26,7 @@ afterEach(() => {
 });
 
 describe("the renderer bridge", () => {
-  it("passes bb's provider bridge conformance suite", async () => {
+  it("passes VesnALIA's provider bridge conformance suite", async () => {
     const report = await runBridgeConformance({
       transport: { send: handleLine, takeMessages: output.takeMessages },
       providerId: "flare",

@@ -14,7 +14,7 @@ The app listening on the default input hears it. A VM that can be suspended has 
 
 ## Apps an agent starts
 
-An app that `box_run` starts in the desktop session (`desktop: true`) has the microphone, the camera and the system's audio without a prompt. bb-box's launcher starts it, and macOS treats the launcher as the app's responsible process, as it treats Terminal for what Terminal starts.
+An app that `box_run` starts in the desktop session (`desktop: true`) has the microphone, the camera and the system's audio without a prompt. alia-box's launcher starts it, and macOS treats the launcher as the app's responsible process, as it treats Terminal for what Terminal starts.
 
 An app opened with `open -a` is its own responsible process, so macOS asks about it. Computer use can answer the prompt.
 

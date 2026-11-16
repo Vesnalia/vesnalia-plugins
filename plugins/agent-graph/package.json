@@ -1,19 +1,15 @@
 {
-  "name": "bb-plugin-agent-graph",
+  "name": "alia-plugin-agent-graph",
   "version": "0.1.0",
-  "description": "A live node graph of your bb agents: threads, turns, tool calls, subagents and workflow agents, with status at a glance.",
+  "description": "A live node graph of your VesnALIA agents: threads, turns, tool calls, subagents and workflow agents, with status at a glance.",
   "license": "MIT",
   "author": {
     "name": "Nathan Colgate",
     "url": "https://github.com/nathancolgate"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/nathancolgate/bb-plugin-agent-graph.git"
-  },
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "agents",
     "subagents",
     "observability",
@@ -21,10 +17,10 @@
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.41",
-    "bbPluginSdk": ">=0.4.34"
+    "alia": ">=0.41",
+    "aliaPluginSdk": ">=0.4.34"
   },
-  "bb": {
+  "alia": {
     "name": "Agent Graph",
     "description": "A live node graph of what your agents are doing: threads, turns, tool calls, subagents and workflow agents, with status at a glance.",
     "branding": {
@@ -40,7 +36,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.34",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -67,8 +62,25 @@
     "vaul": "^1.1.2"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit -p .",
     "test": "node --experimental-strip-types --no-warnings --test tests/*.test.ts"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.34"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/agent-graph#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/agent-graph"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

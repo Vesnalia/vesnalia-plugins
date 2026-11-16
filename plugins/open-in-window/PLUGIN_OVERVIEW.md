@@ -7,11 +7,11 @@ does: a new browser tab or window, following your browser's settings.
 
 ## How it works
 
-The action opens the thread's own bb URL, the one **Copy link** copies, with
+The action opens the thread's own VesnALIA URL, the one **Copy link** copies, with
 an ordinary
 `target="_blank"` link click. The new page has no link back to the one that opened it.
 
 ## Requirements
 
 Nothing to configure. There are no settings, no commands, and no network
-access beyond loading bb itself in the new window.
+access beyond loading VesnALIA itself in the new window.

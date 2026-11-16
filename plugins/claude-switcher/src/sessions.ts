@@ -1,7 +1,7 @@
 // A project's Claude Code sessions, kept reachable across accounts.
 //
 // Claude Code keeps each session at <configDir>/projects/<key>/<sid>.jsonl
-// (and its subagents and tool results in <sid>/). bb resumes a thread with
+// (and its subagents and tool results in <sid>/). VesnALIA resumes a thread with
 // `claude --resume <sid>` under the project's CLAUDE_CONFIG_DIR, so a thread
 // whose project moved to an account whose `projects/` is another directory
 // dies with "No conversation found with session ID" (twice in the NUC's

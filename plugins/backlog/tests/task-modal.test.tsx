@@ -1,7 +1,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterEach, expect, test } from "bun:test";
 if (typeof document === "undefined") GlobalRegistrator.register();
-const { installTestPluginRuntime, renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+const { installTestPluginRuntime, renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
 installTestPluginRuntime();
 // Happy DOM does not implement the native top-layer dialog API.
 HTMLDialogElement.prototype.showModal = function () { this.setAttribute("open", ""); };

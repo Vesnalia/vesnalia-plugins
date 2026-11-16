@@ -1,6 +1,6 @@
 # Verification
 
-`corepack pnpm exec turbo run typecheck test build --filter=bb-plugin-lame-duck`
+`corepack pnpm exec turbo run typecheck test build --filter=alia-plugin-lame-duck`
 passes with eight tests (five server and three frontend).
 
 Coverage includes dispatch holds, durable pause state, drain and held-send
@@ -14,8 +14,8 @@ uses the destructive color token; all other styling follows the host theme.
 
 An earlier isolated-server check verified that a held message retained its ID
 and contents across process restart, then dispatched after explicit resume.
-An actual BB version upgrade was not tested. Restart does not auto-resume.
+An actual VesnALIA version upgrade was not tested. Restart does not auto-resume.
 
 ## SDK dependency
 
-The plugin uses published `@get-bb/plugin-sdk@0.4.84` for the shared icon API.
+The plugin uses published `@vesnalia/plugin-sdk@0.4.84` for the shared icon API.

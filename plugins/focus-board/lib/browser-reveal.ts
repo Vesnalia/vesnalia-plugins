@@ -1,11 +1,11 @@
 // The board card's "Reveal browser tab" action contract (issue #17).
 //
-// bb's own reveal contract (`bb guide browser`): the side panel opens
+// VesnALIA's own reveal contract (`alia guide browser`): the side panel opens
 // and selects the tab only when the OWNING thread is already focused;
 // otherwise nothing changes on screen. Worse for scripts and agents,
 // the surface still answers `{ok: true}` when it no-ops, so a caller
 // cannot tell success from a silent no-op — the reporting thread
-// watched `bb browser reveal` return ok while `bb browser tabs` kept
+// watched `alia browser reveal` return ok while `alia browser tabs` kept
 // `presentation: "hidden"`.
 //
 // From the Focus Board the owning thread is never focused, so a naive
@@ -87,7 +87,7 @@ export interface BrowserRevealNotice {
 }
 
 /**
- * Wait between the focus call and the reveal: bb's router applies
+ * Wait between the focus call and the reveal: VesnALIA's router applies
  * `navigate.toThread` asynchronously, and the host checks focus at
  * reveal time — too early is the race the action exists to absorb.
  */

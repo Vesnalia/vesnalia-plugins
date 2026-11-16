@@ -1,4 +1,4 @@
-import type { PluginSidebarProject, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarProject, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { TicketRef } from "../lib/tickets";
 import type { LaneOrderDirection } from "./preferences";
 import {
@@ -94,7 +94,7 @@ export interface GroupingContext {
 /**
  * True while the thread has detached work in flight: a background agent, a
  * background command, or a workflow run. The provider ends its turn as soon
- * as it launches such work, so bb reports the thread "idle" even though it
+ * as it launches such work, so VesnALIA reports the thread "idle" even though it
  * will wake itself when the work lands; `activity` is the host's live count.
  */
 export function hasBackgroundWork(thread: Pick<PluginSidebarThread, "activity">): boolean {
@@ -118,7 +118,7 @@ export function threadState(
   //
   // The Clear-error acknowledgment (issue #157, lib/error-ack-metadata)
   // silences exactly those error arms: the operator said "seen, dealt with",
-  // so the card settles out pending bb's own record unchanged. A pending
+  // so the card settles out pending VesnALIA's own record unchanged. A pending
   // interaction is never ackable — a wait for the operator needs a real
   // answer, and lib/interaction-sync.ts would fight a fake clear.
   const errorAcked = errorAcks?.has(thread.id) === true;
@@ -709,8 +709,8 @@ export function buildColumns(
   const active = threads.filter((thread) => !doneIds.has(thread.id));
   const done = threads.filter((thread) => doneIds.has(thread.id));
 
-  // Pinned threads (bb's own pin state) lead every board in a far-left
-  // column, exactly as they lead bb's own sidebar list.
+  // Pinned threads (VesnALIA's own pin state) lead every board in a far-left
+  // column, exactly as they lead VesnALIA's own sidebar list.
   const unpinned = active.filter((thread) => !thread.isPinned);
   const pinned = active.filter((thread) => thread.isPinned);
 

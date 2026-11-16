@@ -4,7 +4,7 @@
 // reading of a Gemini reply, and which backend settings are missing.
 //
 // Why: a reply that is not cleaned well ends up verbatim in the sidebar
-// (bead-bb-du7).
+// (bead-alia-du7).
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {

@@ -139,8 +139,8 @@
     "item": {
      "type": "commandExecution",
      "id": "da0cd5e2f6-i3",
-     "command": "ls /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
+     "command": "ls /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
      "status": "pending",
      "approvalStatus": null
     }
@@ -165,8 +165,8 @@
     "item": {
      "type": "commandExecution",
      "id": "da0cd5e2f6-i3",
-     "command": "ls /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
+     "command": "ls /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
      "status": "completed",
      "approvalStatus": null,
      "aggregatedOutput": "README.md\nscripts\ntodo.js\n",
@@ -223,8 +223,8 @@
     "item": {
      "type": "fileRead",
      "id": "da0cd5e2f6-i5",
-     "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/todo.js",
-     "cmd": "read { path: /Users/dev/.bb/plugins/enviro... }",
+     "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/todo.js",
+     "cmd": "read { path: /Users/dev/.vesnalia/plugins/enviro... }",
      "status": "pending"
     }
    }
@@ -238,8 +238,8 @@
     "item": {
      "type": "fileRead",
      "id": "da0cd5e2f6-i5",
-     "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/todo.js",
-     "cmd": "read { path: /Users/dev/.bb/plugins/enviro... }",
+     "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/todo.js",
+     "cmd": "read { path: /Users/dev/.vesnalia/plugins/enviro... }",
      "status": "completed"
     }
    }
@@ -348,9 +348,9 @@
      "id": "da0cd5e2f6-i8",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md",
        "kind": "add",
-       "diff": "--- /dev/null\n+++ b/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md\n+# Ideas for improving the to-do app\n+\n+- Add due dates and a `remind` command so tasks can surface when they're approaching their deadline\n+- Support tags/labels on tasks (e.g. `--tag work`) with a `filter` command to list by tag\n+- Add an `edit` command to update task text or priority without deleting and re-adding\n"
+       "diff": "--- /dev/null\n+++ b/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md\n+# Ideas for improving the to-do app\n+\n+- Add due dates and a `remind` command so tasks can surface when they're approaching their deadline\n+- Support tags/labels on tasks (e.g. `--tag work`) with a `filter` command to list by tag\n+- Add an `edit` command to update task text or priority without deleting and re-adding\n"
       }
      ],
      "status": "pending",
@@ -369,9 +369,9 @@
      "id": "da0cd5e2f6-i9",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/format.js",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/format.js",
        "kind": "add",
-       "diff": "--- /dev/null\n+++ b/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/format.js\n+/**\n+ * Format a task as a single-line string.\n+ * @param {{ id: number, text: string, priority?: string, done?: boolean }} task\n+ * @returns {string}\n+ */\n+function formatTask(task) {\n+  const check = task.done ? \"x\" : \" \";\n+  const priority = task.priority || \"medium\";\n+  return `${task.id} [${check}] (${priority}) ${task.text}`;\n+}\n+\n+module.exports = { formatTask };\n"
+       "diff": "--- /dev/null\n+++ b/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/format.js\n+/**\n+ * Format a task as a single-line string.\n+ * @param {{ id: number, text: string, priority?: string, done?: boolean }} task\n+ * @returns {string}\n+ */\n+function formatTask(task) {\n+  const check = task.done ? \"x\" : \" \";\n+  const priority = task.priority || \"medium\";\n+  return `${task.id} [${check}] (${priority}) ${task.text}`;\n+}\n+\n+module.exports = { formatTask };\n"
       }
      ],
      "status": "pending",
@@ -390,9 +390,9 @@
      "id": "da0cd5e2f6-i9",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/format.js",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/format.js",
        "kind": "add",
-       "diff": "--- /dev/null\n+++ b/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/format.js\n+/**\n+ * Format a task as a single-line string.\n+ * @param {{ id: number, text: string, priority?: string, done?: boolean }} task\n+ * @returns {string}\n+ */\n+function formatTask(task) {\n+  const check = task.done ? \"x\" : \" \";\n+  const priority = task.priority || \"medium\";\n+  return `${task.id} [${check}] (${priority}) ${task.text}`;\n+}\n+\n+module.exports = { formatTask };\n"
+       "diff": "--- /dev/null\n+++ b/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/format.js\n+/**\n+ * Format a task as a single-line string.\n+ * @param {{ id: number, text: string, priority?: string, done?: boolean }} task\n+ * @returns {string}\n+ */\n+function formatTask(task) {\n+  const check = task.done ? \"x\" : \" \";\n+  const priority = task.priority || \"medium\";\n+  return `${task.id} [${check}] (${priority}) ${task.text}`;\n+}\n+\n+module.exports = { formatTask };\n"
       }
      ],
      "status": "completed",
@@ -411,9 +411,9 @@
      "id": "da0cd5e2f6-i8",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md",
        "kind": "add",
-       "diff": "--- /dev/null\n+++ b/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md\n+# Ideas for improving the to-do app\n+\n+- Add due dates and a `remind` command so tasks can surface when they're approaching their deadline\n+- Support tags/labels on tasks (e.g. `--tag work`) with a `filter` command to list by tag\n+- Add an `edit` command to update task text or priority without deleting and re-adding\n"
+       "diff": "--- /dev/null\n+++ b/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md\n+# Ideas for improving the to-do app\n+\n+- Add due dates and a `remind` command so tasks can surface when they're approaching their deadline\n+- Support tags/labels on tasks (e.g. `--tag work`) with a `filter` command to list by tag\n+- Add an `edit` command to update task text or priority without deleting and re-adding\n"
       }
      ],
      "status": "completed",
@@ -503,8 +503,8 @@
     "item": {
      "type": "fileRead",
      "id": "da0cd5e2f6-i12",
-     "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md",
-     "cmd": "read { path: /Users/dev/.bb/plugins/enviro... }",
+     "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md",
+     "cmd": "read { path: /Users/dev/.vesnalia/plugins/enviro... }",
      "status": "pending"
     }
    }
@@ -518,8 +518,8 @@
     "item": {
      "type": "fileRead",
      "id": "da0cd5e2f6-i13",
-     "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/format.js",
-     "cmd": "read { path: /Users/dev/.bb/plugins/enviro... }",
+     "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/format.js",
+     "cmd": "read { path: /Users/dev/.vesnalia/plugins/enviro... }",
      "status": "pending"
     }
    }
@@ -533,8 +533,8 @@
     "item": {
      "type": "fileRead",
      "id": "da0cd5e2f6-i12",
-     "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md",
-     "cmd": "read { path: /Users/dev/.bb/plugins/enviro... }",
+     "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md",
+     "cmd": "read { path: /Users/dev/.vesnalia/plugins/enviro... }",
      "status": "completed"
     }
    }
@@ -548,8 +548,8 @@
     "item": {
      "type": "fileRead",
      "id": "da0cd5e2f6-i13",
-     "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/format.js",
-     "cmd": "read { path: /Users/dev/.bb/plugins/enviro... }",
+     "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/format.js",
+     "cmd": "read { path: /Users/dev/.vesnalia/plugins/enviro... }",
      "status": "completed"
     }
    }
@@ -646,8 +646,8 @@
     "item": {
      "type": "commandExecution",
      "id": "da0cd5e2f6-i16",
-     "command": "cd /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground && node -e \"const { formatTask } = require('./lib/format'); console.log(formatTask({ id: 1, text: 'Buy milk', priority: 'high', done: false })); console.log(formatTask({ id: 2, text: 'Write docs', done: true }));\"",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
+     "command": "cd /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground && node -e \"const { formatTask } = require('./lib/format'); console.log(formatTask({ id: 1, text: 'Buy milk', priority: 'high', done: false })); console.log(formatTask({ id: 2, text: 'Write docs', done: true }));\"",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
      "status": "pending",
      "approvalStatus": null
     }
@@ -672,8 +672,8 @@
     "item": {
      "type": "commandExecution",
      "id": "da0cd5e2f6-i16",
-     "command": "cd /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground && node -e \"const { formatTask } = require('./lib/format'); console.log(formatTask({ id: 1, text: 'Buy milk', priority: 'high', done: false })); console.log(formatTask({ id: 2, text: 'Write docs', done: true }));\"",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
+     "command": "cd /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground && node -e \"const { formatTask } = require('./lib/format'); console.log(formatTask({ id: 1, text: 'Buy milk', priority: 'high', done: false })); console.log(formatTask({ id: 2, text: 'Write docs', done: true }));\"",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
      "status": "completed",
      "approvalStatus": null,
      "aggregatedOutput": "1 [ ] (high) Buy milk\n2 [x] (medium) Write docs\n",
@@ -1100,7 +1100,7 @@
      "id": "dad3c480cd-i2",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/todo.js",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/todo.js",
        "kind": "update"
       }
      ],
@@ -1118,8 +1118,8 @@
     "item": {
      "type": "commandExecution",
      "id": "dad3c480cd-i3",
-     "command": "rm /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
+     "command": "rm /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
      "status": "pending",
      "approvalStatus": null
     }
@@ -1136,7 +1136,7 @@
      "id": "dad3c480cd-i2",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/todo.js",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/todo.js",
        "kind": "update"
       }
      ],
@@ -1154,8 +1154,8 @@
     "item": {
      "type": "commandExecution",
      "id": "dad3c480cd-i3",
-     "command": "rm /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
+     "command": "rm /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
      "status": "completed",
      "approvalStatus": null,
      "exitCode": 0
@@ -1281,8 +1281,8 @@
     "item": {
      "type": "fileRead",
      "id": "dad3c480cd-i5",
-     "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/todo.js",
-     "cmd": "read { path: /Users/dev/.bb/plugins/enviro... }",
+     "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/todo.js",
+     "cmd": "read { path: /Users/dev/.vesnalia/plugins/enviro... }",
      "status": "pending"
     }
    }
@@ -1296,8 +1296,8 @@
     "item": {
      "type": "commandExecution",
      "id": "dad3c480cd-i6",
-     "command": "ls /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md 2>&1",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
+     "command": "ls /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md 2>&1",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
      "status": "pending",
      "approvalStatus": null
     }
@@ -1312,8 +1312,8 @@
     "item": {
      "type": "fileRead",
      "id": "dad3c480cd-i5",
-     "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/todo.js",
-     "cmd": "read { path: /Users/dev/.bb/plugins/enviro... }",
+     "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/todo.js",
+     "cmd": "read { path: /Users/dev/.vesnalia/plugins/enviro... }",
      "status": "completed"
     }
    }
@@ -1325,7 +1325,7 @@
    "data": {
     "providerThreadId": "thr_tzb6pnfr3t",
     "itemId": "dad3c480cd-i6",
-    "delta": "ls: /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md: No such file or directory\n"
+    "delta": "ls: /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md: No such file or directory\n"
    }
   },
   {
@@ -1337,11 +1337,11 @@
     "item": {
      "type": "commandExecution",
      "id": "dad3c480cd-i6",
-     "command": "ls /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md 2>&1",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
+     "command": "ls /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md 2>&1",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
      "status": "failed",
      "approvalStatus": null,
-     "aggregatedOutput": "ls: /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md: No such file or directory\n\n\nCommand exited with code 1",
+     "aggregatedOutput": "ls: /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ideas.md: No such file or directory\n\n\nCommand exited with code 1",
      "exitCode": 1
     }
    }
@@ -1508,8 +1508,8 @@
     "item": {
      "type": "commandExecution",
      "id": "dad3c480cd-i9",
-     "command": "ls /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/scripts/run.sh",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
+     "command": "ls /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/scripts/run.sh",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
      "status": "pending",
      "approvalStatus": null
     }
@@ -1524,8 +1524,8 @@
     "item": {
      "type": "commandExecution",
      "id": "dad3c480cd-i10",
-     "command": "cd /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground && TODO_FILE=/tmp/todo_test_$$.json node -e \"\nprocess.env.TODO_FILE='/tmp/todo_test_smoke.json';\nrequire('fs').writeFileSync('/tmp/todo_test_smoke.json', JSON.stringify([\n  {id:1, text:'Buy milk', priority:'high', done:false},\n  {id:2, text:'Write docs', priority:'medium', done:true}\n]));\n\" && TODO_FILE=/tmp/todo_test_smoke.json node todo.js list && rm -f /tmp/todo_test_smoke.json",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
+     "command": "cd /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground && TODO_FILE=/tmp/todo_test_$$.json node -e \"\nprocess.env.TODO_FILE='/tmp/todo_test_smoke.json';\nrequire('fs').writeFileSync('/tmp/todo_test_smoke.json', JSON.stringify([\n  {id:1, text:'Buy milk', priority:'high', done:false},\n  {id:2, text:'Write docs', priority:'medium', done:true}\n]));\n\" && TODO_FILE=/tmp/todo_test_smoke.json node todo.js list && rm -f /tmp/todo_test_smoke.json",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
      "status": "pending",
      "approvalStatus": null
     }
@@ -1538,7 +1538,7 @@
    "data": {
     "providerThreadId": "thr_tzb6pnfr3t",
     "itemId": "dad3c480cd-i9",
-    "delta": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/scripts/run.sh\n"
+    "delta": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/scripts/run.sh\n"
    }
   },
   {
@@ -1550,11 +1550,11 @@
     "item": {
      "type": "commandExecution",
      "id": "dad3c480cd-i9",
-     "command": "ls /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/scripts/run.sh",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
+     "command": "ls /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/scripts/run.sh",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
      "status": "completed",
      "approvalStatus": null,
-     "aggregatedOutput": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/scripts/run.sh\n",
+     "aggregatedOutput": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/scripts/run.sh\n",
      "exitCode": 0
     }
    }
@@ -1588,8 +1588,8 @@
     "item": {
      "type": "commandExecution",
      "id": "dad3c480cd-i10",
-     "command": "cd /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground && TODO_FILE=/tmp/todo_test_$$.json node -e \"\nprocess.env.TODO_FILE='/tmp/todo_test_smoke.json';\nrequire('fs').writeFileSync('/tmp/todo_test_smoke.json', JSON.stringify([\n  {id:1, text:'Buy milk', priority:'high', done:false},\n  {id:2, text:'Write docs', priority:'medium', done:true}\n]));\n\" && TODO_FILE=/tmp/todo_test_smoke.json node todo.js list && rm -f /tmp/todo_test_smoke.json",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
+     "command": "cd /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground && TODO_FILE=/tmp/todo_test_$$.json node -e \"\nprocess.env.TODO_FILE='/tmp/todo_test_smoke.json';\nrequire('fs').writeFileSync('/tmp/todo_test_smoke.json', JSON.stringify([\n  {id:1, text:'Buy milk', priority:'high', done:false},\n  {id:2, text:'Write docs', priority:'medium', done:true}\n]));\n\" && TODO_FILE=/tmp/todo_test_smoke.json node todo.js list && rm -f /tmp/todo_test_smoke.json",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
      "status": "completed",
      "approvalStatus": null,
      "aggregatedOutput": "1 [ ] (high) Buy milk\n2 [x] (medium) Write docs\n",
@@ -1955,8 +1955,8 @@
     "item": {
      "type": "commandExecution",
      "id": "dad3c480cd-i14",
-     "command": "ls /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/ /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/scripts/",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
+     "command": "ls /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/ /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/scripts/",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
      "status": "pending",
      "approvalStatus": null
     }
@@ -1969,7 +1969,7 @@
    "data": {
     "providerThreadId": "thr_tzb6pnfr3t",
     "itemId": "dad3c480cd-i14",
-    "delta": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/:\nformat.js\n\n/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/:\n\n/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/scripts/:\nrun.sh\n"
+    "delta": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/:\nformat.js\n\n/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/:\n\n/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/scripts/:\nrun.sh\n"
    }
   },
   {
@@ -1981,11 +1981,11 @@
     "item": {
      "type": "commandExecution",
      "id": "dad3c480cd-i14",
-     "command": "ls /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/ /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/scripts/",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
+     "command": "ls /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/ /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/ /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/scripts/",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground",
      "status": "completed",
      "approvalStatus": null,
-     "aggregatedOutput": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/:\nformat.js\n\n/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/:\n\n/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/scripts/:\nrun.sh\n",
+     "aggregatedOutput": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/lib/:\nformat.js\n\n/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/notes/:\n\n/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_tzb6pnfr3t-1/rewind-playground/scripts/:\nrun.sh\n",
      "exitCode": 0
     }
    }

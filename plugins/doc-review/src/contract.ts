@@ -1,6 +1,6 @@
 // RPC contract between the review panel (app.tsx) and the backend. app.tsx
 // imports only its type, so zod never reaches the frontend bundle.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { SheetData } from "../lib/sheet-model.js";
 import { DRAW_TOOLS } from "./types.js";
@@ -251,7 +251,7 @@ const sendTargetSchema = z.discriminatedUnion("kind", [
       threadId: z.string().min(1),
       /**
        * How the message meets an agent that is still working. `auto` (the
-       * default) does what Enter does for this person in bb.
+       * default) does what Enter does for this person in VesnALIA.
        */
       mode: z.enum(["auto", "queue-if-active", "steer-if-active"]).optional(),
     })
@@ -299,13 +299,13 @@ export const rpcContract = defineRpcContract({
       .strict(),
     output: z.object({ path: z.string() }),
   },
-  /** A live site opened in bb's browser: one document per origin. */
+  /** A live site opened in VesnALIA's browser: one document per origin. */
   "web.open": {
     input: z.object({ url: z.string().min(1).max(MAX_URL) }).strict(),
     output: z.object({ doc: docSchema }),
   },
   /**
-   * A screenshot of a Browser tab in bb Desktop, for a drawing's picture.
+   * A screenshot of a Browser tab in VesnALIA Desktop, for a drawing's picture.
    * The server keeps it and returns a token for `comments.create`, so the
    * picture does not travel back to the panel; fails when no connected
    * desktop app has the tab.
@@ -529,7 +529,7 @@ export const rpcContract = defineRpcContract({
     input: z.object({ docId: z.string(), signer: signerSchema, lang: z.enum(["en", "ru"]).optional() }).strict(),
     output: z.object({ link: linkSchema, name: z.string(), count: z.number() }),
   },
-  /** Comments a PDF carries from another bb's export, if any. */
+  /** Comments a PDF carries from another VesnALIA's export, if any. */
   "doc.shared": {
     input: z.object({ docId: z.string() }).strict(),
     output: z.object({

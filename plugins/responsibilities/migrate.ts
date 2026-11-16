@@ -1,7 +1,7 @@
 import { copyFileSync, existsSync, mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 /**
  * Takeover of another plugin's attention table (Model & Effort Badges kept it
@@ -9,8 +9,8 @@ import type { BbPluginApi } from "@get-bb/plugin-sdk";
  * The import merges on every load, so no marker can skip records written since;
  * the history scan runs once per source file version.
  */
-type Db = ReturnType<BbPluginApi["storage"]["database"]>;
-type Sdk = BbPluginApi["sdk"];
+type Db = ReturnType<AliaPluginApi["storage"]["database"]>;
+type Sdk = AliaPluginApi["sdk"];
 type Event = Awaited<ReturnType<Sdk["threads"]["events"]["list"]>>[number];
 
 export const MIGRATION_TABLE = "CREATE TABLE migration (source TEXT PRIMARY KEY, scanned_version REAL)";
@@ -52,7 +52,7 @@ export const markScanned = (db: Db, file: string, version: number) =>
  * The newest result among a thread's completed root turns, read in seq order:
  * each turn that ended `completed` contributes its last non-empty assistant
  * message. A root turn is one whose `turn/started` has no `parentToolCallId`,
- * as BB itself decides when a completion ends the thread's run; a subagent's
+ * as VesnALIA itself decides when a completion ends the thread's run; a subagent's
  * nested turn is not the thread's output. A turn still open, failed or
  * interrupted contributes nothing, so an intermediate message is never a
  * result. A legacy manager message is complete text, so it counts as it is.

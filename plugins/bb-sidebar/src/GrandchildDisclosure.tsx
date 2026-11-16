@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./components/Icon";
 import { Tooltip } from "./components/Tooltip";
 import { cn } from "./lib/utils";
@@ -20,13 +20,13 @@ import {
 export function childStatusBadgeClass(kind: ChildStatusKind | null): string {
   switch (kind) {
     case "failed":
-      return "bg-[color:var(--bb-sidebar-badge-failed-bg)] text-[color:var(--bb-sidebar-badge-failed-fg)]";
+      return "bg-[color:var(--alia-sidebar-badge-failed-bg)] text-[color:var(--alia-sidebar-badge-failed-fg)]";
     case "needs-you":
-      return "bg-[color:var(--bb-sidebar-badge-needs-you-bg)] text-[color:var(--bb-sidebar-badge-needs-you-fg)]";
+      return "bg-[color:var(--alia-sidebar-badge-needs-you-bg)] text-[color:var(--alia-sidebar-badge-needs-you-fg)]";
     case "done":
-      return "bg-[color:var(--bb-sidebar-badge-done-bg)] text-[color:var(--bb-sidebar-badge-done-fg)]";
+      return "bg-[color:var(--alia-sidebar-badge-done-bg)] text-[color:var(--alia-sidebar-badge-done-fg)]";
     case "working":
-      return "bg-[color:var(--bb-sidebar-badge-working-bg)] text-[color:var(--bb-sidebar-badge-working-fg)]";
+      return "bg-[color:var(--alia-sidebar-badge-working-bg)] text-[color:var(--alia-sidebar-badge-working-fg)]";
     default:
       return "bg-muted text-foreground";
   }

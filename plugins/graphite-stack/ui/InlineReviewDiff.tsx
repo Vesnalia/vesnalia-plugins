@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { experimental_useCodeTheme } from "@get-bb/plugin-sdk/app";
-import type { PluginCodeThemeData } from "@get-bb/plugin-sdk/app";
+import { experimental_useCodeTheme } from "@vesnalia/plugin-sdk/app";
+import type { PluginCodeThemeData } from "@vesnalia/plugin-sdk/app";
 import { createHighlighterCore } from "shiki/core";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import ts from "@shikijs/langs/typescript";
@@ -42,7 +42,7 @@ function highlighterFor(theme: PluginCodeThemeData): Promise<HighlighterCore> {
   const cached = highlighters.get(theme);
   if (cached) return cached;
   const promise = createHighlighterCore({
-    themes: [{ name: "bb-current", type: theme.type, fg: theme.fg, bg: theme.bg, colors: { ...theme.colors }, tokenColors: theme.tokenColors.map((rule) => ({ ...rule, scope: typeof rule.scope === "string" ? rule.scope : rule.scope ? [...rule.scope] : undefined })) }],
+    themes: [{ name: "alia-current", type: theme.type, fg: theme.fg, bg: theme.bg, colors: { ...theme.colors }, tokenColors: theme.tokenColors.map((rule) => ({ ...rule, scope: typeof rule.scope === "string" ? rule.scope : rule.scope ? [...rule.scope] : undefined })) }],
     langs: [ts, tsx, js, json, python],
     engine: createJavaScriptRegexEngine(),
   });
@@ -51,7 +51,7 @@ function highlighterFor(theme: PluginCodeThemeData): Promise<HighlighterCore> {
   return promise;
 }
 
-/** Render comment anchors in the patch and use BB's active code theme. */
+/** Render comment anchors in the patch and use VesnALIA's active code theme. */
 export function InlineReviewDiff({ patch, path, renderLine, onAdd }: { patch: string; path: string; renderLine?: (side: Side, line: number) => ReactNode; onAdd?: (side: Side, line: number) => void }) {
   const rows = useMemo(() => parsePatch(patch), [patch]);
   const { theme, mode } = experimental_useCodeTheme();
@@ -63,7 +63,7 @@ export function InlineReviewDiff({ patch, path, renderLine, onAdd }: { patch: st
     if (!theme || !lang || patch.length > 400_000) return;
     const source = rows.filter((row) => row.tokenIndex !== undefined).map((row) => row.text.slice(1)).join("\n");
     highlighterFor(theme).then((highlighter) => {
-      const tokens = highlighter.codeToTokens(source, { lang, theme: "bb-current" }).tokens;
+      const tokens = highlighter.codeToTokens(source, { lang, theme: "alia-current" }).tokens;
       if (!cancelled) setHighlighted({ key, tokens });
     }).catch(() => { if (!cancelled) setHighlighted(null); });
     return () => { cancelled = true; };

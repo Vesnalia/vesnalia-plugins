@@ -1,6 +1,6 @@
 // The plugin SDK has no way to hold a composer's send, so while Magic Compose is still
 // deciding where a draft should run, it is held here against the composer's
-// DOM. Every selector BB's markup is trusted for lives in this file. A BB
+// DOM. Every selector VesnALIA's markup is trusted for lives in this file. A VesnALIA
 // release that renames them stops the hold, so a draft could be sent a moment
 // before Magic Compose has caught up with it; nothing worse.
 
@@ -44,7 +44,7 @@ export function holdSubmit(root: HTMLElement, isHeld: () => boolean): () => void
     hold(event);
   };
 
-  // BB sends on touch from pointerup, before any click or form submit.
+  // VesnALIA sends on touch from pointerup, before any click or form submit.
   const onPointerUp = (event: PointerEvent) => {
     if (event.pointerType === "touch" && within(event.target, SUBMIT_BUTTON)) hold(event);
   };

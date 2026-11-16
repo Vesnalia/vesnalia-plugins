@@ -9,7 +9,7 @@ const THREAD_ID = /^[A-Za-z0-9_-]{1,64}$/;
 const MAX_KEY_LENGTH = 400;
 const KEY_TEXT = /^(?:[A-Za-z0-9._-]|~[0-9A-Fa-f]{2})*$/;
 
-// bb encodes every address segment again and its router then rewrites "%2F", so a percent-encoded key
+// VesnALIA encodes every address segment again and its router then rewrites "%2F", so a percent-encoded key
 // comes back altered. A key is written with letters, digits, "." "_" "-" and "~XX" (a byte in hex)
 // instead: no stage of the round trip changes those.
 function encodeKey(key: string): string {

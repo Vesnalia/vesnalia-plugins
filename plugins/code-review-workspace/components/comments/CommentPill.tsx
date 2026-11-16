@@ -31,7 +31,7 @@ const TWO_LINES = {
 /**
  * A comment in the code folded to one line (Fold comments, `i`): its icon, who, its state or severity, its first line,
  * what's under it ("2 replies · Resolved"), and Show, which opens it in full. 28px tall, 44px on a coarse pointer; its
- * frame keeps the card's: dashed with an edge while it's only in BB, solid on GitHub, muted when private.
+ * frame keeps the card's: dashed with an edge while it's only in VesnALIA, solid on GitHub, muted when private.
  */
 export function CommentPill({ frame, icon, who, words, tag, stateBadge, badge, briefBadge, text, more, name, onShow, className }: {
   /** The card's frame classes (look.tsx). */

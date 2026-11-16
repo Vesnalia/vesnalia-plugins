@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { fireEvent, waitFor, within } from "@testing-library/react";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@get-bb/plugin-sdk/testing/app";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@vesnalia/plugin-sdk/testing/app";
 import app from "../../app.tsx";
 import { createServerRuntime } from "../../server.ts";
 import { rpcContract } from "../../src/ui/contract.ts";
@@ -34,7 +34,7 @@ async function server() {
  fake.harness.sdk.stub("threads.getPluginMetadata", async () => ({}));
  fake.harness.sdk.stub("threads.experimental_listPluginMetadata", async () => ({ threads: [] }));
  cleanups.push(() => fake.harness.lifecycle.dispose());
- await createServerRuntime(fake.bb, { search: async (query) => searched(query), fetch: async (url) => page(url) });
+ await createServerRuntime(fake.alia, { search: async (query) => searched(query), fetch: async (url) => page(url) });
  const rpc = Object.fromEntries(Object.keys(rpcContract).map((method) => [method, (input: unknown) => fake.harness.behavior.callRpc(method, input)])) as unknown as PluginRpcTestHandlers<typeof rpcContract>;
  const tool = (name: string, input: unknown) => fake.harness.behavior.callAgentTool(name, input, { projectId: "proj_a", threadId: "thr_a" });
  return { fake, rpc, tool };

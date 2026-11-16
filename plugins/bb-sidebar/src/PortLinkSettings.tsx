@@ -1,4 +1,4 @@
-import { useSidebarThreads } from "./bb-sdk";
+import { useSidebarThreads } from "./alia-sdk";
 import { BROWSER_EVENTS } from "./lib/browser-events";
 import { STORAGE_KEYS } from "./lib/storage-keys";
 

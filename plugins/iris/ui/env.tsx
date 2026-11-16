@@ -2,7 +2,7 @@
 // and a way to run actions (put text in the composer, send it, open a file).
 
 import { createContext, useCallback, useContext, useMemo, useRef } from "react";
-import { experimental_copyToClipboard, useBbNavigate, useComposers, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard, useAliaNavigate, useComposers, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { ActionValue } from "../core/evaluate";
 import { IrisError } from "../core/evaluate";
@@ -54,7 +54,7 @@ export function useActions(opts: {
   submit?: (value: unknown) => void;
 }): Pick<IrisEnv, "run" | "perform" | "report"> {
   const composers = useComposers();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const rpc = useRpc<RpcContract>();
   const ref = useRef({ composers, navigate, rpc, ...opts });
   ref.current = { composers, navigate, rpc, ...opts };
@@ -86,8 +86,8 @@ export function useActions(opts: {
       const files = await threadFiles();
       if (!files || !threadId) throw new IrisError("Files open only inside a thread");
       const location = line ? ({ kind: "line", line, column: null } as const) : null;
-      if (path.startsWith("$BB_THREAD_STORAGE/") || (files.storagePath && path.startsWith(`${files.storagePath}/`))) {
-        const rel = path.startsWith("$BB_THREAD_STORAGE/") ? path.slice("$BB_THREAD_STORAGE/".length) : path.slice(files.storagePath!.length + 1);
+      if (path.startsWith("$ALIA_THREAD_STORAGE/") || (files.storagePath && path.startsWith(`${files.storagePath}/`))) {
+        const rel = path.startsWith("$ALIA_THREAD_STORAGE/") ? path.slice("$ALIA_THREAD_STORAGE/".length) : path.slice(files.storagePath!.length + 1);
         navigate.experimental_openFilePreview({ target: { kind: "thread-storage", threadId, path: rel }, location });
         return;
       }

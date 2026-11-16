@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // The settings page section and the formatters in both languages.
 
-import { loadPluginApp } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp } from "@vesnalia/plugin-sdk/testing/app";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { en, ru } from "../src/app/i18n";
@@ -44,7 +44,7 @@ describe("settings section", () => {
     expect(root.textContent).toContain("Poll error: codex: boom");
     expect(root.textContent).toContain("Claude Code: ok");
     expect(root.textContent).toContain("acp-cursor: not installed");
-    expect(root.textContent).toContain("bb--provider-usage");
+    expect(root.textContent).toContain("alia--provider-usage");
     expect(screen.getAllByRole("listitem").some((li) => li.textContent?.includes("(Codex), auto: 85% → 30%"))).toBe(true);
 
     fireEvent.click(screen.getByRole("button", { name: "Refresh now" }));

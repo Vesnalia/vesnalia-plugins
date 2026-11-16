@@ -3,7 +3,7 @@
  *
  * `LogStoreManifest.plist` is written as an XML plist (verified on Xcode 26.6),
  * so parsing it in pure JS avoids shelling out to `plutil` — which in turn lets
- * the same code read manifests on remote hosts through `bb.sdk.files`.
+ * the same code read manifests on remote hosts through `alia.sdk.files`.
  *
  * Deliberately not a general plist implementation: it covers the value types
  * Xcode actually emits in these manifests.

@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { CloudIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useId, useState, type ReactNode } from "react";
@@ -8,25 +8,25 @@ import { cn } from "@/lib/utils";
 import type { BackendConfig } from "../core/document.ts";
 import type { ConfigState } from "../plugin/configuration.ts";
 import { Badge, Meta, StatusDot, type Tone } from "./common.tsx";
-import { backendHostChip, onBbMachine } from "./settings-status.ts";
+import { backendHostChip, onAliaMachine } from "./settings-status.ts";
 import { useSettings } from "./settings-context.tsx";
 
 export const FOCUS_RING = "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring";
 
 const PROVIDER_ICONS: Readonly<Record<string, string>> = {
-  "proxmox-lxc": "bb-box/proxmox",
-  "proxmox-qemu": "bb-box/proxmox",
-  docker: "bb-box/docker",
-  tart: "bb-box/laptop",
-  "ssh-pool": "bb-box/server",
-  microsandbox: "bb-box/plug",
+  "proxmox-lxc": "alia-box/proxmox",
+  "proxmox-qemu": "alia-box/proxmox",
+  docker: "alia-box/docker",
+  tart: "alia-box/laptop",
+  "ssh-pool": "alia-box/server",
+  microsandbox: "alia-box/plug",
 };
 
 const CLOUD_PROVIDERS = new Set(["hetzner", "namespace"]);
 
 export function ProviderGlyph({ type, className }: { type: string; className?: string }) {
   if (CLOUD_PROVIDERS.has(type)) return <HugeiconsIcon icon={CloudIcon} className={cn("size-4 shrink-0 text-muted-foreground", className)} aria-hidden="true" />;
-  return <Icon name={PROVIDER_ICONS[type] ?? "bb-box/box"} className={cn("size-4 shrink-0 text-muted-foreground", className)} aria-hidden />;
+  return <Icon name={PROVIDER_ICONS[type] ?? "alia-box/box"} className={cn("size-4 shrink-0 text-muted-foreground", className)} aria-hidden />;
 }
 
 export function Group({ title, description, action, children }: { title: string; description?: ReactNode; action?: ReactNode; children: ReactNode }) {
@@ -201,9 +201,9 @@ export function NotHere({ what }: { what: string }) {
   const { nav } = useSettings();
   return (
     <div className="space-y-3">
-      <PageHeader title={`This ${what} is not here`} description={`BB Box's configuration has no such ${what}. It may have been removed, or the link may be wrong.`} />
+      <PageHeader title={`This ${what} is not here`} description={`VesnALIA Box's configuration has no such ${what}. It may have been removed, or the link may be wrong.`} />
       <Button type="button" variant="outline" size="sm" className="h-8" onClick={nav.toOverview}>
-        Go to BB Box settings
+        Go to VesnALIA Box settings
       </Button>
     </div>
   );
@@ -214,7 +214,7 @@ export function BackendChips({ state, config }: { state: ConfigState; config: Ba
   return (
     <>
       {chip ? <Badge>{chip}</Badge> : null}
-      {onBbMachine(config) ? <Badge>BB machine</Badge> : null}
+      {onAliaMachine(config) ? <Badge>VesnALIA machine</Badge> : null}
     </>
   );
 }

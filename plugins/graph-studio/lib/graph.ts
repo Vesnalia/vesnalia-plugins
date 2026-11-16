@@ -129,7 +129,7 @@ export const KIND_LABEL: Record<NodeKind, string> = {
 };
 
 /**
- * Reasoning levels BB accepts on `threads.spawn`. Kept as a plain list rather
+ * Reasoning levels VesnALIA accepts on `threads.spawn`. Kept as a plain list rather
  * than a free string so an imported graph cannot carry a level the host will
  * reject only once a worker is already being created.
  */
@@ -178,7 +178,7 @@ export const nodeSchema = z.object({
   /** Sent to the spawned thread. `{{input}}` and `{{node_id}}` interpolate. */
   prompt: z.string().max(8000).default(""),
   /**
-   * BB skill ids the node's worker should apply. A skill is a reviewed,
+   * VesnALIA skill ids the node's worker should apply. A skill is a reviewed,
    * reusable instruction set — naming one is usually better than re-writing
    * its rules into `prompt` by hand. The worker loads them itself (progressive
    * disclosure), so this stays cheap in context.
@@ -242,7 +242,7 @@ export const nodeSchema = z.object({
   member: z.string().trim().max(200).default(""),
   /**
    * Optional explicit execution; unset inherits the parent thread. The four
-   * fields are one decision, not four: BB only honours a model together with
+   * fields are one decision, not four: VesnALIA only honours a model together with
    * the provider it belongs to, so half a selection is dropped rather than
    * applied. `nodeExecution` is the single place that judges that, and
    * `validateGraph` rejects a half-filled node instead of letting it look
@@ -299,18 +299,18 @@ export function nodeExecution(node: GraphNode): NodeExecution | null {
 
 /**
  * What actually goes to `threads.spawn`. Separate from `NodeExecution` because
- * an inherited run has a provider but no model: the thread record BB hands back
+ * an inherited run has a provider but no model: the thread record VesnALIA hands back
  * carries `providerId` and nothing else.
  */
 export type SpawnExecution = {
   providerId: string;
-  /** Only set for an explicit selection; inherited runs let BB pick. */
+  /** Only set for an explicit selection; inherited runs let VesnALIA pick. */
   model: string | null;
   reasoningLevel: ReasoningLevel | null;
   serviceTier: ServiceTier | null;
   /**
    * Did the graph choose this, or did we copy it off the parent? Drives
-   * `executionInputSources`, so BB does not file an inherited provider as a
+   * `executionInputSources`, so VesnALIA does not file an inherited provider as a
    * deliberate choice.
    */
   explicit: boolean;
@@ -320,14 +320,14 @@ export type SpawnExecution = {
  * The execution a spawn should carry.
  *
  * A node with no selection is documented as inheriting the parent thread — but
- * omitting `providerId` does *not* inherit anything. BB then falls back to the
+ * omitting `providerId` does *not* inherit anything. VesnALIA then falls back to the
  * remembered project default and finally to the provider catalog default, so
  * the same graph ran on `claude-code` in one run and on `pi` in the next, with
  * no way to tell from the graph which it would be. Naming the parent's
  * provider makes the promise true and the run reproducible.
  *
  * Returning null means "we genuinely know nothing" — only when there is no
- * parent provider either. Then BB's defaults are the honest answer.
+ * parent provider either. Then VesnALIA's defaults are the honest answer.
  */
 export function spawnExecution(
   execution: NodeExecution | null,
@@ -447,7 +447,7 @@ export const graphSchema = z.object({
   /** Global guard: total node executions before the run stops itself. */
   maxSteps: z.number().int().min(1).max(500).default(60),
   /**
-   * Ceiling on one dynamic fan-out. Each element becomes its own BB thread, so
+   * Ceiling on one dynamic fan-out. Each element becomes its own VesnALIA thread, so
    * a worker that answers with 200 file names would otherwise spawn 200 of
    * them. Surplus elements are dropped with a warning rather than failing the
    * run: a truncated review is worth more than none.
@@ -793,7 +793,7 @@ export function validateGraph(
     }
   }
 
-  // Explicit execution. BB applies a model only together with its provider, so
+  // Explicit execution. VesnALIA applies a model only together with its provider, so
   // half a selection is dropped on the way to `threads.spawn` — the node would
   // run on the inherited model while the editor and the export both show the
   // one that was picked. Same shape as every expensive bug in this project:

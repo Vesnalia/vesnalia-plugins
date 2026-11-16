@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { getReviewState, patchReviewState } from "../lib/panel-state";
 import { readDraftRecovery, updateDraftRecovery } from "../lib/draft-recovery";
 import { defaultPreferences } from "../src/preferences";
@@ -151,7 +151,7 @@ test("deleting from the open review returns to the list", async () => {
     deleteReview: () => ({ ok: true }),
   } });
   await slot.findByRole("heading", { name: "Fix login" });
-  // In the band, where BB's title bar didn't take the review's commands.
+  // In the band, where VesnALIA's title bar didn't take the review's commands.
   fireEvent.click(await slot.findByRole("button", { name: "Review actions" }));
   fireEvent.click(await slot.findByRole("button", { name: "Delete…" }));
   fireEvent.click(within(await slot.findByRole("dialog")).getByRole("button", { name: "Delete review" }));

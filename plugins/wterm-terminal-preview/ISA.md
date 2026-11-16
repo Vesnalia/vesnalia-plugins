@@ -1,12 +1,12 @@
 ---
 task: "Make Wterm fast, flicker-free, and reliable"
 slug: 20260904-011200_wterm-speed-and-feel
-project: bb-wterm-terminal-plugin
+project: alia-wterm-terminal-plugin
 phase: complete
 progress: 53/53
 started: 2026-09-04T01:12:10+03:00
 updated: 2026-09-04T18:16:50+03:00
-principal_stated_goal: "изучи пожалуйста его докумментацию рантайм как он связан с bb как он в целом работает и дай мне детальный план что внедрить что делать чтобы он работал быстро четко не фликерил там все круто открывалось тут в вебе и так далее"
+principal_stated_goal: "изучи пожалуйста его докумментацию рантайм как он связан с VesnALIA как он в целом работает и дай мне детальный план что внедрить что делать чтобы он работал быстро четко не фликерил там все круто открывалось тут в вебе и так далее"
 principal_stated_goal_source: conversation
 principal_stated_goal_signal: 2
 principal_stated_goal_locked: 2026-09-04T01:12:10+03:00
@@ -16,20 +16,20 @@ interview_invoked: false
 
 ## Problem
 
-The standalone Wterm plugin already attaches a Ghostty-backed terminal to a BB thread, but opening and using it still feels slow, empty, and jumpy. Installed `@wterm` packages lag the lockfile, token and font work is repeated, create-then-verify races the KV mutex, dead linked IDs look “running,” the picker paints empty, and the renderer flashes a blank frame, leftover TUI row colors, and forced scroll-to-bottom. Users get “session unavailable,” reconnect loops, and a white or empty first paint instead of a terminal that is already there.
+The standalone Wterm plugin already attaches a Ghostty-backed terminal to a VesnALIA thread, but opening and using it still feels slow, empty, and jumpy. Installed `@wterm` packages lag the lockfile, token and font work is repeated, create-then-verify races the KV mutex, dead linked IDs look “running,” the picker paints empty, and the renderer flashes a blank frame, leftover TUI row colors, and forced scroll-to-bottom. Users get “session unavailable,” reconnect loops, and a white or empty first paint instead of a terminal that is already there.
 
 ## Vision
 
-Opening a Wterm tab in the BB web app feels like a local terminal that was already warm: dark first paint with a quiet cursor, **each new tab is a new PTY** (never a silent reopen of the previous session), WASM/font/token paid once, replay without a blank hop, no leftover TUI stripes, no jump-to-bottom while reading scrollback, and several tabs at once without verify stalls or zombie reconnects. Attach to an existing session only from the picker, by an explicit click.
+Opening a Wterm tab in the VesnALIA web app feels like a local terminal that was already warm: dark first paint with a quiet cursor, **each new tab is a new PTY** (never a silent reopen of the previous session), WASM/font/token paid once, replay without a blank hop, no leftover TUI stripes, no jump-to-bottom while reading scrollback, and several tabs at once without verify stalls or zombie reconnects. Attach to an existing session only from the picker, by an explicit click.
 
 ## Out of Scope
 
-- Native `experimental_primarySurface` Chat ↔ CLI full-screen. Packaged BB 0.40/0.41 does not expose it; composer still opens the side panel or picker.
+- Native `experimental_primarySurface` Chat ↔ CLI full-screen. Packaged VesnALIA 0.40/0.41 does not expose it; composer still opens the side panel or picker.
 - Replacing `@wterm` / Ghostty with xterm.js or a custom emulator.
 - Subsetting the 1.2 MB Nerd Font (license-ok later; not this climb).
 - Upstream `WebAssembly.compileStreaming` inside `@wterm/ghostty` (track on next library bump).
 - Changing upload security (thread scope, size, SHA, path confinement) except to keep tests green.
-- Shipping a new plugin ID or merging into BB’s bundled `wterm-terminal`.
+- Shipping a new plugin ID or merging into VesnALIA’s bundled `wterm-terminal`.
 - Deleting `pnpm-lock.yaml` without explicit owner permission.
 
 ## Language
@@ -78,16 +78,16 @@ _Avoid:_ “buffer dump”, “scrollback restore” (scrollback is the renderer
 
 ## Goal
 
-"изучи пожалуйста его докумментацию рантайм как он связан с bb как он в целом работает и дай мне детальный план что внедрить что делать чтобы он работал быстро четко не фликерил там все круто открывалось тут в вебе и так далее"
+"изучи пожалуйста его докумментацию рантайм как он связан с VesnALIA как он в целом работает и дай мне детальный план что внедрить что делать чтобы он работал быстро четко не фликерил там все круто открывалось тут в вебе и так далее"
 
-Make the installed Wterm preview in the BB web app open quickly, stay visually stable, and remain correct under multi-tab create/verify: aligned `@wterm` 0.4.0 assets, no blank/white first frame, no TUI color bleed in scrollback, no false “session unavailable” right after create, no zombie `running` reconnects, shared token/font/WASM work, and the existing standalone security/ordering suite still passing.
+Make the installed Wterm preview in the VesnALIA web app open quickly, stay visually stable, and remain correct under multi-tab create/verify: aligned `@wterm` 0.4.0 assets, no blank/white first frame, no TUI color bleed in scrollback, no false “session unavailable” right after create, no zombie `running` reconnects, shared token/font/WASM work, and the existing standalone security/ordering suite still passing.
 
 ## Test Strategy
 
 | isc | type | check | threshold | tool | anchors_to |
 | --- | --- | --- | --- | --- | --- |
 | ISC-1 | command | standalone suite | exit 0 | npm + Vitest | derived: prior test-port climb closed |
-| ISC-2 | install/build | omit-dev install + plugin build | exit 0 | npm + bb CLI | derived: prior test-port climb closed |
+| ISC-2 | install/build | omit-dev install + plugin build | exit 0 | npm + VesnALIA CLI | derived: prior test-port climb closed |
 | ISC-3 | unit | hostile filename / relative cwd | all pass | Vitest | derived: prior test-port climb closed |
 | ISC-4 | boundary | oversized declared body | HTTP 413; zero writes | Vitest | derived: prior test-port climb closed |
 | ISC-5 | boundary | oversized streamed body | HTTP 413; zero writes | Vitest | derived: prior test-port climb closed |
@@ -98,7 +98,7 @@ Make the installed Wterm preview in the BB web app open quickly, stay visually s
 | ISC-9 | lifecycle | queued input flushed once | sent exactly once | Vitest | derived: prior test-port climb closed |
 | ISC-9.1 | lifecycle | two queued resizes | only latest sent | Vitest | derived: prior test-port climb closed |
 | ISC-9.2 | lifecycle | detach | socket close only; no PTY close | Vitest | derived: prior test-port climb closed |
-| ISC-10 | class sweep | no BB workspace imports | zero external paths | rg | derived: prior test-port climb closed |
+| ISC-10 | class sweep | no VesnALIA workspace imports | zero external paths | rg | derived: prior test-port climb closed |
 | ISC-11 | install | `npm ci` then node_modules `@wterm/*` | all 0.4.0 matching lockfile | npm ls | derived: aligned emulator |
 | ISC-12 | build | rebuilt `dist/ghostty-vt.wasm` sha256 | equals root `ghostty-vt.wasm` | sha256sum | derived: aligned emulator |
 | ISC-13 | command | `npm test` after ci/build | exit 0 | npm + Vitest | literal |
@@ -122,20 +122,20 @@ Make the installed Wterm preview in the BB web app open quickly, stay visually s
 | ISC-39 | unit | `threadPanelAction.run` always `createTerminal` and openPanel params use that new id | create spy called; params.terminalId !== last stored id | Vitest | derived: new tab is new PTY |
 | ISC-40 | anti | newly mounted tab without host params must not hydrate from lastTerminalId | fixture last id present; panel still Picker or new create, not last PTY | Vitest | derived: new tab is new PTY |
 | ISC-41 | unit | Picker "New terminal" always createTerminal | never `replace(lastId)` | Vitest | derived: new tab is new PTY |
-| ISC-42 | e2e/manual | headed: second Wterm tab shows a different terminal id than the first | two distinct PTYs | agent-browser / BB web | derived: new tab is new PTY |
+| ISC-42 | e2e/manual | headed: second Wterm tab shows a different terminal id than the first | two distinct PTYs | agent-browser / VesnALIA web | derived: new tab is new PTY |
 | ISC-43 | unit | composer uses real `wtermOpenCount`; helper `resolveSessionTerminalId` takes `openTabCount` | openTabCount>0 does not reuse last; live composer reveals or creates, never last-id on a new tab | Vitest | derived: new tab is new PTY |
 | ISC-31 | unit | replay insert stays ordered without full re-sort each chunk | flush order = seq | Vitest | derived: quickly |
 | ISC-32 | anti | upload/auth/order tests still pass after speed slices | `npm test` green including server + attachment | Vitest | literal |
-| ISC-33 | anti | production-only install still builds | omit-dev + `bb plugin build` exit 0 | npm + bb CLI | derived: prior constraint |
+| ISC-33 | anti | production-only install still builds | omit-dev + `alia plugin build` exit 0 | npm + VesnALIA CLI | derived: prior constraint |
 | ISC-34 | anti | no `experimental_primarySurface` required | app still opens panel/picker when API missing | Vitest or type/branch fixture | derived: out of scope |
-| ISC-35 | class sweep | new files stay inside this repo | zero BB workspace paths | rg | derived: standalone |
-| ISC-36 | e2e/manual | headed BB: first open shows dark skeleton then content, no white flash | observed | agent-browser / BB web | literal |
-| ISC-37 | e2e/manual | headed BB: create terminal does not show unavailable within grace | observed | agent-browser / BB web | literal |
-| ISC-38 | e2e/manual | headed BB: two tabs open without multi-second verify stall | observed | agent-browser / BB web | literal |
+| ISC-35 | class sweep | new files stay inside this repo | zero VesnALIA workspace paths | rg | derived: standalone |
+| ISC-36 | e2e/manual | headed VesnALIA: first open shows dark skeleton then content, no white flash | observed | agent-browser / VesnALIA web | literal |
+| ISC-37 | e2e/manual | headed VesnALIA: create terminal does not show unavailable within grace | observed | agent-browser / VesnALIA web | literal |
+| ISC-38 | e2e/manual | headed VesnALIA: two tabs open without multi-second verify stall | observed | agent-browser / VesnALIA web | literal |
 | ISC-47 | unit | fragmented DEC 1003 enable/disable and switch to mutually exclusive 1002 | exact enabled state + generation | Vitest + Ghostty WASM | derived: correct Herdr hover state |
 | ISC-48 | unit | no-button SGR motion is one-based and cell-deduplicated | code 35; one report per changed cell | Vitest | derived: responsive without event flood |
 | ISC-49 | e2e/manual | headed Herdr hover precedes click and reaches PTY | SGR 35 before press/release; no same-cell duplicates | agent-browser / WebSocket probe | literal |
-| ISC-50 | anti | existing click, drag, resize, replay, and security behavior remains green | full suite + build | Vitest + bb CLI | literal |
+| ISC-50 | anti | existing click, drag, resize, replay, and security behavior remains green | full suite + build | Vitest + VesnALIA CLI | literal |
 
 ## Features
 
@@ -155,9 +155,9 @@ Why: speed work is worthless if the public plugin stops building, uploading safe
 - [x] ISC-9: queued input flushes exactly once after socket open.
 - [x] ISC-9.1: only the latest queued resize flushes after socket open.
 - [x] ISC-9.2: detach closes only the browser socket and sends no terminal-close message.
-- [x] ISC-10: tests do not depend on the sibling BB workspace at runtime.
+- [x] ISC-10: tests do not depend on the sibling VesnALIA workspace at runtime.
 - [x] ISC-32: after each speed/feel slice, `npm test` still passes including `server.test.ts` and `terminal-attachment.test.ts`.
-- [x] ISC-33: `npm install --omit=dev` plus `bb plugin build .` still exits 0.
+- [x] ISC-33: `npm install --omit=dev` plus `alia plugin build .` still exits 0.
 - [x] ISC-34: missing `experimental_primarySurface` still opens side panel or picker rather than crashing.
 - [x] ISC-35: new modules do not import paths outside this repository.
 
@@ -216,14 +216,14 @@ Why: README already promises every Wterm tab starts an independent PTY; localSto
 - [x] ISC-41: Picker **New terminal** always creates; attaching an existing session happens only by clicking that row.
 - [x] ISC-43: live composer reads `wtermOpenCount` (mounted + pending): already-open tab → reveal without last id; otherwise `createTerminal`. `resolveSessionTerminalId` still takes `openTabCount` in unit tests and must not hardcode `0`.
 
-### F6 · Headed confirmation in BB web
+### F6 · Headed confirmation in VesnALIA web
 
 Why: flicker and multi-tab stalls are user-visible; unit tests cannot close the principal goal alone.
 
-- [x] ISC-36: headed BB web: first terminal open shows dark loading then content, not a white empty flash. Antecedent: a Wterm tab is opened in headed BB web.
-- [x] ISC-37: headed BB web: creating a terminal does not flash “no longer available” within the grace window.
-- [x] ISC-38: headed BB web: opening two Wterm tabs in one thread does not stall verify for multiple seconds.
-- [x] ISC-42: headed BB web: the second new Wterm tab is a different session than the first (not a silent reopen of last).
+- [x] ISC-36: headed VesnALIA web: first terminal open shows dark loading then content, not a white empty flash. Antecedent: a Wterm tab is opened in headed VesnALIA web.
+- [x] ISC-37: headed VesnALIA web: creating a terminal does not flash “no longer available” within the grace window.
+- [x] ISC-38: headed VesnALIA web: opening two Wterm tabs in one thread does not stall verify for multiple seconds.
+- [x] ISC-42: headed VesnALIA web: the second new Wterm tab is a different session than the first (not a silent reopen of last).
 
 ### F8 · BWT-4 right-edge resize stability
 
@@ -231,7 +231,7 @@ Why: dragging the terminal panel's right edge must keep the background, grid,
 cursor, and PTY geometry fitted as one surface instead of leaving a stale or
 blank region.
 
-- [x] ISC-44: reproduce the BWT-4 attachment symptom during right-edge shrink/grow in headed BB web.
+- [x] ISC-44: reproduce the BWT-4 attachment symptom during right-edge shrink/grow in headed VesnALIA web.
 - [x] ISC-45: repeated right-edge shrink/grow keeps renderer bounds and PTY columns synchronized with no stale or blank strip; focused regression, full suite, build, and browser console/network checks pass.
 - [x] ISC-46: BWT-4 contains a substantive update, result artifact, and `in_review` status.
 
@@ -248,29 +248,29 @@ makes menus feel stale or late even when click transport itself is fast.
 
 ## Anti-claims
 
-- Anti: tests do not depend on the sibling BB workspace at runtime.
+- Anti: tests do not depend on the sibling VesnALIA workspace at runtime.
 - Anti: after each speed/feel slice, `npm test` still passes including `server.test.ts` and `terminal-attachment.test.ts`.
-- Anti: `npm install --omit=dev` plus `bb plugin build .` still exits 0.
+- Anti: `npm install --omit=dev` plus `alia plugin build .` still exits 0.
 - Anti: missing `experimental_primarySurface` still opens side panel or picker rather than crashing.
 - Anti: new modules do not import paths outside this repository.
 - Anti: `LegacyTerminalAction` (and any host path) must not treat localStorage last-id as the identity of a newly opened tab when host params have no terminalId.
 
 ## Decisions
 
-- 2026-08-15: Ported standalone tests rather than copying BB-private host hooks; closed ISC-1–ISC-10.
+- 2026-08-15: Ported standalone tests rather than copying ALIA-private host hooks; closed ISC-1–ISC-10.
 - 2026-09-04: New project climb replaces the completed test-port goal. Old ISC IDs stay closed; new work starts at ISC-11 (ID stability).
-- 2026-09-04: ANALYSIS.md is the evidence corpus (static code; no headed profiling yet). FLICKER-03 and PERF-03 stay partly fog until headed BB.
-- 2026-09-04: Ambiguity check: done means the ANALYSIS slices that make open/use fast and visually stable in BB web, not a Ghostty rewrite and not primarySurface. `context_sufficient: true`; interview not invoked.
-- 2026-09-04: Attachment lift (PERF-03) held as fog rather than a premature ISC, so agents do not invent a lifecycle that BB 0.41 may not allow.
+- 2026-09-04: ANALYSIS.md is the evidence corpus (static code; no headed profiling yet). FLICKER-03 and PERF-03 stay partly fog until headed VesnALIA.
+- 2026-09-04: Ambiguity check: done means the ANALYSIS slices that make open/use fast and visually stable in VesnALIA web, not a Ghostty rewrite and not primarySurface. `context_sufficient: true`; interview not invoked.
+- 2026-09-04: Attachment lift (PERF-03) held as fog rather than a premature ISC, so agents do not invent a lifecycle that VesnALIA 0.41 may not allow.
 - 2026-09-04: Font subsetting and compileStreaming listed Out of Scope / fog so the plan stays shippable.
 - 2026-09-04: Principal correction: a new terminal / new tab must open a **new** session, not the previous one. Dropped ISC-30 (Reopen last during picker loading). `readLastTerminalId` remains only as a cache write for the current tab and for explicit picker attach. `LegacyTerminalAction` localStorage fallback is the likely current bug (new tab with empty params mounts last PTY). Composer button may still _reveal an already-open panel_; it must not cause a **new** tab to steal last id.
-- 2026-09-04: `bb plugin build` emits JS/CSS only. `npm run build` now copies repo-root `ghostty-vt.wasm` and the Nerd Font into `dist/` after the bundle. Stay on 0.4.0; do not bump to 0.4.1.
+- 2026-09-04: `alia plugin build` emits JS/CSS only. `npm run build` now copies repo-root `ghostty-vt.wasm` and the Nerd Font into `dist/` after the bundle. Stay on 0.4.0; do not bump to 0.4.1.
 - 2026-09-04: `_measureCharSize` still exists on `@wterm/dom` 0.4.0 as a private method. No fork. Font-size refit keeps the optional private call plus public `resize`.
-- 2026-09-04: Headed F6 closed on BB web (`thr_fgn2njixb7`). Hide/show remounts `TerminalPanel`, but reconnect was not a user-visible stall (WASM cached, PTY still running). Keep PERF-03 / `.16` fog — do not lift attachment.
+- 2026-09-04: Headed F6 closed on VesnALIA web (`thr_fgn2njixb7`). Hide/show remounts `TerminalPanel`, but reconnect was not a user-visible stall (WASM cached, PTY still running). Keep PERF-03 / `.16` fog — do not lift attachment.
 - 2026-09-04: Closed fog bead `.16` without implementation. Epic F1–F5 unit/ISC verified; F6 headed observed.
 - 2026-09-04: Killed fog PERF-03 / attachment lift — headed remount reconnect was not user-visible; out of this climb.
 - 2026-09-04: Killed fog browser HTTP cache for WASM/font — still needs security review; not this climb.
-- 2026-09-04: BWT-4 reproduction showed two PTY resizes during BB's 220ms maximize transition. Keep local Wterm auto-resize responsive, but debounce SIGWINCH delivery for 250ms and record only delivered geometry.
+- 2026-09-04: BWT-4 reproduction showed two PTY resizes during VesnALIA's 220ms maximize transition. Keep local Wterm auto-resize responsive, but debounce SIGWINCH delivery for 250ms and record only delivered geometry.
 - 2026-09-04: Herdr click transport is not the bottleneck: click → WebSocket input measured 0.3–2.9ms, while the multi-chunk PTY redraw completed around 99–111ms. The actionable compatibility defect was the local 1003 → 1002 downgrade: add only missing no-button SGR motion, deduplicated by terminal cell; do not invent a broader renderer/WebSocket optimization.
 
 ## Learning
@@ -282,7 +282,7 @@ makes menus feel stale or late even when click transport itself is fast.
 
 ## Verification
 
-- ISC-1 … ISC-10: prior climb — `npm test` 15 passed; omit-dev build; `server.test.ts` / `terminal-attachment.test.ts`; no BB workspace imports (2026-08-15).
+- ISC-1 … ISC-10: prior climb — `npm test` 15 passed; omit-dev build; `server.test.ts` / `terminal-attachment.test.ts`; no VesnALIA workspace imports (2026-08-15).
 - ISC-11: `npm ls @wterm/dom @wterm/ghostty @wterm/react` all 0.4.0 matching lockfile (2026-09-04).
 - ISC-12: sha256 `4a0a02357206349ed52b76ebda8feea4a65e453fe4e199832d8c009d7c41ba4f` equal for root, `dist/`, and `node_modules/@wterm/ghostty/wasm/` after `npm run build` (2026-09-04).
 - ISC-13: `npm test` 10 files / 68 tests pass on the aligned 0.4.0 tree (2026-09-04).
@@ -301,10 +301,10 @@ makes menus feel stale or late even when click transport itself is fast.
 - ISC-28/29: `pickerStateFromRpc` loaded-empty ≠ failed; Picker renders skeleton / alert+Retry / list (2026-09-04).
 - ISC-39/40/41/43: `run()` always `createTerminal`; `initialPanelParams` ignores last-id; New terminal still `createTerminal`; composer `onOpen` uses `wtermOpenCount` (reveal if >0, else create) and does not call `resolveSessionTerminalId`; helper still tested with explicit `openTabCount` (2026-09-04).
 - ISC-32: `npm test` 13 files / 97 pass including server.test.ts and terminal-attachment.test.ts (2026-09-04).
-- ISC-33: clean-dir `npm install --omit=dev` + `bb plugin build .` exit 0 (2026-09-04).
+- ISC-33: clean-dir `npm install --omit=dev` + `alia plugin build .` exit 0 (2026-09-04).
 - ISC-34: missing `experimental_useReplaceCurrentPluginTab` uses LegacyTerminalAction; `experimental_primarySurface` is only an openThreadPanel option (2026-09-04).
-- ISC-35: rg on ts/tsx/js found no sibling BB workspace imports (2026-09-04).
-- ISC-36/37/38/42: headed BB web 2026-09-04 07:46Z, plugin 0.3.16 via `bb plugin dev` on <http://127.0.0.1:38896> thread `thr_fgn2njixb7`. First tab `term_7d8wrt626z` Ghostty with existing scrollback (agent-browser TUI). Open new tab → Wterm created `term_3gwkt6m52p` (created_at 1788508010144, updated +398ms, status running); KV `thread-terminals:thr_fgn2njixb7` holds both ids; second tab paints a fresh starship prompt `0.3.16` with no first-tab scrollback. Remount second tab: `unavail=[]`, no “no longer available”, Ghostty content without empty wait. Loading CSS remains `.wterm-renderer--loading { background: var(--term-bg, #1e1e1e) }` (WASM already cached so skeleton not screenshotable). `npm test` 13 files / 97 pass same commit.
+- ISC-35: rg on ts/tsx/js found no sibling VesnALIA workspace imports (2026-09-04).
+- ISC-36/37/38/42: headed VesnALIA web 2026-09-04 07:46Z, plugin 0.3.16 via `alia plugin dev` on <http://127.0.0.1:38896> thread `thr_fgn2njixb7`. First tab `term_7d8wrt626z` Ghostty with existing scrollback (agent-browser TUI). Open new tab → Wterm created `term_3gwkt6m52p` (created_at 1788508010144, updated +398ms, status running); KV `thread-terminals:thr_fgn2njixb7` holds both ids; second tab paints a fresh starship prompt `0.3.16` with no first-tab scrollback. Remount second tab: `unavail=[]`, no “no longer available”, Ghostty content without empty wait. Loading CSS remains `.wterm-renderer--loading { background: var(--term-bg, #1e1e1e) }` (WASM already cached so skeleton not screenshotable). `npm test` 13 files / 97 pass same commit.
 - ISC-44/45/46: BWT-4 attachment reproduced in headed Chromium on <http://127.0.0.1:38896> thread `thr_fgn2njixb7`. Before fix, maximize emitted intermediate PTY sizes 74x31 and 127x31; final bundle `f16766173b42ef1f` emits one 61x31 on restore and one 128x31 on maximize, with Herdr filling the surface and no stale/blank strip. `wterm-renderer.test.ts` 11/11; full suite 13 files / 98 tests; `npm run build`; browser console/page errors and 4xx/5xx empty. BWT-4 attachment `01M1P65D7W4RXA0DQ2VYXQHP8Y`; status `in_review` (2026-09-04).
 - ISC-47/48/50: red-green tests cover fragmented 1003, explicit disable, direct switch to 1002, SGR code/modifiers/one-based coordinates, same-cell dedupe, button-held and Shift exclusions. `npm test`: 13 files / 102 tests; `npm run build`; `git diff --check` clean (2026-09-04).
-- ISC-49: headed Chromium on <http://127.0.0.1:38896> thread `thr_svxmvyshea` after plugin reload. Herdr click emitted `<ESC>[<35;8;5M` before `<ESC>[<0;8;5M` press and `<ESC>[<0;8;5m` release. Ten synthetic mousemoves inside one cell emitted exactly one `<ESC>[<35;11;6M`; browser console/page errors and captured 4xx/5xx were empty. Screenshot: `/home/ubuntu/.bb/pi-bridge-sessions/thr_svxmvyshea/wterm-herdr-1003-smoke.png` (2026-09-04).
+- ISC-49: headed Chromium on <http://127.0.0.1:38896> thread `thr_svxmvyshea` after plugin reload. Herdr click emitted `<ESC>[<35;8;5M` before `<ESC>[<0;8;5M` press and `<ESC>[<0;8;5m` release. Ten synthetic mousemoves inside one cell emitted exactly one `<ESC>[<35;11;6M`; browser console/page errors and captured 4xx/5xx were empty. Screenshot: `/home/ubuntu/.vesnalia/pi-bridge-sessions/thr_svxmvyshea/wterm-herdr-1003-smoke.png` (2026-09-04).

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { BbPluginApi, MessageDispatchHookContext } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, MessageDispatchHookContext } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { configSchema, rpcContract, runSchema, type Slot } from "./contract";
 import { advisorFor, boundedContext, cleanInput, hash, runReference, sameModel, safeError, textOf, type Input } from "./core";
@@ -8,7 +8,7 @@ import { fileAccessPolicy, ADVISOR_PROMPT } from "./prompts";
 import { createAudit } from "./audit";
 import { createStore, type Run, type Session, type ThreadConfig, type DraftSelection, type Bootstrap, type SharedSettings, type Member } from "./store";
 
-type Queue = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["queuedMessages"]["list"]>>[number];
+type Queue = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["queuedMessages"]["list"]>>[number];
 const delay = (ms: number, signal: AbortSignal) => new Promise<void>(resolve => {
   if (signal.aborted) return resolve();
   const done = () => { clearTimeout(timer); signal.removeEventListener("abort", done); resolve(); };
@@ -24,9 +24,9 @@ function abortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T | nul
   });
 }
 
-export default function plugin(bb: BbPluginApi) {
-  const store = createStore(bb);
-  const audit = createAudit(bb, store);
+export default function plugin(alia: AliaPluginApi) {
+  const store = createStore(alia);
+  const audit = createAudit(alia, store);
   const active = new Map<string, { abort: AbortController; promise: Promise<void> }>();
   const memberControls = new Map<string, { abort: AbortController; replace: boolean }>();
   const shutdown = new AbortController();
@@ -47,9 +47,9 @@ export default function plugin(bb: BbPluginApi) {
     store.put("global:settings", "global", "settings", { settings, revision: (old?.revision ?? 0) + (pairChanged ? 1 : 0) });
     if (pairChanged) {
       for (const work of active.values()) work.abort.abort();
-      for (const entry of await bb.sdk.threads.queue.list({ waitHolder: `plugin:${bb.pluginId}` })) await strip(entry).catch(() => {});
+      for (const entry of await alia.sdk.threads.queue.list({ waitHolder: `plugin:${alia.pluginId}` })) await strip(entry).catch(() => {});
     }
-    if (!shutdown.signal.aborted) bb.realtime.publish("changed", { global: true });
+    if (!shutdown.signal.aborted) alia.realtime.publish("changed", { global: true });
     await recheck();
   }
   const runFor = (queueId: string) => {
@@ -57,14 +57,14 @@ export default function plugin(bb: BbPluginApi) {
     return link ? store.get<Run>(`run:${link.id}`) : null;
   };
   function saveRun(run: Run) { store.put(`run:${run.id}`, run.threadId, "run", run); changed(run.threadId, run.status); }
-  function changed(threadId: string, status?: Run["status"]) { if (!shutdown.signal.aborted) bb.realtime.publish("changed", { threadId, ...(status ? { status } : {}) }); }
-  async function recheck() { if (!shutdown.signal.aborted) await bb.experimental_hooks.recheck("message.dispatch"); }
-  const queue = (threadId: string) => bb.sdk.threads.queuedMessages.list({ threadId });
+  function changed(threadId: string, status?: Run["status"]) { if (!shutdown.signal.aborted) alia.realtime.publish("changed", { threadId, ...(status ? { status } : {}) }); }
+  async function recheck() { if (!shutdown.signal.aborted) await alia.experimental_hooks.recheck("message.dispatch"); }
+  const queue = (threadId: string) => alia.sdk.threads.queuedMessages.list({ threadId });
   async function mainSlot(threadId: string): Promise<Slot> {
-    const thread = await bb.sdk.threads.get({ threadId });
-    const execution = await bb.sdk.threads.defaultExecutionOptions({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
+    const execution = await alia.sdk.threads.defaultExecutionOptions({ threadId });
     if (!execution) {
-      const pending = (await bb.sdk.threads.queuedMessages.list({ threadId }))[0];
+      const pending = (await alia.sdk.threads.queuedMessages.list({ threadId }))[0];
       if (pending) return { providerId: thread.providerId, model: pending.model, reasoningLevel: pending.reasoningLevel, agentId: null };
       const boot = store.get<Bootstrap>(`bootstrap:${threadId}`);
       if (boot) return boot.main;
@@ -73,11 +73,11 @@ export default function plugin(bb: BbPluginApi) {
     return { providerId: thread.providerId, model: execution.model, reasoningLevel: execution.reasoningLevel, agentId: null };
   }
   async function routing(threadId: string) {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (!thread.environmentId) {
       const boot = store.get<Bootstrap>(`bootstrap:${threadId}`);
       if (!boot) throw new Error("The chat environment is not available yet.");
-      const project = await bb.sdk.projects.get({ projectId: thread.projectId });
+      const project = await alia.sdk.projects.get({ projectId: thread.projectId });
       const source = project.sources.find(s => s.hostId === boot.hostId);
       if (!source && project.kind !== "personal") throw new Error("A project workspace is not available on the selected machine.");
       return { thread, environment: { id: `bootstrap:${boot.hostId}`, hostId: boot.hostId }, bootstrap: true,
@@ -85,7 +85,7 @@ export default function plugin(bb: BbPluginApi) {
           ? { type: "unmanaged" as const, path: source.path }
           : { type: "personal" as const } } };
     }
-    const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
     return { thread, environment, bootstrap: false, spawnEnvironment: { type: "reuse" as const, environmentId: environment.id } };
   }
   function mainAt(ctx: MessageDispatchHookContext): Slot {
@@ -106,15 +106,15 @@ export default function plugin(bb: BbPluginApi) {
   async function strip(entry: Queue) {
     const input = cleanInput(entry.content);
     if (input.length !== entry.content.length) {
-      await bb.sdk.threads.queuedMessages.update({ threadId: entry.threadId, queuedMessageId: entry.id, expectedUpdatedAt: entry.updatedAt, input });
+      await alia.sdk.threads.queuedMessages.update({ threadId: entry.threadId, queuedMessageId: entry.id, expectedUpdatedAt: entry.updatedAt, input });
     }
   }
 
-  // Admission only: enrichment happens after BB has durably queued the message.
-  bb.experimental_hooks.on("message.dispatch", async ctx => {
-    if (ctx.thread.originPluginId === bb.pluginId || ctx.originPluginId === bb.pluginId) return { action: "proceed" };
+  // Admission only: enrichment happens after VesnALIA has durably queued the message.
+  alia.experimental_hooks.on("message.dispatch", async ctx => {
+    if (ctx.thread.originPluginId === alia.pluginId || ctx.originPluginId === alia.pluginId) return { action: "proceed" };
     const tokens = [...new Set(ctx.input.blocks.flatMap(b => b.type === "text"
-      ? [...b.text.matchAll(/\[bb-moa-draft:([0-9a-f-]{36})\]/g)].map(m => m[1]) : []))];
+      ? [...b.text.matchAll(/\[alia-moa-draft:([0-9a-f-]{36})\]/g)].map(m => m[1]) : []))];
     if (tokens.length > 1) return { action: "reject", message: "Choose one MoA pair for this draft." };
     if (tokens.length) {
       const selection = store.get<DraftSelection>(`draft:${tokens[0]}`);
@@ -169,7 +169,7 @@ export default function plugin(bb: BbPluginApi) {
       const { thread, environment, bootstrap, spawnEnvironment } = await routing(run.threadId);
       if (bootstrap) {
         stage = "Checking advisor model";
-        const catalog = await bb.sdk.providers.models({ hostId: environment.hostId, providerId: member.advisor.providerId });
+        const catalog = await alia.sdk.providers.models({ hostId: environment.hostId, providerId: member.advisor.providerId });
         if (!catalog.models.some(m => m.model === member.advisor.model)) throw new Error("Advisor model is not available on the selected machine.");
       }
       const sessionKey = `session:${run.threadId}:${hash({ slot: member.advisor, participant: member.key, environment: environment.id, promptVersion: 1 })}`;
@@ -187,13 +187,13 @@ export default function plugin(bb: BbPluginApi) {
         if (session) { store.put(sessionKey, thread.id, "session", session); store.delete(key); }
       }
       if (session) {
-        const worker = await bb.sdk.threads.get({ threadId: session.workerId }).catch(() => null);
+        const worker = await alia.sdk.threads.get({ threadId: session.workerId }).catch(() => null);
         if (!worker || worker.deletedAt || worker.archivedAt) session = null;
       }
       stage = "Checking file access";
-      member.fileGateway = await hasFileGateway(bb, signal);
+      member.fileGateway = await hasFileGateway(alia, signal);
       stage = "Reading conversation history";
-      const timeline = await bb.sdk.threads.timeline({ threadId: run.threadId, segmentLimit: "50" });
+      const timeline = await alia.sdk.threads.timeline({ threadId: run.threadId, segmentLimit: "50" });
       const rows = timeline.rows.filter(row => row.kind === "conversation" && row.sourceSeqEnd > (session?.cursor ?? 0));
       const history = boundedContext(rows.map(row => row.kind === "conversation" ? `${row.role}: ${row.text}` : "").join("\n\n"));
       const prompt = `${ADVISOR_PROMPT}\n\n${fileAccessPolicy(member.fileGateway, environment.hostId)}\n\nCanonical conversation updates (may be a bounded recent window):\n${history || "No new completed messages."}\n\nCurrent user request:\n${boundedContext(textOf(run.input), 30000)}`;
@@ -203,19 +203,19 @@ export default function plugin(bb: BbPluginApi) {
       stage = "Starting advisor session";
       if (session) {
         workerId = session.workerId;
-        baseline = (await bb.sdk.threads.timeline({ threadId: workerId, segmentLimit: "5" })).maxSeq;
+        baseline = (await alia.sdk.threads.timeline({ threadId: workerId, segmentLimit: "5" })).maxSeq;
         member.workerId = workerId; saveMember();
         member.advisorInput = input.map(b => b.type === "text" ? b.text : "").join("\n\n"); saveMember();
-        await bb.sdk.threads.send({ threadId: workerId, mode: "auto", input,
+        await alia.sdk.threads.send({ threadId: workerId, mode: "auto", input,
           model: member.advisor.model, reasoningLevel: member.advisor.reasoningLevel, serviceTier: member.advisor.serviceTier, permissionMode: run.permissionMode ?? "accept-edits" });
       } else {
         if (signal.aborted || shutdown.signal.aborted) return;
         member.advisorInput = input.map(b => b.type === "text" ? b.text : "").join("\n\n"); saveMember();
-        const worker = await bb.sdk.threads.spawn({
+        const worker = await alia.sdk.threads.spawn({
           projectId: thread.projectId, environment: spawnEnvironment,
           providerId: member.advisor.providerId, model: member.advisor.model, reasoningLevel: member.advisor.reasoningLevel, serviceTier: member.advisor.serviceTier,
           permissionMode: run.permissionMode ?? "accept-edits", visibility: "hidden", title: `MoA advisor · ${member.advisor.model}`,
-          // No parentThreadId: BB auto-notifies parents on child completion, which would
+          // No parentThreadId: VesnALIA auto-notifies parents on child completion, which would
           // deliver an unsolicited second message. The relationship is plugin-owned.
           pluginMetadata: { parentThreadId: thread.id, role: "advisor", participant: member.key },
           input,
@@ -228,13 +228,13 @@ export default function plugin(bb: BbPluginApi) {
       let nextObservation = 0;
       stage = "Waiting for advisor";
       while (!signal.aborted && !shutdown.signal.aborted) {
-        const worker = await bb.sdk.threads.get({ threadId: workerId });
+        const worker = await alia.sdk.threads.get({ threadId: workerId });
         if (worker.archivedAt || worker.deletedAt) throw new Error("Advisor cancelled");
         const overdue = Date.now() - started > (configured(run.threadId)?.config.timeoutSeconds ?? cfg.config.timeoutSeconds) * 1000;
         if (Date.now() >= nextObservation) {
           // Native events expose progress without reading documents or inferring
           // inactivity from missing text. Silent reasoning may still be active.
-          const recent = await bb.sdk.threads.events.list({ threadId: workerId, order: "desc", limit: "1" }).catch(() => []);
+          const recent = await alia.sdk.threads.events.list({ threadId: workerId, order: "desc", limit: "1" }).catch(() => []);
           if (signal.aborted || shutdown.signal.aborted) return;
           member.progress = { state: worker.runtime?.displayStatus ?? worker.status, observedAt: Date.now(),
             lastEventAt: recent[0]?.createdAt ?? member.progress?.lastEventAt ?? null,
@@ -244,17 +244,17 @@ export default function plugin(bb: BbPluginApi) {
           saveMember(); nextObservation = Date.now() + 3000;
         }
         if (worker.status === "idle" && !worker.queuedMessageCount && !worker.activeBackgroundAgentCount) {
-          const completed = await bb.sdk.threads.timeline({ threadId: workerId, segmentLimit: "5" });
+          const completed = await alia.sdk.threads.timeline({ threadId: workerId, segmentLimit: "5" });
           if (completed.rows.some(row => row.kind === "conversation" && row.role === "assistant" && row.sourceSeqEnd > baseline)) break;
           if (overdue) throw new Error("Advisor stopped without a final answer");
         }
         if (worker.status === "error") throw new Error("Advisor provider unavailable");
-        // The threshold is informational for active/starting/pending work. BB
+        // The threshold is informational for active/starting/pending work. VesnALIA
         // owns provider liveness; only explicit cancellation or failure stops it.
         await delay(500, signal);
       }
       if (signal.aborted || shutdown.signal.aborted) return;
-      const output = (await abortable(bb.sdk.threads.output({ threadId: workerId, signal }), signal))?.output?.trim();
+      const output = (await abortable(alia.sdk.threads.output({ threadId: workerId, signal }), signal))?.output?.trim();
       if (signal.aborted || shutdown.signal.aborted) return;
       if (!output) throw new Error("Empty advisor response");
       member.advice = output.slice(0, 32000); member.status = "ready"; member.finishedAt = Date.now();
@@ -263,10 +263,10 @@ export default function plugin(bb: BbPluginApi) {
     } catch (error) {
       if (!signal.aborted && !shutdown.signal.aborted) {
         member.status = "failed"; member.error = `${stage}: ${safeError(error)}`; member.finishedAt = Date.now(); saveMember();
-        bb.log.warn(`Consultation ${run.id}, participant ${member.key} failed (${member.advisor.providerId}).`);
+        alia.log.warn(`Consultation ${run.id}, participant ${member.key} failed (${member.advisor.providerId}).`);
       }
     } finally {
-      if (workerId) await bb.sdk.threads.stop({ threadId: workerId }).catch(() => {});
+      if (workerId) await alia.sdk.threads.stop({ threadId: workerId }).catch(() => {});
       if (signal.aborted && !shutdown.signal.aborted && member.status !== "ready") {
         member.status = "cancelled"; member.finishedAt = Date.now(); saveMember();
       }
@@ -298,7 +298,7 @@ export default function plugin(bb: BbPluginApi) {
     try {
       run.status = "running"; saveRun(run);
       // Every participant gets the same canonical updates independently. Neither
-      // sees its peer's fresh proposal. BB owns provider capacity and queuing.
+      // sees its peer's fresh proposal. VesnALIA owns provider capacity and queuing.
       await Promise.all(run.members!.map(member => consultMember(run, member, signal)));
       if (signal.aborted || shutdown.signal.aborted) return;
       const failed = run.members!.filter(member => member.status !== "ready");
@@ -318,7 +318,7 @@ export default function plugin(bb: BbPluginApi) {
       const reference = runReference(run);
       if (reference.type === "text") run.referenceText = reference.text;
       run.status = "ready"; run.finishedAt = Date.now(); saveRun(run);
-      await bb.sdk.threads.queuedMessages.update({ threadId: run.threadId, queuedMessageId: entry.id,
+      await alia.sdk.threads.queuedMessages.update({ threadId: run.threadId, queuedMessageId: entry.id,
         expectedUpdatedAt: entry.updatedAt, input: [...cleanInput(entry.content), runReference(run)] });
       await recheck();
     } catch (error) {
@@ -336,7 +336,7 @@ export default function plugin(bb: BbPluginApi) {
   }
 
   async function scan() {
-    const entries = await bb.sdk.threads.queue.list({ waitHolder: `plugin:${bb.pluginId}` });
+    const entries = await alia.sdk.threads.queue.list({ waitHolder: `plugin:${alia.pluginId}` });
     const visited = new Set<string>();
     for (const entry of entries) {
       if (shutdown.signal.aborted) return;
@@ -345,7 +345,7 @@ export default function plugin(bb: BbPluginApi) {
       if (visited.has(entry.threadId)) continue;
       visited.add(entry.threadId);
       if (active.has(entry.threadId) || active.size >= 2) continue;
-      const parent = await bb.sdk.threads.get({ threadId: entry.threadId });
+      const parent = await alia.sdk.threads.get({ threadId: entry.threadId });
       if (parent.archivedAt || parent.deletedAt) continue;
       const main: Slot = { providerId: parent.providerId, model: entry.model, reasoningLevel: entry.reasoningLevel, agentId: null };
       const fp = fingerprint(entry.content, main, cfg.revision);
@@ -359,13 +359,13 @@ export default function plugin(bb: BbPluginApi) {
         }
         if (run.status === "ready" && run.advice) {
           // Recover a crash between saving advice and enriching the queue row.
-          await bb.sdk.threads.queuedMessages.update({ threadId: entry.threadId, queuedMessageId: entry.id,
+          await alia.sdk.threads.queuedMessages.update({ threadId: entry.threadId, queuedMessageId: entry.id,
             expectedUpdatedAt: entry.updatedAt, input: [...cleanInput(entry.content), runReference(run)] });
           await recheck(); continue;
         }
         if (run.status === "running") {
           // A previous process may have submitted a billable request. Do not replay it.
-          for (const workerId of run.members?.map(m => m.workerId).filter((id): id is string => !!id) ?? (run.workerId ? [run.workerId] : [])) await bb.sdk.threads.stop({ threadId: workerId }).catch(() => {});
+          for (const workerId of run.members?.map(m => m.workerId).filter((id): id is string => !!id) ?? (run.workerId ? [run.workerId] : [])) await alia.sdk.threads.stop({ threadId: workerId }).catch(() => {});
           for (const member of run.members ?? []) if (member.status !== "ready") { member.status = "failed"; member.error = "Interrupted by reload"; }
           run.status = "failed"; run.error = "Consultation interrupted by a reload. Retry to continue."; saveRun(run); continue;
         }
@@ -392,11 +392,11 @@ export default function plugin(bb: BbPluginApi) {
   }
   async function saveConfig(threadId: string, value: unknown, updatePair = true) {
     const config = configSchema.parse(value); validateConfig(config);
-    await bb.sdk.threads.get({ threadId });
+    await alia.sdk.threads.get({ threadId });
     if (config.enabled) {
       const { environment, bootstrap } = await routing(threadId);
       for (const slot of [config.a, config.b, ...(config.reserve ? [config.reserve] : [])]) {
-        const catalog = await bb.sdk.providers.models({ ...(bootstrap ? { hostId: environment.hostId } : { environmentId: environment.id }), providerId: slot.providerId });
+        const catalog = await alia.sdk.providers.models({ ...(bootstrap ? { hostId: environment.hostId } : { environmentId: environment.id }), providerId: slot.providerId });
         const model = catalog.models.find(m => m.model === slot.model);
         if (!model) throw new Error(`Model is not available: ${slot.model}`);
         if (model.supportedReasoningEfforts.length && !model.supportedReasoningEfforts.some(e => e.reasoningEffort === slot.reasoningLevel)) {
@@ -413,7 +413,7 @@ export default function plugin(bb: BbPluginApi) {
     changed(threadId); await recheck(); return config;
   }
   async function status(threadId: string) {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     return { environmentId: thread.environmentId, config: configured(threadId)?.config ?? null, main: await mainSlot(threadId), runs: store.list<Run>(threadId, "run").slice(0, 20).map(run => runSchema.parse(run)) };
   }
   async function retry(threadId: string, runId: string) {
@@ -428,7 +428,7 @@ export default function plugin(bb: BbPluginApi) {
     } else store.delete(`queue:${entry.id}`);
     changed(threadId); await recheck(); return { ok: true };
   }
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     messageIndex: ({ threadId }) => audit.messageIndex(threadId),
     audit: async ({ threadId, runId }) => ({ ...await audit.detail(threadId, runId), canReplace: !!configured(threadId)?.config.reserve }),
     replaceParticipant: ({ threadId, runId, key }) => {
@@ -440,16 +440,16 @@ export default function plugin(bb: BbPluginApi) {
       control.replace = true; control.abort.abort(); return { ok: true };
     },
     draftDefaults: async ({ projectId }) => {
-      const project = await bb.sdk.projects.get({ projectId });
-      const defaults = await bb.sdk.projects.defaultExecutionOptions({ projectId });
+      const project = await alia.sdk.projects.get({ projectId });
+      const defaults = await alia.sdk.projects.defaultExecutionOptions({ projectId });
       const hostId = (project.sources.find(s => s.isDefault) ?? project.sources[0])?.hostId
-        ?? (await bb.sdk.system.config()).primaryHostId;
+        ?? (await alia.sdk.system.config()).primaryHostId;
       if (!hostId) throw new Error("Choose a project with an existing machine first.");
       const saved = shared()?.settings ?? store.get<ReturnType<typeof configSchema.parse>>(`template:${projectId}`);
       if (saved) return { hostId, config: { ...saved, enabled: false } };
-      const providerId = defaults?.providerId ?? (await bb.sdk.providers.list({ hostId })).find(p => p.available)?.id;
+      const providerId = defaults?.providerId ?? (await alia.sdk.providers.list({ hostId })).find(p => p.available)?.id;
       if (!providerId) throw new Error("No provider is available on this machine.");
-      const catalog = await bb.sdk.providers.models({ hostId, providerId });
+      const catalog = await alia.sdk.providers.models({ hostId, providerId });
       const first = catalog.models.find(m => m.model === defaults?.model) ?? catalog.models[0];
       if (!first) throw new Error("Choose a default provider and model for the project first.");
       const second = catalog.models.find(m => m.model !== first.model) ?? first;
@@ -457,7 +457,7 @@ export default function plugin(bb: BbPluginApi) {
       return { hostId, config: { a: slot(first), b: slot(second), enabled: false, timeoutSeconds: 240 } };
     },
     prepareDraft: async ({ projectId, config }) => {
-      await bb.sdk.projects.get({ projectId });
+      await alia.sdk.projects.get({ projectId });
       validateConfig(config);
       await saveShared(config);
       const token = randomUUID();
@@ -478,32 +478,32 @@ export default function plugin(bb: BbPluginApi) {
     retry: ({ threadId, runId }) => retry(threadId, runId),
     providers: async ({ threadId }) => {
       const { environment } = await routing(threadId);
-      return (await bb.sdk.providers.list({ environmentId: environment.id })).map(p => ({ id: p.id, name: p.displayName, available: p.available }));
+      return (await alia.sdk.providers.list({ environmentId: environment.id })).map(p => ({ id: p.id, name: p.displayName, available: p.available }));
     },
     models: async ({ threadId, providerId }) => {
       const { environment } = await routing(threadId);
-      const result = await bb.sdk.providers.models({ environmentId: environment.id, providerId });
+      const result = await alia.sdk.providers.models({ environmentId: environment.id, providerId });
       return result.models.map(m => ({ model: m.model, name: m.displayName, efforts: m.supportedReasoningEfforts.map(e => e.reasoningEffort) }));
     },
 
   });
-  bb.ui.registerMentionProvider({ id: "draft", label: "MoA", search: () => [], resolve: token => {
+  alia.ui.registerMentionProvider({ id: "draft", label: "MoA", search: () => [], resolve: token => {
     if (!store.get<DraftSelection>(`draft:${token}`)) throw new Error("Choose the MoA pair again.");
-    return { context: `[bb-moa-draft:${token}]\nMoA configuration attached to the initial request. The coordinator supplies any advisor reference separately.` };
+    return { context: `[alia-moa-draft:${token}]\nMoA configuration attached to the initial request. The coordinator supplies any advisor reference separately.` };
   } });
 
-  bb.cli.register({ name: "moa", summary: "Configure per-chat Mixture of Agents and inspect consultations",
+  alia.cli.register({ name: "moa", summary: "Configure per-chat Mixture of Agents and inspect consultations",
     commands: [
-      { name: "status", summary: "Inspect one chat", usage: "bb moa status THREAD_ID" },
-      { name: "configure", summary: "Save a model pair", usage: "bb moa configure THREAD_ID CONFIG_JSON" },
-      { name: "on", summary: "Enable MoA", usage: "bb moa on THREAD_ID" },
-      { name: "off", summary: "Disable MoA", usage: "bb moa off THREAD_ID" },
-      { name: "retry", summary: "Retry a failed consultation", usage: "bb moa retry THREAD_ID RUN_ID" },
+      { name: "status", summary: "Inspect one chat", usage: "alia moa status THREAD_ID" },
+      { name: "configure", summary: "Save a model pair", usage: "alia moa configure THREAD_ID CONFIG_JSON" },
+      { name: "on", summary: "Enable MoA", usage: "alia moa on THREAD_ID" },
+      { name: "off", summary: "Disable MoA", usage: "alia moa off THREAD_ID" },
+      { name: "retry", summary: "Retry a failed consultation", usage: "alia moa retry THREAD_ID RUN_ID" },
     ],
     async run(argv) {
       try {
         const [command, threadId, value] = argv.filter(a => a !== "--json");
-        if (!threadId) return { exitCode: 1, stderr: "Usage: bb moa status|on|off|configure|retry THREAD_ID [CONFIG_JSON|RUN_ID]" };
+        if (!threadId) return { exitCode: 1, stderr: "Usage: VesnALIA moa status|on|off|configure|retry THREAD_ID [CONFIG_JSON|RUN_ID]" };
         let result: unknown;
         if (command === "status") {
           const state = await status(threadId);
@@ -519,32 +519,32 @@ export default function plugin(bb: BbPluginApi) {
       } catch (error) { return { exitCode: 1, stderr: error instanceof Error ? error.message : "Invalid request" }; }
     },
   });
-  bb.agents.configure(ctx => ctx.origin.pluginId === bb.pluginId ? { tools: [], skills: [], instructions: ADVISOR_PROMPT } : { tools: [], skills: [] });
-  bb.events.on("message.cancelled", ({ entry }) => {
+  alia.agents.configure(ctx => ctx.origin.pluginId === alia.pluginId ? { tools: [], skills: [], instructions: ADVISOR_PROMPT } : { tools: [], skills: [] });
+  alia.events.on("message.cancelled", ({ entry }) => {
     const run = runFor(entry.id); if (!run) return;
     active.get(entry.threadId)?.abort.abort(); run.status = "cancelled"; run.finishedAt = Date.now(); saveRun(run);
   });
-  bb.events.on("message.dispatched", ({ entry }) => {
+  alia.events.on("message.dispatched", ({ entry }) => {
     const run = runFor(entry.id); if (!run) return;
-    const enriched = entry.content.some(b => b.type === "text" && b.visibility === "agent-only" && b.text.startsWith(`[bb-moa-reference:${run.id}]`));
+    const enriched = entry.content.some(b => b.type === "text" && b.visibility === "agent-only" && b.text.startsWith(`[alia-moa-reference:${run.id}]`));
     run.status = enriched && run.advice ? "dispatched" : "bypassed";
     run.finishedAt = Date.now(); saveRun(run);
     if (!enriched) active.get(entry.threadId)?.abort.abort();
   });
-  for (const event of ["thread.archived", "thread.deleted"] as const) bb.events.on(event, async ({ thread }) => {
+  for (const event of ["thread.archived", "thread.deleted"] as const) alia.events.on(event, async ({ thread }) => {
     active.get(thread.id)?.abort.abort();
     for (const session of store.list<Session>(thread.id, "session")) {
-      await bb.sdk.threads.archive({ threadId: session.workerId }).catch(() => {});
-      await bb.sdk.threads.stop({ threadId: session.workerId }).catch(() => {});
+      await alia.sdk.threads.archive({ threadId: session.workerId }).catch(() => {});
+      await alia.sdk.threads.stop({ threadId: session.workerId }).catch(() => {});
     }
   });
-  bb.background.service("consultations", { async start(signal) {
+  alia.background.service("consultations", { async start(signal) {
     while (!signal.aborted && !shutdown.signal.aborted) {
-      try { await scan(); } catch { if (!signal.aborted) bb.log.warn("Could not scan MoA queue; will retry."); }
+      try { await scan(); } catch { if (!signal.aborted) alia.log.warn("Could not scan MoA queue; will retry."); }
       await delay(1000, signal);
     }
   } });
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     shutdown.abort(); for (const job of active.values()) job.abort.abort();
     await Promise.allSettled([...active.values()].map(j => j.promise));
   });

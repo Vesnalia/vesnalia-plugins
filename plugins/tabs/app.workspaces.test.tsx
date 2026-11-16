@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp } from "@vesnalia/plugin-sdk/testing/app";
 import { renderPartialSlot as renderSlot, type PartialRenderSlotOptions } from "./test-utils";
 import type { rpcContract } from "./server";
-import type { PluginRpcResult } from "@get-bb/plugin-sdk";
+import type { PluginRpcResult } from "@vesnalia/plugin-sdk";
 import {
   addWorkspace,
   createInitialWorkspaces,
@@ -244,7 +244,7 @@ it("keeps only the selected workspace's pins above shared history and deduplicat
   const f = fixture();
   f.changeState("other", (state) => openTabCandidate(state, home, 2));
   const slot = f.renderOverlay();
-  await waitFor(() => expect(slot.container.querySelectorAll(".bb-chat-tab")).toHaveLength(1));
+  await waitFor(() => expect(slot.container.querySelectorAll(".alia-chat-tab")).toHaveLength(1));
   fireEvent.keyDown(await slot.findByRole("button", { name: "Open chat list" }), {
     key: "ArrowDown",
   });
@@ -265,7 +265,7 @@ it("keeps only the selected workspace's pins above shared history and deduplicat
   await waitFor(() => expect(within(document.body).queryByText("Pinned")).toBeNull());
   act(() => store.select("home"));
   await waitFor(() =>
-    expect(slot.container.querySelector(".bb-chat-tab-title")?.textContent).toBe("Home chat"),
+    expect(slot.container.querySelector(".alia-chat-tab-title")?.textContent).toBe("Home chat"),
   );
   fireEvent.keyDown(slot.getByRole("button", { name: "Open chat list" }), { key: "ArrowDown" });
   const nextPinned = (await within(document.body).findByText("Pinned")).closest<HTMLElement>(
@@ -316,7 +316,7 @@ it("refreshes inactive pins after realtime and reconnect without accepting a lat
     await slot.setRealtimeConnectionState("connected");
   });
   await waitFor(() => expect(within(document.body).queryByText("New pin")).toBeNull());
-  expect(slot.container.querySelectorAll(".bb-chat-tab")).toHaveLength(1);
+  expect(slot.container.querySelectorAll(".alia-chat-tab")).toHaveLength(1);
   expect(calls).toBe(4);
 });
 
@@ -391,11 +391,11 @@ describe("workspace surfaces and visit races", () => {
       );
       const trigger = slot.getByRole("button", { name: "Workspace" });
       expect(trigger.title).toBe("Work");
-      expect(trigger.querySelector(".bb-chat-tabs-workspace-label")?.textContent).toBe("Work");
+      expect(trigger.querySelector(".alia-chat-tabs-workspace-label")?.textContent).toBe("Work");
       expect(
-        trigger.closest(".bb-chat-tabs-workspace-switcher")?.getAttribute("data-compact"),
+        trigger.closest(".alia-chat-tabs-workspace-switcher")?.getAttribute("data-compact"),
       ).toBe(compact ? "true" : null);
-      expect(slot.container.querySelector(".bb-chat-tabs-content-row")).toBeNull();
+      expect(slot.container.querySelector(".alia-chat-tabs-content-row")).toBeNull();
     },
   );
   it("loads and reconnects the header catalog on a cold page with both tab strips disabled", async () => {
@@ -522,7 +522,7 @@ describe("workspace surfaces and visit races", () => {
         (call) => call.method === "tabs_close" || call.method === "tabs_restore",
       ),
     ).toEqual([]);
-    expect(document.querySelector(".bb-chat-tabs-list-menu")).toBeNull();
+    expect(document.querySelector(".alia-chat-tabs-list-menu")).toBeNull();
   });
   it("accepts newer sidechat activity independently of a stale tab-state snapshot without rolling back memberships", async () => {
     const fx = fixture();
@@ -550,7 +550,7 @@ describe("workspace surfaces and visit races", () => {
     const parent = await within(overlay.container).findByRole("button", {
       name: "Work chat, nested work is running",
     });
-    expect(parent.querySelector('.bb-chat-tab-working[data-nested-only="true"]')).not.toBeNull();
+    expect(parent.querySelector('.alia-chat-tab-working[data-nested-only="true"]')).not.toBeNull();
     expect(within(overlay.container).getByRole("button", { name: "Fresh chat" })).toBeTruthy();
     expect(overlay.inspection.sidebarActionCalls).toEqual([]);
     expect(overlay.inspection.navigateCalls).toEqual([]);
@@ -1177,7 +1177,7 @@ describe("workspace surfaces and visit races", () => {
       await within(overlay.container).findByRole("button", { name: "Work chat" });
       const trigger = within(overlay.container).getByRole("button", { name: "Workspace" });
       expect(trigger.title).toBe(name);
-      expect(trigger.querySelector(".bb-chat-tabs-workspace-label")?.textContent).toBe(name);
+      expect(trigger.querySelector(".alia-chat-tabs-workspace-label")?.textContent).toBe(name);
       expect(trigger.getAttribute("aria-description")).toBe(name);
       fireEvent.keyDown(trigger, { key: "ArrowDown" });
       expect(
@@ -1186,13 +1186,13 @@ describe("workspace surfaces and visit races", () => {
       fireEvent.keyDown(within(document.body).getByRole("menu", { name: "Workspace" }), {
         key: "Escape",
       });
-      const badge = overlay.container.querySelector(".bb-chat-tabs-workspace-initial");
+      const badge = overlay.container.querySelector(".alia-chat-tabs-workspace-initial");
       expect(badge?.textContent).toBe(initial);
       expect(badge?.getAttribute("aria-hidden")).toBe("true");
       choose(overlay.container, "home");
       await waitFor(() =>
         expect(
-          overlay.container.querySelector(".bb-chat-tabs-workspace-initial")?.textContent,
+          overlay.container.querySelector(".alia-chat-tabs-workspace-initial")?.textContent,
         ).toBe("H"),
       );
       expect(within(overlay.container).getByRole("button", { name: "Workspace" }).title).toBe(
@@ -1211,13 +1211,13 @@ describe("workspace surfaces and visit races", () => {
     const settings = { enableWorkspaces: true };
     const overlay = fx.renderOverlay({}, settings);
     await within(overlay.container).findByRole("button", { name: "Home chat" });
-    const row = overlay.container.querySelector(".bb-chat-tabs-content-row");
-    expect(row?.firstElementChild?.className).toBe("bb-chat-tabs-list-switcher");
-    expect(row?.querySelector(".bb-chat-tabs-workspace-switcher")).toBeNull();
+    const row = overlay.container.querySelector(".alia-chat-tabs-content-row");
+    expect(row?.firstElementChild?.className).toBe("alia-chat-tabs-list-switcher");
+    expect(row?.querySelector(".alia-chat-tabs-workspace-switcher")).toBeNull();
     expect(
       overlay
         .getByTestId("workspace-thread-header")
-        .querySelector(".bb-chat-tabs-workspace-switcher"),
+        .querySelector(".alia-chat-tabs-workspace-switcher"),
     ).not.toBeNull();
     const Component = ChatSurface;
     const beforeHome = fx.changeState("home", (state) => state);
@@ -1225,7 +1225,7 @@ describe("workspace surfaces and visit races", () => {
     settings.enableWorkspaces = false;
     overlay.rerender(<Component />);
     const chat = await within(overlay.container).findByRole("button", { name: "Work chat" });
-    expect(overlay.container.querySelector(".bb-chat-tabs-workspace-switcher")).toBeNull();
+    expect(overlay.container.querySelector(".alia-chat-tabs-workspace-switcher")).toBeNull();
     fireEvent.contextMenu(chat);
     expect(within(document.body).queryByText("Show in workspaces")).toBeNull();
     expect(within(document.body).getByText("Unpin")).toBeTruthy();
@@ -1256,7 +1256,7 @@ describe("workspace surfaces and visit races", () => {
           ),
         ).toBe(true),
       );
-      expect(section.container.querySelector(".bb-chat-tabs-workspace-switcher")).toBeNull();
+      expect(section.container.querySelector(".alia-chat-tabs-workspace-switcher")).toBeNull();
       expect(section.inspection.sidebarActionCalls).toEqual([]);
     },
   );
@@ -1378,9 +1378,9 @@ describe("workspace surfaces and visit races", () => {
     await within(overlay.container).findByRole("button", { name: "Work chat" });
     choose(overlay.container, "");
     const dialog = await within(document.body).findByRole("dialog", { name: "Workspaces" });
-    expect(dialog.querySelectorAll(".bb-chat-tabs-workspace-current")).toHaveLength(1);
+    expect(dialog.querySelectorAll(".alia-chat-tabs-workspace-current")).toHaveLength(1);
     expect(
-      dialog.querySelector(".bb-chat-tabs-workspace-current")?.closest("li")?.textContent,
+      dialog.querySelector(".alia-chat-tabs-workspace-current")?.closest("li")?.textContent,
     ).toContain("Work");
     const draft = within(dialog).getByRole("textbox", { name: "Workspace name" });
     fireEvent.change(draft, { target: { value: "New draft" } });
@@ -1430,7 +1430,7 @@ describe("workspace surfaces and visit races", () => {
     expect(store.getSnapshot().workspaceId).toBe("work");
     expect(
       overlay.container
-        .querySelector('.bb-chat-tab[data-active="true"] .bb-chat-tab-select')
+        .querySelector('.alia-chat-tab[data-active="true"] .alia-chat-tab-select')
         ?.getAttribute("aria-label"),
     ).toBe("Work chat");
     expect(

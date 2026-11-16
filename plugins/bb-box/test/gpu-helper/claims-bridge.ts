@@ -73,7 +73,7 @@ export class ClaimsBridge {
     this.proxmox.addTemplate(9000, { unprivileged: "1" });
     this.proxmox.addTemplate(9001, { cores: "4", memory: "8192", unprivileged: "1", ...devices(cardLines(CARD_A, "desktop")) });
     this.proxmox.addTemplate(9002, { cores: "4", memory: "8192", unprivileged: "1", ...devices(cardLines(CARD_B, "desktop")) });
-    this.proxmox.guests.set(REPORT_VMID, { vmid: REPORT_VMID, type: "qemu", name: "bb-box-gpu-memory", status: "stopped", template: false, config: { name: "bb-box-gpu-memory", description: "" } });
+    this.proxmox.guests.set(REPORT_VMID, { vmid: REPORT_VMID, type: "qemu", name: "alia-box-gpu-memory", status: "stopped", template: false, config: { name: "alia-box-gpu-memory", description: "" } });
     this.pass();
   }
 
@@ -183,7 +183,7 @@ export class ClaimsBridge {
 
   timerReport(): void {
     const gpus = [CARD_A, CARD_B].map((card) => `    gpu GPU-${card.uuid} ${card.bus} ${card.index} ${card.freeMiB} ${card.totalMiB}`);
-    this.proxmox.guests.get(REPORT_VMID)!.config.description = ["bb-box: each GPU's memory, from the host. Do not edit.", "", `    at ${Math.floor(Date.now() / 1000)}`, ...gpus].join("\n");
+    this.proxmox.guests.get(REPORT_VMID)!.config.description = ["alia-box: each GPU's memory, from the host. Do not edit.", "", `    at ${Math.floor(Date.now() / 1000)}`, ...gpus].join("\n");
   }
 
   stoppedGuest(vmid: number, box: BoxIdentity, template: number): Guest {
@@ -194,7 +194,7 @@ export class ClaimsBridge {
     for (const config of this.#configs) {
       const address = vmid >= config.vmids.first && vmid <= config.vmids.last ? addressFor(config, vmid) : null;
       if (!address) continue;
-      const folder = join(this.ssh.home(address), "usr", "share", "bb-box");
+      const folder = join(this.ssh.home(address), "usr", "share", "alia-box");
       if (version === null) rmSync(join(folder, "nvidia-version"), { force: true });
       else {
         mkdirSync(folder, { recursive: true });

@@ -9,7 +9,7 @@ You can open a box's terminal from:
 - the Box panel: select **Open terminal** on the box's row, which opens a tab called 'Terminal:' and the box's name, with a terminal for its icon. On a narrow screen, such as a phone's, the tab is called by the box's name alone
 - the thread's Terminal tab: it opens the thread's terminal straight away, lists the boxes when there are several, or offers the Box panel when there is none
 - the Boxes page: select **Terminal** on a box's page. On a desktop or device, select **Open terminal** in the toolbar's menu, beside **Open thread**. The terminal shows on the page, with a back arrow to where you opened it: the list or the box's page
-- the Monitor's machine status in BB's sidebar: when it shows a box, select **Open** beside the box's name, then **Open terminal**. The terminal shows on the Boxes page
+- the Monitor's machine status in VesnALIA's sidebar: when it shows a box, select **Open** beside the box's name, then **Open terminal**. The terminal shows on the Boxes page
 
 The thread's Terminal tab counts the machine the thread runs on.
 
@@ -27,13 +27,13 @@ Keys go to the shell, Tab and Shift+Tab too, so completion works. To leave the t
 
 ## When the shell ends
 
-A shell ends when you exit it, when its box stops or goes, or when BB Box restarts. The terminal says why. Select **Start a new shell** to carry on.
+A shell ends when you exit it, when its box stops or goes, or when VesnALIA Box restarts. The terminal says why. Select **Start a new shell** to carry on.
 
 A stopped box has no terminal until it starts. The terminal offers **Start** where the box can start again.
 
-When a box is released, its terminal says so, with the box's name: close the tab, or, on the Boxes page, select **Back to boxes** or **Back to BB Box settings**.
+When a box is released, its terminal says so, with the box's name: close the tab, or, on the Boxes page, select **Back to boxes** or **Back to VesnALIA Box settings**.
 
-A few kinds of box have no terminal, because BB Box reaches them without a shell. The terminal says so.
+A few kinds of box have no terminal, because VesnALIA Box reaches them without a shell. The terminal says so.
 
 ## Agents and commands
 

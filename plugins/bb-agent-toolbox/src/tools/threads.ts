@@ -1,6 +1,6 @@
-import { type BbPluginApi } from "@get-bb/plugin-sdk";
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
-import { type BbContext, type JsonValue } from "@get-bb/plugin-sdk";
+import { type AliaContext, type JsonValue } from "@vesnalia/plugin-sdk";
 import { type Flags, requireProjectId, requireThreadId, sleep, threadTitle, type Registrar } from "../lib/toolkit";
 import { resolveHost } from "../lib/resolve-host";
 
@@ -50,19 +50,19 @@ function parseWhen(input: string): number | null {
 }
 
 export function registerThreadTools(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   flags: Flags,
   register: Registrar,
 ) {
   register("threads", {
     name: "bbtools_threads_list",
     description:
-      "List bb threads in the current project: id, title, status, provider, and activity. Use it to discover threads you can read or message.",
+      "List VesnALIA threads in the current project: id, title, status, provider, and activity. Use it to discover threads you can read or message.",
     parameters: z.object({
       limit: z.number().int().min(1).max(100).optional().describe("Max threads (default 25)."),
     }),
     execute: async ({ limit }, ctx) => {
-      const threads = await bb.sdk.threads.list({
+      const threads = await alia.sdk.threads.list({
         projectId: requireProjectId(ctx),
         limit: limit ?? 25,
       });
@@ -76,15 +76,15 @@ export function registerThreadTools(
   register("threads", {
     name: "bbtools_thread_get",
     description:
-      "Read a bb thread's status, its latest assistant output, and any pending interaction. Use it to check what another thread (agent) is doing, produced, or waits for.",
+      "Read a VesnALIA thread's status, its latest assistant output, and any pending interaction. Use it to check what another thread (agent) is doing, produced, or waits for.",
     parameters: z.object({
       threadId: z.string().describe("The target thread id."),
     }),
     execute: async ({ threadId }) => {
-      const thread = await bb.sdk.threads.get({ threadId, include: "environment" });
+      const thread = await alia.sdk.threads.get({ threadId, include: "environment" });
       let output = "";
       try {
-        const res = await bb.sdk.threads.output({ threadId });
+        const res = await alia.sdk.threads.output({ threadId });
         if (res.output) output = `\n--- output ---\n${res.output}`;
       } catch {
         // output is not always available; the status line still is
@@ -95,7 +95,7 @@ export function registerThreadTools(
           : "";
       let pending = "";
       try {
-        const interactions = (await bb.sdk.threads.interactions.list({ threadId })) as unknown as InteractionRow[];
+        const interactions = (await alia.sdk.threads.interactions.list({ threadId })) as unknown as InteractionRow[];
         const open = interactions.filter((i) => i.status === "pending");
         if (open.length > 0)
           pending = `\n--- pending interaction ---\n${open.map(describeInteraction).join("\n")}\nAnswer with bbtools_thread_interaction_respond.`;
@@ -109,12 +109,12 @@ export function registerThreadTools(
   register("threads", {
     name: "bbtools_thread_outline",
     description:
-      "Read a compact conversation outline of a bb thread: turn-by-turn role and preview. Use it to see what another thread (e.g. a child you spawned) discussed or concluded without pulling the full transcript.",
+      "Read a compact conversation outline of a VesnALIA thread: turn-by-turn role and preview. Use it to see what another thread (e.g. a child you spawned) discussed or concluded without pulling the full transcript.",
     parameters: z.object({
       threadId: z.string().describe("The target thread id."),
     }),
     execute: async ({ threadId }) => {
-      const outline = await bb.sdk.threads.conversationOutline({ threadId });
+      const outline = await alia.sdk.threads.conversationOutline({ threadId });
       if (outline.items.length === 0) return "No conversation yet.";
       return outline.items
         .map((item) => {
@@ -132,7 +132,7 @@ export function registerThreadTools(
   register("threads", {
     name: "bbtools_thread_send",
     description:
-      "Send a text message to an existing bb thread. Use it to message another agent/thread directly to coordinate work, request an update, or hand off a result. A future sendAt queues the message instead of dispatching it now.",
+      "Send a text message to an existing VesnALIA thread. Use it to message another agent/thread directly to coordinate work, request an update, or hand off a result. A future sendAt queues the message instead of dispatching it now.",
     parameters: z.object({
       threadId: z.string().describe("The target thread id."),
       text: z.string().min(1).describe("The message text to send."),
@@ -146,7 +146,7 @@ export function registerThreadTools(
         if (parsed <= Date.now()) return "Error: sendAt must be in the future.";
         sendAtMs = parsed;
       }
-      const res = await bb.sdk.threads.send({
+      const res = await alia.sdk.threads.send({
         threadId,
         mode: "auto",
         input: [{ type: "text", text, mentions: [] }],
@@ -163,7 +163,7 @@ export function registerThreadTools(
   register("threads", {
     name: "bbtools_thread_spawn",
     description:
-      "Create a new bb thread (child of the current one). Use it to delegate parallel or background work to another agent thread. Defaults to the current thread's provider and environment; pass providerId/model to override.",
+      "Create a new VesnALIA thread (child of the current one). Use it to delegate parallel or background work to another agent thread. Defaults to the current thread's provider and environment; pass providerId/model to override.",
     parameters: z.object({
       prompt: z.string().min(1).describe("The initial prompt for the new thread."),
       providerId: z.string().optional().describe("Provider id (defaults to the current thread's)."),
@@ -180,13 +180,13 @@ export function registerThreadTools(
     execute: async ({ prompt, providerId, model, reasoningLevel, permissionMode }, ctx) => {
       const threadId = requireThreadId(ctx);
       const projectId = requireProjectId(ctx);
-      const current = await bb.sdk.threads.get({ threadId });
+      const current = await alia.sdk.threads.get({ threadId });
       const resolvedProvider = providerId ?? current.providerId;
       if (!resolvedProvider) return "Error: no provider on the current thread; pass providerId.";
       // Reuse the current thread's environment when it has one, else fall back to the project default.
       const environment = await (async () => {
         try {
-          const { environmentId } = await resolveHost(bb, threadId);
+          const { environmentId } = await resolveHost(alia, threadId);
           return environmentId
             ? ({ type: "reuse", environmentId } as const)
             : ({ type: "project-default" } as const);
@@ -194,7 +194,7 @@ export function registerThreadTools(
           return { type: "project-default" } as const;
         }
       })();
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         projectId,
         providerId: resolvedProvider,
         ...(model ? { model } : {}),
@@ -212,7 +212,7 @@ export function registerThreadTools(
   register("threads", {
     name: "bbtools_thread_wait",
     description:
-      "Wait until a bb thread reaches a target status (by default idle or error). Use it after spawning or messaging a thread instead of polling bbtools_thread_get repeatedly.",
+      "Wait until a VesnALIA thread reaches a target status (by default idle or error). Use it after spawning or messaging a thread instead of polling bbtools_thread_get repeatedly.",
     parameters: z.object({
       threadId: z.string().describe("The target thread id."),
       waitFor: z
@@ -232,7 +232,7 @@ export function registerThreadTools(
       const limit = timeoutMs ?? 120_000;
       const start = Date.now();
       for (;;) {
-        const thread = await bb.sdk.threads.get({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         const elapsedS = Math.round((Date.now() - start) / 1000);
         if (targets.includes(thread.status)) {
           return `Thread ${thread.id} (${threadTitle(thread)}) reached status ${thread.status} after ${elapsedS}s. Use bbtools_thread_get or bbtools_thread_outline to read the result.`;
@@ -247,12 +247,12 @@ export function registerThreadTools(
   register("threads", {
     name: "bbtools_thread_interactions_list",
     description:
-      "List a bb thread's pending interactions: permission approvals, user questions, and plugin prompts. Use it to see what another thread waits for before answering with bbtools_thread_interaction_respond.",
+      "List a VesnALIA thread's pending interactions: permission approvals, user questions, and plugin prompts. Use it to see what another thread waits for before answering with bbtools_thread_interaction_respond.",
     parameters: z.object({
       threadId: z.string().describe("The target thread id."),
     }),
     execute: async ({ threadId }) => {
-      const list = (await bb.sdk.threads.interactions.list({ threadId })) as unknown as InteractionRow[];
+      const list = (await alia.sdk.threads.interactions.list({ threadId })) as unknown as InteractionRow[];
       if (list.length === 0) return "No interactions on this thread.";
       const open = list.filter((i) => i.status === "pending");
       if (open.length === 0) return "No pending interactions on this thread.";
@@ -263,7 +263,7 @@ export function registerThreadTools(
   register("threads", {
     name: "bbtools_thread_interaction_respond",
     description:
-      "Respond to a pending interaction on another bb thread: approve or deny a permission approval, answer a user question, or submit a value. Listing first with bbtools_thread_interactions_list is expected. This tool is disabled unless the plugin setting enableInteractionRespond is on.",
+      "Respond to a pending interaction on another VesnALIA thread: approve or deny a permission approval, answer a user question, or submit a value. Listing first with bbtools_thread_interactions_list is expected. This tool is disabled unless the plugin setting enableInteractionRespond is on.",
     parameters: z.object({
       threadId: z.string().describe("The target thread id."),
       interactionId: z.string().describe("The interaction id from bbtools_thread_interactions_list."),
@@ -285,7 +285,7 @@ export function registerThreadTools(
     }),
     execute: async ({ threadId, interactionId, decision, answers, value }) => {
       if (!flags.enableInteractionRespond)
-        return "Responding to interactions is disabled in the bb-agent-toolbox plugin settings (enableInteractionRespond).";
+        return "Responding to interactions is disabled in the alia-agent-toolbox plugin settings (enableInteractionRespond).";
       const given = [decision !== undefined, answers !== undefined, value !== undefined].filter(Boolean).length;
       if (given !== 1)
         return "Error: provide exactly one of decision, answers, or value.";
@@ -299,7 +299,7 @@ export function registerThreadTools(
           ),
         };
       else response = { kind: "request_answer", value };
-      await bb.sdk.threads.interactions.respond({ threadId, interactionId, value: response as JsonValue });
+      await alia.sdk.threads.interactions.respond({ threadId, interactionId, value: response as JsonValue });
       return `Responded to interaction ${interactionId} on thread ${threadId}.`;
     },
   });
@@ -307,7 +307,7 @@ export function registerThreadTools(
   register("threads", {
     name: "bbtools_thread_retry",
     description:
-      "Re-submit the failed turn of a bb thread that is in error status. Use it to restart work after fixing the cause of a failure.",
+      "Re-submit the failed turn of a VesnALIA thread that is in error status. Use it to restart work after fixing the cause of a failure.",
     parameters: z.object({
       threadId: z.string().describe("The target thread id."),
       turnRequestId: z
@@ -317,7 +317,7 @@ export function registerThreadTools(
       reason: z.string().optional().describe("Why the turn is retried, shown on the queued row."),
     }),
     execute: async ({ threadId, turnRequestId, reason }) => {
-      const res = await bb.sdk.threads.retry({
+      const res = await alia.sdk.threads.retry({
         threadId,
         ...(turnRequestId ? { turnRequestId } : {}),
         ...(reason ? { reason } : {}),
@@ -330,12 +330,12 @@ export function registerThreadTools(
   register("threads", {
     name: "bbtools_thread_stop",
     description:
-      "Stop a running bb thread (cancels its active turn). Use it to stop work you delegated to another thread, e.g. a runaway or no-longer-needed child thread.",
+      "Stop a running VesnALIA thread (cancels its active turn). Use it to stop work you delegated to another thread, e.g. a runaway or no-longer-needed child thread.",
     parameters: z.object({
       threadId: z.string().describe("The target thread id."),
     }),
     execute: async ({ threadId }) => {
-      await bb.sdk.threads.stop({ threadId });
+      await alia.sdk.threads.stop({ threadId });
       return `Stopped thread ${threadId}.`;
     },
   });
@@ -343,12 +343,12 @@ export function registerThreadTools(
   register("threads", {
     name: "bbtools_thread_archive",
     description:
-      "Archive a bb thread (hides it from the active list; reversible via unarchive). Use it to clean up finished child threads you spawned.",
+      "Archive a VesnALIA thread (hides it from the active list; reversible via unarchive). Use it to clean up finished child threads you spawned.",
     parameters: z.object({
       threadId: z.string().describe("The target thread id."),
     }),
     execute: async ({ threadId }) => {
-      await bb.sdk.threads.archive({ threadId });
+      await alia.sdk.threads.archive({ threadId });
       return `Archived thread ${threadId}.`;
     },
   });
@@ -356,12 +356,12 @@ export function registerThreadTools(
   register("threads", {
     name: "bbtools_thread_clear_context",
     description:
-      "Reset a bb thread's agent context while keeping its workspace and history. Use it on an idle thread that drifted off course before sending a fresh, focused prompt.",
+      "Reset a VesnALIA thread's agent context while keeping its workspace and history. Use it on an idle thread that drifted off course before sending a fresh, focused prompt.",
     parameters: z.object({
       threadId: z.string().describe("The target thread id."),
     }),
     execute: async ({ threadId }) => {
-      await bb.sdk.threads.clearContext({ threadId });
+      await alia.sdk.threads.clearContext({ threadId });
       return `Cleared context of thread ${threadId}.`;
     },
   });
@@ -369,12 +369,12 @@ export function registerThreadTools(
   register("threads", {
     name: "bbtools_thread_compact",
     description:
-      "Compact a bb thread's conversation to shrink its context window. Use it on a long-running thread that is still useful but heavy.",
+      "Compact a VesnALIA thread's conversation to shrink its context window. Use it on a long-running thread that is still useful but heavy.",
     parameters: z.object({
       threadId: z.string().describe("The target thread id."),
     }),
     execute: async ({ threadId }) => {
-      await bb.sdk.threads.compact({ threadId });
+      await alia.sdk.threads.compact({ threadId });
       return `Compacted thread ${threadId}.`;
     },
   });
@@ -382,13 +382,13 @@ export function registerThreadTools(
   register("threads", {
     name: "bbtools_thread_search",
     description:
-      "Search across bb threads and messages for text. Use it to find past discussions instead of reading whole threads.",
+      "Search across VesnALIA threads and messages for text. Use it to find past discussions instead of reading whole threads.",
     parameters: z.object({
       query: z.string().min(1).describe("Text to search for."),
       limitPerGroup: z.number().int().min(1).max(20).optional().describe("Results per group."),
     }),
     execute: async ({ query, limitPerGroup }) => {
-      const res = await bb.sdk.threads.search({
+      const res = await alia.sdk.threads.search({
         query,
         ...(limitPerGroup ? { limitPerGroup: String(limitPerGroup) } : {}),
       });

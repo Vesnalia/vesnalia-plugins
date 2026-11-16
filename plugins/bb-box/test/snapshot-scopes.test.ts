@@ -21,9 +21,9 @@ test("a home snapshot and a machine snapshot each say what they hold", () => {
 });
 
 test("neither a home snapshot nor a machine snapshot is kept past release or forked, each with its own reason", () => {
-  assert.match(notKeptForScope("home", "amber-fox") ?? "", /home folder only, on a machine BB Box lends to other boxes after the release/);
+  assert.match(notKeptForScope("home", "amber-fox") ?? "", /home folder only, on a machine ALIA Box lends to other boxes after the release/);
   assert.match(notKeptForScope("machine", "amber-fox") ?? "", /whole machine box amber-fox was lent/);
-  assert.match(notForkedForScope("home", "amber-fox") ?? "", /BB Box does not fork home folders/);
+  assert.match(notForkedForScope("home", "amber-fox") ?? "", /ALIA Box does not fork home folders/);
   assert.match(notForkedForScope("machine", "amber-fox") ?? "", /holds alone/);
 });
 

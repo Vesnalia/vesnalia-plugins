@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { PrView } from "../contract";
 import { ErrorNote, FIELD_SMALL, PAGE, PageHeading, Segmented } from "./common";
 import { REVIEW_GROUPS, SOURCE_META, type Group } from "./constants";

@@ -1,7 +1,7 @@
 // Settings panels for triage lanes and the area-tag migration.
 import { useMemo, useState } from "react";
-import { experimental_useSidebarThreads as useSidebarThreads, useSdk } from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarSection } from "@get-bb/plugin-sdk/app";
+import { experimental_useSidebarThreads as useSidebarThreads, useSdk } from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarSection } from "@vesnalia/plugin-sdk/app";
 import { LANE_NAMES, matchLanes, resolveLanes, sectionNames, type LaneId, type LaneSections } from "./lanes";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";

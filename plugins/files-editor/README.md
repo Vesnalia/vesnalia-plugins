@@ -1,6 +1,6 @@
-# bb-plugin-files-editor
+# alia-plugin-files-editor
 
-A VS Code-style file explorer and editor for the workspace behind a bb thread,
+A VS Code-style file explorer and editor for the workspace behind a VesnALIA thread,
 laid out the way an editor is: a file tree on the left, editor tabs across the
 top, and the whole file in the middle — syntax highlighted, editable, and
 searchable across every file in the project.
@@ -38,15 +38,15 @@ no real repository or thread titles appear in them.*
   its checkout or one of its worktrees by branch name. Picking a project lands
   on its checkout.
 - **Click a file and it opens in full** — its own tab, the complete contents,
-  syntax-highlighted by BB's own source renderer, in your BB code theme. A
-  markdown file opens rendered instead, the way BB renders a chat message.
+  syntax-highlighted by VesnALIA's own source renderer, in your VesnALIA code theme. A
+  markdown file opens rendered instead, the way VesnALIA renders a chat message.
 - **Edit and save.** A Read / Edit toggle switches the pane to an editor — with
   a third *Preview* segment on a markdown file; <kbd>⌘S</kbd> writes. Saves are
   guarded by the hash the file had when you opened it, so if an agent edited it
   underneath you the save stops and offers *Reload* or *Overwrite* rather than
   clobbering the change.
 - **Images render**, other binaries say so instead of dumping bytes.
-- **`bb files`** gives an agent the same listing from the CLI.
+- **`alia files`** gives an agent the same listing from the CLI.
 
 ## Search in files
 
@@ -75,7 +75,7 @@ built around the fact that you refine a query while you type it:
 - **Every search cancels the one it replaces**, on the machine doing the search
   as well as in the view, so a fast typist never queues a backlog.
 - **It runs where the files are.** Listing and search run in the plugin's host
-  process, which BB starts on the machine the workspace lives on — this one or
+  process, which VesnALIA starts on the machine the workspace lives on — this one or
   a connected one — so every read is a local disk read and only the matches
   travel back.
 - **Files are read in parallel**, binaries are skipped by extension before they
@@ -109,14 +109,14 @@ explorer hides them.
 ## The CLI
 
 ```
-bb files root                 # where the workspace is, and on which machine
-bb files tree [--depth n] [--all] [--limit n]
-bb files find <query> [--limit n]
-bb files read <path>
+alia files root                 # where the workspace is, and on which machine
+alia files tree [--depth n] [--all] [--limit n]
+alia files find <query> [--limit n]
+alia files read <path>
 ```
 
 Everything resolves against the thread the command runs in: its worktree when it
-has one, otherwise the project's default checkout. It reads through BB, so it
+has one, otherwise the project's default checkout. It reads through VesnALIA, so it
 returns the right bytes even when that workspace lives on another machine —
 which is exactly when `ls` and `cat` would quietly read the wrong disk.
 
@@ -130,14 +130,14 @@ big enough to truncate a listing on their own. Remove one to browse it, or add
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/abdoutelb/bb-plugin-files-editor.git@^0.1.2
+alia plugin install git:https://github.com/abdoutelb/bb-plugin-files-editor.git@^0.1.2
 ```
 
-That tracks the 0.x line, so `bb plugin outdated` and `bb plugin update` pick up
+That tracks the 0.x line, so `alia plugin outdated` and `alia plugin update` pick up
 later releases. To work on it locally instead, clone it and install the path:
 
 ```sh
-bb plugin install /path/to/bb-plugin-files-editor
+alia plugin install /path/to/alia-plugin-files-editor
 ```
 
 ## Development
@@ -146,7 +146,7 @@ bb plugin install /path/to/bb-plugin-files-editor
 npm install --include=dev
 npm test                              # pure logic: trees, ranking, find, paths
 npm run typecheck
-bb plugin dev                         # rebuild + reload on save
+alia plugin dev                         # rebuild + reload on save
 ```
 
 `lib/` holds the logic worth testing on its own — tree assembly, the fuzzy
@@ -161,22 +161,22 @@ the view.
 - The listing stops at 40,000 entries, and the explorer mounts at most 600 rows at a time. The footer says when either
   limit is in play; widening *Excluded directories* is the fix for a truncated
   listing.
-- Every `bb files` command is capped by BB's 1 MB limit on a command's output.
+- Every `alia files` command is capped by VesnALIA's 1 MB limit on a command's output.
   Past that it prints what fits — whole lines, for a listing — and says how much
-  it cut. BB discards an oversize result rather than truncating it, so the
+  it cut. VesnALIA discards an oversize result rather than truncating it, so the
   clipping is the difference between a partial answer and none.
 - The editor is a textarea with a gutter, not a code editor: no completion and
   no multiple cursors, and find in the open file is literal text — no regex,
   no replace (Search in files does take a regex). For
-  those, BB's builtin **File Editor** (Monaco) plugin claims the file-preview
+  those, VesnALIA's builtin **File Editor** (Monaco) plugin claims the file-preview
   surface; the ↗ button in the toolbar hands it the current file.
 - Reading, a find hit highlights its whole line, because line ranges are what
-  BB's source viewer accepts. Editing selects the exact match. Previewing there
+  VesnALIA's source viewer accepts. Editing selects the exact match. Previewing there
   is nothing to highlight — the offsets point into the markdown source, not into
   what is on screen — so <kbd>⌘F</kbd> switches the pane to *Read* first, and a
   search hit in a markdown file opens it in *Read* on that line, unless you are
   editing it.
-- *Preview* is BB's chat-message renderer, which knows nothing about where the
+- *Preview* is VesnALIA's chat-message renderer, which knows nothing about where the
   file lives, so relative image and link paths do not resolve against the
   workspace. What it makes of raw HTML is its own business, not this plugin's.
 - Search in files stops at 2,000 hits, 500 files or 10 seconds, and says so.

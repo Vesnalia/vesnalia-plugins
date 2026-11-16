@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   addDays,
@@ -84,8 +84,8 @@ export const rpcContract = defineRpcContract({
 });
 
 type Activity = z.infer<typeof activitySchema>;
-type PluginDatabase = ReturnType<BbPluginApi["storage"]["database"]>;
-type Sdk = BbPluginApi["sdk"];
+type PluginDatabase = ReturnType<AliaPluginApi["storage"]["database"]>;
+type Sdk = AliaPluginApi["sdk"];
 type ThreadSummary = Awaited<ReturnType<Sdk["threads"]["list"]>>[number];
 type ThreadMeta = Pick<
   ThreadSummary,
@@ -275,9 +275,9 @@ function threadTitle(row: Pick<ThreadRow, "id" | "title">): string {
   return row.title?.trim() || `Untitled thread (${row.id})`;
 }
 
-export default function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+export default function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, MIGRATIONS);
 
   let fullSync: Promise<void> | null = null;
   const threadTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -295,7 +295,7 @@ export default function plugin(bb: BbPluginApi) {
     if (disposed || signalTimer) return;
     signalTimer = setTimeout(() => {
       signalTimer = null;
-      bb.realtime.publish(CHANGE_CHANNEL, { at: Date.now() });
+      alia.realtime.publish(CHANGE_CHANNEL, { at: Date.now() });
     }, CHANGE_SIGNAL_DEBOUNCE_MS);
   };
 
@@ -307,7 +307,7 @@ export default function plugin(bb: BbPluginApi) {
     let cursor = row?.last_seq ?? 0;
     let changed = false;
     for (;;) {
-      const page = await bb.sdk.threads.events.list({
+      const page = await alia.sdk.threads.events.list({
         threadId: thread.id,
         afterSeq: String(cursor),
         limit: String(EVENT_PAGE_SIZE),
@@ -329,7 +329,7 @@ export default function plugin(bb: BbPluginApi) {
     const threads: ThreadSummary[] = [];
     for (const archived of [false, true]) {
       for (let offset = 0; ; offset += THREAD_PAGE_SIZE) {
-        const page = await bb.sdk.threads.list({ archived, limit: THREAD_PAGE_SIZE, offset });
+        const page = await alia.sdk.threads.list({ archived, limit: THREAD_PAGE_SIZE, offset });
         threads.push(...page);
         if (page.length < THREAD_PAGE_SIZE) break;
       }
@@ -367,7 +367,7 @@ export default function plugin(bb: BbPluginApi) {
       try {
         changed = (await syncThreadEvents(thread)) || changed;
       } catch (cause) {
-        bb.log.warn(`Could not read turn history for ${thread.id}: ${errorMessage(cause)}`);
+        alia.log.warn(`Could not read turn history for ${thread.id}: ${errorMessage(cause)}`);
       }
     });
 
@@ -375,7 +375,7 @@ export default function plugin(bb: BbPluginApi) {
       "INSERT INTO sync_state (key, value) VALUES ('synced_at', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
     ).run(startedAt);
     if (stale.length > 0) {
-      bb.log.info(`Synced turn history for ${stale.length} of ${threads.length} threads`);
+      alia.log.info(`Synced turn history for ${stale.length} of ${threads.length} threads`);
     }
     if (changed) signalChange();
   };
@@ -408,7 +408,7 @@ export default function plugin(bb: BbPluginApi) {
             if (changed) signalChange();
           },
           (cause) =>
-            bb.log.warn(`Could not read turn history for ${thread.id}: ${errorMessage(cause)}`),
+            alia.log.warn(`Could not read turn history for ${thread.id}: ${errorMessage(cause)}`),
         );
       }, THREAD_SYNC_DEBOUNCE_MS),
     );
@@ -421,9 +421,9 @@ export default function plugin(bb: BbPluginApi) {
     "thread.archived",
     "thread.unarchived",
   ] as const) {
-    bb.events.on(event, ({ thread }) => scheduleThreadSync(thread));
+    alia.events.on(event, ({ thread }) => scheduleThreadSync(thread));
   }
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     deleteThread(db, thread.id);
     signalChange();
   });
@@ -448,7 +448,7 @@ export default function plugin(bb: BbPluginApi) {
         : (db
             .prepare(`SELECT * FROM threads WHERE id IN (${threadIds.map(() => "?").join(", ")})`)
             .all(...threadIds) as ThreadRow[]);
-    const projects = await bb.sdk.projects.list({ includePersonal: true });
+    const projects = await alia.sdk.projects.list({ includePersonal: true });
     const busiest = new Set(busiestProjects(db, now));
     return {
       from,
@@ -457,7 +457,7 @@ export default function plugin(bb: BbPluginApi) {
       generatedAt: now,
       syncedAt: readSyncedAt(),
       projects: projects.map((project) => ({ id: project.id, name: project.name })),
-      // Slots follow bb's project order, so a project keeps its color in every view.
+      // Slots follow VesnALIA's project order, so a project keeps its color in every view.
       colorOrder: projects
         .filter((project) => busiest.has(project.id))
         .map((project) => project.id),
@@ -473,24 +473,24 @@ export default function plugin(bb: BbPluginApi) {
     };
   };
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     activity: ({ from, to, mergeGapMinutes }) =>
       queryActivity(from, to, mergeGapMinutes as MergeGapMinutes),
   });
 
   // Backfill once at load so the first page view does not wait for it.
-  bb.background.service("backfill", {
+  alia.background.service("backfill", {
     async start(signal) {
       try {
         await syncAll();
       } catch (cause) {
         if (!signal.aborted)
-          bb.log.warn(`Initial turn history sync failed: ${errorMessage(cause)}`);
+          alia.log.warn(`Initial turn history sync failed: ${errorMessage(cause)}`);
       }
     },
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "agent-calendar",
     summary: "Show what your agents worked on and when",
     commands: [
@@ -498,13 +498,13 @@ export default function plugin(bb: BbPluginApi) {
         name: "timesheet",
         summary: "Hours per thread and day for a week",
         usage:
-          "bb agent-calendar [timesheet] [--week this|last|YYYY-MM-DD] [--gap 15|30|60|120] [--json]",
+          "alia agent-calendar [timesheet] [--week this|last|YYYY-MM-DD] [--gap 15|30|60|120] [--json]",
       },
       {
         name: "log",
         summary: "Chronological work blocks for a day or a week",
         usage:
-          "bb agent-calendar log [--day today|yesterday|YYYY-MM-DD | --week this|last|YYYY-MM-DD] [--gap 15|30|60|120] [--json]",
+          "alia agent-calendar log [--day today|yesterday|YYYY-MM-DD | --week this|last|YYYY-MM-DD] [--gap 15|30|60|120] [--json]",
       },
     ],
     async run(argv) {
@@ -540,7 +540,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
     for (const timer of threadTimers.values()) clearTimeout(timer);
     threadTimers.clear();
@@ -552,7 +552,7 @@ export default function plugin(bb: BbPluginApi) {
 // CLI
 
 const CLI_USAGE = [
-  "Usage: bb agent-calendar [timesheet|log] [options]",
+  "Usage: VesnALIA agent-calendar [timesheet|log] [options]",
   "",
   "  timesheet   Hours per thread and day for a week (default)",
   "  log         Chronological work blocks for a day or a week",
@@ -563,7 +563,7 @@ const CLI_USAGE = [
   `  --gap ${MERGE_GAP_MINUTES.join("|")}   Merge turns of a thread separated by at most this many idle minutes (default ${DEFAULT_MERGE_GAP_MINUTES})`,
   "  --json                        Print machine-readable JSON",
   "",
-  "Times use the bb server's local time zone.",
+  "Times use the VesnALIA server's local time zone.",
 ].join("\n");
 
 type CliRange = { from: number; to: number; label: string };

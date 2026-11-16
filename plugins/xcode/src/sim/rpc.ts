@@ -78,7 +78,7 @@ export type LiveStateDto = LiveState & {
 /**
  * The proxied stream — the fallback, and still the only one that always works.
  *
- * Same-origin, so a remote bb panel is not blocked as mixed content,
+ * Same-origin, so a remote VesnALIA panel is not blocked as mixed content,
  * and a viewer on another machine has no loopback to talk to. The
  * panel prefers `directStreamUrlFor` and lands here when that fails, which is
  * exactly the remote case.
@@ -100,7 +100,7 @@ export function streamUrlFor(pluginId: string, state: LiveState): string | null 
 /**
  * The direct stream, straight off the capture host's loopback port.
  *
- * Worth the second auth model: measured, proxying the MJPEG through the bb
+ * Worth the second auth model: measured, proxying the MJPEG through the VesnALIA
  * server cost 1.69s of CPU per 8s of streaming — 79% as much as capturing and
  * JPEG-encoding the frames — and spent all of it on the process every other
  * plugin and the whole UI share. The bytes are identical; the hop was pure
@@ -526,7 +526,7 @@ export function makeRpcHandlers(ctx: Ctx, liveStreamStats = new LiveStreamStatsS
 /**
  * Capture, with the context the store needs assembled in one place.
  *
- * Shared by the RPC handler, the agent tool and `bb xcode sim shot`, so a frame taken
+ * Shared by the RPC handler, the agent tool and `alia xcode sim shot`, so a frame taken
  * three ways is one frame taken one way.
  */
 export async function captureNow(

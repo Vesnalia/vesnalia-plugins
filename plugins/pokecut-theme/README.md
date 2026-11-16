@@ -1,10 +1,10 @@
-# Pokecut Theme for BB
+# Pokecut Theme for VesnALIA
 
-Pokecut Theme is a BB plugin that provides a light and dark interface theme and optional styling enhancements for BB's chat, timeline, composer, and file views.
+Pokecut Theme is a VesnALIA plugin that provides a light and dark interface theme and optional styling enhancements for VesnALIA's chat, timeline, composer, and file views.
 
-BB 0.44 or newer. [Русский](README.ru.md).
+VesnALIA 0.44 or newer. [Русский](README.ru.md).
 
-The visual language follows the Pokecut admin design. The chat layer and message timestamps include MIT-licensed adaptations; see [NOTICE](NOTICE) for attribution. No Pokecut source, images, or fonts are bundled; BB supplies Inter.
+The visual language follows the Pokecut admin design. The chat layer and message timestamps include MIT-licensed adaptations; see [NOTICE](NOTICE) for attribution. No Pokecut source, images, or fonts are bundled; VesnALIA supplies Inter.
 
 ![Pokecut theme comparison in light mode](assets/screenshots/compare-light.jpg)
 ![Pokecut theme comparison in dark mode](assets/screenshots/compare-dark.jpg)
@@ -15,11 +15,11 @@ The screenshots use demo content.
 ## Quick start
 
 ```sh
-bb plugin install https://github.com/VKirill/bb-plugin-pokecut-theme
-bb theme set plugin:pokecut-theme:pokecut
+alia plugin install https://github.com/VKirill/bb-plugin-pokecut-theme
+alia theme set plugin:pokecut-theme:pokecut
 ```
 
-Or select **Pokecut** in Settings → Appearance. Reset with `bb theme reset`.
+Or select **Pokecut** in Settings → Appearance. Reset with `alia theme reset`.
 
 ## Documentation
 

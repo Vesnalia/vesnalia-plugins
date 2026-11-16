@@ -57,9 +57,9 @@ export function ShellPicker({
       {/* Fill mode is bounded by the flex parent, so it has to shed the
           vendored 300px menu cap; the dropdown keeps it. The cap is lifted from
           styles.css rather than with `max-h-none`, because this plugin's
-          Tailwind utility layer loses to bb's own app CSS in the host page —
+          Tailwind utility layer loses to VesnALIA's own app CSS in the host page —
           `min-h-0` lands, `max-h-*` does not. */}
-      <CommandList data-bb-ft-fill={fill ? "" : undefined} className={cn(fill && "min-h-0 flex-1")}>
+      <CommandList data-alia-ft-fill={fill ? "" : undefined} className={cn(fill && "min-h-0 flex-1")}>
         <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
           No directory matches that.
         </CommandEmpty>
@@ -82,7 +82,7 @@ export function ShellPicker({
                   <span className="flex min-w-0 items-center gap-1.5">
                     <span className="truncate">{scope.label}</span>
                     {scope.kind === "worktree" ? (
-                      <span className="bb-ft-chip shrink-0">worktree</span>
+                      <span className="alia-ft-chip shrink-0">worktree</span>
                     ) : null}
                   </span>
                   <span className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
@@ -91,12 +91,12 @@ export function ShellPicker({
                     </span>
                     {/* The machine is metadata, not part of the path, and not
                         worth the name's width either: beside the label it took
-                        half the row and cut every project to "bb-plugin-flo…".
+                        half the row and cut every project to "alia-plugin-flo…".
                         On the path's line it costs only path, which already
                         elides its least useful end. The cap lives in styles.css
                         for the reason given there. */}
                     {showHosts || !scope.online ? (
-                      <span data-bb-ft-host="" className="shrink-0 truncate opacity-80">
+                      <span data-alia-ft-host="" className="shrink-0 truncate opacity-80">
                         {showHosts ? scope.hostName : null}
                         {!scope.online ? (showHosts ? " · offline" : "offline") : null}
                       </span>

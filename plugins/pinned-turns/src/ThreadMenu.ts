@@ -4,7 +4,7 @@ import {
   experimental_usePluginId as usePluginId,
   useRpc,
   type PluginThreadActionRegistration,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { useOptions, type Options } from "./options";
 import { HALVES, type Halves, type SettingKey } from "./shared";
@@ -28,8 +28,8 @@ const HALF_PREFIX = "halves:";
 const SETTINGS = "settings";
 
 /**
- * Opens this plugin's page in BB's settings in place. The SDK has no call for it, so
- * this pushes the route and tells BB's router; a plain link would reload the page.
+ * Opens this plugin's page in VesnALIA's settings in place. The SDK has no call for it, so
+ * this pushes the route and tells VesnALIA's router; a plain link would reload the page.
  */
 function openSettings(pluginId: string) {
   history.pushState(null, "", `/settings/plugins/${pluginId}`);
@@ -45,7 +45,7 @@ interface Data {
   openSettings(): void;
 }
 
-/** Read once for the whole app by BB, not per thread: the options are global. */
+/** Read once for the whole app by VesnALIA, not per thread: the options are global. */
 function useData(): Data {
   const rpc = useRpc<typeof rpcContract>();
   const options = useOptions();

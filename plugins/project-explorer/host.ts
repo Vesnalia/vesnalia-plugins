@@ -4,7 +4,7 @@
 // and stat an image before previewing it. Neither operation reads file bytes.
 import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostContract } from "./contract.js";
 
 export default experimental_defineHostEntry({

@@ -1,4 +1,4 @@
-import type { PluginSidebarThreadIndicator } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThreadIndicator } from "@vesnalia/plugin-sdk";
 import { StatusMark, type StatusMarkKind } from "@/components/inbox/status-mark";
 import { Icon } from "@/components/ui/icon";
 import { workingActivityPresentation } from "@/lib/family-status";
@@ -19,7 +19,7 @@ function statusColor(role: ThreadStatusColorRole): string {
  *
  * The row gives the glyph and the age ONE slot, so this decides which of the
  * two the user sees. Listed kind by kind rather than "anything but none": an
- * indicator bb ships tomorrow must fall through to the age label, not blank
+ * indicator VesnALIA ships tomorrow must fall through to the age label, not blank
  * the slot.
  */
 export function hasStatusGlyph(

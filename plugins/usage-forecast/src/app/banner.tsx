@@ -432,7 +432,7 @@ const fullPair = (p: TokenPair) => `${formatTokens(p.work)} (${formatTokens(p.al
 
 /**
  * UF-12 R8: "Tokens: thread 86k · today 310k · month 4.2M". "today" and
- * "month" are the thread's provider across its BB threads. No line without
+ * "month" are the thread's provider across its VesnALIA threads. No line without
  * data, and none while the query loads or after it failed.
  */
 export function TokensLine({ threadId, providerId }: { threadId: string; providerId: string | null }) {

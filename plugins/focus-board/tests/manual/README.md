@@ -50,7 +50,7 @@ through `puppeteer-core` (nothing is downloaded), writes a report per suite to
   on); `click` left-clicks a card's anchor (`{ card: thr_x }`); `click_aria`
   clicks a control by accessible name (aria-label, else button text — e.g.
   the What's-new gift or the modal's Got it); `push_url` pushes a URL the
-  mock router does not own — the shape of a link-out to main bb; `blur` takes
+  mock router does not own — the shape of a link-out to main VesnALIA; `blur` takes
   an aria-label and lets that control's focus go
   (`{ blur: "Search threads" }`), the setup behind "click somewhere else"
   behavior — the search field's search button hides on it.
@@ -190,7 +190,7 @@ through `puppeteer-core` (nothing is downloaded), writes a report per suite to
 - `uat-pane-history.yaml` — the open pane's thread lives in the panel's URL:
   clicks push real history entries, the browser's own back arrow reopens the
   trail of previously opened cards, a foreign-surface push-and-back restores
-  the pane (the bb back-arrow case), Escape closes by replacing the entry,
+  the pane (the VesnALIA back-arrow case), Escape closes by replacing the entry,
   deep links open the pane directly (and a malformed one degrades to the
   plain board), and the active card is kept in view — on restore and when it
   relocates to another lane (drop-to-Done).
@@ -408,7 +408,7 @@ defaults:
 
 ## Two windows (`defaults.windows: 2`)
 
-bb's second window learns about a write through a realtime signal and a
+VesnALIA's second window learns about a write through a realtime signal and a
 refetch. To assert that, a suite can open a SECOND live document over the same
 mocked host:
 
@@ -432,7 +432,7 @@ steps:
   group registry and assignments, rank moves) is appended as one record to the
   page pair's own log in localStorage, and the browser's `storage` event
   delivers it to the other document, which applies the SAME function and fires
-  the realtime signal, so the second window refetches exactly as bb's does.
+  the realtime signal, so the second window refetches exactly as VesnALIA's does.
 - `page: peer` runs a step against the second window. Omit it (or write
   `page: main`) for the first. A step that names the peer in a suite without
   `windows: 2` fails the run rather than quietly driving the first window.

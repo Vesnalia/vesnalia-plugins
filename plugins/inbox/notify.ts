@@ -1,12 +1,12 @@
 // Notification channels: native desktop (macOS) + Telegram (mobile), plus the
-// bb-connect deeplink resolver borrowed from bb-plugin-ntfy so mobile links open
+// alia-connect deeplink resolver borrowed from alia-plugin-ntfy so mobile links open
 // the actual thread on the user's phone.
 import { exec } from "node:child_process";
 import { platform } from "node:process";
 import { telegramRequest } from "./telegram-api";
 
 /**
- * Prefer bb connect's remote origin when this server is paired, so a deeplink
+ * Prefer VesnALIA connect's remote origin when this server is paired, so a deeplink
  * opens on the phone. Falls back to the loopback URL (desktop-local).
  */
 export async function resolveDeeplinkBaseUrl(
@@ -98,7 +98,7 @@ export async function sendTelegram(
 ): Promise<{ ok: boolean; messageId?: number; detail?: string }> {
   const body =
     linkUrl && linkUrl.startsWith("http")
-      ? `${text}\n\n<a href="${escapeHtml(linkUrl)}">Open in bb</a>`
+      ? `${text}\n\n<a href="${escapeHtml(linkUrl)}">Open in VesnALIA</a>`
       : text;
   try {
     const payload = await telegramRequest(cfg.botToken, "sendMessage", {

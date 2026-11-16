@@ -217,7 +217,7 @@ describe("Engine: send-back, cancel, end", () => {
     expect(s.store.work(s.id)!.outcome).toBeNull();
   });
 
-  it("cancels a work whose worktree bb already removed, keeping what the earlier snapshots hold", async () => {
+  it("cancels a work whose worktree VesnALIA already removed, keeping what the earlier snapshots hold", async () => {
     const s = await started();
     const t = idleStage(s);
     await moveTo(s, 2);

@@ -27,7 +27,7 @@ const projectColorsHook = await readFile(
 
 describe("Dockside settings contract", () => {
   it("declares every palette and behavior setting with safe defaults", () => {
-    assert.match(server, /bb\.settings\.define\(/);
+    assert.match(server, /alia\.settings\.define\(/);
     for (const key of [
       "palettePreset",
       "workingColor",
@@ -88,9 +88,9 @@ describe("Dockside settings contract", () => {
     assert.match(server, /listProjectColors:/);
     assert.match(server, /setProjectColor:/);
     assert.match(server, /resetProjectColor:/);
-    assert.match(server, /bb\.sdk\.projects\.get\(\{ projectId \}\)/);
+    assert.match(server, /alia\.sdk\.projects\.get\(\{ projectId \}\)/);
     assert.match(server, /PROJECT_COLOR_CHANNEL/);
-    assert.match(server, /bb\.realtime\.publish\(PROJECT_COLOR_CHANNEL/);
+    assert.match(server, /alia\.realtime\.publish\(PROJECT_COLOR_CHANNEL/);
 
     assert.match(settings, /useSidebarThreads\(\)/);
     assert.match(settings, /data-dockside-project-color-settings/);

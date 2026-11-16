@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import type { ChildProcess } from "node:child_process";
 import { describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { AndroidService, registerAndroid } from "./android";
 import type { AndroidExec, AndroidTools } from "./android-adb";
 
@@ -39,16 +39,16 @@ function fakeSdk() {
 }
 async function load(agentControl: "ask" | "always" | "never" = "always") {
   const sdk = fakeSdk();
-  const { bb, harness } = createFakePluginHost({ pluginId: "android-test" });
-  const service = registerAndroid(bb, { ...sdk, agentControl: () => agentControl });
-  return { ...sdk, service, bb, harness };
+  const { alia, harness } = createFakePluginHost({ pluginId: "android-test" });
+  const service = registerAndroid(alia, { ...sdk, agentControl: () => agentControl });
+  return { ...sdk, service, alia, harness };
 }
 
 describe("Android plugin integration", () => {
   it("registers Android tools and reports missing SDK without trying to install one", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "android-test" });
+    const { alia, harness } = createFakePluginHost({ pluginId: "android-test" });
     const exec = vi.fn<AndroidExec>();
-    registerAndroid(bb, { exec, tools: () => ({ adb: null, emulator: null }) });
+    registerAndroid(alia, { exec, tools: () => ({ adb: null, emulator: null }) });
     expect(harness.registrations.agentTools.map((tool) => tool.name)).toEqual([
       "android_sim_list_devices", "android_sim_attach", "android_sim_screenshot", "android_sim_tap", "android_sim_swipe", "android_sim_type", "android_sim_press_button", "android_sim_install_and_launch", "android_sim_launch", "android_sim_detach",
     ]);
@@ -92,8 +92,8 @@ describe("Android plugin integration", () => {
   });
   it("refuses a different AVD racing onto the selected console port", async () => {
     const sdk = fakeSdk();
-    const { bb, harness } = createFakePluginHost({ pluginId: "android-test" });
-    registerAndroid(bb, { ...sdk, agentControl: () => "always", spawn: (file, args) => {
+    const { alia, harness } = createFakePluginHost({ pluginId: "android-test" });
+    registerAndroid(alia, { ...sdk, agentControl: () => "always", spawn: (file, args) => {
       const child = sdk.spawn(file, args);
       sdk.running.set(`emulator-${args[3]}`, "Unexpected_AVD");
       return child;

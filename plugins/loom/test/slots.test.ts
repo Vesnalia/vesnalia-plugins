@@ -23,10 +23,10 @@ const project = () => h.store.projectBySlug("csv")!;
 const spec = () => specOf(h.store, project());
 const ticket = (key: string) => ticketOf(h, key);
 const workerOf = (key: string): ThreadRow => h.store.threads({ ticketId: ticket(key).id, role: "worker" }).at(-1)!;
-const sentTo = (key: string, text: string) => h.bb.sent(workerOf(key).thread_id!).filter((message) => message.includes(text));
+const sentTo = (key: string, text: string) => h.alia.sent(workerOf(key).thread_id!).filter((message) => message.includes(text));
 const fixRounds = (key: string) => sentTo(key, "needs fixes (fix round");
-const workerSpawns = () => h.bb.callsTo("spawnThread").filter(([args]) => (args as SpawnArgs).metadata.role === "worker").map(([args]) => (args as SpawnArgs).metadata.ticket);
-const reviewerSpawns = () => h.bb.callsTo("spawnThread").filter(([args]) => (args as SpawnArgs).metadata.role === "reviewer").map(([args]) => (args as SpawnArgs).metadata.ticket);
+const workerSpawns = () => h.alia.callsTo("spawnThread").filter(([args]) => (args as SpawnArgs).metadata.role === "worker").map(([args]) => (args as SpawnArgs).metadata.ticket);
+const reviewerSpawns = () => h.alia.callsTo("spawnThread").filter(([args]) => (args as SpawnArgs).metadata.role === "reviewer").map(([args]) => (args as SpawnArgs).metadata.ticket);
 const findings: Finding[] = [{ severity: "blocking", title: "The header row is missing", detail: "An empty export has no header." }];
 const TEXT = { title: "Add order rows", body: "## Why\nSupport wants CSV exports.", commit_message: "Add the order row mapper" };
 
@@ -143,27 +143,27 @@ describe("worker slots for work going back to a worker", () => {
     await openPrs(["CSV-1", "CSV-2"]);
     for (const key of ["CSV-1", "CSV-2"]) {
       const row = workerOf(key);
-      h.bb.threads.get(row.thread_id!)!.status = "idle";
+      h.alia.threads.get(row.thread_id!)!.status = "idle";
     }
     await releaseIdleWorkers(h.ctx, project(), spec());
     for (const key of ["CSV-1", "CSV-2"]) {
       const row = h.store.thread(workerOf(key).id)!;
       expect(isReleased(row)).toBe(true);
-      h.bb.environments.get(h.bb.threads.get(row.thread_id!)!.environmentId!)!.status = "destroyed";
+      h.alia.environments.get(h.alia.threads.get(row.thread_id!)!.environmentId!)!.status = "destroyed";
     }
     feedback("CSV-1");
     feedback("CSV-2");
     await poll();
 
     const second = workerOf("CSV-2").thread_id!;
-    expect(h.bb.callsTo("unarchive")).toEqual([[workerOf("CSV-1").thread_id]]);
+    expect(h.alia.callsTo("unarchive")).toEqual([[workerOf("CSV-1").thread_id]]);
     expect(ticket("CSV-2")).toMatchObject({ state: "working", worker_thread_id: second });
     expect(isReleased(h.store.thread(workerOf("CSV-2").id)!)).toBe(true);
 
     await h.engine.block("CSV-1", "Not now.", "human");
     await deliverHandBacks(h.ctx, project().id);
-    expect(h.bb.callsTo("unarchive")).toContainEqual([second]);
-    expect(h.bb.callsTo("restoreEnvironment")).toContainEqual([second]);
+    expect(h.alia.callsTo("unarchive")).toContainEqual([second]);
+    expect(h.alia.callsTo("restoreEnvironment")).toContainEqual([second]);
   });
 
   it("sends a review's changes to the worker once a slot is free, before any new worker starts", async () => {
@@ -221,13 +221,13 @@ describe("worker slots for work going back to a worker", () => {
   it("keeps the human's reply to a worker whose work waits with that work, and sends both together", async () => {
     const reviewer = await reviewWhileFull();
     await requestChanges(h.ctx, reviewer.thread_id!, "Fix the header.", findings);
-    const before = h.bb.sent(workerOf("CSV-1").thread_id!).length;
+    const before = h.alia.sent(workerOf("CSV-1").thread_id!).length;
     await h.engine.humanPost("CSV-1", "Use the order's own currency too.");
-    expect(h.bb.sent(workerOf("CSV-1").thread_id!)).toHaveLength(before);
+    expect(h.alia.sent(workerOf("CSV-1").thread_id!)).toHaveLength(before);
 
     await handIn("CSV-2");
     await deliverHandBacks(h.ctx, project().id);
-    const sent = h.bb.sent(workerOf("CSV-1").thread_id!).slice(before);
+    const sent = h.alia.sent(workerOf("CSV-1").thread_id!).slice(before);
     expect(sent).toHaveLength(1);
     expect(sent[0]).toContain("review round 1 asked for changes");
     expect(sent[0]).toContain("[loom] Reply on CSV-1 from the human\nUse the order's own currency too.");
@@ -237,7 +237,7 @@ describe("worker slots for work going back to a worker", () => {
     const reviewer = await reviewWhileFull();
     await requestChanges(h.ctx, reviewer.thread_id!, "Fix the header.", findings);
     await h.engine.pause("csv", "human", false);
-    h.bb.threads.get(workerOf("CSV-1").thread_id!)!.status = "idle";
+    h.alia.threads.get(workerOf("CSV-1").thread_id!)!.status = "idle";
     await h.engine.resume("csv", "human");
     expect(sentTo("CSV-1", "The project resumed")).toEqual([]);
     expect(waitsForSlot(ticket("CSV-1"))).toBe(true);
@@ -271,7 +271,7 @@ describe("threads that wait for the human", () => {
     await h.engine.tick();
     expect(sentTo("CSV-1", "asked for changes")).toEqual([]);
 
-    h.bb.waiting.add(workerOf("CSV-2").thread_id!);
+    h.alia.waiting.add(workerOf("CSV-2").thread_id!);
     await h.engine.tick();
     expect(sentTo("CSV-1", "review round 1 asked for changes")).toHaveLength(1);
   });
@@ -288,18 +288,18 @@ describe("threads that wait for the human", () => {
     await h.engine.tick();
     expect(reviewerSpawns()).toEqual(["CSV-1"]);
 
-    h.bb.waiting.add(h.store.threads({ ticketId: ticket("CSV-1").id, role: "reviewer" })[0]!.thread_id!);
+    h.alia.waiting.add(h.store.threads({ ticketId: ticket("CSV-1").id, role: "reviewer" })[0]!.thread_id!);
     await h.engine.tick();
     expect(reviewerSpawns()).toEqual(["CSV-1", "CSV-3"]);
   });
 
-  it("asks bb only while every slot is held and work waits for one", async () => {
+  it("asks VesnALIA only while every slot is held and work waits for one", async () => {
     await seed(2);
     await h.engine.tick();
     expect(workerSpawns()).toEqual(["CSV-1", "CSV-2"]);
-    expect(h.bb.callsTo("waitingOnUser")).toEqual([]);
+    expect(h.alia.callsTo("waitingOnUser")).toEqual([]);
     await h.engine.tick();
-    expect(h.bb.callsTo("waitingOnUser")).toEqual([[[workerOf("CSV-1").thread_id, workerOf("CSV-2").thread_id]]]);
+    expect(h.alia.callsTo("waitingOnUser")).toEqual([[[workerOf("CSV-1").thread_id, workerOf("CSV-2").thread_id]]]);
   });
 });
 

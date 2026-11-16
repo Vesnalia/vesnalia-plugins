@@ -17,4 +17,4 @@ Ronda final con Astra. Disposición: aceptado y arreglado con prueba y mutante (
 ## Límites que declara
 
 - Static review only: no files edited, tests or mutants executed, or work delegated.
-- Live bb behavior and runtime timing were not verified; inspection used repository code and installed SDK declarations.
+- Live VesnALIA behavior and runtime timing were not verified; inspection used repository code and installed SDK declarations.

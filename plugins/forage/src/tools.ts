@@ -1,11 +1,11 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { operationSchemas, type ForageRuntime } from "./operations.ts";
 import { boundOutput } from "./format.ts";
 export { runDispatchedBatch, selectContentTargets } from "./operations.ts";
 
 export const TOOL_NAMES = ["web_search", "web_fetch", "web_map", "web_extract", "web_crawl", "web_diff"] as const;
 
-export function registerTools(bb: BbPluginApi, runtime: ForageRuntime): void {
+export function registerTools(alia: AliaPluginApi, runtime: ForageRuntime): void {
  const definitions = [
   { name: "search", title: "Search the web", description: "Search ranked web results with batches, domain/date filters and optional content. Profiles and providers can only narrow configured privacy policy.", instructions: "Search varied angles, then read relevant URLs with web_fetch before relying on snippets." },
   { name: "fetch", title: "Read web sources", description: "Read URLs or immutable snapshotId content. Use contentHash with offset for stable paging. Supports raw/direct, outline, links, lines and focus views. URL-only paging may fetch again after cache expiry.", instructions: "Use snapshotId and contentHash from a prior result for immutable continuation. Source IDs are scoped; share URLs or findings across threads unless explicitly copied to the project. To cite a kept page in a reply, put ::forage-cite{snapshot=\"<snapshotId>\" lines=\"<from>-<to>\"} on its own line after the claim, with only the few lines that support it." },
@@ -16,7 +16,7 @@ export function registerTools(bb: BbPluginApi, runtime: ForageRuntime): void {
  ] as const;
  for (const definition of definitions) {
   const execute = { search: runtime.executeSearch, fetch: runtime.executeFetch, map: runtime.executeMap, extract: runtime.executeExtract, crawl: runtime.executeCrawl, diff: runtime.executeDiff }[definition.name];
-  bb.agents.registerTool({
+  alia.agents.registerTool({
    name: `web_${definition.name}`, description: definition.description, instructions: definition.instructions,
    presentation: { label: { pending: definition.title, completed: definition.title }, icon: { glyph: `forage/${definition.name}` } },
    parameters: operationSchemas[definition.name],

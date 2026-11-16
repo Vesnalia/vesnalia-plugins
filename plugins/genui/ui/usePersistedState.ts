@@ -1,6 +1,6 @@
 // State a component keeps for the user inside its own UI (weights they tuned,
 // steps they unchecked, numbers they changed) without a `$state` in the spec.
-// BB's timeline unmounts rows that scroll out of view and remounts them on the
+// VesnALIA's timeline unmounts rows that scroll out of view and remounts them on the
 // way back, so plain useState would lose the user's changes; this keeps them
 // per block in localStorage (or in memory where nothing persists: the gallery).
 import { useCallback, useState } from "react";

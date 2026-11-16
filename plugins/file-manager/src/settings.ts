@@ -1,8 +1,8 @@
 // src/settings.ts — §7.1. Declarative descriptors, a live in-process cache, and
 // the writer the panel needs (`useSettings()` is read-only, so savePreferences
-// proxies to bb.sdk.plugins.updateSettings).
+// proxies to alia.sdk.plugins.updateSettings).
 import { stat } from "node:fs/promises";
-import type { BbPluginApi, PluginSettingDescriptors } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginSettingDescriptors } from "@vesnalia/plugin-sdk";
 
 import {
   MAX_CHUNK_BYTES,
@@ -22,7 +22,7 @@ export const settingsDescriptors = {
     // Deliberately not just "Start folder": the Start folder section below is
     // the same setting with a folder browser attached, and two identically
     // labelled editors on one page read as two different settings. This field
-    // is the typed/CLI form of it (`bb plugin config file-manager set
+    // is the typed/CLI form of it (`alia plugin config file-manager set
     // startFolder …`); both write the same key, so whichever is used last wins
     // and the other refreshes itself.
     label: "Start folder (typed path)",
@@ -170,8 +170,8 @@ export async function validateStartFolder(input: string): Promise<string> {
   return real;
 }
 
-export async function createSettings(bb: BbPluginApi): Promise<SettingsModule> {
-  const handle = bb.settings.define(settingsDescriptors);
+export async function createSettings(alia: AliaPluginApi): Promise<SettingsModule> {
+  const handle = alia.settings.define(settingsDescriptors);
   let current: FileManagerSettingsValues = await handle.get();
   handle.onChange((next) => {
     current = next;
@@ -182,7 +182,7 @@ export async function createSettings(bb: BbPluginApi): Promise<SettingsModule> {
       return await validateStartFolder(current.startFolder);
     } catch (error) {
       // §7.1: never throw here — a bad setting must not brick the panel.
-      bb.log.warn(
+      alia.log.warn(
         `startFolder "${current.startFolder}" is unusable (${String(error)}); falling back to ${getRoot()}`,
       );
       return getRoot();
@@ -212,8 +212,8 @@ export async function createSettings(bb: BbPluginApi): Promise<SettingsModule> {
       if (input.uploadChunkMiB !== undefined) values.uploadChunkMiB = input.uploadChunkMiB;
 
       if (Object.keys(values).length > 0) {
-        // bb.sdk is bind-gated: read it here, never at factory top level.
-        await bb.sdk.plugins.updateSettings({ pluginId: bb.pluginId, values });
+        // alia.sdk is bind-gated: read it here, never at factory top level.
+        await alia.sdk.plugins.updateSettings({ pluginId: alia.pluginId, values });
         // onChange fires asynchronously via the host; keep the cache correct now.
         current = { ...current, ...values } as FileManagerSettingsValues;
       }

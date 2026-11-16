@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import type { SpecVersionView } from "../contract";
 import type { Spec, TicketSpec } from "../spec";
 import type { SpecChange } from "../spec-diff";

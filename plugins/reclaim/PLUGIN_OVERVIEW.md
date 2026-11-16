@@ -40,14 +40,14 @@ free space together, because 90% of a 4 TB array still leaves 400 GB while 4 GB
 free is an emergency at any percentage.
 
 When the disk is under pressure it can clean up on its own — bounded to the
-risk tier you authorize — or start a BB thread and hand the problem to an agent
+risk tier you authorize — or start a VesnALIA thread and hand the problem to an agent
 with the full report. Both are off until you turn them on. Every threshold
 crossing and automatic action is logged where you can read it.
 
 ## Agents
 
 Reclaim registers `reclaim_status`, `reclaim_plan` and `reclaim_apply` in every
-BB thread, plus a skill, so an agent hitting a full disk mid-build can diagnose
+VesnALIA thread, plus a skill, so an agent hitting a full disk mid-build can diagnose
 and fix it without being told the plugin exists. While the disk is under
 pressure it also injects the current numbers into every thread; below the
 threshold it contributes nothing.
@@ -61,7 +61,7 @@ inside an authorized root that points outside it is refused.
 
 The apply step never accepts a path. It takes identifiers Reclaim minted while
 building a plan and re-authorizes each one immediately before removal — the
-panel, the `bb reclaim` command, and an agent all pass through the same gate.
+panel, the `alia reclaim` command, and an agent all pass through the same gate.
 Nothing inside a macOS application bundle is ever a candidate.
 
 ## Requirements

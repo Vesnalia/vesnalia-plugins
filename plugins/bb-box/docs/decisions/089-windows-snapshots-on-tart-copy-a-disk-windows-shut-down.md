@@ -18,7 +18,7 @@ one is taken only while the VM is stopped.
 
 A Windows disk copied under saved memory, or while Windows runs, is not as
 Windows leaves it: booted afresh, it is as after a power cut. Windows has no
-identity reset in bb-box, so a copy must never come up beside its source.
+identity reset in alia-box, so a copy must never come up beside its source.
 
 ## Decision
 
@@ -26,10 +26,10 @@ identity reset in bb-box, so a copy must never come up beside its source.
   restored in place with a snapshot as the undo, no fork, and Keep refused.
   `outlivesGuest` is true, as its copies live beside the VMs.
 - A snapshot clones three files of the VM's folder, `disk.qcow2`, `vars.fd`
-  and `config`, into the same `bb-box-snapshots` folder Tart's use, by the
+  and `config`, into the same `alia-box-snapshots` folder Tart's use, by the
   same `clonefile` copy, label, room check and journal. Never `state`, the
   pid file, QEMU's output or its sockets.
-- bb-box copies only once Windows has shut down. A take of a running box
+- alia-box copies only once Windows has shut down. A take of a running box
   asks Windows to shut down, over SSH, and presses QEMU's ACPI power button
   when that cannot be sent, copies, and boots Windows afresh. A box whose
   memory an ordinary Stop saved starts from it, shuts down, and is copied;
@@ -48,9 +48,9 @@ identity reset in bb-box, so a copy must never come up beside its source.
   says why.
 - Restores, recoveries, image refreshes, removals of a build and the making
   of a VM's overlay take turns on the Mac. They can come from more than one
-  process: from the scripts of several BB Box installs that share the Mac,
+  process: from the scripts of several VesnALIA Box installs that share the Mac,
   and from a recovery any of them starts. So the turn is a lock on the Mac,
-  `~/.bb-box/turn.lock`, held with `flock` through the shell's own file
+  `~/.alia-box/turn.lock`, held with `flock` through the shell's own file
   descriptor. The kernel lets one holder have it at a time and frees it when
   the last process holding the descriptor ends, the shell's children
   included, so no lock is ever cleared by hand. A task tries for its turn
@@ -95,7 +95,7 @@ identity reset in bb-box, so a copy must never come up beside its source.
 - A take of a running Windows box closes its apps and takes about as long
   as a shutdown and a boot; its plan says it pauses the box.
 - A take of a stopped Windows box closes the apps its saved memory held.
-- Restores after a restart of bb-box are put right from the same journal as
+- Restores after a restart of alia-box are put right from the same journal as
   a macOS VM's, by `heal_rollback` given the QEMU VM's folder.
 - Forks and Keep wait for a Windows identity reset.
 - An old build of the Windows image stays on the Mac while a snapshot

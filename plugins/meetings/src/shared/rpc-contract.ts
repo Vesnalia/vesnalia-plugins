@@ -1,6 +1,6 @@
 // Frontend data plane: server.ts registers these handlers, app.tsx imports
 // only the type. Realtime channels are listed at the bottom.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { envReportSchema } from "./contract.js";
 import { meetingAnalysisSchema, summaryTemplateSchema, summaryTemplateInputSchema, summaryTemplateIdSchema, askCitationSchema, templateSnapshotSchema } from "./analysis.js";
@@ -218,7 +218,7 @@ export const googleStatusSchema = z
     configured: z.boolean(),
     /** The client ID (not secret) for display; empty when not set. */
     clientId: z.string(),
-    /** Path of the OAuth callback; the redirect URI is the bb origin + this path. */
+    /** Path of the OAuth callback; the redirect URI is the VesnALIA origin + this path. */
     callbackPath: z.string(),
     connected: z.boolean(),
     /** The Google account's email; null when not connected or unknown. */
@@ -515,5 +515,5 @@ export const CHANNEL_CALENDAR_CHANGED = "meetings.calendar"; // payload {}
 export const CHANNEL_ZOOM_CHANGED = "meetings.zoom"; // payload {}
 export const CHANNEL_GOOGLE_CHANGED = "meetings.google"; // payload {}
 export const CHANNEL_BOT_CHANGED = "meetings.bot"; // payload {}
-/** The OAuth redirect route, relative to the bb origin. */
+/** The OAuth redirect route, relative to the VesnALIA origin. */
 export const GOOGLE_CALLBACK_PATH = "/api/v1/plugins/meetings/http/google/callback";

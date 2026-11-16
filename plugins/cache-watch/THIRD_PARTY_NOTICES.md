@@ -1,12 +1,12 @@
 # Third-party notices
 
 The vendored UI files in `components/`, `hooks/`, and `lib/` originate from
-the [BB plugin registry](https://github.com/get-bb/bb/tree/desktop-v0.48.1/packages/plugin-registry),
+the [VesnALIA plugin registry](https://github.com/get-bb/bb/tree/desktop-v0.48.1/packages/plugin-registry),
 including components based on [shadcn/ui](https://github.com/shadcn-ui/ui).
 They retain the following MIT notices. Installed npm dependencies retain
 their own licenses; see their packages for complete notices.
 
-## BB
+## VesnALIA
 
 Copyright (c) 2026 Michael Yong
 

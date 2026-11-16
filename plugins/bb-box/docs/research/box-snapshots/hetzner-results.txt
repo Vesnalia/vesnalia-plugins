@@ -1,8 +1,8 @@
 Hetzner Cloud host snapshot, 30 October 2026, 01:03 UTC, with
-hetzner-snapshot.sh run by the lead with bb-box's Hetzner token, which the
+hetzner-snapshot.sh run by the lead with alia-box's Hetzner token, which the
 owner allowed for this run and the lead then deleted.
 
-source: the bb-box host of a linux small box, cpx42 in nbg1, 320 GB disk, running
+source: the alia-box host of a linux small box, cpx42 in nbg1, 320 GB disk, running
 create_image call                       0.18 s
 snapshot of the running host, to done   76.66 s
 size: 16.99 GB compressed (image_size), disk_size 320 GB

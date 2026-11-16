@@ -1,9 +1,9 @@
-// What BB's thread pages show of the reviews (app.tsx): Review changes in the row above a thread's message box, beside
-// BB's own Changed files, and the Review tab beside a thread linked to a review: its id and name, its comments with where
+// What VesnALIA's thread pages show of the reviews (app.tsx): Review changes in the row above a thread's message box, beside
+// VesnALIA's own Changed files, and the Review tab beside a thread linked to a review: its id and name, its comments with where
 // each stands, the review agent's chat, and Review ↗.
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { experimental_Icon as HostIcon, experimental_usePluginId, ThreadChat, useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
-import type { ExperimentalThreadContextSegmentInput, ExperimentalThreadContextSegmentProps, ExperimentalThreadTabProps } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as HostIcon, experimental_usePluginId, ThreadChat, useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { ExperimentalThreadContextSegmentInput, ExperimentalThreadContextSegmentProps, ExperimentalThreadTabProps } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../src/rpc-contract";
 import type { publicContract } from "../src/public-contract";
@@ -47,7 +47,7 @@ export function useReviewChangesVisible({ threadId, environment }: ExperimentalT
   const on = !!links?.reviewChangesLine && !links.agents.includes(threadId);
   const folder = useFolderStatus(on && environment ? environment.id : null);
   const link = on ? threadReview(links, threadId, environment?.id ?? null, folder?.branch) : null;
-  // Not in the main thread's chat on its own review's page, as BB draws it in the review's Main thread tab.
+  // Not in the main thread's chat on its own review's page, as VesnALIA draws it in the review's Main thread tab.
   if (link && reviewInView() === link.targetKey) return false;
   return on && (!!link || !!folder?.changes);
 }
@@ -80,13 +80,13 @@ function OpenReviewButton({ targetKey, busy, onClick }: { targetKey: string; bus
 
 /**
  * Review changes: "Review · 2 open ↗" for the review the thread's Review tab shows, which goes straight to it; else
- * "Review changes", which does what bb review with no arguments does in the thread: starts the folder's review, or opens
+ * "Review changes", which does what VesnALIA review with no arguments does in the thread: starts the folder's review, or opens
  * it as it is, a live thread there taking over from an archived main thread. No file count: Changed files has one.
  */
 export function ReviewChangesSegment({ threadId, environment }: ExperimentalThreadContextSegmentProps) {
   // reviewThreadChanges is in the contract other plugins call it by too.
   const rpc = useRpc<typeof publicContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const links = useThreadLinks();
   const folder = useFolderStatus(environment?.id ?? null);
   const link = links ? threadReview(links, threadId, environment?.id ?? null, folder?.branch) : null;
@@ -136,11 +136,11 @@ const PART = "text-[11px] font-semibold uppercase tracking-wider text-subtle-for
 
 /**
  * The review in a thread's tab: its id and name with Review ↗; its comments, each with where it stands (Open, Sent
- * to the main thread, Done, Resolved…), which open the review; and the review agent's chat, BB's own.
+ * to the main thread, Done, Resolved…), which open the review; and the review agent's chat, VesnALIA's own.
  */
 function ReviewPane({ targetKey }: { targetKey: string }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const read = useThreadReview(targetKey);
   const { status } = useReviewLinks(read?.review ?? null);
   const [draft, setDraft] = useState<{ draft: Draft; stale: CommentLocation[]; discussions?: Discussion[] } | null>(null);

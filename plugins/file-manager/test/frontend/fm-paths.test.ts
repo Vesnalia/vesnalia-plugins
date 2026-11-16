@@ -74,7 +74,7 @@ describe("toRelative", () => {
 
 describe("subPath round trip", () => {
   it("decodes per segment, as §8 requires", () => {
-    expect(decodeSubPath("my%20docs/a%2Bb")).toBe("my docs/a+b");
+    expect(decodeSubPath("my%20docs/a%2Alia")).toBe("my docs/a+b");
     // A literal "/" inside a name is impossible, so per-segment decoding is safe.
     expect(decodeSubPath("%D0%BF%D0%B0%D0%BF%D0%BA%D0%B0/%23hash")).toBe("папка/#hash");
   });

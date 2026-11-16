@@ -1,7 +1,7 @@
 // Shared dependencies for the engine, pipeline, and calibration.
 import type { BenchHostRow, Store } from "./db/store.ts";
 import type { HostRunner } from "./host/runner.ts";
-import type { BbPort } from "./ports.ts";
+import type { AliaPort } from "./ports.ts";
 import type { Rng } from "./stats.ts";
 
 /** Exclusive sections per key: one measurement at a time per bench host. */
@@ -38,15 +38,15 @@ export interface EngineConfig {
   finishingTimeoutMs: number;
   /** Bundle chunk size override (tests); defaults to BUNDLE_CHUNK_BYTES. */
   bundleChunkBytes?: number;
-  /** How long a bench host's connection status is trusted before asking BB again. */
+  /** How long a bench host's connection status is trusted before asking VesnALIA again. */
   hostStatusTtlMs: number;
   /** Harvest polling period (waiting for the bench to drain before best freezes). */
   harvestPollMs: number;
-  /** Health deferrals a requested measurement (`bb study measure`) waits through before failing. */
+  /** Health deferrals a requested measurement (`alia study measure`) waits through before failing. */
   adhocHealthTries: number;
   /** How long a requested measurement waits for a bench host when none is online yet (remote machines joining after a freeze or a reload). */
   adhocHostWaitMs: number;
-  /** How often provider usage windows are read (bb.sdk.system.usageLimits). */
+  /** How often provider usage windows are read (alia.sdk.system.usageLimits). */
   usagePollMs: number;
   /** How often a live thread's token usage is read. */
   tokenPollMs: number;
@@ -88,7 +88,7 @@ export const DEFAULT_REMOTE_CONFIG: RemoteFleetConfig = {
 
 export interface Ctx {
   store: Store;
-  bb: BbPort;
+  alia: AliaPort;
   now: () => number;
   rng: Rng;
   benchLock: HostMutex;

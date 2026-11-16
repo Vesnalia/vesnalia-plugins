@@ -21,7 +21,7 @@ export { REASONING_LEVELS, type ReasoningLevel } from "./reasoning";
 export interface ProjectCandidate {
   id: string;
   name: string;
-  /** BB's "no project" personal project. */
+  /** VesnALIA's "no project" personal project. */
   isPersonal: boolean;
   gitRemoteUrl: string | null;
   sources: { hostId: string; path: string }[];
@@ -297,7 +297,7 @@ export function describeMachine(
     );
   }
   parts.push(describeThreads(machine.runningThreads));
-  if (machine.isServer) parts.push("this is the main BB server machine");
+  if (machine.isServer) parts.push("this is the main VesnALIA server machine");
   if (machine.projectPath !== null) parts.push(`the project is at ${machine.projectPath}`);
   const creatable = environments
     .filter((environment) => machine.environmentIds.includes(environment.id))

@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { projectSchema, boardSchema, taskSchema, editSchema } from "./model";
 const projectInput = z.object({ projectId: z.string() });

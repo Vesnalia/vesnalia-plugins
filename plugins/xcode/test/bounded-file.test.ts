@@ -11,7 +11,7 @@ afterEach(() => {
 });
 
 function scratch(): string {
-  const dir = mkdtempSync(join(tmpdir(), "bb-bounded-file-"));
+  const dir = mkdtempSync(join(tmpdir(), "alia-bounded-file-"));
   dirs.push(dir);
   return dir;
 }

@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { RuntimePermissionPolicy } from "@get-bb/plugin-sdk/provider-bridge";
-import { approvalInteractionOutcomeSchema } from "@get-bb/plugin-sdk/provider-bridge";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { RuntimePermissionPolicy } from "@vesnalia/plugin-sdk/provider-bridge";
+import { approvalInteractionOutcomeSchema } from "@vesnalia/plugin-sdk/provider-bridge";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import nanoGptPlugin from "../server.js";
 import {
   experimental_createBridgeJsonRpcTestHarness as createHarness,
   type BridgeJsonRpcTestHarness,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import { handleLine } from "./provider-bridge.js";
 import { HISTORY_TOOL_NAME } from "./history-protocol.js";
 
@@ -231,7 +231,7 @@ describe("tool eligibility", () => {
 describe("provider tool controls", () => {
   it("carries saved denials through the public provider-options channel without a native denylist", async () => {
     const host = createFakePluginHost({ pluginId: "nanogpt-provider" });
-    nanoGptPlugin(host.bb);
+    nanoGptPlugin(host.alia);
     await host.harness.behavior.callRpc("saveToolSettings", { disallowedTools: TOOL.name, confirmToolCalls: true });
     const settings = await host.harness.behavior.callRpc("getToolSettings", null) as { disallowedTools: string; confirmToolCalls: boolean };
     const provider = host.harness.registrations.providerRegistrations.find(p => p.id === "nano-gpt")!;

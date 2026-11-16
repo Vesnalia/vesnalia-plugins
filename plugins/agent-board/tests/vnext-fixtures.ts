@@ -1,6 +1,6 @@
 import type { BoardCard, GlobalExecution, GlobalDashboardSnapshot } from "../contract/rpc";
 export function phaseCard(overrides: Partial<BoardCard> = {}): BoardCard {
-  return { key: "card", parentKey: null, depth: 0, kind: "thread", source: "bb", title: "Synthetic task", subtitle: null,
+  return { key: "card", parentKey: null, depth: 0, kind: "thread", source: "alia", title: "Synthetic task", subtitle: null,
     status: "running", column: "active", threadId: "thread", providerId: "codex", providerLabel: "Codex", model: null,
     startedAt: 100, completedAt: null, durationMs: null, phaseTitle: null, promptPreview: null, activity: null,
     outputPreview: null, errorPreview: null, tokens: null, toolCalls: null, waitingOn: null, attention: null, planStatus: null, isRoot: false, ...overrides };

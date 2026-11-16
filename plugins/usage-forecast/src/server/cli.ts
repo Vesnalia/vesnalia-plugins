@@ -1,6 +1,6 @@
-// `bb usage-forecast …`. Calls the same service as the RPC.
+// `alia usage-forecast …`. Calls the same service as the RPC.
 
-import { cliCommand, defineCli, PluginCliError, type PluginCliRegistration } from "@get-bb/plugin-sdk";
+import { cliCommand, defineCli, PluginCliError, type PluginCliRegistration } from "@vesnalia/plugin-sdk";
 import {
   CONTEXT_LIMIT_MAX_TOKENS,
   CONTEXT_LIMIT_MIN_TOKENS,
@@ -350,7 +350,7 @@ export function formatTokensReport(r: TokensReport): string {
     ? []
     : [`First collection of past threads is running: ${r.backfill.threadsRead} read, ${r.backfill.threadsFailed} failed.`];
   if (r.providers.length === 0 && r.threads.length === 0) return ["No token data yet.", ...collecting].join("\n");
-  const lines = [`Tokens in BB threads without cache reads (with them in brackets); day and month in ${r.timeZone}.`];
+  const lines = [`Tokens in VesnALIA threads without cache reads (with them in brackets); day and month in ${r.timeZone}.`];
   for (const p of r.providers) lines.push(`  ${p.providerId}: today ${pairText(p.today)}, month ${pairText(p.month)}`);
   if (r.threads.length > 0) {
     lines.push("Recent threads:");
@@ -376,7 +376,7 @@ export function createCli(
     name: "usage-forecast",
     summary: "Provider usage limits with forecasts, thread context and auto-compact",
     description:
-      "Limits come from bb (system.usageLimits) and are polled on the server. Auto-compact runs when a thread goes idle with its context at or above the threshold.",
+      "Limits come from VesnALIA (system.usageLimits) and are polled on the server. Auto-compact runs when a thread goes idle with its context at or above the threshold.",
     commands: {
       status: cliCommand({
         summary: "Show limits of every provider, forecasts and the last compacts",
@@ -445,9 +445,9 @@ export function createCli(
         ? {}
         : {
             tokens: cliCommand({
-              summary: "Show tokens spent in BB threads today, this month and per thread",
+              summary: "Show tokens spent in VesnALIA threads today, this month and per thread",
               description:
-                "Counted from bb's token-usage events of each thread, without cache reads; the full sums are in brackets and in --json. Covers BB threads only. Today and this month are in the server's time zone.",
+                "Counted from VesnALIA's token-usage events of each thread, without cache reads; the full sums are in brackets and in --json. Covers VesnALIA threads only. Today and this month are in the server's time zone.",
               options: json,
               async run({ options }) {
                 const report = await tokensReport(tokens, now());

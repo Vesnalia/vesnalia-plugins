@@ -1,18 +1,18 @@
-// "New box" in BB's new-thread screen (033): a thread that starts on a box
+// "New box" in VesnALIA's new-thread screen (033): a thread that starts on a box
 // of its own. A second machine provider, ephemeral, makes the box for the
-// thread when BB places it there, and BB's project checkout clones the
-// project onto it. BB gives the provider the thread's ID as the key. The
+// thread when VesnALIA places it there, and VesnALIA's project checkout clones the
+// project onto it. VesnALIA gives the provider the thread's ID as the key. The
 // box has role "machine": it is the thread's machine, outside the
-// per-thread limit, and goes when BB removes the machine or the thread ends.
+// per-thread limit, and goes when VesnALIA removes the machine or the thread ends.
 
-import type { BbPluginApi, MachineBootstrapRequest, PluginMachineProviderDeclaration } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, MachineBootstrapRequest, PluginMachineProviderDeclaration } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { describeError, isActive, type BoxRecord, type Boxes } from "../core/boxes.ts";
 import { PRESETS } from "../core/sizes.ts";
 import { executor } from "./enrol.ts";
 import { PRODUCT } from "../brand.ts";
 
-export const NEW_BOX_PROVIDER_ID = "bb-box-new";
+export const NEW_BOX_PROVIDER_ID = "alia-box-new";
 
 export const newBoxInputs = z.object({
   kind: z.string().min(1),
@@ -39,15 +39,15 @@ function isEstablished(box: BoxRecord): boolean {
   return box.enrol.state === "enrolled";
 }
 
-/** The parts of BB's API that say which of BB's machines a box is. */
+/** The parts of VesnALIA's API that say which of VesnALIA's machines a box is. */
 export interface MachineLookup {
   list(args: { includeCreating: true }): Promise<readonly { id: string; machineProviderId: string | null; lifecycle: { phase: string } }[]>;
   getResource(hostId: string): Promise<unknown>;
 }
 
 /**
- * The ID of BB's machine that box `boxId` is for its thread, or null when
- * it is none. BB keeps the box's ID as the machine's resource, so a lost
+ * The ID of VesnALIA's machine that box `boxId` is for its thread, or null when
+ * it is none. VesnALIA keeps the box's ID as the machine's resource, so a lost
  * record is restored as the thread's machine (#127).
  */
 export async function newBoxHost(lookup: MachineLookup, boxId: string): Promise<string | null> {
@@ -61,7 +61,7 @@ export async function newBoxHost(lookup: MachineLookup, boxId: string): Promise<
 
 /** Releases the thread's own boxes that failed, so a retry starts on a new one. */
 async function releaseFailed(boxes: Boxes, threadId: string): Promise<void> {
-  for (const box of await boxes.list(threadId)) if (box.role === "machine" && box.state === "failed") await boxes.release(threadId, box.id, "it failed, and its thread asked BB for another");
+  for (const box of await boxes.list(threadId)) if (box.role === "machine" && box.state === "failed") await boxes.release(threadId, box.id, "it failed, and its thread asked VesnALIA for another");
 }
 
 export function newBoxProvider(deps: NewBoxDeps): PluginMachineProviderDeclaration<typeof newBoxInputs> {
@@ -79,23 +79,23 @@ export function newBoxProvider(deps: NewBoxDeps): PluginMachineProviderDeclarati
     validate({ inputs }) {
       const kind = boxes.kinds().find((candidate) => candidate.id === inputs.kind);
       if (!kind) return { action: "refuse", message: `${PRODUCT} has no ${inputs.kind} boxes on offer now.` };
-      // BB adds a new box's machine through bb-box's provider, with its installer for Linux and macOS only. A Windows box joins
-      // BB as a machine of BB's manual provider, which BB does not make for a thread's new box (#539).
+      // VesnALIA adds a new box's machine through alia-box's provider, with its installer for Linux and macOS only. A Windows box joins
+      // VesnALIA as a machine of VesnALIA's manual provider, which VesnALIA does not make for a thread's new box (#539).
       if (kind.capabilities.os === "windows") {
-        return { action: "refuse", message: `A thread cannot start on a new ${kind.label} box: BB adds a new box's machine with its installer for Linux and macOS only. Start the thread elsewhere, and give it a Windows box with box_acquire and box_thread.` };
+        return { action: "refuse", message: `A thread cannot start on a new ${kind.label} box: VesnALIA adds a new box's machine with its installer for Linux and macOS only. Start the thread elsewhere, and give it a Windows box with box_acquire and box_thread.` };
       }
-      if (!kind.capabilities.enrol) return { action: "refuse", message: `A ${kind.label} box cannot become a BB machine, so a thread cannot run on it.` };
+      if (!kind.capabilities.enrol) return { action: "refuse", message: `A ${kind.label} box cannot become a VesnALIA machine, so a thread cannot run on it.` };
       return { action: "accept" };
     },
     async create({ inputs, key, checkpoint, report, signal }) {
       const thread = await deps.thread(key);
-      if (!thread) return { status: "failed", message: `${PRODUCT} makes a new box for the thread that starts on it, and BB named none (key ${key}).` };
+      if (!thread) return { status: "failed", message: `${PRODUCT} makes a new box for the thread that starts on it, and VesnALIA named none (key ${key}).` };
       try {
         let box = await machineOf(boxes, thread.id);
         const kept = box ? await boxes.keptFromThread(box, `this thread cannot start on box ${box.name}. Start it on a new box`) : null;
         if (box && kept && isEstablished(box)) return { status: "failed", message: kept.message };
         if (box && kept) {
-          await boxes.release(box.threadId, box.id, "BB was still making it the thread's machine, and its backend no longer serves the thread's project");
+          await boxes.release(box.threadId, box.id, "VesnALIA was still making it the thread's machine, and its backend no longer serves the thread's project");
           box = null;
         }
         if (!box) {
@@ -107,7 +107,7 @@ export function newBoxProvider(deps: NewBoxDeps): PluginMachineProviderDeclarati
         box = (await boxes.settled(box)) ?? box;
         signal.throwIfAborted();
         if (box.state !== "ready") return { status: "failed", message: `Box ${box.name} did not start: ${box.error ?? box.state}.` };
-        report.step(`Installing BB in box ${box.name}`);
+        report.step(`Installing VesnALIA in box ${box.name}`);
         const { command } = await boxes.transports(box);
         if (!command) return { status: "failed", message: `${PRODUCT} cannot run commands in box ${box.name}.` };
         const { hostId } = await deps.bootstrap({ key, executor: executor(command), report, signal });
@@ -118,24 +118,24 @@ export function newBoxProvider(deps: NewBoxDeps): PluginMachineProviderDeclarati
         return { status: "failed", message: describeError(error, "Making the thread's box") };
       }
     },
-    // A create cut short: the thread's box, if bb-box made one, goes.
+    // A create cut short: the thread's box, if alia-box made one, goes.
     async reconcileCleanup({ key }) {
-      await release(await machineOf(boxes, key), "BB cut short making it the thread's machine");
+      await release(await machineOf(boxes, key), "VesnALIA cut short making it the thread's machine");
       await releaseFailed(boxes, key);
       return { status: "removed" };
     },
     async remove({ resource }) {
       const boxId = (resource as { boxId?: unknown }).boxId;
-      if (typeof boxId === "string") await release(await boxes.find(boxId), "BB removed the thread's machine");
+      if (typeof boxId === "string") await release(await boxes.find(boxId), "VesnALIA removed the thread's machine");
       return { status: "removed" };
     },
   };
 }
 
-/** Registers the provider and "New box", paired with BB's project checkout. */
-export function registerNewBox(bb: BbPluginApi, deps: NewBoxDeps): void {
-  bb.experimental_machines.register(newBoxProvider(deps));
-  bb.experimental_environments.register({
+/** Registers the provider and "New box", paired with VesnALIA's project checkout. */
+export function registerNewBox(alia: AliaPluginApi, deps: NewBoxDeps): void {
+  alia.experimental_machines.register(newBoxProvider(deps));
+  alia.experimental_environments.register({
     id: NEW_BOX_PROVIDER_ID,
     displayName: "New box",
     description: `A new ${PRODUCT} box for this thread, with the project cloned onto it.`,

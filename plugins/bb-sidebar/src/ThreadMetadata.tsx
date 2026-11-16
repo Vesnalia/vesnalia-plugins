@@ -1,8 +1,8 @@
-import { useEnvironmentPullRequest } from "./bb-sdk";
+import { useEnvironmentPullRequest } from "./alia-sdk";
 import { Tooltip } from "./components/Tooltip";
 import { cn } from "./lib/utils";
 import { pullRequestStatusLabel, pullRequestToneClass } from "./pull-request-display";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./components/Icon";
 
 export function ThreadLocation({ thread }: { thread: PluginSidebarThread }) {

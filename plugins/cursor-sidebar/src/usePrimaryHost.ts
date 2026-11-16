@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { cursorSidebarRpcContract } from "./server";
 
 /**
- * The host bb itself runs on. A thread row only names its host when it differs,
+ * The host VesnALIA itself runs on. A thread row only names its host when it differs,
  * so local work stays clean and remote work stays labelled. Null until known,
  * which the row treats as "unknown" and shows the label.
  */

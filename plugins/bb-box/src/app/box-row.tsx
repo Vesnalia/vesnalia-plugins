@@ -1,7 +1,7 @@
 // One box in the Box panel: its name, kind and status line, its details
 // when open, its quick actions and its menu.
 
-import { experimental_Icon as Icon, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useId, useState, type MouseEvent, type ReactNode } from "react";
 import { useIsCompactViewport } from "@/components/ui/hooks/use-compact-viewport";
 import { cn } from "@/lib/utils";
@@ -30,7 +30,7 @@ export function myViewers(): Set<string> {
   try {
     for (let index = 0; index < window.sessionStorage.length; index++) {
       const key = window.sessionStorage.key(index);
-      if (key?.startsWith("bb-box:viewer:")) mine.add(window.sessionStorage.getItem(key) ?? "");
+      if (key?.startsWith("alia-box:viewer:")) mine.add(window.sessionStorage.getItem(key) ?? "");
     }
   } catch {
     // Storage may be off; then no viewer is known to be ours.
@@ -101,7 +101,7 @@ export function BoxRow({
   opening: RowOpening;
   act: (method: BoxAction, box: BoxView, options?: { readonly deleteKept?: boolean }) => Promise<string | null | void> | void;
   now: number;
-  /** Set for the box this thread runs on (036): a "BB machine" badge among the others, no Release, Stop or Start, and a line saying where those are. */
+  /** Set for the box this thread runs on (036): a "VesnALIA machine" badge among the others, no Release, Stop or Start, and a line saying where those are. */
   held?: Held | null;
   /** Where the desktop and terminal open, when not in this thread's panel tabs: the Boxes page opens them on the page. */
   opens?: BoxOpens;
@@ -113,7 +113,7 @@ export function BoxRow({
   threading?: boolean;
   onBoxesPage?: () => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const openInPanel = useOpenScreen(threadId);
   const terminalInPanel = useOpenTerminal();
   const filesInPanel = useOpenFiles();
@@ -234,7 +234,7 @@ export function BoxRow({
                 {fact.value}
               </Detail>
             ))}
-            <Detail label="BB machine">{enrolWords(box)}</Detail>
+            <Detail label="VesnALIA machine">{enrolWords(box)}</Detail>
             {timingWords(box) ? <Detail label="Timings">{timingWords(box)}</Detail> : null}
             {startWords(box) ? <Detail label="Last start">{startWords(box)}</Detail> : null}
             <Detail label="Made">{ago(box.createdAt, now)}</Detail>

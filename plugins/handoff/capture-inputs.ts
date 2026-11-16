@@ -1,4 +1,4 @@
-// Rebuild the inputs bb accepted for a thread from its client request events.
+// Rebuild the inputs VesnALIA accepted for a thread from its client request events.
 // Some providers (Claude Code) never echo a user message item, so the request
 // events are the only record of what the user asked for. Providers that do echo
 // (Codex) would otherwise show each input twice.

@@ -8,4 +8,4 @@ Both panels open in navigation or beside a thread and share the selected project
 
 ## Requirements
 
-Requires bb 0.47 or later. Local OpenSpec directories work directly; registered stores additionally require the OpenSpec CLI. Agent threads use your configured bb provider.
+Requires VesnALIA 0.47 or later. Local OpenSpec directories work directly; registered stores additionally require the OpenSpec CLI. Agent threads use your configured VesnALIA provider.

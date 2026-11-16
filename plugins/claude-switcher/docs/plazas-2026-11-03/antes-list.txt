@@ -1,4 +1,4 @@
-# 2026-11-03 13:07:41 CET  bb claude-switcher list
+# 2026-11-03 13:07:41 CET  VesnALIA claude-switcher list
 mariscal    not logged in
             sin datos de plan · seats 0/4
 aitor                sem  51% Fable  27%

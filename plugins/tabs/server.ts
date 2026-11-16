@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { randomUUID } from "node:crypto";
 import { LANGUAGE_OPTIONS } from "./lib/languages";
 import { SETTINGS } from "./lib/settings";
@@ -308,8 +308,8 @@ export const rpcContract = defineRpcContract({
  * Persists workspace sets in plugin-owned SQLite and shared history in KV. Every change flows through one
  * queue so two windows cannot lose each other's tabs between `get` and `set`.
  */
-export default async function plugin(bb: BbPluginApi) {
-  const settingsHandle = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settingsHandle = alia.settings.define({
     ...SETTINGS,
     language: { ...SETTINGS.language, options: [...SETTINGS.language.options] },
     tabListButtonPosition: {
@@ -359,8 +359,8 @@ export default async function plugin(bb: BbPluginApi) {
       .int()
       .nonnegative()
       .max(Number.MAX_SAFE_INTEGER - 1)
-      .parse((await bb.storage.kv.get(sidechatGenerationKey)) ?? 0) + 1;
-  await bb.storage.kv.set(sidechatGenerationKey, sidechatGeneration);
+      .parse((await alia.storage.kv.get(sidechatGenerationKey)) ?? 0) + 1;
+  await alia.storage.kv.set(sidechatGenerationKey, sidechatGeneration);
   const activeSidechats = new Map<string, string>();
   let sidechatEventsSeen: Set<string> | null = new Set();
   let sidechatRevision = 0;
@@ -371,7 +371,7 @@ export default async function plugin(bb: BbPluginApi) {
     sourceThreadIds: [...new Set(activeSidechats.values())],
   });
   type SidebarMetadataThread = Pick<
-    Awaited<ReturnType<typeof bb.sdk.threads.list>>[number],
+    Awaited<ReturnType<typeof alia.sdk.threads.list>>[number],
     "id" | "originPluginId" | "sourceThreadId" | "archivedAt" | "deletedAt" | "status"
   >;
   function updateSidechat(thread: SidebarMetadataThread, seed = false) {
@@ -390,13 +390,13 @@ export default async function plugin(bb: BbPluginApi) {
     else activeSidechats.delete(thread.id);
     if (previous === activeSidechats.get(thread.id)) return;
     sidechatRevision++;
-    if (!seed) bb.realtime.publish(SIDECHAT_ACTIVITY_CHANGED_CHANNEL, sidechatActivity());
+    if (!seed) alia.realtime.publish(SIDECHAT_ACTIVITY_CHANGED_CHANNEL, sidechatActivity());
   }
   async function readSidechatActivity(): Promise<SidechatActivity> {
     if (sidechatSeed === null) {
       sidechatSeed = (async () => {
         for (let offset = 0; ; offset += 200) {
-          const page = await bb.sdk.threads.list({
+          const page = await alia.sdk.threads.list({
             originPluginId: "side-chat",
             includeHidden: true,
             archived: false,
@@ -413,7 +413,7 @@ export default async function plugin(bb: BbPluginApi) {
       sidechatEventsSeen = null;
     } catch (cause) {
       sidechatSeed = null;
-      bb.log.warn(`Could not read sidechat activity: ${errorMessage(cause)}`);
+      alia.log.warn(`Could not read sidechat activity: ${errorMessage(cause)}`);
     }
     return sidechatActivity();
   }
@@ -424,10 +424,10 @@ export default async function plugin(bb: BbPluginApi) {
     "thread.failed",
     "experimental_thread.events",
   ] as const)
-    bb.events.on(event, ({ thread }) => updateSidechat(thread));
+    alia.events.on(event, ({ thread }) => updateSidechat(thread));
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     "CREATE TABLE IF NOT EXISTS tabs_workspace_state (id INTEGER PRIMARY KEY CHECK (id = 1), value TEXT NOT NULL)",
   ]);
   const readCollection = db.prepare("SELECT value FROM tabs_workspace_state WHERE id = 1");
@@ -453,8 +453,8 @@ export default async function plugin(bb: BbPluginApi) {
     if (migrationInFlight !== null) return migrationInFlight;
     const operation = (async () => {
       const [state, closed] = await Promise.all([
-        bb.storage.kv.get<unknown>(STATE_KEY),
-        bb.storage.kv.get<unknown>(CLOSED_THREADS_KEY),
+        alia.storage.kv.get<unknown>(STATE_KEY),
+        alia.storage.kv.get<unknown>(CLOSED_THREADS_KEY),
       ]);
       const collection = createInitialWorkspaces(state, closed);
       // One statement: a failed write leaves no partially created modes. Legacy KV is untouched.
@@ -476,27 +476,27 @@ export default async function plugin(bb: BbPluginApi) {
     if (JSON.stringify(previous) === JSON.stringify(changed)) return previous;
     const next = { ...changed, revision: previous.revision + 1 };
     writeCollection.run(JSON.stringify(workspaceCollectionSchema.parse(next)));
-    bb.realtime.publish(WORKSPACE_MEMBERSHIPS_CHANGED_CHANNEL, next.revision);
+    alia.realtime.publish(WORKSPACE_MEMBERSHIPS_CHANGED_CHANNEL, next.revision);
     for (const workspace of next.workspaces) {
       const old = previous.workspaces.find((item) => item.id === workspace.id);
       if (old !== undefined && tabsStatesEqual(old.state, workspace.state)) continue;
-      bb.realtime.publish(workspaceStateChannel(workspace.id), {
+      alia.realtime.publish(workspaceStateChannel(workspace.id), {
         workspaceId: workspace.id,
         stateRevision: next.revision,
         state: workspace.state,
       });
       if (workspace.id === DEFAULT_WORKSPACE_ID)
-        bb.realtime.publish(TABS_CHANGED_CHANNEL, workspace.state);
+        alia.realtime.publish(TABS_CHANGED_CHANNEL, workspace.state);
     }
     if (
       !next.workspaces.some((item) => item.id === DEFAULT_WORKSPACE_ID) &&
       previous.workspaces.some((item) => item.id === DEFAULT_WORKSPACE_ID)
     ) {
-      bb.realtime.publish(TABS_CHANGED_CHANNEL, createEmptyTabsState());
+      alia.realtime.publish(TABS_CHANGED_CHANNEL, createEmptyTabsState());
     }
     const infos = workspaceInfos(next);
     if (JSON.stringify(workspaceInfos(previous)) !== JSON.stringify(infos))
-      bb.realtime.publish(WORKSPACES_CHANGED_CHANNEL, {
+      alia.realtime.publish(WORKSPACES_CHANGED_CHANNEL, {
         stateRevision: next.revision,
         workspaces: infos,
       });
@@ -522,7 +522,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function readHistory(): Promise<TabHistoryState> {
-    const stored = await bb.storage.kv.get<unknown>(HISTORY_KEY);
+    const stored = await alia.storage.kv.get<unknown>(HISTORY_KEY);
     return stored === undefined ? createEmptyTabHistory() : normalizeTabHistory(stored);
   }
 
@@ -538,7 +538,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (existing !== undefined) return existing;
 
     const operation = (async () => {
-      const result = await bb.sdk.plugins.callRpc<{
+      const result = await alia.sdk.plugins.callRpc<{
         runs: Array<{ status: string }>;
       }>({
         pluginId: "workflows",
@@ -603,7 +603,7 @@ export default async function plugin(bb: BbPluginApi) {
       // A disabled workflows plugin is not a tabs error, and a failure must not
       // cause a hundred repeated requests on every poll.
       workflowRpcRetryAt = Date.now() + 30_000;
-      bb.log.warn(
+      alia.log.warn(
         `Could not read active workflows; using sidebar activity: ${errorMessage(failure)}`,
       );
     }
@@ -626,8 +626,8 @@ export default async function plugin(bb: BbPluginApi) {
         history: normalizeTabHistory(changed.history),
       };
       if (!tabHistoriesEqual(history, next.history)) {
-        await bb.storage.kv.set(HISTORY_KEY, next.history);
-        bb.realtime.publish(TABS_HISTORY_CHANGED_CHANNEL, next.history);
+        await alia.storage.kv.set(HISTORY_KEY, next.history);
+        alia.realtime.publish(TABS_HISTORY_CHANGED_CHANNEL, next.history);
       }
       return next;
     });
@@ -640,8 +640,8 @@ export default async function plugin(bb: BbPluginApi) {
       const current = await readHistory();
       const next = normalizeTabHistory(apply(current));
       if (!tabHistoriesEqual(current, next)) {
-        await bb.storage.kv.set(HISTORY_KEY, next);
-        bb.realtime.publish(TABS_HISTORY_CHANGED_CHANNEL, next);
+        await alia.storage.kv.set(HISTORY_KEY, next);
+        alia.realtime.publish(TABS_HISTORY_CHANGED_CHANNEL, next);
       }
       return next;
     });
@@ -702,7 +702,7 @@ export default async function plugin(bb: BbPluginApi) {
 
     const operation = (async () => {
       try {
-        const thread = await bb.sdk.threads.get({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         // A lifecycle event received during the lookup is newer than its snapshot.
         if (threadAvailabilityById.has(threadId)) return threadAvailabilityById.get(threadId);
         threadParentIdsById.set(threadId, thread.parentThreadId);
@@ -834,15 +834,15 @@ export default async function plugin(bb: BbPluginApi) {
 
   // Events can also arrive for cascade-archived child chats. `closeTabs` is
   // idempotent, so it safely handles both roots and children.
-  bb.events.on("thread.archived", async ({ thread }) => {
+  alia.events.on("thread.archived", async ({ thread }) => {
     updateSidechat(thread);
     await applyThreadAvailability(thread.id, "archived");
   });
-  bb.events.on("thread.deleted", async ({ thread }) => {
+  alia.events.on("thread.deleted", async ({ thread }) => {
     updateSidechat(thread);
     await applyThreadAvailability(thread.id, "deleted");
   });
-  bb.events.on("thread.unarchived", async ({ thread }) => {
+  alia.events.on("thread.unarchived", async ({ thread }) => {
     updateSidechat(thread);
     await applyThreadAvailability(thread.id, null);
   });
@@ -858,14 +858,14 @@ export default async function plugin(bb: BbPluginApi) {
     if (existing !== undefined) return existing;
     const operation = (async () => {
       // Preserve title search if project metadata is temporarily unavailable.
-      const projects = await bb.sdk.projects.list({ includePersonal: true }).catch(() => []);
+      const projects = await alia.sdk.projects.list({ includePersonal: true }).catch(() => []);
       const projectNames = new Map(projects.map((project) => [project.id, project.name]));
       const candidates: SearchCandidate[] = [];
       const seen = new Set<string>();
       const pageSize = 200;
       for (const archived of includeArchived ? [false, true] : [false]) {
         for (let offset = 0; ; offset += pageSize) {
-          const page = await bb.sdk.threads.list({
+          const page = await alia.sdk.threads.list({
             archived,
             includeHidden: false,
             limit: pageSize,
@@ -910,7 +910,7 @@ export default async function plugin(bb: BbPluginApi) {
     stateRevision: collection.revision,
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     tabs_workspaces_list: async () => {
       await mutationTail;
       return catalogResult(await readWorkspaces());
@@ -1022,7 +1022,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
     },
     tabs_resolve_current: async ({ threadId }) => {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       return {
         createdAt: thread.createdAt,
         candidate:
@@ -1096,9 +1096,9 @@ export default async function plugin(bb: BbPluginApi) {
         (_current, _next, closedIds) => closedIds.filter((id) => id !== thread.threadId),
       ),
     tabs_restore: async ({ entry, index, workspaceId }) => {
-      let thread: Awaited<ReturnType<typeof bb.sdk.threads.get>> | undefined;
+      let thread: Awaited<ReturnType<typeof alia.sdk.threads.get>> | undefined;
       try {
-        thread = await bb.sdk.threads.get({ threadId: entry.threadId });
+        thread = await alia.sdk.threads.get({ threadId: entry.threadId });
       } catch (cause) {
         if (!isThreadNotFoundError(cause)) throw cause;
       }
@@ -1167,5 +1167,5 @@ export default async function plugin(bb: BbPluginApi) {
       ),
   });
 
-  bb.log.info("Chat tabs loaded");
+  alia.log.info("Chat tabs loaded");
 }

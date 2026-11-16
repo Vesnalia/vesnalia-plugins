@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse, type FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse, type FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin, { type SpecDetail } from "./server";
 
 const agentContext = { threadId: "agent-thread", projectId: "project-1" };
@@ -7,7 +7,7 @@ let host: FakePluginHost;
 
 beforeEach(async () => {
   host = createFakePluginHost({ pluginId: "specs", settings: { autoTriageQuestions: false } });
-  await plugin(host.bb);
+  await plugin(host.alia);
 });
 
 afterEach(async () => { await host.harness.lifecycle.dispose(); });
@@ -92,7 +92,7 @@ describe("proposal concurrency and review", () => {
     await agent("specs_propose", { idOrSlug: spec.id, content: "Proposed" });
     const proposal = (await detail(spec.id)).proposals[0]!;
     await rpc("proposals_reject", { proposalId: proposal.id, note: "Keep the existing wording" });
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     const before = db.prepare("SELECT * FROM proposals WHERE id = ?").get(proposal.id);
     await expect(rpc("proposals_apply", { proposalId: proposal.id })).rejects.toThrow(/rejected/);
     await expect(rpc("proposals_reject", { proposalId: proposal.id, note: "Replacement reason" })).rejects.toThrow(/rejected/);
@@ -111,12 +111,12 @@ describe("proposal concurrency and review", () => {
     await agent("specs_propose", { idOrSlug: spec.id, content: "Applied by agent", expectedRevision: 2 });
     const proposal = (await detail(spec.id)).proposals[0]!;
     expect((await cli(["apply", proposal.id])).exitCode).toBe(0);
-    expect(host.bb.storage.database().prepare("SELECT resolved_by FROM proposals WHERE id = ?").get(proposal.id)).toEqual({ resolved_by: "agent" });
+    expect(host.alia.storage.database().prepare("SELECT resolved_by FROM proposals WHERE id = ?").get(proposal.id)).toEqual({ resolved_by: "agent" });
     expect((await detail(spec.id)).agentChange).toMatchObject({ author: "agent", revision: 3 });
     await agent("specs_propose", { idOrSlug: spec.id, content: "Rejected" });
     const rejectedId = (await detail(spec.id)).proposals[0]!.id;
     expect((await cli(["reject", rejectedId])).exitCode).toBe(0);
-    expect(host.bb.storage.database().prepare("SELECT resolved_by FROM proposals WHERE id = ?").get(rejectedId)).toEqual({ resolved_by: "agent" });
+    expect(host.alia.storage.database().prepare("SELECT resolved_by FROM proposals WHERE id = ?").get(rejectedId)).toEqual({ resolved_by: "agent" });
     expect((await cli(["ack", spec.id, "--revision", "3"])).exitCode).toBe(0);
     expect((await detail(spec.id)).agentChange?.acked).toBe(true);
     expect((await cli(["revert", spec.id, "--to", "1"])).exitCode).toBe(0);
@@ -135,7 +135,7 @@ describe("proposal concurrency and review", () => {
     // Legacy invalid pending records must also be rejected before saving.
     await agent("specs_propose", { idOrSlug: spec.id, content: "Proposed" });
     const proposal = (await detail(spec.id)).proposals[0]!;
-    host.bb.storage.database().prepare("UPDATE proposals SET question_id = ? WHERE id = ?").run(foreign.id, proposal.id);
+    host.alia.storage.database().prepare("UPDATE proposals SET question_id = ? WHERE id = ?").run(foreign.id, proposal.id);
     await expect(rpc("proposals_apply", { proposalId: proposal.id })).rejects.toThrow(/belonging to this spec/);
     expect((await detail(spec.id)).spec.revision).toBe(1);
     expect((await detail(other.id)).annotations[0]?.foldedRevision).toBeNull();
@@ -198,7 +198,7 @@ describe("CLI validation", () => {
     expect((await cli(["link", spec.id, "--project", "project-1", `--mode=${mode}`])).exitCode).toBe(1);
     expect((await cli(["create", "Invalid mode", `--mode=${mode}`])).exitCode).toBe(1);
     expect((await detail(spec.id)).links).toEqual(before.links);
-    expect(host.bb.storage.database().prepare("SELECT COUNT(*) AS n FROM specs").get()).toEqual({ n: 1 });
+    expect(host.alia.storage.database().prepare("SELECT COUNT(*) AS n FROM specs").get()).toEqual({ n: 1 });
   });
 
   it("rejects generic resolve for questions while retaining question lifecycle commands and note resolution", async () => {
@@ -231,7 +231,7 @@ it("deletes all owned records, cancels active research, and detaches retained ch
   await agent("specs_read", { idOrSlug: spec.id });
   host.harness.sdk.stub("threads.spawn", async () => makeThreadResponse({ id: "research-thread", status: "active" }));
   await rpc("research_start", { specId: spec.id, brief: "Investigate" });
-  const db = host.bb.storage.database();
+  const db = host.alia.storage.database();
   db.prepare("UPDATE specs SET parent_spec_id = ? WHERE id = ?").run(spec.id, child.id);
   db.prepare("INSERT INTO chat_threads (spec_id, thread_id, created_at) VALUES (?, 'chat-thread', '2026-09-22')").run(spec.id);
   const stop = vi.fn(async () => { throw new Error("Thread already stopped"); });
@@ -307,7 +307,7 @@ describe("question acceptance", () => {
     const { spec, input } = await answered(true);
     await agent("specs_propose", { idOrSlug: spec.id, content: "Seven days", questionId: input.annotationId });
     const proposal = (await detail(spec.id)).proposals[0]!;
-    host.bb.storage.database().exec("CREATE TRIGGER fail_decision BEFORE INSERT ON decisions BEGIN SELECT RAISE(ABORT, 'Decision failed'); END");
+    host.alia.storage.database().exec("CREATE TRIGGER fail_decision BEFORE INSERT ON decisions BEGIN SELECT RAISE(ABORT, 'Decision failed'); END");
     await expect(rpc("questions_apply", { ...input, proposalId: proposal.id })).rejects.toThrow(/Decision failed/);
     const current = await detail(spec.id);
     expect(current.spec).toMatchObject({ revision: 1, content: "User content" });

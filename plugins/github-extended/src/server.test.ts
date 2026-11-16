@@ -1,7 +1,7 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { defineRpcContract } from "@get-bb/plugin-sdk";
-import type { PluginRpcClient, PluginRpcHandlers } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
+import type { PluginRpcClient, PluginRpcHandlers } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import {
   dependabotAlertDetailFromRow,
   dependabotAlertFromRow,
@@ -22,7 +22,7 @@ function assertGithubFrontendInference(
   client: PluginRpcClient<typeof githubRpcContract>,
 ) {
   expectTypeOf(
-    client.call("getPull", { repo: "get-bb/bb", number: 694 }),
+    client.call("getPull", { repo: "get-alia/alia", number: 694 }),
   ).toEqualTypeOf<
     Promise<{
       pull: {
@@ -79,7 +79,7 @@ function assertGithubFrontendInference(
   >();
 
   // @ts-expect-error issue numbers must be numeric.
-  void client.call("getIssue", { repo: "get-bb/bb", number: "694" });
+  void client.call("getIssue", { repo: "get-alia/alia", number: "694" });
   // @ts-expect-error unknown filter values are rejected by the contract.
   void client.call("listItems", { kind: "discussion" });
 }
@@ -218,8 +218,8 @@ describe("GitHub RPC contract", () => {
   });
 
   it("separates usable extraRepos entries from ones it cannot honor", () => {
-    expect(parseExtraRepos("get-bb/bb, nonsense")).toEqual({
-      repos: ["get-bb/bb"],
+    expect(parseExtraRepos("get-alia/alia, nonsense")).toEqual({
+      repos: ["get-alia/alia"],
       ignored: ["nonsense"],
     });
     expect(parseExtraRepos("SOME-ORG/Repo")).toEqual({
@@ -288,7 +288,7 @@ describe("GitHub RPC contract", () => {
   });
 
   it("rejects CLI arguments that would otherwise broaden a repository query", () => {
-    expect(validateGithubCliArgs(["issues", "get-bb/bb"])).toBeNull();
+    expect(validateGithubCliArgs(["issues", "get-alia/alia"])).toBeNull();
     expect(validateGithubCliArgs(["issues", "../foo"])).toContain(
       "expected owner/repo",
     );
@@ -298,7 +298,7 @@ describe("GitHub RPC contract", () => {
     expect(validateGithubCliArgs(["issues", "bad/repo/shape"])).toContain(
       "expected owner/repo",
     );
-    expect(validateGithubCliArgs(["prs", "get-bb/bb", "extra"])).toContain(
+    expect(validateGithubCliArgs(["prs", "get-alia/alia", "extra"])).toContain(
       "Unexpected argument",
     );
     expect(validateGithubCliArgs(["repos", "--json"])).toContain(
@@ -318,13 +318,13 @@ describe("GitHub RPC contract", () => {
   });
 
   it("rejects invalid method inputs and outputs at runtime", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "github-contract",
     });
     const contract = defineRpcContract({
       startWork: githubRpcContract.startWork,
     });
-    bb.rpc.register(contract, {
+    alia.rpc.register(contract, {
       startWork() {
         return { threadId: "" };
       },
@@ -337,7 +337,7 @@ describe("GitHub RPC contract", () => {
       }),
     ).rejects.toMatchObject({ code: "invalid_input" });
     await expect(
-      harness.callRpc("startWork", { repo: "get-bb/bb", number: 694 }),
+      harness.callRpc("startWork", { repo: "get-alia/alia", number: 694 }),
     ).rejects.toMatchObject({ code: "invalid_output" });
   });
 });

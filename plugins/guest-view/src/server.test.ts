@@ -1,5 +1,5 @@
-// The plugin's backend, end to end: the real server.ts and the real guest HTTP server, with a fake `bb`
-// (threads, storage, push) and a shell script standing in for cloudflared. No network, no BB.
+// The plugin's backend, end to end: the real server.ts and the real guest HTTP server, with a fake `VesnALIA`
+// (threads, storage, push) and a shell script standing in for cloudflared. No network, no VesnALIA.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
@@ -7,7 +7,7 @@ import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, mock, test } from "node:test";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import plugin, { type OwnerState } from "../server.ts";
 import type { FeedPayload } from "./feed.ts";
 import { drawn, emptyFeed, mergeFeed } from "./merge.ts";
@@ -35,7 +35,7 @@ interface FakeThread {
   rows: Record<string, unknown>[];
   /** While above zero, reading the timeline fails (and counts down). */
   failReads: number;
-  /** When set, reads carry a tag and a read that names the last tag gets a delta, as BB's does. */
+  /** When set, reads carry a tag and a read that names the last tag gets a delta, as VesnALIA's does. */
   tagged?: boolean;
   /** What each timeline read asked for. */
   reads?: { afterTag?: string; deferContent?: string; includeNestedRows?: string }[];
@@ -74,7 +74,7 @@ while true; do sleep 1; done
     const logs: { level: string; message: string }[] = [];
     let disposeFn: () => Promise<void> = async () => {};
     const log = (level: string) => (message: string) => void logs.push({ level, message });
-    const bb = {
+    const alia = {
       settings: { define: () => ({ get: async () => ({ expiryHours: 4, cloudflaredPath: binary }) }) },
       storage: {
         kv: {
@@ -122,7 +122,7 @@ while true; do sleep 1; done
         plugins: { callRpc: async ({ input }: { input: Push }) => void pushes.push(input) },
       },
     };
-    await plugin(bb as unknown as BbPluginApi);
+    await plugin(alia as unknown as AliaPluginApi);
     const instance: Loaded = {
       logs,
       call: (method, input) => handlers[method]!(input),

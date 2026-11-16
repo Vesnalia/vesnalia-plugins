@@ -93,5 +93,5 @@ export async function fetchStartOffer(auth: ReadOnlyAuth, appVersion: string, en
   } catch { throw Error('Start claim discovery unavailable; check ZCode Desktop for current offers.'); }
 }
 export function startClaimGuidance(offer: StartOffer): string | null {
-  return offer.offers.length ? 'ZCode Desktop returned a Start claim offer. Open ZCode Desktop, update it if needed, review your eligibility and claim there. Then refresh the bb model catalogue (discovery may take up to one minute). This offer does not confirm granted quota; Coding Plan is separate.' : null;
+  return offer.offers.length ? 'ZCode Desktop returned a Start claim offer. Open ZCode Desktop, update it if needed, review your eligibility and claim there. Then refresh the VesnALIA model catalogue (discovery may take up to one minute). This offer does not confirm granted quota; Coding Plan is separate.' : null;
 }

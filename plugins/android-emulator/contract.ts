@@ -1,10 +1,10 @@
-import { defineRpcContract } from '@get-bb/plugin-sdk';
+import { defineRpcContract } from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 
 export const serial = z.string().regex(/^[\w.:-]{1,64}$/);
 export const avdName = z.string().regex(/^[\w.-]{1,200}$/);
 export const keyName = z.enum(['back', 'home', 'recent']);
-export const transport = z.enum(['bb', 'network']);
+export const transport = z.enum(['alia', 'network']);
 const pasteText = z.string().min(1).max(65536);
 const origin = z.url().refine(value => new URL(value).origin === value, 'Expected an origin');
 

@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { useRpc, type PluginRpcResult } from "@get-bb/plugin-sdk/app";
+import { useRpc, type PluginRpcResult } from "@vesnalia/plugin-sdk/app";
 import type { pokemonRpcContract } from "../server";
 import { usePokedexSignal } from "@/lib/use-pokedex-signal";
 

@@ -113,7 +113,7 @@ export class JevTransport {
     }
 
     const session = http2.connect(origin);
-    // The connection must never keep the BB server alive on its own.
+    // The connection must never keep the VesnALIA server alive on its own.
     session.unref();
     const hot: HotSession = {
       session,

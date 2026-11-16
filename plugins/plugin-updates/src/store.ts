@@ -1,5 +1,5 @@
-// What the plugin keeps in bb.storage.kv.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// What the plugin keeps in alia.storage.kv.
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { CarriedCheck, CheckEntry, ReleaseResult } from "./report";
 
 /** The last check's raw results; the report is rebuilt from it on demand. */
@@ -7,7 +7,7 @@ export interface LastCheck {
   checks: CheckEntry[];
   releases: Record<string, ReleaseResult>;
   checkedAt: number;
-  /** Plugins bb couldn't check (see `check()`); absent when none. */
+  /** Plugins VesnALIA couldn't check (see `check()`); absent when none. */
   updateCheckFailures?: StoredCheckFailure[];
 }
 
@@ -27,19 +27,19 @@ export interface CheckFailure {
 }
 
 /**
- * bb refused to install `version` for its engines (`reason`, bb's words)
- * while `from` was installed on bb `bbVersion` (absent if it couldn't be read).
+ * VesnALIA refused to install `version` for its engines (`reason`, VesnALIA's words)
+ * while `from` was installed on VesnALIA `aliaVersion` (absent if it couldn't be read).
  */
 export interface Refusal {
   version: string;
   reason: string;
   from: string;
-  bbVersion?: string;
+  aliaVersion?: string;
 }
 
 export type VersionsById = Record<string, string[]>;
 
-export function createStore(kv: BbPluginApi["storage"]["kv"]) {
+export function createStore(kv: AliaPluginApi["storage"]["kv"]) {
   const versions = async (key: string) => (await kv.get<VersionsById>(key)) ?? {};
   return {
     lastCheck: async () => (await kv.get<LastCheck>("lastCheck")) ?? null,
@@ -54,7 +54,7 @@ export function createStore(kv: BbPluginApi["storage"]["kv"]) {
     seen: () => versions("seen"),
     saveSeen: (seen: VersionsById) => kv.set("seen", seen),
     forgetSeen: () => kv.delete("seen"),
-    /** Releases bb refused on apply, by plugin id. */
+    /** Releases VesnALIA refused on apply, by plugin id. */
     refusals: async () => (await kv.get<Record<string, Refusal>>("refusals")) ?? {},
     saveRefusals: (refusals: Record<string, Refusal>) => kv.set("refusals", refusals),
   };

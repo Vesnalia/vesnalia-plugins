@@ -1,4 +1,4 @@
-import type { PluginProviderFallbackModel } from "@get-bb/plugin-sdk";
+import type { PluginProviderFallbackModel } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { NANO_GPT_PROVIDER_ID } from "./provider-id.js";

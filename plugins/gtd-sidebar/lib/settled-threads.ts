@@ -1,7 +1,7 @@
 /**
  * The settled shelf's own thread rows.
  *
- * Settling archives the thread in bb, and the host's sidebar view is built
+ * Settling archives the thread in VesnALIA, and the host's sidebar view is built
  * from queries pinned to `archived: false` — an archived thread is evicted
  * from that cache, so `experimental_useSidebarThreads` can never report it.
  * `isArchived` on a reported thread is therefore always false, and a filter
@@ -9,9 +9,9 @@
  *
  * So the plugin fetches its own settled threads through its backend and maps
  * them into the shape the rest of the list already speaks. These functions are
- * that mapping, kept pure so they can be tested without a bb server.
+ * that mapping, kept pure so they can be tested without a VesnALIA server.
  */
-import type { PluginSidebarThread, PluginSidebarThreadIndicator } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread, PluginSidebarThreadIndicator } from "@vesnalia/plugin-sdk";
 import type { ThreadLifecycleRow } from "@/lib/lifecycle";
 
 /**
@@ -23,7 +23,7 @@ import type { ThreadLifecycleRow } from "@/lib/lifecycle";
  * and short enough that the shelf stays readable.
  *
  * Nothing is un-settled or unarchived when a thread ages out. It stops being
- * drawn here and stays exactly where it is, in bb's archived view.
+ * drawn here and stays exactly where it is, in VesnALIA's archived view.
  */
 export const SETTLED_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -48,11 +48,11 @@ export interface SettledThreadRow {
   titleFallback: string | null;
   parentThreadId: string | null;
   sectionId: string | null;
-  /** bb's `originKind`; anything this sidebar does not draw becomes null. */
+  /** VesnALIA's `originKind`; anything this sidebar does not draw becomes null. */
   originKind: string | null;
   originPluginId: string | null;
   providerId: string;
-  /** bb's thread status: "active", "starting", "stopping", "idle", "error". */
+  /** VesnALIA's thread status: "active", "starting", "stopping", "idle", "error". */
   status: string;
   hasPendingInteraction: boolean;
   isPinned: boolean;
@@ -69,7 +69,7 @@ export interface SettledThreadRow {
   latestAttentionAt: number;
 }
 
-/** bb's own rule: read means the last read caught up with the last attention. */
+/** VesnALIA's own rule: read means the last read caught up with the last attention. */
 export function isUnread(row: SettledThreadRow): boolean {
   return (row.lastReadAt ?? 0) < row.latestAttentionAt;
 }
@@ -166,7 +166,7 @@ export function toSidebarThread(row: SettledThreadRow): PluginSidebarThread {
  * The host's threads plus the settled ones it cannot see.
  *
  * The host wins every collision. Its view is live and this one is a round trip
- * old, so a thread bb has already unarchived — an un-settle that landed while
+ * old, so a thread VesnALIA has already unarchived — an un-settle that landed while
  * the fetch was in flight — must not be dragged back to the settled shelf by a
  * stale copy of itself.
  */
@@ -194,7 +194,7 @@ export function mergeSettledThreads(
  * row that has since aged out.
  *
  * `visibleThreadIds` is the merged list, and subtracting it is what keeps this
- * from counting a thread twice. A settled thread bb still reports — an archive
+ * from counting a thread twice. A settled thread VesnALIA still reports — an archive
  * that failed, or a settle from before this plugin archived anything — already
  * reaches the shelf through `resolveShelf`, and one whose new attention has
  * un-settled it already reaches the inbox. What is left is exactly the set the

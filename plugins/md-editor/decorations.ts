@@ -1,5 +1,5 @@
 // Visual-only decorations (never change the document): status badges and
-// clickable BB entity references (thread ids, task keys).
+// clickable VesnALIA entity references (thread ids, task keys).
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";

@@ -1,4 +1,4 @@
-import { defineRpcContract, type StandardSchemaV1 } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type StandardSchemaV1 } from "@vesnalia/plugin-sdk";
 import catalog from "./palettes/catalog.json";
 const ids = new Set(catalog.map(p => `plugin:herdr-theme:${p.id}`));
 function schema<T>(accept: (value: unknown) => value is T): StandardSchemaV1<T> {

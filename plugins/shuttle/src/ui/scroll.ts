@@ -16,7 +16,7 @@ const nextFrame = (callback: () => void): (() => void) => {
 
 /**
  * Remembers how far a scrolling list was scrolled under `key`, and scrolls back there when the list shows again: after
- * a visit elsewhere in bb, on returning from a PR on a phone, or when a PR opening beside it moves the list to another
+ * a visit elsewhere in VesnALIA, on returning from a PR on a phone, or when a PR opening beside it moves the list to another
  * element. Until the list is tall enough the position is tried again each frame; scrolling, clicking or typing first
  * wins. PR panes use `settle` to hold the position while Markdown finishes rendering. A null key remembers nothing.
  */

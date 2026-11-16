@@ -68,8 +68,8 @@ export async function probeReflink(args: {
   }
   await mkdir(args.copiesRoot, { recursive: true });
   const token = randomBytes(6).toString("hex");
-  const sourceProbe = path.join(args.sourcePath, `.bb-cow-probe-${token}`);
-  const targetProbe = path.join(args.copiesRoot, `.bb-cow-probe-${token}`);
+  const sourceProbe = path.join(args.sourcePath, `.alia-cow-probe-${token}`);
+  const targetProbe = path.join(args.copiesRoot, `.alia-cow-probe-${token}`);
   try {
     await writeFile(sourceProbe, "probe\n");
     await run("cp", ["--reflink=always", sourceProbe, targetProbe]);
@@ -145,7 +145,7 @@ export async function deleteSubvolume(args: {
 /** Whether this user can delete a non-empty subvolume under `root` instantly. */
 export async function canDeleteSubvolumes(root: string): Promise<boolean> {
   await mkdir(root, { recursive: true });
-  const probe = path.join(root, `.bb-cow-subvol-probe-${randomBytes(6).toString("hex")}`);
+  const probe = path.join(root, `.alia-cow-subvol-probe-${randomBytes(6).toString("hex")}`);
   try {
     await run("btrfs", ["subvolume", "create", "--", probe]);
     await writeFile(path.join(probe, "probe"), "probe\n");
@@ -187,8 +187,8 @@ export async function convertToSubvolume(args: {
   if (await isSubvolume(target)) {
     throw new ConvertError(`${target} is already a subvolume`);
   }
-  const fresh = `${target}.bb-subvol-new`;
-  const old = `${target}.bb-subvol-old`;
+  const fresh = `${target}.alia-subvol-new`;
+  const old = `${target}.alia-subvol-old`;
   for (const stale of [fresh, old]) {
     if (await exists(stale)) {
       throw new ConvertError(

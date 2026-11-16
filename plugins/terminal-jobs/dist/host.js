@@ -13,7 +13,7 @@ var __export = (target, all) => {
 // host.ts
 import { fileURLToPath } from "node:url";
 
-// bb-host-sdk-runtime:@get-bb/plugin-sdk
+// alia-host-sdk-runtime:@vesnalia/plugin-sdk
 var PLUGIN_CLI_OUTPUT_MAX_BYTES = 1024 * 1024;
 function defineRpcContract(contract) {
   return contract;
@@ -14685,7 +14685,7 @@ async function runTerminalJobRunner(argv) {
   fs.chmodSync(jobDirectory, 448);
   const startedMs = Date.now();
   const startedAt = new Date(startedMs).toISOString();
-  const terminalId = process.env.BB_TERMINAL_SESSION_ID || null;
+  const terminalId = process.env.ALIA_TERMINAL_SESSION_ID || null;
   atomicJson(
     launchPath,
     {

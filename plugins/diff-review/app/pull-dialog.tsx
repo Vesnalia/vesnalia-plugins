@@ -24,7 +24,7 @@ export function PullDialog({ open, onOpenChange, onPick }: { open: boolean; onOp
           <DialogTitle>Review a pull request</DialogTitle>
           <DialogDescription>
             Its changes are fetched into this workspace's repository, without switching your checkout, and its review threads come from GitHub through the GitHub
-            CLI on the bb server's machine.
+            CLI on the VesnALIA server's machine.
           </DialogDescription>
         </DialogHeader>
         <input

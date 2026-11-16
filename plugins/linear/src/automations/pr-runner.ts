@@ -14,7 +14,7 @@ import type { PullRequestLookup } from "./pull-request-lookup.js";
 
 /**
  * The impure half of automation 2: resolve the branch, read the team's
- * automation, ask bb about the pull request, and apply what the pure decision
+ * automation, ask VesnALIA about the pull request, and apply what the pure decision
  * function decided.
  *
  * **The host capability this rests on is `gh pr view` and nothing else**, so
@@ -47,7 +47,7 @@ export interface PrRunnerDeps {
   readonly mutations: MutationDeps;
   readonly now: () => number;
   readonly log?: (level: "debug" | "info" | "warn", message: string) => void;
-  /** The environment's pull request, from bb's GitHub PR Status plugin. */
+  /** The environment's pull request, from VesnALIA's GitHub PR Status plugin. */
   readonly lookupPullRequest: (environmentId: string) => Promise<PullRequestLookup>;
 }
 
@@ -288,7 +288,7 @@ export async function linkPullRequest(
  * lookup, it may not: otherwise a GitLab shop gets a permanent apology
  * attached to every linked thread, which violates the rule that a row says
  * nothing when it has nothing to say. The fact lives in exactly two places
- * instead — the settings section and `bb linear doctor`.
+ * instead — the settings section and `alia linear doctor`.
  */
 export function mayShowLookupFailure(probe: { outcome: string } | null): boolean {
   return probe !== null && probe.outcome === "available";

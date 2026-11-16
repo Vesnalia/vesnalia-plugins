@@ -192,7 +192,7 @@ export function importPlan(state: ConfigState, read: DraftRead, file: unknown): 
     if (!now || canonicalJson(now) !== canonicalJson(image)) values.push([imageDefinitionPath(name), plain(canonicalJson(image))]);
   }
 
-  for (const type of read.unknownTypes) problems.push(`It has a backend of type ${type}, which this BB Box has no driver for, so the page cannot import it.`);
+  for (const type of read.unknownTypes) problems.push(`It has a backend of type ${type}, which this VesnALIA Box has no driver for, so the page cannot import it.`);
   return { values, problems, unset };
 }
 

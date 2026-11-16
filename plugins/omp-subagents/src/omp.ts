@@ -1,4 +1,4 @@
-// bb-plugin-omp-subagents — parser for OMP session JSONL rows.
+// alia-plugin-omp-subagents — parser for OMP session JSONL rows.
 //
 // OMP layout on this machine (verified against omp 18.12.5):
 //   ~/.omp/agent/sessions/<dir-encoded-workspace>/<timestamp>_<uuid>.jsonl

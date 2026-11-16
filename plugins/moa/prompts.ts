@@ -10,12 +10,12 @@ Return only a concise working note for the acting agent, in the language of the 
 
 export function fileAccessPolicy(available: boolean, hostId: string) {
   return `Current consultation file-access policy. Execution host: ${JSON.stringify(hostId)}. Local paths belong to this host only.
-${available ? `File Gateway is enabled and running. You may use bb_file_gateway with operations hosts, list and read to inspect task-relevant files on enrolled machines or configured external connections. If the native tool is absent from this provider's tool list, use its public CLI through the command tool:
-bb file-gateway hosts
-bb file-gateway list <exact-source-id> <absolute-path> [offset]
-bb file-gateway read <exact-source-id> <absolute-path> [byte-offset] [max-bytes]
+${available ? `File Gateway is enabled and running. You may use alia_file_gateway with operations hosts, list and read to inspect task-relevant files on enrolled machines or configured external connections. If the native tool is absent from this provider's tool list, use its public CLI through the command tool:
+VesnALIA file-gateway hosts
+VesnALIA file-gateway list <exact-source-id> <absolute-path> [offset]
+VesnALIA file-gateway read <exact-source-id> <absolute-path> [byte-offset] [max-bytes]
 First discover sources with hosts. Native File Gateway mentions resolve to an exact hostId and path; honor both, including remote_* website IDs. Never substitute a local path or a different machine. Use bounded reads (normally 32768 bytes, maximum 131072); nextOffset is a byte offset. Quote shell arguments safely. Read only files needed for the user's question. A successful read is evidence; an enabled connection alone is not.
-Only hosts/list/read are allowed for this advisory role; do not copy, write, upload, change gateway policy, or use SSH/curl/another connection to bypass a denial. If the gateway becomes unavailable or returns an access error, report the missing evidence and continue with explicit assumptions.` : `File Gateway is not available to this consultation (absent, disabled, not running, or discovery failed). Do not read external files or use SSH, HTTP, another connector or a local path as a substitute. You may still read relevant local workspace files. If external contents are needed, state that they were not read. Do not infer that BB in general lacks cross-machine file access.`}
+Only hosts/list/read are allowed for this advisory role; do not copy, write, upload, change gateway policy, or use SSH/curl/another connection to bypass a denial. If the gateway becomes unavailable or returns an access error, report the missing evidence and continue with explicit assumptions.` : `File Gateway is not available to this consultation (absent, disabled, not running, or discovery failed). Do not read external files or use SSH, HTTP, another connector or a local path as a substitute. You may still read relevant local workspace files. If external contents are needed, state that they were not read. Do not infer that VesnALIA in general lacks cross-machine file access.`}
 In your final working note, briefly identify files actually read by source and path, and any failed or omitted reads. Keep tool use proportional to the task.`;
 }
 

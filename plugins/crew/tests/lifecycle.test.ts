@@ -138,7 +138,7 @@ describe("handover", () => {
     const fromLead = await service.send({ projectId: PROJECT, from: t.self("orch-lead"), to: "dev-impl", body: "Next task." });
     expect(fromLead[0]!.status).toBe("on_hold");
 
-    service.lifecycle.noteBrief(members["dev-impl"]!, "Parser half done on bb/impl; tests red in lexer.");
+    service.lifecycle.noteBrief(members["dev-impl"]!, "Parser half done on alia/impl; tests red in lexer.");
     // Negative: the old thread is still running its turn — nothing happens yet.
     t.thread(old).status = "active";
     expect(await service.lifecycle.tick()).toBe(0);
@@ -152,7 +152,7 @@ describe("handover", () => {
     const done = store.getHandover(handover.id)!;
     expect(done).toMatchObject({ state: "done", newThread: binding.threadId });
     const item = store.getWork(done.itemId!)!;
-    expect(item).toMatchObject({ ownerMember: members["dev-impl"]!.id, body: "Parser half done on bb/impl; tests red in lexer.", state: "open" });
+    expect(item).toMatchObject({ ownerMember: members["dev-impl"]!.id, body: "Parser half done on alia/impl; tests red in lexer.", state: "open" });
     expect(t.thread(binding.threadId).request!.prompt).toContain(`work item ${item.id}`);
     expect(t.thread(old)).toMatchObject({ archived: true });
     expect(t.thread(old).metadata.retired).toBe(true);

@@ -1,16 +1,16 @@
 // learning-exercises — the server entry.
 //
 // Offers a short learning exercise after real work (a commit, new files, a schema change, a merged pull
-// request), decided from bb's thread events with no model involved; runs the accepted session in a
+// request), decided from VesnALIA's thread events with no model involved; runs the accepted session in a
 // fork of the work thread (or in the thread itself), with the question card, pause and resume; builds a
 // repo orientation in a hidden builder thread on request and runs an orientation session on it; and keeps
 // the record in the plugin's own SQLite. Nothing reaches an agent until the user starts a session or a
 // build: no skills, no tools and no instructions for any other thread. See AGENTS.md.
-import { experimental_PluginRpcRefusal, type BbPluginApi, type ExperimentalPluginRpcHandlerContext } from "@get-bb/plugin-sdk";
+import { experimental_PluginRpcRefusal, type AliaPluginApi, type ExperimentalPluginRpcHandlerContext } from "@vesnalia/plugin-sdk";
 
 import { LEARNING_TAG, rpcContract } from "./shared/contract";
 import { LearningApi } from "./server/api";
-import { bbPorts, SESSION_METADATA_KEY } from "./server/bb-ports";
+import { aliaPorts, SESSION_METADATA_KEY } from "./server/alia-ports";
 import { learningCli } from "./server/cli";
 import { ORIENT_TOOL_INVARIANT, SESSION_INVARIANT } from "./server/content";
 import { OfferEngine } from "./server/offers";
@@ -28,34 +28,34 @@ import { PLUGIN_ID } from "./shared/types";
 
 export { rpcContract };
 
-/** The plugin with bb's ports replaced, for tests; bb loads the default export, which runs the real one. */
-export function learningPlugin(deps: { ports?: (bb: BbPluginApi, changed: () => void) => Ports } = {}) {
-  return (bb: BbPluginApi) => plugin(bb, deps);
+/** The plugin with VesnALIA's ports replaced, for tests; VesnALIA loads the default export, which runs the real one. */
+export function learningPlugin(deps: { ports?: (alia: AliaPluginApi, changed: () => void) => Ports } = {}) {
+  return (alia: AliaPluginApi) => plugin(alia, deps);
 }
 
 export default learningPlugin();
 
-async function plugin(bb: BbPluginApi, deps: { ports?: (bb: BbPluginApi, changed: () => void) => Ports }): Promise<void> {
-  const settingsHandle = bb.settings.define(SETTINGS);
+async function plugin(alia: AliaPluginApi, deps: { ports?: (alia: AliaPluginApi, changed: () => void) => Ports }): Promise<void> {
+  const settingsHandle = alia.settings.define(SETTINGS);
   // Settings are read once here and kept current by onChange; the engine reads them synchronously.
   let current = readSettings(await settingsHandle.get());
   const settings = () => current;
 
-  const db = bb.storage.database();
+  const db = alia.storage.database();
   const reconciled = reconcileOpenSessions(db, Date.now());
-  if (reconciled > 0) bb.log.warn(`Closed ${reconciled} duplicate open learning session(s) left by an earlier version; their answers are kept.`);
-  bb.storage.migrate(db, MIGRATIONS);
+  if (reconciled > 0) alia.log.warn(`Closed ${reconciled} duplicate open learning session(s) left by an earlier version; their answers are kept.`);
+  alia.storage.migrate(db, MIGRATIONS);
   const store = new LearningStore(db);
-  const changed = () => bb.rpc.experimental_invalidate([LEARNING_TAG]);
-  const ports = (deps.ports ?? bbPorts)(bb, changed);
+  const changed = () => alia.rpc.experimental_invalidate([LEARNING_TAG]);
+  const ports = (deps.ports ?? aliaPorts)(alia, changed);
   const orientationStore = new OrientationStore(db);
   const sessions = new SessionService(ports, store, settings);
   const orientations = new OrientationService(ports, orientationStore, settings);
   const offers = new OfferEngine({ ports, store, settings });
   const api = new LearningApi({ ports, store, offers, sessions, settings });
   const orientationApi = new OrientationApi({ ports, sessions, orientations, orientationStore });
-  bb.onDispose(() => sessions.dispose());
-  bb.onDispose(() => orientations.dispose());
+  alia.onDispose(() => sessions.dispose());
+  alia.onDispose(() => orientations.dispose());
 
   // A card does not survive a reload or a restart; its session waits, paused, for Resume.
   sessions.pauseOrphanedCards();
@@ -69,7 +69,7 @@ async function plugin(bb: BbPluginApi, deps: { ports?: (bb: BbPluginApi, changed
   });
 
   // The changes are the user's to make from the app: another plugin calling through
-  // `bb.sdk.plugins.callRpc` (bb verifies that caller) is refused. Reads stay open.
+  // `alia.sdk.plugins.callRpc` (VesnALIA verifies that caller) is refused. Reads stay open.
   const fromUser = <I, O>(work: (input: I) => O) => (input: I, ctx?: ExperimentalPluginRpcHandlerContext): O => {
     if (ctx?.experimental_caller?.kind === "plugin") {
       throw new experimental_PluginRpcRefusal({ code: "forbidden", message: "Learning Exercises' offers and sessions are changed from its own app only." });
@@ -86,7 +86,7 @@ async function plugin(bb: BbPluginApi, deps: { ports?: (bb: BbPluginApi, changed
     }
   };
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     threadView: (input) => api.threadView(input),
     projectSessions: (input) => api.projectSessions(input),
     sessionDetail: (input) => api.sessionDetail(input),
@@ -118,14 +118,14 @@ async function plugin(bb: BbPluginApi, deps: { ports?: (bb: BbPluginApi, changed
     startOrientationSession: fromUser(refusing((input) => orientationApi.startOrientationSession(input))),
   });
 
-  bb.cli.register(learningCli(sessions, orientations));
-  registerTools(bb, sessions);
-  registerOrientationTools(bb, orientations);
+  alia.cli.register(learningCli(sessions, orientations));
+  registerTools(alia, sessions);
+  registerOrientationTools(alia, orientations);
 
   // Zero context upfront: no skill folder, no instructions, and tools only for a session's own thread
   // and for an orientation's builder. The metadata is only a hint (any client can write it); the store
   // decides, and the tools check the calling thread again on every call.
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const none = { tools: [], skills: [] };
     const sessionId = context.pluginMetadata[SESSION_METADATA_KEY];
     if (typeof sessionId === "string") {
@@ -156,59 +156,59 @@ async function plugin(bb: BbPluginApi, deps: { ports?: (bb: BbPluginApi, changed
     try {
       await work();
     } catch (error) {
-      bb.log.warn(`${what} failed: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`${what} failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
   // Only a thread this plugin may have started goes to the orientation service (a bound builder, or one
-  // of this plugin's threads it has not bound yet), so an idle in any other thread costs no bb read.
+  // of this plugin's threads it has not bound yet), so an idle in any other thread costs no VesnALIA read.
   type EventThread = { id: string; originPluginId: string | null; visibility: string };
   const mayBuild = (thread: EventThread) => orientations.isBuilderThread(thread.id) || thread.originPluginId === PLUGIN_ID;
-  // A builder never reaches the offer engine (invariant 3), not even before it is bound: bb can report
+  // A builder never reaches the offer engine (invariant 3), not even before it is bound: VesnALIA can report
   // its first turn before `spawn` answers, and that turn's window would hide commits in its checkout. Its
   // hidden visibility and this plugin's origin say what it is; this plugin's session threads are visible.
   const builderLike = (thread: EventThread) => orientations.isBuilderThread(thread.id) || (thread.originPluginId === PLUGIN_ID && thread.visibility === "hidden");
-  bb.events.on("thread.active", ({ thread }) =>
+  alia.events.on("thread.active", ({ thread }) =>
     guard("Noting a turn's start", () => {
       if (builderLike(thread)) return;
       return offers.onActive(thread);
     })(),
   );
-  bb.events.on("thread.idle", ({ thread }) =>
+  alia.events.on("thread.idle", ({ thread }) =>
     guard("Weighing an offer", async () => {
       if (mayBuild(thread)) await orientations.onIdle(thread.id);
       if (builderLike(thread)) return;
       await offers.onIdle(thread);
     })(),
   );
-  bb.events.on("thread.failed", ({ thread }) =>
+  alia.events.on("thread.failed", ({ thread }) =>
     guard("Clearing a failed turn", async () => {
       if (mayBuild(thread)) await orientations.onFailed(thread.id);
       if (builderLike(thread)) return;
       offers.threadGone(thread.id);
     })(),
   );
-  bb.events.on("thread.archived", ({ thread }) =>
+  alia.events.on("thread.archived", ({ thread }) =>
     guard("Pausing an archived thread's session", () => {
       offers.threadGone(thread.id);
       sessions.threadArchived(thread.id);
     })(),
   );
-  bb.events.on("thread.deleted", ({ thread }) =>
+  alia.events.on("thread.deleted", ({ thread }) =>
     guard("Closing a deleted thread's session", () => {
       offers.threadGone(thread.id);
       sessions.threadDeleted(thread.id);
     })(),
   );
 
-  bb.background.schedule("hourly-sweep", "17 * * * *", guard("The hourly sweep", async () => {
+  alia.background.schedule("hourly-sweep", "17 * * * *", guard("The hourly sweep", async () => {
     offers.expireOld();
     sessions.abandonStale();
     await offers.checkPullRequests();
   }));
   // Cancels builds past their 30 minutes, purges old failed ones, and retries an unfinished clean-up.
-  bb.background.schedule("orientation-sweep", "*/5 * * * *", guard("The orientation sweep", () => orientations.sweep()));
+  alia.background.schedule("orientation-sweep", "*/5 * * * *", guard("The orientation sweep", () => orientations.sweep()));
 
-  // Settles the builders an earlier copy left; starts are refused until it has (never throws into bb).
+  // Settles the builders an earlier copy left; starts are refused until it has (never throws into VesnALIA).
   void guard("Cleaning up orientation builders", () => orientations.reconcile())();
 }

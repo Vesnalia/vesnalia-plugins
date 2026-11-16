@@ -17,7 +17,7 @@ import {
 // which would otherwise fail the test without saying how long it took.
 const SLOW_MS = 4000;
 
-/** Every node bb's renderer would draw as something that loads: images, image references, raw HTML. */
+/** Every node VesnALIA's renderer would draw as something that loads: images, image references, raw HTML. */
 function loaders(markdown: string): string[] {
   const found: string[] = [];
   function walk(node: Nodes): void {
@@ -33,7 +33,7 @@ function isCodeBlock(markdown: string): boolean {
   return "children" in tree && tree.children.length === 1 && tree.children[0]!.type === "code";
 }
 
-// Each of these parses, the way bb's renderer parses it, into at least one
+// Each of these parses, the way VesnALIA's renderer parses it, into at least one
 // node that loads something. After `withoutImages`, re-parsing the output
 // must find none.
 const CASES: Record<string, string> = {
@@ -96,7 +96,7 @@ describe("withoutImages", () => {
   // Review pass 4, finding 7: a reference image used to copy its definition's
   // whole URL into every use, so 47 KB grew to 46 million characters. Every
   // replacement now comes from the replaced span, so the output stays near the
-  // input's size, and transform plus bb's re-parse stays quick.
+  // input's size, and transform plus VesnALIA's re-parse stays quick.
   test("keeps the output near the input's size when many references share one long definition", () => {
     const markdown = "![p]\n".repeat(511) + "\n[p]: https://example.com/" + "!".repeat(45000);
     const started = performance.now();
@@ -170,7 +170,7 @@ describe("budgets", () => {
   });
 });
 
-// Each payload must come back — and parse again as bb's renderer will parse
+// Each payload must come back — and parse again as VesnALIA's renderer will parse
 // it — within SLOW_MS. The bound is generous; the point is "not a blow-up".
 describe("speed on hostile bodies", () => {
   const PAYLOADS: Record<string, string> = {

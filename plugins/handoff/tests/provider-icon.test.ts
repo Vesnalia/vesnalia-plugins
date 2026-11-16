@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { providerIconTint, providerMarkColor, providerMarkStyle } from "../lib/provider-icon";
 
 describe("providerIconTint", () => {
-  it("reads bb's per-scheme tint", () => {
+  it("reads VesnALIA's per-scheme tint", () => {
     expect(providerIconTint({ strings: { iconTint: { light: "#111827", dark: "#F5F5F5" } } })).toEqual({
       light: "#111827",
       dark: "#F5F5F5",

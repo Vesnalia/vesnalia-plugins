@@ -4,7 +4,7 @@ Status: accepted, 30 September 2026.
 
 ## Context
 
-bb-box must give threads machines from many providers:
+alia-box must give threads machines from many providers:
 
 - containers and VMs on a hypervisor;
 - Macs, physical or running macOS VMs;
@@ -13,10 +13,10 @@ bb-box must give threads machines from many providers:
 
 The principle, in the operator's words: "if we do the arch well, it shouldn't
 care who the provider is: proxmox, crabbox, lxc, vm, physical; the abstraction
-solves this as long as bb-box is concerned."
+solves this as long as alia-box is concerned."
 
 If the first backend's details leak into the rest of the code, every later
-backend means rewriting the core, and nobody can run bb-box without that
+backend means rewriting the core, and nobody can run alia-box without that
 provider.
 
 ## Decision
@@ -25,16 +25,16 @@ The code has three parts.
 
 | Part | Owns | Never |
 | --- | --- | --- |
-| Core | registry, lifecycle, agent tools, panel, BB enrolment, thread access, computer use, desktop viewer | names a provider, hypervisor, container technology or transport |
+| Core | registry, lifecycle, agent tools, panel, VesnALIA enrolment, thread access, computer use, desktop viewer | names a provider, hypervisor, container technology or transport |
 | Transports | reaching inside a box: running commands and copying files, streaming a desktop | knows which provider made the box |
 | Backends | adapting one provider: acquire and release, address, capacity, and which transports reach each box | runs anything inside a box on the core's behalf |
 
 - The core depends only on the backend interface and the transport interface.
 - A kind declares its capabilities: guest OS, desktop, GPU, Docker, command
-  transport, desktop stream, and whether it enrols in BB. The panel and tools
+  transport, desktop stream, and whether it enrols in VesnALIA. The panel and tools
   follow these declarations and never branch on the backend or transport name.
 - Everything that runs inside a box is written once, per guest OS, and goes
-  through the command transport. That covers BB enrolment, the thread's
+  through the command transport. That covers VesnALIA enrolment, the thread's
   access, commands, file copies and computer use. The scripts are POSIX sh
   for Linux and macOS, and PowerShell for Windows.
 - Transports are shared modules that backends compose. Commands and file

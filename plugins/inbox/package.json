@@ -1,15 +1,15 @@
 {
-  "name": "bb-plugin-inbox",
+  "name": "alia-plugin-inbox",
   "version": "0.2.1",
   "type": "module",
   "engines": {
     "node": ">=24",
-    "bb": ">=0.46.1",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46.1",
+    "aliaPluginSdk": ">=0.6.49"
   },
-  "bb": {
+  "alia": {
     "name": "Needs You",
-    "description": "Manage attention, finish tasks, and clean up BB threads, with optional Telegram notifications.",
+    "description": "Manage attention, finish tasks, and clean up VesnALIA threads, with optional Telegram notifications.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -23,7 +23,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -55,18 +54,30 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2"
   },
-  "description": "Manage attention, finish tasks, and clean up BB threads, with optional Telegram notifications.",
+  "description": "Manage attention, finish tasks, and clean up VesnALIA threads, with optional Telegram notifications.",
   "author": "Pritam Sharma",
-  "homepage": "https://notpritam.in/plugins/needs-you",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/notpritam/bb-plugin-inbox.git"
-  },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "node --import ./tests/register.mjs --test tests/*.test.mjs",
     "test:browser": "node scripts/browser-smoke.mjs"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/inbox#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/inbox"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

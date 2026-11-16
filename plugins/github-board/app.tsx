@@ -4,7 +4,7 @@
 // editor on the plugin's settings page, two palette commands, and the card a
 // thread was started on in its Info tab and on its sidebar row
 // (app/thread-card-slots.tsx).
-import { definePluginApp, useBbNavigate, type BbNavigate } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate, type AliaNavigate } from "@vesnalia/plugin-sdk/app";
 
 import { BoardPanel, boardPageTitle, PANEL_PATH, PROMPTS_SUBPATH } from "./app/board-panel";
 import { PromptSettingsEditor } from "./app/prompt-settings";
@@ -18,10 +18,10 @@ import { registerThreadCard } from "./app/thread-card-slots";
  * keeps the remembered board current while no board is on screen, and adds a
  * card to a chat that Add to chat opened, once the chat is on screen.
  */
-let navigator: BbNavigate | null = null;
+let navigator: AliaNavigate | null = null;
 
 function AppBridge() {
-  navigator = useBbNavigate();
+  navigator = useAliaNavigate();
   return (
     <>
       <BoardPatchListener />

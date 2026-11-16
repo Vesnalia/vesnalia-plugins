@@ -16,7 +16,7 @@ describe("parking threads", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "thr_snz", title: "Later" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({
@@ -34,8 +34,8 @@ describe("parking threads", () => {
     const shelf = await screen.findByRole("region", { name: "Snoozed" });
     fireEvent.click(within(shelf).getByRole("button"));
     expect(within(shelf).getByText("2h")).toBeDefined();
-    expect(within(shelf).getByLabelText("bb · Later")).toBeDefined();
-    expect(within(shelf).getByText("bb").className).toContain("text-muted-foreground/50");
+    expect(within(shelf).getByLabelText("alia · Later")).toBeDefined();
+    expect(within(shelf).getByText("alia").className).toContain("text-muted-foreground/50");
     expect(within(shelf).getByText("·").className).toContain("text-sm");
     expect(within(shelf).getByText("Later").className).toContain("text-foreground/80");
     expect(within(shelf).getByLabelText("Wake thread now")).toBeDefined();
@@ -49,7 +49,7 @@ describe("parking threads", () => {
         inactiveAfterHours: 6,
       },
     };
-    localStorage.setItem("bb-sidebar:settings-cache:v1", JSON.stringify(storedSettings));
+    localStorage.setItem("alia-sidebar:settings-cache:v1", JSON.stringify(storedSettings));
 
     const now = Date.now();
     const rows = [
@@ -79,7 +79,7 @@ describe("parking threads", () => {
           thread({ id: "thr_done", title: "Finished work" }),
           thread({ id: "thr_later", title: "Later work" }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: { getSidebarSettings: () => storedSettings, listLifecycle: () => ({ rows }) },
     };
@@ -136,7 +136,7 @@ describe("parking threads", () => {
         }),
         thread({ id: "settled", title: "Settled work" }),
       ],
-      projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+      projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
     };
     renderSlot(inbox, props, {
       sidebarThreads,
@@ -184,7 +184,7 @@ describe("parking threads", () => {
         sidebarThreads: {
           status: "ready",
           threads: [thread({ id: "thr_open", title: "Open but settled" })],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         },
         rpc: {
           listLifecycle: () => ({
@@ -217,7 +217,7 @@ describe("parking threads", () => {
           thread({ id: "old-settle", title: "Older settle", createdAt: 999 }),
           thread({ id: "new-settle", title: "Newer settle", createdAt: 1 }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({
@@ -255,7 +255,7 @@ describe("parking threads", () => {
       sidebarThreads: {
         status: "ready",
         threads,
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({

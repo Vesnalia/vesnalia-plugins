@@ -33,13 +33,13 @@ describe("merge requests (human merges by default)", () => {
     const { merge, integrator } = await service.integration.request(alpha.crew, "core-lead@alpha");
     const env = store.memberEnv(alpha.members["core-lead"]!.id)!;
     expect(merge).toMatchObject({ state: "open", branch: env.branch, base: "main" });
-    expect(env.branch).toMatch(/^bb\//);
+    expect(env.branch).toMatch(/^alia\//);
     expect(integrator).toBeNull();
     expect(await needs(alpha, "core-lead")).toContain("merge-request");
     // Only the lead: the other member is not on the list.
     expect(await needs(alpha, "core-dev")).not.toContain("merge-request");
     const view = await service.activity.refreshMember(alpha.members["core-lead"]!);
-    expect(view!.question).toContain(`bb crew approve ${merge.id}`);
+    expect(view!.question).toContain(`alia crew approve ${merge.id}`);
   });
 
   it("a second request returns the open one; approve merges, clears Needs you and tells every running lead without waking them", async () => {
@@ -328,12 +328,12 @@ describe("local git backend", () => {
     const calls: string[] = [];
     const git = createLocalGit(async (args, cwd) => {
       calls.push(`${cwd}: ${args.join(" ")}`);
-      if (args[0] === "worktree") return { code: 0, stdout: "worktree /repo\nHEAD 1\nbranch refs/heads/main\n\nworktree /wt\nbranch refs/heads/bb/x\n", stderr: "" };
+      if (args[0] === "worktree") return { code: 0, stdout: "worktree /repo\nHEAD 1\nbranch refs/heads/main\n\nworktree /wt\nbranch refs/heads/alia/x\n", stderr: "" };
       if (args[0] === "status") return { code: 0, stdout: "", stderr: "" };
       if (args[0] === "merge" && args[1] === "--no-ff") return { code: 1, stdout: "CONFLICT (content): Merge conflict in a", stderr: "" };
       return { code: 0, stdout: "", stderr: "" };
     });
-    const outcome = await git.merge("/wt", "bb/x", "main", "m");
+    const outcome = await git.merge("/wt", "alia/x", "main", "m");
     expect(outcome).toMatchObject({ ok: false, conflict: true });
     expect(calls).toContain("/repo: merge --abort");
   });
@@ -344,7 +344,7 @@ describe("local git backend", () => {
       if (args[0] === "status") return { code: 0, stdout: " M a.txt\n", stderr: "" };
       throw new Error(`unexpected git ${args.join(" ")}`);
     });
-    expect(await git.merge("/wt", "bb/x", "main", "m")).toMatchObject({ ok: false, conflict: false, detail: expect.stringContaining("uncommitted") });
+    expect(await git.merge("/wt", "alia/x", "main", "m")).toMatchObject({ ok: false, conflict: false, detail: expect.stringContaining("uncommitted") });
   });
 
   it("checks(): NODE_ENV is left out of the process env (the server's NODE_ENV=production must not reach vitest)", async () => {

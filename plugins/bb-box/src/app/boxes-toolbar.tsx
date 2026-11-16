@@ -1,8 +1,8 @@
-// The Boxes page's controls, in BB's Automations page's pattern (the
+// The Boxes page's controls, in VesnALIA's Automations page's pattern (the
 // operator, 8 October 2026): tabs with a count, and a search field with
 // Filters and Sort beside it. Classes are that page's own.
 
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";

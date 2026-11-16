@@ -1,5 +1,5 @@
 // Plain constants shared with the settings page. Kept free of zod so the
-// frontend bundle, which loads in every BB window, does not pull it in.
+// frontend bundle, which loads in every VesnALIA window, does not pull it in.
 
 /** This plugin's id, which namespaces its thread metadata. */
 export const MOA_PLUGIN_ID = "moa-provider";

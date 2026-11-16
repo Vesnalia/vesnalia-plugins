@@ -1,6 +1,6 @@
 # Web section (site graphics)
 
-Tool `image_studio_web` / `bb image-studio web generate --mode … --prompt "…"` (in a hidden thread). Runs at once, no Send form, always Muse Image on fal.ai. One project per site: the folder of the thread names the site, created on first use. Pass `project` only for another site (`bb image-studio web projects`).
+Tool `image_studio_web` / `alia image-studio web generate --mode … --prompt "…"` (in a hidden thread). Runs at once, no Send form, always Muse Image on fal.ai. One project per site: the folder of the thread names the site, created on first use. Pass `project` only for another site (`alia image-studio web projects`).
 
 Use it for website graphics: page and section mockups, logo, favicon set, og share card, hero and cover pictures, spot illustrations, icon series, backgrounds, seamless patterns. Not `image_studio_generate`, not `image_studio_gui` (that is for game interfaces). **No SVG yet**: every file is a PNG (plus `favicon.ico` and `site.webmanifest`).
 
@@ -46,8 +46,8 @@ Every job folder gets `manifest.json`: `{ "section": "web", "mode", "site", "fil
 
 ## Site style
 
-Set once per site: `bb image-studio web project --theme "…" --tags minimal|corporate|playful|editorial|brutalist|dark-tech|luxury|flat-illustration|clay-3d --palette background=#0A0A12,accent=#7C5CFF --notes "…"`. Palette keys: `background`, `button`, `outline`, `highlight`, `text`; `accent` is an alias of `highlight`. Approved art becomes a reference for every later prompt: `bb image-studio web ref --image <path or gallery id>`. List sites: `bb image-studio web projects`; remove: `bb image-studio web delete`.
+Set once per site: `alia image-studio web project --theme "…" --tags minimal|corporate|playful|editorial|brutalist|dark-tech|luxury|flat-illustration|clay-3d --palette background=#0A0A12,accent=#7C5CFF --notes "…"`. Palette keys: `background`, `button`, `outline`, `highlight`, `text`; `accent` is an alias of `highlight`. Approved art becomes a reference for every later prompt: `alia image-studio web ref --image <path or gallery id>`. List sites: `alia image-studio web projects`; remove: `alia image-studio web delete`.
 
 ## CLI
 
-`bb image-studio web generate --mode ideas|page|mobile|block|logo|favicon|og|hero|cover|illustrations|icons|background|pattern --prompt "…" [--variants 1-4] [--json]`
+`alia image-studio web generate --mode ideas|page|mobile|block|logo|favicon|og|hero|cover|illustrations|icons|background|pattern --prompt "…" [--variants 1-4] [--json]`

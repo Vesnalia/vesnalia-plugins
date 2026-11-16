@@ -6,7 +6,7 @@
 // `failed[].path` so the panel can match rows 1:1 with what it sent (§4.1).
 import { cp, lstat, mkdir, rename, rm, rmdir, unlink } from "node:fs/promises";
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import type { FileEntry } from "../contract";
 import { fmError, isFileManagerError, mapNodeError, toBatchFailure, type BatchFailure } from "./errors";
@@ -111,7 +111,7 @@ async function applyConflictPolicy(
 /* ------------------------------------------------------------------ */
 
 export async function createFolder(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   input: { path: string; name: string },
 ): Promise<{ entry: FileEntry }> {
   const target = await resolveNew(input.path, input.name);
@@ -120,7 +120,7 @@ export async function createFolder(
   } catch (error) {
     throw mapNodeError(error, target);
   }
-  publishFs(bb, [path.dirname(target)], "create");
+  publishFs(alia, [path.dirname(target)], "create");
   return { entry: await buildEntry(target) };
 }
 
@@ -129,7 +129,7 @@ export async function createFolder(
 /* ------------------------------------------------------------------ */
 
 export async function renameEntry(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   input: { path: string; newName: string },
 ): Promise<{ entry: FileEntry }> {
   const source = await resolveLink(input.path);
@@ -146,7 +146,7 @@ export async function renameEntry(
   } catch (error) {
     throw mapNodeError(error, source.path);
   }
-  publishFs(bb, [parentDir], "rename");
+  publishFs(alia, [parentDir], "rename");
   return { entry: await buildEntry(target) };
 }
 
@@ -155,7 +155,7 @@ export async function renameEntry(
 /* ------------------------------------------------------------------ */
 
 export async function deleteEntries(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   input: { paths: string[]; recursive: boolean },
 ): Promise<BatchResult> {
   const succeeded: string[] = [];
@@ -182,7 +182,7 @@ export async function deleteEntries(
     }
   }
 
-  if (succeeded.length > 0) publishFs(bb, touched, "delete");
+  if (succeeded.length > 0) publishFs(alia, touched, "delete");
   return { succeeded, failed };
 }
 
@@ -191,7 +191,7 @@ export async function deleteEntries(
 /* ------------------------------------------------------------------ */
 
 async function transferEntries(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   input: { paths: string[]; destinationDir: string; conflict: ConflictPolicy },
   mode: "move" | "copy",
 ): Promise<BatchResult> {
@@ -231,7 +231,7 @@ async function transferEntries(
     }
   }
 
-  if (succeeded.length > 0) publishFs(bb, touched, mode);
+  if (succeeded.length > 0) publishFs(alia, touched, mode);
   return { succeeded, failed };
 }
 
@@ -270,17 +270,17 @@ async function copyOne(source: string, target: string): Promise<void> {
 }
 
 export function moveEntries(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   input: { paths: string[]; destinationDir: string; conflict: ConflictPolicy },
 ): Promise<BatchResult> {
-  return transferEntries(bb, input, "move");
+  return transferEntries(alia, input, "move");
 }
 
 export function copyEntries(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   input: { paths: string[]; destinationDir: string; conflict: ConflictPolicy },
 ): Promise<BatchResult> {
-  return transferEntries(bb, input, "copy");
+  return transferEntries(alia, input, "copy");
 }
 
 /** Re-exported so callers can special-case an expected failure without regex. */

@@ -14,8 +14,8 @@ Todas las cifras son cuenta nuestra. Se recalculan con `scripts/opus-por-cuenta.
 - **De dónde sale cada dato:**
   - Modelo y tokens: `~/.claude/projects/**/*.jsonl` de cada máquina. Los transcripts de subagentes se cuentan aparte.
   - Cuenta de cada momento: `~/.claude/state/sesiones-cuenta.jsonl`, que escribe el hook SessionStart con una línea por arranque, resume o compactación. La cuenta que vale es la del último arranque anterior al mensaje.
-  - Tipo de cuenta: `bb claude-switcher health --json` a las 09:33.
-  - Movimientos: `bb claude-switcher history`.
+  - Tipo de cuenta: `alia claude-switcher health --json` a las 09:33.
+  - Movimientos: `alia claude-switcher history`.
 - **Cómo se cuenta:**
   - Un turno es un mensaje escrito en el hilo principal. Su modelo es el que más tokens de salida dio hasta el siguiente turno.
   - «Mtok» son millones de tokens de salida. Entre paréntesis va la parte de subagentes.
@@ -24,7 +24,7 @@ Todas las cifras son cuenta nuestra. Se recalculan con `scripts/opus-por-cuenta.
   opus-por-cuenta.py --desde 1793349448 --hasta 1793954248 > <máquina>.json
   opus-por-cuenta.py --juntar health.json i9.json nuc.json mac.json
   ```
-- El detalle por proyecto y los JSON crudos no están en este repo porque es público. Están en el almacenamiento del hilo de bb que hizo la medida.
+- El detalle por proyecto y los JSON crudos no están en este repo porque es público. Están en el almacenamiento del hilo de VesnALIA que hizo la medida.
 
 ## Por tipo de cuenta
 
@@ -86,7 +86,7 @@ Desglose de la 0.2.41 en adelante:
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---- |
 | Ajuste del proyecto: un proyecto fijado a mano (`use`) en una Ultra al reinstalar el 2026-11-05. La regla de la 0.2.41 hacía que un `use` aguantara a Opus.                                                                 | 121    | 1.38 |
 | Movimiento por margen: «le queda margen de Fable (tope 50 %)». Hubo 4 movimientos en el historial (2026-11-05 12:06, 12:45 y 17:07; 2026-11-06 08:24). Uno de los hilos siguió en la Ultra, sesión tras sesión, del 2026-11-05 13:22 al 2026-11-06 06:04. | 135    | 0.78 |
-| Carga de prueba fuera de bb: `claude -p` de un solo turno con la cuenta puesta a mano, para la medida de asientos del 2026-11-05. No pasa por el switcher.                                                                  | 269    | 1.81 |
+| Carga de prueba fuera de VesnALIA: `claude -p` de un solo turno con la cuenta puesta a mano, para la medida de asientos del 2026-11-05. No pasa por el switcher.                                                                  | 269    | 1.81 |
 
 No se encontró ningún turno de Opus en una Ultra por estos motivos: «Team sin plaza» sin más, «Team sin cuota» o «movimiento por atasco» de noche. El atasco movía a una Team primero; si caía en una Ultra, lo hacía por el margen de Fable, y está contado en la fila del margen.
 
@@ -98,11 +98,11 @@ No se encontró ningún turno de Opus en una Ultra por estos motivos: «Team sin
 | `use` que aguanta a Opus                    | 1.38           | sí: el `use` vale para Fable y el turno de Opus va a una Team |
 | Ultra sin Fable                             | 1.33           | sí                                                            |
 | subagentes de Opus dentro de hilos de Fable | 62.82          | no, el switcher no los ve                                     |
-| carga de prueba fuera de bb                 | 1.81           | no, no pasa por el switcher                                   |
+| carga de prueba fuera de VesnALIA                 | 1.81           | no, no pasa por el switcher                                   |
 
 ## Para Flota
 
-`bb claude-switcher health --json` trae ahora `esperandoTeam`: una lista con `{hilo, modelo, minutos}` de cada turno de Opus o Sonnet que espera plaza en una Team. Vale `null` si no se pudo leer la cola. La salida de texto muestra cada caso como «esperando Team: …».
+`alia claude-switcher health --json` trae ahora `esperandoTeam`: una lista con `{hilo, modelo, minutos}` de cada turno de Opus o Sonnet que espera plaza en una Team. Vale `null` si no se pudo leer la cola. La salida de texto muestra cada caso como «esperando Team: …».
 
 ## La medida de después (0.2.44 en el NUC)
 

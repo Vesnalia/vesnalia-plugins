@@ -1,7 +1,7 @@
 /**
  * The Mac picker, at the left of the page's toolbar row: a dot and the picked
  * Mac's name, opening a menu of every machine with its state (On, Live,
- * Screen Sharing off, Offline…). bb's menu turns into a sheet on a compact
+ * Screen Sharing off, Offline…). VesnALIA's menu turns into a sheet on a compact
  * viewport, and the name truncates, so it fits a narrow window.
  */
 import { useSyncExternalStore } from "react";

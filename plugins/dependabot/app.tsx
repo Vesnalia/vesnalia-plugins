@@ -1,12 +1,12 @@
 import { useDeferredValue, useEffect, useState } from "react";
 import {
   definePluginApp,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
   type PluginNavPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { DependabotGroup, DependabotGroupWithFix, dependabotRpcContract } from "./server.js";
 import { buildDependabotReport } from "./reports.js";
 
@@ -19,8 +19,8 @@ type LoadState =
     }
   | { status: "error"; message: string };
 
-const REPOSITORY_FILTER_KEY = "bb-plugin-dependabot:repository-filter";
-const SEARCH_FILTER_KEY = "bb-plugin-dependabot:search-filter";
+const REPOSITORY_FILTER_KEY = "alia-plugin-dependabot:repository-filter";
+const SEARCH_FILTER_KEY = "alia-plugin-dependabot:search-filter";
 
 function readLocalFilter(key: string): string {
   try {
@@ -224,7 +224,7 @@ function ExposureReport({ groups }: { groups: DependabotGroup[] }) {
 
 function AlertGroupCard({ group }: { group: DependabotGroupWithFix }) {
   const rpc = useRpc<typeof dependabotRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [starting, setStarting] = useState(false);
   const [startedThreadId, setStartedThreadId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -551,7 +551,7 @@ function DependabotPanel(_props: PluginNavPanelProps) {
                 </p>
                 {repos.length === 0 ? (
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Add a GitHub checkout to a BB project or configure extraRepos in this plugin's
+                    Add a GitHub checkout to a VesnALIA project or configure extraRepos in this plugin's
                     settings.
                   </p>
                 ) : null}

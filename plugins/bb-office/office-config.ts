@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import type { PluginKvStorage } from "@get-bb/plugin-sdk";
+import type { PluginKvStorage } from "@vesnalia/plugin-sdk";
 import {
   DEFAULT_OFFICE_CONFIG,
   type OfficeApplyCommand,
@@ -139,14 +139,14 @@ function parseStored(value: unknown): StoredOfficeConfig {
   ) {
     throw new OfficeConfigError(
       "invalid_stored_config",
-      "BB Office found an unsupported stored office configuration",
+      "VesnALIA Office found an unsupported stored office configuration",
     );
   }
   const parsed = officeConfigSchema.safeParse(envelope.config);
   if (!parsed.success) {
     throw new OfficeConfigError(
       "invalid_stored_config",
-      "BB Office found an invalid stored office configuration",
+      "VesnALIA Office found an invalid stored office configuration",
     );
   }
   return {

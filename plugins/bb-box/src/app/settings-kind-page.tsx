@@ -228,12 +228,12 @@ function RunsOnRow({ draft, row, info, problemAt }: { draft: Draft; row: RunsOn;
         <ProviderGlyph type={row.config.type} className="mt-0.5" />
         <div className="min-w-0 flex-1 basis-48">
           <span className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <button type="button" data-row-key={rowKey} aria-describedby={row.chip || row.bbMachine ? chipsId : undefined} onClick={() => nav.go({ page: "backend", id: row.config.id }, rowKey)} className={cn("min-w-0 cursor-pointer truncate rounded-sm text-left text-sm text-foreground underline-offset-2 hover:underline", FOCUS_RING)}>
+            <button type="button" data-row-key={rowKey} aria-describedby={row.chip || row.aliaMachine ? chipsId : undefined} onClick={() => nav.go({ page: "backend", id: row.config.id }, rowKey)} className={cn("min-w-0 cursor-pointer truncate rounded-sm text-left text-sm text-foreground underline-offset-2 hover:underline", FOCUS_RING)}>
               {row.label}
             </button>
             <span id={chipsId} className="flex items-center gap-1.5 empty:hidden">
               {row.chip ? <Badge>{row.chip}</Badge> : null}
-              {row.bbMachine ? <Badge>BB machine</Badge> : null}
+              {row.aliaMachine ? <Badge>VesnALIA machine</Badge> : null}
             </span>
             {row.form ? <Badge>{row.form}</Badge> : null}
             <ChangedChip show={draft.changed(path) && !conflict} />
@@ -327,7 +327,7 @@ function SparesCard({ draft, info }: { draft: Draft; info: KindInfoView }) {
   const now = sparesWords(target, info.spares);
   const making = target > 0 && info.spares.ready < target && info.spares.making > 0;
   return (
-    <Group title="Spare boxes" description="Made ahead and added to BB as machines, so a thread gets one of the default size, with its access, at once.">
+    <Group title="Spare boxes" description="Made ahead and added to VesnALIA as machines, so a thread gets one of the default size, with its access, at once.">
       <Card>
         <DraftNumberRow
           draft={draft}

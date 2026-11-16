@@ -55,7 +55,7 @@ describe("buildSpawnRequest", () => {
 
   it("uses only the identifier in the title so external text never enters host context", () => {
     // Linear's branch autolink matches on the identifier appearing in the
-    // branch name, and bb derives that name from the thread title.
+    // branch name, and VesnALIA derives that name from the thread title.
     expect(plan("title").request.title).toBe("ENG-42 Linear issue");
   });
 

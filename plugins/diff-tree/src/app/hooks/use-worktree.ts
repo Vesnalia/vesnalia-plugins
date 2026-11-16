@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSdk } from "@get-bb/plugin-sdk/app";
+import { useSdk } from "@vesnalia/plugin-sdk/app";
 import type { Environment } from "../../core/comparison-base";
 import type { WorktreePath } from "../../core/worktree";
 import { validWorkspacePath } from "../../core/worktree";
@@ -34,7 +34,7 @@ export function useWorktreeFile(environment: Environment, path: string, revision
       const absolute = `${rootPath.replace(/[\\/]+$/, "")}/${path}`;
       const result = await sdk.files.read({ hostId: environment.hostId, rootPath, path: absolute, signal: controller.signal });
       if (controller.signal.aborted) return;
-      if (result.sizeBytes > 512 * 1024) setState({ key, notice: "This file exceeds the 512 KiB source preview limit. Open it in BB to view it." });
+      if (result.sizeBytes > 512 * 1024) setState({ key, notice: "This file exceeds the 512 KiB source preview limit. Open it in VesnALIA to view it." });
       else if (result.contentEncoding !== "utf8" || result.content.includes("\0")) setState({ key, notice: "Binary file — no source preview available." });
       else setState({ key, content: result.content });
     })().catch(cause => { if (!controller.signal.aborted) setState({ key, error: cause instanceof Error ? cause.message : String(cause) }); });

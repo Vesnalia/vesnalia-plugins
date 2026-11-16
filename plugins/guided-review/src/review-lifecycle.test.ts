@@ -1,15 +1,15 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "./store";
 import { createReviewSync } from "./review-lifecycle";
 
 function setup(state = "OPEN", reviews: unknown[] = []) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "guided-review", sdk: { threads: { update: async () => ({}), stop: async () => ({}), archive: async () => ({}) } } });
-  const store = createStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "guided-review", sdk: { threads: { update: async () => ({}), stop: async () => ({}), archive: async () => ({}) } } });
+  const store = createStore(alia);
   store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, headSha: "sha1", createdAt: 1, status: "ready" });
   store.setAgentThread("pr-1", "agent-1");
   const run = vi.fn(async () => ({ code: 0, stderr: "", stdout: JSON.stringify({ data: { viewer: { login: "me" }, repository: { pullRequest: { state, headRefOid: "sha1", reviews: { nodes: reviews } } } } }) }));
-  return { bb, harness, store, run, sync: createReviewSync(bb, store, run) };
+  return { alia, harness, store, run, sync: createReviewSync(alia, store, run) };
 }
 
 test("sync archives merged reviews and hides and archives their conversation", async () => {

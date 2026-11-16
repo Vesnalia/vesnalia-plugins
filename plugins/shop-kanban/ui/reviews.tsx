@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { ACCENT_BADGE, ACCENT_TEXT, CARD_EDGE, CARD_SURFACE, formatShortAge, type ReviewCard, type ReviewScope } from "./model";
 import type { ReviewVerdict, ReviewsApi } from "./hooks";
 import {
@@ -15,7 +15,7 @@ import {
   ShowMore,
   Spinner,
   TYPE,
-  useBbLinks,
+  useAliaLinks,
   useRowError,
 } from "./primitives";
 
@@ -232,7 +232,7 @@ export function visibleReviews(reviews: ReviewsApi): { count: number; fresh: num
 }
 
 export function ReviewGroup({ reviews, now }: { reviews: ReviewsApi; now: number }) {
-  const links = useBbLinks();
+  const links = useAliaLinks();
   const { state } = reviews;
   const [showAll, setShowAll] = useState(false);
   // Not stored: the board opens on Me every time it is shown.

@@ -1,6 +1,6 @@
-// The flat settings bb draws on Shuttle's settings page. Servers, presets and automations are
+// The flat settings VesnALIA draws on Shuttle's settings page. Servers, presets and automations are
 // Shuttle's own settings sections (config.ts).
-import type { PluginSettingDescriptors } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptors } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const SETTINGS = {
@@ -62,7 +62,7 @@ export const SETTINGS = {
     type: "boolean",
     label: "Auto agent",
     description:
-      "When one of your PRs has no agent, make the bb thread that opened it the agent: the thread whose id is in the branch name, or whose branch the PR is from. Off by default, so threads that follow their own PRs (such as Loom's) are left alone.",
+      "When one of your PRs has no agent, make the VesnALIA thread that opened it the agent: the thread whose id is in the branch name, or whose branch the PR is from. Off by default, so threads that follow their own PRs (such as Loom's) are left alone.",
     default: false,
   },
   inboxRequests: {

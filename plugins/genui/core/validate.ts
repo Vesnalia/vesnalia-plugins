@@ -52,7 +52,7 @@ export const ARROW_ONLY =
 
 /**
  * Named args models reach for to style a component (lowercased). None exist:
- * components draw in BB's theme, so the error says why instead of only that.
+ * components draw in VesnALIA's theme, so the error says why instead of only that.
  */
 const STYLE_ARGS: Record<string, true> = {
   color: true, colour: true, background: true, backgroundcolor: true, bg: true, fill: true, size: true,
@@ -555,7 +555,7 @@ class Validator {
         const hint = didYouMean(arg.name, spec.params.map((param) => param.name));
         const why =
           hint === "" && Object.hasOwn(STYLE_ARGS, arg.name.toLowerCase())
-            ? ` Components draw in BB's theme and take no style arguments${spec.params.some((param) => param.name === "tone") ? "; use `tone:` (good, warn, bad, info) for a status colour" : ""}.`
+            ? ` Components draw in VesnALIA's theme and take no style arguments${spec.params.some((param) => param.name === "tone") ? "; use `tone:` (good, warn, bad, info) for a status colour" : ""}.`
             : hint;
         this.diagnostics.report(arg.pos, `\`${expr.name}\` has no parameter \`${arg.name}\`.${why} ${sig}`);
       } else if (slots[index] !== undefined) {

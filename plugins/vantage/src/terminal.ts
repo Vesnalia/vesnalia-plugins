@@ -1,4 +1,4 @@
-import type { BbNavigate, PluginBrowserBbSdk } from "@get-bb/plugin-sdk/app";
+import type { AliaNavigate, PluginBrowserAliaSdk } from "@vesnalia/plugin-sdk/app";
 
 export function shellQuote(path: string): string {
   return `'${path.replaceAll("'", "'\\''")}'`;
@@ -10,8 +10,8 @@ export function terminalCommand(path: string): string {
 
 // The page belongs to no thread, so its terminal belongs to the worktree's environment and opens in its folder.
 export async function openEnvironmentTerminal(
-  sdk: Pick<PluginBrowserBbSdk, "terminals">,
-  navigate: Pick<BbNavigate, "experimental_openTerminal">,
+  sdk: Pick<PluginBrowserAliaSdk, "terminals">,
+  navigate: Pick<AliaNavigate, "experimental_openTerminal">,
   input: { environmentId: string; title: string },
 ): Promise<boolean> {
   const session = await sdk.terminals.create({
@@ -20,10 +20,10 @@ export async function openEnvironmentTerminal(
   return navigate.experimental_openTerminal({ terminalId: session.id });
 }
 
-// A checkout bb does not manage has no environment, so the page opens its terminal in the folder on that machine.
+// A checkout VesnALIA does not manage has no environment, so the page opens its terminal in the folder on that machine.
 export async function openHostTerminal(
-  sdk: Pick<PluginBrowserBbSdk, "terminals">,
-  navigate: Pick<BbNavigate, "experimental_openTerminal">,
+  sdk: Pick<PluginBrowserAliaSdk, "terminals">,
+  navigate: Pick<AliaNavigate, "experimental_openTerminal">,
   input: { hostId: string; path: string; title: string },
 ): Promise<boolean> {
   const session = await sdk.terminals.create({
@@ -32,10 +32,10 @@ export async function openHostTerminal(
   return navigate.experimental_openTerminal({ terminalId: session.id });
 }
 
-// The terminal belongs to the panel's thread: bb shows a thread only its own terminals.
+// The terminal belongs to the panel's thread: VesnALIA shows a thread only its own terminals.
 export async function openWorktreeTerminal(
-  sdk: Pick<PluginBrowserBbSdk, "terminals">,
-  navigate: Pick<BbNavigate, "experimental_openTerminal">,
+  sdk: Pick<PluginBrowserAliaSdk, "terminals">,
+  navigate: Pick<AliaNavigate, "experimental_openTerminal">,
   input: { threadId: string; path: string; title: string },
 ): Promise<boolean> {
   const session = await sdk.terminals.create({

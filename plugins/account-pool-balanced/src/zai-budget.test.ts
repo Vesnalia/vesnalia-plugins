@@ -3,7 +3,7 @@ import Database from 'better-sqlite3';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import { AccountStore, QuotaStore, QUOTA_MIGRATIONS } from './store.js';
 import { zaiEvidenceFromUsages, zaiBudgetQuota, ZAI_BUDGET_MAX_AGE_MS } from './zai-budget.js';
 import { zaiQuotaFromUsages } from './openai-compatible-usage.js';
@@ -106,14 +106,14 @@ it('attests the actual project/purpose selectable set read-only, including unkno
  const dataDir=await fs.mkdtemp(path.join(os.tmpdir(),'zai-budget-route-'));cleanup.push(()=>fs.rm(dataDir,{recursive:true,force:true}));let clock=now;
  const fetch=vi.fn<typeof globalThis.fetch>(async()=>{throw Error('Unexpected synthetic upstream');});
  const host=createFakePluginHost({pluginId:'account-pool-balanced',dataDir,sdk:{hosts:{list:async()=>[{id:'fixture-host',name:'Fixture'}]},system:{providerStates:async()=>({providers:[]})}}});cleanup.push(()=>host.harness.lifecycle.dispose());
- await host.bb.storage.kv.set('config',{vpnOnlyProviders:[],vpnPolicyVersion:2});
- await createAccountPoolPlugin({fetch,fetchIpv4:fetch,now:()=>clock})(host.bb);
+ await host.alia.storage.kv.set('config',{vpnOnlyProviders:[],vpnPolicyVersion:2});
+ await createAccountPoolPlugin({fetch,fetchIpv4:fetch,now:()=>clock})(host.alia);
  const service=host.harness.behavior.runService('hub');cleanup.push(async()=>{service.controller.abort();await service.done;});await new Promise(resolve=>setImmediate(resolve));
- const secretDir=path.join(dataDir,'plugins',host.bb.pluginId,'secrets','accounts');const accounts=new AccountStore(host.bb.storage.kv,secretDir);
+ const secretDir=path.join(dataDir,'plugins',host.alia.pluginId,'secrets','accounts');const accounts=new AccountStore(host.alia.storage.kv,secretDir);
  const add=()=>accounts.add({provider:'zai',kind:'api-key',label:'Synthetic',email:null,accountUuid:null,subscriptionType:null,rateLimitTier:null,enabled:true,autopilotAllowed:true,priority:100},{kind:'api-key',apiKey:'synthetic-provider-key'});
  const first=await add(),second=await add(),foreign=await add();
  await accounts.setProjects(foreign.id,{onlySelected:true,rules:[{projectId:'other-project',role:'inherit'}]});
- const quotas=new QuotaStore(host.bb.storage.database());quotas.put({...complete(),accountId:first.id});
+ const quotas=new QuotaStore(host.alia.storage.database());quotas.put({...complete(),accountId:first.id});
  const clientFile=path.join(dataDir,'purpose.token');
  const issued=await host.harness.behavior.runCli(['client','add','fixture','--project','project-one','--purpose','autopilot','--output',clientFile]);expect(issued.exitCode).toBe(0);
  const token=(await fs.readFile(clientFile,'utf8')).trim();
@@ -123,7 +123,7 @@ it('attests the actual project/purpose selectable set read-only, including unkno
  const read=(key=token,query='')=>host.harness.behavior.fetchHttp('GET','/budget/zai'+query,{headers:{authorization:`Bearer ${key}`}});
  expect((await read('invalid')).status).toBe(401);expect((await read(unbound)).status).toBe(403);expect((await read(token,'?projectId=other-project')).status).toBe(403);
  const response=await read();expect(response.headers.get('cache-control')).toBe('no-store');const body=await response.json();
- expect(body).toMatchObject({schema:'bb-account-pool/zai-budget/1',projectId:'project-one',purpose:'autopilot',maxAgeMs:300000,
+ expect(body).toMatchObject({schema:'alia-account-pool/zai-budget/1',projectId:'project-one',purpose:'autopilot',maxAgeMs:300000,
   route:{provider:'zai',path:'/zai/v1/chat/completions',ready:true,networkAllowed:true},accounts:[{accountId:first.id,eligible:true,budgetReady:true},{accountId:second.id,eligible:true,budgetReady:false}]});
  expect(body.accounts).toHaveLength(2);expect(JSON.stringify(body)).not.toMatch(/synthetic|email|label|provider-key/);expect(JSON.stringify(body)).not.toContain(token);expect(JSON.stringify(body)).not.toContain(foreign.id);
  clock+=60001;await read();expect(await snapshot()).toEqual(authBefore);expect(await accounts.list()).toEqual(inventory);clock=now;

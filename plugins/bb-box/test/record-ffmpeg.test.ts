@@ -271,7 +271,7 @@ test("a download that does not match its SHA-256 is not used, and the box keeps 
   const refused = run(box, clipFfmpegScript("linux", [build]));
 
   assert.equal(refused.status, CLIP_FFMPEG_EXITS.mismatch);
-  assert.match(refused.stderr, /did not match its SHA-256, so BB Box did not use it/);
+  assert.match(refused.stderr, /did not match its SHA-256, so ALIA Box did not use it/);
   assert.equal(refused.stdout, "", "no pair is offered");
 });
 
@@ -355,13 +355,13 @@ test("a cached build is checked against the checksums taken when it was put in p
 
   const linked = fakeBox("Linux", "x86_64", null);
   const elsewhere = tempDir("clip-ffmpeg-elsewhere");
-  mkdirSync(join(linked.home, ".bb-box"), { recursive: true });
+  mkdirSync(join(linked.home, ".alia-box"), { recursive: true });
   rmSync(join(linked.home, CLIP_FFMPEG_DIR), { recursive: true, force: true });
   symlinkSync(elsewhere, join(linked.home, CLIP_FFMPEG_DIR));
   const refused = run(linked, clipFfmpegScript("linux", [linuxBuild(linuxArchive(linked, FOLDER, EVERY_FILTER))]));
 
   assert.equal(refused.status, CLIP_FFMPEG_EXITS.untrusted);
-  assert.match(refused.stderr, /is a link, or not the box user's alone, so BB Box does not keep ffmpeg there\. Remove it, then start again\./);
+  assert.match(refused.stderr, /is a link, or not the box user's alone, so ALIA Box does not keep ffmpeg there\. Remove it, then start again\./);
   assert.deepEqual(fetches(linked), []);
 });
 

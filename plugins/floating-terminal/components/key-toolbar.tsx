@@ -24,7 +24,7 @@ export function KeyToolbar({ ctrlArmed, onKey }: KeyToolbarProps) {
   const pressed = useRef<{ id: string; pointerId: number } | null>(null);
   return (
     <div
-      className="bb-ft-keybar flex shrink-0 items-center gap-1 border-t border-border bg-muted/40"
+      className="alia-ft-keybar flex shrink-0 items-center gap-1 border-t border-border bg-muted/40"
       role="toolbar"
       aria-label="Terminal keys"
       data-no-drag=""
@@ -78,9 +78,9 @@ export function KeyToolbar({ ctrlArmed, onKey }: KeyToolbarProps) {
               pressed.current = null;
             }}
             className={cn(
-              "bb-ft-key",
-              key.emphasis ? "bb-ft-key-strong" : null,
-              armed ? "bb-ft-key-armed" : null,
+              "alia-ft-key",
+              key.emphasis ? "alia-ft-key-strong" : null,
+              armed ? "alia-ft-key-armed" : null,
             )}
           >
             {key.label}

@@ -2,7 +2,7 @@
 
 Invoked at the end of every other playbook.
 
-**Worktree.** Work from an isolated worktree off main. Give each writer its own, and confirm whether a spawned worker shares the parent's directory before relying on it: on a BB host it does not, since every spawned thread gets its own environment. Multiple delegation calls on the same branch each get their own worktree, or `git fetch && git reset --hard origin/<branch>` between them. Dirty branch with unrelated work: patch out, fresh worktree, apply. Snarled worktree: reset from main, redo minimally.
+**Worktree.** Work from an isolated worktree off main. Give each writer its own, and confirm whether a spawned worker shares the parent's directory before relying on it: on a VesnALIA host it does not, since every spawned thread gets its own environment. Multiple delegation calls on the same branch each get their own worktree, or `git fetch && git reset --hard origin/<branch>` between them. Dirty branch with unrelated work: patch out, fresh worktree, apply. Snarled worktree: reset from main, redo minimally.
 
 **Commits.** Commit liberally. Rebase into small, ordered commits before opening PRs. Each commit is a future PR: landable, ordered to tell the story. Amend when the fix belongs in a just-made commit. New commit when separable.
 

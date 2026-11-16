@@ -1,5 +1,5 @@
 // Thread header control: the checkpoint count; opens the Checkpoints panel.
-import { useBbNavigate, type PluginThreadHeaderActionProps } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, type PluginThreadHeaderActionProps } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,7 @@ import { plural } from "./labels";
 
 export function HeaderButton({ threadId, isCompactViewport }: PluginThreadHeaderActionProps) {
   const rpc = useRewindRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const summary = useLoadable(threadId, () => rpc.call("summary", { threadId }), "summary");
   const count = summary.data?.count ?? null;
   const pending = (summary.data?.pending ?? 0) > 0;

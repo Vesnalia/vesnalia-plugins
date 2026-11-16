@@ -15,7 +15,7 @@ function memoryStorage(initial: Record<string, string> = {}) {
 describe("handoff draft", () => {
   it("matches the host's plugin draft storage key", () => {
     expect(pluginDraftStorageKey("quick-compose-handoff:thr_abc")).toBe(
-      "bb.promptbox.contents-plugin-draft-quick-compose-handoff%3Athr_abc-3",
+      "alia.promptbox.contents-plugin-draft-quick-compose-handoff%3Athr_abc-3",
     );
   });
 

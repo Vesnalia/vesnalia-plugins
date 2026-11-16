@@ -10,7 +10,7 @@ import { documentFamily, extensionOf } from "../lib/formats.js";
  *   to PDF by LibreOffice, then shown as pages.
  * - `spreadsheet` (Excel, ODS): a grid of cells.
  * - `html`: a web page, rendered live in a sandboxed frame.
- * - `web`: a live site opened in bb's own browser, one document per origin;
+ * - `web`: a live site opened in VesnALIA's own browser, one document per origin;
  *   its `absPath` is the origin and each comment names its page.
  */
 export type DocKind = "md" | "pdf" | "text" | "presentation" | "spreadsheet" | "html" | "web";
@@ -165,7 +165,7 @@ export interface CommentReply {
   author: "user" | "agent";
   /**
    * Set when the reply came from another reviewer's file: their name, or for
-   * an agent, the reviewer whose agent wrote it. Null for this bb's own.
+   * an agent, the reviewer whose agent wrote it. Null for this VesnALIA's own.
    */
   name: string | null;
   /** The reply's id in the review it was imported from. */
@@ -185,7 +185,7 @@ export interface ReviewComment {
   status: CommentStatus;
   anchor: Anchor;
   body: string;
-  /** Who wrote it, when it came from another reviewer's file; null for this bb's user. */
+  /** Who wrote it, when it came from another reviewer's file; null for this VesnALIA's user. */
   author: string | null;
   /** The comment's id in the review it was imported from. */
   originId: string | null;
@@ -211,11 +211,11 @@ export interface ReviewDoc {
   kind: DocKind;
   name: string;
   absPath: string;
-  /** Null when the file lives on the bb server's own machine. */
+  /** Null when the file lives on the VesnALIA server's own machine. */
   hostId: string | null;
   /**
-   * The enrolled host the file lives on, the bb server's own machine
-   * included: where bb's file preview opens files next to it. Null for a
+   * The enrolled host the file lives on, the VesnALIA server's own machine
+   * included: where VesnALIA's file preview opens files next to it. Null for a
    * live site, or when the server's machine is not enrolled.
    */
   previewHostId: string | null;

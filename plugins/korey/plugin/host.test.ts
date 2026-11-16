@@ -2,7 +2,7 @@ import { link, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
-import type { ExperimentalHostRpcContext } from "@get-bb/plugin-sdk/host";
+import type { ExperimentalHostRpcContext } from "@vesnalia/plugin-sdk/host";
 import hostEntry from "./host.js";
 import {
   MAX_ATTACHMENT_BYTES,
@@ -27,7 +27,7 @@ vi.mock("node:child_process", () => ({
   }),
 }));
 
-vi.mock("@get-bb/plugin-sdk/host", () => ({
+vi.mock("@vesnalia/plugin-sdk/host", () => ({
   experimental_defineHostEntry: <T extends object>(entry: T) => ({
     experimental_apiVersion: 1,
     ...entry,

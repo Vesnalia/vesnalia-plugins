@@ -62,7 +62,7 @@ vi.mock("./gh", async (orig) => {
   };
 });
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import * as gh from "./gh";
 
@@ -71,9 +71,9 @@ function host() {
 }
 
 async function seeded() {
-  const { bb, harness } = host();
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = host();
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({
     targetKey: "pr-1",
     kind: "pr",
@@ -84,7 +84,7 @@ async function seeded() {
     headSha: "oldsha",
   });
   await store.savePatch("pr-1", "diff --git a/a.ts b/a.ts\n");
-  return { bb, harness, store };
+  return { alia, harness, store };
 }
 
 test("getChecks returns a structured bucket + checks", async () => {

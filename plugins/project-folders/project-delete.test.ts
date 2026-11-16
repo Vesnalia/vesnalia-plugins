@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 
 const root = {
@@ -56,12 +56,12 @@ async function setup(
       threads: { list: async () => [] },
     },
   });
-  await plugin(h.bb);
+  await plugin(h.alia);
   return { ...h, writes, deleted, moved };
 }
 
 describe("project delete", () => {
-  it("removes the BB project and leaves files when keep is selected", async () => {
+  it("removes the VesnALIA project and leaves files when keep is selected", async () => {
     const h = await setup();
     try {
       await h.harness.behavior.callRpc("create", {
@@ -112,19 +112,19 @@ describe("project delete", () => {
       })) as { files: string; archivePath: string | null };
       expect(result.files).toBe("archive");
       expect(result.archivePath).toMatch(
-        /^\/\.bb\/archive\/projects\/[^/]+\/folder$/,
+        /^\/\.alia\/archive\/projects\/[^/]+\/folder$/,
       );
       const id = result.archivePath!.split("/")[4];
       expect(h.moved).toEqual([
         {
           hostId: "h1",
           sourcePath: "/work",
-          destinationPath: `/.bb/archive/projects/${id}/folder`,
+          destinationPath: `/.vesnalia/archive/projects/${id}/folder`,
         },
         {
           hostId: "h2",
           sourcePath: "/home/u/work",
-          destinationPath: `/home/u/.bb/archive/projects/${id}/folder`,
+          destinationPath: `/home/u/.vesnalia/archive/projects/${id}/folder`,
         },
       ]);
       expect(h.deleted).toEqual(["p1"]);
@@ -159,7 +159,7 @@ describe("project delete", () => {
       })) as { files: string; archivePath: string | null };
       expect(result.files).toBe("archive");
       expect(result.archivePath).toMatch(
-        /^\/\.bb\/archive\/projects\/[^/]+\/folder$/,
+        /^\/\.alia\/archive\/projects\/[^/]+\/folder$/,
       );
       expect(h.moved).toEqual([
         {

@@ -7,7 +7,7 @@ description: >-
   wants to write a design document or feature spec.
 ---
 
-# EGM Draft (BB adaptation)
+# EGM Draft (VesnALIA adaptation)
 
 Adapted from google/elephant-goldfish-model @ 3d0b348 (Apache-2.0; see `LICENSE`). Read `references/execution-instructions.md` and use `references/design_doc.md` as the template, both relative to this skill directory.
 
@@ -21,7 +21,7 @@ Adapted from google/elephant-goldfish-model @ 3d0b348 (Apache-2.0; see `LICENSE`
    4. Implementation (begin it with `## Detailed Implementation Plan`, so later reviews can split feature and implementation parts).
 3. **Finalize.** Move the approved draft to `docs/designs/<feature>.md` (ask for the name), register it with `egm_register_spec`, and offer **egm-review**.
 
-## BB notes
+## VesnALIA notes
 
 - While drafting, the draft is yours to edit: the human approves each section in chat. Once it is registered and reviewed, it is a spec under review: from then on change it only through **egm-resolve** proposals the human confirms.
 - Do not present whole sections in chat; point to the file and summarize the two or three decisions that matter.

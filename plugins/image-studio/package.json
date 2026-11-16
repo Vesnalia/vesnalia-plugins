@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-image-studio",
+  "name": "alia-plugin-image-studio",
   "version": "0.10.4",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Image Studio",
     "description": "Generate project images through fal.ai and kie.ai with Nano Banana, Muse Image, optional GPT Image, plus people profiles.",
     "branding": {
@@ -30,7 +30,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -57,25 +56,34 @@
   },
   "description": "Generate project images through fal.ai and kie.ai with Nano Banana, Muse Image, optional GPT Image, plus people profiles.",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "image",
     "fal.ai",
     "kie.ai"
   ],
   "license": "MIT",
   "author": "Kirill Vechkasov <https://github.com/VKirill>",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VKirill/bb-plugin-image-studio.git"
-  },
-  "homepage": "https://github.com/VKirill/bb-plugin-image-studio#readme",
-  "bugs": {
-    "url": "https://github.com/VKirill/bb-plugin-image-studio/issues"
-  },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "node --test --experimental-strip-types tests/*.test.ts"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/image-studio#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/image-studio"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

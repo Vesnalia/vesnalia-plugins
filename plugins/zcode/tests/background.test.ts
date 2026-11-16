@@ -5,7 +5,7 @@ import { record } from "../src/protocol.js";
 import {
   threadDeltaNotificationParamsSchema,
   type ThreadDelta,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 const client: ZCodeConnection = {
   async request() {
     return {};
@@ -39,7 +39,7 @@ it.each([
     if (status) expect(closes[0]!.status).toBe(status);
     expect(record(record(deltas[0]).item).taskStatus).toBe(taskStatus);
     expect(
-      threadDeltaNotificationParamsSchema.safeParse({ threadId: "bb", deltas })
+      threadDeltaNotificationParamsSchema.safeParse({ threadId: "alia", deltas })
         .success,
     ).toBe(true);
     tasks.close("interrupted");
@@ -160,7 +160,7 @@ it("renders a dynamic-workflow run as a local_workflow task with agent lamps", a
   expect(agent.phaseTitle).toBe("first");
   expect(agent.phaseIndex).toBe(1);
   expect(
-    threadDeltaNotificationParamsSchema.safeParse({ threadId: "bb", deltas })
+    threadDeltaNotificationParamsSchema.safeParse({ threadId: "alia", deltas })
       .success,
   ).toBe(true);
   // Terminal journal + registry row close the row with an honest summary.

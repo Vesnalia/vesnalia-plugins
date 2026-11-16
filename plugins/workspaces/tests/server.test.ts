@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makePluginAgentConfigurationContext, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makePluginAgentConfigurationContext, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { WorkspaceStore } from "../src/store";
 import { DEFAULT_BASE_REF, type SessionSnapshot } from "../src/contracts";
@@ -53,7 +53,7 @@ async function boundaryFixture(updateThread = true) {
   let sessionId = "";
   let firstTools: string[] = [];
   let firstSkills: string[] = [];
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "workspaces", agentSkillIds: ["multi-repo-workspaces"], experimental_hostEntry: true,
     sdk: {
       projects: { list: async () => available, create: async ({ name, source }) => {
@@ -74,27 +74,27 @@ async function boundaryFixture(updateThread = true) {
       if (method === "prepare_session") {
         const request = input as { sessionId: string; repositories: PreparedRepository[] };
         sessionId = request.sessionId;
-        repositories.push(...request.repositories.map((repo) => ({ ...repo, baseCommit: "abc123", branch: `bb-workspace/${sessionId}/${repo.alias}`, worktreePath: `/sessions/${sessionId}/repos/${repo.alias}` })));
+        repositories.push(...request.repositories.map((repo) => ({ ...repo, baseCommit: "abc123", branch: `alia-workspace/${sessionId}/${repo.alias}`, worktreePath: `/sessions/${sessionId}/repos/${repo.alias}` })));
         return { rootPath: `/sessions/${sessionId}`, repositories };
       }
       if (method === "read_session") {
         if (readFailure) throw new Error("manifest temporarily unavailable");
-        return { schemaVersion: 2, owner: "bb-plugin-workspaces", sessionId, workspaceName: "Boundary", instructions: "Trusted snapshot.", revision: repositories.length, repositories, operations };
+        return { schemaVersion: 2, owner: "alia-plugin-workspaces", sessionId, workspaceName: "Boundary", instructions: "Trusted snapshot.", revision: repositories.length, repositories, operations };
       }
       if (method === "add_repository") {
         if (mode === "failed") throw new Error("host failed " + "x".repeat(1000));
         const request = input as { operationKey: string; repository: PreparedRepository };
-        const repository = { ...request.repository, baseCommit: "def456", branch: `bb-workspace/${sessionId}/${request.repository.alias}`, worktreePath: `/sessions/${sessionId}/repos/${request.repository.alias}` };
+        const repository = { ...request.repository, baseCommit: "def456", branch: `alia-workspace/${sessionId}/${request.repository.alias}`, worktreePath: `/sessions/${sessionId}/repos/${request.repository.alias}` };
         repositories.push(repository); operations.push({ key: request.operationKey, projectId: repository.projectId, alias: repository.alias });
         return { repository, manifestRevision: repositories.length };
       }
       throw new Error(`Unexpected ${method}`);
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   const workspace = await harness.behavior.callRpc("workspace_create", { name: "Boundary", description: "", instructions: "Trusted snapshot.", repositories: [{ projectId: "proj_auth", alias: "identity" }, { projectId: "proj_gateway", alias: "gateway" }] }) as { id: string; revision: number };
   const session = await harness.behavior.callRpc("session_start", { workspaceId: workspace.id, expectedRevision: workspace.revision, hostId: "host_local", projectIds: ["proj_auth"], prompt: "\n  Boundary   check  \nInspect details", requestKey: "boundary-launch" }) as SessionSnapshot;
-  return { bb, harness, session, firstTools, firstSkills, setReadFailure: (value: boolean) => { readFailure = value; }, setFailure: () => { mode = "failed"; } };
+  return { alia, harness, session, firstTools, firstSkills, setReadFailure: (value: boolean) => { readFailure = value; }, setFailure: () => { mode = "failed"; } };
 }
 
 describe("Workspaces plugin server", () => {
@@ -114,7 +114,7 @@ describe("Workspaces plugin server", () => {
     })).rejects.toThrow();
   });
 
-  it("derives a session name and synchronizes later renames to the BB thread", async () => {
+  it("derives a session name and synchronizes later renames to the VesnALIA thread", async () => {
     const fixture = await boundaryFixture();
     expect(fixture.session.name).toBe("Boundary check");
 
@@ -127,7 +127,7 @@ describe("Workspaces plugin server", () => {
     });
   });
 
-  it("keeps a renamed session when its BB thread no longer exists", async () => {
+  it("keeps a renamed session when its VesnALIA thread no longer exists", async () => {
     const fixture = await boundaryFixture(false);
     const renamed = await fixture.harness.behavior.callRpc("session_rename", { id: fixture.session.id, name: "Local history label" }) as { session: SessionSnapshot; threadTitleUpdated: boolean };
 
@@ -182,23 +182,23 @@ describe("Workspaces plugin server", () => {
 
   it("recovers approved pending RPC requests and normal listing journal rows", async () => {
     const fixture = await boundaryFixture();
-    const store = new WorkspaceStore(fixture.bb.storage.database());
+    const store = new WorkspaceStore(fixture.alia.storage.database());
     store.beginExpansion({ sessionId: fixture.session.id, projectId: "proj_gateway", alias: "gateway", reason: "Needed", requester: "user", approvalMode: "manual", requestKey: "boundary-recover" });
     expect(await fixture.harness.behavior.callRpc("session_add_repository", { threadId: "thr_first", projectId: "proj_gateway", requestKey: "boundary-recover" })).toMatchObject({ outcome: "provisioned", error: null, added: true });
-    fixture.bb.storage.database().prepare("UPDATE session_expansions SET outcome = 'pending' WHERE request_key = ?").run("boundary-recover");
+    fixture.alia.storage.database().prepare("UPDATE session_expansions SET outcome = 'pending' WHERE request_key = ?").run("boundary-recover");
     const dashboard = await fixture.harness.behavior.callRpc("dashboard", null) as { sessions: SessionSnapshot[] };
     expect(dashboard.sessions[0]?.expansions).toMatchObject([{ outcome: "provisioned" }]);
-    fixture.bb.storage.database().prepare("UPDATE session_expansions SET outcome = 'pending' WHERE request_key = ?").run("boundary-recover");
+    fixture.alia.storage.database().prepare("UPDATE session_expansions SET outcome = 'pending' WHERE request_key = ?").run("boundary-recover");
     const cli = await fixture.harness.behavior.runCli(["sessions", "--json"]);
     expect(JSON.parse(cli.stdout!).at(0).expansions).toMatchObject([{ outcome: "provisioned" }]);
   });
-  it("creates groups without mutating BB projects", async () => {
-    const { bb, harness } = createFakePluginHost({
+  it("creates groups without mutating VesnALIA projects", async () => {
+    const { alia, harness } = createFakePluginHost({
       pluginId: "workspaces",
       sdk: { projects: { list: async () => projects } },
       experimental_hostEntry: true,
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const created = await harness.behavior.callRpc("workspace_create", {
       name: "Authentication",
@@ -223,7 +223,7 @@ describe("Workspaces plugin server", () => {
   it("keeps reconciliation failures single-line and bounded in dashboard and CLI session output", async () => {
     const availableProjects = [...projects];
     const failure = `manifest unavailable\n${"x".repeat(1_000)}`;
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "workspaces",
       sdk: {
         projects: {
@@ -248,7 +248,7 @@ describe("Workspaces plugin server", () => {
             rootPath: `/plugin-data/sessions/${request.sessionId}`,
             repositories: request.repositories.map((repository) => ({
               ...repository, baseCommit: `commit-${repository.alias}`,
-              branch: `bb-workspace/${request.sessionId}/${repository.alias}`,
+              branch: `alia-workspace/${request.sessionId}/${repository.alias}`,
               worktreePath: `/plugin-data/sessions/${request.sessionId}/repos/${repository.alias}`,
             })),
           };
@@ -257,7 +257,7 @@ describe("Workspaces plugin server", () => {
         throw new Error(`Unexpected host method: ${method}`);
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     const workspace = await harness.behavior.callRpc("workspace_create", {
       name: "Authentication", description: "", instructions: "", repositories: [{ projectId: "proj_auth", alias: "identity" }],
     }) as { id: string; revision: number };
@@ -280,7 +280,7 @@ describe("Workspaces plugin server", () => {
   it("prepares selected repos and launches one thread at the common root", async () => {
     const hostCalls: Array<{ method: string; input: unknown }> = [];
     const availableProjects = [...projects];
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "workspaces",
       sdk: {
         projects: {
@@ -325,13 +325,13 @@ describe("Workspaces plugin server", () => {
           repositories: request.repositories.map((repository) => ({
             ...repository,
             baseCommit: `commit-${repository.alias}`,
-            branch: `bb-workspace/${request.sessionId}/${repository.alias}`,
+            branch: `alia-workspace/${request.sessionId}/${repository.alias}`,
             worktreePath: `/plugin-data/sessions/${request.sessionId}/repos/${repository.alias}`,
           })),
         };
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     const workspace = await harness.behavior.callRpc("workspace_create", {
       name: "Authentication",
       description: "",
@@ -430,7 +430,7 @@ describe("Workspaces plugin server", () => {
       }],
     };
     const availableProjects = [...projects, recoveredProject];
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "workspaces",
       sdk: {
         projects: {
@@ -471,13 +471,13 @@ describe("Workspaces plugin server", () => {
           repositories: request.repositories.map((repository) => ({
             ...repository,
             baseCommit: `commit-${repository.alias}`,
-            branch: `bb-workspace/${request.sessionId}/${repository.alias}`,
+            branch: `alia-workspace/${request.sessionId}/${repository.alias}`,
             worktreePath: `/plugin-data/sessions/${request.sessionId}/repos/${repository.alias}`,
           })),
         };
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     const workspace = await harness.behavior.callRpc("workspace_create", {
       name: "Authentication",
       description: "",
@@ -531,7 +531,7 @@ describe("Workspaces plugin server", () => {
       projectId: string; alias: string; sourcePath: string; baseRef: string;
       baseCommit: string; branch: string; worktreePath: string;
     }> = [];
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "workspaces",
       agentSkillIds: ["multi-repo-workspaces"],
       sdk: {
@@ -557,13 +557,13 @@ describe("Workspaces plugin server", () => {
           sessionId = request.sessionId;
           repositories.push(...request.repositories.map((repository) => ({
             ...repository, baseCommit: `commit-${repository.alias}`,
-            branch: `bb-workspace/${request.sessionId}/${repository.alias}`,
+            branch: `alia-workspace/${request.sessionId}/${repository.alias}`,
             worktreePath: `/plugin-data/sessions/${request.sessionId}/repos/${repository.alias}`,
           })));
           return { rootPath: `/plugin-data/sessions/${request.sessionId}`, repositories };
         }
         if (method === "read_session") return {
-          schemaVersion: 2, owner: "bb-plugin-workspaces", sessionId,
+          schemaVersion: 2, owner: "alia-plugin-workspaces", sessionId,
           workspaceName: "Services", instructions: "Coordinate the services.", revision: repositories.length,
           repositories, operations: [],
         };
@@ -571,7 +571,7 @@ describe("Workspaces plugin server", () => {
           const request = input as { operationKey: string; repository: { projectId: string; alias: string; sourcePath: string; baseRef: string } };
           const repository = {
             ...request.repository, baseCommit: `commit-${request.repository.alias}`,
-            branch: `bb-workspace/${sessionId}/${request.repository.alias}`,
+            branch: `alia-workspace/${sessionId}/${request.repository.alias}`,
             worktreePath: `/plugin-data/sessions/${sessionId}/repos/${request.repository.alias}`,
           };
           repositories.push(repository);
@@ -580,7 +580,7 @@ describe("Workspaces plugin server", () => {
         throw new Error(`Unexpected host method: ${method}`);
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     expect(harness.inspection.registrations.agentTools.some((tool) => tool.name === "workspace_add_repository")).toBe(true);
     const workspace = await harness.behavior.callRpc("workspace_create", {

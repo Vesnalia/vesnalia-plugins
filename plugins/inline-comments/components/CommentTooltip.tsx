@@ -6,7 +6,7 @@ import {
   useSyncExternalStore,
   type CSSProperties,
 } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { Comment, rpcContract } from "../contract";
 import { editorStore } from "../lib/editor-store";
 import { highlights } from "../lib/highlights";

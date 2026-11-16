@@ -1,8 +1,8 @@
-# BB Files — Product and Technical Roadmap
+# VesnALIA Files — Product and Technical Roadmap
 
 > Status: idea backlog. Items in this document are proposals, not implemented features, unless they are also listed as completed in `README.md`.
 
-This document captures ideas for making BB Files faster, safer, more reliable, and more deeply integrated with BB. It is intentionally broader than the immediate implementation plan so useful ideas are not lost.
+This document captures ideas for making VesnALIA Files faster, safer, more reliable, and more deeply integrated with VesnALIA. It is intentionally broader than the immediate implementation plan so useful ideas are not lost.
 
 ## Priority legend
 
@@ -12,14 +12,14 @@ This document captures ideas for making BB Files faster, safer, more reliable, a
 
 ## Highlighted product directions
 
-### P0 — BB agent integration
+### P0 — VesnALIA agent integration
 
-Turn Files into the bridge between the workspace, the user, and BB agents instead of treating it as only a text editor.
+Turn Files into the bridge between the workspace, the user, and VesnALIA agents instead of treating it as only a text editor.
 
 Proposed actions:
 
-- **Ask BB about this file** from the tab or tree context menu.
-- **Ask BB about selected lines** while preserving `path:startLine:endLine` context.
+- **Ask VesnALIA about this file** from the tab or tree context menu.
+- **Ask VesnALIA about selected lines** while preserving `path:startLine:endLine` context.
 - **Attach file to thread** without manually copying its contents.
 - **Explain this code**, **Fix this selection**, and **Write tests for this file** actions.
 - Copy or insert stable file references such as `src/app.tsx:42-68` into the thread composer.
@@ -35,7 +35,7 @@ The current implementation checks the tree and open files every 10 seconds. This
 
 Preferred approach:
 
-1. Use host filesystem watch events if the BB SDK exposes a safe workspace-scoped watcher.
+1. Use host filesystem watch events if the VesnALIA SDK exposes a safe workspace-scoped watcher.
 2. Subscribe only to the active thread environment and paths needed by the panel.
 3. Coalesce bursts of filesystem events before refreshing the tree.
 4. Update only affected files/directories instead of reloading the whole tree.
@@ -67,7 +67,7 @@ Security requirements:
 - only enable scripts, forms, popups, or same-origin access when required and deliberately audited;
 - prefer a separate preview origin where the platform permits it;
 - apply an explicit Content Security Policy;
-- prevent preview pages from accessing BB authentication data or plugin storage;
+- prevent preview pages from accessing VesnALIA authentication data or plugin storage;
 - provide a “Disable scripts” mode;
 - clearly indicate when scripts are enabled;
 - revoke temporary preview URLs when they are no longer needed;
@@ -197,7 +197,7 @@ Add `Cmd/Ctrl+Shift+P` commands for:
 - copy path or path with line range;
 - quick open and project search;
 - format document;
-- invoke BB agent actions.
+- invoke VesnALIA agent actions.
 
 ### P2 — editor productivity
 
@@ -226,7 +226,7 @@ When the environment is a Git repository:
 - show modified, added, deleted, renamed, and untracked statuses;
 - provide a Changed Files filter;
 - open Git diffs;
-- stage/unstage only if the BB plugin boundary and product policy permit it;
+- stage/unstage only if the VesnALIA plugin boundary and product policy permit it;
 - require confirmation before discarding changes.
 
 ## Performance
@@ -323,7 +323,7 @@ Add tests for likely failure points:
 2. Breadcrumbs and copy path with line range.
 3. Project-wide content search.
 4. Better tab actions and reopen closed tab.
-5. “Ask BB about selected lines”.
+5. “Ask VesnALIA about selected lines”.
 
 ### Phase 2 — performance and reliability
 
@@ -333,7 +333,7 @@ Add tests for likely failure points:
 4. Bounded file cache.
 5. Better reconnect/offline states.
 
-### Phase 3 — differentiated BB experience
+### Phase 3 — differentiated VesnALIA experience
 
 1. Agent Changes / Review Mode.
 2. Side-by-side diff.
@@ -350,4 +350,4 @@ Add tests for likely failure points:
 
 ## Definition of success
 
-The plugin should feel fast on large local and remote repositories, preserve user context across panel remounts, make concurrent user/agent edits understandable, and safely preview workspace content without exposing BB or browser credentials.
+The plugin should feel fast on large local and remote repositories, preserve user context across panel remounts, make concurrent user/agent edits understandable, and safely preview workspace content without exposing VesnALIA or browser credentials.

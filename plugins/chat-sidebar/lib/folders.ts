@@ -4,7 +4,7 @@
 // are fixed folders, Projects and Sections each expand into a folder per
 // project or section, and custom folders hold a rule. Every entry but All can
 // be hidden and moved; every one but Projects and Sections, which take their
-// names from bb, can be renamed. A custom folder about one project wears that
+// names from VesnALIA, can be renamed. A custom folder about one project wears that
 // project's colour (see `linkedProjectId`).
 //
 // A custom folder works like Telegram's: chats added by hand are always in,
@@ -53,7 +53,7 @@ export interface FolderEntry {
   kind: EntryKind;
   /** Null keeps the translated built-in name. */
   name: string | null;
-  /** A bb icon name (or this plugin's `chat-sidebar/…`); null keeps the default. */
+  /** A VesnALIA icon name (or this plugin's `chat-sidebar/…`); null keeps the default. */
   icon: string | null;
   /** Unused while the folder is about one project: it wears the project's colour. */
   color: ColorId | null;
@@ -219,8 +219,8 @@ export function hasFilters(rule: FolderRule): boolean {
 
 /**
  * Icons for the picker, one grid with related icons next to each other.
- * bb's own names first; `chat-sidebar/…` are this plugin's Hugeicons declared
- * in the manifest (`bb.branding.experimental_icons`).
+ * VesnALIA's own names first; `chat-sidebar/…` are this plugin's Hugeicons declared
+ * in the manifest (`alia.branding.experimental_icons`).
  */
 const FOLDER_ICON_GROUPS: readonly { id: string; icons: readonly string[] }[] = [
   {

@@ -15,7 +15,7 @@ function open(path = ":memory:") {
   return { database, cache: new SqlitePredictionCache(database) };
 }
 test("prediction cache survives closing and reopening the database without storing conversation text", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "bb-prediction-cache-"));
+  const directory = await mkdtemp(join(tmpdir(), "alia-prediction-cache-"));
   const file = join(directory, "data.db");
   let current = open(file);
   try {

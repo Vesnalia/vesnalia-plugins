@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-preset-buttons",
+  "name": "alia-plugin-preset-buttons",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.104"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.104"
   },
-  "bb": {
+  "alia": {
     "name": "Preset Buttons",
     "description": "Four one-click provider/model/reasoning presets beside the project picker in the New thread composer.",
     "branding": {
@@ -23,7 +23,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.9",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -48,5 +47,22 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.9"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/preset-buttons#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/preset-buttons"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -5,7 +5,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, type FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, type FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import graphStudio from "../server";
 import { END_NODE, START_NODE, graphSchema } from "../lib/graph";
 import { MIGRATIONS, createStore } from "../lib/store";
@@ -102,13 +102,13 @@ function load() {
     } as never,
   });
   open.push(host);
-  graphStudio(host.bb);
+  graphStudio(host.alia);
   return host;
 }
 
 /** A `running` row nobody drives: what a crash leaves behind. */
 function orphan(host: FakePluginHost, claim?: { driverId: string; heartbeatAt: number }) {
-  const db = host.bb.storage.database();
+  const db = host.alia.storage.database();
   createStore(db).insertRun({
     id: "run_orphan",
     graphId: agentGraph.id,
@@ -153,7 +153,7 @@ describe("resume-orphans with a claim per run", () => {
     const service = host.harness.behavior.runService("resume-orphans");
     await new Promise((resolve) => setTimeout(resolve, 200));
     expect(spawns(host)).toBe(0);
-    expect(createStore(host.bb.storage.database()).getDriver("run_orphan")?.driverId).toBe("drv_elsewhere");
+    expect(createStore(host.alia.storage.database()).getDriver("run_orphan")?.driverId).toBe("drv_elsewhere");
     service.controller.abort();
   });
 
@@ -162,8 +162,8 @@ describe("resume-orphans with a claim per run", () => {
     orphan(host, { driverId: "drv_dead", heartbeatAt: Date.now() - 5 * 60_000 });
     const service = host.harness.behavior.runService("resume-orphans");
     await vi.waitFor(() => expect(spawns(host)).toBe(1));
-    expect(createStore(host.bb.storage.database()).getDriver("run_orphan")?.driverId).toMatch(/^drv_/);
-    expect(createStore(host.bb.storage.database()).getDriver("run_orphan")?.driverId).not.toBe("drv_dead");
+    expect(createStore(host.alia.storage.database()).getDriver("run_orphan")?.driverId).toMatch(/^drv_/);
+    expect(createStore(host.alia.storage.database()).getDriver("run_orphan")?.driverId).not.toBe("drv_dead");
     service.controller.abort();
   });
 
@@ -192,7 +192,7 @@ describe("resume-orphans with a claim per run", () => {
     const next = await host.harness.lifecycle.reload(graphStudio);
     open.push(next);
     // The predecessor gave its claim back on dispose.
-    expect(createStore(next.bb.storage.database()).getDriver(started.run.id)?.driverId).toBeNull();
+    expect(createStore(next.alia.storage.database()).getDriver(started.run.id)?.driverId).toBeNull();
     const a = next.harness.behavior.runService("resume-orphans");
     const b = next.harness.behavior.runService("resume-orphans");
     await vi.waitFor(() => expect(spawns(next)).toBe(1));

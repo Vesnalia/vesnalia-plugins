@@ -1,4 +1,4 @@
-export const EXPANDED_STORAGE_KEY = "bb-plugin-session-log:expanded";
+export const EXPANDED_STORAGE_KEY = "alia-plugin-session-log:expanded";
 
 export interface ExpandedPreference {
   isExpanded(): boolean;

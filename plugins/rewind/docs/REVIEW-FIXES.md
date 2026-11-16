@@ -6,7 +6,7 @@ Final verification handoff for reviewed commit `16e7b033c930cd17ace0ed858314669e
 
 The captain then inspected the changes, ran a fresh check/build and benchmarks, and verified protected files. The first captain stress diagnostic failed at 294 ms; the release control and one fixed-source recheck are reported below, without discarding that failure or claiming a controlled speedup. No source changes followed the final verifier; only this handoff and the evidence ledger were finalised. Nothing was committed, published or reloaded.
 
-Evidence directory: `$HOME/.bb/thread-storage/thr_yhuti7cj3n/fixes/`. `finding-ledger.json` records individual commands, exits, red reasons, green results, source files and current regression names. `completion-result.json` retains the final independent verdict; `captain-verification.json` records the fresh captain checks and all captain benchmark samples. Earlier benchmark/repair evidence remains intact.
+Evidence directory: `$HOME/.vesnalia/thread-storage/thr_yhuti7cj3n/fixes/`. `finding-ledger.json` records individual commands, exits, red reasons, green results, source files and current regression names. `completion-result.json` retains the final independent verdict; `captain-verification.json` records the fresh captain checks and all captain benchmark samples. Earlier benchmark/repair evidence remains intact.
 
 ## Individual dispositions
 
@@ -125,7 +125,7 @@ Regressions: `U03 stops capturing an untracked forced ignored file without ignor
 - Original pre-change `npm run check`: exit 0 (`baseline.log`); fresh pre-repair baseline: exit 0, **242 passed, 1 skipped** (`revision-baseline.log`).
 - Fresh pre-second-repair baseline `npm run check`: exit 0, **257 passed, 1 skipped** (`repair2-baseline.log`), before this worker's application source changes.
 - Second repair's `npm run check`: exit 0, **12 files; 263 passed, 1 skipped** (`repair2-check.log`); prior repair: 257 passed (`revision-check-release.log`). This runs **`tsc --noEmit` and Vitest only**, not lint. Earlier test-only TypeScript annotation errors remain recorded, not product reds.
-- Second repair's final-source `bb plugin build`: exit 0 (`repair2-build.log`; earlier builds remain in `revision-build-complete.log`/`revision-build.log`). Expected installed-SDK mismatch warning only; no `bb plugin types`, dependency update or reload.
+- Second repair's final-source `alia plugin build`: exit 0 (`repair2-build.log`; earlier builds remain in `revision-build-complete.log`/`revision-build.log`). Expected installed-SDK mismatch warning only; no `alia plugin types`, dependency update or reload.
 - The existing non-UTF-8 exact-file-limit test skips because APFS rejects raw invalid UTF-8 filenames with `EILSEQ`. The skip existed in the baseline; it was not added to conceal a regression.
 - Latest `git diff --check`, all eight protected hashes/promo inventory, branch/HEAD/version/pins, unchanged benchmark assertions/dependencies/staging and repository fixture inventory are recorded in `repair2-safeguards.json` (earlier evidence remains in `revision-safeguards.json` and `safeguards.json`/`safeguards.log`).
 
@@ -133,7 +133,7 @@ Regressions: `U03 stops capturing an untracked forced ignored file without ignor
 
 - Final independent verdict: **all twelve grouped criteria met, all seventeen IDs accounted for, no problems** (`completion-result.json`). Its fresh check passed **263 tests, 1 pre-existing skip**. Its five sequential benchmark matrices passed, with representative/stress diagnostic medians **193/115 ms**. The read-only verifier inspected the builder's build receipt rather than writing build artefacts.
 - Fresh captain `npm run check`: exit 0, **12 files; 263 passed, 1 pre-existing skip** (`captain-check.log`).
-- Fresh captain `bb plugin build`: exit 0 (`captain-build.log`), including host/server/app artefacts. The existing installed-SDK `0.6.15` versus pinned `0.5.9` warning was left unchanged; no reload or dependency change.
+- Fresh captain `alia plugin build`: exit 0 (`captain-build.log`), including host/server/app artefacts. The existing installed-SDK `0.6.15` versus pinned `0.5.9` warning was left unchanged; no reload or dependency change.
 - All eight protected file sizes/SHA-256 hashes match `preserved-files.json`, with no additional promotional files. Branch/HEAD, package version, SDK pin, dependencies, staging and benchmark assertions remain unchanged. `git diff --check` passes. `captain-verification.json` records these safeguards and final artefact/source hashes.
 
 ### Production checkpoint benchmarks

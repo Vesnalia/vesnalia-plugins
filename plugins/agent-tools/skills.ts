@@ -17,9 +17,9 @@ export interface SkillLocationScan {
     hasSkillMd: boolean;
     /** Tree size in bytes; 0 when unknown (old snapshots). */
     bytes?: number;
-    /** Size and file count as the BB host-daemon counts them (junk included). */
-    bbBytes?: number;
-    bbFiles?: number;
+    /** Size and file count as the VesnALIA host-daemon counts them (junk included). */
+    aliaBytes?: number;
+    aliaFiles?: number;
     /** node_modules / .venv / __pycache__ … inside the tree. */
     junk?: boolean;
   }[];
@@ -110,10 +110,10 @@ export type LocationPolicy = "canon" | "link" | "native" | "own" | "drop";
 export const LOCATION_POLICY: Record<string, LocationPolicy> = {
   agents: "canon",
   claude: "link",
-  // BB держит свой реестр скиллов и заносит в него только реальные папки
-  // ~/.bb/skills — симлинк оттуда просто исчезает из списка bb-user, и скилл
-  // пропадает из сессий BB. Поэтому эту папку правила не трогают.
-  bb: "own",
+  // VesnALIA держит свой реестр скиллов и заносит в него только реальные папки
+  // ~/.vesnalia/skills — симлинк оттуда просто исчезает из списка alia-user, и скилл
+  // пропадает из сессий VesnALIA. Поэтому эту папку правила не трогают.
+  alia: "own",
   qwen: "link",
   codex: "native",
   cursor: "native",
@@ -132,7 +132,7 @@ export const LOCATION_PATH: Record<string, string> = {
   claude: "~/.claude/skills",
   codex: "~/.codex/skills",
   "gemini-config": "~/.gemini/config/skills",
-  bb: "~/.bb/skills",
+  alia: "~/.vesnalia/skills",
   opencode: "~/.config/opencode/skills",
   cursor: "~/.cursor/skills",
   qwen: "~/.qwen/skills",
@@ -142,31 +142,31 @@ export function locationPath(locationId: string): string {
   return LOCATION_PATH[locationId] ?? locationId;
 }
 
-/** BB host-daemon will not stage a skill tree larger than this into `$`. */
-export const BB_INJECT_MAX_BYTES = 10 * 1024 * 1024;
+/** VesnALIA host-daemon will not stage a skill tree larger than this into `$`. */
+export const ALIA_INJECT_MAX_BYTES = 10 * 1024 * 1024;
 
-/** BB host-daemon limit on files in one skill tree. */
-export const BB_INJECT_MAX_FILES = 1000;
+/** VesnALIA host-daemon limit on files in one skill tree. */
+export const ALIA_INJECT_MAX_FILES = 1000;
 
-export function bbInjectTooHeavy(bytes: number, files = 0): boolean {
-  return bytes > BB_INJECT_MAX_BYTES || files > BB_INJECT_MAX_FILES;
+export function aliaInjectTooHeavy(bytes: number, files = 0): boolean {
+  return bytes > ALIA_INJECT_MAX_BYTES || files > ALIA_INJECT_MAX_FILES;
 }
 
-/** Why BB would refuse this tree, or null. Human text for reports. */
-export function bbTreeProblem(bytes: number, files = 0): string | null {
-  if (bytes > BB_INJECT_MAX_BYTES) {
-    return `${(bytes / 1024 / 1024).toFixed(1)} МБ — больше лимита BB 10 МБ, BB не примет скилл`;
+/** Why VesnALIA would refuse this tree, or null. Human text for reports. */
+export function aliaTreeProblem(bytes: number, files = 0): string | null {
+  if (bytes > ALIA_INJECT_MAX_BYTES) {
+    return `${(bytes / 1024 / 1024).toFixed(1)} МБ — больше лимита ALIA 10 МБ, ALIA не примет скилл`;
   }
-  if (files > BB_INJECT_MAX_FILES) return `${files} файлов — больше лимита BB ${BB_INJECT_MAX_FILES}, BB не примет скилл`;
+  if (files > ALIA_INJECT_MAX_FILES) return `${files} файлов — больше лимита ALIA ${ALIA_INJECT_MAX_FILES}, ALIA не примет скилл`;
   return null;
 }
 
 /**
- * What `$` actually stages: the real `~/.bb/skills` copy if it exists,
+ * What `$` actually stages: the real `~/.vesnalia/skills` copy if it exists,
  * otherwise the canon size that fan-out would copy there.
  */
-export function bbInjectBytes(canonBytes: number, bbDirBytes: number | null): number {
-  if (bbDirBytes != null && bbDirBytes > 0) return bbDirBytes;
+export function aliaInjectBytes(canonBytes: number, aliaDirBytes: number | null): number {
+  if (aliaDirBytes != null && aliaDirBytes > 0) return aliaDirBytes;
   return canonBytes;
 }
 
@@ -177,9 +177,9 @@ export function resolveRowAction(row: SkillRow): SkillAction | null {
   if (policy === "own" && row.state !== "stray-link") return null;
   const leavesLink = policy === "link";
   if (row.state === "stray-link") return { mode: "unlink", label: "Убрать ссылку" };
-  // Дубль реестра BB: убирать или нет — зависит от того, запускает ли человек
-  // этот CLI вне BB, поэтому правило не автоматическое.
-  if (row.state === "bb-registry") return { mode: "unlink", label: "Убрать ссылку", manual: true };
+  // Дубль реестра VesnALIA: убирать или нет — зависит от того, запускает ли человек
+  // этот CLI вне VesnALIA, поэтому правило не автоматическое.
+  if (row.state === "alia-registry") return { mode: "unlink", label: "Убрать ссылку", manual: true };
   if (row.state === "only-here") {
     return { mode: "adopt", label: leavesLink ? "За канон" : "Перенести в канон" };
   }
@@ -219,7 +219,7 @@ export function resolveRowAction(row: SkillRow): SkillAction | null {
  * ссылка в проект с другим содержимым — "linked-external", реальная
  * копия — "copy" или "diverged" (по хешу папки скилла).
  * В папке с политикой "drop" любая ссылка — "stray-link": её надо убрать.
- * Особый случай: канон сам ссылается на реальную папку (симлинк в ~/.bb/skills
+ * Особый случай: канон сам ссылается на реальную папку (симлинк в ~/.vesnalia/skills
  * и т.п.) — тогда эта реальная папка помечается "canonical-source": переносить
  * её нельзя, получится петля симлинков.
  */
@@ -240,10 +240,10 @@ export function computeSkillRows(
   }
   const rows: SkillRow[] = [];
   const prefix = canonicalPath.endsWith("/") ? canonicalPath : `${canonicalPath}/`;
-  // Дом скиллов BB: ссылки сюда — это те же скиллы, которые BB и так подставляет
+  // Дом скиллов VesnALIA: ссылки сюда — это те же скиллы, которые VesnALIA и так подставляет
   // в свои сессии, поэтому в списке провайдера они выглядят вторым экземпляром.
-  const bbHome = locations.find((item) => item.id === "bb")?.path ?? null;
-  const bbPrefix = bbHome === null ? null : bbHome.endsWith("/") ? bbHome : `${bbHome}/`;
+  const aliaHome = locations.find((item) => item.id === "alia")?.path ?? null;
+  const aliaPrefix = aliaHome === null ? null : aliaHome.endsWith("/") ? aliaHome : `${aliaHome}/`;
   for (const location of locations) {
     if (location.id === "agents" || !location.exists) continue;
     const policy = locationPolicy(location.id);
@@ -254,8 +254,8 @@ export function computeSkillRows(
           state = "stray-link";
         } else if (entry.target !== null && entry.target.startsWith(prefix)) {
           state = "linked";
-        } else if (bbPrefix !== null && entry.target !== null && entry.target.startsWith(bbPrefix)) {
-          state = "bb-registry";
+        } else if (aliaPrefix !== null && entry.target !== null && entry.target.startsWith(aliaPrefix)) {
+          state = "alia-registry";
         } else if (!canonicalHashes.has(entry.name)) {
           // Ссылка в проект — тот же кандидат в канон, что и папка «только здесь».
           if (!entry.hasSkillMd) continue;
@@ -297,7 +297,7 @@ export interface PromoteToCanonOp {
 /**
  * Newest tree wins: copy it into that machine's ~/.agents/skills. Git sync
  * then carries it to the others. Equal dates with different hashes stay manual.
- * Plugin-provided names and BB's own home are left alone.
+ * Plugin-provided names and VesnALIA's own home are left alone.
  */
 export function planPromoteToCanon(
   hosts: Array<{ hostId: string; locations: SkillLocationScan[]; pluginNames?: string[] }>,
@@ -381,7 +381,7 @@ export interface FanOutState {
 export type FanOutOpKind =
   /** Поставить в доме симлинк на канон (Claude Code читает только свою папку). */
   | "link"
-  /** Положить в доме реальную копию канона (BB заносит в реестр только папки). */
+  /** Положить в доме реальную копию канона (VesnALIA заносит в реестр только папки). */
   | "mirror"
   /** Убрать из дома то, чего в каноне больше нет. */
   | "drop"
@@ -404,7 +404,7 @@ export interface FanOutPlan {
   nextState: FanOutState;
   /** Имена, которые уже отдаёт плагин-маркетплейс: их не дублируем. */
   skippedByPlugin: string[];
-  /** Скиллы, которые BB не примет даже без мусора: в дом BB не кладём. */
+  /** Скиллы, которые VesnALIA не примет даже без мусора: в дом VesnALIA не кладём. */
   blocked: { name: string; reason: string }[];
 }
 
@@ -455,53 +455,53 @@ export function planFanOut(input: FanOutInput): FanOutPlan {
   const pulled = new Set<string>();
   const blocked: FanOutPlan["blocked"] = [];
 
-  // Дом BB — единственный, где человек заводит и удаляет скиллы руками через
+  // Дом VesnALIA — единственный, где человек заводит и удаляет скиллы руками через
   // интерфейс, поэтому только он может забрать скилл в канон и увести в архив.
-  const bb = locations.find((item) => item.id === "bb");
-  const bbEntries = skillEntries(bb);
-  const bbPrefix = bb === undefined ? null : withSlash(bb.path);
+  const alia = locations.find((item) => item.id === "alia");
+  const aliaEntries = skillEntries(alia);
+  const aliaPrefix = alia === undefined ? null : withSlash(alia.path);
 
   for (const [name, canon] of canonical) {
-    // Канон уже ссылается в дом BB: там и лежит настоящая папка, зеркалить нечего.
-    const sourceInBb =
-      canon.kind === "symlink" && bbPrefix !== null && canon.target?.startsWith(bbPrefix) === true;
-    const mirror = bbEntries.get(name);
-    // Плагин-маркетплейс уже отдаёт этот скилл в сессии BB — зеркало было бы
+    // Канон уже ссылается в дом VesnALIA: там и лежит настоящая папка, зеркалить нечего.
+    const sourceInAlia =
+      canon.kind === "symlink" && aliaPrefix !== null && canon.target?.startsWith(aliaPrefix) === true;
+    const mirror = aliaEntries.get(name);
+    // Плагин-маркетплейс уже отдаёт этот скилл в сессии VesnALIA — зеркало было бы
     // вторым экземпляром того же в списке навыков.
     const fromPlugin = plugins.has(name);
     if (fromPlugin && !skippedByPlugin.includes(name)) skippedByPlugin.push(name);
-    // Канон сам по себе (мусор при копировании отбрасывается) больше лимита BB:
-    // копия в дом BB только сломает старт чатов. Ничего не делаем, сообщаем.
-    const canonProblem = bbTreeProblem(canon.bytes ?? 0);
-    if (bb !== undefined && bb.exists && !sourceInBb && !fromPlugin && canonProblem !== null) {
+    // Канон сам по себе (мусор при копировании отбрасывается) больше лимита VesnALIA:
+    // копия в дом VesnALIA только сломает старт чатов. Ничего не делаем, сообщаем.
+    const canonProblem = aliaTreeProblem(canon.bytes ?? 0);
+    if (alia !== undefined && alia.exists && !sourceInAlia && !fromPlugin && canonProblem !== null) {
       blocked.push({ name, reason: canonProblem });
-    } else if (bb !== undefined && bb.exists && !sourceInBb && !fromPlugin) {
+    } else if (alia !== undefined && alia.exists && !sourceInAlia && !fromPlugin) {
       if (mirror === undefined) {
         // «Удалён человеком» — только если этот скилл мы туда раскладывали.
         // Скилл, который раньше пропускали (его отдавал плагин), просто не
         // зеркалили: его отсутствие ничего не значит и канон трогать нельзя.
         if (state.entries[name]?.mirrored === true) {
-          ops.push({ kind: "retire", locationId: "bb", name, reason: "удалён в BB" });
+          ops.push({ kind: "retire", locationId: "alia", name, reason: "удалён в ALIA" });
           retired.add(name);
         } else {
-          ops.push({ kind: "mirror", locationId: "bb", name, reason: "нет в доме BB" });
+          ops.push({ kind: "mirror", locationId: "alia", name, reason: "нет в доме ALIA" });
         }
       } else if (mirror.hash !== canon.hash) {
         const canonNewer = (canon.mtime ?? 0) >= (mirror.mtime ?? 0);
         if (canonNewer) {
-          ops.push({ kind: "mirror", locationId: "bb", name, reason: "канон новее" });
+          ops.push({ kind: "mirror", locationId: "alia", name, reason: "канон новее" });
         } else {
-          ops.push({ kind: "pull", locationId: "bb", name, reason: "правка в BB новее" });
+          ops.push({ kind: "pull", locationId: "alia", name, reason: "правка в ALIA новее" });
         }
       } else if (mirror.junk === true && mirror.kind === "dir") {
-        // Хеш мусор не учитывает, а BB переносит его целиком: перекладываем чистую копию.
-        ops.push({ kind: "mirror", locationId: "bb", name, reason: "в копии BB мусор (node_modules и т.п.)" });
+        // Хеш мусор не учитывает, а VesnALIA переносит его целиком: перекладываем чистую копию.
+        ops.push({ kind: "mirror", locationId: "alia", name, reason: "в копии ALIA мусор (node_modules и т.п.)" });
       }
     }
     if (retired.has(name)) continue;
 
     for (const location of locations) {
-      if (location.id === "agents" || location.id === "bb") continue;
+      if (location.id === "agents" || location.id === "alia") continue;
       if (!location.exists && location.parentExists !== true) continue;
       if (locationPolicy(location.id) !== "link") continue;
       if (fromPlugin) continue;
@@ -521,15 +521,15 @@ export function planFanOut(input: FanOutInput): FanOutPlan {
     }
   }
 
-  // Скиллы дома BB, которых в каноне нет: новый — забираем, знакомый — значит
+  // Скиллы дома VesnALIA, которых в каноне нет: новый — забираем, знакомый — значит
   // канон его потерял (например, удаление приехало синком), убираем зеркало.
-  for (const [name, entry] of bbEntries) {
+  for (const [name, entry] of aliaEntries) {
     if (canonical.has(name)) continue;
     if (entry.kind === "symlink") continue;
     if (state.entries[name]?.mirrored === true) {
-      ops.push({ kind: "drop", locationId: "bb", name, reason: "убран из канона" });
+      ops.push({ kind: "drop", locationId: "alia", name, reason: "убран из канона" });
     } else {
-      ops.push({ kind: "pull", locationId: "bb", name, reason: "новый скилл BB" });
+      ops.push({ kind: "pull", locationId: "alia", name, reason: "новый скилл ALIA" });
       pulled.add(name);
     }
   }
@@ -556,15 +556,15 @@ export function planFanOut(input: FanOutInput): FanOutPlan {
   for (const name of retired) nextNames.delete(name);
   const entries: FanOutState["entries"] = {};
   for (const name of [...nextNames].sort()) {
-    // Помним не только содержимое, но и факт «мы это зеркалили в дом BB»:
+    // Помним не только содержимое, но и факт «мы это зеркалили в дом VesnALIA»:
     // иначе смена правил выглядит как удаление скилла человеком.
     const mirrored =
-      bb !== undefined &&
-      bb.exists &&
+      alia !== undefined &&
+      alia.exists &&
       !plugins.has(name) &&
       canonical.get(name)?.kind !== "symlink";
     entries[name] = {
-      hash: canonical.get(name)?.hash ?? bbEntries.get(name)?.hash ?? null,
+      hash: canonical.get(name)?.hash ?? aliaEntries.get(name)?.hash ?? null,
       mirrored,
     };
   }
@@ -572,36 +572,36 @@ export function planFanOut(input: FanOutInput): FanOutPlan {
   return { ops, nextState: { entries }, skippedByPlugin, blocked };
 }
 
-/** blocked — не копировать: BB всё равно не примет, reason объясняет почему. */
-export type ServerBbMirrorOp = { name: string; reason: string; blocked?: boolean };
+/** blocked — не копировать: VesnALIA всё равно не примет, reason объясняет почему. */
+export type ServerAliaMirrorOp = { name: string; reason: string; blocked?: boolean };
 
 /**
- * Plan copies into the BB server's user-skill root (`dataDir/skills`).
+ * Plan copies into the VesnALIA server's user-skill root (`dataDir/skills`).
  * Does not pull or retire: those belong to enrolled machines' canons.
  */
-export function planServerBbMirror(input: {
+export function planServerAliaMirror(input: {
   canon: Array<{ name: string; kind: "dir" | "symlink"; hash: string | null; mtime: number | null; bytes?: number }>;
   dest: Array<{ name: string; kind: "dir" | "symlink"; hash: string | null; mtime: number | null; junk?: boolean }>;
   pluginNames: string[];
-}): ServerBbMirrorOp[] {
+}): ServerAliaMirrorOp[] {
   const plugins = new Set(input.pluginNames);
   const destByName = new Map(input.dest.map((item) => [item.name, item]));
-  const ops: ServerBbMirrorOp[] = [];
+  const ops: ServerAliaMirrorOp[] = [];
   for (const canon of input.canon) {
     if (plugins.has(canon.name) || canon.kind === "symlink" || canon.hash === null) continue;
     const dest = destByName.get(canon.name);
     if (dest?.kind === "symlink") continue;
-    const problem = bbTreeProblem(canon.bytes ?? 0);
+    const problem = aliaTreeProblem(canon.bytes ?? 0);
     if (problem !== null) {
       ops.push({ name: canon.name, reason: problem, blocked: true });
       continue;
     }
     if (dest === undefined || dest.hash === null) {
-      ops.push({ name: canon.name, reason: "нет на сервере BB" });
+      ops.push({ name: canon.name, reason: "нет на сервере ALIA" });
       continue;
     }
     if (dest.hash === canon.hash) {
-      if (dest.junk === true) ops.push({ name: canon.name, reason: "в копии на сервере BB мусор (node_modules и т.п.)" });
+      if (dest.junk === true) ops.push({ name: canon.name, reason: "в копии на сервере ALIA мусор (node_modules и т.п.)" });
       continue;
     }
     if ((canon.mtime ?? 0) >= (dest.mtime ?? 0)) {
@@ -611,7 +611,7 @@ export function planServerBbMirror(input: {
   return ops;
 }
 
-export function enrolledHostIsBbServer(
+export function enrolledHostIsAliaServer(
   hosts: Array<{ hostname: string; status: string }>,
   serverHostname: string,
 ): boolean {

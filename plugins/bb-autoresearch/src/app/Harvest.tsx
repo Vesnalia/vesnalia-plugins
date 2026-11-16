@@ -1,12 +1,12 @@
 // Harvest tab. v1: harvest freezes best and closes submissions; an agent
 // turns the frozen best into PRs with the study-harvest skill, asking the
-// plugin for every number (`bb study measure`) and check (`bb study gate`).
+// plugin for every number (`alia study measure`) and check (`alia study gate`).
 // The tab shows the freeze (base, best, the pinned ref, the promotions with
 // their commit messages), the measurements and gates agents asked for, and a
 // short guide with the prompt to give an agent. Harvests the plugin drafted
 // before 1.0 stay readable: changesets, contributions, stacks, PR previews and
 // publish results, without the old publish and keep/drop controls.
-import { experimental_NewThreadComposer as NewThreadComposer, Markdown, useBbNavigate, useSdk } from "@get-bb/plugin-sdk/app";
+import { experimental_NewThreadComposer as NewThreadComposer, Markdown, useAliaNavigate, useSdk } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -170,7 +170,7 @@ function FrozenHarvest({ h, o, guide, onOpenCandidate }: { h: Harvest; o: Overvi
 
 /** How to get an agent to do the harvest: the prompt, a new thread with it, or the study thread. */
 function AgentGuide({ guide, o }: { guide: HarvestView["guide"]; o: OverviewResult }) {
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const [composing, setComposing] = useState(false);
   const copy = async () => {
     try {
@@ -220,7 +220,7 @@ function AgentGuide({ guide, o }: { guide: HarvestView["guide"]; o: OverviewResu
 
 function HarvestComposer({ prompt, projectId, onClose }: { prompt: string; projectId: string; onClose: () => void }) {
   const sdk = useSdk();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const [focus, setFocus] = useState(1);
   useEffect(() => setFocus((f) => f + 1), []);
   return (
@@ -288,7 +288,7 @@ function NextSteps({ h, d, o, slug, rpc, onChanged, onStart, onRefreeze, onArchi
   );
 }
 
-/** `bb study measure` / `bb study gate` runs, newest first. */
+/** `alia study measure` / `alia study gate` runs, newest first. */
 function Runs({ runs, slug }: { runs: Run[]; slug: string }) {
   return (
     <Section title={`Measurements and gates agents asked for (${runs.length})`}>
@@ -313,7 +313,7 @@ function Runs({ runs, slug }: { runs: Run[]; slug: string }) {
         </ul>
       ) : (
         <p className="text-xs text-muted-foreground">
-          None yet. An agent asks with <Mono>bb study measure {slug} &lt;A&gt; &lt;B&gt;</Mono> and <Mono>bb study gate {slug} &lt;ref&gt;</Mono>; every number it reports comes from here.
+          None yet. An agent asks with <Mono>alia study measure {slug} &lt;A&gt; &lt;B&gt;</Mono> and <Mono>alia study gate {slug} &lt;ref&gt;</Mono>; every number it reports comes from here.
         </p>
       )}
     </Section>
@@ -596,7 +596,7 @@ function Report({ slug }: { slug: string }) {
           <Markdown content={md} />
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">Trajectory, wins, notable losses and why, the dossier, calibration, and this harvest, as Markdown (also `bb study report {slug}`).</p>
+        <p className="text-xs text-muted-foreground">Trajectory, wins, notable losses and why, the dossier, calibration, and this harvest, as Markdown (also `alia study report {slug}`).</p>
       )}
     </Section>
   );

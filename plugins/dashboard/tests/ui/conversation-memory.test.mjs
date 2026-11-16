@@ -10,7 +10,7 @@ test("thread heading renders Russian status with environment only in the tooltip
     latestAttentionAt: 150, activity: { workflows: 0, backgroundAgents: 0, backgroundCommands: 0, planMode: 0, goals: 0 },
     environment: { name: "Основное окружение" }, host: null,
   }] });
-  await slot.findByTestId("bb-thread-chat");
+  await slot.findByTestId("alia-thread-chat");
   assert.ok(slot.getByText("Просмотрено"));
   const heading = slot.container.querySelector(".db-thread-open");
   assert.equal(within(heading).queryByText("Основное окружение"), null);
@@ -18,7 +18,7 @@ test("thread heading renders Russian status with environment only in the tooltip
   assert.ok(slot.getByRole("button", { name: "Убрать «Проверка русского треда» с рабочего стола" }));
 });
 
-test("previous threads use BB update order, show compact titles and keep the selected chat when the panel closes", async () => {
+test("previous threads use VesnALIA update order, show compact titles and keep the selected chat when the panel closes", async () => {
   const previous = Array.from({ length: 12 }, (_, i) => thread(`old${i}`, "p1", `Прошлый ${i}`, { latestAttentionAt: 200 + i, updatedAt: 400 - i }));
   const slot = mount({ connected: true, threads: [thread("active", "p1", "Текущий"), ...previous], hiddenIds: previous.map(t => t.id) });
   const toggle = await slot.findByRole("button", { name: "Показать последние 10 тредов" });
@@ -31,27 +31,27 @@ test("previous threads use BB update order, show compact titles and keep the sel
   assert.ok(history.querySelector(".db-conversation-meta time"));
   assert.deepEqual([...history.querySelectorAll(".db-thread-title")].map(el => el.textContent), previous.slice(2).reverse().map(t => t.displayTitle));
   fireEvent.click(within(history).getByRole("button", { name: "Прошлый 11", exact: true }));
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "old11");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "old11");
   assert.equal(slot.container.querySelectorAll(".db-thread-indicator").length, 1);
   assert.equal(slot.container.querySelector(".db-project").getAttribute("data-single-chat"), "false");
   fireEvent.click(within(history).getByRole("button", { name: "Прошлый 10", exact: true }));
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "old10");
-  const selectedChat = slot.getByTestId("bb-thread-chat");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "old10");
+  const selectedChat = slot.getByTestId("alia-thread-chat");
   fireEvent.click(within(history).getByRole("button", { name: "Прошлый 10", exact: true }));
-  assert.equal(slot.getByTestId("bb-thread-chat"), selectedChat);
+  assert.equal(slot.getByTestId("alia-thread-chat"), selectedChat);
   fireEvent.click(slot.getByRole("button", { name: "Скрыть прошлые треды" }));
   assert.equal(slot.queryByRole("region", { name: "Прошлые треды" }), null);
-  assert.equal(slot.getByTestId("bb-thread-chat"), selectedChat);
+  assert.equal(slot.getByTestId("alia-thread-chat"), selectedChat);
   fireEvent.click(slot.getByRole("button", { name: "Показать последние 10 тредов" }));
-  assert.equal(slot.getByTestId("bb-thread-chat"), selectedChat);
+  assert.equal(slot.getByTestId("alia-thread-chat"), selectedChat);
   assert.equal(slot.container.querySelectorAll(".db-thread-indicator").length, 1);
 });
 
-test("history excludes other projects, archived, hidden BB threads and subagents", async () => {
+test("history excludes other projects, archived, hidden VesnALIA threads and subagents", async () => {
   const previous = [
     thread("previous", "p1", "Доступный прошлый"),
     thread("archived", "p1", "Архивный", { isArchived: true }),
-    thread("hidden", "p1", "Скрытый BB", { isHidden: true }),
+    thread("hidden", "p1", "Скрытый ALIA", { isHidden: true }),
     thread("worker", "p1", "Субагент", { parentThreadId: "previous" }),
     thread("other", "p2", "Другой проект"),
   ];
@@ -75,18 +75,18 @@ test("subagents have indicators without rows and completion returns the open cha
     thread("worker", "p1", "Research", { parentThreadId: "manager", status: "active" }),
   ];
   const slot = mount({ connected: true, threads });
-  assert.equal((await slot.findByTestId("bb-thread-chat")).dataset.threadId, "manager");
+  assert.equal((await slot.findByTestId("alia-thread-chat")).dataset.threadId, "manager");
   const tab = slot.getByRole("tab", { name: /^Тестовый проект,/ });
   const strip = slot.getByRole("group", { name: /^Треды всех проектов/ });
   assert.equal(tab.querySelectorAll(".db-dot").length, 2);
   assert.equal(slot.container.querySelectorAll(".db-thread-line").length, 1);
   assert.equal(slot.queryByRole("button", { name: /^Research/ }), null);
   fireEvent.click(within(strip).getByRole("button", { name: "Тестовый проект · Research: Субагент работает" }));
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "worker");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "worker");
   assert.equal(slot.container.querySelectorAll(".db-thread-line").length, 1);
   threads[1] = { ...threads[1], status: "idle", isUnread: true, latestAttentionAt: 200 };
   await slot.behavior.emitRealtime("dashboard-changed", {});
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "manager");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "manager");
   assert.equal(tab.querySelectorAll(".db-dot").length, 1);
   assert.equal(strip.querySelectorAll(".db-dot").length, 1);
   assert.equal(slot.queryByText("Research"), null);
@@ -94,7 +94,7 @@ test("subagents have indicators without rows and completion returns the open cha
   threads[1] = { ...threads[1], status: "active" };
   await slot.behavior.emitRealtime("dashboard-changed", {});
   assert.equal(tab.querySelectorAll(".db-dot").length, 2);
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "manager");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "manager");
 });
 
 test("finished subagents stay absent on mount while independent forks retain their rows", async () => {
@@ -102,7 +102,7 @@ test("finished subagents stay absent on mount while independent forks retain the
     thread("worker", "p1", "Завершённый Research", { parentThreadId: "manager", isUnread: true }),
     thread("fork", "p1", "Самостоятельная ветка", { parentThreadId: "manager", originKind: "fork", isUnread: true }),
   ] });
-  assert.equal((await slot.findByTestId("bb-thread-chat")).dataset.threadId, "fork");
+  assert.equal((await slot.findByTestId("alia-thread-chat")).dataset.threadId, "fork");
   assert.equal(slot.container.querySelectorAll(".db-thread-line").length, 1);
   assert.equal(slot.getByRole("tab", { name: /^Тестовый проект,/ }).querySelectorAll(".db-dot").length, 1);
   assert.equal(slot.queryByText("Завершённый Research"), null);
@@ -113,13 +113,13 @@ test("a project with only a subagent shows its indicator without auto-opening it
   const slot = mount({ connected: true, threads });
   await slot.findByRole("tab", { name: /^Тестовый проект,/ });
   assert.equal(slot.container.querySelectorAll(".db-thread-line").length, 0);
-  assert.equal(slot.queryByTestId("bb-thread-chat"), null);
+  assert.equal(slot.queryByTestId("alia-thread-chat"), null);
   assert.equal(slot.getByRole("tab", { name: /^Тестовый проект,/ }).querySelectorAll(".db-dot").length, 1);
   fireEvent.click(slot.getByRole("button", { name: "Тестовый проект · Research: Субагент работает" }));
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "worker");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "worker");
   threads[0] = { ...threads[0], status: "idle" };
   await slot.behavior.emitRealtime("dashboard-changed", {});
-  assert.equal(slot.queryByTestId("bb-thread-chat"), null);
+  assert.equal(slot.queryByTestId("alia-thread-chat"), null);
   assert.equal(slot.getByRole("tab", { name: /^Тестовый проект,/ }).querySelectorAll(".db-dot").length, 0);
 });
 
@@ -221,14 +221,14 @@ test("header opens a specific thread across projects and keeps stable indicator 
   const indicator = within(strip).getByRole("button", { name: "Второй проект · Выбранный тред: Просмотрено" });
   fireEvent.click(indicator);
   assert.equal(slot.getByRole("tab", { name: /^Второй проект,/ }).getAttribute("aria-selected"), "true");
-  const chat = slot.getByTestId("bb-thread-chat");
+  const chat = slot.getByTestId("alia-thread-chat");
   assert.equal(chat.getAttribute("data-thread-id"), "t3");
   assert.equal(indicator.getAttribute("aria-pressed"), "true");
   threads[0] = { ...threads[0], status: "active" };
   threads.reverse();
   await slot.behavior.emitRealtime("dashboard-changed", {});
   assert.deepEqual(ids(), ["t1", "t2", "t3"]);
-  assert.equal(slot.getByTestId("bb-thread-chat"), chat);
+  assert.equal(slot.getByTestId("alia-thread-chat"), chat);
   assert.equal(indicator.getAttribute("aria-pressed"), "true");
 });
 
@@ -286,28 +286,28 @@ test("tabs expose live project status and support arrows, Home and End", async (
 test("project conversation memory survives navigation and remounts and falls back when a conversation disappears", async () => {
   const threads = [thread("a", "p1", "Running", { status: "active" }), thread("b", "p1", "Reading"), thread("c", "p2", "Other")];
   let slot = mount({ connected: true, projects: [project, secondProject], threads });
-  await slot.findByTestId("bb-thread-chat");
+  await slot.findByTestId("alia-thread-chat");
   fireEvent.click(slot.getByRole("tab", { name: "Reading: Просмотрено" }));
   fireEvent.click(slot.getByRole("tab", { name: /^Второй проект,/ }));
   fireEvent.click(slot.getByRole("tab", { name: /^Тестовый проект,/ }));
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "b");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "b");
   slot.lifecycle.unmount();
   slot = mount({ connected: true, projects: [project, secondProject], threads });
-  assert.equal((await slot.findByTestId("bb-thread-chat")).dataset.threadId, "b");
+  assert.equal((await slot.findByTestId("alia-thread-chat")).dataset.threadId, "b");
   slot.lifecycle.unmount();
   slot = mount({ connected: true, projects: [project, secondProject], threads: threads.filter(t => t.id !== "b") });
-  assert.equal((await slot.findByTestId("bb-thread-chat")).dataset.threadId, "a");
+  assert.equal((await slot.findByTestId("alia-thread-chat")).dataset.threadId, "a");
 });
 
 test("history selection survives remount without importing the historical thread into working tabs", async () => {
   const threads = [thread("a", "p1", "Running", { status: "active" }), thread("old", "p1", "Previous", { latestAttentionAt: 10 })];
   let slot = mount({ connected: true, threads, hiddenIds: ["old"] });
-  await slot.findByTestId("bb-thread-chat");
+  await slot.findByTestId("alia-thread-chat");
   fireEvent.click(slot.getByRole("button", { name: "Показать последние 10 тредов" }));
   fireEvent.click(within(slot.getByRole("region", { name: "Прошлые треды" })).getByRole("button", { name: "Previous" }));
   slot.lifecycle.unmount();
   slot = mount({ connected: true, threads, hiddenIds: ["old"] });
-  assert.equal((await slot.findByTestId("bb-thread-chat")).dataset.threadId, "old");
+  assert.equal((await slot.findByTestId("alia-thread-chat")).dataset.threadId, "old");
   assert.equal(within(slot.getByRole("tablist", { name: "Треды проекта" })).queryByRole("tab", { name: /^Previous/ }), null);
 });
 
@@ -315,14 +315,14 @@ test("green thread opens on project entry, respects manual collapse and reopens 
   const slot = mount({ connected: true, projects: [project, secondProject], threads: [
     thread("t1", "p1", "Первый тред", { isUnread: true }), thread("t2", "p2", "Второй тред", { status: "active" }),
   ] });
-  assert.equal((await slot.findByTestId("bb-thread-chat")).dataset.threadId, "t1");
+  assert.equal((await slot.findByTestId("alia-thread-chat")).dataset.threadId, "t1");
   fireEvent.click(slot.getByRole("button", { name: /^Первый тред/, expanded: true }));
   await slot.behavior.emitRealtime("dashboard-changed", {});
-  assert.equal(slot.queryByTestId("bb-thread-chat"), null);
+  assert.equal(slot.queryByTestId("alia-thread-chat"), null);
   fireEvent.click(slot.getByRole("tab", { name: /^Второй проект,/ }));
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "t2");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "t2");
   fireEvent.click(slot.getByRole("tab", { name: /^Тестовый проект,/ }));
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "t1");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "t1");
 });
 
 test("first project entry prioritizes attention and later returns preserve the conversation despite status changes", async () => {
@@ -335,28 +335,28 @@ test("first project entry prioritizes attention and later returns preserve the c
     thread("result", "p1", "Готовый результат", { isUnread: true, latestAttentionAt: 100 }),
   ];
   const slot = mount({ connected: true, projects: [project, secondProject], threads });
-  assert.equal((await slot.findByTestId("bb-thread-chat")).dataset.threadId, "yellow-new");
+  assert.equal((await slot.findByTestId("alia-thread-chat")).dataset.threadId, "yellow-new");
   fireEvent.click(slot.getByRole("button", { name: /^Первый в списке/, expanded: true }));
   await slot.behavior.emitRealtime("dashboard-changed", {});
-  assert.equal(slot.queryByTestId("bb-thread-chat"), null);
+  assert.equal(slot.queryByTestId("alia-thread-chat"), null);
   fireEvent.click(slot.getByRole("tab", { name: /^Тестовый проект,/ }));
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "yellow-new");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "yellow-new");
   threads[1] = { ...threads[1], hasPendingInteraction: false };
   threads[2] = { ...threads[2], hasPendingInteraction: false };
   await slot.behavior.emitRealtime("dashboard-changed", {});
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "yellow-new");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "yellow-new");
   fireEvent.click(slot.getByRole("tab", { name: /^Второй проект,/ }));
   fireEvent.click(slot.getByRole("tab", { name: /^Тестовый проект,/ }));
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "yellow-new");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "yellow-new");
   threads[5] = { ...threads[5], isUnread: false };
   await slot.behavior.emitRealtime("dashboard-changed", {});
   fireEvent.click(slot.getByRole("tab", { name: /^Тестовый проект,/ }));
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "yellow-new");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "yellow-new");
   for (const changes of [{ status: "pending" }, { status: "idle", isUnread: true }, { status: "idle", isUnread: false }]) {
     threads[0] = { ...threads[0], ...changes };
     await slot.behavior.emitRealtime("dashboard-changed", {});
     fireEvent.click(slot.getByRole("tab", { name: /^Тестовый проект,/ }));
-    assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "yellow-new");
+    assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "yellow-new");
   }
 });
 
@@ -370,37 +370,37 @@ test("project entry falls back to the latest read result and preserves manual co
     thread("child", "p1", "Завершённый агент", { latestAttentionAt: 1300, parentThreadId: "latest" }),
   ];
   const slot = mount({ connected: true, projects: [project, secondProject], threads });
-  assert.equal((await slot.findByTestId("bb-thread-chat")).dataset.threadId, "latest");
+  assert.equal((await slot.findByTestId("alia-thread-chat")).dataset.threadId, "latest");
   fireEvent.click(slot.getByRole("button", { name: /^Последний результат/, expanded: true }));
   await slot.behavior.emitRealtime("dashboard-changed", {});
-  assert.equal(slot.queryByTestId("bb-thread-chat"), null);
+  assert.equal(slot.queryByTestId("alia-thread-chat"), null);
   fireEvent.click(slot.getByRole("tab", { name: /^Второй проект,/ }));
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "other");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "other");
   fireEvent.click(slot.getByRole("tab", { name: /^Тестовый проект,/ }));
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "latest");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "latest");
 });
 
 test("chat fills the workspace with one or multiple threads", async () => {
   const threads = [thread("t1", "p1", "Работа", { status: "active" })];
   const slot = mount({ connected: true, threads });
-  const chat = await slot.findByTestId("bb-thread-chat");
+  const chat = await slot.findByTestId("alia-thread-chat");
   assert.equal(chat.dataset.layout, "contained");
   threads.push(thread("t2", "p1", "Другой тред"));
   await slot.behavior.emitRealtime("dashboard-changed", {});
-  assert.equal(slot.getByTestId("bb-thread-chat"), chat);
+  assert.equal(slot.getByTestId("alia-thread-chat"), chat);
   assert.equal(chat.dataset.layout, "contained");
   assert.ok(slot.getByText("Другой тред"));
   assert.equal(chat.dataset.layout, "contained");
   threads.pop();
   await slot.behavior.emitRealtime("dashboard-changed", {});
-  assert.equal(slot.getByTestId("bb-thread-chat"), chat);
+  assert.equal(slot.getByTestId("alia-thread-chat"), chat);
   assert.equal(chat.dataset.layout, "contained");
 });
 
 test("a single gray or red thread opens as the last worked thread on project entry", async () => {
   for (const changes of [{}, { status: "error" }]) {
     const slot = mount({ connected: true, threads: [thread("t1", "p1", "Тред", changes)] });
-    assert.equal((await slot.findByTestId("bb-thread-chat")).dataset.threadId, "t1");
+    assert.equal((await slot.findByTestId("alia-thread-chat")).dataset.threadId, "t1");
     slot.lifecycle.unmount();
   }
 });
@@ -411,21 +411,21 @@ test("accepted prompts and work transitions keep the same chat mounted until man
   const slot = mount({ connected: true, threads, sdk: {
     subscribe: subscription => { subscriptions.add(subscription); return () => subscriptions.delete(subscription); },
   } });
-  const chat = await slot.findByTestId("bb-thread-chat");
+  const chat = await slot.findByTestId("alia-thread-chat");
   assert.equal(chat.dataset.threadId, "t1");
   await act(async () => {
     for (const subscription of subscriptions) subscription.callback({ metadata: { eventTypes: ["turn/input/accepted"] } });
   });
-  assert.equal(slot.getByTestId("bb-thread-chat"), chat);
+  assert.equal(slot.getByTestId("alia-thread-chat"), chat);
   for (const changes of [
     { status: "starting" }, { status: "active", queuedWork: "waiting" },
     { hasPendingInteraction: true }, { hasPendingInteraction: false, queuedWork: "none" }, { status: "idle" },
   ]) {
     threads[0] = { ...threads[0], ...changes };
     await slot.behavior.emitRealtime("dashboard-changed", {});
-    assert.equal(slot.getByTestId("bb-thread-chat"), chat);
+    assert.equal(slot.getByTestId("alia-thread-chat"), chat);
   }
-  assert.equal(slot.getByTestId("bb-thread-chat"), chat);
+  assert.equal(slot.getByTestId("alia-thread-chat"), chat);
   fireEvent.click(slot.getByRole("button", { name: /^Открытый тред/, expanded: true }));
-  assert.equal(slot.queryByTestId("bb-thread-chat"), null);
+  assert.equal(slot.queryByTestId("alia-thread-chat"), null);
 });

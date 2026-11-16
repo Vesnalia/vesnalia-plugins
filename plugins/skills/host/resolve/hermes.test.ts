@@ -23,7 +23,7 @@ function resolve() {
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(path.join(os.tmpdir(), "bb-skills-hermes-"));
+  root = await mkdtemp(path.join(os.tmpdir(), "alia-skills-hermes-"));
 });
 
 describe("resolveHermesSkills", () => {

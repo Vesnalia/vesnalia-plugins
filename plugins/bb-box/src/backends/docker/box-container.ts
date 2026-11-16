@@ -8,7 +8,7 @@ import { lxcfsMountArgs, type LxcfsOnHost } from "./lxcfs.ts";
 const SHM_MIN_MIB = 1024;
 const DOCKER_DATA = "/var/lib/docker";
 
-export const BOX_START = "/usr/local/sbin/bb-box-start";
+export const BOX_START = "/usr/local/sbin/alia-box-start";
 
 export const VOLUME_OF = "bbbox.volume-of";
 
@@ -172,7 +172,7 @@ export function createArgs(settings: BoxContainerSettings | ImageContainerSettin
     return [
       "container", "create", "--pull", "never", "--name", settings.name,
       ...Object.entries(labels).flatMap(([key, value]) => ["--label", `${key}=${value}`]),
-      "--hostname", "bb-box-image",
+      "--hostname", "alia-box-image",
       ...resourceArgs(settings.cores, settings.memoryMiB),
       "--network", settings.network,
       ...(settings.privileged ? ["--privileged", ...given("BBBOX_DOCKERD", "1"), "--volume", DOCKER_DATA] : []),

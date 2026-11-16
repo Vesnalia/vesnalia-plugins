@@ -21,7 +21,7 @@ const messages = defineMessages(
     original: "Original file",
     pdfWithComments: "PDF with comments",
     shareable: (n: number) =>
-      `${n} comment${n === 1 ? "" : "s"} with drawings, readable in any PDF viewer. Doc Review in another bb imports them.`,
+      `${n} comment${n === 1 ? "" : "s"} with drawings, readable in any PDF viewer. Doc Review in another VesnALIA imports them.`,
     nothingToShare: "No comments on pages or on the whole document yet.",
     signAs: "Sign as",
     yourName: "Your name",
@@ -52,7 +52,7 @@ const messages = defineMessages(
     original: "Исходный файл",
     pdfWithComments: "PDF с комментариями",
     shareable: (n) =>
-      `${n} ${commentsRu(n)} с рисунками, открывается в любой программе для PDF. Doc Review в другом bb импортирует их.`,
+      `${n} ${commentsRu(n)} с рисунками, открывается в любой программе для PDF. Doc Review в другом VesnALIA импортирует их.`,
     nothingToShare: "Пока нет комментариев к страницам или ко всему документу.",
     signAs: "Подпись",
     yourName: "Ваше имя",

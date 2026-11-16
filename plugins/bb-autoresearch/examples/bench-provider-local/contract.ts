@@ -1,28 +1,28 @@
-// A copy of bb-autoresearch's src/bench-provider/contract.ts (a plugin can't import
+// A copy of alia-autoresearch's src/bench-provider/contract.ts (a plugin can't import
 // outside its directory; a test keeps the two identical).
 //
-// Bench provider contract v1: what bb-autoresearch asks of a provider plugin
-// that lends it short-lived remote machines it can't reach as BB machines
-// (for example cloud machines that only allow outbound calls). bb-autoresearch
-// calls the provider's `bb.rpc` methods with `bb.sdk.plugins.callRpc`. The
+// Bench provider contract v1: what alia-autoresearch asks of a provider plugin
+// that lends it short-lived remote machines it can't reach as VesnALIA machines
+// (for example cloud machines that only allow outbound calls). alia-autoresearch
+// calls the provider's `alia.rpc` methods with `alia.sdk.plugins.callRpc`. The
 // provider is a thin transport: create and destroy machines, move files, run
-// processes. Git, seeding, calibration and scheduling stay in bb-autoresearch,
+// processes. Git, seeding, calibration and scheduling stay in alia-autoresearch,
 // which runs ordinary shell commands on the remote machine.
 //
 // Provider plugins copy these schemas (they are plain zod). A change to the
 // contract needs a new `contractVersion`. docs/bench-providers.md has the rules.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const BENCH_PROVIDER_CONTRACT_VERSION = 1;
 
 /** The plugin id providers accept calls from (tests may configure another). */
-export const BENCH_PROVIDER_CALLER = "bb-autoresearch";
+export const BENCH_PROVIDER_CALLER = "alia-autoresearch";
 
 export const hostStateSchema = z.enum(["provisioning", "ready", "suspended", "gone", "failed"]);
 export type HostState = z.infer<typeof hostStateSchema>;
 
-/** Machine states bb-autoresearch treats as the machine leaving (it never reuses one). */
+/** Machine states alia-autoresearch treats as the machine leaving (it never reuses one). */
 export const LEAVING_STATES: readonly HostState[] = ["suspended", "gone", "failed"];
 
 const hostId = z.string().min(1).max(200);
@@ -102,7 +102,7 @@ export const infoOutput = z
 export const putFileInput = z
   .object({
     hostId,
-    /** Absolute, on the BB server's machine. */
+    /** Absolute, on the VesnALIA server's machine. */
     localPath: z.string().min(1).max(4096),
     /** Relative to the remote user's home unless absolute. */
     remotePath: z.string().min(1).max(4096),
@@ -208,7 +208,7 @@ export class BenchProviderError extends Error {
 }
 
 /**
- * The code of a provider error. Providers throw `Error("[code] …")`; BB may
+ * The code of a provider error. Providers throw `Error("[code] …")`; VesnALIA may
  * wrap the message on the way back, so the first bracketed known code
  * anywhere in it counts.
  */

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { QWEN_ACP_DIALECT_ID } from "./dialect.ts";
 import { QWEN_WORKFLOW_ENV } from "./workflow-policy.ts";
 
@@ -9,8 +9,8 @@ const launchSpec = {
   env: QWEN_WORKFLOW_ENV,
 };
 
-export default async function qwenPlugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function qwenPlugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     enabled: {
       type: "boolean",
       label: "Enable Qwen CLI",
@@ -36,7 +36,7 @@ export default async function qwenPlugin(bb: BbPluginApi) {
       type: "boolean",
       label: "Disable native subagents",
       description:
-        "Prevent Qwen Code from using its native subagent tools so agents delegate work via BB child threads instead.",
+        "Prevent Qwen Code from using its native subagent tools so agents delegate work via VesnALIA child threads instead.",
       default: false,
     },
     commandDescriptionsEnabled: {
@@ -49,7 +49,7 @@ export default async function qwenPlugin(bb: BbPluginApi) {
   });
 
   const register = () =>
-    bb.providers.register({
+    alia.providers.register({
       id: "qwen-cli",
       displayName: "Qwen CLI",
       icon: "./assets/provider.svg",

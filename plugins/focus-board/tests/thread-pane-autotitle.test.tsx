@@ -8,11 +8,11 @@ import { createElement, type ReactNode } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { EditableTitle } from "../components/thread-pane";
 
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   ThreadChat: (): ReactNode => null,
   useSdk: () => ({}),
   useRpc: () => ({ call: async () => ({ existence: {} }) }),
-  useBbNavigate: () => ({ toThread: () => {} }),
+  useAliaNavigate: () => ({ toThread: () => {} }),
 }));
 
 afterEach(cleanup);
@@ -136,7 +136,7 @@ describe("auto-rename fallback modal", () => {
     services: [
       { pluginId: "openrouter-inference", serviceId: "default", displayName: "OpenRouter", ready: true, message: null },
       { pluginId: "other-plugin", serviceId: "alt", displayName: "Other service", ready: true, message: null },
-      { pluginId: "bb-ai", serviceId: "cloud", displayName: "bb cloud", ready: false, message: "Sign in to your bb account" },
+      { pluginId: "alia-ai", serviceId: "cloud", displayName: "alia cloud", ready: false, message: "Sign in to your VesnALIA account" },
     ],
     threadModel: { available: false, reason: "This thread has no resolved model" },
   };
@@ -188,9 +188,9 @@ describe("auto-rename fallback modal", () => {
   it("lists not-ready services as disabled rows naming their blocker", async () => {
     failingRender();
     fireEvent.click(screen.getByRole("button", { name: /auto-rename/i }));
-    const row = await screen.findByRole("button", { name: /bb cloud/ });
+    const row = await screen.findByRole("button", { name: /alia cloud/ });
     expect(row.disabled).toBe(true);
-    expect(screen.getByText(/Sign in to your bb account/)).toBeTruthy();
+    expect(screen.getByText(/Sign in to your alia account/)).toBeTruthy();
   });
 
   it("excludes the failed selected service from the alternatives", async () => {

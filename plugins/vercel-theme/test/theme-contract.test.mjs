@@ -51,9 +51,9 @@ const requiredTokens = [
 ];
 
 test("manifest contributes one Vercel theme", () => {
-  assert.equal(manifest.name, "bb-plugin-vercel-theme");
-  assert.equal(manifest.bb.themes.length, 1);
-  assert.deepEqual(manifest.bb.themes[0], {
+  assert.equal(manifest.name, "alia-plugin-vercel-theme");
+  assert.equal(manifest.alia.themes.length, 1);
+  assert.deepEqual(manifest.alia.themes[0], {
     id: "vercel",
     name: "Vercel",
     description:
@@ -67,10 +67,10 @@ test("manifest contributes one Vercel theme", () => {
 });
 
 test("every declared release asset exists", async () => {
-  const theme = manifest.bb.themes[0];
+  const theme = manifest.alia.themes[0];
   const declared = [
-    manifest.bb.branding.icon,
-    manifest.bb.server,
+    manifest.alia.branding.icon,
+    manifest.alia.server,
     theme.css,
     theme.codeTheme.dark,
     theme.codeTheme.light,

@@ -1,7 +1,7 @@
-// bb-plugin-skill-manager — frontend entry. Registers the Skills sidebar
+// alia-plugin-skill-manager — frontend entry. Registers the Skills sidebar
 // page: two tabs (Installed, Find skills) and a full-height reader mode.
 import { useState } from "react";
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { GraduationCapIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { SegmentedControl } from "./components/primitives";

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -33,7 +33,7 @@ export function SettingsOverview() {
   const { settings } = store;
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pb-6 pt-3 md:px-5 md:pt-4">
-      <TopRow trail={[{ words: "Back", go: () => history.back() }, { words: "BB Box settings" }]} />
+      <TopRow trail={[{ words: "Back", go: () => history.back() }, { words: "VesnALIA Box settings" }]} />
       <p className="text-sm text-muted-foreground">A stand-in for decision 067's overview, with its Options group only.</p>
       <Group title="Options">
         <Card>
@@ -106,7 +106,7 @@ export function SnapshotSettingsPage() {
   const backends = [...new Map(store.boxes.filter((box) => box.state !== "released").map((box) => [`${box.backendLabel}/${box.storage?.name ?? ""}`, box])).values()];
   return (
     <div className="mx-auto w-full max-w-3xl space-y-7 px-4 pb-28 pt-3 md:px-5 md:pt-4">
-      <TopRow trail={[{ words: "BB Box settings", go: () => go({ page: "settings", section: "" }) }, { words: "Snapshots" }]} />
+      <TopRow trail={[{ words: "VesnALIA Box settings", go: () => go({ page: "settings", section: "" }) }, { words: "Snapshots" }]} />
       <PageHeader
         glyph={<Icon name="Camera" className="size-4 text-muted-foreground" aria-hidden />}
         title="Snapshots"
@@ -124,7 +124,7 @@ export function SnapshotSettingsPage() {
               {unsaved("perBox")}
               <NumberField id="per-box" unit="a box" {...field("perBox")} />
             </SettingRow>
-            <SettingRow label="Refuse new snapshots when a host's storage is past" htmlFor="room" description={`Snapshots on thin storage grow as a box changes. Past this, new ones are refused; ${SWEEP_DELETES_AT} points above it, bb-box deletes agents' snapshots nobody kept, oldest first, never a target, an undo or a kept one.`}>
+            <SettingRow label="Refuse new snapshots when a host's storage is past" htmlFor="room" description={`Snapshots on thin storage grow as a box changes. Past this, new ones are refused; ${SWEEP_DELETES_AT} points above it, alia-box deletes agents' snapshots nobody kept, oldest first, never a target, an undo or a kept one.`}>
               {unsaved("roomPercent")}
               <NumberField id="room" unit="% full" {...field("roomPercent")} />
             </SettingRow>
@@ -150,14 +150,14 @@ export function SnapshotSettingsPage() {
               <SavedTick show={savedKey === "agentsMemory"} />
               <Switch id="agents-memory" checked={settings.agentsMemory} onCheckedChange={(on) => flip("agentsMemory", on)} />
             </SettingRow>
-            <SettingRow label="Keep a picture of the screen with each snapshot" htmlFor="pictures" description="A small picture of a desktop or device around the take, kept by bb-box beside the snapshot. It shows whatever was on the screen, and only to you and the snapshot's thread.">
+            <SettingRow label="Keep a picture of the screen with each snapshot" htmlFor="pictures" description="A small picture of a desktop or device around the take, kept by alia-box beside the snapshot. It shows whatever was on the screen, and only to you and the snapshot's thread.">
               <SavedTick show={savedKey === "pictures"} />
               <Switch id="pictures" checked={settings.pictures} onCheckedChange={(on) => flip("pictures", on)} />
             </SettingRow>
           </Rows>
         </Card>
       </Group>
-      <Group title="Paid snapshots" description="A ceiling you set on the monthly rate of what is held, per provider and account, $5 a month by default: every paid snapshot held, times its daily price, times 30. A take, an undo, a Keep or a renewal that would pass it is refused. It is not a cap on the bill, and bb-box never deletes kept snapshots to get under it.">
+      <Group title="Paid snapshots" description="A ceiling you set on the monthly rate of what is held, per provider and account, $5 a month by default: every paid snapshot held, times its daily price, times 30. A take, an undo, a Keep or a renewal that would pass it is refused. It is not a cap on the bill, and alia-box never deletes kept snapshots to get under it.">
         <Card>
           <SettingRow
             label="boat.dev, this install's account"

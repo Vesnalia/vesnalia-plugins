@@ -104,7 +104,7 @@ function hostWait(host: string, backoff: HostBackoff, now: number): string {
 export function requestSync(ctx: EngineCtx, slug: string, key?: string): PrSyncRequest {
   const { store } = ctx;
   const project = store.projectBySlug(slug);
-  if (project === null) throw new LoomError("loom_not_found", `No Loom project named "${slug}".`, "Run `bb loom list` to see the projects.");
+  if (project === null) throw new LoomError("loom_not_found", `No Loom project named "${slug}".`, "Run `alia loom list` to see the projects.");
   if (project.state !== "running" && project.state !== "paused") throw new LoomError("loom_invalid_state", `Project ${slug} is ${project.state}; Loom reads pull requests only while a project is running or paused.`);
   const spec = specOf(store, project);
   if (spec.merge.strategy !== "pr") throw new LoomError("loom_invalid_state", `Project ${slug} merges into its integration branch, so it has no pull request per ticket to read.`);
@@ -115,7 +115,7 @@ export function requestSync(ctx: EngineCtx, slug: string, key?: string): PrSyncR
     if (tickets.length === 0) throw new LoomError("loom_invalid_state", `No pull request of ${slug} is open, so there is nothing to read.`);
   } else {
     const ticket = store.ticketByKey(key);
-    if (ticket === null || ticket.project_id !== project.id) throw new LoomError("loom_not_found", `Project ${slug} has no ticket ${key}.`, `Run \`bb loom tickets ${slug}\` to see its tickets.`);
+    if (ticket === null || ticket.project_id !== project.id) throw new LoomError("loom_not_found", `Project ${slug} has no ticket ${key}.`, `Run \`alia loom tickets ${slug}\` to see its tickets.`);
     if (ticket.state === "pr_open" && !followed(ticket)) throw new LoomError("loom_invalid_state", `${key} has no pull request for Loom to read: Loom let go of the one the forge closed with the branch it built on, and opens a new one.`);
     if (!followed(ticket)) throw new LoomError("loom_invalid_state", `${key} has no open pull request for Loom to read: it is ${ticket.state.replace("_", " ")}.`);
     tickets = [ticket];

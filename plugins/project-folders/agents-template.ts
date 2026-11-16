@@ -1,7 +1,7 @@
-export const AGENTS_BLOCK_START = "<!-- bb-project-folders:agents:start -->";
-export const AGENTS_BLOCK_END = "<!-- bb-project-folders:agents:end -->";
-export const CUSTOM_BLOCK_START = "<!-- bb-project-folders:custom:start -->";
-export const CUSTOM_BLOCK_END = "<!-- bb-project-folders:custom:end -->";
+export const AGENTS_BLOCK_START = "<!-- alia-project-folders:agents:start -->";
+export const AGENTS_BLOCK_END = "<!-- alia-project-folders:agents:end -->";
+export const CUSTOM_BLOCK_START = "<!-- alia-project-folders:custom:start -->";
+export const CUSTOM_BLOCK_END = "<!-- alia-project-folders:custom:end -->";
 
 const START = AGENTS_BLOCK_START;
 const END = AGENTS_BLOCK_END;

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 import {
-  ThreadChat, experimental_Icon as Icon, experimental_useAppPanel, useBbNavigate, useRealtime,
+  ThreadChat, experimental_Icon as Icon, experimental_useAppPanel, useAliaNavigate, useRealtime,
   type ExperimentalPageTitle, type PluginNavPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { Overview } from "./contract";
 import { createArchivedPreference } from "./archived-preference";
 import { AllChanges } from "./changes";
@@ -36,7 +36,7 @@ function usePage(subPath: string) {
 }
 
 function useGo() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const ref = useRef(navigate);
   ref.current = navigate;
   return useCallback((next: PageRoute, replace = false) => {
@@ -101,7 +101,7 @@ function Banners({ overview, error, status, onRetry, all }: { overview: Overview
 function PageScreen({ subPath }: PluginNavPanelProps) {
   const { route, canonical, store, snapshot } = usePage(subPath);
   const go = useGo();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const openAgent = useOpenAgent();
   const loaders = useLoaders();
   const setReviewed = useSetReviewed();
@@ -333,7 +333,7 @@ export function VantageHeader(props: PluginNavPanelProps) {
   return <LiveThreadsProvider><HeaderScreen {...props} /></LiveThreadsProvider>;
 }
 
-// bb's title bar shares its row with the header buttons, so a long thread title is cut.
+// VesnALIA's title bar shares its row with the header buttons, so a long thread title is cut.
 const CRUMB_MAX = 60;
 const clip = (label: string): string => (label.length <= CRUMB_MAX ? label : `${label.slice(0, CRUMB_MAX - 1).trimEnd()}…`);
 
@@ -354,7 +354,7 @@ export function usePageTitle({ subPath }: PluginNavPanelProps): ExperimentalPage
     }
   } else if (route.view === "changes") last = "All changes";
   else if (route.view === "overlaps") last = "Overlapping files";
-  // One title, not breadcrumbs: bb draws two crumbs over each other when the page is narrow. The sidebar names the scope.
+  // One title, not breadcrumbs: VesnALIA draws two crumbs over each other when the page is narrow. The sidebar names the scope.
   return { title: clip(last ?? scope), windowTitle: `Vantage · ${last ?? scope}` };
 }
 

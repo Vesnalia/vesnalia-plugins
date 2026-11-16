@@ -1,4 +1,4 @@
-Diff Plus improves BB's Diff tab with a folder tree beside the file list, plus a few views that make a large change quicker to find your way around. It adds to the tab: nothing of BB's is replaced, and it doesn't rebuild features BB already has.
+Diff Plus improves VesnALIA's Diff tab with a folder tree beside the file list, plus a few views that make a large change quicker to find your way around. It adds to the tab: nothing of VesnALIA's is replaced, and it doesn't rebuild features VesnALIA already has.
 
 ## Features
 
@@ -21,22 +21,22 @@ Diff Plus improves BB's Diff tab with a folder tree beside the file list, plus a
 
 Every option is configurable, from the folder button in the tab's toolbar and the view button beside **Changes**.
 
-## Works with BB's Diff tab
+## Works with VesnALIA's Diff tab
 
 - Clicks go through the tab's own search box
-- BB's search, filters, Viewed checkboxes, split view and "Add to chat" work as before
+- VesnALIA's search, filters, Viewed checkboxes, split view and "Add to chat" work as before
 - Works in a split workspace: each pane's Diff tab shows the tree for that pane's own thread, and follows when you move focus between panes
 - The folder button in the tab's toolbar turns the tree off
 
 ## Recent commits and the merge base
 
-BB's scope picker only lists commits made since the checkout's merge base, so commits that are already merged never show. Diff Plus works around that:
+VesnALIA's scope picker only lists commits made since the checkout's merge base, so commits that are already merged never show. Diff Plus works around that:
 
-- Picking a recent commit moves the checkout's merge base back far enough for BB to list that commit
-- The merge base is BB's own setting for the checkout, the one its base branch picker sets; git itself is never changed
+- Picking a recent commit moves the checkout's merge base back far enough for VesnALIA to list that commit
+- The merge base is VesnALIA's own setting for the checkout, the one its base branch picker sets; git itself is never changed
 - While it is moved, every thread on that checkout sees it: **All changes**, **Committed** and the branch's git status count those commits too
 - It is put back when you pick any other scope, close the picker without picking, or the plugin stops or starts
-- Each move and restore is logged (`bb plugin logs diff-plus`)
+- Each move and restore is logged (`alia plugin logs diff-plus`)
 - Don't want this? Set **Recent commits** to Off in the folder button's menu
 
 ## Inspiration
@@ -45,13 +45,13 @@ VS Code: the Explorer tree, pinned scroll rows, compact folders, file icons and 
 
 ## Requirements
 
-- BB 0.48 or later
-- BB has no plugin slot in the Diff tab yet, so the tree finds it by its page structure; a BB update may need a plugin update
+- VesnALIA 0.48 or later
+- VesnALIA has no plugin slot in the Diff tab yet, so the tree finds it by its page structure; a VesnALIA update may need a plugin update
 
 ## Maintenance
 
 - Releases follow semver
-- Kept up to date with BB releases until BB supports these features natively
+- Kept up to date with VesnALIA releases until VesnALIA supports these features natively
 - Feature requests and bug reports are welcome: [open an issue](https://github.com/nfour/bb-plugins/issues)
 
 ## Credits

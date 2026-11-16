@@ -1,6 +1,6 @@
 # Compatibility observations
 
-Observed on BB 0.47.1 / SDK 0.6.79 in the user's real Chromium client on 2026-10-26.
+Observed on VesnALIA 0.47.1 / SDK 0.6.79 in the user's real Chromium client on 2026-10-26.
 
 - Conversation routes use /threads/<id>. The Personal project does not use a project-prefixed thread route.
 - Each conversation header and window share a [data-split-pane-id] ancestor.

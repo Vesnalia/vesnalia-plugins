@@ -1,21 +1,13 @@
 {
-  "name": "bb-plugin-claude-theme",
+  "name": "alia-plugin-claude-theme",
   "version": "0.1.0",
-  "description": "Give BB terracotta accents with charcoal dark and off-white light palettes, matching syntax colours, and terminal colours.",
+  "description": "Give VesnALIA terracotta accents with charcoal dark and off-white light palettes, matching syntax colours, and terminal colours.",
   "type": "module",
   "license": "MIT",
   "author": "Treo-Solutions",
-  "repository": {
-    "url": "https://github.com/Treo-Solutions/bb-plugin-claude-theme.git",
-    "type": "git"
-  },
-  "homepage": "https://github.com/Treo-Solutions/bb-plugin-claude-theme#readme",
-  "bugs": {
-    "url": "https://github.com/Treo-Solutions/bb-plugin-claude-theme/issues"
-  },
   "engines": {
-    "bbPluginSdk": ">=0.6.79 <0.7.0",
-    "bb": ">=0.47.1 <1.0.0"
+    "aliaPluginSdk": ">=0.6.79 <0.7.0",
+    "alia": ">=0.47.1 <1.0.0"
   },
   "files": [
     "server.ts",
@@ -30,11 +22,11 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
-  "bb": {
-    "name": "Claude Theme for BB",
-    "description": "Give BB terracotta accents with charcoal dark and off-white light palettes, matching syntax colours, and terminal colours.",
+  "alia": {
+    "name": "Claude Theme for VesnALIA",
+    "description": "Give VesnALIA terracotta accents with charcoal dark and off-white light palettes, matching syntax colours, and terminal colours.",
     "branding": {
       "icon": "./assets/claude-theme.svg"
     },
@@ -54,7 +46,23 @@
     ]
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
-    "@get-bb/plugin-sdk": "0.6.79"
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.79"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/claude-theme#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/claude-theme"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

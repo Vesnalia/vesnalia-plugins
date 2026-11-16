@@ -3,7 +3,7 @@ import type { ChildProcess } from "node:child_process";
 import {
   experimental_spawnPortableProcess,
   experimental_killPortableProcess,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import { z } from "zod";
 import type { LaunchSpec } from "./launch.js";
 
@@ -43,7 +43,7 @@ export interface ClientCallbacks {
   exit(error: Error): void;
 }
 
-// ZCode frames deliberately have no `jsonrpc` field. bb's frames do.
+// ZCode frames deliberately have no `jsonrpc` field. VesnALIA's frames do.
 export class ZCodeClient implements ZCodeConnection {
   private child: ChildProcess;
   private pending = new Map<
@@ -74,7 +74,7 @@ export class ZCodeClient implements ZCodeConnection {
       detached: process.platform !== "win32",
     });
     // Reverse RPC replies can contain short-lived account credentials. Never
-    // attach bb's raw child-I/O recorder to this transport.
+    // attach VesnALIA's raw child-I/O recorder to this transport.
     this.child.stdout!.on("data", (chunk: Buffer) => this.receive(chunk));
     this.child.stderr!.on("data", () => {
       /* drain diagnostics; never forward credentials or unbounded logs */
@@ -108,7 +108,7 @@ export class ZCodeClient implements ZCodeConnection {
   ): Promise<unknown> {
     if (this.dead || this.closing)
       return Promise.reject(new Error("ZCode is not running."));
-    const id = `bb-${++this.nextId}`;
+    const id = `alia-${++this.nextId}`;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pending.delete(id);

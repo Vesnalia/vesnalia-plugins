@@ -16,7 +16,7 @@
 // drag's own ghost).
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Board } from "../components/board";
 import { buildColumns } from "../components/grouping";
 import {
@@ -307,7 +307,7 @@ describe("the snapshot's stylesheet scope", () => {
     // bare floating text with no surface, which is a real regression this
     // test pins (the probe under scripts/screenshot caught it first).
     const scope = document.createElement("div");
-    scope.setAttribute("data-bb-plugin", "focus-board");
+    scope.setAttribute("data-alia-plugin", "focus-board");
     document.body.append(scope);
     const host = document.createElement("div");
     host.setAttribute("data-thread-card", "thr_scoped");
@@ -316,7 +316,7 @@ describe("the snapshot's stylesheet scope", () => {
 
     const ghost = createTouchDragGhost(host, { x: 4, y: 4 });
     expect(ghost.parentElement).toBe(scope);
-    expect(ghost.closest("[data-bb-plugin]")).toBe(scope);
+    expect(ghost.closest("[data-alia-plugin]")).toBe(scope);
     expect(host.contains(ghost)).toBe(false);
 
     ghost.remove();

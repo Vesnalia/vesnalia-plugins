@@ -1,6 +1,6 @@
-// Turning "this is the order I want" into bb's one-project-at-a-time moves.
+// Turning "this is the order I want" into VesnALIA's one-project-at-a-time moves.
 //
-// bb stores a manual fractional sort key per project, and its reorder operation
+// VesnALIA stores a manual fractional sort key per project, and its reorder operation
 // moves ONE project between two named neighbours. Realizing a whole order is
 // therefore a sequence of those moves. Pure, so the sequence can be tested
 // without reordering anybody's real projects.

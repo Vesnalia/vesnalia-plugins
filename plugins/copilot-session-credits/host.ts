@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk";
 import { constants } from "node:fs";
 import { open, lstat, realpath, readdir } from "node:fs/promises";
 import { homedir } from "node:os";
@@ -41,11 +41,11 @@ async function privateDirectory(path: string, privateMode = false) {
   if (!stat.isDirectory() || stat.isSymbolicLink() || await realpath(path) !== path || (process.getuid && stat.uid !== process.getuid())) throw Error("unsafe-directory");
   if (privateMode && (stat.mode & 0o077)) throw Error("non-private-directory");
 }
-const defaultBridgeDir = () => { const custom = process.env.BB_PI_BRIDGE_SESSION_DIR?.trim(); return custom ? resolve(custom) : join(homedir(), ".bb", "pi-bridge-sessions"); };
+const defaultBridgeDir = () => { const custom = process.env.ALIA_PI_BRIDGE_SESSION_DIR?.trim(); return custom ? resolve(custom) : join(homedir(), ".vesnalia", "pi-bridge-sessions"); };
 const nativeHash = (id: string) => createHash("sha256").update("pi-session-v2\0" + id.toLowerCase()).digest("hex");
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 // Receipts written before 0.3.4 carry `providerSession: null` for `thr_<id>` sessions. Recover them only by the
-// native session hash of that exact BB bridge file header; prompts and messages are never read (4 KiB head only).
+// native session hash of that exact VesnALIA bridge file header; prompts and messages are never read (4 KiB head only).
 async function bridgeHash(bridgeDir: string | null, session: string) {
   if (!bridgeDir || !session.startsWith("thr_")) return null;
   try {
@@ -107,7 +107,7 @@ async function readPi(sessions: string[], piRoots: string[], bridgeDir: string |
     } catch (error: any) { if (error.code !== "ENOENT") damaged = true; }
   }
   // A `pi_<uuid>` file maps to one native session. A `thr_<id>` file is re-forked on every edit, so it may
-  // legitimately span several native sessions of the same BB thread.
+  // legitimately span several native sessions of the same VesnALIA thread.
   if ([...hashes].some(([session, set]) => set.size > 1 && !session.startsWith("thr_"))) return emptyUsage("Multiple native Pi identities for this provider session; refusing ambiguous total");
   const result = piUsage(records);
   result.captureIssue = damaged || health.length > 0;
@@ -136,7 +136,7 @@ return experimental_defineHostEntry({
   handlers: {
     read: async ({ provider, sessionId, sessionIds = [] }) => {
       if ((provider === "pi") !== isPiSession(sessionId)) return emptyUsage("Invalid provider session identity");
-      // Every Pi session that ever backed this BB thread (start, resume, edit forks); the latest one sets readiness.
+      // Every Pi session that ever backed this VesnALIA thread (start, resume, edit forks); the latest one sets readiness.
       const sessions = provider === "pi" ? [...new Set([...sessionIds.filter(isPiSession), sessionId])] : [sessionId];
       const key = provider + ":" + sessions.join(","), previous = cache.get(key);
       const readiness = provider === "pi" ? readinessSchema.parse(readReadiness(statusRoot, sessionId)) : undefined;

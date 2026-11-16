@@ -16,7 +16,7 @@ const sources = [
 
 it("declares every production storage key once in the registry", () => {
   const occurrences = sources.flatMap(({ file, content }) =>
-    [...content.matchAll(/["'`]bb-sidebar:[\w:-]+["'`]/g)].map((match) => ({
+    [...content.matchAll(/["'`]alia-sidebar:[\w:-]+["'`]/g)].map((match) => ({
       file,
       key: match[0].slice(1, -1),
     })),
@@ -46,7 +46,7 @@ it("keeps storage and event key construction inside their registries", () => {
   const unexpected = sources
     .filter(({ file }) => !registries.has(file))
     .flatMap(({ file, content }) =>
-      [...content.matchAll(/["'`]bb-sidebar:/g)].map(
+      [...content.matchAll(/["'`]alia-sidebar:/g)].map(
         (match) => `${file}:${content.slice(0, match.index).split("\n").length}`,
       ),
     );

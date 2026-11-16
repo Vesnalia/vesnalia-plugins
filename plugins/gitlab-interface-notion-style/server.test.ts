@@ -1,7 +1,7 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { defineRpcContract } from "@get-bb/plugin-sdk";
-import type { PluginRpcClient, PluginRpcHandlers } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
+import type { PluginRpcClient, PluginRpcHandlers } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import {
   buildBranchRows,
   classifyJobStatus,
@@ -219,7 +219,7 @@ describe("glab plumbing", () => {
   });
 });
 
-describe("bb gitlab-ui argument parsing", () => {
+describe("alia gitlab-ui argument parsing", () => {
   it("parses list filters, with repeatable labels and both flag forms", () => {
     expect(
       parseGitlabCliArgs([
@@ -339,7 +339,7 @@ describe("bb gitlab-ui argument parsing", () => {
   });
 });
 
-describe("bb gitlab-ui targets", () => {
+describe("alia gitlab-ui targets", () => {
   it("reads host-qualified issue and merge-request refs", () => {
     expect(parseGitlabTarget("gitlab.com/group/sub/app#7", HOSTS, "gitlab.com")).toEqual({
       kind: "issue",
@@ -538,13 +538,13 @@ describe("rpc contract", () => {
   });
 
   it("rejects invalid method inputs and outputs at runtime", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "gitlab-contract",
     });
     const contract = defineRpcContract({
       startReview: gitlabRpcContract.startReview,
     });
-    bb.rpc.register(contract, {
+    alia.rpc.register(contract, {
       startReview() {
         return { threadId: "" };
       },
@@ -640,8 +640,8 @@ describe("pipeline actions", () => {
   });
 
   it("validates pipeline rpc inputs at the boundary", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "gitlab-pipelines" });
-    bb.rpc.register(
+    const { alia, harness } = createFakePluginHost({ pluginId: "gitlab-pipelines" });
+    alia.rpc.register(
       defineRpcContract({
         getJobLog: gitlabRpcContract.getJobLog,
         runPipeline: gitlabRpcContract.runPipeline,

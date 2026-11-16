@@ -6,7 +6,7 @@ type Row = { id: string; archivedAt: number | null };
 type Args = { archived: boolean; limit: number; offset: number; sectionId?: string };
 
 /** A fake threads.list that honours archived, limit, offset and sectionId, as the real route does. */
-function fakeBb(rows: Row[], calls: Args[] = []) {
+function fakeAlia(rows: Row[], calls: Args[] = []) {
   return {
     sdk: {
       threads: {
@@ -28,21 +28,21 @@ const archived = (count: number): Row[] =>
 
 test("live threads behind 500 archived rows are still found", async () => {
   const rows = [...archived(758), ...live(93)];
-  const found = await listLiveThreads(fakeBb(rows));
+  const found = await listLiveThreads(fakeAlia(rows));
   assert.equal(found.length, 93);
   assert.ok(found.every((thread) => thread.archivedAt === null));
 });
 
 test("more than one page of live threads comes back whole", async () => {
   const calls: Args[] = [];
-  const found = await listLiveThreads(fakeBb(live(1203), calls));
+  const found = await listLiveThreads(fakeAlia(live(1203), calls));
   assert.equal(found.length, 1203);
   assert.deepEqual(calls.map((call) => call.offset), [0, 500, 1000]);
 });
 
 test("exactly one full page stops after the empty next page", async () => {
   const calls: Args[] = [];
-  assert.equal((await listLiveThreads(fakeBb(live(500), calls))).length, 500);
+  assert.equal((await listLiveThreads(fakeAlia(live(500), calls))).length, 500);
   assert.equal(calls.length, 2);
 });
 
@@ -63,7 +63,7 @@ test("a thread seen on two pages counts once", async () => {
 
 test("filters reach every page", async () => {
   const calls: Args[] = [];
-  await listLiveThreads(fakeBb(live(600), calls), { sectionId: "sec_1" });
+  await listLiveThreads(fakeAlia(live(600), calls), { sectionId: "sec_1" });
   assert.deepEqual(calls.map((call) => call.sectionId), ["sec_1", "sec_1"]);
   assert.ok(calls.every((call) => call.archived === false));
 });

@@ -42,7 +42,7 @@ const task: Task = {
 const tracker = {
   id: "tracker",
   name: "Research",
-  linkedBbProjectId: "proj_one",
+  linkedAliaProjectId: "proj_one",
 };
 test("baseline silent; meaningful changes enqueue once in linked project", () => {
   const s = memory();
@@ -63,7 +63,7 @@ test("baseline silent; meaningful changes enqueue once in linked project", () =>
 });
 test("unlinked tracker never leaks into another project", () => {
   const s = memory();
-  ingest(s, { ...tracker, linkedBbProjectId: null }, [task]);
+  ingest(s, { ...tracker, linkedAliaProjectId: null }, [task]);
   assert.equal(s.list("").length, 0);
 });
 test("create persists; rename does not recreate; deletion waits", async () => {

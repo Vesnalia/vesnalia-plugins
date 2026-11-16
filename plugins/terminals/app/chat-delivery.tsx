@@ -10,7 +10,7 @@
  * to the clipboard instead, so the selection is not lost.
  */
 import { useEffect, useRef, useSyncExternalStore } from "react";
-import { experimental_copyToClipboard, useComposers, type PluginComposerApi } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard, useComposers, type PluginComposerApi } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import { appendToDraft } from "./chat-text";

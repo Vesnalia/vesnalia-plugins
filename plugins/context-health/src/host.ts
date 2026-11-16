@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry } from '@get-bb/plugin-sdk';
+import { experimental_defineHostEntry } from '@vesnalia/plugin-sdk';
 import { open, readdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join, isAbsolute } from 'node:path';

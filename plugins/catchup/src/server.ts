@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   buildConversationText,
@@ -75,7 +75,7 @@ const recapSchema = z
   .strict();
 export type Recap = z.infer<typeof recapSchema>;
 
-type BbReasoningLevel =
+type AliaReasoningLevel =
   | "none"
   | "low"
   | "medium"
@@ -84,7 +84,7 @@ type BbReasoningLevel =
   | "max"
   | "ultra"
   | "ultracode";
-type BbServiceTier = "default" | "fast";
+type AliaServiceTier = "default" | "fast";
 
 const modelSelectionSchema = z
   .object({
@@ -208,8 +208,8 @@ type ThreadSnapshot = {
 type WorkerExecution = {
   providerId: string;
   model: string;
-  reasoningLevel: BbReasoningLevel;
-  serviceTier?: BbServiceTier;
+  reasoningLevel: AliaReasoningLevel;
+  serviceTier?: AliaServiceTier;
 };
 
 type ThreadState = {
@@ -297,7 +297,7 @@ function isRecapEventTarget(thread: ThreadSnapshot, pluginId: string): boolean {
   return isVisibleThread(thread.visibility) && thread.originPluginId !== pluginId;
 }
 
-type ProviderCatalog = Awaited<ReturnType<BbPluginApi["sdk"]["providers"]["models"]>>;
+type ProviderCatalog = Awaited<ReturnType<AliaPluginApi["sdk"]["providers"]["models"]>>;
 
 function normalizeModelSelection(
   selection: ModelSelection,
@@ -317,15 +317,15 @@ function normalizeModelSelection(
     model: model.model,
     reasoningLevel:
       supported.length > 0 && !supported.includes(selection.reasoningLevel)
-        ? (model.defaultReasoningEffort as BbReasoningLevel)
+        ? (model.defaultReasoningEffort as AliaReasoningLevel)
         : selection.reasoningLevel,
     ...(serviceTier ? { serviceTier } : {}),
   };
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+export default async function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     SQL_CREATE_RECAPS,
     SQL_CREATE_RECAPS_INDEX,
     SQL_CREATE_INVALIDATIONS,
@@ -333,21 +333,21 @@ export default async function plugin(bb: BbPluginApi) {
     SQL_ADD_RECAP_DISMISSED,
   ]);
 
-  let config = parseStoredSettings(await bb.storage.kv.get(SETTINGS_KEY));
+  let config = parseStoredSettings(await alia.storage.kv.get(SETTINGS_KEY));
   let modelSelection = parseStoredModelSelection(
-    await bb.storage.kv.get(MODEL_SELECTION_KEY),
+    await alia.storage.kv.get(MODEL_SELECTION_KEY),
   );
   const states = new Map<string, ThreadState>();
   const generationLimiter = createGenerationLimiter(config.maxConcurrent);
   let disposed = false;
   // Thread-change events omit visibility, so verify it from the current snapshot.
-  const unsubscribeThreadChanges = bb.sdk.subscribe({
+  const unsubscribeThreadChanges = alia.sdk.subscribe({
     event: "thread:changed",
     callback: ({ id }) => {
       if (!id || disposed) return;
       const controller = states.get(id)?.generationController;
       if (!controller || controller.signal.aborted) return;
-      void bb.sdk.threads
+      void alia.sdk.threads
         .get({ threadId: id, signal: controller.signal })
         .then((thread) => {
           if (!isVisibleThread(thread.visibility)) controller.abort();
@@ -359,7 +359,7 @@ export default async function plugin(bb: BbPluginApi) {
   const publishChanged = (payload: Record<string, unknown>) => {
     if (disposed) return;
     try {
-      bb.realtime.publish(RECAP_CHANGED, payload);
+      alia.realtime.publish(RECAP_CHANGED, payload);
     } catch {
       // The host can invalidate handles while an asynchronous operation unwinds.
     }
@@ -368,7 +368,7 @@ export default async function plugin(bb: BbPluginApi) {
   const logWarning = (message: string) => {
     if (disposed) return;
     try {
-      bb.log.warn(message);
+      alia.log.warn(message);
     } catch {
       // Logging is best effort during plugin disposal.
     }
@@ -412,7 +412,7 @@ export default async function plugin(bb: BbPluginApi) {
       for (let page = 0; page < MAX_CHILD_LIST_PAGES; page += 1) {
         let children;
         try {
-          children = await bb.sdk.threads.list({
+          children = await alia.sdk.threads.list({
             parentThreadId: id,
             includeHidden: true,
             archived: false,
@@ -430,7 +430,7 @@ export default async function plugin(bb: BbPluginApi) {
         for (const child of children) {
           if (seen.has(child.id)) continue;
           seen.add(child.id);
-          if (child.originKind === "fork" || child.originPluginId === bb.pluginId)
+          if (child.originKind === "fork" || child.originPluginId === alia.pluginId)
             continue;
           if (child.archivedAt != null || child.deletedAt != null) continue;
           if (isRunningThreadStatus(child.status)) return true;
@@ -451,7 +451,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (
       !thread.parentThreadId ||
       thread.originKind === "fork" ||
-      thread.originPluginId === bb.pluginId
+      thread.originPluginId === alia.pluginId
     )
       return;
     let parentId: string | null = thread.parentThreadId;
@@ -462,7 +462,7 @@ export default async function plugin(bb: BbPluginApi) {
       const state = states.get(parentId);
       if (state && !state.retired) visit(state);
       try {
-        const parent = (await bb.sdk.threads.get({
+        const parent = (await alia.sdk.threads.get({
           threadId: parentId,
         })) as ThreadSnapshot;
         parentId = parent.parentThreadId ?? null;
@@ -568,7 +568,7 @@ export default async function plugin(bb: BbPluginApi) {
     let before: { id: string; seq: number } | undefined;
 
     for (let page = 0; page < 20; page += 1) {
-      const response = await bb.sdk.threads.timeline({
+      const response = await alia.sdk.threads.timeline({
         threadId,
         includeNestedRows: "true",
         ...(before
@@ -594,7 +594,7 @@ export default async function plugin(bb: BbPluginApi) {
   const mainDefaultSelection = async (
     signal?: AbortSignal,
   ): Promise<ModelSelection | null> => {
-    const options = await bb.sdk.system.executionOptions({ signal });
+    const options = await alia.sdk.system.executionOptions({ signal });
     const model =
       options.models.find((candidate) => candidate.isDefault) ??
       options.models[0];
@@ -605,7 +605,7 @@ export default async function plugin(bb: BbPluginApi) {
     return {
       providerId,
       model: model.model,
-      reasoningLevel: model.defaultReasoningEffort as BbReasoningLevel,
+      reasoningLevel: model.defaultReasoningEffort as AliaReasoningLevel,
     };
   };
 
@@ -619,10 +619,10 @@ export default async function plugin(bb: BbPluginApi) {
     signal?: AbortSignal,
   ) => {
     const preferred = modelSelection ?? (await mainDefaultSelection(signal));
-    if (!preferred) throw new Error("No default BB model is available.");
+    if (!preferred) throw new Error("No default VesnALIA model is available.");
 
     const providerId = preferred.providerId;
-    const catalog = await bb.sdk.providers.models(
+    const catalog = await alia.sdk.providers.models(
       thread.environmentId
         ? { environmentId: thread.environmentId, providerId, signal }
         : { providerId, signal },
@@ -654,12 +654,12 @@ export default async function plugin(bb: BbPluginApi) {
 
   const disposeWorker = async (threadId: string) => {
     try {
-      await bb.sdk.threads.archive({ threadId });
+      await alia.sdk.threads.archive({ threadId });
     } catch {
       // The worker may already have failed or been archived.
     }
     try {
-      await bb.sdk.threads.stop({ threadId });
+      await alia.sdk.threads.stop({ threadId });
     } catch {
       // Stopping is best effort after the result has been collected.
     }
@@ -672,7 +672,7 @@ export default async function plugin(bb: BbPluginApi) {
     signal?: AbortSignal,
   ): Promise<string> => {
     if (signal?.aborted) return "";
-    const worker = await bb.sdk.threads.spawn({
+    const worker = await alia.sdk.threads.spawn({
       projectId: thread.projectId,
       environment: thread.environmentId
         ? { type: "reuse", environmentId: thread.environmentId }
@@ -689,7 +689,7 @@ export default async function plugin(bb: BbPluginApi) {
 
     try {
       if (signal?.aborted) return "";
-      await bb.sdk.threads.wait({
+      await alia.sdk.threads.wait({
         threadId: worker.id,
         status: "idle",
         timeoutMs: WORKER_TIMEOUT_MS,
@@ -697,7 +697,7 @@ export default async function plugin(bb: BbPluginApi) {
       });
       if (signal?.aborted) return "";
       return (
-        (await bb.sdk.threads.output({ threadId: worker.id, signal })).output ??
+        (await alia.sdk.threads.output({ threadId: worker.id, signal })).output ??
         ""
       );
     } finally {
@@ -746,7 +746,7 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<GenerationResult> => {
     if (signal?.aborted) return result("aborted");
     if (automatic && !config.auto) return result("automatic_disabled");
-    const thread = (await bb.sdk.threads.get({
+    const thread = (await alia.sdk.threads.get({
       threadId,
       signal,
     })) as ThreadSnapshot;
@@ -784,7 +784,7 @@ export default async function plugin(bb: BbPluginApi) {
 
     const execution = await resolveExecution(thread, signal);
     // Close the async setup window even if a realtime notification was missed.
-    const beforeWorker = (await bb.sdk.threads.get({
+    const beforeWorker = (await alia.sdk.threads.get({
       threadId,
       signal,
     })) as ThreadSnapshot;
@@ -821,7 +821,7 @@ export default async function plugin(bb: BbPluginApi) {
     const summary = cleanRecapText(raw);
     if (summary === "") return result("empty_model_response", turns);
 
-    const current = (await bb.sdk.threads.get({
+    const current = (await alia.sdk.threads.get({
       threadId,
       signal,
     })) as ThreadSnapshot;
@@ -1015,11 +1015,11 @@ export default async function plugin(bb: BbPluginApi) {
   ) => {
     if (signal?.aborted || disposed) return;
     try {
-      const thread = (await bb.sdk.threads.get({
+      const thread = (await alia.sdk.threads.get({
         threadId,
         signal,
       })) as ThreadSnapshot;
-      if (!isRecapEventTarget(thread, bb.pluginId) || thread.status !== "idle")
+      if (!isRecapEventTarget(thread, alia.pluginId) || thread.status !== "idle")
         return;
       scheduleAutomaticRecap(thread);
     } catch {
@@ -1033,7 +1033,7 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<RecapSettings> => {
     const run = persistQueue.then(async () => {
       const next = mergeRecapSettingsPatch(config, patch);
-      await bb.storage.kv.set(SETTINGS_KEY, next);
+      await alia.storage.kv.set(SETTINGS_KEY, next);
       config = next;
       generationLimiter.setLimit(config.maxConcurrent);
       if (config.autoCleanup) cleanupStoredRecaps();
@@ -1052,7 +1052,7 @@ export default async function plugin(bb: BbPluginApi) {
     return run;
   };
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     recap_get: async ({ threadId }) => ({
       recap: latestRecap(threadId),
       generating: stateFor(threadId).inFlight,
@@ -1066,7 +1066,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     recap_model_get: async () => currentModelSelection(),
     recap_model_set: async (selection) => {
-      const catalog = await bb.sdk.providers.models({
+      const catalog = await alia.sdk.providers.models({
         providerId: selection.providerId,
       });
       const modelInfo = catalog.models.find(
@@ -1087,7 +1087,7 @@ export default async function plugin(bb: BbPluginApi) {
         (candidate) => candidate.id === selection.providerId,
       );
       const stored = normalizeModelSelection(selection, modelInfo, provider);
-      await bb.storage.kv.set(MODEL_SELECTION_KEY, stored);
+      await alia.storage.kv.set(MODEL_SELECTION_KEY, stored);
       modelSelection = stored;
       publishChanged({ settings: true });
       return { selection: stored };
@@ -1118,41 +1118,41 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb catchup generate [thread-id] [--json]",
-    "  bb catchup show [thread-id] [--json]",
-    "  bb catchup preview [thread-id] [--json]",
-    "  bb catchup list [--limit N] [--json]",
+    "  VesnALIA catchup generate [thread-id] [--json]",
+    "  VesnALIA catchup show [thread-id] [--json]",
+    "  VesnALIA catchup preview [thread-id] [--json]",
+    "  VesnALIA catchup list [--limit N] [--json]",
     "",
-    "Leave thread-id out when running from a thread-aware BB CLI context.",
+    "Leave thread-id out when running from a thread-aware VesnALIA CLI context.",
   ].join("\n");
   const cliError = (message: string) => ({
     exitCode: 1,
     stderr: `${message}\n\n${usage}`,
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "catchup",
-    summary: "Generate and review short recaps of BB threads",
+    summary: "Generate and review short recaps of VesnALIA threads",
     commands: [
       {
         name: "generate",
         summary: "Generate a recap",
-        usage: "bb catchup generate [thread-id] [--json]",
+        usage: "alia catchup generate [thread-id] [--json]",
       },
       {
         name: "show",
         summary: "Show the latest recap",
-        usage: "bb catchup show [thread-id] [--json]",
+        usage: "alia catchup show [thread-id] [--json]",
       },
       {
         name: "preview",
-        summary: "Show the recap card in open BB windows without generating",
-        usage: "bb catchup preview [thread-id] [--json]",
+        summary: "Show the recap card in open VesnALIA windows without generating",
+        usage: "alia catchup preview [thread-id] [--json]",
       },
       {
         name: "list",
         summary: "List generated recaps",
-        usage: "bb catchup list [--limit N] [--json]",
+        usage: "alia catchup list [--limit N] [--json]",
       },
     ],
     async run(argv, context) {
@@ -1216,7 +1216,7 @@ export default async function plugin(bb: BbPluginApi) {
           exitCode: 0,
           stdout: json
             ? JSON.stringify(preview)
-            : "Recap preview sent to open BB windows. Close it with ×.",
+            : "Recap preview sent to open VesnALIA windows. Close it with ×.",
         };
       }
 
@@ -1255,13 +1255,13 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.events.on("thread.created", ({ thread }) => {
+  alia.events.on("thread.created", ({ thread }) => {
     holdAncestorsForRunningChild(thread);
   });
 
-  bb.events.on("thread.active", ({ thread }) => {
+  alia.events.on("thread.active", ({ thread }) => {
     holdAncestorsForRunningChild(thread);
-    if (!isRecapEventTarget(thread, bb.pluginId)) return;
+    if (!isRecapEventTarget(thread, alia.pluginId)) return;
     invalidateRecap(thread.id);
     const state = states.get(thread.id);
     if (state) {
@@ -1275,13 +1275,13 @@ export default async function plugin(bb: BbPluginApi) {
     }
   });
 
-  bb.events.on("thread.idle", ({ thread }) => {
+  alia.events.on("thread.idle", ({ thread }) => {
     reconsiderAncestors(thread);
-    if (!isRecapEventTarget(thread, bb.pluginId)) return;
+    if (!isRecapEventTarget(thread, alia.pluginId)) return;
     scheduleAutomaticRecap(thread);
   });
 
-  bb.events.on("thread.failed", ({ thread }) => {
+  alia.events.on("thread.failed", ({ thread }) => {
     const state = states.get(thread.id);
     if (state) {
       state.scheduleGeneration += 1;
@@ -1305,10 +1305,10 @@ export default async function plugin(bb: BbPluginApi) {
     }
     reconsiderAncestors(thread);
   };
-  bb.events.on("thread.archived", removeThreadState);
-  bb.events.on("thread.deleted", removeThreadState);
+  alia.events.on("thread.archived", removeThreadState);
+  alia.events.on("thread.deleted", removeThreadState);
 
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     disposed = true;
     unsubscribeThreadChanges();
     const pending: Promise<unknown>[] = [];
@@ -1321,5 +1321,5 @@ export default async function plugin(bb: BbPluginApi) {
     states.clear();
   });
 
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }

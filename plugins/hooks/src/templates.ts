@@ -1,4 +1,4 @@
-// Premade, configurable hooks. `bb hooks use <template> --set key=value`
+// Premade, configurable hooks. `alia hooks use <template> --set key=value`
 // renders one into ordinary hook definitions, which then live in the
 // `hooks` setting like any hand-written hook.
 import { z } from "zod";
@@ -25,7 +25,7 @@ export const templateParamSchema = z
     /** Text default; a param without one and with `required` must be set. */
     default: z.string().max(4096).optional(),
     required: z.boolean().optional(),
-    /** Stored encrypted by `bb hooks use` and referenced as `{{secret:…}}`; never written into the hook. */
+    /** Stored encrypted by `alia hooks use` and referenced as `{{secret:…}}`; never written into the hook. */
     secret: z.boolean().optional(),
   })
   .strict();
@@ -50,7 +50,7 @@ export const templateSchema = z
     match: z.object({ projectId: z.string().optional(), providerId: z.string().optional(), title: z.string().optional(), text: z.string().optional() }).strict().optional(),
     timeoutMs: z.number().int().min(100).max(MAX_TIMEOUT_MS).optional(),
     onError: z.enum(["proceed", "reject", "wait"]).optional(),
-    /** Requirements or caveats shown in `bb hooks templates <id>`. */
+    /** Requirements or caveats shown in `alia hooks templates <id>`. */
     notes: z.string().max(500).optional(),
     /** Longer listing text (plain text or light markdown). */
     description: z.string().max(4000).optional(),

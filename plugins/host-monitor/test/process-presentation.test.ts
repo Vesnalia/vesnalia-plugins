@@ -39,7 +39,7 @@ test("sorts processes deterministically without mutating the RPC rows", () => {
 
 test("filters processes by safe name or PID fields", () => {
   const rows = [
-    processRow({ name: "BB Agent", pid: 120 }),
+    processRow({ name: "VesnALIA Agent", pid: 120 }),
     processRow({ name: "database", pid: 451 }),
     processRow({ name: "web", pid: 9120 }),
   ];
@@ -93,7 +93,7 @@ test("keeps blocked processes non-actionable with an accessible reason", () => {
     processRow({
       allowedTerminationModes: [],
       blockedReason: "monitor-ancestor",
-      name: "bb",
+      name: "alia",
       pid: 10,
     }),
   );

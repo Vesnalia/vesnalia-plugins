@@ -1,4 +1,4 @@
-import { PLUGIN_CLI_OUTPUT_MAX_BYTES, PluginCliError, cliCommand, defineCli, type PluginCliRegistration } from "@get-bb/plugin-sdk";
+import { PLUGIN_CLI_OUTPUT_MAX_BYTES, PluginCliError, cliCommand, defineCli, type PluginCliRegistration } from "@vesnalia/plugin-sdk";
 import type { Commit, FileChange, Overview, OverviewTarget, Repo, Scope, ThreadSummary, Worktree } from "./contract";
 import { primaryThreadId } from "./worktrees";
 
@@ -45,7 +45,7 @@ function threadCommitLines(repo: Repo): string[] {
   if (made.length === 0) return [];
   const lines = [`  ${plural(made.length, "commit")} by its threads${repo.branch === null ? "" : ` on ${repo.branch}`}`];
   lines.push(...made.slice(0, MAX_REPO_COMMITS).map((commit) => `    ${commit.shortSha}  ${commit.subject}`));
-  if (made.length > MAX_REPO_COMMITS) lines.push(`    … ${made.length - MAX_REPO_COMMITS} more (bb vantage worktree <thread>)`);
+  if (made.length > MAX_REPO_COMMITS) lines.push(`    … ${made.length - MAX_REPO_COMMITS} more (VesnALIA vantage worktree <thread>)`);
   return lines;
 }
 
@@ -187,7 +187,7 @@ export function formatWorktrees(overview: Overview): string {
   return `${lines.join("\n")}\n`;
 }
 
-// Every worktree the thread is in: its own workspace first, then any checkout it works in outside bb.
+// Every worktree the thread is in: its own workspace first, then any checkout it works in outside VesnALIA.
 export function formatWorktree(overview: Overview, threadId: string): string {
   const worktrees = overview.worktrees.filter((entry) => entry.threadIds.includes(threadId));
   if (worktrees.length === 0) return `Thread ${threadId} has no worktree.\n`;
@@ -240,7 +240,7 @@ const capWorktree = (worktree: Worktree, cap: number): Worktree => ({
   threadCommits: worktree.threadCommits.slice(0, cap),
 });
 
-// Prints the largest version of `build(cap)` that fits bb's output limit, trying fewer files each time.
+// Prints the largest version of `build(cap)` that fits VesnALIA's output limit, trying fewer files each time.
 function fitJson(build: (cap: number) => unknown): string {
   const limit = PLUGIN_CLI_OUTPUT_MAX_BYTES - OUTPUT_MARGIN_BYTES;
   let text = "";

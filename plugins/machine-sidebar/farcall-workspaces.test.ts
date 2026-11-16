@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { createWorkspaceCache, createWorkspaceIndex, workspaceFromPath, type WorkspaceEnvironment } from "./farcall-workspaces";
 import { projectFarcallEvents } from "./farcall-events";
 import { FARCALL_SETTING, FARCALL_WORKSPACES_CHANGED, farcallRowSchema } from "./farcall-contract";
@@ -76,7 +76,7 @@ function deferred<T>() {
   const promise = new Promise<T>((done) => { resolve = done; });
   return { promise, resolve };
 }
-type List = BbPluginApi["sdk"]["environments"]["list"];
+type List = AliaPluginApi["sdk"]["environments"]["list"];
 const asList = (fn: (...args: any[]) => Promise<WorkspaceEnvironment[]>) => fn as List;
 const page = (rows: WorkspaceEnvironment[], offset = 0) => rows.slice(offset, offset + 200);
 afterEach(() => vi.useRealTimers());
@@ -240,7 +240,7 @@ describe("snapshot enrichment lifecycle and bursts", () => {
   it("publishes at least once per 1.5s during five seconds of continuous changes", async () => {
     vi.useFakeTimers();
     const s = setup();
-    await plugin(s.host.bb);
+    await plugin(s.host.alia);
     await s.read();
     for (let i = 0; i < 50; i++) {
       s.listeners.get("environment:changed")!({});
@@ -255,7 +255,7 @@ describe("snapshot enrichment lifecycle and bursts", () => {
   it.each(["failure", "dirty"])("publishes one recovery after 15s for a %s load, updating stale labels", async (kind) => {
     vi.useFakeTimers();
     const s = setup();
-    await plugin(s.host.bb);
+    await plugin(s.host.alia);
     await s.read();
     const changed = s.listeners.get("environment:changed")!;
     changed({});
@@ -287,7 +287,7 @@ describe("snapshot enrichment lifecycle and bursts", () => {
   it("does not repeat a failed recovery or duplicate its timer across readers", async () => {
     vi.useFakeTimers();
     const s = setup();
-    await plugin(s.host.bb);
+    await plugin(s.host.alia);
     s.list.mockRejectedValue(Error("offline"));
     await Promise.all([s.read(), s.read(), s.read()]);
     expect(vi.getTimerCount()).toBe(1);
@@ -303,7 +303,7 @@ describe("snapshot enrichment lifecycle and bursts", () => {
   it.each(["disable", "dispose", "success"])("cancels pending recovery on %s", async (action) => {
     vi.useFakeTimers();
     const s = setup();
-    await plugin(s.host.bb);
+    await plugin(s.host.alia);
     s.list.mockRejectedValueOnce(Error("offline"));
     await s.read();
     expect(vi.getTimerCount()).toBe(1);
@@ -325,7 +325,7 @@ describe("snapshot enrichment lifecycle and bursts", () => {
     vi.useFakeTimers();
     const s = setup();
     s.environments([checkout]);
-    await plugin(s.host.bb);
+    await plugin(s.host.alia);
     expect((await s.read()).tasks[0].workspace).toEqual(fallback);
     s.environments([checkout, env()]);
     for (let i = 0; i < 20; i++) {
@@ -357,7 +357,7 @@ describe("snapshot enrichment lifecycle and bursts", () => {
       if (stage === "events") s.eventList.mockImplementationOnce(() => gate.promise);
       if (stage === "thread") s.get.mockImplementationOnce(() => gate.promise);
       if (stage === "index") s.list.mockImplementationOnce(() => gate.promise);
-      await plugin(s.host.bb);
+      await plugin(s.host.alia);
       const pending = s.read().catch(() => ({ tasks: [] })); // disposed harness may reject the RPC response
       await vi.advanceTimersByTimeAsync(0);
       if (action === "disable") await s.host.harness.setSettings({ [FARCALL_SETTING]: false });
@@ -383,7 +383,7 @@ describe("snapshot enrichment lifecycle and bursts", () => {
   it("clears queued debounce callbacks and rejects stale subscription callbacks on shutdown", async () => {
     vi.useFakeTimers();
     const s = setup();
-    await plugin(s.host.bb);
+    await plugin(s.host.alia);
     await s.read();
     const changed = s.listeners.get("environment:changed")!;
     changed({});
@@ -397,7 +397,7 @@ describe("snapshot enrichment lifecycle and bursts", () => {
 
   it.each(["relative/path", "/project/../worktrees/w1", "", "/invalid\u0000path"])("does no metadata work for unresolvable cwd %j", async (cwd) => {
     const s = setup({ cwd });
-    await plugin(s.host.bb);
+    await plugin(s.host.alia);
     const result = await s.read();
     expect(result.tasks.every((task) => task.hasCwd === false)).toBe(true);
     expect(s.subscribe).not.toHaveBeenCalled();
@@ -411,7 +411,7 @@ describe("snapshot enrichment lifecycle and bursts", () => {
     vi.useFakeTimers();
     let fails = true;
     const s = setup({ subscribeFails: () => fails });
-    await plugin(s.host.bb);
+    await plugin(s.host.alia);
     expect((await s.read()).tasks[0].workspace).toEqual(resolved);
     expect(s.subscribe).toHaveBeenCalledTimes(1);
     fails = false;
@@ -428,7 +428,7 @@ describe("snapshot enrichment lifecycle and bursts", () => {
   it("keeps a scheduled recovery when a subscription retry fails", async () => {
     vi.useFakeTimers();
     const s = setup({ subscribeFails: () => true });
-    await plugin(s.host.bb);
+    await plugin(s.host.alia);
     await s.read();
     await vi.advanceTimersByTimeAsync(50_000);
     s.list.mockRejectedValueOnce(Error("offline"));
@@ -444,7 +444,7 @@ describe("snapshot enrichment lifecycle and bursts", () => {
 
   it("preserves tasks on missing metadata and resolves the current coordinator host", async () => {
     const s = setup();
-    await plugin(s.host.bb);
+    await plugin(s.host.alia);
     s.list.mockRejectedValueOnce(Error("offline"));
     expect((await s.read()).tasks[0].workspace).toEqual(fallback);
     s.hostEnvironment(null);

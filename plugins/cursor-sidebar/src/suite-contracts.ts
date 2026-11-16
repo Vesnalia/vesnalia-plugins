@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const TASKS_PLUGIN = "tasks";
@@ -12,7 +12,7 @@ export const tasksContract = defineRpcContract({
         prefix: z.string().regex(/^[A-Z][A-Z0-9]{0,9}$/),
         color: z.string().trim().min(1),
         folderId: z.string().nullable().default(null),
-        linkedBbProjectId: z.string().startsWith("proj_").nullable().default(null),
+        linkedAliaProjectId: z.string().startsWith("proj_").nullable().default(null),
       })
       .strict(),
     output: z.object({ project: z.object({ id: z.string(), prefix: z.string() }).passthrough() }).passthrough(),
@@ -23,7 +23,7 @@ export const tasksContract = defineRpcContract({
     output: z
       .object({
         projects: z.array(
-          z.object({ id: z.string(), name: z.string(), prefix: z.string(), linkedBbProjectId: z.string().nullable() }).passthrough(),
+          z.object({ id: z.string(), name: z.string(), prefix: z.string(), linkedAliaProjectId: z.string().nullable() }).passthrough(),
         ),
       })
       .passthrough(),

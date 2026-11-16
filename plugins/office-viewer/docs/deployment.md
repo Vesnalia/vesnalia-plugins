@@ -17,15 +17,15 @@ sources:
 
 # Office Viewer deployment
 
-TL;DR: Install Node dependencies, run the BB plugin build, and install the resulting project with the BB CLI; development scripts provide tests and typechecking (`package.json`; `README.md`).
+TL;DR: Install Node dependencies, run the VesnALIA plugin build, and install the resulting project with the VesnALIA CLI; development scripts provide tests and typechecking (`package.json`; `README.md`).
 
 ## Prerequisites
 
-- BB `>=0.43` and BB Plugin SDK `>=0.4.87` as package engine requirements (`package.json`).
+- VesnALIA `>=0.43` and VesnALIA Plugin SDK `>=0.4.87` as package engine requirements (`package.json`).
 - Node.js with npm for the package scripts and TypeScript (`package.json`; `tsconfig.json:1-23`).
-- BB CLI (`bb`) for plugin build, installation and reload; scripts and install command are documented in `package.json` and `README.md`.
+- VesnALIA CLI (`alia`) for plugin build, installation and reload; scripts and install command are documented in `package.json` and `README.md`.
 
-No environment variables are read by the plugin code. The server derives a typed SDK handle from `bb.sdk` and uses `bb.http` for route registration (`server.ts:356-382`; `src/server/locate.ts:22-36`).
+No environment variables are read by the plugin code. The server derives a typed SDK handle from `alia.sdk` and uses `alia.http` for route registration (`server.ts:356-382`; `src/server/locate.ts:22-36`).
 
 ## Deploy procedure
 
@@ -41,15 +41,15 @@ No environment variables are read by the plugin code. The server derives a typed
    npm run build
    ```
 
-   The build script runs `bb plugin build .` (`package.json`).
+   The build script runs `alia plugin build .` (`package.json`).
 
 3. Install the plugin from the checkout:
 
    ```sh
-   bb plugin install .
+   alia plugin install .
    ```
 
-4. In BB Settings → File openers, select Office Viewer when another plugin claims the same extension; the existing README describes this UI selection (`README.md`).
+4. In VesnALIA Settings → File openers, select Office Viewer when another plugin claims the same extension; the existing README describes this UI selection (`README.md`).
 
 ## Verify
 
@@ -64,13 +64,13 @@ npm run typecheck
 
 ## Rollback
 
-Remove or disable the Office Viewer plugin in BB's plugin management interface. The repository does not define a CLI uninstall command or a release rollback script (`package.json`; `README.md`).
+Remove or disable the Office Viewer plugin in VesnALIA's plugin management interface. The repository does not define a CLI uninstall command or a release rollback script (`package.json`; `README.md`).
 
 ## Troubleshooting
 
-- If the BB CLI rejects the project, check installed BB and SDK versions against `engines` (`package.json`).
+- If the VesnALIA CLI rejects the project, check installed VesnALIA and SDK versions against `engines` (`package.json`).
 - If a dependency install fails, `xlsx` is sourced from the SheetJS CDN tarball rather than the npm registry (`package.json`).
-- If files cannot be opened, verify the BB source still resolves to an available host and that the path is in its permitted root (`src/server/locate.ts:58-68`; `src/server/locate.ts:91-133`).
+- If files cannot be opened, verify the VesnALIA source still resolves to an available host and that the path is in its permitted root (`src/server/locate.ts:58-68`; `src/server/locate.ts:91-133`).
 
 <!-- lane-pilot:backlinks -->
 ## Referenced by

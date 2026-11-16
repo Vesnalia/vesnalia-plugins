@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 const ROOT = join(import.meta.dirname, "..");
-const SKIP = new Set(["node_modules", "dist", ".git", ".bb", ".gitnexus", "bb-plugin-image-generator"]);
+const SKIP = new Set(["node_modules", "dist", ".git", ".vesnalia", ".gitnexus", "alia-plugin-image-generator"]);
 
 function walk(dir: string, acc: string[] = []): string[] {
   for (const name of readdirSync(dir, { withFileTypes: true })) {

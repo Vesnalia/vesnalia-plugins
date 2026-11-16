@@ -1,29 +1,29 @@
 /**
- * `bb learning`: the session commands for agents that have no plugin tools (the "here" mode, and forks
- * of providers whose forks do not receive them), plus `principles`. Only bb's generic `plugin-commands`
+ * `alia learning`: the session commands for agents that have no plugin tools (the "here" mode, and forks
+ * of providers whose forks do not receive them), plus `principles`. Only VesnALIA's generic `plugin-commands`
  * skill lists these commands; no thread is told about them until it starts a session.
  *
- * Trust: the calling thread is whatever the caller's `BB_THREAD_ID` says. bb's CLI context carries no
+ * Trust: the calling thread is whatever the caller's `ALIA_THREAD_ID` says. VesnALIA's CLI context carries no
  * verified identity (SDK 0.6.104 `PluginCliContext`), so this scopes cooperatively, it does not
  * authenticate: each command acts only on the open session in the thread it names, and a process that
- * sets another session thread's id can ask, record or finish there. That is within bb's model, where
+ * sets another session thread's id can ask, record or finish there. That is within VesnALIA's model, where
  * agents and plugins on the machine are trusted; it is said in AGENTS.md and the README.
  *
  * The question and the feedback travel base64-encoded through `--question-base64-stdin` and
- * `--feedback-base64-stdin` (bb's CLI reads one line from stdin on the caller's machine), so quotes,
+ * `--feedback-base64-stdin` (VesnALIA's CLI reads one line from stdin on the caller's machine), so quotes,
  * backticks and newlines in them are never a shell's business.
  */
-import { PluginCliError, cliCommand, defineCli, type PluginCliRegistration } from "@get-bb/plugin-sdk";
+import { PluginCliError, cliCommand, defineCli, type PluginCliRegistration } from "@vesnalia/plugin-sdk";
 
 import { EXERCISE_TYPES, VERDICTS, type ExerciseType, type Verdict } from "../shared/types";
 import { PRINCIPLES } from "./content";
 import { OrientationError, type OrientationService } from "./orientation";
 import { SessionError, type SessionService } from "./sessions";
 
-/** The longest question, in UTF-8 bytes; its base64 still fits bb's one 16 KiB stdin line. */
+/** The longest question, in UTF-8 bytes; its base64 still fits VesnALIA's one 16 KiB stdin line. */
 export const QUESTION_MAX_BYTES = 8_000;
 
-/** The longest feedback, in UTF-8 bytes; like the question's, its base64 fits bb's one stdin line. */
+/** The longest feedback, in UTF-8 bytes; like the question's, its base64 fits VesnALIA's one stdin line. */
 export const FEEDBACK_MAX_BYTES = 8_000;
 
 /** The longest answer form, as UTF-8 JSON bytes (`FORM_LIMITS.json` characters, most of them ASCII). */
@@ -85,7 +85,7 @@ export function decodeForm(encoded: string): unknown {
 
 function callerThread(threadId: string | undefined): string {
   if (threadId === undefined) {
-    throw new PluginCliError("Run this inside the bb thread of the learning session.", { code: "not_in_thread" });
+    throw new PluginCliError("Run this inside the VesnALIA thread of the learning session.", { code: "not_in_thread" });
   }
   return threadId;
 }
@@ -137,7 +137,7 @@ export function learningCli(sessions: SessionService, orientations: OrientationS
           "Opens the question card in this thread and returns at once. End your turn without adding anything: the learner's answer arrives as your next message. The question must stand on its own: put any code it relies on inside it as a fenced code block, and never refer to \"above\" or an earlier message.",
         options: {
           type: { type: "enum", values: EXERCISE_TYPES, required: true, description: "The exercise type" },
-          // bb's CLI turns `--question-base64-stdin` into `--question-base64 <line from stdin>`.
+          // VesnALIA's CLI turns `--question-base64-stdin` into `--question-base64 <line from stdin>`.
           "question-base64": {
             type: "string",
             required: true,
@@ -168,7 +168,7 @@ export function learningCli(sessions: SessionService, orientations: OrientationS
           "Put the feedback in --feedback-base64-stdin, not in a message: the plugin shows it in the chat as a card with the verdict, above the next question, and in the session's history.",
         options: {
           verdict: { type: "enum", values: VERDICTS, required: true, description: "correct, partly, incorrect or skipped" },
-          // bb's CLI turns `--feedback-base64-stdin` into `--feedback-base64 <line from stdin>`.
+          // VesnALIA's CLI turns `--feedback-base64-stdin` into `--feedback-base64 <line from stdin>`.
           "feedback-base64": {
             type: "string",
             stdin: true,

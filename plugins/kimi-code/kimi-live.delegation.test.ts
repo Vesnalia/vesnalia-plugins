@@ -2,22 +2,22 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@get-bb/plugin-sdk/provider-bridge/testing";
+import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import { afterEach, beforeEach, expect, it } from "vitest";
 
 // Live integration test: a real turn that forces kimi to call its Agent tool
 // and asserts the subagent surfaces as a delegation item (not a generic tool
 // row) without argument JSON in progress. Spends model tokens, so it runs only
-// when BB_KIMI_LIVE=1 is set explicitly. BB_KIMI_COMMAND selects a specific
-// binary; BB_KIMI_HOST_ENTRY=./dist/host.js tests the built artifact. Set
-// BB_PROVIDER_BRIDGE_RECORD_DIR to record raw ACP child IO for dialect.test.ts.
-const LIVE = process.env.BB_KIMI_LIVE === "1";
+// when ALIA_KIMI_LIVE=1 is set explicitly. ALIA_KIMI_COMMAND selects a specific
+// binary; ALIA_KIMI_HOST_ENTRY=./dist/host.js tests the built artifact. Set
+// ALIA_PROVIDER_BRIDGE_RECORD_DIR to record raw ACP child IO for dialect.test.ts.
+const LIVE = process.env.ALIA_KIMI_LIVE === "1";
 const itLive = LIVE ? it : it.skip;
 
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-kimi-delegation-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "alia-kimi-delegation-"));
 });
 
 afterEach(() => {
@@ -33,7 +33,7 @@ const OPTIONS = {
     acpDialect: "kimi",
     acpLaunchSpec: {
       displayName: "Kimi Code",
-      command: process.env.BB_KIMI_COMMAND ?? "kimi",
+      command: process.env.ALIA_KIMI_COMMAND ?? "kimi",
       args: ["acp"],
       env: {},
     },
@@ -42,7 +42,7 @@ const OPTIONS = {
 
 itLive("surfaces a kimi Agent tool call", async () => {
   const { experimental_providerBridge: bridge } =
-    process.env.BB_KIMI_HOST_ENTRY === "./dist/host.js"
+    process.env.ALIA_KIMI_HOST_ENTRY === "./dist/host.js"
       // @ts-expect-error The built bundle does not ship type declarations.
       ? await import("./dist/host.js")
       : await import("./host.js");
@@ -135,20 +135,20 @@ itLive("surfaces a kimi Agent tool call", async () => {
         delta.message.includes('"prompt"') &&
         delta.message.includes('"description"'),
     );
-    expect(argumentProgress, "Agent argument JSON must not reach bb progress").toEqual([]);
+    expect(argumentProgress, "Agent argument JSON must not reach VesnALIA progress").toEqual([]);
     expect(settled).toBe(true);
 
-    // Fixture recording: BB_KIMI_FIXTURE_RECORD=<path> dumps the bridge's
+    // Fixture recording: ALIA_KIMI_FIXTURE_RECORD=<path> dumps the bridge's
     // outbound notifications as ndjson (workspace path and session id
     // redacted) for the committed replay fixture in fixtures.test.ts.
-    const fixturePath = process.env.BB_KIMI_FIXTURE_RECORD;
+    const fixturePath = process.env.ALIA_KIMI_FIXTURE_RECORD;
     if (fixturePath !== undefined) {
       const { writeFileSync, mkdirSync } = await import("node:fs");
       const { dirname } = await import("node:path");
       mkdirSync(dirname(fixturePath), { recursive: true });
       const redact = (text: string) =>
         text
-          .split(workspaceDir).join("/tmp/bb-kimi-fixture")
+          .split(workspaceDir).join("/tmp/alia-kimi-fixture")
           .split(providerThreadId).join("session_redacted");
       writeFileSync(
         fixturePath,

@@ -4,7 +4,7 @@
  * that composer is on screen — and onto the clipboard when it never shows.
  */
 import { cleanup, waitFor } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const toasts = vi.hoisted(() => ({ success: [] as string[], error: [] as string[] }));
@@ -47,7 +47,7 @@ describe("ChatDelivery", () => {
     expect(rendered.composer.text).toBe("");
     expect(store.get()).not.toBeNull();
 
-    // bb opened the thread: its composer is now on screen.
+    // VesnALIA opened the thread: its composer is now on screen.
     await rendered.setComposerScope({ kind: "thread", threadId: "thr_1" });
     await waitFor(() => expect(rendered.composer.text).toBe(`${block}\n`));
     expect(store.get()).toBeNull();

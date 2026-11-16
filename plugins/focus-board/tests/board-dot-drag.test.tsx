@@ -13,7 +13,7 @@
 //   hierarchy"; the drag-out is a later cut's explicit morph gesture).
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, createEvent, fireEvent, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Board } from "../components/board";
 import { buildColumns } from "../components/grouping";
 import { childRankKey, DOT_DRAG_TYPE, DRAG_ID_KEY } from "../lib/rank";

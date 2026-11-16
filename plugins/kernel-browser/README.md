@@ -1,8 +1,8 @@
-# bb-ide-plugin
+# alia-ide-plugin
 
-Give [bb](https://github.com/get-bb/bb) a real browser. This plugin lets any
-bb agent open a [Kernel](https://kernel.sh) cloud browser, watch it live, and
-drive it — right from a thread, on your hosted bb workspace, no local
+Give [VesnALIA](https://github.com/get-bb/bb) a real browser. This plugin lets any
+VesnALIA agent open a [Kernel](https://kernel.sh) cloud browser, watch it live, and
+drive it — right from a thread, on your hosted VesnALIA workspace, no local
 setup beyond an API key.
 
 ## Quick start
@@ -27,7 +27,7 @@ https://github.com/kernel/bb-ide-plugin
 
 ## Why you'd want this
 
-Kernel gives any bb agent a real, cloud-hosted browser to work with. With
+Kernel gives any VesnALIA agent a real, cloud-hosted browser to work with. With
 this plugin, an agent can:
 
 - **Log into real accounts and get real work done** — check a dashboard,
@@ -41,13 +41,13 @@ this plugin, an agent can:
 - **Keep running after you walk away.** The browser lives in the cloud, not
   in your editor. Close your laptop, resume the thread tomorrow, and the
   session (or its result) is still there.
-- **Do all of this from a hosted bb workspace** — the browser is already
+- **Do all of this from a hosted VesnALIA workspace** — the browser is already
   cloud-hosted, so there's nothing to run locally and nothing tying the
   session to any one machine.
 
 ## What it adds
 
-- `bb kernel-browser open|list|snapshot|click|type|eval|close|replay-start|replay-stop|replay-list`
+- `alia kernel-browser open|list|snapshot|click|type|eval|close|replay-start|replay-stop|replay-list`
   — see [`skills/kernel-browser/SKILL.md`](skills/kernel-browser/SKILL.md) for
   the full command reference.
 - Native agent tools (`kernel_browser_open`, `_snapshot`, `_click`, `_type`,
@@ -57,7 +57,7 @@ this plugin, an agent can:
 - Video replays: record a target's session (`replay-start`), stop it to
   persist the video (`replay-stop`), and list past recordings with their
   view URLs (`replay-list`) — same target ownership rules as everything else.
-- Managed auth: `bb kernel-browser auth-create|auth-list|auth-get|auth-login|auth-wait|auth-delete`
+- Managed auth: `alia kernel-browser auth-create|auth-list|auth-get|auth-login|auth-wait|auth-delete`
   get a Kernel profile authenticated against a domain through Kernel's own
   hosted login page — this plugin never sees, types, or stores a password or
   code. See [`skills/kernel-managed-auth/SKILL.md`](skills/kernel-managed-auth/SKILL.md).
@@ -77,16 +77,16 @@ this plugin, an agent can:
 
 ## Install
 
-On your hosted bb workspace, you just need a
+On your hosted VesnALIA workspace, you just need a
 [Kernel API key](https://dashboard.onkernel.com/api-keys):
 
 ```bash
-bb plugin install git:https://github.com/kernel/bb-ide-plugin.git@main
-bb plugin config kernel-browser set apiKey <your-kernel-api-key>
-bb plugin reload kernel-browser
+alia plugin install git:https://github.com/kernel/bb-ide-plugin.git@main
+alia plugin config kernel-browser set apiKey <your-kernel-api-key>
+alia plugin reload kernel-browser
 ```
 
-Check status with `bb plugin list` — it reports `needs-configuration` until
+Check status with `alia plugin list` — it reports `needs-configuration` until
 `apiKey` is set. Once configured, ask any agent in the workspace to open a
 browser and it's ready to go.
 
@@ -98,12 +98,12 @@ npm run typecheck
 npm test
 ```
 
-`npm test` runs the unit suite against `@get-bb/plugin-sdk/testing`'s fake
-plugin host — no running bb server or live Kernel API key required; the
-Kernel client is mocked. Against a real bb checkout, `bb plugin dev` (run
+`npm test` runs the unit suite against `@vesnalia/plugin-sdk/testing`'s fake
+plugin host — no running VesnALIA server or live Kernel API key required; the
+Kernel client is mocked. Against a real VesnALIA checkout, `alia plugin dev` (run
 from this directory) watches sources and reloads the plugin on every save.
 
-`bb plugin build` (no server required — it downloads its own build toolchain
+`alia plugin build` (no server required — it downloads its own build toolchain
 on first use) compiles `dist/server.js` and `dist/app.js` and is what a
 `git:` install runs automatically.
 
@@ -125,7 +125,7 @@ on first use) compiles `dist/server.js` and `dist/app.js` and is what a
 - `src/commands.ts` — the actual open/list/snapshot/click/type/eval/close/replay
   and auth-create/list/get/login/wait/delete logic, shared by the CLI, the
   agent tools, and the RPC layer.
-- `src/cli.ts`, `src/server.ts` — `bb.cli.register` / `bb.agents.registerTool`
+- `src/cli.ts`, `src/server.ts` — `alia.cli.register` / `alia.agents.registerTool`
   glue for the browser commands and plugin wiring (settings, event handlers).
 - `src/auth-tools.ts` — the auth CLI command metadata and `kernel_auth_*`
   agent tool registrations, factored out of `server.ts` the same way

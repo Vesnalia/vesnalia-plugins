@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { definePluginApp, useRpc, type PluginEnvironmentProviderInputsProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRpc, type PluginEnvironmentProviderInputsProps } from "@vesnalia/plugin-sdk/app";
 import { defaultInputs, inputsSchema, type Inputs } from "./inputs";
 import { useChoices, usePreview, useRemoteData } from "./picker/data";
 import { TemplateReference } from "./TemplateReference";
@@ -16,7 +16,7 @@ function InputsForm(props: PluginEnvironmentProviderInputsProps) {
   const remote = useRemoteData(rpc, target);
   const { preview, checking } = usePreview(rpc, target, form, refresh);
 
-  // Tell BB whether the composer may submit: schema errors and preflight refusals block.
+  // Tell VesnALIA whether the composer may submit: schema errors and preflight refusals block.
   const onChange = useRef(props.onChange);
   onChange.current = props.onChange;
   useEffect(() => {

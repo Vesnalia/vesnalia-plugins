@@ -1,4 +1,4 @@
-// bb-plugin-memory-explorer — BB memory as a searchable table, a drawer for
+// alia-plugin-memory-explorer — VesnALIA memory as a searchable table, a drawer for
 // each memory and a zoomable link graph.
 //
 // The Memory page (app.tsx, pages/) reads memory through this server's RPC.
@@ -17,7 +17,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { defineRpcContract, type BbPluginApi, type JsonValue } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi, type JsonValue } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import type { Block, Segment } from "./blocks";
@@ -130,7 +130,7 @@ interface ThreadCandidate {
 
 export const rpcContract = defineRpcContract({
   /**
-   * The knowledge graph over BB memory, with the memories it is built from
+   * The knowledge graph over VesnALIA memory, with the memories it is built from
    * (the page searches their aliases, email and Slack id); empty lists with
    * `error` when memory is unavailable.
    */
@@ -177,19 +177,19 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     digestCommand: {
       type: "string",
       label: "Digest command",
       description:
-        'Runs after you confirm or discard a preference, for example a script that rebuilds a digest of your preferences. A program or script and its arguments, run without a shell; put a path with spaces in double quotes. A .js, .mjs or .cjs script runs with Node, and BB_CLI names the bb command. Leave empty to run nothing.',
+        'Runs after you confirm or discard a preference, for example a script that rebuilds a digest of your preferences. A program or script and its arguments, run without a shell; put a path with spaces in double quotes. A .js, .mjs or .cjs script runs with Node, and ALIA_CLI names the VesnALIA command. Leave empty to run nothing.',
       default: "",
     },
   });
 
   const memorySource = createMemorySource((args) =>
-    bb.sdk.plugins.callRpc({
+    alia.sdk.plugins.callRpc({
       pluginId: args.pluginId,
       method: args.method,
       input: args.input as JsonValue,
@@ -203,13 +203,13 @@ export default async function plugin(bb: BbPluginApi) {
     const now = Date.now();
     if (now - lastMemoryLog < MEMORY_LOG_INTERVAL_MS) return;
     lastMemoryLog = now;
-    bb.log.warn(message);
+    alia.log.warn(message);
   }
 
-  /** The bb command in the server's data folder, for scripts the digest command runs; undefined when absent. */
-  function bbCliPath(): string | undefined {
+  /** The VesnALIA command in the server's data folder, for scripts the digest command runs; undefined when absent. */
+  function aliaCliPath(): string | undefined {
     try {
-      const cli = join(bb.server.experimental_dataDir, "bin", "bb");
+      const cli = join(alia.server.experimental_dataDir, "bin", "alia");
       return existsSync(cli) ? cli : undefined;
     } catch {
       return undefined;
@@ -221,8 +221,8 @@ export default async function plugin(bb: BbPluginApi) {
     const command = (await settings.get()).digestCommand.trim();
     if (command === "") return;
     await runDigestCommand(command, {
-      bbCli: bbCliPath(),
-      log: (message) => bb.log.warn(message),
+      aliaCli: aliaCliPath(),
+      log: (message) => alia.log.warn(message),
     });
   }
 
@@ -238,7 +238,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
     try {
       const board = await Promise.race([
-        bb.sdk.plugins.callRpc({
+        alia.sdk.plugins.callRpc({
           pluginId: KANBAN_PLUGIN,
           method: "board_get",
           input: { projectId: null },
@@ -262,10 +262,10 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  /** Open threads as bb lists them; none when they cannot be read. */
+  /** Open threads as VesnALIA lists them; none when they cannot be read. */
   async function openThreads(): Promise<ThreadCandidate[]> {
     try {
-      const threads = await bb.sdk.threads.list({ archived: false, limit: MAX_THREADS });
+      const threads = await alia.sdk.threads.list({ archived: false, limit: MAX_THREADS });
       return threads.map((thread) => ({
         threadId: thread.id,
         title: thread.title ?? thread.titleFallback ?? "Untitled thread",
@@ -289,7 +289,7 @@ export default async function plugin(bb: BbPluginApi) {
     return memory;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     knowledge_list: async () => {
       const { memories, error } = await memorySource.listOrError();
       if (error !== undefined) logMemoryError(error);

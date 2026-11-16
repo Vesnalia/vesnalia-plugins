@@ -1,7 +1,7 @@
 // Player state, controls, and artwork that every style shares.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { Appearance, Control, MusicApp, Player, Track, rpcContract } from "../server";
 import { cn } from "@/lib/utils";
 
@@ -77,7 +77,7 @@ export function usePlayer(intervalMs = POLL_MS) {
 export const DEFAULT_APPEARANCE: Appearance = { style: "default", accents: {} };
 
 /**
- * The style and accents, shared by every bb window. `holdReload` lets the
+ * The style and accents, shared by every VesnALIA window. `holdReload` lets the
  * settings page skip a reload while its own save is still pending, so a
  * color being dragged does not jump back.
  */

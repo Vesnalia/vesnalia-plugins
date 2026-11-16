@@ -1,15 +1,15 @@
 // Model / permission mode / reasoning level, per thread.
 //
 // None of this is in the sidebar payload — it only exists behind
-// bb.sdk.threads.defaultExecutionOptions on the server, so it comes over our
+// alia.sdk.threads.defaultExecutionOptions on the server, so it comes over our
 // own RPC.
 //
 // Refresh is event-driven, not polled: we remember the `updatedAt` each answer
 // was fetched against, and re-ask only for threads the host says have changed
 // since. A sidebar that is merely re-rendering costs nothing.
 import { useEffect, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 
 export interface ThreadExecution {

@@ -1,6 +1,6 @@
 // The server's seams. Each area of the server is a module whose `register(deps)` registers its agent tools and returns
-// what servePlugin merges: its RPC handlers, its listeners to BB's events, and the bb review subcommands it runs.
-import type { BbPluginApi, PluginAgentToolResult, PluginCliCommandInfo, PluginCliContext, PluginCliResult, PluginRpcHandlers, PluginThreadEventHandler, PluginThreadEventName } from "@get-bb/plugin-sdk";
+// what servePlugin merges: its RPC handlers, its listeners to VesnALIA's events, and the VesnALIA review subcommands it runs.
+import type { AliaPluginApi, PluginAgentToolResult, PluginCliCommandInfo, PluginCliContext, PluginCliResult, PluginRpcHandlers, PluginThreadEventHandler, PluginThreadEventName } from "@vesnalia/plugin-sdk";
 import type { rpcContract } from "./rpc-contract";
 import type { publicContract } from "./public-contract";
 import type { releaseRpc } from "./plugin-updates";
@@ -18,7 +18,7 @@ import type { Classify } from "./asking";
 
 /** What servePlugin gives each module: the open store, gh, and what it started on them. */
 export interface ServeDeps {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   store: QueuedStore;
   gh: { runGh: typeof runGh; runGit: typeof runGit };
   receipts: ReturnType<typeof postReceipts>;
@@ -40,7 +40,7 @@ export interface ServeDeps {
   fromOwnAgent(threadId: string): Promise<boolean | null>;
 }
 
-/** The RPC handlers the modules give, merged into the one object BB registers; the release's own are plugin-updates'. */
+/** The RPC handlers the modules give, merged into the one object VesnALIA registers; the release's own are plugin-updates'. */
 export type RpcHandlers = Omit<PluginRpcHandlers<typeof rpcContract>, keyof typeof releaseRpc>;
 /** The handlers of what other plugins call (src/public-contract.ts), which the modules give apart, as `published`. */
 export type PublicHandlers = PluginRpcHandlers<typeof publicContract>;
@@ -57,37 +57,37 @@ export function merge<T extends object[]>(...parts: T): Merged<T> {
   return merged as Merged<T>;
 }
 
-/** A module's listeners to BB's events. */
+/** A module's listeners to VesnALIA's events. */
 export type EventListeners = { [E in PluginThreadEventName]?: PluginThreadEventHandler<E>[] };
 
-/** Register each module's listeners with BB, in order. BB runs every listener on its own. */
-export function listen(bb: BbPluginApi, modules: EventListeners[]) {
+/** Register each module's listeners with VesnALIA, in order. VesnALIA runs every listener on its own. */
+export function listen(alia: AliaPluginApi, modules: EventListeners[]) {
   const on = <E extends PluginThreadEventName>(event: E, listeners: EventListeners[E]) => {
     for (const listener of listeners ?? []) {
-      // An experimental event a bb doesn't have yet goes unheard there.
-      try { bb.events.on(event, listener); } catch (error) { if (!event.startsWith("experimental_")) throw error; }
+      // An experimental event a VesnALIA doesn't have yet goes unheard there.
+      try { alia.events.on(event, listener); } catch (error) { if (!event.startsWith("experimental_")) throw error; }
     }
   };
   for (const listeners of modules) for (const event of Object.keys(listeners) as PluginThreadEventName[]) on(event, listeners[event]);
 }
 
-/** Runs `bb review <name> …` with the arguments after the name; `ownReview` is the calling thread's own review, if it has one. */
+/** Runs `alia review <name> …` with the arguments after the name; `ownReview` is the calling thread's own review, if it has one. */
 export type Subcommands = Record<string, (args: string[], ctx: PluginCliContext, ownReview: string | undefined) => PluginCliResult | Promise<PluginCliResult>>;
 
 /**
- * bb review's subcommands, as its help lists them. A module runs each by its name, but `review`, which is any PR or ref,
+ * VesnALIA review's subcommands, as its help lists them. A module runs each by its name, but `review`, which is any PR or ref,
  * and `storage`, which answers before the store opens.
  */
 export const SUBCOMMANDS: PluginCliCommandInfo[] = [
-  { name: "review", summary: "Review this thread's folder, or a PR or ref", usage: "bb review [<pr-url | owner/repo#n | pr-number | git-ref> [--base <ref>]] [--context <text>] [--name <text>]" },
-  { name: "comment", summary: "List, add, edit, or delete a review's local draft comments; never posts to GitHub", usage: "bb review comment <list | add | edit | delete> <review> [<file>:<line>] [--side LEFT|RIGHT] [--code <text>] [--body <text>] [--severity <severity>] [--evidence <text>] [--pre-existing] [--json]" },
-  { name: "summary", summary: "Show or write a review's local review summary and suggested verdict; never posts to GitHub", usage: "bb review summary <review> [--json] | [--body <text> [--suggest APPROVE|COMMENT|REQUEST_CHANGES]]" },
-  { name: "list", summary: "List your reviews, in Needs review's order, with whose turn it is", usage: "bb review list [--json]" },
-  { name: "ask", summary: "Send a message to a review's agent, relayed from this thread, starting the agent if needed", usage: "bb review ask <review> <text>" },
-  { name: "approve", summary: "Line PRs' approvals up in Needs review for the reviewer's click; never posts", usage: "bb review approve <review…> [--body <text>]" },
-  { name: "report", summary: "Say what you did with a comment the reviewer sent you, done or declined, or which commit Push pushes", usage: "bb review report <id> done|declined [--note <text>] [--commit <sha>] | --commit <sha>" },
-  { name: "ready", summary: "Say you've finished with the comments the reviewer sent you, for them to re-review", usage: "bb review ready [<review>]" },
-  { name: "storage", summary: "Show where the reviews are kept, and move them between SQLite and Postgres", usage: "bb review storage <status | verify | migrate | export-sqlite [--replace-data-db]>" },
+  { name: "review", summary: "Review this thread's folder, or a PR or ref", usage: "alia review [<pr-url | owner/repo#n | pr-number | git-ref> [--base <ref>]] [--context <text>] [--name <text>]" },
+  { name: "comment", summary: "List, add, edit, or delete a review's local draft comments; never posts to GitHub", usage: "alia review comment <list | add | edit | delete> <review> [<file>:<line>] [--side LEFT|RIGHT] [--code <text>] [--body <text>] [--severity <severity>] [--evidence <text>] [--pre-existing] [--json]" },
+  { name: "summary", summary: "Show or write a review's local review summary and suggested verdict; never posts to GitHub", usage: "alia review summary <review> [--json] | [--body <text> [--suggest APPROVE|COMMENT|REQUEST_CHANGES]]" },
+  { name: "list", summary: "List your reviews, in Needs review's order, with whose turn it is", usage: "alia review list [--json]" },
+  { name: "ask", summary: "Send a message to a review's agent, relayed from this thread, starting the agent if needed", usage: "alia review ask <review> <text>" },
+  { name: "approve", summary: "Line PRs' approvals up in Needs review for the reviewer's click; never posts", usage: "alia review approve <review…> [--body <text>]" },
+  { name: "report", summary: "Say what you did with a comment the reviewer sent you, done or declined, or which commit Push pushes", usage: "alia review report <id> done|declined [--note <text>] [--commit <sha>] | --commit <sha>" },
+  { name: "ready", summary: "Say you've finished with the comments the reviewer sent you, for them to re-review", usage: "alia review ready [<review>]" },
+  { name: "storage", summary: "Show where the reviews are kept, and move them between SQLite and Postgres", usage: "alia review storage <status | verify | migrate | export-sqlite [--replace-data-db]>" },
 ];
 
 /** The tools a review's guide writer gets. */

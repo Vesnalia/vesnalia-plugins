@@ -1,15 +1,15 @@
-// bb-plugin-jira-dc — the frontend bundle.
+// alia-plugin-jira-dc — the frontend bundle.
 //
 // A Jira Data Center issue browser (nav page and thread side panel) and the
 // approval card agents' Jira writes wait on. Components live in components/jira/.
 import { useCallback, useMemo, useState } from "react";
 import {
   definePluginApp,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   type PluginNavPanelProps,
   type PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { ApprovalCard } from "@/components/jira/approval-card";
 import { JiraBrowser } from "@/components/jira/browser";
 import { parseSubPath, routeToSubPath } from "./routes";
@@ -17,7 +17,7 @@ import { parseSubPath, routeToSubPath } from "./routes";
 const PANEL_PATH = "jira-dc";
 
 function JiraPage({ subPath }: PluginNavPanelProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const route = useMemo(() => parseSubPath(subPath), [subPath]);
   const select = useCallback(
     (issueKey: string | null) => {
@@ -34,17 +34,17 @@ function JiraPage({ subPath }: PluginNavPanelProps) {
 
 /**
  * A side panel has no route, so the open issue lives in component state.
- * It follows the thread's BB project, so a linked project shows only its
+ * It follows the thread's VesnALIA project, so a linked project shows only its
  * Jira projects' issues.
  */
 function JiraSidePanel(_props: PluginThreadPanelProps) {
-  const { projectId } = useBbContext();
+  const { projectId } = useAliaContext();
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   return (
     <div className="flex h-full min-h-0 flex-col">
       <JiraBrowser
         compact
-        bbProjectId={projectId}
+        aliaProjectId={projectId}
         selectedKey={selectedKey}
         onSelect={setSelectedKey}
       />

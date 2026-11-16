@@ -13,7 +13,7 @@ function row(overrides: Partial<HistoryRow> = {}): HistoryRow {
   return {
     threadId: "thr_1",
     createdAt: 0,
-    project: "bb",
+    project: "alia",
     providerId: "codex",
     model: "astra",
     effort: "medium",

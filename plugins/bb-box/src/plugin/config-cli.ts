@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { isAbsolute, resolve } from "node:path";
-import { PluginCliError, cliCommand, type PluginCliContext, type PluginCliResult } from "@get-bb/plugin-sdk";
+import { PluginCliError, cliCommand, type PluginCliContext, type PluginCliResult } from "@vesnalia/plugin-sdk";
 import { GPU_PARTS, type DoctorReport, type GpuPart } from "../backends/types.ts";
 import { withoutSecretVersions, type ConfigDocument, type Problem } from "../core/document.ts";
 import { digestOf } from "../core/saves.ts";
@@ -49,29 +49,29 @@ const jsonOption = { json: { type: "boolean", description: "Print JSON." } } as 
 const saveOptions = {
   ...jsonOption,
   check: { type: "boolean", description: "Save nothing: say what would change and what is wrong with it, and for a backend run its checks with the change, as the settings page's Check does." },
-  revision: { type: "integer", min: 0, max: Number.MAX_SAFE_INTEGER, placeholder: "n", description: "Save only while the configuration is at this revision, which bb box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times." },
+  revision: { type: "integer", min: 0, max: Number.MAX_SAFE_INTEGER, placeholder: "n", description: "Save only while the configuration is at this revision, which VesnALIA box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times." },
   operation: { type: "string", description: "An ID for this save. The same command again with the same ID, as after an answer that never came, is saved once and answers with the first save's receipt, kept 24 hours. A new ID is made when left out." },
 } as const;
 
 const secretOptions = {
   secret: { type: "string", repeatable: true, placeholder: "field=VARIABLE", description: "A secret field and the variable in the dotenv file that holds its value, such as token=HCLOUD_TOKEN. Repeat for each. The value is read from --secrets-file or --secrets-stdin, never from the command line." },
-  "secrets-file": { type: "string", placeholder: "path", description: "A dotenv file, as bb secret request --write-env writes, read on the machine BB's server runs on; a relative path is from where you run bb." },
+  "secrets-file": { type: "string", placeholder: "path", description: "A dotenv file, as VesnALIA secret request --write-env writes, read on the machine VesnALIA's server runs on; a relative path is from where you run VesnALIA." },
   secrets: {
     type: "string",
     stdin: true,
     placeholder: "line",
     description:
-      "Only as --secrets-stdin, which reads one line: a VARIABLE=value line, as grep '^HCLOUD_TOKEN=' secrets.env | bb box backend add hetzner --secret token=HCLOUD_TOKEN --secrets-stdin, or a whole dotenv file in base64, as base64 < secrets.env | tr -d '\\n' | bb box ... --secrets-stdin, for several secrets at once. Works from any machine.",
+      "Only as --secrets-stdin, which reads one line: a VARIABLE=value line, as grep '^HCLOUD_TOKEN=' secrets.env | VesnALIA box backend add hetzner --secret token=HCLOUD_TOKEN --secrets-stdin, or a whole dotenv file in base64, as base64 < secrets.env | tr -d '\\n' | VesnALIA box ... --secrets-stdin, for several secrets at once. Works from any machine.",
   },
 } as const;
 
 const fieldOptions = {
   field: { type: "string", repeatable: true, placeholder: "key=value", description: "Set a field, such as host=unix:///var/run/docker.sock. Repeat for each. key= with nothing after it saves an empty value, which for an image or template field turns its kind off here. Not for secrets." },
-  "field-file": { type: "string", repeatable: true, placeholder: "key=path", description: "Set a field to a file's text, for a field of several lines, such as known-hosts. Read on the machine BB's server runs on." },
+  "field-file": { type: "string", repeatable: true, placeholder: "key=path", description: "Set a field to a file's text, for a field of several lines, such as known-hosts. Read on the machine VesnALIA's server runs on." },
   unset: { type: "string", repeatable: true, placeholder: "key", description: "Leave a field unset, so it takes its default." },
   "add-line": { type: "string", repeatable: true, placeholder: "key=line", description: "Add a line to a field of lines, such as machines=\"build-1 192.0.2.21 linux\". A line already there is not added again." },
   "remove-line": { type: "string", repeatable: true, placeholder: "key=text", description: "Remove the lines of a field that are the text or start with it and a space, such as machines=build-1." },
-  "secret-file": { type: "string", repeatable: true, placeholder: "field=path", description: "Set a secret field to a whole file's text, such as ssh-private-key=key.pem. Read on the machine BB's server runs on." },
+  "secret-file": { type: "string", repeatable: true, placeholder: "field=path", description: "Set a secret field to a whole file's text, such as ssh-private-key=key.pem. Read on the machine VesnALIA's server runs on." },
   "clear-secret": { type: "string", repeatable: true, placeholder: "field", description: "Clear a secret field." },
 } as const;
 
@@ -88,7 +88,7 @@ function json(value: unknown, exitCode = 0): PluginCliResult {
   return { exitCode, stdout: `${JSON.stringify(value, null, 2)}\n` };
 }
 
-const READ_HINT = "The file is read on the machine BB's server runs on. From another machine, pipe a secret in with --secrets-stdin.";
+const READ_HINT = "The file is read on the machine VesnALIA's server runs on. From another machine, pipe a secret in with --secrets-stdin.";
 
 function workingFolder(ctx: PluginCliContext): string {
   return ctx.cwd ?? process.cwd();
@@ -130,7 +130,7 @@ const STDIN = "stdin";
 const STDIN_LINE = "the line on stdin";
 const STDIN_FILE = "the dotenv file in base64 on stdin";
 const SECRETS_FILE = "the file given to --secrets-file";
-const STDIN_HINT = "Pipe one line: grep '^NAME=' secrets.env | bb box ... --secrets-stdin, or base64 < secrets.env | tr -d '\\n' | bb box ... --secrets-stdin. The line is not shown, as it may hold a secret.";
+const STDIN_HINT = "Pipe one line: grep '^NAME=' secrets.env | VesnALIA box ... --secrets-stdin, or base64 < secrets.env | tr -d '\\n' | VesnALIA box ... --secrets-stdin. The line is not shown, as it may hold a secret.";
 
 function strictBase64(text: string): Buffer | null {
   if (!BASE64.test(text) || text.length % 4 === BASE64_LENGTH_NEVER_MADE) return null;
@@ -184,7 +184,7 @@ async function secretValues(options: SecretInput, ctx: PluginCliContext): Promis
     if (options["secrets-file"] === undefined && options.secrets === undefined) {
       throw new PluginCliError("--secret names a variable; give the dotenv file that holds it with --secrets-file, or pipe its line in with --secrets-stdin.", {
         code: "missing_required",
-        hint: "bb secret request HCLOUD_TOKEN --write-env secrets.env asks the person for it, then: bb box backend add hetzner --secret token=HCLOUD_TOKEN --secrets-file secrets.env",
+        hint: "alia secret request HCLOUD_TOKEN --write-env secrets.env asks the person for it, then: VesnALIA box backend add hetzner --secret token=HCLOUD_TOKEN --secrets-file secrets.env",
       });
     }
     const { env, source } = await secretSource(options, ctx);
@@ -328,9 +328,9 @@ async function save(configuration: Configuration, request: Save, signal?: AbortS
             `Saved revision ${revision}, operation ${operation}.`,
             changesText(built.changes),
             result.problems.length ? `Saved with these problems, in backends that are off:\n${problemsText(result.problems)}` : "",
-            id && !on ? `${id} is off, so it was not checked. bb box backend set ${id} --on turns it on.` : "",
+            id && !on ? `${id} is off, so it was not checked. VesnALIA box backend set ${id} --on turns it on.` : "",
             doctorWords(doctor, after),
-            doctor && !doctor.report.ok ? `Its checks failed: fix what they say, then bb box backend set ${id} --check checks again without saving.` : "",
+            doctor && !doctor.report.ok ? `Its checks failed: fix what they say, then VesnALIA box backend set ${id} --check checks again without saving.` : "",
             request.next?.(saved) ?? "",
           ];
       return out(lines.filter(Boolean).join("\n"), exitCode);
@@ -339,7 +339,7 @@ async function save(configuration: Configuration, request: Save, signal?: AbortS
       if (options.revision !== undefined) {
         return refusal(
           { saved: false, revision: result.state.revision, operation, changes: built.changes, problems: [], doctor: null },
-          `Nothing was saved: the configuration changed since revision ${options.revision}, and is at revision ${result.state.revision}. Look again with bb box config show, then run the command with --revision ${result.state.revision}, or without --revision.`,
+          `Nothing was saved: the configuration changed since revision ${options.revision}, and is at revision ${result.state.revision}. Look again with VesnALIA box config show, then run the command with --revision ${result.state.revision}, or without --revision.`,
           options,
         );
       }
@@ -385,7 +385,7 @@ function driverView(state: ConfigState, type: string): DriverView {
 }
 
 function backendOptions() {
-  return { ...saveOptions, ...fieldOptions, ...secretOptions, ...switchOptions, label: { type: "string", description: "Its name in the settings and in box_list, such as Docker on build-1. Empty gives back the type's name." }, warm: { type: "string", repeatable: true, placeholder: "kind=count", description: "Ready boxes of a kind to keep waiting here, such as linux=1; 0 keeps none." }, projects: { type: "string", placeholder: "names", description: "The BB projects it is kept for, by name or ID, separated by commas. Only their threads see it and get boxes, spares and forks from it, before the shared backends. Empty serves every project, as by default." }, "no-doctor": { type: "boolean", description: "Do not run the backend's checks after saving." } } as const;
+  return { ...saveOptions, ...fieldOptions, ...secretOptions, ...switchOptions, label: { type: "string", description: "Its name in the settings and in box_list, such as Docker on build-1. Empty gives back the type's name." }, warm: { type: "string", repeatable: true, placeholder: "kind=count", description: "Ready boxes of a kind to keep waiting here, such as linux=1; 0 keeps none." }, projects: { type: "string", placeholder: "names", description: "The VesnALIA projects it is kept for, by name or ID, separated by commas. Only their threads see it and get boxes, spares and forks from it, before the shared backends. Empty serves every project, as by default." }, "no-doctor": { type: "boolean", description: "Do not run the backend's checks after saving." } } as const;
 }
 
 function warmOf(value: unknown): [string, number][] {
@@ -408,7 +408,7 @@ function sizeOf(text: string | undefined, name: string, base: boolean): number |
 function firstBoxWords(document: ConfigDocument, id: string): string | null {
   const backend = document.backends.find((candidate) => candidate.id === id);
   if (!backend?.enabled) return null;
-  return `Next: bb box kinds lists what is on offer. To prove it, acquire a first box there: bb box acquire <kind> --on ${id}, then bb box release <box>.`;
+  return `Next: VesnALIA box kinds lists what is on offer. To prove it, acquire a first box there: VesnALIA box acquire <kind> --on ${id}, then VesnALIA box release <box>.`;
 }
 
 async function projectsOf(value: unknown, projects: () => Promise<readonly ProjectChoice[]>): Promise<string[] | undefined> {
@@ -425,7 +425,7 @@ export function configCommands(configuration: Configuration, projects: () => Pro
       async run({ options }) {
         const state = await configuration.state();
         if (options.json) return json(state.backends.map((backend) => ({ ...backend, enabled: state.document.backends.find((candidate) => candidate.id === backend.id)?.enabled ?? false })));
-        if (!state.backends.length) return out("There are no backends yet. bb box backend types lists the types, and bb box backend add <type> adds one; bb box setup docker sets up Docker on the machine that runs BB.");
+        if (!state.backends.length) return out("There are no backends yet. VesnALIA box backend types lists the types, and VesnALIA box backend add <type> adds one; VesnALIA box setup docker sets up Docker on the machine that runs VesnALIA.");
         return out(state.backends.map((backend) => backendLine(state, backend.id)).join("\n"));
       },
     }),
@@ -445,7 +445,7 @@ export function configCommands(configuration: Configuration, projects: () => Pro
     }),
     "backend fields": cliCommand({
       summary: "List a backend type's fields, or a backend's with their values now: each key, what it takes, whether it is a secret, and the first line of its help. Secrets show only as set or not.",
-      positionals: [{ name: "backend", description: "A type, from bb box backend types, or a backend's ID, from bb box backend list.", required: true }],
+      positionals: [{ name: "backend", description: "A type, from VesnALIA box backend types, or a backend's ID, from VesnALIA box backend list.", required: true }],
       options: jsonOption,
       async run({ positionals, options }) {
         const state = await configuration.state();
@@ -455,7 +455,7 @@ export function configCommands(configuration: Configuration, projects: () => Pro
         if (options.json) return json({ type: driver.type, backend: backend?.id ?? null, fields: driver.fields.map((field) => ({ ...field, value: backend?.fields[field.key] })), hostFields: driver.hostFields, hosts: backend?.hosts ?? [] });
         const lines = [`${backend ? `Backend ${backend.id}, ` : ""}${driver.label} (${driver.type}). Its guide: ${driver.setup.guide}.`, "Fields:", ...driver.fields.map((field) => fieldLine(field, backend?.fields[field.key], field.replaces ? backend?.fields[field.replaces] : undefined))];
         if (driver.hostFields.length) {
-          lines.push("Each host's fields, with bb box backend host add:", ...driver.hostFields.map((field) => fieldLine(field, undefined).replace(/ Now: [^\n]*$/, "")));
+          lines.push("Each host's fields, with VesnALIA box backend host add:", ...driver.hostFields.map((field) => fieldLine(field, undefined).replace(/ Now: [^\n]*$/, "")));
           for (const host of backend?.hosts ?? []) lines.push(`Host ${host.name}: ${host.enabled ? "on" : "off"}${Object.entries(host.fields).map(([key, value]) => `, ${key} ${JSON.stringify(value)}`).join("")}.`);
         }
         return out(lines.join("\n"));
@@ -464,7 +464,7 @@ export function configCommands(configuration: Configuration, projects: () => Pro
     "backend add": cliCommand({
       summary:
         "Add a backend, on unless --off, through the same checked save as the settings page, then run its checks. Secrets come only from a dotenv file or stdin. Exits 2 when it saved and its checks failed.",
-      positionals: [{ name: "type", description: "The type, from bb box backend types, such as docker or ssh-pool.", required: true }],
+      positionals: [{ name: "type", description: "The type, from VesnALIA box backend types, such as docker or ssh-pool.", required: true }],
       options: { ...backendOptions(), id: { type: "string", description: "Its ID, for a second backend of a type that allows several, such as docker:build-1 for another Docker host or namespace:team-b for another Namespace workspace or boat:team-b for another boat.dev account, or just build-1 or team-b. The type by default." } },
       run: async ({ positionals, options }, ctx) => {
         const id = backendIdOf(positionals.type, options.id);
@@ -489,7 +489,7 @@ export function configCommands(configuration: Configuration, projects: () => Pro
     }),
     "backend set": cliCommand({
       summary: "Change a backend: its fields, secrets, switch, name, warm boxes or the projects it is kept for, through the same checked save as the settings page, then run its checks. Exits 2 when it saved and its checks failed.",
-      positionals: [{ name: "backend", description: "The backend's ID, from bb box backend list.", required: true }],
+      positionals: [{ name: "backend", description: "The backend's ID, from VesnALIA box backend list.", required: true }],
       options: backendOptions(),
       run: async ({ positionals, options }, ctx) => {
         const enabled = switchOf(options);
@@ -516,7 +516,7 @@ export function configCommands(configuration: Configuration, projects: () => Pro
     }),
     "backend remove": cliCommand({
       summary: "Remove a backend: its settings, its secrets, which cannot be got back, and its warm boxes. Refused while it has boxes, as on the settings page. Asks for --yes.",
-      positionals: [{ name: "backend", description: "The backend's ID, from bb box backend list.", required: true }],
+      positionals: [{ name: "backend", description: "The backend's ID, from VesnALIA box backend list.", required: true }],
       options: { ...saveOptions, yes: { type: "boolean", description: "Remove it. Without it, the command says what would go and removes nothing." } },
       run: async ({ positionals, options }, ctx) => {
         if (!options.yes && !options.check) {
@@ -525,14 +525,14 @@ export function configCommands(configuration: Configuration, projects: () => Pro
           const boxes = state.backends.find((candidate) => candidate.id === backend.id)?.boxes ?? 0;
           return {
             exitCode: 1,
-            stderr: `Nothing was removed. Removing ${backend.id} deletes its settings and its secrets, which cannot be got back, and its warm boxes go; there is no undo.${boxes ? ` It has ${boxes} ${boxes === 1 ? "box" : "boxes"}, so it is refused until they are released: turn it off with bb box backend set ${backend.id} --off, and release them first.` : ""} Run it again with --yes to remove it, or turn it off instead with bb box backend set ${backend.id} --off.\n`,
+            stderr: `Nothing was removed. Removing ${backend.id} deletes its settings and its secrets, which cannot be got back, and its warm boxes go; there is no undo.${boxes ? ` It has ${boxes} ${boxes === 1 ? "box" : "boxes"}, so it is refused until they are released: turn it off with VesnALIA box backend set ${backend.id} --off, and release them first.` : ""} Run it again with --yes to remove it, or turn it off instead with VesnALIA box backend set ${backend.id} --off.\n`,
           };
         }
         return save(configuration, { command: "backend remove", submission: { backend: positionals.backend }, build: (document) => removeBackend(document, positionals.backend), options }, ctx.signal);
       },
     }),
     "backend host add": cliCommand({
-      summary: "Add a host to a backend whose hosts are set up alike, such as a Mac to Tart. The SSH host pool lists its machines in its machines field instead: bb box backend set ssh-pool --add-line.",
+      summary: "Add a host to a backend whose hosts are set up alike, such as a Mac to Tart. The SSH host pool lists its machines in its machines field instead: VesnALIA box backend set ssh-pool --add-line.",
       positionals: [
         { name: "backend", description: "The backend's ID, such as tart.", required: true },
         { name: "host", description: "The host's name: lower-case letters, digits and \"-\", such as mac-1.", required: true },
@@ -563,7 +563,7 @@ export function configCommands(configuration: Configuration, projects: () => Pro
       summary: "Change a backend's host: its fields, or its switch. Off, it takes no new boxes, and its boxes keep working.",
       positionals: [
         { name: "backend", description: "The backend's ID, such as tart.", required: true },
-        { name: "host", description: "The host's name, from bb box backend list.", required: true },
+        { name: "host", description: "The host's name, from VesnALIA box backend list.", required: true },
       ],
       options: { ...saveOptions, field: fieldOptions.field, "field-file": fieldOptions["field-file"], unset: fieldOptions.unset, ...switchOptions, "no-doctor": { type: "boolean", description: "Do not run the backend's checks after saving." } },
       run: async ({ positionals, options }, ctx) => {
@@ -591,7 +591,7 @@ export function configCommands(configuration: Configuration, projects: () => Pro
       summary: "Remove a host from a backend. Refused while it has boxes, as on the settings page.",
       positionals: [
         { name: "backend", description: "The backend's ID, such as tart.", required: true },
-        { name: "host", description: "The host's name, from bb box backend list.", required: true },
+        { name: "host", description: "The host's name, from VesnALIA box backend list.", required: true },
       ],
       options: saveOptions,
       run: async ({ positionals, options }, ctx) =>
@@ -600,7 +600,7 @@ export function configCommands(configuration: Configuration, projects: () => Pro
     "kind set": cliCommand({
       summary:
         "Change a kind: whether it is offered, its presets' sizes, its default preset, its largest custom size, its spare boxes, its GPU when not asked for, or make it the default kind, through the same checked save as the settings page. Sizes and the GPU change new boxes only.",
-      positionals: [{ name: "kind", description: "The kind, such as linux. bb box kinds lists those on offer.", required: true }],
+      positionals: [{ name: "kind", description: "The kind, such as linux. VesnALIA box kinds lists those on offer.", required: true }],
       options: {
         ...saveOptions,
         ...switchOptions,
@@ -668,14 +668,14 @@ export function configCommands(configuration: Configuration, projects: () => Pro
     }),
     "option set": cliCommand({
       summary:
-        "Set general and Monitor options, such as monitor.enabled=false, defaultKind=linux or general.snapshots.ceilings.<backend>=7.50, a ceiling on a backend's paid snapshots, in one checked save, as the settings page saves them. bb box option list lists them.",
+        "Set general and Monitor options, such as monitor.enabled=false, defaultKind=linux or general.snapshots.ceilings.<backend>=7.50, a ceiling on a backend's paid snapshots, in one checked save, as the settings page saves them. VesnALIA box option list lists them.",
       positionals: [{ name: "options", description: "Each as <name>=<value>, such as monitor.enabled=false; or one name and its value as two words.", required: false, variadic: true }],
       options: { ...saveOptions, ...secretOptions },
       run: async ({ positionals, options }, ctx) => {
         const words = (positionals.options ?? []) as string[];
         const pairs = words.length === 2 && !words[0]!.includes("=") ? [[words[0]!, words[1]!] as [string, string]] : words.map((text) => pairOf(text, "an option"));
         const { values: secrets, unresolved } = await secretValues(options, ctx);
-        if (!pairs.length && !secrets.size && !unresolved.size) throw new PluginCliError("Give an option and its value, such as monitor.enabled=false.", { code: "missing_required", hint: "bb box option list lists the options." });
+        if (!pairs.length && !secrets.size && !unresolved.size) throw new PluginCliError("Give an option and its value, such as monitor.enabled=false.", { code: "missing_required", hint: "alia box option list lists the options." });
         for (const [name] of pairs) optionNamed(name);
         return save(
           configuration,
@@ -684,7 +684,7 @@ export function configCommands(configuration: Configuration, projects: () => Pro
             submission: { pairs, secrets: secretDigests(secrets) },
             build: (document) => setOptions(document, pairs, secrets, [], unresolved),
             options,
-            next: (document) => (pairs.some(([name]) => optionNamed(name).name === "monitor.enabled") ? `The Monitor is ${document.monitor?.enabled === false ? "off" : "on"}. BB's sidebar shows the change when BB next loads.` : null),
+            next: (document) => (pairs.some(([name]) => optionNamed(name).name === "monitor.enabled") ? `The Monitor is ${document.monitor?.enabled === false ? "off" : "on"}. VesnALIA's sidebar shows the change when VesnALIA next loads.` : null),
           },
           ctx.signal,
         );

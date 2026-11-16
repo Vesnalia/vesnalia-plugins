@@ -12,7 +12,7 @@ export const boatDriver: BackendDriver<BoatConfig> = {
   form: "VM",
   kinds: BOAT_KINDS,
   fields: BOAT_FIELDS,
-  setup: { guide: "docs/guide/boat.md", scripts: ["setup/boat/template.sh", "setup/boat/customize-sandbox.sh"], needs: "A boat.dev account and API key, and a way for its sandboxes to reach BB." },
+  setup: { guide: "docs/guide/boat.md", scripts: ["setup/boat/template.sh", "setup/boat/customize-sandbox.sh"], needs: "A boat.dev account and API key, and a way for its sandboxes to reach VesnALIA." },
   parse: parseBoatPart,
   several: () => null,
   longestName: LONGEST_BOAT_BACKEND_NAME,

@@ -64,7 +64,7 @@ export function createHealthMonitor(deps: HealthDeps) {
 
   async function check(): Promise<Health> {
     const [primary, known, set] = await Promise.all([deps.primaryHostId(), deps.knownHosts(), watchedHosts()]);
-    // A Mac removed from bb is forgotten, failures and all: nobody can open it to clear them.
+    // A Mac removed from VesnALIA is forgotten, failures and all: nobody can open it to clear them.
     const gone = [...set].filter((hostId) => !known.has(hostId));
     if (gone.length > 0) {
       for (const hostId of gone) set.delete(hostId);

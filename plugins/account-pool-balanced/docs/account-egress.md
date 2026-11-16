@@ -2,7 +2,7 @@
 
 ## Подготовленное native исполнение
 
-У `bb pool native configure <executor-json>` есть необязательный серверный
+У `alia pool native configure <executor-json>` есть необязательный серверный
 `execution`: `runtimeId`, `gatewayId`, `runtimeSha256` (64 lowercase hex) и
 `profile: {id, version}`. Профиль должен уже существовать и поддерживать host
 executor. По умолчанию эта возможность не настроена и ничего не включает.
@@ -10,7 +10,7 @@ executor. По умолчанию эта возможность не настр�
 включая runtime files/toolchain, workspace, собственный профиль и gateway.
 
 Аутентифицированный `/native/agy` возвращает снимок `binding` только для такого
-executor: schema `bb-account-pool/native-execution/1`, leaseId/sessionId,
+executor: schema `alia-account-pool/native-execution/1`, leaseId/sessionId,
 executorId/accountId/hostId, runtime/gateway/hash/profile, kind и server caller.
 Acquire и heartbeat повторно проходят прежний admission. Каталог не получает
 право задачи; после restart/expiry неопределённый слот не объявляется свободным.
@@ -21,7 +21,7 @@ Acquire и heartbeat повторно проходят прежний admission.
 клиента прав не дают. Реестр подтверждает назначение, не измеряет удалённый IP
 и не доказывает, что официальный протокол работает через CONNECT. Неподготовленный
 launcher отказывает, а не игнорирует серверную привязку. Native модель и tools
-должны использовать одну ограниченную среду; хостовая сеть BB остаётся прежней.
+должны использовать одну ограниченную среду; хостовая сеть VesnALIA остаётся прежней.
 Секреты, пути профилей и unlock в response отсутствуют. Live AGY, отдельный
 keyring, удалённый транспорт и активация требуют отдельной операционной приёмки.
 
@@ -37,16 +37,16 @@ opt-ins, квоты, общая очередь и интервал начала 
 Профиль версии 1 поддерживает один тип: SSH LocalForward к HTTPS CONNECT gateway.
 Endpoint — только loopback HTTP-порт без пароля; это транспорт туннеля, TLS модели
 не перехватывается. DNS и публичный IPv4 разрешает доверенный gateway на узле;
-IPv6 и обход через NO_PROXY/direct запрещены. Глобальное окружение BB не меняется.
+IPv6 и обход через NO_PROXY/direct запрещены. Глобальное окружение VesnALIA не меняется.
 Сеть инструментов, Git и пакетов не перенаправляется этим серверным dispatcher.
 
 В существующей карточке аккаунта выбирается профиль, показываются версия,
 поддержанные хосты и предел проверки. Настройка доступна также через штатный CLI:
 
-- `bb pool egress status --json` — реестр, привязки и закреплённые разговоры.
-- `bb pool egress configure <profile-json>` — добавить неизменяемую версию.
-- `bb pool egress bind <account-id> <profile-id> <version>` — новые разговоры аккаунта.
-- `bb pool egress unbind <account-id>` — вернуть новые разговоры к прежнему маршруту.
+- `alia pool egress status --json` — реестр, привязки и закреплённые разговоры.
+- `alia pool egress configure <profile-json>` — добавить неизменяемую версию.
+- `alia pool egress bind <account-id> <profile-id> <version>` — новые разговоры аккаунта.
+- `alia pool egress unbind <account-id>` — вернуть новые разговоры к прежнему маршруту.
 
 Шаблон JSON: id/version/label/node/hostIds/transport=ssh-connect,
 endpoint=http://127.0.0.1:19081, dns=remote, ipv4=true, ipv6=false,
@@ -111,17 +111,17 @@ HTTP и HTTPS в адресе обозначают соединение с пр�
 обычным способом, отключения проверки сертификатов нет. DNS имени прокси
 разрешает сервер Pooler; имя назначения передаётся CONNECT-прокси.
 
-### Запуск Claude из BB
+### Запуск Claude из VesnALIA
 
 Официальная документация: <https://code.claude.com/docs/en/network-config#environment-variables>.
 Claude поддерживает HTTP/HTTPS и Basic auth, не SOCKS. Строчные переменные имеют
 приоритет. Это описание поддержки, а не требование всегда использовать прокси.
 
 В режиме Pooler локальный Claude получает `ANTHROPIC_BASE_URL` и отдельный
-`ANTHROPIC_AUTH_TOKEN` через штатный resolver BB при запуске/возобновлении и
+`ANTHROPIC_AUTH_TOKEN` через штатный resolver VesnALIA при запуске/возобновлении и
 получении моделей, включая удалённые хосты. Аккаунт выбирается сервером после
 запроса клиента. Поэтому персональный URL прокси НЕ копируется в HTTP_PROXY
-локального процесса: это перенаправило бы соединение с самим BB и раскрыло бы
+локального процесса: это перенаправило бы соединение с самим VesnALIA и раскрыло бы
 пароль в событиях `provider.env-resolved`. Pooler передаёт настройки выбранного
 аккаунта напрямую CONNECT dispatcher при модельных запросах, квотах и refresh.
 
@@ -129,7 +129,7 @@ Claude поддерживает HTTP/HTTPS и Basic auth, не SOCKS. Строч
 телеметрию локального клиента и фонового supervisor
 Claude. Для таких процессов нужны отдельные настройки хоста и отдельная приёмка;
 глобальные пользовательские settings.json здесь не изменяются. Локальные сетевые
-переменные для доступа к серверу BB остаются политикой хоста.
+переменные для доступа к серверу VesnALIA остаются политикой хоста.
 
 Перед подключением нового аккаунта требуются рабочий адрес прокси, проверка
 выхода и минимальный живой запрос через него. Сохранённый профиль сам по себе
@@ -141,7 +141,7 @@ Claude. Для таких процессов нужны отдельные на�
 В разделе Claude выберите «Добавить без входа…», укажите имя и почту. Можно
 сразу настроить проекты и персональный прокси. Это запись метаданных: токенов
 ещё нет, аккаунт выключен и не участвует в выборе. Эквивалент CLI:
-`bb pool account add --provider claude --draft --email person@example.test --label "Рабочая подписка"`.
+`alia pool account add --provider claude --draft --email person@example.test --label "Рабочая подписка"`.
 
 Кнопка «Войти в аккаунт» открывает вход для той же записи. Почта полученного
 профиля должна совпасть. Имя, приоритет, проекты и привязка прокси сохраняются;

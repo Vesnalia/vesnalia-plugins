@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useSdk } from "@get-bb/plugin-sdk/app";
+import { useSdk } from "@vesnalia/plugin-sdk/app";
 import { createStrip, type Options as StripOptions, type Strip } from "./strip";
 import { inBackground } from "./tab";
 import { watchTimeline, type Watch } from "./timeline";

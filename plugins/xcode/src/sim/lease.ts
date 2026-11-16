@@ -1,7 +1,7 @@
 /**
  * A short per-thread lease on a device.
  *
- * Three parallel agent threads — bb's core workflow — tapping one booted
+ * Three parallel agent threads — VesnALIA's core workflow — tapping one booted
  * simulator interleave gestures, and each gets back a frame of a screen another
  * agent navigated to. That is worse than having no eyes at all: a wrong
  * screenshot is confidently wrong.

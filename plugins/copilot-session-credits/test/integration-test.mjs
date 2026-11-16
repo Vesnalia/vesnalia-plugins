@@ -3,8 +3,8 @@ import { mkdtempSync, realpathSync, mkdirSync, writeFileSync, symlinkSync, rmSyn
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHostEntry } from '../dist/host.js';
-import { experimental_createHostEntryHarness } from '@get-bb/plugin-sdk/testing/host';
-import { createFakePluginHost, makeThreadResponse } from '@get-bb/plugin-sdk/testing';
+import { experimental_createHostEntryHarness } from '@vesnalia/plugin-sdk/testing/host';
+import { createFakePluginHost, makeThreadResponse } from '@vesnalia/plugin-sdk/testing';
 import plugin from '../dist/server.js';
 const root = realpathSync(mkdtempSync(join(tmpdir(),'meter-test-'))), pi=join(root,'pi'),cli=join(root,'cli');
 mkdirSync(pi,{mode:0o700});mkdirSync(cli,{mode:0o700});
@@ -41,7 +41,7 @@ await test('CLI provider aliases route exact latest identity to environment host
   for(const provider of ['acp-copilot','acp-gh-copilot','acp-github-copilot-cli','acp-copilot-quiet','acp-copilot-fm']){
     const host=experimental_createHostEntryHarness(createHostEntry([pi],cli));
     const calls=[];
-    const {bb,harness}=createFakePluginHost({pluginId:'copilot-session-credits',sdk:{threads:{
+    const {alia,harness}=createFakePluginHost({pluginId:'copilot-session-credits',sdk:{threads:{
       get:async()=>({...makeThreadResponse({providerId:provider}),environment:{hostId:'host_cli_fixture'}}),
       events:{list:async()=>[
         {type:'thread/identity',seq:8,data:{providerThreadId:uuid}},
@@ -55,7 +55,7 @@ await test('CLI provider aliases route exact latest identity to environment host
       return host.experimental_call(args.method,args.input);
     }});
     try{
-      plugin(bb);
+      plugin(alia);
       const r=await harness.behavior.callRpc('usage',{threadId:'thr_cli_fixture'});
       assert.equal(calls.length,1);
       assert.equal(r.provider,provider);assert.equal(r.sessionId,uuid);
@@ -66,10 +66,10 @@ await test('CLI provider aliases route exact latest identity to environment host
     }finally{await harness.lifecycle.dispose();await host.experimental_dispose();}
   }
 });
-await test('Server routes identity-only request to exact environment host',async()=>{let target;const {bb,harness}=createFakePluginHost({pluginId:'copilot-session-credits',sdk:{threads:{get:async()=>({...makeThreadResponse({providerId:'pi'}),environment:{hostId:'host_fixture'}}),events:{list:async()=>[{type:'thread/identity',seq:7,data:{providerThreadId:providerId}}]}}},experimental_callHostRpc:async args=>{target=args;return {aic:'1',coverage:'partial',source:'pi-receipts',reported:1,observed:1,inFlight:0,conflicting:0,missing:0,updatedAt:null,reason:'fixture'};}});plugin(bb);const r=await harness.behavior.callRpc('usage',{threadId:'thr_fixture'});assert.equal(r.aic,'1');assert.equal(target.hostId,'host_fixture');assert.equal(target.input.sessionId,providerId);const events=harness.inspection.sdk.callsTo('threads.events.list')[0];assert(events);await harness.lifecycle.dispose();});
+await test('Server routes identity-only request to exact environment host',async()=>{let target;const {alia,harness}=createFakePluginHost({pluginId:'copilot-session-credits',sdk:{threads:{get:async()=>({...makeThreadResponse({providerId:'pi'}),environment:{hostId:'host_fixture'}}),events:{list:async()=>[{type:'thread/identity',seq:7,data:{providerThreadId:providerId}}]}}},experimental_callHostRpc:async args=>{target=args;return {aic:'1',coverage:'partial',source:'pi-receipts',reported:1,observed:1,inFlight:0,conflicting:0,missing:0,updatedAt:null,reason:'fixture'};}});plugin(alia);const r=await harness.behavior.callRpc('usage',{threadId:'thr_fixture'});assert.equal(r.aic,'1');assert.equal(target.hostId,'host_fixture');assert.equal(target.input.sessionId,providerId);const events=harness.inspection.sdk.callsTo('threads.events.list')[0];assert(events);await harness.lifecycle.dispose();});
 await test('Identity pending Pi remains read-only and gives setup context before any call',async()=>{
   let calls=0;
-  const {bb,harness}=createFakePluginHost({pluginId:'copilot-session-credits',sdk:{threads:{get:async()=>({...makeThreadResponse({providerId:'pi'}),environment:{hostId:'host_fixture'}}),events:{list:async()=>[]}}},experimental_callHostRpc:async()=>{calls++;throw Error('must not read without identity');}});plugin(bb);
+  const {alia,harness}=createFakePluginHost({pluginId:'copilot-session-credits',sdk:{threads:{get:async()=>({...makeThreadResponse({providerId:'pi'}),environment:{hostId:'host_fixture'}}),events:{list:async()=>[]}}},experimental_callHostRpc:async()=>{calls++;throw Error('must not read without identity');}});plugin(alia);
   const result=await harness.behavior.callRpc('usage',{threadId:'thr_pending'});assert.equal(result.provider,'pi');assert.equal(result.sessionId,null);assert.match(result.reason,/identity/);assert.equal(calls,0);await harness.lifecycle.dispose();
 });
 await test('Collector full reason preserves old subtotal and never recommends reload',async()=>{save(rows);for(let i=0;i<255;i++)writeFileSync(join(pi,'closed-'+i),'');try{const r=await read('pi',providerId);assert.equal(r.aic,'1.23456789');assert.equal(r.captureIssue,true);assert.match(r.reason,/Collector full/);assert(!r.reason.includes('reload'));assert(r.reason.length<=300);}finally{for(let i=0;i<255;i++)rmSync(join(pi,'closed-'+i));}});
@@ -77,9 +77,9 @@ await test('Busy and old allocation locks have explicit safe reasons without rem
 await test('Unsupported harnesses never query identity or billing host',async()=>{
   for(const provider of ['acp-claude','acp','acp-copilot-other','acp-gh-copilot-other','acp-copilot-quiet-other']){
     let calls=0;
-    const {bb,harness}=createFakePluginHost({pluginId:'copilot-session-credits',sdk:{threads:{get:async()=>makeThreadResponse({providerId:provider})}},experimental_callHostRpc:async()=>{calls++;throw Error('Unsupported provider must not read host');}});
+    const {alia,harness}=createFakePluginHost({pluginId:'copilot-session-credits',sdk:{threads:{get:async()=>makeThreadResponse({providerId:provider})}},experimental_callHostRpc:async()=>{calls++;throw Error('Unsupported provider must not read host');}});
     try{
-      plugin(bb);const r=await harness.behavior.callRpc('usage',{threadId:'thr_fixture'});
+      plugin(alia);const r=await harness.behavior.callRpc('usage',{threadId:'thr_fixture'});
       assert.equal(r.provider,provider);assert.equal(r.aic,null);
       assert.equal(harness.inspection.sdk.callsTo('threads.events.list').length,0);assert.equal(calls,0);
     }finally{await harness.lifecycle.dispose();}
@@ -125,9 +125,9 @@ await test('Edited Pi thread merges pi_ and thr_ sessions, recovers null-session
     assert.equal((await host.experimental_call('read',{provider:'pi',sessionId:forked})).aic,'7');
     assert.equal((await host.experimental_call('read',{provider:'pi',sessionId:providerId})).aic,'2');
     const calls=[];
-    const {bb,harness}=createFakePluginHost({pluginId:'copilot-session-credits',sdk:{threads:{get:async()=>({...makeThreadResponse({providerId:'pi'}),environment:{hostId:'host_fixture'}}),events:{list:async q=>{assert.equal(q.limit,'100');return [{type:'thread/identity',seq:2376,data:{providerThreadId:forked}},{type:'thread/identity',seq:2121,data:{providerThreadId:providerId}},{type:'thread/identity',seq:12,data:{providerThreadId:providerId}}];}}}},experimental_callHostRpc:async args=>{calls.push(args.input);return host.experimental_call(args.method,args.input);}});
+    const {alia,harness}=createFakePluginHost({pluginId:'copilot-session-credits',sdk:{threads:{get:async()=>({...makeThreadResponse({providerId:'pi'}),environment:{hostId:'host_fixture'}}),events:{list:async q=>{assert.equal(q.limit,'100');return [{type:'thread/identity',seq:2376,data:{providerThreadId:forked}},{type:'thread/identity',seq:2121,data:{providerThreadId:providerId}},{type:'thread/identity',seq:12,data:{providerThreadId:providerId}}];}}}},experimental_callHostRpc:async args=>{calls.push(args.input);return host.experimental_call(args.method,args.input);}});
     try{
-      plugin(bb);const r=await harness.behavior.callRpc('usage',{threadId:'thr_editfixture'});
+      plugin(alia);const r=await harness.behavior.callRpc('usage',{threadId:'thr_editfixture'});
       assert.deepEqual(calls[0],{provider:'pi',sessionId:forked,sessionIds:[providerId,forked]});
       assert.equal(r.sessionId,forked);assert.equal(r.aic,'9');assert.equal(r.reported,3);assert(!JSON.stringify(r).includes('PRIVATE_CANARY'));
     }finally{await harness.lifecycle.dispose();}

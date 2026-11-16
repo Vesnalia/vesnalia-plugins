@@ -1,7 +1,7 @@
-/* Catch cards: top-right on desktop, clear of BB's bottom-right archive toast. */
+/* Catch cards: top-right on desktop, clear of ALIA's bottom-right archive toast. */
 .pokemon-catch-stack {
   position: fixed;
-  top: calc(env(safe-area-inset-top) + var(--bb-app-chrome-row-height, 3rem) + 0.75rem);
+  top: calc(env(safe-area-inset-top) + var(--alia-app-chrome-row-height, 3rem) + 0.75rem);
   right: 1rem;
   z-index: 45;
   display: flex;

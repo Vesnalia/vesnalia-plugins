@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Markdown, experimental_Diff as Diff, useBbNavigate, useRpc } from '@get-bb/plugin-sdk/app';
+import { Markdown, experimental_Diff as Diff, useAliaNavigate, useRpc } from '@vesnalia/plugin-sdk/app';
 import type { TaskboardRpcContract } from '../contract.js';
 import type { FactoryRecord, FactoryRun, FactoryRunKind } from './contract.js';
 import { Button } from '../components/ui/button.js';
@@ -102,7 +102,7 @@ function StageDetail({ kind, run, attempts, onAttempt, title, summary = true, ch
   children?: ReactNode;
   footer?: ReactNode;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return <section className="tb-room-focus" aria-label={`${stageLabels[kind]} stage`}>
     <div className="tb-room-focus-head">
       <div className="tb-room-focus-title">

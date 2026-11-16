@@ -1,8 +1,8 @@
 // Builds the README's carousel, docs/media/carousel.webp: each slide is one
-// gallery example as BB renders it (the plugin installed and running), framed
+// gallery example as VesnALIA renders it (the plugin installed and running), framed
 // on a plain background with its name, light or dark. Animated examples (3D
 // scenes and shaders) are captured as a short run of frames, so the carousel
-// shows them moving. Needs a running BB with this plugin loaded, and img2webp
+// shows them moving. Needs a running VesnALIA with this plugin loaded, and img2webp
 // (`brew install webp`).
 //
 //   node scripts/readme-media.mjs [--url http://127.0.0.1:38886] [--keep /tmp/slides]
@@ -16,7 +16,7 @@ import { chromium } from "playwright-core";
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const args = process.argv.slice(2);
 const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
-const base = option("--url") ?? process.env.BB_URL ?? "http://127.0.0.1:38886";
+const base = option("--url") ?? process.env.ALIA_URL ?? "http://127.0.0.1:38886";
 const keep = option("--keep");
 
 /**
@@ -31,7 +31,7 @@ const SLIDES = [
   ["Map", "light", "Map · places looked up and routed"],
   ["Decision", "light", "Decision · you tune the weights"],
   ["Shader-buffers", "dark", "Shader · Shadertoy GLSL with feedback buffers", 28],
-  ["Board", "dark", "Board · bb tasks or GitHub issues"],
+  ["Board", "dark", "Board · VesnALIA tasks or GitHub issues"],
   ["Roadmap", "light", "Roadmap"],
   ["Scene-model", "light", "Scene · glTF models lit by an HDR"],
   ["Transcript", "light", "Transcript · aligned word by word, with WER"],

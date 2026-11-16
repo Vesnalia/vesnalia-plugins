@@ -13,7 +13,7 @@ for (const name of installed.filter(name => !['navigator', 'IS_REACT_ACT_ENVIRON
 Object.defineProperty(globalThis, 'navigator', { value: dom.window.navigator, configurable: true });
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-const sdk = await import('@get-bb/plugin-sdk/testing/app');
+const sdk = await import('@vesnalia/plugin-sdk/testing/app');
 const rtl = await import('@testing-library/react');
 export const { loadPluginApp } = sdk;
 export const { fireEvent, within, act, waitFor } = rtl;

@@ -1,7 +1,7 @@
 // Inactive marks on the frontend: loaded from the server, refreshed live when
 // any window changes them (realtime signal), and updated optimistically.
 import { useCallback, useEffect, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { INACTIVE_CHANGED } from "./tags";
 import { NO_INACTIVE_MARKS, type InactiveMarks } from "./tree";

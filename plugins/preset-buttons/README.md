@@ -1,4 +1,4 @@
-# bb-plugin-preset-buttons
+# alia-plugin-preset-buttons
 
 Four one-click presets in the New thread composer's bottom action row, between
 the provider/model button and the Prompt Enhancer plugin's icon. Each button
@@ -14,7 +14,7 @@ a saved combination in one click.*
 
 The plugin detail page has an interactive button editor. Choose a built-in set
 as a starting point, select each provider/model/reasoning combination from
-BB's live catalogue, rename or reorder buttons, and add or remove buttons.
+VesnALIA's live catalogue, rename or reorder buttons, and add or remove buttons.
 Each button's icon uses a browse-and-search picker over the plugin's curated
 HugeIcons pool. Saving writes and activates the custom set immediately.
 
@@ -25,7 +25,7 @@ for CLI and advanced use.*
 
 ![The button editor](screenshots/button-editor.png)
 
-*The interactive button editor. Every combination is picked from BB's live
+*The interactive button editor. Every combination is picked from VesnALIA's live
 provider and model catalogue; order, label, and icon are editable in place.*
 
 ![The icon picker](screenshots/icon-picker.png)
@@ -62,11 +62,11 @@ this plugin tries to paper over.
 - `server.ts` — owns configuration: the `presetSet` dropdown and the
   `customPresets` setting, RPCs for reading, switching, and saving presets, a
   realtime signal so a settings write reaches open composers, and the
-  `bb preset-buttons` CLI.
+  `alia preset-buttons` CLI.
 - `lib/presets.ts` — the preset catalogue and schemas. Built-in sets are plain
   data; adding one is a data edit.
 - `lib/icons.tsx` — the OSS icon catalogue. A curated pool of MIT-licensed
-  HugeIcons registered into BB's icon registry, plus the searchable pool the
+  HugeIcons registered into VesnALIA's icon registry, plus the searchable pool the
   picker browses.
 - `components/PresetStrip.tsx` — the button row. Mounted as a
   `new-thread`-scoped composer banner, which is what supplies the `useComposer()`
@@ -75,7 +75,7 @@ this plugin tries to paper over.
 - `components/IconPicker.tsx` — the browse-and-search overlay used to choose a
   button icon in the settings editor.
 - `components/PresetSettings.tsx` — the interactive settings editor. It uses
-  BB's live provider/model picker and manages button labels, icons, order,
+  VesnALIA's live provider/model picker and manages button labels, icons, order,
   additions, and removals without requiring JSON edits.
 - `skills/preset-buttons/SKILL.md` — how an agent inspects and switches sets.
 
@@ -100,17 +100,17 @@ rather than a shrinkable flex item.
 ## CLI
 
 ```
-bb preset-buttons list [--json]        # the presets the buttons apply now
-bb preset-buttons sets [--json]        # every selectable set
-bb preset-buttons use <set-id|label>   # switch the active set
+alia preset-buttons list [--json]        # the presets the buttons apply now
+alia preset-buttons sets [--json]        # every selectable set
+alia preset-buttons use <set-id|label>   # switch the active set
 ```
 
 ## Development
 
 ```sh
 npx tsc --noEmit
-bb plugin build .
-bb plugin reload preset-buttons
+alia plugin build .
+alia plugin reload preset-buttons
 ```
 
 A frontend change needs the build before the reload; a `server.ts` change needs

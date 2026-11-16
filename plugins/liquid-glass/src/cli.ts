@@ -1,5 +1,5 @@
 /**
- * `bb liquid-glass` — the terminal half of the settings section. Output is
+ * `alia liquid-glass` — the terminal half of the settings section. Output is
  * bounded: `show` prints one line per key, `presets` prints the five preset
  * names, and nothing here streams a file.
  *
@@ -22,22 +22,22 @@ export const CLI_COMMANDS = [
   {
     name: "show",
     summary: "Print the current Liquid Glass appearance.",
-    usage: "bb liquid-glass show",
+    usage: "alia liquid-glass show",
   },
   {
     name: "set",
     summary: "Set one appearance key, e.g. `set sidebarBlur 32` or `set wallpaper ocean`.",
-    usage: "bb liquid-glass set <key> <value>",
+    usage: "alia liquid-glass set <key> <value>",
   },
   {
     name: "reset",
     summary: "Restore the monocode defaults.",
-    usage: "bb liquid-glass reset",
+    usage: "alia liquid-glass reset",
   },
   {
     name: "presets",
     summary: "List the wallpaper presets and the accent swatches.",
-    usage: "bb liquid-glass presets",
+    usage: "alia liquid-glass presets",
   },
 ];
 

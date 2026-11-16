@@ -10,7 +10,7 @@
 
 ## Next
 - Follow up on marketplace PR #583 when the maintainer label is available.
-- Complete the Office Studio live check in BB.
+- Complete the Office Studio live check in VesnALIA.
 
 ## Last verify
 - command: Lane Pilot acceptance for `lprun_38203a8bf69c43f294a012b07bded797`.
@@ -19,6 +19,6 @@
 
 ## Pointers
 - Open todos: no todo index exists (`.agents/todos/INDEX.md`).
-- Plans: [Office Studio](plans/2026-10-17-office-studio.md) (in progress; Studio live check remains); [chat link chips in BB core](plans/2026-10-17-chat-link-chips-core.md) (planned); [Studio prototyper roadmap](plans/2026-10-18-studio-roadmap.md) (proposed).
+- Plans: [Office Studio](plans/2026-10-17-office-studio.md) (in progress; Studio live check remains); [chat link chips in VesnALIA core](plans/2026-10-17-chat-link-chips-core.md) (planned); [Studio prototyper roadmap](plans/2026-10-18-studio-roadmap.md) (proposed).
 - No `.agents/plans/ROADMAP.md` exists.
 - [Changelog](CHANGELOG.md) — project memory updates.

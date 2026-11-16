@@ -3,7 +3,7 @@
 // must never be a module-level singleton. Refetches on realtime
 // `thread.link` / `binding.changed` signals and after a reconnect.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { KataRpcContract, ThreadBinding } from "@/lib/rpc-contract";
 import { KATA_CHANNEL, type KataSignal } from "@/lib/signals";
 

@@ -3,7 +3,7 @@ import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:f
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import hostEntry from "./host";
 
 function git(repo: string, ...args: string[]): string {
@@ -14,7 +14,7 @@ function git(repo: string, ...args: string[]): string {
 }
 
 function createPostSelectionRemovalWorkspace(trigger: "show" | "status") {
-  const root = mkdtempSync(join(tmpdir(), "bb-git-history-post-selection-removal-"));
+  const root = mkdtempSync(join(tmpdir(), "alia-git-history-post-selection-removal-"));
   const repository = join(root, "repos", "api");
   const bin = join(root, "bin");
   mkdirSync(repository, { recursive: true });
@@ -44,7 +44,7 @@ describe("Git history host entry", () => {
   let checkpointHash = "";
 
   beforeAll(() => {
-    workspaceRoot = mkdtempSync(join(tmpdir(), "bb-git-history-test-"));
+    workspaceRoot = mkdtempSync(join(tmpdir(), "alia-git-history-test-"));
     repo = join(workspaceRoot, "repos", "web");
     apiRepo = join(workspaceRoot, "repos", "api");
     mkdirSync(repo, { recursive: true });
@@ -144,7 +144,7 @@ describe("Git history host entry", () => {
   });
 
   it("signals when a repository disappears after it was discovered", async () => {
-    const disappearingRoot = mkdtempSync(join(tmpdir(), "bb-git-history-disappeared-repo-"));
+    const disappearingRoot = mkdtempSync(join(tmpdir(), "alia-git-history-disappeared-repo-"));
     const disappearingRepository = join(disappearingRoot, "repos", "api");
     try {
       mkdirSync(disappearingRepository, { recursive: true });
@@ -366,7 +366,7 @@ describe("Git history host entry", () => {
   });
 
   it("reports unmerged working-tree paths as conflicted", async () => {
-    const conflictRepo = mkdtempSync(join(tmpdir(), "bb-git-history-conflict-test-"));
+    const conflictRepo = mkdtempSync(join(tmpdir(), "alia-git-history-conflict-test-"));
     try {
       git(conflictRepo, "init", "-b", "main");
       git(conflictRepo, "config", "user.name", "History Test");

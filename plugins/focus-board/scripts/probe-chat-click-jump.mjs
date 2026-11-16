@@ -1,10 +1,10 @@
 // Repro probe for the "click in the chat pane yanks the transcript back to
-// the bottom" bug. Drives the LIVE bb web UI (not the mock SDK harness — the
-// buggy code is bb's host scroll shell, which the mock does not include).
+// the bottom" bug. Drives the LIVE VesnALIA web UI (not the mock SDK harness — the
+// buggy code is VesnALIA's host scroll shell, which the mock does not include).
 //
 // Usage:
-//   BB_APP=http://127.0.0.1:38886 THREAD_TITLE="scaffolding" node scripts/probe-chat-click-jump.mjs
-// (BB_APP = the running bb server URL; THREAD_TITLE = a substring of a board
+//   ALIA_APP=http://127.0.0.1:38886 THREAD_TITLE="scaffolding" node scripts/probe-chat-click-jump.mjs
+// (ALIA_APP = the running VesnALIA server URL; THREAD_TITLE = a substring of a board
 // card title whose pane transcript is several pages long.)
 //
 // What it does: opens the Focus Board, opens the matching card's pane, then:
@@ -17,7 +17,7 @@
 // evidence trail: it names the affected host module/function.
 import puppeteer from "puppeteer-core";
 
-const APP = process.env.BB_APP ?? "http://127.0.0.1:38886/plugins/focus-board/board";
+const APP = process.env.ALIA_APP ?? "http://127.0.0.1:38886/plugins/focus-board/board";
 const THREAD_ID = process.env.THREAD_ID ?? "";
 const TITLE = process.env.THREAD_TITLE ?? "";
 if (!TITLE && !THREAD_ID) {

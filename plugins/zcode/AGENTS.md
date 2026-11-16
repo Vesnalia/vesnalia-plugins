@@ -1,11 +1,11 @@
 # AGENTS.md
 
-Инструкции для ИИ-агентов, работающих с репозиторием `bb-zcode` — плагином bb,
-который запускает сессии ZCode CLI внутри bb.
+Инструкции для ИИ-агентов, работающих с репозиторием `alia-zcode` — плагином VesnALIA,
+который запускает сессии ZCode CLI внутри VesnALIA.
 
 ## Контекст проекта
 
-- Плагин — адаптер между протоколом bb provider bridge (v2, дельты v3) и
+- Плагин — адаптер между протоколом VesnALIA provider bridge (v2, дельты v3) и
   нативным протоколом ZCode CLI (v1, stdio). Один дочерний процесс ZCode на
   поток; настройки и возможности провайдера объявлены в `server.ts`.
 - Правила контрибуции — в [CONTRIBUTING.md](CONTRIBUTING.md): только публичные
@@ -13,9 +13,9 @@
   approvals, `npm run marketplace:build` после изменения брендинга или
   `PLUGIN_OVERVIEW.md`.
 - Основные команды: `npm run check` (marketplace:check + typecheck + test +
-  build; для build нужен CLI bb или `bb-app@0.46.1`), `npm run format:check`,
+  build; для build нужен CLI VesnALIA или `alia-app@0.46.1`), `npm run format:check`,
   `npm run test:live` (живой CLI с изолированным loopback-фикстуром; полный
-  bb-smoke — только на одноразовом инстансе bb).
+  alia-smoke — только на одноразовом инстансе VesnALIA).
 - Архитектура и границы проверяемости: [docs/capability-audit.md](docs/capability-audit.md)
   и [docs/validation.md](docs/validation.md).
 

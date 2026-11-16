@@ -1,7 +1,7 @@
 /**
- * The card a thread was started on, where bb shows a thread: a row in its
- * Info tab (bb 0.47), and an item on its sidebar row's metadata line (bb
- * 0.48, behind bb's `threadRowMetadata` experiment). Both read the card the
+ * The card a thread was started on, where VesnALIA shows a thread: a row in its
+ * Info tab (VesnALIA 0.47), and an item on its sidebar row's metadata line (VesnALIA
+ * 0.48, behind VesnALIA's `threadRowMetadata` experiment). Both read the card the
  * board's `send` stored as the thread's plugin metadata; a thread without one
  * — Add to chat writes none — shows nothing.
  */
@@ -16,7 +16,7 @@ import {
   type ExperimentalThreadRowMetadataDataInput,
   type ExperimentalThreadRowMetadataProps,
   type PluginAppSlots,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 import { Icon } from "@/components/ui/icon";
 import { isOpenableLink } from "./link";
@@ -73,10 +73,10 @@ export type ThreadCards = ReadonlyMap<string, ThreadCard | null>;
 
 /**
  * The cards of every listed thread the board started, read in batches of 200.
- * bb calls it once for the whole app, and only while a list draws a metadata
+ * VesnALIA calls it once for the whole app, and only while a list draws a metadata
  * line — never while the experiment or the user's Metadata row option is off.
  * A card never changes after the spawn, so each thread is read once; a failed
- * batch is read again the next time bb hands over the list.
+ * batch is read again the next time VesnALIA hands over the list.
  */
 export function useThreadCards({ threads }: ExperimentalThreadRowMetadataDataInput): ThreadCards {
   const pluginId = experimental_usePluginId();
@@ -87,7 +87,7 @@ export function useThreadCards({ threads }: ExperimentalThreadRowMetadataDataInp
   const requested = useRef(new Set<string>());
   const failed = useRef(new Set<string>());
   const key = threadsToRead(threads, pluginId, requested.current).join("\n");
-  // While a read has failed, every new list from bb runs the effect again,
+  // While a read has failed, every new list from VesnALIA runs the effect again,
   // which asks for the failed threads once more; otherwise only new threads do.
   const retryOn = failed.current.size > 0 ? threads : null;
 
@@ -141,8 +141,8 @@ export function ThreadCardRowItem({ thread, data }: ExperimentalThreadRowMetadat
 }
 
 /**
- * Registers both surfaces. The sidebar item's slot is new in bb 0.48, so on
- * bb 0.47 it is left out rather than raising the plugin's minimum bb for an
+ * Registers both surfaces. The sidebar item's slot is new in VesnALIA 0.48, so on
+ * VesnALIA 0.47 it is left out rather than raising the plugin's minimum VesnALIA for an
  * item behind an experiment.
  */
 export function registerThreadCard(slots: PluginAppSlots): void {

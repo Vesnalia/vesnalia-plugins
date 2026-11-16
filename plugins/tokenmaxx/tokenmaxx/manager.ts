@@ -309,7 +309,7 @@ export const manager = (socketPath: string) => ({
     request({
       socketPath,
       method: "provider/switch",
-      params: { provider, reason: "bb plugin", targetAccountId },
+      params: { provider, reason: "alia plugin", targetAccountId },
       schema: dashboardSchema,
       timeoutMs: 30_000,
     }),

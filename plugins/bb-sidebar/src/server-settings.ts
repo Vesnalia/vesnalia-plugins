@@ -58,7 +58,7 @@ export async function createServerSettings(ctx: ServerContext) {
         }),
       );
     } catch (error) {
-      ctx.bb.log.warn(
+      ctx.alia.log.warn(
         `Could not parse sidebar_settings.settings_json; using defaults: ${error instanceof Error ? error.message : String(error)}`,
       );
       return { ...defaults };
@@ -73,8 +73,8 @@ export async function createServerSettings(ctx: ServerContext) {
     ctx.db.prepare(`SELECT 1 FROM sidebar_settings WHERE id = 1 AND settings_json IS NOT NULL`).get() !== undefined;
   if (!hasStoredSidebarSettings) {
     try {
-      const legacy = await ctx.bb.sdk.plugins.getSettings({
-        pluginId: ctx.bb.pluginId,
+      const legacy = await ctx.alia.sdk.plugins.getSettings({
+        pluginId: ctx.alia.pluginId,
       });
       const values = legacy.values;
       const hasLegacyValues = [

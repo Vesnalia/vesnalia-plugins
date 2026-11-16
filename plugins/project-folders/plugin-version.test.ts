@@ -16,11 +16,11 @@ const bundle = (files: Record<string, string>) => {
 };
 
 describe("the plugin version the server bundle reads", () => {
-  it("reads dist/package.json where BB copied it", () => {
+  it("reads dist/package.json where VesnALIA copied it", () => {
     const from = bundle({ "dist/package.json": '{"version":"1.2.3"}' });
     expect(readPluginVersion(from)).toBe("1.2.3");
   });
-  it("falls back to the plugin root on BB 0.43, which copies nothing", () => {
+  it("falls back to the plugin root on VesnALIA 0.43, which copies nothing", () => {
     const from = bundle({ "package.json": '{"version":"1.2.4"}' });
     expect(readPluginVersion(from)).toBe("1.2.4");
   });

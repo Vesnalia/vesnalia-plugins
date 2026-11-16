@@ -1,7 +1,7 @@
 // Debugging over the Debug Adapter Protocol: a small DAP client on the plugin's
 // /dap WebSocket (debugpy behind it), and the hook the Run and Debug view uses.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Scope } from "../server";
 import { fromFileUri } from "./lsp";
 

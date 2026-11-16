@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 import { defaults, imageUrl, isAnimatedImage, MAX_GIF_BYTES, type Snapshot } from "../lib/model.ts";
 import { decodeImage } from "../lib/image.ts";
@@ -13,7 +13,7 @@ const empty = { settings: defaults, image: null, slots: [], activeSlot: null };
 test("six independent slots retain images and appearance across switches and reload", async () => {
   let host = createFakePluginHost({ pluginId: "aura" });
   try {
-    plugin(host.bb);
+    plugin(host.alia);
     assert.deepEqual(await host.harness.callRpc("get", null), empty);
     const saved = await host.harness.callRpc("apply", { settings: defaults, image: replace, saveSlot: { slot: 1, name: "Lake" } }) as Snapshot;
     assert.equal(saved.activeSlot, 1);
@@ -35,7 +35,7 @@ test("six independent slots retain images and appearance across switches and rel
 });
 
 test("invalid image or slot rejects the entire apply without partially changing settings", async () => {
-  const host = createFakePluginHost(); plugin(host.bb);
+  const host = createFakePluginHost(); plugin(host.alia);
   try {
     await host.harness.callRpc("apply", { settings: defaults, image: replace, saveSlot: { slot: 1, name: "Keep" } });
     const before = await host.harness.callRpc("get", null);
@@ -50,7 +50,7 @@ test("invalid image or slot rejects the entire apply without partially changing 
 });
 
 test("scope stays global across slots; clearing/resetting preserves saved work", async () => {
-  const host = createFakePluginHost(); plugin(host.bb);
+  const host = createFakePluginHost(); plugin(host.alia);
   try {
     await host.harness.callRpc("apply", { settings: defaults, image: replace, saveSlot: { slot: 1, name: "Photo" } });
     await host.harness.runCli(["new-thread-only", "on"]);
@@ -70,10 +70,10 @@ test("scope stays global across slots; clearing/resetting preserves saved work",
 });
 test("image type must match bytes; legacy settings get new defaults", async () => {
   assert.equal(decodeImage(png).mime, "image/png"); assert.throws(() => decodeImage(png.replace("image/png", "image/jpeg")));
-  const host = createFakePluginHost(); plugin(host.bb);
+  const host = createFakePluginHost(); plugin(host.alia);
   try {
     const { newThreadOnly, fps, quality, activityOverview, topbarBackground, pattern, dither, photoMotion, ...legacy } = defaults;
-    host.bb.storage.database().prepare("UPDATE background SET settings = ? WHERE id = 1").run(JSON.stringify(legacy));
+    host.alia.storage.database().prepare("UPDATE background SET settings = ? WHERE id = 1").run(JSON.stringify(legacy));
     const settings = (await host.harness.callRpc("get", null) as Snapshot).settings;
     assert.equal(settings.newThreadOnly, false);
     assert.equal(settings.fps, 15);
@@ -87,11 +87,11 @@ test("image type must match bytes; legacy settings get new defaults", async () =
 });
 
 test("settings written by a newer build load instead of rejecting the snapshot", async () => {
-  const host = createFakePluginHost(); plugin(host.bb);
+  const host = createFakePluginHost(); plugin(host.alia);
   try {
     const newer = { ...defaults, activityOverview: true, futureSetting: "from a later release" };
-    host.bb.storage.database().prepare("UPDATE background SET settings = ? WHERE id = 1").run(JSON.stringify(newer));
-    host.bb.storage.database().prepare("INSERT INTO aura_slots (slot, name, settings) VALUES (1, 'Newer', ?)").run(JSON.stringify(newer));
+    host.alia.storage.database().prepare("UPDATE background SET settings = ? WHERE id = 1").run(JSON.stringify(newer));
+    host.alia.storage.database().prepare("INSERT INTO aura_slots (slot, name, settings) VALUES (1, 'Newer', ?)").run(JSON.stringify(newer));
     const loaded = await host.harness.callRpc("get", null) as Snapshot;
     assert.equal(loaded.settings.activityOverview, true);
     assert.equal("futureSetting" in loaded.settings, false);
@@ -102,7 +102,7 @@ test("settings written by a newer build load instead of rejecting the snapshot",
 });
 
 test("overview is default-off and stays global across slots/reset/reload without changing a saved image", async () => {
-  let host = createFakePluginHost({ pluginId: "aura" }); plugin(host.bb);
+  let host = createFakePluginHost({ pluginId: "aura" }); plugin(host.alia);
   try {
     const disabled = await host.harness.callRpc("activity", { period: "year", repository: null }) as { status: string; data: unknown };
     assert.equal(disabled.status, "unavailable"); assert.equal(disabled.data, null);
@@ -126,7 +126,7 @@ test("overview is default-off and stays global across slots/reset/reload without
 });
 
 test("top bar background is default-off and stays global across slots/reset/reload", async () => {
-  let host = createFakePluginHost({ pluginId: "aura" }); plugin(host.bb);
+  let host = createFakePluginHost({ pluginId: "aura" }); plugin(host.alia);
   try {
     const initial = await host.harness.callRpc("get", null) as Snapshot;
     assert.equal(initial.settings.topbarBackground, false);
@@ -148,7 +148,7 @@ test("top bar background is default-off and stays global across slots/reset/relo
 });
 
 test("animation speed and quality persist in saved slots", async () => {
-  const host = createFakePluginHost(); plugin(host.bb);
+  const host = createFakePluginHost(); plugin(host.alia);
   try {
     const settings = { ...defaults, fps: 60 as const, quality: "sharp" as const };
     const saved = await host.harness.callRpc("apply", { settings, image: keep, saveSlot: { slot: 1, name: "Smooth" } }) as Snapshot;
@@ -162,7 +162,7 @@ test("animation speed and quality persist in saved slots", async () => {
 });
 
 test("versioned images use an immutable private browser cache", async () => {
-  const host = createFakePluginHost({ pluginId: "aura" }); plugin(host.bb);
+  const host = createFakePluginHost({ pluginId: "aura" }); plugin(host.alia);
   try {
     const saved = await host.harness.callRpc("apply", { settings: defaults, image: replace }) as Snapshot;
     const response = await host.harness.fetchHttp("GET", `/image?v=${saved.image?.version}`);
@@ -172,7 +172,7 @@ test("versioned images use an immutable private browser cache", async () => {
 });
 
 test("New thread dimmer toggles without replacing images or saved slots", async () => {
-  const host = createFakePluginHost(); plugin(host.bb);
+  const host = createFakePluginHost(); plugin(host.alia);
   try {
     const saved = await host.harness.callRpc("apply", { settings: { ...defaults, fade: .4 }, image: replace, saveSlot: { slot: 1, name: "Photo" } }) as Snapshot;
     const off = await host.harness.callRpc("setDimmer", { enabled: false }) as Snapshot;
@@ -192,7 +192,7 @@ test("New thread dimmer toggles without replacing images or saved slots", async 
 });
 
 test("animated GIFs are stored as uploaded, served as GIF and flagged for the animated renderer", async () => {
-  const host = createFakePluginHost({ pluginId: "aura" }); plugin(host.bb);
+  const host = createFakePluginHost({ pluginId: "aura" }); plugin(host.alia);
   try {
     const saved = await host.harness.callRpc("apply", { settings: defaults, image: { action: "replace", name: "loop.gif", dataUrl: gif }, saveSlot: { slot: 1, name: "Loop" } }) as Snapshot;
     assert.equal(saved.image?.mime, "image/gif");
@@ -224,7 +224,7 @@ test("GIFs must match their bytes and stay within the GIF budget", () => {
 });
 
 test("pattern, dither and photo motion persist in saved slots", async () => {
-  const host = createFakePluginHost(); plugin(host.bb);
+  const host = createFakePluginHost(); plugin(host.alia);
   try {
     const settings = { ...defaults, pattern: "swirl" as const, dither: "random" as const, photoMotion: "shimmer" as const };
     await host.harness.callRpc("apply", { settings, image: keep, saveSlot: { slot: 1, name: "Swirl" } });

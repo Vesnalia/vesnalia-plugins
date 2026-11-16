@@ -5,7 +5,7 @@ import {
   loadPluginApp,
   mountPluginContentScripts,
   renderSlot,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import {
   CHAT_WIKILINK_HOVER_EVENT,
   CHAT_WIKILINK_OPEN_EVENT,
@@ -36,7 +36,7 @@ function memoryStorage(): Storage {
 }
 
 describe("Wikilinks preview", () => {
-  it("registers for Markdown and opens an aliased wikilink through BB navigation", async () => {
+  it("registers for Markdown and opens an aliased wikilink through VesnALIA navigation", async () => {
     const app = await loadPluginApp(() => import("./app.js"));
     const opener = app.fileOpeners[0]!;
     expect(opener).toMatchObject({
@@ -616,7 +616,7 @@ describe("Wikilinks preview", () => {
     document.body.innerHTML = "";
   });
 
-  it("opens a chat wikilink in BB's native file preview", async () => {
+  it("opens a chat wikilink in VesnALIA's native file preview", async () => {
     const app = await loadPluginApp(() => import("./app.js"));
     const action = app.threadHeaderActions[0]!;
     expect(action).toMatchObject({

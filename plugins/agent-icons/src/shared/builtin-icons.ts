@@ -1,5 +1,5 @@
 /**
- * Names that `experimental_Icon` draws in bb 0.49.0. Other names silently
+ * Names that `experimental_Icon` draws in VesnALIA 0.49.0. Other names silently
  * fall back, so assignments are limited to this list.
  */
 export const BUILTIN_ICONS = [
@@ -52,5 +52,5 @@ export function isBuiltinIcon(name: string): name is BuiltinIconName {
   return BUILTIN_SET.has(name);
 }
 
-/** Providers bb ships; their marks are registered even before any assignment. */
+/** Providers VesnALIA ships; their marks are registered even before any assignment. */
 export const BUILTIN_PROVIDER_IDS = ["codex", "claude-code", "acp-cursor", "acp-hermes-agent"] as const;

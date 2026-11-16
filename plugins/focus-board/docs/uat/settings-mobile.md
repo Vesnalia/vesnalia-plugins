@@ -4,7 +4,7 @@ _Generated 2026-11-06T15:50:32.446Z by `npm run uat`._
 
 ## settings-mobile
 
-Source: `/Users/cristos/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_4qh62ybyi5-1/bb-plugin-focus-board/tests/manual/uat-settings-mobile.yaml` · theme dark
+Source: `/Users/cristos/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_4qh62ybyi5-1/alia-plugin-focus-board/tests/manual/uat-settings-mobile.yaml` · theme dark
 
 | Step | Result | Detail |
 | --- | --- | --- |

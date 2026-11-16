@@ -3,7 +3,7 @@ import { applyRequestEvents, hiddenMessagesOf } from "../src/hidden";
 import { acceptedEvent, rejectedEvent, requestEvent } from "./fixtures";
 
 describe("hiddenMessagesOf", () => {
-  it("keeps a plugin's agent-only steer, which bb's timeline drops", () => {
+  it("keeps a plugin's agent-only steer, which VesnALIA's timeline drops", () => {
     expect(hiddenMessagesOf(requestEvent(25))).toEqual([expect.objectContaining({
       kind: "hidden",
       id: "hidden:creq_25",
@@ -64,7 +64,7 @@ describe("hiddenMessagesOf", () => {
 });
 
 describe("applyRequestEvents", () => {
-  it("places an accepted steer at its acceptance, like bb places a visible steer", () => {
+  it("places an accepted steer at its acceptance, like VesnALIA places a visible steer", () => {
     const messages = applyRequestEvents([], [requestEvent(25), acceptedEvent(27, "creq_25")]);
     expect(messages).toEqual([expect.objectContaining({ seq: 27, startedAt: 2_700, steer: true, turnId: "turn-1" })]);
   });

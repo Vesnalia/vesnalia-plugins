@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
-import { threadDeltaSchema } from '@get-bb/plugin-sdk/provider-bridge';
+import { threadDeltaSchema } from '@vesnalia/plugin-sdk/provider-bridge';
 import { experimental_assembleCapturedThreadEvents as assemble,
-  experimental_assembleRecordedEvents as replay, experimental_createBridgeDeltaEventCollector as collector } from '@get-bb/plugin-sdk/provider-bridge/testing';
+  experimental_assembleRecordedEvents as replay, experimental_createBridgeDeltaEventCollector as collector } from '@vesnalia/plugin-sdk/provider-bridge/testing';
 import { api, artifact, rows, snapshot, frame, delta, wires, complete, inputs } from './helpers.mjs';
 import { assertHostNode as executableGuard } from '../../scripts/provider/guard.mjs';
 

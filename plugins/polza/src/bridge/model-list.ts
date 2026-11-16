@@ -2,7 +2,7 @@
 // whitelist, not from the Claude CLI. The whitelist and base URL travel as
 // contributed environment on the `model/list` request (`envVars`), since that
 // request carries no provider options.
-import { type AvailableModel } from "@get-bb/plugin-sdk/provider-bridge";
+import { type AvailableModel } from "@vesnalia/plugin-sdk/provider-bridge";
 import { buildPolzaModelList } from "../polza/catalog.js";
 import {
   POLZA_DEFAULT_BASE_URL,

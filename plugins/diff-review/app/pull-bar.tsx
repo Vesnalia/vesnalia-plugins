@@ -1,5 +1,5 @@
 /** The bar a pull request's view shows under the toolbar: the pull request, when its threads were read, Submit. */
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -8,7 +8,7 @@ import type { PullDetails } from "../shared/github";
 import { ago } from "./labels";
 
 export function PullBar({ pull, onSubmit, onSync, refreshing }: { pull: PullDetails; onSubmit(): void; onSync(): void; refreshing: boolean }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-1.5 text-xs">
       <Icon name="GitPullRequest" className="size-3.5 text-muted-foreground" />

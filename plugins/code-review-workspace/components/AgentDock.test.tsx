@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { test, expect, vi, afterEach, beforeEach } from "vitest";
 import { act, cleanup, screen, fireEvent, waitFor, within } from "@testing-library/react";
-import { installTestPluginRuntime, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { DockInjection } from "./AgentDock";
 import { findPicker } from "./provider-picker.test-support";
 
@@ -30,7 +30,7 @@ async function renderDock(props: Record<string, unknown>, rpc: Record<string, an
   return { slot, inject: (context: DockInjection["context"], quote?: string) => act(() => setInjection({ context, nonce: ++nonce, ...(quote ? { quote } : {}) })) };
 }
 
-test("the agent starts on its first message, under a heading, with no widget to pop out or ✕ of its own: BB's panel has one", async () => {
+test("the agent starts on its first message, under a heading, with no widget to pop out or ✕ of its own: VesnALIA's panel has one", async () => {
   await renderDock({}, { getConversation: unstarted });
   await screen.findByText("Ask about this change.");
   expect(within(screen.getByRole("region", { name: "Review agent" })).getByRole("heading", { level: 2, name: "Review agent" })).toBeTruthy();
@@ -40,7 +40,7 @@ test("the agent starts on its first message, under a heading, with no widget to 
   expect(screen.queryByRole("button", { name: "New conversation" })).toBeNull();
 });
 
-test("the first message starts the conversation on the chosen agent, then bb's chat takes over", async () => {
+test("the first message starts the conversation on the chosen agent, then VesnALIA's chat takes over", async () => {
   const startConversation = vi.fn(async () => ({ threadId: "th-1" }));
   await renderDock({}, { getConversation: unstarted, startConversation });
   const picker = await findPicker(screen);
@@ -50,7 +50,7 @@ test("the first message starts the conversation on the chosen agent, then bb's c
   fireEvent.change(screen.getByRole("textbox", { name: "Ask the agent" }), { target: { value: "Is this safe?" } });
   fireEvent.keyDown(screen.getByRole("textbox", { name: "Ask the agent" }), { key: "Enter" });
   fireEvent.keyDown(screen.getByRole("textbox", { name: "Ask the agent" }), { key: "Enter" });
-  const chat = await screen.findByTestId("bb-thread-chat");
+  const chat = await screen.findByTestId("alia-thread-chat");
   expect(chat.dataset).toMatchObject({ threadId: "th-1", variant: "compact", permissionPolicy: "inherit" });
   expect(startConversation).toHaveBeenCalledExactlyOnceWith({ targetKey: "pr-1", text: "Is this safe?", typed: "Is this safe?", inserted: false, agent: { ...codex, model: "gpt-6" } });
   expect(screen.queryByRole("textbox", { name: "Ask the agent" })).toBeNull();
@@ -75,14 +75,14 @@ test("a selection becomes the first message's quoted context", async () => {
   expect(screen.getByText("x.ts:2–3")).toBeTruthy();
   fireEvent.change(screen.getByRole("textbox", { name: "Ask the agent" }), { target: { value: "Why?" } });
   fireEvent.click(screen.getByRole("button", { name: "Send" }));
-  await screen.findByTestId("bb-thread-chat");
+  await screen.findByTestId("alia-thread-chat");
   expect(startConversation).toHaveBeenCalledWith({ targetKey: "pr-1", text: "Why?\n\nIn `x.ts` lines 2-3:\n```diff\n+b2\n+c\n```", typed: "Why?", inserted: true, agent: codex });
 });
 
-test("during a conversation, a selection is quoted into bb's composer for the reviewer to finish, noted first so it confirms no post", async () => {
+test("during a conversation, a selection is quoted into VesnALIA's composer for the reviewer to finish, noted first so it confirms no post", async () => {
   const noteInserted = vi.fn(async () => ({ ok: true }));
   const { slot, inject } = await renderDock({}, { getConversation: () => ({ threadId: "th-1", legacy: [], defaults: null }), noteInserted }, { composer: { scope: { kind: "thread", threadId: "th-1" } } });
-  await screen.findByTestId("bb-thread-chat");
+  await screen.findByTestId("alia-thread-chat");
   inject({ file: "x.ts", code: "const x = 1" });
   await waitFor(() => expect(slot.inspection.composer.text).toContain("In `x.ts`:\n```\nconst x = 1\n```"));
   expect(noteInserted).toHaveBeenCalledExactlyOnceWith({ targetKey: "pr-1", threadId: "th-1", text: "In `x.ts`:\n```\nconst x = 1\n```" });
@@ -90,10 +90,10 @@ test("during a conversation, a selection is quoted into bb's composer for the re
   expect(screen.queryByRole("textbox", { name: "Ask the agent" })).toBeNull();
 });
 
-test("a quote that couldn't be noted isn't put in bb's composer", async () => {
+test("a quote that couldn't be noted isn't put in VesnALIA's composer", async () => {
   const noteInserted = vi.fn(async () => { throw new Error("offline"); });
   const { slot, inject } = await renderDock({}, { getConversation: () => ({ threadId: "th-1", legacy: [], defaults: null }), noteInserted }, { composer: { scope: { kind: "thread", threadId: "th-1" } } });
-  await screen.findByTestId("bb-thread-chat");
+  await screen.findByTestId("alia-thread-chat");
   inject({ file: "x.ts", code: "const x = 1" });
   await waitFor(() => expect(noteInserted).toHaveBeenCalled());
   await new Promise((resolve) => setTimeout(resolve, 20));
@@ -111,7 +111,7 @@ test("a quote put in the first message's box marks the message inserted while an
     await waitFor(() => expect(box.value).toBe(quote));
     fireEvent.change(box, { target: { value: typed(box.value) } });
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
-    await screen.findByTestId("bb-thread-chat");
+    await screen.findByTestId("alia-thread-chat");
     expect(startConversation).toHaveBeenCalledWith(expect.objectContaining({ inserted }));
     cleanup();
   }
@@ -123,20 +123,20 @@ test("the agent's header names its review by its id", async () => {
   expect(within(screen.getByRole("region", { name: "Review agent" })).getByRole("heading", { level: 2 }).textContent).toBe("Review agent·api#4512");
 });
 
-test("an ask made before the tab mounts, as the ask that opens BB's panel is, is taken as it opens, once", async () => {
+test("an ask made before the tab mounts, as the ask that opens VesnALIA's panel is, is taken as it opens, once", async () => {
   const asked = { context: { file: "src/a.ts", chapterId: "c1" }, nonce: ++nonce };
   const first = await renderDock({}, { getConversation: unstarted }, {}, asked);
   expect(await screen.findByText("a.ts")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Clear selection context" }));
   first.slot.lifecycle.unmount();
-  // BB mounting the tab again doesn't ask again.
+  // VesnALIA mounting the tab again doesn't ask again.
   await renderDock({}, { getConversation: unstarted }, {}, asked);
   await screen.findByText("Ask about this change.");
   await new Promise((resolve) => setTimeout(resolve, 50));
   expect(screen.queryByText("a.ts")).toBeNull();
 });
 
-test("a first message being written, and its context, survive the tab mounting again, as BB 0.48 mounts it each time its panel opens", async () => {
+test("a first message being written, and its context, survive the tab mounting again, as VesnALIA 0.48 mounts it each time its panel opens", async () => {
   const first = await renderDock({ targetKey: "pr-kept" }, { getConversation: unstarted });
   await screen.findByText("Ask about this change.");
   first.inject({ file: "src/kept.ts" });
@@ -147,11 +147,11 @@ test("a first message being written, and its context, survive the tab mounting a
   expect(screen.getByText("kept.ts")).toBeTruthy();
 });
 
-test("Ask agent with nothing to quote, as with no file in view, focuses bb's composer and notes nothing, with no error", async () => {
+test("Ask agent with nothing to quote, as with no file in view, focuses VesnALIA's composer and notes nothing, with no error", async () => {
   const noteInserted = vi.fn(async () => ({ ok: true }));
   const error = vi.spyOn((await import("sonner")).toast, "error");
   const { slot, inject } = await renderDock({}, { getConversation: () => ({ threadId: "th-1", legacy: [], defaults: null }), noteInserted }, { composer: { scope: { kind: "thread", threadId: "th-1" } } });
-  await screen.findByTestId("bb-thread-chat");
+  await screen.findByTestId("alia-thread-chat");
   inject({ chapterId: "c1" });
   await waitFor(() => expect(slot.inspection.composer.focusCount).toBe(1));
   expect(noteInserted).not.toHaveBeenCalled();
@@ -173,8 +173,8 @@ test("Ask agent alone, before the conversation starts, opens an empty first mess
 test("an image in the agent's earlier answers shows as a link to it, and yours as you wrote it", async () => {
   const earlier = { threadId: "th-1", legacy: [{ id: 1, role: "user", text: "See ![mine](https://a.example/mine.png)", context: null, createdAt: 1 }, { id: 2, role: "assistant", text: "Here: ![chart](https://attacker.example/c.png)", context: null, createdAt: 2 }], defaults: null };
   await renderDock({}, { getConversation: async () => earlier });
-  const leading = within(await screen.findByTestId("bb-thread-chat-leading-content"));
-  expect(leading.getByTestId("bb-markdown").textContent).toBe("Here: [Image: chart](https://attacker.example/c.png)");
+  const leading = within(await screen.findByTestId("alia-thread-chat-leading-content"));
+  expect(leading.getByTestId("alia-markdown").textContent).toBe("Here: [Image: chart](https://attacker.example/c.png)");
   expect(leading.getByText("See ![mine](https://a.example/mine.png)")).toBeTruthy();
 });
 
@@ -183,7 +183,7 @@ test("an earlier conversation stays visible, and New conversation starts over af
   const getConversation = vi.fn().mockResolvedValueOnce(earlier).mockResolvedValue(unstarted());
   const newConversation = vi.fn(async () => ({ ok: true }));
   await renderDock({}, { getConversation, newConversation });
-  const leading = within(await screen.findByTestId("bb-thread-chat-leading-content"));
+  const leading = within(await screen.findByTestId("alia-thread-chat-leading-content"));
   expect(leading.getByText("Earlier question")).toBeTruthy();
   // Named like the agent everywhere else in the review.
   expect(leading.getByText("Earlier answer").closest("div.space-y-1")!.textContent).toMatch(/^Agent/);
@@ -209,7 +209,7 @@ test("an earlier conversation stays visible, and New conversation starts over af
 test("a chat deleted while it shows says so, with Start a new chat over the first message's box", async () => {
   const getConversation = vi.fn().mockResolvedValueOnce({ threadId: "th-1", legacy: [], defaults: null }).mockResolvedValue(unstarted());
   const { slot } = await renderDock({}, { getConversation });
-  await screen.findByTestId("bb-thread-chat");
+  await screen.findByTestId("alia-thread-chat");
   await slot.emitRealtime("conversation:pr-1", { deleted: "th-1" });
   const note = await screen.findByRole("status");
   expect(note.textContent).toBe("This review’s agent chat was deleted.Start a new chat");
@@ -229,7 +229,7 @@ test("a failed start keeps the question to try again", async () => {
   await waitFor(() => expect(startConversation).toHaveBeenCalledOnce());
   await waitFor(() => expect((screen.getByRole("button", { name: "Send" }) as HTMLButtonElement).disabled).toBe(false));
   expect((screen.getByRole("textbox", { name: "Ask the agent" }) as HTMLTextAreaElement).value).toBe("A question");
-  expect(screen.queryByTestId("bb-thread-chat")).toBeNull();
+  expect(screen.queryByTestId("alia-thread-chat")).toBeNull();
 });
 
 const onFloMac = (connected = true) => () => ({ threadId: null, legacy: [], defaults: { ...codex, hostId: "host_flomac" }, machine: { name: "FloMac", connected } });
@@ -244,7 +244,7 @@ test("a new conversation starts on the assistant's chosen machine, choosing from
   fireEvent.click(within(picker).getByRole("button", { name: "Apply execution selection" }));
   fireEvent.change(screen.getByRole("textbox", { name: "Ask the agent" }), { target: { value: "Is this safe?" } });
   fireEvent.click(screen.getByRole("button", { name: "Send" }));
-  await screen.findByTestId("bb-thread-chat");
+  await screen.findByTestId("alia-thread-chat");
   expect(startConversation).toHaveBeenCalledExactlyOnceWith({ targetKey: "pr-1", text: "Is this safe?", typed: "Is this safe?", inserted: false, agent: { ...codex, model: "gpt-6", hostId: "host_flomac" } });
 });
 
@@ -257,5 +257,5 @@ test("an offline machine is named, and a refused first message stays in the comp
   await waitFor(() => expect(startConversation).toHaveBeenCalledOnce());
   await waitFor(() => expect((screen.getByRole("textbox", { name: "Ask the agent" }) as HTMLTextAreaElement).disabled).toBe(false));
   expect((screen.getByRole("textbox", { name: "Ask the agent" }) as HTMLTextAreaElement).value).toBe("Is this safe?");
-  expect(screen.queryByTestId("bb-thread-chat")).toBeNull();
+  expect(screen.queryByTestId("alia-thread-chat")).toBeNull();
 });

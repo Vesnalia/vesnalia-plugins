@@ -3,10 +3,10 @@ import {
   experimental_PermissionModePicker as PermissionModePicker,
   experimental_ProviderModelPicker as ProviderModelPicker,
   useRpc
-} from '@get-bb/plugin-sdk/app';
+} from '@vesnalia/plugin-sdk/app';
 import type {
   ExperimentalProviderModelPickerValue
-} from '@get-bb/plugin-sdk/app';
+} from '@vesnalia/plugin-sdk/app';
 import type { TaskboardRpcContract } from '../contract.js';
 import type { FactoryExecution, FactoryExecutionOptions } from './contract.js';
 import { Badge } from '../components/ui/badge.js';
@@ -30,7 +30,7 @@ export function ExecutionPicker({
   resetLabel?: string;
   fallback?: FactoryExecution | null;
   onDefaults?: (value: FactoryExecution | null) => void;
-  /** Prefer the factory settings AI over BB's thread defaults. */
+  /** Prefer the factory settings AI over VesnALIA's thread defaults. */
   preferFactoryAI?: boolean;
 }) {
   const rpc = useRpc<TaskboardRpcContract>();
@@ -71,7 +71,7 @@ export function ExecutionPicker({
     void load();
   }, [load]);
   const preferred = preferFactoryAI ? options?.selected : null;
-  // A factory task inherits the factory settings AI before BB's thread
+  // A factory task inherits the factory settings AI before VesnALIA's thread
   // defaults, so Jev routing cannot silently override the saved model.
   const effective = value ?? fallback ?? preferred ?? options?.defaults ?? null;
   const displayDefault = fallback ?? preferred ?? options?.defaults ?? null;

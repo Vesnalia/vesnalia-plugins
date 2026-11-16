@@ -1,6 +1,6 @@
 # Plan: a working dot's pulse tracks the thread's token burn rate
 
-*Origin: operator request in thread `thr_hqhmxftj3r` ("Animate active status dots"), written 2026-10-22 on branch `bb/animate-active-status-dots-thr_hqhmxftj3r` (based on `dev` at b97f71b, the folded family box merge). Reference behavior: the Activity Overview plugin's burn-rate pulse, shipped in thread `thr_s5vbtjtgwe`.*
+*Origin: operator request in thread `thr_hqhmxftj3r` ("Animate active status dots"), written 2026-10-22 on branch `alia/animate-active-status-dots-thr_hqhmxftj3r` (based on `dev` at b97f71b, the folded family box merge). Reference behavior: the Activity Overview plugin's burn-rate pulse, shipped in thread `thr_s5vbtjtgwe`.*
 
 ## The request
 
@@ -35,7 +35,7 @@ A factory, `createThreadPulseTracker({ now, readUsedTokens, ... })`, with the cl
 
 ### Server wiring: `server.ts`
 
-One module-scope tracker behind the RPC, one `bb.sdk.subscribe({ event: "thread:changed", callback })` registered at plugin init (the callback is the `noteEvent` call, disposed through `bb.onDispose`), and one new RPC:
+One module-scope tracker behind the RPC, one `alia.sdk.subscribe({ event: "thread:changed", callback })` registered at plugin init (the callback is the `noteEvent` call, disposed through `alia.onDispose`), and one new RPC:
 
 ```
 pulse_rates: { input: z.null(), output: { rates: z.record(z.string(), z.number()), generatedAt: z.number() } }

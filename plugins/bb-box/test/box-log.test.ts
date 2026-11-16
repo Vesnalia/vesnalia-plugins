@@ -5,10 +5,10 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { BOX_HISTORY_FILE, BOX_LOG_FILE, MONITOR_CAP_BYTES, SHARED_CAP_BYTES, openBoxFiles } from "../src/plugin/attached-files.ts";
 import { BOX_LOG_MIGRATIONS, BoxLogStore, SHARED_ROW_CAP } from "../src/plugin/box-log-store.ts";
-import { BY_COMMAND, BY_OUTSIDE, BY_PERSON, KEPT_AFTER_THE_END_MS, KEPT_FOR_A_BOX_MS, byAgent, byBbBox, type BoxEvent } from "../src/core/box-log.ts";
+import { BY_COMMAND, BY_OUTSIDE, BY_PERSON, KEPT_AFTER_THE_END_MS, KEPT_FOR_A_BOX_MS, byAgent, byAliaBox, type BoxEvent } from "../src/core/box-log.ts";
 import { createMonitorStore } from "../src/monitor/monitor-store.ts";
 import { tempDir } from "./helpers.ts";
-import { bbOf, storage } from "./box-files.ts";
+import { aliaOf, storage } from "./box-files.ts";
 
 const MB = 1024 * 1024;
 const WORDS = "x".repeat(1100);
@@ -60,7 +60,7 @@ test("a full box-history.db leaves the Monitor's pressure logs and the box log w
   assert.throws(() => {
     for (let i = 0; i < 1000; i++) fill.run(Buffer.alloc(4096));
   }, /full/i, "box history fills at its own cap");
-  const monitor = createMonitorStore(bbOf(source) as never);
+  const monitor = createMonitorStore(aliaOf(source) as never);
   const saved = monitor.write([{ type: "sample", timestamp: Date.now(), cpu: 10 }]);
   assert.equal(saved.length, 1, "pressure logs still write");
   assert.equal(Number(db.pragma("main.max_page_count", { simple: true })), Math.floor(MONITOR_CAP_BYTES / Number(db.pragma("main.page_size", { simple: true }))), "data.db keeps the Monitor's 10 MB cap");
@@ -81,7 +81,7 @@ test("where the handle refuses ATTACH, the tables go in data.db, its cap rises t
   const db = source.handle();
   const pages = (bytes: number) => Math.floor(bytes / Number(db.pragma("main.page_size", { simple: true })));
   assert.equal(Number(db.pragma("main.max_page_count", { simple: true })), pages(SHARED_CAP_BYTES));
-  createMonitorStore(bbOf(source) as never);
+  createMonitorStore(aliaOf(source) as never);
   assert.equal(Number(db.pragma("main.max_page_count", { simple: true })), pages(SHARED_CAP_BYTES), "the Monitor's store keeps the raised cap");
   assert.equal(openBoxFiles(source, { log: BOX_LOG_MIGRATIONS, history: [] }).log.migrationsRun, 0, "its migrations run once there too");
 
@@ -92,7 +92,7 @@ test("where the handle refuses ATTACH, the tables go in data.db, its cap rises t
     return statSync(join(folder, "data.db")).size;
   };
   const before = compacted();
-  for (let i = 0; i < SHARED_ROW_CAP * 3; i++) log.record(event(i, { box: `bx${i % 40}`, words: WORDS, kind: i % 2 ? "stop-failed" : "stopped", by: byBbBox("y".repeat(300)) }));
+  for (let i = 0; i < SHARED_ROW_CAP * 3; i++) log.record(event(i, { box: `bx${i % 40}`, words: WORDS, kind: i % 2 ? "stop-failed" : "stopped", by: byAliaBox("y".repeat(300)) }));
   assert.equal(log.failures, null);
   const rows = (db.prepare("SELECT COUNT(*) AS count FROM main.box_events").get() as { count: number }).count;
   assert.ok(rows <= SHARED_ROW_CAP, `at most ${SHARED_ROW_CAP} events, not ${rows}`);
@@ -104,7 +104,7 @@ test("10,000 events of the longest words keep box-log.db under its 8 MB cap, eac
   const folder = tempDir("box-log-cap");
   const { source, files } = opened(folder);
   const log = new BoxLogStore({ file: files.log });
-  for (let i = 0; i < 10_000; i++) log.record(event(i, { box: `bx${i % 30}`, kind: i % 3 ? "stop-failed" : "release-failed", words: WORDS, by: byBbBox("y".repeat(400)), observed: { state: "running", at: i, from: "Proxmox LXC" } }));
+  for (let i = 0; i < 10_000; i++) log.record(event(i, { box: `bx${i % 30}`, kind: i % 3 ? "stop-failed" : "release-failed", words: WORDS, by: byAliaBox("y".repeat(400)), observed: { state: "running", at: i, from: "Proxmox LXC" } }));
   assert.equal(log.failures, null, "no write failed");
   const db = source.handle();
   const pages = Number(db.pragma("boxlog.page_count", { simple: true }));
@@ -142,7 +142,7 @@ test("with box-log.db read-only, writes fail, the doctor says so, and the view c
   assert.equal(check?.status, "fail");
   assert.match(check?.detail ?? "", /could not write 4 events/);
   const restarted = new BoxLogStore({ file: second.files.log, gaps: gaps.at(-1) });
-  assert.equal(restarted.view("bxone").lastStop, null, "the gap is kept across a restart of bb-box");
+  assert.equal(restarted.view("bxone").lastStop, null, "the gap is kept across a restart of alia-box");
   second.source.close();
   for (const suffix of ["", "-wal", "-shm"]) if (existsSync(join(folder, `box-log.db${suffix}`))) chmodSync(join(folder, `box-log.db${suffix}`), 0o644);
   rmSync(folder, { recursive: true, force: true });
@@ -187,7 +187,7 @@ test("the log keeps a box's last 7 days and its latest event of each kind, and a
   assert.equal(log.view("bxone").lastStop?.by?.is, "agent");
 });
 
-test("the view gives the last start, the last stop and the last failed operation with what BB Box observed (069 G6)", () => {
+test("the view gives the last start, the last stop and the last failed operation with what VesnALIA Box observed (069 G6)", () => {
   const folder = tempDir("box-log-view");
   const { files } = opened(folder);
   const log = new BoxLogStore({ file: files.log });

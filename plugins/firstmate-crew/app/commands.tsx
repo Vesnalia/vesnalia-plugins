@@ -3,7 +3,7 @@
  * cannot reach the RPC client or navigation itself. `CommandBridge`, an app-wide overlay that draws
  * nothing, hands it those for as long as the app is open.
  */
-import { useBbNavigate, useRpc, type BbNavigate, type PluginCommandContext } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc, type AliaNavigate, type PluginCommandContext } from "@vesnalia/plugin-sdk/app";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -15,14 +15,14 @@ export const PANEL_ACTION_ID = "firstmate";
 
 interface Bridge {
   rpc: ReturnType<typeof useRpc<typeof rpcContract>>;
-  navigate: BbNavigate;
+  navigate: AliaNavigate;
 }
 
 let bridge: Bridge | null = null;
 
 export function CommandBridge(): null {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   useEffect(() => {
     bridge = { rpc, navigate };
     return () => {
@@ -41,8 +41,8 @@ function withBridge(work: (ready: Bridge) => Promise<void>): void {
 }
 
 /**
- * Selects the FirstMate tab in the thread in view; false when bb declined. bb 0.48 opens it through the
- * panel controller; bb 0.47 has none, and its `openPanel` (gone from the SDK's types since 0.6.88) takes
+ * Selects the FirstMate tab in the thread in view; false when VesnALIA declined. VesnALIA 0.48 opens it through the
+ * panel controller; VesnALIA 0.47 has none, and its `openPanel` (gone from the SDK's types since 0.6.88) takes
  * the tab's id.
  */
 export function openTab(context: PluginCommandContext): boolean {
@@ -53,7 +53,7 @@ export function openTab(context: PluginCommandContext): boolean {
   return (context as unknown as LegacyCommandContext).openPanel({ actionId: PANEL_ACTION_ID });
 }
 
-/** bb 0.47's command context. */
+/** VesnALIA 0.47's command context. */
 interface LegacyCommandContext {
   openPanel(options: { actionId: string }): boolean;
 }

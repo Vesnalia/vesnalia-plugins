@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Guide } from "./guide";
 import type { Draft, DraftComment, Verdict } from "./draft";
 import { createHash, randomUUID } from "node:crypto";
@@ -96,9 +96,9 @@ export interface Store {
   ): AgentMessage;
 }
 
-export function createStore(bb: BbPluginApi): Store {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+export function createStore(alia: AliaPluginApi): Store {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS reviews (
       target_key TEXT PRIMARY KEY, kind TEXT NOT NULL, number INTEGER, repo TEXT,
       title TEXT, author TEXT, base TEXT, head TEXT, git_ref TEXT, url TEXT,

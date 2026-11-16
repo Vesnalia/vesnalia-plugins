@@ -1,6 +1,6 @@
 import { isValidElement, memo, type DragEvent, type ReactNode, useState } from "react";
 import { createPortal } from "react-dom";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { attentionPulseRef } from "./attention-pulse-gate";
 import { DotGlyph, DOT_CLUSTER_CAPSULE_CLASS, DOT_GENERATION_CLASS, DOT_CLASS } from "./dot-grid";
 import { pulsePeriodMs } from "@/lib/pulse-rate";
@@ -607,7 +607,7 @@ function ProviderTicketChip({
   interactive?: boolean;
 }) {
   // External providers show the site's favicon (forgejo bases, external
-  // links — each carries its hostname; bb's app shell sets no CSP header,
+  // links — each carries its hostname; VesnALIA's app shell sets no CSP header,
   // verified 2026-10-08, so the browser may load it directly). A failed or
   // blocked load collapses to the plain ticket glyph.
   const [faviconFailed, setFaviconFailed] = useState(false);

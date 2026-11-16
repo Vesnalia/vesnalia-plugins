@@ -1,4 +1,4 @@
-// bb-plugin-agent-tv — Agent TV frontend: the wall.
+// alia-plugin-agent-tv — Agent TV frontend: the wall.
 //
 // One surface: a disclosure in the app sidebar's footer. Click (or hover) the
 // Play button and every running thread appears as a tile — the tool call it is
@@ -7,7 +7,7 @@
 //
 // Data comes from two places and is merged here:
 //   * the sidebar's own thread view (titles, status, "needs you") — free, and
-//     exactly as fresh as bb's own sidebar;
+//     exactly as fresh as VesnALIA's own sidebar;
 //   * this plugin's "fleet" realtime channel — the live tool-call feed the
 //     server folds out of thread events while somebody is watching.
 //
@@ -33,10 +33,10 @@ import {
   experimental_useSidebarThreads,
   useRealtime,
   useRealtimeConnectionState,
-  useBbContext,
+  useAliaContext,
   useRpc,
   useSettings,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   ExperimentalSidebarFooterDisclosureController,
   ExperimentalSidebarFooterDisclosureProps,
@@ -44,9 +44,9 @@ import type {
   PluginSidebarProject,
   PluginSidebarThread,
   PluginProvidersState,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
-/** bb's provider artwork, resolved the way the host resolves it. */
+/** VesnALIA's provider artwork, resolved the way the host resolves it. */
 const ProviderIcon = experimental_ProviderIcon;
 type ProviderRecord = ExperimentalProviderIconProps["provider"];
 type ProviderEntry = PluginProvidersState["providers"][number];
@@ -79,9 +79,9 @@ const TRIGGER_SELECTOR = `[data-testid^="plugin-sidebar-footer-item-${PLUGIN_ID}
 const PANEL_SELECTOR = `[data-testid^="plugin-sidebar-footer-disclosure-${PLUGIN_ID}-${FOOTER_ID}"]`;
 
 /** Where the popout was last parked. Per window, so it survives a reload. */
-const POPOUT_OFFSET_KEY = "bb-plugin-agent-tv:popout-offset";
+const POPOUT_OFFSET_KEY = "alia-plugin-agent-tv:popout-offset";
 /** Quiet rows dismissed with the check mark survive a plugin/app reload. */
-const DISMISSED_QUIET_KEY = "bb-plugin-agent-tv:dismissed-quiet";
+const DISMISSED_QUIET_KEY = "alia-plugin-agent-tv:dismissed-quiet";
 
 /**
  * Clamp against the panel's own geometry, so its header — the only thing you
@@ -237,7 +237,7 @@ function useDismissedQuietIds(): ReadonlySet<string> {
 }
 
 /*
- * The wall is a fixed-size monitor on purpose. bb measures the disclosure and
+ * The wall is a fixed-size monitor on purpose. VesnALIA measures the disclosure and
  * animates its height, so a panel that grows and shrinks as tiles change would
  * clamp the scroll offset you carefully set. Instead: every tile is exactly
  * TILE_HEIGHT tall (the file line is reserved, not conditional), the list is
@@ -259,7 +259,7 @@ function peekEnabled(values: Record<string, string | number | boolean> | undefin
 
 /**
  * Which agent is running each thread, and how the threads are related. Both
- * come from data the app already has: bb's provider roster (no fetch — the
+ * come from data the app already has: VesnALIA's provider roster (no fetch — the
  * hook reads the host's own cache) and the sidebar's parent links. The frame's
  * own `childCount` is the tie-breaker for subagents that are hidden from the
  * sidebar, which is how UltraGoal workers usually run.
@@ -881,7 +881,7 @@ function FleetPanel({
   onNudge,
 }: FleetPanelProps) {
   const { threads, projects } = experimental_useSidebarThreads();
-  const { threadId: currentThreadId } = useBbContext();
+  const { threadId: currentThreadId } = useAliaContext();
   const actions = experimental_useSidebarThreadActions();
   const { frame, stale, receivedAt } = useFleetFeed(threads, currentThreadId);
   const family = useFleetFamily(threads, projects);

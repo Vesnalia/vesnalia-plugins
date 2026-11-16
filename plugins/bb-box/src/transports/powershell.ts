@@ -57,7 +57,7 @@ const DETACHED =
  */
 const DETACH =
   "function Start-Detached{param([Parameter(Mandatory)][string]$Command,[string]$Log);" +
-  "$f=Join-Path ([IO.Path]::GetTempPath()) ('bb-box-'+[guid]::NewGuid().ToString('n')+'.xml');" +
+  "$f=Join-Path ([IO.Path]::GetTempPath()) ('alia-box-'+[guid]::NewGuid().ToString('n')+'.xml');" +
   "$o=if($Log){$ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Log)}else{'NUL'};" +
   "$e=@{};foreach($v in Get-ChildItem env:){$e[$v.Name]=$v.Value};" +
   "@{e=$e;c=$Command}|Export-Clixml -LiteralPath $f;" +
@@ -92,7 +92,7 @@ export function powershellCommand(script: string): string {
 
 /** A name for a staged script, in the box user's temp directory. */
 export function stagedName(): string {
-  return `bb-box-${randomBytes(8).toString("hex")}.ps1`;
+  return `alia-box-${randomBytes(8).toString("hex")}.ps1`;
 }
 
 function stagedPath(name: string): string {
@@ -172,14 +172,14 @@ export function hashFileScript(path: string): string {
 export function writePartScript(path: string): string {
   return onFile(
     path,
-    "$t=$p+'.bb-box-part';$null=[IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($p));" +
+    "$t=$p+'.alia-box-part';$null=[IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($p));" +
       `$f=[IO.File]::Create($t);try{[Console]::OpenStandardInput().CopyTo($f)}finally{$f.Close()};${PRINT_HASH}`,
   );
 }
 
 /** Puts `path`'s part file in its place, over any file there, or removes it when not `keep` (#492). */
 export function settlePartScript(path: string, keep: boolean): string {
-  return onFile(path, keep ? "[IO.File]::Move($p+'.bb-box-part',$p,$true)" : "[IO.File]::Delete($p+'.bb-box-part')");
+  return onFile(path, keep ? "[IO.File]::Move($p+'.alia-box-part',$p,$true)" : "[IO.File]::Delete($p+'.alia-box-part')");
 }
 
 /** Writes `path` to stdout, byte for byte. A file another process is writing can be read too. */
@@ -231,73 +231,73 @@ export function desktopScript(script: string, timeoutMs: number | undefined): st
   const timeout =
     timeoutMs === undefined
       ? ""
-      : String.raw`  elseif ($bbClock.ElapsedMilliseconds -ge ${timeoutMs}) {
-    $bbKill = @(Get-CimInstance Win32_Process -Filter "CommandLine LIKE '%$bbId%'" | ForEach-Object { '/PID'; $_.ProcessId })
-    if ($bbKill) { taskkill /F /T @bbKill *> $null }
-    $bbExit = 1
+      : String.raw`  elseif ($aliaClock.ElapsedMilliseconds -ge ${timeoutMs}) {
+    $aliaKill = @(Get-CimInstance Win32_Process -Filter "CommandLine LIKE '%$aliaId%'" | ForEach-Object { '/PID'; $_.ProcessId })
+    if ($aliaKill) { taskkill /F /T @aliaKill *> $null }
+    $aliaExit = 1
   }
 `;
   return String.raw`$ErrorActionPreference = 'Stop'
-$bbId = 'bb-box-' + [guid]::NewGuid().ToString('n')
-$bbDir = Join-Path ([IO.Path]::GetTempPath()) $bbId
-New-Item -ItemType Directory -Path $bbDir | Out-Null
-$bbFile = [IO.File]::Create("$bbDir\in")
-[Console]::OpenStandardInput().CopyTo($bbFile)
-$bbFile.Close()
-Set-Content -LiteralPath "$bbDir\run.ps1" -Value ${literal(powershellCommand(script))}
-Set-Content -LiteralPath "$bbDir\run.cmd" -Value @(
-  ('@type nul >"' + $bbDir + '\started"'),
-  ('@"' + [Environment]::ProcessPath + '" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' + $bbDir + '\run.ps1" <"' + $bbDir + '\in" >"' + $bbDir + '\out" 2>"' + $bbDir + '\err"'),
-  ('@>"' + $bbDir + '\code.tmp" echo %errorlevel%'),
-  ('@move /y "' + $bbDir + '\code.tmp" "' + $bbDir + '\code" >nul'))
-$bbService = New-Object -ComObject Schedule.Service
-$bbService.Connect()
-$bbFolder = $bbService.GetFolder('\')
-$bbTask = $bbService.NewTask(0)
-$bbTask.Principal.UserId = [Security.Principal.WindowsIdentity]::GetCurrent().Name
-$bbTask.Principal.LogonType = 3
-$bbTask.Settings.DisallowStartIfOnBatteries = $false
-$bbTask.Settings.StopIfGoingOnBatteries = $false
-$bbAction = $bbTask.Actions.Create(0)
-$bbAction.Path = "$env:WINDIR\System32\conhost.exe"
-$bbAction.Arguments = '--headless "' + $env:WINDIR + '\System32\cmd.exe" /d /c "' + $bbDir + '\run.cmd"'
-$bbAction.WorkingDirectory = $HOME
-$bbRegistered = $bbFolder.RegisterTaskDefinition($bbId, $bbTask, 6, $null, $null, 3)
-$null = $bbRegistered.Run($null)
-$bbClock = [Diagnostics.Stopwatch]::StartNew()
-$bbExit = $null
-$bbEnded = $null
-while ($null -eq $bbExit) {
-  $bbStarted = Test-Path -LiteralPath "$bbDir\started"
-  if (Test-Path -LiteralPath "$bbDir\code") { $bbExit = [int](Get-Content -LiteralPath "$bbDir\code" -Raw).Trim() }
-  elseif (-not $bbStarted -and $bbRegistered.LastTaskResult -eq 0x41303 -and $bbRegistered.State -ne 2 -and $bbClock.ElapsedMilliseconds -ge ${UNSTARTED_GRACE_MS}) {
-    [Console]::Error.WriteLine("bb-box: there is no desktop session to join: $([Environment]::UserName) is not logged in to the desktop.")
-    $bbExit = ${DESKTOP_EXITS.noSession}
+$aliaId = 'alia-box-' + [guid]::NewGuid().ToString('n')
+$aliaDir = Join-Path ([IO.Path]::GetTempPath()) $aliaId
+New-Item -ItemType Directory -Path $aliaDir | Out-Null
+$aliaFile = [IO.File]::Create("$aliaDir\in")
+[Console]::OpenStandardInput().CopyTo($aliaFile)
+$aliaFile.Close()
+Set-Content -LiteralPath "$aliaDir\run.ps1" -Value ${literal(powershellCommand(script))}
+Set-Content -LiteralPath "$aliaDir\run.cmd" -Value @(
+  ('@type nul >"' + $aliaDir + '\started"'),
+  ('@"' + [Environment]::ProcessPath + '" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' + $aliaDir + '\run.ps1" <"' + $aliaDir + '\in" >"' + $aliaDir + '\out" 2>"' + $aliaDir + '\err"'),
+  ('@>"' + $aliaDir + '\code.tmp" echo %errorlevel%'),
+  ('@move /y "' + $aliaDir + '\code.tmp" "' + $aliaDir + '\code" >nul'))
+$aliaService = New-Object -ComObject Schedule.Service
+$aliaService.Connect()
+$aliaFolder = $aliaService.GetFolder('\')
+$aliaTask = $aliaService.NewTask(0)
+$aliaTask.Principal.UserId = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+$aliaTask.Principal.LogonType = 3
+$aliaTask.Settings.DisallowStartIfOnBatteries = $false
+$aliaTask.Settings.StopIfGoingOnBatteries = $false
+$aliaAction = $aliaTask.Actions.Create(0)
+$aliaAction.Path = "$env:WINDIR\System32\conhost.exe"
+$aliaAction.Arguments = '--headless "' + $env:WINDIR + '\System32\cmd.exe" /d /c "' + $aliaDir + '\run.cmd"'
+$aliaAction.WorkingDirectory = $HOME
+$aliaRegistered = $aliaFolder.RegisterTaskDefinition($aliaId, $aliaTask, 6, $null, $null, 3)
+$null = $aliaRegistered.Run($null)
+$aliaClock = [Diagnostics.Stopwatch]::StartNew()
+$aliaExit = $null
+$aliaEnded = $null
+while ($null -eq $aliaExit) {
+  $aliaStarted = Test-Path -LiteralPath "$aliaDir\started"
+  if (Test-Path -LiteralPath "$aliaDir\code") { $aliaExit = [int](Get-Content -LiteralPath "$aliaDir\code" -Raw).Trim() }
+  elseif (-not $aliaStarted -and $aliaRegistered.LastTaskResult -eq 0x41303 -and $aliaRegistered.State -ne 2 -and $aliaClock.ElapsedMilliseconds -ge ${UNSTARTED_GRACE_MS}) {
+    [Console]::Error.WriteLine("alia-box: there is no desktop session to join: $([Environment]::UserName) is not logged in to the desktop.")
+    $aliaExit = ${DESKTOP_EXITS.noSession}
   }
-  elseif (-not $bbStarted -and $bbClock.ElapsedMilliseconds -ge ${UNSTARTED_LIMIT_MS}) {
-    [Console]::Error.WriteLine('bb-box: the desktop command did not start. Task Scheduler gave {0:x}.' -f $bbRegistered.LastTaskResult)
-    $bbExit = 1
+  elseif (-not $aliaStarted -and $aliaClock.ElapsedMilliseconds -ge ${UNSTARTED_LIMIT_MS}) {
+    [Console]::Error.WriteLine('alia-box: the desktop command did not start. Task Scheduler gave {0:x}.' -f $aliaRegistered.LastTaskResult)
+    $aliaExit = 1
   }
-  elseif ($bbStarted -and $bbRegistered.State -ne 4 -and $bbRegistered.LastTaskResult -ne 0x41301) {
+  elseif ($aliaStarted -and $aliaRegistered.State -ne 4 -and $aliaRegistered.LastTaskResult -ne 0x41301) {
     # Ended, by Task Scheduler's word: the exit status may still be on its way, so it has a moment.
-    if ($null -eq $bbEnded) { $bbEnded = $bbClock.ElapsedMilliseconds; Start-Sleep -Milliseconds 50 }
-    elseif ($bbClock.ElapsedMilliseconds - $bbEnded -ge 1000) {
-      [Console]::Error.WriteLine('bb-box: the desktop command ended without an exit status. Task Scheduler gave {0:x}.' -f $bbRegistered.LastTaskResult)
-      $bbExit = 1
+    if ($null -eq $aliaEnded) { $aliaEnded = $aliaClock.ElapsedMilliseconds; Start-Sleep -Milliseconds 50 }
+    elseif ($aliaClock.ElapsedMilliseconds - $aliaEnded -ge 1000) {
+      [Console]::Error.WriteLine('alia-box: the desktop command ended without an exit status. Task Scheduler gave {0:x}.' -f $aliaRegistered.LastTaskResult)
+      $aliaExit = 1
     }
     else { Start-Sleep -Milliseconds 50 }
   }
 ${timeout}  else { Start-Sleep -Milliseconds 50 }
 }
-$bbFolder.DeleteTask($bbId, 0)
-foreach ($bbOutput in ('out', [Console]::OpenStandardOutput()), ('err', [Console]::OpenStandardError())) {
-  if (-not (Test-Path -LiteralPath "$bbDir\$($bbOutput[0])")) { continue }
-  $bbFile = [IO.FileStream]::new("$bbDir\$($bbOutput[0])", 'Open', 'Read', 'ReadWrite, Delete')
-  $bbFile.CopyTo($bbOutput[1])
-  $bbOutput[1].Flush()
-  $bbFile.Close()
+$aliaFolder.DeleteTask($aliaId, 0)
+foreach ($aliaOutput in ('out', [Console]::OpenStandardOutput()), ('err', [Console]::OpenStandardError())) {
+  if (-not (Test-Path -LiteralPath "$aliaDir\$($aliaOutput[0])")) { continue }
+  $aliaFile = [IO.FileStream]::new("$aliaDir\$($aliaOutput[0])", 'Open', 'Read', 'ReadWrite, Delete')
+  $aliaFile.CopyTo($aliaOutput[1])
+  $aliaOutput[1].Flush()
+  $aliaFile.Close()
 }
-Remove-Item -LiteralPath $bbDir -Recurse -Force -ErrorAction Ignore
-exit $bbExit
+Remove-Item -LiteralPath $aliaDir -Recurse -Force -ErrorAction Ignore
+exit $aliaExit
 `;
 }

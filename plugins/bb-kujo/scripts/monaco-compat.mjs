@@ -1,4 +1,4 @@
-// Explicit, version-locked compatibility repair for bb 0.43.0's bundled File Editor.
+// Explicit, version-locked compatibility repair for VesnALIA 0.43.0's bundled File Editor.
 // This is a maintenance CLI. The Kujo plugin never imports or runs it.
 import {readFile,writeFile,rename,stat} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
@@ -14,9 +14,9 @@ const fix='(()=>{const m=l.current?.getModel();l.current?.dispose();l.current=nu
 const hash=s=>createHash('sha256').update(s).digest('hex');
 const current=await readFile(file,'utf8');
 const original=current.includes(fix)?current.replace(fix,old):current;
-if(hash(original)!==originalHash) throw new Error('Unrecognized bb editor build. Nothing changed; review compatibility before applying.');
+if(hash(original)!==originalHash) throw new Error('Unrecognized VesnALIA editor build. Nothing changed; review compatibility before applying.');
 const patched=current!==original;
-if(mode==='--check') console.log(patched?'Verified compatible editor: fix applied.':'Verified bb 0.43.0 editor: disposal fix available.');
+if(mode==='--check') console.log(patched?'Verified compatible editor: fix applied.':'Verified VesnALIA 0.43.0 editor: disposal fix available.');
 else if((mode==='--apply'&&patched)||(mode==='--restore'&&!patched)) console.log('Already in the requested state.');
 else {
  let next;

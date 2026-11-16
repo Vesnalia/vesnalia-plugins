@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { accessSync, constants, existsSync, statSync } from "node:fs";
 import { basename, dirname, isAbsolute, resolve } from "node:path";
 import {
-  BB_PLUGIN_VARIAQ_VERSION,
+  ALIA_PLUGIN_VARIAQ_VERSION,
   type EnvelopeStatus,
   type ParsedEnvelope,
   type ProblemFamily,
@@ -242,7 +242,7 @@ export function resolveConfig(raw: VariaqSettings): Omit<ResolvedConfig, never> 
       if (inferred === null) {
         throw new PluginError(
           "variaq.projectDir is required when pythonPath is not under <checkout>/.venv/bin/python.",
-          "Set it with: bb plugin config variaq set projectDir <VariaQ-checkout>",
+          "Set it with: VesnALIA plugin config variaq set projectDir <VariaQ-checkout>",
         );
       }
       resolvedProjectDir = inferred;
@@ -273,7 +273,7 @@ export function resolveConfig(raw: VariaqSettings): Omit<ResolvedConfig, never> 
     if (found === null) {
       throw new PluginError(
         "Could not locate a VariaQ installation.",
-        "Set variaq.pythonPath to a Python interpreter with VariaQ installed (bb plugin config variaq set pythonPath <path>), or set variaq.projectDir to the VariaQ checkout.",
+        "Set variaq.pythonPath to a Python interpreter with VariaQ installed (VesnALIA plugin config variaq set pythonPath <path>), or set variaq.projectDir to the VariaQ checkout.",
       );
     }
     resolvedPython = found.python;
@@ -632,7 +632,7 @@ export function checkVariaqVersion(raw: string | null, schemaVersion?: string): 
   const parts: string[] = [];
   if (!supported) {
     parts.push(
-      `Unsupported VariaQ version ${version ?? "unknown"}; bb-plugin-variaq ${BB_PLUGIN_VARIAQ_VERSION} is verified with VariaQ ${VERIFIED_VARIAQ_VERSION} and supports ${SUPPORTED_VARIAQ_SERIES}.`,
+      `Unsupported VariaQ version ${version ?? "unknown"}; alia-plugin-variaq ${ALIA_PLUGIN_VARIAQ_VERSION} is verified with VariaQ ${VERIFIED_VARIAQ_VERSION} and supports ${SUPPORTED_VARIAQ_SERIES}.`,
     );
   }
   if (!schemaVersionSupported) {

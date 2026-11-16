@@ -37,7 +37,7 @@ import {
   type PendingInteractionResolution,
   type PromptInput,
   type ThreadDelta,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import {
   approvalPayloadFromMsp,
   chooseApprovalChoiceId,
@@ -116,7 +116,7 @@ import {
   type MuseProviderOptions,
 } from "./vocabulary.js";
 
-const CLIENT_NAME = "bb";
+const CLIENT_NAME = "alia";
 const CLIENT_VERSION = "1";
 const HANDSHAKE_TIMEOUT_MS = 30_000;
 const COMMAND_TIMEOUT_MS = 120_000;
@@ -125,7 +125,7 @@ const ZERO_WORK_SETTLEMENT_GRACE_MS = 1_500;
 const SESSION_READ_TIMEOUT_MS = 15_000;
 const VIEW_PAGE_TIMEOUT_MS = 20_000;
 const VIEW_PAGE_LIMIT = 200;
-/** A page is bounded work; a session bb has fallen this far behind on is broken. */
+/** A page is bounded work; a session VesnALIA has fallen this far behind on is broken. */
 const VIEW_PAGE_MAX_PAGES = 200;
 /** Overridable so a suite can drive the watchdog without waiting it out. */
 function tunedMs(name: string, fallback: number): number {
@@ -134,11 +134,11 @@ function tunedMs(name: string, fallback: number): number {
 }
 
 const VIEW_WATCHDOG_TICK_MS = tunedMs(
-  "BB_MUSE_VIEW_WATCHDOG_TICK_MS",
+  "ALIA_MUSE_VIEW_WATCHDOG_TICK_MS",
   30_000,
 );
 /**
- * How long an open turn may say nothing before bb reads the view back itself.
+ * How long an open turn may say nothing before VesnALIA reads the view back itself.
  * Muse's own model-call retry waits 180s before its first re-attempt and
  * reports it, so this sits above that: a turn that is merely slow announces
  * itself, and one that has gone quiet for longer than any of Muse's own
@@ -149,7 +149,7 @@ const VIEW_WATCHDOG_TICK_MS = tunedMs(
  * reading back a turn that is merely busy. Four minutes was under the length of
  * an ordinary foreground command here, so it fired constantly on healthy work.
  */
-const VIEW_STALL_MS = tunedMs("BB_MUSE_VIEW_STALL_MS", 600_000);
+const VIEW_STALL_MS = tunedMs("ALIA_MUSE_VIEW_STALL_MS", 600_000);
 
 /**
  * A blocked approval deserves a much faster check than a stalled view.
@@ -158,10 +158,10 @@ const VIEW_STALL_MS = tunedMs("BB_MUSE_VIEW_STALL_MS", 600_000);
  * window, because a turn that says nothing is usually just busy. Re-reading the
  * pending approval fold is neither: it is one lease-free read, and the thing it
  * catches — Muse holding the whole session on a question that never reached
- * bb — never resolves on its own. Ten minutes of that is ten minutes of a
+ * VesnALIA — never resolves on its own. Ten minutes of that is ten minutes of a
  * thread doing nothing for no reason.
  */
-const APPROVAL_RECHECK_MS = tunedMs("BB_MUSE_APPROVAL_RECHECK_MS", 90_000);
+const APPROVAL_RECHECK_MS = tunedMs("ALIA_MUSE_APPROVAL_RECHECK_MS", 90_000);
 
 /**
  * `incomplete` is not one of MSP's turn terminals (`completed | failed |
@@ -212,7 +212,7 @@ const HANDOFF_CHAR_BUDGET = 12_000;
  * A Muse session's route belongs to the process that opened it, and Muse cannot
  * replay its own encrypted reasoning across a route change. Codex kills its
  * child on release because it can resume a rollout cleanly; Muse cannot, so a
- * thread's child outlives ordinary release and is reclaimed only when bb is
+ * thread's child outlives ordinary release and is reclaimed only when VesnALIA is
  * plainly done with the thread.
  */
 const ATTACHMENT_IDLE_SHUTDOWN_MS = 30 * 60_000;
@@ -296,7 +296,7 @@ function emitDeltas(
 /**
  * Announced on the first session and again whenever a rebuild replaces it.
  *
- * bb resolves an interactive request back to its thread through the provider
+ * VesnALIA resolves an interactive request back to its thread through the provider
  * thread id it last recorded, so an identity announced once and never renewed
  * strands every approval raised on a replacement session: the request is
  * rejected as unresolvable, and the prompt the user is owed never appears while
@@ -434,7 +434,7 @@ async function ensureToolProxy(): Promise<ToolProxyEndpoint | null> {
   if (toolProxy !== null) {
     return toolProxy;
   }
-  const scriptPath = join(bridgeDataDir, "bb-tool-proxy.mjs");
+  const scriptPath = join(bridgeDataDir, "alia-tool-proxy.mjs");
   await mkdir(bridgeDataDir, { recursive: true });
   await writeFile(scriptPath, MUSE_TOOL_PROXY_SCRIPT, { mode: 0o700 });
   toolProxyScriptPath = scriptPath;
@@ -458,7 +458,7 @@ async function ensureToolProxy(): Promise<ToolProxyEndpoint | null> {
  * credential and named a tool the grant covers. This checks the tool against
  * the attachment's live declaration as well, because the grant is a snapshot
  * taken when the config home was written and the attachment is the authority:
- * a tool bb has since withdrawn must not still run on a credential minted when
+ * a tool VesnALIA has since withdrawn must not still run on a credential minted when
  * it had not been.
  */
 async function runInjectedTool(call: {
@@ -471,13 +471,13 @@ async function runInjectedTool(call: {
   if (attachment === undefined || attachment.providerSessionId === null) {
     return {
       ok: false as const,
-      error: `bb has no live session for thread ${call.threadId}`,
+      error: `alia has no live session for thread ${call.threadId}`,
     };
   }
   if (!attachment.dynamicTools.some((tool) => tool.name === call.tool)) {
     return {
       ok: false as const,
-      error: `bb does not offer tool ${call.tool} on thread ${call.threadId}`,
+      error: `alia does not offer tool ${call.tool} on thread ${call.threadId}`,
     };
   }
   const result = await sendRuntimeRequest(
@@ -527,15 +527,15 @@ async function buildConfigHome(
       command: process.execPath,
       args: [toolProxyScriptPath],
       env: {
-        /** bb ships as Electron, whose binary needs this to behave as node. */
+        /** VesnALIA ships as Electron, whose binary needs this to behave as node. */
         ELECTRON_RUN_AS_NODE: "1",
-        BB_MUSE_TOOL_PORT: String(proxy.port),
-        BB_MUSE_TOOL_TOKEN: proxy.issueGrant(
+        ALIA_MUSE_TOOL_PORT: String(proxy.port),
+        ALIA_MUSE_TOOL_TOKEN: proxy.issueGrant(
           threadId,
           tools.map((tool) => tool.name),
         ),
-        BB_MUSE_TOOL_THREAD_ID: threadId,
-        BB_MUSE_TOOLS: JSON.stringify(
+        ALIA_MUSE_TOOL_THREAD_ID: threadId,
+        ALIA_MUSE_TOOLS: JSON.stringify(
           tools.map((tool) => ({
             name: tool.name,
             description: tool.description,
@@ -592,7 +592,7 @@ async function handshake(connection: MspConnection): Promise<{
   const result = await connection.request({
     method: MSP_METHODS.initialize,
     params: {
-      clientInfo: { name: CLIENT_NAME, title: "bb", version: CLIENT_VERSION },
+      clientInfo: { name: CLIENT_NAME, title: "alia", version: CLIENT_VERSION },
       capabilities: { requestedCapabilities: ["userShell"] },
     },
     resultSchema: mspInitializeResultSchema,
@@ -698,9 +698,9 @@ async function constructRuntime(args: {
 }
 
 /**
- * Reports the one rebuild the caller never asked for: a session bb declined to
+ * Reports the one rebuild the caller never asked for: a session VesnALIA declined to
  * resume because Muse could not serve its view. It is a context loss like any
- * other fresh start, so it is owed the same things — bb's session instructions,
+ * other fresh start, so it is owed the same things — VesnALIA's session instructions,
  * which rode the first turn of the session just abandoned, and a transcript of
  * what that session had already said.
  */
@@ -727,7 +727,7 @@ async function onUnviewableSessionReplaced(
       kind: "provider.warning",
       summary: "Muse started a fresh session for this thread",
       details:
-        `${reason}. Durable bb state is untouched, and ` +
+        `${reason}. Durable VesnALIA state is untouched, and ` +
         (attachment.pendingHandoff === null
           ? "the in-session conversation could not be read back."
           : "the conversation so far is carried into the new session as a transcript."),
@@ -736,7 +736,7 @@ async function onUnviewableSessionReplaced(
 }
 
 /**
- * Opens a fresh session to stand in for one bb could not keep, and reports the
+ * Opens a fresh session to stand in for one VesnALIA could not keep, and reports the
  * source it replaced so the caller can owe it the handoff every context loss is
  * owed. `unsubscribe` drops a source `session/resume` had already subscribed
  * this connection to: left attached, it goes on pushing cursors from a space
@@ -859,7 +859,7 @@ async function openSession(args: {
      * Propagating it rejects the user's prompt and leaves the thread unusable
      * for good: every later message resumes the same broken session and is
      * refused the same way. A fork is the user asking for that specific
-     * session and is left to fail, but a resume is bb's own bookkeeping, so it
+     * session and is left to fail, but a resume is VesnALIA's own bookkeeping, so it
      * falls back to a fresh session with the conversation carried across.
      */
     if (request.kind !== "resume" || error instanceof MspExitedError) {
@@ -877,8 +877,8 @@ async function openSession(args: {
    * A resume Muse accepts but hands no view cursor for is a session whose
    * materialized projection it can no longer stand behind. It still runs — and
    * that is the trap: turns execute while no `turn/started` or `turn/completed`
-   * ever reaches bb, so the thread either hangs or, worse, settles on nothing.
-   * bb will not carry a thread on a session it cannot watch, so the resume is
+   * ever reaches VesnALIA, so the thread either hangs or, worse, settles on nothing.
+   * VesnALIA will not carry a thread on a session it cannot watch, so the resume is
    * abandoned here for a fresh one and the conversation rides across as a
    * transcript, the same as any other rebuild.
    */
@@ -886,7 +886,7 @@ async function openSession(args: {
     return startReplacementSession(connection, construction, {
       sessionId: sourceId,
       reason:
-        "Muse could no longer serve a view of this session, so bb started a fresh one",
+        "Muse could no longer serve a view of this session, so VesnALIA started a fresh one",
       unsubscribe: true,
     });
   }
@@ -1082,7 +1082,7 @@ function replayViewEvents(
  * This is the only thing standing between a thread and a permanent "working…".
  * Muse's live view can stop while the session keeps running — its materialized
  * projection is marked unavailable and no further notification arrives, so the
- * turn's own `turn/completed` never reaches bb and the thread reads as busy
+ * turn's own `turn/completed` never reaches VesnALIA and the thread reads as busy
  * long after Muse has finished. `view/page` serves from the source log rather
  * than that projection, so it still answers, and replaying it settles the turn.
  */
@@ -1156,7 +1156,7 @@ async function reconcileView(args: {
      * approvals too, and Muse blocks the whole session on one it is waiting for
      * — indefinitely, because the request that would have reached the user is
      * simply gone. Observed as a contributor that went quiet for fifteen minutes
-     * holding `approval_wait.effect.started` while bb showed nothing pending.
+     * holding `approval_wait.effect.started` while VesnALIA showed nothing pending.
      *
      * `approval/listPending` is the authority and a lease-free read, so the fold
      * is re-read whenever the stream has proven lossy. Re-opening is idempotent:
@@ -1166,7 +1166,7 @@ async function reconcileView(args: {
   } catch (error) {
     /**
      * One retry from the beginning of the view before anything is concluded.
-     * A rejected anchor says nothing about the session — only that bb asked
+     * A rejected anchor says nothing about the session — only that VesnALIA asked
      * from the wrong place — and the whole view is always a valid ask.
      */
     if (args.from === undefined && cursor !== "") {
@@ -1196,19 +1196,19 @@ function reportViewGapOnce(
   emitDeltas(attachment, [
     {
       kind: "provider.warning",
-      summary: "Muse stopped streaming this session; bb read it back",
+      summary: "Muse stopped streaming this session; VesnALIA read it back",
       details:
-        "Muse's live view stream dropped events for this session. bb read the missing range back from the session itself, so the transcript is complete — the streamed text of anything in that range arrives as one block rather than as it was typed.",
+        "Muse's live view stream dropped events for this session. VesnALIA read the missing range back from the session itself, so the transcript is complete — the streamed text of anything in that range arrives as one block rather than as it was typed.",
     },
   ]);
 }
 
 /**
  * Muse declares exactly one condition as unrecoverable by paging, and only that
- * one may end a turn bb cannot see.
+ * one may end a turn VesnALIA cannot see.
  *
  * Everything else a failed page can mean — a rejected anchor, a timeout, a
- * transport hiccup — is bb failing to read, not Muse failing to run. A turn is
+ * transport hiccup — is VesnALIA failing to read, not Muse failing to run. A turn is
  * the user's work in flight, and killing it on a read error trades a thread
  * that looks stuck for one that reports a failure over work still running.
  * That is the worse trade, and it is the one this made before the check.
@@ -1217,7 +1217,7 @@ const VIEW_FATAL_KINDS = new Set(["projectionUnavailable"]);
 
 /**
  * How many reads in a row may come back empty, with a turn open and push
- * silent, before bb calls the session stopped rather than slow.
+ * silent, before VesnALIA calls the session stopped rather than slow.
  *
  * The evidence is what makes this safe to act on. A slow turn is not quiet: a
  * model call still reports its usage, its retries, and its tool rows, and any
@@ -1227,7 +1227,7 @@ const VIEW_FATAL_KINDS = new Set(["projectionUnavailable"]);
  * the ten-plus this takes.
  */
 function viewAbandonReads(): number {
-  return Math.max(1, Math.round(tunedMs("BB_MUSE_VIEW_ABANDON_READS", 20)));
+  return Math.max(1, Math.round(tunedMs("ALIA_MUSE_VIEW_ABANDON_READS", 20)));
 }
 
 /**
@@ -1249,7 +1249,7 @@ function abandonIfSessionStopped(
   }
   const message =
     "Muse stopped reporting this turn and its own view of the session has " +
-    "nothing further in it. bb waited, read the session back repeatedly, and " +
+    "nothing further in it. VesnALIA waited, read the session back repeatedly, and " +
     "found no more work and no terminal, so the turn is settled here rather " +
     "than left running forever. Your next message rebuilds the session.";
   emitDeltas(attachment, [
@@ -1290,15 +1290,15 @@ function onReconcileFailed(
     error instanceof MspRequestError && VIEW_FATAL_KINDS.has(error.kind ?? "");
 
   if (!fatal) {
-    /** Said once per runtime: a read bb could not make is not news each time. */
+    /** Said once per runtime: a read VesnALIA could not make is not news each time. */
     if (!runtime.reportedViewReadFailure) {
       runtime.reportedViewReadFailure = true;
       emitDeltas(attachment, [
         {
           kind: "provider.warning",
-          summary: "bb could not read Muse's view of this session",
+          summary: "alia could not read Muse's view of this session",
           details:
-            `${detail}. The turn is still Muse's to finish — bb has left it ` +
+            `${detail}. The turn is still Muse's to finish — VesnALIA has left it ` +
             "running and will keep trying to read it back. Stop the thread if " +
             "it never reports.",
         },
@@ -1352,7 +1352,7 @@ async function replayViewGap(
  * been open and silent for minutes is either a very long model call or a view
  * that has stopped. Paging tells the two apart, cheaply and without guessing:
  * a working turn's page is empty, and a stalled one's page carries everything
- * bb missed, up to and including the terminal.
+ * VesnALIA missed, up to and including the terminal.
  */
 function startViewWatchdog(attachment: MuseAttachment, runtime: MuseRuntime): void {
   stopViewWatchdog(runtime);
@@ -1372,7 +1372,7 @@ function startViewWatchdog(attachment: MuseAttachment, runtime: MuseRuntime): vo
     }
     /**
      * The cheap check first, and on its own until the view itself looks stalled:
-     * an approval bb never received blocks the session outright, and waiting out
+     * an approval VesnALIA never received blocks the session outright, and waiting out
      * the paging window to notice costs the whole thread that time.
      */
     if (quietFor < VIEW_STALL_MS) {
@@ -1431,7 +1431,7 @@ function handleChildNotification(
       openApprovalInteraction(attachment, runtime, params);
       return;
     /**
-     * A non-terminal approval whose pending view changed: the stage bb answered
+     * A non-terminal approval whose pending view changed: the stage VesnALIA answered
      * is resolved and the next one is now current. Muse re-delivers the whole
      * request here, so this is where a multi-stage command keeps moving.
      */
@@ -1480,10 +1480,10 @@ function handleChildNotification(
 }
 
 /**
- * Folds one view notification into bb's timeline. Push and a replayed page both
- * arrive here, because a terminal bb reads back is owed everything a terminal
- * bb was handed is owed: the same boundary, the same typed failure, and the
- * same rerun of the prompt that hit a condition bb knows how to clear.
+ * Folds one view notification into VesnALIA's timeline. Push and a replayed page both
+ * arrive here, because a terminal VesnALIA reads back is owed everything a terminal
+ * VesnALIA was handed is owed: the same boundary, the same typed failure, and the
+ * same rerun of the prompt that hit a condition VesnALIA knows how to clear.
  */
 function foldViewNotification(
   attachment: MuseAttachment,
@@ -1503,9 +1503,9 @@ function foldViewNotification(
 }
 
 /**
- * A turn's terminal is where bb learns the session can no longer run: MSP
+ * A turn's terminal is where VesnALIA learns the session can no longer run: MSP
  * reports mid-turn failures here, never as a JSON-RPC error. Muse names the
- * condition in the message, and for the ones bb knows how to clear the prompt
+ * condition in the message, and for the ones VesnALIA knows how to clear the prompt
  * that hit one is owed a rerun on the rebuilt session — leaving it for the user
  * to notice and retype is how a turn silently disappears.
  */
@@ -1526,8 +1526,8 @@ function onTurnCompleted(
   /**
    * Matched on the command id as well as the turn id, and on nothing at all
    * while the turn is still unnamed: MSP derives a turn id from the command id
-   * that opened it, and bb keeps one turn per thread on the wire, so a terminal
-   * arriving before Muse's reply can only belong to the turn bb just sent.
+   * that opened it, and VesnALIA keeps one turn per thread on the wire, so a terminal
+   * arriving before Muse's reply can only belong to the turn VesnALIA just sent.
    */
   const settledThisTurn =
     settled !== null &&
@@ -1567,7 +1567,7 @@ async function rerunFailedTurn(
   emitDeltas(attachment, [
     {
       kind: "provider.warning",
-      summary: "Muse could not finish that turn; bb is running it again",
+      summary: "Muse could not finish that turn; VesnALIA is running it again",
       details: `${reason}. Your prompt was kept and resubmitted — nothing was dropped.`,
     },
   ]);
@@ -1617,7 +1617,7 @@ function handleChildExit(
     info.signal ?? "null"
   })${info.stderrTail === "" ? "" : `: ${info.stderrTail}`}`;
 
-  const reason = "Muse exited; bb restored the session on a fresh process";
+  const reason = "Muse exited; VesnALIA restored the session on a fresh process";
   emitDeltas(attachment, [
     {
       kind: "provider.error",
@@ -1657,7 +1657,7 @@ function handleChildExit(
 
 /**
  * Muse namespaces an MCP tool as `mcp__<server>__<tool>` (and shows it dotted),
- * so a name is matched back to the tool bb declared.
+ * so a name is matched back to the tool VesnALIA declared.
  */
 export function stripMcpPrefix(tool: string): string {
   const match = /^mcp__[^_]+(?:_[^_]+)*?__(?<name>.+)$/u.exec(tool);
@@ -1669,12 +1669,12 @@ export function stripMcpPrefix(tool: string): string {
 }
 
 /**
- * bb's own plumbing must not read as a decision for the user: Muse's sandbox
+ * VesnALIA's own plumbing must not read as a decision for the user: Muse's sandbox
  * gating the loopback connection to the tool proxy this bridge started, and
- * Muse gating a tool bb injected, which bb already governs on its own side.
+ * Muse gating a tool VesnALIA injected, which VesnALIA already governs on its own side.
  */
 /**
- * The decision bb's own policy already carries, or `null` where the policy
+ * The decision VesnALIA's own policy already carries, or `null` where the policy
  * names the user as the reviewer and the question is genuinely theirs.
  *
  * Selecting Muse's `allowAll` is only half a policy. `allowAll` governs the
@@ -1683,14 +1683,14 @@ export function stripMcpPrefix(tool: string): string {
  * loop — escalates to a human whatever the mode says. Nearly every command an
  * agent actually writes is one of those, which is why this provider asked for
  * permission where the first-party ones never do: the bridge was forwarding a
- * question bb had already answered.
+ * question VesnALIA had already answered.
  *
- * bb's policy has two axes and this reads both. `approvalReviewer` decides who
+ * VesnALIA's policy has two axes and this reads both. `approvalReviewer` decides who
  * answers an ordinary call: `automatic` and `full` are the bridge, `user` is
  * the user. `permissionEscalation` decides only what happens when the agent
  * reaches past its permission scope, which is what Muse's own `protectedWrite`
  * and `judgeEscalated` flags mark — so under `auto` those still reach the user
- * when bb asked for `ask`, and are refused outright when it asked for `deny`.
+ * when VesnALIA asked for `ask`, and are refused outright when it asked for `deny`.
  * `full` has no scope to leave and no reviewer, so nothing there reaches anyone.
  */
 function policyAnswerFor(
@@ -1741,13 +1741,13 @@ function openApprovalInteraction(
   const parsed = mspApprovalRequestParamsSchema.safeParse(params);
   if (!parsed.success) {
     /**
-     * An approval bb cannot read is still an approval Muse is holding a tool
+     * An approval VesnALIA cannot read is still an approval Muse is holding a tool
      * call for. Every path out of here answers Muse or settles the turn.
      */
     void failApproval(
       attachment,
       runtime,
-      `bb could not read Muse's approval request (${parsed.error.message.slice(0, 200)})`,
+      `alia could not read Muse's approval request (${parsed.error.message.slice(0, 200)})`,
     );
     return;
   }
@@ -1759,7 +1759,7 @@ function openApprovalInteraction(
     return;
   }
 
-  /** A later stage of a command bb has already been answered on. */
+  /** A later stage of a command VesnALIA has already been answered on. */
   const carried = runtime.approvalDecisions.get(request.approvalId);
   if (carried !== undefined) {
     void driveApproval(attachment, runtime, request, carried);
@@ -1799,7 +1799,7 @@ function openApprovalInteraction(
     })
     .catch((error: unknown) => {
       /**
-       * bb could not put the question to the user. Muse is still holding the
+       * VesnALIA could not put the question to the user. Muse is still holding the
        * tool call, so the approval is refused rather than abandoned, and the
        * reason is reported: a prompt that silently never appears is the one
        * failure that reads, from the outside, as the agent simply working.
@@ -1808,7 +1808,7 @@ function openApprovalInteraction(
       emitDeltas(attachment, [
         {
           kind: "provider.error",
-          message: `bb could not present Muse's approval for ${describeApprovalSubject(request)}: ${
+          message: `alia could not present Muse's approval for ${describeApprovalSubject(request)}: ${
             error instanceof Error ? error.message : String(error)
           }`,
           settlesTurn: false,
@@ -1863,7 +1863,7 @@ async function reopenPendingInteractions(
  * Muse advanced a non-terminal approval to its next requirement.
  *
  * The chain in `driveApproval` re-reads the pending fold itself, so an update
- * that lands while it is walking is redundant; an update that lands while bb is
+ * that lands while it is walking is redundant; an update that lands while VesnALIA is
  * still asking the user is redundant too, because that answer is applied to
  * whichever requirement is current by then. What is left is an approval whose
  * stage moved on its own — a policy resolving a later fragment — which needs
@@ -1920,8 +1920,8 @@ const MAX_APPROVAL_STAGES = 64;
  * `approval/decide` settles one *stage*: its `terminal` flag reports the whole
  * approval, and a `false` means Muse is still holding the tool call and owes
  * the next requirement. A client that answers the first stage and stops leaves
- * the turn parked forever with nothing on screen but the approval bb already
- * resolved — so the decision bb collected is carried across every remaining
+ * the turn parked forever with nothing on screen but the approval VesnALIA already
+ * resolved — so the decision VesnALIA collected is carried across every remaining
  * stage of the same command, and the pending fold, not a notification, is what
  * names the requirement to answer next.
  */
@@ -1952,7 +1952,7 @@ async function driveApproval(
       }
       const next = await pendingApprovalRequest(runtime, request.approvalId);
       if (next === null) {
-        /** Muse settled it while bb was reading: nothing is owed. */
+        /** Muse settled it while VesnALIA was reading: nothing is owed. */
         return;
       }
       current = next;
@@ -1966,7 +1966,7 @@ async function driveApproval(
     await failApproval(
       attachment,
       runtime,
-      `bb could not finish answering Muse's approval: ${
+      `alia could not finish answering Muse's approval: ${
         error instanceof Error ? error.message : String(error)
       }`,
     );
@@ -2022,7 +2022,7 @@ async function decideApprovalStage(
       ) {
         return { kind: "settled" };
       }
-      /** The stage advanced under bb; re-read the fold and answer that one. */
+      /** The stage advanced under VesnALIA; re-read the fold and answer that one. */
       if (error.kind === "approvalRequirementStale") {
         return { kind: "continue" };
       }
@@ -2036,7 +2036,7 @@ async function decideApprovalStage(
 
 /**
  * The requirement Muse is waiting on now, read from the pending fold rather
- * than inferred from the request bb happens to be holding.
+ * than inferred from the request VesnALIA happens to be holding.
  */
 async function pendingApprovalRequest(
   runtime: MuseRuntime,
@@ -2066,7 +2066,7 @@ function describeApprovalSubject(request: MspApprovalRequestParams): string {
 }
 
 /**
- * An approval bb cannot answer is reported and the turn is interrupted. Muse
+ * An approval VesnALIA cannot answer is reported and the turn is interrupted. Muse
  * holds the tool call until its approval reaches a terminal, so the alternative
  * is a thread that reads as working and never moves again.
  */
@@ -2075,7 +2075,7 @@ async function failApproval(
   runtime: MuseRuntime,
   message: string,
 ): Promise<void> {
-  const detail = `${message}. bb interrupted the turn rather than leave it waiting on an approval it cannot answer.`;
+  const detail = `${message}. VesnALIA interrupted the turn rather than leave it waiting on an approval it cannot answer.`;
   emitDeltas(attachment, [
     {
       kind: "provider.error",
@@ -2112,7 +2112,7 @@ function openUserInputInteraction(
   const payload = userQuestionPayloadFromMsp(request);
   if (payload === null) {
     /**
-     * A prompt bb cannot render is cancelled, not dropped: Muse holds the tool
+     * A prompt VesnALIA cannot render is cancelled, not dropped: Muse holds the tool
      * call open until the prompt settles, and the model is told a cancelled
      * question in a sentence, where a parked turn says nothing at all.
      */
@@ -2174,7 +2174,7 @@ async function settleUserInput(
 }
 
 /**
- * bb states how an agent should behave inside it as session instructions. MSP
+ * VesnALIA states how an agent should behave inside it as session instructions. MSP
  * has no system-prompt slot, so they ride the first turn the way the Claude
  * bridge delivers them, with `displayText` carrying the user's own prompt so the
  * transcript shows what they wrote.
@@ -2207,7 +2207,7 @@ export function withInstructions(
 }
 
 /**
- * A conversation Muse can no longer replay is still a conversation bb can read:
+ * A conversation Muse can no longer replay is still a conversation VesnALIA can read:
  * the log outlives the session, and `session/read` folds it without loading it.
  * Carrying its tail into the replacement is what keeps a rebuilt thread from
  * answering as though the user had said nothing.
@@ -2258,7 +2258,7 @@ export function handoffTranscript(
           ? "assistant"
           : null;
     /**
-     * A user message carries whatever bb wrapped around the prompt — its own
+     * A user message carries whatever VesnALIA wrapped around the prompt — its own
      * session instructions, an earlier handoff — and Muse keeps the user's own
      * words in `displayText`. Sending the wrappers back would hand the new
      * session a second copy of instructions it is being given anyway.
@@ -2390,7 +2390,7 @@ async function liveRuntimeForTurn(args: {
     restart?.reason ??
     (optionsChanged
       ? "Execution settings changed; the Muse session was rebuilt to apply them"
-      : "Muse exited; bb restored the session on a fresh process");
+      : "Muse exited; VesnALIA restored the session on a fresh process");
 
   const replacement = await constructRuntime({
     attachment,
@@ -2405,7 +2405,7 @@ async function liveRuntimeForTurn(args: {
   });
   if (fresh) {
     /**
-     * A fresh session has never seen bb's session instructions — those rode the
+     * A fresh session has never seen VesnALIA's session instructions — those rode the
      * first turn of the session just discarded — so they are owed again, along
      * with whatever of the discarded conversation survives as plain text.
      */
@@ -2419,7 +2419,7 @@ async function liveRuntimeForTurn(args: {
         kind: "provider.warning",
         summary: "Muse started a fresh session for this thread",
         details:
-          `${reason}. Durable bb state is untouched, and ` +
+          `${reason}. Durable VesnALIA state is untouched, and ` +
           (attachment.pendingHandoff === null
             ? "the in-session conversation could not be read back."
             : "the conversation so far is carried into the new session as a transcript."),
@@ -2457,7 +2457,7 @@ function scheduleZeroWorkSettlement(args: {
  * "No turn opened" and "no turn was reported" look identical from here, and
  * they are opposites: the first is a prompt Muse answered without working, the
  * second is a turn running right now on a session whose view has stopped
- * reaching bb. Fabricating a completed turn for the second is worse than
+ * reaching VesnALIA. Fabricating a completed turn for the second is worse than
  * hanging — the thread reports success for work that is still going.
  *
  * So the view is read before anything is invented. A page settles it: silence
@@ -2501,7 +2501,7 @@ async function submitTurn(args: {
   input: readonly PromptInput[];
   options: BridgeExecutionOptions;
   clientRequestId?: string;
-  /** Set on bb's own rerun of a failed turn, which is never rerun again. */
+  /** Set on VesnALIA's own rerun of a failed turn, which is never rerun again. */
   reran?: boolean;
 }): Promise<void> {
   const { attachment, options } = args;
@@ -2552,7 +2552,7 @@ async function submitTurn(args: {
      * beat the reply that names it: the child's response and its notifications
      * arrive on one stream, and a chunk carrying both is dispatched line by
      * line before any `await` here resumes. A turn recorded only afterwards is
-     * a turn whose failure bb cannot attribute — which is how a prompt goes
+     * a turn whose failure VesnALIA cannot attribute — which is how a prompt goes
      * missing. What rode with it is cleared here too, and restored below if
      * the command never reaches Muse at all.
      */
@@ -2586,7 +2586,7 @@ async function submitTurn(args: {
     }
     /**
      * Muse's reply is authoritative about whether a turn exists, and it is the
-     * only place bb learns that before the view says so. A session whose view
+     * only place VesnALIA learns that before the view says so. A session whose view
      * has stopped accepts the prompt and starts the turn while never reporting
      * `turn/started`, which is indistinguishable from a prompt handled without
      * work — and settling that as a completed turn is how a user's message gets
@@ -2615,7 +2615,7 @@ async function submitTurn(args: {
     }
   } catch (error) {
     /**
-     * Accepted input that never settles leaves bb refusing every later turn on
+     * Accepted input that never settles leaves VesnALIA refusing every later turn on
      * the thread, so every failure on this path closes the turn — including one
      * thrown before the input was ever accepted.
      */
@@ -2635,7 +2635,7 @@ async function submitTurn(args: {
     }
     /**
      * A command that never reached Muse is a bridge-side fault, and it is
-     * typed like every other one so bb's recovery reads the same field here
+     * typed like every other one so VesnALIA's recovery reads the same field here
      * as it does on a turn Muse itself failed.
      */
     const errorInfo = museProviderErrorInfo({
@@ -2671,7 +2671,7 @@ async function submitTurn(args: {
 }
 
 /**
- * Muse's catalog labels a model with its own id. bb strips the declared brand
+ * Muse's catalog labels a model with its own id. VesnALIA strips the declared brand
  * prefix from what it shows, so an id becomes a title here.
  */
 export function museModelDisplayName(entry: {
@@ -3250,7 +3250,7 @@ async function interruptAttachment(
   if (!settled) {
     emitDeltas(
       attachment,
-      runtime.translator.settleOpenTurns("interrupted", "Interrupted by bb"),
+      runtime.translator.settleOpenTurns("interrupted", "Interrupted by VesnALIA"),
     );
   }
 }
@@ -3287,7 +3287,7 @@ export function handleLine(line: string): void {
     pendingRuntimeRequests.delete(response.id);
     if ("error" in response) {
       pending.reject(
-        new Error(response.error.message ?? "bb rejected a bridge request"),
+        new Error(response.error.message ?? "alia rejected a bridge request"),
       );
       return;
     }

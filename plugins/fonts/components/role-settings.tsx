@@ -152,7 +152,7 @@ export function RoleSettings({ role, config, resolved, catalog, advancedSupporte
 
       <div className="fonts-controls" role="group" aria-label={`${copy.title} typography controls`}>
         {!advancedSupported && role === "interface" && (
-          <p className="fonts-compatibility">This BB version does not expose the expected typography scale. Family and style remain available; scale controls are disabled.</p>
+          <p className="fonts-compatibility">This VesnALIA version does not expose the expected typography scale. Family and style remain available; scale controls are disabled.</p>
         )}
         <FontPicker role={role} value={config.family} familyKind={config.familyKind} catalog={catalog} onChange={(family, familyKind) => patch({ family, familyKind })} />
         <div className="fonts-control fonts-control--select">

@@ -7,7 +7,7 @@ import * as Clsx from "clsx";
 import {
   installTestPluginRuntime,
   loadPluginApp,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import * as React from "react";
 import * as ReactDom from "react-dom";
 import * as JsxRuntime from "react/jsx-runtime";
@@ -18,10 +18,10 @@ import { expect, test } from "vitest";
 test("the built app bundle activates exactly one account-switch action", async () => {
   installTestPluginRuntime();
   const host = globalThis as typeof globalThis & {
-    __bbPluginRuntime?: Record<string, unknown>;
+    __aliaPluginRuntime?: Record<string, unknown>;
   };
-  host.__bbPluginRuntime = {
-    ...host.__bbPluginRuntime,
+  host.__aliaPluginRuntime = {
+    ...host.__aliaPluginRuntime,
     classVarianceAuthority: ClassVarianceAuthority,
     clsx: Clsx,
     jsxRuntime: JsxRuntime,

@@ -1,10 +1,10 @@
 // What the Tart backend runs on a Mac host, as POSIX sh scripts sent over
 // SSH, and the parsers for what they print. Nothing is installed on the Mac
-// but Tart: the scripts keep their state under ~/.bb-box/tart, readable by
+// but Tart: the scripts keep their state under ~/.alia-box/tart, readable by
 // the host user only. Windows boxes' VMs are QEMU's, which qemu.ts drives
 // (046); their owner files are here too.
 //
-// - owners/<vm>: the owner file of each VM bb-box made. It names the install
+// - owners/<vm>: the owner file of each VM alia-box made. It names the install
 //   and, from the claim on, the box, its thread, name, kind and creation time
 //   (018, 019). It is written before the clone, with noclobber, so two
 //   installs cannot claim one VM, and removed last on release, so a release
@@ -16,7 +16,7 @@
 //   every run; it is read each time a viewer opens the desktop.
 // - run/<vm>.exit: `tart run`'s process ID and start time, then its exit
 //   status and end time, which the shell that waits for it writes (#406),
-//   so bb-box can say why a VM it did not stop has stopped.
+//   so alia-box can say why a VM it did not stop has stopped.
 // - run/<vm>.out.last and run/<vm>.exit.last: the same for the run before,
 //   which a start keeps.
 
@@ -30,8 +30,8 @@ import { VNC_HOLDER_PY } from "./vnc-holder.ts";
 import { PRODUCT } from "../../brand.ts";
 const PATHS = ["/opt/homebrew/bin", "/usr/local/bin", "$HOME/.nix-profile/bin", "/run/current-system/sw/bin", "/nix/var/nix/profiles/default/bin"];
 
-/** The prefix of every VM bb-box clones for a box. */
-export const VM_PREFIX = "bb-box-";
+/** The prefix of every VM alia-box clones for a box. */
+export const VM_PREFIX = "alia-box-";
 
 export function vmName(boxId: string): string {
   return `${VM_PREFIX}${boxId}`;
@@ -79,7 +79,7 @@ note_disk_gb() {
 }`;
 
 export const ROLLBACK_BASE_GONE = "base-gone";
-export const TURN_LOCK = ".bb-box/turn.lock";
+export const TURN_LOCK = ".alia-box/turn.lock";
 export const TURN_WAIT_TENTHS = 600;
 export const TURN_NOT_TAKEN = 2;
 
@@ -109,7 +109,7 @@ free_turn() { exec 9>&-; }
  * to make room), the state directories, and `mine`, which says whether a VM's
  * owner file names an install and a box, or no box when the box is empty.
  */
-const RESTORE_SH = String.raw`snaps_dir() { _rb_sv=$(cd "$tart_vms" 2>/dev/null && pwd -P) && printf '%s/bb-box-snapshots\n' "$(dirname "$_rb_sv")"; }
+const RESTORE_SH = String.raw`snaps_dir() { _rb_sv=$(cd "$tart_vms" 2>/dev/null && pwd -P) && printf '%s/alia-box-snapshots\n' "$(dirname "$_rb_sv")"; }
 started_at() { ps -o lstart= -p "$1" 2>/dev/null | sed 's/^ *//; s/ *$//'; }
 runs_still() { [ -n "$1" ] && [ -n "$2" ] && [ "$(started_at "$1")" = "$2" ]; }
 this_shell() { printf '%s %s' "$$" "$(started_at "$$")"; }
@@ -166,7 +166,7 @@ base_present_for() { :; }
 ${turnSh(TURN_WAIT_TENTHS)}`;
 
 const PRELUDE = String.raw`export PATH="${PATHS.join(":")}:$PATH" TART_NO_AUTO_PRUNE=1
-d="$HOME/.bb-box/tart"
+d="$HOME/.alia-box/tart"
 umask 077
 mkdir -p "$d/owners" "$d/run" || exit 1
 mine() {
@@ -282,17 +282,17 @@ export function sections(text: string): Map<string, string> {
 }
 
 /**
- * Tart's VMs and bb-box's QEMU files may be on another volume, through a
+ * Tart's VMs and alia-box's QEMU files may be on another volume, through a
  * link (#632). When that volume is not mounted, the state fails, so the Mac
  * counts as unreachable and keeps its boxes, rather than as a Mac with none.
  */
-const VOLUME_CHECK = String.raw`for f in "${"$"}{TART_HOME:-$HOME/.tart}" "$HOME/.bb-box/qemu"; do
+const VOLUME_CHECK = String.raw`for f in "${"$"}{TART_HOME:-$HOME/.tart}" "$HOME/.alia-box/qemu"; do
   [ ! -L "$f" ] || [ -d "$f" ] || { echo "$f links to $(readlink "$f"), which is not there: is its volume mounted?" >&2; exit 1; }
 done
 `;
 
 /**
- * Everything bb-box needs to know about a Mac at once: Tart's VMs, the owner
+ * Everything alia-box needs to know about a Mac at once: Tart's VMs, the owner
  * files, the configuration of each running VM, the host's memory and the free
  * space where Tart keeps its VMs. Tart's part only when `tart`, as a Mac
  * that runs only Windows boxes needs no Tart; `extra` adds QEMU's (qemu.ts).
@@ -340,7 +340,7 @@ export interface TartVm {
   /** "running", "suspended" or "stopped". */
   readonly state: string;
   readonly running: boolean;
-  /** Its disk in decimal GB, as Tart gives it; null when bb-box has no note of an ASIF disk's. */
+  /** Its disk in decimal GB, as Tart gives it; null when alia-box has no note of an ASIF disk's. */
   readonly diskGB: number | null;
 }
 
@@ -356,7 +356,7 @@ export interface HostState {
   readonly version: string;
   readonly vms: readonly TartVm[];
   readonly configs: ReadonlyMap<string, VmConfig>;
-  /** Each image's record (049), from ~/.bb-box/tart/images/<image>.json, which the prepare scripts write. */
+  /** Each image's record (049), from ~/.alia-box/tart/images/<image>.json, which the prepare scripts write. */
   readonly records: ReadonlyMap<string, ImageRecord>;
   /**
    * Each VM's disk, as an ID that changes when the disk changes: its file's
@@ -516,7 +516,7 @@ if (set -C; printf '%s' ${quote(owner)} > "$f") 2>/dev/null; then echo claimed; 
 }
 
 /**
- * Suspends a warm VM bb-box has filled, once it is ready, and marks it warm,
+ * Suspends a warm VM alia-box has filled, once it is ready, and marks it warm,
  * and with `grants` notes that its fill made its grants with the Mac helper
  * of that hash (grants=<hash>, 058).
  * Prints "warm", or "gone" when its owner file no longer says it is filling.
@@ -564,7 +564,7 @@ fi
 }
 
 /**
- * The MAC address the Mac's ARP table has for a VM's address, after bb-box
+ * The MAC address the Mac's ARP table has for a VM's address, after alia-box
  * has just reached it, and the one in the VM's config, in one trip.
  */
 export function macScript(vm: string, address: string): string {
@@ -654,7 +654,7 @@ export function startScript(vm: string, waitSeconds: number): string {
   return script(String.raw`vm=${quote(vm)}; out="$d/run/$vm.out"; x="$d/run/$vm.exit"
 ${HOLD}
 started() { rm -f "$d/run/$vm.restored"; [ "$(os_of "$vm")" = linux ] || hold || :; echo started; }
-if rollback_running "$vm"; then echo "BB Box is putting a snapshot in the place of $vm on the Mac, so it does not start it until that has ended." >&2; exit 1; fi
+if rollback_running "$vm"; then echo "VesnALIA Box is putting a snapshot in the place of $vm on the Mac, so it does not start it until that has ended." >&2; exit 1; fi
 heal_rollback "$vm" || { [ $? = ${TURN_NOT_TAKEN} ] || echo "The folder of $vm is missing after a restore cut short, and the Mac has nothing whole to put back." >&2; exit 1; }
 case "$(state "$vm")" in
   running) echo running; exit 0 ;;
@@ -732,7 +732,7 @@ ${HOLD}
 hold
 case $? in
   1) echo "Tart's VNC server for $vm is not running: the VM may be stopped." >&2; exit 1 ;;
-  2) echo "The Mac has no python3 for BB Box's VNC holder: install Xcode's command line tools there (xcode-select --install)." >&2; exit 5 ;;
+  2) echo "The Mac has no python3 for VesnALIA Box's VNC holder: install Xcode's command line tools there (xcode-select --install)." >&2; exit 5 ;;
 esac
 i=0
 while [ "$i" -lt 150 ]; do
@@ -743,7 +743,7 @@ while [ "$i" -lt 150 ]; do
   esac
   sleep 0.1; i=$((i + 1))
 done
-echo "BB Box's VNC holder for $vm did not start within 15 s." >&2; tail -n 5 "$run/log" >&2; exit 1
+echo "VesnALIA Box's VNC holder for $vm did not start within 15 s." >&2; tail -n 5 "$run/log" >&2; exit 1
 `);
 }
 
@@ -940,7 +940,7 @@ function utc(ms: number): string {
 /**
  * Why a VM's run ended, in words, and whether the guest did not choose it
  * (#406), from what `ended` printed for `program`, such as "tart run". Null
- * when the run left no record, as one started before bb-box kept them.
+ * when the run left no record, as one started before alia-box kept them.
  */
 export function endReason(end: RunEnd, program: string): StopReason | null {
   if (end.pid === null) return null;
@@ -962,7 +962,7 @@ export function endReason(end: RunEnd, program: string): StopReason | null {
 /**
  * Stops the VM when it names the box: suspends it, which keeps its memory on
  * disk and frees its slot, or stops it. "shutdown" waits up to a minute for
- * a VM shutting itself down (a Linux box's, which bb-box asked) before it
+ * a VM shutting itself down (a Linux box's, which alia-box asked) before it
  * stops it. A Linux VM is never suspended, since Tart cannot resume one
  * (040). Prints "gone" when it is not there or not this box's.
  */
@@ -1153,7 +1153,7 @@ echo forgotten
 export function deleteScript(vm: string, installId: string, boxId: string | null): string {
   return script(String.raw`vm=${quote(vm)}
 if [ -f "$d/owners/$vm" ] && ! mine "$vm" ${quote(installId)} ${quote(boxId ?? "")}; then echo gone; exit 0; fi
-if rollback_running "$vm"; then echo "BB Box is putting a snapshot in the place of $vm on the Mac, so it deletes it once that has ended." >&2; exit 1; fi
+if rollback_running "$vm"; then echo "VesnALIA Box is putting a snapshot in the place of $vm on the Mac, so it deletes it once that has ended." >&2; exit 1; fi
 heal_rollback "$vm" || :
 if [ -n "$(state "$vm")" ]; then
   tart stop "$vm" --timeout 0 >/dev/null 2>&1

@@ -1,11 +1,11 @@
 ---
 name: ollama-usage
-description: Read Ollama Cloud credit balance, the monthly pool reset date and recent spend (including per-model spend) for the hosts enrolled in this BB server. Use when the user asks how much of the Ollama Cloud plan is left, when the pool resets, how much Ollama cost lately, or why bb shows no Ollama usage.
+description: Read Ollama Cloud credit balance, the monthly pool reset date and recent spend (including per-model spend) for the hosts enrolled in this VesnALIA server. Use when the user asks how much of the Ollama Cloud plan is left, when the pool resets, how much Ollama cost lately, or why VesnALIA shows no Ollama usage.
 ---
 
 # Ollama Cloud usage
 
-Run `bb ollama-usage show --json` to get the current numbers for every
+Run `alia ollama-usage show --json` to get the current numbers for every
 connected host. Each entry looks like:
 
 ```json
@@ -62,4 +62,4 @@ Read it like this:
 Do not read the API key or OpenCode's `auth.json` yourself; this command already
 has the numbers. For a plain terminal view drop `--json`.
 
-The same numbers appear in BB under Settings → Plugins → Provider usage.
+The same numbers appear in VesnALIA under Settings → Plugins → Provider usage.

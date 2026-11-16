@@ -4,7 +4,7 @@
 // microtask) when it emits `issues.changed`, so titles and status stay live.
 // "Not found" answers expire after a while; failed calls are not cached.
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { IssueSummary, KataRpcContract } from "@/lib/rpc-contract";
 import { KATA_CHANNEL, type KataSignal } from "@/lib/signals";
 

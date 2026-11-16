@@ -2,7 +2,7 @@
 // "once" and "always" as approval and anything else as a refusal, so this
 // card fails closed: an unreadable payload offers only Dismiss.
 import { useState } from "react";
-import type { PluginPendingInteractionProps } from "@get-bb/plugin-sdk/app";
+import type { PluginPendingInteractionProps } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";

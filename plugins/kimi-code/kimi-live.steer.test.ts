@@ -2,21 +2,21 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@get-bb/plugin-sdk/provider-bridge/testing";
+import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import { afterEach, beforeEach, expect, it } from "vitest";
 
 // Live integration test: steer and interrupt paths against a real `kimi acp`
 // turn. The bridge queues steer input and cancels the active ACP prompt
 // (session/cancel), then runs the queued input as the next turn; kimi must
 // honor the cancel for this to settle. Spends model tokens, so it runs only
-// when BB_KIMI_LIVE=1 is set explicitly.
-const LIVE = process.env.BB_KIMI_LIVE === "1";
+// when ALIA_KIMI_LIVE=1 is set explicitly.
+const LIVE = process.env.ALIA_KIMI_LIVE === "1";
 const itLive = LIVE ? it : it.skip;
 
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-kimi-steer-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "alia-kimi-steer-"));
 });
 
 afterEach(() => {

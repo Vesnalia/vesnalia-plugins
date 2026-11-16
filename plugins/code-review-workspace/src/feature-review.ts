@@ -1,8 +1,8 @@
 // A feature review: a local review of a folder and branch, one however many threads work there, addressed to its main
-// thread, the thread that started it there. `bb review` with no arguments starts it, or opens it as it is. Its page
+// thread, the thread that started it there. `alia review` with no arguments starts it, or opens it as it is. Its page
 // checks the folder (changed, on another branch, its machine offline, other threads there); once its branch has a PR
-// the same review becomes that PR's; and bb removing the folder ends it, unless comments wait on it.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// the same review becomes that PR's; and VesnALIA removing the folder ends it, unless comments wait on it.
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { placeOn, reanchorDraft, type FeatureReview, type MainThread, type PushRun, type ReviewLifecycle, type ReviewMeta, type Store } from "./store";
 import type { AsyncStore } from "./store-queue";
 import { diffFilesHead, featureBase, folderHas, folderHasBranch, folderHasSince, folderHead, isNotFound, isSecretPath, readFeatureDiff, readFeatureRevisions, type FeatureDiff, type FolderPr, type HiddenFile } from "./env-diff";
@@ -30,9 +30,9 @@ import { revisionOf } from "./review-revision";
 import { approvalHolds } from "../lib/turn";
 import type { EventListeners, PublicHandlers, RpcHandlers, ServeDeps } from "./server-modules";
 
-type Thread = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["get"]>>;
-type Environment = Awaited<ReturnType<BbPluginApi["sdk"]["environments"]["get"]>>;
-interface Deps { bb: BbPluginApi; store: AsyncStore; gh: ServeDeps["gh"]; changed(targetKey: string): void; sync?: Pick<ServeDeps["sync"], "one" | "health"> }
+type Thread = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["get"]>>;
+type Environment = Awaited<ReturnType<AliaPluginApi["sdk"]["environments"]["get"]>>;
+interface Deps { alia: AliaPluginApi; store: AsyncStore; gh: ServeDeps["gh"]; changed(targetKey: string): void; sync?: Pick<ServeDeps["sync"], "one" | "health"> }
 
 /** How long a PR GitHub didn't answer for waits before a check reads it again. */
 const ERROR_RETRY = 60_000;
@@ -42,18 +42,18 @@ const threadTitle = (thread: Pick<Thread, "title" | "titleFallback">) => thread.
 /** A home folder as ~, as the review shows it. */
 export const homeShort = (path: string) => path.replace(/^\/(?:Users|home)\/[^/]+(?=\/|$)/, "~");
 
-/** The thread, or null when BB has no such thread. Any other failure throws: it says nothing about the thread. */
-async function threadOf(bb: BbPluginApi, threadId: string): Promise<Thread | null> {
-  return bb.sdk.threads.get({ threadId }).catch((error) => {
+/** The thread, or null when VesnALIA has no such thread. Any other failure throws: it says nothing about the thread. */
+async function threadOf(alia: AliaPluginApi, threadId: string): Promise<Thread | null> {
+  return alia.sdk.threads.get({ threadId }).catch((error) => {
     if (isNotFound(error)) return null;
     throw error;
   });
 }
 
-/** Whether the thread is gone for good, archived or deleted; null when BB couldn't say. */
-async function threadGone(bb: BbPluginApi, threadId: string): Promise<{ gone: boolean; thread: Thread | null } | null> {
+/** Whether the thread is gone for good, archived or deleted; null when VesnALIA couldn't say. */
+async function threadGone(alia: AliaPluginApi, threadId: string): Promise<{ gone: boolean; thread: Thread | null } | null> {
   try {
-    const thread = await threadOf(bb, threadId);
+    const thread = await threadOf(alia, threadId);
     return { gone: !thread || !live(thread), thread };
   } catch {
     return null;
@@ -65,17 +65,17 @@ async function threadGone(bb: BbPluginApi, threadId: string): Promise<{ gone: bo
  * does, even in its parent's folder; a hidden one gives way to the nearest of its ancestors you see that still works in
  * its folder, passing over one in another folder. `top` is the highest of them working there, which may be one of this
  * plugin's agents a thread works under; `above`, the threads you see over `main` working there, nearest first. Each step
- * reads one thread (threads.get, not experimental_listAncestors, which older BBs lack); a parent BB no longer has ends
+ * reads one thread (threads.get, not experimental_listAncestors, which older BBs lack); a parent VesnALIA no longer has ends
  * the walk, and any other failure throws, as neither can be told.
  */
-export async function mainThreadOf(bb: BbPluginApi, caller: Thread): Promise<{ main: Thread; top: Thread; above: Thread[] }> {
+export async function mainThreadOf(alia: AliaPluginApi, caller: Thread): Promise<{ main: Thread; top: Thread; above: Thread[] }> {
   let main = caller;
   let top = caller;
   let at = caller;
   const above: Thread[] = [];
-  // A cycle, which BB shouldn't make, ends here too.
+  // A cycle, which VesnALIA shouldn't make, ends here too.
   for (let depth = 0; at.parentThreadId && depth < 50; depth++) {
-    const parent = await threadOf(bb, at.parentThreadId);
+    const parent = await threadOf(alia, at.parentThreadId);
     if (!parent) break;
     if (parent.environmentId === caller.environmentId && live(parent)) {
       if (main.visibility === "hidden") main = parent;
@@ -87,12 +87,12 @@ export async function mainThreadOf(bb: BbPluginApi, caller: Thread): Promise<{ m
   return { main, top, above };
 }
 
-/** The ids of `thread`'s ancestors, nearest first, read from `known` where it has them and from BB where it doesn't. */
-async function ancestorIds(bb: BbPluginApi, thread: Pick<Thread, "parentThreadId">, known: Map<string, string | null>): Promise<string[]> {
+/** The ids of `thread`'s ancestors, nearest first, read from `known` where it has them and from VesnALIA where it doesn't. */
+async function ancestorIds(alia: AliaPluginApi, thread: Pick<Thread, "parentThreadId">, known: Map<string, string | null>): Promise<string[]> {
   const ids: string[] = [];
   for (let at = thread.parentThreadId ?? null, depth = 0; at && depth < 50; depth++) {
     ids.push(at);
-    if (!known.has(at)) known.set(at, (await threadOf(bb, at))?.parentThreadId ?? null);
+    if (!known.has(at)) known.set(at, (await threadOf(alia, at))?.parentThreadId ?? null);
     at = known.get(at) ?? null;
   }
   return ids;
@@ -104,16 +104,16 @@ async function ancestorIds(bb: BbPluginApi, thread: Pick<Thread, "parentThreadId
  * leads them, not to whichever asked first. `covers`: the threads it takes over from, `main` among them, by title. Null
  * when no other thread you see works there under one of `above`, as when `main` works there alone.
  */
-async function sharedMain(bb: BbPluginApi, main: Thread, above: readonly Thread[]): Promise<{ main: Thread; covers: Map<string, string | null> } | null> {
+async function sharedMain(alia: AliaPluginApi, main: Thread, above: readonly Thread[]): Promise<{ main: Thread; covers: Map<string, string | null> } | null> {
   if (!above.length || !main.environmentId) return null;
-  const listed = await bb.sdk.threads.list({ environmentId: main.environmentId });
+  const listed = await alia.sdk.threads.list({ environmentId: main.environmentId });
   const known = new Map(listed.map((thread) => [thread.id, thread.parentThreadId ?? null]));
   const over = new Set(above.map((thread) => thread.id));
   const covers = new Map([[main.id, threadTitle(main)]]);
   let reach = -1;
   for (const thread of listed) {
-    if (thread.id === main.id || over.has(thread.id) || !live(thread) || thread.visibility === "hidden" || thread.originPluginId === bb.pluginId) continue;
-    const ancestors = await ancestorIds(bb, thread, known);
+    if (thread.id === main.id || over.has(thread.id) || !live(thread) || thread.visibility === "hidden" || thread.originPluginId === alia.pluginId) continue;
+    const ancestors = await ancestorIds(alia, thread, known);
     // The main thread's own sub-threads are its work.
     if (ancestors.includes(main.id)) continue;
     const at = above.findIndex((parent) => ancestors.includes(parent.id));
@@ -124,22 +124,22 @@ async function sharedMain(bb: BbPluginApi, main: Thread, above: readonly Thread[
   return reach < 0 ? null : { main: above[reach]!, covers };
 }
 
-/** What a folder's review needs to know of it: bb's environment, its machine's name, and its project's GitHub repo. */
+/** What a folder's review needs to know of it: VesnALIA's environment, its machine's name, and its project's GitHub repo. */
 interface Folder { env: Environment & { path: string; branchName: string }; machine: string; repo: string | null }
 
-async function folderOf(bb: BbPluginApi, environmentId: string): Promise<Folder | { error: string }> {
+async function folderOf(alia: AliaPluginApi, environmentId: string): Promise<Folder | { error: string }> {
   let env: Environment;
   try {
-    env = await bb.sdk.environments.get({ environmentId });
+    env = await alia.sdk.environments.get({ environmentId });
   } catch {
-    return { error: "Couldn’t read this thread’s folder from BB. Try again in a moment." };
+    return { error: "Couldn’t read this thread’s folder from VesnALIA. Try again in a moment." };
   }
   if (env.status !== "ready" || !env.path) return { error: "This thread’s folder isn’t ready yet. Try again once it is." };
   if (!env.isGitRepo) return { error: "This thread’s folder isn’t a git repository, so it has no changes to review." };
   if (!env.branchName) return { error: "This thread’s folder isn’t on a branch, so there’s no feature to review. Check out a branch, or pass a git ref." };
   const [machine, project] = await Promise.all([
-    machineStatus(bb, env.hostId),
-    bb.sdk.projects.get({ projectId: env.projectId }).catch(() => null),
+    machineStatus(alia, env.hostId),
+    alia.sdk.projects.get({ projectId: env.projectId }).catch(() => null),
   ]);
   return { env: env as Folder["env"], machine: machine?.name ?? "its machine", repo: remoteRepo(project?.gitRemoteUrl) };
 }
@@ -181,7 +181,7 @@ export function mainThreadState(review: Pick<ReviewMeta, "mainThread" | "impleme
  */
 type Opened = { key: string; created: boolean; joined: boolean; replaced: { threadId: string; title: string | null } | null; main: { threadId: string; title: string | null }; changed: boolean; shared: boolean; movedFrom: { threadId: string; title: string | null } | null };
 
-/** A PR's review a folder on its branch may join: open, with a guide or one being written, and no folder BB still has. */
+/** A PR's review a folder on its branch may join: open, with a guide or one being written, and no folder VesnALIA still has. */
 const joinable = (review: ReviewMeta) => review.kind === "pr" && !review.archivedAt && !review.mergedInto
   && review.prState !== "MERGED" && review.prState !== "CLOSED" && (review.status === "ready" || review.status === "generating")
   && (!review.feature || !!review.feature.folderGone);
@@ -197,10 +197,10 @@ const readsFolder = (review: ReviewMeta | null, env: Folder["env"]) => !!review?
  * the folder to meanwhile is the folder's. Null for none.
  */
 async function prReviewToJoin(deps: Deps, folder: Folder): Promise<ReviewMeta | null> {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   const { env, repo } = folder;
   if (!repo) return null;
-  const found = await featureBase(bb, env, repo);
+  const found = await featureBase(alia, env, repo);
   const pr = "pr" in found ? prOfBranch({ repo }, found.pr) : null;
   // One already the folder's: not one its PR's merge or close ended, as a review's of a branch used again is (movedOn).
   const takes = (review: ReviewMeta) => joinable(review) || review.kind === "pr" && !review.archivedAt && readsFolder(review, env) && !movedOn(review, env.branchName);
@@ -209,7 +209,7 @@ async function prReviewToJoin(deps: Deps, folder: Folder): Promise<ReviewMeta | 
   if (!review || !takes(review)) return null;
   if (readsFolder(review, env)) return review;
   const head = prHead(review);
-  return head && await folderHas(bb, env.id, head) ? review : null;
+  return head && await folderHas(alia, env.id, head) ? review : null;
 }
 
 /**
@@ -220,7 +220,7 @@ async function prReviewToJoin(deps: Deps, folder: Folder): Promise<ReviewMeta | 
  * sharing the folder (sharedMain): a review one of them has moves to `main`. `run` starts its guide once called.
  */
 async function openFolderReview(deps: Deps, folder: Folder, main: Thread | null, options: { name?: string; context?: string } = {}, covers?: Map<string, string | null>): Promise<{ opened: Opened; run?: () => Promise<void> } | { error: string }> {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   const { env, machine, repo } = folder;
   // A review re-homed to a fixer's worktree, on that worktree's branch, is the folder's review: its key is its old folder's;
   // so is one that followed the folder onto this branch. A key whose review moved on gives way to the next; one merged
@@ -242,16 +242,16 @@ async function openFolderReview(deps: Deps, folder: Folder, main: Thread | null,
   let existing = await store.getReview(key);
   const joining = !existing && main ? await prReviewToJoin(deps, folder) : null;
   if (joining) [key, existing] = [joining.targetKey, joining];
-  // A recorded main thread that's archived or deleted gives way to the live one asking. One BB can't read now stays.
-  const checked = !joining && existing?.mainThread && main && existing.mainThread.threadId !== main.id ? await threadGone(bb, existing.mainThread.threadId) : null;
+  // A recorded main thread that's archived or deleted gives way to the live one asking. One VesnALIA can't read now stays.
+  const checked = !joining && existing?.mainThread && main && existing.mainThread.threadId !== main.id ? await threadGone(alia, existing.mainThread.threadId) : null;
   const recorded = checked?.thread ?? null;
   const gone = !!checked?.gone;
   let read: FeatureDiff | undefined;
   if (!existing) {
-    if (!main) return { error: "Couldn’t tell which thread leads the work in this folder: BB didn’t answer for one of this thread’s parents. Try again in a moment." };
-    const unavailable = await guideWriterUnavailable(bb, store);
+    if (!main) return { error: "Couldn’t tell which thread leads the work in this folder: VesnALIA didn’t answer for one of this thread’s parents. Try again in a moment." };
+    const unavailable = await guideWriterUnavailable(alia, store);
     if (unavailable) return { error: unavailable };
-    read = await readFeatureDiff(bb, { environmentId: env.id, machine, repo, branch: env.branchName });
+    read = await readFeatureDiff(alia, { environmentId: env.id, machine, repo, branch: env.branchName });
     if (read.outcome !== "available") return { error: read.message };
     if (!read.patch.trim()) return { error: nothingToReview(read) };
   }
@@ -267,7 +267,7 @@ async function openFolderReview(deps: Deps, folder: Folder, main: Thread | null,
     const here = readsFolder(review, env);
     if (joining && !here) {
       // One that got a folder of its own, went to Archive or was merged meanwhile isn't joined.
-      if (!review || !joinable(review)) return { error: "The review of this branch’s PR changed just now. Run bb review again." };
+      if (!review || !joinable(review)) return { error: "The review of this branch’s PR changed just now. Run alia review again." };
       joined = true;
       const feature: FeatureReview = {
         environmentId: env.id, hostId: env.hostId, machine, path: env.path, branch: env.branchName, baseRef: review.base ?? env.defaultBranch ?? "main", repo,
@@ -278,7 +278,7 @@ async function openFolderReview(deps: Deps, folder: Folder, main: Thread | null,
       if (review!.userArchivedAt) await tx.setLifecycle(key, { userArchivedAt: null });
     } else if (!review) {
       // Read first above, unless another call started it meanwhile: this one only opens it.
-      if (!main || !read || read.outcome !== "available") return { error: "This folder’s review was deleted just now. Run bb review again to start a new one." };
+      if (!main || !read || read.outcome !== "available") return { error: "This folder’s review was deleted just now. Run alia review again to start a new one." };
       const feature: FeatureReview = { environmentId: env.id, hostId: env.hostId, machine, path: env.path, branch: env.branchName, baseRef: read.base, mergeBaseRef: read.mergeBaseRef, repo };
       // Named after the main thread, as it's called now. Kept as "ref" with no cwd, so 1.7.0 never runs git on it.
       const title = threadTitle(main) ?? undefined;
@@ -304,7 +304,7 @@ async function openFolderReview(deps: Deps, folder: Folder, main: Thread | null,
       const named = (await tx.getReview(key))!;
       await tx.setLifecycle(key, { name: options.name && options.name !== defaultName(named) ? options.name : null });
     }
-    if (created) run = await beginGuide(bb, tx, store, key, env.projectId);
+    if (created) run = await beginGuide(alia, tx, store, key, env.projectId);
     const threadId = (await tx.getReview(key))!.mainThread?.threadId ?? main?.id ?? "";
     return { opened: { key, created, joined, replaced, changed, movedFrom, shared: !!covers && threadId === main?.id, main: { threadId, title: threadId === main?.id ? threadTitle(main) : recorded && threadTitle(recorded) } } };
   });
@@ -340,48 +340,48 @@ export function reviewOfFolder(reviews: readonly ReviewMeta[], environmentId: st
 async function pluginThread(deps: Deps, thread: Thread, hidden: boolean): Promise<boolean> {
   if (hidden && thread.visibility === "hidden") return true;
   if (await deps.store.exclusive(async (tx) => !!await assistantReview(tx, thread.id) || !!await tx.generationOf(thread.id))) return true;
-  return await formerWorkerReview(deps.bb, thread.id) !== null;
+  return await formerWorkerReview(deps.alia, thread.id) !== null;
 }
 
-/** The parts of `bb review`'s output the no-argument form takes. */
+/** The parts of `alia review`'s output the no-argument form takes. */
 interface FeatureCommand { name?: string; context?: string; inThreads: boolean }
 interface Ctx { projectId?: string; threadId?: string; cwd?: string }
 
 /**
- * The folder `threadId` works in and the thread its review goes to, as `bb review` with no arguments finds them, or why
+ * The folder `threadId` works in and the thread its review goes to, as `alia review` with no arguments finds them, or why
  * not: neither may be one of the plugin's own threads, as a thread a review agent started would lead to its agent.
  */
 async function callerFolder(deps: Deps, threadId: string): Promise<{ caller: Thread; folder: Folder; main: Thread | null; covers?: Map<string, string | null> } | { exitCode: number; stderr: string }> {
-  const { bb } = deps;
+  const { alia } = deps;
   let caller: Thread | null;
   try {
-    caller = await threadOf(bb, threadId);
+    caller = await threadOf(alia, threadId);
   } catch (error) {
-    return { exitCode: 1, stderr: `Couldn’t read this thread from BB: ${error instanceof Error ? error.message : String(error)}. Try again in a moment.` };
+    return { exitCode: 1, stderr: `Couldn’t read this thread from VesnALIA: ${error instanceof Error ? error.message : String(error)}. Try again in a moment.` };
   }
-  if (!caller) return { exitCode: 1, stderr: "BB has no record of this thread. Run `bb review` in a thread that works in a folder." };
-  if (!caller.environmentId) return { exitCode: 2, stderr: "This thread has no folder yet. Run `bb review` once it’s working in one." };
+  if (!caller) return { exitCode: 1, stderr: "VesnALIA has no record of this thread. Run `alia review` in a thread that works in a folder." };
+  if (!caller.environmentId) return { exitCode: 2, stderr: "This thread has no folder yet. Run `alia review` once it’s working in one." };
   const agents = "This thread is one of Code Review Workspace’s agents, or works under one, so it can’t start a review of its folder. Run it in a thread working on the change.";
-  // A hidden subagent of yours may run bb review; the thread it leads to may not be hidden.
+  // A hidden subagent of yours may run alia review; the thread it leads to may not be hidden.
   if (await pluginThread(deps, caller, false)) return { exitCode: 2, stderr: agents };
-  const folder = await folderOf(bb, caller.environmentId);
+  const folder = await folderOf(alia, caller.environmentId);
   if ("error" in folder) return { exitCode: 1, stderr: folder.error };
   // Unknown, it starts no review, and an existing one keeps its main thread.
-  const found = await mainThreadOf(bb, caller).catch(() => null);
+  const found = await mainThreadOf(alia, caller).catch(() => null);
   if (found && (await pluginThread(deps, found.main, true) || await pluginThread(deps, found.top, true))) return { exitCode: 2, stderr: agents };
   // Sub-threads sharing the folder: the thread that leads them. Unknown, the thread found stays.
-  const shared = found ? await sharedMain(bb, found.main, found.above).catch(() => null) : null;
+  const shared = found ? await sharedMain(alia, found.main, found.above).catch(() => null) : null;
   return { caller, folder, main: shared?.main ?? found?.main ?? null, ...shared ? { covers: shared.covers } : {} };
 }
 
 /**
- * `bb review` with no arguments: the review of the folder the calling thread works in, at its branch now, started or
+ * `alia review` with no arguments: the review of the folder the calling thread works in, at its branch now, started or
  * opened as it is, addressed to the calling thread, or its main thread as before. `ownReview`: a review's own agent ran it, which may not.
  */
 export async function runFeatureCommand(deps: Deps, command: FeatureCommand, ctx: Ctx, ownReview?: string) {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   if (ownReview !== undefined) return { exitCode: 2, stderr: "A review’s own agent can’t start a review of a folder." };
-  if (!ctx.threadId) return { exitCode: 2, stderr: "Run `bb review` with no arguments in a bb thread: it reviews the changes in that thread’s folder. Outside a thread, pass a PR or a git ref." };
+  if (!ctx.threadId) return { exitCode: 2, stderr: "Run `alia review` with no arguments in a VesnALIA thread: it reviews the changes in that thread’s folder. Outside a thread, pass a PR or a git ref." };
   const found = await callerFolder(deps, ctx.threadId);
   if ("stderr" in found) return { exitCode: found.exitCode, stderr: found.stderr };
   const { folder, main, covers } = found;
@@ -396,10 +396,10 @@ export async function runFeatureCommand(deps: Deps, command: FeatureCommand, ctx
   const { key, created, joined, replaced, main: to, changed, shared, movedFrom } = started.opened;
 
   const review = (await store.getReview(key))!;
-  const identity = identityIn(await placeFacts(bb, [review]), await store.listReviews(), review);
+  const identity = identityIn(await placeFacts(alia, [review]), await store.listReviews(), review);
   const which = `${identity.id}${identity.line === identity.id ? "" : ` ${JSON.stringify(identity.name)}`} (${key})`;
-  const appUrl = command.inThreads ? bb.server.experimental_appUrl : null;
-  const open = appUrl ? `Open ${appUrl.replace(/\/+$/, "")}/plugins/${bb.pluginId}/review/${key}` : "Open the Code Review Workspace panel";
+  const appUrl = command.inThreads ? alia.server.experimental_appUrl : null;
+  const open = appUrl ? `Open ${appUrl.replace(/\/+$/, "")}/plugins/${alia.pluginId}/review/${key}` : "Open the Code Review Workspace panel";
   const where = `${homeShort(folder.env.path)} on ${folder.machine}`;
   const thread = to.title ? `${JSON.stringify(to.title)} (${to.threadId})` : to.threadId;
 
@@ -410,7 +410,7 @@ export async function runFeatureCommand(deps: Deps, command: FeatureCommand, ctx
     joined ? `Its main thread is now ${thread}. Comments sent from the review go there.`
       : movedFrom ? `Its main thread is now ${thread}, which leads the sub-threads working in this folder, in place of ${movedFrom.title ? `${JSON.stringify(movedFrom.title)} (${movedFrom.threadId})` : movedFrom.threadId}. Comments sent from the review go there.`
       : replaced ? `Its main thread is now ${thread}, in place of ${replaced.title ? JSON.stringify(replaced.title) : replaced.threadId}, which is archived or deleted. Comments sent from the review go there.`
-      : !main ? `Its main thread is ${thread}, as before: BB couldn’t say which thread leads the work here now. Comments sent from the review go there.`
+      : !main ? `Its main thread is ${thread}, as before: VesnALIA couldn’t say which thread leads the work here now. Comments sent from the review go there.`
       : shared ? `Its main thread is ${thread}, which leads the sub-threads working in this folder. Comments sent from the review go there.`
       : `Its main thread is ${thread}${to.threadId === main.id ? "" : ", as before"}. Comments sent from the review go there.`,
   ];
@@ -457,18 +457,18 @@ function changedCount(kept: Record<string, string> | null, now: Record<string, s
  * The other threads in the review's folder, by title: not its main thread, its subagents, the threads it works under,
  * as an orchestrator over a sub-thread's own review, or this plugin's threads.
  */
-async function alsoActive(bb: BbPluginApi, review: ReviewMeta & { feature: FeatureReview }): Promise<FeatureCheck["alsoActive"]> {
+async function alsoActive(alia: AliaPluginApi, review: ReviewMeta & { feature: FeatureReview }): Promise<FeatureCheck["alsoActive"]> {
   const main = review.mainThread?.threadId;
   const [listed, below] = await Promise.all([
-    bb.sdk.threads.list({ environmentId: review.feature.environmentId }).catch(() => []),
-    main ? bb.sdk.threads.experimental_listDescendants?.({ threadIds: [main] }).catch(() => null) : null,
+    alia.sdk.threads.list({ environmentId: review.feature.environmentId }).catch(() => []),
+    main ? alia.sdk.threads.experimental_listDescendants?.({ threadIds: [main] }).catch(() => null) : null,
   ]);
   const under = new Set(below?.threads.find((thread) => thread.threadId === main)?.descendantIds ?? []);
   const known = new Map(listed.map((thread) => [thread.id, thread.parentThreadId ?? null]));
   const listedMain = listed.find((thread) => thread.id === main);
-  const over = new Set(listedMain ? await ancestorIds(bb, listedMain, known).catch(() => []) : []);
+  const over = new Set(listedMain ? await ancestorIds(alia, listedMain, known).catch(() => []) : []);
   return listed.filter((thread) => thread.id !== main && !under.has(thread.id) && !over.has(thread.id) && thread.parentThreadId !== main && !thread.archivedAt && !thread.deletedAt
-    && thread.visibility !== "hidden" && thread.originPluginId !== bb.pluginId)
+    && thread.visibility !== "hidden" && thread.originPluginId !== alia.pluginId)
     .map((thread) => ({ threadId: thread.id, title: threadTitle(thread) ?? "Untitled thread" }));
 }
 
@@ -513,7 +513,7 @@ function prOfBranch(feature: Pick<FeatureReview, "repo">, pr: FolderPr | undefin
  * since, "pr-closed" or "pr-merged", with nothing waiting on it after, nor, to Merge, offering it.
  */
 export async function becomePr(deps: Deps, key: string, pr: { repo: string; number: number }, clicked?: "pr" | "merge"): Promise<"converted" | "merged" | "offered" | "skipped" | "pr-closed" | "pr-merged"> {
-  const { bb, store, gh } = deps;
+  const { alia, store, gh } = deps;
   const prKey = await prReviewKey(store, pr);
   // A guide being written goes on: it's checked against the diff as it is when it's done, the PR's.
   const now = featureOf(await store.getReview(key));
@@ -618,12 +618,12 @@ export async function becomePr(deps: Deps, key: string, pr: { repo: string; numb
   if (notOwn(snapshot.pr.headRefName)) return asked ? "skipped" : pending({ number: pr.number, url: snapshot.pr.url, why: "branch", head: snapshot.pr.headRefName, at: Date.now() });
   // A branch used again may have an open PR from before the review: it's this work's only when the folder has its head.
   const opened = Date.parse(snapshot.pr.createdAt ?? "");
-  if (!clicked && opened < now.createdAt && !await folderHas(bb, now.feature.environmentId, snapshot.pr.headRefOid)) {
+  if (!clicked && opened < now.createdAt && !await folderHas(alia, now.feature.environmentId, snapshot.pr.headRefOid)) {
     return pending({ number: pr.number, url: snapshot.pr.url, why: "older", at: Date.now() });
   }
-  if (other?.status === "generating") await stopGuide(bb, store, prKey);
+  if (other?.status === "generating") await stopGuide(alia, store, prKey);
   // What the folder has that the PR's head doesn't, where a comment the PR's diff loses can stay, not on GitHub yet.
-  const ahead = await readFeatureDiff(bb, { environmentId: now.feature.environmentId, machine: now.feature.machine, repo: null, baseRef: snapshot.pr.headRefOid, workBranch: folderBranchOf(now.feature) }).catch(() => null);
+  const ahead = await readFeatureDiff(alia, { environmentId: now.feature.environmentId, machine: now.feature.machine, repo: null, baseRef: snapshot.pr.headRefOid, workBranch: folderBranchOf(now.feature) }).catch(() => null);
   const done = await store.exclusive(async (tx) => {
     const review = featureOf(await tx.getReview(key));
     if (!review || review.kind !== "ref") return "skipped" as const;
@@ -632,7 +632,7 @@ export async function becomePr(deps: Deps, key: string, pr: { repo: string; numb
     // Something of yours put in the PR's review while GitHub and the folder were read: offered, not merged on its own.
     const offered = other && clicked !== "merge" ? await offerIn(tx, false) : null;
     if (offered) return offered;
-    if (other) await stopFocusRunIn(bb, tx, prKey, "stopped", true);
+    if (other) await stopFocusRunIn(alia, tx, prKey, "stopped", true);
     // In one transaction: a merge that fails leaves the review as it was, to become the PR's when it's found again.
     return tx.transaction((db) => convertIn(db, review, pr, snapshot, ahead?.outcome === "available" ? ahead : null, other ? prKey : null));
   });
@@ -641,7 +641,7 @@ export async function becomePr(deps: Deps, key: string, pr: { repo: string; numb
   if (done === "saved" || done === "kept") return "offered";
   if (done === "converted" || done === "merged") {
     await deps.sync?.one(key, true).catch(() => {});
-    await retitleAssistant(bb, store, key).catch(() => {});
+    await retitleAssistant(alia, store, key).catch(() => {});
     deps.changed(key);
     if (done === "merged") deps.changed(prKey);
   }
@@ -733,7 +733,7 @@ async function convertIn(db: Store, review: ReviewMeta & { feature: FeatureRevie
  * review that PR's. Only what changes in the review is saved; the page asks again on its realtime signals.
  */
 export async function checkFeature(deps: Deps, key: string): Promise<FeatureCheck> {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   const review = featureOf(await store.getReview(key));
   const empty: FeatureCheck = { state: "current", alsoActive: [], hidden: [], flagged: [] };
   if (!review) return empty;
@@ -752,9 +752,9 @@ export async function checkFeature(deps: Deps, key: string): Promise<FeatureChec
   const seen = new Set(review.flaggedSeen ?? []);
   const flagged = Object.keys(kept.files?.revisions ?? {}).filter((path) => isSecretPath(path) && !included.has(path) && !seen.has(path) && !hidden.some((file) => file.path === path));
   const base: FeatureCheck = { ...empty, hidden, flagged };
-  if (feature.folderGone) return { ...base, state: "gone", message: "BB removed this folder." };
+  if (feature.folderGone) return { ...base, state: "gone", message: "VesnALIA removed this folder." };
 
-  const [read, others, head] = await Promise.all([readFeatureRevisions(bb, feature), alsoActive(bb, review), folderHead(bb, feature.environmentId)]);
+  const [read, others, head] = await Promise.all([readFeatureRevisions(alia, feature), alsoActive(alia, review), folderHead(alia, feature.environmentId)]);
   const withOthers: FeatureCheck = { ...base, alsoActive: others };
   // A folder on no branch is on its detached HEAD.
   const pausedOn = read.outcome === "paused" ? read.branch ?? "HEAD" : read.outcome === "available" ? null : undefined;
@@ -779,9 +779,9 @@ export async function checkFeature(deps: Deps, key: string): Promise<FeatureChec
     // branch merged into the base and deleted isn't renamed), or which was its merge base, a branch with no commits of
     // its own, which can't have been merged, while the folder is still at it: a head read before commits made since may
     // be out of date. It follows, and says so.
-    if (read.branch && !other && !feature.workBranch && feature.headSha && await folderHasBranch(bb, feature.environmentId, feature.branch) === false
-      && await folderHas(bb, feature.environmentId, feature.headSha)
-      && (feature.headSha === feature.mergeBaseRef && head === feature.headSha || await folderHasSince(bb, feature.environmentId, feature.baseRef, feature.headSha))
+    if (read.branch && !other && !feature.workBranch && feature.headSha && await folderHasBranch(alia, feature.environmentId, feature.branch) === false
+      && await folderHas(alia, feature.environmentId, feature.headSha)
+      && (feature.headSha === feature.mergeBaseRef && head === feature.headSha || await folderHasSince(alia, feature.environmentId, feature.baseRef, feature.headSha))
       && await followBranch(deps, key, read.branch, true)) return checkFeature(deps, key);
     return { ...withOthers, state: "paused", branch: read.branch, ...other ? { branchReview: other } : {} };
   }
@@ -812,7 +812,7 @@ async function checkPrFolder(deps: Deps, review: ReviewMeta & { feature: Feature
   const { feature } = review;
   const sha = prHead(review);
   if (!sha) return empty;
-  const read = await readFeatureRevisions(deps.bb, { environmentId: feature.environmentId, machine: feature.machine, repo: null, baseRef: sha, workBranch: folderBranchOf(feature) });
+  const read = await readFeatureRevisions(deps.alia, { environmentId: feature.environmentId, machine: feature.machine, repo: null, baseRef: sha, workBranch: folderBranchOf(feature) });
   if (read.outcome === "gone") {
     if (await deps.store.exclusive(async (tx) => { const now = featureOf(await tx.getReview(review.targetKey)); return !!now && await markFolderGone(tx, now); })) deps.changed(review.targetKey);
     return { ...empty, state: "gone", message: read.message };
@@ -849,13 +849,13 @@ async function followBranch(deps: Deps, key: string, branch: string, said: boole
  * it, your Update or Include and Keep out, or on a PR's review, your Push landing.
  */
 export async function updateFeature(deps: Deps, key: string, why: "update" | "include" | "push" = "update"): Promise<{ ok: boolean; error?: string }> {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   const review = featureOf(await store.getReview(key));
   if (review?.kind === "pr" && !review.feature.folderGone) return updatePr(deps, review, why === "push" ? why : "update");
   if (!review || review.kind !== "ref") return { ok: false, error: "Only a local review of a folder updates this way. Use Update guide." };
   if (review.status === "generating") return { ok: false, error: "The guide writer is writing this review’s guide. Update once it’s done." };
-  if (review.feature.folderGone) return { ok: false, error: "BB removed this folder, so there’s nothing to update from." };
-  const read = await readFeatureDiff(bb, review.feature, review.includeHidden ?? []);
+  if (review.feature.folderGone) return { ok: false, error: "VesnALIA removed this folder, so there’s nothing to update from." };
+  const read = await readFeatureDiff(alia, review.feature, review.includeHidden ?? []);
   if (read.outcome === "gone") {
     if (await store.exclusive(async (tx) => { const now = featureOf(await tx.getReview(key)); return !!now && await markFolderGone(tx, now); })) deps.changed(key);
     return { ok: false, error: read.message };
@@ -921,11 +921,11 @@ async function updatePr(deps: Deps, review: ReviewMeta & { feature: FeatureRevie
  * A feature review's diff read again for its guide (src/rereview.ts): the patch, and, in the block that rebuilds it,
  * what to keep with it. Null for a review that isn't of a folder.
  */
-export async function readForGuide(bb: BbPluginApi, review: ReviewMeta): Promise<{ patch: string; save: (tx: AsyncStore) => Promise<void> } | { error: string } | null> {
+export async function readForGuide(alia: AliaPluginApi, review: ReviewMeta): Promise<{ patch: string; save: (tx: AsyncStore) => Promise<void> } | { error: string } | null> {
   const feature = featureOf(review)?.feature;
   if (!feature || review.kind !== "ref") return null;
-  if (feature.folderGone) return { error: "BB removed this folder, so its guide can’t be written again." };
-  const read = await readFeatureDiff(bb, feature, review.includeHidden ?? []);
+  if (feature.folderGone) return { error: "VesnALIA removed this folder, so its guide can’t be written again." };
+  const read = await readFeatureDiff(alia, feature, review.includeHidden ?? []);
   if (read.outcome === "paused") return { error: `The folder is on ${read.branch ?? "no branch"} now, so this review waits until it’s back on ${feature.branch}.` };
   if (read.outcome !== "available") return { error: read.message };
   return {
@@ -970,7 +970,7 @@ function offeringFolder(reviews: ReviewMeta[], targetKey: string): (ReviewMeta &
 }
 
 export function register(deps: ServeDeps) {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
 
   const handlers = {
     async checkFeature({ targetKey }) {
@@ -1003,7 +1003,7 @@ export function register(deps: ServeDeps) {
     async followFolderBranch({ targetKey }) {
       const review = featureOf(await store.getReview(targetKey));
       if (!review) return { ok: false, error: "This review isn’t of a folder." };
-      const folder = await folderOf(bb, review.feature.environmentId);
+      const folder = await folderOf(alia, review.feature.environmentId);
       if ("error" in folder) return { ok: false, error: folder.error };
       if (folder.env.branchName === review.feature.branch) return { ok: true };
       return await followBranch(deps, targetKey, folder.env.branchName, false) ? { ok: true }
@@ -1077,15 +1077,15 @@ export function register(deps: ServeDeps) {
     async reviewFolderBranch({ targetKey }) {
       const review = featureOf(await store.getReview(targetKey));
       if (!review) return { ok: false, error: "This review isn’t of a folder." };
-      const folder = await folderOf(bb, review.feature.environmentId);
+      const folder = await folderOf(alia, review.feature.environmentId);
       if ("error" in folder) return { ok: false, error: folder.error };
       let main: Thread | null;
       try {
-        main = review.mainThread ? await threadOf(bb, review.mainThread.threadId) : null;
+        main = review.mainThread ? await threadOf(alia, review.mainThread.threadId) : null;
       } catch {
-        return { ok: false, error: "Couldn’t read this review’s main thread from BB. Try again in a moment." };
+        return { ok: false, error: "Couldn’t read this review’s main thread from VesnALIA. Try again in a moment." };
       }
-      if (!main || !main.environmentId || !live(main)) return { ok: false, error: "This review’s main thread is archived or gone. Run bb review in a thread working in the folder." };
+      if (!main || !main.environmentId || !live(main)) return { ok: false, error: "This review’s main thread is archived or gone. Run alia review in a thread working in the folder." };
       const started = await openFolderReview(deps, folder, main);
       if ("error" in started) return { ok: false, error: started.error };
       void started.run?.();
@@ -1095,7 +1095,7 @@ export function register(deps: ServeDeps) {
   } satisfies Partial<RpcHandlers>;
 
   const events: EventListeners = {
-    // bb removed a folder: its reviews end, as markFolderGone says.
+    // VesnALIA removed a folder: its reviews end, as markFolderGone says.
     "experimental_environment.removed": [async ({ removal }) => {
       const gone = await store.exclusive(async (tx) => {
         const keys: string[] = [];
@@ -1109,7 +1109,7 @@ export function register(deps: ServeDeps) {
   };
   // What other plugins call (src/public-contract.ts).
   const published = {
-    // Review changes, above a thread's message box, and other plugins: what bb review with no arguments does there, with no output.
+    // Review changes, above a thread's message box, and other plugins: what VesnALIA review with no arguments does there, with no output.
     async reviewThreadChanges({ threadId }) {
       // A review's agents and guide writers, hidden, may work in the folder's checkout: never a review's main thread,
       // from their page or their shell (callerFolder).

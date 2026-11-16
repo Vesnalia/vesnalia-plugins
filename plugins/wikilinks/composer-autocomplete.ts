@@ -1,7 +1,7 @@
 export const COMPOSER_WIKILINK_QUERY_EVENT =
-  "bb:wikilinks:composer-autocomplete-query";
+  "alia:wikilinks:composer-autocomplete-query";
 export const COMPOSER_WIKILINK_RESULTS_EVENT =
-  "bb:wikilinks:composer-autocomplete-results";
+  "alia:wikilinks:composer-autocomplete-results";
 
 export interface ComposerWikilinkSuggestion {
   reference: string;

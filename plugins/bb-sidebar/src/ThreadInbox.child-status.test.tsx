@@ -24,7 +24,7 @@ describe("ThreadInbox", () => {
             indicator: "runtime",
           }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         getSidebarSettings: () => {
@@ -48,7 +48,7 @@ describe("ThreadInbox", () => {
     await waitFor(() => expect(loads).toBe(2));
     expect(screen.queryByRole("list", { name: "Child threads" })).toBeNull();
     expect(
-      JSON.parse(window.localStorage.getItem("bb-sidebar:settings-cache:v1") ?? "{}").showRunningChildrenWhenCollapsed,
+      JSON.parse(window.localStorage.getItem("alia-sidebar:settings-cache:v1") ?? "{}").showRunningChildrenWhenCollapsed,
     ).toBe(false);
   });
 
@@ -68,7 +68,7 @@ describe("ThreadInbox", () => {
               parentThreadId: "child",
             }),
           ],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         },
         rpc: { listLifecycle: () => ({ rows: [] }) },
       },
@@ -108,7 +108,7 @@ describe("ThreadInbox", () => {
             }),
           ],
           projects: [
-            { id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" },
+            { id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" },
             { id: "proj_2", name: "xPlan", isPersonal: false, href: "", settingsHref: "" },
           ],
         },
@@ -130,7 +130,7 @@ describe("ThreadInbox", () => {
   it("shows every child status or an idle age in expanded rows and accessible names", async () => {
     const minute = Math.floor(Date.now() / 60_000) * 60_000;
     window.localStorage.setItem(
-      "bb-sidebar:working-since:v1",
+      "alia-sidebar:working-since:v1",
       JSON.stringify({
         monitoring: minute - 5 * 60_000,
         planning: minute - 5 * 60_000,
@@ -223,14 +223,14 @@ describe("ThreadInbox", () => {
     const needsYouRow = within(childList).getByRole("link", {
       name: "Open child thread: Pending runtime child, Needs you",
     }).parentElement!;
-    expect(needsYouRow.className).toContain("bg-[color:var(--bb-sidebar-needs-you-tint)]");
-    expect(needsYouRow.className).toContain("shadow-[inset_2px_0_0_0_var(--bb-sidebar-needs-you-accent)]");
+    expect(needsYouRow.className).toContain("bg-[color:var(--alia-sidebar-needs-you-tint)]");
+    expect(needsYouRow.className).toContain("shadow-[inset_2px_0_0_0_var(--alia-sidebar-needs-you-accent)]");
     // and only that row: the rule is the tint's partner, not a row border.
     expect(
       within(childList).getByRole("link", {
         name: "Open child thread: Failed child, Failed",
       }).parentElement?.className,
-    ).not.toContain("--bb-sidebar-needs-you-accent");
+    ).not.toContain("--alia-sidebar-needs-you-accent");
 
     // The slot takes exactly the width its label needs, up to the 112px the
     // longest status wants, so a short status or age hands the rest back to a
@@ -251,11 +251,11 @@ describe("ThreadInbox", () => {
     );
     expect(rendered.linkCalls).toContainEqual({ href: "/projects/proj_1/threads/monitoring", split: false });
     await waitFor(() =>
-      expect(JSON.parse(window.localStorage.getItem("bb-sidebar:child-expansion:v1") ?? "[]")).toEqual(["parent"]),
+      expect(JSON.parse(window.localStorage.getItem("alia-sidebar:child-expansion:v1") ?? "[]")).toEqual(["parent"]),
     );
   });
 
-  // bb adds indicator kinds over time. One this build has never seen has to
+  // VesnALIA adds indicator kinds over time. One this build has never seen has to
   // fall through to the age on a child row exactly as it does on a parent
   // card, and must not tint the rollup badge either.
   it("keeps the age on child and grandchild rows with an unrecognized indicator", () => {
@@ -266,7 +266,7 @@ describe("ThreadInbox", () => {
         id: "child",
         title: "Future child",
         parentThreadId: "parent",
-        indicator: "something-bb-ships-later" as never,
+        indicator: "something-alia-ships-later" as never,
         indicatorLabel: "Doing something new",
         updatedAt: minute - 4 * 60_000,
       }),
@@ -274,7 +274,7 @@ describe("ThreadInbox", () => {
         id: "grandchild",
         title: "Future grandchild",
         parentThreadId: "child",
-        indicator: "another-thing-bb-ships-later" as never,
+        indicator: "another-thing-alia-ships-later" as never,
         indicatorLabel: "Also new",
         updatedAt: minute - 7 * 60_000,
       }),
@@ -315,7 +315,7 @@ describe("ThreadInbox", () => {
   // the status sits beside the disclosure button rather than displacing it.
   it("shows the shared status on grandchild rows and beside a disclosure", () => {
     const minute = Math.floor(Date.now() / 60_000) * 60_000;
-    window.localStorage.setItem("bb-sidebar:working-since:v1", JSON.stringify({ child: minute - 5 * 60_000 }));
+    window.localStorage.setItem("alia-sidebar:working-since:v1", JSON.stringify({ child: minute - 5 * 60_000 }));
     const rendered = render([
       thread({ id: "parent", title: "Parent" }),
       thread({
@@ -361,7 +361,7 @@ describe("ThreadInbox", () => {
     });
     expect(within(grandchildList).getByText("Failed")).toBeDefined();
     expect(within(grandchildList).getByText("Needs you")).toBeDefined();
-    // A raised hand outranks the runtime bb still reports for that thread.
+    // A raised hand outranks the runtime VesnALIA still reports for that thread.
     expect(within(grandchildList).queryByText(/^Working/)).toBeNull();
     for (const name of [
       "Open grandchild thread: Failed grandchild, Failed",

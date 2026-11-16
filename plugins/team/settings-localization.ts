@@ -2,14 +2,14 @@
 // general settings. Native descriptor labels are chosen ONCE at factory load
 // from the stored language value, because the SDK has no runtime metadata
 // update (re-define throws "already defined") and no pre-define read API
-// (`bb.sdk.plugins.getSettings` 404s until the factory has run). The plugin
+// (`alia.sdk.plugins.getSettings` 404s until the factory has run). The plugin
 // therefore defines `language` first, reads it, and then registers the other
 // descriptors with RU-only or EN-only texts. Switching the language refreshes
-// the native page labels only after `bb plugin reload team` (documented
+// the native page labels only after `alia plugin reload team` (documented
 // limitation; the editor UI localizes immediately via the same module).
 
 import { z } from "zod";
-import type { PluginSettingDescriptor } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptor } from "@vesnalia/plugin-sdk";
 import { DEFAULT_TITLE_FORMAT } from "./templates";
 import type { Language } from "./snapshot";
 
@@ -53,12 +53,12 @@ export const SETTING_META: Record<SettingKey, SettingMetaEntry> = {
     en: {
       label: "Default team template",
       description:
-        "Team template for bb team init without --template. Pick from Settings → Team; a missing template is an explicit error, not a silent fallback.",
+        "Team template for VesnALIA team init without --template. Pick from Settings → Team; a missing template is an explicit error, not a silent fallback.",
     },
     ru: {
       label: "Шаблон команды по умолчанию",
       description:
-        "Шаблон для bb team init без --template. Выбирается в Настройки → Team; отсутствующий шаблон — явная ошибка, не скрытая подмена.",
+        "Шаблон для VesnALIA team init без --template. Выбирается в Настройки → Team; отсутствующий шаблон — явная ошибка, не скрытая подмена.",
     },
   },
   language: {
@@ -84,11 +84,11 @@ export const SETTING_META: Record<SettingKey, SettingMetaEntry> = {
   roster: {
     en: {
       label: "Send team roster",
-      description: "Send the team roster message to the lead after bb team create",
+      description: "Send the team roster message to the lead after VesnALIA team create",
     },
     ru: {
       label: "Отправлять состав команды",
-      description: "Отправлять список ролей руководителю после bb team create",
+      description: "Отправлять список ролей руководителю после VesnALIA team create",
     },
   },
   titleFormat: {
@@ -251,7 +251,7 @@ const SETTINGS_MESSAGES: Record<Language, SettingsMessages> = {
   en: {
     defaultTemplateMissing: (id) => ({
       message: `Default team template "${id}" does not exist`,
-      hint: "Pick an existing template (Settings → Team or bb team template list)",
+      hint: "Pick an existing template (Settings → Team or VesnALIA team template list)",
     }),
     templateIsDefault: (id) => ({
       message: `Template "${id}" is the default team template and cannot be deleted`,
@@ -259,7 +259,7 @@ const SETTINGS_MESSAGES: Record<Language, SettingsMessages> = {
     }),
     saved: "Saved",
     reloadHint:
-      "Team plugin settings on the Installed plugins page refresh after `bb plugin reload team`",
+      "Team plugin settings on the Installed plugins page refresh after `alia plugin reload team`",
     generatorFields: {
       providerId: "Provider",
       model: "Model",
@@ -270,7 +270,7 @@ const SETTINGS_MESSAGES: Record<Language, SettingsMessages> = {
   ru: {
     defaultTemplateMissing: (id) => ({
       message: `Шаблона команды "${id}" не существует`,
-      hint: "Выберите существующий шаблон (Настройки → Team или bb team template list)",
+      hint: "Выберите существующий шаблон (Настройки → Team или VesnALIA team template list)",
     }),
     templateIsDefault: (id) => ({
       message: `Шаблон "${id}" — шаблон команды по умолчанию, удалить нельзя`,
@@ -278,7 +278,7 @@ const SETTINGS_MESSAGES: Record<Language, SettingsMessages> = {
     }),
     saved: "Сохранено",
     reloadHint:
-      "Подписи настроек на странице установленных плагинов обновятся только после перезагрузки плагина (`bb plugin reload team`)",
+      "Подписи настроек на странице установленных плагинов обновятся только после перезагрузки плагина (`alia plugin reload team`)",
     generatorFields: {
       providerId: "Провайдер",
       model: "Модель",

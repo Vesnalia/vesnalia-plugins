@@ -1,5 +1,5 @@
 // The RPC contract shared by server.ts and app.tsx.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const sideChatSchema = z

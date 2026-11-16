@@ -1,7 +1,7 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { draftSchema, rpcContract, type ReviewDraft } from "./contract";
 import { formatFeedback } from "./lib/format-feedback";
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(alia: AliaPluginApi) {
   const locks = new Map<string, Promise<unknown>>();
   const key = (threadId: string) => `draft:${threadId}`;
   const empty = (threadId: string): ReviewDraft => ({
@@ -12,7 +12,7 @@ export default function plugin(bb: BbPluginApi) {
   });
   const read = async (threadId: string) => {
     const draft = draftSchema.parse(
-      (await bb.storage.kv.get(key(threadId))) ?? empty(threadId),
+      (await alia.storage.kv.get(key(threadId))) ?? empty(threadId),
     );
     if (draft.threadId !== threadId)
       throw new Error("Stored draft thread mismatch");
@@ -32,8 +32,8 @@ export default function plugin(bb: BbPluginApi) {
   async function write(draft: ReviewDraft) {
     draft.updatedAt = new Date().toISOString();
     draftSchema.parse(draft);
-    await bb.storage.kv.set(key(draft.threadId), draft);
-    bb.realtime.publish("draft-changed", { threadId: draft.threadId });
+    await alia.storage.kv.set(key(draft.threadId), draft);
+    alia.realtime.publish("draft-changed", { threadId: draft.threadId });
     return draft;
   }
   const mutate = (threadId: string, fn: (d: ReviewDraft) => void) =>
@@ -48,7 +48,7 @@ export default function plugin(bb: BbPluginApi) {
       throw new Error("Annotation no longer exists. Reload the draft.");
     return i;
   };
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     getDraft: ({ threadId }) => serial(threadId, () => read(threadId)),
     addAnnotation: ({
       threadId,
@@ -99,7 +99,7 @@ export default function plugin(bb: BbPluginApi) {
         const d = await read(threadId);
         if (!d.annotations.length && !d.overallFeedback.trim())
           throw new Error("Add feedback before sending");
-        const result = await bb.sdk.threads.send({
+        const result = await alia.sdk.threads.send({
           threadId,
           mode: "auto",
           input: [{ type: "text", text: formatFeedback(d), mentions: [] }],
@@ -108,7 +108,7 @@ export default function plugin(bb: BbPluginApi) {
         return { draft, delivery: result.delivery };
       }),
   });
-  bb.events.on("thread.deleted", ({ thread }) =>
-    serial(thread.id, () => bb.storage.kv.delete(key(thread.id))),
+  alia.events.on("thread.deleted", ({ thread }) =>
+    serial(thread.id, () => alia.storage.kv.delete(key(thread.id))),
   );
 }

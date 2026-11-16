@@ -4,7 +4,7 @@ import { lstat, open, readFile, realpath, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 import { promisify } from "node:util";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk";
 import { hostContract, type GitFile, type HostInput, type HostOutput, type HostTarget, type HostUnavailable } from "./src/contract";
 import {
   EMPTY_TREE, FILE_LIMIT, LOG_FORMAT, REFLOG_FORMAT, closestBase, commitsInWindows, foldUntracked, isSafeRef, isSafeRelativePath, isSafeSha,
@@ -355,7 +355,7 @@ async function repoFiles(input: HostInput<"repoFiles">, signal: AbortSignal): Pr
   });
 }
 
-// Everything a worktree row shows for a checkout bb does not manage, in one call that both views share.
+// Everything a worktree row shows for a checkout VesnALIA does not manage, in one call that both views share.
 async function checkoutStatus(input: HostInput<"checkoutStatus">, signal: AbortSignal): Promise<HostOutput<"checkoutStatus">> {
   return guard(async () => {
     const { root } = input;

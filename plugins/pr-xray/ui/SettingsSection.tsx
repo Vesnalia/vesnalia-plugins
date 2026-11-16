@@ -1,6 +1,6 @@
 // Settings page section: GitHub identity and the models PR X-ray's agents use.
 import { useCallback, useEffect, useState } from "react";
-import { experimental_ProviderModelPicker as ProviderModelPicker, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderModelPicker as ProviderModelPicker, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -50,12 +50,12 @@ function ModelSetting(props: {
               }
             />
             <Button size="sm" variant="outline" onClick={() => onChange(null)}>
-              Use bb default
+              Use VesnALIA default
             </Button>
           </>
         ) : (
           <>
-            <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-medium">bb default</span>
+            <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-medium">alia default</span>
             {pickerSeed ? (
               <Button size="sm" variant="outline" onClick={() => onChange(pickerSeed)}>
                 Choose a model

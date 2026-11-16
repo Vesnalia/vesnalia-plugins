@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-cua-driver",
+  "name": "alia-plugin-cua-driver",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.39",
-    "bbPluginSdk": ">=0.4.16"
+    "alia": ">=0.39",
+    "aliaPluginSdk": ">=0.4.16"
   },
-  "bb": {
+  "alia": {
     "name": "Computer Use",
-    "description": "Gives bb agents desktop and browser control, powered by Cua Driver from Cua AI, with per-provider routing.",
+    "description": "Gives VesnALIA agents desktop and browser control, powered by Cua Driver from Cua AI, with per-provider routing.",
     "branding": {
       "icon": "./icons/cua.svg"
     },
@@ -27,7 +27,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.16",
     "@radix-ui/react-dialog": "^1.1.23",
     "@radix-ui/react-tooltip": "^1.2.16",
     "@testing-library/react": "^16.3.0",
@@ -35,7 +34,6 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "bb-app": "^0.39.0",
     "better-sqlite3": "^12.0.0",
     "cron-parser": "^5.10.0",
     "jsdom": "^29.0.0",
@@ -45,24 +43,36 @@
     "typescript": "^5.7.0",
     "vitest": "^4.0.0"
   },
-  "description": "Computer use for bb agents, powered by Cua Driver: background desktop and browser control on the thread's machine, with per-provider routing.",
+  "description": "Computer use for VesnALIA agents, powered by Cua Driver: background desktop and browser control on the thread's machine, with per-provider routing.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/juanbermudez/bb-plugin-cua-driver.git"
-  },
-  "homepage": "https://github.com/juanbermudez/bb-plugin-cua-driver#readme",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "computer-use",
     "cua",
     "desktop-automation",
     "mcp"
   ],
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm run test && npm run build"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.16"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/cua-driver#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/cua-driver"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

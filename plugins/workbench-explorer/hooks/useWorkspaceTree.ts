@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from "react";
-import { useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { subscribeReveal } from "@/lib/reveal-bus";
 import { includeRevealedChild, type VisibleReveal } from "@/lib/visible-reveal";

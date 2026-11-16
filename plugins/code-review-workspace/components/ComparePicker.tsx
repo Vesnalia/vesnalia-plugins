@@ -1,5 +1,5 @@
 import { useEffect, useState, type KeyboardEvent, type ReactNode } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { z } from "zod";
 import type { rpcContract } from "../src/rpc-contract";
 import { useFullscreenPortalContainer } from "../lib/portal-scope";

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { parsePrLink } from "../lib/pr-link";
 import { homeShort, localIdOf, reviewIdentity } from "../lib/review-identity";
 import { placeFacts, reviewPlaces, type PlaceFacts } from "./review-places";
@@ -31,7 +31,7 @@ export function targetKey(t: ReviewTarget, scope?: { projectId: string; cwd: str
 }
 
 /**
- * A local review's key: its folder, as bb's environment, and its branch. One review per folder and branch, however many
+ * A local review's key: its folder, as VesnALIA's environment, and its branch. One review per folder and branch, however many
  * threads work there; `n`, 2 and on, for the next review once the one keyed before moved on (src/feature-review.ts).
  */
 export function featureKey(environmentId: string, branch: string, n?: number): string {
@@ -79,10 +79,10 @@ export interface AmbiguousName { ambiguous: string }
  * it, api#4512 or api:feat; a folder's review's id from before it became its PR's (localIdOf); the id of a review
  * merged into it; or its id on a branch it followed its folder off. One merged into another names that one. Of the
  * reviews an id names, the one not archived, else the newest; more than one not archived, as the same id in two folders,
- * or an old id a review has now, is `ambiguous`, never picked. Null for none. `facts`: bb's facts for local reviews' ids,
+ * or an old id a review has now, is `ambiguous`, never picked. Null for none. `facts`: VesnALIA's facts for local reviews' ids,
  * read before; without them it reads them, so not in the store's lock.
  */
-export async function reviewNamed(store: AsyncStore, bb: BbPluginApi, given: string, facts?: PlaceFacts): Promise<ReviewMeta | AmbiguousName | null> {
+export async function reviewNamed(store: AsyncStore, alia: AliaPluginApi, given: string, facts?: PlaceFacts): Promise<ReviewMeta | AmbiguousName | null> {
   const text = given.trim();
   if (!text) return null;
   const all = await store.listReviews();
@@ -91,7 +91,7 @@ export async function reviewNamed(store: AsyncStore, bb: BbPluginApi, given: str
   if (keyed) return merged(keyed);
   const link = parsePrLink(text);
   if (link) return store.getReview(await prReviewKey(store, link));
-  const places = reviewPlaces(facts ?? await placeFacts(bb, all), all);
+  const places = reviewPlaces(facts ?? await placeFacts(alia, all), all);
   const archived = (review: ReviewMeta) => !!(review.archivedAt || review.userArchivedAt);
   const idNow = (review: ReviewMeta) => reviewIdentity({ ...review, place: places.get(review.targetKey) }).id;
   // Every id it has had.

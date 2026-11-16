@@ -1,36 +1,36 @@
 # Bench providers
 
-A **bench provider** is a BB plugin that lends bb-autoresearch short-lived
-remote machines that can't be BB machines: for example cloud machines that
-only allow outbound connections, so the BB server must drive them. The
+A **bench provider** is a VesnALIA plugin that lends alia-autoresearch short-lived
+remote machines that can't be VesnALIA machines: for example cloud machines that
+only allow outbound connections, so the VesnALIA server must drive them. The
 provider is a thin transport. It creates and destroys machines, moves files,
 and runs processes. Git, seeding, calibration, scheduling and every decision
-stay in bb-autoresearch, which runs ordinary shell commands on the machine.
+stay in alia-autoresearch, which runs ordinary shell commands on the machine.
 
-bb-autoresearch calls the provider's `bb.rpc` methods with
-`bb.sdk.plugins.callRpc({ pluginId, method, input, outputSchema })`. The zod
+alia-autoresearch calls the provider's `alia.rpc` methods with
+`alia.sdk.plugins.callRpc({ pluginId, method, input, outputSchema })`. The zod
 schemas are in [`src/bench-provider/contract.ts`](../src/bench-provider/contract.ts).
-A provider copies them (a BB plugin can't import files outside its own
-directory) and registers them with `bb.rpc.register(benchProviderContract,
+A provider copies them (a VesnALIA plugin can't import files outside its own
+directory) and registers them with `alia.rpc.register(benchProviderContract,
 handlers)`. [`examples/bench-provider-local/`](../examples/bench-provider-local/)
 is a complete provider against local temp directories and child processes.
 
 This is contract version **1**. A change to the contract needs a new
-`contractVersion`. bb-autoresearch 1.0 completed v1 with two optional fields,
+`contractVersion`. alia-autoresearch 1.0 completed v1 with two optional fields,
 `create`'s `machine` and `describe`'s `machineOptions`: it sends `machine`
 only when a study sets machine options, and a provider that returns
-`machineOptions` needs bb-autoresearch 1.0 or newer.
+`machineOptions` needs alia-autoresearch 1.0 or newer.
 
 ## Rules for providers
 
 - **Callers.** Accept calls only when `ctx.experimental_caller` is
-  `{ kind: "plugin", pluginId: "bb-autoresearch" }` (tests may configure
+  `{ kind: "plugin", pluginId: "alia-autoresearch" }` (tests may configure
   another id). Refuse others with `[invalid] caller not allowed`.
 - **Errors.** Throw `Error`s whose message starts with a code in brackets:
   `[not_found]`, `[capacity]`, `[auth]`, `[invalid]`, `[transient]`,
   `[internal]`. `[capacity]` and `[transient]` are retried; the others are
-  not. BB prefixes what a provider throws (`HTTP 500: [invalid] …`), so
-  bb-autoresearch reads the first bracketed code anywhere in the message, and
+  not. VesnALIA prefixes what a provider throws (`HTTP 500: [invalid] …`), so
+  alia-autoresearch reads the first bracketed code anywhere in the message, and
   a message without one counts as `[internal]`. `[not_found]` on a machine
   call means the machine is gone.
 - **Credentials.** Never put the user's credentials on a remote machine.
@@ -43,15 +43,15 @@ only when a study sets machine options, and a provider that returns
   wants (machine type, SMT off, CPU platform, image, …), as provider-specific
   keys with string, number or boolean values. It is the study's choice, per
   machine, not a provider-wide setting. List the keys you accept in
-  `describe`'s `machineOptions` (`[{ name, description }]`; bb-autoresearch
+  `describe`'s `machineOptions` (`[{ name, description }]`; alia-autoresearch
   checks a spec's keys against it when the study is calibrated). Apply them
   when the machine is created. Reject any key you don't understand with
   `[invalid] unknown machine option <key>`, so a typo fails loudly instead of
   benching on the wrong machine; an absent or empty `machine` means your
   default. `info` reports what the machine actually is (its `extra` is the
   place for the machine type, SMT state, CPU platform, image), and
-  bb-autoresearch records it next to what was asked for. `cores` stays the
-  cores bb-autoresearch plans threads for and checks against `info`.
+  alia-autoresearch records it next to what was asked for. `cores` stays the
+  cores alia-autoresearch plans threads for and checks against `info`.
 
 ## Methods
 
@@ -65,7 +65,7 @@ All JSON in, JSON out.
 | `benchProvider.list` | `{ labels }` (match all given labels) | `{ hosts: [{ hostId, state, expiresAt, labels }] }` |
 | `benchProvider.destroy` | `{ hostId }` | `{ ok }`; idempotent, `ok: true` if already gone |
 | `benchProvider.info` | `{ hostId }` | `{ os, arch, cpuModel, nproc, cpuQuotaCores, memoryBytes, extra? }` |
-| `benchProvider.putFile` | `{ hostId, localPath, remotePath, mode? }`; `localPath` is absolute, on the BB server's machine | `{ bytes, sha256 }` of what the machine received |
+| `benchProvider.putFile` | `{ hostId, localPath, remotePath, mode? }`; `localPath` is absolute, on the VesnALIA server's machine | `{ bytes, sha256 }` of what the machine received |
 | `benchProvider.getFile` | `{ hostId, remotePath, localPath, maxBytes }` | `{ bytes, sha256 }` |
 | `benchProvider.execStart` | `{ hostId, argv? \| script?, cwd?, env?, timeoutSeconds }`; exactly one of `argv` or `script`; `script` runs with `bash -lc` | `{ execId }` |
 | `benchProvider.execPoll` | `{ hostId, execId, stdoutOffset, stderrOffset, maxBytes? }` | `{ done, exitCode, signal, stdout, stderr, stdoutOffset, stderrOffset, durationMs }` |
@@ -84,29 +84,29 @@ All JSON in, JSON out.
 - A process killed by `timeoutSeconds` ends with `signal: "TIMEOUT"` and
   `exitCode: null`.
 - A process that died without an exit record (the machine was suspended, or
-  the provider restarted) ends with `signal: "LOST"`. bb-autoresearch treats
+  the provider restarted) ends with `signal: "LOST"`. alia-autoresearch treats
   it like a lost machine for that measurement: the measurement restarts from
   scratch on another bench host.
 
 ### Machines leaving
 
-bb-autoresearch treats `suspended`, `gone` and `failed` as the machine
+alia-autoresearch treats `suspended`, `gone` and `failed` as the machine
 leaving, and never uses that machine again: a suspended machine may come back
 on different hardware, where its calibration would be wrong. It destroys
 machines it no longer needs; it calls `list` with its labels on load, pause
 and archive (and every 10 minutes) and destroys what no live machine of a
 study uses.
 
-A reload of bb-autoresearch doesn't destroy calibrated machines. On load it
+A reload of alia-autoresearch doesn't destroy calibrated machines. On load it
 re-adopts each one whose `status` is `ready` and whose files are still there
 (it runs a short probe with `execStart`), so a provider's machines must stay
 reachable by the same `hostId` across a reload of either plugin. Machines of a
-disabled bb-autoresearch are destroyed by nobody until their lifetime ends:
+disabled alia-autoresearch are destroyed by nobody until their lifetime ends:
 enforce `lifetimeSeconds`. When a call fails because the provider plugin isn't
-loaded yet (BB's startup), bb-autoresearch waits for it instead of giving the
+loaded yet (VesnALIA's startup), alia-autoresearch waits for it instead of giving the
 machine up.
 
-## What bb-autoresearch does on a machine
+## What alia-autoresearch does on a machine
 
 Per machine (each slot of an `[[oracle.remote_bench]]` entry, and each
 replacement):
@@ -118,9 +118,9 @@ replacement):
    machine.
 2. `create` with labels `owner`, `study` and `slot` and the entry's
    `machine` options (verbatim), then `status` until `ready`, then `info`.
-3. `putFile` the seed and unpack it under `~/bb-autoresearch/seed/<sha256>`;
+3. `putFile` the seed and unpack it under `~/alia-autoresearch/seed/<sha256>`;
    `putFile` the base bundle and fetch it into a bare repository at
-   `~/bb-autoresearch/repo.git` (shallow at the base). Best and every
+   `~/alia-autoresearch/repo.git` (shallow at the base). Best and every
    candidate follow as small delta bundles.
 4. The entry's `setup` command, in a checkout of best.
 5. A/A calibration on best on that machine; it then measures with its own

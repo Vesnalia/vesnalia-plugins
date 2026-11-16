@@ -1,10 +1,10 @@
-# Developing bb-box
+# Developing alia-box
 
-How to build and test bb-box, and how to add a backend. How bb-box works is
+How to build and test alia-box, and how to add a backend. How alia-box works is
 in [the architecture](architecture.md), and why in the
 [decisions](decisions/README.md).
 
-Before you change bb-box, read [AGENTS.md](../AGENTS.md): the layout, the
+Before you change alia-box, read [AGENTS.md](../AGENTS.md): the layout, the
 commands, and the rules every change follows. Coding agents read it first,
 and `CLAUDE.md` points to it.
 
@@ -27,7 +27,7 @@ npm run reference
   GitHub runs it, and the typecheck, on each pull request. It fails when
   the reference is out of date, a link between Markdown files is broken,
   or the skill does not name an agent tool.
-- Run the tests in a BB Box box or on GitHub Actions, not on a machine
+- Run the tests in a VesnALIA Box box or on GitHub Actions, not on a machine
   that matters. Some fakes run a box's scripts on the test machine itself,
   and a script can reach that machine's own tools in ways no fake can
   stop, such as by a full path. Each test file's first import,
@@ -39,8 +39,8 @@ npm run reference
   where `sudo -n true` gives no clear answer: it fails other than by
   asking for a password, or has not answered within 10 seconds, when its
   process group gets SIGTERM and, 2 seconds later, SIGKILL. They start
-  anyway in a BB Box box, whose `/usr/share/bb-box/image.json` is an image
-  record of a contract and kind BB Box knows, that only root can change,
+  anyway in a VesnALIA Box box, whose `/usr/share/alia-box/image.json` is an image
+  record of a contract and kind VesnALIA Box knows, that only root can change,
   or in a GitHub Actions run. To run them on such a machine anyway, at the
   risk of changing it, set `BBBOX_TESTS_MAY_BREAK_THIS_MACHINE=1`. A test
   file, in any folder under `test`, starts with `import
@@ -62,10 +62,10 @@ npm run reference
   it starts, so a test file that runs the machine's own `sudo`,
   `tailscale`, `systemctl` or another of those tools by name fails and
   says which.
-- `scripts/smoke.ts` runs one box on a real backend without BB: it
+- `scripts/smoke.ts` runs one box on a real backend without VesnALIA: it
   acquires a box, runs a command, opens a desktop as the relay does, and
   releases the box, printing each step's time. Its settings file is the
-  configuration as `bb box config show --json` prints it, with each secret
+  configuration as `alia box config show --json` prints it, with each secret
   as a string or `{"file": ...}`; `scripts/smoke.example.json` reads the
   Proxmox LXC guide's token file and key. `--kind`, `--size`, `--command`
   and `--doctor` choose what it does. Smoke runs are an install of their
@@ -74,14 +74,14 @@ npm run reference
   against a real backend.
 - `npm run reference` writes `docs/reference` from the code. Run it after
   changing a tool, command, setting, kind or check.
-- `scripts/preview/` renders the built panels outside BB, with BB's theme
+- `scripts/preview/` renders the built panels outside VesnALIA, with VesnALIA's theme
   and fixtures, for screenshots: serve the repository root and open
   `scripts/preview/index.html#panel-list`, or run
   `node scripts/preview/shoot.mjs` on a machine with Chrome.
 
 ## Writing a backend
 
-A backend is where bb-box gets boxes from. The interface it implements is
+A backend is where alia-box gets boxes from. The interface it implements is
 in [src/backends/types.ts](../src/backends/types.ts) and
 [src/transports/types.ts](../src/transports/types.ts), and
 [the architecture](architecture.md#the-backend-interface) explains it.
@@ -92,7 +92,7 @@ in [src/backends/types.ts](../src/backends/types.ts) and
 | --- | --- | --- |
 | Core | `src/core/` | the registry, lifecycle, sweep, in-box scripts, computer use and images. It never names a provider or transport |
 | Transports | `src/transports/` | SSH, PowerShell, routes and `openRoute`, and the ready check. They never know which provider made a box |
-| Backends | `src/backends/<type>/` | one driver per provider, plus what several share: `ReadyPool` and `KvPoolStore` in `pool.ts`, the Proxmox client in `proxmox/`, and what bb-box runs in a Windows guest in `windows.ts` |
+| Backends | `src/backends/<type>/` | one driver per provider, plus what several share: `ReadyPool` and `KvPoolStore` in `pool.ts`, the Proxmox client in `proxmox/`, and what alia-box runs in a Windows guest in `windows.ts` |
 
 The core uses only the two `types.ts` files.
 
@@ -102,7 +102,7 @@ The core uses only the two `types.ts` files.
    - `type`, which is also the ID of the first backend of the type;
    - `label`, `description` and the `kinds` its backends can make;
    - `fields`, and `hostFields` for a backend whose hosts are set up alike:
-     BB's setting descriptors, each with a group (`connection`,
+     VesnALIA's setting descriptors, each with a group (`connection`,
      `credentials`, `boxes` or `advanced`), in the order the settings page
      shows them. A secret field is kept apart from the configuration;
    - `parse`, which turns the backend's part of the configuration into a
@@ -111,7 +111,7 @@ The core uses only the two `types.ts` files.
    - `several`, for a type the configuration may have several backends
      of. For one backend per host, as Docker has, it gives the host a
      backend's fields name, which no two may share
-     ([042](decisions/042-a-docker-host-can-be-a-bb-machine.md)). For
+     ([042](decisions/042-a-docker-host-can-be-a-alia-machine.md)). For
      backends that label what they make with their own ID, as Namespace's
      and boat.dev's do, it gives null, so any number may share an account
      ([087](decisions/087-each-namespace-workspace-is-a-backend-that-labels-what-it-makes.md),
@@ -124,12 +124,12 @@ The core uses only the two `types.ts` files.
    - `create`, which builds the `Backend`. Its context gives the backend's
      ID, its storage, its install ID, and its warm counts, kinds and hosts
      as the configuration has them now, so read them when needed. Where
-     bb-box runs in BB, `context.machines` also reaches BB machines.
+     alia-box runs in VesnALIA, `context.machines` also reaches VesnALIA machines.
 2. Reuse a transport from `src/transports/`, or add one there. A display
    served inside the box is built from the command transport's
    `route(port)`. A kind with computer use needs a transport with `spawn`.
 3. Record ownership at the provider (tags, labels, names or a marker file),
-   so `held()` finds every guest even when bb-box's storage is lost: the
+   so `held()` finds every guest even when alia-box's storage is lost: the
    install ID, from the first write and on warm and part-made guests too,
    and the box's ID, thread, name, kind and creation time, from which the
    sweep restores a lost record
@@ -151,9 +151,9 @@ The core uses only the two `types.ts` files.
 5. Add the driver to `DRIVERS` in
    [src/backends/index.ts](../src/backends/index.ts).
 6. Add `setup/<type>/` with the guide and its scripts. Keep deployment
-   values out: use example addresses and names. Images remove BB's daemon
+   values out: use example addresses and names. Images remove VesnALIA's daemon
    lock and PID file at boot
-   ([017](decisions/017-boxes-clear-bb-daemon-state-at-boot.md)).
+   ([017](decisions/017-boxes-clear-alia-daemon-state-at-boot.md)).
 7. Test it against a fake of the provider, as `test/proxmox-lxc.test.ts`
    does with `test/fake-proxmox.ts`, and run the conformance suite against
    it.
@@ -196,19 +196,19 @@ checks against any backend:
   changes anything, the transports the kind declares, a spawned channel,
   commands with stdin, exit codes and a timeout, the declared OS and
   architecture, streamed output, 32 MiB copied each way, what enrolment
-  needs and enrolment itself with a live BB server, Docker, the iOS
+  needs and enrolment itself with a live VesnALIA server, Docker, the iOS
   Simulator, each display and its resize, the display's own input where its
   server ignores a viewer's, desktop commands, computer use (the driver
   lists the windows, and the OS's editor opens and shows text typed into
-  it), stop and start (with the box's clock right, and connected to BB
+  it), stop and start (with the box's clock right, and connected to VesnALIA
   again within 3 s), recovery by a new instance, and repeated release;
 - for each kind that takes snapshots, as its offer says: a take, the list,
   a restore as a new guest that can be undone, a delete, Keep dates that a
   new instance reads from the provider and that outlive the box's release,
-  and a fork whose identity reset passes the same check BB Box makes
+  and a fork whose identity reset passes the same check VesnALIA Box makes
   before it hands a fork over;
 - a take and a restore run in a second process, which the suite kills part
-  way through, as when BB stops: a new instance on that process's storage
+  way through, as when VesnALIA stops: a new instance on that process's storage
   settles the take, releases the restore's part-made guest and starts the
   box as it was. On Docker it kills the restore while its copy of the
   Docker data runs, trying again up to 3 times if the restore finishes

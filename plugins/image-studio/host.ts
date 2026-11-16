@@ -7,7 +7,7 @@ import { join } from "node:path";
 import {
   defineRpcContract,
   experimental_defineHostEntry,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { TEXTURE_UV_SCRIPT } from "./src/blender-scripts.ts";
 

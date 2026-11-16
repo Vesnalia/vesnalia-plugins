@@ -34,7 +34,7 @@ const STUB_TEMPLATE_SCRIPT = [
   "  finalize)",
   '    say "finalize.sh"',
   '    while [ ! -e "$control/finalize-exit" ]; do sleep 0.02; done',
-  '    if [ -f "$control/android-devices.json" ]; then mkdir -p "$root/usr/share/bb-box" && cp "$control/android-devices.json" "$root/usr/share/bb-box/"; fi',
+  '    if [ -f "$control/android-devices.json" ]; then mkdir -p "$root/usr/share/alia-box" && cp "$control/android-devices.json" "$root/usr/share/alia-box/"; fi',
   '    rm -rf "$(dirname "$here")"',
   '    say "finalized"',
   '    exit "$(cat "$control/finalize-exit")" ;;',
@@ -87,11 +87,11 @@ export class FakeBoatGuest {
   }
 
   get buildDir(): string {
-    return join(this.root, "var/tmp/bb-box-build");
+    return join(this.root, "var/tmp/alia-box-build");
   }
 
   get stateDir(): string {
-    return join(this.root, "run/bb-box-build");
+    return join(this.root, "run/alia-box-build");
   }
 
   beforeEachRun(wait: ((script: string) => Promise<void>) | null): void {
@@ -137,7 +137,7 @@ export class FakeBoatGuest {
 
   async run(script: string, options: { readonly stdin?: Buffer | string; readonly timeoutMs: number }): Promise<RunResult> {
     await this.#beforeRun?.(script);
-    const local = script.replaceAll("/var/tmp/bb-box-build", this.buildDir).replaceAll("/run/bb-box-build", this.stateDir).replaceAll("/usr/share/bb-box/", `${this.root}/usr/share/bb-box/`);
+    const local = script.replaceAll("/var/tmp/alia-box-build", this.buildDir).replaceAll("/run/alia-box-build", this.stateDir).replaceAll("/usr/share/alia-box/", `${this.root}/usr/share/alia-box/`);
     const started = Date.now();
     const child = spawn("sh", ["-c", local], { cwd: this.root, env: { ...process.env, PATH: pathRefusingRealHostTools("The fake boat guest", pathWithHostStubs(this.root, [this.#bin], process.env.PATH)), ...ownedFoldersEnv([this.root], join(this.root, "tmp")) }, stdio: ["pipe", "pipe", "pipe"] });
     let stdout = "";

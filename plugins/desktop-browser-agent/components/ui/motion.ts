@@ -30,7 +30,7 @@ export const CONTROL_HOVER_TRANSITION =
  * scannable here and callers can interpolate them into their own class strings.
  */
 
-/** Expo-flavored ease-out: fast initial move, long gentle settle. BB's default
+/** Expo-flavored ease-out: fast initial move, long gentle settle. VesnALIA's default
  * curve for expand/collapse, opacity and transform transitions. */
 export const EASE_OUT_CLASS = "ease-[cubic-bezier(0.16,1,0.3,1)]";
 
@@ -96,11 +96,11 @@ export const OVERLAY_BACKDROP_MOTION_CLASS = [
 ].join(" ");
 
 /**
- * Desktop modal surface adapted from beUI's center-morph modal. BB keeps
+ * Desktop modal surface adapted from beUI's center-morph modal. VesnALIA keeps
  * Radix as the focus, dismissal, portal, and controlled-state authority; this
  * shared class only supplies a theme-aware 30px-equivalent shell.
  *
- * With BB's default 8px control radius, `var(--radius) + 22px` resolves to the
+ * With VesnALIA's default 8px control radius, `var(--radius) + 22px` resolves to the
  * reference's 30px. Custom palettes can still re-anchor the base radius.
  */
 export const OVERLAY_DIALOG_SURFACE_CLASS =
@@ -112,7 +112,7 @@ export const OVERLAY_BACKDROP_SURFACE_CLASS =
 
 /**
  * Centered dialog panel: unfold from the exact center, then fold back toward
- * it. The source component clips a full-size panel; BB expresses the same
+ * it. The source component clips a full-size panel; VesnALIA expresses the same
  * spatial metaphor through tw-animate's existing center-origin scale so Radix
  * can continue owning mount and exit presence without a second controller.
  */

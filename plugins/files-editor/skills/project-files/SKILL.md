@@ -1,22 +1,22 @@
 ---
 name: project-files
-description: Browse and read files in the current thread's workspace with the `bb files` command. Use when you need the layout of the project, want to find a file by a partial path, or want to print a file relative to the workspace root — especially on a thread whose workspace lives on another machine, where local shell tools would read the wrong disk.
+description: Browse and read files in the current thread's workspace with the `alia files` command. Use when you need the layout of the project, want to find a file by a partial path, or want to print a file relative to the workspace root — especially on a thread whose workspace lives on another machine, where local shell tools would read the wrong disk.
 ---
 
 # Reading the thread's workspace
 
-`bb files` resolves the workspace behind the current thread — its worktree when
-it has one, otherwise the project's default checkout — and reads it through BB,
+`alia files` resolves the workspace behind the current thread — its worktree when
+it has one, otherwise the project's default checkout — and reads it through VesnALIA,
 so it works the same whether that workspace is on this machine or a connected
 one.
 
 ```
-bb files root                 # where the workspace is, and on which machine
-bb files tree                 # every file, workspace-relative
-bb files tree --depth 2       # only the top two levels
-bb files tree --all           # include dotfiles
-bb files find auth cont       # fuzzy match against full paths
-bb files read config/auth.php # print one file
+alia files root                 # where the workspace is, and on which machine
+alia files tree                 # every file, workspace-relative
+alia files tree --depth 2       # only the top two levels
+alia files tree --all           # include dotfiles
+alia files find auth cont       # fuzzy match against full paths
+alia files read config/auth.php # print one file
 ```
 
 `tree` prints directories with a trailing `/`. It stops at 500 entries unless

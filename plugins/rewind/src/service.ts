@@ -1,16 +1,16 @@
 // Rewind's server-side logic: the dispatch gate, lifecycle snapshots, message
-// mapping, restores, forks, and retention. server.ts wires it to BB; tests
+// mapping, restores, forks, and retention. server.ts wires it to VesnALIA; tests
 // drive it through the fake plugin host.
 import { setImmediate } from "node:timers/promises";
 import type {
   ExperimentalHostClient,
   MessageDispatchHookContext,
   MessageDispatchHookDecision,
-  PluginBbSdk,
+  PluginAliaSdk,
   PluginLogger,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import {
-  BB_CHAT_DIR,
+  ALIA_CHAT_DIR,
   EXCERPT_CHARS,
   FORK_ENVIRONMENT_WAIT_MS,
   GATE_WAIT_CAP_MS,
@@ -70,10 +70,10 @@ export class RewindError extends Error {
 }
 
 type HostClient = ExperimentalHostClient<HostContract>;
-type ThreadDto = Awaited<ReturnType<PluginBbSdk["threads"]["get"]>>;
+type ThreadDto = Awaited<ReturnType<PluginAliaSdk["threads"]["get"]>>;
 
 export interface ServiceDeps {
-  sdk: () => PluginBbSdk;
+  sdk: () => PluginAliaSdk;
   host: HostClient;
   store: RewindStore;
   settings: () => RewindSettings;
@@ -102,9 +102,9 @@ const MARK_WAIT_MS = 250;
 /** Open waits older than this after a restart are closed as stale. */
 const STALE_WAIT_MS = 60 * 60 * 1000;
 
-/** Timeline pages (of 100 segments, bb's maximum) read to number a thread's messages. */
+/** Timeline pages (of 100 segments, VesnALIA's maximum) read to number a thread's messages. */
 const TIMELINE_PAGES = 30;
-/** Command starts read per checkpoint range: pages of this size (bb's maximum), at most this many. */
+/** Command starts read per checkpoint range: pages of this size (VesnALIA's maximum), at most this many. */
 const EFFECT_PAGE = 100;
 const EFFECT_PAGES = 30;
 const MAX_EFFECTS_PER_RANGE = 20;
@@ -167,13 +167,13 @@ export function percentile(sorted: readonly number[], fraction: number): number 
   return sorted[index]!;
 }
 
-/** bb's chat copies, which Rewind 0.1 captured: never shown, even in old checkpoints. */
-function bbChatPath(file: string): boolean {
-  return file === BB_CHAT_DIR || file.startsWith(`${BB_CHAT_DIR}/`);
+/** VesnALIA's chat copies, which Rewind 0.1 captured: never shown, even in old checkpoints. */
+function aliaChatPath(file: string): boolean {
+  return file === ALIA_CHAT_DIR || file.startsWith(`${ALIA_CHAT_DIR}/`);
 }
 
-function withoutBbChats(row: CheckpointRow): Pick<CheckpointDto, "stats" | "changes"> {
-  const hidden = row.changes.filter((change) => bbChatPath(change.path));
+function withoutAliaChats(row: CheckpointRow): Pick<CheckpointDto, "stats" | "changes"> {
+  const hidden = row.changes.filter((change) => aliaChatPath(change.path));
   if (hidden.length === 0) return { stats: row.stats, changes: row.changes };
   const sum = (field: "additions" | "deletions") => hidden.reduce((total, change) => total + (change[field] ?? 0), 0);
   return {
@@ -185,7 +185,7 @@ function withoutBbChats(row: CheckpointRow): Pick<CheckpointDto, "stats" | "chan
             insertions: Math.max(0, row.stats.insertions - sum("additions")),
             deletions: Math.max(0, row.stats.deletions - sum("deletions")),
           },
-    changes: row.changes.filter((change) => !bbChatPath(change.path)),
+    changes: row.changes.filter((change) => !aliaChatPath(change.path)),
   };
 }
 
@@ -207,7 +207,7 @@ export function toCheckpointDto(row: CheckpointRow): CheckpointDto {
     commit: row.commit,
     head: row.head,
     baseline: row.baseline,
-    ...withoutBbChats(row),
+    ...withoutAliaChats(row),
     changesTruncated: row.changesTruncated,
     skipped: row.skipped,
     skippedCount: row.skippedCount,
@@ -262,7 +262,7 @@ export interface UserMessage {
   number: number | null;
   sourceSeqEnd: number;
   text: string;
-  /** Typed by the user: bb edits only those, not messages another thread sent. */
+  /** Typed by the user: VesnALIA edits only those, not messages another thread sent. */
   fromUser: boolean;
 }
 
@@ -324,11 +324,11 @@ export class RewindService {
   private readonly scans = new Map<string, Promise<StoredEffect[]>>();
   /** One incremental cleanup at a time per thread. The next pass waits for the previous. */
   private readonly trimTails = new Map<string, Promise<number>>();
-  /** Where bb keeps each thread's own storage (it never moves), and lookups that failed recently. */
+  /** Where VesnALIA keeps each thread's own storage (it never moves), and lookups that failed recently. */
   private readonly storageRoots = new Map<string, { hostId: string; path: string }>();
   private readonly storageLookups = new Map<string, Promise<{ hostId: string; path: string } | null>>();
   private readonly storageMisses = new Map<string, number>();
-  /** Which providers can replace a message (bb's session rewind), cached briefly. */
+  /** Which providers can replace a message (VesnALIA's session rewind), cached briefly. */
   private providerEdits: { at: number; byProvider: Map<string, boolean> } | null = null;
   private disposed = false;
 
@@ -338,7 +338,7 @@ export class RewindService {
     this.loadWaits();
   }
 
-  private get sdk(): PluginBbSdk {
+  private get sdk(): PluginAliaSdk {
     return this.deps.sdk();
   }
 
@@ -408,7 +408,7 @@ export class RewindService {
   }
 
   private async environmentThreads(environmentId?: string) {
-    const threads: Awaited<ReturnType<PluginBbSdk["threads"]["list"]>> = [];
+    const threads: Awaited<ReturnType<PluginAliaSdk["threads"]["list"]>> = [];
     const seen = new Set<string>();
     for (let offset = 0; ; offset += 200) {
       const page = await this.sdk.threads.list({ environmentId, includeHidden: true, limit: 200, offset });
@@ -472,7 +472,7 @@ export class RewindService {
 
   private requireCheckpoint(checkpointId: string): CheckpointRow {
     const checkpoint = this.store.getCheckpoint(checkpointId);
-    if (checkpoint === null) throw new RewindError("checkpoint_not_found", `Checkpoint ${checkpointId} does not exist.`, "Run `bb rewind list` to see this thread's checkpoints.");
+    if (checkpoint === null) throw new RewindError("checkpoint_not_found", `Checkpoint ${checkpointId} does not exist.`, "Run `alia rewind list` to see this thread's checkpoints.");
     if (checkpoint.status === "pending") throw new RewindError("checkpoint_pending", `Checkpoint ${checkpointId} is still being captured. Try again in a moment.`);
     if (checkpoint.status !== "ok" || checkpoint.commit === null) {
       throw new RewindError("checkpoint_unusable", `Checkpoint ${checkpointId} has no files: ${checkpoint.error ?? checkpoint.status}.`);
@@ -624,7 +624,7 @@ export class RewindService {
   }
 
   /**
-   * The before-turn checkpoint. bb's hook runs under a server-wide lock, so
+   * The before-turn checkpoint. VesnALIA's hook runs under a server-wide lock, so
    * the gate holds a message at most `gateHoldMs`. A slower snapshot queues
    * the message ("wait") and releases it with `recheck` once the checkpoint
    * is saved, so the checkpoint is exact rather than late. A message Rewind
@@ -644,7 +644,7 @@ export class RewindService {
       const ours = this.ourRows(ctx.queuedMessages);
       const wait = ours.length > 0 ? this.waitForRows(ctx.thread.id, ours) : null;
       // The re-attempt that measures recheck latency is the first one after
-      // Rewind's recheck; bb may also re-attempt a row on its own before that.
+      // Rewind's recheck; VesnALIA may also re-attempt a row on its own before that.
       if (wait !== null && (wait.reattemptAt === null || (wait.recheckAt !== null && wait.reattemptAt < wait.recheckAt))) {
         this.updateWait(wait, { reattemptAt: started });
       }
@@ -732,7 +732,7 @@ export class RewindService {
             outcome = "background:join-turn";
           } else if (wait !== null && wait.checkpointId === row.id) {
             // Re-attempted while its checkpoint is still being saved: decide at
-            // once, holding nothing. bb re-attempts queued rows on its own
+            // once, holding nothing. VesnALIA re-attempts queued rows on its own
             // schedule (seen live: 2.8 s after a re-queue) and every recheck
             // wakes every row, so the message stays in its one wait, with its
             // first deadline, until the checkpoint is saved. It is never
@@ -916,7 +916,7 @@ export class RewindService {
     for (const wait of waits) if (wait.recheckAt === null) this.updateWait(wait, { recheckAt: at });
     this.deps.log.debug(`recheck (${why}) for ${waits.map((wait) => wait.threadId).join(", ")}`);
     void (this.deps.recheck?.() ?? Promise.resolve()).catch((error: unknown) => {
-      this.deps.log.warn(`could not ask bb to re-send queued messages (${why}): ${errorText(error)}`);
+      this.deps.log.warn(`could not ask VesnALIA to re-send queued messages (${why}): ${errorText(error)}`);
     });
   }
 
@@ -966,7 +966,7 @@ export class RewindService {
   }
 
   /**
-   * bb's storage directory for the thread, for the host to leave alone when it
+   * VesnALIA's storage directory for the thread, for the host to leave alone when it
    * lies inside the workspace. Best effort and brief: snapshots run while the
    * gate holds a message, so a slow lookup finishes in the background.
    */
@@ -1085,7 +1085,7 @@ export class RewindService {
     let mark: number | null;
     let late = false;
     if (RUNNING_STATUSES.has(resolved.thread.status)) {
-      // The next turn already started. A message sent through bb passed the
+      // The next turn already started. A message sent through VesnALIA passed the
       // gate, whose before-turn checkpoint holds these files. A turn the
       // provider started on its own (a wakeup, a finished background task)
       // did not: capture at the end of this turn, flagged late because the
@@ -1374,7 +1374,7 @@ export class RewindService {
         throw new RewindError(
           "thread_running",
           `Not restoring while ${running.length === 1 ? "a thread is" : "threads are"} running in this workspace: ${names}. A running agent could overwrite the restored files or act on files that changed under it.`,
-          `Stop ${running.length === 1 ? "it" : "them"} first (${running.map((thread) => `\`bb thread stop ${thread.id}\``).join(", ")}), or rerun with --stop-running.`,
+          `Stop ${running.length === 1 ? "it" : "them"} first (${running.map((thread) => `\`alia thread stop ${thread.id}\``).join(", ")}), or rerun with --stop-running.`,
         );
       }
       outcome = await this.applyRestore(threadId, workspace, checkpoint, sourceWorkspace, kind);
@@ -1620,7 +1620,7 @@ export class RewindService {
     });
     const restoreId = newId("rs", this.now());
     const started = this.now();
-    const incompleteHint = "Undo it to put every file back as it was before the restore: `bb rewind undo --yes`, or Undo in the Checkpoints panel.";
+    const incompleteHint = "Undo it to put every file back as it was before the restore: `alia rewind undo --yes`, or Undo in the Checkpoints panel.";
     // Durable before sending: a lost response or server restart cannot erase Undo identity.
     this.recordRestore({ id: restoreId, threadId, workspace, kind, target: checkpoint, preRestoreCheckpointId: pre.id, status: "failed", eventMark: mark, summary: null, error: "Restore outcome unknown; files may have changed.", createdAt: started });
     let result;
@@ -1759,7 +1759,7 @@ export class RewindService {
     for (let page = 0; page < TIMELINE_PAGES; page += 1) {
       const timeline = await this.sdk.threads.timeline({
         threadId,
-        segmentLimit: "100", // bb's maximum
+        segmentLimit: "100", // VesnALIA's maximum
         ...(before === null ? {} : { beforeAnchorId: before.anchorId, beforeAnchorSeq: String(before.anchorSeq) }),
       });
       for (const row of conversationRows(timeline.rows)) if (row.role === "user") rows.set(row.sourceSeqEnd, row);
@@ -1821,7 +1821,7 @@ export class RewindService {
     return `Files were restored to ${where}; ${range}. Re-read files before editing.`;
   }
 
-  /** Whether the thread's provider can replace a message; unknown counts as yes and bb decides. */
+  /** Whether the thread's provider can replace a message; unknown counts as yes and VesnALIA decides. */
   private async canEditMessages(threadId: string): Promise<boolean> {
     try {
       const thread = await this.getThread(threadId);
@@ -1867,7 +1867,7 @@ export class RewindService {
       throw new RewindError(
         "not_a_message_checkpoint",
         `Checkpoint ${checkpoint.id} is not the one taken before one of this thread's messages.`,
-        "Pick a \"before\" checkpoint from `bb rewind list`: the one listed with the message you want to edit.",
+        "Pick a \"before\" checkpoint from `alia rewind list`: the one listed with the message you want to edit.",
       );
     }
     const mark = checkpoint.eventMark;
@@ -1904,9 +1904,9 @@ export class RewindService {
 
   /**
    * "Restore files and edit this message": restore the files to before a user
-   * message (a normal, undoable restore), then have bb replace that message,
+   * message (a normal, undoable restore), then have VesnALIA replace that message,
    * which discards it and every later turn. The files are written before the
-   * edit is sent, so its new turn starts on them. If bb or the provider
+   * edit is sent, so its new turn starts on them. If VesnALIA or the provider
    * refuses the edit, the restore stays and the note is offered instead.
    */
   async editMessage(input: { threadId: string; sourceSeqEnd: number; text: string; checkpointId?: string }): Promise<{ outcome: RestoreOutcome; edit: EditResult }> {
@@ -1921,11 +1921,11 @@ export class RewindService {
       );
     }
     if (!message.fromUser) {
-      // bb edits only messages a person typed; nothing was restored.
+      // VesnALIA edits only messages a person typed; nothing was restored.
       throw new RewindError(
         "message_not_editable",
-        "That message was sent by another thread or agent, and bb edits only messages you typed. Nothing was restored.",
-        "Restore the files without editing (bb rewind restore … --yes); Rewind then suggests a note for your next message.",
+        "That message was sent by another thread or agent, and VesnALIA edits only messages you typed. Nothing was restored.",
+        "Restore the files without editing (VesnALIA rewind restore … --yes); Rewind then suggests a note for your next message.",
       );
     }
     let checkpointId = input.checkpointId;
@@ -1941,7 +1941,7 @@ export class RewindService {
       throw new RewindError("checkpoint_after_message", `Checkpoint ${checkpoint.id} was taken after that message, so it is not the files as they were before it.`);
     }
     const outcome = await this.restore(input.threadId, checkpoint.id, "restore", { note: false });
-    // bb's edit starts the new turn itself, without the dispatch gate: take
+    // VesnALIA's edit starts the new turn itself, without the dispatch gate: take
     // the checkpoint the gate would have, of the files just restored.
     const before = await this.beforeEditedTurn(input.threadId, text);
     try {
@@ -1954,7 +1954,7 @@ export class RewindService {
       if (this.store.deleteNote(input.threadId)) this.deps.publish(input.threadId);
       return { outcome, edit: { ok: true, requestSequence: response.requestSequence, message: message.number } };
     } catch (error) {
-      this.deps.log.info(`bb did not edit message ${input.sourceSeqEnd} of ${input.threadId}: ${errorText(error)}`);
+      this.deps.log.info(`alia did not edit message ${input.sourceSeqEnd} of ${input.threadId}: ${errorText(error)}`);
       // No message follows it after all.
       if (before !== null) await this.deleteRefs(this.store.deleteCheckpoints([before.id]));
       const note = await this.recordNote(input.threadId, outcome.restore.id, checkpoint);
@@ -1992,7 +1992,7 @@ export class RewindService {
       throw new RewindError("nothing_to_undo", `Restore ${restore.id} failed before changing any file, so there is nothing to undo.`);
     }
     if (restore.undoneBy !== null) {
-      throw new RewindError("already_undone", `Restore ${restore.id} was already undone by ${restore.undoneBy}.`, "Undo that one instead: `bb rewind undo` undoes the latest restore.");
+      throw new RewindError("already_undone", `Restore ${restore.id} was already undone by ${restore.undoneBy}.`, "Undo that one instead: `alia rewind undo` undoes the latest restore.");
     }
     const pre = this.store.getCheckpoint(restore.preRestoreCheckpointId);
     if (pre === null) throw new RewindError("undo_unavailable", "The restore's Undo identity is missing; refusing to undo an older restore.");

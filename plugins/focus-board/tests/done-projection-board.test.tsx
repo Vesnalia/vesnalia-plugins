@@ -6,7 +6,7 @@
 // and refuses to join a Done sweep: it is not a done thread.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Board } from "../components/board";
 import { assembleBoard } from "../components/nesting";
 import { thread } from "./thread-fixture";

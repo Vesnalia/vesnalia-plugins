@@ -3,7 +3,7 @@ const base = "http://127.0.0.1:38990";
 const run = process.env.LIVE_RUN ?? "1";
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -15,13 +15,13 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 const out = {};
 try {
-  await page.goto(`${base}/settings/plugins/bb-box`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${base}/settings/plugins/alia-box`, { waitUntil: "domcontentloaded" });
   const skip = page.getByRole("button", { name: "Skip setup" });
   await Promise.race([skip.waitFor({ timeout: 6000 }).catch(() => {}), page.locator("[data-settings-view]").waitFor({ timeout: 6000 }).catch(() => {})]);
   if (await skip.count()) {
     await skip.click();
     await pause(500);
-    await page.goto(`${base}/settings/plugins/bb-box`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${base}/settings/plugins/alia-box`, { waitUntil: "domcontentloaded" });
   }
   await page.locator("[data-settings-view]").waitFor();
   await pause(1500);

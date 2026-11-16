@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { sshPoolDriver } from "../src/backends/ssh-pool/index.ts";
 import { tartDriver } from "../src/backends/tart/index.ts";
 import { boatDriver } from "../src/backends/boat/index.ts";
@@ -15,7 +15,7 @@ import { GENERAL_SECRETS } from "../src/core/box-files.ts";
 import { TAILNET_CLIENT_SECRET } from "../src/core/tailnet-settings.ts";
 import { parseDotenv } from "../src/plugin/config-edits.ts";
 import type { ApplyResult } from "../src/plugin/configuration.ts";
-import { setup, type BbBox } from "../src/plugin/setup.ts";
+import { setup, type AliaBox } from "../src/plugin/setup.ts";
 import { FakeBackend, fakeDriver } from "./fake-backend.ts";
 import { seededRandom, tempDir } from "./helpers.ts";
 
@@ -34,8 +34,8 @@ test.afterEach(async () => {
 async function start(options: { failDoctor?: () => string | undefined; boat?: boolean } = {}) {
   const root = tempDir("config-cli");
   const threads = new Map([[THREAD, makeThreadResponse({ id: THREAD, projectId: "prj_cli", environmentId: "env_cli" })]]);
-  const { bb, harness } = createFakePluginHost({
-    pluginId: "bb-box",
+  const { alia, harness } = createFakePluginHost({
+    pluginId: "alia-box",
     sdk: {
       threads: { get: async ({ threadId }: { threadId: string }) => threads.get(threadId)! },
       system: { machineEnvironment: async () => ({ builtInGit: { status: "logged in", statusMessage: "" }, variables: [] }) },
@@ -45,7 +45,7 @@ async function start(options: { failDoctor?: () => string | undefined; boat?: bo
       },
     } as never,
   });
-  await bb.storage.kv.set(INSTALL_ID_KEY, "earlier01");
+  await alia.storage.kv.set(INSTALL_ID_KEY, "earlier01");
   const fake = fakeDriver(root);
   const failing: BackendDriver<any> = {
     ...fake,
@@ -56,7 +56,7 @@ async function start(options: { failDoctor?: () => string | undefined; boat?: bo
       return backend;
     },
   };
-  const app: BbBox = await setup(bb, { drivers: [failing, sshPoolDriver, tartDriver, ...(options.boat ? [boatDriver] : [])], daemonParent: join(root, "no-daemon") });
+  const app: AliaBox = await setup(alia, { drivers: [failing, sshPoolDriver, tartDriver, ...(options.boat ? [boatDriver] : [])], daemonParent: join(root, "no-daemon") });
   disposals.push(() => harness.lifecycle.dispose());
   const seen: string[] = [];
   const cli = async (args: string[], cwd?: string): Promise<Ran> => {
@@ -91,7 +91,7 @@ test("backend add saves through config.apply with an operation and receipt, take
   assert.match(added.stdout ?? "", /  backends\.fake: added, on\n  backends\.fake\.address: "here", the default → "192\.0\.2\.10"\n  backends\.fake\.token: set\n/);
   assert.match(added.stdout ?? "", /\nFake host \(fake\): /);
   assert.match(added.stdout ?? "", /\[ok\] Fake host: Guests live under /);
-  assert.match(added.stdout ?? "", /Next: bb box kinds lists what is on offer\. .*bb box acquire <kind> --on fake/);
+  assert.match(added.stdout ?? "", /Next: alia box kinds lists what is on offer\. .*alia box acquire <kind> --on fake/);
   assert.deepEqual(document().backends[0], { id: "fake", type: "fake", enabled: true, fields: { address: "192.0.2.10", token: { set: true } } });
   assert.equal(app.configuration.secrets.fake?.token, TOKEN);
   const state = await app.configuration.state();
@@ -163,7 +163,7 @@ test("a secret on the command line is refused without echoing it, and nothing is
   assertNoSecret(seen);
 });
 
-test("a secret piped in as one line, as bb's --secrets-stdin gives it, replaces the stored one, and --clear-secret clears it", async () => {
+test("a secret piped in as one line, as VesnALIA's --secrets-stdin gives it, replaces the stored one, and --clear-secret clears it", async () => {
   const { cli, seen, app } = await start();
   assert.equal((await cli(["backend", "add", "fake", "--secret", "token=FAKE_TOKEN", "--secrets", `FAKE_TOKEN=${TOKEN}`])).exitCode, 0);
   assert.equal(app.configuration.secrets.fake?.token, TOKEN);
@@ -389,7 +389,7 @@ test("a rejected value in a configuration file is named by its place, and never 
       for (const json of [[], ["--json"]]) {
         const ran = await cli(["config", command, `rejected-${place}.json`, ...json], dir);
         if (!json.length) assert.equal(ran.exitCode, 1, `place ${place}: ${JSON.stringify(ran)}`);
-        assert.match(`${ran.stdout ?? ""}${ran.stderr ?? ""}`, /is not shown, as it may be a secret|No backend offers|not one BB Box knows|on line 1/, `place ${place}`);
+        assert.match(`${ran.stdout ?? ""}${ran.stderr ?? ""}`, /is not shown, as it may be a secret|No backend offers|not one ALIA Box knows|on line 1/, `place ${place}`);
       }
     }
   }
@@ -444,10 +444,10 @@ test("a rejected command line value is never printed, as a field, kind, option, 
 test("a word the parser refuses is named by its own place when the same text comes earlier, plain or --json", async () => {
   const { cli, seen } = await start();
   const cases: [string[], RegExp][] = [
-    [["backend", "set", "fake", "--revision", "fake"], /invalid value \(word 5 after bb box, not shown, as it may be a secret\) for --revision/],
-    [["list", "--thread", "extra", "extra"], /unexpected argument \(word 4 after bb box, not shown, as it may be a secret\)/],
-    [["backend", "set", "fake", "--revision=fake"], /invalid value \(word 4 after bb box, not shown, as it may be a secret\) for --revision/],
-    [["backend", "set", "--zzz", "fake", "--zzz"], /unknown option \(word 3 after bb box, not shown, as it may be a secret\)/],
+    [["backend", "set", "fake", "--revision", "fake"], /invalid value \(word 5 after alia box, not shown, as it may be a secret\) for --revision/],
+    [["list", "--thread", "extra", "extra"], /unexpected argument \(word 4 after alia box, not shown, as it may be a secret\)/],
+    [["backend", "set", "fake", "--revision=fake"], /invalid value \(word 4 after alia box, not shown, as it may be a secret\) for --revision/],
+    [["backend", "set", "--zzz", "fake", "--zzz"], /unknown option \(word 3 after alia box, not shown, as it may be a secret\)/],
   ];
   for (const [args, words] of cases) {
     for (const json of [[], ["--json"]]) {
@@ -472,14 +472,14 @@ test("an unknown key in a valid configuration file is named by its place, never 
       for (const json of [[], ["--json"]]) {
         const ran = await cli(["config", command, `unknown-${place}.json`, ...json], dir);
         if (!json.length) assert.equal(ran.exitCode, 1, `place ${place}: ${JSON.stringify(ran)}`);
-        assert.match(`${ran.stdout ?? ""}${ran.stderr ?? ""}`, /key in .+ is not one BB Box knows here\. Its name is not shown, as it may be a secret\./, `place ${place}`);
+        assert.match(`${ran.stdout ?? ""}${ran.stderr ?? ""}`, /key in .+ is not one ALIA Box knows here\. Its name is not shown, as it may be a secret\./, `place ${place}`);
       }
     }
   }
   const general = await cli(["config", "check", "unknown-1.json"], dir);
-  assert.match(general.stdout ?? "", /  general\.#1: The 1st key in general is not one BB Box knows here\. Its name is not shown, as it may be a secret\. There are boxesPerThread, /);
+  assert.match(general.stdout ?? "", /  general\.#1: The 1st key in general is not one ALIA Box knows here\. Its name is not shown, as it may be a secret\. There are boxesPerThread, /);
   const field = await cli(["config", "check", "unknown-9.json"], dir);
-  assert.match(field.stdout ?? "", /  backends\.fake\.fields\.#2: The 2nd key in backends\.fake\.fields is not one BB Box knows here\. .* The fields of backend fake are /);
+  assert.match(field.stdout ?? "", /  backends\.fake\.fields\.#2: The 2nd key in backends\.fake\.fields is not one ALIA Box knows here\. .* The fields of backend fake are /);
   for (const text of seen) assert.ok(!text.includes(NAME_SHAPED_VALUE), `an unknown key was printed: ${text}`);
 });
 
@@ -495,14 +495,14 @@ test("a word the command line parser refuses is named by its place, never its te
   const { cli, seen, dir } = await start();
   writeFileSync(join(dir, "empty.json"), "{}");
   const cases: [string[], RegExp][] = [
-    [[NAME_SHAPED_VALUE], /unknown command \(word 1 after bb box, not shown, as it may be a secret\)/],
-    [["config", NAME_SHAPED_VALUE], /unknown command \(word 2 after bb box, not shown, as it may be a secret\)/],
-    [["backend", "add", "fake", `-${NAME_SHAPED_VALUE}`], /unknown option \(word 4 after bb box, not shown, as it may be a secret\)/],
-    [["backend", "add", "fake", `--${NAME_SHAPED_VALUE}=one`], /unknown option \(word 4 after bb box, not shown, as it may be a secret\)/],
-    [["backend", "add", "fake", "--revision", NAME_SHAPED_VALUE], /invalid value \(word 5 after bb box, not shown, as it may be a secret\) for --revision/],
-    [["backend", "add", "fake", `--revision=${NAME_SHAPED_VALUE}`], /invalid value \(word 4 after bb box, not shown, as it may be a secret\) for --revision/],
-    [["config", "check", "empty.json", NAME_SHAPED_VALUE], /unexpected argument \(word 4 after bb box, not shown, as it may be a secret\)/],
-    [["config", "check", `-${NAME_SHAPED_VALUE}`], /unknown option \(word 3 after bb box, not shown, as it may be a secret\)/],
+    [[NAME_SHAPED_VALUE], /unknown command \(word 1 after alia box, not shown, as it may be a secret\)/],
+    [["config", NAME_SHAPED_VALUE], /unknown command \(word 2 after alia box, not shown, as it may be a secret\)/],
+    [["backend", "add", "fake", `-${NAME_SHAPED_VALUE}`], /unknown option \(word 4 after alia box, not shown, as it may be a secret\)/],
+    [["backend", "add", "fake", `--${NAME_SHAPED_VALUE}=one`], /unknown option \(word 4 after alia box, not shown, as it may be a secret\)/],
+    [["backend", "add", "fake", "--revision", NAME_SHAPED_VALUE], /invalid value \(word 5 after alia box, not shown, as it may be a secret\) for --revision/],
+    [["backend", "add", "fake", `--revision=${NAME_SHAPED_VALUE}`], /invalid value \(word 4 after alia box, not shown, as it may be a secret\) for --revision/],
+    [["config", "check", "empty.json", NAME_SHAPED_VALUE], /unexpected argument \(word 4 after alia box, not shown, as it may be a secret\)/],
+    [["config", "check", `-${NAME_SHAPED_VALUE}`], /unknown option \(word 3 after alia box, not shown, as it may be a secret\)/],
   ];
   for (const [args, words] of cases) {
     for (const json of [[], ["--json"]]) {
@@ -700,7 +700,7 @@ test("a backend whose checks fail after the save exits 2 and says how to check a
   const added = await cli(["backend", "add", "fake"]);
   assert.equal(added.exitCode, 2);
   assert.equal(revision(), before + 1);
-  assert.match(added.stdout ?? "", /\[fail\] Fake host: no route to 192\.0\.2\.13\n {8}Fix: Clear the fault\.\nIts checks failed: fix what they say, then bb box backend set fake --check checks again without saving\./);
+  assert.match(added.stdout ?? "", /\[fail\] Fake host: no route to 192\.0\.2\.13\n {8}Fix: Clear the fault\.\nIts checks failed: fix what they say, then alia box backend set fake --check checks again without saving\./);
   const quiet = await cli(["backend", "set", "fake", "--label", "Fake on 192.0.2.13", "--no-doctor"]);
   assert.equal(quiet.exitCode, 0);
   assert.doesNotMatch(quiet.stdout ?? "", /Fake host:/);
@@ -763,7 +763,7 @@ test("hosts of a backend are added, changed and removed; the SSH host pool point
   assert.equal((await cli(["backend", "host", "remove", "fake", "mac-1"])).exitCode, 0);
   assert.deepEqual(document().backends[0]!.hosts, []);
   assert.equal((await cli(["backend", "add", "ssh-pool", "--off"])).exitCode, 0);
-  assert.match((await cli(["backend", "host", "add", "ssh-pool", "build-1"])).stderr ?? "", /SSH host pool has no hosts of its own\. Its machines are lines of its machines field: bb box backend set ssh-pool --add-line machines=/);
+  assert.match((await cli(["backend", "host", "add", "ssh-pool", "build-1"])).stderr ?? "", /SSH host pool has no hosts of its own\. Its machines are lines of its machines field: alia box backend set ssh-pool --add-line machines=/);
 });
 
 test("list, types and fields describe the backends without a secret's value", async () => {
@@ -778,7 +778,7 @@ test("list, types and fields describe the backends without a secret's value", as
   const fields = await cli(["backend", "fields", "fake"]);
   assert.match(fields.stdout ?? "", /^Backend fake, Fake host \(fake\)\. Its guide: setup\/fake\/README\.md\.\nFields:\n {2}address \(string\) \[connection\]: Address\. Where the fake host is\. Now: unset, so "here"\.\n {2}token \(string, secret\) \[credentials\]: Token\. {2}Now: set\./);
   const typeFields = await cli(["backend", "fields", "tart"]);
-  assert.match(typeFields.stdout ?? "", /Each host's fields, with bb box backend host add:\n {2}address \(string\) \[connection\]: Address\./);
+  assert.match(typeFields.stdout ?? "", /Each host's fields, with alia box backend host add:\n {2}address \(string\) \[connection\]: Address\./);
   assert.match((await cli(["backend", "fields", "nothing"])).stderr ?? "", /There is no backend type by the name given\. That name is not shown, as it may be a secret\. The types are fake, ssh-pool, tart\./);
   assertNoSecret(seen);
 });
@@ -796,7 +796,7 @@ test("kind set changes the default preset's size, the default, spares and the sw
   assert.deepEqual(document().kinds.linux, { presets: { small: { cores: 4 }, large: { memoryMiB: 24576, diskGiB: null } }, default: "medium", spares: 2 });
   const off = await cli(["kind", "set", "linux", "--off"]);
   assert.equal(off.exitCode, 1);
-  assert.match(off.stderr ?? "", /linux is the default kind, which stays on, as on the settings page\. Choose another default first: bb box kind set <kind> --make-default\./);
+  assert.match(off.stderr ?? "", /linux is the default kind, which stays on, as on the settings page\. Choose another default first: alia box kind set <kind> --make-default\./);
   assert.equal((await cli(["kind", "set", "linux-desktop", "--make-default"])).exitCode, 0);
   assert.equal(document().general.defaultKind, "linux-desktop");
   assert.equal((await cli(["kind", "set", "linux", "--off"])).exitCode, 0);
@@ -812,7 +812,7 @@ test("option set and unset change general and Monitor options in one save, and l
   const { cli, document } = await start();
   const off = await cli(["option", "set", "monitor.enabled=false"]);
   assert.equal(off.exitCode, 0, off.stderr);
-  assert.match(off.stdout ?? "", /  monitor\.enabled: true, the default → false\nThe Monitor is off\. BB's sidebar shows the change when BB next loads\./);
+  assert.match(off.stdout ?? "", /  monitor\.enabled: true, the default → false\nThe Monitor is off\. ALIA's sidebar shows the change when ALIA next loads\./);
   assert.deepEqual(document().monitor, { enabled: false });
   assert.equal((await cli(["option", "set", "boxesPerThread", "4"])).exitCode, 0);
   assert.equal(document().general.boxesPerThread, 4);
@@ -832,7 +832,7 @@ test("option set and unset change general and Monitor options in one save, and l
   assert.match(kind.stderr ?? "", /^Nothing was saved\. Fix these first:\n  general\.defaultKind: There is no kind by the name general\.defaultKind gives\. The kinds are /);
 });
 
-test("bb box option sets and unsets the snapshot settings that bite, within their ranges (070 unit 4)", async () => {
+test("alia box option sets and unsets the snapshot settings that bite, within their ranges (070 unit 4)", async () => {
   const { cli, document } = await start();
   const set = await cli(["option", "set", "general.snapshots.perBox=3", "general.snapshots.roomPercent=70"]);
   assert.equal(set.exitCode, 0, set.stderr);
@@ -852,10 +852,10 @@ test("the tailnet's OAuth client is set from a dotenv file with its mode in one 
   const missing = await cli(["option", "set", "general.tailnet.mode=oauth", "--secret", "general.tailnet.clientSecret=TS_SECRET", "--secrets-file", "secrets.env"], dir);
   assert.equal(missing.exitCode, 1);
   assert.match(missing.stderr ?? "", /general\.tailnet\.clientId: Set the Tailscale OAuth client's ID/);
-  const set = await cli(["option", "set", "tailnet.mode=oauth", "tailnet.tags=tag:bb-box,tag:ci", "--secret", "tailnet.clientId=OTHER", "--secret", "tailnet.clientSecret=TS_SECRET", "--secrets-file", "secrets.env"], dir);
+  const set = await cli(["option", "set", "tailnet.mode=oauth", "tailnet.tags=tag:alia-box,tag:ci", "--secret", "tailnet.clientId=OTHER", "--secret", "tailnet.clientSecret=TS_SECRET", "--secrets-file", "secrets.env"], dir);
   assert.equal(set.exitCode, 0, set.stderr);
   assert.match(set.stdout ?? "", /general\.tailnet\.clientId: set\n  general\.tailnet\.clientSecret: set/);
-  assert.deepEqual(document().general.tailnet, { mode: "oauth", tags: ["tag:bb-box", "tag:ci"], clientId: { set: true }, clientSecret: { set: true } });
+  assert.deepEqual(document().general.tailnet, { mode: "oauth", tags: ["tag:alia-box", "tag:ci"], clientId: { set: true }, clientSecret: { set: true } });
   assert.equal(app.configuration.secrets[GENERAL_SECRETS]?.[TAILNET_CLIENT_SECRET], CLIENT_SECRET);
   const offAgain = await cli(["option", "unset", "general.tailnet.mode"]);
   assert.match(offAgain.stdout ?? "", /general\.tailnet: removed: the tailnet is off/);
@@ -901,7 +901,7 @@ test("every command's --json is JSON, and none holds a secret", async () => {
   assertNoSecret(seen);
 });
 
-test("a dotenv file is read as bb secret request writes one, and as people write them", () => {
+test("a dotenv file is read as VesnALIA secret request writes one, and as people write them", () => {
   const values = parseDotenv(
     [
       "# a comment",
@@ -958,7 +958,7 @@ test("an empty value for an image field is saved as itself, so it turns its kind
 });
 
 
-test("bb box run runs a command in a thread's box or one of your machines, and exits with its exit code", async () => {
+test("alia box run runs a command in a thread's box or one of your machines, and exits with its exit code", async () => {
   const { cli, app } = await start();
   assert.equal((await cli(["backend", "add", "fake"])).exitCode, 0);
   await app.configuration.state();
@@ -975,7 +975,7 @@ test("bb box run runs a command in a thread's box or one of your machines, and e
   assert.match((await cli(["run", machine.name, "true", "--thread", THREAD])).stderr ?? "", /proof-1/);
 });
 
-test("backend set --projects keeps a backend for BB projects by name or ID, stores their IDs, refuses a name BB does not have or has twice, and an empty list gives it back to every project (#1458)", async () => {
+test("backend set --projects keeps a backend for VesnALIA projects by name or ID, stores their IDs, refuses a name VesnALIA does not have or has twice, and an empty list gives it back to every project (#1458)", async () => {
   const { cli, document } = await start();
   assert.equal((await cli(["backend", "add", "fake", "--no-doctor"])).exitCode, 0);
   assert.equal(document().backends[0]!.projects, undefined, "a new backend serves every project");
@@ -987,7 +987,7 @@ test("backend set --projects keeps a backend for BB projects by name or ID, stor
 
   const unknown = await cli(["backend", "set", "fake", "--projects", "Nope"]);
   assert.equal(unknown.exitCode, 1);
-  assert.match(unknown.stderr ?? "", /BB has no project by the 1st name or ID given\. That name is not shown, as it may be a secret\. Its projects are: Client work, Home, Twin, Twin\./);
+  assert.match(unknown.stderr ?? "", /ALIA has no project by the 1st name or ID given\. That name is not shown, as it may be a secret\. Its projects are: Client work, Home, Twin, Twin\./);
   const twice = await cli(["backend", "set", "fake", "--projects", "twin"]);
   assert.equal(twice.exitCode, 1);
   assert.match(twice.stderr ?? "", /2 projects are called "twin": prj_twin_a, prj_twin_b\. Give its ID\./);

@@ -52,7 +52,7 @@ function world() {
 function shapeOf(messages: readonly string[]): string {
   let shape = "arrow";
   for (const message of messages) {
-    const place = agentPlaceOf(message.slice("BB_AGENT,".length));
+    const place = agentPlaceOf(message.slice("ALIA_AGENT,".length));
     if (place?.act === "shape") shape = place.shape!;
   }
   return shape;
@@ -123,14 +123,14 @@ test("a viewer that connects is shown the same shape as one watching all along, 
 test("a hold that ends is told to every viewer when it ends, by one timer (105)", () => {
   const { shapes, sent, pending, advance } = world();
   shapes.acted(BOX, { act: "click", x: 10, y: 20, shape: "hand" });
-  assert.deepEqual(sent.map((each) => each.message), ["BB_AGENT,shape,10,20,hand"]);
+  assert.deepEqual(sent.map((each) => each.message), ["ALIA_AGENT,shape,10,20,hand"]);
   assert.equal(pending().length, 1);
   advance(0.29);
   assert.equal(sent.length, 1);
   advance(0.31);
   assert.deepEqual(sent.map((each) => [each.at, each.message]), [
-    [0, "BB_AGENT,shape,10,20,hand"],
-    [0.3, "BB_AGENT,shape,10,20,arrow"],
+    [0, "ALIA_AGENT,shape,10,20,hand"],
+    [0.3, "ALIA_AGENT,shape,10,20,arrow"],
   ]);
   assert.equal(pending().length, 0);
 });
@@ -144,7 +144,7 @@ test("forgetting a box, as at a take-over, cancels its timer, tells viewers the 
   shapes.forget(BOX);
   assert.equal(pending().length, 0);
   assert.equal(shapes.pending(BOX), false);
-  assert.equal(sent.at(-1)!.message, "BB_AGENT,shape,30,20,arrow");
+  assert.equal(sent.at(-1)!.message, "ALIA_AGENT,shape,30,20,arrow");
   assert.deepEqual(shapes.told(BOX), []);
   const told = sent.length;
   advance(5);

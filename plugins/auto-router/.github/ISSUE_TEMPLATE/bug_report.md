@@ -16,7 +16,7 @@ Remove private task text and credentials.
 
 ## Environment
 
-State the Model Pilot version, BB version, operating system, classifier provider, classifier model, and selected coding model.
+State the Model Pilot version, VesnALIA version, operating system, classifier provider, classifier model, and selected coding model.
 
 ## Evidence
 

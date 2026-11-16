@@ -4,7 +4,7 @@
  * itself (`messages/`). They are Markdown — and the home's icon — so they can be read and changed as the
  * text they become, rather than as strings in code.
  *
- * `bb plugin build` bundles the server half into one script, so the templates are compiled into it:
+ * `alia plugin build` bundles the server half into one script, so the templates are compiled into it:
  * `npm run gen:templates` writes `templates.generated.ts` from the folder, and the tests check the two
  * agree. HTML comments in a template are notes for whoever edits it; `withoutNotes` leaves them out where
  * a template becomes a message or a part of another file.

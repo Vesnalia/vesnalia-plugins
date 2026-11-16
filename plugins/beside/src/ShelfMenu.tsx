@@ -1,5 +1,5 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { experimental_Icon as BbIcon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as AliaIcon } from "@vesnalia/plugin-sdk/app";
 import { cn } from "./lib/utils";
 import { usePortalScopeProps } from "./lib/portal-scope";
 import { BUTTON_ICON_CLASS, CONTROL_BUTTON_CLASS } from "./SidebarRow";
@@ -48,7 +48,7 @@ export function ShelfMenu({
             "data-[state=open]:bg-state-active data-[state=open]:text-foreground",
           )}
         >
-          <BbIcon name="MoreHorizontal" className={BUTTON_ICON_CLASS} />
+          <AliaIcon name="MoreHorizontal" className={BUTTON_ICON_CLASS} />
         </button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
@@ -65,7 +65,7 @@ export function ShelfMenu({
               className={MENU_ITEM_CLASS}
               onSelect={item.onSelect}
             >
-              <BbIcon name={item.icon} className="size-4 shrink-0" />
+              <AliaIcon name={item.icon} className="size-4 shrink-0" />
               {item.label}
             </DropdownMenu.Item>
           ))}
@@ -74,7 +74,7 @@ export function ShelfMenu({
               <DropdownMenu.Separator className="-mx-1 my-1 h-px bg-muted" />
               <DropdownMenu.Sub>
                 <DropdownMenu.SubTrigger className={MENU_SUB_TRIGGER_CLASS}>
-                  <BbIcon name={choice.icon} className="size-4 shrink-0" />
+                  <AliaIcon name={choice.icon} className="size-4 shrink-0" />
                   {choice.label}
                   <Icon
                     name="ChevronRight"

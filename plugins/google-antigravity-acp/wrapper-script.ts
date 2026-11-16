@@ -66,7 +66,7 @@ function resolveRealBinary() {
   }
 
   throw new Error(
-    \`Antigravity server binary "\${binaryName}" not found. Run "bb google-antigravity-acp install" to install it.\`,
+    \`Antigravity server binary "\${binaryName}" not found. Run "alia google-antigravity-acp install" to install it.\`,
   );
 }
 

@@ -196,7 +196,7 @@ describe("shouldSend", () => {
     ).toBe(true);
   });
 
-  it("suppresses a team no bb project binds", () => {
+  it("suppresses a team no VesnALIA project binds", () => {
     expect(shouldSend(input({ boundTeamIds: new Set(["team_other"]) })).send).toBe(false);
   });
 

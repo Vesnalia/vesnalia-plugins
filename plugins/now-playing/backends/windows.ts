@@ -215,7 +215,7 @@ class Host {
       if (this.child !== child) return;
       this.fail(
         error.code === "ENOENT"
-          ? new Unsupported("Now Playing needs Windows PowerShell (powershell.exe) on the bb server.")
+          ? new Unsupported("Now Playing needs Windows PowerShell (powershell.exe) on the VesnALIA server.")
           : error,
       );
     });

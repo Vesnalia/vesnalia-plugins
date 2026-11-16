@@ -1,10 +1,10 @@
 import { afterEach, expect, test } from "vitest";
-import { createFakePluginHost, experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 const disposers: (() => Promise<void>)[] = [];
 afterEach(async () => { for (const dispose of disposers.splice(0)) await dispose(); });
 async function setup({ files = ['README.md'], fail = false, size = 10 } = {}) {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: 'project-page',
     sdk: { projects: {
       get: async () => ({ id: 'p1', name: 'Project', createdAt: 0, updatedAt: 0, kind: 'standard', gitRemoteUrl: 'git@github.com:jem/project.git', sources: [{ id: 'source', projectId: 'p1', hostId: 'remote-host', path: '/repo', isDefault: true, type: 'local_path', createdAt: 0, updatedAt: 0 }] }),
@@ -12,7 +12,7 @@ async function setup({ files = ['README.md'], fail = false, size = 10 } = {}) {
       fileContent: async () => ({ content: '# Real readme', contentEncoding: 'utf8', mimeType: 'text/markdown', sizeBytes: size }),
     } },
   });
-  plugin(bb); disposers.push(() => harness.lifecycle.dispose()); return harness;
+  plugin(alia); disposers.push(() => harness.lifecycle.dispose()); return harness;
 }
 test('reads from the project source host and returns the shared page contract', async () => {
   const h = await setup();

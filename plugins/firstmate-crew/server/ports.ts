@@ -1,17 +1,17 @@
 /**
- * The narrow slices of bb the server needs, so the first mate's lifecycle, the fleet and the crew
- * actions can be tested against plain in-memory fakes (`testing/fakes.ts`). `bb-ports.ts` implements
- * them over `bb.sdk`; nothing else in `server/` touches the SDK's thread or project areas.
+ * The narrow slices of VesnALIA the server needs, so the first mate's lifecycle, the fleet and the crew
+ * actions can be tested against plain in-memory fakes (`testing/fakes.ts`). `alia-ports.ts` implements
+ * them over `alia.sdk`; nothing else in `server/` touches the SDK's thread or project areas.
  */
 import type { ParentNotifications, ThreadStatus } from "../shared/types";
 
-/** What the plugin reads of one bb thread. Times are epoch milliseconds. */
+/** What the plugin reads of one VesnALIA thread. Times are epoch milliseconds. */
 export interface ThreadInfo {
   id: string;
   title: string | null;
   status: ThreadStatus;
   parentThreadId: string | null;
-  /** Which of its outcomes bb tells its parent about (the thread menu's Notify parent). */
+  /** Which of its outcomes VesnALIA tells its parent about (the thread menu's Notify parent). */
   parentNotifications: ParentNotifications;
   projectId: string;
   environmentId: string | null;
@@ -25,7 +25,7 @@ export interface RestState {
   /** Whose child it is now, so a caller can check it still belongs where it was found. */
   parentThreadId: string | null;
   /**
-   * `status` refined by bb with the machine's state: "waiting-for-host" or "provisioning" while the
+   * `status` refined by VesnALIA with the machine's state: "waiting-for-host" or "provisioning" while the
    * thread's machine is not ready. Anything but "idle" is not at rest.
    */
   runtimeStatus: string;
@@ -43,22 +43,22 @@ export interface TurnEnd {
   at: number;
 }
 
-/** How much of its context window a thread's conversation fills, as bb last measured it. */
+/** How much of its context window a thread's conversation fills, as VesnALIA last measured it. */
 export interface ContextUsage {
   usedTokens: number;
-  /** bb marks the figure as an estimate rather than the provider's own count. */
+  /** VesnALIA marks the figure as an estimate rather than the provider's own count. */
   estimated: boolean;
   /**
-   * When the provider's prompt cache for the conversation expires, in epoch milliseconds, as bb works it
-   * out (bb 0.47's `compactionOfferAt`). Null when bb does not say: a provider that reports no cache
-   * lifetime, a context under bb's own 100,000-token floor, or bb's `compactExpiredCache` experiment off.
+   * When the provider's prompt cache for the conversation expires, in epoch milliseconds, as VesnALIA works it
+   * out (VesnALIA 0.47's `compactionOfferAt`). Null when VesnALIA does not say: a provider that reports no cache
+   * lifetime, a context under VesnALIA's own 100,000-token floor, or VesnALIA's `compactExpiredCache` experiment off.
    */
   cacheExpiresAt: number | null;
 }
 
 /** Where a thread's work is, for telling the first mate which thread a request comes from. */
 export interface ThreadOrigin {
-  /** Null when bb no longer has the project. */
+  /** Null when VesnALIA no longer has the project. */
   projectName: string | null;
   /** Null when the thread has no environment, or its environment no branch. */
   branchName: string | null;
@@ -70,13 +70,13 @@ export interface ThreadOrigin {
  * watch output. None of them interrupts.
  */
 /**
- * How a message joins the thread's work. `compact-first` is bb 0.47's `compactFirst`: bb compacts the
+ * How a message joins the thread's work. `compact-first` is VesnALIA 0.47's `compactFirst`: VesnALIA compacts the
  * idle thread and then delivers the message, queued as `queue-if-active` (`server/compact-first.ts`).
  */
 export type SendMode = "auto" | "steer" | "queue-if-active" | "compact-first";
 
 /**
- * bb answered a `compact-first` send with a refusal, before it queued anything: nothing was compacted for
+ * VesnALIA answered a `compact-first` send with a refusal, before it queued anything: nothing was compacted for
  * it and nothing was delivered. Any other failure of such a send leaves both unknown.
  */
 export class CompactFirstRefused extends Error {
@@ -104,18 +104,18 @@ export interface SpawnArgs {
   title: string;
   prompt: string;
   parentThreadId?: string;
-  /** Which of the child's outcomes bb tells the parent about; absent leaves bb's default. */
+  /** Which of the child's outcomes VesnALIA tells the parent about; absent leaves VesnALIA's default. */
   parentNotifications?: ParentNotifications;
   environment: SpawnEnvironment;
-  /** Empty or absent leaves bb's default. */
+  /** Empty or absent leaves VesnALIA's default. */
   providerId?: string;
   model?: string;
   reasoningLevel?: string;
-  /** The provider's own agent options for the model, by option id (bb 0.46.1); absent sends none. */
+  /** The provider's own agent options for the model, by option id (VesnALIA 0.46.1); absent sends none. */
   sessionOptions?: Record<string, string | boolean>;
   /** Seeded into the plugin's own metadata namespace on the thread. */
   metadata: Record<string, string>;
-  /** Created already pinned in the sidebar, in the same request (bb 0.45+). */
+  /** Created already pinned in the sidebar, in the same request (VesnALIA 0.45+). */
   pinned?: boolean;
 }
 
@@ -127,7 +127,7 @@ export interface ThreadsPort {
   /** The thread's metadata in this plugin's namespace. */
   metadata(id: string): Promise<Record<string, unknown>>;
   /**
-   * The metadata of many threads in this plugin's namespace, read in as few requests as bb allows. A
+   * The metadata of many threads in this plugin's namespace, read in as few requests as VesnALIA allows. A
    * thread with none is left out of the map.
    */
   metadataOf(ids: readonly string[]): Promise<Map<string, Record<string, unknown>>>;
@@ -135,9 +135,9 @@ export interface ThreadsPort {
   pendingInteractions(id: string): Promise<number>;
   /** The thread's latest assistant text, or null when it has none. */
   lastText(id: string): Promise<string | null>;
-  /** The directory the environment works in, when it is on the bb server's machine; null otherwise. */
+  /** The directory the environment works in, when it is on the VesnALIA server's machine; null otherwise. */
   workspacePath(environmentId: string): Promise<string | null>;
-  /** The thread's project and branch, archived or not; null when bb has no such thread. */
+  /** The thread's project and branch, archived or not; null when VesnALIA has no such thread. */
   origin(id: string): Promise<ThreadOrigin | null>;
   spawn(args: SpawnArgs): Promise<ThreadInfo>;
   send(id: string, text: string, mode: SendMode): Promise<"sent" | "queued">;
@@ -145,7 +145,7 @@ export interface ThreadsPort {
   stop(id: string): Promise<void>;
   archive(id: string): Promise<void>;
   clearContext(id: string): Promise<void>;
-  /** Asks bb for the same structured `/compact` turn its composer sends. */
+  /** Asks VesnALIA for the same structured `/compact` turn its composer sends. */
   compact(id: string): Promise<void>;
   /** Null when the thread is missing, deleted or archived. */
   restState(id: string, signal?: AbortSignal): Promise<RestState | null>;
@@ -153,14 +153,14 @@ export interface ThreadsPort {
   lastTurnEnd(id: string, signal?: AbortSignal): Promise<TurnEnd | null>;
   /** How many turns have started since the event `afterSeq`, counting no further than `limit`. */
   turnsStartedAfter(id: string, afterSeq: number, limit: number, signal?: AbortSignal): Promise<number>;
-  /** The thread's context usage, or null when bb has no figure for it. */
+  /** The thread's context usage, or null when VesnALIA has no figure for it. */
   contextUsage(id: string, signal?: AbortSignal): Promise<ContextUsage | null>;
 }
 
 export interface ProjectsPort {
-  /** The project with a source at this directory on the bb server's machine, compared by real path. */
+  /** The project with a source at this directory on the VesnALIA server's machine, compared by real path. */
   findByPath(path: string): Promise<{ id: string } | null>;
-  /** Registers the directory as a new project on the bb server's machine. */
+  /** Registers the directory as a new project on the VesnALIA server's machine. */
   create(name: string, path: string): Promise<{ id: string }>;
   /** Every project's id and name, for resolving what the captain or the first mate typed. */
   list(): Promise<{ id: string; name: string }[]>;

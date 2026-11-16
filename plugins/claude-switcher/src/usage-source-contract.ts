@@ -1,6 +1,6 @@
-// Wire contract of the provider-usage plugin (bb 0.44, plugins/provider-usage/usage-source-contract.ts),
+// Wire contract of the provider-usage plugin (VesnALIA 0.44, plugins/provider-usage/usage-source-contract.ts),
 // copied verbatim so this source speaks exactly what the panel discovers.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const usagePlanSchema = z.object({

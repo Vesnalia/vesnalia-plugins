@@ -2,7 +2,7 @@ import type {
   PluginSidebarProject,
   PluginSidebarSection,
   PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { BlockStatus } from "../../../shared/model";
 import type { LaneRow, Row } from "../../../shared/view";
 

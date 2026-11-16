@@ -1,18 +1,18 @@
-// @smsunarto/bb-plugin-notify — desktop notifications for BB thread lifecycle events.
+// @smsunarto/alia-plugin-notify — desktop notifications for VesnALIA thread lifecycle events.
 //
-// BB notifies agents (parent threads, workflow completions) but never notifies
+// VesnALIA notifies agents (parent threads, workflow completions) but never notifies
 // the person. This plugin closes that gap: it listens to thread.idle and
 // thread.failed and posts a native desktop notification, and it gives agents a
-// `notify_user` tool plus a `bb notify` command for the same thing on demand.
+// `notify_user` tool plus a `alia notify` command for the same thing on demand.
 //
-// There is exactly one delivery path: the BB app window posts the notification
+// There is exactly one delivery path: the VesnALIA app window posts the notification
 // itself. macOS credits a notification to the process that posted it, so this
-// is the only way it can carry BB's icon, BB's name, and a click that opens
+// is the only way it can carry VesnALIA's icon, VesnALIA's name, and a click that opens
 // the thread. Scripted notifiers (osascript, terminal-notifier) were tried and
 // removed — they can only ever arrive as the interpreter, and an alternative
 // that is worse in every respect is not worth a settings row. When no window
 // is open the notification waits in a short queue and arrives when one opens.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import {
@@ -45,8 +45,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     notifyOnIdle: {
       type: "boolean",
       label: "Notify when a thread finishes",
@@ -97,7 +97,7 @@ export default async function plugin(bb: BbPluginApi) {
   let current = await settings.get();
   settings.onChange((next) => {
     current = next;
-    bb.log.info("settings changed");
+    alia.log.info("settings changed");
   });
 
   // --- The delivery queue ---------------------------------------------------
@@ -105,12 +105,12 @@ export default async function plugin(bb: BbPluginApi) {
   // One window at a time holds a long-poll open here. A delivered batch stays
   // persisted under a lease until the renderer acknowledges the notifications
   // it constructed. A dropped response therefore retries instead of vanishing.
-  const notifications = new NotificationQueue(bb.storage.kv);
+  const notifications = new NotificationQueue(alia.storage.kv);
   const waiters = new Set<() => void>();
   let lastPollAt = 0;
   let soundPlayback = Promise.resolve();
 
-  /** True while a BB window is polling, or has polled recently enough. */
+  /** True while a VesnALIA window is polling, or has polled recently enough. */
   function windowIsListening(): boolean {
     return waiters.size > 0 || Date.now() - lastPollAt < RENDERER_TTL_MS;
   }
@@ -123,7 +123,7 @@ export default async function plugin(bb: BbPluginApi) {
     await notifications.enqueue(item);
     const listening = windowIsListening();
     wakeWaiters();
-    bb.log.debug(`${listening ? "queued" : "held"} — opens ${item.threadId ?? "nothing"}`);
+    alia.log.debug(`${listening ? "queued" : "held"} — opens ${item.threadId ?? "nothing"}`);
     return listening;
   }
 
@@ -146,7 +146,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
   }
 
-  bb.http.route("GET", "/pending", async (context) => {
+  alia.http.route("GET", "/pending", async (context) => {
     const { signal } = context.req.raw;
     lastPollAt = Date.now();
     let delivery = await notifications.lease();
@@ -166,7 +166,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
   });
 
-  bb.http.route("POST", "/ack", async (context) => {
+  alia.http.route("POST", "/ack", async (context) => {
     const body: unknown = await context.req.json().catch(() => null);
     const leaseId = isRecord(body) ? body.leaseId : undefined;
     const notificationIds = isRecord(body) ? body.notificationIds : undefined;
@@ -190,10 +190,10 @@ export default async function plugin(bb: BbPluginApi) {
     return context.json({ ok: true, acknowledged: result.acknowledged });
   });
 
-  // Clicking a notification routes through BB's own open action — the same one
-  // `bb thread open` uses — so the thread lands in the right project and pane
+  // Clicking a notification routes through VesnALIA's own open action — the same one
+  // `alia thread open` uses — so the thread lands in the right project and pane
   // instead of the window guessing at a URL.
-  bb.http.route("POST", "/open", async (context) => {
+  alia.http.route("POST", "/open", async (context) => {
     const body: unknown = await context.req.json().catch(() => null);
     const threadId =
       typeof body === "object" && body !== null
@@ -203,11 +203,11 @@ export default async function plugin(bb: BbPluginApi) {
       return context.json({ ok: false, error: "invalid threadId" }, 400);
     }
     try {
-      await bb.sdk.threads.open({ threadId, file: null });
+      await alia.sdk.threads.open({ threadId, file: null });
       return context.json({ ok: true });
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
-      bb.log.warn(`open ${threadId} failed: ${detail}`);
+      alia.log.warn(`open ${threadId} failed: ${detail}`);
       return context.json({ ok: false, error: detail }, 502);
     }
   });
@@ -244,7 +244,7 @@ export default async function plugin(bb: BbPluginApi) {
       return cached.name;
     }
     try {
-      const project = await bb.sdk.projects.get({ projectId });
+      const project = await alia.sdk.projects.get({ projectId });
       projectNames.set(projectId, { name: project.name, readAt: Date.now() });
       return project.name;
     } catch {
@@ -279,11 +279,11 @@ export default async function plugin(bb: BbPluginApi) {
   async function wasManuallyStopped(threadId: string): Promise<boolean> {
     try {
       return await latestRunWasManuallyStopped((args) =>
-        bb.sdk.threads.events.list({ threadId, ...args }),
+        alia.sdk.threads.events.list({ threadId, ...args }),
       );
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
-      bb.log.warn(`could not inspect stop reason for ${threadId}: ${detail}`);
+      alia.log.warn(`could not inspect stop reason for ${threadId}: ${detail}`);
       // Preserve the existing notification behavior when the diagnostic read
       // fails. A transient SDK error must not hide a genuine completion.
       return false;
@@ -349,11 +349,11 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.events.on("thread.active", ({ thread }) => {
+  alia.events.on("thread.active", ({ thread }) => {
     remember(startedAt, thread.id);
   });
 
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) => {
     if (!current.notifyOnIdle) {
       startedAt.delete(thread.id);
       return;
@@ -361,7 +361,7 @@ export default async function plugin(bb: BbPluginApi) {
     return notifyThread(thread, "finished", lastAssistantText);
   });
 
-  bb.events.on("thread.failed", ({ thread, error }) => {
+  alia.events.on("thread.failed", ({ thread, error }) => {
     if (!current.notifyOnFailed) {
       startedAt.delete(thread.id);
       return;
@@ -369,10 +369,10 @@ export default async function plugin(bb: BbPluginApi) {
     return notifyThread(thread, "failed", error);
   });
 
-  bb.events.on("thread.deleted", ({ thread }) => forget(thread.id));
-  bb.events.on("thread.archived", ({ thread }) => forget(thread.id));
+  alia.events.on("thread.deleted", ({ thread }) => forget(thread.id));
+  alia.events.on("thread.archived", ({ thread }) => forget(thread.id));
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "notify_user",
     description:
       "Post a desktop notification on the user's machine. Use it when the user has likely walked away and something needs them now: a long job finished, or you are blocked on a decision. Do not use it for routine progress while they are watching.",
@@ -390,10 +390,10 @@ export default async function plugin(bb: BbPluginApi) {
       message: z.string().min(1).describe("One line the user will act on."),
     }),
     async execute({ message }, ctx) {
-      let heading = "bb";
+      let heading = "alia";
       let project: string | null = null;
       try {
-        const thread = await bb.sdk.threads.get({ threadId: ctx.threadId });
+        const thread = await alia.sdk.threads.get({ threadId: ctx.threadId });
         heading = threadLabel(thread);
         project = await projectName(thread.projectId);
       } catch {
@@ -406,47 +406,47 @@ export default async function plugin(bb: BbPluginApi) {
         ctx.threadId,
       );
       return listening
-        ? "Notification queued; a BB window is listening."
-        : "No BB window is open; the notification will appear when one is.";
+        ? "Notification queued; a VesnALIA window is listening."
+        : "No VesnALIA window is open; the notification will appear when one is.";
     },
   });
 
-  bb.agents.configure(() => ({
+  alia.agents.configure(() => ({
     tools: current.agentTool ? ["notify_user"] : [],
     skills: [],
   }));
 
-  bb.cli.register({
+  alia.cli.register({
     name: "notify",
-    summary: "Post a desktop notification through the BB app window",
+    summary: "Post a desktop notification through the VesnALIA app window",
     commands: [
       {
         name: "send",
         summary: "Post a notification",
-        usage: 'bb notify send "<message>" [--title <text>] [--thread <id>]',
+        usage: 'alia notify send "<message>" [--title <text>] [--thread <id>]',
       },
       {
         name: "test",
         summary: "Post a sample notification to verify the setup",
-        usage: "bb notify test",
+        usage: "alia notify test",
       },
       {
         name: "status",
-        summary: "Show whether a BB window is listening, and the filters",
-        usage: "bb notify status",
+        summary: "Show whether a VesnALIA window is listening, and the filters",
+        usage: "alia notify status",
       },
     ],
     async run(argv, ctx) {
       const [command, ...rest] = argv;
-      // An agent running `bb notify send` from inside a thread should get a
+      // An agent running `alia notify send` from inside a thread should get a
       // notification that opens that thread, without naming it.
       const invokingThread = ctx.threadId ?? null;
       const sent = (listening: boolean) =>
         listening
-          ? { exitCode: 0, stdout: "Queued — a BB window is listening.\n" }
+          ? { exitCode: 0, stdout: "Queued — a VesnALIA window is listening.\n" }
           : {
               exitCode: 0,
-              stdout: "Held — no BB window is open. It will appear when one is.\n",
+              stdout: "Held — no VesnALIA window is open. It will appear when one is.\n",
             };
 
       if (command === "status") {
@@ -470,7 +470,7 @@ export default async function plugin(bb: BbPluginApi) {
         return sent(
           await post(
             project,
-            "bb notify",
+            "alia notify",
             "Notifications are working. Click to open the thread this came from.",
             invokingThread,
           ),
@@ -488,7 +488,7 @@ export default async function plugin(bb: BbPluginApi) {
         return sent(
           await post(
             project,
-            parsed.value.title ?? "bb",
+            parsed.value.title ?? "alia",
             oneLine(plainText(parsed.value.message), BODY_MAX_CHARS),
             parsed.value.threadId ?? invokingThread,
           ),
@@ -497,12 +497,12 @@ export default async function plugin(bb: BbPluginApi) {
 
       return {
         exitCode: 2,
-        stderr: "usage: bb notify <send|test|status>\n",
+        stderr: "usage: VesnALIA notify <send|test|status>\n",
       };
     },
   });
 
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     // Release held long-polls before waiting for sound playback. Each wake
     // removes itself from the set, which Set iteration tolerates.
     wakeWaiters();

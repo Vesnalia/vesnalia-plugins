@@ -12,7 +12,7 @@ export default async (page) => {
   await scrollToRow(page, U(22), -1); await settle(page);
   b = await bar(page);
   const md = await page.evaluate(() => { const t = document.querySelector("[data-sticky-prompt-text]"); return { strong: t?.querySelector("strong")?.textContent, code: t?.querySelector("code")?.textContent, inert: t?.hasAttribute("inert") }; });
-  check("S2 pins as its top reaches the top, with BB Markdown", b.visible && b.text?.startsWith("I need a careful plan") && md.strong === "billing service" && !!md.code && md.inert, { text: b.text, md });
+  check("S2 pins as its top reaches the top, with VesnALIA Markdown", b.visible && b.text?.startsWith("I need a careful plan") && md.strong === "billing service" && !!md.code && md.inert, { text: b.text, md });
 
   await scrollToRow(page, U(22), 40); await settle(page);
   b = await bar(page);
@@ -46,7 +46,7 @@ export default async (page) => {
 
   await scrollToRow(page, U(181), -200); await settle(page, 1500);
   b = await bar(page);
-  check("S10 BB system notice skipped", b.visible && !b.text?.startsWith("[bb system]"), b.text);
+  check("S10 VesnALIA system notice skipped", b.visible && !b.text?.startsWith("[VesnALIA system]"), b.text);
   await page.screenshot({ path: "/home/box/qa/shots/m1-last.png" });
   return results;
 };

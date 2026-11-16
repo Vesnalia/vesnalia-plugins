@@ -2,7 +2,7 @@ import { useId } from "react";
 import { FIELD } from "./common";
 import { messageOf, useShuttleQuery } from "./data";
 
-/** A free-text skill name, with the skills bb knows as suggestions; empty means no skill. */
+/** A free-text skill name, with the skills VesnALIA knows as suggestions; empty means no skill. */
 export function SkillInput({ value, onChange, projectId, label = "Skill" }: { value: string; onChange(next: string): void; projectId?: string; label?: string }) {
   const listId = useId();
   const query = useShuttleQuery("skills", projectId ? { projectId } : {});

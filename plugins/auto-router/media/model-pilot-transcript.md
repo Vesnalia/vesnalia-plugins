@@ -9,7 +9,7 @@ The routing examples illustrate the workflow and do not report a measured routin
 Model Pilot.
 Right model.
 Right effort.
-Automatic model selection and focused helpers inside BB.
+Automatic model selection and focused helpers inside VesnALIA.
 
 The diagram connects your task to a classifier and then to a coding agent.
 You describe the work, the classifier chooses the route, and the coding agent does the work.
@@ -18,9 +18,9 @@ You describe the work, the classifier chooses the route, and the coding agent do
 
 Describe the task.
 The example first message is "Add search to this app."
-Send it to Model Pilot in BB.
+Send it to Model Pilot in VesnALIA.
 
-Choose a classification model from your BB models.
+Choose a classification model from your VesnALIA models.
 Codex and Claude Code use your existing agent sign-ins.
 The classifier receives task text and routing questions.
 
@@ -51,13 +51,13 @@ The comparison does not measure task quality.
 
 ## 00:27 to 00:32
 
-Use your BB models.
+Use your VesnALIA models.
 Keep your agent sign-ins.
 
-1. Choose a BB classification model.
+1. Choose a VesnALIA classification model.
 2. Use your existing agent sign-in.
 3. Select Model Pilot and send your task.
 
-No separate API key is required for classification through BB models.
+No separate API key is required for classification through VesnALIA models.
 Your provider subscription limits still apply.
 A screenshot shows the actual Connection page.

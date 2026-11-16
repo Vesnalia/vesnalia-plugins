@@ -1,10 +1,10 @@
-# Style Fingerprint — bb-plugin-kilo (for issue #3 startup recovery + deterministic tests)
+# Style Fingerprint — alia-plugin-kilo (for issue #3 startup recovery + deterministic tests)
 
 ## Module organization
 - Flat `src/` directory, one concern per kebab-case file; no nested layers except `src/app/` (UI) and `src/permissions/` — `src/process.ts`, `src/client.ts`, `src/probe.ts`, `src/bridge.ts` are the startup-relevant files (`ls src/`).
 - TypeScript ESM with explicit `.js` suffixes on local imports — `src/probe.ts:1-14` (`from "./identity.js"`, `from "./process.js"`).
 - Small exported pure helpers colocated with their caller; interfaces exported for cross-file contracts — `src/process.ts:20-34` (`KiloCodeLock`, `AttachResult`).
-- Entry points wired via `package.json` `bb` block: `server.ts`, `app.tsx`, `host.ts` — `package.json:20-22`.
+- Entry points wired via `package.json` `alia` block: `server.ts`, `app.tsx`, `host.ts` — `package.json:20-22`.
 - Host RPC handlers thin: `handleProbe` delegates straight to `probeKiloCode` — `src/host-handlers.ts:34-36`.
 
 ## Naming
@@ -40,20 +40,20 @@
 - `globalThis.fetch` swapped per-test and restored in `afterEach` — `tests/process.test.ts:48-53`; fake fetch returning `{ ok: url.includes(":4242/") }` — `tests/process.test.ts:88-91`.
 - Hand-rolled fake implementing the full `KiloCodeClient` interface with call counters (`fake.calls.prompt`, `fake.calls.abort`) and overridable impls (`fake.promptImpl`) — `tests/fake-kilo.ts:3-49, 140-156`.
 - Dependency injection over module mocking for the bridge: `BridgeDeps { acquire, attach, write, now? }` — `src/bridge.ts:145-150`; tests install via `resetBridgeForTests({ acquire, attach, write })` — `tests/bridge.test.ts:62-72`.
-- Env isolation helper `withHome` using `mkdtempSync(join(tmpdir(), "bb-oc-home-"))` with save/restore in `try/finally` — `tests/process.test.ts:23-33`; same pattern inline in `tests/probe-config.test.ts:29-54`.
+- Env isolation helper `withHome` using `mkdtempSync(join(tmpdir(), "alia-oc-home-"))` with save/restore in `try/finally` — `tests/process.test.ts:23-33`; same pattern inline in `tests/probe-config.test.ts:29-54`.
 - `vi.spyOn(process, "kill")` with `mockRestore()` in `finally` for pid-alive simulation — `tests/process.test.ts:187-209`.
 - No `vi.useFakeTimers` anywhere in the repo (grep: zero hits); async settling uses `await vi.waitFor(...)` — `tests/event-pump.test.ts:46, 73, 81, 106` — or a tiny real `flush()` sleep (`setTimeout(resolve, 30)`) — `tests/bridge.test.ts:50-52`.
 
 ## Test structure
-- One `tests/<file>.test.ts` per `src/<file>.ts`; colocated behavior names in `it()` titles, often with ISA criterion ids: `it("keeps a lock when health is slow instead of spawning another serve", ...)` — `tests/process.test.ts:61-78`; `it("interrupts and restarts turn/steer when BB steer-on-Enter is on (ISC-20)")` — `tests/bridge.test.ts:74`.
+- One `tests/<file>.test.ts` per `src/<file>.ts`; colocated behavior names in `it()` titles, often with ISA criterion ids: `it("keeps a lock when health is slow instead of spawning another serve", ...)` — `tests/process.test.ts:61-78`; `it("interrupts and restarts turn/steer when ALIA steer-on-Enter is on (ISC-20)")` — `tests/bridge.test.ts:74`.
 - `describe` blocks group by feature area (`"lock reclaim"`, `"stopServe"`, `"provider bridge"`), flat `it()`s inside — `tests/process.test.ts:47, 170`.
 - Assertions on thrown messages use regex `rejects.toThrow(/did not answer in time|Not spawning another/i)` — `tests/process.test.ts:73-75`.
 - Negative assertions prove safety: `expect(spawnMock).not.toHaveBeenCalled()` — `tests/process.test.ts:76`.
 - State reset via `afterEach(() => resetBridgeForTests())` — `tests/bridge.test.ts:57-60`.
-- Vitest config: `environment: "node"`, include `tests/**/*.test.ts` + `src/**/*.test.ts`, SDK shim alias `@get-bb/plugin-sdk/provider-bridge` → `tests/shims/provider-bridge.ts` — `vitest.config.ts:9-24`.
+- Vitest config: `environment: "node"`, include `tests/**/*.test.ts` + `src/**/*.test.ts`, SDK shim alias `@vesnalia/plugin-sdk/provider-bridge` → `tests/shims/provider-bridge.ts` — `vitest.config.ts:9-24`.
 
 ## Tooling commands
-- `npm run typecheck` → `tsc --noEmit`; `npm test` → `vitest run --config vitest.config.ts`; `npm run build` → `bb plugin build` — `package.json:25-29`.
+- `npm run typecheck` → `tsc --noEmit`; `npm test` → `vitest run --config vitest.config.ts`; `npm run build` → `alia plugin build` — `package.json:25-29`.
 - tsconfig: `strict: true`, `target: ES2022`, `moduleResolution: "bundler"`, `noEmit` — `tsconfig.json:2-11`.
 - No ESLint/Prettier config in repo; formatting is enforced only by convention (2-space indent, double quotes, trailing commas).
 
@@ -70,4 +70,4 @@
 
 ## Open questions (unverified)
 - Whether `server.ts` calls `attachOrSpawn`/`probeKiloCode` directly at startup — grep found no direct references in `server.ts`; the startup path appears to route through `host-handlers.ts` → `probeKiloCode`, but the full `server.ts` wiring (1036+ lines) was not read end-to-end.
-- Whether BB SDK exposes a thread-start retry hook the fix should use instead of plugin-local retry — no evidence found in the files inspected.
+- Whether VesnALIA SDK exposes a thread-start retry hook the fix should use instead of plugin-local retry — no evidence found in the files inspected.

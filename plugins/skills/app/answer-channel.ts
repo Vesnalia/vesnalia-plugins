@@ -1,6 +1,6 @@
 /**
  * Answers shared between the components that hold the same key, while any of
- * them is mounted. The composer button and the popup bb mounts for it are
+ * them is mounted. The composer button and the popup VesnALIA mounts for it are
  * separate slots with no props between them, so this is how the popup opens on
  * the list the button already counted and how the popup's fresh scan updates
  * the button's count.

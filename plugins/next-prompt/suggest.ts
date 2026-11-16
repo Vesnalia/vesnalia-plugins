@@ -1,4 +1,4 @@
-// Reads bb timeline rows into next-prompt-core's Message list. No bb or Node
+// Reads VesnALIA timeline rows into next-prompt-core's Message list. No VesnALIA or Node
 // APIs, so tests import it directly.
 import type { Message } from "./vendor/next-prompt-core.ts";
 

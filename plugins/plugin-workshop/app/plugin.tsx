@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { AttemptView, AvailabilityView, PluginView, workshopContract, WorkModels } from "../contract";
-import { REASON_MAX, STAGE_TITLE, STATE, attemptText, bbState, btn, errCls, errText, input, primary, raceCreation, short, when, type Created } from "./common";
+import { REASON_MAX, STAGE_TITLE, STATE, attemptText, aliaState, btn, errCls, errText, input, primary, raceCreation, short, when, type Created } from "./common";
 import { ModelsPicker } from "./models-picker";
 
 // --- the rollout attempt and the plugin actions: the same on the plugin summary and on the work page (stage 6) ---
@@ -38,15 +38,15 @@ export function PluginActions({
   pluginId,
   availability,
   attempt,
-  bbState: pluginState,
+  aliaState: pluginState,
   onDone,
   onError,
 }: {
   pluginId: string;
   availability: AvailabilityView;
   attempt: AttemptView | null;
-  /** The plugin's state in bb, if known (the summary): a disabled plugin shows «Enable» even when both actions are closed. */
-  bbState?: string;
+  /** The plugin's state in VesnALIA, if known (the summary): a disabled plugin shows «Enable» even when both actions are closed. */
+  aliaState?: string;
   onDone: () => void;
   onError: (message: string | null) => void;
 }) {
@@ -203,7 +203,7 @@ export function PluginActions({
 
 const OUTCOME: Record<string, string> = { done: "accepted", canceled: "canceled" };
 
-/** A short summary of a plugin without an open work: its state in bb, source, working copy, rolled-out commit, rollback point, buttons. */
+/** A short summary of a plugin without an open work: its state in VesnALIA, source, working copy, rolled-out commit, rollback point, buttons. */
 export function PluginSummary({
   pluginId,
   slowMs,
@@ -269,7 +269,7 @@ export function PluginSummary({
       </div>
     );
 
-  const bb = bbState(view.bbState);
+  const alia = aliaState(view.aliaState);
   const w = view.work;
   const ws = w ? (STATE[w.state] ?? { text: w.state, cls: "" }) : null;
   const closed = view.reworkBlockers.length > 0;
@@ -292,7 +292,7 @@ export function PluginSummary({
       <header className="flex flex-wrap items-baseline gap-3">
         <h1 className="text-base font-semibold">{view.name}</h1>
         <span className="font-mono text-xs text-muted-foreground">{view.id}</span>
-        <span className={`text-xs ${bb.cls}`}>● {bb.text}</span>
+        <span className={`text-xs ${alia.cls}`}>● {alia.text}</span>
         <span className="flex-1" />
         <button type="button" onClick={load} className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent" title="reload the summary from the server">
           Refresh
@@ -309,7 +309,7 @@ export function PluginSummary({
 
       {!w && view.labels.some((l) => l.startsWith("gone:")) ? (
         <section className="flex flex-wrap items-center gap-3 rounded-lg border border-border p-3 text-xs">
-          <span className="text-muted-foreground">The plugin is neither in bb nor in its folder. The card can be hidden from the board: the history and the id stay; if the plugin reappears, the card comes back.</span>
+          <span className="text-muted-foreground">The plugin is neither in VesnALIA nor in its folder. The card can be hidden from the board: the history and the id stay; if the plugin reappears, the card comes back.</span>
           <span className="flex-1" />
           <button
             type="button"
@@ -416,7 +416,7 @@ export function PluginSummary({
             </div>
           </div>
         ) : null}
-        <PluginActions pluginId={view.id} availability={view.availability} attempt={view.attempt} bbState={view.bbState} onDone={load} onError={setActionError} />
+        <PluginActions pluginId={view.id} availability={view.availability} attempt={view.attempt} aliaState={view.aliaState} onDone={load} onError={setActionError} />
         {actionError ? <div className={errCls}>{actionError}</div> : null}
       </section>
 

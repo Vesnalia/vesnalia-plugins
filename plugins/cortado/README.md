@@ -7,48 +7,48 @@
 
 <h1 align="center">Cortado</h1>
 
-<p align="center"><b>A theme for <a href="https://getbb.app">bb</a> in neutral graphite with warm orange and amber, in light and dark.</b><br>Three palettes, matching code themes, and a contrast check you can run with <code>npm run check</code>.</p>
+<p align="center"><b>A theme for <a href="https://getbb.app">VesnALIA</a> in neutral graphite with warm orange and amber, in light and dark.</b><br>Three palettes, matching code themes, and a contrast check you can run with <code>npm run check</code>.</p>
 
 <p align="center">
 <a href="https://github.com/vburojevic/bb-plugin-cortado/releases/latest"><img src="https://img.shields.io/github/v/release/vburojevic/bb-plugin-cortado?style=flat-square&color=b8640a&label=release" alt="Latest release"></a>
-<img src="https://img.shields.io/badge/bb-%E2%89%A50.48-57606a?style=flat-square" alt="Requires bb 0.48 or later">
+<img src="https://img.shields.io/badge/bb-%E2%89%A50.48-57606a?style=flat-square" alt="Requires VesnALIA 0.48 or later">
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-57606a?style=flat-square" alt="MIT license"></a>
 <img src="https://img.shields.io/badge/contrast-52%2F52%20pass-107b49?style=flat-square" alt="All 52 contrast checks pass">
 </p>
 
-<img src="assets/screens/hero-split.png" width="100%" alt="A bb thread in Cortado, split along a diagonal: Cortado Dark on the left, Cortado Light on the right, with a thin amber seam between them. The chat holds a reply with a table and a TypeScript block; src/greet.ts is open in the file preview.">
+<img src="assets/screens/hero-split.png" width="100%" alt="A VesnALIA thread in Cortado, split along a diagonal: Cortado Dark on the left, Cortado Light on the right, with a thin amber seam between them. The chat holds a reply with a table and a TypeScript block; src/greet.ts is open in the file preview.">
 
-<p align="center"><sub>One bb window, dark on the left and light on the right.</sub></p>
+<p align="center"><sub>One VesnALIA window, dark on the left and light on the right.</sub></p>
 
 ## Install
 
 ```sh
-bb plugin install git:github.com/vburojevic/bb-plugin-cortado@v1.0.0 --yes
+alia plugin install git:github.com/vburojevic/bb-plugin-cortado@v1.0.0 --yes
 ```
 
 > [!TIP]
 > Then pick it under **Settings → Appearance → Palette**, or from a terminal:
 >
 > ```sh
-> bb theme set plugin:cortado:cortado
+> alia theme set plugin:cortado:cortado
 > ```
 
 > [!IMPORTANT]
-> Code renders in [Fira Code](https://github.com/tonsky/FiraCode) and the terminal in [FiraCode Nerd Font Mono](https://www.nerdfonts.com/font-downloads). Install both first, or bb falls back to your system's monospace font.
+> Code renders in [Fira Code](https://github.com/tonsky/FiraCode) and the terminal in [FiraCode Nerd Font Mono](https://www.nerdfonts.com/font-downloads). Install both first, or VesnALIA falls back to your system's monospace font.
 
 ## Three palettes
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screens/palettes-trio-dark.png">
-  <img src="assets/screens/palettes-trio-light.png" width="100%" alt="Three thumbnails of the same bb thread. Cortado, split between dark and light, follows bb's mode. Cortado Dark keeps the dark palette. Cortado Light keeps the light palette. Each carries its bb theme set id.">
+  <img src="assets/screens/palettes-trio-light.png" width="100%" alt="Three thumbnails of the same VesnALIA thread. Cortado, split between dark and light, follows VesnALIA's mode. Cortado Dark keeps the dark palette. Cortado Light keeps the light palette. Each carries its VesnALIA theme set id.">
 </picture>
 
-**Cortado** follows bb's Light, Dark or System setting. **Cortado Dark** and **Cortado Light** keep one palette whichever way that switch is set. Each recolors the app, the syntax colors in chat, diffs and file previews, and the 16 terminal colors.
+**Cortado** follows VesnALIA's Light, Dark or System setting. **Cortado Dark** and **Cortado Light** keep one palette whichever way that switch is set. Each recolors the app, the syntax colors in chat, diffs and file previews, and the 16 terminal colors.
 
 ```sh
-bb theme set plugin:cortado:cortado         # follows bb's mode
-bb theme set plugin:cortado:cortado-dark    # always dark
-bb theme set plugin:cortado:cortado-light   # always light
+alia theme set plugin:cortado:cortado         # follows alia's mode
+alia theme set plugin:cortado:cortado-dark    # always dark
+alia theme set plugin:cortado:cortado-light   # always light
 ```
 
 ## A closer look
@@ -59,24 +59,24 @@ bb theme set plugin:cortado:cortado-light   # always light
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screens/diff-dark.png">
-  <img src="assets/screens/diff-light.png" width="100%" alt="bb's diff panel: README.md with one line changed and src/greet.ts with five added lines, in Cortado's code colors.">
+  <img src="assets/screens/diff-light.png" width="100%" alt="VesnALIA's diff panel: README.md with one line changed and src/greet.ts with five added lines, in Cortado's code colors.">
 </picture>
 
 ### Diffs and file previews
 
-bb draws diffs, file previews and the file editor with a code theme of its own. Cortado brings a matching one for each mode, drawn from the same palette as code in chat.
+VesnALIA draws diffs, file previews and the file editor with a code theme of its own. Cortado brings a matching one for each mode, drawn from the same palette as code in chat.
 
 </td>
 <td width="50%" valign="top">
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screens/palettes-dark.png">
-  <img src="assets/screens/palettes-light.png" width="100%" alt="bb's Settings, Appearance page, with the Palette menu open on Cortado, Cortado Dark and Cortado Light.">
+  <img src="assets/screens/palettes-light.png" width="100%" alt="VesnALIA's Settings, Appearance page, with the Palette menu open on Cortado, Cortado Dark and Cortado Light.">
 </picture>
 
 ### Right in Settings
 
-All three palettes appear under **Settings → Appearance → Palette**, next to bb's built-in ones.
+All three palettes appear under **Settings → Appearance → Palette**, next to VesnALIA's built-in ones.
 
 </td>
 </tr>
@@ -152,20 +152,20 @@ Code keeps its warmth in two places, orange keywords and gold function names. Ty
 flowchart LR
   css["themes/cortado.css<br/>light and dark palettes"] --> build["npm run build"]
   build --> fixed["cortado-dark.css<br/>cortado-light.css"]
-  code["cortado-code.json<br/>cortado-code-light.json"] --> bb["bb: Settings → Appearance<br/>and bb theme set"]
-  css --> bb
-  fixed --> bb
+  code["cortado-code.json<br/>cortado-code-light.json"] --> alia["alia: Settings → Appearance<br/>and alia theme set"]
+  css --> alia
+  fixed --> alia
   css --> check["npm run check<br/>52 contrast pairs"]
   css --> images["npm run images<br/>README art"]
 ```
 
-The stylesheet sets bb's own theme tokens and nothing else. It never targets bb's components, so there are no selectors to break when bb changes its markup.
+The stylesheet sets VesnALIA's own theme tokens and nothing else. It never targets VesnALIA's components, so there are no selectors to break when VesnALIA changes its markup.
 
 <details>
-<summary><b>Every surface, and where bb uses it</b></summary>
+<summary><b>Every surface, and where VesnALIA uses it</b></summary>
 <br>
 
-| Where in bb | Token | Dark | Light |
+| Where in VesnALIA | Token | Dark | Light |
 | :-- | :-- | :-- | :-- |
 | Chat, thread header, composer bar | `--canvas` | `#070707` | `#ffffff` |
 | Sidebar, icon rail, side panels, code | `--sidebar`, `--surface-recessed` | `#0f0f10` | `#f2f2f3` |
@@ -191,7 +191,7 @@ The stylesheet sets bb's own theme tokens and nothing else. It never targets bb'
 <summary><b>Syntax colors in chat</b></summary>
 <br>
 
-bb highlights code blocks in chat with [sugar-high](https://github.com/huozhi/sugar-high), which reads its colors from `--sh-*` properties. Diffs and file previews use the code theme files instead, which set numbers in violet.
+VesnALIA highlights code blocks in chat with [sugar-high](https://github.com/huozhi/sugar-high), which reads its colors from `--sh-*` properties. Diffs and file previews use the code theme files instead, which set numbers in violet.
 
 | Property | Colors | Dark | Light |
 | :-- | :-- | :-- | :-- |
@@ -238,8 +238,8 @@ A local install is read live, so you can tune the theme in place:
 
 ```sh
 git clone https://github.com/vburojevic/bb-plugin-cortado
-cd bb-plugin-cortado && npm install
-bb plugin install . --yes
+cd alia-plugin-cortado && npm install
+alia plugin install . --yes
 ```
 
 Edit `themes/cortado.css` for the app and `themes/cortado-code.json` or `themes/cortado-code-light.json` for diffs and file previews. Then:
@@ -248,7 +248,7 @@ Edit `themes/cortado.css` for the app and `themes/cortado-code.json` or `themes/
 npm run build    # regenerate Cortado Dark and Cortado Light from cortado.css
 npm run check    # contrast in both modes, and stale files
 npm run images   # redraw the logo, palette and code images
-bb theme set plugin:cortado:cortado
+alia theme set plugin:cortado:cortado
 ```
 
 ```
@@ -260,8 +260,8 @@ themes/cortado-code-light.json code theme for diffs and file previews, light
 scripts/build-variants.mjs     writes the two fixed palettes
 scripts/check-contrast.mjs     the contrast check behind npm run check
 scripts/render-images.mjs      draws the README art from the theme
-docs/overview.md               the bb marketplace description
-server.ts                      the empty server entry bb requires
+docs/overview.md               the alia marketplace description
+server.ts                      the empty server entry alia requires
 assets/                        logo, glyph and README images
 ```
 
@@ -271,7 +271,7 @@ assets/                        logo, glyph and README images
 <summary><b>About the images</b></summary>
 <br>
 
-The screenshots are captured from bb itself, running headless with its own empty data folder and Cortado 1.0.0 installed. The threads show an invented change to a sample file. Nothing comes from anyone's real bb.
+The screenshots are captured from VesnALIA itself, running headless with its own empty data folder and Cortado 1.0.0 installed. The threads show an invented change to a sample file. Nothing comes from anyone's real VesnALIA.
 
 The logo, palette and code images are drawn by `npm run images`, which reads every color from `themes/cortado.css` and the code theme files. Regenerating after a palette change keeps them honest.
 
@@ -283,6 +283,6 @@ Fills and lines follow the step roles of [Radix Colors](https://www.radix-ui.com
 
 ---
 
-## More bb plugins
+## More VesnALIA plugins
 
-<p align="center">See every bb plugin I publish at <a href="https://github.com/vburojevic/bb-plugins"><b>vburojevic/bb-plugins</b></a>.</p>
+<p align="center">See every VesnALIA plugin I publish at <a href="https://github.com/vburojevic/bb-plugins"><b>vburojevic/alia-plugins</b></a>.</p>

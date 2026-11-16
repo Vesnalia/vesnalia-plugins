@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 const SLOT_KEY = "nav-rail/rail";
 const SIDEBAR_PREFERENCES = [
@@ -6,11 +6,11 @@ const SIDEBAR_PREFERENCES = [
   "sidebar.headerProvider",
 ] as const;
 
-export default function navRail(bb: BbPluginApi) {
-  bb.onInstall(async () => {
-    const { preferences } = await bb.sdk.system.uiPreferences.list();
+export default function navRail(alia: AliaPluginApi) {
+  alia.onInstall(async () => {
+    const { preferences } = await alia.sdk.system.uiPreferences.list();
     for (const key of SIDEBAR_PREFERENCES) {
-      await bb.sdk.system.uiPreferences.set({
+      await alia.sdk.system.uiPreferences.set({
         key,
         value: SLOT_KEY,
         expectedRevision: preferences[key].revision,

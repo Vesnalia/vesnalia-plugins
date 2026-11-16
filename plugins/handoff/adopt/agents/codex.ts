@@ -115,7 +115,7 @@ function messageText(payload: Record<string, unknown>): string {
 export const codexAdapter: AgentAdapter = {
   id: "codex",
   label: "Codex",
-  bbProviderId: "codex",
+  aliaProviderId: "codex",
 
   async list(cwd: string, home: string = os.homedir()): Promise<SessionSummary[]> {
     const root = sessionsRoot(home);

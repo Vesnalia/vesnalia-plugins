@@ -54,7 +54,7 @@ export const FFMPEG_BUILDS: readonly FfmpegBuild[] = [
   },
 ];
 
-export const CLIP_FFMPEG_DIR = ".bb-box/ffmpeg";
+export const CLIP_FFMPEG_DIR = ".alia-box/ffmpeg";
 
 export const CLIP_FFMPEG_EXITS = { ready: 0, noBuild: 4, fetchFailed: 5, mismatch: 6, broken: 7, publishFailed: 8, untrusted: 9, noneFit: 10 } as const;
 
@@ -137,7 +137,7 @@ missing_in() {
 }
 works() {
   [ -n "$1" ] && [ -n "$2" ] && [ -z "$(missing_in "$1")" ] || return 1
-  t=$(mktemp -d "${"$"}{TMPDIR:-/tmp}/bb-box-ffmpeg.XXXXXX") || return 1
+  t=$(mktemp -d "${"$"}{TMPDIR:-/tmp}/alia-box-ffmpeg.XXXXXX") || return 1
   bounded "$1" -nostdin -v error -y -f lavfi -i color=s=16x16:d=0.2:r=5 -frames:v 1 -c:v libx264 -pix_fmt yuv420p "$t/smoke.mkv" </dev/null >/dev/null 2>&1 &&
     [ "$(bounded "$2" -v error -select_streams v:0 -show_entries stream=codec_name -of csv=p=0 "$t/smoke.mkv" 2>/dev/null)" = h264 ]
   ok=$?
@@ -199,9 +199,9 @@ ${builds.map(buildBranch).join("\n")}
 esac
 umask 077
 mkdir -p "$base" 2>/dev/null
-[ ! -O "$HOME/.bb-box" ] || [ -L "$HOME/.bb-box" ] || chmod go-w "$HOME/.bb-box"
+[ ! -O "$HOME/.alia-box" ] || [ -L "$HOME/.alia-box" ] || chmod go-w "$HOME/.alia-box"
 [ ! -O "$base" ] || [ -L "$base" ] || chmod 700 "$base"
-if ! private_dir "$HOME/.bb-box" || ! private_dir "$base"; then
+if ! private_dir "$HOME/.alia-box" || ! private_dir "$base"; then
   echo "$base is a link, or not the box user's alone, so ${PRODUCT} does not keep ffmpeg there. Remove it, then start again." >&2
   exit ${CLIP_FFMPEG_EXITS.untrusted}
 fi

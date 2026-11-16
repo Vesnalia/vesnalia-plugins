@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
-import type { bbSidebarRpcContract } from "./contract";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { aliaSidebarRpcContract } from "./contract";
 import { PROJECT_COLORS_CHANNEL } from "./realtime-channels";
 import { automaticProjectColor, projectColorsById, projectColorStyle } from "./project-colors";
 import type { ProjectColorDisplay } from "./sidebar-settings";
@@ -8,7 +8,7 @@ import type { ProjectColorDisplay } from "./sidebar-settings";
 export type ProjectStripeView = "full" | "collapsed" | "group-full" | "group-collapsed";
 
 export function useProjectColorOverrides(enabled = true) {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const connection = useRealtimeConnectionState();
   const previousConnection = useRef(connection);
   const [overrides, setOverrides] = useState<Record<string, string>>({});

@@ -2,7 +2,7 @@
 //
 // A sidebar page with the jobs (app/jobs-panel.tsx), whose sidebar entry
 // carries how many jobs are failing, and a palette command that opens it.
-import { definePluginApp, useBbNavigate, type BbNavigate } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate, type AliaNavigate } from "@vesnalia/plugin-sdk/app";
 
 import { useFailingBadge } from "./app/health";
 import { JobsPanel, PANEL_PATH } from "./app/jobs-panel";
@@ -12,10 +12,10 @@ import { JobsPanel, PANEL_PATH } from "./app/jobs-panel";
  * mounted once per window and rendering nothing, hands the host's navigator
  * to the command.
  */
-let navigator: BbNavigate | null = null;
+let navigator: AliaNavigate | null = null;
 
 function NavigatorBridge() {
-  navigator = useBbNavigate();
+  navigator = useAliaNavigate();
   return null;
 }
 

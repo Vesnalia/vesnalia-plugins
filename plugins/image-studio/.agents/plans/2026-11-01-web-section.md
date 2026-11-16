@@ -11,7 +11,7 @@ status: implemented 2026-11-02 (accepted Lane Pilot tasks shipped through 0.10.3
 > A fifth section next to GUI, Characters, Roblox and Model: graphics for websites. Built like the Roblox section:
 > one project per site folder, a mode per asset kind, every picture drawn by **Muse Image** and then fitted to what a
 > site takes (exact sizes, transparent cut-outs, favicon set, manifest of where each file goes). **No SVG yet.**
-> Code lives in the plugin repo root (`bb-plugin-image-studio/`), one level above this checkout.
+> Code lives in the plugin repo root (`alia-plugin-image-studio/`), one level above this checkout.
 
 ## Modes
 
@@ -41,7 +41,7 @@ The palette, theme, notes and approved references of the project go into every p
 
 | id | what | depends |
 |---|---|---|
-| web-core | `src/web.ts` (modes, presets, job prompts, outputs), favicon/ICO raster, `server.ts`: section `web`, CLI `bb image-studio web …`, agent tool `image_studio_web`, files under `image-studio/web/<site>/<group>/`; `tests/web.test.ts` | — |
+| web-core | `src/web.ts` (modes, presets, job prompts, outputs), favicon/ICO raster, `server.ts`: section `web`, CLI `alia image-studio web …`, agent tool `image_studio_web`, files under `image-studio/web/<site>/<group>/`; `tests/web.test.ts` | — |
 | web-panel | panel tab «Сайты» with group tabs, mode hints, project settings (theme, chips, palette, refs), i18n en/ru | web-core |
 | web-skill | `skills/image-studio/references/web.md`, SKILL.md routing, PLUGIN_OVERVIEW.md line | web-core |
 
@@ -58,7 +58,7 @@ prompt-tuning task (`web-prompts`) with the findings.
 | web-prompts | 0.10.3 | done | lprun_f4d6543242eb4137bb61c05032ec28f0 (task web-prompts-2) |
 
 The standalone GUI tab is removed from the panel (owner request in thr_7qsw7g5jw5): game GUI lives inside its Roblox
-game, site interfaces go to this web section; `image_studio_gui` and `bb image-studio gui` still write into a game
+game, site interfaces go to this web section; `image_studio_gui` and `alia image-studio gui` still write into a game
 folder's GUI project. Later items (SVG, reading the style from the site itself, device mockups with a real screenshot,
 ad banner sizes) stay parked.
 
@@ -95,7 +95,7 @@ ad banner sizes) stay parked.
    - opaque: `apple-touch-icon.png` 180 (mark at 80% of the side) and `icon-maskable-512.png` (mark inside the central 80%, i.e. fitted to 409 px box), filled with the project's first palette colour, white when there is no palette;
    - `site.webmanifest` with icons 192, 512 and the maskable 512 (`purpose: "maskable"`).
 4. `manifest.json` in every job folder: `{ section: "web", mode, site, files: [{ file, width, height, place, html? }] }`, `place` = where it goes on a site (`public/favicon.ico`, `public/og.png`…), `html` = the tag (`<link rel="icon" href="/favicon.ico" sizes="32x32">`, `<link rel="apple-touch-icon" href="/apple-touch-icon.png">`, `<link rel="manifest" href="/site.webmanifest">`, `<meta property="og:image" content="/og.png">`, `<img src="/hero.png">`…). Export `webManifest(job, files)` from `src/web.ts` so tests can check it.
-5. `server.ts`: section `web` next to gui/characters/roblox/model (`sectionSchema`, `SECTION_WORD`, mode lists, presets, project creation from the thread folder named after the folder), files under `image-studio/web/<site>/<category>/<job>/`, the output kinds above in the same place Roblox outputs are written, CLI `bb image-studio web projects|project|ref|generate|delete` through `runGuiCommand(..., "web")`, help lines, agent tool `image_studio_web` (prompt, mode, variants, project) with a description like `image_studio_roblox`.
+5. `server.ts`: section `web` next to gui/characters/roblox/model (`sectionSchema`, `SECTION_WORD`, mode lists, presets, project creation from the thread folder named after the folder), files under `image-studio/web/<site>/<category>/<job>/`, the output kinds above in the same place Roblox outputs are written, CLI `alia image-studio web projects|project|ref|generate|delete` through `runGuiCommand(..., "web")`, help lines, agent tool `image_studio_web` (prompt, mode, variants, project) with a description like `image_studio_roblox`.
 6. `tests/web.test.ts`: every mode gives jobs with the aspect and output above; list limits; ideas presets rule; `encodeIco` header bytes and entry sizes/offsets; favicon set sizes and opacity (corners of apple-touch and maskable are alpha 255, the mark bbox of maskable lies inside the central 80%); `webManifest` places and html; server source registers `image_studio_web` and the `web` CLI.
 7. `package.json` version 0.10.0. UI files only if `tsc` forces a type fix for the new section value.
 

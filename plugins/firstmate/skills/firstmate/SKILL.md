@@ -1,44 +1,44 @@
 ---
 name: firstmate
-description: Run a firstmate-style crew inside BB — captain thread dispatches crewmate child threads via `bb firstmate` or firstmate_* tools. Use when user mentions firstmate, crew, crewmates, captain, or parallel agents.
+description: Run a firstmate-style crew inside VesnALIA — captain thread dispatches crewmate child threads via `alia firstmate` or firstmate_* tools. Use when user mentions firstmate, crew, crewmates, captain, or parallel agents.
 ---
 
-# Firstmate crews in BB
+# Firstmate crews in VesnALIA
 
-Talk to one agent, ship with a crew. BB mapping:
+Talk to one agent, ship with a crew. VesnALIA mapping:
 
-| firstmate | BB here |
+| firstmate | VesnALIA here |
 | --- | --- |
 | captain (first mate) | this thread after `deck` / `/captain` |
 | crewmate / scout | child thread (`dispatch --shape ship\|scout`) |
-| tmux windows | BB threads (`backends/bb.sh`) / `bb thread show` |
-| treehouse worktree | BB managed-worktree (backend owns it, like Orca) |
+| tmux windows | VesnALIA threads (`backends/alia.sh`) / `alia thread show` |
+| treehouse worktree | VesnALIA managed-worktree (backend owns it, like Orca) |
 | watcher | `thread.idle` / `thread.failed` events + stuck checker |
-| wait | `bb firstmate watch` → `threads.wait` (do not poll) |
+| wait | `alia firstmate watch` → `threads.wait` (do not poll) |
 | status protocol | `DONE:` / `BLOCKED:` / `FAILED:` |
 | PR / local merge | `deliver`, `merge` (PR or ff-only local-only) |
 
 No captain thread to open: run `/captain` in any thread. Never spawn a thread
 to be captain. A new `/captain` thread is titled and pinned so it stays in
-the sidebar (BB will not infer a title from `/captain` alone). Crew threads
+the sidebar (VesnALIA will not infer a title from `/captain` alone). Crew threads
 must not dispatch nested crews.
 
 Prefer `firstmate_*` tools on a captain thread. CLI works everywhere.
 
 ## Commands
 
-`guide`, `init` (`--real` clones firstmate and overlays `backends/bb.sh`), `fm`
-(any `bin/fm-*.sh` with `FM_BACKEND=bb`), `deck`, `session`, `dispatch`, `crews`,
+`guide`, `init` (`--real` clones firstmate and overlays `backends/alia.sh`), `fm`
+(any `bin/fm-*.sh` with `FM_BACKEND=alia`), `deck`, `session`, `dispatch`, `crews`,
 `crew`, `watch`, `tell`, `interrupt`, `stop`, `retry`, `bearings`, `deliver`,
 `merge`, `promote`, `queue`, `decide`, `posture`, `memory`, `afk`, `quiet`,
 `secondmate`, `supervision`, `forget`.
 
 Native `dispatch`/`tell`/`watch` use the plugin SDK (Fleet UI, pluginMetadata).
-Crews spawn visible so they nest under the captain in the BB sidebar (`--hidden` to hide).
+Crews spawn visible so they nest under the captain in the VesnALIA sidebar (`--hidden` to hide).
 When `fmHome` is set, `dispatch` also writes `state/<id>.meta` so peek/send/teardown
-see Fleet crews. `fm` is the real toolbelt. Both talk to BB threads.
+see Fleet crews. `fm` is the real toolbelt. Both talk to VesnALIA threads.
 
-Run `bb firstmate --help` for flags. `--json` when output drives code.
+Run `alia firstmate --help` for flags. `--json` when output drives code.
 
 ## Procedure
 
@@ -62,4 +62,4 @@ Run `bb firstmate --help` for flags. `--json` when output drives code.
 - Parent permission is ceiling: request `full` only when parent runs full.
 - Poll with crew id from `crews`, never guess thread ids. Waiting = `watch`.
 - firstmate home (`init --real`) is a checkout env, never a nested worktree.
-- Prefer `firstmate_fm` / `bb firstmate fm` for policy scripts (brief, gate, PR merge, teardown) once a home exists.
+- Prefer `firstmate_fm` / `alia firstmate fm` for policy scripts (brief, gate, PR merge, teardown) once a home exists.

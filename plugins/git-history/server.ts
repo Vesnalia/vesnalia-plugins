@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { hostContract, rpcContract, threadHistoryTag } from "./contracts";
 import { createRefreshScheduler } from "./refresh-scheduler";
 
@@ -31,10 +31,10 @@ const URGENT_ENVIRONMENT_CHANGES = new Set<string>([
 ]);
 
 async function repositoryForThread(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
 ): Promise<RepositoryTarget> {
-  const thread = await bb.sdk.threads.get({
+  const thread = await alia.sdk.threads.get({
     threadId,
     include: "environment",
   });
@@ -57,17 +57,17 @@ async function repositoryForThread(
   };
 }
 
-export default function plugin(bb: BbPluginApi) {
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+export default function plugin(alia: AliaPluginApi) {
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   const watchedThreads = new Map<string, number>();
   const threadEnvironments = new Map<string, string | null>();
   const refreshes = createRefreshScheduler((threadId) => {
-    bb.rpc.experimental_invalidate([threadHistoryTag(threadId)]);
+    alia.rpc.experimental_invalidate([threadHistoryTag(threadId)]);
   });
   let stopEvents: (() => void) | null = null;
 
   function subscribeToChanges(): () => void {
-    const stopThreads = bb.sdk.subscribe({
+    const stopThreads = alia.sdk.subscribe({
       event: "thread:changed",
       callback: (event) => {
         const threadId = event.id;
@@ -86,7 +86,7 @@ export default function plugin(bb: BbPluginApi) {
         }
       },
     });
-    const stopEnvironments = bb.sdk.subscribe({
+    const stopEnvironments = alia.sdk.subscribe({
       event: "environment:changed",
       callback: (event) => {
         if (event.id === undefined) return;
@@ -108,7 +108,7 @@ export default function plugin(bb: BbPluginApi) {
 
   async function loadThreadEnvironment(threadId: string): Promise<void> {
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (watchedThreads.has(threadId)) {
         threadEnvironments.set(threadId, thread.environmentId);
       }
@@ -141,7 +141,7 @@ export default function plugin(bb: BbPluginApi) {
     );
   }
 
-  bb.settings.define({
+  alia.settings.define({
     showHeaderShortcut: {
       type: "boolean",
       label: "Show thread header shortcut",
@@ -156,10 +156,10 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async repositories({ threadId }) {
       try {
-        const target = await repositoryForThread(bb, threadId);
+        const target = await repositoryForThread(alia, threadId);
         const result = await host.call(
           "repositories",
           { environmentPath: target.environmentPath },
@@ -177,7 +177,7 @@ export default function plugin(bb: BbPluginApi) {
 
     async history({ threadId, repositoryKey, offset, limit }) {
       try {
-        const target = await repositoryForThread(bb, threadId);
+        const target = await repositoryForThread(alia, threadId);
         return await host.call(
           "history",
           { ...repositoryInput(target, repositoryKey), offset, limit },
@@ -201,7 +201,7 @@ export default function plugin(bb: BbPluginApi) {
 
     async historyRevision({ threadId, repositoryKey }) {
       try {
-        const target = await repositoryForThread(bb, threadId);
+        const target = await repositoryForThread(alia, threadId);
         return await host.call(
           "historyRevision",
           repositoryInput(target, repositoryKey),
@@ -217,7 +217,7 @@ export default function plugin(bb: BbPluginApi) {
     },
 
     async details({ threadId, repositoryKey, hash }) {
-      const target = await repositoryForThread(bb, threadId);
+      const target = await repositoryForThread(alia, threadId);
       return host.call(
         "details",
         { ...repositoryInput(target, repositoryKey), hash },
@@ -226,7 +226,7 @@ export default function plugin(bb: BbPluginApi) {
     },
 
     async patch({ threadId, repositoryKey, hash, path }) {
-      const target = await repositoryForThread(bb, threadId);
+      const target = await repositoryForThread(alia, threadId);
       return host.call(
         "patch",
         { ...repositoryInput(target, repositoryKey), hash, path },
@@ -235,7 +235,7 @@ export default function plugin(bb: BbPluginApi) {
     },
 
     async workingPatch({ threadId, repositoryKey, path }) {
-      const target = await repositoryForThread(bb, threadId);
+      const target = await repositoryForThread(alia, threadId);
       return host.call(
         "workingPatch",
         { ...repositoryInput(target, repositoryKey), path },
@@ -245,14 +245,14 @@ export default function plugin(bb: BbPluginApi) {
   });
 
   for (const method of ["repositories", "historyRevision"] as const) {
-    bb.rpc.experimental_whileWatched(method, (read, signal) => {
+    alia.rpc.experimental_whileWatched(method, (read, signal) => {
       if (!("input" in read)) return;
       const parsed = rpcContract[method].input.safeParse(read.input);
       if (parsed.success) watchThread(parsed.data.threadId, signal);
     });
   }
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     stopEvents?.();
     stopEvents = null;
     watchedThreads.clear();
@@ -260,5 +260,5 @@ export default function plugin(bb: BbPluginApi) {
     refreshes.dispose();
   });
 
-  bb.log.info("Git History loaded");
+  alia.log.info("Git History loaded");
 }

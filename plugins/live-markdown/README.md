@@ -1,7 +1,7 @@
-# bb-plugin-live-markdown
+# alia-plugin-live-markdown
 
 Obsidian-style live-preview editing for `.md`, `.mdx`, and `.markdown` files in
-BB's side panel. 
+VesnALIA's side panel. 
 
 The editor buffer is the file's exact text (CodeMirror 6). Markdown syntax —
 `#`, `**`, `` ` ``, `[label](url)`, `>`, list markers — is hidden on lines the
@@ -35,15 +35,15 @@ A table shows as raw source only when it no longer parses as a table.
 
 ## Default opener
 
-bb has no manifest or registration option for a default opener. With no
+VesnALIA has no manifest or registration option for a default opener. With no
 per-extension choice it uses the first matching opener in plugin-id order,
 which is usually another plugin. So a content script
 (`default-opener.ts`) seeds the choice that Settings → File openers stores
-(the browser-local `bb.fileOpenerByExtension` key), with these rules:
+(the browser-local `alia.fileOpenerByExtension` key), with these rules:
 
 - It runs **once per browser**. It pins `md`, `mdx`, and `markdown` to Live
   Markdown only where that extension has no choice yet, then writes the marker
-  `bb-plugin:live-markdown:default-opener-seeded:v1` and never touches the
+  `alia-plugin:live-markdown:default-opener-seeded:v1` and never touches the
   preference again.
 - An existing choice — Built-in preview or another plugin — is never
   overridden. Picking **Automatic** later removes the pin, and the marker keeps
@@ -51,7 +51,7 @@ which is usually another plugin. So a content script
 - Unreadable preference JSON is left untouched.
 - Each browser (desktop window, remote client, phone) has its own preference,
   so each is seeded on its first load with the plugin enabled.
-- After uninstalling, the pin points to a missing opener and bb falls back to
+- After uninstalling, the pin points to a missing opener and VesnALIA falls back to
   its built-in preview; choose Automatic under Settings → File openers to undo.
 
 ## Saving
@@ -64,24 +64,24 @@ which is usually another plugin. So a content script
   version** discards your edits, **Keep mine** overwrites exactly the version
   you were shown.
 - CRLF files are written back with CRLF.
-- Files over 4 MB, or not UTF-8, fall back to BB's read-only preview.
+- Files over 4 MB, or not UTF-8, fall back to VesnALIA's read-only preview.
 
 ## Layout
 
-- `server.ts` — `read` / `write` RPCs over `bb.sdk.files`, resolving workspace,
+- `server.ts` — `read` / `write` RPCs over `alia.sdk.files`, resolving workspace,
   host, and thread-storage paths.
 - `app.tsx` — the `fileOpener` registration, load/save/conflict state.
 - `default-opener.ts` — one-time default-opener seeding (content script).
 - `editor/live-preview.ts` — inline decorations (view plugin).
 - `editor/tables.ts` — table block widgets (state field) and in-place cell editing.
 - `editor/inline-render.ts` — cell Markdown → DOM, no `innerHTML`.
-- `editor/theme.ts` — styling from BB theme variables.
+- `editor/theme.ts` — styling from VesnALIA theme variables.
 
 ## Develop
 
 ```sh
 npm install
 npx tsc --noEmit -p tsconfig.json
-bb plugin build .
-bb plugin reload live-markdown
+alia plugin build .
+alia plugin reload live-markdown
 ```

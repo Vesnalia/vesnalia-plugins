@@ -2,7 +2,7 @@
 // array (no shell), a timeout, and a byte cap per output stream.
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import path from "node:path";
-import { experimental_sanitizeInheritedChildProcessEnv as sanitizeInheritedChildProcessEnv } from "@get-bb/plugin-sdk/host";
+import { experimental_sanitizeInheritedChildProcessEnv as sanitizeInheritedChildProcessEnv } from "@vesnalia/plugin-sdk/host";
 
 export interface RunOptions {
   cwd: string;

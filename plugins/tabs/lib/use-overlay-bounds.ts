@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 
 const mainChat = "[data-thread-window]:not(aside [data-thread-window])";
-const layoutAttribute = "data-bb-chat-tabs-layout";
+const layoutAttribute = "data-alia-chat-tabs-layout";
 const layouts = new WeakMap<
   Document,
   {
@@ -20,7 +20,7 @@ function observeLayout(document: Document, listener: (main: Element | null) => v
     // ponytail: rescan per mutation batch; index predicates only if streaming DOM scans become measurable.
     const update = () => {
       const main = body.querySelector(mainChat);
-      const overlays = Array.from(body.querySelectorAll("#bb-chat-tabs-overlay"));
+      const overlays = Array.from(body.querySelectorAll("#alia-chat-tabs-overlay"));
       const states = [
         main && "main",
         body.querySelector(`:scope [inert] ${mainChat}`) && "inert",

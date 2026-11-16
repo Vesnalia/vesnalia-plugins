@@ -77,7 +77,7 @@ if [ -e "${join(dir, "stop-hangs")}" ]; then echo deactivating; else echo inacti
 }
 
 async function superviseDockerSocket(box: FakeBox): Promise<void> {
-  const script = join(box.dir, "bb-box-start");
+  const script = join(box.dir, "alia-box-start");
   writeFileSync(
     script,
     `#!/bin/bash
@@ -248,7 +248,7 @@ test("without systemd, as in a Docker box, a quick first start passes and leaves
   assert.deepEqual(lines(box, "listens"), ["listening"]);
 });
 
-test("without systemd, a slow first start stops Docker's daemon, waits for bb-box-start to listen again, then times a second", async () => {
+test("without systemd, a slow first start stops Docker's daemon, waits for alia-box-start to listen again, then times a second", async () => {
   const box = fakeBox([SLOW_START_S, 0], "no systemd");
   await superviseDockerSocket(box);
   const dockerd = Number(readFileSync(join(box.dir, "docker.pid"), "utf8"));
@@ -264,10 +264,10 @@ test("without systemd, a slow first start stops Docker's daemon, waits for bb-bo
 
 test("every Linux image's checks time the first docker command with the helper customize-base installs", () => {
   const base = readFileSync(join(GUEST, "customize-base.sh"), "utf8");
-  assert.match(base, /install -m 0755 "\$build\/guest\/docker-first-start\.sh" \/usr\/local\/libexec\/bb-box\/docker-first-start/);
+  assert.match(base, /install -m 0755 "\$build\/guest\/docker-first-start\.sh" \/usr\/local\/libexec\/alia-box\/docker-first-start/);
 
   for (const check of ["check-headless.sh", "check-desktop.sh", "check-desktop-wayland.sh"]) {
     const line = readFileSync(join(GUEST, check), "utf8").split("\n").find((each) => each.startsWith('d "first docker command"'));
-    assert.equal(line, 'd "first docker command" /usr/local/libexec/bb-box/docker-first-start', check);
+    assert.equal(line, 'd "first docker command" /usr/local/libexec/alia-box/docker-first-start', check);
   }
 });

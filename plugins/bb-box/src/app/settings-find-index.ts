@@ -229,7 +229,7 @@ function optionEntries(state: ConfigState): FindEntry[] {
     option("boxes", "Boxes", "page", "Boxes", null, null, "options page"),
     option("boxes", "Boxes", "default", "Default kind", "general/defaultKind", defaultInfo ? kindName(state.kinds, defaultInfo) : general.defaultKind, "what a thread gets when it does not say"),
     option("boxes", "Boxes", "per-thread", "Boxes per thread", "general/boxesPerThread", general.boxesPerThread ? String(general.boxesPerThread) : "0, no limit", "the most boxes one thread may hold limit"),
-    option("boxes", "Boxes", "enrol", "Boxes join BB as machines", "general/enrol", onOff(general.enrol), "enrol enroll terminals threads credentials", true),
+    option("boxes", "Boxes", "enrol", "Boxes join VesnALIA as machines", "general/enrol", onOff(general.enrol), "enrol enroll terminals threads credentials", true),
     option("boxes", "Boxes", "video", "Linux desktops as video", "general/video", onOff(general.video), "x11 vnc stream selkies", true),
     option("boxes", "Boxes", "files", "Files for every box", ADD_FILE, plural(files.length, "file"), "home dotfiles copied secret add file"),
     ...files.map((file) => option("boxes", "Boxes", `file ${file.path}`, `~/${file.path}`, filePath(file.path), isSecretState(file.content) && file.content.set ? "Set" : "Not set", "file for every box content home replace")),
@@ -246,7 +246,7 @@ function optionEntries(state: ConfigState): FindEntry[] {
     option("devices", "Devices", "test", "Test device", "general/testDevice", onOff(general.testDevice), "test card device path", true),
     option("network", "Network", "page", "Network", null, null, "options page tailnet"),
     option("network", "Network", "mode", "Join machines to the tailnet", tailnetPath("mode"), oauth ? "Yes, with an OAuth client" : "No", "tailscale tailnet oauth cloud machines"),
-    option("network", "Network", "tags", "Tags", oauth ? tailnetPath("tags") : tailnetPath("mode"), oauth ? (tailnet?.tags?.join(", ") ?? "Empty: tag:bb-box, the default") : "Used with Yes", "tailscale tailnet tags"),
+    option("network", "Network", "tags", "Tags", oauth ? tailnetPath("tags") : tailnetPath("mode"), oauth ? (tailnet?.tags?.join(", ") ?? "Empty: tag:alia-box, the default") : "Used with Yes", "tailscale tailnet tags"),
     ...(["clientId", "clientSecret"] as const).map((key) => option("network", "Network", key, TAILNET_SECRET_LABELS[key], oauth ? tailnetPath(key) : tailnetPath("mode"), oauth ? secretSet(key) : "Used with Yes", "tailscale tailnet oauth credentials")),
     option("monitor", "Monitor", "page", "Monitor", null, null, "options page"),
     { ...option("monitor", "Monitor", "enabled", "Machine status", "monitor/enabled", onOff(monitor.enabled), "sidebar footer sampling", true), labels: ["Monitor"] },
@@ -283,10 +283,10 @@ function snapshotEntries(state: ConfigState): FindEntry[] {
 function configurationEntries(state: ConfigState): FindEntry[] {
   return [
     option("configuration", "Configuration", "page", "Configuration", null, `Revision ${state.revision}`, "options page revision json file save"),
-    option("configuration", "Configuration", "export", "Export", EXPORT_BUTTON, null, "copy as json download backup file bb box config show secrets"),
+    option("configuration", "Configuration", "export", "Export", EXPORT_BUTTON, null, "copy as json download backup file VesnALIA box config show secrets"),
     option("configuration", "Configuration", "import", "Import", OPEN_IMPORT, null, "apply json file restore paste check changes"),
-    ...(state.migrated ? [option("configuration", "Configuration", "copy", "Settings moved from BB", COPY_BUTTON, "Kept", "copy of bb's earlier settings migrated remove")] : []),
-    option("configuration", "Configuration", "commands", "From a terminal", null, null, "bb box config show check apply migrated json commands agents scripts"),
+    ...(state.migrated ? [option("configuration", "Configuration", "copy", "Settings moved from VesnALIA", COPY_BUTTON, "Kept", "copy of VesnALIA's earlier settings migrated remove")] : []),
+    option("configuration", "Configuration", "commands", "From a terminal", null, null, "alia box config show check apply migrated json commands agents scripts"),
   ];
 }
 

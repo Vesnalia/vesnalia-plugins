@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { experimental_defineHostEntry, type ExperimentalHostWorkerLease } from '@get-bb/plugin-sdk/host';
+import { experimental_defineHostEntry, type ExperimentalHostWorkerLease } from '@vesnalia/plugin-sdk/host';
 import { hostContract } from './contract.js';
 import * as android from './host/android.js';
 import { DeviceSession, ViewerEndpoint } from './host/session.js';

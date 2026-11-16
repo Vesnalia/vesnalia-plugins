@@ -3,7 +3,7 @@
  * picker, so this plugin's picker filters and groups the way that one does.
  */
 
-/** Reasoning efforts bb knows about, in the order the pickers list them. */
+/** Reasoning efforts VesnALIA knows about, in the order the pickers list them. */
 export const REASONING_LEVELS = [
   "none",
   "low",

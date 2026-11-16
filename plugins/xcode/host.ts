@@ -1,9 +1,9 @@
 /**
  * Xcode tracker — host worker.
  *
- * bb runs this on every enrolled Mac, lazily, when the server first calls it.
+ * VesnALIA runs this on every enrolled Mac, lazily, when the server first calls it.
  * It is how a thread whose checkout lives on another Mac gets its builds
- * tracked: the server routes `xcode_build`, `bb xcode run` and `bb xcode
+ * tracked: the server routes `xcode_build`, `alia xcode run` and `alia xcode
  * stop` here, keyed by the thread environment's host, and it asks here about
  * the builds on that Mac nobody routed — Xcode.app's, a terminal's, Xcode's
  * own agent tools'. Pure wiring — the work lives in `src/host/builds.ts` and
@@ -13,7 +13,7 @@
 import {
   experimental_defineHostEntry,
   type ExperimentalHostRpcContext,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 
 import { hostContract, hostSignals, type HostSignals } from "./src/host/contract";
 import { HostBuilds, type HostBuildsDeps, type WorkerHooks } from "./src/host/builds";
@@ -33,7 +33,7 @@ function hooksFor(context: HostContext): WorkerHooks {
 /**
  * The entry, with its build manager's collaborators injectable.
  *
- * bb loads the default export, which takes none. Tests pass a fake xcodebuild
+ * VesnALIA loads the default export, which takes none. Tests pass a fake xcodebuild
  * and short poll intervals; nothing else may, because the binary is the one
  * thing the checkout boundary does not cover.
  */

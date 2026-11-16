@@ -1,6 +1,6 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type MouseEvent, type AnchorHTMLAttributes, type HTMLAttributes, type Ref, type PointerEvent as ReactPointerEvent } from "react";
-import type { PluginSidebarThread, PluginSidebarProject } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread, PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./icons";
 import { EmojiPicker } from "./EmojiPicker";
 import { defaultAppearance, type ProjectAppearance } from "./preferences";
@@ -48,7 +48,7 @@ export function SidebarView(props: SidebarViewProps) {
   const [closed,setClosed]=useState<Set<string>>(()=>new Set((()=>{const value=stored<unknown>(`${storageKey}:closed`,[]);return Array.isArray(value)?value.filter((id):id is string=>typeof id==="string"):[];})()));
   const [limits,setLimits]=useState<Record<string,number>>({});
   const lastActive=useRef<string|null>(null);
-  // Highlight a pressed thread at once; BB updates activeThreadId only after the thread view renders.
+  // Highlight a pressed thread at once; VesnALIA updates activeThreadId only after the thread view renders.
   const [pendingId,setPendingId]=useState<string|null>(null);
   useEffect(()=>setPendingId(null),[activeThreadId]);
   const markPending=useCallback((event:ReactPointerEvent<HTMLDivElement>|MouseEvent<HTMLDivElement>)=>{if(event.button>0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;const link=(event.target as Element).closest?.(".ns-link");const id=link?.closest<HTMLElement>("[data-thread-id]")?.dataset.threadId;if(id&&id!==activeThreadId)setPendingId(id);},[activeThreadId]);

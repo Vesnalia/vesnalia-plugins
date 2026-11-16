@@ -11,13 +11,13 @@ type Appearance = "light" | "dark";
 interface ModelSettings {
   readonly location: Override<LatLon>;
   readonly statusBar: Override<IosStatusBar>;
-  readonly setByBbBox: { readonly appearance: Appearance; readonly textSize: IosContentSize };
+  readonly setByAliaBox: { readonly appearance: Appearance; readonly textSize: IosContentSize };
 }
 
 const FRESH: ModelSettings = {
   location: { set: null, at: null },
   statusBar: { set: null, at: null },
-  setByBbBox: { appearance: IOS_DEFAULT_APPEARANCE, textSize: IOS_DEFAULT_CONTENT_SIZE },
+  setByAliaBox: { appearance: IOS_DEFAULT_APPEARANCE, textSize: IOS_DEFAULT_CONTENT_SIZE },
 };
 
 export function batteryOverride(battery: Battery): readonly string[] {
@@ -101,7 +101,7 @@ export class IosSettingsKeeper {
   async #change(change: Partial<ModelSettings>): Promise<void> {
     if (!this.#model) return;
     this.#all = { ...this.#all, [this.#model]: { ...this.#own(), ...change } };
-    await this.#save().catch((error) => this.#options.log(`settings: could not keep what bb-box set: ${error instanceof Error ? error.message : String(error)}`));
+    await this.#save().catch((error) => this.#options.log(`settings: could not keep what alia-box set: ${error instanceof Error ? error.message : String(error)}`));
   }
 
   #device(): string {
@@ -121,15 +121,15 @@ export class IosSettingsKeeper {
     const at = this.#options.now();
     const [appearance, textSize] = (await Promise.all([this.#options.simctl.ui(udid, "appearance", undefined, signal), this.#options.simctl.ui(udid, "content_size", undefined, signal)])).map((read) => read.toLowerCase());
     this.#appearance = isAppearance(appearance)
-      ? { known: true, value: appearance, at, by: appearance === own.setByBbBox.appearance ? "bb-box" : "outside" }
+      ? { known: true, value: appearance, at, by: appearance === own.setByAliaBox.appearance ? "alia-box" : "outside" }
       : { known: false, why: `simctl reads the appearance as ${appearance || "nothing"}.` };
     this.#textSize = isContentSize(textSize)
-      ? { known: true, value: textSize, at, by: textSize === own.setByBbBox.textSize ? "bb-box" : "outside" }
+      ? { known: true, value: textSize, at, by: textSize === own.setByAliaBox.textSize ? "alia-box" : "outside" }
       : { known: false, why: `simctl reads the text size as ${textSize || "nothing"}.` };
   }
 
   async setAppearance(to: Appearance, signal: AbortSignal): Promise<void> {
-    await this.#change({ setByBbBox: { ...this.#own().setByBbBox, appearance: to } });
+    await this.#change({ setByAliaBox: { ...this.#own().setByAliaBox, appearance: to } });
     await this.#options.simctl.ui(this.#device(), "appearance", to, signal);
     await this.read(signal);
     if (!this.#appearance.known || this.#appearance.value !== to) throw new DriverError("failed", `The appearance was set to ${to}, but the device reads ${this.#appearance.known ? this.#appearance.value : "nothing"}.`);
@@ -141,7 +141,7 @@ export class IosSettingsKeeper {
       await this.read(signal);
       target = nextContentSize(this.#textSize.known ? this.#textSize.value : IOS_DEFAULT_CONTENT_SIZE, to);
     } else target = to;
-    await this.#change({ setByBbBox: { ...this.#own().setByBbBox, textSize: target } });
+    await this.#change({ setByAliaBox: { ...this.#own().setByAliaBox, textSize: target } });
     await this.#options.simctl.ui(this.#device(), "content_size", target, signal);
     await this.read(signal);
     if (!this.#textSize.known || this.#textSize.value !== target) throw new DriverError("failed", `The text size was set to ${target}, but the device reads ${this.#textSize.known ? this.#textSize.value : "nothing"}.`);
@@ -178,7 +178,7 @@ export class IosSettingsKeeper {
     if (!this.#udid || !own.statusBar.set) return;
     const listed = overridesListed(await this.#options.simctl.statusBar(this.#udid, ["list"], signal).catch(() => "unread"));
     if (listed) return;
-    this.#options.log("settings: the device lists no status bar overrides, as after its reboot, so bb-box sets them again");
+    this.#options.log("settings: the device lists no status bar overrides, as after its reboot, so alia-box sets them again");
     await this.#applyStatusBar(own.statusBar.set, signal);
   }
 }

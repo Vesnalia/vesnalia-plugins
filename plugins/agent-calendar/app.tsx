@@ -4,12 +4,12 @@ import {
   definePluginApp,
   experimental_Icon as Icon,
   experimental_useCodeTheme,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginRpcResult } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcResult } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server.js";
 import {
   addDays,
@@ -182,7 +182,7 @@ function useProjectStyles(activity: Activity | null): Map<string, ProjectStyle> 
         id,
         name: names.get(id) ?? "Unknown project",
         color: slot === undefined ? OTHER_COLOR : PALETTE[mode][slot]!,
-        // Colored projects first, in slot order; the rest in bb's order.
+        // Colored projects first, in slot order; the rest in VesnALIA's order.
         order: slot ?? COLOR_SLOT_COUNT + (order.get(id) ?? activity.projects.length),
       });
     }
@@ -1077,7 +1077,7 @@ function viewRange(view: View, day: number): { from: number; to: number; days: n
 }
 
 function AgentCalendarPage() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const now = useNow(60_000);
   const [day, setDay] = useState(() => startOfDay(Date.now()));
   const [view, setView] = useState<View>(() =>
@@ -1233,7 +1233,7 @@ export default definePluginApp((app) => {
   app.slots.navPanel({
     id: "agent-calendar",
     title: "Agent Calendar",
-    // Declared in package.json under bb.branding.experimental_icons.
+    // Declared in package.json under alia.branding.experimental_icons.
     icon: "agent-calendar/calendar",
     path: "calendar",
     component: AgentCalendarPage,

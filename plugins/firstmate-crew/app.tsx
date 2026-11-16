@@ -1,4 +1,4 @@
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 
 import { CommandBridge, PANEL_ACTION_ID, askFirstMate, openFirstMate } from "./app/commands";
 import { SHIP_ICON } from "./app/icons";

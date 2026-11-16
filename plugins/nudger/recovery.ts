@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { BbPluginApi, PluginThreadEventPayloads } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginThreadEventPayloads } from "@vesnalia/plugin-sdk";
 import { CHECK_IN_MS, NUDGE_STREAK_LIMIT, SCHEDULED_REASON, type Continuation } from "./continuation.js";
 import { CANCEL_REASON, HELD_REASON, isKeyRejectedError, isNoCreditsError, NUDGE_STREAK_REASON, WITHHELD_REASON } from "./continuation-copy.js";
 import { RECOVERY_NUDGE, type FinalMessageClassifier, type RecoveryBlocker, type RecoveryCursor, type RecoveryInventoryProject, type RecoveryInventoryThread, type RecoveryNudgeDecision, type RecoveryRecord, type RecoveryService, type RecoveryStatus, type RecoveryThreadState, type RecoveryWait, type RecoveryWaitKind, type ThreadEventRow } from "./recovery-contract.js";
@@ -52,7 +52,7 @@ export class RecoveryEndTracker {
 }
 
 export interface RecoveryServiceOptions {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   /** Optional control conversations from public plugin discovery; an absent peer returns an empty list. */
   controlThreadIds(): Promise<readonly string[]>;
   detector: FinalMessageClassifier | null;
@@ -121,7 +121,7 @@ const PRUNE_INTERVAL_MS = 3_600_000;
 const MAX_NESTING = 32;
 
 export function createRecoveryService(options: RecoveryServiceOptions): RecoveryService {
-  const { bb } = options;
+  const { alia } = options;
   const tracker = new RecoveryEndTracker();
   const inventory = new Map<string, RecoveryInventoryThread>();
   const cursors = new Map<string, Cursor>();
@@ -165,7 +165,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
   let eventVersion = 0;
   let reconciliationTimer: NodeJS.Timeout | undefined;
   let prunedAt = -Infinity;
-  const kv = createKvWriter(bb.storage.kv);
+  const kv = createKvWriter(alia.storage.kv);
 
   function gates(): string[] {
     return [...(!identitiesKnown ? ["owned-role-identities-unavailable"] : []), ...(!detector ? ["detector-not-selected"] : [])];
@@ -216,7 +216,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
     const record = latestRecords.get(threadId);
     if (record?.gate === undefined || record.outcome || at < record.observedAt || at - record.observedAt > OUTCOME_WINDOW_MS) return;
     record.outcome = { kind, at, nextRecordId: null, classification: null, action: null, reason };
-    void serial(() => persist(record)).catch(caught => bb.log.warn(`Recovery outcome persistence failed: ${String(caught)}`));
+    void serial(() => persist(record)).catch(caught => alia.log.warn(`Recovery outcome persistence failed: ${String(caught)}`));
   }
   /** Mirrors the thread's latest nudge onto the decision it was scheduled for; the operator cancelling it is that decision's outcome. */
   function noteNudge(threadId: string): void {
@@ -228,7 +228,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
     if (JSON.stringify(next) === JSON.stringify(record.nudge)) return;
     record.nudge = next;
     if (nudge.state === "cancelled" && operatorCancelled(nudge.cancelReason)) settleOutcome(threadId, "cancelled", Date.now(), nudge.cancelReason!);
-    void serial(() => persist(record)).catch(caught => bb.log.warn(`Recovery nudge persistence failed: ${String(caught)}`));
+    void serial(() => persist(record)).catch(caught => alia.log.warn(`Recovery nudge persistence failed: ${String(caught)}`));
   }
   /** Decisions whose outcome window passed with nothing observed settle as "none"; runs inside `serial`. */
   async function settleExpiredOutcomes(now: number): Promise<void> {
@@ -259,15 +259,15 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
       for (const [nextId, previous] of predecessors) if (drop.has(previous.id)) predecessors.delete(nextId);
       for (const record of dropped) {
         await kv.delete(`${RECORD_KEY}${record.id}`);
-        if (record.text) await bb.storage.kv.delete(`${TEXT_KEY}${record.id}`);
+        if (record.text) await alia.storage.kv.delete(`${TEXT_KEY}${record.id}`);
       }
       for (const id of dropText) {
         const record = recordsById.get(id)!;
         delete record.text;
         await persist(record);
-        await bb.storage.kv.delete(`${TEXT_KEY}${id}`);
+        await alia.storage.kv.delete(`${TEXT_KEY}${id}`);
       }
-    } catch (caught) { bb.log.warn(`Recovery record pruning deferred: ${String(caught)}`); }
+    } catch (caught) { alia.log.warn(`Recovery record pruning deferred: ${String(caught)}`); }
   }
   /**
    * Cancels in-flight classification, recording `gate`/`reason` on its ending. Anything that cancels it,
@@ -292,7 +292,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
       }
     }
     if (canceled.length) {
-      void serial(async () => { for (const record of canceled) await persist(record); }).catch(caught => bb.log.warn(`Recovery cancellation persistence failed: ${String(caught)}`));
+      void serial(async () => { for (const record of canceled) await persist(record); }).catch(caught => alia.log.warn(`Recovery cancellation persistence failed: ${String(caught)}`));
       changed();
     }
   }
@@ -303,7 +303,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
     jobs.delete(job.record.id);
     if (job.record.action !== "observed") return;
     decide(job.record, "suppressed", gate, reason);
-    void serial(() => persist(job.record)).catch(caught => bb.log.warn(`Recovery cancellation persistence failed: ${String(caught)}`));
+    void serial(() => persist(job.record)).catch(caught => alia.log.warn(`Recovery cancellation persistence failed: ${String(caught)}`));
     changed();
   }
   function workWait(threadId: string): RecoveryWait | null {
@@ -358,7 +358,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
     if (record?.action !== "nudged" || nudge?.state !== "cancelled" || nudge.cancelReason !== CANCEL_REASON.maintenance
       || nudge.runId !== record.runId || nudge.messageId !== record.messageId || nudge.messageRevision !== record.messageRevision) return;
     decide(record, "suppressed", GATE.maintenance, HELD_REASON.maintenance);
-    void serial(() => persist(record)).catch(caught => bb.log.warn(`Recovery hold persistence failed: ${String(caught)}`));
+    void serial(() => persist(record)).catch(caught => alia.log.warn(`Recovery hold persistence failed: ${String(caught)}`));
     changed();
   }
   /** The root at the top of the chain a thread's work reports back up, as far as observed threads tell. */
@@ -414,7 +414,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
         settling.delete(root);
         await release(root);
         changed();
-      }).catch(caught => { if (!disposed) bb.log.warn(`Recovery wait release deferred: ${String(caught)}`); });
+      }).catch(caught => { if (!disposed) alia.log.warn(`Recovery wait release deferred: ${String(caught)}`); });
     }, Math.max(0, until - Date.now()));
     timer.unref?.();
     settleTimers.set(root, timer);
@@ -440,9 +440,9 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
     if (thread.visibility !== "visible") return "hidden";
     if (thread.parentThreadId !== null) return "child";
     if (!identitiesKnown) return "role identities unavailable";
-    if (ownedThreads.has(thread.id) || thread.originPluginId === bb.pluginId) return "orchestrator identity";
+    if (ownedThreads.has(thread.id) || thread.originPluginId === alia.pluginId) return "orchestrator identity";
     try {
-      const metadata = await bb.sdk.threads.getPluginMetadata({ threadId: thread.id });
+      const metadata = await alia.sdk.threads.getPluginMetadata({ threadId: thread.id });
       if (metadata.role === "orchestrator" || metadata.role === "slapper" || metadata.role === "control") return `own ${metadata.role} role`;
     } catch { return "role metadata unreadable"; }
     return null;
@@ -465,8 +465,8 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
       options.continuation?.cancel(row.threadId, CANCEL_REASON.stop);
       if (!stoppedThreads.has(row.threadId)) {
         stoppedThreads.add(row.threadId);
-        void serial(() => bb.storage.kv.set(`recovery.stopped.${row.threadId}`, true))
-          .catch(caught => bb.log.warn(`Recovery Stop persistence failed: ${String(caught)}`));
+        void serial(() => alia.storage.kv.set(`recovery.stopped.${row.threadId}`, true))
+          .catch(caught => alia.log.warn(`Recovery Stop persistence failed: ${String(caught)}`));
       }
       settleOutcome(row.threadId, "stopped", row.createdAt, CANCEL_REASON.stop);
       cancelClassifications(GATE.stop, "Observed manual Stop; waits for your next message to re-arm", row.threadId);
@@ -549,7 +549,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
             abandon(job, GATE.stale, "The observed root ending is no longer current for classification routing");
             return null;
           }
-          const thread = remember(await bb.sdk.threads.get({ threadId: record.threadId }));
+          const thread = remember(await alia.sdk.threads.get({ threadId: record.threadId }));
           validatedVersion = latestThreads.get(thread.id)?.version ?? 0;
           await observe(thread);
           if (!currentEnding(job) || (latestThreads.get(thread.id)?.version ?? 0) !== validatedVersion) {
@@ -620,7 +620,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
       } finally {
         if (jobs.get(record.id) === job) jobs.delete(record.id);
       }
-    })().catch(caught => { if (!disposed) bb.log.warn(`Recovery classification persistence failed: ${String(caught)}`); });
+    })().catch(caught => { if (!disposed) alia.log.warn(`Recovery classification persistence failed: ${String(caught)}`); });
   }
   async function recordEnding(thread: ObservedThread, ending: RecoveryObservation, window: ClassificationWindow, ready?: Promise<void>): Promise<void> {
     if (!ending.runId || !ending.finalMessage) return;
@@ -642,7 +642,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
       gate: held ? HELD_GATE[held]! : canClassify ? GATE.pending : unclassifiedGate, text: ref };
     const previous = latestRecords.get(thread.id);
     addRecord(record);
-    await bb.storage.kv.set(`${TEXT_KEY}${id}`, text);
+    await alia.storage.kv.set(`${TEXT_KEY}${id}`, text);
     await persist(record);
     if (previous?.gate !== undefined && !previous.outcome) {
       // The next ending is the previous decision's outcome only inside its window.
@@ -666,13 +666,13 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
   // inventory; past the bound the run is honestly reported as not followable.
   const MAX_BASELINE_PAGES = 50;
   async function readBaseline(thread: ObservedThread): Promise<ThreadEventRow[]> {
-    const head = await bb.sdk.threads.events.list({ threadId: thread.id, order: "desc", limit: "1", types: historyTypes });
+    const head = await alia.sdk.threads.events.list({ threadId: thread.id, order: "desc", limit: "1", types: historyTypes });
     if (!hasActiveExecutionSignal(thread) || head.length === 0 || disposed) return head;
     const headSeq = head[0]!.seq;
     let rootSeq: number | null = null;
     let beforeSeq = String(headSeq + 1);
     for (let page = 0; page < MAX_BASELINE_PAGES && rootSeq === null && !disposed; page++) {
-      const starts = await bb.sdk.threads.events.list({ threadId: thread.id, beforeSeq, order: "desc", limit: "100", types: ["turn/started"] });
+      const starts = await alia.sdk.threads.events.list({ threadId: thread.id, beforeSeq, order: "desc", limit: "100", types: ["turn/started"] });
       const root = starts.find(row => row.type === "turn/started" && row.scope.kind === "turn" && !row.data.parentToolCallId);
       if (root) rootSeq = root.seq;
       if (starts.length < 100) break;
@@ -680,11 +680,11 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
     }
     if (rootSeq === null || disposed) return [];
     // A `/compact` request right before the root start makes that root a maintenance turn, not the run.
-    const [before] = await bb.sdk.threads.events.list({ threadId: thread.id, beforeSeq: String(rootSeq), order: "desc", limit: "1", types: ["client/turn/requested", "turn/started"] });
+    const [before] = await alia.sdk.threads.events.list({ threadId: thread.id, beforeSeq: String(rootSeq), order: "desc", limit: "1", types: ["client/turn/requested", "turn/started"] });
     const rows: ThreadEventRow[] = before?.type === "client/turn/requested" ? [before] : [];
     let afterSeq = String(rootSeq - 1);
     for (let page = 0; page < MAX_BASELINE_PAGES && !disposed; page++) {
-      const batch = await bb.sdk.threads.events.list({ threadId: thread.id, afterSeq, order: "asc", limit: "100", types: historyTypes });
+      const batch = await alia.sdk.threads.events.list({ threadId: thread.id, afterSeq, order: "asc", limit: "100", types: historyTypes });
       for (const row of batch) if (row.seq <= headSeq) rows.push(row);
       if (batch.length < 100 || batch[batch.length - 1]!.seq >= headSeq) return rows.reverse();
       afterSeq = String(batch[batch.length - 1]!.seq);
@@ -755,7 +755,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
     const rows: ThreadEventRow[] = [];
     let afterSeq = cursor.seq;
     for (let page = 0; page < 4; page++) {
-      const batch = await bb.sdk.threads.events.list({ threadId: thread.id, afterSeq: String(afterSeq), order: "asc", limit: "100", types: historyTypes });
+      const batch = await alia.sdk.threads.events.list({ threadId: thread.id, afterSeq: String(afterSeq), order: "asc", limit: "100", types: historyTypes });
       if (disposed) return;
       rows.push(...batch);
       if (batch.length < 100) break;
@@ -803,10 +803,10 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
       roleError = caught instanceof Error ? caught.message : String(caught);
     }
     try {
-      projects = (await bb.sdk.projects.list({ includePersonal: true })).map(project => ({ id: project.id, name: project.name }));
+      projects = (await alia.sdk.projects.list({ includePersonal: true })).map(project => ({ id: project.id, name: project.name }));
       const seen = new Set<string>();
       for (let offset = 0; !disposed; ) {
-        const page = await bb.sdk.threads.list({ archived: false, includeHidden: true, limit: 100, offset });
+        const page = await alia.sdk.threads.list({ archived: false, includeHidden: true, limit: 100, offset });
         for (const thread of page) {
           seen.add(thread.id);
           const committed = remember(thread);
@@ -820,11 +820,11 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
       // Offset pages are not an atomic inventory snapshot. Confirm missing rows
       // individually instead of erasing chats activated while the scan ran.
       for (const id of inventory.keys()) if (!seen.has(id) && !disposed) {
-        try { await observe(remember(await bb.sdk.threads.get({ threadId: id })), window); }
+        try { await observe(remember(await alia.sdk.threads.get({ threadId: id })), window); }
         catch (caught) {
           // Work that can no longer be read is no longer running for its root.
           workStopped(id);
-          bb.log.warn(`Recovery inventory confirmation deferred for ${id}: ${String(caught)}`);
+          alia.log.warn(`Recovery inventory confirmation deferred for ${id}: ${String(caught)}`);
         }
       }
       if (!disposed) { lastObservedAt = Date.now(); error = roleError; changed(); }
@@ -840,7 +840,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
       reconciliationTimer = undefined;
       const window = { epoch: classificationEpoch, paused };
       void serial(async () => { if (!disposed) await refreshInventory(window); })
-        .catch(caught => { if (!disposed) bb.log.warn(`Recovery reconciliation deferred: ${String(caught)}`); })
+        .catch(caught => { if (!disposed) alia.log.warn(`Recovery reconciliation deferred: ${String(caught)}`); })
         .finally(scheduleReconciliation);
     }, 30_000);
     reconciliationTimer.unref?.();
@@ -860,7 +860,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
           const known = cursors.get(thread.id);
           if (activeWake && hasActiveExecutionSignal(committed) && identitiesKnown && !known?.runId && !known?.maintenance && !liveBaselines.has(thread.id)) {
             const rows = exclusion(committed).then(excluded => excluded || disposed ? null : readBaseline(committed))
-              .catch(caught => { bb.log.warn(`Recovery live baseline deferred: ${String(caught)}`); return null; });
+              .catch(caught => { alia.log.warn(`Recovery live baseline deferred: ${String(caught)}`); return null; });
             liveBaselines.set(thread.id, { thread: committed, rows, window });
           }
           return serial(async () => {
@@ -870,31 +870,31 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
               cancelClassifications(GATE.observationFailed, "Thread observation failed before classification routing", thread.id);
               tracker.forget(thread.id); cursors.delete(thread.id);
               error = caught instanceof Error ? caught.message : String(caught);
-              bb.log.warn(`Recovery observation failed: ${error}`); changed();
+              alia.log.warn(`Recovery observation failed: ${error}`); changed();
             }
           });
         };
-        bb.events.on("thread.active", payload => handler(payload, true)); bb.events.on("thread.idle", handler); bb.events.on("thread.failed", handler);
+        alia.events.on("thread.active", payload => handler(payload, true)); alia.events.on("thread.idle", handler); alia.events.on("thread.failed", handler);
         // There is no public thread.updated event. This is the debounced history
         // announcement; periodic inventory reconciliation covers other updates.
-        bb.events.on("experimental_thread.events", handler); bb.events.on("thread.created", handler); bb.events.on("thread.unarchived", handler);
-        bb.events.on("thread.archived", handler); bb.events.on("thread.deleted", handler);
+        alia.events.on("experimental_thread.events", handler); alia.events.on("thread.created", handler); alia.events.on("thread.unarchived", handler);
+        alia.events.on("thread.archived", handler); alia.events.on("thread.deleted", handler);
       }
-      const storedPaused = z.boolean().optional().parse(await bb.storage.kv.get("recovery.paused"));
+      const storedPaused = z.boolean().optional().parse(await alia.storage.kv.get("recovery.paused"));
       kv.remember("recovery.paused", storedPaused);
-      paused = storedPaused ?? z.boolean().optional().parse(await retainedValue(bb.storage.kv, "recovery.paused")) ?? false;
-      for (const key of await retainedKeys(bb.storage.kv, "recovery.stopped.")) {
-        if (z.boolean().optional().parse(await retainedValue(bb.storage.kv, key))) stoppedThreads.add(key.slice("recovery.stopped.".length));
+      paused = storedPaused ?? z.boolean().optional().parse(await retainedValue(alia.storage.kv, "recovery.paused")) ?? false;
+      for (const key of await retainedKeys(alia.storage.kv, "recovery.stopped.")) {
+        if (z.boolean().optional().parse(await retainedValue(alia.storage.kv, key))) stoppedThreads.add(key.slice("recovery.stopped.".length));
       }
-      for (const key of await retainedKeys(bb.storage.kv, "recovery.rearmed.")) {
-        const at = z.number().optional().parse(await retainedValue(bb.storage.kv, key));
+      for (const key of await retainedKeys(alia.storage.kv, "recovery.rearmed.")) {
+        const at = z.number().optional().parse(await retainedValue(alia.storage.kv, key));
         if (at !== undefined) rearmedAt.set(key.slice("recovery.rearmed.".length), at);
       }
-      for (const key of await retainedKeys(bb.storage.kv, RECORD_KEY)) {
+      for (const key of await retainedKeys(alia.storage.kv, RECORD_KEY)) {
         // The own row shadows the immutable imported one; the writer learns which of them storage holds.
-        const own = await bb.storage.kv.get(key);
+        const own = await alia.storage.kv.get(key);
         kv.remember(key, own);
-        const record = recordSchema.parse(own ?? await bb.storage.kv.get(`${LEGACY_DATA_PREFIX}${key}`));
+        const record = recordSchema.parse(own ?? await alia.storage.kv.get(`${LEGACY_DATA_PREFIX}${key}`));
         if (recordsById.has(record.id)) continue;
         // Persisted historical observations are never sent back to a detector, including endings a prior process held.
         if (record.action === "observed" || (record.action === "suppressed" && HELD[record.reason] === true)) {
@@ -926,7 +926,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
       let bytes = 2;
       for (const record of eligible) {
         if (decisions.length === 200) break;
-        const text = record.text ? decodeText(await bb.storage.kv.get(`${TEXT_KEY}${record.id}`)) : null;
+        const text = record.text ? decodeText(await alia.storage.kv.get(`${TEXT_KEY}${record.id}`)) : null;
         const decision = toDecision(record, text);
         const size = Buffer.byteLength(JSON.stringify(decision)) + 1;
         if (decisions.length && bytes + size > PAGE_BYTES) break;
@@ -940,7 +940,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
         if (!record) return null;
         if (label) record.label = label; else delete record.label;
         await persist(record);
-        return toDecision(record, record.text ? decodeText(await bb.storage.kv.get(`${TEXT_KEY}${record.id}`)) : null);
+        return toDecision(record, record.text ? decodeText(await alia.storage.kv.get(`${TEXT_KEY}${record.id}`)) : null);
       });
     },
     noteNudge,
@@ -975,7 +975,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
       return serial(async () => {
         if (disposed || !initialized) return false;
         if ((await options.controlThreadIds()).includes(blocker.threadId) || disposed) return false;
-        const thread = remember(await bb.sdk.threads.get({ threadId: blocker.threadId }));
+        const thread = remember(await alia.sdk.threads.get({ threadId: blocker.threadId }));
         await observe(thread);
         const cursor = cursors.get(blocker.threadId);
         const latest = latestRecords.get(blocker.threadId);
@@ -986,7 +986,7 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
           && cursor.finalMessage.revision === blocker.messageRevision;
         // An idle thread's startup baseline holds no final message: confirm from native history that the
         // newest root run is still the obstacle's run, completed successfully, and ended on that exact message.
-        const rows = await bb.sdk.threads.events.list({ threadId: blocker.threadId, order: "desc", limit: "64", types: ["turn/started", "turn/completed", "item/completed"] });
+        const rows = await alia.sdk.threads.events.list({ threadId: blocker.threadId, order: "desc", limit: "64", types: ["turn/started", "turn/completed", "item/completed"] });
         const root = rows.find(row => row.type === "turn/started" && row.scope.kind === "turn" && !row.data.parentToolCallId);
         if (disposed || root?.scope.kind !== "turn" || root.scope.turnId !== blocker.runId) return false;
         const completion = rows.find(row => row.type === "turn/completed" && row.scope.kind === "turn" && row.scope.turnId === blocker.runId);
@@ -1004,8 +1004,8 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
       if (cursor) cursor.knownStop = false;
       const listed = inventory.get(threadId);
       if (listed?.exclusion?.startsWith("Observed manual Stop")) listed.exclusion = null;
-      void serial(async () => { await bb.storage.kv.set(`recovery.stopped.${threadId}`, false); await bb.storage.kv.set(`recovery.rearmed.${threadId}`, at); })
-        .catch(caught => bb.log.warn(`Recovery re-arm persistence failed: ${String(caught)}`));
+      void serial(async () => { await alia.storage.kv.set(`recovery.stopped.${threadId}`, false); await alia.storage.kv.set(`recovery.rearmed.${threadId}`, at); })
+        .catch(caught => alia.log.warn(`Recovery re-arm persistence failed: ${String(caught)}`));
       changed();
     },
     configure(nextDetector) {
@@ -1034,6 +1034,6 @@ export function createRecoveryService(options: RecoveryServiceOptions): Recovery
       tracker.reconcile([]);
     },
   };
-  bb.onDispose(() => service.dispose());
+  alia.onDispose(() => service.dispose());
   return service;
 }

@@ -1,9 +1,9 @@
 /**
  * The versions a standard Linux image is built with (049): the latest
- * stable release of the tools that change often and that bb-box does not
+ * stable release of the tools that change often and that alia-box does not
  * depend on, Claude Code, Codex, pi, gh and Chrome, each with the SHA-256
  * its upstream publishes, and the day's apt snapshot. Everything else stays
- * as setup/proxmox-lxc/template pins it, and changes with bb-box releases.
+ * as setup/proxmox-lxc/template pins it, and changes with alia-box releases.
  * A tool keeps its pin when its upstream cannot be read, or has nothing
  * newer, so a build never takes a version older than the pin.
  *
@@ -182,7 +182,7 @@ class Upstream {
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const timeout = AbortSignal.timeout(30_000);
-        const response = await this.#fetch(url, { headers: { "User-Agent": "bb-box", ...headers }, signal: this.#signal ? AbortSignal.any([this.#signal, timeout]) : timeout });
+        const response = await this.#fetch(url, { headers: { "User-Agent": "alia-box", ...headers }, signal: this.#signal ? AbortSignal.any([this.#signal, timeout]) : timeout });
         if (!response.ok) throw new Error(`${url} answered HTTP ${response.status}`);
         return bytes ? new Uint8Array(await response.arrayBuffer()) : response.text();
       } catch (error) {
@@ -363,7 +363,7 @@ export async function resolveVersions(
   const today = `${resolvedAt.slice(0, 10).replaceAll("-", "")}T000000Z`;
   const aptSnapshot = today > snapshot ? today : snapshot;
   // The repository's pins' SHA-256, which the image's record keeps (image-record.sh), so that an
-  // image built from them with newer versions counts as built with this bb-box's pins.
+  // image built from them with newer versions counts as built with this alia-box's pins.
   const [linux, desktop, android] = await Promise.all([pinsDigest(setup, "linux"), pinsDigest(setup, "linux-desktop"), pinsDigest(setup, "android")]);
   const resolvedPins = { ...pins, resolvedAt, aptSnapshot, pinned: { linux, "linux-desktop": desktop, android }, tools: resolvedTools };
   const order = (tool: ToolVersion) => [FOLLOWED.indexOf(tool.name as (typeof FOLLOWED)[number]), tool.arch === "x86_64" ? 0 : 1];

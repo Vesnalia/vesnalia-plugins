@@ -12,7 +12,7 @@ export default async (page) => {
   bbq("plugin", "config", "sticky-prompt", "set", "includeOtherSenders", "true");
   await page.waitForTimeout(2500);
   let b = await bar(page);
-  check("S17 with the setting on, the agent message is pinned", b.visible && b.text?.startsWith("[bb message from thread:"), b.text);
+  check("S17 with the setting on, the agent message is pinned", b.visible && b.text?.startsWith("[VesnALIA message from thread:"), b.text);
   bbq("plugin", "config", "sticky-prompt", "set", "includeOtherSenders", "false");
   await page.waitForTimeout(2500);
   b = await bar(page);

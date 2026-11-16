@@ -4,7 +4,7 @@
  * (`frontend-imports.test.ts` checks it).
  */
 
-/** Reasoning levels accepted when starting a bb thread (`reasoningLevel`). */
+/** Reasoning levels accepted when starting a VesnALIA thread (`reasoningLevel`). */
 export const EFFORTS = ["none", "low", "medium", "high", "xhigh", "max", "ultra", "ultracode"] as const;
 
 /** Titles of the agent-model rows: in the «Agent models» form and in the checks' messages. */

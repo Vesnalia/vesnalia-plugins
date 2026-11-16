@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const periodSchema = z.enum(["today", "7d", "30d"]);
@@ -68,7 +68,7 @@ export const syncSchema = z.object({
     }),
     failure,
   ]),
-  bb: z.union([
+  alia: z.union([
     z.object({ ok: z.literal(true), added: z.number(), removed: z.number(), total: z.number(), changed: z.boolean() }),
     failure,
   ]),

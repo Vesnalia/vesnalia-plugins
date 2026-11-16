@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { UrlLink, type ExperimentalMessageMetadataProps } from "@get-bb/plugin-sdk/app";
+import { UrlLink, type ExperimentalMessageMetadataProps } from "@vesnalia/plugin-sdk/app";
 import { messageOf, useShuttleQuery } from "../data";
 import { linkKey, parseGitLink } from "../../links";
 import { rememberPanelReference } from "../prefs";

@@ -1,5 +1,5 @@
 import { memo, type ReactNode } from "react";
-import { experimental_Icon as Icon, type PluginSidebarProject } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, type PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
 import type { DragController } from "./use-drag";
 import type { GroupKey, HueId, SortMode } from "./layout";
 import type { SectionColour } from "./settings";

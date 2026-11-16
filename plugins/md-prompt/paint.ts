@@ -1,4 +1,4 @@
-import type { ComposerRichTextSpec } from '@get-bb/plugin-sdk/app';
+import type { ComposerRichTextSpec } from '@vesnalia/plugin-sdk/app';
 import { decorateMarkdown, MAX_CHARS, PALETTE, type Decoration } from './vendor/md-prompt/mdprompt';
 
 type Range = { from: number; to: number };

@@ -5,7 +5,7 @@ import { SLICE } from "./relay.js";
 /** The host half's three methods, as the server half calls them (contract.ts). */
 export type HostCall = (method: "run" | "stdinPart" | "outputPart", input: Record<string, unknown>, options: { hostId: string; timeoutMs: number; signal?: AbortSignal }) => Promise<any>;
 
-/** How much longer than the process a host call may take before bb gives up on it. */
+/** How much longer than the process a host call may take before VesnALIA gives up on it. */
 export const HOST_CALL_SLACK_MS = 5_000;
 
 const failed = (error: unknown): RunResult => ({ exitCode: null, stdout: "", stderr: "", timedOut: false, spawnError: `host call failed: ${error instanceof Error ? error.message : String(error)}`, overflowed: false });
@@ -13,7 +13,7 @@ const failed = (error: unknown): RunResult => ({ exitCode: null, stdout: "", std
 const STOPPED: RunResult = { exitCode: null, stdout: "", stderr: "", timedOut: true, spawnError: null, overflowed: false };
 
 /**
- * The Runner in bb: one CLI run is one host call, but a standard input or an
+ * The Runner in VesnALIA: one CLI run is one host call, but a standard input or an
  * answer larger than one host call carries (8 MiB, HOST_FACTS §12) crosses in
  * slices through the host half's relay (D32).
  */
@@ -22,7 +22,7 @@ export function createHostRunner(call: HostCall, synsPath: () => Promise<string 
     async run({ hostId, cwd, within, scope, args, env, stdin, stdinBase64, timeoutMs, signal }: RunRequest): Promise<RunResult> {
       const path = await synsPath();
       if (signal?.aborted) return STOPPED;
-      // The call's signal reaches the host half: bb aborts the host call, and its context's signal stops the process.
+      // The call's signal reaches the host half: VesnALIA aborts the host call, and its context's signal stops the process.
       const options = { hostId, timeoutMs: timeoutMs + HOST_CALL_SLACK_MS, ...(signal ? { signal } : {}) };
       try {
         const input: Record<string, unknown> = { cwd, args, timeoutMs, ...(within ? { within } : {}), ...(scope ? { scope } : {}), ...(env ? { env } : {}), ...(path ? { synsPath: path } : {}) };

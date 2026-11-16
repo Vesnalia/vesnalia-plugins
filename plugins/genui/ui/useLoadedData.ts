@@ -5,7 +5,7 @@
 // address-checked proxy (web/lookups.ts), so every surface shows them the
 // same way whatever its CSP, and the webLookups setting governs them.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { collectLoads, dataKey, type DataRequest, type LoadedData, type Program } from "../core";
 import type { rpcContract } from "../server";
 import { persistedStore } from "./reservedHeight";
@@ -51,7 +51,7 @@ function useLoaders(scope: FileScope): Loaders {
 }
 
 /**
- * Files already read in this page, by scope and request: a block BB's
+ * Files already read in this page, by scope and request: a block VesnALIA's
  * timeline remounts as the user scrolls back renders with them at once,
  * instead of showing loading placeholders and growing under the reader. Failures are
  * not kept, so a file written later still loads; a reload reads afresh.
@@ -111,7 +111,7 @@ export function useLoadedData(scope: FileScope, program: Program | null): Readon
 
 /**
  * Images already read in this page, by block and src, as the data URLs the
- * backend returned: a block BB's timeline remounts (scrolled back to, or its
+ * backend returned: a block VesnALIA's timeline remounts (scrolled back to, or its
  * thread opened again) shows them on its first frame instead of a
  * placeholder that grows when they arrive, and tabs and re-renders don't
  * refetch them. Per block, so a later reply showing a file rewritten at the
@@ -135,7 +135,7 @@ function trimImages(): void {
 }
 
 /** Natural sizes pictures decoded at, by block and src, kept across pages (reservedHeight.ts). */
-const imageSizes = persistedStore("bb.genui.image-sizes", 1000);
+const imageSizes = persistedStore("alia.genui.image-sizes", 1000);
 
 /**
  * Reads images (thread or gallery files, https URLs) as data URLs, once per
@@ -202,7 +202,7 @@ export function useImageLoader(scope: FileScope, block: string | null = null): I
 
 /**
  * Recordings already read in this page, as blob URLs (cheaper for an <audio>
- * to seek than a data URL), by scope and path, so a Transcript BB remounts
+ * to seek than a data URL), by scope and path, so a Transcript VesnALIA remounts
  * while the user scrolls plays at once. A few at most: they are large.
  */
 const AUDIO = new Map<string, Promise<ImageUrl>>();
@@ -240,7 +240,7 @@ export function useAudioLoader(scope: FileScope): (src: string) => Promise<Image
   );
 }
 
-/** data:<type>;base64,<bytes>, decoded here rather than fetched: BB's CSP may refuse data: fetches. */
+/** data:<type>;base64,<bytes>, decoded here rather than fetched: VesnALIA's CSP may refuse data: fetches. */
 function decodeDataUrl(dataUrl: string): { bytes: ArrayBuffer; type: string } {
   const comma = dataUrl.indexOf(",");
   const type = dataUrl.slice(5, dataUrl.indexOf(";"));

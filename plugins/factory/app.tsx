@@ -1,4 +1,4 @@
-// bb-plugin-factory frontend: the Factory page in the left navigation rail.
+// alia-plugin-factory frontend: the Factory page in the left navigation rail.
 //
 // One page per factory (/plugins/factory/factory/<PREFIX>): the agents strip
 // on top, with live status from the host's own thread cache, and the board
@@ -13,11 +13,11 @@ import {
   experimental_ThreadStatusGlyph as ThreadStatusGlyph,
   experimental_useProviders,
   experimental_useSidebarThreads,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
-import type { ExperimentalProviderModelPickerValue, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { ExperimentalProviderModelPickerValue, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type {
   Agent,
   AgentExec,
@@ -127,7 +127,7 @@ function latestChecks(pr: PrSummary) {
 }
 
 function PrChips({ pr }: { pr: PrSummary }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const state = pr.state === "merged" ? "merged" : pr.state === "closed" ? "closed" : pr.isDraft ? "draft" : "ready";
   return (
     <div className="flex flex-wrap items-center gap-1 text-[10px]">
@@ -245,7 +245,7 @@ function useDoctor(prefix: string) {
 // ---------- Page ----------
 
 function FactoryPage({ subPath }: { subPath: string }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const rpc = useRpc<typeof rpcContract>();
   const { factories: all, error, refetch } = useFactories();
   const [creating, setCreating] = useState(false);
@@ -479,7 +479,7 @@ function DeleteFactoryDialog({
               <DialogTitle>Delete {factory.name}?</DialogTitle>
               <DialogDescription>
                 This removes the factory {factory.prefix} for good; it can't be restored. To keep it for later, archive
-                it instead. The bb project {factory.bbProjectName} and its files are not touched.
+                it instead. The VesnALIA project {factory.aliaProjectName} and its files are not touched.
               </DialogDescription>
             </DialogHeader>
             <label className="flex items-start gap-2 text-sm">
@@ -620,7 +620,7 @@ function AgentsStrip({
 }
 
 const AgentCard = memo(function AgentCard({ entry }: { entry: LiveAgent }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { agent, thread } = entry;
   const state = agentState(thread);
   return (
@@ -672,7 +672,7 @@ function StartLead({
   onStarted: () => void;
 }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [goal, setGoal] = useState("");
   const [projectMode, setProjectMode] = useState<ProjectMode>(factory.projectMode ?? "auto");
   const missingAnySpec =
@@ -729,8 +729,8 @@ function StartLead({
       </div>
       <p className="text-xs text-muted-foreground">
         {effectiveMode === "greenfield"
-          ? `Greenfield mode: the Lead will help you lock the project Constitution, PRD, Architecture, and Milestone 1 tasks in ${factory.bbProjectName} before spawning Builders.`
-          : `Brownfield mode: the Lead will audit existing docs and board state in ${factory.bbProjectName}, align agents on the Constitution, and report where we are at and the next step.`}
+          ? `Greenfield mode: the Lead will help you lock the project Constitution, PRD, Architecture, and Milestone 1 tasks in ${factory.aliaProjectName} before spawning Builders.`
+          : `Brownfield mode: the Lead will audit existing docs and board state in ${factory.aliaProjectName}, align agents on the Constitution, and report where we are at and the next step.`}
       </p>
       <div className="grid gap-2 sm:grid-cols-[13rem_1fr]">
         <label className="block space-y-1 text-xs">
@@ -1334,7 +1334,7 @@ function TaskDialog({
   onClose: () => void;
 }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [detail, setDetail] = useState<{ description: string; comments: TaskComment[] } | null>(null);
   const [instructions, setInstructions] = useState("");
   const [pending, setPending] = useState<AssignableRoleId | null>(null);
@@ -1602,7 +1602,7 @@ function CreateFactory({
     setInspected(null);
     if (projectId === "") return;
     let cancelled = false;
-    rpc.call("project_inspect", { bbProjectId: projectId }).then(
+    rpc.call("project_inspect", { aliaProjectId: projectId }).then(
       (result) => {
         if (!cancelled) setInspected(result);
       },
@@ -1623,7 +1623,7 @@ function CreateFactory({
     setError(null);
     try {
       const created = await rpc.call("factory_create", {
-        bbProjectId: project.id,
+        aliaProjectId: project.id,
         prefix: prefix.trim().toUpperCase(),
         name: name.trim() || project.name,
         projectMode,
@@ -1760,7 +1760,7 @@ function CreateFactory({
 
 type AgentRow = AgentsView["agents"][number];
 
-/** Plugin settings section: one line per agent with bb's provider, model and reasoning picker. */
+/** Plugin settings section: one line per agent with VesnALIA's provider, model and reasoning picker. */
 function AgentsSettings() {
   const rpc = useRpc<typeof rpcContract>();
   const [view, setView] = useState<AgentsView | null>(null);

@@ -108,7 +108,7 @@ export function slugify(title: string): string {
 /** Id of this plugin. */
 export const SELF_ID = "plugin-workshop";
 /**
- * Folder of the plugins' working copies (`<root>/bb-plugin-<id>`; the working copy of a plugin is `pluginDir(id)`): setting
+ * Folder of the plugins' working copies (`<root>/alia-plugin-<id>`; the working copy of a plugin is `pluginDir(id)`): setting
  * `pluginsRoot`, default `~/plugins`. Set once at plugin startup (`setPluginsRoot`, the default — from `os.homedir()` in wiring); a
  * change takes effect after a plugin restart, with no open works. Until then — `$HOME/plugins` (the interface never uses it).
  */
@@ -116,7 +116,7 @@ export let PLUGINS_ROOT = `${(typeof process !== "undefined" ? (process.env.HOME
 export function setPluginsRoot(p: string): void {
   PLUGINS_ROOT = p.replace(/\/+$/, "");
 }
-export const pluginDir = (id: string) => `${PLUGINS_ROOT}/bb-plugin-${id}`;
+export const pluginDir = (id: string) => `${PLUGINS_ROOT}/alia-plugin-${id}`;
 
 /** The work's documents live in the plugin repository, in the work branch: they stay in the history next to the code. */
 export const docsDir = (key: string) => `docs/workshop/${key}`;

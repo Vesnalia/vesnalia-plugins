@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.js";
 import { TRACE_CHANNEL, TRACE_EVENT_TYPES } from "./trace.js";
 
@@ -169,7 +169,7 @@ describe("Agent Traces server", () => {
     const world = createWorld();
     seedTurn(world, "t1", 2);
     seedTurn(world, "t2", 60, 100);
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
 
     const overview = await world.call("trace", { threadId: "thr_a" });
     expect(overview).toMatchObject({ title: "Thread thr_a", projectId: "proj_1", focus: null });
@@ -193,7 +193,7 @@ describe("Agent Traces server", () => {
   it("pages through history once, filtered to trace events, then reads only what is new", async () => {
     const world = createWorld();
     seedTurn(world, "t1", 60);
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
 
     await world.call("trace", { threadId: "thr_a" });
     const firstReads = world.host.harness.sdk.callsTo("threads.events.list");
@@ -214,7 +214,7 @@ describe("Agent Traces server", () => {
   it("reads a span's output from the event that ended it", async () => {
     const world = createWorld();
     seedTurn(world, "t1", 2);
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
 
     const details = await world.call("span", { threadId: "thr_a", spanId: "t1-i1" });
     expect(details).toMatchObject({
@@ -233,7 +233,7 @@ describe("Agent Traces server", () => {
       title: "Fix the docs",
     });
     seedTurn(world, "c1", 2, 2.5, "thr_child");
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
 
     const focused = await world.call("trace", { threadId: "thr_a", turnId: "t1" });
     const child = focused.focus.spans.find(
@@ -263,7 +263,7 @@ describe("Agent Traces server", () => {
     seedTurn(world, "t1", 2);
     world.thread("thr_b");
     seedTurn(world, "u1", 1, 0, "thr_b");
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
 
     const thread = await world.call("commands", { threadId: "thr_a", scope: "thread" });
     expect(thread).toMatchObject({ scope: "thread", threads: 1 });
@@ -277,7 +277,7 @@ describe("Agent Traces server", () => {
   it("exports a turn as OTLP/JSON or an HTML snapshot", async () => {
     const world = createWorld();
     seedTurn(world, "t1", 2);
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
 
     const otlp = await world.call("exportTurn", {
       threadId: "thr_a",
@@ -303,7 +303,7 @@ describe("Agent Traces server", () => {
     seedTurn(world, "t1", 1);
     const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
 
     expect(await world.call("sendTurn", { threadId: "thr_a", turnId: "t1" })).toMatchObject({
       ok: false,
@@ -350,7 +350,7 @@ describe("Agent Traces server", () => {
   it("answers in the terminal and to agents", async () => {
     const world = createWorld();
     seedTurn(world, "t1", 2);
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
 
     const show = await world.host.harness.behavior.runCli(["show"], { threadId: "thr_a" } as never);
     expect(show.exitCode).toBe(0);
@@ -375,7 +375,7 @@ describe("Agent Traces server", () => {
     seedTurn(world, "t2", 1, 100);
     seedTurn(world, "u1", 3, 0, "thr_b");
     world.push("turn/started", "u2", {}, 300, "thr_b");
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
     const reads = () => world.host.harness.sdk.callsTo("threads.events.list");
     const both = [
       { threadId: "thr_a", version: "1" },
@@ -427,7 +427,7 @@ describe("Agent Traces server", () => {
   it("rereads history rewritten after any read, even one under way", async () => {
     const world = createWorld();
     seedTurn(world, "t1", 1);
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
     const afterSeqs = () =>
       world.host.harness.sdk
         .callsTo("threads.events.list")
@@ -451,7 +451,7 @@ describe("Agent Traces server", () => {
   it("picks up a renamed thread", async () => {
     const world = createWorld();
     seedTurn(world, "t1", 1);
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
     expect((await world.call("trace", { threadId: "thr_a" })).title).toBe("Thread thr_a");
     world.threads[0].title = "Fix the checkout";
     world.change({ id: "thr_a", changes: ["title-changed"] });
@@ -464,7 +464,7 @@ describe("Agent Traces server", () => {
     world.thread("thr_b");
     seedTurn(world, "t1", 2);
     seedTurn(world, "u1", 1, 0, "thr_b");
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
 
     const stats = await world.call("commands", { threadId: "thr_a", scope: "project" });
     expect(stats.threads).toBe(2);
@@ -483,7 +483,7 @@ describe("Agent Traces server", () => {
     vi.useFakeTimers();
     const world = createWorld();
     seedTurn(world, "t1", 1);
-    await plugin(world.host.bb);
+    await plugin(world.host.alia);
     await world.call("trace", { threadId: "thr_a" });
     const signals = () => world.host.harness.inspection.realtimeSignals;
 

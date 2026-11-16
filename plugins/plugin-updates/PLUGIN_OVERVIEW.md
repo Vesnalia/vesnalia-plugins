@@ -5,23 +5,23 @@
   be turned off.
 - A **Plugin Updates** page with compatible updates (one at a time, or
   Update all), newer releases outside a plugin's installed version range or
-  pin, releases blocked by bb version requirements, and collapsed lists of
+  pin, releases blocked by VesnALIA version requirements, and collapsed lists of
   ignored, up-to-date, and pinned plugins.
 - Ignore a version to hide it until a newer one ships.
 - Disabled plugins keep their updates listed with a Disabled tag, but don't
   count toward the badge or Update all, so you can decide whether to remove
   them instead.
-- A `bb plugin-updates` command with the same checks and actions for
+- A `alia plugin-updates` command with the same checks and actions for
   terminals and agents.
 
 ## How it works
 
-bb's own update check only offers releases inside each plugin's version
+VesnALIA's own update check only offers releases inside each plugin's version
 range, so a plugin installed at `^0.7.0` never hears about `0.9.0`. For
 plugins installed from git, this plugin also reads the repository's release
 tags with `git ls-remote` and lists newer releases outside the range or pin.
 
-Compatible updates use bb's own in-place update. A release outside the range
+Compatible updates use VesnALIA's own in-place update. A release outside the range
 can't be applied in place, so the plugin asks first, then removes the plugin
 and installs the new release, keeping the range or pin style it was
 installed with. Its settings are restored afterwards; its stored data and
@@ -31,13 +31,13 @@ run by hand instead. Confirmed updates run one at a time, in order, and keep
 going if you leave the page; a toast follows each one to the end. Updates
 started here never give a plugin both kinds at once: whichever was asked for
 second waits for the other. An out-of-range update gives up, changing nothing,
-if the other one hasn't finished after 10 minutes. An update started from bb
+if the other one hasn't finished after 10 minutes. An update started from VesnALIA
 itself while a reinstall is underway isn't held back.
 
-Checks run when bb starts and every 6 hours by default (1h, 6h, 24h, or
+Checks run when VesnALIA starts and every 6 hours by default (1h, 6h, 24h, or
 off).
 
 ## Requirements
 
-- `git` on the machine running bb.
+- `git` on the machine running VesnALIA.
 - Network access to each plugin's git host. Nothing else leaves the machine.

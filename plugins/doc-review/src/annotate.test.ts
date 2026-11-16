@@ -121,7 +121,7 @@ describe("export with comments", () => {
     expect(y1).toBeCloseTo(200 + 1.33, 0);
   });
 
-  it("carries the comments for Doc Review in another bb", async () => {
+  it("carries the comments for Doc Review in another VesnALIA", async () => {
     const { bytes } = await annotatePdf(await samplePdf(), [text, whole], options);
     const shared = readShared(await PDFDocument.load(bytes));
     expect(shared?.file).toEqual({ name: "deck.pptx", kind: "presentation", pages: 2 });

@@ -3,7 +3,7 @@ import {
   createFakePluginHost,
   makeMessageDispatchHookContext,
   makeHostResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin, { marker } from "../server";
 const cleanup: Array<() => Promise<void>> = [];
 afterEach(async () => {
@@ -73,14 +73,14 @@ async function setup(agentsIn: (cwd: string) => boolean = () => true) {
       if (method === "instructions") return "Profile instruction";
       return [
         {
-          name: "BB_CLAUDE_CODE_EXECUTABLE",
+          name: "ALIA_CLAUDE_CODE_EXECUTABLE",
           value: "/launcher",
           reason: "test",
         },
       ];
     },
   });
-  await plugin(fake.bb);
+  await plugin(fake.alia);
   cleanup.push(() => fake.harness.lifecycle.dispose());
   return {
     ...fake,
@@ -203,15 +203,15 @@ it("injects Codex instructions only into the bound thread and rehydrates them on
       projectId: "project_a",
     }),
   ).toBeNull();
-  expect(await f.bb.storage.kv.get("instructions:codex_thread")).toBe(
+  expect(await f.alia.storage.kv.get("instructions:codex_thread")).toBe(
     "Profile instruction",
   );
   const reloaded = createFakePluginHost({ pluginId: "cli-agents" });
-  await reloaded.bb.storage.kv.set(
+  await reloaded.alia.storage.kv.set(
     "instructions:codex_thread",
     "Profile instruction",
   );
-  await plugin(reloaded.bb);
+  await plugin(reloaded.alia);
   cleanup.push(() => reloaded.harness.lifecycle.dispose());
   expect(
     reloaded.harness.registrations.instructionProvider!({
@@ -231,8 +231,8 @@ it("proceeds without configuring anything when execution provider does not suppo
   ctx.requestedExecution.providerId = "acp-cursor";
   const hook = fake.harness.registrations.hooks["message.dispatch"]!;
   expect(await hook(ctx)).toEqual({ action: "proceed" });
-  expect(await fake.bb.storage.kv.get("thread:cursor_thread")).toBeUndefined();
-  expect(await fake.bb.storage.kv.get("env:cursor_thread")).toBeUndefined();
+  expect(await fake.alia.storage.kv.get("thread:cursor_thread")).toBeUndefined();
+  expect(await fake.alia.storage.kv.get("env:cursor_thread")).toBeUndefined();
 });
 
 it("proceeds without configuring anything when selection belongs to a different CLI provider", async () => {
@@ -246,9 +246,9 @@ it("proceeds without configuring anything when selection belongs to a different 
   ctx.requestedExecution.providerId = "codex";
   const hook = fake.harness.registrations.hooks["message.dispatch"]!;
   expect(await hook(ctx)).toEqual({ action: "proceed" });
-  expect(await fake.bb.storage.kv.get("thread:codex_thread")).toBeUndefined();
+  expect(await fake.alia.storage.kv.get("thread:codex_thread")).toBeUndefined();
   expect(
-    await fake.bb.storage.kv.get("instructions:codex_thread"),
+    await fake.alia.storage.kv.get("instructions:codex_thread"),
   ).toBeUndefined();
 });
 

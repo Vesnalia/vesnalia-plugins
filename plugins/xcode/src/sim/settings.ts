@@ -1,7 +1,7 @@
 /**
  * Settings: descriptors, and the one normalizer everything reads through.
  *
- * bb settings descriptors are `string | select | boolean | project`, so every
+ * VesnALIA settings descriptors are `string | select | boolean | project`, so every
  * numeric field arrives as a string and is parsed here — once, at load and
  * again in `onChange` — rather than at each of a dozen call sites that would
  * each get the clamping slightly different.
@@ -45,7 +45,7 @@ export const DEFAULTS: Settings = {
 };
 
 /**
- * The descriptor set handed to `bb.settings.define`.
+ * The descriptor set handed to `alia.settings.define`.
  *
  * Every non-secret has a default, so `get()` returns non-optional values and
  * nothing downstream has to handle `undefined`. There are no secrets: this
@@ -115,7 +115,7 @@ export const SETTINGS_DESCRIPTORS = {
     type: "boolean",
     label: "Send simulator images to agents",
     description:
-      "Registers model-facing simulator tools and permits their CLI equivalents. Captured frames are sent to your model provider; the bb panel remains available when this is off.",
+      "Registers model-facing simulator tools and permits their CLI equivalents. Captured frames are sent to your model provider; the VesnALIA panel remains available when this is off.",
     default: DEFAULTS.allowAgentCapture,
   },
   postChangedPreviews: {

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { IDS_KEY, idsToRegister, readCachedIds } from "../src/app/registered-ids";
 import { resetIconsStore, setIconsState } from "../src/app/store";
@@ -63,7 +63,7 @@ describe("provider marks", () => {
     expect(slot.container.innerHTML).toBe(original);
   });
 
-  it("draws a set icon tree with bb's className on the root svg", async () => {
+  it("draws a set icon tree with VesnALIA's className on the root svg", async () => {
     const slot = await renderMark("acp-alpha");
     act(() =>
       setIconsState({

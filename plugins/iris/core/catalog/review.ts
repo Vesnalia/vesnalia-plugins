@@ -47,7 +47,7 @@ Let people pick a palette from a live preview instead of a hand-built page.
 - Ship each as its own release
 
 ## Open
-Should the preview use the person's own bb theme?
+Should the preview use the person's own VesnALIA theme?
 </DocReview>
 <Submit label="Send review" />`,
     aliases: ["SpecReview", "PlanReview", "ReviewDoc"],
@@ -109,7 +109,7 @@ export const TERMINAL = [
     },
     children: "none",
     example: `<Card title="Dev servers" icon="server">
-<DevServers file="$BB_THREAD_STORAGE/servers.json" />
+<DevServers file="$ALIA_THREAD_STORAGE/servers.json" />
 </Card>`,
     aliases: ["Processes", "Ports", "ProcessList", "Servers"],
     heavy: true,

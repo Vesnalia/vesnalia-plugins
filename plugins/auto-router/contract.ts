@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { retainedSessionSchema } from "./dashboard.js";
 import { planSchema, routeSchema } from "./routing/router.js";
@@ -26,7 +26,7 @@ export const hostContract = defineRpcContract({
     input: z
       .object({
         configuration: classifierConfigSchema,
-        bbRoot: z.string().optional(),
+        aliaRoot: z.string().optional(),
         nativeProviderOptions: z.record(z.string(), z.unknown()).optional(),
         key: z.string().max(8192).nullable(),
         onePasswordReference: z.string().max(2048).default(""),
@@ -38,7 +38,7 @@ export const hostContract = defineRpcContract({
     input: z
       .object({
         candidate: classifierSetupInputSchema,
-        bbRoot: z.string().optional(),
+        aliaRoot: z.string().optional(),
         nativeProviderOptions: z.record(z.string(), z.unknown()).optional(),
         onePasswordReference: z.string().max(2048).default(""),
       })

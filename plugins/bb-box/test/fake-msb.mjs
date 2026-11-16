@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// A stand-in for bb-box's msb in tests, for the commands the microsandbox
+// A stand-in for alia-box's msb in tests, for the commands the microsandbox
 // backend runs. Its state is under $FAKE_MSB_ROOT:
 //
 // - host.json: switches: neverReady (a box never writes its ready file),
@@ -10,9 +10,9 @@
 //   home/ is the box user's home, run/ is /run, var-lib/ is /var/lib.
 //
 // `msb exec` runs the command on the test machine, in the box's home, with
-// /home/box, /run/bb-box/ and /var/lib/bb-box/ in its arguments made the
+// /home/box, /run/alia-box/ and /var/lib/alia-box/ in its arguments made the
 // box's own, through the command line $FAKE_GROUP holds, as the fake docker
-// does. Running bb-box-start writes the ready file, as the image's command
+// does. Running alia-box-start writes the ready file, as the image's command
 // does; neither create nor start runs it, as msb's do not. Every call is logged to log, one JSON array per line.
 import { spawn } from "node:child_process";
 import { appendFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
@@ -90,7 +90,7 @@ function create(rest) {
   if (!(image in images) && !image.startsWith("docker:")) fail(`image not found: ${image}`);
   rmSync(dir(name), { recursive: true, force: true });
   mkdirSync(join(dir(name), "home"), { recursive: true });
-  mkdirSync(join(dir(name), "run", "bb-box"), { recursive: true });
+  mkdirSync(join(dir(name), "run", "alia-box"), { recursive: true });
   const labels = { ...(images[image] ?? {}) };
   for (const label of many["--label"]) {
     const [key, ...value] = label.split("=");
@@ -140,7 +140,7 @@ function exec(rest) {
   const name = rest[i];
   const sandbox = found(name);
   // The helper that makes the Docker disks' template: the template appears in the folder it sees.
-  if (name.startsWith("bb-box-mkfs-")) {
+  if (name.startsWith("alia-box-mkfs-")) {
     const made = /\/work\/(docker-\d+G\.ext4)( |$)/.exec(rest.slice(i + 2).join(" "));
     const [source] = (sandbox.config.mountDir ?? "").split(":");
     if (made && source) {
@@ -151,7 +151,7 @@ function exec(rest) {
     return;
   }
   // A builder's commands, which need Docker and the network: logged, not run.
-  if (name.startsWith("bb-box-builder-")) {
+  if (name.startsWith("alia-box-builder-")) {
     appendFileSync(join(root, "builder"), `${rest.slice(i + 2).join(" ")}\n`);
     const command = rest.join(" ");
     const answer = async () => {
@@ -178,15 +178,15 @@ function exec(rest) {
     if (sandbox.config.labels["fake.cached"]) process.stdout.write(`reclaimed_kib=${sandbox.config.labels["fake.cached"]}\n`);
     return;
   }
-  if (command.some((arg) => arg.includes("/usr/local/sbin/bb-box-start"))) {
-    if (!host.neverReady) writeFileSync(join(dir(name), "run", "bb-box", "ready"), "");
+  if (command.some((arg) => arg.includes("/usr/local/sbin/alia-box-start"))) {
+    if (!host.neverReady) writeFileSync(join(dir(name), "run", "alia-box", "ready"), "");
     return;
   }
   const home = join(dir(name), "home");
   const own = (text) =>
     text
-      .replaceAll("/run/bb-box/", `${join(dir(name), "run", "bb-box")}/`)
-      .replaceAll("/var/lib/bb-box/", `${join(dir(name), "var-lib", "bb-box")}/`)
+      .replaceAll("/run/alia-box/", `${join(dir(name), "run", "alia-box")}/`)
+      .replaceAll("/var/lib/alia-box/", `${join(dir(name), "var-lib", "alia-box")}/`)
       .replaceAll("/home/box", home);
   const [program, ...programArgs] = [...JSON.parse(process.env.FAKE_GROUP ?? "[]"), ...command.map(own)];
   const sandboxEnv = { PATH: pathWithHostStubs(root, [], process.env.PATH), HOME: home, ...ownedFoldersEnv([root], join(root, "tmp")), ...env };
@@ -339,7 +339,7 @@ function snapshot(rest) {
     mkdirSync(dir(name), { recursive: true });
     for (const part of ["home", "var-lib", ...(full ? ["run"] : [])]) if (existsSync(join(snapshotDir(target.id), part))) cpSync(join(snapshotDir(target.id), part), join(dir(name), part), { recursive: true });
     mkdirSync(join(dir(name), "home"), { recursive: true });
-    mkdirSync(join(dir(name), "run", "bb-box"), { recursive: true });
+    mkdirSync(join(dir(name), "run", "alia-box"), { recursive: true });
     const resources = full ? { ...target.config.resources } : { cpus: Number(values["--cpus"] ?? 1), memory_mib: memoryMiB ?? 512 };
     save({
       name,
@@ -387,7 +387,7 @@ switch (command) {
   case "start": {
     const sandbox = found(rest.at(-1));
     if (host.failStart) fail(`sandbox '${sandbox.name}' failed to start: ${host.failStart}`);
-    mkdirSync(join(dir(sandbox.name), "run", "bb-box"), { recursive: true });
+    mkdirSync(join(dir(sandbox.name), "run", "alia-box"), { recursive: true });
     // Changes saved for the next start take effect now.
     if (sandbox.pending) {
       Object.assign(sandbox.config.resources, sandbox.pending);

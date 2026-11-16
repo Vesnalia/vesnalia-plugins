@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { ENTRY_LIMIT, hostContract } from "./lib/host-contract.js";
 import {
   createInProcessExecutor,

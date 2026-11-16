@@ -1,5 +1,5 @@
 import katex from "katex";
-import type { PluginContentScriptContext } from "@get-bb/plugin-sdk/app";
+import type { PluginContentScriptContext } from "@vesnalia/plugin-sdk/app";
 import {
   findMath,
   mightContainMath,
@@ -9,11 +9,11 @@ import {
 import { createMathSelectionController } from "./selection";
 
 const PREVIEW = "[data-markdown-preview]";
-const LATEX_CLASS = "bb-latex";
-const OVERLAY_CLASS = "bb-latex-overlay";
-const HIDDEN_SOURCE_CLASS = "bb-latex-source-hidden";
+const LATEX_CLASS = "alia-latex";
+const OVERLAY_CLASS = "alia-latex-overlay";
+const HIDDEN_SOURCE_CLASS = "alia-latex-source-hidden";
 const SKIP_CLOSEST =
-  `pre, code, kbd, samp, script, style, textarea, .katex, .katex-display, .katex-error, .bb-latex, .${HIDDEN_SOURCE_CLASS}, [contenteditable='true']`;
+  `pre, code, kbd, samp, script, style, textarea, .katex, .katex-display, .katex-error, .alia-latex, .${HIDDEN_SOURCE_CLASS}, [contenteditable='true']`;
 const BLOCK_CLOSEST =
   "p, li, td, th, h1, h2, h3, h4, h5, h6, pre, blockquote, [data-markdown-preview]";
 const CROSS_BLOCK = "p, h1, h2, h3, h4, h5, h6";
@@ -138,7 +138,7 @@ function resetCrossBlockDisplays(root: ParentNode): void {
 }
 
 function restoreSpan(span: Element, { force }: { force: boolean }): void {
-  const source = span.getAttribute("data-bb-latex-source") ?? "";
+  const source = span.getAttribute("data-alia-latex-source") ?? "";
   if (!force && sourceAlreadyPresent(span, source)) {
     span.remove();
     return;
@@ -213,7 +213,7 @@ function processCrossBlockDisplays(root: Element): void {
             true,
           );
           if (
-            !overlay.matches(".bb-latex-error") &&
+            !overlay.matches(".alia-latex-error") &&
             !overlay.querySelector(".katex-error")
           ) {
             overlay.classList.add(OVERLAY_CLASS);
@@ -417,7 +417,7 @@ function applyMatch(nodes: Text[], starts: number[], match: MathMatch): void {
 
   const span = renderMatch(match.body, match.raw, match.display);
   if (
-    span.matches(".bb-latex-error") ||
+    span.matches(".alia-latex-error") ||
     span.querySelector(".katex-error")
   ) {
     return;
@@ -471,9 +471,9 @@ function locateEnd(
 function renderMatch(body: string, raw: string, display: boolean): HTMLElement {
   const span = document.createElement("span");
   span.className = display
-    ? `${LATEX_CLASS} bb-latex-display`
-    : `${LATEX_CLASS} bb-latex-inline`;
-  span.setAttribute("data-bb-latex-source", raw);
+    ? `${LATEX_CLASS} alia-latex-display`
+    : `${LATEX_CLASS} alia-latex-inline`;
+  span.setAttribute("data-alia-latex-source", raw);
   try {
     katex.render(prepareTex(body), span, {
       displayMode: display,
@@ -483,7 +483,7 @@ function renderMatch(body: string, raw: string, display: boolean): HTMLElement {
       strict: "ignore",
     });
   } catch {
-    span.classList.add("bb-latex-error");
+    span.classList.add("alia-latex-error");
     span.textContent = raw;
   }
   return span;

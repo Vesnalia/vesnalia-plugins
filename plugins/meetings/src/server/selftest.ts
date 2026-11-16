@@ -1,8 +1,8 @@
-// `bb meetings selftest` (docs/dev/DESIGN.md §8.1): the bot records the
-// built-in mock meeting, served by this plugin's own HTTP routes on the bb
+// `alia meetings selftest` (docs/dev/DESIGN.md §8.1): the bot records the
+// built-in mock meeting, served by this plugin's own HTTP routes on the VesnALIA
 // loopback URL, through the full pipeline (Chrome, PulseAudio, ffmpeg,
 // speaker detection, transcriber), with no Zoom involved.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { LIVE_STATUSES, TERMINAL_STATUSES, type MeetingStatus } from "../shared/rpc-contract.js";
 import { errorMessage, sleep } from "./errors.js";
 import type { MeetingsService } from "./service.js";
@@ -26,18 +26,18 @@ export interface SelftestResult {
   kept: boolean;
 }
 
-export function mockMeetingUrl(bb: BbPluginApi): string {
-  const base = bb.server.loopbackBaseUrl.replace(/\/+$/, "");
-  return `${base}/api/v1/plugins/${bb.pluginId}/http/mock-meeting/index.html?popup=0`;
+export function mockMeetingUrl(alia: AliaPluginApi): string {
+  const base = alia.server.loopbackBaseUrl.replace(/\/+$/, "");
+  return `${base}/api/v1/plugins/${alia.pluginId}/http/mock-meeting/index.html?popup=0`;
 }
 
 export async function runSelftest(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   service: MeetingsService,
   options: { timeoutMs: number; signal?: AbortSignal; keep: boolean },
 ): Promise<SelftestResult> {
   const started = service.now();
-  let row = await service.join({ url: mockMeetingUrl(bb), title: "Самопроверка (mock)", source: "cli", notify: false });
+  let row = await service.join({ url: mockMeetingUrl(alia), title: "Самопроверка (mock)", source: "cli", notify: false });
   const statuses: MeetingStatus[] = [row.status];
   const speakers = new Set<string>();
   let participants = 0;
@@ -47,7 +47,7 @@ export async function runSelftest(
     try {
       row = await service.refresh(row.id, options.signal);
     } catch (error) {
-      bb.log.warn(`Selftest poll failed: ${errorMessage(error)}`);
+      alia.log.warn(`Selftest poll failed: ${errorMessage(error)}`);
     }
     if (statuses.at(-1) !== row.status) statuses.push(row.status);
     for (const name of row.activeSpeakers) speakers.add(name);

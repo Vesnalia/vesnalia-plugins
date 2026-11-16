@@ -1,7 +1,7 @@
 // Shared adoption engine used by both the CLI command and the frontend RPC.
 import * as fs from "node:fs";
 import * as os from "node:os";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { deriveHomeDir } from "../capture";
 import type { ReasoningLevel } from "../handoff";
 import { listMachines, matchMachine } from "../machines";
@@ -77,14 +77,14 @@ export function parseAdoptQuery(text: string): ParsedQuery {
 
 /** Search all agents' stores for a session id/prefix, across all directories. */
 export async function locateSessions(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   sessionId: string,
   agentHint: AgentId | null,
 ): Promise<FoundSession[]> {
   // Candidate directories let the Gemini adapter reverse its cwd hashes:
   // project sources, plus the children of their parent folders (siblings like
   // ~/Git/<other-repo>) and of the home directory.
-  const projects = await bb.sdk.projects.list({ includePersonal: true }).catch(() => []);
+  const projects = await alia.sdk.projects.list({ includePersonal: true }).catch(() => []);
   const home = os.homedir();
   const roots = new Set<string>([home, ...projects.flatMap((p) => p.sources.map((s) => s.path))]);
   const parents = new Set<string>([home]);
@@ -185,7 +185,7 @@ already made unless the user changes it.`;
   const agentOnly = `# Session handoff — adopted external session
 
 You are continuing an existing ${session.agentLabel} session that was running
-outside bb. ${identity}
+outside VesnALIA. ${identity}
 
 - Original session id: ${session.sessionId}
 - Original agent: ${session.agentLabel}
@@ -220,7 +220,7 @@ type AdoptFileOptions = Omit<AdoptOptions, "cwd" | "sessionId" | "agent">;
 const inFlightAdoptions = new Set<string>();
 
 async function adoptFromFile(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   agent: AgentId,
   filePath: string,
   cwd: string,
@@ -259,7 +259,7 @@ async function adoptFromFile(
   }
   inFlightAdoptions.add(kvKey);
   try {
-    return await adoptParsedSession(bb, adapter, session, kvKey, cwd, options, {
+    return await adoptParsedSession(alia, adapter, session, kvKey, cwd, options, {
       possiblyLive: isPossiblyLive(lastActivityMs),
     });
   } finally {
@@ -268,7 +268,7 @@ async function adoptFromFile(
 }
 
 async function adoptParsedSession(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   adapter: AgentAdapter,
   session: ParsedSession,
   kvKey: string,
@@ -277,11 +277,11 @@ async function adoptParsedSession(
   context: { possiblyLive?: boolean; hostId?: string } = {},
 ): Promise<AdoptOutcome> {
   // Refuse duplicate adoption unless forced (the prior thread may have moved on).
-  const existing = await bb.storage.kv.get<{ threadId: string }>(kvKey);
+  const existing = await alia.storage.kv.get<{ threadId: string }>(kvKey);
   if (existing && !options.force) {
     let stillExists = true;
     try {
-      await bb.sdk.threads.get({ threadId: existing.threadId });
+      await alia.sdk.threads.get({ threadId: existing.threadId });
     } catch {
       stillExists = false;
     }
@@ -300,17 +300,17 @@ async function adoptParsedSession(
   // for remote adoption.
   let hostId = context.hostId ?? null;
   if (!hostId) {
-    const { primaryHostId } = await bb.sdk.system.config();
+    const { primaryHostId } = await alia.sdk.system.config();
     hostId = primaryHostId ?? null;
   }
   if (!hostId) {
     return { ok: false, code: "no-host", message: "No host available to run the adopted thread on." };
   }
 
-  // Pick the bb provider for the continued thread: explicit choice, else the
+  // Pick the VesnALIA provider for the continued thread: explicit choice, else the
   // session's own family, falling back to claude-code if unavailable.
-  let providerId = options.threadProviderId ?? adapter.bbProviderId;
-  const providers = await bb.sdk.providers.list({ hostId });
+  let providerId = options.threadProviderId ?? adapter.aliaProviderId;
+  const providers = await alia.sdk.providers.list({ hostId });
   const availableIds = new Set(providers.filter((p) => p.available).map((p) => p.id));
   let providerNote = "";
   if (!availableIds.has(providerId)) {
@@ -323,12 +323,12 @@ async function adoptParsedSession(
     }
     const fallback = availableIds.has("claude-code") ? "claude-code" : [...availableIds][0];
     if (!fallback) {
-      return { ok: false, code: "no-provider", message: "No bb providers are available on the target host." };
+      return { ok: false, code: "no-provider", message: "No VesnALIA providers are available on the target host." };
     }
     providerNote = ` (provider ${providerId} unavailable, using ${fallback})`;
     providerId = fallback;
   }
-  const sameFamily = providerId === adapter.bbProviderId && session.agent !== "gemini";
+  const sameFamily = providerId === adapter.aliaProviderId && session.agent !== "gemini";
 
   // Project: explicit choice, else the project whose source path contains cwd
   // (longest match), else a new project registered for this directory —
@@ -336,7 +336,7 @@ async function adoptParsedSession(
   let projectId = options.projectId ?? null;
   let projectName: string | null = null;
   let willCreateProject = false;
-  const projects = await bb.sdk.projects.list();
+  const projects = await alia.sdk.projects.list();
   if (projectId) {
     const match = projects.find((p) => p.id === projectId);
     if (!match) return { ok: false, code: "bad-project", message: `Unknown project: ${projectId}` };
@@ -382,7 +382,7 @@ async function adoptParsedSession(
   if (options.dryRun) return { ok: true, dryRun: true, plan };
 
   if (willCreateProject) {
-    const project = await bb.sdk.projects.create({
+    const project = await alia.sdk.projects.create({
       name: plan.projectName,
       source: { hostId, type: "local_path", path: cwd },
     });
@@ -395,7 +395,7 @@ async function adoptParsedSession(
   // explicit model — resolve the provider's default when none is given.
   let model = options.model;
   if (!model) {
-    const executionOptions = await bb.sdk.providers.models({ hostId, providerId });
+    const executionOptions = await alia.sdk.providers.models({ hostId, providerId });
     const candidates = executionOptions.models;
     model = (candidates.find((m) => m.isDefault) ?? candidates[0])?.model;
     if (!model) {
@@ -404,7 +404,7 @@ async function adoptParsedSession(
   }
 
   const handoff = buildHandoff(session, cwd, sameFamily, context.possiblyLive ?? false);
-  const thread = await bb.sdk.threads.spawn({
+  const thread = await alia.sdk.threads.spawn({
     projectId: projectId!,
     providerId,
     model,
@@ -420,16 +420,16 @@ async function adoptParsedSession(
       { type: "text", text: handoff.agentOnly, mentions: [], visibility: "agent-only" },
     ],
   });
-  await bb.storage.kv.set(kvKey, { threadId: thread.id, adoptedAt: Date.now() });
-  bb.log.info(`adopted ${session.agent} session ${session.sessionId} as thread ${thread.id}`);
+  await alia.storage.kv.set(kvKey, { threadId: thread.id, adoptedAt: Date.now() });
+  alia.log.info(`adopted ${session.agent} session ${session.sessionId} as thread ${thread.id}`);
   return { ok: true, dryRun: false, plan, threadId: thread.id };
 }
 
 /** Adopt within a known directory (newest session, or an id/prefix in it). */
-export async function performAdopt(bb: BbPluginApi, options: AdoptOptions): Promise<AdoptOutcome> {
+export async function performAdopt(alia: AliaPluginApi, options: AdoptOptions): Promise<AdoptOutcome> {
   const { cwd } = options;
   if (!fs.existsSync(cwd)) {
-    return { ok: false, code: "bad-cwd", message: `Directory does not exist on the bb server machine: ${cwd}` };
+    return { ok: false, code: "bad-cwd", message: `Directory does not exist on the VesnALIA server machine: ${cwd}` };
   }
   const collected = await collectSessions(cwd, options.agent);
   if ("error" in collected) return { ok: false, code: "bad-agent", message: collected.error };
@@ -442,7 +442,7 @@ export async function performAdopt(bb: BbPluginApi, options: AdoptOptions): Prom
   if (!summary) {
     return { ok: false, code: "not-found", message: `No session matching "${options.sessionId}" for ${cwd}.` };
   }
-  return adoptFromFile(bb, summary.agent, summary.filePath, cwd, options);
+  return adoptFromFile(alia, summary.agent, summary.filePath, cwd, options);
 }
 
 export interface QueryAdoptOptions extends AdoptFileOptions {
@@ -456,7 +456,7 @@ export interface QueryAdoptOptions extends AdoptFileOptions {
 
 /** Adopt from pasted input — parse the id, locate it globally, adopt it. */
 export async function performAdoptQuery(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   options: QueryAdoptOptions,
 ): Promise<AdoptOutcome> {
   const parsed = parseAdoptQuery(options.query);
@@ -470,7 +470,7 @@ export async function performAdoptQuery(
           "That command resumes the newest session of a directory — paste a session id instead, or set the directory and use the session list.",
       };
     }
-    return performAdopt(bb, {
+    return performAdopt(alia, {
       ...options,
       cwd: anchorCwd,
       sessionId: undefined,
@@ -485,7 +485,7 @@ export async function performAdoptQuery(
         'No session id found in that input. Paste the id itself, or a resume command like "claude --resume <id>" / "codex resume <id>".',
     };
   }
-  const matches = await locateSessions(bb, parsed.sessionId, parsed.agentHint);
+  const matches = await locateSessions(alia, parsed.sessionId, parsed.agentHint);
   if (matches.length === 0) {
     return {
       ok: false,
@@ -517,12 +517,12 @@ export async function performAdoptQuery(
       matches: [match],
     };
   }
-  return adoptFromFile(bb, match.agent, match.filePath, cwd, options);
+  return adoptFromFile(alia, match.agent, match.filePath, cwd, options);
 }
 
 // ---------------------------------------------------------------------------
 // Remote adoption: sessions that live on another enrolled machine. The stores
-// are read over bb's host file API and, where a store is not addressable by
+// are read over VesnALIA's host file API and, where a store is not addressable by
 // path alone, a short-lived host terminal — see adopt/remote.ts.
 
 export interface RemoteAdoptOptions extends AdoptFileOptions {
@@ -548,7 +548,7 @@ export interface RemoteAdoptOptions extends AdoptFileOptions {
 type FailedOutcome = Extract<AdoptOutcome, { ok: false }>;
 
 async function resolveRemoteContext(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   machine: string,
   homeOverride?: string | null,
 ): Promise<
@@ -556,7 +556,7 @@ async function resolveRemoteContext(
   | { ok: true; local: true }
   | { ok: true; local: false; ctx: RemoteContext }
 > {
-  const machines = await listMachines(bb).catch(() => []);
+  const machines = await listMachines(alia).catch(() => []);
   const host = matchMachine(machines, machine);
   if (!host) {
     const known = machines.map((m) => m.name).join(", ") || "(none)";
@@ -569,7 +569,7 @@ async function resolveRemoteContext(
       },
     };
   }
-  const { primaryHostId } = await bb.sdk.system.config().catch(() => ({ primaryHostId: null }));
+  const { primaryHostId } = await alia.sdk.system.config().catch(() => ({ primaryHostId: null }));
   if (host.id === primaryHostId) return { ok: true, local: true };
   if (!host.connected) {
     return {
@@ -586,12 +586,12 @@ async function resolveRemoteContext(
   // registered sources, or its home may not follow /home or /Users layouts.
   let home = homeOverride?.trim() || null;
   if (!home) {
-    const output = await hostExec(bb, host.id, 'printf \'%s\' "$HOME"');
+    const output = await hostExec(alia, host.id, 'printf \'%s\' "$HOME"');
     const candidate = output?.trim();
     if (candidate?.startsWith("/") && !/[\r\n\0]/.test(candidate)) home = candidate;
   }
   if (!home) {
-    const projects = await bb.sdk.projects.list({ includePersonal: true }).catch(() => []);
+    const projects = await alia.sdk.projects.list({ includePersonal: true }).catch(() => []);
     for (const project of projects) {
       for (const source of project.sources) {
         if (source.hostId !== host.id) continue;
@@ -611,7 +611,7 @@ async function resolveRemoteContext(
       },
     };
   }
-  return { ok: true, local: false, ctx: { bb, hostId: host.id, hostName: host.name, home } };
+  return { ok: true, local: false, ctx: { alia, hostId: host.id, hostName: host.name, home } };
 }
 
 export interface RemoteListResult {
@@ -621,12 +621,12 @@ export interface RemoteListResult {
   error?: string;
 }
 
-/** `bb handoff adopt list --machine <host> --cwd <path>`. */
+/** `alia handoff adopt list --machine <host> --cwd <path>`. */
 export async function listRemoteSessionsForDirectory(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   options: { machine: string; cwd: string; home?: string | null; agent?: string },
 ): Promise<RemoteListResult | { error: string }> {
-  const resolved = await resolveRemoteContext(bb, options.machine, options.home);
+  const resolved = await resolveRemoteContext(alia, options.machine, options.home);
   if (!resolved.ok) return { error: resolved.outcome.message ?? "Unknown machine." };
   if (resolved.local) {
     const collected = await collectSessions(options.cwd, options.agent);
@@ -658,21 +658,21 @@ export async function listRemoteSessionsForDirectory(
 }
 
 export async function performAdoptRemote(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   options: RemoteAdoptOptions,
 ): Promise<AdoptOutcome> {
-  const resolved = await resolveRemoteContext(bb, options.machine, options.home);
+  const resolved = await resolveRemoteContext(alia, options.machine, options.home);
   if (!resolved.ok) return resolved.outcome;
   if (resolved.local) {
     // Local after all — the full local engine applies.
     return options.query?.trim()
-      ? performAdoptQuery(bb, { ...options, cwd: options.cwd ?? null, query: options.query })
+      ? performAdoptQuery(alia, { ...options, cwd: options.cwd ?? null, query: options.query })
       : options.cwd
-        ? performAdopt(bb, { ...options, cwd: options.cwd, agent: options.agent })
+        ? performAdopt(alia, { ...options, cwd: options.cwd, agent: options.agent })
         : {
             ok: false,
             code: "no-cwd",
-            message: "That machine is the bb server itself — pass a session id or --cwd.",
+            message: "That machine is the VesnALIA server itself — pass a session id or --cwd.",
           };
   }
   const ctx = resolved.ctx;
@@ -785,7 +785,7 @@ export async function performAdoptRemote(
   inFlightAdoptions.add(kvKey);
   try {
     const lastMs = session.lastTimestamp ? Date.parse(session.lastTimestamp) : Number.NaN;
-    return await adoptParsedSession(bb, getAdapter(session.agent), session, kvKey, cwd, options, {
+    return await adoptParsedSession(alia, getAdapter(session.agent), session, kvKey, cwd, options, {
       hostId: ctx.hostId,
       possiblyLive: isPossiblyLive(Number.isFinite(lastMs) ? lastMs : null),
     });
@@ -800,11 +800,11 @@ export async function performAdoptRemote(
  * different machine is a path that does not exist over there.
  */
 export async function resolveProjectCwd(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   projectId: string,
   hostId?: string | null,
 ): Promise<string | null> {
-  const projects = await bb.sdk.projects.list({ includePersonal: true });
+  const projects = await alia.sdk.projects.list({ includePersonal: true });
   const project = projects.find((p) => p.id === projectId);
   if (!project) return null;
   const pool = hostId ? project.sources.filter((s) => s.hostId === hostId) : project.sources;

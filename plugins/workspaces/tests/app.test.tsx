@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, fireEvent } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 const project = {
   id: "proj_auth",
@@ -160,7 +160,7 @@ describe("repository approval interaction", () => {
 describe("Workspaces page", () => {
   beforeEach(() => globalThis.localStorage.clear());
 
-  it("creates a workspace from selected BB projects", async () => {
+  it("creates a workspace from selected VesnALIA projects", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const calls: unknown[] = [];
     const slot = renderSlot(app.navPanels[0]!, { subPath: "" }, {

@@ -127,7 +127,7 @@ test("a parent waiting on its subthreads shows the wait, and an ending held or w
   assert.equal(continuationStatus(input({ thread: running, wait: { kind: "subthread", running: 1, settlingUntil: null } })).state, "watching");
 });
 
-const LEGACY_REASON = "Live public root-turn ending observed; Published @get-bb/plugin-sdk 0.6.15 has no execution-bound continuation admission coordinated with native Stop, queue precedence and accepted-fresh-user provenance, or universal provider completion interception. Automatic recovery cannot be enabled or verified; ordinary threads.send is not a safe substitute.";
+const LEGACY_REASON = "Live public root-turn ending observed; Published @vesnalia/plugin-sdk 0.6.15 has no execution-bound continuation admission coordinated with native Stop, queue precedence and accepted-fresh-user provenance, or universal provider completion interception. Automatic recovery cannot be enabled or verified; ordinary threads.send is not a safe substitute.";
 
 test("a legacy or unrecognized ending is watched again, never 'changed at the last second'", () => {
   const watching = { state: "watching", sendAt: null, totalMs: null, checkIn: false, text: "Watching", detail: "I'll check the next reply", updatedAt: NOW, nudgeCount: 0 };

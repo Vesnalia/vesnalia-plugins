@@ -1,12 +1,12 @@
 // Frontend RPC (src/shared/rpc-contract.ts): thin handlers over the service.
 // Inputs are validated by the host; defaults are re-applied defensively in
 // case a raw input (without zod defaults) reaches a handler.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { rpcContract } from "../shared/rpc-contract.js";
 import type { MeetingsService } from "./service.js";
 
-export function registerRpc(bb: BbPluginApi, service: MeetingsService): void {
-  bb.rpc.register(rpcContract, {
+export function registerRpc(alia: AliaPluginApi, service: MeetingsService): void {
+  alia.rpc.register(rpcContract, {
     "meetings.list": (input) =>
       service.list(input?.filter ?? "all", clampInt(input?.limit, 1, 200, 50), input?.before ?? null),
 

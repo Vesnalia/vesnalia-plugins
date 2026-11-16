@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { patchReviewState } from "../lib/panel-state";
 import { TOUCH_CONTROL } from "./touch";
@@ -15,7 +15,7 @@ afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear(); vi.cl
 const KEY = "br-1";
 const patch = "diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -1 +1 @@\n-a\n+aa\n";
 const guide = { title: "Snooze flaky checks", intent: "Snoozes checks.", unplacedFiles: [] as string[], sections: [{ id: "c1", title: "Snooze", overview: "", diffs: [{ file: "src/a.ts" }] }] };
-const feature = { environmentId: "env1", hostId: "host_max", machine: "MaxBook", path: "/Users/me/src/api", branch: "bb/snooze-checks-thr_ab12", baseRef: "main", repo: "acme/api" };
+const feature = { environmentId: "env1", hostId: "host_max", machine: "MaxBook", path: "/Users/me/src/api", branch: "alia/snooze-checks-thr_ab12", baseRef: "main", repo: "acme/api" };
 const local = { targetKey: KEY, kind: "ref", gitRef: feature.branch, status: "ready", createdAt: 1, title: "Snooze flaky checks", feature, mainThread: { threadId: "main", environmentId: "env1", origin: "adopted", since: 1 } };
 const nothing: FeatureCheck = { state: "current", alsoActive: [], hidden: [], flagged: [] };
 
@@ -75,7 +75,7 @@ test("with Say when the code changed off, a changed folder says nothing", async 
 test("a folder on another branch pauses the review, in the info tone: New review for it, filled, or a quiet Follow it instead, or its review ↗ once it has one", async () => {
   const reviewFolderBranch = vi.fn(() => ({ ok: true, targetKey: "br-2" }));
   const followFolderBranch = vi.fn(() => ({ ok: true }));
-  const { slot } = await renderWorkspace({ checkFeature: () => ({ ...nothing, state: "paused", branch: "bb/fix-docs-thr_cd34" }), reviewFolderBranch, followFolderBranch });
+  const { slot } = await renderWorkspace({ checkFeature: () => ({ ...nothing, state: "paused", branch: "alia/fix-docs-thr_cd34" }), reviewFolderBranch, followFolderBranch });
   const paused = await slot.findByRole("status", { name: "Review paused" });
   expect(paused.textContent).toContain("Folder moved to fix-docs, a new branch. This review stays with snooze-checks.");
   expect(paused.className).toContain("bg-primary/5");
@@ -92,7 +92,7 @@ test("a folder on another branch pauses the review, in the info tone: New review
   cleanup();
 
   const opening = vi.fn();
-  const existing = await renderWorkspace({ checkFeature: () => ({ ...nothing, state: "paused", branch: "bb/fix-docs-thr_cd34", branchReview: "br-2" }), reviewFolderBranch: opening });
+  const existing = await renderWorkspace({ checkFeature: () => ({ ...nothing, state: "paused", branch: "alia/fix-docs-thr_cd34", branchReview: "br-2" }), reviewFolderBranch: opening });
   fireEvent.click(within(await existing.slot.findByRole("status", { name: "Review paused" })).getByRole("button", { name: "fix-docs review" }));
   expect(opening).not.toHaveBeenCalled();
   existing.slot.lifecycle.unmount();
@@ -123,14 +123,14 @@ test("a removed folder says so, with Archive until it's archived", async () => {
   const archiveReview = vi.fn(() => ({ ok: true }));
   const { slot } = await renderWorkspace({ checkFeature: () => ({ ...nothing, state: "gone" }), archiveReview }, { ...local, feature: { ...feature, folderGone: true } });
   // Its main thread worked there: a Send starts a fresh one.
-  const text = "BB removed this folder. The review keeps its last changes and your comments. Your next Send starts a fresh thread from snooze-checks.";
+  const text = "VesnALIA removed this folder. The review keeps its last changes and your comments. Your next Send starts a fresh thread from snooze-checks.";
   await slot.findByText(text);
   fireEvent.click(within(notice(slot, text)).getByRole("button", { name: "Archive" }));
   await waitFor(() => expect(archiveReview).toHaveBeenCalledWith({ targetKey: KEY, archived: true }));
   slot.lifecycle.unmount();
   cleanup();
   const archived = await renderWorkspace({ checkFeature: () => ({ ...nothing, state: "gone" }) }, { ...local, archivedAt: 5, feature: { ...feature, folderGone: true } });
-  const done = notice(archived.slot, await archived.slot.findByText("BB removed this folder. The review keeps its last changes.").then((el) => el.textContent!));
+  const done = notice(archived.slot, await archived.slot.findByText("VesnALIA removed this folder. The review keeps its last changes.").then((el) => el.textContent!));
   expect(within(done).queryByRole("button")).toBeNull();
   archived.slot.lifecycle.unmount();
 });
@@ -217,7 +217,7 @@ test("after Update, a guide written before it says so, after Changed, with Rewri
   // or the review's archived, so it isn't offered.
   for (const [rpc, shown] of [
     [{ checkFeature: () => nothing }, { ...review, status: "generating" }],
-    [{ checkFeature: () => ({ ...nothing, state: "gone", message: "BB removed this folder." }) }, review],
+    [{ checkFeature: () => ({ ...nothing, state: "gone", message: "VesnALIA removed this folder." }) }, review],
     [{ checkFeature: () => nothing }, { ...review, archivedAt: 5 }],
     [{ checkFeature: () => nothing }, { ...review, userArchivedAt: 5 }],
   ] as const) {
@@ -278,7 +278,7 @@ test("a PR's review whose folder has files not on GitHub yet says how many, on w
   expect(within(notice(withComments.slot, said)).queryByRole("button", { name: "Review them" })).toBeNull();
   withComments.slot.lifecycle.unmount();
   cleanup();
-  const paused = await renderWorkspace({ checkFeature: () => ({ ...nothing, state: "paused", branch: "bb/fix-docs-thr_cd34" }) }, pr);
+  const paused = await renderWorkspace({ checkFeature: () => ({ ...nothing, state: "paused", branch: "alia/fix-docs-thr_cd34" }) }, pr);
   const shown = await paused.slot.findByRole("status", { name: "Review paused" });
   expect(within(shown).getByRole("button", { name: "New review for it" })).toBeTruthy();
   expect(within(shown).queryByRole("button", { name: "Follow it instead" })).toBeNull();

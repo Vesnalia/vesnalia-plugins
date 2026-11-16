@@ -2,12 +2,12 @@
 import { act, useSyncExternalStore } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
-import type * as PluginSdkApp from "@get-bb/plugin-sdk/app";
+import type * as PluginSdkApp from "@vesnalia/plugin-sdk/app";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ExperimentalCodeFenceRendererProps, PluginSettingsState } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalCodeFenceRendererProps, PluginSettingsState } from "@vesnalia/plugin-sdk/app";
 import { SlotFence } from "./SlotFence";
 
-/** The plugin's settings as BB serves them: a store its subscribers re-render from, like BB's query. */
+/** The plugin's settings as VesnALIA serves them: a store its subscribers re-render from, like VesnALIA's query. */
 const settings = vi.hoisted(() => {
   let state: PluginSettingsState = { values: { animations: true }, isLoading: false };
   const listeners = new Set<() => void>();
@@ -24,12 +24,12 @@ const settings = vi.hoisted(() => {
   };
 });
 
-// Only BB's runtime is replaced; compilation, Fence, AppBlock and diagnostics are real.
-vi.mock("@get-bb/plugin-sdk/app", async (importOriginal) => ({
+// Only VesnALIA's runtime is replaced; compilation, Fence, AppBlock and diagnostics are real.
+vi.mock("@vesnalia/plugin-sdk/app", async (importOriginal) => ({
   ...(await importOriginal<typeof PluginSdkApp>()),
   useComposers: () => [],
   useSdk: () => ({}),
-  useBbNavigate: () => ({}),
+  useAliaNavigate: () => ({}),
   useRpc: () => ({ call: vi.fn() }),
   useSettings: () => useSyncExternalStore(settings.subscribe, settings.get),
   Markdown: ({ content }: { content: string }) => <p>{content}</p>,

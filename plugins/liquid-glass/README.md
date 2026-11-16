@@ -1,6 +1,6 @@
 # Liquid Glass
 
-Liquid Glass brings monocode's translucent-window look to bb with a wallpaper
+Liquid Glass brings monocode's translucent-window look to VesnALIA with a wallpaper
 layer beneath genuinely frosted panes, two dark and light palettes, and vibrant,
 pickable accents alongside adjustable shell tint, opacity, and blur.
 
@@ -12,7 +12,7 @@ Two palettes:
 ## What this can and cannot do
 
 monocode gets its look from a transparent macOS `NSWindow` plus native
-background blur, so the real desktop shows through the app. **bb's desktop app
+background blur, so the real desktop shows through the app. **VesnALIA's desktop app
 is Electron and its window is opaque on macOS** (only Linux has a
 `--transparent-window` flag), and no plugin can change that. This theme does not
 claim OS-level transparency and does not try to fake it.
@@ -24,7 +24,7 @@ monocode's own opacities (sidebar 0.85, blur 24 px). Inside the window the
 result is the monocode look over a wallpaper; outside the window, nothing shows
 through.
 
-"Genuinely translucent" is measured, not asserted. bb's shell nests its
+"Genuinely translucent" is measured, not asserted. VesnALIA's shell nests its
 surfaces — `body` and the main pane both carry `bg-background`, and the sidebar
 carries `bg-sidebar` on four elements from the panel down to each sticky tier —
 so a theme that only sets the tokens would composite 0.85 four times and pass
@@ -34,27 +34,27 @@ wallpaper reaches the eye through both the sidebar and the main pane.
 
 ## Install
 
-### BB Community marketplace
+### VesnALIA Community marketplace
 
-Open bb's plugin marketplace, find **Liquid Glass**, and choose **Install**.
+Open VesnALIA's plugin marketplace, find **Liquid Glass**, and choose **Install**.
 
 ### Git
 
 ```bash
-bb plugin install git:https://github.com/luisllenin02/bb-plugin-liquid-glass.git@^0.5.4
+alia plugin install git:https://github.com/luisllenin02/bb-plugin-liquid-glass.git@^0.5.4
 ```
 
 ### Activate
 
 ```bash
-bb theme set plugin:liquid-glass:liquid-glass
+alia theme set plugin:liquid-glass:liquid-glass
 ```
 
 Use `plugin:liquid-glass:liquid-glass-light` instead for the light palette. The
 palettes also appear under **Settings → Appearance**.
 
 Configure the theme visually under **Settings → Liquid Glass**, or use
-`bb liquid-glass` for the same settings from the command line. The plugin does
+`alia liquid-glass` for the same settings from the command line. The plugin does
 not poll in the background; it reacts only to settings, appearance, and theme
 events. True transparency through to the desktop requires a compatible host
 build because a theme plugin cannot make an opaque application window
@@ -85,7 +85,7 @@ colour pickers they belong to. Hue is disabled while the tint strength is 0 and
 Tint depth while the tint is 0, because neither does anything there.
 
 Choosing a swatch, ramp step, or custom colour updates the live appearance.
-Changing palettes is different: the plugin calls bb's theme API only after an
+Changing palettes is different: the plugin calls VesnALIA's theme API only after an
 explicit **Apply** click, and the current palette carries an **Active** badge.
 
 The controls are:
@@ -165,35 +165,35 @@ its glass either way.
 
 **Reset to monocode defaults** at the foot of the page restores every value.
 
-The **Theme** row writes bb's own client-side light/dark key
-(`localStorage["bb.theme"]`); the marketplace **Theme Toggle** plugin is a good
+The **Theme** row writes VesnALIA's own client-side light/dark key
+(`localStorage["alia.theme"]`); the marketplace **Theme Toggle** plugin is a good
 companion if you want to switch palettes quickly from the sidebar footer.
 
-## `bb liquid-glass`
+## `alia liquid-glass`
 
 ```
-bb liquid-glass show                     # every key and its current value
-bb liquid-glass set sidebarOpacity 0.7
-bb liquid-glass set paneOpacity 0.72
-bb liquid-glass set menuOpacity 0.97
-bb liquid-glass set sidebarBlur 32
-bb liquid-glass set headerTint 0.6
-bb liquid-glass set headerTintDepth 56
-bb liquid-glass set headerBlur 24
-bb liquid-glass set promptCollapsedOpacity 0.5
-bb liquid-glass set promptExpandedOpacity 1
-bb liquid-glass set compactSolidPanes off
-bb liquid-glass set hue 210
-bb liquid-glass set accent violet
-bb liquid-glass set wallpaper ocean
-bb liquid-glass set wallpaperPath /home/you/Pictures/wall.jpg
-bb liquid-glass set wallpaperBrightness 0.9
-bb liquid-glass set wallpaperBlur 8
-bb liquid-glass set wallpaperSaturation 1.25
-bb liquid-glass set wallpaperWash 0.4
-bb liquid-glass set accentWash 85
-bb liquid-glass presets                  # wallpaper presets and accent swatches
-bb liquid-glass reset
+alia liquid-glass show                     # every key and its current value
+alia liquid-glass set sidebarOpacity 0.7
+alia liquid-glass set paneOpacity 0.72
+alia liquid-glass set menuOpacity 0.97
+alia liquid-glass set sidebarBlur 32
+alia liquid-glass set headerTint 0.6
+alia liquid-glass set headerTintDepth 56
+alia liquid-glass set headerBlur 24
+alia liquid-glass set promptCollapsedOpacity 0.5
+alia liquid-glass set promptExpandedOpacity 1
+alia liquid-glass set compactSolidPanes off
+alia liquid-glass set hue 210
+alia liquid-glass set accent violet
+alia liquid-glass set wallpaper ocean
+alia liquid-glass set wallpaperPath /home/you/Pictures/wall.jpg
+alia liquid-glass set wallpaperBrightness 0.9
+alia liquid-glass set wallpaperBlur 8
+alia liquid-glass set wallpaperSaturation 1.25
+alia liquid-glass set wallpaperWash 0.4
+alia liquid-glass set accentWash 85
+alia liquid-glass presets                  # wallpaper presets and accent swatches
+alia liquid-glass reset
 ```
 
 `show` prints these names. `set` also accepts the internal names they replaced —
@@ -272,7 +272,7 @@ separate a pane from the wallpaper, so the panes stop pretending to be glass.
 npm install
 npm run typecheck
 npm test          # node:test theme contract + vitest (server, appearance, app)
-bb plugin build
+alia plugin build
 ```
 
 Fonts are deliberately not set here — the Fonts plugin owns typography.
@@ -282,7 +282,7 @@ Fonts are deliberately not set here — the Fonts plugin owns typography.
 The visual direction, the default opacities and blurs, the appearance knob
 names and ranges, and the nine vibrant accent swatches follow
 [hardbeat920/monocode](https://github.com/hardbeat920/monocode). Packaging
-patterns draw from [vburojevic/bb-plugin-ayu](https://github.com/vburojevic/bb-plugin-ayu)
+patterns draw from [vburojevic/alia-plugin-ayu](https://github.com/vburojevic/bb-plugin-ayu)
 and [divyesh-puri/vercel-theme](https://github.com/divyesh-puri/vercel-theme).
 The Monokai vivid accent row reproduces the classic Monokai colours, the work of
 Wimer Hazenberg. The server bundles [zod](https://github.com/colinhacks/zod).

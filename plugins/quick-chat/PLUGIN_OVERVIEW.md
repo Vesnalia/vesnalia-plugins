@@ -1,6 +1,6 @@
-## A quick chat window, anywhere in BB
+## A quick chat window, anywhere in VesnALIA
 
-Quick Chat opens a small chat window in the corner of BB for questions that don't need a project. Press **Mod+Shift+K** (rebindable in Settings → Keyboard), run **Quick chat: open** from the command palette, or click the chat icon in the sidebar footer.
+Quick Chat opens a small chat window in the corner of VesnALIA for questions that don't need a project. Press **Mod+Shift+K** (rebindable in Settings → Keyboard), run **Quick chat: open** from the command palette, or click the chat icon in the sidebar footer.
 
 ## Stays out of your sidebar
 
@@ -8,4 +8,4 @@ Quick chats run in a personal workspace and don't show up in your thread list. T
 
 ## Requirements
 
-Requires BB 0.42 or later and Plugin SDK 0.4.92 or later.
+Requires VesnALIA 0.42 or later and Plugin SDK 0.4.92 or later.

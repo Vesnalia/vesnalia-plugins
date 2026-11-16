@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { focusInstructions } from "../lib/focus-templates";
 import { ASSISTANT_INSTRUCTIONS_LIMIT, AUTO_START_REPOS_LIMIT, REPO_PATTERN, defaultPreferences, defaultFocusSettings, type FocusSettings, type AgentExecution, type ReviewPreferences } from "../lib/review-preferences";
@@ -29,7 +29,7 @@ export const agentExecutionSchema = z.object({
   hostId: z.string().min(1).max(200).optional(),
   providerId: z.string().min(1).max(200),
   model: z.string().min(1).max(200),
-  // A provider's own level, as bb's SDK takes it, so a new one saves.
+  // A provider's own level, as VesnALIA's SDK takes it, so a new one saves.
   reasoningLevel: z.string().min(1).max(200),
   permissionMode: z.enum(["accept-edits", "auto", "full"]),
   serviceTier: z.string().min(1).max(200).optional(),
@@ -189,18 +189,18 @@ export function reReviewCheckPrompt(preferences: ReviewPreferences): string {
 export interface PreferencesRecord { preferences: ReviewPreferences; revision: number; }
 export interface ReviewerNotesRecord { body: string; revision: number; }
 
-type SpawnExecution = Pick<Parameters<BbPluginApi["sdk"]["threads"]["spawn"]>[0],
+type SpawnExecution = Pick<Parameters<AliaPluginApi["sdk"]["threads"]["spawn"]>[0],
   "providerId" | "model" | "reasoningLevel" | "permissionMode" | "serviceTier" | "executionInputSources">;
 
 /**
  * Spawn fields for an agent selection; none for the project's remembered
- * defaults. Without a permission mode, bb resolves the provider's default.
+ * defaults. Without a permission mode, VesnALIA resolves the provider's default.
  */
 export function spawnExecution(agent: (Omit<AgentExecution, "permissionMode"> & Partial<Pick<AgentExecution, "permissionMode">>) | null): SpawnExecution {
   if (!agent) return {};
   const explicit = "explicit" as const;
   return {
-    // The SDK's types list the reasoning levels it knew; bb takes a provider's own.
+    // The SDK's types list the reasoning levels it knew; VesnALIA takes a provider's own.
     providerId: agent.providerId, model: agent.model, reasoningLevel: agent.reasoningLevel as SpawnExecution["reasoningLevel"],
     ...(agent.permissionMode ? { permissionMode: agent.permissionMode } : {}),
     ...(agent.serviceTier ? { serviceTier: agent.serviceTier } : {}),

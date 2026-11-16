@@ -358,7 +358,7 @@ describe("plan multiplier", () => {
     expect(stored).not.toContain('"plan"');
   });
 
-  it("stores null without a usable multiplier (AE2), as the host sent it on bb 0.49", async () => {
+  it("stores null without a usable multiplier (AE2), as the host sent it on VesnALIA 0.49", async () => {
     for (const plan of [undefined, { id: "plus", multiplier: null }, { multiplier: 1 }]) {
       const t = setup(() => withPlan(plan, "Plus"));
       const { latest } = await t.poller.poll();

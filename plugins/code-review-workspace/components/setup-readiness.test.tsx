@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "vitest";
 import { cleanup } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 afterEach(cleanup);
 
 async function readiness(missingScopes: string[] | "unlisted" | null | undefined) {
@@ -14,7 +14,7 @@ async function readiness(missingScopes: string[] | "unlisted" | null | undefined
 test("Setup names the scopes the GitHub token lacks and the command that adds them", async () => {
   const slot = await readiness(["repo", "read:org"]);
   const row = (await slot.findByText(/Your GitHub token is missing/)).closest("li")!;
-  expect(row.textContent).toBe("Your GitHub token is missing repo and read:org. Posting needs repo, and team reviewers need read:org. On the BB server, run gh auth refresh -h github.com -s repo,read:org");
+  expect(row.textContent).toBe("Your GitHub token is missing repo and read:org. Posting needs repo, and team reviewers need read:org. On the VesnALIA server, run gh auth refresh -h github.com -s repo,read:org");
 });
 
 test("Setup tells a token that doesn't list its scopes from a check that failed, and says nothing when none are missing", async () => {

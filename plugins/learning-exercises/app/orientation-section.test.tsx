@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /** The Learning tab's Orientation section: each state's named controls and the calls they make. */
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { toast } from "sonner";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -15,7 +15,7 @@ vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), succe
 afterEach(cleanup);
 
 const WORK = "thr_work";
-const PERMISSION = "A background agent reads this project for a few minutes in this checkout. bb gives it permission to read and edit files; it is told not to edit anything.";
+const PERMISSION = "A background agent reads this project for a few minutes in this checkout. VesnALIA gives it permission to read and edit files; it is told not to edit anything.";
 
 const summary: OrientationSummary = {
   purpose: "A calculator library.",

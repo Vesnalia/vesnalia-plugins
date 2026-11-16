@@ -1,13 +1,13 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "./store";
 import { createReviewSubmitter } from "./submit-review";
 import type { runGh } from "./gh";
 
 const patch = "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-old\n+new\n";
 function setup() {
-  const { bb } = createFakePluginHost({ pluginId: "guided-review" });
-  const store = createStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "guided-review" });
+  const store = createStore(alia);
   store.saveReview({ targetKey: "pr-test", kind: "pr", repo: "acme/web", number: 7, status: "ready", createdAt: 1, headSha: "sha1" });
   store.savePatch("pr-test", patch);
   store.upsertDraftComment("pr-test", { file: "a.ts", line: 1, side: "RIGHT", body: "Please explain this" });

@@ -1,15 +1,15 @@
-// bb-plugin-plugin-updates — frontend entry. A badge on the Plugin Updates nav
+// alia-plugin-plugin-updates — frontend entry. A badge on the Plugin Updates nav
 // entry shows how many plugins have updates; the page applies them. Toasts
 // announce newly found versions.
 //
-// Compiled by `bb plugin build` into dist/app.js + dist/app.css. React and
-// @get-bb/plugin-sdk/app are provided by the BB app at load time.
+// Compiled by `alia plugin build` into dist/app.js + dist/app.css. React and
+// @vesnalia/plugin-sdk/app are provided by the VesnALIA app at load time.
 //
 //   components/UpdatesPage.tsx     the page (sections in components/sections/)
 //   components/UpdatesOverlay.tsx  headless: toasts
 //   hooks/                         report, update-job, and nav-badge state
-//   components/ui/                 vendored bb components
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+//   components/ui/                 vendored VesnALIA components
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { UpdatesOverlay } from "@/components/UpdatesOverlay";
 import { UpdatesPage } from "@/components/UpdatesPage";
 import { useUpdatesBadge } from "@/hooks/useUpdatesBadge";

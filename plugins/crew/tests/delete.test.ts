@@ -54,11 +54,11 @@ async function twoCrews() {
   return { ...env, trio, duo, toDuo: toDuo[0]!, toTrio: toTrio[0]! };
 }
 
-describe("bb crew delete — refusals", () => {
-  it("refuses a running crew and names bb crew stop", async () => {
+describe("alia crew delete — refusals", () => {
+  it("refuses a running crew and names VesnALIA crew stop", async () => {
     const { service, trio } = await twoCrews();
     const crew = service.ctx.store.getCrew(trio.crew.id)!;
-    await expect(service.delete(crew)).rejects.toThrow("run `bb crew stop trio` first");
+    await expect(service.delete(crew)).rejects.toThrow("run `alia crew stop trio` first");
     expect(service.ctx.store.getCrew(trio.crew.id)).not.toBeNull();
   });
 
@@ -124,7 +124,7 @@ describe("bb crew delete — refusals", () => {
     await service.stop(store.getCrew(trio.crew.id)!);
     const original = port.archive;
     port.archive = async () => {
-      throw new Error("BB is down");
+      throw new Error("VesnALIA is down");
     };
     const refusal = (await service.delete(store.getCrew(trio.crew.id)!).catch((error: unknown) => error)) as DeleteRefused;
     expect(refusal.message).toContain("Nothing was removed from the database");
@@ -135,7 +135,7 @@ describe("bb crew delete — refusals", () => {
   });
 });
 
-describe("bb crew delete — threads", () => {
+describe("alia crew delete — threads", () => {
   async function stoppedTrio() {
     const env = await twoCrews();
     // A retired shift: reset --mode new gives dev-impl a second thread.
@@ -215,7 +215,7 @@ describe("bb crew delete — threads", () => {
   });
 });
 
-describe("bb crew delete — rows", () => {
+describe("alia crew delete — rows", () => {
   it("removes every row of the crew and leaves the other crew's rows exactly as they were", async () => {
     const { db, service, store, trio, duo } = await twoCrews();
     await service.stop(store.getCrew(trio.crew.id)!);
@@ -279,7 +279,7 @@ describe("bb crew delete — rows", () => {
   });
 });
 
-describe("bb crew delete — CLI", () => {
+describe("alia crew delete — CLI", () => {
   const run = (service: ReturnType<typeof setup>["service"], argv: string[]) => runCli(service, argv, ctx, project);
 
   it("deletes a stopped crew and prints threads and rows", async () => {
@@ -297,7 +297,7 @@ describe("bb crew delete — CLI", () => {
   it("negative: running crew, unknown crew, bad --threads and a blocked crew fail with exit 1", async () => {
     const { service, port, store } = setup();
     await running(service, port);
-    expect((await run(service, ["delete", "trio"])).stderr).toContain("run `bb crew stop trio` first");
+    expect((await run(service, ["delete", "trio"])).stderr).toContain("run `alia crew stop trio` first");
     expect((await run(service, ["delete", "nope"])).stderr).toContain('No crew "nope"');
     expect((await run(service, ["delete", "trio", "--threads", "shred"])).stderr).toContain("--threads must be one of archive, delete, keep");
     expect((await run(service, ["delete"])).exitCode).toBe(1);
@@ -313,7 +313,7 @@ describe("bb crew delete — CLI", () => {
   });
 });
 
-describe("bb crew delete — both sides", () => {
+describe("alia crew delete — both sides", () => {
   it("a cross-crew message goes once both of its crews are deleted; negative: with one side left it stays", async () => {
     const { service, store, trio, duo, toDuo } = await twoCrews();
     await service.stop(store.getCrew(trio.crew.id)!);

@@ -1,7 +1,7 @@
 ---
 title: Office Studio — Axure-like prototypes, Paint and Slides in Office Viewer
 status: in progress
-research: .bb/chats/thr_wdpmipwdxc/artifacts/axure-analog-research.md
+research: .vesnalia/chats/thr_wdpmipwdxc/artifacts/axure-analog-research.md
 ---
 
 # Office Studio
@@ -20,7 +20,7 @@ research: .bb/chats/thr_wdpmipwdxc/artifacts/axure-analog-research.md
 | Placement | Free positioning (Axure style), snap grid 8px | Owner described a canvas |
 | Vocabulary | A2UI type names (Button, TextField, ChoicePicker, Checkbox, Card, Image, Table, Modal, Header, Nav, Text, Icon…) | Agents know them |
 | File format | `*.wireframe.json`, zod-validated, version 1 | Agent-readable |
-| Storage | thread storage `<storageRoot>/Prototypes/` (`bb.sdk.threads.storageLocation` + `bb.sdk.files.write`) | Native per-chat files; agent sees `$BB_THREAD_STORAGE` |
+| Storage | thread storage `<storageRoot>/Prototypes/` (`alia.sdk.threads.storageLocation` + `alia.sdk.files.write`) | Native per-chat files; agent sees `$ALIA_THREAD_STORAGE` |
 | To chat | `composer.experimental_vkAttachFiles([png, json])`; fallback absolute paths in composer text | Same path as image editor |
 | Paint | Extend `src/media/image-editor.tsx`: blank canvas, eraser, palette, perfect-freehand | Research 4.2 |
 | Slides | Delivered on the prototype engine in release 0.8.11 | Accepted |
@@ -65,7 +65,7 @@ graph LR
 
 ## Axure parity batch (2026-10-17, from axure-re/index.md)
 
-Source: `.bb/chats/thr_wdpmipwdxc/artifacts/axure-re/index.md` (121 screenshots, view-only trial; no code decompiled — Axure licence forbids it).
+Source: `.vesnalia/chats/thr_wdpmipwdxc/artifacts/axure-re/index.md` (121 screenshots, view-only trial; no code decompiled — Axure licence forbids it).
 
 ```mermaid
 graph LR
@@ -98,4 +98,4 @@ graph LR
 - [x] `prototype-containers` — dynamic panel states with content, repeater data grid, in-place container/group editing
 - [x] `prototype-components` — masters: create, components tab, instances, overrides, detach
 - [x] `prototype-interactions-preview` — event → case → action, preview player, send preview to chat
-- [x] release 0.8.14; Studio live check remains (needs owner's BB browser sign-in)
+- [x] release 0.8.14; Studio live check remains (needs owner's VesnALIA browser sign-in)

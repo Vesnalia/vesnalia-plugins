@@ -5,11 +5,11 @@ import NumberFlow from "@number-flow/react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import {
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
   type PluginNavPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { Habitat } from "./Habitat";
 import type { RpcOutput } from "../overlay/net";
@@ -602,7 +602,7 @@ function FixAnimationsPicker({ pet, queueFull }: { pet: Pet; queueFull: boolean 
 
 function DenTab({ hasApiKey, queueFull }: { hasApiKey: boolean; queueFull: boolean }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [pets, setPets] = useState<Pet[] | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -932,7 +932,7 @@ function HatcheryTab({
   queueFull: boolean;
 }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [description, setDescription] = useState("");
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [picked, setPicked] = useState<Draft | null>(null);
@@ -1635,7 +1635,7 @@ const PERSONALITY_TOGGLES: { key: BehaviorKey; label: string; hint: string }[] =
     label: "Sarcastic",
     hint: "Dry takes on failures and marathon turns",
   },
-  { key: "personalityHelpful", label: "Helpful", hint: "Waiting-thread nudges and bb tips" },
+  { key: "personalityHelpful", label: "Helpful", hint: "Waiting-thread nudges and VesnALIA tips" },
   { key: "personalityCozy", label: "Cozy", hint: "Wandering, sitting nearby, idle naps" },
 ];
 
@@ -1764,7 +1764,7 @@ function TourButton() {
 
 export function PetsPanel({ subPath }: PluginNavPanelProps) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [hasApiKey, setHasApiKey] = useState(false);
   const [hasRdKey, setHasRdKey] = useState(false);
   const [engine, setEngine] = useState("openai");

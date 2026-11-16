@@ -1,4 +1,4 @@
-// bb-plugin-automation-groups — frontend entry.
+// alia-plugin-automation-groups — frontend entry.
 //
 // One page: every automation across projects, grouped into user-defined
 // folders. Rows drag between groups (native HTML5 DnD) or move via the row's
@@ -13,10 +13,10 @@ import {
   definePluginApp,
   experimental_ProviderIcon as ProviderIcon,
   experimental_useProviders as useProviders,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { Board, BoardAutomation, Group, Run, RunsResponse, rpcContract } from "./server";
 import { GROUP_COLORS, GROUPS_CHANGED, type GroupColor } from "./shared";
@@ -42,7 +42,7 @@ const COLOR_DOT: Record<GroupColor, string> = {
 };
 
 const UNGROUPED = "__ungrouped__";
-const DND_TYPE = "application/x-bb-automation-id";
+const DND_TYPE = "application/x-alia-automation-id";
 
 function relative(ts: number | null, now: number): string {
   if (ts === null) return "—";
@@ -86,9 +86,9 @@ const BROWSE_TEMPLATES_HREF = "/plugins/automations/automations/browse";
  * when a group is targeted, tell the agent to file the result there.
  */
 function newAutomationPrompt(group: Group | null): string {
-  const base = "Create a new bb automation to ";
+  const base = "Create a new VesnALIA automation to ";
   if (!group) return base;
-  return `${base}\n\n(When done, add it to the automation group "${group.name}" with \`bb automation-group assign <automationId> "${group.name}"\`.)`;
+  return `${base}\n\n(When done, add it to the automation group "${group.name}" with \`alia automation-group assign <automationId> "${group.name}"\`.)`;
 }
 
 function matches(a: BoardAutomation, query: string): boolean {
@@ -518,7 +518,7 @@ function GroupSection({
 function GroupsPage() {
   const { rpc, board, error, refetch, setError } = useBoard();
   const { providers } = useProviders();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [newName, setNewName] = useState("");
   const [query, setQuery] = useState("");
   const [projectId, setProjectId] = useState<string>("");
@@ -626,7 +626,7 @@ function GroupsPage() {
           <p className="min-w-0 flex-1 text-sm text-muted-foreground">
             Every automation across projects, grouped. Drag rows between
             groups; group actions pause, resume or run every member. Agents use{" "}
-            <code>bb automation-group</code>.
+            <code>alia automation-group</code>.
           </p>
           <a
             href={BROWSE_TEMPLATES_HREF}
@@ -885,7 +885,7 @@ function RunRow({
 
 function DetailPage({ projectId, automationId }: { projectId: string; automationId: string }) {
   const { rpc, board, error, refetch, setError } = useBoard();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [runs, setRuns] = useState<RunsResponse | null>(null);
   const [runsError, setRunsError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());

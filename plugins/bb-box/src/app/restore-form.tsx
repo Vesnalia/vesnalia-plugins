@@ -1,4 +1,4 @@
-import type { PluginPendingInteractionProps } from "@get-bb/plugin-sdk/app";
+import type { PluginPendingInteractionProps } from "@vesnalia/plugin-sdk/app";
 import { useState } from "react";
 import type { RestoreFormAnswer, RestoreFormPayload } from "../plugin/restore-form.ts";
 import { ago } from "./box-words.ts";

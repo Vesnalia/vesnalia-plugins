@@ -26,7 +26,7 @@ export const COMMAND: Caller = { is: "command" };
 export const HOUR = 60 * 60_000;
 export const DAY = 24 * HOUR;
 
-export function world(options: { readonly identityTool?: string; readonly identityRoot?: string; readonly markersOn?: boolean; readonly forkWaitMs?: number; readonly wholeCards?: boolean; readonly backend?: (storage: BackendStorage) => Backend; readonly projectsFromBb?: boolean } = {}) {
+export function world(options: { readonly identityTool?: string; readonly identityRoot?: string; readonly markersOn?: boolean; readonly forkWaitMs?: number; readonly wholeCards?: boolean; readonly backend?: (storage: BackendStorage) => Backend; readonly projectsFromAlia?: boolean } = {}) {
   const root = tempDir("snapshots");
   const kv = new MemoryStorage();
   const backendStorage = scopedStorage(kv, "backend/fake/");
@@ -106,7 +106,7 @@ export function world(options: { readonly identityTool?: string; readonly identi
       general: async () => general,
       notify: () => {},
       thread: async () => ({ state: state.threadState, said: state.threadState }),
-      ...(options.projectsFromBb ? { projectOf: (threadId: string) => projectFromBb(state.threadProjects, threadId) } : {}),
+      ...(options.projectsFromAlia ? { projectOf: (threadId: string) => projectFromAlia(state.threadProjects, threadId) } : {}),
       logError: (operation, error) => state.errors.push(`${operation}: ${error instanceof Error ? error.message : String(error)}`),
       events: state.log,
       log: (message) => state.boxLogs.push(message),
@@ -153,7 +153,7 @@ export function world(options: { readonly identityTool?: string; readonly identi
 
 export type World = ReturnType<typeof world>;
 
-async function projectFromBb(projects: ReadonlyMap<string, string | null | Error>, threadId: string): Promise<string | null> {
+async function projectFromAlia(projects: ReadonlyMap<string, string | null | Error>, threadId: string): Promise<string | null> {
   const project = projects.get(threadId) ?? null;
   if (project instanceof Error) throw project;
   return project;
@@ -215,7 +215,7 @@ export async function untilStep(state: World, step: string): Promise<SnapshotOpe
   }
 }
 
-const IDENTITY_SCRIPT = fileURLToPath(new URL("../setup/proxmox-lxc/template/guest/bb-box-identity.sh", import.meta.url));
+const IDENTITY_SCRIPT = fileURLToPath(new URL("../setup/proxmox-lxc/template/guest/alia-box-identity.sh", import.meta.url));
 
 export function identityGuest(options: { readonly booted?: boolean; readonly on?: boolean } = {}): { readonly root: string; readonly tool: string } {
   const dir = tempDir("identity-guest");
@@ -229,7 +229,7 @@ export function identityGuest(options: { readonly booted?: boolean; readonly on?
   writeFileSync(join(root, "etc/ssh/ssh_host_ed25519_key.pub"), "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIguest guest\n");
   mkdirSync(join(dir, "bin"));
   writeFileSync(join(dir, "bin/ip"), `#!/bin/sh\nexec cat ${quote(join(root, "ip-link.json"))}\n`, { mode: 0o755 });
-  const tool = join(dir, "bb-box-identity");
+  const tool = join(dir, "alia-box-identity");
   writeFileSync(tool, `#!/bin/sh\nPATH=${quote(join(dir, "bin"))}:$PATH BBBOX_IDENTITY_ROOT=${quote(root)} BBBOX_IDENTITY_NIC_WAIT_SECONDS=0 exec bash ${quote(IDENTITY_SCRIPT)} "$@"\n`, { mode: 0o755 });
   if (options.on !== false) assert.equal(spawnSync(tool, ["enable", "--no-unit"]).status, 0, "the image's build turned the reset on");
   if (options.booted !== false) assert.equal(spawnSync(tool, ["boot"]).status, 0, "the boot check ran, as its unit runs it at the box's first boot");

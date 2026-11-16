@@ -27,12 +27,12 @@ import { EMOTION_LABELS, charGeometry, nextFrame, randomBetween } from "./core";
 import { ledgeBands } from "./terrain";
 import {
   experimental_usePluginId,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { rpc, type PetsRpc, type RpcOutput } from "./net";
 import { pickLine, type AmbientContext } from "./personality";
@@ -334,7 +334,7 @@ const composerRect = (): DOMRect | null =>
   document.querySelector("textarea, [contenteditable='true']")?.getBoundingClientRect() ?? null;
 
 /**
- * Every composer on screen — bb splits into multiple thread panes, each with
+ * Every composer on screen — VesnALIA splits into multiple thread panes, each with
  * its own input, so one rect is never enough. Hidden and tiny inputs (search
  * boxes, offscreen panes) are dropped.
  */
@@ -717,8 +717,8 @@ function EvolutionCeremony({
 export function Overlay() {
   const api = useRpc<typeof rpcContract>();
   const pluginId = experimental_usePluginId();
-  const navigate = useBbNavigate();
-  const { threadId: viewedThreadId } = useBbContext();
+  const navigate = useAliaNavigate();
+  const { threadId: viewedThreadId } = useAliaContext();
   const [data, setData] = useState<OverlayData | null>(null);
   const [fleet, setFleet] = useState<Fleet | null>(null);
   const [spriteState, setSpriteState] = useState<SpriteState>("wave");
@@ -1071,8 +1071,8 @@ export function Overlay() {
     void rpc(api, "petPet", { petId: pet.id }).catch(() => {});
   }, [burstHearts, hop, api]);
 
-  // bb's navigation API has no settings route, so the Settings item still
-  // pushes the path itself. Everything else goes through useBbNavigate.
+  // VesnALIA's navigation API has no settings route, so the Settings item still
+  // pushes the path itself. Everything else goes through useAliaNavigate.
   const navigateTo = useCallback((path: string) => {
     history.pushState({}, "", path);
     window.dispatchEvent(new PopStateEvent("popstate"));
@@ -1383,7 +1383,7 @@ export function Overlay() {
 
   const TOUR_STEPS: Array<{ text: string; demo?: () => void }> = [
     {
-      text: "hi. i'm your pet. i live in your bb now.",
+      text: "hi. i'm your pet. i live in your VesnALIA now.",
       demo: () => {
         momentRef.current = { state: "wave", until: Date.now() + 1500 };
         sounds.greet();
@@ -2670,7 +2670,7 @@ export function Overlay() {
         // the ring pulsing forever.
         let ended = nowMs > active.until;
         if (!ended && (!active.lastQueryAt || nowMs - active.lastQueryAt > 200)) {
-          // bb recycles sidebar rows, so a node captured at mission start can go
+          // VesnALIA recycles sidebar rows, so a node captured at mission start can go
           // stale or end up showing a different thread. Re-resolve by id.
           const fresh = threadRowFor(active.thread.id);
           if (!fresh) ended = true;
@@ -3270,7 +3270,7 @@ export function Overlay() {
     };
 
     /**
-     * The three bits of bb chrome the pet is allowed to have opinions about:
+     * The three bits of VesnALIA chrome the pet is allowed to have opinions about:
      * its own paw button in the sidebar footer, its row in the nav rail, and
      * whatever pane header is on screen. Anything that isn't there right now is
      * simply not a candidate.

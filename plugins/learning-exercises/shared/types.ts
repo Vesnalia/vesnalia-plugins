@@ -11,7 +11,7 @@ import { AnswerFormSchema, FormValuesSchema } from "./answer-form";
 export const PLUGIN_ID = "learning-exercises";
 
 /**
- * A thread's workspace, for turning file references in Markdown into links that open the file in bb:
+ * A thread's workspace, for turning file references in Markdown into links that open the file in VesnALIA:
  * relative paths resolve against `rootPath`, the workspace's absolute folder on its machine. Null where
  * the thread has no workspace or it is gone (an archived thread's).
  */
@@ -73,7 +73,7 @@ export type SessionState = z.infer<typeof SessionStateSchema>;
 export const PAUSE_REASONS = {
   user: "you paused it",
   timeout: "the question waited 30 minutes",
-  restart: "bb restarted or the plugin reloaded while a question was open",
+  restart: "alia restarted or the plugin reloaded while a question was open",
   archived: "its thread was archived",
   stopped: "its thread was stopped",
   interrupted: "the question could not be shown or was interrupted",
@@ -116,7 +116,7 @@ export type Exercise = z.infer<typeof ExerciseSchema>;
 
 /**
  * One feedback card in a session thread's chat: the verdict and the feedback on one question, drawn above
- * the last message of the turn that recorded it (`turnId`, bb's id for that turn).
+ * the last message of the turn that recorded it (`turnId`, VesnALIA's id for that turn).
  */
 export const FeedbackCardSchema = z.object({
   sessionId: z.string(),
@@ -184,7 +184,7 @@ export const ThreadViewSchema = z.object({
 });
 export type ThreadView = z.infer<typeof ThreadViewSchema>;
 
-/** The card's renderer id (`bb.ui.requestInput`) and the timeline kind of its settled row. */
+/** The card's renderer id (`alia.ui.requestInput`) and the timeline kind of its settled row. */
 export const CARD_RENDERER_ID = "exercise";
 
 /** What a card shows: the question and where to look. */

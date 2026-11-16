@@ -1,6 +1,6 @@
 // Above a thread's composer: the tasks this thread is waiting on.
 import { useCallback, useEffect, useState } from "react";
-import { useBbNavigate, useComposer, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useComposer, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Todo, TodosChangedSignal } from "../server";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,7 @@ export function ThreadBanner() {
   const composer = useComposer();
   const threadId = composer.scope.kind === "thread" ? composer.scope.threadId : null;
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [tasks, setTasks] = useState<(Todo & { waitingInThread: boolean })[]>([]);
   const refresh = useCallback(() => {
     if (threadId === null) return;

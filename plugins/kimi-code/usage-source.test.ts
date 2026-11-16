@@ -1,7 +1,7 @@
 import {
   createFakePluginHost,
   makeHostResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import { expect, it, vi } from "vitest";
 
 import kimiPlugin from "./server.js";
@@ -35,7 +35,7 @@ it("publishes Kimi usage resources and maps bridge quota windows for the panel",
     },
   }));
   let removed = false;
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "kimi-code",
     sdk: {
       hosts: {
@@ -66,7 +66,7 @@ it("publishes Kimi usage resources and maps bridge quota windows for the panel",
     },
   });
   try {
-    kimiPlugin(bb);
+    kimiPlugin(alia);
     const list = async () =>
       usageResourceListSchema.parse(
         await harness.behavior.callRpc(usageListMethod, {}),
@@ -186,7 +186,7 @@ it("passes through authentication states and hides collection failures", async (
   const collect = vi.fn(async () => ({
     "kimi-code": { status: "unauthenticated" as const },
   }));
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "kimi-code",
     sdk: {
       hosts: {
@@ -202,7 +202,7 @@ it("passes through authentication states and hides collection failures", async (
     },
   });
   try {
-    kimiPlugin(bb);
+    kimiPlugin(alia);
     const input = {
       resourceId: JSON.stringify(["host", "kimi-code"]),
       refresh: false,
@@ -256,7 +256,7 @@ it("coalesces concurrent reads and makes a forced refresh collect again", async 
       },
     };
   });
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "kimi-code",
     sdk: {
       hosts: {
@@ -272,7 +272,7 @@ it("coalesces concurrent reads and makes a forced refresh collect again", async 
     },
   });
   try {
-    kimiPlugin(bb);
+    kimiPlugin(alia);
     const read = (refresh: boolean) =>
       harness.behavior.callRpc(usageFetchMethod, {
         resourceId: JSON.stringify(["host", "kimi-code"]),

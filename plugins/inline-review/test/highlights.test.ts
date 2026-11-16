@@ -61,7 +61,7 @@ describe("rendered assistant quote matching", () => {
     expect(findUniqueAssistantRange("First line\nSecond line")).toBeNull();
   });
 
-  it("ignores a retained copy inside an inactive BB tab", () => {
+  it("ignores a retained copy inside an inactive VesnALIA tab", () => {
     document.body.innerHTML = `
       <section hidden>${assistant("<p>Unique tab passage.</p>")}</section>
       <section>${assistant("<p>Unique tab passage.</p>")}</section>`;
@@ -72,7 +72,7 @@ describe("rendered assistant quote matching", () => {
   });
 });
 
-it("restores the active draft when BB remounts the content script", () => {
+it("restores the active draft when VesnALIA remounts the content script", () => {
   document.body.innerHTML = assistant(
     "<h2>Implementation plan</h2><p>Keep <em>this exact</em> passage.</p>",
   );

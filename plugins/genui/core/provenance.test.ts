@@ -232,7 +232,7 @@ describe("helpers", () => {
 
   it("reads evidence: links, images, files at a line, notes; Windows paths too", () => {
     expect(evidenceOf("https://orbit.example.com/")).toEqual({ kind: "url", url: "https://orbit.example.com/", label: null });
-    expect(evidenceOf("$BB_THREAD_STORAGE/launch.png")).toEqual({ kind: "image", src: "$BB_THREAD_STORAGE/launch.png", label: null });
+    expect(evidenceOf("$ALIA_THREAD_STORAGE/launch.png")).toEqual({ kind: "image", src: "$ALIA_THREAD_STORAGE/launch.png", label: null });
     expect(evidenceOf("logs/install.log:42")).toEqual({ kind: "file", path: "logs/install.log", line: 42, label: null });
     expect(evidenceOf("C:\\builds\\orbit\\install.log")).toMatchObject({ kind: "file", path: "C:\\builds\\orbit\\install.log" });
     expect(evidenceOf("devicectl printed no job ID")).toEqual({ kind: "text", text: "devicectl printed no job ID", label: null });

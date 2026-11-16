@@ -1,8 +1,8 @@
 // agent-retry — the decision engine.
 //
-// Pure functions over plain data: no BB imports, no clock, no randomness of
+// Pure functions over plain data: no VesnALIA imports, no clock, no randomness of
 // its own. Everything time- or luck-dependent arrives in `DecisionInput`, so
-// the whole policy is unit-testable and `bb agent-retry simulate` can replay
+// the whole policy is unit-testable and `alia agent-retry simulate` can replay
 // a failure shape without waiting for one.
 
 export type BackoffStrategy = "exponential" | "linear" | "fixed";
@@ -122,7 +122,7 @@ export interface RetryDecision {
   sendAt: number;
   /** Shown verbatim on the queued row; keep it under 200 characters. */
   reason: string;
-  /** Which layer decided, for the log and for `bb agent-retry log`. */
+  /** Which layer decided, for the log and for `alia agent-retry log`. */
   rule: string;
   maxAttempts: number;
 }

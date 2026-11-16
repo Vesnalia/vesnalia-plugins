@@ -108,8 +108,8 @@ describe("buildSections with a directory in view", () => {
 });
 
 describe("worktreeLabel", () => {
-  it("drops bb's branch prefix and thread suffix", () => {
-    expect(worktreeLabel("bb/reduce-cold-build-depth-thr_5fn7e7pv2c")).toBe("reduce-cold-build-depth");
+  it("drops VesnALIA's branch prefix and thread suffix", () => {
+    expect(worktreeLabel("alia/reduce-cold-build-depth-thr_5fn7e7pv2c")).toBe("reduce-cold-build-depth");
   });
 
   it("leaves a branch someone named alone", () => {

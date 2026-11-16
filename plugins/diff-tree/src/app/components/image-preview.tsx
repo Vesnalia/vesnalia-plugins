@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { ChangedFile } from "../../core/tree";
 import type { ImagePair, ImageSide } from "../../shared/images";
 import type { rpcContract } from "../../shared/contracts";

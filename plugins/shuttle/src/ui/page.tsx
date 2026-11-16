@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import { experimental_Icon as Icon, useBbNavigate, type PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate, type PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { Overview } from "../contract";
 import { ActionsProvider, nudgeText, runNext, useActions } from "./actions";
 import { BUTTON, Dialog, ErrorNote, ICON_GHOST_LARGE, PAGE, PageHeading, TipProvider } from "./common";
@@ -145,15 +145,15 @@ function PhonePrView({ prKey, backLabel, onBack }: { prKey: string; backLabel: s
   );
 }
 
-/** The four areas, the PR list and the PR view; bb's sidebar holds the areas on a desktop (see sidebar.tsx). */
+/** The four areas, the PR list and the PR view; VesnALIA's sidebar holds the areas on a desktop (see sidebar.tsx). */
 export function ShuttlePage({ subPath }: PluginNavPanelProps) {
-  // bb opens the page at its root from the rail: that is where it was last left, until the URL says so too.
+  // VesnALIA opens the page at its root from the rail: that is where it was last left, until the URL says so too.
   const remembered = useStored(lastRoute);
   const resume = subPath === "" && remembered !== null ? remembered : null;
   const route = parseRoute(resume ?? subPath);
   const viewport = useViewport();
   const phone = viewport === "phone";
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const overview = useShuttleQuery("overview", {});
   const filter = useStored(reviewFilter);
   const setFilter = reviewFilter.set;
@@ -270,7 +270,7 @@ export function ShuttlePage({ subPath }: PluginNavPanelProps) {
     if (!overlay || dialogOpen) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented) return;
-      // bb's "Back to app" also listens for Escape; while the panel is open, Escape closes the panel.
+      // VesnALIA's "Back to app" also listens for Escape; while the panel is open, Escape closes the panel.
       event.preventDefault();
       close.current();
     };

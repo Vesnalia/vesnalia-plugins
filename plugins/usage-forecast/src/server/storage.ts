@@ -1,7 +1,7 @@
 // KV keys and bounded buffers. Every buffer is trimmed before it is written,
 // so no value comes near the host's 256 KB limit.
 
-import type { PluginKvStorage } from "@get-bb/plugin-sdk";
+import type { PluginKvStorage } from "@vesnalia/plugin-sdk";
 import type { ClosedWindow } from "../shared/forecast";
 import type { HeldPace } from "../shared/pace";
 import type { CompactLogEntry, ProviderLimits } from "../shared/contract";
@@ -41,7 +41,7 @@ export const keys = {
   tokenThreads: "tokens:threads",
 } as const;
 
-/** The last compaction point bb reported for one provider and window size. */
+/** The last compaction point VesnALIA reported for one provider and window size. */
 export interface CompactPoint {
   tokens: number;
   /** Epoch ms of the last read that reported it. */

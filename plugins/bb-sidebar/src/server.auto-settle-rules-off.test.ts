@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import plugin from "./server";
 import {
   createFakePluginHost,
@@ -22,12 +22,12 @@ async function load(threads: ProjectThread[], rules?: Rules) {
   let lists = 0;
   const missing = new Set<string>();
   const listed = () => threads.filter((thread) => !missing.has(thread.id));
-  const { bb, harness } = createFakePluginHost({
-    pluginId: "bb-sidebar",
+  const { alia, harness } = createFakePluginHost({
+    pluginId: "alia-sidebar",
     sdk: {
       projects: { list: async () => projectsWith(listed()) },
       threads: {
-        list: async (args: Parameters<BbPluginApi["sdk"]["threads"]["list"]>[0]) => {
+        list: async (args: Parameters<AliaPluginApi["sdk"]["threads"]["list"]>[0]) => {
           if (args?.threadIds) return listed().filter((thread) => args.threadIds!.includes(thread.id));
           lists += 1;
           const offset = args?.offset ?? 0;
@@ -43,7 +43,7 @@ async function load(threads: ProjectThread[], rules?: Rules) {
       },
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   disposers.push(() => harness.lifecycle.dispose());
   const evaluate = () => harness.behavior.callRpc("evaluateAutoSettle", {}) as Promise<{ changedThreadIds: string[] }>;
   const settledIds = async () =>
@@ -55,7 +55,7 @@ async function load(threads: ProjectThread[], rules?: Rules) {
     const settings = (await harness.behavior.callRpc("getSidebarSettings", {})) as Record<string, unknown>;
     await harness.behavior.callRpc("updateSidebarSettings", { ...settings, ...next });
   };
-  return { bb, changeRules, evaluate, lists: () => lists, missing, settledIds };
+  return { alia, changeRules, evaluate, lists: () => lists, missing, settledIds };
 }
 
 const off = { autoSettleInactive: false, autoSettleOnMerge: false };
@@ -64,7 +64,7 @@ describe("automatic settle with both rules off", () => {
   it("lists threads on the first pass only", async () => {
     const policy = await load([projectThread({ id: "thr", environmentId: "env_thr", ...quiet })], off);
     // A thread the user settled is not the policy's to change.
-    policy.bb.storage
+    policy.alia.storage
       .database()
       .prepare(`INSERT INTO thread_lifecycle (thread_id, settled_at, settled_override) VALUES (?, ?, 'settled')`)
       .run("thr", old + 1_000);

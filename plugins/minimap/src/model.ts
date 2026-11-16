@@ -10,7 +10,7 @@ export const KINDS: readonly Kind[] = ["user", "reply", "work", "error", "system
 export interface Item {
   id: string;
   kind: Kind;
-  /** Estimated height in px of the row as the timeline draws it; 0 for a row BB folds away. */
+  /** Estimated height in px of the row as the timeline draws it; 0 for a row VesnALIA folds away. */
   h: number;
   /** Width as a share of the message column; only a user message is narrower than the column. */
   w: number;
@@ -43,8 +43,8 @@ export interface Measure {
 
 /**
  * The rectangles, top to bottom, in the strip's own pixels (`own`): every row at its
- * measured height, or an estimate until it has been on screen. BB's scroller has its own
- * pixels (`bb`), which shift whenever BB replaces a spacer's estimate with measurements;
+ * measured height, or an estimate until it has been on screen. VesnALIA's scroller has its own
+ * pixels (`VesnALIA`), which shift whenever VesnALIA replaces a spacer's estimate with measurements;
  * `bbs` and `owns` are matching points in both, so a scroll position and a spot on the
  * strip convert to one another. `total` is the thread's height in own pixels.
  */
@@ -61,7 +61,7 @@ export interface Layout {
 
 export const EMPTY_LAYOUT: Layout = { ids: [], kinds: [], y: [], h: [], w: [], total: 0, bbs: [0], owns: [0] };
 
-/** The message column's width and how much of it a bubble may take, as BB draws them. */
+/** The message column's width and how much of it a bubble may take, as VesnALIA draws them. */
 const COLUMN = 728;
 const BUBBLE_MAX = 0.7;
 /** Characters on a line of a reply and of a bubble (text-sm, ~7px a glyph). */
@@ -85,12 +85,12 @@ export function wrappedLines(text: string, chars: number): number {
   return lines;
 }
 
-/** A reply's estimated height: its lines, plus the gap BB leaves around the text. */
+/** A reply's estimated height: its lines, plus the gap VesnALIA leaves around the text. */
 export function replyHeight(text: string): number {
   return 16 + wrappedLines(text, REPLY_CHARS) * LINE;
 }
 
-/** BB cuts a long message of yours short (a 3,900-character one was 379px tall), so it is never estimated taller. */
+/** VesnALIA cuts a long message of yours short (a 3,900-character one was 379px tall), so it is never estimated taller. */
 const USER_MAX_H = 380;
 
 /** A user message's estimated height and width share, from its text. */
@@ -102,7 +102,7 @@ export function userSize(text: string): { h: number; w: number } {
 }
 
 /**
- * The kind of a row BB drew that the data has no row for (a row BB made up), from
+ * The kind of a row VesnALIA drew that the data has no row for (a row VesnALIA made up), from
  * its DOM id. The data's own kind is preferred where there is one.
  */
 export function kindOfDomId(domId: string): Kind {
@@ -113,14 +113,14 @@ export function kindOfDomId(domId: string): Kind {
   return "system";
 }
 
-/** A DOM row id's data id: BB folds a run of work rows into `<thread>:<turn>:work-summary:<data id of a member>`. */
+/** A DOM row id's data id: VesnALIA folds a run of work rows into `<thread>:<turn>:work-summary:<data id of a member>`. */
 export function dataIdOf(domId: string): string {
   const at = domId.indexOf(":work-summary:");
   return at < 0 ? domId : domId.slice(at + ":work-summary:".length);
 }
 
 /**
- * Heights for the data rows a live turn's folded lines stand for. While a turn works BB
+ * Heights for the data rows a live turn's folded lines stand for. While a turn works VesnALIA
  * shows its tool calls as lines ("Explored 3 files", "Ran 4 commands") that each cover
  * several data rows, so the first row of a line is as tall as the line and the others
  * take no room. A line covers rows up to the next row on screen, or to the end of its
@@ -180,7 +180,7 @@ function calibrate(items: readonly Item[], measured: (rank: number) => number | 
 /**
  * The thread as rectangles. Every row is laid at its measured height where it has been
  * on screen and at its estimate (scaled by how the estimates did for its kind) where it has
- * not, so the map does not move when BB re-measures its spacers while the reader scrolls.
+ * not, so the map does not move when VesnALIA re-measures its spacers while the reader scrolls.
  * Rows on screen also tie the strip's pixels to the scroller's (`bbs`/`owns`).
  * `total` is the scroller's content height.
  */
@@ -221,9 +221,9 @@ export function buildLayout(args: {
   // The points that tie the two kinds of pixel together, in order, each strictly further down the scroller.
   const bbs = [0];
   const owns = [0];
-  const tie = (bb: number, at: number) => {
-    if (bb <= bbs[bbs.length - 1]! || at < owns[owns.length - 1]!) return;
-    bbs.push(bb);
+  const tie = (alia: number, at: number) => {
+    if (alia <= bbs[bbs.length - 1]! || at < owns[owns.length - 1]!) return;
+    bbs.push(alia);
     owns.push(at);
   };
   for (const row of mounted) {
@@ -291,12 +291,12 @@ export function inScrollerPixels(layout: Layout): Layout {
 }
 
 /** A scroller position in the strip's own pixels. */
-export function ownOf(layout: Layout, bb: number): number {
-  return between(layout.bbs, layout.owns, bb);
+export function ownOf(layout: Layout, alia: number): number {
+  return between(layout.bbs, layout.owns, alia);
 }
 
 /** A spot on the strip, in own pixels, as a scroller position. */
-export function bbOf(layout: Layout, own: number): number {
+export function aliaOf(layout: Layout, own: number): number {
   return between(layout.owns, layout.bbs, own);
 }
 
@@ -317,12 +317,12 @@ export function rectAt(layout: Layout, y: number): number {
 
 /** Where a click on the strip should put the scroller: its centre at the point clicked. */
 export function scrollForClick(layout: Layout, y: number, scale: number, viewport: number): number {
-  return bbOf(layout, y / scale) - viewport / 2;
+  return aliaOf(layout, y / scale) - viewport / 2;
 }
 
 /** Where a drag puts the scroller: the slider's top at the pointer less where it was grabbed. */
 export function scrollForDrag(layout: Layout, y: number, grab: number, scale: number): number {
-  return bbOf(layout, (y - grab) / scale);
+  return aliaOf(layout, (y - grab) / scale);
 }
 
 /**

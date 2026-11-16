@@ -2,7 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import {
   createFakePluginHost,
   type ExperimentalFakeHostRpcCall,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import { branchRpcContract } from "./branch-contract";
 import { registerBranchProvider, type BranchProviderDeps } from "./branch-provider";
 
@@ -33,7 +33,7 @@ function start(
     },
   });
   disposers.push(() => host.harness.lifecycle.dispose());
-  const handlers = registerBranchProvider(host.bb, {
+  const handlers = registerBranchProvider(host.alia, {
     repoFromRemote: (remote) => (remote.includes("gitea.example") ? "acme/widgets" : null),
     repoFromCheckout: async () => "acme/widgets",
     login: async () => "dev",
@@ -41,7 +41,7 @@ function start(
     readCiStatus: async () => "none",
     ...options.deps,
   });
-  host.bb.rpc.register(branchRpcContract, handlers);
+  host.alia.rpc.register(branchRpcContract, handlers);
   const provider = host.harness.registrations.environmentProviders.get("gitea-branch")!;
   return { host, provider };
 }
@@ -57,7 +57,7 @@ function context(inputs: unknown, claim = true) {
       host: { id: "host-1" },
       projectCheckout: { path: "/src/widgets" },
       pathKey: "attempt-1",
-      suggestedBranchName: "bb/thread-1",
+      suggestedBranchName: "alia/thread-1",
       signal: new AbortController().signal,
       report: { step: (text: string) => steps.push(text), log: () => {} },
       experimental_claimPath: async (path: string) => {
@@ -100,8 +100,8 @@ it("starts a new thread branch from a local branch or the default branch", async
   await provider.create(context({ kind: "new", from: { kind: "named", name: "develop" } }).value);
   await provider.create(context({ kind: "new", from: { kind: "default" } }).value);
   expect(host.harness.inspection.experimental_hostRpcCalls.map((call) => call.input)).toMatchObject([
-    { branch: { kind: "new", name: "bb/thread-1", base: "develop" } },
-    { branch: { kind: "new", name: "bb/thread-1", base: null } },
+    { branch: { kind: "new", name: "alia/thread-1", base: "develop" } },
+    { branch: { kind: "new", name: "alia/thread-1", base: null } },
   ]);
 });
 
@@ -183,10 +183,10 @@ it("restores a removed worktree on the branch it had", async () => {
   const ctx = context({ kind: "new", from: { kind: "default" } });
   await provider.restore!({
     ...(ctx.value as object),
-    previous: { environment: { branchName: "bb/thread-1" }, resource: null },
+    previous: { environment: { branchName: "alia/thread-1" }, resource: null },
   } as never);
   expect(host.harness.inspection.experimental_hostRpcCalls[0]?.input).toMatchObject({
-    branch: { kind: "checkout", name: "bb/thread-1" },
+    branch: { kind: "checkout", name: "alia/thread-1" },
   });
 });
 
@@ -296,7 +296,7 @@ it("reads CI states for my branches or other branches on request, and keeps fini
   expect(reads).toEqual(["sha-1", "sha-2", "sha-2"]);
 });
 
-it("uses the checkout's own origin, not the remote BB recorded for the project", async () => {
+it("uses the checkout's own origin, not the remote VesnALIA recorded for the project", async () => {
   const checkouts: Record<string, string | null> = {
     "/src/moved": "acme/widgets",
     "/src/elsewhere": null,

@@ -3,7 +3,7 @@
 // `issues.get` answers.
 import { forwardRef } from "react";
 import type { ReactNode } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import type { KataComment, KataIssue, KataIssueDetail, KataLinkPeer } from "@/lib/kata-types";
 import { cn } from "@/lib/utils";
 import { LabelChip, PriorityChip, StatusGlyph } from "@/components/issue-bits";

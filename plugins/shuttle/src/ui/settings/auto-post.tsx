@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, Markdown } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, Markdown } from "@vesnalia/plugin-sdk/app";
 import {
   AUTO_POST_MODES, AUTO_POST_SEVERITIES, CONCERN_KINDS, DEFAULT_DISCLOSURE, DEFAULT_VERIFIER_COMMAND, POSTING_MODES, type AutoPost, type AutoPostMode, type AutoPostRepo, type ConcernKind,
 } from "../../config";

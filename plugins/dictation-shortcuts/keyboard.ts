@@ -1,4 +1,4 @@
-// Narrow adapter to native BB recorder controls. Never target Send.
+// Narrow adapter to native VesnALIA recorder controls. Never target Send.
 export const ROOT = '[data-app-composer]';
 const OVERLAY = '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [data-promptbox-typeahead-menu]';
 export function visible(element: HTMLElement): boolean {
@@ -46,7 +46,7 @@ export function mountKeyboard(doc: Document, options: KeyboardOptions = {}): () 
     if (root.isConnected) insertSpace(root);
   };
   // Native start is asynchronous (permissions/device acquisition). If released
-  // before it finishes, stop as soon as BB presents recording controls.
+  // before it finishes, stop as soon as VesnALIA presents recording controls.
   const settleHold = () => {
     if (!hold) return;
     if (!hold.root.isConnected) { hold = null; clearTimer(); return; }

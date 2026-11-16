@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { ServiceKind } from "./contract";
 import type { ModelOption, rpcContract, Status } from "./server";
@@ -17,17 +17,17 @@ const SERVICES: Record<
   inference: {
     label: "Titles & commit messages",
     useLabel: "Use for titles & commit messages",
-    /** BB's per-attempt budget for title and commit-message inference. */
+    /** VesnALIA's per-attempt budget for title and commit-message inference. */
     limitMs: 5_000,
-    slowNote: "slower than BB's 5s limit for titles",
+    slowNote: "slower than VesnALIA's 5s limit for titles",
     showPricing: true,
   },
   voice: {
     label: "Voice transcription",
     useLabel: "Use for voice transcription",
-    /** BB's per-attempt budget for voice transcription. */
+    /** VesnALIA's per-attempt budget for voice transcription. */
     limitMs: 10_000,
-    slowNote: "slower than BB's 10s limit for voice input",
+    slowNote: "slower than VesnALIA's 10s limit for voice input",
     // Speech-to-text prices mix per-token, per-second, and per-minute units.
     showPricing: false,
   },
@@ -289,13 +289,13 @@ export default definePluginApp((app) => {
   app.slots.settingsSection({
     id: "openrouter",
     title: "Titles & commit messages",
-    description: "Pick the OpenRouter model BB uses for thread titles and commit messages.",
+    description: "Pick the OpenRouter model VesnALIA uses for thread titles and commit messages.",
     component: InferenceSettings,
   });
   app.slots.settingsSection({
     id: "openrouter-voice",
     title: "Voice transcription",
-    description: "Pick the OpenRouter speech-to-text model BB uses for voice input.",
+    description: "Pick the OpenRouter speech-to-text model VesnALIA uses for voice input.",
     component: VoiceSettings,
   });
 });

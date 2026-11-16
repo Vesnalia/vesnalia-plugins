@@ -1,7 +1,7 @@
-import type { BbPluginApi, PluginProviderFallbackModel } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginProviderFallbackModel } from "@vesnalia/plugin-sdk";
 
 // Flare's renderer: a provider that runs no model. Its threads are Flare's hidden companion threads, where each flare
-// arrives as an agent-only prompt and comes back, word for word, as an assistant message. bb renders assistant
+// arrives as an agent-only prompt and comes back, word for word, as an assistant message. VesnALIA renders assistant
 // messages with every installed plugin's renderer, so a flare looks exactly like a reply would, and Flare needs to
 // know nothing about those plugins. Nothing here calls a model: a turn costs no tokens and no money.
 
@@ -35,8 +35,8 @@ export const RENDERER_MODEL = {
   isDefault: true,
 } satisfies PluginProviderFallbackModel;
 
-export function registerProvider(bb: BbPluginApi): void {
-  bb.providers.register({
+export function registerProvider(alia: AliaPluginApi): void {
+  alia.providers.register({
     id: PROVIDER_ID,
     displayName: "Flare",
     icon: "flare/flare",

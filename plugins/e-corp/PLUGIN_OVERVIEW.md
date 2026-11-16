@@ -8,11 +8,11 @@
 
 ## How it behaves
 
-E Corp follows bb's light and dark mode setting automatically. It includes dedicated focus, selection, warning, success, destructive, diff, and ANSI terminal colours rather than flattening semantic states into the neutral palette. Every text tier is measured against the darkest and lightest points the field reaches in that mode.
+E Corp follows VesnALIA's light and dark mode setting automatically. It includes dedicated focus, selection, warning, success, destructive, diff, and ANSI terminal colours rather than flattening semantic states into the neutral palette. Every text tier is measured against the darkest and lightest points the field reaches in that mode.
 
 The fonts and the texture are embedded in the stylesheet, so the theme is self-contained and makes no network requests. Reduced-motion and reduced-transparency preferences are supported. The theme adds no commands, background services, settings, accounts, API keys, or external dependencies.
 
-After installation, select **E Corp** under Settings → Appearance, or run `bb theme set plugin:e-corp:e-corp`.
+After installation, select **E Corp** under Settings → Appearance, or run `alia theme set plugin:e-corp:e-corp`.
 
 ## Attribution
 

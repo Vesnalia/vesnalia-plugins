@@ -10,7 +10,7 @@ import {
   definePluginApp,
   useSettings,
   type ExperimentalMessageMetadataProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { getAreas, noteMessage, prune, setInitiator, subscribeAreas } from "./src/registry";
 import { clearBlobUrls } from "./src/thumbs";
 import { StickyBar } from "./src/bar";

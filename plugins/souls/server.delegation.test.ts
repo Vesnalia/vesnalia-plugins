@@ -4,17 +4,17 @@ import { z } from "zod";
 import {
   createFakePluginHost, makeMessageDispatchHookContext,
   makePluginAgentConfigurationContext, makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.ts";
 import { soulSchema, threadSoulStateSchema } from "./shared.ts";
 
 const savedSoul = z.object({ soul: soulSchema });
 
 async function setup() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
   harness.inspection.sdk.stub("threads.get", () => makeThreadResponse({ status: "idle", parentThreadId: "parent" }));
   harness.inspection.sdk.stub("threads.events.list", () => []);
-  await plugin(bb);
+  await plugin(alia);
   const create = async (name: string, defaultAllowDelegation = false) => savedSoul.parse(
     await harness.behavior.callRpc("souls_create", { draft: { name }, origin: "manual", defaultAllowDelegation }),
   ).soul;

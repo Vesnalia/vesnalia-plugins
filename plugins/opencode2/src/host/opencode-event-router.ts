@@ -1,4 +1,4 @@
-import { experimental_COMPACTION_PRESENTATION as compactionPresentation } from "@get-bb/plugin-sdk/provider-bridge";
+import { experimental_COMPACTION_PRESENTATION as compactionPresentation } from "@vesnalia/plugin-sdk/provider-bridge";
 import { dynamicToolCallRouter, emit } from "./bridge-runtime.ts";
 import { OpenCodeInteractions } from "./opencode-interactions.ts";
 import { toolFailureError } from "./prompt.ts";
@@ -166,7 +166,7 @@ export class OpenCodeEventRouter {
   private readonly emitTimeline: typeof emit;
   private readonly sessionLookup: ReadonlyMap<string, SessionState>;
   private readonly request: RequestOpenCode;
-  /** Native subagent sessions, routed into their parent BB turn. */
+  /** Native subagent sessions, routed into their parent VesnALIA turn. */
   private readonly childSessions = new Map<
     string,
     { parent: SessionState; callId: string }
@@ -258,7 +258,7 @@ export class OpenCodeEventRouter {
     if (event.type === "session.text.started" && textPartId) {
       const item = { type: "agentMessage", text: "" };
       active.opened.set(textPartId, item);
-      this.emit(session.bbThreadId, [
+      this.emit(session.aliaThreadId, [
         {
           kind: "item.open",
           key: itemKey(textPartId, "agentMessage"),
@@ -272,7 +272,7 @@ export class OpenCodeEventRouter {
       textPartId &&
       typeof data.delta === "string"
     ) {
-      this.emit(session.bbThreadId, [
+      this.emit(session.aliaThreadId, [
         {
           kind: "item.textDelta",
           key: itemKey(textPartId, "agentMessage"),
@@ -293,7 +293,7 @@ export class OpenCodeEventRouter {
       };
       item.text = data.text;
       active.opened.delete(textPartId);
-      this.emit(session.bbThreadId, [
+      this.emit(session.aliaThreadId, [
         {
           kind: "item.textClose",
           key: itemKey(textPartId, "agentMessage"),
@@ -317,7 +317,7 @@ export class OpenCodeEventRouter {
     if (event.type === "session.reasoning.started" && reasoningPartId) {
       const item = { type: "reasoning", summary: [], content: [] };
       active.opened.set(reasoningPartId, item);
-      this.emit(session.bbThreadId, [
+      this.emit(session.aliaThreadId, [
         {
           kind: "item.open",
           key: itemKey(reasoningPartId, "reasoningText"),
@@ -331,7 +331,7 @@ export class OpenCodeEventRouter {
       reasoningPartId &&
       typeof data.delta === "string"
     ) {
-      this.emit(session.bbThreadId, [
+      this.emit(session.aliaThreadId, [
         {
           kind: "item.textDelta",
           key: itemKey(reasoningPartId, "reasoningText"),
@@ -353,7 +353,7 @@ export class OpenCodeEventRouter {
       };
       item.content = [data.text];
       active.opened.delete(reasoningPartId);
-      this.emit(session.bbThreadId, [
+      this.emit(session.aliaThreadId, [
         {
           kind: "item.textClose",
           key: itemKey(reasoningPartId, "reasoningText"),
@@ -392,7 +392,7 @@ export class OpenCodeEventRouter {
         if (touched.length) active.touchedFiles.set(eventId, touched);
         active.pendingTools.delete(eventId);
         active.pendingInput.delete(eventId);
-        this.emit(session.bbThreadId, [
+        this.emit(session.aliaThreadId, [
           {
             kind: "item.open",
             key: itemKey(eventId, "tool"),
@@ -402,7 +402,7 @@ export class OpenCodeEventRouter {
           },
         ]);
         // OpenCode's question tool blocks forever waiting on an interactive
-        // form that no TUI will answer in a BB thread. Relay it to BB's
+        // form that no TUI will answer in a VesnALIA thread. Relay it to VesnALIA's
         // native question UI instead (see handleQuestion).
         if (name.toLowerCase() === "question") {
           void this.interactions
@@ -459,7 +459,7 @@ export class OpenCodeEventRouter {
         if (touched.length) active.touchedFiles.set(eventId, touched);
         active.pendingTools.delete(eventId);
         active.pendingInput.delete(eventId);
-        this.emit(session.bbThreadId, [
+        this.emit(session.aliaThreadId, [
           {
             kind: "item.open",
             key: itemKey(eventId, "tool"),
@@ -505,7 +505,7 @@ export class OpenCodeEventRouter {
             : (exitCode ?? 1);
       }
       active.opened.delete(eventId);
-      this.emit(session.bbThreadId, [
+      this.emit(session.aliaThreadId, [
         {
           kind: "item.close",
           key: itemKey(eventId, "tool"),
@@ -550,14 +550,14 @@ export class OpenCodeEventRouter {
         active.lastStepTokens = inputRecord(data.tokens);
     }
     if (event.type === "session.usage.updated") {
-      this.emit(session.bbThreadId, usageDeltas(session, active, data.tokens));
+      this.emit(session.aliaThreadId, usageDeltas(session, active, data.tokens));
     }
     if (event.type === "session.retry.scheduled") {
       const error = inputRecord(data.error);
       const attempt =
         typeof data.attempt === "number" ? ` (attempt ${data.attempt})` : "";
       const category = retryErrorCategory(error);
-      this.emit(session.bbThreadId, [
+      this.emit(session.aliaThreadId, [
         {
           kind: "provider.error",
           message: `${stringValue(error.message) ?? "OpenCode model request failed"}. Retrying${attempt}.`,
@@ -631,7 +631,7 @@ export class OpenCodeEventRouter {
       if (itemId && !active.opened.has(itemId)) {
         const item = { type: "compaction" };
         active.opened.set(itemId, item);
-        this.emit(session.bbThreadId, [
+        this.emit(session.aliaThreadId, [
           {
             kind: "item.open",
             key: itemKey(itemId, "compaction"),
@@ -660,7 +660,7 @@ export class OpenCodeEventRouter {
     if (manual && manualCompaction) {
       active.opened.delete(manualCompaction.itemId);
       this.emit(
-        session.bbThreadId,
+        session.aliaThreadId,
         manualCompactionOutcomeDeltas({
           providerTurnId: active.providerTurnId,
           messageId: manualCompaction.itemId,
@@ -682,7 +682,7 @@ export class OpenCodeEventRouter {
       const item = active.opened.get(itemId);
       if (item) {
         active.opened.delete(itemId);
-        this.emit(session.bbThreadId, [
+        this.emit(session.aliaThreadId, [
           {
             kind: "item.close",
             key: itemKey(itemId, "compaction"),
@@ -695,7 +695,7 @@ export class OpenCodeEventRouter {
       }
     }
     if (isCompleted)
-      this.emit(session.bbThreadId, [
+      this.emit(session.aliaThreadId, [
         { kind: "context.compacted", providerTurnId: active.providerTurnId },
       ]);
     return true;
@@ -704,7 +704,7 @@ export class OpenCodeEventRouter {
   /**
    * OpenCode v2 runs shell tools as background shells and only reports their
    * output when the tool finishes. Poll the shell's byte-cursor output API so
-   * BB's command row streams like a local terminal.
+   * VesnALIA's command row streams like a local terminal.
    */
   private streamShellOutput(
     session: SessionState,
@@ -731,7 +731,7 @@ export class OpenCodeEventRouter {
             typeof output.output === "string" &&
             output.output.length > 0
           ) {
-            this.emit(session.bbThreadId, [
+            this.emit(session.aliaThreadId, [
               {
                 kind: "item.outputDelta",
                 key: itemKey(callId, "tool"),
@@ -797,7 +797,7 @@ export class OpenCodeEventRouter {
       if (typeof change.diff === "string" && change.diff)
         (active.turnPatches ??= []).push(change.diff);
     const item = { type: "fileChange", changes };
-    this.emit(session.bbThreadId, [
+    this.emit(session.aliaThreadId, [
       {
         kind: "item.open",
         key: itemKey(key, "fileChange"),
@@ -824,7 +824,7 @@ export class OpenCodeEventRouter {
     active.abortController.abort();
     if (active.manualCompaction) {
       this.emit(
-        session.bbThreadId,
+        session.aliaThreadId,
         manualCompactionOutcomeDeltas({
           providerTurnId: active.providerTurnId,
           messageId: active.manualCompaction.itemId,
@@ -841,12 +841,12 @@ export class OpenCodeEventRouter {
     active.shellPolls?.clear();
     dynamicToolCallRouter.resolve(
       session.dynamicToolScope,
-      "OpenCode turn ended before the BB tool returned",
+      "OpenCode turn ended before the VesnALIA tool returned",
     );
     for (const [, formId] of active.openQuestions)
       void this.interactions.cancelQuestionForm(session, formId);
     for (const [id, item] of active.opened) {
-      this.emit(session.bbThreadId, [
+      this.emit(session.aliaThreadId, [
         {
           kind: "item.close",
           key: itemKeyForOpenItem(id, item),
@@ -866,7 +866,7 @@ export class OpenCodeEventRouter {
     // OpenCode's session diff endpoint needs snapshots that are often off,
     // so the turn diff is the sequence of patches its edit tools reported.
     if (active.turnPatches?.length)
-      this.emit(session.bbThreadId, [
+      this.emit(session.aliaThreadId, [
         {
           kind: "turn.diff",
           diff: active.turnPatches
@@ -877,7 +877,7 @@ export class OpenCodeEventRouter {
       ]);
     if (status === "failed") {
       this.emit(
-        session.bbThreadId,
+        session.aliaThreadId,
         providerFailureDeltas({
           providerTurnId: active.providerTurnId,
           error: error ?? "OpenCode execution failed",
@@ -887,7 +887,7 @@ export class OpenCodeEventRouter {
         }),
       );
     } else {
-      this.emit(session.bbThreadId, [
+      this.emit(session.aliaThreadId, [
         {
           kind: "turn.boundary",
           status,

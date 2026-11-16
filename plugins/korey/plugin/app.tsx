@@ -1,4 +1,4 @@
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { ConnectionSettings } from "./connection-settings.js";
 import { OPERATION_RESOLUTION_RENDERER_ID } from "./contracts.js";
 import { OperationResolution } from "./operation-resolution.js";

@@ -7,7 +7,7 @@
  * pending-question form — the answer surface is that same host chrome and
  * the fix itself proves an absence (the pane's own card is removed);
  * the file-change title click — the maximize's outcome is host navigation
- * (bb's main view opens the diff), nothing the harness can render; ticket
+ * (VesnALIA's main view opens the diff), nothing the harness can render; ticket
  * chips' idle-callback fetches — fetch timing, the pixels identical either
  * way.
  *
@@ -15,7 +15,7 @@
  *   mock composer paints the pane's focusRequest bump as a ring) and a
  *   switch to another thread keeps the ring.
  * - new-project-on-the-row: the dialog at rest shows the folder-plus on
- *   the project row's line; the click runs bb's typical create over the
+ *   the project row's line; the click runs VesnALIA's typical create over the
  *   mock's pickFolder, and the toolbar's Project filter reads the created
  *   project back.
  * - magic-rename-gated-row: a destroyed environment renders the fallback
@@ -66,7 +66,7 @@ export const demos = [
       // pickers row's open left edge — no stacked shape, no dead band.
       await g.shot("button-on-the-row", { hold: 1.2 });
 
-      // The click runs bb's typical create: the mock's pickFolder answers
+      // The click runs VesnALIA's typical create: the mock's pickFolder answers
       // with a picked folder, the name derives from it, and the create
       // carries the local_path source — no hand-typed field this cut.
       await g.click("[data-new-project-option]", { settle: 1.6 });

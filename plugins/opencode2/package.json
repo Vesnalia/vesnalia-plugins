@@ -1,20 +1,12 @@
 {
-  "name": "bb-plugin-opencode2",
+  "name": "alia-plugin-opencode2",
   "version": "1.2.0",
-  "description": "BB plugin that runs threads through an installed OpenCode v2 server.",
+  "description": "VesnALIA plugin that runs threads through an installed OpenCode v2 server.",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "opencode",
     "provider"
   ],
-  "homepage": "https://github.com/iamEvanYT/bb-plugin-opencode2#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/iamEvanYT/bb-plugin-opencode2.git"
-  },
-  "bugs": {
-    "url": "https://github.com/iamEvanYT/bb-plugin-opencode2/issues"
-  },
   "author": {
     "name": "Evan",
     "url": "https://github.com/iamEvanYT"
@@ -22,20 +14,20 @@
   "license": "MIT",
   "type": "module",
   "engines": {
-    "bb": ">=0.41",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.41",
+    "aliaPluginSdk": ">=0.6.49"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "npm run build && node --test --test-concurrency=1 tests/*.test.ts && vitest run tests/app.test.tsx",
     "check": "npm run format:check && npm run typecheck && npm test"
   },
-  "bb": {
+  "alia": {
     "name": "OpenCode v2",
-    "description": "Run BB threads through an installed OpenCode v2 server.",
+    "description": "Run VesnALIA threads through an installed OpenCode v2 server.",
     "branding": {
       "icon": "./icons/opencode.svg"
     },
@@ -44,9 +36,9 @@
     "app": "./src/app.tsx"
   },
   "dependencies": {
-    "@get-bb/plugin-sdk": "0.6.80",
     "@radix-ui/react-slot": "^1.5.0",
-    "zod": "^4.5.4"
+    "zod": "^4.5.4",
+    "@vesnalia/plugin-sdk": "^0.6.80"
   },
   "devDependencies": {
     "@pierre/diffs": "^1.2.9",
@@ -76,5 +68,14 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^4.1.12"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/opencode2#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/opencode2"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

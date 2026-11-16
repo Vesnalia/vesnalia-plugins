@@ -1,4 +1,4 @@
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { posix, win32 } from 'node:path';
 import { formatWorkItemContext, type WorkItem } from '../contract.js';
 import type { FactoryIdentity, FactoryProjectPolicy, FactoryRecord, FactoryRun, FactoryRunKind, FactoryStatusTarget } from './contract.js';
@@ -10,7 +10,7 @@ import { dispatchRejection, executionForDispatch, nativeError as message, thread
 import { statusTargetLabel, trackerTarget } from './tracker.js';
 
 type Store = ReturnType<typeof createFactoryStore>;
-type Sdk = BbPluginApi['sdk'];
+type Sdk = AliaPluginApi['sdk'];
 type Event = Awaited<ReturnType<Sdk['threads']['events']['list']>>[number];
 class SessionBusyError extends Error {}
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
@@ -110,7 +110,7 @@ export function factoryPrompt(item: WorkItem, record: FactoryRecord, kind: Facto
   }[kind];
   return [
     instruction,
-    'Use BB native tools and repository instructions. Taskboard does not impose a workflow runtime.',
+    'Use VesnALIA native tools and repository instructions. Taskboard does not impose a workflow runtime.',
     'A finished turn is not accepted work. Report failures and missing evidence plainly.',
     formatWorkItemContext(item),
     kind === 'build' || kind === 'review'
@@ -173,12 +173,12 @@ export function createFactoryService(
   }
   const coordinators = createCoordinatorLifecycle(sdk, store, persist);
   function existing(item: WorkItem) {
-    const record = store.get({ projectId: item.bbProjectId, source: item.source, locator: item.locator });
+    const record = store.get({ projectId: item.aliaProjectId, source: item.source, locator: item.locator });
     if (!record) throw new Error('No existing ticket workflow is available for coordinator recovery.');
     return record;
   }
   function current(item: WorkItem) {
-    const identity = { projectId: item.bbProjectId, source: item.source, locator: item.locator };
+    const identity = { projectId: item.aliaProjectId, source: item.source, locator: item.locator };
     const record = store.get(identity) ?? newRecord(item);
     const scope = scopeDigest(item);
     if (record.scopeDigest !== scope) {
@@ -363,7 +363,7 @@ export function createFactoryService(
           throw new Error('Project provider changed. Save factory settings before continuing.');
         }
         item = await queue.liveItem(record);
-        if (item.bbProjectId !== record.projectId || item.source !== record.source ||
+        if (item.aliaProjectId !== record.projectId || item.source !== record.source ||
           item.locator !== record.locator || ['done', 'canceled'].includes(item.stateCategory) ||
           scopeDigest(item) !== record.scopeDigest) {
           throw new Error('Issue scope or status changed. Inspect the ticket before continuing.');
@@ -481,18 +481,18 @@ export function createFactoryService(
     }
     const contextId = author?.threadId ?? input.contextThreadId;
     const context = contextId ? await sdk.threads.get({ threadId: contextId }) : null;
-    if (context && context.projectId !== item.bbProjectId) throw new Error('Select a thread in this ticket project.');
+    if (context && context.projectId !== item.aliaProjectId) throw new Error('Select a thread in this ticket project.');
     if (context?.deletedAt) throw new Error('The original authoring session was deleted. Restore it before continuing.');
     if (author && record.coordinator?.status === 'ready' && !legacyRun(record, author) &&
       context?.parentThreadId !== record.coordinator.threadId) {
       throw new Error('The original stage session has a different coordinator. Restore its parent before continuing.');
     }
-    const policy = store.getProjectPolicy(item.bbProjectId, item.source);
+    const policy = store.getProjectPolicy(item.aliaProjectId, item.source);
     const selected = record.execution ?? policy.execution;
     const defaults = selected ? null : context
       ? await sdk.threads.defaultExecutionOptions({ threadId: context.id }).then(value =>
           value ? threadExecution(context.providerId, value) : null)
-      : await sdk.projects.defaultExecutionOptions({ projectId: item.bbProjectId });
+      : await sdk.projects.defaultExecutionOptions({ projectId: item.aliaProjectId });
     const executionArgs = executionForDispatch(selected, defaults);
     const environment = context?.environmentId
       ? await sdk.environments.get({ environmentId: context.environmentId }) : null;
@@ -585,7 +585,7 @@ export function createFactoryService(
         throw new Error('Project provider changed before dispatch.');
       }
       const live = await queue.liveItem(record);
-      if (live.bbProjectId !== record.projectId || live.source !== record.source || live.locator !== record.locator ||
+      if (live.aliaProjectId !== record.projectId || live.source !== record.source || live.locator !== record.locator ||
         ['done', 'canceled'].includes(live.stateCategory) || scopeDigest(live) !== record.scopeDigest ||
         !record.runs.length && live.stateCategory !== 'todo') {
         throw new Error('Issue scope or status changed before stage dispatch.');
@@ -616,7 +616,7 @@ export function createFactoryService(
       } else {
         const thread = await sdk.threads.spawn({
           ...executionArgs,
-          projectId: item.bbProjectId,
+          projectId: item.aliaProjectId,
           ...(record.coordinator?.status === 'ready' ? { parentThreadId: record.coordinator.threadId } : {}),
           environment: (input.kind === 'review' || input.kind === 'plan' || (input.kind === 'build' && build)) && environment
             ? { type: 'reuse', environmentId: environment.id }
@@ -652,7 +652,7 @@ export function createFactoryService(
       } else {
         // Even a transport exception may have committed a native dispatch.
         run.status = 'uncertain';
-        run.error = `Native dispatch outcome uncertain: ${detail}. Inspect recent BB threads; no automatic retry.`;
+        run.error = `Native dispatch outcome uncertain: ${detail}. Inspect recent VesnALIA threads; no automatic retry.`;
       }
     }
     return syncProgress(item, persist(record));
@@ -673,20 +673,20 @@ export function createFactoryService(
             record.projectId === policy.projectId && record.source === policy.provider
           ).map(record => record.locator);
           const candidates = await queue.candidates(policy, excludeLocators);
-          const unclaimed = candidates.filter(candidate => candidate.bbProjectId === policy.projectId &&
+          const unclaimed = candidates.filter(candidate => candidate.aliaProjectId === policy.projectId &&
             candidate.source === policy.provider && candidate.stateCategory === 'todo' && !store.get({
-              projectId: candidate.bbProjectId, source: candidate.source, locator: candidate.locator
+              projectId: candidate.aliaProjectId, source: candidate.source, locator: candidate.locator
             }));
           for (const candidate of unclaimed.slice(0, 500)) {
-            const identity = { projectId: candidate.bbProjectId, source: candidate.source, locator: candidate.locator };
+            const identity = { projectId: candidate.aliaProjectId, source: candidate.source, locator: candidate.locator };
             const item = await queue.liveItem(identity);
-            if (item.bbProjectId !== policy.projectId || item.source !== policy.provider ||
+            if (item.aliaProjectId !== policy.projectId || item.source !== policy.provider ||
               item.locator !== candidate.locator || item.stateCategory !== 'todo') continue;
             const result = await this.admit(item, policy);
             if ('kind' in result && (result.kind === 'capacity' || result.kind === 'disabled')) break;
           }
           const pendingCandidates = candidates.filter(candidate => !store.get({
-            projectId: candidate.bbProjectId, source: candidate.source, locator: candidate.locator
+            projectId: candidate.aliaProjectId, source: candidate.source, locator: candidate.locator
           })).length;
           store.saveScan({ projectId: policy.projectId, observedAt: new Date().toISOString(),
             kind: 'success', reason: null, candidates: candidates.length, pendingCandidates });
@@ -698,9 +698,9 @@ export function createFactoryService(
       }
     },
     async admit(item: WorkItem, policy: FactoryProjectPolicy) {
-      return locked({ projectId: item.bbProjectId, source: item.source, locator: item.locator }, async () => {
+      return locked({ projectId: item.aliaProjectId, source: item.source, locator: item.locator }, async () => {
         const result = store.admit({
-          projectId: item.bbProjectId, source: item.source, locator: item.locator,
+          projectId: item.aliaProjectId, source: item.source, locator: item.locator,
           scopeDigest: scopeDigest(item)
         }, policy);
         if (result.kind !== 'admitted') return result;
@@ -743,7 +743,7 @@ export function createFactoryService(
       };
     },
     async get(item: WorkItem, signal?: AbortSignal) {
-      const identity = { projectId: item.bbProjectId, source: item.source, locator: item.locator };
+      const identity = { projectId: item.aliaProjectId, source: item.source, locator: item.locator };
       return locked(identity, async () => {
         const saved = store.get(identity);
         const record = saved?.admission.kind === 'factory' ? saved : current(item);
@@ -753,12 +753,12 @@ export function createFactoryService(
       });
     },
     async startTask(item: WorkItem, contextThreadId: string | null, execution?: FactoryRecord['execution']) {
-      return locked({ projectId: item.bbProjectId, source: item.source, locator: item.locator }, async () => {
+      return locked({ projectId: item.aliaProjectId, source: item.source, locator: item.locator }, async () => {
         let record = await reconcile(current(item));
         if (execution === null && contextThreadId) {
           try {
             const context = await sdk.threads.get({ threadId: contextThreadId });
-            const defaults = context.projectId === item.bbProjectId && !context.deletedAt && !context.archivedAt
+            const defaults = context.projectId === item.aliaProjectId && !context.deletedAt && !context.archivedAt
               ? await sdk.threads.defaultExecutionOptions({ threadId: context.id })
               : null;
             record.execution = defaults ? threadExecution(context.providerId, defaults) : null;
@@ -823,7 +823,7 @@ export function createFactoryService(
       });
     },
     async retryStatus(item: WorkItem) {
-      return locked({ projectId: item.bbProjectId, source: item.source, locator: item.locator }, async () => {
+      return locked({ projectId: item.aliaProjectId, source: item.source, locator: item.locator }, async () => {
         const record = current(item);
         record.trackerProgress = { ...record.trackerProgress, status: 'pending', message: null };
         return syncProgress(item, persist(record));
@@ -831,7 +831,7 @@ export function createFactoryService(
     },
     forThread: (threadId: string) => store.forThread(threadId),
     async adoptCoordinator(item: WorkItem, expectedVersion: number) {
-      return locked({ projectId: item.bbProjectId, source: item.source, locator: item.locator }, async () => {
+      return locked({ projectId: item.aliaProjectId, source: item.source, locator: item.locator }, async () => {
         let record = existing(item);
         if (record.coordinator?.status === 'ready') return coordinators.observe(record);
         assertVersion(record, expectedVersion);
@@ -842,7 +842,7 @@ export function createFactoryService(
       });
     },
     async retryCoordinator(item: WorkItem, expectedVersion: number, intentId: string) {
-      return locked({ projectId: item.bbProjectId, source: item.source, locator: item.locator }, async () => {
+      return locked({ projectId: item.aliaProjectId, source: item.source, locator: item.locator }, async () => {
         let record = existing(item);
         assertVersion(record, expectedVersion);
         if (record.coordinator?.status !== 'failed' || record.coordinator.intentId !== intentId) {
@@ -854,14 +854,14 @@ export function createFactoryService(
       });
     },
     async recoverCoordinator(item: WorkItem, expectedVersion: number, intentId: string, threadId: string) {
-      return locked({ projectId: item.bbProjectId, source: item.source, locator: item.locator }, async () => {
+      return locked({ projectId: item.aliaProjectId, source: item.source, locator: item.locator }, async () => {
         const record = existing(item);
         assertVersion(record, expectedVersion);
         return coordinators.recover(item, record, intentId, threadId);
       });
     },
     async linkRecovered(item: WorkItem, expectedVersion: number, threadId: string) {
-      return locked({ projectId: item.bbProjectId, source: item.source, locator: item.locator }, async () => {
+      return locked({ projectId: item.aliaProjectId, source: item.source, locator: item.locator }, async () => {
         const record = current(item);
         assertVersion(record, expectedVersion);
         const run = record.runs.at(-1);
@@ -899,14 +899,14 @@ export function createFactoryService(
     async setExecution(item: WorkItem, execution: FactoryRecord['execution']) {
       // Execution is an independent preference: last selection wins instead of
       // failing whenever background progress advanced the record version.
-      return locked({ projectId: item.bbProjectId, source: item.source, locator: item.locator }, async () => {
+      return locked({ projectId: item.aliaProjectId, source: item.source, locator: item.locator }, async () => {
         const record = current(item);
         record.execution = execution;
         return persist(record);
       });
     },
     async savePlan(item: WorkItem, expectedVersion: number, body: string) {
-      return locked({ projectId: item.bbProjectId, source: item.source, locator: item.locator }, async () => {
+      return locked({ projectId: item.aliaProjectId, source: item.source, locator: item.locator }, async () => {
         const record = current(item);
         assertVersion(record, expectedVersion);
         savePlan(record, body);
@@ -915,7 +915,7 @@ export function createFactoryService(
       });
     },
     async approve(item: WorkItem, expectedVersion: number, hash: string) {
-      return locked({ projectId: item.bbProjectId, source: item.source, locator: item.locator }, async () => {
+      return locked({ projectId: item.aliaProjectId, source: item.source, locator: item.locator }, async () => {
         const record = current(item);
         assertVersion(record, expectedVersion);
         approvePlan(record, hash);
@@ -925,7 +925,7 @@ export function createFactoryService(
     async start(item: WorkItem, input: {
       expectedVersion: number; kind: FactoryRunKind; contextThreadId: string | null; retry: boolean;
     }) {
-      return locked({ projectId: item.bbProjectId, source: item.source, locator: item.locator }, async () => {
+      return locked({ projectId: item.aliaProjectId, source: item.source, locator: item.locator }, async () => {
         const requested = current(item);
         const record = await reconcile(structuredClone(requested));
         const last = record.runs.at(-1);
@@ -948,12 +948,12 @@ export function createFactoryService(
           let dirty = false;
           if (latest.coordinator?.status === 'starting') {
             latest.coordinator = { ...latest.coordinator, status: 'uncertain',
-              error: 'BB restarted during coordinator dispatch. Inspect native threads and link the matching coordinator; no duplicate was started.' };
+              error: 'VesnALIA restarted during coordinator dispatch. Inspect native threads and link the matching coordinator; no duplicate was started.' };
             dirty = true;
           }
           for (const run of latest.runs) if (run.status === 'starting') {
             run.status = 'uncertain';
-            run.error = 'BB restarted during dispatch. Inspect native threads before proceeding; no duplicate was started.';
+            run.error = 'VesnALIA restarted during dispatch. Inspect native threads before proceeding; no duplicate was started.';
             dirty = true;
           }
           if (dirty) persist(latest);
@@ -976,7 +976,7 @@ export function createFactoryService(
                   throw new Error('Project provider changed. Save factory settings before continuing.');
                 }
                 const live = await queue.liveItem(latest);
-                if (live.bbProjectId !== latest.projectId || live.source !== latest.source ||
+                if (live.aliaProjectId !== latest.projectId || live.source !== latest.source ||
                   live.locator !== latest.locator || live.stateCategory !== 'todo' ||
                   scopeDigest(live) !== latest.scopeDigest) {
                   throw new Error('Reserved issue changed before dispatch.');

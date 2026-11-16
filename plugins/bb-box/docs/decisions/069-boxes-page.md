@@ -8,7 +8,7 @@ after the re-reviews](#what-changed-after-the-re-reviews)).
 Being built in the units of [How it is built](#14-how-it-is-built).
 
 The prototype is [069-boxes-page/prototype.html](069-boxes-page/prototype.html):
-one file, opened in any browser, made from bb-box's own components with a
+one file, opened in any browser, made from alia-box's own components with a
 fake server. Its source is in [069-boxes-page/prototype](069-boxes-page/prototype/).
 How to click through it is under [The prototype](#the-prototype).
 
@@ -30,7 +30,7 @@ whose click today only unfolds a few facts: "Over here." And: "How do we
 improve this whole page? It's good now, but a little bit more
 improvement."
 
-The Boxes page is bb-box's `navPanel` (`BoxesPage` and `BoxList` in
+The Boxes page is alia-box's `navPanel` (`BoxesPage` and `BoxList` in
 `src/app/desktop.tsx`, rows in `src/app/box-row.tsx` and
 `src/app/settings-machines.tsx`, the toolbar in `src/app/boxes-toolbar.tsx`).
 It lists every box across threads and the person's own machines (036), on
@@ -40,13 +40,13 @@ desktop, device or terminal opens on the page at
 the same path ends in `/from-settings` and its way back goes to settings.
 
 The Monitor (066, `src/app/monitor`, `src/plugin/monitor.ts`) reads any
-machine it can: BB's server, the person's machines, and each box, through
-bb-box's host entry where the box is a BB machine and through the box's
+machine it can: VesnALIA's server, the person's machines, and each box, through
+alia-box's host entry where the box is a VesnALIA machine and through the box's
 command route where it is not. A box is a machine there, with its `boxId`.
 
 ### Who uses the page, and for what
 
-One person uses it: the operator of a BB install, today the owner, every
+One person uses it: the operator of a VesnALIA install, today the owner, every
 day. Agents do not use it; they use `box_list`, `box_status` and the other
 box tools. The tasks, most frequent first. The order is estimated from the
 owner's notes and the decisions' history, not measured.
@@ -68,13 +68,13 @@ owner's notes and the decisions' history, not measured.
 - Each thread's boxes sit under the thread's title, which opens the
   thread.
 - Rows are short and calm, one line for what the box is and one for its
-  state, in the look of BB's Automations page.
+  state, in the look of VesnALIA's Automations page.
 - Quick actions open a box's views, and Stop or Start it in one click; the
   menu has everything else. A stop or release asks first when a thread is
-  working on the box's BB machine (`guarded` in `src/plugin/rpc.ts`, which
+  working on the box's VesnALIA machine (`guarded` in `src/plugin/rpc.ts`, which
   reads `threadsOn`). It does not ask when the box's own thread is working
   through box tools, which is the usual case.
-- A row shows the box's error, an unrequested stop, a failed join to BB
+- A row shows the box's error, an unrequested stop, a failed join to VesnALIA
   and a resize's result under its status line.
 - Search, filters with counts, sort, and a tab that is remembered.
 - A view opens on the page with a way back, or in a browser tab of its own.
@@ -87,15 +87,15 @@ machines of the owner's own. Names here are generic.
 
 1. A click unfolds the row into 7 or more facts in small type. The timings
    are one line of 9 parts ("warm 0.3 s · clone 1.1 s · configure 24 ms ·
-   tags 18 ms · start 1.3 s · network 0.3 s · ssh 0.2 s · total 3.6 s · BB
+   tags 18 ms · start 1.3 s · network 0.3 s · ssh 0.2 s · total 3.6 s · VesnALIA
    enrolment 2.4 s"). There is no link to a box: a reload closes it, and
    nothing can be sent to someone or opened in another tab.
 2. Rows say how a box started, not how it is. Every row seen begins with
-   how long the box took to be ready and to join BB, such as "Ready in
-   3.6 s · BB machine in 2.4 s". None says how long it has been up, that
+   how long the box took to be ready and to join VesnALIA, such as "Ready in
+   3.6 s · VesnALIA machine in 2.4 s". None says how long it has been up, that
    it has been stopped for a day, or that it is at 96% CPU.
 3. "8 cores · 16 GiB · 16 GiB": memory and disk read alike.
-4. A box's numbers are elsewhere: in the Monitor, in BB's sidebar footer,
+4. A box's numbers are elsewhere: in the Monitor, in VesnALIA's sidebar footer,
    picked by name from a list of every machine. They cover the last 6
    minutes (72 readings), and only while the Monitor is open on that box.
    Nothing remembers how a box was an hour ago.
@@ -105,7 +105,7 @@ machines of the owner's own. Names here are generic.
    the Threads tab (`BoxList` in `src/app/desktop.tsx`), which is the
    normal case. Only a person's control is news.
 
-### What bb-box knows today, and what it does not
+### What alia-box knows today, and what it does not
 
 The Monitor's `monitor.machine` returns a snapshot (`src/monitor/snapshot.ts`):
 CPU with cores, load or, in a container, pressure; memory with used,
@@ -124,9 +124,9 @@ reading. A cold route reading runs its script twice. Each reading is a
 full one: every process, `tailscale status`, the disk and, on a Mac, the
 battery and sensors. Disk I/O is not read.
 
-A box's record (`BoxRecord`, kept in BB's key-value store under
+A box's record (`BoxRecord`, kept in VesnALIA's key-value store under
 `box/<threadId>/<boxId>`, with an index from box ID to thread) holds the
-latest `stoppedAt`, the first `readyAt` and the latest stop bb-box did not
+latest `stoppedAt`, the first `readyAt` and the latest stop alia-box did not
 ask for. It does not hold earlier stops, who asked for a stop, when the
 last start was asked for or finished (a start does not update `readyAt`),
 or anything about a box once it is released. A release that fails leaves
@@ -136,10 +136,10 @@ Decision 066 said the owner wanted "no monitoring on the box page". That
 was the Box panel in a thread, and it stays so. This decision puts the
 Monitor's numbers on the Boxes page, as the owner now asks.
 
-### What BB lets a plugin do here
+### What VesnALIA lets a plugin do here
 
 A `navPanel` owns a route and its sub-paths. The Boxes page already uses
-them: `/plugins/bb-box/desktop/<threadId>/<boxId>` opens a desktop, survives
+them: `/plugins/alia-box/desktop/<threadId>/<boxId>` opens a desktop, survives
 a reload, and is what Open in browser gives. So a box's page can have a
 real path, unlike the settings page, which had only the URL's hash (067).
 
@@ -162,7 +162,7 @@ For (◌ Fix the sign-in flow ↗) working now
 └─────────────────────────────────────────────────────┘
 ┌ Top processes ┐
 ┌ Kind ─────┬ Size ──────┬ Runs on ─────┬ Address ──┐
-├ System ───┼ BB machine ┼ Made ────────┼ Desktop ──┤
+├ System ───┼ ALIA machine ┼ Made ────────┼ Desktop ──┤
 ┌ Other threads on it ┐ ┌ How it started ┐
 ```
 
@@ -188,7 +188,7 @@ memory now, and they lead back to its page.
 
 ### 1. A box's page is one step in from its row, with a link of its own
 
-| Path under `/plugins/bb-box/desktop/` | Shows |
+| Path under `/plugins/alia-box/desktop/` | Shows |
 | --- | --- |
 | (none), `threads`, `machines` | The list, on the tab remembered, or the one named |
 | `box/<boxId>` | The box's page |
@@ -213,7 +213,7 @@ How it opens:
 
 The way back is where the person came from (gate G8, unit 1c):
 
-- BB's `useBbNavigate().toPluginPanel(path, { subPath, replace })` takes a
+- VesnALIA's `useAliaNavigate().toPluginPanel(path, { subPath, replace })` takes a
   sub-path and nothing else (in SDK 0.6.49; unit 1c checks 0.6.15 before
   building), so an entry cannot carry state. Where an entry was opened from
   is the last part of its path, as `from-settings` already is. It survives
@@ -258,7 +258,7 @@ this page opens tens of times a day.
 - Its thread: "For (thread title ↗) working now", or "idle for 3 h". The
   chip opens the thread, and spins while the thread works, as the
   Machines tab's chips do. One of the person's own machines says so
-  instead: "One of your machines. It shows in BB's machine list, and
+  instead: "One of your machines. It shows in VesnALIA's machine list, and
   threads can run on it."
 
 The actions, right of the name on a wide window and under it on a narrow
@@ -268,7 +268,7 @@ one, in this order:
    Emulator, Terminal. One that cannot open now is disabled and says why
    ("silver-pine is stopped", "pve-3 does not answer").
 2. Start, the one filled button, when it is stopped. Stop when it is
-   ready. Both are disabled, with the reason, when bb-box cannot reach the
+   ready. Both are disabled, with the reason, when alia-box cannot reach the
    box's backend.
 3. The menu: Copy address, New thread on this box…, Resize…, Check now,
    then Release… (Remove… for a machine of the person's own; Release
@@ -277,7 +277,7 @@ one, in this order:
    and today's confirmations.
 
 Not offered, though boat.dev has them: Fork, Prompt, AI usage and cost.
-bb-box has no fork of a box, and no price for one.
+alia-box has no fork of a box, and no price for one.
 
 ### 3. The page, in order
 
@@ -287,8 +287,8 @@ rest:
 1. The header.
 2. Notices, when there are any (section 7): a failed operation, a backend
    that is not in settings, a host that does not answer, a failed start, a
-   stop bb-box did not ask for, a device that did not boot, a failed join
-   to BB.
+   stop alia-box did not ask for, a device that did not boot, a failed join
+   to VesnALIA.
 3. Starting, while the box starts: its steps so far.
 4. Activity (section 4).
 5. Top processes (section 5).
@@ -302,7 +302,7 @@ rest:
    | Runs on | LXC container on pve-1 | Proxmox LXC, or "Backend not in settings" | `form`, `shared`, `backendLabel` |
    | Address | 10.20.0.31, copied with a click | Its tailnet name, where a reading has one | `address`, the snapshot's `tailscale` |
    | System | Linux x86_64, with Docker | | `os`, `arch`, `docker` |
-   | BB machine | Joined | Threads can run on it; Offline now | `enrol` |
+   | VesnALIA machine | Joined | Threads can run on it; Offline now | `enrol` |
    | Made | 2 h 14 min ago | today at 4:44 PM | `createdAt` |
    | Desktop, Device or Resize | The agent has control; iPhone 17 Pro; "Disk now; cores and memory with a restart" | 1920 × 1080, video; iOS 26.1 · control: the agent | `control`, `device`, `facts`, `resizing` |
 
@@ -365,12 +365,12 @@ reading through the Monitor's sampler.
 
 When the Monitor is off, nothing is read and Live cannot be chosen, but
 the history already kept stays on show, under one line: "The Monitor is
-off, so bb-box reads nothing now. What it read before stays. Turn it on in
+off, so alia-box reads nothing now. What it read before stays. Turn it on in
 Monitor settings", the last words a link to the Monitor's page in settings
 (067). When only box history is off, Live still reads while the page is
 open, and 1 h, 24 h and 7 d keep what was read before, under "Box history
-is off". A box bb-box can never read,
-as a Windows box that is not a BB machine, says the Monitor's own words
+is off". A box alia-box can never read,
+as a Windows box that is not a VesnALIA machine, says the Monitor's own words
 instead of a chart. A Live reading that fails after one worked keeps the
 last numbers under the Monitor's "Showing data from 6:58 PM" notice. While
 a box is stopping, Live stays until its readings stop or the stop is
@@ -391,15 +391,15 @@ keeping both ends, as the Monitor does.
 
 ### 6. Other threads, and how it started
 
-- **Other threads on it**: the threads working on its BB machine besides
+- **Other threads on it**: the threads working on its VesnALIA machine besides
   its own, as the Machines tab's chips, with New thread on this box…; or
-  why there are none ("Its BB machine is offline now"). For a machine of
+  why there are none ("Its VesnALIA machine is offline now"). For a machine of
   the person's own: "Threads on this machine".
 - **How it started**: "Ready in 3.6 s", a bar of its steps in proportion
   (its steps also named in the bar's text for screen readers), the four
   longest steps by name with their times, then one line: how many quicker
-  steps, when it joined BB, and when it was made. Step names are words a
-  person uses: "Took a warm box", "Clone", "Network", "Join BB". After a
+  steps, when it joined VesnALIA, and when it was made. Step names are words a
+  person uses: "Took a warm box", "Clone", "Network", "Join VesnALIA". After a
   restart, one more line: "Last started today at 6:58 PM, by you: ready in
   1.9 s (boot 1.4 s, SSH 0.5 s)", from the box log. This replaces the
   9-part line.
@@ -419,20 +419,20 @@ it, the words leave it out rather than guess.
 | Starting, first time | ◌ Starting · for 6 s, from when it was asked for | A card of the steps done so far, each with its time, and what it waits on ("Waiting for the box to answer on SSH"). The page follows it: when it is ready, the rest appears in place |
 | Starting again | ◌ Starting · for 2 s, from when Start was pressed | The same card with the start's own steps (boot, SSH), not the first acquisition's |
 | Stopping | ◌ Stopping… | As ready: Live stays until it has stopped |
-| Stopped | ○ Stopped · 3 h 5 min ago, today at 3:53 PM, by you | Facts with "None while stopped" and "Offline now", Activity on 24 h with its stops shown, no processes. Start is the filled button. "by you", "by the agent in (thread)", "by a bb box command", "by bb-box: (why)" or "outside bb-box", only as the box log has it |
-| Stopped without being asked | ○ Stopped · … outside bb-box | Today's amber notice with what bb-box saw and did (#406), under the header |
-| Stop, Start or Resize failed | The state bb-box last confirmed, with when | A red notice, "Stop failed 2 min ago", with the backend's words and what bb-box then observed: "It is still running (checked 6:58 PM)", or "bb-box could not confirm its state". A resize that failed part way names the parts that changed. Stop again, Start again or Resize… (gate G6) |
-| Release did not finish | ● Release did not finish · 1 min ago | A red notice with the backend's words: "The box may still run on pve-1; bb-box keeps its record until a release is confirmed." Release again… in the notice and the menu. Never a spinner without end |
-| Its backend is not in settings | ● Not checked · last seen ready 2 d ago | An amber notice: the backend was removed from settings, so bb-box cannot check, stop or release the box, which may still be running there. Open BB Box settings, to add it back, or Forget…, which removes bb-box's record only and says that a guest that still runs keeps running. Stop, Start, Resize and New thread on this box are disabled with that reason, in words beside them; Runs on is muted (gate G20) |
-| Its backend does not answer | ● Not checked · last seen ready | Listing its backend's boxes fails (the sweep, every 3 minutes). An amber notice with the backend's error and since when: bb-box cannot check, stop, start or resize the box through it. Stop, Start, Resize and New thread on this box are disabled with that reason, in words (gate G20). It clears when the backend lists its boxes again |
-| The box does not answer | ● Not answering · last seen ready 12 min ago | An amber notice with the box's error and since when: bb-box cannot reach it, so it cannot read it or run commands in it, but it can still stop, start or release it, as those go through its backend. "bb-box checks again in 4 min", from the reach check's schedule (section 10, gate G7), apart from the notice's words. Check now. Its views and New thread on this box are disabled with that reason; Stop, Start and Resize stay. The mark clears as soon as the box is seen stopped or answering. History shows "No reading" from then |
+| Stopped | ○ Stopped · 3 h 5 min ago, today at 3:53 PM, by you | Facts with "None while stopped" and "Offline now", Activity on 24 h with its stops shown, no processes. Start is the filled button. "by you", "by the agent in (thread)", "by a VesnALIA box command", "by alia-box: (why)" or "outside alia-box", only as the box log has it |
+| Stopped without being asked | ○ Stopped · … outside alia-box | Today's amber notice with what alia-box saw and did (#406), under the header |
+| Stop, Start or Resize failed | The state alia-box last confirmed, with when | A red notice, "Stop failed 2 min ago", with the backend's words and what alia-box then observed: "It is still running (checked 6:58 PM)", or "alia-box could not confirm its state". A resize that failed part way names the parts that changed. Stop again, Start again or Resize… (gate G6) |
+| Release did not finish | ● Release did not finish · 1 min ago | A red notice with the backend's words: "The box may still run on pve-1; alia-box keeps its record until a release is confirmed." Release again… in the notice and the menu. Never a spinner without end |
+| Its backend is not in settings | ● Not checked · last seen ready 2 d ago | An amber notice: the backend was removed from settings, so alia-box cannot check, stop or release the box, which may still be running there. Open VesnALIA Box settings, to add it back, or Forget…, which removes alia-box's record only and says that a guest that still runs keeps running. Stop, Start, Resize and New thread on this box are disabled with that reason, in words beside them; Runs on is muted (gate G20) |
+| Its backend does not answer | ● Not checked · last seen ready | Listing its backend's boxes fails (the sweep, every 3 minutes). An amber notice with the backend's error and since when: alia-box cannot check, stop, start or resize the box through it. Stop, Start, Resize and New thread on this box are disabled with that reason, in words (gate G20). It clears when the backend lists its boxes again |
+| The box does not answer | ● Not answering · last seen ready 12 min ago | An amber notice with the box's error and since when: alia-box cannot reach it, so it cannot read it or run commands in it, but it can still stop, start or release it, as those go through its backend. "alia-box checks again in 4 min", from the reach check's schedule (section 10, gate G7), apart from the notice's words. Check now. Its views and New thread on this box are disabled with that reason; Stop, Start and Resize stay. The mark clears as soon as the box is seen stopped or answering. History shows "No reading" from then |
 | A device that did not boot | ● Ready, with the device's words | An amber notice, "Its iPhone 17 Pro did not boot", with the device's error and Check now; Simulator opens the view, which shows the device's own state. A ready host never stands for a ready device |
-| Could not join BB | ● Ready · Could not join BB | Today's join help (`JoinHelp`), as a notice |
+| Could not join VesnALIA | ● Ready · Could not join VesnALIA | Today's join help (`JoinHelp`), as a notice |
 | Failed | ● Failed · 52 min ago | A red notice, "It did not start", with the error, Check now and Release…; then how it started, up to where it stopped |
 | Releasing | ◌ Releasing… | As it was, dimmed |
 | Released, or a link to a box that is not there | | For 24 hours after a release, "amber-fox was released", with when, from the box log, across reloads and restarts. Otherwise "This box is not here. It may have been released more than 24 hours ago, or the link is wrong." Both with Back to boxes |
-| Forgotten | | For 24 hours, "maple-row was forgotten: bb-box removed its record. Its box was not deleted and may still run on pve-old.", with when and who (gate G5). Never "released" |
-| Gone (deleted outside bb-box) | ● Gone · deleted outside bb-box | Facts and How it started; Release… removes its record |
+| Forgotten | | For 24 hours, "maple-row was forgotten: alia-box removed its record. Its box was not deleted and may still run on pve-old.", with when and who (gate G5). Never "released" |
+| Gone (deleted outside alia-box) | ● Gone · deleted outside alia-box | Facts and How it started; Release… removes its record |
 
 ### 8. A view sits one step in from the page
 
@@ -443,7 +443,7 @@ changes in three ways:
 - Its back arrow goes back to where it was opened from, as its path names
   it (section 1), and says where: "Back to boxes" from a row,
   "Back to amber-fox" from the page or from a link with no origin, "Back to
-  BB Box settings" from settings; the same after a reload. The box's name
+  VesnALIA Box settings" from settings; the same after a reload. The box's name
   in the bar always opens its page.
 - The box's other views are buttons in the bar, so Desktop to Terminal is
   one click. A switch replaces the view and keeps its origins in the path,
@@ -474,7 +474,7 @@ one card per thread. What changes:
   | A failed operation | ● Ready · Stop failed · up 2 h …, and the backend's words on the next line |
   | Its backend is not in settings | ● Last seen ready · Its backend is not in settings · 2 d ago |
   | Its host does not answer | ● Last seen ready · pve-3 does not answer · 12 min ago |
-  | Joining BB, or could not | ● Ready · Could not join BB · up 12 s |
+  | Joining VesnALIA, or could not | ● Ready · Could not join VesnALIA · up 12 s |
   | Starting | ◌ Starting · 7 s |
   | Stopped | ○ Stopped · 3 h ago · 4 cores · 8 GiB memory |
   | Failed | ● Failed · 52 min ago, and the error on the next two lines |
@@ -482,7 +482,7 @@ one card per thread. What changes:
   The items that need attention, in this order: a failed operation, a
   backend not in settings, a host that does not answer, busy, a person's
   control, a failed join. Each is words, in amber or red, never colour
-  alone. Today's lines under a row stay: the error, a stop bb-box did not
+  alone. Today's lines under a row stay: the error, a stop alia-box did not
   ask for, a resize's result.
 
   "Busy" comes only from box history (section 10): the last 5 minute
@@ -507,9 +507,9 @@ one card per thread. What changes:
   with no dialog of its own. The guard widens (gate G3, unit 1c): Stop and
   Release, from a row, the menu, the page or a notice's retry, ask first
   when the box's own thread is working, as they already do when a thread
-  works on its BB machine: "Fix the sign-in flow in Safari is working on
-  amber-fox. Stop it anyway?" When BB cannot say whether the thread works,
-  they ask too ("bb-box could not ask BB whether …"). A resize that needs a
+  works on its VesnALIA machine: "Fix the sign-in flow in Safari is working on
+  amber-fox. Stop it anyway?" When VesnALIA cannot say whether the thread works,
+  they ask too ("alia-box could not ask VesnALIA whether …"). A resize that needs a
   restart asks under the same guard. A machine of the person's own keeps
   today's guard. The inline details go.
 - **Sort by last active.** Sort gains "Last active": when the box's thread,
@@ -527,12 +527,12 @@ table with columns.
 Five additions, each owned by one build unit (section 14), with its gates
 in [Gated in unit N](#gated-in-unit-n).
 
-#### How bb-box opens its two new files (unit 1b)
+#### How alia-box opens its two new files (unit 1b)
 
-The plugin SDK gives bb-box one database, `bb.storage.database()`, the
-file `<dataDir>/plugins/<id>/data.db`, with `bb.storage.migrate` recording
-statements in its `_bb_migrations` table. The Monitor's store sets that
-file's `max_page_count` to 10 MB, a cap on the whole file. bb-box has no
+The plugin SDK gives alia-box one database, `alia.storage.database()`, the
+file `<dataDir>/plugins/<id>/data.db`, with `alia.storage.migrate` recording
+statements in its `_alia_migrations` table. The Monitor's store sets that
+file's `max_page_count` to 10 MB, a cap on the whole file. alia-box has no
 SQLite driver of its own at run time (`better-sqlite3` is a development
 dependency), so the new files are opened through the SDK's handle (gate
 G4):
@@ -560,27 +560,27 @@ of at most 1 KB.
   without being asked, resize asked, resized (with the parts that changed),
   release asked, released, forgotten, and a failed stop, start, resize or
   release with the backend's words.
-- Who: the person (a call from bb-box's app), an agent (a box tool, with
-  its thread), a command (`bb box`), bb-box itself (with why: spares,
-  idle stops, a lapsed lease), or outside bb-box (a stop it did not ask
+- Who: the person (a call from alia-box's app), an agent (a box tool, with
+  its thread), a command (`alia box`), alia-box itself (with why: spares,
+  idle stops, a lapsed lease), or outside alia-box (a stop it did not ask
   for). Unknown stays unknown.
 - **An operation's outcome is not the box's state** (gate G6). Each event
-  of a failed operation carries what bb-box then observed of the box,
-  when, and from where: after a failure bb-box observes the box, as
+  of a failed operation carries what alia-box then observed of the box,
+  when, and from where: after a failure alia-box observes the box, as
   `Boxes.#start` already does (`src/core/boxes.ts`), and the page's words
   come from that observation: "It is still running (checked 6:58 PM)", or
-  "bb-box could not confirm its state". A resize that fails part way
+  "alia-box could not confirm its state". A resize that fails part way
   records the parts that did change. Only a confirmed stop makes a
   "Stopped" interval in history; a failed Start or Stop never does.
 - **Release and forget are different events** (gate G5). "release asked"
   is written before the backend is called, and "released" only once the
-  backend confirms; then the record goes. If bb-box restarts between the
+  backend confirms; then the record goes. If alia-box restarts between the
   two, at start it finds the record in `releasing` with an open "release
   asked", observes the box, and either finishes the release (the guest is
   gone) or shows "Release did not finish". Forget writes "forgotten", with
   the box's name, ID, who, when and its last known backend and state; the
   record goes and nothing is deleted. The page then says "maple-row was
-  forgotten: bb-box removed its record. Its box was not deleted and may
+  forgotten: alia-box removed its record. Its box was not deleted and may
   still run on pve-old." Forgetting writes no "released" event and no
   stopped interval.
 - **When the log cannot be written**, the action still runs, the page and
@@ -597,7 +597,7 @@ of at most 1 KB.
 
 #### A backend that is gone, or a host that does not answer (unit 1b)
 
-A reach check in bb-box's server owns these words, whatever box history
+A reach check in alia-box's server owns these words, whatever box history
 does (gate G7).
 
 - A backend is "not in settings" when the box's record names a backend the
@@ -606,8 +606,8 @@ does (gate G7).
 - A box is "not answering" when a command, a Live reading, a history
   reading or a view fails to reach it with a transport error. The reach
   check then retries that box alone: after 1 minute, after 5, then every
-  15 minutes, until it answers. It tries the cheapest way first: for a BB
-  machine, BB's own connection state, which costs nothing; for any other
+  15 minutes, until it answers. It tries the cheapest way first: for a VesnALIA
+  machine, VesnALIA's own connection state, which costs nothing; for any other
   box, one command through its route with a 10 s timeout. It never calls a
   backend's API on its own: a power check through Proxmox, Namespace,
   Hetzner or boat.dev runs only on Check now, at most once a minute for a
@@ -615,21 +615,21 @@ does (gate G7).
   after the first 20 minutes, and no paid API calls.
 - The reach check runs the same with box history on or off, and with the
   Monitor off; it reads no numbers.
-- The page's words follow it: "pve-3 does not answer. bb-box checks again
+- The page's words follow it: "pve-3 does not answer. alia-box checks again
   in 4 min", with when it last answered.
 
 #### `boxPage` (unit 1c)
 
 One box by ID, for any owner, with what the page needs in one answer: the
 box's view, its thread and whether that thread works (as `ThreadOnBox`),
-the threads on its BB machine, its Monitor machine ID or why the Monitor
+the threads on its VesnALIA machine, its Monitor machine ID or why the Monitor
 cannot read it, and, for a box released or forgotten in the last 24 hours,
 its name, thread, which of the two, and when. The `changed` signal for the
 box's thread or `operator` refreshes it.
 
 #### Box history: what is read, and how (unit 3)
 
-A reader in bb-box's server, `src/monitor/box-history.ts`. It does not
+A reader in alia-box's server, `src/monitor/box-history.ts`. It does not
 share readings with the Monitor's live sampler: a box whose page or
 Monitor is open is read by both, and unit 3 measures that extra cost.
 
@@ -647,8 +647,8 @@ Monitor is open is read by both, and unit 3 measures that extra cost.
 
   No process list, no Tailscale, no sensors or battery. For a box read
   through its command route this is one command whose answer is under
-  1 KB; for a BB machine, one call to a new `monitor.light` handler in
-  bb-box's host entry.
+  1 KB; for a VesnALIA machine, one call to a new `monitor.light` handler in
+  alia-box's host entry.
 - **066's limits, reused** (gate G10). A container's CPU percentage is its
   CPU time against `containerCapacity` (the least of its quota, its cpuset
   and the CPUs it can see), and its memory against `containerMemory` (the
@@ -663,7 +663,7 @@ Monitor is open is read by both, and unit 3 measures that extra cost.
   last reading, not a 300 ms sample, and records the start and end of the
   time it covers. Counters older than 150 s (2.5 minutes), from before the
   box's last start, or lower than the last (a reset) only start a new
-  baseline, and that minute is "No reading". After a restart of bb-box,
+  baseline, and that minute is "No reading". After a restart of alia-box,
   counters from the file that are still under 150 s old are used, so a
   quick restart loses no point. A change of capacity (a live resize) starts
   a new point at once.
@@ -715,7 +715,7 @@ Monitor is open is read by both, and unit 3 measures that extra cost.
 #### It reverses 066's opt-in, for boxes, and why
 
 Decision 066 made background monitoring opt-in: `backgroundMonitoring` is
-off by default, so today nothing reads even BB's server unless the person
+off by default, so today nothing reads even VesnALIA's server unless the person
 turns it on. Box history reads every running box in the background, on by
 default. The reason: "was it busy, or stopped, an hour ago?" and a busy
 flag on rows cannot be answered after the fact, and the page's 1 h, 24 h
@@ -729,10 +729,10 @@ it ships off by default, with its minute step unchanged.
 
 | What | Budget, with 30 boxes |
 | --- | --- |
-| bb-box's server process | under 1% of one core averaged over an hour, its SSH and `docker exec` children included, and under 30 MB more memory |
+| alia-box's server process | under 1% of one core averaged over an hour, its SSH and `docker exec` children included, and under 30 MB more memory |
 | A box | under 0.2% of one core averaged over a minute, its children included, on a 2-core box |
 | A Mac with 3 shared slots | one Mac reading and 3 slot readings a minute, together under 0.5% of one core |
-| Commands and calls | one command a minute for each box read through its route; one host call a minute for each BB machine |
+| Commands and calls | one command a minute for each box read through its route; one host call a minute for each VesnALIA machine |
 | On-time coverage | at least 99% of the minute readings due for boxes that answer are taken within 10 s of their second; skipped and failed readings counted apart, and boxes that do not answer apart from a busy queue |
 | Freshness | every box that answers has a point under 2 minutes old |
 | Extra cost while open | with 5 pages or Monitors open, the server's cost stays within the first row's budget |
@@ -769,8 +769,8 @@ flag's 5 whole minutes all need minute points.
   4:58 PM", "Tue 27 Oct at 9:10 AM", in the browser's own format.
 - Size: "4 cores · 8 GiB memory" on a row, "4 cores, 8 GiB memory, 32 GiB
   disk" on the page.
-- Who: "by you", "by the agent in (thread)", "by a bb box command", "by
-  bb-box: (why)", "outside bb-box"; nothing when not known.
+- Who: "by you", "by the agent in (thread)", "by a VesnALIA box command", "by
+  alia-box: (why)", "outside alia-box"; nothing when not known.
 - A slot's numbers name whose they are: "this slot", "mac-1, all slots".
 - Ranges: "Live", "1 h", "24 h", "7 d", described under the chart as "the
   last 24 hours, by 10 minutes".
@@ -779,7 +779,7 @@ flag's 5 whole minutes all need minute points.
 
 ### 12. Look and motion
 
-BB's tokens and components, the hairline cards of the Boxes and settings
+VesnALIA's tokens and components, the hairline cards of the Boxes and settings
 pages, the Monitor's pills, and its colours for CPU (green), memory
 (amber), disk and download (blue) and upload (violet), in a darker tone of
 each on the light theme so that every line has at least 3:1 contrast with
@@ -828,18 +828,18 @@ New in the app: `BoxPage` and its parts (`BoxHeader`, `BoxNotices`,
 form), and the view bar's other views and live numbers.
 
 Each unit is one PR with its tests, a keyboard pass, screenshots at 1440,
-760 and 390 px in light and dark, and a live check on a separate BB in a
-box: a fresh `npx bb-app` with no account, bb-box installed from the unit's
+760 and 390 px in light and dark, and a live check on a separate VesnALIA in a
+box: a fresh `npx alia-app` with no account, alia-box installed from the unit's
 branch, with boxes made through it. Each owns its part alone.
 
 | Unit | Change | Server additions | Live check |
 | --- | --- | --- | --- |
 | 1a | `BoxMenu`: the menu's items move out of `BoxRow` and the Machines row into one component. No visible change | None | Every item of the menu on a thread's box and on a machine, in the Box panel, on the Boxes page and in settings, does what it did |
-| 1b | The box log, the two files' opening, the reach check, and what the box's view gains from them; a failed release keeps its record | `box-log.db` attached to the SDK's handle, its own migrations and caps; events with who and with what was observed after a failure; release asked and confirmed; forgotten; the reach check; the view's last start, last stop, last failed operation and backend reach | Gates G4 to G7. A stop by the person (the app), an agent (`box_stop`), a command (`bb box`) and from outside (`docker stop` on the host), each logged with who; a start asked and finished; the log kept across a restart of bb-box; tests with a set clock for 24 hours and 7 days |
-| 1c | The box's page without Activity: routes and their origins, `from-settings`, old paths, the way back for the page and its views, the header, every state and notice of section 7 but busy (unit 4), Starting, facts, threads, how it started; the widened Stop and Release guard; "Page" in the Monitor's Open menu and "Open on the Boxes page" in the Box panel. Rows still unfold | `boxPage`; `guarded` also asks when the box's own thread is working | Gates G3, G8 and G20. Open it from each entry; reload; back and forward; Command-click into a new tab; old paths, with and without `from-settings`; Stop, Start and Release from the page; a start that fails; a backend removed from settings with a box on it; a host cut off; a released and a forgotten box's link before and after a restart of bb-box; keyboard only |
+| 1b | The box log, the two files' opening, the reach check, and what the box's view gains from them; a failed release keeps its record | `box-log.db` attached to the SDK's handle, its own migrations and caps; events with who and with what was observed after a failure; release asked and confirmed; forgotten; the reach check; the view's last start, last stop, last failed operation and backend reach | Gates G4 to G7. A stop by the person (the app), an agent (`box_stop`), a command (`alia box`) and from outside (`docker stop` on the host), each logged with who; a start asked and finished; the log kept across a restart of alia-box; tests with a set clock for 24 hours and 7 days |
+| 1c | The box's page without Activity: routes and their origins, `from-settings`, old paths, the way back for the page and its views, the header, every state and notice of section 7 but busy (unit 4), Starting, facts, threads, how it started; the widened Stop and Release guard; "Page" in the Monitor's Open menu and "Open on the Boxes page" in the Box panel. Rows still unfold | `boxPage`; `guarded` also asks when the box's own thread is working | Gates G3, G8 and G20. Open it from each entry; reload; back and forward; Command-click into a new tab; old paths, with and without `from-settings`; Stop, Start and Release from the page; a start that fails; a backend removed from settings with a box on it; a host cut off; a released and a forgotten box's link before and after a restart of alia-box; keyboard only |
 | 1d | The list opens the page: a row's click, name link and chevron, the inline details removed in the same change, the list's kept state and focus, the search row above the scrolling rows | None | Gate G9. Release from the page and return; 390 px |
 | 2 | Activity on Live and the processes: tiles, the shared slot's split against its share, the chart, its read-out, live region and summaries, the range group, colours; the Monitor off, a box it cannot read, a failed reading; Live while stopping | A slot's reading adds its own user's CPU time (with `ps -S`) and memory, and its share, apart from the Mac's | Gates G1, G2, G16 and G17. `stress-ng --cpu 2` in a box against `top` in its terminal, CPU within 5 points; on a Mac box with 3 shared iOS slots, a load in one slot leaves another's CPU its own; the Monitor turned off and on; the chart read with VoiceOver on a Mac box and NVDA on a Windows box |
-| 3 | Box history and the page's 1 h, 24 h and 7 d, with gaps, coverage and busiest minutes; its switch through 067's engine | The reader, `monitor.light` in the host entry, `box-history.db` attached as unit 1b proved, its schedule, workers and pruning, `monitor.history` | Gates G10 to G14, G18 and G19. One box stopped for an hour, one loaded for 10 minutes, one whose host is cut off; bb-box restarted half way; every budget of section 10 measured; the switch saved while another setting is saved; tests with a set clock for retention and released and forgotten boxes |
+| 3 | Box history and the page's 1 h, 24 h and 7 d, with gaps, coverage and busiest minutes; its switch through 067's engine | The reader, `monitor.light` in the host entry, `box-history.db` attached as unit 1b proved, its schedule, workers and pruning, `monitor.history` | Gates G10 to G14, G18 and G19. One box stopped for an hour, one loaded for 10 minutes, one whose host is cut off; alia-box restarted half way; every budget of section 10 measured; the switch saved while another setting is saved; tests with a set clock for retention and released and forgotten boxes |
 | 4 | The list says how a box is now: the second line, its order and two lines, the busy flag, threads working, the Last active sort | `allBoxes`' additions | Gate G15. A loaded box says busy after 5 minutes and stops after the load ends; a loaded neighbour slot leaves a slot calm; a person takes control; at 390 px the busy words show; a thread finishes and its card says idle |
 | 5 | The view's bar: the box's other views as buttons, and its live numbers | None | A desktop box and an Android emulator box (a Linux box with KVM): switch views, then back, with every origin of gate G8, which a switch keeps; the bar's numbers match the page's |
 
@@ -847,7 +847,7 @@ branch, with boxes made through it. Each owns its part alone.
 
 These are the re-reviews' remaining findings, each settled as a rule
 above and owned by one unit. A unit lands only when its gates pass in its
-live check on a separate BB in a box, as 067's G1 to G9 do. Where a gate
+live check on a separate VesnALIA in a box, as 067's G1 to G9 do. Where a gate
 needs a Mac, it uses a Tart or Namespace Mac box where it can, and never a
 pool Mac someone else holds.
 
@@ -855,23 +855,23 @@ pool Mac someone else holds.
 | --- | --- | --- | --- |
 | G1 slot-share | 2 | A slot is judged, shown and flagged against its share of the Mac: 064's per-slot cores and memory, or the Mac's divided by the slots it can hold (sections 4, 9, 10) | On a Mac box of 12 cores with 3 shared iOS slots, so a share of 4 cores, a slot using 2 cores reads about 50% of its share, not 17% of the Mac; a slot whose processes use 95% of its share for 5 minutes is busy; the Mac at 90% from other slots leaves it calm |
 | G2 slot-short-processes | 2 | A slot's CPU counts its processes' exited children (section 10), read from `proc_pid_rusage` as unit 2 found `ps -S` does not on macOS 26 | An `xcodebuild` of a small app in one slot shows on its CPU tile, and in unit 3's history, within 20% of the build's CPU time, measured as the Mac's own CPU above its idle level with no other slot busy (`time xcodebuild` leaves out Xcode's build service, which does the compiling) |
-| G3 stop-guard | 1c | Stop and Release ask first when the box's own thread is working, as well as when a thread works on its BB machine, from a row, the menu, the page and a notice's retry; `force` stops it (section 9, question 4) | With an agent working in a box through box tools, Stop from each of the four places asks, names the thread, and stops only after "Stop it anyway"; an idle thread's box stops at once; a machine of the person's own behaves as today |
-| G4 attached-files | 1b | `box-log.db` and `box-history.db` are attached to the SDK's handle, with their own migrations, WAL and caps; if `ATTACH` is refused, the tables go in `data.db` under row caps that leave the Monitor's alerts 10 MB (section 10) | On a fresh BB, both files are made and migrated on start, a second start runs no migration again, `PRAGMA boxlog.max_page_count` and `boxhistory.max_page_count` read as set, and filling `boxhistory` past its cap leaves pressure logs still writable; a test with `ATTACH` refused takes the fallback and passes the same checks |
-| G5 log-truth | 1b | Release and forget are distinct events; "released" is written only on the backend's confirmation; a restart between confirmation and record removal is finished by observing; a failed log write makes the page claim nothing from the log; events are bounded to 1 KB and the file to 8 MB (section 10) | Forget on a box whose backend was removed says "forgotten", never "released", and leaves no stopped interval; bb-box killed after the backend deletes a container but before the record goes finishes the release on start; with the log file made read-only, a stop still runs and the page says no "by you"; 10,000 events keep the file under its cap |
-| G6 outcome-not-state | 1b records, 1c words | A failed operation's words come from what bb-box observed after it, with when; only a confirmed stop makes a "Stopped" interval (sections 7, 10) | A VM that boots but never answers SSH says "bb-box could not confirm its state" or what it observed, not "still stopped"; a stop that times out and then succeeds shows Stopped from the confirmed time; a resize refused after its memory changed names memory as changed |
-| G7 host-reach | 1b | The reach check retries a box that does not answer after 1, 5, then every 15 minutes, by BB's connection state or one routed command, never a backend API on its own; the same with history on or off and with the Monitor off (section 10) | With a box's host cut off for an hour, the server logs at most 6 attempts for it, makes no Proxmox, Namespace, Hetzner or boat.dev call until Check now, and the page's "checks again in" matches the next attempt within 10 s, with history on and off |
+| G3 stop-guard | 1c | Stop and Release ask first when the box's own thread is working, as well as when a thread works on its VesnALIA machine, from a row, the menu, the page and a notice's retry; `force` stops it (section 9, question 4) | With an agent working in a box through box tools, Stop from each of the four places asks, names the thread, and stops only after "Stop it anyway"; an idle thread's box stops at once; a machine of the person's own behaves as today |
+| G4 attached-files | 1b | `box-log.db` and `box-history.db` are attached to the SDK's handle, with their own migrations, WAL and caps; if `ATTACH` is refused, the tables go in `data.db` under row caps that leave the Monitor's alerts 10 MB (section 10) | On a fresh VesnALIA, both files are made and migrated on start, a second start runs no migration again, `PRAGMA boxlog.max_page_count` and `boxhistory.max_page_count` read as set, and filling `boxhistory` past its cap leaves pressure logs still writable; a test with `ATTACH` refused takes the fallback and passes the same checks |
+| G5 log-truth | 1b | Release and forget are distinct events; "released" is written only on the backend's confirmation; a restart between confirmation and record removal is finished by observing; a failed log write makes the page claim nothing from the log; events are bounded to 1 KB and the file to 8 MB (section 10) | Forget on a box whose backend was removed says "forgotten", never "released", and leaves no stopped interval; alia-box killed after the backend deletes a container but before the record goes finishes the release on start; with the log file made read-only, a stop still runs and the page says no "by you"; 10,000 events keep the file under its cap |
+| G6 outcome-not-state | 1b records, 1c words | A failed operation's words come from what alia-box observed after it, with when; only a confirmed stop makes a "Stopped" interval (sections 7, 10) | A VM that boots but never answers SSH says "alia-box could not confirm its state" or what it observed, not "still stopped"; a stop that times out and then succeeds shows Stopped from the confirmed time; a resize refused after its memory changed names memory as changed |
+| G7 host-reach | 1b | The reach check retries a box that does not answer after 1, 5, then every 15 minutes, by VesnALIA's connection state or one routed command, never a backend API on its own; the same with history on or off and with the Monitor off (section 10) | With a box's host cut off for an hour, the server logs at most 6 attempts for it, makes no Proxmox, Namespace, Hetzner or boat.dev call until Check now, and the page's "checks again in" matches the next attempt within 10 s, with history on and off |
 | G8 origin-in-path | 1c | Where an entry was opened from is in its path (`from-list`, `from-box`, `from-settings`), as `toPluginPanel` carries only a sub-path; the way back goes back in history only to the panel's own last move, and otherwise replaces with the named origin (section 1) | SDK 0.6.15's `toPluginPanel` checked first; then each of Astra's re-review paths: a quick Simulator icon and back focuses that row; after visiting another box, a quick icon and back focuses the new row; settings, a machine's page, Desktop and back return to the page and then settings, also after a reload; a page opened by URL, then Boxes, then browser Back does not return to the page; a row's quick Desktop, a reload, then back goes to the list it names |
 | G9 list-return | 1d | The list's search, filters, sort, tab and scroll are kept, every way out of a row records it, and focus returns to that row's name by every way back (section 1) | With a search, a filter and a sort set and the list scrolled, open a box by its name, its chevron, a quick icon and its menu; return each time by the trail, the browser's Back and a view's back: all four kept, focus on that row's name |
 | G10 container-limits | 3 | The light reader reuses 066's `containerCapacity` and `containerMemory`, with their inputs in the reading (section 10) | On a 2-core, 4 GiB Proxmox LXC box with `cpu.max` `max 100000`, a two-CPU cpuset and `memory.max` `max`, a `stress-ng --cpu 2` reads about 100% and a 3 GiB allocation about 75%; tests cover an uncapped child cgroup, a fractional quota (`50000 100000`) and a live resize |
 | G11 coverage | 3 | Coverage of due readings is the measure, workers grow with the work up to 8, skipped and failed readings are counted apart (section 10) | In the 24-hour run, on-time coverage is at least 99% for boxes that answer; a test with 30 boxes whose readings all succeed in 9.9 s keeps coverage at 99% by growing workers; a box that does not answer is reported apart from a busy queue |
-| G12 counters | 3 | Counters older than 150 s, from before a start, or reset, start a new baseline; counters in the file survive a quick restart; a capacity change starts a new point (section 10) | A restart of bb-box taking 30 s loses no point; one taking 4 minutes loses one; a box restarted inside shows no negative or huge CPU; a live resize from 2 to 4 cores starts a new point |
-| G13 collection-off | 3 | With the Monitor off nothing is read, Live included; with box history off only open pages and the Monitor read; off intervals are kept and survive turning on again and restarts (sections 4, 10) | With the Monitor off for 10 minutes, the box sees no command from bb-box; with history off for 3 minutes, then on, those minutes still say "Not read" after a restart of bb-box |
+| G12 counters | 3 | Counters older than 150 s, from before a start, or reset, start a new baseline; counters in the file survive a quick restart; a capacity change starts a new point (section 10) | A restart of alia-box taking 30 s loses no point; one taking 4 minutes loses one; a box restarted inside shows no negative or huge CPU; a live resize from 2 to 4 cores starts a new point |
+| G13 collection-off | 3 | With the Monitor off nothing is read, Live included; with box history off only open pages and the Monitor read; off intervals are kept and survive turning on again and restarts (sections 4, 10) | With the Monitor off for 10 minutes, the box sees no command from alia-box; with history off for 3 minutes, then on, those minutes still say "Not read" after a restart of alia-box |
 | G14 rollups | 3 | An hour's mean is weighted by the minutes it covers, and an hour under 30 covered minutes is marked partial (section 10) | A box read for 20 minutes of an hour at 90% and stopped for the rest shows 90% for that hour, marked partly read, not 30% |
 | G15 busy-truth | 4 | Busy only from 5 whole fresh minutes in a row for one reason, including load for a box with its own kernel and a slot's share; never with history off or stale (section 9) | A VM with load 8 on 4 cores for 6 minutes says busy by load; turning box history off removes "Busy" from its row and page within a minute; a box whose newest point is 3 minutes old says nothing |
 | G16 stopping-live | 2 | Live stays while a box is stopping, until its readings stop or the stop is confirmed (section 4) | Stop a box whose page is on Live: Live keeps reading until the stop is confirmed, then the card turns to 24 h |
 | G17 network-summary | 2 | The network chart is described by its numbers and gaps, as CPU's is (section 4) | VoiceOver and NVDA read the network chart's averages and highest point, and its gaps |
 | G18 history-full | 3 | A full history file stops history's writes, says so, and recovers by pruning; nothing else is affected (section 10) | With `boxhistory`'s cap set low in a test, writes stop, Monitor settings and the doctor say so, alerts and the box log still write, and writing resumes once pruning makes room |
-| G19 run-shape | 3 | The run is 24 hours on a separate BB with 30 Linux boxes: Docker boxes, Proxmox LXC boxes, a Proxmox VM, and more than 16 boxes read through their route; and 2 hours of it with a Mac with 3 shared iOS slots, on a Tart or Namespace Mac where one is free, never a pool Mac someone else holds | The run's report gives every budget of section 10 for both parts, with what limits each number |
+| G19 run-shape | 3 | The run is 24 hours on a separate VesnALIA with 30 Linux boxes: Docker boxes, Proxmox LXC boxes, a Proxmox VM, and more than 16 boxes read through their route; and 2 hours of it with a Mac with 3 shared iOS slots, on a Tart or Namespace Mac where one is free, never a pool Mac someone else holds | The run's report gives every budget of section 10 for both parts, with what limits each number |
 | G20 offline-actions | 1c | With its backend not in settings or not answering, a box's Stop, Start, Resize and New thread on this box are disabled with the reason, in words; a box that does not answer itself keeps Stop, Start and Resize, which go through its backend, and loses only its views and New thread (section 7; the lead's decision during unit 1c) | maple-row's menus and page, and those of a box whose backend's listing fails, offer none of them, each saying why; fern-hollow, which does not answer, can be stopped from its page, and its mark clears once it is stopped |
 
 ## Decided by the lead during unit 1c
@@ -882,10 +882,10 @@ After unit 1c's independent review, on 30 October 2026:
   through a box's backend, not through the box, so they are disabled only
   when the backend is not in settings or does not answer (its listing of
   boxes fails). A box that does not answer keeps them: that is how a hung
-  VM gets stopped. Its notice says that bb-box cannot reach it and that it
+  VM gets stopped. Its notice says that alia-box cannot reach it and that it
   can still be stopped, started or released, and its mark clears as soon as
   the box is seen stopped or answering.
-- **The guard fails safe.** When BB cannot say whether the box's own thread
+- **The guard fails safe.** When VesnALIA cannot say whether the box's own thread
   works, Stop and Release ask, saying so.
 - **A resize's restart asks too.** A resize that needs a restart asks under
   the same guard as Stop and Release, the box's own working thread
@@ -958,7 +958,7 @@ On 30 October 2026, during unit 3:
 - **A point covers its time.** Each point keeps when it starts and ends,
   and is spread over the minutes, 10-minute steps and hours it overlaps,
   by the seconds in each. So the reading after one missed, as in a quick
-  restart of bb-box, fills both minutes, and an hour's mean is weighted by
+  restart of alia-box, fills both minutes, and an hour's mean is weighted by
   the seconds it covers.
 - **A capacity change starts a new baseline.** The reading that sees a
   new capacity (cores or memory) makes no point, as the minute before it
@@ -976,7 +976,7 @@ On 30 October 2026, during unit 3:
 - **The tiles and processes stay.** While a box is read, Activity keeps
   its tiles and its top processes on every range; only the chart changes.
 - **A slot's counters are not kept in the file.** A shared slot's own
-  processes' counters stay in memory, so after a restart of bb-box its
+  processes' counters stay in memory, so after a restart of alia-box its
   first reading is a new baseline.
 - **History reads a person's own machines too.** Box history reads every
   running box in the background, a person's own machines included, not
@@ -993,14 +993,14 @@ On 30 October 2026, during unit 3:
 After the independent review of unit 3:
 
 - **Pruning runs whether history reads or not.** Each minute, and when
-  bb-box starts, box history prunes its file, with the Monitor or history
+  alia-box starts, box history prunes its file, with the Monitor or history
   off too, so released and forgotten boxes' points go 24 hours after them
   and old points age out. It lists box records for this itself, so a
   history that is off does not take every box for gone.
 - **Turning history off forgets each box's counters.** In memory and in
   its file, so the first reading after it is on again is a new baseline,
   and no point spans the time it was off, however short. A reading begun
-  before it went off is dropped. A restart of bb-box with history on keeps
+  before it went off is dropped. A restart of alia-box with history on keeps
   its counters, as G12 needs.
 - **Monotonic time for the schedule and for rates.** Box history schedules
   its readings, times them and measures CPU and network over monotonic
@@ -1031,9 +1031,9 @@ After the independent review of unit 3:
 On 31 October 2026, during unit 4:
 
 - **A long reason sits behind a warning mark: the lead's decision, from
-  the owner.** A row whose box could not join BB showed the whole error as
+  the owner.** A row whose box could not join VesnALIA showed the whole error as
   an amber paragraph under it. Now the second line says "Could not join
-  BB" with a warning mark after it, and the full reason is in the line's
+  VesnALIA" with a warning mark after it, and the full reason is in the line's
   tooltip and in the name's accessible description. The tooltip also
   opens while the name has the keyboard's focus, so a sighted keyboard
   user reads it with no extra Tab stop (the lead's decision). The same goes for
@@ -1041,7 +1041,7 @@ On 31 October 2026, during unit 4:
   unexpected stop, a failed start's error, a release that did not finish,
   and why a backend or host does not answer. So section 9's "Today's lines
   under a row stay" no longer holds: no paragraph sits under a row on the
-  Boxes page, and How boxes join BB is on the box's page. The Box panel
+  Boxes page, and How boxes join VesnALIA is on the box's page. The Box panel
   keeps its lines.
 - **Five minutes, with a reading's lateness.** A streak counts when its
   points cover 5 minutes less 10 s, the most a reading may start late
@@ -1054,7 +1054,7 @@ On 31 October 2026, during unit 4:
 - **Rows keep one unit of time.** "up 2 h", "3 h ago", "Idle 3 h",
   "Busy: CPU 96% for 9 min". The page keeps two ("up 2 h 14 min").
 - **The list asks again every 15 s while it is shown**, as the page asks
-  for its threads, since BB sends no signal when a thread starts or
+  for its threads, since VesnALIA sends no signal when a thread starts or
   finishes and the busy flag changes each minute. A thread card's title
   comes with `allBoxes`, so it is there in the first frame.
 - **Last active puts the most recent first** when chosen, and its
@@ -1078,9 +1078,9 @@ On 30 October 2026, during unit 5:
   whichever screen was last shown, so a switch from an old path goes to
   `box/<boxId>/<view>`, keeping its origins, rather than to the old form.
 - **A slot's host is named by its Mac.** A slot on a Tart shared iOS host
-  was named by the host VM's own name (`bb-box-host-` and an ID) in
+  was named by the host VM's own name (`alia-box-host-` and an ID) in
   Activity, and the network's label wrapped. Activity, the Monitor and the
-  page's facts now name the Mac where bb-box knows it (Tart and the pool).
+  page's facts now name the Mac where alia-box knows it (Tart and the pool).
   A Namespace Mac has no name of its own, so its slots say "its Namespace
   Mac" in all three, "Its Namespace Mac" at the start of a label, never the
   host's tag. The network's label is "Network", with the Mac's name after
@@ -1089,8 +1089,8 @@ On 30 October 2026, during unit 5:
 ## Decided after unit 5: NVIDIA GPUs
 
 On 31 October 2026, the Monitor and a box's page gained NVIDIA GPUs,
-wherever `nvidia-smi` answers: Proxmox LXC and Docker GPU boxes, BB
-machines with NVIDIA cards, and BB's server.
+wherever `nvidia-smi` answers: Proxmox LXC and Docker GPU boxes, VesnALIA
+machines with NVIDIA cards, and VesnALIA's server.
 
 - **Read where the reading already runs.** The full reading and box
   history's light reading each run `nvidia-smi --query-gpu` once, as CSV
@@ -1102,9 +1102,9 @@ machines with NVIDIA cards, and BB's server.
   29 to 35 ms and about 10 ms of CPU.
 - **A hang costs only the GPU.** In a box's script, each call runs under
   `timeout -k 1 2`, the GPU sections come last, and the process query is
-  skipped when the card query timed out. On BB's server and BB machines,
+  skipped when the card query timed out. On VesnALIA's server and VesnALIA machines,
   each call races a 2 s timer that kills it with SIGKILL and gives up on
-  it even if it never exits, and bb-box asks nothing more of `nvidia-smi`
+  it even if it never exits, and alia-box asks nothing more of `nvidia-smi`
   for 5 minutes after one that did not answer. The output of a call that
   exits with an error is still read, so one lost card does not hide the
   others.
@@ -1121,14 +1121,14 @@ machines with NVIDIA cards, and BB's server.
   so an idle box beside another box's training would read busy. The lead
   decided that GPU use never changes a machine's health: a card at full
   use is a training box doing its job, so health stays judged by CPU,
-  memory, disk and load, and `bb box monitor health` never exits 2 for
+  memory, disk and load, and `alia box monitor health` never exits 2 for
   it.
 - **Box history.** A migration adds `gpu_minutes` and `gpu_hours`: each
   card's use and memory at each minute point, and each hour's mean, its
   busiest minute and its highest memory, and whether it was shared. A
   minute's `gpu` column is the counted use, for busy. A GPU's minute is
   the card's use at the moment of reading, not a mean over the minute.
-  Counters keep no GPU figures. Where the history shares bb-box's
+  Counters keep no GPU figures. Where the history shares alia-box's
   database, its cap of 200,000 rows counts each GPU's row as well. With a
   set clock, 30 boxes for 7 days took 2.82 MB with no GPU, 4.72 MB with
   one each and 6.5 MB with two; the write-ahead log peaked at 1.08 MB,
@@ -1152,7 +1152,7 @@ The owner answered all four on 29 October 2026, each with its default.
 3. A row says when a box has been busy for 5 whole minutes, and nothing
    else from the Monitor. Default: yes.
 4. Stop stays one click on a wide row, and in the menu on a narrow one.
-   Today it asks first only when a thread works on the box's BB machine,
+   Today it asks first only when a thread works on the box's VesnALIA machine,
    not when the box's own thread is working through box tools, so one
    click can stop the box an agent is using. Unit 1c widens the guard to
    ask in that case too. Default: yes, keep one click and widen the
@@ -1168,7 +1168,7 @@ The owner answered all four on 29 October 2026, each with its default.
 - Richer details unfolded in the row. No link, and the list would jump
   as rows grow by 600 px.
 - Opening a box in the Monitor instead, with a larger Monitor. The Monitor
-  is a glance from anywhere in BB, in the sidebar's width; the page is
+  is a glance from anywhere in VesnALIA, in the sidebar's width; the page is
   where a box is looked at closely. They share their readings, not their
   layout.
 - boat.dev's list as a table, with columns for type, cost and a usage
@@ -1188,8 +1188,8 @@ The owner answered all four on 29 October 2026, each with its default.
 
 Open [069-boxes-page/prototype.html](069-boxes-page/prototype.html) in a
 browser. It is one file with nothing to install and saves nothing. It uses
-bb-box's own row title, badges, tabs, search and filters, thread chips and
-the Monitor's metric parts and middle truncation, with BB's buttons, menus
+alia-box's own row title, badges, tabs, search and filters, thread chips and
+the Monitor's metric parts and middle truncation, with VesnALIA's buttons, menus
 and dialogs. A fake server holds ten boxes under generic names and answers
 Stop in about 1.6 s, Start in about 3.2 s and Release in about 1.4 s, and
 keeps a box log: who stopped or started a box, and released boxes. Each
@@ -1220,7 +1220,7 @@ px](069-boxes-page/new/11-phone-list.png), [light](069-boxes-page/new/12-light.p
 [a point read on the chart](069-boxes-page/new/13-stopped-read-out.png), [a
 host that does not answer](069-boxes-page/new/14-host-not-answering.png),
 [a backend removed from settings](069-boxes-page/new/15-backend-removed.png),
-[a Windows machine bb-box cannot read](069-boxes-page/new/16-windows-machine.png),
+[a Windows machine alia-box cannot read](069-boxes-page/new/16-windows-machine.png),
 [a busy box at 760 px](069-boxes-page/new/17-760.png), [a stop that
 failed](069-boxes-page/new/18-stop-failed.png) and [a release that did not
 finish](069-boxes-page/new/19-release-failed.png).
@@ -1250,7 +1250,7 @@ Worth trying:
 
 What it does not do: real readings, the history's server, resize and new
 thread (they show a note), a box's tailnet name, a gone box, a device that
-did not boot, a failed join to BB, the Monitor in BB's footer and its new
+did not boot, a failed join to VesnALIA, the Monitor in VesnALIA's footer and its new
 Page item, the Box panel's new item, the old `<threadId>/<boxId>` paths,
 and a released box after a reload (the real one keeps it 24 hours).
 
@@ -1259,7 +1259,7 @@ this note differ, the build follows the note, and the gates prove it. The
 re-reviews found these differences:
 
 - It keeps where an entry came from in the browser's history state, which
-  BB's `toPluginPanel` cannot carry; the note puts it in the path (G8). So
+  VesnALIA's `toPluginPanel` cannot carry; the note puts it in the path (G8). So
   a quick icon's way back, settings through a page to a view, a reload
   after a quick icon, and a page opened by URL behave as G8 says, not as
   the prototype does.
@@ -1283,13 +1283,13 @@ writes `prototype.html` beside the folder. `npx tsc -p tsconfig.json
 
 - The Boxes page's rows no longer unfold; the details, and more, are one
   click in.
-- bb-box reads each running box once a minute while box history is on,
+- alia-box reads each running box once a minute while box history is on,
   within the budget of section 10, and keeps two small files of its own,
   `box-log.db` and `box-history.db`.
 - `BoxMenu` becomes the one place a box's menu is defined, for the row,
   the page and the Machines tab.
 - 066's "no monitoring on the box page" now applies to the thread's Box
-  panel only, and its opt-in background monitoring still applies to BB's
+  panel only, and its opt-in background monitoring still applies to VesnALIA's
   server and the person's machines.
 
 ## What changed after the reviews
@@ -1305,7 +1305,7 @@ Every finding of both is answered here.
 | History shared the Monitor's database with alerts, with a page cap | Opus 2 | Its own file, `box-history.db`, pruned by age, capped on its own; alerts never affected | Section 10, "Where" |
 | History reversed 066's opt-in without saying so | Opus 2, Astra 1 | Said plainly, with why, its own switch through 067's engine, and question 1 asks the owner; off if the budget is missed | Section 10, "It reverses 066's opt-in"; question 1; prototype Settings stand-in |
 | A shared slot showed the Mac's numbers as its own, and could be flagged busy for a neighbour | Opus 2, Astra 4 | The slot's own CPU and memory from its own user's processes; the Mac's numbers labelled as all slots', with the encoder room; busy only from its own processes; the Mac read once for all its slots | Sections 4, 5, 9, 10; prototype calm-harbor, [screenshot](069-boxes-page/new/04-device-box-shared-slot.png) |
-| Stops, "stopped by you", start times and released boxes needed records bb-box does not keep | Opus 3, Astra 2 | The box log, `box-log.db`: events with time and who, the last start asked and finished, released boxes kept 24 hours; words leave out what is not known | Sections 6, 7, 10; prototype silver-pine's Start and Stop |
+| Stops, "stopped by you", start times and released boxes needed records alia-box does not keep | Opus 3, Astra 2 | The box log, `box-log.db`: events with time and who, the last start asked and finished, released boxes kept 24 hours; words leave out what is not known | Sections 6, 7, 10; prototype silver-pine's Start and Stop |
 | "Starting for 1 d 2 h" after Start on a stopped box | Opus 3, Astra 2 | A restart counts from when Start was asked, and shows the start's own steps | Section 7; prototype silver-pine |
 | No state for a failed stop, start, resize or release, a removed backend, or a host that does not answer; today's row notices dropped | Opus 7, Astra 3 | Operation results kept apart from state; a notice for each with its recovery; Forget… for a removed backend; a failed release keeps its record; a device that did not boot; today's lines under a row stay | Sections 7, 9, 10; prototype fern-hollow, maple-row and the fail switch, [screenshots](069-boxes-page/new/18-stop-failed.png) |
 | A view's back always went to the box's page, and pushed a new entry | Opus 1, Astra 7 | Back returns to where the view was opened from, by going back in history; from a link or reload it replaces itself with the page | Sections 1, 8; prototype, worth trying 2 |
@@ -1339,7 +1339,7 @@ each point is a rule above, owned by one unit, and proved by its gate.
 | A slot judged against the whole Mac could never be busy, and its history missed short builds | Opus 1 | A slot is judged against its share of the Mac; `ps -S` counts exited children; proved with an `xcodebuild` in a slot | G1, G2 (unit 2) |
 | The Stop guard does not cover the box's own working thread | Opus 2 | The guard widens to ask when the box's own thread is working, from every place Stop and Release are offered; question 4 says what today's guard does not do | G3 (unit 1c) |
 | The two new files had no way to be opened, migrated or capped beside the SDK's single `data.db` | Opus 3 | Attached to the SDK's handle, with their own migrations, WAL and caps; a fallback inside `data.db` that leaves the alerts 10 MB | G4 (unit 1b) |
-| Nothing owned "tries again" for a host that does not answer | Opus 4 | The reach check: its schedule (1, 5, then every 15 minutes), its way (BB's connection state or one command), no backend API on its own, the same with history on or off | G7 (unit 1b) |
+| Nothing owned "tries again" for a host that does not answer | Opus 4 | The reach check: its schedule (1, 5, then every 15 minutes), its way (VesnALIA's connection state or one command), no backend API on its own, the same with history on or off | G7 (unit 1b) |
 | "Where it was opened from" cannot ride on `toPluginPanel`; settings' way back was lost through a page | Opus 5, Astra 5 | The origin is in the path, carried through page and view; going back in history only to the panel's own last move, replacing otherwise; checked against SDK 0.6.15 first | G8 (unit 1c) |
 | The counters' 150 s limit broke the 2-minute fallback; a restart's effect was said two ways | Opus 6, Astra 4 | No 2-minute fallback: history ships off if it misses its budget; counters from the file survive a restart under 150 s | G12 (unit 3) |
 | The busy rule dropped load | Opus 7 | The reading includes `/proc/loadavg`; load is a reason for a box with its own kernel | G15 (unit 4) |

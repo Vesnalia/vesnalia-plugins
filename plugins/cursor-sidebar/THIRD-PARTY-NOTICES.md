@@ -1,6 +1,6 @@
 # Third-party notices
 
-Parts of `src/` in this plugin are derived from **bb-plugin-thread-inbox**
+Parts of `src/` in this plugin are derived from **alia-plugin-thread-inbox**
 (https://github.com/wy3z/bb-plugin-thread-inbox), used with permission under
 the MIT License. That project's checkout was treated as read-only; only source
 was copied and adapted into this plugin's own package.

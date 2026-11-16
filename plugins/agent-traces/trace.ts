@@ -1,5 +1,5 @@
 /**
- * Turns a thread's raw bb events into a trace: one entry per top-level turn,
+ * Turns a thread's raw VesnALIA events into a trace: one entry per top-level turn,
  * each holding the commands, tool calls, subagents, waits, and errors that
  * happened inside it, plus when its agents were visibly thinking or writing.
  *
@@ -74,7 +74,7 @@ export interface Span {
   seq: number;
   /** The event that ended it, which carries its output. */
   endSeq: number | null;
-  /** The closest chat message to jump to, as bb's `?msg=` sequence. */
+  /** The closest chat message to jump to, as VesnALIA's `?msg=` sequence. */
   chatSeq: number | null;
 }
 
@@ -93,7 +93,7 @@ export interface Turn {
   /** 1-based position among the thread's top-level turns. */
   index: number;
   prompt: string;
-  /** The thread that sent the prompt, or `bb` for bb's own notices; null when the user did. */
+  /** The thread that sent the prompt, or `VesnALIA` for VesnALIA's own notices; null when the user did. */
   sender: string | null;
   start: number;
   /** Null while it runs. */
@@ -101,7 +101,7 @@ export interface Turn {
   status: Status;
   spans: Span[];
   activity: Activity[];
-  /** The prompt, as bb's `#msg=` sequence. A queued prompt comes before `firstSeq`. */
+  /** The prompt, as VesnALIA's `#msg=` sequence. A queued prompt comes before `firstSeq`. */
   requestSeq: number | null;
   /**
    * The stretch of history the turn ran over, from its `turn/started` to its
@@ -112,7 +112,7 @@ export interface Turn {
   lastSeq: number;
 }
 
-/** The slice of a bb thread event row the trace reads. */
+/** The slice of a VesnALIA thread event row the trace reads. */
 export interface TraceEvent {
   seq: number;
   createdAt: number;
@@ -188,11 +188,11 @@ const HEREDOC =
 // A heredoc whose terminator was cut off, as in a clipped command, runs to the end.
 const UNTERMINATED_HEREDOC = /<<-?[ \t]*(['"]?)[A-Za-z_][A-Za-z0-9_]*\1([^\n]*)\n[\s\S]*$/;
 const HEREDOC_WORD = "<<…";
-const THREAD_MESSAGE_PREFIX = /^\s*\[bb message from thread:([^\]\s]+)\]\s*/;
-// bb's own notices, such as a spawned thread finishing, arrive as prompts too.
-const SYSTEM_MESSAGE_PREFIX = /^\s*\[bb system\]\s*/;
-/** The sender of a prompt that bb itself sent. */
-export const BB_SENDER = "bb";
+const THREAD_MESSAGE_PREFIX = /^\s*\[alia message from thread:([^\]\s]+)\]\s*/;
+// VesnALIA's own notices, such as a spawned thread finishing, arrive as prompts too.
+const SYSTEM_MESSAGE_PREFIX = /^\s*\[alia system\]\s*/;
+/** The sender of a prompt that VesnALIA itself sent. */
+export const ALIA_SENDER = "alia";
 
 /**
  * `cat > file`, `echo … > file`, and `tee` only write a file for the next
@@ -429,7 +429,7 @@ export class TraceBuilder {
    * tool call still nests under it.
    */
   private readonly via = new Map<string, string>();
-  /** The top-level turn that is running, for events bb records outside any turn. */
+  /** The top-level turn that is running, for events VesnALIA records outside any turn. */
   private activeTurn: string | null = null;
 
   apply(events: readonly TraceEvent[]): void {
@@ -495,14 +495,14 @@ export class TraceBuilder {
       case "client/turn/requested": {
         const input = Array.isArray(data.input) ? data.input : [];
         const raw = input.map((part) => text(record(part).text)).find(Boolean) ?? "";
-        // bb prefixes messages from other threads and its own notices; the sender is shown on its own.
+        // VesnALIA prefixes messages from other threads and its own notices; the sender is shown on its own.
         const prefix = THREAD_MESSAGE_PREFIX.exec(raw);
         const system = prefix ? null : SYSTEM_MESSAGE_PREFIX.exec(raw);
         const requestId = text(data.requestId);
         if (requestId) {
           this.requests.set(requestId, {
             prompt: clip(raw.slice((prefix ?? system)?.[0].length ?? 0)),
-            sender: text(data.senderThreadId) || prefix?.[1] || (system ? BB_SENDER : null),
+            sender: text(data.senderThreadId) || prefix?.[1] || (system ? ALIA_SENDER : null),
             seq: event.seq,
             at: event.createdAt,
           });
@@ -545,7 +545,7 @@ export class TraceBuilder {
         return;
       case "system/error":
         this.addMarker(turnId, event, {
-          name: "bb error",
+          name: "alia error",
           detail: text(data.message) || text(data.code),
           status: "failed",
         });

@@ -1,6 +1,6 @@
 ---
 name: beads
-description: "Manage the beads issue tracker (bd CLI) from BB threads and the shell."
+description: "Manage the beads issue tracker (bd CLI) from VesnALIA threads and the shell."
 ---
 
 # Beads
@@ -26,13 +26,13 @@ Many commands accept `--json` when you need to parse the result.
 
 ## From the shell
 
-- `bb beads -- list` — run any `bd` command
-- `bb beads check` — verify the `bd` binary is reachable
-- `bb plugin config beads` — set the `bd` binary path if it is not on PATH
+- `alia beads -- list` — run any `bd` command
+- `alia beads check` — verify the `bd` binary is reachable
+- `alia plugin config beads` — set the `bd` binary path if it is not on PATH
   (setting "Path to the `bd` beads CLI", default `bd`)
 
 ## Setup
 
-`bd` must be installed on the BB host machine. In a repo without beads yet,
+`bd` must be installed on the VesnALIA host machine. In a repo without beads yet,
 run `beads({ args: ["init", "--skip-agents", "--non-interactive"] })` once
 (plain `init` also installs Claude/Codex/Cursor editor integrations).

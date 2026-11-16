@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { hostContract, machineStatusSchema, type MachineStatus } from "./contract.js";
 
@@ -37,8 +37,8 @@ function sleep(milliseconds: number, signal: AbortSignal): Promise<void> {
   });
 }
 
-export default function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     hideUnavailableMachines: {
       type: "boolean",
       label: "Hide machines without selected status",
@@ -78,11 +78,11 @@ export default function plugin(bb: BbPluginApi) {
         ? settings.experimental_set({ showMemory: true })
         : settings.experimental_set({ showStorage: true });
     void restore.catch((error) => {
-      bb.log.warn(`At least one visible metric is required: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`At least one visible metric is required: ${error instanceof Error ? error.message : String(error)}`);
     });
   });
 
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   const statuses = new Map<string, MachineStatusWithHost>();
   const failures = new Map<string, number>();
   let markInitialPollComplete: (() => void) | null = null;
@@ -91,7 +91,7 @@ export default function plugin(bb: BbPluginApi) {
   const snapshot = () => ({ machines: [...statuses.values()].sort((a, b) => a.name.localeCompare(b.name)) });
 
   async function poll(): Promise<void> {
-    const machines = await bb.sdk.hosts.list();
+    const machines = await alia.sdk.hosts.list();
     const connectedMachines = machines.filter((machine) => machine.status === "connected");
     const connectedIds = new Set(connectedMachines.map((machine) => machine.id));
     let changed = false;
@@ -116,25 +116,25 @@ export default function plugin(bb: BbPluginApi) {
         const failureCount = (failures.get(machine.id) ?? 0) + 1;
         failures.set(machine.id, failureCount);
         if (failureCount >= 3 && statuses.delete(machine.id)) changed = true;
-        bb.log.warn(`Could not read machine status for ${machine.name}: ${error instanceof Error ? error.message : String(error)}`);
+        alia.log.warn(`Could not read machine status for ${machine.name}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }));
-    if (changed) bb.realtime.publish("machineStatus.changed", snapshot());
+    if (changed) alia.realtime.publish("machineStatus.changed", snapshot());
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async status() {
       await initialPollComplete;
       return snapshot();
     },
   });
-  bb.background.service("machine-status-poll", {
+  alia.background.service("machine-status-poll", {
     async start(signal) {
       while (!signal.aborted) {
         try {
           await poll();
         } catch (error) {
-          bb.log.warn(`Could not poll machine status: ${error instanceof Error ? error.message : String(error)}`);
+          alia.log.warn(`Could not poll machine status: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
           markInitialPollComplete?.();
           markInitialPollComplete = null;

@@ -1,10 +1,10 @@
 // Markdown PRO — frontend: a Markdown file opener. Files open formatted and
 // editable in place (Tiptap) with a style toolbar, Mermaid, LaTeX and a YAML
-// properties panel. BB routes .md files here from chat links, the file picker,
-// Tasks/Docs panels and `bb thread open`.
+// properties panel. VesnALIA routes .md files here from chat links, the file picker,
+// Tasks/Docs panels and `alia thread open`.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { definePluginApp, useBbNavigate, useComposer, useRpc, type PluginFileOpenerProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate, useComposer, useRpc, type PluginFileOpenerProps } from "@vesnalia/plugin-sdk/app";
 import type { Editor } from "@tiptap/react";
 import { parseDocument } from "yaml";
 import { toast } from "sonner";
@@ -70,7 +70,7 @@ function PromptDialog({ prompt, onClose }: { prompt: Prompt; onClose: () => void
   };
   return (
     <Dialog open={prompt !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent data-bb-ru-skip="">
+      <DialogContent data-alia-ru-skip="">
         <DialogHeader>
           <DialogTitle>{prompt?.title}</DialogTitle>
         </DialogHeader>
@@ -200,7 +200,7 @@ export function PropertiesPanel({ value, onChange, editable }: { value: string; 
 
 function MarkdownFileOpener({ path, source, experimental_lineRange, Original }: PluginFileOpenerProps) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const composer = useComposer();
   const rootRef = useRef<HTMLDivElement>(null);
   const [compact, setCompact] = useState(() => globalThis.matchMedia?.(MOBILE_QUERY).matches ?? false);
@@ -604,7 +604,7 @@ function MarkdownFileOpener({ path, source, experimental_lineRange, Original }: 
   const status = saveState === "saving" ? t("saving") : dirty ? t("unsaved") : saveState === "saved" ? t("saved") : null;
 
   return (
-    <div ref={rootRef} data-bb-ru-skip="" style={{ "--mdpro-font-size": fontSize === null ? undefined : `${fontSize}px` } as CSSProperties} className="mdpro-editor flex h-full min-h-0 flex-col bg-background text-foreground">
+    <div ref={rootRef} data-alia-ru-skip="" style={{ "--mdpro-font-size": fontSize === null ? undefined : `${fontSize}px` } as CSSProperties} className="mdpro-editor flex h-full min-h-0 flex-col bg-background text-foreground">
       <style>{RICH_CSS}</style>
       <div className={cn("flex items-center gap-2 border-b border-border", compact ? "px-2 py-1" : "min-h-10 px-3 py-1.5")}>
         <div className="min-w-0 flex-1">
@@ -777,7 +777,7 @@ function MarkdownFileOpener({ path, source, experimental_lineRange, Original }: 
         </div>
       )}
       <Dialog open={fontSizeOpen} onOpenChange={setFontSizeOpen}>
-        <DialogContent className="mdpro-font-dialog max-w-sm" data-bb-ru-skip="">
+        <DialogContent className="mdpro-font-dialog max-w-sm" data-alia-ru-skip="">
           <DialogHeader><DialogTitle>{t("fontSize")}</DialogTitle></DialogHeader>
           <form className="space-y-4" onSubmit={(event) => {
             event.preventDefault();

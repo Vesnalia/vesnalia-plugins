@@ -116,8 +116,8 @@ export function shouldSend(input: SuppressionInput): Suppression {
     return { send: false, because: "snoozed" };
   }
 
-  // Scope is the binding here too. A notification about a team no bb project
-  // binds is a notification about work this bb does not track.
+  // Scope is the binding here too. A notification about a team no VesnALIA project
+  // binds is a notification about work this VesnALIA does not track.
   if (node.team !== undefined) {
     if (!input.boundTeamIds.has(node.team.id)) {
       return { send: false, because: "team not bound" };

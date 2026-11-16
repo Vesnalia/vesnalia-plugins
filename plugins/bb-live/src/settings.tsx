@@ -3,7 +3,7 @@ import {
   useRpc,
   experimental_ProviderModelPicker as ProviderModelPicker,
   type ExperimentalProviderModelPickerValue,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./contract";
 import { DEFAULT_VOICE_PROMPT, DEFAULT_OPENING } from "./policy";
 import {
@@ -302,7 +302,7 @@ export function LiveSettings() {
                       }))
                 }
               />
-              Use BB defaults
+              Use VesnALIA defaults
             </label>
             {prefs.operatorProvider && operatorValue && (
               <ProviderModelPicker

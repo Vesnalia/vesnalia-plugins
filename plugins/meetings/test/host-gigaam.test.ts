@@ -1,9 +1,9 @@
-// gigaam.discover with a fake `bb` CLI on PATH and a local /health server.
+// gigaam.discover with a fake `VesnALIA` CLI on PATH and a local /health server.
 import fs from "node:fs/promises";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 import path from "node:path";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import hostEntry from "../host.js";
 import { clearGigaamCache, discoverGigaam } from "../src/host/gigaam.js";
@@ -33,9 +33,9 @@ async function healthServer(body: unknown, status = 200): Promise<number> {
   return (server.address() as AddressInfo).port;
 }
 
-/** Puts a `bb` script first on PATH that prints `status` for `bb gigaam status --json` and counts calls. */
-async function fakeBb(status: unknown, exitCode = 0): Promise<{ calls: () => Promise<number> }> {
-  const bin = await tempDir("meetings-fake-bb-");
+/** Puts a `VesnALIA` script first on PATH that prints `status` for `alia gigaam status --json` and counts calls. */
+async function fakeAlia(status: unknown, exitCode = 0): Promise<{ calls: () => Promise<number> }> {
+  const bin = await tempDir("meetings-fake-alia-");
   const counter = path.join(bin, "calls");
   const script = [
     "#!/bin/sh",
@@ -46,7 +46,7 @@ async function fakeBb(status: unknown, exitCode = 0): Promise<{ calls: () => Pro
     "EOF",
     `exit ${exitCode}`,
   ].join("\n");
-  await fs.writeFile(path.join(bin, "bb"), `${script}\n`, { mode: 0o755 });
+  await fs.writeFile(path.join(bin, "alia"), `${script}\n`, { mode: 0o755 });
   process.env.PATH = `${bin}${path.delimiter}${originalPath}`;
   return {
     calls: async () => (await fs.readFile(counter, "utf8").catch(() => "")).split("\n").filter(Boolean).length,
@@ -54,9 +54,9 @@ async function fakeBb(status: unknown, exitCode = 0): Promise<{ calls: () => Pro
 }
 
 describe("gigaam.discover", () => {
-  it("finds the gigaam plugin's server through bb, checks /health and persists gigaam.json", async () => {
+  it("finds the gigaam plugin's server through VesnALIA, checks /health and persists gigaam.json", async () => {
     const port = await healthServer({ ready: true, model: "v3_e2e_rnnt", threads: 5 });
-    const bb = await fakeBb({ mode: "managed", phase: "ready", model: "v3_e2e_rnnt", threads: 0, port });
+    const alia = await fakeAlia({ mode: "managed", phase: "ready", model: "v3_e2e_rnnt", threads: 0, port });
     const dataDir = await tempDir();
     const harness = experimental_createHostEntryHarness(hostEntry, {
       experimental_paths: { dataDir, tempDir: await tempDir() },
@@ -66,33 +66,33 @@ describe("gigaam.discover", () => {
     const saved = JSON.parse(await fs.readFile(path.join(dataDir, "gigaam.json"), "utf8"));
     expect(saved.url).toBe(`http://127.0.0.1:${port}`);
 
-    // Cached for 30 s: no second bb run, gigaam.json untouched.
+    // Cached for 30 s: no second VesnALIA run, gigaam.json untouched.
     const before = (await fs.stat(path.join(dataDir, "gigaam.json"))).mtimeMs;
     await harness.experimental_call("gigaam.discover", { configuredUrl: "" });
-    expect(await bb.calls()).toBe(1);
+    expect(await alia.calls()).toBe(1);
     expect((await fs.stat(path.join(dataDir, "gigaam.json"))).mtimeMs).toBe(before);
     await harness.experimental_dispose();
   });
 
-  it("uses the configured URL without asking bb", async () => {
+  it("uses the configured URL without asking VesnALIA", async () => {
     const port = await healthServer({ ready: true });
-    const bb = await fakeBb({ mode: "managed", phase: "ready", port: 1 });
+    const alia = await fakeAlia({ mode: "managed", phase: "ready", port: 1 });
     const paths = hostPaths(await tempDir());
     const status = await discoverGigaam(paths, ` http://127.0.0.1:${port}/ `);
     expect(status).toMatchObject({ url: `http://127.0.0.1:${port}`, ready: true });
-    expect(await bb.calls()).toBe(0);
+    expect(await alia.calls()).toBe(0);
   });
 
   it("reports a server that is still starting, an external one, and an unreachable one", async () => {
     const paths = hostPaths(await tempDir());
-    await fakeBb({ mode: "managed", phase: "installing", message: "Installing PyTorch", port: null });
+    await fakeAlia({ mode: "managed", phase: "installing", message: "Installing PyTorch", port: null });
     const starting = await discoverGigaam(paths, "", { fresh: true });
     expect(starting).toMatchObject({ url: null, ready: false });
     expect(starting.detail).toContain("Installing PyTorch");
     await expect(fs.stat(paths.gigaamFile)).rejects.toThrow(); // nothing to persist
 
     const port = await healthServer({ ready: false });
-    await fakeBb({ mode: "external", serverUrl: `http://127.0.0.1:${port}/`, ready: true });
+    await fakeAlia({ mode: "external", serverUrl: `http://127.0.0.1:${port}/`, ready: true });
     const loading = await discoverGigaam(paths, "", { fresh: true });
     expect(loading).toMatchObject({ url: `http://127.0.0.1:${port}`, ready: false, detail: expect.stringContaining("загружает") });
 
@@ -105,8 +105,8 @@ describe("gigaam.discover", () => {
 
   it("explains a missing gigaam plugin", async () => {
     const paths = hostPaths(await tempDir());
-    const bin = await tempDir("meetings-fake-bb-");
-    await fs.writeFile(path.join(bin, "bb"), "#!/bin/sh\necho 'Unknown command: gigaam' >&2\nexit 1\n", { mode: 0o755 });
+    const bin = await tempDir("meetings-fake-alia-");
+    await fs.writeFile(path.join(bin, "alia"), "#!/bin/sh\necho 'Unknown command: gigaam' >&2\nexit 1\n", { mode: 0o755 });
     process.env.PATH = `${bin}${path.delimiter}${originalPath}`;
     const status = await discoverGigaam(paths, "", { fresh: true });
     expect(status).toMatchObject({ url: null, ready: false });

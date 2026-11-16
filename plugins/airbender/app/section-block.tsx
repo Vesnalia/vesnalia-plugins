@@ -174,13 +174,13 @@ export function CurrentSection({
         // tall, so it shows no scrollbar; one appears only once a long
         // section is unfolded. The first cap, 22% of the window, was a
         // little shorter than that and scrolled for nothing (the user's
-        // complaint, bead-bb-l3m).
+        // complaint, bead-alia-l3m).
         detailsClassName="max-h-[max(30vh,20rem)] overflow-y-auto"
         // The current issue stands out by a box with a thicker border and a
         // light green background, the look the user chose after trying it
-        // (bead-bb-6ui).
+        // (bead-alia-6ui).
         //
-        // The green is BB's theme "success" colour mixed INTO the card
+        // The green is VesnALIA's theme "success" colour mixed INTO the card
         // colour, giving a solid colour. The first attempts used the green
         // at low opacity instead, which let whatever lay underneath show
         // through: the panel's gray background at rest, and the gray hover

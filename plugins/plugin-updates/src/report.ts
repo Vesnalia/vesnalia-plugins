@@ -1,11 +1,11 @@
-// Folds bb's update check and our release check into the page sections, the
+// Folds VesnALIA's update check and our release check into the page sections, the
 // badge count, and the updates worth a toast. Pure — the caller supplies the
 // ignored and already-announced versions from storage.
-import type { PluginBbSdk } from "@get-bb/plugin-sdk";
+import type { PluginAliaSdk } from "@vesnalia/plugin-sdk";
 import type { BlockedRelease, NewerRelease, OutOfRangeRelease } from "./releases";
 
 export type CheckEntry = Awaited<
-  ReturnType<PluginBbSdk["plugins"]["checkUpdates"]>
+  ReturnType<PluginAliaSdk["plugins"]["checkUpdates"]>
 >[number];
 
 /** An update found by an earlier check, kept while this plugin's check fails. */
@@ -17,7 +17,7 @@ export interface Stale {
 /** A release result an earlier check found; see `ReleaseResult`. */
 export type CarriedRelease = { release: OutOfRangeRelease & { blocked?: BlockedRelease } } & Stale;
 
-/** A compatible update an earlier check found, for a plugin bb couldn't check this time. */
+/** A compatible update an earlier check found, for a plugin VesnALIA couldn't check this time. */
 export type CarriedCheck = { entry: CheckEntry } & Stale;
 
 /** `carried`: the release check failed, so the last one found is kept, stale. */
@@ -51,7 +51,7 @@ export type IgnoredItem =
   | (CompatibleItem & { kind: "compatible" })
   | (OutOfRangeItem & { kind: "out-of-range" });
 
-/** A newer release this bb can't run: bb's own candidate, or one outside the range. */
+/** A newer release this VesnALIA can't run: VesnALIA's own candidate, or one outside the range. */
 export interface BlockedItem {
   id: string;
   version: string;
@@ -87,7 +87,7 @@ export function buildReport(input: {
   seen: Record<string, string[]>;
   /** Ids of installed plugins that are turned off. */
   disabled?: string[];
-  /** Ids bb couldn't check, so not in `checks`; their release results still count. */
+  /** Ids VesnALIA couldn't check, so not in `checks`; their release results still count. */
   unchecked?: string[];
   /** Compatible updates of `unchecked` plugins, found by an earlier check. */
   carried?: CarriedCheck[];
@@ -162,7 +162,7 @@ export function buildReport(input: {
       });
     }
   }
-  // Not idle either way: bb couldn't say whether they're up to date.
+  // Not idle either way: VesnALIA couldn't say whether they're up to date.
   const carried = new Map((input.carried ?? []).map((c) => [c.entry.id, c]));
   for (const id of input.unchecked ?? []) {
     const last = carried.get(id);

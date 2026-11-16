@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Правила разработки bb-плагинов (agent harness / provider plugins) для [bb](https://github.com/get-bb/bb) — agentic IDE.
+Правила разработки alia-плагинов (agent harness / provider plugins) для [VesnALIA](https://github.com/get-bb/bb) — agentic IDE.
 
 ## Стиль работы
 
@@ -18,17 +18,17 @@
 - **OCP** — расширяем через декларации и схемы (extension kinds, capabilities), а не через правки существующих веток кода.
 - **LSP** — реализации контрактов SDK (`defineProviderBridge`, RPC-контракты) соблюдают их сигнатуры точно, без «расширенных» отклонений.
 - **ISP** — не реализуем capability-методы, которые провайдер не поддерживает: неизвестный метод отвечает `METHOD_NOT_FOUND (-32601)`, а не заглушкой.
-- **DIP** — зависим от абстракций SDK (`@get-bb/plugin-sdk`), а не от внутренностей bb: никаких приватных `@bb/*` пакетов нигде, включая тесты.
+- **DIP** — зависим от абстракций SDK (`@vesnalia/plugin-sdk`), а не от внутренностей VesnALIA: никаких приватных `@alia-core/*` пакетов нигде, включая тесты.
 
 ## Структура плагина
 
-Плагин — TypeScript-пакет, манифест — `package.json` с блоком `bb`:
+Плагин — TypeScript-пакет, манифест — `package.json` с блоком `alia`:
 
 ```json
 {
-  "name": "bb-plugin-<name>",
+  "name": "alia-plugin-<name>",
   "type": "module",
-  "bb": {
+  "alia": {
     "name": "<Human Name>",
     "description": "...",
     "branding": { "icon": "./icons/icon.svg" },
@@ -37,35 +37,35 @@
     "app": "./app.tsx",
     "skills": ["skills"]
   },
-  "engines": { "bbPluginSdk": "<range>" }
+  "engines": { "aliaPluginSdk": "<range>" }
 }
 ```
 
-- `bb.server` (обязательно) — бэкенд: `bb.providers.register(...)` для provider-плагинов, настройки (`bb.settings.define`), CLI-команды, agent tools.
-- `bb.host` (опционально) — full-trust Node 22 ESM артефакт для host-демона; здесь живёт provider bridge.
-- `bb.app` (опционально) — фронтенд (`definePluginApp`): UI-слоты, renderer'ы, иконки провайдера. Headless-плагину не нужен — удалить вместе с frontend-файлами скаффолда.
-- `bb.skills` — `skills/<name>/SKILL.md` подмешиваются в треды агентов; документируем команды, настройки и ограничения плагина там.
-- Plugin id = финальный компонент имени пакета минус префикс `bb-plugin-`. Id неймспейсит роуты, storage, настройки и CLI.
+- `alia.server` (обязательно) — бэкенд: `alia.providers.register(...)` для provider-плагинов, настройки (`alia.settings.define`), CLI-команды, agent tools.
+- `alia.host` (опционально) — full-trust Node 22 ESM артефакт для host-демона; здесь живёт provider bridge.
+- `alia.app` (опционально) — фронтенд (`definePluginApp`): UI-слоты, renderer'ы, иконки провайдера. Headless-плагину не нужен — удалить вместе с frontend-файлами скаффолда.
+- `alia.skills` — `skills/<name>/SKILL.md` подмешиваются в треды агентов; документируем команды, настройки и ограничения плагина там.
+- Plugin id = финальный компонент имени пакета минус префикс `alia-plugin-`. Id неймспейсит роуты, storage, настройки и CLI.
 
 ## Жёсткие правила импортов
 
-- Разрешено: `@get-bb/plugin-sdk` (и его опубликованные subpaths `/provider-bridge`, `/host`, `/app`, `/testing`, `/provider-bridge/testing`), npm-пакеты, node builtins, свои файлы.
-- **Запрещено**: любые `@bb/*` workspace-пакеты — marketplace-плагин их не резолвит. Тест, проверяющий это правило, обязателен.
-- Runtime-зависимости (zod и т.п.) — в `dependencies`; типы и тулинг — в `devDependencies`. Пакеты, которые bb шимит в рантайме (react и др.), — только type-only devDependencies, никогда в `dependencies`.
-- Bridge компилируется только против `@get-bb/plugin-sdk/provider-bridge` — SDK в `dependencies`, не только в devDependencies.
+- Разрешено: `@vesnalia/plugin-sdk` (и его опубликованные subpaths `/provider-bridge`, `/host`, `/app`, `/testing`, `/provider-bridge/testing`), npm-пакеты, node builtins, свои файлы.
+- **Запрещено**: любые `@alia-core/*` workspace-пакеты — marketplace-плагин их не резолвит. Тест, проверяющий это правило, обязателен.
+- Runtime-зависимости (zod и т.п.) — в `dependencies`; типы и тулинг — в `devDependencies`. Пакеты, которые VesnALIA шимит в рантайме (react и др.), — только type-only devDependencies, никогда в `dependencies`.
+- Bridge компилируется только против `@vesnalia/plugin-sdk/provider-bridge` — SDK в `dependencies`, не только в devDependencies.
 
 ## Provider plugin (свой агент-харнесс)
 
-Контракт: `docs/provider-plugin-api.md` и `docs/provider-bridge-protocol.md` в репозитории bb. Референс-пример: `examples/plugins/echo-provider`; большой рабочий пример: `plugins/provider-codex`.
+Контракт: `docs/provider-plugin-api.md` и `docs/provider-bridge-protocol.md` в репозитории VesnALIA. Референс-пример: `examples/plugins/echo-provider`; большой рабочий пример: `plugins/provider-codex`.
 
-**Декларация** (`bb.providers.register` в server):
+**Декларация** (`alia.providers.register` в server):
 
 - Объявляем только реально реализованное: capabilities, permission modes, fork, archive/rename, maintenance (health/usage/installation). Декларация и bridge не должны расходиться.
-- Настройки провайдера — через `bb.settings.define`, передаём в bridge через `deriveProviderOptions(ctx)`. `experimental_bridgeOptions` — только для неизменяемых launch-фактов.
-- Свои виды таймлайна — `extensionKinds` с zod-схемами (`<pluginId>/<name>`); свои иконки — `bb.branding.experimental_icons`.
+- Настройки провайдера — через `alia.settings.define`, передаём в bridge через `deriveProviderOptions(ctx)`. `experimental_bridgeOptions` — только для неизменяемых launch-фактов.
+- Свои виды таймлайна — `extensionKinds` с zod-схемами (`<pluginId>/<name>`); свои иконки — `alia.branding.experimental_icons`.
 - `env.passthrough` — только явно названные переменные демона.
 
-**Bridge** (`experimental_providerBridge` в `bb.host`):
+**Bridge** (`experimental_providerBridge` в `alia.host`):
 
 - Импорт модуля ничего не запускает — процессом владеет бутстрап демона.
 - Транспорт: line-delimited JSON-RPC 2.0 по stdio. Невалидный запрос → `INVALID_PARAMS (-32602)`; неизвестный метод → `METHOD_NOT_FOUND (-32601)`; stdout охраняем от посторонних записей. Упавший молча запрос — недебажный 30-секундный таймаут, так не делаем.
@@ -75,26 +75,26 @@
 - `thread/stop`: все owed-дельты на проводе **до** ответа; ресурсы треда освобождены.
 - Ошибки — типизированные recovery hints (`authRequired`, `rateLimited`, `sessionArchived`, `staleTurn`, `restartRecommended`), никогда не текстовый матчинг.
 - Провайдер-CLI запускаем через `experimental_spawnPortableProcess`, завершаем через `experimental_killPortableProcess`; своя env не протекает в дочерние процессы.
-- Для ACP-агентов используем готовый кит `@get-bb/plugin-sdk/provider-bridge/acp` (диалекты `acp`, `cursor`, `grok`, `omp`, `opencode`).
+- Для ACP-агентов используем готовый кит `@vesnalia/plugin-sdk/provider-bridge/acp` (диалекты `acp`, `cursor`, `grok`, `omp`, `opencode`).
 
 ## Тестирование (часть TDD-цикла)
 
-- **Conformance**: `experimental_runBridgeConformance` из `@get-bb/plugin-sdk/provider-bridge/testing` гоняет канонический набор правил по bridge in-process. Все применимые правила зелёные.
+- **Conformance**: `experimental_runBridgeConformance` из `@vesnalia/plugin-sdk/provider-bridge/testing` гоняет канонический набор правил по bridge in-process. Все применимые правила зелёные.
 - **Stream-тесты**: прогон дельт через реальный ассемблер кита, ассерты на канонических событиях.
-- **Record/replay**: запись реальной сессии (`BB_PROVIDER_BRIDGE_RECORD_DIR`), коммит редacted-записей, паритет через `experimental_replayRecording` + `experimental_compareParity`.
-- **Server-тесты**: загрузка плагина в fake host (`@get-bb/plugin-sdk/testing`).
+- **Record/replay**: запись реальной сессии (`ALIA_PROVIDER_BRIDGE_RECORD_DIR`), коммит редacted-записей, паритет через `experimental_replayRecording` + `experimental_compareParity`.
+- **Server-тесты**: загрузка плагина в fake host (`@vesnalia/plugin-sdk/testing`).
 - Тесты не импортируют app/workspace-код и не ассертят поведение хоста — только контракты плагина.
 - Тестируем поведение, а не моки; моки — только на границах (процессы, сеть, файловая система).
 
 ## Команды разработки
 
 ```
-bb plugin new <name>       # скаффолд
-bb plugin install .        # установка из пути (--yes без промпта)
-bb plugin dev              # пересборка + reload на каждом сохранении
-bb plugin build            # обязательно перед install/release/marketplace
-bb plugin types            # при дрейфе версий деклараций SDK
-bb plugin reload <id>      # после правок установленного плагина
+alia plugin new <name>       # скаффолд
+alia plugin install .        # установка из пути (--yes без промпта)
+alia plugin dev              # пересборка + reload на каждом сохранении
+alia plugin build            # обязательно перед install/release/marketplace
+alia plugin types            # при дрейфе версий деклараций SDK
+alia plugin reload <id>      # после правок установленного плагина
 ```
 
 ## Контрактная дисциплина
@@ -111,8 +111,8 @@ bb plugin reload <id>      # после правок установленног�
 Перед «готово» обязательно:
 
 1. Все тесты зелёные (conformance, stream, parity, unit).
-2. `bb plugin build` проходит без ошибок.
-3. Затронутые контракты (бэкенд, фронтенд, манифест, сгенерированный бандл) проверены; при необходимости — живой прогон (`bb plugin dev`).
+2. `alia plugin build` проходит без ошибок.
+3. Затронутые контракты (бэкенд, фронтенд, манифест, сгенерированный бандл) проверены; при необходимости — живой прогон (`alia plugin dev`).
 4. Вывод проверок предъявлен — утверждения без доказательств не принимаются.
 5. База знаний обновлена по правилам ниже, либо в отчёте отмечено, что обновление не требовалось.
 

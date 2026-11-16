@@ -1,4 +1,4 @@
-// Adapted from bb-plugin-files-editor (MIT, abdoutelb).
+// Adapted from alia-plugin-files-editor (MIT, abdoutelb).
 /**
  * Project-wide text search: turning a query into a pattern, and turning raw
  * match offsets into the rows the results list draws.

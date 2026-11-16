@@ -1,26 +1,21 @@
 {
-  "name": "bb-plugin-project-usage-sort",
+  "name": "alia-plugin-project-usage-sort",
   "version": "0.1.0",
   "type": "module",
-  "description": "Sorts bb projects by how often each one is used.",
+  "description": "Sorts VesnALIA projects by how often each one is used.",
   "license": "MIT",
   "author": "Willhong",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Willhong/bb-plugin-project-usage-sort.git"
-  },
-  "homepage": "https://github.com/Willhong/bb-plugin-project-usage-sort#readme",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "projects",
     "sort",
     "usage"
   ],
   "engines": {
-    "bb": ">=0.47",
-    "bbPluginSdk": ">=0.6.79"
+    "alia": ">=0.47",
+    "aliaPluginSdk": ">=0.6.79"
   },
-  "bb": {
+  "alia": {
     "name": "Project Usage Sort",
     "description": "Sorts the project order by how often each project is used.",
     "branding": {
@@ -43,7 +38,6 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.79",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
     "@types/react": "^19.3.0",
@@ -52,5 +46,22 @@
     "typescript": "^5.7.0",
     "vitest": "^4.1.12",
     "zod": "^4.6.5"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.79"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/project-usage-sort#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/project-usage-sort"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

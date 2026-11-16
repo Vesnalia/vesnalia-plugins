@@ -89,7 +89,7 @@ export function topReasonLabel(reasons: readonly string[]): string | null {
 }
 
 /**
- * Node colour by activity and needs-you reason, from the BB theme. A real
+ * Node colour by activity and needs-you reason, from the VesnALIA theme. A real
  * error wins over everything else; a reason that only waits on a human
  * decision (an approval, a ready merge request, a question) is amber, not
  * red (BBP-95).
@@ -113,7 +113,7 @@ export function activityTone(activity: string, reasons: readonly string[]): stri
 /**
  * Colours per severity, written as var() with a fallback and color-mix() for
  * tints rather than named Tailwind classes (bg-warning/10, text-warning-text),
- * the pattern bb-plugin-aside uses for host tokens (BBP-95).
+ * the pattern alia-plugin-aside uses for host tokens (BBP-95).
  */
 export const SEVERITY_COLOR: Record<ReasonSeverity, string> = { error: "var(--destructive)", decision: "var(--warning)" };
 export const SEVERITY_TEXT_COLOR: Record<ReasonSeverity, string> = {

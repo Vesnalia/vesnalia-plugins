@@ -19,7 +19,7 @@ import { z } from "zod";
 
 const transcriptEntrySchema = z.looseObject({ type: z.string() });
 const TRANSCRIPT_READ_CHUNK_BYTES = 1024 * 1024;
-const FORK_WORKER_TASK = "bb-claude-session-fork";
+const FORK_WORKER_TASK = "alia-claude-session-fork";
 const forkWorkerTaskSchema = z.object({
   task: z.literal(FORK_WORKER_TASK),
   configDirectory: z.string(),

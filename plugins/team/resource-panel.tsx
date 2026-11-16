@@ -1,12 +1,12 @@
 import {useEffect,useState} from "react";
-import {useRpc,useBbNavigate} from "@get-bb/plugin-sdk/app";
+import {useRpc,useAliaNavigate} from "@vesnalia/plugin-sdk/app";
 import type {rpcContract} from "./server";
 import type {ResourceSummary,ResourcePolicy} from "./resource-control";
 import type {TeamSnapshot,Language,TaskId} from "./snapshot";
 
 /** Event-backed status; opening it calls neither a model nor an observer thread. */
 export function ResourcePanel({snapshot,language,onChanged}:{snapshot:TeamSnapshot;language:Language;onChanged:()=>Promise<void>}){
- const rpc=useRpc<typeof rpcContract>(),navigate=useBbNavigate(),ru=language==="ru";
+ const rpc=useRpc<typeof rpcContract>(),navigate=useAliaNavigate(),ru=language==="ru";
  const state=snapshot.resources;
  const [limits,setLimits]=useState({taskAttempts:"8",teamStarts:"100",tokens:"",minutes:""});
  const [reason,setReason]=useState("");const [busy,setBusy]=useState(false);const [error,setError]=useState<string|null>(null);
@@ -38,7 +38,7 @@ export function ResourcePanel({snapshot,language,onChanged}:{snapshot:TeamSnapsh
    {state.taskCounts.map(t=><p key={`${t.taskId}:${t.role}`}>#{t.taskId??"—"} · {t.role} · {ru?"допусков":"admissions"} {t.starts} · {ru?"возвратов":"returns"} {t.returns}{t.taskId!==null?` · ${t.starts+t.returns}/${state.policy.taskAttempts}`:""}</p>)}
    {state.results?.recent.map(task=><div key={task.id} className="rounded border border-border p-2">#{task.id} {task.title}: {task.result??(ru?"результат не указан":"no result recorded")}<br/>{ru?"Основание приёмки":"Acceptance grounds"}: {task.acceptanceReason??"—"}<ul>{task.checks.map((check,i)=><li key={i}>{check.what}: {check.result??`N/A: ${check.notApplicable}`}</li>)}</ul></div>)}
    {state.blocked&&<p role="alert">{ru?"Следующие запуски остановлены":"Further starts are held"}: {state.blocked}</p>}
-   <p>{ru?"Активная работа не прерывается. Замена модели, треда или карточки не сбрасывает счётчики. Send-now в BB — явное ручное исключение, которое плагин не может запретить.":"Active work is not interrupted. Model/thread/card replacement does not reset counters. BB Send-now is an explicit manual override that plugins cannot veto."}</p>
+   <p>{ru?"Активная работа не прерывается. Замена модели, треда или карточки не сбрасывает счётчики. Send-now в ALIA — явное ручное исключение, которое плагин не может запретить.":"Active work is not interrupted. Model/thread/card replacement does not reset counters. VesnALIA Send-now is an explicit manual override that plugins cannot veto."}</p>
    <div className="flex flex-wrap gap-2">{(["taskAttempts","teamStarts","tokens","minutes"] as const).map(key=><label key={key} className="flex flex-col gap-1">{({taskAttempts:ru?"Попыток на задачу (старты + возвраты)":"Task attempts (starts + returns)",teamStarts:ru?"Запусков на команду":"Team starts",tokens:ru?"Сообщённых токенов (пусто — без предела)":"Reported tokens (blank = no cap)",minutes:ru?"Минут с начала (пусто — без предела)":"Minutes since start (blank = no cap)"})[key]}<input type="number" min={1} value={limits[key]} onChange={e=>setLimits(p=>({...p,[key]:e.target.value}))} className="w-32 rounded border border-border bg-background p-1"/></label>)}</div>
    <label className="flex flex-col gap-1">{ru?"Решение пользователя / конкретное изменение подхода":"Manual decision / concrete changed approach"}<textarea rows={2} maxLength={4000} value={reason} onChange={e=>setReason(e.target.value)} className="rounded border border-border bg-background p-1"/></label>
    {error&&<p role="alert">{error}</p>}

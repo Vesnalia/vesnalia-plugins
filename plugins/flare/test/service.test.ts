@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import { threadTag } from "../src/contract";
 import type { Companions } from "../src/companion";
@@ -24,7 +24,7 @@ interface World {
 function setup(world: World = {}) {
   let now = 1_000_000;
   const threads = world.threads ?? {};
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "flare",
     sdk: {
       threads: {
@@ -62,8 +62,8 @@ function setup(world: World = {}) {
       },
     },
   });
-  const db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+  const db = alia.storage.database();
+  alia.storage.migrate(db, MIGRATIONS);
   const store = new FlareStore(db);
   const settings = { ...readSettings({}), ...world.settings };
   const companions = world.companions;
@@ -79,9 +79,9 @@ function setup(world: World = {}) {
           },
           settled: async () => undefined,
         } as unknown as Companions);
-  const service = new FlareService(bb, store, async () => settings, () => now, fakeCompanions);
+  const service = new FlareService(alia, store, async () => settings, () => now, fakeCompanions);
   return {
-    bb,
+    alia,
     harness,
     store,
     service,
@@ -160,7 +160,7 @@ describe("sending a flare", () => {
 
   it("reports a database failure as a result to retry, not a thrown error", () => {
     const world = setup();
-    world.bb.storage.database().exec("DROP TABLE flares");
+    world.alia.storage.database().exec("DROP TABLE flares");
     const result = world.service.send({ threadId: "thr_a", projectId: null, fields: { title: "Lost" }, source: "tool" });
     expect(result).toMatchObject({ status: "failed" });
   });

@@ -58,8 +58,8 @@ describe("security remediation regressions", () => {
   it("marks Linear tool results as untrusted agent input", () => {
     const tools = source("src/tools.ts");
     const configure = tools.slice(
-      tools.indexOf("bb.agents.configure"),
-      tools.indexOf("\n  });\n}", tools.indexOf("bb.agents.configure")),
+      tools.indexOf("alia.agents.configure"),
+      tools.indexOf("\n  });\n}", tools.indexOf("alia.agents.configure")),
     );
     expect(tools).toContain('import { UNTRUSTED_LINEAR_POLICY } from "./security-boundaries.js"');
     expect(configure).toContain("instructions: UNTRUSTED_LINEAR_POLICY");

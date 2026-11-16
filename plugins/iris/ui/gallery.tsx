@@ -1,10 +1,10 @@
 // The component gallery: a docs-style browser. A sidebar lists every group and
 // component (with search and ⌘K); the main pane shows one component at a time on
 // a framed stage with Preview, Code and Props tabs, and previous and next links.
-// Deep links go through bb's panel routing: /plugins/iris/gallery/Chart opens
+// Deep links go through VesnALIA's panel routing: /plugins/iris/gallery/Chart opens
 // Chart, /plugins/iris/gallery/react-Card the React kit's Card, and back and
 // forward walk between them. Old #Chart links still open.
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { CATALOG, GROUPS } from "../core/catalog";
 import type { PropSpec } from "../core/catalog/spec";
@@ -94,7 +94,7 @@ export function GalleryPage({ subPath = "", brand = true }: { subPath?: string; 
   const root = useRef<HTMLDivElement | null>(null);
   const main = useRef<HTMLDivElement | null>(null);
   const search = useRef<HTMLInputElement | null>(null);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const current = entryFor(subPath);
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
@@ -249,7 +249,7 @@ function Sidebar({
   const list = useRef<HTMLDivElement | null>(null);
   const searching = query.trim().length > 0;
   const [typing, setTyping] = useState(false);
-  // Scrolls only the list, never bb's own containers around it.
+  // Scrolls only the list, never VesnALIA's own containers around it.
   const reveal = (sel: string, center: boolean) => {
     const box = list.current;
     const el = box?.querySelector<HTMLElement>(sel);
@@ -377,17 +377,17 @@ function Sidebar({
 // ---------------------------------------------------------------- overview
 
 // A live card fed by Iris's own sample of the public plugin data contract.
-// bb's own live data that needs no thread: plan usage, machines and plugin health.
-const BB_DEMO = `<let u={load("bb:usage")} />
-<let m={load("bb:machines")} />
-<let p={load("bb:plugins")} />
-<Card title="Live data from bb itself" icon="activity" state="live" subtitle={\`load("bb:usage"), bb:machines, bb:plugins\`}>
+// VesnALIA's own live data that needs no thread: plan usage, machines and plugin health.
+const ALIA_DEMO = `<let u={load("VesnALIA:usage")} />
+<let m={load("VesnALIA:machines")} />
+<let p={load("VesnALIA:plugins")} />
+<Card title="Live data from VesnALIA itself" icon="activity" state="live" subtitle={\`load("VesnALIA:usage"), VesnALIA:machines, VesnALIA:plugins\`}>
   <Row>
     <Metric label="Machines online" value={\`\${m.filter((x) => x.status == "connected").length} of \${m.length}\`} />
     <Metric label="Plugins healthy" value={\`\${p.filter((x) => x.status == "running" && !x.detail).length} of \${p.length}\`} />
   </Row>
   <Budget lines={u.filter((w) => w.usedPercent != null).map((w) => ({ label: \`\${w.provider} · \${w.label}\`, spent: w.usedPercent, limit: 100, unit: "percent" }))} />
-  In a thread, bb:thread, bb:threads, bb:pr, bb:commits, bb:changes and bb:environments read that thread's own live data too.
+  In a thread, VesnALIA:thread, VesnALIA:threads, VesnALIA:pr, VesnALIA:commits, VesnALIA:changes and VesnALIA:environments read that thread's own live data too.
 </Card>`;
 
 const LIVE_DEMO = `<let d={load("plugin:iris/example")} />
@@ -396,7 +396,7 @@ const LIVE_DEMO = `<let d={load("plugin:iris/example")} />
     <Metric label="Seconds" value={d.seconds} note="re-read every 2 s" />
     <Metric label="Latest value" value={d.points ? d.points[d.points.length - 1].value : null} trend={d.points ? d.points.map((p) => p.value) : []} />
   </Row>
-  Any bb plugin can serve JSON under \`/iris/\` and cards read it live with \`load("plugin:pluginId/name")\`.
+  Any VesnALIA plugin can serve JSON under \`/iris/\` and cards read it live with \`load("plugin:pluginId/name")\`.
 </Card>`;
 
 function Overview({ open, brand }: { open: (e: Entry) => void; brand: boolean }) {
@@ -406,14 +406,14 @@ function Overview({ open, brand }: { open: (e: Entry) => void; brand: boolean })
         {brand ? <IrisMark size={44} /> : null}
         <div>
           <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em]">{brand ? "Iris" : "Components"}</h1>
-          <p className="text-[13.5px] text-muted-foreground">{brand ? "Live, interactive UI in your bb chat" : `${CATALOG.length} components, each live in your theme`}</p>
+          <p className="text-[13.5px] text-muted-foreground">{brand ? "Live, interactive UI in your VesnALIA chat" : `${CATALOG.length} components, each live in your theme`}</p>
         </div>
       </div>
       <p className="mt-4 max-w-[640px] text-[14px] leading-relaxed text-muted-foreground">
         Agents draw these in replies with <InlineCode>```iris</InlineCode> blocks, and as apps with <InlineCode>```iris-react</InlineCode>. Every example is live and wears your theme's colors. Pick one to see it, its code and every prop.
       </p>
       <div className="mt-8" data-iris-stage="">
-        <IrisBlock source={BB_DEMO} streaming={false} threadId={null} mode="gallery" stateKey={null} />
+        <IrisBlock source={ALIA_DEMO} streaming={false} threadId={null} mode="gallery" stateKey={null} />
         <IrisBlock source={LIVE_DEMO} streaming={false} threadId={null} mode="gallery" stateKey={null} />
       </div>
       <div className="mt-8 grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 248px), 1fr))" }}>

@@ -28,11 +28,11 @@ TL;DR: The spreadsheet opener parses supported workbook files into a virtualized
 
 ## Purpose
 
-Open spreadsheet files in BB, inspect/search/copy cells, quote a selected range into the chat, and edit the formats whose save path is implemented (`src/spreadsheet/sheet.ts:6-13`; `src/spreadsheet/opener.tsx:103-162`).
+Open spreadsheet files in VesnALIA, inspect/search/copy cells, quote a selected range into the chat, and edit the formats whose save path is implemented (`src/spreadsheet/sheet.ts:6-13`; `src/spreadsheet/opener.tsx:103-162`).
 
 ## How it works
 
-1. BB routes extensions registered by `app.tsx` to `SpreadsheetOpener` (`app.tsx:5-7`; `app.tsx:19-25`).
+1. VesnALIA routes extensions registered by `app.tsx` to `SpreadsheetOpener` (`app.tsx:5-7`; `app.tsx:19-25`).
 2. The opener calls RPC `open`, fetches the preview URL, decodes its bytes, parses through `parseWorkbook`, and constructs the formula model (`src/spreadsheet/opener.tsx:103-162`; `src/spreadsheet/sheet.ts:155-176`; `src/spreadsheet/engine.ts:55-113`).
 3. The grid renders visible cells and selection; formula and cell inputs are normalized into engine inputs, and dependent formulas recalculate in the model (`src/spreadsheet/grid.tsx:58-117`; `src/spreadsheet/engine.ts:139-182`).
    `FormulaInput` shows function completion for the token at the caret, cycles candidates with arrow keys, accepts with Tab or Enter, and dismisses with Escape (`src/spreadsheet/formula-input.tsx:28-100`). The catalog supplies English and Russian names, argument signatures and hints (`src/spreadsheet/functions.ts:1-67`).
@@ -62,7 +62,7 @@ On parse, load, engine or save errors, the opener displays an error state; a has
 
 | Import or call | File | Purpose |
 |---|---|---|
-| `SpreadsheetOpener` | `src/spreadsheet/opener.tsx:103-162` | BB UI for opening, editing and quoting a workbook. |
+| `SpreadsheetOpener` | `src/spreadsheet/opener.tsx:103-162` | VesnALIA UI for opening, editing and quoting a workbook. |
 | `parseWorkbook`, `findCells`, `editMode` | `src/spreadsheet/sheet.ts:9-13`; `src/spreadsheet/sheet.ts:155-193` | Parse workbook data, select save mode and search. |
 | `buildWorkbook`, `applyInput`, `editsForSave` | `src/spreadsheet/engine.ts:55-113`; `src/spreadsheet/engine.ts:139-182`; `src/spreadsheet/engine.ts:198-239` | Build model, apply values and produce save edits. |
 | `initEngine` | `src/spreadsheet/engine.ts:16-20` | Initialize IronCalc WASM once. |
@@ -75,7 +75,7 @@ On parse, load, engine or save errors, the opener displays an error state; a has
 
 ## Package shape
 
-`sheet.ts` and `csv.ts` parse files; `engine.ts`, `formula.ts`, `functions.ts` and `edits.ts` implement formula and input behavior; `grid.tsx` and `formula-input.tsx` provide editing UI; `xlsx-patch.ts` writes workbook changes; `opener.tsx` connects them to BB (`src/spreadsheet/opener.tsx:1-20`).
+`sheet.ts` and `csv.ts` parse files; `engine.ts`, `formula.ts`, `functions.ts` and `edits.ts` implement formula and input behavior; `grid.tsx` and `formula-input.tsx` provide editing UI; `xlsx-patch.ts` writes workbook changes; `opener.tsx` connects them to VesnALIA (`src/spreadsheet/opener.tsx:1-20`).
 
 ## Internal model
 
@@ -83,7 +83,7 @@ SheetJS supplies sheet and cell data; IronCalc owns the editable workbook state 
 
 ## Dependencies
 
-SheetJS parses workbook formats, IronCalc WASM computes formulas, and `fflate` enables XLSX package patching (`package.json`; `src/spreadsheet/engine.ts:4-6`; `src/spreadsheet/xlsx-patch.ts:1-5`). The server performs final writes through BB file services (`server.ts:548-569`).
+SheetJS parses workbook formats, IronCalc WASM computes formulas, and `fflate` enables XLSX package patching (`package.json`; `src/spreadsheet/engine.ts:4-6`; `src/spreadsheet/xlsx-patch.ts:1-5`). The server performs final writes through VesnALIA file services (`server.ts:548-569`).
 
 ## Gotchas
 

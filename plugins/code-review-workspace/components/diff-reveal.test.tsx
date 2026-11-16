@@ -16,7 +16,7 @@ vi.mock("@pierre/diffs/react", () => ({
     ...(lineAnnotations ?? []).map((annotation: any, i: number) => createElement("div", { key: i }, renderAnnotation(annotation)))),
 }));
 
-import { installTestPluginRuntime } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime } from "@vesnalia/plugin-sdk/testing/app";
 import type { FileViewFlags } from "./DiffViewer";
 import { InlineDraftContext, type InlineDraft } from "./InlineDraft";
 

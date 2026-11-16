@@ -2,8 +2,8 @@ import {
   createBridgeIo,
   experimental_defineProviderBridge,
   type ProviderBridgeEntry,
-} from "@get-bb/plugin-sdk/provider-bridge";
-import { experimental_acpProviderBridge } from "@get-bb/plugin-sdk/provider-bridge/acp";
+} from "@vesnalia/plugin-sdk/provider-bridge";
+import { experimental_acpProviderBridge } from "@vesnalia/plugin-sdk/provider-bridge/acp";
 
 import { readGrokHealth, readGrokUsage } from "./grok-usage.js";
 

@@ -1,10 +1,10 @@
-import type { PluginSidebarThread, PluginSidebarThreadActivity } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread, PluginSidebarThreadActivity } from "@vesnalia/plugin-sdk";
 
 /**
  * The parked / settled / snoozed lifecycle, as pure functions over stored rows.
  *
- * This state lives in the PLUGIN's own database, never on bb's thread. That
- * keeps a plugin concept out of bb's schema and out of the host-daemon
+ * This state lives in the PLUGIN's own database, never on VesnALIA's thread. That
+ * keeps a plugin concept out of VesnALIA's schema and out of the host-daemon
  * protocol, and uninstalling the plugin takes its state with it.
  */
 
@@ -30,7 +30,7 @@ export interface ThreadActivitySignals {
   /** Any live work: runtime, workflows, background agents, plan. */
   isWorking: boolean;
   isUnread: boolean;
-  /** Newest attention timestamp bb reports for the thread. */
+  /** Newest attention timestamp VesnALIA reports for the thread. */
   latestAttentionAt: number;
 }
 
@@ -42,7 +42,7 @@ type WakeReason = "timer" | "attention";
  *
  * The lifecycle row deliberately remains until acknowledgement. That makes
  * the Woke marker durable across reloads and gives every client the same
- * answer. A pending interaction is attention even if bb has not advanced the
+ * answer. A pending interaction is attention even if VesnALIA has not advanced the
  * rolled-up timestamp yet.
  */
 export function resolveWakeReason(
@@ -64,7 +64,7 @@ export function resolveWakeReason(
  * Whether a thread may be parked at all: the one rule manual parking and
  * automatic settle share.
  *
- * bb has more kinds of live work than a single session status — workflows,
+ * VesnALIA has more kinds of live work than a single session status — workflows,
  * background agents, background commands, plan mode — and every one of them
  * must block parking. Hiding a thread that is still working is the one
  * failure this feature cannot afford. A queued message is work about to
@@ -85,16 +85,16 @@ export function parkBlocker(signals: ParkSignals): ParkBlocker | null {
   return null;
 }
 
-/** A turn bb has accepted and not yet finished, in either thread view. */
+/** A turn VesnALIA has accepted and not yet finished, in either thread view. */
 export function isTurnInFlight(status: PluginSidebarThread["status"]): boolean {
   return status === "active" || status === "pending" || status === "starting" || status === "stopping";
 }
 
 /**
- * Any live work at all: a turn in flight or any of bb's activity counters.
+ * Any live work at all: a turn in flight or any of VesnALIA's activity counters.
  *
  * The one definition the sidebar and automatic settle share. They read it from
- * different bb views, so each passes its own turn signal, but the counters
+ * different VesnALIA views, so each passes its own turn signal, but the counters
  * that make a thread busy must never differ between them.
  */
 export function hasLiveWork(activity: PluginSidebarThreadActivity, turnInFlight: boolean): boolean {
@@ -107,7 +107,7 @@ export function hasLiveWork(activity: PluginSidebarThreadActivity, turnInFlight:
   );
 }
 
-/** The activity counts on bb's project-thread row, which server code reads. */
+/** The activity counts on VesnALIA's project-thread row, which server code reads. */
 export interface ThreadRowActivity {
   activeBackgroundAgentCount: number;
   activeBackgroundCommandCount: number;
@@ -130,7 +130,7 @@ export function rowActivity(activity: ThreadRowActivity): PluginSidebarThreadAct
 
 /** Any live work at all, which blocks parking and wakes a parked thread. */
 export function isThreadWorking(thread: PluginSidebarThread): boolean {
-  // The turn status as well as the indicator: bb paints attention before
+  // The turn status as well as the indicator: VesnALIA paints attention before
   // work, so an unread thread whose turn is still running shows no runtime
   // indicator, while a monitor keeps the runtime indicator between turns.
   return hasLiveWork(thread.activity, isTurnInFlight(thread.status) || thread.indicator === "runtime");
@@ -211,7 +211,7 @@ export function waitsForScheduledContinue(
  * The shelf a thread's own sidebar row sits on.
  *
  * A pinned thread stays in Active unless the user filed it away explicitly:
- * that keeps a shelf change visible while bb's unpin update propagates, and
+ * that keeps a shelf change visible while VesnALIA's unpin update propagates, and
  * the pin RPC clears these rows when pinning succeeds. A child shown inside
  * its parent's row takes the parent's shelf instead (see `shelfRowIds`).
  */

@@ -2,7 +2,7 @@
 // filters the way the prompt input's model-and-reasoning picker does, plus the
 // reasoning efforts of whichever model is selected.
 import { useCallback, useEffect, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../server";
 import {

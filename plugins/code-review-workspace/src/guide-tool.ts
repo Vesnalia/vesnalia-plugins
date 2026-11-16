@@ -7,9 +7,9 @@ import { guideAccepted, guideAsksSinceReview, guideRejected, guideStopped } from
 import { failed, type ServeDeps } from "./server-modules";
 
 export function register(deps: ServeDeps) {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   const guideToolParameters = z.object({ targetKey: z.string(), generationId: z.string(), guide: GuideInputSchema });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "generate_review_guide",
     description: "Submit the guide. It's rejected, with every problem listed, unless: each changed file (or each hunk of a split file) is in exactly one chapter; chapter ids are unique, and none is \"overview\", the Overview page's; unplaced files have no changed lines; every chapter has a risk, and medium- and high-risk chapters a focus; no hotspot is listed twice; each hotspot and covered requirement points at a line the diff shows, a new-file line or, with side LEFT, a removed line's old-file line; and its text fits the schema's length limits. Fix and resubmit with the same targetKey and generationId.",
     instructions: "When generate_review_guide answers `Guide accepted.`, stop.",
@@ -25,9 +25,9 @@ export function register(deps: ServeDeps) {
           return failed("This generation was superseded or interrupted. Do not overwrite the current review.");
         }
         // Stopped, it's finalizing: a guide now would stand in for the one you stopped.
-        if (guideStopped(bb, generationId)) return failed("The reviewer stopped this guide. Don't submit it again.");
+        if (guideStopped(alia, generationId)) return failed("The reviewer stopped this guide. Don't submit it again.");
         // The run remembers why, to remind its worker and tell the reviewer if the guide fails.
-        const reject = (text: string) => { guideRejected(bb, generationId, text); return failed(text); };
+        const reject = (text: string) => { guideRejected(alia, generationId, text); return failed(text); };
         const guide = (raw as { guide?: unknown }).guide;
         const input = checkGuideInput(guide);
         // The input's parse drops what the plugin stamps; a guide that fails it is never saved.
@@ -51,9 +51,9 @@ export function register(deps: ServeDeps) {
         const meta = await tx.getReview(targetKey);
         if (meta?.gitRef) v.guide.review = { gitRef: meta.gitRef, ...(meta.base ? { base: meta.base } : {}) };
         // Only a re-review is asked what changed since your review; a first guide's would show as if you had reviewed it.
-        if (!guideAsksSinceReview(bb, generationId)) delete v.guide.sinceReview;
+        if (!guideAsksSinceReview(alia, generationId)) delete v.guide.sinceReview;
         await tx.saveGuide(targetKey, placeUnplacedFiles(v.guide, patch));
-        guideAccepted(bb, generationId);
+        guideAccepted(alia, generationId);
         return "Guide accepted.";
       });
     },

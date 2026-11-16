@@ -20,7 +20,7 @@ export interface IndexThread {
 }
 interface InputRequest {
   id: string;
-  /** Event sequence of the request; bb's thread view can scroll to it. */
+  /** Event sequence of the request; VesnALIA's thread view can scroll to it. */
   seq: number;
   at: number;
   prompt: string;
@@ -132,12 +132,12 @@ function addHandoff(state: ThreadIndex, thread: IndexThread, turn: IndexedTurn, 
   if (!from || from === thread.id) return;
   putHandoff(state, handoff(from, request.endedThreadId ? "end" : request.source === "spawn" ? "spawn" : "tell"));
 }
-const ENVELOPE_LINE = /^\[bb [^\]]*\]$/;
+const ENVELOPE_LINE = /^\[alia [^\]]*\]$/;
 const MARKDOWN_PREFIX = /^(?:#{1,6}\s+|>\s*|[-*+]\s+|\d+[.)]\s+)+/;
 
 /**
- * A block's title: the first line of the prompt that reads as prose. bb wraps
- * relayed messages in a "[bb message from thread:…]" envelope line and agents
+ * A block's title: the first line of the prompt that reads as prose. VesnALIA wraps
+ * relayed messages in a "[VesnALIA message from thread:…]" envelope line and agents
  * write markdown, so skip envelopes, rules, and fences, and drop list, quote,
  * heading, and emphasis markers.
  */

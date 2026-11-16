@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   CATCH_CHANNEL,
@@ -109,9 +109,9 @@ type CatchInput = z.infer<typeof catchInputSchema>;
 type CatchResult = z.infer<typeof catchResultSchema>;
 type FishBook = z.infer<typeof fishBookSchema>;
 type Profile = z.infer<typeof profileSchema>;
-type PluginDatabase = ReturnType<BbPluginApi["storage"]["database"]>;
+type PluginDatabase = ReturnType<AliaPluginApi["storage"]["database"]>;
 
-/** Append only: bb rejects a changed statement at an existing index. */
+/** Append only: VesnALIA rejects a changed statement at an existing index. */
 export const MIGRATIONS = [
   `CREATE TABLE IF NOT EXISTS catches (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -217,20 +217,20 @@ export function readFishBook(db: PluginDatabase): FishBook {
   return { totalCatches: species.reduce((sum, entry) => sum + entry.count, 0), species };
 }
 
-export default function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+export default function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, MIGRATIONS);
 
   const readProfile = async (): Promise<Profile> => {
     const stats = readStats(db);
-    return { look: sanitizeLook(await bb.storage.kv.get<Look>(LOOK_KEY), stats), stats };
+    return { look: sanitizeLook(await alia.storage.kv.get<Look>(LOOK_KEY), stats), stats };
   };
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     recordCatch: (input) => {
       const result = recordCatch(db, input, Date.now());
-      bb.realtime.publish(CATCH_CHANNEL, { speciesId: input.speciesId });
-      if (result.unlocked.length > 0) bb.realtime.publish(PROFILE_CHANNEL, {});
+      alia.realtime.publish(CATCH_CHANNEL, { speciesId: input.speciesId });
+      if (result.unlocked.length > 0) alia.realtime.publish(PROFILE_CHANNEL, {});
       return result;
     },
     fishBook: () => readFishBook(db),
@@ -238,8 +238,8 @@ export default function plugin(bb: BbPluginApi) {
     setLook: async (look) => {
       const locked = lockedParts(look, readStats(db));
       if (locked.length > 0) throw new Error(`Not unlocked yet: ${locked.join(", ")}`);
-      await bb.storage.kv.set(LOOK_KEY, look);
-      bb.realtime.publish(PROFILE_CHANNEL, {});
+      await alia.storage.kv.set(LOOK_KEY, look);
+      alia.realtime.publish(PROFILE_CHANNEL, {});
       return readProfile();
     },
   });

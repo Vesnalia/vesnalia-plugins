@@ -1,4 +1,4 @@
-// Graphite Stack — BB plugin frontend entry.
+// Graphite Stack — VesnALIA plugin frontend entry.
 //
 // Two surfaces share one review workspace (ui/GraphiteView.tsx):
 // - a fixed "Graphite" tab beside every thread, anchored on the thread's
@@ -6,11 +6,11 @@
 // - a "Graphite stacks" project page that lists the project's repositories
 //   (projectRepos) and opens one of them.
 //
-// React and @get-bb/plugin-sdk/app come from the BB app at load time. The app
+// React and @vesnalia/plugin-sdk/app come from the VesnALIA app at load time. The app
 // imports only types from contract.ts and lib/model.ts.
 import { useEffect, useState } from "react";
-import type { ExperimentalThreadTabProps, PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
-import { definePluginApp, experimental_useTabVisible, useBbContext, useBbNavigate, useSdk } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalThreadTabProps, PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
+import { definePluginApp, experimental_useTabVisible, useAliaContext, useAliaNavigate, useSdk } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { GraphiteView } from "./ui/GraphiteView";
 import { InlineError, Spinner, StatePanel } from "./ui/primitives";
@@ -26,7 +26,7 @@ export function ThreadGraphiteTab({ threadId, environment }: ExperimentalThreadT
     return (
       <div className="gs-root">
         <StatePanel title="No environment">
-          This thread has no BB environment. Graphite Stack reads the Git checkout of a thread environment.
+          This thread has no VesnALIA environment. Graphite Stack reads the Git checkout of a thread environment.
         </StatePanel>
       </div>
     );
@@ -59,8 +59,8 @@ function decodeSegments(subPath: string): string[] {
 }
 
 export function ProjectStacksPage({ subPath }: PluginNavPanelProps) {
-  const context = useBbContext();
-  const navigate = useBbNavigate();
+  const context = useAliaContext();
+  const navigate = useAliaNavigate();
   const sdk = useSdk();
   const rpc = useGraphiteRpc();
   const visible = usePageVisible();

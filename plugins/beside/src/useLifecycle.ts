@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { isDecisionModeOn, useDecisionConfig } from "./useDecisionConfig";
 import { toast } from "sonner";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
-import type { bbSidebarRpcContract } from "./server";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
+import type { aliaSidebarRpcContract } from "./server";
 import {
   canPark,
   hasQuietNews,
@@ -125,7 +125,7 @@ export function useDecisionModeEnabled(): boolean {
 export function useLifecycle(
   threads: readonly PluginSidebarThread[] = [],
 ): LifecycleApi {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const storedRows = useLifecycleRows(rpc);
   const rows = useMemo<LifecycleRows>(
     () => storedRows ?? new Map(),

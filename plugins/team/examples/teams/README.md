@@ -11,7 +11,7 @@ and a tester in a separate environment taken from `vars`. Roles without
 вида (`kind`).
 
 ```bash
-mkdir -p <project>/.bb/teams && cp -r dev.yaml dev <project>/.bb/teams/
-bb team doctor --team dev --project <project>
-bb team create --team dev --project <project>
+mkdir -p <project>/.vesnalia/teams && cp -r dev.yaml dev <project>/.vesnalia/teams/
+alia team doctor --team dev --project <project>
+alia team create --team dev --project <project>
 ```

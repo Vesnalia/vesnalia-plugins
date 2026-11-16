@@ -5,7 +5,7 @@ export const FARCALL_CHANGED = "farcall-tasks.changed";
 export const FARCALL_WORKSPACES_CHANGED = "farcall-workspaces.changed";
 export const farcallChangedSchema = z.object({ threadId: z.string(), sequence: z.number().int() });
 
-/** A display projection, never a BB child thread or a worker control handle. */
+/** A display projection, never a VesnALIA child thread or a worker control handle. */
 export const farcallTaskSchema = z.object({
   key: z.string(),
   provider: z.enum(["claude", "codex"]),
@@ -20,13 +20,13 @@ export const farcallTaskSchema = z.object({
   evidence: z.array(z.string()),
   /** Short, deterministic task text from the call arguments; never the whole prompt. */
   task: z.string().nullable(),
-  /** BB event times (ms) of the tool call; they bound waiting time, not worker execution. */
+  /** VesnALIA event times (ms) of the tool call; they bound waiting time, not worker execution. */
   startedAt: z.number().nullable(),
   endedAt: z.number().nullable(),
   cwd: z.string().max(4096).optional(),
 });
 export type FarcallTask = z.infer<typeof farcallTaskSchema>;
-/** Only send what the compact sidebar renders. Full evidence stays in BB history. */
+/** Only send what the compact sidebar renders. Full evidence stays in VesnALIA history. */
 export const farcallRowSchema = farcallTaskSchema.pick({
   key: true, provider: true, requestedModel: true, status: true, callState: true,
   task: true, startedAt: true, endedAt: true,

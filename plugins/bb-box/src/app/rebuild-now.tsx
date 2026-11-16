@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { Contract } from "../plugin/contract.ts";
@@ -53,7 +53,7 @@ function runPlace(progress: RunProgress): { readonly share: number; readonly cur
 function Running({ progress }: { progress: RunProgress }) {
   const now = useNow(true, 1000);
   const { share, current, at } = runPlace(progress);
-  const title = progress.only === "bb-app" ? "Rebuilding images after a BB update" : "Rebuilding images";
+  const title = progress.only === "alia-app" ? "Rebuilding images after a VesnALIA update" : "Rebuilding images";
   return (
     <div className="px-4 py-3" role="status" aria-live="polite">
       <p className="text-sm text-foreground">{title}</p>

@@ -19,11 +19,11 @@ sources:
 ---
 # Device copies and moves
 
-TL;DR: A BB project can have local-path copies on connected hosts; project, section and chat moves validate ownership and activity, persist retry journals, perform host filesystem operations, and then update plugin metadata (`project-move.ts:47-80`, `section-move.ts:279-304`).
+TL;DR: A VesnALIA project can have local-path copies on connected hosts; project, section and chat moves validate ownership and activity, persist retry journals, perform host filesystem operations, and then update plugin metadata (`project-move.ts:47-80`, `section-move.ts:279-304`).
 
 ## Purpose
 
-The feature keeps project and section paths aligned with BB metadata across devices and supports moving a chat’s dedicated `.bb/chats/<threadId>` storage alongside its working directory (`server.ts:2642-2723`, `project-move.ts:18-31`, `thread-move.ts:97-104`).
+The feature keeps project and section paths aligned with VesnALIA metadata across devices and supports moving a chat’s dedicated `.vesnalia/chats/<threadId>` storage alongside its working directory (`server.ts:2642-2723`, `project-move.ts:18-31`, `thread-move.ts:97-104`).
 
 ## How it works
 
@@ -33,7 +33,7 @@ The feature keeps project and section paths aligned with BB metadata across devi
 4. Before a distinct-path filesystem operation, it inventories active and archived chats using relevant environments, persists a move barrier, drains pending exports, then rechecks and stops those chats. It dispatches host `inspect`, `move` or `link`; shared source paths or a destination already assigned to a section update the binding and complete the journal without moving files (`section-move.ts:197-252`, `section-move.ts:254-304`).
 5. After a move/re-link, a database transaction rebases descendant section paths, host-specific path bindings, history export paths and archive manifests, then marks the journal complete (`section-move.ts:305-357`).
 6. A chat move accepts only an idle or error chat in the same project and on the same host, then journals both workspace and chat-storage paths (`thread-move.ts:66-120`).
-7. If BB’s directory update works, the chat storage moves immediately. Otherwise the server files the chat in the destination and asks the chat agent to switch; the move settles after that turn (`thread-move.ts:138-185`, `thread-move.ts:216-269`).
+7. If VesnALIA’s directory update works, the chat storage moves immediately. Otherwise the server files the chat in the destination and asks the chat agent to switch; the move settles after that turn (`thread-move.ts:138-185`, `thread-move.ts:216-269`).
 
 ### `makeSectionMoves`
 
@@ -84,17 +84,17 @@ The filesystem branch runs only after environment and chat preflight. It capture
 
 | Operation | Scope | Filesystem effect | Retry state |
 |---|---|---|---|
-| Add/remove project copy | One project source on one host | Add/remove BB local-path source | BB project source state |
+| Add/remove project copy | One project source on one host | Add/remove VesnALIA local-path source | VesnALIA project source state |
 | Move project | Entire project root on one host | Move directory and leave compatibility link | `project_moves` |
 | Move/re-link section | One section subtree on its host | Move folder or link an externally renamed path | `section_moves` |
-| Move chat | One chat, same project and host | Repoint environment and move `.bb/chats/<id>` | `thread_moves` |
+| Move chat | One chat, same project and host | Repoint environment and move `.vesnalia/chats/<id>` | `thread_moves` |
 | Place chat | Tree placement only | No workspace/filesystem change | `thread_places` |
 
 Project and section move journals are set before filesystem work (`project-move.ts:18-31`, `section-move.ts:279-304`); chat move conditions and journal are in `thread-move.ts:76-120`.
 
 Section moves have two metadata-only branches: when the source is shared by another section or the destination is already assigned to one, only the selected section’s `folders.path` and `folder_paths` binding change; otherwise the host filesystem operation runs and descendant paths, exports and archive manifests are rebased (`section-move.ts:125-138`, `section-move.ts:238-252`, `section-move.ts:285-355`).
 
-`copy_remove` requires an existing source, at least one other project source, and no section rows or environments for the project on that host; it deletes only the BB source record, not the directory (`server.ts:2691-2733`).
+`copy_remove` requires an existing source, at least one other project source, and no section rows or environments for the project on that host; it deletes only the VesnALIA source record, not the directory (`server.ts:2691-2733`).
 
 ## Failures
 
@@ -123,7 +123,7 @@ Section moves have two metadata-only branches: when the source is shared by anot
 | `section_move`, `pending_section_moves`, `thread_move` | Move/re-link section or move chat | `server.ts:169-176`, `server.ts:244-260` |
 | `copy_add`, `copy_remove`, `copy_edit` | Add, remove or update a device copy | `server.ts:319-341` |
 | `thread_place`, `thread_place_clear` | Change tree filing without moving workspace | `server.ts:223-235` |
-| CLI `move-section`, `move-chat`, `copy-add`, `copy-remove` | Run matching operations through BB CLI | `server.ts:3799-3810`, `server.ts:3844-3854`, `server.ts:3911-3961` |
+| CLI `move-section`, `move-chat`, `copy-add`, `copy-remove` | Run matching operations through VesnALIA CLI | `server.ts:3799-3810`, `server.ts:3844-3854`, `server.ts:3911-3961` |
 
 ## Gotchas
 

@@ -1,4 +1,4 @@
-// bb-plugin-agent-graph — frontend entry.
+// alia-plugin-agent-graph — frontend entry.
 //
 // Surfaces sharing one view: the "Agent Graph" sidebar page (every recent
 // thread) with a right-panel "Thread" tab to chat beside the graph, and a
@@ -11,11 +11,11 @@ import {
   experimental_useFixedTabTarget,
   experimental_useSidebarThreads,
   ThreadChat,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
   type ExperimentalPluginFixedTabReference,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { Graph, rpcContract } from "./server";
 import { AgentGraphView } from "./graph";
 import {
@@ -128,7 +128,7 @@ function useGraph(threadId: string | null) {
 
 function OverviewPage() {
   const { graph, error, retry } = useGraph(null);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const panel = experimental_useAppPanel();
   return (
     <div className="flex h-full min-h-0 flex-1">
@@ -263,7 +263,7 @@ function ThreadGraphPanel({ threadId, params }: { threadId: string; params: unkn
     (readStorage(SCOPE_KEY) === "all" ? "all" : "thread");
   const [scope, setScope] = useState<Scope>(initial);
   const { graph, error, retry } = useGraph(scope === "all" ? null : threadId);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <div className="flex h-full min-h-0 flex-1">
       <AgentGraphView
@@ -291,7 +291,7 @@ function ThreadGraphPanel({ threadId, params }: { threadId: string; params: unkn
 }
 
 function ThreadHeaderButton() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <Button
       variant="ghost"

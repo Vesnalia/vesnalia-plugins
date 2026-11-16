@@ -5,7 +5,7 @@ import {
   useRealtime,
   experimental_usePluginId,
   Markdown,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Note } from "./server";
 import type { PrRef } from "./github";
 import { Button } from "./components/ui/button";

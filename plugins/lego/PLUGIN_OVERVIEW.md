@@ -26,8 +26,8 @@
 Ask for a build with `/lego` and a task. The planning agent calls
 `lego_create_book`, then `lego_setup_build` to show the form. Builders report
 each step and the Master Builder reports each attachment, and the banner and
-panel update as they do. `bb lego demo` previews the whole thing with
+panel update as they do. `alia lego demo` previews the whole thing with
 simulated builders; press Play on its banner.
 
-Everything stays in this BB install: books are stored in the plugin's own
-database, and workers are ordinary BB threads you can open, stop or archive.
+Everything stays in this VesnALIA install: books are stored in the plugin's own
+database, and workers are ordinary VesnALIA threads you can open, stop or archive.

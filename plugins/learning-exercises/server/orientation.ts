@@ -9,9 +9,9 @@
  * ```
  *
  * Reserve, then spawn: under the project's lock a `starting` row is inserted with no await between the
- * check and the insert (a partial unique index refuses a second live row whatever races), then bb is asked
+ * check and the insert (a partial unique index refuses a second live row whatever races), then VesnALIA is asked
  * for the hidden thread. The builder may call before `spawn` answers; its first call binds it by the
- * orientation id bb stamped on its metadata, only when this plugin started that thread (`builderFor`). Its
+ * orientation id VesnALIA stamped on its metadata, only when this plugin started that thread (`builderFor`). Its
  * first idle or failed turn binds it the same way when that comes first (`settleBuilder`), so an early
  * event is handled, not lost.
  *
@@ -20,9 +20,9 @@
  * old failed rows, so a terminal row is never touched). Cancel puts the builder away (stopped, then
  * archived), logging errors rather than throwing them into the user's action. Finish does not: it runs
  * inside the builder's own tool call, so the builder is put away once it goes idle (`onIdle`), or by a
- * reconcile. A put-away bb does not confirm (`putAway`) is recorded in the store, outside the row, so a
+ * reconcile. A put-away VesnALIA does not confirm (`putAway`) is recorded in the store, outside the row, so a
  * reload sees it too; while any is recorded `clean` is false and starts are refused, and every sweep
- * tries it again (`retryPutAways`) until bb confirms the thread archived or gone. After `dispose()` no
+ * tries it again (`retryPutAways`) until VesnALIA confirms the thread archived or gone. After `dispose()` no
  * continuation of this copy touches the store (`alive()`).
  *
  * The builder's lifecycle (§7). Its first idle after a turn gets one reminder (a visible line and an
@@ -34,11 +34,11 @@
  *
  * Reload safety fails closed: `clean` starts false, and only a reconcile that read and settled everything
  * (pending put-aways first) sets it, so no start is allowed before the load-time check. `reconcile` keeps a live row whose builder
- * is working, binds a `starting` row to the thread bb made for it (found by its metadata) when that thread
+ * is working, binds a `starting` row to the thread VesnALIA made for it (found by its metadata) when that thread
  * works, fails the rest ("Interrupted by a reload.") and puts their threads away, then archives every
  * thread of this plugin whose orientation id no live row has it building (finished builders among them).
  * A `starting` row with no thread yet is failed but leaves `clean` false: a spawn the old copy sent may
- * still answer, and the next sweep's reconcile archives that thread if bb has made it by then. A thread bb
+ * still answer, and the next sweep's reconcile archives that thread if VesnALIA has made it by then. A thread VesnALIA
  * makes later still is listed by no reconcile until the next load, so it is put away on its first tool call
  * (`builderFor`) or its first idle or failed turn (`onIdle`, `onFailed`): this plugin started it and its
  * metadata names an orientation that is not live. Reconcile runs only at load and from sweeps while
@@ -69,7 +69,7 @@ const SUMMARY_ONLY =
 
 /** A fenced code block's opening line (CommonMark: up to three spaces, then three backticks or tildes). */
 const FENCE = /^\s{0,3}(`{3,}|~{3,})/m;
-/** The thread statuses of a builder at work: bb runs, queues or starts its turn. */
+/** The thread statuses of a builder at work: VesnALIA runs, queues or starts its turn. */
 const WORKING = new Set(["active", "pending", "starting"]);
 const INTERRUPTED = "Interrupted by a reload.";
 const REMINDER = "Reminder: finish the orientation.";
@@ -156,7 +156,7 @@ function oneLine(value: string, what: string, max: number): string {
 }
 
 export class OrientationService {
-  /** Set when this copy of the plugin goes: its store and its `bb` handle are closed from then on. */
+  /** Set when this copy of the plugin goes: its store and its `VesnALIA` handle are closed from then on. */
   private disposed = false;
   /** False until a reconcile has settled what an earlier copy left; starts are refused meanwhile. */
   private isClean = false;
@@ -281,7 +281,7 @@ export class OrientationService {
     this.alive();
     const current = this.store.get(row.id);
     if (current === null || !isLive(current.status)) {
-      // Ended while bb spawned it. A builder that bound itself is put away by whoever ended the row (or,
+      // Ended while VesnALIA spawned it. A builder that bound itself is put away by whoever ended the row (or,
       // after a finish, once it goes idle); one that never called is put away here.
       if (current?.builderThreadId !== threadId) await this.putAway(threadId, row.id);
       return { orientationId: row.id };
@@ -315,7 +315,7 @@ export class OrientationService {
     if (info === null || info.originPluginId !== PLUGIN_ID) throw new OrientationError(NOT_BUILDING);
     const row = this.store.get(orientationId);
     if (row === null || !isLive(row.status)) {
-      // A thread bb made for a build that has ended, as when a reload landed while it was being spawned.
+      // A thread VesnALIA made for a build that has ended, as when a reload landed while it was being spawned.
       // Put away in the background: this is the thread's own tool call, and a stop may wait for its answer.
       if (info.archivedAt === null) this.observe(this.putAwayStray(threadId, orientationId), threadId);
       throw new OrientationError(NOT_BUILDING);
@@ -632,7 +632,7 @@ export class OrientationService {
 
   /**
    * Stops the thread, then archives it whatever the stop did; failures are logged, never thrown. True when
-   * the thread is put away (or there is none): both calls worked, or bb confirms it archived or gone
+   * the thread is put away (or there is none): both calls worked, or VesnALIA confirms it archived or gone
    * (`confirmedPutAway`: a stop that failed before an archive that worked, an archive refused because it
    * already was). Otherwise the thread is recorded as pending in the store, which keeps starts refused
    * (`clean`) until a sweep puts it away (`retryPutAways`); success forgets that record. Once this copy is
@@ -667,7 +667,7 @@ export class OrientationService {
   }
 
   /**
-   * Whether bb confirms the thread put away: archived, or gone (no thread by its id, and none of this
+   * Whether VesnALIA confirms the thread put away: archived, or gone (no thread by its id, and none of this
    * plugin's unarchived threads). A read that fails confirms nothing.
    */
   private async confirmedPutAway(threadId: string): Promise<boolean> {
@@ -709,7 +709,7 @@ export class OrientationService {
 
   /**
    * `thread.idle` of a thread: the first idle of a builder after a turn reminds it, the next fails the
-   * build. An idle with no turn known (bb can report one before the builder's first turn starts, and a
+   * build. An idle with no turn known (VesnALIA can report one before the builder's first turn starts, and a
    * turn read that fails is taken as none) changes nothing, so it cannot spend the reminder while the
    * original work is still queued; the 30-minute cap ends a builder whose turns can never be read.
    */
@@ -744,7 +744,7 @@ export class OrientationService {
    * can come before `spawn` answers and before any tool call, and is then handled as any builder's, not
    * lost. A thread whose row has ended (finish leaves it running), or whose metadata names an orientation
    * that is not live (purged, unknown, ended before the spawn answered), is put away instead, unless it
-   * already is. Never rejects: it runs from bb's events.
+   * already is. Never rejects: it runs from VesnALIA's events.
    */
   private async settleBuilder(threadId: string, whileBuilding: (row: OrientationRow) => Promise<void>): Promise<void> {
     if (this.disposed) return;
@@ -878,7 +878,7 @@ export class OrientationService {
         this.warn("Could not list this plugin's threads to find orientation builders an earlier copy left; orientations stay refused until a sweep can.");
         return;
       }
-      // bb's port lists unarchived threads only; the flag is checked as well, so none is archived twice.
+      // VesnALIA's port lists unarchived threads only; the flag is checked as well, so none is archived twice.
       const threads = listed.filter((entry) => !entry.archived);
       const handled = new Set<string>();
       let complete = true;
@@ -903,7 +903,7 @@ export class OrientationService {
   }
 
   /**
-   * One live row, under its lock: kept (and bound, when bb made its thread but no copy bound it) while its
+   * One live row, under its lock: kept (and bound, when VesnALIA made its thread but no copy bound it) while its
    * builder works, otherwise failed and its thread put away. False when it is not settled yet.
    */
   private async reconcileRow(id: string, threads: readonly PluginThread[], handled: Set<string>): Promise<boolean> {
@@ -912,7 +912,7 @@ export class OrientationService {
     if (row === null || !isLive(row.status)) return true;
     const threadId = row.builderThreadId ?? threads.find((entry) => entry.value === id)?.threadId ?? null;
     if (threadId === null) {
-      // Its copy is gone and bb has no thread for it yet; a spawn still on its way leaves one behind for
+      // Its copy is gone and VesnALIA has no thread for it yet; a spawn still on its way leaves one behind for
       // the next reconcile to archive, so this one does not count as clean.
       if (this.store.transition(id, ["starting", "building"], "failed", this.ports.now(), INTERRUPTED)) this.ports.changed();
       return false;
@@ -930,7 +930,7 @@ export class OrientationService {
       return true;
     }
     if (this.store.transition(id, ["starting", "building"], "failed", this.ports.now(), INTERRUPTED)) this.ports.changed();
-    // A thread that is gone or already archived has nothing to put away (bb would refuse the archive).
+    // A thread that is gone or already archived has nothing to put away (VesnALIA would refuse the archive).
     return state === "gone" ? true : this.putAway(threadId, id);
   }
 

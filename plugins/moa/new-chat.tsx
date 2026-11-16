@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { useComposer, useComposerView, useRpc, useRealtime, useRealtimeConnectionState, experimental_ProviderModelPicker as ModelPicker } from "@get-bb/plugin-sdk/app";
+import { useComposer, useComposerView, useRpc, useRealtime, useRealtimeConnectionState, experimental_ProviderModelPicker as ModelPicker } from "@vesnalia/plugin-sdk/app";
 import type { Config, rpcContract } from "./contract";
 import { FallbackSettings, invalidFallback } from "./fallback";
 import { getDraft, subscribeDraft, moaMentions, removeMoa } from "./draft";

@@ -1,9 +1,9 @@
-// Standalone harness: exercises the GraphQL layer without a running bb server.
+// Standalone harness: exercises the GraphQL layer without a running VesnALIA server.
 //
 //   npx tsx src/cli-check.ts my-org 1 "assignee:@me -status:Done!"
 //
 // Kept out of the plugin's own surface on purpose — it is a development tool,
-// not a `bb` command.
+// not a `VesnALIA` command.
 import { checkAuth } from "./github/cli.js";
 import {
   fetchProjectBoard,

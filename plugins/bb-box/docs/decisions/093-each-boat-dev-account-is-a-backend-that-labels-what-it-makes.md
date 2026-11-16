@@ -5,7 +5,7 @@ Date: 11 November 2026
 
 ## Context
 
-BB Box allowed one boat.dev backend. A boat.dev plan's limits, such as its
+VesnALIA Box allowed one boat.dev backend. A boat.dev plan's limits, such as its
 sandboxes at once and its starts, are per account, so a person with more
 than one account could not add up their room ([#1455](https://github.com/ahkohd/bb-box/issues/1455)).
 [087](087-each-namespace-workspace-is-a-backend-that-labels-what-it-makes.md)
@@ -42,11 +42,11 @@ stale tailnet devices.
   its label's value, then the box and the snapshot, such as
   `<install>-boat-team-b-bx...-sn...`. Its restores' deployed sandboxes,
   which boat.dev gives no labels, are named
-  `bb-box:restoring:boat-team-b:<box>:<token>`, and its idempotency keys
+  `alia-box:restoring:boat-team-b:<box>:<token>`, and its idempotency keys
   carry its label's value after the install. Each backend lists, keeps,
   deletes and cleans up only names of its own form.
 - A backend forks only templates that a backend with its ID built, on this
-  install or another BB Box install on the account, as one backend forked
+  install or another VesnALIA Box install on the account, as one backend forked
   another install's before. So each backend builds its own templates, even
   where two share an account, and one backend's tidy never deletes a
   template another depends on.
@@ -59,17 +59,17 @@ stale tailnet devices.
   setting, and counts the account's bill, as before. Where two backends
   share an account, each one's ceiling so counts the other's saved
   snapshots too, which never counts less than the account pays.
-- Another backend's boxes join the tailnet as `bb-box-boatb-`, the
+- Another backend's boxes join the tailnet as `alia-box-boatb-`, the
   install's ID, the length of the backend's name, the name, then the box's
   name, as 087 does for Namespace. The first backend's prefix,
-  `bb-box-boat-`, starts none of theirs. A boat.dev backend's name is so at
+  `alia-box-boat-`, starts none of theirs. A boat.dev backend's name is so at
   most 13 characters, so its prefix fits a tailnet name with the longest
   install ID. A box's tailnet name that would still be too long is
   shortened with a code, as [094](094-a-tailnet-name-too-long-is-shortened-with-a-code.md)
   says, so 2 boxes of a backend never share one.
 - A boat.dev backend is called boat.dev, and another by its name in
   brackets, such as boat.dev (team-b), in kinds, `on` and box_list.
-- `bb box images list` lists each boat.dev backend's templates, through
+- `alia box images list` lists each boat.dev backend's templates, through
   `Backend.ownImages`.
 - What 087 and this record share, the labels, which backend owns what, the
   scope of names and the tailnet prefixes, is one class in
@@ -89,6 +89,6 @@ stale tailnet devices.
 - A backend removed while its sandboxes still run leaves them to their
   auto-stop, as before. A sandbox without a backend label is no one's once
   the backend with the ID `boat` is gone.
-- A backend kept for BB projects
-  ([092](092-a-backend-can-be-kept-for-bb-projects.md)) can be any of them,
+- A backend kept for VesnALIA projects
+  ([092](092-a-backend-can-be-kept-for-alia-projects.md)) can be any of them,
   as for any backend.

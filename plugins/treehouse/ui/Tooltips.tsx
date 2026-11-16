@@ -3,14 +3,14 @@ import { createPortal } from "react-dom";
 import { usePortalScopeProps } from "@/lib/portal-scope";
 
 const SHOW_DELAY_MS = 450;
-/** After a tooltip hides, the next one within this window shows at once, as in bb and most editors. */
+/** After a tooltip hides, the next one within this window shows at once, as in VesnALIA and most editors. */
 const SKIP_DELAY_MS = 400;
 const GAP = 6;
 const MARGIN = 8;
 
 export const TOOLTIP_ROOT_ATTRIBUTE = "data-treehouse-tooltips";
 
-// Several Treehouse surfaces can be mounted at once (the Files tab and a bb
+// Several Treehouse surfaces can be mounted at once (the Files tab and a VesnALIA
 // diff tab); only the first one mounted runs the tooltip, so a hover never
 // shows two.
 const claims: symbol[] = [];

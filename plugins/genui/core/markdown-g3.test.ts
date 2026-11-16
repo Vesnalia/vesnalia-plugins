@@ -45,7 +45,7 @@ function detail(id: string, rest: Pick<EnvironmentDetail, "checkout" | "pull">):
   return { ok: true, id, ...rest, fetchedAt: NOW };
 }
 
-/** The orbit-web project as BB answered on 2026-10-10: the checkout, a worktree with a PR, a worktree whose folder is gone, one without threads. */
+/** The orbit-web project as VesnALIA answered on 2026-10-10: the checkout, a worktree with a PR, a worktree whose folder is gone, one without threads. */
 const VIEW: ProjectResult = {
   ok: true,
   fetchedAt: NOW,
@@ -138,9 +138,9 @@ describe("toMarkdown: Environments", () => {
     expect(projectRequests(roots(`Card("x", [Environments(), Environments()])`))).toEqual([{ kind: "environments" }]);
   });
 
-  it("says where the data is without an answer, and why when BB failed", () => {
-    expect(toMarkdown(roots(`Environments()`))).toBe("_This project's environments, their threads and changes: open the reply in BB to see them._");
-    expect(markdown(`Environments()`, { ok: false, reason: "not-found", message: "BB has no such thread" })).toBe("**Environments** · _BB has no such thread_");
+  it("says where the data is without an answer, and why when VesnALIA failed", () => {
+    expect(toMarkdown(roots(`Environments()`))).toBe("_This project's environments, their threads and changes: open the reply in VesnALIA to see them._");
+    expect(markdown(`Environments()`, { ok: false, reason: "not-found", message: "VesnALIA has no such thread" })).toBe("**Environments** · _ALIA has no such thread_");
   });
 
   it("lists the environments with live threads, their git line and threads, and counts the rest", () => {

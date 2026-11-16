@@ -123,7 +123,7 @@ const TOUCH_SVG = `
  *
  * A demo may record TWO windows. `page` is the window the storyboard drives by
  * default and `peer` is a second live page against the same mocked host, so a
- * write in one lands in the other exactly as bb's second window sees it. Every
+ * write in one lands in the other exactly as VesnALIA's second window sees it. Every
  * `shot` captures both and the assembly stacks them side by side; `use("peer")`
  * re-points the gestures at the second window without breaking the lockstep
  * (`scripts/uat/run.mjs` drives the same pairing for its suites).
@@ -798,7 +798,7 @@ export async function recordDemo(browser, demo, { release, baseParams = "", outD
   // token turns on the harness's cross-page host row (a fresh token per demo,
   // so no earlier capture's write can replay into this one), so a fold, a done
   // mark, a rank move or a group write in one window reaches the other the way
-  // bb's does.
+  // VesnALIA's does.
   const hostToken = `${release}-${demo.id}-${Math.random().toString(36).slice(2, 8)}`;
   const query = `${baseParams}${demo.params ?? ""}${
     peer === undefined ? "" : `&sharedHost=${encodeURIComponent(hostToken)}`

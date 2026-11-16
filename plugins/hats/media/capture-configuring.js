@@ -2,7 +2,7 @@
 // page. Run with browser_run_code_unsafe { filename: "<repo>/media/capture-configuring.js" }.
 // Writes PNG frames to media-out/configuring-<timestamp>/ and returns that
 // directory. It creates a "Gym" hat; delete it afterwards with
-// `BB_SERVER_URL=http://127.0.0.1:39886 bb hats delete Gym`.
+// `ALIA_SERVER_URL=http://127.0.0.1:39886 VesnALIA hats delete Gym`.
 async (page) => {
   const URL = 'http://127.0.0.1:39886';
   const dir = `media-out/configuring-${Date.now()}`;

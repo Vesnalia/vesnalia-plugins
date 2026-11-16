@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import type { ThreadEventRow } from "@get-bb/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import type { ThreadEventRow } from "@vesnalia/plugin-sdk";
 import { createThreadRetry, threadRetryMigration } from "./thread-retry";
 
 const disposals: Array<() => Promise<void>> = [];
@@ -9,7 +9,7 @@ function setup() {
   const worker = { ...makeThreadResponse({ id: "worker", status: "error" }), environmentId: "env" };
   const state = { requestId: "failure-1", queued: false, waiting: false, lost: false, eligible: true, reads: 0 };
   const calls: unknown[] = [];
-  const { bb, harness } = createFakePluginHost({ pluginId: "retry-test", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "retry-test", sdk: { threads: {
     get: async () => worker,
     events: { list: async () => { state.reads++; return state.requestId ? [{ type: "client/turn/requested", data: { requestId: state.requestId } }] as ThreadEventRow[] : []; } },
     interactions: { list: async () => state.waiting ? [{}] as never[] : [] },
@@ -18,9 +18,9 @@ function setup() {
       return { ok: true, delivery: "sent", turnRequestId: "retry-1", attempt: 2 }; },
   } } });
   disposals.push(() => harness.lifecycle.dispose());
-  const db = bb.storage.database(); bb.storage.migrate(db, [threadRetryMigration]);
-  const retry = createThreadRetry(bb, db, () => false);
-  return { bb, harness, db, worker, state, calls, retry,
+  const db = alia.storage.database(); alia.storage.migrate(db, [threadRetryMigration]);
+  const retry = createThreadRetry(alia, db, () => false);
+  return { alia, harness, db, worker, state, calls, retry,
     run: (force = false) => retry.retry("worker", "env", "assignment", () => state.eligible, force) };
 }
 
@@ -33,7 +33,7 @@ describe("same-thread retry", () => {
   it("keeps an uncertain dispatch claimed after a lost response and module restart", async () => {
     const t = setup(); t.state.lost = true;
     await t.run();
-    const next = createThreadRetry(t.bb, t.db, () => false);
+    const next = createThreadRetry(t.alia, t.db, () => false);
     await next.retry("worker", "env", "assignment", () => true, true);
     expect(t.calls).toHaveLength(1);
     expect(next.read("worker")).toMatchObject({ status: "uncertain", error: expect.stringContaining("Response lost") });
@@ -42,7 +42,7 @@ describe("same-thread retry", () => {
     const t = setup(); await t.run(); t.state.requestId = "failure-2";
     await t.run(); expect(t.calls).toHaveLength(1);
     t.db.prepare("UPDATE worktree_thread_retries SET claimed_at = claimed_at - 30001").run();
-    const next = createThreadRetry(t.bb, t.db, () => false);
+    const next = createThreadRetry(t.alia, t.db, () => false);
     await next.retry("worker", "env", "assignment", () => true);
     expect(t.calls).toHaveLength(2);
     t.state.requestId = "failure-3";

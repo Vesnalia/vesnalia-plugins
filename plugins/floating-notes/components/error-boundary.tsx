@@ -14,7 +14,7 @@ export class SurfaceBoundary extends Component<
   }
 
   componentDidCatch(error: unknown): void {
-    console.error(`[bb-plugin-notes] ${this.props.name} crashed:`, error);
+    console.error(`[alia-plugin-notes] ${this.props.name} crashed:`, error);
   }
 
   render(): ReactNode {

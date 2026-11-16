@@ -1,4 +1,4 @@
-// The Iris mark inside bb: four blades around a square window, drawn in the
+// The Iris mark inside VesnALIA: four blades around a square window, drawn in the
 // theme's accent so it follows the person's theme like everything else in Iris.
 import { useId } from "react";
 import { MARK_PATH } from "./brand-mark";

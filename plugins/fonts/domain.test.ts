@@ -100,7 +100,7 @@ describe("font settings domain", () => {
       "--text-sm": "14px",
       "--font-weight-normal": "350",
       "--font-weight-semibold": "650",
-      "--bb-interface-line-height": "1.6",
+      "--alia-interface-line-height": "1.6",
       "--text-sm--line-height": "1.6",
       "--leading-normal": "1.4",
       "--tracking-normal": "0.005em",

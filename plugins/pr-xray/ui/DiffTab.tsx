@@ -7,8 +7,8 @@ import {
   experimental_SourceCode as SourceCode,
   experimental_useCodeTheme as useCodeTheme,
   experimental_VoiceInputTextarea as VoiceInputTextarea,
-  useBbNavigate,
-} from "@get-bb/plugin-sdk/app";
+  useAliaNavigate,
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -90,7 +90,7 @@ export function DiffTab({
   onFileRequestHandled: () => void;
 }) {
   const { pr } = data;
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const hunks = useMemo(() => new Map(pr.hunks.map((hunk) => [hunk.id, hunk])), [pr.hunks]);
   const files = useMemo(() => new Map(pr.files.map((file) => [file.index, file])), [pr.files]);
   const storedByGithubId = useMemo(() => {

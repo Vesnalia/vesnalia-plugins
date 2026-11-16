@@ -16,7 +16,7 @@
  * those listings (splitting the text around mentions before Markdown would break lists and emphasis).
  * Listing paths link into the orientation's workspace, or are plain code when it is gone.
  */
-import { experimental_FileLink as FileLink, experimental_useTabVisible, type ExperimentalThreadTabProps } from "@get-bb/plugin-sdk/app";
+import { experimental_FileLink as FileLink, experimental_useTabVisible, type ExperimentalThreadTabProps } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";

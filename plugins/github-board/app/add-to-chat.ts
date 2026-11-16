@@ -11,7 +11,7 @@
  *
  * Pure apart from the handle it is given, so it is tested with a fake one.
  */
-import type { PluginComposerApi, PluginComposerScope, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginComposerApi, PluginComposerScope, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 import type { BoardItem, ColumnId, PromptSettings } from "../shared/board";
 import { renderTemplate, templateFor } from "../shared/settings";
@@ -31,7 +31,7 @@ export function cardPrompt(
 }
 
 /**
- * The bb project a composer writes into: a new thread's selected project, or
+ * The VesnALIA project a composer writes into: a new thread's selected project, or
  * the project of the thread it belongs to as the sidebar lists it. Null when
  * neither is known — a new-thread composer that has not resolved its project,
  * or a thread the sidebar does not list.
@@ -44,7 +44,7 @@ export function composerProjectId(
   return threads.find((thread) => thread.id === scope.threadId)?.projectId ?? null;
 }
 
-/** What the picker needs from bb's sidebar to name a composer. */
+/** What the picker needs from VesnALIA's sidebar to name a composer. */
 export interface ComposerNames {
   threads: readonly { id: string; displayTitle: string }[];
   projects: readonly { id: string; name: string }[];
@@ -75,7 +75,7 @@ export interface ChatTargets<Composer> {
 export const THREAD_TARGET_LIMIT = 8;
 
 /**
- * What the picker offers: the chats on screen first, in bb's order, then the
+ * What the picker offers: the chats on screen first, in VesnALIA's order, then the
  * threads that are not, the card's own projects' first and the most recently
  * updated first within each. A thread whose chat is on screen is listed once,
  * as on screen; hidden helper threads and archived ones are left out.

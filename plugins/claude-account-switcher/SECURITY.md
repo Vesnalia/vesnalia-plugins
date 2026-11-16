@@ -6,7 +6,7 @@ Security fixes target the latest released version of the plugin.
 
 ## Reporting a vulnerability
 
-Use GitHub's private vulnerability reporting from the repository's **Security** page. Include the plugin version, BB version, operating system, and the smallest safe reproduction you can provide.
+Use GitHub's private vulnerability reporting from the repository's **Security** page. Include the plugin version, VesnALIA version, operating system, and the smallest safe reproduction you can provide.
 
 Do not include credentials, OAuth codes, account identifiers, raw authentication output, or private thread data.
 

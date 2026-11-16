@@ -1,8 +1,8 @@
-// bb-plugin-code-review-workspace — backend entry.
+// alia-plugin-code-review-workspace — backend entry.
 //
 // Turns a GitHub PR (or local git ref) into an agent-authored chaptered
-// walkthrough, rendered and reviewed in a bb panel, submitted back to GitHub.
-import type { BbPluginApi, PluginAgentConfiguration, PluginAgentConfigurationContext, PluginCliContext, PluginCliResult } from "@get-bb/plugin-sdk";
+// walkthrough, rendered and reviewed in a VesnALIA panel, submitted back to GitHub.
+import type { AliaPluginApi, PluginAgentConfiguration, PluginAgentConfigurationContext, PluginCliContext, PluginCliResult } from "@vesnalia/plugin-sdk";
 import { rpcContract } from "./src/rpc-contract";
 import { createStore, storeOn, type Store } from "./src/store";
 import { codeOwners } from "./src/codeowners";
@@ -75,7 +75,7 @@ export { rpcContract } from "./src/rpc-contract";
 /** How long a wait on the assistant, or an ask, stands before a review-state pass checks whether its turn ended unheard. */
 const WAIT_GRACE = 2 * 60_000;
 
-/** What the plugin serves from its open store. BB takes services, schedules and the configure and CLI registrations from the factory alone, which hands them on to these. */
+/** What the plugin serves from its open store. VesnALIA takes services, schedules and the configure and CLI registrations from the factory alone, which hands them on to these. */
 interface Served {
   store: QueuedStore;
   configure(context: PluginAgentConfigurationContext): PluginAgentConfiguration;
@@ -86,15 +86,15 @@ interface Served {
   pruneOld(): Promise<void>;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const storage = await chooseStorage(bb);
+export default async function plugin(alia: AliaPluginApi) {
+  const storage = await chooseStorage(alia);
   let served: Served | null = null;
   let serve: (opened: Served) => void = () => {};
   const serving = new Promise<Served>((resolve) => { serve = (opened) => { served = opened; resolve(opened); }; });
-  // bb.agents.configure must answer synchronously, every time: until the store is open, it gives no thread anything.
-  bb.agents.configure((context) => served?.configure(context) ?? { tools: [], skills: [] });
-  const storageCommand = createStorageCommand(bb, storage);
-  bb.cli.register({
+  // alia.agents.configure must answer synchronously, every time: until the store is open, it gives no thread anything.
+  alia.agents.configure((context) => served?.configure(context) ?? { tools: [], skills: [] });
+  const storageCommand = createStorageCommand(alia, storage);
+  alia.cli.register({
     name: "review",
     summary: "Open a review of a GitHub PR or local git ref in Code Review Workspace, or change its local draft",
     rendersHelp: true,
@@ -102,27 +102,27 @@ export default async function plugin(bb: BbPluginApi) {
     async run(argv, ctx) {
       // Storage answers in maintenance too, where the reviews move between backends.
       if (argv[0] === "storage") {
-        if (served && ctx.threadId && await served.isFocusThread(ctx.threadId)) return { exitCode: 1, stderr: "Focus threads cannot run bb review." };
+        if (served && ctx.threadId && await served.isFocusThread(ctx.threadId)) return { exitCode: 1, stderr: "Focus threads cannot run alia review." };
         return storageCommand(argv.slice(1), ctx);
       }
       if (served) return served.run(argv, ctx);
       const { state, problem } = storage.status;
       if (state === "maintenance") return { exitCode: 1, stderr: problem! };
-      return { exitCode: 1, stderr: `Code Review Workspace is opening its Postgres storage${problem ? ` (latest try: ${problem})` : ""}. Try again in a moment; bb review storage status says more.` };
+      return { exitCode: 1, stderr: `Code Review Workspace is opening its Postgres storage${problem ? ` (latest try: ${problem})` : ""}. Try again in a moment; VesnALIA review storage status says more.` };
     },
   });
   if (storage.kind === "maintenance") {
-    bb.log.warn(storage.status.problem!);
-    bb.status.needsConfiguration(storage.status.problem!);
+    alia.log.warn(storage.status.problem!);
+    alia.status.needsConfiguration(storage.status.problem!);
     return;
   }
-  bb.background.service("plugin-updates", { start: async (signal) => { await (await unlessAborted(serving, signal))?.checkUpdates(signal); } });
-  bb.background.service("review-state", { start: async (signal) => { await (await unlessAborted(serving, signal))?.syncReviews(signal); } });
-  // Once a day, drop the stored diffs of reviews out of play for a month. BB keeps the schedule, so a reload doesn't prune again.
-  bb.background.schedule("prune-old-diffs", "17 4 * * *", async () => { await served?.pruneOld(); });
+  alia.background.service("plugin-updates", { start: async (signal) => { await (await unlessAborted(serving, signal))?.checkUpdates(signal); } });
+  alia.background.service("review-state", { start: async (signal) => { await (await unlessAborted(serving, signal))?.syncReviews(signal); } });
+  // Once a day, drop the stored diffs of reviews out of play for a month. VesnALIA keeps the schedule, so a reload doesn't prune again.
+  alia.background.schedule("prune-old-diffs", "17 4 * * *", async () => { await served?.pruneOld(); });
   if (storage.kind === "sqlite") {
     // Deliberately let schema refusal fail activation so a managed update can roll back to the previous build.
-    serve(servePlugin(bb, await openStore(bb, createStore(bb)), true));
+    serve(servePlugin(alia, await openStore(alia, createStore(alia)), true));
     return;
   }
   const { pg, schema } = storage;
@@ -130,19 +130,19 @@ export default async function plugin(bb: BbPluginApi) {
   // next none to find.
   const interrupted: Interrupted[] = [];
   // Opened at activation, once the instance a reload replaces has closed its connection and let the writer lock go.
-  bb.background.service("storage", {
+  alia.background.service("storage", {
     async start(signal) {
-      // BB restarts a service for an uncaught error in work started from it, as the store's is: run again, it finds the store open.
+      // VesnALIA restarts a service for an uncaught error in work started from it, as the store's is: run again, it finds the store open.
       if (!served) {
-        const opened = await openPostgres(bb, storage, signal, async () => {
+        const opened = await openPostgres(alia, storage, signal, async () => {
           await pg.lockWriter();
           // The reviews are in Postgres, by storage:owner: a schema without them is the wrong one, not one to make.
           if (!await pgSchemaMigrated(pg, schema)) throw new Error(`storage:owner says the reviews are in Postgres, but schema "${schema}" holds none: check postgresUrl and postgresSchema, then reload`);
           await migratePg(pg, schema);
-          return await openStore(bb, storeOn(pg), interrupted);
+          return await openStore(alia, storeOn(pg), interrupted);
         });
         if (!opened) return;
-        serve(servePlugin(bb, opened));
+        serve(servePlugin(alia, opened));
       }
       await new Promise<void>((resolve) => {
         if (signal.aborted) return resolve();
@@ -150,7 +150,7 @@ export default async function plugin(bb: BbPluginApi) {
       });
     },
   });
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     // Calls still queued, and later ones, reject; closing the connection lets the writer lock go for the next instance.
     await served?.store.dispose();
     await pg.end();
@@ -163,10 +163,10 @@ type Interrupted = Awaited<ReturnType<Store["interruptGenerations"]>>[number];
  * The store over `backend`: configure's view of it, read first, and the guides a reload interrupted, before anything
  * else reaches it. They're added to `interrupted`, which an open tried again passes again.
  */
-async function openStore(bb: BbPluginApi, backend: Store, interrupted: Interrupted[] = []) {
-  // bb.agents.configure must answer synchronously, so it reads a view the queue keeps up to date; everything else
+async function openStore(alia: AliaPluginApi, backend: Store, interrupted: Interrupted[] = []) {
+  // alia.agents.configure must answer synchronously, so it reads a view the queue keeps up to date; everything else
   // takes its turn in the queue.
-  const configured = await createConfigureView(bb, backend);
+  const configured = await createConfigureView(alia, backend);
   const store = queueStore(configured.backend, { afterTurn: configured.afterTurn });
   await store.exclusive(async (tx) => {
     for (const found of await tx.interruptGenerations()) if (!interrupted.some((known) => known.targetKey === found.targetKey)) interrupted.push(found);
@@ -180,51 +180,51 @@ async function openStore(bb: BbPluginApi, backend: Store, interrupted: Interrupt
  * Register the tools, RPC handlers and events, and start what runs on the open store. Nothing in it awaits.
  * `sharedWithReplaced`: the instance a reload replaces can still write to the store, as on SQLite.
  */
-function servePlugin(bb: BbPluginApi, { configured, store, interrupted }: Awaited<ReturnType<typeof openStore>>, sharedWithReplaced = false): Served {
-  const receipts = postReceipts(bb.storage.kv);
+function servePlugin(alia: AliaPluginApi, { configured, store, interrupted }: Awaited<ReturnType<typeof openStore>>, sharedWithReplaced = false): Served {
+  const receipts = postReceipts(alia.storage.kv);
   const githubWrites = createGithubWrites();
   // Who you are as the sync last read it, or reads it now, to tell your own PR from a teammate's before the sync has.
   const submitReview = createReviewSubmitter(store, runGh, receipts, githubWrites.pace, () => sync.login());
-  const deps = { bb, store, gh: { runGh, runGit } };
-  const notifications = completionNotifications(bb, store);
-  const suggester = createInstructionSuggester(bb, store, () => bb.realtime.publish("learning", {}));
+  const deps = { alia, store, gh: { runGh, runGit } };
+  const notifications = completionNotifications(alia, store);
+  const suggester = createInstructionSuggester(alia, store, () => alia.realtime.publish("learning", {}));
   let personalProject: string | null = null;
   const reasons: Record<string, string> = {
     "re-requested": "the author re-requested the reviewer's review", handled: "every thread of the reviewer's feedback is resolved or answered",
     "looks-ready": "the last check found the feedback addressed", dismissed: "GitHub dismissed the reviewer's review",
   };
-  const sync = createReviewSync(bb, store, runGh, { actions: {
+  const sync = createReviewSync(alia, store, runGh, { actions: {
     async prepare(targetKey, reason) {
       const review = await store.getReview(targetKey);
       if (!review) return false;
       // An out-of-date guide is rebuilt first; its completion starts the check.
       if (review.status === "tracked" || guideBehind(review)) return (await rerunReview(deps, targetKey, { notify: false, unattended: true })).ok;
-      return startVerification(bb, store, targetKey, reasons[reason] ?? "the review came back to the reviewer", "automatic");
+      return startVerification(alia, store, targetKey, reasons[reason] ?? "the review came back to the reviewer", "automatic");
     },
-    checkPushes: (targetKey) => startVerification(bb, store, targetKey, "the author pushed new commits and they have settled", "automatic"),
-    checkFixes: (targetKey) => startVerification(bb, store, targetKey, "the main thread finished the comments the reviewer sent, so they're ready to re-review", "automatic", { fixes: true }),
+    checkPushes: (targetKey) => startVerification(alia, store, targetKey, "the author pushed new commits and they have settled", "automatic"),
+    checkFixes: (targetKey) => startVerification(alia, store, targetKey, "the main thread finished the comments the reviewer sent, so they're ready to re-review", "automatic", { fixes: true }),
     async autoStart(targetKey) {
       return (await rerunReview(deps, targetKey, { notify: false, unattended: true })).ok;
     },
     async projectId() {
       if (personalProject) return personalProject;
-      personalProject = (await personalProjectId(bb).catch(() => undefined)) ?? null;
+      personalProject = (await personalProjectId(alia).catch(() => undefined)) ?? null;
       return personalProject;
     },
     becomePr: (targetKey, pr) => featureReview.becomePr({ ...deps, changed: (key) => changed(key) }, targetKey, pr),
   } });
-  onPrepared(bb, (targetKey) => { void sync.evaluate(targetKey); });
-  onAssistantWaitsEnded(bb, (targetKey) => { void sync.evaluate(targetKey); });
+  onPrepared(alia, (targetKey) => { void sync.evaluate(targetKey); });
+  onAssistantWaitsEnded(alia, (targetKey) => { void sync.evaluate(targetKey); });
   // Guides a reload interrupted: their workers stop, and the rebuilds start again without alerting. Their rows are gone,
   // so each writer is recorded now: as a former writer, it can still run commands only on its own review.
-  for (const { targetKey, workerId } of interrupted) if (workerId) void recordFormerWorker(bb, workerId, targetKey, "writer");
+  for (const { targetKey, workerId } of interrupted) if (workerId) void recordFormerWorker(alia, workerId, targetKey, "writer");
   void (async () => {
     for (const { targetKey, workerId } of interrupted) await (async () => {
       // A writer whose spawn the reload interrupted has no recorded id, so it's found by its exact title, before the
       // restart spawns another, and kept to its review too. One a generation since records is that generation's. A title
       // is the thread's own to write, so an assistant, or a former worker kept to another review or to none, stays as it is.
-      const writers = await pluginThreadsTitled(bb, `${GUIDE_WORKER_TITLE}${targetKey}`).catch((error) => {
-        bb.log.warn(`Could not list the guide writers of ${targetKey}: ${String(error)}`);
+      const writers = await pluginThreadsTitled(alia, `${GUIDE_WORKER_TITLE}${targetKey}`).catch((error) => {
+        alia.log.warn(`Could not list the guide writers of ${targetKey}: ${String(error)}`);
         return [];
       });
       const titled = await store.exclusive(async (tx) => {
@@ -234,21 +234,21 @@ function servePlugin(bb: BbPluginApi, { configured, store, interrupted }: Awaite
       });
       const unrecorded: string[] = [];
       for (const threadId of titled) {
-        const kept = await formerWorkerReview(bb, threadId);
+        const kept = await formerWorkerReview(alia, threadId);
         if (kept === null || kept === targetKey) unrecorded.push(threadId);
       }
-      for (const threadId of unrecorded) await recordFormerWorker(bb, threadId, targetKey, "writer");
+      for (const threadId of unrecorded) await recordFormerWorker(alia, threadId, targetKey, "writer");
       for (const threadId of [...(workerId ? [workerId] : []), ...unrecorded]) {
-        await bb.sdk.threads.archive({ threadId }).catch(() => {});
-        await bb.sdk.threads.stop({ threadId }).catch(() => {});
+        await alia.sdk.threads.archive({ threadId }).catch(() => {});
+        await alia.sdk.threads.stop({ threadId }).catch(() => {});
       }
       await restartInterruptedGuide(deps, targetKey);
     })().catch(async (error) => {
-      bb.log.warn(`Could not restart the interrupted guide for ${targetKey}: ${String(error)}`);
+      alia.log.warn(`Could not restart the interrupted guide for ${targetKey}: ${String(error)}`);
       await interruptedGuideThrew(deps, targetKey, error).catch(() => {});
     });
-  })().catch((error) => bb.log.warn(`Could not restart interrupted guides: ${String(error)}`));
-  // A turn that ended while the plugin was down, or while its storage failed as BB told of it, never settled what waited
+  })().catch((error) => alia.log.warn(`Could not restart interrupted guides: ${String(error)}`));
+  // A turn that ended while the plugin was down, or while its storage failed as VesnALIA told of it, never settled what waited
   // for it: a feedback check, a discussion, or an ask. Settled at activation, and on each review-state pass, once the
   // newest has had `grace` to start its turn, as one just asked may not have yet.
   const settleOutlivedWaits = async (grace: number) => {
@@ -259,35 +259,35 @@ function servePlugin(bb: BbPluginApi, { configured, store, interrupted }: Awaite
       if ((review.verifyingSince || asked.has(k)) && Math.max(review.verifyingSince ?? 0, asked.get(k) ?? 0) <= before) {
         // A check that left the queue while no one heard has had its turn, or is having it.
         const threadId = review.verifyingMessageId ? await store.getAssistantThread(k) : null;
-        const queue = threadId ? await bb.sdk.threads.queuedMessages.list({ threadId }).catch(() => null) : null;
+        const queue = threadId ? await alia.sdk.threads.queuedMessages.list({ threadId }).catch(() => null) : null;
         if (queue && !queue.some((m) => m.id === review.verifyingMessageId)) {
           await store.exclusive(async (tx) => { if ((await tx.getReview(k))?.verifyingMessageId === review.verifyingMessageId) await tx.setLifecycle(k, { verifyingMessageId: null }); });
         }
-        if (!await assistantMayAnswer(bb, store, k) && await endAssistantWaits(bb, store, k)) await sync.evaluate(k);
+        if (!await assistantMayAnswer(alia, store, k) && await endAssistantWaits(alia, store, k)) await sync.evaluate(k);
       }
       // An ask whose turn ended unheard, or whose message left the queue unheard and whose turn has ended since.
       for (const { at, ask } of listAsks(review)) {
-        if (ask.state === "sending" || !ask.threadId || ask.at > before || await threadMayAnswer(bb, ask.threadId)) continue;
+        if (ask.state === "sending" || !ask.threadId || ask.at > before || await threadMayAnswer(alia, ask.threadId)) continue;
         const withdrawn = await store.exclusive(async (tx) => {
           const current = askAt(await tx.getReview(k), at);
           if (current?.at !== ask.at || current.state !== ask.state) return false;
           await setAsk(tx, k, at, null);
           return true;
         });
-        if (withdrawn) bb.realtime.publish(`review:${k}`, { ts: Date.now() });
+        if (withdrawn) alia.realtime.publish(`review:${k}`, { ts: Date.now() });
       }
     }
   };
-  void settleOutlivedWaits(0).catch((error) => bb.log.warn(`Could not settle reviews waiting on their assistants: ${String(error)}`));
-  const updates = createPluginUpdates(bb, () => hasGuideGenerations(bb));
-  bb.onDispose(() => { stopGuideGenerations(bb); disposeFocusRuns(bb); });
-  void recoverFocusRuns(bb, store).catch((error) => bb.log.warn(`Could not recover focus runs: ${String(error)}`));
+  void settleOutlivedWaits(0).catch((error) => alia.log.warn(`Could not settle reviews waiting on their assistants: ${String(error)}`));
+  const updates = createPluginUpdates(alia, () => hasGuideGenerations(alia));
+  alia.onDispose(() => { stopGuideGenerations(alia); disposeFocusRuns(alia); });
+  void recoverFocusRuns(alia, store).catch((error) => alia.log.warn(`Could not recover focus runs: ${String(error)}`));
 
-  bb.log.info("code-review-workspace loaded");
+  alia.log.info("code-review-workspace loaded");
 
   const changed = (targetKey: string) => {
-    bb.realtime.publish(`review:${targetKey}`, { ts: Date.now() });
-    bb.realtime.publish("reviews", { ts: Date.now() });
+    alia.realtime.publish(`review:${targetKey}`, { ts: Date.now() });
+    alia.realtime.publish("reviews", { ts: Date.now() });
   };
   /** Re-read your threads on a PR now. */
   async function refreshThreads(review: ReviewMeta) {
@@ -305,22 +305,22 @@ function servePlugin(bb: BbPluginApi, { configured, store, interrupted }: Awaite
     });
     if (threadsChanged === null) return;
     // Every open review page reads the threads again when told, so it's told only when they changed.
-    if (threadsChanged) bb.realtime.publish(`feedback:${review.targetKey}`, { ts: Date.now() });
+    if (threadsChanged) alia.realtime.publish(`feedback:${review.targetKey}`, { ts: Date.now() });
   }
   /** The review's changed `files` with CODEOWNERS owners, marking yours. */
-  const reviewOwners = (review: ReviewMeta, files: string[]) => codeOwners({ runGh, runGit, bb }, review, files,
+  const reviewOwners = (review: ReviewMeta, files: string[]) => codeOwners({ runGh, runGit, alia }, review, files,
     async () => ({ login: await sync.login(), teams: await sync.teams() }));
 
   // Each area of the server is a module (src/server-modules.ts). Registering it registers its agent tools, in this
-  // order, and gives its RPC handlers, its listeners to BB's events, and the bb review subcommands it runs.
+  // order, and gives its RPC handlers, its listeners to VesnALIA's events, and the VesnALIA review subcommands it runs.
   // Who's asking in a review agent's turn. The plugin's own agents, by their recorded ids, never count as you: read from
   // configure's view and the former workers' kv, as it's asked inside the store's blocks too.
   const isFocusThread = async (threadId: string) => {
     const recorded = configured.threadRole({ id: threadId, title: null });
-    return recorded ? recorded === "focus" : configured.threadRole({ id: threadId, title: await focusInFlightTitle(bb, threadId) }) === "focus";
+    return recorded ? recorded === "focus" : configured.threadRole({ id: threadId, title: await focusInFlightTitle(alia, threadId) }) === "focus";
   };
-  const ownThread = async (threadId: string) => !!configured.threadRole({ id: threadId, title: null }) || !!configured.threadRole({ id: threadId, title: await focusInFlightTitle(bb, threadId) }) || await formerWorkerReview(bb, threadId) !== null;
-  const moduleDeps: ServeDeps = { ...deps, receipts, submitReview, githubWrites, notifications, suggester, sync, changed, refreshThreads, reviewOwners, classify: createClassifier(bb, ownThread), fromOwnAgent: fromOwnAgent(bb, ownThread) };
+  const ownThread = async (threadId: string) => !!configured.threadRole({ id: threadId, title: null }) || !!configured.threadRole({ id: threadId, title: await focusInFlightTitle(alia, threadId) }) || await formerWorkerReview(alia, threadId) !== null;
+  const moduleDeps: ServeDeps = { ...deps, receipts, submitReview, githubWrites, notifications, suggester, sync, changed, refreshThreads, reviewOwners, classify: createClassifier(alia, ownThread), fromOwnAgent: fromOwnAgent(alia, ownThread) };
   const settings = settingsRpc.register(moduleDeps);
   const reviews = reviewsRpc.register(moduleDeps);
   const githubThreads = githubThreadsRpc.register(moduleDeps);
@@ -351,7 +351,7 @@ function servePlugin(bb: BbPluginApi, { configured, store, interrupted }: Awaite
   const guard = <T extends object>(handlers: T): T => Object.fromEntries(Object.entries(handlers).map(([name, handler]) =>
     [name, (input: unknown) => updates.run(() => (handler as (input: unknown) => unknown)(input))])) as unknown as T;
   const guarded = guard(handlers);
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     ...guarded,
     getReleaseStatus: () => updates.status(),
     checkPluginUpdates: () => updates.check(),
@@ -359,20 +359,20 @@ function servePlugin(bb: BbPluginApi, { configured, store, interrupted }: Awaite
     setReviewPresence: ({ clientId, open }) => updates.presence(clientId, open),
     applyPluginUpdate: ({ clientId, candidateVersion }) => updates.apply(clientId, candidateVersion),
   });
-  // What other plugins call (docs/plugin-api.md), on its own, so BB's RPC discovery lists it and none of the panel's.
-  bb.rpc.register(publicContract, guard(published), {
+  // What other plugins call (docs/plugin-api.md), on its own, so VesnALIA's RPC discovery lists it and none of the panel's.
+  alia.rpc.register(publicContract, guard(published), {
     experimental_discoverable: true,
     experimental_description: "Code Review Workspace for other plugins: where each review stands, who it waits on, whether you've approved the code as it is now and since when; and starting a review of a thread's changes.",
   });
-  listen(bb, [events.events, agents.events, feature.events, ledgerEvents(bb), sends.events, reports.events, own.events, pushing.events, watching.events, focusEvents(bb, store)]);
+  listen(alia, [events.events, agents.events, feature.events, ledgerEvents(alia), sends.events, reports.events, own.events, pushing.events, watching.events, focusEvents(alia, store)]);
   const subcommands: Subcommands = merge(reviews.commands, draft.commands, relays.commands, reports.commands);
 
   // Tools go only to THIS plugin's own spawned threads, by the role each is recorded with: a thread can retitle
   // itself, so its title chooses only while its spawn is in flight, before its id is recorded.
   const configure = (context: PluginAgentConfigurationContext): PluginAgentConfiguration => {
-    // Agents in your own threads get the skill for bb review; this plugin's threads get only what their role needs.
+    // Agents in your own threads get the skill for VesnALIA review; this plugin's threads get only what their role needs.
     // A guided-review install's threads came over with its reviews; they still get tools only by their recorded role.
-    if (context.origin?.pluginId !== bb.pluginId && context.origin?.pluginId !== FORMER_PLUGIN_ID) return { tools: [], skills: configured.preferences().knobs.reviewCommandInThreads ? ["code-review-workspace"] : [] };
+    if (context.origin?.pluginId !== alia.pluginId && context.origin?.pluginId !== FORMER_PLUGIN_ID) return { tools: [], skills: configured.preferences().knobs.reviewCommandInThreads ? ["code-review-workspace"] : [] };
     const role = context.thread ? configured.threadRole(context.thread) : null;
     if (role === "focus") return { tools: [...focusTools.FOCUS_TOOLS], skills: [] };
     if (role === "writer") {
@@ -387,7 +387,7 @@ function servePlugin(bb: BbPluginApi, { configured, store, interrupted }: Awaite
       const targetKey = configured.threadReview(context.thread!);
       const review = targetKey ? configured.review(targetKey) : null;
       const focuses = configured.preferences().focuses.enabled || review?.focusRun?.state === "merging";
-      recordFocusTools(bb, context.thread!.id, focuses);
+      recordFocusTools(alia, context.thread!.id, focuses);
       return {
         tools: [...ASSISTANT_TOOL_NAMES, ...(configured.preferences().knobs.reviewAgentActs ? ASSISTANT_WRITE_TOOL_NAMES : []), ...(focuses ? focusTools.FOCUS_MERGE_TOOLS : [])], skills: [],
         ...(review ? { instructions: assistantInstructions(review.targetKey, configured.guide(review.targetKey), configured.preferences(), mayRunChecks(review, configured.preferences()) ? review.number : undefined, review) } : {}),
@@ -398,9 +398,9 @@ function servePlugin(bb: BbPluginApi, { configured, store, interrupted }: Awaite
   // An assistant's runtime keeps the tools it started with. Restart idle ones
   // once, so conversations from before set_review_summary get it.
   void (async () => {
-    if (await bb.storage.kv.get<number>("assistant-tools") === ASSISTANT_TOOLS) return;
-    await refreshAssistants(bb, store);
-    await bb.storage.kv.set("assistant-tools", ASSISTANT_TOOLS);
+    if (await alia.storage.kv.get<number>("assistant-tools") === ASSISTANT_TOOLS) return;
+    await refreshAssistants(alia, store);
+    await alia.storage.kv.set("assistant-tools", ASSISTANT_TOOLS);
   })().catch(() => {});
 
   return {
@@ -411,8 +411,8 @@ function servePlugin(bb: BbPluginApi, { configured, store, interrupted }: Awaite
       return updates.run(async () => {
         // A review's own assistant or guide writer, by its recorded identity, may change only that review, as may
         // one it replaced; the Suggest instructions worker, none.
-        if (ctx.threadId && await isFocusThread(ctx.threadId)) return { exitCode: 1, stderr: "Focus threads cannot run bb review." };
-        const ownReview = (ctx.threadId ? await toolThreadReview(bb, store, ctx.threadId) ?? await formerWorkerReview(bb, ctx.threadId) : null) ?? undefined;
+        if (ctx.threadId && await isFocusThread(ctx.threadId)) return { exitCode: 1, stderr: "Focus threads cannot run alia review." };
+        const ownReview = (ctx.threadId ? await toolThreadReview(alia, store, ctx.threadId) ?? await formerWorkerReview(alia, ctx.threadId) : null) ?? undefined;
         // A subcommand a module runs, by its name; anything else is a PR or ref to review.
         const subcommand = Object.hasOwn(subcommands, argv[0]) ? subcommands[argv[0]] : undefined;
         return subcommand ? await subcommand(argv.slice(1), ctx, ownReview) : runReviewCommand(deps, argv, ctx, ownReview);
@@ -421,7 +421,7 @@ function servePlugin(bb: BbPluginApi, { configured, store, interrupted }: Awaite
     async checkUpdates(signal) {
       while (!signal.aborted) {
         await delay(60_000, undefined, { signal }).catch(() => {});
-        // Stop at once when BB stops the plugin: past 5 s it's degraded and the new instance doesn't load. What still
+        // Stop at once when VesnALIA stops the plugin: past 5 s it's degraded and the new instance doesn't load. What still
         // waits on the network settles unheard.
         if (!signal.aborted) await unlessAborted(updates.run(() => notifications.flush(), false), signal).catch(() => {});
         if (!signal.aborted) await unlessAborted(updates.tick(signal), signal).catch(() => {});
@@ -431,16 +431,16 @@ function servePlugin(bb: BbPluginApi, { configured, store, interrupted }: Awaite
       // On SQLite, the instance a reload replaces shares data.db, and may write after this one read configure's view,
       // which reads a guide again only when a call can change it: it's all read again once, after the first pass's first turn.
       if (sharedWithReplaced) configured.readAllAfterNextTurn();
-      // What happened to the main threads while the plugin was down: BB doesn't tell its events again.
-      await updates.run(() => reports.reconcile(), false).catch((error) => bb.log.warn(`Could not read the main threads again: ${String(error)}`));
-      await updates.run(() => agentTools.clearPrDrafts(), false).catch((error) => bb.log.warn(`Could not clear the PR drafts of Post forms from before the plugin started: ${String(error)}`));
+      // What happened to the main threads while the plugin was down: VesnALIA doesn't tell its events again.
+      await updates.run(() => reports.reconcile(), false).catch((error) => alia.log.warn(`Could not read the main threads again: ${String(error)}`));
+      await updates.run(() => agentTools.clearPrDrafts(), false).catch((error) => alia.log.warn(`Could not clear the PR drafts of Post forms from before the plugin started: ${String(error)}`));
       // Approvals of a diff their review no longer shows, as ones kept from before 1.10.0, end.
-      await updates.run(async () => { for (const key of await loop.endOutlivedApprovals(store)) changed(key); }, false).catch((error) => bb.log.warn(`Could not end the approvals of earlier diffs: ${String(error)}`));
+      await updates.run(async () => { for (const key of await loop.endOutlivedApprovals(store)) changed(key); }, false).catch((error) => alia.log.warn(`Could not end the approvals of earlier diffs: ${String(error)}`));
       while (!signal.aborted) {
         await updates.run(() => sync.all(), false).catch(() => {});
         await updates.run(() => watching.poll(), false).catch(() => {});
         await updates.run(() => retryInterruptedGuides(deps), false).catch(() => {});
-        await updates.run(() => failUnfinishedGuides(bb, store), false).catch(() => {});
+        await updates.run(() => failUnfinishedGuides(alia, store), false).catch(() => {});
         await updates.run(() => settleOutlivedWaits(WAIT_GRACE), false).catch(() => {});
         await delay(60_000, undefined, { signal }).catch(() => {});
       }

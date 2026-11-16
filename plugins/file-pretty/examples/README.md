@@ -18,7 +18,7 @@ step with the formatter.
 Use the Raw toggle to compare with the file as written, and the Indent select
 to switch between 2 and 4 spaces.
 
-BB's built-in editor also opens json, yaml, toml, and xml. Pretty opens these
+VesnALIA's built-in editor also opens json, yaml, toml, and xml. Pretty opens these
 by default, because its plugin id (`file-pretty`) sorts before `monaco-editor`.
 To open one in the built-in editor, use "Open with", or set it under Settings
 → Files.

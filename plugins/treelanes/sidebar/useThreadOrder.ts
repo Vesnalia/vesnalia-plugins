@@ -4,7 +4,7 @@ import {
   useRealtime,
   useRpc,
   useRealtimeConnectionState,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { sidebarRpcContract } from "./server";
 
 export interface ThreadOrderApi {

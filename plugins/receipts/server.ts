@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { isValidTimeZone, makeWindow } from "./lib/format";
@@ -6,7 +6,7 @@ import { RECEIPTS_DATA_DIR } from "./lib/plugin-data";
 import {
   applyEnvironmentThreads,
   applyProjectCatalog,
-  catalogFromBbProjects,
+  catalogFromAliaProjects,
   environmentIdFromProjectRow,
   finalizeProjectRows,
 } from "./lib/projects";
@@ -14,7 +14,7 @@ import { mergedUsageSchema } from "./lib/rpc-schema";
 import { UsageScanner } from "./lib/scan";
 import type { MergedUsage, ProjectTotals } from "./lib/types";
 
-const RECEIPTS_COMMAND = "bb receipts show [--days 7|30|90] [--force]";
+const RECEIPTS_COMMAND = "alia receipts show [--days 7|30|90] [--force]";
 
 const daySchema = z
   .string()
@@ -96,7 +96,7 @@ function parseCliOptions(argv: readonly string[]): UsageCliOptions {
 }
 
 async function attachEnvironmentThreads(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   rows: ProjectTotals[],
 ): Promise<ProjectTotals[]> {
   const envIds = [
@@ -112,7 +112,7 @@ async function attachEnvironmentThreads(
   await Promise.all(
     envIds.map(async (environmentId) => {
       try {
-        const environment = await bb.sdk.environments.get({ environmentId });
+        const environment = await alia.sdk.environments.get({ environmentId });
         projectIds.add(environment.projectId);
       } catch {
         // Destroyed environments stay unlabeled.
@@ -128,7 +128,7 @@ async function attachEnvironmentThreads(
   await Promise.all(
     [...projectIds].map(async (projectId) => {
       try {
-        const listed = await listProjectThreads(bb, projectId);
+        const listed = await listProjectThreads(alia, projectId);
         for (const thread of listed) {
           if (!thread.environmentId || thread.deletedAt !== null) continue;
           const title = thread.title || thread.titleFallback;
@@ -156,14 +156,14 @@ const THREAD_PAGE_SIZE = 200;
 const THREAD_PAGE_CAP = 2000;
 
 async function listProjectThreads(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   projectId: string,
 ) {
-  const out: Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["list"]>> = [];
+  const out: Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["list"]>> = [];
   for (const archived of [false, true] as const) {
     let offset = 0;
     while (offset < THREAD_PAGE_CAP) {
-      const page = await bb.sdk.threads.list({
+      const page = await alia.sdk.threads.list({
         projectId,
         includeHidden: true,
         ...(archived ? { archived: true } : {}),
@@ -186,8 +186,8 @@ function isPreferredThread(
   return next.attention > current.attention;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     cursorEnabled: {
       type: "boolean",
       label: "Include Cursor usage",
@@ -206,7 +206,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   const scanner = new UsageScanner({
     dataDir: RECEIPTS_DATA_DIR,
-    log: (message) => bb.log.info(message),
+    log: (message) => alia.log.info(message),
   });
 
   async function cursorOptions() {
@@ -218,10 +218,10 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function resolveUsage(merged: MergedUsage): Promise<MergedUsage> {
-    let catalog: ReturnType<typeof catalogFromBbProjects> = [];
+    let catalog: ReturnType<typeof catalogFromAliaProjects> = [];
     try {
-      catalog = catalogFromBbProjects(
-        await bb.sdk.projects.list({ includePersonal: true }),
+      catalog = catalogFromAliaProjects(
+        await alia.sdk.projects.list({ includePersonal: true }),
       );
     } catch {
       // Folder-name merge still runs without a live project list.
@@ -230,13 +230,13 @@ export default async function plugin(bb: BbPluginApi) {
     return {
       ...merged,
       projects: finalizeProjectRows(
-        await attachEnvironmentThreads(bb, projects),
+        await attachEnvironmentThreads(alia, projects),
         merged.costUsd,
       ),
     };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async getUsage({ sinceDay, untilDay, timeZone, force }) {
       const { merged } = await scanner.readSummary({
         sinceDay,
@@ -249,16 +249,16 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => scanner.flush());
+  alia.onDispose(() => scanner.flush());
 
-  bb.cli.register({
+  alia.cli.register({
     name: "receipts",
     summary: "Show Claude / Codex / Hermes / OpenCode / Pi / Cursor usage totals",
     commands: [
       {
         name: "show",
         summary: "Print usage for a window (default 30 days)",
-        usage: "bb receipts show [--days 7|30|90] [--force]",
+        usage: "alia receipts show [--days 7|30|90] [--force]",
       },
     ],
     async run(argv) {

@@ -5,7 +5,7 @@ import {
   renderSlot,
   type CapturedPluginApp,
   type RenderedSlot,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import { fleetCard, addFleetGroups } from "../lib/fleet-source";
 import { buildGlobalDashboard } from "../lib/global-model";
 import { job, wire, parent, group, scoped, NOW } from "./fleet-fixtures";
@@ -127,7 +127,7 @@ describe("Fleet worker presentation", () => {
     expect(card.textContent).toContain("qwen3-coder:30b");
     expect(card.getAttribute("data-live-state")).toBe("executing");
   });
-  it("Fleet timeline targets job ID, never an invented BB thread", async () => {
+  it("Fleet timeline targets job ID, never an invented VesnALIA thread", async () => {
     const { timelineTargetForCard } = await import("../components/timeline/execution-timeline-dialog");
     expect(
       timelineTargetForCard(fleetCard(job({ origin: null }))),

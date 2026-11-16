@@ -1,4 +1,4 @@
-import type { PluginComposerApi } from "@get-bb/plugin-sdk/app";
+import type { PluginComposerApi } from "@vesnalia/plugin-sdk/app";
 
 export type EditorRequest =
   | {

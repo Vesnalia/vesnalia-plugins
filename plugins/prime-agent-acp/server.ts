@@ -3,7 +3,7 @@ import { promisify } from "node:util";
 import { chmodSync, copyFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { type BbPluginApi } from "@get-bb/plugin-sdk";
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 const execFileAsync = promisify(execFile);
 
@@ -21,7 +21,7 @@ const INSTALL_URL = "https://app.primeintellect.ai/prime-agent/install.sh";
 // The ACP launch spec is sent to whatever host daemon executes the thread, so
 // an absolute path resolved on the server breaks on every other machine
 // (remote daemons do not share the server's plugin cache). Register a stable
-// PATH-based launcher name instead and make `bb prime-agent install` place
+// PATH-based launcher name instead and make `alia prime-agent install` place
 // the bundled launch.mjs at that name on the local machine.
 const LAUNCHER_NAME = "prime-agent-acp-launch";
 
@@ -62,15 +62,15 @@ async function resolvePrimeAgentBinary(): Promise<string | null> {
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.providers.register({
+export default async function plugin(alia: AliaPluginApi) {
+  alia.providers.register({
     id: "acp-prime-agent",
     displayName: "Prime Agent",
     family: "acp",
     icon: "./icons/prime-agent.svg",
     strings: {
       signInHint:
-        "Ensure Prime Agent is installed and authenticated (`prime-agent /login` or `bb prime-agent install`).",
+        "Ensure Prime Agent is installed and authenticated (`prime-agent /login` or `alia prime-agent install`).",
       expiredHint:
         "Prime Agent session expired or needs re-authentication. Check your API keys with `prime-agent`.",
       installUrl: "https://app.primeintellect.ai/prime-agent/install.sh",
@@ -87,9 +87,9 @@ export default async function plugin(bb: BbPluginApi) {
       supportsThreadRename: true,
       fork: "none",
       permissionModes: ["accept-edits", "full"],
-      // "minimal" is a valid prime-agent --thinking level but bb's
+      // "minimal" is a valid prime-agent --thinking level but VesnALIA's
       // PluginProviderReasoningLevel union has no such member (0.4.84), so it
-      // cannot be declared here until bb extends the vocabulary.
+      // cannot be declared here until VesnALIA extends the vocabulary.
       reasoningLevels: ["none", "low", "medium", "high", "xhigh", "max"],
     },
     composerActions: [],
@@ -165,34 +165,34 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "prime-agent",
     summary: "Inspect and manage the Prime Agent ACP provider",
     commands: [
       {
         name: "status",
         summary: "Show the Prime Agent launcher and resolved binary status",
-        usage: "bb prime-agent status [--json]",
+        usage: "alia prime-agent status [--json]",
       },
       {
         name: "models",
         summary: "List available models discovered by Prime Agent",
-        usage: "bb prime-agent models [--json]",
+        usage: "alia prime-agent models [--json]",
       },
       {
         name: "install",
         summary: "Download and install the official Prime Agent binary (requires --yes)",
-        usage: "bb prime-agent install --yes",
+        usage: "alia prime-agent install --yes",
       },
       {
         name: "sessions",
         summary: "List Prime Agent sessions and running agents",
-        usage: "bb prime-agent sessions [--all] [--json]",
+        usage: "alia prime-agent sessions [--all] [--json]",
       },
       {
         name: "doctor",
         summary: "Inspect and clean up Prime Agent background services",
-        usage: "bb prime-agent doctor [--fix] [--json]",
+        usage: "alia prime-agent doctor [--fix] [--json]",
       },
     ],
     async run(argv) {
@@ -208,7 +208,7 @@ export default async function plugin(bb: BbPluginApi) {
               `  ${INSTALL_URL}`,
               "It installs the official prime-agent binary into your home directory.",
               "",
-              "Re-run with --yes to confirm: `bb prime-agent install --yes`",
+              "Re-run with --yes to confirm: `alia prime-agent install --yes`",
             ].join("\n"),
             stdout: "",
           };
@@ -260,7 +260,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (!bin) {
           return {
             exitCode: 1,
-            stderr: "Prime Agent is not installed. Run `bb prime-agent install --yes` first.",
+            stderr: "Prime Agent is not installed. Run `alia prime-agent install --yes` first.",
             stdout: "",
           };
         }
@@ -304,7 +304,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (!bin) {
           return {
             exitCode: 1,
-            stderr: "Prime Agent is not installed. Run `bb prime-agent install --yes` first.",
+            stderr: "Prime Agent is not installed. Run `alia prime-agent install --yes` first.",
             stdout: "",
           };
         }
@@ -372,10 +372,10 @@ export default async function plugin(bb: BbPluginApi) {
         ready: resolvedBinary !== null && launcherOnPath !== null,
         hint:
           resolvedBinary === null
-            ? "Prime Agent is not yet installed. Run `bb prime-agent install --yes` to download it."
+            ? "Prime Agent is not yet installed. Run `alia prime-agent install --yes` to download it."
             : launcherOnPath === null
-              ? `Prime Agent binary found, but the ${LAUNCHER_NAME} launcher is missing from PATH. Re-run \`bb prime-agent install --yes\` to install it.`
-              : "Ready. Prime Agent appears in bb provider list and agent selectors.",
+              ? `Prime Agent binary found, but the ${LAUNCHER_NAME} launcher is missing from PATH. Re-run \`alia prime-agent install --yes\` to install it.`
+              : "Ready. Prime Agent appears in VesnALIA provider list and agent selectors.",
       };
 
       return {

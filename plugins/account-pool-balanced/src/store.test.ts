@@ -3,8 +3,8 @@ import path from "node:path";
 import { tmpdir } from "node:os";
 import { mkdtemp } from "node:fs/promises";
 import Database from "better-sqlite3";
-import type { PluginKvStorage } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { PluginKvStorage } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it } from "vitest";
 import type { Account } from "./contracts.js";
 import { AccountStore, PoolAffinityStore, QUOTA_MIGRATIONS, QuotaStore } from "./store.js";
@@ -35,7 +35,7 @@ describe("AccountStore", () => {
     const dir=await mkdtemp(path.join(tmpdir(),'pool-draft-'));
     const host=createFakePluginHost({pluginId:'account-pool',dataDir:dir});
     cleanups.push(async()=>{await host.harness.lifecycle.dispose();await fs.rm(dir,{recursive:true,force:true});});
-    const store=new AccountStore(host.bb.storage.kv,path.join(dir,'secrets'));
+    const store=new AccountStore(host.alia.storage.kv,path.join(dir,'secrets'));
     const a=await store.addDraft({label:'Team subscription',email:'fixture@example.com',priority:8});
     expect(a).toMatchObject({enabled:false,draft:true,provider:'claude',kind:'oauth'});
     await expect(fs.stat(path.join(dir,'secrets'))).rejects.toThrow();
@@ -51,10 +51,10 @@ describe("AccountStore", () => {
   });
 
   it("restores previous authorization when reauthorization metadata cannot be persisted", async () => {
-    const dataDir=await mkdtemp(path.join(tmpdir(),'bb-account-store-'));
+    const dataDir=await mkdtemp(path.join(tmpdir(),'alia-account-store-'));
     const host=createFakePluginHost({pluginId:'account-pool',dataDir});
     cleanups.push(async()=>{await host.harness.lifecycle.dispose();await fs.rm(dataDir,{recursive:true,force:true});});
-    const kv=host.bb.storage.kv;let rejectWrite=false;
+    const kv=host.alia.storage.kv;let rejectWrite=false;
     const store=new AccountStore({
       get:key=>kv.get(key),delete:key=>kv.delete(key),list:prefix=>kv.list(prefix),
       set:async(key,value)=>{if(rejectWrite&&key==='accounts:v1')throw new Error('metadata storage failed');await kv.set(key,value);},
@@ -69,13 +69,13 @@ describe("AccountStore", () => {
     expect(await store.get(account.id)).toEqual(account);
   });
   it("loads account metadata written before account UUIDs were stored", async () => {
-    const dataDir = await mkdtemp(path.join(tmpdir(), "bb-account-store-"));
+    const dataDir = await mkdtemp(path.join(tmpdir(), "alia-account-store-"));
     const host = createFakePluginHost({ pluginId: "account-pool", dataDir });
     const store = new AccountStore(
-      host.bb.storage.kv,
+      host.alia.storage.kv,
       path.join(dataDir, "secrets"),
     );
-    await host.bb.storage.kv.set("accounts:v1", [
+    await host.alia.storage.kv.set("accounts:v1", [
       {
         id: "11111111-1111-4111-8111-111111111111",
         provider: "claude",
@@ -100,12 +100,12 @@ describe("AccountStore", () => {
     const legacy = (await store.list())[0]!;
     expect(legacy.drainOnce ?? false).toBe(false);
     expect(legacy.autopilotAllowed).toBe(false);
-    expect((await host.bb.storage.kv.get<Array<Record<string,unknown>>>("accounts:v1"))![0]).not.toHaveProperty("autopilotAllowed");
+    expect((await host.alia.storage.kv.get<Array<Record<string,unknown>>>("accounts:v1"))![0]).not.toHaveProperty("autopilotAllowed");
     await store.setAutopilotAllowed(legacy.id,true,false);
     await expect(store.setAutopilotAllowed(legacy.id,false,false)).rejects.toThrow('permission changed');
     expect((await store.get(legacy.id))?.autopilotAllowed).toBe(true);
     const first = (await store.setDrainOnce(legacy.id, true))!;
-    const reloaded = new AccountStore(host.bb.storage.kv, path.join(dataDir, "secrets"));
+    const reloaded = new AccountStore(host.alia.storage.kv, path.join(dataDir, "secrets"));
     expect((await reloaded.get(legacy.id))?.drainOnce).toBe(true);
     const rearmed = (await store.setDrainOnce(legacy.id, true))!;
     await store.finishDrain(first);
@@ -115,11 +115,11 @@ describe("AccountStore", () => {
   });
 
   it("preserves both accounts added concurrently", async () => {
-    const dataDir = await mkdtemp(path.join(tmpdir(), "bb-account-store-"));
+    const dataDir = await mkdtemp(path.join(tmpdir(), "alia-account-store-"));
     const host = createFakePluginHost({ pluginId: "account-pool", dataDir });
     const secretsDir = path.join(dataDir, "secrets");
     const store = new AccountStore(
-      delayedAccountReads(host.bb.storage.kv),
+      delayedAccountReads(host.alia.storage.kv),
       secretsDir,
     );
     await store.initialize();

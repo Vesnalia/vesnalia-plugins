@@ -28,7 +28,7 @@ import {
   type WebHost,
 } from "./core/web";
 
-/** Append-only: bb records each statement's hash. */
+/** Append-only: VesnALIA records each statement's hash. */
 export const WEB_MIGRATIONS = [
   `CREATE TABLE web_cache (
     key TEXT PRIMARY KEY,

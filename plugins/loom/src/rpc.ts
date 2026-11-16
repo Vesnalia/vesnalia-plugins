@@ -1,6 +1,6 @@
 // The page's server side: reads over the store and changes through the same engine methods the CLI calls.
 import { finalBadge } from "./final-review";
-import { experimental_PluginRpcRefusal as PluginRpcRefusal, type BbPluginApi, type ExperimentalPluginRpcHandlersWithContext } from "@get-bb/plugin-sdk";
+import { experimental_PluginRpcRefusal as PluginRpcRefusal, type AliaPluginApi, type ExperimentalPluginRpcHandlersWithContext } from "@vesnalia/plugin-sdk";
 import { badgeView } from "./badge";
 import { humanAction } from "./cli";
 import { rpcContract, type AgentRow, type BoardCard, type MergeWaitView, type ProjectView, type SpecSummary, type StartWaitView, type ThreadInfo, type TicketDetail, type TicketPr } from "./contract";
@@ -52,7 +52,7 @@ export interface RpcDeps {
  * project refreshes only the reads of no one project, throttled the same way. Besides the writes' own `invalidates`, this
  * is the only thing that refreshes the page. Returns the stop function.
  */
-export function watchChanges(bb: BbPluginApi, store: Store): () => void {
+export function watchChanges(alia: AliaPluginApi, store: Store): () => void {
   const timers = new Map<number | null, ReturnType<typeof setTimeout>>();
   store.setOnEvent((projectId) => {
     if (timers.has(projectId)) return;
@@ -61,7 +61,7 @@ export function watchChanges(bb: BbPluginApi, store: Store): () => void {
       setTimeout(() => {
         timers.delete(projectId);
         const slug = projectId === null ? null : store.project(projectId)?.slug;
-        if (slug !== undefined) bb.rpc.experimental_invalidate(changedTags(slug));
+        if (slug !== undefined) alia.rpc.experimental_invalidate(changedTags(slug));
       }, THROTTLE_MS),
     );
   });
@@ -78,7 +78,7 @@ export function specSummary(toml: string): SpecSummary {
   if (spec === null) return { tickets: [], repos: [], checks: [], reviewer: null, warnings: [...errors, ...warnings] };
   return {
     tickets: spec.ticket.map((ticket) => ({ ref: ticket.ref, title: ticket.title, dependsOn: ticket.depends_on })),
-    repos: (spec.repo ?? []).map((repo) => ({ name: repo.name, bbProjectId: repo.project, bbProjectName: null })),
+    repos: (spec.repo ?? []).map((repo) => ({ name: repo.name, aliaProjectId: repo.project, aliaProjectName: null })),
     checks: spec.checks.commands,
     reviewer: modelLabel(spec.agents.reviewer),
     warnings,
@@ -269,7 +269,7 @@ export function draftCards(spec: Spec, at: number): BoardCard[] {
   }));
 }
 
-// A refusal is an answer the page shows, not a crash bb records against the plugin.
+// A refusal is an answer the page shows, not a crash VesnALIA records against the plugin.
 const REFUSALS: Record<LoomErrorCode, PluginRpcRefusal["code"]> = {
   loom_not_found: "not_found",
   loom_invalid_state: "conflict",
@@ -298,14 +298,14 @@ export function refusing(handlers: Handlers): Handlers {
   return Object.fromEntries(wrapped) as Handlers;
 }
 
-export function registerRpc(bb: BbPluginApi, deps: RpcDeps): void {
+export function registerRpc(alia: AliaPluginApi, deps: RpcDeps): void {
   const { projects, engine, store, now } = deps;
-  const changes = new Changes({ store, bb: engine.ctx.bb, host: engine.ctx.host });
+  const changes = new Changes({ store, alia: engine.ctx.alia, host: engine.ctx.host });
 
   /** With `eventId`, the project as it was at that event; it never writes. */
   const projectView = async (slug: string, eventId?: number): Promise<ProjectView> => {
     // Every read after the names comes in one synchronous pass, so the view is of one moment.
-    const names = await projects.bbProjectNames();
+    const names = await projects.aliaProjectNames();
     const live = projects.require(slug);
     const past = eventId === undefined ? null : rewind(rowsOf(store, live), eventId);
     const spec = projects.spec(slug, past?.specVersion);
@@ -474,11 +474,11 @@ export function registerRpc(bb: BbPluginApi, deps: RpcDeps): void {
     return humanAction({ projects, store }, {}, action, data, fn);
   };
 
-  bb.rpc.register(rpcContract, refusing({
+  alia.rpc.register(rpcContract, refusing({
     projects: () => projects.namedList(),
     badge: () => badgeView({ store, projects, now: now() }),
     home: async () => {
-      const names = await projects.bbProjectNames();
+      const names = await projects.aliaProjectNames();
       const view = homeView({ store, projects, now: now() });
       return { ...view, projects: view.projects.map((row) => withRepoNames(row, names)) };
     },
@@ -534,7 +534,7 @@ export function registerRpc(bb: BbPluginApi, deps: RpcDeps): void {
       refusePlugins(ctx);
       return engine.syncPullRequests(slug, key === undefined ? {} : { key });
     },
-    bbProjects: () => projects.bbProjectChoices(),
+    aliaProjects: () => projects.aliaProjectChoices(),
     changes: ({ slug }) => changes.view(slug),
     changePatch: (input) => changes.patch(input),
     startPlanning: ({ request, merge, reviewer, repos }, ctx) => act(ctx, "plan", {}, () => projects.startPlanning({ request, merge, reviewer, repos: repos ?? [] })),

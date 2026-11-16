@@ -11,19 +11,19 @@ Gitea repositories, including self-hosted servers, are supported through
 `tea login add`, then choose **Gitea** in **Taskboard → Manage** and enter
 its login name and repository in `host/owner/repo` form. Non-default ports
 are supported; the repository host must match the selected login's URL.
-Each BB project has one selected tracker and one Gitea repository.
+Each VesnALIA project has one selected tracker and one Gitea repository.
 
 Taskboard invokes `tea api --login <name>` for every authenticated request;
 it never reads a token from tea's config or stores another token. The tea
-login must be configured on the machine running the BB server.
+login must be configured on the machine running the VesnALIA server.
 
 ```sh
-bb taskboard config --source gitea --gitea-login my-gitea --gitea-project git.example.com/team/app
-bb taskboard refresh gitea
-bb taskboard list --source gitea --json
-bb taskboard show gitea 'git.example.com/team/app#7'
-bb taskboard transitions gitea 'git.example.com/team/app#7'
-bb taskboard move gitea 'git.example.com/team/app#7' --status __closed__
+alia taskboard config --source gitea --gitea-login my-gitea --gitea-project git.example.com/team/app
+alia taskboard refresh gitea
+alia taskboard list --source gitea --json
+alia taskboard show gitea 'git.example.com/team/app#7'
+alia taskboard transitions gitea 'git.example.com/team/app#7'
+alia taskboard move gitea 'git.example.com/team/app#7' --status __closed__
 ```
 
 Lists include open and closed issues, exclude pull requests and paginate,
@@ -52,12 +52,12 @@ Image uploads are not supported by this source.
 Create new ticket accepts pasted or selected PNG/JPEG/WebP images (up to five,
 2 MB each). Images upload to Linear before issue creation; other destinations
 currently support text-only creation. Composer-assisted creation can capture
-the current clipboard image with permission; BB's pinned SDK cannot expose
+the current clipboard image with permission; VesnALIA's pinned SDK cannot expose
 already-attached composer files, so missing images must be pasted again.
 Create only opens the new issue in Taskboard without starting an agent.
 Start now explicitly starts work after creation succeeds.
 
-Changed files opens a selectable native BB unified diff from the linked
+Changed files opens a selectable native VesnALIA unified diff from the linked
 workspace. This is the current workspace diff, not a historical run snapshot.
 Commands and updates start collapsed; earlier runs use compact summary rows.
 Live activity motion honors reduced-motion settings.
@@ -66,12 +66,12 @@ Live activity motion honors reduced-motion settings.
 native thread and keeps Taskboard pinned on the originating ticket. The
 existing right panel shows native activity, plan steps, command exit codes,
 reported file changes and findings. Conversation, steering, permissions and
-stop remain native BB controls. No additional credentials or workflow runtime
+stop remain native VesnALIA controls. No additional credentials or workflow runtime
 are required.
 
 Investigation continues to planning and build automatically in the same thread.
 If investigation used the project's plain checkout, Build forks the planning
-session into a BB-managed worktree, preserving its conversation and ticket link.
+session into a ALIA-managed worktree, preserving its conversation and ticket link.
 Starting a task authorizes that sequence: the generated plan is saved as an
 immutable revision and its exact digest is approved before build dispatch.
 Existing investigation/planning runs adopt this behavior on reload. Scope
@@ -103,7 +103,7 @@ tracker or optional evidence limitations separately. It never repeats
 automatically or invents product and policy decisions; repository-required
 workflow, tracker, evidence, and human gates still pause the task.
 
-Task progress uses BB theme colors for active, successful, failed and
+Task progress uses VesnALIA theme colors for active, successful, failed and
 attention states. Commands are collapsed by default with outcome counts;
 individual output and earlier runs expand on demand. The thread-header
 progress control opens the same phase, step and activity details.
@@ -114,7 +114,7 @@ choice in the Taskboard panel.
 
 For tickets started from an initialized Empirical checkout, the progress view
 also shows the selected feature, revision, phase, next action, verification
-and durable completion level. Empirical is read on the native run's exact BB
+and durable completion level. Empirical is read on the native run's exact VesnALIA
 host and checkout; this does not start, complete or otherwise change an
 Empirical workflow. Status refreshes serially while the progress view is open.
 The slower repository-wide ownership check runs in the background and fills in
@@ -127,18 +127,18 @@ To run the isolated progress demo, build Taskboard and start the fixture server
 from the workspace root:
 
 ```sh
-npm run build -w bb-plugin-taskboard
+npm run build -w alia-plugin-taskboard
 TASKBOARD_DEMO_PORT=8421 node plugins/taskboard/scripts/factory-browser-check.mjs
 ```
 
-The page uses Taskboard's real progress components with in-memory BB responses.
+The page uses Taskboard's real progress components with in-memory VesnALIA responses.
 Click **Start task** on the example card, then use the demo controls to switch
 between awaiting input, blocked, offline, implemented-only and verified states.
 The fixture creates no native agents or external tickets. The panel polls every
 eight seconds while open and marks an observation older than 20 seconds stale;
 it also refreshes immediately on a fixture event. The host-wide ownership
 inventory is slower and cached separately. The demo does not prove host-routed
-delivery; verify that with a locally installed plugin in a connected BB host.
+delivery; verify that with a locally installed plugin in a connected VesnALIA host.
 
 In **Create new ticket**, enter rough text in Title or Description and select
 **Improve title & description**. Choose **Concise** for a short actionable draft
@@ -161,7 +161,7 @@ another agent. Status updates run from stage dispatch and the background factory
 poll, not from opening a ticket, and a slow tracker write times out without
 blocking the panel. A finished turn is **not** accepted work.
 
-Dispatch intent is saved before calling BB. Duplicate starts reuse the original
+Dispatch intent is saved before calling VesnALIA. Duplicate starts reuse the original
 dispatch. Confirmed failed/stopped attempts have bounded retries; ambiguous
 starts never retry automatically. Use **Link recovered session** after inspecting
 the matching recent native thread.
@@ -184,7 +184,7 @@ available.
 
 The same block selects the AI for the coordinator and every new stage session:
 provider, model, reasoning level, permission mode, and service tier. The picker
-is BB's own provider/model picker, with provider logos, live model search, and
+is VesnALIA's own provider/model picker, with provider logos, live model search, and
 the native reasoning and service-tier controls. The choice is stored on the
 project factory policy and
 applies to manual **Start task** and automatic intake. **Use project defaults**
@@ -241,13 +241,13 @@ ticket, or accept a passed review for the operator.
 The same controls are available from the CLI:
 
 ```sh
-bb taskboard factory status --project proj_example --json
-bb taskboard factory enable 2 --project proj_example
-bb taskboard factory scan --project proj_example
-bb taskboard factory pause --project proj_example
+alia taskboard factory status --project proj_example --json
+alia taskboard factory enable 2 --project proj_example
+alia taskboard factory scan --project proj_example
+alia taskboard factory pause --project proj_example
 ```
 
-Run `npm run check --workspace bb-plugin-taskboard` from the workspace root.
+Run `npm run check --workspace alia-plugin-taskboard` from the workspace root.
 The opt-in native harness uses isolated storage and does not install a plugin
 or contact a tracker:
 
@@ -256,36 +256,36 @@ FACTORY_SMOKE_DB=/absolute/path/to/smoke.sqlite \
   node --experimental-strip-types plugins/taskboard/scripts/factory-native-smoke.ts
 ```
 
-It requires BB thread/project context. The browser harness uses the dedicated
-Steel project's `STEEL_CDP_URL` and an installed `PLAYWRIGHT_MODULE`; mocked BB
+It requires VesnALIA thread/project context. The browser harness uses the dedicated
+Steel project's `STEEL_CDP_URL` and an installed `PLAYWRIGHT_MODULE`; mocked VesnALIA
 hooks exercise the real progress component, not the live panel host.
 
 <p align="center">
-  GitHub, GitLab, Linear, or Jira tasks inside BB—one focused tracker for every project.
+  GitHub, GitLab, Linear, or Jira tasks inside VesnALIA—one focused tracker for every project.
 </p>
 
 <p align="center">
   <a href="https://github.com/MateoCerquetella/bb-plugins/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/MateoCerquetella/bb-plugins/ci.yml?branch=main&style=flat-square&label=CI" alt="CI status" /></a>
-  <img src="https://img.shields.io/badge/BB-%E2%89%A5%200.38-7c3aed?style=flat-square" alt="BB 0.38 or newer" />
+  <img src="https://img.shields.io/badge/BB-%E2%89%A5%200.38-7c3aed?style=flat-square" alt="VesnALIA 0.38 or newer" />
   <img src="https://img.shields.io/badge/GitHub%20%C2%B7%20GitLab%20%C2%B7%20Linear%20%C2%B7%20Jira-supported-2563eb?style=flat-square" alt="GitHub, GitLab, Linear, and Jira supported" />
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-16a34a?style=flat-square" alt="MIT license" /></a>
 </p>
 
-![Taskboard inside BB](https://raw.githubusercontent.com/MateoCerquetella/bb-plugins/main/docs/media/hero.png)
+![Taskboard inside VesnALIA](https://raw.githubusercontent.com/MateoCerquetella/bb-plugins/main/docs/media/hero.png)
 
 Taskboard brings external issues into the place where the work happens. Pick
-exactly one tracker for each BB project, browse a quiet List or Kanban view,
+exactly one tracker for each VesnALIA project, browse a quiet List or Kanban view,
 open live task details, move work through real provider statuses, and hand a
 task to an agent without rebuilding context by hand.
 
 ## What it does
 
-- **Project-first tasks** — each BB project selects GitHub, GitLab, Linear, or
+- **Project-first tasks** — each VesnALIA project selects GitHub, GitLab, Linear, or
   Jira; different projects can use different providers.
 - **List and Kanban** — compact rows plus Linear-style Status, State group,
   Assignee, Priority, Project, and Labels filters. Filter values within one
   field match either value; different fields combine to narrow the view.
-- **Remembered project views** — each BB project remembers selected filters,
+- **Remembered project views** — each VesnALIA project remembers selected filters,
   List or Kanban view, and collapsed finished groups on this device. The full
   board and pinned right panel share one project view; Across projects remains
   independent.
@@ -301,16 +301,16 @@ task to an agent without rebuilding context by hand.
 - **Live task details** — cached summaries keep browsing fast; opening a task
   fetches its current description, labels, assignee, and comments.
 - **Pinned beside every chat** — open Taskboard from the thread-header button,
-  then keep it pinned in BB's right panel while moving between threads.
+  then keep it pinned in VesnALIA's right panel while moving between threads.
 - **Status changes everywhere** — use the shaped status glyph on a List row or the
   status pill inside a task to move it through the provider's real workflow.
 - **Create without context switching** — turn a composer prompt into a
-  provider-aware issue beside BB's native prompt actions in New thread, or choose **New issue** directly from a project board. Native
+  provider-aware issue beside VesnALIA's native prompt actions in New thread, or choose **New issue** directly from a project board. Native
   assignee, status, priority, labels, due date, milestone, and issue type fields
   appear when supported. Taskboard remembers the last successfully used
   assignee for that exact project and destination. Assisted creations attach a
   Taskboard mention so the thread continues with live issue context.
-- **Agent handoff** — prefill a BB prompt from any task or attach one with the
+- **Agent handoff** — prefill a VesnALIA prompt from any task or attach one with the
   Taskboard mention result.
 - **GitLab** — uses the `glab` CLI already authenticated for the host
   (`glab auth status` shows the hosts). Taskboard stores no GitLab token.
@@ -319,7 +319,7 @@ task to an agent without rebuilding context by hand.
   column is terminal. Missing `status/*` labels are created on first move.
 - **CLI automation** — browse cached/live work, inspect transitions, move
   statuses, refresh providers, and manage project connections through
-  `bb taskboard`. Issue creation remains an intentional review-and-confirm UI
+  `alia taskboard`. Issue creation remains an intentional review-and-confirm UI
   action in the board or composer.
 
 [Andrii Los (@RIP21)](https://github.com/RIP21) contributed Taskboard's
@@ -327,28 +327,28 @@ project-view persistence work and dogfooding fixes, plus named filter presets.
 
 ## Install
 
-Taskboard is a full-trust BB plugin. Review the source, then install its tracking
+Taskboard is a full-trust VesnALIA plugin. Review the source, then install its tracking
 Git release directly from this monorepo:
 
 ```sh
-bb plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.3.7 --subdirectory plugins/taskboard --tag-prefix taskboard/
+alia plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.3.7 --subdirectory plugins/taskboard --tag-prefix taskboard/
 ```
 
-The [BB Community entry](https://github.com/get-bb/marketplace/pull/129)
+The [VesnALIA Community entry](https://github.com/get-bb/marketplace/pull/129)
 is merged. You can also install its configured release range:
 
 ```sh
-bb plugin install taskboard@bb-community
+alia plugin install taskboard@alia-community
 ```
 
 Taskboard 0.3.7 keeps a running stage attached when the ticket changes, resumes a
 paused Build with the updated answers, includes coordinator-first task dispatch
 and the autonomous ticket factory, and fixes Improve title & description in
-insecure BB webviews. For a missing local
+insecure VesnALIA webviews. For a missing local
 installation, use [the recovery guide](../../docs/plugin-recovery.md) to
 preserve your configuration without uninstalling or downgrading.
 
-Open **Taskboard → Manage**, choose a BB project, select its tracker, and save
+Open **Taskboard → Manage**, choose a VesnALIA project, select its tracker, and save
 the connection. The same page configures that project's filters, default
 layout, and workflow ordering. Each project selects exactly one tracker; other
 projects can choose a different provider and board setup.
@@ -356,19 +356,19 @@ projects can choose a different provider and board setup.
 Update, reload, or remove the managed Git installation later:
 
 ```sh
-bb plugin outdated
-bb plugin update taskboard
-bb plugin reload taskboard
-bb plugin remove taskboard
+alia plugin outdated
+alia plugin update taskboard
+alia plugin reload taskboard
+alia plugin remove taskboard
 ```
 
 ## Connect a tracker
 
 ### GitHub
 
-Taskboard reads the GitHub remote from the selected BB project's local checkout
+Taskboard reads the GitHub remote from the selected VesnALIA project's local checkout
 on the current host. It uses the authenticated GitHub CLI directly and does not
-require BB's separate GitHub plugin. Taskboard stores neither a GitHub token nor
+require VesnALIA's separate GitHub plugin. Taskboard stores neither a GitHub token nor
 a separate repository selection.
 
 ```sh
@@ -377,7 +377,7 @@ gh auth status --hostname github.com
 ```
 
 The selected project must have a readable local checkout whose `origin` points
-to `github.com`. If no local checkout is available, Taskboard uses the BB
+to `github.com`. If no local checkout is available, Taskboard uses the VesnALIA
 project's saved Git remote. A readable non-GitHub `origin` takes precedence over
 stale project metadata and leaves GitHub unconfigured.
 
@@ -400,7 +400,7 @@ token, and JQL. Only HTTPS `*.atlassian.net` origins are accepted.
 
 ## Work with tasks
 
-The panel opens on BB's current project. Use **Across projects** only when you
+The panel opens on VesnALIA's current project. Use **Across projects** only when you
 want an explicit grouped overview. List and Kanban preserve each provider's
 actual workflow names. The primary delivery stages appear in the focused order
 Backlog, Todo, In Progress, In Review, QA, then the remaining workflow stages
@@ -416,17 +416,17 @@ compact **Filters** control holds the enabled project facets.
 From a thread, click the Taskboard panel button in the upper-right header. The
 panel opens beside the conversation; leave its pin enabled to reopen it
 automatically when you switch chats. Use the pin control in the panel header to
-stop reopening it. The right panel follows the BB project selected for each
+stop reopening it. The right panel follows the VesnALIA project selected for each
 thread, while **Open full Taskboard** keeps the larger workspace available when
 you need filters or board management.
 
-On BB's root **New thread** screen, open the right panel (`Ctrl+J`), choose
+On VesnALIA's root **New thread** screen, open the right panel (`Ctrl+J`), choose
 **New tab → Actions → Taskboard**, and select a project in the composer. The
 panel follows that project without creating a thread.
 
 With Taskboard beside an existing thread or **New thread**, drag a ticket from
 the constrained List or Kanban board onto the prompt editor to add its live
-Taskboard mention. The existing draft and attachments stay in place and BB
+Taskboard mention. The existing draft and attachments stay in place and VesnALIA
 does not submit automatically. For a keyboard-accessible equivalent, open the
 ticket and choose **Add to chat**. Kanban drops onto status lanes continue to
 move the provider ticket; drops onto the composer copy its reference only.
@@ -438,7 +438,7 @@ or Jira rejects the transition.
 
 In **New thread** or an existing thread, write a prompt and click the Taskboard
 ticket icon beside the prompt and voice actions. Taskboard automatically uses
-the tracker selected for that BB project. GitHub offers its mapped
+the tracker selected for that VesnALIA project. GitHub offers its mapped
 repositories, Linear uses the configured team, and Jira infers project keys
 from simple `project = KEY` or `project in (...)` JQL scopes (with a project-key
 field when the scope cannot be inferred).
@@ -455,22 +455,22 @@ review but never creates or mutates an issue until you confirm creation.
 ![Live task detail](https://raw.githubusercontent.com/MateoCerquetella/bb-plugins/main/docs/media/task-detail.png)
 
 The CLI covers browsing, detail, transitions, status moves, refresh, and project
-configuration. Direct/composer-assisted issue creation stays in BB's review UI.
-The CLI uses the current BB project unless `--project <proj_id>` is supplied:
+configuration. Direct/composer-assisted issue creation stays in VesnALIA's review UI.
+The CLI uses the current VesnALIA project unless `--project <proj_id>` is supplied:
 
 ```text
-bb taskboard status [--project <proj_id>] [--json]
-bb taskboard config [--project <proj_id>] [--source linear|github|jira|gitlab] [provider fields] [--json]
-bb taskboard credentials [--project <proj_id>] [--json]
-bb taskboard refresh [linear|github|jira|gitlab] [--project <proj_id>] [--json]
-bb taskboard list [--project <proj_id>] [--source linear|github|jira] [--query <text>] [--preset <name>] [--cached] [--json]
-bb taskboard show <linear|github|jira|gitlab> <locator> [--project <proj_id>] [--json]
-bb taskboard transitions <linear|github|jira|gitlab> <locator> [--project <proj_id>] [--json]
-bb taskboard move <linear|github|jira|gitlab> <locator> --status <id> [--project <proj_id>] [--json]
-bb taskboard presets list [--project <proj_id>] [--json]
-bb taskboard presets save <name> --from-state <json> [--project <proj_id>] [--json]
-bb taskboard presets rename <name> <new-name> [--project <proj_id>] [--json]
-bb taskboard presets delete <name> [--project <proj_id>] [--json]
+alia taskboard status [--project <proj_id>] [--json]
+alia taskboard config [--project <proj_id>] [--source linear|github|jira|gitlab] [provider fields] [--json]
+alia taskboard credentials [--project <proj_id>] [--json]
+alia taskboard refresh [linear|github|jira|gitlab] [--project <proj_id>] [--json]
+alia taskboard list [--project <proj_id>] [--source linear|github|jira] [--query <text>] [--preset <name>] [--cached] [--json]
+alia taskboard show <linear|github|jira|gitlab> <locator> [--project <proj_id>] [--json]
+alia taskboard transitions <linear|github|jira|gitlab> <locator> [--project <proj_id>] [--json]
+alia taskboard move <linear|github|jira|gitlab> <locator> --status <id> [--project <proj_id>] [--json]
+alia taskboard presets list [--project <proj_id>] [--json]
+alia taskboard presets save <name> --from-state <json> [--project <proj_id>] [--json]
+alia taskboard presets rename <name> <new-name> [--project <proj_id>] [--json]
+alia taskboard presets delete <name> [--project <proj_id>] [--json]
 ```
 
 `presets save --from-state` accepts a complete versioned project-view JSON
@@ -483,10 +483,10 @@ rejects mismatches before contacting a provider.
 
 ## Credentials and privacy
 
-Linear and Jira credentials are isolated by BB project. Secret inputs are
+Linear and Jira credentials are isolated by VesnALIA project. Secret inputs are
 write-only and stay blank after loading or saving. Taskboard stores the live
 copy in owner-only files, never returns secret values to the frontend or CLI,
-and accepts credentials only through BB's authenticated interaction form.
+and accepts credentials only through VesnALIA's authenticated interaction form.
 
 The external tracker remains authoritative. Taskboard caches task summaries
 and sync metadata in its plugin database; details and comments are fetched live
@@ -500,34 +500,34 @@ policy or agent instructions.
 
 ```sh
 git clone https://github.com/MateoCerquetella/bb-plugins.git
-cd bb-plugins
+cd alia-plugins
 npm install
 npm run check
-bb plugin install ./plugins/taskboard
-npm run dev --workspace bb-plugin-taskboard
+alia plugin install ./plugins/taskboard
+npm run dev --workspace alia-plugin-taskboard
 ```
 
-`components/ui/` is vendored BB component source pinned by `components.json`.
-Add another component with `npx shadcn add @bb/<component>`. The exact
-`@get-bb/plugin-sdk` development dependency makes the source typecheck without
-a BB checkout. Run `npm run types:refresh` and then `npm install` when updating
-the minimum BB version. The script deliberately uses this workspace's pinned
-BB toolchain even when run from inside a live BB agent environment.
+`components/ui/` is vendored VesnALIA component source pinned by `components.json`.
+Add another component with `npx shadcn add @alia-core/<component>`. The exact
+`@vesnalia/plugin-sdk` development dependency makes the source typecheck without
+a VesnALIA checkout. Run `npm run types:refresh` and then `npm install` when updating
+the minimum VesnALIA version. The script deliberately uses this workspace's pinned
+VesnALIA toolchain even when run from inside a live VesnALIA agent environment.
 
 ## License
 
 [MIT](./LICENSE) © 2026 Mateo Cerquetella.
 
-## Prepare work inside BB
+## Prepare work inside VesnALIA
 
 Prepare work turns a New thread request into a source-backed brief and interactive
 prototype alternatives before you hand anything to Empirical. It needs no tracker
 connection and never starts an Empirical workflow or creates/updates a ticket.
 
 1. Select your project, machine/workspace/branch, provider/model/reasoning and
-   permissions in BB's existing **New thread** composer.
+   permissions in VesnALIA's existing **New thread** composer.
 2. Write your request, open **Prepare work** from the New thread panel Actions
-   list, and attach the preparation there. Then use BB's normal **Send**.
+   list, and attach the preparation there. Then use VesnALIA's normal **Send**.
    The preparation reference preserves your request and binds to the actual
    submitted thread settings; there is no second settings form.
 3. The preparation bootstrap tool starts an agent investigation. The linked
@@ -537,7 +537,7 @@ connection and never starts an Empirical workflow or creates/updates a ticket.
    the panel conversation to refine the brief. Earlier revisions remain in History;
    results generated against an older revision are proposals, not silent edits.
 5. **Generate prototypes** accepts 1–4 alternatives (default 2) and optional design
-   direction. Each job uses your configured BB agent. Successful versions remain
+   direction. Each job uses your configured VesnALIA agent. Successful versions remain
    available if a sibling fails; retry the failed job or refine a chosen version.
 6. Preview/compare the alternatives, select a version, and mark the brief ready.
    **Export for Empirical** offers Markdown, a JSON packet including the selected
@@ -558,7 +558,7 @@ symlinks, binary/oversized files and likely credential-bearing content are exclu
 The panel shows source line ranges, hashes, repository commit, inventory limits and
 unresolved assumptions. Repository content is treated as untrusted reference data.
 
-Research and prototype jobs run as ordinary BB threads with the same resolved
+Research and prototype jobs run as ordinary VesnALIA threads with the same resolved
 provider/model/reasoning/service tier/permissions, in separate directories under
 Taskboard's host data storage. The bootstrap agent is instructed only to invoke the
 preparation tool and stop. This instruction is not an OS read-only sandbox; the
@@ -566,7 +566,7 @@ plugin does not alter the user's native permission setting. Plugin operations do
 not write target repository production files.
 
 Briefs, sources, conversation, jobs, HTML versions and selection persist in
-Taskboard's SQLite database. Active jobs reconcile from their BB thread IDs after
+Taskboard's SQLite database. Active jobs reconcile from their VesnALIA thread IDs after
 reload. If a restart interrupts a spawn before its ID is saved, the job reports an
 ambiguous start and requires checking recent Prepare threads before retrying; it is
 never automatically duplicated. Idle jobs without output become retryable failures
@@ -579,20 +579,20 @@ HTML previews use nested opaque-origin `sandbox="allow-scripts"` frames. A trust
 outer document limits child navigation to `about:`; generated content cannot relax
 that policy or navigate its own frame onto the network. The inner CSP also blocks
 resource loads, fetch, nested frames and form submission. Scripts
-cannot read BB's page or storage or navigate the parent. Do not treat browser
+cannot read VesnALIA's page or storage or navigate the parent. Do not treat browser
 iframe isolation as an OS sandbox for arbitrary downloaded code.
 
 SDK limitations: the New thread panel exposes project/draft context, not all unsent
 execution/environment selectors; native submission supplies those settings. The
 preparation tool must be available to the selected provider. Host or agent failures
-are visible in the panel and original BB job thread. A remote host must be online
+are visible in the panel and original VesnALIA job thread. A remote host must be online
 and support the plugin host entry. Current live verification covers the installed
 Codex provider; tests verify explicit remote-host routing.
 
 Agent-readable CLI (no implementation is started):
 
 ```sh
-bb taskboard prepare list --project <project-id>
-bb taskboard prepare show <preparation-id> --project <project-id>
-bb taskboard prepare export <preparation-id> --project <project-id>
+alia taskboard prepare list --project <project-id>
+alia taskboard prepare show <preparation-id> --project <project-id>
+alia taskboard prepare export <preparation-id> --project <project-id>
 ```

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent } from "react";
 import type { SelectedLineRange } from "@pierre/diffs";
 import { FileDiff } from "@pierre/diffs/react";
-import { experimental_Diff as NativeDiff, experimental_useCodeTheme, useComposer } from "@get-bb/plugin-sdk/app";
+import { experimental_Diff as NativeDiff, experimental_useCodeTheme, useComposer } from "@vesnalia/plugin-sdk/app";
 import { ActionIcon } from "./action-icon";
 import { selectedDiffQuote } from "../../core/diff-selection";
 import { contextualDiff } from "../../core/diff-context";

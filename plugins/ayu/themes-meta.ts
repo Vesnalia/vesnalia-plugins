@@ -4,7 +4,7 @@
 import type { AyuVariant } from "./generated/palettes";
 
 export interface AyuThemeMeta {
-  /** Manifest theme id; BB namespaces it as `plugin:ayu:<id>`. */
+  /** Manifest theme id; VesnALIA namespaces it as `plugin:ayu:<id>`. */
   id: string;
   name: string;
   variant: AyuVariant;

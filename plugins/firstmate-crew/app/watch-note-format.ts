@@ -1,12 +1,12 @@
 /**
  * The pure half of the chat's expanding watch notes (`watch-note-expander.tsx`): which chips are watch
- * notes, and how a watch's plain-text output is shown through bb's Markdown.
+ * notes, and how a watch's plain-text output is shown through VesnALIA's Markdown.
  */
 import { WATCH_NOTES_FOLDER, WATCH_NOTE_FILE } from "../shared/types";
 
 /**
- * The attribute bb puts on every chip it draws in a message, holding the chip's resource as JSON. It is
- * bb's markup, not the SDK's contract: when it changes, the chips open the note file again, as a plain
+ * The attribute VesnALIA puts on every chip it draws in a message, holding the chip's resource as JSON. It is
+ * VesnALIA's markup, not the SDK's contract: when it changes, the chips open the note file again, as a plain
  * path mention does.
  */
 export const CHIP_RESOURCE_ATTRIBUTE = "data-prompt-mention-resource";

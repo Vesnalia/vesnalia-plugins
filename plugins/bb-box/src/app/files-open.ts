@@ -1,4 +1,4 @@
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useIsCompactViewport } from "@/components/ui/hooks/use-compact-viewport";
 import type { BoxView } from "../plugin/views.ts";
 
@@ -22,7 +22,7 @@ export function offersFiles(box: Pick<BoxView, "device" | "state" | "terminal">)
 }
 
 export function useOpenFiles(): (box: BoxView) => void {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const compactViewport = useIsCompactViewport();
   return (box) => {
     navigate.openThreadPanel({

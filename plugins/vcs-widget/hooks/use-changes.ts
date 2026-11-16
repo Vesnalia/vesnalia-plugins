@@ -1,7 +1,7 @@
 // The commit panel's view of the working tree and the index, refetched on
 // every repository change and after a reconnect.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { ChangesResult } from "../contracts";
 import type { rpcContract } from "../server";
 import { errorMessage } from "../lib/errors";

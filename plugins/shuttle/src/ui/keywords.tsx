@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { PrView } from "../contract";
 import { compareRanks, describedWords, matchText, rankOf, searchTerms, textWords, type Rank } from "../match";
 import { ICON_GHOST_SMALL } from "./common";
@@ -145,7 +145,7 @@ export function KeywordField({ value, onChange, label, placeholder = "Filter by 
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={(event) => {
           if (event.key !== "Escape" || value === "") return;
-          // bb's "Back to app" also listens for Escape; a field with words only clears.
+          // VesnALIA's "Back to app" also listens for Escape; a field with words only clears.
           event.preventDefault();
           event.stopPropagation();
           onChange("");

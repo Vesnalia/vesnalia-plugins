@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { opencodeSettingsRpcContract } from "../src/settings-contract.ts";
 
 const mountedSlots: Array<{ lifecycle: { unmount(): void } }> = [];
@@ -26,7 +26,7 @@ describe("OpenCode settings", () => {
             providerEnabled: true,
             enabledModels: null,
             disableSubagents: true,
-            hideBbToolsOutsideBb: true,
+            hideAliaToolsOutsideAlia: true,
           }),
           listModels: async () => ({
             models: [
@@ -77,7 +77,7 @@ describe("OpenCode settings", () => {
         providerEnabled: true,
         enabledModels: null,
         disableSubagents: false,
-        hideBbToolsOutsideBb: true,
+        hideAliaToolsOutsideAlia: true,
       });
     });
 
@@ -90,7 +90,7 @@ describe("OpenCode settings", () => {
         providerEnabled: false,
         enabledModels: null,
         disableSubagents: false,
-        hideBbToolsOutsideBb: true,
+        hideAliaToolsOutsideAlia: true,
       });
     });
   });

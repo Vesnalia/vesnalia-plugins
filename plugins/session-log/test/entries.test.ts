@@ -195,7 +195,7 @@ describe("toLogEntries", () => {
 describe("hidden messages", () => {
   const seqs = (start: number) => ({ sourceSeqStart: start, sourceSeqEnd: start });
 
-  it("puts a hidden steer where bb received it, as a divider the chat never shows", () => {
+  it("puts a hidden steer where VesnALIA received it, as a divider the chat never shows", () => {
     const hidden = applyRequestEvents([], [requestEvent(25), acceptedEvent(27, "creq_25")]);
     const entries = toLogEntries([
       userRow("request", seqs(1)),

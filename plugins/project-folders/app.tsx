@@ -78,7 +78,7 @@ import {
   definePluginApp,
   useRpc,
   useRealtime,
-  useBbNavigate,
+  useAliaNavigate,
   experimental_useSidebarThreads,
   experimental_useSidebarThreadActions,
   experimental_useProviders,
@@ -88,7 +88,7 @@ import {
   type PluginThreadListProps,
   type PluginNavPanelProps,
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { createPortal } from "react-dom";
 import type { Folder, ComposerRequest, rpcContract } from "./server";
 import type { Archive } from "./archive";
@@ -979,7 +979,7 @@ function FolderDialog({
                       icon: "EyeOff" as const,
                       title: t("Убрать из дерева"),
                       hint: t(
-                        "Папка на диске останется. Раздел пропадёт из дерева вместе с чатами, которые в нём открывались. Эти чаты уйдут в архив чатов BB.",
+                        "Папка на диске останется. Раздел пропадёт из дерева вместе с чатами, которые в нём открывались. Эти чаты уйдут в архив чатов ALIA.",
                       ),
                     },
                     {
@@ -995,7 +995,7 @@ function FolderDialog({
                       icon: "Trash2" as const,
                       title: t("Удалить полностью"),
                       hint: t(
-                        "Раздел и его чаты исчезнут безвозвратно. Папка на диске удалится, если её не делит другой раздел и внутри нет другого проекта BB.",
+                        "Раздел и его чаты исчезнут безвозвратно. Папка на диске удалится, если её не делит другой раздел и внутри нет другого проекта ALIA.",
                       ),
                       danger: true,
                     },
@@ -1030,7 +1030,7 @@ function FolderDialog({
               <fieldset className="mb-4 space-y-3">
                 <p className="text-sm">
                   {t(
-                    "Проект пропадёт из дерева BB. Его чаты будут удалены из BB. Это нельзя отменить из плагина.",
+                    "Проект пропадёт из дерева ALIA. Его чаты будут удалены из ALIA. Это нельзя отменить из плагина.",
                   )}
                 </p>
                 <label className="pf-field">
@@ -1059,7 +1059,7 @@ function FolderDialog({
                   </span>
                   <span className="text-sm text-muted-foreground">
                     {t(
-                      "Каждая копия папки переедет в скрытый архив рядом с ней, в .bb/archive/projects/.",
+                      "Каждая копия папки переедет в скрытый архив рядом с ней, в .vesnalia/archive/projects/.",
                     )}
                   </span>
                 </label>
@@ -1910,7 +1910,7 @@ function ThreadRow({
           return;
         }
         event.dataTransfer.setData(
-          "application/x-bb-project-folders-thread",
+          "application/x-alia-project-folders-thread",
           thread.id,
         );
         event.dataTransfer.effectAllowed = "move";
@@ -2444,7 +2444,7 @@ function Tree(props: PluginThreadListProps) {
   const environmentKey = threads.map((t) => t.environment?.id ?? "").join("|");
   useEffect(refresh, [environmentKey, refresh]);
   const actions = experimental_useSidebarThreadActions();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const [modal, setModal] = useState<Modal | null>(null);
   const [newProject, setNewProject] = useState(false);
   const [movingProject, setMovingProject] = useState<Folder | null>(null);
@@ -2477,7 +2477,7 @@ function Tree(props: PluginThreadListProps) {
     placeOf(chat, data.bindings, data.places);
   /**
    * Where a chat goes when filed into a tree node, or null when the node
-   * cannot hold chats. Only the place in the tree changes: BB keeps a chat on
+   * cannot hold chats. Only the place in the tree changes: VesnALIA keeps a chat on
    * the environment it was created with, so its working folder stays put.
    */
   const moveTarget = (
@@ -2557,8 +2557,8 @@ function Tree(props: PluginThreadListProps) {
     setDropTarget(null);
     setDropReason(null);
     try {
-      // Same machine: the chat's working folder follows it. BB has no plugin
-      // API for that (get-bb/bb#3904), so the server asks the chat itself —
+      // Same machine: the chat's working folder follows it. VesnALIA has no plugin
+      // API for that (get-alia/alia#3904), so the server asks the chat itself —
       // it owns `update_environment_directory`. Another device can only take
       // the place in the tree, because a chat cannot change machine.
       const sameDevice = chat.host?.id === folder.hostId;
@@ -2977,7 +2977,7 @@ function Tree(props: PluginThreadListProps) {
             if (
               !draggedChat ||
               event.dataTransfer.getData(
-                "application/x-bb-project-folders-thread",
+                "application/x-alia-project-folders-thread",
               ) !== draggedChat.id
             )
               return;
@@ -3039,7 +3039,7 @@ function Tree(props: PluginThreadListProps) {
           "--pf-tree-branch-width": `${TREE_BRANCH_TOGGLE_WIDTH}px`,
         } as React.CSSProperties
       }
-      data-bb-ru-skip=""
+      data-alia-ru-skip=""
       dir={direction()}
     >
       {/* First child button of .pf-tree: themes anchor on it (Pokecut). */}
@@ -3358,9 +3358,9 @@ function Panel({ subPath }: PluginNavPanelProps) {
     className: string;
   } | null>(null);
   /**
-   * What a new chat in the chosen place starts with. These are seeds for BB's
+   * What a new chat in the chosen place starts with. These are seeds for VesnALIA's
    * own composer, not locks: its pickers still win, and a group nobody pinned
-   * leaves BB's remembered choice exactly as it was. The composer re-seeds
+   * leaves VesnALIA's remembered choice exactly as it was. The composer re-seeds
    * every selection when a seed changes, so it is mounted only once the
    * values for the chosen folder have arrived.
    */
@@ -3490,7 +3490,7 @@ function Panel({ subPath }: PluginNavPanelProps) {
   const [ruleModeSaved, setRuleModeSaved] = useState<
     "manual" | "inherit" | "custom" | null
   >(null);
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const [action, projectId, folderId] = (subPath || "")
     .replace(/^\//, "")
     .split("/")
@@ -3515,7 +3515,7 @@ function Panel({ subPath }: PluginNavPanelProps) {
     if (!seedKey || !f) return;
     let live = true;
     const read = async () => {
-      // A place that cannot be read still opens a chat: BB's own defaults.
+      // A place that cannot be read still opens a chat: VesnALIA's own defaults.
       let seeds: NonNullable<typeof chatSeeds>["seeds"] = {};
       try {
         const r = await rpc.call("execution_read", {
@@ -4101,7 +4101,7 @@ function Panel({ subPath }: PluginNavPanelProps) {
         ? sel.paths
         : [{ hostId: sel.hostId, path: sel.path }]
       : [];
-  /** Every machine BB knows: the ones holding a copy first, then the free ones. */
+  /** Every machine VesnALIA knows: the ones holding a copy first, then the free ones. */
   const cardMachines = sel
     ? selRoot
       ? [
@@ -4922,7 +4922,7 @@ function Panel({ subPath }: PluginNavPanelProps) {
                 {t("Провайдер, модель и агент")}
                 <Help
                   text={t(
-                    "Новый чат, созданный здесь, начинается с этих настроек. Выключенная группа наследуется: ближайший раздел выше, затем проект, затем настройки плагина, затем обычный выбор BB.",
+                    "Новый чат, созданный здесь, начинается с этих настроек. Выключенная группа наследуется: ближайший раздел выше, затем проект, затем настройки плагина, затем обычный выбор ALIA.",
                   )}
                 />
               </h3>
@@ -4948,7 +4948,7 @@ function Panel({ subPath }: PluginNavPanelProps) {
                   {t("Контекст сессии")}
                   <Help
                     text={t(
-                      "Что загружается в сессию агента, начатую здесь: плагины BB, навыки, MCP-серверы и плагины CLI. Группа без своего значения наследуется: ближайший раздел выше, затем проект, затем настройки плагина.",
+                      "Что загружается в сессию агента, начатую здесь: плагины ALIA, навыки, MCP-серверы и плагины CLI. Группа без своего значения наследуется: ближайший раздел выше, затем проект, затем настройки плагина.",
                     )}
                   />
                 </h3>
@@ -5053,7 +5053,7 @@ function Panel({ subPath }: PluginNavPanelProps) {
       <p className="p-4">{error || t("Загрузка…")}</p>
     );
   return (
-    <div className="pf pf-panel" dir={direction()} data-bb-ru-skip="">
+    <div className="pf pf-panel" dir={direction()} data-alia-ru-skip="">
       <div className="pf-header">
         <h1>{t("Проекты и разделы")}</h1>
         <div className="pf-header-side">
@@ -5068,7 +5068,7 @@ function Panel({ subPath }: PluginNavPanelProps) {
         {t(
           "Разделы — папки проекта. Переписка и служебные материалы хранятся в скрытой папке",
         )}{" "}
-        <code>.bb/chats/</code> {t("каждого раздела.")}
+        <code>.vesnalia/chats/</code> {t("каждого раздела.")}
       </p>
       <div className="pf-layout">
         <aside className="pf-side" aria-label={t("Проекты и разделы")}>
@@ -5166,7 +5166,7 @@ function Panel({ subPath }: PluginNavPanelProps) {
 function SettingsSection() {
   useLanguage();
   return (
-    <div className="pf" dir={direction()} data-bb-ru-skip="">
+    <div className="pf" dir={direction()} data-alia-ru-skip="">
       <PluginSettings archive={<ArchiveList bare />} />
     </div>
   );
@@ -5194,24 +5194,24 @@ export default definePluginApp((app) => {
     id: "settings",
     component: SettingsSection,
   });
-  // The tree inside BB's own New thread screen: its environment picker renders
+  // The tree inside VesnALIA's own New thread screen: its environment picker renders
   // this beside "Project section".
   app.slots.experimental_environmentProviderInputs({
     environmentProviderId: SECTION_ENVIRONMENT_ID,
     component: SectionEnvironmentInputs,
   });
-  // BB's own New thread screen names the project and stops there; this says
+  // VesnALIA's own New thread screen names the project and stops there; this says
   // which section folder the chat will actually start in.
   app.composer.customize({
     id: "section-line",
     scopes: ["new-thread"],
-    // The section choice lives in BB's project chip. The one-click Section
+    // The section choice lives in VesnALIA's project chip. The one-click Section
     // control is only a fallback for when that chip cannot be found, and it
     // renders nothing otherwise — so it is a banner, not an action: an empty
-    // action still takes a plugin slot and can leave BB's action overflow
+    // action still takes a plugin slot and can leave VesnALIA's action overflow
     // menu open on nothing.
     banners: [
-      // Renders nothing of its own: it puts the tree into BB's project chip,
+      // Renders nothing of its own: it puts the tree into VesnALIA's project chip,
       // where the choice of place belongs.
       { id: "project-chip", chrome: "bare", component: ComposerProjectChip },
       {

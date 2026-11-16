@@ -6,7 +6,7 @@
 // Its own module because two boards and the grid draw it: the column board
 // (components/board), the parent-lane board, and the ungrouped card grid all
 // take the same dot, so none of them owns a private copy that can drift.
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { DOT_CLASS } from "./dot-grid";
 import { threadState } from "./grouping";
 import { cn } from "@/lib/utils";

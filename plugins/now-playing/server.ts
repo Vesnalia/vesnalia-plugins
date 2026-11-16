@@ -1,10 +1,10 @@
-// bb-plugin-now-playing — controls the music player on the bb server.
+// alia-plugin-now-playing — controls the music player on the VesnALIA server.
 //
 // Each platform has a backend (backends/): JavaScript for Automation on
 // macOS, MPRIS through playerctl on Linux, and the Windows media controls on
 // Windows. No account, API key, or network call is needed. The sidebar panel
-// (app.tsx) and the `bb music` command share the core below.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+// (app.tsx) and the `alia music` command share the core below.
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { Backend } from "./backends/common";
 import { createLinuxBackend } from "./backends/linux";
@@ -28,7 +28,7 @@ const styleSchema = z.enum(STYLES);
 const accentStyleSchema = z.enum(ACCENT_STYLES);
 const hexSchema = z.string().regex(/^#[0-9a-f]{6}$/);
 
-// The style is the same in every bb window. A style with no stored accent
+// The style is the same in every VesnALIA window. A style with no stored accent
 // uses its default (see ui/theme.ts).
 const appearanceSchema = z.object({
   style: styleSchema,
@@ -44,7 +44,7 @@ const appearancePatchSchema = z.union([
 ]);
 export type AppearancePatch = z.infer<typeof appearancePatchSchema>;
 
-/** v0.3.0 called the bb-amp style "winamp"; read those values as "bbamp". */
+/** v0.3.0 called the alia-amp style "winamp"; read those values as "bbamp". */
 function renameWinamp(value: unknown): unknown {
   if (typeof value !== "object" || value === null) return value;
   const { style, accents } = value as { style?: unknown; accents?: unknown };
@@ -132,13 +132,13 @@ function formatTime(seconds: number): string {
 function describe(player: Player): string {
   switch (player.status) {
     case "unsupported":
-      return player.reason ?? "Now Playing needs a bb server on macOS, Linux, or Windows.";
+      return player.reason ?? "Now Playing needs a VesnALIA server on macOS, Linux, or Windows.";
     case "not-installed":
-      return `${APP_NAMES[player.app]} is not installed on the bb server.`;
+      return `${APP_NAMES[player.app]} is not installed on the VesnALIA server.`;
     case "not-running":
       return player.launchApp === null
-        ? "No music player is running on the bb server."
-        : `No music app is running. Run \`bb music play\` to start ${APP_NAMES[player.launchApp]}.`;
+        ? "No music player is running on the VesnALIA server."
+        : `No music app is running. Run \`alia music play\` to start ${APP_NAMES[player.launchApp]}.`;
     case "ready": {
       const lines = [];
       if (player.track === null) {
@@ -173,8 +173,8 @@ function createBackend(): Backend | null {
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     app: {
       type: "select",
       label: "Music player",
@@ -227,13 +227,13 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function control(action: Control): Promise<Player> {
     const result = await player(action);
-    bb.realtime.publish(PLAYER_CHANGED, null);
+    alia.realtime.publish(PLAYER_CHANGED, null);
     return result;
   }
 
   async function getAppearance(): Promise<Appearance> {
     const stored = appearanceSchema.safeParse(
-      renameWinamp(await bb.storage.kv.get(APPEARANCE_KEY)),
+      renameWinamp(await alia.storage.kv.get(APPEARANCE_KEY)),
     );
     return stored.success ? stored.data : DEFAULT_APPEARANCE;
   }
@@ -258,12 +258,12 @@ export default async function plugin(bb: BbPluginApi) {
       else accents[patch.accent] = patch.color;
       next = { ...current, accents };
     }
-    await bb.storage.kv.set(APPEARANCE_KEY, next);
-    bb.realtime.publish(APPEARANCE_CHANGED, null);
+    await alia.storage.kv.set(APPEARANCE_KEY, next);
+    alia.realtime.publish(APPEARANCE_CHANGED, null);
     return next;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     player_state: () => player("state"),
     player_control: (input) => control(input),
     player_artwork: async ({ key }) => {
@@ -288,7 +288,7 @@ export default async function plugin(bb: BbPluginApi) {
             url = await lookupArtwork(track);
           } catch (cause) {
             // Do not cache a network failure; the next track change retries.
-            bb.log.warn(`Artwork lookup failed: ${String(cause)}`);
+            alia.log.warn(`Artwork lookup failed: ${String(cause)}`);
             return { url: null };
           }
         }
@@ -302,56 +302,56 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb music status [--json]",
-    "  bb music play | pause | toggle | next | previous [--json]",
-    "  bb music volume <0-100> [--json]",
-    "  bb music shuffle on|off [--json]",
-    "  bb music repeat off|all|one [--json]",
-    "  bb music app [auto|spotify|music]",
-    `  bb music style [${STYLES.join("|")}]`,
+    "  VesnALIA music status [--json]",
+    "  VesnALIA music play | pause | toggle | next | previous [--json]",
+    "  VesnALIA music volume <0-100> [--json]",
+    "  VesnALIA music shuffle on|off [--json]",
+    "  VesnALIA music repeat off|all|one [--json]",
+    "  VesnALIA music app [auto|spotify|music]",
+    `  VesnALIA music style [${STYLES.join("|")}]`,
   ].join("\n");
-  bb.cli.register({
+  alia.cli.register({
     name: "music",
-    summary: "Control the music player on the bb server",
+    summary: "Control the music player on the VesnALIA server",
     commands: [
       {
         name: "status",
         summary: "Show the current track and player state",
-        usage: "bb music status [--json]",
+        usage: "alia music status [--json]",
       },
-      { name: "play", summary: "Start playback", usage: "bb music play" },
-      { name: "pause", summary: "Pause playback", usage: "bb music pause" },
-      { name: "toggle", summary: "Play or pause", usage: "bb music toggle" },
-      { name: "next", summary: "Skip to the next track", usage: "bb music next" },
+      { name: "play", summary: "Start playback", usage: "alia music play" },
+      { name: "pause", summary: "Pause playback", usage: "alia music pause" },
+      { name: "toggle", summary: "Play or pause", usage: "alia music toggle" },
+      { name: "next", summary: "Skip to the next track", usage: "alia music next" },
       {
         name: "previous",
         summary: "Go to the previous track",
-        usage: "bb music previous",
+        usage: "alia music previous",
       },
       {
         name: "volume",
         summary: "Set the volume (macOS and Linux)",
-        usage: "bb music volume <0-100>",
+        usage: "alia music volume <0-100>",
       },
       {
         name: "shuffle",
         summary: "Turn shuffle on or off",
-        usage: "bb music shuffle on|off",
+        usage: "alia music shuffle on|off",
       },
       {
         name: "repeat",
         summary: "Set repeat (Spotify has no 'one' mode)",
-        usage: "bb music repeat off|all|one",
+        usage: "alia music repeat off|all|one",
       },
       {
         name: "app",
         summary: "Show or set which player to control (auto is any player)",
-        usage: "bb music app [auto|spotify|music]",
+        usage: "alia music app [auto|spotify|music]",
       },
       {
         name: "style",
         summary: "Show or set the look of the sidebar player",
-        usage: `bb music style [${STYLES.join("|")}]`,
+        usage: `alia music style [${STYLES.join("|")}]`,
       },
     ],
     async run(argv) {

@@ -4,8 +4,8 @@ An archive button in the sidebar footer, next to Settings. Click it once and arc
 
 ## How it works
 
-The button flips the existing active/archived setting of bb's own thread list, the same one under Organize. Nothing is stored by the plugin and the list itself is bb's, unchanged.
+The button flips the existing active/archived setting of VesnALIA's own thread list, the same one under Organize. Nothing is stored by the plugin and the list itself is VesnALIA's, unchanged.
 
 ## Requirements
 
-Keep bb's built-in Thread list plugin enabled.
+Keep VesnALIA's built-in Thread list plugin enabled.

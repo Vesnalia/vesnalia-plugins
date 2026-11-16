@@ -72,7 +72,7 @@ describe('createSecretReader', () => {
     assert.equal(args.at(-1), WINDOWS_CREDENTIAL_SCRIPT);
     assert.ok(!WINDOWS_CREDENTIAL_SCRIPT.includes(ACCOUNT));
     assert.equal(
-      options.env?.BB_COPILOT_CREDENTIAL_TARGETS,
+      options.env?.ALIA_COPILOT_CREDENTIAL_TARGETS,
       windowsCredentialTargets('copilot-cli', ACCOUNT).join('\n')
     );
     assert.deepEqual(windowsCredentialTargets('copilot-cli', ACCOUNT), [

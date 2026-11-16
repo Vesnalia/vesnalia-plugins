@@ -8,7 +8,7 @@ import {
   experimental_formatConformanceReport as formatConformanceReport,
   experimental_runBridgeConformance as runBridgeConformance,
   type CapturedBridgeJsonRpcOutput,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 
 const fixtureDir = dirname(fileURLToPath(import.meta.url));
 
@@ -16,9 +16,9 @@ const fixtureDir = dirname(fileURLToPath(import.meta.url));
  * Scoped to this file: a leaked executable override would send another suite's
  * bridge at the scripted host instead of the real binary.
  */
-const previousExecutable = process.env.BB_MUSE_EXECUTABLE;
+const previousExecutable = process.env.ALIA_MUSE_EXECUTABLE;
 const previousApiKey = process.env.META_API_KEY;
-process.env.BB_MUSE_EXECUTABLE = join(fixtureDir, "fake-muse-serve.mjs");
+process.env.ALIA_MUSE_EXECUTABLE = join(fixtureDir, "fake-muse-serve.mjs");
 process.env.META_API_KEY = "conformance-key";
 
 const { handleLine } = await import("../src/provider-bridge.js");
@@ -27,7 +27,7 @@ let output: CapturedBridgeJsonRpcOutput;
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-muse-conformance-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "alia-muse-conformance-"));
   output = captureBridgeJsonRpcOutput();
 });
 
@@ -38,9 +38,9 @@ afterEach(() => {
 
 afterAll(() => {
   if (previousExecutable === undefined) {
-    delete process.env.BB_MUSE_EXECUTABLE;
+    delete process.env.ALIA_MUSE_EXECUTABLE;
   } else {
-    process.env.BB_MUSE_EXECUTABLE = previousExecutable;
+    process.env.ALIA_MUSE_EXECUTABLE = previousExecutable;
   }
   if (previousApiKey === undefined) {
     delete process.env.META_API_KEY;

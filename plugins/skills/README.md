@@ -4,37 +4,37 @@ Every skill a thread's agent can use, where each one comes from, and what it say
 conversation, with a button that puts one in the chat box. Ported from
 [`paseo-plugins/skills`](https://github.com/gpambrozio/paseo-plugins/tree/main/skills).
 
-bb's own `/` menu lists skill names. This lists them per thread and by origin — the project, the
-repository, your personal folder, an admin folder, a Claude Code or Codex plugin, or bb itself — and
+VesnALIA's own `/` menu lists skill names. This lists them per thread and by origin — the project, the
+repository, your personal folder, an admin folder, a Claude Code or Codex plugin, or VesnALIA itself — and
 opens each one's `SKILL.md`, rendered, with its path. Claude Code, Codex and Hermes threads get their
 skill files read off disk, in the order that provider reads them, so the copy listed is the copy the
-agent uses. Threads on any other provider list bb's own skills and what bb's `/` menu reports for them.
+agent uses. Threads on any other provider list VesnALIA's own skills and what VesnALIA's `/` menu reports for them.
 
 ## What you need
 
-- bb 0.45 or later. On bb 0.44, install with `@^0.1.0` instead of `@^0.3.0`.
+- VesnALIA 0.45 or later. On VesnALIA 0.44, install with `@^0.1.0` instead of `@^0.3.0`.
 - Nothing else: no account, key or network access. The plugin reads skill files on the machine the
-  thread runs on, through bb's host daemon there.
+  thread runs on, through VesnALIA's host daemon there.
 
 ## Install
 
 ```bash
-bb plugin install 'git:github.com/gpambrozio/bb-plugins@^0.3.0' --plugin skills --tag-prefix skills/
+alia plugin install 'git:github.com/gpambrozio/bb-plugins@^0.3.0' --plugin skills --tag-prefix skills/
 ```
 
 ## Use
 
 - **The Skills button** in a thread's composer shows how many entries the thread has. Press it to
-  list them above the message box, in the same pop-up bb uses for its `/` menu (a sheet in a narrow
+  list them above the message box, in the same pop-up VesnALIA uses for its `/` menu (a sheet in a narrow
   window): search, pick one to read it, and press **Add to chat**. **Open in panel** opens the full tab —
   on the skill you were reading, if one was open.
 - **A keyboard shortcut**: *Skills: browse this thread's skills* opens and closes the same list from
-  whichever message box has the cursor. It has no key until you give it one in bb's keyboard
+  whichever message box has the cursor. It has no key until you give it one in VesnALIA's keyboard
   settings, and it is in the command palette.
 - **The Skills tab** in the thread's side panel (from the panel's launcher, or *Skills: show this
   thread's skills* in the command palette) shows the same list, and each skill's path with **Copy
   path** and its whole `SKILL.md`.
-- **Add to chat** puts the skill at the start of the thread's message box as the same pill bb's own
+- **Add to chat** puts the skill at the start of the thread's message box as the same pill VesnALIA's own
   `/` menu inserts, and puts the cursor after it, ready for any arguments. A command already at the
   start is replaced rather than joined by a second one. Nothing is sent: you finish the message and
   send it. Anything else already typed stays, after the command. (The Paseo plugin invoked the skill
@@ -42,7 +42,7 @@ bb plugin install 'git:github.com/gpambrozio/bb-plugins@^0.3.0' --plugin skills 
 
 Skills are grouped by where they come from, in the order the provider reads them. A name defined in
 two places is listed once, under the copy that wins. **Built-in skills** and **Built-in commands** are
-what bb's `/` menu offers that no file was found for; they have a description and can be added to the
+what VesnALIA's `/` menu offers that no file was found for; they have a description and can be added to the
 chat, but have no file to show.
 
 ## Develop
@@ -51,13 +51,13 @@ chat, but have no file to show.
 npm install --include=dev
 npm test               # vitest: resolvers, the RPCs and the id boundary, the app
 npx tsc --noEmit
-bb plugin build
-bb plugin install path:$PWD --yes
-bb plugin dev          # rebuild and reload on change
-bb plugin logs skills -f
+alia plugin build
+alia plugin install path:$PWD --yes
+alia plugin dev          # rebuild and reload on change
+alia plugin logs skills -f
 ```
 
-`AGENTS.md` records why the plugin is shaped this way, what it adds to bb's own skill management, and
+`AGENTS.md` records why the plugin is shaped this way, what it adds to VesnALIA's own skill management, and
 what it deliberately does not do. Read it before changing discovery.
 
 ## Layout
@@ -65,7 +65,7 @@ what it deliberately does not do. Read it before changing discovery.
 | Path | Owns |
 | --- | --- |
 | `host.ts`, `host/` | Discovery on the thread's machine: the provider resolvers and `read`. |
-| `server.ts`, `server/` | Thread → workspace, bb's own skills, the reported list, the RPCs. |
+| `server.ts`, `server/` | Thread → workspace, VesnALIA's own skills, the reported list, the RPCs. |
 | `shared/` | Shapes, frontmatter, and the two contracts. |
 | `app.tsx`, `app/` | The panel, the composer button and its pop-up, and the browser they share. |
 

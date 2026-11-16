@@ -6,7 +6,7 @@
  * comes back.
  */
 import { cleanup, waitFor } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { Board } from "../shared/board";

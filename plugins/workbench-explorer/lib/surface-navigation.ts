@@ -1,8 +1,8 @@
-import type { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import type { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 
-type Navigate = ReturnType<typeof useBbNavigate>;
+type Navigate = ReturnType<typeof useAliaNavigate>;
 
-/** BB's window overlay has no file preview panel; its route slot owns that intent. */
+/** VesnALIA's window overlay has no file preview panel; its route slot owns that intent. */
 const navigators = new Map<string, Navigate>();
 
 function key(threadId: string | null): string {

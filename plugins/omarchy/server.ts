@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   animationSchema,
@@ -61,16 +61,16 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
 export { rpcContract } from "./contract.js";
 export type { SyncStatus } from "./contract.js";
 
-export default async function plugin(bb: BbPluginApi) {
-  const host = bb.hosts.experimental_client({
+export default async function plugin(alia: AliaPluginApi) {
+  const host = alia.hosts.experimental_client({
     contract: hostContract,
     experimental_signals: hostSignals,
   });
 
-  let transient: Pick<SyncStatus, "phase" | "message" | "bbThemeId"> = {
+  let transient: Pick<SyncStatus, "phase" | "message" | "aliaThemeId"> = {
     phase: "checking",
     message: "Looking for Omarchy…",
-    bbThemeId: null,
+    aliaThemeId: null,
   };
   let currentHostId: string | null = null;
   let syncPromise: Promise<SyncStatus> | null = null;
@@ -78,12 +78,12 @@ export default async function plugin(bb: BbPluginApi) {
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   async function preferences(): Promise<Preferences> {
-    const parsed = preferencesSchema.safeParse(await bb.storage.kv.get("preferences"));
+    const parsed = preferencesSchema.safeParse(await alia.storage.kv.get("preferences"));
     return parsed.success ? parsed.data : DEFAULT_PREFERENCES;
   }
 
   async function stored() {
-    const parsed = storedStatusSchema.safeParse(await bb.storage.kv.get("last-sync"));
+    const parsed = storedStatusSchema.safeParse(await alia.storage.kv.get("last-sync"));
     return parsed.success ? parsed.data : null;
   }
 
@@ -101,7 +101,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function publish(): void {
-    bb.realtime.publish(STATUS_CHANGED, { at: Date.now() });
+    alia.realtime.publish(STATUS_CHANGED, { at: Date.now() });
   }
 
   async function primaryHostId(): Promise<string> {
@@ -110,8 +110,8 @@ export default async function plugin(bb: BbPluginApi) {
       currentHostId = prefs.themeHostId;
       return prefs.themeHostId;
     }
-    const config = await bb.sdk.system.config();
-    if (config.primaryHostId === null) throw new Error("BB has no primary host configured");
+    const config = await alia.sdk.system.config();
+    if (config.primaryHostId === null) throw new Error("VesnALIA has no primary host configured");
     currentHostId = config.primaryHostId;
     return config.primaryHostId;
   }
@@ -120,18 +120,18 @@ export default async function plugin(bb: BbPluginApi) {
     if (!theme.available || theme.colors === null || theme.themeName === null) {
       throw new Error(theme.error ?? "Omarchy is not available on the selected theme host");
     }
-    // Deliberately keep the server's selected palette unchanged. BB mobile
+    // Deliberately keep the server's selected palette unchanged. VesnALIA mobile
     // follows that server selection, while the frontend content script below
-    // applies this overlay only in BB's web/Electron clients.
-    const active = await bb.sdk.theme.get();
+    // applies this overlay only in VesnALIA's web/Electron clients.
+    const active = await alia.sdk.theme.get();
     const nextFavicon = prefs.syncFavicon ? faviconColor(theme.colors.accent) : active.faviconColor;
     if (nextFavicon !== active.faviconColor) {
-      await bb.sdk.theme.set({ themeId: active.themeId, faviconColor: nextFavicon });
+      await alia.sdk.theme.set({ themeId: active.themeId, faviconColor: nextFavicon });
     }
     const now = new Date().toISOString();
     const css = buildThemeCss(theme.colors, prefs.animation, prefs.syncCodeTheme);
     const [overlay, saved] = await Promise.all([
-      bb.storage.kv.get<{ css?: unknown; revision?: unknown }>("client-theme"),
+      alia.storage.kv.get<{ css?: unknown; revision?: unknown }>("client-theme"),
       stored(),
     ]);
     const cssChanged = overlay?.css !== css || typeof overlay?.revision !== "string";
@@ -140,21 +140,21 @@ export default async function plugin(bb: BbPluginApi) {
       || JSON.stringify(saved.colors) !== JSON.stringify(theme.colors);
     // A new revision makes clients replace their stylesheet. Only actual
     // palette or preference changes should invalidate the page's styles.
-    if (cssChanged) await bb.storage.kv.set("client-theme", { css, revision: now });
+    if (cssChanged) await alia.storage.kv.set("client-theme", { css, revision: now });
     if (statusChanged) {
-      await bb.storage.kv.set("last-sync", {
+      await alia.storage.kv.set("last-sync", {
         themeName: theme.themeName,
         mode: theme.colors.mode,
         colors: theme.colors,
         lastSyncedAt: now,
         hookInstalled: theme.hookInstalled,
       });
-      bb.log.info(`synced Omarchy theme ${theme.themeName} (${theme.colors.mode})`);
+      alia.log.info(`synced Omarchy theme ${theme.themeName} (${theme.colors.mode})`);
     }
     transient = {
       phase: "synced",
-      message: `${theme.themeName} is live in BB`,
-      bbThemeId: active.themeId,
+      message: `${theme.themeName} is live in VesnALIA`,
+      aliaThemeId: active.themeId,
     };
   }
 
@@ -166,11 +166,11 @@ export default async function plugin(bb: BbPluginApi) {
     syncPromise = (async () => {
       const prefs = await preferences();
       if (!force && !prefs.autoSync) {
-        transient = { phase: "paused", message: "Automatic sync is paused", bbThemeId: null };
+        transient = { phase: "paused", message: "Automatic sync is paused", aliaThemeId: null };
         publish();
         return status();
       }
-      transient = { phase: "checking", message: "Reading the Omarchy palette…", bbThemeId: null };
+      transient = { phase: "checking", message: "Reading the Omarchy palette…", aliaThemeId: null };
       publish();
       try {
         const hostId = await primaryHostId();
@@ -179,7 +179,7 @@ export default async function plugin(bb: BbPluginApi) {
           transient = {
             phase: "unavailable",
             message: theme.error ?? "Omarchy was not found on the selected theme host",
-            bbThemeId: null,
+            aliaThemeId: null,
           };
         } else {
           await prepareClientTheme(theme, prefs);
@@ -188,9 +188,9 @@ export default async function plugin(bb: BbPluginApi) {
         transient = {
           phase: "error",
           message: cause instanceof Error ? cause.message : String(cause),
-          bbThemeId: null,
+          aliaThemeId: null,
         };
-        bb.log.error(`theme sync failed: ${transient.message}`);
+        alia.log.error(`theme sync failed: ${transient.message}`);
       }
       publish();
       return status();
@@ -221,12 +221,12 @@ export default async function plugin(bb: BbPluginApi) {
     if (hostId === currentHostId) scheduleSync();
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     status: () => status(),
     sync: () => runSync(true),
     async setPreferences(patch) {
       const next = { ...(await preferences()), ...patch };
-      await bb.storage.kv.set("preferences", next);
+      await alia.storage.kv.set("preferences", next);
       return runSync(patch.autoSync === false ? false : true);
     },
     async setHook({ enabled }) {
@@ -236,8 +236,8 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.http.route("GET", "/client-theme", async (context) => {
-    const value = await bb.storage.kv.get<unknown>("client-theme");
+  alia.http.route("GET", "/client-theme", async (context) => {
+    const value = await alia.storage.kv.get<unknown>("client-theme");
     if (
       value !== null &&
       typeof value === "object" &&
@@ -254,18 +254,18 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   const usage = `Usage:
-  bb omarchy status [--json]
-  bb omarchy sync [--json]
-  bb omarchy host <host-id|auto> [--json]
-  bb omarchy hook install|remove [--json]`;
-  bb.cli.register({
+  VesnALIA omarchy status [--json]
+  VesnALIA omarchy sync [--json]
+  VesnALIA omarchy host <host-id|auto> [--json]
+  VesnALIA omarchy hook install|remove [--json]`;
+  alia.cli.register({
     name: "omarchy",
-    summary: "Sync BB with the active Omarchy theme",
+    summary: "Sync VesnALIA with the active Omarchy theme",
     commands: [
-      { name: "status", summary: "Show sync state", usage: "bb omarchy status [--json]" },
-      { name: "sync", summary: "Sync immediately", usage: "bb omarchy sync [--json]" },
-      { name: "host", summary: "Choose the machine that supplies the theme", usage: "bb omarchy host <host-id|auto> [--json]" },
-      { name: "hook", summary: "Install or remove the Omarchy hook", usage: "bb omarchy hook install|remove [--json]" },
+      { name: "status", summary: "Show sync state", usage: "alia omarchy status [--json]" },
+      { name: "sync", summary: "Sync immediately", usage: "alia omarchy sync [--json]" },
+      { name: "host", summary: "Choose the machine that supplies the theme", usage: "alia omarchy host <host-id|auto> [--json]" },
+      { name: "hook", summary: "Install or remove the Omarchy hook", usage: "alia omarchy hook install|remove [--json]" },
     ],
     async run(argv) {
       const json = argv.includes("--json");
@@ -274,7 +274,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (args[0] === undefined || args[0] === "status") result = await status();
       else if (args[0] === "sync") result = await runSync(true);
       else if (args[0] === "host" && args.length === 2 && (args[1] === "auto" || /^host_[a-z0-9]+$/.test(args[1]))) {
-        await bb.storage.kv.set("preferences", { ...(await preferences()), themeHostId: args[1] === "auto" ? null : args[1] });
+        await alia.storage.kv.set("preferences", { ...(await preferences()), themeHostId: args[1] === "auto" ? null : args[1] });
         result = await runSync(true);
       }
       else if (args[0] === "hook" && (args[1] === "install" || args[1] === "remove")) {
@@ -291,7 +291,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.background.service("omarchy-theme-watch", {
+  alia.background.service("omarchy-theme-watch", {
     async start(signal) {
       while (!signal.aborted) {
         try {
@@ -300,14 +300,14 @@ export default async function plugin(bb: BbPluginApi) {
           if (prefs.autoSync) await runSync();
           await host.call("watchTheme", null, { hostId, signal });
         } catch (cause) {
-          bb.log.warn(`watch setup will retry: ${cause instanceof Error ? cause.message : String(cause)}`);
+          alia.log.warn(`watch setup will retry: ${cause instanceof Error ? cause.message : String(cause)}`);
         }
         await sleep(30_000, signal);
       }
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     if (debounceTimer !== null) clearTimeout(debounceTimer);
     unsubscribeSignal();
     unsubscribeWorkerExit();

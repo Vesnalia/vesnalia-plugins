@@ -1,10 +1,10 @@
 # Component kit: design guide
 
-Every component in `ui/components/` follows this file. It is the approved outcome of genjutsu (paint), design-taste-frontend and Hallmark (app-screen scope), applied to a kit that renders inside BB's chat.
+Every component in `ui/components/` follows this file. It is the approved outcome of genjutsu (paint), design-taste-frontend and Hallmark (app-screen scope), applied to a kit that renders inside VesnALIA's chat.
 
 ## Thesis (approved)
 
-**Visual.** Part of the conversation, not a dashboard pasted into it. BB's own neutrals; BB's accent as the only signal colour, spent on the one thing each component is about (the current value, the selected option, the primary action); success, warning and danger only for real state. BB's Inter at its 13px scale, one heading weight (560), tabular numerals on every figure, sentence-case labels, mono only for code, paths, hashes and IDs. Dense but breathing on a 4px unit. Flat surfaces: whitespace, then a hairline, then a tinted well. Never a card inside the block's card. One radius per nesting level.
+**Visual.** Part of the conversation, not a dashboard pasted into it. VesnALIA's own neutrals; VesnALIA's accent as the only signal colour, spent on the one thing each component is about (the current value, the selected option, the primary action); success, warning and danger only for real state. VesnALIA's Inter at its 13px scale, one heading weight (560), tabular numerals on every figure, sentence-case labels, mono only for code, paths, hashes and IDs. Dense but breathing on a 4px unit. Flat surfaces: whitespace, then a hairline, then a tinted well. Never a card inside the block's card. One radius per nesting level.
 
 **Interaction.** Fast and dry: 120ms press and colour, 220ms hover and menus, 420ms at most for expanding. Hover is one signal (a colour step), press a 1px drop. Charts draw once, after the block stops streaming. No scroll reveals, no bounce or overshoot, no glow, no looping animation except the loading skeleton and a running Timer. Reduced motion shows the end state at once.
 
@@ -36,7 +36,7 @@ Multi-series colour: a lightness ramp of the accent, e.g. `color-mix(in oklch, v
 
 - `Skeleton({lines|height})`, `EmptyState({title, hint})`, `ErrorState({title, detail})`.
 - `LoadedView({loaded, parse, isEmpty, empty, skeleton, children})`: the four states of a file-backed region.
-- `useThreadFile(path, {media})` (`../data.tsx`): reads a file of the reply's thread through the server (workspace-relative, `$BB_THREAD_STORAGE/...` or `/tmp/...`). Returns `{state: "loading" | "error" | "ready"}`; with `media` a data URL.
+- `useThreadFile(path, {media})` (`../data.tsx`): reads a file of the reply's thread through the server (workspace-relative, `$ALIA_THREAD_STORAGE/...` or `/tmp/...`). Returns `{state: "loading" | "error" | "ready"}`; with `media` a data URL.
 - `Button({variant: "primary", state})`: the 8-state control. Class `.bbui-btn` if you need the raw element.
 - `useAsk()(text)`: sends `text` as the user's next message. Use for choices, approvals and follow-ups.
 - `useStreaming()`: true while the reply streams. Draw charts and enable interactions only when false.

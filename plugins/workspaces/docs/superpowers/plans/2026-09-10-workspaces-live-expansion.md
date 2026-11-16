@@ -4,9 +4,9 @@
 
 **Goal:** Give new multi-repository threads a neutral `🧩 Workspaces` owner and let users or agents append eligible repositories safely to an active session.
 
-**Architecture:** A plugin-owned, host-backed synthetic BB project satisfies BB's thread ownership requirement without making a real repository primary. Session storage separates the immutable initial selection from an append-only current repository set and expansion journal; one shared expansion service validates membership, asks for approval when required, provisions through the host, and reconciles the database from the manifest after partial failures.
+**Architecture:** A plugin-owned, host-backed synthetic VesnALIA project satisfies VesnALIA's thread ownership requirement without making a real repository primary. Session storage separates the immutable initial selection from an append-only current repository set and expansion journal; one shared expansion service validates membership, asks for approval when required, provisions through the host, and reconciles the database from the manifest after partial failures.
 
-**Tech Stack:** TypeScript, React 19, Zod 4, BB Plugin SDK 0.4.47, Node 22 host entry, SQLite through `bb.storage.database()`, Git CLI, Vitest, Testing Library.
+**Tech Stack:** TypeScript, React 19, Zod 4, VesnALIA Plugin SDK 0.4.47, Node 22 host entry, SQLite through `alia.storage.database()`, Git CLI, Vitest, Testing Library.
 
 **Spec:** `docs/superpowers/specs/2026-09-10-live-expansion-and-multi-repo-history-design.md`
 
@@ -131,7 +131,7 @@ ON session_expansions(session_id, project_id)
 WHERE outcome = 'provisioned';
 ```
 
-The same migration entry uses `ALTER TABLE sessions ADD COLUMN` for the three new session columns. Do not rerun migrations from the store constructor; production uses `bb.storage.migrate`, and tests use the ordered helper.
+The same migration entry uses `ALTER TABLE sessions ADD COLUMN` for the three new session columns. Do not rerun migrations from the store constructor; production uses `alia.storage.migrate`, and tests use the ordered helper.
 
 ```sql
 ALTER TABLE sessions ADD COLUMN initial_repositories_json TEXT;
@@ -209,8 +209,8 @@ Add tests for:
 ```ts
 const anchor = await ensureAnchor(dataRoot);
 expect(anchor.path).toBe(join(dataRoot, "workspace-anchor"));
-expect(JSON.parse(readFileSync(join(anchor.path, ".bb-workspaces-anchor.json"), "utf8")))
-  .toEqual({ schemaVersion: 1, owner: "bb-plugin-workspaces" });
+expect(JSON.parse(readFileSync(join(anchor.path, ".alia-workspaces-anchor.json"), "utf8")))
+  .toEqual({ schemaVersion: 1, owner: "alia-plugin-workspaces" });
 
 const added = await addRepository({
   dataRoot,
@@ -246,7 +246,7 @@ In `src/worktrees.ts`, define:
 ```ts
 export type SessionManifest = {
   schemaVersion: 2;
-  owner: "bb-plugin-workspaces";
+  owner: "alia-plugin-workspaces";
   sessionId: string;
   workspaceName: string;
   instructions: string;
@@ -260,7 +260,7 @@ export type SessionManifest = {
 
 - [ ] **Step 4: Implement a stable host anchor**
 
-`ensureAnchor(dataRoot)` creates `<dataRoot>/workspace-anchor`, writes `.bb-workspaces-anchor.json` create-only when absent, validates an existing marker, and returns `{ path }`. It never initializes Git and never deletes the directory.
+`ensureAnchor(dataRoot)` creates `<dataRoot>/workspace-anchor`, writes `.alia-workspaces-anchor.json` create-only when absent, validates an existing marker, and returns `{ path }`. It never initializes Git and never deletes the directory.
 
 - [ ] **Step 5: Upgrade initial session preparation**
 
@@ -279,7 +279,7 @@ export async function addRepository(input: {
 }): Promise<{ repository: PreparedRepository; manifestRevision: number }>;
 ```
 
-Validate the manifest before Git mutation. Return an existing repository when either the operation key or project ID already appears. Otherwise resolve the base commit, create `bb-workspace/<session-slug>/<alias>`, add the worktree at `repos/<alias>`, write new `AGENTS.md`, then atomically publish the new manifest revision. If publishing fails, restore the prior instructions file, remove only the new worktree, and delete only the branch created by this call.
+Validate the manifest before Git mutation. Return an existing repository when either the operation key or project ID already appears. Otherwise resolve the base commit, create `alia-workspace/<session-slug>/<alias>`, add the worktree at `repos/<alias>`, write new `AGENTS.md`, then atomically publish the new manifest revision. If publishing fails, restore the prior instructions file, remove only the new worktree, and delete only the branch created by this call.
 
 Serialize additions per session with a module-local promise queue that deletes its map entry in `finally`. Different sessions may provision concurrently; calls for the same session must re-read the manifest after acquiring the queue so duplicate requests become successful no-ops.
 
@@ -342,7 +342,7 @@ rtk git commit -m "feat: provision repositories into active sessions"
 - Modify: `tests/server.test.ts`
 
 **Interfaces:**
-- Consumes: `ensure_anchor` host RPC, `WorkspaceStore` metadata, and BB `projects.create`, `projects.get`, `projects.list`, and `projects.sources.add`.
+- Consumes: `ensure_anchor` host RPC, `WorkspaceStore` metadata, and VesnALIA `projects.create`, `projects.get`, `projects.list`, and `projects.sources.add`.
 - Produces: `ensureWorkspaceProject(deps, hostId): Promise<string>` returning the stable synthetic project ID.
 
 - [ ] **Step 1: Write failing project lifecycle tests**
@@ -404,16 +404,16 @@ export type CreateProjectInput = {
 
 Resolution order is: valid stored project; project whose source on the requested host exactly matches the returned anchor path; otherwise create. Attach a missing host source to the resolved project and persist its ID. Do not adopt by display name alone.
 
-- [ ] **Step 4: Wire BB SDK operations and launch ownership**
+- [ ] **Step 4: Wire VesnALIA SDK operations and launch ownership**
 
 In `server.ts`, adapt the dependency methods to:
 
 ```ts
-bb.sdk.projects.create({
+alia.sdk.projects.create({
   name: "🧩 Workspaces",
   source: { type: "local_path", hostId, path: anchor.path },
 });
-bb.sdk.projects.sources.add({
+alia.sdk.projects.sources.add({
   projectId,
   type: "local_path",
   hostId,
@@ -509,7 +509,7 @@ Add `ExpansionOption` with `projectId`, `alias`, `projectName`, and `sourcePath`
 
 - [ ] **Step 4: Implement validation and resolution**
 
-Construct the service with narrow async dependencies for project listing, host calls, approval, and realtime notification. `optionsForThread(threadId)` looks up the active session, requires the saved workspace, intersects current workspace members with current BB projects, excludes session members, and keeps only sources on `session.hostId`.
+Construct the service with narrow async dependencies for project listing, host calls, approval, and realtime notification. `optionsForThread(threadId)` looks up the active session, requires the saved workspace, intersects current workspace members with current VesnALIA projects, excludes session members, and keeps only sources on `session.hostId`.
 
 `requestFromAgent` accepts an alias, resolves it through those options, begins the journal entry, requests approval only under `ask`, validates the response schema, and calls one private `provision()` method. `addManually` accepts `projectId` plus request key, resolves it through the same options, and calls the same `provision()` method.
 
@@ -602,7 +602,7 @@ session_add_repository: {
 },
 ```
 
-The options RPC reconciles the target session manifest before returning. The dashboard RPC and `bb workspaces sessions` CLI path call `reconcileActiveSessions()` before listing, satisfying the next-read recovery rule. Reconciliation errors are logged and surfaced on the affected session without hiding other sessions. The add RPC passes `reason: "Added from the Repositories panel"` to `addManually`.
+The options RPC reconciles the target session manifest before returning. The dashboard RPC and `alia workspaces sessions` CLI path call `reconcileActiveSessions()` before listing, satisfying the next-read recovery rule. Reconciliation errors are logged and surfaced on the affected session without hiding other sessions. The add RPC passes `reason: "Added from the Repositories panel"` to `addManually`.
 
 - [ ] **Step 4: Register the native tool and approval request**
 
@@ -611,7 +611,7 @@ Register:
 ```ts
 import { randomUUID } from "node:crypto";
 
-bb.agents.registerTool({
+alia.agents.registerTool({
   name: "workspace_add_repository",
   description: "Request another repository from this thread's saved multi-repository workspace.",
   instructions: "Use only when the task requires a workspace repository that is not already in session.json. Explain the concrete dependency in reason.",
@@ -638,11 +638,11 @@ bb.agents.registerTool({
 });
 ```
 
-The service's approval adapter calls `bb.ui.requestInput` with renderer ID `workspace-add-repository`, the typed payload, and the tool signal. Parse all submitted values with `expansionApprovalResponseSchema`.
+The service's approval adapter calls `alia.ui.requestInput` with renderer ID `workspace-add-repository`, the typed payload, and the tool signal. Parse all submitted values with `expansionApprovalResponseSchema`.
 
 - [ ] **Step 5: Configure the tool only for workspace sessions**
 
-Register one synchronous `bb.agents.configure` callback. Require `context.origin.pluginId === "workspaces"` and `store.hasSessionForThread(context.thread.id)`. Return:
+Register one synchronous `alia.agents.configure` callback. Require `context.origin.pluginId === "workspaces"` and `store.hasSessionForThread(context.thread.id)`. Return:
 
 ```ts
 {
@@ -768,13 +768,13 @@ Update README to say:
 
 - [ ] **Step 2: Bump the feature release version**
 
-Change both package files from `0.1.1` to `0.2.0`. Do not change `engines.bb` or `engines.bbPluginSdk` unless `rtk bb plugin types --check` reports a required version change.
+Change both package files from `0.1.1` to `0.2.0`. Do not change `engines.alia` or `engines.aliaPluginSdk` unless `rtk alia plugin types --check` reports a required version change.
 
 - [ ] **Step 3: Run documentation and manifest checks**
 
 ```bash
 rtk rg -n "primary|immutable|auto-approve|🧩 Workspaces|Add repository" README.md skills/workspaces/SKILL.md
-rtk bb plugin types --check
+rtk alia plugin types --check
 rtk git diff --check
 ```
 
@@ -800,7 +800,7 @@ rtk git commit -m "docs: explain live workspace expansion"
 - [ ] **Step 1: Run the complete immutable verification suite**
 
 ```bash
-rtk bb plugin types --check
+rtk alia plugin types --check
 rtk npm test
 rtk npm run typecheck
 rtk npm run build
@@ -813,9 +813,9 @@ Expected: every test passes, typecheck/build succeed, and the branch is clean.
 - [ ] **Step 2: Capture existing live state before reload**
 
 ```bash
-rtk bb workspaces list --json
-rtk bb workspaces sessions --json
-rtk bb plugin list --json
+rtk alia workspaces list --json
+rtk alia workspaces sessions --json
+rtk alia plugin list --json
 ```
 
 Record workspace IDs, session IDs/states, plugin source/version, and Git History settings. Do not archive, clean, or alter existing user sessions.
@@ -823,17 +823,17 @@ Record workspace IDs, session IDs/states, plugin source/version, and Git History
 - [ ] **Step 3: Reload the path-installed Workspaces plugin**
 
 ```bash
-rtk bb plugin reload workspaces
-rtk bb plugin list --json
-rtk bb workspaces list --json
-rtk bb workspaces sessions --json
+rtk alia plugin reload workspaces
+rtk alia plugin list --json
+rtk alia workspaces list --json
+rtk alia workspaces sessions --json
 ```
 
 Expected: Workspaces is running at 0.2.0, existing definitions and sessions remain, and legacy rows hydrate with `ask` policy without changing existing thread ownership.
 
 - [ ] **Step 4: Run disposable-repository end-to-end acceptance**
 
-Create three small temporary Git repositories as ordinary BB projects on one host, create a disposable workspace, and verify:
+Create three small temporary Git repositories as ordinary VesnALIA projects on one host, create a disposable workspace, and verify:
 
 1. A new thread's sidebar owner is `🧩 Workspaces` and its title remains descriptive.
 2. Git History switches among the initial repository worktrees.
@@ -847,9 +847,9 @@ Create three small temporary Git repositories as ordinary BB projects on one hos
 - [ ] **Step 5: Verify existing user state again**
 
 ```bash
-rtk bb workspaces list --json
-rtk bb workspaces sessions --json
-rtk bb plugin list --json
+rtk alia workspaces list --json
+rtk alia workspaces sessions --json
+rtk alia plugin list --json
 ```
 
 Expected: pre-existing workspace/session IDs and states still match the capture from Step 2, apart from normal `updatedAt` values caused by reads/reconciliation. Existing threads still show their old owner; only newly launched threads use the synthetic project.

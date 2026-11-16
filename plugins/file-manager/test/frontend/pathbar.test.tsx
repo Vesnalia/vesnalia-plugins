@@ -9,8 +9,8 @@
 // promise that a path outside the root costs no round trip at all.
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@vesnalia/plugin-sdk/testing/app";
 
 import type { FileEntry, FileManagerContract, Preferences } from "../../contract";
 
@@ -42,7 +42,7 @@ const Panel = registration.component;
 const ROOT = "/home/coder";
 const DOCS = `${ROOT}/docs`;
 const PROJECTS = `${ROOT}/projects`;
-const DRAG_MIME = "application/x-bb-file-manager";
+const DRAG_MIME = "application/x-alia-file-manager";
 
 /* ------------------------------------------------------------------ */
 /* Fixtures                                                            */

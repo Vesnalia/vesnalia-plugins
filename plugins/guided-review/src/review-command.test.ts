@@ -14,20 +14,20 @@ vi.mock("./gh", async (orig) => {
   };
 });
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "./store";
 import { runReviewCommand } from "./review-command";
 import * as gh from "./gh";
 import { targetKey } from "./targets";
 const key = targetKey({ kind: "pr", number: 7, repo: "acme/web" });
 
-test("bb review <number> fetches, stores patch+meta, and kicks generation", async () => {
-  const { bb, harness } = createFakePluginHost({
+test("alia review <number> fetches, stores patch+meta, and kicks generation", async () => {
+  const { alia, harness } = createFakePluginHost({
     pluginId: "guided-review",
     sdk: { threads: { spawn: async () => ({ id: "th_1" }), wait: async () => {}, archive: async () => {}, stop: async () => {} } },
   });
-  const store = createStore(bb);
-  const res = await runReviewCommand({ bb, store, gh }, ["7"], { projectId: "p1", cwd: "/repo" });
+  const store = createStore(alia);
+  const res = await runReviewCommand({ alia, store, gh }, ["7"], { projectId: "p1", cwd: "/repo" });
   expect(res.exitCode).toBe(0);
   const meta = store.getReview(key);
   expect(meta?.repo).toBe("acme/web");

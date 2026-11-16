@@ -1,8 +1,8 @@
-// iris_ask's labels: bb shows "Waiting: <title>" while the picker waits and "Answered: <title>"
+// iris_ask's labels: VesnALIA shows "Waiting: <title>" while the picker waits and "Answered: <title>"
 // after, and refuses a request whose label is over 80 characters. A title of up to 120 is
 // accepted, so a long one is cut at a word to fit.
 
-/** bb's limit on a pending interaction's label. */
+/** VesnALIA's limit on a pending interaction's label. */
 export const ASK_LABEL_MAX = 80;
 
 function fit(prefix: string, title: string): string {

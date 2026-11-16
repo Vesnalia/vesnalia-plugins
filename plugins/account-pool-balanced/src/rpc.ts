@@ -5,7 +5,7 @@ import { accountProxyInputSchema, egressProfileSchema, egressStateSchema, type A
 import {nativeProbeInputSchema,nativeProbeResultSchema,nativeAccountUpdateSchema, type NativeAccountUpdate, nativeProjectsSchema, nativeAccountsSchema, type NativeAccounts} from "./native-accounts.js";
 import { httpScopeAcceptInputSchema, httpScopeRevokeInputSchema } from './http-scope-acceptance.js';
 import type {AgyOAuthLogin} from "./agy-oauth-login.js";
-import { defineRpcContract, type PluginRpcHandlers } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type PluginRpcHandlers } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   accountPolicySchema,

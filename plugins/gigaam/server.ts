@@ -1,15 +1,15 @@
-// bb-plugin-gigaam — Russian voice input for bb through GigaAM v3.
+// alia-plugin-gigaam — Russian voice input for VesnALIA through GigaAM v3.
 //
-// By default the host entry (host.ts) installs GigaAM on the bb server's own
+// By default the host entry (host.ts) installs GigaAM on the VesnALIA server's own
 // machine and keeps it running; this file registers the voice service, keeps
-// the host in the configured state, and adds the `bb gigaam` command. With
+// the host in the configured state, and adds the `alia gigaam` command. With
 // the "GigaAM server URL" setting, recordings go to that server instead.
 import {
   PluginCliError,
   cliCommand,
   defineCli,
-  type BbPluginApi,
-} from "@get-bb/plugin-sdk";
+  type AliaPluginApi,
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   MAX_AUDIO_BYTES,
@@ -24,11 +24,11 @@ import {
 const RECONCILE_INTERVAL_MS = 60_000;
 const RECONCILE_RETRY_MS = 15_000;
 const STATUS_TIMEOUT_MS = 5_000;
-/** bb waits up to 70 s for a transcript. */
+/** VesnALIA waits up to 70 s for a transcript. */
 const TRANSCRIBE_TIMEOUT_MS = 65_000;
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     model: {
       type: "select",
       label: "Model",
@@ -49,7 +49,7 @@ export default async function plugin(bb: BbPluginApi) {
       type: "string",
       label: "GigaAM server URL",
       description:
-        "Leave empty to install and run GigaAM on the bb server's machine. Set an OpenAI-compatible server (it must serve /v1/audio/transcriptions) to use it instead, for example GigaAM on a GPU machine.",
+        "Leave empty to install and run GigaAM on the VesnALIA server's machine. Set an OpenAI-compatible server (it must serve /v1/audio/transcriptions) to use it instead, for example GigaAM on a GPU machine.",
       experimental_schema: z
         .string()
         .refine(
@@ -60,7 +60,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
 
   async function config(): Promise<{ desired: Desired; serverUrl: string | null }> {
     const values = await settings.get();
@@ -72,7 +72,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function primaryHostId(): Promise<string | null> {
-    return (await bb.sdk.system.config()).primaryHostId;
+    return (await alia.sdk.system.config()).primaryHostId;
   }
 
   async function ensure(
@@ -81,12 +81,12 @@ export default async function plugin(bb: BbPluginApi) {
     timeoutMs = STATUS_TIMEOUT_MS,
   ): Promise<HostState> {
     const hostId = await primaryHostId();
-    if (hostId === null) throw new Error("No primary machine is connected to bb");
+    if (hostId === null) throw new Error("No primary machine is connected to VesnALIA");
     const { desired } = await config();
     return host.call("gigaam.ensure", { ...desired, action }, { hostId, signal, timeoutMs });
   }
 
-  bb.experimental_aiServices.register({
+  alia.experimental_aiServices.register({
     id: "gigaam",
     displayName: "GigaAM v3",
     async transcribe(audio, { signal }) {
@@ -99,7 +99,7 @@ export default async function plugin(bb: BbPluginApi) {
         return requestTranscription(serverUrl, audio, filename, signal);
       }
       const hostId = await primaryHostId();
-      if (hostId === null) throw new Error("No primary machine is connected to bb");
+      if (hostId === null) throw new Error("No primary machine is connected to VesnALIA");
       const { text } = await host.call(
         "gigaam.transcribe",
         {
@@ -136,7 +136,7 @@ export default async function plugin(bb: BbPluginApi) {
   settings.onChange(wakeReconcile);
   host.experimental_onWorkerExit(wakeReconcile);
   let lastProblem: string | null = null;
-  bb.background.service("reconcile", {
+  alia.background.service("reconcile", {
     async start(signal) {
       while (!signal.aborted) {
         let delay = RECONCILE_INTERVAL_MS;
@@ -146,13 +146,13 @@ export default async function plugin(bb: BbPluginApi) {
             const problem = state.phase === "failed" || state.phase === "unsupported"
               ? describe(state)
               : null;
-            if (problem !== null && problem !== lastProblem) bb.log.warn(problem);
+            if (problem !== null && problem !== lastProblem) alia.log.warn(problem);
             lastProblem = problem;
           }
         } catch (error) {
           if (signal.aborted) break;
           const problem = `Could not reach the GigaAM host: ${errorMessage(error)}`;
-          if (problem !== lastProblem) bb.log.warn(problem);
+          if (problem !== lastProblem) alia.log.warn(problem);
           lastProblem = problem;
           delay = RECONCILE_RETRY_MS;
         }
@@ -171,7 +171,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "gigaam",
       summary: "Check and manage GigaAM v3 voice input",
@@ -214,7 +214,7 @@ export default async function plugin(bb: BbPluginApi) {
           summary: "Restart the GigaAM server (reloads the model)",
           async run() {
             const state = await requireManaged(() => ensure("restart"));
-            return { exitCode: 0, stdout: `${describe(state)}\nFollow progress with: bb gigaam status` };
+            return { exitCode: 0, stdout: `${describe(state)}\nFollow progress with: VesnALIA gigaam status` };
           },
         }),
         reinstall: cliCommand({
@@ -223,7 +223,7 @@ export default async function plugin(bb: BbPluginApi) {
             const state = await requireManaged(() => ensure("reinstall", undefined, 30_000));
             return {
               exitCode: 0,
-              stdout: `${describe(state)}\nThis takes a few minutes. Follow progress with: bb gigaam status`,
+              stdout: `${describe(state)}\nThis takes a few minutes. Follow progress with: VesnALIA gigaam status`,
             };
           },
         }),
@@ -243,7 +243,7 @@ export default async function plugin(bb: BbPluginApi) {
             const lines = input.options.lines;
             const hostId = await primaryHostId();
             if (hostId === null) {
-              throw new PluginCliError("No primary machine is connected to bb", {
+              throw new PluginCliError("No primary machine is connected to VesnALIA", {
                 code: "no_primary_host",
               });
             }
@@ -259,7 +259,7 @@ export default async function plugin(bb: BbPluginApi) {
     if ((await config()).serverUrl !== null) {
       throw new PluginCliError("GigaAM runs on an external server, so this plugin does not manage it", {
         code: "external_server",
-        hint: "Clear it with: bb plugin config gigaam set serverUrl ''",
+        hint: "Clear it with: VesnALIA plugin config gigaam set serverUrl ''",
       });
     }
     return run();
@@ -275,7 +275,7 @@ function describe(state: HostState): string {
     case "starting":
       return `Starting GigaAM: ${state.message}`;
     case "failed":
-      return `GigaAM setup failed: ${state.message}. Retry with: bb gigaam reinstall`;
+      return `GigaAM setup failed: ${state.message}. Retry with: VesnALIA gigaam reinstall`;
     case "unsupported":
       return `GigaAM cannot run on this machine: ${state.message}`;
     case "idle":

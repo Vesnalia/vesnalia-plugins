@@ -5,19 +5,19 @@ import { describe, expect, it } from "vitest";
 import { buildDeclaration } from "../src/declaration.js";
 import { METHODS } from "../src/methods/index.js";
 import { PAGEHOST } from "../src/pagehost.js";
-import { fakeBb } from "./fake-bb.js";
+import { fakeAlia } from "./fake-alia.js";
 import { rec } from "./fake-runner.js";
 
 /**
  * The declaration as a host takes it, through the protocol's own code rather than this plugin's idea of it:
- * `parseContributor` (07 §The declaration grammar) from `pages-core`, and bb-pages' discovery and invoke
- * (`createBbContributors`, 07 §Discovery per host) over this plugin's RPCs. Neither package is published, so they
+ * `parseContributor` (07 §The declaration grammar) from `pages-core`, and alia-pages' discovery and invoke
+ * (`createAliaContributors`, 07 §Discovery per host) over this plugin's RPCs. Neither package is published, so they
  * are read from a checkout of the Unife monorepo: `UNIFE_MONO`, else the folder beside this repository's parent.
  * Without one the suite is skipped and says why.
  */
 const MONO = process.env.UNIFE_MONO ?? fileURLToPath(new URL("../../../unife-mono", import.meta.url));
 const VALIDATOR = join(MONO, "packages/pages-core/src/domain/capabilities/contributed.ts");
-const DISCOVERY = join(MONO, "packages/bb-pages/src/provider/contributors.ts");
+const DISCOVERY = join(MONO, "packages/alia-pages/src/provider/contributors.ts");
 const PAGE_SCRIPTS = join(MONO, "packages/pages-core/src/serving/page-scripts.ts");
 const DOCUMENT = join(MONO, "packages/pages-core/src/domain/html/document.ts");
 const present = existsSync(VALIDATOR) && existsSync(DISCOVERY) && existsSync(PAGE_SCRIPTS) && existsSync(DOCUMENT);
@@ -47,15 +47,15 @@ describe.skipIf(!present)(`the reference host code (${present ? MONO : `no Unife
     }
   });
 
-  /** bb-pages' adapter over a bb whose plugin RPCs are this plugin's own handlers. */
-  async function discovery(hostCall: Parameters<typeof fakeBb>[1]) {
-    const { createBbContributors } = await import(/* @vite-ignore */ DISCOVERY);
-    const { handlers } = fakeBb({}, hostCall);
-    const bb = {
-      pluginId: "bb-pages",
+  /** alia-pages' adapter over a VesnALIA whose plugin RPCs are this plugin's own handlers. */
+  async function discovery(hostCall: Parameters<typeof fakeAlia>[1]) {
+    const { createAliaContributors } = await import(/* @vite-ignore */ DISCOVERY);
+    const { handlers } = fakeAlia({}, hostCall);
+    const alia = {
+      pluginId: "alia-pages",
       sdk: {
         plugins: {
-          list: async () => ({ plugins: [{ id: "bb-pages", enabled: true, status: "running" }, { id: "syns", enabled: true, status: "running" }] }),
+          list: async () => ({ plugins: [{ id: "alia-pages", enabled: true, status: "running" }, { id: "syns", enabled: true, status: "running" }] }),
           callRpc: async ({ pluginId, method, input }: { pluginId: string; method: string; input?: unknown }) => {
             if (pluginId !== "syns" || !handlers[method]) throw Object.assign(new Error("http 404"), { status: 404 });
             return handlers[method]!(input);
@@ -63,15 +63,15 @@ describe.skipIf(!present)(`the reference host code (${present ? MONO : `no Unife
         },
       },
     };
-    return createBbContributors(bb as never, { log: { warn: () => undefined } });
+    return createAliaContributors(alia as never, { log: { warn: () => undefined } });
   }
 
-  it("bb-pages lists the plugin with the declaration the table builds", async () => {
+  it("alia-pages lists the plugin with the declaration the table builds", async () => {
     const contributors = await discovery(async () => rec("repo.ok"));
     expect(await contributors.list()).toEqual([{ id: "syns", declaration: buildDeclaration(METHODS, { agentInstructions: true }) }]);
   });
 
-  it("bb-pages' invoke reaches the session's folder without a scope, and the placed folder with one", async () => {
+  it("alia-pages' invoke reaches the session's folder without a scope, and the placed folder with one", async () => {
     const runs: Record<string, unknown>[] = [];
     // A scoped call is checked with `repo --within` (D83): the CLI answers `within: true` for a folder of the session's repository.
     const contributors = await discovery(async (_method, input) => (runs.push(input), rec(input.within ? "repo.within.placed.2d706e8" : "repo.ok")));
@@ -83,7 +83,7 @@ describe.skipIf(!present)(`the reference host code (${present ? MONO : `no Unife
     expect(runs.at(-1)).toMatchObject({ cwd: "/work/checkout/clients/vela/crm", within: "/work/checkout", args: ["repo", "--within=/work/checkout", "--json"] });
   });
 
-  it("the host's page scripts take the plugin's answer through bb-pages, hold it by version, and put it right after the kernel (07 §A page script)", async () => {
+  it("the host's page scripts take the plugin's answer through alia-pages, hold it by version, and put it right after the kernel (07 §A page script)", async () => {
     const { parseContributor } = await import(/* @vite-ignore */ VALIDATOR);
     const { createPageScripts } = await import(/* @vite-ignore */ PAGE_SCRIPTS);
     const { injectKernel } = await import(/* @vite-ignore */ DOCUMENT);

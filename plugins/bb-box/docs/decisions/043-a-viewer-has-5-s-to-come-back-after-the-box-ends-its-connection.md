@@ -18,7 +18,7 @@ but control had gone to the agent, so the person had to take it again. The
 viewer tries again after 1 s, then after 2 s more.
 
 A box that stops, starts or is released already gives control back at
-once, because bb-box forgets the box's control then. So 020's case of a
+once, because alia-box forgets the box's control then. So 020's case of a
 restarted desktop is mostly covered without the hand-back at once.
 
 ## Decision

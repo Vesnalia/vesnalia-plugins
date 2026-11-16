@@ -23,13 +23,13 @@ export interface SavedSelection {
   reasoningLevel: ReasoningLevel | null;
 }
 
-const PREFIX = "bb.save-my-model.v3";
-const PREVIOUS_PREFIX = "bb.save-my-model.v2";
+const PREFIX = "alia.save-my-model.v3";
+const PREVIOUS_PREFIX = "alia.save-my-model.v2";
 const PROVIDER_RECORD = "provider";
 const EXECUTION_RECORD = "execution";
-const LEGACY_PROVIDER_KEY = "bb.promptbox.provider";
-const LEGACY_MODEL_KEY = "bb.promptbox.model";
-const LEGACY_REASONING_KEY = "bb.promptbox.reasoning";
+const LEGACY_PROVIDER_KEY = "alia.promptbox.provider";
+const LEGACY_MODEL_KEY = "alia.promptbox.model";
+const LEGACY_REASONING_KEY = "alia.promptbox.reasoning";
 const LEGACY_PROVIDER_VERSION = "1";
 const MAX_HOST_ID = 128;
 const MAX_PROVIDER_ID = 128;

@@ -1,6 +1,6 @@
 // launchd-jobs — the host entry.
 //
-// Runs on the Mac whose jobs are being managed, in a worker bb's host daemon
+// Runs on the Mac whose jobs are being managed, in a worker VesnALIA's host daemon
 // starts there: `launchctl` acts on that machine's launchd, and the plists,
 // runner, logs and history are that machine's files. The server entry calls it
 // with the host's id. What each method does lives in host/jobs.ts.
@@ -8,7 +8,7 @@ import { mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk";
 
 import { createLogFollows } from "./host/follow";
 import { createJobs, type Jobs } from "./host/jobs";
@@ -21,7 +21,7 @@ function warn(message: string): void {
   console.warn(`[launchd-jobs] ${message}`);
 }
 
-/** Built on the first call, once bb has said where this plugin's data directory is. */
+/** Built on the first call, once VesnALIA has said where this plugin's data directory is. */
 let jobs: Jobs | null = null;
 let ownDir = "";
 

@@ -3,7 +3,7 @@
 *Source: docs/musings/2026-09-25-tracker-integration.md (decisions there are settled; "Mirror, don't integrate" is the chosen direction). The full adapter layer is explicitly out of scope for this sashay.*
 
 *Status (end-of-sashay): both phases shipped on branch
-`bb/sashay-tracker-mirroring-ticket-id-detection-lin-thr_ajjsj7f4fm`.
+`alia/sashay-tracker-mirroring-ticket-id-detection-lin-thr_ajjsj7f4fm`.
 Empirical finding that reshaped phase 2: the GitHub plugin exposes no RPC
 methods, so status reads its local SQLite cache server-side instead of
 `callRpc` (details below, kept as written at plan time). Shipped contract
@@ -107,13 +107,13 @@ hosts → null). Passed down `Board → ThreadCard` like `projectNameFor`.
 ### Empirical answer to musing open question #1 (polling cost)
 
 The official GitHub plugin (builtin, v0.2.1, running) publishes **no
-discoverable RPC methods** — `bb plugin rpc list github` returns none, and
-`bb plugin rpc call github sync` 404s. The musing's proposed vehicle
-(`bb.sdk.plugins.callRpc`) therefore has no method to call today. What the
+discoverable RPC methods** — `alia plugin rpc list github` returns none, and
+`alia plugin rpc call github sync` 404s. The musing's proposed vehicle
+(`alia.sdk.plugins.callRpc`) therefore has no method to call today. What the
 plugin does maintain is a **local SQLite cache** at
-`~/.bb/plugins/github/data.db` with an `items` table keyed
+`~/.vesnalia/plugins/github/data.db` with an `items` table keyed
 `(repo, kind, number)` carrying `state`, `title`, `updatedAt` — populated
-by the plugin's `sync` service. `bb github issues/prs` read exactly this
+by the plugin's `sync` service. `alia github issues/prs` read exactly this
 cache.
 
 Plan pivot: phase 2 reads that cache **server-side** from the thread-board

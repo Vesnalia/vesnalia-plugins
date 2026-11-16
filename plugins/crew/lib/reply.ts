@@ -1,13 +1,13 @@
 // The reply to a delivered message (§4.8 `memberReply`): the first completed
 // assistant answer after the message reached the thread.
 //
-// BB has no "reply to message X" relation, so it is read from the thread's
+// VesnALIA has no "reply to message X" relation, so it is read from the thread's
 // event log (seen live on claude-code, 30.09.2026): the delivery shows up as a
 // `client/turn/requested` whose input text carries the header marker
-// `msg <id>`; BB answers with `turn/input/accepted` naming that request id,
+// `msg <id>`; VesnALIA answers with `turn/input/accepted` naming that request id,
 // the turn's assistant text arrives as `item/completed` items of type
 // `agentMessage`, and the turn ends with `turn/completed` (`status`). A message
-// queued behind a running turn gets its own request once BB dispatches it.
+// queued behind a running turn gets its own request once VesnALIA dispatches it.
 // Pure, so the fake port and the SDK port share it.
 
 export type ReplyEvent = { seq: number; type: string; data: unknown };

@@ -8,7 +8,7 @@
  * `rejectStaleAgentToolFields` *throws* on it, so `registerTool` failed during
  * startup and the whole plugin went to an error state on install. Type checking
  * did not catch it: the vendored `types/` declarations were pinned to whatever
- * SDK the locally installed bb happened to carry, which was still 0.4.8.
+ * SDK the locally installed VesnALIA happened to carry, which was still 0.4.8.
  *
  * So the assertions below deliberately do not restate the field names. They
  * import the genuine, executable validator out of the SDK package, the one
@@ -19,7 +19,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { normalizeAgentToolRegistration } from "@get-bb/plugin-sdk/internal/host-policy";
+import { normalizeAgentToolRegistration } from "@vesnalia/plugin-sdk/internal/host-policy";
 
 import { createTools, type ToolDeps } from "../src/tools";
 import {
@@ -67,7 +67,7 @@ describe("agent tool registrations against the host validator", () => {
   /** What the host passes: this plugin declares no icons of its own. */
   const register = (tool: (typeof tools)[number]) =>
     normalizeAgentToolRegistration({
-      pluginId: "bb-plugin-xcode",
+      pluginId: "alia-plugin-xcode",
       declaredIconNames: new Set(),
       tool: tool as Parameters<typeof normalizeAgentToolRegistration>[0]["tool"],
     });

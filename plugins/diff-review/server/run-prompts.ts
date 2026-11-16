@@ -7,7 +7,7 @@
  * (https://github.com/nilbuild/diffity), Copyright (c) 2026 Kamran Ahmed, MIT License — see
  * THIRD_PARTY_NOTICES.md. The review steps, what to flag, the validation pass, the writing rules and
  * the rejected-edit rules are diffity's; the tools are this plugin's `diff_review_*` tools, with the
- * `bb diff-review` command as the way back when a tool is missing.
+ * `alia diff-review` command as the way back when a tool is missing.
  */
 import { rangeText } from "../shared/git-spec";
 import { describeLocation, describeTarget, type ReviewThread, type Target } from "../shared/types";
@@ -16,12 +16,12 @@ import { TOOL } from "./tool-names";
 
 /**
  * The line every run's final message opens with. A run's thread is a child of the thread under review,
- * and bb posts each of a child's finished turns to its parent ("@thread:… completed: <final message>"),
+ * and VesnALIA posts each of a child's finished turns to its parent ("@thread:… completed: <final message>"),
  * which wakes the parent's agent; this line tells that agent the notice is a report, not a request.
  */
 export const REPORT_LINE = "Diff Review status report — no action needed; the results are in the Review tab.";
 
-const REPORT = `Start your final message with this line, exactly: "${REPORT_LINE}" bb shows your final message to the thread whose changes are under review (this thread is its child), and that line tells its agent this is a report to read, not a request to act on.`;
+const REPORT = `Start your final message with this line, exactly: "${REPORT_LINE}" VesnALIA shows your final message to the thread whose changes are under review (this thread is its child), and that line tells its agent this is a report to read, not a request to act on.`;
 
 const WRITING = `## How to write comments
 

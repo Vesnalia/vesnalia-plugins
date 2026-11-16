@@ -1,5 +1,5 @@
 // reviews.v1.status (src/public-contract.ts): where each review stands, for other plugins, from the turn All reviews,
-// the alerts and bb review list say (lib/review-status.ts), with what places it: its PR, branch, folder and threads. It
+// the alerts and VesnALIA review list say (lib/review-status.ts), with what places it: its PR, branch, folder and threads. It
 // reads no diff or guide. When each came to stand as it does is kept on the review (`standing`), here and on the
 // sync's pass over every review (src/review-lifecycle.ts).
 import type { ReviewMeta } from "./store";
@@ -26,14 +26,14 @@ export async function noteStanding(tx: AsyncStore, review: ReviewMeta, turn: Tur
   if (changed) await tx.setLifecycle(review.targetKey, { standing: since });
 }
 
-/** The threads the review is linked to: its main thread, the ones before it, its Sends' threads, and the thread bb review ran in. */
+/** The threads the review is linked to: its main thread, the ones before it, its Sends' threads, and the thread VesnALIA review ran in. */
 function linkedThreads(review: ReviewMeta): string[] {
   const ids = [review.mainThread?.threadId, ...(review.implementers ?? []).map((thread) => thread.threadId), ...(review.sends ?? []).map((send) => send.threadId), review.sourceThreadId];
   return [...new Set(ids.filter((id): id is string => !!id))];
 }
 
 export function register(deps: ServeDeps) {
-  const { bb, store, sync } = deps;
+  const { alia, store, sync } = deps;
   const published = {
     async [REVIEW_STATUS]() {
       const now = Date.now();
@@ -41,7 +41,7 @@ export function register(deps: ServeDeps) {
       // As the list reads them: the sync's cached login says whose a PR it hasn't read yet is.
       const login = all.some(ownPrUnread) ? sync.cachedLogin() : null;
       const reviews = all.map((review) => ownPrOf(review, login));
-      const places = reviewPlaces(await placeFacts(bb, reviews), reviews);
+      const places = reviewPlaces(await placeFacts(alia, reviews), reviews);
       const noted: Array<{ review: ReviewMeta; since: Since }> = [];
       const rows = await Promise.all(reviews.map(async (review) => {
         const turn = await sync.turnOf(review, now, options);

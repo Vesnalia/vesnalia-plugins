@@ -6,7 +6,7 @@
 // runs are ringed planets whose agents circle them, and MCP servers are stations on the
 // outer belt. Click a planet to open its thread, a ringed planet to open its run graph.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { experimental_useSidebarThreads, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_useSidebarThreads, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { ResolvedScope, rpcContract, Scope } from "../server";
 import type { AgentCall, RunHistory } from "@/lib/workflows";
 import { buildAppGalaxy, buildGalaxy, type Body, type GalaxyRun, type GalaxyThread } from "@/lib/galaxy";

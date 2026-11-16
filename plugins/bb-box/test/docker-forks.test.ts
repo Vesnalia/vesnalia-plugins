@@ -13,9 +13,9 @@ import { MemoryStorage, tempDir, testContext } from "./helpers.ts";
 import { COMMAND, THREAD, rejection, standing, world, type World } from "./snapshot-world.ts";
 
 const SOURCE_CREDENTIALS = {
-  "home/box/.bb-machines/bb.example/host-id": "host_source\n",
-  "home/box/.bb-machines/bb.example/auth.json": '{"token":"source"}\n',
-  "home/box/.config/bb-box/env": "GH_TOKEN=source\n",
+  "home/box/.alia-machines/alia.example/host-id": "host_source\n",
+  "home/box/.alia-machines/alia.example/auth.json": '{"token":"source"}\n',
+  "home/box/.config/alia-box/env": "GH_TOKEN=source\n",
   "var/lib/tailscale/tailscaled.state": '{"_current-profile":"cHJvZmlsZQ==","profile-a1b2":"bm9kZQ=="}\n',
 } as const;
 
@@ -104,11 +104,11 @@ function createOf(fake: FakeDockerHost, container: string): string[] {
 }
 
 function heldFile(fake: FakeDockerHost, container: string): string {
-  return join(fake.root, "containers", container, "run", "bb-box", "held");
+  return join(fake.root, "containers", container, "run", "alia-box", "held");
 }
 
 function readyFile(fake: FakeDockerHost, container: string): string {
-  return join(fake.root, "containers", container, "run", "bb-box", "ready");
+  return join(fake.root, "containers", container, "run", "alia-box", "ready");
 }
 
 function callIndex(fake: FakeDockerHost, container: string, says: string): number {
@@ -128,7 +128,7 @@ function restartUpdates(fake: FakeDockerHost, container: string): string[] {
   return fake.calls().filter((args) => args[0] === "container" && args[1] === "update" && args.includes("--restart") && args.at(-1) === container).map((args) => args[args.indexOf("--restart") + 1]!);
 }
 
-test("Docker forks a snapshot into a new container with the fork's own ID, name, labels and identity value, whose boot reset runs before BB Box hands it over", async () => {
+test("Docker forks a snapshot into a new container with the fork's own ID, name, labels and identity value, whose boot reset runs before VesnALIA Box hands it over", async () => {
   const fake = fakeDockerHost();
   const { state, source, target } = await sourceWithSnapshotOfA(fake);
   const sourceMachineId = identityFile(fake, source, "etc/machine-id");
@@ -150,21 +150,21 @@ test("Docker forks a snapshot into a new container with the fork's own ID, name,
   assert.equal(made.Config.Image, snapshotImage("test", source.id, target.id));
   assert.deepEqual(readBoth(fake, fork), ["A", "A"]);
 
-  assert.match(identityFile(fake, fork, "var/lib/bb-box/identity-resets"), /the value bb-box set on this guest is not the marker's; BB machines removed: host_source/, "its boot reset ran");
-  assert.deepEqual(present(fake.identityRoot(container), SOURCE_CREDENTIALS), [], "BB's machine credentials, the access file and the tailnet node from the source are gone");
+  assert.match(identityFile(fake, fork, "var/lib/alia-box/identity-resets"), /the value alia-box set on this guest is not the marker's; ALIA machines removed: host_source/, "its boot reset ran");
+  assert.deepEqual(present(fake.identityRoot(container), SOURCE_CREDENTIALS), [], "VesnALIA's machine credentials, the access file and the tailnet node from the source are gone");
   assert.notEqual(identityFile(fake, fork, "etc/machine-id"), sourceMachineId);
   assert.notEqual(identityFile(fake, fork, "etc/ssh/ssh_host_ed25519_key.pub"), sourceHostKey);
-  assert.match(identityFile(fake, fork, "etc/bb-box/identity"), new RegExp(`^box ${fork.id}$`, "m"), "BB Box wrote the fork's own marker once it was handed over");
+  assert.match(identityFile(fake, fork, "etc/alia-box/identity"), new RegExp(`^box ${fork.id}$`, "m"), "VesnALIA Box wrote the fork's own marker once it was handed over");
 
   assert.equal(fake.inspect(source.guest!.ref).State.Status, "running", "the source is untouched");
   assert.deepEqual(present(fake.identityRoot(source.guest!.ref), SOURCE_CREDENTIALS), Object.keys(SOURCE_CREDENTIALS));
-  assert.match(identityFile(fake, source, "etc/bb-box/identity"), new RegExp(`^box ${source.id}$`, "m"));
+  assert.match(identityFile(fake, source, "etc/alia-box/identity"), new RegExp(`^box ${source.id}$`, "m"));
 
   writeBoth(fake, fork, "B");
   assert.deepEqual(readBoth(fake, (await state.boxes.find(source.id))!), ["A", "A"], "a write in the fork leaves the source as it was");
 });
 
-test("Docker makes a fork with restart policy no and changes it to unless-stopped only once BB Box's check has passed", async () => {
+test("Docker makes a fork with restart policy no and changes it to unless-stopped only once VesnALIA Box's check has passed", async () => {
   const fake = fakeDockerHost();
   const { state, source, target } = await sourceWithSnapshotOfA(fake);
   const before = fake.calls().length;
@@ -211,7 +211,7 @@ for (const each of [
     const refused = await rejection(state.snapshots.fork(COMMAND, source, standing(source), target.id));
 
     assert.equal(refused.code, "unsupported");
-    assert.match(refused.message, new RegExp(`version ${each.version} of the identity reset when "A" was taken, and BB Box forks .*'s boxes only from version ${each.needs}`));
+    assert.match(refused.message, new RegExp(`version ${each.version} of the identity reset when "A" was taken, and VesnALIA Box forks .*'s boxes only from version ${each.needs}`));
     assert.deepEqual(fake.containers(), containers, "no container was made");
     assert.deepEqual(volumes(fake), volumesBefore, "no Docker data was copied");
   });
@@ -227,8 +227,8 @@ test("Docker releases a fork whose boot reset did not run, says why, and never l
   const fork = await forkOf(state, source, target.id);
 
   assert.equal(fork.state, "failed");
-  assert.match(fork.error ?? "", /BB Box did not hand fork the-fork over/);
-  assert.match(fork.error ?? "", /BB Box released it, so nothing of it acts as /);
+  assert.match(fork.error ?? "", /ALIA Box did not hand fork the-fork over/);
+  assert.match(fork.error ?? "", /ALIA Box released it, so nothing of it acts as /);
   assert.equal(fork.guest, null);
   assert.deepEqual(fake.containers(), containers, "the fork's container is gone");
   assert.deepEqual(volumes(fake), volumesBefore, "and its Docker data");
@@ -237,8 +237,8 @@ test("Docker releases a fork whose boot reset did not run, says why, and never l
   assert.equal(made[made.indexOf("--restart") + 1], "no");
   assert.ok(!restartUpdates(fake, name).includes("unless-stopped"), "its restart policy never let Docker start it again");
   assert.ok(createOf(fake, name).includes("BBBOX_FORK_HOLD=1"), "it was made held");
-  assert.deepEqual(fake.servicesStarted(name), [], "nothing copied from the source ran in it: no inner Docker, SSH, BB daemon, Tailscale or desktop");
-  assert.equal(callIndex(fake, name, "fork-released"), -1, "BB Box never released it");
+  assert.deepEqual(fake.servicesStarted(name), [], "nothing copied from the source ran in it: no inner Docker, SSH, VesnALIA daemon, Tailscale or desktop");
+  assert.equal(callIndex(fake, name, "fork-released"), -1, "VesnALIA Box never released it");
   assert.equal(fake.inspect(source.guest!.ref).State.Status, "running");
   assert.deepEqual(present(fake.identityRoot(source.guest!.ref), SOURCE_CREDENTIALS), Object.keys(SOURCE_CREDENTIALS));
 });
@@ -267,7 +267,7 @@ test("Docker takes a fork's creation reservation under its new container's name,
   assert.deepEqual(readBoth(fake, fork), ["A", "A"]);
 });
 
-test("Docker removes a fork BB Box stopped after its copy, before its check passed, makes it again, and leaves the source untouched", async () => {
+test("Docker removes a fork VesnALIA Box stopped after its copy, before its check passed, makes it again, and leaves the source untouched", async () => {
   const fake = fakeDockerHost();
   const { state, source, target } = await sourceWithSnapshotOfA(fake);
   const release = join(tempDir("docker-fork"), "start-may-finish");
@@ -342,7 +342,7 @@ test("Docker disarms a fork before it goes: no restart policy, and stopped", asy
   assert.deepEqual(await backend.guestIdentity!(fork), { macs: {}, smbios: null, value: "bxfork0000002" });
 });
 
-test("Docker holds every service of a fork until BB Box's check has passed, then releases it as the fork's own box", async () => {
+test("Docker holds every service of a fork until VesnALIA Box's check has passed, then releases it as the fork's own box", async () => {
   const fake = fakeDockerHost();
   const { state, source, target } = await sourceWithSnapshotOfA(fake);
 
@@ -353,15 +353,15 @@ test("Docker holds every service of a fork until BB Box's check has passed, then
   assert.ok(createOf(fake, container).includes("BBBOX_FORK_HOLD=1"));
   const checked = callIndex(fake, container, "tailnet_node");
   const released = callIndex(fake, container, "fork-released");
-  assert.ok(checked >= 0 && released > checked, "BB Box released the fork only after its check");
+  assert.ok(checked >= 0 && released > checked, "VesnALIA Box released the fork only after its check");
   const [servicesAfterCalls, ...again] = fake.servicesStarted(container);
   assert.deepEqual(again, [], "its services started once");
   assert.ok(servicesAfterCalls !== undefined && servicesAfterCalls > released, "its services started only after the release");
-  assert.equal(readFileSync(join(fake.root, "containers", container, "var-lib", "bb-box", "fork-released"), "utf8"), fork.id);
+  assert.equal(readFileSync(join(fake.root, "containers", container, "var-lib", "alia-box", "fork-released"), "utf8"), fork.id);
   assert.equal(existsSync(heldFile(fake, container)), false);
 });
 
-test("Docker leaves a fork held when BB Box stops before its check, and removes it without ever releasing it", async () => {
+test("Docker leaves a fork held when VesnALIA Box stops before its check, and removes it without ever releasing it", async () => {
   const fake = fakeDockerHost();
   const { state, source, target } = await sourceWithSnapshotOfA(fake);
   const release = join(tempDir("docker-fork"), "check-may-run");
@@ -369,7 +369,7 @@ test("Docker leaves a fork held when BB Box stops before its check, and removes 
 
   const answer = await state.snapshots.fork(COMMAND, source, standing(source), target.id, { name: "the-fork" });
   const halfMade = await until(() => fake.containers().find((name) => forkName(answer.box!.id).test(name) && existsSync(heldFile(fake, name))), "the fork to be held");
-  await until(() => callIndex(fake, halfMade, "tailnet_node") >= 0, "BB Box's check to start");
+  await until(() => callIndex(fake, halfMade, "tailnet_node") >= 0, "VesnALIA Box's check to start");
   await state.restart();
   await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -455,7 +455,7 @@ test("Docker holds a fork of a fork, though its copy carries the first fork's re
   await backend.startForForkCheck!(second, AbortSignal.timeout(30_000));
   await new Promise((resolve) => setTimeout(resolve, 500));
 
-  assert.equal(readFileSync(join(fake.root, "containers", second.ref, "var-lib", "bb-box", "fork-released"), "utf8"), "bxfork0000005", "the copy carries the first fork's release");
+  assert.equal(readFileSync(join(fake.root, "containers", second.ref, "var-lib", "alia-box", "fork-released"), "utf8"), "bxfork0000005", "the copy carries the first fork's release");
   assert.equal(existsSync(heldFile(fake, second.ref)), true, "the second fork is held all the same");
   assert.deepEqual(fake.servicesStarted(second.ref), []);
 

@@ -1,7 +1,7 @@
-// Agent tools, gated by role twice: bb.agents.configure selects them from
+// Agent tools, gated by role twice: alia.agents.configure selects them from
 // thread metadata + the threads table, and every call re-checks the role
 // against the plugin's own threads table (metadata can be forged).
-import type { BbPluginApi, PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginAgentToolResult } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { Engine, Role } from "./engine.ts";
 import { errText } from "./pipeline.ts";
@@ -49,9 +49,9 @@ async function run(fn: () => Promise<string> | string): Promise<PluginAgentToolR
   }
 }
 
-export function registerTools(bb: BbPluginApi, engine: Engine): void {
+export function registerTools(alia: AliaPluginApi, engine: Engine): void {
   // ---- worker ----
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "study_submit_candidate",
     description:
       "Submit your worktree, then end your turn. The plugin checks scope, runs gates and measures against best; a ticket returns now and the verdict arrives later. Your title and body are used verbatim for the candidate commit and, if promoted, the commit on best.",
@@ -70,7 +70,7 @@ export function registerTools(bb: BbPluginApi, engine: Engine): void {
     }),
     execute: ({ title, body }, ctx) => run(() => engine.submit(ctx.threadId, { title, body: body ?? null })),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "study_record_finding",
     description: "Record a finding before study_finish. Separate the plugin's measured result from your explanation of why it happened; cite the candidate and evidence, and say when the idea is worth revisiting.",
     presentation: { label: { pending: "Recording finding", completed: "Recorded finding" } },
@@ -83,20 +83,20 @@ export function registerTools(bb: BbPluginApi, engine: Engine): void {
     }),
     execute: (args, ctx) => run(() => engine.recordFinding(ctx.threadId, args)),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "study_propose_idea",
     description: "Add an idea you noticed but won't pursue. The strategist triages it.",
     parameters: z.object({ title: z.string().min(5).max(200), rationale: z.string().min(10).max(2000), theme: z.string().max(60).optional() }),
     execute: (args, ctx) => run(() => engine.proposeIdea(ctx.threadId, args)),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "study_request_profile",
     description: "Profile best or your latest candidate on the bench host with the study's profile command. Uses bench time and counts against the budget.",
     presentation: { label: { pending: "Profiling on the bench host", completed: "Profiled on the bench host" } },
     parameters: z.object({ target: z.enum(["best", "candidate"]) }),
     execute: ({ target }, ctx) => run(() => engine.requestProfile(ctx.threadId, target)),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "study_finish",
     description: "End your assignment. Refuses until study_record_finding has been called. The plugin then archives this thread and removes its worktree.",
     parameters: z.object({}),
@@ -104,10 +104,10 @@ export function registerTools(bb: BbPluginApi, engine: Engine): void {
   });
 
   // ---- creator ----
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "study_propose",
     description:
-      "Submit an autoresearch study spec (TOML) for validation. Creates the study in Draft (or revises its spec) and binds this thread as the study thread. The human approves with `bb study calibrate`.",
+      "Submit an autoresearch study spec (TOML) for validation. Creates the study in Draft (or revises its spec) and binds this thread as the study thread. The human approves with `alia study calibrate`.",
     presentation: { label: { pending: "Proposing study spec", completed: "Proposed study spec" } },
     parameters: z.object({ spec_toml: z.string().min(50).max(64 * 1024).describe("The full study spec in TOML; see the study-create skill.") }),
     execute: ({ spec_toml }, ctx) =>
@@ -118,7 +118,7 @@ export function registerTools(bb: BbPluginApi, engine: Engine): void {
   });
 
   // ---- strategist ----
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "study_queue_ideas",
     description: "Add ideas to the study's queue (each with rationale, theme, optional priority, starting candidate, and the idea it varies) and/or reprioritize queued ideas. Ideas repeating a lost idea are skipped unless marked as a variation.",
     presentation: { label: { pending: "Queueing ideas", completed: "Queued ideas" } },
@@ -140,19 +140,19 @@ export function registerTools(bb: BbPluginApi, engine: Engine): void {
     }),
     execute: (args, ctx) => run(() => engine.queueIdeas(ctx.threadId, args)),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "study_retire_idea",
     description: "Close a queued idea or direction, with a reason.",
     parameters: z.object({ id: z.number().int().positive(), reason: z.string().min(5).max(500) }),
     execute: ({ id, reason }, ctx) => run(() => engine.retireIdea(ctx.threadId, id, reason)),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "study_update_dossier",
     description: "Replace the study dossier: your running map of the codebase (hot paths, what's been learned, dead ends). Workers get it in their brief.",
     parameters: z.object({ text: z.string().min(20).max(20_000) }),
     execute: ({ text }, ctx) => run(() => engine.updateDossier(ctx.threadId, text)),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "study_search_findings",
     description: "Search findings and candidates by text, theme, or verdict.",
     parameters: z.object({
@@ -163,7 +163,7 @@ export function registerTools(bb: BbPluginApi, engine: Engine): void {
     }),
     execute: (args, ctx) => run(() => engine.searchFindings(ctx.threadId, args)),
   });
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     if (context.origin.kind === "fork" && context.origin.pluginId === "side-chat") return { tools: [], skills: [] };
     let role: Role | null = null;
     try {

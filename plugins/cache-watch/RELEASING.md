@@ -1,6 +1,6 @@
 # Publishing to GitHub
 
-Releases are published to `SergeyZh/bb-plugin-cache-watch` as Git tags and
+Releases are published to `SergeyZh/alia-plugin-cache-watch` as Git tags and
 GitHub releases. Version 0.3.0 adds
 turn/session statistics, provider cost estimates, and Claude Code Telemetry support.
 
@@ -11,7 +11,7 @@ release from that tag using its CHANGELOG entry as the release notes.
 
 ## First publication
 
-1. Create an empty GitHub repository `SergeyZh/bb-plugin-cache-watch`. Do not
+1. Create an empty GitHub repository `SergeyZh/alia-plugin-cache-watch`. Do not
    generate a README, license, or .gitignore there; these files already exist.
 2. Run the checks below and confirm the intended remote with `git remote -v`.
    If publishing under another account, update the remote, package repository,
@@ -39,7 +39,7 @@ release from that tag using its CHANGELOG entry as the release notes.
 ```sh
 npm ci --include=dev
 npm run check
-npm exec -- bb plugin types --check .
+npm exec -- alia plugin types --check .
 npm run build
 npm pack --dry-run
 git diff --check
@@ -47,13 +47,13 @@ git diff --check
 
 Confirm the package includes source, skills, built app/server metadata,
 LICENSE, and THIRD_PARTY_NOTICES.md. Check compatibility floors against the
-oldest BB/SDK version actually verified. Inspect changes for local session data.
+oldest ALIA/SDK version actually verified. Inspect changes for local session data.
 
 For later releases, update `package.json`, its lockfile, and CHANGELOG before
-building and tagging. Never move a published tag: BB records its commit and
+building and tagging. Never move a published tag: VesnALIA records its commit and
 refuses changed tags. Publish a new version for fixes.
 
-GitHub publication does not publish to npm or submit to the BB Community
+GitHub publication does not publish to npm or submit to the VesnALIA Community
 marketplace. The included PLUGIN_OVERVIEW.md is ready for a future marketplace
 submission. An npm release additionally needs the built `dist/` artifacts;
 run the build before packing or publishing.

@@ -35,7 +35,7 @@ export interface RunRow {
   lastNudgeAt: number | null;
 }
 
-// Append-only: bb records each statement's hash, so a shipped statement never changes.
+// Append-only: VesnALIA records each statement's hash, so a shipped statement never changes.
 export const MIGRATIONS = [
   `CREATE TABLE flares (
     id TEXT PRIMARY KEY,

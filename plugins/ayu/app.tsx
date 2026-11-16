@@ -1,4 +1,4 @@
-// bb-plugin-ayu — the Ayu settings panel.
+// alia-plugin-ayu — the Ayu settings panel.
 //
 // Rendered on the plugin's Settings page (Settings → Ayu): switch between the
 // three ayu themes and explore every colour the palette publishes. Palette
@@ -12,7 +12,7 @@ import {
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "./server";
 import { AYU_PALETTES, type AyuVariant } from "./generated/palettes";
@@ -55,7 +55,7 @@ function isLightColor(hex: string): boolean {
 }
 
 async function copyHex(hex: string) {
-  // bb's own clipboard writer: native on bb Desktop (no focus or secure origin
+  // VesnALIA's own clipboard writer: native on VesnALIA Desktop (no focus or secure origin
   // needed), the Clipboard API then the copy command in browsers.
   if (await experimental_copyToClipboard({ text: hex })) {
     toast.success(`Copied ${hex}`);
@@ -71,10 +71,10 @@ function useActiveTheme() {
   const [themeId, setThemeId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const connection = useRealtimeConnectionState();
-  // bb has no theme event for plugins, but it re-renders this hook whenever
+  // VesnALIA has no theme event for plugins, but it re-renders this hook whenever
   // the app theme changes its code theme. Every ayu theme declares its own
   // (package.json `codeTheme`), so a switch to, from or between ayu themes
-  // made anywhere else (Settings → Appearance, `bb theme set`, another
+  // made anywhere else (Settings → Appearance, `alia theme set`, another
   // window) changes this name and triggers a re-read. The one switch it
   // misses is between an ayu theme and a custom theme that declares the same
   // ayu code theme; the badge then catches up on the next reconnect or visit.

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import { experimental_Icon as Icon, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { BoardDetail, BoardSummary, PrView } from "../contract";
 import { PANEL_PATH } from "./constants";
@@ -128,7 +128,7 @@ function BoardCard({ board, onOpen }: { board: BoardSummary; onOpen(): void }) {
 
 /** `stay` keeps the page where it is after a create, as the PR view does, instead of opening the new board. */
 export function BoardFormDialog({ mode, board, prs = [], stay = false, initialName = "", onClose }: { mode: "create" | "edit" | "duplicate"; board?: BoardSummary; prs?: readonly string[]; stay?: boolean; initialName?: string; onClose(): void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const create = useShuttleMutation("boardCreate");
   const update = useShuttleMutation("boardUpdate");
   const [name, setName] = useState(mode === "duplicate" ? `${(board?.name ?? "").slice(0, 80 - " (copy)".length).trimEnd()} (copy)` : board?.name ?? initialName);
@@ -367,12 +367,12 @@ function BoardToolsDialog({ board, onClose }: { board: BoardSummary; onClose(): 
       <p className="mt-3 text-sm text-muted-foreground">Ask a thread to call these tools, replacing the example PR keys with yours. These operations never assign PR agents or change review tracking.</p>
       <details className="mt-3 text-sm">
         <summary className="cursor-pointer text-muted-foreground">CLI equivalents</summary>
-        <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-6">{`bb shuttle board list
-bb shuttle board show <id>
-bb shuttle board create <name> [prs...] [--description <text>]
-bb shuttle board add <id> <prs...>
-bb shuttle board remove <id> <prs...>
-bb shuttle board update <id> [--name <text>] [--description <text>] [--archive|--restore]`}</pre>
+        <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-6">{`alia shuttle board list
+VesnALIA shuttle board show <id>
+VesnALIA shuttle board create <name> [prs...] [--description <text>]
+VesnALIA shuttle board add <id> <prs...>
+VesnALIA shuttle board remove <id> <prs...>
+VesnALIA shuttle board update <id> [--name <text>] [--description <text>] [--archive|--restore]`}</pre>
       </details>
     </Dialog>
   );
@@ -469,7 +469,7 @@ export function BoardDetailView({ id, layout, onGo }: { id: string; layout: RowL
     setStatus("all");
     setDialog(null);
   }, [id, selection.clear]);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const detail: BoardDetail | undefined = boardQuery.data;
   const selected = useMemo(() => new Set(selection.selected), [selection.selected]);
   const toggleSelected = selection.toggle;

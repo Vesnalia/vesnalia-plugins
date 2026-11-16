@@ -1,9 +1,9 @@
 /**
- * File references, linked the way bb links them in chat. bb's `Markdown` turns a Markdown link to a
+ * File references, linked the way VesnALIA links them in chat. VesnALIA's `Markdown` turns a Markdown link to a
  * workspace path, and an inline-code path such as `src/a.ts`, `src/a.ts:42` or `src/a.ts:40-60`, into a
- * link that opens the file in bb's preview at that line or range. It does so only where it knows the
+ * link that opens the file in VesnALIA's preview at that line or range. It does so only where it knows the
  * workspace: a chat message knows its thread's, but a plugin's card or tab does not, so there the same
- * text stayed plain. `experimental_document` hands it the workspace (bb 0.48.1's `PluginMarkdown` resolves
+ * text stayed plain. `experimental_document` hands it the workspace (VesnALIA 0.48.1's `PluginMarkdown` resolves
  * relative links against the document's folder and opens them with `experimental_openFilePreview`).
  *
  * A card's `files` are drawn with `experimental_FileLink`, which takes the line or range as `location`.
@@ -13,7 +13,7 @@ import {
   Markdown,
   type ExperimentalFileLocation,
   type MarkdownProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Fragment } from "react";
 
 import type { Workspace } from "../shared/types";
@@ -37,7 +37,7 @@ export function markdownDocument(workspace: Workspace | null | undefined): Markd
   };
 }
 
-/** Markdown whose file references open in `workspace`; with none, bb's own routing (a chat message's). */
+/** Markdown whose file references open in `workspace`; with none, VesnALIA's own routing (a chat message's). */
 export function FileMarkdown(props: { content: string; workspace: Workspace | null | undefined; className?: string }) {
   const document = markdownDocument(props.workspace);
   return <Markdown content={props.content} className={props.className} {...(document === undefined ? {} : { experimental_document: document })} />;
@@ -56,7 +56,7 @@ function rangeOf(start: number | null, end: number | null): ExperimentalFileLoca
 }
 
 /**
- * Splits a reference into its path and the line or range it points at, in the forms bb's chat links
+ * Splits a reference into its path and the line or range it points at, in the forms VesnALIA's chat links
  * read: `path:42`, `path:42:7` (the column is dropped), `path:40-60`, `path#L42`, `path#L40-L60`.
  */
 export function parseFileRef(ref: string): { path: string; location: ExperimentalFileLocation | null } {
@@ -85,7 +85,7 @@ export function FileRef(props: { reference: string; environmentId: string | null
 }
 
 /**
- * Whether bb would link this inline code in a chat message: no spaces, not a URL, and either a path
+ * Whether VesnALIA would link this inline code in a chat message: no spaces, not a URL, and either a path
  * that starts with `./` or `../`, a name with an extension, or a line suffix. Absolute paths and paths
  * that climb out of the workspace are left as code, since a workspace link takes a path inside it.
  */

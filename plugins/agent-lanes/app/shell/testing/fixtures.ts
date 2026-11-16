@@ -1,6 +1,6 @@
 // Test fixtures for the shell: complete sidebar threads and lane blocks with
 // partial overrides, so a new required field changes one default.
-import type { PluginSidebarProject, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarProject, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { LaneBlock } from "../../../shared/model";
 
 type Environment = NonNullable<PluginSidebarThread["environment"]>;

@@ -9,7 +9,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { data, now, task, thread } from "./fixtures";
 import { sessionPreview } from "./preview";
 import { localDay } from "./model";
@@ -20,7 +20,7 @@ import type {
   TaskComment,
   TaskDetail,
 } from "./server";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import {
   managedProjectSchema,
   managementInput,
@@ -226,7 +226,7 @@ it("shows recent activity without claiming an agent is running, and holds an ope
   expect(slot.getByText("ACTIVE IN THE LAST 24H")).toBeTruthy();
   fireEvent.click(tile);
   fireEvent.click(slot.getByRole("button", { name: "Chat here" }));
-  const chat = slot.getByTestId("bb-thread-chat");
+  const chat = slot.getByTestId("alia-thread-chat");
   const area = tile.closest("[data-layout-id]");
   const parent = area?.parentElement;
   clock += 2 * 86400000;
@@ -235,7 +235,7 @@ it("shows recent activity without claiming an agent is running, and holds an ope
   await waitFor(() => expect(tile.textContent).toContain("Active 2d ago"));
   await slot.findByText(/Task source disconnected/);
   expect(area?.parentElement).toBe(parent);
-  expect(slot.getByTestId("bb-thread-chat")).toBe(chat);
+  expect(slot.getByTestId("alia-thread-chat")).toBe(chat);
   expect(slot.inspection.sidebarActionCalls).toEqual([]);
   expect(
     slot.inspection.rpcCalls.some((c) =>
@@ -465,7 +465,7 @@ async function mount(
     threads?: PluginSidebarThread[];
     preferences?: Record<string, Preference>;
     attachmentError?: boolean;
-    linkedBbProjectId?: string | null;
+    linkedAliaProjectId?: string | null;
     delegateAreaRequests?: {
       requestId: string;
       projectId: string;
@@ -507,10 +507,10 @@ async function mount(
           id: "p1",
           name: "Test project",
           prefix: "TEST",
-          linkedBbProjectId:
-            options.linkedBbProjectId === undefined
-              ? "proj_bb"
-              : options.linkedBbProjectId,
+          linkedAliaProjectId:
+            options.linkedAliaProjectId === undefined
+              ? "proj_alia"
+              : options.linkedAliaProjectId,
         }),
       ];
   const tasks = options.tasks ?? [
@@ -525,7 +525,7 @@ async function mount(
         managementOptions: () => ({
           projects,
           folders: [{ id: "folder", name: "Work" }],
-          bbProjects: [{ id: "proj_unrelated", name: "BB work" }],
+          aliaProjects: [{ id: "proj_unrelated", name: "VesnALIA work" }],
         }),
         manage: (raw) => {
           const input = managementInput.parse(raw);
@@ -775,9 +775,9 @@ describe("existing session chat", () => {
     const row = slot
       .getByRole("region", { name: "Expanded: Running session" })
       .closest(".wm-result");
-    expect(slot.queryByTestId("bb-thread-chat")).toBeNull();
+    expect(slot.queryByTestId("alia-thread-chat")).toBeNull();
     fireEvent.click(slot.getByRole("button", { name: "Chat here" }));
-    const chat = slot.getByTestId("bb-thread-chat");
+    const chat = slot.getByTestId("alia-thread-chat");
     expect(chat.getAttribute("data-thread-id")).toBe(session.id);
     expect(chat.getAttribute("data-permission-policy")).toBe("inherit");
     expect(chat.getAttribute("data-layout")).toBe("contained");
@@ -785,7 +785,7 @@ describe("existing session chat", () => {
     expect(chat.closest(".wm-result")).toBe(row);
     expect(chat.closest(".wm-detail-section")).toBeNull();
     fireEvent.change(slot.getByRole("slider"), { target: { value: "160" } });
-    expect(slot.getByTestId("bb-thread-chat")).toBe(chat);
+    expect(slot.getByTestId("alia-thread-chat")).toBe(chat);
     const key = new KeyboardEvent("keydown", {
       key: "0",
       ctrlKey: true,
@@ -803,7 +803,7 @@ describe("existing session chat", () => {
           .textContent,
       ).toContain("Inactive"),
     );
-    expect(slot.getByTestId("bb-thread-chat")).toBe(chat);
+    expect(slot.getByTestId("alia-thread-chat")).toBe(chat);
     expect(
       slot.inspection.rpcCalls.some((call) => call.method === "createSession"),
     ).toBe(false);
@@ -821,7 +821,7 @@ describe("existing session chat", () => {
     // acknowledge a hidden excerpt on the host chat's behalf.
     expect(slot.inspection.sidebarActionCalls).toEqual([]);
     fireEvent.click(slot.getByRole("button", { name: "Back to summary" }));
-    expect(slot.queryByTestId("bb-thread-chat")).toBeNull();
+    expect(slot.queryByTestId("alia-thread-chat")).toBeNull();
     expect(
       slot
         .getByRole("region", { name: "Expanded: Running session" })
@@ -846,45 +846,45 @@ describe("existing session chat", () => {
     );
     fireEvent.click(slot.getByRole("button", { name: "Chat here" }));
     expect(
-      slot.getByTestId("bb-thread-chat").getAttribute("data-thread-id"),
+      slot.getByTestId("alia-thread-chat").getAttribute("data-thread-id"),
     ).toBe("thr_second");
     fireEvent.click(
       slot.getByRole("button", { name: /^First agent.*Attached/ }),
     );
     fireEvent.click(slot.getByRole("button", { name: "Chat here" }));
     expect(
-      slot.getByTestId("bb-thread-chat").getAttribute("data-thread-id"),
+      slot.getByTestId("alia-thread-chat").getAttribute("data-thread-id"),
     ).toBe("thr_test");
     fireEvent.click(
       slot.getByRole("button", { name: /^Second agent.*Attached/ }),
     );
-    expect(slot.queryByTestId("bb-thread-chat")).toBeNull();
+    expect(slot.queryByTestId("alia-thread-chat")).toBeNull();
     fireEvent.click(slot.getByRole("button", { name: "Chat here" }));
     expect(
-      slot.getByTestId("bb-thread-chat").getAttribute("data-thread-id"),
+      slot.getByTestId("alia-thread-chat").getAttribute("data-thread-id"),
     ).toBe("thr_second");
     const taskDetail = slot.getByRole("region", {
       name: "Expanded: Review proposal",
     });
     pickMore(within(taskDetail), "Open in side pane");
     expect(
-      slot.getByTestId("bb-thread-chat").closest(".wm-preview"),
+      slot.getByTestId("alia-thread-chat").closest(".wm-preview"),
     ).not.toBeNull();
     pickMore(slot, "Expand in map");
     const focusRequest = Number(
-      slot.getByTestId("bb-thread-chat").getAttribute("data-focus-request"),
+      slot.getByTestId("alia-thread-chat").getAttribute("data-focus-request"),
     );
     fireEvent.click(
       slot.getByRole("button", { name: /^Preview Review proposal/ }),
     );
-    expect(slot.queryByTestId("bb-thread-chat")).toBeNull();
+    expect(slot.queryByTestId("alia-thread-chat")).toBeNull();
     expect(
       slot.getByRole("region", { name: "Expanded: Review proposal" }),
     ).toBeTruthy();
     fireEvent.click(slot.getByRole("button", { name: "Chat here" }));
     expect(
       Number(
-        slot.getByTestId("bb-thread-chat").getAttribute("data-focus-request"),
+        slot.getByTestId("alia-thread-chat").getAttribute("data-focus-request"),
       ),
     ).toBeGreaterThan(focusRequest);
     const consumedEscape = new KeyboardEvent("keydown", {
@@ -893,10 +893,10 @@ describe("existing session chat", () => {
       cancelable: true,
     });
     consumedEscape.preventDefault();
-    fireEvent(slot.getByTestId("bb-thread-chat"), consumedEscape);
-    expect(slot.getByTestId("bb-thread-chat")).toBeTruthy();
-    fireEvent.keyDown(slot.getByTestId("bb-thread-chat"), { key: "Escape" });
-    expect(slot.queryByTestId("bb-thread-chat")).toBeNull();
+    fireEvent(slot.getByTestId("alia-thread-chat"), consumedEscape);
+    expect(slot.getByTestId("alia-thread-chat")).toBeTruthy();
+    fireEvent.keyDown(slot.getByTestId("alia-thread-chat"), { key: "Escape" });
+    expect(slot.queryByTestId("alia-thread-chat")).toBeNull();
     expect(
       slot.getByRole("region", { name: "Expanded: Review proposal" }),
     ).toBeTruthy();
@@ -926,7 +926,7 @@ describe("existing session chat", () => {
     );
     fireEvent.click(slot.getByRole("button", { name: "Chat here" }));
     // The SDK stub has no editor; stand its root in for the Reply editor.
-    const editor = slot.getByTestId("bb-thread-chat");
+    const editor = slot.getByTestId("alia-thread-chat");
     editor.tabIndex = -1;
     editor.focus();
     const escape = () => {
@@ -945,16 +945,16 @@ describe("existing session chat", () => {
     escape();
     await new Promise((resolve) => setTimeout(resolve, 10));
     expect(document.activeElement).toBe(editor);
-    expect(slot.getByTestId("bb-thread-chat")).toBe(editor);
+    expect(slot.getByTestId("alia-thread-chat")).toBe(editor);
     // Second Escape leaves the editor, which drops focus on the body.
     escape();
     editor.blur();
     const back = slot.getByRole("button", { name: "Back to summary" });
     await waitFor(() => expect(document.activeElement).toBe(back));
-    expect(slot.getByTestId("bb-thread-chat")).toBeTruthy();
+    expect(slot.getByTestId("alia-thread-chat")).toBeTruthy();
     // From there Escape steps back as the hint promises: chat closes first.
     fireEvent.keyDown(back, { key: "Escape" });
-    expect(slot.queryByTestId("bb-thread-chat")).toBeNull();
+    expect(slot.queryByTestId("alia-thread-chat")).toBeNull();
     expect(
       slot.getByRole("region", { name: "Expanded: Review proposal" }),
     ).toBeTruthy();
@@ -971,7 +971,7 @@ describe("existing session chat", () => {
     await slot.findByText(/Session preview could not be loaded/);
     fireEvent.click(slot.getByRole("button", { name: "Chat here" }));
     expect(
-      slot.getByTestId("bb-thread-chat").getAttribute("data-thread-id"),
+      slot.getByTestId("alia-thread-chat").getAttribute("data-thread-id"),
     ).toBe("thr_test");
     const detail = slot.getByRole("region", {
       name: "Expanded: Review proposal",
@@ -979,8 +979,8 @@ describe("existing session chat", () => {
     fireEvent.click(
       within(detail).getByRole("button", { name: "New session" }),
     );
-    expect(slot.queryByTestId("bb-thread-chat")).toBeNull();
-    expect(slot.getByTestId("bb-new-thread-composer")).toBeTruthy();
+    expect(slot.queryByTestId("alia-thread-chat")).toBeNull();
+    expect(slot.getByTestId("alia-new-thread-composer")).toBeTruthy();
     fireEvent.click(slot.getByRole("button", { name: "Close draft" }));
     expect(slot.getByRole("button", { name: "Chat here" })).toBeTruthy();
     expect(
@@ -998,7 +998,7 @@ describe("existing session chat", () => {
     session.isArchived = true;
     fireEvent.click(slot.getByRole("button", { name: "Refresh map" }));
     await waitFor(() =>
-      expect(slot.queryByTestId("bb-thread-chat")).toBeNull(),
+      expect(slot.queryByTestId("alia-thread-chat")).toBeNull(),
     );
     expect(slot.queryByRole("button", { name: "Chat here" })).toBeNull();
     expect(
@@ -1112,7 +1112,7 @@ describe("area management", () => {
       name: "Launch",
       prefix: "LAUNCH",
       folderId: "folder",
-      linkedBbProjectId: "proj_unrelated",
+      linkedAliaProjectId: "proj_unrelated",
     });
     slot.lifecycle.unmount();
   });
@@ -1263,15 +1263,15 @@ describe("preview and native navigation", () => {
     expect(card.textContent).not.toContain("|");
     expect(card.getAttribute("aria-label")).not.toContain("|");
     fireEvent.click(card);
-    const content = await slot.findByTestId("bb-markdown");
+    const content = await slot.findByTestId("alia-markdown");
     expect(content.textContent).toBe(markdown);
     expect(content.closest("p, button")).toBeNull();
     expect(content.closest('[role="region"]')?.getAttribute("tabindex")).toBe(
       "0",
     );
     fireEvent.click(slot.getByRole("button", { name: "Open in side pane" }));
-    expect(slot.getByTestId("bb-markdown").textContent).toBe(markdown);
-    expect(slot.getByTestId("bb-markdown").closest(".wm-preview")).toBeTruthy();
+    expect(slot.getByTestId("alia-markdown").textContent).toBe(markdown);
+    expect(slot.getByTestId("alia-markdown").closest(".wm-preview")).toBeTruthy();
     slot.lifecycle.unmount();
   });
   it("labels shortened responses and keeps the full session accessible", async () => {
@@ -1282,7 +1282,7 @@ describe("preview and native navigation", () => {
     fireEvent.click(
       await slot.findByRole("button", { name: /^Preview Session/ }),
     );
-    const content = await slot.findByTestId("bb-markdown");
+    const content = await slot.findByTestId("alia-markdown");
     expect(content.textContent!.length).toBeLessThanOrEqual(6000);
     expect(
       slot.getByText(
@@ -1416,14 +1416,14 @@ describe("preview and native navigation", () => {
       await slot.findByRole("button", { name: /^Preview Review proposal/ }),
     );
     fireEvent.click(slot.getByRole("button", { name: "Chat here" }));
-    const chat = slot.getByTestId("bb-thread-chat");
+    const chat = slot.getByTestId("alia-thread-chat");
     const done = slot.getByRole("button", { name: "Done" });
     expect(done.closest(".wm-inline-detail")).toBe(
       chat.closest(".wm-inline-detail"),
     );
     expect(done.closest(".wm-live-session")).toBeNull();
     fireEvent.change(slot.getByRole("slider"), { target: { value: "60" } });
-    expect(slot.getByTestId("bb-thread-chat")).toBe(chat);
+    expect(slot.getByTestId("alia-thread-chat")).toBe(chat);
     fireEvent.click(done);
     await slot.findByRole("region", { name: "Settled today" });
     expect(settleRequests[0]).toMatchObject({
@@ -1595,8 +1595,8 @@ describe("preview and native navigation", () => {
       name: "Expanded: Review proposal",
     });
     fireEvent.click(within(area).getByRole("button", { name: "New session" }));
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
-    await slot.findByTestId("bb-thread-chat");
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
+    await slot.findByTestId("alia-thread-chat");
     fireEvent.click(slot.getByRole("button", { name: "Pause here" }));
     fireEvent.click(slot.getByRole("button", { name: "Save and pause" }));
     await slot.findByRole("region", { name: "Settled today" });
@@ -1611,11 +1611,11 @@ describe("preview and native navigation", () => {
     fireEvent.click(await slot.findByRole("button", { name: "New session" }));
     expect(
       slot
-        .getByTestId("bb-new-thread-composer")
+        .getByTestId("alia-new-thread-composer")
         .getAttribute("data-default-project-id"),
     ).toBe("proj_unrelated");
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
-    const chat = await slot.findByTestId("bb-thread-chat");
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
+    const chat = await slot.findByTestId("alia-thread-chat");
     expect(chat.getAttribute("data-layout")).toBe("contained");
     expect(chat.parentElement?.classList.contains("wm-created-chat")).toBe(
       true,
@@ -1628,22 +1628,22 @@ describe("preview and native navigation", () => {
     expect(createRequests[0].taskId).toBeUndefined();
     expect(createRequests[0].request.projectId).toBe("proj_unrelated");
     fireEvent.change(slot.getByRole("slider"), { target: { value: "160" } });
-    expect(slot.getByTestId("bb-thread-chat")).toBe(chat);
+    expect(slot.getByTestId("alia-thread-chat")).toBe(chat);
     fireEvent.click(slot.getByRole("button", { name: "Collapse session" }));
-    expect(slot.queryByTestId("bb-thread-chat")).toBeNull();
+    expect(slot.queryByTestId("alia-thread-chat")).toBeNull();
   });
   it("preserves the project draft and placement through zoom, then contains its created chat", async () => {
     const createRequests: {
       taskId?: string;
       request: { projectId: string };
     }[] = [];
-    const slot = await mount({ createRequests, linkedBbProjectId: null });
+    const slot = await mount({ createRequests, linkedAliaProjectId: null });
     fireEvent.click(
       await slot.findByRole("button", { name: /^Open project Test project/ }),
     );
     const area = slot.getByRole("region", { name: "Expanded: Test project" });
     fireEvent.click(within(area).getByRole("button", { name: "New session" }));
-    const composer = slot.getByTestId("bb-new-thread-composer");
+    const composer = slot.getByTestId("alia-new-thread-composer");
     expect(composer.closest(".wm-island")).toBe(area.closest(".wm-island"));
     expect(composer.getAttribute("data-default-model")).toBe("");
     expect(composer.getAttribute("data-default-permission-mode")).toBe("");
@@ -1654,38 +1654,38 @@ describe("preview and native navigation", () => {
       ).map((element) => element.dataset.layoutId);
     const before = roots();
     const input = slot.getByTestId(
-      "bb-new-thread-composer-input",
+      "alia-new-thread-composer-input",
     ) as HTMLTextAreaElement;
     fireEvent.change(input, {
       target: { value: "Keep my draft while I zoom" },
     });
     fireEvent.change(slot.getByRole("slider"), { target: { value: "60" } });
     expect(roots()).toEqual(before);
-    expect(slot.getByTestId("bb-new-thread-composer")).toBe(composer);
+    expect(slot.getByTestId("alia-new-thread-composer")).toBe(composer);
     fireEvent.click(slot.getByRole("button", { name: "Reset to actual size" }));
     expect(input.value).toBe("Keep my draft while I zoom");
     expect(roots()).toEqual(before);
     expect(createRequests).toEqual([]);
-    fireEvent.keyDown(slot.getByTestId("bb-new-thread-composer-input"), {
+    fireEvent.keyDown(slot.getByTestId("alia-new-thread-composer-input"), {
       key: "Escape",
     });
-    expect(slot.queryByTestId("bb-new-thread-composer")).toBeNull();
+    expect(slot.queryByTestId("alia-new-thread-composer")).toBeNull();
     expect(
       slot.getByRole("region", { name: "Expanded: Test project" }),
     ).toBeTruthy();
     fireEvent.click(within(area).getByRole("button", { name: "New session" }));
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
-    const chat = await slot.findByTestId("bb-thread-chat");
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
+    const chat = await slot.findByTestId("alia-thread-chat");
     expect(chat.getAttribute("data-layout")).toBe("contained");
     expect(chat.parentElement?.classList.contains("wm-created-chat")).toBe(
       true,
     );
     expect(chat.closest(".wm-island")).toBe(area.closest(".wm-island"));
     fireEvent.change(slot.getByRole("slider"), { target: { value: "60" } });
-    expect(slot.getByTestId("bb-thread-chat")).toBe(chat);
+    expect(slot.getByTestId("alia-thread-chat")).toBe(chat);
     expect(roots()).toEqual(before);
   });
-  it("starts a task session inside its filtered row with the linked BB project", async () => {
+  it("starts a task session inside its filtered row with the linked VesnALIA project", async () => {
     const createRequests: {
       taskId?: string;
       request: { projectId: string };
@@ -1694,7 +1694,7 @@ describe("preview and native navigation", () => {
       createRequests,
       tasks: [task({ status: "in_review" })],
       threads: [],
-      linkedBbProjectId: "proj_linked",
+      linkedAliaProjectId: "proj_linked",
     });
     fireEvent.click(
       await slot.findByRole("button", { name: "Waiting for you 1" }),
@@ -1711,15 +1711,15 @@ describe("preview and native navigation", () => {
     );
     expect(
       slot
-        .getByTestId("bb-new-thread-composer")
+        .getByTestId("alia-new-thread-composer")
         .getAttribute("data-default-project-id"),
     ).toBe("proj_linked");
     expect(
-      (slot.getByTestId("bb-new-thread-composer-input") as HTMLTextAreaElement)
+      (slot.getByTestId("alia-new-thread-composer-input") as HTMLTextAreaElement)
         .value,
     ).toContain("TEST-1");
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
-    const chat = await slot.findByTestId("bb-thread-chat");
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
+    const chat = await slot.findByTestId("alia-thread-chat");
     expect(chat.getAttribute("data-thread-id")).toBe("thr_created");
     expect(chat.getAttribute("data-layout")).toBe("contained");
     expect(chat.parentElement?.classList.contains("wm-created-chat")).toBe(
@@ -1728,9 +1728,9 @@ describe("preview and native navigation", () => {
     expect(chat.closest(".wm-result")).toBe(row);
     expect(createRequests[0].taskId).toBe("task1");
     expect(createRequests[0].request.projectId).toBe("proj_linked");
-    expect(slot.queryByTestId("bb-new-thread-composer")).toBeNull();
+    expect(slot.queryByTestId("alia-new-thread-composer")).toBeNull();
     fireEvent.change(slot.getByRole("slider"), { target: { value: "60" } });
-    expect(slot.getByTestId("bb-thread-chat")).toBe(chat);
+    expect(slot.getByTestId("alia-thread-chat")).toBe(chat);
     expect(chat.closest(".wm-result")).toBe(row);
   });
   it("keeps a started session usable when attachment fails, with a separate retry", async () => {
@@ -1744,13 +1744,13 @@ describe("preview and native navigation", () => {
     fireEvent.click(
       within(detail).getByRole("button", { name: "New session" }),
     );
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
     await slot.findByRole("button", { name: "Retry attachment" });
     fireEvent.click(slot.getByRole("button", { name: "Collapse session" }));
     fireEvent.click(
       within(detail).getByRole("button", { name: "New session" }),
     );
-    expect(slot.queryByTestId("bb-new-thread-composer")).toBeNull();
+    expect(slot.queryByTestId("alia-new-thread-composer")).toBeNull();
     fireEvent.click(
       await slot.findByRole("button", { name: "Retry attachment" }),
     );
@@ -1760,7 +1760,7 @@ describe("preview and native navigation", () => {
       ).toBeNull(),
     );
     expect(
-      slot.getByTestId("bb-thread-chat").getAttribute("data-thread-id"),
+      slot.getByTestId("alia-thread-chat").getAttribute("data-thread-id"),
     ).toBe("thr_created");
   });
   it("expands a waiting result in its row and keeps order through a ranking change", async () => {
@@ -2289,7 +2289,7 @@ describe("preview and native navigation", () => {
     expect(card.querySelector(".wm-excerpt")).toBeNull();
     expect(card.textContent).not.toContain("Preview unavailable");
     expect(slot.getByRole("button", { name: "Retry preview" })).toBeTruthy();
-    expect(slot.queryByTestId("bb-markdown")).toBeNull();
+    expect(slot.queryByTestId("alia-markdown")).toBeNull();
     expect(
       slot.inspection.sidebarActionCalls.filter((c) => c.method === "setRead"),
     ).toEqual([]);
@@ -2366,7 +2366,7 @@ describe("preview and native navigation", () => {
     await slot.behavior.emitRealtime("preferences-changed", {});
     fireEvent.click(slot.getByRole("button", { name: "Chat here" }));
     expect(
-      slot.getByTestId("bb-thread-chat").getAttribute("data-thread-id"),
+      slot.getByTestId("alia-thread-chat").getAttribute("data-thread-id"),
     ).toBe("thr_test");
     expect(
       slot.inspection.sidebarActionCalls.filter(
@@ -2404,12 +2404,12 @@ describe("preview and native navigation", () => {
     );
     fireEvent.click(slot.getByRole("button", { name: "Chat here" }));
     expect(
-      slot.getByTestId("bb-thread-chat").getAttribute("data-thread-id"),
+      slot.getByTestId("alia-thread-chat").getAttribute("data-thread-id"),
     ).toBe("thr_test");
     tasks[0] = { ...tasks[0], threadIds: ["thr_second"] };
     fireEvent.click(slot.getByRole("button", { name: "Refresh map" }));
     await waitFor(() =>
-      expect(slot.queryByTestId("bb-thread-chat")).toBeNull(),
+      expect(slot.queryByTestId("alia-thread-chat")).toBeNull(),
     );
     await waitFor(() =>
       expect(
@@ -2420,7 +2420,7 @@ describe("preview and native navigation", () => {
     );
     fireEvent.click(slot.getByRole("button", { name: "Chat here" }));
     expect(
-      slot.getByTestId("bb-thread-chat").getAttribute("data-thread-id"),
+      slot.getByTestId("alia-thread-chat").getAttribute("data-thread-id"),
     ).toBe("thr_second");
     slot.lifecycle.unmount();
   });
@@ -2556,7 +2556,7 @@ describe("preview and native navigation", () => {
       await slot.findByRole("button", { name: /Preview Review proposal/ }),
     );
     expect(
-      slot.getByText(/Removing focus also unpins those sessions in BB/),
+      slot.getByText(/Removing focus also unpins those sessions in ALIA/),
     ).toBeTruthy();
     pickMore(slot, "Remove focus");
     await waitFor(() =>
@@ -3489,7 +3489,7 @@ describe("heat layout", () => {
     slot.lifecycle.unmount();
   });
 
-  it("disables the handover with its reason when the area has no bb project", async () => {
+  it("disables the handover with its reason when the area has no VesnALIA project", async () => {
     const delegateAreaRequests: {
       requestId: string;
       projectId: string;
@@ -3497,19 +3497,19 @@ describe("heat layout", () => {
     }[] = [];
     const slot = await mount({
       ...heatFixture(),
-      linkedBbProjectId: null,
+      linkedAliaProjectId: null,
       delegateAreaRequests,
     });
     await expandProject(slot);
     // The act stays on the card, disabled, saying why: the click that failed
     // tonight is now impossible to make.
     const blocked = slot.getByRole("button", {
-      name: "Agent decides · Pick a direction · unavailable: project not linked to a bb project",
+      name: "Agent decides · Pick a direction · unavailable: project not linked to a VesnALIA project",
     });
     expect(blocked.hasAttribute("disabled")).toBe(true);
     expect(
       slot.container.querySelector(".wm-tile-note")?.textContent,
-    ).toContain("Cannot hand over: project not linked to a bb project");
+    ).toContain("Cannot hand over: project not linked to a VesnALIA project");
     // With nothing to hand over, the area never offers the bulk act either.
     expect(
       slot.queryByRole("button", { name: /^Let agents decide/ }),
@@ -3857,7 +3857,7 @@ describe("heat layout", () => {
       await slot.findByRole("button", { name: /^Preview Review proposal/ }),
     );
     fireEvent.click(await slot.findByRole("button", { name: "Chat here" }));
-    const chat = slot.getByTestId("bb-thread-chat");
+    const chat = slot.getByTestId("alia-thread-chat");
     // The stylesheet relies on exactly this nesting (app.css, open Heat card).
     const live = chat.closest(".wm-live-session")!;
     const view = live.parentElement!;

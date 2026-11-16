@@ -1,16 +1,16 @@
 ---
 name: hotspot
-description: Answer when the user's Mac ran hot and which BB thread caused it, using the Hotspot plugin's `hotspot_history` tool or `bb hotspot` CLI. Use when the user asks why the Mac was hot, loud, throttled or slow at some time, or which thread is using the CPU or memory now.
+description: Answer when the user's Mac ran hot and which VesnALIA thread caused it, using the Hotspot plugin's `hotspot_history` tool or `alia hotspot` CLI. Use when the user asks why the Mac was hot, loud, throttled or slow at some time, or which thread is using the CPU or memory now.
 ---
 
 # Hotspot
 
-Hotspot stores a sample of the Mac BB's server runs on every 60 seconds by
-default (and, only while a BB window is on screen, shows a live reading every
+Hotspot stores a sample of the Mac VesnALIA's server runs on every 60 seconds by
+default (and, only while a VesnALIA window is on screen, shows a live reading every
 2 seconds that is never stored): the
 macOS thermal pressure level, machine-wide CPU, load per core, memory (used
 %, app, wired and compressed memory, swap used, and the kernel's memory
-pressure level: normal, warn or critical), the five BB threads using the
+pressure level: normal, warn or critical), the five VesnALIA threads using the
 most CPU with each one's resident memory, and the five busiest processes
 that belong to no thread. It keeps seven days of samples and records **hot
 episodes**. Memory does not open or close episodes.
@@ -31,30 +31,30 @@ Call `hotspot_history` with a window around the time the user names:
 
 It returns a summary of the whole window (average and peak CPU, average and
 peak memory used, peak swap, worst memory pressure, peak thermal level,
-BB's total CPU (average and peak) and peak memory, and the busiest threads with their CPU and peak memory) and every episode
+VesnALIA's total CPU (average and peak) and peak memory, and the busiest threads with their CPU and peak memory) and every episode
 overlapping it with its ranked culprits, each with its busiest processes
 over the episode (`processes: node · vite avg 30%, …`; absent for episodes
 recorded before this was kept). Process names never include flag values or
 the environment. Samples taken before memory was
 recorded say "Memory: not recorded". When there is no episode, the window summary still says what was
 busy. Name the culprit thread by title and give its id as `@thread:<id>` so
-BB renders a link.
+VesnALIA renders a link.
 
 ## Commands
 
 ```
-bb hotspot status [--json]
-bb hotspot episodes [--since 24h] [--until <time>] [--limit 10] [--json]
-bb hotspot kill <threadId> [--pid <pid>] [--yes] [--json]
+alia hotspot status [--json]
+alia hotspot episodes [--since 24h] [--until <time>] [--limit 10] [--json]
+alia hotspot kill <threadId> [--pid <pid>] [--yes] [--json]
 ```
 
 `status` takes a fresh reading (or reuses one under 5 seconds old), so its
 CPU figures cover the time since the previous reading rather than the last
-stored minute. It prints the reading (including a memory line, a BB total line
+stored minute. It prints the reading (including a memory line, a VesnALIA total line
 with its app/threads split, and each thread's memory with its five busiest
 processes indented under it) and the episode in progress, if any; `--json` carries the
 full memory reading under `latest.memory`, `memBytes` per thread, and
-the BB total under `latest.bb` (`cpu`, `memBytes`, `processes`, and the
+the VesnALIA total under `latest.alia` (`cpu`, `memBytes`, `processes`, and the
 same for `app` and `threads`).
 `episodes` lists episodes newest first; `--limit` is 1–50 and the JSON form
 keeps the top five culprits per episode.
@@ -66,7 +66,7 @@ that are still the same process. With `--pid`, the plan is cut down to that
 process and the targets it started (a dev server takes its workers); a pid
 the thread's plan spares, another thread's pid, or one no longer running
 plans nothing and says why. `--yes` is refused unless a person typed
-the command in a terminal: the calling `bb` process must have a
+the command in a terminal: the calling `alia` process must have a
 controlling terminal and no provider bridge above it. That stops an agent
 applying a kill by accident; it does not stop a determined one, which could
 signal the processes itself. Agents may run the dry run; to kill, point the
@@ -76,12 +76,12 @@ thread's turn, on purpose.
 ## What a kill touches
 
 A process belongs to a thread for a kill only when walking up from it
-reaches a process BB launched with that thread's `BB_THREAD_ID`, or a
+reaches a process VesnALIA launched with that thread's `ALIA_THREAD_ID`, or a
 detached process (parent launchd) carrying that id, without first crossing
 a **wall**. Walls are never targets, and nothing below a wall belongs to the
 thread, even when it inherited the id:
 
-- BB itself (anything under `bb.app`, `bb`, `bb Helper`, a `bb` CLI call)
+- VesnALIA itself (anything under `alia.app`, `alia`, `alia Helper`, a `alia` CLI call)
   and Hotspot's own process chain;
 - other users' processes (`login`, `sudo`), system binaries (`/System`,
   `/usr/libexec`, `/usr/sbin`, `/sbin`);
@@ -94,7 +94,7 @@ thread, even when it inherited the id:
 - interactive shells: a login shell (`-zsh`) or one with no `-c` and no
   script.
 
-Below the process BB launched, the **agent chain** is spared: the launched
+Below the process VesnALIA launched, the **agent chain** is spared: the launched
 process and everything down to its first work shell, passing through
 wrappers (`npx`, `npm exec`, `uvx`, `sh -c`) and a program relaunching its
 own executable (Gemini's `node` → `node`). `sandbox-exec` is transparent:
@@ -102,17 +102,17 @@ Codex's sandboxed command shell is work, Codex itself is not. Any other child of
 MCP server, `rg`) is a helper and is spared with everything under it. Work
 starts at a shell the agent runs (`zsh -c`, `bash -lc`), and detached
 processes carrying the id (a dev server reparented to launchd) are work
-too. The shell running a spared process and the rest of a `bb` CLI call's
-command (`bb hotspot kill … | head`) are also spared.
+too. The shell running a spared process and the rest of a `alia` CLI call's
+command (`alia hotspot kill … | head`) are also spared.
 
 The plan lists the thread's targets and spared processes, plus any process
 the id reached only through a wall. The plan id expires after two minutes
 and works once. Before each signal the server re-reads the process table
 and refuses a target whose start time or command line changed (a recycled
 pid) or that no longer passes these rules. Every kill is logged with its
-counts (`bb plugin logs hotspot`).
+counts (`alia plugin logs hotspot`).
 
-## In the BB window
+## In the VesnALIA window
 
 The sidebar footer shows Hotspot's flame and labelled figures, `CPU 16%`
 and `MEM 62%`. The flame is grey while calm, amber when warm or busy, red
@@ -124,7 +124,7 @@ A figure turns red at the CPU threshold, and MEM turns amber or red under
 kernel memory pressure. Hovering shows the full line; clicking opens a
 popover that leads with a verdict (running cool, warming up, working hard
 or running hot, and the thread to blame), then heat, CPU, memory (with
-swap) and load per core with a line for the last hour, then BB's total CPU and memory (the
+swap) and load per core with a line for the last hour, then VesnALIA's total CPU and memory (the
 app's own processes plus every thread's; memory is summed RSS, so shared
 pages count more than once) and the five
 busiest threads with CPU and memory, one line each (the title opens the
@@ -143,15 +143,15 @@ sheet.
 
 ## Settings
 
-Set with `bb plugin config hotspot set <key> <value>`:
+Set with `alia plugin config hotspot set <key> <value>`:
 
 | Key | Default | Range |
 | --- | --- | --- |
 | `sampleIntervalSeconds` | 60 | 15–3600 |
 | `retentionDays` | 7 | 1–30 |
 | `cpuThreshold` | 80 (% of all cores) | 10–100 |
-| `toast` | true | show a toast in BB when an episode opens |
-| `allowKill` | true | offer Kill processes and the drill-down's per-process kill; `false` hides both and refuses `bb hotspot kill` |
+| `toast` | true | show a toast in VesnALIA when an episode opens |
+| `allowKill` | true | offer Kill processes and the drill-down's per-process kill; `false` hides both and refuses `alia hotspot kill` |
 
 ## Limits
 
@@ -171,22 +171,22 @@ Set with `bb plugin config hotspot set <key> <value>`:
   only the CPU rule applies; thread attribution there reads
   `/proc/<pid>/environ`. If `ps` fails, samples still record CPU and load
   with no threads.
-- A process belongs to a thread through `BB_THREAD_ID` in its own
-  environment, else a `thr_…` id that is a folder directly under a BB
+- A process belongs to a thread through `ALIA_THREAD_ID` in its own
+  environment, else a `thr_…` id that is a folder directly under a VesnALIA
   `worktrees/` or `workspaces/` directory in its arguments, else its nearest
   ancestor with either. A bare `thr_…` in a command line (`grep thr_x`) or a
   worktree path in another variable (`PWD`) does not count. Processes owned
   by other users, such as root daemons, never map to a thread.
 - Thread titles are looked up when shown, so a renamed thread shows its
-  current title everywhere, and an id BB no longer knows is left out.
-- Only the machine the BB server runs on is sampled, never remote hosts.
+  current title everywhere, and an id VesnALIA no longer knows is left out.
+- Only the machine the VesnALIA server runs on is sampled, never remote hosts.
 - Nothing is sampled while the Mac sleeps or the plugin is off; a gap longer
   than three intervals (the larger of the old and new interval, if the
   setting changed) ends an open episode.
 - Sampling only reads. The only signals Hotspot sends are the user's own
   kills, and it never renices anything. Stop turn interrupts a thread's
-  running turn through BB, like BB's own stop button; the thread can be
+  running turn through VesnALIA, like VesnALIA's own stop button; the thread can be
   resumed.
 - A process whose environment `ps` cannot read and whose parent has exited
   belongs to no thread, so a kill cannot reach it. In practice detached dev
-  servers keep `BB_THREAD_ID` in their environment and are reachable.
+  servers keep `ALIA_THREAD_ID` in their environment and are reachable.

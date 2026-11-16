@@ -1,12 +1,12 @@
-// The Triage thread list: the sidebar that replaces bb's own when its setting is on.
+// The Triage thread list: the sidebar that replaces VesnALIA's own when its setting is on.
 import { toast } from "sonner";
 import { useWorkspaces, useSelectedWorkspace, switchWorkspace } from "./workspace-client";
 import { useWorkspaceSwipe, sidebarBlock, slideIn, tabDirection } from "./workspace-ui";
 import { inWorkspace } from "./workspaces";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
-import { experimental_useSidebarThreads as useSidebarThreads, useBbNavigate, useSdk, useSettings } from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread, PluginThreadListProps } from "@get-bb/plugin-sdk/app";
+import { experimental_useSidebarThreads as useSidebarThreads, useAliaNavigate, useSdk, useSettings } from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread, PluginThreadListProps } from "@vesnalia/plugin-sdk/app";
 import type { FlowState } from "./server";
 import { useSidebarThreadActions } from "./thread-actions";
 import { allSettled, threadPrs, useNow } from "./ui-extras";
@@ -127,8 +127,8 @@ export function TriageThreadList({
   const workspace = workspaceState.workspaces.find((item) => item.id === selectedWorkspace);
   const threads = useMemo(() => allThreads.filter((thread) => inWorkspace(thread, selectedWorkspace, workspaceState, allThreads)), [allThreads, selectedWorkspace, workspaceState]);
   const { rpc, state } = useFlowState();
-  // BB saves a section rename but doesn't refresh the sidebar's section list
-  // until reload. Show the new name meanwhile; drop it once BB's name changes.
+  // VesnALIA saves a section rename but doesn't refresh the sidebar's section list
+  // until reload. Show the new name meanwhile; drop it once VesnALIA's name changes.
   const [renamed, setRenamed] = useState<Record<string, { from: string; to: string }>>({});
   const sections = useMemo(
     () =>
@@ -187,7 +187,7 @@ export function TriageThreadList({
     [sdk],
   );
   const drag = useThreadDrag(onDrop);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const swipeOn = useSettings().values?.workspaceSwipe === true;
   const onSwipe = useWorkspaceSwipe();
   // Whatever switched the workspace (a swipe or a tab click), slide the new one in.

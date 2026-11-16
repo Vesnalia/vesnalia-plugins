@@ -15,7 +15,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { DevicePicker } from "./DevicePicker";
 import { PANEL_PATH } from "./route";
 import { LivePanel } from "./LivePanel";
@@ -40,7 +40,7 @@ interface PickResult {
 
 export function ThreadSimulator({ threadId }: { threadId: string }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const live = useLive();
   const [pick, setPick] = useState<PickResult | null>(null);
   const [busy, setBusy] = useState(false);

@@ -1,6 +1,6 @@
 ---
 name: jira-dc
-description: Read and change Jira Data Center issues with the jira_dc_* agent tools and `bb jira-dc` — search with JQL, read an issue with its comments, create, edit fields, move status, comment, assign, or delete. Use when the user mentions a Jira issue key (PROJ-123), asks what is assigned to them, or wants work reflected back into Jira DC.
+description: Read and change Jira Data Center issues with the jira_dc_* agent tools and `alia jira-dc` — search with JQL, read an issue with its comments, create, edit fields, move status, comment, assign, or delete. Use when the user mentions a Jira issue key (PROJ-123), asks what is assigned to them, or wants work reflected back into Jira DC.
 ---
 
 # Jira Data Center
@@ -12,24 +12,24 @@ Plugin settings (server-side):
 - **Jira base URL** — e.g. `https://jira.company.com`
 - **Personal Access Token** — Profile → Personal Access Tokens (Jira 8.14+)
 
-Link a BB project: `bb jira-dc link PROJ` (or the Links UI in the Jira DC panel).
+Link a VesnALIA project: `alia jira-dc link PROJ` (or the Links UI in the Jira DC panel).
 
 ## CLI
 
-- `bb jira-dc status` — connection check
-- `bb jira-dc link KEY…` / `unlink` — project links
-- `bb jira-dc search 'jql…'` — search (scoped when linked)
-- `bb jira-dc get KEY` — issue + comments + transitions
-- `bb jira-dc comment KEY 'body'` — add comment
-- `bb jira-dc transition KEY Done` — workflow transition
-- `bb jira-dc spawn KEY` — create a BB thread from the issue
+- `alia jira-dc status` — connection check
+- `alia jira-dc link KEY…` / `unlink` — project links
+- `alia jira-dc search 'jql…'` — search (scoped when linked)
+- `alia jira-dc get KEY` — issue + comments + transitions
+- `alia jira-dc comment KEY 'body'` — add comment
+- `alia jira-dc transition KEY Done` — workflow transition
+- `alia jira-dc spawn KEY` — create a VesnALIA thread from the issue
 
 ## Read first
 
 - `jira_dc_search_issues` — JQL in, one row per issue out (key, type, status,
   priority, assignee, summary). Example:
   `assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC`.
-  **In a BB project linked to Jira projects, results are limited to those
+  **In a VesnALIA project linked to Jira projects, results are limited to those
   projects** (the first output line names the scope); leave `project = …` out.
 - `jira_dc_search_all_issues` — the same, across every Jira project. Use it only
   when the user asks about issues outside the linked projects.

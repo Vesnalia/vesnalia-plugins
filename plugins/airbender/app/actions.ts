@@ -16,7 +16,7 @@
 // - Delivered by React context, so adding an action touches this file and
 //   the component that uses it, and nothing in between.
 
-import { experimental_useSidebarThreads } from "@get-bb/plugin-sdk/app";
+import { experimental_useSidebarThreads } from "@vesnalia/plugin-sdk/app";
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import type {
   Issue,
@@ -210,7 +210,7 @@ export interface IssueCommands {
   reopen: (beadId: string) => void;
   /**
    * Puts an issue in Someday (true) or brings it back to Ready (false); no
-   * confirmation (bead-bb-26g).
+   * confirmation (bead-alia-26g).
    */
   setSomeday: (beadId: string, someday: boolean) => void;
 }
@@ -220,7 +220,7 @@ export type IssueActions = IssueLookups & IssueCommands;
 
 /**
  * The thread statuses in which the agent is at work. Anything else, also a
- * status this does not know, counts as idle (as BB's own list does).
+ * status this does not know, counts as idle (as VesnALIA's own list does).
  */
 const BUSY_STATUSES: ReadonlySet<string> = new Set([
   "starting",
@@ -279,7 +279,7 @@ export interface IssueActionsView {
       type: IssueType | null;
       priority: number | null;
       category: string | null;
-      /** Create it straight into Someday (`#someday`, bead-bb-26g). */
+      /** Create it straight into Someday (`#someday`, bead-alia-26g). */
       someday?: boolean;
     },
   ) => Promise<string | null>;
@@ -356,7 +356,7 @@ export function useIssueActions({
   setFocus: (beadId: string | null) => void;
 }): IssueActionsView {
   const { threadId, projectId } = scope;
-  // Whether the thread's agent is at work (bead-bb-dtf), read from the app's
+  // Whether the thread's agent is at work (bead-alia-dtf), read from the app's
   // own live list of threads: it costs no request and changes the moment a
   // turn starts or ends. The tab has no hook for "this thread's run" as the
   // message box has (useComposerView), and asking the backend would only

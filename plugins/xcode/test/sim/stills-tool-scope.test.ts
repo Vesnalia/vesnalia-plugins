@@ -1,4 +1,4 @@
-import type { PluginAgentToolContext } from "@get-bb/plugin-sdk";
+import type { PluginAgentToolContext } from "@vesnalia/plugin-sdk";
 import { describe, expect, it, vi } from "vitest";
 import type { Ctx, ThreadScope } from "../../src/sim/context.js";
 import { makeStillsTool } from "../../src/sim/tools.js";

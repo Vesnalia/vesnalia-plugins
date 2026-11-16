@@ -4,8 +4,8 @@ import { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { api, host } from './helpers.mjs';
-import { threadDeltaSchema } from '@get-bb/plugin-sdk/provider-bridge';
-import { experimental_createDeltaAssembler } from '@get-bb/plugin-sdk/provider-bridge/testing';
+import { threadDeltaSchema } from '@vesnalia/plugin-sdk/provider-bridge';
+import { experimental_createDeltaAssembler } from '@vesnalia/plugin-sdk/provider-bridge/testing';
 // Native vocabulary from M4.6.4 own guided/attachment primaries; fake timing
 // deliberately exercises late/duplicate frames, not a claim of live timing.
 const options = { permissionMode:'full', permissionScope:'full', approvalReviewer:null, permissionEscalation:null,

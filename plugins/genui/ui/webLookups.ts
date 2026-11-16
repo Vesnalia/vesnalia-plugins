@@ -3,7 +3,7 @@
 // the page's lifetime, so a UI that re-renders, a Gallery that repeats a
 // search or a map panned back over the same streets asks the backend once.
 import { useEffect, useState } from "react";
-import { useRpc, type PluginRpcClient } from "@get-bb/plugin-sdk/app";
+import { useRpc, type PluginRpcClient } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import type { FoundImage, WikiPhoto } from "../web/commons";
 

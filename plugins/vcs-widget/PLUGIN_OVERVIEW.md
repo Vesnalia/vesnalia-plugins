@@ -1,4 +1,4 @@
-IntelliJ-style VCS popup, commit dialog and log, inside bb.
+IntelliJ-style VCS popup, commit dialog and log, inside VesnALIA.
 
 ## What you get
 
@@ -12,7 +12,7 @@ IntelliJ-style VCS popup, commit dialog and log, inside bb.
   Diff with Working Tree, Rebase, Merge, New Worktree from, Update, Push,
   Tracked Branch, Rename, Delete, favourites, copy.
 - Fetch, pull and push in the background, with progress and Cancel, so a slow
-  remote never hits bb's host-call deadline.
+  remote never hits VesnALIA's host-call deadline.
 - A commit dialog as a panel tab: the working tree as a checklist whose
   checkbox is the staged state, a diff preview, message, Amend, Sign-off, Run
   Git hooks, Commit and Commit and Push, and a Discard that always asks
@@ -25,11 +25,11 @@ IntelliJ-style VCS popup, commit dialog and log, inside bb.
   changed and their diffs, and a context menu with Checkout Revision, New
   Branch from, Cherry-Pick, Revert, Reset and Compare.
 - Panel tabs that compare two branches or a revision, or diff the working
-  tree against a branch, in bb's own diff viewer.
+  tree against a branch, in VesnALIA's own diff viewer.
 - Command palette rows for the quick actions on thread routes.
-- Live refresh: bb's sidebar follows a checkout, open popups refetch after
+- Live refresh: VesnALIA's sidebar follows a checkout, open popups refetch after
   actions, and changes made by an agent or a terminal reach the popup through
-  bb's environment events and the host's file watch.
+  VesnALIA's environment events and the host's file watch.
 
 ## How it works
 
@@ -49,7 +49,7 @@ merge or rebase is in progress; the popup offers Abort instead.
 
 ## For agents
 
-`bb vcs-widget status | branches | log` and the `vcs_widget_status` tool read
+`alia vcs-widget status | branches | log` and the `vcs_widget_status` tool read
 the repository behind a thread, on the machine that owns the worktree.
 
 Both

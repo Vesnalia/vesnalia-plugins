@@ -63,7 +63,7 @@ describe("threadState", () => {
 
   it("treats an idle turn with background work in flight as working", () => {
     // The provider ends its turn as soon as it launches detached work, so
-    // bb reports "idle" while a background agent, command, or workflow runs.
+    // VesnALIA reports "idle" while a background agent, command, or workflow runs.
     const quiet = { workflows: 0, backgroundAgents: 0, backgroundCommands: 0, planMode: 0, goals: 0 };
     for (const busy of [{ backgroundAgents: 1 }, { backgroundCommands: 2 }, { workflows: 1 }]) {
       const activity = { ...quiet, ...busy };

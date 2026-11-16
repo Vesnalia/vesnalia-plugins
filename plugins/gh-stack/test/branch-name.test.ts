@@ -57,7 +57,7 @@ test("git check-ref-format rejects structurally invalid normalized prefixes", ()
     }
     const result = spawnSync(
       "git",
-      ["check-ref-format", "--branch", `${normalized.prefix}bb-stack-check`],
+      ["check-ref-format", "--branch", `${normalized.prefix}alia-stack-check`],
       { encoding: "utf8" },
     );
     assert.notEqual(result.status, 0, `${raw} unexpectedly formed a valid branch`);
@@ -66,7 +66,7 @@ test("git check-ref-format rejects structurally invalid normalized prefixes", ()
   const valid = normalizeBranchPrefix("team/platform");
   assert.ok("prefix" in valid);
   assert.equal(
-    spawnSync("git", ["check-ref-format", "--branch", `${valid.prefix}bb-stack-check`]).status,
+    spawnSync("git", ["check-ref-format", "--branch", `${valid.prefix}alia-stack-check`]).status,
     0,
   );
 });

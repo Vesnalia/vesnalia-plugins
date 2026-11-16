@@ -1,15 +1,15 @@
-// bb-plugin-media-viewer frontend: one zoomable, pannable viewer for images,
-// videos and audio. It replaces BB's preview for media files in the right
+// alia-plugin-media-viewer frontend: one zoomable, pannable viewer for images,
+// videos and audio. It replaces VesnALIA's preview for media files in the right
 // panel and renders the `::media{file="..."}` directive inline in chat.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import {
   definePluginApp,
   experimental_Icon as Icon,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
   type PluginFileOpenerProps,
   type PluginMessageDirectiveProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { AUDIO_EXTENSIONS, IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from "./media.ts";
 import type { MediaItem, MediaSource, rpcContract } from "./server.ts";
 
@@ -190,7 +190,7 @@ function usePanZoom(natural: Size | null, captureWheel: (view: View) => boolean)
   return { viewport, view, fit, zoomTo, handlers };
 }
 
-// BB's icon set has no volume or frame-step icons; these follow Lucide's.
+// VesnALIA's icon set has no volume or frame-step icons; these follow Lucide's.
 function Glyph({ children }: { children: ReactNode }) {
   return (
     <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -457,7 +457,7 @@ function PanelViewer({ path, source, Original }: PluginFileOpenerProps) {
       <Message tone="error">
         Could not open {path}: {error}{" "}
         <button type="button" className="underline" onClick={() => setOriginal(true)}>
-          Use BB's preview
+          Use VesnALIA's preview
         </button>
       </Message>
     );
@@ -466,7 +466,7 @@ function PanelViewer({ path, source, Original }: PluginFileOpenerProps) {
 }
 
 function InlineViewer({ attributes, message }: PluginMessageDirectiveProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const file = (attributes.file ?? "").trim();
   const requested = attributes.source?.trim();
   const kind: MediaSource["kind"] = file.startsWith("/") ? "host" : requested === "thread-storage" ? "thread-storage" : "workspace";

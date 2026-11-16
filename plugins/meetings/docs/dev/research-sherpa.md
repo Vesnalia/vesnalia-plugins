@@ -1,9 +1,9 @@
 ## install
 
-Everything was installed in /tmp/sherpa-probe/venv. Nothing under /home/bb/.bb/plugins/gigaam was modified; its uv binary was only executed.
+Everything was installed in /tmp/sherpa-probe/venv. Nothing under /home/alia/.vesnalia/plugins/gigaam was modified; its uv binary was only executed.
 
 ```
-UV=/home/bb/.bb/plugins/gigaam/host-data/bin/uv        # uv 0.13.0 (x86_64-unknown-linux-musl)
+UV=/home/alia/.vesnalia/plugins/gigaam/host-data/bin/uv        # uv 0.13.0 (x86_64-unknown-linux-musl)
 $UV venv /tmp/sherpa-probe/venv --python 3.12          # took 0.09 s, used /usr/bin/python3.12 (CPython 3.12.3)
 $UV pip install --python /tmp/sherpa-probe/venv/bin/python sherpa-onnx numpy   # 0.69 s wall
 ```
@@ -304,9 +304,9 @@ All of these are synthetic TTS voices. Re-tune on real meeting audio; expect rea
 
 ## gigaamHttp
 
-Port: `bb gigaam status --json` returned {"mode":"managed","phase":"ready","model":"v3_e2e_rnnt","threads":0,"port":38271,...}. GET /health returned {"ready":true,"model":"v3_e2e_rnnt","threads":5}; threads 0 means half the cores.
+Port: `alia gigaam status --json` returned {"mode":"managed","phase":"ready","model":"v3_e2e_rnnt","threads":0,"port":38271,...}. GET /health returned {"ready":true,"model":"v3_e2e_rnnt","threads":5}; threads 0 means half the cores.
 
-Server behaviour (read-only look at /home/bb/.bb/plugins/gigaam/host-data/gigaam_server.py):
+Server behaviour (read-only look at /home/alia/.vesnalia/plugins/gigaam/host-data/gigaam_server.py):
 - Fields are file (required) and response_format ("json" returns {"text": ...}; "text" returns text/plain).
 - Any format ffmpeg can decode is accepted. Uploads are limited to 25 MB (413 above that).
 - Audio shorter than 0.1 s returns "".
@@ -318,7 +318,7 @@ Working stdlib-only client (gigaam_test.py):
 import io, json, subprocess, urllib.request, urllib.error, uuid, wave
 import numpy as np
 def gigaam_port():
-    st = json.loads(subprocess.run(["bb","gigaam","status","--json"], capture_output=True, text=True, check=True, timeout=30).stdout)
+    st = json.loads(subprocess.run(["alia","gigaam","status","--json"], capture_output=True, text=True, check=True, timeout=30).stdout)
     if st.get("phase") != "ready": raise RuntimeError(st)
     return int(st["port"])
 def wav_bytes(x, sr=16000):                     # float32 [-1,1] -> in-memory 16-bit PCM WAV

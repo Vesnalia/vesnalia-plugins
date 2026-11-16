@@ -1,11 +1,11 @@
 // The project service: proposals, approval, lifecycle, the board's posts, and
 // role lookup. Every state change goes through the store, which appends the event.
-import type { NewThreadRequest } from "@get-bb/plugin-sdk";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk";
 import type { EventRow, PlanningRow, PostRow, ProjectRow, Store, ThreadRow, TicketRow } from "./db/store";
 import { StoreError } from "./db/store";
 import { aboutOf, pendingAboutOf, type PendingAbout, type ProjectAbout } from "./about";
 import { gatherFacts, reachErrors, specTargets } from "./discover";
-import { SectionNameConflictError, type BbPort, type BbProjectInfo, type HostPort } from "./ports";
+import { SectionNameConflictError, type AliaPort, type AliaProjectInfo, type HostPort } from "./ports";
 import { MAX_PLANNING_REPOS, notesMessage, planningKickoff, planningTitle, type PickedRepo } from "./prompts";
 import { isMultiRepo, repoSettings } from "./repos";
 import { rolloutJson } from "./rollout";
@@ -28,7 +28,7 @@ export class LoomError extends Error {
 
 export interface Ctx {
   store: Store;
-  bb: BbPort;
+  alia: AliaPort;
   now: () => number;
   host: HostPort;
   /** The human's standing instructions for every planner; Loom's plannerInstructions setting. */
@@ -79,13 +79,13 @@ export interface ProjectOverview {
   updatedAt: number;
 }
 
-/** One repository of a project, as `bb loom show` and the page list it. */
+/** One repository of a project, as `alia loom show` and the page list it. */
 export interface RepoOverview {
   /** The [[repo]] name; null for a single-repo project's own repository. */
   name: string | null;
-  bbProjectId: string;
-  /** bb's name for the bb project; null when bb cannot tell, and in a view that has not asked bb yet. */
-  bbProjectName: string | null;
+  aliaProjectId: string;
+  /** VesnALIA's name for the VesnALIA project; null when VesnALIA cannot tell, and in a view that has not asked VesnALIA yet. */
+  aliaProjectName: string | null;
   base: string;
   /** The integration branch; null on the pull request strategy. */
   branch: string | null;
@@ -143,8 +143,8 @@ export interface PlanningSession {
   projectState: ProjectState | null;
 }
 
-/** A standard bb project the New project composer offers as a repo. */
-export interface BbProjectChoice {
+/** A standard VesnALIA project the New project composer offers as a repo. */
+export interface AliaProjectChoice {
   id: string;
   name: string;
   /** The machines with a checkout of it, by host id; empty when no machine has one. */
@@ -165,14 +165,14 @@ const parseList = (json: string) => JSON.parse(json) as string[];
 
 export class Projects {
   readonly store: Store;
-  private readonly bb: BbPort;
+  private readonly alia: AliaPort;
   private readonly host: HostPort;
   private readonly now: () => number;
   private readonly instructions: () => string;
 
   constructor(ctx: Ctx) {
     this.store = ctx.store;
-    this.bb = ctx.bb;
+    this.alia = ctx.alia;
     this.host = ctx.host;
     this.now = ctx.now;
     this.instructions = ctx.plannerInstructions ?? (() => "");
@@ -185,7 +185,7 @@ export class Projects {
 
   // ---------------------------------------------------------------- propose
 
-  async propose(args: { toml: string; threadId: string; bbProjectId: string; hostId: string | null }): Promise<ProposeResult> {
+  async propose(args: { toml: string; threadId: string; aliaProjectId: string; hostId: string | null }): Promise<ProposeResult> {
     const parsed = parseSpec(args.toml);
     if (!parsed.ok || parsed.spec === null) throw rejected(parsed.errors);
     const errors = [...proposalErrorsOf(parsed.spec), ...this.proposalErrors(args.threadId, parsed.spec), ...(await this.providerErrors(parsed.spec)), ...(await this.repoErrors(parsed.spec, args.hostId))];
@@ -214,7 +214,7 @@ export class Projects {
     return errors;
   }
 
-  /** bb refuses to start a thread with a provider it does not have, so the spec is refused now. A list bb cannot read blocks no proposal. */
+  /** VesnALIA refuses to start a thread with a provider it does not have, so the spec is refused now. A list VesnALIA cannot read blocks no proposal. */
   private async providerErrors(spec: Spec): Promise<string[]> {
     const set = (["worker", "reviewer"] as const).flatMap((role) => {
       const provider = spec.agents[role].provider;
@@ -223,46 +223,46 @@ export class Projects {
     if (set.length === 0) return [];
     let known: string[];
     try {
-      known = (await this.bb.providerIds()).sort();
+      known = (await this.alia.providerIds()).sort();
     } catch (error) {
-      this.bb.log("warn", `Could not read bb's providers, so the spec's providers are not checked: ${error instanceof Error ? error.message : String(error)}`);
+      this.alia.log("warn", `Could not read VesnALIA's providers, so the spec's providers are not checked: ${error instanceof Error ? error.message : String(error)}`);
       return [];
     }
-    // bb always has a provider, so an empty list is one it could not fill yet, not a reason to refuse every provider.
+    // VesnALIA always has a provider, so an empty list is one it could not fill yet, not a reason to refuse every provider.
     if (known.length === 0) return [];
     return set
       .filter(({ provider }) => !known.includes(provider))
-      .map(({ role, provider }) => `agents.${role}.provider: bb has no provider "${provider}". Use one of: ${known.join(", ")}.`);
+      .map(({ role, provider }) => `agents.${role}.provider: VesnALIA has no provider "${provider}". Use one of: ${known.join(", ")}.`);
   }
 
-  /** Every [[repo]] must be a standard bb project with a checkout on the proposer's machine, where the project's workers run. Unlike providers, a list bb cannot read refuses the spec: the project could not start without its checkouts. */
+  /** Every [[repo]] must be a standard VesnALIA project with a checkout on the proposer's machine, where the project's workers run. Unlike providers, a list VesnALIA cannot read refuses the spec: the project could not start without its checkouts. */
   private async repoErrors(spec: Spec, hostId: string | null): Promise<string[]> {
     const repos = spec.repo ?? [];
     if (repos.length === 0) return [];
     if (hostId === null) {
-      return ["repo: bb did not say which machine this thread runs on, so Loom cannot check that every repo has a checkout there. Call loom_propose again in a moment."];
+      return ["repo: VesnALIA did not say which machine this thread runs on, so Loom cannot check that every repo has a checkout there. Call loom_propose again in a moment."];
     }
-    let known: BbProjectInfo[];
+    let known: AliaProjectInfo[];
     try {
-      known = await this.bb.listProjects();
+      known = await this.alia.listProjects();
     } catch (error) {
       return [
-        `repo: Loom could not read bb's projects to check the [[repo]] tables (${error instanceof Error ? error.message : String(error)}), and the project could not start without a checkout of every repo. Call loom_propose again in a moment.`,
+        `repo: Loom could not read VesnALIA's projects to check the [[repo]] tables (${error instanceof Error ? error.message : String(error)}), and the project could not start without a checkout of every repo. Call loom_propose again in a moment.`,
       ];
     }
     const standard = known.filter((project) => project.kind === "standard");
     const listed =
       standard.length === 0
-        ? "bb lists no standard projects. Add the repository to bb as a project first."
-        : `Use the id of one of bb's projects: ${standard.slice(0, MAX_LISTED_PROJECTS).map((project) => `${project.name} (${project.id})`).join(", ")}${standard.length > MAX_LISTED_PROJECTS ? `, and ${standard.length - MAX_LISTED_PROJECTS} more` : ""}.`;
+        ? "alia lists no standard projects. Add the repository to VesnALIA as a project first."
+        : `Use the id of one of VesnALIA's projects: ${standard.slice(0, MAX_LISTED_PROJECTS).map((project) => `${project.name} (${project.id})`).join(", ")}${standard.length > MAX_LISTED_PROJECTS ? `, and ${standard.length - MAX_LISTED_PROJECTS} more` : ""}.`;
     return repos.flatMap((repo, index) => {
       const at = `repo[${index}].project`;
       const project = known.find((entry) => entry.id === repo.project);
-      if (project === undefined) return [`${at}: bb has no project "${repo.project}". ${listed}`];
-      if (project.kind !== "standard") return [`${at}: "${repo.project}" is bb's personal project, which has no git checkout. ${listed}`];
+      if (project === undefined) return [`${at}: VesnALIA has no project "${repo.project}". ${listed}`];
+      if (project.kind !== "standard") return [`${at}: "${repo.project}" is VesnALIA's personal project, which has no git checkout. ${listed}`];
       if (project.sources.some((source) => source.hostId === hostId)) return [];
       return [
-        `${at}: bb project ${project.name} (${project.id}) has no checkout on this machine (${hostId}), where the project's workers run. Clone it here with \`bb project source add ${project.id} --clone --machine ${hostId}\`, then call loom_propose again.`,
+        `${at}: VesnALIA project ${project.name} (${project.id}) has no checkout on this machine (${hostId}), where the project's workers run. Clone it here with \`alia project source add ${project.id} --clone --machine ${hostId}\`, then call loom_propose again.`,
       ];
     });
   }
@@ -271,10 +271,10 @@ export class Projects {
    * How the spec reaches each repo on the proposer's machine: its remote, its forge, its environment provider and its
    * integration worktree. Without a machine there is nothing to check, as for a single repo's checkout in repoErrors.
    */
-  private async reachErrorsOf(spec: Spec, args: { bbProjectId: string; hostId: string | null }): Promise<string[]> {
+  private async reachErrorsOf(spec: Spec, args: { aliaProjectId: string; hostId: string | null }): Promise<string[]> {
     if (args.hostId === null) return [];
     try {
-      return reachErrors(await gatherFacts({ bb: this.bb, host: this.host }, specTargets(spec, args.bbProjectId), args.hostId));
+      return reachErrors(await gatherFacts({ alia: this.alia, host: this.host }, specTargets(spec, args.aliaProjectId), args.hostId));
     } catch (error) {
       return [`merge: Loom could not check how the repositories are reached on this machine (${error instanceof Error ? error.message : String(error)}), and the project could not start without that. Call loom_propose again in a moment.`];
     }
@@ -296,11 +296,11 @@ export class Projects {
     return errors;
   }
 
-  private async createDraft(args: { toml: string; threadId: string; bbProjectId: string; hostId: string | null }, spec: Spec, warnings: string[]): Promise<ProposeResult> {
+  private async createDraft(args: { toml: string; threadId: string; aliaProjectId: string; hostId: string | null }, spec: Spec, warnings: string[]): Promise<ProposeResult> {
     const { slug, name, key } = spec.project;
     let sectionId: string;
     try {
-      sectionId = await this.bb.ensureSection(null, sectionNameOf(name, slug));
+      sectionId = await this.alia.ensureSection(null, sectionNameOf(name, slug));
     } catch (error) {
       if (error instanceof SectionNameConflictError) {
         throw rejected([`A sidebar section named "${error.sectionName}" already exists. Rename it, or choose another slug.`]);
@@ -314,17 +314,17 @@ export class Projects {
         // Another proposal may have won while the section was being created.
         const errors = this.proposalErrors(args.threadId, spec);
         if (errors.length > 0) throw rejected(errors);
-        const project = this.store.createProject({ slug, name, key, bb_project_id: args.bbProjectId, host_id: args.hostId, section_id: sectionId, planner_thread_id: args.threadId }, args.threadId);
+        const project = this.store.createProject({ slug, name, key, alia_project_id: args.aliaProjectId, host_id: args.hostId, section_id: sectionId, planner_thread_id: args.threadId }, args.threadId);
         this.store.addThread({ thread_id: args.threadId, project_id: project.id, role: "planner", state: "active" });
         return this.store.addSpecVersion(project.id, args.toml, JSON.stringify(spec), specHash(spec), args.threadId);
       });
     } catch (error) {
-      await this.tolerate("delete section after a failed proposal", () => this.bb.deleteSection(sectionId));
+      await this.tolerate("delete section after a failed proposal", () => this.alia.deleteSection(sectionId));
       throw error;
     }
 
-    await this.tolerate("move the planner thread into its section", () => this.bb.moveThread(args.threadId, sectionId));
-    await this.tolerate("mark the planner thread", () => this.bb.setMetadata(args.threadId, { project: slug, role: "planner" }));
+    await this.tolerate("move the planner thread into its section", () => this.alia.moveThread(args.threadId, sectionId));
+    await this.tolerate("mark the planner thread", () => this.alia.setMetadata(args.threadId, { project: slug, role: "planner" }));
     this.store.changed(this.require(slug).id);
     return { slug, version, state: "draft", warnings, pending: false, change: "created" };
   }
@@ -396,7 +396,7 @@ export class Projects {
 
   private guardVersion(slug: string, requested: number | undefined, waiting: number): void {
     if (requested === undefined || requested === waiting) return;
-    throw new LoomError("loom_invalid_state", `Spec version ${requested} is not the one waiting for approval (version ${waiting}). Run \`bb loom spec ${slug}\` to read it.`);
+    throw new LoomError("loom_invalid_state", `Spec version ${requested} is not the one waiting for approval (version ${waiting}). Run \`alia loom spec ${slug}\` to read it.`);
   }
 
   private createTickets(project: ProjectRow, spec: Spec, actor: string): string[] {
@@ -438,7 +438,7 @@ export class Projects {
   }
 
   async start(slug: string, actor: string): Promise<ProjectRow> {
-    const project = this.expectState(slug, "start", "ready", { draft: `Run \`bb loom approve ${slug}\` first.`, paused: `Run \`bb loom resume ${slug}\` instead.` });
+    const project = this.expectState(slug, "start", "ready", { draft: `Run \`alia loom approve ${slug}\` first.`, paused: `Run \`alia loom resume ${slug}\` instead.` });
     const started = this.moveProject(project, "running", actor);
     await this.ensureProjectSection(started);
     return this.store.project(started.id)!;
@@ -450,7 +450,7 @@ export class Projects {
   }
 
   async resume(slug: string, actor: string): Promise<ProjectRow> {
-    const project = this.expectState(slug, "resume", "paused", { ready: `Run \`bb loom start ${slug}\` instead.` });
+    const project = this.expectState(slug, "resume", "paused", { ready: `Run \`alia loom start ${slug}\` instead.` });
     const resumed = this.moveProject(project, "running", actor);
     await this.ensureProjectSection(resumed);
     return this.store.project(resumed.id)!;
@@ -574,7 +574,7 @@ export class Projects {
   }
 
   hostOf(threadId: string): Promise<string | null> {
-    return this.bb.threadHostId(threadId);
+    return this.alia.threadHostId(threadId);
   }
 
   threadGone(threadId: string, reason: string): void {
@@ -601,7 +601,7 @@ export class Projects {
     if (planner?.role !== "planner" || planner.state !== "active" || planner.thread_id === null) {
       throw new LoomError("loom_invalid_state", `Project ${slug} has no planner thread to send notes to.`);
     }
-    await this.bb.send(planner.thread_id, notesMessage({ slug, version: newest, status: this.specStatus(project, newest), notes }));
+    await this.alia.send(planner.thread_id, notesMessage({ slug, version: newest, status: this.specStatus(project, newest), notes }));
   }
 
   // ---------------------------------------------------------------- planning conversations
@@ -610,44 +610,44 @@ export class Projects {
   async startPlanning(a: { request: NewThreadRequest; merge: MergeChoice; reviewer: string; repos?: readonly string[] }): Promise<{ threadId: string }> {
     const title = planningTitle(a.request.input);
     if (title === "") throw new LoomError("loom_invalid_input", "Describe what should exist when the project is done.");
-    if ((await this.bb.projectKind(a.request.projectId)) !== "standard") {
-      throw new LoomError("loom_no_checkout", "Loom needs a bb project with a git checkout. Pick a project in the composer.");
+    if ((await this.alia.projectKind(a.request.projectId)) !== "standard") {
+      throw new LoomError("loom_no_checkout", "Loom needs a VesnALIA project with a git checkout. Pick a project in the composer.");
     }
     const repos = await this.pickedRepos(a.request.projectId, a.repos ?? []);
-    const threadId = await this.bb.spawnPlanner({ request: a.request, title: `Loom plan: ${title}`, kickoff: planningKickoff({ merge: a.merge, reviewer: a.reviewer, repos, instructions: this.plannerInstructions() }) });
-    this.store.addPlanning({ thread_id: threadId, bb_project_id: a.request.projectId, title });
+    const threadId = await this.alia.spawnPlanner({ request: a.request, title: `Loom plan: ${title}`, kickoff: planningKickoff({ merge: a.merge, reviewer: a.reviewer, repos, instructions: this.plannerInstructions() }) });
+    this.store.addPlanning({ thread_id: threadId, alia_project_id: a.request.projectId, title });
     return { threadId };
   }
 
-  /** The picked repos with bb's names, in the order picked, leaving out repeats and the composer's own project. Each must be a standard bb project. */
+  /** The picked repos with VesnALIA's names, in the order picked, leaving out repeats and the composer's own project. Each must be a standard VesnALIA project. */
   private async pickedRepos(ownProjectId: string, ids: readonly string[]): Promise<PickedRepo[]> {
     if (ids.length > MAX_PLANNING_REPOS) throw new LoomError("loom_invalid_input", `Pick at most ${MAX_PLANNING_REPOS} repos; ${ids.length} were picked.`);
     const wanted = [...new Set(ids)].filter((id) => id !== ownProjectId);
     if (wanted.length === 0) return [];
-    const known = await this.readBbProjects("check the picked repos");
+    const known = await this.readAliaProjects("check the picked repos");
     const found = wanted.map((id) => ({ id, project: known.find((entry) => entry.id === id) }));
     const problems = found.flatMap(({ id, project }) => {
-      if (project === undefined) return [`bb has no project "${id}".`];
-      return project.kind === "standard" ? [] : [`"${id}" is bb's personal project, which has no git checkout.`];
+      if (project === undefined) return [`alia has no project "${id}".`];
+      return project.kind === "standard" ? [] : [`"${id}" is VesnALIA's personal project, which has no git checkout.`];
     });
-    if (problems.length > 0) throw new LoomError("loom_invalid_input", `${problems.join(" ")} Pick the repos from bb's standard projects.`);
+    if (problems.length > 0) throw new LoomError("loom_invalid_input", `${problems.join(" ")} Pick the repos from VesnALIA's standard projects.`);
     return found.map(({ id, project }) => ({ id, name: project!.name }));
   }
 
-  /** bb's standard projects by name, each with the machines that have a checkout of it, for the New project composer's repo picker. */
-  async bbProjectChoices(): Promise<BbProjectChoice[]> {
-    const known = await this.readBbProjects("list the repos");
+  /** VesnALIA's standard projects by name, each with the machines that have a checkout of it, for the New project composer's repo picker. */
+  async aliaProjectChoices(): Promise<AliaProjectChoice[]> {
+    const known = await this.readAliaProjects("list the repos");
     return known
       .filter((project) => project.kind === "standard")
       .map((project) => ({ id: project.id, name: project.name, hostIds: [...new Set(project.sources.map((source) => source.hostId))] }))
       .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
   }
 
-  private async readBbProjects(why: string): Promise<BbProjectInfo[]> {
+  private async readAliaProjects(why: string): Promise<AliaProjectInfo[]> {
     try {
-      return await this.bb.listProjects();
+      return await this.alia.listProjects();
     } catch (error) {
-      throw new LoomError("loom_unavailable", `Loom could not read bb's projects to ${why}: ${error instanceof Error ? error.message : String(error)}. Try again in a moment.`);
+      throw new LoomError("loom_unavailable", `Loom could not read VesnALIA's projects to ${why}: ${error instanceof Error ? error.message : String(error)}. Try again in a moment.`);
     }
   }
 
@@ -681,23 +681,23 @@ export class Projects {
     return this.overviewOf(this.require(slug));
   }
 
-  /** The overview with bb's name for each repo's bb project. */
+  /** The overview with VesnALIA's name for each repo's VesnALIA project. */
   async namedOverview(slug: string): Promise<ProjectOverview> {
     const overview = this.overview(slug);
-    return withRepoNames(overview, await this.bbProjectNames());
+    return withRepoNames(overview, await this.aliaProjectNames());
   }
 
   async namedList(): Promise<ProjectOverview[]> {
-    const names = await this.bbProjectNames();
+    const names = await this.aliaProjectNames();
     return this.list().map((overview) => withRepoNames(overview, names));
   }
 
-  /** bb's project names by id. When bb cannot list its projects there are none, and the views show the ids instead. */
-  async bbProjectNames(): Promise<ReadonlyMap<string, string>> {
+  /** VesnALIA's project names by id. When VesnALIA cannot list its projects there are none, and the views show the ids instead. */
+  async aliaProjectNames(): Promise<ReadonlyMap<string, string>> {
     try {
-      return new Map((await this.bb.listProjects()).map((project) => [project.id, project.name]));
+      return new Map((await this.alia.listProjects()).map((project) => [project.id, project.name]));
     } catch (error) {
-      this.bb.log("warn", `Could not read bb's projects, so repos show their bb project id: ${error instanceof Error ? error.message : String(error)}`);
+      this.alia.log("warn", `Could not read VesnALIA's projects, so repos show their VesnALIA project id: ${error instanceof Error ? error.message : String(error)}`);
       return new Map();
     }
   }
@@ -705,7 +705,7 @@ export class Projects {
   spec(slug: string, version?: number): SpecView {
     const project = this.require(slug);
     const row = version === undefined ? this.store.specVersion(project.id, project.approved_version ?? this.store.latestSpecVersion(project.id)!.version) : this.store.specVersion(project.id, version);
-    if (row === null) throw new LoomError("loom_not_found", `Project ${slug} has no spec version ${version}.`, `Run \`bb loom show ${slug}\` to see its versions.`);
+    if (row === null) throw new LoomError("loom_not_found", `Project ${slug} has no spec version ${version}.`, `Run \`alia loom show ${slug}\` to see its versions.`);
     const status = this.specStatus(project, row.version);
     return { slug, version: row.version, status, toml: row.toml, hash: row.hash, proposedBy: row.proposed_by, createdAt: row.created_at };
   }
@@ -793,13 +793,13 @@ export class Projects {
 
   require(slug: string): ProjectRow {
     const project = this.store.projectBySlug(slug);
-    if (project === null) throw new LoomError("loom_not_found", `No Loom project named "${slug}".`, "Run `bb loom list` to see the projects.");
+    if (project === null) throw new LoomError("loom_not_found", `No Loom project named "${slug}".`, "Run `alia loom list` to see the projects.");
     return project;
   }
 
   private requireTicket(key: string): TicketRow {
     const ticket = this.store.ticketByKey(key);
-    if (ticket === null) throw new LoomError("loom_not_found", `No ticket ${key}.`, "Run `bb loom tickets <slug>` to see the ticket keys.");
+    if (ticket === null) throw new LoomError("loom_not_found", `No ticket ${key}.`, "Run `alia loom tickets <slug>` to see the ticket keys.");
     return ticket;
   }
 
@@ -807,29 +807,29 @@ export class Projects {
     return this.store.project(ticket.project_id)!.slug;
   }
 
-  /** Makes sure the project's sidebar section exists. Recreates a deleted one, stores its new id and moves the planner thread into it. Returns the stored id when bb refuses, and gives a done or archived project none. */
+  /** Makes sure the project's sidebar section exists. Recreates a deleted one, stores its new id and moves the planner thread into it. Returns the stored id when VesnALIA refuses, and gives a done or archived project none. */
   async ensureProjectSection(project: ProjectRow): Promise<string | null> {
     if (project.state === "done" || project.state === "archived") return project.section_id;
     let sectionId = project.section_id;
     await this.tolerate("repair the project's section", async () => {
-      sectionId = await this.bb.ensureSection(project.section_id, sectionNameOf(project.name, project.slug));
+      sectionId = await this.alia.ensureSection(project.section_id, sectionNameOf(project.name, project.slug));
     });
     if (sectionId === project.section_id || sectionId === null) return project.section_id;
 
     const repaired = sectionId;
     this.store.updateProject(project.id, { section_id: repaired });
     const planner = project.planner_thread_id;
-    if (planner !== null) await this.tolerate("move the planner thread into its new section", () => this.bb.moveThread(planner, repaired));
+    if (planner !== null) await this.tolerate("move the planner thread into its new section", () => this.alia.moveThread(planner, repaired));
     this.store.changed(project.id);
     return repaired;
   }
 
-  /** A done or archived project keeps no sidebar section; bb unassigns its threads. A refused delete keeps the id, so the next engine pass tries again. */
+  /** A done or archived project keeps no sidebar section; VesnALIA unassigns its threads. A refused delete keeps the id, so the next engine pass tries again. */
   async removeFinishedSection(project: ProjectRow): Promise<void> {
     if ((project.state !== "done" && project.state !== "archived") || project.section_id === null) return;
     const sectionId = project.section_id;
     await this.tolerate("delete the project's section", async () => {
-      await this.bb.deleteSection(sectionId);
+      await this.alia.deleteSection(sectionId);
       this.store.updateProject(project.id, { section_id: null });
       this.store.changed(project.id);
     });
@@ -838,20 +838,20 @@ export class Projects {
   private async renameSection(project: ProjectRow, name: string): Promise<void> {
     if (project.section_id === null) return;
     const sectionId = project.section_id;
-    await this.tolerate("rename the project's section", () => this.bb.renameSection(sectionId, sectionNameOf(name, project.slug)));
+    await this.tolerate("rename the project's section", () => this.alia.renameSection(sectionId, sectionNameOf(name, project.slug)));
   }
 
-  // Sidebar changes are cosmetic: when bb refuses one, the saved state still stands.
+  // Sidebar changes are cosmetic: when VesnALIA refuses one, the saved state still stands.
   private async tolerate(what: string, fn: () => Promise<void>): Promise<void> {
     try {
       await fn();
     } catch (error) {
-      this.bb.log("warn", `Could not ${what}: ${error instanceof Error ? error.message : String(error)}`);
+      this.alia.log("warn", `Could not ${what}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }
 
-/** A revision after approval may add repos, but every approved repo keeps its name, bb project, base and remote: its tickets, branches and worktrees already use them. */
+/** A revision after approval may add repos, but every approved repo keeps its name, VesnALIA project, base and remote: its tickets, branches and worktrees already use them. */
 /** A repo's forge kind and whether it has a [merge.worktree] stay as approved: open pull requests and the integration worktree depend on them. */
 function lockedReachErrors(approved: Spec, spec: Spec): string[] {
   const names: Array<string | null> = isMultiRepo(approved) ? approved.repo!.map((repo) => repo.name).filter((name) => spec.repo?.some((entry) => entry.name === name)) : isMultiRepo(spec) ? [] : [null];
@@ -895,8 +895,8 @@ function lockedRepoErrors(approved: Spec, spec: Spec): string[] {
     const was = repoSettings(approved, repo.name);
     const next = repoSettings(spec, repo.name);
     const why = "after approval, because its tickets, branches and worktrees already use it";
-    if (was.bbProjectId !== next.bbProjectId) {
-      errors.push(`repo[${index}].project: repo "${repo.name}" cannot change from "${was.bbProjectId}" to "${next.bbProjectId}" ${why}. Keep the project; for work in another repository, add a new [[repo]] table.`);
+    if (was.aliaProjectId !== next.aliaProjectId) {
+      errors.push(`repo[${index}].project: repo "${repo.name}" cannot change from "${was.aliaProjectId}" to "${next.aliaProjectId}" ${why}. Keep the project; for work in another repository, add a new [[repo]] table.`);
     }
     if (was.base !== next.base) {
       errors.push(`repo[${index}].base: repo "${repo.name}" cannot change from "${was.base}" to "${next.base}" ${why}. Set repo[${index}].base = "${was.base}" to keep it, or archive this project and propose a new one.`);
@@ -909,7 +909,7 @@ function lockedRepoErrors(approved: Spec, spec: Spec): string[] {
 }
 
 /** One entry per repo of `spec`, in its order. `lands` holds each repo's last land by [[repo]] name, or by null for a single-repo project's own repository. */
-export function repoOverviews(project: Pick<ProjectRow, "bb_project_id">, spec: Spec, tickets: readonly TicketRow[], lands: ReadonlyMap<string | null, RepoLand>): RepoOverview[] {
+export function repoOverviews(project: Pick<ProjectRow, "alia_project_id">, spec: Spec, tickets: readonly TicketRow[], lands: ReadonlyMap<string | null, RepoLand>): RepoOverview[] {
   const names = isMultiRepo(spec) ? spec.repo!.map((repo) => repo.name) : [null];
   return names.map((name) => {
     const settings = repoSettings(spec, name);
@@ -917,7 +917,7 @@ export function repoOverviews(project: Pick<ProjectRow, "bb_project_id">, spec: 
     const landedAt = land?.landedAt ?? null;
     // The rule of unlandedRepos in merge.ts, which imports this file.
     const toLand = settings.branch !== null && tickets.some((ticket) => ticket.repo === name && ticket.state === "done" && (landedAt ?? -1) < ticket.state_at);
-    return { name, bbProjectId: settings.bbProjectId ?? project.bb_project_id, bbProjectName: null, base: settings.base, branch: settings.branch, prUrl: land?.prUrl ?? null, landedAt, toLand };
+    return { name, aliaProjectId: settings.aliaProjectId ?? project.alia_project_id, aliaProjectName: null, base: settings.base, branch: settings.branch, prUrl: land?.prUrl ?? null, landedAt, toLand };
   });
 }
 
@@ -933,8 +933,8 @@ export function landsOf(events: readonly EventRow[]): Map<string | null, RepoLan
   return lands;
 }
 
-export function namedRepos<T extends { bbProjectId: string; bbProjectName: string | null }>(repos: readonly T[], names: ReadonlyMap<string, string>): T[] {
-  return repos.map((repo) => ({ ...repo, bbProjectName: names.get(repo.bbProjectId) ?? null }));
+export function namedRepos<T extends { aliaProjectId: string; aliaProjectName: string | null }>(repos: readonly T[], names: ReadonlyMap<string, string>): T[] {
+  return repos.map((repo) => ({ ...repo, aliaProjectName: names.get(repo.aliaProjectId) ?? null }));
 }
 
 export function withRepoNames<T extends { repos: RepoOverview[] }>(overview: T, names: ReadonlyMap<string, string>): T {

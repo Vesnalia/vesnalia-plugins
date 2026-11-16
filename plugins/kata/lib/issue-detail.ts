@@ -53,7 +53,7 @@ export function toIssueDetail(
     created_at: c.created_at,
   }));
   const labels = (show.labels ?? []).map((l) => l.label);
-  // bb's RPC boundary rejects `undefined`, so optional keys are omitted.
+  // VesnALIA's RPC boundary rejects `undefined`, so optional keys are omitted.
   const issue: KataIssueDetail["issue"] = {
     ...raw,
     qualified_id: raw.qualified_id ?? `${projectName}#${raw.short_id}`,

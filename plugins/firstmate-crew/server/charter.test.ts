@@ -44,17 +44,17 @@ describe("renderCharter", () => {
     }
   });
 
-  it("names bb firstmate-crew crew spawn, bb thread tell, bb thread show, bb thread output and bb thread list --parent-thread", async () => {
+  it("names VesnALIA firstmate-crew crew spawn, VesnALIA thread tell, VesnALIA thread show, VesnALIA thread output and VesnALIA thread list --parent-thread", async () => {
     const [charter] = await renderAll();
     for (const command of [
-      "bb firstmate-crew crew spawn",
-      "bb thread tell",
-      "bb thread show",
-      "bb thread output",
-      "bb thread list --parent-thread $BB_THREAD_ID",
-      "bb thread stop",
-      "bb thread archive",
-      "bb project list",
+      "alia firstmate-crew crew spawn",
+      "alia thread tell",
+      "alia thread show",
+      "alia thread output",
+      "alia thread list --parent-thread $ALIA_THREAD_ID",
+      "alia thread stop",
+      "alia thread archive",
+      "alia project list",
     ]) {
       expect(charter).toContain(command);
     }
@@ -126,9 +126,9 @@ describe("renderCharter", () => {
     expect(charter).toContain("(kind: captain) (hold: <the options, in a few words>) (actions: <label> => <prompt> | …)");
   });
 
-  // bb 0.45's own wording for a child whose work it cut short (its server's child-thread notifications).
+  // VesnALIA 0.45's own wording for a child whose work it cut short (its server's child-thread notifications).
   // The charter quotes them so the first mate can match the message; each must stay on one line.
-  it("quotes bb's words for a crewmate's work cut short, and says a stop by hand sends nothing", async () => {
+  it("quotes VesnALIA's words for a crewmate's work cut short, and says a stop by hand sends nothing", async () => {
     const [charter] = await renderAll();
     for (const notice of [
       "was interrupted because its host connection was lost",
@@ -151,7 +151,7 @@ describe("renderCharter", () => {
     expect(text).toContain("whatever its last status line says — `working`,\n`paused`, or none at all");
     expect(text).toContain("`system/thread/interrupted`");
     expect(text).toContain("`manual-stop`");
-    expect(text).toContain("bb thread log <id> --json --all");
+    expect(text).toContain("alia thread log <id> --json --all");
     expect(text).toContain("ask too when the log does not settle the cause");
     expect(text).toContain("unless you stopped it yourself\nduring a step of the stuck-crewmate ladder");
     // It comes before the status-line rules it overrides: a stale `paused` and a missing status line.
@@ -185,10 +185,10 @@ describe("renderCharter", () => {
 });
 
 describe("the messages to the first mate", () => {
-  it("the heading note says bb wrote AGENTS.md", async () => {
+  it("the heading note says VesnALIA wrote AGENTS.md", async () => {
     const agents = await readTemplate(TEMPLATES.agents);
     expect(agents).not.toMatch(/paseo/i);
-    expect(agents).toMatch(/^<!-- Written by the FirstMate plugin for bb from data\/charter\.md/);
+    expect(agents).toMatch(/^<!-- Written by the FirstMate plugin for alia from data\/charter\.md/);
   });
 
   it("the restart note keeps no heartbeat and says the crew still report to it", async () => {

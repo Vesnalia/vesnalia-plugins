@@ -1,10 +1,10 @@
-// SlopCop — configurable GitHub issue and PR rules that dispatch BB agents.
+// SlopCop — configurable GitHub issue and PR rules that dispatch VesnALIA agents.
 //
 // Flow: a watcher polls each watched repo with `gh`, detects the
 // draft -> ready-for-review edge, matches PRs against enabled rules, and spawns
 // a review thread per match. When that thread goes idle, SlopCop verifies the
 // outcome against GitHub itself rather than trusting the agent's transcript.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { createGhClient, type GhClient } from "./lib/gh";
 import {
@@ -203,8 +203,8 @@ function toRuleOutput(rule: Rule) {
   return { ...rule, dangerous: isDangerousCombination(rule) };
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     pollSeconds: {
       type: "string",
       label: "Poll interval (seconds)",
@@ -232,8 +232,8 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+  const db = alia.storage.database();
+  alia.storage.migrate(db, MIGRATIONS);
   repairIssueSchema(db);
   repairKeywordSchema(db);
   const store: Store = createStore(db as never);
@@ -265,7 +265,7 @@ export default async function plugin(bb: BbPluginApi) {
   };
 
   const announce = () => {
-    bb.realtime.publish(RUNS_CHANNEL, { at: Date.now() });
+    alia.realtime.publish(RUNS_CHANNEL, { at: Date.now() });
   };
 
   /**
@@ -285,7 +285,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       pullRequest.files = await gh.listFiles(repo, pullRequest.number);
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `could not list files for ${repo}#${pullRequest.number}: ${
           error instanceof Error ? error.message : String(error)
         }`,
@@ -390,10 +390,10 @@ export default async function plugin(bb: BbPluginApi) {
       const sectionId = resolveThreadSectionId(
         defaultThreadSection,
         defaultThreadSection.length > 0
-          ? await bb.sdk.threadSections.list()
+          ? await alia.sdk.threadSections.list()
           : [],
       );
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         ...execution,
         prompt: buildPrompt(context),
         title: buildThreadTitle(context),
@@ -404,7 +404,7 @@ export default async function plugin(bb: BbPluginApi) {
       store.updateRun(runId, { status: "reviewing", threadId });
       inFlight += 1;
       announce();
-      bb.log.info(
+      alia.log.info(
         `dispatched ${rule.name} for ${target.kind} ${rule.repo}#${target.number} (${rule.mode}) -> ${threadId}`,
       );
       return { runId, threadId };
@@ -536,7 +536,7 @@ export default async function plugin(bb: BbPluginApi) {
         }
         store.setCommentCursor(repo, source, pollStartedAt);
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `comment poll failed for ${repo} (${source}): ${
             error instanceof Error ? error.message : String(error)
           }`,
@@ -665,7 +665,7 @@ export default async function plugin(bb: BbPluginApi) {
           const pullRequests = await gh.listOpenPullRequests(repo);
           const repoBootstrapped = store.isBootstrapped(repo);
           if (!repoBootstrapped) {
-            bb.log.info(
+            alia.log.info(
               `bootstrapping ${repo}: recording ${pullRequests.length} open PR(s) as backlog`,
             );
           }
@@ -735,7 +735,7 @@ export default async function plugin(bb: BbPluginApi) {
                 const eventId = triggerEventId(trigger, pullRequest);
                 if (hasAlreadyRun(rule, pullRequest, eventId)) continue;
                 if (inFlight >= maxConcurrent) {
-                  bb.log.info(
+                  alia.log.info(
                     `concurrency cap reached (${maxConcurrent}); ${rule.name} will retry next poll`,
                   );
                   deferred = true;
@@ -761,7 +761,7 @@ export default async function plugin(bb: BbPluginApi) {
           }
           store.markBootstrapped(repo, Date.now());
         } catch (error) {
-          bb.log.warn(
+          alia.log.warn(
             `PR poll failed for ${repo}: ${
               error instanceof Error ? error.message : String(error)
             }`,
@@ -774,7 +774,7 @@ export default async function plugin(bb: BbPluginApi) {
           const issueNumbers = await gh.listOpenIssueNumbers(repo);
           const repoBootstrapped = store.isIssueBootstrapped(repo);
           if (!repoBootstrapped) {
-            bb.log.info(
+            alia.log.info(
               `bootstrapping ${repo}: recording ${issueNumbers.length} open issue(s) as backlog`,
             );
           }
@@ -809,7 +809,7 @@ export default async function plugin(bb: BbPluginApi) {
               if (alreadyRan) continue;
               if (inFlight >= maxConcurrent) {
                 retry = true;
-                bb.log.info(
+                alia.log.info(
                   `concurrency cap reached (${maxConcurrent}); ${rule.name} will retry next poll`,
                 );
                 continue;
@@ -820,7 +820,7 @@ export default async function plugin(bb: BbPluginApi) {
           }
           store.markIssueBootstrapped(repo, Date.now());
         } catch (error) {
-          bb.log.warn(
+          alia.log.warn(
             `issue poll failed for ${repo}: ${
               error instanceof Error ? error.message : String(error)
             }`,
@@ -882,15 +882,15 @@ export default async function plugin(bb: BbPluginApi) {
       finishedAt: Date.now(),
     });
     announce();
-    bb.log.info(
+    alia.log.info(
       `run ${run.id} (${run.ruleName} ${run.targetKind} #${run.prNumber}) -> ${result.status}`,
     );
   }
 
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) => {
     void finishRun(thread.id, lastAssistantText, null).catch(
       (error: unknown) => {
-        bb.log.error(
+        alia.log.error(
           `verification failed: ${error instanceof Error ? error.message : String(error)}`,
         );
       },
@@ -909,7 +909,7 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<string> {
     if (reported !== null && reported.trim().length > 0) return reported;
     try {
-      const result = (await bb.sdk.threads.events.list({
+      const result = (await alia.sdk.threads.events.list({
         threadId,
       } as never)) as { events?: unknown[] };
       const events = Array.isArray(result.events) ? result.events : [];
@@ -930,7 +930,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (message.length > 0) return `${type}: ${message}`;
       }
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `could not read failure detail for ${threadId}: ${
           error instanceof Error ? error.message : String(error)
         }`,
@@ -939,7 +939,7 @@ export default async function plugin(bb: BbPluginApi) {
     return "the review thread failed (no error detail recorded — open the thread)";
   }
 
-  bb.events.on("thread.failed", ({ thread, error }) => {
+  alia.events.on("thread.failed", ({ thread, error }) => {
     void describeThreadFailure(thread.id, error).then((detail) =>
       finishRun(thread.id, null, detail),
     );
@@ -999,7 +999,7 @@ export default async function plugin(bb: BbPluginApi) {
     };
     store.upsertRule(rule);
     if (isDangerousCombination(rule)) {
-      bb.log.warn(
+      alia.log.warn(
         `rule '${rule.name}' reviews PRs from ANY author — untrusted code can run with agent access`,
       );
     }
@@ -1008,7 +1008,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // --- rpc -----------------------------------------------------------------
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     listRules: () => ({ rules: store.listRules().map(toRuleOutput) }),
 
     saveRule: ({ id, rule }) => ({ rule: toRuleOutput(saveRule(id, rule)) }),
@@ -1093,60 +1093,60 @@ export default async function plugin(bb: BbPluginApi) {
 
   // --- cli -----------------------------------------------------------------
 
-  bb.cli.register({
+  alia.cli.register({
     name: "slopcop",
     summary: "Configure automated GitHub review and issue rules",
     commands: [
       {
         name: "rules",
         summary: "List rules",
-        usage: "bb slopcop rules [--json]",
+        usage: "alia slopcop rules [--json]",
       },
       {
         name: "rules-add",
         summary: "Create a rule",
         usage:
-          "bb slopcop rules add --name <n> --repo <owner/repo> --project <name> [--trigger <type,…>] [--keyword <text,…>] [--requester-trust <level>] [--trust <level>] [--live] [--hidden]",
+          "alia slopcop rules add --name <n> --repo <owner/repo> --project <name> [--trigger <type,…>] [--keyword <text,…>] [--requester-trust <level>] [--trust <level>] [--live] [--hidden]",
       },
       {
         name: "rules-edit",
         summary: "Update a rule",
-        usage: "bb slopcop rules edit <id|name> [same flags as add]",
+        usage: "alia slopcop rules edit <id|name> [same flags as add]",
       },
       {
         name: "rules-toggle",
         summary: "Toggle or delete a rule",
-        usage: "bb slopcop rules enable <id|name>",
+        usage: "alia slopcop rules enable <id|name>",
       },
       {
         name: "runs",
         summary: "Recent review runs",
-        usage: "bb slopcop runs [--rule <id|name>] [--limit N] [--json]",
+        usage: "alia slopcop runs [--rule <id|name>] [--limit N] [--json]",
       },
       {
         name: "check",
         summary: "Dry-run a rule against a PR or issue",
-        usage: "bb slopcop check <id|name> <number> [--issue]",
+        usage: "alia slopcop check <id|name> <number> [--issue]",
       },
       {
         name: "dispatch",
         summary: "Run a rule against a PR or issue now",
-        usage: "bb slopcop dispatch <id|name> <number> [--issue] [--force]",
+        usage: "alia slopcop dispatch <id|name> <number> [--issue] [--force]",
       },
       {
         name: "verify",
         summary: "Re-check a live run's comments against GitHub",
-        usage: "bb slopcop verify [run-id] [--json]",
+        usage: "alia slopcop verify [run-id] [--json]",
       },
       {
         name: "show",
         summary: "Show a run and the review body it produced",
-        usage: "bb slopcop show [run-id] [--json]",
+        usage: "alia slopcop show [run-id] [--json]",
       },
       {
         name: "status",
         summary: "Show gh auth and watched repos",
-        usage: "bb slopcop status",
+        usage: "alia slopcop status",
       },
     ],
     async run(argv) {
@@ -1284,12 +1284,12 @@ export default async function plugin(bb: BbPluginApi) {
                 : (existing?.visibility ?? "visible"),
           });
 
-          // Agent configuration from the CLI, so another BB agent can create a
+          // Agent configuration from the CLI, so another VesnALIA agent can create a
           // dispatchable rule without opening the panel.
           const projectFlag = flag("project");
           let request = existing?.request ?? null;
           if (projectFlag !== undefined || flag("model") !== undefined) {
-            const projects = await bb.sdk.projects.list();
+            const projects = await alia.sdk.projects.list();
             const project =
               projectFlag === undefined
                 ? null
@@ -1312,7 +1312,7 @@ export default async function plugin(bb: BbPluginApi) {
               model: flag("model") ?? previous.model ?? "claude-opus-5",
               reasoningLevel:
                 flag("reasoning") ?? previous.reasoningLevel ?? "high",
-              // BB's permission modes are full | auto | accept-edits — there is
+              // VesnALIA's permission modes are full | auto | accept-edits — there is
               // no read-only tier, so `auto` is the narrowest sensible default.
               permissionMode:
                 flag("permission") ?? previous.permissionMode ?? "auto",
@@ -1520,7 +1520,7 @@ export default async function plugin(bb: BbPluginApi) {
         }
 
         return fail(
-          "Usage: bb slopcop <rules|runs|show|verify|check|dispatch|status> …\nRun `bb slopcop rules` to list rules.",
+          "Usage: VesnALIA slopcop <rules|runs|show|verify|check|dispatch|status> …\nRun `alia slopcop rules` to list rules.",
         );
       } catch (error) {
         return fail(error instanceof Error ? error.message : String(error));
@@ -1530,25 +1530,25 @@ export default async function plugin(bb: BbPluginApi) {
 
   // --- watcher -------------------------------------------------------------
 
-  bb.background.service("watcher", {
+  alia.background.service("watcher", {
     async start(signal) {
       const initial = await readSettings();
       gh = createGhClient(initial.ghPath);
       ghLogin = await gh.authenticatedLogin();
       if (ghLogin === null) {
-        bb.status.needsConfiguration(
+        alia.status.needsConfiguration(
           "`gh` is not authenticated on this machine. Run `gh auth login`, then reload the plugin.",
         );
         return;
       }
-      bb.log.info(`gh authenticated as ${ghLogin}`);
+      alia.log.info(`gh authenticated as ${ghLogin}`);
 
       while (!signal.aborted) {
         const values = await readSettings();
         try {
           await poll(values.maxConcurrent);
         } catch (error) {
-          bb.log.error(
+          alia.log.error(
             `poll pass failed: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
@@ -1567,7 +1567,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

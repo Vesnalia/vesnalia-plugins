@@ -16,9 +16,9 @@ export const PROFILE = {
     user: [".augment/skills", ".claude/skills", ".agents/skills"],
     project: [".augment/skills", ".claude/skills", ".agents/skills"],
   },
-  // bb's permission modes as Auggie `--permission tool:policy` flags. There is
+  // VesnALIA's permission modes as Auggie `--permission tool:policy` flags. There is
   // no allow-everything switch (`--allow-all` is rejected). Accept-edits maps
-  // to auto-approving Auggie's file-mutation tools; shell still asks. bb's
+  // to auto-approving Auggie's file-mutation tools; shell still asks. VesnALIA's
   // default "auto" mode adds nothing, so every request comes through ACP.
   permissionCli: {
     workspaceWrite: [
@@ -28,7 +28,7 @@ export const PROFILE = {
       "--permission=remove-files:allow",
     ],
   },
-  installHint: "Install Auggie with `npm install -g @augmentcode/auggie`, authenticate it, then run `bb plugin reload auggie`.",
+  installHint: "Install Auggie with `npm install -g @augmentcode/auggie`, authenticate it, then run `alia plugin reload auggie`.",
 } as const;
 
 export function isObject(value: unknown): value is JsonObject {

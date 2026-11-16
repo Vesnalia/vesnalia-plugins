@@ -225,7 +225,7 @@ describe("compactMate", () => {
   });
 
   for (const status of ["idle", "error"] as const) {
-    it(`compact asks bb to compact the first mate's thread and sends nothing (${status})`, async () => {
+    it(`compact asks VesnALIA to compact the first mate's thread and sends nothing (${status})`, async () => {
       const { threads, store, deps } = await setup();
       const mate = threads.add({ status });
       await store.setMateThreadId(mate.id);

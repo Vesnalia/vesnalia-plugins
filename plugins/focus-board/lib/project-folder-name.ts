@@ -1,22 +1,22 @@
 /**
- * The project name bb derives from a picked folder in its typical
- * new-project flow — verified against bb 0.48.1's bundle (its `go`, `mo`,
+ * The project name VesnALIA derives from a picked folder in its typical
+ * new-project flow — verified against VesnALIA 0.48.1's bundle (its `go`, `mo`,
  * `no` and `Fee` path utilities): the name is the folder's last path
- * segment after trailing separators are stripped. bb's parser splits each
+ * segment after trailing separators are stripped. VesnALIA's parser splits each
  * flavor's ROOT off first — the POSIX leading "/" and the Windows drive
  * (or UNC machine) are the root, never a segment — so a filesystem root
  * yields no name at all. Both flavors of separator are handled so a
- * Windows-picked folder names itself the way bb's own parser does.
+ * Windows-picked folder names itself the way VesnALIA's own parser does.
  *
- * bb's own refusal words are kept verbatim (its root check's message) so a
- * refused root reads the same at this plugin as it does in bb's main view.
- * bb's fuller validation (absolute-path and Windows-network-path checks)
+ * VesnALIA's own refusal words are kept verbatim (its root check's message) so a
+ * refused root reads the same at this plugin as it does in VesnALIA's main view.
+ * VesnALIA's fuller validation (absolute-path and Windows-network-path checks)
  * guards its typed-path entry dialog; the plugin's picker flow has no
  * typed path — the picked path comes from the OS's own folder dialog — so
  * the root refusal is the only check the picked path can still trip.
  */
 
-/** bb's words for a picked path that names no project directory. */
+/** VesnALIA's words for a picked path that names no project directory. */
 export const PROJECT_PATH_ROOT_REFUSAL =
   "Project path must point to a project directory, not the filesystem root.";
 
@@ -31,7 +31,7 @@ export function projectFolderName(folderPath: string): string {
   const stripped = folderPath.trim().replace(/[\\/]+$/u, "");
   if (stripped === "") return "";
   // A bare Windows drive ("C:") is the filesystem root of its own volume;
-  // a UNC machine ("\\\\server") is the network root. bb's parser reads
+  // a UNC machine ("\\\\server") is the network root. VesnALIA's parser reads
   // each as root-only, no segments, so neither names a project.
   const windowsDrive = /^[A-Za-z]:$/u.test(stripped);
   const uncMachine = /^\\\\[^\\/]+$/u.test(stripped);

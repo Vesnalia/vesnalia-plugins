@@ -1,5 +1,5 @@
 import "./check-test-machine.mjs";
-// The box's pointer from bb-box-cursor (060): its lines as events, and its
+// The box's pointer from alia-box-cursor (060): its lines as events, and its
 // images as the PNG the panel shows.
 
 import assert from "node:assert/strict";
@@ -9,7 +9,7 @@ import { followPointer, pointerEvent } from "../src/backends/selkies.ts";
 import { argbToRgba, rgbaPng } from "../src/core/png.ts";
 import type { BoxPointer, StreamOptions } from "../src/transports/types.ts";
 
-test("bb-box-cursor's lines are pointer events, and a line it cannot have written is none", () => {
+test("alia-box-cursor's lines are pointer events, and a line it cannot have written is none", () => {
   assert.deepEqual(pointerEvent('{"enter":true}'), { type: "enter" });
   assert.deepEqual(pointerEvent('{"leave":true}'), { type: "leave" });
   assert.deepEqual(pointerEvent('{"position":[640,-3]}'), { type: "position", x: 640, y: -3 });
@@ -21,7 +21,7 @@ test("bb-box-cursor's lines are pointer events, and a line it cannot have writte
   }
 });
 
-test("bb-box-cursor runs in the box's session, and its output, in pieces however it comes, is read a line at a time", async () => {
+test("alia-box-cursor runs in the box's session, and its output, in pieces however it comes, is read a line at a time", async () => {
   let script = "";
   const events: BoxPointer[] = [];
   const command = {
@@ -34,8 +34,8 @@ test("bb-box-cursor runs in the box's session, and its output, in pieces however
     },
   };
   await followPointer(command as never, (event) => events.push(event), new AbortController().signal);
-  assert.match(script, /\. \/run\/bb-box\/display\.env/);
-  assert.match(script, /exec '\/usr\/local\/libexec\/bb-box\/cursor'$/);
+  assert.match(script, /\. \/run\/alia-box\/display\.env/);
+  assert.match(script, /exec '\/usr\/local\/libexec\/alia-box\/cursor'$/);
   // The last line has no newline yet: it is not taken, as the helper ends each line it writes.
   assert.deepEqual(events, [{ type: "enter" }, { type: "position", x: 1, y: 2 }, { type: "position", x: 3, y: 4 }]);
 });

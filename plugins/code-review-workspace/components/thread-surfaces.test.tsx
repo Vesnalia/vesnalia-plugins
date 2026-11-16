@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-// BB's thread pages: Review changes above a thread's message box, shown only for a folder with changes or a review
-// while Settings has it on, reading BB's git status of the folder and never its diff; and the Review tab, only beside a
+// VesnALIA's thread pages: Review changes above a thread's message box, shown only for a folder with changes or a review
+// while Settings has it on, reading VesnALIA's git status of the folder and never its diff; and the Review tab, only beside a
 // thread linked to a review, with its id and name, its comments and where each stands, the agent's chat and Review ↗.
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, renderHook, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginAppDefinition } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginAppDefinition } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import appModule from "../app";
 import { defaultPreferences } from "../src/preferences";
@@ -16,7 +16,7 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.f
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 type Link = { targetKey: string; createdAt: number; main: string | null; threads: string[]; folder: { environmentId: string; branch: string; paused: boolean } | null };
-/** The folder's git status as BB's Git plugin answers its keyed `status`: `files` changed, on `branch`. */
+/** The folder's git status as VesnALIA's Git plugin answers its keyed `status`: `files` changed, on `branch`. */
 const gitStatus = (folders: Record<string, { files: number; branch?: string | null } | "not_applicable">) => ({ keys }: { keys: string[] }) =>
   Object.fromEntries(keys.map((key) => {
     const folder = folders[key];
@@ -51,7 +51,7 @@ const folderReview = (environmentId: string, extra: Partial<Link> = {}): Link =>
 
 test("a host without the thread slots loads the plugin as before, with each slot absent in turn", async () => {
   const definition = appModule as unknown as PluginAppDefinition & { setup(app: unknown): void };
-  const without = (slot: string) => ({ __bbPluginApp: true, setup: (app: { slots: object }) => definition.setup(new Proxy(app, {
+  const without = (slot: string) => ({ __aliaPluginApp: true, setup: (app: { slots: object }) => definition.setup(new Proxy(app, {
     get: (target, name) => name === "slots" ? new Proxy(target.slots, { get: (slots, member) => member === slot ? undefined : Reflect.get(slots, member) }) : Reflect.get(target, name),
   })) }) as unknown as PluginAppDefinition;
   const all = await loadPluginApp(definition);
@@ -65,7 +65,7 @@ test("a host without the thread slots loads the plugin as before, with each slot
     expect(loaded.threadContextSegments).toHaveLength(slot === "experimental_threadContextSegment" ? 0 : 1);
     expect(loaded.tabs).toHaveLength(slot === "experimental_tab" ? 0 : 3);
   }
-  const neither = { __bbPluginApp: true, setup: (app: { slots: object }) => definition.setup(new Proxy(app, {
+  const neither = { __aliaPluginApp: true, setup: (app: { slots: object }) => definition.setup(new Proxy(app, {
     get: (target, name) => name === "slots" ? new Proxy(target.slots, { get: (slots, member) => member === "experimental_tab" || member === "experimental_threadContextSegment" ? undefined : Reflect.get(slots, member) }) : Reflect.get(target, name),
   })) } as unknown as PluginAppDefinition;
   expect((await loadPluginApp(neither)).navPanels).toHaveLength(1);
@@ -73,7 +73,7 @@ test("a host without the thread slots loads the plugin as before, with each slot
 
 test("a host that refuses a navigation page's tabs, as a client from before them may, still loads the plugin, with the thread's Review tab", async () => {
   const definition = appModule as unknown as PluginAppDefinition & { setup(app: unknown): void };
-  const refusing = { __bbPluginApp: true, setup: (app: { slots: Record<string, unknown> }) => definition.setup(new Proxy(app, {
+  const refusing = { __aliaPluginApp: true, setup: (app: { slots: Record<string, unknown> }) => definition.setup(new Proxy(app, {
     get: (target, name) => name !== "slots" ? Reflect.get(target, name) : new Proxy(target.slots, { get: (slots, member) => member !== "experimental_tab" ? Reflect.get(slots, member)
       : (registration: { context: { kind: string } }) => {
         if (registration.context.kind === "nav-panel") throw new Error("Unknown tab context: nav-panel");
@@ -111,7 +111,7 @@ test("Review changes shows only for a folder with changes or a review, while Set
   cleanup();
   expect((await probe("t-review2", { id: "env-review2" }, { folders: { "env-review2": { files: 0, branch: "main" } }, links: [folderReview("env-review2")] })).getByText("segment:shown tab:shown")).toBeTruthy();
   cleanup();
-  // A main thread with no folder, as a PR's fixer in a worktree BB removed: its review, as its tab has it.
+  // A main thread with no folder, as a PR's fixer in a worktree VesnALIA removed: its review, as its tab has it.
   expect((await probe("t-main", null, { links: [{ targetKey: "pr-main", createdAt: 1, main: "t-main", threads: ["t-main"], folder: null }] })).getByText("segment:shown tab:shown")).toBeTruthy();
   cleanup();
   // Git can't say (not a git folder, or its plugin off): a review the folder was last seen on its branch for still shows.
@@ -121,7 +121,7 @@ test("Review changes shows only for a folder with changes or a review, while Set
   expect((await probe("t-agent", { id: "env-agent" }, { folders: { "env-agent": { files: 2 } }, links: [folderReview("env-agent")], agents: ["t-agent"] })).getByText("segment:hidden tab:hidden")).toBeTruthy();
 });
 
-test("across many threads, Review changes reads BB's git status of each folder and the plugin's index, never a diff", async () => {
+test("across many threads, Review changes reads VesnALIA's git status of each folder and the plugin's index, never a diff", async () => {
   const environments = Array.from({ length: 24 }, (_, at) => `env-many-${at}`);
   const folders = Object.fromEntries(environments.map((id, at) => [id, { files: at % 3 }]));
   const links = environments.filter((_, at) => at % 4 === 0).map((id) => folderReview(id));
@@ -133,7 +133,7 @@ test("across many threads, Review changes reads BB's git status of each folder a
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
   const methods = new Set(slot.rpcCalls.map((call) => call.method));
   expect([...methods].sort()).toEqual(["status", "threadLinks", "threadReview"]);
-  // One status read per folder at most, batched as BB's keyed read does; one review read per folder review.
+  // One status read per folder at most, batched as VesnALIA's keyed read does; one review read per folder review.
   const statusKeys = slot.rpcCalls.filter((call) => call.method === "status").flatMap((call) => (call.input as { keys: string[] }).keys);
   expect(new Set(statusKeys).size).toBe(statusKeys.length);
   expect(slot.rpcCalls.filter((call) => call.method === "threadReview")).toHaveLength(links.length);
@@ -243,7 +243,7 @@ test("the Review tab names the review, lists its comments with where each stands
   expect(within(comments).getByRole("button", { name: /Open · src\/a\.ts:1/ })).toBeTruthy();
   expect(within(comments).getByRole("button", { name: /Done · Logged it · src\/a\.ts:4/ })).toBeTruthy();
   expect(within(comments).getByRole("button", { name: /Resolved · src\/b\.ts:2/ })).toBeTruthy();
-  const chat = within(slot.getByRole("region", { name: "Review agent" })).getByTestId("bb-thread-chat");
+  const chat = within(slot.getByRole("region", { name: "Review agent" })).getByTestId("alia-thread-chat");
   expect([chat.dataset.threadId, chat.dataset.variant, chat.dataset.layout]).toEqual(["agent-1", "compact", "contained"]);
   // A comment's row, and Review ↗, open the review.
   fireEvent.click(within(comments).getByRole("button", { name: /Done · Logged it/ }));
@@ -267,7 +267,7 @@ test("before the review agent has started, its first message starts it in the ta
   fireEvent.change(agent.getByRole("textbox", { name: "Ask the agent" }), { target: { value: "Is the snooze safe?" } });
   fireEvent.click(agent.getByRole("button", { name: "Send" }));
   await waitFor(() => expect(startConversation).toHaveBeenCalledWith(expect.objectContaining({ targetKey: "br-tab", text: "Is the snooze safe?", typed: "Is the snooze safe?" })));
-  expect(await agent.findByTestId("bb-thread-chat")).toBeTruthy();
+  expect(await agent.findByTestId("alia-thread-chat")).toBeTruthy();
   expect(slot.navigateCalls).toEqual([]);
 });
 
@@ -276,7 +276,7 @@ test("on a thread's page the agent's first message takes no focus from the threa
   const slot = renderSlot({ component: ReviewTab }, { threadId: "lead", environment: { id: "env-tab" } }, { rpc: handlers({ links: tabLinks, rpc: {
     getDraft: () => draft, getConversation: () => ({ threadId, legacy: [], defaults: { providerId: "codex", model: "gpt-6", reasoningLevel: "medium" }, machine: null }),
   } }) });
-  await slot.findByTestId("bb-thread-chat");
+  await slot.findByTestId("alia-thread-chat");
   threadId = null;
   await slot.emitRealtime("conversation:br-tab", { deleted: "agent-1" });
   const agent = within(slot.getByRole("region", { name: "Review agent" }));
@@ -296,5 +296,5 @@ test("when the review agent's chat can't be read, the tab says so, with Try agai
   expect(slot.queryByText("No questions yet.")).toBeNull();
   fail = false;
   fireEvent.click(within(alert).getByRole("button", { name: "Try again" }));
-  expect((await slot.findByTestId("bb-thread-chat")).dataset.threadId).toBe("agent-2");
+  expect((await slot.findByTestId("alia-thread-chat")).dataset.threadId).toBe("agent-2");
 });

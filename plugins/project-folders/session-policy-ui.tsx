@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { ExecutionScope, rpcContract } from "./server";
 import {
   BUILT_IN_SESSION_ITEMS,
@@ -54,8 +54,8 @@ function addsLabel(adds: Adds): string {
 const INHERIT = "__inherit";
 
 /**
- * Whether the running BB can enforce session rules. Asked once per page:
- * the answer only changes when BB itself is replaced.
+ * Whether the running VesnALIA can enforce session rules. Asked once per page:
+ * the answer only changes when VesnALIA itself is replaced.
  */
 let availability: Promise<boolean> | null = null;
 export function useSessionPolicyAvailable(): boolean {
@@ -82,15 +82,15 @@ export function useSessionPolicyAvailable(): boolean {
 
 const groupMeta = (group: SessionPolicyGroup) =>
   ({
-    bbPlugins: {
-      title: t("Плагины BB"),
+    aliaPlugins: {
+      title: t("Плагины ALIA"),
       hint: t(
-        "Инструкции, инструменты и навыки плагинов BB. Исключённый плагин здесь не показывает свои кнопки в поле ввода и не перехватывает сообщения.",
+        "Инструкции, инструменты и навыки плагинов ALIA. Исключённый плагин здесь не показывает свои кнопки в поле ввода и не перехватывает сообщения.",
       ),
     },
     skills: {
       title: t("Навыки"),
-      hint: t("Навыки BB и собственные навыки CLI по имени."),
+      hint: t("Навыки ALIA и собственные навыки CLI по имени."),
     },
     mcpServers: {
       title: t("MCP-серверы"),
@@ -103,7 +103,7 @@ const groupMeta = (group: SessionPolicyGroup) =>
   })[group];
 
 function originLabel(origin: PolicyOrigin | undefined, scope: ExecutionScope) {
-  if (!origin) return t("по умолчанию BB");
+  if (!origin) return t("по умолчанию ALIA");
   if (origin.scope === "global") return t("из настроек плагина");
   if (origin.scope === "project") return t("из проекта");
   return scope.kind === "folder" && origin.folderId === scope.folderId
@@ -119,7 +119,7 @@ function modeLabel(filter: SessionFilter | undefined) {
 }
 
 /**
- * What an agent session started here loads: BB plugins, skills, MCP servers
+ * What an agent session started here loads: VesnALIA plugins, skills, MCP servers
  * and CLI plugins. Every group inherits until it is set here, like the
  * provider and model defaults next to it.
  */
@@ -205,9 +205,9 @@ export function SessionPolicyEditor({ scope }: { scope: ExecutionScope }) {
         />
       ))}
       <SwitchRow
-        title={t("Общие инструкции BB")}
+        title={t("Общие инструкции ALIA")}
         hint={
-          t("Файл {path}: BB добавляет его текст в каждую сессию.").replace(
+          t("Файл {path}: ALIA добавляет его текст в каждую сессию.").replace(
             "{path}",
             state.userInstructionsFile.path,
           ) +
@@ -224,7 +224,7 @@ export function SessionPolicyEditor({ scope }: { scope: ExecutionScope }) {
       <SwitchRow
         title={t("Инструкции проекта")}
         hint={t(
-          "AGENTS.md и CLAUDE.md в папке раздела и выше, а также .bb/AGENTS.md. Claude Code и Codex отключают их полностью, OpenCode — вместе со своими настройками проекта, Cursor не отключает.",
+          "AGENTS.md и CLAUDE.md в папке раздела и выше, а также .vesnalia/AGENTS.md. Claude Code и Codex отключают их полностью, OpenCode — вместе со своими настройками проекта, Cursor не отключает.",
         )}
         own={draft.projectInstructions}
         inherited={state.inherited.projectInstructions}
@@ -245,7 +245,7 @@ export function SessionPolicyEditor({ scope }: { scope: ExecutionScope }) {
       />
       <p className="pf-agents-hint">
         {t(
-          "Действует для новых сессий. Claude Code и Codex соблюдают все группы, OpenCode — всё, кроме плагинов CLI, Cursor — плагины BB и MCP-серверы.",
+          "Действует для новых сессий. Claude Code и Codex соблюдают все группы, OpenCode — всё, кроме плагинов CLI, Cursor — плагины VesnALIA и MCP-серверы.",
         )}
       </p>
       <div className="pf-agents-actions">
@@ -426,7 +426,7 @@ function GroupRow({
                       <span>{item.label}</span>
                       {required ? (
                         <span className="pf-session-adds">
-                          {t("нужен BB, всегда подключён")}
+                          {t("нужен ALIA, всегда подключён")}
                         </span>
                       ) : (
                         item.adds && (

@@ -1,4 +1,4 @@
-// A terminal in a box, with its PTY on BB's server: the transport's own
+// A terminal in a box, with its PTY on VesnALIA's server: the transport's own
 // command line (`ssh -tt`, `docker exec -it`) runs under `script`, which
 // gives it a PTY and relays that PTY over its own stdin and stdout. Nothing
 // runs in the box, so every guest OS has one. The first line of the output

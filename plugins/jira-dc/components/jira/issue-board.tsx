@@ -12,7 +12,7 @@ import { buildBoardColumns, type BoardColumn } from "./board-columns";
 import { useJiraRpc } from "./hooks";
 import { Avatar, IssueKey, PriorityMark, StatusLozenge, TypeGlyph, errorText } from "./primitives";
 
-const DRAG_TYPE = "application/x-bb-jira-issue";
+const DRAG_TYPE = "application/x-alia-jira-issue";
 /** Give up waiting for the refetch to confirm a move after this long. */
 const MOVE_SETTLE_MS = 10_000;
 

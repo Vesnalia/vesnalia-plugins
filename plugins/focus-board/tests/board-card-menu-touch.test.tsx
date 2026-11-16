@@ -14,7 +14,7 @@
 // right-click) is untouched, which these tests pin in both directions.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Board } from "../components/board";
 import { buildColumns } from "../components/grouping";
 import { resolveTouchDragSource, TOUCH_DRAG_ARMED_ATTR } from "../components/touch-hold-drag";

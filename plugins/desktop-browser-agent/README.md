@@ -1,20 +1,20 @@
-# Desktop & Browser Agent for bb
+# Desktop & Browser Agent for VesnALIA
 
-Computer use for [bb](https://getbb.app) agents: they use desktop apps and
+Computer use for [VesnALIA](https://getbb.app) agents: they use desktop apps and
 browsers on your machine, in the background, powered by
 [Cua Driver](https://cua.ai/docs) from Cua AI. A Chrome extension lets them
 work in your own browser tabs too.
 
-A community plugin, not affiliated with or endorsed by Cua AI, Inc. or the bb
+A community plugin, not affiliated with or endorsed by Cua AI, Inc. or the VesnALIA
 team. See [NOTICE.md](NOTICE.md).
 
-![Desktop & Browser Agent settings in bb](docs/screenshots/1-overview.png)
+![Desktop & Browser Agent settings in VesnALIA](docs/screenshots/1-overview.png)
 
 ## Features
 
 - **Desktop and browser control.** Agents read and operate native apps and
   Chromium windows without taking over your screen.
-- **Your everyday browser (optional).** The bundled **Browser Bridge for bb**
+- **Your everyday browser (optional).** The bundled **Browser Bridge for VesnALIA**
   extension lets agents work in Brave, Chrome or Edge tabs while you keep
   browsing.
 - **Per-provider routing.** Providers with their own computer use, such as
@@ -41,14 +41,14 @@ team. See [NOTICE.md](NOTICE.md).
 1. Install the plugin:
 
    ```sh
-   bb plugin install https://github.com/qwadrox/bb-plugin-desktop-browser-agent
+   alia plugin install https://github.com/qwadrox/bb-plugin-desktop-browser-agent
    ```
 
 2. Open **Settings → Plugins → Desktop & Browser Agent**, select **Install Cua Driver…**
    next to your machine, and on macOS select **Grant macOS permissions**.
 3. Start a new thread and ask the agent to do something in an app.
 
-Needs bb 0.39 or later. Tested on macOS 14+. Windows 10/11 and Linux (X11)
+Needs VesnALIA 0.39 or later. Tested on macOS 14+. Windows 10/11 and Linux (X11)
 are supported by Cua Driver but not yet tested with this plugin. The browser
 extension is tested on macOS; it has a Linux setup too, also untested, and
 none on Windows. For manual installs, see the
@@ -59,7 +59,7 @@ none on Windows. For manual installs, see the
 | | Browser window tools | Browser extension (optional) |
 | --- | --- | --- |
 | Tools | `cua_browser_*` | `browser_*` |
-| Runs through | Cua Driver, no extension | Browser Bridge for bb extension |
+| Runs through | Cua Driver, no extension | Browser Bridge for VesnALIA extension |
 | Reaches | one Chrome, Edge, Brave or Electron window | any tab of your everyday browser |
 | Your signed-in profile | only with **Signed-in browser profiles** on | always |
 | Default | on | off |
@@ -89,7 +89,7 @@ Off until you turn it on:
 
 1. In **Settings → Plugins → Desktop & Browser Agent → Browser extension**, tick **Offer
    browser_\* tools (extension)** and select **Install bridge**.
-2. Add [Browser Bridge for bb](https://chromewebstore.google.com/detail/aaidacbpcgjigclcoffjlcpnkmpnpgcc) from the Chrome Web
+2. Add [Browser Bridge for VesnALIA](https://chromewebstore.google.com/detail/aaidacbpcgjigclcoffjlcpnkmpnpgcc) from the Chrome Web
    Store (it works in Brave and Edge too). To run a local build instead, run
    `npm run build:extension`, open `brave://extensions` or
    `chrome://extensions`, turn on Developer mode, select **Load unpacked**
@@ -108,7 +108,7 @@ Off until you turn it on:
 | Browser extension | off | Offer the extension's `browser_*` tools |
 | Ask before sensitive actions | off | Ask in the thread before sensitive calls |
 
-Everything is also available from the terminal: `bb cua help`.
+Everything is also available from the terminal: `alia cua help`.
 
 ## More
 

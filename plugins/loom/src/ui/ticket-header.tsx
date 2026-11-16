@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { experimental_copyToClipboard, experimental_Icon as Icon, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard, experimental_Icon as Icon, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { MergeItem, TicketAction, TicketDetail } from "../contract";
 import { formatDuration, mergeRetryText, plural, startWaitText } from "../format";
 import type { TicketState } from "../states";
@@ -215,7 +215,7 @@ export function TicketHeader({
   onJump(postId: number): void;
   sync?: { syncing: boolean; onSync(): void };
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [reason, setReason] = useState("");
   const final = ticket.state === "done" || ticket.state === "cancelled";
   const worker = ticket.state === "working" ? ticket.threads.filter((thread) => thread.role === "worker" && thread.state !== "ended" && thread.threadId !== null).at(-1) : undefined;

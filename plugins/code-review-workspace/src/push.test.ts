@@ -3,7 +3,7 @@
 // waits for Push anyway. When the thread stops, GitHub is read: a branch not at the commit, or one that moved with no
 // Push, is flagged. Only you, in the review, start a push; the plugin runs no git.
 import { expect, test, vi } from "vitest";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { toolFailed, toolText } from "./fake-host.test-support";
 
 const runGh = vi.hoisted(() => vi.fn());
@@ -29,13 +29,13 @@ const HEAD = "abc1234def5678abc1234def5678abc1234def56";
 const OTHER = "f00dbabef00dbabef00dbabef00dbabef00dbabe";
 const PR_HEAD = "9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e";
 const OLD = "0ld0000000000000000000000000000000000000".replace(/l/g, "1");
-/** The files the review read, as bb's revisions: a.ts shown, .env kept out by the secrets filter. */
+/** The files the review read, as VesnALIA's revisions: a.ts shown, .env kept out by the secrets filter. */
 const REVIEWED = { "src/a.ts": "100644:aaa:100644:bbb", ".env": "000000:000:100644:eee" };
 const ok = (stdout = "") => ({ stdout, stderr: "", code: 0 });
 
 /**
  * A local review of feat/qa in acme/api, in env1 on MaxBook, whose main thread is `coder` (with a subagent `sub`); the
- * review agent is `agent`. `folder` is what bb's Git plugin says of the folder: its head, whether it has changes not
+ * review agent is `agent`. `folder` is what VesnALIA's Git plugin says of the folder: its head, whether it has changes not
  * committed, and what its branch commits; `github` is the branch's head on GitHub.
  */
 async function setup({ branch = "feat/qa", workBranch, pr, joined = false }: { branch?: string; workBranch?: string; pr?: { fork?: string }; joined?: boolean } = {}) {
@@ -54,7 +54,7 @@ async function setup({ branch = "feat/qa", workBranch, pr, joined = false }: { b
     behind: false,
     // On your PR, what Not pushed yet reads: the fixer's folder against the PR's head.
     shown: { "src/a.ts": REVIEWED["src/a.ts"] } as Record<string, string>,
-    // Asked about GitHub's head, BB can't read the folder, as when its machine sleeps.
+    // Asked about GitHub's head, VesnALIA can't read the folder, as when its machine sleeps.
     unreadable: false,
     // What the branch's commits are counted from: the review's base, or the PR's head once it's the PR's.
     base,
@@ -79,9 +79,9 @@ async function setup({ branch = "feat/qa", workBranch, pr, joined = false }: { b
   // The review agent's machine offline: what's sent to it fails.
   const agent = { offline: false };
   const sent: any[] = [];
-  const { bb, harness, calls } = folderHost({
+  const { alia, harness, calls } = folderHost({
     files: [{ path: "src/a.ts" }],
-    env: { branchName: pr ? "bb/fixes-thr_fix" : workBranch ?? branch },
+    env: { branchName: pr ? "alia/fixes-thr_fix" : workBranch ?? branch },
     answers: {
       workspaceStatus: (input) => folder.unreadable && input.mergeBaseBranch && input.mergeBaseBranch !== folder.base ? { outcome: "unavailable", failure: { code: "host_offline", message: "MaxBook is asleep" } } : ({ outcome: "available", workspace: {
         workingTree: { hasUncommittedChanges: folder.dirty, fileCount: folder.dirty ? 1 : 0 }, checkout: { kind: "branch", headSha: folder.head },
@@ -114,10 +114,10 @@ async function setup({ branch = "feat/qa", workBranch, pr, joined = false }: { b
     list: async () => [],
     experimental_listAncestors: async ({ threadIds }: { threadIds: string[] }) => ({ threads: threadIds.map((id) => ({ threadId: id, ancestorIds: id === "sub" ? ["coder"] : [] })) }),
   } });
-  const store = await startPlugin(bb);
+  const store = await startPlugin(alia);
   if (pr) {
     await store.saveReview({ targetKey: key, kind: "pr", repo: "acme/api", number: 12, head: branch, base: "main", headSha: PR_HEAD, title: "Snooze flaky checks", createdAt: 1, status: "ready", projectId: "proj_api" });
-    await store.setLifecycle(key, { ownPr: true, ...pr.fork ? { headFork: pr.fork } : { headFork: null }, mainThread: { threadId: "fixer", environmentId: "env1", origin: "fresh", since: 1, branch: "bb/fixes-thr_fix", fixer: { sha: PR_HEAD, at: 1 } } });
+    await store.setLifecycle(key, { ownPr: true, ...pr.fork ? { headFork: pr.fork } : { headFork: null }, mainThread: { threadId: "fixer", environmentId: "env1", origin: "fresh", since: 1, branch: "alia/fixes-thr_fix", fixer: { sha: PR_HEAD, at: 1 } } });
     await store.savePatch(key, PATCH);
   } else if (joined) {
     await store.saveReview({ targetKey: key, kind: "pr", repo: "acme/api", number: 12, head: branch, base: "main", headSha: PR_HEAD, title: "Snooze flaky checks", author: "dana", createdAt: 1, status: "ready", projectId: "proj_api" });
@@ -143,7 +143,7 @@ async function setup({ branch = "feat/qa", workBranch, pr, joined = false }: { b
   // Push, or Push anyway on the warning the page shows now, unless `at` says another.
   const push = async (force?: boolean, sha?: string, at?: number) => harness.behavior.callRpc("push", { targetKey: key, ...force ? { force, at: at ?? (await run())?.at } : {}, ...sha ? { sha } : {} }) as Promise<any>;
   const text = (i: number) => sent[i].input[0].text as string;
-  return { bb, harness, store, folder, github, sent, chat, calls, push, cli, idle, run, text, key, agent };
+  return { alia, harness, store, folder, github, sent, chat, calls, push, cli, idle, run, text, key, agent };
 }
 
 /** The command the thread is told, quoted for its shell. */
@@ -155,7 +155,7 @@ test("Push asks the main thread to commit and report, not push; a reported commi
   expect(sent).toHaveLength(1);
   expect(sent[0]).toMatchObject({ threadId: "coder", mode: "queue-if-active" });
   expect(text(0)).toMatch(/^Review api:feat\/qa "Snooze flaky checks" on MaxBook in `\/Users\/me\/src\/api`, from Code Review Workspace:\n\n/);
-  expect(text(0)).toContain("Commit the changes I reviewed, all of them, in this folder. Then run `bb review report --commit <sha>`");
+  expect(text(0)).toContain("Commit the changes I reviewed, all of them, in this folder. Then run `alia review report --commit <sha>`");
   expect(text(0)).toContain("Don’t push");
   expect(text(0)).not.toContain("git push");
   expect(await run()).toMatchObject({ state: "committing", threadId: "coder", repo: "acme/api", head: "feat/qa" });
@@ -164,7 +164,7 @@ test("Push asks the main thread to commit and report, not push; a reported commi
   const reported = await cli("sub", "report", "--commit", HEAD.slice(0, 9).toUpperCase());
   expect(reported).toEqual({ exitCode: 0, stderr: "", stdout: `Checked abc1234 for api:feat/qa: it’s what the reviewer reviewed. Push it now, exactly this commit:\n  ${refspec(HEAD)}\nDon’t force-push unless the reviewer says so.` });
   expect(await run()).toMatchObject({ state: "pushing", sha: HEAD });
-  // Nothing else is told, and the plugin reads through bb, never git.
+  // Nothing else is told, and the plugin reads through VesnALIA, never git.
   expect(sent).toHaveLength(1);
   expect(runGit).not.toHaveBeenCalled();
   expect(calls.map((call) => call.method)).toEqual(expect.arrayContaining(["workspaceStatus", "files"]));
@@ -197,7 +197,7 @@ test("when the main thread stops, the read of the branch finds its PR in the sam
 
 // Another thread opens the PR while the main thread commits: T1 or the poll makes the review the PR's mid-Push.
 test("a review that becomes its PR's while Push waits on the commit checks it against what the folder had then, and Push goes on", async () => {
-  const { push, cli, run, store, key, folder, bb } = await setup();
+  const { push, cli, run, store, key, folder, alia } = await setup();
   const answers = runGh.getMockImplementation()!;
   runGh.mockImplementation(async (args: string[]) => {
     if (args[0] === "pr" && args[1] === "view") return ok(JSON.stringify({ number: 7, title: "Snooze flaky checks", author: { login: "me" }, baseRefName: "main", headRefName: "feat/qa", url: "https://github.com/acme/api/pull/7", headRefOid: OLD, state: "OPEN", createdAt: new Date().toISOString() }));
@@ -207,7 +207,7 @@ test("a review that becomes its PR's while Push waits on the commit checks it ag
   });
   await push();
   expect(await run()).toMatchObject({ state: "committing" });
-  expect(await becomePr({ bb, store, gh: { runGh, runGit }, changed: vi.fn() }, key, { repo: "acme/api", number: 7 })).toBe("converted");
+  expect(await becomePr({ alia, store, gh: { runGh, runGit }, changed: vi.fn() }, key, { repo: "acme/api", number: 7 })).toBe("converted");
   expect(await store.getReview(key)).toMatchObject({ kind: "pr", notPushedSeen: { environmentId: "env1", base: OLD } });
   expect(await store.getSnapshotFiles(key, "not-pushed")).toEqual({ revisions: folder.shown, hidden: [] });
   folder.base = OLD;
@@ -218,7 +218,7 @@ test("a review that becomes its PR's while Push waits on the commit checks it ag
 });
 
 test("a review that becomes its PR's after its folder changed checks the commit against what the review showed, not the folder then, and warns of the change", async () => {
-  const { push, cli, run, store, key, folder, bb } = await setup();
+  const { push, cli, run, store, key, folder, alia } = await setup();
   const answers = runGh.getMockImplementation()!;
   runGh.mockImplementation(async (args: string[]) => {
     if (args[0] === "pr" && args[1] === "view") return ok(JSON.stringify({ number: 7, title: "Snooze flaky checks", author: { login: "me" }, baseRefName: "main", headRefName: "feat/qa", url: "https://github.com/acme/api/pull/7", headRefOid: OLD, state: "OPEN", createdAt: new Date().toISOString() }));
@@ -231,7 +231,7 @@ test("a review that becomes its PR's after its folder changed checks the commit 
   const edited = "100644:aaa:100644:ccc";
   folder.shown = { "src/a.ts": edited };
   folder.committed = { "src/a.ts": edited };
-  expect(await becomePr({ bb, store, gh: { runGh, runGit }, changed: vi.fn() }, key, { repo: "acme/api", number: 7 })).toBe("converted");
+  expect(await becomePr({ alia, store, gh: { runGh, runGit }, changed: vi.fn() }, key, { repo: "acme/api", number: 7 })).toBe("converted");
   expect(await store.getSnapshotFiles(key, "not-pushed")).toEqual({ revisions: { "src/a.ts": REVIEWED["src/a.ts"] }, hidden: [] });
   folder.base = OLD;
   await cli("coder", "report", "--commit", HEAD);
@@ -239,7 +239,7 @@ test("a review that becomes its PR's after its folder changed checks the commit 
 });
 
 test("a review with no record of the files it showed becomes its PR's with nothing in Not pushed yet seen, so Push asks you to open it", async () => {
-  const { push, cli, run, store, key, bb } = await setup();
+  const { push, cli, run, store, key, alia } = await setup();
   const answers = runGh.getMockImplementation()!;
   runGh.mockImplementation(async (args: string[]) => {
     if (args[0] === "pr" && args[1] === "view") return ok(JSON.stringify({ number: 7, title: "Snooze flaky checks", author: { login: "me" }, baseRefName: "main", headRefName: "feat/qa", url: "https://github.com/acme/api/pull/7", headRefOid: OLD, state: "OPEN", createdAt: new Date().toISOString() }));
@@ -250,7 +250,7 @@ test("a review with no record of the files it showed becomes its PR's with nothi
   await push();
   // A diff whose files the review never kept, as a review from before they were.
   await store.savePatch(key, PATCH.replace("+b", "+b2"));
-  expect(await becomePr({ bb, store, gh: { runGh, runGit }, changed: vi.fn() }, key, { repo: "acme/api", number: 7 })).toBe("converted");
+  expect(await becomePr({ alia, store, gh: { runGh, runGit }, changed: vi.fn() }, key, { repo: "acme/api", number: 7 })).toBe("converted");
   expect((await store.getReview(key))?.notPushedSeen).toBeUndefined();
   await cli("coder", "report", "--commit", HEAD);
   expect(await run()).toMatchObject({ state: "mismatch", warning: expect.stringContaining("you haven’t opened Not pushed yet for this folder") });
@@ -387,9 +387,9 @@ test("a branch that moves on GitHub with no Push is flagged as a push no one ask
 });
 
 test("\"push\" to the review agent starts Push only when you typed it in the review: a turn the plugin started, or a relayed one, sends nothing", async () => {
-  const { bb, harness, chat, sent, run } = await setup();
+  const { alia, harness, chat, sent, run } = await setup();
   const tool = (input: Record<string, unknown> = {}) => harness.behavior.callAgentTool("push", input, { threadId: "agent" });
-  await sendToAgent(bb, { threadId: "agent", mode: "queue-if-active", input: [{ type: "text", text: "New commits: push them.", mentions: [] }] }, { kind: "automatic" });
+  await sendToAgent(alia, { threadId: "agent", mode: "queue-if-active", input: [{ type: "text", text: "New commits: push them.", mentions: [] }] }, { kind: "automatic" });
   let result = await tool();
   expect(toolFailed(result)).toBe(true);
   expect(toolText(result)).toMatch(/^Not pushed: only the reviewer starts a push, with a message in this review that's just "push"/);
@@ -408,11 +408,11 @@ test("\"push\" to the review agent starts Push only when you typed it in the rev
 });
 
 test("a re-homed folder, on its fresh thread's own branch, pushes to the review's branch", async () => {
-  const { push, cli, sent } = await setup({ workBranch: "bb/snooze-thr_fresh1" });
+  const { push, cli, sent } = await setup({ workBranch: "alia/snooze-thr_fresh1" });
   await push();
   const reported = await cli("coder", "report", "--commit", HEAD);
   expect(reported.stdout).toContain(refspec(HEAD, "feat/qa"));
-  expect(reported.stdout).not.toContain("bb/snooze");
+  expect(reported.stdout).not.toContain("alia/snooze");
   expect(sent).toHaveLength(1);
 });
 
@@ -460,7 +460,7 @@ test("a secret an earlier commit added warns, though a later one removed it: the
   await long.push();
   long.folder.commits = [...Array.from({ length: 50 }, (_, i) => ({ sha: `${i}`.padStart(40, "0"), files: {} })), { sha: HEAD, files: {} }];
   await long.cli("coder", "report", "--commit", HEAD);
-  expect(await long.run()).toMatchObject({ state: "mismatch", sha: HEAD, warning: "Couldn’t check `abc1234` against what you reviewed: BB couldn’t list the branch’s 51 commits to check each for secrets." });
+  expect(await long.run()).toMatchObject({ state: "mismatch", sha: HEAD, warning: "Couldn’t check `abc1234` against what you reviewed: VesnALIA couldn’t list the branch’s 51 commits to check each for secrets." });
 });
 
 test("a commit reported by a short SHA is pushed by its full one, and GitHub at it reads as pushed", async () => {
@@ -559,15 +559,15 @@ test("a large lockfile and an image the review hid are compared by revision: as 
 });
 
 test("the agent's push takes only a short command of the reviewer's own: not a negation, a question, another word, a quote the plugin put in, or a message joined to its own turn", async () => {
-  const { bb, harness, chat, sent, run, push, cli, folder } = await setup();
+  const { alia, harness, chat, sent, run, push, cli, folder } = await setup();
   const tool = (input: Record<string, unknown> = {}) => harness.behavior.callAgentTool("push", input, { threadId: "agent" });
   for (const said of ["don't push", "why did the push fail?", "pushback on the naming", "please don't push yet", "push it, then merge"]) {
     chat.say(said);
     expect(toolFailed(await tool()), said).toBe(true);
   }
-  await sendToAgent(bb, { threadId: "agent", mode: "queue-if-active", input: [{ type: "text", text: "push", mentions: [] }] }, { kind: "ask", said: "push", inserted: true });
+  await sendToAgent(alia, { threadId: "agent", mode: "queue-if-active", input: [{ type: "text", text: "push", mentions: [] }] }, { kind: "ask", said: "push", inserted: true });
   expect(toolFailed(await tool())).toBe(true);
-  await sendToAgent(bb, { threadId: "agent", mode: "queue-if-active", input: [{ type: "text", text: "Review this change.", mentions: [] }] }, { kind: "automatic" });
+  await sendToAgent(alia, { threadId: "agent", mode: "queue-if-active", input: [{ type: "text", text: "Review this change.", mentions: [] }] }, { kind: "automatic" });
   chat.say("push", { joins: true });
   expect(toolFailed(await tool())).toBe(true);
   expect(sent).toEqual([]);
@@ -594,7 +594,7 @@ test("GitHub with commits the folder doesn't warns before the thread is told any
   expect(behind).toMatchObject({ state: "mismatch", behind: true });
   expect(behind.sha).toBeUndefined();
   expect(await push(true)).toEqual({ ok: true, delivery: "sent" });
-  expect(sent[0].input[0].text).toContain("bb review report --commit");
+  expect(sent[0].input[0].text).toContain("alia review report --commit");
   expect(await run()).toMatchObject({ state: "committing", pastBehind: true });
   expect((await cli("coder", "report", "--commit", HEAD)).stdout).toContain(refspec(HEAD));
 
@@ -620,7 +620,7 @@ test("Push anyway acts on the warning shown, and only while the folder is still 
   expect(await run()).toMatchObject({ state: "mismatch", sha: HEAD });
 });
 
-test("bb's commits in either order: the newest first still finds an earlier secret, and the cap counts only commits GitHub hasn't", async () => {
+test("VesnALIA's commits in either order: the newest first still finds an earlier secret, and the cap counts only commits GitHub hasn't", async () => {
   const { push, cli, run, folder } = await setup();
   await push();
   folder.commits = [{ sha: HEAD, files: { "src/a.ts": "modified", ".env.local": "deleted" } }, { sha: "e".repeat(40), files: { ".env.local": "added" } }];
@@ -679,7 +679,7 @@ test("on your PR, the fixer's commit is checked against what Not pushed yet show
   expect(await harness.behavior.callRpc("getNotPushed", { targetKey: key })).toMatchObject({ state: "available", base: PR_HEAD });
   expect(await push()).toEqual({ ok: true, delivery: "sent" });
   expect(sent[0]).toMatchObject({ threadId: "fixer" });
-  expect(sent[0].input[0].text).toContain("bb review report --commit");
+  expect(sent[0].input[0].text).toContain("alia review report --commit");
   const reported = await cli("fixer", "report", "--commit", HEAD);
   expect(reported.stdout).toContain(`  git push origin '${HEAD}:refs/heads/feat/qa'\n`);
   expect(calls.filter((call) => call.method === "files").map((call) => call.input.target)).toContainEqual({ type: "branch_committed", mergeBaseBranch: PR_HEAD });
@@ -750,7 +750,7 @@ test("on someone else's PR whose review your folder joined, Push says first that
   expect(await run()).toMatchObject({ state: "mismatch", theirs: true });
   expect(await push(true)).toEqual({ ok: true, delivery: "sent" });
   expect(sent[0]).toMatchObject({ threadId: "coder" });
-  expect(sent[0].input[0].text).toContain("bb review report --commit");
+  expect(sent[0].input[0].text).toContain("alia review report --commit");
   expect(await run()).toMatchObject({ state: "committing", pastTheirs: true });
   expect((await cli("coder", "report", "--commit", HEAD)).stdout).toContain(`  git push origin '${HEAD}:refs/heads/feat/qa'\n`);
   github.sha = HEAD;
@@ -772,7 +772,7 @@ test("Push on someone else's PR goes only from the folder that joined its review
   const joined = { kind: "pr" as const, repo: "acme/api", number: 7, head: "feat/qa", ownPr: false, headFork: null, feature, mainThread: { threadId: "coder", environmentId: "env1", origin: "adopted" as const, since: 1 } };
   expect(pushTarget(joined)).toEqual({ repo: "acme/api", head: "feat/qa", environmentId: "env1", remote: "origin", fixer: false, pr: 7 });
   expect(pushTarget({ ...joined, headFork: "dana" })).toEqual({ repo: "acme/api", head: "feat/qa", environmentId: "env1", remote: "<remote>", forkOf: "dana", fixer: false, pr: 7 });
-  expect(pushTarget({ ...joined, feature: { ...feature, folderGone: true } })).toBe("Push works on someone else’s PR only from the folder that joined its review, while BB has it.");
+  expect(pushTarget({ ...joined, feature: { ...feature, folderGone: true } })).toBe("Push works on someone else’s PR only from the folder that joined its review, while VesnALIA has it.");
   const { joinedAt: _joined, ...converted } = feature;
   expect(pushTarget({ ...joined, feature: converted })).toBe("Push works on a local review, on your own PR with a thread fixing it, or on a PR whose review your thread’s folder joined.");
 });
@@ -961,7 +961,7 @@ test("Push and open PR that can't ask the review agent once pushed says why, unt
 });
 
 test("Push and open PR that couldn't ask the review agent says so no more once the review becomes its PR's, as you opened it", async () => {
-  const { harness, bb, store, cli, idle, run, github, agent } = await setup();
+  const { harness, alia, store, cli, idle, run, github, agent } = await setup();
   const answers = runGh.getMockImplementation()!;
   runGh.mockImplementation(async (args: string[]) => {
     if (args[0] === "pr" && args[1] === "view") return ok(JSON.stringify({ number: 7, title: "Snooze flaky checks", author: { login: "me" }, baseRefName: "main", headRefName: "feat/qa", url: "https://github.com/acme/api/pull/7", headRefOid: HEAD, state: "OPEN", createdAt: new Date().toISOString() }));
@@ -974,7 +974,7 @@ test("Push and open PR that couldn't ask the review agent says so no more once t
   github.sha = HEAD;
   await idle();
   expect(await run()).toMatchObject({ state: "pushed", thenOpenPr: "failed" });
-  expect(await becomePr({ bb, store, gh: { runGh, runGit }, changed: vi.fn() }, KEY, { repo: "acme/api", number: 7 })).toBe("converted");
+  expect(await becomePr({ alia, store, gh: { runGh, runGit }, changed: vi.fn() }, KEY, { repo: "acme/api", number: 7 })).toBe("converted");
   expect(await run()).toMatchObject({ state: "pushed", sha: HEAD });
   expect((await run())!.thenOpenPr).toBeUndefined();
   expect((await run())!.openPrError).toBeUndefined();
@@ -1016,7 +1016,7 @@ test("Cancel and Stop waiting drop Push and open PR: a push that lands after ask
 
 // T1 or the poll makes the review the PR's while the thread pushes: the push lands on a PR's review.
 test("Push and open PR whose review became the PR's while it pushed drops its intent once the push lands, and asks the review agent nothing", async () => {
-  const { harness, bb, store, cli, idle, run, github, chat } = await setup();
+  const { harness, alia, store, cli, idle, run, github, chat } = await setup();
   const answers = runGh.getMockImplementation()!;
   runGh.mockImplementation(async (args: string[]) => {
     if (args[0] === "pr" && args[1] === "view") return ok(JSON.stringify({ number: 7, title: "Snooze flaky checks", author: { login: "me" }, baseRefName: "main", headRefName: "feat/qa", url: "https://github.com/acme/api/pull/7", headRefOid: OLD, state: "OPEN", createdAt: new Date().toISOString() }));
@@ -1027,7 +1027,7 @@ test("Push and open PR whose review became the PR's while it pushed drops its in
   await harness.behavior.callRpc("push", { targetKey: KEY, thenOpenPr: true });
   await cli("coder", "report", "--commit", HEAD);
   expect(await run()).toMatchObject({ state: "pushing", thenOpenPr: true });
-  expect(await becomePr({ bb, store, gh: { runGh, runGit }, changed: vi.fn() }, KEY, { repo: "acme/api", number: 7 })).toBe("converted");
+  expect(await becomePr({ alia, store, gh: { runGh, runGit }, changed: vi.fn() }, KEY, { repo: "acme/api", number: 7 })).toBe("converted");
   github.sha = HEAD;
   await idle();
   expect(await run()).toMatchObject({ state: "pushed", sha: HEAD });

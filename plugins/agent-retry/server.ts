@@ -1,19 +1,19 @@
-// bb-plugin-agent-retry — backend entry.
+// alia-plugin-agent-retry — backend entry.
 //
 // Watches `turn.failed` and, when the policy says so, queues another attempt
 // at a later time. The decision itself lives in `policy.ts`; this file only
 // gathers the facts that decision needs and acts on it.
 //
-// Why a BB plugin rather than Pi's own retry: Pi's retryable-error list is a
+// Why a VesnALIA plugin rather than Pi's own retry: Pi's retryable-error list is a
 // hard-coded set of provider messages, so a failure whose text is not on it —
 // or one that carries no structured error info at all — never retries. Core's
 // `turn.failed` event, by contrast, is fired for every failed turn and carries
 // a durable attempt counter, which is what a long backoff needs.
 import type {
-  BbPluginApi,
-  PluginBbSdk,
+  AliaPluginApi,
+  PluginAliaSdk,
   PluginThreadEventPayloads,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { defineSettings, resolvePolicy, type RetrySettings } from "./config.js";
 import { decideRetry, type DecisionInput } from "./policy.js";
 import {
@@ -26,12 +26,12 @@ import {
 import { registerCli } from "./cli.js";
 
 type TurnFailedEvent = PluginThreadEventPayloads["turn.failed"];
-type ThreadGetResult = Awaited<ReturnType<PluginBbSdk["threads"]["get"]>>;
+type ThreadGetResult = Awaited<ReturnType<PluginAliaSdk["threads"]["get"]>>;
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = defineSettings(bb);
-  const store = openStore(bb);
-  registerCli(bb, settings, store);
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = defineSettings(alia);
+  const store = openStore(alia);
+  registerCli(alia, settings, store);
 
   // A configuration problem is worth saying once, not on every failure.
   const reportedProblems = new Set<string>();
@@ -39,12 +39,12 @@ export default async function plugin(bb: BbPluginApi) {
     for (const problem of problems) {
       if (reportedProblems.has(problem)) continue;
       reportedProblems.add(problem);
-      bb.log.warn(problem);
+      alia.log.warn(problem);
     }
   };
 
-  bb.events.on("turn.failed", (event) =>
-    handleTurnFailed(bb, settings, store, event, reportProblems),
+  alia.events.on("turn.failed", (event) =>
+    handleTurnFailed(alia, settings, store, event, reportProblems),
   );
 
   // A chain ends when the thread stops failing: a successful turn goes idle,
@@ -53,15 +53,15 @@ export default async function plugin(bb: BbPluginApi) {
   const clearChain = async ({ thread }: { thread: { id: string } }) => {
     await store.clearChain(thread.id);
   };
-  bb.events.on("thread.idle", clearChain);
-  bb.events.on("thread.archived", clearChain);
-  bb.events.on("thread.deleted", clearChain);
+  alia.events.on("thread.idle", clearChain);
+  alia.events.on("thread.archived", clearChain);
+  alia.events.on("thread.deleted", clearChain);
 
   // A user who cancels the queued retry has decided against it, so the chain
   // should not keep counting against `maxTotalSpanMs`. Only a row this plugin
   // queued counts: another retrier's cancellation is not our business, and
   // clearing our chain for it would hand the next failure a fresh budget.
-  bb.events.on("message.cancelled", async ({ entry }) => {
+  alia.events.on("message.cancelled", async ({ entry }) => {
     if (entry.payload.kind !== "retry") return;
     const recorded = store.latestQueuedRetry(entry.threadId);
     if (recorded?.queuedMessageId !== entry.id) return;
@@ -72,17 +72,17 @@ export default async function plugin(bb: BbPluginApi) {
   // deleted while this plugin is unloaded, and then nothing clears it. Sweep
   // the leftovers daily; `MAX_CHAIN_AGE_MS` is far longer than any chain the
   // policy can produce, so this never cuts a live one short.
-  bb.background.schedule("sweep", "17 4 * * *", async () => {
+  alia.background.schedule("sweep", "17 4 * * *", async () => {
     const removed = await store.sweepChains(MAX_CHAIN_AGE_MS, Date.now());
     const pruned = store.pruneDecisions(MAX_DECISION_ROWS);
     if (removed > 0 || pruned > 0) {
-      bb.log.info(
+      alia.log.info(
         `sweep removed ${removed} stale chain(s) and pruned ${pruned} decision row(s)`,
       );
     }
   });
 
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }
 
 /**
@@ -93,7 +93,7 @@ export default async function plugin(bb: BbPluginApi) {
 export const MAX_CHAIN_AGE_MS = 14 * 24 * 60 * 60 * 1000;
 
 export async function handleTurnFailed(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   settings: RetrySettings,
   store: Store,
   event: TurnFailedEvent,
@@ -112,8 +112,8 @@ export async function handleTurnFailed(
     reportProblems(resolved.problems);
 
     const [thread, errorText, chain] = await Promise.all([
-      readThread(bb, event.threadId),
-      readErrorText(bb, event.threadId),
+      readThread(alia, event.threadId),
+      readErrorText(alia, event.threadId),
       store.readChain(event.threadId),
     ]);
 
@@ -156,23 +156,23 @@ export async function handleTurnFailed(
     };
 
     if (decision.action === "skip") {
-      record(bb, store, logDecisions, { ...base, action: "skip" });
-      bb.log.info(
+      record(alia, store, logDecisions, { ...base, action: "skip" });
+      alia.log.info(
         `declined ${event.threadId} attempt ${event.attemptNumber} [${decision.rule}]: ${decision.reason}`,
       );
       return;
     }
 
     if (resolved.dryRun) {
-      record(bb, store, logDecisions, { ...base, action: "dry-run" });
-      bb.log.info(
+      record(alia, store, logDecisions, { ...base, action: "dry-run" });
+      alia.log.info(
         `[dry-run] would retry ${event.threadId} attempt ${event.attemptNumber} ` +
           `in ${Math.round(decision.delayMs / 1000)}s [${decision.rule}]: ${decision.reason}`,
       );
       return;
     }
 
-    const result = await bb.sdk.threads.retry({
+    const result = await alia.sdk.threads.retry({
       threadId: event.threadId,
       turnRequestId: event.requestId,
       sendAt: decision.sendAt,
@@ -181,7 +181,7 @@ export async function handleTurnFailed(
     const queuedMessageId =
       result.delivery === "queued" ? result.queuedMessageId : null;
 
-    record(bb, store, logDecisions, {
+    record(alia, store, logDecisions, {
       ...base,
       action: "retry",
       queuedMessageId,
@@ -196,16 +196,16 @@ export async function handleTurnFailed(
       updatedAt: now,
     });
 
-    bb.log.info(
+    alia.log.info(
       `queued attempt ${event.attemptNumber + 1}/${decision.maxAttempts} for ` +
         `${event.threadId} in ${Math.round(decision.delayMs / 1000)}s ` +
         `[${decision.rule}] ${result.delivery}`,
     );
   } catch (error) {
     const message = errorMessage(error);
-    bb.log.error(`could not retry ${event.threadId}: ${message}`);
+    alia.log.error(`could not retry ${event.threadId}: ${message}`);
     try {
-      record(bb, store, logDecisions, {
+      record(alia, store, logDecisions, {
         at: now,
         threadId: event.threadId,
         projectId: null,
@@ -231,7 +231,7 @@ export async function handleTurnFailed(
 }
 
 function record(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   store: Store,
   enabled: boolean,
   decision: DecisionRecord & { action: DecisionAction },
@@ -240,16 +240,16 @@ function record(
   try {
     store.record(decision);
   } catch (error) {
-    bb.log.warn(`could not record decision: ${errorMessage(error)}`);
+    alia.log.warn(`could not record decision: ${errorMessage(error)}`);
   }
 }
 
 async function readThread(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
 ): Promise<ThreadGetResult | null> {
   try {
-    return await bb.sdk.threads.get({ threadId });
+    return await alia.sdk.threads.get({ threadId });
   } catch {
     // A thread we cannot read still gets the failure's own facts, which is
     // enough for the policy to act on.
@@ -268,11 +268,11 @@ async function readThread(
  * only the first would leave every message rule blind to door rejections.
  */
 async function readErrorText(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
 ): Promise<string | null> {
   try {
-    const rows = await bb.sdk.threads.events.list({
+    const rows = await alia.sdk.threads.events.list({
       threadId,
       types: ["provider/error", "system/error"],
       order: "desc",

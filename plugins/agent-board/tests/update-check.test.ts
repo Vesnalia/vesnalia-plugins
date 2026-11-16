@@ -24,7 +24,7 @@ describe("release awareness and supported updates", () => {
     await expect(c.checker.install("old-candidate")).rejects.toThrow();
     expect(c.applyNative).not.toHaveBeenCalled();
   });
-  it("applies eligible updates through BB without removing the plugin", async () => {
+  it("applies eligible updates through VesnALIA without removing the plugin", async () => {
     const c = checker({ checkNative: async () => ({ outcome: "update-available", candidate: { version: "sha-08", display: "repo@v0.8.0" } }) });
     expect((await c.checker.snapshot()).eligible?.version).toBe("sha-08");
     await c.checker.install("sha-08");

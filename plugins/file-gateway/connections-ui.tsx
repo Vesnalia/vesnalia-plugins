@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from 'react';
-import {useRpc} from '@get-bb/plugin-sdk/app';
+import {useRpc} from '@vesnalia/plugin-sdk/app';
 import {connectionsContract,type Connection} from './connections-contract.js';
 import {Button} from './components/ui/button.js';
 import {Input} from './components/ui/input.js';
@@ -20,7 +20,7 @@ export function ConnectionSettings(){
  <label className="block text-sm">Accessible folder<Input required value={editing.root} onChange={e=>field('root',e.target.value)} placeholder="/public_html"/></label>
  {editing.protocol==='sftp'&&<label className="block text-sm">Server host key SHA-256 (64 hex characters)<Input required pattern="[a-fA-F0-9]{64}" value={editing.fingerprint??''} onChange={e=>field('fingerprint',e.target.value)}/><span className="text-xs text-muted-foreground">Get the fingerprint from your hosting dashboard or server administrator.</span></label>}
  <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={editing.enabled} onChange={e=>field('enabled',e.target.checked)}/>Access enabled</label>
- <p className="text-xs text-muted-foreground">Connections originate from the main BB server. Passwords are stored in BB’s secret storage and are not shared with agents.</p>
+ <p className="text-xs text-muted-foreground">Connections originate from the main VesnALIA server. Passwords are stored in VesnALIA’s secret storage and are not shared with agents.</p>
  <div className="flex gap-2"><Button size="sm" disabled={busy}>Save</Button><Button type="button" size="sm" variant="ghost" disabled={busy} onClick={()=>{setEditing(null);setPassword('');}}>Cancel</Button></div></form>}
  {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}{message&&<p role="status" className="text-sm text-muted-foreground">{message}</p>}</div>;
 }

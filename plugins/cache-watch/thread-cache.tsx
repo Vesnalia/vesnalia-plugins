@@ -5,7 +5,7 @@ import {
   useRealtime, useRpc, useSettings,
   type ExperimentalThreadContextCardProps,
   type ExperimentalThreadContextSegmentProps,
-} from '@get-bb/plugin-sdk/app';
+} from '@vesnalia/plugin-sdk/app';
 import { defaultStatusTemplate, renderStatusParts, templateData, type StatusTextPart } from './status-template';
 import { StatusTemplateText } from './status-template-ui';
 import { useStatusTemplate } from './template-settings';

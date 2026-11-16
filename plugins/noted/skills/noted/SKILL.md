@@ -1,19 +1,19 @@
 ---
 name: noted
-description: 'Operate the complete Noted review workflow for HTML and Markdown artifacts in bb. Use when opening an artifact for review, routing review to another thread, responding to annotations, checking or ending a session, reopening an ended review, or filing a finished artifact to a knowledge base. Also use when a user message begins with "Noted: feedback on".'
+description: 'Operate the complete Noted review workflow for HTML and Markdown artifacts in VesnALIA. Use when opening an artifact for review, routing review to another thread, responding to annotations, checking or ending a session, reopening an ended review, or filing a finished artifact to a knowledge base. Also use when a user message begins with "Noted: feedback on".'
 ---
 
 # Noted review workflow
 
-Use Noted to collaborate on an HTML or rendered Markdown artifact in the bb
+Use Noted to collaborate on an HTML or rendered Markdown artifact in the VesnALIA
 side panel. For creating an HTML artifact, also use `reviewable-html` when that
 skill is available.
 
 ## Start a review
 
 1. Make sure the HTML or Markdown file exists in the workspace or
-   `$BB_THREAD_STORAGE`.
-2. Run `bb noted open <file>` from the producing thread.
+   `$ALIA_THREAD_STORAGE`.
+2. Run `alia noted open <file>` from the producing thread.
 3. Route the review only when needed:
    - `--view parent` shows it in the thread that spawned this one.
    - `--view <thread>` shows it in another thread.
@@ -42,7 +42,7 @@ and the requested change.
    changes and ask one focused question about the conflict.
 3. Run the artifact's relevant checks. Do not reopen the session: Noted captures
    the changed file as a new revision after the turn and refreshes the panel.
-4. When useful, run `bb noted reply <text>` to leave a short implementation note
+4. When useful, run `alia noted reply <text>` to leave a short implementation note
    in the review conversation.
 5. Finish the requested feedback work and any remaining independent authorized
    work, then give a concise summary of what changed.
@@ -55,11 +55,11 @@ feedback explicitly changes them.
 
 - The reviewer can use **Send to agent** to continue the session or
   **Send & End** to send the batch and close it.
-- Run `bb noted end <file>` when the user asks the agent to close an open
+- Run `alia noted end <file>` when the user asks the agent to close an open
   session.
 - Do not reopen a session the user ended unless they explicitly ask to resume
-  review. Then use `bb noted open <file> --reopen`.
-- Use `bb noted status [<file>]` only for a requested status check, recovery, or
+  review. Then use `alia noted open <file> --reopen`.
+- Use `alia noted status [<file>]` only for a requested status check, recovery, or
   before an explicit close/file operation when the active artifact is unclear.
 
 ## Completion

@@ -1,6 +1,6 @@
 # Hide Models
 
-Moves chosen model IDs out of BB's main model list and into **More models**. Hidden models stay selectable from **More models** and from the picker search. New models stay visible until you hide them.
+Moves chosen model IDs out of VesnALIA's main model list and into **More models**. Hidden models stay selectable from **More models** and from the picker search. New models stay visible until you hide them.
 
 Open **Settings → Plugins → Hide Models** (or the plugin's detail page) to choose model IDs per enabled provider. Hidden IDs are stored per provider, so a provider disabled later keeps its choices and restores them when re-enabled.
 
@@ -16,7 +16,7 @@ Open **Settings → Plugins → Hide Models** (or the plugin's detail page) to c
 
 ## Limits
 
-This is a DOM adapter over BB 0.47.1 picker markup. A future BB layout change can disable it until repaired. It never patches BB or uses React internals. If the More menu cannot be validated, it fails open.
+This is a DOM adapter over VesnALIA 0.47.1 picker markup. A future VesnALIA layout change can disable it until repaired. It never patches VesnALIA or uses React internals. If the More menu cannot be validated, it fails open.
 
 ## Build and install
 
@@ -25,7 +25,7 @@ npm ci --include=dev --ignore-scripts
 npm run typecheck
 npm test
 npm run build
-bb plugin install . --yes
+alia plugin install . --yes
 ```
 
-Disable with `bb plugin disable model-visibility`; disabling removes the content script and restores the native menu.
+Disable with `alia plugin disable model-visibility`; disabling removes the content script and restores the native menu.

@@ -1,12 +1,12 @@
 import { copyFileSync } from "node:fs";
 import { act } from "@testing-library/react";
 import { renderSlot } from "./test-slot";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import { afterEach, vi } from "vitest";
 import { toast } from "sonner";
 import plugin from "./server";
-import { bbSidebarRpcContract } from "./contract";
+import { aliaSidebarRpcContract } from "./contract";
 import { createFakePluginHost, projectThread, projectsWith, standardProject } from "./test-server";
 import { inbox, sidebarSettings, listProps, defaultProviders } from "./test-inbox";
 import { deferred } from "./test-fixtures";
@@ -44,10 +44,10 @@ export async function createWired(
       lastReadAt: item.lastReadAt,
     });
   };
-  const { bb, harness } = createFakePluginHost({
-    pluginId: "bb-sidebar",
+  const { alia, harness } = createFakePluginHost({
+    pluginId: "alia-sidebar",
     sdk: {
-      plugins: { getSettings: async () => ({ values: {}, pluginId: "bb-sidebar" }) },
+      plugins: { getSettings: async () => ({ values: {}, pluginId: "alia-sidebar" }) },
       projects: {
         get: async () => standardProject(),
         list: async () =>
@@ -158,7 +158,7 @@ export async function createWired(
       },
     },
   });
-  const db = bb.storage.database();
+  const db = alia.storage.database();
   if (options.fixture) {
     const filename = db.name;
     db.close();
@@ -177,7 +177,7 @@ export async function createWired(
   }
   function rpcHandlers(replies: Array<{ method: string; result: unknown }>) {
     return Object.fromEntries(
-      Object.keys(bbSidebarRpcContract).map((method) => [
+      Object.keys(aliaSidebarRpcContract).map((method) => [
         method,
         async (input: unknown) => {
           await options.rpcGate;
@@ -193,7 +193,7 @@ export async function createWired(
     threads,
     projects: [{ id: "proj_1", name: "Sidebar", isPersonal: false, href: "", settingsHref: "" }],
   });
-  await plugin(bb);
+  await plugin(alia);
   disposers.push(async () => {
     for (const request of archiveRequests) request.cancel();
     for (const slot of slots) slot.lifecycle.unmount();
@@ -211,15 +211,15 @@ export async function createWired(
             providers: { status: "ready", providers: defaultProviders },
             sdk: {
               threads: {
-                get: (args) => bb.sdk.threads.get(args),
-                update: (args) => bb.sdk.threads.update(args),
-                pin: (args) => bb.sdk.threads.pin(args),
-                unpin: (args) => bb.sdk.threads.unpin(args),
-                markRead: (args) => bb.sdk.threads.markRead(args),
-                markUnread: (args) => bb.sdk.threads.markUnread(args),
-                archive: (args) => bb.sdk.threads.archive(args),
-                unarchive: (args) => bb.sdk.threads.unarchive(args),
-                experimental_listCascade: (args) => bb.sdk.threads.experimental_listCascade(args),
+                get: (args) => alia.sdk.threads.get(args),
+                update: (args) => alia.sdk.threads.update(args),
+                pin: (args) => alia.sdk.threads.pin(args),
+                unpin: (args) => alia.sdk.threads.unpin(args),
+                markRead: (args) => alia.sdk.threads.markRead(args),
+                markUnread: (args) => alia.sdk.threads.markUnread(args),
+                archive: (args) => alia.sdk.threads.archive(args),
+                unarchive: (args) => alia.sdk.threads.unarchive(args),
+                experimental_listCascade: (args) => alia.sdk.threads.experimental_listCascade(args),
               },
             },
             // Confirmation and the Undo toast below are harness-produced, not host UI.
@@ -249,12 +249,12 @@ export async function createWired(
     return Object.assign(slot, { rpcReplies });
   }
   return {
-    bb,
+    alia,
     harness,
     mount,
     archiveRequests,
     flush,
-    db: bb.storage.database(),
+    db: alia.storage.database(),
     async call(method: string, input: unknown = {}) {
       let result: unknown;
       await act(async () => {

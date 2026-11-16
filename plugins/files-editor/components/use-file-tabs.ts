@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server.js";
 import type { ScopeRef } from "@/lib/route";
 import { sameScope } from "@/lib/route";
@@ -260,7 +260,7 @@ export function useFileTabs(scope: ScopeRef | null): FileTabsApi {
 
   /**
    * `guard` is the hash the draft was based on, or "force" to write regardless.
-   * BB reads an explicit null as create-only, so the guard is either a hash or
+   * VesnALIA reads an explicit null as create-only, so the guard is either a hash or
    * an absent field — never null.
    */
   const writeActive = useCallback(

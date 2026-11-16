@@ -55,13 +55,13 @@ function parseCredentials(value: string | undefined): OAuthCredentials | null {
     return oauthCredentialsSchema.parse(JSON.parse(text));
   } catch {
     throw new KoreyOAuthError(
-      "The saved Korey account connection is invalid. Disconnect under Settings -> Installed plugins -> Korey or run `bb korey logout`, then connect again.",
+      "The saved Korey account connection is invalid. Disconnect under Settings -> Installed plugins -> Korey or run `alia korey logout`, then connect again.",
       "invalid_credentials",
     );
   }
 }
 
-/** The OAuth connection between this bb server and a Korey account. */
+/** The OAuth connection between this VesnALIA server and a Korey account. */
 export class KoreyConnection {
   readonly tokens: OAuthTokenSource;
   private readonly oauth: KoreyOAuth;
@@ -103,7 +103,7 @@ export class KoreyConnection {
   /**
    * Finishes a sign-in from the callback URL Korey redirected to. The URL can
    * come from the callback route or be pasted by the user when the browser
-   * could not reach this bb server.
+   * could not reach this VesnALIA server.
    */
   async complete(redirectUrl: string): Promise<void> {
     let params: URLSearchParams;
@@ -143,7 +143,7 @@ export class KoreyConnection {
     if (!grantsThreadAccess(credentials.scope)) {
       await this.oauth.revoke(credentials).catch(() => undefined);
       throw new KoreyOAuthError(
-        "bb needs permission to read and write your Korey threads. Connect again and keep both permissions selected.",
+        "alia needs permission to read and write your Korey threads. Connect again and keep both permissions selected.",
         "insufficient_scope",
       );
     }

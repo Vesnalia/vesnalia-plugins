@@ -1,5 +1,5 @@
 // Renders every model, finished and mid-build, to one static HTML page for
-// visual review outside bb. Opt in: LEGO_PREVIEW=/path/to/out.html npx vitest run scripts
+// visual review outside VesnALIA. Opt in: LEGO_PREVIEW=/path/to/out.html npx vitest run scripts
 import { readFileSync, writeFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it } from "vitest";

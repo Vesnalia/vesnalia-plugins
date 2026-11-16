@@ -1,4 +1,4 @@
-// bb-plugin-agent-tv — Agent TV backend: the fleet pump.
+// alia-plugin-agent-tv — Agent TV backend: the fleet pump.
 //
 // Agent TV turns every running thread into a live tile. Everything a tile
 // shows — the tool call in flight, the files touched in the last minute,
@@ -25,7 +25,7 @@
 //      so the wall ages its own rows between frames.
 //
 // The folding itself lives in lib/fleet.ts so it is testable without a server.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   applyRow,
@@ -94,7 +94,7 @@ const MODEL_EVENT_TYPES = [
 ] as const;
 /** How many feeds the pump keeps at all, however quiet. */
 const MAX_FEEDS = 80;
-/** Ceiling on the threads one `bb agent-tv status` may scan. */
+/** Ceiling on the threads one `alia agent-tv status` may scan. */
 const SNAPSHOT_SCAN_MAX = 32;
 
 export const rpcContract = defineRpcContract({
@@ -109,8 +109,8 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     maxRows: {
       type: "number",
       label: "Threads on the wall",
@@ -212,13 +212,13 @@ export default async function plugin(bb: BbPluginApi) {
       feed.dead = true;
       feed.lastAt = 0;
       feed.target = feed.cursor;
-      bb.log.debug(`fleet ${what} gave up on a thread that is gone: ${feed.id}`);
+      alia.log.debug(`fleet ${what} gave up on a thread that is gone: ${feed.id}`);
       return;
     }
     feed.failures += 1;
     if (feed.failures >= MAX_FEED_FAILURES) {
       feed.dead = true;
-      bb.log.debug(
+      alia.log.debug(
         `fleet ${what} failed ${feed.failures}x, leaving ${feed.id} alone: ${messageOf(error)}`,
       );
       return;
@@ -228,7 +228,7 @@ export default async function plugin(bb: BbPluginApi) {
     feed.retryAt =
       Date.now() +
       Math.min(MAX_RETRY_MS, DRAIN_RETRY_MS * 2 ** (feed.failures - 1));
-    bb.log.debug(`fleet ${what} failed: ${feed.id}: ${messageOf(error)}`);
+    alia.log.debug(`fleet ${what} failed: ${feed.id}: ${messageOf(error)}`);
   }
 
   /** A read worked: the feed is healthy again. */
@@ -247,7 +247,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (stopped || feed.dead) return false;
     let rows: WireRow[];
     try {
-      rows = (await bb.sdk.threads.events.list({
+      rows = (await alia.sdk.threads.events.list({
         threadId: feed.id,
         order: "desc",
         types: FLEET_EVENT_TYPES,
@@ -285,7 +285,7 @@ export default async function plugin(bb: BbPluginApi) {
       // the difference between a feed that recovers in one read and one that
       // shows minutes-old history for as long as its thread keeps talking.
       if (feed.target - feed.cursor > CATCHUP_LIMIT) {
-        bb.log.debug(
+        alia.log.debug(
           `fleet skipping ${feed.target - feed.cursor} unread events on ${feed.id}`,
         );
         // A page size dropped by an earlier oversized response gets a fresh
@@ -303,7 +303,7 @@ export default async function plugin(bb: BbPluginApi) {
       while (round < DRAIN_ROUNDS && feed.cursor < feed.target) {
         let rows: unknown;
         try {
-          rows = await bb.sdk.threads.events.list({
+          rows = await alia.sdk.threads.events.list({
             threadId: feed.id,
             afterSeq: String(feed.cursor),
             order: "asc",
@@ -315,7 +315,7 @@ export default async function plugin(bb: BbPluginApi) {
             if (pageLimit > MIN_DRAIN_LIMIT) {
               pageLimit = Math.max(MIN_DRAIN_LIMIT, Math.floor(pageLimit / 2));
               feed.drainLimit = pageLimit;
-              bb.log.debug(
+              alia.log.debug(
                 `fleet drain response too large: ${feed.id}; retrying with ${pageLimit} rows`,
               );
               continue;
@@ -325,7 +325,7 @@ export default async function plugin(bb: BbPluginApi) {
             // the cursor over that row rather than asking for it forever.
             feed.cursor += 1;
             round += 1;
-            bb.log.debug(
+            alia.log.debug(
               `fleet drain skipped an oversized event on ${feed.id} at seq ${feed.cursor}`,
             );
             continue;
@@ -394,7 +394,7 @@ export default async function plugin(bb: BbPluginApi) {
     ) {
       return;
     }
-    bb.log.debug(
+    alia.log.debug(
       `fleet re-reading the tail of a stale running thread: ${feed.id}`,
     );
     await readTail(feed);
@@ -420,7 +420,7 @@ export default async function plugin(bb: BbPluginApi) {
       // the reliable path for a quiet thread whose request event is far back
       // in history, and it avoids making the wall depend on a particular
       // provider's request-event payload shape.
-      const execution = await bb.sdk.threads.defaultExecutionOptions({
+      const execution = await alia.sdk.threads.defaultExecutionOptions({
         threadId: feed.id,
       });
       if (execution !== null) {
@@ -436,12 +436,12 @@ export default async function plugin(bb: BbPluginApi) {
         }
       }
     } catch (error) {
-      bb.log.debug(`fleet execution lookup failed: ${feed.id}: ${messageOf(error)}`);
+      alia.log.debug(`fleet execution lookup failed: ${feed.id}: ${messageOf(error)}`);
     }
     try {
       let beforeSeq: string | undefined;
       for (let page = 0; page < MODEL_LOOKUP_PAGES; page += 1) {
-        const rows = (await bb.sdk.threads.events.list({
+        const rows = (await alia.sdk.threads.events.list({
           threadId: feed.id,
           order: "desc",
           limit: String(MODEL_LOOKUP_LIMIT),
@@ -475,7 +475,7 @@ export default async function plugin(bb: BbPluginApi) {
         beforeSeq = String(oldest);
       }
     } catch (error) {
-      bb.log.debug(`fleet model lookup failed: ${feed.id}: ${messageOf(error)}`);
+      alia.log.debug(`fleet model lookup failed: ${feed.id}: ${messageOf(error)}`);
     }
   }
 
@@ -506,9 +506,9 @@ export default async function plugin(bb: BbPluginApi) {
     if (!force && key === lastFrameKey) return;
     lastFrameKey = key;
     try {
-      bb.realtime.publish(FLEET_CHANNEL, built);
+      alia.realtime.publish(FLEET_CHANNEL, built);
     } catch (error) {
-      bb.log.debug(`fleet publish failed: ${messageOf(error)}`);
+      alia.log.debug(`fleet publish failed: ${messageOf(error)}`);
     }
   }
 
@@ -530,7 +530,7 @@ export default async function plugin(bb: BbPluginApi) {
       // already knew about.
       await resyncIfStale(feed);
     } catch (error) {
-      bb.log.debug(`fleet seed failed: ${feed.id}: ${messageOf(error)}`);
+      alia.log.debug(`fleet seed failed: ${feed.id}: ${messageOf(error)}`);
     }
   }
 
@@ -554,7 +554,7 @@ export default async function plugin(bb: BbPluginApi) {
     publish(firstViewer);
   }
 
-  bb.events.on("experimental_thread.events", ({ thread, sequence }) => {
+  alia.events.on("experimental_thread.events", ({ thread, sequence }) => {
     const feed = feedFor(thread.id);
     applyThreadDto(feed, thread);
     if (typeof sequence === "number" && sequence > feed.target) {
@@ -590,7 +590,7 @@ export default async function plugin(bb: BbPluginApi) {
    * matching resolution arrives as an interaction lifecycle row in the event
    * log (see WAIT_EVENTS in lib/fleet.ts), which is also what clears this.
    */
-  bb.events.on("interaction.pending", ({ thread, interaction }) => {
+  alia.events.on("interaction.pending", ({ thread, interaction }) => {
     const feed = feedFor(thread.id);
     applyThreadDto(feed, thread);
     // Key on whatever id this payload carries, preferring the field the
@@ -606,28 +606,28 @@ export default async function plugin(bb: BbPluginApi) {
     if (watched()) publish();
   });
 
-  bb.events.on("thread.active", ({ thread }) => noteLifecycle("active", thread));
-  bb.events.on("thread.idle", ({ thread }) => noteLifecycle("idle", thread));
-  bb.events.on("thread.failed", ({ thread }) => noteLifecycle("error", thread));
-  bb.events.on("thread.unarchived", ({ thread }) => {
+  alia.events.on("thread.active", ({ thread }) => noteLifecycle("active", thread));
+  alia.events.on("thread.idle", ({ thread }) => noteLifecycle("idle", thread));
+  alia.events.on("thread.failed", ({ thread }) => noteLifecycle("error", thread));
+  alia.events.on("thread.unarchived", ({ thread }) => {
     feedFor(thread.id).hydrated = false;
     trimFeeds();
   });
   for (const event of ["thread.archived", "thread.deleted"] as const) {
-    bb.events.on(event, ({ thread }) => {
+    alia.events.on(event, ({ thread }) => {
       feeds.delete(thread.id);
       if (watched()) publish(true);
     });
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async fleet_snapshot({ threadIds }) {
       await startWatching(threadIds);
       return frame(wallOrder);
     },
   });
 
-  bb.background.service("fleet-frame", {
+  alia.background.service("fleet-frame", {
     async start(signal) {
       while (!signal.aborted && !stopped) {
         await sleep(TICK_MS, signal);
@@ -645,7 +645,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   /**
-   * One snapshot for `bb agent-tv status`: hydrate from the thread list so the
+   * One snapshot for `alia agent-tv status`: hydrate from the thread list so the
    * command is useful even when nobody has the sidebar open.
    */
   async function collect(
@@ -660,7 +660,7 @@ export default async function plugin(bb: BbPluginApi) {
     // Ask for the whole (unarchived, visible) list rather than `limit`: the
     // list is not ordered by activity, so a `limit` here would truncate it
     // before the ranking below can pick the threads worth reading.
-    const threads = await bb.sdk.threads.list({
+    const threads = await alia.sdk.threads.list({
       archived: false,
       includeHidden: false,
       ...(projectId === null ? {} : { projectId }),
@@ -700,16 +700,16 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb agent-tv status [--json] [--limit <n>] [--all-projects]",
+    "  VesnALIA agent-tv status [--json] [--limit <n>] [--all-projects]",
     "",
     "Print the live fleet feed: what each running thread's agent is doing right",
     "now, the files it touched in the last minute, and its 60s activity trace.",
     "",
     "Run inside a thread it shows that thread's project; --all-projects widens",
-    "it to every project on this bb. Run outside a thread it shows everything.",
+    "it to every project on this VesnALIA. Run outside a thread it shows everything.",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "agent-tv",
     summary: "Watch what every running thread's agent is doing right now",
     rendersHelp: true,
@@ -717,7 +717,7 @@ export default async function plugin(bb: BbPluginApi) {
       {
         name: "status",
         summary: "Print the live fleet feed",
-        usage: "bb agent-tv status [--json] [--limit <n>] [--all-projects]",
+        usage: "alia agent-tv status [--json] [--limit <n>] [--all-projects]",
       },
     ],
     async run(argv, ctx) {
@@ -812,12 +812,12 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     stopped = true;
     feeds.clear();
   });
 
-  bb.log.info(`Agent TV on air — ${maxRows()} tiles on the wall`);
+  alia.log.info(`Agent TV on air — ${maxRows()} tiles on the wall`);
 }
 
 /** Abort-aware sleep — a service must resolve when its signal aborts. */

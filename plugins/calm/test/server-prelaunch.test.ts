@@ -1,13 +1,13 @@
 // The pre-launch fixes on the server: overlapping runs keep their steps,
 // opened failures stay dismissed across restarts, "waiting on you" always
-// clears, Calm loads without bb's experimental events, and muted threads
+// clears, Calm loads without VesnALIA's experimental events, and muted threads
 // count nothing.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import plugin from "../server";
-import { fakeBb, type Row } from "./fake-bb";
+import { fakeAlia, type Row } from "./fake-alia";
 
 const step = (seq: number, at = Date.now()): Row => ({ seq, createdAt: at, data: { item: { type: "toolCall" } } });
-const last = (f: ReturnType<typeof fakeBb>, channel: string, id: string) =>
+const last = (f: ReturnType<typeof fakeAlia>, channel: string, id: string) =>
   f.published.filter((p) => p.channel === channel && p.payload.threadId === id).at(-1)?.payload;
 
 beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date(2026, 9, 5, 12, 0)); });
@@ -15,8 +15,8 @@ afterEach(() => { vi.useRealTimers(); });
 
 describe("overlapping runs", () => {
   it("a run that starts while the last one's steps are being read keeps its own steps", async () => {
-    const f = fakeBb();
-    await plugin(f.bb as never);
+    const f = fakeAlia();
+    await plugin(f.alia as never);
     await f.emit("thread.active", { thread: f.thread("t") });
     await f.rpc.state_get({ threadId: "t" });
     f.rows.push(step(1), step(2));
@@ -41,8 +41,8 @@ describe("overlapping runs", () => {
 
 describe("overlapping runs, codex review", () => {
   it("a run that starts and finishes during the read still gets only its own steps", async () => {
-    const f = fakeBb();
-    await plugin(f.bb as never);
+    const f = fakeAlia();
+    await plugin(f.alia as never);
     await f.emit("thread.active", { thread: f.thread("t") });
     await f.rpc.state_get({ threadId: "t" });
     f.rows.push(step(1));
@@ -64,10 +64,10 @@ describe("overlapping runs, codex review", () => {
 });
 
 describe("failed helpers you have opened", () => {
-  const FAILED_AT = new Date(2026, 9, 5, 11, 59).getTime();   // bb's record of when the helper failed
+  const FAILED_AT = new Date(2026, 9, 5, 11, 59).getTime();   // VesnALIA's record of when the helper failed
   async function failedHelper(kv = new Map<string, unknown>()) {
-    const f = fakeBb({ kv });
-    await plugin(f.bb as never);
+    const f = fakeAlia({ kv });
+    await plugin(f.alia as never);
     f.setChildren([f.thread("kid", "error", "p", FAILED_AT)]);
     const s = await f.rpc.state_get({ threadId: "p" });
     return { f, s, kv };
@@ -79,18 +79,18 @@ describe("failed helpers you have opened", () => {
     expect(s.crew[0].dismissed).toBeUndefined();
     await f.rpc.failure_dismiss({ threadId: "kid" });
     expect(last(f, "crew", "p").crew[0].dismissed).toBe(true);
-    // bb restarts: a fresh server rebuilds the failure from bb's record.
+    // VesnALIA restarts: a fresh server rebuilds the failure from VesnALIA's record.
     vi.setSystemTime(Date.now() + 3_600_000);
     const again = await failedHelper(kv);
     expect(again.s.crew[0].dismissed).toBe(true);
   });
 
-  it("stay dismissed when bb's record changes later for another reason", async () => {
+  it("stay dismissed when VesnALIA's record changes later for another reason", async () => {
     const { f, kv } = await failedHelper();
     await f.rpc.failure_dismiss({ threadId: "kid" });
     vi.setSystemTime(Date.now() + 3_600_000);
-    const g = fakeBb({ kv });
-    await plugin(g.bb as never);
+    const g = fakeAlia({ kv });
+    await plugin(g.alia as never);
     g.setChildren([g.thread("kid", "error", "p", Date.now())]);   // renamed or read: a newer update time, same failure
     const s = await g.rpc.state_get({ threadId: "p" });
     expect(s.crew[0].dismissed).toBe(true);
@@ -116,8 +116,8 @@ describe("failed helpers you have opened", () => {
 
 describe("waiting on you", () => {
   it("clears once the question is answered, even with no thread events", async () => {
-    const f = fakeBb({ refuseEvents: ["experimental_thread.events"] });
-    await plugin(f.bb as never);
+    const f = fakeAlia({ refuseEvents: ["experimental_thread.events"] });
+    await plugin(f.alia as never);
     const stop = new AbortController();
     void f.services[0].start(stop.signal);
     await f.emit("thread.active", { thread: f.thread("t") });
@@ -134,8 +134,8 @@ describe("waiting on you", () => {
   });
 
   it("clears a helper's question in the parent's alert, even with no thread events", async () => {
-    const f = fakeBb({ refuseEvents: ["experimental_thread.events"] });
-    await plugin(f.bb as never);
+    const f = fakeAlia({ refuseEvents: ["experimental_thread.events"] });
+    await plugin(f.alia as never);
     const stop = new AbortController();
     void f.services[0].start(stop.signal);
     f.setChildren([f.thread("kid", "active", "p")]);
@@ -148,9 +148,9 @@ describe("waiting on you", () => {
     stop.abort();
   });
 
-  it("Calm still loads and shows moods if bb drops its experimental thread events", async () => {
-    const f = fakeBb({ refuseEvents: ["experimental_thread.events"] });
-    await plugin(f.bb as never);
+  it("Calm still loads and shows moods if VesnALIA drops its experimental thread events", async () => {
+    const f = fakeAlia({ refuseEvents: ["experimental_thread.events"] });
+    await plugin(f.alia as never);
     await f.emit("thread.active", { thread: f.thread("t") });
     const s = await f.rpc.state_get({ threadId: "t" });
     expect(s.mood.kind).toBe("working");
@@ -159,8 +159,8 @@ describe("waiting on you", () => {
 
 describe("Calm off in a thread", () => {
   it("counts no steps there", async () => {
-    const f = fakeBb();
-    await plugin(f.bb as never);
+    const f = fakeAlia();
+    await plugin(f.alia as never);
     await f.emit("thread.active", { thread: f.thread("t") });
     await f.rpc.thread_prefs_set({ threadId: "t", off: true });
     await f.rpc.state_get({ threadId: "t" });
@@ -173,8 +173,8 @@ describe("Calm off in a thread", () => {
   });
 
   it("muting cancels a count already queued", async () => {
-    const f = fakeBb();
-    await plugin(f.bb as never);
+    const f = fakeAlia();
+    await plugin(f.alia as never);
     await f.emit("thread.active", { thread: f.thread("t") });
     await f.rpc.state_get({ threadId: "t" });
     await vi.runAllTimersAsync();

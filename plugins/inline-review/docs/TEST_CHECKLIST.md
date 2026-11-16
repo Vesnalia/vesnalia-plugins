@@ -34,7 +34,7 @@ send real feedback until the final step.
 - [ ] Simulate a send failure if practical; confirm the saved draft remains available.
 - [x] Send one final batch and confirm its compact numbered format is readable in thread history.
 
-User acceptance completed in the live BB desktop client on 2026-09-15. The
+User acceptance completed in the live VesnALIA desktop client on 2026-09-15. The
 submitted batch covered formatted Markdown, fenced code, a removal, duplicate
 text, and Overall feedback. The optional manual failure simulation remains
 covered by automated integration tests.
@@ -48,7 +48,7 @@ covered by automated integration tests.
 - Failed or cancelled actions do not lose saved feedback.
 - One Send feedback action creates exactly one thread message.
 
-Mobile acceptance completed in the live BB iOS client on 2026-09-15. The pass
+Mobile acceptance completed in the live VesnALIA iOS client on 2026-09-15. The pass
 covered selection, keyboard layout and focus, comment and removal decorations,
 navigation restoration, ambiguous duplicate handling, review controls, clear
 confirmation, and one combined delivery.

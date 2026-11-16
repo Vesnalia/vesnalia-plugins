@@ -2,7 +2,7 @@
 // fills in. Saving goes through RPC, so the server stays the only writer and
 // every open surface refetches from its "souls-changed" signal.
 import { useEffect, useId, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../server";
 import {

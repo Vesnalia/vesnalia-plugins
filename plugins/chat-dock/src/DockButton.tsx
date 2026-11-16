@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { experimental_Icon as Icon, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { DOCK_ICON } from "./icons";
 import { useOptions } from "./options";
@@ -8,7 +8,7 @@ import { useOptions } from "./options";
 const BUTTON_ATTR = "data-chat-dock-button";
 
 /**
- * BB's composer expands on any trusted pointer-down inside it, and that handler
+ * VesnALIA's composer expands on any trusted pointer-down inside it, and that handler
  * runs in React's capture phase, ahead of anything the button could do. The
  * event is stopped at the document, before React's root listener, so the
  * composer never sees it; the button's click still arrives.

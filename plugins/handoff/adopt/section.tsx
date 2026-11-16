@@ -5,7 +5,7 @@
 // the session across every agent's store. Secondary flow: browse recent
 // sessions per project/directory and tap one to adopt it.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../server";
 import { Badge } from "@/components/ui/badge";
@@ -124,7 +124,7 @@ function SessionRowButton({
 
 export function AdoptSection({ projectId: projectIdProp }: { projectId: string | null }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
 
   // The whole section stays collapsed to a quiet one-liner until opened —
   // starting a fresh thread is the primary action on this screen, not this.
@@ -563,7 +563,7 @@ export function AdoptSection({ projectId: projectIdProp }: { projectId: string |
                       {hiddenCount > 0 ? (
                         <p className="px-1 text-xs text-muted-foreground">
                           +{hiddenCount} older —{" "}
-                          <code className="font-mono">bb handoff adopt list</code> shows them all.
+                          <code className="font-mono">alia handoff adopt list</code> shows them all.
                         </p>
                       ) : null}
                     </div>

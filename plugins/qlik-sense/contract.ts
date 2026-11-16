@@ -2,7 +2,7 @@
 // on the machine where agents run: that machine reaches Qlik Sense, keeps the
 // password in its own OS store, and holds the connection and report catalog.
 // The server keeps no company data — only the agent policy.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const note = z.string().max(500);

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 export interface MigrationRecord { id: number; statement_hash: string | null }
 
@@ -19,9 +19,9 @@ export function assertMigrationLedger(applied: MigrationRecord[], statements: re
 }
 
 /** Read only, including ledgers from before the host recorded statement hashes. */
-export function assertSqliteLedger(db: ReturnType<BbPluginApi["storage"]["database"]>, statements: readonly string[], schema = "main"): void {
-  if (!db.prepare(`SELECT 1 FROM ${schema}.sqlite_master WHERE type='table' AND name='_bb_migrations'`).get()) return;
-  const columns = db.prepare(`PRAGMA ${schema}.table_info(_bb_migrations)`).all() as Array<{ name: string }>;
+export function assertSqliteLedger(db: ReturnType<AliaPluginApi["storage"]["database"]>, statements: readonly string[], schema = "main"): void {
+  if (!db.prepare(`SELECT 1 FROM ${schema}.sqlite_master WHERE type='table' AND name='_alia_migrations'`).get()) return;
+  const columns = db.prepare(`PRAGMA ${schema}.table_info(_alia_migrations)`).all() as Array<{ name: string }>;
   const hash = columns.some((column) => column.name === "statement_hash") ? "statement_hash" : "NULL AS statement_hash";
-  assertMigrationLedger(db.prepare(`SELECT id, ${hash} FROM ${schema}._bb_migrations ORDER BY id`).all() as MigrationRecord[], statements, "SQLite");
+  assertMigrationLedger(db.prepare(`SELECT id, ${hash} FROM ${schema}._alia_migrations ORDER BY id`).all() as MigrationRecord[], statements, "SQLite");
 }

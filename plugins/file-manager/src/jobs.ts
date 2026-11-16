@@ -6,7 +6,7 @@
 // Every transition publishes the whole job on the `job` realtime channel
 // (§7.3), so the panel never has to poll unless it wants to.
 import { randomUUID } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import { JOB_CHANNEL, type FileManagerErrorCode, type Job } from "../contract";
 
@@ -25,7 +25,7 @@ export interface CreateJobInput {
 }
 
 export interface JobsModule {
-  /* --- contract handlers (wired into bb.rpc by server.ts) --- */
+  /* --- contract handlers (wired into alia.rpc by server.ts) --- */
   jobStatus(input: { jobId: string }): { job: Job | null };
   jobCancel(input: { jobId: string }): { job: Job | null };
 
@@ -57,7 +57,7 @@ export interface JobsOptions {
 
 const DEFAULT_MAX_JOBS = 200;
 
-export function createJobs(bb: BbPluginApi, options: JobsOptions = {}): JobsModule {
+export function createJobs(alia: AliaPluginApi, options: JobsOptions = {}): JobsModule {
   const now = options.now ?? Date.now;
   const maxJobs = options.maxJobs ?? DEFAULT_MAX_JOBS;
   /** Insertion-ordered (Map preserves it), which is also chronological order. */
@@ -66,10 +66,10 @@ export function createJobs(bb: BbPluginApi, options: JobsOptions = {}): JobsModu
 
   function publish(job: Job): void {
     try {
-      bb.realtime.publish(JOB_CHANNEL, job);
+      alia.realtime.publish(JOB_CHANNEL, job);
     } catch (error) {
       // Publishing is best-effort: a broken socket must not fail the work.
-      bb.log.warn(`job signal for ${job.jobId} not published: ${String(error)}`);
+      alia.log.warn(`job signal for ${job.jobId} not published: ${String(error)}`);
     }
   }
 
@@ -136,7 +136,7 @@ export function createJobs(bb: BbPluginApi, options: JobsOptions = {}): JobsModu
           try {
             await canceller();
           } catch (error) {
-            bb.log.warn(`job ${job.jobId} canceller failed: ${String(error)}`);
+            alia.log.warn(`job ${job.jobId} canceller failed: ${String(error)}`);
           }
         })();
       }
@@ -177,7 +177,7 @@ export function createJobs(bb: BbPluginApi, options: JobsOptions = {}): JobsModu
           try {
             await canceller();
           } catch (error) {
-            bb.log.warn(`job ${jobId} canceller failed: ${String(error)}`);
+            alia.log.warn(`job ${jobId} canceller failed: ${String(error)}`);
           }
         })();
         return;

@@ -3,16 +3,16 @@
 # Goals
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue)](package.json)
-[![BB](https://img.shields.io/badge/bb-0.43%2B-blue)](https://getbb.app)
+[![VesnALIA](https://img.shields.io/badge/bb-0.43%2B-blue)](https://getbb.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Give your decisions a point of reference. Keep an ordered list of personal goals and ask your agent to evaluate a plan against what matters to you.
 
 [Quick start](#quick-start) · [Install](#install) · [Requirements](#requirements) · [All plugins](../../README.md)
 
-![Goals in BB](../../marketplace/screenshots/goals/overview.png)
+![Goals in VesnALIA](../../marketplace/screenshots/goals/overview.png)
 
-*Real plugin interface captured in an isolated BB instance with example content.*
+*Real plugin interface captured in an isolated VesnALIA instance with example content.*
 
 ## What you can do
 
@@ -38,37 +38,37 @@ Give your decisions a point of reference. Keep an ordered list of personal goals
 From a local checkout, install this package:
 
 ```sh
-bb plugin install ./plugins/goals
+alia plugin install ./plugins/goals
 ```
 
 <details>
 <summary>Install a versioned release</summary>
 
 ```sh
-bb plugin install 'git:https://github.com/dmitriikapustin/bb-plugins-by-kapustin.git@^0.1.0' --plugin goals --tag-prefix goals/
+alia plugin install 'git:https://github.com/dmitriikapustin/bb-plugins-by-kapustin.git@^0.1.0' --plugin goals --tag-prefix goals/
 ```
 
 Compatible updates remain explicit:
 
 ```sh
-bb plugin outdated
-bb plugin update goals
+alia plugin outdated
+alia plugin update goals
 ```
 
 </details>
 
 ## Requirements
 
-BB **0.43+** and Plugin SDK **0.4.87+**.
+VesnALIA **0.43+** and Plugin SDK **0.4.87+**.
 
-The list works locally in BB, starts empty, and requires no additional account. Asking an agent to evaluate your goals uses that agent’s configured provider.
+The list works locally in VesnALIA, starts empty, and requires no additional account. Asking an agent to evaluate your goals uses that agent’s configured provider.
 
 Goals are consulted when you ask for alignment. They are not an automatic task queue and editing them does not start agent work. Updated agent instructions take effect when the provider session next starts.
 
 ## From the terminal
 
 ```sh
-bb goals show
+alia goals show
 ```
 
 <details>
@@ -83,7 +83,7 @@ Completed goals remain visible in a separate section. Existing legacy goal text 
 <details>
 <summary>Development</summary>
 
-From the repository root, using Node 22.19+ and the BB CLI:
+From the repository root, using Node 22.19+ and the VesnALIA CLI:
 
 ```sh
 node scripts/run.mjs deps goals
@@ -92,7 +92,7 @@ node scripts/run.mjs test goals
 node scripts/run.mjs build goals
 ```
 
-The test command reports when a package has no declared test suite. To reload a development installation, first confirm that `bb plugin source goals` points to the copy you edited, then run `bb plugin reload goals`.
+The test command reports when a package has no declared test suite. To reload a development installation, first confirm that `alia plugin source goals` points to the copy you edited, then run `alia plugin reload goals`.
 
 </details>
 

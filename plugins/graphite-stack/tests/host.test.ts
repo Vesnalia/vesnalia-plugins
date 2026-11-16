@@ -1,7 +1,7 @@
 // Host entry against real git and gt in disposable repositories.
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createHostEntry } from "../host";
 import { runProcess, type Runner } from "../lib/process";

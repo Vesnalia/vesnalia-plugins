@@ -1,5 +1,5 @@
 import type { Ref } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { SEVERITY_LABEL, summaryChanges, VERDICT_LABEL, type Discussion, type Draft, type Verdict } from "../src/draft";
 import { SUMMARY_LABEL } from "../lib/comments";
 import type { SummaryLine } from "../lib/summary-lines";
@@ -22,7 +22,7 @@ export function updateRequest(changes: { comments: boolean; verdict: Verdict | n
 
 /**
  * The review summary, the comment GitHub shows with your verdict. It works like a line comment: the agent can write it,
- * you edit or remove it, and Ask agent discusses it with the agent here. Only in BB until you submit, so it's dashed,
+ * you edit or remove it, and Ask agent discusses it with the agent here. Only in VesnALIA until you submit, so it's dashed,
  * with an edge in its words' color.
  */
 export function SummaryCard({ cardRef, draft, discussion, editable, busy, writing, composer, changedWhileEditing = false, isLocal, chat, lines = [], onOpenLine, onEdit, onAsk, onRemove, onUndo, onRequest }: {

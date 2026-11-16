@@ -14,7 +14,7 @@ function memoryStorage() {
 describe("client font storage", () => {
   it("recovers safely from invalid JSON", () => {
     const storage = memoryStorage();
-    storage.setItem("bb-plugin-fonts:config:v1", "{");
+    storage.setItem("alia-plugin-fonts:config:v1", "{");
     expect(loadConfig(storage)).toEqual(DEFAULT_CONFIG);
   });
 

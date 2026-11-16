@@ -29,7 +29,7 @@ describe("readCoverage", () => {
     expect(report.total.lines).toEqual({ covered: 2474, total: 2654 });
     expect(report.total.branches).toEqual({ covered: 2475, total: 2934 });
     const markdown = report.files.find((file) => file.path.endsWith("core/markdown.ts"))!;
-    expect(markdown.path).toBe("/home/dev/bb-plugin-genui/core/markdown.ts");
+    expect(markdown.path).toBe("/home/dev/alia-plugin-genui/core/markdown.ts");
     expect(markdown.uncovered).toBeNull();
     expect(markdown.missed).toBe(markdown.lines!.total - markdown.lines!.covered);
   });
@@ -146,7 +146,7 @@ describe("views", () => {
 
   it("builds a directory tree with single-child chains folded and folder totals", () => {
     const report = read(JSON.parse(fixture("coverage-summary.json")) as Value);
-    const tree = coverageTree(report.files, (file) => file.path.replace("/home/dev/bb-plugin-genui/", ""));
+    const tree = coverageTree(report.files, (file) => file.path.replace("/home/dev/alia-plugin-genui/", ""));
     expect(tree.map((node) => node.name)).toEqual(["core", "ui/components"]);
     const ui = tree[1] as CoverageFolder;
     expect(ui.fileCount).toBe(5);

@@ -1,7 +1,7 @@
 // Older replies contain ::lego{book="…"} directives from before the composer
 // banner existed. They render as a one-line chip instead of raw text; agents
 // no longer emit them.
-import type { PluginMessageDirectiveProps } from "@get-bb/plugin-sdk/app";
+import type { PluginMessageDirectiveProps } from "@vesnalia/plugin-sdk/app";
 import { STATUS_LABEL } from "./BuildView";
 import { BOOK_ID, useBook, useOpenBuildPanel } from "./useBook";
 

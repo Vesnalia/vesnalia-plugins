@@ -1,6 +1,6 @@
 ## A little mechanical feedback
 
-Hear a short click as you type in BB, with distinct sounds for space, deletion and Enter. Adjust the volume or turn typing sounds off from the plugin settings. A preview button lets you check the sound before enabling it.
+Hear a short click as you type in VesnALIA, with distinct sounds for space, deletion and Enter. Adjust the volume or turn typing sounds off from the plugin settings. A preview button lets you check the sound before enabling it.
 
 ## Bring your own sound pack
 

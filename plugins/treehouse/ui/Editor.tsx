@@ -19,7 +19,7 @@ import { shell } from "@codemirror/legacy-modes/mode/shell";
 import { dockerFile } from "@codemirror/legacy-modes/mode/dockerfile";
 import { toml } from "@codemirror/legacy-modes/mode/toml";
 import { properties } from "@codemirror/legacy-modes/mode/properties";
-import { experimental_useCodeTheme, type PluginCodeThemeData } from "@get-bb/plugin-sdk/app";
+import { experimental_useCodeTheme, type PluginCodeThemeData } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { errorMessage, useRefreshSignal, useTreehouseRpc } from "./data";
@@ -161,7 +161,7 @@ function scopeColors(theme: PluginCodeThemeData) {
   };
 }
 
-/** Translates bb's active code theme (a VS Code theme) into CodeMirror's theme and highlighting. */
+/** Translates VesnALIA's active code theme (a VS Code theme) into CodeMirror's theme and highlighting. */
 function themeExtension(theme: PluginCodeThemeData | null): Extension {
   const color = (key: string, fallback: string) => theme?.colors[key] ?? fallback;
   const dark = theme?.type === "dark";

@@ -1,7 +1,7 @@
-// One semantic palette for the whole IDE, taken from BB's current code theme
+// One semantic palette for the whole IDE, taken from VesnALIA's current code theme
 // (its terminal ANSI colours), so colour coding follows light and dark themes.
 import { useMemo } from "react";
-import { experimental_useCodeTheme } from "@get-bb/plugin-sdk/app";
+import { experimental_useCodeTheme } from "@vesnalia/plugin-sdk/app";
 import type { Hue } from "@/lib/file-colors";
 
 const FALLBACK: Record<"dark" | "light", Record<Hue, string>> = {

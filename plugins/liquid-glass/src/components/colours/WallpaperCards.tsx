@@ -84,7 +84,7 @@ export function WallpaperCards({
           </Row>
           <Row
             label="Image file on this machine"
-            description="An absolute path on the bb server, up to 20 MB, png/jpg/webp/avif/gif. Used when no URL is set."
+            description="An absolute path on the VesnALIA server, up to 20 MB, png/jpg/webp/avif/gif. Used when no URL is set."
           >
             <div className="flex flex-col items-end gap-1">
               <div className="flex items-center gap-2">

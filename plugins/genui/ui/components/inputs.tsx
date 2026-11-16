@@ -433,7 +433,7 @@ export function HintProvider({ children }: { children: ReactNode }) {
 }
 
 /**
- * BB's tooltip with what pressing `children` does (actionIntent's hint), on
+ * VesnALIA's tooltip with what pressing `children` does (actionIntent's hint), on
  * hover or keyboard focus. Without a hint it never opens but keeps the same
  * tree, so an action that changes with state doesn't remount a focused
  * control. Outside a HintProvider it brings its own.

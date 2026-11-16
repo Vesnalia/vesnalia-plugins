@@ -7,7 +7,7 @@
 // own chip rows settle in issue #171, tracked for rows as #127).
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, waitFor } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { ThreadCard } from "../components/thread-card";
 import { thread } from "./thread-fixture";
 

@@ -1,10 +1,10 @@
 {
-  "name": "bb-plugin-codex-theme",
+  "name": "alia-plugin-codex-theme",
   "version": "0.2.1",
-  "description": "A bb palette that brings the OpenAI Codex / ChatGPT desktop app's look: typography, surfaces, composer geometry, and rail sizing.",
+  "description": "A VesnALIA palette that brings the OpenAI Codex / ChatGPT desktop app's look: typography, surfaces, composer geometry, and rail sizing.",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "theme",
     "palette",
     "codex",
@@ -13,12 +13,12 @@
   "license": "MIT",
   "type": "module",
   "engines": {
-    "bb": ">=0.47.1",
-    "bbPluginSdk": ">=0.6.79"
+    "alia": ">=0.47.1",
+    "aliaPluginSdk": ">=0.6.79"
   },
-  "bb": {
+  "alia": {
     "name": "Codex Theme",
-    "description": "The OpenAI Codex / ChatGPT desktop look: system-font typography at 430 weight, Codex surfaces and menus, a 26px composer with the Codex send arrow, and a roomier left rail. Pick Catppuccin or BB colors, and turn on optional changes in the plugin settings.",
+    "description": "The OpenAI Codex / ChatGPT desktop look: system-font typography at 430 weight, Codex surfaces and menus, a 26px composer with the Codex send arrow, and a roomier left rail. Pick Catppuccin or VesnALIA colors, and turn on optional changes in the plugin settings.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -35,10 +35,10 @@
         }
       },
       {
-        "id": "codex-bb",
-        "name": "Codex (BB colors)",
-        "description": "The same Codex layout and typography on BB's default light and dark colors, with Pierre syntax highlighting.",
-        "css": "./theme-bb.css",
+        "id": "codex-alia",
+        "name": "Codex (VesnALIA colors)",
+        "description": "The same Codex layout and typography on VesnALIA's default light and dark colors, with Pierre syntax highlighting.",
+        "css": "./theme-alia.css",
         "codeTheme": {
           "dark": "pierre-dark",
           "light": "pierre-light"
@@ -51,7 +51,7 @@
   "files": [
     "dist/",
     "theme.css",
-    "theme-bb.css",
+    "theme-alia.css",
     "theme.json",
     "palettes/",
     "scripts/",
@@ -62,17 +62,16 @@
     "app.tsx",
     "app.css",
     "options.ts",
-    "bb-logo.ts",
+    "alia-logo.ts",
     "tsconfig.json"
   ],
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "build:themes": "node scripts/build-themes.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "^0.6.104",
     "@types/node": "^22.20.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
@@ -80,5 +79,22 @@
     "react-dom": "^19.3.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.12"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/codex-theme#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/codex-theme"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

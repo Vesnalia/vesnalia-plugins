@@ -10,7 +10,7 @@ Plan a task as an instruction book of bags that builder agents build in parallel
 A Master Builder assembles them while you watch a Lego model of your task come together.
 
 ![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)
-![bb ≥ 0.46](https://img.shields.io/badge/bb-%E2%89%A5%200.46-f97316)
+![VesnALIA ≥ 0.46](https://img.shields.io/badge/bb-%E2%89%A5%200.46-f97316)
 ![Plugin SDK ≥ 0.6.49](https://img.shields.io/badge/plugin%20sdk-%E2%89%A5%200.6.49-c81e1e)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 
@@ -18,14 +18,14 @@ A Master Builder assembles them while you watch a Lego model of your task come t
 
 <br>
 
-<img src="docs/screenshots/build.png" alt="A finished Lego build in BB. The thread shows the planning agent's summary and the composer banner for Set 24231, Shelfie Reading Lists, complete at 21 of 21 pieces. The side panel shows the Shelfie Library model with its crew of minifigures and a flag on top, four bag trays marked On the model, and the Master Builder's assembly steps, each ticked" width="900">
+<img src="docs/screenshots/build.png" alt="A finished Lego build in VesnALIA. The thread shows the planning agent's summary and the composer banner for Set 24231, Shelfie Reading Lists, complete at 21 of 21 pieces. The side panel shows the Shelfie Library model with its crew of minifigures and a flag on top, four bag trays marked On the model, and the Master Builder's assembly steps, each ticked" width="900">
 
 </div>
 
 <br>
 
 > [!NOTE]
-> The screenshots are real BB captures of a build in a throwaway demo project, Shelfie.
+> The screenshots are real VesnALIA captures of a build in a throwaway demo project, Shelfie.
 
 ## The problem
 
@@ -121,7 +121,7 @@ naming its set, the task it was built for, the date and the crew.
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/MacHatter1/bb-plugin-lego --yes
+alia plugin install git:https://github.com/MacHatter1/bb-plugin-lego --yes
 ```
 
 Start a new thread and ask for a build with `/lego` and a task.
@@ -131,17 +131,17 @@ Start a new thread and ask for a build with `/lego` and a task.
 
 ```sh
 git clone https://github.com/MacHatter1/bb-plugin-lego
-cd bb-plugin-lego
-npm install && bb plugin build
-bb plugin install path:$PWD --yes
+cd alia-plugin-lego
+npm install && alia plugin build
+alia plugin install path:$PWD --yes
 ```
 
 </details>
 
 **Requirements**
 
-- bb **0.46+** (Plugin SDK 0.6.49+)
-- At least one agent provider set up in BB for the builders and the Master Builder
+- VesnALIA **0.46+** (Plugin SDK 0.6.49+)
+- At least one agent provider set up in VesnALIA for the builders and the Master Builder
 
 ## Where to find it
 
@@ -178,7 +178,7 @@ sequenceDiagram
 - **Parallel by design.** Bags own disjoint files and code against the studs,
   not against each other. A bag with `dependsOn` waits until those bags are
   built.
-- **Ordinary BB threads.** Builders and the Master Builder are child threads of
+- **Ordinary VesnALIA threads.** Builders and the Master Builder are child threads of
   the planning thread, in the same workspace, with the provider, model and
   reasoning you chose and the planning thread's permission mode.
 - **State that survives restarts.** Books live in the plugin's own SQLite
@@ -191,7 +191,7 @@ sequenceDiagram
   bag says so with `lego_bag_blocked`. One that stops short is asked once to
   report; if it stops short again, the bag fails and the planning thread gets
   the builder's own words. The Master Builder is held to the same rule. A
-  thread BB refuses to start under load (a 5xx, or a dispatch hook timing out)
+  thread VesnALIA refuses to start under load (a 5xx, or a dispatch hook timing out)
   is retried twice before the bag fails.
 - **Blueprints, checked.** A blueprint compiles into at most 220 bricks on a
   baseplate of 6 to 24 studs a side. Bricks off the plate or colliding with
@@ -203,20 +203,20 @@ sequenceDiagram
 
 - 🧑‍✈️ **You pick the crew.** No builder starts until you submit the setup form. Closing it starts nothing.
 - 📁 **Builders stay in your workspace.** They edit files in the planning thread's workspace, each in the files its bag owns, and are told not to commit, push or open pull requests.
-- 🛑 **Stop at any time.** **Cancel build** in the panel, `lego_cancel_build` or `bb lego cancel` stops every worker thread. Files they already changed stay.
-- 🔒 **Nothing leaves BB.** Books are stored in the plugin's own database. The plugin calls no external service.
-- 🧪 **Demos spawn nothing.** `bb lego demo` runs simulated builders in the plugin, with no agent threads.
+- 🛑 **Stop at any time.** **Cancel build** in the panel, `lego_cancel_build` or `alia lego cancel` stops every worker thread. Files they already changed stay.
+- 🔒 **Nothing leaves VesnALIA.** Books are stored in the plugin's own database. The plugin calls no external service.
+- 🧪 **Demos spawn nothing.** `alia lego demo` runs simulated builders in the plugin, with no agent threads.
 
 ## CLI
 
 ```sh
-bb lego list                       # this thread's books
-bb lego status lb_7c1e2a9f04       # bags, builders, Master Builder, latest events
-bb lego demo                       # print a sample book; press Play on its banner
+alia lego list                       # this thread's books
+alia lego status lb_7c1e2a9f04       # bags, builders, Master Builder, latest events
+alia lego demo                       # print a sample book; press Play on its banner
 ```
 
 ```text
-$ bb lego list
+$ alia lego list
 lb_7c1e2a9f04  Set 48213 "Billing dashboard"  building  12/31 pieces
 ```
 
@@ -252,9 +252,9 @@ for the model on the box.
 npm install
 npm test
 npm run typecheck
-bb plugin build
-bb plugin install path:$PWD --yes
-bb plugin dev                      # rebuild and reload on every save
+alia plugin build
+alia plugin install path:$PWD --yes
+alia plugin dev                      # rebuild and reload on every save
 LEGO_PREVIEW=$TMPDIR/lego.html npx vitest run scripts   # render every model to one page
 ```
 
@@ -285,7 +285,7 @@ the baseplate, paint order and bag splits, and cover the blueprint compiler and
 model matching.
 
 `PLUGIN_OVERVIEW.md` is the store listing. Keep it in step with
-`bb.description` in `package.json`.
+`alia.description` in `package.json`.
 
 ## Licence
 

@@ -1,5 +1,5 @@
 // HTML pages open in a sandboxed frame whose origin is opaque, so the review
-// panel cannot reach into the page and the page's scripts cannot reach bb.
+// panel cannot reach into the page and the page's scripts cannot reach VesnALIA.
 // The server serves the file with this bridge script first in its head:
 // inside the frame it reports text selections and picked elements to the
 // panel, and paints the comments the panel sends back (highlights, numbered
@@ -12,7 +12,7 @@
 // maps their rectangles into its own viewport, so the panel talks to one
 // bridge however deep the frames go.
 //
-// In bb's own browser (a live site in a Browser tab) the bridge runs in an
+// In VesnALIA's own browser (a live site in a Browser tab) the bridge runs in an
 // isolated world of the top page instead: the injector sets
 // `window.__docReviewHost` first, and the bridge sends through `host.send`
 // and takes the panel's messages on `host.receive`. It leaves the page's
@@ -1073,7 +1073,7 @@ export const BRIDGE_SCRIPT = String.raw`(function () {
     }
   }, true);
   // Links, after the page's own handlers (an app that routes its links calls
-  // preventDefault and keeps them). The <base> points at bb's preview of the
+  // preventDefault and keeps them). The <base> points at VesnALIA's preview of the
   // file's folder, so left alone a "#section" link would leave the page and a
   // link to a file next to it would replace the document in the frame.
   window.addEventListener("click", function (event) {
@@ -1373,7 +1373,7 @@ function bridgeSrcdocFrames(text: string, scriptTag: string): string {
 
 /**
  * The page as the frame gets it: relative URLs resolve next to the file (a
- * `<base>` pointing at bb's preview of its folder) and the bridge script runs
+ * `<base>` pointing at VesnALIA's preview of its folder) and the bridge script runs
  * first in the head, so it answers while a large page is still arriving;
  * pages in srcdoc frames get the bridge too. Works on bytes, so any
  * ASCII-compatible encoding survives untouched; `contentType` names the

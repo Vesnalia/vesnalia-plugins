@@ -28,7 +28,7 @@ const en = {
   save: "Save",
   addTitle: "Add access",
   editTitle: "Edit access",
-  addHint: "Encrypted with AES-256-GCM on the BB server. Agents on any machine can read it with env_get.",
+  addHint: "Encrypted with AES-256-GCM on the VesnALIA server. Agents on any machine can read it with env_get.",
   kind: "Type",
   kindSecret: "API key / secret",
   kindFtp: "FTP / FTPS / SFTP",
@@ -121,7 +121,7 @@ const ru: { [K in keyof typeof en]: string } = {
   addTitle: "Добавить доступ",
   editTitle: "Изменить доступ",
   addHint:
-    "Шифруется AES-256-GCM на сервере BB. Агенты на любой машине читают через env_get.",
+    "Шифруется AES-256-GCM на сервере ALIA. Агенты на любой машине читают через env_get.",
   kind: "Тип",
   kindSecret: "API-ключ / секрет",
   kindFtp: "FTP / FTPS / SFTP",

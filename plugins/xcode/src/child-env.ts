@@ -1,6 +1,6 @@
 /**
  * Minimal environment for children that execute project code or native
- * dependencies. The bb server commonly holds provider, plugin, and tunnel
+ * dependencies. The VesnALIA server commonly holds provider, plugin, and tunnel
  * credentials; inheriting all of `process.env` would hand every build phase
  * and third-party child those credentials.
  */

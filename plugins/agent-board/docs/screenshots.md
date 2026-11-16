@@ -1,7 +1,7 @@
 # Release screenshots
 
 Status: global, nested Fleet workers, timeline and mobile screenshots captured
-with Playwright against the real plugin in BB; RPC responses use synthetic data.
+with Playwright against the real plugin in VesnALIA; RPC responses use synthetic data.
 The images were visually reviewed. No private screenshots selected for publication.
 Use the real plugin UI with clearly labeled synthetic fixture data. A fixture
 must not claim to be a physical-device or live inference verification.
@@ -23,7 +23,7 @@ represent the product UI. An animation is optional after still images pass revie
 
 Physical Android checklist: global Needs Attention, Active Work, nested Fleet
 workers, Recent, Timeline, scoped board; no horizontal overflow. Record device,
-viewport, BB version and result. An emulated viewport cannot satisfy this check.
+viewport, VesnALIA version and result. An emulated viewport cannot satisfy this check.
 
 Emulated Chromium results: document/viewport widths 1440/1440, 412/412, 360/360;
 plugin scroll width matches its width at each viewport. Reduced-motion preference

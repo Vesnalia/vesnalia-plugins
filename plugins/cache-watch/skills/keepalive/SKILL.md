@@ -1,19 +1,19 @@
 ---
 name: keepalive
-description: Enable, stop, renew, or inspect time-limited prompt-cache keepalive for the current BB session. Use /keepalive start, /keepalive stop, or /keepalive status.
+description: Enable, stop, renew, or inspect time-limited prompt-cache keepalive for the current VesnALIA session. Use /keepalive start, /keepalive stop, or /keepalive status.
 ---
 
-Manage keepalive for the current BB thread. Interpret the text after `/keepalive`
+Manage keepalive for the current VesnALIA thread. Interpret the text after `/keepalive`
 as the action: `start` (or `on`), `stop` (or `off`), `status`, or `renew`.
 Use an explicitly supplied thread ID only if the user names another thread.
-Otherwise obtain the current thread ID from `BB_THREAD_ID` or `bb status`.
+Otherwise obtain the current thread ID from `ALIA_THREAD_ID` or `alia status`.
 Do not guess a thread ID or act on a different session.
 
-- `start` / `on` / `renew`: run `bb cache-watch start <thread-id> --hours 6 --json`.
+- `start` / `on` / `renew`: run `alia cache-watch start <thread-id> --hours 6 --json`.
   Use the user's requested duration instead of 6 hours (range 0.25–24 hours).
   This is explicit authorization to enable paid keepalive; execute directly.
-- `stop` / `off`: run `bb cache-watch stop <thread-id> --json`.
-- `status`, or no action: run `bb cache-watch status <thread-id> --json`.
+- `stop` / `off`: run `alia cache-watch stop <thread-id> --json`.
+- `status`, or no action: run `alia cache-watch status <thread-id> --json`.
 
 Keep the response short. For start/renew explain that pings are ordinary paid
 turns, scheduled 5 minutes before estimated expiry, for the selected duration.
@@ -30,7 +30,7 @@ expanded **Cache** panel above the composer (or **Prompt cache** context card).
 Do not respond to a keepalive ping by running this skill or renewing a lease;
 reply `OK` only.
 
-For control without invoking the LLM, use BB's command palette
+For control without invoking the LLM, use VesnALIA's command palette
 (Cmd+Shift+P on macOS, Ctrl+Shift+P elsewhere), search for `Keepalive` and select
 Show status, Enable paid keepalive for 6 hours, Renew paid keepalive for 6 hours,
 or Stop keepalive. These commands target the selected session and show results

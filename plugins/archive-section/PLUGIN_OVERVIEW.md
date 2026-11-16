@@ -6,12 +6,12 @@
   no section leaves the Archived section.
 - Threads archived before you installed the plugin, or while it was turned off,
   are moved in when the plugin loads.
-- A `bb archive-section` command shows the matched section and moves any
+- A `alia archive-section` command shows the matched section and moves any
   stragglers on demand.
 
 ## How it works
 
-The plugin listens for BB's archive and unarchive events on the server, so it
+The plugin listens for VesnALIA's archive and unarchive events on the server, so it
 works from the sidebar, the thread menu, the CLI, and agents alike. It picks the
 section by name and ignores emoji, spacing, and case, so "Archived" finds a
 section called "🗑️ Archived". If no section matches, it creates one the first
@@ -26,5 +26,5 @@ time you archive a thread.
 
 ## Requirements
 
-Nothing beyond BB. The plugin needs no account or external service, and it
-stores only each archived thread's previous section, on your BB server.
+Nothing beyond VesnALIA. The plugin needs no account or external service, and it
+stores only each archived thread's previous section, on your VesnALIA server.

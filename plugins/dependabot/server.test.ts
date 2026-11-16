@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import {
   buildDependabotFixPrompt,
   default as dependabotPlugin,
@@ -225,13 +225,13 @@ describe("Dependabot plugin inputs", () => {
 
 describe("Dependabot plugin dispatch", () => {
   it("serves repeated reads from cache and force-refreshes explicitly", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "dependabot",
       sdk: {
         projects: { list: async () => [project()] },
       },
     });
-    await dependabotPlugin(bb);
+    await dependabotPlugin(alia);
 
     await harness.callRpc("listAlerts", {});
     await harness.callRpc("listAlerts", {});
@@ -253,14 +253,14 @@ describe("Dependabot plugin dispatch", () => {
   });
 
   it("discovers the inspected project remote and spawns one grouped fix", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "dependabot",
       sdk: {
         projects: { list: async () => [project()] },
         threads: { spawn: async () => ({ id: "thr_fix" }) },
       },
     });
-    await dependabotPlugin(bb);
+    await dependabotPlugin(alia);
 
     await expect(
       harness.callRpc("startFix", {
@@ -290,7 +290,7 @@ describe("Dependabot plugin dispatch", () => {
   });
 
   it("appends the current custom prompt to button and CLI fixes without a reload", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "dependabot",
       settings: { customPrompt: "Use a dedicated branch.\nOpen a draft PR." },
       sdk: {
@@ -299,7 +299,7 @@ describe("Dependabot plugin dispatch", () => {
         threads: { spawn: async () => ({ id: "thr_fix" }), list: async () => [] },
       },
     });
-    await dependabotPlugin(bb);
+    await dependabotPlugin(alia);
     const [group] = parseDependabotAlerts(JSON.stringify(response), "acme/widgets");
     const standardPrompt = buildDependabotFixPrompt(group);
 
@@ -332,13 +332,13 @@ describe("Dependabot plugin dispatch", () => {
   });
 
   it("rejects untracked repositories before querying their alerts", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "dependabot",
       sdk: {
         projects: { list: async () => [project()] },
       },
     });
-    await dependabotPlugin(bb);
+    await dependabotPlugin(alia);
     const apiCallsBefore = execFileMock.mock.calls.filter(([, args]) => args[0] === "api").length;
 
     await expect(
@@ -355,14 +355,14 @@ describe("Dependabot plugin dispatch", () => {
 
   it("returns a failing CLI exit code when any repository could not be read", async () => {
     mockGitHubCli("acme/other");
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "dependabot",
       settings: { extraRepos: "acme/other" },
       sdk: {
         projects: { list: async () => [project()] },
       },
     });
-    await dependabotPlugin(bb);
+    await dependabotPlugin(alia);
 
     const result = await harness.runCli(["alerts"]);
     expect(result.exitCode).toBe(1);
@@ -375,14 +375,14 @@ describe("Dependabot linked fix threads", () => {
   it("shares concurrent button and CLI requests and persists the link across reloads", async () => {
     const thread = fixThread();
     const spawn = vi.fn(async () => thread);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "dependabot",
       sdk: {
         projects: { list: async () => [project()] },
         threads: { spawn, list: async () => [thread] },
       },
     });
-    await dependabotPlugin(bb);
+    await dependabotPlugin(alia);
     await Promise.all([
       harness.behavior.callRpc("startFix", fixInput),
       harness.behavior.callRpc("startFix", { ...fixInput, ecosystem: "NPM" }),
@@ -407,14 +407,14 @@ describe("Dependabot linked fix threads", () => {
   it("shows current idle and failed states and notifies panels without losing the link", async () => {
     let thread = fixThread();
     const spawn = vi.fn(async () => thread);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "dependabot",
       sdk: {
         projects: { list: async () => [project()] },
         threads: { spawn, list: async () => [thread] },
       },
     });
-    await dependabotPlugin(bb);
+    await dependabotPlugin(alia);
     await harness.behavior.callRpc("startFix", fixInput);
     for (const status of ["idle", "error", "active"] as const) {
       thread = fixThread({ status });
@@ -439,14 +439,14 @@ describe("Dependabot linked fix threads", () => {
     async (state) => {
       let threads = [fixThread()];
       const spawn = vi.fn(async () => fixThread({ id: `thr_fix_${spawn.mock.calls.length}` }));
-      const { bb, harness } = createFakePluginHost({
+      const { alia, harness } = createFakePluginHost({
         pluginId: "dependabot",
         sdk: {
           projects: { list: async () => [project()] },
           threads: { spawn, list: async () => threads },
         },
       });
-      await dependabotPlugin(bb);
+      await dependabotPlugin(alia);
       const first = (await harness.behavior.callRpc("startFix", fixInput)) as { threadId: string };
       threads =
         state === "missing"
@@ -473,11 +473,11 @@ describe("Dependabot linked fix threads", () => {
       .fn()
       .mockRejectedValueOnce(new Error("Spawn failed"))
       .mockResolvedValueOnce(fixThread());
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "dependabot",
       sdk: { projects: { list: async () => [project()] }, threads: { spawn } },
     });
-    await dependabotPlugin(bb);
+    await dependabotPlugin(alia);
     await expect(harness.behavior.callRpc("startFix", fixInput)).rejects.toThrow("Spawn failed");
     expect(await harness.behavior.callRpc("listAlerts", {})).toMatchObject({
       groups: [{ fixThread: null }],
@@ -492,11 +492,11 @@ describe("Dependabot linked fix threads", () => {
       .fn()
       .mockRejectedValueOnce(new Error("Server unavailable"))
       .mockResolvedValue([fixThread()]);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "dependabot",
       sdk: { projects: { list: async () => [project()] }, threads: { spawn, list } },
     });
-    await dependabotPlugin(bb);
+    await dependabotPlugin(alia);
     await harness.behavior.callRpc("startFix", fixInput);
     await expect(harness.behavior.callRpc("startFix", fixInput)).rejects.toThrow(
       "Server unavailable",
@@ -513,11 +513,11 @@ describe("Dependabot linked fix threads", () => {
         ? Array.from({ length: 100 }, (_, index) => fixThread({ id: `thr_other_${index}` }))
         : [fixThread()],
     );
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "dependabot",
       sdk: { projects: { list: async () => [project()] }, threads: { spawn, list } },
     });
-    await dependabotPlugin(bb);
+    await dependabotPlugin(alia);
     await harness.behavior.callRpc("startFix", fixInput);
     expect(await harness.behavior.callRpc("startFix", fixInput)).toEqual({ threadId: "thr_fix" });
     expect(list).toHaveBeenLastCalledWith(

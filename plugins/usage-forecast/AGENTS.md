@@ -1,6 +1,6 @@
-# bb-plugin-usage-forecast — Standalone Context
+# alia-plugin-usage-forecast — Standalone Context
 
-BB plugin that shows every provider's usage limits with a forecast to the
+VesnALIA plugin that shows every provider's usage limits with a forecast to the
 window reset, the thread's context-window fill, a Compact button and an
 optional auto-compact. A server part polls limits on a schedule and runs
 auto-compact without open clients.
@@ -25,12 +25,12 @@ auto-compact without open clients.
   (`indicator.ts` model, `ring-icon.tsx`, `indicator-store.ts` with its
   overlay feeder, the `store.ts` helper behind the module stores,
   `sidebar-card.tsx`); UI strings in `i18n.ts`.
-- `components/`, `lib/` — vendored BB UI components (only the ones `src/`
+- `components/`, `lib/` — vendored VesnALIA UI components (only the ones `src/`
   imports); import them by relative path and keep them unchanged.
 
 ## Critical Rules
 
-1. **Limits only through `bb.sdk.system.usageLimits`.** Never call provider
+1. **Limits only through `alia.sdk.system.usageLimits`.** Never call provider
    APIs and never read provider credentials.
 2. **No account identifiers in logs or storage.** `usageLimits` returns
    `accountEmail` and an undocumented `accountKey`; drop both before logging
@@ -39,7 +39,7 @@ auto-compact without open clients.
    undocumented `kind` is only a hint for the window duration (see Host facts).
 4. **Auto-compact is off by default.** Turning it on by default needs the
    maintainer's approval. Do not touch or disable the built-in
-   `bb--provider-usage` plugin.
+   `alia--provider-usage` plugin.
 5. **One KV value stays under 256 KB.** Every list is a ring buffer trimmed
    before it is written.
 6. **UI text is English by default**, Russian through the `language`
@@ -50,18 +50,18 @@ auto-compact without open clients.
 ## Commands
 
 - Check: `npm ci && npm run typecheck && npm test && npm run build`.
-- Live test from the checkout: `npm run build && bb plugin install "$PWD" --yes`,
-  then `bb plugin logs usage-forecast` and `bb plugin list`.
-- RPC from the shell: `bb plugin rpc call usage-forecast <method> --input-file
+- Live test from the checkout: `npm run build && alia plugin install "$PWD" --yes`,
+  then `alia plugin logs usage-forecast` and `alia plugin list`.
+- RPC from the shell: `alia plugin rpc call usage-forecast <method> --input-file
   <json> --json`.
 - App tests need `// @vitest-environment jsdom` and `cleanup()` in `afterEach`
   (Vitest runs without globals).
-- `bb plugin build` failing with `Cannot find module 'npm/package.json'` means
-  the bb install has no bundled npm (seen on bb 0.49.0, macOS). Fix:
-  `npm install -g --prefix ~/.bb/npm npm@11.16.0`; repeat it if a bb update
+- `alia plugin build` failing with `Cannot find module 'npm/package.json'` means
+  the VesnALIA install has no bundled npm (seen on VesnALIA 0.49.0, macOS). Fix:
+  `npm install -g --prefix ~/.vesnalia/npm npm@11.16.0`; repeat it if a VesnALIA update
   removes the package.
 
-## Host facts (bb 0.49.0, SDK 0.6.132, checked 2026-11-08)
+## Host facts (VesnALIA 0.49.0, SDK 0.6.132, checked 2026-11-08)
 
 Usage limits:
 
@@ -89,36 +89,36 @@ Usage limits:
   unseen; `planLabel` carried no multiplier. The plugin reads only a finite
   number above 1.
 
-Hosts (checked 2026-11-16 from the bb CLI on the server, a two-host install):
+Hosts (checked 2026-11-16 from the VesnALIA CLI on the server, a two-host install):
 
 - `usageLimits` without `hostId` answers for one host only. Since 0.4.6 the
   plugin polls each host of `hosts.list` with `status: connected` and
   `lifecycle.phase: active` by `hostId`; data stored before belongs to the
-  host in `system.config().primaryHostId` (`bb settings show` shows it), kept
+  host in `system.config().primaryHostId` (`alia settings show` shows it), kept
   as `legacyOwner` in `limits:hosts`.
 - A Mac that was offline listed as `status: disconnected` with
-  `lifecycle.phase: active`. Usage for it (`bb settings usage --machine`)
+  `lifecycle.phase: active`. Usage for it (`alia settings usage --machine`)
   did not fail: every provider answered `status: error`, «Provider usage
   could not be loaded.». The plugin therefore does not poll disconnected
   hosts.
 - A thread's host: `threads.get` has `environmentId`, the environment
-  (`environments.get`) has `hostId` (`bb thread show`, `bb environment show`).
+  (`environments.get`) has `hostId` (`alia thread show`, `alia environment show`).
 
 Schedules and lifecycle:
 
-- `bb.background.schedule` with a name already registered in this load throws
+- `alia.background.schedule` with a name already registered in this load throws
   `schedule "<name>" is already registered`; the first registration stays.
   Back-off therefore skips ticks inside one schedule, and a new interval
-  applies after `bb plugin reload`.
+  applies after `alia plugin reload`.
 - A tick fires about 10 s after the minute. A throwing tick shows as
-  `running (schedule <name> failed: …)` in `bb plugin list`, with
+  `running (schedule <name> failed: …)` in `alia plugin list`, with
   `last: error (…)` on the schedule row.
 - Thread plugin metadata (`threads.updatePluginMetadata`) survives
-  `bb plugin reload`.
+  `alia plugin reload`.
 - A server-side settings write (`settingsHandle.experimental_set`, checked
   2026-11-16 with a throwaway plugin) fires `onChange` and then the realtime
   event `system:changed` with `changes: ["plugins-changed"]` within a few ms.
-  In the bb 0.49.0 web client that event invalidates the `plugin-settings`
+  In the VesnALIA 0.49.0 web client that event invalidates the `plugin-settings`
   query behind `useSettings()` (read in the bundle, not watched in a browser:
   the headless browser could not start on the server), so open pages follow
   without a reload.
@@ -140,7 +140,7 @@ Context window:
   fires for it. Some idle Claude Code threads have no snapshot at all, so the
   plugin remembers the last point per provider and window.
 - Codex reports no compaction point and no `model_auto_compact_token_limit`;
-  a 500K model shows `modelContextWindow: 475000` (bb reports the usable
+  a 500K model shows `modelContextWindow: 475000` (VesnALIA reports the usable
   95 %). Its compaction point reaches the plugin only through the
   per-provider setting.
 - `providers.list()` capabilities have no `supportsManualCompaction` (A5):
@@ -170,9 +170,9 @@ Context window:
 Compaction events:
 
 - `thread/compacted` and `thread/contextWindowUsage/updated` are thread events,
-  read with `bb.sdk.threads.events.list({threadId, types, order, limit})`.
+  read with `alia.sdk.threads.events.list({threadId, types, order, limit})`.
   The server hears `thread.active`, `thread.idle` and
-  `experimental_thread.events`; `bb.realtime.publish` from the server reaches
+  `experimental_thread.events`; `alia.realtime.publish` from the server reaches
   the open app (A2).
 - In a Claude Code auto-compact the `thread/compacted` event was followed by
   a usage event with no numbers, one with the old value, and the new, lower
@@ -199,7 +199,7 @@ Token usage (checked 2026-11-16 with a throwaway plugin over 105 threads):
 
 - `threads.list` without `archived` returns active and archived threads but
   no hidden ones; `archived: true` returns only archived ones;
-  `includeHidden: true` returns all of them (as `bb thread list
+  `includeHidden: true` returns all of them (as `alia thread list
   --include-archived --include-hidden`). `limit` (1000 accepted) and
   `offset` pages do not overlap.
 - `threads.events.list` with `types: ["thread/tokenUsage/updated"]` filters
@@ -229,7 +229,7 @@ UI surfaces:
   the phone.
 
 Sidebar footer (checked 2026-11-16 with a throwaway plugin in headless
-Chrome against the web app, bb 0.49.0):
+Chrome against the web app, VesnALIA 0.49.0):
 
 - An `experimental_icons` component used as a footer item's icon renders
   outside the plugin slot: `useSettings()` throws «plugin SDK hooks can only
@@ -254,19 +254,19 @@ Chrome against the web app, bb 0.49.0):
 
 ## Repository and release contract
 
-- Repository: public `ponomr/bb-plugin-usage-forecast`, MIT. Submitted to the
-  BB Community marketplace as `usage-forecast` with a Git source that tracks
-  `^0.4.0` (get-bb/marketplace#928); a compatible release needs no new
+- Repository: public `ponomr/alia-plugin-usage-forecast`, MIT. Submitted to the
+  VesnALIA Community marketplace as `usage-forecast` with a Git source that tracks
+  `^0.4.0` (get-alia/marketplace#928); a compatible release needs no new
   marketplace PR, a contract change needs a PR that moves the range. The
   marketplace's long description (`overview/usage-forecast.md` there) is a
   copy of `PLUGIN_OVERVIEW.md`, at most 4000 characters; after changing it,
-  open a marketplace PR with the new copy (get-bb/marketplace#973 for
+  open a marketplace PR with the new copy (get-alia/marketplace#973 for
   0.4.19). Its screenshots (`docs/screenshots/`) show the band only.
 - Checks: the command above; there is no CI yet.
 - Release: bump `version` in `package.json` and `package-lock.json` and add
   the version to `CHANGELOG.md` in the PR, merge it, tag the merge commit `vX.Y.Z` and push the tag.
 - Install from a checkout: check out the tag and run
-  `npm ci && npm run build && bb plugin install "$PWD" --yes`;
-  `bb plugin list` must show the new version as `running`.
+  `npm ci && npm run build && alia plugin install "$PWD" --yes`;
+  `alia plugin list` must show the new version as `running`.
 - Recovery: check out the previous tag and reinstall, or run
-  `bb plugin disable usage-forecast`. Data stays in the plugin's KV storage.
+  `alia plugin disable usage-forecast`. Data stays in the plugin's KV storage.

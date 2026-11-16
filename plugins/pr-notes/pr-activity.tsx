@@ -5,7 +5,7 @@ import {
   useRealtime,
   experimental_usePluginId,
   UrlLink,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type { PrRef } from "./github";
 import type { ActivityItem, ActivityPage } from "./github-activity";

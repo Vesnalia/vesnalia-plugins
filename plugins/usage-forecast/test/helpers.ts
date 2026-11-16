@@ -1,7 +1,7 @@
 // Shared fakes for the server tests. Storage uses the fake host's kv, which
 // enforces the real 256 KB value cap.
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { Storage } from "../src/server/storage";
 import type { PluginSettings, ThreadsSdk } from "../src/server/threads";
 import { HOUR_MS } from "../src/shared/windows";
@@ -10,7 +10,7 @@ export const NOW = Date.UTC(2026, 10, 8, 12, 0, 0);
 export const MIN = 60_000;
 
 export function makeStorage(): Storage {
-  return new Storage(createFakePluginHost({ pluginId: "usage-forecast" }).bb.storage.kv);
+  return new Storage(createFakePluginHost({ pluginId: "usage-forecast" }).alia.storage.kv);
 }
 
 export function settingsOf(over: Partial<PluginSettings> = {}): () => Promise<PluginSettings> {
@@ -40,7 +40,7 @@ export class Clock {
 
 /**
  * A Claude Code `threads.context` answer after a turn: by default a 150 000
- * window with its own compact at 117 000 (bb 0.49 reports the window minus
+ * window with its own compact at 117 000 (VesnALIA 0.49 reports the window minus
  * 33 000); a 200 000 window reports 167 000.
  */
 export function claudeContext(usedTokens: number, windowTokens = 150_000, autoCompactAtTokens = windowTokens - 33_000) {
@@ -71,7 +71,7 @@ export function codexContext(usedTokens: number, windowTokens = 258_400) {
 
 type ContextAnswer = unknown | (() => unknown);
 
-/** Mutable stand-in for `bb.sdk.threads`. */
+/** Mutable stand-in for `alia.sdk.threads`. */
 export class FakeThreads implements ThreadsSdk {
   status = new Map<string, string>();
   providers = new Map<string, string>();

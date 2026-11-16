@@ -1,22 +1,22 @@
 #!/usr/bin/env node
 /**
- * Reproduce a managed BB install and prove the plugin still builds and loads.
+ * Reproduce a managed VesnALIA install and prove the plugin still builds and loads.
  *
- * BB installs a Git plugin by cloning the repository and running
+ * VesnALIA installs a Git plugin by cloning the repository and running
  * `npm install --omit=dev` before it builds. Every module the built artifacts
  * import therefore has to be a *production* dependency — `devDependencies`
  * simply are not on disk at that point. That is easy to get wrong and
  * invisible locally, because a developer checkout has both sets installed:
  * `npm run build` passes while the managed install fails to resolve
- * `@get-bb/plugin-sdk/provider-bridge/acp` and the provider never loads.
+ * `@vesnalia/plugin-sdk/provider-bridge/acp` and the provider never loads.
  *
  * So this check builds in a throwaway copy of the working tree that has only
- * production dependencies, exactly as BB would:
+ * production dependencies, exactly as VesnALIA would:
  *
  *   1. copy the tracked (and not-ignored) working tree to a temp directory
  *   2. `npm install --omit=dev` there
  *   3. resolve each specifier the artifacts import at build time
- *   4. `bb plugin build`
+ *   4. `alia plugin build`
  *   5. import the built `dist/host.js` and confirm it exports the bridge
  *
  * Run it with `npm run check:managed` (or as part of `npm run check`).
@@ -32,17 +32,17 @@ import { fileURLToPath } from "node:url";
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /**
- * The specifiers the built artifacts pull in. `bb plugin build` bundles them,
+ * The specifiers the built artifacts pull in. `alia plugin build` bundles them,
  * so they must resolve from a production-only install even though nothing
  * imports them at runtime afterwards.
  */
 const RUNTIME_SPECIFIERS = [
-  "@get-bb/plugin-sdk",
-  "@get-bb/plugin-sdk/provider-bridge/acp",
+  "@vesnalia/plugin-sdk",
+  "@vesnalia/plugin-sdk/provider-bridge/acp",
   "zod",
 ];
 
-/** The export name BB's host loads a provider bridge under. */
+/** The export name VesnALIA's host loads a provider bridge under. */
 const BRIDGE_EXPORT = "experimental_providerBridge";
 
 const steps = [];
@@ -90,13 +90,13 @@ function pluginFiles() {
     .filter((file) => file && existsSync(join(repoRoot, file)));
 }
 
-/** The bb that would install this plugin: the pinned one when present. */
-function bbCommand() {
-  const pinned = join(repoRoot, "node_modules", ".bin", "bb");
-  return existsSync(pinned) ? pinned : "bb";
+/** The VesnALIA that would install this plugin: the pinned one when present. */
+function aliaCommand() {
+  const pinned = join(repoRoot, "node_modules", ".bin", "alia");
+  return existsSync(pinned) ? pinned : "alia";
 }
 
-const workdir = mkdtempSync(join(tmpdir(), "bb-plugin-fx-managed-"));
+const workdir = mkdtempSync(join(tmpdir(), "alia-plugin-fx-managed-"));
 let succeeded = false;
 
 try {
@@ -114,7 +114,7 @@ try {
   );
   console.log(`    ${files.length} files`);
 
-  step("npm install --omit=dev (what BB runs for a managed Git install)");
+  step("npm install --omit=dev (what VesnALIA runs for a managed Git install)");
   const install = run(
     "npm",
     ["install", "--omit=dev", "--no-audit", "--no-fund"],
@@ -149,14 +149,14 @@ try {
     console.log(`    ok  ${specifier}`);
   }
 
-  step("bb plugin build");
-  const build = run(bbCommand(), ["plugin", "build"], { cwd: workdir });
+  step("alia plugin build");
+  const build = run(aliaCommand(), ["plugin", "build"], { cwd: workdir });
   if (!build.ok) {
-    fail("`bb plugin build` failed on a production-only install", build.output);
+    fail("`alia plugin build` failed on a production-only install", build.output);
   }
   for (const artifact of ["dist/server.js", "dist/host.js"]) {
     if (!existsSync(join(workdir, artifact))) {
-      fail(`\`bb plugin build\` produced no ${artifact}`, build.output);
+      fail(`\`alia plugin build\` produced no ${artifact}`, build.output);
     }
     console.log(`    ok  ${artifact}`);
   }

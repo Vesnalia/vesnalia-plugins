@@ -368,7 +368,7 @@ test("only a plain github.com PR link opens in My PRs", () => {
     "http://github.com/o/r/pull/42",
     "https://github.com/o/r/pull/0",
     "https://github.com/o%2Fx/r/pull/42",
-    "/plugins/bb-github-pr-dashboard/prs/o/r/42",
+    "/plugins/alia-github-pr-dashboard/prs/o/r/42",
     "not a url",
   ]) {
     assert.equal(prFromUrl(href), null, href);
@@ -413,7 +413,7 @@ test("repo of a git remote, https or ssh, any case", () => {
   assert.equal(repoOfRemote(null), null);
 });
 
-test("the PR's thread is on its branch in its repo; bb's PR status for the environment overrides the remote", () => {
+test("the PR's thread is on its branch in its repo; VesnALIA's PR status for the environment overrides the remote", () => {
   const t = (id: string, projectId: string, over: Partial<AgentThread> = {}): AgentThread => ({
     id, projectId, environmentId: `env_${id}`, environmentBranchName: "feat/x", archivedAt: null, updatedAt: 1, title: id, titleFallback: null, ...over,
   });

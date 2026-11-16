@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { DraftProviderProps } from "./DraftProvider";
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
@@ -422,7 +422,7 @@ test("Undo after removing keeps an agent's comment the agent's, and isn't offere
   slot.lifecycle.unmount();
 });
 
-test("when BB mounts a review's new workspace before the old one goes, the old one going keeps its draft status and comments", async () => {
+test("when VesnALIA mounts a review's new workspace before the old one goes, the old one going keeps its draft status and comments", async () => {
   await loadPluginApp(() => import("../app"));
   const DraftTray = await draftTray();
   const { useDraftStatus } = await import("../lib/draft-status");

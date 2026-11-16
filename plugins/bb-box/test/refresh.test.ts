@@ -27,7 +27,7 @@ const record = (build: string, tools: Record<string, string>, changes: Partial<I
   os: "Ubuntu 24.04.5 LTS",
   aptSnapshot: "20261003T000000Z",
   pins: "p".repeat(64),
-  bbApp: APP,
+  aliaApp: APP,
   tools,
   nvidia: null,
   layer: null,
@@ -40,7 +40,7 @@ const CURRENT: ImageBuild = { ref: "9100", image: "standard", kind: "linux", bui
 
 /**
  * Image operations on a fake backend that record what happens, with boxes
- * that answer the build script, the kind's check and BB's app, and a clock
+ * that answer the build script, the kind's check and VesnALIA's app, and a clock
  * that a box from the new build moves on by `slowerMs` more.
  */
 function fake(options: { buildExit?: number; check?: string; app?: string; captured?: ImageRecord; slowerMs?: number; stalls?: number[]; full?: number; steps?: boolean } = {}) {
@@ -54,16 +54,16 @@ function fake(options: { buildExit?: number; check?: string; app?: string; captu
   const command = (ref: string): CommandTransport => ({
     probe: async () => true,
     run: async (script) => {
-      events.push(`run ${ref} ${script.includes("bb-box-check-headless") ? "check" : script.includes("host-artifact") ? "app" : script}`);
+      events.push(`run ${ref} ${script.includes("alia-box-check-headless") ? "check" : script.includes("host-artifact") ? "app" : script}`);
       // A check that is an echo prints what it echoes.
       const echoed = /^echo '(.*)'$/.exec(script)?.[1];
-      const stdout = echoed !== undefined ? `${echoed}\n` : script.includes("bb-box-check") ? (options.check ?? "docker stopped after boot   ok   docker.socket active\nservices   ok   ssh\n") : script.includes("host-artifact") ? `${options.app ?? APP}\n` : "";
+      const stdout = echoed !== undefined ? `${echoed}\n` : script.includes("alia-box-check") ? (options.check ?? "docker stopped after boot   ok   docker.socket active\nservices   ok   ssh\n") : script.includes("host-artifact") ? `${options.app ?? APP}\n` : "";
       return { exitCode: 0, stdout, stderr: "", timedOut: false, truncated: false, durationMs: 1 } satisfies RunResult;
     },
     stream: async (script, { onOutput }) => {
       events.push(`stream ${ref}`);
       assert.match(script, /customize-base\.sh/);
-      onOutput(new TextEncoder().encode("fetched claude\ninstalled claude-code 2.1.288 in /opt/bb-box-tools/claude-code-2.1.288\n"), "stdout");
+      onOutput(new TextEncoder().encode("fetched claude\ninstalled claude-code 2.1.288 in /opt/alia-box-tools/claude-code-2.1.288\n"), "stdout");
       onOutput(new TextEncoder().encode("finalize: done (linux)"), "stderr");
       return { exitCode: options.buildExit ?? 0, timedOut: false };
     },
@@ -101,7 +101,7 @@ function fake(options: { buildExit?: number; check?: string; app?: string; captu
 }
 
 const refresh = (made: ReturnType<typeof fake>, extra: { replace?: boolean; room?: { waitMs: number; pollMs: number } } = {}) =>
-  refreshImage({ images: made.images, current: CURRENT, setup: SETUP, bbUrl: "https://bb.example.com", bbApp: APP, pinned: true, signal: AbortSignal.timeout(60_000), now: made.now, ...extra });
+  refreshImage({ images: made.images, current: CURRENT, setup: SETUP, aliaUrl: "https://bb.example.com", aliaApp: APP, pinned: true, signal: AbortSignal.timeout(60_000), now: made.now, ...extra });
 
 test("a refresh builds in a box of the image, captures it, checks a trial box against a box of the old build, and replaces the image (049)", async () => {
   const made = fake();
@@ -110,7 +110,7 @@ test("a refresh builds in a box of the image, captures it, checks a trial box ag
   assert.deepEqual([result.build?.ref, result.build?.build, result.build?.current], ["9100", "build.20261003-021500-3f9c", true]);
   assert.deepEqual(made.events, [
     "box 7000 from 9100: refresh of 9100",
-    "write 7000 bb-box-setup.tgz",
+    "write 7000 alia-box-setup.tgz",
     "stream 7000",
     "capture 7000 from 9100 as standard",
     "box 7001 from 9100: answer time of build.20260926-060000-a1b2",
@@ -121,15 +121,15 @@ test("a refresh builds in a box of the image, captures it, checks a trial box ag
     "remove 7002",
     "replace 9100 with 7000",
   ]);
-  assert.ok(made.written.get("bb-box-setup.tgz")!.length > 1000, "the staged setup, packed");
+  assert.ok(made.written.get("alia-box-setup.tgz")!.length > 1000, "the staged setup, packed");
   assert.deepEqual(result.checks.map((check) => [check.name, check.ok]), [
     ["answers as quickly", true],
-    ["the kind's check (bb-box-check-headless)", true],
-    ["BB's app", true],
+    ["the kind's check (alia-box-check-headless)", true],
+    ["ALIA's app", true],
     ["the record", true],
     ["no tool older", true],
   ]);
-  assert.ok(result.output.includes("installed claude-code 2.1.288 in /opt/bb-box-tools/claude-code-2.1.288"));
+  assert.ok(result.output.includes("installed claude-code 2.1.288 in /opt/alia-box-tools/claude-code-2.1.288"));
   assert.ok(result.output.includes("finalize: done (linux)"), "the last line, without a newline");
   assert.equal(result.output.at(-1), "replaced 9100 with build.20261003-021500-3f9c");
 });
@@ -178,14 +178,14 @@ test("a failed build, or a failed check, keeps the image and removes what the re
   const failed = fake({ buildExit: 1 });
   const build = await refresh(failed);
   assert.equal(build.ok, false);
-  assert.match(build.reason!, /^The build failed with exit code 1: finalize: done \(linux\)\. Its whole output is in \S+\/bb-box-build-logs\/9100-\S+\.log\.$/);
+  assert.match(build.reason!, /^The build failed with exit code 1: finalize: done \(linux\)\. Its whole output is in \S+\/alia-box-build-logs\/9100-\S+\.log\.$/);
   assert.deepEqual(failed.events.slice(-1), ["remove 7000"]);
   assert.ok(!failed.events.some((event) => event.startsWith("capture")));
 
   const check = fake({ check: "docker stopped after boot   FAIL dockerd runs\n" });
   const checked = await refresh(check);
   assert.equal(checked.ok, false);
-  assert.match(checked.reason!, /^The new build failed the kind's check \(bb-box-check-headless\): docker stopped after boot +FAIL dockerd runs$/);
+  assert.match(checked.reason!, /^The new build failed the kind's check \(alia-box-check-headless\): docker stopped after boot +FAIL dockerd runs$/);
   assert.ok(!check.events.some((event) => event.startsWith("replace")));
   assert.deepEqual(check.events.slice(-2), ["remove 7002", "remove 7000"], "the trial box, then the build");
 
@@ -197,7 +197,7 @@ test("a failed build, or a failed check, keeps the image and removes what the re
   assert.match(timedSteps.reason!, /answered in 6\.0 s \(clone 0\.4 s, ssh 5\.6 s\) and 6\.0 s \(clone 0\.4 s, ssh 5\.6 s\), of the old in 1\.0 s \(clone 0\.4 s, ssh 0\.6 s\) and 1\.0 s \(clone 0\.4 s, ssh 0\.6 s\)\./);
 
   const app = await refresh(fake({ app: "b".repeat(64) }));
-  assert.match(app.reason!, /BB's app: The box has BB's app bbbbbbbbbbbb, the record aaaaaaaaaaaa, the server aaaaaaaaaaaa\./);
+  assert.match(app.reason!, /ALIA's app: The box has ALIA's app bbbbbbbbbbbb, the record aaaaaaaaaaaa, the server aaaaaaaaaaaa\./);
 
   const older = await refresh(fake({ captured: record("build.x", { node: "24.21.0", "claude-code": "2.1.280" }) }));
   assert.match(older.reason!, /no tool older: claude-code 2\.1\.280 is older than 2\.1\.283\./);
@@ -216,7 +216,7 @@ test("a refresh on a backend whose standard images come from a build script, as 
     },
     check: () => "echo 'node ok   v24.21.0'",
   };
-  const result = await refreshImage({ images, current: CURRENT, setup: SETUP, bbUrl: "https://bb.example.com", bbApp: APP, pinned: true, signal: AbortSignal.timeout(60_000), now: made.now });
+  const result = await refreshImage({ images, current: CURRENT, setup: SETUP, aliaUrl: "https://bb.example.com", aliaApp: APP, pinned: true, signal: AbortSignal.timeout(60_000), now: made.now });
   assert.equal(result.ok, true, result.reason ?? "");
   assert.deepEqual(made.events, [
     "build from 9100",
@@ -228,7 +228,7 @@ test("a refresh on a backend whose standard images come from a build script, as 
     "remove 7001",
     "replace 9100 with bbbox/linux:refresh-x",
   ]);
-  assert.match(staged[0]!, /bb-box-refresh-.*\/setup$/, "a staged copy of setup/");
+  assert.match(staged[0]!, /alia-box-refresh-.*\/setup$/, "a staged copy of setup/");
   assert.equal(result.checks[1]!.name, "the kind's check");
 });
 
@@ -247,7 +247,7 @@ test("a refresh writes its build's output to the build's own file, and gives the
     },
     check: () => "echo 'node ok   v24.21.0'",
   };
-  const result = await refreshImage({ images, current: CURRENT, setup: SETUP, bbUrl: "https://bb.example.com", bbApp: APP, pinned: true, signal: AbortSignal.timeout(60_000), now: made.now, log: (line) => void lines.push(line), buildLogDir: dir });
+  const result = await refreshImage({ images, current: CURRENT, setup: SETUP, aliaUrl: "https://bb.example.com", aliaApp: APP, pinned: true, signal: AbortSignal.timeout(60_000), now: made.now, log: (line) => void lines.push(line), buildLogDir: dir });
   assert.equal(result.ok, true, result.reason ?? "");
   assert.deepEqual(lines.filter((line) => /Get:|DONE/.test(line)), [], "no build output in the plugin's log");
   assert.ok(lines.includes("#14 [linux 4/9] RUN apt-get update") && lines.includes("built bbbox/linux:refresh-x"), "its steps are");
@@ -281,25 +281,25 @@ test("the record's checks: whole, and no tool older or missing than in the old b
   assert.equal(recordChecks(null, OLD, "linux")[0]!.ok, false);
   assert.equal(recordChecks(record("build.y", {}, { os: "" }), null, "linux")[0]!.ok, false);
   // A tool named by a hash of its source has no order, so a new hash is not older (#771).
-  const hashed = { ...OLD, tools: { ...OLD.tools, "bb-box-stream": "464979ceb555" } };
-  const rebuilt = recordChecks(record("build.y", { node: "24.21.0", "claude-code": "2.1.288", pi: "1.0.0", "bb-box-stream": "bf343f0d36dc" }), hashed, "linux");
+  const hashed = { ...OLD, tools: { ...OLD.tools, "alia-box-stream": "464979ceb555" } };
+  const rebuilt = recordChecks(record("build.y", { node: "24.21.0", "claude-code": "2.1.288", pi: "1.0.0", "alia-box-stream": "bf343f0d36dc" }), hashed, "linux");
   assert.ok(rebuilt.every((check) => check.ok), JSON.stringify(rebuilt));
 });
 
 test("the build script runs the guest scripts as build.sh does for each kind", () => {
   const wayland = buildScript("linux-desktop-wayland-cpu", "https://bb.example.com", "build.20261003-021500-3f9c");
-  for (const line of ["DESKTOP_GPU=none", "DESKTOP_SESSION=wayland", "BUILD_ID=build.20261003-021500-3f9c", "BB_URL='https://bb.example.com'", 'BOX_DNS="$dns"']) assert.ok(wayland.split("\n").includes(line), line);
+  for (const line of ["DESKTOP_GPU=none", "DESKTOP_SESSION=wayland", "BUILD_ID=build.20261003-021500-3f9c", "ALIA_URL='https://bb.example.com'", 'BOX_DNS="$dns"']) assert.ok(wayland.split("\n").includes(line), line);
   assert.match(wayland, /fetch-artifacts\.sh \S+ desktop-wayland-cpu "\$arch"/);
   assert.match(wayland, /customize-desktop\.sh/);
   assert.match(wayland, /^BOX_IDENTITY_RESET=on$/m);
   assert.match(wayland, /finalize\.sh \S+ desktop$/m);
   const gpu = buildScript("linux-desktop", null, "build.x");
   assert.ok(gpu.split("\n").includes("DESKTOP_GPU=nvidia"));
-  assert.ok(gpu.split("\n").includes("BB_URL=''"));
+  assert.ok(gpu.split("\n").includes("ALIA_URL=''"));
   const linux = buildScript("linux", null, "build.x");
   assert.doesNotMatch(linux, /customize-desktop|DESKTOP_/);
   assert.match(linux, /finalize\.sh \S+ linux$/m);
-  assert.throws(() => buildScript("macos", null, "build.x"), /BB Box refreshes no macos image/);
+  assert.throws(() => buildScript("macos", null, "build.x"), /ALIA Box refreshes no macos image/);
   const android = buildScript("android", null, "build.x");
   assert.match(android, /fetch-artifacts\.sh \S+ linux "\$arch"/);
   assert.doesNotMatch(android, /customize-desktop|DESKTOP_/);
@@ -307,7 +307,7 @@ test("the build script runs the guest scripts as build.sh does for each kind", (
   assert.ok(android.indexOf("customize-android.sh") > android.indexOf("customize-vm.sh"), "the Android layer after the VM's");
   assert.ok(android.indexOf("customize-android.sh") < android.indexOf("finalize.sh"), "and before finalize.sh");
   assert.match(android, /finalize\.sh \S+ android$/m);
-  assert.equal(trialCheck({} as never, "android").name, "the kind's check (bb-box-check-android)");
+  assert.equal(trialCheck({} as never, "android").name, "the kind's check (alia-box-check-android)");
 });
 
 test("the build script runs the guest scripts in a VM's way in a VM, and in a container's in a container (057)", () => {
@@ -337,7 +337,7 @@ function runBuildScript(kind: string, host: { readonly virt: string; readonly ma
   const driver = join(root, "nvidia-version");
   mkdirSync(bin);
   mkdirSync(join(home, ".ssh"), { recursive: true });
-  writeFileSync(join(home, ".ssh", "authorized_keys"), "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIplugin bb-box\n");
+  writeFileSync(join(home, ".ssh", "authorized_keys"), "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIplugin alia-box\n");
   if (host.driver) writeFileSync(driver, `${host.driver}\n`);
   const calls = join(root, "calls");
   writeFileSync(
@@ -389,7 +389,7 @@ test("071 unit 7b: a Linux image's refresh in a container on a host with an NVID
   assert.equal(android.fetched, "linux x86_64");
 });
 
-const WINDOWS_OLD = record("build.20260901-020000-77aa", { pwsh: "7.6.6", git: "2.56.0", "cua-driver": "0.30.4" }, { kind: "windows-desktop", os: "Windows 11 Pro", aptSnapshot: null, bbApp: null, sizeGiB: null });
+const WINDOWS_OLD = record("build.20260901-020000-77aa", { pwsh: "7.6.6", git: "2.56.0", "cua-driver": "0.30.4" }, { kind: "windows-desktop", os: "Windows 11 Pro", aptSnapshot: null, aliaApp: null, sizeGiB: null });
 const WINDOWS: ImageBuild = { ref: "9200", image: "standard", kind: "windows-desktop", build: WINDOWS_OLD.build, record: WINDOWS_OLD, current: true };
 
 /**
@@ -411,7 +411,7 @@ function fakeWindows(exits: number[], options: { readonly after?: (string | null
     run: async (script) => {
       if (script.includes("Start-Detached")) {
         made.events.push(`start ${ref}`);
-        assert.match(script, /Start-Detached -Command '& ''C:\\bb-box\\build\\refresh\.ps1'' -Pins ''C:\\bb-box\\build\\pins\.json'' -Record ''C:\\bb-box\\build\\image\.json''; Set-Content -LiteralPath ''C:\\bb-box\\build\\refresh\.exit'' -Value \$LASTEXITCODE' -Log 'C:\\bb-box\\build\\refresh\.log'/);
+        assert.match(script, /Start-Detached -Command '& ''C:\\alia-box\\build\\refresh\.ps1'' -Pins ''C:\\alia-box\\build\\pins\.json'' -Record ''C:\\alia-box\\build\\image\.json''; Set-Content -LiteralPath ''C:\\alia-box\\build\\refresh\.exit'' -Value \$LASTEXITCODE' -Log 'C:\\alia-box\\build\\refresh\.log'/);
         if (++streams === options.cut) detached = { exit: null, log: "" };
         else {
           const exit = left.shift() ?? 0;
@@ -431,9 +431,9 @@ function fakeWindows(exits: number[], options: { readonly after?: (string | null
         return { exitCode: 0, stdout, stderr: "", timedOut: false, truncated: false, durationMs: 1 } satisfies RunResult;
       }
       // check.ps1 reads the boot time too, in its boot line, so it is told first.
-      // BB's app on the trial box, which refresh.ps1 installed (#916).
+      // VesnALIA's app on the trial box, which refresh.ps1 installed (#916).
       if (script.includes("host-artifact.sha256")) {
-        made.events.push(`run ${ref} BB's app`);
+        made.events.push(`run ${ref} VesnALIA's app`);
         return { exitCode: 0, stdout: `${APP}\n`, stderr: "", timedOut: false, truncated: false, durationMs: 1 } satisfies RunResult;
       }
       const what = script.includes("Check 'Node.js") ? "check.ps1" : script.includes("LastBootUpTime") ? "booted" : script.startsWith("Restart-Computer") ? "restart" : script.startsWith("Remove-Item") ? "clean" : script;
@@ -453,7 +453,7 @@ function fakeWindows(exits: number[], options: { readonly after?: (string | null
     stream: async (script, { onOutput }) => {
       made.events.push(`stream ${ref}`);
       if (++streams === options.cut) throw new TransportError("unreachable", "The box at 192.0.2.9 did not answer on SSH.");
-      assert.equal(script, "& 'C:\\bb-box\\build\\refresh.ps1' -Pins 'C:\\bb-box\\build\\pins.json' -Record 'C:\\bb-box\\build\\image.json'; exit $LASTEXITCODE");
+      assert.equal(script, "& 'C:\\alia-box\\build\\refresh.ps1' -Pins 'C:\\alia-box\\build\\pins.json' -Record 'C:\\alia-box\\build\\image.json'; exit $LASTEXITCODE");
       const exit = left.shift() ?? 0;
       onOutput(new TextEncoder().encode(exit === 3010 ? "12:00:00 a restart, then this again\n" : exit ? "12:00:00 FAILED: no network\n" : "12:00:00 Done\n"), "stdout");
       return { exitCode: exit, timedOut: false };
@@ -472,16 +472,16 @@ function fakeWindows(exits: number[], options: { readonly after?: (string | null
     },
     capture: async (box, from, image) => {
       made.events.push(`capture ${box.ref} from ${from.ref} as ${image}`);
-      const written = JSON.parse(new TextDecoder().decode(made.written.get("C:\\bb-box\\build\\image.json"))) as ImageRecord;
-      // As refresh.ps1 writes it: with the digest of the BB app it installed, given the server's URL.
-      const bbApp = made.written.has("C:\\bb-box\\build\\bb-url") ? APP : written.bbApp;
-      return { ref: box.ref, image, kind: from.kind, build: written.build, record: { ...written, bbApp }, current: false };
+      const written = JSON.parse(new TextDecoder().decode(made.written.get("C:\\alia-box\\build\\image.json"))) as ImageRecord;
+      // As refresh.ps1 writes it: with the digest of the VesnALIA app it installed, given the server's URL.
+      const aliaApp = made.written.has("C:\\alia-box\\build\\alia-url") ? APP : written.aliaApp;
+      return { ref: box.ref, image, kind: from.kind, build: written.build, record: { ...written, aliaApp }, current: false };
     },
     // Tart's builds its Linux and macOS images with a script: a Windows refresh still takes a box.
     build: async () => assert.fail("a Windows refresh does not build with the backend's script"),
   };
   const run = () =>
-    refreshImage({ images, current: WINDOWS, setup: SETUP, bbUrl: "https://bb.example.com", bbApp: APP, signal: AbortSignal.timeout(60_000), now: made.now, restart: { timeoutMs: 1_000, pollMs: 0, steadyMs: options.steadyMs ?? 0 } });
+    refreshImage({ images, current: WINDOWS, setup: SETUP, aliaUrl: "https://bb.example.com", aliaApp: APP, signal: AbortSignal.timeout(60_000), now: made.now, restart: { timeoutMs: 1_000, pollMs: 0, steadyMs: options.steadyMs ?? 0 } });
   return { ...made, run };
 }
 
@@ -491,14 +491,14 @@ test("a Windows refresh runs refresh.ps1 in a box of the image, restarts it whil
   assert.equal(result.ok, true, result.reason ?? "");
   assert.deepEqual(made.events, [
     "box 7000 from 9200: refresh of 9200",
-    "write 7000 C:\\bb-box\\build\\refresh.ps1",
-    "write 7000 C:\\bb-box\\build\\bb-box-stream.cs",
-    "write 7000 C:\\bb-box\\build\\install-stream.ps1",
-    "write 7000 C:\\bb-box\\build\\hardware-cursor.ps1",
-    "write 7000 C:\\bb-box\\build\\boot.ps1",
-    "write 7000 C:\\bb-box\\build\\pins.json",
-    "write 7000 C:\\bb-box\\build\\image.json",
-    "write 7000 C:\\bb-box\\build\\bb-url",
+    "write 7000 C:\\alia-box\\build\\refresh.ps1",
+    "write 7000 C:\\alia-box\\build\\alia-box-stream.cs",
+    "write 7000 C:\\alia-box\\build\\install-stream.ps1",
+    "write 7000 C:\\alia-box\\build\\hardware-cursor.ps1",
+    "write 7000 C:\\alia-box\\build\\boot.ps1",
+    "write 7000 C:\\alia-box\\build\\pins.json",
+    "write 7000 C:\\alia-box\\build\\image.json",
+    "write 7000 C:\\alia-box\\build\\alia-url",
     "start 7000",
     "run 7000 booted",
     "run 7000 restart",
@@ -510,21 +510,21 @@ test("a Windows refresh runs refresh.ps1 in a box of the image, restarts it whil
     "remove 7001",
     `box 7002 from 7000: trial of ${result.build!.build}`,
     "run 7002 check.ps1",
-    "run 7002 BB's app",
+    "run 7002 ALIA's app",
     "remove 7002",
     "replace 9200 with 7000",
   ]);
-  assert.equal(new TextDecoder().decode(made.written.get("C:\\bb-box\\build\\bb-url")), "https://bb.example.com\n", "refresh.ps1 installs the server's BB app (#916)");
+  assert.equal(new TextDecoder().decode(made.written.get("C:\\alia-box\\build\\alia-url")), "https://bb.example.com\n", "refresh.ps1 installs the server's VesnALIA app (#916)");
   assert.deepEqual(result.checks.map((check) => [check.name, check.ok]), [
     ["answers as quickly", true],
     ["the kind's check (check.ps1)", true],
-    ["BB's app", true],
+    ["ALIA's app", true],
     ["the record", true],
     ["no tool older", true],
   ]);
   assert.ok(result.output.includes("restarting the box (round 1 of 5)"));
 
-  const pins = JSON.parse(new TextDecoder().decode(made.written.get("C:\\bb-box\\build\\pins.json"))) as { tools: { name: string; arch: string; version: string }[] };
+  const pins = JSON.parse(new TextDecoder().decode(made.written.get("C:\\alia-box\\build\\pins.json"))) as { tools: { name: string; arch: string; version: string }[] };
   assert.ok(pins.tools.length > 5 && pins.tools.every((pin) => pin.arch === "x86_64"), "the x86_64 pins alone");
   const written = result.build!.record!;
   assert.match(written.build, /^build\.\d{8}-\d{6}-[0-9a-f]{4}$/);
@@ -532,7 +532,7 @@ test("a Windows refresh runs refresh.ps1 in a box of the image, restarts it whil
   assert.equal(written.tools.node, "24.21.0");
   assert.equal(written.tools.pwsh, pins.tools.find((pin) => pin.name === "pwsh")!.version);
   assert.equal(written.tools["hardware-cursor"], "1", "refresh.ps1 turns on the hardware cursor, so the record lists it (060)");
-  assert.equal(new TextDecoder().decode(made.written.get("C:\\bb-box\\build\\refresh.ps1")), readFileSync(join(SETUP, "windows", "refresh.ps1"), "utf8"));
+  assert.equal(new TextDecoder().decode(made.written.get("C:\\alia-box\\build\\refresh.ps1")), readFileSync(join(SETUP, "windows", "refresh.ps1"), "utf8"));
 });
 
 test("a Windows refresh waits for the box to stay up after a restart, through the restart Windows makes by itself to finish its updates", async () => {
@@ -587,46 +587,46 @@ test("a Windows refresh that fails, or that Windows keeps asking to restart, kee
 test("the Windows refresh gives an image built before the OneDrive policy what the first logon gives a new one, and ends a running OneDrive (#707)", () => {
   const policy = /'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\OneDrive'[^\n]*\n?[^\n]*DisableFileSyncNGSC/;
   const refresh = readFileSync(join(SETUP, "windows", "refresh.ps1"), "utf8");
-  assert.match(readFileSync(join(SETUP, "proxmox-qemu", "answer", "bb-box", "firstlogon.ps1"), "utf8"), policy);
+  assert.match(readFileSync(join(SETUP, "proxmox-qemu", "answer", "alia-box", "firstlogon.ps1"), "utf8"), policy);
   assert.match(refresh, /New-ItemProperty -Path \$onedrive -Name DisableFileSyncNGSC -Value 1 -PropertyType DWord -Force/);
   assert.match(refresh, /Get-Process OneDrive -ErrorAction SilentlyContinue \| Stop-Process -Force/);
   assert.match(readFileSync(join(SETUP, "windows", "check.ps1"), "utf8"), /Check 'no OneDrive'/);
 });
 
 test("a Windows image's first logon and its refresh turn on the VirtIO GPU's hardware cursor, its record lists it, and its check sees the pointer out of the captured image (060)", () => {
-  const firstLogon = readFileSync(join(SETUP, "proxmox-qemu", "answer", "bb-box", "firstlogon.ps1"), "utf8");
+  const firstLogon = readFileSync(join(SETUP, "proxmox-qemu", "answer", "alia-box", "firstlogon.ps1"), "utf8");
   const refresh = readFileSync(join(SETUP, "windows", "refresh.ps1"), "utf8");
   const build = readFileSync(join(SETUP, "proxmox-qemu", "build.sh"), "utf8");
   const script = readFileSync(join(SETUP, "windows", "hardware-cursor.ps1"), "utf8");
-  assert.match(firstLogon, /& C:\\bb-box\\hardware-cursor\.ps1/);
+  assert.match(firstLogon, /& C:\\alia-box\\hardware-cursor\.ps1/);
   assert.match(refresh, /& "\$dir\\hardware-cursor\.ps1"/);
-  assert.match(build, /cp [^\n]*"\$here\/\.\.\/windows\/hardware-cursor\.ps1" "\$work\/answer\/bb-box\/"/);
+  assert.match(build, /cp [^\n]*"\$here\/\.\.\/windows\/hardware-cursor\.ps1" "\$work\/answer\/alia-box\/"/);
   assert.match(build, /openh264: \$openh264, "hardware-cursor": "1", /);
   assert.match(script, /-Name HWCursor -Value 1 -PropertyType DWord/);
   assert.match(script, /Control\\Class\\\$driver/);
   assert.match(script, /Control\\Video\\\$video\\0000/);
   assert.match(script, /pnputil \/restart-device/);
-  assert.match(readFileSync(join(SETUP, "windows", "check.ps1"), "utf8"), /Check 'pointer out of the captured image'[\s\S]*bb-box-stream\.exe[\s\S]*pointer > pointer\.txt/);
-  assert.match(readFileSync(join(SETUP, "windows", "bb-box-stream.cs"), "utf8"), /if \(mode == "pointer"\) return PointerTest\(\);/);
+  assert.match(readFileSync(join(SETUP, "windows", "check.ps1"), "utf8"), /Check 'pointer out of the captured image'[\s\S]*alia-box-stream\.exe[\s\S]*pointer > pointer\.txt/);
+  assert.match(readFileSync(join(SETUP, "windows", "alia-box-stream.cs"), "utf8"), /if \(mode == "pointer"\) return PointerTest\(\);/);
 });
 
-test("bb-box-stream.exe says where the pointer is only to a client that follows it, as Proxmox's video draws it in (#865)", () => {
-  const source = readFileSync(join(SETUP, "windows", "bb-box-stream.cs"), "utf8");
-  assert.match(source, /case "BB_POINTER_FOLLOW":\n\s+client\.FollowsPointer = true;\n\s+client\.Text\(pointerMessage \?\? Capture\.PointerAt\(\)\);/, "it asks, and gets where it is at once");
+test("alia-box-stream.exe says where the pointer is only to a client that follows it, as Proxmox's video draws it in (#865)", () => {
+  const source = readFileSync(join(SETUP, "windows", "alia-box-stream.cs"), "utf8");
+  assert.match(source, /case "ALIA_POINTER_FOLLOW":\n\s+client\.FollowsPointer = true;\n\s+client\.Text\(pointerMessage \?\? Capture\.PointerAt\(\)\);/, "it asks, and gets where it is at once");
   assert.match(source, /foreach \(Client client in all\) if \(client\.FollowsPointer\) client\.Text\(message\);/, "then each move, to followers only");
-  assert.match(source, /return "BB_POINTER," \+ \(cursor\.at\.x - GetSystemMetrics\(76\)\) \+ "," \+ \(cursor\.at\.y - GetSystemMetrics\(77\)\);/, "in the desktop's pixels");
+  assert.match(source, /return "ALIA_POINTER," \+ \(cursor\.at\.x - GetSystemMetrics\(76\)\) \+ "," \+ \(cursor\.at\.y - GetSystemMetrics\(77\)\);/, "in the desktop's pixels");
 });
 
-test("a Windows first logon builds bb-box-stream and sets the hardware cursor where its build pins OpenH264, as both builds do, Tart's arm64 one with its files copied (060)", () => {
-  const firstLogon = readFileSync(join(SETUP, "proxmox-qemu", "answer", "bb-box", "firstlogon.ps1"), "utf8");
+test("a Windows first logon builds alia-box-stream and sets the hardware cursor where its build pins OpenH264, as both builds do, Tart's arm64 one with its files copied (060)", () => {
+  const firstLogon = readFileSync(join(SETUP, "proxmox-qemu", "answer", "alia-box", "firstlogon.ps1"), "utf8");
   const tart = readFileSync(join(SETUP, "tart", "prepare-windows-image.sh"), "utf8");
   const guarded = /\nif \(\$build\.openh264\) \{\n([\s\S]*?)\n\} else \{\n/.exec(firstLogon);
   assert.ok(guarded, "the stream's steps are inside if ($build.openh264)");
   const outside = firstLogon.replace(guarded[0], "\n");
-  for (const file of ["install-stream.ps1", "hardware-cursor.ps1", "bb-box-stream.cs"]) {
-    assert.ok(guarded[1]!.includes(`C:\\bb-box\\${file}`), `${file} inside`);
-    assert.ok(!outside.includes(`C:\\bb-box\\${file}`), `${file} nowhere else`);
-    assert.match(tart, new RegExp(`cp [^\n]*"\\$here/\\.\\./windows/${file.replace(".", "\\.")}"[^\n]*"\\$a/bb-box/"`), `Tart's build copies ${file} for the first logon`);
+  for (const file of ["install-stream.ps1", "hardware-cursor.ps1", "alia-box-stream.cs"]) {
+    assert.ok(guarded[1]!.includes(`C:\\alia-box\\${file}`), `${file} inside`);
+    assert.ok(!outside.includes(`C:\\alia-box\\${file}`), `${file} nowhere else`);
+    assert.match(tart, new RegExp(`cp [^\n]*"\\$here/\\.\\./windows/${file.replace(".", "\\.")}"[^\n]*"\\$a/alia-box/"`), `Tart's build copies ${file} for the first logon`);
   }
   assert.match(tart, /^OPENH264_URL=https:\/\/ciscobinary\.openh264\.org\/openh264-2\.6\.0-win-arm64\.dll\.bz2$/m, "Tart's build pins Cisco's arm64 OpenH264");
   assert.match(tart, /pin openh264 "\$OPENH264_VERSION" "\$OPENH264_SHA256" "\$OPENH264_URL"/, "and hands it to the first logon");
@@ -643,7 +643,7 @@ test("a refreshed arm64 Windows record lists the hardware cursor once OpenH264 i
 });
 
 test("every Windows image sets the box user's password never to expire and the maximum password age to unlimited, records it, and its check fails one that expires", () => {
-  const firstLogon = readFileSync(join(SETUP, "proxmox-qemu", "answer", "bb-box", "firstlogon.ps1"), "utf8");
+  const firstLogon = readFileSync(join(SETUP, "proxmox-qemu", "answer", "alia-box", "firstlogon.ps1"), "utf8");
   const refresh = readFileSync(join(SETUP, "windows", "refresh.ps1"), "utf8");
   const check = readFileSync(join(SETUP, "windows", "check.ps1"), "utf8");
   const build = readFileSync(join(SETUP, "proxmox-qemu", "build.sh"), "utf8");
@@ -665,7 +665,7 @@ test("every Windows image sets the box user's password never to expire and the m
 test("setup/windows/pins.json has the Windows build scripts' pins, Node.js included", () => {
   const pins = (JSON.parse(readFileSync(join(SETUP, "windows", "pins.json"), "utf8")) as { tools: { name: string; arch: string; version: string; url: string; sha256: string }[] }).tools;
   const common: Record<string, string> = { PWSH: "pwsh", GIT: "git", GH: "gh", CUA: "cua-driver", VS: "vs-buildtools", LLVM: "llvm", RUSTUP: "rustup", NODE: "node", CLAUDE: "claude-code", CODEX: "codex", PI: "pi", FFMPEG: "ffmpeg" };
-  // bb-box-stream's encoder (060) on both: Cisco's x64 and arm64 builds.
+  // alia-box-stream's encoder (060) on both: Cisco's x64 and arm64 builds.
   for (const [script, arch, names] of [
     ["proxmox-qemu/build.sh", "x86_64", { ...common, OPENH264: "openh264" }],
     ["tart/prepare-windows-image.sh", "arm64", { ...common, OPENH264: "openh264" }],

@@ -3,14 +3,14 @@
 # Usage Bar
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue)](package.json)
-[![BB](https://img.shields.io/badge/bb-0.43%2B-blue)](https://getbb.app)
+[![VesnALIA](https://img.shields.io/badge/bb-0.43%2B-blue)](https://getbb.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Keep provider quotas and reset times within reach. Open the details for a broader view of usage windows and recorded token totals across BB.
+Keep provider quotas and reset times within reach. Open the details for a broader view of usage windows and recorded token totals across VesnALIA.
 
 [Quick start](#quick-start) · [Install](#install) · [Requirements](#requirements) · [All plugins](../../README.md)
 
-![Usage Bar in BB](../../marketplace/screenshots/usage-bar/overview.png)
+![Usage Bar in VesnALIA](../../marketplace/screenshots/usage-bar/overview.png)
 
 *The screenshot shows illustrative provider quotas and token totals in an isolated demo. It contains no personal account data.*
 
@@ -20,11 +20,11 @@ Keep provider quotas and reset times within reach. Open the details for a broade
 | --- | --- |
 | **Always within reach** | The sidebar shows weekly usage and time until reset for reporting provider accounts. |
 | **Look across windows and hosts** | Open the details for available quota windows, account status and connected-host information. |
-| **Understand recorded usage** | View tokens for today and the current month, including archived threads and hidden agents reported to BB. |
+| **Understand recorded usage** | View tokens for today and the current month, including archived threads and hidden agents reported to VesnALIA. |
 
 ## Quick start
 
-1. Configure your provider accounts through BB as usual.
+1. Configure your provider accounts through VesnALIA as usual.
 2. Read the usage chips above the sidebar footer.
 3. Click the bar to open the detailed view.
 4. Refresh when you need the latest provider snapshot.
@@ -34,21 +34,21 @@ Keep provider quotas and reset times within reach. Open the details for a broade
 From a local checkout, install this package:
 
 ```sh
-bb plugin install ./plugins/usage-bar
+alia plugin install ./plugins/usage-bar
 ```
 
 <details>
 <summary>Install a versioned release</summary>
 
 ```sh
-bb plugin install 'git:https://github.com/dmitriikapustin/bb-plugins-by-kapustin.git@^0.1.0' --plugin usage-bar --tag-prefix usage-bar/
+alia plugin install 'git:https://github.com/dmitriikapustin/bb-plugins-by-kapustin.git@^0.1.0' --plugin usage-bar --tag-prefix usage-bar/
 ```
 
 Compatible updates remain explicit:
 
 ```sh
-bb plugin outdated
-bb plugin update usage-bar
+alia plugin outdated
+alia plugin update usage-bar
 ```
 
 </details>
@@ -57,19 +57,19 @@ Works independently. The optional Usage Limits plugin adds a separate footer sho
 
 ## Requirements
 
-BB **0.43+** and Plugin SDK **0.4.87+**.
+VesnALIA **0.43+** and Plugin SDK **0.4.87+**.
 
-Uses BB’s provider integrations and their existing authentication. A provider and connected host must report quota information for their limits to appear; no extra credentials are required by this plugin.
+Uses VesnALIA’s provider integrations and their existing authentication. A provider and connected host must report quota information for their limits to appear; no extra credentials are required by this plugin.
 
-Token totals include only usage providers recorded in BB. History permanently deleted before the first collection cannot be reconstructed. These counters are not billing statements.
+Token totals include only usage providers recorded in VesnALIA. History permanently deleted before the first collection cannot be reconstructed. These counters are not billing statements.
 
 ## From the terminal
 
 ```sh
-bb usage-bar
-bb usage-bar --all --force
-bb usage-bar --json
-bb usage-bar --tokens
+alia usage-bar
+alia usage-bar --all --force
+alia usage-bar --json
+alia usage-bar --tokens
 ```
 
 <details>
@@ -84,7 +84,7 @@ Token totals use the browser timezone in the interface and the server timezone i
 <details>
 <summary>Development</summary>
 
-From the repository root, using Node 22.19+ and the BB CLI:
+From the repository root, using Node 22.19+ and the VesnALIA CLI:
 
 ```sh
 node scripts/run.mjs deps usage-bar
@@ -93,7 +93,7 @@ node scripts/run.mjs test usage-bar
 node scripts/run.mjs build usage-bar
 ```
 
-The test command reports when a package has no declared test suite. To reload a development installation, first confirm that `bb plugin source usage-bar` points to the copy you edited, then run `bb plugin reload usage-bar`.
+The test command reports when a package has no declared test suite. To reload a development installation, first confirm that `alia plugin source usage-bar` points to the copy you edited, then run `alia plugin reload usage-bar`.
 
 </details>
 

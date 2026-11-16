@@ -1,7 +1,7 @@
 // Topology tab (§4.6), drawn the way Graph Studio draws a graph: compact
 // cards in layers from top to bottom — the lead on top, its groups below —
-// and edges as computed paths (lib/canvas-layout.ts). Cards take the BB
-// theme's own tokens, so the canvas reads as part of BB and not as a widget.
+// and edges as computed paths (lib/canvas-layout.ts). Cards take the VesnALIA
+// theme's own tokens, so the canvas reads as part of VesnALIA and not as a widget.
 //
 // Two layers of edges: the crew's links (assigns, works with, …) in muted
 // strokes, and the messages members actually sent in the primary colour, a
@@ -289,7 +289,7 @@ export function colorLightness(color: string): number | null {
   return null;
 }
 
-/** React Flow's colour mode from the BB theme on screen, so its chrome is never light inside a dark BB. */
+/** React Flow's colour mode from the VesnALIA theme on screen, so its chrome is never light inside a dark VesnALIA. */
 export function useHostColorMode(): [React.RefObject<HTMLDivElement | null>, ColorMode] {
   const ref = useRef<HTMLDivElement | null>(null);
   const [mode, setMode] = useState<ColorMode>("system");
@@ -299,7 +299,7 @@ export function useHostColorMode(): [React.RefObject<HTMLDivElement | null>, Col
     if (lightness !== null) setMode(lightness < 0.5 ? "dark" : "light");
   }, []);
   useLayoutEffect(measure);
-  // BBP-81: BB switches the theme by class on <html> without re-rendering the
+  // BBP-81: VesnALIA switches the theme by class on <html> without re-rendering the
   // plugin; measured only on render, the canvas kept the theme it opened in.
   useEffect(() => {
     if (typeof MutationObserver !== "function") return;
@@ -565,7 +565,7 @@ export function MemberCard({
   const [busy, setBusy] = useState(false);
   const needs = (view?.needsYou.length ?? 0) > 0;
   const isError = hasErrorReason(view?.needsYou ?? []);
-  // A BB interaction (approval, provider question) is answered in the thread; a crew_send question here.
+  // A VesnALIA interaction (approval, provider question) is answered in the thread; a crew_send question here.
   const inThread = view?.needsYou.some((reason) => reason === "approval" || reason === "question") ?? false;
   return (
     <aside aria-label="Member card" className="w-full flex-none rounded-lg border border-border bg-card p-4 text-xs @3xl:w-[300px]">

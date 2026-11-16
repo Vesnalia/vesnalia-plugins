@@ -5,7 +5,7 @@
 // clock stands, as `bend sync --json`, `--status` and `--log` give them.
 //
 // Why: syncing is bend's, for every tracker; the plugin only shows it
-// (bead-bb-c9l.16). These are the words it is shown in, the same in the
+// (bead-alia-c9l.16). These are the words it is shown in, the same in the
 // server, the contract and the tab. They are written to match
 // bend/internal/kept/report.go and bend/internal/tracker/sync.go, where
 // each is explained in full.
@@ -16,7 +16,7 @@
 //   in: bend says so when a tracker cannot tell, and nothing above guesses.
 //
 // Gotchas:
-// - This file must stay free of imports from the plugin and from BB: the
+// - This file must stay free of imports from the plugin and from VesnALIA: the
 //   tab's code and the server's both read it.
 
 /**

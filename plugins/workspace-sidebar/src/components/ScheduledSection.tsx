@@ -17,7 +17,7 @@ import { TONE_TEXT, type StatusTone } from "./ThreadStatus";
 
 export function ScheduledSection({ projectIds, now }: { projectIds: readonly string[] | null; now: number }) {
   const { value, refresh, run, setEnabled, remove } = useScheduledTasks();
-  const [expanded, setExpanded] = usePersistedFlag("bb-workspace-sidebar:scheduled-expanded:v1", false);
+  const [expanded, setExpanded] = usePersistedFlag("alia-workspace-sidebar:scheduled-expanded:v1", false);
   const sectionId = useId();
   const entries = useMemo(() => visibleScheduledTasks(value?.entries ?? [], projectIds), [value, projectIds]);
   if (!value || value.availability === "unavailable" || (value.availability === "ready" && !entries.length)) return null;
@@ -27,7 +27,7 @@ export function ScheduledSection({ projectIds, now }: { projectIds: readonly str
     <DockHeader label="Scheduled" icon="Repeat" expanded={expanded} onToggle={() => setExpanded(!expanded)} controls={sectionId}
       count={value.availability === "error" ? "Unavailable" : attention ? `${attention} need attention` : running ? `${running} running` : entries.length}
       countTone={attention ? "ws-tone-danger" : running ? "ws-tone-working" : undefined} />
-    {expanded && <div id={sectionId} className="bb-ws-section-tree max-h-48 overflow-y-auto pb-1">
+    {expanded && <div id={sectionId} className="alia-ws-section-tree max-h-48 overflow-y-auto pb-1">
       {value.availability === "error"
         ? <div className="px-3 py-1 text-xs text-muted-foreground/70" role="status">Couldn’t load schedules. <button type="button" onClick={refresh} className="underline underline-offset-2 hover:text-foreground">Retry</button></div>
         : <ul>{entries.map(task => <ScheduledTaskRow key={task.id} task={task} now={now} showProject={projectIds === null || projectIds.length !== 1} onRun={run} onSetEnabled={setEnabled} onDelete={remove} />)}</ul>}

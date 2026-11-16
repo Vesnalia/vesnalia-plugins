@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it, vi } from "vitest";
 import { createShuttlePlugin } from "../server";
 import { Shuttle } from "../src/shuttle";
@@ -128,10 +128,10 @@ describe("the pause RPC", () => {
   it("persists across plugin reloads, respects the old toggle, and validates input", async () => {
     let now = Date.parse("2026-11-11T12:00:00Z");
     const initial = createFakePluginHost({ pluginId: "shuttle", sdk: { subscribe: () => () => {} } });
-    const { bb } = initial;
+    const { alia } = initial;
     let host = initial.harness;
     const plugin = createShuttlePlugin({ now: () => now });
-    await plugin(bb);
+    await plugin(alia);
     try {
       const until = now + DAY;
       await host.behavior.callRpc("setAutomationPause", { mode: "until", until });

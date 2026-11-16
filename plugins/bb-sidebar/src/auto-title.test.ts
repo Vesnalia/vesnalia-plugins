@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { AUTO_TITLE_RECOVERY_MIGRATION, createAutoTitleRecovery } from "./auto-title";
 import { createTitleRegenerator, PermanentTitleError } from "./regenerate-title";
 
@@ -11,9 +11,9 @@ afterEach(async () => {
 });
 
 function setup(useRealGenerator = false) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "bb-sidebar" });
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [AUTO_TITLE_RECOVERY_MIGRATION]);
+  const { alia, harness } = createFakePluginHost({ pluginId: "alia-sidebar" });
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [AUTO_TITLE_RECOVERY_MIGRATION]);
   let thread = makeThreadResponse({
     id: "target",
     title: null,
@@ -44,10 +44,10 @@ function setup(useRealGenerator = false) {
     ],
   }));
   const regenerate = vi.fn(async () => ({ title: "Review sidebar pull request", changed: true }));
-  createAutoTitleRecovery(bb, useRealGenerator ? createTitleRegenerator(bb) : regenerate);
+  createAutoTitleRecovery(alia, useRealGenerator ? createTitleRegenerator(alia) : regenerate);
   disposers.push(() => harness.lifecycle.dispose());
   return {
-    bb,
+    alia,
     harness,
     sdk,
     db,
@@ -69,7 +69,7 @@ function setup(useRealGenerator = false) {
 }
 
 describe("automatic title recovery", () => {
-  it("waits for BB, recovers once, and remembers the attempt after reload", async () => {
+  it("waits for VesnALIA, recovers once, and remembers the attempt after reload", async () => {
     const state = setup();
     await state.active();
     await state.idle();
@@ -80,7 +80,7 @@ describe("automatic title recovery", () => {
     await state.active();
     await vi.advanceTimersByTimeAsync(10_000);
     expect(state.regenerate).toHaveBeenCalledTimes(1);
-    const replacement = await state.harness.lifecycle.reload((bb) => createAutoTitleRecovery(bb, state.regenerate));
+    const replacement = await state.harness.lifecycle.reload((alia) => createAutoTitleRecovery(alia, state.regenerate));
     disposers.push(() => replacement.harness.lifecycle.dispose());
     await replacement.harness.behavior.emitThreadEvent("thread.active", {
       thread: makeThreadResponse({ id: "target", title: null, visibility: "visible" }),
@@ -89,10 +89,10 @@ describe("automatic title recovery", () => {
     expect(state.regenerate).toHaveBeenCalledTimes(1);
   });
 
-  it("lets BB's successful title win before recovery starts", async () => {
+  it("lets VesnALIA's successful title win before recovery starts", async () => {
     const state = setup();
     await state.active();
-    state.setThread({ title: "BB generated title" });
+    state.setThread({ title: "VesnALIA generated title" });
     await vi.advanceTimersByTimeAsync(10_000);
     expect(state.regenerate).not.toHaveBeenCalled();
     expect(state.sdk.callsTo("system.aiServices")).toHaveLength(0);
@@ -162,7 +162,7 @@ describe("automatic title recovery", () => {
     expect(state.regenerate).toHaveBeenCalledTimes(5);
   });
 
-  it("asks bb at most three times for a thread whose generation always fails", async () => {
+  it("asks VesnALIA at most three times for a thread whose generation always fails", async () => {
     const state = setupCore();
     state.sdk.stub("threads.experimental_regenerateTitle", async () => {
       throw new Error("The title service timed out");
@@ -179,10 +179,10 @@ describe("automatic title recovery", () => {
     });
     await state.attempt();
     expect(state.sdk.callsTo("threads.experimental_regenerateTitle")).toHaveLength(1);
-    let db!: ReturnType<typeof state.bb.storage.database>;
-    const replacement = await state.harness.lifecycle.reload((bb) => {
-      db = bb.storage.database();
-      createAutoTitleRecovery(bb, state.regenerate);
+    let db!: ReturnType<typeof state.alia.storage.database>;
+    const replacement = await state.harness.lifecycle.reload((alia) => {
+      db = alia.storage.database();
+      createAutoTitleRecovery(alia, state.regenerate);
     });
     disposers.push(() => replacement.harness.lifecycle.dispose());
     expect(db.prepare("SELECT thread_id FROM title_recovery_attempts").all()).toEqual([{ thread_id: "target" }]);
@@ -256,7 +256,7 @@ describe("automatic title recovery", () => {
     expect(state.regenerate).toHaveBeenCalledTimes(3);
   });
 
-  it("names an untitled thread through bb with the selected service", async () => {
+  it("names an untitled thread through VesnALIA with the selected service", async () => {
     const state = setupCore();
     await state.active();
     await vi.advanceTimersByTimeAsync(10_000);
@@ -265,7 +265,7 @@ describe("automatic title recovery", () => {
     expect(state.sdk.callsTo("threads.update")).toHaveLength(0);
   });
 
-  it("does not ask bb when the thread got a title just before recovery", async () => {
+  it("does not ask VesnALIA when the thread got a title just before recovery", async () => {
     const state = setupCore();
     state.sdk.stub("system.aiServices", async () => {
       state.setThread({ title: "My title" });

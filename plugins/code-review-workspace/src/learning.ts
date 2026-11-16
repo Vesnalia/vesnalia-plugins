@@ -1,7 +1,7 @@
 // What the reviewer does with the review assistant's draft comments: which they remove (so the agent
 // doesn't raise them again), and, once a review is submitted, which they kept, edited, or removed.
 // The reviewer can ask an agent to propose instruction lines from them; nothing applies them but Save.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { postedBody, sameLocation, type CommentLocation, type Draft, type DraftComment } from "./draft";
 import { diffPositions } from "./review-positions";
 import { agentPlacement, machineUnavailable, personalProjectId } from "./machines";
@@ -294,28 +294,28 @@ const SUGGESTER_TITLE = "Suggest assistant instructions";
  * Proposals for the assistant's instructions, from a short-lived hidden worker on the review assistant's
  * agent. One runs at a time; `changed` is told when the proposal's state changes.
  */
-export function createInstructionSuggester(bb: BbPluginApi, store: AsyncStore, changed: () => void) {
+export function createInstructionSuggester(alia: AliaPluginApi, store: AsyncStore, changed: () => void) {
   let suggestion: Suggestion = { state: "idle" };
   const stopped = new AbortController();
-  bb.onDispose(() => stopped.abort());
+  alia.onDispose(() => stopped.abort());
   const settle = (next: Suggestion) => { suggestion = next; changed(); };
 
   async function run(prompt: string) {
-    // Read while the handle is live: after a dispose, bb.sdk throws, and the finally still stops the worker.
-    const threads = bb.sdk.threads;
+    // Read while the handle is live: after a dispose, alia.sdk throws, and the finally still stops the worker.
+    const threads = alia.sdk.threads;
     let workerId: string | undefined;
     try {
       const { assistantAgent } = (await store.getPreferences()).preferences;
-      const unavailable = await machineUnavailable(bb, assistantAgent, "review assistant");
+      const unavailable = await machineUnavailable(alia, assistantAgent, "review assistant");
       if (unavailable) return settle({ state: "failed", at: Date.now(), error: unavailable });
-      const projectId = await personalProjectId(bb);
-      if (!projectId) return settle({ state: "failed", at: Date.now(), error: "bb has no project to run the agent in." });
-      const placement = await agentPlacement(bb, assistantAgent, projectId);
-      // It runs at the review agent's permissions with no review of its own: to bb review, every review is another's,
+      const projectId = await personalProjectId(alia);
+      if (!projectId) return settle({ state: "failed", at: Date.now(), error: "alia has no project to run the agent in." });
+      const placement = await agentPlacement(alia, assistantAgent, projectId);
+      // It runs at the review agent's permissions with no review of its own: to VesnALIA review, every review is another's,
       // from its first command, which may come before its spawn returns.
-      const worker = await spawningFor(bb, SUGGESTER_TITLE, NO_REVIEW, async () => {
+      const worker = await spawningFor(alia, SUGGESTER_TITLE, NO_REVIEW, async () => {
         const worker = await threads.spawn({ ...placement, prompt, title: SUGGESTER_TITLE, visibility: "hidden", ...spawnExecution(assistantAgent) });
-        await recordFormerWorker(bb, worker.id, null, "suggester");
+        await recordFormerWorker(alia, worker.id, null, "suggester");
         return worker;
       });
       workerId = worker.id;
@@ -324,7 +324,7 @@ export function createInstructionSuggester(bb: BbPluginApi, store: AsyncStore, c
       settle({ state: "ready", at: Date.now(), text: suggestionLines(output ?? "") });
     } catch (error) {
       if (stopped.signal.aborted) return;
-      bb.log.warn(`Suggesting assistant instructions failed: ${String(error)}`);
+      alia.log.warn(`Suggesting assistant instructions failed: ${String(error)}`);
       settle({ state: "failed", at: Date.now(), error: "The agent couldn’t suggest changes. Try again." });
     } finally {
       if (workerId) {
@@ -347,8 +347,8 @@ export function createInstructionSuggester(bb: BbPluginApi, store: AsyncStore, c
         return { ok: true, prompt: suggestionPrompt((await tx.getPreferences()).preferences.assistantInstructions, material) };
       });
       // Started after the block, which its reads of the store would wait for.
-      // Started from an RPC, outside any service: a rejection nothing handles would end BB.
-      if (prompt !== undefined) void run(prompt).catch((error) => { if (!stopped.signal.aborted) bb.log.warn(`Suggesting assistant instructions failed: ${String(error)}`); });
+      // Started from an RPC, outside any service: a rejection nothing handles would end VesnALIA.
+      if (prompt !== undefined) void run(prompt).catch((error) => { if (!stopped.signal.aborted) alia.log.warn(`Suggesting assistant instructions failed: ${String(error)}`); });
       return result;
     },
     /** Forget a finished proposal; one still running carries on. */

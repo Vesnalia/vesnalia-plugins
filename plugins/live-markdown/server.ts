@@ -1,15 +1,15 @@
-// bb-plugin-live-markdown — backend.
+// alia-plugin-live-markdown — backend.
 //
-// Two RPCs over bb.sdk.files: `read` returns the file's exact text and its
+// Two RPCs over alia.sdk.files: `read` returns the file's exact text and its
 // sha256; `write` saves with compare-and-swap against the sha256 the editor
 // last saw, so an agent's concurrent edit becomes a conflict, never a silent
 // overwrite. The editor never re-serializes Markdown: what it writes is the
 // buffer, byte for byte.
 import path from "node:path";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
-/** Larger files stay in BB's read-only preview; a live-preview buffer this big is not a note. */
+/** Larger files stay in VesnALIA's read-only preview; a live-preview buffer this big is not a note. */
 const MAX_EDITABLE_BYTES = 4 * 1024 * 1024;
 
 const sourceSchema = z
@@ -57,11 +57,11 @@ interface Target {
   hostId?: string;
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   async function resolveTarget(source: Source, filePath: string): Promise<Target> {
     if (source.kind === "thread-storage") {
       if (source.threadId === null) throw new Error("This thread-storage file has no thread");
-      const { hostId, storageRootPath } = await bb.sdk.threads.storageLocation({
+      const { hostId, storageRootPath } = await alia.sdk.threads.storageLocation({
         threadId: source.threadId,
       });
       return { path: path.join(storageRootPath, filePath), rootPath: storageRootPath, hostId };
@@ -71,7 +71,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (source.kind !== "workspace" || source.projectId === null) {
         throw new Error("This file has no environment or project to resolve it against");
       }
-      const project = await bb.sdk.projects.get({ projectId: source.projectId });
+      const project = await alia.sdk.projects.get({ projectId: source.projectId });
       const checkout =
         source.experimental_hostId === undefined
           ? (project.sources.find((entry) => entry.isDefault) ?? project.sources[0])
@@ -84,7 +84,7 @@ export default async function plugin(bb: BbPluginApi) {
       };
     }
 
-    const environment = await bb.sdk.environments.get({ environmentId: source.environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId: source.environmentId });
     const hostId = environment.hostId ? { hostId: environment.hostId } : {};
     if (source.kind === "host") {
       const api = path.win32.isAbsolute(filePath) ? path.win32 : path.posix;
@@ -94,10 +94,10 @@ export default async function plugin(bb: BbPluginApi) {
     return { path: path.join(environment.path, filePath), rootPath: environment.path, ...hostId };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async read({ path: filePath, source }) {
       const target = await resolveTarget(source, filePath);
-      const file = await bb.sdk.files.read(target);
+      const file = await alia.sdk.files.read(target);
       if (file.contentEncoding !== "utf8") {
         return { kind: "unsupported" as const, reason: "This file is not UTF-8 text" };
       }
@@ -117,7 +117,7 @@ export default async function plugin(bb: BbPluginApi) {
 
     async write({ path: filePath, source, content, expectedSha256 }) {
       const target = await resolveTarget(source, filePath);
-      const result = await bb.sdk.files.write({
+      const result = await alia.sdk.files.write({
         ...target,
         content,
         contentEncoding: "utf8",

@@ -37,7 +37,7 @@
   pointer-events: none; z-index: 0;
 }
 .sb-meta, .sb-two-line-meta { font-size: 11px; }
-/* Sized to its items, so bb's metadata line, which grows to fill its parent, never takes width from the title. */
+/* Sized to its items, so alia's metadata line, which grows to fill its parent, never takes width from the title. */
 .sb-row-meta { display: flex; flex: 0 1 auto; min-width: 0; max-width: 7rem; overflow: hidden; margin-left: calc(-1 * var(--sb-gap)); }
 .sb-row-meta > [data-thread-row-metadata] { margin-left: var(--sb-gap); }
 .sb-two-line-stack { gap: 3px; }
@@ -191,7 +191,7 @@
 .sb-info-top { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted-foreground); }
 .sb-info-kbd { margin-left: auto; color: var(--subtle-foreground); }
 .sb-info-title { margin: 4px 0 2px; font-size: 13px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
-/* bb's ThreadTitle puts each run of text in a `truncate whitespace-pre` span, which never wraps on its own. */
+/* alia's ThreadTitle puts each run of text in a `truncate whitespace-pre` span, which never wraps on its own. */
 .sb-info-title > span { white-space: pre-wrap; }
 .sb-info-title > * { max-width: 100%; }
 .sb-info-crumb, .sb-info-muted { color: var(--muted-foreground); }
@@ -255,10 +255,10 @@
    drop; a background fade repaints on the main thread every frame. */
 .sb-flash::after { background: color-mix(in oklch, var(--primary) 28%, transparent); opacity: 0; animation: sb-flash .9s ease-out; }
 @keyframes sb-flash { from { opacity: 1; } to { opacity: 0; } }
-/* The spinner turns on the compositor: a main-thread timer stutters whenever bb is busy, and an animated SVG
+/* The spinner turns on the compositor: a main-thread timer stutters whenever alia is busy, and an animated SVG
    image repaints every frame. It makes one turn a second in 30 steps, which caps it at 30 frames a second with
    an even cadence on 60 and 120 Hz screens. One iteration lasts 1000 turns because React listens for
-   animationiteration, and every iteration event wakes the main thread. bb restyles every running animation on
+   animationiteration, and every iteration event wakes the main thread. alia restyles every running animation on
    each main-thread frame while a thread streams, so status-glyph.tsx animates only the spinners on screen. */
 @keyframes sb-spin { to { transform: rotate(1000turn); } }
 @media (prefers-reduced-motion: no-preference) {
@@ -268,7 +268,7 @@
   .sb-control { transition: none; }
   .sb-flash::after { animation: none; }
 }
-@media (pointer: coarse) { .sb-row { min-height: max(var(--sb-row-h), var(--bb-sidebar-row-height-coarse, 2.5rem)); } }
+@media (pointer: coarse) { .sb-row { min-height: max(var(--sb-row-h), var(--alia-sidebar-row-height-coarse, 2.5rem)); } }
 @media (hover: hover) {
   .sb-quick-actions, .sb-menu-trigger { display: none; }
   /* The open menu is portalled outside the row and anchored to the trigger: hiding the

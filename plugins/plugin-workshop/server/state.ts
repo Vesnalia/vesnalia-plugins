@@ -40,7 +40,7 @@ export interface StateFacts {
    * null — nothing to tell. The engine decides which attempt counts: a rollback runs even when the work is already back in Implementation.
    */
   attempt: AttemptFact | null;
-  /** The plugin came up in bb as `needs-configuration` (last confirmed state): at Rollout the card says "needs configuration". */
+  /** The plugin came up in VesnALIA as `needs-configuration` (last confirmed state): at Rollout the card says "needs configuration". */
   needsConfiguration?: boolean;
   /** A review is about to start on its own: what is about to happen — instead of "the agent finished its turn"; null — nothing. */
   reviewsDue?: string | null;

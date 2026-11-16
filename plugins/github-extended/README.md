@@ -4,13 +4,13 @@
 
 # GitHub Extended
 
-### Keep GitHub work moving, from one BB inbox.
+### Keep GitHub work moving, from one VesnALIA inbox.
 
-Review issues, pull requests, and security alerts without leaving BB.<br>
+Review issues, pull requests, and security alerts without leaving VesnALIA.<br>
 Turn repeat work into automations you can inspect and approve.
 
 ![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)
-![bb ≥ 0.0](https://img.shields.io/badge/bb-%E2%89%A5%200.0-0969da)
+![VesnALIA ≥ 0.0](https://img.shields.io/badge/bb-%E2%89%A5%200.0-0969da)
 ![Plugin SDK ≥ 0.6.49](https://img.shields.io/badge/plugin%20sdk-%E2%89%A5%200.6.49-0550ae)
 ![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 
@@ -25,7 +25,7 @@ Turn repeat work into automations you can inspect and approve.
 <br>
 
 > [!NOTE]
-> The screenshots are real BB captures populated with fictional demo data.
+> The screenshots are real VesnALIA captures populated with fictional demo data.
 
 ## The problem
 
@@ -83,7 +83,7 @@ Custom tasks use the same approval and dry-run controls as built-in actions.
 
 ### 💬 Keep the conversation attached
 
-**Ask agent** opens BB's native composer. Choose your task, project, model,
+**Ask agent** opens VesnALIA's native composer. Choose your task, project, model,
 environment, and permissions, then return to the linked conversation later.
 
 </td>
@@ -110,10 +110,10 @@ history for the selected repository, including older runs and their audit detail
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/MacHatter1/bb-plugin-github-extended --yes
+alia plugin install git:https://github.com/MacHatter1/bb-plugin-github-extended --yes
 ```
 
-Open **GitHub+** in BB. Repositories are discovered from your projects' GitHub
+Open **GitHub+** in VesnALIA. Repositories are discovered from your projects' GitHub
 `origin` remotes; add others in Settings.
 
 <details>
@@ -121,17 +121,17 @@ Open **GitHub+** in BB. Repositories are discovered from your projects' GitHub
 
 ```sh
 git clone https://github.com/MacHatter1/bb-plugin-github-extended
-cd bb-plugin-github-extended
+cd alia-plugin-github-extended
 npm install
 npm run build
-bb plugin install path:$PWD --yes
+alia plugin install path:$PWD --yes
 ```
 
 </details>
 
 **Requirements**
 
-- BB with Plugin SDK **0.6.49 or newer**.
+- VesnALIA with Plugin SDK **0.6.49 or newer**.
 - The [GitHub CLI](https://cli.github.com/), authenticated for `github.com`:
   `gh auth login`, then `gh auth status --hostname github.com`.
 - Access to the repositories you track. Dependabot alerts must be enabled and
@@ -147,14 +147,14 @@ GitHub Enterprise remotes are not discovered. The plugin uses `github.com`.
 | **GitHub+ → Automations** | Saved rules, immediate on/off switches, native creation composer, and the manual builder |
 | **GitHub+ → Activity** | Run outputs, audit details, replay controls, and linked agent conversations |
 | **GitHub+ → Settings** | Tracked repositories and advanced automation enablement, polling, and quota controls |
-| **Ask agent** on an item | Investigate, fix, or review it in BB's native composer |
+| **Ask agent** on an item | Investigate, fix, or review it in VesnALIA's native composer |
 | **@** and **#** in the composer | Mention tracked GitHub issues and pull requests |
 
 ## How it works
 
 ```mermaid
 flowchart TD
-  A[BB project remotes + extra repositories] --> B[Read GitHub through gh]
+  A[ALIA project remotes + extra repositories] --> B[Read GitHub through gh]
   B --> C[Local SQLite cache]
   C --> D[Inbox and item details]
   E[Poll enabled repositories] --> F[Compare issue, PR, and branch snapshots]
@@ -196,10 +196,10 @@ template variables, polling limits, retries, and quota behaviour.
   the configured base branch in the attached project checkout.
 
 <details>
-<summary><b>Running alongside BB's built-in GitHub plugin</b></summary>
+<summary><b>Running alongside VesnALIA's built-in GitHub plugin</b></summary>
 
-The commands, storage, and panel routes are separate: `bb github-extended` and
-`bb github` do not overwrite each other. Running both can duplicate panels,
+The commands, storage, and panel routes are separate: `alia github-extended` and
+`alia github` do not overwrite each other. Running both can duplicate panels,
 mention suggestions, background refreshes, and API traffic. Keep the built-in
 `github` plugin disabled if you want a single GitHub surface.
 
@@ -208,21 +208,21 @@ mention suggestions, background refreshes, and API traffic. Keep the built-in
 ## CLI
 
 ```sh
-bb github-extended repos
-bb github-extended issues acme/api
-bb github-extended prs acme/web
-bb github-extended jobs
+alia github-extended repos
+alia github-extended issues acme/api
+alia github-extended prs acme/web
+alia github-extended jobs
 ```
 
 List commands read cached data and return plain text. Use `sync` to refresh it.
-The explicit command form is `bb plugin run github-extended <command>`.
+The explicit command form is `alia plugin run github-extended <command>`.
 
 <details>
 <summary><b>All commands</b></summary>
 
 | Command | Does |
 | --- | --- |
-| `repos` | List repositories discovered from BB projects and `extraRepos` |
+| `repos` | List repositories discovered from VesnALIA projects and `extraRepos` |
 | `issues [owner/repo]` | List cached open issues |
 | `prs [owner/repo]` | List cached open pull requests |
 | `sync` | Refresh the cache from GitHub |
@@ -245,7 +245,7 @@ browsing and inspecting stored work.
 
 ## Settings
 
-Use `bb plugin config github-extended`, or open the plugin's settings in BB.
+Use `alia plugin config github-extended`, or open the plugin's settings in VesnALIA.
 The GitHub+ Settings drawer contains repository and automation controls.
 
 <details>
@@ -254,11 +254,11 @@ The GitHub+ Settings drawer contains repository and automation controls.
 | Setting | Default | Effect |
 | --- | --- | --- |
 | `extraRepos` | Empty string | Comma-separated `owner/repo` entries, in addition to project remotes; invalid entries are ignored and logged |
-| `defaultProject` | Unset | BB project for repositories that are not attached to a discovered project |
+| `defaultProject` | Unset | VesnALIA project for repositories that are not attached to a discovered project |
 | `automationDryRun` | `true` | Record intended automation actions without starting agents, posting, or updating checkouts |
 
 ```sh
-bb plugin config github-extended set extraRepos "acme/api,acme/web"
+alia plugin config github-extended set extraRepos "acme/api,acme/web"
 ```
 
 Advanced automation settings also control polling: enabled by default, every
@@ -272,8 +272,8 @@ repository until you enable it. See the [automation guide](docs/AUTOMATION.md).
 <summary><b>Turning it off</b></summary>
 
 ```sh
-bb plugin disable github-extended
-bb plugin enable github-extended
+alia plugin disable github-extended
+alia plugin enable github-extended
 ```
 
 To stop scheduled event detection, turn off polling or disable the repository under
@@ -289,8 +289,8 @@ npm test
 npm run typecheck
 npm run build
 npm run check:package
-bb plugin install path:$PWD --yes
-bb plugin dev
+alia plugin install path:$PWD --yes
+alia plugin dev
 ```
 
 ```text

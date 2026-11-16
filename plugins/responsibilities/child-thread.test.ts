@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { NewThreadRequest, PluginThreadActionTarget } from "@get-bb/plugin-sdk/app";
+import type { NewThreadRequest, PluginThreadActionTarget } from "@vesnalia/plugin-sdk/app";
 import { childSpawnArgs, childThreadItem, currentChildTarget, openChildComposer } from "./child-thread";
 
 const thread: PluginThreadActionTarget = {

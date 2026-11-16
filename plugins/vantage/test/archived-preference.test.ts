@@ -12,7 +12,7 @@ describe("createArchivedPreference", () => {
   it("hides archived threads on the page and shows them in the side tab by default", () => {
     expect(createArchivedPreference(window, "page").get()).toBe(false);
     expect(createArchivedPreference(window, "panel").get()).toBe(true);
-    expect(ARCHIVED_STORAGE_KEYS).toEqual({ page: "bb-plugin-vantage:page-archived", panel: "bb-plugin-vantage:panel-archived" });
+    expect(ARCHIVED_STORAGE_KEYS).toEqual({ page: "alia-plugin-vantage:page-archived", panel: "alia-plugin-vantage:panel-archived" });
   });
 
   it.each<[ArchivedSurface, boolean]>([["page", true], ["panel", false]])("remembers a choice made on the %s", (surface, value) => {

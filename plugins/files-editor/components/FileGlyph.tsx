@@ -2,7 +2,7 @@ import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { glyphTone, type GlyphTone } from "@/lib/file-kind";
 
-// Mid-range hues only: BB's palettes are user-selectable rather than a plain
+// Mid-range hues only: VesnALIA's palettes are user-selectable rather than a plain
 // light/dark pair, so a `dark:` variant would not track the active theme.
 const TONE_CLASS: Readonly<Record<GlyphTone, string>> = {
   code: "text-sky-500",

@@ -5,7 +5,7 @@ created: 2026-10-14
 updated: 2026-10-14
 status: active
 confidence: medium
-tags: [architecture, bb-plugin, runtime]
+tags: [architecture, alia-plugin, runtime]
 sources:
   - package.json
   - app.tsx
@@ -24,11 +24,11 @@ sources:
 
 # Architecture
 
-TL;DR: BB loads a generated theme stylesheet, mounts the plugin app and server, and connects the app to the server through the SDK's typed RPC and realtime APIs.
+TL;DR: VesnALIA loads a generated theme stylesheet, mounts the plugin app and server, and connects the app to the server through the SDK's typed RPC and realtime APIs.
 
 ## System context
 
-The plugin runs inside BB. BB supplies theme loading, plugin storage, RPC transport, realtime events, thread timeline data, and navigation (`package.json:16-27`, `server.ts:13-54`, `app.tsx:104-117`).
+The plugin runs inside VesnALIA. VesnALIA supplies theme loading, plugin storage, RPC transport, realtime events, thread timeline data, and navigation (`package.json:16-27`, `server.ts:13-54`, `app.tsx:104-117`).
 
 ## Containers
 
@@ -38,19 +38,19 @@ C4Container
     System_Boundary(plugin, "Pokecut Theme plugin") {
         Container(theme, "Theme stylesheet", "CSS", "Base shell, chat, integration rules")
         Container(app, "Plugin app", "React + TypeScript", "Settings and DOM enhancements")
-        Container(server, "Plugin server", "TypeScript", "Preference storage and BB SDK lookups")
+        Container(server, "Plugin server", "TypeScript", "Preference storage and ALIA SDK lookups")
         Container(contract, "RPC contract", "Zod", "Input and output validation")
     }
-    System_Ext(bb, "BB host", "Loads themes and plugins; provides storage, SDK, and UI")
-    Rel(bb, theme, "Loads selected theme")
-    Rel(bb, app, "Mounts plugin slots")
+    System_Ext(alia, "ALIA host", "Loads themes and plugins; provides storage, SDK, and UI")
+    Rel(alia, theme, "Loads selected theme")
+    Rel(alia, app, "Mounts plugin slots")
     Rel(app, contract, "Uses typed RPC calls")
     Rel(server, contract, "Registers handlers")
     Rel(app, server, "RPC and realtime")
-    Rel(server, bb, "Storage, timeline, environment SDK")
+    Rel(server, alia, "Storage, timeline, environment SDK")
 ```
 
-The package manifest points BB at the app, server, and theme CSS entry points (`package.json:16-27`). The contract defines preference, message-time, and thread-root method shapes (`contract.ts:10-36`).
+The package manifest points VesnALIA at the app, server, and theme CSS entry points (`package.json:16-27`). The contract defines preference, message-time, and thread-root method shapes (`contract.ts:10-36`).
 
 ## Building blocks
 
@@ -61,11 +61,11 @@ The package manifest points BB at the app, server, and theme CSS entry points (`
 
 ## Runtime paths
 
-1. BB starts the plugin app and invokes the server plugin entry point (`package.json:16-27`).
+1. VesnALIA starts the plugin app and invokes the server plugin entry point (`package.json:16-27`).
 2. The app calls `getPrefs`; the server reads the `prefs` key and normalizes it before returning (`prefs.ts:8-17`, `server.ts:13-24`, `settings.ts:42-49`).
 3. If the theme is active, the overlay writes preference attributes to `<html>` and mounts enabled DOM helpers (`app.tsx:27-65`).
 4. The settings form sends partial updates; the server normalizes, stores, and broadcasts `prefs-changed` (`settings-section.tsx:37-46`, `server.ts:15-19`).
-5. BB SDK calls supply timeline rows and environment roots for message-time and file-preview UI (`server.ts:28-53`).
+5. VesnALIA SDK calls supply timeline rows and environment roots for message-time and file-preview UI (`server.ts:28-53`).
 
 ## Invariants
 
@@ -80,10 +80,10 @@ The package manifest points BB at the app, server, and theme CSS entry points (`
 
 **Failure handling:** The app reports preference load/save failures in settings; timestamp fetch failures are swallowed and retried on the next refresh (`settings-section.tsx:34-46`, `message-times.ts:80-92`). See [gotchas](gotchas.md).
 
-**Data ownership:** The plugin owns one KV preference object; BB owns timeline and environment records queried by the server (`server.ts:13-14`, `server.ts:28-52`). See [data model](data-model.md).
+**Data ownership:** The plugin owns one KV preference object; VesnALIA owns timeline and environment records queried by the server (`server.ts:13-14`, `server.ts:28-52`). See [data model](data-model.md).
 
 <!-- lane-pilot:backlinks -->
 ## Referenced by
 
 - [Theme appearance](features/theme-appearance.md)
-- [Pokecut Theme for BB overview](overview.md)
+- [Pokecut Theme for VesnALIA overview](overview.md)

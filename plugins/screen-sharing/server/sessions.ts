@@ -3,7 +3,7 @@
  *
  * A ticket is what the app asks for before it opens the relay's WebSocket: a
  * random token bound to one Mac — and to the way the relay reaches it, its own
- * loopback or bb's host link — usable once, for a few seconds. Redeeming it
+ * loopback or VesnALIA's host link — usable once, for a few seconds. Redeeming it
  * opens a session; the relay (relay.ts) owns the sockets and tells the
  * registry when they close. The registry ends a session itself when it has
  * been idle too long, when it is too old, or when the user closes them all.
@@ -126,7 +126,7 @@ export class SessionRegistry {
    * Ends every session and voids every unredeemed ticket, so a connection that
    * was still on its way when the user pressed Close all never opens.
    */
-  closeAll(code: number = CloseCode.closedByUser, reason = "closed from bb"): number {
+  closeAll(code: number = CloseCode.closedByUser, reason = "closed from VesnALIA"): number {
     this.closedAll++;
     this.tickets.clear();
     const ending = [...this.sessions.values()];

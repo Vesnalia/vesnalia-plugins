@@ -1,4 +1,4 @@
-import type { useSdk } from "@get-bb/plugin-sdk/app";
+import type { useSdk } from "@vesnalia/plugin-sdk/app";
 import { workIcon } from "./icons.ts";
 import { replyHeight, userSize, type Item } from "./model.ts";
 
@@ -116,7 +116,7 @@ function moreOf(text: string, tip: string): { more?: string } {
   return more.length > tip.length ? { more } : {};
 }
 
-/** The note's name for a row of work: BB's own label for it ("Ran command") and what it ran, read or touched. */
+/** The note's name for a row of work: VesnALIA's own label for it ("Ran command") and what it ran, read or touched. */
 function workNote(row: Row): { icon: string; label?: string; tip?: string } {
   const presentation = (row as { presentation?: { label?: { pending?: string; completed?: string }; title?: string } | null }).presentation;
   if (!presentation) return { icon: workIcon((row as { workKind?: unknown }).workKind) };

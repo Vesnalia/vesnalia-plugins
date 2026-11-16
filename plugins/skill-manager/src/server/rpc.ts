@@ -1,10 +1,10 @@
 // RPC handlers for the Skills page. Thin: parse nothing, delegate everything.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { rpcContract } from "./contract";
 import type { SkillService } from "./service";
 
-export function registerRpc(bb: BbPluginApi, service: SkillService): void {
-  bb.rpc.register(rpcContract, {
+export function registerRpc(alia: AliaPluginApi, service: SkillService): void {
+  alia.rpc.register(rpcContract, {
     status: () => service.status(),
     sync: async ({ skills, agents, mode, force }) => ({
       results: await service.sync(skills, agents, mode, force ?? false),

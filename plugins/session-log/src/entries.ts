@@ -294,7 +294,7 @@ function entryFor(row: TimelineRow, id: string, depth: 0 | 1): LogEntry {
 
 /**
  * Flattens timeline rows into log entries. Each hidden message, ordered by seq, goes
- * before the first top-level row bb's timeline sourced after it.
+ * before the first top-level row VesnALIA's timeline sourced after it.
  */
 export function toLogEntries(rows: readonly TimelineRow[], hidden: readonly HiddenMessage[] = []): LogEntry[] {
   const entries: LogEntry[] = [];

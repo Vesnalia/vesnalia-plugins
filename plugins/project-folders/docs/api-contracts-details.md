@@ -33,7 +33,7 @@ The RPC and host contracts validate calls between plugin surfaces, the server an
 
 ### `rpcContract`
 
-1. `rpcContract` declares a Zod input and output schema per RPC operation. BB registers that contract with the server's handler map; contract validation and handler rejection propagate through the RPC call (`server.ts:173-240`, `server.ts:3579`).
+1. `rpcContract` declares a Zod input and output schema per RPC operation. VesnALIA registers that contract with the server's handler map; contract validation and handler rejection propagate through the RPC call (`server.ts:173-240`, `server.ts:3579`).
 2. The first operations model chat relocation and labels, project relocation, pending project moves, groups and manual chat placement. For example, `thread_move` requires a target plus nonempty thread ID and returns a path with `asked`; `thread_section` returns nullable section metadata with `pending`; `project_move` takes project, host and destination; `pending_moves` returns unfinished journal fields (`server.ts:174-240`).
 3. The remaining contract declares tree, folder, archive, rules, execution, session-policy, preference, export and backup RPC inputs and outputs (`server.ts:241-647`).
 
@@ -45,7 +45,7 @@ The RPC and host contracts validate calls between plugin surfaces, the server an
 
 ### `moveHostContract`
 
-1. `moveHostContract` declares seven device-side methods. The host ID is supplied in BB call options, separate from each validated payload (`move-contract.ts:10-64`, `host.ts:7-19`).
+1. `moveHostContract` declares seven device-side methods. The host ID is supplied in VesnALIA call options, separate from each validated payload (`move-contract.ts:10-64`, `host.ts:7-19`).
 2. `host.ts` binds `folder_edit`, `inspect`, `move`, `link`, remote lookups and session inventory to handlers on the selected host (`host.ts:7-19`). Project moves inspect then move; section moves choose inspect/move for a still-present source or link for an externally renamed directory (`project-move.ts:135-139`, `project-move.ts:172-176`, `section-move.ts:254-304`).
 3. Each handler validates its filesystem or metadata state, then returns the schema's paths, `moved` flag, resulting folder path, nullable remote URLs, or inventory names (`move-contract.ts:10-64`, `folder-files.ts:3-41`, `move-files.ts:14-118`, `session-inventory.ts:6-22`).
 
@@ -64,11 +64,11 @@ There is no shared host-contract catch that converts errors to results. A reject
 ### `makeProjectMoves`
 
 1. The factory reads and replaces JSON records in `project_moves`. `list` exposes them, `busy` checks for an unfinished project record, and `canonical` follows completed same-host aliases for at most 100 steps (`project-move.ts:18-53`).
-2. `move` rejects a concurrent call, resolves the BB project and its local-path source for the requested host, and either reuses an unfinished journal with the same host and destination or builds a candidate with the resolved destination (`project-move.ts:45-80`).
+2. `move` rejects a concurrent call, resolves the VesnALIA project and its local-path source for the requested host, and either reuses an unfinished journal with the same host and destination or builds a candidate with the resolved destination (`project-move.ts:45-80`).
 3. Preflight checks project-source overlaps, environments outside the source, pending section archives, then asks the host to inspect the paths (`project-move.ts:81-139`).
 4. It pages hidden and visible threads in archived and unarchived states, 200 at a time. Active/starting/stopping/pending status, queued work or positive activity rejects before the move barrier (`project-move.ts:140-166`).
 5. After preflight it persists the journal and publishes `changed`, drains pending exports, repeats the thread check while stopping eligible chats, then calls host `move` (`project-move.ts:167-176`).
-6. On host success it updates the BB project source, rebases archive manifests, section paths and export paths, marks the record complete with no error, publishes `changed` and returns the journal (`project-move.ts:177-233`).
+6. On host success it updates the VesnALIA project source, rebases archive manifests, section paths and export paths, marks the record complete with no error, publishes `changed` and returns the journal (`project-move.ts:177-233`).
 7. The catch rethrows; it stores an error only when the journal had been persisted. `finally` always clears the process-local concurrency guard (`project-move.ts:234-243`).
 
 | Branch | Condition | Outcome or failure |
@@ -127,13 +127,13 @@ The predicate itself does not list or archive threads. The sweep handles those c
 
 ## Business rules
 
-- Host selection is supplied in BB host call options and is not part of `moveHostContract` operation payloads (`move-contract.ts:10-64`, `project-move.ts:135-139`, `project-move.ts:172-175`).
+- Host selection is supplied in VesnALIA host call options and is not part of `moveHostContract` operation payloads (`move-contract.ts:10-64`, `project-move.ts:135-139`, `project-move.ts:172-175`).
 - `removeSection` keeps files for `unbind`; `purge` refuses shared paths before deleting files (`section-remove.ts:119-150`, `section-remove.ts:222-233`).
 - Session inventory sends names and source labels, not local commands, URLs or secrets (`session-inventory.ts:6-22`, `session-inventory.ts:92-96`).
 
 ## Public API
 
-The plugin registers `rpcContract` with BB RPC; the host registers `moveHostContract` methods with BB's host API (`server.ts:3579`, `host.ts:7-19`).
+The plugin registers `rpcContract` with VesnALIA RPC; the host registers `moveHostContract` methods with VesnALIA's host API (`server.ts:3579`, `host.ts:7-19`).
 
 ## Gotchas
 

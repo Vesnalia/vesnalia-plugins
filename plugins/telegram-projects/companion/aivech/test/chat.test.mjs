@@ -12,7 +12,7 @@ import { join } from "node:path";
 import { createBot, OWNER_ID, BOT_ID } from "../dist/bot.js";
 import { saveChatUpdate } from "../dist/chat.js";
 test("owner-only durable ingress preserves topic, reply and callback; Tasks stays in companion", async () => {
-  const root = mkdtempSync(join(tmpdir(), "bb-ingress-"));
+  const root = mkdtempSync(join(tmpdir(), "alia-ingress-"));
   const replies = [];
   try {
     const bot = createBot("dummy", () => "", {
@@ -43,21 +43,21 @@ test("owner-only durable ingress preserves topic, reply and callback; Tasks stay
     };
     await bot.handleUpdate({ update_id: 1, message: msg });
     await bot.handleUpdate({ update_id: 1, message: msg });
-    assert.equal(readdirSync(join(root, "bb-chat-inbox")).length, 1);
+    assert.equal(readdirSync(join(root, "alia-chat-inbox")).length, 1);
     const saved = JSON.parse(
-      readFileSync(join(root, "bb-chat-inbox/1.json"), "utf8"),
+      readFileSync(join(root, "alia-chat-inbox/1.json"), "utf8"),
     );
     assert.equal(saved.topicId, 777);
     assert.equal(saved.replyTo, 2);
     assert.equal(
-      statSync(join(root, "bb-chat-inbox/1.json")).mode & 0o777,
+      statSync(join(root, "alia-chat-inbox/1.json")).mode & 0o777,
       0o600,
     );
     await bot.handleUpdate({
       update_id: 2,
       message: { ...msg, from: { id: 22, is_bot: false, first_name: "Other" } },
     });
-    assert.equal(readdirSync(join(root, "bb-chat-inbox")).length, 1);
+    assert.equal(readdirSync(join(root, "alia-chat-inbox")).length, 1);
     await bot.handleUpdate({
       update_id: 3,
       callback_query: {
@@ -68,13 +68,13 @@ test("owner-only durable ingress preserves topic, reply and callback; Tasks stay
           ...msg,
           from: { id: BOT_ID, is_bot: true, first_name: "Bot" },
         },
-        data: "bb:abc",
+        data: "alia:abc",
       },
     });
     assert.equal(
-      JSON.parse(readFileSync(join(root, "bb-chat-inbox/3.json"), "utf8"))
+      JSON.parse(readFileSync(join(root, "alia-chat-inbox/3.json"), "utf8"))
         .callback,
-      "bb:abc",
+      "alia:abc",
     );
     assert.ok(replies.some((r) => r.method === "answerCallbackQuery"));
     await bot.handleUpdate({
@@ -85,7 +85,7 @@ test("owner-only durable ingress preserves topic, reply and callback; Tasks stay
         entities: [{ type: "bot_command", offset: 0, length: 6 }],
       },
     });
-    assert.equal(readdirSync(join(root, "bb-chat-inbox")).length, 2);
+    assert.equal(readdirSync(join(root, "alia-chat-inbox")).length, 2);
     assert.ok(replies.some((r) => r.method === "sendMessage"));
   } finally {
     rmSync(root, { recursive: true, force: true });

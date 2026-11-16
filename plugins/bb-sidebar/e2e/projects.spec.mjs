@@ -96,7 +96,7 @@ test("project filter remembers multiple projects per window and All projects res
   await shortcut.click();
   await expect(shelf(page, "Active").getByRole("link")).toHaveCount(fixture.threads.length + 1);
   await expect(shortcut).toHaveAttribute("aria-pressed", "true");
-  await page.locator("[data-bb-sidebar-root]").screenshot({ path: test.info().outputPath("pinned-projects.png") });
+  await page.locator("[data-alia-sidebar-root]").screenshot({ path: test.info().outputPath("pinned-projects.png") });
   await page.getByRole("button", { name: "Reset project filter", exact: true }).click();
   await expect(page.getByRole("button", { name: "Project scope: All projects", exact: true })).toBeVisible();
   await expect(shortcut).toHaveAttribute("aria-pressed", "false");
@@ -160,7 +160,7 @@ test("custom project color styles persist after reload", async ({ page, request 
   await open(page);
   try {
     await page.getByRole("button", { name: /^Settings \(/ }).click();
-    await page.getByRole("link", { name: "BB Sidebar", exact: true }).click();
+    await page.getByRole("link", { name: "VesnALIA Sidebar", exact: true }).click();
     await page.getByRole("switch", { name: "Project colors", exact: true }).check();
     await page.getByRole("combobox", { name: "Show project stripes in", exact: true }).selectOption("full");
     await expect.poll(async () => (await rpc(request, "getSidebarSettings")).projectColorsEnabled).toBe(true);

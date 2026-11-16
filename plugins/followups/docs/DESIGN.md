@@ -44,7 +44,7 @@ puts it in the composer. The plugin never sends anything.
   children can't be looked up, follow-ups are drafted anyway and a warning is
   logged.
 - **A thread whose last message is the user's own** (it went idle before
-  replying, so BB's "last assistant text" is that message) gets no follow-ups.
+  replying, so VesnALIA's "last assistant text" is that message) gets no follow-ups.
 - **Cost.** `followups_get` and `followups_expand` return `stats` (`ms`,
   `model`, and the worker thread's token usage when the provider reported any),
   read from the worker's `thread/tokenUsage/updated` event; the banner shows them
@@ -57,7 +57,7 @@ puts it in the composer. The plugin never sends anything.
 
 ## Workers
 
-- **Waiting for a worker.** A worker's answer is waited for, not polled: BB sends
+- **Waiting for a worker.** A worker's answer is waited for, not polled: VesnALIA sends
   `thread.idle` and `thread.failed` for every thread, hidden ones included, and
   those wake the wait. The first look is half a second after the spawn (a thread
   can report idle before its turn starts, so an earlier event is not acted on); a
@@ -67,7 +67,7 @@ puts it in the composer. The plugin never sends anything.
   followed up 250ms later. A run logs how many status checks it made and how many
   were ended by an event. Idle events from hidden threads (the workers
   themselves, other plugins' helpers) are ignored without a lookup. A worker
-  that hasn't started its turn is idle too, and what BB reports as its output
+  that hasn't started its turn is idle too, and what VesnALIA reports as its output
   then is its own prompt: that is never taken for an answer (it would show the
   prompt's format example as a follow-up, or put the whole prompt in the
   composer), and the wait goes on.
@@ -111,8 +111,8 @@ puts it in the composer. The plugin never sends anything.
   thread that merely has a worker's title is treated like any other.
 - **Cleanup.** Hidden worker threads are stopped and archived as soon as their
   output is consumed or discarded as stale, including suggestion runs and
-  message drafts. BB forwards archive requests to providers advertising
-  `supportsThreadArchive`; other providers get BB's local archive behavior.
+  message drafts. VesnALIA forwards archive requests to providers advertising
+  `supportsThreadArchive`; other providers get VesnALIA's local archive behavior.
   Archiving runs in the background so it never delays the banner or composer.
   Failed archive requests are logged and leave the worker for a later retry.
   A sweep shortly after load, and at most every ten minutes after a worker
@@ -131,10 +131,10 @@ puts it in the composer. The plugin never sends anything.
 - **Clearing.** Queued or dispatched messages and the thread going active again
   wipe the stored follow-ups, so the banner clears when the user just sends a
   message. Clearing only writes and broadcasts when something is showing or
-  being drafted: every thread in BB goes through it, almost always with nothing
+  being drafted: every thread in VesnALIA goes through it, almost always with nothing
   to clear.
 - **The switch.** Follow-ups can be switched on or off for one thread
-  (`followups_set_enabled`, `bb followups on|off <thread-id>`, and the button in
+  (`followups_set_enabled`, `alia followups on|off <thread-id>`, and the button in
   the thread header). The thread's own choice is stored in its plugin metadata
   and beats the "Suggest follow-ups automatically" setting, which is only the
   default for threads that have made none: with the setting off a thread can opt
@@ -166,13 +166,13 @@ puts it in the composer. The plugin never sends anything.
   replaced, anything else gets the new draft appended. The in-flight draft can be
   cancelled, and is dropped if its follow-up goes away first.
   The per-thread switch is a button in the thread header's action row
-  (`app.slots.experimental_threadHeaderAction`): BB 0.45 (plugin SDK 0.6.15)
+  (`app.slots.experimental_threadHeaderAction`): VesnALIA 0.45 (plugin SDK 0.6.15)
   gives plugins no way to add to the thread's own "more" menu. It is always
   there, so follow-ups can be turned off before the first ones arrive; a slash
   over the icon means off.
 - `lib/banner-memory.ts` — what the banner remembers per thread, outside the
   component: the message being written, the drafted tile, the draft's cost, and
-  the composer text it wrote itself. BB rebuilds the message box (on some
+  the composer text it wrote itself. VesnALIA rebuilds the message box (on some
   resizes, and whenever a thread is left and come back to), and a rebuilt banner
   reads the same memory, so none of it is forgotten. A written message waits
   there until a banner for its thread puts it in that thread's composer, so one
@@ -183,13 +183,13 @@ puts it in the composer. The plugin never sends anything.
   plugin reloads; new batches start collapsed. Collapsing clears the saved choice.
 - `components/glyph.tsx` — icons drawn straight from
   `@hugeicons/core-free-icons` (a runtime `dependency`, because a
-  `bb plugin install git:` build installs without devDependencies; the bundler
-  keeps only the eight glyphs imported there). BB's `Icon` only knows the small subset
-  of that set BB registered, and a name outside it silently renders as a ⚡, so
+  `alia plugin install git:` build installs without devDependencies; the bundler
+  keeps only the eight glyphs imported there). VesnALIA's `Icon` only knows the small subset
+  of that set VesnALIA registered, and a name outside it silently renders as a ⚡, so
   anything beyond the everyday controls (✕, ✓, chevrons, spinner, which still use
-  BB's `Icon`) goes through `Glyph`.
+  VesnALIA's `Icon`) goes through `Glyph`.
 - `skills/followups/SKILL.md` — tells agents the banner is the user's surface;
-  `bb followups show <thread-id>` / `clear <thread-id>` inspect it.
+  `alia followups show <thread-id>` / `clear <thread-id>` inspect it.
 - `PLUGIN_OVERVIEW.md` — the store listing text. `CHANGELOG.md` — what changed.
 
 ## Tests

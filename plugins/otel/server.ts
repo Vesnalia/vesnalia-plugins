@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { fold, newState, USAGE_EVENT_TYPES, type EventRow, type ThreadState } from "./src/fold.js";
 import { makePost, parseKeyValues, tracesBody, type Attrs, type Post } from "./src/otlp.js";
@@ -8,7 +8,7 @@ import { setUsageGauges, Telemetry, type ThreadCtx, type UsageWindowInput } from
 const VERSION = "0.1.1";
 const PAGE = 100;
 const MAX_DEPTH = 8;
-const USAGE_PLUGIN = "bb--provider-usage";
+const USAGE_PLUGIN = "alia--provider-usage";
 
 const usageSchema = z.object({
   machines: z.array(
@@ -46,8 +46,8 @@ const sleep = (ms: number, signal: AbortSignal) =>
     signal.addEventListener("abort", () => (clearTimeout(t), resolve()), { once: true });
   });
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     endpoint: {
       type: "string",
       label: "OTLP/HTTP endpoint",
@@ -76,14 +76,14 @@ export default async function plugin(bb: BbPluginApi) {
   const configure = () => {
     post = cfg.endpoint ? makePost({ endpoint: cfg.endpoint, headers: parseKeyValues(cfg.headers ?? "") }) : null;
     resource = {
-      "service.name": "bb",
-      "bb.plugin.name": "bb-plugin-otel",
-      "bb.plugin.version": VERSION,
+      "service.name": "alia",
+      "alia.plugin.name": "alia-plugin-otel",
+      "alia.plugin.version": VERSION,
       ...parseKeyValues(cfg.resourceAttributes),
     };
   };
   configure();
-  if (!cfg.endpoint) bb.status.needsConfiguration("Set endpoint with `bb plugin config otel set endpoint http://collector:4318`.");
+  if (!cfg.endpoint) alia.status.needsConfiguration("Set endpoint with `alia plugin config otel set endpoint http://collector:4318`.");
   settings.onChange((next) => {
     cfg = next;
     configure();
@@ -92,12 +92,12 @@ export default async function plugin(bb: BbPluginApi) {
   // Per-thread context, kept for the life of the plugin; a thread's project and parent do not change often.
   const ctxs = new Map<string, ThreadCtx>();
   const projectNames = new Map<string, string | undefined>();
-  const since = (await bb.storage.kv.get<number>("since")) ?? Date.now();
-  await bb.storage.kv.set("since", since);
+  const since = (await alia.storage.kv.get<number>("since")) ?? Date.now();
+  await alia.storage.kv.set("since", since);
 
   const projectName = async (id: string) => {
     if (!projectNames.has(id)) {
-      const p = await bb.sdk.projects.get({ projectId: id }).catch(() => undefined);
+      const p = await alia.sdk.projects.get({ projectId: id }).catch(() => undefined);
       const name = (p as { name?: unknown } | undefined)?.name;
       projectNames.set(id, typeof name === "string" ? name : undefined);
     }
@@ -113,7 +113,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (!hostNames.has(hostId) && Date.now() - hostsReadAt > 60_000) {
       hostsReadAt = Date.now();
       const hosts = await Promise.resolve()
-        .then(() => bb.sdk.hosts.list())
+        .then(() => alia.sdk.hosts.list())
         .catch(() => []);
       for (const h of hosts as { id?: unknown; name?: unknown }[])
         if (typeof h.id === "string" && typeof h.name === "string") hostNames.set(h.id, h.name);
@@ -124,7 +124,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (!environmentId) return null;
     if (!envHosts.has(environmentId)) {
       const env = await Promise.resolve()
-        .then(() => bb.sdk.environments.get({ environmentId }))
+        .then(() => alia.sdk.environments.get({ environmentId }))
         .catch(() => undefined);
       const id = (env as { hostId?: unknown } | undefined)?.hostId;
       if (env) envHosts.set(environmentId, typeof id === "string" ? id : null);
@@ -149,7 +149,7 @@ export default async function plugin(bb: BbPluginApi) {
     let parent = t.parentThreadId;
     for (let i = 0; parent && i < MAX_DEPTH; i++) {
       root = parent;
-      parent = (ctxs.get(parent)?.parentThreadId ?? (await bb.sdk.threads.get({ threadId: parent }).catch(() => null))?.parentThreadId) ?? null;
+      parent = (ctxs.get(parent)?.parentThreadId ?? (await alia.sdk.threads.get({ threadId: parent }).catch(() => null))?.parentThreadId) ?? null;
     }
     const machineId = (await hostOf(t.environmentId)) ?? undefined;
     const c: ThreadCtx = {
@@ -169,7 +169,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   const list = (threadId: string, extra: Record<string, unknown>) =>
-    bb.sdk.threads.events.list({ threadId, types: [...USAGE_EVENT_TYPES], limit: String(PAGE), ...extra } as never) as Promise<EventRow[]>;
+    alia.sdk.threads.events.list({ threadId, types: [...USAGE_EVENT_TYPES], limit: String(PAGE), ...extra } as never) as Promise<EventRow[]>;
 
   /** A thread that existed before this plugin did starts at its newest event, with only the model read back. */
   async function initState(t: Thread): Promise<ThreadState> {
@@ -195,22 +195,22 @@ export default async function plugin(bb: BbPluginApi) {
   const sync = (t: Thread) =>
     serial(t.id, async () => {
       const key = `st:${t.id}`;
-      const state = (await bb.storage.kv.get<ThreadState>(key)) ?? (await initState(t));
+      const state = (await alia.storage.kv.get<ThreadState>(key)) ?? (await initState(t));
       const c = await ctxOf(t);
       for (;;) {
         const rows = await list(t.id, { order: "asc", afterSeq: String(state.afterSeq) });
         for (const turn of fold(state, rows)) tel.turn(c, turn);
         if (rows.length < PAGE) break;
       }
-      await bb.storage.kv.set(key, state);
+      await alia.storage.kv.set(key, state);
     });
 
   const active = new Map<string, number>();
   const guard = (name: string, fn: () => Promise<void>) =>
-    fn().catch((e) => bb.log.warn(`${name} failed: ${e instanceof Error ? e.message : String(e)}`));
+    fn().catch((e) => alia.log.warn(`${name} failed: ${e instanceof Error ? e.message : String(e)}`));
 
-  bb.events.on("thread.created", ({ thread }) => guard("created", async () => tel.lifecycle(await ctxOf(thread), "created")));
-  bb.events.on("thread.active", ({ thread }) =>
+  alia.events.on("thread.created", ({ thread }) => guard("created", async () => tel.lifecycle(await ctxOf(thread), "created")));
+  alia.events.on("thread.active", ({ thread }) =>
     guard("active", async () => {
       active.set(thread.id, Date.now());
       tel.lifecycle(await ctxOf(thread), "active");
@@ -218,7 +218,7 @@ export default async function plugin(bb: BbPluginApi) {
     }),
   );
   for (const state of ["idle", "failed"] as const)
-    bb.events.on(`thread.${state}`, ({ thread }) =>
+    alia.events.on(`thread.${state}`, ({ thread }) =>
       guard(state, async () => {
         await sync(thread);
         const from = active.get(thread.id);
@@ -227,14 +227,14 @@ export default async function plugin(bb: BbPluginApi) {
       }),
     );
   for (const state of ["archived", "deleted"] as const)
-    bb.events.on(`thread.${state}`, ({ thread }) =>
+    alia.events.on(`thread.${state}`, ({ thread }) =>
       guard(state, async () => {
         if (state === "archived") await sync(thread);
         const c = await ctxOf(thread);
         tel.lifecycle(c, state);
         tel.threadSpan(c, thread.createdAt, Date.now(), state);
         if (state === "deleted") {
-          await bb.storage.kv.delete(`st:${thread.id}`);
+          await alia.storage.kv.delete(`st:${thread.id}`);
           ctxs.delete(thread.id);
         }
       }),
@@ -274,13 +274,13 @@ export default async function plugin(bb: BbPluginApi) {
     }
     if (failure) {
       const msg = failure instanceof Error ? failure.message : String(failure);
-      if (msg !== lastError) bb.log.warn(`export failed: ${msg}`);
+      if (msg !== lastError) alia.log.warn(`export failed: ${msg}`);
       lastError = msg;
     }
   }
 
   async function pollUsage() {
-    const snapshot = await bb.sdk.plugins.callRpc({
+    const snapshot = await alia.sdk.plugins.callRpc({
       pluginId: USAGE_PLUGIN,
       method: "getUsage",
       input: { force: false, machineIds: null, providerIds: [], maxAgeMs: cfg.usagePollSeconds * 1000 },
@@ -309,19 +309,19 @@ export default async function plugin(bb: BbPluginApi) {
     setUsageGauges(tel.meter, windows);
   }
 
-  bb.background.service("export", {
+  alia.background.service("export", {
     async start(signal) {
       let nextUsage = 0;
       while (!signal.aborted) {
         if (cfg.usageWindows && cfg.metrics && Date.now() >= nextUsage) {
           nextUsage = Date.now() + cfg.usagePollSeconds * 1000;
-          await pollUsage().catch((e) => bb.log.debug(`usage poll failed: ${e instanceof Error ? e.message : String(e)}`));
+          await pollUsage().catch((e) => alia.log.debug(`usage poll failed: ${e instanceof Error ? e.message : String(e)}`));
         }
         await flush();
         await sleep(cfg.flushSeconds * 1000, signal);
       }
     },
   });
-  bb.onDispose(flush);
+  alia.onDispose(flush);
 
 }

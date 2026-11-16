@@ -15,8 +15,8 @@ afterEach(async () => {
 async function fixture() {
   const loaded = await load();
   disposers.push(() => loaded.harness.lifecycle.dispose());
-  const tokens = createAgentTokenManager(loaded.bb);
-  if (!loaded.harness.inspection.registrations.httpRoutes.some(route => route.path === "/mcp")) registerAgentTransports(loaded.bb, loaded.service, tokens);
+  const tokens = createAgentTokenManager(loaded.alia);
+  if (!loaded.harness.inspection.registrations.httpRoutes.some(route => route.path === "/mcp")) registerAgentTransports(loaded.alia, loaded.service, tokens);
   const post = (message: unknown, requestHeaders: Record<string, string> = headers, path = "/mcp") => loaded.harness.behavior.fetchHttp("POST", path, { headers: requestHeaders, body: JSON.stringify(message) });
   return { ...loaded, tokens, post };
 }

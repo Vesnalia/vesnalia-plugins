@@ -1,7 +1,7 @@
 // Dig deeper on a chapter: a focused pass by the review's assistant over one medium- or high-risk chapter, at high
 // effort. Its comments arrive in the draft as the assistant's always do, and what it found stays on the chapter: its
 // report on each thing to verify, and the comments it added. Nothing here reaches GitHub.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { messageAssistant } from "./agent";
 import { ASK_LIFETIME, askAt, asked, setAsk } from "./asks";
 import { sameLocation, type CommentLocation } from "./draft";
@@ -53,7 +53,7 @@ export async function deepDiveMessage(store: AsyncStore, targetKey: string, chap
  * and the review keeps the ask until the turn that carries it ends. Throws when the draft can't change, the chapter
  * can't be dug into, or another deep dive is under way. Returns whether a conversation started.
  */
-export async function digDeeper(bb: BbPluginApi, store: AsyncStore, targetKey: string, chapterId: string): Promise<{ started: boolean }> {
+export async function digDeeper(alia: AliaPluginApi, store: AsyncStore, targetKey: string, chapterId: string): Promise<{ started: boolean }> {
   const at = { deepDive: chapterId };
   // Checked and recorded in one turn, so a second Dig deeper finds this one.
   const { text, context } = await store.exclusive(async (tx) => {
@@ -72,7 +72,7 @@ export async function digDeeper(bb: BbPluginApi, store: AsyncStore, targetKey: s
   let result: Awaited<ReturnType<typeof messageAssistant>>;
   try {
     // Your click, with no words of yours: the chapter's title is the PR's.
-    result = await messageAssistant(bb, store, targetKey, text, context, { kind: "ask", effort: DEEP_DIVE_EFFORT });
+    result = await messageAssistant(alia, store, targetKey, text, context, { kind: "ask", effort: DEEP_DIVE_EFFORT });
   } catch (error) {
     await setAsk(store, targetKey, at, null);
     throw error;

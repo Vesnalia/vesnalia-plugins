@@ -1,6 +1,6 @@
 # Third-party notices
 
-The BB scaffold UI in `components/`, `hooks/`, and `lib/` is adapted from BB (https://github.com/get-bb/bb). Its MIT license follows. Other dependencies retain their respective licenses.
+The VesnALIA scaffold UI in `components/`, `hooks/`, and `lib/` is adapted from VesnALIA (https://github.com/get-bb/bb). Its MIT license follows. Other dependencies retain their respective licenses.
 
 MIT License
 

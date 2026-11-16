@@ -2,7 +2,7 @@
 
 Encargo literal de Aitor (2026-11-03 ~12:55): «Qué tal va el sistema de carga, tengo mucha cola? necesitaría abrir más hilos por favor».
 
-Medido (2026-11-03 13:07, `bb claude-switcher seats`/`list`, ficheros `antes-*.txt` aquí): siloeads 4/4 con 1 hilo esperando mientras ganaresenas y joytorm estaban 0/4 con cuota. siloeads tiene 25 proyectos, aitor 27, ganaresenas 11, joytorm 9.
+Medido (2026-11-03 13:07, `alia claude-switcher seats`/`list`, ficheros `antes-*.txt` aquí): siloeads 4/4 con 1 hilo esperando mientras ganaresenas y joytorm estaban 0/4 con cuota. siloeads tiene 25 proyectos, aitor 27, ganaresenas 11, joytorm 9.
 
 ## Fase 1 — un turno que esperaría plaza mueve antes su proyecto
 - Con `autoSwitch`, en `placeTurn` (antes del turno): si la cuenta del proyecto no tiene plaza para este hilo (`seats.free <= posición en su cola`) y NINGÚN otro hilo del proyecto tiene plaza (turno en marcha o reservado), `decidePlacement` recibe `seatsFull` y elige otra cuenta con `chooseAccount` (mismo criterio que cualquier movimiento: puede correr el modelo, no gasta la semanal de Fable para otro modelo, por debajo del umbral de switch-ahead del modelo si hay) entre las que tienen plaza libre más allá de su cola (`seatRoom`).
@@ -11,7 +11,7 @@ Medido (2026-11-03 13:07, `bb claude-switcher seats`/`list`, ficheros `antes-*.t
 - Proyecto con otro hilo en marcha: no se mueve (lo pidió la sesión que delega: perdería caché / cortaría un turno).
 - Fuera de alcance: cambiar topes de plazas o umbrales de cuota.
 
-## Fase 2 — `bb claude-switcher rebalance [--apply] [--json]`
+## Fase 2 — `alia claude-switcher rebalance [--apply] [--json]`
 - Cuentas: las Ultra usables según `health` (plan ultra, usable). Carga = max(semana %, modelo preferido %).
 - Proyectos: los de esas cuentas (el default sin variable cuenta en el default). Un proyecto "trabajando" no se mueve: hilo Claude Code en starting/active/stopping, en error, con `queuedWork` waiting/failed, actividad (`updatedAt`) en la última hora, o un hilo con plaza o en cola.
 - Objetivo por cuenta ∝ hueco semanal (100 − carga), contado proyecto a proyecto desde los fijos (los que trabajan) hacia arriba: cada uno va a la cuenta con menos proyectos para su hueco, salvo que eso la deje más de 10 por encima de la que menos, o haya una más de 10 por debajo de la que más: entonces a la que menos. Se mueven primero los menos recientes.

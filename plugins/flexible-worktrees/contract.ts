@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { choicesSchema, inputsSchema, liveBranchesSchema, planResultSchema, planSchema, previewSchema, pullsSchema, templateSchema } from "./inputs";
 export { inputsSchema, planSchema, type Inputs, type Plan } from "./inputs";

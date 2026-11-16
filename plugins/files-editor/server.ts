@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url";
 import {
   defineRpcContract,
   PLUGIN_CLI_OUTPUT_MAX_BYTES,
-  type BbPluginApi,
-} from "@get-bb/plugin-sdk";
+  type AliaPluginApi,
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { FlatEntry } from "./lib/tree.js";
 import { rankEntries } from "./lib/tree.js";
@@ -140,7 +140,7 @@ export const rpcContract = defineRpcContract({
         /**
          * The hash the edit was based on, guarding against an agent having
          * written the file in the meantime. Omit it to overwrite regardless.
-         * (`null` is deliberately not accepted: BB reads it as create-only,
+         * (`null` is deliberately not accepted: VesnALIA reads it as create-only,
          * which would conflict on every existing file.)
          */
         expectedSha256: z.string().optional(),
@@ -164,8 +164,8 @@ export const rpcContract = defineRpcContract({
 export type ResolvedScope = z.infer<typeof resolvedScopeSchema>;
 export type WorkspaceOption = z.infer<typeof workspaceSchema>;
 
-export default function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     excludedDirectories: {
       type: "string",
       label: "Excluded directories (one name per line)",
@@ -179,12 +179,12 @@ export default function plugin(bb: BbPluginApi) {
     return parseExcludedNames(excludedDirectories);
   }
 
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
 
   let cachedServerHostId: string | null = null;
 
   /**
-   * The machine BB's server runs on, so a workspace somewhere else can be
+   * The machine VesnALIA's server runs on, so a workspace somewhere else can be
    * labelled with its machine's name. Only a label: listing and search run in
    * the host entry on the workspace's own machine either way.
    */
@@ -192,13 +192,13 @@ export default function plugin(bb: BbPluginApi) {
     if (cachedServerHostId !== null) return cachedServerHostId;
     // Only a known id is cached, so a daemon that registers after this plugin
     // loaded is picked up on the next call.
-    cachedServerHostId = (await bb.sdk.system.config()).primaryHostId;
+    cachedServerHostId = (await alia.sdk.system.config()).primaryHostId;
     return cachedServerHostId;
   }
 
   async function hostName(hostId: string): Promise<string> {
     try {
-      const host = await bb.sdk.hosts.get({ hostId });
+      const host = await alia.sdk.hosts.get({ hostId });
       return host.name;
     } catch {
       return "this machine";
@@ -211,9 +211,9 @@ export default function plugin(bb: BbPluginApi) {
    */
   async function project(projectId: string) {
     try {
-      return await bb.sdk.projects.get({ projectId });
+      return await alia.sdk.projects.get({ projectId });
     } catch {
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       return projects.find((entry) => entry.id === projectId) ?? null;
     }
   }
@@ -266,7 +266,7 @@ export default function plugin(bb: BbPluginApi) {
     let projectId: string | null = null;
 
     if (scope.kind === "thread") {
-      const thread = await bb.sdk.threads.get({ threadId: scope.id });
+      const thread = await alia.sdk.threads.get({ threadId: scope.id });
       environmentId = thread.environmentId;
       projectId = thread.projectId;
     } else if (scope.kind === "environment") {
@@ -276,7 +276,7 @@ export default function plugin(bb: BbPluginApi) {
     }
 
     if (environmentId !== null) {
-      const environment = await bb.sdk.environments.get({ environmentId });
+      const environment = await alia.sdk.environments.get({ environmentId });
       if (environment.path !== null) {
         const [owner, local, name] = await Promise.all([
           project(environment.projectId),
@@ -352,7 +352,7 @@ export default function plugin(bb: BbPluginApi) {
 
   async function readWorkspaceFile(scope: ResolvedScope, relativePath: string) {
     const absolutePath = resolveWithinRoot(scope.root, relativePath);
-    const file = await bb.sdk.files.read({
+    const file = await alia.sdk.files.read({
       hostId: scope.hostId,
       path: absolutePath,
       rootPath: scope.root,
@@ -400,7 +400,7 @@ export default function plugin(bb: BbPluginApi) {
   let previewCache: { baseUrl: string; expiresAtMs: number } | null = null;
 
   /**
-   * `docs/` served over a confined preview URL — the transport BB documents for
+   * `docs/` served over a confined preview URL — the transport VesnALIA documents for
    * plugin images. Sits beside the entry in a source checkout and one level up
    * from `dist/` in a built install, so both layouts are probed.
    */
@@ -419,18 +419,18 @@ export default function plugin(bb: BbPluginApi) {
     ].find((candidate) => existsSync(path.join(candidate, "preview.png")));
     if (root === undefined) throw new Error("The preview image is not installed.");
 
-    previewCache = await bb.sdk.files.createPreview({
+    previewCache = await alia.sdk.files.createPreview({
       rootPath: root,
       ttlMs: PREVIEW_TTL_MS,
     });
     return previewCache;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async workspaces() {
       // One request gives every project, its checkouts, and the environments
       // its threads run in — which is where a worktree's branch name lives.
-      const projects = await bb.sdk.projects.list({
+      const projects = await alia.sdk.projects.list({
         include: "threads",
         includePersonal: true,
       });
@@ -529,7 +529,7 @@ export default function plugin(bb: BbPluginApi) {
       if (!resolved.ok) throw new Error(resolved.reason);
 
       const absolutePath = resolveWithinRoot(resolved.scope.root, relativePath);
-      const result = await bb.sdk.files.write({
+      const result = await alia.sdk.files.write({
         hostId: resolved.scope.hostId,
         path: absolutePath,
         rootPath: resolved.scope.root,
@@ -554,14 +554,14 @@ export default function plugin(bb: BbPluginApi) {
           { hostId: resolved.scope.hostId },
         );
       } catch (error) {
-        bb.log.warn(`could not drop ${absolutePath} from the search cache: ${describe(error)}`);
+        alia.log.warn(`could not drop ${absolutePath} from the search cache: ${describe(error)}`);
       }
-      bb.realtime.publish(CHANGED_CHANNEL, {
+      alia.realtime.publish(CHANGED_CHANNEL, {
         scope,
         path: relativePath,
         sha256: result.sha256,
       });
-      bb.log.info(`wrote ${absolutePath}`);
+      alia.log.info(`wrote ${absolutePath}`);
       return {
         outcome: "written" as const,
         sha256: result.sha256,
@@ -570,29 +570,29 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "files",
     summary: "Browse and read the files of a thread's workspace",
     commands: [
       {
         name: "tree",
         summary: "List the workspace's files",
-        usage: "bb files tree [--depth <n>] [--all] [--limit <n>]",
+        usage: "alia files tree [--depth <n>] [--all] [--limit <n>]",
       },
       {
         name: "find",
         summary: "Fuzzy-find files by path",
-        usage: "bb files find <query> [--limit <n>]",
+        usage: "alia files find <query> [--limit <n>]",
       },
       {
         name: "read",
         summary: "Print a file relative to the workspace root",
-        usage: "bb files read <path>",
+        usage: "alia files read <path>",
       },
       {
         name: "root",
         summary: "Print the resolved workspace root and machine",
-        usage: "bb files root",
+        usage: "alia files root",
       },
     ],
     async run(argv, ctx) {
@@ -647,7 +647,7 @@ export default function plugin(bb: BbPluginApi) {
           const clipped = clipLinesForCli(lines, CLI_LISTING_BUDGET);
           if (clipped.omitted > 0) {
             notes.push(
-              `(output capped: printed ${lines.length - clipped.omitted} of ${lines.length} entries — BB caps a command's output)`,
+              `(output capped: printed ${lines.length - clipped.omitted} of ${lines.length} entries — VesnALIA caps a command's output)`,
             );
           }
           return {
@@ -659,7 +659,7 @@ export default function plugin(bb: BbPluginApi) {
         case "find": {
           const query = flags.positional.join(" ");
           if (query === "") {
-            return { exitCode: 1, stderr: "Usage: bb files find <query>\n" };
+            return { exitCode: 1, stderr: "Usage: VesnALIA files find <query>\n" };
           }
           const listed = await listEntries(resolved.scope, true);
           const files = listed.entries.filter((entry) => entry.kind === "file");
@@ -677,7 +677,7 @@ export default function plugin(bb: BbPluginApi) {
             ...(clipped.omitted === 0
               ? {}
               : {
-                  stderr: `(output capped: ${clipped.omitted} more matches omitted — BB caps a command's output)\n`,
+                  stderr: `(output capped: ${clipped.omitted} more matches omitted — VesnALIA caps a command's output)\n`,
                 }),
           };
         }
@@ -685,7 +685,7 @@ export default function plugin(bb: BbPluginApi) {
         case "read": {
           const target = flags.positional[0];
           if (target === undefined) {
-            return { exitCode: 1, stderr: "Usage: bb files read <path>\n" };
+            return { exitCode: 1, stderr: "Usage: VesnALIA files read <path>\n" };
           }
           const file = await readWorkspaceFile(resolved.scope, target);
           if (file.kind !== "text") {
@@ -701,7 +701,7 @@ export default function plugin(bb: BbPluginApi) {
             ...(clipped.clippedFrom === null
               ? {}
               : {
-                  stderr: `(truncated: printed ${CLI_OUTPUT_BUDGET} of ${clipped.clippedFrom} bytes — BB caps a command's output)\n`,
+                  stderr: `(truncated: printed ${CLI_OUTPUT_BUDGET} of ${clipped.clippedFrom} bytes — VesnALIA caps a command's output)\n`,
                 }),
           };
         }
@@ -710,7 +710,7 @@ export default function plugin(bb: BbPluginApi) {
           return {
             exitCode: 1,
             stderr:
-              "Usage: bb files <root|tree|find|read> [...]\nRun `bb files root` to see the resolved workspace.\n",
+              "Usage: VesnALIA files <root|tree|find|read> [...]\nRun `alia files root` to see the resolved workspace.\n",
           };
       }
     },

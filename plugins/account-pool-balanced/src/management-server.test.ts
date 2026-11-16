@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, expect, it, vi } from 'vitest';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import { createAccountPoolPlugin } from './server.js';
 
 const cleanups: Array<() => Promise<unknown>> = [];
@@ -14,7 +14,7 @@ it('keeps owner RPCs available while CLI and delegated management remain guarded
   const upstream = vi.fn(async () => { throw Error('Unexpected upstream request'); });
   const host = createFakePluginHost({ pluginId: 'pool-test', dataDir, sdk: { hosts: { list: async () => [] } } });
   cleanups.push(() => host.harness.lifecycle.dispose());
-  await createAccountPoolPlugin({ fetch: upstream })(host.bb);
+  await createAccountPoolPlugin({ fetch: upstream })(host.alia);
   const call = host.harness.behavior.callRpc;
   for (const method of ['account.list', 'status.get', 'config.get', 'egress.status', 'native.accounts']) await expect(call(method, null)).resolves.toBeDefined();
   expect((await host.harness.behavior.runCli(['egress', 'status', '--json'])).exitCode).toBe(1);

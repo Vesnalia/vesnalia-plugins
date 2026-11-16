@@ -4,15 +4,15 @@ import { fileURLToPath } from "node:url";
 import { readCodeThemeRules } from "../scripts/code-theme-rules";
 import { auditTheme, renderCodeTheme, renderTheme } from "../scripts/generate-theme";
 
-const templatePath = fileURLToPath(new URL("../scripts/bb-monokai.template.css", import.meta.url));
-const themePath = fileURLToPath(new URL("../themes/bb-monokai.css", import.meta.url));
-const codeThemePath = fileURLToPath(new URL("../themes/bb-monokai-code.json", import.meta.url));
+const templatePath = fileURLToPath(new URL("../scripts/alia-monokai.template.css", import.meta.url));
+const themePath = fileURLToPath(new URL("../themes/alia-monokai.css", import.meta.url));
+const codeThemePath = fileURLToPath(new URL("../themes/alia-monokai-code.json", import.meta.url));
 const template = await readFile(templatePath, "utf8");
 const theme = await readFile(themePath, "utf8");
 const codeTheme = await readFile(codeThemePath, "utf8");
 const codeThemeRules = readCodeThemeRules().rules;
 
-describe("bb Monokai contract audit", () => {
+describe("VesnALIA Monokai contract audit", () => {
   test("the shipped CSS is generated from the code-owned roles and template", () => {
     expect(theme).toBe(renderTheme(template));
   });
@@ -38,10 +38,10 @@ describe("bb Monokai contract audit", () => {
     expect(() => auditTheme(changed)).toThrow("#123456 is off-contract");
   });
 
-  test("rejects a missing token that would leak a bb default", () => {
+  test("rejects a missing token that would leak a VesnALIA default", () => {
     const changed = theme.replace("  --trees-status-added-override: #3fa266;\n", "");
     expect(() => auditTheme(changed)).toThrow(
-      "--trees-status-added-override: MISSING (bb default leaks in)",
+      "--trees-status-added-override: MISSING (VesnALIA default leaks in)",
     );
   });
 
@@ -61,17 +61,17 @@ describe("bb Monokai contract audit", () => {
   });
 });
 
-describe("bb Monokai code theme", () => {
+describe("VesnALIA Monokai code theme", () => {
   test("the shipped JSON is generated from the vendored rules and the palette", () => {
     expect(codeTheme).toBe(`${JSON.stringify(renderCodeTheme(codeThemeRules), null, 2)}\n`);
   });
 
-  test("it carries the shape bb parses and hands to Shiki", () => {
+  test("it carries the shape VesnALIA parses and hands to Shiki", () => {
     const parsed = JSON.parse(codeTheme) as ReturnType<typeof renderCodeTheme>;
     expect(parsed.name.length).toBeGreaterThan(0);
     expect(parsed.type).toBe("dark");
     // Without these two Shiki falls back to a scopeless token rule, and this
-    // theme has none — the code surface would render on bb's default ground.
+    // theme has none — the code surface would render on VesnALIA's default ground.
     expect(parsed.colors["editor.background"]).toBe("#181818");
     expect(parsed.colors["editor.foreground"]).toBe("#e3e3dd");
     expect(parsed.tokenColors.length).toBeGreaterThan(0);

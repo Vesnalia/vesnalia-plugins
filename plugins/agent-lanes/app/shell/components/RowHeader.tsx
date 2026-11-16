@@ -7,7 +7,7 @@ import {
   experimental_useSidebarThreadSplit,
   ThreadTitle,
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   ContextMenu,
   ContextMenuContent,

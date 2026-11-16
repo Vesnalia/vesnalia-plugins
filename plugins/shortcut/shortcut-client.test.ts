@@ -52,11 +52,11 @@ describe("ShortcutClient", () => {
           id: 42,
           position: 125,
           name: "Ship the Shortcut plugin",
-          description: "Make stories visible in bb.",
+          description: "Make stories visible in VesnALIA.",
           app_url: "https://app.shortcut.com/example/story/42",
           story_type: "feature",
           workflow_state_id: 10,
-          labels: [{ name: "bb" }],
+          labels: [{ name: "alia" }],
           estimate: 3,
           tasks: [{ id: 1, description: "Build it", complete: true }],
           updated_at: "2026-08-10T12:00:00Z",
@@ -81,7 +81,7 @@ describe("ShortcutClient", () => {
         workflowId: 7,
         workflowName: "Product",
       },
-      labels: ["bb"],
+      labels: ["alia"],
       estimate: 3,
     });
     expect(storyAsMarkdown(result.stories[0]!)).toContain("# sc-42: Ship the Shortcut plugin");

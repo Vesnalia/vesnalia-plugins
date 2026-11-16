@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginRpcResult } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcResult } from "@vesnalia/plugin-sdk/app";
 import { CompareView } from "./compare.js";
 import { Overview } from "./overview.js";
 import type { Screen } from "./routes.js";

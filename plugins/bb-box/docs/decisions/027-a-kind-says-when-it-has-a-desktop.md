@@ -4,7 +4,7 @@ Status: accepted, 1 October 2026. Partly supersedes
 [012](012-offers-may-add-features.md): the IDs and labels of the kinds
 without a desktop. Partly superseded by
 [029](029-configuration-is-one-checked-document.md): the keys from before
-027 are read once, when BB's settings move into bb-box's configuration.
+027 are read once, when VesnALIA's settings move into alia-box's configuration.
 Extended by [040](040-linux-on-arm64-has-kinds-of-its-own.md): where an
 architecture goes in a kind's ID. Partly superseded by
 [041](041-every-linux-box-has-docker.md): `linux-docker` is an alias of
@@ -20,7 +20,7 @@ most tool calls and on most rows of the panel, and it names what the box
 lacks. The operator asked for the plain box to have no qualifier and for
 desktops to say so.
 
-Existing boxes carry the old IDs: in bb-box's records, in the kind tag
+Existing boxes carry the old IDs: in alia-box's records, in the kind tag
 Proxmox LXC writes on each guest, which the sweep reads to restore a lost
 record ([019](019-lost-records-are-restored-from-guests.md)), and in
 settings, scripts and habits.
@@ -43,7 +43,7 @@ settings, scripts and habits.
 - The default kind is `linux`.
 - The old IDs stay accepted as aliases everywhere an ID comes in:
   `box_acquire` and the panel, settings, stored records, and owners read from
-  guests. Everything bb-box shows uses the new IDs and labels.
+  guests. Everything alia-box shows uses the new IDs and labels.
 - Core keeps the one alias table and maps an ID where it comes in, so the
   registry, `capacity`, `transports` and the views see only the new IDs.
   Backends offer only the new IDs. A backend that reads a kind from its own
@@ -60,7 +60,7 @@ settings, scripts and habits.
 - Existing boxes keep working, and nothing rewrites their guests: a guest
   keeps its old tag until it is released, and core reads it as the new ID.
   A stored record shows the new ID and the kind's current label.
-- BB's settings handle returns the keys bb-box declares, with a key's
+- VesnALIA's settings handle returns the keys alia-box declares, with a key's
   declared default when it is unset. So the old keys stay declared, labelled
   as replaced, until a later release drops them. The new keys declare no
   default: Proxmox LXC applies its defaults itself, and each key's

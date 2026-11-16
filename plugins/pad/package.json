@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-pad",
+  "name": "alia-plugin-pad",
   "version": "0.2.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.49.0",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49.0",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "Pad",
     "description": "Keep notes beside your work in a local Markdown outline, with keyboard editing and optional agent reviews.",
     "branding": {
@@ -26,7 +26,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@pierre/diffs": "~1.2.12",
     "@radix-ui/react-alert-dialog": "^1.2.1",
     "@radix-ui/react-context-menu": "^2.4.1",
@@ -53,17 +52,26 @@
     "vaul": "^1.1.2"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test test/*.test.ts"
   },
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/pad#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/itsbariscan/bb-pad.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/pad"
   },
   "bugs": {
-    "url": "https://github.com/itsbariscan/bb-pad/issues"
-  },
-  "homepage": "https://github.com/itsbariscan/bb-pad#readme"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

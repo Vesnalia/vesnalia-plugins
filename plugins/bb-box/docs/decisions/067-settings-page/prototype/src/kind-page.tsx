@@ -247,7 +247,7 @@ function KindEditor({ id }: { id: string }) {
         </Card>
       </Section>
 
-      <Section title="Spare boxes" description="Made ahead and added to BB as machines, so a thread gets one of the default size, with its access, at once.">
+      <Section title="Spare boxes" description="Made ahead and added to VesnALIA as machines, so a thread gets one of the default size, with its access, at once.">
         <Card>
           <SettingRow
             id={`kinds/${id}/spares`}

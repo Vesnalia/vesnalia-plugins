@@ -2,13 +2,13 @@
  * Claude Switcher: the four state colours of design B, the three of its bars
  * of what is spent, and its two motions
  * (Optimizador informes/2026-10-30/ultra/propuestas/DISENO.md). Everything
- * else comes from bb's tokens through Tailwind classes in app.tsx. bb marks
- * its dark mode with a `.dark` class (bb theming reference), which Tailwind's
+ * else comes from alia's tokens through Tailwind classes in app.tsx. alia marks
+ * its dark mode with a `.dark` class (alia theming reference), which Tailwind's
  * `dark:` variant does not follow in a plugin build: hence these variables.
  * Every class starts with `cs-`, as this sheet is not scoped to the plugin.
  */
 .cs-tone {
-  /* text on bb's light surfaces: each above 4.5:1 on white */
+  /* text on alia's light surfaces: each above 4.5:1 on white */
   --cs-run: #1d4ed8;
   --cs-ok: #15803d;
   --cs-keep: #a16207;

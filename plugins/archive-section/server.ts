@@ -1,10 +1,10 @@
-// bb-plugin-archive-section — moves archived threads into an "Archived"
+// alia-plugin-archive-section — moves archived threads into an "Archived"
 // sidebar section, and puts them back where they were on unarchive.
 //
 // Core fires `thread.archived` / `thread.unarchived` after the change lands,
 // so the move happens right after the click. Events that fire while the
 // plugin is unloaded are not replayed, so a startup sweep catches those up.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 type Thread = { id: string; sectionId: string | null; title: string | null };
 type Section = { id: string; name: string };
@@ -18,8 +18,8 @@ function normalize(name: string): string {
   return name.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     sectionName: {
       type: "string",
       label: "Archive section name",
@@ -48,7 +48,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function listSections(): Promise<Section[]> {
-    return await bb.sdk.threadSections.list();
+    return await alia.sdk.threadSections.list();
   }
 
   async function findSection(sections: Section[]): Promise<Section | null> {
@@ -62,8 +62,8 @@ export default async function plugin(bb: BbPluginApi) {
   async function archiveSection(): Promise<Section> {
     const existing = await findSection(await listSections());
     if (existing !== null) return existing;
-    const created = await bb.sdk.threadSections.create({ name: wanted });
-    bb.log.info(`created archive section ${created.name} (${created.id})`);
+    const created = await alia.sdk.threadSections.create({ name: wanted });
+    alia.log.info(`created archive section ${created.name} (${created.id})`);
     return created;
   }
 
@@ -72,16 +72,16 @@ export default async function plugin(bb: BbPluginApi) {
   async function moveToArchive(thread: Thread, section: Section): Promise<boolean> {
     if (thread.sectionId === section.id) return false;
     const previous: Previous = { sectionId: thread.sectionId };
-    await bb.storage.kv.set(previousKey(thread.id), previous);
-    await bb.sdk.threads.update({ threadId: thread.id, sectionId: section.id });
-    bb.log.info(`moved archived thread ${thread.id} into ${section.id}`);
+    await alia.storage.kv.set(previousKey(thread.id), previous);
+    await alia.sdk.threads.update({ threadId: thread.id, sectionId: section.id });
+    alia.log.info(`moved archived thread ${thread.id} into ${section.id}`);
     return true;
   }
 
   async function restore(thread: Thread): Promise<void> {
     const key = previousKey(thread.id);
-    const previous = await bb.storage.kv.get<Previous>(key);
-    await bb.storage.kv.delete(key);
+    const previous = await alia.storage.kv.get<Previous>(key);
+    await alia.storage.kv.delete(key);
     if (!restoreOnUnarchive) return;
     const sections = await listSections();
     const archive = await findSection(sections);
@@ -89,11 +89,11 @@ export default async function plugin(bb: BbPluginApi) {
     if (archive === null || thread.sectionId !== archive.id) return;
     const target = previous?.sectionId ?? null;
     const stillExists = target !== null && sections.some((s) => s.id === target);
-    await bb.sdk.threads.update({
+    await alia.sdk.threads.update({
       threadId: thread.id,
       sectionId: stillExists ? target : null,
     });
-    bb.log.info(`restored unarchived thread ${thread.id} to ${stillExists ? target : "no section"}`);
+    alia.log.info(`restored unarchived thread ${thread.id} to ${stillExists ? target : "no section"}`);
   }
 
   /** Moves every archived thread that is outside the archive section. */
@@ -103,7 +103,7 @@ export default async function plugin(bb: BbPluginApi) {
     // Each move takes a thread out of the "not in section" set, so page by
     // offset over the whole archived list instead of a filtered one.
     for (let offset = 0; ; offset += PAGE_SIZE) {
-      const page: Thread[] = await bb.sdk.threads.list({
+      const page: Thread[] = await alia.sdk.threads.list({
         archived: true,
         includeHidden: true,
         limit: PAGE_SIZE,
@@ -117,17 +117,17 @@ export default async function plugin(bb: BbPluginApi) {
     return { sectionName: section.name, moved };
   }
 
-  bb.events.on("thread.archived", ({ thread }) =>
+  alia.events.on("thread.archived", ({ thread }) =>
     serialize(async () => {
       await moveToArchive(thread, await archiveSection());
     }),
   );
-  bb.events.on("thread.unarchived", ({ thread }) => serialize(() => restore(thread)));
+  alia.events.on("thread.unarchived", ({ thread }) => serialize(() => restore(thread)));
 
-  bb.background.service("startup-sweep", {
+  alia.background.service("startup-sweep", {
     async start(signal) {
       const { moved } = await serialize(sweep);
-      if (moved.length > 0) bb.log.info(`startup sweep moved ${moved.length} thread(s)`);
+      if (moved.length > 0) alia.log.info(`startup sweep moved ${moved.length} thread(s)`);
       // Nothing else to do; stay up until reload so the service is not restarted.
       await new Promise((resolve) => signal.addEventListener("abort", resolve, { once: true }));
     },
@@ -135,22 +135,22 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb archive-section status [--json]",
-    "  bb archive-section sweep [--json]",
+    "  VesnALIA archive-section status [--json]",
+    "  VesnALIA archive-section sweep [--json]",
   ].join("\n");
-  bb.cli.register({
+  alia.cli.register({
     name: "archive-section",
     summary: "Keep archived threads in an Archived sidebar section",
     commands: [
       {
         name: "status",
         summary: "Show the archive section and how many archived threads are outside it",
-        usage: "bb archive-section status [--json]",
+        usage: "alia archive-section status [--json]",
       },
       {
         name: "sweep",
         summary: "Move every archived thread that is outside the section into it",
-        usage: "bb archive-section sweep [--json]",
+        usage: "alia archive-section sweep [--json]",
       },
     ],
     async run(argv) {
@@ -166,7 +166,7 @@ export default async function plugin(bb: BbPluginApi) {
           const section = await findSection(await listSections());
           let outside = 0;
           for (let offset = 0; ; offset += PAGE_SIZE) {
-            const page: Thread[] = await bb.sdk.threads.list({
+            const page: Thread[] = await alia.sdk.threads.list({
               archived: true,
               includeHidden: true,
               limit: PAGE_SIZE,

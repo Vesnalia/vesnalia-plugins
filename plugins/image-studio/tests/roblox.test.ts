@@ -131,7 +131,7 @@ test("migration: one game per folder, scratch folders get their own, links set",
   const styles = [
     style({ id: "gui1", section: "gui", origin: "/p/Zombie Colony", theme: "RTS colony", updatedAt: "2026-10-05T00:00:00.000Z" }),
     style({ id: "chr1", section: "characters", origin: "/p/Zombie Colony", theme: "steampunk" }),
-    style({ id: "chr2", section: "characters", origin: "/p/Zombie Colony/.bb/chats/thr_x/tmp/arthas", name: "Arthas test" }),
+    style({ id: "chr2", section: "characters", origin: "/p/Zombie Colony/.vesnalia/chats/thr_x/tmp/arthas", name: "Arthas test" }),
     style({ id: "done", section: "gui", gameId: "old" }),
   ];
   const plan = planGameMigration(styles, "2026-10-23T00:00:00.000Z", () => `g${++n}`);
@@ -139,7 +139,7 @@ test("migration: one game per folder, scratch folders get their own, links set",
     plan.games.map((game) => [game.id, game.name, game.theme, game.origin]),
     [
       ["g1", "Zombie Colony", "RTS colony", "/p/Zombie Colony"],
-      ["g2", "Arthas test", "", "/p/Zombie Colony/.bb/chats/thr_x/tmp/arthas"],
+      ["g2", "Arthas test", "", "/p/Zombie Colony/.vesnalia/chats/thr_x/tmp/arthas"],
     ],
   );
   assert.deepEqual(plan.links, { gui1: "g1", chr1: "g1", chr2: "g2" });

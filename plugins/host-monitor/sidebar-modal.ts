@@ -214,7 +214,7 @@ export function mountHostMonitorMiniModal(pluginId: string, signal: AbortSignal)
       if (controller.signal.aborted || modal === null || rows === null || summary === null || status === null) return;
       summary.textContent = `${fleet.connected}/${fleet.total} connected`;
       rows.replaceChildren(...fleet.machines.map((machine) => machineRow(machine, fleet.thresholds)));
-      status.textContent = fleet.machines.length === 0 ? "No machines are enrolled in BB." : "Updated now";
+      status.textContent = fleet.machines.length === 0 ? "No machines are enrolled in VesnALIA." : "Updated now";
       position();
     }).catch((error: unknown) => {
       if (modal !== null && status !== null && !(error instanceof DOMException && error.name === "AbortError")) {

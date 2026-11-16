@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import type { ExperimentalMessageMetadataProps } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalMessageMetadataProps } from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import type { FlareDto } from "../contract";
 import { ago } from "../format";
@@ -8,8 +8,8 @@ import { ChildLink, KindIcon } from "./flare-card";
 import { OUTCOME_LABELS, clock, sectionTitle, type Section } from "./group";
 import { useNow } from "./use-now";
 
-// The rendered view is bb's own conversation view of a companion thread, so Flare cannot put its dividers between the
-// messages itself. bb's message metadata slot renders a component above each message instead; the Flares tab
+// The rendered view is VesnALIA's own conversation view of a companion thread, so Flare cannot put its dividers between the
+// messages itself. VesnALIA's message metadata slot renders a component above each message instead; the Flares tab
 // publishes here which flare each companion turn shows, and the divider reads it. Any other thread finds nothing and
 // renders nothing.
 
@@ -106,7 +106,7 @@ function Divider({ mark }: { mark: Mark }) {
   );
 }
 
-/** bb's message metadata slot: a divider over each flare in a companion thread, nothing anywhere else. */
+/** VesnALIA's message metadata slot: a divider over each flare in a companion thread, nothing anywhere else. */
 export function FlareDivider({ message }: ExperimentalMessageMetadataProps) {
   const mark = useMark(message.threadId, message.turnId);
   if (mark === null || message.role !== "assistant") return null;

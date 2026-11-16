@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin, { createHotspot } from "../server.ts";
 import { MIGRATIONS, createStore } from "../lib/store.ts";
 
 const MINUTE = 60_000;
 
 const THREADS = {
-  // An untitled thread: BB names it by its fallback title.
+  // An untitled thread: VesnALIA names it by its fallback title.
   thr_hotthread1: { title: null, titleFallback: "Run the e2e suite" },
 };
 
@@ -29,20 +29,20 @@ function hotReading(at) {
 
 /** Load the plugin in the SDK's fake host with one stored episode. */
 async function loadWithEpisode() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "hotspot" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "hotspot" });
   const readings = [];
   harness.sdk.stub("threads.get", async ({ threadId }) => {
     const thread = THREADS[threadId];
     if (thread === undefined) throw Object.assign(new Error("HTTP 404: Thread not found"), { status: 404 });
     return { id: threadId, ...thread };
   });
-  await createHotspot(bb, {
+  await createHotspot(alia, {
     takeReading: async (at, options) => {
       readings.push(options);
       return { live: hotReading(at), stored: null };
     },
   });
-  const store = createStore(bb.storage.database());
+  const store = createStore(alia.storage.database());
   const start = Date.now() - 30 * MINUTE;
   store.saveEpisode({
     id: null,
@@ -71,7 +71,7 @@ async function loadWithEpisode() {
     ],
     procs: [],
   });
-  return { bb, harness, readings };
+  return { alia, harness, readings };
 }
 
 function runTool(harness, params) {
@@ -106,7 +106,7 @@ test("hotspot_history reports an unreadable time as a tool error", async () => {
   assert.match(result.content[0].text, /Cannot read time "teatime"/);
 });
 
-test("bb hotspot episodes and status print bounded text", async () => {
+test("alia hotspot episodes and status print bounded text", async () => {
   const { harness, readings } = await loadWithEpisode();
   const episodes = await harness.runCli(["episodes", "--since", "1h"]);
   assert.equal(episodes.exitCode, 0);
@@ -129,23 +129,23 @@ test("bb hotspot episodes and status print bounded text", async () => {
 });
 
 test("detector state kept in KV by an earlier build is adopted once and the key removed", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "hotspot" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "hotspot" });
   const streak = { id: null, startAt: 1, endAt: null, lastHotAt: 1, peakThermal: 1, peakCpu: 50, samples: 2, culprits: [], others: [] };
-  await bb.storage.kv.set("detector", { streak, open: null, normalStreak: 0, lastAt: 1 });
-  await plugin(bb);
-  assert.equal((await bb.storage.kv.get("detector")) ?? null, null);
-  assert.deepEqual(createStore(bb.storage.database()).detectorState().streak, streak);
+  await alia.storage.kv.set("detector", { streak, open: null, normalStreak: 0, lastAt: 1 });
+  await plugin(alia);
+  assert.equal((await alia.storage.kv.get("detector")) ?? null, null);
+  assert.deepEqual(createStore(alia.storage.database()).detectorState().streak, streak);
   assert.equal(harness.registrations.services.length, 1);
 });
 
 test("an episode left open behind a reset detector state is closed at load", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "hotspot" });
-  await plugin(bb);
-  const db = bb.storage.database();
+  const { alia, harness } = createFakePluginHost({ pluginId: "hotspot" });
+  await plugin(alia);
+  const db = alia.storage.database();
   const orphan = createStore(db).saveEpisode({
     id: null, startAt: 1_000, endAt: null, lastHotAt: 4_000, peakThermal: 2, peakCpu: 90, samples: 3, culprits: [], others: [],
   });
   db.prepare(`INSERT OR REPLACE INTO state (key, value) VALUES ('detector', '{"garbage":true}')`).run();
   const reloaded = await harness.reload(plugin);
-  assert.equal(createStore(reloaded.bb.storage.database()).episode(orphan.id).endAt, 4_000);
+  assert.equal(createStore(reloaded.alia.storage.database()).episode(orphan.id).endAt, 4_000);
 });

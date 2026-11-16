@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { fixtureRuntime } from "./runtime-helper.ts";
 import { registerTools } from "../src/tools.ts";
 import { createCli } from "../src/cli.ts";
@@ -17,8 +17,8 @@ function page(content = "# Example\n\nBody") : FetchedContent {
 }
 function host(overrides: Partial<RuntimeDependencies> = {}, settings: Partial<WebConfig> = {}) {
  const fake = createFakePluginHost({ pluginId: "forage", experimental_declaredIconNames: ["search", "fetch", "map", "extract", "crawl", "diff"] });
- const runtime = fixtureRuntime(fake.bb, async () => config(settings), overrides);
- registerTools(fake.bb, runtime); fake.bb.cli.register(createCli(runtime));
+ const runtime = fixtureRuntime(fake.alia, async () => config(settings), overrides);
+ registerTools(fake.alia, runtime); fake.alia.cli.register(createCli(runtime));
  cleanups.push(() => fake.harness.lifecycle.dispose());
  return { ...fake, runtime };
 }

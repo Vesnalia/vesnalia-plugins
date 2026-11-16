@@ -76,7 +76,7 @@ describe("forbidden APIs", () => {
     },
     {
       pattern: /\bconsole\.(log|error|warn|info|debug)\b/,
-      why: "the one log sink is bb.log, which re-redacts",
+      why: "the one log sink is alia.log, which re-redacts",
     },
   ];
 

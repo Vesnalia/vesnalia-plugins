@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Store, AgentMessageContext } from "./store";
 import type { Guide } from "./guide";
 import { isMissingThread } from "./thread-errors";
@@ -8,11 +8,11 @@ import { withReviewAgentTurn } from "./agent-coordination";
 
 import { reviewRevision } from "./review-revision";
 
-const active = new WeakMap<BbPluginApi, Set<AbortController>>();
-export function stopReviewAgents(bb: BbPluginApi) {
-  for (const controller of active.get(bb) ?? []) controller.abort();
+const active = new WeakMap<AliaPluginApi, Set<AbortController>>();
+export function stopReviewAgents(alia: AliaPluginApi) {
+  for (const controller of active.get(alia) ?? []) controller.abort();
 }
-export function hasReviewAgents(bb: BbPluginApi) { return (active.get(bb)?.size ?? 0) > 0; }
+export function hasReviewAgents(alia: AliaPluginApi) { return (active.get(alia)?.size ?? 0) > 0; }
 
 interface AgentTurnArgs {
   targetKey: string;
@@ -144,17 +144,17 @@ function normalizeOutput(res: unknown): string {
  * thereafter. The in-panel chat log is the display source of truth; the thread
  * runs hidden and releases its runtime after each turn.
  */
-export async function runAgentTurn(bb: BbPluginApi, store: Store, args: AgentTurnArgs): Promise<{ answer: string }> {
+export async function runAgentTurn(alia: AliaPluginApi, store: Store, args: AgentTurnArgs): Promise<{ answer: string }> {
   const controller = new AbortController();
-  const runs = active.get(bb) ?? new Set<AbortController>();
-  active.set(bb, runs); runs.add(controller);
-  try { return await withReviewAgentTurn(bb, args.targetKey, () => runTurn(bb, store, args, controller.signal)); }
+  const runs = active.get(alia) ?? new Set<AbortController>();
+  active.set(alia, runs); runs.add(controller);
+  try { return await withReviewAgentTurn(alia, args.targetKey, () => runTurn(alia, store, args, controller.signal)); }
   finally { runs.delete(controller); }
 }
 
-async function runTurn(bb: BbPluginApi, store: Store, args: AgentTurnArgs, signal: AbortSignal): Promise<{ answer: string }> {
+async function runTurn(alia: AliaPluginApi, store: Store, args: AgentTurnArgs, signal: AbortSignal): Promise<{ answer: string }> {
   signal.throwIfAborted();
-  const threads = bb.sdk.threads;
+  const threads = alia.sdk.threads;
   const revision = reviewRevision(store, args.targetKey);
   const guide = store.getGuide(args.targetKey);
   const patch = store.readPatch(args.targetKey, 0, 5_000_000).text;

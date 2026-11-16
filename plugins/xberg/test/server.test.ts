@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 
 const okResult = {
@@ -34,7 +34,7 @@ async function setup(
     input: any;
     hostId: string;
   }> = [];
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "xberg",
     agentSkillIds: ["xberg"],
     sdk: {
@@ -68,7 +68,7 @@ async function setup(
       return respond({ method, input });
     },
   } as unknown as Parameters<typeof createFakePluginHost>[0]);
-  await plugin(bb);
+  await plugin(alia);
   return { harness, calls };
 }
 

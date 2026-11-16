@@ -1,4 +1,4 @@
-/** Storage boundary shared by the BB host and the standalone server. */
+/** Storage boundary shared by the VesnALIA host and the standalone server. */
 export interface PoolKvStorage {
   get(key: string): Promise<unknown>;
   set(key: string, value: unknown): Promise<void>;

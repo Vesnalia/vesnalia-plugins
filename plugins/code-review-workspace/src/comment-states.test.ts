@@ -2,7 +2,7 @@
 // it; on your own change only open comments post with Submit, in its checks, its payload and Submit anyway; a reopened
 // comment goes with the next Send; and Undo after Remove puts a comment back with its id and where it stood.
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 
 const runGh = vi.hoisted(() => vi.fn());
 vi.mock("./gh", async (orig) => ({ ...(await orig<any>()), runGh }));
@@ -46,14 +46,14 @@ const sends = { hold: null as Promise<void> | null };
 async function sentThree({ own = true, send = true } = {}) {
   gh();
   sends.hold = null;
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: {
       get: async ({ threadId }: { threadId: string }) => ({ id: threadId, title: "Retry uploads", titleFallback: null, archivedAt: null, deletedAt: null, environmentId: null, status: "idle", visibility: "visible", originPluginId: null }),
       send: async () => { await sends.hold; return { ok: true, delivery: "sent" }; },
       experimental_listAncestors: async ({ threadIds }: { threadIds: string[] }) => ({ threads: threadIds.map((threadId) => ({ threadId, ancestorIds: [] })) }),
     },
   } as any });
-  const store = await startPlugin(bb);
+  const store = await startPlugin(alia);
   await store.saveReview({ targetKey: KEY, kind: "pr", repo: "acme/web", number: 12, title: "Retry uploads", author: own ? "me" : "alice", base: "main", head: "retry", headSha: "sha2", status: "ready", createdAt: 1, projectId: "p1" });
   await store.setLifecycle(KEY, { ownPr: own, prState: "OPEN", sourceThreadId: "coder", sourceThreadAt: 1 });
   await store.savePatch(KEY, PATCH);
@@ -61,7 +61,7 @@ async function sentThree({ own = true, send = true } = {}) {
   const call = (method: string, input: unknown) => harness.behavior.callRpc(method, input) as Promise<any>;
   if (send) expect(await call("sendToSourceThread", { targetKey: KEY, comments: [at(1), at(2), at(3)], force: true })).toMatchObject({ ok: true, sendN: 1 });
   const cli = (...argv: string[]) => harness.behavior.runCli(argv, { threadId: "coder", projectId: "p1" });
-  return { bb, harness, store, call, cli };
+  return { alia, harness, store, call, cli };
 }
 
 const comments = async (store: AsyncStore) => (await store.getDraft(KEY)).comments;
@@ -320,8 +320,8 @@ test("Undo after an edit puts back open, not sent: the thread never got the new 
 });
 
 test("a Resolve's Undo is forgotten once its comment is removed, its review deleted, or it's past its time", async () => {
-  const { bb, call } = await sentThree();
-  const keys = () => bb.storage.kv.list("fix-undo:");
+  const { alia, call } = await sentThree();
+  const keys = () => alia.storage.kv.list("fix-undo:");
   await call("resolveComment", { targetKey: KEY, ...at(1), state: "resolved" });
   await call("resolveComment", { targetKey: KEY, ...at(2), state: "dismissed" });
   expect(await keys()).toHaveLength(2);

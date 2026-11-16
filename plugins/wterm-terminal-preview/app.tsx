@@ -1,11 +1,11 @@
 import { lazy, useEffect, useRef, useState } from "react";
 import {
 	definePluginApp,
-	useBbContext,
-	useBbNavigate,
+	useAliaContext,
+	useAliaNavigate,
 	useRpc,
-} from "@bb/plugin-sdk/app";
-import * as BbApp from "@bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import * as AliaApp from "@vesnalia/plugin-sdk/app";
 import type { wtermRpcContract } from "./server";
 import { evaluateTerminalPresence } from "./terminal-open-policy.js";
 import {
@@ -415,7 +415,7 @@ function LegacyTerminalAction({
 }
 
 function OpenSessionTerminalAction() {
-	const navigate = useBbNavigate();
+	const navigate = useAliaNavigate();
 	return (
 		<SessionTerminalComposerAction
 			onOpen={async (threadId) => {
@@ -492,11 +492,11 @@ export default definePluginApp((app) => {
 			}
 		},
 		component: function TerminalAction({ threadId, params }) {
-			const { threadId: contextThreadId } = useBbContext();
+			const { threadId: contextThreadId } = useAliaContext();
 			const currentThreadId = threadId || contextThreadId || "";
 			useTrackOpenWtermTab(currentThreadId, params);
 			const useReplaceCurrent = Reflect.get(
-				BbApp,
+				AliaApp,
 				"experimental_useReplaceCurrentPluginTab",
 			) as ReplaceCurrentPluginTabHook | undefined;
 			return useReplaceCurrent ? (

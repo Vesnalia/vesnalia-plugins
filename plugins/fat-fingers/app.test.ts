@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   loadPluginApp,
   mountPluginContentScripts,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 
 const ACTIVE_ATTRIBUTE = "data-fat-fingers";
 
@@ -12,7 +12,7 @@ afterEach(() => {
 });
 
 describe("fat-fingers", () => {
-  it("registers one content script that bb accepts", async () => {
+  it("registers one content script that VesnALIA accepts", async () => {
     const app = await loadPluginApp(() => import("./app"));
     expect(app.contentScripts.map((script) => script.id)).toEqual([
       "scale-icons",

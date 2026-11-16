@@ -1,4 +1,4 @@
-// Waiting that ends when a signal aborts, as when the plugin stops and BB
+// Waiting that ends when a signal aborts, as when the plugin stops and VesnALIA
 // may no longer answer it.
 
 /** `promise`, or `signal`'s reason as soon as it aborts. The work itself goes on; only the wait ends. */

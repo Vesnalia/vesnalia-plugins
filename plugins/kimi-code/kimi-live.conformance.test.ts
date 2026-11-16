@@ -6,18 +6,18 @@ import {
   experimental_captureBridgeJsonRpcOutput as captureBridgeJsonRpcOutput,
   experimental_formatConformanceReport as formatConformanceReport,
   experimental_runBridgeConformance as runBridgeConformance,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import { afterEach, beforeEach, expect, it } from "vitest";
 
 // Live integration test: drives the real ACP bridge against a real `kimi acp`
 // child, which needs the kimi binary on PATH and a valid login. It also spends
-// model tokens, so it runs only when BB_KIMI_LIVE=1 is set explicitly.
-const LIVE = process.env.BB_KIMI_LIVE === "1";
+// model tokens, so it runs only when ALIA_KIMI_LIVE=1 is set explicitly.
+const LIVE = process.env.ALIA_KIMI_LIVE === "1";
 
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-kimi-conformance-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "alia-kimi-conformance-"));
 });
 
 afterEach(() => {
@@ -58,7 +58,7 @@ itLive("passes the canonical protocol suite against a real kimi acp", async () =
 
     console.info(`kimi bridge live conformance:\n${formatConformanceReport(report)}`);
 
-    // kimi >= 2.3.0 locks every session to its owning process, and bb forks
+    // kimi >= 2.3.0 locks every session to its owning process, and VesnALIA forks
     // by asking a NEW kimi process to fork the still-live source session, so
     // fork always fails against a live session. The declaration says
     // fork: "none" and the plugin's host.ts wrapper narrows the initialize

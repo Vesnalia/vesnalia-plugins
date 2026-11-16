@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type SyntheticEvent } from "react";
 import { CircleX, Info, Sparkles, TriangleAlert, type LucideIcon } from "lucide-react";
-import { definePluginApp, UrlLink, useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, UrlLink, useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { issueBadgeEntries, issueRouteKey, splitProjectSlugs } from "./sentry-core";
 import type {
@@ -788,15 +788,15 @@ function ConnectionForm({
           <fieldset className="rounded-lg border border-border p-4 sm:col-span-2">
             <legend className="px-1 text-sm font-semibold text-foreground">Link local projects</legend>
             <p className="mb-4 text-xs font-normal leading-5 text-muted-foreground">
-              Link each Sentry project to a local BB checkout to enable the in-app Triage button on its issues.
+              Link each Sentry project to a local VesnALIA checkout to enable the in-app Triage button on its issues.
             </p>
             {localProjectsLoading ? (
-              <p className="text-sm text-muted-foreground">Loading local BB projects…</p>
+              <p className="text-sm text-muted-foreground">Loading local VesnALIA projects…</p>
             ) : localProjectsError !== null ? (
               <p role="alert" className="text-sm text-destructive">Local projects unavailable: {localProjectsError}</p>
             ) : localProjects.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No local BB projects found. Add a project with a local checkout, then reopen this form.
+                No local VesnALIA projects found. Add a project with a local checkout, then reopen this form.
               </p>
             ) : (
               <div className="space-y-3">
@@ -804,7 +804,7 @@ function ConnectionForm({
                   <label key={projectSlug} className="block text-sm font-medium text-foreground">
                     <span className="font-mono text-xs">{projectSlug}</span>
                     <select
-                      aria-label={`Local BB project for Sentry project ${projectSlug}`}
+                      aria-label={`Local VesnALIA project for Sentry project ${projectSlug}`}
                       value={projectLinks[projectSlug] ?? ""}
                       onChange={(event) => {
                         const value = event.target.value;
@@ -2022,7 +2022,7 @@ function IssueDetailPage({
   onBack: () => void;
 }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { projects: localProjects } = useLocalProjects();
   const [triageLoading, setTriageLoading] = useState(false);
   const [triageError, setTriageError] = useState<string | null>(null);
@@ -2098,8 +2098,8 @@ function IssueDetailPage({
     if (linkedProjectId === null) return;
     if (newRun || triageThreads.threads.length === 0) {
       const prompt = newRun
-        ? "Start a new AI triage thread for this issue? Existing linked threads will be kept. BB will ask for approval before any file changes."
-        : "Start an AI triage thread for this issue? It will inspect the linked local project and BB will ask for approval before any file changes.";
+        ? "Start a new AI triage thread for this issue? Existing linked threads will be kept. VesnALIA will ask for approval before any file changes."
+        : "Start an AI triage thread for this issue? It will inspect the linked local project and VesnALIA will ask for approval before any file changes.";
       if (!window.confirm(prompt)) return;
     }
     setTriageLoading(true);
@@ -2139,7 +2139,7 @@ function IssueDetailPage({
           {linkedProjectId === null ? (
             <span
               className="rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground"
-              title="Edit the Sentry connection to link this project to a local BB checkout"
+              title="Edit the Sentry connection to link this project to a local VesnALIA checkout"
             >
               Link a local project to enable triage
             </span>
@@ -2149,7 +2149,7 @@ function IssueDetailPage({
                 type="button"
                 onClick={() => void triage()}
                 disabled={triageLoading}
-                title={linkedProject === null ? "Start triage in the linked local BB project" : "Open the linked triage thread in " + linkedProject.name}
+                title={linkedProject === null ? "Start triage in the linked local VesnALIA project" : "Open the linked triage thread in " + linkedProject.name}
                 className="rounded-md bg-foreground px-3 py-2 text-sm font-medium text-background hover:opacity-90 disabled:cursor-wait disabled:opacity-60"
               >
                 {triageLoading ? "Opening…" : triageThreads.threads.length > 0 ? "Open triage" : "Start triage"}
@@ -2231,7 +2231,7 @@ function IssueDetailPage({
         )}
         <section className="rounded-xl border border-border bg-card p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-foreground">Related BB triage threads</h2>
+            <h2 className="text-sm font-semibold text-foreground">Related VesnALIA triage threads</h2>
             <span className="text-xs text-muted-foreground">
               {triageThreads.loading ? "Loading…" : triageThreads.threads.length + " linked"}
             </span>
@@ -2510,7 +2510,7 @@ function IssueDetailPage({
 }
 
 function PluginPage({ subPath }: { subPath: string }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const state = useConnections();
   const route = parseIssueRoute(subPath);
   if (state.connections === null || state.connections.length === 0) {

@@ -83,7 +83,7 @@ const alive = (pid: number) => {
 };
 
 /**
- * A cloudflared this plugin started in an earlier run and never stopped (BB's server was killed)
+ * A cloudflared this plugin started in an earlier run and never stopped (VesnALIA's server was killed)
  * still holds its public address. Stops it when the process with that id is really one of ours;
  * an id that now belongs to anything else is left alone. Says whether a tunnel was stopped.
  */

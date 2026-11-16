@@ -1,4 +1,4 @@
-// The JSON a panel tab is opened with is persisted by bb and restored across
+// The JSON a panel tab is opened with is persisted by VesnALIA and restored across
 // reloads, so it is untrusted input: parse it back into typed refs.
 import type { BranchRef, CompareRef, LogFilter } from "../contracts";
 import { isValidGitBranchName, isValidRefish, isValidRemoteName } from "./branch-name";

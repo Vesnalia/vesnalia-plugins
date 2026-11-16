@@ -20,9 +20,9 @@ import {
   it,
   vi,
 } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import hostEntry from "./host";
 import {
   createTaskTracker,
@@ -50,7 +50,7 @@ const bd = async (cwd: string, args: (string | number)[]): Promise<unknown> =>
   );
 
 describe("task tracker", () => {
-  let bb: BbPluginApi;
+  let alia: AliaPluginApi;
   let fakeHarness: ReturnType<typeof createFakePluginHost>["harness"];
   let hostHarness: ReturnType<typeof experimental_createHostEntryHarness>;
   let defaultKind: TrackerKind;
@@ -71,11 +71,11 @@ describe("task tracker", () => {
           },
         ),
     });
-    bb = fake.bb;
+    alia = fake.alia;
     fakeHarness = fake.harness;
     defaultKind = "builtin";
     published = [];
-    tracker = createTaskTracker(bb, {
+    tracker = createTaskTracker(alia, {
       defaultTracker: async () => defaultKind,
       publish: (projectId) => published.push(projectId),
     });
@@ -113,7 +113,7 @@ describe("task tracker", () => {
       const scope = scopeOf(workspace, "alpha");
       await tracker.setConfig(workspace, "builtin");
       // Pre-existing data under the unchanged key tasks:<projectId>:<team>.
-      await bb.storage.kv.set("tasks:p1:alpha", {
+      await alia.storage.kv.set("tasks:p1:alpha", {
         nextId: 8,
         tasks: [
           {
@@ -141,7 +141,7 @@ describe("task tracker", () => {
       expect(after.tasks.map((task) => task.id)).toEqual([7, 8]);
       expect(after.nextId).toBe(9);
       expect(published).toContain("p1");
-      const raw = await bb.storage.kv.get<{ tasks: { id: number }[] }>(
+      const raw = await alia.storage.kv.get<{ tasks: { id: number }[] }>(
         "tasks:p1:alpha",
       );
       expect(raw?.tasks.map((task) => task.id)).toEqual([7, 8]);
@@ -238,7 +238,7 @@ describe("task tracker", () => {
       const store = await tracker.read(scope);
       expect(store.tasks[0]!.review?.decisions).toEqual([decision]);
       expect(store.tasks[0]!.review?.submission?.id).toBe("sub_t1");
-      const raw = await bb.storage.kv.get<{
+      const raw = await alia.storage.kv.get<{
         tasks: { id: number; review?: unknown }[];
       }>("tasks:p1:alpha");
       expect((raw?.tasks[0]?.review as { submission: { id: string } }).submission.id).toBe("sub_t1");
@@ -263,7 +263,7 @@ describe("task tracker", () => {
         step: 1,
         files: ["a.ts"],
       });
-      const raw = await bb.storage.kv.get<{
+      const raw = await alia.storage.kv.get<{
         tasks: { id: number; checkpoint?: unknown }[];
       }>("tasks:p1:alpha");
       expect(raw?.tasks[0]?.checkpoint).toEqual({ step: 1, files: ["a.ts"] });
@@ -355,7 +355,7 @@ describe("task tracker", () => {
           "-a",
           "dev",
           "-l",
-          "bb-team:delta",
+          "alia-team:delta",
         ]);
         const child = join(parent, "child");
         await mkdir(child);
@@ -391,7 +391,7 @@ describe("task tracker", () => {
             throw new Error("host unreachable");
           },
         });
-        const failingTracker = createTaskTracker(failing.bb, {
+        const failingTracker = createTaskTracker(failing.alia, {
           defaultTracker: async () => "beads",
           publish: () => {},
         });
@@ -436,7 +436,7 @@ describe("task tracker", () => {
 
     it("ignores junk in the override row", async () => {
       const workspace = workspaceOf("p1", "/ws/demo");
-      await bb.storage.kv.set("tracker:p1", "jira");
+      await alia.storage.kv.set("tracker:p1", "jira");
       expect(await tracker.getConfig(workspace)).toEqual({
         kind: "builtin",
         override: null,
@@ -461,7 +461,7 @@ describe("task tracker", () => {
       const scope = scopeOf(workspace, "alpha");
       await tracker.setConfig(workspace, "beads");
       // Built-in data exists and must NOT be used as a fallback.
-      await bb.storage.kv.set("tasks:p1:alpha", { nextId: 2, tasks: [] });
+      await alia.storage.kv.set("tasks:p1:alpha", { nextId: 2, tasks: [] });
       const missing = await tracker.read(scope).catch((cause: unknown) => cause);
       // Callers may degrade to an empty package list on this exact code only.
       expect(isTrackerAbsentError(missing)).toBe(true);
@@ -517,7 +517,7 @@ describe("task tracker", () => {
       const [issue] = (await bd(repo, ["show", todo.id])) as [
         { labels: string[]; assignee: string },
       ];
-      expect(issue.labels).toContain("bb-team:alpha");
+      expect(issue.labels).toContain("alia-team:alpha");
       expect(issue.assignee).toBe("developer");
     });
 
@@ -534,27 +534,27 @@ describe("task tracker", () => {
         ((await bd(repo, ["show", task.id])) as [{ labels?: string[] }])[0]
           ?.labels ?? [];
       await tracker.update(scope, task.id, { status: "review" });
-      expect(await labels()).toContain("bb-state:review");
+      expect(await labels()).toContain("alia-state:review");
       expect((await tracker.read(scope)).tasks[0]!.status).toBe("review");
       const { previous } = await tracker.update(scope, task.id, {
         status: "in-progress",
       });
       expect(previous.status).toBe("review");
-      expect(await labels()).not.toContain("bb-state:review");
+      expect(await labels()).not.toContain("alia-state:review");
       // Closing an assigned in-progress task needs no --force: the tracker
       // never bypasses a live claim implicitly.
       await tracker.update(scope, task.id, { status: "done" });
       const assignedDone = (await tracker.read(scope)).tasks[0]!;
       expect(assignedDone.status).toBe("done");
       expect(assignedDone.role).toBe("dev");
-      expect(await labels()).toEqual(["bb-team:beta"]);
+      expect(await labels()).toEqual(["alia-team:beta"]);
       await tracker.update(scope, task.id, { status: "todo" });
       expect((await tracker.read(scope)).tasks[0]!.status).toBe("todo");
       await tracker.update(scope, task.id, { status: "dropped" });
-      expect(await labels()).toContain("bb-state:dropped");
+      expect(await labels()).toContain("alia-state:dropped");
       expect((await tracker.read(scope)).tasks[0]!.status).toBe("dropped");
       await tracker.update(scope, task.id, { status: "todo" });
-      expect(await labels()).toEqual(["bb-team:beta"]);
+      expect(await labels()).toEqual(["alia-team:beta"]);
       expect((await tracker.read(scope)).tasks[0]!.status).toBe("todo");
       await tracker.update(scope, task.id, {
         status: "done",
@@ -581,7 +581,7 @@ describe("task tracker", () => {
         "--type",
         "task",
         "-l",
-        "bb-team:gamma",
+        "alia-team:gamma",
         "--deps",
         String(base.id),
       ]);
@@ -603,13 +603,13 @@ describe("task tracker", () => {
         "-s",
         "blocked",
         "-l",
-        "bb-team:gamma",
+        "alia-team:gamma",
       ])) as { id: string };
       const deferredIssue = (await bd(repo, [
         "create",
         "Deferred",
         "-l",
-        "bb-team:gamma",
+        "alia-team:gamma",
       ])) as { id: string };
       await bd(repo, ["defer", deferredIssue.id, "--until=+1d"]);
 
@@ -625,7 +625,7 @@ describe("task tracker", () => {
         "--limit",
         "0",
         "--label",
-        "bb-team:gamma",
+        "alia-team:gamma",
       ])) as Array<{ id: string }>;
       expect(ready).toEqual(cliReady.map((row) => row.id));
     });
@@ -659,7 +659,7 @@ describe("task tracker", () => {
       ];
       expect(issue.metadata.foreignTool).toBe("keep");
       expect(issue.metadata.other).toEqual({ nested: true });
-      expect(issue.metadata.bbTeamCheckpoint).toEqual({
+      expect(issue.metadata.aliaTeamCheckpoint).toEqual({
         step: 1,
         files: ["a.ts"],
       });
@@ -667,7 +667,7 @@ describe("task tracker", () => {
       const [updated] = (await bd(repo, ["show", task.id])) as [
         { metadata: Record<string, unknown> },
       ];
-      expect(updated.metadata.bbTeamCheckpoint).toEqual({ step: 2 });
+      expect(updated.metadata.aliaTeamCheckpoint).toEqual({ step: 2 });
       expect(updated.metadata.foreignTool).toBe("keep");
       // The projection carries the checkpoint without an extra bd show.
       const store = await tracker.read(scope);
@@ -714,9 +714,9 @@ describe("task tracker", () => {
       ];
       expect(issue.metadata.foreignTool).toBe("keep");
       expect(
-        (issue.metadata.bbTeamSubmission as { id: string }).id,
+        (issue.metadata.aliaTeamSubmission as { id: string }).id,
       ).toBe("sub_b1");
-      expect(issue.metadata.bbTeamAcceptance).toEqual([decision]);
+      expect(issue.metadata.aliaTeamAcceptance).toEqual([decision]);
       // The projection carries the whole record without an extra bd show.
       const store = await tracker.read(scope);
       expect(store.tasks[0]!.review?.submission?.id).toBe("sub_b1");
@@ -755,7 +755,7 @@ describe("task tracker", () => {
         "create",
         "Rich",
         "-l",
-        "bb-team:eta",
+        "alia-team:eta",
         "-p",
         "1",
         "--acceptance",

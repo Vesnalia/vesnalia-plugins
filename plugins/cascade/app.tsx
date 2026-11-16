@@ -1,4 +1,4 @@
-// bb-plugin-cascade — the frontend. One navPanel owning a scrollable-tiling
+// alia-plugin-cascade — the frontend. One navPanel owning a scrollable-tiling
 // strip of live threads.
 //
 // Every column renders the host's own `ThreadChat`, so this file never touches
@@ -17,8 +17,8 @@ import {
   ThreadChat,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
-import type { NewThreadRequest } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "./server";
 import {
@@ -38,7 +38,7 @@ import { cn } from "@/lib/utils";
 // niri's `preset-column-widths`, as a fraction of the viewport.
 const WIDTH_PRESETS = [0.333, 0.5, 0.667] as const;
 const DRAFT_WIDTH = 0.28;
-// The open draft renders bb's full compose surface; its control row (project,
+// The open draft renders VesnALIA's full compose surface; its control row (project,
 // environment, branch, permission mode) does not fit in the closed placeholder
 // width, so an open draft takes the 1/2 preset.
 const DRAFT_OPEN_WIDTH = WIDTH_PRESETS[1];

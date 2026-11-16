@@ -1,6 +1,6 @@
 name: BBProbe
 options:
-  bundleIdPrefix: dev.bb-box
+  bundleIdPrefix: dev.alia-box
   deploymentTarget:
     iOS: "26.0"
 settings:
@@ -16,7 +16,7 @@ targets:
     sources: [BBProbe]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: dev.bb-box.probe
+        PRODUCT_BUNDLE_IDENTIFIER: dev.alia-box.probe
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_CFBundleDisplayName: BBProbe
@@ -28,7 +28,7 @@ targets:
       - target: BBProbe
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: dev.bb-box.probe.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: dev.alia-box.probe.uitests
         GENERATE_INFOPLIST_FILE: YES
 schemes:
   BBProbe:

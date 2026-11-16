@@ -1,6 +1,6 @@
 import { archivedLast } from "./archived";
 import { posix } from "node:path";
-import type { PluginBbSdk } from "@get-bb/plugin-sdk";
+import type { PluginAliaSdk } from "@vesnalia/plugin-sdk";
 import type { EditIndex, EditRecord, ThreadEdits } from "./edits";
 import { collectAll, FETCH_CONCURRENCY, loadEnvironments, RUNNING, summarizeThread, type AllOptions, type Collected } from "./collect-all";
 import type { FileChange, HostInput, HostMethod, HostOutput, Overview, OverviewTarget, Repo, RepoRef, Scope, ShellInput, ThreadSummary } from "./contract";
@@ -11,13 +11,13 @@ import { loadRepoFiles, loadWorkspaceStatus, picksBase, recordedFile, recordedLi
 import { attachThreadCommits, leaveOutHistory } from "./thread-commits";
 import { findSharedFiles, loadingWorktrees, loadWorktrees } from "./worktrees";
 
-export type Environment = Awaited<ReturnType<PluginBbSdk["environments"]["get"]>>;
+export type Environment = Awaited<ReturnType<PluginAliaSdk["environments"]["get"]>>;
 export type HostCall = <M extends HostMethod>(
   method: M, input: HostInput<M>, options: { hostId: string; signal?: AbortSignal },
 ) => Promise<HostOutput<M>>;
 /** `counting`: the counting settings, the defaults when left out. `whole`: worktrees the user asked to see whole, by key. */
 export interface CollectDeps {
-  sdk: PluginBbSdk; host: HostCall; edits: EditIndex; allOptions?: Omit<AllOptions, "now">; cache?: RepoCache; roots?: RootCache;
+  sdk: PluginAliaSdk; host: HostCall; edits: EditIndex; allOptions?: Omit<AllOptions, "now">; cache?: RepoCache; roots?: RootCache;
   counting?: Counting; whole?: ReadonlySet<string>;
 }
 
@@ -42,7 +42,7 @@ const isAbsolute = (path: string): boolean => /^([/\\]|[A-Za-z]:[\\/])/.test(pat
 const byPath = (a: { path: string }, b: { path: string }): number => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 
 type LiveEnvironment = Environment & { path: string };
-// bb keeps an archived thread's worktree on disk for a while ("retiring") before it destroys it.
+// VesnALIA keeps an archived thread's worktree on disk for a while ("retiring") before it destroys it.
 const isLive = (env: Environment): env is LiveEnvironment =>
   env.status === "ready" && (env.lifecycle.phase === "active" || env.lifecycle.phase === "retiring") && env.isGitRepo && env.path !== null;
 const isDestroyed = (env: Environment): boolean =>
@@ -382,7 +382,7 @@ async function collectTarget(
 
 type Listed = { projects: ProjectInfo[]; hosts: HostInfo[] };
 
-function listProjectsAndHosts(sdk: PluginBbSdk, warnings: string[], signal?: AbortSignal): Promise<Listed> {
+function listProjectsAndHosts(sdk: PluginAliaSdk, warnings: string[], signal?: AbortSignal): Promise<Listed> {
   return Promise.all([
     sdk.projects.list({ includePersonal: true, signal }).catch((error: unknown) => {
       warnings.push(`Could not list projects: ${errorMessage(error)}`);

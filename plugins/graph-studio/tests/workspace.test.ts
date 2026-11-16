@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { isWorkspaceBusy, whileWorkspaceBusy } from "../lib/workspace";
 
-/** What BB's plugin SDK actually throws: BbHttpError with status and code. */
-function bbError(status: number, code: string, message = "broken") {
+/** What VesnALIA's plugin SDK actually throws: AliaHttpError with status and code. */
+function aliaError(status: number, code: string, message = "broken") {
   return Object.assign(new Error(`HTTP ${status}: ${message}`), {
     status,
     code,
@@ -24,8 +24,8 @@ function fakeClock() {
 }
 
 describe("isWorkspaceBusy", () => {
-  it("recognises BB's refusal", () => {
-    expect(isWorkspaceBusy(bbError(409, "workspace_busy"))).toBe(true);
+  it("recognises VesnALIA's refusal", () => {
+    expect(isWorkspaceBusy(aliaError(409, "workspace_busy"))).toBe(true);
   });
 
   // Negative cases: everything that merely *looks* like it. If one of them
@@ -33,11 +33,11 @@ describe("isWorkspaceBusy", () => {
   // instead of failing the node straight away.
   it("does not read another 409 as busy", () => {
     // Same status, different cause: the environment belongs to another project.
-    expect(isWorkspaceBusy(bbError(409, "invalid_request"))).toBe(false);
+    expect(isWorkspaceBusy(aliaError(409, "invalid_request"))).toBe(false);
   });
 
   it("does not read the same code under another status as busy", () => {
-    expect(isWorkspaceBusy(bbError(500, "workspace_busy"))).toBe(false);
+    expect(isWorkspaceBusy(aliaError(500, "workspace_busy"))).toBe(false);
   });
 
   it("does not trip over errors without structure", () => {
@@ -65,13 +65,13 @@ describe("whileWorkspaceBusy", () => {
   });
 
   it("waits out the gap and then spawns after all", async () => {
-    // The real case: BB releases the environment ~500 ms after `idle`.
+    // The real case: VesnALIA releases the environment ~500 ms after `idle`.
     let calls = 0;
     const clock = fakeClock();
     const result = await whileWorkspaceBusy(
       async () => {
         calls += 1;
-        if (calls < 3) throw bbError(409, "workspace_busy");
+        if (calls < 3) throw aliaError(409, "workspace_busy");
         return "thr_critique";
       },
       { sleep: clock.sleep, now: clock.now, delayMs: 250 },
@@ -89,7 +89,7 @@ describe("whileWorkspaceBusy", () => {
       whileWorkspaceBusy(
         async () => {
           calls += 1;
-          throw bbError(404, "not_found", "No such environment.");
+          throw aliaError(404, "not_found", "No such environment.");
         },
         { sleep: clock.sleep, now: clock.now },
       ),
@@ -106,7 +106,7 @@ describe("whileWorkspaceBusy", () => {
       whileWorkspaceBusy(
         async () => {
           calls += 1;
-          throw bbError(409, "workspace_busy", "Working copy busy");
+          throw aliaError(409, "workspace_busy", "Working copy busy");
         },
         { sleep: clock.sleep, now: clock.now, delayMs: 250, timeoutMs: 1_000 },
       ),
@@ -119,7 +119,7 @@ describe("whileWorkspaceBusy", () => {
   it("caps the pause instead of doubling it without end", async () => {
     const clock = fakeClock();
     await expect(
-      whileWorkspaceBusy(async () => Promise.reject(bbError(409, "workspace_busy")), {
+      whileWorkspaceBusy(async () => Promise.reject(aliaError(409, "workspace_busy")), {
         sleep: clock.sleep,
         now: clock.now,
         delayMs: 1_000,
@@ -138,7 +138,7 @@ describe("whileWorkspaceBusy", () => {
     await whileWorkspaceBusy(
       async () => {
         calls += 1;
-        if (calls < 3) throw bbError(409, "workspace_busy");
+        if (calls < 3) throw aliaError(409, "workspace_busy");
         return "ok";
       },
       {

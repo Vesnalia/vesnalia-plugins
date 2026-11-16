@@ -18,7 +18,7 @@ import { NOT_THIS_REVIEW, verifiedGh } from "./github-threads-rpc";
 import type { RpcHandlers, ServeDeps } from "./server-modules";
 
 export function register(deps: ServeDeps) {
-  const { bb, store, receipts, githubWrites, notifications, sync, changed, refreshThreads } = deps;
+  const { alia, store, receipts, githubWrites, notifications, sync, changed, refreshThreads } = deps;
   const view = async (store: AsyncStore, targetKey: string) => {
     return store.exclusive(async (tx) => {
       const review = await tx.getReview(targetKey);
@@ -29,9 +29,9 @@ export function register(deps: ServeDeps) {
   return {
     handlers: {
       async rerunFocusRun({ targetKey }: { targetKey: string }) {
-        return startFocusRun(bb, store, targetKey);
+        return startFocusRun(alia, store, targetKey);
       },
-      stopFocusRun: async ({ targetKey }: { targetKey: string }) => ({ ok: await stopFocusRun(bb, store, targetKey) }),
+      stopFocusRun: async ({ targetKey }: { targetKey: string }) => ({ ok: await stopFocusRun(alia, store, targetKey) }),
       async snoozeReview({ targetKey, snoozed, until }: { targetKey: string; snoozed: boolean; until?: number | null }) {
         const refused = await store.exclusive(async (tx) => {
           if (!await tx.getReview(targetKey)) return { ok: false, error: "This review no longer exists." };
@@ -86,8 +86,8 @@ export function register(deps: ServeDeps) {
         } else {
           try {
             // A conversation under way gets the review, as a message you send it.
-            const ran = skipped.run === "review" ? ["started", "sent"].includes(await startAutomaticReview(bb, store, targetKey, undefined, { clicked: true }))
-              : await startVerification(bb, store, targetKey, "the reviewer asked for a check", "ask");
+            const ran = skipped.run === "review" ? ["started", "sent"].includes(await startAutomaticReview(alia, store, targetKey, undefined, { clicked: true }))
+              : await startVerification(alia, store, targetKey, "the reviewer asked for a check", "ask");
             result = ran ? { ok: true } : { ok: false, error: skipped.run === "review" ? "The review didn't start. Try again." : "The assistant couldn't start. Open Ask agent to choose its agent." };
           } catch (error) {
             result = { ok: false, error: error instanceof Error ? error.message : "The assistant couldn't start." };
@@ -103,7 +103,7 @@ export function register(deps: ServeDeps) {
       },
       async refreshFeedback({ targetKey }: { targetKey: string }) {
         const review = await store.getReview(targetKey);
-        if (review) await refreshThreads(review).catch((error) => bb.log.warn(`Could not read your threads on ${targetKey}: ${String(error)}`));
+        if (review) await refreshThreads(review).catch((error) => alia.log.warn(`Could not read your threads on ${targetKey}: ${String(error)}`));
         await sync.evaluate(targetKey);
         return { feedback: await view(store, targetKey) };
       },
@@ -115,9 +115,9 @@ export function register(deps: ServeDeps) {
         if (!review) return { ok: false, error: "This review no longer exists." };
         if (!baselineOf(review).at) return { ok: false, error: "Submit a review first; then the assistant can check your feedback." };
         if (!checking) return { ok: false, error: "The re-review check is off. Turn it on in Review settings." };
-        if (await isAssistantAnswering(bb, store, targetKey)) return { ok: false, error: "The assistant is still answering. Try again when it finishes." };
+        if (await isAssistantAnswering(alia, store, targetKey)) return { ok: false, error: "The assistant is still answering. Try again when it finishes." };
         await refreshThreads(review).catch(() => {});
-        if (!await startVerification(bb, store, targetKey, "the reviewer asked for a check", "ask")) return { ok: false, error: "The assistant couldn't start. Open Ask agent to choose its agent." };
+        if (!await startVerification(alia, store, targetKey, "the reviewer asked for a check", "ask")) return { ok: false, error: "The assistant couldn't start. Open Ask agent to choose its agent." };
         // The check you ran replaces one that didn't run on its own.
         if (review.skippedRun?.run === "check") await store.setLifecycle(targetKey, { skippedRun: null });
         return { ok: true };
@@ -138,7 +138,7 @@ export function register(deps: ServeDeps) {
         await refreshThreads(review).catch(() => {});
         // GitHub has the reply: a store that can't be read now mustn't fail the Send, or the page drafts it to post again.
         const feedback = await view(store, targetKey).catch((error) => {
-          bb.log.warn(`Could not read the feedback on ${targetKey} after your reply: ${String(error)}`);
+          alia.log.warn(`Could not read the feedback on ${targetKey} after your reply: ${String(error)}`);
           return undefined;
         });
         return { ok: true, ...(feedback !== undefined ? { feedback } : {}) };
@@ -157,7 +157,7 @@ export function register(deps: ServeDeps) {
       async discardReplyDraft({ targetKey, threadId }: { targetKey: string; threadId: string }) {
         await store.deleteReplyDraft(targetKey, threadId);
         await forgetPostedReply(receipts, targetKey, threadId);
-        bb.realtime.publish(`feedback:${targetKey}`, { ts: Date.now() });
+        alia.realtime.publish(`feedback:${targetKey}`, { ts: Date.now() });
         return { ok: true };
       },
       async getReplyDrafts({ targetKey }: { targetKey: string }) {
@@ -181,7 +181,7 @@ export function register(deps: ServeDeps) {
           return { ok: true };
         });
         if (!result.ok) return result;
-        bb.realtime.publish(`feedback:${targetKey}`, { ts: Date.now() });
+        alia.realtime.publish(`feedback:${targetKey}`, { ts: Date.now() });
         await sync.evaluate(targetKey);
         changed(targetKey);
         return { ok: true };
@@ -208,7 +208,7 @@ export function register(deps: ServeDeps) {
           const draft = await tx.updateSummary(targetKey, mode === "suggested"
             ? { verdict, verdictChosen: true, body, bodyAuthor: "agent", written: { verdict, comments: commentsKey((await tx.getDraft(targetKey)).comments) } }
             : { verdict, verdictChosen: true, body, bodyAuthor: undefined, written: undefined });
-          bb.realtime.publish(`draft:${targetKey}`, {});
+          alia.realtime.publish(`draft:${targetKey}`, {});
           return { ok: true, draft };
         });
       },

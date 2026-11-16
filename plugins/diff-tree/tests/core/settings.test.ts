@@ -7,7 +7,7 @@ it("uses compatible defaults and ignores invalid persisted settings", () => {
   expect(readSettings({ chatFileLinks: "icon", fileIcons: false, smoothTransitions: false, defaultView: "split", fontSize: 16, contextLines: 10, refreshOnReturn: false })).toEqual({ chatFileLinks: "icon", fileIcons: false, smoothTransitions: false, defaultView: "split", fontSize: 16, contextLines: 10, refreshOnReturn: false });
 });
 
-it("validates number settings before BB saves them", () => {
+it("validates number settings before VesnALIA saves them", () => {
   expect(settingDescriptors.fontSize.experimental_schema.safeParse(9).success).toBe(false);
   expect(settingDescriptors.fontSize.experimental_schema.safeParse(14.5).success).toBe(false);
   expect(settingDescriptors.fontSize.experimental_schema.safeParse(16).success).toBe(true);

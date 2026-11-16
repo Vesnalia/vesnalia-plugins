@@ -3,8 +3,8 @@ import {
   defineCli,
   defineRpcContract,
   PluginCliError,
-  type BbPluginApi,
-} from "@get-bb/plugin-sdk";
+  type AliaPluginApi,
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { PHASES, turnStats } from "./breakdown.js";
 import { commandStats, compareTurns, threadTotals } from "./insights.js";
@@ -309,9 +309,9 @@ async function mapLimit<T, R>(
   return results;
 }
 
-export default function plugin(bb: BbPluginApi) {
-  const store: TraceStore = createTraceStore(bb);
-  const settings = bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  const store: TraceStore = createTraceStore(alia);
+  const settings = alia.settings.define({
     otlpEndpoint: {
       type: "string",
       label: "OTLP/HTTP traces endpoint, such as http://localhost:4318/v1/traces",
@@ -346,7 +346,7 @@ export default function plugin(bb: BbPluginApi) {
       threadId,
       setTimeout(() => {
         signalTimers.delete(threadId);
-        bb.realtime.publish(TRACE_CHANNEL, { threadId });
+        alia.realtime.publish(TRACE_CHANNEL, { threadId });
       }, SIGNAL_DEBOUNCE_MS),
     );
   };
@@ -358,7 +358,7 @@ export default function plugin(bb: BbPluginApi) {
    * of are worth signaling, and only when the appended events can change a
    * span. A child thread's changes also refresh the parent, whose turns show it.
    */
-  const unsubscribe = bb.sdk.subscribe({
+  const unsubscribe = alia.sdk.subscribe({
     event: "thread:changed",
     callback: ({ id: threadId, changes, metadata }) => {
       if (!threadId) return;
@@ -446,7 +446,7 @@ export default function plugin(bb: BbPluginApi) {
     // Every thread that goes idle comes through here; reading it must not push out open traces.
     const finished = (await store.peekTurns(threadId)).filter((turn) => turn.end !== null);
     const key = `otlp-sent:${threadId}`;
-    const last = await bb.storage.kv.get<number>(key);
+    const last = await alia.storage.kv.get<number>(key);
     // Turning it on sends what finishes from now on, not the whole history.
     const pending =
       typeof last === "number" ? finished.filter((turn) => turn.index > last) : finished.slice(-1);
@@ -456,17 +456,17 @@ export default function plugin(bb: BbPluginApi) {
       pending.map((turn) => turn.id),
       true,
     );
-    if (result.ok) await bb.storage.kv.set(key, pending.at(-1)!.index);
-    else bb.log.warn(`Could not send the trace of ${threadId}: ${result.message}`);
+    if (result.ok) await alia.storage.kv.set(key, pending.at(-1)!.index);
+    else alia.log.warn(`Could not send the trace of ${threadId}: ${result.message}`);
   };
   // One export at a time per thread, so back-to-back events never send a turn twice.
   const exports = new Map<string, Promise<void>>();
   for (const event of ["thread.idle", "thread.failed"] as const) {
-    bb.events.on(event, ({ thread }) => {
+    alia.events.on(event, ({ thread }) => {
       const next = (exports.get(thread.id) ?? Promise.resolve())
         .then(() => exportFinished(thread.id))
         .catch((cause) =>
-          bb.log.warn(`Could not send the trace of ${thread.id}: ${errorMessage(cause)}`),
+          alia.log.warn(`Could not send the trace of ${thread.id}: ${errorMessage(cause)}`),
         );
       exports.set(thread.id, next);
       void next.then(() => {
@@ -486,13 +486,13 @@ export default function plugin(bb: BbPluginApi) {
     return { threads: threads.length, rows: commandStats(threads, Date.now()) };
   };
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async trace({ threadId, turnId }) {
       let turns: Turn[];
       try {
         turns = await store.turns(threadId);
       } catch (cause) {
-        bb.log.warn(`Could not read the history of ${threadId}: ${errorMessage(cause)}`);
+        alia.log.warn(`Could not read the history of ${threadId}: ${errorMessage(cause)}`);
         throw cause;
       }
       const thread = await store.info(threadId);
@@ -598,7 +598,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  // `bb agent-traces …` for people and agents in a terminal.
+  // `alia agent-traces …` for people and agents in a terminal.
   const threadPositional = {
     name: "thread",
     description: "Thread ID; defaults to the thread the command runs in",
@@ -608,7 +608,7 @@ export default function plugin(bb: BbPluginApi) {
     if (!threadId) {
       throw new PluginCliError("no thread given", {
         code: "thread_required",
-        hint: "Pass a thread ID, such as `bb agent-traces show thr_abc123`.",
+        hint: "Pass a thread ID, such as `alia agent-traces show thr_abc123`.",
       });
     }
     return threadId;
@@ -618,7 +618,7 @@ export default function plugin(bb: BbPluginApi) {
     if (!turn) {
       throw new PluginCliError(`no turn ${ref ?? ""}`.trim(), {
         code: "turn_not_found",
-        hint: "Run `bb agent-traces turns` to list the thread's turns.",
+        hint: "Run `alia agent-traces turns` to list the thread's turns.",
       });
     }
     return turn;
@@ -630,7 +630,7 @@ export default function plugin(bb: BbPluginApi) {
   } as const;
   const jsonOption = { type: "boolean", description: "Print machine-readable JSON" } as const;
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "agent-traces",
       summary: "See where an agent's time went: turns, slowest calls, waits, failures, and exports",
@@ -795,10 +795,10 @@ export default function plugin(bb: BbPluginApi) {
   );
 
   // The same answers for agents, without leaving the conversation.
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "agent_traces",
     description:
-      "Explain where an agent's time went in a bb thread: one turn's time by phase (tools, subagents, thinking, writing, model, waiting on the user, compaction), its slowest calls, subagents, child threads, and failures; or list turns, group calls by what they ran, or compare two turns.",
+      "Explain where an agent's time went in a VesnALIA thread: one turn's time by phase (tools, subagents, thinking, writing, model, waiting on the user, compaction), its slowest calls, subagents, child threads, and failures; or list turns, group calls by what they ran, or compare two turns.",
     instructions:
       "When asked why a turn was slow or what took the time, call agent_traces instead of guessing from memory.",
     presentation: { label: { pending: "Reading the trace", completed: "Read the trace" } },
@@ -866,9 +866,9 @@ export default function plugin(bb: BbPluginApi) {
       return turnReport(await store.withChildThreads(threadId, turn, now), now);
     },
   });
-  bb.agents.configure(() => ({ tools: ["agent_traces"], skills: ["agent-traces"] }));
+  alia.agents.configure(() => ({ tools: ["agent_traces"], skills: ["agent-traces"] }));
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
     unsubscribe();
     for (const timer of signalTimers.values()) clearTimeout(timer);

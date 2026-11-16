@@ -1,21 +1,21 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createPluginUpdates } from "./plugin-updates";
 
 function setup() {
   let now = 1_000_000;
   const check = vi.fn(async () => [{ id: "guided-review", outcome: "update-available", installed: { display: "0.2.0", version: "old" }, candidate: { display: "0.2.1", version: "new" } }]);
   const apply = vi.fn(async () => ({ outcome: "updated", applied: true, from: { display: "0.2.0", version: "old" }, to: { display: "0.2.1", version: "new" } }));
-  const { bb } = createFakePluginHost({ pluginId: "guided-review", sdk: { plugins: { checkUpdates: check, applyUpdate: apply } } });
-  const updates = createPluginUpdates(bb, () => false, () => now);
-  return { bb, updates, check, apply, advance: () => { now += 3_600_001; } };
+  const { alia } = createFakePluginHost({ pluginId: "guided-review", sdk: { plugins: { checkUpdates: check, applyUpdate: apply } } });
+  const updates = createPluginUpdates(alia, () => false, () => now);
+  return { alia, updates, check, apply, advance: () => { now += 3_600_001; } };
 }
 
 test("automatic updates default off, persist opt-in, and wait for open views to close", async () => {
-  const { bb, updates, check, apply, advance } = setup();
+  const { alia, updates, check, apply, advance } = setup();
   advance(); await updates.tick(); expect(check).not.toHaveBeenCalled();
   updates.setAutomatic(true);
-  expect(createPluginUpdates(bb, () => false).status().automatic).toBe(true);
+  expect(createPluginUpdates(alia, () => false).status().automatic).toBe(true);
   updates.presence("review-tab", true); advance(); await updates.tick(); expect(apply).not.toHaveBeenCalled();
   updates.presence("review-tab", false); advance(); await updates.tick(); expect(apply).toHaveBeenCalledTimes(1);
 });

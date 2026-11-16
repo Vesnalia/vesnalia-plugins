@@ -6,7 +6,7 @@ import {
   type PendingInteractionApprovalDecision,
   type PendingInteractionResolution,
   type UserQuestionPendingInteractionPayload,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import type {
   MspApprovalChoice,
   MspApprovalRequestParams,
@@ -15,7 +15,7 @@ import type {
 
 /**
  * MSP mints the choices an approval will accept and guards the decision with a
- * requirement id, so the bridge maps bb's three decisions onto whichever
+ * requirement id, so the bridge maps VesnALIA's three decisions onto whichever
  * choices this stage actually offers rather than assuming a fixed set.
  */
 function decisionForChoice(
@@ -65,7 +65,7 @@ export function chooseApprovalChoiceId(
 /**
  * Muse decomposes a shell command into argv stages and reviews the ones its
  * grammar cannot resolve — a `${VAR}` expansion, a substitution, a heredoc —
- * even under `allowAll`. bb asks about the command, not the fragment, so a
+ * even under `allowAll`. VesnALIA asks about the command, not the fragment, so a
  * decision carries across every remaining stage of the same approval; the
  * count is stated because the answer covers more than the argv on screen.
  */
@@ -208,7 +208,7 @@ export interface MuseUserInputSettlement {
 const MUSE_FREE_TEXT_MAX = 500;
 
 /**
- * bb answers every question with a selection, free text, or both. MSP accepts
+ * VesnALIA answers every question with a selection, free text, or both. MSP accepts
  * exactly one of those per answer, so a free-text-only reply becomes a
  * clarification and a mixed reply keeps the selection — the model re-decides on
  * the clarification either way.
@@ -218,7 +218,7 @@ export function userInputSettlementFromResolution(
   resolution: PendingInteractionResolution,
 ): MuseUserInputSettlement {
   if (!("kind" in resolution) || resolution.kind !== "user_answer") {
-    return { method: "userInput/cancel", reason: "bb declined the prompt" };
+    return { method: "userInput/cancel", reason: "alia declined the prompt" };
   }
 
   const answers: NonNullable<MuseUserInputSettlement["answers"]> = [];
@@ -258,5 +258,5 @@ export function userInputSettlementFromResolution(
       },
     };
   }
-  return { method: "userInput/cancel", reason: "bb answered no questions" };
+  return { method: "userInput/cancel", reason: "alia answered no questions" };
 }

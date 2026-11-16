@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { test, expect, afterEach, vi } from "vitest";
 import { render, cleanup, fireEvent, screen } from "@testing-library/react";
-import { installTestPluginRuntime } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime } from "@vesnalia/plugin-sdk/testing/app";
 
 // Like pierre, setting a selection reports it back as selected.
 vi.mock("@pierre/diffs/react", async () => {

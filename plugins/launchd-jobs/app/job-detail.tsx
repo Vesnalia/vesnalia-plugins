@@ -3,7 +3,7 @@
  * and the actions — Run now, Enable/Disable, Edit, Delete.
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import type { RpcContract } from "../shared/contract";
@@ -139,7 +139,7 @@ export function JobDetail({
       ) : null}
       {!job.loaded && !job.disabled && job.problem === null ? (
         <p className="text-sm text-destructive">
-          launchd does not have this job loaded, so it will not run on its schedule — as happens when bb quits in the middle
+          launchd does not have this job loaded, so it will not run on its schedule — as happens when VesnALIA quits in the middle
           of changing a job. Enable loads it again, as does saving it.
         </p>
       ) : null}

@@ -32,7 +32,7 @@ interface Size {
   height: number;
 }
 
-const ANCHOR_STORAGE_KEY = "bb-plugin-quick-chat:window-anchor";
+const ANCHOR_STORAGE_KEY = "alia-plugin-quick-chat:window-anchor";
 const VIEWPORT_MARGIN = 8;
 /** The resting distance from an edge; matches the default `bottom-4 right-4`. */
 export const EDGE_GAP = 16;

@@ -1,5 +1,5 @@
 import { useState, useRef, useLayoutEffect, type ReactNode } from "react";
-import { Markdown, useBbNavigate, experimental_useRpcQuery as useRpcQuery } from "@get-bb/plugin-sdk/app";
+import { Markdown, useAliaNavigate, experimental_useRpcQuery as useRpcQuery } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "../components/ui/icon";
 import { rpcContract } from "./contract";
 import type { SpecificationEntry, SpecificationCatalog, SpecificationDocument } from "./specification-model";
@@ -28,7 +28,7 @@ export function SpecificationsPanel({ environmentId, hostId, source, catalog, er
   environmentId: string; hostId: string; source: PlanningSource; catalog?: SpecificationCatalog; error?: string; routeCapability?: string; navigateSelection?: boolean; onRefresh: () => void;
 }) {
   const { t, locale } = useI18n();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [selected, setSelected] = useState(routeCapability);
   const [change, setChange] = useState<string>();
   const [mode, setMode] = useState<Mode>();

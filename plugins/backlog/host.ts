@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry, type ExperimentalHostRpcContext, type ExperimentalHostWatchEvent } from "@get-bb/plugin-sdk";
+import { experimental_defineHostEntry, type ExperimentalHostRpcContext, type ExperimentalHostWatchEvent } from "@vesnalia/plugin-sdk";
 import { lstat, readdir } from "node:fs/promises";
 import { join, resolve, relative, sep, isAbsolute } from "node:path";
 import { watchContract, watchSignals } from "./src/watch-contract";

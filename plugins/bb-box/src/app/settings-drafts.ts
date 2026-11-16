@@ -337,7 +337,7 @@ export function restoredPart(stored: StoredPart): PartState {
   return { ...EMPTY_PART, edits, operation, restored: edits.size || lost.length ? { count: edits.size, lost } : null };
 }
 
-const STORAGE_PREFIX = "bb-box.settings.draft.";
+const STORAGE_PREFIX = "alia-box.settings.draft.";
 
 export function sessionDraftStorage(storage: Storage | null): DraftStorage {
   return {
@@ -779,7 +779,7 @@ export class DraftRegistry {
     const undone = write.undone ?? "changed";
     switch (finish.kind) {
       case "applied":
-        set({ pending: null, saved: true, note: finish.lostReply ? { text: `Saved at revision ${finish.revision}: BB Box did not reply, and its receipt for this change confirms it.`, tone: "info" } : null, operation: null });
+        set({ pending: null, saved: true, note: finish.lostReply ? { text: `Saved at revision ${finish.revision}: VesnALIA Box did not reply, and its receipt for this change confirms it.`, tone: "info" } : null, operation: null });
         tick();
         return { kind: "saved", revision: finish.revision };
       case "already":
@@ -790,7 +790,7 @@ export class DraftRegistry {
         set({ pending: null, saved: false, note: { text: `${write.what} was not ${undone}: it was changed elsewhere while you chose. It is ${write.say(finish.state)} now.`, tone: "bad" }, operation: null });
         return { kind: "conflicts" };
       case "problems":
-        set({ pending: null, saved: false, note: { text: `${write.what} was not ${undone}: ${reasonAfterColon(finish.problems.map((problem) => problem.message).join(" ") || "BB Box gave no reason.")}`, tone: "bad" }, operation: null });
+        set({ pending: null, saved: false, note: { text: `${write.what} was not ${undone}: ${reasonAfterColon(finish.problems.map((problem) => problem.message).join(" ") || "VesnALIA Box gave no reason.")}`, tone: "bad" }, operation: null });
         return { kind: "refused" };
       case "refused":
         set({ pending: null, saved: false, note: { text: `${write.what} was not ${undone}: ${reasonAfterColon(finish.reason)}`, tone: "bad" }, operation: null });
@@ -802,8 +802,8 @@ export class DraftRegistry {
       case "expired": {
         const reason = finish.kind === "unconfirmed" ? finish.reason : "its receipt is no longer kept";
         const text = now
-          ? `Not confirmed: BB Box did not reply (${reason}), and has no receipt for this change. ${write.what} is ${write.say(now)} now, at revision ${now.revision}.`
-          : `Not confirmed: BB Box did not reply (${reason}). Reload the page to see what is saved.`;
+          ? `Not confirmed: VesnALIA Box did not reply (${reason}), and has no receipt for this change. ${write.what} is ${write.say(now)} now, at revision ${now.revision}.`
+          : `Not confirmed: VesnALIA Box did not reply (${reason}). Reload the page to see what is saved.`;
         set({ pending: null, saved: false, note: { text, tone: "bad" }, operation: finish.kind === "unconfirmed" ? { ...operation, phase: { at: "unconfirmed", reason } } : null });
         return { kind: "unconfirmed" };
       }
@@ -815,7 +815,7 @@ export class DraftRegistry {
     if (!operation || operation.phase.at !== "unconfirmed") return;
     const receipt = receiptOf(state, operation);
     if (!receipt) return;
-    this.#instants.set(key, { write: entry.write, state: { pending: null, saved: false, note: { text: `Saved at revision ${receipt.revision}: BB Box did not reply, and its receipt for this change confirms it. ${entry.write.what} is ${entry.write.say(state)} now.`, tone: "info" }, operation: null } });
+    this.#instants.set(key, { write: entry.write, state: { pending: null, saved: false, note: { text: `Saved at revision ${receipt.revision}: VesnALIA Box did not reply, and its receipt for this change confirms it. ${entry.write.what} is ${entry.write.say(state)} now.`, tone: "info" }, operation: null } });
   }
 }
 

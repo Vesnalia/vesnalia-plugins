@@ -102,10 +102,10 @@ test("a patched Selkies captures Sway at Sway's size for a lone viewer, as for a
   assert.equal(readFileSync(file, "utf8"), whole.text);
 
   // A Selkies patched before the viewer's part gets that part alone.
-  const start = whole.text.indexOf("        # bb-box: capturing a host compositor, a viewer's");
+  const start = whole.text.indexOf("        # alia-box: capturing a host compositor, a viewer's");
   const end = whole.text.indexOf("        elif layout:");
   const earlier = whole.text.slice(0, start) + "        if layout:" + whole.text.slice(end + "        elif layout:".length);
-  assert.ok(earlier.includes("_bb_box_host_output_size") && !earlier.includes("_bb_box_viewer_host_size"));
+  assert.ok(earlier.includes("_alia_box_host_output_size") && !earlier.includes("_alia_box_viewer_host_size"));
   assert.equal(patched(dir, earlier).text, whole.text);
 
   // Code it does not expect fails the build and is left as it was.

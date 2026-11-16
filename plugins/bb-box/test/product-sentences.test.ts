@@ -4,7 +4,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { missingBackendWords } from "../src/backends/index.ts";
-import { BY_OUTSIDE, byBbBox } from "../src/core/box-log.ts";
+import { BY_OUTSIDE, byAliaBox } from "../src/core/box-log.ts";
 import { forkNameProblem } from "../src/core/boxes.ts";
 import { byWords } from "../src/core/snapshot.ts";
 import { reasonAfterColon } from "../src/app/settings-drafts.ts";
@@ -12,7 +12,7 @@ import { screenAround } from "../src/app/snapshot-words.ts";
 
 const ROOT = join(import.meta.dirname, "../src");
 const MESSAGE_ROOTS = ["core", "plugin", "backends", "device"];
-const NAME = ["bb", "box"].join("-");
+const NAME = ["alia", "box"].join("-");
 const PROSE = new RegExp(`${NAME}(?:'s)?(?:(?=\\s+[A-Za-z])|\\s+\\$\\{|[.,;:!?](?=\\s|["'\`]|$))`);
 const CODESIGN_IDENTITY = `${NAME} local code signing`;
 const PLACEHOLDER = "${" + "PRODUCT}";
@@ -54,18 +54,18 @@ function insideUnclosed(before: string, pattern: RegExp): boolean {
 }
 
 function recordPrefix(body: string): boolean {
-  return /^(?:bb-box install\b|bb-box warm\b|bb-box image box:)/.test(body);
+  return /^(?:alia-box install\b|alia-box warm\b|alia-box image box:)/.test(body);
 }
 
 function programName(body: string): boolean {
-  if (body.startsWith("bb-box:")) return true;
-  return /(?:echo ["']bb-box: |printf 'bb-box: |WriteLine\('bb-box: |die "bb-box: )/.test(body);
+  if (body.startsWith("alia-box:")) return true;
+  return /(?:echo ["']alia-box: |printf 'alia-box: |WriteLine\('alia-box: |die "alia-box: )/.test(body);
 }
 
 function providerResource(body: string): boolean {
-  if (body.includes("tag:bb-box")) return true;
-  if (/^bb-box \$\{[^}]*\}(?:$| template\b| image of | image build\b| box )/.test(body)) return true;
-  return body.includes("Host image snapshot ") && /: bb-box \$\{[^}]*\}\.$/.test(body);
+  if (body.includes("tag:alia-box")) return true;
+  if (/^alia-box \$\{[^}]*\}(?:$| template\b| image of | image build\b| box )/.test(body)) return true;
+  return body.includes("Host image snapshot ") && /: alia-box \$\{[^}]*\}\.$/.test(body);
 }
 
 function allowance(body: string, before: string): string | null {
@@ -74,10 +74,10 @@ function allowance(body: string, before: string): string | null {
   if (insideUnclosed(before, /\.describe\s*\(/)) return "commandHelp";
   if (insideUnclosed(before, /(?:^|[^.\w])log\s*\?\.\(|\.log\s*\?\.\(|\.#?log\s*\(|\.logError\s*\(|console\.(?:log|info|warn|error|debug)\s*\(/)) return "logLine";
   if (recordPrefix(body)) return "recordPrefix";
-  if (body.startsWith("bb-box: use box_acquire")) return "agentInstruction";
-  if (/# (?:Written|Added) by bb-box\b/.test(body)) return "guestComment";
+  if (body.startsWith("alia-box: use box_acquire")) return "agentInstruction";
+  if (/# (?:Written|Added) by alia-box\b/.test(body)) return "guestComment";
   if (programName(body)) return "programName";
-  if (body.includes("other plugins") || body.includes("which runs bb-box")) return "profileOwner";
+  if (body.includes("other plugins") || body.includes("which runs alia-box")) return "profileOwner";
   if (providerResource(body)) return "providerResource";
   return null;
 }
@@ -86,7 +86,7 @@ function unescapeQuoted(raw: string): string {
   return raw.replace(/\\(.)/g, "$1");
 }
 
-test("a message says BB Box, and a quoted sentence never leaves ${PRODUCT} for the panel", () => {
+test("a message says VesnALIA Box, and a quoted sentence never leaves ${PRODUCT} for the panel", () => {
   const prose: string[] = [];
   const quoted: string[] = [];
   for (const file of MESSAGE_ROOTS.flatMap((root) => filesUnder(join(ROOT, root)))) {
@@ -170,16 +170,16 @@ test("a message says BB Box, and a quoted sentence never leaves ${PRODUCT} for t
     walk(false);
   }
   assert.deepEqual(quoted, [], "a double or single quoted sentence still contains ${PRODUCT}");
-  assert.deepEqual(prose, [], `a message still says bb-box where a person reads it, outside ${ALLOWED}`);
+  assert.deepEqual(prose, [], `a message still says alia-box where a person reads it, outside ${ALLOWED}`);
 });
 
-test("a snapshot names BB Box when BB Box or someone outside it took it", () => {
-  assert.equal(byWords(byBbBox("the sweep")), "by BB Box: the sweep");
-  assert.equal(byWords(BY_OUTSIDE), "outside BB Box");
+test("a snapshot names VesnALIA Box when VesnALIA Box or someone outside it took it", () => {
+  assert.equal(byWords(byAliaBox("the sweep")), "by VesnALIA Box: the sweep");
+  assert.equal(byWords(BY_OUTSIDE), "outside VesnALIA Box");
 });
 
 test("a missing backend says what to do next, and its note stays on boxForm", () => {
-  assert.equal(missingBackendWords("docker"), "BB Box has no docker backend. Update BB Box, or remove this backend.");
+  assert.equal(missingBackendWords("docker"), "VesnALIA Box has no docker backend. Update VesnALIA Box, or remove this backend.");
   const source = readFileSync(join(ROOT, "backends/index.ts"), "utf8");
   const words = source.indexOf("export function missingBackendWords");
   const form = source.indexOf("export function boxForm");
@@ -192,7 +192,7 @@ test("a reason after a colon lower-cases a leading common word and leaves a prov
   assert.equal(reasonAfterColon("Hetzner Cloud: no token."), "Hetzner Cloud: no token.");
   assert.equal(reasonAfterColon("The host did not answer."), "the host did not answer.");
   assert.equal(reasonAfterColon("Nothing was saved."), "nothing was saved.");
-  assert.equal(reasonAfterColon("BB Box gave no reason."), "BB Box gave no reason.");
+  assert.equal(reasonAfterColon("VesnALIA Box gave no reason."), "VesnALIA Box gave no reason.");
   assert.equal(reasonAfterColon("It failed."), "it failed.");
   assert.equal(reasonAfterColon("Its disk is full."), "its disk is full.");
   const configuration = readFileSync(join(ROOT, "app/settings-configuration.tsx"), "utf8");

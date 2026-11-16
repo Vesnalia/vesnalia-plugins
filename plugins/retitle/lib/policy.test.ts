@@ -52,8 +52,8 @@ describe("decideAutoRename", () => {
     expect(decide()).toEqual({ rename: true });
   });
 
-  it("replaces bb's first title, because it looks like any other title", () => {
-    expect(decide({ thread: thread({ title: "bb title from the first message" }) })).toEqual({
+  it("replaces VesnALIA's first title, because it looks like any other title", () => {
+    expect(decide({ thread: thread({ title: "alia title from the first message" }) })).toEqual({
       rename: true,
     });
   });

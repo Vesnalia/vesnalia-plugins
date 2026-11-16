@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { MapTask, Preference, Snapshot } from "./server";
 
 export function plainText(text: string): string {
@@ -150,8 +150,8 @@ export interface WorkItem {
   children: WorkItem[];
   scope: string;
   issue: boolean;
-  /** The bb project agents for this work start in; null when none is linked. */
-  bbProjectId: string | null;
+  /** The VesnALIA project agents for this work start in; null when none is linked. */
+  aliaProjectId: string | null;
   /** Epoch ms a snoozed task stays quiet until; absent once it has passed. */
   snoozedUntil?: number;
 }
@@ -438,9 +438,9 @@ export function buildMap(
       score: 0,
       scope: projectById.get(task.projectId)?.name ?? "Tasks",
       issue: linked.some((t) => t.indicator === "unread-error"),
-      // Delegation starts an agent in the linked bb project, so a task with
+      // Delegation starts an agent in the linked VesnALIA project, so a task with
       // none cannot be delegated. The map says so before the click, not after.
-      bbProjectId: projectById.get(task.projectId)?.linkedBbProjectId ?? null,
+      aliaProjectId: projectById.get(task.projectId)?.linkedAliaProjectId ?? null,
       ...(snoozedUntil ? { snoozedUntil } : {}),
     };
     item.score = rank(item, now);
@@ -527,7 +527,7 @@ export function buildMap(
       recent: recentlyActive(activityAt, now),
       scope: project.prefix,
       issue: children.some((c) => c.issue),
-      bbProjectId: project.linkedBbProjectId ?? null,
+      aliaProjectId: project.linkedAliaProjectId ?? null,
     };
   });
   const standalone: WorkItem[] = active
@@ -568,7 +568,7 @@ export function sessionItem(
     children: [],
     scope: "Session",
     issue: thread.indicator === "unread-error",
-    bbProjectId: null,
+    aliaProjectId: null,
   };
   item.score = rank(item, now);
   return item;

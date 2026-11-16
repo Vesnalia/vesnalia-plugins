@@ -77,12 +77,12 @@ export function fakeDeviceHost(options: { slim?: boolean; template?: boolean } =
   mkdirSync(host);
   const helper = join(host, "device-host");
   rewrite(join(IOS, "device-host.sh"), helper, mac.root, bin);
-  const libexec = join(mac.data, "usr/local/libexec/bb-box");
+  const libexec = join(mac.data, "usr/local/libexec/alia-box");
   mkdirSync(libexec, { recursive: true });
   copyFileSync(helper, join(libexec, "device-host"));
   const machineHelper = join(dir, "pool", "machine-mac.sh");
 
-  const share = join(mac.data, "usr/local/share/bb-box");
+  const share = join(mac.data, "usr/local/share/alia-box");
   mkdirSync(join(share, "ios"), { recursive: true });
   copyFileSync(join(IOS, "devices.tsv"), join(share, "ios/devices.tsv"));
   writeFileSync(join(share, "ios/runtimes.tsv"), `${RUNTIME}\t27.0\t24A434\t${LIST}\n`);

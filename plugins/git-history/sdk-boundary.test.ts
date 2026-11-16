@@ -1,4 +1,4 @@
-import { experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 
 describe("public SDK boundary", () => {

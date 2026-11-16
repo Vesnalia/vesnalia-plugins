@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { Value } from "../../core/types";
 import { Icon as HostIcon } from "@/components/ui/icon";
@@ -63,7 +63,7 @@ export function Callout({ props }: { props: Props }) {
   );
 }
 
-/** A host icon at the surrounding text size; names BB doesn't draw show nothing, never the host's Zap. */
+/** A host icon at the surrounding text size; names VesnALIA doesn't draw show nothing, never the host's Zap. */
 export function Icon({ props }: { props: Props }) {
   const name = resolveIconName(text(props.name));
   if (name === null) return null;

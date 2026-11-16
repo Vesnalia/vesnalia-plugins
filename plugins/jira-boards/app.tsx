@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { definePluginApp, useRpc, useComposer, useBbNavigate, useRealtime, experimental_promptMentionClipboardAttributes } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRpc, useComposer, useAliaNavigate, useRealtime, experimental_promptMentionClipboardAttributes } from "@vesnalia/plugin-sdk/app";
 import type { DragEvent, } from "react";
 import type { rpcContract } from "./server";
 import type { Detail, Issue, QuickFilter, Transition } from "./jira";
@@ -51,7 +51,7 @@ export function dragIssue(event: DragEvent, issue: Issue) {
 export function JiraPanel({ compact = false, taskLimit = boardTaskLimit }: { compact?: boolean; taskLimit?: number }) {
   const rpc = useRpc<typeof rpcContract>();
   const composer = useComposer();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [boards, setBoards] = useState<Board[]>([]);
   const [boardNext, setBoardNext] = useState<number | null>(null);
   const [boardId, setBoardId] = useState<number | null>(null);

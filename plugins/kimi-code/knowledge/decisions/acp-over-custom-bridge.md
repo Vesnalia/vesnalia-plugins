@@ -1,9 +1,9 @@
 ---
 type: Decision
 title: Kimi Code подключается через готовый ACP-кит, а не через собственный bridge
-description: Почему провайдер Kimi Code — это реэкспорт bb ACP bridge с launch spec, а не самостоятельная реализация протокола.
+description: Почему провайдер Kimi Code — это реэкспорт VesnALIA ACP bridge с launch spec, а не самостоятельная реализация протокола.
 status: stable
-tags: [bb, kimi, acp, decision]
+tags: [VesnALIA, kimi, acp, decision]
 generated: { by: kimi-code/k3, at: "2026-10-20T19:36:38Z" }
 verified: { by: kimi-code/k3, at: "2026-10-20T19:36:38Z" }
 sources:
@@ -18,7 +18,7 @@ sources:
   - id: acp-kit
     resource: https://github.com/get-bb/bb/blob/e0f6fda5a02332bd4eb44183542a57f34f3263d7/docs/provider-plugin-api.md
     title: Provider plugin API — ACP bridge kit
-    author: team:get-bb
+    author: team:get-alia
   - id: audit-23
     resource: Свежие пробы handshake/session/new против kimi acp 2.3.0 и сверка с релиз-нотами, 2026-10-22
     title: Аудит-дельта покрытия kimi 2.3.0
@@ -28,16 +28,16 @@ sources:
     title: Инцидент session lock kimi 2.3.0 (fork живой сессии)
     author: zcode
   - id: swarm-dump
-    resource: Live-дамп bb/provider-commands и bb/session-options через bridge против kimi acp 2.3.0 (thread/start без промпта), 2026-10-22; сверка с llms-full.txt moonshotai.github.io/kimi-code
+    resource: Live-дамп alia/provider-commands и alia/session-options через bridge против kimi acp 2.3.0 (thread/start без промпта), 2026-10-22; сверка с llms-full.txt moonshotai.github.io/kimi-code
     title: Полный список публикуемых команд и опций kimi acp 2.3.0
     author: zcode
 ---
 
 # Решение
 
-Плагин `bb-plugin-kimi-code` не реализует provider bridge сам: `host.ts`
+Плагин `alia-plugin-kimi-code` не реализует provider bridge сам: `host.ts`
 реэкспортирует `experimental_acpProviderBridge` из
-`@get-bb/plugin-sdk/provider-bridge/acp`, а `server.ts` передаёт
+`@vesnalia/plugin-sdk/provider-bridge/acp`, а `server.ts` передаёт
 `acpLaunchSpec { command: "kimi", args: ["acp"] }` через
 `experimental_bridgeOptions`.
 
@@ -53,11 +53,11 @@ sources:
 - Пробник `session/new` вернул `configOptions`: `model` (kimi-code/k3,
   k3-256k, kimi-for-coding, kimi-for-coding-highspeed), `thinking`
   (category `thought_level`: low/high/max) и `mode` (default/plan/auto/yolo).
-  bb ACP bridge читает модели из `configOptions` (`category === "model"`) и
+  VesnALIA ACP bridge читает модели из `configOptions` (`category === "model"`) и
   уровни рассуждения из `category === "thought_level"` — отдельный `modelCli`
   и `reasoningCli` в launch spec не нужны (проверено по коду
   `parseAcpConfigOptions` / `findAcpThoughtLevelConfigOption` в
-  `@get-bb/plugin-sdk` 0.6.49–0.6.54).
+  `@vesnalia/plugin-sdk` 0.6.49–0.6.54).
 - Handshake generic ACP bridge: `fork: "tip"`, `approvalEnforcedBy: "runtime"`,
   `grammarVersions: [3, 3]`, `skills.configure: true` — поэтому декларация
   заявляла `fork: "tip"` и все три permission modes. С 2026-10-22 fork сужен
@@ -65,12 +65,12 @@ sources:
   живой сессии — см. [инцидент](../incidents/2026-10-22-kimi-23-session-lock-breaks-fork.md);
   handshake моста при этом сужен до `none` обёрткой в `host.ts` (SDK хардкодит `"tip"`).
   С 2026-10-23 permission modes сужены до `["accept-edits", "full"]`: SDK-мост
-  бросает на bb-режиме `auto` — см.
+  бросает на alia-режиме `auto` — см.
   [инцидент](../incidents/2026-10-23-acp-bridge-rejects-auto-mode.md).
 
 # Последствия
 
-- Совместимость с удалёнными машинами даёт сам bb: host-артефакт с bridge
+- Совместимость с удалёнными машинами даёт сам VesnALIA: host-артефакт с bridge
   доставляется на enrolled-хосты контент-адресуемо, `kimi` должен быть
   установлен и залогинен на хосте.[^acp-kit]
 
@@ -78,28 +78,28 @@ sources:
 
 Плагин использует entrypoint `provider-bridge/acp-next` (не `/acp`): в
 опубликованных SDK 0.6.49 и 0.6.54 только acp-next публикует
-`bb/provider-commands` и `bb/session-options` (`publishSessionSnapshot`) и
+`alia/provider-commands` и `alia/session-options` (`publishSessionSnapshot`) и
 поддерживает регистрацию диалектов (`experimental_registerAcpDialect`).
-acp-next помечен в документации bb как deprecated alias — риск при апгрейде
+acp-next помечен в документации VesnALIA как deprecated alias — риск при апгрейде
 SDK зафиксирован в `host.ts`.
 
 Поддержано и live-проверено против `kimi acp` 2.2.0:
 
 - треды/turn'ы, resume, fork — conformance 16/16;
 - каталог моделей и уровни thinking из `configOptions`; лестница декларации
-  включает `medium` (дефолт bb при создании треда), который bridge не мапит
+  включает `medium` (дефолт VesnALIA при создании треда), который bridge не мапит
   на значение kimi — kimi остаётся на своём текущем уровне (дефолт high),
   в пикере он подписан «Medium (Kimi default)»;
 - slash-команды kimi (`/compact`, `/status`, `/usage`, skill-команды) —
-  публикуются как `bb/provider-commands` (live-тест
+  публикуются как `alia/provider-commands` (live-тест
   `kimi-live.session-state.test.ts`);
 - селектор mode (default/plan/auto/yolo) — публикуется как
-  `bb/session-options` с `category: "mode"` (composer footer); plan mode
+  `alia/session-options` с `category: "mode"` (composer footer); plan mode
   доступен через него. С 2026-10-30 заявлен `composerActions: ["plan"]`:
   `mapPlanPromptMode` переводит `promptMode: "plan"` на `turn/start` в
   `sessionOptions.mode = "plan"`, а acp-next применяет его до `runTurn` через
   `session/set_mode`. Live-тест `kimi-live.plan-mode.test.ts` против CLI 2.3.3
-  подтверждает `bb/session-options → mode.value === "plan"`;
+  подтверждает `alia/session-options → mode.value === "plan"`;
 - `/compact` — маппится на `session/prompt` "/compact";
 - **tool-pайплайн**: live-проверен turn с реальным Write-инструментом
   (`kimi-live.tools.test.ts`): `item.open`/`item.close` с shape
@@ -115,14 +115,14 @@ SDK зафиксирован в `host.ts`.
   фаза `Swarm`, по задаче на каждый элемент `rawInput.items`, состояния
   `queued` → `done`/`failed`). `childRef` = toolCallId, label из
   `rawInput.description`; `AgentSwarm`: detail = число задач. Wire-шейпы
-  запинены в `dialect.test.ts` по записям `BB_PROVIDER_BRIDGE_RECORD_DIR`,
+  запинены в `dialect.test.ts` по записям `ALIA_PROVIDER_BRIDGE_RECORD_DIR`,
   end-to-end — live-тесты `kimi-live.delegation.test.ts` и
   `kimi-live.swarm.test.ts`;
 - **AskUserQuestion** мапится kimi в ACP `session/request_permission` →
-  approval с вариантами ответа в bb (по коду `acp-server/src/question.ts`);
+  approval с вариантами ответа в VesnALIA (по коду `acp-server/src/question.ts`);
   поэтому `supportsNativeUserQuestion: false` — вопросы работают, но не как
   нативные карточки;
-- установка из bb: диалект `kimi` отдаёт install-план официального скрипта
+- установка из VesnALIA: диалект `kimi` отдаёт install-план официального скрипта
   (live: `provider/installation/status` для отсутствующего бинаря);
 - sign-in статус: OAuth-файл или api_key в config.toml → health `ready`
   (live); JWT kimi не содержит email — email всегда null;
@@ -147,11 +147,11 @@ SDK зафиксирован в `host.ts`.
   отвечает на 429 пустым `end_turn` без update'ов (см. инцидент
   2026-11-01-kimi-quota-silent-turns). Fail-open: эндпоинт недоступен,
   статус не ok, reset прошёл или отсутствует, таймаут 2.5 c. Отключение:
-  `BB_KIMI_QUOTA_GATE=0` (в тестах — vitest.setup.ts).
+  `ALIA_KIMI_QUOTA_GATE=0` (в тестах — vitest.setup.ts).
 - **Профили агентов** (`--agent/--agent-file`), `kimi vis`, `export` —
   CLI-фичи вне ACP.
 - **MCP** — работает через собственную конфигурацию kimi (`/mcp-config`,
-  config.toml), bb им не управляет.
+  config.toml), VesnALIA им не управляет.
 
 # Аудит-дельта против kimi 2.3.0 (2026-10-22)
 
@@ -165,24 +165,24 @@ ACP-инструментов не содержат. Что изменилось 
 - **fork** — см. [инцидент 2026-10-22](../incidents/2026-10-22-kimi-23-session-lock-breaks-fork.md):
   multi-client session occupancy в 2.3.0 и есть тот лок; декларация и (с
   2026-10-22, обёртка в `host.ts`) handshake — `none`.
-- **`additionalDirectories`** — gap SDK-моста: bb→bridge протокол имеет
+- **`additionalDirectories`** — gap SDK-моста: VesnALIA→bridge протокол имеет
   `additionalWorkspaceWriteRoots`, но мост шлёт агенту в `session/new` только
   `cwd`+`mcpServers` и корни не пробрасывает. Плагином не чинится (нет хука в
   setup сессии); практическое влияние не проверялось (нужен live multi-root
-  turn). Кандидат в upstream-issue к get-bb/plugin-sdk.[^audit-23]
+  turn). Кандидат в upstream-issue к get-alia/plugin-sdk.[^audit-23]
 - **`auth.logout`** — kimi объявляет, SDK-клиент имеет request spec, но ни
-  мост, ни bb не имеют поверхности вызова: выйти из аккаунта kimi через bb
+  мост, ни VesnALIA не имеют поверхности вызова: выйти из аккаунта kimi через VesnALIA
   нельзя, только локально.[^audit-23]
-- **ACP `plan/update`** — мост мапит в bb plan-steps, но kimi их не эмитит
+- **ACP `plan/update`** — мост мапит в VesnALIA plan-steps, но kimi их не эмитит
   (в бинаре упоминаний нет): Plan-режим работает как mode, живого план-таймлайна
-  от kimi в bb нет — ограничение провайдера.[^audit-23]
+  от kimi в VesnALIA нет — ограничение провайдера.[^audit-23]
 - **Сессии монопольны**: один kimi-session нельзя держать открытым
-  одновременно в живом bb-треде и в интерактивном kimi (`-S`/`--continue`) —
+  одновременно в живом alia-треде и в интерактивном kimi (`-S`/`--continue`) —
   второй клиент получит occupancy-ошибку.[^incident-23]
 
 ## Дельта по swarm и secondary model (2026-10-22, live-дамп команд)
 
-Живой дамп `bb/provider-commands` и `bb/session-options` против kimi acp
+Живой дамп `alia/provider-commands` и `alia/session-options` против kimi acp
 2.3.0 через наш bridge (thread/start без промпта):[^swarm-dump]
 
 - команды: `compact`, `status`, `usage`, `mcp`, `tasks`, `help`,
@@ -197,7 +197,7 @@ ACP-инструментов не содержат. Что изменилось 
   -only, через ACP не экспонируется: ни mode-значения, ни `/swarm` в дампе
   команд.[^swarm-dump] При этом тул `AgentSwarm` — обычный инструмент агента:
   модель может вызвать его и в ACP-сессии (вне swarm-мода в manual — с
-  approval; approval enforce'ит runtime bb); на таймлайне выглядит generic
+  approval; approval enforce'ит runtime VesnALIA); на таймлайне выглядит generic
   tool-строкой, как `Agent`. Живой turn с `AgentSwarm` не проверялся —
   вывод из документации и кода kimi-code (llms-full.txt, тул-спека).
   Delegation-отображение роя — то же возможное улучшение диалекта, что и для
@@ -206,16 +206,16 @@ ACP-инструментов не содержат. Что изменилось 
   stable с 2.2.x) — конфигурация config.toml kimi, через ACP не управляется
   (`/secondary-model` в дампе команд отсутствует). Работает прозрачно
   kimi-стороны: пул даёт тулам `Agent`/`AgentSwarm` параметр `model`;
-  настроить из bb-треда можно командой `update-config` (публикуется) или
-  правкой `~/.kimi-code/config.toml`. bb-настройки плагина для пула нет —
-  и не нужно: bb не владеет конфигом kimi.
+  настроить из alia-треда можно командой `update-config` (публикуется) или
+  правкой `~/.kimi-code/config.toml`. alia-настройки плагина для пула нет —
+  и не нужно: VesnALIA не владеет конфигом kimi.
 
 ## Дельта по display-name и применению reasoning (2026-10-23, live-пробы)
 
-Ответ на вопрос «все ли опции kimi видны в bb» (пикер моделей пользователя):
+Ответ на вопрос «все ли опции kimi видны в VesnALIA» (пикер моделей пользователя):
 полное совпадение 1:1. Проверено тремя независимыми способами против kimi
-2.3.0: live `model/list` через bridge, `bb provider models kimi-code --json`
-(кэш bb-core) и скриншот пикера bb.
+2.3.0: live `model/list` через bridge, `alia provider models kimi-code --json`
+(кэш alia-core) и скриншот пикера VesnALIA.
 
 - **Display-name дрейф kimi-стороны**: `kimi-for-coding` теперь отдаётся как
   «K2.8 Preview» (id прежний); остальные — «K2.7 Code Highspeed», «K3»
@@ -223,17 +223,17 @@ ACP-инструментов не содержат. Что изменилось 
   хардкодит — переименования подхватываются пробой автоматически.
 - **Per-model лестницы thinking**: K3-класс (kimi-for-coding, k3, k3-256k) —
   low/high/max; `kimi-for-coding-highspeed` — тумблер on/high («Thinking On»).
-  Пикер bb рендерит probed-значения выбранной модели, поэтому у K3 видны
+  Пикер VesnALIA рендерит probed-значения выбранной модели, поэтому у K3 видны
   ровно Low/High/Max.
-- **Цепочка применения уровня**: bb принимает provider-specific id уровня
-  (`bb thread spawn --reasoning-level`: «id the model lists ... or a
+- **Цепочка применения уровня**: VesnALIA принимает provider-specific id уровня
+  (`alia thread spawn --reasoning-level`: «id the model lists ... or a
   provider-specific id»; `reasoningLevelSchema` — открытая строка). Мост
   (`selectAcpNativeReasoning` в acp-next) шлёт `session/set_config_option`
   со значением verbatim, если kimi сам его перечисляет
   (`acpNativeReasoningLevelToValue`), и молча опускает неизвестное (так
   «medium» остаётся no-op — kimi бежит на своём дефолте high).
 - **Mode-селектор** (default/plan/auto/yolo) живёт не в пикере моделей, а в
-  composer footer как session-option — тоже виден в `bb provider models`.
+  composer footer как session-option — тоже виден в `alia provider models`.
 - **Ошибки kimi на проводе** (пробы 2026-10-23, `/tmp/probe-occupancy.mjs`,
   `/tmp/probe-auth.mjs`): auth — `-32000 "Authentication required"`,
   стандартный ACP-шейп, SDK мапит в typed recovery `authRequired` с подсказкой
@@ -264,7 +264,7 @@ ACP-инструментов не содержат. Что изменилось 
   `check-kimi-code-docs`, `import-from-cc-codex` (= /import-sessions из
   2.4.0), `mcp-config`, `sub-skill`, `sub-skill.consolidate`,
   `sub-skill.review`, `update-config`, `write-goal` — автоматически
-  публикуются в composer bb, изменений плагина не нужно.
+  публикуются в composer VesnALIA, изменений плагина не нужно.
 - **2.4.0, влияющее на поведение**: сессии выгружаются из памяти после 30 мин
   простоя и прозрачно резюмятся — объясняет респавн kimi-процесса на каждый
   turn в живых тредах; для плагина прозрачно (session/load). «Агент больше не
@@ -294,18 +294,18 @@ subagent_type, ...}`. В SDK 0.6.90 `extractAcpToolCallOutputText` отправ�
 текст в `item.progress`, а диалектный фильтр существовал только для command.
 
 Для generic progress добавлен upstream-хук в
-[get-bb/bb#6769](https://github.com/get-bb/bb/pull/6769), доступный в SDK
+[get-alia/alia#6769](https://github.com/get-bb/bb/pull/6769), доступный в SDK
 0.6.116. Плагин обновлён с 0.6.90 до 0.6.116 и регистрирует
 `normalizeKimiToolCallEvent`: неполные снапшоты до `rawInput` и точный
 `JSON.stringify(call.rawInput)` подавляются; реальные progress и terminal
 JSON-result проходят. Используется `mergedCall` из SDK, отдельного глобального
 state для Agent нет. RED: 2 теста падали на пропущенном JSON; GREEN:
 `dialect.test.ts` 31/31. Live на отдельном бинаре **kimi 2.4.1** подтверждает
-отсутствие argument JSON в исходящих bb deltas. Полный набор **78/78**
+отсутствие argument JSON в исходящих VesnALIA deltas. Полный набор **78/78**
 (19 файлов, включая unit и все live) зелёный отдельно на **2.4.1** и **2.5.0**.
 Собранный `dist/host.js` отдельно прошёл delegation live на 2.5.0. Старые
 сохранённые события в таймлайне не переписываются; исправление действует на
-новые вызовы. `bb plugin build` предлагает `bb plugin types` для downgrade на
+новые вызовы. `alia plugin build` предлагает `alia plugin types` для downgrade на
 SDK 0.6.104: не выполнять его, пока bundled SDK не включает #6769 (0.6.116+),
 иначе normalization-хук исчезнет.
 

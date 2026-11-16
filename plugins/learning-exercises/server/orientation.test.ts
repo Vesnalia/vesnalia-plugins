@@ -132,7 +132,7 @@ describe("starting a build", () => {
     expect(ports.spawned).toHaveLength(1);
   });
 
-  it("puts the new thread away when the build was cancelled while bb spawned it", async () => {
+  it("puts the new thread away when the build was cancelled while VesnALIA spawned it", async () => {
     const { ports, store, service } = await setup();
     let id = "";
     ports.duringSpawn = async () => {
@@ -145,7 +145,7 @@ describe("starting a build", () => {
     expect(ports.archived).toContain(BUILDER);
   });
 
-  it("writes nothing after it was disposed while bb spawned the builder", async () => {
+  it("writes nothing after it was disposed while VesnALIA spawned the builder", async () => {
     const { ports, store, service } = await setup();
     ports.duringSpawn = async () => service.dispose();
     await expect(service.start({ sourceThreadId: SOURCE, depth: "summary" })).rejects.toThrow("reloaded");

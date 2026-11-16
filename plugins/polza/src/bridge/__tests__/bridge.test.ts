@@ -23,7 +23,7 @@ import {
   type JsonValue,
   type RuntimePermissionPolicy,
   type RuntimePermissionScope,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 
 const { queryMock, contextQueryMock } = vi.hoisted(() => ({
   queryMock: vi.fn(),
@@ -53,11 +53,11 @@ import {
 import {
   experimental_assembleCapturedThreadEvents as assembleCapturedThreadEvents,
   experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import type {
   BridgeJsonRpcOutputMessage,
   ThreadEvent,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 
 type BridgeSessionOptions = ReturnType<typeof buildSessionOptions>;
 type BridgeSessionHooks = NonNullable<BridgeSessionOptions["hooks"]>;
@@ -317,7 +317,7 @@ function createControlledClaudeQuery(): ControlledClaudeQuery {
     },
     mcpServerStatus: vi
       .fn()
-      .mockResolvedValue([{ name: "bb-bridge", status: "connected" }]),
+      .mockResolvedValue([{ name: "alia-bridge", status: "connected" }]),
     getContextUsage: vi.fn().mockResolvedValue(null),
     initializationResult: vi.fn(),
     interrupt: vi.fn().mockResolvedValue(undefined),
@@ -490,7 +490,7 @@ function createAssistantToolUseMessage(
 }
 
 function createTempClaudeExecutable(): TempClaudeExecutable {
-  const binDir = mkdtempSync(join(tmpdir(), "bb-claude-path-"));
+  const binDir = mkdtempSync(join(tmpdir(), "alia-claude-path-"));
   tempDirs.push(binDir);
   const executablePath = join(binDir, CLAUDE_EXECUTABLE_NAME);
   writeFileSync(executablePath, "#!/bin/sh\nexit 0\n");
@@ -986,8 +986,8 @@ describe("bridge", () => {
         settings: { disableAllHooks: true },
       });
       expect(reportOptions.hooks).toBeUndefined();
-      expect(reportOptions.mcpServers["bb-bridge"].instance).not.toBe(
-        getLatestQueryOptions().mcpServers?.["bb-bridge"].instance,
+      expect(reportOptions.mcpServers["alia-bridge"].instance).not.toBe(
+        getLatestQueryOptions().mcpServers?.["alia-bridge"].instance,
       );
 
       bridge.sendRequest(
@@ -1052,7 +1052,7 @@ describe("bridge", () => {
       assembleCapturedThreadEvents(bridge.messages, "claude-code").flatMap(
         (event) =>
           event.type === "thread/extensionState/updated" &&
-          event.kind === "bb/provider-commands"
+          event.kind === "alia/provider-commands"
             ? [event.payload]
             : [],
       );
@@ -1169,8 +1169,8 @@ describe("bridge", () => {
           { name: "simplify", description: "Simplify code", argumentHint: "" },
           { name: "model", description: "Set the model", argumentHint: "" },
           {
-            name: "bb-global-skills:bb-cli",
-            description: "Injected by bb",
+            name: "alia-global-skills:alia-cli",
+            description: "Injected by VesnALIA",
             argumentHint: "",
           },
         ],
@@ -1223,7 +1223,7 @@ describe("bridge", () => {
   });
 
   it("forks a Claude session from the session config directory through the requested checkpoint", async () => {
-    const root = mkdtempSync(join(tmpdir(), "bb-claude-fork-"));
+    const root = mkdtempSync(join(tmpdir(), "alia-claude-fork-"));
     tempDirs.push(root);
     const hostConfigDir = join(root, "host-config");
     const projectConfigDir = join(root, "project-config");
@@ -1583,7 +1583,7 @@ describe("bridge", () => {
   });
 
   it("falls back to well-known install locations when PATH discovery fails", () => {
-    const homeDir = mkdtempSync(join(tmpdir(), "bb-claude-home-"));
+    const homeDir = mkdtempSync(join(tmpdir(), "alia-claude-home-"));
     tempDirs.push(homeDir);
     const localBinDir = join(homeDir, ".local", "bin");
     mkdirSync(localBinDir, { recursive: true });
@@ -1605,7 +1605,7 @@ describe("bridge", () => {
         permissionMode: "default",
         permissionScope: "workspace",
       },
-      { HOME: homeDir, USERPROFILE: homeDir, PATH: "/nonexistent-bb-test-dir" },
+      { HOME: homeDir, USERPROFILE: homeDir, PATH: "/nonexistent-alia-test-dir" },
     );
 
     expect(options.pathToClaudeCodeExecutable).toBe(executablePath);
@@ -1628,7 +1628,7 @@ describe("bridge", () => {
         permissionScope: "workspace",
       },
       {
-        BB_CLAUDE_CODE_EXECUTABLE: `  ${executablePath}  `,
+        ALIA_CLAUDE_CODE_EXECUTABLE: `  ${executablePath}  `,
         PATH: "/usr/bin",
       },
     );
@@ -1637,7 +1637,7 @@ describe("bridge", () => {
   });
 
   it("rejects explicit Claude executable overrides that are not executable", () => {
-    const binDir = mkdtempSync(join(tmpdir(), "bb-claude-path-"));
+    const binDir = mkdtempSync(join(tmpdir(), "alia-claude-path-"));
     tempDirs.push(binDir);
     const executablePath = join(binDir, "claude");
 
@@ -1657,11 +1657,11 @@ describe("bridge", () => {
           permissionScope: "workspace",
         },
         {
-          BB_CLAUDE_CODE_EXECUTABLE: executablePath,
+          ALIA_CLAUDE_CODE_EXECUTABLE: executablePath,
           PATH: "/usr/bin",
         },
       ),
-    ).toThrow("BB_CLAUDE_CODE_EXECUTABLE must point to an executable");
+    ).toThrow("ALIA_CLAUDE_CODE_EXECUTABLE must point to an executable");
   });
 
   it("configures acceptEdits and auto sessions with the same Claude sandbox", () => {
@@ -1787,7 +1787,7 @@ describe("bridge", () => {
         },
         expected: {
           behavior: "deny",
-          messageIncludes: "bb's workspace sandbox allows work inside",
+          messageIncludes: "VesnALIA's workspace sandbox allows work inside",
         },
       },
       {
@@ -1803,7 +1803,7 @@ describe("bridge", () => {
         },
         expected: {
           behavior: "deny",
-          messageIncludes: "bb's workspace sandbox allows work inside",
+          messageIncludes: "VesnALIA's workspace sandbox allows work inside",
         },
       },
     ] satisfies CanUseToolPolicyCase[];
@@ -1869,7 +1869,7 @@ describe("bridge", () => {
     });
   });
 
-  it("forwards unresolved high-risk auto-mode asks to bb", async () => {
+  it("forwards unresolved high-risk auto-mode asks to VesnALIA", async () => {
     const bridge = createBridgeJsonRpcTestHarness(handleLine);
     const queries: ControlledClaudeQuery[] = [];
     queryMock.mockImplementation(() => {
@@ -3332,7 +3332,7 @@ describe("bridge", () => {
     }
   });
 
-  it("dispatches an inbound request whose id collides with a pending bb request", async () => {
+  it("dispatches an inbound request whose id collides with a pending VesnALIA request", async () => {
     const bridge = createBridgeJsonRpcTestHarness(handleLine);
     const queries: ControlledClaudeQuery[] = [];
     queryMock.mockImplementation(() => {
@@ -3439,7 +3439,7 @@ describe("bridge", () => {
     }
   });
 
-  it("denies invalid AskUserQuestion input before forwarding to bb", async () => {
+  it("denies invalid AskUserQuestion input before forwarding to VesnALIA", async () => {
     const bridge = createBridgeJsonRpcTestHarness(handleLine);
     const queries: ControlledClaudeQuery[] = [];
     queryMock.mockImplementation(() => {
@@ -3477,7 +3477,7 @@ describe("bridge", () => {
     }
   });
 
-  it("denies AskUserQuestion when bb returns an interactive request error", async () => {
+  it("denies AskUserQuestion when VesnALIA returns an interactive request error", async () => {
     const bridge = createBridgeJsonRpcTestHarness(handleLine);
     const queries: ControlledClaudeQuery[] = [];
     queryMock.mockImplementation(() => {
@@ -3518,7 +3518,7 @@ describe("bridge", () => {
     }
   });
 
-  it("denies AskUserQuestion when bb returns an invalid response payload", async () => {
+  it("denies AskUserQuestion when VesnALIA returns an invalid response payload", async () => {
     const bridge = createBridgeJsonRpcTestHarness(handleLine);
     const queries: ControlledClaudeQuery[] = [];
     queryMock.mockImplementation(() => {
@@ -3556,7 +3556,7 @@ describe("bridge", () => {
     }
   });
 
-  it("denies AskUserQuestion when bb returns a mismatched response kind", async () => {
+  it("denies AskUserQuestion when VesnALIA returns a mismatched response kind", async () => {
     const bridge = createBridgeJsonRpcTestHarness(handleLine);
     const queries: ControlledClaudeQuery[] = [];
     queryMock.mockImplementation(() => {
@@ -3607,7 +3607,7 @@ describe("bridge", () => {
     });
 
     const originalHome = process.env.HOME;
-    process.env.HOME = "/Users/test-bb";
+    process.env.HOME = "/Users/test-alia";
     try {
       bridge.sendRequest(1, "thread/start", {
         threadId: "thread-home-config",
@@ -3627,7 +3627,7 @@ describe("bridge", () => {
       await bridge.waitForResponse(1);
 
       const queryOptions = getLatestQueryOptions();
-      expect(queryOptions.env?.HOME).toBe("/Users/test-bb");
+      expect(queryOptions.env?.HOME).toBe("/Users/test-alia");
       expect(queryOptions.env?.CLAUDE_CODE_ENTRYPOINT).toBe("cli");
       expect(queryOptions.env?.CLAUDE_AGENT_SDK_CLIENT_APP).toBeUndefined();
       expect(queryOptions.settingSources).toEqual(["user", "project", "local"]);
@@ -6109,7 +6109,7 @@ describe("canonical skills/configure", () => {
       queries.push(query);
       return query;
     });
-    const stagedRoot = mkdtempSync(join(tmpdir(), "bb-claude-skill-roots-"));
+    const stagedRoot = mkdtempSync(join(tmpdir(), "alia-claude-skill-roots-"));
     const rootA = join(stagedRoot, "a", "skills");
     const rootB = join(stagedRoot, "b", "skills");
     for (const root of [rootA, rootB]) {

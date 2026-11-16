@@ -1,4 +1,4 @@
-// Iris's colors come only from the person's bb theme, and follow it live.
+// Iris's colors come only from the person's VesnALIA theme, and follow it live.
 //
 // - The accent is the theme's own primary color, exactly: edges, rings, focus,
 //   sliders and (when the primary has color) single-series charts use it.
@@ -194,7 +194,7 @@ function recompute(force = false) {
   for (const fn of subscribers) fn(cached);
 }
 
-/** Recomputes when bb swaps its theme: class or style changes, a new or edited stylesheet, or a system light/dark switch. */
+/** Recomputes when VesnALIA swaps its theme: class or style changes, a new or edited stylesheet, or a system light/dark switch. */
 function watchTheme() {
   if (watching || typeof window === "undefined") return;
   watching = true;

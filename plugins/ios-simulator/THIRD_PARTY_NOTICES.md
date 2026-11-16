@@ -1,6 +1,6 @@
 # Third-party notices
 
-The BB plugin code is MIT licensed; see LICENSE. The following licenses apply
+The VesnALIA plugin code is MIT licensed; see LICENSE. The following licenses apply
 to the vendored native source and compiled `native/serve-sim-native.node` and
 are distributed with this plugin.
 

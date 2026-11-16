@@ -1,16 +1,11 @@
 {
-  "name": "bb-plugin-ollama-usage",
+  "name": "alia-plugin-ollama-usage",
   "version": "0.1.1",
   "type": "module",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/fgbm/bb-plugin-ollama-usage.git"
-  },
-  "homepage": "https://github.com/fgbm/bb-plugin-ollama-usage",
   "keywords": [
-    "bb-plugin",
-    "bb",
+    "alia-plugin",
+    "alia",
     "ollama",
     "ollama-cloud",
     "usage",
@@ -18,12 +13,12 @@
     "limits"
   ],
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "Ollama Usage",
-    "description": "Shows the Ollama Cloud credit pool, its reset date and recent spend in BB's Provider usage view.",
+    "description": "Shows the Ollama Cloud credit pool, its reset date and recent spend in VesnALIA's Provider usage view.",
     "branding": {
       "icon": "ChartColumn"
     },
@@ -37,8 +32,24 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/ollama-usage#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/ollama-usage"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

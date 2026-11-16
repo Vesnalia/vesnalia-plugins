@@ -18,6 +18,6 @@ export async function telegramRequest(token: string, method: string, body: Recor
     return payload.result;
   } catch (error) {
     if (error instanceof TelegramError) throw error;
-    throw new TelegramError("Couldn’t reach Telegram. Check the BB host’s connection and try again.");
+    throw new TelegramError("Couldn’t reach Telegram. Check the VesnALIA host’s connection and try again.");
   }
 }

@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import { mkdirSync, readFileSync, readdirSync, writeFileSync, existsSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { delimiter, dirname, isAbsolute, join } from "node:path";
-import { experimental_defineHostEntry, type ExperimentalHostRpcContext } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry, type ExperimentalHostRpcContext } from "@vesnalia/plugin-sdk/host";
 import { z } from "zod";
 import { extensionSource } from "./extension-source.js";
 import { hostContract } from "./contract.js";
@@ -33,15 +33,15 @@ function npmPiEntry() {
 const quote = (value: string) => "'" + value.replaceAll("'", "'\\''") + "'";
 
 // One launcher, so a second addon cannot replace this one's extension by
-// contributing BB_PI_BRIDGE_COMMAND itself. The optional extension is loaded
+// contributing ALIA_PI_BRIDGE_COMMAND itself. The optional extension is loaded
 // only when another plugin supplies all five variables, and never for the
 // --no-session discovery child.
 function launcherSource(invocation: string, extension: string, menu: string) {
   const commands = `--extension ${quote(extension)}`;
-  return `#!/bin/sh\nexport BB_PI_COMMAND_MENU_DIR=${quote(menu)}\n` +
-    `if [ -n "\${BB_PI_SUBAGENTS_EXTENSION:-}" ] && [ -n "\${BB_PI_SUBAGENTS_ROOT:-}" ] && [ -n "\${BB_PI_SUBAGENTS_THREAD_ID:-}" ] && [ -n "\${BB_PI_SUBAGENTS_SLOT:-}" ] && [ -n "\${BB_PI_SUBAGENTS_NONCE:-}" ]; then\n` +
+  return `#!/bin/sh\nexport ALIA_PI_COMMAND_MENU_DIR=${quote(menu)}\n` +
+    `if [ -n "\${ALIA_PI_SUBAGENTS_EXTENSION:-}" ] && [ -n "\${ALIA_PI_SUBAGENTS_ROOT:-}" ] && [ -n "\${ALIA_PI_SUBAGENTS_THREAD_ID:-}" ] && [ -n "\${ALIA_PI_SUBAGENTS_SLOT:-}" ] && [ -n "\${ALIA_PI_SUBAGENTS_NONCE:-}" ]; then\n` +
     `  for arg in "$@"; do\n    if [ "$arg" = "--no-session" ]; then exec ${invocation} "$@" ${commands}; fi\n  done\n` +
-    `  exec ${invocation} "$@" ${commands} --extension "$BB_PI_SUBAGENTS_EXTENSION"\nfi\n` +
+    `  exec ${invocation} "$@" ${commands} --extension "$ALIA_PI_SUBAGENTS_EXTENSION"\nfi\n` +
     `exec ${invocation} "$@" ${commands}\n`;
 }
 
@@ -49,11 +49,11 @@ export function prepareRuntime(dataDir: string) {
   if (process.platform === "win32") throw new Error("Pi Command Sync supports Linux and macOS hosts; Windows is not verified.");
   const cli = npmPiEntry();
   const invocation = cli ? `${quote(process.execPath)} ${quote(cli)}` : "pi";
-  // The compatible ordinary-Pi bridge reads this BB-only catalog, not terminal Pi skills.
-  const menu = join(homedir(), ".pi", "bb-commands");
+  // The compatible ordinary-Pi bridge reads this ALIA-only catalog, not terminal Pi skills.
+  const menu = join(homedir(), ".pi", "alia-commands");
   const folder = join(dataDir, "runtime", hash(extensionSource + invocation + menu + "pi-subagents-env-bridge-v1"));
   const extension = join(folder, "commands.ts");
-  const launcher = join(folder, "pi-bb");
+  const launcher = join(folder, "pi-alia");
   mkdirSync(folder, { recursive: true, mode: 0o700 });
   if (!existsSync(extension)) writeFileSync(extension, extensionSource, { mode: 0o600 });
   if (!existsSync(launcher)) writeFileSync(launcher, launcherSource(invocation, extension, menu), { mode: 0o700 });

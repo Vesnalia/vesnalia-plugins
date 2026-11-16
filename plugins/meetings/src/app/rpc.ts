@@ -1,6 +1,6 @@
 // Typed access to the plugin's RPC methods (src/shared/rpc-contract.ts, types only).
-import { useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginRpcClient } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcClient } from "@vesnalia/plugin-sdk/app";
 import type { RpcContract } from "../shared/rpc-contract";
 
 export type MeetingsRpc = PluginRpcClient<RpcContract>;

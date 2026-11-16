@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { Machine } from "../../plugin/contract.ts";
 import { SERVER_MACHINE } from "./use-snapshot.ts";
 import { machineKey } from "./use-machines.ts";
@@ -14,10 +14,10 @@ import { CrownIcon, ServerIcon } from "@hugeicons/core-free-icons";
 type MachineKind = "server" | "machine" | "box" | "device" | "desktop";
 
 const KIND_ICONS = { server: CrownIcon, machine: ServerIcon } as const;
-const BB_BOX_ICON = "bb-box/box";
+const ALIA_BOX_ICON = "alia-box/box";
 
 const KIND_LABELS: Record<MachineKind, string> = {
-  server: "bb server",
+  server: "alia server",
   machine: "Machine",
   box: "Box",
   device: "Device box",
@@ -41,7 +41,7 @@ function KindIcon({ kind, className }: { kind: MachineKind; className?: string }
   if (kind === "box") {
     return (
       <span role="img" aria-label={KIND_LABELS.box} className={cn("inline-flex shrink-0", className)}>
-        <Icon name={BB_BOX_ICON} className="size-3.5" aria-hidden />
+        <Icon name={ALIA_BOX_ICON} className="size-3.5" aria-hidden />
       </span>
     );
   }
@@ -63,7 +63,7 @@ export function selectedMachine(machines: Machine[] | null, selected: string, lo
   const machine = machines?.find((candidate) => machineKey(candidate) === selected);
   if (machine) return { name: machine.name, kind: kindOf(machine, lookOf) };
   return selected === SERVER_MACHINE
-    ? { name: "This bb server", kind: "server" }
+    ? { name: "This VesnALIA server", kind: "server" }
     : { name: "Machine", kind: "machine" };
 }
 
@@ -152,12 +152,12 @@ export function MachinePicker({
             onKeyDown={onKeyDown}
             placeholder="Search machines"
             aria-label="Search machines"
-            aria-controls="bb-box-monitor-machine-list"
+            aria-controls="alia-box-monitor-machine-list"
             className="h-7 w-full rounded-sm bg-transparent px-2 text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-none"
           />
         </div>
         <div
-          id="bb-box-monitor-machine-list"
+          id="alia-box-monitor-machine-list"
           ref={listRef}
           role="listbox"
           aria-label="Machines"

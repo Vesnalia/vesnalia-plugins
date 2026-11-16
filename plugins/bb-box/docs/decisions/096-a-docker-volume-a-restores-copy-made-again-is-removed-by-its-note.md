@@ -11,12 +11,12 @@ copy made again.
 ## Context
 
 A Docker restore copies the snapshot's Docker data into the new
-container's volume with a copy container. If BB stops part way, Docker can
+container's volume with a copy container. If VesnALIA stops part way, Docker can
 still make that copy after a release has removed the volume. Docker then
 makes the volume again, without labels. Under 082's rule, nothing removes
 it, as it has no labels.
 
-BB Box notes each copy in its own storage before it asks Docker for it. A
+VesnALIA Box notes each copy in its own storage before it asks Docker for it. A
 release and maintenance read the note. The first version of the fix had
 two faults:
 
@@ -27,7 +27,7 @@ two faults:
 
 ## Decision
 
-1. A release reads BB Box's own storage first. With no note of a copy into
+1. A release reads VesnALIA Box's own storage first. With no note of a copy into
    the volume, it removes the volume as before this record: one list, one
    inspect and one removal, with no wait. Only if Docker says the volume
    is in use does it look for a copy into it, remove that and try again,
@@ -35,7 +35,7 @@ two faults:
 2. With a note, a release removes every copy into the volume, then the
    volume, and waits for a copy Docker may still be making, as 082's
    results describe.
-3. BB Box removes a volume without labels only when a note or a copy's
+3. VesnALIA Box removes a volume without labels only when a note or a copy's
    labels name it, and only for its own install. A volume with labels must
    still be labelled for the container and the install.
 4. Maintenance writes a note for each copy it finds before it removes the
@@ -50,7 +50,7 @@ two faults:
 
 - An ordinary release makes no more Docker calls than it did before
   restores had copy containers.
-- A volume made again stays named in BB Box's storage until it is removed,
+- A volume made again stays named in VesnALIA Box's storage until it is removed,
   however many sweeps that takes.
 - A lost storage still leaves the copy's labels, which maintenance reads
   and turns into a note.

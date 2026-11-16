@@ -3,7 +3,7 @@
 // Tier 1 is module scope: it survives a remount of the panel inside one page
 // session and is written synchronously, so nothing is lost between an unmount
 // and the remount the host performs when you navigate away and back.
-// Tier 2 is `window.localStorage`: it survives a reload and a bb restart.
+// Tier 2 is `window.localStorage`: it survives a reload and a VesnALIA restart.
 //
 // The rules below are carried over verbatim from TREE-SPEC §6, where they were
 // inlined in `hooks/useTree.ts` for the expanded-folder set. The location
@@ -14,7 +14,7 @@
 //     component disables the plugin's whole UI for the session (SPEC §8.1);
 //   * a corrupt or foreign row degrades to the fallback, silently;
 //   * the serialized payload is size-capped *before* the write, never after;
-//   * the key is namespaced `bb-plugin-file-manager:<what>:v1`, so a shape
+//   * the key is namespaced `alia-plugin-file-manager:<what>:v1`, so a shape
 //     change is a new key rather than a migration.
 
 export interface SessionStore<T> {

@@ -39,7 +39,7 @@ export const HETZNER_FIELDS: Readonly<Record<string, FieldDescriptor>> = {
   [HETZNER_KEYS.location]: {
     type: "string",
     label: "Location",
-    description: "The Hetzner location hosts are made in, such as nbg1 (Nuremberg), fsn1 (Falkenstein) or hel1 (Helsinki). Choose one near BB's server, as a desktop's stream crosses between them.",
+    description: "The Hetzner location hosts are made in, such as nbg1 (Nuremberg), fsn1 (Falkenstein) or hel1 (Helsinki). Choose one near VesnALIA's server, as a desktop's stream crosses between them.",
     group: "connection",
     default: HETZNER_DEFAULTS.location,
   },
@@ -88,7 +88,7 @@ export const HETZNER_FIELDS: Readonly<Record<string, FieldDescriptor>> = {
   [HETZNER_KEYS.sshFrom]: {
     type: "string",
     label: "SSH from",
-    description: "The addresses that may reach a host's SSH over the internet, used only with the tailnet off. Give CIDRs separated by commas, such as BB's server's public address. With the tailnet on, a host's SSH is reached on the tailnet alone.",
+    description: "The addresses that may reach a host's SSH over the internet, used only with the tailnet off. Give CIDRs separated by commas, such as VesnALIA's server's public address. With the tailnet on, a host's SSH is reached on the tailnet alone.",
     group: "advanced",
     default: "",
   },

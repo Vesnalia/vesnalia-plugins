@@ -1,9 +1,9 @@
-/** Extract only BB's thread marker. Never return or log process environments. */
+/** Extract only VesnALIA's thread marker. Never return or log process environments. */
 export function threadIdFromEnvironment(environment: string, separator: "nul" | "space"): string | undefined {
   const entries = separator === "nul" ? environment.split("\0") : environment.split(/\s+/);
-  const values = entries.filter((entry) => entry.startsWith("BB_THREAD_ID="));
+  const values = entries.filter((entry) => entry.startsWith("ALIA_THREAD_ID="));
   if (values.length !== 1) return undefined;
-  const value = values[0].slice("BB_THREAD_ID=".length);
+  const value = values[0].slice("ALIA_THREAD_ID=".length);
   return /^thr_[a-zA-Z0-9_-]+$/.test(value) ? value : undefined;
 }
 

@@ -1,7 +1,7 @@
-// `bb rewind …` — declared with defineCli so every command gets --help, typo
+// `alia rewind …` — declared with defineCli so every command gets --help, typo
 // suggestions, and the --json error envelope. Output is bounded.
 import path from "node:path";
-import { PluginCliError, cliCommand, defineCli, type PluginBbSdk, type PluginCliContext, type PluginCliRegistration, type PluginCliResult } from "@get-bb/plugin-sdk";
+import { PluginCliError, cliCommand, defineCli, type PluginAliaSdk, type PluginCliContext, type PluginCliRegistration, type PluginCliResult } from "@vesnalia/plugin-sdk";
 import { CHECKPOINT_ID_PATTERN, RESTORE_ID_PATTERN, THREAD_ID_PATTERN } from "./ids";
 import {
   OUTPUT_BUDGET_BYTES,
@@ -32,7 +32,7 @@ const jsonOption = { type: "boolean", description: "Print machine-readable JSON"
 interface CliDeps {
   service: RewindService;
   store: RewindStore;
-  sdk: () => PluginBbSdk;
+  sdk: () => PluginAliaSdk;
 }
 
 function text(stdout: string): PluginCliResult {
@@ -65,7 +65,7 @@ async function guard(run: () => Promise<PluginCliResult>): Promise<PluginCliResu
 }
 
 /**
- * An agent running `bb rewind restore` from inside its own turn is always
+ * An agent running `alia rewind restore` from inside its own turn is always
  * refused (its thread is running), and stopping itself is never the answer.
  */
 async function refuseSelfRestore(service: RewindService, threadId: string, ctx: PluginCliContext, command: string): Promise<void> {
@@ -75,16 +75,16 @@ async function refuseSelfRestore(service: RewindService, threadId: string, ctx: 
   if (!running.some((thread) => thread.isSelf)) return;
   throw new PluginCliError("This thread is running, so its workspace cannot be restored from inside its own turn.", {
     code: "thread_running",
-    hint: `Tell the user the checkpoint id instead: they can restore it from the Checkpoints panel, or run \`bb rewind ${command} --thread ${threadId}\` in a terminal once this turn ends. \`--dry-run\` shows what would change.`,
+    hint: `Tell the user the checkpoint id instead: they can restore it from the Checkpoints panel, or run \`alia rewind ${command} --thread ${threadId}\` in a terminal once this turn ends. \`--dry-run\` shows what would change.`,
   });
 }
 
 function threadFor(option: string | undefined, ctx: PluginCliContext, command: string): string {
   const threadId = option ?? ctx.threadId;
   if (threadId === undefined || threadId.length === 0) {
-    throw new PluginCliError("No thread to work on: this command is not running inside a BB thread.", {
+    throw new PluginCliError("No thread to work on: this command is not running inside a VesnALIA thread.", {
       code: "missing_thread",
-      hint: `Pass --thread <thread-id>, for example \`bb rewind ${command} --thread thr_…\`. \`bb thread list\` shows thread ids.`,
+      hint: `Pass --thread <thread-id>, for example \`alia rewind ${command} --thread thr_…\`. \`alia thread list\` shows thread ids.`,
     });
   }
   if (!THREAD_ID_PATTERN.test(threadId)) {
@@ -107,7 +107,7 @@ export function buildCli(deps: CliDeps): PluginCliRegistration {
     }
     throw new PluginCliError(`Checkpoint "${value}" was not found${threadId === null ? "" : ` for ${threadId}`}.`, {
       code: "checkpoint_not_found",
-      hint: "Run `bb rewind list` to see checkpoint ids.",
+      hint: "Run `alia rewind list` to see checkpoint ids.",
     });
   };
 
@@ -237,7 +237,7 @@ export function buildCli(deps: CliDeps): PluginCliRegistration {
       restore: cliCommand({
         summary: "Restore the thread's files to a checkpoint (preview with --dry-run, apply with --yes)",
         description:
-          "Takes a pre-restore checkpoint first, so `bb rewind undo` can put the files back. Never touches ignored files, files over the size cap, nested repositories, or .git, and refuses while a thread in the workspace is running.",
+          "Takes a pre-restore checkpoint first, so `alia rewind undo` can put the files back. Never touches ignored files, files over the size cap, nested repositories, or .git, and refuses while a thread in the workspace is running.",
         positionals: [{ name: "checkpoint", description: "Checkpoint id (ck_…) or a unique prefix", required: true }],
         options: {
           "dry-run": { type: "boolean", description: "Show what would change; write nothing", aliases: ["dryrun", "preview"] },
@@ -245,7 +245,7 @@ export function buildCli(deps: CliDeps): PluginCliRegistration {
           "stop-running": { type: "boolean", description: "Stop threads running in this workspace first" },
           "edit-message": {
             type: "string",
-            description: "Then replace the message this checkpoint preceded with this text; bb discards it and every later turn",
+            description: "Then replace the message this checkpoint preceded with this text; VesnALIA discards it and every later turn",
             stdin: true,
           },
           "edit-message-file": { type: "string", description: "Like --edit-message, reading the new text from a file on this machine (max 100 KB)", placeholder: "path" },
@@ -270,7 +270,7 @@ export function buildCli(deps: CliDeps): PluginCliRegistration {
               if (message !== null) {
                 lines.push(
                   "",
-                  `With --yes this then replaces message ${message.number ?? ""} (“${message.text.replace(/\s+/gu, " ").slice(0, 80)}”): bb discards it and every later turn. The files can be undone; the conversation edit follows bb's rules.`,
+                  `With --yes this then replaces message ${message.number ?? ""} (“${message.text.replace(/\s+/gu, " ").slice(0, 80)}”): VesnALIA discards it and every later turn. The files can be undone; the conversation edit follows VesnALIA's rules.`,
                 );
               }
               return text(lines.join("\n"));
@@ -278,7 +278,7 @@ export function buildCli(deps: CliDeps): PluginCliRegistration {
             if (!input.options.yes) {
               throw new PluginCliError("Restoring overwrites files in the workspace; nothing was changed.", {
                 code: "confirmation_required",
-                hint: `Preview with \`bb rewind restore ${id} --dry-run\`, then apply with \`bb rewind restore ${id} --yes\`. Every restore can be undone with \`bb rewind undo --yes\`.`,
+                hint: `Preview with \`alia rewind restore ${id} --dry-run\`, then apply with \`alia rewind restore ${id} --yes\`. Every restore can be undone with \`alia rewind undo --yes\`.`,
               });
             }
             await refuseSelfRestore(service, threadId, ctx, `restore ${id} --yes`);
@@ -309,7 +309,7 @@ export function buildCli(deps: CliDeps): PluginCliRegistration {
             const threadId = threadFor(input.options.thread, ctx, "undo");
             const restoreId = input.positionals.restore;
             if (restoreId !== undefined && !RESTORE_ID_PATTERN.test(restoreId)) {
-              throw new PluginCliError(`"${restoreId}" is not a restore id.`, { code: "invalid_value", hint: "Restore ids look like rs_…; `bb rewind list` shows them." });
+              throw new PluginCliError(`"${restoreId}" is not a restore id.`, { code: "invalid_value", hint: "Restore ids look like rs_…; `alia rewind list` shows them." });
             }
             if (input.options["dry-run"]) {
               const { workspace } = await service.resolveWorkspace(threadId);
@@ -321,7 +321,7 @@ export function buildCli(deps: CliDeps): PluginCliRegistration {
             if (!input.options.yes) {
               throw new PluginCliError("Undoing a restore overwrites files in the workspace; nothing was changed.", {
                 code: "confirmation_required",
-                hint: "Preview with `bb rewind undo --dry-run`, then apply with `bb rewind undo --yes`.",
+                hint: "Preview with `alia rewind undo --dry-run`, then apply with `alia rewind undo --yes`.",
               });
             }
             await refuseSelfRestore(service, threadId, ctx, "undo --yes");
@@ -440,7 +440,7 @@ export function buildCli(deps: CliDeps): PluginCliRegistration {
               if (!input.options["dry-run"] && !input.options.yes) {
                 throw new PluginCliError(`Deleting every checkpoint of ${threadId} cannot be undone.`, {
                   code: "confirmation_required",
-                  hint: `Check with \`bb rewind prune --thread ${threadId} --dry-run\`, then run it with --yes.`,
+                  hint: `Check with \`alia rewind prune --thread ${threadId} --dry-run\`, then run it with --yes.`,
                 });
               }
               const count = await service.pruneThread(threadId, { dryRun: input.options["dry-run"] });

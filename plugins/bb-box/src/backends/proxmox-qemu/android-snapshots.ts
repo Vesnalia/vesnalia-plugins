@@ -1,7 +1,7 @@
 import { PRODUCT } from "../../brand.ts";
 import type { SnapshotPlan, Snapshotting } from "../types.ts";
 
-export const ANDROID_NO_FORK = "an Android device and its host have no identity reset BB Box has checked, so a copy of it would keep the box's identity";
+export const ANDROID_NO_FORK = "an Android device and its host have no identity reset VesnALIA Box has checked, so a copy of it would keep the box's identity";
 
 const ANDROID_DISK_ONLY = "An Android box's snapshot holds its disk only.";
 

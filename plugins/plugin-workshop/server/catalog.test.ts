@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { bbStateOf, Catalog, columnOf, labelsOf, reworkBlockers, type PluginFacts } from "./catalog";
+import { aliaStateOf, Catalog, columnOf, labelsOf, reworkBlockers, type PluginFacts } from "./catalog";
 import { FakePorts } from "./fake-ports";
 import type { GitFacts, InstalledPlugin, PluginState } from "./ports";
 import { PLUGINS_ROOT, pluginDir, SELF_ID } from "./stages";
@@ -69,11 +69,11 @@ describe("reworkBlockers", () => {
   it("a detached HEAD is not main", () => expect(reworkBlockers(f({ id: "x", branch: null }))).toEqual(["the working copy is not on branch main (detached HEAD)"]));
   it("a repository without commits", () => expect(reworkBlockers(f({ id: "x", head: null, branch: null }))).toEqual(["the repository has no commits"]));
   it("a plugin installed from elsewhere", () =>
-    expect(reworkBlockers(f({ id: "runner", source: "path:/srv/bb/sources/runner-1a2b3c4" }))[0]).toMatch(/^installed from /));
+    expect(reworkBlockers(f({ id: "runner", source: "path:/srv/alia/sources/runner-1a2b3c4" }))[0]).toMatch(/^installed from /));
   it("a source with no working copy in the plugins root", () => {
     const blockers = reworkBlockers(f({ id: "notes", source: "git:github.com/acme/bb-plugin-notes@main", dirExists: false }));
     expect(blockers).toEqual([`source outside ${PLUGINS_ROOT}`]);
-    expect(reworkBlockers(f({ id: "studio", source: "path:/srv/bb/local-plugins/studio/releases/0.1.0", dirExists: false }))).toEqual([`source outside ${PLUGINS_ROOT}`]);
+    expect(reworkBlockers(f({ id: "studio", source: "path:/srv/alia/local-plugins/studio/releases/0.1.0", dirExists: false }))).toEqual([`source outside ${PLUGINS_ROOT}`]);
   });
   it("workshop itself", () => expect(reworkBlockers(f({ id: SELF_ID }))).toContain("the Workshop is not reworked through itself"));
   it("an open work", () => expect(reworkBlockers(f({ id: "mail", work: { stage: 3, task_key: "TEST-12" } }))).toContain("work TEST-12 is already in progress"));
@@ -92,7 +92,7 @@ describe("columns, states and labels", () => {
     expect(labelsOf(f({ id: "draft", installed: null }))).toContain("not installed");
     const x = f({ id: "lex", state: "error", work: { stage: 4 } });
     expect(columnOf(x)).toBe("build");
-    expect(bbStateOf(x).state).toBe("error");
+    expect(aliaStateOf(x).state).toBe("error");
     const y = f({ id: "hello", work: { stage: 6 } });
     expect(columnOf(y)).toBe("live");
     expect(labelsOf(y)).toContain("awaiting acceptance");
@@ -105,7 +105,7 @@ describe("columns, states and labels", () => {
     expect(columnOf(f({ id: "x", state: "disabled", enabled: false, work: { stage: 3 } }))).toBe("tz");
     expect(columnOf(f({ id: "x", installed: null, work: { stage: 1 } }))).toBe("context");
   });
-  it("without a work the column follows bb: enabled — live, disabled and absent — off", () => {
+  it("without a work the column follows VesnALIA: enabled — live, disabled and absent — off", () => {
     expect(columnOf(f({ id: "x" }))).toBe("live");
     expect(columnOf(f({ id: "x", installed: null }))).toBe("off");
   });
@@ -117,12 +117,12 @@ describe("columns, states and labels", () => {
     expect(labelsOf(f({ id: "x", state: "needs-configuration" }))).toContain("needs configuration");
     expect(labelsOf(f({ id: "x" }))).not.toContain("needs configuration");
   });
-  it("bb state is shown apart from the column; not installed is its own state", () => {
-    expect(bbStateOf(f({ id: "x", state: "needs-configuration" }))).toEqual({ state: "needs-configuration", stale: false });
-    expect(bbStateOf(f({ id: "x", installed: null }))).toEqual({ state: "not-installed", stale: false });
+  it("alia state is shown apart from the column; not installed is its own state", () => {
+    expect(aliaStateOf(f({ id: "x", state: "needs-configuration" }))).toEqual({ state: "needs-configuration", stale: false });
+    expect(aliaStateOf(f({ id: "x", installed: null }))).toEqual({ state: "not-installed", stale: false });
   });
   it("stale means the last list failed — one rule", () => {
-    expect(bbStateOf(f({ id: "x", listFailedAt: 5 })).stale).toBe(true);
+    expect(aliaStateOf(f({ id: "x", listFailedAt: 5 })).stale).toBe(true);
     expect(labelsOf(f({ id: "x", listFailedAt: 5 }))).toContain("stale data");
     expect(labelsOf(f({ id: "x" }))).not.toContain("stale data");
   });
@@ -165,7 +165,7 @@ describe("Catalog", () => {
     await catalog.sync();
     const x = (await catalog.one("mail"))!;
     expect(columnOf(x)).toBe("live");
-    expect(bbStateOf(x)).toEqual({ state: "running", stale: true });
+    expect(aliaStateOf(x)).toEqual({ state: "running", stale: true });
     expect(labelsOf(x)).toContain("stale data");
     expect(labelsOf(x)).not.toContain("not installed");
   });
@@ -176,7 +176,7 @@ describe("Catalog", () => {
     await catalog.sync();
     const x = (await catalog.one("mail"))!;
     expect(columnOf(x)).toBe("live");
-    expect(bbStateOf(x)).toEqual({ state: "running", stale: true });
+    expect(aliaStateOf(x)).toEqual({ state: "running", stale: true });
   });
   it("list failure does not overwrite the known source, name or folder", async () => {
     install("mail", { name: "Mailbox" });
@@ -196,7 +196,7 @@ describe("Catalog", () => {
     await catalog.sync();
     ports.plugins.failList = false;
     await catalog.sync();
-    expect(bbStateOf((await catalog.one("mail"))!)).toEqual({ state: "running", stale: false });
+    expect(aliaStateOf((await catalog.one("mail"))!)).toEqual({ state: "running", stale: false });
   });
   it("a failed list never marks a plugin gone, even when its folder is missing", async () => {
     install("mail");
@@ -206,7 +206,7 @@ describe("Catalog", () => {
     ports.plugins.failList = true;
     await catalog.sync();
     expect(store.plugin("mail")!.gone_reason).toBeNull();
-    expect(bbStateOf((await catalog.one("mail"))!)).toEqual({ state: "running", stale: true });
+    expect(aliaStateOf((await catalog.one("mail"))!)).toEqual({ state: "running", stale: true });
   });
   it("a failed list leaves a gone plugin alone, and a good one clears the stale mark of a plugin that is not installed", async () => {
     install("old");
@@ -219,10 +219,10 @@ describe("Catalog", () => {
     ports.plugins.failList = true;
     await catalog.sync();
     expect(store.plugin("old")!.list_failed_at).toBeNull();
-    expect(bbStateOf((await catalog.one("tags"))!)).toEqual({ state: "not-installed", stale: true });
+    expect(aliaStateOf((await catalog.one("tags"))!)).toEqual({ state: "not-installed", stale: true });
     ports.plugins.failList = false;
     await catalog.sync();
-    expect(bbStateOf((await catalog.one("tags"))!)).toEqual({ state: "not-installed", stale: false });
+    expect(aliaStateOf((await catalog.one("tags"))!)).toEqual({ state: "not-installed", stale: false });
   });
   it("a failed list does not create cards for folders it cannot classify", async () => {
     ports.fs.put(pluginDir("fresh"));
@@ -241,7 +241,7 @@ describe("Catalog", () => {
     expect(row.last_state).toBeNull();
     const x = (await catalog.one("old"))!;
     expect(columnOf(x)).toBe("off");
-    expect(bbStateOf(x)).toEqual({ state: "not-installed", stale: false });
+    expect(aliaStateOf(x)).toEqual({ state: "not-installed", stale: false });
     expect(labelsOf(x)).toContain("not installed");
     expect((await catalog.facts()).map((p) => p.row.id)).toContain("old");
   });
@@ -261,7 +261,7 @@ describe("Catalog", () => {
     install("old");
     await catalog.sync();
     expect(store.plugin("old")!.gone_reason).toBeNull();
-    expect(bbStateOf((await catalog.one("old"))!).state).toBe("running");
+    expect(aliaStateOf((await catalog.one("old"))!).state).toBe("running");
   });
   it("an uninstalled plugin whose folder stays loses its confirmed state, but is not gone", async () => {
     install("tags");
@@ -272,7 +272,7 @@ describe("Catalog", () => {
     expect(row.gone_reason).toBeNull();
     expect(row.last_state).toBeNull();
     const x = (await catalog.one("tags"))!;
-    expect(bbStateOf(x)).toEqual({ state: "not-installed", stale: false });
+    expect(aliaStateOf(x)).toEqual({ state: "not-installed", stale: false });
     expect(columnOf(x)).toBe("off");
     expect(reworkBlockers(x)).toEqual([]);
   });
@@ -285,7 +285,7 @@ describe("Catalog", () => {
     await catalog.sync();
     expect(store.plugin("hello")!.name).toBe("Greeter");
   });
-  it("once the plugin is installed, bb's name wins", async () => {
+  it("once the plugin is installed, VesnALIA's name wins", async () => {
     store.upsertSeen({ id: "hello", name: "Greeter", dir: pluginDir("hello"), source: null }, 1);
     install("hello", { name: "Hello, world" });
     await catalog.sync();
@@ -325,12 +325,12 @@ describe("Catalog", () => {
     await catalog.sync();
     expect(store.plugin("mail")!.dir).toBe(pluginDir("mail"));
   });
-  it("bb still says running, but the folder is gone: the card shows missing", async () => {
+  it("alia still says running, but the folder is gone: the card shows missing", async () => {
     install("mail");
     await ports.fs.remove(pluginDir("mail"));
     await catalog.sync();
     const x = (await catalog.one("mail"))!;
-    expect(bbStateOf(x).state).toBe("missing");
+    expect(aliaStateOf(x).state).toBe("missing");
     expect(x.installed!.error).toContain(pluginDir("mail"));
     expect(columnOf(x)).toBe("live");
     expect(x.git).toBeNull();
@@ -341,14 +341,14 @@ describe("Catalog", () => {
     install("tags", { state: "disabled", enabled: false });
     await catalog.sync();
     const lex = (await catalog.one("lex"))!;
-    expect([bbStateOf(lex).state, lex.installed!.error, columnOf(lex)]).toEqual(["error", "boom", "live"]);
+    expect([aliaStateOf(lex).state, lex.installed!.error, columnOf(lex)]).toEqual(["error", "boom", "live"]);
     const tags = (await catalog.one("tags"))!;
-    expect([bbStateOf(tags).state, tags.installed!.enabled, columnOf(tags)]).toEqual(["disabled", false, "off"]);
+    expect([aliaStateOf(tags).state, tags.installed!.enabled, columnOf(tags)]).toEqual(["disabled", false, "off"]);
   });
-  it("a plugin whose root folder bb does not name is taken as bb says", async () => {
+  it("a plugin whose root folder VesnALIA does not name is taken as VesnALIA says", async () => {
     install("mail", { rootDir: null });
     await catalog.sync();
-    expect(bbStateOf((await catalog.one("mail"))!).state).toBe("running");
+    expect(aliaStateOf((await catalog.one("mail"))!).state).toBe("running");
   });
   it("a missing plugin keeps its old name", async () => {
     install("mail", { name: "Mailbox" });
@@ -356,7 +356,7 @@ describe("Catalog", () => {
     ports.plugins.add({ id: "mail", name: null, state: "missing" });
     await catalog.sync();
     expect(store.plugin("mail")!.name).toBe("Mailbox");
-    expect(bbStateOf((await catalog.one("mail"))!).state).toBe("missing");
+    expect(aliaStateOf((await catalog.one("mail"))!).state).toBe("missing");
   });
   it("facts carry the working copy, the open work and the current attempt", async () => {
     install("mail", {}, { branch: "feature/x", dirtyCount: 2 });
@@ -549,8 +549,8 @@ describe("Catalog", () => {
     });
   });
 
-  // Targeted reconcile of one plugin — after an owner action and after an attempt step: its state in bb and git, not the whole catalog.
-  describe("refreshPlugin: one plugin against bb", () => {
+  // Targeted reconcile of one plugin — after an owner action and after an attempt step: its state in VesnALIA and git, not the whole catalog.
+  describe("refreshPlugin: one plugin against VesnALIA", () => {
     it("takes the state from the list: the card changes column and state at once, the others stay", async () => {
       install("a");
       install("b");
@@ -562,8 +562,8 @@ describe("Catalog", () => {
       const all = await catalog.cachedFacts();
       const a = all.find((p) => p.row.id === "a")!;
       const b = all.find((p) => p.row.id === "b")!;
-      expect([columnOf(a), bbStateOf(a)]).toEqual(["off", { state: "disabled", stale: false }]);
-      expect([columnOf(b), bbStateOf(b).state]).toEqual(["live", "running"]);
+      expect([columnOf(a), aliaStateOf(a)]).toEqual(["off", { state: "disabled", stale: false }]);
+      expect([columnOf(b), aliaStateOf(b).state]).toEqual(["live", "running"]);
     });
     it("re-reads git of that plugin too", async () => {
       install("a");
@@ -572,7 +572,7 @@ describe("Catalog", () => {
       await catalog.refreshPlugin("a");
       expect((await catalog.cachedFacts())[0]!.git!.head).toBe("moved");
     });
-    it("asks bb for the list once and does not walk the folders", async () => {
+    it("asks VesnALIA for the list once and does not walk the folders", async () => {
       install("a");
       install("b");
       await catalog.sync();
@@ -581,12 +581,12 @@ describe("Catalog", () => {
       await catalog.refreshPlugin("a");
       expect([list.mock.calls.length, folders.mock.calls.length]).toEqual([1, 0]);
     });
-    it("a plugin bb no longer lists, whose folder stays, is no longer installed", async () => {
+    it("a plugin VesnALIA no longer lists, whose folder stays, is no longer installed", async () => {
       install("a");
       await catalog.sync();
       ports.plugins.items.delete("a");
       await catalog.refreshPlugin("a");
-      expect(bbStateOf((await catalog.one("a"))!)).toEqual({ state: "not-installed", stale: false });
+      expect(aliaStateOf((await catalog.one("a"))!)).toEqual({ state: "not-installed", stale: false });
       expect(store.plugin("a")!.gone_reason).toBeNull();
     });
     it("a list that did not come marks only that card stale and keeps its state", async () => {
@@ -595,7 +595,7 @@ describe("Catalog", () => {
       await catalog.sync();
       ports.plugins.failList = true;
       await catalog.refreshPlugin("a");
-      expect(bbStateOf((await catalog.one("a"))!)).toEqual({ state: "running", stale: true });
+      expect(aliaStateOf((await catalog.one("a"))!)).toEqual({ state: "running", stale: true });
       expect(store.plugin("b")!.list_failed_at).toBeNull();
     });
     it("a plugin that is not on the board is ignored", async () => {
@@ -622,7 +622,7 @@ describe("Catalog", () => {
       const both = catalog.refreshPlugin("a");
       release();
       await Promise.all([gitOnly, both]);
-      expect(bbStateOf((await catalog.one("a"))!).state).toBe("error");
+      expect(aliaStateOf((await catalog.one("a"))!).state).toBe("error");
     });
     it("a failure of the state pass is reported, and git is still read", async () => {
       install("a");

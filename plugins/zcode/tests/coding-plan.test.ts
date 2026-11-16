@@ -9,7 +9,7 @@ import { record } from "../src/protocol.js";
 const hosts: CodingPlanHost[] = [];
 afterEach(() => hosts.splice(0).forEach((host) => host.close()));
 function fixture(family: "zai" | "bigmodel" = "zai", encrypted = false) {
-  const root = mkdtempSync(join(tmpdir(), "bb-zcode-account-"));
+  const root = mkdtempSync(join(tmpdir(), "alia-zcode-account-"));
   const data = join(root, ".zcode", "v2");
   mkdirSync(data, { recursive: true });
   const providerId = `account:${family}-individual-coding-plan`;
@@ -266,7 +266,7 @@ it.each(["zai", "bigmodel"] as const)(
         mcpKey: "search",
         targetOrigin: "https://zcode.z.ai",
         workspace: {
-          workspaceKey: "bb:/workspace",
+          workspaceKey: "alia:/workspace",
           workspacePath: "/workspace",
         },
       },
@@ -300,7 +300,7 @@ it.each([
         mcpKey: "m",
         targetOrigin,
         workspace: {
-          workspaceKey: "bb:/workspace",
+          workspaceKey: "alia:/workspace",
           workspacePath: "/workspace",
         },
       },
@@ -335,7 +335,7 @@ it("does not give official MCP credentials to a different workspace or after log
   const result = await f.host.authorizeOfficialMcp(
     {
       ...request,
-      workspace: { workspaceKey: "bb:/workspace", workspacePath: "/workspace" },
+      workspace: { workspaceKey: "alia:/workspace", workspacePath: "/workspace" },
     },
     "/workspace",
   );

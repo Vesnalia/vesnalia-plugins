@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   ensurePath,
   locate,
@@ -38,7 +38,7 @@ import {
 } from "./hub-skills.ts";
 import { skillBodyExcerpt } from "./skill-meta.ts";
 import { oneShotPluginNeed, requiredSessionPolicySpawnField } from "./required-session-policy.ts";
-import { bbServerSkillsDir } from "./skills-server.ts";
+import { aliaServerSkillsDir } from "./skills-server.ts";
 import { getLang, isUiLangChoice, t, tp } from "./i18n.ts";
 import {
   CARD_WRITER_ROLE,
@@ -153,7 +153,7 @@ export const skillsHubSchema = z.object({
 });
 
 const skillsSettingsSchema = z.object({
-  /** Page language choice stored by the server; auto follows BB's own locale. */
+  /** Page language choice stored by the server; auto follows VesnALIA's own locale. */
   uiLang: z.enum(["auto", "ru", "en"]),
   provider: z.string(),
   model: z.string(),
@@ -320,12 +320,12 @@ const SKILL_READ_MAX = 60_000;
 const SUGGEST_TOOLS = ["skills_find", "skill_read"] as const;
 
 export function createSkillsHubService(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   host: HostCaller,
   readConfig: () => Promise<SkillsHubConfig>,
   saveConfig: (patch: SkillsHubConfigPatch) => Promise<void>,
 ) {
-  const root = bbServerSkillsDir(bb.server.experimental_dataDir);
+  const root = aliaServerSkillsDir(alia.server.experimental_dataDir);
   let cache: { at: number; skills: HubSkill[] } | null = null;
 
   async function hubSkills(fresh = false): Promise<HubSkill[]> {
@@ -341,9 +341,9 @@ export function createSkillsHubService(
 
   async function readStore(): Promise<CategoryStore> {
     const [tree, assignments, review] = await Promise.all([
-      bb.storage.kv.get<SkillTree>(KV.tree),
-      bb.storage.kv.get<SkillAssignment[]>(KV.assignments),
-      bb.storage.kv.get<ReviewItem[]>(KV.review),
+      alia.storage.kv.get<SkillTree>(KV.tree),
+      alia.storage.kv.get<SkillAssignment[]>(KV.assignments),
+      alia.storage.kv.get<ReviewItem[]>(KV.review),
     ]);
     return { tree: tree ?? seedTree(), assignments: assignments ?? [], review: review ?? [] };
   }
@@ -362,28 +362,28 @@ export function createSkillsHubService(
 
   async function writeStore(store: CategoryStore): Promise<void> {
     await Promise.all([
-      bb.storage.kv.set(KV.tree, store.tree),
-      bb.storage.kv.set(KV.assignments, store.assignments),
-      bb.storage.kv.set(KV.review, store.review),
+      alia.storage.kv.set(KV.tree, store.tree),
+      alia.storage.kv.set(KV.assignments, store.assignments),
+      alia.storage.kv.set(KV.review, store.review),
     ]);
   }
 
   async function readState(): Promise<ClassifierState> {
-    return { ...EMPTY_CLASSIFIER_STATE, ...((await bb.storage.kv.get<ClassifierState>(KV.classifier)) ?? {}) };
+    return { ...EMPTY_CLASSIFIER_STATE, ...((await alia.storage.kv.get<ClassifierState>(KV.classifier)) ?? {}) };
   }
 
   async function personalProjectId(): Promise<string> {
     const configured = (await readConfig()).classifierProjectId.trim();
     if (configured !== "") return configured;
-    const projects = (await bb.sdk.projects.list()) as unknown as Array<{ id: string; kind?: string }> | { projects: Array<{ id: string; kind?: string }> };
+    const projects = (await alia.sdk.projects.list()) as unknown as Array<{ id: string; kind?: string }> | { projects: Array<{ id: string; kind?: string }> };
     const list = Array.isArray(projects) ? projects : projects.projects;
     const pick = list.find((project) => project.kind === "personal") ?? list[0];
-    if (pick === undefined) throw new Error("no BB project to run the skill classifier in");
+    if (pick === undefined) throw new Error("no VesnALIA project to run the skill classifier in");
     return pick.id;
   }
 
   async function threadStatus(threadId: string): Promise<string | null> {
-    const result = (await bb.sdk.threads.get({ threadId }).catch(() => null)) as { status?: string; thread?: { status?: string } } | null;
+    const result = (await alia.sdk.threads.get({ threadId }).catch(() => null)) as { status?: string; thread?: { status?: string } } | null;
     return result?.status ?? result?.thread?.status ?? null;
   }
 
@@ -391,7 +391,7 @@ export function createSkillsHubService(
 
   async function spawnHidden(title: string, role: string, prompt: string): Promise<string> {
     const config = await readConfig();
-    const result = (await bb.sdk.threads.spawn({
+    const result = (await alia.sdk.threads.spawn({
       projectId: await personalProjectId(),
       providerId: config.classifierProvider,
       // Empty: the provider's own default model.
@@ -402,18 +402,18 @@ export function createSkillsHubService(
       pluginMetadata: { role },
       prompt,
       ...requiredSessionPolicySpawnField(
-        bb.agents,
+        alia.agents,
         config.classifierProvider,
-        oneShotPluginNeed(bb.pluginId),
+        oneShotPluginNeed(alia.pluginId),
       ),
-    } as Parameters<typeof bb.sdk.threads.spawn>[0])) as { id?: string; thread?: { id: string } };
+    } as Parameters<typeof alia.sdk.threads.spawn>[0])) as { id?: string; thread?: { id: string } };
     const id = result.thread?.id ?? result.id;
-    if (id === undefined) throw new Error("BB did not return the hidden thread id");
+    if (id === undefined) throw new Error("VesnALIA did not return the hidden thread id");
     return id;
   }
 
   const sendMessage = async (threadId: string, text: string) => {
-    await bb.sdk.threads.send({ threadId, mode: "queue-if-active", input: [{ type: "text", text }] } as Parameters<typeof bb.sdk.threads.send>[0]);
+    await alia.sdk.threads.send({ threadId, mode: "queue-if-active", input: [{ type: "text", text }] } as Parameters<typeof alia.sdk.threads.send>[0]);
   };
 
   const waitIdleFor = (label: string) => async (threadId: string, timeoutMs: number) => {
@@ -431,7 +431,7 @@ export function createSkillsHubService(
   };
 
   const archiveThread = async (threadId: string) => {
-    await (bb.sdk.threads as unknown as { archive(args: { threadId: string }): Promise<unknown> }).archive({ threadId });
+    await (alia.sdk.threads as unknown as { archive(args: { threadId: string }): Promise<unknown> }).archive({ threadId });
   };
 
   const classifier = new SkillClassifier({
@@ -450,13 +450,13 @@ export function createSkillsHubService(
       await withStore(async () => ({ store, value: undefined }));
     },
     readState,
-    writeState: (state) => bb.storage.kv.set(KV.classifier, state),
+    writeState: (state) => alia.storage.kv.set(KV.classifier, state),
     spawnThread: (prompt) => spawnHidden("Agent Tools: skill categories", CLASSIFIER_ROLE, prompt),
     sendMessage,
     waitIdle: waitIdleFor("classifier"),
     archiveThread,
     now: () => Date.now(),
-    log: (message) => bb.log.info(message),
+    log: (message) => alia.log.info(message),
   });
 
   // A reload (update, restart) drops a run in progress but leaves its flag in
@@ -464,10 +464,10 @@ export function createSkillsHubService(
   void (async () => {
     const state = await readState();
     if (!state.running) return;
-    await bb.storage.kv.set(KV.classifier, { ...state, running: false });
-    bb.log.info("skill classifier: resuming after a reload");
+    await alia.storage.kv.set(KV.classifier, { ...state, running: false });
+    alia.log.info("skill classifier: resuming after a reload");
     void classifier.run();
-  })().catch((cause: unknown) => bb.log.warn(`skill classifier resume: ${String(cause)}`));
+  })().catch((cause: unknown) => alia.log.warn(`skill classifier resume: ${String(cause)}`));
 
   let suggestToolsOn = false;
   void readConfig()
@@ -482,12 +482,12 @@ export function createSkillsHubService(
   const CARD_PREFIX = "skillCard:";
 
   async function migrateLegacyCards(): Promise<void> {
-    const legacy = await bb.storage.kv.get<Record<string, StoredCard>>(KV.cards);
+    const legacy = await alia.storage.kv.get<Record<string, StoredCard>>(KV.cards);
     if (legacy === undefined || legacy === null) return;
     for (const [name, card] of Object.entries(legacy)) {
-      if ((await bb.storage.kv.get<StoredCard>(CARD_PREFIX + name)) === undefined) await bb.storage.kv.set(CARD_PREFIX + name, card);
+      if ((await alia.storage.kv.get<StoredCard>(CARD_PREFIX + name)) === undefined) await alia.storage.kv.set(CARD_PREFIX + name, card);
     }
-    await bb.storage.kv.delete(KV.cards);
+    await alia.storage.kv.delete(KV.cards);
   }
 
   let legacyMigrated: Promise<void> | null = null;
@@ -497,8 +497,8 @@ export function createSkillsHubService(
       throw cause;
     });
     await legacyMigrated;
-    const keys = await bb.storage.kv.list(CARD_PREFIX);
-    const values = await Promise.all(keys.map((key) => bb.storage.kv.get<StoredCard>(key)));
+    const keys = await alia.storage.kv.list(CARD_PREFIX);
+    const values = await Promise.all(keys.map((key) => alia.storage.kv.get<StoredCard>(key)));
     const cards: Record<string, StoredCard> = {};
     keys.forEach((key, index) => {
       const value = values[index];
@@ -510,10 +510,10 @@ export function createSkillsHubService(
   /** Writes only the cards that changed and removes the ones that disappeared. */
   async function writeCardsDiff(before: Record<string, StoredCard>, after: Record<string, StoredCard>): Promise<void> {
     for (const [name, card] of Object.entries(after)) {
-      if (JSON.stringify(before[name]) !== JSON.stringify(card)) await bb.storage.kv.set(CARD_PREFIX + name, card);
+      if (JSON.stringify(before[name]) !== JSON.stringify(card)) await alia.storage.kv.set(CARD_PREFIX + name, card);
     }
     for (const name of Object.keys(before)) {
-      if (!(name in after)) await bb.storage.kv.delete(CARD_PREFIX + name);
+      if (!(name in after)) await alia.storage.kv.delete(CARD_PREFIX + name);
     }
   }
 
@@ -531,7 +531,7 @@ export function createSkillsHubService(
   }
 
   async function readSuggestLog(): Promise<SuggestLogEntry[]> {
-    return (await bb.storage.kv.get<SuggestLogEntry[]>(KV.suggestLog)) ?? [];
+    return (await alia.storage.kv.get<SuggestLogEntry[]>(KV.suggestLog)) ?? [];
   }
 
   // One read-modify-write at a time: dispatch hints log in the background and
@@ -539,7 +539,7 @@ export function createSkillsHubService(
   let logLock: Promise<unknown> = Promise.resolve();
   function pushLog(entry: SuggestLogEntry): Promise<void> {
     const next = logLock.then(async () => {
-      await bb.storage.kv.set(KV.suggestLog, appendLog(await readSuggestLog(), entry));
+      await alia.storage.kv.set(KV.suggestLog, appendLog(await readSuggestLog(), entry));
     });
     logLock = next.catch(() => undefined);
     return next;
@@ -588,7 +588,7 @@ export function createSkillsHubService(
       mode: args.mode,
     });
     // A queued turn must not wait for the log write.
-    if (args.mode === "dispatch") logged.catch((cause: unknown) => bb.log.warn(`skill suggest log: ${String(cause)}`));
+    if (args.mode === "dispatch") logged.catch((cause: unknown) => alia.log.warn(`skill suggest log: ${String(cause)}`));
     else await logged;
     return { result, skillRead: config.skillsSuggestTools === true };
   }
@@ -627,7 +627,7 @@ export function createSkillsHubService(
   }
 
   const injector = new SkillDispatchInjector({
-    pluginId: bb.pluginId,
+    pluginId: alia.pluginId,
     enabled: () => {
       refreshInject();
       return injectOn;
@@ -639,7 +639,7 @@ export function createSkillsHubService(
         // Only after a plugin restart; a new thread has no output yet. Capped so
         // the queued turn is not held by a slow read.
         const output = (await Promise.race([
-          bb.sdk.threads.output({ threadId }).catch(() => null),
+          alia.sdk.threads.output({ threadId }).catch(() => null),
           new Promise<null>((resolve) => setTimeout(() => resolve(null), 500)),
         ])) as { output?: string | null } | null;
         prevAssistant = output?.output ?? "";
@@ -651,28 +651,28 @@ export function createSkillsHubService(
       return relevanceBlock(ran.result.skill, { skillRead: ran.skillRead });
     },
     updateRow: async (row, content) => {
-      await bb.sdk.threads.queuedMessages.update({
+      await alia.sdk.threads.queuedMessages.update({
         threadId: row.threadId,
         queuedMessageId: row.id,
         expectedUpdatedAt: row.updatedAt,
         input: content,
-      } as unknown as Parameters<typeof bb.sdk.threads.queuedMessages.update>[0]);
+      } as unknown as Parameters<typeof alia.sdk.threads.queuedMessages.update>[0]);
     },
     isHidden: async (threadId) => {
       type Found = { visibility?: string; parentThreadId?: string | null };
-      const found = (await bb.sdk.threads.get({ threadId }).catch(() => null)) as (Found & { thread?: Found }) | null;
+      const found = (await alia.sdk.threads.get({ threadId }).catch(() => null)) as (Found & { thread?: Found }) | null;
       const thread = found?.thread ?? found;
       return thread?.visibility === "hidden" || (thread?.parentThreadId ?? null) !== null;
     },
-    recheck: () => bb.experimental_hooks.recheck("message.dispatch"),
+    recheck: () => alia.experimental_hooks.recheck("message.dispatch"),
     waitReason: () => t("Agent Tools: подбираю навык"),
     now: () => Date.now(),
-    log: (message) => bb.log.info(message),
+    log: (message) => alia.log.info(message),
   });
 
-  bb.experimental_hooks.on("message.dispatch", (context) => injector.decide(context as unknown as DispatchContext));
-  bb.events.on("message.queued", ({ entry }) => injector.onQueued(entry as unknown as QueuedRow));
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) => {
+  alia.experimental_hooks.on("message.dispatch", (context) => injector.decide(context as unknown as DispatchContext));
+  alia.events.on("message.queued", ({ entry }) => injector.onQueued(entry as unknown as QueuedRow));
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) => {
     if (lastAssistantText) remember(lastAssistant, thread.id, lastAssistantText);
   });
 
@@ -743,7 +743,7 @@ export function createSkillsHubService(
   }
 
   async function readCardWriterState() {
-    return { ...EMPTY_CARD_WRITER_STATE, ...((await bb.storage.kv.get<typeof EMPTY_CARD_WRITER_STATE>(KV.cardWriter)) ?? {}) };
+    return { ...EMPTY_CARD_WRITER_STATE, ...((await alia.storage.kv.get<typeof EMPTY_CARD_WRITER_STATE>(KV.cardWriter)) ?? {}) };
   }
 
   const cardWriter = new SkillCardWriter({
@@ -752,25 +752,25 @@ export function createSkillsHubService(
     // Merge, never replace: a snapshot taken before a concurrent save must not drop it.
     writeCards: (cards) => withCards(async (current) => ({ cards: { ...current, ...cards }, value: undefined })),
     readState: readCardWriterState,
-    writeState: (state) => bb.storage.kv.set(KV.cardWriter, state),
+    writeState: (state) => alia.storage.kv.set(KV.cardWriter, state),
     spawnThread: (prompt) => spawnHidden("Agent Tools: skill cards", CARD_WRITER_ROLE, prompt),
     sendMessage,
     waitIdle: waitIdleFor("skill card writer"),
     archiveThread,
     now: () => Date.now(),
-    log: (message) => bb.log.info(message),
+    log: (message) => alia.log.info(message),
   });
 
   void (async () => {
     const state = await readCardWriterState();
     if (!state.running) return;
-    await bb.storage.kv.set(KV.cardWriter, { ...state, running: false });
-    bb.log.info("skill card writer: resuming after a reload");
+    await alia.storage.kv.set(KV.cardWriter, { ...state, running: false });
+    alia.log.info("skill card writer: resuming after a reload");
     void cardWriter.run();
-  })().catch((cause: unknown) => bb.log.warn(`skill card writer resume: ${String(cause)}`));
+  })().catch((cause: unknown) => alia.log.warn(`skill card writer resume: ${String(cause)}`));
 
   // ------------------------------------------------------------- tools
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: TOOL_TREE,
     description:
       "Agent Tools skill classifier: returns the current two-level category tree (section → subsection) with the number of skills in each subsection.",
@@ -778,7 +778,7 @@ export function createSkillsHubService(
     execute: async () => treeForModel(await readStore()),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: TOOL_ASSIGN,
     description:
       "Agent Tools skill classifier: places one skill into a section/subsection, creating either when missing. Russian names, English titles in sectionEn/subsectionEn. confidence 0..1.",
@@ -804,7 +804,7 @@ export function createSkillsHubService(
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: TOOL_CARD_SAVE,
     description:
       "Agent Tools card writer: saves the routing card for one hub skill (does, not_for, neighbors, examples, triggers_ru).",
@@ -825,10 +825,10 @@ export function createSkillsHubService(
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "skills_find",
     description:
-      "Find the BB skills that fit a task. Returns up to `limit` skills ranked for the query with what each does and is not for. Call it before a task that may need a specific tool, service or procedure, then read the chosen one with skill_read.",
+      "Find the VesnALIA skills that fit a task. Returns up to `limit` skills ranked for the query with what each does and is not for. Call it before a task that may need a specific tool, service or procedure, then read the chosen one with skill_read.",
     parameters: z.object({
       query: z.string().min(1).max(2000),
       context: z.string().max(2000).optional(),
@@ -868,9 +868,9 @@ export function createSkillsHubService(
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "skill_read",
-    description: "Read a BB skill's SKILL.md, or a file it references, from the BB hub.",
+    description: "Read a VesnALIA skill's SKILL.md, or a file it references, from the VesnALIA hub.",
     parameters: z.object({
       name: z.string().min(1).max(120),
       file: z.string().max(500).optional(),
@@ -920,15 +920,15 @@ export function createSkillsHubService(
   /**
    * The hub canon root as the server sees it, with the marker token that
    * proves a folder really is the canon. On the hub host itself
-   * `~/.bb/skills` IS the canon, so every count/cleanup call protects it;
+   * `~/.vesnalia/skills` IS the canon, so every count/cleanup call protects it;
    * a machine that merely shares the path layout has no marker and is
    * still cleaned.
    */
   async function canonToken(): Promise<string> {
-    const stored = await bb.storage.kv.get<string>(KV.canonToken);
+    const stored = await alia.storage.kv.get<string>(KV.canonToken);
     if (typeof stored === "string" && stored.length > 0) return stored;
     const token = randomUUID();
-    await bb.storage.kv.set(KV.canonToken, token);
+    await alia.storage.kv.set(KV.canonToken, token);
     return token;
   }
 
@@ -982,7 +982,7 @@ export function createSkillsHubService(
   }
 
   async function refreshMachines(): Promise<MachineHomes[]> {
-    const hosts = (await bb.sdk.hosts.list()) as unknown as Array<{ id: string; name: string; status?: string }>;
+    const hosts = (await alia.sdk.hosts.list()) as unknown as Array<{ id: string; name: string; status?: string }>;
     const result: MachineHomes[] = [];
     for (const item of hosts) {
       const scan = await scanMachineSkills(item.id);
@@ -995,7 +995,7 @@ export function createSkillsHubService(
         at: Date.now(),
       });
     }
-    await bb.storage.kv.set(KV.machines, result);
+    await alia.storage.kv.set(KV.machines, result);
     return result;
   }
 
@@ -1012,7 +1012,7 @@ export function createSkillsHubService(
 
   async function runHubOnly(): Promise<HubOnlyReport> {
     const protect = await protectPaths();
-    const connected = ((await bb.sdk.hosts.list()) as unknown as Array<{ id: string; name: string; status?: string }>).filter(
+    const connected = ((await alia.sdk.hosts.list()) as unknown as Array<{ id: string; name: string; status?: string }>).filter(
       (item) => item.status === undefined || item.status === "connected",
     );
     const names = new Map(connected.map((item) => [item.id, item.name]));
@@ -1032,11 +1032,11 @@ export function createSkillsHubService(
           moved: Array<{ id: string; count: number }>;
           errors: string[];
         },
-      log: (message) => bb.log.info(message),
+      log: (message) => alia.log.info(message),
     });
-    await bb.storage.kv.set(KV.hubOnlyLast, { at: Date.now(), report });
+    await alia.storage.kv.set(KV.hubOnlyLast, { at: Date.now(), report });
     invalidate();
-    await refreshMachines().catch((cause: unknown) => bb.log.warn(`skills hub-only refresh: ${String(cause)}`));
+    await refreshMachines().catch((cause: unknown) => alia.log.warn(`skills hub-only refresh: ${String(cause)}`));
     return report;
   }
 
@@ -1048,7 +1048,7 @@ export function createSkillsHubService(
       readStore(),
       hubGitState(root),
       readState(),
-      bb.storage.kv.get<MachineHomes[]>(KV.machines),
+      alia.storage.kv.get<MachineHomes[]>(KV.machines),
       readConfig(),
     ]);
     const byName = new Map(store.assignments.map((item) => [item.skill, item]));
@@ -1161,7 +1161,7 @@ export function createSkillsHubService(
 
   /** Publishes the skills a machine has and the hub lacks, one by one. */
   async function importFromMachine(hostId: string, names: string[] | null, dryRun = false) {
-    const machines = (await bb.storage.kv.get<MachineHomes[]>(KV.machines)) ?? (await refreshMachines());
+    const machines = (await alia.storage.kv.get<MachineHomes[]>(KV.machines)) ?? (await refreshMachines());
     const machine = machines.find((item) => item.hostId === hostId);
     if (machine === undefined) throw new Error("unknown machine; refresh the machines first");
     const onHub = loadableHubNames(await hubSkills(true));
@@ -1180,22 +1180,22 @@ export function createSkillsHubService(
 
   // First open after install: nothing was counted yet, so look at the machines now.
   void (async () => {
-    if ((await bb.storage.kv.get<MachineHomes[]>(KV.machines)) === null) await refreshMachines();
-  })().catch((cause: unknown) => bb.log.warn(`skills machines first scan: ${String(cause)}`));
+    if ((await alia.storage.kv.get<MachineHomes[]>(KV.machines)) === null) await refreshMachines();
+  })().catch((cause: unknown) => alia.log.warn(`skills machines first scan: ${String(cause)}`));
 
   async function settingsView() {
     const config = await readConfig();
-    const providers = ((await bb.sdk.providers.list().catch(() => [])) as unknown as Array<{ id: string; displayName?: string; available?: boolean }>).map(
+    const providers = ((await alia.sdk.providers.list().catch(() => [])) as unknown as Array<{ id: string; displayName?: string; available?: boolean }>).map(
       (item) => ({ id: item.id, label: item.displayName ?? item.id, available: item.available !== false }),
     );
-    const projectList = (await bb.sdk.projects.list().catch(() => [])) as unknown as
+    const projectList = (await alia.sdk.projects.list().catch(() => [])) as unknown as
       | Array<{ id: string; name?: string; kind?: string }>
       | { projects: Array<{ id: string; name?: string; kind?: string }> };
     const projects = (Array.isArray(projectList) ? projectList : projectList.projects).map((item) => ({
       id: item.id,
       name: item.kind === "personal" ? `${item.name ?? item.id} (personal)` : (item.name ?? item.id),
     }));
-    const last = await bb.storage.kv.get<{ at: number; report: HubOnlyReport }>(KV.hubOnlyLast);
+    const last = await alia.storage.kv.get<{ at: number; report: HubOnlyReport }>(KV.hubOnlyLast);
     const hubOnlyLast =
       last === undefined || last === null
         ? null
@@ -1208,7 +1208,7 @@ export function createSkillsHubService(
               .filter((item) => item.skipped !== null)
               .map((item) => ({ hostName: item.hostName, reason: item.skipped as string })),
           };
-    const storedUiLang = await bb.storage.kv.get<string>("uiLang");
+    const storedUiLang = await alia.storage.kv.get<string>("uiLang");
     return {
       uiLang: isUiLangChoice(storedUiLang) ? storedUiLang : "auto",
       provider: config.classifierProvider,
@@ -1224,7 +1224,7 @@ export function createSkillsHubService(
 
   async function providerModels(providerId: string) {
     try {
-      const result = (await bb.sdk.providers.models({ providerId })) as unknown as
+      const result = (await alia.sdk.providers.models({ providerId })) as unknown as
         | Array<{ id: string; model?: string; displayName?: string; description?: string }>
         | { models?: Array<{ id: string; model?: string; displayName?: string; description?: string }> };
       const list = Array.isArray(result) ? result : (result.models ?? []);
@@ -1254,13 +1254,13 @@ export function createSkillsHubService(
       });
       // Turning the mode on starts one enforcement run right away.
       if (input.hubOnly === true) {
-        void enforceHubOnlyMode().catch((cause: unknown) => bb.log.warn(`skills hub-only: ${String(cause)}`));
+        void enforceHubOnlyMode().catch((cause: unknown) => alia.log.warn(`skills hub-only: ${String(cause)}`));
       }
       const after = await readConfig();
       // A new model or provider starts a new classifier thread with the next skill.
       if (after.classifierProvider !== before.classifierProvider || after.classifierModel !== before.classifierModel) {
         const state = await readState();
-        await bb.storage.kv.set(KV.classifier, { ...state, threadId: null, count: 0 });
+        await alia.storage.kv.set(KV.classifier, { ...state, threadId: null, count: 0 });
       }
       return settingsView();
     },
@@ -1328,7 +1328,7 @@ export function createSkillsHubService(
   // ------------------------------------------------------------- cli
   async function hostIdByName(value: string | null): Promise<string | null> {
     if (value === null) return null;
-    const hosts = (await bb.sdk.hosts.list()) as unknown as Array<{ id: string; name: string }>;
+    const hosts = (await alia.sdk.hosts.list()) as unknown as Array<{ id: string; name: string }>;
     const needle = value.toLowerCase();
     return hosts.find((item) => item.id === value || item.name.toLowerCase() === needle)?.id ?? null;
   }
@@ -1355,7 +1355,7 @@ export function createSkillsHubService(
           hub.git.isRepo
             ? tp("git: {0} {1}, незакоммичено {2}", hub.git.branch ?? "?", hub.git.head?.sha ?? "?", hub.git.dirty)
             : t("git: папка не под git"),
-          tp("Без категории: {0}, на проверке: {1}, BB не примет: {2}", unplaced.length, hub.skills.filter((skill) => skill.review !== null).length, blocked.length),
+          tp("Без категории: {0}, на проверке: {1}, ALIA не примет: {2}", unplaced.length, hub.skills.filter((skill) => skill.review !== null).length, blocked.length),
         ];
         for (const skill of blocked) {
           lines.push(`  ✗ ${skill.name}: ${skill.problems.filter((problem) => problem.blocking).map((problem) => problem.detail).join("; ")}`);
@@ -1386,9 +1386,9 @@ export function createSkillsHubService(
       }
       case "skills-publish": {
         const dir = positional[0];
-        if (dir === undefined) return t("Укажите папку навыка: bb tools skills-publish <папка> [--host <машина>] [--dry-run]");
+        if (dir === undefined) return t("Укажите папку навыка: VesnALIA tools skills-publish <папка> [--host <машина>] [--dry-run]");
         if (hostId === null) return t("Не удалось определить машину: укажите --host");
-        const result = await publishFromHost(hostId, dir, dryRun, `bb tools on ${hostId}`);
+        const result = await publishFromHost(hostId, dir, dryRun, `alia tools on ${hostId}`);
         if (json) return JSON.stringify(result, null, 2);
         if (!result.ok) {
           return [tp("Не опубликовано: {0}", result.error ?? ""), ...result.problems.map((problem) => `  - ${problem.detail}`)].join("\n");
@@ -1408,7 +1408,7 @@ export function createSkillsHubService(
       }
       case "skills-pull": {
         const name = positional[0];
-        if (name === undefined) return t("Укажите навык: bb tools skills-pull <навык> [--to <папка>] [--host <машина>]");
+        if (name === undefined) return t("Укажите навык: VesnALIA tools skills-pull <навык> [--to <папка>] [--host <машина>]");
         if (hostId === null) return t("Не удалось определить машину: укажите --host");
         const result = await pullToHost(name, hostId, flag(args, "--to"));
         return result.ok ? tp("Навык скопирован в {0}", result.path ?? "") : tp("Не удалось: {0}", result.error ?? "");
@@ -1416,7 +1416,7 @@ export function createSkillsHubService(
       case "skills-move": {
         const [skill, target] = positional;
         if (skill === undefined || target === undefined || !target.includes("/")) {
-          return t("Формат: bb tools skills-move <навык> \"Раздел/Подраздел\"");
+          return t("Формат: VesnALIA tools skills-move <навык> \"Раздел/Подраздел\"");
         }
         const [section, subsection] = target.split("/").map((part) => part.trim());
         const ids = await withStore(async (store) => {
@@ -1432,12 +1432,12 @@ export function createSkillsHubService(
         const state = await readState();
         return args.includes("--wait")
           ? tp("Разложено моделью: {0}. Ошибка: {1}", state.lastPlaced, state.lastError ?? "—")
-          : t("Классификация запущена в фоне; итог — bb tools skills-hub");
+          : t("Классификация запущена в фоне; итог — VesnALIA tools skills-hub");
       }
       case "skills-remove": {
         const name = positional[0];
-        if (name === undefined) return t("Укажите навык: bb tools skills-remove <навык>");
-        const result = await removeHubSkill(root, name, "bb tools");
+        if (name === undefined) return t("Укажите навык: VesnALIA tools skills-remove <навык>");
+        const result = await removeHubSkill(root, name, "alia tools");
         invalidate();
         return result.ok ? tp("Убрано с хаба в архив: {0}", result.backup ?? "") : tp("Не удалось: {0}", result.error ?? "");
       }
@@ -1456,7 +1456,7 @@ export function createSkillsHubService(
           .join("\n");
       }
       case "skills-import": {
-        if (hostId === null) return t("Укажите машину: bb tools skills-import --host <машина> [--dry-run]");
+        if (hostId === null) return t("Укажите машину: VesnALIA tools skills-import --host <машина> [--dry-run]");
         await refreshMachines();
         const results = await importFromMachine(hostId, positional.length > 0 ? positional : null, dryRun);
         if (json) return JSON.stringify(results, null, 2);
@@ -1469,7 +1469,7 @@ export function createSkillsHubService(
         ].join("\n");
       }
       case "skills-cleanup": {
-        if (hostId === null) return t("Укажите машину: bb tools skills-cleanup --host <машина> [--dry-run]");
+        if (hostId === null) return t("Укажите машину: VesnALIA tools skills-cleanup --host <машина> [--dry-run]");
         const result = (await host.call("skill_homes_cleanup", { dryRun, protect: await protectPaths() }, { hostId, timeoutMs: 180_000 })) as {
           backup: string | null;
           moved: Array<{ id: string; count: number }>;
@@ -1492,7 +1492,7 @@ export function createSkillsHubService(
           if (json) return JSON.stringify(report, null, 2);
           return formatHubOnlyReport(report).join("\n");
         }
-        const last = await bb.storage.kv.get<{ at: number; report: HubOnlyReport }>(KV.hubOnlyLast);
+        const last = await alia.storage.kv.get<{ at: number; report: HubOnlyReport }>(KV.hubOnlyLast);
         if (json) return JSON.stringify({ hubOnly: config.hubOnly, last: last ?? null }, null, 2);
         const lines = [config.hubOnly ? t("Режим «только на хабе» включён") : t("Режим «только на хабе» выключен")];
         if (last === undefined || last === null) {
@@ -1506,17 +1506,17 @@ export function createSkillsHubService(
           );
           lines.push(...formatHubOnlyReport(last.report));
         }
-        lines.push(t("Прогон по требованию: bb tools skills-hub-only --run"));
+        lines.push(t("Прогон по требованию: VesnALIA tools skills-hub-only --run"));
         return lines.join("\n");
       }
       case "skills-suggest": {
         const config = await readConfig();
         suggestToolsOn = config.skillsSuggestTools === true;
-        // The handler runs in the BB server, not in the calling CLI process, so
+        // The handler runs in the VesnALIA server, not in the calling CLI process, so
         // there is no caller stdin here: hooks pass every field as an argument.
         const message = flag(args, "--message") ?? "";
         if (message.trim() === "") {
-          return t("Укажите сообщение: bb tools skills-suggest --message <текст> [--json]");
+          return t("Укажите сообщение: VesnALIA tools skills-suggest --message <текст> [--json]");
         }
         const ran = await runSuggest({
           message,
@@ -1590,20 +1590,20 @@ export function createSkillsHubService(
 }
 
 export const SKILLS_CLI_USAGE = [
-  "  bb tools skills-hub [--json]                Навыки на хабе: git, проблемы, копии на машинах",
-  "  bb tools skills-tree [--skills] [--json]    Дерево категорий",
-  "  bb tools skills-publish <папка> [--host <машина>] [--dry-run]  Опубликовать навык на хаб",
-  "  bb tools skills-pull <навык> [--to <папка>] [--host <машина>]  Взять навык с хаба в работу",
-  "  bb tools skills-move <навык> \"Раздел/Подраздел\"  Перенести навык вручную",
-  "  bb tools skills-classify [--wait]           Разложить навыки без категории",
-  "  bb tools skills-suggest --message <текст> [--prev-user <текст>] [--prev-assistant <текст>] [--thread <id>] [--json]  Какой навык подходит к сообщению",
-  "  bb tools skills-cards [--refresh] [--wait] [--json] [--show <навык>]  Карточки маршрутизации навыков",
-  "  bb tools skills-suggest-log [--limit N] [--json]  Журнал подбора навыков",
-  "  bb tools skills-remove <навык>              Убрать навык с хаба в архив",
-  "  bb tools skills-machines                    Копии навыков на машинах",
-  "  bb tools skills-import --host <машина> [--dry-run]  Перенести на хаб навыки, которых там нет",
-  "  bb tools skills-cleanup --host <машина> [--dry-run]  Убрать копии с машины в архив",
-  "  bb tools skills-hub-only [--run] [--json]  Режим «только на хабе»: отчёт или прогон",
+  "  VesnALIA tools skills-hub [--json]                Навыки на хабе: git, проблемы, копии на машинах",
+  "  VesnALIA tools skills-tree [--skills] [--json]    Дерево категорий",
+  "  VesnALIA tools skills-publish <папка> [--host <машина>] [--dry-run]  Опубликовать навык на хаб",
+  "  VesnALIA tools skills-pull <навык> [--to <папка>] [--host <машина>]  Взять навык с хаба в работу",
+  "  VesnALIA tools skills-move <навык> \"Раздел/Подраздел\"  Перенести навык вручную",
+  "  VesnALIA tools skills-classify [--wait]           Разложить навыки без категории",
+  "  VesnALIA tools skills-suggest --message <текст> [--prev-user <текст>] [--prev-assistant <текст>] [--thread <id>] [--json]  Какой навык подходит к сообщению",
+  "  VesnALIA tools skills-cards [--refresh] [--wait] [--json] [--show <навык>]  Карточки маршрутизации навыков",
+  "  VesnALIA tools skills-suggest-log [--limit N] [--json]  Журнал подбора навыков",
+  "  VesnALIA tools skills-remove <навык>              Убрать навык с хаба в архив",
+  "  VesnALIA tools skills-machines                    Копии навыков на машинах",
+  "  VesnALIA tools skills-import --host <машина> [--dry-run]  Перенести на хаб навыки, которых там нет",
+  "  VesnALIA tools skills-cleanup --host <машина> [--dry-run]  Убрать копии с машины в архив",
+  "  VesnALIA tools skills-hub-only [--run] [--json]  Режим «только на хабе»: отчёт или прогон",
 ];
 
 /** Human-readable lines for one hub-only report (CLI and tests). */

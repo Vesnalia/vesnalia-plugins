@@ -10,12 +10,12 @@ import { createScratchKeychain } from "./keychain.mjs";
 export async function startScratchServer() {
   const args = process.argv.slice(2);
   const appIndex = args.indexOf("--app-dir");
-  const sourceAppDir = resolve(appIndex < 0 ? "node_modules/bb-app" : args[appIndex + 1]);
-  const inheritedUrl = process.env.BB_SERVER_URL;
+  const sourceAppDir = resolve(appIndex < 0 ? "node_modules/alia-app" : args[appIndex + 1]);
+  const inheritedUrl = process.env.ALIA_SERVER_URL;
   if (inheritedUrl && Number(new URL(inheritedUrl).port || 80) === 38886) {
-    throw new Error("Refusing BB_SERVER_URL on the developer's port 38886. Strip inherited BB_* variables.");
+    throw new Error("Refusing ALIA_SERVER_URL on the developer's port 38886. Strip inherited ALIA_* variables.");
   }
-  const scratch = mkdtempSync("/tmp/bb-sidebar-smoke-");
+  const scratch = mkdtempSync("/tmp/alia-sidebar-smoke-");
   if (!scratch.startsWith("/tmp/")) throw new Error("Scratch data must be under /tmp");
   const children = new Set();
   let cleaning;
@@ -132,7 +132,7 @@ export async function startScratchServer() {
         cause,
       });
     }
-    await createScratchKeychain({ ...env, BB_DATA_DIR: scratch });
+    await createScratchKeychain({ ...env, ALIA_DATA_DIR: scratch });
     const runtimeModules = join(scratch, "runtime/node_modules");
     cpSync(resolve("node_modules"), runtimeModules, {
       recursive: true,
@@ -140,10 +140,10 @@ export async function startScratchServer() {
       mode: constants.COPYFILE_FICLONE,
     });
     const appDir =
-      sourceAppDir === resolve("node_modules/bb-app")
-        ? join(runtimeModules, "bb-app")
-        : join(scratch, "runtime/bb-app");
-    if (appDir !== join(runtimeModules, "bb-app")) {
+      sourceAppDir === resolve("node_modules/alia-app")
+        ? join(runtimeModules, "alia-app")
+        : join(scratch, "runtime/alia-app");
+    if (appDir !== join(runtimeModules, "alia-app")) {
       cpSync(sourceAppDir, appDir, { recursive: true, verbatimSymlinks: true, mode: constants.COPYFILE_FICLONE });
     }
     const port = await freePort();
@@ -155,7 +155,7 @@ export async function startScratchServer() {
     marketplace = createHttpServer((_request, response) => {
       response.writeHead(200, { "content-type": "application/json" });
       response.end(
-        JSON.stringify({ schemaVersion: 2, name: "bb-community", displayName: "Scratch catalog", plugins: [] }),
+        JSON.stringify({ schemaVersion: 2, name: "alia-community", displayName: "Scratch catalog", plugins: [] }),
       );
     });
     await new Promise((accept, reject) => {
@@ -165,12 +165,12 @@ export async function startScratchServer() {
     const marketplacePort = marketplace.address().port;
     if (marketplacePort === 38886) throw new Error("Refusing the developer's port");
     Object.assign(env, {
-      BB_DATA_DIR: scratch,
-      BB_SERVER_URL: url,
-      BB_SERVER_PORT: String(port),
-      BB_HOST_DAEMON_PORT: String(hostPort),
-      BB_TELEMETRY: "false",
-      BB_MARKETPLACE_URL: `http://127.0.0.1:${marketplacePort}/marketplace.json`,
+      ALIA_DATA_DIR: scratch,
+      ALIA_SERVER_URL: url,
+      ALIA_SERVER_PORT: String(port),
+      ALIA_HOST_DAEMON_PORT: String(hostPort),
+      ALIA_TELEMETRY: "false",
+      ALIA_MARKETPLACE_URL: `http://127.0.0.1:${marketplacePort}/marketplace.json`,
     });
     writeFileSync(
       join(env.CODEX_HOME, "config.toml"),
@@ -188,11 +188,11 @@ trace_exporter = "none"
 `,
     );
     const version = JSON.parse(readFileSync(join(appDir, "package.json"))).version;
-    console.log(`ISOLATION: bb-app ${version}; ${url}; data ${scratch}; host port ${hostPort}`);
+    console.log(`ISOLATION: alia-app ${version}; ${url}; data ${scratch}; host port ${hostPort}`);
     const app = start(
       process.execPath,
       [
-        join(appDir, "dist/bb-app.js"),
+        join(appDir, "dist/alia-app.js"),
         "--bundled",
         "--data-dir",
         scratch,
@@ -215,7 +215,7 @@ trace_exporter = "none"
       await delay(500);
     }
     if (!ready) throw new Error(`Server never became ready: ${JSON.stringify(app.output())}`);
-    const bb = join(appDir, "host-daemon/dist/bb");
+    const alia = join(appDir, "host-daemon/dist/alia");
     console.log("READY: GET / returned 200");
     checkIsolation = createIsolationGuard(app.child.pid, scratch, env, logPath, toolEnv.HOME);
     await checkIsolation("ready");
@@ -232,11 +232,11 @@ trace_exporter = "none"
         }
       }
     })();
-    await run("npm", ["run", "build"], { env: { ...toolEnv, BB_DATA_DIR: scratch, BB_SERVER_URL: url } });
+    await run("npm", ["run", "build"], { env: { ...toolEnv, ALIA_DATA_DIR: scratch, ALIA_SERVER_URL: url } });
     console.log("BUILD: passed");
     // Pi model discovery overwrites its process title/environment display on macOS.
     // These fixtures use Codex; disable Pi in scratch before the UI requests models.
-    await run(bb, ["provider", "disable", "pi"]);
+    await run(alia, ["provider", "disable", "pi"]);
     const pluginDir = join(scratch, "plugin");
     cpSync(process.cwd(), pluginDir, {
       recursive: true,
@@ -248,9 +248,9 @@ trace_exporter = "none"
         ),
     });
     symlinkSync(runtimeModules, join(pluginDir, "node_modules"));
-    await run(bb, ["plugin", "install", `path:${pluginDir}`, "--yes"]);
-    await run(bb, ["settings", "ui", "set", "sidebar.threadListProvider", "bb-sidebar/inbox"]);
-    await run(bb, ["settings", "general", "onboardingCompletedAt", new Date().toISOString()]);
+    await run(alia, ["plugin", "install", `path:${pluginDir}`, "--yes"]);
+    await run(alia, ["settings", "ui", "set", "sidebar.threadListProvider", "alia-sidebar/inbox"]);
+    await run(alia, ["settings", "general", "onboardingCompletedAt", new Date().toISOString()]);
     const repo = join(scratch, "repo");
     await run("git", ["init", "--initial-branch=main", repo]);
     await run("git", [
@@ -265,13 +265,13 @@ trace_exporter = "none"
       "-m",
       "Scratch smoke fixture",
     ]);
-    const projectResult = await run(bb, ["project", "create", "--name", "Sidebar smoke", "--root", repo, "--json"]);
+    const projectResult = await run(alia, ["project", "create", "--name", "Sidebar smoke", "--root", repo, "--json"]);
     const project = JSON.parse(projectResult.stdout);
     const projectId = project.id ?? project.project?.id;
     if (!projectId) throw new Error(`No project id: ${projectResult.stdout}`);
 
     async function cli(argv, options) {
-      return run(bb, argv, options);
+      return run(alia, argv, options);
     }
     async function diagnostics() {
       try {
@@ -333,7 +333,7 @@ trace_exporter = "none"
       }
       return { id, title };
     }
-    return { url, scratch, env, toolEnv, cli, seed, run, cleanup, diagnostics, checkIsolation, projectId, bb };
+    return { url, scratch, env, toolEnv, cli, seed, run, cleanup, diagnostics, checkIsolation, projectId, alia };
   } catch (error) {
     await cleanup();
     throw error;

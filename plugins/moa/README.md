@@ -1,13 +1,13 @@
-# Mixture of Agents for BB
+# Mixture of Agents for VesnALIA
 
-Mixture of Agents (MoA) is a BB plugin that asks two configured models for independent advice before the chat’s acting model responds. It adds controls for new and existing chats, retry and fallback options, and consultation history.
+Mixture of Agents (MoA) is a VesnALIA plugin that asks two configured models for independent advice before the chat’s acting model responds. It adds controls for new and existing chats, retry and fallback options, and consultation history.
 
 ## Quick start
 
 ```sh
 npm ci
-bb plugin build
-bb plugin install . --yes
+alia plugin build
+alia plugin install . --yes
 ```
 
 Open the MoA control in a chat composer to choose the two models and enable consultation for that chat. For a new chat, configure MoA before sending the first message.

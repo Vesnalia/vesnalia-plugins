@@ -1,6 +1,6 @@
 # Release screenshots
 
-Capture the installed Diff Tree plugin in BB with public sample code. Do not draw a mockup or publish unrelated chat, private code, tokens, email addresses, or home directory paths.
+Capture the installed Diff Tree plugin in VesnALIA with public sample code. Do not draw a mockup or publish unrelated chat, private code, tokens, email addresses, or home directory paths.
 
 The Community marketplace accepts PNG, JPEG, or WebP, at least 1200 pixels wide and at most 2 MiB per image. Prefer device pixel ratio 2 when available. The preparation script currently accepts PNG screenshots.
 

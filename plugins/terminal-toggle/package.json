@@ -1,5 +1,5 @@
 {
-  "name": "bb-plugin-terminal-toggle",
+  "name": "alia-plugin-terminal-toggle",
   "version": "0.1.0",
   "description": "Toggle the last focused native terminal and return to the composer.",
   "type": "module",
@@ -15,9 +15,9 @@
     "docs/verification.md"
   ],
   "engines": {
-    "bbPluginSdk": ">=0.6.104 <1"
+    "aliaPluginSdk": ">=0.6.104 <1"
   },
-  "bb": {
+  "alia": {
     "name": "Terminal Toggle",
     "description": "Toggle the last focused native terminal with Ctrl+backtick. Press again to hide the panel and return to the composer.",
     "branding": {
@@ -30,12 +30,11 @@
     ]
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -45,5 +44,22 @@
     "sonner": "^1.7.4",
     "typescript": "^5.7.0",
     "vitest": "^5.0.5"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/terminal-toggle#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/terminal-toggle"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

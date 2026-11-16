@@ -13,7 +13,7 @@ const help = `Standalone account pool (Node 22+)
   npm run pool -- --data-dir DIRECTORY client-add --client NAME --output PRIVATE_FILE [--project PROJECT_ID]
   npm run pool -- --data-dir DIRECTORY client-revoke --client NAME
   npm run pool -- --data-dir DIRECTORY accounts
-Stop the standalone server before administrative commands. Never use BB's data directory.
+Stop the standalone server before administrative commands. Never use VesnALIA's data directory.
 Account input is { account: {...metadata}, secret: {...} }; see docs/external-clients.md.
 Tokens are written only to a new mode-0600 file; never printed.`;
 

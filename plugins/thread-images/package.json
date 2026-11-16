@@ -1,22 +1,18 @@
 {
-  "name": "bb-plugin-thread-images",
+  "name": "alia-plugin-thread-images",
   "version": "0.1.3",
-  "description": "Shows the images an agent opens in a bb thread.",
+  "description": "Shows the images an agent opens in a VesnALIA thread.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/kartollikaa/bb-plugin-thread-images.git"
-  },
   "type": "module",
   "scripts": {
     "test": "node --experimental-strip-types --test placement.test.ts image-reads.test.ts",
     "typecheck": "tsc -p ."
   },
   "engines": {
-    "bb": ">=0.48",
-    "bbPluginSdk": ">=0.6.104"
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.104"
   },
-  "bb": {
+  "alia": {
     "name": "Thread Images",
     "description": "Shows the images an agent opens: in the chat and in a gallery in the thread context card.",
     "branding": {
@@ -29,10 +25,26 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/thread-images#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/thread-images"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,10 +1,10 @@
 // Iris backend: the agent tools (iris_check, iris_docs, iris_ask and the
 // reference carriers), the instructions agents get, the file reads behind
-// load() and Snippet, saved card state, and the `bb iris` command.
+// load() and Snippet, saved card state, and the `alia iris` command.
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { PluginCliError, defineCli, cliCommand, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { PluginCliError, defineCli, cliCommand, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { check, formatReport } from "./core/check";
 import { parseDataFile } from "./core/data";
@@ -21,12 +21,12 @@ import { cardsInMessage, isCardKey, pendingKey, pendingKeyFor, personInputs, pla
 import { MAX_ALERT_WHEN, MAX_PINS, MAX_PIN_SOURCE, type Pin, type PinBy, type PinnedThread, alertText, cardFromFile, needsAttention, newestPinnedFirst, stepAlert, cardTitle, normalizePins, pinId, removePin, upsertPin, validPinId } from "./core/pins";
 import { failure, parseChangesTarget, parsePathFilter, parseThreadIds } from "./core/project";
 import { createProjectSource } from "./project-source";
-import { createBbSource } from "./bb-source";
-import { isBbSource } from "./core/bb-data";
+import { createAliaSource } from "./alia-source";
+import { isAliaSource } from "./core/alia-data";
 import { WEB_MIGRATIONS, createWebSource } from "./web-source";
 
-// Tool parameters go to bb as plain JSON Schema, and each tool validates its input with zod
-// itself. bb never converts a zod schema from this plugin inside its own long-running process,
+// Tool parameters go to VesnALIA as plain JSON Schema, and each tool validates its input with zod
+// itself. VesnALIA never converts a zod schema from this plugin inside its own long-running process,
 // where zod's shared global registry can outlive a broken plugin generation and fail reloads.
 type ToolResult = { content: { type: "text"; text: string }[]; isError?: boolean };
 function params(_schema: z.ZodType, json: Record<string, unknown>): { parameters: Record<string, unknown> } {
@@ -56,7 +56,7 @@ const MAX_TAIL_FILE_BYTES = 64 * 1024 * 1024;
 const TAIL_CHARS = 256 * 1024;
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 const MAX_MODEL_BYTES = 16 * 1024 * 1024;
-const STORAGE_PREFIX = "$BB_THREAD_STORAGE/";
+const STORAGE_PREFIX = "$ALIA_THREAD_STORAGE/";
 const IMAGE_TYPES: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", avif: "image/avif" };
 const MAX_PERSON_THREADS = 5000;
 const LEASE_TTL_MS = 60 * 60_000;
@@ -77,8 +77,8 @@ interface Root {
   hostId: string;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     stance: {
       type: "select",
       label: "How often agents draw",
@@ -90,7 +90,7 @@ export default async function plugin(bb: BbPluginApi) {
     rollout: {
       type: "select",
       label: "Where agents learn Iris",
-      description: "Everywhere: every top-level thread, whoever started it (a person, a side chat or a plugin). Trial: only threads started with `bb iris try`, for testing next to another UI plugin.",
+      description: "Everywhere: every top-level thread, whoever started it (a person, a side chat or a plugin). Trial: only threads started with `alia iris try`, for testing next to another UI plugin.",
       options: ["everywhere", "trial"],
       experimental_optionLabels: { everywhere: "Everywhere", trial: "Trial threads only" },
       default: "everywhere",
@@ -131,7 +131,7 @@ export default async function plugin(bb: BbPluginApi) {
     const hit = rootCache.get(threadId);
     if (hit && Date.now() - hit.at < 60_000) return hit.roots;
     const roots = (async () => {
-      const [thread, storage] = await Promise.all([bb.sdk.threads.get({ threadId, include: "environment" }), bb.sdk.threads.storageLocation({ threadId }).catch(() => null)]);
+      const [thread, storage] = await Promise.all([alia.sdk.threads.get({ threadId, include: "environment" }), alia.sdk.threads.storageLocation({ threadId }).catch(() => null)]);
       const env = "environment" in thread ? (thread.environment as { id?: string; path?: string; hostId?: string } | null) : null;
       return {
         workspace: env && typeof env.path === "string" && typeof env.hostId === "string" ? { path: env.path, hostId: env.hostId } : null,
@@ -180,9 +180,9 @@ export default async function plugin(bb: BbPluginApi) {
     }
     let target: string | null = null;
     let root: Root | null = null;
-    if (requested.startsWith(STORAGE_PREFIX) || requested.startsWith("$BB_THREAD_STORAGE")) {
+    if (requested.startsWith(STORAGE_PREFIX) || requested.startsWith("$ALIA_THREAD_STORAGE")) {
       root = roots.storage;
-      if (root) target = path.resolve(root.path, requested.replace(/^\$BB_THREAD_STORAGE\/?/, ""));
+      if (root) target = path.resolve(root.path, requested.replace(/^\$ALIA_THREAD_STORAGE\/?/, ""));
     } else if (path.isAbsolute(requested)) {
       let t = path.resolve(requested);
       const inStorage = roots.storage ? underRoot(roots.storage.path, t) : null;
@@ -196,7 +196,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       if (!root && roots.storage && path.basename(roots.storage.path) === threadId) {
         // Another thread's storage on the same machine (a parent thread showing its subthreads' screenshots):
-        // only inside a real thread folder of bb's thread-storage directory, never loose files there.
+        // only inside a real thread folder of VesnALIA's thread-storage directory, never loose files there.
         const all = path.dirname(roots.storage.path);
         const other = path.relative(all, t).split(path.sep)[0];
         if (inside(all, t) && /^thr_[a-z0-9]+$/.test(other)) root = { path: path.join(all, other), hostId: roots.storage.hostId };
@@ -206,7 +206,7 @@ export default async function plugin(bb: BbPluginApi) {
       root = roots.workspace;
       if (root) target = path.resolve(root.path, requested);
     }
-    if (!root || !target || !inside(root.path, target)) return { ok: false, error: `${path.basename(requested)} is outside this thread's workspace and bb's thread storage` };
+    if (!root || !target || !inside(root.path, target)) return { ok: false, error: `${path.basename(requested)} is outside this thread's workspace and VesnALIA's thread storage` };
     // Thread storage, this thread's or another's (no git), as opposed to the workspace.
     return { ok: true, root, target, storage: root !== roots.workspace, own: root === roots.storage };
   }
@@ -217,7 +217,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (!where.ok) return where;
     const { root, target } = where;
     try {
-      const result = await bb.sdk.files.read({ path: target, rootPath: root.path, hostId: root.hostId });
+      const result = await alia.sdk.files.read({ path: target, rootPath: root.path, hostId: root.hostId });
       if (!("content" in result)) return { ok: false, error: "the file could not be read" };
       if (result.sizeBytes > maxBytes) return { ok: false, error: `the file is ${Math.round(result.sizeBytes / 1024)} KB, over the ${Math.round(maxBytes / 1024)} KB limit`, final: true };
       return { ok: true, content: result.content, encoding: result.contentEncoding };
@@ -243,13 +243,13 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   // ---------- streamed files (players, assets, PDFs, fonts) ----------
-  // bb serves files through a preview lease (sdk.files.createPreview): an
+  // VesnALIA serves files through a preview lease (sdk.files.createPreview): an
   // unguessable URL that answers byte ranges, so a video or PDF plays and
   // seeks without being read whole. A lease covers the thread's workspace or
   // its thread storage, the same files load() may read, and never a folder
-  // picked from the path: bb checks every request against the lease's root,
+  // picked from the path: VesnALIA checks every request against the lease's root,
   // so a symlink inside the root can't lead outside it. Leases expire after
-  // LEASE_TTL_MS. When bb can't lease, a file up to MAX_MEDIA_DATA_BYTES comes
+  // LEASE_TTL_MS. When VesnALIA can't lease, a file up to MAX_MEDIA_DATA_BYTES comes
   // as a data URL.
 
   const leases = new Map<string, { at: number; lease: Promise<{ baseUrl: string; expiresAtMs: number }> }>();
@@ -257,7 +257,7 @@ export default async function plugin(bb: BbPluginApi) {
     const key = `${root.hostId}\0${root.path}`;
     const hit = leases.get(key);
     if (hit && hit.at + LEASE_TTL_MS - LEASE_RENEW_MS > Date.now()) return hit.lease;
-    const lease = bb.sdk.files.createPreview({ hostId: root.hostId, rootPath: root.path, ttlMs: LEASE_TTL_MS }).then((r) => ({ baseUrl: r.baseUrl, expiresAtMs: r.expiresAtMs }));
+    const lease = alia.sdk.files.createPreview({ hostId: root.hostId, rootPath: root.path, ttlMs: LEASE_TTL_MS }).then((r) => ({ baseUrl: r.baseUrl, expiresAtMs: r.expiresAtMs }));
     leases.set(key, { at: Date.now(), lease });
     lease.catch(() => leases.delete(key));
     if (leases.size > 500) leases.delete(leases.keys().next().value as string);
@@ -275,7 +275,7 @@ export default async function plugin(bb: BbPluginApi) {
       const lease = await leaseRoot(where.root);
       return { ok: true, url: `${lease.baseUrl}/${relUrl(where.root, where.target)}`, via: "stream", expiresAtMs: lease.expiresAtMs, name };
     } catch (cause) {
-      bb.log.warn(`file lease failed, reading ${name} whole: ${cause instanceof Error ? cause.message : String(cause)}`);
+      alia.log.warn(`file lease failed, reading ${name} whole: ${cause instanceof Error ? cause.message : String(cause)}`);
     }
     const file = await readFile(threadId, requested, MAX_MEDIA_DATA_BYTES);
     if (!file.ok) return file;
@@ -285,12 +285,12 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   /**
-   * Files under a folder, scoped to it so big workspaces stay fast. bb's
+   * Files under a folder, scoped to it so big workspaces stay fast. VesnALIA's
    * scoped listing doesn't read .gitignore, so dependency and build output
    * folders are skipped by name instead.
    */
   async function listFolder(root: Root, target: string, limit: number): Promise<{ files: string[]; truncated: boolean }> {
-    const listing = await bb.sdk.files.list({ hostId: root.hostId, path: target, limit, includeHidden: false, excludeNames: [...SKIPPED_FOLDERS] });
+    const listing = await alia.sdk.files.list({ hostId: root.hostId, path: target, limit, includeHidden: false, excludeNames: [...SKIPPED_FOLDERS] });
     return { files: listing.files.map((f) => f.path), truncated: listing.truncated };
   }
 
@@ -319,27 +319,27 @@ export default async function plugin(bb: BbPluginApi) {
       truncated: listing.truncated,
       base: lease ? (sub ? `${lease.baseUrl}/${sub}` : lease.baseUrl) : null,
       expiresAtMs: lease?.expiresAtMs ?? null,
-      folder: own ? `$BB_THREAD_STORAGE${rel ? `/${rel}` : ""}` : storage ? path.join(root.path, rel) : rel || ".",
+      folder: own ? `$ALIA_THREAD_STORAGE${rel ? `/${rel}` : ""}` : storage ? path.join(root.path, rel) : rel || ".",
       repoPrefix: storage ? null : rel,
     };
   }
 
   // ---------- on-demand chunks (dist/chunks, committed) ----------
 
-  serveChunks(bb);
+  serveChunks(alia);
 
-  const project = createProjectSource(bb);
-  const bbData = createBbSource(bb, project);
+  const project = createProjectSource(alia);
+  const aliaData = createAliaSource(alia, project);
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, WEB_MIGRATIONS);
+  const db = alia.storage.database();
+  alia.storage.migrate(db, WEB_MIGRATIONS);
   const web = createWebSource({ db, enabled: () => webLookups });
 
   // ---------- RPC ----------
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     load_file: ({ threadId, path: p, raw, tail }) => loadFile(threadId, p, raw === true, tail === true),
-    bb_data: ({ threadId, spec }) => bbData.read(threadId, spec),
+    alia_data: ({ threadId, spec }) => aliaData.read(threadId, spec),
     async load_image({ threadId, path: p }) {
       const ext = /\.([^./\\]+)$/.exec(p)?.[1]?.toLowerCase();
       if (!ext || !IMAGE_TYPES[ext]) return { ok: false as const, error: `only ${Object.keys(IMAGE_TYPES).join(", ")} images can be shown`, final: true };
@@ -367,16 +367,16 @@ export default async function plugin(bb: BbPluginApi) {
       }
     },
     async state_get({ key }) {
-      const state = await bb.storage.kv.get<Record<string, unknown>>(`state:${key}`);
+      const state = await alia.storage.kv.get<Record<string, unknown>>(`state:${key}`);
       if (state) return { state };
       // Values the agent set (iris_card_set) before the card saved any of its own.
       const pending = pendingKeyFor(key);
-      return { state: (pending ? await bb.storage.kv.get<Record<string, unknown>>(pending) : null) ?? null };
+      return { state: (pending ? await alia.storage.kv.get<Record<string, unknown>>(pending) : null) ?? null };
     },
     async state_set({ key, state }) {
       const size = JSON.stringify(state).length;
       if (size > 200_000) return { ok: false };
-      await bb.storage.kv.set(`state:${key}`, state);
+      await alia.storage.kv.set(`state:${key}`, state);
       return { ok: true };
     },
     async project_changes({ threadId, target, paths }) {
@@ -407,7 +407,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ---------- pinned cards ----------
   // A thread keeps up to MAX_PINS live cards beside its conversation. The person pins from a card's
-  // toolbar; the thread's agent pins with iris_pin or `bb iris pin`; any client can use the
+  // toolbar; the thread's agent pins with iris_pin or `alia iris pin`; any client can use the
   // discoverable pins.* RPCs. Every change is checked first, written once, and announced so open
   // views refresh.
 
@@ -422,14 +422,14 @@ export default async function plugin(bb: BbPluginApi) {
     return next;
   }
   async function readPins(threadId: string): Promise<Pin[]> {
-    const stored = await bb.storage.kv.get<unknown>(pinsKey(threadId));
+    const stored = await alia.storage.kv.get<unknown>(pinsKey(threadId));
     // Before 1.10 a thread had one pin under its own key: it reads as the person's pin.
-    return normalizePins(stored ?? (await bb.storage.kv.get<unknown>(legacyPinKey(threadId))));
+    return normalizePins(stored ?? (await alia.storage.kv.get<unknown>(legacyPinKey(threadId))));
   }
   async function writePins(threadId: string, pins: Pin[]): Promise<void> {
-    await bb.storage.kv.set(pinsKey(threadId), { pins });
-    await bb.storage.kv.set(legacyPinKey(threadId), { source: null });
-    bb.realtime.publish("iris-pins", { threadId });
+    await alia.storage.kv.set(pinsKey(threadId), { pins });
+    await alia.storage.kv.set(legacyPinKey(threadId), { source: null });
+    alia.realtime.publish("iris-pins", { threadId });
   }
 
   type PinInput = { id?: string; title?: string; source?: string; file?: string; by: PinBy; alert?: { when: string; message?: string } };
@@ -442,14 +442,14 @@ export default async function plugin(bb: BbPluginApi) {
       if (bad) return { ok: false, error: `the alert condition "${input.alert.when}" doesn't parse: ${bad}` };
     }
     let body = input.source ?? "";
-    // A path the shell expanded inside this thread's storage reads back as $BB_THREAD_STORAGE/..., for
+    // A path the shell expanded inside this thread's storage reads back as $ALIA_THREAD_STORAGE/..., for
     // the person and in iris_pins.
     if (input.file && path.isAbsolute(input.file)) {
       try {
         const storage = (await threadRoots(threadId)).storage?.path;
         const within = storage ? underRoot(storage, input.file) : null;
         const rel = storage && within ? path.relative(storage, within) : null;
-        if (rel) input = { ...input, file: `$BB_THREAD_STORAGE/${rel.split(path.sep).join("/")}` };
+        if (rel) input = { ...input, file: `$ALIA_THREAD_STORAGE/${rel.split(path.sep).join("/")}` };
       } catch {
         // keep the path as given
       }
@@ -491,7 +491,7 @@ export default async function plugin(bb: BbPluginApi) {
   // A pin can carry a condition over its card's own names. Every ALERT_EVERY_MS the server reads
   // each alerting pin's card and loads, as the card would, and decides the condition. On the turn
   // to true the pin asks for attention: a mark on the pin and the pinned-count chip, a toast in
-  // every open bb window, a desktop notification where bb may show them, and the thread marked
+  // every open VesnALIA window, a desktop notification where VesnALIA may show them, and the thread marked
   // unread. It never messages the thread or wakes the agent. The person dismisses it.
   const ALERT_EVERY_MS = 30_000;
   async function decideAlert(threadId: string, pin: Pin): Promise<boolean | null> {
@@ -505,7 +505,7 @@ export default async function plugin(bb: BbPluginApi) {
     const { preloaded } = await readLoads(source, threadId);
     const r = checkAlert(source, pin.alert.when, preloaded);
     if (!r.ok) {
-      bb.log.warn(`pin alert ${threadId}/${pin.id}: ${r.error}`);
+      alia.log.warn(`pin alert ${threadId}/${pin.id}: ${r.error}`);
       return null;
     }
     return r.held;
@@ -535,18 +535,18 @@ export default async function plugin(bb: BbPluginApi) {
       if (changed) await writePins(threadId, next);
     });
     if (!fired.length) return;
-    const title = threadTitle ?? (await bb.sdk.threads.get({ threadId }).then((t) => t.title || "a thread", () => "a thread"));
-    for (const pin of fired) bb.realtime.publish("iris-alert", { threadId, threadTitle: title, pinId: pin.id, title: pin.title, message: alertText(pin) });
-    // bb's own unread mark: the thread shows as needing a look in the sidebar on every device.
-    await bb.sdk.threads.markUnread({ threadId }).catch(() => undefined);
+    const title = threadTitle ?? (await alia.sdk.threads.get({ threadId }).then((t) => t.title || "a thread", () => "a thread"));
+    for (const pin of fired) alia.realtime.publish("iris-alert", { threadId, threadTitle: title, pinId: pin.id, title: pin.title, message: alertText(pin) });
+    // VesnALIA's own unread mark: the thread shows as needing a look in the sidebar on every device.
+    await alia.sdk.threads.markUnread({ threadId }).catch(() => undefined);
   }
-  bb.background.service("pin-alerts", {
+  alia.background.service("pin-alerts", {
     async start(signal) {
       while (!signal.aborted) {
         const threads = await allPins().catch(() => [] as PinnedThread[]);
         for (const t of threads) {
           if (signal.aborted) break;
-          if (t.pins.some((p) => p.alert)) await checkThreadAlerts(t.threadId, t.title, signal).catch((e: unknown) => bb.log.warn(`pin alerts for ${t.threadId}: ${e instanceof Error ? e.message : String(e)}`));
+          if (t.pins.some((p) => p.alert)) await checkThreadAlerts(t.threadId, t.title, signal).catch((e: unknown) => alia.log.warn(`pin alerts for ${t.threadId}: ${e instanceof Error ? e.message : String(e)}`));
         }
         await new Promise<void>((resolve) => {
           if (signal.aborted) return resolve();
@@ -582,15 +582,15 @@ export default async function plugin(bb: BbPluginApi) {
       return { ok: change.ok, removed: change.ok ? [id ?? ""] : [] };
     });
   }
-  /** Every open thread that has pins, for bb's home page: archived and deleted threads are left out. */
+  /** Every open thread that has pins, for VesnALIA's home page: archived and deleted threads are left out. */
   async function allPins(): Promise<PinnedThread[]> {
-    const keys = [...(await bb.storage.kv.list("state:pins:")), ...(await bb.storage.kv.list("state:pin:"))];
+    const keys = [...(await alia.storage.kv.list("state:pins:")), ...(await alia.storage.kv.list("state:pin:"))];
     const ids = [...new Set(keys.map((k) => k.replace(/^state:pins?:/, "")).filter(Boolean))];
     const withPins = (await Promise.all(ids.map(async (threadId) => ({ threadId, pins: await readPins(threadId).catch(() => [] as Pin[]) })))).filter((t) => t.pins.length > 0);
     const out: PinnedThread[] = [];
     for (let i = 0; i < withPins.length; i += 200) {
       const batch = withPins.slice(i, i + 200);
-      const rows = await bb.sdk.threads.list({ threadIds: batch.map((t) => t.threadId), includeHidden: true }).catch(() => []);
+      const rows = await alia.sdk.threads.list({ threadIds: batch.map((t) => t.threadId), includeHidden: true }).catch(() => []);
       for (const row of rows) {
         if (row.archivedAt !== null || row.deletedAt !== null) continue;
         const t = batch.find((b) => b.threadId === row.id);
@@ -602,7 +602,7 @@ export default async function plugin(bb: BbPluginApi) {
   /** What the agent is told after a pin: where it shows and what the person can do with it. */
   function pinnedText(r: Extract<PinResult, { ok: true }>, count: number): string {
     const follows = r.pin.file ? ` It re-reads ${r.pin.file} every 3 seconds while it shows, so rewrite that file to update it.` : "";
-    const alerts = r.pin.alert ? ` Iris checks "${r.pin.alert.when}" every 30 seconds; when it turns true the person sees an alert on the pin, a toast in bb and the thread marked unread (no phone push), until they dismiss it.` : "";
+    const alerts = r.pin.alert ? ` Iris checks "${r.pin.alert.when}" every 30 seconds; when it turns true the person sees an alert on the pin, a toast in VesnALIA and the thread marked unread (no phone push), until they dismiss it.` : "";
     return `${r.replaced ? "Replaced" : "Pinned"} "${r.pin.title}" (id ${r.pin.id}) beside this thread's conversation, ${count} of ${MAX_PINS} pins. The person sees it in the thread's right panel (Info tab, under Pinned cards), marked as pinned by the agent, with Unpin.${follows}${alerts}\n\n${r.report}`;
   }
   const pinList = (pins: Pin[]) =>
@@ -621,7 +621,7 @@ export default async function plugin(bb: BbPluginApi) {
     const pages: Row[] = [];
     let before: string | undefined;
     for (let page = 0; page < 5; page++) {
-      const rows = (await bb.sdk.threads.events.list({ threadId, types: ["item/completed"], order: "desc", limit: "100", ...(before ? { beforeSeq: before } : {}) })) as unknown as Row[];
+      const rows = (await alia.sdk.threads.events.list({ threadId, types: ["item/completed"], order: "desc", limit: "100", ...(before ? { beforeSeq: before } : {}) })) as unknown as Row[];
       if (!Array.isArray(rows) || !rows.length) break;
       pages.push(...rows);
       const found = pages.reduce((n, r) => n + (r.data?.item?.type === "agentMessage" ? (r.data.item.text?.match(/```iris/g)?.length ?? 0) : 0), 0);
@@ -637,13 +637,13 @@ export default async function plugin(bb: BbPluginApi) {
     }
     const cards: CardRef[] = [...messages].flatMap(([id, text]) => cardsInMessage(id, text));
     const recent = cards.slice(-MAX_CARDS);
-    const keys = await bb.storage.kv.list(`state:${threadId}:`);
+    const keys = await alia.storage.kv.list(`state:${threadId}:`);
     return recent.map((card, k) => ({ card, n: cards.length - recent.length + k + 1, key: keys.find((x) => isCardKey(x, card)) ?? null }));
   }
   /** What the card holds now: its own saved state, else values the agent set before it saved any. */
   async function cardState(threadId: string, c: ListedCard): Promise<Record<string, unknown>> {
-    const own = c.key ? await bb.storage.kv.get<unknown>(c.key) : null;
-    const state = own ?? (await bb.storage.kv.get<unknown>(pendingKey(threadId, c.card)));
+    const own = c.key ? await alia.storage.kv.get<unknown>(c.key) : null;
+    const state = own ?? (await alia.storage.kv.get<unknown>(pendingKey(threadId, c.card)));
     return state && typeof state === "object" && !Array.isArray(state) ? (state as Record<string, unknown>) : {};
   }
   async function threadCards(threadId: string): Promise<CardWithInputs[]> {
@@ -677,8 +677,8 @@ export default async function plugin(bb: BbPluginApi) {
       const own = check(c.card.source, { saved: personInputs(plan.next), load: () => new Promise<LoadResult>(() => undefined) });
       if (!own.ok) return { ok: false, error: `The card errors with those values, so nothing was set.\n${formatReport(own)}` };
       const report = await checkSource(c.card.source, threadId, personInputs(plan.next));
-      await bb.storage.kv.set(c.key ?? pendingKey(threadId, c.card), plan.next);
-      bb.realtime.publish("iris-card-state", { threadId, item: `item:${c.card.message}#${c.card.language}#${c.card.index}` });
+      await alia.storage.kv.set(c.key ?? pendingKey(threadId, c.card), plan.next);
+      alia.realtime.publish("iris-card-state", { threadId, item: `item:${c.card.message}#${c.card.language}#${c.card.index}` });
       const { source: _source, ...card } = c.card;
       return { ok: true, card: { ...card, n: c.n, inputs: personInputs(plan.next) }, changed: plan.changed, report };
     };
@@ -705,7 +705,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     for (const pair of pairs) {
       const eq = pair.indexOf("=");
-      if (eq < 1) throw new PluginCliError(`"${pair}" isn't name=value`, { code: "invalid", hint: "For example: bb iris set 2 seats=20 plan=Pro" });
+      if (eq < 1) throw new PluginCliError(`"${pair}" isn't name=value`, { code: "invalid", hint: "For example: VesnALIA iris set 2 seats=20 plan=Pro" });
       const raw = pair.slice(eq + 1);
       let value: unknown = raw;
       try {
@@ -718,7 +718,7 @@ export default async function plugin(bb: BbPluginApi) {
     return out;
   }
 
-  bb.rpc.register(
+  alia.rpc.register(
     cardsContract,
     {
       "cards.list": async ({ threadId }) => ({ cards: await threadCards(threadId) }),
@@ -727,7 +727,7 @@ export default async function plugin(bb: BbPluginApi) {
     { experimental_discoverable: true, experimental_description: "Iris: the thread's cards, what the person set in them, and setting their inputs." },
   );
 
-  bb.rpc.register(
+  alia.rpc.register(
     pinsContract,
     {
       "pins.list": async ({ threadId }) => ({ pins: await readPins(threadId) }),
@@ -765,31 +765,31 @@ export default async function plugin(bb: BbPluginApi) {
     return live.length ? `${report}\n\nDidn't answer within 5 s, so not checked here (the card reads them live): ${[...new Set(live)].join(", ")}` : report;
   }
 
-  /** Everything the card's load() calls ask for, read here as the card would read it (bb data and plugin feeds at most 5 s each). */
+  /** Everything the card's load() calls ask for, read here as the card would read it (VesnALIA data and plugin feeds at most 5 s each). */
   async function readLoads(source: string, threadId: string | null, saved?: Record<string, unknown>): Promise<{ preloaded: Map<string, LoadResult>; live: string[] }> {
     // First pass finds the files load() asks for; the second checks with them read.
     const asked = new Set<string>();
     check(source, { saved, load: (p, raw, tail) => (asked.add(`${tail ? "tail:" : raw ? "raw:" : ""}${p}`), new Promise<LoadResult>(() => undefined)) });
     const preloaded = new Map<string, LoadResult>();
     const live: string[] = [];
-    const bbReads: Promise<void>[] = [];
+    const aliaReads: Promise<void>[] = [];
     for (const key of asked) {
       const raw = key.startsWith("raw:");
       const tail = key.startsWith("tail:");
       const p = raw ? key.slice(4) : tail ? key.slice(5) : key;
-      // bb's own data is read here for real, so the check sees what the card will (in parallel, at most 5 s each).
-      if (isBbSource(p)) {
+      // VesnALIA's own data is read here for real, so the check sees what the card will (in parallel, at most 5 s each).
+      if (isAliaSource(p)) {
         let timer: ReturnType<typeof setTimeout> | undefined;
-        const timeout = new Promise<LoadResult>((resolve) => (timer = setTimeout(() => resolve({ ok: false, error: "bb didn't answer within 5 s; not checked" }), 5000)));
-        bbReads.push(
-          Promise.race([bbData.read(threadId, p), timeout]).then((r) => {
+        const timeout = new Promise<LoadResult>((resolve) => (timer = setTimeout(() => resolve({ ok: false, error: "alia didn't answer within 5 s; not checked" }), 5000)));
+        aliaReads.push(
+          Promise.race([aliaData.read(threadId, p), timeout]).then((r) => {
             clearTimeout(timer);
             preloaded.set(key, r);
           }),
         );
         continue;
       }
-      // A plugin's data is read here as the card reads it: from bb's own loopback address, where the
+      // A plugin's data is read here as the card reads it: from VesnALIA's own loopback address, where the
       // plugin's iris/ routes answer (at most 5 s). Unreachable, it stays pending and is named below.
       if (isPluginSource(p)) {
         const parsed = parsePluginSource(p);
@@ -799,7 +799,7 @@ export default async function plugin(bb: BbPluginApi) {
         }
         let base: string | null = null;
         try {
-          base = bb.server.loopbackBaseUrl;
+          base = alia.server.loopbackBaseUrl;
         } catch {
           base = null;
         }
@@ -809,7 +809,7 @@ export default async function plugin(bb: BbPluginApi) {
         }
         let timer: ReturnType<typeof setTimeout> | undefined;
         const timeout = new Promise<LoadResult | null>((resolve) => (timer = setTimeout(() => resolve(null), 5000)));
-        bbReads.push(
+        aliaReads.push(
           Promise.race([loadPluginData(p, threadId, raw || tail, fetch, base), timeout]).then((r) => {
             clearTimeout(timer);
             if (r === null) live.push(p);
@@ -821,23 +821,23 @@ export default async function plugin(bb: BbPluginApi) {
       }
       preloaded.set(key, threadId ? await loadFile(threadId, p, raw, tail) : { ok: false, error: "no thread to read files from" });
     }
-    await Promise.all(bbReads);
+    await Promise.all(aliaReads);
     return { preloaded, live };
   }
 
-  // A dev copy installed under another id (bb-plugin-iris-dev-*) gets its own
+  // A dev copy installed under another id (alia-plugin-iris-dev-*) gets its own
   // gallery and fence language but never registers agent tools or instructions,
   // so it can't collide with the live Iris.
-  const devInstance = bb.pluginId !== "iris";
-  bb.cli.register(cliSpec());
+  const devInstance = alia.pluginId !== "iris";
+  alia.cli.register(cliSpec());
   if (devInstance) {
-    bb.log.info(`Iris dev instance ${bb.pluginId}: no agent tools or instructions`);
+    alia.log.info(`Iris dev instance ${alia.pluginId}: no agent tools or instructions`);
     return;
   }
 
   const [docsIndex, examplesIndex] = indexSections();
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "iris_check",
     description:
       "Checks an ```iris block before you send it: syntax, unknown components or props, missing required props, files load() can't read, errors that only appear when an input moves to its ends, and a text outline of what the person will see. An ```iris-react module is compiled and its imports checked.",
@@ -853,9 +853,9 @@ export default async function plugin(bb: BbPluginApi) {
     }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "iris_docs",
-    description: "Returns every prop (type, default, meaning) and a working example for the Iris components you name; \"React\" gives the iris-react kit, \"bb\" the bb: live data shapes.",
+    description: "Returns every prop (type, default, meaning) and a working example for the Iris components you name; \"React\" gives the iris-react kit, \"VesnALIA\" the VesnALIA: live data shapes.",
     instructions: docsIndex.text,
     ...params(
       z.object({ components: z.array(z.string().min(1).max(40)).min(1).max(10) }),
@@ -866,7 +866,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   const families = exampleFamilies();
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "iris_examples",
     description: "Returns working Iris examples for every component in the families you name; \"Recipes\" gives patterns that combine components and tools (a status card that follows a file, a Variants picker).",
     instructions: examplesIndex.text,
@@ -885,7 +885,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "iris_ask",
     description:
       "Asks the person a rich question and waits for the answer: the picker replaces the composer and the thread shows it is waiting on them. Write the picker in Iris markup with <state> for each answer and a <Submit /> button; the answer comes back as JSON of the state values. Use it for picks that need more than a few options: compare designs, tune weights, edit a table, approve a plan. Plain questions go through the host's own ask mode.",
@@ -913,7 +913,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (report.startsWith("Error")) return { content: [{ type: "text", text: `The picker app has errors; fix them and ask again.\n${report}` }], isError: true };
       }
       if (!ctx.threadId) return { content: [{ type: "text", text: "iris_ask works only inside a thread" }], isError: true };
-      const result = await bb.ui.requestInput(
+      const result = await alia.ui.requestInput(
         {
           threadId: ctx.threadId,
           rendererId: "iris-ask",
@@ -941,7 +941,7 @@ export default async function plugin(bb: BbPluginApi) {
       alert_message: z.string().min(1).max(200).optional(),
     })
     .strict();
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "iris_pin",
     description:
       "Pins a live Iris card beside this thread's conversation, where it stays in view and keeps refreshing while the chat scrolls on (a build, a fleet's status, a job). Give source (Iris markup) or file (a thread storage or workspace path holding the card, re-read every 3 s, so rewriting the file updates the pin). The card is checked first; one with errors isn't pinned. Pinning again with the same id replaces the pin; its alert stays unless you give a new one. At most 5 pins per thread.",
@@ -949,7 +949,7 @@ export default async function plugin(bb: BbPluginApi) {
       type: "object",
       properties: {
         source: { type: "string", minLength: 1, maxLength: 100_000, description: "The card's Iris markup, without the ``` lines" },
-        file: { type: "string", minLength: 1, maxLength: 2000, description: "A path such as $BB_THREAD_STORAGE/status.iris whose content is the card; the pin follows the file" },
+        file: { type: "string", minLength: 1, maxLength: 2000, description: "A path such as $ALIA_THREAD_STORAGE/status.iris whose content is the card; the pin follows the file" },
         title: { type: "string", minLength: 1, maxLength: 120, description: "Shown above the pin; default the card's title" },
         id: { type: "string", minLength: 1, maxLength: 40, description: "Stable id (lowercase, digits, dashes); default from the title" },
         alert_when: { type: "string", minLength: 1, maxLength: 500, description: 'Alert the person when this Iris expression over the card\'s names turns true, e.g. build.state == "failed" (checked every 30 s: a mark on the pin, a toast, the thread marked unread; no phone push)' },
@@ -968,7 +968,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   const UNPIN_PARAMS = z.object({ id: z.string().min(1).max(40).optional(), all: z.boolean().optional() }).strict();
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "iris_unpin",
     description: "Unpins a card from beside this thread's conversation by its id, or every pin with all: true.",
     ...params(UNPIN_PARAMS, {
@@ -985,7 +985,7 @@ export default async function plugin(bb: BbPluginApi) {
     }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "iris_pins",
     description: "Lists the cards pinned beside this thread's conversation: id, title, source or file, and who pinned each.",
     parameters: { type: "object", properties: {}, additionalProperties: false },
@@ -996,7 +996,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "iris_cards",
     description: "Lists this thread's Iris cards, newest last, with what the person set in each (slider values, picks, typed notes, stored values), so you can act on a card's state without asking.",
     parameters: { type: "object", properties: {}, additionalProperties: false },
@@ -1008,7 +1008,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   const SET_PARAMS = z.object({ card: z.union([z.number().int().min(1), z.string().min(1).max(200)]), values: z.record(z.string(), z.unknown()) }).strict();
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "iris_card_set",
     description:
       "Sets inputs in one of this thread's Iris cards: a slider, a pick, a field, any <state> it declares. Name the card by its id from iris_cards (or its #) and give the values by state name; each keeps its type. The card is checked with the new values first, and an open card redraws with them. Use it to show the person a scenario in the card they already have instead of sending a new one.",
@@ -1033,7 +1033,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   const personThreads = new Set<string>();
   const toolNames = ["iris_check", "iris_ask", "iris_docs", "iris_examples", "iris_pin", "iris_unpin", "iris_pins", "iris_cards", "iris_card_set"];
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const trial = context.pluginMetadata?.iris === "trial";
     // Every top-level thread is one a person reads, whoever started it (the person, a side chat,
     // or a plugin that runs its own top-level threads). Child threads spawned by agents stay off
@@ -1047,7 +1047,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (personThreads.size > MAX_PERSON_THREADS) personThreads.delete(personThreads.values().next().value as string);
     return { tools: toolNames, skills: [] };
   });
-  bb.agents.contributeInstructions(({ threadId }) => (personThreads.has(threadId) ? CODE_WORK_INSTRUCTIONS : null));
+  alia.agents.contributeInstructions(({ threadId }) => (personThreads.has(threadId) ? CODE_WORK_INSTRUCTIONS : null));
 
   // ---------- CLI (hoisted: a dev instance registers it too, under its own id) ----------
 
@@ -1060,17 +1060,17 @@ export default async function plugin(bb: BbPluginApi) {
 
   /**
    * A path from a shell command, as the caller meant it: relative to the shell's own folder
-   * (ctx.cwd), not to bb's. Absolute and $BB_THREAD_STORAGE paths pass through as they are.
+   * (ctx.cwd), not to VesnALIA's. Absolute and $ALIA_THREAD_STORAGE paths pass through as they are.
    */
   function callerPath(file: string, cwd: string | undefined): string {
-    if (path.isAbsolute(file) || file.startsWith("$BB_THREAD_STORAGE") || !cwd) return file;
+    if (path.isAbsolute(file) || file.startsWith("$ALIA_THREAD_STORAGE") || !cwd) return file;
     return path.resolve(cwd, file);
   }
 
   function cliSpec() {
     return defineCli({
-      name: bb.pluginId,
-      summary: "Iris: live UI in bb chat",
+      name: alia.pluginId,
+      summary: "Iris: live UI in VesnALIA chat",
       commands: {
         check: cliCommand({
           summary: "Check an Iris block or iris-react app from a file and print what the person will see",
@@ -1078,14 +1078,14 @@ export default async function plugin(bb: BbPluginApi) {
           async run({ positionals }, ctx) {
             const fs = await import("node:fs/promises");
             const file = callerPath(positionals.file, ctx.cwd);
-            // From a thread, the file is read through bb on the thread's own host, like the card reads it.
+            // From a thread, the file is read through VesnALIA on the thread's own host, like the card reads it.
             const source = ctx.threadId ? await readCardFile(ctx.threadId, file) : await fs.readFile(file, "utf8");
             const body = source.replace(/^\s*```[\w-]*[^\n]*\n/, "").replace(/```\s*$/, "");
             if (isReactApp(body)) {
               const text = await checkReact(body);
               return { exitCode: text.startsWith("Error") ? 1 : 0, stdout: `${text}\n` };
             }
-            // From a thread's shell it reads that thread's files, bb data and plugin feeds, as iris_check does.
+            // From a thread's shell it reads that thread's files, VesnALIA data and plugin feeds, as iris_check does.
             const report = await checkSource(body, ctx.threadId ?? null);
             return { exitCode: report.startsWith("Error") || report.includes("\nError") ? 1 : 0, stdout: `${report}\n` };
           },
@@ -1093,7 +1093,7 @@ export default async function plugin(bb: BbPluginApi) {
         pin: cliCommand({
           summary: "Pin a card beside this thread's conversation; the pin follows the file, so rewriting it updates the card",
           description: "Checked first: a card with errors isn't pinned. With --once the card's source is stored instead of the file's path. Pinning again with the same --id replaces the pin. At most 5 pins per thread.",
-          positionals: [{ name: "file", description: "A file holding the card, e.g. $BB_THREAD_STORAGE/status.iris (with or without the ``` lines)", required: true }] as const,
+          positionals: [{ name: "file", description: "A file holding the card, e.g. $ALIA_THREAD_STORAGE/status.iris (with or without the ``` lines)", required: true }] as const,
           options: {
             title: { type: "string", description: "Shown above the pin; default the card's title" },
             id: { type: "string", description: "Stable id (lowercase, digits, dashes); default from the title" },
@@ -1103,7 +1103,7 @@ export default async function plugin(bb: BbPluginApi) {
           },
           async run(input, ctx) {
             const threadId = ctx.threadId;
-            if (!threadId) throw new PluginCliError("pin acts on the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in bb, where BB_THREAD_ID is set" });
+            if (!threadId) throw new PluginCliError("pin acts on the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in VesnALIA, where ALIA_THREAD_ID is set" });
             const file = callerPath(input.positionals.file, ctx.cwd);
             let source: string | undefined;
             if (input.options.once) source = cardFromFile(await readCardFile(threadId, file));
@@ -1115,11 +1115,11 @@ export default async function plugin(bb: BbPluginApi) {
         }),
         unpin: cliCommand({
           summary: "Unpin a card from beside this thread's conversation",
-          positionals: [{ name: "id", description: "The pin's id, from `bb iris pins`" }] as const,
+          positionals: [{ name: "id", description: "The pin's id, from `alia iris pins`" }] as const,
           options: { all: { type: "boolean", description: "Unpin every card in this thread" } },
           async run(input, ctx) {
             const threadId = ctx.threadId;
-            if (!threadId) throw new PluginCliError("unpin acts on the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in bb, where BB_THREAD_ID is set" });
+            if (!threadId) throw new PluginCliError("unpin acts on the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in VesnALIA, where ALIA_THREAD_ID is set" });
             if (!input.positionals.id && !input.options.all) throw new PluginCliError("name the pin's id, or pass --all", { code: "invalid" });
             const r = await unpinCards(threadId, input.positionals.id, input.options.all === true);
             return r.ok ? { exitCode: 0, stdout: `Unpinned ${r.removed.join(", ")}.\n` } : { exitCode: 1, stdout: "", stderr: `No pin "${input.positionals.id}" here.\n${pinList(await readPins(threadId))}\n` };
@@ -1130,25 +1130,25 @@ export default async function plugin(bb: BbPluginApi) {
           options: { json: { type: "boolean", description: "Print the cards as JSON" } },
           async run(input, ctx) {
             const threadId = ctx.threadId;
-            if (!threadId) throw new PluginCliError("cards reads the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in bb, where BB_THREAD_ID is set" });
+            if (!threadId) throw new PluginCliError("cards reads the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in VesnALIA, where ALIA_THREAD_ID is set" });
             const cards = await threadCards(threadId);
             return { exitCode: 0, stdout: `${input.options.json ? JSON.stringify(cards, null, 2) : cardList(cards)}\n` };
           },
         }),
         set: cliCommand({
           summary: "Set inputs in one of this thread's cards; an open card redraws with them",
-          description: "Name the card by its # from `bb iris cards`, then name=value pairs (values parse as JSON when they can: 20, true, [\"a\"]; quote text that looks like a number: name='\"123\"'). Each must be a <state> the card declares and keep its type. Checked first: values that make the card error aren't set.",
+          description: "Name the card by its # from `alia iris cards`, then name=value pairs (values parse as JSON when they can: 20, true, [\"a\"]; quote text that looks like a number: name='\"123\"'). Each must be a <state> the card declares and keep its type. Checked first: values that make the card error aren't set.",
           positionals: [
-            { name: "card", description: "The card's id (message#index) or number, from `bb iris cards`", required: true },
+            { name: "card", description: "The card's id (message#index) or number, from `alia iris cards`", required: true },
             { name: "values", description: "name=value pairs, e.g. seats=20 plan=Pro", variadic: true },
           ] as const,
           options: { json: { type: "string", description: 'The values as one JSON object, e.g. {"seats": 20}' } },
           async run(input, ctx) {
             const threadId = ctx.threadId;
-            if (!threadId) throw new PluginCliError("set acts on the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in bb, where BB_THREAD_ID is set" });
+            if (!threadId) throw new PluginCliError("set acts on the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in VesnALIA, where ALIA_THREAD_ID is set" });
             const raw = input.positionals.card.replace(/^#/, "");
             const which = /^\d+$/.test(raw) ? Number(raw) : raw;
-            if (which === 0 || (typeof which === "string" && !raw.includes("#"))) throw new PluginCliError(`"${input.positionals.card}" isn't a card number or id`, { code: "invalid", hint: "`bb iris cards` lists them" });
+            if (which === 0 || (typeof which === "string" && !raw.includes("#"))) throw new PluginCliError(`"${input.positionals.card}" isn't a card number or id`, { code: "invalid", hint: "`alia iris cards` lists them" });
             const values = parseAssignments(input.positionals.values ?? [], input.options.json);
             const r = await setCardInputs(threadId, which, values);
             return r.ok ? { exitCode: 0, stdout: `${setText(r)}\n` } : { exitCode: 1, stdout: "", stderr: `${r.error}\n` };
@@ -1159,7 +1159,7 @@ export default async function plugin(bb: BbPluginApi) {
           options: { json: { type: "boolean", description: "Print the pins as JSON" } },
           async run(input, ctx) {
             const threadId = ctx.threadId;
-            if (!threadId) throw new PluginCliError("pins reads the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in bb, where BB_THREAD_ID is set" });
+            if (!threadId) throw new PluginCliError("pins reads the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in VesnALIA, where ALIA_THREAD_ID is set" });
             const pins = await readPins(threadId);
             return { exitCode: 0, stdout: `${input.options.json ? JSON.stringify(pins, null, 2) : pinList(pins)}\n` };
           },
@@ -1172,18 +1172,18 @@ export default async function plugin(bb: BbPluginApi) {
           async run(input, ctx) {
             let base: string | null = null;
             try {
-              base = bb.server.loopbackBaseUrl;
+              base = alia.server.loopbackBaseUrl;
             } catch {
               base = null;
             }
-            if (!base) throw new PluginCliError("bb's own address isn't available to Iris here", { code: "unavailable" });
+            if (!base) throw new PluginCliError("VesnALIA's own address isn't available to Iris here", { code: "unavailable" });
             const r = await checkFeed(input.positionals.feed, ctx.threadId ?? null, base);
             return { exitCode: r.ok ? 0 : 1, stdout: `${input.options.json ? JSON.stringify(r, null, 2) : r.lines.join("\n")}\n` };
           },
         }),
         try: cliCommand({
           summary: "Try a prompt in a subthread whose agent knows Iris",
-          description: "The subthread belongs to this thread. Open it in bb to see the cards; `bb thread wait <id>` waits for the reply.",
+          description: "The subthread belongs to this thread. Open it in VesnALIA to see the cards; `alia thread wait <id>` waits for the reply.",
           options: {
             model: { type: "string", description: "Model ID; omitted, the project's default" },
             provider: { type: "string", description: "Provider ID; omitted, the project's remembered provider" },
@@ -1192,9 +1192,9 @@ export default async function plugin(bb: BbPluginApi) {
           positionals: [{ name: "prompt", description: "The message to send", required: true }] as const,
           async run(input, ctx) {
             const parentId = ctx.threadId;
-            if (!parentId) throw new PluginCliError("try runs inside a thread", { code: "thread_required", hint: "Run it from an agent's shell in bb, where BB_THREAD_ID is set" });
-            const parent = await bb.sdk.threads.get({ threadId: parentId });
-            const thread = await bb.sdk.threads.spawn({
+            if (!parentId) throw new PluginCliError("try runs inside a thread", { code: "thread_required", hint: "Run it from an agent's shell in VesnALIA, where ALIA_THREAD_ID is set" });
+            const parent = await alia.sdk.threads.get({ threadId: parentId });
+            const thread = await alia.sdk.threads.spawn({
               projectId: parent.projectId,
               environment: parent.environmentId === null ? { type: "project-default" } : { type: "reuse", environmentId: parent.environmentId },
               parentThreadId: parentId,
@@ -1226,7 +1226,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
   }
 
-  bb.log.info(`Iris loaded: ${CATALOG.length} components, stance ${stance}`);
+  alia.log.info(`Iris loaded: ${CATALOG.length} components, stance ${stance}`);
 }
 
 function summarize(value: unknown): string {
@@ -1244,10 +1244,10 @@ function chunkDir(): string | undefined {
   return [path.join(here, "dist", "chunks"), path.join(here, "chunks")].find((d) => existsSync(path.join(d, "manifest.json")));
 }
 
-function serveChunks(bb: BbPluginApi) {
+function serveChunks(alia: AliaPluginApi) {
   const dir = chunkDir();
   if (!dir) {
-    bb.log.warn("no dist/chunks/manifest.json: run node scripts/build-chunks.mjs");
+    alia.log.warn("no dist/chunks/manifest.json: run node scripts/build-chunks.mjs");
     return;
   }
   const manifest = JSON.parse(readFileSync(path.join(dir, "manifest.json"), "utf8")) as { files: Record<string, number> };
@@ -1257,7 +1257,7 @@ function serveChunks(bb: BbPluginApi) {
     const br = existsSync(`${file}.br`) ? readFileSync(`${file}.br`) : null;
     const gzip = existsSync(`${file}.gz`) ? readFileSync(`${file}.gz`) : null;
     const type = name.endsWith(".css") ? "text/css; charset=utf-8" : name.endsWith(".woff2") ? "font/woff2" : name.endsWith(".mp4") ? "video/mp4" : name.endsWith(".ttf") ? "font/ttf" : "text/javascript; charset=utf-8";
-    bb.http.route(
+    alia.http.route(
       "GET",
       `/c/${name}`,
       (c) => {
@@ -1272,7 +1272,7 @@ function serveChunks(bb: BbPluginApi) {
   }
 
   // Iris's own sample of the public plugin data contract: load("plugin:iris/example") in any card.
-  bb.http.route(
+  alia.http.route(
     "GET",
     "/iris/example",
     () => {

@@ -9,7 +9,7 @@ See the instruction you were about to type before you type it.
   one. Nothing is sent without your action.
 - Silence when there is nothing to suggest: no "push it" after a commit, no
   "check the build" while the agent says it is running.
-- `bb next-prompt` to show, generate, and debug suggestions.
+- `alia next-prompt` to show, generate, and debug suggestions.
 
 ## How it works
 
@@ -21,7 +21,7 @@ Nothing is written to the thread or the agent's context.
 
 ## Requirements
 
-Pick the model with bb's provider/model picker. Claude Code and Codex models
-run as a lean CLI call (`claude` or `codex` logged in on the bb server) and use
+Pick the model with VesnALIA's provider/model picker. Claude Code and Codex models
+run as a lean CLI call (`claude` or `codex` logged in on the VesnALIA server) and use
 your existing subscription; other providers run as a hidden worker thread. An
 Anthropic- or OpenAI-compatible HTTP API can replace either.

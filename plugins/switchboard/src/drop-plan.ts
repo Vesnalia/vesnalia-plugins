@@ -110,7 +110,7 @@ export function planDrop(index: TreeIndex, draggedIds: readonly string[], target
       mode !== "manual") return { ok: false, reason: mode === "recent" ? "Sorted by recent activity" : "Sorted by status" };
   const parentDepth = parentId ? index.byId.get(parentId)?.depth ?? 0 : 0;
   if (roots.some((id) => parentDepth + index.byId.get(id)!.height > MAX_DEPTH))
-    return { ok: false, reason: "bb allows 4 levels of threads" };
+    return { ok: false, reason: "alia allows 4 levels of threads" };
   const next = new Map<IndexedContainer, string[]>();
   const list = (key: IndexedContainer): string[] => {
     if (!next.has(key)) next.set(key, [...(index.containers.get(key) ?? [])]);

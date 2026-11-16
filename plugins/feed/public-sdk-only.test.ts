@@ -1,7 +1,7 @@
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { experimental_scanPublicSdkOnly as scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { experimental_scanPublicSdkOnly as scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 
 const scan = scanPublicSdkOnly(dirname(fileURLToPath(import.meta.url)), {
   allow: [

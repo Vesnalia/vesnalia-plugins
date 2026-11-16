@@ -1,12 +1,12 @@
-# bb-gh-copilot
+# alia-gh-copilot
 
-Adds GitHub Copilot CLI to [bb](https://getbb.app) as an ACP coding-agent provider.
+Adds GitHub Copilot CLI to [VesnALIA](https://getbb.app) as an ACP coding-agent provider.
 
-After installation, **GitHub Copilot** appears in bb as provider **`acp-gh-copilot`**.
+After installation, **GitHub Copilot** appears in VesnALIA as provider **`acp-gh-copilot`**.
 
-The npm package is `bb-plugin-gh-copilot` and the plugin id is `gh-copilot`,
+The npm package is `alia-plugin-gh-copilot` and the plugin id is `gh-copilot`,
 not `copilot`: an unrelated community plugin
-([balazstasi/bb-plugin-copilot](https://github.com/balazstasi/bb-plugin-copilot))
+([balazstasi/alia-plugin-copilot](https://github.com/balazstasi/bb-plugin-copilot))
 already claims that id and the `acp-copilot` provider, and two plugins cannot
 share either. Installing this one migrates the entry this plugin wrote under the
 old `copilot` id — recognised by its `GitHub Copilot` display name, so the other
@@ -15,21 +15,21 @@ version of this plugin have to be re-pointed at `acp-gh-copilot`.
 
 ## Prerequisites
 
-- bb 0.40 or newer with its built-in ACP providers plugin enabled.
+- VesnALIA 0.40 or newer with its built-in ACP providers plugin enabled.
 - Install with `brew install --cask copilot-cli`, then authenticate with `copilot login`.
 
 ## Install
 
-From the bb marketplace:
+From the VesnALIA marketplace:
 
 ```bash
-bb plugin install gh-copilot@bb-community
+alia plugin install gh-copilot@alia-community
 ```
 
 Or directly from GitHub, tracking releases:
 
 ```bash
-bb plugin install git:https://github.com/ai-ecoverse/bb-gh-copilot.git@^1.0.0
+alia plugin install git:https://github.com/ai-ecoverse/bb-gh-copilot.git@^1.0.0
 ```
 
 For local development:
@@ -38,7 +38,7 @@ For local development:
 npm install
 npm run lint
 npm test
-bb plugin install .
+alia plugin install .
 ```
 
 The plugin locates the CLI and writes or repairs its managed entry in the ACP
@@ -47,7 +47,7 @@ uses `copilot --acp` over stdio. Model ids come from Copilot's ACP session catal
 
 ## Skills
 
-The managed entry declares the skill directories the Copilot CLI reads, so bb
+The managed entry declares the skill directories the Copilot CLI reads, so VesnALIA
 lists them in the composer next to its own:
 
 - project: `.github/skills/`, `.agents/skills/`, `.claude/skills/`
@@ -55,9 +55,9 @@ lists them in the composer next to its own:
 
 ## Permission modes
 
-bb's thread permission mode becomes a Copilot launch flag:
+VesnALIA's thread permission mode becomes a Copilot launch flag:
 
-| bb mode      | Copilot flag         |
+| VesnALIA mode      | Copilot flag         |
 | ------------ | -------------------- |
 | Auto         | none — every tool call comes through ACP for approval |
 | Accept edits | `--allow-tool=write` — file writes run unattended, shell and URLs still ask |
@@ -67,13 +67,13 @@ bb's thread permission mode becomes a Copilot launch flag:
 
 The plugin reports your Copilot quota — premium requests (labelled AI credits
 on token-billed accounts), plus chat and code completions on plans that cap
-them — through bb's `provider-usage.v1` usage
-source contract, so it shows up in bb's **Provider usage** panel next to Codex
+them — through VesnALIA's `provider-usage.v1` usage
+source contract, so it shows up in VesnALIA's **Provider usage** panel next to Codex
 and Claude Code. Unlimited quotas are left out rather than shown as 0%.
 
 ```bash
-bb gh-copilot usage          # Plan: Business / Premium requests: 5% used, resets …
-bb gh-copilot usage --json   # the raw provider-usage measurement
+alia gh-copilot usage          # Plan: Business / Premium requests: 5% used, resets …
+alia gh-copilot usage --json   # the raw provider-usage measurement
 ```
 
 The numbers come from `GET /copilot_internal/user`, the call Copilot CLI makes
@@ -81,7 +81,7 @@ at session start, authenticated the way the CLI
 [resolves credentials](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/authenticate-copilot-cli#how-copilot-cli-stores-credentials):
 
 1. `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, or `GITHUB_TOKEN`, from the managed
-   entry's `env` and then the bb environment. In Codespaces, the `GITHUB_TOKEN`
+   entry's `env` and then the VesnALIA environment. In Codespaces, the `GITHUB_TOKEN`
    Codespaces injected yields to a stored login, as it does for the CLI; one
    you exported over it (it differs from the token recorded under
    `/workspaces/.codespaces/shared/`) keeps its precedence.
@@ -95,50 +95,50 @@ Classic PATs (`ghp_`) are skipped wherever they appear, as Copilot rejects them.
 `COPILOT_GH_HOST` / `GH_HOST` select a GHE.com or GHES host. The token is only
 sent to that GitHub host. Readings are cached for a minute.
 
-Quota is read on the machine running the bb server, so it is listed for that
+Quota is read on the machine running the VesnALIA server, so it is listed for that
 machine only.
 
 ## Check or repair
 
 ```bash
-bb gh-copilot status
-bb gh-copilot usage
-bb gh-copilot repair
-bb provider models acp-gh-copilot
+alia gh-copilot status
+alia gh-copilot usage
+alia gh-copilot repair
+alia provider models acp-gh-copilot
 ```
 
-If the CLI moves after an upgrade, `bb gh-copilot repair` records its new
-absolute path and reloads bb.
+If the CLI moves after an upgrade, `alia gh-copilot repair` records its new
+absolute path and reloads VesnALIA.
 
 ## Uninstall
 
 Remove the managed provider entry before removing the plugin:
 
 ```bash
-bb gh-copilot unregister
-bb plugin remove gh-copilot
+alia gh-copilot unregister
+alia plugin remove gh-copilot
 ```
 
 The legacy `scripts/install.sh` and `scripts/uninstall.sh` remain available for
-installations made before this repository became a bb plugin. Do not use them
-for new installs: they write the `customAcpAgents` array that bb removes in
+installations made before this repository became a VesnALIA plugin. Do not use them
+for new installs: they write the `customAcpAgents` array that VesnALIA removes in
 0.41. Installing the plugin migrates such an entry to the setting and deletes
 the legacy one.
 
 ## How it works
 
-bb's built-in ACP provider supplies the ACP-to-bb runtime. This plugin manages
+VesnALIA's built-in ACP provider supplies the ACP-to-alia runtime. This plugin manages
 the provider-specific launch profile in that plugin's `customAgents` setting
-(the old `customAcpAgents` array in `config.json` is deprecated in bb 0.40 and
+(the old `customAcpAgents` array in `config.json` is deprecated in VesnALIA 0.40 and
 removed in 0.41). Authentication and model availability remain owned by the
 vendor CLI and the user's account.
 
 The package ID is `gh-copilot`; the provider ID is `acp-gh-copilot`. The compact
-icon is a `currentColor` mask so it follows the bb theme. It is the `copilot-48`
+icon is a `currentColor` mask so it follows the VesnALIA theme. It is the `copilot-48`
 icon from [GitHub Primer Octicons](https://github.com/primer/octicons) (MIT;
 GitHub marks are subject to GitHub's brand guidelines). It has an intrinsic
-16×16 size, without which WebKit (bb's iOS and iPadOS apps) lays it out at 300px
-inside bb's `min-w-max` icon wrapper.
+16×16 size, without which WebKit (VesnALIA's iOS and iPadOS apps) lays it out at 300px
+inside VesnALIA's `min-w-max` icon wrapper.
 
 ## Development
 
@@ -146,7 +146,7 @@ inside bb's `min-w-max` icon wrapper.
 npm install    # also installs this worktree's git hooks
 npm run lint   # slicc-lint: Biome, typecheck, no comments, AGENTS.md, no unit tests in git
 npm test       # node --test test/integration/*.test.mjs
-npm run build  # bb plugin build . into the gitignored dist/
+npm run build  # alia plugin build . into the gitignored dist/
 ```
 
 The repository follows
@@ -161,8 +161,8 @@ entry looks like, how it is merged into an existing `customAgents` array, and
 what is safe to remove. `src/copilot-usage.ts` resolves the Copilot login and
 turns GitHub's quota report into a usage measurement; `src/credential-store.ts`
 reads the OS keychain and `gh`; `src/usage-source.ts` publishes the measurement
-over RPC; `src/usage-contract.ts` is bb's `provider-usage.v1` contract, copied
-from bb's `plugins/provider-usage/usage-source-contract.ts` (bb owns it, and each
+over RPC; `src/usage-contract.ts` is VesnALIA's `provider-usage.v1` contract, copied
+from VesnALIA's `plugins/provider-usage/usage-source-contract.ts` (VesnALIA owns it, and each
 usage source ships its own copy). `server.ts` keeps the side effects: locating
 the CLI, reading and writing the setting, the keychain lookup, the CLI commands.
 
@@ -170,13 +170,13 @@ the CLI, reading and writing the setting, the keychain lookup, the CLI commands.
 
 Every push to `main` runs semantic-release. Conventional commits pick the
 version (`fix:` a patch, `feat:` a minor, a `BREAKING CHANGE:` footer a major),
-and the release commits the bumped `package.json` and tags `vX.Y.Z`. bb installs
+and the release commits the bumped `package.json` and tags `vX.Y.Z`. VesnALIA installs
 the highest tag the marketplace range (`^1.0.0`) allows, so a new major needs a
-marketplace PR. Never move or delete a published tag: bb refuses a tag whose
+marketplace PR. Never move or delete a published tag: VesnALIA refuses a tag whose
 commit changed.
 
-The plugin requires bb 0.40+ and plugin SDK 0.4.94+.
+The plugin requires VesnALIA 0.40+ and plugin SDK 0.4.94+.
 
 ## License
 
-MIT, matching [bb itself](https://github.com/get-bb/bb). See [LICENSE](LICENSE).
+MIT, matching [VesnALIA itself](https://github.com/get-bb/bb). See [LICENSE](LICENSE).

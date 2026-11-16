@@ -18,7 +18,7 @@ export interface EmptyStateProps {
   query?: string;
   /**
    * The hard root, named in the "escapes-root" copy. It is the home directory
-   * of whoever runs bb, so only the backend knows it: the panel passes
+   * of whoever runs VesnALIA, so only the backend knows it: the panel passes
    * `state.root`, and the default reads the value the panel published.
    */
   root?: string;

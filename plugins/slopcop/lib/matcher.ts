@@ -2,7 +2,7 @@
 //
 // Every rejection carries a human-readable reason, because "why didn't SlopCop
 // review my PR?" is the question this plugin will be asked most often. The
-// reasons surface in `bb slopcop check` and on skipped runs in the panel.
+// reasons surface in `alia slopcop check` and on skipped runs in the panel.
 import {
   TRUSTED_ASSOCIATIONS,
   type AuthorAssociation,
@@ -244,7 +244,7 @@ export function describeTrust(trust: Rule["authorTrust"]): string {
 /**
  * Reviewing a PR from `anyone` is the genuinely dangerous corner: the agent
  * runs `gh pr checkout` on a stranger's code and can execute commands in EVERY
- * BB permission mode — the enum is full | auto | accept-edits, and none of them
+ * VesnALIA permission mode — the enum is full | auto | accept-edits, and none of them
  * is read-only. So trust is the only real gate, and `full` merely widens an
  * already-open door.
  */

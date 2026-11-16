@@ -25,7 +25,7 @@ export const NAME_SORT: Sort = { key: "name", ascending: true };
 
 export const FRESH_PLACE: ListPlace = { search: "", filters: NO_FILTERS, sort: NAME_SORT, scroll: null, left: null };
 
-const STORAGE_KEY = "bb-box:boxes-list";
+const STORAGE_KEY = "alia-box:boxes-list";
 
 export const ROW_NAME = "data-row-name";
 

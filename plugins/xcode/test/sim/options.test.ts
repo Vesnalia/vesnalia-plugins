@@ -33,7 +33,7 @@ describe("the ui options allowlist", () => {
   });
 
   it("NEVER offers allowAgentCapture, or any other trust decision", () => {
-    // The RPC pair behind the gear rides bb's `auth: "local"` boundary, which
+    // The RPC pair behind the gear rides VesnALIA's `auth: "local"` boundary, which
     // any same-user process can cross — an agent included. A menu that could
     // flip allowAgentCapture would let an agent grant itself simulator access.
     // This assertion is the fence; do not "fix" a failure here by widening it.

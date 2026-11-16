@@ -1,5 +1,5 @@
 // The page's RPC contract and the types it carries. The app imports only types from this file, so zod stays out of its bundle.
-import { defineRpcContract, type NewThreadRequest } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type NewThreadRequest } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { ProjectHealth } from "./health";
 import type { HomeProject, HomeView, NeedItem } from "./home";
@@ -9,7 +9,7 @@ import type { MergeEntry, MergeOrderView, MergeVerdict, MergeWait } from "./merg
 import type { NextStep } from "./next-step";
 import type { PrSyncOutcome, PrSyncResult, PrSyncTicket } from "./pr-sync";
 import type { RolloutCheckResult, RolloutLive, RolloutMerge, RolloutMilestone, RolloutNext, RolloutRequirement, RolloutStage, RolloutStep, RolloutView, RolloutWarning, RolloutWindow } from "./rollout";
-import type { BbProjectChoice, PlanningSession, ProjectOverview, RepoOverview } from "./projects";
+import type { AliaProjectChoice, PlanningSession, ProjectOverview, RepoOverview } from "./projects";
 import { MAX_PLANNING_REPOS } from "./prompts";
 import type { Finding } from "./review";
 import type { Moment, MomentKind, ProjectTimeline, SessionBar, TicketBar } from "./replay";
@@ -34,7 +34,7 @@ export type { PrSyncOutcome, PrSyncResult, PrSyncTicket };
 export type { RolloutCheckResult, RolloutLive, RolloutMerge, RolloutMilestone, RolloutNext, RolloutRequirement, RolloutStage, RolloutStep, RolloutView, RolloutWarning, RolloutWindow };
 export type { SpecReviewRound };
 export type { AckTab, AskAction, AskStep, BadgeAcks, PlannerAction, PlannerAsk, PlannerStep, PlannerVersion, PlannerView, TurnStep, VersionChange };
-export type { ActivityItem, Attempt, BbProjectChoice, ChecksItem, CheckStep, PrFeedbackItem, PrTextItem, HomeProject, HomeView, Mark, MergeItem, Moment, MomentKind, NeedItem, NextStep, PlanningSession, ProjectHealth, ProjectTimeline, RepoOverview, ReviewItem, SentNote, SessionBar, SpecVersionView, TicketActivity, TicketBar };
+export type { ActivityItem, Attempt, AliaProjectChoice, ChecksItem, CheckStep, PrFeedbackItem, PrTextItem, HomeProject, HomeView, Mark, MergeItem, Moment, MomentKind, NeedItem, NextStep, PlanningSession, ProjectHealth, ProjectTimeline, RepoOverview, ReviewItem, SentNote, SessionBar, SpecVersionView, TicketActivity, TicketBar };
 
 export interface BoardCard {
   key: string;
@@ -100,8 +100,8 @@ export interface MergeWaitView {
 /** What the draft card shows before a project has tickets on the board. */
 export interface SpecSummary {
   tickets: Array<{ ref: string; title: string; dependsOn: string[] }>;
-  /** The spec's [[repo]] tables; empty on a single-repo spec. `bbProjectName` is null when bb cannot tell. */
-  repos: Array<{ name: string; bbProjectId: string; bbProjectName: string | null }>;
+  /** The spec's [[repo]] tables; empty on a single-repo spec. `aliaProjectName` is null when VesnALIA cannot tell. */
+  repos: Array<{ name: string; aliaProjectId: string; aliaProjectName: string | null }>;
   checks: string[];
   /** "provider / model", or null when the spec sets neither. */
   reviewer: string | null;
@@ -292,7 +292,7 @@ export interface ThreadInfo {
   state: string;
 }
 
-/** What the badge on Loom's rail button counts, less the threads the page finds waiting on the human in bb's own thread state. */
+/** What the badge on Loom's rail button counts, less the threads the page finds waiting on the human in VesnALIA's own thread state. */
 export interface BadgeView {
   /** The home page's Needs you items. */
   needsYou: number;
@@ -312,12 +312,12 @@ const slug = z.string().min(1).max(100);
 const key = z.string().min(1).max(100);
 const eventId = z.number().int().min(1);
 const commitHash = z.string().regex(/^[0-9a-f]{40}(?:[0-9a-f]{24})?$/, "must be a full commit hash");
-// bb's RPC cannot tell the page from an agent that calls `bb plugin rpc`, so every change needs an explicit confirmation.
-// That does not stop an agent impersonating the human, here or through the CLI with its bb thread identity stripped
-// (`env -u BB_THREAD_ID`): Loom's human-only controls rely on agents not doing so, until bb reports where each call came from.
+// VesnALIA's RPC cannot tell the page from an agent that calls `alia plugin rpc`, so every change needs an explicit confirmation.
+// That does not stop an agent impersonating the human, here or through the CLI with its VesnALIA thread identity stripped
+// (`env -u ALIA_THREAD_ID`): Loom's human-only controls rely on agents not doing so, until VesnALIA reports where each call came from.
 const confirm = z.literal(true);
 const typed = <T>() => z.custom<T>();
-// bb's spawn validates the rest of the composer's request.
+// VesnALIA's spawn validates the rest of the composer's request.
 const isComposerRequest = (value: unknown) => typeof value === "object" && value !== null && typeof (value as { projectId?: unknown }).projectId === "string" && Array.isArray((value as { input?: unknown }).input);
 
 export const rpcContract = defineRpcContract({
@@ -401,7 +401,7 @@ export const rpcContract = defineRpcContract({
   },
   // A read of the project's open pull requests now; no human.action, since it changes nothing the human decides.
   syncPullRequests: { input: z.object({ slug, key: key.optional(), confirm }).strict(), output: typed<PrSyncResult>(), ...RPC_TAGS.syncPullRequests },
-  bbProjects: { input: z.null(), output: typed<BbProjectChoice[]>(), ...RPC_TAGS.bbProjects },
+  aliaProjects: { input: z.null(), output: typed<AliaProjectChoice[]>(), ...RPC_TAGS.aliaProjects },
   startPlanning: {
     input: z
       .object({

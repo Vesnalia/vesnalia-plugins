@@ -1,8 +1,8 @@
-// First-run setup (the operator's setup job, 11 October 2026): what each BB
-// machine offers bb-box, so the Box panel and settings can offer one action,
+// First-run setup (the operator's setup job, 11 October 2026): what each VesnALIA
+// machine offers alia-box, so the Box panel and settings can offer one action,
 // such as "Use Docker on this machine", or one line that fixes what stands
 // in its way. It reads what the Docker host list already knows (042), and
-// the facts bb-box's host entry gives with it: who BB's daemon runs as, how
+// the facts alia-box's host entry gives with it: who VesnALIA's daemon runs as, how
 // it restarts, KVM, and free disk.
 
 import type { SetupFacts } from "../host/relay.ts";
@@ -15,20 +15,20 @@ export const LINUX_BUILD_GB = 10;
 export interface MachineSetup {
   readonly hostId: string;
   readonly name: string;
-  /** The machine that runs BB's server, which the panel offers first and calls "this machine". */
+  /** The machine that runs VesnALIA's server, which the panel offers first and calls "this machine". */
   readonly here: boolean;
   /**
-   * on: bb-box already uses its Docker. ready: Docker answers, and one click sets it up.
-   * fix: Docker is there, but something stands in the way. none: no Docker. offline: BB cannot reach it.
+   * on: alia-box already uses its Docker. ready: Docker answers, and one click sets it up.
+   * fix: Docker is there, but something stands in the way. none: no Docker. offline: VesnALIA cannot reach it.
    */
   readonly state: "on" | "ready" | "fix" | "none" | "offline";
   /** Docker's version, where it answers. */
   readonly docker: string | null;
   /** What stands in the way, in a sentence, for `fix`. */
   readonly problem: string | null;
-  /** The one line that fixes it, when bb-box knows it. */
+  /** The one line that fixes it, when alia-box knows it. */
   readonly fix: string | null;
-  /** The command that restarts BB's daemon after the fix, or null to say "restart BB" in words. Restarting it ends running threads' turns. */
+  /** The command that restarts VesnALIA's daemon after the fix, or null to say "restart VesnALIA" in words. Restarting it ends running threads' turns. */
   readonly restart: string | null;
   readonly kvm: SetupFacts["kvm"] | null;
   readonly freeGb: number | null;
@@ -55,7 +55,7 @@ export function dockerFix(host: Pick<DockerHostView, "name" | "connected" | "doc
   if (host.absent || known?.inSocketGroup !== false) return null;
   const group = known.socketGroup ?? "docker";
   return {
-    problem: `Docker is on ${where}, but BB's user, ${known.user}, cannot use it. Add ${known.user} to the ${group} group, then restart BB's daemon there.`,
+    problem: `Docker is on ${where}, but VesnALIA's user, ${known.user}, cannot use it. Add ${known.user} to the ${group} group, then restart VesnALIA's daemon there.`,
     command: `sudo usermod -aG ${group} ${known.user}`,
     restart: known.restart,
   };
@@ -63,7 +63,7 @@ export function dockerFix(host: Pick<DockerHostView, "name" | "connected" | "doc
 
 const ORDER: Record<MachineSetup["state"], number> = { on: 0, ready: 1, fix: 2, none: 3, offline: 4 };
 
-/** Each BB machine's setup, the server's first, then those that can be set up now. */
+/** Each VesnALIA machine's setup, the server's first, then those that can be set up now. */
 export function machineSetups(
   hosts: readonly DockerHostView[],
   facts: ReadonlyMap<string, SetupFacts>,
@@ -97,15 +97,15 @@ export function machineSetups(
     .sort((a, b) => Number(b.here) - Number(a.here) || ORDER[a.state] - ORDER[b.state] || a.name.localeCompare(b.name));
 }
 
-/** Why BB's machine access will not let boxes join BB, as BB's Machines settings would say it. */
+/** Why VesnALIA's machine access will not let boxes join VesnALIA, as VesnALIA's Machines settings would say it. */
 export interface MachineAccessProblem {
-  /** The way of access BB uses, such as "bb connect". */
+  /** The way of access VesnALIA uses, such as "alia connect". */
   readonly provider: string;
-  /** BB's own words, such as "Sign in to your bb account to use bb connect". */
+  /** VesnALIA's own words, such as "Sign in to your VesnALIA account to use VesnALIA connect". */
   readonly message: string;
 }
 
-/** The parts of BB's system configuration that say how machines reach BB. */
+/** The parts of VesnALIA's system configuration that say how machines reach VesnALIA. */
 export interface AccessConfig {
   readonly generalSettings?: { readonly defaultMachineAccess?: string | null };
   readonly serverAccess?: {
@@ -115,9 +115,9 @@ export interface AccessConfig {
 }
 
 /**
- * What stands in the way of boxes joining BB: the way of access BB uses, unless it is available. Null where it is, or
- * where bb-box cannot tell. A box joins BB through it, so without it every box's enrolment fails (the newcomer check:
- * BB's desktop app starts with bb connect, which needs a sign-in).
+ * What stands in the way of boxes joining VesnALIA: the way of access VesnALIA uses, unless it is available. Null where it is, or
+ * where alia-box cannot tell. A box joins VesnALIA through it, so without it every box's enrolment fails (the newcomer check:
+ * VesnALIA's desktop app starts with VesnALIA connect, which needs a sign-in).
  */
 export function machineAccessProblem(config: AccessConfig | null): MachineAccessProblem | null {
   const access = config?.serverAccess;
@@ -129,15 +129,15 @@ export function machineAccessProblem(config: AccessConfig | null): MachineAccess
   return { provider: provider.displayName, message: availability.message ?? `${provider.displayName} is not set up.` };
 }
 
-/** Whether BB's words say its machine access needs a sign-in to the user's bb account, as bb connect does. */
+/** Whether VesnALIA's words say its machine access needs a sign-in to the user's VesnALIA account, as VesnALIA connect does. */
 export function needsSignIn(words: string | null): boolean {
-  return !!words && /sign in to your bb account/i.test(words);
+  return !!words && /sign in to your alia account/i.test(words);
 }
 
 /** Whether the machine's image build is going on. */
 export const building = (setup: MachineSetup) => setup.build?.state === "checking" || setup.build?.state === "building";
 
-/** The machine setup is about: one building, else the one that runs BB if it can be set up, else the first that can. */
+/** The machine setup is about: one building, else the one that runs VesnALIA if it can be set up, else the first that can. */
 export function setupTarget(machines: readonly MachineSetup[]): MachineSetup | null {
   return (
     machines.find(building) ??
@@ -154,9 +154,9 @@ export function setupTarget(machines: readonly MachineSetup[]): MachineSetup | n
  * is the gentler way. Every way ends the turns of threads running there.
  */
 export function restartWords(restart: string | null): string {
-  if (!restart) return "Then restart BB there, or log out and in again, or reboot. That ends the turns of threads running there.";
+  if (!restart) return "Then restart VesnALIA there, or log out and in again, or reboot. That ends the turns of threads running there.";
   if (/^sudo systemctl restart user@\d+\.service$/.test(restart)) {
-    return "The second line restarts all of that user's services, BB's daemon among them. That ends the turns of threads running there and, if the user has a desktop there, its audio, notifications and other services too. Logging out and in again, or rebooting, does the same more gently.";
+    return "The second line restarts all of that user's services, VesnALIA's daemon among them. That ends the turns of threads running there and, if the user has a desktop there, its audio, notifications and other services too. Logging out and in again, or rebooting, does the same more gently.";
   }
-  return "The second line restarts BB's daemon there, which ends the turns of threads running there. Rebooting does the same.";
+  return "The second line restarts VesnALIA's daemon there, which ends the turns of threads running there. Rebooting does the same.";
 }

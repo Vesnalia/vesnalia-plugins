@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { cn } from "./lib/utils";
 
 export function RichMarkdown({

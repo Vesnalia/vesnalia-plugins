@@ -16,7 +16,7 @@ import { MAY_BREAK_THIS_MACHINE } from "./preflight.mjs";
 import { hostCommandsRecorded, pathWithHostStubs, recordingStandInsForHostTools, refusalForRealHostTools, testMadeRoots, withHostToolsFirstOnPath } from "./host-stubs.mjs";
 
 const EXIT_GUARD = new URL("./exit-guard.ts", import.meta.url).pathname;
-const NEVER_THERE = "/etc/bb-box-test-never-here";
+const NEVER_THERE = "/etc/alia-box-test-never-here";
 const TOOLS_THESE_TESTS_NAME = ["sudo", "tailscale", "systemctl", "reboot", "pkill", "runuser", "setpriv", "killall5", "osascript", "pfctl", "ip", "route", "sysctl", "scutil"];
 
 function standInsForTheTestMachine() {
@@ -67,11 +67,11 @@ test("runuser, setpriv, killall5, osascript and pfctl in a fake box are only rec
     "ip link set bbbox-test-none down",
     "route del -host 192.0.2.1",
     "sysctl -w bbbox.test.none=1",
-    "scutil --set BbBoxTestNone none",
+    "scutil --set AliaBoxTestNone none",
   ];
 
   const ran = await withHostToolsFirstOnPath(testMachine, () =>
-    box.run(`runuser -u nobody -- true; setpriv --reuid=65534 true; killall5 -0; osascript -e 'do shell script "true" with administrator privileges'; pfctl -s Running; ip link set bbbox-test-none down; route del -host 192.0.2.1; sysctl -w bbbox.test.none=1; scutil --set BbBoxTestNone none; echo done`, { timeoutMs: 20_000 }),
+    box.run(`runuser -u nobody -- true; setpriv --reuid=65534 true; killall5 -0; osascript -e 'do shell script "true" with administrator privileges'; pfctl -s Running; ip link set bbbox-test-none down; route del -host 192.0.2.1; sysctl -w bbbox.test.none=1; scutil --set AliaBoxTestNone none; echo done`, { timeoutMs: 20_000 }),
   );
 
   assert.equal(ran.stdout.trim(), "done", ran.stderr);
@@ -124,7 +124,7 @@ test("ip and scutil in a fake box run only in the forms that read, so an abbrevi
   const testMachine = standInsForTheTestMachine();
 
   const ran = await withHostToolsFirstOnPath(testMachine, () =>
-    box.run("ip l s bbbox-test-none down; ip -batch /nonexistent/bbbox-test-batch; printf 'remove State:/Network/BbBoxTestNone\\n' | scutil; ip -o -4 addr show >/dev/null 2>&1; echo done", { timeoutMs: 20_000 }),
+    box.run("ip l s bbbox-test-none down; ip -batch /nonexistent/bbbox-test-batch; printf 'remove State:/Network/AliaBoxTestNone\\n' | scutil; ip -o -4 addr show >/dev/null 2>&1; echo done", { timeoutMs: 20_000 }),
   );
 
   assert.equal(ran.stdout.trim(), "done", ran.stderr);
@@ -170,7 +170,7 @@ test("a fake refuses a PATH that would reach a real privileged tool, and takes o
   assert.equal(taken, null);
 });
 
-test("the test's own folders are where BB Box makes its temporary folders, short ones too", () => {
+test("the test's own folders are where VesnALIA Box makes its temporary folders, short ones too", () => {
   assert.ok(testMadeRoots().includes(tmpdir()));
   assert.ok(testMadeRoots().includes(shortTempBase()));
 });
@@ -201,6 +201,6 @@ test("a test process that runs the test machine's own sudo, tailscale or systemc
 
   assert.deepEqual(testMachine.ran(), [], "the test machine's tools never ran");
   assert.equal(child.status, 1, child.stderr);
-  assert.match(child.stderr, /BB Box test guard: a test ran the test machine's own sudo -n true\./);
-  assert.match(child.stderr, /This test file ran the test machine's own privileged tools, which BB Box's test guard stopped: sudo -n true; tailscale logout; systemctl restart bbbox-test-none\./);
+  assert.match(child.stderr, /ALIA Box test guard: a test ran the test machine's own sudo -n true\./);
+  assert.match(child.stderr, /This test file ran the test machine's own privileged tools, which ALIA Box's test guard stopped: sudo -n true; tailscale logout; systemctl restart bbbox-test-none\./);
 });

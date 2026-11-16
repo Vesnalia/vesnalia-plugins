@@ -1,12 +1,12 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PluginComposerScope } from "@get-bb/plugin-sdk/app";
+import type { PluginComposerScope } from "@vesnalia/plugin-sdk/app";
 
 const state = vi.hoisted(() => ({
   projects: [] as { id: string; name: string; isPersonal: boolean }[],
   scope: { kind: "new-thread", projectId: null } as PluginComposerScope,
 }));
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   definePluginApp: () => ({}),
   experimental_useSidebarThreads: () => state,
   useComposer: () => state,

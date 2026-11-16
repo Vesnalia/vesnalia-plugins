@@ -6,7 +6,7 @@
 // building AND by the nested families so a parent's rows never lie about
 // their lane's order.
 import { describe, expect, it } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import {
   assembleBoard,
 } from "../components/nesting";

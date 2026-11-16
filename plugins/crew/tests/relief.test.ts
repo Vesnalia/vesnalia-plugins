@@ -115,7 +115,7 @@ describe("deputy (§3.9.4)", () => {
 });
 
 describe("thread limit (§3.9.5)", () => {
-  it("reads the tighter of BB's global and host limits", () => {
+  it("reads the tighter of VesnALIA's global and host limits", () => {
     expect(parseLimitStatus('{"globalLimit":null,"hosts":[{"status":"connected","effectiveLimit":16}]}')).toBe(16);
     expect(parseLimitStatus('{"globalLimit":4,"hosts":[{"status":"connected","effectiveLimit":16}]}')).toBe(4);
     expect(parseLimitStatus('{"globalLimit":null,"hosts":[]}')).toBeNull();
@@ -123,7 +123,7 @@ describe("thread limit (§3.9.5)", () => {
   });
 
   it("at the limit a turn-starting delivery is throttled; leads and the human go first when a slot frees", async () => {
-    const { service, port, store } = setup({ bbLimit: 1 });
+    const { service, port, store } = setup({ aliaLimit: 1 });
     const { threads, self } = await running(service, port);
     port.threads.get(threads["dev-impl"]!)!.status = "active"; // the one running thread
     const [toReview] = await service.send({ projectId: PROJECT, from: self("dev-impl"), to: "dev-review", body: "routine" });
@@ -143,8 +143,8 @@ describe("thread limit (§3.9.5)", () => {
     expect(view!.needsYou).toEqual([]);
   });
 
-  it("negative: no readable limit throttles nothing; the plugin-side limit overrides BB's", async () => {
-    const open = setup({ bbLimit: null });
+  it("negative: no readable limit throttles nothing; the plugin-side limit overrides VesnALIA's", async () => {
+    const open = setup({ aliaLimit: null });
     const a = await running(open.service, open.port);
     open.port.threads.get(a.threads["dev-impl"]!)!.status = "active";
     const [row] = await open.service.send({ projectId: PROJECT, from: a.self("dev-impl"), to: "dev-review", body: "x" });
@@ -157,18 +157,18 @@ describe("thread limit (§3.9.5)", () => {
   });
 
   it("plan and apply warn when the running crews' members exceed the limit, and not below it", async () => {
-    const tight = setup({ bbLimit: 4 });
+    const tight = setup({ aliaLimit: 4 });
     await running(tight.service, tight.port);
     const planned = await tight.service.plan(PROJECT, duoYaml());
-    expect(planned.validation.problems.find((p) => p.code === "thread-limit")?.message).toContain("5 members in running crews vs BB limit 4");
+    expect(planned.validation.problems.find((p) => p.code === "thread-limit")?.message).toContain("5 members in running crews vs VesnALIA limit 4");
     const applied = await tight.service.apply(PROJECT, duoYaml());
     expect(applied.validation.problems.some((p) => p.code === "thread-limit")).toBe(true);
 
-    const roomy = setup({ bbLimit: 16 });
+    const roomy = setup({ aliaLimit: 16 });
     await running(roomy.service, roomy.port);
     const fine = await roomy.service.plan(PROJECT, duoYaml());
     expect(fine.validation.problems.some((p) => p.code === "thread-limit")).toBe(false);
-    expect(fine.limit).toContain("5 members in running crews vs BB limit 16");
+    expect(fine.limit).toContain("5 members in running crews vs VesnALIA limit 16");
     expect(limitLine(3, { limit: null, source: "unknown" }).text).toContain("not readable");
   });
 });
@@ -199,7 +199,7 @@ describe("activity: open work and context thresholds", () => {
     expect(unknown.diagnoses).toEqual([]);
   });
 
-  it("the tracker reads context usage from BB and work items from the queue", async () => {
+  it("the tracker reads context usage from VesnALIA and work items from the queue", async () => {
     const { service, port } = setup();
     const { crew, members, threads } = await running(service, port, trioYaml());
     port.usage.set(threads["orch-lead"]!, usage(0.85));

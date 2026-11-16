@@ -1,5 +1,5 @@
 // The texts agents read. Plain prose; every message the plugin sends starts with "[loom]".
-import type { NewThreadRequest } from "@get-bb/plugin-sdk";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk";
 import type { Skipped } from "./check-wait";
 import type { CheckRun } from "./checks";
 import type { PostRow, ProjectRow, ReviewRow, SpecReviewRow, TicketRow } from "./db/store";
@@ -87,7 +87,7 @@ export function planningTitle(input: NewThreadRequest["input"]): string {
 /** How many repos the human can pick for a new project, besides the composer's own. */
 export const MAX_PLANNING_REPOS = 10;
 
-/** A bb project the human picked in the New project composer. */
+/** A VesnALIA project the human picked in the New project composer. */
 export interface PickedRepo {
   id: string;
   name: string;
@@ -96,9 +96,9 @@ export interface PickedRepo {
 function pickedReposLines(repos: readonly PickedRepo[]): string[] {
   return [
     `The human picked ${repos.length === 1 ? "this repo" : "these repos"} for the work, besides this thread's own project: ${repos.map((repo) => `${repo.name} (${repo.id})`).join(", ")}.`,
-    "List each repo the work changes in its own [[repo]] table, with its bb project id as project, and include this thread's own project when the work changes it too.",
-    "Every repo needs a checkout on this machine, where the workers run: `bb project list --json` shows each project's checkouts by machine, and `bb status` names this machine. For a repo with no checkout here, offer to clone it with `bb project source add <id> --clone --machine <this machine>`, and run that once the human agrees.",
-    "The picked repos are a starting point, not a limit: you may find other repos with `bb project list` and `bb project discover`, and add any the work also changes.",
+    "List each repo the work changes in its own [[repo]] table, with its VesnALIA project id as project, and include this thread's own project when the work changes it too.",
+    "Every repo needs a checkout on this machine, where the workers run: `alia project list --json` shows each project's checkouts by machine, and `alia status` names this machine. For a repo with no checkout here, offer to clone it with `alia project source add <id> --clone --machine <this machine>`, and run that once the human agrees.",
+    "The picked repos are a starting point, not a limit: you may find other repos with `alia project list` and `alia project discover`, and add any the work also changes.",
   ];
 }
 
@@ -158,7 +158,7 @@ export function notesMessage(a: { slug: string; version: number; status: string;
 function repositorySection(project: ProjectRow, repo: RepoSettings): string[] {
   return [
     "## Repository",
-    `This ticket is in the repo ${JSON.stringify(repo.name)}, the bb project ${repo.bbProjectId ?? project.bb_project_id}, and this worktree is a checkout of it. The scope globs and protected paths below are relative to this repo's root.`,
+    `This ticket is in the repo ${JSON.stringify(repo.name)}, the VesnALIA project ${repo.aliaProjectId ?? project.alia_project_id}, and this worktree is a checkout of it. The scope globs and protected paths below are relative to this repo's root.`,
     "",
   ];
 }
@@ -172,7 +172,7 @@ function otherReposSection(spec: Spec, repo: RepoSettings, checkouts: ReadonlyMa
     "This project also works in these repos. You may read them for context, but never edit them: changes there belong to their own tickets.",
     ...others.map((entry) => {
       const path = remote ? undefined : checkouts.get(entry.name);
-      return `- ${JSON.stringify(entry.name)} (bb project ${entry.project}): ${remote ? "it is not on this machine" : path === undefined ? "no checkout was found on this machine" : path}`;
+      return `- ${JSON.stringify(entry.name)} (VesnALIA project ${entry.project}): ${remote ? "it is not on this machine" : path === undefined ? "no checkout was found on this machine" : path}`;
     }),
     ...(repo.branch === null ? [] : [`This project's merged work in them is on the branch ${JSON.stringify(repo.branch)}. Read a file from it with \`git -C <path> show ${repo.branch}:<file>\`.`]),
     "",
@@ -274,7 +274,7 @@ export function workerBrief(a: {
   checkouts?: ReadonlyMap<string, string>;
   tickets?: readonly TicketRow[];
   signature?: string;
-  /** The bb threads of the ticket's earlier workers, oldest first. */
+  /** The VesnALIA threads of the ticket's earlier workers, oldest first. */
   earlierThreads?: readonly string[];
   /** The worker runs on a machine of its own, away from the project's checkout. */
   remote?: boolean;
@@ -331,7 +331,7 @@ export function workerBrief(a: {
     "- Call loom_note({ text }) once for each milestone, so the human can follow along on the ticket.",
     "- Call loom_submit({ summary }) when every acceptance criterion holds, then end your turn. The plugin commits your work and runs the checks; you get the result as a message.",
     "- Call loom_block({ reason, needs }) when you cannot continue without something from the human or the planner: say what is wrong and exactly what you need. Then end your turn.",
-    "- Do not commit yourself; the plugin does it. Do not run bb loom commands.",
+    "- Do not commit yourself; the plugin does it. Do not run alia loom commands.",
   ];
   if (resume) {
     lines.push("", "## Earlier work");
@@ -354,7 +354,7 @@ export function workerBrief(a: {
     const earlier = a.earlierThreads ?? [];
     if (earlier.length > 0) {
       lines.push(
-        `The earlier ${earlier.length === 1 ? "worker's conversation is" : "workers' conversations are"} still in bb: ${andList(earlier.map((id) => `\`${id}\``))}. When you need ${earlier.length === 1 ? "its" : "their"} reasoning, read the newest with \`bb thread log ${earlier.at(-1)} --all\`; the ticket thread below has what ${earlier.length === 1 ? "it" : "they"} handed in.`,
+        `The earlier ${earlier.length === 1 ? "worker's conversation is" : "workers' conversations are"} still in VesnALIA: ${andList(earlier.map((id) => `\`${id}\``))}. When you need ${earlier.length === 1 ? "its" : "their"} reasoning, read the newest with \`alia thread log ${earlier.at(-1)} --all\`; the ticket thread below has what ${earlier.length === 1 ? "it" : "they"} handed in.`,
       );
     }
     lines.push("Read the ticket thread below first: the human's replies and the planner's answers are instructions, and the last block post says why work stopped.", "", renderThread(posts, THREAD_LIMIT));
@@ -499,9 +499,9 @@ export function approvedText(a: { slug: string; version: number; requeued: strin
   const moved: string[] = [];
   if (a.requeued.length > 0) {
     const after = a.requeued.length === 1 ? "Its failure count starts over, and a worker picks it up by itself." : "Their failure counts start over, and workers pick them up by themselves.";
-    moved.push(`Loom queued ${a.requeued.join(", ")} again, because bb never started ${its(a.requeued.length, "worker")}. ${after}`);
+    moved.push(`Loom queued ${a.requeued.join(", ")} again, because VesnALIA never started ${its(a.requeued.length, "worker")}. ${after}`);
   }
-  if (a.backToReview.length > 0) moved.push(`Loom sent ${a.backToReview.join(", ")} back to review, because bb refused to start ${its(a.backToReview.length, "reviewer")}; new reviewers start for the same commit.`);
+  if (a.backToReview.length > 0) moved.push(`Loom sent ${a.backToReview.join(", ")} back to review, because VesnALIA refused to start ${its(a.backToReview.length, "reviewer")}; new reviewers start for the same commit.`);
   const requeued = moved.length === 0 ? "No ticket needed to be queued again." : moved.join(" ");
   const blocked = a.stillBlocked.length === 0 ? "" : ` Still blocked: ${a.stillBlocked.join(", ")}. Requeue one with loom_requeue when v${a.version} fixes what blocked it.`;
   return { summary: `[loom] Spec v${a.version} of ${a.slug} is approved.`, detail: `${requeued}${blocked}` };
@@ -516,11 +516,11 @@ export function blockedReplyText(key: string, reply: string): { summary: string;
 }
 
 export function startRequeueNote(version: number): string {
-  return `Spec v${version} is approved, so Loom queued this ticket again: bb never started its worker.`;
+  return `Spec v${version} is approved, so Loom queued this ticket again: VesnALIA never started its worker.`;
 }
 
 export function reviewRequeueNote(version: number): string {
-  return `Spec v${version} is approved, so Loom sent this ticket back to review: bb refused to start its reviewer, and its work had already passed the checks.`;
+  return `Spec v${version} is approved, so Loom sent this ticket back to review: VesnALIA refused to start its reviewer, and its work had already passed the checks.`;
 }
 
 // ---------------------------------------------------------------- review and merge
@@ -537,7 +537,7 @@ export function findingsList(findings: readonly Finding[]): string {
 function reviewerRepositorySection(project: ProjectRow, repo: RepoSettings): string[] {
   return [
     "## Repository",
-    `This ticket is in the repo ${JSON.stringify(repo.name)}, the bb project ${repo.bbProjectId ?? project.bb_project_id}, and this worktree is a checkout of it. The changes, the scope report and the check results below are about this repo only.`,
+    `This ticket is in the repo ${JSON.stringify(repo.name)}, the VesnALIA project ${repo.aliaProjectId ?? project.alia_project_id}, and this worktree is a checkout of it. The changes, the scope report and the check results below are about this repo only.`,
     "The checks of this repo, which ran after the ticket's verify commands:",
     repo.checks.length > 0 ? bullets(repo.checks) : "- none",
     "",
@@ -901,9 +901,9 @@ export function prNudgeText(key: string, commitOnly: boolean): string {
 }
 
 /** A fix round: what the pull request's checks and reviews, or the human on the ticket, asked for. */
-/** What a worker whose environment Loom released, and bb restored, must know before it runs anything. */
+/** What a worker whose environment Loom released, and VesnALIA restored, must know before it runs anything. */
 export const RESTORED_NOTE =
-  "While the pull request waited, Loom released your worktree to free its environment, and bb has now built a new one on your branch: every commit is there, but files git ignores, such as installed dependencies and build output, are gone, and paths from earlier in this conversation may have moved. Set up what the checks need before you run them.";
+  "While the pull request waited, Loom released your worktree to free its environment, and VesnALIA has now built a new one on your branch: every commit is there, but files git ignores, such as installed dependencies and build output, are gone, and paths from earlier in this conversation may have moved. Set up what the checks need before you run them.";
 
 const CI_FIX = "These checks ran in the pull request's CI, which may run tests you cannot run here: read each one's log at its link, fix the cause, and say in your loom_submit summary which of those tests you could not run here.";
 
@@ -930,7 +930,7 @@ export function prFeedbackText(a: { key: string; url: string | null; round: numb
   };
 }
 
-/** A message to a worker whose worktree bb restored since its last submit, with the note on what that means first. */
+/** A message to a worker whose worktree VesnALIA restored since its last submit, with the note on what that means first. */
 export function withRestoredNote(text: { summary: string; detail: string }, restored: boolean): { summary: string; detail: string } {
   return restored ? { ...text, detail: `${RESTORED_NOTE}\n\n${text.detail}` } : text;
 }
@@ -1109,7 +1109,7 @@ export function specReviewerBrief(a: { project: ProjectRow; spec: Spec; toml: st
     `You are Loom's spec reviewer for version ${version} of the project ${JSON.stringify(project.name)} (${project.slug}), round ${round} of ${SPEC_REVIEW_ROUNDS}. A planner agent wrote this spec from a conversation with the human. Before the human is asked to approve it, you check that it builds what the human asked for, and no more. You judge the spec; you change nothing.`,
     "",
     "## What the human asked for",
-    `Read the planning conversation first: \`bb thread log ${project.planner_thread_id} --format minimal --all\`. The User messages are the human's request and answers; messages that start with [loom] come from Loom, not the human. The human's words outrank the spec's goal, which is the planner's summary of them.`,
+    `Read the planning conversation first: \`alia thread log ${project.planner_thread_id} --format minimal --all\`. The User messages are the human's request and answers; messages that start with [loom] come from Loom, not the human. The human's words outrank the spec's goal, which is the planner's summary of them.`,
     "The human's answers to the planner's Ask User Question rounds may be missing from that log. The goal and non-goals below record them, so treat those as the human's words unless the log contradicts them.",
     "",
     `Goal: ${spec.project.goal}`,
@@ -1141,7 +1141,7 @@ export function specReviewerBrief(a: { project: ProjectRow; spec: Spec; toml: st
     "",
     "## The spec",
     clip(toml, SPEC_LIMIT),
-    ...(toml.length > SPEC_LIMIT ? ["", `[The spec was clipped at ${SPEC_LIMIT} characters. Read the rest with \`bb loom spec ${project.slug} --version ${version}\`.]`] : []),
+    ...(toml.length > SPEC_LIMIT ? ["", `[The spec was clipped at ${SPEC_LIMIT} characters. Read the rest with \`alia loom spec ${project.slug} --version ${version}\`.]`] : []),
   ];
   if (earlier.length > 0) {
     lines.push("", "## Earlier rounds", "Do not raise again what the planner fixed, or answered in the conversation with a reason you accept.");
@@ -1154,7 +1154,7 @@ export function specReviewerBrief(a: { project: ProjectRow; spec: Spec; toml: st
   lines.push(
     "",
     "## Rules",
-    "- This worktree is a checkout of the base branch. Read the code the tickets touch; `bb project list --json` gives the checkouts of the project's other repos. Run anything that writes nothing; change nothing and commit nothing.",
+    "- This worktree is a checkout of the base branch. Read the code the tickets touch; `alia project list --json` gives the checkouts of the project's other repos. Run anything that writes nothing; change nothing and commit nothing.",
     "- Every finding stops the planner from handing the spec over, so raise only what would make the project build the wrong thing, more than the goal needs, or less. Never raise wording, style or taste. What the human explicitly asked for is in scope, even when it looks like more than the goal needs.",
     "- Call exactly one verdict tool, then end your turn: loom_spec_approve({ summary }) when the spec holds, or loom_spec_request_changes({ summary, findings }). Each finding is { path?, title, detail }: path names the part of the spec, such as ticket[csv-export] or ticket[csv-export].acceptance[1] (tickets by ref, list items counted from 0); detail says what is wrong and the smaller or right alternative.",
   );

@@ -1,6 +1,6 @@
-// Shapes each BB event into what a hook receives: the JSON payload (stdin or
-// POST body), BB_* environment variables, and the subject matchers test.
-import type { MessageDispatchHookContext, PluginThreadEventPayloads } from "@get-bb/plugin-sdk";
+// Shapes each VesnALIA event into what a hook receives: the JSON payload (stdin or
+// POST body), ALIA_* environment variables, and the subject matchers test.
+import type { MessageDispatchHookContext, PluginThreadEventPayloads } from "@vesnalia/plugin-sdk";
 import type { HookEvent, MatchSubject, ObserveEvent } from "./definitions.js";
 
 /** The thread fields every payload and matcher relies on. */
@@ -47,16 +47,16 @@ function displayTitle(thread: ThreadFacts | null): string | null {
 }
 
 function baseEnv(event: HookEvent, thread: ThreadFacts | null, threadId: string | null): Record<string, string> {
-  const env: Record<string, string> = { BB_HOOK_EVENT: event };
+  const env: Record<string, string> = { ALIA_HOOK_EVENT: event };
   const id = thread?.id ?? threadId;
-  if (id !== null) env.BB_THREAD_ID = id;
+  if (id !== null) env.ALIA_THREAD_ID = id;
   if (thread !== null) {
-    env.BB_PROJECT_ID = thread.projectId;
-    env.BB_PROVIDER_ID = thread.providerId;
-    env.BB_THREAD_STATUS = thread.status;
-    env.BB_THREAD_TITLE = (displayTitle(thread) ?? "").slice(0, MAX_ENV_TEXT);
-    if (typeof thread.parentThreadId === "string") env.BB_PARENT_THREAD_ID = thread.parentThreadId;
-    if (typeof thread.environmentId === "string") env.BB_ENVIRONMENT_ID = thread.environmentId;
+    env.ALIA_PROJECT_ID = thread.projectId;
+    env.ALIA_PROVIDER_ID = thread.providerId;
+    env.ALIA_THREAD_STATUS = thread.status;
+    env.ALIA_THREAD_TITLE = (displayTitle(thread) ?? "").slice(0, MAX_ENV_TEXT);
+    if (typeof thread.parentThreadId === "string") env.ALIA_PARENT_THREAD_ID = thread.parentThreadId;
+    if (typeof thread.environmentId === "string") env.ALIA_ENVIRONMENT_ID = thread.environmentId;
   }
   return env;
 }
@@ -185,13 +185,13 @@ export function prepareDispatch(ctx: MessageDispatchHookContext): PreparedEvent 
     parentThreadId: ctx.parentThreadId,
   };
   const env = baseEnv("message.dispatch", thread, ctx.thread.id);
-  env.BB_DISPATCH_ATTEMPT = ctx.attempt;
-  env.BB_PROVIDER_ID = ctx.requestedExecution.providerId;
-  if (ctx.requestedExecution.model !== null) env.BB_MODEL = ctx.requestedExecution.model;
-  if (ctx.requestedExecution.reasoningLevel !== null) env.BB_REASONING_LEVEL = ctx.requestedExecution.reasoningLevel;
-  if (ctx.requestedExecution.serviceTier !== null) env.BB_SERVICE_TIER = ctx.requestedExecution.serviceTier;
-  if (ctx.requestedExecution.permissionMode !== null) env.BB_PERMISSION_MODE = ctx.requestedExecution.permissionMode;
-  env.BB_MESSAGE_TEXT = ctx.input.text.slice(0, MAX_ENV_TEXT);
+  env.ALIA_DISPATCH_ATTEMPT = ctx.attempt;
+  env.ALIA_PROVIDER_ID = ctx.requestedExecution.providerId;
+  if (ctx.requestedExecution.model !== null) env.ALIA_MODEL = ctx.requestedExecution.model;
+  if (ctx.requestedExecution.reasoningLevel !== null) env.ALIA_REASONING_LEVEL = ctx.requestedExecution.reasoningLevel;
+  if (ctx.requestedExecution.serviceTier !== null) env.ALIA_SERVICE_TIER = ctx.requestedExecution.serviceTier;
+  if (ctx.requestedExecution.permissionMode !== null) env.ALIA_PERMISSION_MODE = ctx.requestedExecution.permissionMode;
+  env.ALIA_MESSAGE_TEXT = ctx.input.text.slice(0, MAX_ENV_TEXT);
   return {
     event: "message.dispatch",
     threadId: ctx.thread.id,
@@ -201,7 +201,7 @@ export function prepareDispatch(ctx: MessageDispatchHookContext): PreparedEvent 
   };
 }
 
-/** A representative payload for `bb hooks test`, built around a real or sample thread. */
+/** A representative payload for `alia hooks test`, built around a real or sample thread. */
 export function prepareSample(event: HookEvent, thread: ThreadFacts | null): PreparedEvent {
   const now = Date.now();
   const sampleThread: ThreadFacts & Record<string, unknown> = thread
@@ -269,7 +269,7 @@ export function prepareSample(event: HookEvent, thread: ThreadFacts | null): Pre
           parentThreadId: null,
           sample: true,
         },
-        env: { ...baseEnv(event, sampleThread, sampleThread.id), BB_DISPATCH_ATTEMPT: "start-turn", BB_MESSAGE_TEXT: "Sample message." },
+        env: { ...baseEnv(event, sampleThread, sampleThread.id), ALIA_DISPATCH_ATTEMPT: "start-turn", ALIA_MESSAGE_TEXT: "Sample message." },
       };
       return prepared;
     }

@@ -1,18 +1,18 @@
-// bb-plugin-github-app-auth — settings page.
+// alia-plugin-github-app-auth — settings page.
 //
 // Rendered below the host's own settings form on the plugin's settings page.
 // The form above edits the default app (all projects). This section has one
 // project dropdown: "All projects (defaults)" shows the default app read-only,
-// and a specific project stores its own GitHub App, the way bb's own
+// and a specific project stores its own GitHub App, the way VesnALIA's own
 // Environment variables page scopes values.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import {
   definePluginApp,
-  useBbContext,
+  useAliaContext,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { OverviewResult, ProjectSummary, rpcContract } from "./server";
 import { Button } from "@/components/ui/button";
@@ -228,7 +228,7 @@ function ProjectEditor({
 
 function SettingsPage() {
   const rpc = useRpc<typeof rpcContract>();
-  const context = useBbContext();
+  const context = useAliaContext();
   const [overview, setOverview] = useState<OverviewResult | null>(null);
   const [projects, setProjects] = useState<ProjectSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);

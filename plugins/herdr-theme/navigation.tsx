@@ -6,7 +6,7 @@ import {
   type ExperimentalSidebarNavigationProps,
   type ExperimentalSidebarNavigationItem,
   type ExperimentalSidebarNavigationState,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 export function Navigation(props: ExperimentalSidebarNavigationProps) {
   const enabled = useHerdrTheme();

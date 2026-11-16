@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { decodeLaunchArtifact, decodeOutcomeArtifact } from "./artifacts.js";
 import { JobStore, type Job } from "./store.js";
 
@@ -120,7 +120,7 @@ function displayedPath(path: string, max = 1_000): string {
 
 export function formatCompletion(job: Job): string {
   const terminal = job.terminalId ?? "unknown";
-  const status = bounded(job.lastBbStatus ?? "unknown", 256);
+  const status = bounded(job.lastAliaStatus ?? "unknown", 256);
   const exitCode = job.exitCode === null ? "unknown" : String(job.exitCode);
   const closeReason = bounded(job.closeReason ?? "unknown", 256);
   let outcome: string;
@@ -143,9 +143,9 @@ export function formatCompletion(job: Job): string {
   const mandatory = [
     job.marker,
     `Terminal: ${terminal}`,
-    `BB status: ${status}; exit: ${exitCode}; close reason: ${closeReason}`,
+    `VesnALIA status: ${status}; exit: ${exitCode}; close reason: ${closeReason}`,
     `Runner outcome: ${outcome}`,
-    `Status: bb terminal-job show ${job.jobId} --json`,
+    `Status: VesnALIA terminal-job show ${job.jobId} --json`,
   ];
   const optional = [
     `Terminal job completed: ${bounded(job.title, 1_000)}`,
@@ -171,7 +171,7 @@ export function formatCompletion(job: Job): string {
 
 export class TerminalJobService {
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly store: JobStore,
   ) {}
 
@@ -220,7 +220,7 @@ export class TerminalJobService {
     if (!job.launchPath) throw new Error(`preparing job ${job.jobId} has no launch path`);
     let content: string;
     try {
-      const file = await this.bb.sdk.files.read({
+      const file = await this.alia.sdk.files.read({
         hostId: job.hostId,
         rootPath: job.artifactRoot,
         path: job.launchPath,
@@ -285,13 +285,13 @@ export class TerminalJobService {
 
   private async pollTerminal(job: Job, now: number): Promise<Job> {
     try {
-      const terminal = await this.bb.sdk.terminals.get({ terminalId: job.terminalId! });
+      const terminal = await this.alia.sdk.terminals.get({ terminalId: job.terminalId! });
       if (terminal.status === "exited") {
         return this.store.update(
           job.jobId,
           {
             terminalState: "exited",
-            lastBbStatus: terminal.status,
+            lastAliaStatus: terminal.status,
             exitCode: terminal.exitCode,
             closeReason: terminal.closeReason,
             lastObservationError: null,
@@ -304,7 +304,7 @@ export class TerminalJobService {
       return this.store.update(
         job.jobId,
         {
-          lastBbStatus: terminal.status,
+          lastAliaStatus: terminal.status,
           lastObservationError: null,
           observedAt: now,
         },
@@ -343,7 +343,7 @@ export class TerminalJobService {
     }
     if (!job.outcomePath) throw new Error(`run job ${job.jobId} has no outcome path`);
     try {
-      const file = await this.bb.sdk.files.read({
+      const file = await this.alia.sdk.files.read({
         hostId: job.hostId,
         rootPath: job.artifactRoot,
         path: job.outcomePath,
@@ -411,14 +411,14 @@ export class TerminalJobService {
     const reserved = this.store.reserveDelivery(job.jobId, serviceToken, now);
     if (!reserved) return;
     try {
-      const response = await this.bb.sdk.threads.send({
+      const response = await this.alia.sdk.threads.send({
         threadId: reserved.ownerThreadId,
         mode: reserved.deliveryMode === "steer" ? "steer-if-active" : "queue-if-active",
         input: [{ type: "text", text: formatCompletion(reserved), mentions: [] }],
       });
       const delivery = (response as unknown as { delivery?: unknown }).delivery;
       if (!["sent", "queued", "deferred"].includes(String(delivery))) {
-        throw new Error("BB accepted a thread send without a recognized delivery result");
+        throw new Error("VesnALIA accepted a thread send without a recognized delivery result");
       }
       this.store.completeDelivery(
         reserved.jobId,

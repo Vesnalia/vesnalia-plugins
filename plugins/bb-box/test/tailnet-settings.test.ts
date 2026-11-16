@@ -15,14 +15,14 @@ function draft(tailnet: unknown) {
   return readDraft({ schema: 1, revision: 0, backends: [], kinds: {}, general: { tailnet } }, DRIVERS);
 }
 
-test("the tailnet's OAuth client is two general secrets, kept only while BB Box uses it, shown only as set, and stored apart", () => {
-  const read = draft({ mode: "oauth", tags: ["tag:bb-box", "tag:bb-box-mac"], clientId: "kCLIENT", clientSecret: SECRET });
+test("the tailnet's OAuth client is two general secrets, kept only while VesnALIA Box uses it, shown only as set, and stored apart", () => {
+  const read = draft({ mode: "oauth", tags: ["tag:alia-box", "tag:alia-box-mac"], clientId: "kCLIENT", clientSecret: SECRET });
   assert.deepEqual(read.problems, []);
-  assert.deepEqual(read.document.general.tailnet, { mode: "oauth", tags: ["tag:bb-box", "tag:bb-box-mac"] });
+  assert.deepEqual(read.document.general.tailnet, { mode: "oauth", tags: ["tag:alia-box", "tag:alia-box-mac"] });
   assert.deepEqual(read.secrets[GENERAL_SECRETS], { [TAILNET_CLIENT_ID]: "kCLIENT", [TAILNET_CLIENT_SECRET]: SECRET });
   const stored = withSecretChanges({}, read.secrets, read.document);
   assert.deepEqual(stored[GENERAL_SECRETS], { [TAILNET_CLIENT_ID]: "kCLIENT", [TAILNET_CLIENT_SECRET]: SECRET });
-  assert.deepEqual(exported(read.document, stored, DRIVERS).general.tailnet, { mode: "oauth", tags: ["tag:bb-box", "tag:bb-box-mac"], clientId: { set: true }, clientSecret: { set: true } });
+  assert.deepEqual(exported(read.document, stored, DRIVERS).general.tailnet, { mode: "oauth", tags: ["tag:alia-box", "tag:alia-box-mac"], clientId: { set: true }, clientSecret: { set: true } });
   assert.doesNotMatch(JSON.stringify(exported(read.document, stored, DRIVERS)), /SECRET|kCLIENT/);
   assert.doesNotMatch(JSON.stringify(withoutSecrets(read.document, DRIVERS)), /SECRET|kCLIENT/);
   assert.deepEqual(checkDocument(read.document, stored, DRIVERS), []);
@@ -38,7 +38,7 @@ test("the tailnet's OAuth client is two general secrets, kept only while BB Box 
 
 test("a tailnet setting that is not one is refused at its field, and never quotes a secret", () => {
   assert.deepEqual(draft({ mode: "vpn" }).problems.map((problem) => problem.path), ["general.tailnet.mode"]);
-  assert.deepEqual(draft({ mode: "oauth", tags: ["bb-box"] }).problems.map((problem) => problem.path), ["general.tailnet.tags"]);
+  assert.deepEqual(draft({ mode: "oauth", tags: ["alia-box"] }).problems.map((problem) => problem.path), ["general.tailnet.tags"]);
   const wrong = draft({ mode: "oauth", clientSecret: 42, port: 1 });
   assert.deepEqual(wrong.problems.map((problem) => problem.path), ["general.tailnet.port", "general.tailnet.clientSecret"]);
   assert.deepEqual(draft("oauth").problems.map((problem) => problem.path), ["general.tailnet"]);
@@ -49,12 +49,12 @@ function fakeTailscale(options: { devicesStatus?: number } = {}): TailnetFetch {
     const path = new URL(url).pathname;
     const reply = (status: number, body: unknown) => ({ ok: status === 200, status, text: async () => JSON.stringify(body) });
     if (path === "/api/v2/oauth/token") return new URLSearchParams(init.body).get("client_secret") === SECRET ? reply(200, { access_token: "tok", expires_in: 3600 }) : reply(401, { error: "invalid_client" });
-    if (path === "/api/v2/tailnet/-/devices") return options.devicesStatus ? reply(options.devicesStatus, { message: "forbidden" }) : reply(200, { devices: [{ nodeId: "n1", hostname: "bb-box-ns-i1-mac-one", tags: ["tag:bb-box"] }, { nodeId: "n2", hostname: "owners-laptop", tags: ["tag:bb-box"] }, { nodeId: "n3", hostname: "bb-box-ns-other-mac", tags: ["tag:bb-box"] }] });
+    if (path === "/api/v2/tailnet/-/devices") return options.devicesStatus ? reply(options.devicesStatus, { message: "forbidden" }) : reply(200, { devices: [{ nodeId: "n1", hostname: "alia-box-ns-i1-mac-one", tags: ["tag:alia-box"] }, { nodeId: "n2", hostname: "owners-laptop", tags: ["tag:alia-box"] }, { nodeId: "n3", hostname: "alia-box-ns-other-mac", tags: ["tag:alia-box"] }] });
     return reply(404, {});
   };
 }
 
-test("backends get the tailnet as the settings have it now, and the doctor checks the client and lists only this install's BB Box devices, counting the others with the tag", async () => {
+test("backends get the tailnet as the settings have it now, and the doctor checks the client and lists only this install's VesnALIA Box devices, counting the others with the tag", async () => {
   const backends = new Backends({ storage: new MemoryStorage(), installId: "i1", logError: () => {}, tailnetFetch: fakeTailscale() });
   const on = draft({ mode: "oauth", clientId: "kCLIENT", clientSecret: SECRET });
   await backends.configure(on.document, withSecretChanges({}, on.secrets, on.document));
@@ -64,7 +64,7 @@ test("backends get the tailnet as the settings have it now, and the doctor check
   const report = await tailnetDoctor(tailnet, "i1");
   assert.equal(report.ok, true);
   assert.deepEqual(report.checks.map((check) => `${check.id} ${check.status}`), ["tailnet.client ok", "tailnet.devices ok"]);
-  assert.equal(report.checks[1]!.detail, "1 of BB Box's on the tailnet: bb-box-ns-i1-mac-one. 2 other devices have the tags tag:bb-box; BB Box leaves them alone.");
+  assert.equal(report.checks[1]!.detail, "1 of VesnALIA Box's on the tailnet: alia-box-ns-i1-mac-one. 2 other devices have the tags tag:alia-box; VesnALIA Box leaves them alone.");
 
   const off = draft({ mode: "off" });
   await backends.configure(off.document, {});

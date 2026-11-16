@@ -1,32 +1,32 @@
-# 032: Spare boxes are enrolled ahead, and BB shows them until claimed
+# 032: Spare boxes are enrolled ahead, and VesnALIA shows them until claimed
 
 Status: accepted, 1 October 2026. Partly supersedes
 [014](014-enrol-through-machine-providers.md): warm boxes are not enrolled
 ahead. Extended by [036](036-your-machines-are-boxes-you-own.md): a spare
-that a thread starts on through BB's picker becomes yours. Extended by
+that a thread starts on through VesnALIA's picker becomes yours. Extended by
 [049](049-a-project-image-is-a-script-on-the-standard-image-and-images-are-rebuilt-when-stale.md):
 spares can be of an image.
 
 ## Context
 
-A box that enrols takes about 5 s after it is ready to become a BB machine
+A box that enrols takes about 5 s after it is ready to become a VesnALIA machine
 on Linux, and 8 to 11 s on a Mac
-([BB request 5](../bb-requests.md#5-enrol-quickly-when-bb-app-is-installed)).
+([VesnALIA request 5](../alia-requests.md#5-enrol-quickly-when-alia-app-is-installed)).
 Until then it has none of the thread's GitHub access or variables. 014
 named enrolling ahead as the next step if enrolment took more than 3 s.
 
-014 enrolled no warm box, because BB cannot hide a machine. In BB's source
+014 enrolled no warm box, because VesnALIA cannot hide a machine. In VesnALIA's source
 of 30 September 2026, it still cannot:
 
 - a machine has no hidden flag, and `hosts.update` changes only its name;
-- BB hides only ephemeral machines. It makes one when it places a thread
+- VesnALIA hides only ephemeral machines. It makes one when it places a thread
   on an ephemeral provider, and removes it once no thread uses it. A
   plugin cannot make one.
 
-But every box is already an ordinary machine in BB's machine list and
-picker, so a few more, named as spares, cost little. BB gives a machine's
+But every box is already an ordinary machine in VesnALIA's machine list and
+picker, so a few more, named as spares, cost little. VesnALIA gives a machine's
 daemon the same variables whichever thread uses it, so a machine enrolled
-ahead has all a new one would. BB's installer still starts two daemons and
+ahead has all a new one would. VesnALIA's installer still starts two daemons and
 polls every 1 s, so request 5 is not close.
 
 ## Decision
@@ -49,16 +49,16 @@ polls every 1 s, so request 5 is not close.
 - At claim, a spare whose machine is not connected reconnects, as after
   `box_start`. A claim skips a spare that has a thread on its machine
   (`threads.list` with its host ID).
-- A claim changes bb-box's record, not the guest's owner label
+- A claim changes alia-box's record, not the guest's owner label
   ([018](018-guests-name-their-install-and-box.md)).
 
 ## Consequences
 
 - An acquire that claims a spare should return in under 1 s, with the
   thread's GitHub access ready. This is to be measured.
-- Spares show in BB's machine list and picker. If someone starts a thread
-  on one, claims skip it. A hidden flag from BB would end this
-  ([BB requests, "Possible later"](../bb-requests.md#possible-later)).
+- Spares show in VesnALIA's machine list and picker. If someone starts a thread
+  on one, claims skip it. A hidden flag from VesnALIA would end this
+  ([VesnALIA requests, "Possible later"](../alia-requests.md#possible-later)).
 - A spare is a running box. It holds memory, and on Tart one of the Mac's
   two VM slots, while a warm VM there is suspended and holds none. So the
   default is 0, and the operator turns spares on for the kinds they use.

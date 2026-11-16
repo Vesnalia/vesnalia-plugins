@@ -9,9 +9,9 @@ import { shippedSkills } from "./test-workspace";
 const kinds = ["feature", "bug-fix", "refactor", "perf"] as const;
 const task = (kind?: unknown) => ({ outcome: "Change it.", scope: ["a.ts"], decisions: [], requiredChecks: ["npm test"],
   allowedActions: ["Edit a.ts."], ...(kind === undefined ? {} : { kind }) });
-// The catalog ID bb gives a skill in this plugin's skills/ folder.
+// The catalog ID VesnALIA gives a skill in this plugin's skills/ folder.
 const catalogId = (name: string) =>
-  `skill_${createHash("sha256").update(`bb-plugin:treelanes\0${name}/SKILL.md`).digest("hex")}`;
+  `skill_${createHash("sha256").update(`alia-plugin:treelanes\0${name}/SKILL.md`).digest("hex")}`;
 
 describe("task kinds", () => {
   it("accepts the four kinds and a task without a kind", () => {
@@ -38,7 +38,7 @@ describe("task kinds", () => {
         for (const skill of step.skills) expect(shipped).toContain(skill);
     for (const kind of kinds) expect(kindTemplate({ kind, deliveryTarget: "pr" }).at(-1)!.skills).toContain(catalogId("pr-proof"));
     expect(kindTemplate({ kind: "bug-fix" })[0]!.skills).toEqual([catalogId("diagnosing-bugs"), catalogId("principle-fix-root-causes")]);
-    // The ID a live bb catalog gave the shipped tdd skill of plugin treelanes.
+    // The ID a live VesnALIA catalog gave the shipped tdd skill of plugin treelanes.
     expect(kindTemplate({ kind: "feature" })[0]!.skills[0]).toBe("skill_be770585e3c00bb7048489911a88678935ab2249dae66ef8e36ce3243591a92c");
   });
 

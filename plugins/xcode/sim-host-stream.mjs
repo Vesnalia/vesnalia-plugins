@@ -3,7 +3,7 @@
  * bundled plugin.
  *
  * SHIPS RAW AND UNBUNDLED. The child will use this module to translate the
- * installed dependency's undocumented v1 byte stream into bb's versioned v2
+ * installed dependency's undocumented v1 byte stream into VesnALIA's versioned v2
  * envelope. Keeping the translation pure means Linux CI can prove the wire
  * contract without loading serve-sim's macOS native addon, while keeping any
  * future server-side import from acquiring a path to that addon.
@@ -227,7 +227,7 @@ export function createMediaEnvelopeEncoder(options = {}) {
   };
 }
 
-export const MEDIA_ENVELOPE_V2_CONTENT_TYPE = "application/vnd.bb.sim-avcc;version=2";
+export const MEDIA_ENVELOPE_V2_CONTENT_TYPE = "application/vnd.alia.sim-avcc;version=2";
 const MAX_AVCC_NAL_UNITS = 256;
 
 function avccNalLengthSize(description) {

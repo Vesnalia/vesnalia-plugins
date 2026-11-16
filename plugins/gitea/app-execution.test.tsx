@@ -2,7 +2,7 @@
 
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 afterEach(() => cleanup());
 const app = await loadPluginApp(() => import("./app"));

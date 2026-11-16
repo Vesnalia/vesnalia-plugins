@@ -2,7 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../../lib/recent/server.js";
 
 const cleanups: (() => void | Promise<void>)[] = [];
@@ -15,7 +15,7 @@ async function host(slow = false) {
     mkdirSync(join(dir, "lib/recent"), { recursive: true });
     writeFileSync(join(dir, "lib/recent/query-worker.mjs"), `import{writeFileSync,appendFileSync}from'node:fs';writeFileSync(${JSON.stringify(pidFile)},'started');setInterval(()=>appendFileSync(${JSON.stringify(pidFile)},'.'),10);`);
   } else {
-    const db = new DatabaseSync(join(dir, "bb.db"));
+    const db = new DatabaseSync(join(dir, "alia.db"));
     db.exec(`CREATE TABLE threads(id TEXT PRIMARY KEY,visibility TEXT,archived_at INTEGER,deleted_at INTEGER,project_id TEXT DEFAULT 'proj_test',title TEXT DEFAULT 'Synthetic chat',title_fallback TEXT);
       CREATE TABLE projects(id TEXT PRIMARY KEY,name TEXT,deleted_at INTEGER);
       INSERT INTO projects VALUES('proj_test','Synthetic project',NULL);
@@ -32,7 +32,7 @@ async function host(slow = false) {
   const h = createFakePluginHost({ pluginId: "multi-repo-git", dataDir: dir,
     sdk: { subscribe, plugins: { list: async () => ({ plugins: [{ id: "multi-repo-git", rootDir: slow ? dir : process.cwd() }] } as any) } },
   });
-  await plugin(h.bb); cleanups.push(() => h.harness.dispose());
+  await plugin(h.alia); cleanups.push(() => h.harness.dispose());
   return { ...h, pidFile, dir, subscribe };
 }
 
@@ -45,7 +45,7 @@ describe("Server RPC boundary and real worker lifecycle", () => {
     expect(metrics).toMatchObject({ reason: "success", activeAtStart: 1, maxWorkersSinceReload: 1,
       workerPid: expect.any(Number), workerSpawnedMs: expect.any(Number), workerStartedMs: expect.any(Number), telemetry: { phase: "finished", queryMs: expect.any(Number), cpuMs: expect.any(Number) } });
     expect(metrics.workerPid).not.toBe(process.pid);
-    expect(line).not.toMatch(/thr_synthetic|synthetic|bb\.db|rows|text/);
+    expect(line).not.toMatch(/thr_synthetic|synthetic|alia\.db|rows|text/);
     await expect(harness.callRpc("recent_latest", { sql: "SELECT anything", path: "outside" })).rejects.toThrow();
   });
   it("accepts a bounded Unicode query even when lowercasing expands its length", async () => {

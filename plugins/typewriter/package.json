@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-typewriter",
+  "name": "alia-plugin-typewriter",
   "version": "0.1.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.48",
-    "bbPluginSdk": ">=0.6.104"
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.104"
   },
-  "bb": {
+  "alia": {
     "name": "Typewriter",
-    "description": "Mechanical typing sounds in BB, with volume controls and local WAV sound packs.",
+    "description": "Mechanical typing sounds in VesnALIA, with volume controls and local WAV sound packs.",
     "branding": {
       "icon": "Keyboard"
     },
@@ -20,7 +20,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -56,7 +55,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "files": [
     "server.ts",
@@ -76,5 +75,22 @@
     "resources",
     "LICENSES",
     "ATTRIBUTION.md"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/typewriter#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/typewriter"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

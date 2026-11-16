@@ -1,9 +1,9 @@
 # Roadmap
 
-Public plan for **bb-plugin-sql**. Day-to-day AJTBD notes and checklists live
+Public plan for **alia-plugin-sql**. Day-to-day AJTBD notes and checklists live
 locally (not in this repo). This file is the durable, shareable outlook.
 
-**Product promise (0.5+):** Postgres from bb — human panel + agent tools.
+**Product promise (0.5+):** Postgres from VesnALIA — human panel + agent tools.
 **UI connections default to read/write**; DDL and agent write stay opt-in
 (per-connection flags, default off). **Shipped through `v0.5.4`** on
 marketplace. Next: deepen Postgres UX (completion → editable results), then
@@ -22,7 +22,7 @@ hosted presets / SQLite — not a warehouse zoo.
 
 ## 0.2 — Classic SQL query workflow
 
-Match the day-to-day SQLTools-style flow without leaving bb.
+Match the day-to-day SQLTools-style flow without leaving VesnALIA.
 
 - [x] **Layout split:** left **nav panel** = connections + schema tree;
   right **Actions panel** / fixed **Query** tab = editor + result tabs
@@ -33,7 +33,7 @@ Match the day-to-day SQLTools-style flow without leaving bb.
   optional `-- @conn Name` header
 - [x] Free-form read-only SQL in the editor (from 0.1) kept through the split
 - [x] Public release tags `v0.2.0`–`v0.2.3`
-- [x] bb-community marketplace listing (merged)
+- [x] alia-community marketplace listing (merged)
 
 ## 0.3 — Editor UX, marketplace harden, credential trust
 
@@ -138,7 +138,7 @@ Stay on the lightweight editor (no Monaco/LSP yet).
 
 ### 0.6.1 — Query session persistence
 
-- [x] Keep editor SQL + result tabs across bb tab switches (panel remount);
+- [x] Keep editor SQL + result tabs across VesnALIA tab switches (panel remount);
   server-side query session + `editorSql` pref; draft handoff still works
 
 ### 0.6.2 — All databases + safer new-connection defaults
@@ -222,5 +222,5 @@ Candidate themes (pick by feedback, not a commitment):
 ## Feedback
 
 Issues and PRs on the GitHub repo are welcome. The plugin is listed in
-bb-community. Ship tag **`v0.6.3`** (completion aliases, query session,
+alia-community. Ship tag **`v0.6.3`** (completion aliases, query session,
 show-all-databases, duplicate connection); marketplace range **`^0.6.3`**.

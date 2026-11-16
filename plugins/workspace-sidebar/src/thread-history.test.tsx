@@ -6,12 +6,12 @@ import {
   loadPluginApp,
   mountPluginContentScripts,
   renderSlot,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import type {
   PluginAppBuilder,
   PluginCommandContext,
   PluginCommandRegistration,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 beforeEach(() => {
   window.sessionStorage.clear();
@@ -79,7 +79,7 @@ it("moves back and forward through opened threads with Mod+[ and Mod+]", async (
 it("does nothing before the overlay has mounted", async () => {
   const app = await loadPluginApp(() => import("./app"));
   window.sessionStorage.setItem(
-    "bb-workspace-sidebar:thread-history:v1",
+    "alia-workspace-sidebar:thread-history:v1",
     JSON.stringify({ entries: ["thr_a", "thr_b"], index: 1 }),
   );
   const scripts = await mountPluginContentScripts(app, {
@@ -88,7 +88,7 @@ it("does nothing before the overlay has mounted", async () => {
 
   expect(pressMod("[").defaultPrevented).toBe(false);
   expect(
-    JSON.parse(window.sessionStorage.getItem("bb-workspace-sidebar:thread-history:v1")!),
+    JSON.parse(window.sessionStorage.getItem("alia-workspace-sidebar:thread-history:v1")!),
   ).toEqual({ entries: ["thr_a", "thr_b"], index: 1 });
 
   await scripts.lifecycle.dispose();

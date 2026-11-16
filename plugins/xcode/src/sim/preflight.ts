@@ -1,7 +1,7 @@
 /**
  * Prerequisites, probed once and cached.
  *
- * `bb xcode sim doctor`, the panel's Doctor section and the empty state render **the
+ * `alia xcode sim doctor`, the panel's Doctor section and the empty state render **the
  * same sentences** — there is no second vocabulary of status tokens. Every
  * check returns a `Probe` whose `detail` is the sentence a person reads, so a
  * new surface cannot invent its own wording for a state that already has one.
@@ -69,14 +69,14 @@ export function defaultDeps(pluginDir: string): PreflightDeps {
 /**
  * The sentence for a non-macOS server.
  *
- * This is the **first** probe, before all others. bb supports a Linux server
- * with enrolled Macs — which is exactly why `bb.sdk.terminals` takes an
+ * This is the **first** probe, before all others. VesnALIA supports a Linux server
+ * with enrolled Macs — which is exactly why `alia.sdk.terminals` takes an
  * explicit `{ kind: "host_path", hostId }` scope — and without this check that
  * topology gets told to run `xcode-select --install`.
  */
 export function platformProbe(platform: NodeJS.Platform): Probe {
   if (platform === "darwin") {
-    return { id: "platform", label: "Server platform", state: "ok", detail: "This bb server runs on macOS.", value: platform };
+    return { id: "platform", label: "Server platform", state: "ok", detail: "This VesnALIA server runs on macOS.", value: platform };
   }
   const named = platform === "linux" ? "Linux" : platform === "win32" ? "Windows" : platform;
   return {
@@ -84,7 +84,7 @@ export function platformProbe(platform: NodeJS.Platform): Probe {
     label: "Server platform",
     state: "blocked",
     detail:
-      "Xcode Simulators drives Xcode and the iOS simulator, so it only works when the bb server itself runs on macOS. " +
+      "Xcode Simulators drives Xcode and the iOS simulator, so it only works when the VesnALIA server itself runs on macOS. " +
       `This server runs on ${named}.`,
     value: platform,
   };
@@ -205,7 +205,7 @@ export function addonProbe(loaded: boolean, error: string | null): Probe {
     // the addon prebuilt, so rebuilding rebuilds nothing and the stranger's one
     // instruction is a dead end.
     detail:
-      "serve-sim's native capture addon did not load. Reinstall with `bb plugin update xcode`; " +
+      "serve-sim's native capture addon did not load. Reinstall with `alia plugin update xcode`; " +
       "if that does not fix it, node_modules/serve-sim/dist/native/ is missing.",
     value: error ?? undefined,
   };
@@ -424,7 +424,7 @@ export async function runPreflight(deps: PreflightDeps): Promise<Preflight> {
     addonError = "serve-sim is not installed";
   } else {
     // Existence only. The child `dlopen`s it for real and reports back on its
-    // handshake line — loading a native addon into the bb server to find out
+    // handshake line — loading a native addon into the VesnALIA server to find out
     // whether it loads is the thing the child process exists to avoid.
     try {
       const { existsSync } = await import("node:fs");

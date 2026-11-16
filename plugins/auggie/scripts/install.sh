@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Merge bb-auggie into ~/.bb/config.json customAcpAgents and install logo.
+# Merge alia-auggie into ~/.vesnalia/config.json customAcpAgents and install logo.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 AGENT_JSON="$ROOT/config/custom-acp-agent.json"
 LOGO_SRC="$ROOT/assets/logo.svg"
 
-BB_DATA_DIR="${BB_DATA_DIR:-$HOME/.bb}"
-CONFIG_PATH="$BB_DATA_DIR/config.json"
+ALIA_DATA_DIR="${ALIA_DATA_DIR:-$HOME/.alia}"
+CONFIG_PATH="$ALIA_DATA_DIR/config.json"
 LOGO_NAME="auggie-logo.svg"
-LOGO_DST="$BB_DATA_DIR/$LOGO_NAME"
+LOGO_DST="$ALIA_DATA_DIR/$LOGO_NAME"
 
 if [[ ! -f "$AGENT_JSON" ]]; then
   echo "error: missing agent definition: $AGENT_JSON" >&2
@@ -27,11 +27,11 @@ else
   echo "auggie: $(command -v auggie) ($(auggie --version 2>/dev/null | head -1))"
 fi
 
-mkdir -p "$BB_DATA_DIR"
+mkdir -p "$ALIA_DATA_DIR"
 cp "$LOGO_SRC" "$LOGO_DST"
 chmod 644 "$LOGO_DST"
 
-# Build agent object with logo relative to bb data dir
+# Build agent object with logo relative to alia data dir
 AGENT="$(jq --arg logo "$LOGO_NAME" '. + {logo: $logo}' "$AGENT_JSON")"
 AGENT_ID="$(jq -r '.id' <<<"$AGENT")"
 
@@ -56,8 +56,8 @@ NEXT="$(
   ' <<<"$CURRENT"
 )"
 
-TMP="$(mktemp "${BB_DATA_DIR}/.config.json.XXXXXX")"
-# Pretty-print with trailing newline; mode 600 like bb-app
+TMP="$(mktemp "${ALIA_DATA_DIR}/.config.json.XXXXXX")"
+# Pretty-print with trailing newline; mode 600 like alia-app
 umask 077
 printf '%s\n' "$(jq '.' <<<"$NEXT")" >"$TMP"
 mv "$TMP" "$CONFIG_PATH"
@@ -66,12 +66,12 @@ chmod 600 "$CONFIG_PATH"
 echo "wrote $CONFIG_PATH (customAcpAgents id=$AGENT_ID → provider acp-$AGENT_ID)"
 echo "logo: $LOGO_DST"
 
-# Prefer bb-app refresh when present; packaged macOS builds expose dist/bb-app.js
+# Prefer alia-app refresh when present; packaged macOS builds expose dist/alia-app.js
 refreshed=0
 refresh_candidates=(
-  "bb-app"
-  "/Applications/bb.app/Contents/MacOS/bb-app"
-  "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/dist/bb-app.js"
+  "alia-app"
+  "/Applications/alia.app/Contents/MacOS/alia-app"
+  "/Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/dist/alia-app.js"
 )
 for cmd in "${refresh_candidates[@]}"; do
   if [[ "$cmd" == *.js ]]; then
@@ -90,10 +90,10 @@ for cmd in "${refresh_candidates[@]}"; do
 done
 
 if [[ "$refreshed" -eq 0 ]]; then
-  echo "note: restart bb (or run: node /Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/dist/bb-app.js config refresh)"
+  echo "note: restart alia (or run: node /Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/dist/alia-app.js config refresh)"
 fi
 
 echo
 echo "verify:"
-echo "  bb provider list"
-echo "  bb provider models acp-$AGENT_ID"
+echo "  alia provider list"
+echo "  alia provider models acp-$AGENT_ID"

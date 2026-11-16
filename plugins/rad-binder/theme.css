@@ -1,4 +1,4 @@
-/* Rad Binder — an 80s/90s school-binder cover and toy-commercial look for bb.
+/* Rad Binder — an 80s/90s school-binder cover and toy-commercial look for alia.
    Neon confetti on deep purple (dark) or a laser-lilac binder cover (light),
    chunky offset shadows, a striped binder edge, and chrome-italic headings.
    Original patterns and colours; no brand marks. System fonts only, no network. */
@@ -145,12 +145,12 @@
 }
 
 /* Selected thread: a hot-pink sticker. */
-[data-sidebar="sidebar"] .bb-sidebar-selected-row {
+[data-sidebar="sidebar"] .alia-sidebar-selected-row {
   background: var(--rb-pink) !important;
   box-shadow: 3px 3px 0 var(--rb-teal);
 }
-[data-sidebar="sidebar"] .bb-sidebar-selected-row,
-[data-sidebar="sidebar"] .bb-sidebar-selected-row :is(span, a, button, svg) {
+[data-sidebar="sidebar"] .alia-sidebar-selected-row,
+[data-sidebar="sidebar"] .alia-sidebar-selected-row :is(span, a, button, svg) {
   color: #120a24 !important;
   font-weight: 600;
 }

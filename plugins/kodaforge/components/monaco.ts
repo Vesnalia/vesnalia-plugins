@@ -26,10 +26,10 @@ export function loadMonaco(baseUrl: string): Promise<Monaco> {
   return loading;
 }
 
-/** Defines (or redefines) BB's current code theme and returns its Monaco name. */
+/** Defines (or redefines) VesnALIA's current code theme and returns its Monaco name. */
 export function applyTheme(monaco: Monaco, theme: CodeTheme | null, mode: "dark" | "light"): string {
   if (theme === null) return mode === "dark" ? "vs-dark" : "vs";
-  const name = `bb-${theme.name.replace(/[^a-zA-Z0-9-]/g, "-")}`;
+  const name = `alia-${theme.name.replace(/[^a-zA-Z0-9-]/g, "-")}`;
   monaco.editor.defineTheme(name, toMonacoTheme(theme));
   return name;
 }

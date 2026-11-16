@@ -1,6 +1,6 @@
 # Captain's Deck
 
-A kanban board for work a first mate runs in bb. Five fixed columns show what
+A kanban board for work a first mate runs in VesnALIA. Five fixed columns show what
 is charted, what is underway, the captain's calls waiting on you, merges
 awaiting review, and landings. The board is read-only except for a Captain's
 Call: pick an option, add a note, and the answer is delivered to the first
@@ -18,9 +18,9 @@ mate's thread.
 - **Earlier calls stay on the task.** The decision dialog lists the calls the
   first mate replaced, with the answer each got.
 - **Crew tabs.** Filter the whole board to one worker bot, or watch all of them.
-- **Thread calls.** When a deck-linked thread hits a native bb prompt, it shows
+- **Thread calls.** When a deck-linked thread hits a native VesnALIA prompt, it shows
   under Waiting in threads in the same column; open the thread and answer it.
-- **Bearings.** `bb deck bearings` prints the same five sections as a digest
+- **Bearings.** `alia deck bearings` prints the same five sections as a digest
   for a standup, a sweep, or a scheduled automation.
 
 ## How it works
@@ -28,13 +28,13 @@ mate's thread.
 The first mate drives the board from a shell:
 
 ```
-bb deck chart --title "Dark mode" --brief "Settings toggle + tokens" --bot Designer
-bb deck start a1b2c3d4 --thread thr_abc123
-bb deck note  a1b2c3d4 --text "First pass done, contrast check running"
-bb deck ask   a1b2c3d4 --question "Ship behind a flag?" \
+alia deck chart --title "Dark mode" --brief "Settings toggle + tokens" --bot Designer
+alia deck start a1b2c3d4 --thread thr_abc123
+alia deck note  a1b2c3d4 --text "First pass done, contrast check running"
+alia deck ask   a1b2c3d4 --question "Ship behind a flag?" \
   --option "Behind a flag" --option "Straight to users" --recommend 1
-bb deck merge a1b2c3d4 --pr https://github.com/acme/app/pull/42
-bb deck land  a1b2c3d4
+alia deck merge a1b2c3d4 --pr https://github.com/acme/app/pull/42
+alia deck land  a1b2c3d4
 ```
 
 Every command accepts `--json`. The bundled `captains-deck` skill teaches any
@@ -46,5 +46,5 @@ answered decisions. Leave it empty to record answers on the board only.
 
 ## Requirements
 
-bb 0.44 or newer. The plugin stores its tasks in bb; no external service or
+VesnALIA 0.44 or newer. The plugin stores its tasks in VesnALIA; no external service or
 account is needed.

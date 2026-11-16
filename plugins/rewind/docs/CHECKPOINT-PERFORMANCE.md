@@ -107,7 +107,7 @@ also still spend seconds on initial object creation (about 4.5 seconds of the
 
 ## Original evidence from the running plugin
 
-Read-only `bb rewind status --json`, with the latest 1,000 gate samples:
+Read-only `alia rewind status --json`, with the latest 1,000 gate samples:
 
 | Measurement | p50 | p95 | Maximum |
 | --- | ---: | ---: | ---: |
@@ -142,9 +142,9 @@ One completed wait recorded:
 Four other waits had 32–36 seconds between recheck request and the next attempt,
 while checkpoint completion took roughly 0.8–1.6 seconds from gate start.
 
-`RewindService.releaseWaits()` records `recheckAt` before calling BB's recheck
+`RewindService.releaseWaits()` records `recheckAt` before calling VesnALIA's recheck
 API. Therefore this proves a delay after requesting release, **not** a proven
-BB scheduler bug: other hooks, a running turn, server load, or the recheck call
+VesnALIA scheduler bug: other hooks, a running turn, server load, or the recheck call
 itself may explain it. Trace those boundaries before changing release logic.
 
 ## Original controlled prototype benchmark
@@ -266,7 +266,7 @@ own correctness tests and measurements.
 Measure the timestamp of successful recheck completion, the next actual queue
 attempt, other hook waits, and thread readiness. Keep the current exact
 before-turn checkpoint behavior. Raising `gateHoldMs` can hide short waits but
-holds BB's server-wide dispatch lock longer and does not speed up saving.
+holds VesnALIA's server-wide dispatch lock longer and does not speed up saving.
 
 Do not “fix” this by sending messages while a pre-turn checkpoint is still
 being captured. The worst measured release delays are tens of seconds beyond
@@ -331,9 +331,9 @@ prototype replacement and its `REWIND_BENCH_SINGLE_SCAN` option are removed.
   fixture rejected by APFS), across 12 test files.
 - Representative, stress, and small-workspace production benchmarks: passed
   the requested 200 ms unchanged-checkpoint threshold.
-- `bb plugin build`: passed. BB warns that the existing SDK pin is 0.5.9 while
+- `alia plugin build`: passed. VesnALIA warns that the existing SDK pin is 0.5.9 while
   its current SDK is 0.6.15; the pin/lockfile were not changed for this engine fix.
-- `bb plugin reload rewind --json`: succeeded; Rewind is enabled and running.
+- `alia plugin reload rewind --json`: succeeded; Rewind is enabled and running.
   No pending checkpoints, running restores, or running forks were present at
   the pre-reload check.
 - Three post-reload live checkpoints: successful, deduplicated, 109/68/68 ms

@@ -9,7 +9,7 @@ export interface PredictionCache {
 }
 
 export const CACHE_MIGRATIONS = [
-  // Append migrations; BB tracks their positions across plugin versions.
+  // Append migrations; VesnALIA tracks their positions across plugin versions.
   `CREATE TABLE IF NOT EXISTS predictions_v1 (thread_id TEXT PRIMARY KEY, payload TEXT NOT NULL, updated_at INTEGER NOT NULL)`,
 ];
 const recordSchema = z.object({

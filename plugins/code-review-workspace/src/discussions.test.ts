@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost, makeQueueEntry, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeQueueEntry, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { runGh } from "./gh";
 import { testStore } from "./test-store.test-support";
@@ -14,7 +14,7 @@ const patch = [
 const at = { file: "a.ts", line: 3, side: "RIGHT" } as const;
 
 async function host({ conversation = true } = {}) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: {
       get: async () => ({ archivedAt: null, deletedAt: null, status: "idle" }),
       send: async () => ({ delivery: "sent" }),
@@ -24,8 +24,8 @@ async function host({ conversation = true } = {}) {
     },
     projects: { defaultExecutionOptions: async () => ({ providerId: "claude-code", model: "opus", reasoningLevel: "high" }) },
   } as any });
-  await plugin(bb);
-  const store = testStore(bb);
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1", projectId: "p1" });
   await store.savePatch("pr-1", patch);
   if (conversation) await store.setAssistantThread("pr-1", "assistant");
@@ -332,7 +332,7 @@ test("a turn's end and the next queued message's dispatch, told at once, each ta
   const { store, harness } = await host();
   // The summary's ask rode the turn that ends; the comment's waits in the queue as the next message.
   await store.setLifecycle("pr-1", { summaryAsk: { threadId: "assistant", state: "running", at: Date.now() }, commentAsks: [{ ...at, ask: { threadId: "assistant", state: "queued", queuedMessageId: "q2", at: Date.now() } }] });
-  // BB tells both without waiting for either handler.
+  // VesnALIA tells both without waiting for either handler.
   await Promise.all([
     harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: "assistant" }), lastAssistantText: "Done" }),
     harness.behavior.emitThreadEvent("message.dispatched", { entry: makeQueueEntry({ id: "q2", threadId: "assistant" }) }),

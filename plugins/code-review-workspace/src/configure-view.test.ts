@@ -1,10 +1,10 @@
-// bb.agents.configure reads a view of the store the queue keeps up to date: after any turn, it answers as fresh reads
+// alia.agents.configure reads a view of the store the queue keeps up to date: after any turn, it answers as fresh reads
 // of the store would, and during a block it still answers as before the block.
 import { expect, test } from "vitest";
 import { register as registerPatchTools } from "./patch-tools";
 import type { ServeDeps } from "./server-modules";
 import { toolText } from "./fake-host.test-support";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore, storeOn, type ReviewMeta, type Store } from "./store";
 import type { Sql } from "./db/sql";
 import { testSql } from "./test-store.test-support";
@@ -22,9 +22,9 @@ const patchOf = (renamed: boolean) => renamed
 const guideOf = (title: string) => ({ title, intent: "I", unplacedFiles: [], sections: [{ id: "s", title: "S", overview: "o", risk: "low", diffs: [{ file: "old.ts", summary: "s" }] }], hotspots: [] });
 
 async function views() {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = createStore(bb);
-  const view = await createConfigureView(bb, store);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = createStore(alia);
+  const view = await createConfigureView(alia, store);
   return { store, view, queued: queueStore(view.backend, { afterTurn: view.afterTurn }) };
 }
 
@@ -140,11 +140,11 @@ test("during a block the view answers as before it, and from the turn after it a
 });
 
 test("a read that fails while the view catches up is logged, leaves the call's result, and is tried again after the next turn", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = createStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = createStore(alia);
   let failing = false;
   const backend = { ...store, listReviews: () => { if (failing) throw new Error("connection lost"); return store.listReviews(); } };
-  const view = await createConfigureView(bb, backend);
+  const view = await createConfigureView(alia, backend);
   const queued = queueStore(view.backend, { afterTurn: view.afterTurn });
   failing = true;
   await expect(queued.setAssistantThread("pr-1", "assistant-1")).resolves.toBeUndefined();
@@ -172,10 +172,10 @@ function countingPatchReads(sql: Sql) {
 // bug bash HC-3: any call naming a review, as each review-state poll's lifecycle writes do, had the view read its
 // guide again, which reads its whole patch for renames whenever more than 8 reviews cycle through the parsed-patch cache.
 test("turns that can't change a guide, as the review-state poll's lifecycle writes, don't read its review's patch again", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
   // Migrated by the Store's own open; counted from here.
-  createStore(bb);
-  const { counted, counts } = countingPatchReads(testSql(bb));
+  createStore(alia);
+  const { counted, counts } = countingPatchReads(testSql(alia));
   const backend = storeOn(counted);
   const keys = Array.from({ length: 10 }, (_, i) => `pr-${i}`);
   for (const [i, key] of keys.entries()) {
@@ -183,7 +183,7 @@ test("turns that can't change a guide, as the review-state poll's lifecycle writ
     await backend.savePatch(key, patchOf(true));
     await backend.saveGuide(key, guideOf("T") as never);
   }
-  const view = await createConfigureView(bb, backend);
+  const view = await createConfigureView(alia, backend);
   const store = queueStore(view.backend, { afterTurn: view.afterTurn });
   const before = counts.patchReads;
   for (const poll of [0, 1]) for (const [i, key] of keys.entries()) await store.exclusive(async (tx) => { await tx.setLifecycle(key, { turnGroup: poll ? "waiting" : "needs", pushCheckTriedAt: i }); });
@@ -206,17 +206,17 @@ test("a guide's patch saved inside a transaction is read again with its renames,
 });
 
 test.each(["read_review_patch", "focusFindings"])("focuses off: %s keeps the configure view loaded, but identity writes refresh it", async (read) => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const backend = createStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const backend = createStore(alia);
   await backend.saveReview({ targetKey: "ref-1", kind: "ref", status: "ready", headSha: "head", createdAt: 1 });
   await backend.savePatch("ref-1", patchOf(false));
   await backend.setAssistantThread("ref-1", "assistant-1");
   // Its already-recorded read must not itself cause a legitimate lifecycle write.
   await backend.setLifecycle("ref-1", { agentReads: { head: "head", files: ["old.ts"] } });
   let loads = 0;
-  const view = await createConfigureView(bb, { ...backend, listReviews: async () => { loads++; return backend.listReviews(); } });
+  const view = await createConfigureView(alia, { ...backend, listReviews: async () => { loads++; return backend.listReviews(); } });
   const store = queueStore(view.backend, { afterTurn: view.afterTurn });
-  registerPatchTools({ bb, store } as ServeDeps);
+  registerPatchTools({ alia, store } as ServeDeps);
   expect(view.preferences().focuses.enabled).toBe(false);
   const before = loads;
   if (read === "read_review_patch") {

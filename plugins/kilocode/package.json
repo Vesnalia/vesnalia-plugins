@@ -1,17 +1,16 @@
 {
-  "name": "bb-plugin-kilocode",
+  "name": "alia-plugin-kilocode",
   "version": "0.1.4",
   "license": "MIT",
-  "repository": "https://github.com/masked8knights/bb-kilocode",
-  "description": "Kilo Code as a native BB provider — run BB threads on the kilo CLI over ACP.",
+  "description": "Kilo Code as a native VesnALIA provider — run VesnALIA threads on the kilo CLI over ACP.",
   "type": "module",
   "engines": {
-    "bb": ">=0.45",
-    "bbPluginSdk": ">=0.6.15"
+    "alia": ">=0.45",
+    "aliaPluginSdk": ">=0.6.15"
   },
-  "bb": {
+  "alia": {
     "name": "Kilo Code",
-    "description": "Run BB threads on Kilo Code.",
+    "description": "Run VesnALIA threads on Kilo Code.",
     "branding": {
       "icon": "./assets/icon.svg",
       "logo": {
@@ -23,16 +22,25 @@
     "host": "./host.ts"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --config vitest.config.ts"
-  },
-  "dependencies": {
-    "@get-bb/plugin-sdk": "0.6.15"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0",
     "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@vesnalia/plugin-sdk": "^0.6.15"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/kilocode#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/kilocode"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

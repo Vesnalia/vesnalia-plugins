@@ -23,7 +23,7 @@ afterEach(async () => { await rm(temp, { recursive: true, force: true }); });
 // Most tests use branch-named folders; template behavior has its own describe block.
 const template = () => join(temp, "worktrees", "{repo}", "{branch}");
 const resolve = (inputs: unknown, pathKey?: string, pathTemplate = template()) =>
-  plan({ source, inputs: inputsSchema.parse(inputs), pathTemplate, suggestedBranch: pathKey ? "bb/test" : undefined, pathKey, dataDir: data });
+  plan({ source, inputs: inputsSchema.parse(inputs), pathTemplate, suggestedBranch: pathKey ? "alia/test" : undefined, pathKey, dataDir: data });
 /** Plan and create exactly as a launch does. */
 async function launch(inputs: unknown, pathKey = "test-key") {
   const parsed = inputsSchema.parse(inputs);
@@ -57,11 +57,11 @@ describe("new branch", () => {
     expect(await readFile(join(r.path, "keep.txt"), "utf8")).toBe("uncommitted");
     expect(await branchAt(r.path)).toBe("feature/custom");
   });
-  it("uses BB's suggested name when blank and suffixes colliding folders", async () => {
-    await mkdir(join(temp, "worktrees", "repo", "bb-test"), { recursive: true });
+  it("uses VesnALIA's suggested name when blank and suffixes colliding folders", async () => {
+    await mkdir(join(temp, "worktrees", "repo", "alia-test"), { recursive: true });
     const r = await launch({ target: "new" });
-    expect(r.path).toBe(join(temp, "worktrees", "repo", "bb-test-2"));
-    expect(await branchAt(r.path)).toBe("bb/test");
+    expect(r.path).toBe(join(temp, "worktrees", "repo", "alia-test-2"));
+    expect(await branchAt(r.path)).toBe("alia/test");
   });
   it("retries reuse the first attempt's folder instead of re-suffixing past it", async () => {
     const first = await launch({ target: "new", branch: "x" });
@@ -406,10 +406,10 @@ describe("path templates", () => {
   it("uses the primary checkout's name for {repo} when the source is a linked worktree", async () => {
     const linked = at("linked");
     await git(source, ["worktree", "add", "-q", "-b", "side", linked]);
-    const r = await plan({ source: linked, inputs: inputsSchema.parse({ target: "new", branch: "y" }), pathTemplate: at("wt", "{repo}", "{branch}"), pathKey: "k", suggestedBranch: "bb/test" });
+    const r = await plan({ source: linked, inputs: inputsSchema.parse({ target: "new", branch: "y" }), pathTemplate: at("wt", "{repo}", "{branch}"), pathKey: "k", suggestedBranch: "alia/test" });
     expect(r.plan.path).toBe(at("wt", "repo", "y"));
   });
-  it("shows placeholders for names BB assigns at launch, and requires them at launch", async () => {
+  it("shows placeholders for names VesnALIA assigns at launch, and requires them at launch", async () => {
     expect((await resolve({ target: "new" }, undefined, at("wt", "{repo}", "{branch}"))).plan.path).toBe(at("wt", "repo", "<automatic branch>"));
     expect((await resolve({ target: "new", branch: "x" }, undefined, at("wt", "{pathKey}"))).plan.path).toBe(at("wt", "<automatic folder>"));
     await expect(plan({ source, inputs: inputsSchema.parse({ target: "new" }), pathTemplate: at("wt", "{branch}"), pathKey: "k" })).rejects.toThrow("unresolved");

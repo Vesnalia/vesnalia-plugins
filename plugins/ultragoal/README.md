@@ -1,6 +1,6 @@
 # UltraGoal
 
-A [BB](https://getbb.app) plugin that adds one provider-neutral durable UltraGoal system on Codex, Cursor, OpenCode, Claude Code, and Pi.
+A [VesnALIA](https://getbb.app) plugin that adds one provider-neutral durable UltraGoal system on Codex, Cursor, OpenCode, Claude Code, and Pi.
 
 The root thread is the orchestrator. It keeps a durable objective, a requirement plan, and a crew of named subagents. Workers implement slices. Optional verifiers check finished work on a second model.
 
@@ -9,24 +9,24 @@ The root thread is the orchestrator. It keeps a durable objective, a requirement
 After the community marketplace listing is approved:
 
 ```bash
-bb plugin install ultragoal@bb-community
+alia plugin install ultragoal@alia-community
 ```
 
 Until then, install the tagged release from this repository:
 
 ```bash
-bb plugin install 'git:https://github.com/braedonsaunders/bb-plugin-ultragoal.git@v0.29.0'
+alia plugin install 'git:https://github.com/braedonsaunders/bb-plugin-ultragoal.git@v0.29.0'
 ```
 
 Or from a local checkout:
 
 ```bash
-cd bb-plugin-ultragoal
+cd alia-plugin-ultragoal
 npm install
-bb plugin install . --yes
+alia plugin install . --yes
 ```
 
-Reload after source edits with `bb plugin reload ultragoal`.
+Reload after source edits with `alia plugin reload ultragoal`.
 
 ## Use
 
@@ -49,21 +49,21 @@ Other commands:
 CLI (from a thread, or pass `--thread`):
 
 ```bash
-bb ultragoal
-bb ultragoal set "Ship the ledger export"
-bb ultragoal set "Ship the ledger export" --workers 4 \
+alia ultragoal
+alia ultragoal set "Ship the ledger export"
+alia ultragoal set "Ship the ledger export" --workers 4 \
   --worker-provider codex --worker-model gpt-5.6-sol --worker-reasoning high \
   --worker-tier fast --worker-permission auto \
   --verifier-provider codex --verifier-model gpt-5.6-sol --verifier-reasoning xhigh
-bb ultragoal exec
-bb ultragoal exec worker --provider codex --model gpt-5.6-sol \
+alia ultragoal exec
+alia ultragoal exec worker --provider codex --model gpt-5.6-sol \
   --reasoning high --tier fast --permission auto
-bb ultragoal exec worker --provider codex --model gpt-5.6-sol \
+alia ultragoal exec worker --provider codex --model gpt-5.6-sol \
   --reasoning high --tier fast --permission auto --replace-active
-bb ultragoal revalidate <item-id>
-bb ultragoal pause
-bb ultragoal resume
-bb ultragoal clear
+alia ultragoal revalidate <item-id>
+alia ultragoal pause
+alia ultragoal resume
+alia ultragoal clear
 ```
 
 The UltraGoal pane lists **Now** (expand a row for the live worker), **Up next** (blocked work gets a chip), and **Previous**. Its headline metrics distinguish **Work items** from **Defects** because related defects can share one repair item. The plan is read-only in the pane; the agent updates it. A new goal can be created with its worker count and complete worker/verifier execution configuration in one step. Settings show global defaults, goal overrides, effective selections, actual launched values, and host substitutions; they also control progress chat, repository integration, local provider accounting, standing worker rules, and the token budget.
@@ -76,7 +76,7 @@ The split follows the research in [docs/architecture-research.md](docs/architect
 
 1. The orchestrator calls `ultragoal_patch` with new or changed work as a dependency-DAG patch: every work item carries `files` (its disjoint file scope), `check` (a runnable done-gate), and `deps` (what it waits for; `[]` = ready now). Omitted work remains durable, batches cap at 200, and `ultragoal_state` pages large plans 40 rows at a time by default.
 2. The ready-queue scheduler staffs one fresh worker per ready work item — deps complete, file scopes disjoint — up to the worker limit (default 5). Assigned workers occupy a slot until their item closes, including idle Codex turns. Pause stops the whole crew and parks in-progress work.
-   Before allocating a managed worktree, the scheduler resolves the target repository and requested ref on the owning host, peels it to an immutable commit SHA, and uses that SHA as the worker base. Invalid tuples stay pending without repeated spawning; use `bb ultragoal revalidate <item-id>` after repairing an unchanged ref.
+   Before allocating a managed worktree, the scheduler resolves the target repository and requested ref on the owning host, peels it to an immutable commit SHA, and uses that SHA as the worker base. Invalid tuples stay pending without repeated spawning; use `alia ultragoal revalidate <item-id>` after repairing an unchanged ref.
 3. Hunt/audit work streams defects through `report_finding`. Exact-file related defects share repair work; new repair work is created until remediation capacity (the persisted `maxOpenFindings` setting) is full. Overflow waits durably and backfills oldest-first as capacity frees, including after restart. Open defects block completion.
 4. Workers stay hidden and implement only their item, reporting evidence (commit SHAs, check output). Every brief carries a generalized quality bar ([templates/goals/worker_brief.md](templates/goals/worker_brief.md)) — reuse-first, complete production-grade work, clean cutover, honest gates, crew-safe atomic commits — with the repo's own AGENTS.md taking precedence. They do not call `ultragoal_finish` or rewrite the parent plan.
 5. When verification is on (default), a second model audits each finished worker. The orchestrator should not mark that work item complete until `VERIFY_PASS`.
@@ -94,9 +94,9 @@ Safety-sensitive behavior is off by default and shown in each goal's pane:
 
 Automatic approval of agent requests is separately off by default. Workers default to `auto` permission mode, while each goal can explicitly opt into `accept-edits` or `full`; verifiers are always restricted to `auto`. Standing worker rules can be activated, edited, or cleared only by a user action in the UltraGoal pane; the agent-facing CLI cannot write them. The pane records when the rules were saved and that they came from a user action. Agent-authored work-item and finding `check` strings remain visible as plan metadata but are never inserted into another agent's prompt; workers choose verification independently from trusted repository instructions, and linked finding evidence is explicitly labeled untrusted data.
 
-Worker and verifier launches are pinned from a validated per-goal execution snapshot. Global plugin defaults and goal overrides are resolved at launch time; existing workers keep their original selection. The pane and `bb ultragoal exec` expose requested versus actual provider/model/reasoning/tier/permission values and flag substitutions. Verifiers are always restricted to `auto` permission mode. Controlled worker replacement is opt-in and refuses to discard a dirty worktree, an active run, or an unharvested report.
+Worker and verifier launches are pinned from a validated per-goal execution snapshot. Global plugin defaults and goal overrides are resolved at launch time; existing workers keep their original selection. The pane and `alia ultragoal exec` expose requested versus actual provider/model/reasoning/tier/permission values and flag substitutions. Verifiers are always restricted to `auto` permission mode. Controlled worker replacement is opt-in and refuses to discard a dirty worktree, an active run, or an unharvested report.
 
-Every durable UltraGoal root carries exactly one UltraGoal pill beside its title in BB's thread list until the goal is cleared. A lifecycle-scoped content-script stylesheet targets only those root row IDs; it installs no observer, mutates no host nodes, and does not replace the user's chosen thread list. Workers and verifiers are created with BB's supported hidden-thread visibility, so the left sidebar stays at one root row. Subagents belonging to ordinary non-UltraGoal threads remain visible.
+Every durable UltraGoal root carries exactly one UltraGoal pill beside its title in VesnALIA's thread list until the goal is cleared. A lifecycle-scoped content-script stylesheet targets only those root row IDs; it installs no observer, mutates no host nodes, and does not replace the user's chosen thread list. Workers and verifiers are created with VesnALIA's supported hidden-thread visibility, so the left sidebar stays at one root row. Subagents belonging to ordinary non-UltraGoal threads remain visible.
 
 ## Plugin compatibility
 
@@ -109,15 +109,15 @@ Do not install UltraGoal alongside the separate `goal` plugin. Both contribute o
 An unfinished UltraGoal can move to a replacement root in the same project and environment without changing its workers or durable history:
 
 ```bash
-bb ultragoal transfer-root <source-thread> <target-thread> --dry-run
-bb ultragoal transfer-root <source-thread> <target-thread>
+alia ultragoal transfer-root <source-thread> <target-thread> --dry-run
+alia ultragoal transfer-root <source-thread> <target-thread>
 ```
 
 The target must be an idle empty root with no UltraGoal-owned rows or worker identity collision. Transfer uses a durable, restartable journal: it stops both runtimes, atomically moves plugin-owned state, archives the source, reparents only live direct workers, verifies parity, then wakes the target once. Existing worker/provider pins, settings, tokens, plan, defect metadata, decisions, and cursors are preserved.
 
 ## Requirements
 
-- BB `>= 0.39`
+- VesnALIA `>= 0.39`
 - Plugin SDK `>= 0.4.8`
 
 ## License

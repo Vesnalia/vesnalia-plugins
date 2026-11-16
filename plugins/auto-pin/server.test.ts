@@ -2,17 +2,17 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 
 describe("auto-pin", () => {
   it("pins a visible unpinned root thread, including a root fork", async () => {
     const pin = vi.fn(async () => ({ success: true }));
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "auto-pin",
       sdk: { threads: { pin } },
     });
-    plugin(bb);
+    plugin(alia);
 
     await harness.behavior.emitThreadEvent("thread.created", {
       thread: makeThreadResponse({
@@ -37,11 +37,11 @@ describe("auto-pin", () => {
     ["already pinned", { pinnedAt: 1 }],
   ])("ignores a %s thread", async (_description, overrides) => {
     const pin = vi.fn(async () => ({ success: true }));
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "auto-pin",
       sdk: { threads: { pin } },
     });
-    plugin(bb);
+    plugin(alia);
 
     await harness.behavior.emitThreadEvent("thread.created", {
       thread: makeThreadResponse({
@@ -60,11 +60,11 @@ describe("auto-pin", () => {
     const pin = vi.fn(async () => {
       throw new Error("thread is archived");
     });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "auto-pin",
       sdk: { threads: { pin } },
     });
-    plugin(bb);
+    plugin(alia);
 
     // Thread events are fire-and-forget, so this must not reject.
     await harness.behavior.emitThreadEvent("thread.created", {

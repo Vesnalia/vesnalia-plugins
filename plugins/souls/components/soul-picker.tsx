@@ -27,11 +27,11 @@ import {
   useState,
 } from "react";
 import {
-  useBbNavigate,
+  useAliaNavigate,
   useComposer,
   useComposerView,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../server";
 import {
@@ -221,7 +221,7 @@ export function SoulPickerDialog({
   ) => void | Promise<void>;
 }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { souls, error } = useSouls();
   const missingCurrent =
     open &&
@@ -759,7 +759,7 @@ function useApplyModelPin() {
         >;
       if (Object.keys(selection).length === 0) return;
       try {
-        // BB ignores anything this composer has no picker for and reconciles
+        // VesnALIA ignores anything this composer has no picker for and reconciles
         // the rest, so the resolved selection is the truth to report.
         const settled = await composer.experimental_setSelection(selection);
         const label = describeModelPin({
@@ -799,7 +799,7 @@ function bannerNote(state: ThreadSoulState): string | null {
     case "outdated":
       return "Changed since this session started. The change applies from the next session.";
     case "unknown":
-      return "BB has no record of this session's instructions, so the soul is not confirmed yet.";
+      return "VesnALIA has no record of this session's instructions, so the soul is not confirmed yet.";
     default:
       return null;
   }
@@ -1131,7 +1131,7 @@ function SoulPeek({
   /** The banner's pills in full sentences, for touch screens without tooltips. */
   notes: readonly { icon: string; text: string }[];
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <div
       id={id}

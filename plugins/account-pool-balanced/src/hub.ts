@@ -287,7 +287,7 @@ export class AccountPoolHub {
   }
 
   requestToken(request: Request, adapter?: ProviderAdapter): string | null {
-    return request.headers.get("x-bb-account-pool-token") ??
+    return request.headers.get("x-alia-account-pool-token") ??
       readBearer(request.headers.get("authorization")) ?? adapter?.inboundToken?.(request.headers) ?? null;
   }
 
@@ -318,16 +318,16 @@ export class AccountPoolHub {
       return this.errorResponse(adapter, request, 401, "Invalid Account Pooler bearer token.");
     }
     if (this.options.maintenance?.status().lease)
-      return this.errorResponse(adapter, request, 503, "Account Pooler is paused for maintenance.", {"x-bb-pool-error":"POOL_MAINTENANCE","retry-after":"30"});
+      return this.errorResponse(adapter, request, 503, "Account Pooler is paused for maintenance.", {"x-alia-pool-error":"POOL_MAINTENANCE","retry-after":"30"});
     if (!this.accepting)
       return this.errorResponse(adapter, request,
         503,
         "Account Pooler is not accepting requests.",
-        {"x-bb-pool-error":"POOL_SHUTTING_DOWN"},
+        {"x-alia-pool-error":"POOL_SHUTTING_DOWN"},
       );
     try { await this.assertNetworkAllowed(provider); }
     catch (error) {
-      if (error instanceof VpnRequiredError) return this.errorResponse(adapter, request, 503, error.message, { 'x-bb-pool-error': error.code, 'retry-after': '10' });
+      if (error instanceof VpnRequiredError) return this.errorResponse(adapter, request, 503, error.message, { 'x-alia-pool-error': error.code, 'retry-after': '10' });
       throw error;
     }
     const body = new Uint8Array(await request.arrayBuffer());
@@ -783,7 +783,7 @@ export class AccountPoolHub {
             }
             signal.throwIfAborted();
             if (error instanceof ClientPolicyDenied) {
-              failure = {status:403,message:"No enabled account is allowed for this client purpose.",headers:{"x-bb-pool-error":"POOL_ACCOUNT_POLICY"}};
+              failure = {status:403,message:"No enabled account is allowed for this client purpose.",headers:{"x-alia-pool-error":"POOL_ACCOUNT_POLICY"}};
               break;
             }
             if (!(error instanceof UpstreamConnectionError)) throw error;
@@ -957,15 +957,15 @@ export class AccountPoolHub {
             failure.headers,
           ));
     } catch (error) {
-      if (maintenanceSignal?.aborted) return result(this.errorResponse(adapter,request,503,"Account Pooler is paused for maintenance.",{"x-bb-pool-error":"POOL_MAINTENANCE","retry-after":"30"}));
-      if (error instanceof PoolMaintenanceError) return result(this.errorResponse(adapter,request,503,error.message,{"x-bb-pool-error":error.code,"retry-after":"30"}));
-      if (error instanceof EgressUnavailable)return result(this.errorResponse(adapter,request,503,error.message,{"x-bb-pool-error":error.code}));
-      if (error instanceof ClientPolicyDenied)return result(this.errorResponse(adapter,request,403,"No enabled account is allowed for this client purpose.",{"x-bb-pool-error":"POOL_ACCOUNT_POLICY"}));
+      if (maintenanceSignal?.aborted) return result(this.errorResponse(adapter,request,503,"Account Pooler is paused for maintenance.",{"x-alia-pool-error":"POOL_MAINTENANCE","retry-after":"30"}));
+      if (error instanceof PoolMaintenanceError) return result(this.errorResponse(adapter,request,503,error.message,{"x-alia-pool-error":error.code,"retry-after":"30"}));
+      if (error instanceof EgressUnavailable)return result(this.errorResponse(adapter,request,503,error.message,{"x-alia-pool-error":error.code}));
+      if (error instanceof ClientPolicyDenied)return result(this.errorResponse(adapter,request,403,"No enabled account is allowed for this client purpose.",{"x-alia-pool-error":"POOL_ACCOUNT_POLICY"}));
       if (error instanceof AdmissionUnavailable) {
         this.observe(trace,{event:'queue-wait',attempt,accountId:lastAccount,status:503,errorClass:error.code==='POOL_QUEUE_FULL'?'queue-full':'queue-timeout',durationMs:Math.max(0,this.options.now()-startedAt)});
-        return result(this.errorResponse(adapter, request, 503, error.message, {"x-bb-pool-error":error.code,"retry-after":"1"}));
+        return result(this.errorResponse(adapter, request, 503, error.message, {"x-alia-pool-error":error.code,"retry-after":"1"}));
       }
-      if (error instanceof VpnRequiredError) return result(this.errorResponse(adapter, request, 503, error.message, { "x-bb-pool-error": error.code, "retry-after": "10" }));
+      if (error instanceof VpnRequiredError) return result(this.errorResponse(adapter, request, 503, error.message, { "x-alia-pool-error": error.code, "retry-after": "10" }));
       if (!signal.aborted) {
         this.observe(trace,{event:'result',attempt,accountId:lastAccount,outcome:'error',errorClass:'request-error',durationMs:Math.max(0,this.options.now()-startedAt)});
         throw error;
@@ -975,7 +975,7 @@ export class AccountPoolHub {
         request.signal.aborted
           ? "Account Pooler request was canceled."
           : "Account Pooler stopped accepting requests.",
-        {"x-bb-pool-error":request.signal.aborted?"POOL_REQUEST_CANCELED":"POOL_SHUTTING_DOWN"},
+        {"x-alia-pool-error":request.signal.aborted?"POOL_REQUEST_CANCELED":"POOL_SHUTTING_DOWN"},
       ));
     }
   }
@@ -1120,7 +1120,7 @@ export class AccountPoolHub {
     const accounts = (await this.options.accounts.list()).filter(a => a.provider === 'codex' && inClientScope(a.id,context.accountScope) && projectTier(a, context.projectId) !== null);
     const eligible = new Set(this.eligibleEntries('codex', context.projectId, accounts, 'other', now, context.purpose).eligible.map(({ account }) => account.id));
     return reply({
-      schema: 'bb-account-pool/codex-budget/1', observedAt: now, maxAgeMs: CODEX_BUDGET_MAX_AGE_MS,
+      schema: 'alia-account-pool/codex-budget/1', observedAt: now, maxAgeMs: CODEX_BUDGET_MAX_AGE_MS,
       projectId: context.projectId,
       ...(context.purpose ? {purpose:context.purpose} : {}),
       route: { provider: 'codex', path: '/v1/responses', accepting: this.modelAdmissionOpen(), routingEnabled, networkAllowed, threadBypassed, ready: routeReady },
@@ -1148,7 +1148,7 @@ export class AccountPoolHub {
     const routeReady=!context.accountScope && this.modelAdmissionOpen() && routingEnabled && networkAllowed && !threadBypassed;
     const accounts=(await this.options.accounts.list()).filter(a=>a.provider==='zai' && inClientScope(a.id,context.accountScope) && projectTier(a,context.projectId)!==null);
     const eligible=new Set(this.eligibleEntries('zai',context.projectId,accounts,'other',now,context.purpose).eligible.map(({account})=>account.id));
-    return reply({schema:'bb-account-pool/zai-budget/1',observedAt:now,maxAgeMs:ZAI_BUDGET_MAX_AGE_MS,projectId:context.projectId,
+    return reply({schema:'alia-account-pool/zai-budget/1',observedAt:now,maxAgeMs:ZAI_BUDGET_MAX_AGE_MS,projectId:context.projectId,
       ...(context.purpose?{purpose:context.purpose}:{}),
       route:{provider:'zai',path:'/zai/v1/chat/completions',accepting:this.modelAdmissionOpen(),routingEnabled,networkAllowed,threadBypassed,ready:routeReady},
       accounts:accounts.map(account=>{
@@ -1177,7 +1177,7 @@ export class AccountPoolHub {
       // Available applies shared project/purpose/policy gates before any family filter.
       // A blocked 'other' family must not hide an account selectable by Sonnet.
       const eligible=new Set(this.eligibleEntries(provider,context.projectId,accounts,'other',now,context.purpose).available.map(e=>e.account.id));
-      return reply({schema:'bb-account-pool/provider-budget/1',eligibilityScope:'shared-policy-superset',provider,supported:NUMERIC_BUDGET_PROVIDERS.some(p=>p===provider),projectId:context.projectId,
+      return reply({schema:'alia-account-pool/provider-budget/1',eligibilityScope:'shared-policy-superset',provider,supported:NUMERIC_BUDGET_PROVIDERS.some(p=>p===provider),projectId:context.projectId,
         ...(context.purpose?{purpose:context.purpose}:{}),observedAt:now,maxAgeMs:PROVIDER_BUDGET_MAX_AGE_MS,
         route:{provider,accepting:this.modelAdmissionOpen(),routingEnabled,networkAllowed,threadBypassed,ready},
         accounts:accounts.map(a=>{const quota=this.options.quotas.get(a.id);return {accountId:a.id,eligible:ready&&eligible.has(a.id),heldUntil:quota.heldUntil,...providerBudgetQuota(provider,quota,now)};}),
@@ -1675,8 +1675,8 @@ export class AccountPoolHub {
       if (!DROPPED_RESPONSE_HEADERS.has(name.toLowerCase()))
         headers.append(name, value);
     }
-    headers.delete("x-bb-pool-request-id");
-    if (upstream.poolRequestId) headers.set("x-bb-pool-request-id", upstream.poolRequestId);
+    headers.delete("x-alia-pool-request-id");
+    if (upstream.poolRequestId) headers.set("x-alia-pool-request-id", upstream.poolRequestId);
     if (upstream.response.body === null) {
       upstream.release();
       return new Response(null, {
@@ -1743,29 +1743,29 @@ export class AccountPoolHub {
   ): Response {
     accounts = accounts.filter(account => purpose !== "autopilot" || account.autopilotAllowed);
     if (purpose === "autopilot" && !accounts.some(account => account.enabled)) {
-      return this.errorResponse(adapter, request, 403, "No enabled account is allowed for this client purpose.", {"x-bb-pool-error":"POOL_ACCOUNT_POLICY"});
+      return this.errorResponse(adapter, request, 403, "No enabled account is allowed for this client purpose.", {"x-alia-pool-error":"POOL_ACCOUNT_POLICY"});
     }
     const enabled = accounts.filter(account => account.enabled);
     accounts = accounts.filter(account => projectTier(account, projectId) !== null);
     if (enabled.length > 0 && !accounts.some(account => account.enabled)) {
-      return this.errorResponse(adapter, request, 403, "Для проекта нет разрешённого аккаунта / No enabled account is allowed for this project context.", {"x-bb-pool-error":"POOL_PROJECT_RESTRICTED"});
+      return this.errorResponse(adapter, request, 403, "Для проекта нет разрешённого аккаунта / No enabled account is allowed for this project context.", {"x-alia-pool-error":"POOL_PROJECT_RESTRICTED"});
     }
     if (!accounts.some((account) => account.enabled)) {
       return this.errorResponse(adapter, request,
         503,
         "Account Pooler has no enabled account",
-        {"x-bb-pool-error":"POOL_NO_ACCOUNTS"},
+        {"x-alia-pool-error":"POOL_NO_ACCOUNTS"},
       );
     }
     const now = this.options.now();
     if (!accounts.some(account => account.enabled && (account.drainOnce || scheduleAllows(account.policy, now)))) {
-      return this.errorResponse(adapter, request, 403, "Аккаунты недоступны по расписанию / Every enabled account is outside its allowed schedule.", {"x-bb-pool-error":"POOL_SCHEDULE_RESTRICTED"});
+      return this.errorResponse(adapter, request, 403, "Аккаунты недоступны по расписанию / Every enabled account is outside its allowed schedule.", {"x-alia-pool-error":"POOL_SCHEDULE_RESTRICTED"});
     }
     accounts = accounts.filter(account => account.enabled && (account.drainOnce || scheduleAllows(account.policy, now)));
     if (accounts.every(account => this.options.quotas.get(account.id).error !== null)) {
       return this.errorResponse(adapter, request, 403,
         `${adapter.upstreamName}: аккаунты недоступны из-за сохранённых ошибок авторизации или подключения; проверьте карточки / Accounts have stored credential or connection errors.`,
-        {"x-bb-pool-error":"POOL_ACCOUNT_UNAVAILABLE"});
+        {"x-alia-pool-error":"POOL_ACCOUNT_UNAVAILABLE"});
     }
     const threshold = this.options.getSettings().switchThreshold;
     const next = accounts
@@ -1816,7 +1816,7 @@ export class AccountPoolHub {
       }
     }
     if (resetAt!==null) message += upstreamHeld ? ` Повторная попытка не ранее / Retry no earlier than: ${resetAt}.` : ` Сброс / reset: ${resetAt}.`;
-    return this.errorResponse(adapter, request, 403, message, {"x-bb-pool-error":reason});
+    return this.errorResponse(adapter, request, 403, message, {"x-alia-pool-error":reason});
   }
 
   private markError(accountId: string, message: string): void {

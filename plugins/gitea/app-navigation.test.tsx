@@ -8,7 +8,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 beforeAll(() => {
   vi.stubGlobal(
@@ -168,9 +168,9 @@ const search = () =>
   screen.getByPlaceholderText(
     "Search title, body, repository",
   ) as HTMLInputElement;
-const skeleton = () => screen.queryByTestId("bb-list-loading");
+const skeleton = () => screen.queryByTestId("alia-list-loading");
 const freshness = () =>
-  screen.getByTestId("bb-freshness").getAttribute("data-state");
+  screen.getByTestId("alia-freshness").getAttribute("data-state");
 
 function listCalls(slot: ReturnType<typeof renderSlot>) {
   return slot.rpcCalls
@@ -303,7 +303,7 @@ it("keeps rows through a failed background refresh and rereads only on a list ch
   await showQuery("kept", ["Kept row"]);
   await waitFor(() => expect(freshness()).toBe("stale-error"));
   expect(screen.getByText(/Refresh failed/)).toBeTruthy();
-  expect(screen.getByTestId("bb-freshness").getAttribute("title")).toContain(
+  expect(screen.getByTestId("alia-freshness").getAttribute("title")).toContain(
     "HTTP 502",
   );
 

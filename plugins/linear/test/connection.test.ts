@@ -186,8 +186,8 @@ describe("renderStatus", () => {
 
   it("tells an unconfigured plugin what to do", () => {
     const text = renderStatus(report({ connection: { kind: "no-credential" } }));
-    expect(text).toContain("bb plugin config linear set apiKey");
-    // Never a navigation breadcrumb: bb shows plugin management under
+    expect(text).toContain("alia plugin config linear set apiKey");
+    // Never a navigation breadcrumb: VesnALIA shows plugin management under
     // Extensions only when that collection is enabled, and under
     // Settings → Plugins otherwise.
     expect(text).not.toContain("Extensions");

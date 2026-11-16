@@ -114,8 +114,8 @@ type SetupStep = {
   settings and receipts survive a reload. A stage change and its pending launch
   share one transaction.
 
-`bb treelanes history` shows the latest ten task versions.
-`bb treelanes playbooks [project-id]` shows the latest five Checked Setups. A
+`alia treelanes history` shows the latest ten task versions.
+`alia treelanes playbooks [project-id]` shows the latest five Checked Setups. A
 Checked Setup is an example, not an approval or a receipt for new files. A PR
 setup joins the list only after a verified matching merge, and Done needs the
 setup to finish.
@@ -144,7 +144,7 @@ sequenceDiagram
     B-->>U: pull request ready to merge
 ```
 
-- `treelanes_deliver` or `bb treelanes deliver '<json>'` takes
+- `treelanes_deliver` or `alia treelanes deliver '<json>'` takes
   `{ "stage": "tdd", "task": { ... } }`. The task carries the outcome, scope,
   decisions, constraints, confirmations, checks and allowed actions, with no
   `setup` or `deliveryStages`. The caller ends its turn after it queues the
@@ -188,8 +188,8 @@ restart initial planning. Health reports a stale request for the current stage.
 
 ### Manual setup
 
-Inspect choices with `bb treelanes catalog [provider-id] [skill-query]`, save
-the task with its setup, then run `bb treelanes start` once.
+Inspect choices with `alia treelanes catalog [provider-id] [skill-query]`, save
+the task with its setup, then run `alia treelanes start` once.
 
 ## Failures and recovery
 
@@ -257,7 +257,7 @@ each repair state.
 
 ### Plan Recovery
 
-`treelanes_recover` or `bb treelanes recover '{"reason":"...","nextAction":"..."}'`
+`treelanes_recover` or `alia treelanes recover '{"reason":"...","nextAction":"..."}'`
 asks for a different plan for a concrete repair within the saved scope. A
 recorded failed result needs `nextAction`. An unchanged base or external
 failure keeps the current plan, and an open human decision blocks recovery.
@@ -272,7 +272,7 @@ alone uses Same-thread Retry, not Plan Recovery.
 ### Reopen
 
 `treelanes_reopen` or
-`bb treelanes reopen '{"taskRevision":2,"reason":"User requested changed work"}'`
+`alia treelanes reopen '{"taskRevision":2,"reason":"User requested changed work"}'`
 returns an unpaused automatic task from PR Watch to Design. Only the saved
 orchestrator or current owner calls it, and only at the user's request. It
 rejects stale revisions, pending setup, other live work and pending input.
@@ -289,7 +289,7 @@ open.
 pause and checks the saved state. `health` lists pending starts, failures,
 blocked starts, workers waiting for input, and missing or stale evidence.
 `health` and `snapshot` report state and start no workers. PR Watch moves to Done after the
-`bb--github-pr-status` plugin confirms a merged pull request for the worktree
+`alia--github-pr-status` plugin confirms a merged pull request for the worktree
 branch. Each pass reads PR Watch cards in batches of at most 200; an
 unavailable read leaves that batch in PR Watch.
 
@@ -297,7 +297,7 @@ unavailable read leaves that batch in PR Watch.
 
 - `treelanes_move_card` takes a stage and an optional note. The plugin finds
   the worktree from the current thread.
-- `bb treelanes help` lists every command.
+- `alia treelanes help` lists every command.
 - Stage prompts name `/delivery` and the stage skill, then give assignment
   IDs. Workers read the Saved Task, active step, checks and selected skill
   references from fresh context.

@@ -2,7 +2,7 @@ import { memo } from "react";
 import type { ToolKind } from "../../shared/model";
 import { Icon } from "../../components/ui/icon";
 
-/** bb icon names for each tool family, with a core-set fallback for the lazily loaded ones. */
+/** VesnALIA icon names for each tool family, with a core-set fallback for the lazily loaded ones. */
 const TOOL_ICONS: Record<ToolKind, { name: string; fallback: string; label: string }> = {
   command: { name: "Terminal", fallback: "Terminal", label: "Commands" },
   edit: { name: "EditFile", fallback: "Edit", label: "Edits" },

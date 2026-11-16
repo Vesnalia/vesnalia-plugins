@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../../src/rpc-contract";
 import { cn } from "../../lib/utils";
@@ -27,7 +27,7 @@ function Check({ ok, children, fix, action }: { ok: boolean | null; children: Re
 
 /**
  * With no reviews yet, in place of the sections: the find box as a paste box (`omnibox`), what a review needs and
- * whether it's there (GitHub CLI and its account on the BB server, a BB agent), and the ways to start one.
+ * whether it's there (GitHub CLI and its account on the VesnALIA server, a VesnALIA agent), and the ways to start one.
  */
 export function FirstRun({ omnibox, syncing }: { omnibox: ReactNode; syncing: boolean }) {
   const rpc = useRpc<typeof rpcContract>();
@@ -57,20 +57,20 @@ export function FirstRun({ omnibox, syncing }: { omnibox: ReactNode; syncing: bo
           {!setup && !failed && <li className="flex items-center gap-2.5 py-1.5 text-muted-foreground"><Icon name="Loading" className="size-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden />Checking setup…</li>}
           {failed && <Check ok={null}>Couldn’t check the setup.</Check>}
           {setup && <>
-            <Check ok={setup.githubCli} fix={<span className="block text-xs text-muted-foreground">Install it on the machine running BB, then check again.</span>}>
-              {setup.githubCli ? "GitHub CLI on the BB server" : "GitHub CLI isn’t on the BB server"}
+            <Check ok={setup.githubCli} fix={<span className="block text-xs text-muted-foreground">Install it on the machine running VesnALIA, then check again.</span>}>
+              {setup.githubCli ? "GitHub CLI on the VesnALIA server" : "GitHub CLI isn’t on the VesnALIA server"}
             </Check>
             <Check ok={!!setup.account} action={setup.account && <AccountBar />} fix={<span className="flex flex-wrap items-center gap-2">
               <code className="break-all rounded-md border border-border bg-muted/50 px-1.5 py-0.5 font-mono text-[11px]">{SIGN_IN}</code>
               <Button variant="outline" size="sm" className={cn("h-7", TOUCH_CONTROL)} onClick={() => void copy(SIGN_IN)}>Copy</Button>
             </span>}>
-              {setup.account ? `Signed in to GitHub as @${setup.account}` : "Sign in to GitHub on the BB server"}
+              {setup.account ? `Signed in to GitHub as @${setup.account}` : "Sign in to GitHub on the VesnALIA server"}
             </Check>
-            <Check ok={setup.agentAvailable} fix={<span className="block text-xs text-muted-foreground">Connect an agent provider in BB’s Settings.</span>}>
-              {setup.agentAvailable === true ? "A BB agent to write guides" : setup.agentAvailable === false ? "No BB agent to write guides" : "Couldn’t check BB’s agent providers"}
+            <Check ok={setup.agentAvailable} fix={<span className="block text-xs text-muted-foreground">Connect an agent provider in VesnALIA’s Settings.</span>}>
+              {setup.agentAvailable === true ? "A VesnALIA agent to write guides" : setup.agentAvailable === false ? "No VesnALIA agent to write guides" : "Couldn’t check VesnALIA’s agent providers"}
             </Check>
-            {setup.projectAvailable !== true && <Check ok={setup.projectAvailable} fix={<span className="block text-xs text-muted-foreground">Add a BB project before starting a review.</span>}>
-              {setup.projectAvailable === false ? "No BB project to run guides in" : "Couldn’t check your BB projects"}
+            {setup.projectAvailable !== true && <Check ok={setup.projectAvailable} fix={<span className="block text-xs text-muted-foreground">Add a VesnALIA project before starting a review.</span>}>
+              {setup.projectAvailable === false ? "No VesnALIA project to run guides in" : "Couldn’t check your VesnALIA projects"}
             </Check>}
           </>}
           {syncing && <li className="flex items-center gap-2.5 py-1.5 text-muted-foreground"><Icon name="Loading" className="size-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden />Looking for PRs that request your review…</li>}
@@ -78,8 +78,8 @@ export function FirstRun({ omnibox, syncing }: { omnibox: ReactNode; syncing: bo
         {(failed || (setup && (!setup.githubCli || !setup.account || setup.agentAvailable !== true || setup.projectAvailable !== true))) &&
           <Button variant="outline" size="sm" disabled={checking} className={cn("mx-auto flex", TOUCH_CONTROL)} onClick={() => void check()}>{checking ? "Checking…" : "Check again"}</Button>}
         <div className="space-y-1.5 text-center text-sm text-muted-foreground">
-          <p>Paste a PR link above, or run <code className="rounded-md border border-border bg-muted/50 px-1.5 py-0.5 font-mono text-[11px] text-foreground">bb review &lt;pr&gt;</code> in any BB thread.</p>
-          <p className="text-xs">Guides use your BB agent’s usual allowance. Nothing reaches GitHub until you submit, send a reply, or resolve a thread.</p>
+          <p>Paste a PR link above, or run <code className="rounded-md border border-border bg-muted/50 px-1.5 py-0.5 font-mono text-[11px] text-foreground">alia review &lt;pr&gt;</code> in any VesnALIA thread.</p>
+          <p className="text-xs">Guides use your VesnALIA agent’s usual allowance. Nothing reaches GitHub until you submit, send a reply, or resolve a thread.</p>
         </div>
       </section>
     </div>

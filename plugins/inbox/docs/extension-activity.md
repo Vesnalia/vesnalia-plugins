@@ -1,6 +1,6 @@
 # Notify through Needs You
 
-Needs You 0.2.0-beta.3+ exposes an optional activity API for other BB extensions.
+Needs You 0.2.0-beta.3+ exposes an optional activity API for other VesnALIA extensions.
 It saves one inbox item per extension and piece of work, sends enabled alerts,
 and opens the source extension when the user selects the item.
 
@@ -10,21 +10,21 @@ private notes, or other sensitive content in notification text.
 
 ```ts
 import { z } from "zod";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 export async function notifyGuideReady(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   input: { targetKey: string; generationId: string; completedAt: number; projectId: string; title: string },
 ) {
   try {
-    await bb.sdk.plugins.callRpc({
+    await alia.sdk.plugins.callRpc({
       pluginId: "inbox", method: "activityCapabilities", input: null,
       outputSchema: z.object({ version: z.literal(1) }),
     });
-    return await bb.sdk.plugins.callRpc({
+    return await alia.sdk.plugins.callRpc({
       pluginId: "inbox", method: "publishActivity",
       input: {
-        sourceId: bb.pluginId, sourceName: "Guided Review",
+        sourceId: alia.pluginId, sourceName: "Guided Review",
         entityId: input.targetKey, eventId: input.generationId,
         occurredAt: input.completedAt, projectId: input.projectId,
         title: input.title, body: "Your guide is ready to review.", status: "ready",
@@ -49,14 +49,14 @@ export async function notifyGuideReady(
 - `occurredAt`: integer milliseconds. Persist a strictly increasing value per entity
   for new outcomes, even when two outcomes occur in the same millisecond. Retries
   must reuse the original timestamp; older or equal timestamps are ignored.
-- `projectId`: optional BB project ID. Omit for installation-wide activity.
+- `projectId`: optional VesnALIA project ID. Omit for installation-wide activity.
 - `title`: 1–240 characters; `body`: up to 600 characters.
 - `status`: `ready` or `error`.
 - `target`: your registered nav panel's path and up to 12 unencoded subpath segments.
   Segments cannot contain slashes, backslashes, controls, `.` or `..`.
   Needs You constructs `/plugins/<sourceId>/<panel>/<encoded segments>`.
 
-RPC calls run in the trusted BB installation. The SDK does not provide an
+RPC calls run in the trusted VesnALIA installation. The SDK does not provide an
 authenticated caller identity for these methods: source fields are attribution,
 not an authorization boundary. This is not a public webhook or remote send API.
 
@@ -77,9 +77,9 @@ Desktop/Telegram delivery is independent of which browser window is open.
 
 Receipts are committed before channel delivery to prevent duplicate pings after
 a lost response. Channel failures are not retried automatically; the inbox item
-is the durable fallback. In-app popups require BB's desktop sidebar accessory;
+is the durable fallback. In-app popups require VesnALIA's desktop sidebar accessory;
 the inbox also works on compact layouts. Checking for updates does not install
-them; normal BB update handling applies.
+them; normal VesnALIA update handling applies.
 
 Guided Review retries an unacknowledged event once a minute for up to 24 hours
 while loaded. It discards outcomes superseded by a newer generation and never

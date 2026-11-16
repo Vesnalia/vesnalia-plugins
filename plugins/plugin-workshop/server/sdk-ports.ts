@@ -4,7 +4,7 @@ import { lstat, mkdir, mkdtemp, readdir, readFile, realpath, rename, rm, stat, s
 import { homedir, tmpdir } from "node:os";
 import { setTimeout as delay } from "node:timers/promises";
 import { basename, dirname, extname, join, posix, resolve, sep } from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   MachineUnavailable, sourcePath, SymlinkRefused, WorktreeGone,
@@ -16,7 +16,7 @@ import { MAIN_BRANCH } from "./gates";
 import { BUILD_LOCK } from "./rules";
 import { PLUGINS_ROOT, SELF_ID } from "./stages";
 
-// Live bb error texts: missing file — «HTTP 404: Path does not exist: …», missing thread — «HTTP 404: Thread not found».
+// Live VesnALIA error texts: missing file — «HTTP 404: Path does not exist: …», missing thread — «HTTP 404: Thread not found».
 /** No such thread. Only for thread requests: «Host not found» would match here too. */
 const NOT_FOUND = /not.?found|ENOENT|no such file|does not exist/i;
 /** No such file or folder on the machine. Narrow on purpose: «HTTP 404: Host not found» is not "no such file". */
@@ -24,7 +24,7 @@ const PATH_MISSING = /Path does not exist|ENOENT|no such file/i;
 /** Machine offline. Live text: «HTTP 502: Host is not connected» (caught by `not connected`); the other alternatives are just in case — extend them from `host call failed` log entries. */
 const OFFLINE = /offline|not connected|disconnected|unreachable|daemon|timed? ?out|ECONNREFUSED|host.*unavailable/i;
 /**
- * No environment, or it is not ready. bb: «HTTP 409: Environment unavailable» — the status is not ready (still being created or already removed),
+ * No environment, or it is not ready. VesnALIA: «HTTP 409: Environment unavailable» — the status is not ready (still being created or already removed),
  * «HTTP 404: Environment not found»; the machine daemon: `unknown environment`.
  */
 const ENV_GONE = /Environment unavailable|unknown environment|Environment not found/i;
@@ -37,12 +37,12 @@ const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const taskShape = z.looseObject({ id: z.string(), key: z.string(), projectId: z.string(), title: z.string(), status: z.string() });
 const taskMutationOut = z.union([z.looseObject({ ok: z.literal(true), task: taskShape }), z.looseObject({ ok: z.literal(false), error: z.unknown() })]);
 const taskByKeyOut = z.looseObject({ task: taskShape.nullable() });
-const listProjectsOut = z.looseObject({ projects: z.array(z.looseObject({ id: z.string(), linkedBbProjectId: z.string().nullable() })) });
+const listProjectsOut = z.looseObject({ projects: z.array(z.looseObject({ id: z.string(), linkedAliaProjectId: z.string().nullable() })) });
 /** The tracker's `listTasks`: the result includes the description; paging is by `nextCursor`. */
 const listTasksOut = z.looseObject({ tasks: z.array(taskShape.extend({ description: z.string().nullable().optional() })), nextCursor: z.string().nullable().optional() });
 const anyOut = z.unknown();
 
-// --- bb responses about plugins, install jobs and projects: schemas at the boundary ---
+// --- VesnALIA responses about plugins, install jobs and projects: schemas at the boundary ---
 
 const PLUGIN_STATES = ["running", "needs-configuration", "degraded", "error", "incompatible", "missing", "disabled", "starting"] as const;
 const pluginListOut = z.looseObject({
@@ -66,8 +66,8 @@ const configOut = z.looseObject({ primaryHostId: z.string().nullable().optional(
 const UNKNOWN_JOB = /unknown install job/i;
 
 /**
- * Parses a bb response against a schema. On a mismatch (e.g. a state this code does not know) the raw values of the offending fields go
- * to the plugin log, then it throws: strictness stays, and the cause is visible in `bb plugin logs plugin-workshop`.
+ * Parses a VesnALIA response against a schema. On a mismatch (e.g. a state this code does not know) the raw values of the offending fields go
+ * to the plugin log, then it throws: strictness stays, and the cause is visible in `alia plugin logs plugin-workshop`.
  */
 function parseOrLog<T>(schema: z.ZodType<T>, raw: unknown, what: string, warn: (m: string) => void): T {
   const r = schema.safeParse(raw);
@@ -94,7 +94,7 @@ interface Run {
   stderr: string;
 }
 const GIT_TIMEOUT_MS = 60_000;
-/** `bb plugin new`: up to 15 minutes waiting for the lock (`flock -w 900`) plus the scaffold itself with `npm install`. */
+/** `alia plugin new`: up to 15 minutes waiting for the lock (`flock -w 900`) plus the scaffold itself with `npm install`. */
 const SCAFFOLD_TIMEOUT_MS = 20 * 60_000;
 /**
  * Runs a command to completion without throwing on a non-zero exit code (the caller interprets it). Throws if it failed to start, timed
@@ -364,7 +364,7 @@ const treeSpecs = (exclude: string[], skip: string[] = []) => ["--", ".", ...exc
 
 // --- build lock ---
 
-export const LOCKS_DIR = join(homedir(), ".bb", "locks", SELF_ID);
+export const LOCKS_DIR = join(homedir(), ".vesnalia", "locks", SELF_ID);
 export { BUILD_LOCK } from "./rules";
 /**
  * Build lock holder: `flock -w 900 build.lock sh -c <script> workshop-holder <id> <token>`. It holds the lock while `<id>.want`
@@ -382,20 +382,20 @@ function safeName(kind: string, v: string): string {
 }
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** `bb plugin new` under the lock: first remove whatever an interrupted earlier run left in the nested folder (it held the lock until the end). */
-const SCAFFOLD_SCRIPT = `rm -rf -- "bb-plugin-$1" && exec "$2" plugin new "$1"`;
+/** `alia plugin new` under the lock: first remove whatever an interrupted earlier run left in the nested folder (it held the lock until the end). */
+const SCAFFOLD_SCRIPT = `rm -rf -- "alia-plugin-$1" && exec "$2" plugin new "$1"`;
 const PLUGIN_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export interface SdkPortsOptions {
-  /** Folder for claims and holder marks; default `~/.bb/locks/<plugin id>`. A temporary one in tests. */
+  /** Folder for claims and holder marks; default `~/.vesnalia/locks/<plugin id>`. A temporary one in tests. */
   locksDir?: string;
-  /** Build lock; default: the `buildLock` setting (`~/.bb/locks/build.lock`). A temporary file in tests. */
+  /** Build lock; default: the `buildLock` setting (`~/.vesnalia/locks/build.lock`). A temporary file in tests. */
   buildLock?: string;
   /** Root of the plugin working copies (`plugins.folders`); default: the `pluginsRoot` setting (`~/plugins`). */
   pluginsRoot?: string;
-  /** The `bb` command used for scaffolding; a fake in tests (tests never run the real `bb plugin new`). */
-  bbBin?: string;
-  /** Folder for dependency install state; default `workshop-deps` next to the claims folder (`~/.bb/locks/workshop-deps`). */
+  /** The `VesnALIA` command used for scaffolding; a fake in tests (tests never run the real `alia plugin new`). */
+  aliaBin?: string;
+  /** Folder for dependency install state; default `workshop-deps` next to the claims folder (`~/.vesnalia/locks/workshop-deps`). */
   depsDir?: string;
   /** The npm command; a fake in tests. */
   npmBin?: string;
@@ -438,11 +438,11 @@ interface ThreadFacts {
 /** threads.get returns the thread either flat or wrapped in `{ thread }` (with include). */
 const threadOf = (r: unknown): ThreadFacts => ((r as { thread?: ThreadFacts }).thread ?? r) as ThreadFacts;
 
-export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, opts: SdkPortsOptions = {}): Ports {
+export function sdkPorts(alia: AliaPluginApi, onChange: (workId: string) => void, opts: SdkPortsOptions = {}): Ports {
   const locksDir = opts.locksDir ?? LOCKS_DIR;
   const buildLock = opts.buildLock ?? BUILD_LOCK;
   const HOLDER_SCRIPT = holderScript(locksDir);
-  const bbBin = opts.bbBin ?? "bb";
+  const aliaBin = opts.aliaBin ?? "alia";
   const depsDir = opts.depsDir ?? join(dirname(locksDir), "workshop-deps");
   const npmBin = opts.npmBin ?? "npm";
   /** Fingerprint of what the dependencies are installed from: the lockfile, or package.json without one; null — no package.json, nothing to install. */
@@ -476,7 +476,7 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
     return at > 0 && argv[at + 1] === dir && argv[at + 2] === want && argv[at + 3] === base;
   }
   /** The plugin log keeps what it is given: token-shaped text is redacted first. */
-  const warnLog = (m: string) => bb.log.warn(redact(m));
+  const warnLog = (m: string) => alia.log.warn(redact(m));
   /** An error from a call on a machine: no file → null; machine offline → MachineUnavailable; anything else is rethrown as is. */
   function classify(e: unknown): null {
     const text = errText(e);
@@ -489,7 +489,7 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
   async function notReady(environmentId: string, e: unknown): Promise<never> {
     const text = errText(e);
     if (/Environment unavailable/i.test(text)) {
-      const env = (await bb.sdk.environments.get({ environmentId }).catch((g: unknown) => {
+      const env = (await alia.sdk.environments.get({ environmentId }).catch((g: unknown) => {
         if (ENV_GONE.test(errText(g))) throw new WorktreeGone(text);
         throw g;
       })) as { status?: string };
@@ -501,7 +501,7 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
   async function loc(environmentId: string) {
     const cached = locations.get(environmentId);
     if (cached) return cached;
-    const e = (await bb.sdk.environments.get({ environmentId }).catch((err: unknown) => {
+    const e = (await alia.sdk.environments.get({ environmentId }).catch((err: unknown) => {
       if (ENV_GONE.test(errText(err))) throw new WorktreeGone(errText(err));
       throw err;
     })) as { hostId: string; path: string | null };
@@ -511,7 +511,7 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
     return l;
   }
   /**
-   * On the bb server machine (where the worktree is a local folder) a file is read only by its own path: a symbolic link, or a path through
+   * On the VesnALIA server machine (where the worktree is a local folder) a file is read only by its own path: a symbolic link, or a path through
    * one (its real path differs from the folder's real path plus `rel`), throws `SymlinkRefused`. On another machine there is no local check
    * — the host's `rootPath` confinement is all there is.
    */
@@ -528,14 +528,14 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
     const l = await loc(environmentId);
     if (noLinks) await refuseLinks(l, rel);
     try {
-      const f = await bb.sdk.files.read({ hostId: l.hostId, path: posix.join(l.path, rel), rootPath: l.path });
+      const f = await alia.sdk.files.read({ hostId: l.hostId, path: posix.join(l.path, rel), rootPath: l.path });
       return "content" in f ? f : null;
     } catch (e) {
       return classify(e);
     }
   }
   const tasksRpc = <T>(method: string, input: unknown, outputSchema: z.ZodType<T>) =>
-    bb.sdk.plugins.callRpc({ pluginId: "tasks", method, input: input as never, outputSchema }) as Promise<T>;
+    alia.sdk.plugins.callRpc({ pluginId: "tasks", method, input: input as never, outputSchema }) as Promise<T>;
   const mutate = async (method: string, input: unknown): Promise<TaskRef> => {
     const r = await tasksRpc(method, input, taskMutationOut);
     if (!r.ok) throw new Error(`tasks.${method}: ${JSON.stringify((r as { error: unknown }).error)}`);
@@ -544,7 +544,7 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
   };
   let dataDir: string | null = null;
   const worksDir = async (workId: string) => {
-    dataDir ??= ((await bb.sdk.system.config()) as { dataDir: string }).dataDir;
+    dataDir ??= ((await alia.sdk.system.config()) as { dataDir: string }).dataDir;
     return join(dataDir, "plugins", SELF_ID, "works", workId);
   };
   let serverHost: string | null = null;
@@ -625,7 +625,7 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
         a.environment.kind === "reuse"
           ? ({ type: "reuse", environmentId: a.environment.environmentId } as const)
           : ({ type: "host", hostId: a.environment.hostId, workspace: { type: "managed-worktree", baseBranch: { kind: "default" } } } as const);
-      const t = await bb.sdk.threads.spawn({
+      const t = await alia.sdk.threads.spawn({
         projectId: a.projectId,
         environment,
         providerId: a.providerId,
@@ -644,9 +644,9 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
       // in the project and pick candidates by createdAt >= since. An error or "could not look through everything" throws instead of
       // returning "no thread": "no thread" lets the Engine create a second agent.
       for (let offset = 0; offset < 500; offset += 50) {
-        const page = (await bb.sdk.threads.list({ projectId, originPluginId: SELF_ID, includeHidden: true, limit: 50, offset })) as Array<{ id: string; createdAt: number }>;
+        const page = (await alia.sdk.threads.list({ projectId, originPluginId: SELF_ID, includeHidden: true, limit: 50, offset })) as Array<{ id: string; createdAt: number }>;
         for (const t of page.filter((x) => x.createdAt >= since)) {
-          const m = (await bb.sdk.threads.getPluginMetadata({ threadId: t.id })) as { opKey?: unknown };
+          const m = (await alia.sdk.threads.getPluginMetadata({ threadId: t.id })) as { opKey?: unknown };
           if (m.opKey === opKey) return t.id;
         }
         if (page.length < 50) return null;
@@ -657,7 +657,7 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
     async status(threadId) {
       let t: ThreadFacts;
       try {
-        t = threadOf(await bb.sdk.threads.get({ threadId }));
+        t = threadOf(await alia.sdk.threads.get({ threadId }));
       } catch (e) {
         if (NOT_FOUND.test(errText(e))) return "unknown";
         throw e;
@@ -668,7 +668,7 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
     },
     async threadStamp(threadId) {
       try {
-        const t = (threadOf(await bb.sdk.threads.get({ threadId })) as ThreadFacts & { updatedAt?: unknown });
+        const t = (threadOf(await alia.sdk.threads.get({ threadId })) as ThreadFacts & { updatedAt?: unknown });
         return typeof t.updatedAt === "number" ? t.updatedAt : null;
       } catch (e) {
         if (NOT_FOUND.test(errText(e))) return null;
@@ -676,14 +676,14 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
       }
     },
     async threadOutput(threadId) {
-      const r = (await bb.sdk.threads.output({ threadId })) as { output?: unknown };
+      const r = (await alia.sdk.threads.output({ threadId })) as { output?: unknown };
       return typeof r.output === "string" ? r.output : null;
     },
     async environmentOf(threadId) {
       for (let i = 0; i < 10; i++) {
-        const t = threadOf(await bb.sdk.threads.get({ threadId }));
+        const t = threadOf(await alia.sdk.threads.get({ threadId }));
         if (t.environmentId) {
-          const e = (await bb.sdk.environments.get({ environmentId: t.environmentId })) as { mergeBaseBranch?: string | null; defaultBranch?: string | null };
+          const e = (await alia.sdk.environments.get({ environmentId: t.environmentId })) as { mergeBaseBranch?: string | null; defaultBranch?: string | null };
           return { environmentId: t.environmentId, baseBranch: e.mergeBaseBranch ?? e.defaultBranch ?? null };
         }
         await new Promise((r) => setTimeout(r, 1500));
@@ -691,19 +691,19 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
       return null;
     },
     async send(threadId, text) {
-      await bb.sdk.threads.send({ threadId, mode: "auto", input: [{ type: "text", text, mentions: [] }] });
+      await alia.sdk.threads.send({ threadId, mode: "auto", input: [{ type: "text", text, mentions: [] }] });
     },
     async stop(threadId) {
-      await bb.sdk.threads.stop({ threadId });
+      await alia.sdk.threads.stop({ threadId });
     },
     /** Idempotent: a thread that is already archived (or already deleted) is not an error. The thread's state decides, not the error text. */
     async archive(threadId) {
       try {
-        await bb.sdk.threads.archive({ threadId });
+        await alia.sdk.threads.archive({ threadId });
       } catch (e) {
         let t: ThreadFacts;
         try {
-          t = threadOf(await bb.sdk.threads.get({ threadId }));
+          t = threadOf(await alia.sdk.threads.get({ threadId }));
         } catch (g) {
           if (NOT_FOUND.test(errText(g))) return;
           throw e;
@@ -712,9 +712,9 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
       }
     },
     async head(environmentId) {
-      let st: Awaited<ReturnType<typeof bb.sdk.environments.status>>;
+      let st: Awaited<ReturnType<typeof alia.sdk.environments.status>>;
       try {
-        st = await bb.sdk.environments.status({ environmentId });
+        st = await alia.sdk.environments.status({ environmentId });
       } catch (e) {
         warnLog(`environments.status ${environmentId}: ${errText(e)}`);
         if (ENV_GONE.test(errText(e))) await notReady(environmentId, e);
@@ -744,7 +744,7 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
     async list(environmentId, relDir) {
       const l = await loc(environmentId);
       try {
-        const r = await bb.sdk.files.listPaths({ hostId: l.hostId, path: posix.join(l.path, relDir), includeFiles: true, includeDirectories: false, includeHidden: true, limit: 500 });
+        const r = await alia.sdk.files.listPaths({ hostId: l.hostId, path: posix.join(l.path, relDir), includeFiles: true, includeDirectories: false, includeHidden: true, limit: 500 });
         if (r.truncated) throw new TooManyFiles(`too many files in ${relDir}`);
         return r.paths.map((p) => posix.join(relDir, p.path));
       } catch (e) {
@@ -761,7 +761,7 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
     /** All of `.superpowers/` is kept out of git: it holds both the Workshop's files and the implementer's SDD journal (`.superpowers/sdd/`) — otherwise the worktree is "dirty" and hand-over is blocked. */
     async ensureWorkDir(environmentId) {
       const l = await loc(environmentId);
-      await bb.sdk.files.write({ hostId: l.hostId, path: posix.join(l.path, ".superpowers/.gitignore"), rootPath: l.path, content: "*\n", createParents: true });
+      await alia.sdk.files.write({ hostId: l.hostId, path: posix.join(l.path, ".superpowers/.gitignore"), rootPath: l.path, content: "*\n", createParents: true });
     },
     /**
      * Key files by name, symbolic links and files whose content has a finding are not copied: they are returned in `withheld` (labels only).
@@ -836,20 +836,20 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
     },
     ui: {
       async panels() {
-        const { preferences } = await bb.sdk.system.uiPreferences.list();
+        const { preferences } = await alia.sdk.system.uiPreferences.list();
         const o = preferences["sidebar.pluginPanelOrder"];
         const v = preferences["sidebar.visiblePluginPanels"];
         return { order: [...(o?.value ?? [])], orderRevision: o?.revision ?? 0, visible: v?.value ? [...v.value] : null, visibleRevision: v?.revision ?? 0 };
       },
       async setOrder(order, expectedRevision) {
-        await bb.sdk.system.uiPreferences.set({ key: "sidebar.pluginPanelOrder", value: order, expectedRevision });
+        await alia.sdk.system.uiPreferences.set({ key: "sidebar.pluginPanelOrder", value: order, expectedRevision });
       },
       async setVisible(visible, expectedRevision) {
-        await bb.sdk.system.uiPreferences.set({ key: "sidebar.visiblePluginPanels", value: visible, expectedRevision });
+        await alia.sdk.system.uiPreferences.set({ key: "sidebar.visiblePluginPanels", value: visible, expectedRevision });
       },
     },
     async projectHost(projectId) {
-      const p = (await bb.sdk.projects.get({ projectId })) as { sources?: Array<{ hostId: string; isDefault?: boolean }> };
+      const p = (await alia.sdk.projects.get({ projectId })) as { sources?: Array<{ hostId: string; isDefault?: boolean }> };
       const s = p.sources?.find((x) => x.isDefault) ?? p.sources?.[0];
       if (!s) throw new Error("the project has no folder on any machine");
       return s.hostId;
@@ -872,13 +872,13 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
         const r = await tasksRpc("getTaskByKey", { taskKey: key }, taskByKeyOut);
         return r.task ? { id: r.task.id, key: r.task.key, projectId: r.task.projectId, title: r.task.title } : null;
       },
-      async linkedProject(bbProjectId) {
+      async linkedProject(aliaProjectId) {
         const { projects } = await tasksRpc("listProjects", {}, listProjectsOut);
-        return projects.find((p) => p.linkedBbProjectId === bbProjectId)?.id ?? null;
+        return projects.find((p) => p.linkedAliaProjectId === aliaProjectId)?.id ?? null;
       },
-      async linkedBbProject(tasksProjectId) {
+      async linkedAliaProject(tasksProjectId) {
         const { projects } = await tasksRpc("listProjects", {}, listProjectsOut);
-        return projects.find((p) => p.id === tasksProjectId)?.linkedBbProjectId ?? null;
+        return projects.find((p) => p.id === tasksProjectId)?.linkedAliaProjectId ?? null;
       },
       // What goes to the tracker is redacted: token-shaped text in a request or a note does not end up in a task.
       create: (a) => mutate("createTask", { projectId: a.tasksProjectId, title: redact(a.title), description: redact(a.description), status: "todo", priority: "medium" }),
@@ -895,7 +895,7 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
     },
     plugins: {
       async list(): Promise<InstalledPlugin[]> {
-        const { plugins } = parseOrLog(pluginListOut, await bb.sdk.plugins.list(), "plugins.list", warnLog);
+        const { plugins } = parseOrLog(pluginListOut, await alia.sdk.plugins.list(), "plugins.list", warnLog);
         return plugins
           .filter((p) => !p.source.startsWith("builtin:"))
           .map((p) => ({ id: p.id, name: p.name ?? null, state: p.status, enabled: p.enabled, source: p.source, rootDir: p.rootDir ?? null, error: p.statusDetail ?? null }));
@@ -908,44 +908,44 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
         });
         const out: Array<{ id: string; dir: string; name: string | null }> = [];
         for (const e of entries) {
-          if (!e.name.startsWith("bb-plugin-") || e.name === "bb-plugin-") continue;
+          if (!e.name.startsWith("alia-plugin-") || e.name === "alia-plugin-") continue;
           const dir = join(root, e.name);
           const isDir = e.isDirectory() || (e.isSymbolicLink() && (await stat(dir).then((s) => s.isDirectory(), () => false)));
           if (!isDir) continue;
           const manifest = await readFile(join(dir, "package.json"), "utf8")
-            .then((t) => JSON.parse(t) as { bb?: { name?: unknown } } | null)
+            .then((t) => JSON.parse(t) as { alia?: { name?: unknown } } | null)
             .catch(() => null);
-          const name = typeof manifest?.bb?.name === "string" ? manifest.bb.name : null;
-          out.push({ id: e.name.slice("bb-plugin-".length), dir, name });
+          const name = typeof manifest?.alia?.name === "string" ? manifest.alia.name : null;
+          out.push({ id: e.name.slice("alia-plugin-".length), dir, name });
         }
         return out;
       },
-      /** The source in the form of the CLI and `InstalledPlugin.source` (`path:<folder>`): while a job with the same string is running, bb returns that job. */
+      /** The source in the form of the CLI and `InstalledPlugin.source` (`path:<folder>`): while a job with the same string is running, VesnALIA returns that job. */
       async startInstall(dir) {
         const p = sourcePath(dir);
         if (!p) throw new Error(`install: an absolute folder path is required, not «${dir}»`);
-        return jobOf(await bb.sdk.plugins.startInstall({ source: `path:${p}` }), warnLog).id;
+        return jobOf(await alia.sdk.plugins.startInstall({ source: `path:${p}` }), warnLog).id;
       },
       async job(id) {
         try {
-          return jobOf(await bb.sdk.plugins.installJobs.get({ jobId: id }), warnLog);
+          return jobOf(await alia.sdk.plugins.installJobs.get({ jobId: id }), warnLog);
         } catch (e) {
           if (UNKNOWN_JOB.test(errText(e))) return null;
           throw e;
         }
       },
       async jobs() {
-        const list = await bb.sdk.plugins.installJobs.list();
+        const list = await alia.sdk.plugins.installJobs.list();
         return z.array(z.unknown()).parse(list).map((j) => jobOf(j, warnLog));
       },
       async cancelJob(id) {
-        await bb.sdk.plugins.installJobs.cancel({ jobId: id });
+        await alia.sdk.plugins.installJobs.cancel({ jobId: id });
       },
       async enable(id) {
-        await bb.sdk.plugins.enable({ pluginId: id });
+        await alia.sdk.plugins.enable({ pluginId: id });
       },
       async disable(id) {
-        await bb.sdk.plugins.disable({ pluginId: id });
+        await alia.sdk.plugins.disable({ pluginId: id });
       },
     },
     deps: {
@@ -1312,7 +1312,7 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
         const real = (p: string) => realpath(p).catch(() => resolve(p));
         const want = await real(dir);
         const out: string[] = [];
-        for (const p of projectsOut.parse(await bb.sdk.projects.list())) {
+        for (const p of projectsOut.parse(await alia.sdk.projects.list())) {
           for (const s of p.sources ?? []) {
             if (s.hostId === hostId && (await real(s.path)) === want) {
               out.push(p.id);
@@ -1323,7 +1323,7 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
         return out;
       },
       async create(a) {
-        return createdOut.parse(await bb.sdk.projects.create({ name: a.name, source: { type: "local_path", hostId: a.hostId, path: a.dir } })).id;
+        return createdOut.parse(await alia.sdk.projects.create({ name: a.name, source: { type: "local_path", hostId: a.hostId, path: a.dir } })).id;
       },
     },
     fs: {
@@ -1358,13 +1358,13 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
       },
       /**
        * `mkdir -p tmpDir`, then under the build lock (`flock -w 900`) in `tmpDir`: remove the nested folder an interrupted earlier run may
-       * have left, and `bb plugin new <id>`, which creates `<tmpDir>/bb-plugin-<id>/`. `Creation` checks completeness.
+       * have left, and `alia plugin new <id>`, which creates `<tmpDir>/alia-plugin-<id>/`. `Creation` checks completeness.
        */
       async scaffold(id, tmpDir) {
         if (!PLUGIN_ID.test(id)) throw new Error(`scaffold: «${id}» is not a plugin id`);
         await mkdir(tmpDir, { recursive: true });
-        const r = await run("flock", ["-w", "900", buildLock, "sh", "-c", SCAFFOLD_SCRIPT, "workshop-scaffold", id, bbBin], { cwd: tmpDir, timeout: SCAFFOLD_TIMEOUT_MS });
-        if (r.code !== 0) throw new Error(`bb plugin new ${id}: exit code ${r.code}${(r.stderr || r.stdout).trim() ? ` — ${(r.stderr || r.stdout).trim().slice(-500)}` : ""}`);
+        const r = await run("flock", ["-w", "900", buildLock, "sh", "-c", SCAFFOLD_SCRIPT, "workshop-scaffold", id, aliaBin], { cwd: tmpDir, timeout: SCAFFOLD_TIMEOUT_MS });
+        if (r.code !== 0) throw new Error(`alia plugin new ${id}: exit code ${r.code}${(r.stderr || r.stdout).trim() ? ` — ${(r.stderr || r.stdout).trim().slice(-500)}` : ""}`);
       },
     },
     async saveText(workId, label, relPath, content) {
@@ -1379,12 +1379,12 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
      * queried in parallel, each for at most 10 s: a hung ACP provider does not hold up the form. One that returns no models stays, with a note.
      */
     async modelCatalog() {
-      const list = (await bb.sdk.providers.list()) as Array<{ id: string; name?: string; displayName?: string }>;
+      const list = (await alia.sdk.providers.list()) as Array<{ id: string; name?: string; displayName?: string }>;
       return Promise.all(
         list.map(async (p) => {
           const name = p.displayName || p.name || p.id;
           try {
-            const r = (await withTimeout(bb.sdk.providers.models({ providerId: p.id }), 10_000, "no answer within 10 s")) as {
+            const r = (await withTimeout(alia.sdk.providers.models({ providerId: p.id }), 10_000, "no answer within 10 s")) as {
               models?: Array<{ model: string; displayName?: string; defaultReasoningEffort?: string; supportedReasoningEfforts?: Array<{ reasoningEffort: string }> }>;
               modelLoadError?: { code?: string; detail?: string | null } | null;
             };
@@ -1402,11 +1402,11 @@ export function sdkPorts(bb: BbPluginApi, onChange: (workId: string) => void, op
         }),
       );
     },
-    /** The machine the bb server runs on (`primaryHostId`): the plugin working copies live there. */
+    /** The machine the VesnALIA server runs on (`primaryHostId`): the plugin working copies live there. */
     async serverHostId() {
       if (serverHost) return serverHost;
-      const c = configOut.parse(await bb.sdk.system.config());
-      if (!c.primaryHostId) throw new Error("bb did not report its server machine (primaryHostId)");
+      const c = configOut.parse(await alia.sdk.system.config());
+      if (!c.primaryHostId) throw new Error("alia did not report its server machine (primaryHostId)");
       serverHost = c.primaryHostId;
       return serverHost;
     },

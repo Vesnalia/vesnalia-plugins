@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { experimental_Icon as Icon, useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import type { SettingKey, rpcContract } from "../server";
 import { BLOCKS, NUMBER_RANGES, SHARE_KEYS, hintOf, shortOf, unitOf, type ColorKey, type NumberKey } from "./shared";
 import type { Kind } from "./model.ts";
@@ -342,7 +342,7 @@ function ResetAll() {
   );
 }
 
-/** The tabs and the settings under them: the floating panel and BB's settings page both show this. */
+/** The tabs and the settings under them: the floating panel and VesnALIA's settings page both show this. */
 function Content({ box, focusOnOpen }: { box: React.RefObject<HTMLElement | null>; focusOnOpen?: boolean }) {
   const options = useOptions();
   const uid = useId();
@@ -523,7 +523,7 @@ function Body() {
   );
 }
 
-/** The same settings as a section of BB's settings page, in the page's own flow instead of floating. */
+/** The same settings as a section of VesnALIA's settings page, in the page's own flow instead of floating. */
 export function SettingsPage() {
   const box = useRef<HTMLDivElement>(null);
   const style = { "--minimap-float": FLOAT, "--minimap-row": ROW, "--minimap-pos": ABS, "--minimap-rel": REL } as React.CSSProperties;

@@ -80,10 +80,10 @@ class FakeFs implements FsPort {
   async freeDiskGb(_p: string) {
     return this.freeGb;
   }
-  /** Like `bb plugin new <id>` with `cwd = tmpDir`: a nested `bb-plugin-<id>/` with all `SCAFFOLD_FILES`; nothing in `tmpDir` itself. */
+  /** Like `alia plugin new <id>` with `cwd = tmpDir`: a nested `alia-plugin-<id>/` with all `SCAFFOLD_FILES`; nothing in `tmpDir` itself. */
   async scaffold(id: string, tmpDir: string) {
     return this.fx("scaffold", [id, tmpDir], () => {
-      const dir = `${tmpDir}/bb-plugin-${id}`;
+      const dir = `${tmpDir}/alia-plugin-${id}`;
       this.put(dir);
       for (const f of SCAFFOLD_FILES) this.put(`${dir}/${f}`);
     });
@@ -115,13 +115,13 @@ class FakePlugins implements PluginsPort {
     if (full.rootDir) this.fs.put(full.rootDir);
     return { ...full };
   }
-  /** A job started by someone else (a manual `bb plugin install`) or already running. */
+  /** A job started by someone else (a manual `alia plugin install`) or already running. */
   addJob(j: { id: string; source: string | null; state: JobState; error?: string | null }): InstallJob {
     const job: InstallJob = { id: j.id, source: j.source, state: j.state, error: j.error ?? null };
     this.jobMap.set(job.id, job);
     return { ...job };
   }
-  /** Advance a job. `succeeded` installs the plugin from the job's folder: a new one runs, a disabled one gets enabled (as bb does). */
+  /** Advance a job. `succeeded` installs the plugin from the job's folder: a new one runs, a disabled one gets enabled (as VesnALIA does). */
   setJob(id: string, state: JobState, error?: string | null): void {
     const job = this.jobMap.get(id);
     if (!job) throw new Error(`no job ${id}`);
@@ -129,17 +129,17 @@ class FakePlugins implements PluginsPort {
     job.error = error !== undefined ? error : state === "failed" ? "install failed" : null;
     if (state === "succeeded") this.applyInstall(job);
   }
-  /** The next `startInstall` returns this id (bb returned an already running job). */
+  /** The next `startInstall` returns this id (VesnALIA returned an already running job). */
   startInstallReturns(jobId: string): void {
     this.forced = jobId;
   }
-  /** The job is gone: bb keeps finished jobs for ~10 minutes, and after a server restart they are gone entirely (`job` → null, not in `jobs`). */
+  /** The job is gone: VesnALIA keeps finished jobs for ~10 minutes, and after a server restart they are gone entirely (`job` → null, not in `jobs`). */
   forgetJob(id: string): void {
     this.jobMap.delete(id);
   }
   private applyInstall(job: InstallJob) {
     const dir = sourcePath(job.source);
-    const id = dir ? /^bb-plugin-(.+)$/.exec(posix.basename(dir))?.[1] : undefined;
+    const id = dir ? /^alia-plugin-(.+)$/.exec(posix.basename(dir))?.[1] : undefined;
     if (!dir || !id) return;
     this.items.set(id, { id, name: this.items.get(id)?.name ?? id, state: "running", enabled: true, source: `path:${dir}`, rootDir: dir, error: null });
   }
@@ -157,13 +157,13 @@ class FakePlugins implements PluginsPort {
     if (this.failFolders) throw new Error("plugins.folders failed");
     return this.fs
       .children(PLUGINS_ROOT)
-      .filter((n) => n.startsWith("bb-plugin-"))
+      .filter((n) => n.startsWith("alia-plugin-"))
       .map((n) => {
-        const id = n.slice("bb-plugin-".length);
+        const id = n.slice("alia-plugin-".length);
         return { id, dir: `${PLUGINS_ROOT}/${n}`, name: this.folderNames.get(id) ?? null };
       });
   }
-  /** As bb does: the same source string while the job is running — the same job; a different spelling — a new one, queued behind the running one. */
+  /** As VesnALIA does: the same source string while the job is running — the same job; a different spelling — a new one, queued behind the running one. */
   async startInstall(dir: string) {
     return this.fx("startInstall", [dir], () => {
       if (this.forced !== null) {
@@ -196,7 +196,7 @@ class FakePlugins implements PluginsPort {
     if (j.state === "queued") j.state = "cancelled";
     else if (j.state === "running") j.state = "cancelling";
   }
-  /** Enabling loads the plugin from scratch: no folder — `missing` without a name (as bb does), otherwise a disabled one runs again. */
+  /** Enabling loads the plugin from scratch: no folder — `missing` without a name (as VesnALIA does), otherwise a disabled one runs again. */
   async enable(id: string) {
     return this.fx("enable", [id], () => {
       const p = this.known(id);
@@ -714,7 +714,7 @@ class FakeGithub implements GithubPort {
   }
 }
 
-// --- bb projects ---
+// --- VesnALIA projects ---
 
 class FakeProjects implements ProjectsPort {
   rows = new Map<string, { id: string; name: string; dir: string; hostId: string }>();
@@ -748,7 +748,7 @@ interface FakeThread extends SpawnArgs {
 /** The environment's worktree folder in the fake; a new worktree is a git repository right away (`git`) with one commit on main. */
 export const worktreeDirOf = (env: string) => `/wt/${env}`;
 
-/** Memory instead of bb: threads, worktree files, snapshots, tracker tasks. */
+/** Memory instead of VesnALIA: threads, worktree files, snapshots, tracker tasks. */
 export class FakePorts implements Ports {
   /** Log of performed external actions (effects) in order. A "before" failure is not in it: the action did not happen. */
   readonly calls: Array<{ effect: string; args: unknown[] }> = [];
@@ -791,9 +791,9 @@ export class FakePorts implements Ports {
   readonly git = new FakeGit(this.fx);
   readonly github = new FakeGithub(this.fx, this.git);
   readonly projects = new FakeProjects(this.fx);
-  /** The machine bb runs on. */
+  /** The machine VesnALIA runs on. */
   serverHost = "host_1";
-  /** bb providers and models; `catalogFails` — the list did not arrive. */
+  /** VesnALIA providers and models; `catalogFails` — the list did not arrive. */
   catalog = [
     { id: "claude-code", name: "Claude Code", models: [
       { id: "claude-opus-5-5", label: "Opus 5.5", efforts: ["low", "medium", "high", "xhigh", "max"], defaultEffort: "high" },
@@ -818,7 +818,7 @@ export class FakePorts implements Ports {
   heads = new Map<string, string>();
   dirty = new Set<string>();
   machineDown = false;
-  /** Environments whose worktree bb has already removed. */
+  /** Environments whose worktree VesnALIA has already removed. */
   gone = new Set<string>();
   spawnFails = false;
   /** The thread was created, but the call returned an error (reply timeout). */
@@ -840,7 +840,7 @@ export class FakePorts implements Ports {
   saved: Array<{ workId: string; env: string; label: string; what: Snapshot }> = [];
   savedFiles = new Map<string, string>();
   taskRows = new Map<string, TaskRef & { description: string; status: TaskStatus; comments: string[]; threads: string[] }>();
-  /** tasksProjectId → bbProjectId */
+  /** tasksProjectId → aliaProjectId */
   links = new Map<string, string>([["tp1", "p1"]]);
   changes: string[] = [];
   /** Total time waited via `sleep`: the fake's clock moved ahead by as much. */
@@ -852,7 +852,7 @@ export class FakePorts implements Ports {
   now() {
     return this.t;
   }
-  /** Run `run` when the fake's clock reaches "now + ms" (`sleep` moves it): bb finished a job, the lock became free. */
+  /** Run `run` when the fake's clock reaches "now + ms" (`sleep` moves it): VesnALIA finished a job, the lock became free. */
   after(ms: number, run: () => void): void {
     this.timers.push({ at: this.t + ms, run });
   }
@@ -869,8 +869,8 @@ export class FakePorts implements Ports {
     if (this.spawnFails || this.spawnCalls === this.failSpawnNumber) throw new Error("spawn failed");
     const id = `thr_${++this.n}`;
     const env = a.environment.kind === "reuse" ? a.environment.environmentId : `env_${this.n}`;
-    // The work worktree is on its own branch, as with bb (`bb/<…>`), not on main.
-    if (a.environment.kind === "new-worktree") this.git.setRepo(worktreeDirOf(env), { branch: `bb/${env}` });
+    // The work worktree is on its own branch, as with VesnALIA (`alia/<…>`), not on main.
+    if (a.environment.kind === "new-worktree") this.git.setRepo(worktreeDirOf(env), { branch: `alia/${env}` });
     this.threads.set(id, { ...a, status: "active", env, createdAt: this.t, stamp: ++this.stampSeq, output: null });
     if (this.spawnThenThrow) throw new Error("timeout after create");
     return id;
@@ -1005,7 +1005,7 @@ export class FakePorts implements Ports {
       this.depsStates.set(dir, { kind: "running" });
     },
   };
-  /** The navigation bar — bb UI preferences; the revision grows with every write. */
+  /** The navigation bar — VesnALIA UI preferences; the revision grows with every write. */
   panels = { order: [] as string[], orderRevision: 0, visible: null as string[] | null, visibleRevision: 0 };
   uiFails = false;
   ui = {
@@ -1032,8 +1032,8 @@ export class FakePorts implements Ports {
   }
   tasks = {
     byKey: async (key: string) => [...this.taskRows.values()].find((t) => t.key === key) ?? null,
-    linkedProject: async (bbProjectId: string) => [...this.links].find(([, p]) => p === bbProjectId)?.[0] ?? null,
-    linkedBbProject: async (tasksProjectId: string) => this.links.get(tasksProjectId) ?? null,
+    linkedProject: async (aliaProjectId: string) => [...this.links].find(([, p]) => p === aliaProjectId)?.[0] ?? null,
+    linkedAliaProject: async (tasksProjectId: string) => this.links.get(tasksProjectId) ?? null,
     create: (a: { tasksProjectId: string; title: string; description: string }) =>
       this.fx("tasks.create", [a], () => {
         const key = `TEST-${this.taskRows.size + 1}`;

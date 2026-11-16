@@ -506,7 +506,7 @@ export function assembleDashboard(input: {
    * meter the user is missing — it is an agent they never added. Plugin-supplied
    * providers only reach the catalog once their plugin is installed, so this is
    * what keeps the dashboard to the agents that actually exist here. A provider
-   * bb ships stays listed even when uninstalled, because "not installed" is real
+   * VesnALIA ships stays listed even when uninstalled, because "not installed" is real
    * news for those.
    */
   const trackedKeys = PROVIDER_KEYS.filter((key) => {

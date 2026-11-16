@@ -50,8 +50,8 @@ const server = createServer(async (req, res) => {
     for (const name of ['content-type', 'content-encoding', 'connect-content-encoding', 'connect-accept-encoding', 'user-agent']) {
       if (req.headers[name]) headers.set(name, String(req.headers[name]));
     }
-    headers.set('x-bb-account-pool-token', token);
-    headers.set('x-bb-devin-session', sessionId);
+    headers.set('x-alia-account-pool-token', token);
+    headers.set('x-alia-devin-session', sessionId);
     const upstream = await fetch(target, { method: 'POST', headers, body: Buffer.concat(chunks), redirect: 'error' });
     const responseHeaders = {};
     for (const [name, value] of upstream.headers) {

@@ -1,9 +1,9 @@
 ---
 name: variaq
-description: "Use when running VariaQ hybrid-compute experiments (classical/Qiskit/CUDA-Q) from bb — generating problems, solving, benchmarking, planning campaigns, executing campaigns, analyzing results, generating reports, or inspecting/reproducing experiment runs."
+description: "Use when running VariaQ hybrid-compute experiments (classical/Qiskit/CUDA-Q) from VesnALIA — generating problems, solving, benchmarking, planning campaigns, executing campaigns, analyzing results, generating reports, or inspecting/reproducing experiment runs."
 ---
 
-# VariaQ from bb
+# VariaQ from VesnALIA
 
 The VariaQ plugin is a thin adapter: every capability below shells out to the
 **standalone** VariaQ CLI (`python -m variaq`) from its installed checkout.
@@ -57,10 +57,10 @@ read VariaQ's own ARCHITECTURE.md for solver internals.
 
 ## CLI
 
-`bb variaq --help` lists the same operations (`bb variaq status`, `solve …`,
-`bb variaq benchmark …`, `bb variaq runs …`, `bb variaq campaign-plan …`,
-`bb variaq campaign-run …`, `bb variaq campaigns …`, `bb variaq campaign …`,
-`bb variaq analyze-campaign …`, `bb variaq report-campaign …`, …); add `--json`
+`alia variaq --help` lists the same operations (`alia variaq status`, `solve …`,
+`alia variaq benchmark …`, `alia variaq runs …`, `alia variaq campaign-plan …`,
+`alia variaq campaign-run …`, `alia variaq campaigns …`, `alia variaq campaign …`,
+`alia variaq analyze-campaign …`, `alia variaq report-campaign …`, …); add `--json`
 for machine-readable output.
 
 ## Constraints
@@ -80,7 +80,7 @@ for machine-readable output.
 - **Reports derive from stored runs.** Report generation may create files, but
   it never mutates run records, problems, or campaign definitions.
 - Problems default to `<checkout>/data/problems/` and the experiment DB to
-  `<checkout>/data/variaq.sqlite3` — change via `bb plugin config variaq set <key>`
+  `<checkout>/data/variaq.sqlite3` — change via `alia plugin config variaq set <key>`
   (`dbPath`, `problemsDir`, `pythonPath`, `projectDir`, `reportOutputDir`,
   `timeoutMs`). Report outputs are constrained to `reportOutputDir`.
 - All runs are deterministic given their seed; VariaQ appends runs, it never
@@ -90,7 +90,7 @@ for machine-readable output.
   nonzero infeasible counts as a run failure.
 - **Graph Partition quantum support remains unadvertised** unless VariaQ
   capabilities change in a future release.
-- This checkout supports stable VariaQ 0.6.x and 0.8.x and the explicitly verified 0.8.0rc1 candidate, schema version `1`, on BB 0.46 / SDK 0.6.37. Other versions/candidates/schemas remain unsupported.
+- This checkout supports stable VariaQ 0.6.x and 0.8.x and the explicitly verified 0.8.0rc1 candidate, schema version `1`, on VesnALIA 0.46 / SDK 0.6.37. Other versions/candidates/schemas remain unsupported.
 - On VariaQ 0.8.x (or the tested 0.8.0rc1), pass compare: "paired_solvers" to variaq_analyze_campaign or variaq_report_campaign. Forward VariaQ's pairing, precision, null reasons and timing scopes; do not compute scientific metrics or claim cold GPU state/speedup.
 - VariaQ analyze runs has no --compare contract; use stored campaign analysis for comparisons. Paired analysis/reporting on 0.6.x fails clearly.
 - Campaign solver_config uses nested seed/parameters overrides, including numeric candidate-parameter matrices. Preview resource limits before execution.

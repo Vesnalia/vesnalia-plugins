@@ -28,7 +28,7 @@ describe("thread status", () => {
     expect(rowState(sidebarThread({ status: "unknown" as never, indicator: "unknown" as never }))).toBe("idle");
   });
 
-  it("shows an unread reply over background agents, commands and queued messages, as bb 0.48 does", () => {
+  it("shows an unread reply over background agents, commands and queued messages, as VesnALIA 0.48 does", () => {
     const activity = (key: keyof ReturnType<typeof sidebarThread>["activity"]) => ({ ...sidebarThread().activity, [key]: 1 });
     for (const background of [{ activity: activity("backgroundAgents") }, { activity: activity("backgroundCommands") },
       { indicator: "background-agent" as const }, { indicator: "background-command" as const }, { indicator: "queued-waiting" as const }]) {

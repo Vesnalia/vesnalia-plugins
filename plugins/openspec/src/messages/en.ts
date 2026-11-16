@@ -41,7 +41,7 @@ export const en = {
   "actionHint.apply": "Complete tasks",
   "actionHint.verify": "Check against specs",
   customAgentSettings: "Custom agent settings",
-  bbDefaults: "Use bb defaults",
+  aliaDefaults: "Use VesnALIA defaults",
   firstMessage: "First message",
   launching: "Launching…",
   createAndLaunch: "Create and launch",

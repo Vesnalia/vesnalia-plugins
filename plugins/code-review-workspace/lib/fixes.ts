@@ -26,7 +26,7 @@ export function tallyOf(out: readonly OutComment[], verdicts: ReadonlyMap<string
 }
 
 /**
- * The review's newest Send while comments are out, and whether it's Ready to re-review (`ready`): its thread ran `bb
+ * The review's newest Send while comments are out, and whether it's Ready to re-review (`ready`): its thread ran `VesnALIA
  * review ready`, or reported the last comment out. Not ready, the review waits for the thread's reports, unless the
  * thread was archived or deleted (`gone`). Null with nothing out: no Send, or every comment resolved, dismissed or open again.
  */

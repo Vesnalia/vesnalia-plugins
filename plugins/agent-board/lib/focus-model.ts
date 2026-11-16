@@ -1,8 +1,8 @@
-// bb-plugin-agent-board — the single-agent focus view model.
+// alia-plugin-agent-board — the single-agent focus view model.
 //
 // Pure derivation: normalized snapshot → "is the user watching ONE logical
 // active execution?" → a generic focus layout model. No SDK imports, no
-// React, no source-specific branching: Redteam and BB both express executions
+// React, no source-specific branching: Redteam and VesnALIA both express executions
 // through the generic card fields (parentKey, parentThreadId, scanId,
 // groupKey, sequence).
 //
@@ -22,13 +22,13 @@
 //       while the root's turn runs;
 //    c. Redteam cards share a scanId — a scan's active phase and its current
 //       operation records are ONE execution. Different scans never merge.
-//    BB and Redteam cards never merge (disjoint link spaces).
+//    VesnALIA and Redteam cards never merge (disjoint link spaces).
 // 3. FOCUS MODE activates exactly when the active set forms ONE linked group
 //    that contains at least one hero-eligible card (kind thread,
 //    workflow-agent, delegation, phase, or operation). Plan steps and queued
 //    messages are pipeline/queue material, never the hero. Two independent
 //    active executions (e.g. two Redteam scans, or one Redteam scan plus one
-//    running BB child with an idle root) keep the multi-agent Kanban board.
+//    running VesnALIA child with an idle root) keep the multi-agent Kanban board.
 //
 // The hero is the most specific executing card: deepest first (a running
 // child thread beats its running root), then the freshest activity, then a
@@ -207,7 +207,7 @@ export function groupExecutions(cards: readonly BoardCard[]): BoardCard[][] {
     if (ra !== rb) parent[rb] = ra;
   };
 
-  // Link (a) children to active parents and (b) BB threads to active parents.
+  // Link (a) children to active parents and (b) VesnALIA threads to active parents.
   const threadById = new Map<string, number>();
   active.forEach((card, position) => {
     if (card.kind === "thread" && card.threadId !== null) threadById.set(card.threadId, position);

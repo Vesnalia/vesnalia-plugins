@@ -1,6 +1,6 @@
 // Out-of-range updates run one at a time, in the order they were confirmed,
-// each after any bb update job for the same plugin ends (or gives up on it).
-// The queue is in memory only: reloading this plugin (or bb) drops queued
+// each after any VesnALIA update job for the same plugin ends (or gives up on it).
+// The queue is in memory only: reloading this plugin (or VesnALIA) drops queued
 // entries, and cuts off a running one wherever it was.
 import type { ManualSteps, OutOfRangeEntry, OutOfRangeRequest, OutOfRangeResult } from "./contract";
 import { message } from "./errors";
@@ -56,7 +56,7 @@ export function createOutOfRangeQueue({
 
   async function run(slot: Slot): Promise<Outcome> {
     const { id } = slot.entry;
-    // Blocks the whole queue, which is fine: bb runs one install at a time anyway.
+    // Blocks the whole queue, which is fine: VesnALIA runs one install at a time anyway.
     if (await busy(id)) {
       update(slot, { state: "waiting" });
       const giveUpAt = Date.now() + waitTimeoutMs;

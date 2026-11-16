@@ -3,7 +3,7 @@ import {
   useRpc,
   UrlLink,
   experimental_usePluginId,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type { PrRef, Detail } from "./github";
 import { Button } from "./components/ui/button";

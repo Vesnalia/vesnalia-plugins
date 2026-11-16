@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent, PointerEvent } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { PLUGIN_NAME } from "../brand";
 import { BOTTOM_BOARD_COLLAPSED_CLASS, BOTTOM_BOARD_HEIGHT_VAR, BOTTOM_BOARD_OPEN_CLASS, STATUS_META, type BoardStatus } from "./model";
 import { useBoard, useReviews, useWork } from "./hooks";
@@ -31,9 +31,9 @@ function clampPanelHeight(value: number): number {
 }
 
 /**
- * Right edge of bb's left sidebar, in px (0 when it is collapsed or hidden, e.g. on phones). The board is a
+ * Right edge of VesnALIA's left sidebar, in px (0 when it is collapsed or hidden, e.g. on phones). The board is a
  * fixed bottom panel; starting it here instead of at the window's left edge keeps the sidebar's footer
- * (settings, etc.) reachable. bb's in-flow `[data-sidebar="gap"]` spacer always tracks the sidebar's width,
+ * (settings, etc.) reachable. VesnALIA's in-flow `[data-sidebar="gap"]` spacer always tracks the sidebar's width,
  * through collapse, rail mode, resizing and their animations.
  */
 function useSidebarInset(): number {
@@ -134,7 +134,7 @@ export function BottomBoardOverlay() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Pads bb's page (see app.tsx) so the panel, or the phone's hidden-board bar, never covers its bottom.
+  // Pads VesnALIA's page (see app.tsx) so the panel, or the phone's hidden-board bar, never covers its bottom.
   useEffect(() => {
     const root = document.documentElement;
     if (!open) {
@@ -151,7 +151,7 @@ export function BottomBoardOverlay() {
 
   if (!open) {
     // A floating pill; on phones a full-width bottom bar instead, in a strip app.tsx reserves, so it never
-    // sits on bb's composer controls.
+    // sits on VesnALIA's composer controls.
     return (
       <button
         type="button"

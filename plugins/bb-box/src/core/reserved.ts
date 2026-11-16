@@ -52,7 +52,7 @@ export function inAcquireOrder<T extends { readonly backend: { readonly id: stri
   return [...tiers.reserved, ...tiers.shared];
 }
 
-export const NONE_SERVES_THREAD = "Every backend here is kept for certain projects, and none for this thread's, so it has no kinds to acquire. Ask the user: they choose each backend's projects in BB Box's settings.";
+export const NONE_SERVES_THREAD = "Every backend here is kept for certain projects, and none for this thread's, so it has no kinds to acquire. Ask the user: they choose each backend's projects in VesnALIA Box's settings.";
 
 export function keptForOthersWords(name: string, audience: Audience, cannot = "it cannot make this box"): string {
   const thread = audience.of === "thread" && audience.projectId === null ? "this thread has no project" : "this thread's project is not one of them";
@@ -72,7 +72,7 @@ export function reservedChecks(backends: readonly KeptBackend[], existing: Reado
       const id = `projects.${backend.id}` as const;
       const name = `Projects of ${backend.label}`;
       if (!existing && audience.of === "thread") return { id, name, status: "skipped", detail: keptWordsForThread(backend.projects, audience), fix: null };
-      if (!existing) return { id, name, status: "skipped", detail: `Kept for ${countWords(backend.projects.length)}. BB did not say which projects it has, so ${PRODUCT} could not check they still exist.`, fix: null };
+      if (!existing) return { id, name, status: "skipped", detail: `Kept for ${countWords(backend.projects.length)}. VesnALIA did not say which projects it has, so ${PRODUCT} could not check they still exist.`, fix: null };
       const served = backend.projects.filter((project) => existing.has(project)).map((project) => existing.get(project)!);
       const gone = backend.projects.length - served.length;
       if (!served.length) {
@@ -80,11 +80,11 @@ export function reservedChecks(backends: readonly KeptBackend[], existing: Reado
           id,
           name,
           status: "warn",
-          detail: `Kept for ${countWords(gone)} that ${gone === 1 ? "is" : "are"} no longer in BB, so it serves no project and no thread can use it.`,
-          fix: `Choose its projects again in ${PRODUCT}'s settings, or let every project use it: bb box backend set ${backend.id} --projects ""`,
+          detail: `Kept for ${countWords(gone)} that ${gone === 1 ? "is" : "are"} no longer in VesnALIA, so it serves no project and no thread can use it.`,
+          fix: `Choose its projects again in ${PRODUCT}'s settings, or let every project use it: VesnALIA box backend set ${backend.id} --projects ""`,
         };
       }
-      const left = gone ? ` ${countWords(gone, "other")} it was kept for ${gone === 1 ? "is" : "are"} no longer in BB.` : "";
+      const left = gone ? ` ${countWords(gone, "other")} it was kept for ${gone === 1 ? "is" : "are"} no longer in VesnALIA.` : "";
       if (audience.of === "thread") return { id, name, status: "ok", detail: keptWordsForThread(backend.projects, audience), fix: null };
       return { id, name, status: "ok", detail: `Kept for ${served.join(", ")}: only their threads see it.${left}`, fix: null };
     });

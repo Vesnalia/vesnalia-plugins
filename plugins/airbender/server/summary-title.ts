@@ -7,11 +7,11 @@
 // prompt on stdin and prints the title.
 //
 // Why: a conversation with no current issue still wants a name that says
-// what it is doing (bead-bb-du7). This came from a separate "Live Titles"
+// what it is doing (bead-alia-du7). This came from a separate "Live Titles"
 // plugin the user had folded into Airbender, so one plugin owns the title.
 //
 // Design notes:
-// - Nothing here touches BB: server/thread-titles.ts gathers the
+// - Nothing here touches VesnALIA: server/thread-titles.ts gathers the
 //   conversation, calls `generateTitle` and writes the result, which keeps
 //   the prompt, the cleanup and the backends testable on their own.
 // - The prompt tells the model to give the current title back unchanged
@@ -19,7 +19,7 @@
 // - Gemini is called with `store: false`: nothing is kept on Google's side.
 //
 // Gotchas:
-// - The command backend runs with /bin/sh in the BB server's environment,
+// - The command backend runs with /bin/sh in the VesnALIA server's environment,
 //   whose PATH may be shorter than a login shell's: a command that is a
 //   Node script may need PATH set in front of it.
 // - Local command-line models can take most of a minute on a cold start.
@@ -305,7 +305,7 @@ export const SHORT_NAME_LENGTH = 32;
 
 /**
  * The prompt that asks for a conversation title of a few words summing up
- * the issue it works on (bead-bb-du7: the user wants "the current issue
+ * the issue it works on (bead-alia-du7: the user wants "the current issue
  * summarized in very short words", no id).
  */
 export function buildShortNamePrompt(title: string, description: string): string {

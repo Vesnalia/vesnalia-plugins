@@ -9,7 +9,7 @@ await loadInboxApp();
 
 describe("ThreadInbox", () => {
   it("retains the newest child expansions after saving and remounting", async () => {
-    const key = "bb-sidebar:child-expansion:v1";
+    const key = "alia-sidebar:child-expansion:v1";
     const oldIds = Array.from({ length: 100 }, (_, index) => `z${String(index).padStart(3, "0")}`);
     const allThreads = [...oldIds, "a-newest", "b-next"].flatMap((id) => [
       thread({ id, title: id }),
@@ -35,7 +35,7 @@ describe("ThreadInbox", () => {
   });
 
   it("restores child expansion outside the parent card body", () => {
-    window.localStorage.setItem("bb-sidebar:child-expansion:v1", JSON.stringify(["parent"]));
+    window.localStorage.setItem("alia-sidebar:child-expansion:v1", JSON.stringify(["parent"]));
     render([
       thread({ id: "parent", title: "Parent" }),
       thread({ id: "child", title: "Child", parentThreadId: "parent" }),
@@ -47,14 +47,14 @@ describe("ThreadInbox", () => {
   });
 
   it("prunes expansion state for parents that no longer have children", async () => {
-    window.localStorage.setItem("bb-sidebar:child-expansion:v1", JSON.stringify(["parent", "deleted-parent"]));
+    window.localStorage.setItem("alia-sidebar:child-expansion:v1", JSON.stringify(["parent", "deleted-parent"]));
     render([
       thread({ id: "parent", title: "Parent" }),
       thread({ id: "child", title: "Child", parentThreadId: "parent" }),
     ]);
 
     await waitFor(() =>
-      expect(JSON.parse(window.localStorage.getItem("bb-sidebar:child-expansion:v1") ?? "[]")).toEqual(["parent"]),
+      expect(JSON.parse(window.localStorage.getItem("alia-sidebar:child-expansion:v1") ?? "[]")).toEqual(["parent"]),
     );
   });
 });

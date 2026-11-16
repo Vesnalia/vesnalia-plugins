@@ -1,4 +1,4 @@
-// bb-plugin-deepseek-harness - composer surfaces for the acp-deepseek provider.
+// alia-plugin-deepseek-harness - composer surfaces for the acp-deepseek provider.
 //
 // Two surfaces:
 //   * the mode picker (banner) - which dsh composition the next dsh process boots
@@ -9,13 +9,13 @@
 // for its own UI through the plugin's subagents_get / subagent_detail RPCs.
 //
 // Styling rule: every surface uses `currentColor` and rgba(127,127,127,...) so it
-// inherits whatever theme bb is showing. Only the live/running accent is a literal
+// inherits whatever theme VesnALIA is showing. Only the live/running accent is a literal
 // color, because "active" has to read as green in both themes.
 //
 // Source is deliberately ASCII-only: this file has been corrupted twice by text
 // tooling that round-tripped non-ASCII characters.
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { definePluginApp, useComposer, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useComposer, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 
 type Mode = "standard" | "creator" | "minimal";
@@ -74,7 +74,7 @@ function ModeBanner() {
   useEffect(() => {
     if (!isDsh) return;
     let cancelled = false;
-    // bb rejects `undefined` in an RPC payload: omit the key, never send null.
+    // VesnALIA rejects `undefined` in an RPC payload: omit the key, never send null.
     rpc.call("mode_get", threadId === undefined ? {} : { threadId }).then(
       (result) => {
         if (cancelled) return;
@@ -452,7 +452,7 @@ function Roster({ threadId, onClose }: { threadId: string; onClose: () => void }
 
 /** Host-rendered banner that exists only while the panel is open, so it costs no
  * height when closed. Popups render inline and are composer-scoped; the overlay
- * slot is not available on this bb build. */
+ * slot is not available on this VesnALIA build. */
 function SubagentPanel() {
   const threadId = useOpenThread();
   if (threadId === null) return null;

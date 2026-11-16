@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { registerHooks } from 'node:module';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { PLUGIN_CLI_OUTPUT_MAX_BYTES } from '@get-bb/plugin-sdk';
+import { PLUGIN_CLI_OUTPUT_MAX_BYTES } from '@vesnalia/plugin-sdk';
 import Database from 'better-sqlite3';
 import {
   defaultBrowsePreferences,
@@ -38,41 +38,41 @@ const {
   parseTaskboardCliArguments,
   resolvePresetListSelection
 } = await import('../server.ts');
-type StoreBb = Parameters<typeof createWorkItemStore>[0];
+type StoreAlia = Parameters<typeof createWorkItemStore>[0];
 type WorkItemStore = ReturnType<typeof createWorkItemStore>;
 
 function createStore(): { db: Database.Database; store: WorkItemStore } {
   const db = new Database(':memory:');
-  const bb = {
+  const alia = {
     storage: {
       database: () => db,
       migrate(database: Database.Database, migrations: readonly string[]) {
         for (const migration of migrations) database.exec(migration);
       }
     }
-  } as unknown as StoreBb;
-  return { db, store: createWorkItemStore(bb) };
+  } as unknown as StoreAlia;
+  return { db, store: createWorkItemStore(alia) };
 }
 
 test('upgrades a retained Work-board migration without rewriting history or losing data', () => {
   const db = new Database(':memory:');
   const hash = (sql: string) => createHash('sha256').update(sql).digest('hex');
   let statements: readonly string[] = [];
-  const bb = { storage: {
+  const alia = { storage: {
     database: () => db,
     migrate(database: Database.Database, migrations: readonly string[]) {
       statements = migrations;
-      database.exec('CREATE TABLE IF NOT EXISTS _bb_migrations (id INTEGER PRIMARY KEY, statement_hash TEXT)');
+      database.exec('CREATE TABLE IF NOT EXISTS _alia_migrations (id INTEGER PRIMARY KEY, statement_hash TEXT)');
       database.transaction(() => migrations.forEach((sql, index) => {
-        const existing = database.prepare('SELECT statement_hash FROM _bb_migrations WHERE id=?').get(index) as { statement_hash: string } | undefined;
+        const existing = database.prepare('SELECT statement_hash FROM _alia_migrations WHERE id=?').get(index) as { statement_hash: string } | undefined;
         if (existing) assert.equal(hash(sql), existing.statement_hash, `migration ${index}`);
         else {
           database.exec(sql);
-          database.prepare('INSERT INTO _bb_migrations VALUES (?,?)').run(index, hash(sql));
+          database.prepare('INSERT INTO _alia_migrations VALUES (?,?)').run(index, hash(sql));
         }
       }))();
     }
-  }} as unknown as StoreBb;
+  }} as unknown as StoreAlia;
   try {
     // Capture the canonical migrations without using an external checkout.
     createWorkItemStore({ storage: {
@@ -82,21 +82,21 @@ test('upgrades a retained Work-board migration without rewriting history or losi
         migrations.slice(0, 7).forEach(sql => database.exec(sql));
         throw new Error('legacy schema prepared');
       }
-    }} as unknown as StoreBb);
+    }} as unknown as StoreAlia);
   } catch (error) {
     assert.equal((error as Error).message, 'legacy schema prepared');
   }
   try {
-    db.exec('CREATE TABLE _bb_migrations (id INTEGER PRIMARY KEY, statement_hash TEXT)');
-    statements.slice(0, 7).forEach((sql, index) => db.prepare('INSERT INTO _bb_migrations VALUES (?,?)').run(index, hash(sql)));
-    db.prepare('INSERT INTO _bb_migrations VALUES (7,?)').run('2ed0e2eda3103f718fe67e4f50324116a3dfddcd1959b05959e083a2cc80e1ca');
+    db.exec('CREATE TABLE _alia_migrations (id INTEGER PRIMARY KEY, statement_hash TEXT)');
+    statements.slice(0, 7).forEach((sql, index) => db.prepare('INSERT INTO _alia_migrations VALUES (?,?)').run(index, hash(sql)));
+    db.prepare('INSERT INTO _alia_migrations VALUES (7,?)').run('2ed0e2eda3103f718fe67e4f50324116a3dfddcd1959b05959e083a2cc80e1ca');
     db.exec("CREATE TABLE work_board_settings (project_id TEXT PRIMARY KEY, data_json TEXT); INSERT INTO work_board_settings VALUES ('proj_legacy','preserved')");
     db.exec("CREATE TABLE preparations (document TEXT); INSERT INTO preparations VALUES ('preserved')");
-    createWorkItemStore(bb);
+    createWorkItemStore(alia);
     assert.equal(db.prepare('SELECT data_json FROM work_board_settings').pluck().get(), 'preserved');
     assert.equal(db.prepare('SELECT document FROM preparations').pluck().get(), 'preserved');
-    assert.equal(db.prepare('SELECT count(*) FROM _bb_migrations').pluck().get(), 13);
-    createWorkItemStore(bb);
+    assert.equal(db.prepare('SELECT count(*) FROM _alia_migrations').pluck().get(), 13);
+    createWorkItemStore(alia);
   } finally {
     db.close();
   }
@@ -221,7 +221,7 @@ test('contains corrupt rows and makes reorder exact and atomic', () => {
     );
     db.prepare(
       `INSERT INTO project_filter_presets (
-         id, bb_project_id, name, name_normalized, filters_json, position,
+         id, alia_project_id, name, name_normalized, filters_json, position,
          created_at, updated_at
        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
@@ -237,7 +237,7 @@ test('contains corrupt rows and makes reorder exact and atomic', () => {
     const serializedState = serializeFilterPresetState(state());
     db.prepare(
       `INSERT INTO project_filter_presets (
-         id, bb_project_id, name, name_normalized, filters_json, position,
+         id, alia_project_id, name, name_normalized, filters_json, position,
          created_at, updated_at
        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
@@ -252,7 +252,7 @@ test('contains corrupt rows and makes reorder exact and atomic', () => {
     );
     db.prepare(
       `INSERT INTO project_filter_presets (
-         id, bb_project_id, name, name_normalized, filters_json, position,
+         id, alia_project_id, name, name_normalized, filters_json, position,
          created_at, updated_at
        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
@@ -267,7 +267,7 @@ test('contains corrupt rows and makes reorder exact and atomic', () => {
     );
     db.prepare(
       `INSERT INTO project_filter_presets (
-         id, bb_project_id, name, name_normalized, filters_json, position,
+         id, alia_project_id, name, name_normalized, filters_json, position,
          created_at, updated_at
        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
@@ -295,7 +295,7 @@ test('contains corrupt rows and makes reorder exact and atomic', () => {
       .prepare(
         `SELECT id, position, updated_at
          FROM project_filter_presets
-         WHERE bb_project_id = ?
+         WHERE alia_project_id = ?
          ORDER BY id`
       )
       .all('proj_alpha');
@@ -306,7 +306,7 @@ test('contains corrupt rows and makes reorder exact and atomic', () => {
       db.prepare(
         `SELECT id, position, updated_at
          FROM project_filter_presets
-         WHERE bb_project_id = ?
+         WHERE alia_project_id = ?
          ORDER BY id`
       ).all('proj_alpha'),
       before
@@ -315,13 +315,13 @@ test('contains corrupt rows and makes reorder exact and atomic', () => {
     db.prepare(
       `UPDATE project_filter_presets
        SET position = position + 10
-       WHERE bb_project_id = ?`
+       WHERE alia_project_id = ?`
     ).run('proj_alpha');
     const gapped = db
       .prepare(
         `SELECT id, position, updated_at
          FROM project_filter_presets
-         WHERE bb_project_id = ?
+         WHERE alia_project_id = ?
          ORDER BY id`
       )
       .all('proj_alpha');
@@ -330,7 +330,7 @@ test('contains corrupt rows and makes reorder exact and atomic', () => {
       db.prepare(
         `SELECT id, position, updated_at
          FROM project_filter_presets
-         WHERE bb_project_id = ?
+         WHERE alia_project_id = ?
          ORDER BY id`
       ).all('proj_alpha'),
       gapped
@@ -382,7 +382,7 @@ test('bounds reads and fails closed when raw rows exceed the preset limit', () =
     );
     db.prepare(
       `INSERT INTO project_filter_presets (
-         id, bb_project_id, name, name_normalized, filters_json, position,
+         id, alia_project_id, name, name_normalized, filters_json, position,
          created_at, updated_at
        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(

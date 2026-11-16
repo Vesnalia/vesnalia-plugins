@@ -17,7 +17,7 @@ export function executionOptions(value: unknown, instructionMode = 'append', dis
   if (providerOptions.memoryEnabled !== undefined && typeof providerOptions.memoryEnabled !== 'boolean') throw Error('Invalid memory setting');
   const memoryEnabled = providerOptions.memoryEnabled !== false;
   const selectedAuthMode = authMode(providerOptions.authMode);
-  // bb supplies these roots even for full. Native yolo already permits them;
+  // VesnALIA supplies these roots even for full. Native yolo already permits them;
   // accepting valid roots neither creates mounts nor grants a new permission.
   const roots = providerOptions.additionalWorkspaceWriteRoots;
   if (roots !== undefined && (!Array.isArray(roots) || roots.some(p => typeof p !== 'string' || !isAbsolute(p) || p.includes('\0'))))

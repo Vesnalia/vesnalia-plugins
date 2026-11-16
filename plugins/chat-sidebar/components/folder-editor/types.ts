@@ -1,4 +1,4 @@
-import type { PluginSidebarProject, PluginSidebarSection } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarProject, PluginSidebarSection } from "@vesnalia/plugin-sdk/app";
 
 import type { Chat } from "@/lib/model";
 

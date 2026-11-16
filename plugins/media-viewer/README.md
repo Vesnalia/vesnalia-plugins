@@ -1,6 +1,6 @@
-# Media viewer for bb
+# Media viewer for VesnALIA
 
-Opens images, videos and audio in bb's right panel with zoom, pan and
+Opens images, videos and audio in VesnALIA's right panel with zoom, pan and
 playback controls, and shows them inline in chat with a `::media` directive.
 
 - Drag to pan; pinch, or Ctrl or Cmd and scroll, to zoom at the pointer.
@@ -15,8 +15,8 @@ mov, webm. Audio: mp3, m4a, aac, wav, ogg, oga, opus, flac.
 
 ## Use
 
-Matching files open in the viewer wherever bb opens a file in the right
-panel: file links, the file picker and `bb thread open`. To use bb's own
+Matching files open in the viewer wherever VesnALIA opens a file in the right
+panel: file links, the file picker and `alia thread open`. To use VesnALIA's own
 preview for a file type, pick it under Settings → File openers, or use
 "Open with" on a file.
 
@@ -33,9 +33,9 @@ The bundled `media-viewer` skill tells agents how to present media.
 
 ```sh
 npm install
-bb plugin build
-bb plugin install .
+alia plugin build
+alia plugin install .
 ```
 
-The viewer streams files through bb's own file routes, which support byte
+The viewer streams files through VesnALIA's own file routes, which support byte
 ranges, so long videos seek without downloading the whole file.

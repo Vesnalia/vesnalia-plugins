@@ -1,6 +1,6 @@
 // The contract between server.ts and the host worker (host.ts), which runs
 // `gh` on the machine that holds the project checkout.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 /** The only `gh` subcommands the host worker will run. */

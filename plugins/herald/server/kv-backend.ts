@@ -1,12 +1,12 @@
 /**
- * The store's entries in `bb.storage.kv`, one row per thread under `entry:`.
+ * The store's entries in `alia.storage.kv`, one row per thread under `entry:`.
  *
  * One row each rather than one array, because a value is capped at 256 KB and
  * a user with a few hundred unattended threads would pass that. A write
  * changes only the rows whose entry changed and deletes the rows of threads no
  * longer in the map, so mirroring the whole map on every change stays cheap.
  */
-import type { PluginKvStorage } from "@get-bb/plugin-sdk";
+import type { PluginKvStorage } from "@vesnalia/plugin-sdk";
 
 import type { AttentionEntry } from "../shared/herald";
 import type { StoreBackend } from "./store";

@@ -1,5 +1,5 @@
 // Thin wrapper over Radix Popover (shimmed to the host's copy at runtime).
-// Content is portalled and tagged with BB's plugin-scope attributes so host
+// Content is portalled and tagged with VesnALIA's plugin-scope attributes so host
 // styles and z-index apply.
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import * as React from "react";

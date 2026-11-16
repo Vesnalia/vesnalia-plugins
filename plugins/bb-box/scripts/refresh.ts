@@ -1,13 +1,13 @@
-// Refreshes one standard image on a live backend, without BB (049):
+// Refreshes one standard image on a live backend, without VesnALIA (049):
 //
 //   npm run refresh -- --backend <type> --settings <settings.json> --image <ref>
-//     [--bb-url <url>] [--pinned] [--try]
+//     [--alia-url <url>] [--pinned] [--try]
 //
 // The settings file is as scripts/conformance.ts reads it. <ref> is the
 // image's current build, such as a template's VMID; --try builds and checks
-// a new one, then removes it and leaves the current one. --bb-url gives the
-// image BB's app from that server. The refresh is an install of its own,
-// "refresh", so a bb-box install on the same backend leaves its boxes alone.
+// a new one, then removes it and leaves the current one. --alia-url gives the
+// image VesnALIA's app from that server. The refresh is an install of its own,
+// "refresh", so a alia-box install on the same backend leaves its boxes alone.
 
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
@@ -15,18 +15,18 @@ import { DRIVERS } from "../src/backends/index.ts";
 import { backendPart } from "../src/core/document.ts";
 import { refreshImage } from "../src/core/refresh.ts";
 import { defaultSize, kindSizes, presetSizes } from "../src/core/sizes.ts";
-import { bbAppDigest } from "../src/plugin/docker-images.ts";
+import { aliaAppDigest } from "../src/plugin/docker-images.ts";
 import { MemoryStorage } from "../test/helpers.ts";
 import { readSettings, toConfiguration } from "./smoke.ts";
 
-const USAGE = "usage: npm run refresh -- --backend <type> --settings <settings.json> --image <ref> [--bb-url <url>] [--pinned] [--try]";
+const USAGE = "usage: npm run refresh -- --backend <type> --settings <settings.json> --image <ref> [--alia-url <url>] [--pinned] [--try]";
 
 const { values } = parseArgs({
   options: {
     backend: { type: "string" },
     settings: { type: "string" },
     image: { type: "string" },
-    "bb-url": { type: "string" },
+    "alia-url": { type: "string" },
     pinned: { type: "boolean" },
     try: { type: "boolean" },
   },
@@ -58,13 +58,13 @@ try {
   if (!backend.images) throw new Error(`${driver.label} has no image operations.`);
   const current = (await backend.images.list()).builds.find((build) => build.ref === values.image && build.current);
   if (!current) throw new Error(`${driver.label} has no current standard build ${values.image}: give a template from its settings.`);
-  const bbUrl = values["bb-url"] ?? null;
+  const aliaUrl = values["alia-url"] ?? null;
   const result = await refreshImage({
     images: backend.images,
     current,
     setup: fileURLToPath(new URL("../setup/", import.meta.url)),
-    bbUrl,
-    bbApp: bbUrl ? await bbAppDigest(bbUrl) : null,
+    aliaUrl,
+    aliaApp: aliaUrl ? await aliaAppDigest(aliaUrl) : null,
     pinned: !!values.pinned,
     replace: !values.try,
     signal: AbortSignal.timeout(3 * 60 * 60_000),

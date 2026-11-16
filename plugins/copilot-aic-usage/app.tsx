@@ -6,7 +6,7 @@ import {
   useRealtimeConnectionState,
   useRpc,
   type PluginThreadHeaderActionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { realtimeSchema, USAGE_CHANGED, type Usage } from "./src/model";
 import { UsageBadge } from "./src/UsageBadge";
 

@@ -25,7 +25,7 @@ type Level = ModelPreset["reasoningLevel"];
 
 interface DefaultCandidate {
   providerId: string;
-  /** Catalog ids to try, in order; BB has renamed ids before (e.g. the `[1m]` suffix). */
+  /** Catalog ids to try, in order; VesnALIA has renamed ids before (e.g. the `[1m]` suffix). */
   models: readonly string[];
   reasoningLevel: Level;
 }
@@ -67,7 +67,7 @@ export const DEFAULT_RUNGS: readonly DefaultRung[] = [
   { id: "default:cheap", name: "Cheap & fast", candidates: [codex(LUNA, "low"), claude(HAIKU, "low")] },
 ];
 
-/** The slice of BB's execution-options catalog the resolver reads. */
+/** The slice of VesnALIA's execution-options catalog the resolver reads. */
 export interface CatalogModel {
   id: string;
   supportedReasoningEfforts: readonly { reasoningEffort: string }[];

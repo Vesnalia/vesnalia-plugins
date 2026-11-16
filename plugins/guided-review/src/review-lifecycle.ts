@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { Store, ReviewLifecycle } from "./store";
 import { isMissingThread } from "./thread-errors";
@@ -19,26 +19,26 @@ const resultSchema = z.object({ data: z.object({
 }) });
 
 /** Reconcile durable review state without making any GitHub writes. */
-export function createReviewSync(bb: BbPluginApi, store: Store, run: typeof runGh) {
+export function createReviewSync(alia: AliaPluginApi, store: Store, run: typeof runGh) {
   const pending = new Map<string, Promise<void>>();
   const checked = new Map<string, number>();
   const hidden = new Set<string>();
   const archived = new Set<string>();
   let disposed = false;
-  bb.onDispose(() => { disposed = true; });
+  alia.onDispose(() => { disposed = true; });
 
   async function maintainThread(targetKey: string) {
-    await withReviewAgentMaintenance(bb, targetKey, async () => {
+    await withReviewAgentMaintenance(alia, targetKey, async () => {
       const threadId = store.getAgentThread(targetKey);
       if (!threadId || disposed) return;
       try {
         if (!hidden.has(threadId)) {
-          await bb.sdk.threads.update({ threadId, visibility: "hidden" });
+          await alia.sdk.threads.update({ threadId, visibility: "hidden" });
           hidden.add(threadId);
         }
         if (store.getReview(targetKey)?.archivedAt && !archived.has(threadId) && !disposed) {
-          try { await bb.sdk.threads.stop({ threadId }); }
-          finally { if (!disposed) await bb.sdk.threads.archive({ threadId }); }
+          try { await alia.sdk.threads.stop({ threadId }); }
+          finally { if (!disposed) await alia.sdk.threads.archive({ threadId }); }
           archived.add(threadId);
         }
       } catch (error) {
@@ -46,7 +46,7 @@ export function createReviewSync(bb: BbPluginApi, store: Store, run: typeof runG
         if (isMissingThread(error)) {
           // Retain the transcript, and never detach a different replacement worker.
           if (store.getAgentThread(targetKey) === threadId) store.clearAgentThread(targetKey);
-        } else bb.log.warn(`Could not tidy review thread ${threadId}: ${String(error)}`);
+        } else alia.log.warn(`Could not tidy review thread ${threadId}: ${String(error)}`);
       }
     });
   }
@@ -86,10 +86,10 @@ export function createReviewSync(bb: BbPluginApi, store: Store, run: typeof runG
         store.setLifecycle(targetKey, state);
         await maintainThread(targetKey);
         if (!disposed && JSON.stringify(current) !== JSON.stringify(store.getReview(targetKey))) {
-          bb.realtime.publish(`review:${targetKey}`, { ts: Date.now() });
-          bb.realtime.publish("reviews", { ts: Date.now() });
+          alia.realtime.publish(`review:${targetKey}`, { ts: Date.now() });
+          alia.realtime.publish("reviews", { ts: Date.now() });
         }
-      } catch (error) { if (!disposed) bb.log.warn(`Could not refresh ${targetKey}: ${String(error)}`); }
+      } catch (error) { if (!disposed) alia.log.warn(`Could not refresh ${targetKey}: ${String(error)}`); }
     })().finally(() => pending.delete(targetKey));
     pending.set(targetKey, task);
     return task;

@@ -19,9 +19,9 @@ export const VNC_ROUTE = "/vnc";
  *
  * The relay URL names the text frames the page speaks, `flow=ack-ping` (acks,
  * and the liveness pings below), and the relay turns away any other value
- * before it redeems the ticket, telling the page to reload bb. So a window
+ * before it redeems the ticket, telling the page to reload VesnALIA. So a window
  * still running an older page — no flow control, or 0.2.0's `flow=ack` with
- * no pings, which would sit "connected" after bb restarts — is refused, and so
+ * no pings, which would sit "connected" after VesnALIA restarts — is refused, and so
  * is this page by a relay from before pings (0.2.0 accepted only `ack`), which
  * would otherwise close the session on the first ping. Change the value
  * whenever the page's text frames change.
@@ -46,7 +46,7 @@ export function parseAck(frame: string): number | null {
 
 /**
  * Liveness between the page and the relay. A socket can stay open in the
- * browser after the server behind it is gone — bb restarting behind the
+ * browser after the server behind it is gone — VesnALIA restarting behind the
  * getbb.app tunnel leaves the browser's end open — so the page does not wait
  * for a close event alone: it sends `ping` every `PING_EVERY_MS`, the relay
  * answers `pong`, and the page ends the session when a ping has gone
@@ -79,8 +79,8 @@ export const CloseCode = {
   failed: 1011,
   idle: 4001,
   maxAge: 4002,
-  /** bb itself closes a plugin's sockets with this when the plugin reloads or is disabled. */
-  bbPluginReloaded: 1012,
+  /** VesnALIA itself closes a plugin's sockets with this when the plugin reloads or is disabled. */
+  aliaPluginReloaded: 1012,
   closedByUser: 4003,
   stopping: 4004,
 } as const;
@@ -107,8 +107,8 @@ export type SessionList = z.infer<typeof SessionListSchema>;
  * - `refused`: Screen Sharing answers but turns connections away for now
  *   (macOS does this after too many failed sign-ins, for one).
  * - `unsupported`: the machine is not a Mac.
- * - `offline`: bb has no connection to the machine right now.
- * - `unreachable`: bb is connected to it, but the check itself failed.
+ * - `offline`: VesnALIA has no connection to the machine right now.
+ * - `unreachable`: VesnALIA is connected to it, but the check itself failed.
  */
 export const ScreenStateSchema = z.enum(["ready", "off", "not-listening", "refused", "unsupported", "offline", "unreachable"]);
 
@@ -132,7 +132,7 @@ export type ScreenCheck = z.infer<typeof ScreenCheckSchema>;
 export const ScreenStatusSchema = ScreenCheckSchema.extend({
   hostId: z.string(),
   hostName: z.string(),
-  /** The Mac running the bb server, reached over its own loopback. */
+  /** The Mac running the VesnALIA server, reached over its own loopback. */
   isServer: z.boolean(),
   /** Why the check failed; only with `unreachable`. */
   unreachableReason: z.string().nullable(),
@@ -140,13 +140,13 @@ export const ScreenStatusSchema = ScreenCheckSchema.extend({
 
 export type ScreenStatus = z.infer<typeof ScreenStatusSchema>;
 
-/** One machine enrolled in this bb, as the host picker lists it. */
+/** One machine enrolled in this VesnALIA, as the host picker lists it. */
 export const HostEntrySchema = z.object({
   id: z.string(),
   name: z.string(),
-  /** bb has a live connection to it. */
+  /** VesnALIA has a live connection to it. */
   connected: z.boolean(),
-  /** The machine running the bb server. */
+  /** The machine running the VesnALIA server. */
   isServer: z.boolean(),
 });
 
@@ -158,11 +158,11 @@ export type HostList = z.infer<typeof HostListSchema>;
 
 /**
  * The most clipboard text that syncs with a Mac, in UTF-8 bytes: it crosses
- * bb's link to the Mac as one call, and the page as one RPC.
+ * VesnALIA's link to the Mac as one call, and the page as one RPC.
  */
 export const MAX_CLIPBOARD_BYTES = 1024 * 1024;
 
-/** The macOS account whose clipboard the plugin reads and writes on a Mac: the one bb runs as there. */
+/** The macOS account whose clipboard the plugin reads and writes on a Mac: the one VesnALIA runs as there. */
 export const ClipboardAccountSchema = z.object({
   /** The short name, e.g. "alice". */
   userName: z.string(),

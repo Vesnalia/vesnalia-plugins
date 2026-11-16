@@ -3,7 +3,7 @@
 // What: checks the mark of a copied comment, which comments count as
 // missing, and a whole run against made-up comments on both sides.
 // Why: an import that copies a discussion twice, or loses its order or its
-// authors, would spoil the context it is meant to bring (bead-bb-apc).
+// authors, would spoil the context it is meant to bring (bead-alia-apc).
 
 import assert from "node:assert/strict";
 import { test } from "node:test";

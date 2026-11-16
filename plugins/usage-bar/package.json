@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-usage-bar",
+  "name": "alia-plugin-usage-bar",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Usage Bar",
     "description": "Keep provider quotas and reset times visible above the sidebar footer.",
     "branding": {
@@ -26,7 +26,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -52,9 +51,9 @@
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
   },
-  "description": "Weekly agent-provider usage limits in the bb sidebar footer",
+  "description": "Weekly agent-provider usage limits in the VesnALIA sidebar footer",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "usage",
     "limits"
   ],
@@ -62,11 +61,6 @@
   "author": {
     "name": "Dmitrii Kapustin",
     "url": "https://github.com/dmitriikapustin"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin.git",
-    "directory": "plugins/usage-bar"
   },
   "files": [
     "server.ts",
@@ -86,8 +80,25 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "check": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/token-totals.test.mjs"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/usage-bar#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/usage-bar"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

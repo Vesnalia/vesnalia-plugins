@@ -59,7 +59,7 @@ export function LineComposer({
   snapshot: DiffSnapshot;
   /** The loaded patch for `path`, or null while it loads or for binary files. */
   patch: string | null;
-  /** BB thread that owns private notes, or null when no thread is linked. */
+  /** VesnALIA thread that owns private notes, or null when no thread is linked. */
   noteThreadId: string | null;
   /** Null when PR comments are available, otherwise the reason. */
   prAvailability: string | null;
@@ -99,7 +99,7 @@ export function LineComposer({
   const destination: Destination = draft.destination;
   const destinationError =
     destination === "pr" && prAvailability !== null
-      ? `PR comments are unavailable: ${prAvailability} Select Local draft to keep this text in BB.`
+      ? `PR comments are unavailable: ${prAvailability} Select Local draft to keep this text in VesnALIA.`
       : null;
   const rangeError =
     draft.start.trim() === "" ? "Enter a start line." : validateRange(ranges, draft.side, start, end, destination === "private");

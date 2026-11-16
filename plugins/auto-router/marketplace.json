@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "name": "model-pilot",
   "displayName": "Model Pilot",
-  "description": "Public Model Pilot releases for BB.",
+  "description": "Public Model Pilot releases for VesnALIA.",
   "plugins": [
     {
       "id": "auto-router",
       "displayName": "Model Pilot",
-      "description": "Choose a coding model for each task and see where your tokens go. Route work to Codex or Claude Code, delegate helper tasks, and compare recorded usage with cost estimates. Experimental support targets macOS with BB 0.46.",
+      "description": "Choose a coding model for each task and see where your tokens go. Route work to Codex or Claude Code, delegate helper tasks, and compare recorded usage with cost estimates. Experimental support targets macOS with VesnALIA 0.46.",
       "icon": {
         "url": "./media/icon.svg"
       },

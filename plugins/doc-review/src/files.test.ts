@@ -1,10 +1,10 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { describe, expect, it } from "vitest";
 import { DocFiles, joinPath, normalizeAbsolute } from "./files";
 
-const bb = {
+const alia = {
   sdk: { system: { config: async () => ({ primaryHostId: "host-linux" }) } },
-} as unknown as BbPluginApi;
+} as unknown as AliaPluginApi;
 
 describe("Windows paths", () => {
   it("get one spelling: forward slashes and an upper-case drive", () => {
@@ -23,7 +23,7 @@ describe("Windows paths", () => {
   });
 
   it("open from a Windows host on a Linux or macOS server", async () => {
-    const files = new DocFiles(bb, "/tmp/unused");
+    const files = new DocFiles(alia, "/tmp/unused");
     const resolved = await files.resolve("d:\\Documents\\reports\\..\\audit.html", {
       kind: "host",
       experimental_hostId: "host-windows",
@@ -35,7 +35,7 @@ describe("Windows paths", () => {
   });
 
   it("still refuses a relative path", async () => {
-    const files = new DocFiles(bb, "/tmp/unused");
+    const files = new DocFiles(alia, "/tmp/unused");
     await expect(
       files.resolve("Documents\\audit.html", {
         kind: "host",
@@ -52,7 +52,7 @@ describe("files on another machine", () => {
   function remote() {
     let reads = 0;
     const content = Buffer.from("<p>report</p>").toString("base64");
-    const remoteBb = {
+    const remoteAlia = {
       sdk: {
         system: { config: async () => ({ primaryHostId: "host-linux" }) },
         files: {
@@ -62,8 +62,8 @@ describe("files on another machine", () => {
           },
         },
       },
-    } as unknown as BbPluginApi;
-    return { files: new DocFiles(remoteBb, "/tmp/unused"), reads: () => reads };
+    } as unknown as AliaPluginApi;
+    return { files: new DocFiles(remoteAlia, "/tmp/unused"), reads: () => reads };
   }
   const doc = { id: "d_1", hostId: "host-mac", absPath: "/Users/me/report.html", kind: "html" as const };
 

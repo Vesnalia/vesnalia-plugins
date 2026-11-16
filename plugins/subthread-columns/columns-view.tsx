@@ -5,20 +5,20 @@ import {
   experimental_Icon as Icon,
   experimental_ThreadStatusGlyph as ThreadStatusGlyph,
   experimental_useSidebarThreads as useSidebarThreads,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useSettings,
   useSidebarSplitLayout,
   type PluginComposerThreadRowStatus,
   type PluginNavPanelProps,
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { rowAttention, type Attention } from "./attention";
 import { NO_COLUMNS, columnLimit, eligibleIds, engage, isStolenFocus, nextColumns, routeChange, seenMark, settle, shouldAutoOpen, type Column, type Layout } from "./columns";
 import { useAttention, useMarkSeen, useSeenWhileShown } from "./use-attention";
 
 export const COLUMNS_PATH = "columns";
-/** BB's own compact breakpoint (`useIsCompactViewport`). */
+/** VesnALIA's own compact breakpoint (`useIsCompactViewport`). */
 const COMPACT = "(max-width: 767px)";
 const SUPPRESS = "subthread-columns/only-this-thread:";
 const ROW = "[data-sidebar-rename-row]";
@@ -101,8 +101,8 @@ function readSuppressed(threadId: string): string[] | null {
  * per navigation and only when the data it needs arrives within about 3s.
  */
 export function SubthreadColumnsAutoOpen() {
-  const { threadId } = useBbContext();
-  const navigate = useBbNavigate();
+  const { threadId } = useAliaContext();
+  const navigate = useAliaNavigate();
   const { status, threads } = useSidebarThreads();
   const { attention, loaded } = useAttention();
   const settings = useSettings();
@@ -113,7 +113,7 @@ export function SubthreadColumnsAutoOpen() {
   const pending = useRef<{ id: string; inPane: boolean } | null>(null);
   const current = useSyncExternalStore(subscribeColumnsAnchor, columnsAnchor);
 
-  // The anchor of the columns page on screen looks like BB's own current row, also after the sidebar re-renders it.
+  // The anchor of the columns page on screen looks like VesnALIA's own current row, also after the sidebar re-renders it.
   useEffect(() => {
     if (!current) return;
     let frame = 0;
@@ -178,7 +178,7 @@ export function SubthreadColumnsPage({ subPath }: PluginNavPanelProps) {
   const { attention, loaded } = useAttention();
   const anchor = threads.find((thread) => thread.id === anchorId && !thread.isHidden) ?? null;
   const shownId = anchor?.id ?? null;
-  // BB has no open thread on a plugin page, so the page applies the open-thread rule to its anchor.
+  // VesnALIA has no open thread on a plugin page, so the page applies the open-thread rule to its anchor.
   useSeenWhileShown(shownId, attention);
   useEffect(() => (shownId ? showAnchor(shownId) : undefined), [shownId]);
   if (!anchor) return status === "loading" ? null : <p data-mea-columns-hint="">Open a thread whose subthreads need you to see them here.</p>;
@@ -188,7 +188,7 @@ export function SubthreadColumnsPage({ subPath }: PluginNavPanelProps) {
 function Columns(props: { anchor: PluginSidebarThread; threads: readonly PluginSidebarThread[]; attention: ReadonlyMap<string, Attention>; loaded: boolean }) {
   const { anchor, threads, attention } = props;
   const seen = useMarkSeen();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const limit = columnLimit(useSettings().values?.maxColumns);
   const scroller = useRef<HTMLDivElement>(null);
   const [{ columns, more }, setLayout] = useState<Layout>(() => nextColumns(NO_COLUMNS, anchor.id, threads, attention, { limit }));
@@ -350,7 +350,7 @@ const ColumnView = memo(function ColumnView(props: {
   onlyThisThread?: () => void;
 }) {
   const { id, indicator, column, mounted, observer, more, onlyThisThread } = props;
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

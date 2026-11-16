@@ -1,4 +1,4 @@
-import { definePluginApp, useRealtime, useRealtimeConnectionState, useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRealtimeConnectionState, useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MachineStatusSnapshot, rpcContract } from "./server.js";
 

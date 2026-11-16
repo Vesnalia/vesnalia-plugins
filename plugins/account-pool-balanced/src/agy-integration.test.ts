@@ -1,4 +1,4 @@
-import {createFakePluginHost} from '@get-bb/plugin-sdk/testing';
+import {createFakePluginHost} from '@vesnalia/plugin-sdk/testing';
 import {afterEach,expect,it,vi} from 'vitest';
 import {mkdtemp,rm,readFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -21,8 +21,8 @@ async function fixture(streamResponse?:()=>Response){
   return Response.json({response:{candidates:[]},traceId:'synthetic-private'});
  };
  const dataDir=await mkdtemp(path.join(tmpdir(),'pool-agy-test-'));
- const {bb,harness}=createFakePluginHost({pluginId:'account-pool',dataDir,sdk:{hosts:{list:async()=>[{id:'host-one',name:'Fixture'}]},system:{providerStates:async()=>({providers:[]})},plugins:{list:async()=>({plugins:[]})}}});
- await createAccountPoolPlugin({fetch:mock,fetchIpv4:mock,agyAppConfig:async()=>appConfig})(bb);
+ const {alia,harness}=createFakePluginHost({pluginId:'account-pool',dataDir,sdk:{hosts:{list:async()=>[{id:'host-one',name:'Fixture'}]},system:{providerStates:async()=>({providers:[]})},plugins:{list:async()=>({plugins:[]})}}});
+ await createAccountPoolPlugin({fetch:mock,fetchIpv4:mock,agyAppConfig:async()=>appConfig})(alia);
  const service=harness.behavior.runService('hub');
  cleanups.push(async()=>{service.controller.abort();await service.done;await harness.lifecycle.dispose();await rm(dataDir,{recursive:true,force:true});});
  await vi.waitFor(async()=>{const status=await harness.behavior.callRpc('status.get',null) as {accepting:boolean};expect(status.accepting).toBe(true);});
@@ -31,7 +31,7 @@ async function fixture(streamResponse?:()=>Response){
  const env=await harness.behavior.resolveProviderEnv('acp-agy',{hostId:'host-one',projectId:'project-one',threadId:'thread-one'});
  const token=env.find(entry=>entry.name==='OXI_AGY_POOL_AUTH_TOKEN')?.value;
  if(typeof token!=='string')throw Error('Missing pool credential');
- return {bb,harness,requests,token,account,env,dataDir};
+ return {alia,harness,requests,token,account,env,dataDir};
 }
 it('central login issues only pool credentials, forwards native wire and unwraps JSON/SSE/catalog',async()=>{
  const f=await fixture();expect(f.account.provider).toBe('agy');expect(f.account.autopilotAllowed).toBe(false);

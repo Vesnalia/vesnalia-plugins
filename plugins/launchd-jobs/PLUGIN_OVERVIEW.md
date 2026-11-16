@@ -1,5 +1,5 @@
 Every job is a LaunchAgent plist in `~/Library/LaunchAgents` that launchd itself owns: it fires on
-schedule with bb closed, runs a missed fire once when the Mac wakes, and stays disabled across reboots
+schedule with VesnALIA closed, runs a missed fire once when the Mac wakes, and stays disabled across reboots
 once you disable it. One sidebar page is where you make, read and change those jobs.
 
 ## What you get
@@ -12,18 +12,18 @@ once you disable it. One sidebar page is where you make, read and change those j
 - Commands run through your login shell with your terminal's PATH, so tools from Homebrew or a version
   manager are found.
 - The sidebar entry shows how many jobs are failing; opening a job clears it until it fails again.
-- Optionally, a push notification when a job starts failing, once per failure, through bb's Push
-  notifications (bb 0.48.1 or newer).
-- With several Macs connected to bb, a picker chooses whose jobs you see.
+- Optionally, a push notification when a job starts failing, once per failure, through VesnALIA's Push
+  notifications (VesnALIA 0.48.1 or newer).
+- With several Macs connected to VesnALIA, a picker chooses whose jobs you see.
 - Jobs made by the Paseo `launchd-jobs` plugin appear as they are, with their history, and are never
   moved.
 
 ## What it needs
 
-bb 0.47 or newer, and macOS on the Mac whose jobs you manage. Commands run as you, with your permissions; only plists under
+VesnALIA 0.47 or newer, and macOS on the Mac whose jobs you manage. Commands run as you, with your permissions; only plists under
 the plugin's own label prefix are ever listed or changed.
 
-## Not a replacement for bb automations
+## Not a replacement for VesnALIA automations
 
-bb's built-in automations run scripts and agents from the bb server while it runs. Use this plugin for
-commands that must run on a schedule whether or not bb is open.
+VesnALIA's built-in automations run scripts and agents from the VesnALIA server while it runs. Use this plugin for
+commands that must run on a schedule whether or not VesnALIA is open.

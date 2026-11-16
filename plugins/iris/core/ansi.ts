@@ -1,7 +1,7 @@
 // ANSI color handling shared by Logs, LiveLog and TerminalReplay. Colors stay
 // indexes into the theme's 16 ANSI colors (--ansi-0..15): 256-color and
 // truecolor codes map to the nearest of those, so output always reads in the
-// person's bb theme.
+// person's VesnALIA theme.
 
 export interface AnsiStyle {
   fg?: number;

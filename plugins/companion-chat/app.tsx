@@ -4,12 +4,12 @@ import {
   experimental_NewThreadComposer as NewThreadComposer,
   ThreadChat,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   JsonValue,
   NewThreadRequest,
   PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import type { rpcContract } from "./server";
 
 type CompanionContext = {

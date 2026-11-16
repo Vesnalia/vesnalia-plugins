@@ -2,11 +2,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Markdown,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { NodeRunDto, RunDto, rpcContract } from "../server";
 import { KIND_LABEL, START_NODE, edgeKey, fanOutProgress, type Graph } from "../lib/graph";
 import { describeCost, runCommand, runTotal } from "../lib/describe";
@@ -192,7 +192,7 @@ function NodeInspector({
   /** The attempt picked on the timeline — shown first and marked. */
   focusAttemptId?: string | null;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [tab, setTab] = useState<"attempts" | "prompt" | "fields">("attempts");
   const node = graph.nodes.find((entry) => entry.id === nodeId);
   const attempts = (run?.nodeRuns ?? []).filter(
@@ -945,9 +945,9 @@ function Library({
               On the command line:
             </p>
             <CopyCommand
-              command={`bb graph-studio export ${active || "<graph-id>"} > file.json`}
+              command={`alia graph-studio export ${active || "<graph-id>"} > file.json`}
             />
-            <CopyCommand command="bb graph-studio import file.json" />
+            <CopyCommand command="alia graph-studio import file.json" />
           </div>
         </div>
       </details>
@@ -965,7 +965,7 @@ type View =
 /**
  * Everything the panel shows that belongs to *one* conversation. Which run is
  * open and which graph is armed in "Start a run" are answers to "what am I
- * doing in this thread", not to "what did I last click anywhere in BB".
+ * doing in this thread", not to "what did I last click anywhere in VesnALIA".
  */
 type PanelState = {
   view: View;
@@ -1013,7 +1013,7 @@ export function GraphStudioPanel({
   /** Opened from the run banner: land on that run instead of the library. */
   initialRunId?: string | null;
 }) {
-  const ctx = useBbContext();
+  const ctx = useAliaContext();
   const threadId = prop ?? ctx.threadId;
   const {
     rpc,

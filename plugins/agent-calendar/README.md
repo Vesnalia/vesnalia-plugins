@@ -15,23 +15,23 @@ The screenshots use sample data.
 From the marketplace:
 
 ```sh
-bb marketplace add git:github.com/charpeni/bb-plugins@main
-bb plugin install agent-calendar@charpeni
+alia marketplace add git:github.com/charpeni/bb-plugins@main
+alia plugin install agent-calendar@charpeni
 ```
 
 Or directly from this repository:
 
 ```sh
-bb plugin install git:https://github.com/charpeni/bb-plugins.git@^1.0.0 --tag-prefix agent-calendar/ --plugin agent-calendar
+alia plugin install git:https://github.com/charpeni/bb-plugins.git@^1.0.0 --tag-prefix agent-calendar/ --plugin agent-calendar
 ```
 
 Open **Agent Calendar** from the app sidebar, or ask the CLI:
 
 ```sh
-bb agent-calendar                      # this week's time sheet
-bb agent-calendar --week last          # last week's time sheet
-bb agent-calendar log                  # today's work blocks, in order
-bb agent-calendar log --day yesterday --json
+alia agent-calendar                      # this week's time sheet
+alia agent-calendar --week last          # last week's time sheet
+alia agent-calendar log                  # today's work blocks, in order
+alia agent-calendar log --day yesterday --json
 ```
 
 ## How blocks are built
@@ -55,7 +55,7 @@ one. The time sheet lists every thread under its project, with decimal hours
 per day, and can copy itself as CSV.
 
 The eight projects with the most agent time over the last 30 days get the
-palette's colors, in bb's project order, so a project keeps its color in every
+palette's colors, in VesnALIA's project order, so a project keeps its color in every
 view. Other projects share a neutral color.
 
 Hours count each thread, so five agents working for one hour count as five
@@ -70,7 +70,7 @@ re-reads threads whose `updatedAt` changed, and thread lifecycle events keep
 the calendar live. Hidden threads (background workers) are not shown. Deleted
 threads drop out.
 
-Times use the viewer's time zone in the app and the bb server's time zone in
+Times use the viewer's time zone in the app and the VesnALIA server's time zone in
 the CLI. Weeks start on Monday.
 
 The icon adapts the [Hugeicons](https://hugeicons.com) Calendar 03 glyph
@@ -81,6 +81,6 @@ The icon adapts the [Hugeicons](https://hugeicons.com) Calendar 03 glyph
 From the repository root:
 
 ```sh
-bb plugin install ./plugins/agent-calendar
-bb plugin dev plugins/agent-calendar
+alia plugin install ./plugins/agent-calendar
+alia plugin dev plugins/agent-calendar
 ```

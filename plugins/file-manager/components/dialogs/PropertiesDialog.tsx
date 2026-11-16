@@ -7,7 +7,7 @@
 //
 // A folder's real size is the one expensive question here, so it stays behind
 // a button: `directorySize` walks the subtree with hard limits and can answer
-// "partial", which this renders as a lower bound rather than as a total. bb's
+// "partial", which this renders as a lower bound rather than as a total. VesnALIA's
 // RPC has no abort channel, so closing the dialog cannot call the walk off —
 // it retires the ticket the answer would land on, and the walk's own time
 // budget bounds what is left running.

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { z } from "zod";
 
 export function nowIso(): string {
@@ -75,14 +75,14 @@ export function errorMessage(error: unknown): string {
  * Logs a line unless the same `key` was logged within `intervalMs`: failures repeat for every thread or pull request,
  * and one line per distinct failure per interval keeps the plugin log readable.
  */
-export function throttledLog(bb: BbPluginApi, intervalMs: number) {
+export function throttledLog(alia: AliaPluginApi, intervalMs: number) {
   const loggedAt = new Map<string, number>();
   return (line: string, key = line) => {
     const now = Date.now();
     for (const [seen, at] of loggedAt) if (now - at >= intervalMs) loggedAt.delete(seen);
     if (loggedAt.has(key)) return;
     loggedAt.set(key, now);
-    bb.log.info(line);
+    alia.log.info(line);
   };
 }
 

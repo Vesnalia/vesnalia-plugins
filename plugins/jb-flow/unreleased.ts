@@ -5,7 +5,7 @@
 //   branch since that tag.
 // PRs come from the compare's commit subjects ("… (#123)" squash merges and
 // "Merge pull request #123" merges), with details from one GraphQL query.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { gh, ghGraphql } from "./gh.ts";
 
@@ -119,12 +119,12 @@ async function compute(repo: string): Promise<Unreleased> {
   };
 }
 
-export function createUnreleased(bb: BbPluginApi) {
+export function createUnreleased(alia: AliaPluginApi) {
   const cache = new Map<string, Unreleased>();
   return async function unreleased(projectId: string, refresh: boolean): Promise<Unreleased> {
     const cached = cache.get(projectId);
     if (cached && !refresh && Date.now() - cached.checkedAt < CACHE_MS) return cached;
-    const project = await bb.sdk.projects.get({ projectId });
+    const project = await alia.sdk.projects.get({ projectId });
     const repo = repoSlug(project.gitRemoteUrl);
     let result: Unreleased;
     if (repo === null) {

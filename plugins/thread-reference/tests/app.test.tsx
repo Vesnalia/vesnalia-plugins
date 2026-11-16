@@ -5,7 +5,7 @@ import {
   loadPluginApp,
   mountPluginContentScripts,
   renderSlot,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import {
   THREAD_REFERENCE_MIME,
   parseThreadReferenceMentionResource,
@@ -97,7 +97,7 @@ describe("plugin app", () => {
 
     expect(row.draggable).toBe(false);
     const handle = rowContainer.querySelector<HTMLElement>(
-      "[data-bb-thread-reference-handle]",
+      "[data-alia-thread-reference-handle]",
     );
     expect(handle).not.toBeNull();
     expect(handle?.draggable).toBe(true);
@@ -116,7 +116,7 @@ describe("plugin app", () => {
 
     await mounted.lifecycle.dispose();
     expect(row.draggable).toBe(true);
-    expect(rowContainer.querySelector("[data-bb-thread-reference-handle]")).toBeNull();
+    expect(rowContainer.querySelector("[data-alia-thread-reference-handle]")).toBeNull();
   });
 
   it("does not render a visible drop banner", async () => {
@@ -131,7 +131,7 @@ describe("plugin app", () => {
     });
     expect(rendered.queryByRole("region")).toBeNull();
     expect(
-      rendered.container.querySelector("[data-bb-thread-reference-bridge]"),
+      rendered.container.querySelector("[data-alia-thread-reference-bridge]"),
     ).not.toBeNull();
     rendered.lifecycle.unmount();
   });
@@ -205,7 +205,7 @@ describe("plugin app", () => {
       pluginId: "thread-reference",
     });
 
-    expect(mention.getAttribute("data-bb-thread-reference-link")).toBe("true");
+    expect(mention.getAttribute("data-alia-thread-reference-link")).toBe("true");
     expect(mention.getAttribute("role")).toBe("link");
     expect(mention.getAttribute("tabindex")).toBe("0");
     expect(mention.getAttribute("aria-label")).toBe(
@@ -218,7 +218,7 @@ describe("plugin app", () => {
     expect(anchorClick).toHaveBeenCalledTimes(1);
 
     await mounted.lifecycle.dispose();
-    expect(mention.getAttribute("data-bb-thread-reference-link")).toBeNull();
+    expect(mention.getAttribute("data-alia-thread-reference-link")).toBeNull();
     expect(mention.getAttribute("role")).toBeNull();
     anchorClick.mockRestore();
   });

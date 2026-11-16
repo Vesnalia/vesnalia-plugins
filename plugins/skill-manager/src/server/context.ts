@@ -1,6 +1,6 @@
 // Everything a handler needs: settings resolved to concrete values, a fresh
 // filesystem scan, and cached update checks merged into the rows.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   DEFAULT_HUB,
@@ -51,8 +51,8 @@ export interface Config {
   updates: Record<string, UpdateCheck>;
 }
 
-export function defineSettings(bb: BbPluginApi) {
-  return bb.settings.define({
+export function defineSettings(alia: AliaPluginApi) {
+  return alia.settings.define({
     hubDir: {
       type: "string",
       label: "Hub directory",
@@ -93,10 +93,10 @@ export class Context {
   readonly tags: TagStore;
 
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly settings: Settings,
   ) {
-    this.tags = new TagStore(bb);
+    this.tags = new TagStore(alia);
   }
 
   /** Re-read settings and rescan the filesystem. Every handler starts here. */
@@ -122,11 +122,11 @@ export class Context {
 
   announce(): void {
     this.generation++;
-    this.bb.realtime.publish(SKILLS_CHANGED, { at: Date.now() });
+    this.alia.realtime.publish(SKILLS_CHANGED, { at: Date.now() });
   }
 
   async readUpdates(): Promise<Record<string, UpdateCheck>> {
-    return (await this.bb.storage.kv.get<Record<string, UpdateCheck>>(UPDATE_CACHE_KEY)) ?? {};
+    return (await this.alia.storage.kv.get<Record<string, UpdateCheck>>(UPDATE_CACHE_KEY)) ?? {};
   }
 
   /** Merge fresh checks into the cache; drop entries for skills no longer in the hub. */
@@ -135,11 +135,11 @@ export class Context {
     const current = await this.readUpdates();
     for (const check of checks) current[check.skill] = check;
     for (const name of Object.keys(current)) if (!keep.has(name)) delete current[name];
-    await this.bb.storage.kv.set(UPDATE_CACHE_KEY, current);
+    await this.alia.storage.kv.set(UPDATE_CACHE_KEY, current);
   }
 
   async readRegistry(): Promise<Record<string, RegistryStat | RegistryMiss | StarStat>> {
-    const raw = (await this.bb.storage.kv.get<Record<string, RegistryStat | RegistryMiss | StarStat | null>>(REGISTRY_CACHE_KEY)) ?? {};
+    const raw = (await this.alia.storage.kv.get<Record<string, RegistryStat | RegistryMiss | StarStat | null>>(REGISTRY_CACHE_KEY)) ?? {};
     // Older builds stored misses as null; treat those as stale.
     const cache: Record<string, RegistryStat | RegistryMiss | StarStat> = {};
     for (const [key, value] of Object.entries(raw)) if (value !== null) cache[key] = value;
@@ -160,11 +160,11 @@ export class Context {
     const now = Date.now();
     const stale = ids.filter((id) => !this.isFresh(cache[id], now));
     if (stale.length === 0) return;
-    this.bb.log.debug(`registry: fetching ${stale.length} id(s)`);
+    this.alia.log.debug(`registry: fetching ${stale.length} id(s)`);
     for (let index = 0; index < stale.length; index += 50) {
       const chunk = stale.slice(index, index + 50);
       try {
-        const { entries } = await this.bb.sdk.skills.registry.entries({ registrySkillIds: chunk });
+        const { entries } = await this.alia.sdk.skills.registry.entries({ registrySkillIds: chunk });
         const seen = new Set<string>();
         for (const entry of entries) {
           seen.add(entry.id);
@@ -172,7 +172,7 @@ export class Context {
         }
         for (const id of chunk) if (!seen.has(id)) cache[id] = { miss: true, fetchedAt: now };
       } catch (cause) {
-        this.bb.log.warn(`registry lookup failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+        this.alia.log.warn(`registry lookup failed: ${cause instanceof Error ? cause.message : String(cause)}`);
       }
     }
   }
@@ -185,17 +185,17 @@ export class Context {
     const now = Date.now();
     const stale = names.filter((name) => !this.isFresh(cache[`name:${name}`], now));
     if (stale.length === 0) return;
-    this.bb.log.debug(`registry: searching ${stale.length} name(s)`);
+    this.alia.log.debug(`registry: searching ${stale.length} name(s)`);
     const lookup = async (name: string) => {
       try {
-        const { skills } = await this.bb.sdk.skills.registry.search({ query: name, perPage: 10 });
+        const { skills } = await this.alia.sdk.skills.registry.search({ query: name, perPage: 10 });
         const match = skills.filter((entry) => entry.skillId === name || entry.name === name).sort((a, b) => b.installs - a.installs)[0];
         cache[`name:${name}`] =
           match === undefined
             ? { miss: true, fetchedAt: now }
             : { id: match.id, source: match.source, installs: match.installs, stars: match.stars, url: match.url, fetchedAt: now };
       } catch (cause) {
-        this.bb.log.warn(`registry search for ${name} failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+        this.alia.log.warn(`registry search for ${name} failed: ${cause instanceof Error ? cause.message : String(cause)}`);
       }
     };
     // A few at a time so a big hub does not fire dozens of requests at once.
@@ -207,13 +207,13 @@ export class Context {
     const now = Date.now();
     const stale = [...new Set(sources)].filter((source) => !this.isFresh(cache[`stars:${source}`], now));
     if (stale.length === 0) return;
-    this.bb.log.debug(`registry: stars for ${stale.length} repo(s)`);
+    this.alia.log.debug(`registry: stars for ${stale.length} repo(s)`);
     const lookup = async (source: string) => {
       try {
-        const { stars } = await this.bb.sdk.skills.registry.repositoryStars({ source });
+        const { stars } = await this.alia.sdk.skills.registry.repositoryStars({ source });
         cache[`stars:${source}`] = { stars, fetchedAt: now };
       } catch (cause) {
-        this.bb.log.warn(`stars for ${source} failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+        this.alia.log.warn(`stars for ${source} failed: ${cause instanceof Error ? cause.message : String(cause)}`);
       }
     };
     for (let index = 0; index < stale.length; index += 4) await Promise.all(stale.slice(index, index + 4).map(lookup));
@@ -243,7 +243,7 @@ export class Context {
     await this.fillStars(cache, [...sources]);
     const keep = new Set([...ids, ...names.map((name) => `name:${name}`), ...[...sources].map((source) => `stars:${source}`)]);
     for (const key of Object.keys(cache)) if (!keep.has(key)) delete cache[key];
-    if (JSON.stringify(cache) !== before) await this.bb.storage.kv.set(REGISTRY_CACHE_KEY, cache);
+    if (JSON.stringify(cache) !== before) await this.alia.storage.kv.set(REGISTRY_CACHE_KEY, cache);
     return cache;
   }
 
@@ -252,14 +252,14 @@ export class Context {
     const hit = cache[`name:${name}`];
     if (hit === undefined || !("source" in hit)) return;
     cache[`name:${name}`] = { ...hit, verified };
-    await this.bb.storage.kv.set(REGISTRY_CACHE_KEY, cache);
+    await this.alia.storage.kv.set(REGISTRY_CACHE_KEY, cache);
   }
 
   async forgetUpdate(skill: string): Promise<void> {
     const current = await this.readUpdates();
     if (skill in current) {
       delete current[skill];
-      await this.bb.storage.kv.set(UPDATE_CACHE_KEY, current);
+      await this.alia.storage.kv.set(UPDATE_CACHE_KEY, current);
     }
   }
 }

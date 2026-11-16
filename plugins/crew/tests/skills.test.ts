@@ -28,16 +28,16 @@ const frontmatter = (name: string) => `---\nname: ${name}\ndescription: test\n--
 describe("resolveSkillsCatalog", () => {
   it("positive: finds skills under both global roots and the project root, by frontmatter name", async () => {
     const fs = fakeFs({
-      "/home/.bb/skills/memory/SKILL.md": frontmatter("memory"),
-      "/home/.bb/skills-generated/plugin-commands/SKILL.md": frontmatter("plugin-commands"),
-      "/repo/.bb/skills/local-thing/SKILL.md": frontmatter("local-thing"),
+      "/home/.vesnalia/skills/memory/SKILL.md": frontmatter("memory"),
+      "/home/.vesnalia/skills-generated/plugin-commands/SKILL.md": frontmatter("plugin-commands"),
+      "/repo/.vesnalia/skills/local-thing/SKILL.md": frontmatter("local-thing"),
     });
     const catalog = await resolveSkillsCatalog({ homeDir: "/home", projectPath: "/repo" }, fs);
     expect([...catalog.names].sort()).toEqual(["local-thing", "memory", "plugin-commands"]);
   });
 
   it("positive: a missing frontmatter name falls back to the directory name", async () => {
-    const fs = fakeFs({ "/home/.bb/skills/gitlab/SKILL.md": "# Gitlab\n\nNo frontmatter here." });
+    const fs = fakeFs({ "/home/.vesnalia/skills/gitlab/SKILL.md": "# Gitlab\n\nNo frontmatter here." });
     const catalog = await resolveSkillsCatalog({ homeDir: "/home", projectPath: null }, fs);
     expect(catalog.names.has("gitlab")).toBe(true);
   });
@@ -58,7 +58,7 @@ describe("resolveSkillsCatalog", () => {
   });
 
   it("negative: an entry without a SKILL.md is not a skill", async () => {
-    const fs = fakeFs({ "/home/.bb/skills/not-a-skill/README.md": "nope" });
+    const fs = fakeFs({ "/home/.vesnalia/skills/not-a-skill/README.md": "nope" });
     const catalog = await resolveSkillsCatalog({ homeDir: "/home", projectPath: null }, fs);
     expect(catalog.names.size).toBe(0);
   });
@@ -70,7 +70,7 @@ describe("resolveSkillsCatalog", () => {
   });
 
   it("negative: projectPath null skips the project root entirely", async () => {
-    const fs = fakeFs({ "/repo/.bb/skills/local-thing/SKILL.md": frontmatter("local-thing") });
+    const fs = fakeFs({ "/repo/.vesnalia/skills/local-thing/SKILL.md": frontmatter("local-thing") });
     const catalog = await resolveSkillsCatalog({ homeDir: "/home", projectPath: null }, fs);
     expect(catalog.names.size).toBe(0);
   });

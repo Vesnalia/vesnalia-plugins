@@ -1,14 +1,14 @@
 ---
 name: board
-description: Work the project's Kanban over BB Tasks — the "Task board" plugin page. Read and change real BB Tasks (statuses, priorities, due dates, labels, descriptions, comments) that show up on the user's board.
+description: Work the project's Kanban over VesnALIA Tasks — the "Task board" plugin page. Read and change real VesnALIA Tasks (statuses, priorities, due dates, labels, descriptions, comments) that show up on the user's board.
 ---
 
 # Tasks Kanban board ("Task board")
 
 The user has a project-wide Kanban page in the left sidebar (plugin
 `tasks-kanban`, panel "Task board", Russian UI shows "Доска задач"). It is a
-live view over the built-in **BB Tasks** tracker: the same tasks, columns,
-and data that `bb tasks` uses. Nothing is a copy — a card moved on the board
+live view over the built-in **VesnALIA Tasks** tracker: the same tasks, columns,
+and data that `alia tasks` uses. Nothing is a copy — a card moved on the board
 moves the real task.
 
 ## When to use
@@ -22,17 +22,17 @@ moves the real task.
 
 ## How to act on tasks
 
-Use the built-in `bb tasks` CLI — the board refreshes automatically from the
+Use the built-in `alia tasks` CLI — the board refreshes automatically from the
 same data:
 
 ```sh
-bb tasks project list                     # find tracker projects and prefixes
-bb tasks list --project <PREFIX>          # see keys, statuses, due dates
-bb tasks show <KEY>                       # full task: description, comments
-bb tasks update <KEY> --status in_progress # move a card
-bb tasks update <KEY> --priority high --due 2026-12-01
-bb tasks create --project <PREFIX> --title "…" --description-file ./x.md
-bb tasks comment <KEY> --body "…"
+alia tasks project list                     # find tracker projects and prefixes
+alia tasks list --project <PREFIX>          # see keys, statuses, due dates
+alia tasks show <KEY>                       # full task: description, comments
+alia tasks update <KEY> --status in_progress # move a card
+alia tasks update <KEY> --priority high --due 2026-12-01
+alia tasks create --project <PREFIX> --title "…" --description-file ./x.md
+alia tasks comment <KEY> --body "…"
 ```
 
 Prefer stable keys (`SPBU-10`) over ids. After every meaningful change, the

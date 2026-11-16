@@ -11,11 +11,11 @@ terminal and without the plaintext ever touching disk.
   editor with highlighting for YAML, JSON, INI and plain text.
 - A review of your changes before anything is encrypted, with values hidden
   until you show them.
-- Clicking an encrypted `.env` file anywhere in BB opens it in the editor.
+- Clicking an encrypted `.env` file anywhere in VesnALIA opens it in the editor.
 
 ## How it works
 
-Everything runs on the machine BB runs on, with your own sops, run through
+Everything runs on the machine VesnALIA runs on, with your own sops, run through
 mise in the repo so the repo's pinned version and key settings apply.
 Saving goes through `sops edit`, so the file keeps its keys and only the
 values you changed get new ciphertext; the result is decrypted again and

@@ -1,6 +1,6 @@
-// Office Viewer — frontend entry: registers the file openers. BB routes files
-// here by extension from chat links, the file picker and `bb thread open`.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+// Office Viewer — frontend entry: registers the file openers. VesnALIA routes files
+// here by extension from chat links, the file picker and `alia thread open`.
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import type { ComponentType } from "react";
 import { t } from "./src/shared/i18n";
 import { EXTENSIONS } from "./src/spreadsheet/sheet";
@@ -59,14 +59,14 @@ export default definePluginApp((app) => {
     app.slots.experimental_threadHeaderAction({ id: "studio", title: t("studio"), component: StudioHeaderAction });
   }
   app.slots.settingsSection({ id: "office-studio", title: t("studioSettings"), component: StudioSettingsForm });
-  // A button beside BB's Browser address bar (BB 0.46+); older hosts don't have the slot.
+  // A button beside VesnALIA's Browser address bar (VesnALIA 0.46+); older hosts don't have the slot.
   const browser = app.slots as typeof app.slots & {
     experimental_browserToolbarAction?: (registration: { id: string; title: string; component: ComponentType<{ url: string }> }) => void;
   };
   if (typeof browser.experimental_browserToolbarAction === "function") {
     browser.experimental_browserToolbarAction({ id: "devices", title: t("siteOpenDevices"), component: BrowserDevicesButton });
   }
-  // VK core function `image-editor`: an Edit button in BB's image preview for chat attachments.
+  // VK core function `image-editor`: an Edit button in VesnALIA's image preview for chat attachments.
   const vk = app.slots as typeof app.slots & {
     experimental_vkImageEditor?: (registration: { id: string; title: string; component: ComponentType<VkImageEditorProps> }) => void;
   };

@@ -1,10 +1,10 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { SetupStep } from "./setup-plan";
 import { kindSteps, TASK_KINDS, type TaskKind } from "./task-kinds";
 
-type Db = ReturnType<BbPluginApi["storage"]["database"]>;
-type Sdk = BbPluginApi["sdk"];
+type Db = ReturnType<AliaPluginApi["storage"]["database"]>;
+type Sdk = AliaPluginApi["sdk"];
 
 /**
  * A saved Execution Choice for one task map slot. Each level needs the one

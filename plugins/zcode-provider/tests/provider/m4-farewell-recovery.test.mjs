@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
 import { api, artifact, snapshot, inputs } from './helpers.mjs';
-import { experimental_assembleCapturedThreadEvents as assemble } from '@get-bb/plugin-sdk/provider-bridge/testing';
+import { experimental_assembleCapturedThreadEvents as assemble } from '@vesnalia/plugin-sdk/provider-bridge/testing';
 // Own M3 recording fields: m3-native-background fixture; public warning schema/assembler1945.
 const state = (command = '/own/node worker.mjs --key SYNTHETIC_SECRET_1') => ({ ...snapshot([
   { rowId: 1, kind: 'turnHeader', turnId: 't', sourceCommandId: 'c', state: 'completedSuccess' },

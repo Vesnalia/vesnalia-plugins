@@ -25,7 +25,7 @@ TL;DR: Section removal offers archive, unbind or purge; archive journals and ret
 
 Archives provide a reversible way to remove a section subtree from the active tree while retaining files and chat records in an archive entry (`archive.ts:15-28`, `archive.ts:50-72`).
 
-Automatic chat archiving moves eligible quiet chats into BB’s chat archive after a configured inactive period. It is disabled by default and uses the same page for its settings and manual sweep (`auto-archive.ts:9-12`, `plugin-settings.tsx:279-315`).
+Automatic chat archiving moves eligible quiet chats into VesnALIA’s chat archive after a configured inactive period. It is disabled by default and uses the same page for its settings and manual sweep (`auto-archive.ts:9-12`, `plugin-settings.tsx:279-315`).
 
 ## How it works
 
@@ -50,7 +50,7 @@ The settings editor loads and saves `enabled` and `days`, and its Run now action
 1. The archive operation serializes through a queue and either resumes an existing `archiving` record or validates the requested section (`archive.ts:96-126`).
 2. It inventories project threads and environments, rejects active work, external project overlap, child threads outside the subtree and sections that cross ownership boundaries (`archive.ts:128-218`).
 3. It syncs selected chat histories, records archive paths, subtree members and thread IDs with state `archiving` (`archive.ts:219-240`).
-4. After checking for late chats, it stops and archives eligible threads; internal section folders move under `<project>/.bb/archive/sections/<id>/folder`, while external folders stay in place (`archive.ts:242-331`).
+4. After checking for late chats, it stops and archives eligible threads; internal section folders move under `<project>/.vesnalia/archive/sections/<id>/folder`, while external folders stay in place (`archive.ts:242-331`).
 5. In one database transaction, it removes each archived member’s folder and path rows, sets the journal state to `archived` and clears its prior error (`archive.ts:360-368`). The change notification follows the transaction (`archive.ts:369`); a caught failure stores its error, notifies listeners and rethrows (`archive.ts:371-375`).
 6. Restore checks the saved state and destination, moves owned files back, recreates tree rows, and restores threads listed in `restoreThreadIds` (`archive.ts:349-430`).
 
@@ -59,7 +59,7 @@ The settings editor loads and saves `enabled` and `days`, and its Run now action
 1. The factory binds the database and callbacks for folder lookup, canonical paths, project moves, project roots, history sync, pending exports and change notifications. `list` reads newest-first and parses each JSON record with `archiveSchema`; invalid JSON or record shape rejects the read (`archive.ts:50-72`).
 2. The lookup functions answer three questions: `matches` searches completed archives for the same project and host by NFC-normalized lowercase section name or path basename; `blocked` checks whether any archive contains a thread ID; `moving` checks whether a canonicalized path is inside a same-host archive whose state is not `archived` (`archive.ts:73-95`).
 3. Archive and restore calls share one promise queue. Each caller receives its operation result or rejection; the stored queue tail catches rejection so the next queued operation still runs. Thread inventory covers visible and hidden chats across both archived states and pages in batches of 200 (`archive.ts:96-117`).
-4. For a new archive, the coordinator resolves the section and project root, rejects a nested BB project or a ready foreign-project environment, and selects threads whose environments lie under the section. When another section shares the same host path, only threads manually placed in the selected section are included. A selected thread with a child outside the selection, busy status, queued work or positive activity rejects the request; so does a child section outside the archived subtree. Selected histories are synced before the `archiving` record is written (`archive.ts:119-240`, `archive.ts:241-268`).
+4. For a new archive, the coordinator resolves the section and project root, rejects a nested VesnALIA project or a ready foreign-project environment, and selects threads whose environments lie under the section. When another section shares the same host path, only threads manually placed in the selected section are included. A selected thread with a child outside the selection, busy status, queued work or positive activity rejects the request; so does a child section outside the archived subtree. Selected histories are synced before the `archiving` record is written (`archive.ts:119-240`, `archive.ts:241-268`).
 5. An existing record for the same folder in `archiving` state resumes with its saved members and thread IDs. After journaling, the coordinator drains pending exports, rescans for late chats, rejects late busy work, records eligible late threads, and stops/archives threads that were not already archived. An internal unshared directory moves under the project archive with a manifest; an external or shared directory stays in place. Both source and destination existing, or neither existing, rejects without replacing a folder (`archive.ts:119-126`, `archive.ts:250-268`, `archive.ts:270-358`).
 6. Finalization runs in a database transaction: it removes each member’s folder-path and folder rows, sets `state` to `archived` and clears the journal error (`archive.ts:360-368`). The change notification follows the transaction (`archive.ts:369`). Failures before the journal is written reject without an archive retry record; failures caught after journaling save the error and notify listeners, leaving an `archiving` record for retry (`archive.ts:238-268`, `archive.ts:371-377`).
 7. The factory returns `list`, `matches`, `blocked`, `moving`, `archive` and `restore`. The first four are read/guard operations; `archive` and `restore` enter the serial queue and resolve to an archive record or restored folder, while validation and operation errors reject their caller (`archive.ts:63-100`, `archive.ts:119-126`, `archive.ts:379-387`, `archive.ts:467-468`).
@@ -89,10 +89,10 @@ The settings editor loads and saves `enabled` and `days`, and its Run now action
 | Section removal mode | Files and tree | Chats | Evidence |
 |---|---|---|---|
 | `archive` | Archives the section subtree through the archive coordinator; files inside the project move into its archive and the archive record supports restore | The archive coordinator archives eligible chats | `section-remove.ts:76-79`, `archive.ts:294-331` |
-| `unbind` | Removes the selected section and its nested members from the plugin tree; leaves directories in place | Syncs selected chat histories, then stops and archives chats in BB | `section-remove.ts:82-102`, `section-remove.ts:199-238` |
-| `purge` | Same tree removal, then recursively removes the selected folder | Syncs histories, then stops and deletes selected chats in BB | `section-remove.ts:199-238` |
+| `unbind` | Removes the selected section and its nested members from the plugin tree; leaves directories in place | Syncs selected chat histories, then stops and archives chats in VesnALIA | `section-remove.ts:82-102`, `section-remove.ts:199-238` |
+| `purge` | Same tree removal, then recursively removes the selected folder | Syncs histories, then stops and deletes selected chats in VesnALIA | `section-remove.ts:199-238` |
 
-For `unbind` and `purge`, the selected set consists of the real section and real descendant folders on the same project and host whose paths lie inside it, plus nested groups. A child section outside that set blocks removal. Chat inventory includes hidden and archived BB threads in pages of 200, then excludes chats already archived; a live manual placement into the removed subtree selects the chat, otherwise its environment path selects it. If another section shares the selected path, only chats explicitly placed in the selected section are included (`section-remove.ts:15-45`, `section-remove.ts:82-102`, `section-remove.ts:151-177`).
+For `unbind` and `purge`, the selected set consists of the real section and real descendant folders on the same project and host whose paths lie inside it, plus nested groups. A child section outside that set blocks removal. Chat inventory includes hidden and archived VesnALIA threads in pages of 200, then excludes chats already archived; a live manual placement into the removed subtree selects the chat, otherwise its environment path selects it. If another section shares the selected path, only chats explicitly placed in the selected section are included (`section-remove.ts:15-45`, `section-remove.ts:82-102`, `section-remove.ts:151-177`).
 
 | Archive state | Meaning |
 |---|---|
@@ -100,7 +100,7 @@ For `unbind` and `purge`, the selected set consists of the real section and real
 | `archived` | Section is in archive; eligible for restore or matching |
 | `restoring` | Restore operation journal exists |
 
-The same dialog also removes projects. It offers `keep` or `archive`; `keep` leaves every project copy in place, while `archive` moves each local-path source to a sibling `.bb/archive/projects/<uuid>/folder` path on its host, using one UUID across copies, before deleting the BB project (`app.tsx:948-985`, `app.tsx:560-563`, `project-delete.ts:62-124`). Project deletion checks and ownership rules are documented in [Project and section tree](project-tree.md).
+The same dialog also removes projects. It offers `keep` or `archive`; `keep` leaves every project copy in place, while `archive` moves each local-path source to a sibling `.vesnalia/archive/projects/<uuid>/folder` path on its host, using one UUID across copies, before deleting the VesnALIA project (`app.tsx:948-985`, `app.tsx:560-563`, `project-delete.ts:62-124`). Project deletion checks and ownership rules are documented in [Project and section tree](project-tree.md).
 
 ### Folder dialog entry points
 
@@ -119,7 +119,7 @@ The same dialog also removes projects. It offers `keep` or `archive`; `keep` lea
 
 | Folder location | Archive behavior |
 |---|---|
-| Inside project root | Move the folder under `.bb/archive/sections/<id>/folder` |
+| Inside project root | Move the folder under `.vesnalia/archive/sections/<id>/folder` |
 | Outside project root | Keep the directory in place; archive tree record and chats |
 
 | `FolderDialog` action | RPC path and result |
@@ -149,7 +149,7 @@ State and location fields: `archive.ts:15-28`, `archive.ts:219-240`, `archive.ts
 ## Business rules
 
 - The operation rejects selected chats whose status is active, starting, stopping or pending, or that have queued work or positive activity (`archive.ts:185-211`).
-- It rejects folders containing another BB project or a ready environment from another project (`archive.ts:128-156`).
+- It rejects folders containing another VesnALIA project or a ready environment from another project (`archive.ts:128-156`).
 - Restore never overwrites an occupied destination; errors remain on the archive record for retry (`archive.ts:392-406`, `archive.ts:462-466`).
 - Groups nested beneath archived members are stored and restored as part of the subtree (`archive.ts:30-48`).
 - Archive does not permanently delete files (`archive.ts:349-430`).
@@ -164,8 +164,8 @@ State and location fields: `archive.ts:15-28`, `archive.ts:219-240`, `archive.ts
 | `auto_archive_get`, `auto_archive_save`, `auto_archive_run` | Read/save auto-archive settings and run a sweep; settings use the `enabled` and `days` fields | `server.ts:636-647`, `server.ts:3569-3577`, `auto-archive.ts:3-6` |
 | `archive_list`, `archive_matches`, `archive`, `restore`, `forget` | List, match, archive, restore or use archive compatibility operation | `server.ts:368-406` |
 | `section_remove` | Remove a section using `archive`, `unbind` or `purge` | `server.ts:366-375`, `server.ts:2418-2470`, `section-remove.ts:48-79` |
-| `bb project-folders remove-section <folder-id> archive\|unbind\|purge` | CLI section-removal operation | `server.ts:3869-3874`, `server.ts:3985-3989` |
-| `bb project-folders archives`, `archive`, `restore`, `forget` | CLI archive operations | `server.ts:3607-3619`, `server.ts:3757-3764` |
+| `alia project-folders remove-section <folder-id> archive\|unbind\|purge` | CLI section-removal operation | `server.ts:3869-3874`, `server.ts:3985-3989` |
+| `alia project-folders archives`, `archive`, `restore`, `forget` | CLI archive operations | `server.ts:3607-3619`, `server.ts:3757-3764` |
 
 ## Gotchas
 

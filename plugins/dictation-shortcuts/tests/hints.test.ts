@@ -22,7 +22,7 @@ test('no browser tooltip, compact modifier badges, release and restoration',asyn
  assert.equal(f.doc.querySelectorAll('[data-dictation-hint]').length,0);
  f.dispose();assert.equal(button.title,'Original');assert.equal(button.hasAttribute('aria-keyshortcuts'),false);f.dom.window.close();
 });
-test('BB showKeyboardHints=false suppresses badges',async()=>{
+test('VesnALIA showKeyboardHints=false suppresses badges',async()=>{
  const f=setup(false);
  f.dom.window.dispatchEvent(new f.dom.window.KeyboardEvent('keydown',{key:'Control',ctrlKey:true}));await wait();
  assert.equal(f.doc.querySelectorAll('[data-dictation-hint]').length,0);f.dispose();f.dom.window.close();

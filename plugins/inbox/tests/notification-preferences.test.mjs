@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import plugin from '../server.ts';
 
 async function fixture(settings = {}) {
-  const { bb, harness } = createFakePluginHost({ pluginId: 'inbox', settings: {
+  const { alia, harness } = createFakePluginHost({ pluginId: 'inbox', settings: {
     desktopEnabled: false, telegramBotToken: 'synthetic-token', telegramChatId: '123', ...settings,
   }});
-  await plugin(bb);
+  await plugin(alia);
   return { harness, rpc: input => harness.behavior.callRpc('notify', input), close: () => harness.lifecycle.dispose() };
 }
 

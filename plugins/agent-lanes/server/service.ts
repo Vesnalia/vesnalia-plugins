@@ -1,11 +1,11 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { LANES_CHANGED, type BlockDetail, type LanesChangedSignal } from "../shared/model";
 import { blockDetail } from "./detail";
 import { foldEvents, INDEX_EVENT_TYPES, inlineApproval, object, reconcileIdle, type IndexEvent, type IndexThread } from "./indexer";
 import { LanesStorage } from "./storage";
 
 const WEEK = 7 * 24 * 60 * 60 * 1000;
-// bb caps a thread events page at 100 rows; thread list pages use the same size.
+// VesnALIA caps a thread events page at 100 rows; thread list pages use the same size.
 const PAGE_SIZE = 100;
 const relevantTypes = new Set<string>(INDEX_EVENT_TYPES);
 export class LanesService {
@@ -19,14 +19,14 @@ export class LanesService {
   private readonly subscriptions: (() => void)[] = [];
   private readonly controller = new AbortController();
   private backfillJob: Promise<void> | null = null;
-  constructor(private readonly bb: BbPluginApi) {
-    this.storage = new LanesStorage(bb);
+  constructor(private readonly alia: AliaPluginApi) {
+    this.storage = new LanesStorage(alia);
   }
   private publish(blocks: LanesChangedSignal["blocks"] = [], handoffs: LanesChangedSignal["handoffs"] = []) {
     if (this.disposed) return;
     // Empty arrays are an invalidation: removals and bursts over 50 require a full window refetch.
     const overflow = blocks.length + handoffs.length > 50;
-    this.bb.realtime.publish(LANES_CHANGED, {
+    this.alia.realtime.publish(LANES_CHANGED, {
       blocks: overflow ? [] : blocks, handoffs: overflow ? [] : handoffs, generatedAt: Date.now(),
     } satisfies LanesChangedSignal);
   }
@@ -38,7 +38,7 @@ export class LanesService {
       this.timers.delete(threadId);
       void this.refresh(threadId).catch((error: unknown) => {
         if (this.disposed) return;
-        this.bb.log.warn(`Could not update lane ${threadId}; retrying: ${error instanceof Error ? error.message : String(error)}`);
+        this.alia.log.warn(`Could not update lane ${threadId}; retrying: ${error instanceof Error ? error.message : String(error)}`);
         this.timers.set(threadId, setTimeout(() => {
           this.timers.delete(threadId);
           this.schedule(threadId);
@@ -58,13 +58,13 @@ export class LanesService {
   private async indexThread(threadId: string) {
     if (this.disposed || this.deletedThreads.has(threadId)) return;
     const signal = this.controller.signal;
-    const thread = await this.bb.sdk.threads.get({ threadId, signal });
+    const thread = await this.alia.sdk.threads.get({ threadId, signal });
     if (this.disposed) return;
     const previous = this.storage.read(threadId);
     const oldHandoffs = this.storage.handoffsFor(threadId);
     let next = previous;
     for (;;) {
-      const events = await this.bb.sdk.threads.events.list({ threadId,
+      const events = await this.alia.sdk.threads.events.list({ threadId,
         afterSeq: String(next.lastSeq), limit: String(PAGE_SIZE), order: "asc", types: INDEX_EVENT_TYPES, signal });
       if (this.disposed) return;
       next = foldEvents(next, events, thread);
@@ -73,7 +73,7 @@ export class LanesService {
     // Status may have changed while paging history; only the final live state can close a crashed turn.
     const hasOpen = Object.values(next.turns).some(turn => turn.block.end === null);
     const current = hasOpen && thread.status === "idle"
-      ? await this.bb.sdk.threads.get({ threadId, signal }) : thread;
+      ? await this.alia.sdk.threads.get({ threadId, signal }) : thread;
     if (this.disposed) return;
     if (this.deletedThreads.has(threadId)) return;
     next = reconcileIdle(next, current);
@@ -105,7 +105,7 @@ export class LanesService {
     const signal = this.controller.signal;
     const openIds = new Set(this.storage.open().map(row => row.thread.id));
     for (let offset = 0; !this.disposed; offset += PAGE_SIZE) {
-      const page = await this.bb.sdk.threads.list({ limit: PAGE_SIZE, offset, signal });
+      const page = await this.alia.sdk.threads.list({ limit: PAGE_SIZE, offset, signal });
       threads.push(...page.filter(thread => thread.updatedAt >= Date.now() - WEEK
         || thread.status === "active" || thread.status === "starting" || openIds.has(thread.id)));
       if (page.length < PAGE_SIZE) break;
@@ -119,7 +119,7 @@ export class LanesService {
         // One unreadable thread must not stall the rest of the backfill; retry it on its own.
         await this.refresh(thread.id).catch((error: unknown) => {
           if (this.disposed) return;
-          this.bb.log.warn(`Could not index lane ${thread.id}: ${error instanceof Error ? error.message : String(error)}`);
+          this.alia.log.warn(`Could not index lane ${thread.id}: ${error instanceof Error ? error.message : String(error)}`);
           this.schedule(thread.id);
         });
       }
@@ -135,11 +135,11 @@ export class LanesService {
     if (signal.aborted || this.disposed) return;
     const stop = () => this.dispose();
     signal.addEventListener("abort", stop, { once: true });
-    this.subscriptions.push(this.bb.sdk.subscribe({ event: "thread:changed", callback: event => {
+    this.subscriptions.push(this.alia.sdk.subscribe({ event: "thread:changed", callback: event => {
       if (this.disposed) return;
       if (!event.id) {
         void this.backfill().catch(() => {
-          if (!this.disposed) this.bb.log.warn("Could not reconcile lanes after invalidation");
+          if (!this.disposed) this.alia.log.warn("Could not reconcile lanes after invalidation");
         });
         return;
       }
@@ -160,10 +160,10 @@ export class LanesService {
       if (!contentChange && types?.length && !types.some(type => relevantTypes.has(type))) return;
       this.schedule(event.id);
     } }));
-    this.subscriptions.push(this.bb.sdk.subscribe({ event: "realtime:connection", callback: event => {
+    this.subscriptions.push(this.alia.sdk.subscribe({ event: "realtime:connection", callback: event => {
       if (event.state === "connected" && event.reconnected) {
         void this.backfill().catch(() => {
-          if (!this.disposed) this.bb.log.warn("Could not reconcile lanes after reconnect");
+          if (!this.disposed) this.alia.log.warn("Could not reconcile lanes after reconnect");
         });
       }
     } }));
@@ -191,7 +191,7 @@ export class LanesService {
     const events: IndexEvent[] = [];
     let afterSeq = turn.startSeq - 1;
     for (;;) {
-      const page = await this.bb.sdk.threads.events.list({ threadId,
+      const page = await this.alia.sdk.threads.events.list({ threadId,
         afterSeq: String(afterSeq), ...(turn.endSeq === null ? {} : { beforeSeq: String(turn.endSeq + 1) }),
         types: ["item/started", "item/completed"], limit: String(PAGE_SIZE), order: "asc", signal: this.controller.signal });
       events.push(...page);
@@ -205,10 +205,10 @@ export class LanesService {
   }
   async decide(threadId: string, interactionId: string, decision: "approve" | "reject") {
     try {
-      const interaction = await this.bb.sdk.threads.interactions.get({ threadId, interactionId, signal: this.controller.signal });
+      const interaction = await this.alia.sdk.threads.interactions.get({ threadId, interactionId, signal: this.controller.signal });
       if (interaction.status !== "pending") return { ok: false, message: "This request has already been answered" };
       if (!inlineApproval(object(interaction.payload))) return { ok: false, message: "Answer this request in the thread" };
-      await this.bb.sdk.threads.interactions.resolve({ threadId, interactionId,
+      await this.alia.sdk.threads.interactions.resolve({ threadId, interactionId,
         resolution: decision === "approve" ? { decision: "allow_once", grantedPermissions: null } : { decision: "deny" } });
       this.schedule(threadId);
       return { ok: true, message: null };

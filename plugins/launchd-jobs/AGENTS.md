@@ -1,7 +1,7 @@
 # AGENTS.md
 
-A bb plugin that adds a **Scheduled jobs** sidebar page: shell commands on a cron expression or a
-fixed interval, written as LaunchAgents and run by launchd on a Mac, whether or not bb is open. It is
+A VesnALIA plugin that adds a **Scheduled jobs** sidebar page: shell commands on a cron expression or a
+fixed interval, written as LaunchAgents and run by launchd on a Mac, whether or not VesnALIA is open. It is
 the port of the Paseo plugin `launchd-jobs` and **adopts that plugin's jobs** where they are.
 
 The repository root `AGENTS.md` covers what every plugin here shares. This file covers only what is
@@ -30,15 +30,15 @@ specific to `launchd-jobs`.
 
 ## Decisions
 
-**Why this plugin exists beside bb's `automations`.** `automations` runs scheduled scripts from the
-bb server, so only while bb runs. A LaunchAgent runs while bb is closed, runs a missed fire when the
+**Why this plugin exists beside VesnALIA's `automations`.** `automations` runs scheduled scripts from the
+VesnALIA server, so only while VesnALIA runs. A LaunchAgent runs while VesnALIA is closed, runs a missed fire when the
 Mac wakes, keeps a disable across reboots, and is a plist the user can read and edit. And the owner's
 jobs already exist as LaunchAgents made by the Paseo plugin; this plugin shows and manages them.
 
-**Which machine: a `bb.host` entry.** `launchctl` must run on the Mac that owns the jobs, as that
-user, in that user's login session, so all of `host/jobs.ts` runs in the host entry, never in the bb
-server's process. The server only forwards (`bb.hosts.experimental_client(...).call(method, input,
-{ hostId })`). The page opens on `bb.sdk.system.config().primaryHostId` — the Mac running the bb
+**Which machine: a `alia.host` entry.** `launchctl` must run on the Mac that owns the jobs, as that
+user, in that user's login session, so all of `host/jobs.ts` runs in the host entry, never in the VesnALIA
+server's process. The server only forwards (`alia.hosts.experimental_client(...).call(method, input,
+{ hostId })`). The page opens on `alia.sdk.system.config().primaryHostId` — the Mac running the VesnALIA
 server — and offers a picker when more than one host is connected; off macOS the host answers
 `supported: false` and the page says so.
 
@@ -73,7 +73,7 @@ interleave with another change. Reads (`list`, `log`, `health`) do not wait. The
 written atomically, so a reader never sees half a file. This is per host worker; the Paseo plugin,
 running elsewhere, is guarded only by the exclusive link above.
 
-**A manager, not a launcher.** launchd runs the jobs; nothing here runs one, so bb quitting, a
+**A manager, not a launcher.** launchd runs the jobs; nothing here runs one, so VesnALIA quitting, a
 reload or a cancelled call never touches a running job. The plugin's own commands (`launchctl`,
 `plutil`, the PATH probe) are short, and none is cancelled once started:
 
@@ -86,7 +86,7 @@ reload or a cancelled call never touches a running job. The plugin's own command
 - **The shared runner script** is written only once a change is past its reads (`ensureRunner` after
   `directoryForSave`), so a change that gives up never replaces it.
 
-**bb quitting in the middle of a change** can leave a job half-way — most likely an update booted
+**VesnALIA quitting in the middle of a change** can leave a job half-way — most likely an update booted
 out and rewritten but not yet bootstrapped. There is deliberately no recovery machinery: no
 persisted intent, no drain on dispose. The job then lists as **Not loaded** (launchd's own status,
 read on every list), the detail pane says so in plain words, and both **Enable** and saving the job
@@ -98,7 +98,7 @@ path.
 Each plist names its own data directory in `EnvironmentVariables.PASEO_LAUNCHD_JOBS_DIR`, and its
 runner by absolute path. `dataDirOf` reads that, and a job's log, history and runner are looked for
 **there** — the Paseo plugin's `~/.paseo/plugin-data/launchd-jobs/` for its jobs, this plugin's own
-host data directory (`context.experimental_paths.dataDir`, `~/.bb/plugins/launchd-jobs/host-data/` on
+host data directory (`context.experimental_paths.dataDir`, `~/.vesnalia/plugins/launchd-jobs/host-data/` on
 the server's Mac) for jobs made here. One reader serves both because the runner format is the same:
 keep the log markers and the history line identical to the Paseo runner's.
 
@@ -211,11 +211,11 @@ as `log-changed` over realtime; the app reads only what was appended (`log` with
 
 ## The failing count
 
-`app.slots.navPanel`'s `experimental_useBadge` (bb 0.47, SDK 0.6.75) puts the count on the static
-entry, with the jobs' names as its tooltip — a hook bb calls in the plugin's scope, no re-registering,
+`app.slots.navPanel`'s `experimental_useBadge` (VesnALIA 0.47, SDK 0.6.75) puts the count on the static
+entry, with the jobs' names as its tooltip — a hook VesnALIA calls in the plugin's scope, no re-registering,
 unlike Paseo. It returns `tone: "critical"` while any job is failing and null otherwise. The
-`experimental_sidebarAccessory` component it replaced was not drawn from bb 0.46 on, and bb 0.46 refuses
-the new key (`unknown field`), which is why `engines.bb` is `>=0.47`. The server owns the count (`server/health.ts`), re-taken every 60 s
+`experimental_sidebarAccessory` component it replaced was not drawn from VesnALIA 0.46 on, and VesnALIA 0.46 refuses
+the new key (`unknown field`), which is why `engines.alia` is `>=0.47`. The server owns the count (`server/health.ts`), re-taken every 60 s
 by a background service whether or not any window is open, and published on `health-changed` only
 when it changes; the app reads it on mount and after a reconnect.
 
@@ -224,7 +224,7 @@ when it changes; the app reads it on mount and after a reconnect.
   page's status column is where that shows.
 - The server's own Mac is always asked. Another Mac is asked only once a listing there found a job
   (kv `watched-hosts`), and drops out when it has none, so a laptop nobody looked at is not woken
-  every minute. A Mac that is asleep keeps what it last reported; a Mac removed from bb is forgotten
+  every minute. A Mac that is asleep keeps what it last reported; a Mac removed from VesnALIA is forgotten
   with its failures, since nobody could open it to clear them.
 - A recount asked for while a check is running (after an acknowledge or a delete) waits for it and
   runs once more, because the running check may have read the files before the change.
@@ -235,29 +235,29 @@ when it changes; the app reads it on mount and after a reconnect.
 
 ## The push when a job starts failing
 
-One setting, `notifyOnFailure` (off by default), sends a push notification through bb's built-in Push
-notifications plugin (`bb.sdk.plugins.callRpc` → `push-notifications` / `notifications.send`, bb
+One setting, `notifyOnFailure` (off by default), sends a push notification through VesnALIA's built-in Push
+notifications plugin (`alia.sdk.plugins.callRpc` → `push-notifications` / `notifications.send`, VesnALIA
 0.48.1) when a job joins the failing set: title "<name> failed on <Mac>", body the run's exit code.
 
 - **Every count is observed, on or off.** `server/health.ts` hands each count to `checked`, changed or
   not, and `server/failure-push.ts` stores the `hostId/id` of every failing job in kv
   `notified-failures`. A job notifies only when it is failing now, absent from that set, and the
   setting is on. So nothing repeats while a job stays failing; a job that recovers or is acknowledged
-  leaves the set and notifies on its next failure; and turning the setting on, a reload or a bb
+  leaves the set and notifies on its next failure; and turning the setting on, a reload or a VesnALIA
   restart sends nothing for a job already failing — the set was kept while the setting was off. With no
   stored set at all (the first count after install) the count is only recorded.
-- Publishing only on change is not enough: a job that recovered while bb was down must leave the set
+- Publishing only on change is not enough: a job that recovered while VesnALIA was down must leave the set
   on the first count after load, even when that count publishes nothing.
 - **Recorded before sending**, so a send cut short by a reload is lost rather than repeated. The set is
   re-read from kv on every count (once a minute) instead of cached, since a reload's new instance loads
   before the old one is disposed; `dispose` stops the old one from sending or writing. Counts are
   handled one at a time.
-- **Feature-detected, not an engine bump.** On bb before 0.48.1, or with Push notifications turned off,
+- **Feature-detected, not an engine bump.** On VesnALIA before 0.48.1, or with Push notifications turned off,
   the call throws; that is logged once (until a send succeeds again), the failure is still recorded so
-  it is not retried every minute, and the count is never affected. `engines.bb` stays `>=0.47`.
+  it is not retried every minute, and the count is never affected. `engines.alia` stays `>=0.47`.
 - **A Mac that did not answer keeps its record.** The count carries an asleep or erroring Mac's entries
   from what this instance last saw, which after a reload is nothing, so `checked` also names the Macs
-  asked that did not answer and their stored keys are kept. A Mac removed from bb, or no longer asked,
+  asked that did not answer and their stored keys are kept. A Mac removed from VesnALIA, or no longer asked,
   leaves the set with its failures.
 - The fake host in `server.test.ts` stands in for Push notifications; never send a real one from a test.
 
@@ -266,13 +266,13 @@ notifications plugin (`bb.sdk.plugins.callRpc` → `push-notifications` / `notif
 There is no scratch launchd. The host tests use `host/fake-launchd.ts` and temporary directories, and
 never touch `~/Library/LaunchAgents`. A live check of create/run/delete goes into the real launchd:
 name the job `fm-smoke-…` so it is obviously one, and delete it from the page or with
-`bb plugin rpc call launchd-jobs delete`. Reading — `list`, `log`, `health` — is safe on real jobs:
+`alia plugin rpc call launchd-jobs delete`. Reading — `list`, `log`, `health` — is safe on real jobs:
 
 ```bash
 echo '{}' > /tmp/empty.json
-bb plugin rpc call launchd-jobs hosts --input-file /tmp/empty.json     # the primary host id
+alia plugin rpc call launchd-jobs hosts --input-file /tmp/empty.json     # the primary host id
 echo '{"hostId":"host_…"}' > /tmp/in.json
-bb plugin rpc call launchd-jobs list --input-file /tmp/in.json
+alia plugin rpc call launchd-jobs list --input-file /tmp/in.json
 ```
 
-`bb plugin rpc call` sends `null` without `--input-file`, which every method here refuses.
+`alia plugin rpc call` sends `null` without `--input-file`, which every method here refuses.

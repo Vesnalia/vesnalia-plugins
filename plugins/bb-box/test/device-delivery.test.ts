@@ -77,10 +77,10 @@ function serverRoot(version: number, change: (main: string) => string = (main) =
 }
 
 function inBox(home: string) {
-  const env = { ...process.env, HOME: home, BB_BOX_DEVICE_MANAGER: "supervisor" };
+  const env = { ...process.env, HOME: home, ALIA_BOX_DEVICE_MANAGER: "supervisor" };
   cleanups.push(() => {
     for (const name of ["supervisor.pid", "server.pid"]) {
-      const file = join(home, ".bb-box/device", name);
+      const file = join(home, ".alia-box/device", name);
       if (existsSync(file)) {
         try {
           process.kill(Number(readFileSync(file, "utf8")), "SIGKILL");
@@ -144,7 +144,7 @@ describe("delivering the device server", { skip: process.platform === "win32" },
     assert.equal(view.is === "connected" && view.state.model, "Pixel Tablet");
     assert.equal(record.device?.model, "Pixel Tablet");
     assert.equal(record.device?.runtime.platform, "android");
-    assert.deepEqual(JSON.parse(readFileSync(join(home, ".bb-box/device/choices.json"), "utf8")), { slim: true }, "the box's choices go with the delivery");
+    assert.deepEqual(JSON.parse(readFileSync(join(home, ".alia-box/device/choices.json"), "utf8")), { slim: true }, "the box's choices go with the delivery");
     assert.ok(logs.some((line) => line === "first: Box b-12's device server: delivered version 1, as it has none yet."));
     await first.dispose();
   });
@@ -176,7 +176,7 @@ describe("delivering the device server", { skip: process.platform === "win32" },
     servers.controlChanged(box.id);
     for (let tries = 0; servers.view(box.id).is !== "connected" && tries < 200; tries++) await new Promise((resolve) => setTimeout(resolve, 50));
     assert.equal(await runs(), 3);
-    const told = () => readFileSync(join(home, ".bb-box/device/server.log"), "utf8").split("\n").filter((line) => /owner: (agent|person), generation \d+/.test(line));
+    const told = () => readFileSync(join(home, ".alia-box/device/server.log"), "utf8").split("\n").filter((line) => /owner: (agent|person), generation \d+/.test(line));
     for (let tries = 0; !told().some((line) => line.includes("owner: agent")) && tries < 100; tries++) await new Promise((resolve) => setTimeout(resolve, 50));
     assert.ok(told().some((line) => line.includes("owner: agent")), "the new server is told the agent has control");
     await servers.dispose();
@@ -226,8 +226,8 @@ describe("delivering the device server", { skip: process.platform === "win32" },
 
   test("caps a box in a slot at two thirds as soon as a delivery's new server says hello (064, unit 4)", async () => {
     logs.length = 0;
-    const slot = { ...record, guest: { ref: "bb-box-host-1/i1", host: "mac1", address: null, size: null, data: { box: record.id, ...placementData({ on: "slot", host: "bb-box-host-1", hostOn: "tart", carried: true, generation: 1, place: 0, most: 8 }) } } } as BoxRecord;
-    const capped = () => readFileSync(join(home, ".bb-box/device/server.log"), "utf8").split("\n").filter((line) => line.includes("video: capped at two-thirds")).length;
+    const slot = { ...record, guest: { ref: "alia-box-host-1/i1", host: "mac1", address: null, size: null, data: { box: record.id, ...placementData({ on: "slot", host: "alia-box-host-1", hostOn: "tart", carried: true, generation: 1, place: 0, most: 8 }) } } } as BoxRecord;
+    const capped = () => readFileSync(join(home, ".alia-box/device/server.log"), "utf8").split("\n").filter((line) => line.includes("video: capped at two-thirds")).length;
     const before = capped();
     const servers = make("slot", 70, 5, serverRoot(5));
     assert.equal((await servers.ensure(slot)).is, "connected");
@@ -239,9 +239,9 @@ describe("delivering the device server", { skip: process.platform === "win32" },
 
   test("with the encoder ledger on, a slot's stream takes the ledger's cap and words, not two thirds (064, unit 6)", async () => {
     logs.length = 0;
-    const slot = { ...record, guest: { ref: "bb-box-host-1/i1", host: "mac1", address: null, size: null, data: { box: record.id, ...placementData({ on: "slot", host: "bb-box-host-1", hostOn: "tart", carried: true, generation: 1, place: 0, most: 8 }) } } } as BoxRecord;
+    const slot = { ...record, guest: { ref: "alia-box-host-1/i1", host: "mac1", address: null, size: null, data: { box: record.id, ...placementData({ on: "slot", host: "alia-box-host-1", hostOn: "tart", carried: true, generation: 1, place: 0, most: 8 }) } } } as BoxRecord;
     record = slot;
-    const serverLog = () => readFileSync(join(home, ".bb-box/device/server.log"), "utf8").split("\n");
+    const serverLog = () => readFileSync(join(home, ".alia-box/device/server.log"), "utf8").split("\n");
     const before = serverLog().length;
     const sent: string[] = [];
     let on = true;
@@ -269,7 +269,7 @@ describe("delivering the device server", { skip: process.platform === "win32" },
   });
 
   test("switching the encoder ledger off clears the cap and words it gave a box in a VM of its own (064, unit 6's H8)", async () => {
-    const serverLog = () => readFileSync(join(home, ".bb-box/device/server.log"), "utf8").split("\n").filter(Boolean);
+    const serverLog = () => readFileSync(join(home, ".alia-box/device/server.log"), "utf8").split("\n").filter(Boolean);
     const before = serverLog().length;
     let on = true;
     const ledger = new EncoderLedgers({ on: () => on, controlled: () => false, send: () => {}, probe: async () => null, log: () => {}, logError: () => {} });
@@ -338,14 +338,14 @@ describe("delivering the device server", { skip: process.platform === "win32" },
     await servers.dispose();
   });
 
-  test("the doctor says the device's state as its server gives it now, and what is not known when the server does not answer or BB Box closed its connection (F-8)", async () => {
+  test("the doctor says the device's state as its server gives it now, and what is not known when the server does not answer or VesnALIA Box closed its connection (F-8)", async () => {
     const check = async (servers: DeviceServers) => (await servers.checks()).find((each) => each.id === "device.b-12")!;
     const servers = make("doctor", 90, DEVICE_SERVER_VERSION, serverRoot(DEVICE_SERVER_VERSION), () => false, { deviceStateWaitMs: 1000 });
     assert.equal((await servers.ensure(box)).is, "connected");
     const answering = await check(servers);
     assert.match(answering.detail, new RegExp(`^Version ${DEVICE_SERVER_VERSION}, protocol \\d+: the Pixel Tablet, booted\\.`));
 
-    const server = Number(readFileSync(join(home, ".bb-box/device/server.pid"), "utf8"));
+    const server = Number(readFileSync(join(home, ".alia-box/device/server.pid"), "utf8"));
     process.kill(server, "SIGSTOP");
     try {
       const silent = await check(servers);
@@ -362,7 +362,7 @@ describe("delivering the device server", { skip: process.platform === "win32" },
     await new Promise((resolve) => setTimeout(resolve, 400));
     const closed = await check(idle);
     assert.equal(closed.status, "ok");
-    assert.match(closed.detail, /: BB Box closed its connection at .* UTC, as nothing used it, so the device's state now is not known\. It last said the Pixel Tablet was booted/);
+    assert.match(closed.detail, /: ALIA Box closed its connection at .* UTC, as nothing used it, so the device's state now is not known\. It last said the Pixel Tablet was booted/);
     await idle.dispose();
   });
 });
@@ -377,7 +377,7 @@ test("the doctor looks for Device Hub in every ios box at once, each bounded, an
       state: "ready",
       kind: "ios",
       capabilities: { device: offer, os: "macos" },
-      guest: { ref: `bb-box-host-1/${n}`, host: "mac1", address: null, size: null, data: { box: `bx-slot-${n}`, ...placementData({ on: "slot", host: "bb-box-host-1", hostOn: "tart", carried: false, generation: n, place: n - 1, most: 8 }) } },
+      guest: { ref: `alia-box-host-1/${n}`, host: "mac1", address: null, size: null, data: { box: `bx-slot-${n}`, ...placementData({ on: "slot", host: "alia-box-host-1", hostOn: "tart", carried: false, generation: n, place: n - 1, most: 8 }) } },
     }) as unknown as BoxRecord;
   const answering = { ...slot(9), id: "bx-own", name: "own-box", guest: null } as unknown as BoxRecord;
   const boxes = [slot(1), slot(2), slot(3), slot(4), answering];
@@ -406,7 +406,7 @@ test("the doctor looks for Device Hub in every ios box at once, each bounded, an
     id: "device-hub.slot-box-2",
     name: "Device Hub in slot-box-2",
     status: "skipped",
-    detail: "BB Box could not look in box slot-box-2: it waited 1 s for box slot-box-2 to answer a command over SSH as its slot's user on the shared iOS host bb-box-host-1, and stopped waiting.",
+    detail: "VesnALIA Box could not look in box slot-box-2: it waited 1 s for box slot-box-2 to answer a command over SSH as its slot's user on the shared iOS host alia-box-host-1, and stopped waiting.",
     fix: null,
   });
   await servers.dispose();

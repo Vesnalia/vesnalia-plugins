@@ -18,8 +18,8 @@ Power buttons: turn the display off, sleep with a wake timer, shut down.
 
 ## How it works
 
-Every 15 seconds the plugin reads stock macOS tools: `vm_stat`, `sysctl`, `pmset`, `ioreg`, `netstat` and `ps`. No sudo, nothing installed. 24 hours of history stay in BB storage at one-minute resolution. Agents get `bb mac-watch status [--json]` and a skill that answers "is the Mac at home still awake".
+Every 15 seconds the plugin reads stock macOS tools: `vm_stat`, `sysctl`, `pmset`, `ioreg`, `netstat` and `ps`. No sudo, nothing installed. 24 hours of history stay in VesnALIA storage at one-minute resolution. Agents get `alia mac-watch status [--json]` and a skill that answers "is the Mac at home still awake".
 
 ## Requirements
 
-macOS on Apple Silicon. Alerts go through the push-notifications plugin. Sleep, the wake timer and shutdown add a one-time sudoers rule for exactly three commands. Collection runs only while bb runs: if the Mac dies or leaves the network, the plugin goes with it and the page simply stops updating. Battery swelling cannot be measured directly; only the early signs are visible. The interface is in Russian.
+macOS on Apple Silicon. Alerts go through the push-notifications plugin. Sleep, the wake timer and shutdown add a one-time sudoers rule for exactly three commands. Collection runs only while VesnALIA runs: if the Mac dies or leaves the network, the plugin goes with it and the page simply stops updating. Battery swelling cannot be measured directly; only the early signs are visible. The interface is in Russian.

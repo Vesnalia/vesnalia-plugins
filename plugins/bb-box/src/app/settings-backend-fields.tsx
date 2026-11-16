@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { Fragment, useEffect, useId, useState, type ReactNode } from "react";
 import { BoxDialog, DialogButton } from "./box-dialog.tsx";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ export { backendPart };
 export const FOLDED_GROUPS: ReadonlySet<FieldGroup> = new Set(["ios-hosts", "advanced"]);
 
 export const GROUP_WORDS: Readonly<Partial<Record<FieldGroup, string>>> = {
-  credentials: "Kept secret: BB Box never shows them again, only whether each is set.",
+  credentials: "Kept secret: VesnALIA Box never shows them again, only whether each is set.",
   boxes: "What new boxes start from, and what they may do.",
   gpus: "Limits and defaults for the boxes on its cards. No setting here changes a box's own GPU: that is chosen when a box is made, and by Resize.",
   "ios-hosts": "iOS boxes as macOS users on a shared Mac or VM, ready in seconds.",
@@ -668,7 +668,7 @@ export function RemoveHostDialog({ name, noun, backend, rowOf, onCancel, onConfi
     >
       <div className="space-y-2">
         <p>New boxes stop going to {name}. Its shared iOS host is deleted when its last box goes, and its warm VMs are released.</p>
-        <p>BB Box refuses to remove a {noun} while boxes are on it: turn its switch off and release them first. The removal waits for Save, with the rest of the form.</p>
+        <p>VesnALIA Box refuses to remove a {noun} while boxes are on it: turn its switch off and release them first. The removal waits for Save, with the rest of the form.</p>
       </div>
     </BoxDialog>
   );

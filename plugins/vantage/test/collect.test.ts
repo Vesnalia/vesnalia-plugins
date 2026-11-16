@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import type { PluginBbSdk } from "@get-bb/plugin-sdk";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { PluginAliaSdk } from "@vesnalia/plugin-sdk";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import {
   buildOverview, collectTree, pathsToResolve, planRepos, type CollectDeps, type Environment, type HostCall, type HostInfo, type ProjectInfo,
   type ResolvedRoots,
@@ -56,7 +56,7 @@ describe("planRepos", () => {
     });
   });
 
-  it("keeps an archived thread's workspace while bb is still about to remove it (retiring), as a live worktree", () => {
+  it("keeps an archived thread's workspace while VesnALIA is still about to remove it (retiring), as a live worktree", () => {
     const retiring = environment({ id: "env_1", path: "/work/one", lifecycle: { phase: "retiring", retireAt: 1_800_000_000_000, teardown: null } });
     const { plans } = plan({ threads: [threadSummary({ archived: true })], environments: [retiring], roots: liveRoots });
     expect(plans).toHaveLength(1);
@@ -168,17 +168,17 @@ describe("planRepos", () => {
       threads: [threadSummary({ id: "a" }), threadSummary({ id: "b", environmentId: null })],
       environments: [live],
       edits: {
-        a: edits([record({ path: "/Users/me/.bb/thread-storage/thr_1/notes.md" }), record({ path: "/tmp/scratch.txt" })]),
+        a: edits([record({ path: "/Users/me/.vesnalia/thread-storage/thr_1/notes.md" }), record({ path: "/tmp/scratch.txt" })]),
         b: edits([record({ threadId: "b", path: "/anywhere/x.txt" })]),
       },
       roots: roots("host_1", {
         "/work/one": own("/work/one"),
-        "/Users/me/.bb/thread-storage/thr_1/notes.md": { root: null, relative: null },
+        "/Users/me/.vesnalia/thread-storage/thr_1/notes.md": { root: null, relative: null },
       }),
     });
     expect(plans).toHaveLength(1);
     expect([...otherFiles.keys()]).toEqual([
-      "/Users/me/.bb/thread-storage/thr_1/notes.md", "/tmp/scratch.txt", "/anywhere/x.txt",
+      "/Users/me/.vesnalia/thread-storage/thr_1/notes.md", "/tmp/scratch.txt", "/anywhere/x.txt",
     ]);
     expect([...otherFiles.get("/anywhere/x.txt")!.threadIds]).toEqual(["b"]);
   });
@@ -503,7 +503,7 @@ function setup(options: Setup) {
     return (fallback as (...args: unknown[]) => Promise<unknown>)(method, input, hostOptions);
   }) as unknown as HostMock;
   const allOptions = { windowHours: 24, maxThreads: 200 };
-  return { deps: { sdk: sdk as unknown as PluginBbSdk, host, edits, allOptions } as CollectDeps, sdk, edits, host };
+  return { deps: { sdk: sdk as unknown as PluginAliaSdk, host, edits, allOptions } as CollectDeps, sdk, edits, host };
 }
 
 // Roots the server already knows, so the early status reads start before the edit index finishes.
@@ -587,7 +587,7 @@ describe("collectTree with archived threads hidden", () => {
     environments: [environment({ id: "env_1" }), environment({ id: "env_2", path: "/work/two" })],
   });
 
-  it("drops an archived descendant and counts it, but still asks bb for archived threads", async () => {
+  it("drops an archived descendant and counts it, but still asks VesnALIA for archived threads", async () => {
     const { deps, sdk } = family();
     const tree = await collectTree(deps, "thr_1", false);
     expect(tree.threads.map((thread) => thread.id)).toEqual(["thr_1", "thr_live", "thr_deep"]);
@@ -1045,7 +1045,7 @@ describe("buildOverview for every thread", () => {
       expect(statusCalls(host)).toHaveLength(4);
     });
 
-    it("reads an environment again after bb reports it changed", async () => {
+    it("reads an environment again after VesnALIA reports it changed", async () => {
       const { deps, host } = twoProjects();
       const cache = createRepoCache();
       await ask({ ...deps, cache });

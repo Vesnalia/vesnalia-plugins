@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { Label, PrView, ReviewerState } from "../contract";
 import { Avatar } from "./avatar";
 import { Pill } from "./common";

@@ -4,7 +4,7 @@
 // the server. Asked once the viewport settles, per window, for just the
 // lanes that have nothing loaded before the window.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { LaneBlock, LaneNeighbors } from "../../../shared/model";
 import type { rpcContract } from "../../../shared/rpc";
 import { MINUTE } from "../time";

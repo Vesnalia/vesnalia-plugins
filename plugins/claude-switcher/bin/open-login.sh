@@ -1,5 +1,5 @@
 #!/bin/sh
-# Opens the Claude login page for a login started from bb (Claude Switcher).
+# Opens the Claude login page for a login started from alia (Claude Switcher).
 # `claude auth login` runs this as $BROWSER with the consent URL as its only
 # argument. macOS: a private Chrome window, so the login does not reuse the
 # browser's Claude session (CLAUDE_SWITCHER_PRIVATE=0 opens the default

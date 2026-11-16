@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -18,13 +18,13 @@ interface FakeOptions {
   hostsThrow?: boolean;
 }
 
-function makeBb(options: FakeOptions = {}) {
+function makeAlia(options: FakeOptions = {}) {
   const hosts = options.hosts ?? [MACBOOK, MINI];
   const sources = options.sources ?? [
     { hostId: MACBOOK.id, path: "/Users/dev/Git/aurora", isDefault: true },
     { hostId: MINI.id, path: "/Users/mini/Git/aurora" },
   ];
-  const bb = {
+  const alia = {
     sdk: {
       hosts: {
         list: async () => {
@@ -43,7 +43,7 @@ function makeBb(options: FakeOptions = {}) {
       },
     },
   };
-  return bb as unknown as BbPluginApi;
+  return alia as unknown as AliaPluginApi;
 }
 
 const BASE = {
@@ -53,13 +53,13 @@ const BASE = {
   hasEnvironment: true,
 };
 
-function plan(bb: BbPluginApi, workspace: WorkspaceMode, machine?: string) {
-  return planTransfer(bb, { ...BASE, workspace, machine });
+function plan(alia: AliaPluginApi, workspace: WorkspaceMode, machine?: string) {
+  return planTransfer(alia, { ...BASE, workspace, machine });
 }
 
 describe("planTransfer", () => {
   it("stays on the source machine when none is named", async () => {
-    const result = await plan(makeBb(), "reuse");
+    const result = await plan(makeAlia(), "reuse");
     expect(result).toMatchObject({
       hostId: MACBOOK.id,
       crossMachine: false,
@@ -68,18 +68,18 @@ describe("planTransfer", () => {
   });
 
   it("keeps working when the machine list is unavailable and none was named", async () => {
-    const result = await plan(makeBb({ hostsThrow: true }), "worktree");
+    const result = await plan(makeAlia({ hostsThrow: true }), "worktree");
     expect(result).toMatchObject({ hostId: MACBOOK.id, crossMachine: false, hostName: null });
   });
 
   it("fails loudly when a machine is named but the list is unavailable", async () => {
-    await expect(plan(makeBb({ hostsThrow: true }), "checkout", "mini")).rejects.toThrow(
+    await expect(plan(makeAlia({ hostsThrow: true }), "checkout", "mini")).rejects.toThrow(
       "daemon unreachable",
     );
   });
 
   it("detects the machine change and resolves that machine's checkout", async () => {
-    const result = await plan(makeBb(), "checkout", "mini");
+    const result = await plan(makeAlia(), "checkout", "mini");
     expect(result).toMatchObject({
       hostId: MINI.id,
       hostName: "mini",
@@ -90,71 +90,71 @@ describe("planTransfer", () => {
   });
 
   it("matches a machine by id as well as by name", async () => {
-    const result = await plan(makeBb(), "checkout", MINI.id);
+    const result = await plan(makeAlia(), "checkout", MINI.id);
     expect(result.hostId).toBe(MINI.id);
   });
 
   it("rejects reuse across machines with a message that names both", async () => {
-    await expect(plan(makeBb(), "reuse", "mini")).rejects.toThrow(TransferError);
-    await expect(plan(makeBb(), "reuse", "mini")).rejects.toThrow(
+    await expect(plan(makeAlia(), "reuse", "mini")).rejects.toThrow(TransferError);
+    await expect(plan(makeAlia(), "reuse", "mini")).rejects.toThrow(
       /lives on Vedrans-MacBook-Pro.*run on mini/s,
     );
   });
 
   it("still rejects reuse when the thread has no environment", async () => {
     await expect(
-      planTransfer(makeBb(), { ...BASE, hasEnvironment: false, workspace: "reuse" }),
+      planTransfer(makeAlia(), { ...BASE, hasEnvironment: false, workspace: "reuse" }),
     ).rejects.toThrow("no environment to reuse");
   });
 
   it("rejects a checkout on a machine the project is not on", async () => {
-    const bb = makeBb({ sources: [{ hostId: MACBOOK.id, path: "/Users/dev/Git/aurora" }] });
-    await expect(plan(bb, "checkout", "mini")).rejects.toThrow(/no checkout on mini/);
+    const alia = makeAlia({ sources: [{ hostId: MACBOOK.id, path: "/Users/dev/Git/aurora" }] });
+    await expect(plan(alia, "checkout", "mini")).rejects.toThrow(/no checkout on mini/);
   });
 
   it("rejects a cross-machine worktree with nothing to build it from", async () => {
-    const bb = makeBb({ sources: [{ hostId: MACBOOK.id, path: "/Users/dev/Git/aurora" }] });
-    await expect(plan(bb, "worktree", "mini")).rejects.toThrow(/nothing to build a worktree/);
+    const alia = makeAlia({ sources: [{ hostId: MACBOOK.id, path: "/Users/dev/Git/aurora" }] });
+    await expect(plan(alia, "worktree", "mini")).rejects.toThrow(/nothing to build a worktree/);
   });
 
   it("refuses a disconnected target machine", async () => {
-    const bb = makeBb({ hosts: [MACBOOK, { ...MINI, status: "disconnected" }] });
-    await expect(plan(bb, "checkout", "mini")).rejects.toThrow(/disconnected/);
+    const alia = makeAlia({ hosts: [MACBOOK, { ...MINI, status: "disconnected" }] });
+    await expect(plan(alia, "checkout", "mini")).rejects.toThrow(/disconnected/);
   });
 
   it("bases a cross-machine worktree on the source branch when it exists there", async () => {
-    const result = await plan(makeBb({ branches: ["main", "feature-x"] }), "worktree", "mini");
+    const result = await plan(makeAlia({ branches: ["main", "feature-x"] }), "worktree", "mini");
     expect(result.baseBranch).toBe("feature-x");
     expect(result.notes).toEqual([]);
   });
 
   it("falls back to the default branch and says so when the branch is not there", async () => {
-    const result = await plan(makeBb({ branches: ["main"] }), "worktree", "mini");
+    const result = await plan(makeAlia({ branches: ["main"] }), "worktree", "mini");
     expect(result.baseBranch).toBeNull();
     expect(result.notes[0]).toMatch(/does not exist on mini/);
   });
 
   it("leaves same-machine worktrees on the default branch", async () => {
-    const result = await plan(makeBb(), "worktree");
+    const result = await plan(makeAlia(), "worktree");
     expect(result.baseBranch).toBeNull();
     expect(result.notes).toEqual([]);
   });
 
   it("needs nothing from the project for a personal workspace", async () => {
-    const bb = makeBb({ sources: [] });
-    const result = await plan(bb, "personal", "mini");
+    const alia = makeAlia({ sources: [] });
+    const result = await plan(alia, "personal", "mini");
     expect(result).toMatchObject({ hostId: MINI.id, crossMachine: true, checkoutPath: null });
   });
 });
 
 // --- Working state ----------------------------------------------------------
 
-function makeStatusBb(
+function makeStatusAlia(
   status: unknown,
   diff?: unknown,
-): { bb: BbPluginApi; gitCalls: { method: string; input: unknown }[] } {
+): { alia: AliaPluginApi; gitCalls: { method: string; input: unknown }[] } {
   const gitCalls: { method: string; input: unknown }[] = [];
-  const bb = {
+  const alia = {
     sdk: {
       plugins: {
         callRpc: async (args: {
@@ -163,14 +163,14 @@ function makeStatusBb(
           input: unknown;
           outputSchema: { parse(value: unknown): unknown };
         }) => {
-          expect(args.pluginId).toBe("bb--git");
+          expect(args.pluginId).toBe("alia--git");
           gitCalls.push({ method: args.method, input: args.input });
           return args.outputSchema.parse(args.method === "workspaceStatus" ? status : diff);
         },
       },
     },
   };
-  return { bb: bb as unknown as BbPluginApi, gitCalls };
+  return { alia: alia as unknown as AliaPluginApi, gitCalls };
 }
 
 function diffResult(diff: string, truncated = false) {
@@ -207,18 +207,18 @@ const DIRTY_STATUS = {
 
 describe("captureWorkingState", () => {
   it("reports a clean tree without asking for a patch", async () => {
-    const { bb, gitCalls } = makeStatusBb(CLEAN_STATUS);
-    const state = await captureWorkingState(bb, "env_1");
+    const { alia, gitCalls } = makeStatusAlia(CLEAN_STATUS);
+    const state = await captureWorkingState(alia, "env_1");
     expect(state).toMatchObject({ dirty: false, branch: "feature-x", patch: null });
     expect(gitCalls).toEqual([{ method: "workspaceStatus", input: { environmentId: "env_1" } }]);
   });
 
   it("ships the uncommitted diff, untracked files included, as one patch", async () => {
-    const { bb, gitCalls } = makeStatusBb(
+    const { alia, gitCalls } = makeStatusAlia(
       DIRTY_STATUS,
       diffResult("--- a/src/a.ts\n+++ b/src/a.ts\n--- /dev/null\n+++ b/src/b.ts"),
     );
-    const state = await captureWorkingState(bb, "env_1");
+    const state = await captureWorkingState(alia, "env_1");
     expect(state?.dirty).toBe(true);
     expect(state?.files).toHaveLength(2);
     expect(state?.patch).toContain("src/a.ts");
@@ -237,8 +237,8 @@ describe("captureWorkingState", () => {
   it("cuts a truncated diff back to the files that fit whole, and names the rest", async () => {
     const a = "diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -1 +1 @@\n-old\n+new\n";
     const cutB = "diff --git a/src/b.ts b/src/b.ts\nnew file mode 100644\n--- /dev/null\n+++ b/src/b.ts\n@@ -0,0 +1,2 @@\n+line one\n+line t";
-    const { bb } = makeStatusBb(DIRTY_STATUS, diffResult(atLimit(a + cutB), true));
-    const state = await captureWorkingState(bb, "env_1");
+    const { alia } = makeStatusAlia(DIRTY_STATUS, diffResult(atLimit(a + cutB), true));
+    const state = await captureWorkingState(alia, "env_1");
     expect(state?.patchTruncated).toBe(true);
     expect(state?.patch).toBe(a);
     expect(state?.patchOmitted).toEqual(["src/b.ts"]);
@@ -246,8 +246,8 @@ describe("captureWorkingState", () => {
 
   it("ships no patch when not even the first file fits", async () => {
     const cutA = "diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -1,9 +1,9 @@\n-ol";
-    const { bb } = makeStatusBb(DIRTY_STATUS, diffResult(atLimit(cutA), true));
-    const state = await captureWorkingState(bb, "env_1");
+    const { alia } = makeStatusAlia(DIRTY_STATUS, diffResult(atLimit(cutA), true));
+    const state = await captureWorkingState(alia, "env_1");
     expect(state?.patch).toBeNull();
     expect(state?.patchOmitted).toEqual(["src/a.ts", "src/b.ts"]);
     expect(state?.note).toMatch(/larger than the 2 MB patch limit/);
@@ -257,8 +257,8 @@ describe("captureWorkingState", () => {
     // The Git plugin also reports truncated when it caps the untracked file list.
     const a = "diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -1 +1 @@\n-old\n+new\n";
     const b = a.replaceAll("a.ts", "b.ts");
-    const { bb } = makeStatusBb(DIRTY_STATUS, diffResult(a + b, true));
-    const state = await captureWorkingState(bb, "env_1");
+    const { alia } = makeStatusAlia(DIRTY_STATUS, diffResult(a + b, true));
+    const state = await captureWorkingState(alia, "env_1");
     expect(state?.patch).toBe(a + b);
     expect(state?.patchOmitted).toEqual([]);
   });
@@ -275,8 +275,8 @@ describe("captureWorkingState", () => {
       const cut = "diff --git a/zz-big.txt b/zz-big.txt\nnew file mode 100644\n--- /dev/null\n+++ b/zz-big.txt\n@@ -0,0 +1,9 @@\n+";
       const status = structuredClone(DIRTY_STATUS);
       status.workspace.workingTree.files = [...names, "zz-big.txt"].map((path) => ({ path, status: "??", insertions: 1, deletions: 0 }));
-      const { bb } = makeStatusBb(status, diffResult(atLimit(whole + cut), true));
-      const state = await captureWorkingState(bb, "env_1");
+      const { alia } = makeStatusAlia(status, diffResult(atLimit(whole + cut), true));
+      const state = await captureWorkingState(alia, "env_1");
       expect(state?.patch).toBe(whole);
       expect(state?.patchOmitted).toEqual(["zz-big.txt"]);
     } finally {
@@ -286,29 +286,29 @@ describe("captureWorkingState", () => {
 
   it("leaves a complete diff alone", async () => {
     const a = "diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -1 +1 @@\n-old\n+new\n";
-    const { bb } = makeStatusBb(DIRTY_STATUS, diffResult(a + a.replaceAll("a.ts", "b.ts")));
-    const state = await captureWorkingState(bb, "env_1");
+    const { alia } = makeStatusAlia(DIRTY_STATUS, diffResult(a + a.replaceAll("a.ts", "b.ts")));
+    const state = await captureWorkingState(alia, "env_1");
     expect(state?.patchTruncated).toBe(false);
     expect(state?.patch).toBe(a + a.replaceAll("a.ts", "b.ts"));
     expect(state?.patchOmitted).toEqual([]);
   });
 
   it("keeps the dirty file list when no patch can be produced", async () => {
-    const { bb } = makeStatusBb(DIRTY_STATUS, {
+    const { alia } = makeStatusAlia(DIRTY_STATUS, {
       outcome: "not_applicable",
       reason: "non_git_environment",
       message: "Not a git repository",
     });
-    const state = await captureWorkingState(bb, "env_1");
+    const state = await captureWorkingState(alia, "env_1");
     expect(state).toMatchObject({ dirty: true, patch: null, note: "Not a git repository" });
     expect(state?.files).toHaveLength(2);
   });
 
   it("returns null when the environment cannot be inspected", async () => {
-    const { bb } = makeStatusBb({
+    const { alia } = makeStatusAlia({
       outcome: "unavailable",
       failure: { code: "path_not_found", workspacePath: "/gone", message: "Workspace is missing" },
     });
-    expect(await captureWorkingState(bb, "env_1")).toBeNull();
+    expect(await captureWorkingState(alia, "env_1")).toBeNull();
   });
 });

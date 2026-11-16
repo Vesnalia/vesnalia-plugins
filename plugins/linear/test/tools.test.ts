@@ -36,14 +36,14 @@ describe("agent issue resolution", () => {
       return store.issue("stub");
     });
     const registered: Array<{ name: string; execute: (...args: any[]) => unknown }> = [];
-    const bb = {
+    const alia = {
       agents: {
         registerTool: (tool: { name: string; execute: (...args: any[]) => unknown }) =>
           registered.push(tool),
         configure: () => {},
       },
     };
-    registerTools(bb as never, {
+    registerTools(alia as never, {
       store,
       bindings: () => [
         {

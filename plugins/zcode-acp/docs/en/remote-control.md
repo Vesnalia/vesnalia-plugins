@@ -1,12 +1,12 @@
 # QR remote control
 
-Use the CLI/ACP provider for new BB sessions. To access work already open in ZCode Desktop, use ZCode's official **Mobile Remote Control** link.
+Use the CLI/ACP provider for new VesnALIA sessions. To access work already open in ZCode Desktop, use ZCode's official **Mobile Remote Control** link.
 
 | Local CLI / ACP | QR link |
 | --- | --- |
 | Creates the adapter's own native sessions. | Connects the official web client to the existing Desktop window. |
 | Reuses saved Desktop authorization. | Uses official browser sign-in and pairing. A persistent browser profile can keep its session. |
-| Available as **ZCode CLI** in BB. | The plugin opens the web interface; remote ACP is not implemented. |
+| Available as **ZCode CLI** in VesnALIA. | The plugin opens the web interface; remote ACP is not implemented. |
 
 ## Open the official client
 

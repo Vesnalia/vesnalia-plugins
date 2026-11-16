@@ -6,7 +6,7 @@ with a real answer card.
 
 - **An offer at the right moment.** When a turn ends after real work, one line appears above the
   composer naming what was done, with Start, Later and Not in this thread. Offers are decided from
-  bb's own data (commits, the turn's file changes, pull request status), never by an AI, so they cost
+  VesnALIA's own data (commits, the turn's file changes, pull request status), never by an AI, so they cost
   no tokens.
 - **Nothing in your agents' context until you start.** The plugin ships no skill and adds no tools or
   instructions to your threads. Only a session you start receives the exercise instructions.
@@ -40,8 +40,8 @@ bar, to start an exercise on that thread's work by hand.
 
 ## Requirements
 
-- bb 0.48.1 or later.
-- bb's bundled Git plugin on, to see commits; GitHub PR Status for pull request offers.
+- VesnALIA 0.48.1 or later.
+- VesnALIA's bundled Git plugin on, to see commits; GitHub PR Status for pull request offers.
 - Your answers are kept on this machine, in the plugin's own database, and can be deleted per session.
 
 ## Credits

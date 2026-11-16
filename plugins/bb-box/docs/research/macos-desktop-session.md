@@ -1,6 +1,6 @@
 # The macOS desktop session
 
-How bb-box runs a command in a Mac box user's logged-in desktop session, so
+How alia-box runs a command in a Mac box user's logged-in desktop session, so
 that the run tool's `session: "desktop"` works on macOS (issue #57).
 
 Research, 1 October 2026: a note of what was known and measured then, not
@@ -66,7 +66,7 @@ image.
 
 ## Measured
 
-On macOS 27.0, as the box user over bb-box's SSH:
+On macOS 27.0, as the box user over alia-box's SSH:
 
 - **E5.** The wrapper ran `osascript -e 'tell application "System Events"
   to count processes'` and printed a count, with exit status 0.
@@ -97,7 +97,7 @@ On macOS 27.0, as the box user over bb-box's SSH:
 - **E14.** With a box user's sudo limited to the standard user's rule
   below, the wrapper runs a script of several lines with quotes in it, and
   sudo refuses other commands as root and the wrapper for another user.
-- **E15.** bb-box's desktop command takes about 93 ms for
+- **E15.** alia-box's desktop command takes about 93 ms for
   `/usr/bin/true`, against 20 ms for a plain one: the checks about 12 ms,
   the wrapper about 20 ms, and the inner shell's `~/.zshenv` hook loads the
   variables again.
@@ -138,16 +138,16 @@ to plain SSH than Apple's forum reports for 26, but the session is still
 
 ## Variables
 
-E7 bears on how bb-box reads BB's variables from a worker's
+E7 bears on how alia-box reads VesnALIA's variables from a worker's
 environment on macOS (`src/core/in-box.ts`). `ps -E` prints a newline
 in it as `\012`, but a literal backslash as it is, so `\NNN` in a
 value is ambiguous. It is rare, and GH_TOKEN never has one. A space
-followed by `WORD=` in a value is ambiguous too. Both go when BB gives
-the variables directly ([BB requests](../bb-requests.md), request 8).
+followed by `WORD=` in a value is ambiguous too. Both go when VesnALIA gives
+the variables directly ([VesnALIA requests](../alia-requests.md), request 8).
 
 ## Standard box users
 
-Mac setup writes one file, `/etc/sudoers.d/bb-box-desktop` (mode 0440,
+Mac setup writes one file, `/etc/sudoers.d/alia-box-desktop` (mode 0440,
 checked with `visudo -cf`):
 
 ```
@@ -187,7 +187,7 @@ Only if `asuser` stops working:
 - **A script as an app's executable, started with `open`.** Launch
   Services handles it badly on Apple silicon: it may offer Rosetta, or
   fail to launch. Apple advises against it. A compiled launcher would be a
-  binary for bb-box to build and ship.
+  binary for alia-box to build and ship.
 - **`tart exec`.** tart-guest-agent runs in the desktop session, but only
   Tart has it, and it is reached from the Mac host, not the box.
 - **`launchctl bootstrap gui/<uid>` from SSH.** It fails for a standard
@@ -195,7 +195,7 @@ Only if `asuser` stops working:
 
 ## Experiments
 
-Run as the box user over bb-box's SSH on macOS 27.0. Results are above.
+Run as the box user over alia-box's SSH on macOS 27.0. Results are above.
 
 | | Checks | Result |
 | --- | --- | --- |
@@ -209,7 +209,7 @@ Run as the box user over bb-box's SSH on macOS 27.0. Results are above.
 | E12 | a GUI binary from plain SSH, then `open -a` | binary typed into via Accessibility; `open` frontmost |
 | E13 | `sudo -n -l` and a no-op through the wrapper, when its rule needs a password | `-l` exits 0; the no-op fails |
 | E14 | the wrapper with only the standard user's rule | runs; other root commands refused |
-| E15 | bb-box's desktop command against a plain one, for `/usr/bin/true` | 93 ms; 20 ms |
+| E15 | alia-box's desktop command against a plain one, for `/usr/bin/true` | 93 ms; 20 ms |
 
 ## Sources
 
@@ -226,5 +226,5 @@ Read on 30 September and 1 October 2026:
   executables: https://github.com/PowerShell/PowerShell/issues/27587,
   https://github.com/Ryubing/Issues/issues/422
 - `open(1)` on current macOS (`--env`, `--stdin`, `--stdout`, `--stderr`).
-- bb-box: `setup/tart/guest/customize.sh` (the Cua Driver LaunchAgent) and
+- alia-box: `setup/tart/guest/customize.sh` (the Cua Driver LaunchAgent) and
   `src/core/in-box.ts`.

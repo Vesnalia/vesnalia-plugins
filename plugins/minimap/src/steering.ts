@@ -27,13 +27,13 @@ export interface Steering {
 }
 
 /**
- * How the strip moves the timeline: a click jumps there and follows the row clicked while BB re-measures,
+ * How the strip moves the timeline: a click jumps there and follows the row clicked while VesnALIA re-measures,
  * the slider drags, the wheel over the strip scrolls. Every write to the scroller is announced as the
  * reader's own, and any real input of theirs ends a follow.
  */
 export function createSteering(env: SteeringEnv): Steering {
   /**
-   * Writes the scroller's position. BB's scroll keeper writes a scroll it cannot
+   * Writes the scroller's position. VesnALIA's scroll keeper writes a scroll it cannot
    * explain back to the bottom while it is attached there; a wheel event on the
    * scroller marks the next moments as the reader's own.
    */
@@ -75,10 +75,10 @@ export function createSteering(env: SteeringEnv): Steering {
     const timeline = env.timeline();
     if (!timeline) return stopGlide();
     const { scroller } = timeline;
-    // Something else moved the scroller (BB re-measuring rows above): carry the glide along rather than pull against it.
+    // Something else moved the scroller (VesnALIA re-measuring rows above): carry the glide along rather than pull against it.
     const moved = scroller.scrollTop - wheelSeen;
     const bottom = scroller.scrollHeight - scroller.clientHeight;
-    // A jump to the very bottom from somewhere else is BB's scroll keeper undoing a write it did not take for the reader's
+    // A jump to the very bottom from somewhere else is VesnALIA's scroll keeper undoing a write it did not take for the reader's
     // (a slow frame outlasts its window for that): it is written again, not followed, or the glide would end at the bottom.
     const snapped = scroller.scrollTop >= bottom - 1 && wheelSeen < bottom - 1;
     if (Math.abs(moved) > 1 && !snapped) {
@@ -107,7 +107,7 @@ export function createSteering(env: SteeringEnv): Steering {
 
   let steering = 0;
   /**
-   * After a click far away the rows between mount and BB replaces its estimates with
+   * After a click far away the rows between mount and VesnALIA replaces its estimates with
    * measurements, so the place clicked moves. This follows the row that was under the
    * click until it is on screen at the right height, then lets go.
    */
@@ -132,7 +132,7 @@ export function createSteering(env: SteeringEnv): Steering {
         if (!timeline || steering !== mine) return;
         const row = rowById(timeline.items, id);
         if (!row) {
-          // Not on screen: BB's scroll keeper may have put the scroller back at the bottom after the write (a slow frame
+          // Not on screen: VesnALIA's scroll keeper may have put the scroller back at the bottom after the write (a slow frame
           // outlasts the window in which it takes a write for the reader's), so the place aimed at is written again.
           if (Math.abs(timeline.scroller.scrollTop - aimed) > 1 && !(glide && wheelFrame !== 0)) scrollTo(aimed);
           continue;
@@ -173,7 +173,7 @@ export function createSteering(env: SteeringEnv): Steering {
         const scale = env.scale();
         const glide = env.config().clickSmooth && !reducedMotion();
         const target = scrollForClick(layout, y, scale, scroller.clientHeight);
-        // Our own glide, not the browser's smooth scroll: that one is cut short whenever BB swaps the estimated height of
+        // Our own glide, not the browser's smooth scroll: that one is cut short whenever VesnALIA swaps the estimated height of
         // rows for measured ones under it, which it does all the way to a place not loaded yet (a click ended 10% of the way).
         if (glide) aim(scroller, target);
         else scrollTo(target);

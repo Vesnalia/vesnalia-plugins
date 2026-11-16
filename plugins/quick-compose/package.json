@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-quick-compose",
+  "name": "alia-plugin-quick-compose",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.42",
-    "bbPluginSdk": ">=0.4.92"
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.4.92"
   },
-  "bb": {
+  "alia": {
     "name": "Quick Compose",
     "description": "Start a new thread from a floating composer without leaving the page you're on. Open it with Mod+Shift+L, hand off the current thread with Mod+Shift+H, or use the command palette.",
     "branding": {
@@ -17,7 +17,7 @@
     "skills": []
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -25,7 +25,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.104",
     "@radix-ui/react-tooltip": "^1.2.12",
     "@types/better-sqlite3": "7.6.13",
     "@types/node": "^22.0.0",
@@ -37,9 +36,21 @@
     "vitest": "^4.1.1"
   },
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/quick-compose#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SawyerHood/sawyer-plugins.git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
     "directory": "plugins/quick-compose"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

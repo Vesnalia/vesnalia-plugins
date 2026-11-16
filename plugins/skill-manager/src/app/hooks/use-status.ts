@@ -1,6 +1,6 @@
 // The status payload, kept current by the server's realtime signal.
 import { useCallback, useEffect, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { SKILLS_CHANGED } from "../../shared/events";
 import { describeError } from "../lib/format";
 import type { RpcContract, Status } from "../lib/types";

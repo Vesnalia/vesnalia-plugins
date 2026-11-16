@@ -29,7 +29,7 @@ This page describes the runtime branches behind plugin initialization, the two p
 
 1. `plugin` reads the KV language and keeps it only when it is `ru` or `en`; otherwise it selects English, then sets the shared language before declaring labels (`server.ts:484-490`).
 2. It defines MetaMCP and classifier settings, plus the machine-copy cleanup offer. `readConfig` calls `settings.get()` when its consumer requests configuration (`server.ts:492-545`).
-3. It creates the host RPC client and `createSkillsHubService`, passing live settings readers and a saver that writes changed fields with `settings.experimental_set` (`server.ts:545-561`). A blank classifier provider falls back to `claude-code`; a blank model is passed through for BB's provider default (`server.ts:550-561`, `skills-hub-service.ts:350-362`).
+3. It creates the host RPC client and `createSkillsHubService`, passing live settings readers and a saver that writes changed fields with `settings.experimental_set` (`server.ts:545-561`). A blank classifier provider falls back to `claude-code`; a blank model is passed through for VesnALIA's provider default (`server.ts:550-561`, `skills-hub-service.ts:350-362`).
 4. It registers classifier-thread agent configuration: threads marked for the classifier receive its two tools and instructions; every other thread gets the `agent-tools` skill (`server.ts:564-568`).
 5. It defines readers for catalogue, ignored names, auto-sync and probes. Missing stored arrays resolve to empty arrays and missing auto-sync resolves to false (`server.ts:571-589`). The RPC handler registration combines hub handlers with the main handlers (`server.ts:2088-2091`).
 
@@ -50,7 +50,7 @@ The plugin entry has no local recovery wrapper around the initial language read,
 
 1. `rpcContract` is built with `defineRpcContract`, spreads `skillsRpcContract`, then adds overview, catalogue, schedule, probe, legacy skills rollout, OpenCode, gateway, and language methods (`server.ts:219-448`).
 2. Each entry binds a method name to a Zod input and output. Nullable inputs represent optional selection; defaults on `purge`, `sync`, `skills_fanout`, and other methods are encoded in the schema (`server.ts:242-270`, `server.ts:343-380`).
-3. `bb.rpc.register` receives the contract and a handler object. Hub methods come from `skillsHub.handlers`; main handlers read/write state, call hosts, and return refreshed overview data (`server.ts:2088-2115`).
+3. `alia.rpc.register` receives the contract and a handler object. Hub methods come from `skillsHub.handlers`; main handlers read/write state, call hosts, and return refreshed overview data (`server.ts:2088-2115`).
 4. `overview` reads the composed view. Mutating methods generally publish the new overview after state changes; specific methods instead return counted outcomes or errors (`server.ts:2085-2115`, `server.ts:2120-2150`).
 
 | Branch | Input condition | Outcome or failure |
@@ -112,7 +112,7 @@ The page uses `skills_hub`, `skills_hub_detail`, `skills_hub_file`, category and
 
 ## `SettingsPage`
 
-`SettingsPage` loads classifier and machine-copy settings with `skills_settings`, requests model choices when the provider changes, and saves each edit through `skills_settings_set` (`settings-page.tsx:37-79`). It exposes provider, model, classifier project, hourly classification, and the offer-cleanup switch (`settings-page.tsx:100-199`). The provider and project lists come from BB SDK calls; a failed list call becomes an empty list, while model-fetch failures are shown beside the model selector (`skills-hub-service.ts:617-656`). Save failures remain on the page, and the busy indicator is cleared after either result (`settings-page.tsx:67-79`, `settings-page.tsx:91-97`).
+`SettingsPage` loads classifier and machine-copy settings with `skills_settings`, requests model choices when the provider changes, and saves each edit through `skills_settings_set` (`settings-page.tsx:37-79`). It exposes provider, model, classifier project, hourly classification, and the offer-cleanup switch (`settings-page.tsx:100-199`). The provider and project lists come from VesnALIA SDK calls; a failed list call becomes an empty list, while model-fetch failures are shown beside the model selector (`skills-hub-service.ts:617-656`). Save failures remain on the page, and the busy indicator is cleared after either result (`settings-page.tsx:67-79`, `settings-page.tsx:91-97`).
 
 The page's RPC methods and input bounds are listed in [Hub skills UI/server RPC](api.md#hub-skills-uiserver-rpc) (`skills-hub-service.ts:188-205`). Detailed function paths for initialization, the hub service, the Skills page, RPC registration, settings, and hub file operations are in [Runtime function details](api-runtime-details.md).
 

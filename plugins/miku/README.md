@@ -1,10 +1,10 @@
-# Miku Companion for BB
+# Miku Companion for VesnALIA
 
 ![Miku Companion logo](assets/miku-logo.webp)
 
-A small Hatsune Miku roams around every BB screen using the app-wide
+A small Hatsune Miku roams around every VesnALIA screen using the app-wide
 `experimental_appOverlay` plugin API. She alternates idle animations and can
-use a dedicated hidden BB thread to comment on real activity in the app.
+use a dedicated hidden VesnALIA thread to comment on real activity in the app.
 
 - Uses the supplied pixel-art sprite sheet and removes its blue matte at runtime.
 - Walks toward two-dimensional waypoints and pauses for varied idle loops.
@@ -43,7 +43,7 @@ use a dedicated hidden BB thread to comment on real activity in the app.
 Install directly from GitHub:
 
 ```sh
-bb plugin install git:https://github.com/SawyerHood/bb-plugin-miku.git
+alia plugin install git:https://github.com/SawyerHood/bb-plugin-miku.git
 ```
 
 Or install from a local checkout:
@@ -51,7 +51,7 @@ Or install from a local checkout:
 ```sh
 npm install
 npm run build
-bb plugin install .
+alia plugin install .
 ```
 
 The sprite is served by the plugin's local authenticated HTTP route. Disabling,
@@ -72,13 +72,13 @@ the Miku settings page for inspection.
 
 Voice is off by default. Enable **Speak aloud** in Miku's settings to hear her text bubbles in a
 musical synthesized voice. Voice runs locally and requires FFmpeg with Flite
-and Rubber Band support on the BB server. Click in BB once to enable browser
+and Rubber Band support on the VesnALIA server. Click in VesnALIA once to enable browser
 audio. Mute her from settings or **Miku: toggle voice** in the command palette;
 text bubbles keep working.
 
 ## Animation test bench
 
-Open `/api/v1/plugins/miku/http/test-bench` on the BB server to preview every
+Open `/api/v1/plugins/miku/http/test-bench` on the VesnALIA server to preview every
 production clip and its complete filmstrip. The bench validates that every crop
 is tightly trimmed, non-empty, inside the 1180×497 source sheet, and small
 enough for the shared 92×102 render canvas.

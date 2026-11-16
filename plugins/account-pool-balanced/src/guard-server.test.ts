@@ -3,7 +3,7 @@ import {createGuardNetworkCheck,type GuardDiagnostic} from './guard-network.js';
 import {serverGuardRead,runGuardProbe,guardProbeSchema,type GuardServerAccess} from './guard-server.js';
 
 const host='host_poolserver';
-const direct={schema:'bb-vpn-guard/network-decision/2',hostId:host,allowed:true,reason:'direct'};
+const direct={schema:'alia-vpn-guard/network-decision/2',hostId:host,allowed:true,reason:'direct'};
 function access():GuardServerAccess{return {serverHost:vi.fn(async()=>host),decision:vi.fn(async()=>direct)};}
 
 for(const stage of ['server-host','guard-rpc','server-host-recheck'] as const){

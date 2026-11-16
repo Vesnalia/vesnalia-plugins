@@ -1,5 +1,5 @@
 # What: builds and publishes bend binaries when a plugin release tag is pushed.
-# Why: Linux/macOS users should not need Go to install Airbender (bead-bb-bk2).
+# Why: Linux/macOS users should not need Go to install Airbender (bead-alia-bk2).
 # Design: raw, CGO-free binaries and individual SHA-256 files; setup pins the
 # download to package.json. Releases are immutable: a rerun never clobbers one.
 # Gotchas: tag vX.Y.Z must match package.json, and the reviewed commit must be

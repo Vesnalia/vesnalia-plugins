@@ -1,6 +1,6 @@
-import type { useSidebarThreads } from "./bb-sdk";
+import type { useSidebarThreads } from "./alia-sdk";
 import type { ReactNode } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { ThreadListLoading, ActiveEmptyState, WorkingEmptyState } from "./ThreadInboxEmptyStates";
 import {
   CompactShelf,
@@ -91,8 +91,8 @@ export function ThreadInboxView({
   const { setExpandedShelves, setActiveSortMode, setSettledLimit } = useInboxActions();
   const { pinned, inbox, working, inactive, snoozed, parked, settled } = shelves;
   return (
-    <div data-bb-sidebar-root="" className="flex min-h-0 flex-1 flex-col">
-      {/* Project scope is plugin-owned; New thread lives in bb's chrome. */}
+    <div data-alia-sidebar-root="" className="flex min-h-0 flex-1 flex-col">
+      {/* Project scope is plugin-owned; New thread lives in VesnALIA's chrome. */}
       <ProjectScopeControls scope={scope} status={status} />
 
       <p role="status" aria-live="polite" className="sr-only">

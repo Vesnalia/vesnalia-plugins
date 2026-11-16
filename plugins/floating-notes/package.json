@@ -1,17 +1,12 @@
 {
-  "name": "bb-plugin-floating-notes",
+  "name": "alia-plugin-floating-notes",
   "version": "1.3.0",
-  "description": "Floating notes for bb: a draggable notes window, stickies pinned to threads or projects, per-thread scratchpads, quick capture, and a live-markdown editor.",
+  "description": "Floating notes for VesnALIA: a draggable notes window, stickies pinned to threads or projects, per-thread scratchpads, quick capture, and a live-markdown editor.",
   "license": "MIT",
   "author": "Vedran Burojević (https://github.com/vburojevic)",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/vburojevic/bb-plugin-floating-notes.git"
-  },
-  "homepage": "https://github.com/vburojevic/bb-plugin-floating-notes#readme",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "notes",
     "sticky-notes",
     "markdown",
@@ -23,12 +18,12 @@
     "typecheck": "tsc --noEmit"
   },
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "Floating Notes",
-    "description": "Floating notes over bb: a draggable notes window, pop-out stickies pinned to threads, thread scratchpads, quick capture, live markdown, plus @note mentions, a bb notes CLI, and agent tools.",
+    "description": "Floating notes over VesnALIA: a draggable notes window, pop-out stickies pinned to threads, thread scratchpads, quick capture, live markdown, plus @note mentions, a VesnALIA notes CLI, and agent tools.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -60,7 +55,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@radix-ui/react-dialog": "^1.1.19",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
@@ -72,5 +66,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/floating-notes#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/floating-notes"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

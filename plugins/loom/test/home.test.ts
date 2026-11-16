@@ -25,7 +25,7 @@ const named = (slug: string, key: string, name: string, edit?: (doc: Doc) => voi
   edit?.(doc);
 };
 const propose = (slug: string, key: string, name: string, edit?: (doc: Doc) => void) =>
-  host.projects.propose({ toml: specToml(named(slug, key, name, edit)), threadId: `thr_${slug}`, bbProjectId: "proj_1", hostId: "host_env" });
+  host.projects.propose({ toml: specToml(named(slug, key, name, edit)), threadId: `thr_${slug}`, aliaProjectId: "proj_1", hostId: "host_env" });
 const project = (slug: string) => host.store.projectBySlug(slug)!;
 const running = async (slug: string, key: string, name: string, edit?: (doc: Doc) => void) => {
   await propose(slug, key, name, edit);

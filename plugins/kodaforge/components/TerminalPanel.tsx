@@ -1,4 +1,4 @@
-// Terminals: xterm.js in the browser, BB's persistent terminals behind it.
+// Terminals: xterm.js in the browser, VesnALIA's persistent terminals behind it.
 // Tabs on the right, each holding up to four terminals split side by side.
 // Terminals start in the workspace root, survive closing the IDE, and are found
 // again (by their "IDE" title) with their layout when it reopens.
@@ -7,7 +7,7 @@ import { Group as PanelGroup, Panel, Separator } from "react-resizable-panels";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import { experimental_useCodeTheme, useSdk } from "@get-bb/plugin-sdk/app";
+import { experimental_useCodeTheme, useSdk } from "@vesnalia/plugin-sdk/app";
 import type { ResolvedScope } from "../server";
 import { Icon } from "@/components/ui/icon";
 import { useHues } from "./colors";
@@ -377,7 +377,7 @@ function attachTerminal(sdk: ReturnType<typeof useSdk>, terminalId: string): Liv
     void sdk.terminals.resize({ terminalId, cols, rows }).catch(() => undefined);
   });
 
-  // BB has no push for terminal output: poll by sequence number, fast while text
+  // VesnALIA has no push for terminal output: poll by sequence number, fast while text
   // flows, slow when idle, hidden, or while KodaForge is not on screen.
   let stopped = false;
   let nextSeq: number | undefined;

@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 // [REDWORK] The host's queued-message row reveals its actions on a touch
 // device through two `@media (hover:none)` utilities (opacity and
-// pointer-events). bb scopes our plugin stylesheet with
-// `:where([data-bb-plugin="focus-board"], ...)` and appends it after bb's
+// pointer-events). VesnALIA scopes our plugin stylesheet with
+// `:where([data-alia-plugin="focus-board"], ...)` and appends it after VesnALIA's
 // global utilities, so our own scoped `.opacity-0` and `.pointer-events-none`
 // outrank those host utilities on every host element inside the plugin root.
 // The queued row is the case that hurts a person: on a phone its "…" control
@@ -33,11 +33,11 @@ const REVEAL = ["pointer-events-auto", "opacity-100"].map((utility) => `${HOVER_
 
 const noop = () => {};
 
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   ThreadChat: () => null,
   useSdk: () => ({ threads: { get: async () => ({}) } }),
   useRpc: () => ({ call: async () => ({ existence: {} }) }),
-  useBbNavigate: () => ({ toThread: () => {} }),
+  useAliaNavigate: () => ({ toThread: () => {} }),
   useSettings: () => ({ values: undefined, isLoading: false }),
 }));
 

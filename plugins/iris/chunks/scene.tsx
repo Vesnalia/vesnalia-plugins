@@ -5,7 +5,7 @@
 // runs animate() in the card's interpreter and loads models over RPC;
 // SceneCanvas owns the three.js world.
 
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { Glyph, InlineError, Shimmer, hexColor, num, str, themeVar, useEnv, useGlSlot } from "@iris/ui";
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import {

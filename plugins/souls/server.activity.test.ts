@@ -1,18 +1,18 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { activityForItem, moodFor } from "./motion.ts";
 import plugin from "./server.ts";
 
 async function setup() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
   let latest: { type: string; item?: string } | null = null;
   harness.inspection.sdk.stub("threads.events.list", ((args: { types?: string[] }) =>
     latest !== null && (args.types ?? []).includes(latest.type)
       ? [{ id: "e1", threadId: "thread-1", seq: 1, createdAt: Date.now(), type: latest.type, scope: { kind: "thread" },
           data: { providerThreadId: "s", ...(latest.item === undefined ? {} : { item: { type: latest.item, id: "i1" } }) } }]
       : []) as (...args: never[]) => unknown);
-  await plugin(bb);
+  await plugin(alia);
   const { soul } = (await harness.behavior.callRpc("souls_create", { draft: { name: "Hazel" }, origin: "manual" })) as {
     soul: { id: string };
   };
@@ -78,7 +78,7 @@ test("the mood puts the user first, then errors, start-up and the work", () => {
 });
 
 test("a slow read never overwrites a newer one, and a deleted thread is forgotten", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
   const reads: Array<(rows: unknown[]) => void> = [];
   const row = (item: string) => ({
     id: `e-${item}`, threadId: "thread-1", seq: 1, createdAt: Date.now(), type: "item/started",
@@ -88,7 +88,7 @@ test("a slow read never overwrites a newer one, and a deleted thread is forgotte
     args.types?.includes("item/completed")
       ? new Promise((resolve) => reads.push(resolve))
       : []) as (...args: never[]) => unknown);
-  await plugin(bb);
+  await plugin(alia);
   const { soul } = (await harness.behavior.callRpc("souls_create", { draft: { name: "Hazel" }, origin: "manual" })) as {
     soul: { id: string };
   };

@@ -3592,7 +3592,7 @@ const PAGEHOST = String.raw`/*
  * A frame is the host's own (threadPage.embed { html, scope, title }: Thread Pages 1.13.4, Unife Pages 0.5.4), a frame
  * of the page with its kernel and its plugins' page scripts: its calls, forms, text areas, file inputs, drafts and
  * scroll are a Thread Page's (Unife Pages IN-0020, B-0102, B-0103, B-0104). The page host reads the document, carries
- * its relative CSS and JS inside it (bb serves a page's files inside the page, not by URL), and hands its links to
+ * its relative CSS and JS inside it (VesnALIA serves a page's files inside the page, not by URL), and hands its links to
  * onLink; this script, run again inside the frame, does the last.
  */
 (function () {
@@ -3791,7 +3791,7 @@ const PAGEHOST = String.raw`/*
       const go = this.opts.onLink || ((t) => { if (t.kind === "external") this.invoke("navigation.openExternal", { url: t.url }).catch(() => {}); });
       if (/^https?:/i.test(href)) {
         let u = null; try { u = new URL(href); } catch (e) { /* no address: external, as written */ }
-        // A page address (bb's and Unife Pages' routes both end in /page): the host says whether it is its own, by refusing it (R5.32a, before any confirmation);
+        // A page address (VesnALIA's and Unife Pages' routes both end in /page): the host says whether it is its own, by refusing it (R5.32a, before any confirmation);
         // then this session's documents open in place, another session's page by pages.open (which takes no path). Until the kernel routes such links (unife-pages IN-0019).
         const id = u && /\/page$/.test(u.pathname) && u.searchParams.get("session");
         if (id) return this.invoke("navigation.openExternal", { url: href }).catch((x) => { if (x && x.code === "invalid_params") return this.session().then((own) => id === own ? go({ kind: "page", path: (u.searchParams.get("path") || "index.html") + u.hash, newTab: newTab }) : this.invoke("pages.open", { sessionId: id })); }).catch(() => {});
@@ -4214,7 +4214,7 @@ const refused = (spawnError) => ({
 });
 /**
 * The Runner on Claude Code: the session's folder is on this machine, so the CLI runs here, in-process, with what
-* bb's host half calls on its machine (scopeFolder, scopeInside, findSyns, runSyns). No host call, so no 8 MiB bound and no
+* VesnALIA's host half calls on its machine (scopeFolder, scopeInside, findSyns, runSyns). No host call, so no 8 MiB bound and no
 * slices. `hostId` is ignored: there is one machine.
 */
 function createLocalRunner(synsPath) {
@@ -4236,8 +4236,8 @@ function createLocalRunner(synsPath) {
 //#region hosts/claude/process.ts
 /**
 * The Syns contributor on Claude Code: a process contributor (unife-pages 07 R-X5, U24). It registers the same
-* declaration bb gets (R-X1) with the Unife Pages daemon over its control socket, and answers each call the daemon
-* POSTs to it with the same dispatch as bb's plugin, the CLI running on this machine in the folder the call names
+* declaration VesnALIA gets (R-X1) with the Unife Pages daemon over its control socket, and answers each call the daemon
+* POSTs to it with the same dispatch as VesnALIA's plugin, the CLI running on this machine in the folder the call names
 * (`caller.workspace`, U44).
 *
 *   POST   /v1/contributors            { kind: "process", namespace: "syns", declaration, endpoint } → 201

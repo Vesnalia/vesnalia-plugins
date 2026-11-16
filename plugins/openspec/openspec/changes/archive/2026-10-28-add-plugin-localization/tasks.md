@@ -1,5 +1,5 @@
 ## 1. Exploration
-- [x] 1.1 Check the bb settings API and document the localization boundaries.
+- [x] 1.1 Check the VesnALIA settings API and document the localization boundaries.
 
 ## 2. Implementation
 - [x] 2.1 Add a language setting, typed catalogs, locale resolution, a React provider, and Intl helpers.

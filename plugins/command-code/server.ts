@@ -1,8 +1,8 @@
-import type { BbPluginApi, JsonValue } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, JsonValue } from "@vesnalia/plugin-sdk";
 
 /**
  * `cmd -p` has no interactive permission channel: file writes and shell
- * commands are either all allowed (`--yolo`) or all refused. BB's per-tool
+ * commands are either all allowed (`--yolo`) or all refused. VesnALIA's per-tool
  * approval therefore cannot apply to this provider, so the choice is exposed
  * once, as a setting, instead of pretending to be per-call. See README.
  */
@@ -18,7 +18,7 @@ function buildLaunchSpec(allowWrites: boolean, executable: string): JsonValue {
       workspaceWrite: allowWrites ? ["--yolo"] : ["--readonly"],
     },
     // No modelCli or reasoningCli: the adapter advertises models and each
-    // model's own `--effort` ladder as ACP session config options, which BB
+    // model's own `--effort` ladder as ACP session config options, which VesnALIA
     // only discovers when no modelCli is set.
     nativeSkillRoots: {
       user: [".command-code/skills", ".claude/skills", ".agents/skills"],
@@ -27,8 +27,8 @@ function buildLaunchSpec(allowWrites: boolean, executable: string): JsonValue {
   } satisfies JsonValue;
 }
 
-export default function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     allowWrites: {
       type: "boolean",
       default: true,
@@ -44,7 +44,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.providers.register({
+  alia.providers.register({
     id: "command-code",
     displayName: "Command Code",
     family: "acp",
@@ -85,7 +85,7 @@ export default function plugin(bb: BbPluginApi) {
   });
 
   void settings.get().then((values) => {
-    bb.log.info(
+    alia.log.info(
       `Command Code provider registered (writes ${values.allowWrites ? "allowed" : "blocked"})`,
     );
   });

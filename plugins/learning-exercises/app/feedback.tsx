@@ -1,9 +1,9 @@
 /**
  * The agent's feedback in the chat: a card with the verdict and the feedback, drawn above the last message
- * of the turn that recorded it, through bb's message metadata (`experimental_messageMetadata`, "above";
+ * of the turn that recorded it, through VesnALIA's message metadata (`experimental_messageMetadata`, "above";
  * there is no slot below a message, and a plugin cannot add a row of its own).
  *
- * bb folds a finished turn's work and its earlier messages into one "Worked for" row, and the question
+ * VesnALIA folds a finished turn's work and its earlier messages into one "Worked for" row, and the question
  * card's own row is part of that work, so neither the feedback message nor the card stays in view. What
  * stays is the turn's last message ("I've asked the next question…", the closing line). The server keeps
  * the feedback with the id of the turn it was recorded in (`feedbackCards`); here each message of that
@@ -14,7 +14,7 @@
  * Nothing is drawn from the timeline itself: a reload, another window and another device read the same
  * stored feedback and the same turn ids.
  */
-import { experimental_useRpcQuery, type ExperimentalMessageMetadataProps } from "@get-bb/plugin-sdk/app";
+import { experimental_useRpcQuery, type ExperimentalMessageMetadataProps } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 
 import { cn } from "@/lib/utils";
@@ -112,7 +112,7 @@ export function FeedbackAboveMessage({ message }: ExperimentalMessageMetadataPro
   const cards = message.turnId === null ? [] : (data?.cards ?? []).filter((card) => card.turnId === message.turnId);
   const anchor = useIsAnchor(message, cards.length > 0);
   if (!anchor) return null;
-  // bb's metadata row is small, muted and aligned to the message's side: the cards take the whole line,
+  // VesnALIA's metadata row is small, muted and aligned to the message's side: the cards take the whole line,
   // set their own size and colour, and leave 10 px before the message.
   return (
     <div className="mb-[10px] flex min-w-0 basis-full flex-col gap-1.5" data-learning-feedback="">
@@ -123,7 +123,7 @@ export function FeedbackAboveMessage({ message }: ExperimentalMessageMetadataPro
   );
 }
 
-/** Framed as the question card is where bb draws it (a raised card in the theme's tokens). */
+/** Framed as the question card is where VesnALIA draws it (a raised card in the theme's tokens). */
 export function FeedbackCard({ card }: { card: FeedbackCardData }) {
   return (
     <section aria-label={`Feedback on question ${card.ordinal}`} className="flex flex-col gap-2 rounded-lg border border-border bg-surface-raised-solid p-3 text-left text-sm text-foreground">

@@ -1,7 +1,7 @@
 import { useInboxChildList, type InboxChildListInputs } from "./InboxContext";
-import { useSidebarThreadSplit, useSidebarThreads } from "./bb-sdk";
+import { useSidebarThreadSplit, useSidebarThreads } from "./alia-sdk";
 import { useId, useState, type ReactNode } from "react";
-import { useRealtime, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useRealtime, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./components/Icon";
 import { Tooltip } from "./components/Tooltip";
 import { Disc } from "./Disc";
@@ -61,7 +61,7 @@ export function childThreadsByParent(
 /**
  * Whether a child earns a row while its section is collapsed: anything with
  * a status to report (failed, waiting on the user, finished but unread, or
- * still working). Read and idle children fold away; so does any indicator bb
+ * still working). Read and idle children fold away; so does any indicator VesnALIA
  * ships later, until it is given a kind. This is the same set the collapsed
  * badge counts, so the rows and the badge never disagree.
  */
@@ -346,7 +346,7 @@ function ChildThreadRow({
   isActive?: boolean;
   /** Set when the thread's project differs from its parent's. */
   foreignProject?: ForeignProject;
-  /** Runs on a click that bb's link routing opens; it does not navigate. */
+  /** Runs on a click that VesnALIA's link routing opens; it does not navigate. */
   onThreadOpen: () => void;
   disclosure?: GrandchildDisclosure;
 }) {
@@ -374,12 +374,12 @@ function ChildThreadRow({
           needsYou &&
             !isActive &&
             cn(
-              "bg-[color:var(--bb-sidebar-needs-you-tint)]",
-              "hover:bg-[color:var(--bb-sidebar-needs-you-tint-hover)]",
+              "bg-[color:var(--alia-sidebar-needs-you-tint)]",
+              "hover:bg-[color:var(--alia-sidebar-needs-you-tint-hover)]",
               // In dark the amber fill is only a 1.07:1 step off the sidebar,
               // so a leading rule carries where the fill cannot. It is
               // transparent in light, where the cream band already reads.
-              "shadow-[inset_2px_0_0_0_var(--bb-sidebar-needs-you-accent)]",
+              "shadow-[inset_2px_0_0_0_var(--alia-sidebar-needs-you-accent)]",
             ),
           // The open chat gets the same tint as an active parent card, so the
           // eye finds it in a long tree the way it finds a card in the list.

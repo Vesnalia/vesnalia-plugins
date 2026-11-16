@@ -1,5 +1,5 @@
 // A review's local draft and its Submit: comments, discussions and asks, the summary and verdict, and the files you
-// marked Viewed. Also bb review comment and bb review summary.
+// marked Viewed. Also VesnALIA review comment and VesnALIA review summary.
 import { seeComments, undoable, undoChange } from "./draft-comments";
 import { z } from "zod";
 import { isLocal, isSummary, rangeOf, sameLocation, severityOf, type CommentLocation, type Draft, type DraftComment } from "./draft";
@@ -44,7 +44,7 @@ async function restoreTracking(tx: AsyncStore, targetKey: string, at: CommentLoc
 }
 
 export function register(deps: ServeDeps) {
-  const { bb, store, submitReview, notifications, sync, changed } = deps;
+  const { alia, store, submitReview, notifications, sync, changed } = deps;
   // The draft, its comments drafted against an older diff (which Submit warns about), and the discussions at its lines and summary.
   const draftState = async (store: AsyncStore, targetKey: string, given?: Draft) => {
     return store.exclusive(async (tx) => {
@@ -87,7 +87,7 @@ export function register(deps: ServeDeps) {
             await clearAsks(tx, targetKey);
             if (asks.some(stays)) await tx.setLifecycle(targetKey, { commentAsks: asks.filter(stays) });
           }
-          bb.realtime.publish(`draft:${targetKey}`, {});
+          alia.realtime.publish(`draft:${targetKey}`, {});
           const review = (await tx.getReview(targetKey))!;
           // The diff you reviewed is what "since your review" compares against.
           if (review.headSha) await tx.saveSnapshot(targetKey, review.headSha, await tx.patch(targetKey));
@@ -98,7 +98,7 @@ export function register(deps: ServeDeps) {
         await notifications.dismiss(targetKey).catch(() => {});
         await sync.evaluate(targetKey);
       } catch (error) {
-        bb.log.warn(`Could not finish recording the review of ${targetKey} GitHub took: ${String(error)}`);
+        alia.log.warn(`Could not finish recording the review of ${targetKey} GitHub took: ${String(error)}`);
       }
     }
     changed(targetKey);
@@ -111,7 +111,7 @@ export function register(deps: ServeDeps) {
    * says.
    */
   async function setCommentState(targetKey: string, at: CommentLocation, state: "resolved" | "dismissed" | "open" | "undo") {
-    const kv = bb.storage.kv;
+    const kv = alia.storage.kv;
     const before = state === "undo" ? await readBefore(kv, targetKey, at) : undefined;
     const saved = await store.exclusive(async (tx) => {
       const comment = (await tx.getDraft(targetKey)).comments.find((c) => sameLocation(c, at));
@@ -133,7 +133,7 @@ export function register(deps: ServeDeps) {
       return await draftState(tx, targetKey);
     });
     if (state === "undo" || state === "open") await forgetBefore(kv, targetKey, at);
-    bb.realtime.publish(`draft:${targetKey}`, {});
+    alia.realtime.publish(`draft:${targetKey}`, {});
     changed(targetKey);
     return saved;
   }
@@ -147,7 +147,7 @@ export function register(deps: ServeDeps) {
     async markCommentsSeen({ targetKey, at }) {
       const changed = await store.exclusive(async (tx) => await tx.getReview(targetKey) ? await seeComments(tx, targetKey, at) : false);
       // Other windows drop the mark too.
-      if (changed) bb.realtime.publish(`draft:${targetKey}`, {});
+      if (changed) alia.realtime.publish(`draft:${targetKey}`, {});
       return { ok: true };
     },
     async saveDraftComment({ targetKey, comment: { startLine, startSide, severity, body, focus, id, state, sendN, claim, editedBy: _editedBy, ...input }, revision, replaces, restore }) {
@@ -182,13 +182,13 @@ export function register(deps: ServeDeps) {
         }
         const saved = await draftState(tx, targetKey, draft);
         // Another window of the review, perhaps with this comment's box open, reads it again.
-        bb.realtime.publish(`draft:${targetKey}`, {});
+        alia.realtime.publish(`draft:${targetKey}`, {});
         return saved;
       });
     },
     async removeDraftComment({ targetKey, file, line, side }) {
       // Gone, there's no Resolve of it to undo.
-      await forgetBefore(bb.storage.kv, targetKey, { file, line, side });
+      await forgetBefore(alia.storage.kv, targetKey, { file, line, side });
       return store.exclusive(async (tx) => {
         await noteReviewerRemoval(tx, targetKey, { file, line, side });
         // Already gone, for example deleted by an agent: the current draft shows that.
@@ -198,23 +198,23 @@ export function register(deps: ServeDeps) {
         // A sent comment removed is no longer out with the main thread.
         if (await settleFixes(tx, targetKey)) changed(targetKey);
         // Another window of the review stops showing it.
-        bb.realtime.publish(`draft:${targetKey}`, {});
+        alia.realtime.publish(`draft:${targetKey}`, {});
         return await draftState(tx, targetKey, draft);
       });
     },
     async askAgent({ targetKey, ...input }) {
-      const { started } = await askAgent(bb, store, targetKey, input);
-      if (started) bb.realtime.publish(`conversation:${targetKey}`, {});
+      const { started } = await askAgent(alia, store, targetKey, input);
+      if (started) alia.realtime.publish(`conversation:${targetKey}`, {});
       return await draftState(store, targetKey);
     },
     async digDeeper({ targetKey, chapterId }) {
       if (!(await store.getPreferences()).preferences.knobs.digDeeper) return { ok: false, error: "Dig deeper is off in Settings. Use Ask agent." };
       let started: boolean;
-      try { ({ started } = await digDeeper(bb, store, targetKey, chapterId)); }
+      try { ({ started } = await digDeeper(alia, store, targetKey, chapterId)); }
       catch (error) { return { ok: false, error: error instanceof Error ? error.message : "The agent couldn’t start." }; }
-      if (started) bb.realtime.publish(`conversation:${targetKey}`, {});
+      if (started) alia.realtime.publish(`conversation:${targetKey}`, {});
       // The chapter says the agent is digging into it.
-      bb.realtime.publish(`review:${targetKey}`, { ts: Date.now() });
+      alia.realtime.publish(`review:${targetKey}`, { ts: Date.now() });
       return { ok: true };
     },
     async dismissDiscussion({ targetKey, file, line, side }) {
@@ -229,7 +229,7 @@ export function register(deps: ServeDeps) {
       return store.exclusive(async (tx) => {
         const result = await undoChange(tx, targetKey, { file, line, side });
         if (!result.ok) throw new Error(result.error);
-        bb.realtime.publish(`draft:${targetKey}`, {});
+        alia.realtime.publish(`draft:${targetKey}`, {});
         return await draftState(tx, targetKey);
       });
     },
@@ -238,7 +238,7 @@ export function register(deps: ServeDeps) {
         if (!(await tx.getPreferences()).preferences.knobs.removalReasons) return { ok: false };
         const ok = await tx.setRemovalReason(targetKey, { file, line, side }, { reason, ...(note ? { note } : {}) });
         // Settings counts the reasons of submitted reviews' removals.
-        if (ok) bb.realtime.publish("learning", {});
+        if (ok) alia.realtime.publish("learning", {});
         return { ok };
       });
     },
@@ -255,7 +255,7 @@ export function register(deps: ServeDeps) {
       return store.exclusive(async (tx) => {
         if (!await tx.getReview(targetKey)) throw new Error("This review no longer exists.");
         const draft = await tx.setVerdict(targetKey, verdict);
-        bb.realtime.publish(`draft:${targetKey}`, {});
+        alia.realtime.publish(`draft:${targetKey}`, {});
         return { draft };
       });
     },
@@ -265,7 +265,7 @@ export function register(deps: ServeDeps) {
         // Your words now, whoever wrote them before, and an ask on the summary is over.
         await tx.setLifecycle(targetKey, { summaryAsk: null });
         const draft = await tx.updateSummary(targetKey, { body, bodyAuthor: undefined, written: undefined });
-        bb.realtime.publish(`draft:${targetKey}`, {});
+        alia.realtime.publish(`draft:${targetKey}`, {});
         return await draftState(tx, targetKey, draft);
       });
     },
@@ -287,7 +287,7 @@ export function register(deps: ServeDeps) {
         const draft = await tx.deleteDraftComment(targetKey, at) ?? await tx.getDraft(targetKey);
         await tx.deleteDiscussion(targetKey, at);
         await setAsk(tx, targetKey, at, null);
-        bb.realtime.publish(`draft:${targetKey}`, {});
+        alia.realtime.publish(`draft:${targetKey}`, {});
         return await draftState(tx, targetKey, draft);
       });
     },
@@ -312,7 +312,7 @@ export function register(deps: ServeDeps) {
         const draft = await tx.getDraft(targetKey);
         if (draft.verdict === "COMMENT" && draft.body === body) await tx.setVerdict(targetKey, shownVerdict);
       });
-      if (verdict !== shownVerdict) bb.realtime.publish(`draft:${targetKey}`, {});
+      if (verdict !== shownVerdict) alia.realtime.publish(`draft:${targetKey}`, {});
       return { ok, ...(error ? { error } : {}), ...(url ? { url } : {}), ...(warning ? { warning } : {}), ...(warnings ? { warnings } : {}), ...(offers ? { offers } : {}), ...(newCommits ? { newCommits } : {}) };
     },
 
@@ -368,10 +368,10 @@ export function register(deps: ServeDeps) {
       });
     },
   } satisfies Partial<RpcHandlers>;
-  const changedDraft = (targetKey: string) => bb.realtime.publish(`draft:${targetKey}`, {});
+  const changedDraft = (targetKey: string) => alia.realtime.publish(`draft:${targetKey}`, {});
   const commands = {
-    comment: (args, _ctx, ownReview) => runCommentCommand(store, bb, args, changedDraft, ownReview),
-    summary: (args, _ctx, ownReview) => runSummaryCommand(store, bb, args, changedDraft, ownReview),
+    comment: (args, _ctx, ownReview) => runCommentCommand(store, alia, args, changedDraft, ownReview),
+    summary: (args, _ctx, ownReview) => runSummaryCommand(store, alia, args, changedDraft, ownReview),
   } satisfies Subcommands;
   return { handlers, commands, submit };
 }

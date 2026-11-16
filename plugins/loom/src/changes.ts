@@ -5,7 +5,7 @@
 import { repoCheckout, type RepoCheckout } from "./checkouts";
 import type { ProjectRow, Store, TicketRow } from "./db/store";
 import type { HostInput, HostOutput } from "./host-contract";
-import type { BbPort, EnvironmentFile, FileStatus, HostPort } from "./ports";
+import type { AliaPort, EnvironmentFile, FileStatus, HostPort } from "./ports";
 import { LoomError } from "./projects";
 import { isMultiRepo, repoSettings, type RepoSettings } from "./repos";
 import type { Spec } from "./spec";
@@ -223,16 +223,16 @@ export class Changes {
   // A listing between two full commit hashes never changes, so it is read once.
   private readonly cache = new Map<string, HostOutput<"changedFiles">>();
 
-  constructor(private readonly deps: { store: Store; bb: BbPort; host: HostPort }) {}
+  constructor(private readonly deps: { store: Store; alia: AliaPort; host: HostPort }) {}
 
   private project(slug: string): ProjectRow {
     const project = this.deps.store.projectBySlug(slug);
-    if (project === null) throw new LoomError("loom_not_found", `No Loom project named "${slug}".`, "Run `bb loom list` to see the projects.");
+    if (project === null) throw new LoomError("loom_not_found", `No Loom project named "${slug}".`, "Run `alia loom list` to see the projects.");
     return project;
   }
 
   /**
-   * The checkout of repo `name` to read git in, or why there is none: a deleted bb project, like a missing checkout, leaves nothing to read.
+   * The checkout of repo `name` to read git in, or why there is none: a deleted VesnALIA project, like a missing checkout, leaves nothing to read.
    * A named repo without a checkout says so with repoCheckout's message, which names the repo and the clone command.
    */
   private async checkout(project: ProjectRow, spec: Spec, name: string | null): Promise<RepoCheckout | string> {
@@ -241,7 +241,7 @@ export class Changes {
     } catch (error) {
       const missing = error instanceof LoomError && error.code === "loom_no_checkout";
       if (name !== null) return missing ? error.message : `The checkout of the repo "${name}" cannot be found, so its changes cannot be read: ${errText(error)}`;
-      return missing ? `The bb project has no checkout on the machine ${project.host_id ?? "(unknown)"}, so its changes cannot be read.` : `The project's checkout cannot be found, so its changes cannot be read: ${errText(error)}`;
+      return missing ? `The VesnALIA project has no checkout on the machine ${project.host_id ?? "(unknown)"}, so its changes cannot be read.` : `The project's checkout cannot be found, so its changes cannot be read: ${errText(error)}`;
     }
   }
 
@@ -264,7 +264,7 @@ export class Changes {
     if (read.kind === "none") return { ...plan.source, ...empty, files: [], note: read.note };
     try {
       if (read.kind === "live") {
-        const live = await this.deps.bb.environmentFiles(read.environmentId, read.base);
+        const live = await this.deps.alia.environmentFiles(read.environmentId, read.base);
         if (live.outcome === "ok") return { ...plan.source, ...empty, files: live.files.map(liveFile), truncated: live.truncated };
         if (read.fallback === null) return { ...plan.source, ...empty, note: `The worker's worktree cannot be read: ${live.message}` };
         return this.read(checkout, { source: { ...plan.source, id: `commit:${plan.source.key}`, kind: "commit" }, read: { kind: "git", input: read.fallback } });
@@ -323,7 +323,7 @@ export class Changes {
       const ticket = this.deps.store.ticketByKey(input.key);
       if (ticket === null || ticket.project_id !== project.id) throw new LoomError("loom_not_found", `No ticket ${input.key} in ${input.slug}.`);
       if (ticket.environment_id === null) return { patch: null, message: `${ticket.key} has no worktree now.` };
-      const live = await this.deps.bb.environmentPatch(ticket.environment_id, baseOf(specOf(this.deps.store, project), ticket), input.path);
+      const live = await this.deps.alia.environmentPatch(ticket.environment_id, baseOf(specOf(this.deps.store, project), ticket), input.path);
       return live.outcome === "ok" ? { patch: live.patch, truncated: live.truncated } : { patch: null, message: live.message };
     }
     if (input.base === undefined || input.head === undefined) throw new LoomError("loom_invalid_input", "A file's patch needs the two commits it is read between, or the key of a working ticket.");

@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-my-jira",
+  "name": "alia-plugin-my-jira",
   "version": "0.4.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.48",
-    "bbPluginSdk": ">=0.6.94"
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.94"
   },
-  "bb": {
+  "alia": {
     "name": "Jira Board",
     "description": "Your Jira tickets, open and done: filter by status and type, search, group by status, initiative or epic, or board, and open a ticket beside the list. Change statuses in place, move with the keyboard. Sign in with Atlassian in the browser and pick your site if you have several; nothing to set up.",
     "branding": {
@@ -20,7 +20,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -38,11 +37,24 @@
     "typecheck": "tsc"
   },
   "keywords": [
-    "bb-plugin"
+    "alia-plugin"
   ],
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/my-jira#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ahsan7162/bb-plugin-my-jira.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/my-jira"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

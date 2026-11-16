@@ -22,7 +22,7 @@ export function hasRateLimitedProvider(
 }
 
 /**
- * Anthropic's OAuth usage endpoint 429s if BB asks too often. Keep the last
+ * Anthropic's OAuth usage endpoint 429s if VesnALIA asks too often. Keep the last
  * successful Claude (or any provider) windows instead of blanking the meter.
  */
 export function overlayLastGoodLimits(

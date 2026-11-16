@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 // The reveal notice banner. The "Reveal browser tab" card action can
-// only be honest about its outcome on the board surface itself — bb's
+// only be honest about its outcome on the board surface itself — VesnALIA's
 // reveal answers {ok:true} even when the tab stays hidden, and the
 // plugin has no toast API to lean on. Board renders a dismissible,
 // self-expiring status banner (same visual language as the sweep
 // notice) with the report; a board without the prop renders nothing.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Board } from "../components/board";
 import { buildColumns } from "../components/grouping";
 import { thread } from "./thread-fixture";

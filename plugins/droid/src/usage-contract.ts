@@ -1,6 +1,6 @@
-// BB's provider-usage.v1 wire contract. Keep this compatible with the usage
+// VesnALIA's provider-usage.v1 wire contract. Keep this compatible with the usage
 // panel; it is a discoverable cross-plugin RPC, not an ACP session update.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const account = {

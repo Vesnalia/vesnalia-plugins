@@ -7,7 +7,7 @@ import {
   mountPluginContentScripts,
   renderSlot,
   type PluginRpcTestHandlers,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import type { rpcContract } from "../server.js";
 import { buildNewChatActivityByProject } from "../src/activity.js";
 import { formatRelativeTime } from "../src/relative-time.js";
@@ -202,7 +202,7 @@ describe("project chat launcher", () => {
 
     const app = await loadPluginApp(() => import("../app"));
     const scripts = await mountPluginContentScripts(app, { pluginId: "homepage" });
-    const style = document.head.querySelector("style[data-bb-homepage-hide-recents]");
+    const style = document.head.querySelector("style[data-alia-homepage-hide-recents]");
 
     expect(scripts.inspection.mountedIds).toEqual(["hide-homepage-recent-chats"]);
     expect(style?.textContent).toContain("[data-root-compose-mobile-recents]");
@@ -304,7 +304,7 @@ describe("project chat launcher", () => {
   });
 
   it("reorders projects from the keyboard in Manual mode", async () => {
-    window.localStorage.setItem("bb-plugin-homepage:ranking-mode", "Manual");
+    window.localStorage.setItem("alia-plugin-homepage:ranking-mode", "Manual");
     const app = await loadPluginApp(() => import("../app"));
     const slot = renderSlot(app.homepageSections[0]!, { projectId: null }, {
       rpc: {
@@ -448,7 +448,7 @@ describe("project chat launcher", () => {
   });
 
   it("pins a project dropped into the pinned section", async () => {
-    window.localStorage.setItem("bb-plugin-homepage:ranking-mode", "Manual");
+    window.localStorage.setItem("alia-plugin-homepage:ranking-mode", "Manual");
     const app = await loadPluginApp(() => import("../app"));
     const rpcHandlers: PluginRpcTestHandlers<typeof rpcContract> = {
       getProjectOpenContext: () => ({ source: null, ports: [] }),
@@ -605,7 +605,7 @@ describe("project chat launcher", () => {
       name: "Expand Work group",
     }).getAttribute("aria-expanded")).toBe("false");
     expect(JSON.parse(
-      window.localStorage.getItem("bb-plugin-homepage:collapsed-project-groups") ?? "[]",
+      window.localStorage.getItem("alia-plugin-homepage:collapsed-project-groups") ?? "[]",
     )).toEqual(["work"]);
     slot.lifecycle.unmount();
 
@@ -624,7 +624,7 @@ describe("project chat launcher", () => {
   });
 
   it("moves a project into a custom group by dragging in Manual mode", async () => {
-    window.localStorage.setItem("bb-plugin-homepage:ranking-mode", "Manual");
+    window.localStorage.setItem("alia-plugin-homepage:ranking-mode", "Manual");
     let groups = [{ id: "work", name: "Work", projectIds: ["alpha"] }];
     const app = await loadPluginApp(() => import("../app"));
     const slot = renderSlot(app.homepageSections[0]!, { projectId: null }, {
@@ -992,7 +992,7 @@ describe("project chat launcher", () => {
     ]);
     expect(slot.container.querySelectorAll("img")).toHaveLength(0);
     expect(
-      Array.from(slot.container.querySelectorAll(".bb-homepage-monogram"))
+      Array.from(slot.container.querySelectorAll(".alia-homepage-monogram"))
         .map((icon) => icon.getAttribute("data-letter")),
     ).toEqual(["T", "O"]);
     slot.lifecycle.unmount();
@@ -1112,10 +1112,10 @@ describe("project chat launcher", () => {
     ]);
     expect(
       JSON.parse(
-        window.localStorage.getItem("bb-plugin-homepage:manual-project-order") ?? "[]",
+        window.localStorage.getItem("alia-plugin-homepage:manual-project-order") ?? "[]",
       ),
     ).toEqual(["gamma", "alpha", "beta"]);
-    expect(window.localStorage.getItem("bb-plugin-homepage:ranking-mode"))
+    expect(window.localStorage.getItem("alia-plugin-homepage:ranking-mode"))
       .toBe("Manual");
 
     slot.lifecycle.unmount();
@@ -1146,7 +1146,7 @@ describe("project chat launcher", () => {
   });
 
   it("keeps manual-mode cards clickable below the drag activation distance", async () => {
-    window.localStorage.setItem("bb-plugin-homepage:ranking-mode", "Manual");
+    window.localStorage.setItem("alia-plugin-homepage:ranking-mode", "Manual");
     const app = await loadPluginApp(() => import("../app"));
     const slot = renderSlot(app.homepageSections[0]!, { projectId: null }, {
       sidebarThreads: {
@@ -1192,7 +1192,7 @@ describe("project chat launcher", () => {
   });
 
   it("keeps the homepage ordering choice in browser storage", async () => {
-    window.localStorage.setItem("bb-plugin-homepage:ranking-mode", "Most chats");
+    window.localStorage.setItem("alia-plugin-homepage:ranking-mode", "Most chats");
     const app = await loadPluginApp(() => import("../app"));
     const slot = renderSlot(app.homepageSections[0]!, { projectId: null }, {
       sidebarThreads: {
@@ -1214,7 +1214,7 @@ describe("project chat launcher", () => {
     expect(slot.getAllByRole("button", { name: /Start a new chat/ })[0]?.textContent).toContain("Busy");
 
     fireEvent.change(selector, { target: { value: "Alphabetical" } });
-    expect(window.localStorage.getItem("bb-plugin-homepage:ranking-mode"))
+    expect(window.localStorage.getItem("alia-plugin-homepage:ranking-mode"))
       .toBe("Alphabetical");
 
     selector.focus();
@@ -1269,7 +1269,7 @@ describe("project chat launcher", () => {
     fireEvent.error(images[0]!);
     expect(slot.container.querySelectorAll("img")).toHaveLength(0);
     expect(slot.container.querySelectorAll('svg[viewBox="0 0 24 24"]')).toHaveLength(1);
-    const monogram = slot.container.querySelector(".bb-homepage-monogram");
+    const monogram = slot.container.querySelector(".alia-homepage-monogram");
     expect(monogram?.getAttribute("data-letter")).toBe("W");
     expect(monogram?.getAttribute("aria-hidden")).toBe("true");
     expect(monogram?.textContent).toBe("");
@@ -1559,11 +1559,11 @@ describe("project chat launcher", () => {
         {
           environmentId: "wt-1",
           name: null,
-          branch: "bb/dirty-thr_1",
+          branch: "alia/dirty-thr_1",
           status: {
             kind: "available" as const,
             environmentId: "wt-1",
-            branch: "bb/dirty-thr_1",
+            branch: "alia/dirty-thr_1",
             defaultBranch: "main",
             changes: { files: 1, insertions: 3, deletions: 1, lineStatsComplete: true },
             worktrees: 0,
@@ -1573,7 +1573,7 @@ describe("project chat launcher", () => {
         {
           environmentId: "wt-2",
           name: null,
-          branch: "bb/gone-thr_2",
+          branch: "alia/gone-thr_2",
           status: {
             kind: "unavailable" as const,
             environmentId: "wt-2",
@@ -1622,7 +1622,7 @@ describe("project chat launcher", () => {
       // Radix portals the card to document.body, outside the slot container.
       const card = await waitFor(() => {
         const element = document.body.querySelector(
-          '[data-bb-plugin="homepage"][data-state="open"]',
+          '[data-alia-plugin="homepage"][data-state="open"]',
         );
         expect(element).not.toBeNull();
         return element!;
@@ -1633,8 +1633,8 @@ describe("project chat launcher", () => {
           Array.from(card.querySelectorAll("div.flex.items-center")).map((row) => row.textContent),
         ).toEqual([
           "Checkout · main",
-          "bb/dirty-thr_11 file, +3 -1",
-          "bb/gone-thr_2Unavailable",
+          "alia/dirty-thr_11 file, +3 -1",
+          "alia/gone-thr_2Unavailable",
         ]);
       });
     } finally {
@@ -1643,7 +1643,7 @@ describe("project chat launcher", () => {
     }
   });
 
-  it("renders a declared BB glyph as a masked tile", async () => {
+  it("renders a declared VesnALIA glyph as a masked tile", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const slot = renderSlot(app.homepageSections[0]!, { projectId: null }, {
       rpc: {

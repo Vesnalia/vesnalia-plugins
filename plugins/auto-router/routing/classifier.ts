@@ -107,7 +107,7 @@ export function makeClassifierAsk(
   config: ClassifierConfig,
   deps: JevDeps = {},
 ): JevAsk {
-  if (config.provider === "native") throw new Error("Native classification requires the BB host bridge.");
+  if (config.provider === "native") throw new Error("Native classification requires the VesnALIA host bridge.");
   if (config.provider === "jev") {
     const ask = makeJevAsk(deps);
     return async (state, questions) => {

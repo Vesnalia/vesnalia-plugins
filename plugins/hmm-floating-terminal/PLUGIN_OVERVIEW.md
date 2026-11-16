@@ -19,7 +19,7 @@ project you are in, without leaving the conversation for a panel or another app.
 
 ## How it works
 
-BB already runs terminal sessions. This plugin asks for them in the project's
+VesnALIA already runs terminal sessions. This plugin asks for them in the project's
 checkout and attaches xterm to the host's live socket. Nothing is proxied
 through the plugin, and closing the window leaves every shell running —
 reopening replays the scrollback and picks up where you left off. Closing a tab
@@ -27,5 +27,5 @@ is what ends a shell.
 
 ## Requirements
 
-BB 0.42 or newer with Plugin SDK 0.4.47 or newer. No account, service, or
+VesnALIA 0.42 or newer with Plugin SDK 0.4.47 or newer. No account, service, or
 separate install.

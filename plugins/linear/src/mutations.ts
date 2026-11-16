@@ -88,7 +88,7 @@ export interface MutationDeps {
    * The client that can reach a given issue.
    *
    * A function rather than a client, because a Linear personal API key is
-   * scoped to one workspace and this bb may hold several. Sending an issue id
+   * scoped to one workspace and this VesnALIA may hold several. Sending an issue id
    * over the wrong key does not leak anything — the key genuinely cannot see
    * it — but it does fail in the least informative way available, so the
    * lookup happens here rather than being got wrong at each call site.

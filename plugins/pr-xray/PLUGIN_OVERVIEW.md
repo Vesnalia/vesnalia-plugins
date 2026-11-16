@@ -3,18 +3,18 @@ Understand a pull request before you review it. PR X-ray groups the diff by conc
 ## What you get
 
 - **Diff tab**: hunks grouped by concern and ordered as a reading path, with lockfiles and renames last. Viewed checkmarks, split or unified view, and GitHub-style inline comments, reviews, suggestions, replies and resolve.
-- **Explain tab**: a summary, spots to look at closely, and interactive PR Lens diagrams with a walkthrough that zooms to each step. Click a node or table to leave a design comment, which stays in bb.
+- **Explain tab**: a summary, spots to look at closely, and interactive PR Lens diagrams with a walkthrough that zooms to each step. Click a node or table to leave a design comment, which stays in VesnALIA.
 - **Fix with agents**: fix one thread, your open review comments, all open comments, or redesign from your diagram comments. The redesign plans first and waits for your approval.
-- **Retro feed**: tag comments yourself or with AI, then export them with `bb pr-xray comments --json`.
+- **Retro feed**: tag comments yourself or with AI, then export them with `alia pr-xray comments --json`.
 
 ## How to open it
 
-Use the command palette or the PR X-ray page in the nav rail, ask any agent to "x-ray" a PR URL (`pr_xray_review`), or run `bb pr-xray review <url>`.
+Use the command palette or the PR X-ray page in the nav rail, ask any agent to "x-ray" a PR URL (`pr_xray_review`), or run `alia pr-xray review <url>`.
 
 ## Requirements
 
 - A GitHub login through `gh`, or a fine-grained token with Pull requests read and write, and Contents read. [The README shows how to create one](https://github.com/AlsoKnownAs-Ax/bb-plugin-pr-xray#create-a-github-token).
-- An agent provider in bb. Analysis, chat and tagging use your provider's quota.
+- An agent provider in VesnALIA. Analysis, chat and tagging use your provider's quota.
 - Optional: Notion connected to that provider, so the analysis can read the ticket linked in the PR description.
 
 ## Security
@@ -23,7 +23,7 @@ Use the command palette or the PR X-ray page in the nav rail, ask any agent to "
 
 PR content is untrusted, and a malicious PR can try to prompt-inject the agents that read it. Analysis and chat agents never run in your own checkout: they use a disposable copy of the PR's commit, so setup scripts on the branch don't run, or no repository for fork PRs. They are told to stay off the network, but that instruction is not a security boundary.
 
-**With Codex, these agents have network access.** bb's Codex workspace sandbox always allows it and PR X-ray can't turn it off, so an injected agent could reach the internet, run `gh` with your login and read files on your machine. Other providers depend on their own sandbox and approval settings.
+**With Codex, these agents have network access.** VesnALIA's Codex workspace sandbox always allows it and PR X-ray can't turn it off, so an injected agent could reach the internet, run `gh` with your login and read files on your machine. Other providers depend on their own sandbox and approval settings.
 
 PR X-ray asks you to confirm once per PR before an agent works on someone else's PR, or chats over other people's comments, unless Skip trust prompts is on in Settings. Ticking "Don't ask again for any PR" in either prompt turns that setting on.
 

@@ -19,15 +19,15 @@ import {
   experimental_useRpcQuery,
   Markdown,
   ThreadChat,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
   useSdk,
-  type BbNavigate,
+  type AliaNavigate,
   type ExperimentalMessageMetadataProps,
   type ExperimentalPanelController,
   type ExperimentalThreadActionTabProps,
   type ThreadChatMessageAction,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import {
   rpcContract,
@@ -150,7 +150,7 @@ function useSelection(key: string): string | null {
  */
 export function openSideChatGroup(args: {
   panel: ExperimentalPanelController;
-  navigate: BbNavigate;
+  navigate: AliaNavigate;
   sourceThreadId: string;
   messageId: string | null;
   group: readonly SideChat[];
@@ -180,19 +180,19 @@ export function openSideChatGroup(args: {
 const LINKS_ATTRIBUTE = "data-side-chat-links";
 
 /**
- * bb draws the row under a message (copy, fork, time) only while the pointer
+ * VesnALIA draws the row under a message (copy, fork, time) only while the pointer
  * is over the message, and puts plugin content after the buttons. A link that
  * says "this response has side chats" has to be visible all the time, so for
  * a row that holds one of our links this stylesheet:
  *
- * 1. dissolves bb's fading wrapper, which makes the links and bb's own
+ * 1. dissolves VesnALIA's fading wrapper, which makes the links and VesnALIA's own
  *    metadata separate items of the row;
  * 2. moves the links to the start of the row, where they do not leave a gap
  *    for the hidden buttons;
- * 3. gives bb's own metadata (the time) its hover fade back.
+ * 3. gives VesnALIA's own metadata (the time) its hover fade back.
  *
- * It relies on bb's markup: `data-message-action-metadata` on the wrapper and
- * `data-message-column` on the message. If a bb release changes those, the
+ * It relies on VesnALIA's markup: `data-message-action-metadata` on the wrapper and
+ * `data-message-column` on the message. If a VesnALIA release changes those, the
  * links are still drawn, but only on hover, like the rest of the row.
  */
 const LINKS_STYLESHEET = (() => {
@@ -209,14 +209,14 @@ ${message}:hover ${others}, ${message}:focus-within ${others} { opacity: 1; }
 })();
 
 /**
- * In bb's macOS desktop window the panel's tab strip sits in the title bar,
- * where bb sizes every button to the title bar's control height
- * (`MACOS_TITLE_BAR_CONTROL_SIZE_CLASS` in bb's lib/bb-desktop.ts). That
+ * In VesnALIA's macOS desktop window the panel's tab strip sits in the title bar,
+ * where VesnALIA sizes every button to the title bar's control height
+ * (`MACOS_TITLE_BAR_CONTROL_SIZE_CLASS` in VesnALIA's lib/alia-desktop.ts). That
  * also stretches the small close button inside each tab, so its hover
  * highlight is a tall block instead of a square. This puts the close button
- * back to the size bb gives it everywhere else. It applies to every panel
+ * back to the size VesnALIA gives it everywhere else. It applies to every panel
  * tab, not only this plugin's: the tabs carry nothing that tells them apart.
- * Touch screens keep bb's own larger close target.
+ * Touch screens keep VesnALIA's own larger close target.
  */
 const TAB_CLOSE_STYLESHEET = `
 @media (hover: hover) and (pointer: fine) {
@@ -245,7 +245,7 @@ function useSideChats(threadId: string): readonly SideChat[] {
 function SideChatLink({ message }: ExperimentalMessageMetadataProps) {
   const sideChats = useSideChats(message.threadId);
   const panel = experimental_useAppPanel();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const group = sideChats.filter(
     (sideChat) => sideChat.messageId === message.id,
   );
@@ -541,7 +541,7 @@ function SideChatGroup(props: {
 function SideChatOverview({ threadId }: { threadId: string }) {
   const sideChats = useSideChats(threadId);
   const panel = experimental_useAppPanel();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const groups = groupByMessage(sideChats);
   if (groups.length === 0) {
     return (
@@ -622,7 +622,7 @@ export default definePluginApp((app) => {
     id: "stylesheet",
     mount() {
       const style = document.createElement("style");
-      style.setAttribute("data-bb-plugin", PLUGIN_ID);
+      style.setAttribute("data-alia-plugin", PLUGIN_ID);
       style.textContent = LINKS_STYLESHEET + TAB_CLOSE_STYLESHEET;
       document.head.append(style);
       return () => style.remove();

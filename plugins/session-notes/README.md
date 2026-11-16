@@ -1,6 +1,6 @@
 # Session Notes
 
-Attach short, private notes to messages in a bb thread, so that when you scroll
+Attach short, private notes to messages in a VesnALIA thread, so that when you scroll
 back through a transcript you see your own annotations next to the output they
 refer to.
 
@@ -19,7 +19,7 @@ saved note to reveal **Edit** and **Delete note**; editing reuses the same box
 and the same keys. Notes are listed in timeline order, so reading the panel top
 to bottom walks the thread.
 
-Note bodies are **markdown**, rendered through bb's own chat renderer. Bodies
+Note bodies are **markdown**, rendered through VesnALIA's own chat renderer. Bodies
 are stored raw, so this is a display concern only — nothing to migrate, and
 turning it off is a one-line revert. The anchor excerpt above each note stays
 plain text on purpose (see *Storage*).
@@ -27,24 +27,24 @@ plain text on purpose (see *Storage*).
 The trade-off: rendering through the chat renderer means notes no longer read as
 typographically distinct from agent output. The distinction is carried
 structurally instead — accented left rule, card background, and the role label
-("You" / "via bb note").
+("You" / "via VesnALIA note").
 
 **From a script or hook.**
 
 ```
-bb note add <text> [--seq <n>]   # default anchor: the end of the thread
-bb note list
-bb note rm <id>
+alia note add <text> [--seq <n>]   # default anchor: the end of the thread
+alia note list
+alia note rm <id>
 ```
 
-There is deliberately **no `bb note edit`**. Editing is panel-only: the CLI
+There is deliberately **no `alia note edit`**. Editing is panel-only: the CLI
 exists so scripts and hooks can drop markers, and a marker a script can later
 rewrite is a more stateful thing than that. Keeping it out also keeps the
 agent-facing surface as narrow as it was.
 
 ## Settings
 
-`bb plugin config session-notes`
+`alia plugin config session-notes`
 
 | Setting | Default | Effect |
 | --- | --- | --- |
@@ -60,18 +60,18 @@ a thread stops being live. Notes are always deleted when a thread is deleted.
 This is the plugin's main invariant, so it is enforced by omission rather than
 by filtering:
 
-- No `bb.agents` tool and no `contributeInstructions` — the only two APIs that
+- No `alia.agents` tool and no `contributeInstructions` — the only two APIs that
   put plugin content into a turn.
-- No `skills/` directory. `bb plugin new` scaffolds one; it was deleted,
+- No `skills/` directory. `alia plugin new` scaffolds one; it was deleted,
   because a shipped skill *is* agent context.
-- Note bodies live only in this plugin's own `data.db`, never in bb.db's event
+- Note bodies live only in this plugin's own `data.db`, never in alia.db's event
   log.
 
-One deliberate exception: registering the `bb note` CLI command makes
-*note-taking* discoverable to agents through bb's generated `plugin-commands`
+One deliberate exception: registering the `alia note` CLI command makes
+*note-taking* discoverable to agents through VesnALIA's generated `plugin-commands`
 skill. Note contents still never enter a model's context, but an agent can write
 notes. To keep that visible, CLI-created notes are stored with role `cli` and
-the panel labels them **"via bb note"** instead of "You".
+the panel labels them **"via VesnALIA note"** instead of "You".
 
 `server.test.ts` asserts all of this (`describe("agent isolation")`).
 
@@ -83,8 +83,8 @@ Four extension points:
 | --- | --- |
 | `app.slots.messageAction` | The "Add note" button; captures *which* message |
 | `app.slots.threadPanelAction` | The Notes tab; captures the text and lists notes |
-| `bb.rpc` | Panel reads and writes |
-| `bb.http.route("POST", "/compose")` | The message action's only route to the backend |
+| `alia.rpc` | Panel reads and writes |
+| `alia.http.route("POST", "/compose")` | The message action's only route to the backend |
 
 ### Why there is an HTTP route
 
@@ -93,7 +93,7 @@ client is the `useRpc` **hook**. So `run` cannot call rpc. It posts the anchor t
 `/compose` instead, which stores it as a pending draft; the panel then reads that
 draft and asks for the text.
 
-If bb ever gives registration callbacks an rpc client, this route can be deleted
+If VesnALIA ever gives registration callbacks an rpc client, this route can be deleted
 and nothing else changes.
 
 ### Why `openPanel` is called before the `await`
@@ -101,7 +101,7 @@ and nothing else changes.
 `openPanel` is a synchronous method on a host-supplied context object. Calling it
 first avoids depending on that context still being valid after a suspension.
 
-It is deliberately called with **no params**: bb refocuses an existing tab for
+It is deliberately called with **no params**: VesnALIA refocuses an existing tab for
 identical `actionId` + `params`, but opens *sibling* tabs for different params.
 Passing the anchor through params would open a new Notes tab per annotated
 message. The anchor travels through `/compose` for exactly this reason.
@@ -113,7 +113,7 @@ They cover opposite races. A freshly mounted panel may call `list` before
 reconciles it. An already-open panel would never re-read on its own — the signal
 is the only thing that tells it.
 
-`bb.realtime.publish` broadcasts to *every* connected client with no thread
+`alia.realtime.publish` broadcasts to *every* connected client with no thread
 scoping, so each payload carries `threadId` and the panel filters on it.
 
 ## The anchor: `sourceSeqEnd`, not `message.id`
@@ -123,7 +123,7 @@ alternative is a trap.
 
 `message.id` maps to the event store's `item_id`, which looks like
 `claude-assistant-1`. **That counter resets every turn.** Observed in a live
-`bb.db`, same thread, same provider session:
+`alia.db`, same thread, same provider session:
 
 ```
 sequence  turn_id                  item_id
@@ -136,16 +136,16 @@ Keying on `message.id` would make a note silently reappear on an unrelated
 message a few turns later.
 
 `sourceSeqEnd` is backed by a unique index on `(thread_id, sequence)`, assigned
-server-side, append-only, and already trusted by bb itself as the anchor for
+server-side, append-only, and already trusted by VesnALIA itself as the anchor for
 provider-history forks. It survives reload, resume, and restore.
 
 It is also on `TimelineRowBase`, the base of *every* timeline row kind including
-tool rows — so if bb ever extends message actions to tool output, or ships a
+tool rows — so if VesnALIA ever extends message actions to tool output, or ships a
 per-item render slot, those are read-path changes with **no migration**.
 
 ## Storage
 
-Plugin-owned SQLite at `~/.bb/plugins/session-notes/data.db`.
+Plugin-owned SQLite at `~/.vesnalia/plugins/session-notes/data.db`.
 
 ```sql
 CREATE TABLE notes (
@@ -160,7 +160,7 @@ CREATE TABLE notes (
 CREATE INDEX notes_thread_seq_idx ON notes (thread_id, source_seq_end);
 ```
 
-`bb.storage.migrate` uses **array index as migration id**. The `MIGRATIONS` array
+`alia.storage.migrate` uses **array index as migration id**. The `MIGRATIONS` array
 in `server.ts` is append-only: never reorder or edit a statement that has
 shipped, only push new ones.
 
@@ -171,7 +171,7 @@ Two deliberate choices:
   would mean silently destroying the first one.
 - **`anchor_preview` and `message_role` are denormalized snapshots.** They
   duplicate timeline data on purpose: the panel renders without a second read,
-  and if bb's completed-item truncation ever removes an event, the note still
+  and if VesnALIA's completed-item truncation ever removes an event, the note still
   displays the text it was attached to instead of a bare integer.
 - **The anchor preview is rendered as plain text, not markdown**, even though
   note bodies are markdown. It is a whitespace-collapsed 140-character
@@ -189,24 +189,24 @@ Two deliberate choices:
   against a pre-1.0 UI.
 - **User and assistant messages only.** `messageAction`'s context types `role` as
   `"user" | "assistant"` and documents its payload as "NOT an internal timeline
-  row", so tool calls and tool results cannot carry a note. `bb note add --seq`
+  row", so tool calls and tool results cannot carry a note. `alia note add --seq`
   is the manual escape hatch.
 - **No sub-item anchoring.** `selectedText` on the action context would make
   character-range notes plausible for assistant text later, but not for tool
   output.
 
-## API notes (bb 0.38 / plugin SDK 0.4.6)
+## API notes (VesnALIA 0.38 / plugin SDK 0.4.6)
 
 Things that cost a build cycle and are not in the authoring skill:
 
-- `bb.http.route` paths **require a leading slash** (`"/compose"`), though the
+- `alia.http.route` paths **require a leading slash** (`"/compose"`), though the
   skill's example omits it. Without it the plugin fails to load.
 - Route handlers must return via the Hono context (`context.json(...)`). A bare
   `Response.json(...)` is rejected with "http route handler must return a
   Response".
 - Plugin settings have **no numeric type** — only `string`, `boolean`, `select`,
   `project`. Hence `retentionDays` is a select of day counts.
-- `@get-bb/plugin-sdk/testing` needs `cron-parser` installed alongside it; it is
+- `@vesnalia/plugin-sdk/testing` needs `cron-parser` installed alongside it; it is
   not declared as a dependency.
 
 ## Development
@@ -215,12 +215,12 @@ Things that cost a build cycle and are not in the authoring skill:
 npm install --include=dev
 npm test          # vitest against createFakePluginHost — no server needed
 npm run typecheck
-npm run build     # bb plugin build .
-bb plugin reload session-notes
+npm run build     # alia plugin build .
+alia plugin reload session-notes
 ```
 
 The test suite drives the two paths that are awkward to check by hand against a
-live bb: the retention schedule (normally hourly cron) via `harness.runSchedule`,
+live VesnALIA: the retention schedule (normally hourly cron) via `harness.runSchedule`,
 and archive/delete sweeps via `harness.emitThreadEvent`.
 
-`bb plugin dev .` watches sources and reloads on change.
+`alia plugin dev .` watches sources and reloads on change.

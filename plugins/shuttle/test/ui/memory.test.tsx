@@ -80,7 +80,7 @@ describe("where the page was left", () => {
     expect(list.scrollTop).toBe(0);
     route("mine");
     expect(list.scrollTop).toBe(420);
-    await waitFor(() => expect(JSON.parse(window.localStorage.getItem("bb-plugin-shuttle:scroll") ?? "{}")).toEqual({ mine: 420 }));
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem("alia-plugin-shuttle:scroll") ?? "{}")).toEqual({ mine: 420 }));
   });
 
   it("keeps the position while a list is still too short to reach it", async () => {
@@ -141,6 +141,6 @@ describe("which PR each thread's tab shows in full", () => {
     expect(Object.keys(panelPrs.get()).at(-1)).toBe("thr_5");
     rememberPanelPr("thr_5", null);
     expect(panelPrs.get()).not.toHaveProperty("thr_5");
-    expect(JSON.parse(window.localStorage.getItem("bb-plugin-shuttle:panel-pr")!)).toEqual(panelPrs.get());
+    expect(JSON.parse(window.localStorage.getItem("alia-plugin-shuttle:panel-pr")!)).toEqual(panelPrs.get());
   });
 });

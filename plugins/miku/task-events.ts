@@ -1,6 +1,6 @@
 interface TasksProject {
   id: string;
-  linkedBbProjectId: string | null;
+  linkedAliaProjectId: string | null;
 }
 
 export interface TaskSummary {
@@ -12,7 +12,7 @@ export interface TaskSummary {
 
 export interface TaskSnapshot {
   task: TaskSummary;
-  linkedBbProjectId: string | null;
+  linkedAliaProjectId: string | null;
 }
 
 interface RpcEnvelope {
@@ -58,15 +58,15 @@ function parseProjects(value: unknown): TasksProject[] {
     if (
       !isRecord(candidate) ||
       typeof candidate.id !== "string" ||
-      (candidate.linkedBbProjectId !== null &&
-        typeof candidate.linkedBbProjectId !== "string")
+      (candidate.linkedAliaProjectId !== null &&
+        typeof candidate.linkedAliaProjectId !== "string")
     ) {
       return [];
     }
     return [
       {
         id: candidate.id,
-        linkedBbProjectId: candidate.linkedBbProjectId,
+        linkedAliaProjectId: candidate.linkedAliaProjectId,
       },
     ];
   });
@@ -131,7 +131,7 @@ async function readSnapshot(
         ),
       );
       for (const task of page.tasks) {
-        snapshot.set(task.id, { task, linkedBbProjectId: project.linkedBbProjectId });
+        snapshot.set(task.id, { task, linkedAliaProjectId: project.linkedAliaProjectId });
       }
       if (page.nextCursor === null) break;
       cursor = page.nextCursor;
@@ -172,9 +172,9 @@ export function findCompletedTaskEvents(
     if (before !== undefined && before.task.status !== "done" && next.task.status === "done") {
       completed.push({
         taskKey: next.task.key,
-        ...(next.linkedBbProjectId === null
+        ...(next.linkedAliaProjectId === null
           ? {}
-          : { projectId: next.linkedBbProjectId }),
+          : { projectId: next.linkedAliaProjectId }),
       });
     }
   }

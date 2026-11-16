@@ -1,9 +1,9 @@
-// Check All/project layout with real bb data, previewing the local build only.
+// Check All/project layout with real VesnALIA data, previewing the local build only.
 // PLAYWRIGHT_DIR=/tmp/lanes-qa-tools node scripts/qa/scale.mjs
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { BB, launch } from './browser.mjs';
+import { ALIA, launch } from './browser.mjs';
 
 const out = process.argv[2] ?? 'docs/fidelity/live/scale';
 mkdirSync(out, {recursive: true});
@@ -22,7 +22,7 @@ try {
       const lanes = js ? body.includes('Pan back and forth') && body.includes('Window span') : body.includes('.lanes-tray');
       await route.fulfill(lanes ? {response, body:readFileSync(`dist/app.${js?'js':'css'}`, 'utf8')} : {response});
     });
-    await page.goto(`${BB}/plugins/agent-lanes/lanes`,{waitUntil:'networkidle'});
+    await page.goto(`${ALIA}/plugins/agent-lanes/lanes`,{waitUntil:'networkidle'});
     await page.evaluate(dark => document.documentElement.classList.toggle('dark',dark),scheme==='dark');
     await page.getByRole('button',{name:'Keyboard shortcuts',exact:true}).click();
     const help=page.getByRole('dialog',{name:'Keyboard shortcuts',exact:true});

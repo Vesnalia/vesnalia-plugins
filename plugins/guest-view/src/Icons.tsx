@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from "react";
 import { MARK } from "./mark";
 
-/** Small line icons in BB's weight (1.5 stroke in a 24-unit box), drawn here so the names cannot go missing. */
+/** Small line icons in VesnALIA's weight (1.5 stroke in a 24-unit box), drawn here so the names cannot go missing. */
 function Svg({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <svg className={className} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -12,7 +12,7 @@ function Svg({ children, className }: { children: ReactNode; className?: string 
 
 type Props = { className?: string };
 
-/** The name the app registers {@link ShareIcon} under (`app.tsx`), so BB's own surfaces such as the thread menu can draw it. */
+/** The name the app registers {@link ShareIcon} under (`app.tsx`), so VesnALIA's own surfaces such as the thread menu can draw it. */
 export const SHARE_ICON = "guest-view/share";
 
 /** Guest View's mark (see `mark.ts`): two people over a chain link. */

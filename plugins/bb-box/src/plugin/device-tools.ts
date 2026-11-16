@@ -1,4 +1,4 @@
-import type { BbPluginApi, PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginAgentToolResult } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { BoxError, type BoxRecord } from "../core/boxes.ts";
 import { answerText, controlFromParameters } from "../core/device-control.ts";
@@ -6,7 +6,7 @@ import { deviceStateWords } from "../core/device-settings.ts";
 import { DEVICE_ACTIONS, IOS_CONTENT_SIZES, ORIENTATIONS, deviceModel, modelNamed, offeredModels, type DeviceAnswer, type DeviceErrorCode, type ModelName } from "../core/device.ts";
 import { inSlot, slotSwitchRefusal } from "../core/device-host.ts";
 import { toolsForPurposes } from "./purposes.ts";
-import type { BbBox } from "./setup.ts";
+import type { AliaBox } from "./setup.ts";
 import { boxParam, failure, thread } from "./tools.ts";
 import { next } from "./views.ts";
 import { PRODUCT } from "../brand.ts";
@@ -23,7 +23,7 @@ const HINTS: Partial<Record<DeviceErrorCode, string>> = {
   failed: "Call box_status to see the device's state.",
 };
 
-function modelOf(app: BbBox, box: BoxRecord): ModelName {
+function modelOf(app: AliaBox, box: BoxRecord): ModelName {
   const view = app.devices.view(box.id);
   if (view.is === "connected") return view.state.model;
   return box.device?.model ?? box.askedDevice ?? box.capabilities.device!.devices[0].model;
@@ -35,8 +35,8 @@ function refusal(box: BoxRecord, answer: Extract<DeviceAnswer, { ok: false }>): 
   return { content: [{ type: "text", text: `Box ${box.name}: ${answer.error.words}${now}${hint ? next(hint) : ""}` }], isError: true };
 }
 
-export function registerDeviceTools(bb: BbPluginApi, app: BbBox): void {
-  const registerTool = toolsForPurposes(bb);
+export function registerDeviceTools(alia: AliaPluginApi, app: AliaBox): void {
+  const registerTool = toolsForPurposes(alia);
 
   registerTool({
     name: "box_device",

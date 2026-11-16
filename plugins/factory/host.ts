@@ -5,7 +5,7 @@ import { existsSync, statSync } from "node:fs";
 import { mkdir, readdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk";
 import { GH_ALLOWED, hostContract, type RepoInspection } from "./host-contract";
 
 /** The daemon's PATH may not include user-level installs such as ~/.local/bin or Homebrew. */
@@ -224,7 +224,7 @@ function buildAgentsMdTemplate(
       : "- `.specify/memory/constitution.md`\n- `docs/architecture.md`\n- `docs/roadmap.md`";
   return `# AGENTS.md — ${factoryName} (${prefix})
 
-This repository is managed with the **BB Software Factory** (\`bb factory\`) using **Spec-Driven Development (SDD)**.
+This repository is managed with the **VesnALIA Software Factory** (\`alia factory\`) using **Spec-Driven Development (SDD)**.
 Every coding agent (Lead, Planner, Builder, QA, Designer, Reviewer 1/2, Security) must read this router before acting.
 
 ## 1. Canonical Source-of-Truth Documents
@@ -240,7 +240,7 @@ ${docList}
 ## 2. How Work Flows Across Roles (${mode === "greenfield" ? "Greenfield Mode" : "Brownfield Mode"})
 
 1. **Lead (\`lead\`):** Coordinates the \`${prefix}\` board, keeps \`docs/roadmap.md\` aligned with reality, delegates ambiguity/architecture to the **Planner**, and opens draft PRs when Builders finish. Never writes product code directly.
-2. **Planner (\`plan\`):** Reads \`.specify/memory/constitution.md\`, \`docs/architecture.md\`, and the codebase. Publishes a \`Factory plan: READY\` task comment with \`## Problem and scope\`, \`## Acceptance criteria\`, \`## Implementation plan\`, \`## Dependencies\`, and \`## Open questions\`, then runs \`bb factory plan-ready <KEY> --comment <id>\`. Names any living docs (\`docs/architecture.md\`, \`docs/roadmap.md\`, ADRs) that the Builder must update.
+2. **Planner (\`plan\`):** Reads \`.specify/memory/constitution.md\`, \`docs/architecture.md\`, and the codebase. Publishes a \`Factory plan: READY\` task comment with \`## Problem and scope\`, \`## Acceptance criteria\`, \`## Implementation plan\`, \`## Dependencies\`, and \`## Open questions\`, then runs \`alia factory plan-ready <KEY> --comment <id>\`. Names any living docs (\`docs/architecture.md\`, \`docs/roadmap.md\`, ADRs) that the Builder must update.
 3. **Builder (\`build\`):** Works in an isolated Git worktree. Reads the canonical \`Factory plan: READY\` comment and \`.specify/memory/constitution.md\`. Implements the smallest coherent change, updates living docs when contracts change, runs local verification suites, and pushes the branch.
 4. **QA (\`qa\`) & PR Reviewers (\`review1\`, \`review2\`, \`security\`):** Grade the diff strictly against the task's **Acceptance Criteria** and \`.specify/memory/constitution.md\`. Do not invent out-of-scope redesigns on re-review rounds.
 `;
@@ -286,7 +286,7 @@ function buildRoadmapTemplate(factoryName: string, prefix: string, mode: "greenf
 - [ ] Complete initial task wave on \`${prefix}\`
 
 ### Next Steps (Updated by Lead)
-- Run \`bb factory status ${prefix}\` and \`bb factory doctor ${prefix}\` to inspect active workstreams and pending gates.
+- Run \`alia factory status ${prefix}\` and \`alia factory doctor ${prefix}\` to inspect active workstreams and pending gates.
 `;
 }
 

@@ -140,8 +140,8 @@ export async function forkByFullClone(guests: ForkGuests, ref: SnapshotRef, box:
       await guests.forget(vmid);
       const writes = guests.writes(api, box.boxId, true);
       const { lockOutlasted } = await disarmBeforeDelete(guests, writes, vmid, "a fork that failed");
-      if (lockOutlasted) guests.logError(`delete guest ${vmid}, a fork that failed; bb-box tries again`, new Error("Proxmox still holds its lock, so bb-box neither disarmed nor deleted it yet."));
-      else await writes.destroy(vmid).catch((cause) => guests.logError(`delete guest ${vmid}, a fork that failed; bb-box tries again`, cause));
+      if (lockOutlasted) guests.logError(`delete guest ${vmid}, a fork that failed; alia-box tries again`, new Error("Proxmox still holds its lock, so alia-box neither disarmed nor deleted it yet."));
+      else await writes.destroy(vmid).catch((cause) => guests.logError(`delete guest ${vmid}, a fork that failed; alia-box tries again`, cause));
     }
     throw error;
   } finally {

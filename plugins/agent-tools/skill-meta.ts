@@ -1,16 +1,16 @@
 import yaml from "js-yaml";
 
 /**
- * The rules BB applies before it registers a skill from its data dir and
+ * The rules VesnALIA applies before it registers a skill from its data dir and
  * stages it into sessions (packages/skill-index/src/metadata.ts and
- * apps/server/src/services/skills/injected-skills.ts in BB). A skill that
- * breaks any of them is silently skipped by BB, so the plugin checks the same
+ * apps/server/src/services/skills/injected-skills.ts in VesnALIA). A skill that
+ * breaks any of them is silently skipped by VesnALIA, so the plugin checks the same
  * rules before publishing and shows the result on the Skills page.
  */
 export const SKILL_NAME_PATTERN = /^(?!.*--)[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/u;
 export const SKILL_DESCRIPTION_MAX = 1024;
-export const BB_SKILL_MAX_BYTES = 10 * 1024 * 1024;
-export const BB_SKILL_MAX_FILES = 1000;
+export const ALIA_SKILL_MAX_BYTES = 10 * 1024 * 1024;
+export const ALIA_SKILL_MAX_FILES = 1000;
 
 export type SkillProblemCode =
   | "no-skill-md"
@@ -29,7 +29,7 @@ export type SkillProblem = {
   code: SkillProblemCode;
   /** Short English detail for logs and the CLI; the UI renders its own text by code. */
   detail: string;
-  /** Problems BB rejects the skill for. Warnings still load. */
+  /** Problems VesnALIA rejects the skill for. Warnings still load. */
   blocking: boolean;
 };
 
@@ -39,7 +39,7 @@ export type SkillMeta = {
   problems: SkillProblem[];
 };
 
-/** Splits off the frontmatter block the way gray-matter does for BB. */
+/** Splits off the frontmatter block the way gray-matter does for VesnALIA. */
 function frontmatterBlock(content: string): string | null {
   const match = /^\s*---\r?\n([\s\S]*?)\r?\n---\s*(?:\r?\n|$)/u.exec(content);
   return match === null ? null : match[1];
@@ -51,8 +51,8 @@ function stringField(data: Record<string, unknown>, key: string): string | null 
 }
 
 /**
- * Parses SKILL.md metadata and lists what BB would reject. `dirName` is the
- * skill folder; BB itself only needs a valid name, but a name that differs
+ * Parses SKILL.md metadata and lists what VesnALIA would reject. `dirName` is the
+ * skill folder; VesnALIA itself only needs a valid name, but a name that differs
  * from the folder makes the same skill show under two names, so it is a
  * warning.
  */
@@ -105,7 +105,7 @@ export function parseSkillMeta(content: string | null, dirName: string): SkillMe
   } else if (description.length > SKILL_DESCRIPTION_MAX) {
     problems.push({
       code: "description-too-long",
-      detail: `description is ${description.length} characters, BB accepts up to ${SKILL_DESCRIPTION_MAX}`,
+      detail: `description is ${description.length} characters, VesnALIA accepts up to ${SKILL_DESCRIPTION_MAX}`,
       blocking: true,
     });
   }
@@ -119,18 +119,18 @@ export function parseSkillMeta(content: string | null, dirName: string): SkillMe
   return { name, description, problems };
 }
 
-/** Size problems of the tree BB would copy into a session. */
+/** Size problems of the tree VesnALIA would copy into a session. */
 export function treeProblems(bytes: number, files: number): SkillProblem[] {
   const problems: SkillProblem[] = [];
-  if (bytes > BB_SKILL_MAX_BYTES) {
+  if (bytes > ALIA_SKILL_MAX_BYTES) {
     problems.push({
       code: "too-big",
-      detail: `${(bytes / 1024 / 1024).toFixed(1)} MB, BB copies up to 10 MB`,
+      detail: `${(bytes / 1024 / 1024).toFixed(1)} MB, VesnALIA copies up to 10 MB`,
       blocking: true,
     });
   }
-  if (files > BB_SKILL_MAX_FILES) {
-    problems.push({ code: "too-many-files", detail: `${files} files, BB copies up to ${BB_SKILL_MAX_FILES}`, blocking: true });
+  if (files > ALIA_SKILL_MAX_FILES) {
+    problems.push({ code: "too-many-files", detail: `${files} files, VesnALIA copies up to ${ALIA_SKILL_MAX_FILES}`, blocking: true });
   }
   return problems;
 }

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type {
   AccountPoolConfig,
   AccountSummary,
@@ -9,7 +9,7 @@ import type {
 } from "./src/contracts.js";
 
 vi.mock('./management-ui', async () => {
-  const { useRpc } = await import('@get-bb/plugin-sdk/app');
+  const { useRpc } = await import('@vesnalia/plugin-sdk/app');
   return {
     ManagementGate: ({ children }: { children: unknown }) => children,
     usePoolRpc: () => useRpc(),

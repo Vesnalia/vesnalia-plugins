@@ -1,4 +1,4 @@
-// BB remounts a plugin's page when its own layout switches, at a 768px window: as a 14 Pro Max turns, as the Duo
+// VesnALIA remounts a plugin's page when its own layout switches, at a 768px window: as a 14 Pro Max turns, as the Duo
 // unfolds. What a review's workspace has open, typed, shows and focuses is kept in this tab's sessionStorage as it
 // changes, for a new workspace in its place to go on from: one that mounts while the old one is still there, or within
 // FRESH_MS of its going. Later, a review opens as it always does.
@@ -44,9 +44,9 @@ type Entry = Partial<Kept> & { live: number; gone?: number; doc?: number };
 const KEY = "gr:remount";
 const FRESH_MS = 2000;
 /**
- * How long what's kept waits after the window resizes. BB swaps its layout a few frames after the window crosses 768:
- * until then the old workspace lays out in BB's old pane at the window's new size, where a side can dock that can't in
- * the new pane (the unfolded Duo held sideways, beside BB's thread list). The new workspace goes on from what was kept
+ * How long what's kept waits after the window resizes. VesnALIA swaps its layout a few frames after the window crosses 768:
+ * until then the old workspace lays out in VesnALIA's old pane at the window's new size, where a side can dock that can't in
+ * the new pane (the unfolded Duo held sideways, beside VesnALIA's thread list). The new workspace goes on from what was kept
  * before the turn instead, so the turn carries what's open as it does in place.
  */
 const SETTLE_MS = 300;

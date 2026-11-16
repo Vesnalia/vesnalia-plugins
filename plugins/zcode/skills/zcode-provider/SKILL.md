@@ -1,14 +1,14 @@
 ---
 name: zcode-provider
-description: Configure or troubleshoot the ZCode provider plugin in bb.
+description: Configure or troubleshoot the ZCode provider plugin in VesnALIA.
 ---
 
 # ZCode provider
 
-Use this skill for setup and diagnostics of the `zcode` provider in bb.
+Use this skill for setup and diagnostics of the `zcode` provider in VesnALIA.
 
-- Inspect available models with `bb provider models zcode`.
-- Inspect settings with `bb plugin config zcode`.
+- Inspect available models with `alia provider models zcode`.
+- Inspect settings with `alia plugin config zcode`.
 - Set `executable` to a ZCode executable or JavaScript bundle path on the
   execution host; set `nodeExecutable` when the bundle needs an explicit Node 24+
   runtime. `args` is a JSON array; no shell interpolation occurs.
@@ -17,31 +17,31 @@ Use this skill for setup and diagnostics of the `zcode` provider in bb.
   through the existing ZCode Desktop sign-in on the same machine and OS user.
   Open Coding Plan once in ZCode to prepare its project key. Start Plan,
   Team plans, and standalone CLI-only login are not supported.
-- Native permission and question prompts are answered through bb. The plugin
+- Native permission and question prompts are answered through VesnALIA. The plugin
   does not provide an OS sandbox, and does not grant persistent permission rules.
 - Text and attachment prompts, streaming, generic tool activity, interruption,
   resume, queued follow-ups, token/context reporting and native `/compact` are
   supported. Follow-ups wait for a turn boundary; they do not inject into an
-  active model loop. Native bb forks and edit-message/rewind use exact persisted
+  active model loop. Native VesnALIA forks and edit-message/rewind use exact persisted
   assistant checkpoints; missing/stale targets fail explicitly.
 - The context meter is sized from each model's advertised window (GLM-5.3:
   1M tokens; the native projection keeps a smaller pre-bind default), and
-  `model/list` descriptions carry the window because bb model entries have
+  `model/list` descriptions carry the window because VesnALIA model entries have
   no numeric field for it.
 - Models with a larger native window also list context-budget variants, e.g.
   `GLM-5.3 (256K)` next to `GLM-5.3 (1M)`. A variant runs the same base
-  native model but caps the window reported to bb. The cap survives native
+  native model but caps the window reported to VesnALIA. The cap survives native
   background follow-ups and resume; accepting a new model selection replaces
   it. Use the exact ID from `model/list`: only generated aliases map to the
   base model, and real native IDs (including those ending in `-256k`) stay
   unchanged. A reporting cap does not change ZCode's native compaction window.
-- Enable `bbToolsEnabled` for bb-injected tools. It is off by default to preserve
+- Enable `aliaToolsEnabled` for alia-injected tools. It is off by default to preserve
   CLI MCP inheritance; when enabled, list other custom servers in `mcpServers`.
-  These tools run through a session-scoped local MCP endpoint and bb’s tool
-  dispatcher. bb skills are a file catalog read with native tools, not entries in
+  These tools run through a session-scoped local MCP endpoint and VesnALIA’s tool
+  dispatcher. VesnALIA skills are a file catalog read with native tools, not entries in
   ZCode’s native Skill registry. Start a new session to refresh the selection.
 - `subagents` accepts a validated native configuration snapshot. Empty inherits
-  native agents; custom child questions/approvals return through the parent bb
+  native agents; custom child questions/approvals return through the parent VesnALIA
   session. Background Bash/agent cards survive foreground turn settlement.
   A full subagent tree UI is not implemented.
 - Use `/zcode-tasks`, `/zcode-task-output <id>` (Bash only) and

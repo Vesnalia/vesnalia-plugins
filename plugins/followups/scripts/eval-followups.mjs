@@ -78,11 +78,11 @@ export async function runEvaluation(config, { root = repoRoot, runLive = runSamp
   const manifest = {
     schemaVersion: 1, cliVersion: "1", createdAt: new Date().toISOString(), executionMode: "native-codex-session",
     dryRun: !config.live, config, corpusHash: hash(JSON.stringify(corpus)), selectedCases: cases.map((entry) => entry.id),
-    sdkVersion: JSON.parse(await readFile(path.join(root, "node_modules/@get-bb/plugin-sdk/package.json"), "utf8")).version,
+    sdkVersion: JSON.parse(await readFile(path.join(root, "node_modules/@vesnalia/plugin-sdk/package.json"), "utf8")).version,
     nodeVersion: process.version, codex: null, revisions: {}, schedule: schedulePairs(cases, config.repeats),
     host: { platform: platform(), release: release(), arch: arch(), logicalCpus: cpus().length, initialLoadAverage: loadavg() },
     nativeConfig, commandArguments: { baseline: {}, candidate: {} },
-    caveats: ["Not full BB host parity: captured plugin prompt and own normalized instructions only.", "Native skill discovery and provider context can differ even with user configuration/rules disabled.", "Read-only sandbox does not prevent tool attempts.", "Quality checks are deterministic proxies, not semantic proof.", "Observed model identity and missing usage remain null when not emitted."],
+    caveats: ["Not full VesnALIA host parity: captured plugin prompt and own normalized instructions only.", "Native skill discovery and provider context can differ even with user configuration/rules disabled.", "Read-only sandbox does not prevent tool attempts.", "Quality checks are deterministic proxies, not semantic proof.", "Observed model identity and missing usage remain null when not emitted."],
   };
   const persist = async () => {
     const results = { schemaVersion: 1, dryRun: !config.live, failed: evaluationFailed(samples), samples, summary: summarize(samples) };

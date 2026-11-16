@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { collectTurnUsage, type WriteLifetimes } from './turn-usage';
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
-type ThreadEventRow = Awaited<ReturnType<BbPluginApi['sdk']['threads']['events']['list']>>[number];
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
+type ThreadEventRow = Awaited<ReturnType<AliaPluginApi['sdk']['threads']['events']['list']>>[number];
 
 export const PRICING_URL = 'https://developers.openai.com/api/docs/pricing';
 export const CLAUDE_PRICING_URL = 'https://platform.claude.com/docs/en/about-claude/pricing';
@@ -163,7 +163,7 @@ function estimateClaudeCost(rows: ThreadEventRow[], providerId: string): Calcula
   const model = request?.type === 'client/turn/requested' ? request.data.execution.model : null;
   if (!usage.steps.length || !start) return unavailable(usage.note ?? 'Waiting for Claude Code usage.', model, usage.turnId);
   if (providerId !== 'claude-code-telemetry' && ordered.some(row => row.seq > start.seq && row.type === 'provider/modelFallback'))
-    return unavailable('Claude model changed during this turn; per-model usage is not exposed by BB.', model, usage.turnId);
+    return unavailable('Claude model changed during this turn; per-model usage is not exposed by VesnALIA.', model, usage.turnId);
   if (!model && providerId !== 'claude-code-telemetry') return unavailable('Claude model selection is unavailable.', null, usage.turnId);
   const { inputTokens: input, outputTokens: output, readTokens: read, writeTokens: write } = usage;
   if (providerId === 'claude-code-telemetry') {
@@ -197,7 +197,7 @@ function estimateClaudeCost(rows: ThreadEventRow[], providerId: string): Calcula
   const price = priceClaudeTokens(model!, input, read, output, write);
   if (!price) return unavailable('No verified Anthropic API rate for the recorded Claude model.', model, usage.turnId);
   return { ...price, model, turnId: usage.turnId, inputTokens: input, outputTokens: output, pricingDate: PRICING_DATE,
-    note: 'Claude Code turn usage. Anthropic Standard API equivalent for the selected model; BB does not expose per-model SDK cost. Not a bill or subscription-limit estimate. Input excludes cache reads/writes, which are priced separately. Excludes tools, Fast mode, regional and long-context surcharges.'
+    note: 'Claude Code turn usage. Anthropic Standard API equivalent for the selected model; VesnALIA does not expose per-model SDK cost. Not a bill or subscription-limit estimate. Input excludes cache reads/writes, which are priced separately. Excludes tools, Fast mode, regional and long-context surcharges.'
       + (write > 0 ? ' Range uses 5m–1h write rates: the aggregate TTL report cannot separate mixed write lifetimes.' : '')
       + (input + read + write > (claudeLongPromptRates[claudeModelId(model!)]?.threshold ?? Infinity)
         ? ' Range spans both prompt-length rate cards: turn totals cannot show which requests exceeded the threshold.' : '') };

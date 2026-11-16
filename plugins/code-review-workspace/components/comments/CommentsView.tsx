@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../../src/rpc-contract";
 import { sameLocation, SEVERITIES, VERDICT_LABEL, type CommentLocation } from "../../src/draft";
@@ -72,7 +72,7 @@ export function CommentsView({ shown, finish, tab, onTab, onShowThread }: {
   const api = useWorkspace();
   const { targetKey, review, sections, display } = api;
   const draft = useDraft();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const coarse = useMediaQuery("(pointer: coarse)");
   const isPr = review.kind === "pr";
   // Each draft's status line, as its card in the code says it.
@@ -285,7 +285,7 @@ export function CommentsView({ shown, finish, tab, onTab, onShowThread }: {
           </div>
         )}
         {chips.length > 0 && <Chips chips={chips} filter={filter} onFilter={setFilter} wrap={tracked} />}
-        {!isPr && <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Icon name="Lock" className="size-3.5 shrink-0" aria-hidden />Comments on a local review stay in BB.</p>}
+        {!isPr && <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Icon name="Lock" className="size-3.5 shrink-0" aria-hidden />Comments on a local review stay in VesnALIA.</p>}
         {/* On your own PR there's no feedback of yours for the agent to check. */}
         {isPr && mine && !closed && !ownPr && <CheckStrip run={feedback?.run ?? null} tally={checkTally(items)} running={!!review.verifyingSince} starting={checking} onCheck={() => void actions?.checkAgain()} />}
         {isPr && threadsError !== null && <Notice tone="danger" action={actions && <Button variant="outline" size="sm" className={cn("h-7 px-2 text-xs", TOUCH_CONTROL)} disabled={refreshing} onClick={() => void actions.refresh()}>Try again</Button>}>
@@ -307,7 +307,7 @@ export function CommentsView({ shown, finish, tab, onTab, onShowThread }: {
         <div className="flex min-h-14 shrink-0 items-center gap-2 border-t border-border py-2 pl-3 pr-2 [[data-keyboard=short]_&]:hidden">
           <p role="status" className={cn("min-w-0 flex-1 truncate text-xs", draft.status.error ? "text-destructive-text" : "text-muted-foreground")}>
             {draft.status.error ?? (draft.status.saving ? "Saving…" : draft.completed ? "Review submitted"
-              : !isPr ? `${sending.comments} comment${sending.comments === 1 ? "" : "s"} · stay in BB`
+              : !isPr ? `${sending.comments} comment${sending.comments === 1 ? "" : "s"} · stay in VesnALIA`
               : <><span className="font-medium text-foreground">{VERDICT_LABEL[sending.verdict]}</span> · {sending.comments} to send</>)}
           </p>
           <Button size="sm" className={cn("shrink-0 gap-1.5", TOUCH_CONTROL)} onClick={() => api.openFinish()}>Finish review<Icon name="ArrowRight" className="size-3.5" aria-hidden /></Button>

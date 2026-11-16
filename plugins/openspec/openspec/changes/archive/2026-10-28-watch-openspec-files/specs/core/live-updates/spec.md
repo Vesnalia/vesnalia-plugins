@@ -30,7 +30,7 @@ After missed events, reconnects, and changes to the OpenSpec structure, the plug
 - **THEN** the panel first shows that the directory is missing and then shows the new set of changes
 
 ### Requirement: Thread Updates
-Changes to linked thread states SHALL be reflected through bb events without filesystem scanning.
+Changes to linked thread states SHALL be reflected through VesnALIA events without filesystem scanning.
 
 #### Scenario: Agent Finishes a Turn
 - **WHEN** a linked thread becomes idle

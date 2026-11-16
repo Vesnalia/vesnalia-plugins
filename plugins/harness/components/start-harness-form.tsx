@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 import type { FormEvent } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { PHASES, PHASE_COPY, type ExecutionMode, type PhaseSpec } from "../lib/harness";
 import {

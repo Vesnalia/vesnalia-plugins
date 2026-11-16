@@ -124,7 +124,7 @@ export class MkvWriter {
       unsigned(IDS.docTypeVersion, 4),
       unsigned(IDS.docTypeReadVersion, 2),
     ]);
-    const info = master(IDS.info, [unsigned(IDS.timecodeScale, 1_000_000), textElement(IDS.muxingApp, "bb-box-device"), textElement(IDS.writingApp, "bb-box-device")]);
+    const info = master(IDS.info, [unsigned(IDS.timecodeScale, 1_000_000), textElement(IDS.muxingApp, "alia-box-device"), textElement(IDS.writingApp, "alia-box-device")]);
     const track = master(IDS.trackEntry, [
       unsigned(IDS.trackNumber, VIDEO_TRACK),
       unsigned(IDS.trackUid, 1),

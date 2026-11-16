@@ -1,21 +1,21 @@
-// bb-plugin-diff-plus — backend entry.
+// alia-plugin-diff-plus — backend entry.
 //
-// Reads the changed files for the tree from BB's Git plugin (`bb--git`), and
+// Reads the changed files for the tree from VesnALIA's Git plugin (`alia--git`), and
 // which of them are marked Viewed. The calls are made here rather than in the
 // page because they need a zod schema for the answer, and zod is not shared
 // with the page: it would be bundled into app.js.
 //
-// It also backs "recent commits" in the scope picker. BB's Diff tab lists only
+// It also backs "recent commits" in the scope picker. VesnALIA's Diff tab lists only
 // the commits since the environment's merge base, and drops a picked commit that
 // is not among them, so on a branch compared with itself there are none. The
 // page lists the last N commits itself; picking one moves the merge base to the
-// commit N back (a sha passes bb--git's branch-name check) so BB lists and shows
+// commit N back (a sha passes alia--git's branch-name check) so VesnALIA lists and shows
 // it, and picking any other scope puts the base back. The base it replaced is
 // kept in kv until then.
 //
 // Everything else is in the page (app.tsx).
 import { execFile } from "node:child_process";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const target = z.discriminatedUnion("type", [
@@ -25,7 +25,7 @@ const target = z.discriminatedUnion("type", [
   z.object({ type: z.literal("commit"), sha: z.string().min(1) }),
 ]);
 
-/** The part of `bb--git`'s `files` answer the tree reads; zod drops the rest. */
+/** The part of `alia--git`'s `files` answer the tree reads; zod drops the rest. */
 const files = z.discriminatedUnion("outcome", [
   z.object({
     outcome: z.literal("available"),
@@ -47,7 +47,7 @@ const files = z.discriminatedUnion("outcome", [
   z.object({ outcome: z.literal("unavailable"), failure: z.object({ message: z.string() }) }),
 ]);
 
-/** `bb--git`'s `viewed` answer: the files marked Viewed, at the revision they were marked at. */
+/** `alia--git`'s `viewed` answer: the files marked Viewed, at the revision they were marked at. */
 const viewed = z.object({ files: z.array(z.object({ path: z.string(), revision: z.string() })) });
 
 const commits = z.discriminatedUnion("ok", [
@@ -66,7 +66,7 @@ export const rpcContract = defineRpcContract({
   viewed: { input: z.object({ environmentId: z.string().min(1), target }), output: viewed },
   /** The newest `count` commits of HEAD that have a parent, newest first (the root commit is left out). */
   recent_commits: { input: z.object({ environmentId: z.string().min(1), count: z.number().int().min(1).max(50) }), output: commits },
-  /** Moves the merge base back `count` commits so BB lists them; `moved` true while a record stands for it. */
+  /** Moves the merge base back `count` commits so VesnALIA lists them; `moved` true while a record stands for it. */
   show_recent: { input: z.object({ environmentId: z.string().min(1), count: z.number().int().min(1).max(50) }), output: moved },
   /** Puts back the merge base `show_recent` replaced; `moved` false when there was nothing to put back. */
   restore_base: {
@@ -108,11 +108,11 @@ const log = (path: string, count: number) =>
 
 const setMergeBaseResult = z.object({ ok: z.boolean() });
 
-export default async function plugin(bb: BbPluginApi) {
-  const { kv } = bb.storage;
+export default async function plugin(alia: AliaPluginApi) {
+  const { kv } = alia.storage;
   const setMergeBase = async (environmentId: string, mergeBaseBranch: string | null) => {
-    const result = await bb.sdk.plugins.callRpc({
-      pluginId: "bb--git",
+    const result = await alia.sdk.plugins.callRpc({
+      pluginId: "alia--git",
       method: "setMergeBase",
       input: { environmentId, mergeBaseBranch },
       outputSchema: setMergeBaseResult,
@@ -133,9 +133,9 @@ export default async function plugin(bb: BbPluginApi) {
   const current = async (environmentId: string) => {
     const record = await kv.get<Recent>(recentKey(environmentId));
     if (!record) return null;
-    const environment = await bb.sdk.environments.get({ environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId });
     if (environment.mergeBaseBranch === record.sha) return record;
-    bb.log.info(`base record dropped ${environmentId}: base is ${environment.mergeBaseBranch ?? "default"}, not ${record.sha} (changed elsewhere)`);
+    alia.log.info(`base record dropped ${environmentId}: base is ${environment.mergeBaseBranch ?? "default"}, not ${record.sha} (changed elsewhere)`);
     await kv.delete(recentKey(environmentId));
     return null;
   };
@@ -145,25 +145,25 @@ export default async function plugin(bb: BbPluginApi) {
     if (!record) return false;
     await setMergeBase(environmentId, record.previous);
     await kv.delete(recentKey(environmentId));
-    bb.log.info(`base restored ${environmentId}: ${record.sha} -> ${record.previous ?? "default"} (${reason})`);
+    alia.log.info(`base restored ${environmentId}: ${record.sha} -> ${record.previous ?? "default"} (${reason})`);
     return true;
   };
   const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
   const pathOf = async (environmentId: string) => {
-    const environment = await bb.sdk.environments.get({ environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId });
     if (!environment.path) throw new Error("This environment has no folder.");
     return { environment, path: environment.path };
   };
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     files: (input) =>
-      bb.sdk.plugins.callRpc({
-        pluginId: "bb--git",
+      alia.sdk.plugins.callRpc({
+        pluginId: "alia--git",
         method: "files",
         input: { ...input, ignoreWhitespace: false },
         outputSchema: files,
       }),
-    viewed: (input) => bb.sdk.plugins.callRpc({ pluginId: "bb--git", method: "viewed", input, outputSchema: viewed }),
+    viewed: (input) => alia.sdk.plugins.callRpc({ pluginId: "alia--git", method: "viewed", input, outputSchema: viewed }),
     recent_commits: async ({ environmentId, count }) => {
       try {
         const { path } = await pathOf(environmentId);
@@ -195,10 +195,10 @@ export default async function plugin(bb: BbPluginApi) {
             await (record ? kv.set(recentKey(environmentId), record) : kv.delete(recentKey(environmentId)));
             throw cause;
           }
-          bb.log.info(`base moved ${environmentId}: ${environment.mergeBaseBranch ?? "default"} -> ${sha} (last ${count})`);
+          alia.log.info(`base moved ${environmentId}: ${environment.mergeBaseBranch ?? "default"} -> ${sha} (last ${count})`);
           return { ok: true as const, moved: true };
         } catch (cause) {
-          bb.log.warn(`showing recent commits failed for ${environmentId}: ${message(cause)}`);
+          alia.log.warn(`showing recent commits failed for ${environmentId}: ${message(cause)}`);
           return { ok: false as const, message: message(cause) };
         }
       }),
@@ -207,7 +207,7 @@ export default async function plugin(bb: BbPluginApi) {
         try {
           return { ok: true as const, moved: await restore(environmentId, reason) };
         } catch (cause) {
-          bb.log.warn(`restoring the merge base failed for ${environmentId}: ${message(cause)}`);
+          alia.log.warn(`restoring the merge base failed for ${environmentId}: ${message(cause)}`);
           return { ok: false as const, message: message(cause) };
         }
       }),
@@ -221,17 +221,17 @@ export default async function plugin(bb: BbPluginApi) {
       for (const key of await kv.list(prefix)) {
         const environmentId = key.slice(prefix.length);
         await serial(environmentId, () => restore(environmentId, reason)).catch((cause) =>
-          bb.log.warn(`restoring the merge base failed for ${environmentId}: ${message(cause)}`),
+          alia.log.warn(`restoring the merge base failed for ${environmentId}: ${message(cause)}`),
         );
       }
     } catch (cause) {
-      bb.log.warn(`restoring the merge bases (${reason}) failed: ${message(cause)}`);
+      alia.log.warn(`restoring the merge bases (${reason}) failed: ${message(cause)}`);
     }
   };
-  bb.log.info("loaded");
+  alia.log.info("loaded");
   void restoreAll("startup");
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     await restoreAll("dispose");
-    bb.log.info("disposed");
+    alia.log.info("disposed");
   });
 }

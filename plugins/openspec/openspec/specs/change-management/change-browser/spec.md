@@ -1,7 +1,7 @@
 # change-management/change-browser Specification
 
 ## Purpose
-Provides bb users with a view of OpenSpec changes and their artifacts in the selected project environment without duplicating repository content.
+Provides VesnALIA users with a view of OpenSpec changes and their artifacts in the selected project environment without duplicating repository content.
 
 ## Requirements
 

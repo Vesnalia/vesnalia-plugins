@@ -85,7 +85,7 @@ export function useRealtimeConnectionState() {
 
 export const OPEN_THREAD = "prototype-open-thread";
 
-export function useBbNavigate() {
+export function useAliaNavigate() {
   return {
     toThread(threadId: string) {
       window.dispatchEvent(new CustomEvent(OPEN_THREAD, { detail: threadId }));

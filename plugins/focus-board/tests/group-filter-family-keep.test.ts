@@ -9,7 +9,7 @@
 // cross-group child outright (the project column-gate policy mirrored), so
 // the parent card rendered with holes in it.
 import { describe, expect, it } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { FilterState, GroupingContext } from "../components/grouping";
 import { assembleBoard, buildFamilyIndex, filterFamilies } from "../components/nesting";
 import { thread } from "./thread-fixture";

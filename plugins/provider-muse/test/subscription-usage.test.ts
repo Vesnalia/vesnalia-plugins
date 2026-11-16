@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
-import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@get-bb/plugin-sdk/provider-bridge/testing";
+import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import {
   createMuseUsageStore,
   museUsageWindows,
@@ -73,7 +73,7 @@ describe("museUsageWindows", () => {
 
 describe("createMuseUsageStore", () => {
   it("keeps the newest reading and survives a restart through its file", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "bb-muse-usage-"));
+    const dir = mkdtempSync(join(tmpdir(), "alia-muse-usage-"));
     try {
       const path = join(dir, "nested", "subscription-usage.json");
       const store = createMuseUsageStore(() => path);
@@ -93,7 +93,7 @@ describe("createMuseUsageStore", () => {
   });
 
   it("sees a reading another worker saved after it last looked", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "bb-muse-usage-"));
+    const dir = mkdtempSync(join(tmpdir(), "alia-muse-usage-"));
     try {
       const path = join(dir, "subscription-usage.json");
       const answering = createMuseUsageStore(() => path);
@@ -127,7 +127,7 @@ describe("createMuseUsageStore", () => {
 describe("getMuseProviderUsage", () => {
   const env = {
     ...process.env,
-    BB_MUSE_EXECUTABLE: join(fixtureDir, "fake-muse-serve.mjs"),
+    ALIA_MUSE_EXECUTABLE: join(fixtureDir, "fake-muse-serve.mjs"),
     META_API_KEY: "usage-key",
   };
 
@@ -153,12 +153,12 @@ describe("getMuseProviderUsage", () => {
   });
 });
 
-const previousExecutable = process.env.BB_MUSE_EXECUTABLE;
+const previousExecutable = process.env.ALIA_MUSE_EXECUTABLE;
 const previousApiKey = process.env.META_API_KEY;
 
 afterAll(() => {
   for (const [name, value] of [
-    ["BB_MUSE_EXECUTABLE", previousExecutable],
+    ["ALIA_MUSE_EXECUTABLE", previousExecutable],
     ["META_API_KEY", previousApiKey],
   ] as const) {
     if (value === undefined) delete process.env[name];
@@ -167,11 +167,11 @@ afterAll(() => {
 });
 
 it("answers provider usage with the meters a thread's host pushed", async () => {
-  process.env.BB_MUSE_EXECUTABLE = join(fixtureDir, "fake-muse-serve.mjs");
+  process.env.ALIA_MUSE_EXECUTABLE = join(fixtureDir, "fake-muse-serve.mjs");
   process.env.META_API_KEY = "usage-key";
   const { handleLine } = await import("../src/provider-bridge.js");
   const harness = createBridgeJsonRpcTestHarness(handleLine);
-  const workspaceDir = mkdtempSync(join(tmpdir(), "bb-muse-usage-live-"));
+  const workspaceDir = mkdtempSync(join(tmpdir(), "alia-muse-usage-live-"));
   const options = {
     model: "muse-spark-1.3",
     permissionMode: "auto",
@@ -182,7 +182,7 @@ it("answers provider usage with the meters a thread's host pushed", async () => 
   try {
     harness.sendRequest(1, "initialize", {
       protocolVersion: 1,
-      client: { name: "bb", version: "1" },
+      client: { name: "alia", version: "1" },
     });
     await harness.waitForResponse(1);
 

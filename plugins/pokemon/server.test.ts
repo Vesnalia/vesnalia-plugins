@@ -1,4 +1,4 @@
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import { CATCH_CHANNEL, parseCatchEvent } from "./lib/catch-event";
 import { spriteUrlFor } from "./lib/sprites";
@@ -44,13 +44,13 @@ function fakePokeApi(online: boolean) {
 
 async function setup({ online = true }: { online?: boolean } = {}) {
   const api = fakePokeApi(online);
-  const { bb, harness } = createFakePluginHost({ pluginId: "pokemon" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "pokemon" });
   // Always pick the last species in the list.
   await createPokemonPlugin({
     fetch: api.fetch,
     randomIndex: (maxExclusive) => maxExclusive - 1,
     now: () => 1_700_000_000_000,
-  })(bb);
+  })(alia);
 
   const archive = (overrides: Parameters<typeof makeThreadResponse>[0] = {}) =>
     harness.behavior.emitThreadEvent("thread.archived", {

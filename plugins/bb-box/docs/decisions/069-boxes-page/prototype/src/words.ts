@@ -57,11 +57,11 @@ export function actorWords(actor: Actor, threads: readonly FakeThread[]): string
     case "agent":
       return `by the agent in ${threads.find((thread) => thread.id === actor.threadId)?.title ?? "its thread"}`;
     case "command":
-      return "by a bb box command";
-    case "bb-box":
-      return `by bb-box: ${actor.why}`;
+      return "by a VesnALIA box command";
+    case "alia-box":
+      return `by alia-box: ${actor.why}`;
     case "outside":
-      return "outside bb-box";
+      return "outside alia-box";
   }
 }
 
@@ -77,7 +77,7 @@ export function attentionItems(box: FakeBox, now: number): StatusItem[] {
   if (busy) items.push(busy);
   const control = controlWord(view, MY_VIEWERS);
   if (control?.tone === "fg") items.push(control);
-  if (view.state === "ready" && view.enrol.state === "failed") items.push({ text: "Could not join BB", tone: "warn" });
+  if (view.state === "ready" && view.enrol.state === "failed") items.push({ text: "Could not join VesnALIA", tone: "warn" });
   return items;
 }
 
@@ -112,9 +112,9 @@ export function rowLine(box: FakeBox, now: number): Line {
     case "failed":
       return { tone: "bad", items: [{ text: "Failed", tone: "danger" }, ...attention, { text: `${shortSpan(now - view.createdAt)} ago` }] };
     case "gone":
-      return { tone: "bad", items: [{ text: "Gone" }, { text: "deleted outside bb-box" }] };
+      return { tone: "bad", items: [{ text: "Gone" }, { text: "deleted outside alia-box" }] };
     case "ready": {
-      const join: StatusItem[] = view.enrol.state === "enrolling" ? [{ text: "Joining BB…" }] : [];
+      const join: StatusItem[] = view.enrol.state === "enrolling" ? [{ text: "Joining VesnALIA…" }] : [];
       const unknown = box.unreachable || box.backendGone;
       return { tone: tone("ok"), items: [{ text: unknown ? "Last seen ready" : "Ready" }, ...attention, ...join, { text: unknown ? `${shortSpan(now - (box.unreachable?.since ?? box.backendGone!.since))} ago` : `up ${shortSpan(now - upSince(box))}` }, ...sized] };
     }
@@ -147,7 +147,7 @@ export function headline(box: FakeBox, now: number, threads: readonly FakeThread
     case "failed":
       return { tone: "bad", words: "Failed", detail: `${span(now - view.createdAt)} ago` };
     case "gone":
-      return { tone: "bad", words: "Gone", detail: "deleted outside bb-box" };
+      return { tone: "bad", words: "Gone", detail: "deleted outside alia-box" };
     case "ready":
       if (box.unreachable) return { tone: "warn", words: "Not answering", detail: `last seen ready ${span(now - box.unreachable.since)} ago` };
       if (box.backendGone) return { tone: "warn", words: "Not checked", detail: `last seen ready ${span(now - box.backendGone.since)} ago` };
@@ -165,10 +165,10 @@ export const STEP_NAMES: Readonly<Record<string, string>> = {
   start: "Start",
   network: "Network",
   ssh: "SSH",
-  enrol: "Join BB",
+  enrol: "Join VesnALIA",
   spare: "Claimed a spare",
   spareSwitch: "Switch its device",
-  spareReconnect: "BB machine back",
+  spareReconnect: "VesnALIA machine back",
   template: "Template",
 };
 

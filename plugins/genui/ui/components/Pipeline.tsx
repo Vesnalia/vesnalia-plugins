@@ -5,7 +5,7 @@
 // marked. Links go out to the CI; re-running or investigating is a message
 // the user sends, never an API call from here.
 import { useContext, useId, useMemo, useState, type ReactNode } from "react";
-import { UrlLink } from "@get-bb/plugin-sdk/app";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import {

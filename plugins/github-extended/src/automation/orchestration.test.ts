@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { EMPTY_AGENT_OUTPUT, runAgentThread } from "./orchestration";
 
-describe("BB agent orchestration", () => {
+describe("VesnALIA agent orchestration", () => {
   it("spawns, waits for idle, and returns the thread output", async () => {
     const calls: string[] = [];
     const adapter = {

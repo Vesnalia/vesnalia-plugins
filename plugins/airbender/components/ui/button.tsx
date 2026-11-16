@@ -42,7 +42,7 @@ export interface ButtonProps
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   /**
-   * Tooltip text. Added for the Beads tab (bead-bb-b5o): when set, the
+   * Tooltip text. Added for the Beads tab (bead-alia-b5o): when set, the
    * button is wrapped in a Tip that shows this text on hover and on focus.
    */
   tip?: string;

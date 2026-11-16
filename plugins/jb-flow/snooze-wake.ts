@@ -1,4 +1,4 @@
-// Waking snoozed threads, apart from bb so it can be tested. A due thread comes
+// Waking snoozed threads, apart from VesnALIA so it can be tested. A due thread comes
 // back first, so a send that fails can't leave it hidden, and its note is then
 // tried until it's sent. `wakeStarted` is what tells a thread that left Snoozed
 // because of this wake from one you moved by hand, whose snooze no longer applies.

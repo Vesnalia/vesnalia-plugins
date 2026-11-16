@@ -2,7 +2,7 @@
 set -u
 
 work=${SHARED_WORK:-$HOME/shared}
-list=${SLIM_LIST:-/usr/local/share/bb-box/ios/ios-27.0-24A434.txt}
+list=${SLIM_LIST:-/usr/local/share/alia-box/ios/ios-27.0-24A434.txt}
 template_name=${TEMPLATE:-iPhone 18 Pro}
 url=${PAGE_URL:-http://127.0.0.1:8765/page.html?busy}
 mkdir -p "$work/sock" "$work/log"

@@ -1,6 +1,6 @@
 import "./check-test-machine.mjs";
 // The plugin in SDK's fake plugin host, with the fake backend: the agent
-// tools, enrolment as a BB machine, thread events, the panel's RPC, the CLI
+// tools, enrolment as a VesnALIA machine, thread events, the panel's RPC, the CLI
 // and settings.
 
 import assert from "node:assert/strict";
@@ -14,8 +14,8 @@ import { connect, type AddressInfo } from "node:net";
 import { Duplex } from "node:stream";
 import { dirname, isAbsolute, join, relative } from "node:path";
 import { test, type TestContext } from "node:test";
-import type { PluginAgentToolResult, PluginSettingValue } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, makeHostResponse, makeMessageDispatchHookContext, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { PluginAgentToolResult, PluginSettingValue } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, makeHostResponse, makeMessageDispatchHookContext, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { DRIVERS } from "../src/backends/index.ts";
 import { AudienceError, BackendError, DEVICE_DISPLAY, type BackendDriver, type BoxKind } from "../src/backends/types.ts";
 import { DEVICE_SERVER_VERSION, PERSON_HAS_CONTROL_WORDS, stillsRequestText, testDeviceOffer, type OfferedDevices } from "../src/core/device.ts";
@@ -39,7 +39,7 @@ import { FILES_FROM_PANEL } from "../src/plugin/box-fs.ts";
 import { setup, type SetupOptions } from "../src/plugin/setup.ts";
 import { heldWords } from "../src/plugin/turn-hold.ts";
 import { boxPath, ownProcessHint, workspacePath } from "../src/plugin/tools.ts";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { hostEntry } from "../src/host/entry.ts";
 import { PAUSED, RETURNED } from "../src/core/computer.ts";
 import { waylandPointerScript } from "../src/backends/wayvnc.ts";
@@ -57,13 +57,13 @@ const PROJECT = "prj_one";
 type Host = ReturnType<typeof makeHostResponse>;
 type Thread = ReturnType<typeof makeThreadResponse>;
 
-/** BB's file API refuses a relative path. */
+/** VesnALIA's file API refuses a relative path. */
 function absolute(path: string): string {
   if (!isAbsolute(path)) throw Object.assign(new Error("HTTP 400: Path must be absolute"), { status: 400 });
   return path;
 }
 
-/** As BB's file API reads: a path outside the root it is given is refused (#482). */
+/** As VesnALIA's file API reads: a path outside the root it is given is refused (#482). */
 function withinRoot(path: string, rootPath: string | undefined): void {
   if (rootPath && relative(rootPath, path).startsWith("..")) throw Object.assign(new Error(`HTTP 400: Path "${path}" escapes read root`), { status: 400 });
 }
@@ -72,7 +72,7 @@ function notFound(what: string): Error {
   return Object.assign(new Error(`${what} not found`), { status: 404, code: "not_found" });
 }
 
-/** What BB's SDK throws for a thread that does not exist or was deleted. */
+/** What VesnALIA's SDK throws for a thread that does not exist or was deleted. */
 function threadNotFound(): Error {
   return Object.assign(new Error("HTTP 404: Thread not found"), { status: 404, code: "thread_not_found" });
 }
@@ -82,8 +82,8 @@ function variables(names: readonly string[]) {
 }
 
 /**
- * `daemonParent` stands in for BB's daemon in the boxes. The fake boxes run
- * on this machine as its user, so it must never match BB's real daemon here.
+ * `daemonParent` stands in for VesnALIA's daemon in the boxes. The fake boxes run
+ * on this machine as its user, so it must never match VesnALIA's real daemon here.
  */
 async function start(
   settings: Record<string, PluginSettingValue> = { "fake-enabled": true },
@@ -92,7 +92,7 @@ async function start(
   const root = tempDir("plugin");
   const workspace = join(root, "workspace");
   mkdirSync(workspace, { recursive: true });
-  // The thread's storage folder, $BB_THREAD_STORAGE (#482).
+  // The thread's storage folder, $ALIA_THREAD_STORAGE (#482).
   const storage = join(root, "thread-storage", THREAD);
   mkdirSync(storage, { recursive: true });
   const threads = new Map<string, Thread>([[THREAD, makeThreadResponse({ id: THREAD, projectId: PROJECT, environmentId: "env_one", providerId: "claude-code" })]]);
@@ -117,23 +117,23 @@ async function start(
     threads,
     hosts,
     backend: null as FakeBackend | null,
-    /** The context BB Box gave each fake backend it made. */
+    /** The context VesnALIA Box gave each fake backend it made. */
     contexts: [] as BackendContext[],
-    /** Keys BB's bootstrap ran with, in order. */
+    /** Keys VesnALIA's bootstrap ran with, in order. */
     bootstraps: [] as string[],
-    /** The script BB's installer runs in the box. */
-    installer: "echo installed > bb-installed",
-    /** False: BB gives no Windows enrolment command (#539). */
+    /** The script VesnALIA's installer runs in the box. */
+    installer: "echo installed > alia-installed",
+    /** False: VesnALIA gives no Windows enrolment command (#539). */
     windowsEnrolment: true,
     /** A Windows machine connects once its enrolment command is asked for, as its installer would make it (#539). */
     windowsConnects: false,
-    /** BB's machine calls never answer, as for a plugin that is stopping. */
+    /** VesnALIA's machine calls never answer, as for a plugin that is stopping. */
     silent: false,
-    /** How many more machine creates BB refuses, not knowing BB Box's provider, as while the plugin restarts. */
+    /** How many more machine creates VesnALIA refuses, not knowing VesnALIA Box's provider, as while the plugin restarts. */
     unknownProvider: 0,
-    /** BB's built-in Git: "logged in" when it gives machines GH_TOKEN. */
+    /** VesnALIA's built-in Git: "logged in" when it gives machines GH_TOKEN. */
     git: "logged in" as "logged in" | "not logged in" | "disabled" | "overridden",
-    /** The machine variables a user set in BB's settings. */
+    /** The machine variables a user set in VesnALIA's settings. */
     machineVariables: ["MACHINE_VAR"],
     /** The variables a user set for the thread's project. */
     projectVariables: ["PROJECT_VAR"],
@@ -143,7 +143,7 @@ async function start(
     threadsError: null as Error | null,
     /** Makes threads.get fail for one thread. */
     threadErrors: new Map<string, Error>(),
-    /** The agent CLIs BB finds on every machine, by provider; null: BB cannot say (#561). */
+    /** The agent CLIs VesnALIA finds on every machine, by provider; null: VesnALIA cannot say (#561). */
     agentClis: {
       "claude-code": { displayName: "Claude Code", executableName: "claude", installed: true },
       codex: { displayName: "Codex", executableName: "codex", installed: true },
@@ -153,39 +153,39 @@ async function start(
     parentModel: "claude-opus-5-5" as string | null,
     /** The models each provider's CLI lists on a machine. */
     models: { "claude-code": ["claude-opus-5-5", "claude-sonnet-5-5"], codex: ["gpt-5.5"] } as Record<string, string[]>,
-    /** Calls for the names of BB's machine variables: "system", or the project's ID. */
+    /** Calls for the names of VesnALIA's machine variables: "system", or the project's ID. */
     names: [] as string[],
-    /** Threads BB Box asked BB to start. */
+    /** Threads VesnALIA Box asked VesnALIA to start. */
     spawned: [] as unknown[],
     /** The machine the thread's workspace is on. */
     workspaceHost: "host-workspace",
     /**
-     * Machines BB owns, as for "New box": deleting one runs BB's removal, which
+     * Machines VesnALIA owns, as for "New box": deleting one runs VesnALIA's removal, which
      * calls the provider's remove and waits for it, with no time limit.
      */
-    bbRemovals: new Map<string, () => Promise<unknown>>(),
-    /** The resource BB keeps for each machine a provider made, by host ID. */
+    aliaRemovals: new Map<string, () => Promise<unknown>>(),
+    /** The resource VesnALIA keeps for each machine a provider made, by host ID. */
     resources: new Map<string, { boxId: string }>(),
-    /** Changes BB Box made to threads. */
+    /** Changes VesnALIA Box made to threads. */
     updated: [] as unknown[],
-    /** Threads that run on each BB machine, by host ID. */
+    /** Threads that run on each VesnALIA machine, by host ID. */
     onHost: new Map<string, { id: string; title: string | null; status: string; hasPendingInteraction: boolean; archivedAt: number | null; deletedAt: number | null }[]>(),
-    /** The project's sources, by machine, as BB keeps them. */
+    /** The project's sources, by machine, as VesnALIA keeps them. */
     sources: [] as { hostId: string; type: string }[],
-    /** The thread's project's kind: BB's personal project has no repository. */
+    /** The thread's project's kind: VesnALIA's personal project has no repository. */
     projectKind: "standard" as "standard" | "personal",
-    /** How long after bootstrap returns BB shows a machine it has connected again, or null for never, nor a new one. */
+    /** How long after bootstrap returns VesnALIA shows a machine it has connected again, or null for never, nor a new one. */
     connectAfterMs: 0 as number | null,
     current: null as { inspection: { registrations: { machineProviders: Map<string, unknown> } } } | null,
-    /** What BB's bootstrap throws before it runs anything, as for bb connect without a sign-in, or null. */
+    /** What VesnALIA's bootstrap throws before it runs anything, as for VesnALIA connect without a sign-in, or null. */
     bootstrapError: null as string | null,
     /** How many threads run on each machine, by host ID. */
     hostThreads: new Map<string, number>(),
-    /** BB's terminal sessions, by ID. */
+    /** VesnALIA's terminal sessions, by ID. */
     terminals: new Map<string, { id: string; hostId: string; title: string; command: string; status: "starting" | "running" | "exited"; createdAt: number; threadId?: string; environmentId?: string }>(),
-    /** Calls of BB Box's host entry, by method, with the machine and input. */
+    /** Calls of VesnALIA Box's host entry, by method, with the machine and input. */
     hostCalls: [] as { method: string; hostId: string; input: unknown }[],
-    /** Answers a call of BB Box's host entry, as its worker on the machine would. */
+    /** Answers a call of VesnALIA Box's host entry, as its worker on the machine would. */
     hostEntry: null as ((method: string, hostId: string, input: unknown) => unknown) | null,
   };
   const terminalStarted = new Map<string, () => boolean>();
@@ -195,13 +195,13 @@ async function start(
     if (session.status === "starting" && (terminalStarted.get(id)?.() ?? true)) session.status = "running";
     return { ...session };
   };
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     experimental_callHostRpc: ({ method, hostId, input }) => {
       world.hostCalls.push({ method, hostId, input });
       return world.hostEntry ? world.hostEntry(method, hostId, input) : { started: false, pid: null };
     },
-    pluginId: "bb-box",
-    agentSkillIds: ["bb-box", "bb-box-setup"],
+    pluginId: "alia-box",
+    agentSkillIds: ["alia-box", "alia-box-setup"],
     appUrl: options.appUrl ?? null,
     settings,
     sdk: {
@@ -231,7 +231,7 @@ async function start(
         get: async () => ({ id: "env_one", hostId: world.workspaceHost, path: workspace }) as never,
       },
       terminals: {
-        // As BB's: each scope lists only its own sessions, a machine's those of no thread or environment.
+        // As VesnALIA's: each scope lists only its own sessions, a machine's those of no thread or environment.
         list: async ({ scope }: { scope: { kind: string; hostId?: string; threadId?: string; environmentId?: string } }) => ({
           sessions: [...world.terminals.values()]
             .filter((session) =>
@@ -289,9 +289,9 @@ async function start(
         // A machine's enrolment and reconnect commands, with their Windows forms (#539).
         experimental_getEnrollmentCommand: async ({ hostId }: { hostId: string }) => {
           world.events.push(`enrolment command ${hostId}`);
-          // As BB's installer would once it runs: the machine connects a moment later, named after the computer.
+          // As VesnALIA's installer would once it runs: the machine connects a moment later, named after the computer.
           const host = hosts.get(hostId);
-          if (host && world.windowsConnects) setTimeout(() => hosts.set(hostId, { ...hosts.get(hostId)!, name: "bb-box-win", status: "connected", lifecycle: { ...host.lifecycle, phase: "active" } }), 50);
+          if (host && world.windowsConnects) setTimeout(() => hosts.set(hostId, { ...hosts.get(hostId)!, name: "alia-box-win", status: "connected", lifecycle: { ...host.lifecycle, phase: "active" } }), 50);
           return world.windowsEnrolment ? { command: `sh enrol ${hostId}`, windowsCommand: `& enrol ${hostId}`, expiresAt: Date.now() + 60_000 } : null;
         },
         experimental_reconnect: async ({ hostId }: { hostId: string }) => {
@@ -301,12 +301,12 @@ async function start(
           if (host) setTimeout(() => hosts.set(hostId, { ...hosts.get(hostId)!, status: "connected" }), 50);
           return { command: `sh start ${hostId}`, windowsCommand: `& start ${hostId}`, hostId, expiresAt: Date.now() + 60_000 };
         },
-        // Like BB: records the machine, then calls the provider's create in
-        // the background. A key whose machine BB still has gets it back.
+        // Like VesnALIA: records the machine, then calls the provider's create in
+        // the background. A key whose machine VesnALIA still has gets it back.
         experimental_create: async ({ key, inputs, machineProviderId }: { key: string; inputs: { boxId: string }; machineProviderId: string }) => {
           const id = nextMachineId(key);
           world.events.push(machineProviderId === "manual" ? `create manual ${id}` : `create ${id}`);
-          // BB's manual provider: the machine waits for its enrolment command to run (#539).
+          // VesnALIA's manual provider: the machine waits for its enrolment command to run (#539).
           if (machineProviderId === "manual") {
             const host = makeHostResponse({ id, status: "disconnected", machineProviderId: "manual" });
             hosts.set(id, { ...host, lifecycle: { ...host.lifecycle, phase: "creating" } });
@@ -315,15 +315,15 @@ async function start(
           }
           if (world.unknownProvider > 0) {
             world.unknownProvider--;
-            throw Object.assign(new Error('HTTP 400: Unknown machine provider "bb-box"'), { status: 400 });
+            throw Object.assign(new Error('HTTP 400: Unknown machine provider "alia-box"'), { status: 400 });
           }
           const existing = hosts.get(id);
           if (existing && existing.lifecycle.phase !== "destroyed") return existing;
-          const host = makeHostResponse({ id, status: "disconnected", machineProviderId: "bb-box" });
+          const host = makeHostResponse({ id, status: "disconnected", machineProviderId: "alia-box" });
           hosts.set(id, { ...host, lifecycle: { ...host.lifecycle, phase: "creating" } });
           machineMade(key, id);
           void (async () => {
-            const provider = ((world.current ?? harness) as typeof harness).inspection.registrations.machineProviders.get("bb-box")!;
+            const provider = ((world.current ?? harness) as typeof harness).inspection.registrations.machineProviders.get("alia-box")!;
             const result = await provider.create({
               inputs,
               key,
@@ -345,7 +345,7 @@ async function start(
         },
         list: async () => [...hosts.values()],
         get: async ({ hostId }: { hostId: string }) => {
-          // As BB may be for a plugin that is stopping: no answer at all.
+          // As VesnALIA may be for a plugin that is stopping: no answer at all.
           if (world.silent) await new Promise(() => {});
           const host = hosts.get(hostId);
           if (!host) throw notFound("Host");
@@ -359,7 +359,7 @@ async function start(
         },
         delete: async ({ hostId }: { hostId: string }) => {
           world.events.push(`delete ${hostId}`);
-          const removal = world.bbRemovals.get(hostId);
+          const removal = world.aliaRemovals.get(hostId);
           if (removal) {
             await removal();
             return {} as never;
@@ -371,7 +371,7 @@ async function start(
       files: {
         read: async ({ path, rootPath }: { path: string; rootPath?: string }) => {
           withinRoot(path, rootPath);
-          // As BB's file API: a file over 25 MB is refused whole (#485).
+          // As VesnALIA's file API: a file over 25 MB is refused whole (#485).
           const size = statSync(absolute(path)).size;
           if (size > 25 * 1000 * 1000) throw Object.assign(new Error(`HTTP 413: File size ${size} bytes exceeds the 25 MB limit`), { status: 413 });
           const data = readFileSync(absolute(path));
@@ -386,15 +386,15 @@ async function start(
       },
     } as never,
     machineResource: async (hostId) => world.resources.get(hostId) ?? null,
-    // BB's installer, in brief: it runs a command in the box through the
-    // executor, and a machine BB already has connects again.
+    // VesnALIA's installer, in brief: it runs a command in the box through the
+    // executor, and a machine VesnALIA already has connects again.
     machineBootstrap: {
       async bootstrap({ key, executor, signal }) {
         world.bootstraps.push(key);
         if (world.bootstrapError) throw new Error(world.bootstrapError);
         let output = "";
         const { exitCode } = await executor.exec({ command: ["sh", "-c", world.installer], timeoutMs: 10_000, signal, stdin: "", onOutput: (text) => (output += text) });
-        // As BB reports it, with the installer's output.
+        // As VesnALIA reports it, with the installer's output.
         if (exitCode !== 0) throw new Error(`Machine bootstrap command failed:\n\n${output}The installer exited with ${exitCode}.`);
         const machine = machineOfKey.get(key) ?? `host-${key}`;
         const connect = () => {
@@ -424,24 +424,24 @@ async function start(
     runWaitMs: options.runWaitMs,
     ...(options.liveChecks !== undefined ? { liveChecks: options.liveChecks } : {}),
   };
-  await bb.storage.kv.set(INSTALL_ID_KEY, newInstallId());
-  const app = await setup(bb, setupOptions);
+  await alia.storage.kv.set(INSTALL_ID_KEY, newInstallId());
+  const app = await setup(alia, setupOptions);
   const tool = (name: string, input: unknown, threadId = THREAD) => harness.behavior.callAgentTool(name, input, { threadId, projectId: PROJECT });
-  return { bb, harness, app, world, tool, setupOptions };
+  return { alia, harness, app, world, tool, setupOptions };
 }
 
 function text(result: PluginAgentToolResult): string {
   return typeof result === "string" ? result : result.content.map((part) => ("text" in part ? part.text : "")).join("");
 }
 
-test("box_image_set and bb box image set, list, show and remove keep a project's image in the configuration (049)", async (t) => {
+test("box_image_set and VesnALIA box image set, list, show and remove keep a project's image in the configuration (049)", async (t) => {
   const { app, harness, tool, world } = await start();
   t.after(() => harness.lifecycle.dispose());
-  const set = await tool("box_image_set", { name: "rust-tools", kinds: ["linux"], script: "#!/bin/bash\necho rust\n", check: "cargo --version\n", script_path: ".bb/box-setup.sh", check_path: ".bb/box-check.sh" });
+  const set = await tool("box_image_set", { name: "rust-tools", kinds: ["linux"], script: "#!/bin/bash\necho rust\n", check: "cargo --version\n", script_path: ".vesnalia/box-setup.sh", check_path: ".vesnalia/box-check.sh" });
   assert.match(text(set), /^Set image rust-tools for linux boxes in this thread's project\./);
   const image = app.configuration.exported().images?.["rust-tools"];
-  assert.deepEqual([image?.projects, image?.kinds, image?.check, image?.source], [[PROJECT], ["linux"], "cargo --version\n", { script: ".bb/box-setup.sh", check: ".bb/box-check.sh" }]);
-  assert.match((await harness.behavior.runCli(["image", "list"])).stdout ?? "", /^rust-tools: linux boxes in prj_one; baked auto; script \.bb\/box-setup\.sh, check \.bb\/box-check\.sh; set \d{4}-\d{2}-\d{2}\.\n$/);
+  assert.deepEqual([image?.projects, image?.kinds, image?.check, image?.source], [[PROJECT], ["linux"], "cargo --version\n", { script: ".vesnalia/box-setup.sh", check: ".vesnalia/box-check.sh" }]);
+  assert.match((await harness.behavior.runCli(["image", "list"])).stdout ?? "", /^rust-tools: linux boxes in prj_one; baked auto; script \.alia\/box-setup\.sh, check \.alia\/box-check\.sh; set \d{4}-\d{2}-\d{2}\.\n$/);
   assert.equal((await harness.behavior.runCli(["image", "show", "rust-tools"])).stdout, "#!/bin/bash\necho rust\n\n# The check, run as the box user:\ncargo --version\n");
 
   // box_list names a kind's images, and box_acquire chooses one or refuses one there is not.
@@ -453,7 +453,7 @@ test("box_image_set and bb box image set, list, show and remove keep a project's
   // A draft from the project's files.
   const draft = text(await tool("box_image_draft", { files: [{ path: ".nvmrc", text: "20\n" }, { path: "Dockerfile", text: "FROM ubuntu:24.04\nCOPY . /app\n" }] }));
   assert.match(draft, /^Drafted from Dockerfile, \.nvmrc\.\n\nLeft to you, also commented at the top of the script:\n- Dockerfile: COPY \. \/app is commented out/);
-  assert.match(draft, /`\.bb\/box-setup\.sh`:\n```bash\n#!\/bin\/bash\n[\s\S]*'node@20'  # \.nvmrc\n[\s\S]*```\n\n`\.bb\/box-check\.sh`:\n```bash\n[\s\S]*node --version\n```/);
+  assert.match(draft, /`\.alia\/box-setup\.sh`:\n```bash\n#!\/bin\/bash\n[\s\S]*'node@20'  # \.nvmrc\n[\s\S]*```\n\n`\.alia\/box-check\.sh`:\n```bash\n[\s\S]*node --version\n```/);
 
   // A try needs a backend that builds images, which the fake host is not; the CLI tries an image already set, on a kind it covers.
   const tried = await tool("box_image_try", { kind: "linux", script: "#!/bin/bash\necho rust\n" });
@@ -483,18 +483,18 @@ test("box_image_set and bb box image set, list, show and remove keep a project's
 });
 
 test("a project's image removed by config.apply, as the settings page removes it, loses its builds, and its failed build leaves the page's Status (049, 067)", async (t) => {
-  const { bb, app, harness, world } = await start();
+  const { alia, app, harness, world } = await start();
   t.after(() => harness.lifecycle.dispose());
   const file = join(world.root, "setup.sh");
   writeFileSync(file, "#!/bin/bash\necho rust\n");
   assert.equal((await harness.behavior.runCli(["image", "set", "rust-tools", "--kinds", "linux", "--script-file", file, "--project", PROJECT])).exitCode, 0);
-  await bb.storage.kv.set("images/bake/rust-tools/fake/linux/failed", { at: 1, reason: "It exited with 100.", output: [], script: "x", base: null });
+  await alia.storage.kv.set("images/bake/rust-tools/fake/linux/failed", { at: 1, reason: "It exited with 100.", output: [], script: "x", base: null });
   const failures = async () => ((await harness.behavior.callRpc("images.progress", null)) as { failures: unknown[] }).failures;
   assert.deepEqual(await failures(), [{ of: "project", name: "rust-tools", kind: "linux", backend: "fake", at: 1, reason: "It exited with 100." }]);
   const { kinds: _kinds, images: _images, ...rest } = app.configuration.exported();
   const applied = (await harness.behavior.callRpc("config.apply", { draft: rest, revision: rest.revision })) as { ok: boolean };
   assert.ok(applied.ok, JSON.stringify(applied));
-  await until("its failed build to go", async () => (await bb.storage.kv.list("images/bake/")).length === 0);
+  await until("its failed build to go", async () => (await alia.storage.kv.list("images/bake/")).length === 0);
   assert.deepEqual(await failures(), []);
 });
 
@@ -554,7 +554,7 @@ test("box_grant grants a program in a Mac's box its permissions, says how to run
   assert.match(text(granted), /Open the app with open, so that it is its own responsible process/);
   const cli = await tool("box_grant", { box: box.name, program: "/Users/bbx-0/bin/tool", permissions: ["microphone"] });
   assert.match(text(cli), /Start it through launchd from a box_run command with desktop true, as launchctl submit -l <label> -o <log> -- \/Users\/bbx-0\/bin\/tool <arguments>/);
-  assert.match(ownProcessHint("ssh-pool:macs", "/Users/bbx-0/bin/tool"), /^Run it through bb-box-own, as bb-box-own \/Users\/bbx-0\/bin\/tool <arguments>/, "the SSH host pool's Macs have bb-box-own");
+  assert.match(ownProcessHint("ssh-pool:macs", "/Users/bbx-0/bin/tool"), /^Run it through alia-box-own, as alia-box-own \/Users\/bbx-0\/bin\/tool <arguments>/, "the SSH host pool's Macs have alia-box-own");
   for (const namespace of ["namespace", "namespace:team-b"]) {
     assert.match(ownProcessHint(namespace, "/Users/runner/bin/tool"), /^Start it through launchd in the box user's session, as sudo launchctl asuser "\$\(id -u\)" sudo -u "\$\(id -un\)" launchctl submit -l <label> -o <log> -- \/Users\/runner\/bin\/tool <arguments>/, "box_run's commands on Namespace run outside the box user's session");
   }
@@ -562,13 +562,13 @@ test("box_grant grants a program in a Mac's box its permissions, says how to run
   await assert.rejects(tool("box_grant", { box: box.name, program: "/Users/bbx-0/bin/tool", permissions: ["telepathy"] }), /expected one of "accessibility"/);
   assert.doesNotMatch(text(await tool("box_status", { box: box.name })), /Signing identity/);
   signingIdentity = false;
-  assert.match(text(await tool("box_status", { box: box.name })), /\nSigning identity: missing, so codesign -s "bb-box local code signing" fails in this box\. Tell the Mac's operator: its helper could not make it\.\n/);
+  assert.match(text(await tool("box_status", { box: box.name })), /\nSigning identity: missing, so codesign -s "alia-box local code signing" fails in this box\. Tell the Mac's operator: its helper could not make it\.\n/);
 
   let blockedBy: string | null = "sip-on";
   Object.assign(app.backends.get(box.backend)!, { grants: async () => ({ blockedBy, signingIdentity: true, grants: [] }) });
   assert.match(text(await tool("box_status", { box: box.name })), /\nmacOS permissions: box_grant cannot grant them on this Mac, as System Integrity Protection is on\.\n/);
   blockedBy = "unknown-database";
-  assert.match(text(await tool("box_status", { box: box.name })), /\nmacOS permissions: box_grant cannot grant them on this Mac, as its TCC database has columns BB Box does not know, as a newer macOS may have\.\n/);
+  assert.match(text(await tool("box_status", { box: box.name })), /\nmacOS permissions: box_grant cannot grant them on this Mac, as its TCC database has columns ALIA Box does not know, as a newer macOS may have\.\n/);
 });
 
 test("an agent acquires a box, runs commands, copies files both ways and releases it", async (t) => {
@@ -649,7 +649,7 @@ test("a deploy lets box_run's commands finish and takes no new ones, and a comma
   const box = await only(app);
   const home = /stdout:\n(.*)\n/.exec(text(await tool("box_run", { box: box.name, command: "pwd" })))![1]!;
 
-  // As BB updates a plugin: it aborts the tool calls, then runs the dispose hooks.
+  // As VesnALIA updates a plugin: it aborts the tool calls, then runs the dispose hooks.
   const deploy = new AbortController();
   const call = (command: string) => harness.behavior.callAgentTool("box_run", { box: box.name, command }, { threadId: THREAD, projectId: PROJECT, signal: deploy.signal });
   const short = call("sleep 0.5; echo short");
@@ -660,7 +660,7 @@ test("a deploy lets box_run's commands finish and takes no new ones, and a comma
 
   const refused = await tool("box_run", { box: box.name, command: "echo new" });
   assert.equal(isError(refused), true);
-  assert.equal(text(refused), "BB Box is restarting, as for an update, and takes no new commands until it is back, usually within seconds.\n\nNext: Run the command again in a few seconds, once BB Box is back.");
+  assert.equal(text(refused), "VesnALIA Box is restarting, as for an update, and takes no new commands until it is back, usually within seconds.\n\nNext: Run the command again in a few seconds, once VesnALIA Box is back.");
   const finished = await short;
   assert.equal(isError(finished), false, text(finished));
   assert.match(text(finished), /^Exit code 0 in box .*\n\nstdout:\nshort\n/);
@@ -669,12 +669,12 @@ test("a deploy lets box_run's commands finish and takes no new ones, and a comma
   assert.equal(isError(stopped), true);
   const job = /It goes on there as job ([0-9a-f]{12})\./.exec(text(stopped))?.[1];
   assert.ok(job, text(stopped));
-  assert.ok(text(stopped).endsWith(`Next: Call box_job with box "${box.name}" and job "${job}" for its exit code and output once it ends. BB Box is usually back within seconds; until then the box may not answer.`), text(stopped));
+  assert.ok(text(stopped).endsWith(`Next: Call box_job with box "${box.name}" and job "${job}" for its exit code and output once it ends. VesnALIA Box is usually back within seconds; until then the box may not answer.`), text(stopped));
   await disposing;
-  assert.equal(readFileSync(join(home, ".local/state/bb-box/jobs", job, "out"), "utf8"), "long\n", "the command's output is in the box");
+  assert.equal(readFileSync(join(home, ".local/state/alia-box/jobs", job, "out"), "utf8"), "long\n", "the command's output is in the box");
 });
 
-test("box_run returns before BB ends a tool call: a Linux command goes on as a job with its output so far, and a Windows one as a job too (#486, #414)", async (t) => {
+test("box_run returns before VesnALIA ends a tool call: a Linux command goes on as a job with its output so far, and a Windows one as a job too (#486, #414)", async (t) => {
   const linux = await start({ "fake-enabled": true, "enrol-boxes": false }, { runWaitMs: 1_000 });
   t.after(() => linux.harness.lifecycle.dispose());
   await linux.tool("box_acquire", {});
@@ -683,7 +683,7 @@ test("box_run returns before BB ends a tool call: a Linux command goes on as a j
   assert.equal(isError(long), false, text(long));
   const job = /as job ([0-9a-f]{12})/.exec(text(long))?.[1];
   assert.ok(job, text(long));
-  assert.match(text(long), /^The command still runs in box \S+ after 1 s, and goes on there as job [0-9a-f]{12}: BB ends a tool call at about five minutes, so box_run returns before then\. The end of its output so far:\n\nstdout:\nstarted\n/);
+  assert.match(text(long), /^The command still runs in box \S+ after 1 s, and goes on there as job [0-9a-f]{12}: ALIA ends a tool call at about five minutes, so box_run returns before then\. The end of its output so far:\n\nstdout:\nstarted\n/);
   await until("the job to end", async () => /ended with exit code 0/.test(text(await linux.tool("box_job", { box: box.name, job: job! }))));
   // A short command is answered as before.
   assert.match(text(await linux.tool("box_run", { box: box.name, command: "echo quick" })), /^Exit code 0/);
@@ -694,10 +694,10 @@ test("box_run returns before BB ends a tool call: a Linux command goes on as a j
   // The fake's PowerShell cannot run a job, but its runner's command waits as a Windows box's does.
   const detached = await windows.tool("box_run", { box: name, command: "Start-Sleep 5", timeout_seconds: 600 });
   assert.equal(isError(detached), false, text(detached));
-  assert.match(text(detached), /^The command still runs in box \S+ after 1 s, and goes on there as job [0-9a-f]{12}: BB ends a tool call at about five minutes/);
+  assert.match(text(detached), /^The command still runs in box \S+ after 1 s, and goes on there as job [0-9a-f]{12}: ALIA ends a tool call at about five minutes/);
 });
 
-test("a command whose box stops answering as BB Box stops for a deploy, as a Docker box on a BB machine does when BB stops the relay first, names its job (#415)", async (t) => {
+test("a command whose box stops answering as VesnALIA Box stops for a deploy, as a Docker box on a VesnALIA machine does when VesnALIA stops the relay first, names its job (#415)", async (t) => {
   const { harness, app, world, tool } = await start({ "fake-enabled": true, "enrol-boxes": false }, { drainMs: 1_500 });
   let disposing: Promise<void> | null = null;
   t.after(() => disposing ?? harness.lifecycle.dispose());
@@ -706,7 +706,7 @@ test("a command whose box stops answering as BB Box stops for a deploy, as a Doc
   const deploy = new AbortController();
   const long = harness.behavior.callAgentTool("box_run", { box: box.name, command: "echo long; sleep 5" }, { threadId: THREAD, projectId: PROJECT, signal: deploy.signal });
   await new Promise((resolve) => setTimeout(resolve, 300));
-  // BB stops BB Box's worker on the machine, and the relay with it, then aborts the calls and runs the dispose hooks.
+  // VesnALIA stops VesnALIA Box's worker on the machine, and the relay with it, then aborts the calls and runs the dispose hooks.
   world.backend!.loseCommands(box.guest!.ref);
   await new Promise((resolve) => setTimeout(resolve, 500));
   deploy.abort("plugin-disposed");
@@ -715,7 +715,7 @@ test("a command whose box stops answering as BB Box stops for a deploy, as a Doc
   assert.equal(isError(answer), true);
   const job = /It may go on there as job ([0-9a-f]{12})\./.exec(text(answer))?.[1];
   assert.ok(job, text(answer));
-  assert.ok(text(answer).endsWith(`Next: Call box_job with box "${box.name}" and job "${job}" for its exit code and output once it ends. BB Box is usually back within seconds; until then the box may not answer.`), text(answer));
+  assert.ok(text(answer).endsWith(`Next: Call box_job with box "${box.name}" and job "${job}" for its exit code and output once it ends. VesnALIA Box is usually back within seconds; until then the box may not answer.`), text(answer));
 });
 
 test("box_job gives a job's output while it runs and its exit code once it ends, and the box's next command removes it (#405)", async (t) => {
@@ -725,7 +725,7 @@ test("box_job gives a job's output while it runs and its exit code once it ends,
   const box = await only(app);
   const home = /stdout:\n(.*)\n/.exec(text(await tool("box_run", { box: box.name, command: "pwd" })))![1]!;
   const job = "0123456789ab";
-  const dir = join(home, ".local/state/bb-box/jobs", job);
+  const dir = join(home, ".local/state/alia-box/jobs", job);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "out"), "building\n");
   writeFileSync(join(dir, "err"), "");
@@ -739,7 +739,7 @@ test("box_job gives a job's output while it runs and its exit code once it ends,
   writeFileSync(join(dir, "status"), "0\n");
   const ended = await tool("box_job", { box: box.name, job });
   assert.equal(text(ended), `Job ${job} ended with exit code 0 in box ${box.name}.\n\nstdout:\nbuilding\nbuilt\n\n\nstderr:\na warning\n\n\nNext: Run more with box_run.`);
-  assert.ok(existsSync(dir), "kept until BB Box's next command");
+  assert.ok(existsSync(dir), "kept until VesnALIA Box's next command");
   assert.match(text(await tool("box_run", { box: box.name, command: "true" })), /Exit code 0/);
   assert.equal(existsSync(dir), false);
 
@@ -749,7 +749,7 @@ test("box_job gives a job's output while it runs and its exit code once it ends,
   await assert.rejects(tool("box_job", { box: box.name, job: "../../x" }));
 });
 
-test("files for every box go into a Linux box's home as it joins BB, mode 600, into running boxes when they change, and into a stopped one as it starts, never into a log (#455)", async (t) => {
+test("files for every box go into a Linux box's home as it joins VesnALIA, mode 600, into running boxes when they change, and into a stopped one as it starts, never into a log (#455)", async (t) => {
   const { harness, app, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   const SECRET = '{"providers":{"example":{"apiKey":"sk-secret-value"}}}';
@@ -829,11 +829,11 @@ test("box_record records a Linux desktop, and stop puts the clip and a page that
   assert.match(text(none), /has no recording\./);
 
   // A recording that ended at its limit, as the box leaves it.
-  await tool("box_run", { box: desktop.name, command: "mkdir -p .local/state/bb-box/recording && echo capture > .local/state/bb-box/recording/capture.mkv" });
+  await tool("box_run", { box: desktop.name, command: "mkdir -p .local/state/alia-box/recording && echo capture > .local/state/alia-box/recording/capture.mkv" });
   const stopped = await tool("box_record", { box: desktop.name, action: "stop", speed: 2 });
   assert.ok(!isError(stopped), text(stopped));
   const said = text(stopped);
-  const name = /\$BB_THREAD_STORAGE\/(recordings\/[^ ]+)\.mp4/.exec(said)?.[1];
+  const name = /\$ALIA_THREAD_STORAGE\/(recordings\/[^ ]+)\.mp4/.exec(said)?.[1];
   assert.ok(name, said);
   assert.match(said, /^Recorded box \S+: a 4\.2 s clip of 10\.0 s recorded, 6\.0 s of idle stretches cut, played 2x, 1280x720, 1 KB, framed\. It reached the 5-minute limit/);
   assert.match(said, /Making it took \d+\.\d s: \d+\.\d s to stop and find the idle stretches, \d+\.\d s to plan, \d+\.\d s to draw the pills, \d+\.\d s to draw the rest and encode, and \d+\.\d s to copy it here\./, "what each part of the stop cost");
@@ -850,9 +850,9 @@ test("box_record records a Linux desktop, and stop puts the clip and a page that
   world.threads.set(THREAD, { ...world.threads.get(THREAD)!, parentThreadId: "thr_parent" });
   world.threads.set("thr_parent", makeThreadResponse({ id: "thr_parent", projectId: PROJECT, parentThreadId: "thr_grand" }));
   world.threads.set("thr_grand", makeThreadResponse({ id: "thr_grand", projectId: PROJECT }));
-  await tool("box_run", { box: desktop.name, command: "mkdir -p .local/state/bb-box/recording && echo capture > .local/state/bb-box/recording/capture.mkv" });
+  await tool("box_run", { box: desktop.name, command: "mkdir -p .local/state/alia-box/recording && echo capture > .local/state/alia-box/recording/capture.mkv" });
   const child = text(await tool("box_record", { box: desktop.name, action: "stop" }));
-  const clip = /\$BB_THREAD_STORAGE\/(recordings\/[^ ,]+)\.mp4/.exec(child)?.[1];
+  const clip = /\$ALIA_THREAD_STORAGE\/(recordings\/[^ ,]+)\.mp4/.exec(child)?.[1];
   assert.ok(clip, child);
   assert.match(child, /and in the storage folder of its parent threads, 2 of them\./);
   assert.match(child, /It shows the clip in this thread and in its parent threads, which have a copy, so a parent can pass the line on:/);
@@ -864,12 +864,12 @@ test("box_record records a Linux desktop, and stop puts the clip and a page that
   assert.match(text(await tool("box_record", { box: desktop.name, action: "step", text: "Too early" })), /is not recording\./);
   assert.match(text(await tool("box_record", { box: desktop.name, action: "step" })), /Give text with step/);
   assert.match(text(await tool("box_record", { box: desktop.name, action: "result", text: "Saw it" })), /Give passed with result/);
-  await tool("box_run", { box: desktop.name, command: "d=.local/state/bb-box/recording; mkdir -p $d && echo capture > $d/capture.mkv && date +%s.000 > $d/start && { setsid sleep 30 >/dev/null 2>&1 & echo $! > $d/pid; }" });
+  await tool("box_run", { box: desktop.name, command: "d=.local/state/alia-box/recording; mkdir -p $d && echo capture > $d/capture.mkv && date +%s.000 > $d/start && { setsid sleep 30 >/dev/null 2>&1 & echo $! > $d/pid; }" });
   assert.match(text(await tool("box_record", { box: desktop.name, action: "step", text: "It keeps the draft when saving fails" })), /^Captioned the next step: ▶ It keeps the draft when saving fails/);
   assert.match(text(await tool("box_record", { box: desktop.name, action: "result", passed: false, text: "The editor closed and lost it" })), /^Captioned the result: ✗ The editor closed and lost it/);
   const captioned = text(await tool("box_record", { box: desktop.name, action: "stop" }));
   assert.match(captioned, /, 1 step captioned, 1 failed\./, captioned);
-  const page = /\$BB_THREAD_STORAGE\/(recordings\/[^ ,]+)\.mp4/.exec(captioned)?.[1];
+  const page = /\$ALIA_THREAD_STORAGE\/(recordings\/[^ ,]+)\.mp4/.exec(captioned)?.[1];
   const html = readFileSync(join(world.storage, `${page}.html`), "utf8");
   assert.match(html, /▶<\/span> It keeps the draft when saving fails<br><span style="color:#ff453a">✗<\/span> The editor closed and lost it/);
   assert.ok(captioned.includes(`file="${page}.html" height="430"`), captioned);
@@ -906,7 +906,7 @@ test("box_record on an ios box records its device, not the host's desktop: frame
   await new Promise((resolve) => setTimeout(resolve, 1100));
   const stopped = text(await tool("box_record", { box: phone.name, action: "stop" }));
   assert.match(stopped, /^Recorded box \S+'s device: a \d+\.\d s clip of \d+\.\d s recorded, .*1280x\d+, \d+ KB, 1 step captioned\./, stopped);
-  const clip = /\$BB_THREAD_STORAGE\/(recordings\/[^ ,]+)\.mp4/.exec(stopped)?.[1];
+  const clip = /\$ALIA_THREAD_STORAGE\/(recordings\/[^ ,]+)\.mp4/.exec(stopped)?.[1];
   assert.ok(clip, stopped);
   assert.equal(readFileSync(join(world.storage, `${clip}.mp4`)).subarray(4, 8).toString("latin1"), "ftyp");
   assert.match(text(await tool("box_record", { box: phone.name, action: "step", text: "Late" })), /is not recording\./);
@@ -939,13 +939,13 @@ test("box_record on a device box whose host cannot get an ffmpeg fit for a clip 
   const started = await tool("box_record", { box: phone.name, action: "start" });
 
   assert.ok(isError(started));
-  assert.match(text(started), new RegExp(`^Box ${phone.name} cannot make a recording's clip yet: BB Box could not fetch https://github\\.com/BtbN/FFmpeg-Builds/\\S+linux64-gpl-9\\.0\\.tar\\.xz: curl: \\(6\\) Could not resolve host: github\\.com\\. Check that the box can reach the internet, then start again\\.`), text(started));
+  assert.match(text(started), new RegExp(`^Box ${phone.name} cannot make a recording's clip yet: VesnALIA Box could not fetch https://github\\.com/BtbN/FFmpeg-Builds/\\S+linux64-gpl-9\\.0\\.tar\\.xz: curl: \\(6\\) Could not resolve host: github\\.com\\. Check that the box can reach the internet, then start again\\.`), text(started));
   assert.equal(recordings, 0, "the device was not asked to record");
 
   const doctor = (await harness.behavior.callRpc("doctor", null)) as { sections: { title: string; report: { checks: { id: string; status: string; detail: string }[] } }[] };
   const check = doctor.sections.find((section) => section.title === "Recordings")?.report.checks.find((each) => each.id === "recording.android");
   assert.equal(check?.status, "warn");
-  assert.match(check?.detail ?? "", /records the device's own screen, in its frame, with captioned steps and a step list\. It needs ffmpeg and ffprobe with libx264 and the overlay, geq, freezedetect, tpad, drawtext filters\. When the box has none fit, BB Box fetches ffmpeg 9\.0\.2 into the box user's home at its first recording, about 151 MB, and checks its SHA-256\./);
+  assert.match(check?.detail ?? "", /records the device's own screen, in its frame, with captioned steps and a step list\. It needs ffmpeg and ffprobe with libx264 and the overlay, geq, freezedetect, tpad, drawtext filters\. When the box has none fit, ALIA Box fetches ffmpeg 9\.0\.2 into the box user's home at its first recording, about 151 MB, and checks its SHA-256\./);
   assert.match(check?.detail ?? "", new RegExp(`In box ${phone.name}, at \\d{4}-\\d\\d-\\d\\d \\d\\d:\\d\\d UTC: Box ${phone.name} cannot make a recording's clip yet`));
 });
 
@@ -960,27 +960,27 @@ test("box_copy takes files in the thread's storage folder both ways, by its vari
   const byPath = await tool("box_copy", { box: name, direction: "to_box", from: join(world.storage, "prof", "check.mjs") });
   assert.ok(!isError(byPath), text(byPath));
   assert.match(text(byPath), /\(7 bytes, SHA-256 [0-9a-f]{64}\) to check\.mjs in box/);
-  assert.ok(!isError(await tool("box_copy", { box: name, direction: "to_box", from: "$BB_THREAD_STORAGE/prof/check.mjs", to: "again.mjs" })));
+  assert.ok(!isError(await tool("box_copy", { box: name, direction: "to_box", from: "$ALIA_THREAD_STORAGE/prof/check.mjs", to: "again.mjs" })));
   assert.match(text(await tool("box_run", { box: name, command: "cat check.mjs again.mjs > both.txt" })), /Exit code 0/);
 
-  const back = await tool("box_copy", { box: name, direction: "from_box", from: "both.txt", to: "${BB_THREAD_STORAGE}/out/both.txt" });
+  const back = await tool("box_copy", { box: name, direction: "from_box", from: "both.txt", to: "${ALIA_THREAD_STORAGE}/out/both.txt" });
   assert.ok(!isError(back), text(back));
   assert.match(text(back), /in this thread's storage folder\./);
   assert.equal(readFileSync(join(world.storage, "out", "both.txt"), "utf8"), "stored\nstored\n");
-  // A path in neither folder is still the workspace's, and BB refuses to read one outside it.
+  // A path in neither folder is still the workspace's, and VesnALIA refuses to read one outside it.
   writeFileSync(join(world.root, "other.txt"), "x");
   const outside = await tool("box_copy", { box: name, direction: "to_box", from: join(world.root, "other.txt") });
   assert.ok(isError(outside));
   assert.match(text(outside), /escapes read root/);
 });
 
-test("box_copy streams a file too large for BB's file API through the thread's machine, both ways, and checks its SHA-256 (#492)", async (t) => {
+test("box_copy streams a file too large for VesnALIA's file API through the thread's machine, both ways, and checks its SHA-256 (#492)", async (t) => {
   const { harness, app, world, tool } = await start({ "fake-enabled": true, "enrol-boxes": false });
   t.after(() => harness.lifecycle.dispose());
-  const saved = process.env.BB_SERVER_URL;
-  process.env.BB_SERVER_URL = "https://bb.example.com";
-  t.after(() => (saved === undefined ? delete process.env.BB_SERVER_URL : (process.env.BB_SERVER_URL = saved)));
-  // BB Box's worker on the thread's machine, its WebSocket joined to BB Box's route in memory.
+  const saved = process.env.ALIA_SERVER_URL;
+  process.env.ALIA_SERVER_URL = "https://bb.example.com";
+  t.after(() => (saved === undefined ? delete process.env.ALIA_SERVER_URL : (process.env.ALIA_SERVER_URL = saved)));
+  // VesnALIA Box's worker on the thread's machine, its WebSocket joined to VesnALIA Box's route in memory.
   const { urls, connectTo } = joined(() => app.files);
   const worker = experimental_createHostEntryHarness(hostEntry({ files: { connect: connectTo } }));
   t.after(() => worker.experimental_dispose());
@@ -995,17 +995,17 @@ test("box_copy streams a file too large for BB's file API through the thread's m
   const sent = await tool("box_copy", { box: name, direction: "to_box", from: big });
   assert.ok(!isError(sent), text(sent));
   assert.match(text(sent), new RegExp(`^Copied ${big} \\(${content.length} bytes, SHA-256 ${sha}\\) to setup\\.bin in box ${name}, streamed through the thread's machine\\.`));
-  assert.match(urls[0]!, /^wss:\/\/bb\.example\.com\/api\/v1\/plugins\/bb-box\/http\/file-relay\?s=[0-9a-f]{32}$/);
+  assert.match(urls[0]!, /^wss:\/\/alia\.example\.com\/api\/v1\/plugins\/alia-box\/http\/file-relay\?s=[0-9a-f]{32}$/);
   const inBox = text(await tool("box_run", { box: name, command: "sha256sum setup.bin; ls" }));
   assert.ok(inBox.includes(`${sha}  setup.bin\n`), inBox);
-  assert.doesNotMatch(inBox, /bb-box-part/, "the part file took the file's place");
+  assert.doesNotMatch(inBox, /alia-box-part/, "the part file took the file's place");
 
   const back = await tool("box_copy", { box: name, direction: "from_box", from: "setup.bin", to: "back.bin" });
   assert.ok(!isError(back), text(back));
   assert.match(text(back), new RegExp(`^Copied setup\\.bin \\(${content.length} bytes, SHA-256 ${sha}\\) from box ${name} to ${join(world.workspace, "back.bin")} in the workspace, streamed through the thread's machine\\.`));
   assert.equal(createHash("sha256").update(readFileSync(join(world.workspace, "back.bin"))).digest("hex"), sha);
-  assert.ok(!existsSync(join(world.workspace, "back.bin.bb-box-part")));
-  // The worker's lease goes once BB Box closes the link.
+  assert.ok(!existsSync(join(world.workspace, "back.bin.alia-box-part")));
+  // The worker's lease goes once VesnALIA Box closes the link.
   await until("the lease to go", async () => worker.experimental_getRetainedWorkerLeaseCount() === 0);
 });
 
@@ -1022,16 +1022,16 @@ test("a kind a backend changes by itself, as when a Mac reports Windows video re
   await until("the box to take the kind's displays", async () => (await app.boxes.find(box.id))?.capabilities.displays.some((display) => display.id === "video") ?? false);
 });
 
-test("after a Windows box enrols, and after it reconnects, BB Box hides the windows of BB's daemon's consoles, which BB starts in front (bb-requests 27)", async (t) => {
+test("after a Windows box enrols, and after it reconnects, VesnALIA Box hides the windows of VesnALIA's daemon's consoles, which VesnALIA starts in front (alia-requests 27)", async (t) => {
   const kind: BoxKind = { ...FAKE_WINDOWS_KIND, capabilities: { ...FAKE_WINDOWS_KIND.capabilities, enrol: true } };
   const shell = join(tempDir("windows-shell"), "pwsh");
-  // Each run in the desktop session, BB's installer and the hide alike, says it found and hid one console window.
+  // Each run in the desktop session, VesnALIA's installer and the hide alike, says it found and hid one console window.
   writeFileSync(shell, `#!/bin/sh\ncase "$2" in *Schedule.Service*) echo "consoles=1 hidden=1"; exit 0 ;; *"]::Daemon("*) exit ${ACCESS_CHECK_EXITS.noDaemon} ;; esac\nexit 1\n`);
   chmodSync(shell, 0o755);
   const { harness, app, world, tool } = await start({ "fake-enabled": true }, { kinds: [kind], shell, logonWaitMs: 100 });
   t.after(() => harness.lifecycle.dispose());
   world.windowsConnects = true;
-  const hid = (name: string) => harness.inspection.logEntries.filter((entry) => entry.message === `Hid 1 of BB's 1 console window on box ${name}'s desktop (bb-requests 27).`).length;
+  const hid = (name: string) => harness.inspection.logEntries.filter((entry) => entry.message === `Hid 1 of VesnALIA's 1 console window on box ${name}'s desktop (alia-requests 27).`).length;
   await tool("box_acquire", { kind: "windows" });
   const box = await only(app);
   await until("the hide after the enrolment", async () => hid(box.name) === 1);
@@ -1042,18 +1042,18 @@ test("after a Windows box enrols, and after it reconnects, BB Box hides the wind
   await until("the hide after the reconnect", async () => hid(box.name) === 2);
 });
 
-test("a Windows box on trial enrols as a machine of BB's manual provider, which BB Box owns: release, a failure and the sweep remove it, and a start reconnects only a disconnected one (#539)", async (t) => {
+test("a Windows box on trial enrols as a machine of VesnALIA's manual provider, which VesnALIA Box owns: release, a failure and the sweep remove it, and a start reconnects only a disconnected one (#539)", async (t) => {
   const kind: BoxKind = { ...FAKE_WINDOWS_KIND, capabilities: { ...FAKE_WINDOWS_KIND.capabilities, enrol: true } };
-  // A box's PowerShell that runs the desktop session's command as BB's installer would, and exits 0.
-  // Its access check finds no BB daemon (#560); anything else fails.
+  // A box's PowerShell that runs the desktop session's command as VesnALIA's installer would, and exits 0.
+  // Its access check finds no VesnALIA daemon (#560); anything else fails.
   const dir = tempDir("windows-shell");
   const shell = join(dir, "pwsh");
-  // The look for BB's daemon on its way says what the file daemon says (#917): none to begin with.
+  // The look for VesnALIA's daemon on its way says what the file daemon says (#917): none to begin with.
   const daemon = join(dir, "daemon");
   writeFileSync(daemon, "none\n");
   writeFileSync(shell, `#!/bin/sh\ncase "$2" in *Schedule.Service*) exit 0 ;; *"]::Daemon("*) exit ${ACCESS_CHECK_EXITS.noDaemon} ;; *install-machine-windows*) cat '${daemon}'; exit 0 ;; esac\nexit 1\n`);
   chmodSync(shell, 0o755);
-  const { bb, harness, app, world, tool } = await start({ "fake-enabled": true }, { kinds: [kind], shell, logonWaitMs: 400 });
+  const { alia, harness, app, world, tool } = await start({ "fake-enabled": true }, { kinds: [kind], shell, logonWaitMs: 400 });
   t.after(() => harness.lifecycle.dispose());
   world.windowsConnects = true;
   await tool("box_acquire", { kind: "windows" });
@@ -1062,10 +1062,10 @@ test("a Windows box on trial enrols as a machine of BB's manual provider, which 
   const hostId = `host-${box.id}`;
   assert.ok(world.events.includes(`create manual ${hostId}`), world.events.join("\n"));
   assert.ok(world.events.includes(`enrolment command ${hostId}`));
-  assert.deepEqual(world.bootstraps, [], "BB's POSIX bootstrap is not run");
+  assert.deepEqual(world.bootstraps, [], "VesnALIA's POSIX bootstrap is not run");
   assert.equal(world.hosts.get(hostId)?.name, box.name, "the machine is named after the box once it connects");
-  assert.deepEqual(await bb.storage.kv.list("manual-machine/"), [`manual-machine/${hostId}`]);
-  // A start runs BB's reconnect command only when BB shows the machine disconnected.
+  assert.deepEqual(await alia.storage.kv.list("manual-machine/"), [`manual-machine/${hostId}`]);
+  // A start runs VesnALIA's reconnect command only when VesnALIA shows the machine disconnected.
   await tool("box_stop", { box: box.name });
   assert.ok(!isError(await tool("box_start", { box: box.name })));
   assert.ok(!world.events.includes(`reconnect command ${hostId}`), world.events.join("\n"));
@@ -1074,7 +1074,7 @@ test("a Windows box on trial enrols as a machine of BB's manual provider, which 
   assert.ok(!isError(await tool("box_start", { box: box.name })));
   assert.ok(world.events.includes(`reconnect command ${hostId}`), world.events.join("\n"));
   assert.equal((await app.boxes.find(box.id))?.enrol.error, null);
-  // After a boot, BB's logon entry starts the daemon: BB Box waits for it to connect, and starts no second supervisor (#917).
+  // After a boot, VesnALIA's logon entry starts the daemon: VesnALIA Box waits for it to connect, and starts no second supervisor (#917).
   const reconnects = () => world.events.filter((event) => event === `reconnect command ${hostId}`).length;
   const before = reconnects();
   writeFileSync(daemon, "logon\n");
@@ -1084,16 +1084,16 @@ test("a Windows box on trial enrols as a machine of BB's manual provider, which 
   assert.ok(!isError(await tool("box_start", { box: box.name })));
   await until("the daemon to connect", async () => world.hosts.get(hostId)?.status === "connected");
   assert.equal(reconnects(), before, "no reconnect while the logon starts the daemon");
-  // A daemon on its way that never connects gets BB's reconnect once the wait is over.
+  // A daemon on its way that never connects gets VesnALIA's reconnect once the wait is over.
   writeFileSync(daemon, "running\n");
   world.hosts.set(hostId, { ...world.hosts.get(hostId)!, status: "disconnected" });
   await tool("box_stop", { box: box.name });
   assert.ok(!isError(await tool("box_start", { box: box.name })));
   await until("the reconnect after the wait", async () => reconnects() === before + 1);
-  // Releasing the box removes its machine, and BB Box's record of it.
+  // Releasing the box removes its machine, and VesnALIA Box's record of it.
   assert.ok(!isError(await tool("box_release", { box: box.name })));
   assert.equal(world.hosts.has(hostId), false);
-  assert.deepEqual(await bb.storage.kv.list("manual-machine/"), []);
+  assert.deepEqual(await alia.storage.kv.list("manual-machine/"), []);
 
   // A failed enrolment removes its machine.
   world.windowsConnects = false;
@@ -1101,25 +1101,25 @@ test("a Windows box on trial enrols as a machine of BB's manual provider, which 
   await tool("box_acquire", { kind: "windows" });
   const failed = await only(app);
   await until("the enrolment to fail", async () => (await app.boxes.find(failed.id))?.enrol.state === "failed");
-  assert.match((await app.boxes.find(failed.id))!.enrol.error!, /BB gave no Windows enrolment command/);
+  assert.match((await app.boxes.find(failed.id))!.enrol.error!, /ALIA gave no Windows enrolment command/);
   assert.equal(world.hosts.has(`host-${failed.id}`), false);
-  assert.deepEqual(await bb.storage.kv.list("manual-machine/"), []);
+  assert.deepEqual(await alia.storage.kv.list("manual-machine/"), []);
 
   // The sweep removes a manual machine whose box is gone.
   const leftover = makeHostResponse({ id: "host-left", status: "connected", machineProviderId: "manual" });
   world.hosts.set("host-left", leftover);
-  await bb.storage.kv.set("manual-machine/host-left", { boxId: "bxgone", at: 0 });
+  await alia.storage.kv.set("manual-machine/host-left", { boxId: "bxgone", at: 0 });
   await app.enrolment.sweep();
   assert.equal(world.hosts.has("host-left"), false);
-  assert.deepEqual(await bb.storage.kv.list("manual-machine/"), []);
+  assert.deepEqual(await alia.storage.kv.list("manual-machine/"), []);
 });
 
-test("a Windows box sets up the thread's access while BB's installer runs, not after it, as that takes most of a minute (#916)", async (t) => {
+test("a Windows box sets up the thread's access while VesnALIA's installer runs, not after it, as that takes most of a minute (#916)", async (t) => {
   const kind: BoxKind = { ...FAKE_WINDOWS_KIND, capabilities: { ...FAKE_WINDOWS_KIND.capabilities, enrol: true } };
   const dir = tempDir("windows-shell");
   const shell = join(dir, "pwsh");
   const order = join(dir, "order");
-  // BB's installer, in the desktop session, takes a second; the access setup notes when it ran.
+  // VesnALIA's installer, in the desktop session, takes a second; the access setup notes when it ran.
   writeFileSync(
     shell,
     `#!/bin/sh\ncase "$2" in *Schedule.Service*) sleep 1; echo installed >> '${order}'; exit 0 ;; *"]::Daemon("*) exit ${ACCESS_CHECK_EXITS.noDaemon} ;; *"gh auth setup-git"*) echo access >> '${order}'; echo 5; exit 0 ;; esac\nexit 1\n`,
@@ -1134,7 +1134,7 @@ test("a Windows box sets up the thread's access while BB's installer runs, not a
   assert.deepEqual(readFileSync(order, "utf8").trim().split("\n"), ["access", "installed"]);
 });
 
-test("a Windows box's release ends its threads' processes, waits for BB to finish removing its manual machine, and keeps its record of one BB is slow to remove (#539)", async (t) => {
+test("a Windows box's release ends its threads' processes, waits for VesnALIA to finish removing its manual machine, and keeps its record of one VesnALIA is slow to remove (#539)", async (t) => {
   const kind: BoxKind = { ...FAKE_WINDOWS_KIND, capabilities: { ...FAKE_WINDOWS_KIND.capabilities, enrol: true } };
   const dir = tempDir("windows-shell");
   const shell = join(dir, "pwsh");
@@ -1142,10 +1142,10 @@ test("a Windows box's release ends its threads' processes, waits for BB to finis
   const ended = join(dir, "ended");
   writeFileSync(
     shell,
-    `#!/bin/sh\ncase "$2" in *Schedule.Service*) exit 0 ;; *"]::Daemon("*) exit ${ACCESS_CHECK_EXITS.noDaemon} ;; *BbProcessDirectory*) : > '${ended}'; echo ended=2; exit 0 ;; esac\nexit 1\n`,
+    `#!/bin/sh\ncase "$2" in *Schedule.Service*) exit 0 ;; *"]::Daemon("*) exit ${ACCESS_CHECK_EXITS.noDaemon} ;; *AliaProcessDirectory*) : > '${ended}'; echo ended=2; exit 0 ;; esac\nexit 1\n`,
   );
   chmodSync(shell, 0o755);
-  const { bb, harness, app, world, tool } = await start({ "fake-enabled": true }, { kinds: [kind], shell, manualRemoveMs: 300 });
+  const { alia, harness, app, world, tool } = await start({ "fake-enabled": true }, { kinds: [kind], shell, manualRemoveMs: 300 });
   t.after(() => harness.lifecycle.dispose());
   world.windowsConnects = true;
   const acquire = async () => {
@@ -1154,7 +1154,7 @@ test("a Windows box's release ends its threads' processes, waits for BB to finis
     await until("the enrolment", async () => (await app.boxes.find(box.id))?.enrol.state === "enrolled");
     return { box, hostId: `host-${box.id}` };
   };
-  // As BB: the delete returns at once, and BB removes the machine once it has torn down the environments on it.
+  // As VesnALIA: the delete returns at once, and VesnALIA removes the machine once it has torn down the environments on it.
   const removing = (hostId: string, message: string | null) => {
     const host = world.hosts.get(hostId)!;
     world.hosts.set(hostId, { ...host, lifecycle: { ...host.lifecycle, phase: "removing", message } });
@@ -1163,7 +1163,7 @@ test("a Windows box's release ends its threads' processes, waits for BB to finis
   const first = await acquire();
   let releasedFirst: boolean | null = null;
   let endedFirst: boolean | null = null;
-  world.bbRemovals.set(first.hostId, async () => {
+  world.aliaRemovals.set(first.hostId, async () => {
     endedFirst = existsSync(ended);
     removing(first.hostId, null);
     setTimeout(() => {
@@ -1172,28 +1172,28 @@ test("a Windows box's release ends its threads' processes, waits for BB to finis
     }, 100);
   });
   assert.ok(!isError(await tool("box_release", { box: first.box.name })));
-  assert.equal(releasedFirst, false, "the box goes once BB has removed its machine");
-  assert.equal(endedFirst, true, "the threads' processes ended before BB was asked to remove the machine");
-  assert.ok(harness.inspection.logEntries.some((entry) => entry.message === `Ended 2 processes of threads in box ${first.box.name} before its BB machine's removal, so that BB can remove their worktrees.`));
-  assert.deepEqual(await bb.storage.kv.list("manual-machine/"), []);
+  assert.equal(releasedFirst, false, "the box goes once VesnALIA has removed its machine");
+  assert.equal(endedFirst, true, "the threads' processes ended before VesnALIA was asked to remove the machine");
+  assert.ok(harness.inspection.logEntries.some((entry) => entry.message === `Ended 2 processes of threads in box ${first.box.name} before its VesnALIA machine's removal, so that VesnALIA can remove their worktrees.`));
+  assert.deepEqual(await alia.storage.kv.list("manual-machine/"), []);
 
-  // BB is still removing it when the wait ends, as when the box went first: the box goes, and BB Box keeps its record and logs it once.
+  // VesnALIA is still removing it when the wait ends, as when the box went first: the box goes, and VesnALIA Box keeps its record and logs it once.
   const second = await acquire();
-  world.bbRemovals.set(second.hostId, async () => removing(second.hostId, "Host is not connected"));
+  world.aliaRemovals.set(second.hostId, async () => removing(second.hostId, "Host is not connected"));
   assert.ok(!isError(await tool("box_release", { box: second.box.name })));
   assert.deepEqual(await app.boxes.list(THREAD), []);
-  assert.deepEqual(await bb.storage.kv.list("manual-machine/"), [`manual-machine/${second.hostId}`]);
-  const stuck = () => harness.inspection.logEntries.map((entry) => entry.message).filter((line) => line.startsWith(`BB has not finished removing machine ${second.hostId}`));
+  assert.deepEqual(await alia.storage.kv.list("manual-machine/"), [`manual-machine/${second.hostId}`]);
+  const stuck = () => harness.inspection.logEntries.map((entry) => entry.message).filter((line) => line.startsWith(`VesnALIA has not finished removing machine ${second.hostId}`));
   assert.equal(stuck().length, 1);
   // With the machine's name, which is its box's.
-  assert.match(stuck()[0]!, new RegExp(`s after bb-box asked: "${second.box.name}" is removing, Host is not connected\\. bb-box keeps its record, and its sweep looks again\\.$`));
-  // The sweep looks again without logging it again, and forgets it once BB no longer has it.
+  assert.match(stuck()[0]!, new RegExp(`s after alia-box asked: "${second.box.name}" is removing, Host is not connected\\. alia-box keeps its record, and its sweep looks again\\.$`));
+  // The sweep looks again without logging it again, and forgets it once VesnALIA no longer has it.
   await app.enrolment.sweep();
   assert.equal(stuck().length, 1);
   assert.equal(world.hosts.has(second.hostId), true);
   world.hosts.delete(second.hostId);
   await app.enrolment.sweep();
-  assert.deepEqual(await bb.storage.kv.list("manual-machine/"), []);
+  assert.deepEqual(await alia.storage.kv.list("manual-machine/"), []);
 });
 
 test("a box_copy under 16 MiB checks the size and SHA-256 at both ends, both ways, and a short copy fails, leaving nothing written here", async (t) => {
@@ -1250,14 +1250,14 @@ test("workspace and box paths", () => {
   assert.equal(boxPath("/tmp/y"), "/tmp/y");
 });
 
-test("a ready box becomes a BB machine, and its machine goes before the box", async (t) => {
+test("a ready box becomes a VesnALIA machine, and its machine goes before the box", async (t) => {
   const daemon = await fakeDaemon([{ GH_TOKEN: "value-token", MACHINE_VAR: "value-machine", PROJECT_VAR: "value-project", UNLISTED: "value-unlisted" }]);
   t.after(daemon.stop);
   const { harness, app, world, tool } = await start(undefined, { daemonParent: daemon.parent });
   t.after(() => harness.lifecycle.dispose());
-  // The thread's access is set up while BB's installer runs: it sees ~/.bashrc change.
+  // The thread's access is set up while VesnALIA's installer runs: it sees ~/.bashrc change.
   world.installer =
-    'for i in $(seq 50); do grep -qs "Added by bb-box" .bashrc && break; sleep 0.1; done; grep -c "Added by bb-box" .bashrc > access-during-install; echo installed > bb-installed';
+    'for i in $(seq 50); do grep -qs "Added by alia-box" .bashrc && break; sleep 0.1; done; grep -c "Added by alia-box" .bashrc > access-during-install; echo installed > alia-installed';
   // A box has gh, which the access setup makes git's helper: here a stand-in whose setup-git fails, as when gh is not
   // logged in, so the setup adds the helper itself, whether or not this machine has gh.
   const bin = tempDir("fake-gh");
@@ -1270,8 +1270,8 @@ test("a ready box becomes a BB machine, and its machine goes before the box", as
 
   // box_acquire waits for enrolment, as box_run would, and says how long it took.
   const acquired = text(await tool("box_acquire", { kind: "linux" }));
-  assert.match(acquired, /BB machine: enrolled/);
-  assert.match(acquired, /Timings: .*total \d+(?: ms|\.\d s), BB enrolment \d+(?: ms|\.\d s)/);
+  assert.match(acquired, /ALIA machine: enrolled/);
+  assert.match(acquired, /Timings: .*total \d+(?: ms|\.\d s), ALIA enrolment \d+(?: ms|\.\d s)/);
   const box = await only(app);
   const enrolled = await until("enrolment", async () => {
     const current = await app.boxes.find(box.id);
@@ -1280,7 +1280,7 @@ test("a ready box becomes a BB machine, and its machine goes before the box", as
   assert.equal(enrolled.enrol.hostId, `host-${box.id}`);
   assert.equal(enrolled.timings.enrol, Object.values(enrolled.timings).at(-1), "enrolment is timed after the start-up steps");
   assert.ok(enrolled.timings.enrol! >= 0);
-  assert.deepEqual(world.bootstraps, [box.id], "BB's bootstrap runs once, keyed by the box ID");
+  assert.deepEqual(world.bootstraps, [box.id], "VesnALIA's bootstrap runs once, keyed by the box ID");
   assert.equal(world.hosts.get(`host-${box.id}`)?.name, box.name);
   assert.equal(text(await tool("box_run", { box: box.name, command: "cat access-during-install" })).match(/stdout:\n(\d)/)?.[1], "1");
 
@@ -1288,22 +1288,22 @@ test("a ready box becomes a BB machine, and its machine goes before the box", as
   const logged = harness.inspection.logEntries.map((entry) => entry.message).find((line) => line.startsWith(`Enrolled box ${box.name} `));
   assert.ok(logged, "the enrolment is logged");
   const s = String.raw`\d+\.\d\d s`;
-  for (const step of ["BB calling BB Box's create", "reaching the box", "BB preparing the enrolment", "BB's installer in the box", "BB waiting for the daemon"]) {
+  for (const step of ["VesnALIA calling VesnALIA Box's create", "reaching the box", "VesnALIA preparing the enrolment", "VesnALIA's installer in the box", "VesnALIA waiting for the daemon"]) {
     assert.match(logged, new RegExp(`, ${step} ${s},`), step);
   }
-  assert.match(logged, new RegExp(`^Enrolled box ${box.name} ${s} after it was ready: asking BB ${s} alongside, BB calling BB Box's create ${s}, .*, finishing ${s}\\.$`));
+  assert.match(logged, new RegExp(`^Enrolled box ${box.name} ${s} after it was ready: asking VesnALIA ${s} alongside, VesnALIA calling VesnALIA Box's create ${s}, .*, finishing ${s}\\.$`));
   const parts = ["fetching the variable names", "reaching the box and back", "running the script"].map((part) => `${part} ${s}`);
   assert.match(logged, new RegExp(`, setting up the thread's access ${s} alongside \\(${parts.join(", ")}\\), `));
-  // Once bootstrap returns, BB Box notices the machine connected at once rather than at its next 500 ms poll.
-  assert.match(logged, /, BB showing the machine connected 0\.[0-2]\d s,/);
+  // Once bootstrap returns, VesnALIA Box notices the machine connected at once rather than at its next 500 ms poll.
+  assert.match(logged, /, ALIA showing the machine connected 0\.[0-2]\d s,/);
 
-  // BB's installer ran in the box, and commands see the box's identity.
-  const installed = await tool("box_run", { box: box.name, command: 'cat bb-installed; echo "$BB_BOX_NAME $BB_THREAD_ID $BB_HOST_ID"' });
+  // VesnALIA's installer ran in the box, and commands see the box's identity.
+  const installed = await tool("box_run", { box: box.name, command: 'cat alia-installed; echo "$ALIA_BOX_NAME $ALIA_THREAD_ID $ALIA_HOST_ID"' });
   assert.match(text(installed), new RegExp(`installed\n${box.name} ${THREAD} host-${box.id}`));
-  assert.match(text(await tool("box_status", { box: box.name })), /BB machine: enrolled\n.*BB enrolment \d+(?: ms|\.\d s)/);
-  assert.match(text(await tool("box_list", {})), /enrolled as a BB machine in \d+(?: ms|\.\d s)/);
+  assert.match(text(await tool("box_status", { box: box.name })), /ALIA machine: enrolled\n.*ALIA enrolment \d+(?: ms|\.\d s)/);
+  assert.match(text(await tool("box_list", {})), /enrolled as a ALIA machine in \d+(?: ms|\.\d s)/);
 
-  // Commands take the listed variables from BB's daemon, and nothing else.
+  // Commands take the listed variables from VesnALIA's daemon, and nothing else.
   const access = await tool("box_run", { box: box.name, command: 'printf "%s|" "${GH_TOKEN:+token}" "$MACHINE_VAR" "$PROJECT_VAR" "${UNLISTED-unset}"' });
   assert.match(text(access), /stdout:\ntoken\|value-machine\|value-project\|unset\|/);
   // So do SSH commands, through ~/.bashrc. git asks gh for GitHub credentials, and fetches GitHub's SSH URLs over HTTPS.
@@ -1313,8 +1313,8 @@ test("a ready box becomes a BB machine, and its machine goes before the box", as
       'head -n 1 .bashrc; bash -c \'unset MACHINE_VAR; . ~/.bashrc; printf "%s\\n" "$MACHINE_VAR"\'; git config --global --get-all credential.https://github.com.helper; ' +
       "git ls-remote --get-url git@github.com:o/r.git",
   });
-  assert.match(text(shells), /stdout:\n# Added by bb-box: .*\nvalue-machine\n(.*\n)*.*gh auth git-credential\nhttps:\/\/github\.com\/o\/r\.git\n/);
-  // BB was asked for the names once, as the box started, and not again for each command.
+  assert.match(text(shells), /stdout:\n# Added by alia-box: .*\nvalue-machine\n(.*\n)*.*gh auth git-credential\nhttps:\/\/github\.com\/o\/r\.git\n/);
+  // VesnALIA was asked for the names once, as the box started, and not again for each command.
   assert.deepEqual(world.names.sort(), [PROJECT, "system"]);
 
   await tool("box_release", { box: box.name });
@@ -1323,16 +1323,16 @@ test("a ready box becomes a BB machine, and its machine goes before the box", as
   assert.deepEqual(world.backend!.calls.filter((call) => call.startsWith("release")).length, 1);
 });
 
-test("the enrolment waits for BB's daemon to start a worker with the thread's variables, so the first command has them", async (t) => {
+test("the enrolment waits for VesnALIA's daemon to start a worker with the thread's variables, so the first command has them", async (t) => {
   const connected = join(tempDir("connected"), "connected");
   const daemon = await fakeDaemon([{ GH_TOKEN: "value-token", MACHINE_VAR: "value-machine" }], { startOn: { file: connected, seconds: 1 } });
   t.after(daemon.stop);
   const { harness, app, world, tool } = await start(undefined, { daemonParent: daemon.parent });
   t.after(() => harness.lifecycle.dispose());
-  // BB shows the machine connected as its installer returns, and its daemon starts the workers a second later.
+  // VesnALIA shows the machine connected as its installer returns, and its daemon starts the workers a second later.
   world.installer = `: > '${connected}'`;
 
-  assert.match(text(await tool("box_acquire", { kind: "linux" })), /BB machine: enrolled/);
+  assert.match(text(await tool("box_acquire", { kind: "linux" })), /ALIA machine: enrolled/);
   const box = await only(app);
   const run = await tool("box_run", { box: box.name, command: 'printf "%s|%s\\n" "${GH_TOKEN:+token}" "$MACHINE_VAR"' });
   assert.match(text(run), /stdout:\ntoken\|value-machine\n/);
@@ -1340,7 +1340,7 @@ test("the enrolment waits for BB's daemon to start a worker with the thread's va
   assert.match(logged ?? "", /, waiting for a worker with the thread's variables (0\.[5-9]|[1-4]\.\d)\d s, finishing /);
 });
 
-test("the enrolment waits for GH_TOKEN, which BB can give a new machine after its other variables, so the first command has it and the git identity", async (t) => {
+test("the enrolment waits for GH_TOKEN, which VesnALIA can give a new machine after its other variables, so the first command has it and the git identity", async (t) => {
   const connected = join(tempDir("connected"), "connected");
   const identity = { GIT_AUTHOR_NAME: "A Person", GIT_AUTHOR_EMAIL: "a@example.com", GIT_COMMITTER_NAME: "A Person", GIT_COMMITTER_EMAIL: "a@example.com" };
   // A worker with the git identity a second after the machine connects; GH_TOKEN a second or so later.
@@ -1354,7 +1354,7 @@ test("the enrolment waits for GH_TOKEN, which BB can give a new machine after it
     daemon.start({ ...identity, GH_TOKEN: "value-token" });
   })();
 
-  assert.match(text(await tool("box_acquire", { kind: "linux" })), /BB machine: enrolled/);
+  assert.match(text(await tool("box_acquire", { kind: "linux" })), /ALIA machine: enrolled/);
   const box = await only(app);
   const logged = harness.inspection.logEntries.map((entry) => entry.message).find((line) => line.startsWith(`Enrolled box ${box.name} `));
   assert.match(logged ?? "", /, waiting for a worker with the thread's variables [1-9]\.\d+ s, finishing /, "past the identity, until GH_TOKEN");
@@ -1362,12 +1362,12 @@ test("the enrolment waits for GH_TOKEN, which BB can give a new machine after it
   assert.match(text(run), /stdout:\ntoken\nA Person <a@example\.com> \d+ [+-]\d{4}\nA Person <a@example\.com> \d+ [+-]\d{4}\n/);
 });
 
-test("box_start waits for the box's BB daemon to start again with a worker with the thread's variables", async (t) => {
+test("box_start waits for the box's VesnALIA daemon to start again with a worker with the thread's variables", async (t) => {
   const parent = join(tempDir("daemon"), "daemon-bundle");
   const { harness, app, world, tool } = await start(undefined, { daemonParent: parent });
   t.after(() => harness.lifecycle.dispose());
   // Nothing runs the daemon's program yet, so the enrolment does not wait.
-  assert.match(text(await tool("box_acquire", { kind: "linux" })), /BB machine: enrolled/);
+  assert.match(text(await tool("box_acquire", { kind: "linux" })), /ALIA machine: enrolled/);
   const box = await only(app);
   await tool("box_stop", { box: box.name });
 
@@ -1383,24 +1383,24 @@ test("box_start waits for the box's BB daemon to start again with a worker with 
   assert.match(text(run), /stdout:\ntoken\|value-machine\n/);
 });
 
-test("commands in an enrolled box keep the thread's access when BB's workers that had it are gone, from BB Box's host entry, and its old terminal is closed", async (t) => {
-  // No worker has the variables, as after a plugin reload stopped BB's plugin workers in the box.
+test("commands in an enrolled box keep the thread's access when VesnALIA's workers that had it are gone, from VesnALIA Box's host entry, and its old terminal is closed", async (t) => {
+  // No worker has the variables, as after a plugin reload stopped VesnALIA's plugin workers in the box.
   const daemon = await fakeDaemon([{ UNLISTED: "value-unlisted" }]);
   t.after(daemon.stop);
   const { harness, app, world, tool } = await start(undefined, { daemonParent: daemon.parent, variablesWaitMs: 300 });
   t.after(() => harness.lifecycle.dispose());
-  // BB's worker for BB Box's host entry starts a process with the daemon's variables, below the daemon.
+  // VesnALIA's worker for VesnALIA Box's host entry starts a process with the daemon's variables, below the daemon.
   let started: (() => boolean) | null = null;
   world.hostEntry = (_method, hostId) => {
     if (!started) {
-      // The terminal BB Box kept for this before (#217), there before the first call.
+      // The terminal VesnALIA Box kept for this before (#217), there before the first call.
       world.terminals.set("term_old", { id: "term_old", hostId, title: RETIRED_TITLE, command: "sleep 2147483647", status: "running", createdAt: 1 });
       started = daemon.start({ GH_TOKEN: "value-token", MACHINE_VAR: "value-machine" });
     }
     return { started: true, pid: 1 };
   };
 
-  assert.match(text(await tool("box_acquire", { kind: "linux" })), /BB machine: enrolled/);
+  assert.match(text(await tool("box_acquire", { kind: "linux" })), /ALIA machine: enrolled/);
   const box = await only(app);
   const hostId = `host-${box.id}`;
   await until("the host entry's process", async () => started?.() ?? false);
@@ -1416,14 +1416,14 @@ test("commands in an enrolled box keep the thread's access when BB's workers tha
   await until("the old terminal to close", async () => world.terminals.get("term_old")?.status === "exited");
 });
 
-test("the sweeper stops at once when the plugin stops, mid-reconnect or with BB not answering, though a backend's call would wait", async (t) => {
+test("the sweeper stops at once when the plugin stops, mid-reconnect or with VesnALIA not answering, though a backend's call would wait", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
-  assert.match(text(await tool("box_acquire", { kind: "linux" })), /BB machine: enrolled/);
+  assert.match(text(await tool("box_acquire", { kind: "linux" })), /ALIA machine: enrolled/);
   const box = await only(app);
   const hostId = `host-${box.id}`;
 
-  // BB shows the machine disconnected, so the sweep starts its daemon again, and BB's installer takes minutes.
+  // VesnALIA shows the machine disconnected, so the sweep starts its daemon again, and VesnALIA's installer takes minutes.
   world.hosts.set(hostId, { ...world.hosts.get(hostId)!, status: "disconnected" });
   world.installer = "sleep 300";
   const before = world.bootstraps.length;
@@ -1434,7 +1434,7 @@ test("the sweeper stops at once when the plugin stops, mid-reconnect or with BB 
   await first.done;
   assert.ok(Date.now() - stopped < 1_000, `the sweeper stopped in ${Date.now() - stopped} ms, not when the installer ends`);
 
-  // BB no longer answers the plugin's calls about machines, as for a plugin that is stopping.
+  // VesnALIA no longer answers the plugin's calls about machines, as for a plugin that is stopping.
   world.silent = true;
   const second = harness.behavior.runService("sweeper");
   await new Promise((resolve) => setTimeout(resolve, 100));
@@ -1445,8 +1445,8 @@ test("the sweeper stops at once when the plugin stops, mid-reconnect or with BB 
   world.silent = false;
 });
 
-test("the images-after-a-BB-update service ends within a second when the plugin stops during its look at the images (#852)", async (t) => {
-  // BB's server takes the look's question about its app and never answers, as one that is going away.
+test("the images-after-a-ALIA-update service ends within a second when the plugin stops during its look at the images (#852)", async (t) => {
+  // VesnALIA's server takes the look's question about its app and never answers, as one that is going away.
   const asked: ServerResponse[] = [];
   const server = createServer((_request, response) => void asked.push(response));
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -1461,8 +1461,8 @@ test("the images-after-a-BB-update service ends within a second when the plugin 
   const applied = (await harness.behavior.callRpc("config.apply", { draft: { ...rest, general: { ...rest.general, nightlyImages: true } }, revision: rest.revision })) as { ok: boolean };
   assert.ok(applied.ok, JSON.stringify(applied));
 
-  const service = harness.behavior.runService("bb-update-images");
-  await until("the look to ask BB's server", async () => asked.length > 0);
+  const service = harness.behavior.runService("alia-update-images");
+  await until("the look to ask VesnALIA's server", async () => asked.length > 0);
   const stopped = Date.now();
   service.controller.abort(new Error("the plugin is stopping"));
   // Before #852 it ended only when its wait for the next look ran out, about 5 minutes later.
@@ -1471,10 +1471,10 @@ test("the images-after-a-BB-update service ends within a second when the plugin 
   assert.ok(Date.now() - stopped < 1_000, `the service ended in ${Date.now() - stopped} ms`);
 });
 
-test("box_start waits for BB to show the box's machine connected again, but only so long", async (t) => {
+test("box_start waits for VesnALIA to show the box's machine connected again, but only so long", async (t) => {
   const { harness, app, world, tool } = await start(undefined, { variablesWaitMs: 300 });
   t.after(() => harness.lifecycle.dispose());
-  assert.match(text(await tool("box_acquire", { kind: "linux" })), /BB machine: enrolled/);
+  assert.match(text(await tool("box_acquire", { kind: "linux" })), /ALIA machine: enrolled/);
   const box = await only(app);
   const hostId = `host-${box.id}`;
   const stop = async () => {
@@ -1485,23 +1485,23 @@ test("box_start waits for BB to show the box's machine connected again, but only
   await stop();
   world.connectAfterMs = 200;
   assert.ok(!isError(await tool("box_start", { box: box.name })));
-  assert.equal(world.hosts.get(hostId)?.status, "connected", "box_start returned once BB showed the machine connected");
+  assert.equal(world.hosts.get(hostId)?.status, "connected", "box_start returned once VesnALIA showed the machine connected");
 
   await stop();
   world.connectAfterMs = null;
   assert.ok(!isError(await tool("box_start", { box: box.name })));
   const messages = harness.inspection.logEntries.map((entry) => entry.message);
-  assert.ok(messages.includes(`BB did not show box ${box.name}'s machine connected 0.3 s after its daemon started again.`), messages.join("\n"));
+  assert.ok(messages.includes(`VesnALIA did not show box ${box.name}'s machine connected 0.3 s after its daemon started again.`), messages.join("\n"));
 });
 
-test("a box whose machine BB removes while BB Box waits for the variables is not enrolled", async (t) => {
+test("a box whose machine VesnALIA removes while VesnALIA Box waits for the variables is not enrolled", async (t) => {
   const daemon = await fakeDaemon([{ UNLISTED: "value-unlisted" }]);
   t.after(daemon.stop);
   const { harness, app, world, tool } = await start(undefined, { daemonParent: daemon.parent, variablesWaitMs: 1_500 });
   t.after(() => harness.lifecycle.dispose());
 
   const acquired = tool("box_acquire", { kind: "linux" });
-  const box = await until("BB to show the machine connected", async () => {
+  const box = await until("VesnALIA to show the machine connected", async () => {
     const [current] = await app.boxes.list(THREAD);
     return current && world.hosts.get(`host-${current.id}`)?.status === "connected" ? current : null;
   });
@@ -1514,13 +1514,13 @@ test("a box whose machine BB removes while BB Box waits for the variables is not
   await new Promise((resolve) => setTimeout(resolve, 1_400));
   const messages = harness.inspection.logEntries.map((entry) => entry.message);
   assert.deepEqual((await app.boxes.find(box.id))?.enrol, { state: "off", hostId: null, error: null });
-  assert.ok(!messages.some((line) => line.startsWith(`Enrolled box ${box.name} `) || line.startsWith(`BB's daemon in box ${box.name} had no worker`)), messages.join("\n"));
+  assert.ok(!messages.some((line) => line.startsWith(`Enrolled box ${box.name} `) || line.startsWith(`VesnALIA's daemon in box ${box.name} had no worker`)), messages.join("\n"));
 });
 
-test("a box whose machine BB removes while its daemon starts again is not enrolled", async (t) => {
+test("a box whose machine VesnALIA removes while its daemon starts again is not enrolled", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
-  assert.match(text(await tool("box_acquire", { kind: "linux" })), /BB machine: enrolled/);
+  assert.match(text(await tool("box_acquire", { kind: "linux" })), /ALIA machine: enrolled/);
   const box = await only(app);
   await tool("box_stop", { box: box.name });
 
@@ -1535,7 +1535,7 @@ test("a box whose machine BB removes while its daemon starts again is not enroll
   assert.deepEqual((await app.boxes.find(box.id))?.enrol, { state: "off", hostId: null, error: null });
 });
 
-test("without GitHub in BB, a new box waits only for the machine variables a user set, not for GH_TOKEN", async (t) => {
+test("without GitHub in VesnALIA, a new box waits only for the machine variables a user set, not for GH_TOKEN", async (t) => {
   const connected = join(tempDir("connected"), "connected");
   const daemon = await fakeDaemon([{ MACHINE_VAR: "value-machine" }], { startOn: { file: connected, seconds: 0.5 } });
   t.after(daemon.stop);
@@ -1544,8 +1544,8 @@ test("without GitHub in BB, a new box waits only for the machine variables a use
   world.git = "not logged in";
   world.installer = `: > '${connected}'`;
   const started = Date.now();
-  assert.match(text(await tool("box_acquire", { kind: "linux" })), /BB machine: enrolled/);
-  assert.ok(Date.now() - started < 10_000, `no wait for a token BB does not give: ${Date.now() - started} ms`);
+  assert.match(text(await tool("box_acquire", { kind: "linux" })), /ALIA machine: enrolled/);
+  assert.ok(Date.now() - started < 10_000, `no wait for a token VesnALIA does not give: ${Date.now() - started} ms`);
   const box = await only(app);
   const messages = harness.inspection.logEntries.map((entry) => entry.message);
   assert.ok(!messages.some((line) => line.includes("had no process with the thread's GH_TOKEN")), messages.join("\n"));
@@ -1553,7 +1553,7 @@ test("without GitHub in BB, a new box waits only for the machine variables a use
   assert.match(text(run), /stdout:\nnone\|value-machine/);
 });
 
-test("without GitHub or machine variables in BB, a new box does not wait at all, as BB gives git's identity only with its GitHub login", async (t) => {
+test("without GitHub or machine variables in VesnALIA, a new box does not wait at all, as VesnALIA gives git's identity only with its GitHub login", async (t) => {
   const connected = join(tempDir("connected"), "connected");
   const daemon = await fakeDaemon([{ UNLISTED: "value-unlisted" }], { startOn: { file: connected, seconds: 0.5 } });
   t.after(daemon.stop);
@@ -1564,8 +1564,8 @@ test("without GitHub or machine variables in BB, a new box does not wait at all,
   world.projectVariables = [];
   world.installer = `: > '${connected}'`;
   const started = Date.now();
-  assert.match(text(await tool("box_acquire", { kind: "linux" })), /BB machine: enrolled/);
-  assert.ok(Date.now() - started < 10_000, `no wait for variables BB does not give: ${Date.now() - started} ms`);
+  assert.match(text(await tool("box_acquire", { kind: "linux" })), /ALIA machine: enrolled/);
+  assert.ok(Date.now() - started < 10_000, `no wait for variables VesnALIA does not give: ${Date.now() - started} ms`);
   const messages = harness.inspection.logEntries.map((entry) => entry.message);
   assert.ok(!messages.some((line) => line.includes("had no process with the thread's")), messages.join("\n"));
 });
@@ -1576,11 +1576,11 @@ test("the enrolment waits only so long for a worker with the thread's variables"
   const { harness, app, tool } = await start(undefined, { daemonParent: daemon.parent, variablesWaitMs: 300 });
   t.after(() => harness.lifecycle.dispose());
 
-  assert.match(text(await tool("box_acquire", { kind: "linux" })), /BB machine: enrolled/);
+  assert.match(text(await tool("box_acquire", { kind: "linux" })), /ALIA machine: enrolled/);
   const box = await only(app);
   const messages = harness.inspection.logEntries.map((entry) => entry.message);
   assert.ok(
-    messages.includes(`BB's daemon in box ${box.name} had no process with the thread's GH_TOKEN 0.3 s after the machine connected. Its commands take it once one has.`),
+    messages.includes(`VesnALIA's daemon in box ${box.name} had no process with the thread's GH_TOKEN 0.3 s after the machine connected. Its commands take it once one has.`),
     messages.join("\n"),
   );
   // The wait counts from when the machine connected, so any wait for the access setup is part of it.
@@ -1590,7 +1590,7 @@ test("the enrolment waits only so long for a worker with the thread's variables"
   assert.ok(step("waiting for the access setup") + step("waiting for a worker with the thread's variables") >= 0.29, line);
 });
 
-test("an enrolment fails, and says why, when BB's daemon stops soon after the machine connects, as in a box out of memory (#286)", async (t) => {
+test("an enrolment fails, and says why, when VesnALIA's daemon stops soon after the machine connects, as in a box out of memory (#286)", async (t) => {
   // A worker without the thread's variables keeps the enrolment waiting while the daemon stops.
   const daemon = await fakeDaemon([{ UNLISTED: "value-unlisted" }]);
   t.after(daemon.stop);
@@ -1601,7 +1601,7 @@ test("an enrolment fails, and says why, when BB's daemon stops soon after the ma
   assert.ok(applied.ok, JSON.stringify(applied));
 
   const acquired = tool("box_acquire", { kind: "linux", size: "small" });
-  const box = await until("BB to show the machine connected", async () => {
+  const box = await until("VesnALIA to show the machine connected", async () => {
     const [current] = await app.boxes.list(THREAD);
     return current && world.hosts.get(`host-${current.id}`)?.status === "connected" ? current : null;
   });
@@ -1611,10 +1611,10 @@ test("an enrolment fails, and says why, when BB's daemon stops soon after the ma
   world.hosts.set(hostId, { ...world.hosts.get(hostId)!, status: "disconnected" });
 
   const reason =
-    `BB's daemon in box ${box.name} stopped soon after it connected, and BB did not show the machine connected again within 1.5 s. ` +
-    "The box has 1 GiB memory: with less than 2 GiB it can run out of memory as it becomes a BB machine.";
+    `VesnALIA's daemon in box ${box.name} stopped soon after it connected, and VesnALIA did not show the machine connected again within 1.5 s. ` +
+    "The box has 1 GiB memory: with less than 2 GiB it can run out of memory as it becomes a VesnALIA machine.";
   const result = text(await acquired);
-  assert.ok(result.includes(`BB machine: enrolment failed: ${reason}\n`), result);
+  assert.ok(result.includes(`VesnALIA machine: enrolment failed: ${reason}\n`), result);
   assert.deepEqual((await app.boxes.find(box.id))?.enrol, { state: "failed", hostId, error: reason });
   const messages = harness.inspection.logEntries.map((entry) => entry.message);
   assert.ok(messages.includes(reason), messages.join("\n"));
@@ -1625,14 +1625,14 @@ test("an enrolment fails, and says why, when BB's daemon stops soon after the ma
   assert.deepEqual(world.events, [`create ${hostId}`, `delete ${hostId}`]);
 });
 
-test("an enrolment that finds the machine disconnected as its waits end gives BB a while to show it connected again (#286)", async (t) => {
+test("an enrolment that finds the machine disconnected as its waits end gives VesnALIA a while to show it connected again (#286)", async (t) => {
   const daemon = await fakeDaemon([{ UNLISTED: "value-unlisted" }]);
   t.after(daemon.stop);
   const { harness, app, world, tool } = await start(undefined, { daemonParent: daemon.parent, variablesWaitMs: 1_000 });
   t.after(() => harness.lifecycle.dispose());
 
   const acquired = tool("box_acquire", { kind: "linux" });
-  const box = await until("BB to show the machine connected", async () => {
+  const box = await until("VesnALIA to show the machine connected", async () => {
     const [current] = await app.boxes.list(THREAD);
     return current && world.hosts.get(`host-${current.id}`)?.status === "connected" ? current : null;
   });
@@ -1640,12 +1640,12 @@ test("an enrolment that finds the machine disconnected as its waits end gives BB
   const hostId = `host-${box.id}`;
   world.hosts.set(hostId, { ...world.hosts.get(hostId)!, status: "disconnected" });
   await until("the wait for the variables to end", async () =>
-    harness.inspection.logEntries.some((entry) => entry.message.startsWith(`BB's daemon in box ${box.name} had no process`)),
+    harness.inspection.logEntries.some((entry) => entry.message.startsWith(`VesnALIA's daemon in box ${box.name} had no process`)),
   );
   await new Promise((resolve) => setTimeout(resolve, 300));
   world.hosts.set(hostId, { ...world.hosts.get(hostId)!, status: "connected" });
 
-  assert.match(text(await acquired), /BB machine: enrolled\n/);
+  assert.match(text(await acquired), /ALIA machine: enrolled\n/);
   assert.deepEqual((await app.boxes.find(box.id))?.enrol, { state: "enrolled", hostId, error: null });
 });
 
@@ -1662,15 +1662,15 @@ test("a reload during an enrolment stops the replaced instance's enrolment at on
   });
   world.connectAfterMs = null;
   await host.behavior.callRpc("acquire", { threadId: THREAD, kind: "linux" });
-  const box = await until("the enrolment to wait for BB to show the machine connected, its installer done", async () => {
+  const box = await until("the enrolment to wait for VesnALIA to show the machine connected, its installer done", async () => {
     const [current] = await app.boxes.list(THREAD);
     const machine = current?.enrol.hostId ? world.hosts.get(current.enrol.hostId) : undefined;
     return current?.enrol.state === "enrolling" && machine?.lifecycle.phase === "active" ? current : null;
   });
   const old = harness;
   let restarted: Awaited<ReturnType<typeof setup>> | null = null;
-  const next = await host.lifecycle.reload(async (bb) => {
-    restarted = await setup(bb, setupOptions);
+  const next = await host.lifecycle.reload(async (alia) => {
+    restarted = await setup(alia, setupOptions);
   });
   host = next.harness;
   world.current = next.harness as never;
@@ -1683,7 +1683,7 @@ test("a reload during an enrolment stops the replaced instance's enrolment at on
   await until("the next run to enrol the box", async () => (await restarted!.boxes.find(box.id))?.enrol.state === "enrolled");
 });
 
-test("a reload while BB's installer runs in a box ends the installer, and the next run adds the box again and enrols it, rather than leave it failed (#1032)", async (t) => {
+test("a reload while VesnALIA's installer runs in a box ends the installer, and the next run adds the box again and enrols it, rather than leave it failed (#1032)", async (t) => {
   const { harness, app, world, setupOptions } = await start();
   let host = harness;
   let sweeper: ReturnType<typeof harness.behavior.runService> | null = null;
@@ -1697,26 +1697,26 @@ test("a reload while BB's installer runs in a box ends the installer, and the ne
   const installer = world.installer;
   world.installer = "sleep 30";
   await host.behavior.callRpc("acquire", { threadId: THREAD, kind: "linux" });
-  const box = await until("BB's installer to run in the box", async () => {
+  const box = await until("VesnALIA's installer to run in the box", async () => {
     const [current] = await app.boxes.list(THREAD);
     return current?.enrol.state === "enrolling" && world.bootstraps.length ? current : null;
   });
   const old = harness;
   let restarted: Awaited<ReturnType<typeof setup>> | null = null;
-  const next = await host.lifecycle.reload(async (bb) => {
-    restarted = await setup(bb, setupOptions);
+  const next = await host.lifecycle.reload(async (alia) => {
+    restarted = await setup(alia, setupOptions);
   });
   host = next.harness;
   world.current = next.harness as never;
   world.installer = installer;
   sweeper = next.harness.behavior.runService("sweeper");
   await until("the next run to enrol the box", async () => (await restarted!.boxes.find(box.id))?.enrol.state === "enrolled");
-  assert.ok(world.bootstraps.length >= 2, "BB's installer ran again");
+  assert.ok(world.bootstraps.length >= 2, "VesnALIA's installer ran again");
   assert.deepEqual(old.inspection.logEntries.filter((entry) => /enrol/i.test(entry.message) && /fail|error|stale/i.test(entry.message)).map((entry) => entry.message), []);
-  assert.ok(next.harness.inspection.logEntries.some((entry) => entry.message === `BB removed box ${box.name}'s machine while bb-box restarted, as when a restart ended BB's installer in it; bb-box adds the box again.`));
+  assert.ok(next.harness.inspection.logEntries.some((entry) => entry.message === `VesnALIA removed box ${box.name}'s machine while alia-box restarted, as when a restart ended VesnALIA's installer in it; alia-box adds the box again.`));
 });
 
-test("an enrolment fails, and says why, when BB does not show the machine connected soon after its daemon started (#286)", async (t) => {
+test("an enrolment fails, and says why, when VesnALIA does not show the machine connected soon after its daemon started (#286)", async (t) => {
   const { harness, app, world, tool } = await start(undefined, { variablesWaitMs: 300 });
   t.after(() => harness.lifecycle.dispose());
   world.connectAfterMs = null;
@@ -1724,12 +1724,12 @@ test("an enrolment fails, and says why, when BB does not show the machine connec
   // box_acquire waits for the enrolment for 20 s at most, well short of its 5 minutes.
   const result = text(await tool("box_acquire", { kind: "linux" }));
   const box = await only(app);
-  const reason = `BB's daemon in box ${box.name} started, but BB did not show the machine connected within 0.3 s.`;
-  assert.ok(result.includes(`BB machine: enrolment failed: ${reason}\n`), result);
+  const reason = `VesnALIA's daemon in box ${box.name} started, but VesnALIA did not show the machine connected within 0.3 s.`;
+  assert.ok(result.includes(`VesnALIA machine: enrolment failed: ${reason}\n`), result);
   assert.deepEqual((await app.boxes.find(box.id))?.enrol, { state: "failed", hostId: `host-${box.id}`, error: reason });
 });
 
-test("the nightly rebuilds run on BB Box's own schedule at 03:00 while General's switch is on, and not while it is off", async (t) => {
+test("the nightly rebuilds run on VesnALIA Box's own schedule at 03:00 while General's switch is on, and not while it is off", async (t) => {
   const { harness, app } = await start();
   t.after(() => harness.lifecycle.dispose());
   assert.deepEqual(
@@ -1746,30 +1746,30 @@ test("the nightly rebuilds run on BB Box's own schedule at 03:00 while General's
   assert.equal(started(), 1);
 });
 
-test("a box BB could not add as a machine says why, after BB removes the machine (the newcomer check: bb connect without a sign-in)", async (t) => {
+test("a box VesnALIA could not add as a machine says why, after VesnALIA removes the machine (the newcomer check: VesnALIA connect without a sign-in)", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
-  world.bootstrapError = "Sign in to your bb account to use bb connect";
+  world.bootstrapError = "Sign in to your VesnALIA account to use VesnALIA connect";
 
   const acquired = tool("box_acquire", { kind: "linux" });
-  const box = await until("BB to give up on the machine", async () => {
+  const box = await until("VesnALIA to give up on the machine", async () => {
     const [current] = await app.boxes.list(THREAD);
     return current && world.hosts.get(`host-${current.id}`)?.lifecycle.phase === "destroyed" ? current : null;
   });
-  // As BB does then: it removes the machine through BB Box's provider, and says it is deleted.
+  // As VesnALIA does then: it removes the machine through VesnALIA Box's provider, and says it is deleted.
   const hostId = `host-${box.id}`;
   const host = world.hosts.get(hostId)!;
-  await harness.inspection.registrations.machineProviders.get("bb-box")!.remove({ hostId, resource: { boxId: box.id } } as never);
+  await harness.inspection.registrations.machineProviders.get("alia-box")!.remove({ hostId, resource: { boxId: box.id } } as never);
   world.hosts.delete(hostId);
   await app.enrolment.forgetHost(host.id);
 
-  const reason = `Enrolling box ${box.name} failed: Sign in to your bb account to use bb connect`;
-  assert.match(text(await acquired), /BB machine: enrolment failed: .*Sign in to your bb account to use bb connect/);
+  const reason = `Enrolling box ${box.name} failed: Sign in to your VesnALIA account to use VesnALIA connect`;
+  assert.match(text(await acquired), /ALIA machine: enrolment failed: .*Sign in to your alia account to use alia connect/);
   assert.deepEqual((await app.boxes.find(box.id))?.enrol, { state: "failed", hostId: null, error: reason });
 });
 
 const DNS_TIMEOUT = "curl: (28) Resolving timed out after 10001 milliseconds";
-const REFUSED = "curl: (7) Failed to connect to bb.example.com port 443 after 3 ms: Connection refused";
+const REFUSED = "curl: (7) Failed to connect to alia.example.com port 443 after 3 ms: Connection refused";
 
 function failingInstaller(broken: string, words: string): string {
   return `if [ -e '${broken}' ]; then echo '${words}'; exit 1; fi`;
@@ -1777,7 +1777,7 @@ function failingInstaller(broken: string, words: string): string {
 
 async function joinChecksOf(harness: Awaited<ReturnType<typeof start>>["harness"]) {
   const doctor = JSON.parse((await harness.behavior.runCli(["doctor", "--json"])).stdout ?? "{}") as DoctorJson;
-  return doctor.sections.find((each) => each.title === "Joining BB")?.report.checks ?? [];
+  return doctor.sections.find((each) => each.title === "Joining VesnALIA")?.report.checks ?? [];
 }
 
 async function failedTries(app: Awaited<ReturnType<typeof start>>["app"], boxId: string, count: number): Promise<BoxRecord> {
@@ -1799,13 +1799,13 @@ test("a join that failed for something that can pass, as a DNS lookup that timed
   world.installer = failingInstaller(broken, DNS_TIMEOUT);
 
   const acquired = text(await tool("box_acquire", { kind: "linux" }));
-  assert.match(acquired, /\nBB machine: joining BB: try 2 of 5 starts in (2\d|30) s\. Try 1 failed: This box could not look up BB's address in time/, "the acquire waits for the next try to be planned, so it never says the enrolment failed");
+  assert.match(acquired, /\nBB machine: joining ALIA: try 2 of 5 starts in (2\d|30) s\. Try 1 failed: This box could not look up ALIA's address in time/, "the acquire waits for the next try to be planned, so it never says the enrolment failed");
   const box = await failedTries(app, (await only(app)).id, 1);
   assert.deepEqual([box.enrol.state, box.enrol.hostId, box.joinTries?.problem, box.joinTries?.setup], ["enrolling", null, "dns-timeout", false]);
-  assert.equal(box.joinTries?.words, `This box could not look up BB's address in time (${DNS_TIMEOUT}).`);
+  assert.equal(box.joinTries?.words, `This box could not look up VesnALIA's address in time (${DNS_TIMEOUT}).`);
   assert.ok(box.joinTries!.next! - Date.now() > 20_000 && box.joinTries!.next! - Date.now() <= 30_000, "the second try is 30 s after the first");
   const status = text(await tool("box_status", { box: box.name }));
-  assert.match(status, /BB machine: joining BB: try 2 of 5 starts in (2\d|30) s\. Try 1 failed: This box could not look up BB's address in time \(curl: \(28\) Resolving timed out after 10001 milliseconds\)\./);
+  assert.match(status, /ALIA machine: joining ALIA: try 2 of 5 starts in (2\d|30) s\. Try 1 failed: This box could not look up ALIA's address in time \(curl: \(28\) Resolving timed out after 10001 milliseconds\)\./);
   assert.doesNotMatch(status, /tailnet/);
   assert.equal((await joinChecksOf(harness))[0]?.status, "warn");
 
@@ -1825,7 +1825,7 @@ test("a join that failed for something that can pass, as a DNS lookup that timed
     return current?.enrol.state === "enrolled" ? current : null;
   });
   assert.equal(joined.joinTries, null);
-  assert.ok(harness.inspection.logEntries.some((entry) => entry.message === `Box ${box.name} joined BB at its try 3 of 5.`));
+  assert.ok(harness.inspection.logEntries.some((entry) => entry.message === `Box ${box.name} joined VesnALIA at its try 3 of 5.`));
   assert.deepEqual(await joinChecksOf(harness), []);
 });
 
@@ -1849,7 +1849,7 @@ class SetAlarms implements JoinAlarm {
   }
 }
 
-test("a try to join BB starts by itself once it is due, without waiting for the next sweep (a set clock)", async (t) => {
+test("a try to join VesnALIA starts by itself once it is due, without waiting for the next sweep (a set clock)", async (t) => {
   const alarms = new SetAlarms();
   let now = Date.now() + 3_600_000;
   const { harness, app, world, tool } = await start(undefined, { joinAlarm: alarms, now: () => now });
@@ -1878,12 +1878,12 @@ test("a try to join BB starts by itself once it is due, without waiting for the 
   assert.deepEqual(alarms.pending, [], "a joined box has no try planned");
 });
 
-test("a box that cannot reach BB while other boxes on its backend joined says what failed, and gives no setup advice", async (t) => {
+test("a box that cannot reach VesnALIA while other boxes on its backend joined says what failed, and gives no setup advice", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   const broken = join(tempDir("dns"), "broken");
   world.installer = failingInstaller(broken, DNS_TIMEOUT);
-  assert.match(text(await tool("box_acquire", { kind: "linux" })), /BB machine: enrolled/);
+  assert.match(text(await tool("box_acquire", { kind: "linux" })), /ALIA machine: enrolled/);
   writeFileSync(broken, "");
   assert.ok(!isError(await tool("box_acquire", { kind: "linux" })));
   const [, second] = await app.boxes.list(THREAD);
@@ -1897,7 +1897,7 @@ test("a box that cannot reach BB while other boxes on its backend joined says wh
   assert.equal(box.joinTries?.setup, false);
   assert.equal(
     box.enrol.error,
-    `This box could not look up BB's address in time (${DNS_TIMEOUT}). It failed 5 tries. Other boxes on ${box.backendLabel} joined BB, so BB's setup is fine: the fault is in this box's network. BB Box tries again every 30 minutes for up to 24 hours; Join BB again tries at once.`,
+    `This box could not look up VesnALIA's address in time (${DNS_TIMEOUT}). It failed 5 tries. Other boxes on ${box.backendLabel} joined VesnALIA, so VesnALIA's setup is fine: the fault is in this box's network. VesnALIA Box tries again every 30 minutes for up to 24 hours; Join VesnALIA again tries at once.`,
   );
   assert.ok(box.joinTries!.next! - Date.now() > 25 * 60_000, "it keeps trying every 30 minutes");
   assert.doesNotMatch(text(await tool("box_status", { box: box.name })), /tailnet|not reachable from/);
@@ -1905,7 +1905,7 @@ test("a box that cannot reach BB while other boxes on its backend joined says wh
   assert.deepEqual([check?.status, check?.detail], ["warn", box.enrol.error]);
 });
 
-test("a box whose connection to BB is refused while no box on its backend reaches BB gives the setup advice at once, as does each other box there", async (t) => {
+test("a box whose connection to VesnALIA is refused while no box on its backend reaches VesnALIA gives the setup advice at once, as does each other box there", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   const broken = join(tempDir("refused"), "broken");
@@ -1918,7 +1918,7 @@ test("a box whose connection to BB is refused while no box on its backend reache
     assert.equal(box.joinTries?.setup, true);
     assert.equal(
       box.enrol.error,
-      `This box found BB's address, but nothing there accepted the connection: it was refused (${REFUSED}). It failed 1 try. No box on ${box.backendLabel} can reach BB, so BB's address is likely one its boxes cannot reach: turn the tailnet on in BB Box's settings, or give BB a URL its boxes can reach (docs/guide/tailnet.md). BB Box tries again every 30 minutes for up to 24 hours; Join BB again tries at once.`,
+      `This box found VesnALIA's address, but nothing there accepted the connection: it was refused (${REFUSED}). It failed 1 try. No box on ${box.backendLabel} can reach VesnALIA, so VesnALIA's address is likely one its boxes cannot reach: turn the tailnet on in VesnALIA Box's settings, or give VesnALIA a URL its boxes can reach (docs/guide/tailnet.md). VesnALIA Box tries again every 30 minutes for up to 24 hours; Join VesnALIA again tries at once.`,
     );
   }
   assert.deepEqual((await joinChecksOf(harness)).map((check) => check.status), ["fail", "fail"]);
@@ -1952,7 +1952,7 @@ test("Check now tries again at once to add a box waiting for its next try, and a
   await until("the box to join", async () => (await app.boxes.find(gaveUp.id))?.enrol.state === "enrolled");
 });
 
-test("after 24 hours of failed tries BB Box gives up: the box says so, the sweep tries no more, and Join BB again starts a new round (clock set ahead)", async (t) => {
+test("after 24 hours of failed tries VesnALIA Box gives up: the box says so, the sweep tries no more, and Join VesnALIA again starts a new round (clock set ahead)", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   const broken = join(tempDir("dns"), "broken");
@@ -1966,23 +1966,23 @@ test("after 24 hours of failed tries BB Box gives up: the box says so, the sweep
     await app.enrolment.sweep();
     box = await failedTries(app, box.id, failed);
   }
-  assert.match(box.enrol.error ?? "", /BB Box tries again every 30 minutes for up to 24 hours; Join BB again tries at once\.$/);
+  assert.match(box.enrol.error ?? "", /ALIA Box tries again every 30 minutes for up to 24 hours; Join ALIA again tries at once\.$/);
 
   t.mock.timers.enable({ apis: ["Date"], now: since + 24 * 3_600_000 });
   await dueNow(app, box);
   await app.enrolment.sweep();
-  const gaveUp = await until("BB Box to give up", async () => {
+  const gaveUp = await until("VesnALIA Box to give up", async () => {
     const current = await app.boxes.find(box.id);
     return current?.joinTries?.failed === 6 ? current : null;
   });
   assert.deepEqual([gaveUp.enrol.state, gaveUp.joinTries?.next], ["failed", null]);
-  assert.match(gaveUp.enrol.error ?? "", /It failed 6 tries\. .* BB Box gave up after 24 hours of tries; Join BB again starts a new round\.$/);
-  assert.match(text(await tool("box_status", { box: box.name })), /BB machine: enrolment failed: .*BB Box gave up after 24 hours of tries/);
+  assert.match(gaveUp.enrol.error ?? "", /It failed 6 tries\. .* ALIA Box gave up after 24 hours of tries; Join ALIA again starts a new round\.$/);
+  assert.match(text(await tool("box_status", { box: box.name })), /ALIA machine: enrolment failed: .*ALIA Box gave up after 24 hours of tries/);
   const bootstraps = world.bootstraps.length;
   t.mock.timers.setTime(since + 48 * 3_600_000);
   await app.enrolment.sweep();
   await new Promise((resolve) => setTimeout(resolve, 200));
-  assert.equal(world.bootstraps.length, bootstraps, "no try after BB Box gave up");
+  assert.equal(world.bootstraps.length, bootstraps, "no try after VesnALIA Box gave up");
 
   rmSync(broken);
   const again = await app.checkNow(THREAD, box.name);
@@ -1991,7 +1991,7 @@ test("after 24 hours of failed tries BB Box gives up: the box says so, the sweep
 });
 
 const BEFORE_TRIES = (box: string, backend: string) =>
-  `BB's server is not reachable from ${backend}: turn the tailnet on in BB Box's settings, or give BB a URL its boxes can reach (docs/guide/tailnet.md). Enrolling box ${box} failed: Machine bootstrap command failed:\n\n${DNS_TIMEOUT}\nThe installer exited with 28.`;
+  `VesnALIA's server is not reachable from ${backend}: turn the tailnet on in VesnALIA Box's settings, or give VesnALIA a URL its boxes can reach (docs/guide/tailnet.md). Enrolling box ${box} failed: Machine bootstrap command failed:\n\n${DNS_TIMEOUT}\nThe installer exited with 28.`;
 
 async function failedBeforeTheTries(app: Awaited<ReturnType<typeof start>>["app"], world: Awaited<ReturnType<typeof start>>["world"], box: BoxRecord): Promise<BoxRecord> {
   world.hosts.delete(box.enrol.hostId!);
@@ -2011,7 +2011,7 @@ function untouched(app: Awaited<ReturnType<typeof start>>["app"], before: BoxRec
   assert.deepEqual(powerEvents(app, after.id), powered, "the box was not started, stopped, restarted or resized");
 }
 
-test("a box whose join failed on a DNS timeout before BB Box tried such failures again is picked up by the sweep, says what failed without setup advice, and joins", async (t) => {
+test("a box whose join failed on a DNS timeout before VesnALIA Box tried such failures again is picked up by the sweep, says what failed without setup advice, and joins", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   assert.ok(!isError(await tool("box_acquire", { kind: "linux" })));
@@ -2029,9 +2029,9 @@ test("a box whose join failed on a DNS timeout before BB Box tried such failures
   await app.enrolment.sweep();
   const planned = await failedTries(app, before.id, 1);
   assert.deepEqual([planned.enrol.state, planned.joinTries?.problem, planned.joinTries?.setup], ["enrolling", "dns-timeout", false]);
-  assert.equal(planned.joinTries?.words, `This box could not look up BB's address in time (${DNS_TIMEOUT}).`);
+  assert.equal(planned.joinTries?.words, `This box could not look up VesnALIA's address in time (${DNS_TIMEOUT}).`);
   assert.equal(world.bootstraps.length, bootstraps, "the sweep plans the tries, starting 30 s later, as after any first failure");
-  assert.ok(harness.inspection.logEntries.some((entry) => entry.message.startsWith(`Box ${before.name} could not join BB and had no tries planned`)));
+  assert.ok(harness.inspection.logEntries.some((entry) => entry.message.startsWith(`Box ${before.name} could not join VesnALIA and had no tries planned`)));
   const status = text(await tool("box_status", { box: before.name }));
   assert.doesNotMatch(status, /tailnet|not reachable from/);
   await app.enrolment.sweep();
@@ -2052,7 +2052,7 @@ test("a box whose join failed on a DNS timeout before BB Box tried such failures
   untouched(app, before, powered, joined);
 });
 
-const SLOW = "BB did not finish adding the box as a machine within 5 minutes.";
+const SLOW = "VesnALIA did not finish adding the box as a machine within 5 minutes.";
 
 async function joinedBox(app: Awaited<ReturnType<typeof start>>["app"], tool: Awaited<ReturnType<typeof start>>["tool"]): Promise<BoxRecord> {
   assert.ok(!isError(await tool("box_acquire", { kind: "linux" })));
@@ -2063,12 +2063,12 @@ async function joinedBox(app: Awaited<ReturnType<typeof start>>["app"], tool: Aw
 }
 
 function machineLeftAlone(world: Awaited<ReturnType<typeof start>>["world"], hostId: string, events: number, bootstraps: number): void {
-  assert.deepEqual(world.events.slice(events).filter((event) => event.includes(hostId) || event.startsWith("create")), [], "BB's machine was neither removed nor made again");
-  assert.equal(world.bootstraps.length, bootstraps, "BB's installer did not run, so BB's daemon in the box was not stopped");
+  assert.deepEqual(world.events.slice(events).filter((event) => event.includes(hostId) || event.startsWith("create")), [], "VesnALIA's machine was neither removed nor made again");
+  assert.equal(world.bootstraps.length, bootstraps, "VesnALIA's installer did not run, so VesnALIA's daemon in the box was not stopped");
   assert.equal(world.hosts.get(hostId)?.status, "connected");
 }
 
-test("an old slow failure whose machine BB has connected is recorded as a BB machine by the sweep: the machine is not removed and the box is not added again (review 1336)", async (t) => {
+test("an old slow failure whose machine VesnALIA has connected is recorded as a VesnALIA machine by the sweep: the machine is not removed and the box is not added again (review 1336)", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   const joined = await joinedBox(app, tool);
@@ -2078,7 +2078,7 @@ test("an old slow failure whose machine BB has connected is recorded as a BB mac
   const bootstraps = world.bootstraps.length;
 
   await app.enrolment.sweep();
-  const kept = await until("the box to be recorded as a BB machine", async () => {
+  const kept = await until("the box to be recorded as a VesnALIA machine", async () => {
     const current = await app.boxes.find(joined.id);
     return current?.enrol.state === "enrolled" ? current : null;
   });
@@ -2088,7 +2088,7 @@ test("an old slow failure whose machine BB has connected is recorded as a BB mac
   machineLeftAlone(world, hostId, events, bootstraps);
 });
 
-test("a try that is due, Join BB again, bb box enrol and box_enrol leave a machine BB still has alone, and record the box as a BB machine (review 1336)", async (t) => {
+test("a try that is due, Join VesnALIA again, VesnALIA box enrol and box_enrol leave a machine VesnALIA still has alone, and record the box as a VesnALIA machine (review 1336)", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   const joined = await joinedBox(app, tool);
@@ -2103,10 +2103,10 @@ test("a try that is due, Join BB again, bb box enrol and box_enrol leave a machi
 
   await app.boxes.update(joined, () => slowRecord);
   const cli = await harness.behavior.runCli(["enrol", joined.name, "--thread", THREAD]);
-  assert.equal(cli.stdout, `Box ${joined.name} is a BB machine already, as machine ${hostId}. Nothing changed.\n`);
+  assert.equal(cli.stdout, `Box ${joined.name} is a VesnALIA machine already, as machine ${hostId}. Nothing changed.\n`);
 
   await app.boxes.update(joined, () => slowRecord);
-  assert.match(text(await tool("box_enrol", { box: joined.name })), new RegExp(`is a BB machine already, as machine ${hostId}\\. Nothing changed\\.$`));
+  assert.match(text(await tool("box_enrol", { box: joined.name })), new RegExp(`is a VesnALIA machine already, as machine ${hostId}\\. Nothing changed\\.$`));
 
   await app.boxes.update(joined, () => slowRecord);
   const page = (await harness.behavior.callRpc("enrol", { threadId: THREAD, box: joined.id })) as { box: { enrol: { state: string; hostId: string | null } } | null; error: string | null };
@@ -2114,7 +2114,7 @@ test("a try that is due, Join BB again, bb box enrol and box_enrol leave a machi
   machineLeftAlone(world, hostId, events, bootstraps);
 });
 
-test("a machine BB is still adding is not removed: Join BB again says the box is joining, and changes nothing (review 1336)", async (t) => {
+test("a machine VesnALIA is still adding is not removed: Join VesnALIA again says the box is joining, and changes nothing (review 1336)", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   const joined = await joinedBox(app, tool);
@@ -2124,7 +2124,7 @@ test("a machine BB is still adding is not removed: Join BB again says the box is
   const events = world.events.length;
   const bootstraps = world.bootstraps.length;
   const cli = await harness.behavior.runCli(["enrol", joined.name, "--thread", THREAD]);
-  assert.match(cli.stdout ?? "", new RegExp(`^Box ${joined.name} is joining BB now, so nothing else was started\\.`));
+  assert.match(cli.stdout ?? "", new RegExp(`^Box ${joined.name} is joining VesnALIA now, so nothing else was started\\.`));
   await app.enrolment.sweep();
   await new Promise((resolve) => setTimeout(resolve, 200));
   assert.deepEqual(world.events.slice(events).filter((event) => event.includes(hostId)), []);
@@ -2146,7 +2146,7 @@ test("with enrolment off, the sweep plans no tries for a thread's box that faile
   assert.equal(world.bootstraps.length, bootstraps);
 });
 
-test("a failure that cannot pass, as bb connect without a sign-in, is not picked up by the sweep", async (t) => {
+test("a failure that cannot pass, as VesnALIA connect without a sign-in, is not picked up by the sweep", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   assert.ok(!isError(await tool("box_acquire", { kind: "linux" })));
@@ -2155,14 +2155,14 @@ test("a failure that cannot pass, as bb connect without a sign-in, is not picked
     return current?.enrol.state === "enrolled" ? current : null;
   });
   world.hosts.delete(enrolled.enrol.hostId!);
-  const failed = (await app.boxes.update(enrolled, () => ({ enrol: { state: "failed", hostId: null, error: "Enrolling box x failed: Sign in to your bb account to use bb connect" }, joinTries: null })))!;
+  const failed = (await app.boxes.update(enrolled, () => ({ enrol: { state: "failed", hostId: null, error: "Enrolling box x failed: Sign in to your VesnALIA account to use VesnALIA connect" }, joinTries: null })))!;
   await app.enrolment.sweep();
   await new Promise((resolve) => setTimeout(resolve, 200));
   assert.deepEqual((await app.boxes.find(failed.id))?.enrol, failed.enrol);
   assert.equal((await app.boxes.find(failed.id))?.joinTries, null);
 });
 
-test("bb box enrol adds a ready box that is not a BB machine without restarting it, and leaves one that is as it is", async (t) => {
+test("alia box enrol adds a ready box that is not a VesnALIA machine without restarting it, and leaves one that is as it is", async (t) => {
   const { harness, app, world, tool } = await start({ "fake-enabled": true, "enrol-boxes": false });
   t.after(() => harness.lifecycle.dispose());
   assert.ok(!isError(await tool("box_acquire", { kind: "linux" })));
@@ -2175,23 +2175,23 @@ test("bb box enrol adds a ready box that is not a BB machine without restarting 
   assert.equal(added.exitCode, 0, added.stderr);
   const joined = (await app.boxes.find(off.id))!;
   assert.equal(joined.enrol.state, "enrolled");
-  assert.equal(added.stdout, `Box ${off.name} joined BB as machine ${joined.enrol.hostId}. BB Box ran BB's installer in it as its user, and did not restart, stop or resize it.\n`);
+  assert.equal(added.stdout, `Box ${off.name} joined VesnALIA as machine ${joined.enrol.hostId}. VesnALIA Box ran VesnALIA's installer in it as its user, and did not restart, stop or resize it.\n`);
   assert.equal(world.bootstraps.length, bootstraps + 1);
   untouched(app, off, powered, joined);
 
   const events = world.events.length;
   const again = await harness.behavior.runCli(["enrol", off.name, "--thread", THREAD]);
   assert.equal(again.exitCode, 0);
-  assert.equal(again.stdout, `Box ${off.name} is a BB machine already, as machine ${joined.enrol.hostId}. Nothing changed.\n`);
+  assert.equal(again.stdout, `Box ${off.name} is a VesnALIA machine already, as machine ${joined.enrol.hostId}. Nothing changed.\n`);
   assert.equal(world.bootstraps.length, bootstraps + 1, "no installer ran");
-  assert.deepEqual(world.events.slice(events), [], "BB was asked for nothing");
+  assert.deepEqual(world.events.slice(events), [], "VesnALIA was asked for nothing");
   assert.deepEqual((await app.boxes.find(off.id))?.enrol, joined.enrol);
 
   const json = JSON.parse((await harness.behavior.runCli(["enrol", off.name, "--thread", THREAD, "--json"])).stdout ?? "{}") as { is: string };
   assert.equal(json.is, "joined");
 });
 
-test("bb box enrol tries at once on a box that could not join, says why when it fails, and refuses a box that is not ready without starting it", async (t) => {
+test("alia box enrol tries at once on a box that could not join, says why when it fails, and refuses a box that is not ready without starting it", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   const broken = join(tempDir("dns"), "broken");
@@ -2203,24 +2203,24 @@ test("bb box enrol tries at once on a box that could not join, says why when it 
 
   const failedAgain = await harness.behavior.runCli(["enrol", waiting.name, "--thread", THREAD]);
   assert.equal(failedAgain.exitCode, 1);
-  assert.match(failedAgain.stderr ?? "", new RegExp(`^Box ${waiting.name} did not join BB at this try\\. It is joining BB: try 3 of 5 starts in \\d+ min\\. Try 2 failed: This box could not look up BB's address in time \\(curl: \\(28\\) Resolving timed out after 10001 milliseconds\\)\\.\\n$`));
+  assert.match(failedAgain.stderr ?? "", new RegExp(`^Box ${waiting.name} did not join VesnALIA at this try\\. It is joining VesnALIA: try 3 of 5 starts in \\d+ min\\. Try 2 failed: This box could not look up VesnALIA's address in time \\(curl: \\(28\\) Resolving timed out after 10001 milliseconds\\)\\.\\n$`));
 
   rmSync(broken);
   const answer = text(await tool("box_enrol", { box: waiting.name }));
   const joined = (await app.boxes.find(waiting.id))!;
   assert.equal(joined.enrol.state, "enrolled");
-  assert.equal(answer, `Box ${waiting.name} joined BB as machine ${joined.enrol.hostId}. BB Box ran BB's installer in it as its user, and did not restart, stop or resize it.`);
+  assert.equal(answer, `Box ${waiting.name} joined VesnALIA as machine ${joined.enrol.hostId}. VesnALIA Box ran VesnALIA's installer in it as its user, and did not restart, stop or resize it.`);
   untouched(app, waiting, powered, joined);
-  assert.match(text(await tool("box_enrol", { box: waiting.name })), /is a BB machine already, as machine .*\. Nothing changed\.$/);
+  assert.match(text(await tool("box_enrol", { box: waiting.name })), /is a ALIA machine already, as machine .*\. Nothing changed\.$/);
 
   assert.match(text(await tool("box_stop", { box: waiting.name })), /is stopped/);
   const refused = await harness.behavior.runCli(["enrol", waiting.name, "--thread", THREAD]);
   assert.equal(refused.exitCode, 1);
-  assert.match(refused.stderr ?? "", /is stopped, and only a ready box can join BB\. BB Box does not start a box to add it to BB: start it first\./);
+  assert.match(refused.stderr ?? "", /is stopped, and only a ready box can join ALIA\. ALIA Box does not start a box to add it to ALIA: start it first\./);
   assert.equal((await app.boxes.find(waiting.id))?.state, "stopped");
 });
 
-test("bb box enrol --machine adds one of your machines that could not join, and the box page's Join BB again does the same over RPC", async (t) => {
+test("alia box enrol --machine adds one of your machines that could not join, and the box page's Join VesnALIA again does the same over RPC", async (t) => {
   const { harness, app, world } = await start({ "fake-enabled": true, "boxes-per-thread": 1 });
   t.after(() => harness.lifecycle.dispose());
   const mine = await addMachine(harness, app, { kind: "linux", name: "build-1" });
@@ -2249,16 +2249,16 @@ test("the schedule of tries ends 24 hours after a round's first failure", () => 
   assert.equal(nextTry({ failed: 2, problem: "dns-timeout", verdict: "unknown", now: since, since }).next, since + 2 * 60_000);
 });
 
-test("a join's failure says what failed in plain words first, and only a failure to reach BB is tried again", () => {
+test("a join's failure says what failed in plain words first, and only a failure to reach VesnALIA is tried again", () => {
   const production = `Enrolling box quiet-oak failed: Machine bootstrap command failed:\n\n${DNS_TIMEOUT}\nThe installer exited with 28.`;
-  assert.equal(plainJoinFailure(production), `This box could not look up BB's address in time (${DNS_TIMEOUT}).`);
+  assert.equal(plainJoinFailure(production), `This box could not look up VesnALIA's address in time (${DNS_TIMEOUT}).`);
   assert.equal(joinProblem(production)?.problem, "dns-timeout");
-  assert.equal(joinProblem("curl: (6) Could not resolve host: bb.example.com")?.problem, "dns");
-  assert.equal(joinProblem("curl: (7) Failed to connect to bb.example.com port 443 after 2 ms: No route to host")?.problem, "unroutable");
-  assert.equal(joinProblem("curl: (28) Failed to connect to bb.example.com port 443 after 10002 ms: Timeout was reached")?.problem, "timeout");
+  assert.equal(joinProblem("curl: (6) Could not resolve host: alia.example.com")?.problem, "dns");
+  assert.equal(joinProblem("curl: (7) Failed to connect to alia.example.com port 443 after 2 ms: No route to host")?.problem, "unroutable");
+  assert.equal(joinProblem("curl: (28) Failed to connect to alia.example.com port 443 after 10002 ms: Timeout was reached")?.problem, "timeout");
   assert.equal(joinProblem("curl: (56) Recv failure: Connection reset by peer")?.problem, "reset");
   assert.deepEqual(joinProblem(plainJoinFailure(production)), joinProblem(production), "the plain words keep curl's, so they are read the same again");
-  assert.equal(joinProblem("Enrolling box quiet-oak failed: Sign in to your bb account to use bb connect"), null);
+  assert.equal(joinProblem("Enrolling box quiet-oak failed: Sign in to your VesnALIA account to use VesnALIA connect"), null);
   assert.equal(plainJoinFailure("Enrolling box quiet-oak failed: exit 1"), "Enrolling box quiet-oak failed: exit 1");
 });
 
@@ -2268,20 +2268,20 @@ test("the enrolment's log lists its steps in the order they started, with the ac
     for (const [step, at] of Object.entries(marks)) phases.mark(step, 1_000 + at);
     return phases.line("b");
   };
-  // BB answers the request after it calls create; the access setup runs alongside the installer.
+  // VesnALIA answers the request after it calls create; the access setup runs alongside the installer.
   const marks = { called: 20, prepared: 20, install: 40, requested: 100, access: 110, names: 500, env: 800, accessed: 3_730, installed: 5_020, bootstrapped: 5_050, connected: 5_150 };
   assert.equal(
     timeline({ ...marks, enrolled: 5_150 }),
-    "Enrolled box b 5.15 s after it was ready: asking BB 0.10 s alongside, BB calling BB Box's create 0.02 s, reaching the box 0.00 s, " +
-      "BB preparing the enrolment 0.02 s, BB's installer in the box 4.98 s, setting up the thread's access 3.62 s alongside " +
+    "Enrolled box b 5.15 s after it was ready: asking VesnALIA 0.10 s alongside, VesnALIA calling VesnALIA Box's create 0.02 s, reaching the box 0.00 s, " +
+      "VesnALIA preparing the enrolment 0.02 s, VesnALIA's installer in the box 4.98 s, setting up the thread's access 3.62 s alongside " +
       "(fetching the variable names 0.39 s, reaching the box and back 0.30 s, running the script 2.93 s), " +
-      "BB waiting for the daemon 0.03 s, BB showing the machine connected 0.10 s, finishing 0.00 s.",
+      "VesnALIA waiting for the daemon 0.03 s, VesnALIA showing the machine connected 0.10 s, finishing 0.00 s.",
   );
   // An access setup that ends after the machine connects is waited for; without the script's own time, its parts are left out.
   const { env: _, ...untimed } = marks;
   assert.match(
     timeline({ ...untimed, accessed: 5_650, enrolled: 5_660 }),
-    /^Enrolled box b 5\.66 s after .*, setting up the thread's access 5\.54 s alongside, BB waiting .*, BB showing the machine connected 0\.10 s, waiting for the access setup 0\.50 s, finishing 0\.01 s\.$/,
+    /^Enrolled box b 5\.66 s after .*, setting up the thread's access 5\.54 s alongside, ALIA waiting .*, ALIA showing the machine connected 0\.10 s, waiting for the access setup 0\.50 s, finishing 0\.01 s\.$/,
   );
 });
 
@@ -2290,9 +2290,9 @@ test("an enrolment followed again after a restart is timed from then, not from w
   t.after(() => harness.lifecycle.dispose());
   await tool("box_acquire", {});
   const box = await only(app);
-  // As if BB Box restarted while BB installed its daemon, an hour after the box was ready.
+  // As if VesnALIA Box restarted while VesnALIA installed its daemon, an hour after the box was ready.
   const hostId = `host-${box.id}`;
-  const host = makeHostResponse({ id: hostId, status: "connected", machineProviderId: "bb-box" });
+  const host = makeHostResponse({ id: hostId, status: "connected", machineProviderId: "alia-box" });
   world.hosts.set(hostId, { ...host, lifecycle: { ...host.lifecycle, phase: "active" } });
   await app.boxes.update(box, () => ({ readyAt: box.readyAt! - 3_600_000, enrol: { state: "enrolling", hostId, error: null } }));
   await app.enrolment.resume();
@@ -2302,10 +2302,10 @@ test("an enrolment followed again after a restart is timed from then, not from w
   });
   assert.equal(enrolled.timings.enrol, undefined, "the box shows no enrolment time");
   const logged = harness.inspection.logEntries.map((entry) => entry.message).find((line) => line.startsWith(`Enrolled box ${box.name} `));
-  assert.match(logged ?? "", new RegExp(`^Enrolled box ${box.name} [0-4]\\.\\d\\d s after BB Box resumed following it: `));
+  assert.match(logged ?? "", new RegExp(`^Enrolled box ${box.name} [0-4]\\.\\d\\d s after VesnALIA Box resumed following it: `));
 });
 
-test("a stopped box starts again and BB's daemon is started with the same key", async (t) => {
+test("a stopped box starts again and VesnALIA's daemon is started with the same key", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
 
@@ -2321,7 +2321,7 @@ test("a stopped box starts again and BB's daemon is started with the same key", 
   assert.deepEqual(world.bootstraps, [box.id, box.id]);
 });
 
-test("on a Mac that booted, BB's daemon loaded at login is unloaded and the bootstrap runs again, so the reconnect works (#416)", async (t) => {
+test("on a Mac that booted, VesnALIA's daemon loaded at login is unloaded and the bootstrap runs again, so the reconnect works (#416)", async (t) => {
   // A launchctl that keeps whether the job is loaded in a file in the box's home.
   const bin = tempDir("launchctl");
   writeFileSync(join(bin, "launchctl"), `#!/bin/sh\necho "$*" >> "$HOME/launchctl.log"\ncase "$1" in print) [ -f "$HOME/loaded" ] ;; bootout) rm -f "$HOME/loaded" ;; esac\n`);
@@ -2338,7 +2338,7 @@ test("on a Mac that booted, BB's daemon loaded at login is unloaded and the boot
   await tool("box_acquire", { kind: "macos" });
   const box = await only(app);
   await until("enrolment", async () => (await app.boxes.find(box.id))?.enrol.state === "enrolled");
-  // BB's installer, as on a Mac: launchctl bootstrap fails while the job is loaded.
+  // VesnALIA's installer, as on a Mac: launchctl bootstrap fails while the job is loaded.
   world.installer = `mkdir -p Library/LaunchAgents && : > Library/LaunchAgents/app.getbb.host-daemon.srv-host-${box.id}.plist && : > Library/LaunchAgents/app.getbb.host-daemon.srv-host-other.plist; if [ -f loaded ]; then echo 'Bootstrap failed: 5: Input/output error'; exit 1; fi; : > loaded`;
   // launchd loads it at login after the boot.
   await tool("box_run", { box: box.name, command: ": > loaded" });
@@ -2354,30 +2354,30 @@ test("on a Mac that booted, BB's daemon loaded at login is unloaded and the boot
   assert.deepEqual(world.bootstraps, [box.id, box.id, box.id]);
 });
 
-test("a box whose host keeps BB's daemon, as a slot on a shared iOS host, runs BB's installer with BB_INSTALL_SKIP_SERVICE=1 and then hands the daemon to its host, at every bootstrap (064)", async (t) => {
+test("a box whose host keeps VesnALIA's daemon, as a slot on a shared iOS host, runs VesnALIA's installer with ALIA_INSTALL_SKIP_SERVICE=1 and then hands the daemon to its host, at every bootstrap (064)", async (t) => {
   const { harness, app, world, tool } = await start({ "fake-enabled": true }, { daemonKeptByHost: true, appUrl: "https://bb.example.test" });
   t.after(() => harness.lifecycle.dispose());
-  world.installer = `printf 'skip-service=%s port=%s\\n' "\${BB_INSTALL_SKIP_SERVICE:-unset}" "$(cat "$HOME/.bb-machines/bb.example.test/host-daemon-port")" >> installer.log`;
+  world.installer = `printf 'skip-service=%s port=%s\\n' "\${ALIA_INSTALL_SKIP_SERVICE:-unset}" "$(cat "$HOME/.alia-machines/alia.example.test/host-daemon-port")" >> installer.log`;
 
   await tool("box_acquire", {});
   const box = await only(app);
   await until("enrolment", async () => (await app.boxes.find(box.id))?.enrol.state === "enrolled");
   const takeOvers = () => world.backend!.calls.filter((call) => call.startsWith("take over "));
   assert.deepEqual(takeOvers(), [`take over ${box.guest!.ref}`]);
-  assert.match(text(await tool("box_run", { box: box.name, command: "cat installer.log" })), /^skip-service=1 port=38900$/m, "BB's installer finds the slot's own daemon port, so slots enrolling at once never race for one");
+  assert.match(text(await tool("box_run", { box: box.name, command: "cat installer.log" })), /^skip-service=1 port=38900$/m, "VesnALIA's installer finds the slot's own daemon port, so slots enrolling at once never race for one");
 
   const hostId = `host-${box.id}`;
   world.hosts.set(hostId, { ...world.hosts.get(hostId)!, status: "disconnected" });
   await app.enrolment.sweep();
   assert.deepEqual(world.bootstraps, [box.id, box.id]);
-  assert.equal(takeOvers().length, 2, "the host takes BB's daemon over again after a reconnect");
+  assert.equal(takeOvers().length, 2, "the host takes VesnALIA's daemon over again after a reconnect");
   assert.doesNotMatch(text(await tool("box_run", { box: box.name, command: "cat installer.log" })), /skip-service=unset/);
 });
 
-test("a box whose backend keeps no daemon runs BB's installer as it always has", async (t) => {
+test("a box whose backend keeps no daemon runs VesnALIA's installer as it always has", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
-  world.installer = `printf 'skip-service=%s\\n' "\${BB_INSTALL_SKIP_SERVICE:-unset}" >> installer.log`;
+  world.installer = `printf 'skip-service=%s\\n' "\${ALIA_INSTALL_SKIP_SERVICE:-unset}" >> installer.log`;
   await tool("box_acquire", {});
   const box = await only(app);
   await until("enrolment", async () => (await app.boxes.find(box.id))?.enrol.state === "enrolled");
@@ -2385,7 +2385,7 @@ test("a box whose backend keeps no daemon runs BB's installer as it always has",
   assert.deepEqual(world.backend!.calls.filter((call) => call.startsWith("take over ")), []);
 });
 
-test("the sweep starts BB's daemon again in a ready box that BB shows disconnected", async (t) => {
+test("the sweep starts VesnALIA's daemon again in a ready box that VesnALIA shows disconnected", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
 
@@ -2395,20 +2395,20 @@ test("the sweep starts BB's daemon again in a ready box that BB shows disconnect
   await app.enrolment.sweep();
   assert.deepEqual(world.bootstraps, [box.id], "a connected machine is left alone");
 
-  // The box rebooted without bb-box: BB's daemon is not running.
+  // The box rebooted without alia-box: VesnALIA's daemon is not running.
   const hostId = `host-${box.id}`;
   world.hosts.set(hostId, { ...world.hosts.get(hostId)!, status: "disconnected" });
   await app.enrolment.sweep();
   assert.deepEqual(world.bootstraps, [box.id, box.id], "bootstrapped again with the box ID");
 
-  // BB no longer has the machine: the box is no longer enrolled.
+  // VesnALIA no longer has the machine: the box is no longer enrolled.
   world.hosts.delete(hostId);
   await app.enrolment.sweep();
   assert.equal((await app.boxes.find(box.id))?.enrol.state, "off");
   assert.equal(world.bootstraps.length, 2);
 });
 
-test("a kind keeps a spare box as a BB machine, which box_acquire claims, renames and reconnects, and another takes its place (032)", async (t) => {
+test("a kind keeps a spare box as a VesnALIA machine, which box_acquire claims, renames and reconnects, and another takes its place (032)", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
 
@@ -2435,18 +2435,18 @@ test("a kind keeps a spare box as a BB machine, which box_acquire claims, rename
   // An archived thread does not hold it (036).
   world.onHost.set(hostId, [{ id: "thr_picker", title: null, status: "idle", hasPendingInteraction: false, archivedAt: 1, deletedAt: null }]);
 
-  // BB shows the spare's machine disconnected, as after the box rebooted.
+  // VesnALIA shows the spare's machine disconnected, as after the box rebooted.
   world.hosts.set(hostId, { ...world.hosts.get(hostId)!, status: "disconnected" });
   const bootstraps = world.bootstraps.length;
   const acquired = text(await tool("box_acquire", { kind: "linux" }));
   assert.match(acquired, new RegExp(`\\b${spare.name}\\b`));
-  assert.match(acquired, /BB machine: enrolled/);
+  assert.match(acquired, /ALIA machine: enrolled/);
   assert.match(acquired, /Timings: claiming a spare \d+(?: ms|\.\d s), total \d+(?: ms|\.\d s)/);
   const box = await only(app);
   assert.equal(box.id, spare.id);
   assert.equal(world.hosts.get(hostId)?.name, box.name);
   assert.equal(text(await tool("box_run", { box: box.name, command: "echo claimed" })).match(/stdout:\n(\w+)/)?.[1], "claimed");
-  assert.deepEqual(world.bootstraps.slice(bootstraps).filter((key) => key === box.id), [box.id], "the claim started BB's daemon again, with the box ID");
+  assert.deepEqual(world.bootstraps.slice(bootstraps).filter((key) => key === box.id), [box.id], "the claim started VesnALIA's daemon again, with the box ID");
   assert.equal(world.hosts.get(hostId)?.status, "connected");
 
   const next = await until("another spare", async () => (await app.boxes.list(SPARES)).find((spare) => spare.enrol.state === "enrolled"));
@@ -2454,7 +2454,7 @@ test("a kind keeps a spare box as a BB machine, which box_acquire claims, rename
   await until("its machine", async () => world.hosts.get(`host-${next.id}`)?.name === `${next.name} (spare)`);
 });
 
-test("where a stop keeps a box's session, a spare waits stopped as a BB machine, which a claim starts and then renames, and another takes its place (#539)", async (t) => {
+test("where a stop keeps a box's session, a spare waits stopped as a VesnALIA machine, which a claim starts and then renames, and another takes its place (#539)", async (t) => {
   const { harness, app, world, tool } = await start(undefined, { keepsSession: (kind) => kind === "linux" });
   t.after(() => harness.lifecycle.dispose());
   const { kinds: _, ...rest } = app.configuration.exported();
@@ -2463,7 +2463,7 @@ test("where a stop keeps a box's session, a spare waits stopped as a BB machine,
   const waiting = async (not?: string) => (await app.boxes.list(SPARES)).find((box) => box.id !== not && box.state === "stopped" && box.enrol.state === "enrolled");
   const spare = await until("a spare waiting stopped", () => waiting());
   const hostId = `host-${spare.id}`;
-  // Its machine's name says it waits stopped, as BB shows the machine offline meanwhile.
+  // Its machine's name says it waits stopped, as VesnALIA shows the machine offline meanwhile.
   await until("its machine named as a stopped spare", async () => world.hosts.get(hostId)?.name === `${spare.name} (spare, stopped)`);
   const state = (await harness.behavior.callRpc("state", { threadId: THREAD })) as { kinds: { id: string; spares: unknown; offers: { ready: number; spareStarts?: boolean }[] }[] };
   const linux = state.kinds.find((kind) => kind.id === "linux")!;
@@ -2471,7 +2471,7 @@ test("where a stop keeps a box's session, a spare waits stopped as a BB machine,
   // The form says the spare is ready in seconds rather than now, as a claim resumes it first.
   assert.deepEqual(linux.offers.map((offer) => [offer.ready, offer.spareStarts]), [[1, true]]);
 
-  // BB shows its machine disconnected while it waits, and the upkeep keeps it.
+  // VesnALIA shows its machine disconnected while it waits, and the upkeep keeps it.
   world.hosts.set(hostId, { ...world.hosts.get(hostId)!, status: "disconnected" });
   await app.boxes.keepSpares();
   assert.equal((await app.boxes.list(SPARES)).find((box) => box.id === spare.id)?.state, "stopped");
@@ -2483,15 +2483,15 @@ test("where a stop keeps a box's session, a spare waits stopped as a BB machine,
   world.backend!.powerGate = null;
   assert.match(acquired, new RegExp(`\\b${spare.name}\\b`));
   assert.match(acquired, /State: ready/);
-  assert.match(acquired, /BB machine: enrolled/);
+  assert.match(acquired, /ALIA machine: enrolled/);
   assert.match(acquired, /\nTimings: claiming a spare \d+ ms, resuming it [\d.]+ (ms|s), total [\d.]+ (ms|s)/);
   const box = await only(app);
   assert.equal(box.id, spare.id);
   const { spare: claim = 0, spareResume = 0, total = 0, spareReconnect = 0 } = box.timings;
   assert.ok(spareResume >= 250, `the resume, ${spareResume} ms`);
   assert.equal(total, claim + spareResume, "the claim's total counts the resume");
-  // Until BB shows its machine connected with the thread's access, from the claim, as a step of its own after the total.
-  assert.match(acquired, /, total [\d.]+ (ms|s)(, naming it for its owner [\d.]+ (ms|s))?, BB machine reconnecting [\d.]+ (ms|s)/);
+  // Until VesnALIA shows its machine connected with the thread's access, from the claim, as a step of its own after the total.
+  assert.match(acquired, /, total [\d.]+ (ms|s)(, naming it for its owner [\d.]+ (ms|s))?, ALIA machine reconnecting [\d.]+ (ms|s)/);
   assert.ok(spareReconnect >= spareResume, `the reconnect, ${spareReconnect} ms, from the claim`);
   await until("the rename", async () => world.hosts.get(hostId)?.name === box.name);
   await until("the start to reconnect its machine", async () => world.hosts.get(hostId)?.status === "connected");
@@ -2506,14 +2506,14 @@ test("a Windows kind keeps its spare as a manual machine enrolled ahead, which a
   const shell = join(tempDir("windows-shell"), "pwsh");
   writeFileSync(shell, `#!/bin/sh\ncase "$2" in *Schedule.Service*) exit 0 ;; *"]::Daemon("*) exit ${ACCESS_CHECK_EXITS.noDaemon} ;; esac\nexit 1\n`);
   chmodSync(shell, 0o755);
-  const { bb, harness, app, world, tool } = await start({ "fake-enabled": true }, { kinds: [kind], shell });
+  const { alia, harness, app, world, tool } = await start({ "fake-enabled": true }, { kinds: [kind], shell });
   t.after(() => harness.lifecycle.dispose());
   world.windowsConnects = true;
 
-  const provider = harness.inspection.registrations.machineProviders.get("bb-box-new")!;
+  const provider = harness.inspection.registrations.machineProviders.get("alia-box-new")!;
   const refused = (await provider.validate!({ inputs: { kind: "windows" } } as never)) as { action: string; message: string };
   assert.equal(refused.action, "refuse");
-  assert.match(refused.message, /^A thread cannot start on a new Windows box: BB adds a new box's machine with its installer for Linux and macOS only\./);
+  assert.match(refused.message, /^A thread cannot start on a new Windows box: ALIA adds a new box's machine with its installer for Linux and macOS only\./);
 
   const { kinds: _, ...rest } = app.configuration.exported();
   const applied = (await harness.behavior.callRpc("config.apply", { draft: { ...rest, kinds: { windows: { spares: 1 } } }, revision: rest.revision })) as { ok: boolean };
@@ -2522,11 +2522,11 @@ test("a Windows kind keeps its spare as a manual machine enrolled ahead, which a
   const hostId = `host-${spare.id}`;
   assert.ok(world.events.includes(`create manual ${hostId}`), world.events.join("\n"));
   assert.equal(world.hosts.get(hostId)?.name, `${spare.name} (spare)`, "named as a spare once it connects");
-  assert.deepEqual(await bb.storage.kv.list("manual-machine/"), [`manual-machine/${hostId}`]);
+  assert.deepEqual(await alia.storage.kv.list("manual-machine/"), [`manual-machine/${hostId}`]);
 
   const acquired = text(await tool("box_acquire", { kind: "windows" }));
   assert.match(acquired, new RegExp(`\\b${spare.name}\\b`));
-  assert.match(acquired, /BB machine: enrolled/);
+  assert.match(acquired, /ALIA machine: enrolled/);
   assert.match(acquired, /Timings: claiming a spare/);
   const box = await only(app);
   assert.equal(box.id, spare.id);
@@ -2535,30 +2535,30 @@ test("a Windows kind keeps its spare as a manual machine enrolled ahead, which a
 
   assert.ok(!isError(await tool("box_release", { box: box.name })));
   assert.equal(world.hosts.has(hostId), false);
-  assert.ok(!(await bb.storage.kv.list("manual-machine/")).includes(`manual-machine/${hostId}`));
+  assert.ok(!(await alia.storage.kv.list("manual-machine/")).includes(`manual-machine/${hostId}`));
 });
 
-test("an enrolment BB refuses for not knowing bb-box's machine provider, as while the plugin restarts, asks again and enrols (#285)", async (t) => {
+test("an enrolment VesnALIA refuses for not knowing alia-box's machine provider, as while the plugin restarts, asks again and enrols (#285)", async (t) => {
   const { harness, app, world, tool } = await start(undefined, { providerRetryMs: 20 });
   t.after(() => harness.lifecycle.dispose());
   world.unknownProvider = 2;
 
-  assert.match(text(await tool("box_acquire", {})), /BB machine: enrolled/);
+  assert.match(text(await tool("box_acquire", {})), /ALIA machine: enrolled/);
   const box = await only(app);
   assert.equal(world.events.filter((event) => event === `create host-${box.id}`).length, 3);
   const messages = harness.inspection.logEntries.map((entry) => entry.message);
-  assert.ok(messages.includes(`Enrolling box ${box.name}: BB does not know bb-box's machine provider yet, as while the plugin restarts. Asking again in 0.02 s, 5 more times at most.`), messages.join("\n"));
+  assert.ok(messages.includes(`Enrolling box ${box.name}: VesnALIA does not know alia-box's machine provider yet, as while the plugin restarts. Asking again in 0.02 s, 5 more times at most.`), messages.join("\n"));
 
-  // BB that never knows it: six tries, then the box says why it is not a BB machine.
+  // VesnALIA that never knows it: six tries, then the box says why it is not a VesnALIA machine.
   world.unknownProvider = 100;
   await tool("box_acquire", {}, "thr_two");
   const [other] = await app.boxes.list("thr_two");
   await until("the enrolment to give up", async () => (await app.boxes.find(other!.id))?.enrol.state === "failed");
-  assert.match((await app.boxes.find(other!.id))?.enrol.error ?? "", /Unknown machine provider "bb-box"/);
+  assert.match((await app.boxes.find(other!.id))?.enrol.error ?? "", /Unknown machine provider "alia-box"/);
   assert.equal(world.events.filter((event) => event === `create host-${other!.id}`).length, 6);
 });
 
-test("when BB removes a box's machine, the box is no longer enrolled", async (t) => {
+test("when VesnALIA removes a box's machine, the box is no longer enrolled", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
 
@@ -2572,7 +2572,7 @@ test("when BB removes a box's machine, the box is no longer enrolled", async (t)
   assert.equal((await only(app)).state, "ready", "the box stays");
 });
 
-test("box_thread starts a child thread on a box's BB machine, with the thread's project (#55)", async (t) => {
+test("box_thread starts a child thread on a box's VesnALIA machine, with the thread's project (#55)", async (t) => {
   const { harness, tool, world } = await start();
   t.after(() => harness.lifecycle.dispose());
   await tool("box_acquire", {});
@@ -2591,7 +2591,7 @@ test("box_thread starts a child thread on a box's BB machine, with the thread's 
     providerId: "claude-code",
     model: "claude-opus-5-5",
     origin: "plugin",
-    originPluginId: "bb-box",
+    originPluginId: "alia-box",
   });
 
   assert.deepEqual(world.sources, [{ hostId: box.boxes[0]!.enrol.hostId, type: "clone" }], "the first thread clones the project onto the box");
@@ -2603,7 +2603,7 @@ test("box_thread starts a child thread on a box's BB machine, with the thread's 
   assert.equal(world.sources.length, 1, "later threads use the same clone");
 });
 
-test("box_thread, the panel and bb box thread start no child on a box whose backend is no longer kept for the thread's project now, after the thread moved or the reservation changed, or when BB cannot say the project (#1458)", async (t) => {
+test("box_thread, the panel and VesnALIA box thread start no child on a box whose backend is no longer kept for the thread's project now, after the thread moved or the reservation changed, or when VesnALIA cannot say the project (#1458)", async (t) => {
   const { app, harness, tool, world } = await start();
   t.after(() => harness.lifecycle.dispose());
   const keepFor = async (projects: readonly string[]) => {
@@ -2633,7 +2633,7 @@ test("box_thread, the panel and bb box thread start no child on a box whose back
 
   await keepFor([PROJECT]);
   world.threadErrors.set(THREAD, new Error("thread not readable"));
-  for (const said of await everyWay()) assert.match(said, /BB could not say which project this thread is in just now\. \S.* is kept for certain projects, so a new thread cannot start on box \S+\. The box itself keeps working\. Try again in a minute\./, said);
+  for (const said of await everyWay()) assert.match(said, /ALIA could not say which project this thread is in just now\. \S.* is kept for certain projects, so a new thread cannot start on box \S+\. The box itself keeps working\. Try again in a minute\./, said);
   world.threadErrors.delete(THREAD);
   assert.deepEqual(world.spawned, [], "no child was started");
   assert.deepEqual(world.sources, [], "nothing was cloned");
@@ -2642,7 +2642,7 @@ test("box_thread, the panel and bb box thread start no child on a box whose back
   await app.boxes.idle();
 });
 
-test("box_thread on a backend kept for no project starts the child in the box's own project, as before, when BB cannot read the thread or it moved (#1458)", async (t) => {
+test("box_thread on a backend kept for no project starts the child in the box's own project, as before, when VesnALIA cannot read the thread or it moved (#1458)", async (t) => {
   const { app, tool, harness, world } = await start();
   t.after(() => harness.lifecycle.dispose());
   await tool("box_acquire", {});
@@ -2664,7 +2664,7 @@ test("box_thread on a backend kept for no project starts the child in the box's 
   await app.boxes.idle();
 });
 
-test("bb box doctor in a thread says whether a kept backend serves the thread's project, without naming its projects; in the person's own terminal it names them (#1458)", async (t) => {
+test("alia box doctor in a thread says whether a kept backend serves the thread's project, without naming its projects; in the person's own terminal it names them (#1458)", async (t) => {
   const { app, harness } = await start();
   t.after(() => harness.lifecycle.dispose());
   const document = app.configuration.exported();
@@ -2696,34 +2696,34 @@ test("box_thread starts the child on its parent's provider and model when the bo
   // The box's CLI does not list the parent's model: that CLI's default.
   world.parentModel = "claude-opus-4-1";
   assert.deepEqual(await agent(), { providerId: "claude-code", model: undefined });
-  // The box lacks the parent's CLI: the first it has, in BB's order, with its default model, not BB's default, which the box may lack too (#47).
+  // The box lacks the parent's CLI: the first it has, in VesnALIA's order, with its default model, not VesnALIA's default, which the box may lack too (#47).
   world.agentClis!["claude-code"] = { ...world.agentClis!["claude-code"]!, installed: false };
   assert.deepEqual(await agent(), { providerId: "codex", model: undefined });
-  // The parent's provider unknown, as BB cannot read the thread: the first CLI the box has, though the parent's is there too.
+  // The parent's provider unknown, as VesnALIA cannot read the thread: the first CLI the box has, though the parent's is there too.
   const listed = world.agentClis!;
   world.agentClis = { codex: listed.codex!, "claude-code": { ...listed["claude-code"]!, installed: true } };
   world.threadErrors.set(THREAD, new Error("thread not readable"));
   assert.deepEqual(await agent(), { providerId: "codex", model: undefined });
   world.threadErrors.delete(THREAD);
   world.agentClis = listed;
-  // BB cannot say which CLIs the box has: BB's default.
+  // VesnALIA cannot say which CLIs the box has: VesnALIA's default.
   const clis = world.agentClis;
   world.agentClis = null;
   assert.deepEqual(await agent(), { providerId: undefined, model: undefined });
 
-  // None of BB's CLIs: refused before anything is started.
+  // None of VesnALIA's CLIs: refused before anything is started.
   world.agentClis = Object.fromEntries(Object.entries(clis!).map(([id, cli]) => [id, { ...cli, installed: false }]));
   const spawned = world.spawned.length;
   const refused = await tool("box_thread", { box: name, prompt: "Run uname -a" });
   assert.ok(isError(refused));
   assert.match(
     text(refused),
-    new RegExp(`^A thread cannot run on box ${name}: it has none of the agent CLIs BB runs threads with: Claude Code \\(claude\\), Codex \\(codex\\), Cursor \\(cursor-agent\\)\\. Install one there, then start the thread again\\.`),
+    new RegExp(`^A thread cannot run on box ${name}: it has none of the agent CLIs VesnALIA runs threads with: Claude Code \\(claude\\), Codex \\(codex\\), Cursor \\(cursor-agent\\)\\. Install one there, then start the thread again\\.`),
   );
   assert.equal(world.spawned.length, spawned);
 });
 
-test("in BB's personal project, a thread on a box takes a personal workspace there, with no clone (#55)", async (t) => {
+test("in VesnALIA's personal project, a thread on a box takes a personal workspace there, with no clone (#55)", async (t) => {
   const { harness, tool, world } = await start();
   t.after(() => harness.lifecycle.dispose());
   world.projectKind = "personal";
@@ -2734,7 +2734,7 @@ test("in BB's personal project, a thread on a box takes a personal workspace the
   const [args] = world.spawned as { environment: { hostId: string }; parentThreadId?: string }[];
   assert.equal(args!.environment.hostId, boxes[0]!.enrol.hostId, "the child's machine is the box's");
   assert.deepEqual(args!.environment, { type: "host", hostId: boxes[0]!.enrol.hostId, workspace: { type: "personal" } });
-  // Spawned with a parent, BB would give it the parent's environment; it is linked afterwards.
+  // Spawned with a parent, VesnALIA would give it the parent's environment; it is linked afterwards.
   assert.equal(args!.parentThreadId, undefined);
   assert.deepEqual(world.updated, [{ threadId: "thr_child1", parentThreadId: THREAD }]);
   assert.deepEqual(world.sources, [], "nothing is cloned");
@@ -2793,16 +2793,16 @@ test("the panel and the CLI release a box with only idle threads at once, and fo
   assert.equal(cli.exitCode, 0, cli.stderr);
   assert.deepEqual(await app.boxes.list(THREAD), []);
 });
-test("bb box machines --help names its add, resize and remove commands, not the list alone", async (t) => {
+test("alia box machines --help names its add, resize and remove commands, not the list alone", async (t) => {
   const { harness } = await start();
   t.after(() => harness.lifecycle.dispose());
   const help = await harness.behavior.runCli(["machines", "--help"]);
   const words = `${help.stdout ?? ""}${help.stderr ?? ""}`;
-  for (const command of ["bb box machines add <kind>", "bb box machines resize <machine>", "bb box machines remove <machine>"]) assert.ok(words.includes(command), words);
+  for (const command of ["alia box machines add <kind>", "alia box machines resize <machine>", "alia box machines remove <machine>"]) assert.ok(words.includes(command), words);
 });
 
-test("a box made before its kind's boxes joined BB stays a box only, and box_status and box_thread say so (#539)", async (t) => {
-  // A Windows kind whose boxes do not join BB, then do, as when the switch comes on.
+test("a box made before its kind's boxes joined VesnALIA stays a box only, and box_status and box_thread say so (#539)", async (t) => {
+  // A Windows kind whose boxes do not join VesnALIA, then do, as when the switch comes on.
   const { harness, app, tool, world } = await start({ "fake-enabled": true }, { kinds: [FAKE_WINDOWS_KIND] });
   t.after(() => harness.lifecycle.dispose());
   await tool("box_acquire", { kind: "windows" });
@@ -2812,26 +2812,26 @@ test("a box made before its kind's boxes joined BB stays a box only, and box_sta
 
   assert.match(
     text(await tool("box_status", { box: box.name })),
-    /BB machine: not enrolled: it was made while boxes of its kind did not join BB, and stays so until it is released\. A new one joins BB when BB Box enrols boxes/,
+    /ALIA machine: not enrolled: it was made while boxes of its kind did not join ALIA, and stays so until it is released\. A new one joins ALIA when ALIA Box enrols boxes/,
   );
   const refused = await tool("box_thread", { box: box.name, prompt: "Run Get-Date" });
   assert.ok(isError(refused));
-  assert.match(text(refused), new RegExp(`^A thread cannot run on box ${box.name}: it was made before Windows boxes joined BB, and stays a box only until it is released\\. Acquire another windows box, which joins BB, for the thread\\.`));
+  assert.match(text(refused), new RegExp(`^A thread cannot run on box ${box.name}: it was made before Windows boxes joined VesnALIA, and stays a box only until it is released\\. Acquire another windows box, which joins VesnALIA, for the thread\\.`));
   assert.deepEqual(world.spawned, []);
 });
 
-test("a box that is not a BB machine cannot run a thread, and says why (#55)", async (t) => {
+test("a box that is not a VesnALIA machine cannot run a thread, and says why (#55)", async (t) => {
   const { harness, tool, world } = await start({ "fake-enabled": true, "enrol-boxes": false });
   t.after(() => harness.lifecycle.dispose());
   await tool("box_acquire", {});
   const { boxes } = (await harness.behavior.callRpc("state", { threadId: THREAD })) as { boxes: { name: string }[] };
   const refused = await tool("box_thread", { box: boxes[0]!.name, prompt: "Run uname -a" });
   assert.ok(isError(refused));
-  assert.match(text(refused), /A thread cannot run on box \S+: it is not a BB machine\. Its kind does not enrol, or enrolment is off in BB Box's settings\./);
+  assert.match(text(refused), /A thread cannot run on box \S+: it is not a ALIA machine\. Its kind does not enrol, or enrolment is off in ALIA Box's settings\./);
   assert.deepEqual(world.spawned, []);
 });
 
-/** BB's call of a machine provider's create: the key, inputs and steps it reports. */
+/** VesnALIA's call of a machine provider's create: the key, inputs and steps it reports. */
 function createContext(key: string, inputs: unknown) {
   const steps: string[] = [];
   const checkpoints: unknown[] = [];
@@ -2849,10 +2849,10 @@ function createContext(key: string, inputs: unknown) {
   };
 }
 
-test("New box: BB's new-thread screen makes a box that is the thread's own machine, and removes it with the thread (033)", async (t) => {
+test("New box: VesnALIA's new-thread screen makes a box that is the thread's own machine, and removes it with the thread (033)", async (t) => {
   const { harness, app, world, tool } = await start({ "fake-enabled": true, "boxes-per-thread": 1 });
   t.after(() => harness.lifecycle.dispose());
-  const provider = harness.inspection.registrations.machineProviders.get("bb-box-new")!;
+  const provider = harness.inspection.registrations.machineProviders.get("alia-box-new")!;
   assert.ok(provider, "the provider is registered");
   assert.equal(provider.ephemeral, true);
 
@@ -2867,9 +2867,9 @@ test("New box: BB's new-thread screen makes a box that is the thread's own machi
   assert.deepEqual(box!.size, { cores: 4, memoryMiB: 8192, diskGiB: null, gpu: "none" });
   assert.deepEqual(created.resource, { boxId: box!.id });
   assert.deepEqual(checkpoints, [{ boxId: box!.id }]);
-  assert.deepEqual(world.bootstraps, [THREAD], "BB's daemon joins under the thread's key, once");
+  assert.deepEqual(world.bootstraps, [THREAD], "VesnALIA's daemon joins under the thread's key, once");
   assert.deepEqual(box!.enrol, { state: "enrolled", hostId: `host-${THREAD}`, error: null });
-  assert.deepEqual(steps, ["Making a box", `Installing BB in box ${box!.name}`]);
+  assert.deepEqual(steps, ["Making a box", `Installing VesnALIA in box ${box!.name}`]);
   assert.match(text(await tool("box_list", {})), /this thread's machine/);
   // It does not count against the per-thread limit of 1.
   assert.ok(!isError(await tool("box_acquire", {})));
@@ -2883,17 +2883,17 @@ function within<T>(promise: Promise<T>, what: string, ms = 3_000): Promise<T> {
   return Promise.race([promise, new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`${what} did not finish in ${ms} ms`)), ms))]);
 }
 
-/** A "New box" box made for the thread as BB would, with BB owning its machine. */
+/** A "New box" box made for the thread as VesnALIA would, with VesnALIA owning its machine. */
 async function newBox(harness: Awaited<ReturnType<typeof start>>["harness"], world: Awaited<ReturnType<typeof start>>["world"]) {
-  const provider = harness.inspection.registrations.machineProviders.get("bb-box-new")!;
+  const provider = harness.inspection.registrations.machineProviders.get("alia-box-new")!;
   const created = (await provider.create(createContext(THREAD, { kind: "linux" }).context)) as unknown as { resource: { boxId: string } };
   const hostId = `host-${THREAD}`;
-  world.hosts.set(hostId, makeHostResponse({ id: hostId, status: "connected", machineProviderId: "bb-box-new" }));
+  world.hosts.set(hostId, makeHostResponse({ id: hostId, status: "connected", machineProviderId: "alia-box-new" }));
   world.resources.set(hostId, created.resource);
-  // BB's removal of the machine, started once, as BB's removeMachine does.
+  // VesnALIA's removal of the machine, started once, as VesnALIA's removeMachine does.
   let removing: Promise<unknown> | null = null;
   const removal = () => (removing ??= provider.remove({ resource: created.resource, hostId } as never));
-  world.bbRemovals.set(hostId, removal);
+  world.aliaRemovals.set(hostId, removal);
   return { removal, hostId, boxId: created.resource.boxId };
 }
 
@@ -2901,32 +2901,32 @@ test("New box: archiving the thread removes its box without waiting on itself (0
   const { harness, app, world } = await start({ "fake-enabled": true });
   t.after(() => harness.lifecycle.dispose());
   const { removal, hostId } = await newBox(harness, world);
-  assert.deepEqual(await within(removal(), "BB's removal"), { status: "removed" });
+  assert.deepEqual(await within(removal(), "ALIA's removal"), { status: "removed" });
   assert.deepEqual(await app.boxes.list(THREAD), []);
-  assert.ok(!world.events.includes(`delete ${hostId}`), "BB Box leaves BB's machine to BB");
+  assert.ok(!world.events.includes(`delete ${hostId}`), "VesnALIA Box leaves VesnALIA's machine to VesnALIA");
 });
 
-test("New box: the sweep releases the box of a thread that ended, and BB's removal after it finds nothing left (033)", async (t) => {
+test("New box: the sweep releases the box of a thread that ended, and VesnALIA's removal after it finds nothing left (033)", async (t) => {
   const { harness, app, world } = await start({ "fake-enabled": true });
   t.after(() => harness.lifecycle.dispose());
   const { removal, hostId } = await newBox(harness, world);
   world.threads.delete(THREAD);
   await within(app.boxes.sweep(), "the sweep");
-  assert.equal((await app.boxes.list(THREAD)).length, 1, "BB has said so at one sweep");
+  assert.equal((await app.boxes.list(THREAD)).length, 1, "VesnALIA has said so at one sweep");
   await within(app.boxes.sweep(), "the next sweep");
   assert.deepEqual(await app.boxes.list(THREAD), []);
-  assert.ok(!world.events.includes(`delete ${hostId}`), "BB Box leaves BB's machine to BB");
-  assert.deepEqual(await within(removal(), "BB's removal"), { status: "removed" });
+  assert.ok(!world.events.includes(`delete ${hostId}`), "VesnALIA Box leaves VesnALIA's machine to VesnALIA");
+  assert.deepEqual(await within(removal(), "ALIA's removal"), { status: "removed" });
 });
 
-test("New box: after BB Box loses its storage, the sweep restores the thread's box as BB's machine for the thread, which does not enrol again (#127)", async (t) => {
-  const { harness, bb, app, world } = await start({ "fake-enabled": true });
+test("New box: after VesnALIA Box loses its storage, the sweep restores the thread's box as VesnALIA's machine for the thread, which does not enrol again (#127)", async (t) => {
+  const { harness, alia, app, world } = await start({ "fake-enabled": true });
   t.after(() => harness.lifecycle.dispose());
-  // Another thread's New box machine, which BB lists first, is not this box's.
-  world.hosts.set("host-thr_other", makeHostResponse({ id: "host-thr_other", status: "connected", machineProviderId: "bb-box-new" }));
+  // Another thread's New box machine, which VesnALIA lists first, is not this box's.
+  world.hosts.set("host-thr_other", makeHostResponse({ id: "host-thr_other", status: "connected", machineProviderId: "alia-box-new" }));
   world.resources.set("host-thr_other", { boxId: "bxother" });
   const { hostId, boxId } = await newBox(harness, world);
-  for (const key of [...(await bb.storage.kv.list("box/")), ...(await bb.storage.kv.list("index/"))]) await bb.storage.kv.delete(key);
+  for (const key of [...(await alia.storage.kv.list("box/")), ...(await alia.storage.kv.list("index/"))]) await alia.storage.kv.delete(key);
 
   assert.match((await harness.behavior.runCli(["sweep"])).stdout ?? "", /Boxes restored from their guests: 1/);
   const restored = await app.boxes.settled({ threadId: THREAD, id: boxId });
@@ -2934,13 +2934,13 @@ test("New box: after BB Box loses its storage, the sweep restores the thread's b
   assert.equal(restored?.projectId, PROJECT);
   assert.deepEqual(restored?.enrol, { state: "enrolled", hostId, error: null });
   assert.equal(restored?.restoredAt, null, "it is not waiting to enrol");
-  assert.deepEqual(world.events, [], "BB Box makes no other machine for the box");
+  assert.deepEqual(world.events, [], "VesnALIA Box makes no other machine for the box");
 });
 
 test("New box: a retry makes a new box rather than reuse one that failed (033)", async (t) => {
   const { harness, app } = await start({ "fake-enabled": true });
   t.after(() => harness.lifecycle.dispose());
-  const provider = harness.inspection.registrations.machineProviders.get("bb-box-new")!;
+  const provider = harness.inspection.registrations.machineProviders.get("alia-box-new")!;
   const failed = await app.boxes.acquire({ threadId: THREAD, projectId: PROJECT, kind: "linux", role: "machine" });
   await app.boxes.settled(failed);
   await app.boxes.update((await app.boxes.find(failed.id))!, () => ({ state: "failed", error: "it did not start" }));
@@ -2953,11 +2953,11 @@ test("New box: a retry makes a new box rather than reuse one that failed (033)",
 test("New box: a create cut short is cleaned up, and a key that is no thread fails with a message (033)", async (t) => {
   const { harness, app } = await start({ "fake-enabled": true });
   t.after(() => harness.lifecycle.dispose());
-  const provider = harness.inspection.registrations.machineProviders.get("bb-box-new")!;
+  const provider = harness.inspection.registrations.machineProviders.get("alia-box-new")!;
 
   const none = (await provider.create(createContext("thr_nope", { kind: "linux" }).context)) as { status: string; message: string };
   assert.equal(none.status, "failed");
-  assert.match(none.message, /BB named none \(key thr_nope\)/);
+  assert.match(none.message, /ALIA named none \(key thr_nope\)/);
 
   await app.boxes.acquire({ threadId: THREAD, projectId: PROJECT, kind: "linux", role: "machine" });
   assert.deepEqual(await provider.reconcileCleanup({ key: THREAD, report: { step: () => {}, log: () => {} }, signal: new AbortController().signal } as never), { status: "removed" });
@@ -2967,7 +2967,7 @@ test("New box: a create cut short is cleaned up, and a key that is no thread fai
 async function newBoxWorld() {
   const started = await start({ "fake-enabled": true });
   const { app, harness } = started;
-  const provider = harness.inspection.registrations.machineProviders.get("bb-box-new")!;
+  const provider = harness.inspection.registrations.machineProviders.get("alia-box-new")!;
   const keepFor = async (projects: readonly string[]) => {
     const document = app.configuration.exported();
     const result = await app.configuration.apply({ ...document, backends: document.backends.map((backend) => ({ ...backend, projects })) }, document.revision);
@@ -3004,7 +3004,7 @@ test("New box: a create again for the thread's machine, once its backend is kept
 
   assert.equal(again.status, "failed");
   assert.match(again.message ?? "", /is kept for certain projects, and this thread's project is not one of them, so this thread cannot start on box \S+\. Start it on a new box\./);
-  assert.equal(world.bootstraps.length, 1, "BB's installer ran only for the box made while the backend served the thread");
+  assert.equal(world.bootstraps.length, 1, "VesnALIA's installer ran only for the box made while the backend served the thread");
   const after = await app.boxes.find(machine!.id);
   assert.equal(after?.state, "ready", "the thread's machine keeps working");
   assert.equal(after?.enrol.state, "enrolled");
@@ -3014,7 +3014,7 @@ test("New box: a create again for the thread's machine, once its backend is kept
 test("New box: with no backend kept for a project, a create resumes the box it made before, as it always has (#1458)", async (t) => {
   const { harness, app, world } = await start({ "fake-enabled": true });
   t.after(() => harness.lifecycle.dispose());
-  const provider = harness.inspection.registrations.machineProviders.get("bb-box-new")!;
+  const provider = harness.inspection.registrations.machineProviders.get("alia-box-new")!;
   const halfMade = await app.boxes.acquire({ threadId: THREAD, projectId: PROJECT, kind: "linux", role: "machine" });
   await app.boxes.settled(halfMade);
 
@@ -3026,7 +3026,7 @@ test("New box: with no backend kept for a project, a create resumes the box it m
   await app.boxes.idle();
 });
 
-/** One of your machines added over RPC, waited for until it is a BB machine. */
+/** One of your machines added over RPC, waited for until it is a VesnALIA machine. */
 async function addMachine(harness: Awaited<ReturnType<typeof start>>["harness"], app: Awaited<ReturnType<typeof start>>["app"], input: Record<string, unknown>) {
   const added = (await harness.behavior.callRpc("machines.add", input)) as { box: { id: string; name: string } | null; error: string | null };
   assert.equal(added.error, null);
@@ -3034,7 +3034,7 @@ async function addMachine(harness: Awaited<ReturnType<typeof start>>["harness"],
   return app.boxes.enrolled((await app.boxes.settled(box)) ?? box);
 }
 
-test("your machines: added in settings under a name, BB machines whatever the enrolment setting, and kept by the sweep (036)", async (t) => {
+test("your machines: added in settings under a name, VesnALIA machines whatever the enrolment setting, and kept by the sweep (036)", async (t) => {
   const { harness, app, world } = await start({ "fake-enabled": true, "enrol-boxes": false, "boxes-per-thread": 1 });
   t.after(() => harness.lifecycle.dispose());
   const box = await addMachine(harness, app, { kind: "linux", name: "build-1" });
@@ -3048,9 +3048,9 @@ test("your machines: added in settings under a name, BB machines whatever the en
   const bad = (await harness.behavior.callRpc("machines.add", { kind: "linux", name: "Build_1" })) as { error: string };
   assert.match(bad.error, /"Build_1" is not one\./);
   const named = await addMachine(harness, app, { kind: "linux" });
-  assert.match(named.name, /^[a-z]+-[a-z]+$/, "BB Box picks a name");
+  assert.match(named.name, /^[a-z]+-[a-z]+$/, "VesnALIA Box picks a name");
 
-  // No thread exists, and BB says so: the sweep keeps them all.
+  // No thread exists, and VesnALIA says so: the sweep keeps them all.
   world.threads.clear();
   await app.boxes.sweep();
   const listed = (await harness.behavior.callRpc("machines.list", null)) as { machines: { box: { name: string }; threads: unknown[] }[]; kinds: { id: string }[] };
@@ -3058,35 +3058,35 @@ test("your machines: added in settings under a name, BB machines whatever the en
   assert.ok(listed.kinds.some((kind) => kind.id === "linux"));
 });
 
-test("your machines: removed in settings or in BB, without either waiting on the other (036)", async (t) => {
+test("your machines: removed in settings or in VesnALIA, without either waiting on the other (036)", async (t) => {
   const { harness, app, world } = await start({ "fake-enabled": true });
   t.after(() => harness.lifecycle.dispose());
-  const provider = harness.inspection.registrations.machineProviders.get("bb-box")!;
-  const bbOwned = (box: { id: string; enrol: { hostId: string | null } }) => {
+  const provider = harness.inspection.registrations.machineProviders.get("alia-box")!;
+  const aliaOwned = (box: { id: string; enrol: { hostId: string | null } }) => {
     let removing: Promise<unknown> | null = null;
     const removal = () => (removing ??= provider.remove({ resource: { boxId: box.id }, hostId: box.enrol.hostId } as never));
-    world.bbRemovals.set(box.enrol.hostId!, removal);
+    world.aliaRemovals.set(box.enrol.hostId!, removal);
     return removal;
   };
 
-  // Removed in settings: the release deletes its BB machine, and BB's removal calls back.
+  // Removed in settings: the release deletes its VesnALIA machine, and VesnALIA's removal calls back.
   const first = await addMachine(harness, app, { kind: "linux", name: "first" });
-  bbOwned(first);
+  aliaOwned(first);
   assert.deepEqual(await within(harness.behavior.callRpc("machines.remove", { box: "first" }), "removing in settings"), { box: null, error: null });
   assert.equal(await app.boxes.find(first.id), null);
 
-  // Removed in BB: the box goes too.
+  // Removed in VesnALIA: the box goes too.
   const second = await addMachine(harness, app, { kind: "linux", name: "second" });
-  const removal = bbOwned(second);
-  assert.deepEqual(await within(removal(), "BB's removal"), { status: "removed" });
+  const removal = aliaOwned(second);
+  assert.deepEqual(await within(removal(), "ALIA's removal"), { status: "removed" });
   assert.equal(await app.boxes.find(second.id), null);
 
   const unjoined = await addMachine(harness, app, { kind: "linux", name: "unjoined" });
-  await app.boxes.update(unjoined, (current) => ({ enrol: { state: "failed", hostId: current.enrol.hostId, error: "BB at http://127.0.0.1:38886 is not reachable from the box." } }));
-  assert.deepEqual(await within(bbOwned(unjoined)(), "BB's removal of a machine that never joined"), { status: "removed" });
+  await app.boxes.update(unjoined, (current) => ({ enrol: { state: "failed", hostId: current.enrol.hostId, error: "VesnALIA at http://127.0.0.1:38886 is not reachable from the box." } }));
+  assert.deepEqual(await within(aliaOwned(unjoined)(), "VesnALIA's removal of a machine that never joined"), { status: "removed" });
   const kept = await app.boxes.find(unjoined.id);
   assert.equal(kept?.state, "ready");
-  assert.deepEqual(kept?.enrol, { state: "failed", hostId: null, error: "BB at http://127.0.0.1:38886 is not reachable from the box." });
+  assert.deepEqual(kept?.enrol, { state: "failed", hostId: null, error: "VesnALIA at http://127.0.0.1:38886 is not reachable from the box." });
 });
 
 test("your machines: removing or stopping one a thread is working on asks first (036)", async (t) => {
@@ -3096,7 +3096,7 @@ test("your machines: removing or stopping one a thread is working on asks first 
   world.onHost.set(box.enrol.hostId!, [{ id: "thr_worker", title: "Build", status: "active", hasPendingInteraction: false, archivedAt: null, deletedAt: null }]);
   const listed = (await harness.behavior.callRpc("machines.list", null)) as { machines: { threads: unknown[] }[] };
   assert.deepEqual(listed.machines[0]!.threads, [{ id: "thr_worker", title: "Build", running: true }]);
-  // A thread with no title yet goes by BB's fallback, the start of its prompt.
+  // A thread with no title yet goes by VesnALIA's fallback, the start of its prompt.
   world.onHost.set(box.enrol.hostId!, [
     { id: "thr_worker", title: "Build", status: "active", hasPendingInteraction: false, archivedAt: null, deletedAt: null },
     { id: "thr_new", title: null, titleFallback: "Run the tests", status: "idle", hasPendingInteraction: false, archivedAt: null, deletedAt: null } as never,
@@ -3120,7 +3120,7 @@ test("your machines: removing or stopping one a thread is working on asks first 
   assert.deepEqual(await harness.behavior.callRpc("machines.remove", { box: "busy", force: true }), { box: null, error: null });
 });
 
-test("a spare a thread started on through BB's picker becomes yours, not another thread's, and a new spare is made (036)", async (t) => {
+test("a spare a thread started on through VesnALIA's picker becomes yours, not another thread's, and a new spare is made (036)", async (t) => {
   const { harness, app, world } = await start();
   t.after(() => harness.lifecycle.dispose());
   const { kinds: _, ...rest } = app.configuration.exported();
@@ -3133,7 +3133,7 @@ test("a spare a thread started on through BB's picker becomes yours, not another
   assert.equal(yours?.id, spare.id);
   assert.equal(yours?.name, spare.name);
   await until("its machine renamed", async () => world.hosts.get(spare.enrol.hostId!)?.name === spare.name);
-  assert.ok(harness.inspection.logEntries.some((entry) => entry.message === `Spare box ${spare.name} is now yours: thread thr_picker started on it from BB's picker.`));
+  assert.ok(harness.inspection.logEntries.some((entry) => entry.message === `Spare box ${spare.name} is now yours: thread thr_picker started on it from VesnALIA's picker.`));
   await until("a new spare", async () => (await app.boxes.list(SPARES)).some((box) => box.id !== spare.id));
 });
 
@@ -3208,7 +3208,7 @@ test("box_resize resizes a box live where its backend can, says first what it wo
   assert.ok(isError(smaller));
   assert.match(text(smaller), /^A box's disk only grows, and this box's is 30 GiB, more than the 25 GiB asked for\./);
   assert.match(text(await tool("box_resize", { box: box.name, memory_gib: 1 })), /needs at least 2 GiB memory/);
-  assert.match(text(await tool("box_resize", { box: box.name, cores: 64 })), /can be at most 16 cores, 32 GiB memory, 256 GiB disk.* To allow more, raise the kind's largest size in BB Box settings, under Kinds, Linux, Sizes, or run bb box kind set linux --largest-cores <cores>\./);
+  assert.match(text(await tool("box_resize", { box: box.name, cores: 64 })), /can be at most 16 cores, 32 GiB memory, 256 GiB disk.* To allow more, raise the kind's largest size in ALIA Box settings, under Kinds, Linux, Sizes, or run alia box kind set linux --largest-cores <cores>\./);
 });
 
 test("box_resize refuses a live shrink of memory below what the box uses, with a margin, and changes nothing (061)", async (t) => {
@@ -3228,7 +3228,7 @@ test("box_resize refuses a live shrink of memory below what the box uses, with a
   assert.ok(isError(refused));
   assert.match(
     text(refused),
-    new RegExp(`^Box ${box.name} uses 3\\.6 GiB of memory now, so 4 GiB would leave less than 512 MiB free, and the kernel could end its processes\\. Give it at least 5 GiB, or free memory in it first\\. BB Box changed nothing\\.\\n\\nNext: Give the box at least the memory this names`),
+    new RegExp(`^Box ${box.name} uses 3\\.6 GiB of memory now, so 4 GiB would leave less than 512 MiB free, and the kernel could end its processes\\. Give it at least 5 GiB, or free memory in it first\\. VesnALIA Box changed nothing\\.\\n\\nNext: Give the box at least the memory this names`),
   );
   assert.equal(world.backend!.resized.length, 0);
   assert.equal((await app.boxes.find(box.id))?.resize ?? null, null, "nothing was recorded");
@@ -3247,7 +3247,7 @@ test("box_resize makes a change that needs a restart only when asked, and never 
   assert.ok(isError(asked));
   assert.match(
     text(asked),
-    new RegExp(`^Resizing box ${box.name} to 4 cores, 4 GiB memory needs a restart for its cores: the box shuts down and starts again, for about 8 s, which ends everything running in it\\. BB Box changed nothing\\.\\n\\nNext: Call box_resize again with restart true`),
+    new RegExp(`^Resizing box ${box.name} to 4 cores, 4 GiB memory needs a restart for its cores: the box shuts down and starts again, for about 8 s, which ends everything running in it\\. VesnALIA Box changed nothing\\.\\n\\nNext: Call box_resize again with restart true`),
   );
   // The disk alone is live.
   assert.match(text(await tool("box_resize", { box: box.name, disk_gib: 40 })), /^Resized box .* to 2 cores, 4 GiB memory, 40 GiB disk in /);
@@ -3279,7 +3279,7 @@ test("an agent resizes the machine its thread runs on live, but not with a resta
   assert.ok(isError(own));
   assert.match(
     text(own),
-    /^Resizing box build-1 needs a restart, which would end this thread's session on it\. Ask the user to resize it with bb box machines resize build-1 --restart and the size, from a terminal elsewhere, which restarts it; the thread's session comes back once it is up\./,
+    /^Resizing box build-1 needs a restart, which would end this thread's session on it\. Ask the user to resize it with alia box machines resize build-1 --restart and the size, from a terminal elsewhere, which restarts it; the thread's session comes back once it is up\./,
   );
   assert.equal((await app.boxes.find(machine.id))?.size?.memoryMiB, 4096);
 });
@@ -3301,7 +3301,7 @@ test("box_resize does not restart a desktop box while a person holds its control
   assert.match(text(await tool("box_resize", { box: box.name, cores: 6 })), /^Resized box .* to 6 cores, /);
 });
 
-test("bb box machines resize resizes one of your machines, checks first with --check, and restarts it only with --restart, and not while a thread works on it unless --force (061)", async (t) => {
+test("alia box machines resize resizes one of your machines, checks first with --check, and restarts it only with --restart, and not while a thread works on it unless --force (061)", async (t) => {
   const { harness, app, world } = await start();
   t.after(() => harness.lifecycle.dispose());
   world.backend!.resizeWays = { cores: "live", memory: "restart", disk: "live", shrinks: true };
@@ -3405,7 +3405,7 @@ test("settings' Machines resizes one of your machines through machines.resize (0
   assert.ok(harness.inspection.logEntries.some((entry) => entry.message.startsWith("Resized box build-1 ") && entry.message.includes("live, as the panel asked")));
 });
 
-test("after a live change of a BB machine's cores, box_resize says BB keeps the old count and how to set the thread limit, where it cannot restart BB's daemon there (061, BB request 28)", async (t) => {
+test("after a live change of a VesnALIA machine's cores, box_resize says VesnALIA keeps the old count and how to set the thread limit, where it cannot restart VesnALIA's daemon there (061, VesnALIA request 28)", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   world.backend!.resizeWays = { cores: "live", memory: "live", disk: "live", shrinks: true };
@@ -3417,9 +3417,9 @@ test("after a live change of a BB machine's cores, box_resize says BB keeps the 
   assert.match(
     busy,
     new RegExp(
-      `\\nBB still counts 2 processors on machine ${box.name}, and its automatic thread limit stays at 2, until BB's daemon there restarts, as it does when the box next starts\\. ` +
-        `BB Box does not restart it while thread "Build" \\(thr_worker\\) works on the machine, as that would end its turn\\. ` +
-        `To raise the limit now: bb concurrency-limit host ${box.name} 4, and then bb concurrency-limit host ${box.name} auto once BB counts the new cores\\.\\n\\nNext:`,
+      `\\nBB still counts 2 processors on machine ${box.name}, and its automatic thread limit stays at 2, until VesnALIA's daemon there restarts, as it does when the box next starts\\. ` +
+        `VesnALIA Box does not restart it while thread "Build" \\(thr_worker\\) works on the machine, as that would end its turn\\. ` +
+        `To raise the limit now: VesnALIA concurrency-limit host ${box.name} 4, and then VesnALIA concurrency-limit host ${box.name} auto once VesnALIA counts the new cores\\.\\n\\nNext:`,
     ),
   );
   // An idle thread there, with a terminal of its own open, and then one of the machine's.
@@ -3427,15 +3427,15 @@ test("after a live change of a BB machine's cores, box_resize says BB keeps the 
   const session = { hostId: box.enrol.hostId!, command: "sh", status: "running" as const, createdAt: 1 };
   world.terminals.set("term_thread", { ...session, id: "term_thread", title: "Shell", threadId: "thr_worker" });
   world.terminals.set("term_machine", { ...session, id: "term_machine", title: "Shell" });
-  assert.match(text(await tool("box_resize", { box: box.name, cores: 6 })), /\nBB still counts 4 processors .*\. BB Box does not restart it while 2 BB terminals are open on the machine, as that would end them\. To raise the limit now: bb concurrency-limit host .* 6,/);
+  assert.match(text(await tool("box_resize", { box: box.name, cores: 6 })), /\nBB still counts 4 processors .*\. ALIA Box does not restart it while 2 ALIA terminals are open on the machine, as that would end them\. To raise the limit now: alia concurrency-limit host .* 6,/);
   world.terminals.get("term_thread")!.status = "exited";
-  assert.match(text(await tool("box_resize", { box: box.name, cores: 7 })), /BB Box does not restart it while a BB terminal is open on the machine, as that would end it\./);
-  // No thread works there and no terminal is open, so BB Box tries the restart: a test's fake box has no daemon of BB's to restart.
+  assert.match(text(await tool("box_resize", { box: box.name, cores: 7 })), /ALIA Box does not restart it while a ALIA terminal is open on the machine, as that would end it\./);
+  // No thread works there and no terminal is open, so VesnALIA Box tries the restart: a test's fake box has no daemon of VesnALIA's to restart.
   world.terminals.get("term_machine")!.status = "exited";
   const idle = text(await tool("box_resize", { box: box.name, cores: 8 }));
-  assert.match(idle, /\nBB still counts 7 processors on machine .*, as it does when the box next starts\. To raise the limit now: bb concurrency-limit host .* 8,/);
+  assert.match(idle, /\nBB still counts 7 processors on machine .*, as it does when the box next starts\. To raise the limit now: alia concurrency-limit host .* 8,/);
   assert.doesNotMatch(idle, /does not restart it while/);
-  assert.doesNotMatch(text(await tool("box_resize", { box: box.name, memory_gib: 6 })), /BB still counts/, "memory alone leaves the count alone");
+  assert.doesNotMatch(text(await tool("box_resize", { box: box.name, memory_gib: 6 })), /ALIA still counts/, "memory alone leaves the count alone");
 });
 
 test("box_resize refuses a size with no room, and a failed resize is recorded, with the box's size unchanged (061)", async (t) => {
@@ -3462,7 +3462,7 @@ test("box_resize refuses a size with no room, and a failed resize is recorded, w
   assert.match(text(await tool("box_status", { box: box.name })), /\nSize: 2 cores, 4 GiB memory\n[\s\S]*\nLast resize: to 2 cores, 8 GiB memory, at .* UTC, failed: The provider said no\./);
 });
 
-test("a resize BB Box restarted in the middle of ends at the next sweep with the size the guest says (061)", async (t) => {
+test("a resize VesnALIA Box restarted in the middle of ends at the next sweep with the size the guest says (061)", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   const backend = world.backend!;
@@ -3470,12 +3470,12 @@ test("a resize BB Box restarted in the middle of ends at the next sweep with the
   await tool("box_acquire", { kind: "linux" });
   const box = await only(app);
   await tool("box_resize", { box: box.name, memory_gib: 6 });
-  // As if BB Box stopped after recording a resize to 8 GiB: the guest still has 6 GiB.
+  // As if VesnALIA Box stopped after recording a resize to 8 GiB: the guest still has 6 GiB.
   await app.boxes.update(box, (current) => ({ resize: { ...current.resize!, to: { cores: 2, memoryMiB: 8192, diskGiB: null }, state: "resizing", ms: null } }));
   await app.boxes.sweep();
   const record = (await app.boxes.find(box.id))!;
   assert.equal(record.resize?.state, "failed");
-  assert.match(record.resize?.error ?? "", /^BB Box restarted before the resize finished/);
+  assert.match(record.resize?.error ?? "", /^ALIA Box restarted before the resize finished/);
   assert.equal(record.guest?.size?.memoryMiB, 6144);
   assert.equal(record.size?.memoryMiB, 6144);
 });
@@ -3492,7 +3492,7 @@ test("a thread found on a spare makes it yours at once, not at the next sweep (0
   await until("yours", async () => (await app.boxes.find(spare.id))?.threadId === OPERATOR);
 });
 
-test("a spare is yours as soon as BB says a thread on its machine is working, not at the next upkeep (036, #155)", async (t) => {
+test("a spare is yours as soon as VesnALIA says a thread on its machine is working, not at the next upkeep (036, #155)", async (t) => {
   const { harness, app, world } = await start();
   t.after(() => harness.lifecycle.dispose());
   const { kinds: _, ...rest } = app.configuration.exported();
@@ -3501,7 +3501,7 @@ test("a spare is yours as soon as BB says a thread on its machine is working, no
   await app.boxes.idle();
   world.workspaceHost = spare.enrol.hostId!;
   world.onHost.set(spare.enrol.hostId!, [{ id: "thr_picker", title: null, status: "active", hasPendingInteraction: false, archivedAt: null, deletedAt: null }]);
-  // BB creates the thread before its environment, so its machine is not known yet.
+  // VesnALIA creates the thread before its environment, so its machine is not known yet.
   const created = makeThreadResponse({ id: "thr_picker", projectId: PROJECT, environmentId: null });
   world.threads.set("thr_picker", created);
   await harness.behavior.emitThreadEvent("thread.created", { thread: created });
@@ -3549,7 +3549,7 @@ test("enrolment can be switched off", async (t) => {
   assert.equal(world.hosts.size, 0);
 });
 
-test("archiving or deleting a thread releases its boxes, once BB says so when asked, and the log has BB's answer", async (t) => {
+test("archiving or deleting a thread releases its boxes, once VesnALIA says so when asked, and the log has VesnALIA's answer", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   world.threads.set("thr_two", makeThreadResponse({ id: "thr_two", projectId: PROJECT }));
@@ -3560,18 +3560,18 @@ test("archiving or deleting a thread releases its boxes, once BB says so when as
   const archived = makeThreadResponse({ id: THREAD, projectId: PROJECT, archivedAt });
   const logs = () => harness.inspection.logEntries.map((entry) => entry.message);
   await harness.behavior.emitThreadEvent("thread.archived", { thread: archived });
-  await until("the check with BB", async () => logs().includes(`Kept the boxes of thread ${THREAD}: BB said it was archived, but says now that it is live. BB's answer: archivedAt null, deletedAt null.`));
+  await until("the check with VesnALIA", async () => logs().includes(`Kept the boxes of thread ${THREAD}: VesnALIA said it was archived, but says now that it is live. VesnALIA's answer: archivedAt null, deletedAt null.`));
   assert.equal((await app.boxes.list(THREAD)).length, 1);
   world.threads.set(THREAD, archived);
   await harness.behavior.emitThreadEvent("thread.archived", { thread: archived });
   await until("the archived thread's box to go", async () => (await app.boxes.list(THREAD)).length === 0);
-  const answer = `BB's answer: archivedAt ${new Date(archivedAt).toISOString()}, deletedAt null.`;
+  const answer = `VesnALIA's answer: archivedAt ${new Date(archivedAt).toISOString()}, deletedAt null.`;
   assert.ok(logs().some((line) => line.startsWith("Releasing box ") && line.endsWith(` of thread ${THREAD}: its thread was archived. ${answer}`)));
-  // BB finds no such thread: the box goes at the next sweep if BB still finds none.
+  // VesnALIA finds no such thread: the box goes at the next sweep if VesnALIA still finds none.
   world.threads.delete("thr_two");
   await harness.behavior.emitThreadEvent("thread.deleted", { thread: makeThreadResponse({ id: "thr_two" }) });
-  const missing = `BB's answer: status 404, code thread_not_found, message "HTTP 404: Thread not found".`;
-  await until("the check with BB", async () => logs().includes(`Kept the boxes of thread thr_two: BB said it was deleted, but finds no such thread now, and the next sweep releases them if BB still finds none. ${missing}`));
+  const missing = `VesnALIA's answer: status 404, code thread_not_found, message "HTTP 404: Thread not found".`;
+  await until("the check with VesnALIA", async () => logs().includes(`Kept the boxes of thread thr_two: VesnALIA said it was deleted, but finds no such thread now, and the next sweep releases them if VesnALIA still finds none. ${missing}`));
   assert.equal((await app.boxes.list("thr_two")).length, 1);
   await within(app.boxes.sweep(), "the sweep");
   assert.deepEqual(await app.boxes.list("thr_two"), []);
@@ -3579,7 +3579,7 @@ test("archiving or deleting a thread releases its boxes, once BB says so when as
   assert.equal(world.hosts.size, 0, "their machines went too");
 });
 
-test("the sweep releases boxes of threads that are gone, but not when BB does not answer", async (t) => {
+test("the sweep releases boxes of threads that are gone, but not when VesnALIA does not answer", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
 
@@ -3587,7 +3587,7 @@ test("the sweep releases boxes of threads that are gone, but not when BB does no
   world.threads.delete(THREAD);
   const answers: [string, Error][] = [
     ["a network error", new Error("connect ECONNREFUSED 127.0.0.1:3000")],
-    ["a 404 from a route BB does not have yet", Object.assign(new Error("HTTP 404: Not Found"), { status: 404 })],
+    ["a 404 from a route VesnALIA does not have yet", Object.assign(new Error("HTTP 404: Not Found"), { status: 404 })],
     ["another resource's not-found", Object.assign(new Error("HTTP 404: Plugin not found"), { status: 404, code: "plugin_not_found" })],
     ["a not-found that mentions the thread", Object.assign(new Error("HTTP 404: Not found: project of thread"), { status: 404, code: "not_found" })],
   ];
@@ -3600,13 +3600,13 @@ test("the sweep releases boxes of threads that are gone, but not when BB does no
   world.threadsError = null;
   const first = (await harness.behavior.runCli(["sweep"])).stdout ?? "";
   assert.match(first, /Boxes of ended threads released: 0/);
-  assert.match(first, /Boxes and guests kept until the next sweep, as BB says their thread ended only now: 1/);
+  assert.match(first, /Boxes and guests kept until the next sweep, as ALIA says their thread ended only now: 1/);
   assert.match((await harness.behavior.runCli(["sweep"])).stdout ?? "", /Boxes of ended threads released: 1/);
   assert.deepEqual(await app.boxes.list(THREAD), []);
 });
 
-test("after BB Box loses its storage, the sweep restores a live thread's box from its guest and leaves it running", async (t) => {
-  const { harness, bb, app, world, tool } = await start();
+test("after VesnALIA Box loses its storage, the sweep restores a live thread's box from its guest and leaves it running", async (t) => {
+  const { harness, alia, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   world.threads.set("thr_two", makeThreadResponse({ id: "thr_two", projectId: PROJECT }));
   world.threads.set("thr_three", makeThreadResponse({ id: "thr_three", projectId: PROJECT }));
@@ -3619,8 +3619,8 @@ test("after BB Box loses its storage, the sweep restores a live thread's box fro
   const [unsure] = await app.boxes.list("thr_three");
   await tool("box_run", { box: live!.name, command: "echo kept > work.txt" });
   // The plugin's storage loses every box record; the guests keep running.
-  for (const key of await bb.storage.kv.list("box/")) await bb.storage.kv.delete(key);
-  for (const key of await bb.storage.kv.list("index/")) await bb.storage.kv.delete(key);
+  for (const key of await alia.storage.kv.list("box/")) await alia.storage.kv.delete(key);
+  for (const key of await alia.storage.kv.list("index/")) await alia.storage.kv.delete(key);
   const archivedAt = Date.now();
   world.threads.set("thr_two", makeThreadResponse({ id: "thr_two", projectId: PROJECT, archivedAt }));
   world.threads.set("thr_three", { ...makeThreadResponse({ id: "thr_three", projectId: PROJECT }), deletedAt: undefined } as unknown as Thread);
@@ -3629,8 +3629,8 @@ test("after BB Box loses its storage, the sweep restores a live thread's box fro
   const swept = (await harness.behavior.runCli(["sweep"])).stdout ?? "";
   assert.match(swept, /Boxes restored from their guests: 1/);
   assert.match(swept, /Leftover guests removed: 0/);
-  assert.match(swept, /Guests kept until BB says whether their thread ended: 1/);
-  assert.match(swept, /Boxes and guests kept until the next sweep, as BB says their thread ended only now: 1/);
+  assert.match(swept, /Guests kept until ALIA says whether their thread ended: 1/);
+  assert.match(swept, /Boxes and guests kept until the next sweep, as ALIA says their thread ended only now: 1/);
   assert.match((await harness.behavior.runCli(["sweep"])).stdout ?? "", /Leftover guests removed: 1/);
 
   const restored = (await app.boxes.list(THREAD))[0]!;
@@ -3641,7 +3641,7 @@ test("after BB Box loses its storage, the sweep restores a live thread's box fro
   assert.equal(restored.state, "ready");
   assert.equal(restored.error, null);
   assert.deepEqual(restored.guest, live!.guest);
-  // It is a BB machine again, keyed by its box ID: BB gives back the machine it still has.
+  // It is a VesnALIA machine again, keyed by its box ID: VesnALIA gives back the machine it still has.
   const enrolled = await until("enrolment", async () => {
     const current = await app.boxes.find(live!.id);
     return current?.enrol.state === "enrolled" ? current : null;
@@ -3651,23 +3651,23 @@ test("after BB Box loses its storage, the sweep restores a live thread's box fro
   const result = await tool("box_run", { box: live!.name, command: "cat work.txt" });
   assert.match(text(result), /kept/);
   assert.deepEqual(await app.boxes.list("thr_two"), [], "the archived thread's guest went");
-  assert.deepEqual(await app.boxes.list("thr_three"), [], "no record until BB answers");
+  assert.deepEqual(await app.boxes.list("thr_three"), [], "no record until VesnALIA answers");
   const held = (await world.backend!.held()).map((guest) => guest.owner?.boxId).sort();
   assert.deepEqual(held, [live!.id, unsure!.id].sort());
   assert.ok(!held.includes(ended!.id));
   const logs = harness.inspection.logEntries.map((entry) => entry.message);
   assert.ok(logs.some((line) => line.startsWith(`Restored box ${live!.name} of thread ${THREAD}`)), "the restore is logged");
-  assert.ok(logs.some((line) => line.includes(`${ended!.id}, which no box records: its box's thread thr_two ended, as BB says at this sweep and the last. BB's answer: archivedAt ${new Date(archivedAt).toISOString()}, deletedAt null.`)));
-  assert.ok(logs.some((line) => line.endsWith(`BB did not say whether thread thr_three still exists. BB's answer: status 404, code none, message "HTTP 404: Not Found".`)));
+  assert.ok(logs.some((line) => line.includes(`${ended!.id}, which no box records: its box's thread thr_two ended, as VesnALIA says at this sweep and the last. VesnALIA's answer: archivedAt ${new Date(archivedAt).toISOString()}, deletedAt null.`)));
+  assert.ok(logs.some((line) => line.endsWith(`VesnALIA did not say whether thread thr_three still exists. VesnALIA's answer: status 404, code none, message "HTTP 404: Not Found".`)));
   assert.ok(logs.some((line) => line.startsWith(`Kept guest`) && line.includes(unsure!.id)));
 
   world.threadErrors.clear();
   assert.match((await harness.behavior.runCli(["sweep"])).stdout ?? "", /Boxes restored from their guests: 1/);
-  assert.equal((await app.boxes.list("thr_three"))[0]?.id, unsure!.id, "restored once BB answers");
+  assert.equal((await app.boxes.list("thr_three"))[0]?.id, unsure!.id, "restored once VesnALIA answers");
 });
 
 test("a box the sweep restores enrols again with its box ID once it answers, timed from then", async (t) => {
-  const { harness, bb, app, world, tool } = await start();
+  const { harness, alia, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   await tool("box_acquire", {});
   const box = await only(app);
@@ -3675,10 +3675,10 @@ test("a box the sweep restores enrols again with its box ID once it answers, tim
   const hostId = `host-${box.id}`;
   // The guest says the box was made an hour ago.
   const label = `backend/fake/guest/${box.guest!.ref}`;
-  const guest = (await bb.storage.kv.get(label)) as { owner: { createdAt: number } };
-  await bb.storage.kv.set(label, { ...guest, owner: { ...guest.owner, createdAt: guest.owner.createdAt - 3_600_000 } });
+  const guest = (await alia.storage.kv.get(label)) as { owner: { createdAt: number } };
+  await alia.storage.kv.set(label, { ...guest, owner: { ...guest.owner, createdAt: guest.owner.createdAt - 3_600_000 } });
   const restore = async () => {
-    for (const key of [...(await bb.storage.kv.list("box/")), ...(await bb.storage.kv.list("index/"))]) await bb.storage.kv.delete(key);
+    for (const key of [...(await alia.storage.kv.list("box/")), ...(await alia.storage.kv.list("index/"))]) await alia.storage.kv.delete(key);
     assert.match((await harness.behavior.runCli(["sweep"])).stdout ?? "", /Boxes restored from their guests: 1/);
   };
   const enrolled = () =>
@@ -3688,18 +3688,18 @@ test("a box the sweep restores enrols again with its box ID once it answers, tim
     });
   const logged = () => harness.inspection.logEntries.map((entry) => entry.message).filter((line) => line.startsWith(`Enrolled box ${box.name} `));
 
-  // The box rebooted, so BB still has its machine but its daemon is not running: bootstrap starts it again.
+  // The box rebooted, so VesnALIA still has its machine but its daemon is not running: bootstrap starts it again.
   world.hosts.set(hostId, { ...world.hosts.get(hostId)!, status: "disconnected" });
   await restore();
   const again = await enrolled();
   assert.equal(again.enrol.hostId, hostId);
   assert.deepEqual(world.bootstraps, [box.id, box.id]);
   assert.ok(again.timings.enrol! < 60_000, "timed from the restore, not from when the box was made");
-  assert.match(logged().at(-1) ?? "", /^Enrolled box \S+ \d+\.\d\d s after BB Box found the restored box answering: .*BB waiting for the daemon /);
-  assert.deepEqual(world.events, [`create ${hostId}`, `create ${hostId}`], "the same key, and BB's machine is kept");
+  assert.match(logged().at(-1) ?? "", /^Enrolled box \S+ \d+\.\d\d s after ALIA Box found the restored box answering: .*ALIA waiting for the daemon /);
+  assert.deepEqual(world.events, [`create ${hostId}`, `create ${hostId}`], "the same key, and VesnALIA's machine is kept");
   assert.equal(world.hosts.get(hostId)?.status, "connected");
 
-  // BB no longer has the machine: it is made again with the same key, and BB gives it a new ID.
+  // VesnALIA no longer has the machine: it is made again with the same key, and VesnALIA gives it a new ID.
   world.hosts.delete(hostId);
   const madeAgain = `${hostId}-2`;
   await restore();
@@ -3715,13 +3715,13 @@ test("a box the sweep restores enrols again with its box ID once it answers, tim
   assert.equal(stopped?.enrol.state, "off");
   assert.ok(stopped?.restoredAt, "marked to enrol later");
   assert.equal(world.events.length, 3);
-  assert.match(text(await tool("box_status", { box: box.name })), /BB machine: not enrolled since BB Box restored its lost record/);
+  assert.match(text(await tool("box_status", { box: box.name })), /ALIA machine: not enrolled since ALIA Box restored its lost record/);
   assert.ok(!isError(await tool("box_start", { box: box.name })));
   const started = await enrolled();
-  assert.equal(started.enrol.hostId, madeAgain, "BB gives back the machine it still has");
+  assert.equal(started.enrol.hostId, madeAgain, "VesnALIA gives back the machine it still has");
   assert.equal(started.restoredAt, null);
   assert.deepEqual(world.events, [`create ${hostId}`, `create ${hostId}`, `create ${madeAgain}`, `create ${madeAgain}`]);
-  assert.match(logged().at(-1) ?? "", /^Enrolled box \S+ \d+\.\d\d s after BB Box found the restored box answering: /);
+  assert.match(logged().at(-1) ?? "", /^Enrolled box \S+ \d+\.\d\d s after ALIA Box found the restored box answering: /);
 
   // Once enrolled, it reconnects when it starts again rather than enrolling.
   const bootstraps = world.bootstraps.length;
@@ -3776,7 +3776,7 @@ test("with no backend on, the plugin asks for its settings, and a saved configur
   const { harness, app, tool } = await start({});
   t.after(() => harness.lifecycle.dispose());
 
-  assert.deepEqual(harness.inspection.needsConfigurationMessages, ["Set a backend up in BB Box's settings and turn it on."]);
+  assert.deepEqual(harness.inspection.needsConfigurationMessages, ["Set a backend up in VesnALIA Box's settings and turn it on."]);
   assert.match(text(await tool("box_list", {})), /No backend is set up/);
   const refused = await tool("box_acquire", {});
   assert.match(text(refused), /No backend is set up, so there are no boxes to acquire/);
@@ -3812,7 +3812,7 @@ test("box_acquire takes a preset or a custom size, and box_list shows each kind'
   const refused = await tool("box_acquire", { cores: 64 });
   assert.ok(isError(refused));
   assert.match(text(refused), /^A linux box can be at most 16 cores, 32 GiB memory, 256 GiB disk, not 64 cores, 4 GiB memory\./);
-  assert.match(text(refused), / To allow more, raise the kind's largest size in BB Box settings, under Kinds, Linux, Sizes, or run bb box kind set linux --largest-cores <cores>\./);
+  assert.match(text(refused), / To allow more, raise the kind's largest size in ALIA Box settings, under Kinds, Linux, Sizes, or run alia box kind set linux --largest-cores <cores>\./);
   assert.match(text(refused), /Pick a preset, or a custom size within the largest\. box_list shows each kind's sizes\./);
   assert.equal((await app.boxes.list(THREAD)).length, 2, "a refused size makes no box");
 });
@@ -3839,8 +3839,8 @@ test("sizes saved in the Proxmox LXC settings before 028 become the kinds' defau
   const applied = (await harness.behavior.callRpc("config.apply", { draft, revision: rest.revision })) as { ok: boolean };
   assert.ok(applied.ok, JSON.stringify(applied));
   let restarted: Awaited<ReturnType<typeof setup>> | null = null;
-  const next = await harness.lifecycle.reload(async (bb) => {
-    restarted = await setup(bb, setupOptions);
+  const next = await harness.lifecycle.reload(async (alia) => {
+    restarted = await setup(alia, setupOptions);
   });
   t.after(() => next.harness.lifecycle.dispose());
   const again = (await restarted!.kinds()).find((kind) => kind.id === "linux")!;
@@ -3854,7 +3854,7 @@ test("a box-sizes entry with a mistake is left out of the configuration, and the
   assert.equal(kinds.find((kind) => kind.id === "linux")!.defaultPreset, "small");
   assert.equal(kinds.find((kind) => kind.id === "linux-desktop")!.defaultPreset, "large", "a good entry still counts");
   const copy = await app.configuration.migrated();
-  assert.deepEqual(copy!.notes, ["Box sizes: linux.default must be small, medium or large. BB Box ignored it, so it was left out."]);
+  assert.deepEqual(copy!.notes, ["Box sizes: linux.default must be small, medium or large. VesnALIA Box ignored it, so it was left out."]);
   assert.equal(copy!.values["box-sizes"], '{"linux":{"default":"huge"},"linux-desktop":{"default":"large"}}', "the copy keeps the setting as it was");
 });
 test("wrong settings are named in the status and the doctor", async (t) => {
@@ -3878,7 +3878,7 @@ test("the doctor warns, and does not fail, when a Linux preset has less than 2 G
   assert.equal(doctor.exitCode, 0);
   assert.match(
     doctor.stdout ?? "",
-    /Sizes: Some presets of Linux kinds have less than 2 GiB memory.\n {2}\[warn\] Box sizes: The small linux preset, 2 cores, 1 GiB memory, has less than 2 GiB memory, so its boxes can run out of memory as they become BB machines.\n {8}Fix: Give it at least 2 GiB memory in BB Box's settings, under Kinds./,
+    /Sizes: Some presets of Linux kinds have less than 2 GiB memory.\n {2}\[warn\] Box sizes: The small linux preset, 2 cores, 1 GiB memory, has less than 2 GiB memory, so its boxes can run out of memory as they become ALIA machines.\n {8}Fix: Give it at least 2 GiB memory in ALIA Box's settings, under Kinds./,
   );
 });
 
@@ -3926,7 +3926,7 @@ test("the desktop route relays a box's desktop, and only the viewer with control
   assert.equal(box.id, acquired.box.id);
 
   const state = (await harness.behavior.callRpc("state", { threadId: THREAD })) as { desktopPath: string };
-  assert.equal(state.desktopPath, "/api/v1/plugins/bb-box/http/desktop");
+  assert.equal(state.desktopPath, "/api/v1/plugins/alia-box/http/desktop");
   assert.deepEqual(
     ((await harness.behavior.callRpc("allBoxes", null)) as { threadId: string; box: { id: string } }[]).map((entry) => [entry.threadId, entry.box.id]),
     [[THREAD, box.id]],
@@ -3969,7 +3969,7 @@ test("the desktop route relays a box's desktop, and only the viewer with control
   assert.match(sentTo(noId).subarray(12).toString(), /The viewer gave no viewer ID/);
 
   assert.deepEqual(await harness.behavior.callRpc("release", { threadId: THREAD, box: box.name }), { box: null, error: null });
-  assert.deepEqual(await harness.behavior.callRpc("desktop", { threadId: THREAD, box: box.id }), { box: null, desktopPath: state.desktopPath, terminalPath: "/api/v1/plugins/bb-box/http/terminal", video: false, videoByDefault: false, sharp: null, switching: false });
+  assert.deepEqual(await harness.behavior.callRpc("desktop", { threadId: THREAD, box: box.id }), { box: null, desktopPath: state.desktopPath, terminalPath: "/api/v1/plugins/alia-box/http/terminal", video: false, videoByDefault: false, sharp: null, switching: false });
 });
 
 test("a box whose video is shown only by choice, as a Tart Mac's, offers video but opens VNC first; others open video", async (t) => {
@@ -4144,7 +4144,7 @@ test("a box with the test device shows its device by the display's ID beside its
   const selkies = world.backend!.selkies;
   const viewer = "viewer-one-0001";
   const session = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=${viewer}&display=device`);
-  await until("the device server's hello", async () => session.sent.some((message) => typeof message === "string" && message.startsWith("BB_DEVICE_HELLO ")));
+  await until("the device server's hello", async () => session.sent.some((message) => typeof message === "string" && message.startsWith("ALIA_DEVICE_HELLO ")));
   assert.ok(session.sent.includes("MODE websockets"));
   await session.receive("START_VIDEO");
   const frame = await until("a frame of the device", async () => session.sent.find((message): message is Uint8Array => typeof message !== "string"));
@@ -4155,7 +4155,7 @@ test("a box with the test device shows its device by the display's ID beside its
   await session.receive("kd,97");
   await session.receive(clipboard);
   await new Promise((resolve) => setTimeout(resolve, 200));
-  const log = async () => /stdout:\n([\s\S]*?)\n\n/.exec(text(await tool("box_run", { box: box.name, command: "cat ~/.bb-box/device/server.log" })))?.[1] ?? "";
+  const log = async () => /stdout:\n([\s\S]*?)\n\n/.exec(text(await tool("box_run", { box: box.name, command: "cat ~/.alia-box/device/server.log" })))?.[1] ?? "";
   assert.doesNotMatch(await log(), /clipboard: the viewer's/, "nothing of a viewer without control reaches the device");
   const took = (await harness.behavior.callRpc("takeControl", { threadId: THREAD, box: box.id, viewer })) as { error: null };
   assert.equal(took.error, null);
@@ -4167,11 +4167,11 @@ test("a box with the test device shows its device by the display's ID beside its
   await new Promise((resolve) => setTimeout(resolve, 200));
   assert.equal(selkies.pages.length, 0, "the desktop's Selkies never hears of the device's viewer, its input or its clipboard");
   const stills = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-two-0002&display=device`);
-  await until("the second viewer's hello", async () => stills.sent.some((message) => typeof message === "string" && message.startsWith("BB_DEVICE_HELLO ")));
+  await until("the second viewer's hello", async () => stills.sent.some((message) => typeof message === "string" && message.startsWith("ALIA_DEVICE_HELLO ")));
   await stills.receive(stillsRequestText(true));
   await stills.receive("START_VIDEO");
-  const still = await until("a still", async () => stills.sent.find((message): message is string => typeof message === "string" && message.startsWith("BB_DEVICE_STILL ")));
-  const png = Buffer.from((JSON.parse(still.slice("BB_DEVICE_STILL ".length)) as { png: string }).png, "base64");
+  const still = await until("a still", async () => stills.sent.find((message): message is string => typeof message === "string" && message.startsWith("ALIA_DEVICE_STILL ")));
+  const png = Buffer.from((JSON.parse(still.slice("ALIA_DEVICE_STILL ".length)) as { png: string }).png, "base64");
   assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [360, 800]);
   assert.ok(!stills.sent.some((message) => typeof message !== "string"), "no video to a viewer that asked for stills");
   await stills.close();
@@ -4243,7 +4243,7 @@ test("a video viewer's resize of a Docker GPU desktop that took the CPU, as when
   t.after(() => dockerBackend.dispose?.());
   const identity = { boxId: "bxdockercpu0001", threadId: THREAD, name: "calm-otter-cpu", kind: "linux-desktop", createdAt: 1_790_000_000_000, size: { cores: 4, memoryMiB: 8192, diskGiB: null, gpu: "shared" as const } };
   const desktop = await dockerBackend.acquire(identity, null, { claim: async () => undefined, starting: async () => undefined, timing: () => undefined }, AbortSignal.timeout(20_000));
-  writeFileSync(join(docker.root, "containers", desktop.ref, "run", "bb-box", "display-mode"), "cpu\n");
+  writeFileSync(join(docker.root, "containers", desktop.ref, "run", "alia-box", "display-mode"), "cpu\n");
   const [shown] = (await dockerBackend.transports(desktop, "linux-desktop")).displays;
   assert.equal(shown?.protocol, "rfb");
   await videoViewerResizes(t, (size) => shown!.resize!(size));
@@ -4300,8 +4300,8 @@ test("a video display told a size first, as Selkies on Sway, hears it before the
   await session.close();
 });
 
-test("a box whose image has bb-box-cursor gives each video viewer its pointer's shape and where it is, and a later viewer the last of each; Selkies' own arrow goes no further (060)", async (t) => {
-  // The helper as a test drives it: each run, the events it is given, until BB Box ends it.
+test("a box whose image has alia-box-cursor gives each video viewer its pointer's shape and where it is, and a later viewer the last of each; Selkies' own arrow goes no further (060)", async (t) => {
+  // The helper as a test drives it: each run, the events it is given, until VesnALIA Box ends it.
   const runs: { emit: (event: BoxPointer) => void; ended: boolean }[] = [];
   const pointer = (onEvent: (event: BoxPointer) => void, signal: AbortSignal) =>
     new Promise<void>((resolve) => {
@@ -4327,7 +4327,7 @@ test("a box whose image has bb-box-cursor gives each video viewer its pointer's 
   // A 2 by 1 image: an opaque red pixel, then a clear one, as the helper gives it.
   runs[0]!.emit({ type: "image", width: 2, height: 1, hotX: 1, hotY: 0, argb: Uint8Array.from([0, 0, 255, 255, 0, 0, 0, 0]) });
   runs[0]!.emit({ type: "position", x: 640, y: 360 });
-  await until("the pointer", async () => said(one).includes("BB_POINTER,640,360"));
+  await until("the pointer", async () => said(one).includes("ALIA_POINTER,640,360"));
   const cursor = said(one).find((message) => message.startsWith("cursor,"))!;
   const { curdata, hotx, hoty } = JSON.parse(cursor.slice("cursor,".length)) as { curdata: string; hotx: number; hoty: number };
   const png = Buffer.from(curdata, "base64");
@@ -4338,11 +4338,11 @@ test("a box whose image has bb-box-cursor gives each video viewer its pointer's 
 
   // A viewer that connects later has the pointer as it is, before its next change.
   const two = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-two-0002&stream=selkies`);
-  await until("the second viewer's pointer", async () => said(two).includes("BB_POINTER,640,360"));
+  await until("the second viewer's pointer", async () => said(two).includes("ALIA_POINTER,640,360"));
   assert.ok(said(two).includes(cursor));
   assert.equal(runs.length, 1, "one helper for the box, whatever its viewers");
   runs[0]!.emit({ type: "leave" });
-  await until("the pointer gone, for both", async () => said(one).includes("BB_POINTER,") && said(two).includes("BB_POINTER,"));
+  await until("the pointer gone, for both", async () => said(one).includes("ALIA_POINTER,") && said(two).includes("ALIA_POINTER,"));
 
   // With no viewer left, the helper ends.
   await one.close();
@@ -4372,14 +4372,14 @@ test("a VNC viewer's pointer stream gets the box's pointer from the same helper 
   await until("the helper running", async () => runs.length === 1);
   runs[0]!.emit({ type: "image", width: 1, height: 1, hotX: 0, hotY: 0, argb: Uint8Array.from([0, 0, 255, 255]) });
   runs[0]!.emit({ type: "position", x: 10, y: 20 });
-  await until("the pointer", async () => said(vnc).includes("BB_POINTER,10,20"));
+  await until("the pointer", async () => said(vnc).includes("ALIA_POINTER,10,20"));
   assert.ok(said(vnc).some((message) => message.startsWith("cursor,")), "its shape too");
   // A video viewer shares the run, and gets the pointer as it is.
   const video = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-video-0001&stream=selkies`);
-  await until("the video viewer's pointer", async () => said(video).includes("BB_POINTER,10,20"));
+  await until("the video viewer's pointer", async () => said(video).includes("ALIA_POINTER,10,20"));
   assert.equal(runs.length, 1, "one helper for the box");
   runs[0]!.emit({ type: "position", x: 11, y: 20 });
-  await until("both told", async () => said(vnc).includes("BB_POINTER,11,20") && said(video).includes("BB_POINTER,11,20"));
+  await until("both told", async () => said(vnc).includes("ALIA_POINTER,11,20") && said(video).includes("ALIA_POINTER,11,20"));
   // Input on the pointer stream goes nowhere, and it is not a viewer of the desktop: it neither takes nor holds control.
   await vnc.receive("kd,97");
   assert.equal(vnc.closeCalls.length, 0);
@@ -4400,7 +4400,7 @@ test("a VNC viewer's pointer stream gets the box's pointer from the same helper 
   assert.deepEqual(none.closeCalls[0], { code: 1000, reason: POINTER_NONE });
 });
 
-test("a box whose image has no bb-box-cursor, as every Wayland box of a 24.04 image, keeps Selkies' own cursor messages and gets no pointer of BB Box's (#707, 060)", async (t) => {
+test("a box whose image has no alia-box-cursor, as every Wayland box of a 24.04 image, keeps Selkies' own cursor messages and gets no pointer of VesnALIA Box's (#707, 060)", async (t) => {
   const { harness, app, world } = await start(undefined, { kinds: [FAKE_SELKIES_KIND] });
   t.after(() => harness.lifecycle.dispose());
   await harness.behavior.callRpc("acquire", { threadId: THREAD, kind: FAKE_SELKIES_KIND.id });
@@ -4413,7 +4413,7 @@ test("a box whose image has no bb-box-cursor, as every Wayland box of a 24.04 im
   await until("Selkies' cursor", async () => one.sent.includes('cursor,{"curdata":"QVJST1c=","hotx":0,"hoty":0}'));
   await selkies.frame(1, true);
   await until("a frame", async () => one.sent.some((message) => typeof message !== "string"));
-  assert.ok(!one.sent.some((message) => typeof message === "string" && message.startsWith("BB_POINTER")), "no pointer of BB Box's");
+  assert.ok(!one.sent.some((message) => typeof message === "string" && message.startsWith("ALIA_POINTER")), "no pointer of VesnALIA Box's");
   await one.close();
 });
 
@@ -4423,7 +4423,7 @@ test("a joining Linux desktop viewer with no saved agent place is explicitly tol
   for (const stream of ["pointer", "selkies"]) {
     const viewer = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-joining-0001&stream=${stream}`);
     await until("the joining viewer told to clear", async () => agentSaid(viewer).length > 0);
-    assert.deepEqual(agentSaid(viewer), ["BB_AGENT,clear"]);
+    assert.deepEqual(agentSaid(viewer), ["ALIA_AGENT,clear"]);
     await viewer.close();
   }
 });
@@ -4432,20 +4432,20 @@ test("on a Linux desktop, whose driver draws no agent cursor, each viewer is tol
   const { harness, box, tool } = await desktopBox({ kind: FAKE_SELKIES_KIND });
   t.after(() => harness.lifecycle.dispose());
   const said = (session: { sent: readonly (string | Uint8Array)[] }) => session.sent.filter((message): message is string => typeof message === "string");
-  const agentSaid = (session: { sent: readonly (string | Uint8Array)[] }) => said(session).filter((message) => message.startsWith("BB_AGENT,"));
+  const agentSaid = (session: { sent: readonly (string | Uint8Array)[] }) => said(session).filter((message) => message.startsWith("ALIA_AGENT,"));
   const vnc = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-vnc-00001&stream=pointer`);
   const video = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-video-0001&stream=selkies`);
   await tool("computer_screenshot", { box: box.name });
   const clicked = text(await tool("computer_act", { box: box.name, action: "click", window: "desktop", x: 400, y: 300 }));
   const [, sx, sy] = /\((\d+), (\d+)\) on the screen/.exec(clicked)!;
-  await until("both viewers told of the click", async () => agentSaid(vnc).includes(`BB_AGENT,click,${sx},${sy}`) && agentSaid(video).includes(`BB_AGENT,click,${sx},${sy}`));
-  assert.equal(vnc.closeCalls.length, 0, "the pointer stream stays open for the agent's actions, though the image has no bb-box-cursor");
+  await until("both viewers told of the click", async () => agentSaid(vnc).includes(`ALIA_AGENT,click,${sx},${sy}`) && agentSaid(video).includes(`ALIA_AGENT,click,${sx},${sy}`));
+  assert.equal(vnc.closeCalls.length, 0, "the pointer stream stays open for the agent's actions, though the image has no alia-box-cursor");
   await tool("computer_act", { box: box.name, action: "scroll", window: "desktop", x: 300, y: 200, direction: "down" });
-  await until("the scroll", async () => agentSaid(vnc).some((message) => message.startsWith("BB_AGENT,scroll,")));
-  const scrolled = agentSaid(vnc).find((message) => message.startsWith("BB_AGENT,scroll,"))!;
+  await until("the scroll", async () => agentSaid(vnc).some((message) => message.startsWith("ALIA_AGENT,scroll,")));
+  const scrolled = agentSaid(vnc).find((message) => message.startsWith("ALIA_AGENT,scroll,"))!;
   const later = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-vnc-00002&stream=pointer`);
   await until("the later viewer told where the agent is", async () => agentSaid(later).length > 0);
-  assert.deepEqual(agentSaid(later), [scrolled.replace("BB_AGENT,scroll,", "BB_AGENT,at,"), `${scrolled.replace("BB_AGENT,scroll,", "BB_AGENT,shape,")},arrow`], "where, and its shape, with no ring for an action it did not see");
+  assert.deepEqual(agentSaid(later), [scrolled.replace("ALIA_AGENT,scroll,", "ALIA_AGENT,at,"), `${scrolled.replace("ALIA_AGENT,scroll,", "ALIA_AGENT,shape,")},arrow`], "where, and its shape, with no ring for an action it did not see");
   await video.close();
   await vnc.close();
   await later.close();
@@ -4475,11 +4475,11 @@ function withXfceScale(t: TestContext, scale: number, slowMs = 0): string {
 }
 
 function agentClicks(session: { sent: readonly (string | Uint8Array)[] }): string[] {
-  return session.sent.filter((message): message is string => typeof message === "string" && message.startsWith("BB_AGENT,click,"));
+  return session.sent.filter((message): message is string => typeof message === "string" && message.startsWith("ALIA_AGENT,click,"));
 }
 
 for (const scale of [1, 2]) {
-  test(`on a Linux desktop at scale ${scale}, a click by reference shows no pointer, as BB Box cannot know where it is, and a click by pixels shows one where Cua clicked (102)`, async (t) => {
+  test(`on a Linux desktop at scale ${scale}, a click by reference shows no pointer, as VesnALIA Box cannot know where it is, and a click by pixels shows one where Cua clicked (102)`, async (t) => {
     withXfceScale(t, scale);
     const { harness, box, file, tool } = await desktopBox();
     t.after(() => harness.lifecycle.dispose());
@@ -4496,7 +4496,7 @@ for (const scale of [1, 2]) {
     const byPixels = text(await tool("computer_act", { box: box.name, action: "click", window: "desktop", x: 400, y: 300 }));
     const [, sx, sy] = /\((\d+), (\d+)\) on the screen/.exec(byPixels)!;
     await until("the click by pixels told", async () => agentClicks(vnc).length > 0);
-    assert.deepEqual(agentClicks(vnc), [`BB_AGENT,click,${sx},${sy}`]);
+    assert.deepEqual(agentClicks(vnc), [`ALIA_AGENT,click,${sx},${sy}`]);
     await vnc.close();
   });
 }
@@ -4516,15 +4516,15 @@ test("a click by reference on a Linux desktop waits for nothing in the box befor
 type Viewer = { sent: readonly (string | Uint8Array)[] };
 
 function agentSaid(session: Viewer): string[] {
-  return session.sent.filter((message): message is string => typeof message === "string" && message.startsWith("BB_AGENT,"));
+  return session.sent.filter((message): message is string => typeof message === "string" && message.startsWith("ALIA_AGENT,"));
 }
 
 function shapesSaid(session: Viewer): string[] {
-  return agentSaid(session).filter((message) => message.startsWith("BB_AGENT,shape,"));
+  return agentSaid(session).filter((message) => message.startsWith("ALIA_AGENT,shape,"));
 }
 
 function clicksSaid(session: Viewer): string[] {
-  return agentSaid(session).filter((message) => message.startsWith("BB_AGENT,click,"));
+  return agentSaid(session).filter((message) => message.startsWith("ALIA_AGENT,click,"));
 }
 
 const QUIET_MS = 400;
@@ -4546,16 +4546,16 @@ test("on a Linux desktop, the agent's pointer is a hand on a link or button it c
     assert.match(clicked, new RegExp(`on the desktop, \\(${screen}\\) on the screen`));
   };
   await clickAt(139, 555, "170, 680");
-  await until("the hand", async () => shapesSaid(vnc).includes("BB_AGENT,shape,170,680,hand"));
-  await until("the arrow once the hand's 0.3 s are over", async () => shapesSaid(vnc).includes("BB_AGENT,shape,170,680,arrow"));
+  await until("the hand", async () => shapesSaid(vnc).includes("ALIA_AGENT,shape,170,680,hand"));
+  await until("the arrow once the hand's 0.3 s are over", async () => shapesSaid(vnc).includes("ALIA_AGENT,shape,170,680,arrow"));
   await clickAt(408, 94, "500, 115");
   await until("the heading's click", async () => clicksSaid(vnc).length === 2);
   await quiet();
   assert.equal(shapesSaid(vnc).length, 2, "a heading gives no shape");
   await clickAt(327, 523, "400, 640");
-  await until("the I-beam", async () => shapesSaid(vnc).includes("BB_AGENT,shape,400,640,ibeam"));
-  assert.deepEqual(clicksSaid(vnc), ["BB_AGENT,click,170,680", "BB_AGENT,click,500,115", "BB_AGENT,click,400,640"], "a click's message carries no shape");
-  assert.deepEqual(shapesSaid(vnc), ["BB_AGENT,shape,170,680,hand", "BB_AGENT,shape,170,680,arrow", "BB_AGENT,shape,400,640,ibeam"]);
+  await until("the I-beam", async () => shapesSaid(vnc).includes("ALIA_AGENT,shape,400,640,ibeam"));
+  assert.deepEqual(clicksSaid(vnc), ["ALIA_AGENT,click,170,680", "ALIA_AGENT,click,500,115", "ALIA_AGENT,click,400,640"], "a click's message carries no shape");
+  assert.deepEqual(shapesSaid(vnc), ["ALIA_AGENT,shape,170,680,hand", "ALIA_AGENT,shape,170,680,arrow", "ALIA_AGENT,shape,400,640,ibeam"]);
   await vnc.close();
 });
 
@@ -4567,7 +4567,7 @@ test("a click by a window's pixels takes its shape from the window's tree when t
   await until("the idle session to close", async () => !app.computer.connected(box.id));
   await tool("computer_act", { box: box.name, action: "click", window: 100, x: 750, y: 540 });
   await until("the hand", async () => shapesSaid(vnc).length > 0);
-  assert.equal(shapesSaid(vnc)[0], "BB_AGENT,shape,850,640,hand");
+  assert.equal(shapesSaid(vnc)[0], "ALIA_AGENT,shape,850,640,hand");
   await vnc.close();
 });
 
@@ -4586,7 +4586,7 @@ test("a click by a window's pixels takes no shape from a tree read before the ac
   await tool("computer_act", { box: box.name, action: "click", window: 100, x: 70, y: 580 });
   await until("the click told", async () => clicksSaid(vnc).length === 1);
   await quiet();
-  assert.deepEqual(agentSaid(vnc), ["BB_AGENT,clear", "BB_AGENT,click,170,680"], "the link was in the tree read with the image, but has gone since");
+  assert.deepEqual(agentSaid(vnc), ["ALIA_AGENT,clear", "ALIA_AGENT,click,170,680"], "the link was in the tree read with the image, but has gone since");
   const clicks = app.recordings.end(box.id)!.filter((event) => event.type === "click");
   assert.deepEqual(
     clicks.map((event) => event.type === "click" && event.role),
@@ -4610,15 +4610,15 @@ test("a viewer that connects is told where the agent is and the shape showing no
   await tool("computer_screenshot", { box: box.name });
   await tool("computer_act", { box: box.name, action: "click", window: "desktop", x: 327, y: 523 });
   const watching = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-vnc-00009&stream=pointer`);
-  assert.deepEqual(await viewer(1), ["BB_AGENT,at,400,640", "BB_AGENT,shape,400,640,ibeam"], "the I-beam held after a click on a text field, until the pointer moves");
+  assert.deepEqual(await viewer(1), ["ALIA_AGENT,at,400,640", "ALIA_AGENT,shape,400,640,ibeam"], "the I-beam held after a click on a text field, until the pointer moves");
 
   await tool("computer_act", { box: box.name, action: "click", window: "desktop", x: 408, y: 94 });
   app.desktops.agentTyping(running, { characters: 8, secret: false, role: "text" }, Date.now());
-  assert.deepEqual(await viewer(2), ["BB_AGENT,at,500,115", "BB_AGENT,shape,500,115,ibeam"], "the I-beam while the agent types");
+  assert.deepEqual(await viewer(2), ["ALIA_AGENT,at,500,115", "ALIA_AGENT,shape,500,115,ibeam"], "the I-beam while the agent types");
 
   app.desktops.agentTyping(running, null, Date.now());
-  await until("the arrow a second after the typing", async () => shapesSaid(watching).at(-1) === "BB_AGENT,shape,500,115,arrow");
-  assert.deepEqual(await viewer(3), ["BB_AGENT,at,500,115", "BB_AGENT,shape,500,115,arrow"]);
+  await until("the arrow a second after the typing", async () => shapesSaid(watching).at(-1) === "ALIA_AGENT,shape,500,115,arrow");
+  assert.deepEqual(await viewer(3), ["ALIA_AGENT,at,500,115", "ALIA_AGENT,shape,500,115,arrow"]);
   await watching.close();
 });
 
@@ -4648,7 +4648,7 @@ for (const [what, second, place] of [
       app.desktops.agentActed(running, { type: "click", button: "left", count: 1, point: { x: at.x, y: at.y }, area: null, role: at.role, window: null }, Date.now());
     const watching = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-vnc-00001&stream=pointer`);
     click({ x: 10, y: 20, role: "text" });
-    await until("the watching viewer told", async () => shapesSaid(watching).includes("BB_AGENT,shape,10,20,ibeam"));
+    await until("the watching viewer told", async () => shapesSaid(watching).includes("ALIA_AGENT,shape,10,20,ibeam"));
     const lookups = holdJoinLookups(app as never);
     t.after(lookups.restore);
     const joining = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-vnc-00002&stream=pointer`);
@@ -4657,8 +4657,8 @@ for (const [what, second, place] of [
     await until("the click told to the joining viewer", async () => clicksSaid(joining).length === 1);
     lookups.release();
     const expected = second.role === "text" ? "ibeam" : "arrow";
-    await until("the joining viewer told the shape now", async () => shapesSaid(joining).at(-1) === `BB_AGENT,shape,${place},${expected}`);
-    assert.equal(agentSaid(joining).filter((message) => message.startsWith("BB_AGENT,at,")).at(-1), `BB_AGENT,at,${place}`);
+    await until("the joining viewer told the shape now", async () => shapesSaid(joining).at(-1) === `ALIA_AGENT,shape,${place},${expected}`);
+    assert.equal(agentSaid(joining).filter((message) => message.startsWith("ALIA_AGENT,at,")).at(-1), `ALIA_AGENT,at,${place}`);
     assert.equal(shapesSaid(watching).at(-1), shapesSaid(joining).at(-1), "the same as the viewer watching all along");
     await joining.close();
     await watching.close();
@@ -4672,18 +4672,18 @@ test("a person who takes control ends the agent's shape: watching viewers clear 
   await tool("computer_act", { box: box.name, action: "click", window: "desktop", x: 327, y: 523 });
   const watching = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-vnc-00001&stream=pointer`);
   await until("the watching viewer told", async () => agentSaid(watching).length >= 2);
-  assert.deepEqual(agentSaid(watching), ["BB_AGENT,at,400,640", "BB_AGENT,shape,400,640,ibeam"]);
+  assert.deepEqual(agentSaid(watching), ["ALIA_AGENT,at,400,640", "ALIA_AGENT,shape,400,640,ibeam"]);
   const viewer = "viewer-one-0001";
   const session = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=${viewer}`);
   await session.receive(new TextEncoder().encode("RFB 003.008\n"));
   await session.receive(Uint8Array.of(1));
   await session.receive(Uint8Array.of(1));
   assert.equal(((await harness.behavior.callRpc("takeControl", { threadId: THREAD, box: box.id, viewer })) as { error: string | null }).error, null);
-  await until("the pointer cleared", async () => agentSaid(watching).at(-1) === "BB_AGENT,clear");
+  await until("the pointer cleared", async () => agentSaid(watching).at(-1) === "ALIA_AGENT,clear");
   await harness.behavior.callRpc("handBack", { threadId: THREAD, box: box.id });
   const later = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-vnc-00002&stream=pointer`);
   await quiet();
-  assert.deepEqual(agentSaid(later), ["BB_AGENT,clear"], "the joining viewer explicitly clears any old place and shape");
+  assert.deepEqual(agentSaid(later), ["ALIA_AGENT,clear"], "the joining viewer explicitly clears any old place and shape");
   assert.equal(agentSaid(watching).length, 4, "nothing more after the take-over");
   await later.close();
   await watching.close();
@@ -4697,7 +4697,7 @@ test("on a Linux desktop, the agent's pointer is an I-beam while it types into a
   const field = refOf(text(await tool("computer_observe", { box: box.name, window: 100 })), '"New task"');
   await tool("computer_type", { box: box.name, ref: field, text: "Buy milk" });
   await quiet();
-  assert.deepEqual(agentSaid(vnc), ["BB_AGENT,clear"], "typing by reference with no place known shows no pointer");
+  assert.deepEqual(agentSaid(vnc), ["ALIA_AGENT,clear"], "typing by reference with no place known shows no pointer");
 
   await tool("computer_screenshot", { box: box.name });
   await tool("computer_act", { box: box.name, action: "click", window: "desktop", x: 408, y: 94 });
@@ -4707,7 +4707,7 @@ test("on a Linux desktop, the agent's pointer is an I-beam while it types into a
   await until("the arrow after it", async () => shapesSaid(vnc).length === 2);
   await tool("computer_act", { box: box.name, action: "set_value", ref: field, value: "Buy bread" });
   await until("the I-beam and the arrow again", async () => shapesSaid(vnc).length === 4);
-  assert.deepEqual(shapesSaid(vnc), ["BB_AGENT,shape,500,115,ibeam", "BB_AGENT,shape,500,115,arrow", "BB_AGENT,shape,500,115,ibeam", "BB_AGENT,shape,500,115,arrow"]);
+  assert.deepEqual(shapesSaid(vnc), ["ALIA_AGENT,shape,500,115,ibeam", "ALIA_AGENT,shape,500,115,arrow", "ALIA_AGENT,shape,500,115,ibeam", "ALIA_AGENT,shape,500,115,arrow"]);
 
   await tool("computer_type", { box: box.name, window: 100, text: "x" });
   await tool("computer_type", { box: box.name, ref: field, keys: "ctrl+a" });
@@ -4729,7 +4729,7 @@ test("a click by pixels on a window too large to read quickly keeps the arrow, a
   assert.match(clicked, /too large to read quickly/);
   await until("the click told", async () => clicksSaid(vnc).length === 1);
   await quiet();
-  assert.deepEqual(agentSaid(vnc), ["BB_AGENT,clear", "BB_AGENT,click,845,160"], "the Delete Task 1 button is under the point, but its tree was not read");
+  assert.deepEqual(agentSaid(vnc), ["ALIA_AGENT,clear", "ALIA_AGENT,click,845,160"], "the Delete Task 1 button is under the point, but its tree was not read");
   const budgets = readDesktop(file).calls.filter((call) => call.tool === "get_window_state").slice(before).map((call) => call.args.max_elements);
   assert.ok(budgets.length && budgets.every((budget) => budget === 1), `reads: ${budgets.join()}`);
   await vnc.close();
@@ -4747,7 +4747,7 @@ test("an action that began before its box stopped shows no pointer once the box 
   app.desktops.agentActed(running, click, began);
   const later = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-vnc-00002&stream=pointer`);
   await new Promise((resolve) => setTimeout(resolve, 300));
-  assert.deepEqual([...agentClicks(vnc), ...agentSaid(later)], ["BB_AGENT,clear"], "the old action is not shown, nor kept for a later viewer");
+  assert.deepEqual([...agentClicks(vnc), ...agentSaid(later)], ["ALIA_AGENT,clear"], "the old action is not shown, nor kept for a later viewer");
   app.desktops.agentActed(running, click, Date.now());
   await until("an action since the start shown", async () => agentClicks(vnc).length === 1);
   await vnc.close();
@@ -4757,7 +4757,7 @@ test("an action that began before its box stopped shows no pointer once the box 
 test("where the agent last acted is forgotten as its box stops or is released, so no viewer is shown an old place (102)", async (t) => {
   const { harness, box, tool } = await desktopBox();
   t.after(() => harness.lifecycle.dispose());
-  const agentSaid = (session: { sent: readonly (string | Uint8Array)[] }) => session.sent.filter((message): message is string => typeof message === "string" && message.startsWith("BB_AGENT,"));
+  const agentSaid = (session: { sent: readonly (string | Uint8Array)[] }) => session.sent.filter((message): message is string => typeof message === "string" && message.startsWith("ALIA_AGENT,"));
   await tool("computer_screenshot", { box: box.name });
   await tool("computer_act", { box: box.name, action: "click", window: "desktop", x: 400, y: 300 });
   const before = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-vnc-00001&stream=pointer`);
@@ -4768,7 +4768,7 @@ test("where the agent last acted is forgotten as its box stops or is released, s
   assert.equal(((await harness.behavior.callRpc("start", { threadId: THREAD, box: box.id })) as { box: { state: string } }).box.state, "ready");
   const restarted = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-vnc-00002&stream=pointer`);
   await new Promise((resolve) => setTimeout(resolve, 300));
-  assert.deepEqual(agentSaid(restarted), ["BB_AGENT,clear"], "a desktop that started again has no place of the agent's yet");
+  assert.deepEqual(agentSaid(restarted), ["ALIA_AGENT,clear"], "a desktop that started again has no place of the agent's yet");
   await restarted.close();
 
   await tool("computer_screenshot", { box: box.name });
@@ -4871,9 +4871,9 @@ test("the box ending the connection of the viewer with control keeps control whi
 });
 
 test("a reload keeps a person's control and the desktop's size for their viewer, and gives both back if it does not connect again in time (045)", async (t) => {
-  const { bb, harness, app, world, setupOptions } = await start(undefined, { controlStaleMs: 500, controlReconnectMs: 60_000 });
+  const { alia, harness, app, world, setupOptions } = await start(undefined, { controlStaleMs: 500, controlReconnectMs: 60_000 });
   let host = harness;
-  let api = bb;
+  let api = alia;
   const hosts = [host];
   t.after(() => host.lifecycle.dispose());
   await host.behavior.callRpc("acquire", { threadId: THREAD, kind: "linux-desktop" });
@@ -4895,13 +4895,13 @@ test("a reload keeps a person's control and the desktop's size for their viewer,
   const before = world.backend!.rfb;
   await until("the viewer's size", async () => before.width === 1600);
   const control = async () => ((await host.behavior.callRpc("desktop", { threadId: THREAD, box: box.id })) as { box: { control: unknown } }).box.control;
-  // As BB does: the next instance starts, then the last one stops.
+  // As VesnALIA does: the next instance starts, then the last one stops.
   const reload = async () => {
-    const next = await host.lifecycle.reload(async (bb) => {
-      await setup(bb, setupOptions);
+    const next = await host.lifecycle.reload(async (alia) => {
+      await setup(alia, setupOptions);
     });
     host = next.harness;
-    api = next.bb;
+    api = next.alia;
     hosts.push(host);
     // The new instance's fake desktop is the box's, as the person left it.
     Object.assign(world.backend!.rfb, { width: 1600, height: 1000 });
@@ -4914,17 +4914,17 @@ test("a reload keeps a person's control and the desktop's size for their viewer,
   await new Promise((resolve) => setTimeout(resolve, 1_000));
   assert.deepEqual(await control(), { owner: "human", holder: viewer }, "the viewer connected again in time");
 
-  // Its tab closed while BB Box restarted.
+  // Its tab closed while VesnALIA Box restarted.
   await reload();
   await until("control to go back", async () => ((await control()) as { owner: string }).owner === "agent");
   assert.deepEqual([world.backend!.rfb.width, world.backend!.rfb.height], [1280, 800], "the agent's size");
   const logged = (level: string) => hosts.flatMap((each) => each.inspection.logEntries.filter((entry) => entry.level === level).map((entry) => entry.message));
   assert.deepEqual(logged("error"), []);
-  const stopping = `BB Box is stopping, as for an update or a reload. The viewer with control of box ${box.name}'s desktop keeps it if it connects again within 0.5 s.`;
+  const stopping = `VesnALIA Box is stopping, as for an update or a reload. The viewer with control of box ${box.name}'s desktop keeps it if it connects again within 0.5 s.`;
   assert.deepEqual(logged("warn"), [stopping, stopping], "the log says why the viewer's connection dropped, and how long it has");
-  const started = `The viewer with control of box ${box.name}'s desktop as BB Box restarted keeps it if it connects again within 0.5 s.`;
+  const started = `The viewer with control of box ${box.name}'s desktop as VesnALIA Box restarted keeps it if it connects again within 0.5 s.`;
   assert.deepEqual(
-    logged("info").filter((message) => message.includes("as BB Box restarted")),
+    logged("info").filter((message) => message.includes("as VesnALIA Box restarted")),
     [started, started],
   );
 
@@ -4938,15 +4938,15 @@ test("a reload keeps a person's control and the desktop's size for their viewer,
   await until("storage to be cleared", async () => (await api.storage.kv.get("desktop-control")) === undefined);
   assert.deepEqual(await control(), { owner: "agent", holder: null });
   assert.deepEqual(logged("error"), []);
-  assert.equal(logged("info").filter((message) => message.includes("as BB Box restarted")).length, 2);
+  assert.equal(logged("info").filter((message) => message.includes("as VesnALIA Box restarted")).length, 2);
 
-  // Nor for a box that stopped while BB Box was away.
+  // Nor for a box that stopped while VesnALIA Box was away.
   assert.match(text(await host.behavior.callAgentTool("box_stop", { box: box.name }, { threadId: THREAD, projectId: PROJECT })), /is stopped/);
   await api.storage.kv.set("desktop-control", [{ boxId: box.id, holder: viewer, size: null, resized: null }]);
   await reload();
   await until("storage to be cleared again", async () => (await api.storage.kv.get("desktop-control")) === undefined);
   assert.deepEqual(logged("error"), []);
-  assert.equal(logged("info").filter((message) => message.includes("as BB Box restarted")).length, 2);
+  assert.equal(logged("info").filter((message) => message.includes("as VesnALIA Box restarted")).length, 2);
 });
 
 test("a take in the last instance after the next one started holds when the viewer connects to the next one (#318)", async (t) => {
@@ -4971,8 +4971,8 @@ test("a take in the last instance after the next one started holds when the view
   // The next instance starts and finds nobody's control kept. Then the
   // person takes control in the last one, which then stops.
   const last = host;
-  const next = await host.lifecycle.reload(async (bb) => {
-    await setup(bb, setupOptions);
+  const next = await host.lifecycle.reload(async (alia) => {
+    await setup(alia, setupOptions);
     await new Promise((resolve) => setTimeout(resolve, 100));
     await last.behavior.callRpc("takeControl", { threadId: THREAD, box: box.id, viewer });
   });
@@ -5001,7 +5001,7 @@ test("a box without a desktop has no desktop to control", async (t) => {
   );
 });
 
-test("bb box lists kinds and boxes, and acquires and releases for the thread it runs in", async (t) => {
+test("alia box lists kinds and boxes, and acquires and releases for the thread it runs in", async (t) => {
   const { harness, app } = await start();
   t.after(() => harness.lifecycle.dispose());
 
@@ -5030,7 +5030,7 @@ test("bb box lists kinds and boxes, and acquires and releases for the thread it 
   assert.match((await harness.behavior.runCli(["release", box.name, "--thread", THREAD])).stdout ?? "", /Released box/);
 });
 
-test("bb box snapshot take and box_snapshot hold the memory unasked where every snapshot holds it, as on a Tart macOS box, and refuse no memory there in words", async (t) => {
+test("alia box snapshot take and box_snapshot hold the memory unasked where every snapshot holds it, as on a Tart macOS box, and refuse no memory there in words", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   const provider = new FakeSnapshots();
@@ -5060,7 +5060,7 @@ test("bb box snapshot take and box_snapshot hold the memory unasked where every 
   assert.equal(app.snapshotStore.records({ box: box.id }).length, 2);
 });
 
-test("bb box snapshot take --check and box_snapshot with check say how long a take would pause the box, taking nothing; the take then says how long it paused it", async (t) => {
+test("alia box snapshot take --check and box_snapshot with check say how long a take would pause the box, taking nothing; the take then says how long it paused it", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   const provider = new FakeSnapshots();
@@ -5090,7 +5090,7 @@ test("bb box snapshot take --check and box_snapshot with check say how long a ta
   assert.match(takenByTool, new RegExp(`\\nIt paused ${box.name} for 4\\.1 s\\.\\n`));
 });
 
-test("bb box snapshot takes, lists and deletes a thread's box's snapshots; box_status and box_list say what it holds and offers; the doctor checks snapshots.db (070)", async (t) => {
+test("alia box snapshot takes, lists and deletes a thread's box's snapshots; box_status and box_list say what it holds and offers; the doctor checks snapshots.db (070)", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   const provider = new FakeSnapshots();
@@ -5114,7 +5114,7 @@ test("bb box snapshot takes, lists and deletes a thread's box's snapshots; box_s
 
   const listed = await harness.behavior.runCli(["snapshot", "list", "--thread", THREAD]);
   assert.equal(listed.exitCode, 0, listed.stderr);
-  assert.match(listed.stdout ?? "", new RegExp(`^${box.name} \\(${box.id}\\) · Fake host · thread ${THREAD}\\n  "before the migration" \\(${record!.id}\\) · ready · taken .* · by a bb box command · disk · size unknown · not fork-safe: ${box.name} had no working identity reset when it was taken · GPU: none; NVIDIA userspace: unknown\\n  1 of 5 for this box\\.\\n$`));
+  assert.match(listed.stdout ?? "", new RegExp(`^${box.name} \\(${box.id}\\) · Fake host · thread ${THREAD}\\n  "before the migration" \\(${record!.id}\\) · ready · taken .* · by a VesnALIA box command · disk · size unknown · not fork-safe: ${box.name} had no working identity reset when it was taken · GPU: none; NVIDIA userspace: unknown\\n  1 of 5 for this box\\.\\n$`));
   const json = JSON.parse((await harness.behavior.runCli(["snapshot", "list", box.name, "--thread", THREAD, "--json"])).stdout ?? "[]") as { id: string; note: string }[];
   assert.deepEqual(json.map((each) => [each.id, each.note]), [[record!.id, "schema v41"]]);
   assert.equal((await harness.behavior.runCli(["snapshot", "list", "--all", "--kept"])).stdout, "There are no kept snapshots.\n");
@@ -5136,16 +5136,16 @@ test("bb box snapshot takes, lists and deletes a thread's box's snapshots; box_s
   const deleteOnce = ["snapshot", "delete", box.name, once.id, "--thread", THREAD, "--request", "req-gone"];
   assert.equal((await harness.behavior.runCli(deleteOnce)).exitCode, 0);
   assert.equal((await harness.behavior.runCli(deleteOnce)).stdout, `Snapshot ${once.id} of box ${box.name} was deleted already, with that request.\n`);
-  assert.equal((await harness.behavior.runCli(takeOnce)).stdout, `Snapshot ${once.id} of box ${box.name} was asked for with that request already, and is no longer in BB Box's records.\n`);
+  assert.equal((await harness.behavior.runCli(takeOnce)).stdout, `Snapshot ${once.id} of box ${box.name} was asked for with that request already, and is no longer in VesnALIA Box's records.\n`);
 
   const doctor = JSON.parse((await harness.behavior.runCli(["doctor", "--json"])).stdout ?? "{}") as { sections: { title: string; report: { checks: { id: string; status: string }[] } }[] };
   assert.deepEqual(doctor.sections.find((section) => section.title === "Snapshots")?.report.checks.map((check) => [check.id, check.status]), [["snapshots", "ok"]]);
-  assert.equal((await harness.behavior.runCli(["snapshot", "forget", "fake"])).stdout, "BB Box records no snapshots on backend fake.\n");
-  assert.equal((await harness.behavior.runCli(["snapshot", "hold-next"])).exitCode !== 0, true, "the live checks' hold is not there without BB_BOX_LIVE_CHECKS");
+  assert.equal((await harness.behavior.runCli(["snapshot", "forget", "fake"])).stdout, "VesnALIA Box records no snapshots on backend fake.\n");
+  assert.equal((await harness.behavior.runCli(["snapshot", "hold-next"])).exitCode !== 0, true, "the live checks' hold is not there without ALIA_BOX_LIVE_CHECKS");
 });
 
-for (const via of ["bb box acquire", "box_acquire"] as const) {
-  test(`${via} says when BB Box restarts before the box is ready, and the next BB Box goes on with it (#533)`, async (t) => {
+for (const via of ["alia box acquire", "box_acquire"] as const) {
+  test(`${via} says when VesnALIA Box restarts before the box is ready, and the next VesnALIA Box goes on with it (#533)`, async (t) => {
     const { harness, app, world, tool } = await start();
     let disposing: Promise<void> | null = null;
     t.after(() => disposing ?? harness.lifecycle.dispose());
@@ -5154,21 +5154,21 @@ for (const via of ["bb box acquire", "box_acquire"] as const) {
     const acquiring = via === "box_acquire" ? tool("box_acquire", { kind: "linux" }).then(text) : harness.behavior.runCli(["acquire", "linux", "--thread", THREAD]).then((ran) => ran.stdout ?? "");
     const box = await until("the box's guest", async () => (await app.boxes.list(THREAD)).find((box) => box.guest));
     disposing = harness.lifecycle.dispose();
-    await until("BB Box to stop", async () => app.boxes.stopping);
+    await until("VesnALIA Box to stop", async () => app.boxes.stopping);
     open();
     const said = await acquiring;
-    const restarted = `BB Box restarted, as for an update, before box ${box.name} was ready. It goes on starting once BB Box is back, usually within seconds.`;
+    const restarted = `VesnALIA Box restarted, as for an update, before box ${box.name} was ready. It goes on starting once VesnALIA Box is back, usually within seconds.`;
     if (via === "box_acquire") assert.equal(said, `${restarted}\n\nNext: Call box_status with box "${box.name}" to see when it is ready.`);
-    else assert.ok(said.startsWith(`Box ${box.name} (`) && said.endsWith(`\n\n${restarted} Follow it with: bb box status ${box.name} --thread ${THREAD}\n`), said);
+    else assert.ok(said.startsWith(`Box ${box.name} (`) && said.endsWith(`\n\n${restarted} Follow it with: VesnALIA box status ${box.name} --thread ${THREAD}\n`), said);
   });
 }
 
-test("bb box install-id shows the install's ID, and --set takes an old one back once no box holds a guest", async (t) => {
-  const { bb, harness, app, world } = await start();
+test("alia box install-id shows the install's ID, and --set takes an old one back once no box holds a guest", async (t) => {
+  const { alia, harness, app, world } = await start();
   t.after(() => harness.lifecycle.dispose());
   const id = app.backends.installId;
   assert.match(id, /^[a-z0-9]{10}$/, "a new install makes a random ID");
-  assert.equal(await bb.storage.kv.get("install-id"), id, "and keeps it");
+  assert.equal(await alia.storage.kv.get("install-id"), id, "and keeps it");
   assert.equal((await harness.behavior.runCli(["install-id"])).stdout, `This install's ID is ${id}.\n`);
 
   const bad = await harness.behavior.runCli(["install-id", "--set", "Not_An_ID"]);
@@ -5188,7 +5188,7 @@ test("bb box install-id shows the install's ID, and --set takes an old one back 
   const set = await harness.behavior.runCli(["install-id", "--set", "old-install"]);
   assert.equal(set.exitCode, 0, set.stderr);
   assert.match(set.stdout ?? "", /^This install's ID is now old-install\. The next sweep restores the boxes of the guests that carry it/);
-  assert.equal(await bb.storage.kv.get("install-id"), "old-install");
+  assert.equal(await alia.storage.kv.get("install-id"), "old-install");
   assert.notEqual(world.backend, before, "the backend is made again with the ID");
   assert.deepEqual(JSON.parse((await harness.behavior.runCli(["install-id", "--json"])).stdout ?? ""), { installId: "old-install" });
 });
@@ -5311,19 +5311,19 @@ test("High resolution on Windows: twice the pixels, then 200%, and 100% before t
   const dir = tempDir("pwsh");
   const shell = join(dir, "pwsh");
   const scales = join(dir, "scale.log");
-  // BB Box's scripts reach PowerShell in base64, a desktop command's within its own, so the shell reads through each.
+  // VesnALIA Box's scripts reach PowerShell in base64, a desktop command's within its own, so the shell reads through each.
   writeFileSync(
     shell,
     String.raw`#!/usr/bin/env node
 let text = process.argv[3] ?? "";
 for (let i = 0; i < 4; i++) text += [...text.matchAll(/FromBase64String\('{1,2}([A-Za-z0-9+\/=]+)'{1,2}\)/g)].map((m) => Buffer.from(m[1], "base64").toString("utf8")).join("\n");
-const scale = /\$bbScale::Set\((\d+)\)/.exec(text);
+const scale = /\$aliaScale::Set\((\d+)\)/.exec(text);
 if (scale) {
-  require("node:fs").appendFileSync(process.env.BB_TEST_SCALES, scale[1] + "\n");
+  require("node:fs").appendFileSync(process.env.ALIA_TEST_SCALES, scale[1] + "\n");
   process.exit(0);
 }
 process.exit(1);
-`.replace("process.env.BB_TEST_SCALES", JSON.stringify(scales)),
+`.replace("process.env.ALIA_TEST_SCALES", JSON.stringify(scales)),
   );
   chmodSync(shell, 0o755);
   const kind: BoxKind = { ...FAKE_WINDOWS_KIND, capabilities: { ...FAKE_WINDOWS_KIND.capabilities, displays: FAKE_SELKIES_KIND.capabilities.displays } };
@@ -5373,7 +5373,7 @@ test("High resolution is as large as every viewer's browser decodes: smaller whi
   const viewer = "viewer-one-0001";
   const one = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=${viewer}&stream=selkies`);
   await until("Selkies' first message", async () => one.sent.includes("MODE websockets"));
-  await one.receive("BB_DECODES,139264");
+  await one.receive("ALIA_DECODES,139264");
   await selkies.frame(1, true, 2560, 1600);
   await until("the frame", async () => one.sent.some((message) => typeof message !== "string"));
   await harness.behavior.callRpc("takeControl", { threadId: THREAD, box: box.id, viewer });
@@ -5382,12 +5382,12 @@ test("High resolution is as large as every viewer's browser decodes: smaller whi
   // A viewer whose browser decodes no more than level 5.2, as Safari's, watches: the desktop is as large as it decodes.
   const two = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-two-0002&stream=selkies`);
   await until("the second viewer", async () => two.sent.includes("MODE websockets"));
-  await two.receive("BB_DECODES,34560");
+  await two.receive("ALIA_DECODES,34560");
   await until("within level 5.2", async () => rfb.width === 3904 && rfb.height === 2256);
   // It goes: twice the tab's size again.
   await two.close();
   await until("twice the tab's size again", async () => rfb.width === 5200 && rfb.height === 3000);
-  assert.ok(!selkies.pages.some((page) => page.received.some((message) => typeof message === "string" && message.startsWith("BB_DECODES"))), "Selkies never sees BB Box's own message");
+  assert.ok(!selkies.pages.some((page) => page.received.some((message) => typeof message === "string" && message.startsWith("ALIA_DECODES"))), "Selkies never sees VesnALIA Box's own message");
   // A viewer that does not say, as a page from before this, counts as one that decodes level 5.2.
   const three = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-three-0003&stream=selkies`);
   await until("the third viewer", async () => three.sent.includes("MODE websockets"));
@@ -5412,23 +5412,23 @@ test("a box streams in 4:4:4 while every viewer's browser decodes it, and in 4:2
   const settings = () => selkies.pages.filter((page) => page.role === "controller").flatMap((page) => page.received.filter((message) => typeof message === "string" && message.includes("video_fullcolor")));
   const one = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-one-0001&stream=selkies`);
   await until("Selkies' first message", async () => one.sent.includes("MODE websockets"));
-  await one.receive("BB_FULLCOLOR,1");
+  await one.receive("ALIA_FULLCOLOR,1");
   await until("4:4:4", async () => settings().length === 1);
   assert.deepEqual(settings(), [colour(true)]);
   const two = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=viewer-two-0002&stream=selkies`);
   await until("the second viewer", async () => two.sent.includes("MODE websockets"));
   await new Promise((resolve) => setTimeout(resolve, 30));
   assert.deepEqual(settings(), [colour(true)], "nothing changes before the new viewer says");
-  await two.receive("BB_FULLCOLOR,0");
+  await two.receive("ALIA_FULLCOLOR,0");
   await until("4:2:0", async () => settings().length === 2);
   await two.close();
   await until("4:4:4 again, with that viewer gone", async () => settings().length === 3);
   assert.deepEqual(settings(), [colour(true), colour(false), colour(true)]);
-  assert.ok(!selkies.pages.some((page) => page.received.some((message) => typeof message === "string" && message.startsWith("BB_FULLCOLOR"))), "Selkies never sees BB Box's own message");
+  assert.ok(!selkies.pages.some((page) => page.received.some((message) => typeof message === "string" && message.startsWith("ALIA_FULLCOLOR"))), "Selkies never sees VesnALIA Box's own message");
   await one.close();
 });
 
-for (const [how, message] of [["stream", "BB_CURSOR"], ["selkies", "SET_NATIVE_CURSOR_RENDERING"]] as const) {
+for (const [how, message] of [["stream", "ALIA_CURSOR"], ["selkies", "SET_NATIVE_CURSOR_RENDERING"]] as const) {
   test(`a video desktop (cursor ${how}) leaves the box's cursor out while a person holds control, and draws it while the agent has control`, async (t) => {
     const kind: BoxKind = {
       ...FAKE_SELKIES_KIND,
@@ -5454,19 +5454,19 @@ for (const [how, message] of [["stream", "BB_CURSOR"], ["selkies", "SET_NATIVE_C
     }
     app.desktops.forgetAgent(box.id);
     await until("the cursor returns after forgetting", async () => cursors().length === 3);
-    assert.ok(one.sent.includes("BB_AGENT,clear"));
+    assert.ok(one.sent.includes("ALIA_AGENT,clear"));
     app.desktops.agentActed(box, { type: "click", button: "left", count: 1, point: { x: 100, y: 100 }, area: null, role: null, window: null }, Date.now());
     await until("the cursor out again", async () => cursors().length === 4);
     await harness.behavior.callRpc("takeControl", { threadId: THREAD, box: box.id, viewer });
     await until("the cursor out, with a person in control", async () => cursors().length === 4);
     // A page from before the choice went, asking for the box's pointer: it goes nowhere, and changes nothing.
-    await one.receive("BB_SHOWPOINTER,1");
+    await one.receive("ALIA_SHOWPOINTER,1");
     await new Promise((resolve) => setTimeout(resolve, 50));
     assert.equal(cursors().length, 4);
     await harness.behavior.callRpc("handBack", { threadId: THREAD, box: box.id });
     await until("the cursor in, as the agent has control again", async () => cursors().length === 5);
     assert.deepEqual(cursors(), [`${message},1`, `${message},0`, `${message},1`, `${message},0`, `${message},1`]);
-    assert.ok(!selkies.pages.some((page) => page.received.some((sent) => typeof sent === "string" && sent.startsWith("BB_SHOWPOINTER"))), "the stream never sees the old page's message");
+    assert.ok(!selkies.pages.some((page) => page.received.some((sent) => typeof sent === "string" && sent.startsWith("ALIA_SHOWPOINTER"))), "the stream never sees the old page's message");
     await one.close();
   });
 }
@@ -5528,8 +5528,8 @@ test("High resolution is offered for Windows with video on x86_64, not on arm64 
 test("a Wayland desktop's pointer script switches Sway's and GTK's cursor theme to the hidden one, or back, with the session bus whatever the caller's environment, and keeps wayvnc's input devices on the seat (#707)", () => {
   const hide = waylandPointerScript(false);
   // Without attach, the seat command detaches wayvnc's virtual pointer and keyboard: a person's clicks then go nowhere.
-  assert.match(hide, /swaymsg -s "\$SWAYSOCK" 'seat seat0 attach "\*"; seat seat0 xcursor_theme bb-box-hidden' >\/dev\/null \|\| exit 1/);
-  assert.match(hide, /gsettings set org\.gnome\.desktop\.interface cursor-theme bb-box-hidden/);
+  assert.match(hide, /swaymsg -s "\$SWAYSOCK" 'seat seat0 attach "\*"; seat seat0 xcursor_theme alia-box-hidden' >\/dev\/null \|\| exit 1/);
+  assert.match(hide, /gsettings set org\.gnome\.desktop\.interface cursor-theme alia-box-hidden/);
   assert.match(hide, /DBUS_SESSION_BUS_ADDRESS="\$\{DBUS_SESSION_BUS_ADDRESS:-unix:path=\$XDG_RUNTIME_DIR\/bus\}"/);
   const show = waylandPointerScript(true);
   assert.match(show, /seat seat0 attach "\*"; seat seat0 xcursor_theme default' >/);
@@ -5549,9 +5549,9 @@ test("a video desktop whose box's image cannot leave the cursor out is never tol
   const one = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=${viewer}&stream=selkies`);
   await until("Selkies' first message", async () => one.sent.includes("MODE websockets"));
   await harness.behavior.callRpc("takeControl", { threadId: THREAD, box: box.id, viewer });
-  await one.receive("BB_SHOWPOINTER,1");
+  await one.receive("ALIA_SHOWPOINTER,1");
   await new Promise((resolve) => setTimeout(resolve, 50));
-  assert.ok(!selkies.pages.some((page) => page.received.some((message) => typeof message === "string" && message.startsWith("BB_"))));
+  assert.ok(!selkies.pages.some((page) => page.received.some((message) => typeof message === "string" && message.startsWith("ALIA_"))));
   await one.close();
 });
 
@@ -5563,9 +5563,9 @@ test("a video desktop that says nothing of its cursor is never told", async (t) 
   const one = await harness.behavior.experimental_openWebSocket(`/desktop?box=${box.id}&viewer=${viewer}&stream=selkies`);
   await until("Selkies' first message", async () => one.sent.includes("MODE websockets"));
   await harness.behavior.callRpc("takeControl", { threadId: THREAD, box: box.id, viewer });
-  await one.receive("BB_SHOWPOINTER,1");
+  await one.receive("ALIA_SHOWPOINTER,1");
   await new Promise((resolve) => setTimeout(resolve, 50));
-  assert.ok(!selkies.pages.some((page) => page.received.some((message) => typeof message === "string" && message.startsWith("BB_"))));
+  assert.ok(!selkies.pages.some((page) => page.received.some((message) => typeof message === "string" && message.startsWith("ALIA_"))));
   await one.close();
 });
 
@@ -5991,12 +5991,12 @@ test("a desktop click whose after-read and its retry both fail still reports the
   assert.equal(isError(result), false, text(result));
   const said = text(result);
   assert.match(said, /^Right-clicked \(327, 196\) on the desktop/);
-  assert.match(said, /BB Box could not read what changed/);
+  assert.match(said, /ALIA Box could not read what changed/);
   assert.match(said, /Call computer_screenshot with window "desktop"/);
 });
 
 test("on Sway, text an element refuses in the background is pasted with Cua's paste key, and the clipboard's text put back (#707)", async (t) => {
-  // wtype's own keys lose characters in Chrome: BB Box puts the text on the clipboard, Cua presses the paste key.
+  // wtype's own keys lose characters in Chrome: VesnALIA Box puts the text on the clipboard, Cua presses the paste key.
   const bin = tempDir("sway");
   const shims: Record<string, string> = {
     "wl-paste": `case "$*" in *-l*) echo text/plain ;; *) printf 'old\nclip' ;; esac`,
@@ -6035,10 +6035,10 @@ test("on Sway, text an element refuses in the background is pasted with Cua's pa
 });
 
 test("on Sway, text goes in with the image's US keyboard where it has one, and is pasted where the text has a character the layout lacks (#707)", async (t) => {
-  // bb-box-type stands for /usr/local/libexec/bb-box/type: it records its text, and refuses é as the US layout lacks it.
+  // alia-box-type stands for /usr/local/libexec/alia-box/type: it records its text, and refuses é as the US layout lacks it.
   const bin = tempDir("sway-keyboard");
   const shims: Record<string, string> = {
-    "bb-box-type": `text=$(cat; printf x); case "$text" in *é*) exit 3 ;; esac; printf %s "\${text%x}" >> "$HOME/typed"; echo >> "$HOME/typed"`,
+    "alia-box-type": `text=$(cat; printf x); case "$text" in *é*) exit 3 ;; esac; printf %s "\${text%x}" >> "$HOME/typed"; echo >> "$HOME/typed"`,
     "wl-paste": `case "$*" in *-l*) echo text/plain ;; *) printf old ;; esac`,
     "wl-copy": `if [ "$1" = --clear ]; then echo cleared >> "$HOME/copies"; else cat >> "$HOME/copies"; echo >> "$HOME/copies"; fi`,
     swaymsg: `case "$*" in *get_tree*) cat "$HOME/tree.json" ;; *) echo "$*" >> "$HOME/swaymsg.log" ;; esac`,
@@ -6134,7 +6134,7 @@ test("an agent reads a desktop box's window, acts on references and is told what
   assert.match(limited, /Partial: showing 2 of 10 lines \(1 of 9 elements\); 8 lines cut\. Pass query to see only the lines you need, or a larger limit \(at most 2000\)\./);
 
   const unknown = await tool("computer_act", { box: box.name, action: "click", ref: "e999" });
-  assert.match(text(unknown), /^BB Box has no reference e999 for box .*\n\nNext: Call computer_observe to get references\./);
+  assert.match(text(unknown), /^ALIA Box has no reference e999 for box .*\n\nNext: Call computer_observe to get references\./);
   const noTarget = await tool("computer_act", { box: box.name, action: "click" });
   assert.match(text(noTarget), /^Give ref, or window with x and y\./);
   assert.match(text(await tool("computer_type", { box: box.name, window: 100, keys: "ctrl+" })), /"ctrl\+" is not a key chord/);
@@ -6228,7 +6228,7 @@ test("on Windows, computer_windows and computer_launch give a window with no tit
 
   // computer_windows answers at once with Cua's list, and names in the background, one namer at a time.
   const first = await Promise.all([tool("computer_windows", { box: box.name }), tool("computer_windows", { box: box.name })]);
-  for (const listed of first) assert.doesNotMatch(text(listed), new RegExp(`window ${untitled}|BB Box gave`));
+  for (const listed of first) assert.doesNotMatch(text(listed), new RegExp(`window ${untitled}|VesnALIA Box gave`));
   assert.equal(most, 1, "one namer at a time");
   await new Promise((resolve) => setTimeout(resolve, 300));
   const listed = text(await tool("computer_windows", { box: box.name }));
@@ -6236,7 +6236,7 @@ test("on Windows, computer_windows and computer_launch give a window with no tit
   assert.match(listed, new RegExp(`\\n\\nBB Box gave window ${untitled} the title "gpui-example \\(untitled\\)", as it had none, and Cua on Windows reaches only windows with a title\\.\\n\\nNext:`));
   assert.match(text(await tool("computer_observe", { box: box.name, window: untitled })), new RegExp(`^Window ${untitled}: gpui-example "gpui-example \\(untitled\\)"`));
   await new Promise((resolve) => setTimeout(resolve, 300));
-  assert.doesNotMatch(text(await tool("computer_windows", { box: box.name })), /BB Box gave/, "said once, and a title the window has is left alone");
+  assert.doesNotMatch(text(await tool("computer_windows", { box: box.name })), /ALIA Box gave/, "said once, and a title the window has is left alone");
   // Within 15 s, the namer runs again only when Cua's window list changed. Each check waits for the namer before to end.
   await new Promise((resolve) => setTimeout(resolve, 300));
   let calls = asked;
@@ -6289,7 +6289,7 @@ test("pixels count only against the agent's latest image of the window or the de
 
   const blind = await tool("computer_act", { box: box.name, action: "click", window: 100, x: 745, y: 140 });
   assert.equal(isError(blind), true);
-  assert.match(text(blind), /^You have no current image of window 100, so BB Box cannot tell what x and y mean\.\n\nNext: Call computer_screenshot with window 100/);
+  assert.match(text(blind), /^You have no current image of window 100, so ALIA Box cannot tell what x and y mean\.\n\nNext: Call computer_screenshot with window 100/);
 
   const shot = await tool("computer_screenshot", { box: box.name, window: 100 });
   assert.match(text(shot), /^window 100: tasks "Tasks", 800 by 600\. Image 800x600 of window 800x600, scale 1; x and y are image pixels\./);
@@ -6341,7 +6341,7 @@ test("a click on an element the desktop cannot click as an element goes to the e
       .filter(({ tool }) => tool === "click" || tool === "get_window_state")
       .map(({ tool, args }) => (tool === "click" ? `click ${args.x === undefined ? "element" : `(${String(args.x)}, ${String(args.y)})`} ${String(args.delivery_mode)}` : `read${args.include_screenshot ? " with image" : ""}`));
 
-  // With no image of the window in this session, BB Box reads it with one first.
+  // With no image of the window in this session, VesnALIA Box reads it with one first.
   const tree = text(await tool("computer_observe", { box: box.name, window: 100 }));
   const deleteThree = refOf(tree, 'push button "Delete Task 3"');
   const deleteTwo = refOf(tree, 'push button "Delete Task 2"');
@@ -6349,7 +6349,7 @@ test("a click on an element the desktop cannot click as an element goes to the e
   const clicked = text(await tool("computer_act", { box: box.name, action: "click", ref: deleteThree }));
   assert.match(
     clicked,
-    new RegExp(`^Clicked ${deleteThree} \\(push button 'Delete Task 3'\\) at its centre, with the real pointer \\(the desktop's focus may have moved\\)\\. The desktop could not click it as an element, so BB Box clicked where it is drawn\\.`),
+    new RegExp(`^Clicked ${deleteThree} \\(push button 'Delete Task 3'\\) at its centre, with the real pointer \\(the desktop's focus may have moved\\)\\. The desktop could not click it as an element, so VesnALIA Box clicked where it is drawn\\.`),
   );
   assert.match(clicked, /- \[e\d+\] list item "Task 3"/);
   assert.deepEqual(readDesktop(file).tasks["100"], ["Task 1", "Task 2"]);
@@ -6448,7 +6448,7 @@ test("computer_launch opens apps and URLs and says which windows opened", async 
   assert.equal(isError(missing), true);
   assert.equal(
     text(missing),
-    "BB Box could not open missing: 'missing' is not an executable on PATH and matches no installed .desktop application. Apps installed in the box: Browser, Editor, Tasks, Wide.\n\n" +
+    "VesnALIA Box could not open missing: 'missing' is not an executable on PATH and matches no installed .desktop application. Apps installed in the box: Browser, Editor, Tasks, Wide.\n\n" +
       "Next: Give app as one of these names, or the path of a program in the box.",
   );
   assert.match(text(await tool("computer_launch", { box: box.name })), /^Give app or url, not both and not neither\./);
@@ -6471,7 +6471,7 @@ test("computer_launch of a single-instance app already open, which opens no new 
   assert.equal(isError(again), false);
   assert.equal(
     text(again),
-    `Editor was already open, and opening it again opened no new window. BB Box brought its window to the front:\n- window ${id}: editor "Untitled 2 - Editor", 640 by 480\n\n` +
+    `Editor was already open, and opening it again opened no new window. VesnALIA Box brought its window to the front:\n- window ${id}: editor "Untitled 2 - Editor", 640 by 480\n\n` +
       `Its title was "Untitled 1 - Editor" before, so it may show a new document.\n\nNext: Call computer_observe with window ${id} to read it.`,
   );
   assert.deepEqual(lastCall(file, "bring_to_front")?.args, { pid, window_id: id });
@@ -6498,7 +6498,7 @@ test("computer_launch on macOS opens Finder, which always runs, in a new window,
   assert.ok(Date.now() - finderBegan < 4_000);
   assert.equal(
     finderAgain,
-    `/System/Library/CoreServices/Finder.app was already open, and opening it again opened no new window. BB Box brought its window to the front:\n- window ${home}: Finder "box", 640 by 480\n\nNext: Call computer_observe with window ${home} to read it.`,
+    `/System/Library/CoreServices/Finder.app was already open, and opening it again opened no new window. VesnALIA Box brought its window to the front:\n- window ${home}: Finder "box", 640 by 480\n\nNext: Call computer_observe with window ${home} to read it.`,
   );
   assert.deepEqual(launched(), { bundle_id: "com.apple.finder", urls: ["~"] });
   assert.equal(lastCall(file, "bring_to_front")?.args.window_id, home);
@@ -6523,13 +6523,13 @@ test("computer_launch on macOS opens Finder, which always runs, in a new window,
   assert.ok(Date.now() - began < 2_000);
   assert.equal(
     again,
-    `calculator was already open, and opening it again opened no new window. BB Box brought its window to the front:\n- window ${id}: Calculator "Calculator", 640 by 480\n\nNext: Call computer_observe with window ${id} to read it.`,
+    `calculator was already open, and opening it again opened no new window. VesnALIA Box brought its window to the front:\n- window ${id}: Calculator "Calculator", 640 by 480\n\nNext: Call computer_observe with window ${id} to read it.`,
   );
   assert.equal(lastCall(file, "bring_to_front")?.args.window_id, id);
 
   const missing = await tool("computer_launch", { box: box.name, app: "Nope" });
   assert.equal(isError(missing), true);
-  assert.match(text(missing), /^BB Box could not open Nope: No installed macOS app found for name 'Nope'\. Apps installed in the box: Archive Utility, Calculator, Finder, TextEdit\./);
+  assert.match(text(missing), /^ALIA Box could not open Nope: No installed macOS app found for name 'Nope'\. Apps installed in the box: Archive Utility, Calculator, Finder, TextEdit\./);
 });
 
 test("a web page's runs of text are one line each, and the limit counts every line shown", async (t) => {
@@ -6627,7 +6627,7 @@ test("an action on a reference is refused once when its element was renamed wher
   assert.equal(isError(refused), true);
   assert.equal(
     text(refused),
-    `${area} is now text 'Notes', but BB Box last showed it as text 'Draft!', so nothing was done.\n\nNext: Act on ${area} again if it is the one you want; otherwise call computer_observe.`,
+    `${area} is now text 'Notes', but VesnALIA Box last showed it as text 'Draft!', so nothing was done.\n\nNext: Act on ${area} again if it is the one you want; otherwise call computer_observe.`,
   );
   assert.equal(readDesktop(file).fields[id], "Notes");
   assert.match(text(await tool("computer_type", { box: box.name, ref: area, text: "?" })), new RegExp(`^Typed 1 character into ${area} \\(text 'Notes'\\)\\.`));
@@ -6707,18 +6707,18 @@ test("an action on the desktop says which windows opened, closed or changed, or 
   const picked = text(await tool("computer_act", { box: box.name, action: "click", ref: rename }));
   assert.match(picked, new RegExp(`^Clicked ${rename} \\(menu item 'Rename'\\)\\.\\n\\nClosed the context menu on list item 'Task 3' \\(window 104\\)\\.`));
 
-  // When the desktop gives another window's elements for a menu, BB Box says it cannot read the menu's.
+  // When the desktop gives another window's elements for a menu, VesnALIA Box says it cannot read the menu's.
   editDesktop(file, (desktop) => {
     desktop.misreadPopups = true;
   });
   const misread = text(await tool("computer_act", { box: box.name, action: "right_click", window: "desktop", x: 327, y: 196 }));
-  assert.match(misread, /\n\nOpened a context menu on list item 'Task 3' \(window 105\), whose items BB Box cannot read\.\n\nNext: Call computer_screenshot with window "desktop" to see it, then click its items by pixels\.$/);
+  assert.match(misread, /\n\nOpened a context menu on list item 'Task 3' \(window 105\), whose items ALIA Box cannot read\.\n\nNext: Call computer_screenshot with window "desktop" to see it, then click its items by pixels\.$/);
   const unread = await tool("computer_observe", { box: box.name, window: 105 });
   assert.equal(isError(unread), true);
-  assert.match(text(unread), /^BB Box cannot read the items of the context menu on list item 'Task 3' \(window 105\): the desktop gives another window's instead\./);
+  assert.match(text(unread), /^ALIA Box cannot read the items of the context menu on list item 'Task 3' \(window 105\): the desktop gives another window's instead\./);
   assert.match(text(await tool("computer_type", { box: box.name, window: 105, keys: "Escape" })), /\n\nClosed the context menu on list item 'Task 3' \(window 105\)\./);
 
-  // When its items show in its window's tree instead, as a GTK app's do, BB Box says so, and they are references.
+  // When its items show in its window's tree instead, as a GTK app's do, VesnALIA Box says so, and they are references.
   editDesktop(file, (desktop) => {
     desktop.menusInWindow = true;
   });
@@ -6739,7 +6739,7 @@ test("a closed popup is forgotten, so later actions on the desktop do not read i
   await tool("computer_screenshot", { box: box.name });
   // Task 3, at (400, 240) on the screen.
   assert.match(text(await tool("computer_act", { box: box.name, action: "right_click", window: "desktop", x: 327, y: 196 })), /Opened a context menu on list item 'Task 3' \(window 101\)/);
-  // It closes where BB Box does not see it, as when a person clicks elsewhere.
+  // It closes where VesnALIA Box does not see it, as when a person clicks elsewhere.
   editDesktop(file, (desktop) => {
     desktop.windows = desktop.windows.filter((window) => window.menuOf === undefined);
   });
@@ -6779,7 +6779,7 @@ test("pixels of the desktop keep their meaning in a new session, and are refused
   assert.match(text(await tool("computer_screenshot", { box: box.name })), /^The desktop\. Image 1568x882 of screen 1920x1080, scale 0\.817;/);
   await until("the idle session to close", async () => !app.computer.connected(box.id));
 
-  // A new session has no image of the desktop to map pixels by, so BB Box takes one first.
+  // A new session has no image of the desktop to map pixels by, so VesnALIA Box takes one first.
   // The Clear all button of window 100, at (850, 640) on the screen.
   const opened = text(await tool("computer_act", { box: box.name, action: "click", window: "desktop", x: 694, y: 523 }));
   assert.match(opened, /^Clicked \(694, 523\) on the desktop, \(850, 640\) on the screen\./);
@@ -6812,7 +6812,7 @@ test("a click on the desktop reads only a small tree under the point, and says w
   const clicked = text(await tool("computer_act", { box: box.name, action: "click", window: "desktop", x: 408, y: 94 }));
   assert.match(
     clicked,
-    /\n\nNo window opened, closed or changed\. BB Box did not read the tree of window 100, which is under that point, as it is too large to read quickly\.\n\nNext: Call computer_observe with window 100 to see what changed in it, or computer_screenshot with window "desktop"\.$/,
+    /\n\nNo window opened, closed or changed\. ALIA Box did not read the tree of window 100, which is under that point, as it is too large to read quickly\.\n\nNext: Call computer_observe with window 100 to see what changed in it, or computer_screenshot with window "desktop"\.$/,
   );
   const reads = readDesktop(file).calls.filter((call) => call.tool === "get_window_state").map((call) => call.args.max_elements);
   assert.equal(reads[0], 5);
@@ -6873,7 +6873,7 @@ test("a window a few pixels from another of its app's is moved apart, so that it
   assert.ok(isError(stuck));
   assert.equal(
     text(stuck),
-    'BB Box cannot read window 102: the desktop gives the tree of window 100, "Tasks", which lies within a few pixels of it, and window 102 would not move, as when it is maximised.\n\nNext: Un-maximise or close one of the two windows, for example by double-clicking its title bar, then observe it again. Or act on window 102 by pixels: call computer_screenshot with window 102.',
+    'VesnALIA Box cannot read window 102: the desktop gives the tree of window 100, "Tasks", which lies within a few pixels of it, and window 102 would not move, as when it is maximised.\n\nNext: Un-maximise or close one of the two windows, for example by double-clicking its title bar, then observe it again. Or act on window 102 by pixels: call computer_screenshot with window 102.',
   );
 });
 
@@ -6900,7 +6900,7 @@ test("while a person holds a desktop the computer tools wait, and afterwards the
   assert.equal(took.error, null);
   const interrupted = await slow;
   assert.equal(isError(interrupted), true);
-  assert.match(text(interrupted), /^A person took control of the box's desktop while this ran, so BB Box closed its session with the driver\. BB Box cannot tell whether it was done\.\n\nNext: Wait until they hand control back/);
+  assert.match(text(interrupted), /^A person took control of the box's desktop while this ran, so ALIA Box closed its session with the driver\. ALIA Box cannot tell whether it was done\.\n\nNext: Wait until they hand control back/);
   assert.equal(app.computer.connected(box.id), false);
 
   const paused = await tool("computer_windows", { box: box.name });
@@ -6913,7 +6913,7 @@ test("while a person holds a desktop the computer tools wait, and afterwards the
   assert.match(back, new RegExp(`^${RETURNED.replace(/[.;]/g, "\\$&")}\\n\\nWindows on box`));
   assert.equal(readDesktop(file).calls.length, calls + 1, "nothing reached the driver while the person held control");
   assert.doesNotMatch(text(await tool("computer_windows", { box: box.name })), /Control returned/, "the notice comes once");
-  assert.match(text(await tool("computer_act", { box: box.name, action: "click", ref: add })), /^BB Box has no reference e\d+/, "references go when a person takes control");
+  assert.match(text(await tool("computer_act", { box: box.name, action: "click", ref: add })), /^ALIA Box has no reference e\d+/, "references go when a person takes control");
   await session.close();
 });
 
@@ -6958,7 +6958,7 @@ test("computer_take_control takes a desktop back from a person as a hand-back do
   await session.close();
 });
 
-test("a click on the desktop says it was done when a person takes control while BB Box looks for changes", async (t) => {
+test("a click on the desktop says it was done when a person takes control while VesnALIA Box looks for changes", async (t) => {
   const { harness, app, box, file, tool } = await desktopBox({ computer: { desktopWaitMs: 5_000 } });
   t.after(() => harness.lifecycle.dispose());
   await tool("computer_screenshot", { box: box.name });
@@ -6970,14 +6970,14 @@ test("a click on the desktop says it was done when a person takes control while 
   await session.receive(Uint8Array.of(1));
   await until("the viewer to join", async () => app.desktops.control.connected(box.id, viewer));
 
-  // Nothing is under (960, 540), and nothing changes, so BB Box keeps looking.
+  // Nothing is under (960, 540), and nothing changes, so VesnALIA Box keeps looking.
   const click = tool("computer_act", { box: box.name, action: "click", window: "desktop", x: 784, y: 441 });
   await until("the click to reach the driver", async () => readDesktop(file).calls.some((call) => call.tool === "click"));
   const took = (await harness.behavior.callRpc("takeControl", { threadId: THREAD, box: box.id, viewer })) as { error: string | null };
   assert.equal(took.error, null);
   const clicked = await click;
   assert.equal(isError(clicked), false, text(clicked));
-  assert.match(text(clicked), /^Clicked \(784, 441\) on the desktop, \(960, 540\) on the screen\. .*\n\nA person took control of the desktop before BB Box could read what changed\.\n\nNext: Wait until they hand control back, or take it back with computer_take_control once they ask you to continue; then call computer_observe\.$/);
+  assert.match(text(clicked), /^Clicked \(784, 441\) on the desktop, \(960, 540\) on the screen\. .*\n\nA person took control of the desktop before ALIA Box could read what changed\.\n\nNext: Wait until they hand control back, or take it back with computer_take_control once they ask you to continue; then call computer_observe\.$/);
   await session.close();
 });
 
@@ -7054,7 +7054,7 @@ test("a provider's profile for the form's (i): its technology, hosts, kinds, roo
   await assert.rejects(harness.behavior.callRpc("provider", { backend: "elsewhere" }), /No provider has the ID elsewhere/);
 });
 
-test("before BB's installer, a box sets aside BB's data for a machine that is not its own, and stops that machine's daemon, as after a restore", () => {
+test("before VesnALIA's installer, a box sets aside VesnALIA's data for a machine that is not its own, and stops that machine's daemon, as after a restore", () => {
   const root = tempDir("aside");
   const bin = join(root, "bin");
   mkdirSync(bin, { recursive: true });
@@ -7064,47 +7064,47 @@ test("before BB's installer, a box sets aside BB's data for a machine that is no
   chmodSync(join(bin, "systemctl"), 0o755);
   chmodSync(join(bin, "uname"), 0o755);
   const data = (dir: string, host: string) => {
-    mkdirSync(join(root, ".bb-machines", dir, "thread-storage"), { recursive: true });
-    writeFileSync(join(root, ".bb-machines", dir, "host-id"), host);
-    writeFileSync(join(root, ".bb-machines", dir, "thread-storage", "notes.txt"), "kept\n");
+    mkdirSync(join(root, ".alia-machines", dir, "thread-storage"), { recursive: true });
+    writeFileSync(join(root, ".alia-machines", dir, "host-id"), host);
+    writeFileSync(join(root, ".alia-machines", dir, "thread-storage", "notes.txt"), "kept\n");
   };
-  data("bb.example.com", "host_old");
+  data("alia.example.com", "host_old");
   data("other.example.com", "host_mine");
   const units = join(root, ".config/systemd/user");
   mkdirSync(units, { recursive: true });
-  writeFileSync(join(units, "bb-host-daemon-bb-example-com-host_old.service"), "[Service]\n");
-  writeFileSync(join(units, "bb-host-daemon-other-example-com-host_mine.service"), "[Service]\n");
+  writeFileSync(join(units, "alia-host-daemon-alia-example-com-host_old.service"), "[Service]\n");
+  writeFileSync(join(units, "alia-host-daemon-other-example-com-host_mine.service"), "[Service]\n");
   const run = (keep: string | null) => execFileSync("/bin/sh", ["-c", setAsideOtherMachines(keep)], { encoding: "utf8", env: { HOME: root, PATH: `${bin}:/usr/bin:/bin` } });
 
-  assert.equal(run("host_mine"), `${root}/.bb-machines/bb.example.com host_old\n`);
-  assert.equal(readFileSync(join(root, ".bb-machines/.set-aside/bb.example.com-host_old/thread-storage/notes.txt"), "utf8"), "kept\n", "its threads' files are kept");
-  assert.ok(!existsSync(join(root, ".bb-machines/bb.example.com")), "BB's installer finds no folder of another machine");
-  assert.ok(existsSync(join(root, ".bb-machines/other.example.com/host-id")), "the box's own machine's data stays");
-  assert.ok(!existsSync(join(units, "bb-host-daemon-bb-example-com-host_old.service")));
-  assert.ok(existsSync(join(units, "bb-host-daemon-other-example-com-host_mine.service")));
-  assert.match(readFileSync(join(root, "systemctl.log"), "utf8"), /^--user disable --now bb-host-daemon-bb-example-com-host_old\.service\n--user daemon-reload\n$/);
+  assert.equal(run("host_mine"), `${root}/.alia-machines/alia.example.com host_old\n`);
+  assert.equal(readFileSync(join(root, ".alia-machines/.set-aside/alia.example.com-host_old/thread-storage/notes.txt"), "utf8"), "kept\n", "its threads' files are kept");
+  assert.ok(!existsSync(join(root, ".alia-machines/alia.example.com")), "VesnALIA's installer finds no folder of another machine");
+  assert.ok(existsSync(join(root, ".alia-machines/other.example.com/host-id")), "the box's own machine's data stays");
+  assert.ok(!existsSync(join(units, "alia-host-daemon-alia-example-com-host_old.service")));
+  assert.ok(existsSync(join(units, "alia-host-daemon-other-example-com-host_mine.service")));
+  assert.match(readFileSync(join(root, "systemctl.log"), "utf8"), /^--user disable --now alia-host-daemon-alia-example-com-host_old\.service\n--user daemon-reload\n$/);
   // Again: nothing more to do.
   assert.equal(run("host_mine"), "");
   // With no machine known yet, any machine's data is another's.
-  assert.equal(run(null), `${root}/.bb-machines/other.example.com host_mine\n`);
+  assert.equal(run(null), `${root}/.alia-machines/other.example.com host_mine\n`);
 });
 
-test("before BB's installer, a box on an overlay root drops a pre-installed BB app of another build than the server's, and keeps the server's (#701)", () => {
+test("before VesnALIA's installer, a box on an overlay root drops a pre-installed VesnALIA app of another build than the server's, and keeps the server's (#701)", () => {
   const root = tempDir("stale");
   const bin = join(root, "bin");
   mkdirSync(bin, { recursive: true });
   const server = "a".repeat(64);
-  // stat says the root is an overlay, and curl gives the package's headers, as BB's server does.
+  // stat says the root is an overlay, and curl gives the package's headers, as VesnALIA's server does.
   writeFileSync(join(bin, "stat"), `#!/bin/sh\necho "\${FAKE_FS:-overlayfs}"\n`);
-  writeFileSync(join(bin, "curl"), `#!/bin/sh\nprintf 'HTTP/1.1 200 OK\\r\\nx-bb-artifact-sha256: ${server}\\r\\n\\r\\n'\n`);
+  writeFileSync(join(bin, "curl"), `#!/bin/sh\nprintf 'HTTP/1.1 200 OK\\r\\nx-alia-artifact-sha256: ${server}\\r\\n\\r\\n'\n`);
   chmodSync(join(bin, "stat"), 0o755);
   chmodSync(join(bin, "curl"), 0o755);
   const app = (dir: string, digest: string) => {
-    mkdirSync(join(root, ".bb-machines", dir, "npm/lib/node_modules/bb-app"), { recursive: true });
-    writeFileSync(join(root, ".bb-machines", dir, "host-artifact.sha256"), `${digest}\n`);
+    mkdirSync(join(root, ".alia-machines", dir, "npm/lib/node_modules/alia-app"), { recursive: true });
+    writeFileSync(join(root, ".alia-machines", dir, "host-artifact.sha256"), `${digest}\n`);
   };
   const run = (fs?: string) => execFileSync("/bin/sh", ["-c", removeStaleApp("https://bb.example.com/")], { env: { HOME: root, PATH: `${bin}:/usr/bin:/bin`, ...(fs ? { FAKE_FS: fs } : {}) } });
-  const has = (dir: string) => existsSync(join(root, ".bb-machines", dir, "npm/lib/node_modules/bb-app"));
+  const has = (dir: string) => existsSync(join(root, ".alia-machines", dir, "npm/lib/node_modules/alia-app"));
   app("old", "b".repeat(64));
   app("current", server);
   run("ext2/ext3");
@@ -7177,7 +7177,7 @@ test("box_device sends a control with its own parameters only, answers in words 
     model: "iPhone 18 Pro",
     power: { is: "booted", awake: true },
     geometry: { generation: 2, physical: "turned-left", content: "turned-left", video: { width: 2622, height: 1206 } },
-    settings: { appearance: { known: true, value: "dark", at: 1, by: "bb-box" }, textSize: { known: true, value: "large", at: 1, by: "bb-box" }, location: { set: null, at: null }, statusBar: { set: null, at: 1 } },
+    settings: { appearance: { known: true, value: "dark", at: 1, by: "alia-box" }, textSize: { known: true, value: "large", at: 1, by: "alia-box" }, location: { set: null, at: null }, statusBar: { set: null, at: 1 } },
     at: 0,
   };
   const sent: unknown[] = [];
@@ -7204,7 +7204,7 @@ test("box_device sends a control with its own parameters only, answers in words 
   assert.match(text(await tool("box_device", { box: plain.name, action: "home" })), /has no device: box_device works on ios and android boxes\./);
 });
 
-test("box_status asks the device server to read the device's settings first, so a change made outside BB Box shows with no viewer watching (F-7)", async (t) => {
+test("box_status asks the device server to read the device's settings first, so a change made outside VesnALIA Box shows with no viewer watching (F-7)", async (t) => {
   const runtime = { platform: "android", api: 35, image: "google_apis", revision: 9, abi: "x86_64", emulator: "37.2.12.0", snapshot: null };
   const offer = { platform: "android", devices: [{ model: "Pixel 8", native: "pixel_8", runtime }] };
   const kind: BoxKind = { ...FAKE_KINDS[0]!, id: "android", label: "Android emulator", capabilities: { ...FAKE_KINDS[0]!.capabilities, displays: [DEVICE_DISPLAY], device: offer as never } };
@@ -7218,7 +7218,7 @@ test("box_status asks the device server to read the device's settings first, so 
     settings: { appearance: { known: false, why: "" }, fontScale: { known: false, why: "" }, location: { known: false, why: "" }, battery: { known: false, why: "" }, network, statusBar: { set: null, at: null } },
     at: 0,
   });
-  let view = { is: "connected", version: 24, protocol: 2, state: state({ known: true, value: "online", at: 1, by: "bb-box" }), bootedHere: [] };
+  let view = { is: "connected", version: 24, protocol: 2, state: state({ known: true, value: "online", at: 1, by: "alia-box" }), bootedHere: [] };
   const asked: string[] = [];
   Object.assign(app.devices, {
     recorded: () => undefined,
@@ -7247,7 +7247,7 @@ test("box_device switch in a shared ios box is refused before it reaches the dev
     model: "iPhone 18 Pro",
     power: { is: "booted", awake: true },
     geometry: { generation: 1, physical: "upright", content: "upright", video: { width: 1206, height: 2622 } },
-    settings: { appearance: { known: true, value: "light", at: 1, by: "bb-box" }, textSize: { known: true, value: "large", at: 1, by: "bb-box" }, location: { set: null, at: null }, statusBar: { set: null, at: 1 } },
+    settings: { appearance: { known: true, value: "light", at: 1, by: "alia-box" }, textSize: { known: true, value: "large", at: 1, by: "alia-box" }, location: { set: null, at: null }, statusBar: { set: null, at: 1 } },
     at: 0,
   };
   Object.assign(app.devices, { recorded: () => undefined, view: () => ({ is: "connected", version: 7, protocol: 1, state }), control: async (_box: unknown, control: unknown) => (sent.push(control), { id: "a", ok: false, error: { code: "failed", words: "reached the device" }, state: null }) });
@@ -7261,7 +7261,7 @@ test("box_device switch in a shared ios box is refused before it reaches the dev
   assert.deepEqual(sent, [], "no switch reaches a slot's device");
 });
 
-test("box_acquire and bb box acquire take a device, refuse it on other kinds, and refuse a device kind no backend offers (063)", async (t) => {
+test("box_acquire and VesnALIA box acquire take a device, refuse it on other kinds, and refuse a device kind no backend offers (063)", async (t) => {
   const { harness, app, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   const ios = await tool("box_acquire", { kind: "ios" });
@@ -7296,10 +7296,10 @@ test("box_acquire and bb box acquire take a device, refuse it on other kinds, an
   assert.deepEqual(asked.filter((kind) => kind === "ios"), ["ios", "ios", "ios"], "by acquire twice, then by box_list");
 });
 
-test("the box log names who stopped and started a box from the panel, a tool and bb box, in box-log.db beside BB Box's database, and the view and the doctor say so (069)", async (t) => {
-  const { app, bb, harness, tool } = await start();
+test("the box log names who stopped and started a box from the panel, a tool and VesnALIA box, in box-log.db beside VesnALIA Box's database, and the view and the doctor say so (069)", async (t) => {
+  const { app, alia, harness, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
-  const folder = dirname(bb.storage.database().name);
+  const folder = dirname(alia.storage.database().name);
   assert.ok(existsSync(join(folder, "box-log.db")) && existsSync(join(folder, "box-history.db")), "both files are made on start");
   assert.equal(app.boxLog.file.attached, true);
   assert.ok(!isError(await tool("box_acquire", { kind: "linux" })));
@@ -7332,7 +7332,7 @@ test("the box log names who stopped and started a box from the panel, a tool and
   const doctor = (await harness.behavior.callRpc("doctor", null)) as { sections: { title: string; report: { checks: { id: string; status: string; detail: string }[] } }[] };
   const check = doctor.sections.find((section) => section.title === "Box log")?.report.checks[0];
   assert.equal(check?.status, "ok");
-  assert.match(check?.detail ?? "", /box-log\.db, attached to BB Box's database: \d+ events/);
+  assert.match(check?.detail ?? "", /box-log\.db, attached to ALIA Box's database: \d+ events/);
 });
 
 test("the reach check follows a box that stops answering with the Monitor off, and Check now checks it at once (069 G7)", async (t) => {
@@ -7352,7 +7352,7 @@ test("the reach check follows a box that stops answering with the Monitor off, a
   assert.equal(checked.box.reach.is, "answers", "Check now checks it at once");
 });
 
-test("the panel's Stop and Release ask first while the box's own thread is working, as while a thread works on its BB machine; an idle thread's box stops at once (069 G3)", async (t) => {
+test("the panel's Stop and Release ask first while the box's own thread is working, as while a thread works on its VesnALIA machine; an idle thread's box stops at once (069 G3)", async (t) => {
   const { harness, app, tool, world } = await start();
   t.after(() => harness.lifecycle.dispose());
   await tool("box_acquire", {});
@@ -7366,7 +7366,7 @@ test("the panel's Stop and Release ask first while the box's own thread is worki
   }
   world.onHost.set(box.enrol.hostId!, [{ id: "thr_worker", title: "Build the app", status: "active", hasPendingInteraction: false, archivedAt: null, deletedAt: null }]);
   const both = (await harness.behavior.callRpc("stop", { threadId: THREAD, box: box.name })) as { threads: { id: string }[] };
-  assert.deepEqual(both.threads.map((thread) => thread.id), [THREAD, "thr_worker"], "its own thread first, then the threads on its BB machine");
+  assert.deepEqual(both.threads.map((thread) => thread.id), [THREAD, "thr_worker"], "its own thread first, then the threads on its VesnALIA machine");
   const forced = (await harness.behavior.callRpc("stop", { threadId: THREAD, box: box.name, force: true })) as { box: { state: string }; error: string | null };
   assert.equal(forced.error, null);
   assert.equal(forced.box.state, "stopped", "Stop it anyway stops it");
@@ -7379,7 +7379,7 @@ test("the panel's Stop and Release ask first while the box's own thread is worki
   assert.equal(idle.threads, undefined);
 });
 
-test("boxPage finds a box by its ID alone, with its thread, the threads on its BB machine and the Monitor's machine; a released box for 24 hours; a box whose release did not finish stays listed (069)", async (t) => {
+test("boxPage finds a box by its ID alone, with its thread, the threads on its VesnALIA machine and the Monitor's machine; a released box for 24 hours; a box whose release did not finish stays listed (069)", async (t) => {
   const { harness, app, tool, world } = await start();
   t.after(() => harness.lifecycle.dispose());
   await tool("box_acquire", {});
@@ -7394,7 +7394,7 @@ test("boxPage finds a box by its ID alone, with its thread, the threads on its B
   assert.deepEqual(page.threads.map((thread) => thread.id), ["thr_worker"]);
   assert.ok(page.monitor.machineId !== null || page.monitor.why !== null, "the Monitor's machine, or why it cannot read it");
   if (page.monitor.is === "read") assert.ok(page.monitor.machineId);
-  else assert.match(page.monitor.why ?? "", /its BB machine is not answering BB|not a BB machine/, "an enrolled box the Monitor cannot reach is not called no BB machine");
+  else assert.match(page.monitor.why ?? "", /its ALIA machine is not answering ALIA|not a ALIA machine/, "an enrolled box the Monitor cannot reach is not called no VesnALIA machine");
   assert.equal(page.ended, null);
 
   const nothing = (await harness.behavior.callRpc("boxPage", { box: "bxnosuchbox000" })) as { box: unknown; ended: unknown };
@@ -7424,7 +7424,7 @@ test("boxPage finds a box by its ID alone, with its thread, the threads on its B
   assert.equal(mine.thread, null);
 });
 
-test("the guard asks when BB cannot say whether the box's own thread works, and goes on for a thread that no longer exists (069 G3, lead decision)", async (t) => {
+test("the guard asks when VesnALIA cannot say whether the box's own thread works, and goes on for a thread that no longer exists (069 G3, lead decision)", async (t) => {
   const { harness, app, tool, world } = await start();
   t.after(() => harness.lifecycle.dispose());
   await tool("box_acquire", {});
@@ -7438,7 +7438,7 @@ test("the guard asks when BB cannot say whether the box's own thread works, and 
   }
   world.threadErrors.set(THREAD, Object.assign(new Error("HTTP 404: Thread not found"), { status: 404, code: "thread_not_found" }));
   const gone = (await harness.behavior.callRpc("stop", { threadId: THREAD, box: box.name })) as { box: { state: string }; threads?: unknown[] };
-  assert.equal(gone.box.state, "stopped", "a thread BB no longer has does not hold the box");
+  assert.equal(gone.box.state, "stopped", "a thread VesnALIA no longer has does not hold the box");
   assert.equal(gone.threads, undefined);
 });
 
@@ -7521,7 +7521,7 @@ async function armed(app: Awaited<ReturnType<typeof start>>["app"], box: BoxReco
 
 async function identityResetIn(app: Awaited<ReturnType<typeof start>>["app"], box: BoxRecord, machines: string): Promise<void> {
   const { command } = await app.boxes.transports(box);
-  const ran = await command!.run(`mkdir -p ${IDENTITY_STATE} && printf '%s\\n' ${quote(`2026-10-30T17:04:02Z ${RESET_WHY}; BB machines removed: ${machines}`)} >> ${IDENTITY_STATE}/identity-resets`);
+  const ran = await command!.run(`mkdir -p ${IDENTITY_STATE} && printf '%s\\n' ${quote(`2026-10-30T17:04:02Z ${RESET_WHY}; VesnALIA machines removed: ${machines}`)} >> ${IDENTITY_STATE}/identity-resets`);
   assert.equal(ran.exitCode, 0, ran.stderr);
 }
 
@@ -7539,7 +7539,7 @@ async function resetChecks(harness: Awaited<ReturnType<typeof start>>["harness"]
   return doctor.sections.find((each) => each.title === "Identity resets")?.report.checks ?? [];
 }
 
-test("a box whose own identity reset took its BB machine is kept: the old machine removed first, then a new one made, logged in its box log, and named by the doctor (070)", async (t) => {
+test("a box whose own identity reset took its VesnALIA machine is kept: the old machine removed first, then a new one made, logged in its box log, and named by the doctor (070)", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   await tool("box_acquire", {});
@@ -7556,23 +7556,23 @@ test("a box whose own identity reset took its BB machine is kept: the old machin
   assert.equal(again.state, "ready");
   assert.deepEqual(world.events.filter((event) => event.startsWith("delete ") || event.startsWith("create ")), [`delete ${machine}`, `create ${replacement}`]);
   assert.ok(!world.hosts.has(machine), "the old machine is gone, so its credentials no longer work");
-  assert.deepEqual(world.bootstraps, [box.id, box.id], "BB's bootstrap of the new machine, never a reconnect of the old one");
+  assert.deepEqual(world.bootstraps, [box.id, box.id], "VesnALIA's bootstrap of the new machine, never a reconnect of the old one");
   assert.deepEqual(
     { why: again.identityReset?.why, machine: again.identityReset?.machine, machineAgain: again.identityReset?.machineAgain, retired: again.identityReset?.retiredAt !== null },
     { why: RESET_WHY, machine, machineAgain: replacement, retired: true },
   );
   const events = app.boxLog.events(box.id).filter((event) => event.kind === "identity-reset" || event.kind === "enrolled-again");
-  assert.deepEqual(events.map((event) => [event.kind, event.by.is]), [["identity-reset", "bb-box"], ["enrolled-again", "bb-box"]]);
-  assert.match(events[0]!.words ?? "", new RegExp(`^Box ${box.name} reset its identity at 2026-10-30 17:04:02 UTC, as none of the marker's MAC addresses .*\\. BB's machine ${machine} went with it, so BB Box enrols the box again as a new BB machine, and keeps it\\.$`));
-  assert.match(events[1]!.words ?? "", new RegExp(`^Box ${box.name} joined BB again as machine ${replacement}, in place of ${machine}, \\d+ s after BB Box found its identity reset\\.$`));
+  assert.deepEqual(events.map((event) => [event.kind, event.by.is]), [["identity-reset", "alia-box"], ["enrolled-again", "alia-box"]]);
+  assert.match(events[0]!.words ?? "", new RegExp(`^Box ${box.name} reset its identity at 2026-10-30 17:04:02 UTC, as none of the marker's MAC addresses .*\\. VesnALIA's machine ${machine} went with it, so VesnALIA Box enrols the box again as a new VesnALIA machine, and keeps it\\.$`));
+  assert.match(events[1]!.words ?? "", new RegExp(`^Box ${box.name} joined VesnALIA again as machine ${replacement}, in place of ${machine}, \\d+ s after VesnALIA Box found its identity reset\\.$`));
   const [check] = await resetChecks(harness);
   assert.deepEqual([check?.id, check?.status], [`identity-reset.${box.name}`, "warn"]);
-  assert.match(check!.detail, new RegExp(`BB Box kept the box and enrolled it again, at .* UTC, as BB machine ${replacement}\\.$`));
+  assert.match(check!.detail, new RegExp(`VesnALIA Box kept the box and enrolled it again, at .* UTC, as VesnALIA machine ${replacement}\\.$`));
   await app.enrolment.sweep();
   assert.deepEqual(world.bootstraps, [box.id, box.id], "once enrolled again, the old reset is not acted on again");
 });
 
-test("a removal of the old machine that fails keeps the box out of BB, never enrolling, until a later sweep removes it, then a new machine is made (070)", async (t) => {
+test("a removal of the old machine that fails keeps the box out of VesnALIA, never enrolling, until a later sweep removes it, then a new machine is made (070)", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   await tool("box_acquire", {});
@@ -7582,8 +7582,8 @@ test("a removal of the old machine that fails keeps the box out of BB, never enr
   await identityResetIn(app, box, machine);
   world.hosts.set(machine, { ...world.hosts.get(machine)!, status: "disconnected" });
   let refusals = 2;
-  world.bbRemovals.set(machine, async () => {
-    if (refusals-- > 0) throw Object.assign(new Error("HTTP 503: BB is busy"), { status: 503 });
+  world.aliaRemovals.set(machine, async () => {
+    if (refusals-- > 0) throw Object.assign(new Error("HTTP 503: VesnALIA is busy"), { status: 503 });
     world.hosts.delete(machine);
   });
   for (let sweep = 0; sweep < 2; sweep++) {
@@ -7598,7 +7598,7 @@ test("a removal of the old machine that fails keeps the box out of BB, never enr
     assert.equal(waiting.state, "ready");
     const [check] = await resetChecks(harness);
     assert.equal(check?.status, "fail");
-    assert.match(check!.detail, new RegExp(`BB has not yet confirmed the removal of machine ${machine}`));
+    assert.match(check!.detail, new RegExp(`VesnALIA has not yet confirmed the removal of machine ${machine}`));
   }
   await app.enrolment.sweep();
   const again = await enrolledAgain(app, box.id);
@@ -7623,23 +7623,23 @@ test("a thread's own machine whose identity reset is never removed nor enrolled 
   await app.enrolment.sweep();
   assert.equal(kept.state, "ready");
   assert.equal((await app.boxes.find(boxId))?.role, "machine", "not released");
-  assert.deepEqual(world.events.filter((event) => event.startsWith("delete ") || event.startsWith("create ")), [], "its machine is BB's to remove: removing it would release the box with the thread's worktree");
+  assert.deepEqual(world.events.filter((event) => event.startsWith("delete ") || event.startsWith("create ")), [], "its machine is VesnALIA's to remove: removing it would release the box with the thread's worktree");
   assert.deepEqual(world.bootstraps.filter((key) => key === THREAD), [THREAD], "no bootstrap of the old machine either");
   const [check] = await resetChecks(harness);
   assert.equal(check?.status, "fail");
-  assert.match(check!.detail, new RegExp(`It is the machine of thread ${THREAD}, and BB Box removes no thread's machine`));
+  assert.match(check!.detail, new RegExp(`It is the machine of thread ${THREAD}, and VesnALIA Box removes no thread's machine`));
   assert.match(check!.fix ?? "", new RegExp(`Copy what thread ${THREAD} needs from the box`));
 });
 
-test("one of your machines whose BB machine BB removes after its identity reset is kept and enrolled again, never released; one that does not answer then is kept, named by the doctor, and decided once it answers (070, 036)", async (t) => {
+test("one of your machines whose VesnALIA machine VesnALIA removes after its identity reset is kept and enrolled again, never released; one that does not answer then is kept, named by the doctor, and decided once it answers (070, 036)", async (t) => {
   const { harness, app, world } = await start({ "fake-enabled": true });
   t.after(() => harness.lifecycle.dispose());
-  const provider = harness.inspection.registrations.machineProviders.get("bb-box")!;
+  const provider = harness.inspection.registrations.machineProviders.get("alia-box")!;
   const box = await armed(app, await addMachine(harness, app, { kind: "linux", name: "build-1" }));
   const machine = box.enrol.hostId!;
   await identityResetIn(app, box, machine);
   world.hosts.delete(machine);
-  assert.deepEqual(await within(provider.remove({ resource: { boxId: box.id }, hostId: machine } as never), "BB's removal"), { status: "removed" });
+  assert.deepEqual(await within(provider.remove({ resource: { boxId: box.id }, hostId: machine } as never), "ALIA's removal"), { status: "removed" });
   const kept = await enrolledAgain(app, box.id);
   assert.deepEqual([kept.threadId, kept.state, kept.name], [OPERATOR, "ready", "build-1"]);
   assert.notEqual(kept.enrol.hostId, machine);
@@ -7649,19 +7649,19 @@ test("one of your machines whose BB machine BB removes after its identity reset 
   const fake = app.backends.get(quiet.backend) as FakeBackend;
   fake.faults.silent = quiet.guest!.ref;
   world.hosts.delete(quiet.enrol.hostId!);
-  assert.deepEqual(await within(provider.remove({ resource: { boxId: quiet.id }, hostId: quiet.enrol.hostId } as never), "BB's removal of a box that does not answer", 30_000), { status: "removed" });
+  assert.deepEqual(await within(provider.remove({ resource: { boxId: quiet.id }, hostId: quiet.enrol.hostId } as never), "VesnALIA's removal of a box that does not answer", 30_000), { status: "removed" });
   const waiting = await app.boxes.find(quiet.id);
-  assert.equal(waiting?.state, "ready", "kept: BB Box could not read whether it reset");
+  assert.equal(waiting?.state, "ready", "kept: VesnALIA Box could not read whether it reset");
   assert.deepEqual([waiting?.enrol.state, waiting?.removedMachineToCheck?.machine], ["off", quiet.enrol.hostId]);
   const [check] = (await resetChecks(harness)).filter((each) => each.id === "identity-reset.build-2");
   assert.equal(check?.status, "warn");
-  assert.match(check!.detail, /BB Box could not read whether the box's identity reset/);
+  assert.match(check!.detail, /ALIA Box could not read whether the box's identity reset/);
   fake.faults.silent = undefined;
   await app.enrolment.sweep();
   await until("one of your machines with no reset of its own released once it answers (036)", async () => (await app.boxes.find(quiet.id)) === null);
 });
 
-test("a reset record that names another BB machine, as in a box copied from another, or none, as in the source of a clone made outside bb-box, or one BB Box never armed, changes nothing (070)", async (t) => {
+test("a reset record that names another VesnALIA machine, as in a box copied from another, or none, as in the source of a clone made outside alia-box, or one VesnALIA Box never armed, changes nothing (070)", async (t) => {
   const { harness, app, world, tool } = await start({ "fake-enabled": true });
   t.after(() => harness.lifecycle.dispose());
   await tool("box_acquire", {});
@@ -7678,32 +7678,32 @@ test("a reset record that names another BB machine, as in a box copied from anot
   assert.equal(after?.identityReset ?? null, null);
   assert.equal(after?.enrol.hostId, machine);
 
-  const provider = harness.inspection.registrations.machineProviders.get("bb-box")!;
+  const provider = harness.inspection.registrations.machineProviders.get("alia-box")!;
   const unarmed = await addMachine(harness, app, { kind: "linux", name: "build-3" });
   await identityResetIn(app, unarmed, unarmed.enrol.hostId!);
   world.hosts.delete(unarmed.enrol.hostId!);
-  assert.deepEqual(await within(provider.remove({ resource: { boxId: unarmed.id }, hostId: unarmed.enrol.hostId } as never), "BB's removal"), { status: "removed" });
-  assert.equal(await app.boxes.find(unarmed.id), null, "a box BB Box never armed is removed with its machine, as before (036)");
+  assert.deepEqual(await within(provider.remove({ resource: { boxId: unarmed.id }, hostId: unarmed.enrol.hostId } as never), "ALIA's removal"), { status: "removed" });
+  assert.equal(await app.boxes.find(unarmed.id), null, "a box VesnALIA Box never armed is removed with its machine, as before (036)");
 
   const mine = await armed(app, await addMachine(harness, app, { kind: "linux", name: "build-4" }));
   world.hosts.delete(mine.enrol.hostId!);
-  assert.deepEqual(await within(provider.remove({ resource: { boxId: mine.id }, hostId: mine.enrol.hostId } as never), "BB's removal"), { status: "removed" });
-  assert.equal(await app.boxes.find(mine.id), null, "with no record of a reset, removing one of your machines in BB still removes it (036)");
+  assert.deepEqual(await within(provider.remove({ resource: { boxId: mine.id }, hostId: mine.enrol.hostId } as never), "ALIA's removal"), { status: "removed" });
+  assert.equal(await app.boxes.find(mine.id), null, "with no record of a reset, removing one of your machines in VesnALIA still removes it (036)");
   assert.deepEqual(app.boxLog.events(box.id).filter((event) => event.kind === "identity-reset"), []);
 });
 
-test("a reset record BB Box cannot read is not taken for no reset: an unreadable record keeps the box (070)", async (t) => {
+test("a reset record VesnALIA Box cannot read is not taken for no reset: an unreadable record keeps the box (070)", async (t) => {
   const { harness, app, world } = await start({ "fake-enabled": true });
   t.after(() => harness.lifecycle.dispose());
-  const provider = harness.inspection.registrations.machineProviders.get("bb-box")!;
+  const provider = harness.inspection.registrations.machineProviders.get("alia-box")!;
   const box = await armed(app, await addMachine(harness, app, { kind: "linux", name: "build-5" }));
   const { command } = await app.boxes.transports(box);
   assert.equal((await command!.run(`mkdir -p ${IDENTITY_STATE}/identity-resets`)).exitCode, 0, "a record that is not a readable file");
   world.hosts.delete(box.enrol.hostId!);
-  assert.deepEqual(await within(provider.remove({ resource: { boxId: box.id }, hostId: box.enrol.hostId } as never), "BB's removal"), { status: "removed" });
+  assert.deepEqual(await within(provider.remove({ resource: { boxId: box.id }, hostId: box.enrol.hostId } as never), "ALIA's removal"), { status: "removed" });
   const kept = await app.boxes.find(box.id);
   assert.equal(kept?.state, "ready");
-  assert.match(kept?.removedMachineToCheck?.why ?? "", /could not read \/var\/lib\/bb-box\/identity-resets/);
+  assert.match(kept?.removedMachineToCheck?.why ?? "", /could not read \/var\/lib\/alia-box\/identity-resets/);
 });
 
 test("an enrolment again after an identity reset that fails is tried again at the next sweep, and the doctor fails until it works (070)", async (t) => {
@@ -7715,7 +7715,7 @@ test("an enrolment again after an identity reset that fails is tried again at th
   const machine = `host-${box.id}`;
   await identityResetIn(app, box, machine);
   world.hosts.set(machine, { ...world.hosts.get(machine)!, status: "disconnected" });
-  world.bootstrapError = "BB's server did not answer";
+  world.bootstrapError = "VesnALIA's server did not answer";
   await app.enrolment.sweep();
   await until("the enrolment again failed", async () => {
     const current = await app.boxes.find(box.id);
@@ -7723,7 +7723,7 @@ test("an enrolment again after an identity reset that fails is tried again at th
   });
   const [failed] = await resetChecks(harness);
   assert.equal(failed?.status, "fail");
-  assert.match(failed!.detail, /BB Box kept the box; BB Box has not yet enrolled it again as a BB machine\. Its last try failed: .*BB's server did not answer/);
+  assert.match(failed!.detail, /ALIA Box kept the box; ALIA Box has not yet enrolled it again as a ALIA machine\. Its last try failed: .*ALIA's server did not answer/);
   world.bootstrapError = null;
   await app.enrolment.sweep();
   const again = await enrolledAgain(app, box.id);
@@ -7734,7 +7734,7 @@ test("an enrolment again after an identity reset that fails is tried again at th
 test("a stale read of no reset never releases a box whose reset another check recorded meanwhile; it is enrolled again instead (070, 036)", async (t) => {
   const { harness, app, world } = await start({ "fake-enabled": true });
   t.after(() => harness.lifecycle.dispose());
-  const provider = harness.inspection.registrations.machineProviders.get("bb-box")!;
+  const provider = harness.inspection.registrations.machineProviders.get("alia-box")!;
   const box = await armed(app, await addMachine(harness, app, { kind: "linux", name: "build-6" }));
   const machine = box.enrol.hostId!;
   const backend = app.backends.get(box.backend)!;
@@ -7769,7 +7769,7 @@ test("a stale read of no reset never releases a box whose reset another check re
   await until("the read under way", async () => reads > 0);
   await app.boxes.identityResetFound((await app.boxes.find(box.id))!, { at: Date.parse("2026-10-30T17:04:02Z"), why: RESET_WHY, machine });
   letReadEnd();
-  assert.deepEqual(await within(removal, "BB's removal"), { status: "removed" });
+  assert.deepEqual(await within(removal, "ALIA's removal"), { status: "removed" });
   const kept = await app.boxes.find(box.id);
   assert.equal(kept?.state, "ready", "not released: its reset is recorded and its recovery pending");
   assert.equal(kept?.identityReset?.machine, machine);
@@ -7779,19 +7779,19 @@ test("a stale read of no reset never releases a box whose reset another check re
   assert.notEqual(again.enrol.hostId, machine);
 });
 
-test("BB's removal of a machine after its box's reset returns at once, while BB still holds the machine removing, and the box is enrolled again once BB is done (070)", async (t) => {
+test("VesnALIA's removal of a machine after its box's reset returns at once, while VesnALIA still holds the machine removing, and the box is enrolled again once VesnALIA is done (070)", async (t) => {
   const { harness, app, world } = await start({ "fake-enabled": true }, { manualRemoveMs: 60_000 });
   t.after(() => harness.lifecycle.dispose());
-  const provider = harness.inspection.registrations.machineProviders.get("bb-box")!;
+  const provider = harness.inspection.registrations.machineProviders.get("alia-box")!;
   const box = await armed(app, await addMachine(harness, app, { kind: "linux", name: "build-7" }));
   const machine = box.enrol.hostId!;
   await identityResetIn(app, box, machine);
   world.hosts.set(machine, { ...world.hosts.get(machine)!, status: "disconnected", lifecycle: { ...world.hosts.get(machine)!.lifecycle, phase: "removing" } });
-  world.bbRemovals.set(machine, async () => {});
+  world.aliaRemovals.set(machine, async () => {});
   const started = Date.now();
-  assert.deepEqual(await within(provider.remove({ resource: { boxId: box.id }, hostId: machine } as never), "BB's removal", 3_000), { status: "removed" });
-  assert.ok(Date.now() - started < 3_000, "it does not wait for BB to finish the removal it is part of");
-  assert.ok(world.hosts.has(machine), "BB still holds the machine, removing");
+  assert.deepEqual(await within(provider.remove({ resource: { boxId: box.id }, hostId: machine } as never), "ALIA's removal", 3_000), { status: "removed" });
+  assert.ok(Date.now() - started < 3_000, "it does not wait for VesnALIA to finish the removal it is part of");
+  assert.ok(world.hosts.has(machine), "VesnALIA still holds the machine, removing");
   const waiting = await app.boxes.find(box.id);
   assert.deepEqual([waiting?.identityReset?.machine, waiting?.identityReset?.retiredAt, waiting?.enrol.state], [machine, null, "off"]);
   world.hosts.delete(machine);
@@ -7820,7 +7820,7 @@ test("box_snapshot, box_snapshots and box_snapshot_delete: an agent takes, lists
   assert.equal((await harness.behavior.runCli(["option", "set", "general.snapshots.perBox=2"])).exitCode, 0);
   await tool("box_snapshot", { box: box.name, name: "two" });
   const three = text(await tool("box_snapshot", { box: box.name, name: "three" }));
-  assert.match(three, /holds 2 of 2 snapshots\.\nThe box was at its limit of 2, so BB Box deleted the oldest snapshot an agent of this thread took and nobody kept: "one"\./);
+  assert.match(three, /holds 2 of 2 snapshots\.\nThe box was at its limit of 2, so ALIA Box deleted the oldest snapshot an agent of this thread took and nobody kept: "one"\./);
   const listed = text(await tool("box_snapshots", {}));
   assert.match(listed, new RegExp(`^Box ${box.name} \\(${box.id}\\), [^:]+: snapshots of its disk, or its disk and memory, while it runs\\.\\n  "two" \\(sn`));
   assert.match(listed, /\n  2 of 2 for this box\.\n\nNext: /);
@@ -7853,7 +7853,7 @@ test("box_snapshot, box_snapshots and box_snapshot_delete: an agent takes, lists
   assert.ok(app.snapshotStore.record(threeRecord!.id), "nothing of the thread's was touched");
 });
 
-test("box_fork and bb box snapshot fork: with no snapshot named, box_fork checks the box before it takes one, so a box without a working identity reset leaves nothing behind; a refusal after its take deletes that snapshot and passes on the take's words; another thread finds no box (070 unit 7)", async (t) => {
+test("box_fork and VesnALIA box snapshot fork: with no snapshot named, box_fork checks the box before it takes one, so a box without a working identity reset leaves nothing behind; a refusal after its take deletes that snapshot and passes on the take's words; another thread finds no box (070 unit 7)", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   new FakeSnapshots().attach(world.backend!, Date.now);
@@ -7861,7 +7861,7 @@ test("box_fork and bb box snapshot fork: with no snapshot named, box_fork checks
   const box = await only(app);
   const refused = await tool("box_fork", { box: box.name });
   assert.equal(typeof refused === "string" ? false : refused.isError, true);
-  assert.match(text(refused), new RegExp(`^Box ${box.name} has no working identity reset now, so a copy of it would not give up its identity, and BB Box does not fork it\\.\\n\\nNext: Call box_status`));
+  assert.match(text(refused), new RegExp(`^Box ${box.name} has no working identity reset now, so a copy of it would not give up its identity, and VesnALIA Box does not fork it\\.\\n\\nNext: Call box_status`));
   assert.deepEqual(app.snapshotStore.records({ box: box.id }), [], "it took nothing");
   assert.equal((await app.boxes.list(THREAD)).length, 1, "and made no box");
   await tool("box_snapshot", { box: box.name, name: "plain" });
@@ -7875,7 +7875,7 @@ test("box_fork and bb box snapshot fork: with no snapshot named, box_fork checks
   };
   const after = text(await tool("box_fork", { box: box.name }));
   assert.match(after, /^The Proxmox token lacks VM\.Clone on \/pool\/bbbox\.\nTook snapshot "for a fork" \(sn[a-z2-7]{12}\) of box \S+ in [0-9.]+ s: it holds its disk\./);
-  assert.match(after, /BB Box deleted the snapshot "for a fork" it took for this, as the fork was refused\./);
+  assert.match(after, /ALIA Box deleted the snapshot "for a fork" it took for this, as the fork was refused\./);
   assert.deepEqual(app.snapshotStore.records({ box: box.id }).map((record) => record.name), ["plain"], "the snapshot it took is gone");
   const OTHER = "thr_other";
   world.threads.set(OTHER, makeThreadResponse({ id: OTHER, projectId: PROJECT, environmentId: "env_two", providerId: "claude-code" }));
@@ -7888,8 +7888,8 @@ test("snapshot tools never add release or settings advice to fork and restore ca
   new FakeSnapshots().attach(world.backend!, Date.now);
   await tool("box_acquire", {});
   const box = await only(app);
-  app.snapshots.fork = async () => { throw new BoxError("no_capacity", "Not forked: no card has room. Fork it with gpu none, or ask the user. BB Box copied nothing."); };
-  app.snapshots.restore = async () => { throw new BoxError("no_capacity", "Every VMID is in use, so BB Box has none for the copy a restore needs. Try again later, or ask the user to make room for the copy."); };
+  app.snapshots.fork = async () => { throw new BoxError("no_capacity", "Not forked: no card has room. Fork it with gpu none, or ask the user. VesnALIA Box copied nothing."); };
+  app.snapshots.restore = async () => { throw new BoxError("no_capacity", "Every VMID is in use, so VesnALIA Box has none for the copy a restore needs. Try again later, or ask the user to make room for the copy."); };
   for (const [name, input] of [["box_fork", { box: box.name, snapshot: "one", gpu: "shared" }], ["box_restore", { box: box.name, snapshot: "one", replace: true }]] as const) {
     const answer = text(await tool(name, input));
     assert.doesNotMatch(answer, /\n\nNext:/, answer);
@@ -7903,14 +7903,14 @@ test("071 unit 8: box_acquire takes gpu whole and box_fork too; the provider's r
   t.after(() => harness.lifecycle.dispose());
   new FakeSnapshots().attach(world.backend!, Date.now);
   const off = text(await tool("box_acquire", { kind: "linux", gpu: "whole" }));
-  assert.equal(off, "Not made: whole cards are off on this install. Ask for gpu shared, or ask the user. BB Box changed nothing.", "whole cards are off until the install turns them on");
+  assert.equal(off, "Not made: whole cards are off on this install. Ask for gpu shared, or ask the user. VesnALIA Box changed nothing.", "whole cards are off until the install turns them on");
   const before = app.configuration.exported();
   const turned = await app.configuration.apply({ ...before, general: { ...before.general, wholeCards: true } }, before.revision);
   assert.ok(turned.ok, JSON.stringify(turned.ok ? null : turned));
   const backend = world.backend! as unknown as { capacity: Backend["capacity"] };
   const capacity = backend.capacity.bind(backend);
   const asked: (string | undefined)[] = [];
-  const words = "Not made: no card on the fake host is free for a whole card now: card 0 has lone-pine running. Ask for gpu shared, or ask the user. BB Box changed nothing.";
+  const words = "Not made: no card on the fake host is free for a whole card now: card 0 has lone-pine running. Ask for gpu shared, or ask the user. VesnALIA Box changed nothing.";
   backend.capacity = async (kind, size, pending, signal, asking) => {
     if (size.gpu !== "whole") return capacity(kind, size, pending, signal, asking);
     asked.push(asking?.threadId);
@@ -7922,14 +7922,14 @@ test("071 unit 8: box_acquire takes gpu whole and box_fork too; the provider's r
   const forked: unknown[] = [];
   app.snapshots.fork = async (_caller, _box, _standing, _ref, input) => {
     forked.push(input?.gpu);
-    throw new BoxError("no_capacity", "Not forked: no card on the fake host is free for a whole card now. Fork it with gpu shared or none, or ask the user. BB Box copied nothing.");
+    throw new BoxError("no_capacity", "Not forked: no card on the fake host is free for a whole card now. Fork it with gpu shared or none, or ask the user. VesnALIA Box copied nothing.");
   };
   (app.snapshots as unknown as Record<string, unknown>).checkForkOfBox = async () => {};
   const booted = await app.boxes.acquire({ threadId: THREAD, projectId: PROJECT, kind: "linux" });
   await app.boxes.settled(booted);
   const fork = text(await tool("box_fork", { box: booted.name, snapshot: "one", gpu: "whole" }));
   assert.deepEqual(forked, ["whole"]);
-  assert.match(fork, /Fork it with gpu shared or none, or ask the user\. BB Box copied nothing\./);
+  assert.match(fork, /Fork it with gpu shared or none, or ask the user\. ALIA Box copied nothing\./);
 });
 
 test("071 unit 10: box_resize gives an agent its own words when the check after an install failed, and no person's command", async (t) => {
@@ -7950,7 +7950,7 @@ test("071 unit 10: box_resize gives an agent its own words when the check after 
   (app.boxes as unknown as { resize: () => Promise<typeof answer> }).resize = async () => answer;
   const said = text(await tool("box_resize", { box: box.name, gpu: "shared", restart: true }));
   assert.match(said, /but its check after the restart failed: its desktop came up on the CPU\. Ask the user to update it again\./, said);
-  assert.doesNotMatch(said, /bb box gpu update/, "an agent is not given the person's command");
+  assert.doesNotMatch(said, /alia box gpu update/, "an agent is not given the person's command");
 });
 
 test("071 unit 8, round 2: while whole cards are off, the schemas agents get for box_acquire and box_fork and the CLI's help offer no whole card, and once they are on they do, from the next session", async (t) => {
@@ -7988,8 +7988,8 @@ test("071 unit 8, round 2: while whole cards are off, the schemas agents get for
   assert.match((await help(["snapshot", "fork"])).split("\n").find((line) => /^\s+--gpu /.test(line)) ?? "", /shared or whole/);
 });
 
-test("071 unit 8, round 2: BB Box reads its skills' names from its manifest, as the tool selection must list them", () => {
-  assert.deepEqual(manifestSkills()?.sort(), ["bb-box", "bb-box-setup"]);
+test("071 unit 8, round 2: VesnALIA Box reads its skills' names from its manifest, as the tool selection must list them", () => {
+  assert.deepEqual(manifestSkills()?.sort(), ["alia-box", "alia-box-setup"]);
 });
 
 test("box_acquire, box_resize, box_start and box_snapshot keep a refusal's own words and never tell an agent to release a box or change a setting", async (t) => {
@@ -7999,10 +7999,10 @@ test("box_acquire, box_resize, box_start and box_snapshot keep a refusal's own w
   new FakeSnapshots().attach(world.backend!, Date.now);
   const backend = world.backend!;
   const capacity = backend.capacity.bind(backend);
-  const gpuRefusal = "Not made: no card on the fake host can take a shared GPU now. Ask for gpu none, or ask the user. BB Box changed nothing.";
+  const gpuRefusal = "Not made: no card on the fake host can take a shared GPU now. Ask for gpu none, or ask the user. VesnALIA Box changed nothing.";
   backend.capacity = async (kind, size, pending) => {
     if ((size as { gpu?: string }).gpu === "shared") {
-      return { ok: false, message: "No card has room. Release a box on a card, or raise the boxes per card in BB Box's settings.", agentMessage: gpuRefusal, warm: null, hosts: [] };
+      return { ok: false, message: "No card has room. Release a box on a card, or raise the boxes per card in VesnALIA Box's settings.", agentMessage: gpuRefusal, warm: null, hosts: [] };
     }
     return capacity(kind, size, pending);
   };
@@ -8018,7 +8018,7 @@ test("box_acquire, box_resize, box_start and box_snapshot keep a refusal's own w
   backend.capacity = capacity;
   backend.offer([FAKE_KINDS[0]!, FAKE_KINDS[1]!]);
   const unsupported = text(await tool("box_acquire", { kind: "linux", gpu: "shared" }));
-  assert.match(unsupported, /Ask for gpu none, or ask the user\. BB Box changed nothing\.$/);
+  assert.match(unsupported, /Ask for gpu none, or ask the user\. ALIA Box changed nothing\.$/);
   assert.doesNotMatch(unsupported, /\n\nNext:/);
   assert.doesNotMatch(unsupported, /[Rr]elease|settings|Call box_status/);
 
@@ -8026,7 +8026,7 @@ test("box_acquire, box_resize, box_start and box_snapshot keep a refusal's own w
   assert.ok(!isError(await tool("box_acquire", { kind: "linux" })));
   const box = await only(app);
   backend.resizeWays = { cores: "live", memory: "live", disk: "live", shrinks: true };
-  const resizeRefusal = "Not resized: no card is free for this box. Keep the GPU shared, or ask the user. BB Box changed nothing.";
+  const resizeRefusal = "Not resized: no card is free for this box. Keep the GPU shared, or ask the user. VesnALIA Box changed nothing.";
   backend.resizeRoom = { ok: false, message: "No card is free. Release a desktop box, or raise the boxes per card.", agentMessage: resizeRefusal, warm: null, hosts: [] };
   const resized = text(await tool("box_resize", { box: box.name, memory_gib: 8 }));
   assert.equal(resized, resizeRefusal);
@@ -8048,10 +8048,10 @@ test("box_acquire, box_resize, box_start and box_snapshot keep a refusal's own w
   assert.equal(capped, "Box holds 5 snapshots, the most allowed.\n\nNext: Delete a snapshot you took and no longer need with box_snapshot_delete, or ask the user.");
   assert.doesNotMatch(capped, /[Ss]ettings|[Rr]elease|raise|widen/);
   app.snapshots.take = async () => {
-    throw new BoxError("no_capacity", "Not taken: the pool is full. Try again later, or ask the user. BB Box changed nothing.");
+    throw new BoxError("no_capacity", "Not taken: the pool is full. Try again later, or ask the user. VesnALIA Box changed nothing.");
   };
   const pooled = text(await tool("box_snapshot", { box: box.name }));
-  assert.equal(pooled, "Not taken: the pool is full. Try again later, or ask the user. BB Box changed nothing.");
+  assert.equal(pooled, "Not taken: the pool is full. Try again later, or ask the user. VesnALIA Box changed nothing.");
 
   const acquire = backend.acquire.bind(backend);
   backend.acquire = async () => {
@@ -8071,7 +8071,7 @@ test("box_restore restores the agent's own box at once with an undo; with agents
   await tool("box_acquire", {});
   const box = await app.boxes.enrolled(await only(app));
   await tool("box_snapshot", { box: box.name, name: "one" });
-  assert.match(text(await tool("box_restore", { box: box.name, snapshot: "one", replace: false })), /BB Box changed nothing\.\n\nNext: Call box_restore with replace true if you mean it\./);
+  assert.match(text(await tool("box_restore", { box: box.name, snapshot: "one", replace: false })), /ALIA Box changed nothing\.\n\nNext: Call box_restore with replace true if you mean it\./);
   const direct = text(await tool("box_restore", { box: box.name, snapshot: "one", replace: true }));
   assert.match(direct, new RegExp(`^Restored box ${box.name} to "one" \\(sn`));
   assert.match(direct, /Its undo is "before the restore at \d\d:\d\d" \(sn[a-z2-7]{12}\): restore that to undo this\./);
@@ -8089,7 +8089,7 @@ test("box_restore restores the agent's own box at once with an undo; with agents
   assert.equal(payload.runsOnIt, false);
   assert.equal(payload.changed, false);
   harness.behavior.cancelInteraction(form.id);
-  assert.match(text(await cancelled), new RegExp(`^BB Box did not restore box ${box.name}: the form was cancelled in the thread\\. Nothing changed\\.`));
+  assert.match(text(await cancelled), new RegExp(`^VesnALIA Box did not restore box ${box.name}: the form was cancelled in the thread\\. Nothing changed\\.`));
 
   const wrong = tool("box_restore", { box: box.name, snapshot: "one", replace: true });
   const second = await untilForm(harness, 2);
@@ -8097,7 +8097,7 @@ test("box_restore restores the agent's own box at once with an undo; with agents
   assert.match(text(await wrong), /the form's answer was not a yes to this restore\. Nothing changed\./);
 
   world.terminals.set("term_x", { id: "term_x", hostId: box.enrol.hostId!, title: "shell", command: "bash", status: "running", createdAt: Date.now() });
-  assert.match(text(await tool("box_restore", { box: box.name, snapshot: "one", replace: true })), /would end what is on it now: a BB terminal is open on it\. Ask the person to end it first/, "the form does not take an agent past a terminal");
+  assert.match(text(await tool("box_restore", { box: box.name, snapshot: "one", replace: true })), /would end what is on it now: a ALIA terminal is open on it\. Ask the person to end it first/, "the form does not take an agent past a terminal");
   world.terminals.delete("term_x");
   const changing = tool("box_restore", { box: box.name, snapshot: "one", replace: true });
   const third = await untilForm(harness, 3);
@@ -8117,7 +8117,7 @@ test("box_restore restores the agent's own box at once with an undo; with agents
   assert.match(asked.words!, /; on a yes given in thread thr_one\.$|; on a yes given in ".*" \(thr_one\)\.$/);
 });
 
-test("a box threads run on: box_restore is refused until machine restores are on; then it asks through the form even with agents' restores on, holds every turn on the machine from the yes until the box is ready, and asks BB to send them after (070 unit 5, G17's hold)", async (t) => {
+test("a box threads run on: box_restore is refused until machine restores are on; then it asks through the form even with agents' restores on, holds every turn on the machine from the yes until the box is ready, and asks VesnALIA to send them after (070 unit 5, G17's hold)", async (t) => {
   const { harness, app, world, tool } = await start({ "fake-enabled": true }, { liveChecks: true });
   t.after(() => harness.lifecycle.dispose());
   const provider = new FakeSnapshots();
@@ -8129,10 +8129,10 @@ test("a box threads run on: box_restore is refused until machine restores are on
   assert.match(text(await tool("box_snapshot", { box: "dev-desk", name: "before the upgrade" })), /^Took snapshot "before the upgrade"/);
   assert.match((await harness.behavior.runCli(["snapshot", "machine-restores", "off"])).stdout ?? "", /^Restores of boxes threads run on are off, for live checks/);
   const off = text(await tool("box_restore", { box: "dev-desk", snapshot: "before the upgrade", replace: true }));
-  assert.match(off, /BB Box does not restore such a box yet: that stays off until BB Box can hold every turn on it while it restores/);
+  assert.match(off, /ALIA Box does not restore such a box yet: that stays off until ALIA Box can hold every turn on it while it restores/);
   assert.equal(harness.inspection.pendingInteractions.length, 0);
 
-  assert.match((await harness.behavior.runCli(["snapshot", "machine-restores", "on"])).stdout ?? "", /^Restores of boxes threads run on are on until BB Box restarts/);
+  assert.match((await harness.behavior.runCli(["snapshot", "machine-restores", "on"])).stdout ?? "", /^Restores of boxes threads run on are on until ALIA Box restarts/);
   const noUndo = await harness.behavior.runCli(["snapshot", "restore", "dev-desk", "before the upgrade", "--machine", "--replace", "--no-undo", "--force"]);
   assert.match(noUndo.stderr ?? "", /always takes an undo before it restores a box threads run on/);
   const hook = harness.inspection.registrations.hooks["message.dispatch"]!;
@@ -8154,23 +8154,23 @@ test("a box threads run on: box_restore is refused until machine restores are on
   const held = await hook(onIt);
   assert.equal(held.action, "wait");
   const again = (held as { sendAt: number }).sendAt;
-  assert.ok(again >= asked + 15_000 && again <= Date.now() + 15_000, "BB asks again within 15 s, whether or not a recheck reaches the row");
-  assert.equal((held as { reason: string }).reason, "BB Box is restoring box dev-desk, the machine this thread runs on. This message waits until the box is ready again.");
-  assert.ok(heldWords({ name: "x".repeat(200) }).length <= 200, "BB refuses a wait reason over 200 characters");
+  assert.ok(again >= asked + 15_000 && again <= Date.now() + 15_000, "VesnALIA asks again within 15 s, whether or not a recheck reaches the row");
+  assert.equal((held as { reason: string }).reason, "VesnALIA Box is restoring box dev-desk, the machine this thread runs on. This message waits until the box is ready again.");
+  assert.ok(heldWords({ name: "x".repeat(200) }).length <= 200, "VesnALIA refuses a wait reason over 200 characters");
   assert.ok(heldWords({ name: "a".repeat(63) }).includes("a".repeat(63)));
   assert.deepEqual(await hook(makeMessageDispatchHookContext({ host: { id: "host_elsewhere" } })), { action: "proceed" }, "other machines' turns go on");
   const said = text(await restoring);
   assert.match(said, /^Restored box dev-desk to "before the upgrade"/);
   assert.match(said, /It was restored on a yes given in this thread\./);
   await until("the hold to end", async () => (await hook(onIt)).action === "proceed");
-  assert.ok(harness.inspection.recheckCount > rechecks, "BB Box asked BB to send the held messages");
+  assert.ok(harness.inspection.recheckCount > rechecks, "VesnALIA Box asked VesnALIA to send the held messages");
   const events = app.boxLog.events(machine.id).filter((event) => event.kind === "restore-asked" || event.kind === "restored");
   assert.equal(events.length, 2);
   for (const event of events) assert.match(event.words!, /on a yes given in/);
   assert.ok(app.snapshotStore.records({ box: machine.id }).some((record) => record.undoOf !== null), "an undo was taken");
 });
 
-test("bb box option sets each backend's ceiling on paid snapshots and the agents' two switches, and refuses a backend that is not there (070 unit 5)", async (t) => {
+test("alia box option sets each backend's ceiling on paid snapshots and the agents' two switches, and refuses a backend that is not there (070 unit 5)", async (t) => {
   const { harness, app } = await start();
   t.after(() => harness.lifecycle.dispose());
   const set = await harness.behavior.runCli(["option", "set", "general.snapshots.ceilings.fake=7.50", "general.snapshots.agentsRestore=false", "general.snapshots.agentsMemory=false"]);
@@ -8188,7 +8188,7 @@ test("bb box option sets each backend's ceiling on paid snapshots and the agents
   assert.equal(app.configuration.exported().general.snapshots, undefined);
 });
 
-test("when BB Box cannot tell where the thread runs, the snapshot tools count its own box as one it runs on, and show only what it took there (070 unit 5)", async (t) => {
+test("when VesnALIA Box cannot tell where the thread runs, the snapshot tools count its own box as one it runs on, and show only what it took there (070 unit 5)", async (t) => {
   const { harness, app, world, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   new FakeSnapshots().attach(world.backend!, Date.now);
@@ -8196,7 +8196,7 @@ test("when BB Box cannot tell where the thread runs, the snapshot tools count it
   const box = await app.boxes.enrolled(await only(app));
   assert.equal((await harness.behavior.runCli(["snapshot", "take", box.name, "--thread", THREAD, "--name", "the person's"])).exitCode, 0);
   assert.match(text(await tool("box_snapshots", { box: box.name })), /\n  "the person's" \(sn/);
-  world.threadsError = new Error("BB is restarting");
+  world.threadsError = new Error("VesnALIA is restarting");
   const listed = text(await tool("box_snapshots", { box: box.name }));
   assert.match(listed, /\n  No snapshots, and one you cannot see\./);
   assert.doesNotMatch(listed, /the person's/);
@@ -8232,7 +8232,7 @@ test("allBoxes says each box's thread and whether it works, when it was last sta
   assert.equal(listed.machines[0]!.busy, undefined, "machines.list no longer reads box history");
 });
 
-test("070 unit 8: bb box snapshot keep and unkeep, a release that copies what was kept first, and a released box's kept snapshot kept longer, checked for a fork and deleted without a thread", async (t) => {
+test("070 unit 8: VesnALIA box snapshot keep and unkeep, a release that copies what was kept first, and a released box's kept snapshot kept longer, checked for a fork and deleted without a thread", async (t) => {
   const { harness, app, world } = await start();
   t.after(() => harness.lifecycle.dispose());
   const provider = new FakeSnapshots();
@@ -8242,13 +8242,13 @@ test("070 unit 8: bb box snapshot keep and unkeep, a release that copies what wa
   assert.equal((await harness.behavior.runCli(["snapshot", "take", box.name, "--thread", THREAD, "--name", "old image"])).exitCode, 0);
   const refused = await harness.behavior.runCli(["snapshot", "keep", box.name, "old image", "--thread", THREAD]);
   assert.equal(refused.exitCode, 1);
-  assert.match(refused.stderr ?? "", /Taken before .*'s image had the identity reset: "old image" could not be forked after a release, so BB Box does not keep it\. Its identity reset was off when it was taken, as in a box from an image prepared before the reset was turned on: refresh the Linux image and make the box again\. \(unsupported\)/);
+  assert.match(refused.stderr ?? "", /Taken before .*'s image had the identity reset: "old image" could not be forked after a release, so ALIA Box does not keep it\. Its identity reset was off when it was taken, as in a box from an image prepared before the reset was turned on: refresh the Linux image and make the box again\. \(unsupported\)/);
   const [record] = app.snapshotStore.records();
   app.snapshotStore.updateRecord(record!.id, { forkSafe: 7 });
   const check = await harness.behavior.runCli(["snapshot", "keep", box.name, "old image", "--thread", THREAD, "--days", "10", "--check"]);
   assert.equal(check.exitCode, 0, check.stderr);
   assert.match(check.stdout ?? "", /^Keeping "old image" \(sn\w+\) of box .* until \d{4}-\d{2}-\d{2} makes it yours: no agent can delete it, it outlives its box's release, and a fork of it after then is one of your machines\./);
-  assert.match(check.stdout ?? "", /BB Box first copies this snapshot in full into a template that cannot start: .*\nNothing changed\.\n$/);
+  assert.match(check.stdout ?? "", /ALIA Box first copies this snapshot in full into a template that cannot start: .*\nNothing changed\.\n$/);
   assert.equal(app.snapshotStore.record(record!.id)?.keptUntil, null, "--check changes nothing");
   const kept = await harness.behavior.runCli(["snapshot", "keep", box.name, "old image", "--thread", THREAD, "--days", "10"]);
   assert.match(kept.stdout ?? "", /^Kept "old image" \(sn\w+\) of box .* until \d{4}-\d{2}-\d{2}\./);
@@ -8266,7 +8266,7 @@ test("070 unit 8: bb box snapshot keep and unkeep, a release that copies what wa
   assert.equal(app.snapshotStore.records().length, 0);
 });
 
-test("on a Linux desktop, a recording logs no place for actions by reference, as BB Box cannot know where they land, and keeps the typing as a count (102)", async (t) => {
+test("on a Linux desktop, a recording logs no place for actions by reference, as VesnALIA Box cannot know where they land, and keeps the typing as a count (102)", async (t) => {
   const { harness, app, box, tool } = await desktopBox();
   t.after(() => harness.lifecycle.dispose());
   const tree = text(await tool("computer_observe", { box: box.name, window: 100 }));
@@ -8310,7 +8310,7 @@ test("while a desktop box records, its computer use is logged for the clip: clic
   assert.doesNotMatch(JSON.stringify(events), /milk/, "the text typed is not in the log");
 });
 
-test("typing whose field BB Box cannot tell, into a window's focused element or as a single key, is logged as secret, so the clip shows no pill and draws no zoom for it (073)", async (t) => {
+test("typing whose field VesnALIA Box cannot tell, into a window's focused element or as a single key, is logged as secret, so the clip shows no pill and draws no zoom for it (073)", async (t) => {
   const { harness, app, box, tool } = await desktopBox();
   t.after(() => harness.lifecycle.dispose());
   const tree = text(await tool("computer_observe", { box: box.name, window: 100 }));
@@ -8377,7 +8377,7 @@ test("a person's keys are read as the desktop's server names Command and Option,
 const TOOLS_TAKING_NO_SESSION = ["list_windows", "launch_app", "list_apps", "bring_to_front", "kill_app"];
 const A_LONG_CAPTURE_MS = 60_000;
 
-test("while a desktop records, BB Box hides the driver's own agent cursor in a session of its own, names that session on each call that takes one, and shows the cursor again at the stop, in the same session, so its refs stay good (073)", async (t) => {
+test("while a desktop records, VesnALIA Box hides the driver's own agent cursor in a session of its own, names that session on each call that takes one, and shows the cursor again at the stop, in the same session, so its refs stay good (073)", async (t) => {
   const { harness, app, box, tool, file } = await desktopBox();
   t.after(() => harness.lifecycle.dispose());
   const tree = text(await tool("computer_observe", { box: box.name, window: 100 }));
@@ -8388,7 +8388,7 @@ test("while a desktop records, BB Box hides the driver's own agent cursor in a s
   await tool("computer_windows", { box: box.name });
   const during = readDesktop(file);
   const session = during.calls.find((call) => call.tool === "start_session")?.args.session;
-  assert.match(String(session), /^bb-box-[0-9a-f]{8}$/);
+  assert.match(String(session), /^alia-box-[0-9a-f]{8}$/);
   assert.deepEqual(during.agentCursorShownBySession, { [String(session)]: false }, "its cursor hidden");
   const named = during.calls.slice(before).filter((call) => !["start_session", "set_agent_cursor_enabled"].includes(call.tool));
   assert.ok(named.some((call) => call.tool === "click"), "the click was done");
@@ -8433,7 +8433,7 @@ test("a recording's hidden agent cursor is hidden again in a new session with th
   assert.equal(await app.computer.showAgentCursor(box), false, "so the clip keeps the driver's cursor");
 });
 
-test("a recording's hidden agent cursor comes back by itself as its capture ends at the limit, stays shown in a new session with the driver, and its stop still draws BB Box's pointer for that capture (073)", async (t) => {
+test("a recording's hidden agent cursor comes back by itself as its capture ends at the limit, stays shown in a new session with the driver, and its stop still draws VesnALIA Box's pointer for that capture (073)", async (t) => {
   const { harness, app, box, tool, file } = await desktopBox();
   t.after(() => harness.lifecycle.dispose());
   await tool("computer_observe", { box: box.name, window: 100 });
@@ -8447,7 +8447,7 @@ test("a recording's hidden agent cursor comes back by itself as its capture ends
   await tool("computer_observe", { box: box.name, window: 100 });
   assert.equal(starts(), before + 1, "a new session with the driver");
   assert.equal(readDesktop(file).agentCursorShownBySession?.[session], true, "which leaves the cursor shown");
-  assert.equal(await app.computer.showAgentCursor(box), true, "the capture had it hidden throughout, so its stop draws BB Box's pointer");
+  assert.equal(await app.computer.showAgentCursor(box), true, "the capture had it hidden throughout, so its stop draws VesnALIA Box's pointer");
   assert.equal(await app.computer.showAgentCursor(box), false, "and only once");
 });
 
@@ -8464,7 +8464,7 @@ test("where the driver's agent cursor came back during a capture, its stop keeps
   assert.equal(await app.computer.showAgentCursor(box), false);
 });
 
-test("showing the hidden agent cursor again waits for the driver to confirm it, tries again after a short wait, and once more as BB Box next connects to the driver (073)", async (t) => {
+test("showing the hidden agent cursor again waits for the driver to confirm it, tries again after a short wait, and once more as VesnALIA Box next connects to the driver (073)", async (t) => {
   const { harness, app, box, tool, file } = await desktopBox({ computer: { cursorRestoreRetryMs: [50, 100, 150] } });
   t.after(() => harness.lifecycle.dispose());
   await tool("computer_observe", { box: box.name, window: 100 });
@@ -8487,7 +8487,7 @@ test("showing the hidden agent cursor again waits for the driver to confirm it, 
     desktop.endedSession = desktop.sessions;
   });
   await tool("computer_observe", { box: box.name, window: 100 });
-  assert.equal(readDesktop(file).agentCursorShownBySession?.[session], true, "shown as BB Box next connects");
+  assert.equal(readDesktop(file).agentCursorShownBySession?.[session], true, "shown as VesnALIA Box next connects");
 });
 
 test("files stay on the panel: an agent has no files tool, and another plugin cannot call the files RPC", async (t) => {
@@ -8505,7 +8505,7 @@ test("files stay on the panel: an agent has no files tool, and another plugin ca
   assert.deepEqual(gone, { error: "That box is gone." });
 });
 
-test("a backend kept for other projects is not in box_list, box_acquire, bb box kinds or bb box acquire for this thread, naming it is refused, and the doctor warns when its projects are gone (#1458)", async (t) => {
+test("a backend kept for other projects is not in box_list, box_acquire, VesnALIA box kinds or VesnALIA box acquire for this thread, naming it is refused, and the doctor warns when its projects are gone (#1458)", async (t) => {
   const { app, harness, tool } = await start();
   t.after(() => harness.lifecycle.dispose());
   const keepFor = async (projects: readonly string[]) => {
@@ -8531,7 +8531,7 @@ test("a backend kept for other projects is not in box_list, box_acquire, bb box 
   assert.equal((await app.boxes.list(THREAD)).length, 0);
 
   const doctor = await harness.behavior.runCli(["doctor"]);
-  assert.match(doctor.stdout ?? "", /Projects of [^:\n]+: Kept for 1 project that is no longer in BB, so it serves no project and no thread can use it\./);
+  assert.match(doctor.stdout ?? "", /Projects of [^:\n]+: Kept for 1 project that is no longer in ALIA, so it serves no project and no thread can use it\./);
 
   await keepFor([PROJECT]);
   assert.match(text(await tool("box_list", {})), /- linux: /);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import {
   createFakePluginHost,
@@ -13,8 +13,8 @@ import {
   type ProjectThread,
 } from "./test-server";
 
-const insertRow = (bb: ReturnType<typeof createFakePluginHost>["bb"], threadId: string) =>
-  bb.storage
+const insertRow = (alia: ReturnType<typeof createFakePluginHost>["alia"], threadId: string) =>
+  alia.storage
     .database()
     .prepare(
       `INSERT INTO thread_lifecycle
@@ -33,17 +33,17 @@ const manualOnly = {
 };
 
 async function loadWith(threads: () => ProjectThread[]) {
-  const { bb, harness } = createFakePluginHost({
-    pluginId: "bb-sidebar",
+  const { alia, harness } = createFakePluginHost({
+    pluginId: "alia-sidebar",
     sdk: {
       plugins: { ...manualOnly, callRpc: pullRequestStatus(() => ({ outcome: "absent" })) },
       projects: { list: async () => projectsWith(threads()) },
       threads: { get: async ({ threadId }) => makeThreadResponse({ id: threadId }) },
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   disposers.push(() => harness.lifecycle.dispose());
-  return { bb, harness };
+  return { alia, harness };
 }
 
 const rowsOf = async (harness: Awaited<ReturnType<typeof loadWith>>["harness"]) =>
@@ -61,8 +61,8 @@ describe("children of older parent-only settles", () => {
       projectThread({ id: "asking", parentThreadId: "parent", hasPendingInteraction: true, latestAttentionAt: 90 }),
       projectThread({ id: "unrelated", latestAttentionAt: 90 }),
     ];
-    const { bb, harness } = await loadWith(() => threads);
-    insertRow(bb, "parent");
+    const { alia, harness } = await loadWith(() => threads);
+    insertRow(alia, "parent");
 
     await expect(harness.behavior.callRpc("evaluateAutoSettle", {})).resolves.toEqual({
       changedThreadIds: expect.arrayContaining(["quiet", "grandchild", "hidden"]),
@@ -86,7 +86,7 @@ describe("children of older parent-only settles", () => {
     });
 
     // A later rowless child is not legacy data. The repair does not run again.
-    bb.storage.database().prepare("DELETE FROM thread_lifecycle WHERE thread_id = 'quiet'").run();
+    alia.storage.database().prepare("DELETE FROM thread_lifecycle WHERE thread_id = 'quiet'").run();
     await harness.behavior.callRpc("evaluateAutoSettle", {});
     expect((await rowsOf(harness)).map((row) => row.threadId)).toEqual(["parent", "grandchild", "hidden"]);
   });
@@ -96,8 +96,8 @@ describe("children of older parent-only settles", () => {
       projectThread({ id: "parent", latestAttentionAt: 200 }),
       projectThread({ id: "child", parentThreadId: "parent", latestAttentionAt: 90 }),
     ];
-    const { bb, harness } = await loadWith(() => threads);
-    insertRow(bb, "parent");
+    const { alia, harness } = await loadWith(() => threads);
+    insertRow(alia, "parent");
     await harness.behavior.callRpc("evaluateAutoSettle", {});
     expect((await rowsOf(harness)).map((row) => row.threadId)).toEqual(["parent"]);
   });
@@ -108,8 +108,8 @@ describe("children of older parent-only settles", () => {
       projectThread({ id: "parent", title: "Parent", latestAttentionAt: 50, ...shared }),
       projectThread({ id: "child", title: "Child", parentThreadId: "parent", latestAttentionAt: 90, ...shared }),
     ];
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       experimental_callHostRpc: async ({ method, input }) => {
         if (method === "resolveRoots")
           return {
@@ -128,7 +128,7 @@ describe("children of older parent-only settles", () => {
         environments: {
           get: async () =>
             ({ id: "env_shared", hostId: "host_1", path: "/workspace/shared", status: "ready" }) as Awaited<
-              ReturnType<typeof bb.sdk.environments.get>
+              ReturnType<typeof alia.sdk.environments.get>
             >,
         },
         terminals: {
@@ -141,9 +141,9 @@ describe("children of older parent-only settles", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
-    insertRow(bb, "parent");
+    insertRow(alia, "parent");
 
     const before = (await harness.behavior.callRpc("previewSettledCleanup", { threadIds: ["parent"] })) as {
       threads: unknown[];
@@ -169,11 +169,11 @@ describe("children of older parent-only settles", () => {
 });
 
 const insertLifecycle = (
-  bb: ReturnType<typeof createFakePluginHost>["bb"],
+  alia: ReturnType<typeof createFakePluginHost>["alia"],
   threadId: string,
   row: { settledAt?: number; settledOverride?: string; parkedAt?: number; snoozedUntil?: number; snoozedAt?: number },
 ) =>
-  bb.storage
+  alia.storage
     .database()
     .prepare(
       `INSERT INTO thread_lifecycle
@@ -207,13 +207,13 @@ describe("children whose own row leaves them Active inside a settled tree", () =
       projectThread({ id: "snoozed", parentThreadId: "parent", latestAttentionAt: 20 }),
       projectThread({ id: "parked", parentThreadId: "parent", latestAttentionAt: 20 }),
     ];
-    const { bb, harness } = await loadWith(() => threads);
-    bb.storage.database().prepare("INSERT INTO lifecycle_backfills (name) VALUES ('settled-child-rows')").run();
-    insertRow(bb, "parent");
-    insertLifecycle(bb, "woken", { snoozedUntil: 60, snoozedAt: 25 });
-    insertLifecycle(bb, "returned", { settledOverride: "active" });
-    insertLifecycle(bb, "snoozed", { snoozedUntil: future, snoozedAt: 40 });
-    insertLifecycle(bb, "parked", { parkedAt: 40 });
+    const { alia, harness } = await loadWith(() => threads);
+    alia.storage.database().prepare("INSERT INTO lifecycle_backfills (name) VALUES ('settled-child-rows')").run();
+    insertRow(alia, "parent");
+    insertLifecycle(alia, "woken", { snoozedUntil: 60, snoozedAt: 25 });
+    insertLifecycle(alia, "returned", { settledOverride: "active" });
+    insertLifecycle(alia, "snoozed", { snoozedUntil: future, snoozedAt: 40 });
+    insertLifecycle(alia, "parked", { parkedAt: 40 });
 
     await harness.behavior.callRpc("evaluateAutoSettle", {});
     const rows = new Map((await rowsOf(harness)).map((row) => [row.threadId, row]));
@@ -229,8 +229,8 @@ describe("children whose own row leaves them Active inside a settled tree", () =
       projectThread({ id: "middle", parentThreadId: "root", latestAttentionAt: 50 }),
       projectThread({ id: "leaf", parentThreadId: "middle", latestAttentionAt: 50 }),
     ];
-    const { bb, harness } = await loadWith(() => threads);
-    insertRow(bb, "middle");
+    const { alia, harness } = await loadWith(() => threads);
+    insertRow(alia, "middle");
     await harness.behavior.callRpc("evaluateAutoSettle", {});
     expect((await rowsOf(harness)).map((row) => row.threadId)).toEqual(["middle"]);
   });
@@ -250,10 +250,10 @@ describe("a thread back from the archive", () => {
       projectThread({ id: "other", latestAttentionAt: 40 }),
       projectThread({ id: "other-child", parentThreadId: "other", latestAttentionAt: 40 }),
     ];
-    const { bb, harness } = await loadWith(threads);
+    const { alia, harness } = await loadWith(threads);
     // The first policy pass runs the one-time repair before the child returns.
     await harness.behavior.callRpc("evaluateAutoSettle", {});
-    insertRow(bb, "parent");
+    insertRow(alia, "parent");
     archived = false;
 
     await harness.behavior.emitThreadEvent("thread.unarchived", {

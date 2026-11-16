@@ -34,7 +34,7 @@ export function ShortcutsHelp({ open, onOpenChange }: { open: boolean; onOpenCha
   return (
     <Dialog open={open} onOpenChange={change}>
       {/* As tall as its list. The dialog is portaled straight into <body>, so a page rule like
-          `body > div { height: 100vh }` (the harness's stand-in for BB's base styles has one) made it
+          `body > div { height: 100vh }` (the harness's stand-in for VesnALIA's base styles has one) made it
           full height, its grid rows spreading an empty band above the list. */}
       <DialogContent className="h-auto max-h-[85dvh] overflow-y-auto">
         <DialogHeader>

@@ -137,7 +137,7 @@ export function NotesNavPanel() {
   }, []);
 
   return (
-    <div className="bb-fn-panel flex h-full min-h-0">
+    <div className="alia-fn-panel flex h-full min-h-0">
       <NoteList
         notes={visibleNotes}
         tags={tags}
@@ -161,10 +161,10 @@ export function NotesNavPanel() {
         onRestore={(id) => void notesStore.restoreNote(id).then(refreshTrash)}
         onPurge={(id) => void notesStore.purgeNote(id).then(refreshTrash)}
         onEmptyTrash={() => void notesStore.emptyTrash().then(refreshTrash)}
-        className="bb-fn-list-pane border-r border-border"
+        className="alia-fn-list-pane border-r border-border"
       />
       {selected === null ? (
-        <div className="bb-fn-editor-pane flex min-h-0 flex-col items-center justify-center gap-1 p-8 text-center">
+        <div className="alia-fn-editor-pane flex min-h-0 flex-col items-center justify-center gap-1 p-8 text-center">
           <p className="text-sm text-muted-foreground">
             {loaded ? "Select a note, or start one." : "Loading notes…"}
           </p>
@@ -173,7 +173,7 @@ export function NotesNavPanel() {
           ) : null}
         </div>
       ) : (
-        <div className="bb-fn-editor-pane flex min-h-0 flex-col">
+        <div className="alia-fn-editor-pane flex min-h-0 flex-col">
           <div className="flex shrink-0 items-center gap-0.5 border-b border-border px-3 py-1.5">
             <Icon
               name={SCOPE_ICON[noteScope(selected).kind]}
@@ -263,7 +263,7 @@ export function NotesNavPanel() {
             )}
           </div>
           {view === "trash" ? (
-            <div className="bb-fn-quiet-scroll min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap p-4 font-mono text-xs text-muted-foreground">
+            <div className="alia-fn-quiet-scroll min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap p-4 font-mono text-xs text-muted-foreground">
               {selected.body}
             </div>
           ) : (
@@ -273,7 +273,7 @@ export function NotesNavPanel() {
                 note={selected}
                 className={
                   selected.color !== null
-                    ? `bb-fn-tint-${selected.color} bb-fn-tinted-editor`
+                    ? `alia-fn-tint-${selected.color} alia-fn-tinted-editor`
                     : undefined
                 }
               />

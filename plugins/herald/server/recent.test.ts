@@ -39,12 +39,12 @@ describe("withNames", () => {
     expect(lookups).toEqual(["t1", "t2"]);
   });
 
-  it("keeps a sentence whose thread is gone, or whose names bb cannot give, and says why in the log", async () => {
+  it("keeps a sentence whose thread is gone, or whose names VesnALIA cannot give, and says why in the log", async () => {
     const log = recordingLog();
     const names: NamesPort = {
       async thread(threadId) {
         if (threadId === "gone") return null;
-        if (threadId === "down") throw new Error("bb away");
+        if (threadId === "down") throw new Error("alia away");
         return { title: "Login fix", projectId: "p1" };
       },
       projectName: async () => {
@@ -57,7 +57,7 @@ describe("withNames", () => {
       { threadTitle: null, projectName: null, threadExists: true },
       { threadTitle: "Login fix", projectName: null, threadExists: true },
     ]);
-    expect(log.lines.some((line) => line.includes("bb away"))).toBe(true);
+    expect(log.lines.some((line) => line.includes("alia away"))).toBe(true);
     expect(log.lines.some((line) => line.includes("project p1"))).toBe(true);
   });
 });

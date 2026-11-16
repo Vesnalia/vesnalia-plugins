@@ -69,7 +69,7 @@ const boardSessionSchema = z.object({
   costThreads: z.number(),
   usedTokens: z.number().nullable(),
   contextWindow: z.number().nullable(),
-  /** Token counts are bb's estimate rather than the harness's report. */
+  /** Token counts are VesnALIA's estimate rather than the harness's report. */
   estimated: z.boolean(),
 });
 
@@ -89,7 +89,7 @@ const boardTaskSchema = z.object({
   statusReason: z.string().nullable(),
   /** In Queue with a message waiting to send (held by the working limit, or otherwise queued), so starting it now can send it. */
   startable: z.boolean(),
-  /** bb's unread state: new activity since the user last opened the thread. */
+  /** VesnALIA's unread state: new activity since the user last opened the thread. */
   unread: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -246,7 +246,7 @@ const workMarkSchema = z.enum(["archived", "measured", "demoed"]);
 const memoryPressureSchema = z.enum(["normal", "warn", "critical"]);
 
 /**
- * The bb server machine's resources: the computer bb runs on, not the browser viewing it. Byte counts are bytes, rates
+ * The VesnALIA server machine's resources: the computer VesnALIA runs on, not the browser viewing it. Byte counts are bytes, rates
  * bytes per second. Fields the OS can't report are null.
  */
 const systemStatsSchema = z.object({
@@ -287,7 +287,7 @@ const systemStatsSchema = z.object({
       outPerSec: z.number().nullable(),
     })
     .nullable(),
-  /** The volume holding the home directory, where projects, caches and bb's data live. */
+  /** The volume holding the home directory, where projects, caches and VesnALIA's data live. */
   disk: z.object({ total: z.number(), free: z.number() }).nullable(),
   battery: z
     .object({
@@ -323,7 +323,7 @@ export type SystemProcesses = z.infer<typeof systemProcessesSchema>;
 
 /**
  * The signed-in user's Shopify AI proxy spend, from the proxy's per-user counter: every tool on the proxy, not just
- * bb threads. Costs are USD; `today` is the bb machine's local calendar day. Figures are null until a read succeeds;
+ * VesnALIA threads. Costs are USD; `today` is the VesnALIA machine's local calendar day. Figures are null until a read succeeds;
  * after one has, a failed read keeps them and sets `error`.
  */
 const aiUsageSchema = z.object({
@@ -360,7 +360,7 @@ export const rpcContract = {
   board_remove_task: { input: threadRefSchema, output: z.object({ removed: z.boolean() }) },
   /** Park an idle thread (it stays in Parked until it starts working again), or unpark it. */
   board_park_task: { input: z.object({ threadId: z.string(), parked: z.boolean() }), output: boardTaskSchema },
-  /** Start a Queue card now: send its waiting message with bb's Send now, past the working limit. */
+  /** Start a Queue card now: send its waiting message with VesnALIA's Send now, past the working limit. */
   board_start_task: { input: threadRefSchema, output: boardTaskSchema },
   board_mark_read: { input: threadRefSchema, output: z.object({ ok: z.boolean() }) },
   board_mark_unread: { input: threadRefSchema, output: z.object({ ok: z.boolean() }) },
@@ -385,9 +385,9 @@ export const rpcContract = {
   work_list: { input: z.null(), output: workStateSchema },
   /** Set or clear a mark on a work item. */
   work_mark: { input: z.object({ id: reviewRefSchema.shape.id, mark: workMarkSchema, on: z.boolean() }), output: okSchema },
-  /** The bb server machine's CPU, memory, swap, disk and battery; reading starts a sampler that idles once reads stop. */
+  /** The VesnALIA server machine's CPU, memory, swap, disk and battery; reading starts a sampler that idles once reads stop. */
   system_stats: { input: z.null(), output: systemStatsSchema },
-  /** The heaviest processes on the bb server machine, grouped by name. */
+  /** The heaviest processes on the VesnALIA server machine, grouped by name. */
   system_processes: { input: z.null(), output: systemProcessesSchema },
   /** Today's Shopify AI proxy spend for the signed-in user; cached a minute on the server. */
   ai_usage: { input: z.null(), output: aiUsageSchema },

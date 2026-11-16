@@ -53,12 +53,12 @@ describe("AdvisorStream", () => {
 
   it("shows workspace paths as relative and the home directory as ~", () => {
     const stream = new AdvisorStream({
-      workspace: "/Users/sam/.bb/worktrees/thr_1/pantry/",
+      workspace: "/Users/sam/.vesnalia/worktrees/thr_1/pantry/",
       home: "/Users/sam",
     });
     stream.apply([
       event("item/started", {
-        item: { type: "fileRead", id: "f", path: "/Users/sam/.bb/worktrees/thr_1/pantry/src/pantry.js" },
+        item: { type: "fileRead", id: "f", path: "/Users/sam/.vesnalia/worktrees/thr_1/pantry/src/pantry.js" },
       }),
     ]);
     expect(stream.activity).toBe("Reading src/pantry.js");
@@ -67,7 +67,7 @@ describe("AdvisorStream", () => {
         item: {
           type: "commandExecution",
           id: "c",
-          command: "cd /Users/sam/.bb/worktrees/thr_1/pantry && node --test",
+          command: "cd /Users/sam/.vesnalia/worktrees/thr_1/pantry && node --test",
         },
       }),
     ]);

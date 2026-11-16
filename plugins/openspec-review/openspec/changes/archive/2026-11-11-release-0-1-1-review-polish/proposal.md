@@ -29,5 +29,5 @@
 ## Impact
 
 - Код: `app.css`, `app.tsx`, `server.ts`, `src/i18n.ts`; тесты `tests/server.ts`, `tests/browser-matrix.ts`.
-- Релиз: тег `v0.1.1` в github.com/nicolay-i/bb-plugin-openspec-review; диапазон `^0.1.0` маркетплейса подхватывает его без смены entry; PR get-bb/marketplace#877 — новые скриншоты и overview.
+- Релиз: тег `v0.1.1` в github.com/nicolay-i/bb-plugin-openspec-review; диапазон `^0.1.0` маркетплейса подхватывает его без смены entry; PR get-alia/marketplace#877 — новые скриншоты и overview.
 - Совместимость: сохранённая настройка `en`/`ru` остаётся валидной.

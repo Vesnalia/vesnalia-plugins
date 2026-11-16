@@ -32,10 +32,10 @@ export interface AgentDef {
   /** Candidate config files, most canonical first. */
   readonly configs: readonly AgentConfigFile[];
   /**
-   * BB provider ids that expose this CLI as a thread provider. Empty means BB
-   * cannot drive this CLI, so the machine can hold MCP servers BB never sees.
+   * VesnALIA provider ids that expose this CLI as a thread provider. Empty means VesnALIA
+   * cannot drive this CLI, so the machine can hold MCP servers VesnALIA never sees.
    */
-  readonly bbProviders: readonly string[];
+  readonly aliaProviders: readonly string[];
   /** A gateway aggregates other MCP servers instead of being one itself. */
   readonly gateway?: boolean;
   /**
@@ -60,7 +60,7 @@ export const AGENTS: readonly AgentDef[] = [
     label: "Claude Code",
     bins: ["claude"],
     configs: [claudeFile(".claude.json")],
-    bbProviders: ["claude-code"],
+    aliaProviders: ["claude-code"],
   },
   {
     kind: "codex",
@@ -75,7 +75,7 @@ export const AGENTS: readonly AgentDef[] = [
         style: "codex-toml",
       },
     ],
-    bbProviders: ["codex"],
+    aliaProviders: ["codex"],
   },
   {
     kind: "opencode",
@@ -96,7 +96,7 @@ export const AGENTS: readonly AgentDef[] = [
         style: "opencode",
       },
     ],
-    bbProviders: ["acp-opencode", "opencode"],
+    aliaProviders: ["acp-opencode", "opencode"],
   },
   {
     kind: "cursor",
@@ -104,7 +104,7 @@ export const AGENTS: readonly AgentDef[] = [
     label: "Cursor",
     bins: ["cursor-agent", "cursor"],
     configs: [claudeFile(".cursor/mcp.json")],
-    bbProviders: ["acp-cursor", "cursor-agent"],
+    aliaProviders: ["acp-cursor", "cursor-agent"],
   },
   {
     kind: "antigravity",
@@ -125,7 +125,7 @@ export const AGENTS: readonly AgentDef[] = [
         style: "antigravity",
       },
     ],
-    bbProviders: ["acp-antigravity", "antigravity"],
+    aliaProviders: ["acp-antigravity", "antigravity"],
   },
   {
     kind: "gemini",
@@ -140,7 +140,7 @@ export const AGENTS: readonly AgentDef[] = [
         style: "gemini",
       },
     ],
-    bbProviders: ["acp-gemini", "gemini"],
+    aliaProviders: ["acp-gemini", "gemini"],
   },
   {
     kind: "qwen",
@@ -148,14 +148,14 @@ export const AGENTS: readonly AgentDef[] = [
     label: "Qwen Code",
     bins: ["qwen"],
     configs: [claudeFile(".qwen/settings.json")],
-    bbProviders: ["acp-qwen", "qwen"],
+    aliaProviders: ["acp-qwen", "qwen"],
   },
   {
     kind: "kimi",
     label: "Kimi CLI",
     bins: ["kimi"],
     configs: [claudeFile(".kimi-code/mcp.json")],
-    bbProviders: ["acp-kimi", "kimi"],
+    aliaProviders: ["acp-kimi", "kimi"],
   },
   {
     kind: "grok",
@@ -170,7 +170,7 @@ export const AGENTS: readonly AgentDef[] = [
         style: "grok-toml",
       },
     ],
-    bbProviders: ["acp-grok", "grok"],
+    aliaProviders: ["acp-grok", "grok"],
   },
   {
     kind: "crush",
@@ -184,7 +184,7 @@ export const AGENTS: readonly AgentDef[] = [
         style: "claude",
       },
     ],
-    bbProviders: ["acp-crush", "crush"],
+    aliaProviders: ["acp-crush", "crush"],
   },
   {
     kind: "mimocode",
@@ -199,7 +199,7 @@ export const AGENTS: readonly AgentDef[] = [
         style: "opencode",
       },
     ],
-    bbProviders: [],
+    aliaProviders: [],
   },
   {
     kind: "metamcp-stdio",
@@ -213,7 +213,7 @@ export const AGENTS: readonly AgentDef[] = [
         style: "metamcp",
       },
     ],
-    bbProviders: [],
+    aliaProviders: [],
     gateway: true,
   },
 ];

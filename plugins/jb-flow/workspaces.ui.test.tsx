@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { exampleWorkspaces } from "./workspaces.fixtures";
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type {
   ExperimentalSidebarNavigationItem,
   PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { mountWorkspaceTopBar, WORKSPACE_BAR_EVENT } from "./workspace-topbar";
 import { selectWorkspace } from "./workspace-client";
 

@@ -3,7 +3,7 @@
 // or a job that finished before this pane subscribed), and cancels on
 // request. One pane waits for one job at a time.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { ActionResult, JobEvent, JobSummary } from "../contracts";
 import type { rpcContract } from "../server";

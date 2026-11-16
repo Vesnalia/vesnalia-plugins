@@ -27,7 +27,7 @@ test('original provider ticket route round-trips reserved locator characters', (
 
 test('console follows current work until the operator selects an explicit attempt', () => {
   const item: WorkItem = {
-    bbProjectId: 'proj_test', source: 'linear', locator: 'issue-42', key: 'BAN-42',
+    aliaProjectId: 'proj_test', source: 'linear', locator: 'issue-42', key: 'BAN-42',
     title: 'Keep the console selection stable', description: '', url: '', status: 'Todo',
     stateCategory: 'todo', priority: null, assignee: null, project: null, labels: [], updatedAt: ''
   };
@@ -51,7 +51,7 @@ test('console follows current work until the operator selects an explicit attemp
 
 test('stale Build blockers require current plan approval then a new Build', () => {
   const item: WorkItem = {
-    bbProjectId: 'proj_test', source: 'linear', locator: 'issue-42', key: 'BAN-42',
+    aliaProjectId: 'proj_test', source: 'linear', locator: 'issue-42', key: 'BAN-42',
     title: 'Recover blocked work', description: '', url: '', status: 'Todo',
     stateCategory: 'todo', priority: null, assignee: null, project: null, labels: [], updatedAt: ''
   };
@@ -86,7 +86,7 @@ test('stale Build blockers require current plan approval then a new Build', () =
 
 test('Build needing approval offers one approve-and-continue action', () => {
   const item: WorkItem = {
-    bbProjectId: 'proj_test', source: 'linear', locator: 'issue-42', key: 'BAN-42',
+    aliaProjectId: 'proj_test', source: 'linear', locator: 'issue-42', key: 'BAN-42',
     title: 'Approve pending decisions', description: '', url: '', status: 'Todo',
     stateCategory: 'todo', priority: null, assignee: null, project: null, labels: [], updatedAt: ''
   };
@@ -106,7 +106,7 @@ test('Build needing approval offers one approve-and-continue action', () => {
 
 test('an archived completed Plan offers continuation without starting a new task', () => {
   const record = newRecord({
-    bbProjectId: 'proj_test', source: 'linear', locator: 'issue-42', key: 'BAN-42',
+    aliaProjectId: 'proj_test', source: 'linear', locator: 'issue-42', key: 'BAN-42',
     title: 'Continue planned work', description: '', url: '', status: 'In progress',
     stateCategory: 'in_progress', priority: null, assignee: null, project: null, labels: [], updatedAt: ''
   });

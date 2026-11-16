@@ -1,19 +1,19 @@
-// bb-plugin-radar — panel frontend. Compiled by `bb plugin build`.
+// alia-plugin-radar — panel frontend. Compiled by `alia plugin build`.
 import { createContext, useCallback, useContext, useDeferredValue, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   definePluginApp,
   experimental_NewThreadComposer as NewThreadComposer,
   experimental_ProviderModelPicker as ProviderModelPicker,
   UrlLink,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { DraftResult, HiddenEntry, Lane, LaneResult, RadarItem, RadarSnapshot, RebaseResult, ReviewContext, rpcContract, SlackContextView, SlackThreadView } from "./server";
-import type { NewThreadComposerProps, PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import type { NewThreadComposerProps, PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import { mountRailBadge } from "./badge";
 import type { AiOverride } from "./ai";
-import type { ExperimentalProviderModelPickerValue } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalProviderModelPickerValue } from "@vesnalia/plugin-sdk/app";
 import { CATEGORY_LABEL, enabledSources, itemInView, laneInView, moveInView, SOURCE_LABEL, SOURCES, viewFrom, VIEWS, type Category, type Source, type View } from "./lanes";
 
 const sourceHint = (source: Source): string => {
@@ -460,7 +460,7 @@ function ItemRow({ item }: { item: RadarItem }) {
           {showRebase ? <RebaseAction item={item} rebase={actions.rebase} onActive={setRebaseActive} /> : null}
           <SlackAction item={item} />
           {threadId !== undefined ? (
-            <ActionIcon icon="external" label="Open thread" tip="Open the bb thread started for this" onClick={() => actions.open(threadId)} />
+            <ActionIcon icon="external" label="Open thread" tip="Open the VesnALIA thread started for this" onClick={() => actions.open(threadId)} />
           ) : null}
           <ActionIcon
             icon="bot"
@@ -1512,7 +1512,7 @@ function ReviewSheet({
 function RadarPage({ subPath }: PluginNavPanelProps) {
   const view = viewFrom(subPath);
   const { rpc, snapshot, error, setError, mutate, call, optimistic } = useRadar();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [reviewing, setReviewing] = useState<{ item: RadarItem; context: ReviewContext } | null>(null);
   const [undo, setUndo] = useState<{ key: string; title: string } | null>(null);
   /** In-flight hides, so an Undo can't reach the server before its hide. */
@@ -1828,14 +1828,14 @@ function AiSettings() {
   }
   const [draft, setDraft] = useState<ExperimentalProviderModelPickerValue>({ providerId: "", model: "", reasoningLevel: "medium" });
   return <section>
-    <p>Draft lanes and interpret focus using BB’s configured providers. On BB builds without that, Radar uses the AI fallback settings (endpoint, key variable, model).</p>
-    <p>{selection ? `${selection.providerId} / ${selection.model}` : "Use BB default"}</p>
+    <p>Draft lanes and interpret focus using VesnALIA’s configured providers. On VesnALIA builds without that, Radar uses the AI fallback settings (endpoint, key variable, model).</p>
+    <p>{selection ? `${selection.providerId} / ${selection.model}` : "Use VesnALIA default"}</p>
     <p>{status}</p>
     <button className="radar-btn" disabled={!ready || saving} onClick={() => {
       setDraft({ providerId: selection?.providerId ?? "", model: selection?.model ?? "", reasoningLevel: "medium" });
       setEditing(true);
     }}>Choose override</button>
-    {selection ? <button className="radar-btn" disabled={saving} onClick={() => void save(null)}>Use BB default</button> : null}
+    {selection ? <button className="radar-btn" disabled={saving} onClick={() => void save(null)}>Use VesnALIA default</button> : null}
     {editing ? <div>
       <ProviderModelPicker value={draft} onChange={setDraft} disabled={saving} />
       <button className="radar-btn" disabled={saving || !draft.providerId || !draft.model} onClick={() => void save({ providerId: draft.providerId, model: draft.model })}>Save override</button>

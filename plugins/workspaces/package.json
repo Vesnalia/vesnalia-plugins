@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-workspaces",
+  "name": "alia-plugin-workspaces",
   "version": "0.3.1",
   "license": "MIT",
   "type": "module",
   "engines": {
-    "bb": ">=0.42",
-    "bbPluginSdk": ">=0.4.47"
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.4.47"
   },
-  "bb": {
+  "alia": {
     "name": "Workspaces",
     "description": "Group related repositories and launch isolated multi-repo threads.",
     "branding": {
@@ -23,7 +23,7 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.1.3",
@@ -33,7 +33,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.47",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -61,5 +60,22 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.47"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/workspaces#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/workspaces"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

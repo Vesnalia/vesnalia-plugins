@@ -4,13 +4,13 @@ import {GatewayExplorer,GatewayHeaderButton} from './explorer.js';
 import {FolderView} from './folder-view.js';
 import {mountFolderLinks} from './chat-folder-links.js';
 import React,{useEffect,useState} from 'react';
-import {definePluginApp,useRpc} from '@get-bb/plugin-sdk/app';
+import {definePluginApp,useRpc} from '@vesnalia/plugin-sdk/app';
 import type {uiContract,SettingsView} from './configuration.js';
 import {Button} from './components/ui/button.js';
 import {Input} from './components/ui/input.js';
 type Machine=SettingsView['machines'][number];
 type Policy=Machine['policy'];
-const modes=[{id:'off',title:'Off',description:'Files on this machine are not accessible through the gateway.'},{id:'folders',title:'Selected folders',description:'Access is limited to the folders listed below.'},{id:'all',title:'Full computer',description:'All files BB can read on this machine.'}] as const;
+const modes=[{id:'off',title:'Off',description:'Files on this machine are not accessible through the gateway.'},{id:'folders',title:'Selected folders',description:'Access is limited to the folders listed below.'},{id:'all',title:'Full computer',description:'All files VesnALIA can read on this machine.'}] as const;
 function FolderBrowser({hostId,onSelect,onClose}:{hostId:string;onSelect:(path:string)=>void;onClose:()=>void}){
  const rpc=useRpc<typeof uiContract>();const [listing,setListing]=useState<{directory:string;parent:string|null;entries:{name:string;path:string}[];truncated:boolean}|null>(null);
  const [path,setPath]=useState('');const [error,setError]=useState('');const [busy,setBusy]=useState(false);
@@ -61,11 +61,11 @@ export function GatewaySettings(){
  useEffect(()=>{void load();},[]);
  async function change(action:()=>Promise<SettingsView>){setBusy(true);setSaved(false);setError('');try{setView(await action());setSaved(true);}catch(e){setError(e instanceof Error?e.message:String(e));}finally{setBusy(false);}}
  return <div className="space-y-4" aria-label="File access between machines">
-  <div className="flex items-start justify-between gap-3"><p className="text-sm text-muted-foreground">Choose which files agents can access from other BB machines.</p><Button size="sm" variant="ghost" disabled={busy} onClick={()=>void load()}>Refresh</Button></div>
+  <div className="flex items-start justify-between gap-3"><p className="text-sm text-muted-foreground">Choose which files agents can access from other VesnALIA machines.</p><Button size="sm" variant="ghost" disabled={busy} onClick={()=>void load()}>Refresh</Button></div>
   {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
   {!view&&!error&&<p className="text-sm text-muted-foreground">Loading machines…</p>}
   {view?.machines.map(machine=><MachineCard key={machine.id} machine={machine} busy={busy} onChange={policy=>change(()=>rpc.call('saveMachine',{hostId:machine.id,policy,revision:view.revision}))}/>)}
-  {view?.machines.length===0&&<p className="text-sm text-muted-foreground">Connect a machine to BB to see it here.</p>}
+  {view?.machines.length===0&&<p className="text-sm text-muted-foreground">Connect a machine to VesnALIA to see it here.</p>}
   {view&&<details className="rounded-md border border-border p-3"><summary className="cursor-pointer text-sm">File transfers</summary><form className="mt-3 flex flex-wrap items-center gap-3" onSubmit={e=>{e.preventDefault();void change(()=>rpc.call('saveLimit',{revision:view.revision,maxFileMiB:Number(limit)}));}}><label htmlFor="gateway-size" className="text-sm">Maximum size (MiB)</label><Input id="gateway-size" className="w-24" type="number" min={1} max={256} value={limit} onChange={e=>setLimit(e.target.value)}/><Button size="sm" variant="outline" disabled={busy||!Number.isInteger(Number(limit))||Number(limit)<1||Number(limit)>256}>Save</Button></form></details>}
   <p role="status" className="min-h-4 text-xs text-muted-foreground">{busy?'Saving…':saved?'Saved. Changes take effect immediately.':''}</p>
  </div>;

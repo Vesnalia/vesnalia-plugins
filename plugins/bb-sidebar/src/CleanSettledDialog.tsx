@@ -1,17 +1,17 @@
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./components/Icon";
 import { usePortalScopeProps } from "./lib/portal-scope";
-import type { bbSidebarRpcContract, SettledCleanupPreview, SettledCleanupResult } from "./contract";
-import { useSidebarThreads } from "./bb-sdk";
+import type { aliaSidebarRpcContract, SettledCleanupPreview, SettledCleanupResult } from "./contract";
+import { useSidebarThreads } from "./alia-sdk";
 import { resolveThreadTitlesIn, threadDisplayTitle } from "./inbox";
 import { announcePortsClosed } from "./OpenPorts";
 
 export function CleanSettledDialog({ threadIds, onNavigate }: { threadIds: string[]; onNavigate: () => void }) {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
-  const navigate = useBbNavigate();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
+  const navigate = useAliaNavigate();
   const portalScope = usePortalScopeProps();
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<SettledCleanupPreview | null>(null);

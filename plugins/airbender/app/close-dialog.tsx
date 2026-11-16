@@ -14,7 +14,7 @@
 // - On the simple workflow there is nothing to finish or cancel: closing is
 //   just closing (`plain`), and the dialog says only that.
 // - A finished epic closed from the epic band has a wording of its own
-//   (bead-bb-ty5.1): it is not cancelled, and nothing is committed for it,
+//   (bead-alia-ty5.1): it is not cancelled, and nothing is committed for it,
 //   since each of its sub-issues landed by itself. When epics can own a
 //   branch (the user's plan), this is where "Close & merge" will go: with a
 //   branch attached the button merges it, without one it only closes.
@@ -51,7 +51,7 @@ export interface PendingClose {
   epicDone?: number;
   /**
    * With `epicDone`, for an epic whose issues were worked on a branch of
-   * its own (bead-bb-ty5.2): that branch. Closing the epic then goes
+   * its own (bead-alia-ty5.2): that branch. Closing the epic then goes
    * through the workflow (`moveId` is set) and merges the branch.
    */
   mergeBranch?: string;

@@ -5,11 +5,11 @@ import { createFakePluginHost, disposers, standardProject } from "./test-server"
 describe("project management", () => {
   it("renames standard projects and rejects personal projects or empty names", async () => {
     let project = standardProject();
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: { projects: { get: async () => project, update: async ({ name }) => ({ ...project, name: name! }) } },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
     await expect(
       harness.behavior.callRpc("renameProject", { projectId: "proj_1", name: "  New name  " }),
@@ -36,8 +36,8 @@ describe("project management", () => {
       lastRejectedProtocolVersion: null,
       maxPermissionMode: "auto" as const,
     };
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         hosts: {
           list: async () => [
@@ -52,7 +52,7 @@ describe("project management", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
     await expect(harness.behavior.callRpc("projectPathHosts", { projectId: "proj_1" })).resolves.toEqual({
       hosts: [{ id: "host_2", name: "Laptop" }],
@@ -69,8 +69,8 @@ describe("project management", () => {
 
   it("requires the project name before removing a standard project", async () => {
     const project = standardProject();
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           delete: async () => ({ ok: true as const }),
@@ -79,7 +79,7 @@ describe("project management", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     await expect(harness.behavior.callRpc("listProjects", {})).resolves.toEqual({

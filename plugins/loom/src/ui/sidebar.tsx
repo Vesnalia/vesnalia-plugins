@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { experimental_Icon as Icon, useBbNavigate, type PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate, type PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { BoardCard, HomeProject, PlanningSession } from "../contract";
 import type { TicketState } from "../states";
 import { HEADING, plural, stateTone, useLoom } from "./common";
@@ -83,9 +83,9 @@ function ProjectItem({ project, needs, open, ticket, go }: { project: HomeProjec
   );
 }
 
-/** Loom in place of bb's thread list while the Loom page is open: home, planning conversations, projects with what needs you, and the open project's tickets in flight. */
+/** Loom in place of VesnALIA's thread list while the Loom page is open: home, planning conversations, projects with what needs you, and the open project's tickets in flight. */
 export function LoomSidebar({ subPath }: PluginNavPanelProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   useStored(lastRoute);
   const route = routeOf(subPath);
   // The page already shown stays one history entry, so Back after a second click on it still goes back.

@@ -14,7 +14,7 @@ import { canonicalUrlKey } from "../src/web/url.ts";
 
 describe("shared web contracts", () => {
 	it("loads the SDK testing host with its declared cron-parser peer", async () => {
-		const testing = await import("@get-bb/plugin-sdk/testing");
+		const testing = await import("@vesnalia/plugin-sdk/testing");
 		assert.equal(typeof testing.createFakePluginHost, "function");
 	});
 	it("compile as the single shared contract surface", () => {

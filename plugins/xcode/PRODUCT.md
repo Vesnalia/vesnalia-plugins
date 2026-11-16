@@ -2,7 +2,7 @@
 
 ## What it is
 
-A bb plugin that answers one question at a glance: **what is Xcode doing, and did
+A VesnALIA plugin that answers one question at a glance: **what is Xcode doing, and did
 the last thing I ran pass?** It watches every project on the machine with no
 per-project setup, capturing builds from Xcode.app, `xcodebuild`, CI scripts and
 wrapper tools alike.
@@ -21,7 +21,7 @@ they are looking at it *while* the build runs, so the surface must be stable
 under change — a layout that reflows or flickers as builds start and stop is
 worse than no live view at all.
 
-They also read it remotely through bb's web client on a second machine.
+They also read it remotely through VesnALIA's web client on a second machine.
 
 ## The two failure modes that matter
 
@@ -34,7 +34,7 @@ They also read it remotely through bb's web client on a second machine.
 
 ## Design constraints
 
-- Inherits the host bb theme; all color comes from bb's live CSS variables. The
+- Inherits the host VesnALIA theme; all color comes from VesnALIA's live CSS variables. The
   panel must look correct in any user palette, light or dark.
 - Restrained color. The accent carries running state and selection only.
 - Density is a virtue here — this is a log, not a landing page.

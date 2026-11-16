@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { cliCommand, defineCli, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { cliCommand, defineCli, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { EMPTY_SUGGESTION, hostContract, rpcContract, type Suggestion } from "./contract";
 import { suggestionPrompt } from "./logic";
 
@@ -7,15 +7,15 @@ export { rpcContract } from "./contract";
 type Job = { controller: AbortController; result: Promise<Suggestion>; consumers: number };
 type CachedSuggestion = Suggestion & { createdAt: number };
 
-export default function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     enabled: {
       type: "boolean", label: "Подсказка следующего шага",
       description: "После ответа Codex предлагать одно следующее сообщение. Tab — принять, Esc — скрыть. Использует дополнительный запрос к Codex.",
       default: true,
     },
   });
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   const jobs = new Map<string, Job>();
   const lifecycle = new AbortController();
 
@@ -24,27 +24,27 @@ export default function plugin(bb: BbPluginApi) {
     jobs.delete(threadId);
   }
   for (const event of ["thread.active", "thread.failed", "thread.archived", "thread.deleted"] as const) {
-    bb.events.on(event, ({ thread }) => cancel(thread.id));
+    alia.events.on(event, ({ thread }) => cancel(thread.id));
   }
-  bb.events.on("thread.idle", ({ thread }) => {
-    if (thread.providerId === "codex") bb.realtime.publish("turn-finished", { threadId: thread.id });
+  alia.events.on("thread.idle", ({ thread }) => {
+    if (thread.providerId === "codex") alia.realtime.publish("turn-finished", { threadId: thread.id });
   });
   settings.onChange(({ enabled }) => {
     if (!enabled) for (const threadId of jobs.keys()) cancel(threadId);
   });
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     lifecycle.abort();
     for (const threadId of jobs.keys()) cancel(threadId);
   });
 
   async function generate(threadId: string, signal: AbortSignal): Promise<Suggestion> {
-    const thread = await bb.sdk.threads.get({ threadId, signal });
+    const thread = await alia.sdk.threads.get({ threadId, signal });
     if (thread.providerId !== "codex" || thread.status !== "idle" || thread.archivedAt || !thread.environmentId) return EMPTY_SUGGESTION;
     const [reply, prompts, environment, execution] = await Promise.all([
-      bb.sdk.threads.output({ threadId, signal }),
-      bb.sdk.threads.promptHistory({ threadId, limit: "3", signal }),
-      bb.sdk.environments.get({ environmentId: thread.environmentId, signal }),
-      bb.sdk.threads.defaultExecutionOptions({ threadId, signal }),
+      alia.sdk.threads.output({ threadId, signal }),
+      alia.sdk.threads.promptHistory({ threadId, limit: "3", signal }),
+      alia.sdk.environments.get({ environmentId: thread.environmentId, signal }),
+      alia.sdk.threads.defaultExecutionOptions({ threadId, signal }),
     ]);
     if (!reply.output?.trim() || !prompts.length) return EMPTY_SUGGESTION;
     const messages = [...prompts].sort((a, b) => a.createdAt - b.createdAt).map((row) =>
@@ -54,7 +54,7 @@ export default function plugin(bb: BbPluginApi) {
     const key = createHash("sha256").update(JSON.stringify({
       prompt, model: execution?.model ?? null, lastPromptId: prompts[0]?.id,
     })).digest("hex").slice(0, 24);
-    const cache = await bb.storage.kv.get<CachedSuggestion>(`suggestion:${threadId}`);
+    const cache = await alia.storage.kv.get<CachedSuggestion>(`suggestion:${threadId}`);
     if (cache?.key === key && Date.now() - cache.createdAt < 86400000) return { key, text: cache.text };
     signal.throwIfAborted();
     const result = await host.call("complete", { prompt, model: execution?.model ?? null }, {
@@ -62,10 +62,10 @@ export default function plugin(bb: BbPluginApi) {
     });
     signal.throwIfAborted();
     if (!(await settings.get()).enabled) return EMPTY_SUGGESTION;
-    const current = await bb.sdk.threads.get({ threadId, signal });
+    const current = await alia.sdk.threads.get({ threadId, signal });
     if (current.status !== "idle" || current.archivedAt || current.providerId !== "codex") return EMPTY_SUGGESTION;
     const suggestion = { key, text: result.suggestion };
-    await bb.storage.kv.set(`suggestion:${threadId}`, { ...suggestion, createdAt: Date.now() });
+    await alia.storage.kv.set(`suggestion:${threadId}`, { ...suggestion, createdAt: Date.now() });
     return suggestion;
   }
 
@@ -78,7 +78,7 @@ export default function plugin(bb: BbPluginApi) {
       job = { controller, consumers: 0, result: Promise.resolve(EMPTY_SUGGESTION) };
       const ownJob = job;
       job.result = generate(threadId, combined).catch(() => {
-        if (!combined.aborted) bb.log.warn(`Не удалось получить подсказку для ${threadId}. Проверьте авторизацию Codex на машине диалога.`);
+        if (!combined.aborted) alia.log.warn(`Не удалось получить подсказку для ${threadId}. Проверьте авторизацию Codex на машине диалога.`);
         return EMPTY_SUGGESTION;
       }).finally(() => {
         if (jobs.get(threadId) === ownJob) jobs.delete(threadId);
@@ -104,10 +104,10 @@ export default function plugin(bb: BbPluginApi) {
   }
 
   async function status() { return { enabled: (await settings.get()).enabled, activeRequests: jobs.size }; }
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     suggest: ({ threadId }, context) => suggest(threadId, context.experimental_signal), status,
   });
-  bb.cli.register(defineCli({
+  alia.cli.register(defineCli({
     name: "next-step", summary: "Подсказка следующего сообщения для Codex",
     commands: {
       status: cliCommand({

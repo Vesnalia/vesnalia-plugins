@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  experimental_Icon as Icon, experimental_useRpcKeyedQuery, useBbNavigate, useSdk,
+  experimental_Icon as Icon, experimental_useRpcKeyedQuery, useAliaNavigate, useSdk,
   type ExperimentalThreadActionTabProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { PrView } from "../contract";
 import { ActionsProvider } from "./actions";
 import { BUTTON, BUTTON_GHOST, BUTTON_PRIMARY, CARD, ErrorNote, HEADING, ICON_GHOST, Pill, Segmented, ServerBadge, TipProvider } from "./common";
@@ -114,7 +114,7 @@ function PrCard({ pr, threadId, busy, writes, onView, onUnlink }: {
   onView(pr: PrView): void;
   onUnlink(pr: PrView): void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const role = pr.agent?.threadId === threadId ? "Agent" : (() => {
     const link = pr.links.find((entry) => entry.threadId === threadId);
     return link === undefined ? null : ROLE_LABELS[link.role].short;
@@ -165,7 +165,7 @@ function PrCard({ pr, threadId, busy, writes, onView, onUnlink }: {
 
 /** One PR in full inside the tab, as the Shuttle page shows it, with a way back to the thread's list. */
 function PanelPrView({ prKey, onBack, canExpand = true }: { prKey: string; onBack(): void; canExpand?: boolean }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const scroller = useScrollMemory(`pr/${prKey}`, true);
   return (
     <section data-shuttle-panel data-panel-pr={prKey} aria-label="Shuttle" className="flex h-full min-h-0 flex-col bg-background text-foreground">
@@ -199,7 +199,7 @@ function PanelList({ threadId, prs, data, writes, onView }: {
   const unlink = useShuttleMutation("unlink");
   const sendUnread = useShuttleMutation("sendUnread");
   const busy = link.isPending || unlink.isPending || sendUnread.isPending;
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const pending = prs?.reduce((sum, pr) => sum + pr.pendingItems, 0) ?? 0;
   const linked = new Set(prs?.map((pr) => pr.key));
 

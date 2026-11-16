@@ -1,4 +1,4 @@
-# Model Pilot for BB
+# Model Pilot for VesnALIA
 
 AI model routing for coding agents, with automatic model selection and a token usage dashboard.
 
@@ -6,10 +6,10 @@ AI model routing for coding agents, with automatic model selection and a token u
 
 [Watch the 32-second overview](media/model-pilot-overview.mp4) · [Static preview](media/model-pilot-poster.png) · [Text transcript](media/model-pilot-transcript.md)
 
-Model Pilot chooses coding models and assigns helper work inside BB.
+Model Pilot chooses coding models and assigns helper work inside VesnALIA.
 It aims to match the model to the task instead of using the same expensive model for every request.
-Choose an available BB model as the classifier and keep your existing Codex or Claude Code sign-in.
-Native BB classification does not require a separate API key.
+Choose an available VesnALIA model as the classifier and keep your existing Codex or Claude Code sign-in.
+Native VesnALIA classification does not require a separate API key.
 Native classifiers can inherit provider instructions and skills, which add overhead.
 Your provider subscription limits still apply.
 A classifier is a model that decides how the task runs.
@@ -21,27 +21,27 @@ Start with ordinary tasks and compare the results before you depend on a classif
 
 ## Install
 
-Version 0.4.5 is an experimental BB plugin for BB 0.46 on macOS.
-It uses internal BB provider bridges, so a BB update can break compatibility.
-Other platforms and BB versions do not have verified support.
+Version 0.4.5 is an experimental VesnALIA plugin for VesnALIA 0.46 on macOS.
+It uses internal VesnALIA provider bridges, so a VesnALIA update can break compatibility.
+Other platforms and VesnALIA versions do not have verified support.
 Native classification was tested with Codex CLI 0.162.1 and Claude Code 2.1.300 command interfaces.
 Older command-line versions can reject the required isolation flags.
-Make sure that your BB version matches before installation.
+Make sure that your VesnALIA version matches before installation.
 Coding model access depends on your Codex and Claude Code accounts.
 
-Install the tagged release in BB with this command.
+Install the tagged release in VesnALIA with this command.
 
 ```sh
-bb plugin install 'git:https://github.com/MahmoudElsayad/bb-model-pilot.git@^0.4.0'
+alia plugin install 'git:https://github.com/MahmoudElsayad/bb-model-pilot.git@^0.4.0'
 ```
 
-Add the publisher catalog to discover Model Pilot in BB before Community marketplace review finishes.
+Add the publisher catalog to discover Model Pilot in VesnALIA before Community marketplace review finishes.
 
 ```sh
-bb marketplace add git:https://github.com/MahmoudElsayad/bb-model-pilot.git@main
+alia marketplace add git:https://github.com/MahmoudElsayad/bb-model-pilot.git@main
 ```
 
-The BB Community marketplace submission is pending.
+The VesnALIA Community marketplace submission is pending.
 Direct Git installation does not depend on marketplace approval.
 The source uses the MIT license and accepts contributions through GitHub pull requests.
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before you make a change.
@@ -50,36 +50,36 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before you make a change.
 
 Jev is the default classifier.
 It needs a TypeSafe API key and uses its own API billing.
-You can choose a model already in BB instead.
+You can choose a model already in VesnALIA instead.
 
 To connect Jev:
 
 1. Get a key from the [TypeSafe console](https://console.typesafe.ai).
-2. Open Model Pilot in the BB navigation.
+2. Open Model Pilot in the VesnALIA navigation.
 3. Open Connection.
 4. If a connection already exists, select Change connection.
 5. Keep Jev selected and paste the key into Jev API key.
 6. Select Connect and test.
-7. Create a BB thread and select Model Pilot.
+7. Create a VesnALIA thread and select Model Pilot.
 
 Model Pilot saves the key as a secret plugin setting.
 The page receives connection status, not the saved key.
 To keep a saved key when you change the connection, leave the field empty.
 
-To use a model already in BB:
+To use a model already in VesnALIA:
 
-1. Sign in to Codex or Claude Code through BB.
-2. On the Connection page, select Model in BB.
+1. Sign in to Codex or Claude Code through VesnALIA.
+2. On the Connection page, select Model in VesnALIA.
 3. Choose a Classification model.
 4. Select Connect and test.
 
 Native classification runs through the installed Codex or Claude Code command-line program with your existing sign-in.
 It needs no separate API key.
-The model list reflects the provider catalog that BB exposes.
+The model list reflects the provider catalog that VesnALIA exposes.
 An entry in that catalog does not guarantee account access or available quota.
 The connection test consumes provider usage and can encounter subscription limits.
 Model Pilot does not include extra credits or bypass provider limits.
-The Guide tab explains routing, helpers, privacy, and usage inside BB.
+The Guide tab explains routing, helpers, privacy, and usage inside VesnALIA.
 
 ## Classifier choices
 
@@ -90,48 +90,48 @@ For native classification, a smaller available model limits classification overh
 A model's routing quality depends on the tasks and the provider's responses.
 Successful connection tests establish a working response, not equivalent routing quality across models.
 
-The legacy direct OpenAI and Anthropic API adapters require separate API keys through BB plugin settings.
+The legacy direct OpenAI and Anthropic API adapters require separate API keys through VesnALIA plugin settings.
 They use fixed official endpoints and structured response formats.
-Other platforms and BB versions do not have verified support.
+Other platforms and VesnALIA versions do not have verified support.
 Native classification was tested with Codex CLI 0.162.1 and Claude Code 2.1.300 command interfaces.
 Older command-line versions can reject the required isolation flags.
-Make sure that your BB version matches before installation.
+Make sure that your VesnALIA version matches before installation.
 Coding model access depends on your Codex and Claude Code accounts.
 
-Install the tagged release in BB with this command.
+Install the tagged release in VesnALIA with this command.
 
 ```sh
-bb plugin install 'git:https://github.com/MahmoudElsayad/bb-model-pilot.git@^0.4.0'
+alia plugin install 'git:https://github.com/MahmoudElsayad/bb-model-pilot.git@^0.4.0'
 ```
 
-Add the publisher catalog to discover Model Pilot in BB before Community marketplace review finishes.
+Add the publisher catalog to discover Model Pilot in VesnALIA before Community marketplace review finishes.
 
 ```sh
-bb marketplace add git:https://github.com/MahmoudElsayad/bb-model-pilot.git@main
+alia marketplace add git:https://github.com/MahmoudElsayad/bb-model-pilot.git@main
 ```
 
-The BB Community marketplace submission is pending.
+The VesnALIA Community marketplace submission is pending.
 Direct Git installation does not depend on marketplace approval.
 The source uses the MIT license and accepts contributions through GitHub pull requests.
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before you make a change.
 
-## Connect your BB model
-Model Pilot reads the available models from BB's installed Codex and Claude Code providers.
-The model list reflects the provider catalog that BB exposes.
+## Connect your VesnALIA model
+Model Pilot reads the available models from VesnALIA's installed Codex and Claude Code providers.
+The model list reflects the provider catalog that VesnALIA exposes.
 An entry in that catalog does not guarantee account access or available quota.
 
-1. Sign in to Codex or Claude Code through BB.
-2. Open Model Pilot in the BB navigation.
+1. Sign in to Codex or Claude Code through VesnALIA.
+2. Open Model Pilot in the VesnALIA navigation.
 3. Open Connection.
 4. If a connection already exists, select Change connection.
 5. Choose a Classification model.
 6. Select Connect and test.
-7. Create a BB thread and select Model Pilot.
+7. Create a VesnALIA thread and select Model Pilot.
 
 Native classification runs through the installed Codex or Claude Code command-line program with your existing sign-in.
 The connection test consumes provider usage and can encounter subscription limits.
 Model Pilot does not include extra credits or bypass provider limits.
-The Guide tab explains routing, helpers, privacy, and usage inside BB.
+The Guide tab explains routing, helpers, privacy, and usage inside VesnALIA.
 
 ## Classifier choices
 
@@ -141,14 +141,14 @@ Native Codex and Claude Code classification uses your existing agent sign-ins.
 A model's routing quality depends on the tasks and the provider's responses.
 Successful connection tests establish a working response, not equivalent routing quality across models.
 
-Existing Jev configuration remains available as an optional advanced mode through BB plugin settings.
+Existing Jev configuration remains available as an optional advanced mode through VesnALIA plugin settings.
 Jev uses a separate API key and API billing.
 Its default model is `jev-latest`.
 It retains the original routing policy's TypeSafe judgments and probabilities.
 Get an optional Jev key through the [TypeSafe console](https://console.typesafe.ai).
-The legacy direct OpenAI and Anthropic API adapters also require separate API keys through BB plugin settings.
+The legacy direct OpenAI and Anthropic API adapters also require separate API keys through VesnALIA plugin settings.
 They use fixed official endpoints and structured response formats.
-A native BB model does not need those API adapters or keys.
+A native VesnALIA model does not need those API adapters or keys.
 
 ## How the work flows
 
@@ -183,7 +183,7 @@ The plugin archives completed helpers and releases their runtimes.
 The `auto_plan` tool assigns plan steps.
 The `auto_delegate` tool runs an assigned helper.
 The `auto_step_done` tool records a completed main step.
-Background helpers return their reports through BB's child thread mechanism.
+Background helpers return their reports through VesnALIA's child thread mechanism.
 Foreground helpers return their reports through the tool result.
 The main agent remains responsible for the final result.
 
@@ -249,8 +249,8 @@ The current implementation limits routing text to 12,000 characters.
 Native classification sends those requests through the installed Codex or Claude Code program with your existing sign-in.
 Review your chosen provider's data policies before you send confidential work.
 
-BB manages native provider sign-ins.
-Optional API modes use BB secret storage and private host provisioning.
+VesnALIA manages native provider sign-ins.
+Optional API modes use VesnALIA secret storage and private host provisioning.
 Host credential files use owner-only permissions, `0600`.
 The page receives status rather than a saved secret.
 Never put a key in chat, a screenshot, a source file, or a command argument.
@@ -258,15 +258,15 @@ Read [PRIVACY.md](PRIVACY.md) for stored fields, retention, and removal limits.
 
 ## Connection problems
 
-If the BB model list is empty, make sure that a supported native provider is installed and available in BB.
-If Codex or Claude Code requests a login, sign in through its existing BB integration.
+If the VesnALIA model list is empty, make sure that a supported native provider is installed and available in VesnALIA.
+If Codex or Claude Code requests a login, sign in through its existing VesnALIA integration.
 If your account lacks model access or quota, choose an available model or restore access with the provider.
 A catalog entry does not guarantee that your account can start that model.
 
 If an optional API connection fails, make sure that its separate API account has credit and model access.
 A coding subscription does not supply API credit for those optional modes.
 If a legacy API key is invalid or revoked, create a replacement with that provider.
-Update its corresponding BB plugin setting.
+Update its corresponding VesnALIA plugin setting.
 
 If classification fails during work, the routing policy can choose its Opus medium fallback.
 That fallback can cost more than the expected route and still requires access to its coding provider.
@@ -279,14 +279,14 @@ Run this command to preview classification without starting a coding agent.
 The preview still consumes usage through your selected classifier.
 
 ```sh
-bb auto route 'Explain what this function does.'
+alia auto route 'Explain what this function does.'
 ```
 
 Run this command to inspect a thread's route, plan, history, and estimated usage cost.
-Replace `<thread-id>` with the BB thread identifier.
+Replace `<thread-id>` with the VesnALIA thread identifier.
 
 ```sh
-bb auto status --thread <thread-id>
+alia auto status --thread <thread-id>
 ```
 
 The display name is Model Pilot.
@@ -296,9 +296,9 @@ The original Jev routing core and model descriptions come from the T3 Code Auto 
 The `routing/provenance.json` file records source hashes.
 The default configuration keeps `toolsOnPickedThreads: false`, as the original patch does.
 
-This adapter supports BB 0.46 on macOS, bridge protocol 2, and grammar version 3.
-It uses BB's bundled provider bridges because the public SDK does not export reusable Codex and Claude factories.
-A BB update can require an adapter update.
+This adapter supports VesnALIA 0.46 on macOS, bridge protocol 2, and grammar version 3.
+It uses VesnALIA's bundled provider bridges because the public SDK does not export reusable Codex and Claude factories.
+A VesnALIA update can require an adapter update.
 Read [the release requirements](PUBLIC-RELEASE.md) before public distribution or installation on other hosts.
 Read [PRIVACY.md](PRIVACY.md) for stored fields, retention, and credential removal.
 Read [SECURITY.md](SECURITY.md) to report a vulnerability without sharing secrets publicly.
@@ -307,7 +307,7 @@ Read [SECURITY.md](SECURITY.md) to report a vulnerability without sharing secret
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) for installation, test commands, and pull request guidance.
 Keep the supplied pnpm configuration and its seven-day package cooldown.
-The tests cover routing parity, classifier failures, native sessions, permissions, plans, helpers, cleanup, and BB bridge conformance.
+The tests cover routing parity, classifier failures, native sessions, permissions, plans, helpers, cleanup, and VesnALIA bridge conformance.
 Successful requests to each classifier still depend on valid provider credentials and model access.
 Test coverage does not establish equivalent routing quality across classifiers.
 

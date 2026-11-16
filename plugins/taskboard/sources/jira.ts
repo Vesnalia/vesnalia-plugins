@@ -560,12 +560,12 @@ export function createJiraAdapter(options: {
     configured: () => configured,
     configurationMessage: () =>
       !options.enabled
-        ? 'Enable Jira for this BB project in Manage.'
+        ? 'Enable Jira for this VesnALIA project in Manage.'
         : rawBaseUrl && !baseUrl
           ? 'Jira Cloud URL must be an HTTPS atlassian.net origin.'
           : hasCredentials
             ? null
-            : 'Set the Jira URL, email, and API token for this BB project in Manage.',
+            : 'Set the Jira URL, email, and API token for this VesnALIA project in Manage.',
     async list() {
       if (!configured) throw new Error('Jira is not configured');
       const issues: z.infer<typeof jiraIssueSchema>[] = [];

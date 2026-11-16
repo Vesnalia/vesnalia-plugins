@@ -1,6 +1,6 @@
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { moveHostContract } from "./move-contract";
 import { archiveSchema } from "./archive";
 type Move = {
@@ -16,11 +16,11 @@ type Move = {
 const within = (p: string, r: string) =>
   p === r || p.startsWith(r.endsWith(path.sep) ? r : r + path.sep);
 export function makeProjectMoves(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   changed: () => void,
   pending: () => Promise<unknown>,
 ) {
-  const db = bb.storage.database();
+  const db = alia.storage.database();
   const list = () =>
     (
       db.prepare("SELECT data FROM project_moves").all() as { data: string }[]
@@ -42,7 +42,7 @@ export function makeProjectMoves(
     }
     throw new Error("Too many project relocation links.");
   };
-  const host = bb.hosts.experimental_client({ contract: moveHostContract });
+  const host = alia.hosts.experimental_client({ contract: moveHostContract });
   let running = false;
   async function move(input: {
     projectId: string;
@@ -53,7 +53,7 @@ export function makeProjectMoves(
     running = true;
     let m: Move | undefined;
     try {
-      const projects = await bb.sdk.projects.list();
+      const projects = await alia.sdk.projects.list();
       const project = projects.find((p) => p.id === input.projectId);
       const source = project?.sources.find(
         (s) => s.type === "local_path" && s.hostId === input.hostId,
@@ -92,9 +92,9 @@ export function makeProjectMoves(
         )
       )
         throw new Error(
-          "Another BB project uses the source or destination tree. Move it separately.",
+          "Another VesnALIA project uses the source or destination tree. Move it separately.",
         );
-      const envs = await bb.sdk.environments.list();
+      const envs = await alia.sdk.environments.list();
       if (
         envs.some(
           (e) =>
@@ -140,7 +140,7 @@ export function makeProjectMoves(
       async function checkThreads(stop: boolean) {
         for (const archived of [false, true])
           for (let offset = 0; ; offset += 200) {
-            const threads = await bb.sdk.threads.list({
+            const threads = await alia.sdk.threads.list({
               projectId: project!.id,
               archived,
               includeHidden: true,
@@ -158,7 +158,7 @@ export function makeProjectMoves(
                 throw new Error(
                   "Finish all running chats and queued work before moving the project.",
                 );
-              if (stop) await bb.sdk.threads.stop({ threadId: t.id });
+              if (stop) await alia.sdk.threads.stop({ threadId: t.id });
             }
             if (threads.length < 200) break;
           }
@@ -174,7 +174,7 @@ export function makeProjectMoves(
         { source: m.source, destination: m.destination },
         { hostId: m.hostId },
       );
-      await bb.sdk.projects.sources.update({
+      await alia.sdk.projects.sources.update({
         projectId: m.projectId,
         sourceId: m.sourceId,
         type: "local_path",
@@ -182,7 +182,7 @@ export function makeProjectMoves(
       });
       const remap = (p: string) =>
         within(p, m!.source) ? m!.destination + p.slice(m!.source.length) : p;
-      // Rebase archive manifests too; canonical BB transcripts retain their historical text.
+      // Rebase archive manifests too; canonical VesnALIA transcripts retain their historical text.
       const newArchives = archived
         .filter(
           (a) =>
@@ -197,7 +197,7 @@ export function makeProjectMoves(
           members: a.members.map((f) => ({ ...f, path: remap(f.path) })),
         }));
       for (const a of newArchives)
-        await bb.sdk.files.write({
+        await alia.sdk.files.write({
           hostId: m.hostId,
           path: path.join(path.dirname(a.archivePath), "manifest.json"),
           content: JSON.stringify(a, null, 2),

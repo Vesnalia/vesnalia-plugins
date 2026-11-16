@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-triage",
+  "name": "alia-plugin-triage",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.42",
-    "bbPluginSdk": "^0.4.47"
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.6"
   },
-  "bb": {
+  "alia": {
     "name": "Triage",
     "description": "Keep agent tasks, progress, and work that needs your attention in one board.",
     "branding": {
@@ -31,7 +31,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.47",
     "@radix-ui/react-dialog": "^1.1.19",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
@@ -47,18 +46,27 @@
     "vaul": "^1.1.2"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "tsx --test tests/**/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "license": "MIT",
   "author": "Mayank Bansal",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.47"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/triage#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MayankBansal12/bb-plugin-triage.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/triage"
   },
-  "homepage": "https://github.com/MayankBansal12/bb-plugin-triage#readme",
   "bugs": {
-    "url": "https://github.com/MayankBansal12/bb-plugin-triage/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

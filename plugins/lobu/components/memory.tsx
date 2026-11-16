@@ -1,8 +1,8 @@
-// Lobu memory in bb: the thread panel. It shows what a thread was given,
+// Lobu memory in VesnALIA: the thread panel. It shows what a thread was given,
 // looked up, and saved, and the project's pins, note box, and brief.
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { UrlLink, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "@/lib/contract";
 import type {
   MemoryHit,
@@ -505,7 +505,7 @@ export function ProjectBrief({ projectId }: { projectId: string }) {
 const THREAD_POLL_MS = 15_000;
 
 /** The thread's Lobu memory panel: what it started with, looked up, and saved. */
-/** Lobu's events page with everything bb saved through the login it uses. */
+/** Lobu's events page with everything VesnALIA saved through the login it uses. */
 function SavedInLobu() {
   const rpc = useRpc<typeof rpcContract>();
   const [url, setUrl] = useState<string | null>(null);
@@ -518,7 +518,7 @@ function SavedInLobu() {
   if (url === null) return null;
   return (
     <UrlLink href={url} className="inline-block text-xs text-muted-foreground underline hover:text-foreground">
-      See everything bb saved in Lobu
+      See everything VesnALIA saved in Lobu
     </UrlLink>
   );
 }

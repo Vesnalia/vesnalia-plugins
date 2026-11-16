@@ -4,7 +4,7 @@
 // server.ts (the backend and its dependencies are erased from the frontend
 // bundle), so any runtime value both sides need lives here instead.
 
-/** Matches the installed plugin id — `bb-plugin-session-notes` minus the prefix. */
+/** Matches the installed plugin id — `alia-plugin-session-notes` minus the prefix. */
 export const PLUGIN_ID = "session-notes";
 
 /** Realtime channel for "this thread's notes changed" signals. */

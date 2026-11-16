@@ -1,26 +1,17 @@
 {
-  "name": "@gpambrozio/bb-plugin-learning-exercises",
+  "name": "@gpambrozio/alia-plugin-learning-exercises",
   "version": "0.3.0",
   "license": "MIT AND CC-BY-4.0",
   "author": "gpambrozio (https://github.com/gpambrozio)",
-  "homepage": "https://github.com/gpambrozio/bb-plugins/tree/main/learning-exercises#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/gpambrozio/bb-plugins.git",
-    "directory": "learning-exercises"
-  },
-  "bugs": {
-    "url": "https://github.com/gpambrozio/bb-plugins/issues"
-  },
   "type": "module",
   "engines": {
-    "bb": ">=0.48.1",
-    "bbPluginSdk": ">=0.6.104"
+    "alia": ">=0.48.1",
+    "aliaPluginSdk": ">=0.6.104"
   },
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "gen:content": "node scripts/gen-content.mjs"
   },
   "files": [
@@ -43,7 +34,7 @@
     "!**/*.test.tsx",
     "!server/testing/"
   ],
-  "bb": {
+  "alia": {
     "name": "Learning Exercises",
     "description": "Get a short exercise on work you just did with an agent, offered after commits and run in a side thread with an answer card.",
     "branding": {
@@ -59,7 +50,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@pierre/diffs": "1.5.1",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -90,5 +80,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "5.0.5"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/learning-exercises#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/learning-exercises"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,4 +1,4 @@
-Browse the project that belongs to the active BB thread without leaving the
+Browse the project that belongs to the active VesnALIA thread without leaving the
 right sidebar.
 
 ## What you get
@@ -6,7 +6,7 @@ right sidebar.
 - The current Environment or Worktree's file and folder tree.
 - Git status indicators for files and folders when the workspace is a Git
   repository.
-- BB's built-in preview for text, Markdown, and image files.
+- VesnALIA's built-in preview for text, Markdown, and image files.
 
 ## How it works
 
@@ -22,5 +22,5 @@ unchanged.
 
 ## Requirements
 
-The plugin requires a BB version compatible with the package's declared engine
+The plugin requires a VesnALIA version compatible with the package's declared engine
 range and a thread with an available Environment for the tree to appear.

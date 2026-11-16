@@ -8,7 +8,7 @@ export type MachineHosts = readonly DockerHostView[] | null;
 
 export function machineIdOf(config: BackendConfig): string | null {
   const host = config.type === "docker" ? config.fields.host : undefined;
-  return typeof host === "string" && host.startsWith("bb:") ? host.slice("bb:".length) : null;
+  return typeof host === "string" && host.startsWith("alia:") ? host.slice("alia:".length) : null;
 }
 
 export function machineOf(hosts: MachineHosts, config: BackendConfig): DockerHostView | null {
@@ -29,7 +29,7 @@ export function dockerFacts(host: DockerHostView): string[] {
 export function hostState(host: DockerHostView, backend: BackendConfig | null): { tone: Tone; text: string } {
   const boxes = host.backend?.boxes ?? 0;
   const held = boxes ? `, ${boxes} ${boxes === 1 ? "box" : "boxes"} on it` : "";
-  if (!host.connected) return { tone: "warn", text: `Offline in BB${held}` };
+  if (!host.connected) return { tone: "warn", text: `Offline in VesnALIA${held}` };
   if (!host.docker && !host.absent) return { tone: "bad", text: `Cannot host boxes${held}` };
   if (!host.docker) return { tone: backend ? "bad" : "off", text: backend ? `No Docker now${held}` : "No Docker" };
   if (backend?.enabled) return { tone: "ok", text: `Hosts boxes${held}` };
@@ -55,7 +55,7 @@ function buildStep(build: ImageBuild): string {
 }
 
 export function fixLines(fix: DockerFix): string {
-  return `${fix.command}${fix.restart ? `, then ${fix.restart}` : ", then restart BB there"}`;
+  return `${fix.command}${fix.restart ? `, then ${fix.restart}` : ", then restart VesnALIA there"}`;
 }
 
 export interface MachineTrouble {
@@ -71,8 +71,8 @@ export function machineTrouble(config: BackendConfig, hosts: MachineHosts): Mach
   const hostId = machineIdOf(config);
   if (!hostId || !hosts) return null;
   const host = hosts.find((candidate) => candidate.hostId === hostId);
-  if (!host) return { status: "failing", tone: "bad", words: "Cannot host boxes", detail: "BB has no such persistent machine now.", fix: "Add the machine to BB again, or remove this backend." };
-  if (!host.connected) return { status: "failing", tone: "warn", words: "Offline in BB", detail: host.problem ?? "The machine is offline in BB.", fix: `Start ${host.name}, or BB on it, then check again.`, offline: true };
+  if (!host) return { status: "failing", tone: "bad", words: "Cannot host boxes", detail: "VesnALIA has no such persistent machine now.", fix: "Add the machine to VesnALIA again, or remove this backend." };
+  if (!host.connected) return { status: "failing", tone: "warn", words: "Offline in VesnALIA", detail: host.problem ?? "The machine is offline in VesnALIA.", fix: `Start ${host.name}, or VesnALIA on it, then check again.`, offline: true };
   if (host.docker) return null;
   if (host.absent) return { status: "failing", tone: "bad", words: "Cannot host boxes", detail: `${host.name} has no Docker now.`, fix: "Install Docker Engine there, then check again." };
   const detail = host.problem ?? "Docker there does not answer.";

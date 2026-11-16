@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://bb.app/schemas/bb-wireframe-v2.json",
-  "title": "BB Wireframe v2",
+  "title": "VesnALIA Wireframe v2",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -13,7 +13,7 @@
   ],
   "properties": {
     "format": {
-      "const": "bb-wireframe"
+      "const": "alia-wireframe"
     },
     "version": {
       "const": 2

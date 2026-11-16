@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { definePluginApp, experimental_usePluginId, useSdk, useSettings } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, experimental_usePluginId, useSdk, useSettings } from "@vesnalia/plugin-sdk/app";
 import { mountQueueCollapse } from "./collapse-queue";
 import { mountToolGrouping } from "./group-tools";
 import { AREAS, buildCss } from "./rules";
@@ -17,10 +17,10 @@ function HideStyles() {
   }, [collapseToolCalls, sdk]);
   const collapseQueue = values?.collapseQueue === true;
   useEffect(() => (collapseQueue ? mountQueueCollapse() : undefined), [collapseQueue]);
-  return <style data-bb-minus="">{css}</style>;
+  return <style data-alia-minus="">{css}</style>;
 }
 
-// Classes copied from bb's declarative settings form so the grouped cards match it.
+// Classes copied from VesnALIA's declarative settings form so the grouped cards match it.
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (next: boolean) => void }) {
   const state = checked ? "checked" : "unchecked";
   return (
@@ -55,7 +55,7 @@ function GroupedSettings() {
   const sdk = useSdk();
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
-  // Optimistic until the next settings snapshot arrives (also picks up `bb plugin config` changes).
+  // Optimistic until the next settings snapshot arrives (also picks up `alia plugin config` changes).
   useEffect(() => setPending({}), [values]);
   const set = (key: string, next: boolean) => {
     setPending((p) => ({ ...p, [key]: next }));

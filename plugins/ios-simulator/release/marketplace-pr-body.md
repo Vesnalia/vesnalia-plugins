@@ -1,11 +1,11 @@
-Adds iOS Simulator: a shared simulator panel beside a BB thread, native agent
+Adds iOS Simulator: a shared simulator panel beside a VesnALIA thread, native agent
 controls, and an initial Android emulator screenshot preview.
 
 Source: https://github.com/peteabu/bb-plugin-ios-simulator.git,
 Git range `^0.1.0`, immutable release tag `v0.1.0`.
 
-Plugin checks pass: **110 tests across 14 files**, TypeScript, BB plugin
-build, and reload. Native BB Home, Lock, full-cycle toolbar rotation, and
+Plugin checks pass: **110 tests across 14 files**, TypeScript, VesnALIA plugin
+build, and reload. Native VesnALIA Home, Lock, full-cycle toolbar rotation, and
 explicit attachment/default selection pass live checks. Foreground pointer
 actions reach the expected asymmetric targets in portrait and both landscape
 orientations. A 90-second H.264 run decoded **546/546 frames without errors**
@@ -18,14 +18,14 @@ PNG format/width/size, no orphan screenshots, overview and draft-copy equality,
 full build (384 entries), v1 addition gate, all 43 tests, upload retry tests,
 and whitespace. One unchanged entry has an unrelated missing-category warning.
 
-The plugin requires BB 0.46+/Plugin SDK 0.6.37+. iOS requires an Apple Silicon
+The plugin requires VesnALIA 0.46+/Plugin SDK 0.6.37+. iOS requires an Apple Silicon
 Mac with Xcode, the iOS platform, and Node.js 20+. Android requires an existing
-Android SDK and AVD. Local helpers capture and control the device; BB proxies
+Android SDK and AVD. Local helpers capture and control the device; VesnALIA proxies
 the panel and asks for agent control permission by default. No additional
 external account or hosted service is required. Native source/binary licenses
 and provenance are included; Xcode artwork is read locally, not bundled.
 
-`screenshots/ios-simulator/panel-eb92b3d6.png` shows the real installed BB panel
+`screenshots/ios-simulator/panel-eb92b3d6.png` shows the real installed VesnALIA panel
 with Truffle's Create conversation/Wikipedia topics, local Apple device frame,
 picker, and footer controls. The reviewed native-window crop is 1472×1600 and
 278,376 bytes, without private chat or paths. It remains accurate after the

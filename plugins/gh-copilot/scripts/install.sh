@@ -5,10 +5,10 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 AGENT_JSON="$ROOT/config/custom-acp-agent.json"
 LOGO_SRC="$ROOT/assets/logo.svg"
 
-BB_DATA_DIR="${BB_DATA_DIR:-${HOME}/.bb}"
-CONFIG_PATH="$BB_DATA_DIR/config.json"
+ALIA_DATA_DIR="${ALIA_DATA_DIR:-${HOME}/.alia}"
+CONFIG_PATH="$ALIA_DATA_DIR/config.json"
 LOGO_NAME="copilot-logo.svg"
-LOGO_DST="$BB_DATA_DIR/$LOGO_NAME"
+LOGO_DST="$ALIA_DATA_DIR/$LOGO_NAME"
 CLI_NAME="copilot"
 
 if [[ ! -f "$AGENT_JSON" ]]; then
@@ -24,13 +24,13 @@ fi
 COPILOT_CMD="$CLI_NAME"
 if ! command -v "$CLI_NAME" >/dev/null 2>&1; then
   echo "warning: copilot not on PATH — install with: brew install --cask copilot-cli" >&2
-  echo "warning: bb's host daemon may not share your shell PATH; install will keep command as \"copilot\"" >&2
+  echo "warning: alia's host daemon may not share your shell PATH; install will keep command as \"copilot\"" >&2
 else
   COPILOT_CMD="$(command -v "$CLI_NAME")"
   echo "copilot: $COPILOT_CMD ($("$COPILOT_CMD" --version 2>/dev/null | head -1))"
 fi
 
-mkdir -p "$BB_DATA_DIR"
+mkdir -p "$ALIA_DATA_DIR"
 cp "$LOGO_SRC" "$LOGO_DST"
 chmod 644 "$LOGO_DST"
 
@@ -57,7 +57,7 @@ NEXT="$(
 )"
 
 umask 077
-TMP="$(mktemp "${BB_DATA_DIR}/.config.json.XXXXXX")"
+TMP="$(mktemp "${ALIA_DATA_DIR}/.config.json.XXXXXX")"
 printf '%s\n' "$(jq '.' <<<"$NEXT")" >"$TMP"
 mv "$TMP" "$CONFIG_PATH"
 chmod 600 "$CONFIG_PATH"
@@ -68,9 +68,9 @@ echo "custom agents: $(jq -r '[.customAcpAgents[]?.id] | join(", ")' "$CONFIG_PA
 
 refreshed=0
 refresh_candidates=(
-  "bb-app"
-  "/Applications/bb.app/Contents/MacOS/bb-app"
-  "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/dist/bb-app.js"
+  "alia-app"
+  "/Applications/alia.app/Contents/MacOS/alia-app"
+  "/Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/dist/alia-app.js"
 )
 for cmd in "${refresh_candidates[@]}"; do
   if [[ "$cmd" == *.js ]]; then
@@ -89,10 +89,10 @@ for cmd in "${refresh_candidates[@]}"; do
 done
 
 if [[ "$refreshed" -eq 0 ]]; then
-  echo "note: restart bb or run: bb-app config refresh"
+  echo "note: restart alia or run: alia-app config refresh"
 fi
 
 echo
 echo "verify:"
-echo "  bb provider list"
-echo "  bb provider models acp-$AGENT_ID"
+echo "  alia provider list"
+echo "  alia provider models acp-$AGENT_ID"

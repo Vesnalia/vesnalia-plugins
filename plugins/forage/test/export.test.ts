@@ -5,7 +5,7 @@ import { fixtureServices } from "./fixtures/ui/services.ts";
 const fixtures: ReturnType<typeof fixtureServices>[] = [];
 afterEach(async () => { for (const f of fixtures.splice(0)) await f.close(); });
 function setup() {
- const f = fixtureServices(); fixtures.push(f); const api = createSourcesRpc(f.bb, f); registerSourcesHttp(f.bb, f, api);
+ const f = fixtureServices(); fixtures.push(f); const api = createSourcesRpc(f.alia, f); registerSourcesHttp(f.alia, f, api);
  const download = (input: unknown) => f.harness.behavior.fetchHttp("GET", `${EXPORT_PATH}?request=${encodeURIComponent(JSON.stringify(input))}`);
  return { ...f, download };
 }

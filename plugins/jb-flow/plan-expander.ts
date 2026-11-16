@@ -1,10 +1,10 @@
 // Expanded, resizable plan reviews (the "Expand plan reviews" setting).
 // --- plan review banners -----------------------------------------------------------
-// BB renders a plan awaiting approval in a banner that starts collapsed, caps its
+// VesnALIA renders a plan awaiting approval in a banner that starts collapsed, caps its
 // body at min(32rem, 50dvh) and sizes the banner to the space left in the thread.
 // Core renderers can't be replaced, so this content script expands each banner
 // once when it appears (a manual collapse sticks) and lets it take ~75% of the
-// window with a single scroll area, resizable by dragging. Selectors are BB's own test ids.
+// window with a single scroll area, resizable by dragging. Selectors are VesnALIA's own test ids.
 
 // Only with the "Expand plan reviews" setting on: CommandHost sets this flag on <html>.
 export const EXPAND_PLANS_FLAG = "jbFlowExpandPlans";

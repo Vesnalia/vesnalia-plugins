@@ -12,19 +12,19 @@ opened by the toolbar's double-duty gift/gear icon): tabs Behavior
 (the pane's Escape setting), Appearance (card animations, motion, wallpaper),
 What's new (the changelog feed with per-line amber), About (identity).
 
-**Surface B, bb's plugin detail page** (`Tools`, section "Configuration"):
+**Surface B, VesnALIA's plugin detail page** (`Tools`, section "Configuration"):
 host-rendered from the six settings `server.ts` declares through
-`bb.settings.define`: `escStopsRunningThread`,
+`alia.settings.define`: `escStopsRunningThread`,
 `scrollDebugInstrumentation`, and the two sweep threshold pairs
 (`doneArchiveValue` + `doneArchiveUnit`, `idleArchiveValue` +
-`idleArchiveUnit`). bb paints a native control per declared setting there.
+`idleArchiveUnit`). VesnALIA paints a native control per declared setting there.
 The sidebar footer gear (`app.slots.sidebarFooterAction` id `open-settings`)
-jumps to this page; it is the plugin's own shortcut because bb's sidebar entry
+jumps to this page; it is the plugin's own shortcut because VesnALIA's sidebar entry
 context menu has no plugin extension point.
 
-**Surface C, the CLI.** `bb plugin config focus-board [set|unset] <key>
+**Surface C, the CLI.** `alia plugin config focus-board [set|unset] <key>
 <value>` edits all six declared keys and is host-validated. The plugin's own
-`bb focus-board config show|set` covers the four sweep keys only. The server
+`alia focus-board config show|set` covers the four sweep keys only. The server
 reads the sweep thresholds itself (`settings.get()` inside the sweep command),
 so the sweep can never be a browser-side value.
 
@@ -71,12 +71,12 @@ Appearance tab (later mirrored outward, see D3). Is it a view of the current
 data? Then it belongs to the toolbar's view controls, never to settings. The
 standing boundary rule stands with a sharpened edge: the view menu is how the
 board looks right now, the settings modal is how the board behaves always,
-and declared settings are the behaviors bb itself (or another browser) must
+and declared settings are the behaviors VesnALIA itself (or another browser) must
 be able to read.
 
 **P4, the modal is the operator surface, the config panel is the complete
 surface.** The modal holds what a board user adjusts (operator settings plus
-look prefs). bb's config page shows every declared setting with its native
+look prefs). VesnALIA's config page shows every declared setting with its native
 control, including developer settings the modal deliberately leaves out. The
 modal never embeds a link-out for declared settings; declared operator
 settings render as real controls right in the Behavior tab.
@@ -129,7 +129,7 @@ retitling costs one string.
 
 **D5, the plugin CLI's config commands retire.** Ruled 2026-10-10 (operator
 thread thr_2vjgvw98xc): the plugin CLI no longer carries `config show|set`,
-keep true. `bb focus-board` keeps the state commands (done, group, link,
+keep true. `alia focus-board` keeps the state commands (done, group, link,
 snooze, autotitle, sweep).
 
 **Developer settings in the modal.** `scrollDebugInstrumentation` stays
@@ -166,12 +166,12 @@ designed, never a settings write.
    (PR #65): the `settingsSection` registration, the shared
    `components/appearance-controls.tsx` anatomy, the standalone
    `?page=configuration` harness mount, and unit plus headless coverage.
-2. ~~The `bb focus-board config` retirement ruling~~ Ruled and landed in the
+2. ~~The `alia focus-board config` retirement ruling~~ Ruled and landed in the
    same PR (operator thread thr_2vjgvw98xc): the plugin CLI's `config
-   show|set` retired, `bb plugin config focus-board` keeps the one door, and
+   show|set` retired, `alia plugin config focus-board` keeps the one door, and
    the README CLI block names it.
 3. Mobile settings page (`experimental_page: "mobile"` on
-   `settingsSection`) if bb's mobile settings surface ever needs the mirrors.
+   `settingsSection`) if VesnALIA's mobile settings surface ever needs the mirrors.
 
 ## Test plan
 

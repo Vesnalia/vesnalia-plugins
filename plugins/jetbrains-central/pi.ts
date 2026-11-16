@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 import type { Profile } from "./profiles.js";
 import { centralArgs } from "./profiles.js";
-import type { AvailableModel } from "@get-bb/plugin-sdk/provider-bridge";
+import type { AvailableModel } from "@vesnalia/plugin-sdk/provider-bridge";
 
 export const CENTRAL_PI_PROVIDERS = new Set(["openai", "anthropic", "google-vertex"]);
 export function isWorkPiModel(id: string) { return CENTRAL_PI_PROVIDERS.has(id.split("/")[0]); }

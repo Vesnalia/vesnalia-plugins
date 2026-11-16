@@ -7,7 +7,7 @@ import {
   experimental_formatConformanceReport as formatConformanceReport,
   experimental_runBridgeConformance as runBridgeConformance,
   type CapturedBridgeJsonRpcOutput,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import { handleLine } from "../src/bridge.js";
 import { createFakeServer, createTransport } from "./fake-server.js";
 
@@ -15,7 +15,7 @@ let output: CapturedBridgeJsonRpcOutput;
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-moa-conformance-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "alia-moa-conformance-"));
   output = captureBridgeJsonRpcOutput();
 });
 

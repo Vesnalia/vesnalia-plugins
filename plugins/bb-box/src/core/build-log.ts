@@ -7,7 +7,7 @@ const STEP = /^#\d+ \[([^\]]+ \d+\/\d+)\]/;
 const BUILDKIT_OUTPUT = /^#\d+ /;
 
 export function buildLogDir(): string {
-  return join(tmpdir(), "bb-box-build-logs");
+  return join(tmpdir(), "alia-box-build-logs");
 }
 
 export class BuildLog {

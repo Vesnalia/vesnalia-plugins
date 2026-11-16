@@ -39,7 +39,7 @@ account does not opt it into automation.
 
 ## Client contract
 
-For the existing BB provider `acp-agy`, Pooler contributes only:
+For the existing VesnALIA provider `acp-agy`, Pooler contributes only:
 
 - `OXI_AGY_POOL_BASE_URL`: the plugin HTTP root followed by `/agy`.
 - `OXI_AGY_POOL_AUTH_TOKEN`: the scoped pool credential, never a Google token.
@@ -59,7 +59,7 @@ External trusted clients use the same scoped pool credential as other pool
 routes. The native GenAI base is `B/agy`, where `B` is the plugin HTTP root.
 Routes are `GET B/agy/v1beta/models` and
 `POST B/agy/v1beta/models/{model}:generateContent` or `:streamGenerateContent`.
-Models must come from the authenticated catalog. BB route registration is exact:
+Models must come from the authenticated catalog. VesnALIA route registration is exact:
 login and catalog responses register validated model IDs; only those IDs are
 cached, up to 512 total. Unsupported actions or unknown model paths refuse.
 The standalone host recognizes the same native paths directly.

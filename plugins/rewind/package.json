@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-rewind",
+  "name": "alia-plugin-rewind",
   "version": "0.1.2",
   "description": "Undo an agent's file changes turn by turn, on every provider.",
   "type": "module",
   "license": "MIT",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.5.9"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.5.9"
   },
-  "bb": {
+  "alia": {
     "name": "Rewind",
     "description": "Undo an agent's file changes turn by turn: automatic checkpoints, diffs per turn, reversible restores, and forks with files.",
     "branding": {
@@ -24,8 +24,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build": "bb plugin build",
-    "dev": "bb plugin dev",
+    "build": "alia plugin build",
+    "dev": "alia plugin dev",
     "check": "tsc --noEmit && vitest run"
   },
   "dependencies": {
@@ -36,7 +36,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.9",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -67,5 +66,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^3.2.7"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.9"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/rewind#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/rewind"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

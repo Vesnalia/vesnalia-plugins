@@ -1,4 +1,4 @@
-// bb-plugin-qlik-sense — server entry.
+// alia-plugin-qlik-sense — server entry.
 //
 // The server keeps no company data. Qlik is reached from the host entry on the
 // machine where agents run (src/host.ts); this module decides WHO may get the
@@ -11,10 +11,10 @@
 //   3. A thread that has received Qlik answers is marked; the dispatch hook
 //      refuses to send such a thread to a model outside the allow-list, because
 //      the whole history — Qlik answers included — would go to that model.
-//   4. The panel's RPC methods answer the panel, the bb CLI and agents (bb shows
+//   4. The panel's RPC methods answer the panel, the VesnALIA CLI and agents (VesnALIA shows
 //      them all as `client`), never another plugin. Other plugins get only
 //      `setupStatus`, which holds no company data.
-import { defineRpcContract, experimental_PluginRpcRefusal, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, experimental_PluginRpcRefusal, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { catalogSchema, checkLinkResultSchema, checkSignInResultSchema, connectionStatusSchema, hostContract, MAX_ROWS, qlikAppSummarySchema, qlikSheetSummarySchema, type ConnectionStatus, type ToolInput } from "./contract";
 import { guideAnswer, MAX_GUIDE_CHARS } from "./src/shared/guide";
@@ -99,8 +99,8 @@ interface Execution {
   at: number;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     url: {
       type: "string",
       label: "Qlik Sense address",
@@ -136,7 +136,7 @@ export default async function plugin(bb: BbPluginApi) {
       type: "string",
       label: "Guide for agents (Markdown)",
       description:
-        "Your company's notes on its reports: which one answers what, field names, what the measures mean, known pitfalls. Agents get it through the qlik_guide tool, allowed models only. It is a plain setting, not a secret: anyone who can run the bb CLI here can read it, so keep passwords and figures out of it. A `# Title` line starts a section: the tool returns the first section and lists the others.",
+        "Your company's notes on its reports: which one answers what, field names, what the measures mean, known pitfalls. Agents get it through the qlik_guide tool, allowed models only. It is a plain setting, not a secret: anyone who can run the VesnALIA CLI here can read it, so keep passwords and figures out of it. A `# Title` line starts a section: the tool returns the first section and lists the others.",
       experimental_multiline: true,
       default: "",
       experimental_schema: z.string().max(MAX_GUIDE_CHARS),
@@ -163,8 +163,8 @@ export default async function plugin(bb: BbPluginApi) {
     guide = next.guide;
   });
 
-  const host = bb.hosts.experimental_client({ contract: hostContract });
-  const kv = bb.storage.kv;
+  const host = alia.hosts.experimental_client({ contract: hostContract });
+  const kv = alia.storage.kv;
   const execKey = (threadId: string) => `exec:${threadId}`;
   const taintKey = (threadId: string) => `taint:${threadId}`;
 
@@ -176,7 +176,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ---------- Who may receive Qlik data ----------
 
-  bb.experimental_hooks.on("message.dispatch", async (ctx) => {
+  alia.experimental_hooks.on("message.dispatch", async (ctx) => {
     const { providerId, model } = ctx.requestedExecution;
     const thread = ctx.thread;
     const tainted = (await isTainted(thread.id)) || (await isTainted(thread.sourceThreadId));
@@ -194,13 +194,13 @@ export default async function plugin(bb: BbPluginApi) {
     return { action: "proceed" };
   });
 
-  bb.agents.configure((ctx) =>
+  alia.agents.configure((ctx) =>
     policy.allows(ctx.provider.id, ctx.provider.model)
       ? { tools: guide.trim() ? [...TOOL_NAMES, TOOL_GUIDE] : TOOL_NAMES, skills: [SKILL] }
       : { tools: [], skills: [] },
   );
 
-  bb.events.on("thread.deleted", async ({ thread }) => {
+  alia.events.on("thread.deleted", async ({ thread }) => {
     await kv.delete(execKey(thread.id));
     await kv.delete(taintKey(thread.id));
   });
@@ -215,9 +215,9 @@ export default async function plugin(bb: BbPluginApi) {
         message: `Qlik Sense data is not available to ${who}. Only the models allowed in the Qlik Sense panel → Agents can read it.`,
       };
     }
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (!thread.environmentId) return { ok: false, message: "This thread has no machine to reach Qlik Sense from yet." };
-    const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
     return { ok: true, hostId: environment.hostId };
   }
 
@@ -235,7 +235,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   const label = (pending: string, completed: string) => ({ label: { pending, completed } });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: TOOL_GUIDE,
     description:
       "This company's notes on its Qlik reports: which report answers which question, fields to filter by, what the measures mean, known pitfalls. " +
@@ -253,7 +253,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "qlik_reports",
     description: "The Qlik Sense reports the user enabled for agents: apps, recommended sheets, what each is for, and links to open them.",
     instructions: REPORTS_INSTRUCTIONS,
@@ -262,7 +262,7 @@ export default async function plugin(bb: BbPluginApi) {
     execute: (_params, ctx) => runTool(ctx.threadId, { tool: "reports" }, ctx.signal),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "qlik_list_sheets",
     description: "Sheets (pages) of an enabled Qlik app: id, title, number of objects, link, and which sheets the user recommended.",
     presentation: label("Listing Qlik sheets", "Listed Qlik sheets"),
@@ -270,7 +270,7 @@ export default async function plugin(bb: BbPluginApi) {
     execute: (params: ToolArgs<"sheets">, ctx) => runTool(ctx.threadId, { tool: "sheets", ...params }, ctx.signal),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "qlik_sheet_objects",
     description: "What a sheet shows: tables, charts, KPIs and filter panes with their ids, dimensions and measures. The id goes to qlik_get_data.",
     presentation: label("Reading a Qlik sheet", "Read a Qlik sheet"),
@@ -278,7 +278,7 @@ export default async function plugin(bb: BbPluginApi) {
     execute: (params: ToolArgs<"sheet_objects">, ctx) => runTool(ctx.threadId, { tool: "sheet_objects", ...params }, ctx.signal),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "qlik_list_fields",
     description: "Fields of the data model (for filters and breakdowns), master dimensions, and master measures with their formulas.",
     presentation: label("Listing Qlik fields", "Listed Qlik fields"),
@@ -286,7 +286,7 @@ export default async function plugin(bb: BbPluginApi) {
     execute: (params: ToolArgs<"fields">, ctx) => runTool(ctx.threadId, { tool: "fields", ...params }, ctx.signal),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "qlik_field_values",
     description:
       "Values of a field, to build filters. With filters it shows which values remain possible: selected and possible first, then excluded.",
@@ -301,7 +301,7 @@ export default async function plugin(bb: BbPluginApi) {
     execute: (params: ToolArgs<"field_values">, ctx) => runTool(ctx.threadId, { tool: "field_values", ...params }, ctx.signal),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "qlik_get_data",
     description: "Data of a table, chart, pivot or KPI from a sheet, as a table recalculated by the Qlik engine with the given filters.",
     presentation: label("Reading Qlik data", "Read Qlik data"),
@@ -316,7 +316,7 @@ export default async function plugin(bb: BbPluginApi) {
       runTool(ctx.threadId, { tool: "get_data", object, filters, maxRows: max_rows, rawNumbers: raw_numbers, app }, ctx.signal),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "qlik_query",
     description:
       "Calculate your own table: dimensions are fields or master dimensions; measures are master measures by name or Qlik formulas " +
@@ -344,7 +344,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   const policyView = () => ({ rules: [...policy.rules], error: policyError });
 
-  type RpcHandlers = Parameters<typeof bb.rpc.register<typeof rpcContract>>[1];
+  type RpcHandlers = Parameters<typeof alia.rpc.register<typeof rpcContract>>[1];
   type Handler = (input: unknown, context: Parameters<RpcHandlers["status"]>[1]) => unknown;
   /** The connection, the catalog and the agent list are for this plugin's own panel and people, not for other plugins. */
   const ownCallers = (handlers: RpcHandlers): RpcHandlers =>
@@ -365,7 +365,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   const handlers: RpcHandlers = {
     machines: async () => {
-      const hosts = await bb.sdk.hosts.list();
+      const hosts = await alia.sdk.hosts.list();
       const machines = hosts
         .filter((candidate) => candidate.lifecycle.phase !== "destroyed")
         .map((candidate) => ({ id: candidate.id, name: candidate.name, connected: candidate.status === "connected" }));
@@ -392,13 +392,13 @@ export default async function plugin(bb: BbPluginApi) {
       return policyView();
     },
     agents: async ({ hostId }) => {
-      const providers = await bb.sdk.providers.list({ hostId });
+      const providers = await alia.sdk.providers.list({ hostId });
       const out = await Promise.all(
         providers
           .filter((provider) => provider.available)
           .map(async (provider) => {
             try {
-              const result = await withTimeout(bb.sdk.providers.models({ providerId: provider.id, hostId }), MODELS_TIMEOUT_MS);
+              const result = await withTimeout(alia.sdk.providers.models({ providerId: provider.id, hostId }), MODELS_TIMEOUT_MS);
               return { id: provider.id, name: provider.displayName, groups: groupModels(result.models), error: result.modelLoadError?.detail ?? null };
             } catch (error) {
               return { id: provider.id, name: provider.displayName, groups: [], error: error instanceof Error ? error.message : String(error) };
@@ -409,17 +409,17 @@ export default async function plugin(bb: BbPluginApi) {
       return { providers: out.filter((provider) => provider.groups.length > 0) };
     },
   };
-  bb.rpc.register(rpcContract, ownCallers(handlers));
+  alia.rpc.register(rpcContract, ownCallers(handlers));
 
   // ---------- The onboarding step (src/shared/setup.ts) ----------
 
-  /** The machine the person set Qlik up on: named by the caller, else the panel's last machine, else bb's own machine. */
+  /** The machine the person set Qlik up on: named by the caller, else the panel's last machine, else VesnALIA's own machine. */
   async function setupMachine(requested: string | undefined): Promise<string | null> {
     if (requested) return requested;
-    const hosts = (await bb.sdk.hosts.list()).filter((candidate) => candidate.lifecycle.phase !== "destroyed");
+    const hosts = (await alia.sdk.hosts.list()).filter((candidate) => candidate.lifecycle.phase !== "destroyed");
     const last = await kv.get<string>("ui:lastHost");
     if (last && hosts.some((candidate) => candidate.id === last)) return last;
-    const { primaryHostId } = await bb.sdk.system.config();
+    const { primaryHostId } = await alia.sdk.system.config();
     return primaryHostId ?? hosts[0]?.id ?? null;
   }
 
@@ -428,7 +428,7 @@ export default async function plugin(bb: BbPluginApi) {
    * page asks every 15 s, and the host checks the password store each time.
    */
   async function setupOn(machine: string, lang: "en" | "ru") {
-    const host = (await bb.sdk.hosts.list()).find((candidate) => candidate.id === machine);
+    const host = (await alia.sdk.hosts.list()).find((candidate) => candidate.id === machine);
     if (!host || host.lifecycle.phase === "destroyed" || host.status !== "connected") return setupStep("problem", "offline", lang);
     let cached = setupAnswers.get(machine);
     if (!cached || Date.now() - cached.at > SETUP_FRESH_MS) {
@@ -440,13 +440,13 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       return setupFromStatus(await cached.status, lang);
     } catch (error) {
-      bb.log.info(`setupStatus: ${machine} could not read its state: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.info(`setupStatus: ${machine} could not read its state: ${error instanceof Error ? error.message : String(error)}`);
       return setupStep("problem", "unreadable", lang);
     }
   }
 
   // The one method other plugins may call (the panel's methods above refuse them): the answer holds no report, address or login.
-  bb.rpc.register(
+  alia.rpc.register(
     setupStatusContract,
     {
       setupStatus: async ({ lang = "en", hostId: requested }) => {
@@ -454,7 +454,7 @@ export default async function plugin(bb: BbPluginApi) {
         return machine ? setupOn(machine, lang) : setupStep("problem", "noMachine", lang);
       },
     },
-    { experimental_discoverable: true, experimental_description: "Qlik Sense setup state for a bb build's onboarding page." },
+    { experimental_discoverable: true, experimental_description: "Qlik Sense setup state for a VesnALIA build's onboarding page." },
   );
 }
 

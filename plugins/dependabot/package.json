@@ -1,24 +1,15 @@
 {
-  "name": "bb-plugin-dependabot",
+  "name": "alia-plugin-dependabot",
   "version": "1.0.1",
   "private": true,
-  "description": "Review GitHub Dependabot alerts by dependency and send grouped fixes to BB agents.",
+  "description": "Review GitHub Dependabot alerts by dependency and send grouped fixes to VesnALIA agents.",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "dependabot",
     "github",
     "security"
   ],
-  "homepage": "https://github.com/charpeni/bb-plugins/tree/main/plugins/dependabot#readme",
-  "bugs": {
-    "url": "https://github.com/charpeni/bb-plugins/issues"
-  },
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/charpeni/bb-plugins.git",
-    "directory": "plugins/dependabot"
-  },
   "files": [
     "dist",
     "server.ts",
@@ -29,7 +20,7 @@
   ],
   "type": "module",
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
@@ -37,27 +28,42 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.47",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.2.18",
-    "bb-app": "^0.38.0",
     "better-sqlite3": "^13.0.3",
     "cron-parser": "^5.10.0",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   },
   "engines": {
-    "bb": ">=0.38",
-    "bbPluginSdk": ">=0.4.47"
+    "alia": ">=0.38",
+    "aliaPluginSdk": ">=0.4.47"
   },
-  "bb": {
+  "alia": {
     "name": "Dependabot",
-    "description": "Review GitHub Dependabot alerts by dependency and send grouped fixes to BB agents.",
+    "description": "Review GitHub Dependabot alerts by dependency and send grouped fixes to VesnALIA agents.",
     "branding": {
       "icon": "./assets/shield-blockchain.svg"
     },
     "server": "./server.ts",
     "app": "./app.tsx"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.47"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/dependabot#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/dependabot"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

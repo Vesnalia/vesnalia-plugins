@@ -345,7 +345,7 @@ export const en: Strings = {
       thread === null ? null : `This thread: ${thread}.`,
       today === null ? null : `The provider today: ${today}.`,
       month === null ? null : `The provider this month: ${month}.`,
-      "Counts BB threads only; use of the same account outside BB is not included.",
+      "Counts VesnALIA threads only; use of the same account outside VesnALIA is not included.",
     ]
       .filter((p) => p !== null)
       .join("\n"),
@@ -355,14 +355,14 @@ export const en: Strings = {
       on ? `on, threshold ${t}% of the limit` : "off"
     }. Limits polled every ${i} min.`,
   settingsHint:
-    "Change the settings in the form above. The context bar and the threshold are measured against the thread's limit: the thread's own limit, then the provider's limit, then the point where the provider compacts on its own (when bb reports it; Claude Code does, Codex does not), then the global limit. A smaller model window caps it. When the limit lies above the point where the provider compacts on its own, the plugin acts a little below that point. A single thread's limit and auto compact are set in its context card or in the band.",
+    "Change the settings in the form above. The context bar and the threshold are measured against the thread's limit: the thread's own limit, then the provider's limit, then the point where the provider compacts on its own (when VesnALIA reports it; Claude Code does, Codex does not), then the global limit. A smaller model window caps it. When the limit lies above the point where the provider compacts on its own, the plugin acts a little below that point. A single thread's limit and auto compact are set in its context card or in the band.",
   notPolledYet: "Limits not polled yet",
   lastPoll: (ago) => `Last poll: ${ago}`,
   refresh: "Refresh now",
   refreshing: "Refreshing…",
   pollError: (m) => `Poll error: ${m}`,
   providerUsageNote:
-    "The built-in «Provider usage» plugin (bb--provider-usage) can stay on: both read the same bb limits and do not interfere.",
+    "The built-in «Provider usage» plugin (alia--provider-usage) can stay on: both read the same VesnALIA limits and do not interfere.",
 
   pushTitle: (provider, window, percent) => `${provider}: ${window} limit at ${percent}`,
   pushReachedTitle: (provider, window) => `${provider}: ${window} limit reached`,
@@ -526,7 +526,7 @@ export const ru: Strings = {
       thread === null ? null : `Этот тред: ${thread}.`,
       today === null ? null : `Провайдер сегодня: ${today}.`,
       month === null ? null : `Провайдер за месяц: ${month}.`,
-      "Считаются только треды BB; работа с тем же аккаунтом вне BB не входит.",
+      "Считаются только треды ALIA; работа с тем же аккаунтом вне ALIA не входит.",
     ]
       .filter((p) => p !== null)
       .join("\n"),
@@ -536,14 +536,14 @@ export const ru: Strings = {
       on ? `вкл, порог ${t}% от лимита` : "выкл"
     }. Опрос лимитов каждые ${i} мин.`,
   settingsHint:
-    "Настройки меняются в форме выше. Полоса контекста и порог считаются от лимита треда: лимит треда, затем лимит провайдера, затем точка, где провайдер сжимает сам (если bb её сообщает; Claude Code сообщает, Codex нет), затем общий лимит. Окно модели меньше лимита ограничивает его. Если лимит выше точки, где провайдер сжимает сам, плагин срабатывает чуть раньше неё. Лимит и авто-компакт отдельного треда настраиваются в его карточке контекста или в полосе над полем ввода.",
+    "Настройки меняются в форме выше. Полоса контекста и порог считаются от лимита треда: лимит треда, затем лимит провайдера, затем точка, где провайдер сжимает сам (если VesnALIA её сообщает; Claude Code сообщает, Codex нет), затем общий лимит. Окно модели меньше лимита ограничивает его. Если лимит выше точки, где провайдер сжимает сам, плагин срабатывает чуть раньше неё. Лимит и авто-компакт отдельного треда настраиваются в его карточке контекста или в полосе над полем ввода.",
   notPolledYet: "Лимиты ещё не опрошены",
   lastPoll: (ago) => `Последний опрос: ${ago}`,
   refresh: "Обновить сейчас",
   refreshing: "Обновляю…",
   pollError: (m) => `Ошибка опроса: ${m}`,
   providerUsageNote:
-    "Встроенный плагин «Provider usage» (bb--provider-usage) можно оставить включённым: оба читают одни и те же лимиты bb и не мешают друг другу.",
+    "Встроенный плагин «Provider usage» (alia--provider-usage) можно оставить включённым: оба читают одни и те же лимиты VesnALIA и не мешают друг другу.",
 
   pushTitle: (provider, window, percent) => `${provider}: лимит «${window}» — ${percent}`,
   pushReachedTitle: (provider, window) => `${provider}: лимит «${window}» исчерпан`,

@@ -5,12 +5,12 @@ import {
   loadPluginApp,
   mountPluginContentScripts,
   renderSlot,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import type { SyncStatus } from "./contract";
 
 type ShellWindow = Window & {
   ReactNativeWebView?: unknown;
-  bb?: { native?: { __installed?: boolean } };
+  alia?: { native?: { __installed?: boolean } };
 };
 
 type StandaloneNavigator = Navigator & { standalone?: boolean };
@@ -18,7 +18,7 @@ type StandaloneNavigator = Navigator & { standalone?: boolean };
 function clearMobileMarkers() {
   const client = window as ShellWindow;
   delete client.ReactNativeWebView;
-  delete client.bb;
+  delete client.alia;
   delete (navigator as StandaloneNavigator).standalone;
 }
 
@@ -28,7 +28,7 @@ describe("Omarchy client overlay surfaces", () => {
     clearMobileMarkers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
-    document.head.querySelectorAll("[data-bb-omarchy-theme]").forEach((node) => node.remove());
+    document.head.querySelectorAll("[data-alia-omarchy-theme]").forEach((node) => node.remove());
   });
 
   it("leaves unchanged CSS and unrelated styles in place when only the revision changes", async () => {
@@ -40,7 +40,7 @@ describe("Omarchy client overlay surfaces", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ enabled: true, css, revision }))));
     const plugin = await loadPluginApp(() => import("./app"));
     const mounted = await mountPluginContentScripts(plugin, { pluginId: "omarchy", generation: 10 });
-    const style = document.head.querySelector<HTMLStyleElement>("[data-bb-omarchy-theme]")!;
+    const style = document.head.querySelector<HTMLStyleElement>("[data-alia-omarchy-theme]")!;
     const writes: MutationRecord[] = [];
     const observer = new MutationObserver((records) => writes.push(...records));
     observer.observe(style, { childList: true });
@@ -59,7 +59,7 @@ describe("Omarchy client overlay surfaces", () => {
       expect(writes).toHaveLength(1);
 
       const palette = document.createElement("style");
-      palette.id = "bb-app-theme";
+      palette.id = "alia-app-theme";
       document.head.appendChild(palette);
       await vi.advanceTimersByTimeAsync(750);
       expect(palette.nextElementSibling).toBe(style);
@@ -71,7 +71,7 @@ describe("Omarchy client overlay surfaces", () => {
     }
   });
 
-  it("does not theme BB's Expo react-native WebView", async () => {
+  it("does not theme VesnALIA's Expo react-native WebView", async () => {
     (window as ShellWindow).ReactNativeWebView = { postMessage() {} };
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
@@ -83,7 +83,7 @@ describe("Omarchy client overlay surfaces", () => {
     });
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(document.head.querySelector("[data-bb-omarchy-theme]")).toBeNull();
+    expect(document.head.querySelector("[data-alia-omarchy-theme]")).toBeNull();
     await mounted.lifecycle.dispose();
   });
 
@@ -103,7 +103,7 @@ describe("Omarchy client overlay surfaces", () => {
     const mounted = await mountPluginContentScripts(plugin, { pluginId: "omarchy", generation: 3 });
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(document.head.querySelector("[data-bb-omarchy-theme]")).toBeNull();
+    expect(document.head.querySelector("[data-alia-omarchy-theme]")).toBeNull();
     await mounted.lifecycle.dispose();
   });
 
@@ -124,7 +124,7 @@ describe("Omarchy client overlay surfaces", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     const stale = document.createElement("style");
-    stale.dataset.bbOmarchyTheme = "client-only";
+    stale.dataset.aliaOmarchyTheme = "client-only";
     stale.textContent = ":root, .light, .dark { color-scheme: dark; }";
     document.head.appendChild(stale);
 
@@ -132,7 +132,7 @@ describe("Omarchy client overlay surfaces", () => {
     const mounted = await mountPluginContentScripts(plugin, { pluginId: "omarchy", generation: 4 });
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(document.head.querySelector("[data-bb-omarchy-theme]")).toBeNull();
+    expect(document.head.querySelector("[data-alia-omarchy-theme]")).toBeNull();
     await mounted.lifecycle.dispose();
   });
 
@@ -151,7 +151,7 @@ describe("Omarchy client overlay surfaces", () => {
     const mounted = await mountPluginContentScripts(plugin, { pluginId: "omarchy", generation: 5 });
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(document.head.querySelector("[data-bb-omarchy-theme]")).toBeNull();
+    expect(document.head.querySelector("[data-alia-omarchy-theme]")).toBeNull();
     await mounted.lifecycle.dispose();
   });
 
@@ -178,10 +178,10 @@ describe("Omarchy client overlay surfaces", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledOnce();
-    expect(document.head.querySelector<HTMLStyleElement>("[data-bb-omarchy-theme]")?.textContent)
+    expect(document.head.querySelector<HTMLStyleElement>("[data-alia-omarchy-theme]")?.textContent)
       .toContain("--background: #010203");
     await mounted.lifecycle.dispose();
-    expect(document.head.querySelector("[data-bb-omarchy-theme]")).toBeNull();
+    expect(document.head.querySelector("[data-alia-omarchy-theme]")).toBeNull();
   });
 });
 
@@ -189,7 +189,7 @@ describe("Omarchy Sync panel", () => {
   it("shows every preserved terminal color beside the semantic palette", async () => {
     const ansi = Array.from({ length: 16 }, (_, index) => `#${index.toString(16).repeat(6)}`);
     const status: SyncStatus = {
-      phase: "synced", message: "oxocarbon is live in BB", themeName: "oxocarbon", mode: "dark",
+      phase: "synced", message: "oxocarbon is live in VesnALIA", themeName: "oxocarbon", mode: "dark",
       colors: {
         mode: "dark", ansi,
         accent: "#33b1ff", selection: "#41414d", muted: "#525252",
@@ -198,7 +198,7 @@ describe("Omarchy Sync panel", () => {
         red: "#3ddbd9", yellow: "#ee5396", orange: "#ff832b", green: "#33b1ff", cyan: "#ff7eb6", blue: "#42be65", magenta: "#be95ff", brown: "#ff832b",
         brightRed: "#78a9ff", brightYellow: "#be95ff", brightGreen: "#ff7eb6", brightCyan: "#82cfff", brightBlue: "#dde1e6", brightMagenta: "#ffffff",
       },
-      bbThemeId: "default", lastSyncedAt: null, hookInstalled: true,
+      aliaThemeId: "default", lastSyncedAt: null, hookInstalled: true,
       autoSync: true, syncCodeTheme: true, syncFavicon: true, animation: "smooth", themeHostId: null,
     };
     const plugin = await loadPluginApp(() => import("./app"));

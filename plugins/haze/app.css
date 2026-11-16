@@ -1,5 +1,5 @@
 /*
- * Haze: MonoCode's chat-pane background and window glass, ported to BB.
+ * Haze: MonoCode's chat-pane background and window glass, ported to ALIA.
  *
  * The image is not a wallpaper behind the text. It is light at the top of the
  * pane: anchored to the top edge, low opacity, and masked so it has dissolved
@@ -110,7 +110,7 @@ html[data-haze] :is(#root-compose-main-panel, #thread-detail-timeline-panel)::be
 
 /*
  * New thread: MonoCode centres the composer, so it sits where the image has
- * already softened instead of over its brightest part. Phones keep BB's
+ * already softened instead of over its brightest part. Phones keep ALIA's
  * bottom-pinned composer.
  */
 @media (min-width: 768px) {

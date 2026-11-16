@@ -9,7 +9,7 @@ export const contrast=(a,b)=>{
  const luminance=channels=>channels.map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);
  const x=luminance(a),y=luminance(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);
 };
-// This is a focused rendering fixture, not a reconstructed bb screenshot.
+// This is a focused rendering fixture, not a reconstructed VesnALIA screenshot.
 if(process.argv[1]?.endsWith('/diff-contrast.mjs')) {
  const stage=process.argv[2]||'after';assert.ok(['before','after'].includes(stage));
  const browser=await chromium.launch({channel:process.env.KUJO_BROWSER||'chrome',headless:true});
@@ -27,7 +27,7 @@ if(process.argv[1]?.endsWith('/diff-contrast.mjs')) {
   await page.locator('#result').evaluate((n,report)=>n.textContent=report.map((s,i)=>`${i?'Added':'Removed'} comment: ${s.ratio.toFixed(2)}:1 ${s.ratio>=4.5?'PASS':'FAIL'} (AA requires 4.5:1)`).join(' · '),report);
   await mkdir('docs/bug-sweep',{recursive:true});
   await page.screenshot({path:`docs/bug-sweep/diff-${stage}.png`});
-  await writeFile(`docs/bug-sweep/diff-${stage}.json`,JSON.stringify({kind:'Focused CSS fixture, not a bb app screenshot',browser:browser.version(),cssSha256:createHash('sha256').update(css).digest('hex'),samples:report},null,2)+'\n');
+  await writeFile(`docs/bug-sweep/diff-${stage}.json`,JSON.stringify({kind:'Focused CSS fixture, not a VesnALIA app screenshot',browser:browser.version(),cssSha256:createHash('sha256').update(css).digest('hex'),samples:report},null,2)+'\n');
   if(stage==='after') for(const sample of report)assert.ok(sample.ratio>=4.5);
   console.log(report.map(s=>s.ratio));
  } finally {await browser.close();}

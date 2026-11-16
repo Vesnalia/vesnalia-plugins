@@ -1,16 +1,16 @@
-// The only place that calls `bb.sdk.threads.*` (§4.2). Everything above it
+// The only place that calls `alia.sdk.threads.*` (§4.2). Everything above it
 // talks to the `ThreadPort` interface, so tests swap in `createFakeThreadPort`
 // and the SDK's quirks (workspace_busy, missing model field, 404 on deleted
 // threads) are handled in exactly one file.
 //
-// SDK 0.5.29 limitations that shape this file (bundled-types/bb-plugin-sdk.d.ts):
+// SDK 0.5.29 limitations that shape this file (bundled-types/alia-plugin-sdk.d.ts):
 // - `managed-worktree` takes only a `baseBranch` (`named` | `default`,
-//   d.ts:11981–11987); the new worktree's own branch name is chosen by BB.
+//   d.ts:11981–11987); the new worktree's own branch name is chosen by VesnALIA.
 //   The `crew/<crew>` and `crew/<crew>/<member>` branch names from §3.2
 //   cannot be requested. `unmanaged` accepts `branch: existing | new` but
 //   `new` has no name either (d.ts:11971–11979).
 // - `permissionMode` knows only `accept-edits | auto | full` (d.ts:12123–12127).
-//   There is no read-only mode, so `ask` maps to `accept-edits`, BB's
+//   There is no read-only mode, so `ask` maps to `accept-edits`, VesnALIA's
 //   standard mode in which escalations are asked for.
 // - `ThreadResponse` carries `providerId` but no model (d.ts:13539–13591);
 //   the model is read from `threads.defaultExecutionOptions`
@@ -18,7 +18,7 @@
 // - `ThreadListResponse` rows carry no plugin metadata (d.ts:13263–13336),
 //   so finding a thread by `opId` needs one `getPluginMetadata` per candidate.
 // - `threads.send` answers `delivery: "sent" | "queued"` (d.ts:12540–12546);
-//   `queued` means BB holds the message in the thread's queue and will run
+//   `queued` means VesnALIA holds the message in the thread's queue and will run
 //   it, so it counts as delivered and is never sent again (§3.4).
 // - There is no `interaction.resolved` event, only `interaction.pending`
 //   (d.ts:20627). Whether a hold can be released is read from
@@ -26,14 +26,14 @@
 //   `status: pending | resolving | resolved | interrupted`.
 // - Read status: `ThreadResponse.lastReadAt` and `latestAttentionAt`
 //   (d.ts:13548–13549) — "Unread result" is `latestAttentionAt > lastReadAt`.
-// - E3: the branch BB chose for a worktree is read from `environments.get`
+// - E3: the branch VesnALIA chose for a worktree is read from `environments.get`
 //   (`Environment.branchName`, `path`, `defaultBranch`, d.ts:417–470).
 //   Context usage comes from `threads.context` (`usage.usedTokens` and
 //   `usage.modelContextWindow`, d.ts:4397–4430 and :16820); `usage` is null
 //   until the provider reported a turn. Running threads are counted with
 //   `threads.count({ status: "active" }).total` (d.ts:16421–16429, :14321–14327). The SDK has no
-//   read access to BB's concurrency limit (no field in d.ts; the limit lives
-//   behind the `bb concurrency-limit` CLI), see lib/capacity.ts.
+//   read access to VesnALIA's concurrency limit (no field in d.ts; the limit lives
+//   behind the `alia concurrency-limit` CLI), see lib/capacity.ts.
 // - E4: metadata is merged with `threads.updatePluginMetadata({set, remove})`
 //   (d.ts:16551–16557, :16776); a new shift without a new thread uses
 //   `threads.clearContext` (d.ts:16765). `threads.open` takes `split:
@@ -44,12 +44,12 @@
 // - `threads.events.list` takes `limit` as a string (d.ts:16650–16658) but
 //   refuses anything above 100 with HTTP 400 — found live in E4; the E2
 //   marker check asked for 200 and failed silently until then.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { replyFromEvents, type ReplyEvent, type TurnReply } from "./reply";
 import type { Permission } from "./spec";
 
 export const PLUGIN_ID = "crew";
-/** BB refuses more: "HTTP 400: Thread event limit cannot exceed 100" (seen live, 30.09.2026; the d.ts types `limit` as a plain string). */
+/** VesnALIA refuses more: "HTTP 400: Thread event limit cannot exceed 100" (seen live, 30.09.2026; the d.ts types `limit` as a plain string). */
 export const EVENT_PAGE = 100;
 
 export type ThreadInfo = {
@@ -100,7 +100,7 @@ export type SpawnRequest = {
   metadata: CrewMetadata;
 };
 
-/** `hostId`: the machine the environment lives on; null/absent when BB does not say. */
+/** `hostId`: the machine the environment lives on; null/absent when VesnALIA does not say. */
 export type EnvironmentInfo = { path: string | null; branch: string | null; defaultBranch: string | null; hostId?: string | null };
 export type ContextUsage = { usedTokens: number; contextWindow: number };
 
@@ -111,7 +111,7 @@ export interface ThreadPort {
   spawn(request: SpawnRequest): Promise<ThreadInfo>;
   /** `null` when the thread is gone (deleted or never existed). */
   get(threadId: string): Promise<ThreadInfo | null>;
-  /** The model BB resolved for the thread, `null` when BB does not say. */
+  /** The model VesnALIA resolved for the thread, `null` when VesnALIA does not say. */
   model(threadId: string): Promise<string | null>;
   /** Wait until the thread has an environment, e.g. a worktree still provisioning. */
   environmentOf(threadId: string): Promise<string | null>;
@@ -121,7 +121,7 @@ export interface ThreadPort {
   update(threadId: string, patch: ThreadPatch): Promise<void>;
   archive(threadId: string): Promise<void>;
   /**
-   * Delete one thread. BB does not delete sub-threads with it, so callers
+   * Delete one thread. VesnALIA does not delete sub-threads with it, so callers
    * delete `children` first; a thread that is already gone is not an error.
    */
   delete(threadId: string): Promise<void>;
@@ -129,21 +129,21 @@ export interface ThreadPort {
   children(threadId: string): Promise<string[]>;
   unarchive(threadId: string): Promise<void>;
   stop(threadId: string): Promise<void>;
-  /** `sent`: a turn runs (or was steered); `queued`: BB queued it behind the running turn. */
+  /** `sent`: a turn runs (or was steered); `queued`: VesnALIA queued it behind the running turn. */
   send(threadId: string, text: string, mode: SendMode): Promise<"sent" | "queued">;
   /** Interactions still waiting for the human (pending or resolving). */
   openInteractions(threadId: string): Promise<OpenInteraction[]>;
   /** Did a text containing `marker` already reach the thread (events or queue)? Dedupe after a crash mid-send. */
   hasMarker(threadId: string, marker: string): Promise<boolean>;
-  /** Path and branch of an environment; null when BB does not know it. */
+  /** Path and branch of an environment; null when VesnALIA does not know it. */
   environmentInfo(environmentId: string): Promise<EnvironmentInfo | null>;
-  /** Host of the BB server's own machine (`system.config().primaryHostId`); null when BB does not say. */
+  /** Host of the VesnALIA server's own machine (`system.config().primaryHostId`); null when VesnALIA does not say. */
   localHostId(): Promise<string | null>;
   /** Host of the project's default source — where a managed worktree is created. */
   projectHostId(projectId: string): Promise<string | null>;
   /** Context window usage of the thread's session; null until the provider reported one. */
   contextUsage(threadId: string): Promise<ContextUsage | null>;
-  /** Threads running right now across BB (status active). */
+  /** Threads running right now across VesnALIA (status active). */
   runningCount(): Promise<number>;
   /** Merge keys into the thread's `crew` metadata namespace; `remove` drops keys. */
   setMetadata(threadId: string, set: Record<string, unknown>, remove?: string[]): Promise<void>;
@@ -151,7 +151,7 @@ export interface ThreadPort {
   clearContext(threadId: string): Promise<void>;
   /** Every live (not archived, not deleted) thread of the project, whoever made it. */
   listProject(projectId: string): Promise<ThreadInfo[]>;
-  /** Open a thread in the connected BB apps. */
+  /** Open a thread in the connected VesnALIA apps. */
   open(threadId: string, split: OpenSplit): Promise<void>;
   /** The first answer after the text carrying `marker` reached the thread. */
   reply(threadId: string, marker: string): Promise<TurnReply>;
@@ -161,7 +161,7 @@ export function permissionModeFor(permissions: Permission): "accept-edits" | "au
   return permissions === "ask" ? "accept-edits" : permissions;
 }
 
-/** BB's error for "someone else still holds this workspace" (409). */
+/** VesnALIA's error for "someone else still holds this workspace" (409). */
 export function isWorkspaceBusy(error: unknown): boolean {
   if (typeof error !== "object" || error === null) return false;
   const candidate = error as { status?: unknown; code?: unknown };
@@ -182,7 +182,7 @@ export type BackoffOptions = {
 };
 
 /**
- * Retry only while BB reports the workspace as busy. Safe because the refusal
+ * Retry only while VesnALIA reports the workspace as busy. Safe because the refusal
  * happens before a thread exists. Pattern from graph-studio `lib/workspace.ts`.
  */
 export async function whileWorkspaceBusy<T>(attempt: () => Promise<T>, options: BackoffOptions = {}): Promise<T> {
@@ -242,7 +242,7 @@ function sdkEnvironment(environment: PortEnvironment, defaultHostId: string | nu
     case "project-default":
       return { type: "project-default" as const };
     case "managed-worktree":
-      // BB refuses a managed worktree without a host (HTTP 400 "hostId is
+      // VesnALIA refuses a managed worktree without a host (HTTP 400 "hostId is
       // required unless workspace.type is personal"), so it is the host of
       // the project's default source.
       if (!defaultHostId) throw new Error("the project has no default source host for a worktree");
@@ -274,10 +274,10 @@ export function interactionTitle(payload: unknown): string {
   return value.kind ?? "interaction";
 }
 
-export function createSdkThreadPort(bb: BbPluginApi, options: { backoff?: BackoffOptions } = {}): ThreadPort {
-  const threads = () => bb.sdk.threads;
+export function createSdkThreadPort(alia: AliaPluginApi, options: { backoff?: BackoffOptions } = {}): ThreadPort {
+  const threads = () => alia.sdk.threads;
   async function defaultHost(projectId: string): Promise<string | null> {
-    const project = await bb.sdk.projects.get({ projectId });
+    const project = await alia.sdk.projects.get({ projectId });
     const source = project.sources.find((entry) => entry.isDefault) ?? project.sources[0];
     return source?.hostId ?? null;
   }
@@ -295,7 +295,7 @@ export function createSdkThreadPort(bb: BbPluginApi, options: { backoff?: Backof
             providerId: request.providerId,
             model: request.model,
             permissionMode: permissionModeFor(request.permissions),
-            // Without "explicit" BB treats the values as a client preference
+            // Without "explicit" VesnALIA treats the values as a client preference
             // and may silently pick the project default instead (§6).
             ...(request.reasoningLevel ? { reasoningLevel: request.reasoningLevel as never } : {}),
             ...(request.serviceTier ? { serviceTier: request.serviceTier as never } : {}),
@@ -313,7 +313,7 @@ export function createSdkThreadPort(bb: BbPluginApi, options: { backoff?: Backof
         {
           ...options.backoff,
           onWait: (attempt, waited) =>
-            bb.log.info(`${request.title}: workspace busy, retrying (attempt ${attempt}, ${waited} ms)`),
+            alia.log.info(`${request.title}: workspace busy, retrying (attempt ${attempt}, ${waited} ms)`),
         },
       );
       return toInfo(thread);
@@ -364,7 +364,7 @@ export function createSdkThreadPort(bb: BbPluginApi, options: { backoff?: Backof
     },
     async delete(threadId) {
       try {
-        // Children are deleted by the caller beforehand; the flag only confirms BB's prompt.
+        // Children are deleted by the caller beforehand; the flag only confirms VesnALIA's prompt.
         await threads().delete({ threadId, childThreadsConfirmed: true });
       } catch (error) {
         if (!isNotFound(error)) throw error;
@@ -401,7 +401,7 @@ export function createSdkThreadPort(bb: BbPluginApi, options: { backoff?: Backof
     },
     async environmentInfo(environmentId) {
       try {
-        const env = await bb.sdk.environments.get({ environmentId });
+        const env = await alia.sdk.environments.get({ environmentId });
         return { path: env.path, branch: env.branchName, defaultBranch: env.defaultBranch, hostId: env.hostId ?? null };
       } catch (error) {
         if (isNotFound(error)) return null;
@@ -409,7 +409,7 @@ export function createSdkThreadPort(bb: BbPluginApi, options: { backoff?: Backof
       }
     },
     async localHostId() {
-      return (await bb.sdk.system.config()).primaryHostId ?? null;
+      return (await alia.sdk.system.config()).primaryHostId ?? null;
     },
     async projectHostId(projectId) {
       return defaultHost(projectId);
@@ -473,20 +473,20 @@ export type FakeThreadPort = ThreadPort & {
   calls: { method: string; args: unknown }[];
   /** Makes the next spawns fail with this error (one entry per spawn). */
   spawnFailures: unknown[];
-  /** Pretend BB resolved a different model than requested. */
+  /** Pretend VesnALIA resolved a different model than requested. */
   modelOverride: Map<string, string>;
   /** Makes the next sends fail with this error (one entry per send). */
   sendFailures: unknown[];
   countCalls(method: string): number;
-  /** environmentId → info; unset ones answer `/work/<env>` on branch `bb/<env>`. */
+  /** environmentId → info; unset ones answer `/work/<env>` on branch `alia/<env>`. */
   environments: Map<string, EnvironmentInfo>;
-  /** Host the fake BB server runs on; environments default to it. */
+  /** Host the fake VesnALIA server runs on; environments default to it. */
   localHost: string | null;
   /** Host of the project's default source and of every environment not in `environments`; defaults to `localHost`. */
   projectHost: string | null | undefined;
   /** threadId → context usage. */
   usage: Map<string, ContextUsage>;
-  /** Threads that exist in BB but were not spawned by the plugin (attach candidates). */
+  /** Threads that exist in VesnALIA but were not spawned by the plugin (attach candidates). */
   addForeign(thread: Partial<ThreadInfo> & { id: string; projectId: string }): FakeThread;
   /** Append a finished turn answering the delivered text that carries `marker`. */
   answer(threadId: string, marker: string, text: string, status?: "completed" | "failed"): void;
@@ -582,7 +582,7 @@ export function createFakeThreadPort(): FakeThreadPort {
       record("delete", threadId);
       const thread = threads.get(threadId);
       if (!thread) return;
-      // Like BB: the parent goes, its children stay behind as orphans.
+      // Like VesnALIA: the parent goes, its children stay behind as orphans.
       threads.delete(threadId);
     },
     async children(threadId) {
@@ -616,8 +616,8 @@ export function createFakeThreadPort(): FakeThreadPort {
       return require(threadId).inbox.some((entry) => entry.text.includes(marker));
     },
     async environmentInfo(environmentId) {
-      // Worktrees live on the project's source host, like BB's managed worktrees.
-      return { hostId: port.projectHost === undefined ? port.localHost : port.projectHost, ...(port.environments.get(environmentId) ?? { path: `/work/${environmentId}`, branch: `bb/${environmentId}`, defaultBranch: "main" }) };
+      // Worktrees live on the project's source host, like VesnALIA's managed worktrees.
+      return { hostId: port.projectHost === undefined ? port.localHost : port.projectHost, ...(port.environments.get(environmentId) ?? { path: `/work/${environmentId}`, branch: `alia/${environmentId}`, defaultBranch: "main" }) };
     },
     async localHostId() {
       return port.localHost;

@@ -4,12 +4,12 @@
  * the branches updated from here. One instance per plugin load; a reload
  * starts clean.
  *
- * Everything outside — GitHub, the token, the login setting, bb's projects,
+ * Everything outside — GitHub, the token, the login setting, VesnALIA's projects,
  * the clock — comes in through `BoardServiceDeps`, so the tests drive it with
  * fakes.
  *
- * The loads take the RPC caller's signal (bb 0.48.1 aborts it when the caller
- * stops waiting or the plugin reloads; older bb has none). It kills the load's
+ * The loads take the RPC caller's signal (VesnALIA 0.48.1 aborts it when the caller
+ * stops waiting or the plugin reloads; older VesnALIA has none). It kills the load's
  * `gh` runs, and a load whose signal fired never caches its cut-short result
  * (a sub-read that completed first, such as the viewer's login, may stay): a
  * pill-only request killed half-way is caught and logged like any other
@@ -47,7 +47,7 @@ export interface BoardServiceDeps {
   token(signal: AbortSignal): Promise<string>;
   /** The login setting, blank when the user has not pinned one. */
   configuredLogin(): Promise<string>;
-  /** bb's projects matched to repositories; `force` rebuilds a cached index. */
+  /** VesnALIA's projects matched to repositories; `force` rebuilds a cached index. */
   projectIndex(force: boolean): Promise<ProjectIndex>;
   /** The server's own machine, which the send dialog prefers a project on. */
   localHostId(): Promise<string | null>;

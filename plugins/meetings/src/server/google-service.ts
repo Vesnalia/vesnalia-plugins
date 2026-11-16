@@ -3,7 +3,7 @@
 // calendars, and the Google part of the calendar sync (calendar-service.ts
 // runs it together with the ICS feeds). Tokens and the client secret never
 // leave the server: not over RPC, not in logs, not in error messages.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   CHANNEL_CALENDAR_CHANGED,
   CHANNEL_GOOGLE_CHANGED,
@@ -97,7 +97,7 @@ export class GoogleService {
   private refreshing: Promise<string> | null = null;
 
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly settings: SettingsHandle,
     private readonly repo: Repository,
     private readonly service: MeetingsService,
@@ -108,7 +108,7 @@ export class GoogleService {
   }
 
   private changed(): void {
-    this.bb.realtime.publish(CHANNEL_GOOGLE_CHANGED, {});
+    this.alia.realtime.publish(CHANNEL_GOOGLE_CHANGED, {});
   }
 
   private async client(): Promise<{ clientId: string; clientSecret: string } | null> {
@@ -201,14 +201,14 @@ export class GoogleService {
         "google_not_configured",
         "Сначала сохраните Client ID и Client Secret OAuth-клиента Google",
         "Save the Google OAuth client ID and secret first",
-        "bb plugin config meetings set googleClientId <id> (the secret: on the Meetings page or in the plugin settings)",
+        "alia plugin config meetings set googleClientId <id> (the secret: on the Meetings page or in the plugin settings)",
       );
     }
     const base = redirectOrigin(origin);
     if (base === null) {
       throw new MeetingsError(
         "invalid_origin",
-        "Google разрешает перенаправление только на https:// или на http://localhost / http://127.0.0.1. Откройте bb по такому адресу и подключите снова",
+        "Google разрешает перенаправление только на https:// или на http://localhost / http://127.0.0.1. Откройте alia по такому адресу и подключите снова",
         "Google only redirects to https:// or http://localhost / http://127.0.0.1 origins",
       );
     }
@@ -273,7 +273,7 @@ export class GoogleService {
         try {
           email = await fetchUserEmail(this.endpoints, tokens.accessToken, this.service.lifetime);
         } catch (error) {
-          this.bb.log.warn(`Could not read the Google account's email: ${describeGoogleError(error)}`);
+          this.alia.log.warn(`Could not read the Google account's email: ${describeGoogleError(error)}`);
         }
       }
       const previous = this.repo.googleAuth();
@@ -302,13 +302,13 @@ export class GoogleService {
         },
         now,
       );
-      this.bb.log.info("Google Calendar connected");
+      this.alia.log.info("Google Calendar connected");
       if (previous !== null && !sameAccount) {
         // The other account's grant goes with it (revoking a token of the same account would end the new grant too).
         const replaced = previous.refreshToken;
         if (replaced !== null && replaced !== refreshToken) {
           void revokeToken(this.endpoints, replaced, this.service.lifetime).catch((error: unknown) =>
-            this.bb.log.warn(`Could not revoke the previous Google account's token: ${describeGoogleError(error)}`),
+            this.alia.log.warn(`Could not revoke the previous Google account's token: ${describeGoogleError(error)}`),
           );
         }
         // Another account's calendars are not watched any more: their bots go.
@@ -326,7 +326,7 @@ export class GoogleService {
       };
     } catch (error) {
       const message = error instanceof MeetingsError ? error.message : describeGoogleError(error);
-      this.bb.log.warn(`Google sign-in failed: ${message}`);
+      this.alia.log.warn(`Google sign-in failed: ${message}`);
       return fail(`Не удалось подключить Google Календарь: ${message}`);
     }
   }
@@ -365,7 +365,7 @@ export class GoogleService {
       if (error instanceof GoogleOAuthError && error.code === "invalid_grant") {
         if (this.repo.googleAuth()?.refreshToken === refreshToken) {
           this.repo.updateGoogleAuth({ refreshToken: null, accessToken: null, accessExpiresAt: null, lastError: GOOGLE_BROKEN_MESSAGE }, this.service.now());
-          this.bb.log.warn("Google refused the refresh token (revoked or expired); the connection needs to be made again");
+          this.alia.log.warn("Google refused the refresh token (revoked or expired); the connection needs to be made again");
           this.changed();
         }
         throw new GoogleAuthBrokenError(GOOGLE_BROKEN_MESSAGE);
@@ -473,7 +473,7 @@ export class GoogleService {
     // A connection that broke during this sync keeps saying so.
     const lastError = row.refreshToken === null ? row.lastError : errors.length > 0 ? errors.join("; ") : null;
     this.repo.updateGoogleAuth({ lastSyncAt: now, lastError }, now);
-    if (errors.length > 0) this.bb.log.warn(`Google Calendar sync: ${errors.join("; ")}`);
+    if (errors.length > 0) this.alia.log.warn(`Google Calendar sync: ${errors.join("; ")}`);
     this.changed();
   }
 
@@ -489,9 +489,9 @@ export class GoogleService {
     const token = row.refreshToken;
     this.repo.updateGoogleAuth({ refreshToken: null, accessToken: null, accessExpiresAt: null, lastError: GOOGLE_CLIENT_CHANGED_MESSAGE }, this.service.now());
     this.refreshing = null;
-    this.bb.log.info("The Google OAuth client changed; the Google Calendar connection has to be made again");
+    this.alia.log.info("The Google OAuth client changed; the Google Calendar connection has to be made again");
     void revokeToken(this.endpoints, token, this.service.lifetime).catch((error: unknown) =>
-      this.bb.log.warn(`Could not revoke the old Google token: ${describeGoogleError(error)}`),
+      this.alia.log.warn(`Could not revoke the old Google token: ${describeGoogleError(error)}`),
     );
     this.changed();
   }
@@ -508,7 +508,7 @@ export class GoogleService {
     this.repo.updateGoogleAuth({ selectedCalendars: wanted }, this.service.now());
     // Bots of calendars no longer watched go now; new ones are fetched by the sync.
     this.service.calendar.reapply(await this.settings.get());
-    this.bb.realtime.publish(CHANNEL_CALENDAR_CHANGED, {});
+    this.alia.realtime.publish(CHANNEL_CALENDAR_CHANGED, {});
     this.changed();
     this.service.calendar.requestSync();
     return this.status();
@@ -535,20 +535,20 @@ export class GoogleService {
       try {
         await revokeToken(this.endpoints, token, this.service.lifetime);
       } catch (error) {
-        this.bb.log.warn(`Could not revoke the Google token (it is deleted anyway): ${describeGoogleError(error)}`);
+        this.alia.log.warn(`Could not revoke the Google token (it is deleted anyway): ${describeGoogleError(error)}`);
       }
     }
     this.repo.deleteGoogleAuth();
     this.refreshing = null;
     const cancelled = this.service.calendar.forgetFeeds(GOOGLE_FEED_PREFIX, "Google Календарь отключён");
-    this.bb.log.info(`Google Calendar disconnected${cancelled > 0 ? `; cancelled ${cancelled} scheduled bot(s)` : ""}`);
+    this.alia.log.info(`Google Calendar disconnected${cancelled > 0 ? `; cancelled ${cancelled} scheduled bot(s)` : ""}`);
     // A sync that started meanwhile may still store Google events: forget them once it is done.
     void this.service.calendar
       .idle()
       .then(() => {
         if (this.repo.googleAuth() === null) this.service.calendar.forgetFeeds(GOOGLE_FEED_PREFIX, "Google Календарь отключён");
       })
-      .catch((error: unknown) => this.bb.log.warn(`Google cleanup failed: ${errorMessage(error)}`));
+      .catch((error: unknown) => this.alia.log.warn(`Google cleanup failed: ${errorMessage(error)}`));
     this.changed();
     return this.status();
   }

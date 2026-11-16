@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { experimental_Icon as Icon, useRealtime, useRpc, type ExperimentalSidebarFooterDisclosureProps, type PluginAppBuilder } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useRealtime, useRpc, type ExperimentalSidebarFooterDisclosureProps, type PluginAppBuilder } from "@vesnalia/plugin-sdk/app";
 import type { Contract, Machine, MonitorSnapshot, ThreadOnBox } from "../../plugin/contract.ts";
 import type { GpuCard } from "../../monitor/snapshot.ts";
 import { SHARED_PILL, cardFoot, cardLabel, cardSlots, cardMemoryWords, gpuMemoryOf, powerWords, processesOnCard, sharedCardWords } from "../gpu-words.ts";
@@ -249,7 +249,7 @@ function SummaryStrip({ snapshot, isServer, isBox, waitingFor }: { snapshot: Mon
   if (!snapshot) {
     return (
       <div className="relative flex flex-wrap items-center gap-1 px-3 py-2">
-        {["● Healthy", "macOS · arm64", "16 GB", "8 cores", "up 1d 2h", ...(isServer ? ["bb up 1h 2m"] : [])].map((sample) => <Pill key={sample} loading>{sample}</Pill>)}
+        {["● Healthy", "macOS · arm64", "16 GB", "8 cores", "up 1d 2h", ...(isServer ? ["alia up 1h 2m"] : [])].map((sample) => <Pill key={sample} loading>{sample}</Pill>)}
         {waitingFor ? (
           <div role="status" className="absolute inset-0 flex items-center justify-center px-3">
             <span className="flex items-center gap-1.5 rounded-md bg-sidebar px-2 py-1 text-xs text-subtle-foreground">
@@ -283,7 +283,7 @@ function SummaryStrip({ snapshot, isServer, isBox, waitingFor }: { snapshot: Mon
       <Pill>{formatBytes(memory.totalBytes)}</Pill>
       <Pill>{cpu.cores} cores</Pill>
       <Pill>{upWords(snapshot, isBox)}</Pill>
-      {isServer && runtime ? <Pill>bb up {formatDuration(runtime.processUptimeSeconds)}</Pill> : null}
+      {isServer && runtime ? <Pill>alia up {formatDuration(runtime.processUptimeSeconds)}</Pill> : null}
       {snapshot.slot ? <SlotPills slot={snapshot.slot} /> : null}
     </div>
   );
@@ -565,7 +565,7 @@ function shareColor(share: number, warnAt: number, badAt: number): string | unde
 }
 
 const PROCESS_ROWS = 5;
-const LOADING_PROCESS_NAMES = ["WindowServer", "node", "Helium Helper", "kernel_task", "bb"];
+const LOADING_PROCESS_NAMES = ["WindowServer", "node", "Helium Helper", "kernel_task", "alia"];
 
 function ProcessRows({ snapshot, gpu }: { snapshot: MonitorSnapshot | null; gpu: boolean }) {
   if (!snapshot) {
@@ -639,7 +639,7 @@ function StatusPopover({ snapshot, isServer, isBox, expected, waitingFor }: { sn
 
 function MachineHeader({ machines, selected, onSelect, onOpen, opens, lookOf, actions }: { machines: Machine[] | null; selected: string; onSelect: (machineId: string) => void; onOpen: () => void; opens: MachineOpens | null; lookOf: LookOf; actions: ReactNode }) {
   return (
-    <div data-bb-box-monitor-header className="sticky top-0 z-10 bg-sidebar">
+    <div data-alia-box-monitor-header className="sticky top-0 z-10 bg-sidebar">
       <div className="flex h-9 min-w-0 items-center gap-1 bg-sidebar-accent/50 px-1.5">
         <span className="flex min-w-0 items-center">
           <MachinePicker machines={machines} selected={selected} onSelect={onSelect} onOpen={onOpen} lookOf={lookOf} />
@@ -725,7 +725,7 @@ function StatusDisclosure({ dismiss }: ExperimentalSidebarFooterDisclosureProps)
   return (
     <TooltipProvider>
     <HudScrollProvider container={container}>
-    <div ref={container} data-bb-box-monitor-shell aria-busy={(active && !snapshot && !error) || reloading} className="w-full min-w-0 divide-y divide-sidebar-border">
+    <div ref={container} data-alia-box-monitor-shell aria-busy={(active && !snapshot && !error) || reloading} className="w-full min-w-0 divide-y divide-sidebar-border">
       <MachineHeader
         machines={machines}
         selected={selected}
@@ -748,7 +748,7 @@ function StatusDisclosure({ dismiss }: ExperimentalSidebarFooterDisclosureProps)
   );
 }
 
-const MONITOR_ON_KEY = "bb-box:monitor:on";
+const MONITOR_ON_KEY = "alia-box:monitor:on";
 
 export function rememberedMonitorOn(): boolean {
   try {
@@ -786,7 +786,7 @@ function MonitorOverlay() {
   return <PressureNotifications active={state !== null && state.enabled && state.backgroundMonitoring && state.pressureNotifications} />;
 }
 
-export const MACHINE_STATUS_ICON = "bb-box-machine-status";
+export const MACHINE_STATUS_ICON = "alia-box-machine-status";
 
 export function registerMonitor(app: PluginAppBuilder): void {
   app.experimental_icons.register({ name: MACHINE_STATUS_ICON, component: ServerMark });

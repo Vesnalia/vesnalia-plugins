@@ -15,9 +15,9 @@ Whole libraries do not fit: a set holds 200 icons and all sets together 2 MB
 
 ```sh
 icon-sets/build.sh /tmp/icon-sets
-bb agent-icons import-set Tabler /tmp/icon-sets/tabler
-bb agent-icons import-set Lucide /tmp/icon-sets/lucide
-bb agent-icons import-set Phosphor /tmp/icon-sets/phosphor
+alia agent-icons import-set Tabler /tmp/icon-sets/tabler
+alia agent-icons import-set Lucide /tmp/icon-sets/lucide
+alia agent-icons import-set Phosphor /tmp/icon-sets/phosphor
 ```
 
 `build.sh` downloads the pinned packages with `npm pack` into a temporary

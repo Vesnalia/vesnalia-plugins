@@ -1,4 +1,4 @@
-// bb-plugin-read-aloud — backend entry.
+// alia-plugin-read-aloud — backend entry.
 //
 // Streams neural TTS audio for a chat message. Two routes, deliberately:
 //
@@ -14,7 +14,7 @@
 //
 // Synthesis is native (see synth.ts) — no Python, no external binary.
 import { randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   activeClientVersion,
@@ -351,13 +351,13 @@ async function probeSynthesis(voice: string, rate: string): Promise<void> {
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     voice: {
       type: "string",
       label: "Voice",
       description:
-        'Microsoft neural voice, e.g. en-US-AndrewMultilingualNeural. Run "bb read-aloud voices" to list them.',
+        'Microsoft neural voice, e.g. en-US-AndrewMultilingualNeural. Run "alia read-aloud voices" to list them.',
       default: "en-US-AndrewMultilingualNeural",
     },
     rate: {
@@ -392,10 +392,10 @@ export default async function plugin(bb: BbPluginApi) {
   const initial = await settings.get();
   configureClientVersion({
     override: initial.clientVersion,
-    learned: await bb.storage.kv.get<string>(LEARNED_VERSION_KEY),
+    learned: await alia.storage.kv.get<string>(LEARNED_VERSION_KEY),
     onLearned: (version) => {
-      bb.log.info(`negotiated a newer client version: ${version}`);
-      void bb.storage.kv.set(LEARNED_VERSION_KEY, version);
+      alia.log.info(`negotiated a newer client version: ${version}`);
+      void alia.storage.kv.set(LEARNED_VERSION_KEY, version);
     },
   });
 
@@ -414,7 +414,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     status: async () => {
       const { voice, rate } = await settings.get();
       try {
@@ -437,7 +437,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.http.route(
+  alia.http.route(
     "POST",
     "/prepare",
     async (context) => {
@@ -463,7 +463,7 @@ export default async function plugin(bb: BbPluginApi) {
     { auth: "local" },
   );
 
-  bb.http.route(
+  alia.http.route(
     "GET",
     "/stream",
     async (context) => {
@@ -533,7 +533,7 @@ export default async function plugin(bb: BbPluginApi) {
               // Nothing has left for the client, so this attempt can be
               // discarded wholesale rather than replayed on top of itself.
               queued = [];
-              bb.log.warn(
+              alia.log.warn(
                 `chunk attempt ${attempt}/${CHUNK_ATTEMPTS} failed: ` +
                   (cause instanceof Error ? cause.message : String(cause)),
               );
@@ -599,11 +599,11 @@ export default async function plugin(bb: BbPluginApi) {
                 if (aborted()) break;
                 sink.enqueue(bytes);
               }
-              bb.log.debug(`chunk ${index + 1}/${chunks.length} sent`);
+              alia.log.debug(`chunk ${index + 1}/${chunks.length} sent`);
             }
             if (!controller.signal.aborted) sink.close();
           } catch (cause) {
-            bb.log.error(
+            alia.log.error(
               `synthesis failed: ${cause instanceof Error ? cause.message : String(cause)}`,
             );
             try {
@@ -635,26 +635,26 @@ export default async function plugin(bb: BbPluginApi) {
   // every composer surface and layout, which a frontend-only submit hook would
   // not. The frontend filters on threadId so background threads do not
   // interrupt listening.
-  bb.events.on("thread.active", ({ thread }) => {
-    bb.realtime.publish(STOP_CHANNEL, {
+  alia.events.on("thread.active", ({ thread }) => {
+    alia.realtime.publish(STOP_CHANNEL, {
       reason: "thread-active",
       threadId: thread.id,
     });
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "read-aloud",
     summary: "Inspect the Read Aloud plugin's speech setup",
     commands: [
       {
         name: "status",
         summary: "Check that synthesis is reachable",
-        usage: "bb read-aloud status",
+        usage: "alia read-aloud status",
       },
       {
         name: "voices",
         summary: "List available neural voices",
-        usage: "bb read-aloud voices [filter]",
+        usage: "alia read-aloud voices [filter]",
       },
     ],
     async run(argv) {
@@ -712,13 +712,13 @@ export default async function plugin(bb: BbPluginApi) {
           return {
             exitCode: 1,
             stderr:
-              "Usage:\n  bb read-aloud status\n  bb read-aloud voices [filter]",
+              "Usage:\n  VesnALIA read-aloud status\n  VesnALIA read-aloud voices [filter]",
           };
       }
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     jobs.clear();
   });
 }

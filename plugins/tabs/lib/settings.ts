@@ -16,7 +16,7 @@ export const SETTINGS = {
     type: "select",
     label: "Language",
     description:
-      "Choose the language for Chat Tabs, including these settings. Auto uses the BB page or browser language.",
+      "Choose the language for Chat Tabs, including these settings. Auto uses the VesnALIA page or browser language.",
     options: [...LANGUAGE_OPTIONS],
     default: "Auto",
   },
@@ -44,14 +44,14 @@ export const SETTINGS = {
     type: "boolean",
     label: "Show top tabs on desktop",
     description:
-      "Shows the chat tab strip below the BB header on desktop. Turning it off keeps your pins and history.",
+      "Shows the chat tab strip below the VesnALIA header on desktop. Turning it off keeps your pins and history.",
     default: true,
   },
   showTabsOnMobile: {
     type: "boolean",
     label: "Show top tabs on mobile",
     description:
-      "Shows the chat tab strip below the BB header on mobile. Turning it off keeps your pins and history.",
+      "Shows the chat tab strip below the VesnALIA header on mobile. Turning it off keeps your pins and history.",
     default: true,
   },
   showTabListButton: {

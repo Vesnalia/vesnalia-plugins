@@ -61,11 +61,11 @@ matching tests and documentation updates (see
 ## Context selection lifetime
 
 - The reporting model selection is session state. Creation and resume restore
-  it from bb's model option (or the native current model for `zcode-default`).
+  it from VesnALIA's model option (or the native current model for `zcode-default`).
 - A native accepted prompt replaces that selection before buffered events are
   replayed. Rejected or failed submissions leave the previous selection intact.
 - Foreground settlement does not clear it: ZCode can start an automatic turn
-  after background work finishes without a bb `turn/start`. Both usage and
+  after background work finishes without a VesnALIA `turn/start`. Both usage and
   refreshed context deltas must still honor the last accepted reporting budget.
 - A `session/read` refresh updates native current selection and projection but
   retains discovered windows for known model identities. CLI 0.17.0 rewrites
@@ -85,11 +85,11 @@ bounds retain the verification dates stated below; see
   credentials are read, never modified.
 - In `src/coding-plan.ts`, only the module's own `AccountError` messages may
   leave the module - API bodies and credential-parser failures can contain
-  secrets and must never become bb diagnostics (stated in a code comment).
-- bb's raw child-I/O recorder is never attached to the ZCode transport because
+  secrets and must never become VesnALIA diagnostics (stated in a code comment).
+- VesnALIA's raw child-I/O recorder is never attached to the ZCode transport because
   reverse-RPC replies can contain credentials (`src/client.ts`); child stderr
   is drained, never forwarded.
-- The bb tool bridge endpoint binds to `127.0.0.1` on an ephemeral port with a
+- The VesnALIA tool bridge endpoint binds to `127.0.0.1` on an ephemeral port with a
   random 32-byte bearer token, rejects any request carrying an `Origin` header
   (browser-origin defense), and answers only `POST /mcp`.
 - Credentials live in ZCode (`~/.zcode/v2/`); the plugin has no API-key
@@ -105,12 +105,12 @@ Numeric limits enforced in code (values verified at commit `3dc639d`):
 | Follow-up queue               | 32 pending inputs                               | `src/bridge.ts`                       |
 | Image inputs (local/data URL) | 16 MiB                                          | `src/input.ts`                        |
 | Tool-server request body      | 1 MiB (HTTP 413 beyond)                         | `src/tool-server.ts`                  |
-| bb tool call timeout          | 10 minutes                                      | `src/bridge.ts`, `src/tool-server.ts` |
+| VesnALIA tool call timeout          | 10 minutes                                      | `src/bridge.ts`, `src/tool-server.ts` |
 | Bash output snapshot          | last 8192 bytes                                 | `src/lifecycle.ts`                    |
 | File-rewind preview token     | 5 minutes, single-use, session-bound            | `src/lifecycle.ts`                    |
 | v4 history lookup             | 200 rows/page, ≤50 pages (= 10,000 rows)        | `src/lifecycle.ts`                    |
-| bb tool catalog               | ≤256 tools, unique names                        | `src/tool-server.ts`                  |
-| bb skill catalog              | ≤128 roots, ≤1024 skills, ≤256 KiB JSON         | `src/skills.ts`                       |
+| VesnALIA tool catalog               | ≤256 tools, unique names                        | `src/tool-server.ts`                  |
+| VesnALIA skill catalog              | ≤128 roots, ≤1024 skills, ≤256 KiB JSON         | `src/skills.ts`                       |
 | Rich row text (v0.6.0)        | 64 KiB per old/new text, 4 KiB labels/summaries | `src/timeline.ts`                     |
 | Connectivity check (v0.7.0)   | 60 s timeout, one real model request            | `src/bridge.ts`                       |
 | Native request timeout        | 30 s default                                    | `src/client.ts`                       |

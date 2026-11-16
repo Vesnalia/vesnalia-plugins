@@ -5,7 +5,7 @@
  * reading and when. `app/image-gate.ts` makes both decisions.
  */
 import { useEffect, useMemo, useState } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 
 import { Button } from "@/components/ui/button";
 import { imageOrigin, startImageLoad, type LoadedImage } from "./image-gate";
@@ -36,7 +36,7 @@ function measure(uri: string): Promise<LoadedImage> {
 
 export function RemoteImage({ url, alt }: { url: string; alt: string }) {
   const rpc = useBoardRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const origin = useMemo(() => imageOrigin(url), [url]);
   const [requested, setRequested] = useState(false);
   const [loaded, setLoaded] = useState<LoadedImage | null>(() => cachedImages.get(url) ?? null);

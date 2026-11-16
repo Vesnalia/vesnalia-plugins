@@ -1,7 +1,7 @@
 // Undoing the padding an earlier version of this plugin put on project names.
 //
-// bb's project picker used to be indented by padding the names themselves, which
-// meant renaming every project and showing that padding anywhere bb printed a
+// VesnALIA's project picker used to be indented by padding the names themselves, which
+// meant renaming every project and showing that padding anywhere VesnALIA printed a
 // name. `projectMenu.ts` indents the picker's rows directly instead, so the
 // padding is only ever removed now — but names already carrying it have to be
 // cleaned up, and a user who never had it must not be touched.

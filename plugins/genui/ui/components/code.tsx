@@ -1,13 +1,13 @@
-// Code, file snippets, diffs and diagrams drawn by BB's own viewers, so they
+// Code, file snippets, diffs and diagrams drawn by VesnALIA's own viewers, so they
 // carry the user's code theme, highlighting and gutters exactly like code
-// elsewhere in BB.
+// elsewhere in VesnALIA.
 import { type MouseEvent, type ReactNode, type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   experimental_Diff as HostDiff,
   experimental_SourceCode as HostSourceCode,
   Markdown,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { useCodeHeight } from "../codeHeight";
@@ -21,7 +21,7 @@ import { parseDetails } from "./explain-logic";
 import { sketchMermaid } from "./sketch";
 import { usePanZoom } from "./viewer";
 
-/** Language names models write → the file extension BB detects languages by. */
+/** Language names models write → the file extension VesnALIA detects languages by. */
 const EXTENSIONS: Readonly<Record<string, string>> = {
   typescript: "ts",
   javascript: "js",
@@ -48,7 +48,7 @@ const ICON_BUTTON =
 
 /**
  * A bordered code surface with a quiet caption bar. With `lines` (Code and
- * Snippet; null while unknown) the body holds the height BB's viewer will
+ * Snippet; null while unknown) the body holds the height VesnALIA's viewer will
  * draw that many lines at while it loads (codeHeight.ts).
  */
 function CodeFrame({ caption, actions, lines, children }: { caption: ReactNode; actions: ReactNode; lines?: number | null; children: ReactNode }) {
@@ -83,7 +83,7 @@ function CopyButton({ code }: { code: string }) {
 }
 
 /**
- * The path BB's viewer gets for `content`. The viewer caches what it renders
+ * The path VesnALIA's viewer gets for `content`. The viewer caches what it renders
  * by path, so two blocks with one path but different content (two bash
  * snippets, two ranges of one file) would show each other's lines; a content
  * hash in front keeps them apart and leaves the extension for highlighting.
@@ -100,7 +100,7 @@ export function viewerPath(path: string, content: string): string {
 /** How many times a hidden ancestor (an inactive tab, a closed Details) took away `element`'s box after it was shown. */
 function useTimesHidden(element: RefObject<HTMLElement | null>): number {
   const [count, setCount] = useState(0);
-  // From layout, where BB's viewer starts watching too: a hide right after mounting isn't missed.
+  // From layout, where VesnALIA's viewer starts watching too: a hide right after mounting isn't missed.
   useLayoutEffect(() => {
     const box = element.current;
     if (box === null) return;
@@ -117,13 +117,13 @@ function useTimesHidden(element: RefObject<HTMLElement | null>): number {
 }
 
 /**
- * BB's source viewer, made anew each time it is hidden. Hidden by
- * display:none, the viewer BB 0.46 ships (@pierre/diffs 1.2.9's
+ * VesnALIA's source viewer, made anew each time it is hidden. Hidden by
+ * display:none, the viewer VesnALIA 0.46 ships (@pierre/diffs 1.2.9's
  * VirtualizedFile) swaps its lines for a blank placeholder and, shown again,
  * keeps it: it still counts the lines as drawn. A viewer made while hidden
  * draws its lines at once (the first 200 or so; further down, a frame after
  * it is shown), so the box comes back drawn and at its height.
- * @pierre/diffs 1.3.0 fixed it; this can go once BB ships that.
+ * @pierre/diffs 1.3.0 fixed it; this can go once VesnALIA ships that.
  */
 export function SourceView({ content, path }: { content: string; path: string }) {
   const box = useRef<HTMLDivElement>(null);
@@ -148,7 +148,7 @@ export function Code({ props }: { props: Props }) {
 
 /**
  * Lines of a workspace file, read by reference (`code` is null while the file
- * loads). BB's viewer numbers the lines it is given from 1, so the caption
+ * loads). VesnALIA's viewer numbers the lines it is given from 1, so the caption
  * carries the file's real line range.
  */
 export function Snippet({ props }: { props: Props }) {
@@ -259,11 +259,11 @@ export function Diff({ props }: { props: Props }) {
 }
 
 /**
- * BB's diagram block, stripped to the drawing: no border, background or
+ * VesnALIA's diagram block, stripped to the drawing: no border, background or
  * padding, and its toolbar (source, zoom, copy) a quiet row of icons at the
  * top right, without the "MERMAID" label. Floating it over the drawing would
  * cover nodes in wide diagrams. Styled by structure (block > toolbar, body >
- * the SVG's frame), so if BB's markup changes the block simply keeps its own
+ * the SVG's frame), so if VesnALIA's markup changes the block simply keeps its own
  * frame. A pinched drawing is zoomed inside its own box: the body clips it.
  */
 const DRAWING_CSS = `
@@ -277,10 +277,10 @@ const DRAWING_CSS = `
 `;
 
 /**
- * BB's open button in the diagram's toolbar. Its dialog's pinch listeners
+ * VesnALIA's open button in the diagram's toolbar. Its dialog's pinch listeners
  * attach before the dialog mounts, so on a touch screen it only pans; the
- * diagram opens in DiagramViewer instead. Matched by label: if BB renames
- * it, BB's own dialog simply opens again.
+ * diagram opens in DiagramViewer instead. Matched by label: if VesnALIA renames
+ * it, VesnALIA's own dialog simply opens again.
  */
 const OPEN_BUTTON = 'button[aria-label="Open Mermaid diagram"]';
 
@@ -288,7 +288,7 @@ const OPEN_BUTTON = 'button[aria-label="Open Mermaid diagram"]';
  * Each drawing's last height, by theme, width and source, kept across reloads
  * (a page opens a thread's old diagrams for the first time too); bounded.
  */
-const HEIGHTS_STORAGE = "bb.genui.drawnHeights";
+const HEIGHTS_STORAGE = "alia.genui.drawnHeights";
 const MAX_DRAWN_HEIGHTS = 300;
 const DRAWN_HEIGHTS: Map<string, number> = (() => {
   try {
@@ -320,11 +320,11 @@ function hash(text: string): string {
 
 /**
  * Mermaid draws asynchronously, after the row holding the diagram is laid
- * out, and BB draws it only once it comes within 256 px of the screen. Until
+ * out, and VesnALIA draws it only once it comes within 256 px of the screen. Until
  * the drawing is there, the box holds exactly the height it had last time at
  * this width, so the conversation doesn't move under the reader. A diagram
  * never drawn here keeps the tallest of its placeholders (the font loading,
- * then BB's "Rendering diagram..."), so it moves once, when it draws.
+ * then VesnALIA's "Rendering diagram..."), so it moves once, when it draws.
  */
 function useDrawnHeight(element: RefObject<HTMLDivElement | null>, dark: boolean, source: string): void {
   useLayoutEffect(() => {
@@ -333,7 +333,7 @@ function useDrawnHeight(element: RefObject<HTMLDivElement | null>, dark: boolean
     // Wide diagrams scale to the width, so their height depends on it.
     const key = `${dark ? "d" : "l"}:${Math.round(box.clientWidth / 40)}:${hash(source)}`;
     const drawn = () => box.querySelector("svg[aria-roledescription]") !== null;
-    // Drawn, or BB showing the source instead (its toggle, or a diagram it couldn't draw).
+    // Drawn, or VesnALIA showing the source instead (its toggle, or a diagram it couldn't draw).
     const settled = () => drawn() || box.querySelector("pre") !== null;
     const reserved = DRAWN_HEIGHTS.get(key);
     let holding = !settled();
@@ -371,13 +371,13 @@ function useDrawnHeight(element: RefObject<HTMLDivElement | null>, dark: boolean
 }
 
 /**
- * A Mermaid diagram, drawn by BB's chat markdown exactly like a ```mermaid
+ * A Mermaid diagram, drawn by VesnALIA's chat markdown exactly like a ```mermaid
  * fence in a reply (source toggle and copy included), in the Excalidraw
  * style (sketch.ts): hand-drawn strokes in Excalifont, in its dark palette
- * under BB's dark theme. It has no frame or canvas of its own: it is drawn on
+ * under VesnALIA's dark theme. It has no frame or canvas of its own: it is drawn on
  * whatever it sits in, and edge labels take that colour. Nodes named in
  * `details` open their detail under the diagram (diagram.tsx). A pinch or
- * ⌘/Ctrl + scroll zooms it in place; BB's open button shows it full screen
+ * ⌘/Ctrl + scroll zooms it in place; VesnALIA's open button shows it full screen
  * in DiagramViewer.
  */
 export function Diagram({ props }: { props: Props }) {
@@ -394,7 +394,7 @@ export function Diagram({ props }: { props: Props }) {
   const backdrop = useBackdropColor(host, dark);
   const source = text(props.mermaid).trim();
   useDrawnHeight(drawing, dark, source);
-  // The SVG's frame in BB's block is what zooms; its parent, the block's body, is the pane.
+  // The SVG's frame in VesnALIA's block is what zooms; its parent, the block's body, is the pane.
   const frameOf = () => surface?.querySelector(DIAGRAM_SVG)?.parentElement ?? null;
   const zoom = usePanZoom(surface, {
     measure: () => {
@@ -413,7 +413,7 @@ export function Diagram({ props }: { props: Props }) {
     doubleTap: false,
   });
   const { redraw } = zoom;
-  // BB's Markdown can replace the drawn block when its row renders again (a layout change,
+  // VesnALIA's Markdown can replace the drawn block when its row renders again (a layout change,
   // a panel opening), dropping the transform set on the old frame; draw the view again on
   // the new one, so a zoomed diagram stays zoomed and keeps panning.
   useEffect(() => {

@@ -2,13 +2,13 @@
 // send button becomes a waveform button ("Start new voice chat"). Typing brings
 // the send arrow back; once the message is sent and the box is empty again, the
 // waveform returns. While live, a pill (level waveform, status, mute, end)
-// stands in for bb's mic, and the send button reappears only if you type.
+// stands in for VesnALIA's mic, and the send button reappears only if you type.
 // Leave the thread (Settings, another thread) and the session keeps going in a
 // floating pill until you come back or end it.
 //
-// bb has no SDK hook on its send button, so we portal our UI over it and flag
-// the composer form so app.css can hide bb's controls. On wide screens a
-// composer action places the portal; bb doesn't mount plugin actions in its
+// VesnALIA has no SDK hook on its send button, so we portal our UI over it and flag
+// the composer form so app.css can hide VesnALIA's controls. On wide screens a
+// composer action places the portal; VesnALIA doesn't mount plugin actions in its
 // compact (phone / collapsed) composer, so there the app overlay hosts the same
 // UI and pairs each host with a form by position.
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -16,11 +16,11 @@ import { createPortal } from "react-dom";
 import {
   definePluginApp,
   ThreadTitle,
-  useBbNavigate,
+  useAliaNavigate,
   useComposer,
   useComposers,
   useSettings,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { isLive, sessionFor, stopAllSessions, subscribeAll, undockedSession, type Phase, type VoiceSession } from "./session";
 import { compactThreadComposers, planCompactHosts, type CompactComposer } from "./compact-hosts";
 import { ConnectionPluginsSection } from "./connection-plugins";
@@ -40,11 +40,11 @@ const cn = (...classes: (string | false | null | undefined)[]) => classes.filter
 const SEND_SELECTOR = "[data-promptbox-send-menu]";
 /** The row our control portals into; present in both the wide and compact composer. */
 const SUBMIT_GROUP_SELECTOR = "[data-promptbox-submit-group]";
-/** How long to wait for bb's send group before falling back to the action slot. */
+/** How long to wait for VesnALIA's send group before falling back to the action slot. */
 const FALLBACK_AFTER_MS = 1500;
-/** Set on the composer form while the waveform button replaces bb's send button. */
+/** Set on the composer form while the waveform button replaces VesnALIA's send button. */
 const VOICE_SEND_ATTR = "data-voice-mode-send";
-/** Set on the composer form while the voice pill replaces bb's mic. */
+/** Set on the composer form while the voice pill replaces VesnALIA's mic. */
 const LIVE_ATTR = "data-voice-mode-live";
 
 function useVoiceState(session: VoiceSession) {
@@ -111,7 +111,7 @@ function LevelWave({ session, phase, muted }: { session: VoiceSession; phase: Ph
   );
 }
 
-// Lucide mic / mic-off / x / undo-2 glyphs, inlined because bb's icon set lacks MicOff.
+// Lucide mic / mic-off / x / undo-2 glyphs, inlined because VesnALIA's icon set lacks MicOff.
 function Glyph({ name, className = "size-4" }: { name: "mic" | "mic-off" | "x" | "return" | "alert"; className?: string }) {
   return (
     <svg
@@ -181,7 +181,7 @@ const expandFrom = new WeakMap<VoiceSession, { width: number; background: string
 /**
  * Where the pill slides closed to: the same start box (mic plus waveform) and
  * the mic alone, for when you typed during the session and send is back. Kept
- * for the session's lifetime; the fallbacks are bb's default sizes.
+ * for the session's lifetime; the fallbacks are VesnALIA's default sizes.
  */
 const restBox = new WeakMap<VoiceSession, { both: number; mic: number; background: string }>();
 const REST_FALLBACK = { both: 96, mic: 32, background: "transparent" };
@@ -377,16 +377,16 @@ function VoicePill({
 function ComposerVoice() {
   const composer = useComposer();
   const threadId = composer.scope.kind === "thread" ? composer.scope.threadId : null;
-  // bb renders no plugin composer actions in its compact composer, so nothing
+  // VesnALIA renders no plugin composer actions in its compact composer, so nothing
   // here mounts there; CompactVoiceButtons hosts it from the app overlay.
   if (!threadId || composer.layout === "compact") return null;
   return <ThreadComposerVoice threadId={threadId} canStart={composer.isEmpty && !composer.isRunning} />;
 }
 
 /**
- * bb's composer is a plugin (`builtin:composer`), swappable under Settings →
+ * VesnALIA's composer is a plugin (`builtin:composer`), swappable under Settings →
  * Appearance → Composer, so these markers belong to that plugin rather than to
- * a stable bb API. A different composer can therefore leave a composer compact
+ * a stable VesnALIA API. A different composer can therefore leave a composer compact
  * with no marker to find; the count check in planCompactHosts already refuses
  * to guess there, and warnUnhostedComposers says so out loud instead of the
  * button quietly not appearing.
@@ -394,7 +394,7 @@ function ComposerVoice() {
 const COMPACT_FORM_SELECTOR = "form[data-promptbox][data-promptbox-compact]";
 
 /**
- * The composers on screen that bb is drawing compact: collapsed or phone
+ * The composers on screen that VesnALIA is drawing compact: collapsed or phone
  * width, the case where its action row leaves our composer action out.
  */
 function compactComposerForms(): HTMLFormElement[] {
@@ -420,7 +420,7 @@ function warnUnhostedComposers(composers: readonly CompactComposer[], formCount:
   if (!formCount) {
     warnOnce(
       `voice mode can't place its button: ${compact} compact thread composer(s) but no ${COMPACT_FORM_SELECTOR}. ` +
-        "bb's compact composer has no plugin action slot, so voice mode hosts its own. If you switched composer " +
+        "VesnALIA's compact composer has no plugin action slot, so voice mode hosts its own. If you switched composer " +
         "under Settings → Appearance → Composer, this marker may not be there.",
     );
     return;
@@ -435,10 +435,10 @@ function warnUnhostedComposers(composers: readonly CompactComposer[], formCount:
 
 /**
  * The app overlay's stand-in for the composer action, for the thread composers
- * bb is drawing compact. Their plugin action slots exist but never render, so
+ * VesnALIA is drawing compact. Their plugin action slots exist but never render, so
  * this is the only way in. Each host pairs with a form by position; when the
  * counts disagree (a composer in the way that we don't host) it renders
- * nothing, leaving bb's own controls untouched rather than guessing.
+ * nothing, leaving VesnALIA's own controls untouched rather than guessing.
  */
 function CompactVoiceButtons() {
   const composers = useComposers();
@@ -464,7 +464,7 @@ function CompactVoiceButtons() {
 }
 
 /**
- * Copy the size and look of bb's (hidden) send control so the waveform matches
+ * Copy the size and look of VesnALIA's (hidden) send control so the waveform matches
  * it under any theme, e.g. a theme that makes send a circle.
  */
 function useSendButtonLook(ref: React.RefObject<HTMLElement | null>) {
@@ -473,7 +473,7 @@ function useSendButtonLook(ref: React.RefObject<HTMLElement | null>) {
     const form = ref.current?.closest("form");
     if (!form) return;
     const read = () => {
-      // The compact composer has no send menu: bb sends from a plain button in
+      // The compact composer has no send menu: VesnALIA sends from a plain button in
       // the submit group, so copy that one's size and colors instead.
       const menu = form.querySelector<HTMLElement>(SEND_SELECTOR);
       const target =
@@ -481,7 +481,7 @@ function useSendButtonLook(ref: React.RefObject<HTMLElement | null>) {
         form.querySelector<HTMLElement>(`${SUBMIT_GROUP_SELECTOR} [data-promptbox-submit-action]`) ??
         form.querySelector<HTMLElement>(SUBMIT_GROUP_SELECTOR);
       if (!target) return;
-      // The control is display:none while we stand in for it, and bb collapses
+      // The control is display:none while we stand in for it, and VesnALIA collapses
       // its model chevron (w-0) while the composer is empty, growing it (w-6) as
       // you type. Un-hide and expand it for one synchronous layout read (no
       // paint in between) so the waveform takes the size send has once you type.
@@ -577,9 +577,9 @@ function ThreadComposerVoice({
   const { phase } = useVoiceState(session);
   const anchor = useRef<HTMLSpanElement>(null);
   const [host, setHost] = useState<HTMLElement | null>(null);
-  // bb's send group usually renders within a frame or two of this action. If
-  // it hasn't after a beat, bb's markup has changed: fall back to rendering in
-  // the composer action slot the SDK gave us, beside bb's own controls, and
+  // VesnALIA's send group usually renders within a frame or two of this action. If
+  // it hasn't after a beat, VesnALIA's markup has changed: fall back to rendering in
+  // the composer action slot the SDK gave us, beside VesnALIA's own controls, and
   // leave send and the mic alone. An overlay host has no slot to fall back to.
   const [undocked, setUndocked] = useState(false);
   useEffect(() => {
@@ -614,7 +614,7 @@ function ThreadComposerVoice({
     let observer: MutationObserver | null = null;
     const place = () => {
       frame = 0;
-      // bb's buttons can render after this action does, so key off the composer
+      // VesnALIA's buttons can render after this action does, so key off the composer
       // form and look them up on every change.
       const group =
         composerRoot?.querySelector(SEND_SELECTOR)?.closest(SUBMIT_GROUP_SELECTOR) ??
@@ -659,8 +659,8 @@ function ThreadComposerVoice({
     };
   }, [threadId, compactIndex, compactCount]);
 
-  // Empty and idle: our waveform stands in for bb's send button. Live: the
-  // pill stands in for bb's mic (and for send, until you type).
+  // Empty and idle: our waveform stands in for VesnALIA's send button. Live: the
+  // pill stands in for VesnALIA's mic (and for send, until you type).
   const showStart = canStart && phase === "off" && !closing;
   const hideSend = canStart && phase !== "error";
   useEffect(() => {
@@ -690,9 +690,9 @@ function ThreadComposerVoice({
  * A slot of our own at the bottom of the sidebar's panel body, just above the
  * footer (the Settings / more menu), so the pill stays inside the panel's
  * border, takes space from the thread list, and the footer doesn't move. Found
- * by bb's `data-testid="app-sidebar-body"` marker (the flex column inside the
+ * by VesnALIA's `data-testid="app-sidebar-body"` marker (the flex column inside the
  * nav-rail panel, so the icon rail beside it is left alone); null when the
- * sidebar is collapsed or the marker is gone. bb has no plugin slot here.
+ * sidebar is collapsed or the marker is gone. VesnALIA has no plugin slot here.
  */
 function useSidebarSlot(enabled: boolean): HTMLElement | null {
   const [slot, setSlot] = useState<HTMLElement | null>(null);
@@ -761,7 +761,7 @@ function FloatingVoice() {
 
 function FloatingPill({ session, placement }: { session: VoiceSession; placement: "sidebar" | "floating" }) {
   const { phase, muted, caption, agentStatus } = useVoiceState(session);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   // Detailed unless the user picked compact (also while settings are loading, so it doesn't flip).
   const detailed = useSettings().values?.widgetStyle !== "compact";
   const micActive = phase === "listening" || phase === "speaking";
@@ -878,7 +878,7 @@ export default definePluginApp((app) => {
     component: FloatingVoice,
   });
 
-  // bb's compact composer renders no plugin action slot, so the start control
+  // VesnALIA's compact composer renders no plugin action slot, so the start control
   // needs a host that is always mounted (see CompactVoiceButtons).
   app.slots.experimental_appOverlay({
     id: "voice-mode-compact",

@@ -172,7 +172,7 @@ describe("AgentTrace", () => {
 describe("ContextMeter", () => {
   const thread = { id: "thr_1", title: "Ship it", status: "active", context: { used: 412_000, window: 1_000_000, percent: 41.2, model: "claude-opus", categories: [{ label: "Messages", tokens: 301_000 }, { label: "Tools", tokens: 64_000 }, { label: "System", tokens: 40_000 }] }, cost: { amount: 4.82, currency: "USD" } };
 
-  it("reads bb:thread and splits the window into categories, other and free", () => {
+  it("reads VesnALIA:thread and splits the window into categories, other and free", () => {
     const m = readContext(thread);
     expect(m.rows[0]).toMatchObject({ label: "Ship it", model: "claude-opus", used: 412_000, share: 0.412, cost: 4.82, currency: "USD" });
     expect(contextSegments(m.rows[0])).toEqual([
@@ -184,7 +184,7 @@ describe("ContextMeter", () => {
     ]);
   });
 
-  it("totals a bb:threads list by model and skips sessions without a reading", () => {
+  it("totals a VesnALIA:threads list by model and skips sessions without a reading", () => {
     const m = readContext([thread, { ...thread, title: "B", context: { used: 100_000, window: 200_000, model: "claude-sonnet" }, cost: { amount: 1, currency: "USD" } }, { title: "C", context: null, cost: null }]);
     expect(m.rows).toHaveLength(2);
     expect(m.byModel.map((x) => [x.model, x.used, x.sessions])).toEqual([

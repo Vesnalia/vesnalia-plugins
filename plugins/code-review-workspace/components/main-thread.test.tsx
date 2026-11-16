@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
-// The main thread: Main thread ↗ in BB's title bar and a phone's dock, which goes to it, and its tab in BB's side panel
-// beside the diff, showing the thread that writes the code with BB's chat, which thread and machine it is, Change main
+// The main thread: Main thread ↗ in VesnALIA's title bar and a phone's dock, which goes to it, and its tab in VesnALIA's side panel
+// beside the diff, showing the thread that writes the code with VesnALIA's chat, which thread and machine it is, Change main
 // thread and Go to thread; and Send now on a comment's card.
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { toast } from "sonner";
 import { defaultPreferences } from "../src/preferences";
 import { patchReviewState } from "../lib/panel-state";
@@ -67,7 +67,7 @@ function handlers(review: Record<string, unknown>, rpc: Record<string, unknown> 
   };
 }
 
-/** The review's page at `width` × `height`, and BB's title bar, as the host renders it apart from the page. */
+/** The review's page at `width` × `height`, and VesnALIA's title bar, as the host renders it apart from the page. */
 async function renderReview(review: Record<string, unknown>, size: [number, number], rpc: Record<string, unknown> = {}) {
   fakeSize(...size);
   patchReviewState(review.targetKey as string, { activeId: "c1" });
@@ -80,13 +80,13 @@ async function renderReview(review: Record<string, unknown>, size: [number, numb
   return { app, bar, page, options };
 }
 
-test("BB's title bar goes to the main thread, and shows it beside the diff in BB's side panel: its own chat, which can't widen its permissions, named with its machine", async () => {
+test("VesnALIA's title bar goes to the main thread, and shows it beside the diff in VesnALIA's side panel: its own chat, which can't widen its permissions, named with its machine", async () => {
   const getSourceThread = vi.fn(() => MAIN);
   const { app, bar, page, options } = await renderReview(folderReview, [1440, 1000], { getSourceThread });
   // Main thread ↗ is the switch from reviewing to doing.
   fireEvent.click(await bar.findByRole("button", { name: "Go to main thread" }));
   expect(bar.inspection.navigateCalls).toEqual([{ method: "toThread", threadId: "coder" }]);
-  // Show beside review opens BB's Main thread tab.
+  // Show beside review opens VesnALIA's Main thread tab.
   const beside = bar.getByRole("button", { name: "Show main thread beside review" });
   expect(beside.getAttribute("aria-pressed")).toBe("false");
   fireEvent.click(beside);
@@ -94,7 +94,7 @@ test("BB's title bar goes to the main thread, and shows it beside the diff in BB
   const slot = renderPanelTab(app, "main", "br-1", options);
   const tab = await slot.findByRole("region", { name: "Main thread" });
   expect(within(tab).getByRole("heading", { level: 2 }).textContent).toBe("Main thread·api:feat/snooze·Build snooze");
-  const chat = await within(tab).findByTestId("bb-thread-chat");
+  const chat = await within(tab).findByTestId("alia-thread-chat");
   expect(chat.dataset).toMatchObject({ threadId: "coder", variant: "compact", permissionPolicy: "inherit" });
   // Which thread, on which machine, and that it's working now, so a Send waits.
   expect(within(tab).getByText("MaxBook")).toBeTruthy();
@@ -123,7 +123,7 @@ test("a review with no main thread, or with Send to thread off, has no Main thre
   await bar.findByRole("button", { name: "Ask agent" });
   expect(bar.queryByRole("button", { name: "Go to main thread" })).toBeNull();
   expect(bar.queryByRole("button", { name: "Show main thread beside review" })).toBeNull();
-  // BB's panel doesn't list the tab either; it does beside a review with one.
+  // VesnALIA's panel doesn't list the tab either; it does beside a review with one.
   const visible = (subPath: string) => {
     const tab = app.tabs.find((registration) => registration.id === "main")!;
     const probe = renderSlot({ component: () => <p>{String(tab.useVisible!({ subPath } as never))}</p> }, {}, {});
@@ -140,7 +140,7 @@ test("a review with no main thread, or with Send to thread off, has no Main thre
   off.bar.lifecycle.unmount();
 });
 
-/** The tab on its own, in a workspace showing `review`, with BB's thread list `threads`. */
+/** The tab on its own, in a workspace showing `review`, with VesnALIA's thread list `threads`. */
 async function renderTab(review: Record<string, unknown>, rpc: Record<string, unknown>, threads: unknown[] = []) {
   fakeSize(1440, 1000);
   const { WorkspaceProvider } = await import("../lib/workspace-context");
@@ -182,12 +182,12 @@ test("Finish review's Change main thread opens the tab with its Change thread me
   again.lifecycle.unmount();
 });
 
-test("Change main thread's menu, opened by Finish review, stays open as BB focuses the chat box, until a click outside it", async () => {
+test("Change main thread's menu, opened by Finish review, stays open as VesnALIA focuses the chat box, until a click outside it", async () => {
   const { askChangeThread } = await import("../lib/main-thread");
   askChangeThread("br-1");
   const slot = await renderTab(folderReview, { getSourceThread: () => MAIN }, [listed("coder", "Build snooze")]);
   await slot.findByRole("menu", { name: "Change main thread" });
-  // BB's chat box, which the harness doesn't have.
+  // VesnALIA's chat box, which the harness doesn't have.
   const chatBox = document.body.appendChild(document.createElement("textarea"));
   await new Promise((resolve) => setTimeout(resolve, 0));
   chatBox.focus();
@@ -205,11 +205,11 @@ test("Change main thread's menu, opened by Finish review, stays open as BB focus
   slot.lifecycle.unmount();
 });
 
-test("an ask of the Main thread tab that BB doesn't open goes, rather than open the menu unasked later", async () => {
+test("an ask of the Main thread tab that VesnALIA doesn't open goes, rather than open the menu unasked later", async () => {
   const { askChangeThread } = await import("../lib/main-thread");
   const { bar, page } = await renderReview(folderReview, [1440, 1000]);
   askChangeThread("br-1");
-  // The harness's panel declines, as BB does where it doesn't list the tab.
+  // The harness's panel declines, as VesnALIA does where it doesn't list the tab.
   fireEvent.click(await bar.findByRole("button", { name: "Show main thread beside review" }));
   expect(toast.error).toHaveBeenCalledWith("The main thread isn’t available here.");
   page.lifecycle.unmount();
@@ -234,12 +234,12 @@ test("Change main thread can start a fresh thread here, which gets your Sends fr
 
 test("a main thread that's archived shows its conversation with no box to write in, and one deleted says what the next Send does", async () => {
   const archived = await renderTab(folderReview, { getSourceThread: () => ({ thread: { ...MAIN.thread, state: "archived" } }) });
-  expect((await archived.findByTestId("bb-thread-chat")).dataset.variant).toBe("timeline");
+  expect((await archived.findByTestId("alia-thread-chat")).dataset.variant).toBe("timeline");
   expect(archived.getByText(/This thread is archived\. Your next Send offers to unarchive it or start a fresh thread/)).toBeTruthy();
   archived.lifecycle.unmount();
   const gone = await renderTab(folderReview, { getSourceThread: () => ({ thread: { threadId: "coder", title: null, state: "gone" } }) });
   await waitFor(() => expect(gone.getByRole("status").textContent).toBe("The main thread was deleted. Your next Send starts a fresh thread, or choose another with Change thread."));
-  expect(gone.queryByTestId("bb-thread-chat")).toBeNull();
+  expect(gone.queryByTestId("alia-thread-chat")).toBeNull();
   gone.lifecycle.unmount();
 });
 
@@ -267,7 +267,7 @@ test("Send now on a comment's card sends it alone, and says when the main thread
   fireEvent.click(card.getByRole("button", { name: "Send now to Build snooze (main thread) on MaxBook" }));
   await waitFor(() => expect(sendNow).toHaveBeenCalledWith({ targetKey: "k", comment: { file: "src/a.ts", line: 2, side: "RIGHT" } }));
   await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Queued for Build snooze: it’s busy, and gets the comment when its turn ends.", expect.objectContaining({ action: expect.objectContaining({ label: "Watch" }) })));
-  // Watch shows the thread beside the review, in BB's Main thread tab.
+  // Watch shows the thread beside the review, in VesnALIA's Main thread tab.
   (vi.mocked(toast.success).mock.calls.at(-1)![1] as unknown as { action: { onClick: () => void } }).action.onClick();
   expect(watched).toHaveBeenCalledWith("main");
 });
@@ -297,7 +297,7 @@ test("a sent comment says which Send carried it, to which thread, on its row, an
 test("on your PR whose folder a fixer took over, Change offers a fresh thread, not one here: the server starts a fixer at the PR's head", async () => {
   const setMainThread = vi.fn(async () => ({ ok: true }));
   const rehomed = { ...folderReview, targetKey: "pr-12", kind: "pr", repo: "acme/api", number: 12, ownPr: true,
-    feature: { ...folderReview.feature, environmentId: "env_fix", workBranch: "bb/fix" }, mainThread: { threadId: "coder", environmentId: "env_fix", origin: "fresh", since: 2, fixer: { sha: "a".repeat(40), at: 2 } } };
+    feature: { ...folderReview.feature, environmentId: "env_fix", workBranch: "alia/fix" }, mainThread: { threadId: "coder", environmentId: "env_fix", origin: "fresh", since: 2, fixer: { sha: "a".repeat(40), at: 2 } } };
   const slot = await renderTab(rehomed, { getSourceThread: () => MAIN, setMainThread }, [listed("coder", "Build snooze", { environment: { id: "env_fix" } })]);
   fireEvent.click(await slot.findByRole("button", { name: "Change main thread" }));
   const menu = within(await slot.findByRole("menu", { name: "Change main thread" }));

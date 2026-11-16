@@ -54,7 +54,7 @@ export interface StoreRetries {
   ending: Retries;
   /** A submit whose host steps got no answer, by ticket id. */
   checks: Retries;
-  /** A hand-back bb did not take, by ticket id and worker thread, so a new worker does not wait out the old one's failures. */
+  /** A hand-back VesnALIA did not take, by ticket id and worker thread, so a new worker does not wait out the old one's failures. */
   sends: Retries;
 }
 

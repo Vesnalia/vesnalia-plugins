@@ -2,7 +2,7 @@ import { join } from "node:path";
 import type {
   ExperimentalHostRpcContext,
   ExperimentalHostWatchSubscription,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import {
   emptyUsage,
   type Target,

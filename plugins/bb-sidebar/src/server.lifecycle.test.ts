@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import {
   createFakePluginHost,
@@ -101,8 +101,8 @@ describe("lifecycle RPC", () => {
   });
 
   it("releases the agent session and only the terminals nobody used", async () => {
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: { list: async () => projectsWith([projectThread({ id: "thr_1" })]) },
         threads: {
@@ -122,7 +122,7 @@ describe("lifecycle RPC", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     await expect(harness.behavior.callRpc("settle", { threadId: "thr_1" })).resolves.toEqual({
@@ -137,8 +137,8 @@ describe("lifecycle RPC", () => {
   });
 
   it("settles even when the runtime and terminals cannot be reached", async () => {
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: { list: async () => projectsWith([projectThread({ id: "thr_1" })]) },
         threads: {
@@ -154,7 +154,7 @@ describe("lifecycle RPC", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     await expect(harness.behavior.callRpc("settle", { threadId: "thr_1" })).resolves.toEqual({
@@ -167,8 +167,8 @@ describe("lifecycle RPC", () => {
   });
 
   it("releases every archived runtime even when one stop fails", async () => {
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         threads: {
           stop: async ({ threadId }: { threadId: string }) => {
@@ -178,7 +178,7 @@ describe("lifecycle RPC", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     await expect(
@@ -227,7 +227,7 @@ describe("lifecycle RPC", () => {
     await expect(harness.behavior.callRpc("listLifecycle", {})).resolves.toEqual({ rows: [] });
   });
 
-  it("persists pinned placement through the bb SDK", async () => {
+  it("persists pinned placement through the VesnALIA SDK", async () => {
     const harness = await loadPlugin();
 
     await expect(
@@ -287,7 +287,7 @@ describe("lifecycle RPC", () => {
     });
   });
 
-  it("removes lifecycle state when bb deletes the thread", async () => {
+  it("removes lifecycle state when VesnALIA deletes the thread", async () => {
     const harness = await loadPlugin();
     await harness.behavior.callRpc("settle", { threadId: "thr_1" });
 
@@ -329,8 +329,8 @@ describe("lifecycle RPC", () => {
   });
 
   it.each(["settle", "snooze", "park"])("does not %s when native unpinning fails", async (method) => {
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: { list: async () => projectsWith([projectThread({ id: "thr_1", pinnedAt: 1 })]) },
         threads: {
@@ -340,7 +340,7 @@ describe("lifecycle RPC", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     await expect(

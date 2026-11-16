@@ -329,7 +329,7 @@ export function isBuiltinIconName(name: string): name is BuiltinIconName {
 /**
  * The brand mark as a host-registrable app icon component. Registered via
  * `app.experimental_icons.register` in app.tsx under the name "FocusBoard",
- * which makes the mark usable anywhere the host takes a `BbIconName` — the
+ * which makes the mark usable anywhere the host takes a `AliaIconName` — the
  * sidebar nav row and the pane's title-bar tab included — instead of the
  * built-in placeholder glyph the navPanel registration used to carry.
  */

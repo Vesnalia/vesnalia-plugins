@@ -47,7 +47,7 @@ function mediaQuery(query: string): MediaQueryList | null {
   return typeof matchMedia === "function" ? matchMedia(query) : null;
 }
 
-/** bb's `dark` class on <html>, else the OS preference. */
+/** VesnALIA's `dark` class on <html>, else the OS preference. */
 function useDarkTheme(): boolean {
   const [dark, setDark] = useState(true);
   useEffect(() => {

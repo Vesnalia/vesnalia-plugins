@@ -10,7 +10,7 @@ ship it".
 signals. The error signals (`status: "error"`, `indicator: "unread-error"`,
 `indicator: "queued-failed"`, `queuedWork: "failed"`) have no dismissal: 24 of
 278 live threads on this board carry `status: "error"`, all claiming
-attention. bb itself has no acknowledge verb (`bb thread update` writes
+attention. VesnALIA itself has no acknowledge verb (`alia thread update` writes
 title/parent/section/model/reasoning/visibility only; a new turn is the only
 native path off `status: "error"`).
 
@@ -36,7 +36,7 @@ native path off `status: "error"`).
   in `lib/error-ack.ts`) and clears the record via RPC; the server does not
   watch turns. Known accepted window: an error arriving on an acked thread
   while every board panel is closed stays masked until the next panel sees
-  the stale ack drop. bb's own thread view keeps showing the error either way.
+  the stale ack drop. VesnALIA's own thread view keeps showing the error either way.
 
 ## Units
 

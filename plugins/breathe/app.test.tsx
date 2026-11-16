@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent } from '@testing-library/react';
-import { loadPluginApp, renderSlot } from '@get-bb/plugin-sdk/testing/app';
+import { loadPluginApp, renderSlot } from '@vesnalia/plugin-sdk/testing/app';
 import { BreatheSettings } from './components/breathe-settings';
 
 // Rendering and timer lifecycles are covered by the real-canvas component suites.

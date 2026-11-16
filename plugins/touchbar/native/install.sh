@@ -8,17 +8,17 @@ SUPPORT="$HOME/Library/Application Support/BBTouchBar"
 LAUNCH_AGENTS="$HOME/Library/LaunchAgents"
 PLIST="$LAUNCH_AGENTS/app.getbb.touchbar.native.plist"
 DOMAIN="gui/$(id -u)"
-BB_BIN="${BB_TOUCHBAR_BB_BIN:-$(command -v bb || true)}"
+ALIA_BIN="${ALIA_TOUCHBAR_ALIA_BIN:-$(command -v alia || true)}"
 
 [ "$(uname -s)" = "Darwin" ] || { printf '%s\n' 'error: macOS is required' >&2; exit 1; }
-[ -n "$BB_BIN" ] && [ -x "$BB_BIN" ] || { printf '%s\n' 'error: bb executable not found' >&2; exit 1; }
+[ -n "$ALIA_BIN" ] && [ -x "$ALIA_BIN" ] || { printf '%s\n' 'error: alia executable not found' >&2; exit 1; }
 
 mkdir -p "$INSTALL_DIR" "$SUPPORT" "$LAUNCH_AGENTS"
-printf '%s\n' "$BB_BIN" > "$SUPPORT/bb-path"
-chmod 600 "$SUPPORT/bb-path"
+printf '%s\n' "$ALIA_BIN" > "$SUPPORT/alia-path"
+chmod 600 "$SUPPORT/alia-path"
 
 bash "$ROOT/build.sh"
-BB_TOUCHBAR_APP="$INSTALL_APP" bash "$ROOT/run.sh" stop || true
+ALIA_TOUCHBAR_APP="$INSTALL_APP" bash "$ROOT/run.sh" stop || true
 rm -rf "$INSTALL_APP"
 ditto "$ROOT/build/BBTouchBar.app" "$INSTALL_APP"
 
@@ -39,7 +39,7 @@ PLIST
 plutil -lint "$PLIST" >/dev/null
 launchctl bootout "$DOMAIN/app.getbb.touchbar.native" 2>/dev/null || true
 launchctl bootstrap "$DOMAIN" "$PLIST"
-BB_TOUCHBAR_APP="$INSTALL_APP" bash "$ROOT/run.sh" start
+ALIA_TOUCHBAR_APP="$INSTALL_APP" bash "$ROOT/run.sh" start
 
 printf 'installed %s\n' "$INSTALL_APP"
-printf '%s\n' 'tap the BB badge in the Control Strip, or run native/run.sh open'
+printf '%s\n' 'tap the ALIA badge in the Control Strip, or run native/run.sh open'

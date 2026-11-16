@@ -6,7 +6,7 @@ import { createHash } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import type { SkillLocationScan } from "./skills.js";
-import { copySkillTree, isSkillJunk, measureBbTree, SKILL_TAR_EXCLUDES } from "./skill-tree.js";
+import { copySkillTree, isSkillJunk, measureAliaTree, SKILL_TAR_EXCLUDES } from "./skill-tree.js";
 
 const execFileAsync = promisify(execFile);
 const FINGERPRINT_MAX_FILES = 500;
@@ -55,7 +55,7 @@ export async function fingerprintDir(dir: string): Promise<{ hash: string; mtime
   return { hash: sha.digest("hex").slice(0, 12), mtime: newest, bytes };
 }
 
-export function bbServerSkillsDir(dataDir: string): string {
+export function aliaServerSkillsDir(dataDir: string): string {
   return path.join(dataDir, "skills");
 }
 
@@ -75,7 +75,7 @@ export async function scanSkillHome(id: string, dir: string): Promise<SkillLocat
       const isSymlink = info.isSymbolicLink();
       const hasSkillMd = await exists(path.join(full, "SKILL.md"));
       const fingerprint = hasSkillMd ? await fingerprintDir(full) : null;
-      const tree = hasSkillMd && !isSymlink ? await measureBbTree(full) : null;
+      const tree = hasSkillMd && !isSymlink ? await measureAliaTree(full) : null;
       entries.push({
         name,
         kind: isSymlink ? "symlink" : "dir",
@@ -84,8 +84,8 @@ export async function scanSkillHome(id: string, dir: string): Promise<SkillLocat
         mtime: fingerprint?.mtime ?? null,
         hasSkillMd,
         bytes: fingerprint?.bytes ?? 0,
-        bbBytes: tree?.bytes ?? 0,
-        bbFiles: tree?.files ?? 0,
+        aliaBytes: tree?.bytes ?? 0,
+        aliaFiles: tree?.files ?? 0,
         junk: (tree?.junk.length ?? 0) > 0,
       });
     }
@@ -113,7 +113,7 @@ async function backupSkillDir(source: string, name: string, reason: string): Pro
   await copySkillTree(source, dest);
   await writeFile(
     path.join(dest, ".backup.json"),
-    `${JSON.stringify({ name, at: new Date().toISOString(), reason, locationId: "bb-server", machine: os.hostname() }, null, 2)}\n`,
+    `${JSON.stringify({ name, at: new Date().toISOString(), reason, locationId: "alia-server", machine: os.hostname() }, null, 2)}\n`,
   );
 }
 
@@ -121,7 +121,7 @@ export async function mirrorSkillFromCanon(canonRoot: string, destRoot: string, 
   const here = path.join(destRoot, name);
   const canon = path.join(canonRoot, name);
   if (dryRun) return;
-  await backupSkillDir(here, name, "заменено каноном на сервере BB");
+  await backupSkillDir(here, name, "заменено каноном на сервере ALIA");
   await rm(here, { recursive: true, force: true });
   await mkdir(destRoot, { recursive: true });
   await copySkillTree(canon, here);
@@ -133,7 +133,7 @@ export async function extractSkillArchive(destRoot: string, name: string, archiv
   await backupSkillDir(here, name, "заменено архивом с машины");
   await rm(here, { recursive: true, force: true });
   await mkdir(destRoot, { recursive: true });
-  const tmp = path.join(os.tmpdir(), `bb-agent-tools-skill-${process.pid}-${Date.now()}.tgz`);
+  const tmp = path.join(os.tmpdir(), `alia-agent-tools-skill-${process.pid}-${Date.now()}.tgz`);
   await writeFile(tmp, Buffer.from(archiveBase64, "base64"));
   try {
     // Архив со старой версии плагина может нести node_modules — не распаковываем мусор.

@@ -1,8 +1,8 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { controlThreadsSchema, migrationSchema } from "./nudger-contract.js";
 
 /** A failed/absent integration has no authority to gate standalone watching. */
-export function createHeadquartersPeer(bb: BbPluginApi, signal: AbortSignal) {
+export function createHeadquartersPeer(alia: AliaPluginApi, signal: AbortSignal) {
   let present = false;
   let ids: string[] = [];
   let refreshedAt = -Infinity;
@@ -14,12 +14,12 @@ export function createHeadquartersPeer(bb: BbPluginApi, signal: AbortSignal) {
     const requested = requestedControls;
     refreshing = (async () => {
       try {
-        const { plugins } = await bb.sdk.plugins.list({ signal });
+        const { plugins } = await alia.sdk.plugins.list({ signal });
         const peer = plugins.find(plugin => plugin.id === "orchestrator");
         present = !!peer && peer.enabled && ["running", "starting", "needs-configuration", "degraded"].includes(peer.status);
         if (!present) { ids = []; return ids; }
         try {
-          const controls = await bb.sdk.plugins.callRpc({ pluginId: "orchestrator", method: "headquarters_controls_v1", input: { version: 1 }, outputSchema: controlThreadsSchema, signal });
+          const controls = await alia.sdk.plugins.callRpc({ pluginId: "orchestrator", method: "headquarters_controls_v1", input: { version: 1 }, outputSchema: controlThreadsSchema, signal });
           ids = controls.threadIds;
         } catch { /* Retain last known exclusions during a transient peer failure, never block unrelated threads. */ }
         return ids;
@@ -42,7 +42,7 @@ export function createHeadquartersPeer(bb: BbPluginApi, signal: AbortSignal) {
     contains(threadId: string): boolean { return ids.includes(threadId); },
     present(): boolean { return present; },
     readMigration(cursor: string | null) {
-      return bb.sdk.plugins.callRpc({ pluginId: "orchestrator", method: "nudger_export_v1", input: { version: 1, cursor }, outputSchema: migrationSchema, signal });
+      return alia.sdk.plugins.callRpc({ pluginId: "orchestrator", method: "nudger_export_v1", input: { version: 1, cursor }, outputSchema: migrationSchema, signal });
     },
   };
 }

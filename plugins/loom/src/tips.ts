@@ -78,7 +78,7 @@ export async function takeForRound(ctx: EngineCtx, project: ProjectRow, seen: Ti
   try {
     checkout = await repoCheckout(ctx, project, spec, seen.repo);
   } catch (error) {
-    ctx.bb.log("warn", `Could not read ${seen.key}'s checkout before its fix round: ${errText(error)}`);
+    ctx.alia.log("warn", `Could not read ${seen.key}'s checkout before its fix round: ${errText(error)}`);
     return { kind: "later" };
   }
   const branch = seen.pr_branch ?? seen.branch ?? "";
@@ -130,7 +130,7 @@ export async function takeForRound(ctx: EngineCtx, project: ProjectRow, seen: Ti
     store.changed(project.id);
     return { kind: "took", tip: tip.sha, sha: merged.sha };
   } catch (error) {
-    ctx.bb.log("warn", `Could not merge the new commits on ${seen.key}'s pull request branch before its fix round; Loom merges them when it pushes the fix: ${errText(error)}`);
+    ctx.alia.log("warn", `Could not merge the new commits on ${seen.key}'s pull request branch before its fix round; Loom merges them when it pushes the fix: ${errText(error)}`);
     return { kind: "later" };
   }
 }

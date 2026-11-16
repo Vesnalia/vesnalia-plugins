@@ -1,6 +1,6 @@
-export const MIKU_VISIBILITY_STORAGE_KEY = "bb-plugin-miku:visible";
+export const MIKU_VISIBILITY_STORAGE_KEY = "alia-plugin-miku:visible";
 
-const MIKU_VISIBILITY_EVENT = "bb-plugin-miku:visibility-change";
+const MIKU_VISIBILITY_EVENT = "alia-plugin-miku:visibility-change";
 
 type VisibilityStorage = Pick<Storage, "getItem" | "setItem">;
 

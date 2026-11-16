@@ -13,7 +13,7 @@ function fakeWindow(pathname = "/plugins/herald/waiting"): HistoryWindow & { pus
 }
 
 describe("openPluginSettings", () => {
-  it("pushes the route bb's own openSettings uses and tells the router", () => {
+  it("pushes the route VesnALIA's own openSettings uses and tells the router", () => {
     const win = fakeWindow();
     expect(openPluginSettings(win, "herald")).toBe(true);
     expect(win.pushes).toHaveLength(1);

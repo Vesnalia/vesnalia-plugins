@@ -30,7 +30,7 @@ describe("stages", () => {
   it("paths", () => {
     expect(docPaths("TEST-12")).toEqual({ context: "docs/workshop/TEST-12/context.md", tech: "docs/workshop/TEST-12/tech.md", tz: "docs/workshop/TEST-12/tz.md" });
     expect(livePath("TEST-12", 2)).toBe(".superpowers/workshop/TEST-12/live-r2.md");
-    expect(pluginDir("hello")).toBe(`${PLUGINS_ROOT}/bb-plugin-hello`);
+    expect(pluginDir("hello")).toBe(`${PLUGINS_ROOT}/alia-plugin-hello`);
   });
   it("derives work files from the task key", () => {
     expect(workDir("TEST-1")).toBe(".superpowers/workshop/TEST-1");

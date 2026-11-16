@@ -1,11 +1,11 @@
 /**
- * Opens FirstMate's page in bb's settings (the host-rendered form and the settings section) from a panel.
+ * Opens FirstMate's page in VesnALIA's settings (the host-rendered form and the settings section) from a panel.
  *
  * The panel SDK has no call for it: only a sidebar-footer action is handed `openSettings()`. That call
- * navigates to `/settings/plugins/<id>` (bb 0.44's app), so this does the same the way the app's
+ * navigates to `/settings/plugins/<id>` (VesnALIA 0.44's app), so this does the same the way the app's
  * react-router browser history does: push the route with the router's `{ usr, key, idx }` state, then
- * dispatch the `popstate` the router listens for. It is an internal route; if a later bb moves it, the
- * push lands on bb's not-found page rather than failing, and the caller's fallback toast says where the
+ * dispatch the `popstate` the router listens for. It is an internal route; if a later VesnALIA moves it, the
+ * push lands on VesnALIA's not-found page rather than failing, and the caller's fallback toast says where the
  * page is.
  */
 export const PLUGIN_SETTINGS_PATH = "/settings/plugins/firstmate-crew";

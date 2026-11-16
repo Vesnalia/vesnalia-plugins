@@ -2,7 +2,7 @@
 set -u
 
 here=$(cd "$(dirname "$0")" && pwd)
-shared=/Users/Shared/bb-box/docs/research/ios-shared-hosts
+shared=/Users/Shared/alia-box/docs/research/ios-shared-hosts
 now() { python3 -c 'import time; print(f"{time.time():.3f}")'; }
 since() { python3 -c "import sys, time; print(f'{time.time() - float(sys.argv[1]):.1f}')" "$1"; }
 as_user() { "$here/users.sh" run "$@"; }

@@ -21,9 +21,9 @@ const shoot = async (name) => {
   console.log(name);
 };
 const button = (name, options = {}) => page.getByRole("button", { name, ...options });
-const bb = (...args) => execFileSync(process.env.BB_CLI ?? "bb", args, { encoding: "utf8" });
-const bbJson = (...args) => JSON.parse(bb(...args, "--json"));
-const monitorHeader = page.locator("[data-bb-box-monitor-header]");
+const alia = (...args) => execFileSync(process.env.ALIA_CLI ?? "alia", args, { encoding: "utf8" });
+const aliaJson = (...args) => JSON.parse(alia(...args, "--json"));
+const monitorHeader = page.locator("[data-alia-box-monitor-header]");
 const threadsOnServer = [
   ["Write the release notes", true],
   ["Run the test suite", true],
@@ -34,7 +34,7 @@ const threadsOnServer = [
   ["Tidy the build cache", false],
 ];
 
-await page.goto(process.env.DEMO_BB_URL ?? "http://localhost:4999/", { waitUntil: "networkidle" });
+await page.goto(process.env.DEMO_ALIA_URL ?? "http://localhost:4999/", { waitUntil: "networkidle" });
 await pause(1500);
 await page.getByRole("textbox", { name: "Ask anything." }).click();
 await page.keyboard.type("Get a Linux desktop box and open getbb.app on it.");
@@ -57,7 +57,7 @@ await shoot("new-box-form");
 
 await button("Create box").click();
 await page.getByRole("button", { name: "Open terminal" }).nth(1).waitFor({ timeout: 120000 });
-await page.getByText(/BB machine in/).nth(1).waitFor({ timeout: 120000 });
+await page.getByText(/ALIA machine in/).nth(1).waitFor({ timeout: 120000 });
 await pause(1500);
 await shoot("box-panel");
 
@@ -105,13 +105,13 @@ await pause(500);
 await button("Box", { exact: true }).click();
 await pause(800);
 
-const server = bbJson("machine", "list").find((machine) => machine.machineProviderId === null);
+const server = aliaJson("machine", "list").find((machine) => machine.machineProviderId === null);
 const root = process.env.DEMO_PROJECT_ROOT ?? `${homedir()}/website`;
 mkdirSync(root, { recursive: true });
-const project = bbJson("project", "create", "--name", "website", "--root", root, "--machine", server.name);
+const project = aliaJson("project", "create", "--name", "website", "--root", root, "--machine", server.name);
 for (const [title, working] of threadsOnServer) {
-  const thread = bbJson("thread", "spawn", "--project", project.id, "--machine", server.name, "--environment", root, "--provider", "acp-demo", "--prompt", working ? "WORK" : "Done");
-  bb("thread", "update", thread.id, "--title", title);
+  const thread = aliaJson("thread", "spawn", "--project", project.id, "--machine", server.name, "--environment", root, "--provider", "acp-demo", "--prompt", working ? "WORK" : "Done");
+  alia("thread", "update", thread.id, "--title", title);
   await pause(1500);
 }
 await pause(5000);
@@ -122,7 +122,7 @@ await page.getByRole("listbox", { name: "Machines" }).locator("[data-machine-ind
 await pause(8000);
 await monitorHeader.getByRole("button", { name: `Threads on ${server.name}`, exact: true }).click();
 await pause(1500);
-const panel = await page.locator("[data-bb-box-monitor-shell]").boundingBox();
+const panel = await page.locator("[data-alia-box-monitor-shell]").boundingBox();
 const menu = await page.getByRole("menu").boundingBox();
 const left = Math.min(panel.x, menu.x) - 8;
 const top = Math.min(panel.y, menu.y) - 8;

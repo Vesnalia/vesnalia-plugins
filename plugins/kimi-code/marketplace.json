@@ -2,13 +2,13 @@
   "$schema": "https://getbb.app/schemas/marketplace.schema.json",
   "schemaVersion": 1,
   "name": "kimi-code",
-  "displayName": "Kimi Code for bb",
-  "description": "The Kimi Code provider plugin for bb, maintained by Dmitry Polishuk.",
+  "displayName": "Kimi Code for VesnALIA",
+  "description": "The Kimi Code provider plugin for VesnALIA, maintained by Dmitry Polishuk.",
   "plugins": [
     {
       "id": "kimi-code",
       "displayName": "Kimi Code",
-      "description": "Run Kimi Code CLI threads in bb — locally and on remote hosts, with models, thinking levels, modes, slash commands, and approvals.",
+      "description": "Run Kimi Code CLI threads in VesnALIA — locally and on remote hosts, with models, thinking levels, modes, slash commands, and approvals.",
       "icon": { "url": "./icons/kimi.svg" },
       "tags": ["agent", "provider", "kimi"],
       "author": {

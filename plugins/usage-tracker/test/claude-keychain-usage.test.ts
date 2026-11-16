@@ -196,7 +196,7 @@ test("is unavailable outside macOS", async () => {
   assert.deepEqual(fake.services, []);
 });
 
-test("overrides BB's Claude Code usage in the snapshot", async () => {
+test("overrides VesnALIA's Claude Code usage in the snapshot", async () => {
   const sdk: UsageSdk = {
     threads: {},
     hosts: { list: async () => [{ id: "host", name: "Host", status: "connected", lastSeenAt: 1 }] },

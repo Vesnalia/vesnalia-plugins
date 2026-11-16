@@ -9,7 +9,7 @@ const refused = (spawnError: string): RunResult => ({ exitCode: null, stdout: ""
 
 /**
  * The Runner on Claude Code: the session's folder is on this machine, so the CLI runs here, in-process, with what
- * bb's host half calls on its machine (scopeFolder, scopeInside, findSyns, runSyns). No host call, so no 8 MiB bound and no
+ * VesnALIA's host half calls on its machine (scopeFolder, scopeInside, findSyns, runSyns). No host call, so no 8 MiB bound and no
  * slices. `hostId` is ignored: there is one machine.
  */
 export function createLocalRunner(synsPath: string | undefined): Runner {

@@ -1,10 +1,10 @@
 # Treelanes
 
-Treelanes is one bb plugin with a board and a sidebar for Git Worktrees.
+Treelanes is one VesnALIA plugin with a board and a sidebar for Git Worktrees.
 
 ## Terms
 
-**Git Worktree**: A checked-out Git branch that bb marks as a managed or unmanaged worktree.
+**Git Worktree**: A checked-out Git branch that VesnALIA marks as a managed or unmanaged worktree.
 
 **Worktree Card**: One board card for one Git Worktree. It contains all Unsettled Threads in that worktree. Avoid: thread card, root card.
 
@@ -17,7 +17,7 @@ _Avoid_: core thread, root card
 
 **Snoozed Thread**: A thread the user postponed until a wake time, with no newer attention or live work.
 
-**Unsettled Thread**: A bb thread that is in a Git Worktree and is not a Settled Thread. A thread becomes unsettled again when it has new attention or live work.
+**Unsettled Thread**: A VesnALIA thread that is in a Git Worktree and is not a Settled Thread. A thread becomes unsettled again when it has new attention or live work.
 
 **Display Title**: A short sidebar name for an automatic board thread. The model that the Task Map selects for titles writes it in a short hidden thread. The original title remains for run recovery. A manual rename takes priority. Automatic titles are off by default.
 
@@ -45,7 +45,7 @@ _Avoid_: Quality Loop
 
 **Setup Step**: One worker assignment with a stable ID, Worktree Stage, instructions, checks, and execution choices. Several Setup Steps can use the same Worktree Stage.
 
-**Execution Choice**: The bb provider, model, supported reasoning effort, selected skill references, and reason for one Setup Step. The provider selects the harness. The board stores the resolved choice before dispatch.
+**Execution Choice**: The VesnALIA provider, model, supported reasoning effort, selected skill references, and reason for one Setup Step. The provider selects the harness. The board stores the resolved choice before dispatch.
 
 **Task Map**: The Settings section that lists each task kind's template steps, plus the orchestrator and automatic titles, with a harness, model, and effort for each. A saved choice binds setup planning and validation for steps that have not started. "Orchestrator chooses" leaves the choice open. Settings and health report a saved choice that the live catalog cannot run.
 
@@ -63,4 +63,4 @@ _Avoid_: Quality Loop
 
 **Same-thread Retry**: A bounded retry of a failed turn in its assigned thread. It keeps the execution choice, task revision, and stage. A saved claim prevents duplicate dispatch after reload. Each assignment permits two retries. It cannot grant approval, clear a check blocker, or restart an idle or stopped worker.
 
-**One-time Import**: `bb treelanes import` copies the data of the earlier workflow-board and worktree-sidebar plugins into a new Treelanes install in one transaction. It refuses a destination that has data, and a second run does nothing.
+**One-time Import**: `alia treelanes import` copies the data of the earlier workflow-board and worktree-sidebar plugins into a new Treelanes install in one transaction. It refuses a destination that has data, and a second run does nothing.

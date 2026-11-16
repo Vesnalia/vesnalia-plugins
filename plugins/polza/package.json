@@ -1,21 +1,16 @@
 {
-  "name": "bb-plugin-polza",
+  "name": "alia-plugin-polza",
   "version": "0.1.5",
-  "description": "Polza.ai provider for bb: sign in with Polza, pick catalog models, see your balance.",
+  "description": "Polza.ai provider for VesnALIA: sign in with Polza, pick catalog models, see your balance.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/polza-ai/bb-plugin-polza.git"
-  },
-  "homepage": "https://github.com/polza-ai/bb-plugin-polza",
   "type": "module",
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "Polza [Experimental]",
-    "description": "Run bb threads on polza.ai models with Claude Code: OAuth sign-in, a curated model list, balance and ruble spend.",
+    "description": "Run alia threads on polza.ai models with Claude Code: OAuth sign-in, a curated model list, balance and ruble spend.",
     "branding": {
       "icon": "./icons/polza.svg",
       "experimental_icons": {
@@ -37,23 +32,23 @@
     ]
   },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "polza",
     "llm",
     "provider"
   ],
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.3.318",
-    "@get-bb/plugin-sdk": "0.6.132",
     "@modelcontextprotocol/sdk": "^1.32.2",
     "@radix-ui/react-checkbox": "^1.4.1",
     "@radix-ui/react-slot": "^1.5.0",
-    "zod": "^4.6.5"
+    "zod": "^4.6.5",
+    "@vesnalia/plugin-sdk": "^0.6.132"
   },
   "devDependencies": {
     "@pierre/diffs": "~1.2.12",
@@ -84,5 +79,14 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^4.0.0"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/polza#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/polza"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

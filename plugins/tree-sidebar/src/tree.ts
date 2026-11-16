@@ -1,11 +1,11 @@
 // The shape of the sidebar: projects placed where they sit on disk.
 //
-// bb knows each project's workspace path, so a set of projects under
+// VesnALIA knows each project's workspace path, so a set of projects under
 // ~/Code, ~/Projects, and ~/Support already forms a tree. This module turns
 // those paths plus the live thread list into that tree. It is deliberately
 // pure — no React, no SDK calls — so the layout rules are testable on their
 // own.
-import type { PluginSidebarThread } from "@bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 
 /** A project and where its default workspace lives. */
 export interface ProjectLocation {
@@ -96,7 +96,7 @@ export function nestThreads(threads: PluginSidebarThread[]): ThreadNode[] {
     }
   }
   // A parent cycle would otherwise recurse forever, and every thread in one
-  // would be a child of something and so appear nowhere. bb should never
+  // would be a child of something and so appear nowhere. VesnALIA should never
   // produce one, but a sidebar must not be the thing that hangs or hides work
   // if it does: anything left over is promoted to a root.
   const placed = new Set<string>();
@@ -118,7 +118,7 @@ export interface BuildTreeArgs {
   /** The host's search box text; "" when it is closed. */
   query?: string;
   /**
-   * Thread ids the server's full-text search matched. bb searches message
+   * Thread ids the server's full-text search matched. VesnALIA searches message
    * bodies, which a title filter cannot reach, so a thread counts as matching
    * when its title matches OR it is in here. Null means the search has not
    * answered yet and titles are all there is to go on.

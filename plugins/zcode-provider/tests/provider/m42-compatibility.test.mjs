@@ -5,14 +5,14 @@ import { resolve } from 'node:path';
 import { api } from './helpers.mjs';
 import { setTimeout as delay } from 'node:timers/promises';
 import { createHash } from 'node:crypto';
-const tuple={bb:'0.45.0',installedSdk:'0.6.15',declaredSdk:'0.6.15',desktop:'3.14.4',cli:'0.16.9',runtimeSha256:'a'.repeat(64),
- bbArtifactSha256:'b'.repeat(64),sdkArtifactSha256:'c'.repeat(64),platform:'darwin',arch:'arm64',node:'24.20.0'};
+const tuple={alia:'0.45.0',installedSdk:'0.6.15',declaredSdk:'0.6.15',desktop:'3.14.4',cli:'0.16.9',runtimeSha256:'a'.repeat(64),
+ aliaArtifactSha256:'b'.repeat(64),sdkArtifactSha256:'c'.repeat(64),platform:'darwin',arch:'arm64',node:'24.20.0'};
 const table=[{tuple,pluginRevision:'fixture-only',resultRef:'synthetic-level1',evidenceRef:'public SDK fixture',level:'level1'}];
 test('current base reference is exact; only evidenced level1 tuples are accepted and old support is removed',()=>{
  const ref=api.compatibilityReference;
- assert.equal(ref.bb,'0.47.1');assert.equal(ref.installedSdk,'0.6.79');assert.equal(ref.declaredSdk,'0.6.79');
+ assert.equal(ref.alia,'0.47.1');assert.equal(ref.installedSdk,'0.6.79');assert.equal(ref.declaredSdk,'0.6.79');
  assert.equal(ref.desktop,'3.15.1');assert.equal(ref.node,'24.22.0');assert.match(ref.builtinSha256,/^[a-f0-9]{64}$/);
- assert.deepEqual(api.checkedTuples.map(row=>row.tuple.bb),['0.47.1','0.48.0']);
+ assert.deepEqual(api.checkedTuples.map(row=>row.tuple.alia),['0.47.1','0.48.0']);
  const target=api.checkedTuples[1].tuple;
  assert.equal(target.installedSdk,'0.6.94');assert.equal(target.declaredSdk,'0.6.79');
  assert.equal(target.desktop,'3.16.3');assert.equal(target.cli,'0.17.0');
@@ -30,7 +30,7 @@ test('actual installed tuple is discovered without promoting an untested install
  const current=api.discoverCompatibility(paths,createHash('sha256').update(readFileSync(paths.script)).digest('hex'));
  assert.equal(current.runtimeSha256,createHash('sha256').update(readFileSync(paths.script)).digest('hex'));
  assert.equal(current.declaredSdk,'0.6.79');assert.equal(current.platform,process.platform);assert.equal(current.node,process.versions.node);
- for(const key of ['builtinSha256','bbArtifactSha256','sdkArtifactSha256'])assert.match(current[key],/^[a-f0-9]{64}$/);
+ for(const key of ['builtinSha256','aliaArtifactSha256','sdkArtifactSha256'])assert.match(current[key],/^[a-f0-9]{64}$/);
  const match=api.checkedTuples.find(row=>Object.entries(current).every(([key,value])=>value!==null&&row.tuple[key]===value));
  const compared=api.compareCompatibility(current);
  assert.equal(compared.known,Boolean(match));
@@ -39,18 +39,18 @@ test('actual installed tuple is discovered without promoting an untested install
 });
 test('unknown compatibility never masks actual startup/protocol failure or retries create',async()=>{
  const output=[];let prepares=0;
- const b=api.createZCodeBridge({compatibility:()=>api.compareCompatibility({...tuple,bb:null},table),
+ const b=api.createZCodeBridge({compatibility:()=>api.compareCompatibility({...tuple,alia:null},table),
   prepare:async()=>{prepares++;throw new api.ProtocolError('synthetic-startup-protocol-failure');}},m=>output.push(m));
  b.handleLine(JSON.stringify({jsonrpc:'2.0',id:1,method:'thread/start',params:{threadId:'own',cwd:resolve('.'),instructionMode:'append',
   options:{permissionMode:'full',permissionScope:'full',approvalReviewer:null,permissionEscalation:null}}}));
  for(let n=0;n<100&&!output.some(v=>v.id===1);n++)await delay(10);
  const response=output.find(v=>v.id===1);assert.ok(response.error);assert.match(response.error.message,/synthetic-startup-protocol-failure/);
- assert.match(response.error.message,/bb unknown/);assert.equal(prepares,1);assert.equal(output.some(v=>v.method==='thread/identity'),false);await b.close();
+ assert.match(response.error.message,/alia unknown/);assert.equal(prepares,1);assert.equal(output.some(v=>v.method==='thread/identity'),false);await b.close();
 });
-test('local exact tuple: known, unknown bb/ZCode/both, SHA mismatch and absent metadata never infer compatibility',()=>{
+test('local exact tuple: known, unknown alia/ZCode/both, SHA mismatch and absent metadata never infer compatibility',()=>{
  assert.equal(api.compareCompatibility(tuple,table).known,true);
- for(const change of [{bb:'99.0.0'},{cli:'99.0.0'},{bb:'99.0.0',cli:'99.0.0'},{runtimeSha256:'d'.repeat(64)},
-  {cli:null},{bb:null},{installedSdk:null},{runtimeSha256:null},{sdkArtifactSha256:null}]){
+ for(const change of [{alia:'99.0.0'},{cli:'99.0.0'},{alia:'99.0.0',cli:'99.0.0'},{runtimeSha256:'d'.repeat(64)},
+  {cli:null},{alia:null},{installedSdk:null},{runtimeSha256:null},{sdkArtifactSha256:null}]){
   const result=api.compareCompatibility({...tuple,...change},table);assert.equal(result.known,false);assert.match(result.message,/You can continue/);
  }
  assert.equal(api.compareCompatibility(tuple,[{...table[0],evidenceRef:''}]).known,false);

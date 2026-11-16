@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRealtime, useRpc } from '@get-bb/plugin-sdk/app';
+import { useRealtime, useRpc } from '@vesnalia/plugin-sdk/app';
 import type { rpcContract } from './server';
 import { defaultStatusTemplate, statusPresets, VARIABLES, renderStatusParts, templateData, validateStatusTemplate, type TemplateData, type TemplateSurface } from './status-template';
 import { StatusTemplateText } from './status-template-ui';

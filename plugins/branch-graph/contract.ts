@@ -1,4 +1,4 @@
-import { defineRpcContract } from '@get-bb/plugin-sdk';
+import { defineRpcContract } from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 
 export const treeSchema = z.object({ path: z.string(), sha: z.string(), branch: z.string().nullable(), kind: z.enum(['primary', 'linked', 'detached', 'prunable']), note: z.string() });

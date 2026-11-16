@@ -231,7 +231,7 @@ export async function fetchCopilotUsage(
       headers: {
         Authorization: `token ${credential.token}`,
         Accept: 'application/json',
-        'User-Agent': 'bb-plugin-gh-copilot',
+        'User-Agent': 'alia-plugin-gh-copilot',
         'X-GitHub-Api-Version': '2025-04-01',
       },
       signal: AbortSignal.timeout(timeoutMs),

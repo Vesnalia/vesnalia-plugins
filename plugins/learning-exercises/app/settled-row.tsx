@@ -4,7 +4,7 @@
  * row shows exactly what the learner said and nothing credited to them. A form answer is shown part by
  * part (`AnswerView`); a row whose form no longer reads shows the answer's text summary.
  */
-import type { PluginTimelineRendererProps } from "@get-bb/plugin-sdk/app";
+import type { PluginTimelineRendererProps } from "@vesnalia/plugin-sdk/app";
 
 import { FormValuesSchema, readAnswerForm } from "../shared/answer-form";
 import { CONFIDENCE_LABELS, SettledRowSchema } from "../shared/types";

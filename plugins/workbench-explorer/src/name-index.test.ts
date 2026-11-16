@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "bun:test";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { type RevealRoot } from "../shared";
 
 const DEFAULT_IGNORED_DIRS = [
@@ -26,7 +26,7 @@ import { registerRoot } from "./roots";
 import { resolveInRoot } from "./reveal";
 
 test("findByName resolves a bare filename to its owning root", async () => {
-  const base = await mkdtemp(path.join(tmpdir(), "bb-file-explorer-name-index-"));
+  const base = await mkdtemp(path.join(tmpdir(), "alia-file-explorer-name-index-"));
   const docs = path.join(base, "Documents");
   try {
     await mkdir(docs, { recursive: true });
@@ -45,7 +45,7 @@ test("findByName resolves a bare filename to its owning root", async () => {
 });
 
 test("findByName resolves a multi-segment name to the right file inside its root", async () => {
-  const base = await mkdtemp(path.join(tmpdir(), "bb-file-explorer-name-index-"));
+  const base = await mkdtemp(path.join(tmpdir(), "alia-file-explorer-name-index-"));
   const docs = path.join(base, "Documents");
   try {
     await mkdir(docs, { recursive: true });
@@ -67,7 +67,7 @@ test("a bare filename mentioned in chat reveals via the name index across roots"
   // Regression: `findByName` used an undeclared `name`, so a chat link to a
   // bare filename (not present in the thread workspace) threw "name is not
   // defined" instead of re-rooting the tree to the file.
-  const base = await mkdtemp(path.join(tmpdir(), "bb-file-explorer-reveal-name-"));
+  const base = await mkdtemp(path.join(tmpdir(), "alia-file-explorer-reveal-name-"));
   const workspace = path.join(base, "thread-ws");
   const docs = path.join(base, "Documents");
   try {
@@ -77,7 +77,7 @@ test("a bare filename mentioned in chat reveals via the name index across roots"
     await writeFile(path.join(docs, "lonely.md"), "there");
 
     const rootId = registerRoot("host-1", workspace);
-    const bb = {
+    const alia = {
       sdk: {
         system: { config: async () => ({ primaryHostId: "host-1" }) },
         projects: { list: async () => [] },
@@ -86,11 +86,11 @@ test("a bare filename mentioned in chat reveals via the name index across roots"
         hosts: { pathsExist: async () => ({ existence: {} }) },
       },
       log: { warn: () => undefined, info: () => undefined },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
     const probe = async (hostId: string, rootPath: string, relativePath: string) =>
       statHostPath(rootPath, relativePath);
 
-    const result = await resolveInRoot(bb, { rootId, path: "lonely.md" }, async () => [docs], probe, new Set(DEFAULT_IGNORED_DIRS));
+    const result = await resolveInRoot(alia, { rootId, path: "lonely.md" }, async () => [docs], probe, new Set(DEFAULT_IGNORED_DIRS));
     assert.equal(result.ok, true);
     if (result.ok) {
       assert.equal(result.isDirectory, false);
@@ -99,7 +99,7 @@ test("a bare filename mentioned in chat reveals via the name index across roots"
       assert.equal(result.root?.rootPath, docs);
     }
     // And the thread-workspace file still resolves in place.
-    const here = await resolveInRoot(bb, { rootId, path: "exists.md" }, async () => [docs], probe, new Set(DEFAULT_IGNORED_DIRS));
+    const here = await resolveInRoot(alia, { rootId, path: "exists.md" }, async () => [docs], probe, new Set(DEFAULT_IGNORED_DIRS));
     assert.equal(here.ok, true);
     if (here.ok) assert.equal(here.root, null);
   } finally {

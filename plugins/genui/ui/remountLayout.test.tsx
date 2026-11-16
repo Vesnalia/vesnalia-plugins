@@ -2,10 +2,10 @@
 // A thread opened again must lay its blocks out at their final size on the
 // first frame: no placeholder that grows when a picture arrives, no choices
 // that fold when the outline arrives, no reservation dropped while a picture
-// is still being read (a remote BB can take seconds per picture).
+// is still being read (a remote VesnALIA can take seconds per picture).
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import type * as PluginSdkApp from "@get-bb/plugin-sdk/app";
+import type * as PluginSdkApp from "@vesnalia/plugin-sdk/app";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { SlotFence } from "./SlotFence";
 import { useSuperseded } from "./useSuperseded";
@@ -38,11 +38,11 @@ const { rpc, sdk, pictures } = vi.hoisted(() => {
   return { rpc, sdk, pictures };
 });
 
-vi.mock("@get-bb/plugin-sdk/app", async (importOriginal) => ({
+vi.mock("@vesnalia/plugin-sdk/app", async (importOriginal) => ({
   ...(await importOriginal<typeof PluginSdkApp>()),
   useComposers: () => [],
   useSdk: () => sdk,
-  useBbNavigate: () => ({}),
+  useAliaNavigate: () => ({}),
   useRpc: () => rpc,
   useSettings: () => ({ values: { animations: true }, isLoading: false }),
   experimental_Icon: () => <span aria-hidden="true" />,
@@ -83,13 +83,13 @@ const loadImageCalls = () => rpc.call.mock.calls.filter(([method]) => method ===
 
 beforeAll(() => {
   // What an earlier page left behind; the stores read it on first use.
-  localStorage.setItem("bb.genui.image-sizes", JSON.stringify([["fresh|bb.genui.state:fresh:assistant:1#ui#0|poster.png", [600, 900]]]));
-  localStorage.setItem("bb.genui.answered", JSON.stringify(["fresh:assistant:answered"]));
+  localStorage.setItem("alia.genui.image-sizes", JSON.stringify([["fresh|alia.genui.state:fresh:assistant:1#ui#0|poster.png", [600, 900]]]));
+  localStorage.setItem("alia.genui.answered", JSON.stringify(["fresh:assistant:answered"]));
   localStorage.setItem(
-    "bb.genui.heights",
+    "alia.genui.heights",
     JSON.stringify([
-      ["bb.genui.state:hold:assistant:1#ui#0", [720, 500]],
-      ["bb.genui.state:stuck:assistant:1#ui#0", [720, 500]],
+      ["alia.genui.state:hold:assistant:1#ui#0", [720, 500]],
+      ["alia.genui.state:stuck:assistant:1#ui#0", [720, 500]],
     ]),
   );
 });
@@ -105,7 +105,7 @@ beforeEach(() => {
       disconnect() {}
     },
   );
-  // The column BB lays replies out in.
+  // The column VesnALIA lays replies out in.
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 720, 0));
   container = document.createElement("div");
   document.body.append(container);
@@ -120,14 +120,14 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("a block BB mounts again", () => {
+describe("a block VesnALIA mounts again", () => {
   it("shows a picture this page already read, at its size, on its first frame", async () => {
     renderBlock("page", 'Image("shot.png", "Shot")');
     expect(container.querySelector('[role="status"]')).not.toBeNull();
     await act(async () => pictures.get("shot.png")?.({ ok: true, dataUrl: "data:image/png;base64,AAAA" }));
     decode(container.querySelector("img")!, 480, 270);
 
-    // BB's timeline drops the row (the thread is left, or scrolled past), then mounts it again.
+    // VesnALIA's timeline drops the row (the thread is left, or scrolled past), then mounts it again.
     act(() => root.render(null));
     renderBlock("page", 'Image("shot.png", "Shot")');
     const img = container.querySelector("img")!;
@@ -216,7 +216,7 @@ describe("a block BB mounts again", () => {
     expect(loadImageCalls()).toBe(calls + 1);
   });
 
-  it("still ends a reservation the content no longer fills when BB's outline never arrives", async () => {
+  it("still ends a reservation the content no longer fills when VesnALIA's outline never arrives", async () => {
     vi.useFakeTimers();
     renderBlock("stuck", 'Text("Shorter now")');
     const holder = container.querySelector<HTMLElement>("[data-genui-fence] .group\\/genui > div");
@@ -254,6 +254,6 @@ describe("useSuperseded", () => {
   it("remembers a reply the outline shows answered", async () => {
     await act(async () => root.render(<Verdict threadId="later" messageId="later:assistant:1" />));
     expect(verdicts()).toEqual(["true"]);
-    await vi.waitFor(() => expect(JSON.parse(localStorage.getItem("bb.genui.answered") ?? "[]")).toContain("later:assistant:1"));
+    await vi.waitFor(() => expect(JSON.parse(localStorage.getItem("alia.genui.answered") ?? "[]")).toContain("later:assistant:1"));
   });
 });

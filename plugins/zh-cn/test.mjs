@@ -22,8 +22,8 @@ test('merged runtime rules compose count units and fixed operation names',()=>{
   const t=createTranslator(dictionary,rules);
   assert.equal(t('2 dev servers running at the last scan are stopped first.'),'上次扫描时仍在运行的 2 个开发服务器 会先停止。');
   assert.equal(t('Automation "Daily" requires a prompt before it can run. Edit it and add a prompt first.'),'自动化任务“Daily”需要先添加提示词，才能运行。先编辑任务并添加提示词。');
-  assert.doesNotMatch(t('bb cloud can\'t transcribe this audio; use WebM, Ogg, MP4, MP3, WAV, FLAC, or AAC'),/\bthis\b/);
-  assert.match(t('bb cloud can\'t transcribe audio/custom audio; use WebM, Ogg, MP4, MP3, WAV, FLAC, or AAC'),/audio\/custom/);
+  assert.doesNotMatch(t('alia cloud can\'t transcribe this audio; use WebM, Ogg, MP4, MP3, WAV, FLAC, or AAC'),/\bthis\b/);
+  assert.match(t('alia cloud can\'t transcribe audio/custom audio; use WebM, Ogg, MP4, MP3, WAV, FLAC, or AAC'),/audio\/custom/);
 });
 test('cron ordered slots render numbers without leaving percent placeholders',()=>{
   const t=createTranslator(dictionary,rules);
@@ -150,7 +150,7 @@ test('removed nodes are restored before reuse as user content',async()=>{
 test('compiled plugin registers and mounts against the shared runtime',async()=>{
   const dom=new JSDOM('<button>Settings</button><button>New project</button>');
   globalThis.document=dom.window.document;
-  globalThis.__bbPluginRuntime={pluginSdkApp:{definePluginApp:setup=>({setup})}};
+  globalThis.__aliaPluginRuntime={pluginSdkApp:{definePluginApp:setup=>({setup})}};
   try {
     const bundle=await import('./dist/app.js');
     const registrations=[];
@@ -163,6 +163,6 @@ test('compiled plugin registers and mounts against the shared runtime',async()=>
     abort.abort();dispose();
     assert.equal(document.body.textContent,'SettingsNew project');
   } finally {
-    delete globalThis.document;delete globalThis.__bbPluginRuntime;dom.window.close();
+    delete globalThis.document;delete globalThis.__aliaPluginRuntime;dom.window.close();
   }
 });

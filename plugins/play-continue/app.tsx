@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { definePluginApp, useComposer, useSdk } from '@get-bb/plugin-sdk/app';
+import { definePluginApp, useComposer, useSdk } from '@vesnalia/plugin-sdk/app';
 import { toast } from 'sonner';
 import { PROMPT, canStop, composerIdle, doubleEscape, playButton, resumable, rootOf, stopButton, stopHint } from './logic';
 
@@ -98,7 +98,7 @@ export default definePluginApp(app => {
     id: 'hide-action-slot',
     mount() {
       const style = document.createElement('style');
-      style.dataset.bbPlugin = PLUGIN_ID;
+      style.dataset.aliaPlugin = PLUGIN_ID;
       style.textContent = css;
       document.head.append(style);
       return () => style.remove();

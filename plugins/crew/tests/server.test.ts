@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { GRAPH_TOOL_NAME, INTEGRATOR_TOOL_NAMES, LEAD_ADMIN_TOOL_NAMES, LEAD_TOOL_NAMES, TOOL_NAMES, WORK_TOOL_NAMES } from "../lib/agent";
 import plugin from "../server";
 
 describe("server wiring", () => {
   it("registers the crew CLI and the RPC methods, migrates the DB", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "crew" });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "crew" });
+    await plugin(alia);
     const help = await harness.behavior.runCli(["help"]);
-    expect(help.stdout).toContain("bb crew apply");
+    expect(help.stdout).toContain("alia crew apply");
     expect(await harness.behavior.callRpc("listCrews", { projectId: null })).toEqual({ crews: [] });
     const saved = (await harness.behavior.callRpc("saveCrewFile", {
       projectId: "p1",
@@ -21,9 +21,9 @@ describe("server wiring", () => {
   });
 
   it("getCrew decorates the crew with its project's name, like listCrews (BBP-79)", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "crew" });
+    const { alia, harness } = createFakePluginHost({ pluginId: "crew" });
     harness.sdk.stub("projects.get", async () => ({ id: "p1", name: "My Project", sources: [] }));
-    await plugin(bb);
+    await plugin(alia);
     await harness.behavior.callRpc("saveCrewFile", {
       projectId: "p1",
       yaml: "version: 1\nname: solo\ngroups:\n  - id: g\n    members:\n      - id: me\n        provider: claude-code\n        model: m\n",
@@ -34,11 +34,11 @@ describe("server wiring", () => {
   });
 
   it("negative: getCrew falls back to no project name when the lookup fails", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "crew" });
+    const { alia, harness } = createFakePluginHost({ pluginId: "crew" });
     harness.sdk.stub("projects.get", async () => {
       throw new Error("no such project");
     });
-    await plugin(bb);
+    await plugin(alia);
     await harness.behavior.callRpc("saveCrewFile", {
       projectId: "p1",
       yaml: "version: 1\nname: solo\ngroups:\n  - id: g\n    members:\n      - id: me\n        provider: claude-code\n        model: m\n",
@@ -49,8 +49,8 @@ describe("server wiring", () => {
   });
 
   it("negative: saving an invalid crew file stores nothing", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "crew" });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "crew" });
+    await plugin(alia);
     const saved = (await harness.behavior.callRpc("saveCrewFile", { projectId: "p1", yaml: "version: 1\nname: a.b\ngroups: []\n" })) as {
       crew: unknown;
       problems: unknown[];
@@ -64,8 +64,8 @@ describe("server wiring", () => {
 
 describe("server wiring — deleteCrew", () => {
   it("deletes a stored, stopped crew over RPC", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "crew" });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "crew" });
+    await plugin(alia);
     await harness.behavior.callRpc("saveCrewFile", {
       projectId: "p1",
       yaml: "version: 1\nname: solo\ngroups:\n  - id: g\n    members:\n      - id: me\n        provider: claude-code\n        model: m\n",
@@ -78,8 +78,8 @@ describe("server wiring — deleteCrew", () => {
   });
 
   it("negative: an unknown crew is an error answer, not a throw", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "crew" });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "crew" });
+    await plugin(alia);
     const result = (await harness.behavior.callRpc("deleteCrew", { projectId: "p1", name: "ghost", threads: "delete" })) as { deleted: boolean; error: string };
     expect(result.deleted).toBe(false);
     expect(result.error).toContain('No crew "ghost"');
@@ -89,8 +89,8 @@ describe("server wiring — deleteCrew", () => {
 
 describe("server wiring (E2)", () => {
   it("registers the crew tools, configure, the delivery and activity services and the messaging RPCs", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "crew", agentSkillIds: ["crew"] });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "crew", agentSkillIds: ["crew"] });
+    await plugin(alia);
     const tools = harness.registrations.agentTools.map((tool) => tool.name).sort();
     expect(tools).toEqual(
       [...TOOL_NAMES, ...WORK_TOOL_NAMES, ...LEAD_TOOL_NAMES, ...LEAD_ADMIN_TOOL_NAMES, "crew_directory", ...INTEGRATOR_TOOL_NAMES, GRAPH_TOOL_NAME].sort(),

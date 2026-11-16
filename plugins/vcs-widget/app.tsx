@@ -3,7 +3,7 @@
 // quick actions, four side-panel tabs (compare branches and diff with the
 // working tree from the context menu, the commit dialog and the log), and two
 // blocks on the plugin's settings page.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { requestOpen } from "./lib/events";
 import type { QuickActionId } from "./shared/model";
 import { PANEL_ACTION } from "./shared/panel-params";

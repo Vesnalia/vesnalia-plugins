@@ -2,15 +2,15 @@
 //
 // §10 — the nav panel registration is verbatim law: `id` and `path` must match
 // /^[a-zA-Z0-9_-]+$/ or the whole frontend fails to register, and `icon` must
-// agree with `bb.branding.icon` in package.json (which overrides it on compact
+// agree with `alia.branding.icon` in package.json (which overrides it on compact
 // surfaces). This suite is the only guard against a silent rename.
 import { cleanup, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 import { PANEL_PATH } from "../../contract";
 
-// Every plugin module that touches `@get-bb/plugin-sdk/app` binds the runtime
+// Every plugin module that touches `@vesnalia/plugin-sdk/app` binds the runtime
 // at import time, so it may only be imported *after* loadPluginApp installed
 // the test runtime — hence the dynamic imports here (see the SDK's
 // installTestPluginRuntime docs).
@@ -116,7 +116,7 @@ describe("nav panel registration (§10)", () => {
 
   it("opens both launchers with host defaults instead of a run hook", () => {
     // Nothing has to be resolved before the tab opens, and an omitted `run`
-    // is what makes bb open it with the registration's own title.
+    // is what makes VesnALIA open it with the registration's own title.
     expect(app.threadPanelActions[0]?.run).toBeUndefined();
     expect(app.newThreadPanelActions[0]?.run).toBeUndefined();
   });

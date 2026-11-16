@@ -22,7 +22,7 @@ into a user's session, legacy. A LaunchAgent must be installed in every
 image and home skeleton, stays resident, and would have to carry stdin,
 output, the exit status and stopping across FIFOs itself.
 
-Measured on macOS 27.0 in a Tart box, over bb-box's SSH
+Measured on macOS 27.0 in a Tart box, over alia-box's SSH
 ([the macOS desktop session](../research/macos-desktop-session.md)):
 
 - A command wrapped in `launchctl asuser` runs in `Aqua`, with the PATH
@@ -53,7 +53,7 @@ Measured on macOS 27.0 in a Tart box, over bb-box's SSH
     more;
   - on a Mac whose box user is a standard user, such as an SSH host pool's
     Mac or a physical Mac, Mac setup writes
-    `/etc/sudoers.d/bb-box-desktop`, mode 0440, checked with `visudo -cf`:
+    `/etc/sudoers.d/alia-box-desktop`, mode 0440, checked with `visudo -cf`:
 
     ```
     <user> ALL=(root) NOPASSWD: /bin/launchctl asuser <uid> /usr/bin/sudo -n -u <user> -- *
@@ -96,5 +96,5 @@ Measured on macOS 27.0 in a Tart box, over bb-box's SSH
   setup add the sudoers rule.
 - Windows still needs a scheduled task with `/IT` for its desktop session
   (issue #46).
-- Core makes the change in `src/core/in-box.ts` after reading BB's
+- Core makes the change in `src/core/in-box.ts` after reading VesnALIA's
   variables on macOS.

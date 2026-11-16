@@ -2,8 +2,8 @@
 // UI: панель Team (вкладки команд, мастер создания, исполнители, пакеты) и редактор шаблонов.
 import { afterEach, describe, expect, it } from "vitest";
 import { act, cleanup, fireEvent, within, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginBrowserBbSdk } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginBrowserAliaSdk } from "@vesnalia/plugin-sdk/app";
 import type { TeamSnapshot } from "./snapshot";
 import type { ResourceSummary } from "./resource-control";
 import type { SessionView } from "./session-view";
@@ -27,7 +27,7 @@ const SNAPSHOT: TeamSnapshot = {
   teams: ["main"],
   versioned: false,
   versioningBlocked: false,
-  configSource: ".bb/teams/main.yaml",
+  configSource: ".vesnalia/teams/main.yaml",
   configError: null,
   leadRole: "lead",
   paused: false,
@@ -75,7 +75,7 @@ const KINDS = [
   { kind: "tester", title: "Tester" },
 ];
 
-type ProviderModelsResult = Awaited<ReturnType<PluginBrowserBbSdk["providers"]["models"]>>;
+type ProviderModelsResult = Awaited<ReturnType<PluginBrowserAliaSdk["providers"]["models"]>>;
 
 function fakeProviderModels(providerId = "codex"): ProviderModelsResult {
   return {
@@ -262,7 +262,7 @@ async function mount(
         },
         rolePolicy: (input: {policy?: unknown}) => {
           log("rolePolicy")(input);
-          return {role:{name:"developer",provider:"pi",model:"qwen3",...(input.policy ? {executionPolicy:input.policy}:{})},source:".bb/team.yaml",revision:"rev-1"};
+          return {role:{name:"developer",provider:"pi",model:"qwen3",...(input.policy ? {executionPolicy:input.policy}:{})},source:".vesnalia/team.yaml",revision:"rev-1"};
         },
         taskUpdate: (input: {id: number | string; status: TeamSnapshot["roles"][number]["tasks"][number]["status"]}) => {
           log("taskUpdate")(input);

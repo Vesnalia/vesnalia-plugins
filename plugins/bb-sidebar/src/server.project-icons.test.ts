@@ -5,8 +5,8 @@ import { createFakePluginHost, disposers, standardProject } from "./test-server"
 describe("project icons", () => {
   it("stores per-project choices and searches only supported image files", async () => {
     const project = standardProject();
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           get: async () => project,
@@ -33,7 +33,7 @@ describe("project icons", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     await expect(harness.behavior.callRpc("listProjectIconSettings", {})).resolves.toEqual({
@@ -106,8 +106,8 @@ describe("project icons", () => {
 
   it("serves an automatically discovered favicon through the local route", async () => {
     const project = standardProject();
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           get: async () => project,
@@ -123,7 +123,7 @@ describe("project icons", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     const [response, concurrentResponse] = await Promise.all([
@@ -143,8 +143,8 @@ describe("project icons", () => {
   it("finds icons outside the conventional paths through project file search", async () => {
     const project = standardProject();
     const svg = '<svg xmlns="http://www.w3.org/2000/svg"/>';
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           get: async () => project,
@@ -166,7 +166,7 @@ describe("project icons", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     const response = await harness.behavior.fetchHttp("GET", "/project-icon?projectId=proj_1");
@@ -184,16 +184,16 @@ describe("project icons", () => {
     expect(reads).not.toContain("docs/icon-picker.png");
   });
 
-  it("prefers the image declared in package.json bb.branding", async () => {
+  it("prefers the image declared in package.json alia.branding", async () => {
     const project = standardProject();
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           get: async () => project,
           fileContent: async ({ path }) => {
             if (path === "package.json") {
-              const content = JSON.stringify({ bb: { branding: { icon: "brand/mark.png" } } });
+              const content = JSON.stringify({ alia: { branding: { icon: "brand/mark.png" } } });
               return { content, contentEncoding: "utf8" as const, mimeType: "application/json", sizeBytes: 40 };
             }
             if (path === "brand/mark.png" || path === "favicon.svg") {
@@ -204,7 +204,7 @@ describe("project icons", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     const response = await harness.behavior.fetchHttp("GET", "/project-icon?projectId=proj_1");
@@ -214,8 +214,8 @@ describe("project icons", () => {
 
   it("keeps a missing icon a miss when the search finds nothing", async () => {
     const project = standardProject();
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           get: async () => project,
@@ -226,20 +226,20 @@ describe("project icons", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     const response = await harness.behavior.fetchHttp("GET", "/project-icon?projectId=proj_1");
     expect(response.status).toBe(404);
     // The app waits an hour before asking again only when the 404 carries this mark.
-    expect(response.headers.get("x-bb-sidebar-icon-missing")).toBe("1");
+    expect(response.headers.get("x-alia-sidebar-icon-missing")).toBe("1");
   });
 
   it("does not cache a failed icon read as a missing icon", async () => {
     const project = standardProject();
     let hostReady = false;
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           get: async () => project,
@@ -256,13 +256,13 @@ describe("project icons", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     const failed = await harness.behavior.fetchHttp("GET", "/project-icon?projectId=proj_1");
     expect(failed.status).toBe(503);
     expect(failed.headers.get("cache-control")).toBe("no-store");
-    expect(failed.headers.get("x-bb-sidebar-icon-missing")).toBeNull();
+    expect(failed.headers.get("x-alia-sidebar-icon-missing")).toBeNull();
 
     hostReady = true;
     const recovered = await harness.behavior.fetchHttp("GET", "/project-icon?projectId=proj_1");
@@ -290,8 +290,8 @@ describe("project icons", () => {
     }>((resolve) => {
       resolveOldRead = resolve;
     });
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           get: async () => project,
@@ -313,7 +313,7 @@ describe("project icons", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     await harness.behavior.callRpc("setProjectIcon", {

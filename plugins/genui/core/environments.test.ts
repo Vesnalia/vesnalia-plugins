@@ -83,7 +83,7 @@ describe("environments: shared wording and order", () => {
   it("names an environment by branch, name, folder or id", () => {
     expect(environmentTitle(environmentFixture("env_x"))).toBe("wt/env_x");
     expect(environmentTitle(environmentFixture("env_x", { branch: null, name: "Scratch" }))).toBe("Scratch");
-    expect(environmentTitle(environmentFixture("env_x", { branch: null, path: "/Users/me/.bb/personal-workspaces/env_x/" }))).toBe("env_x");
+    expect(environmentTitle(environmentFixture("env_x", { branch: null, path: "/Users/me/.vesnalia/personal-workspaces/env_x/" }))).toBe("env_x");
     expect(environmentTitle(environmentFixture("env_x", { branch: null, path: null }))).toBe("env_x");
     expect(folderName("C:\\work\\app")).toBe("app");
     expect(folderName(null)).toBeNull();

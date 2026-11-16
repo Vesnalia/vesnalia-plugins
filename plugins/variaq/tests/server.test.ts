@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -37,7 +37,7 @@ afterEach(async () => {
 async function setupHost() {
   const h = createFakePluginHost({ pluginId: "variaq" });
   hosts.push(h);
-  await plugin(h.bb);
+  await plugin(h.alia);
   const tmp = mkdtempSync(join(tmpdir(), "variaq-plugin-it-"));
   temps.push(tmp);
   await h.harness.behavior.setSettings({
@@ -89,7 +89,7 @@ describeReal("failure: misconfiguration", () => {
   it("clear error when configured pythonPath does not exist", async () => {
     const h = createFakePluginHost({ pluginId: "variaq" });
     hosts.push(h);
-    await plugin(h.bb);
+    await plugin(h.alia);
     await h.harness.behavior.setSettings({ pythonPath: "/no/such/python" });
     const result = await tool(h, "variaq_version", {});
     const parsed = JSON.parse(String(result));
@@ -100,7 +100,7 @@ describeReal("failure: misconfiguration", () => {
   it("clear error when no VariaQ can be discovered", async () => {
     const h = createFakePluginHost({ pluginId: "variaq" });
     hosts.push(h);
-    await plugin(h.bb);
+    await plugin(h.alia);
     await h.harness.behavior.setSettings({ projectDir: "/no/such/dir" });
     const result = await tool(h, "variaq_version", {});
     const parsed = JSON.parse(String(result));

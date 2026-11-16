@@ -3,7 +3,7 @@
  * and the agent to run it, which leaves its comments in the tab as it goes. Or "Summarize": the same
  * agent writes a summary of the change for a reviewer, left as a comment on the whole diff.
  */
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -95,7 +95,7 @@ export function AiReviewDialog({
           ) : null}
           <ExecutionPicker environmentId={environmentId} execution={defaults.execution} onChange={defaults.setExecution} message={defaults.message} permissionMode={defaults.permissionMode} disabled={busy} />
           <p className="text-xs text-muted-foreground">
-            It is asked not to edit files, but bb cannot stop it; any file that changes while it runs is listed on the run.
+            It is asked not to edit files, but VesnALIA cannot stop it; any file that changes while it runs is listed on the run.
           </p>
         </div>
         <DialogFooter>

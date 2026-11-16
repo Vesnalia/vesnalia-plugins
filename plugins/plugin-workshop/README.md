@@ -1,12 +1,12 @@
 # Plugin Workshop
 
-A bb plugin for building bb plugins. It adds a **Plugin Workshop** section to bb: a board where every card is a
+A VesnALIA plugin for building VesnALIA plugins. It adds a **Plugin Workshop** section to VesnALIA: a board where every card is a
 plugin, from the first idea to retirement. Building or changing a plugin is a *work* that goes through seven stages —
 Context, Feasibility, Spec, Mockup, Implementation, Verification, Rollout — with its own agent thread at each stage.
 The owner moves a work from one stage to the next with the stage's button, or hands the work to the optional
 **autopilot**.
 
-- Plugin id: `plugin-workshop` · CLI: `bb plugin-workshop` · requires bb 0.46 or later.
+- Plugin id: `plugin-workshop` · CLI: `alia plugin-workshop` · requires VesnALIA 0.46 or later.
 - The CLI is read-only; actions are the panel's buttons (or autopilot actions that run the same code). Both are
   plugin RPC methods — see Security for who can call them.
 
@@ -14,20 +14,20 @@ The owner moves a work from one stage to the next with the stage's button, or ha
 
 Columns: **Context → Feasibility → Spec → Mockup → Building → In production → Retired**.
 
-- Every plugin installed in bb and every `bb-plugin-<id>` folder in the plugins folder (setting `pluginsRoot`,
+- Every plugin installed in VesnALIA and every `alia-plugin-<id>` folder in the plugins folder (setting `pluginsRoot`,
   default `~/plugins`) gets a card. Without an open work, an enabled plugin sits in *In production*; a disabled or
   uninstalled one in *Retired*.
 - A card with an open work sits in the column of the work's stage (Implementation and Verification share *Building*,
-  Rollout is *In production*). The card shows the plugin's state in bb and labels such as *needs configuration*,
+  Rollout is *In production*). The card shows the plugin's state in VesnALIA and labels such as *needs configuration*,
   *main branch ≠ rolled-out commit* or the GitHub labels below.
-- **New plugin** — name, id and what the plugin should do. The Workshop scaffolds it with `bb plugin new` under the
-  build lock, moves it to `<pluginsRoot>/bb-plugin-<id>`, makes it a git repository, creates a bb project for the
-  folder and a task in bb Tasks, and opens the Context stage.
+- **New plugin** — name, id and what the plugin should do. The Workshop scaffolds it with `alia plugin new` under the
+  build lock, moves it to `<pluginsRoot>/alia-plugin-<id>`, makes it a git repository, creates a VesnALIA project for the
+  folder and a task in VesnALIA Tasks, and opens the Context stage.
 - **Rework** (on a plugin's page) — the same for an existing plugin. It needs a working copy in the plugins folder on
   branch `main` without uncommitted changes, installed from that folder (if installed at all), no other open work and
   no undecided install. The Workshop does not rework itself.
 
-A plugin has at most one open work. Each work has a task key (from bb Tasks), its own branch and worktree of the
+A plugin has at most one open work. Each work has a task key (from VesnALIA Tasks), its own branch and worktree of the
 plugin repository, and a journal on the work page.
 
 ## How a work flows
@@ -38,11 +38,11 @@ the result and presses the stage's button; the next agent gets the documents, no
 | # | Stage | The agent produces | The owner's button |
 |---|---|---|---|
 | 1 | Context | A conversation with the owner → `context.md`: what is wanted, what the owner will see, what is out of scope; the section badge code and colour | **Next** |
-| 2 | Feasibility | `tech.md`, checked against the SDK types of the running bb, ending with `VERDICT: OK`, `OK_WITH_CAVEATS` or `IMPOSSIBLE`; `owner.md` — a checklist of what is needed from the owner (keys, accounts, paid plans, decisions) | **Next** or send back |
+| 2 | Feasibility | `tech.md`, checked against the SDK types of the running VesnALIA, ending with `VERDICT: OK`, `OK_WITH_CAVEATS` or `IMPOSSIBLE`; `owner.md` — a checklist of what is needed from the owner (keys, accounts, paid plans, decisions) | **Next** or send back |
 | 3 | Spec | `tz.md` — an implementation plan with `### Task N:` headings, a `## Post-rollout check` section, a `MIGRATIONS: yes` or `MIGRATIONS: no` line and `NAV:` lines; reviews run on it | **Next** or send back |
-| 4 | Mockup | `mockup/index.html` (one self-contained HTML file in bb's look) plus `desktop.png` and `phone.png`; the owner asks for changes in the chat | **Approve mockup** |
+| 4 | Mockup | `mockup/index.html` (one self-contained HTML file in VesnALIA's look) plus `desktop.png` and `phone.png`; the owner asks for changes in the chat | **Approve mockup** |
 | 5 | Implementation | The code, built task by task with subagents; a ledger of finished tasks | **To verification** |
-| 6 | Verification | A fresh verifier each round runs the tests, the typecheck, `bb plugin build` and `bb plugin types --check`, compares the branch with the spec and the mockup and writes a report ending in `VERDICT: PASS` or `VERDICT: FAIL` | **Roll out** or **Send back to Implementation per report** |
+| 6 | Verification | A fresh verifier each round runs the tests, the typecheck, `alia plugin build` and `alia plugin types --check`, compares the branch with the spec and the mockup and writes a report ending in `VERDICT: PASS` or `VERDICT: FAIL` | **Roll out** or **Send back to Implementation per report** |
 | 7 | Rollout | The Workshop installs the plugin; a fresh agent runs the spec's post-rollout check and writes a live report | **Accept**, **Roll back** or **Fix forward per report** |
 
 Documents live in the plugin repository, in the work branch, under `docs/workshop/<KEY>/` (`context.md`, `tech.md`,
@@ -70,8 +70,8 @@ Rules that hold the flow together:
   snapshot nor copied into the plugin's data: the snapshot's `manifest.json` lists them (path and finding labels, no
   values). Staged changes are kept as `staged.patch`, built from the other paths only; it is withheld if the staged
   content it carries (binary files included) has a finding or cannot be read in full.
-- **Snapshots.** On hand-overs and at the end, the work's files are copied into the plugin's data folder in bb
-  (`<bb data>/plugins/plugin-workshop/works/<workId>/`, folders `0700`, files `0600`). Key files, symbolic links and
+- **Snapshots.** On hand-overs and at the end, the work's files are copied into the plugin's data folder in VesnALIA
+  (`<alia data>/plugins/plugin-workshop/works/<workId>/`, folders `0700`, files `0600`). Key files, symbolic links and
   files with key indicators are not copied; the journal names them.
 - **Reconcile.** A pass every minute (and on thread events) drives every work from the facts: an action interrupted
   by a restart is finished or recognized rather than blindly repeated.
@@ -79,7 +79,7 @@ Rules that hold the flow together:
 ## Agents and models
 
 The New plugin and Rework forms let the owner pick, per work, the provider, model and reasoning level for each group.
-The choice is checked against bb's provider list and does not change after the work starts.
+The choice is checked against VesnALIA's provider list and does not change after the work starts.
 
 | Group | Default |
 |---|---|
@@ -90,10 +90,10 @@ The choice is checked against bb's provider list and does not change after the w
 | Implementation subagents (Claude models only) | Claude Code · `claude-sonnet-5-5` |
 | Reviewers (0, 1 or 2) | Claude Code · `claude-fable-5-1` and Codex · `gpt-6-astra` |
 
-Every agent receives the bb plugin rules (where the plugin lives, the shared build lock, SDK pinning, append-only
+Every agent receives the VesnALIA plugin rules (where the plugin lives, the shared build lock, SDK pinning, append-only
 migrations, no secrets in files, no installing or pushing on its own) and a short list of skills and references for
-its stage. The stage knowledge is plain data in `server/rules.ts` (`stageKnowledge`). It names bb's built-in skills
-(`bb-plugin-authoring`, `browser-automation`, `secrets`, `inline-vis`) and optional ones — `brainstorming`,
+its stage. The stage knowledge is plain data in `server/rules.ts` (`stageKnowledge`). It names VesnALIA's built-in skills
+(`alia-plugin-authoring`, `browser-automation`, `secrets`, `inline-vis`) and optional ones — `brainstorming`,
 `writing-plans`, `subagent-driven-development`, `test-driven-development`, `verification-before-completion`,
 `frontend-design` — which agents use only if they are installed.
 
@@ -113,19 +113,19 @@ A work has 0–2 reviewers. Reviewers see only files and write `review-<slot>-<s
 ## Mockup
 
 With `mockupStage` on (the default), a Mockup stage sits between Spec and Implementation. The agent draws the
-plugin's section as it will look inside bb (navigation bar, panel header, every screen and state from the spec,
+plugin's section as it will look inside VesnALIA (navigation bar, panel header, every screen and state from the spec,
 sample data) and shows it in the chat. The owner asks for changes in words and presses **Approve mockup**.
 Implementation builds the interface to the mockup; Verification and the live check compare against it. The guide the
 agent follows is `docs/mockup-guide.md`. With `mockupStage` off, Implementation follows Spec directly.
 
-The work page previews the mockup in a sandboxed frame (scripts allowed, no same-origin access to bb) under a Content
+The work page previews the mockup in a sandboxed frame (scripts allowed, no same-origin access to VesnALIA) under a Content
 Security Policy that allows only the mockup's inline scripts and styles and `data:`/`blob:` images, fonts and media —
 no network requests, frames, workers or form submissions. A mockup that navigates its own frame away is replaced with a
 notice (see Security for what this does not prevent).
 
 Plugins with a navigation section register their own coloured badge (`docs/nav-badge.md`). The spec's
 `NAV: <plugin>/<section> after <neighbour>` lines tell the Workshop where the section goes: on entering Rollout it
-makes the plugin's sections visible and orders them in bb's UI settings (`sidebar.visiblePluginPanels`,
+makes the plugin's sections visible and orders them in VesnALIA's UI settings (`sidebar.visiblePluginPanels`,
 `sidebar.pluginPanelOrder`). Only the plugin's own sections are touched.
 
 ## Rollout, rollback, adopt
@@ -136,12 +136,12 @@ runs, so a restart resumes from the record:
 1. Write the rollback point: `refs/workshop/<KEY>/before` and `refs/workshop/<KEY>/target` in the plugin repository.
 2. Move the working copy's `main` to the work commit (`git reset --keep`, which refuses rather than overwrite changes).
 3. Take the shared build lock (setting `buildLock`).
-4. Install the working copy's dependencies (`npm ci --ignore-scripts`), then start a bb install job from the folder.
-5. Release the lock, set the enabled state and check the result in bb's plugin list.
+4. Install the working copy's dependencies (`npm ci --ignore-scripts`), then start a VesnALIA install job from the folder.
+5. Release the lock, set the enabled state and check the result in VesnALIA's plugin list.
 
 On success the work moves to Rollout and a live-check agent starts. Nothing starts on top of a running install, and
 an unknown outcome is not repeated automatically: **Install again** is offered for that case. **Try to cancel install**
-cancels the bb install job.
+cancels the VesnALIA install job.
 
 - **Accept** finishes the work. The rollback point stays with the plugin until the next rollout or rollback.
 - **Roll back** returns the working copy to the rollback point, installs it and restores the previous enabled state;
@@ -155,9 +155,9 @@ cancels the bb install job.
 
 ## GitHub
 
-Off until `githubOwner` is set. Then, with the `gh` sign-in of the bb server:
+Off until `githubOwner` is set. Then, with the `gh` sign-in of the VesnALIA server:
 
-- each plugin gets a private repository `<owner>/bb-plugin-<id>`, created with the plugin's `main` the first time a
+- each plugin gets a private repository `<owner>/alia-plugin-<id>`, created with the plugin's `main` the first time a
   work needs it;
 - every push that carries code — `main` the first time, each new commit of the work branch, `main` after **Accept** or
   **Adopt as rolled out** — goes through one publication check. First the destination: `origin` must have exactly one
@@ -222,29 +222,29 @@ the same code as the matching button (same gates, same version checks) and is lo
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `tasksProject` | none (required) | bb Tasks project where each work gets its task. Until it is set, new works are refused. Project ids: `bb tasks project list`. |
+| `tasksProject` | none (required) | VesnALIA Tasks project where each work gets its task. Until it is set, new works are refused. Project ids: `alia tasks project list`. |
 | `maxBuilding` | `2` | Works per machine in Implementation and Verification; more wait in a queue. |
 | `minFreeDiskGb` | `2` | Free disk space (in the plugins folder), in GB, below which **Roll out** does not start. |
 | `autoReview` | `true` | Reviews start on their own at Spec and Verification; off — only by the button. |
 | `mockupStage` | `true` | The Mockup stage between Spec and Implementation. |
-| `githubOwner` | empty | GitHub user or organization for `<owner>/bb-plugin-<id>`; empty — GitHub is not used. |
+| `githubOwner` | empty | GitHub user or organization for `<owner>/alia-plugin-<id>`; empty — GitHub is not used. |
 | `allowPublicRepos` | `false` | Also push to a public repository or one not owned by `githubOwner`. Off — such a destination refuses the push. |
 | `pluginsRoot` | empty (`~/plugins`) | Folder of the plugin working copies. Change it only with no open works; takes effect after a plugin restart. |
-| `buildLock` | empty (`~/.bb/locks/build.lock`) | `flock` file shared by every heavy command. Takes effect after a plugin restart. |
+| `buildLock` | empty (`~/.vesnalia/locks/build.lock`) | `flock` file shared by every heavy command. Takes effect after a plugin restart. |
 
 `pluginsRoot` and `buildLock` must be absolute, normalized paths made of letters, digits and `. _ / @ + -`; any other
 value is ignored in favour of the default, and the reason is written to the plugin log and shown as the plugin's
 *needs configuration* status. Shell examples given to agents single-quote these paths.
 
 ```sh
-bb plugin config plugin-workshop set tasksProject <project-id>
+alia plugin config plugin-workshop set tasksProject <project-id>
 ```
 
 ## CLI
 
 ```sh
-bb plugin-workshop list [--json]            # plugins by column: state in bb, open work
-bb plugin-workshop show <id|KEY> [--json]   # a plugin (by id) or a work (by task key or work id)
+alia plugin-workshop list [--json]            # plugins by column: state in alia, open work
+alia plugin-workshop show <id|KEY> [--json]   # a plugin (by id) or a work (by task key or work id)
 ```
 
 The CLI is read-only: hand-overs, installs and rollbacks are the panel's buttons and the autopilot's actions (plugin RPC
@@ -252,33 +252,33 @@ methods; see Security).
 
 ## Requirements
 
-- bb 0.46 or later (plugin SDK 0.6.37 or later), with the bb server on Linux or another Unix: the plugin runs `git`,
-  `flock`, `pgrep`, `sh`, `npm` and the `bb` CLI there.
-- **bb Tasks** and a project for the works' tasks (`tasksProject`).
+- VesnALIA 0.46 or later (plugin SDK 0.6.37 or later), with the VesnALIA server on Linux or another Unix: the plugin runs `git`,
+  `flock`, `pgrep`, `sh`, `npm` and the `alia` CLI there.
+- **VesnALIA Tasks** and a project for the works' tasks (`tasksProject`).
 - The **Claude Code** provider, signed in: the default agents, the orchestrator and the Implementation subagents
   (which must be Claude models). **Codex** for the default second reviewer — or pick other reviewers, or none, in the
   form. Every work runs several agent threads (one per stage, the reviewers, a verifier and a live check per round,
   optionally the orchestrator), which uses your provider plans or API budget.
-- Optional: the **GitHub CLI** (`gh`) signed in on the bb server, with `gh auth setup-git` so that `git push` uses
+- Optional: the **GitHub CLI** (`gh`) signed in on the VesnALIA server, with `gh auth setup-git` so that `git push` uses
   it, and `git` 2.31 or later, for the GitHub integration.
 - Disk: every work has a worktree with its own `node_modules` (typically 50–180 MB).
 
 ## Security
 
-The Workshop is a full-trust plugin. Install it only on a bb you control, and read this section first.
+The Workshop is a full-trust plugin. Install it only on a VesnALIA you control, and read this section first.
 
 **Trust model**
 
-- **One trust domain.** The panel's actions are plugin RPC methods. Any bb client can call them: the panel, the `bb`
-  CLI (`bb plugin rpc call`) and every agent thread that can run `bb` — including the Workshop's own stage agents.
-  bb does not tell the plugin whether a person clicked or an agent called, so every client is, in effect, the owner.
-  The only callers the plugin refuses are *other plugins*: bb verifies the calling plugin, and every method that
+- **One trust domain.** The panel's actions are plugin RPC methods. Any VesnALIA client can call them: the panel, the `alia`
+  CLI (`alia plugin rpc call`) and every agent thread that can run `alia` — including the Workshop's own stage agents.
+  VesnALIA does not tell the plugin whether a person clicked or an agent called, so every client is, in effect, the owner.
+  The only callers the plugin refuses are *other plugins*: VesnALIA verifies the calling plugin, and every method that
   changes something rejects it (`board`, `plugin`, `work`, `file` and `models` stay readable).
-- **Agents have full permissions.** Stage agents, reviewers and the autopilot orchestrator are bb threads started with
-  `permissionMode: "full"` on the bb server (or the work's machine). A worktree is a working folder, not a sandbox:
+- **Agents have full permissions.** Stage agents, reviewers and the autopilot orchestrator are VesnALIA threads started with
+  `permissionMode: "full"` on the VesnALIA server (or the work's machine). A worktree is a working folder, not a sandbox:
   an agent can run any command the server's user can, read that user's files and use its sign-ins (`git`, `gh`, model
-  providers, bb itself). Rules such as "do not install, do not push" are instructions to the agents, not enforcement.
-- **The orchestrator too.** bb's narrower permission modes (`accept-edits`, `auto`) send tool calls to a user or an
+  providers, VesnALIA itself). Rules such as "do not install, do not push" are instructions to the agents, not enforcement.
+- **The orchestrator too.** VesnALIA's narrower permission modes (`accept-edits`, `auto`) send tool calls to a user or an
   automatic reviewer; none of them limits a thread to the three Workshop tools, and nothing in the plugin SDK says the
   Workshop's tools run unattended under them. So the orchestrator also runs with `full`, and "act only through the
   Workshop tools" is an instruction. What the code enforces are the hard stops below.
@@ -324,15 +324,15 @@ The Workshop is a full-trust plugin. Install it only on a bb you control, and re
   and finding labels, no values) without copying them. `staged.patch` is built from the other paths of one captured
   index state, and the bytes it carries — both sides of every path, binary files included — are checked: on a
   finding, or when that content cannot be read in full (more than 64 MB, unmerged entries), the whole patch is
-  withheld. The files themselves stay in the worktree until bb removes it.
+  withheld. The files themselves stay in the worktree until VesnALIA removes it.
 - The file viewer and the autopilot's file tool refuse key file names and symbolic links. The symbolic-link checks
-  apply when the worktree is on the bb server's machine; on another machine only bb's own confinement of reads to the
+  apply when the worktree is on the VesnALIA server's machine; on another machine only VesnALIA's own confinement of reads to the
   worktree applies.
 - Text the Workshop keeps or sends on — the journal, error texts, notes, reports, the plugin log, task comments — has
   token-shaped values replaced by `[redacted:<label>]`. That is best effort: what the patterns do not recognize stays,
-  so task comments and the journal may retain text pasted into requests or reports. Agent threads are bb's and are not
+  so task comments and the journal may retain text pasted into requests or reports. Agent threads are VesnALIA's and are not
   redacted.
-- Agents are told to keep keys out of files, reports and git, and the owner enters keys with bb's `secrets` skill.
+- Agents are told to keep keys out of files, reports and git, and the owner enters keys with VesnALIA's `secrets` skill.
 
 **Interface**
 
@@ -340,19 +340,19 @@ The Workshop is a full-trust plugin. Install it only on a bb you control, and re
   blocks network requests, frames, workers and forms. Residual: a script can still navigate its own frame and carry
   data in the URL — CSP cannot block that. The Workshop notices the second load and stops showing that mockup, but
   only after the navigation happened. A mockup that the stage agent shows in its chat (`inline-vis`) is rendered by
-  bb, not by this plugin.
-- Documents and reports are rendered with bb's `Markdown` component; how links and embedded HTML in them are handled
-  relies on bb's sanitizer.
+  VesnALIA, not by this plugin.
+- Documents and reports are rendered with VesnALIA's `Markdown` component; how links and embedded HTML in them are handled
+  relies on VesnALIA's sanitizer.
 - A pull request link is stored and shown only if it points at the checked repository.
 
 **Installs and dependencies**
 
 - The Workshop installs, enables and disables plugins and moves the working copies' `main` branch — on the owner's
-  buttons or the autopilot's actions — and changes two bb UI settings (which navigation sections are visible, and
+  buttons or the autopilot's actions — and changes two VesnALIA UI settings (which navigation sections are visible, and
   their order) for the plugin being rolled out. It runs `git` and `gh` with the server's sign-in, creates repositories,
   pushes without `--force` and opens pull requests.
 - Rollout installs a working copy's dependencies with `npm ci --ignore-scripts`, and agents are told to install with
-  `--ignore-scripts` too. `bb plugin new` (the New plugin scaffold) runs bb's own `npm install`; set
+  `--ignore-scripts` too. `alia plugin new` (the New plugin scaffold) runs VesnALIA's own `npm install`; set
   `ignore-scripts=true` in the server user's npm config if you want that off as well. This repository's `.npmrc` sets
   `ignore-scripts=true` (see Development).
 
@@ -369,7 +369,7 @@ server/rollout.ts       roll out, accept, roll back, reinstall, disable / enable
 server/pilot.ts         the autopilot: orchestrator thread, wake-ups, the plugin_workshop_* tools, hard stops and stop rules, its instructions
 server/models.ts        default models, per-work model choice and its validation
 server/stages.ts        stages and columns, stage order (pos / before / nextStage), file paths of a work, pluginsRoot
-server/rules.ts         bb plugin rules for agents and per-stage knowledge (skills and references); build lock and docs paths
+server/rules.ts         alia plugin rules for agents and per-stage knowledge (skills and references); build lock and docs paths
 server/regulations.ts   stage instructions and the texts of messages to agents and reviewers
 server/gates.ts         what blocks a hand-over (blockers) and what only warns (warnings)
 server/versions.ts      result versions, stale stages, validity of a round's result
@@ -379,11 +379,11 @@ server/secrets.ts       the key-file name rule, key patterns, the synthetic-valu
 server/publish.ts       the publication gate: destination check, scan of the outgoing commits (also without a push, for verdicts), the only content push
 server/snapshot.ts      the cancel snapshot and its checked staged.patch
 server/ports.ts         the Ports interface — everything the server does outside its own database
-server/sdk-ports.ts     Ports on top of bb.sdk, git, gh, flock and npm
+server/sdk-ports.ts     Ports on top of alia.sdk, git, gh, flock and npm
 server/fake-ports.ts    in-memory Ports for tests
 server/store.ts         the plugin's SQLite: works, stage runs, hand-overs, intents, attempts, autopilot, journal
 server/migrations.ts    append-only schema migrations
-server/api.ts, cli.ts   views for the panel; `bb plugin-workshop list | show`
+server/api.ts, cli.ts   views for the panel; `alia plugin-workshop list | show`
 app.tsx, app/           the panel: board, plugin page, «New plugin» form, model picker, work page with the agent chat and the mockup preview
 docs/                   guides read by stage agents: mockup-guide.md, nav-badge.md, browser-recipe.md
 icons/board.svg         the section icon
@@ -400,19 +400,19 @@ messages, installs) run from intents and are recognized after a restart; a threa
 Run heavy commands one at a time, under the same build lock the plugin uses:
 
 ```sh
-flock ~/.bb/locks/build.lock npm ci                     # no install scripts (.npmrc)
-flock ~/.bb/locks/build.lock npm rebuild better-sqlite3 --ignore-scripts=false   # after review: the tests need it
-flock ~/.bb/locks/build.lock npm test
-flock ~/.bb/locks/build.lock npm run typecheck
-flock ~/.bb/locks/build.lock bb plugin build            # builds dist/, does not install
-flock ~/.bb/locks/build.lock bb plugin install . --yes
-bb plugin logs plugin-workshop | tail
+flock ~/.vesnalia/locks/build.lock npm ci                     # no install scripts (.npmrc)
+flock ~/.vesnalia/locks/build.lock npm rebuild better-sqlite3 --ignore-scripts=false   # after review: the tests need it
+flock ~/.vesnalia/locks/build.lock npm test
+flock ~/.vesnalia/locks/build.lock npm run typecheck
+flock ~/.vesnalia/locks/build.lock alia plugin build            # builds dist/, does not install
+flock ~/.vesnalia/locks/build.lock alia plugin install . --yes
+alia plugin logs plugin-workshop | tail
 ```
 
 The repository's `.npmrc` sets `ignore-scripts=true`: `npm install` and `npm ci` run no dependency install scripts
 (named scripts such as `npm test` still run). The tests need the native binding of `better-sqlite3`, so review what
 its install script does and build it with the second command above; without `--ignore-scripts=false` the `.npmrc`
-setting would skip that build too. Use `bb plugin install`, not `bb plugin reload`: reload does not rebuild the
+setting would skip that build too. Use `alia plugin install`, not `alia plugin reload`: reload does not rebuild the
 bundle. The Workshop is not developed through itself — change it by hand and install it.
 
 ## License

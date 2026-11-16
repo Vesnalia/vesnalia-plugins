@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useSdk } from "@get-bb/plugin-sdk/app";
+import { useSdk } from "@vesnalia/plugin-sdk/app";
 
 export const RECENT_PROVIDER = "multi-repo-git/recent";
 export const WORKSPACES_PROVIDER = "thread-list/thread-list";
 const KEY = "sidebar.threadListProvider";
 const ANCHOR = '[data-testid="app-sidebar-body"] > [data-sidebar="content"]';
 
-// BB has no additive header slot. Decorate only the shell, never clone its tree.
+// VesnALIA has no additive header slot. Decorate only the shell, never clone its tree.
 export function mountModeTargets(changed: (targets: HTMLElement[]) => void): () => void {
   const targets = new Map<Element, HTMLElement>();
   function sync() {

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { test, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, cleanup, waitFor, within } from "@testing-library/react";
-import { installTestPluginRuntime, loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime, loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { interdiff } from "../src/interdiff";
 import { defaultPreferences } from "../src/preferences";
 import { getReviewState, patchReviewState } from "../lib/panel-state";
@@ -26,7 +26,7 @@ const reviewed = [
   file("src/d.ts", "@@ -1 +1 @@\n-gone\n+going\n"),
 ].join("");
 const current = [
-  file("src/a.ts", `${first}@@ -10,2 +10,3 @@\n a\n+bb\n c\n`),
+  file("src/a.ts", `${first}@@ -10,2 +10,3 @@\n a\n+VesnALIA\n c\n`),
   file("src/b.ts", "@@ -1 +1 @@\n-x\n+y\n"),
   file("src/c.ts", "@@ -0,0 +1 @@\n+brand new\n"),
 ].join("");
@@ -44,7 +44,7 @@ test("since your review: unchanged files hide, a changed file shows only its cha
   expect(diffOf("src/b.ts")).toBeNull();
   expect(screen.getByText("1 file unchanged since your review")).toBeTruthy();
   const a = diffOf("src/a.ts")!.getByTestId("filediff");
-  expect(a.textContent).toContain("bb");
+  expect(a.textContent).toContain("alia");
   expect(a.textContent).not.toContain("new");
   expect(a.dataset.css).toContain('[data-line-type="change-addition"][data-column-number="11"] { border-right-color: var(--gr-since-mark); }');
   expect(diffOf("src/c.ts")!.getByTestId("filediff").textContent).toContain("brand new");

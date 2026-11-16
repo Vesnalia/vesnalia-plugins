@@ -1,6 +1,6 @@
 import { toneColor } from "../palette";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Markdown, experimental_Diff as HostDiff, experimental_SourceCode as SourceCode, useRpc } from "@get-bb/plugin-sdk/app";
+import { Markdown, experimental_Diff as HostDiff, experimental_SourceCode as SourceCode, useRpc } from "@vesnalia/plugin-sdk/app";
 import { isPendingValue, toText } from "../../core/evaluate";
 import type { RpcContract } from "../../shared/rpc";
 import { DEMO_THREAD } from "../demo";

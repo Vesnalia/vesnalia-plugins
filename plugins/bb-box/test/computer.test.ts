@@ -12,7 +12,7 @@ import { FAKE_CUA_BIN } from "./fake-backend.ts";
 import { emptyDesktop, png } from "./fake-cua.ts";
 import { tempDir } from "./helpers.ts";
 
-const CLIENT = { client: { name: "bb-box", version: "1" }, timeoutMs: 5_000 };
+const CLIENT = { client: { name: "alia-box", version: "1" }, timeoutMs: 5_000 };
 
 test("chord splits a key chord into its key and lowercase modifiers", () => {
   assert.deepEqual(chord("ctrl+shift+t"), { key: "t", modifiers: ["ctrl", "shift"] });
@@ -56,7 +56,7 @@ test("a click Cua on Windows made, but found another process's window in front o
   assert.equal(landedElsewhere({ ...result("was not foreground after the click"), isError: false }), null);
 });
 
-test("explain says why the desktop refused in BB Box's words, without Cua's codes, tools or hex window IDs", () => {
+test("explain says why the desktop refused in VesnALIA Box's words, without Cua's codes, tools or hex window IDs", () => {
   const refused = (text: string, structured?: Record<string, unknown>) => ({ content: [{ type: "text", text }], structuredContent: structured, isError: true });
   const focus =
     "foreground_unavailable: window 0x1000122 did not become the active, focused window within 1.5s (active=0x0 focus_within_target=true); " +
@@ -65,7 +65,7 @@ test("explain says why the desktop refused in BB Box's words, without Cua's code
   assert.equal(explain(refused(focus)), "Window 16777506 did not become the active, focused window within 1.5s; no input was sent.");
   assert.equal(
     explain(refused("element_token is stale; call get_window_state again to refresh", { status: "refused", refusal: { code: "stale_element_token" } })),
-    "The element changed since BB Box last read its window, so nothing was done.",
+    "The element changed since VesnALIA Box last read its window, so nothing was done.",
   );
   assert.equal(explain(refused("Cua Driver could not do that.")), "The desktop gave no reason.");
   assert.equal(explain(refused("The app is not responding \u2014 call get_window_state to check it.")), "The app is not responding.");
@@ -195,7 +195,7 @@ test("closing an MCP session fails its calls with the reason, and the driver's e
 });
 
 test("an MCP session opens with the driver command and talks to the driver", async () => {
-  const home = tempDir("bb-box-cua-");
+  const home = tempDir("alia-box-cua-");
   const desktop = emptyDesktop();
   desktop.delays.click = 5_000;
   writeFileSync(join(home, "cua-driver.json"), JSON.stringify(desktop));
@@ -210,7 +210,7 @@ test("an MCP session opens with the driver command and talks to the driver", asy
 });
 
 test("a driver socket that starts with ~/ is in the home of the user the command runs as (047)", async () => {
-  const home = tempDir("bb-box-cua-");
+  const home = tempDir("alia-box-cua-");
   mkdirSync(join(home, "it's here"));
   writeFileSync(join(home, "it's here", "cua-driver.json"), JSON.stringify(emptyDesktop()));
   const script = `HOME='${home}' && PATH='${FAKE_CUA_BIN}':"$PATH" && export HOME PATH && ${driverCommand("macos", "~/it's here/cua-driver.json")}`;

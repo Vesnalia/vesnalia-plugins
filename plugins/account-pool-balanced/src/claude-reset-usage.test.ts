@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, expect, it } from "vitest";
 import { createClaudeAdapter } from "./claude-adapter.js";
 import { AccountStore, QUOTA_MIGRATIONS, QuotaStore } from "./store.js";
@@ -10,13 +10,13 @@ const cleanups: Array<() => Promise<void>> = [];
 afterEach(async () => { while (cleanups.length) await cleanups.pop()?.(); });
 
 async function fixture(usageUrl = "https://usage.example/api/oauth/usage") {
-  const dataDir = await fs.mkdtemp(path.join(tmpdir(), "bb-claude-reset-test-"));
+  const dataDir = await fs.mkdtemp(path.join(tmpdir(), "alia-claude-reset-test-"));
   const host = createFakePluginHost({ pluginId: "account-pool", dataDir });
   cleanups.push(async () => { await host.harness.lifecycle.dispose(); await fs.rm(dataDir, { recursive: true, force: true }); });
-  const accounts = new AccountStore(host.bb.storage.kv, path.join(dataDir, "secrets"));
+  const accounts = new AccountStore(host.alia.storage.kv, path.join(dataDir, "secrets"));
   await accounts.initialize();
-  const db = host.bb.storage.database();
-  host.bb.storage.migrate(db, QUOTA_MIGRATIONS);
+  const db = host.alia.storage.database();
+  host.alia.storage.migrate(db, QUOTA_MIGRATIONS);
   const quotas = new QuotaStore(db);
   const secret = { kind: "oauth" as const, accessToken: "synthetic-access", refreshToken: "synthetic-refresh", expiresAt: null };
   const account = await accounts.add({ provider: "claude", kind: "oauth", label: "Test account", email: null,

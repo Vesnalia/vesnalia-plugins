@@ -1,10 +1,10 @@
 # Plan: Board-linked GitHub issues — own-store chips (thread thr_qs29yvc9a3)
 
-*Repro + root cause: GitHub issue [cristoslc/bb-plugin-focus-board#13](https://github.com/cristoslc/bb-plugin-focus-board/issues/13) ("Board card shows no GitHub-issue chip for a thread linked to an issue (no data path from the GitHub plugin's link records)"). Screenshots attached there.*
+*Repro + root cause: GitHub issue [cristoslc/alia-plugin-focus-board#13](https://github.com/cristoslc/bb-plugin-focus-board/issues/13) ("Board card shows no GitHub-issue chip for a thread linked to an issue (no data path from the GitHub plugin's link records)"). Screenshots attached there.*
 
 ## Goal
 
-A thread tied to a GitHub issue or PR shows a `#12`-style chip on its card, with a live OPEN/CLOSED/MERGED status dot, driven entirely by the Focus Board plugin's own data. The official builtin GitHub plugin (`builtin:github` 0.2.1) stores thread↔issue links in bb.db `plugin_kv` rows under its own namespace, and focus-board cannot read another plugin's KV (no cross-plugin surface in `BbPluginApi`, verified in the bundled SDK typings 0.5.29), so the plugin stops watching a foreign store and keeps its own.
+A thread tied to a GitHub issue or PR shows a `#12`-style chip on its card, with a live OPEN/CLOSED/MERGED status dot, driven entirely by the Focus Board plugin's own data. The official builtin GitHub plugin (`builtin:github` 0.2.1) stores thread↔issue links in alia.db `plugin_kv` rows under its own namespace, and focus-board cannot read another plugin's KV (no cross-plugin surface in `AliaPluginApi`, verified in the bundled SDK typings 0.5.29), so the plugin stops watching a foreign store and keeps its own.
 
 ## Store shape
 
@@ -25,8 +25,8 @@ The first entry is the primary link. Helpers follow `lib/done-metadata.ts` exact
 
 ## Feed paths
 
-1. **Agent tool** `focus_board_link_issue` (`bb.agents.registerTool`): the tool's `instructions` nudge — the AGENTS.md-style push, appended to thread instructions whenever the tool is in the session's tool set — tells the thread's agent to link what it just filed. Parameters: GitHub issue URL (preferred) or bare number + kind; repo resolved from the URL, or from `ctx.project.gitRemoteUrl` (via `resolveRepoSlug`). Writes go through the same server-side writer the RPCs use, and publish the realtime signal.
-2. **CLI** `bb focus-board link list|set|clear`: set takes `<thread-id> <number-or-url>` with `--repo owner/repo` fallback; without `--repo`, the server looks the thread's project up through `bb.sdk.projects.list()` and resolves `gitRemoteUrl`. `--pull` marks kind `pull`.
+1. **Agent tool** `focus_board_link_issue` (`alia.agents.registerTool`): the tool's `instructions` nudge — the AGENTS.md-style push, appended to thread instructions whenever the tool is in the session's tool set — tells the thread's agent to link what it just filed. Parameters: GitHub issue URL (preferred) or bare number + kind; repo resolved from the URL, or from `ctx.project.gitRemoteUrl` (via `resolveRepoSlug`). Writes go through the same server-side writer the RPCs use, and publish the realtime signal.
+2. **CLI** `alia focus-board link list|set|clear`: set takes `<thread-id> <number-or-url>` with `--repo owner/repo` fallback; without `--repo`, the server looks the thread's project up through `alia.sdk.projects.list()` and resolves `gitRemoteUrl`. `--pull` marks kind `pull`.
 3. **Auto-detect** (V2, same store): `threads.search` scoped to the project's remote slug, run when a thread's `updatedAt` moves, cached by `threadId + updatedAt`, matched against `https://github.com/<owner>/<repo>/(issues|pull)/\d+`. Multi-match rules from the design discussion apply (auto-link only one in-repo item; otherwise candidates). Explicit `agent`/`operator` links always outrank auto ones.
 
 ## RPC surface (server.ts, mirroring done_set/done_list)
@@ -44,7 +44,7 @@ Realtime channel `link-changed`. Plugin metadata writes emit no thread realtime 
 
 ## CLI + tool surfaces
 
-`bb focus-board link` joins the existing `done`, `snooze`, `autotitle`, `sweep`, `config` command groups (`bb.cli.register` in server.ts:2232). The agent tool registers with a `PluginRowPresentation` `{ glyph }`-free default label and `suppress: true` styling is not used (the link event is worth seeing in the timeline).
+`alia focus-board link` joins the existing `done`, `snooze`, `autotitle`, `sweep`, `config` command groups (`alia.cli.register` in server.ts:2232). The agent tool registers with a `PluginRowPresentation` `{ glyph }`-free default label and `suppress: true` styling is not used (the link event is worth seeing in the timeline).
 
 ## Docs
 
@@ -67,15 +67,15 @@ Realtime channel `link-changed`. Plugin metadata writes emit no thread realtime 
 - Auto-detect (V2 above).
 - Writing to GitHub (the plugin mirrors; it never mutates the tracker).
 - Bidirectional sync with the builtin plugin's links; a link set in both places is two records, and each surface renders its own.
-## Follow-up units (2026-10-09, branch bb/external-links-and-validated-chips)
+## Follow-up units (2026-10-09, branch alia/external-links-and-validated-chips)
 
 Units E, F, and G landed after the GLM-5 false-chip report (operator rule @414: a text ref chips only when something attached to the project can validate it; projects expose only `gitRemoteUrl`, so nothing can validate a bare WORD-123 key).
 
 - **Unit E — external-item links.** `ThreadLink` is now a union: GitHub records (repo+number identity, kind excluded because GitHub redirects `/issues/N` to `/pull/N`) and external records (any https URL, identity by exact URL, `hostname` derived at parse and never trusted from storage, optional 1..80-char `label` chip text). `link_set`, the CLI, and `focus_board_link_issue` accept any https URL; external chips read label-or-hostname, never enter the status-dot batch, and survive clearing a GitHub number.
 - **Unit F — validation.** `lib/tickets.ts` gains `forgejoItemBase` (non-GitHub remotes with owner/repo shape become deterministic `https://host/owner/repo` item bases). New `lib/tracker-validate.ts` + `tracker_validate` RPC: GitHub-plugin cache first (authoritative, with kind/state), HTTP GET fallback (10s timeout) for cache misses and forgejo, KV-cached with a 6h up / 10min down TTL. Cards receive a `validatedHrefs` set and render a scanned text ref only when its href validates; store links stay trusted by construction. An unwired prop keeps the old unfiltered behavior so older test suites hold.
-- **Unit G — favicon chips.** Non-GitHub `#N` refs carry their base hostname; `TicketChip` renders `https://<host>/favicon.ico` before the ref text, hidden on load error. The bb app shell sets no Content-Security-Policy header (verified with `curl -I` on the live shell), so cross-origin favicons load.
+- **Unit G — favicon chips.** Non-GitHub `#N` refs carry their base hostname; `TicketChip` renders `https://<host>/favicon.ico` before the ref text, hidden on load error. The VesnALIA app shell sets no Content-Security-Policy header (verified with `curl -I` on the live shell), so cross-origin favicons load.
 
-## Issue #76 — Forgejo chips read the item, not the host (2026-10-11, branch bb/forgejo-chip-kind-and-id)
+## Issue #76 — Forgejo chips read the item, not the host (2026-10-11, branch alia/forgejo-chip-kind-and-id)
 
 Unit E's external variant treated every non-GitHub URL as a generic tracker item: label-or-hostname text, no kind glyph, dedupe by raw text. That held for Jira/Linear but broke Forgejo, whose URLs carry the item exactly (`/issues/N`, `/pulls/N`) and whose remotes the board already parses. Three Cove links on one thread rendered as a single chip reading `git.cove`, and the surviving link opened whichever item happened to be first.
 

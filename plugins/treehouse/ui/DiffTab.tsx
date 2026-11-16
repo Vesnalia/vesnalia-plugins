@@ -6,9 +6,9 @@ import { splitHunks } from "./hunks";
 import { z } from "zod";
 import {
   experimental_Diff as Diff,
-  useBbNavigate,
+  useAliaNavigate,
   type ExperimentalThreadActionTabProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { FileIcon } from "./FileIcon";
 import { TOOLTIP_ROOT_ATTRIBUTE, Tooltips } from "./Tooltips";
@@ -94,11 +94,11 @@ export function DiffView({
 }: {
   environmentId: string;
   params: FileDiffParams | CompareDiffParams;
-  /** Opens the file in Treehouse's Files tabs; without it the file opens as a bb tab. */
+  /** Opens the file in Treehouse's Files tabs; without it the file opens as a VesnALIA tab. */
   onOpenFile?: (path: string) => void;
 }) {
   const rpc = useTreehouseRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const watching = useWatchLease(rpc, environmentId);
   const signal = useRefreshSignal(environmentId, { poll: watching === false });
   const [result, setResult] = useCachedState(diffCache, `${environmentId}\u0000${JSON.stringify(params)}`, () => null);

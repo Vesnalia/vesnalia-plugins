@@ -4,7 +4,7 @@ import { useLanguage } from "./i18n";
 import { Icon } from "./icons";
 import "./compact-sheet.css";
 
-/** Host-shimmed dialog shares focus, scroll lock and dismissal with BB's drawer. */
+/** Host-shimmed dialog shares focus, scroll lock and dismissal with VesnALIA's drawer. */
 export function CompactSheet({ open, onOpenChange, title, theme, className, children, onCloseAutoFocus }: {
   open: boolean;
   onOpenChange(open: boolean): void;

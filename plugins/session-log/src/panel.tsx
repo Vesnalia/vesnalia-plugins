@@ -4,8 +4,8 @@ import {
 } from "react";
 import { toast } from "sonner";
 import {
-  experimental_copyToClipboard, experimental_Icon as Icon, experimental_useTabVisible, useBbNavigate, useSdk,
-} from "@get-bb/plugin-sdk/app";
+  experimental_copyToClipboard, experimental_Icon as Icon, experimental_useTabVisible, useAliaNavigate, useSdk,
+} from "@vesnalia/plugin-sdk/app";
 import { consumePanelFocus, onPanelFocusRequest } from "./commands";
 import {
   collectTurnStats, previewLines, toLogEntries, type EntryCategory, type LogEntry, type TurnStats,
@@ -27,7 +27,7 @@ const CHIPS: ReadonlyArray<[EntryCategory, string]> = [
   ["message", "Messages"], ["thinking", "Thinking"], ["tool", "Tools"], ["hidden", "Hidden"],
 ];
 
-// bb's own sticky scrollers use the same threshold and intent window (useStickyBottomScroll).
+// VesnALIA's own sticky scrollers use the same threshold and intent window (useStickyBottomScroll).
 const STICKY_BOTTOM_THRESHOLD_PX = 4;
 const USER_SCROLL_INTENT_MS = 350;
 const SCROLL_KEYS = new Set(["PageUp", "PageDown", "Home", "End", " "]);
@@ -96,10 +96,10 @@ export function SessionLogPanel({ threadId, preference }: { threadId: string; pr
   const sdk = useSdk();
   const sdkRef = useRef(sdk);
   sdkRef.current = sdk;
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const navigateRef = useRef(navigate);
   navigateRef.current = navigate;
-  // bb keeps a closed panel's tab mounted, so the log stops reading the thread until it shows again.
+  // VesnALIA keeps a closed panel's tab mounted, so the log stops reading the thread until it shows again.
   const tabVisible = experimental_useTabVisible();
   const tabVisibleRef = useRef(tabVisible);
   tabVisibleRef.current = tabVisible;

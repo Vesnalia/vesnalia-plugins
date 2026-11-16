@@ -24,9 +24,9 @@ class FakeRoot implements AttributeRoot {
   }
 }
 
-const HIERARCHY = "data-bb-ui-clearer-hierarchy";
-const PROMPT_POSITION = "data-bb-ui-prompt-position";
-const PROMPT_HEIGHT = "data-bb-ui-prompt-height";
+const HIERARCHY = "data-alia-ui-clearer-hierarchy";
+const PROMPT_POSITION = "data-alia-ui-prompt-position";
+const PROMPT_HEIGHT = "data-alia-ui-prompt-height";
 
 test("private marker on writes and cleanup removes it", () => {
   const root = new FakeRoot();

@@ -19,7 +19,7 @@ describe("chat icon from the title", () => {
     ["Пост в канал", "chat-sidebar/pen"],
     ["Ресерч рынка TTS", "chat-sidebar/headphones"],
     ["Изучи конкурентов", "Explore"],
-    ["Chat Sidebar plugin bb", "Plug02"],
+    ["Chat Sidebar plugin VesnALIA", "Plug02"],
   ])("%s → %s", (title, icon) => {
     expect(ruleIconFor(title)).toBe(icon);
   });

@@ -1,8 +1,8 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 /**
- * The plugin's `bb.host` entry: the part that touches the disk. BB starts it
+ * The plugin's `alia.host` entry: the part that touches the disk. VesnALIA starts it
  * on whichever machine a workspace lives on — this one or a connected one — so
  * listing and searching read files where they are, with no guess about which
  * machine that is.

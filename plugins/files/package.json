@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-files",
+  "name": "alia-plugin-files",
   "version": "0.1.4",
   "type": "module",
   "engines": {
-    "bb": ">=0.35.1",
-    "bbPluginSdk": "^0.4.1"
+    "alia": ">=0.35.1",
+    "aliaPluginSdk": ">=0.6"
   },
-  "bb": {
+  "alia": {
     "name": "Files",
-    "description": "Browse and safely edit the current BB thread environment.",
+    "description": "Browse and safely edit the current VesnALIA thread environment.",
     "branding": {
       "icon": "FolderOpen"
     },
@@ -64,7 +64,7 @@
     "vaul": "^1.1.2",
     "vitest": "4.1.10"
   },
-  "description": "Browse and safely edit the current BB thread environment.",
+  "description": "Browse and safely edit the current VesnALIA thread environment.",
   "license": "MIT",
   "private": true,
   "files": [
@@ -83,6 +83,23 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run --config vitest.config.ts",
-    "build": "bb plugin build ."
+    "build": "alia plugin build ."
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/files#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/files"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,6 +1,6 @@
 import { afterEach, vi } from "vitest";
-import { createFakePluginHost as createHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import { createFakePluginHost as createHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import plugin, { type StoredLifecycleRow } from "./server";
 import { deferred } from "./test-fixtures";
 import { GITHUB_PR_STATUS_PLUGIN_ID } from "./github-pr-status";
@@ -12,10 +12,10 @@ export const createFakePluginHost = (options: Parameters<typeof createHost>[0]) 
   if (!options?.sdk?.threads?.list) {
     result.harness.inspection.sdk.stub(
       "threads.list",
-      async (args: Parameters<BbPluginApi["sdk"]["threads"]["list"]>[0]) => {
-        const projects = await result.bb.sdk.projects.list({ include: "threads", includePersonal: true });
+      async (args: Parameters<AliaPluginApi["sdk"]["threads"]["list"]>[0]) => {
+        const projects = await result.alia.sdk.projects.list({ include: "threads", includePersonal: true });
         const all = projects.flatMap((p) => ("threads" in p ? p.threads : []));
-        // bb 0.47 filters by id server-side; unknown ids are left out.
+        // VesnALIA 0.47 filters by id server-side; unknown ids are left out.
         const threads = args?.threadIds ? all.filter((thread) => args.threadIds!.includes(thread.id)) : all;
         const offset = args?.offset ?? 0;
         return threads.slice(offset, offset + (args?.limit ?? 100));
@@ -28,7 +28,7 @@ export const createFakePluginHost = (options: Parameters<typeof createHost>[0]) 
 export interface LifecycleListResult {
   rows: StoredLifecycleRow[];
 }
-export type Environment = Awaited<ReturnType<BbPluginApi["sdk"]["environments"]["get"]>>;
+export type Environment = Awaited<ReturnType<AliaPluginApi["sdk"]["environments"]["get"]>>;
 
 export const disposers: Array<() => Promise<void>> = [];
 
@@ -56,11 +56,11 @@ export function standardProject() {
 }
 
 export type ProjectThread = Extract<
-  Awaited<ReturnType<BbPluginApi["sdk"]["projects"]["list"]>>[number],
+  Awaited<ReturnType<AliaPluginApi["sdk"]["projects"]["list"]>>[number],
   { threads: unknown }
 >["threads"][number];
 
-/** A thread as bb's project list reports it, idle unless overridden. */
+/** A thread as VesnALIA's project list reports it, idle unless overridden. */
 export function projectThread(overrides: Partial<ProjectThread> & { id: string }): ProjectThread {
   return {
     activity: {
@@ -186,7 +186,7 @@ export function pullRequestStatus(
     method,
     input,
     outputSchema,
-  }: Parameters<BbPluginApi["sdk"]["plugins"]["callRpc"]>[0]) => {
+  }: Parameters<AliaPluginApi["sdk"]["plugins"]["callRpc"]>[0]) => {
     if (pluginId !== GITHUB_PR_STATUS_PLUGIN_ID || method !== "pullRequests") {
       throw new Error(`Unexpected RPC ${pluginId}.${method}`);
     }
@@ -194,7 +194,7 @@ export function pullRequestStatus(
     batches.push(keys);
     return outputSchema.parse(Object.fromEntries(await Promise.all(keys.map(async (key) => [key, await row(key)]))));
   };
-  return callRpc as BbPluginApi["sdk"]["plugins"]["callRpc"];
+  return callRpc as AliaPluginApi["sdk"]["plugins"]["callRpc"];
 }
 
 afterEach(async () => {
@@ -206,8 +206,8 @@ export async function loadPlugin(
   unpin: (input: { threadId: string }) => Promise<ReturnType<typeof makeThreadResponse>> = async ({ threadId }) =>
     makeThreadResponse({ id: threadId }),
 ) {
-  const { bb, harness } = createFakePluginHost({
-    pluginId: "bb-sidebar",
+  const { alia, harness } = createFakePluginHost({
+    pluginId: "alia-sidebar",
     sdk: {
       projects: { list: async () => projectsWith([projectThread({ id: "thr_1" })]) },
       threads: {
@@ -223,7 +223,7 @@ export async function loadPlugin(
       },
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   disposers.push(() => harness.lifecycle.dispose());
   return harness;
 }

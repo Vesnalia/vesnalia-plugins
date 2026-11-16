@@ -32,7 +32,7 @@ const tabs: TabSummary[] = [
     kind: "plugin-panel",
     label: "Recap",
     closable: true,
-    relaunchActionId: "plugin-action:bb-recap:recap",
+    relaunchActionId: "plugin-action:alia-recap:recap",
   },
 ];
 
@@ -46,7 +46,7 @@ test("shows only real content tabs in the mirrored strip", () => {
 test("keeps the empty combobox action-only and ranks open tabs while searching", () => {
   const actions = [
     { id: "plugin-action:taskboard:taskboard-panel", label: "Taskboard" },
-    { id: "plugin-action:bb-recap:recap", label: "Recap" },
+    { id: "plugin-action:alia-recap:recap", label: "Recap" },
   ];
   assert.deepEqual(
     buildLauncherOptions(tabs, actions, "").map((option) => option.kind),

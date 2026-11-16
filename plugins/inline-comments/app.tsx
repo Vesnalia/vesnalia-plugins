@@ -1,7 +1,7 @@
 // Inline Comments: select text in a message, choose "Add to chat", and the
 // passage (with an optional comment) rides along with your next message as a
 // pill in the composer. Highlighted passages open their comment on click.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { CommentOverlay } from "./components/CommentOverlay";
 import { editorStore } from "./lib/editor-store";

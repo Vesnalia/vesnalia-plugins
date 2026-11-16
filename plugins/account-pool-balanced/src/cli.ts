@@ -5,7 +5,7 @@ import {z} from 'zod';
 import type {CursorStream} from './network-flights.js';
 import {guardProbeSchema,type GuardProbeInput, type runGuardProbe} from './guard-server.js';
 import type { AccountEgress } from "./account-egress.js";
-import type { BbPluginApi, PluginCliResult } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginCliResult } from "@vesnalia/plugin-sdk";
 import { setTimeout as wait } from "node:timers/promises";
 import {
   accountAddInputSchema,
@@ -46,54 +46,54 @@ interface ParsedFlags {
 }
 
 const HELP = [
-  "  bb pool maintenance <status|acquire-graceful|acquire|interrupt|release> [--owner <uuid>] --json",
+  "  VesnALIA pool maintenance <status|acquire-graceful|acquire|interrupt|release> [--owner <uuid>] --json",
   "Usage:",
-  "  bb pool egress status --json",
-  "  bb pool egress configure <profile-json>",
-  "  bb pool egress bind <account-id> <profile-id> <version>",
-  "  bb pool egress unbind <account-id>",
-  "  bb pool account add --provider claude --import [--label <text>] [--priority <n>]",
-  "  bb pool account add --provider codex --import [--label <text>] [--priority <n>]",
-  "  bb pool account add --provider claude --draft --email <email> [--label <name>]",
-  "  bb pool account add --provider claude --login",
-  "  bb pool account add --provider codex --login",
-  "  bb pool account login-poll --session <id>",
-  "  printf '%s\\n' \"$CLAUDE_AUTH_CODE\" | bb pool account login-complete --session <id> --code-stdin",
-  "  bb pool account add --provider claude --api-key-stdin [--label <text>] [--priority <n>]",
-  "  bb pool account add --provider <kimi|zai|opencode-go|neuraldeep|cursor|devin> --api-key-stdin [--label <text>] [--priority <n>]",
-  "  bb pool account add --provider claude --api-key <key> [--label <text>] [--priority <n>]  Unsafe: exposes the key in process arguments.",
-  "  bb pool account list [--json]",
-  "  bb pool account remove <id>",
-  "  bb pool account enable <id>",
-  "  bb pool account disable <id>",
-  "  bb pool account priority <id> <n>",
-  "  bb pool account role <id> <primary|reserve>",
-  '  bb pool account projects <id> <JSON|off>',
-  "  bb pool account cap <id> <early> <late>",
-  "  bb pool account cap <id> off",
-  "  bb pool account reorder <claude|codex|kimi|zai|opencode-go|neuraldeep|agy|cursor|devin> <id>...",
-  "  bb pool account refresh <id>",
-  "  bb pool status [--json]",
-  "  bb pool readiness [--project <id>] [--json]",
-  '  bb pool native status --json',
-  '  bb pool native preflight <target-json>',
-  '  bb pool native configure <executor-json>',
-  '  bb pool native prefer <executor-id>',
-  '  bb pool native mode <managed|off>',
-  '  bb pool native attest-stopped <lease-id> --confirmed',
-  "  bb pool stream-probe --thread <id> [--interrupt-request <uuid> --confirm] [--json]",
-  "  bb pool observations [--json]",
-  "  bb pool guard-probe --provider cursor [--delay-stage guard-rpc] [--delay-ms 4100] [--delay-attempts first|all] [--json]",
-  "  bb pool history [--offset <0..8192>] [--limit <1..200>] [--json]",
-  "  bb pool routing <claude|codex|kimi|zai|opencode-go|neuraldeep|agy|cursor|devin> [--off]",
-  "  bb pool config",
-  "  bb pool config set <anthropicUpstreamBaseUrl|codexUpstreamBaseUrl|kimiUpstreamBaseUrl|zaiUpstreamBaseUrl|opencodeGoUpstreamBaseUrl|opencodeFreeUpstreamBaseUrl|neuraldeepUpstreamBaseUrl|cursorUpstreamBaseUrl|devinUpstreamBaseUrl|maxConcurrentRequestsPerAccount|claudeRequestStartIntervalMs|switchThreshold|routingStrategy|reserveDrainHours|restDays|vpnOnlyProviders|vpnStatusFile|browserHostId|vpnGuardEnabled> <value>",
-  "  bb pool token rotate --machine <id-or-name>",
-  "  bb pool client add <name> --output <new-private-file-on-server> [--project <project-id>] [--purpose autopilot] [--account-scope-json <json>]",
-  "  bb pool client revoke <name>",
-  "  bb pool bypass <thread-id> [--off]",
-  "  bb pool browser open <id|email|label> [--url <url>]",
-  "  bb pool browser list [--json]",
+  "  VesnALIA pool egress status --json",
+  "  VesnALIA pool egress configure <profile-json>",
+  "  VesnALIA pool egress bind <account-id> <profile-id> <version>",
+  "  VesnALIA pool egress unbind <account-id>",
+  "  VesnALIA pool account add --provider claude --import [--label <text>] [--priority <n>]",
+  "  VesnALIA pool account add --provider codex --import [--label <text>] [--priority <n>]",
+  "  VesnALIA pool account add --provider claude --draft --email <email> [--label <name>]",
+  "  VesnALIA pool account add --provider claude --login",
+  "  VesnALIA pool account add --provider codex --login",
+  "  VesnALIA pool account login-poll --session <id>",
+  "  printf '%s\\n' \"$CLAUDE_AUTH_CODE\" | VesnALIA pool account login-complete --session <id> --code-stdin",
+  "  VesnALIA pool account add --provider claude --api-key-stdin [--label <text>] [--priority <n>]",
+  "  VesnALIA pool account add --provider <kimi|zai|opencode-go|neuraldeep|cursor|devin> --api-key-stdin [--label <text>] [--priority <n>]",
+  "  VesnALIA pool account add --provider claude --api-key <key> [--label <text>] [--priority <n>]  Unsafe: exposes the key in process arguments.",
+  "  VesnALIA pool account list [--json]",
+  "  VesnALIA pool account remove <id>",
+  "  VesnALIA pool account enable <id>",
+  "  VesnALIA pool account disable <id>",
+  "  VesnALIA pool account priority <id> <n>",
+  "  VesnALIA pool account role <id> <primary|reserve>",
+  '  VesnALIA pool account projects <id> <JSON|off>',
+  "  VesnALIA pool account cap <id> <early> <late>",
+  "  VesnALIA pool account cap <id> off",
+  "  VesnALIA pool account reorder <claude|codex|kimi|zai|opencode-go|neuraldeep|agy|cursor|devin> <id>...",
+  "  VesnALIA pool account refresh <id>",
+  "  VesnALIA pool status [--json]",
+  "  VesnALIA pool readiness [--project <id>] [--json]",
+  '  VesnALIA pool native status --json',
+  '  VesnALIA pool native preflight <target-json>',
+  '  VesnALIA pool native configure <executor-json>',
+  '  VesnALIA pool native prefer <executor-id>',
+  '  VesnALIA pool native mode <managed|off>',
+  '  VesnALIA pool native attest-stopped <lease-id> --confirmed',
+  "  VesnALIA pool stream-probe --thread <id> [--interrupt-request <uuid> --confirm] [--json]",
+  "  VesnALIA pool observations [--json]",
+  "  VesnALIA pool guard-probe --provider cursor [--delay-stage guard-rpc] [--delay-ms 4100] [--delay-attempts first|all] [--json]",
+  "  VesnALIA pool history [--offset <0..8192>] [--limit <1..200>] [--json]",
+  "  VesnALIA pool routing <claude|codex|kimi|zai|opencode-go|neuraldeep|agy|cursor|devin> [--off]",
+  "  VesnALIA pool config",
+  "  VesnALIA pool config set <anthropicUpstreamBaseUrl|codexUpstreamBaseUrl|kimiUpstreamBaseUrl|zaiUpstreamBaseUrl|opencodeGoUpstreamBaseUrl|opencodeFreeUpstreamBaseUrl|neuraldeepUpstreamBaseUrl|cursorUpstreamBaseUrl|devinUpstreamBaseUrl|maxConcurrentRequestsPerAccount|claudeRequestStartIntervalMs|switchThreshold|routingStrategy|reserveDrainHours|restDays|vpnOnlyProviders|vpnStatusFile|browserHostId|vpnGuardEnabled> <value>",
+  "  VesnALIA pool token rotate --machine <id-or-name>",
+  "  VesnALIA pool client add <name> --output <new-private-file-on-server> [--project <project-id>] [--purpose autopilot] [--account-scope-json <json>]",
+  "  VesnALIA pool client revoke <name>",
+  "  VesnALIA pool bypass <thread-id> [--off]",
+  "  VesnALIA pool browser open <id|email|label> [--url <url>]",
+  "  VesnALIA pool browser list [--json]",
   "",
   "Accounts run sequentially by priority, then order added. The current fallback stays active until unavailable.",
   "Reorder includes every account for the provider and changes the next failover sequence; existing conversations stay pinned.",
@@ -361,7 +361,7 @@ function json(value: object): string {
 }
 
 export function registerPoolCli(
-  bb: Pick<BbPluginApi, "cli" | "server" | "pluginId">,
+  alia: Pick<AliaPluginApi, "cli" | "server" | "pluginId">,
   operations: PoolOperations,
   login: ClaudeOAuthLogin,
   codexLogin: CodexDeviceLogin,
@@ -375,116 +375,116 @@ export function registerPoolCli(
   maintenance?: Pick<PoolMaintenance,'status'|'acquire'|'release'> & Partial<Pick<PoolMaintenance,'acquireGraceful'>> & {interrupt:(owner:string)=>Promise<ReturnType<PoolMaintenance['status']>>},
   nativePreflight?:(input:import('./native-probe-wire.js').NativeProbeInput)=>Promise<object>,
 ): void {
-  bb.cli.register({
+  alia.cli.register({
     name: "pool",
     summary:
       "Manage Claude and Codex accounts and inspect the Account Pooler hub",
     commands: [
-      {name:"egress",summary:"Manage server-owned account egress profiles",usage:"bb pool egress <status|configure|bind|unbind>"},
+      {name:"egress",summary:"Manage server-owned account egress profiles",usage:"alia pool egress <status|configure|bind|unbind>"},
       {
         name: "account-add",
         summary:
           "Sign in to Claude or Codex, import credentials, or add an Anthropic API key",
         usage:
-          "bb pool account add --provider <claude|codex> --login\nbb pool account add --provider <claude|codex> --import [--label <text>] [--priority <n>]\nbb pool account add --provider <claude|kimi> --api-key-stdin [--label <text>] [--priority <n>]\nUnsafe compatibility form: bb pool account add --provider claude --api-key <key> [--label <text>] [--priority <n>]",
+          "alia pool account add --provider <claude|codex> --login\nbb pool account add --provider <claude|codex> --import [--label <text>] [--priority <n>]\nbb pool account add --provider <claude|kimi> --api-key-stdin [--label <text>] [--priority <n>]\nUnsafe compatibility form: VesnALIA pool account add --provider claude --api-key <key> [--label <text>] [--priority <n>]",
       },
       {
         name: "account-login-poll",
         summary: "Wait for a Codex device-code login to complete",
-        usage: "bb pool account login-poll --session <id>",
+        usage: "alia pool account login-poll --session <id>",
       },
       {
         name: "account-login-complete",
         summary: "Complete a Claude browser login with its manual code",
         usage:
-          "printf '%s\\n' \"$CLAUDE_AUTH_CODE\" | bb pool account login-complete --session <id> --code-stdin",
+          "printf '%s\\n' \"$CLAUDE_AUTH_CODE\" | VesnALIA pool account login-complete --session <id> --code-stdin",
       },
       {
         name: "account-list",
         summary: "List pool accounts and observed quota",
-        usage: "bb pool account list [--json]",
+        usage: "alia pool account list [--json]",
       },
       {
         name: "account-remove",
         summary: "Remove an account and its secret token file",
-        usage: "bb pool account remove <id>",
+        usage: "alia pool account remove <id>",
       },
       {
         name: "account-enable",
         summary: "Enable an account",
-        usage: "bb pool account enable <id>",
+        usage: "alia pool account enable <id>",
       },
       {
         name: "account-disable",
         summary: "Disable an account",
-        usage: "bb pool account disable <id>",
+        usage: "alia pool account disable <id>",
       },
       {
         name: "account-priority",
         summary: "Set an account's position in the failover priority order",
-        usage: "bb pool account priority <id> <n>",
+        usage: "alia pool account priority <id> <n>",
       },
       {
         name: "account-projects",
         summary: "Set project scope and per-project account roles",
-        usage: "bb pool account projects <id> <JSON|off>",
+        usage: "alia pool account projects <id> <JSON|off>",
       },
       {
         name: "account-reorder",
         summary: "Set the complete failover order for one provider",
-        usage: "bb pool account reorder <claude|codex|kimi|zai|opencode-go|neuraldeep|agy|cursor|devin> <id>...",
+        usage: "alia pool account reorder <claude|codex|kimi|zai|opencode-go|neuraldeep|agy|cursor|devin> <id>...",
       },
       {
         name: "account-refresh",
         summary: "Refresh one account's observed usage",
-        usage: "bb pool account refresh <id>",
+        usage: "alia pool account refresh <id>",
       },
-      { name:"readiness", summary:"Inspect cached project-scoped pool admission without a model request", usage:"bb pool readiness [--project <id>] [--json]" },
-      {name:"stream-probe",summary:"Inspect one thread or interrupt one exact observed Cursor body",usage:"bb pool stream-probe --thread <id> [--interrupt-request <uuid> --confirm] [--json]"},
-      { name:"guard-probe", summary:"Rehearse read-only Guard admission, optionally delaying only this probe", usage:"bb pool guard-probe --provider cursor [--delay-stage server-host|guard-rpc|server-host-recheck] [--delay-ms 0..4500] [--delay-attempts first|all] [--json]" },
-      { name:"observations", summary:"Inspect bounded request metadata and retained-event minute counts", usage:"bb pool observations [--json]" },
-      { name:"history", summary:"Inspect bounded fourteen-day hourly account and client counters", usage:"bb pool history [--offset <0..8192>] [--limit <1..200>] [--json]" },
+      { name:"readiness", summary:"Inspect cached project-scoped pool admission without a model request", usage:"alia pool readiness [--project <id>] [--json]" },
+      {name:"stream-probe",summary:"Inspect one thread or interrupt one exact observed Cursor body",usage:"alia pool stream-probe --thread <id> [--interrupt-request <uuid> --confirm] [--json]"},
+      { name:"guard-probe", summary:"Rehearse read-only Guard admission, optionally delaying only this probe", usage:"alia pool guard-probe --provider cursor [--delay-stage server-host|guard-rpc|server-host-recheck] [--delay-ms 0..4500] [--delay-attempts first|all] [--json]" },
+      { name:"observations", summary:"Inspect bounded request metadata and retained-event minute counts", usage:"alia pool observations [--json]" },
+      { name:"history", summary:"Inspect bounded fourteen-day hourly account and client counters", usage:"alia pool history [--offset <0..8192>] [--limit <1..200>] [--json]" },
       {
         name: "status",
         summary: "Show hub, machine token, routing, and account status",
-        usage: "bb pool status [--json]",
+        usage: "alia pool status [--json]",
       },
       {
         name: "routing",
         summary: "Enable or disable pooled routing for one provider",
-        usage: "bb pool routing <claude|codex|kimi|zai|opencode-go|neuraldeep|agy|cursor|devin> [--off]",
+        usage: "alia pool routing <claude|codex|kimi|zai|opencode-go|neuraldeep|agy|cursor|devin> [--off]",
       },
       {
         name: "config",
         summary: "Show Account Pooler routing configuration",
-        usage: "bb pool config",
+        usage: "alia pool config",
       },
       {
         name: "config-set",
         summary: "Update one Account Pooler routing configuration value",
         usage:
-          "bb pool config set <anthropicUpstreamBaseUrl|codexUpstreamBaseUrl|kimiUpstreamBaseUrl|zaiUpstreamBaseUrl|opencodeGoUpstreamBaseUrl|opencodeFreeUpstreamBaseUrl|neuraldeepUpstreamBaseUrl|cursorUpstreamBaseUrl|devinUpstreamBaseUrl|maxConcurrentRequestsPerAccount|claudeRequestStartIntervalMs|switchThreshold|routingStrategy|reserveDrainHours|restDays|vpnOnlyProviders|vpnStatusFile|browserHostId|vpnGuardEnabled> <value>",
+          "alia pool config set <anthropicUpstreamBaseUrl|codexUpstreamBaseUrl|kimiUpstreamBaseUrl|zaiUpstreamBaseUrl|opencodeGoUpstreamBaseUrl|opencodeFreeUpstreamBaseUrl|neuraldeepUpstreamBaseUrl|cursorUpstreamBaseUrl|devinUpstreamBaseUrl|maxConcurrentRequestsPerAccount|claudeRequestStartIntervalMs|switchThreshold|routingStrategy|reserveDrainHours|restDays|vpnOnlyProviders|vpnStatusFile|browserHostId|vpnGuardEnabled> <value>",
       },
       {
         name: "token-rotate",
         summary: "Rotate one machine's Account Pooler bearer token",
-        usage: "bb pool token rotate --machine <id-or-name>",
+        usage: "alia pool token rotate --machine <id-or-name>",
       },
       {
         name: "bypass",
         summary: "Bypass Account Pooler routing for one thread",
-        usage: "bb pool bypass <thread-id> [--off]",
+        usage: "alia pool bypass <thread-id> [--off]",
       },
       {
         name: "browser-open",
         summary:
           "Open a persistent per-account browser profile with the exit IP timezone",
-        usage: "bb pool browser open <id|email|label> [--url <url>]",
+        usage: "alia pool browser open <id|email|label> [--url <url>]",
       },
       {
         name: "browser-list",
         summary: "List pool accounts and the state of their browser profiles",
-        usage: "bb pool browser list [--json]",
+        usage: "alia pool browser list [--json]",
       },
     ],
     async run(argv, ctx): Promise<PluginCliResult> {
@@ -648,7 +648,7 @@ export function registerPoolCli(
                   `Session ID: ${started.sessionId}`,
                   "",
                   "After authorizing, wait for the account to be added with:",
-                  `bb pool account login-poll --session ${started.sessionId}`,
+                  `alia pool account login-poll --session ${started.sessionId}`,
                 ].join("\n")}\n`,
               };
             }
@@ -662,13 +662,13 @@ export function registerPoolCli(
                 `Session ID: ${started.sessionId}`,
                 "",
                 "After signing in, pipe the code shown on the final page into:",
-                `printf '%s\\n' \"$CLAUDE_AUTH_CODE\" | bb pool account login-complete --session ${started.sessionId} --code-stdin`,
+                `printf '%s\\n' \"$CLAUDE_AUTH_CODE\" | VesnALIA pool account login-complete --session ${started.sessionId} --code-stdin`,
               ].join("\n")}\n`,
             };
           }
           if (apiKeyStdin) {
             throw new Error(
-              "--api-key-stdin must be invoked through the bb CLI so it can read stdin safely.",
+              "--api-key-stdin must be invoked through the VesnALIA CLI so it can read stdin safely.",
             );
           }
           if (
@@ -738,7 +738,7 @@ export function registerPoolCli(
           );
           if (flags.booleans.has("code-stdin")) {
             throw new Error(
-              "--code-stdin requires the current bb CLI so it can read stdin safely.",
+              "--code-stdin requires the current VesnALIA CLI so it can read stdin safely.",
             );
           }
           const input = loginCompleteInputSchema.parse({
@@ -766,8 +766,8 @@ export function registerPoolCli(
           if(config.get().browserHostId && !browser)throw Error('Remote browser host transport is unavailable.');
           const profiles = browser ? await browser.list() : await listBrowserProfiles({
             accounts: await operations.list(),
-            dataDir: bb.server.experimental_dataDir,
-            pluginId: bb.pluginId,
+            dataDir: alia.server.experimental_dataDir,
+            pluginId: alia.pluginId,
           });
           if (flags.booleans.has("json")) {
             return { exitCode: 0, stdout: json({ profiles }) };
@@ -794,8 +794,8 @@ export function registerPoolCli(
             accounts: await operations.list(),
             query,
             url: flags.values.get("url"),
-            dataDir: bb.server.experimental_dataDir,
-            pluginId: bb.pluginId,
+            dataDir: alia.server.experimental_dataDir,
+            pluginId: alia.pluginId,
             vpnStatusFile: config.get().vpnStatusFile,
           });
           return {
@@ -840,7 +840,7 @@ export function registerPoolCli(
         if(argv[0]==='stream-probe'){
           const flags=parseFlags(argv.slice(1),['json','confirm'],['thread','interrupt-request']);
           const threadId=flags.values.get('thread')??'',requestId=flags.values.get('interrupt-request');
-          if(!/^thr_[a-z0-9]+$/.test(threadId))throw Error('--thread requires a BB thread ID');
+          if(!/^thr_[a-z0-9]+$/.test(threadId))throw Error('--thread requires a VesnALIA thread ID');
           if(requestId!==undefined&&!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(requestId))throw Error('--interrupt-request requires an exact request UUID');
           if((requestId!==undefined)!==flags.booleans.has('confirm'))throw Error('Interrupting one stream requires both --interrupt-request and --confirm');
           if(!streamProbe)throw Error('Cursor stream probe unavailable');
@@ -923,14 +923,14 @@ export function registerPoolCli(
           if (argv[1] === "add" && argv[2]) {
             const flags = parseFlags(argv.slice(3), [], ["output", "project", "purpose", "account-scope-json"]);
             const output = flags.values.get("output");
-            if (!output) throw new Error("--output is required (path on the BB server).");
+            if (!output) throw new Error("--output is required (path on the VesnALIA server).");
             const projectId = flags.values.get("project") ?? null;
             const purpose = flags.values.get("purpose");
             if (purpose !== undefined && purpose !== "autopilot") throw Error("Unsupported client purpose.");
             const scopeInput=flags.values.get("account-scope-json");
             const scope=scopeInput===undefined?undefined:clientAccountScopeSchema.parse(JSON.parse(scopeInput));
             await externalClients.add(argv[2], output, projectId, purpose, scope);
-            return { exitCode: 0, stdout: "External client token saved to private file on the BB server.\n" };
+            return { exitCode: 0, stdout: "External client token saved to private file on the VesnALIA server.\n" };
           }
           if (argv[1] === "revoke" && argv.length === 3) {
             await externalClients.revoke(argv[2]!);

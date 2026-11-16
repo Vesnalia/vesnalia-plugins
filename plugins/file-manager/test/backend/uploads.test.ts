@@ -7,7 +7,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdtemp, readFile, readdir, realpath, stat, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { STAGING_DIR_NAME } from "../../contract";
@@ -93,7 +93,7 @@ beforeEach(async () => {
   root = await realpath(await mkdtemp(path.join(tmpdir(), "fm-uploads-")));
   await initRoot(root);
   host = createFakePluginHost({ pluginId: "file-manager" });
-  uploads = await createUploads(host.bb, { settings: CHUNK_SETTINGS });
+  uploads = await createUploads(host.alia, { settings: CHUNK_SETTINGS });
 });
 
 afterEach(async () => {

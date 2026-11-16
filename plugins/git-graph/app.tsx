@@ -4,7 +4,7 @@ import {
   experimental_useAppPanel,
   useRpc,
   type PluginThreadHeaderActionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   GitGraphCommit,
   GitGraphRepository,

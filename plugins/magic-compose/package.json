@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-magic-compose",
+  "name": "alia-plugin-magic-compose",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.103"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.103"
   },
-  "bb": {
+  "alia": {
     "name": "Magic Compose",
     "description": "Switch on Magic Compose in the new-thread composer and Jev picks the project, machine, model, reasoning level, and environment as you type, using your Vercel AI Gateway or OpenRouter key.",
     "branding": {
@@ -20,7 +20,7 @@
     ]
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -32,7 +32,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.104",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -60,9 +59,21 @@
     "vitest": "^4.1.1"
   },
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/magic-compose#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SawyerHood/sawyer-plugins.git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
     "directory": "plugins/magic-compose"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

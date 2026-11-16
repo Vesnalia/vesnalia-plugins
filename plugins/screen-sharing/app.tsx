@@ -1,10 +1,10 @@
 // screen-sharing — the app entry.
 //
-// A sidebar page with the screens of the Macs enrolled in this bb
+// A sidebar page with the screens of the Macs enrolled in this VesnALIA
 // (app/screen-panel.tsx), whose sidebar entry carries a LIVE badge while any
 // session is open; a pill in every window's corner offering Close all while
 // one is; and a palette command that opens the page.
-import { definePluginApp, useBbNavigate, type BbNavigate } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate, type AliaNavigate } from "@vesnalia/plugin-sdk/app";
 
 import { ScreenPanel, SessionsHeader } from "./app/screen-panel";
 import { LiveSessionsOverlay, PANEL_PATH, useLiveBadge } from "./app/sessions";
@@ -14,10 +14,10 @@ import { LiveSessionsOverlay, PANEL_PATH, useLiveBadge } from "./app/sessions";
  * mounted once per window and rendering nothing, hands the host's navigator
  * to the command.
  */
-let navigator: BbNavigate | null = null;
+let navigator: AliaNavigate | null = null;
 
 function NavigatorBridge() {
-  navigator = useBbNavigate();
+  navigator = useAliaNavigate();
   return null;
 }
 

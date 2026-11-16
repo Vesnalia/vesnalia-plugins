@@ -4,7 +4,7 @@
 import { spawn } from "node:child_process";
 import type { McpServer } from "./contract.js";
 
-const CLIENT = { name: "bb-mcp-catalog", version: "0.1.0" };
+const CLIENT = { name: "alia-mcp-catalog", version: "0.1.0" };
 const PROTOCOL = "2025-06-18";
 
 const initializeRequest = {

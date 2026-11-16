@@ -1,11 +1,11 @@
 // Dragging threads onto sections, and sections into a new order, in the Triage list.
 import { createContext, useCallback, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 // --- drag threads between sections ---------------------------------------------------
-// Pointer-based (not HTML5 drag) so bb's own drag-to-split keeps working: a
+// Pointer-based (not HTML5 drag) so VesnALIA's own drag-to-split keeps working: a
 // drop inside the sidebar moves the thread; leaving the sidebar cancels ours
-// and bb's split gesture takes over.
+// and VesnALIA's split gesture takes over.
 
 export const DROP_ATTR = "data-jb-drop-section";
 export const ACTIVE_DROP = "__active";
@@ -32,7 +32,7 @@ export function useThreadDrag(onDrop: (threadId: string, sectionId: string | nul
         }
         const bounds = nav?.getBoundingClientRect();
         if (bounds && (moveEvent.clientX > bounds.right || moveEvent.clientX < bounds.left)) {
-          finish(false); // left the sidebar: bb's drag-to-split owns this gesture
+          finish(false); // left the sidebar: VesnALIA's drag-to-split owns this gesture
           return;
         }
         const target = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)?.closest(`[${DROP_ATTR}]`);

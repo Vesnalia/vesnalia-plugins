@@ -1,4 +1,4 @@
-export const LEFT_PANE_SPLIT_STORAGE_KEY = "bb-prototype-left-pane-split";
+export const LEFT_PANE_SPLIT_STORAGE_KEY = "alia-prototype-left-pane-split";
 export const LEFT_PANE_MIN_SECTION = 80;
 export const LEFT_PANE_DIVIDER_SIZE = 6;
 export const LEFT_PANE_PAGES_COLLAPSED_HEIGHT = 40;

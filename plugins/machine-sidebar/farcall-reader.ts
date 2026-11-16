@@ -1,7 +1,7 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { FarcallProjection } from "./farcall-events";
 
-type EventList = BbPluginApi["sdk"]["threads"]["events"]["list"];
+type EventList = AliaPluginApi["sdk"]["threads"]["events"]["list"];
 /** No timers, workers, filesystem access or durable task copies. */
 export function createFarcallReader(list: EventList) {
   const entries = new Map<string, { projection: FarcallProjection; sequence: number; pending?: Promise<void> }>();
@@ -24,7 +24,7 @@ export function createFarcallReader(list: EventList) {
           if (!live()) return;
           if (events.length === 0) return;
           const sequence = Math.max(...events.map((event) => event.seq));
-          if (sequence <= current.sequence) throw new Error("BB-Ereigniscursor ist nicht fortgeschritten.");
+          if (sequence <= current.sequence) throw new Error("ALIA-Ereigniscursor ist nicht fortgeschritten.");
           for (const event of events) current.projection.apply(event);
           current.sequence = sequence;
         }

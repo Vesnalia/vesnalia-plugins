@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -287,7 +287,7 @@ export function RestoreDialog({ box, snap, onClose, returnTo }: { box: FakeBox; 
               {excludes ? ` The snapshot leaves out ${excludes}.` : ""}
             </p>
           )}
-          {plan.swap ? <p>This makes a new guest from the copy, with {box.name}'s identity, so it stays the same BB machine. The {plan.leavesOnEarlierGuest} other snapshots stay on its earlier guest: they can be forked or kept, not restored.</p> : null}
+          {plan.swap ? <p>This makes a new guest from the copy, with {box.name}'s identity, so it stays the same VesnALIA machine. The {plan.leavesOnEarlierGuest} other snapshots stay on its earlier guest: they can be forked or kept, not restored.</p> : null}
           {plan.undoWay === "held-copy" && !plan.swap ? <p>Undoing this later would make a new guest from that copy; the {onCurrent} snapshots on its current guest would stay there, fork only.</p> : null}
           {losses.length ? (
             <div className="rounded-md border border-surface-warning-border bg-surface-warning px-3 py-2 text-foreground">
@@ -349,7 +349,7 @@ export function ForkDialog({ box, snap, onClose, returnTo }: { box: FakeBox; sna
       }
     >
       <AlertDialogDescription>
-        A new box with {box.name}'s files as they were {whenInSentence(snap.takenAt, store.now)}. It gets its own BB machine, address and keys, and never acts as {box.name}. Everything else on its disk comes with it: project secrets, signed-in browsers and keychains. It starts fresh: no apps are running{snap.holds === "disk-and-memory" ? ", as a fork never uses saved memory" : ""}.
+        A new box with {box.name}'s files as they were {whenInSentence(snap.takenAt, store.now)}. It gets its own VesnALIA machine, address and keys, and never acts as {box.name}. Everything else on its disk comes with it: project secrets, signed-in browsers and keychains. It starts fresh: no apps are running{snap.holds === "disk-and-memory" ? ", as a fork never uses saved memory" : ""}.
       </AlertDialogDescription>
       <label className="block space-y-1">
         <span className="text-xs text-foreground">Name</span>
@@ -370,7 +370,7 @@ export function ForkDialog({ box, snap, onClose, returnTo }: { box: FakeBox; sna
           <input type="radio" name="fork-into" checked={into === "machine"} onChange={() => setInto("machine")} className="mt-1 accent-[var(--primary)]" />
           <span>
             As a machine of yours
-            <span className="block text-xs text-subtle-foreground">It shows in BB's machine list, with your access, until you remove it.</span>
+            <span className="block text-xs text-subtle-foreground">It shows in VesnALIA's machine list, with your access, until you remove it.</span>
           </span>
         </label>
       </fieldset>
@@ -492,7 +492,7 @@ function keepCostWords(box: FakeBox, snap: FakeSnap, until: number, now: number)
   if (box.state === "released" || (snap.heldCopyGB !== null && !snap.undoOf)) return `It is a held copy, a template that cannot start, ${sizeWords(snap.heldCopyGB)} on ${box.host}, until ${day(until)}.`;
   if (cap?.keeps === "held-copy") {
     const memory = snap.holds === "disk-and-memory" ? " It holds the disk only, not the memory." : "";
-    return `While ${box.name} lives, it stays as it is. If ${box.name} is released before ${day(until)}, bb-box first copies this snapshot in full into a template that cannot start: about ${seconds(heldCopySeconds(box.usedGB) * 1000)}, and ${box.usedGB} GB on ${box.host} until then. The release waits for the copy, and stops if there is no room.${memory} After the release it can be forked.`;
+    return `While ${box.name} lives, it stays as it is. If ${box.name} is released before ${day(until)}, alia-box first copies this snapshot in full into a template that cannot start: about ${seconds(heldCopySeconds(box.usedGB) * 1000)}, and ${box.usedGB} GB on ${box.host} until then. The release waits for the copy, and stops if there is no room.${memory} After the release it can be forked.`;
   }
   if (cap?.keeps === "as-is" && snap.price) return `It stays on ${box.backend} after the release, at ${priceWords(snap.price)}: about $${(days * snap.price.amount).toFixed(2)} until ${day(until)}, within your ceiling.`;
   if (cap?.keeps === "as-is") return `It stays on ${box.host} after the release; then it holds its whole size, up to ${box.diskGiB} GiB, as nothing shares its blocks.`;
@@ -531,7 +531,7 @@ export function KeepDialog({ box, snaps, onClose, onDone, returnTo }: { box: Fak
         </>
       }
     >
-      <AlertDialogDescription>A kept snapshot is yours: no agent can delete it. It stays after its box is released, and bb-box deletes it at the end of that day, warning you 3 days before.</AlertDialogDescription>
+      <AlertDialogDescription>A kept snapshot is yours: no agent can delete it. It stays after its box is released, and alia-box deletes it at the end of that day, warning you 3 days before.</AlertDialogDescription>
       {keeping.length ? (
         <label className="block space-y-1">
           <span className="text-xs text-foreground">Until</span>

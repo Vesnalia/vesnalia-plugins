@@ -15,15 +15,15 @@ sources:
 
 # PDF viewing
 
-TL;DR: The PDF opener fetches a BB preview, loads PDF.js in the browser and provides page navigation, zoom, search, text selection, quoting and download (`src/pdf/pdf.tsx:239-298`).
+TL;DR: The PDF opener fetches a VesnALIA preview, loads PDF.js in the browser and provides page navigation, zoom, search, text selection, quoting and download (`src/pdf/pdf.tsx:239-298`).
 
 ## Purpose
 
-Render PDF pages in a continuous viewer, with search and selection features that can pass cited text into the BB composer (`src/pdf/pdf.tsx:239-298`).
+Render PDF pages in a continuous viewer, with search and selection features that can pass cited text into the VesnALIA composer (`src/pdf/pdf.tsx:239-298`).
 
 ## How it works
 
-1. BB routes `.pdf` to `PdfOpener` (`app.tsx:39-44`; `src/pdf/pdf.tsx:27-30`).
+1. VesnALIA routes `.pdf` to `PdfOpener` (`app.tsx:39-44`; `src/pdf/pdf.tsx:27-30`).
 2. The opener calls server RPC `open`, fetches file bytes from the returned preview URL and loads the PDF document (`src/pdf/pdf.tsx:284-310`; `server.ts:505-516`).
 3. The opener dynamically loads the PDF.js runtime and worker from `/pdfjs/` routes; each handler returns a package-version ETag and responds 304 to a matching `If-None-Match` (`src/pdf/pdf.tsx:54-62`; `server.ts:360-370`).
 4. Pages near the visible viewport are rendered and page dimensions are collected in chunks (`src/pdf/pdf.tsx:299-330`).
@@ -31,7 +31,7 @@ Render PDF pages in a continuous viewer, with search and selection features that
 
 | Mode | Input and output | Failure behavior |
 |---|---|---|
-| Regular PDF | BB preview bytes rendered by PDF.js (`src/pdf/pdf.tsx:239-298`). | Fetch or PDF.js failures set an error state in the opener (`src/pdf/pdf.tsx:299-330`). |
+| Regular PDF | VesnALIA preview bytes rendered by PDF.js (`src/pdf/pdf.tsx:239-298`). | Fetch or PDF.js failures set an error state in the opener (`src/pdf/pdf.tsx:299-330`). |
 | Password-protected PDF | PDF.js password callback collects a password and retries loading (`src/pdf/pdf.tsx:239-298`). | Rejected password/error is surfaced in viewer status (`src/pdf/pdf.tsx:299-330`). |
 | PDF without text layer | Page rendering remains available; text search/selection depend on extracted text (`src/pdf/pdf.tsx:239-298`). | Search produces no text matches where PDF.js exposes no text. |
 
@@ -43,7 +43,7 @@ Render PDF pages in a continuous viewer, with search and selection features that
 
 ## Reading position
 
-Page index, position within the page, horizontal scroll and zoom are saved in BB’s server-side plugin KV, scoped to the viewing thread and resolved file host/path. A fresh client restores the position independently of preview tokens; different threads keep separate positions. Outside a thread the view remains temporary.
+Page index, position within the page, horizontal scroll and zoom are saved in VesnALIA’s server-side plugin KV, scoped to the viewing thread and resolved file host/path. A fresh client restores the position independently of preview tokens; different threads keep separate positions. Outside a thread the view remains temporary.
 
 Scroll saves are debounced by 400 ms and serialized across panel instances in the same browser. Refresh keeps the live anchor, and reopening during a pending save restores the latest local state. Restoration waits at most 1.5 seconds; a missing, invalid, failed or late response cannot prevent reading. Hidden panels retain their anchor and apply it on becoming visible.
 

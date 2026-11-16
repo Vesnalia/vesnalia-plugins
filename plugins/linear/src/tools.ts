@@ -1,6 +1,6 @@
 import { WORK_ACTIONS, type WorkAction } from "./store/thread-work.js";
 import { z } from "zod";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { crossTeamRefusal, scopeFor, type Scope } from "./bindings.js";
 import type { LinearClient } from "./linear/client.js";
 import { describeError } from "./linear/errors.js";
@@ -75,7 +75,7 @@ export interface ToolDeps {
    *  here. */
   readonly skills: () => string[];
   /** The key that can write to a given team. A Linear key is scoped to one
-   *  workspace, and this bb may hold several. */
+   *  workspace, and this VesnALIA may hold several. */
   readonly clientForTeam: (teamId: string) => LinearClient;
   /** Linear's own search, scoped to the given teams. Null when it could not be
    *  reached — the caller falls back to the local answer and says so. */
@@ -92,13 +92,13 @@ export interface ToolDeps {
     signal?: AbortSignal,
   ) => Promise<{ name: string; issues: IssueRow[] } | null>;
   /** Injected rather than imported so the tool layer stays testable without a
-   *  bb server. */
+   *  VesnALIA server. */
   readonly startThread: (input: {
     issueId: string;
     projectId: string;
   }) => Promise<{ ok: boolean; message: string; note: string | null }>;
   /** The calling thread's own binding, as a sentence an agent can act on —
-   *  the one fact no Linear MCP can know, because only bb holds the link. */
+   *  the one fact no Linear MCP can know, because only VesnALIA holds the link. */
   readonly threadIssue: (threadId: string) => string;
   readonly workThread: (threadId: string, action: WorkAction, issue: string | null,
     projectId: string | null, expectedRevision?: number) => Promise<{ ok: boolean; message: string | null }>;
@@ -112,7 +112,7 @@ export interface ToolDeps {
 }
 
 /** Read tools are always available on a bound project. The thread tools sit
- *  here even though `linear_thread_bind` writes — it writes bb's own link
+ *  here even though `linear_thread_bind` writes — it writes VesnALIA's own link
  *  table, never Linear, so `agentWrites: "off"` correctly still allows it. */
 const READ_TOOLS = [
   "linear_team_context",
@@ -160,9 +160,9 @@ export function issueNeedsRefresh(issue: IssueRow): boolean {
 }
 
 export const UNBOUND_INSTRUCTION =
-  "This bb project isn't bound to a Linear team, so Linear tools are unavailable here. Use the Linear panel's Bind button or run `bb linear bind TEAM-KEY`. `linear_thread_bind` remains available for linking a thread after the project has a team.";
+  "This VesnALIA project isn't bound to a Linear team, so Linear tools are unavailable here. Use the Linear panel's Bind button or run `alia linear bind TEAM-KEY`. `linear_thread_bind` remains available for linking a thread after the project has a team.";
 
-export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
+export function registerTools(alia: AliaPluginApi, deps: ToolDeps): void {
   const context = (
     teamIds: readonly string[],
     issues: readonly IssueRow[] = [],
@@ -335,7 +335,7 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
 
   /* ── Read ──────────────────────────────────────────────────────────────── */
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_team_context",
     description:
       "The bound Linear team's own vocabulary: its workflow states with their ids and types, its labels, its people, its priority names and its estimate scale. Call this before writing anything to Linear.",
@@ -368,10 +368,10 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_search",
     description:
-      "Search Linear issues by text. Answers instantly from bb's local copy of the bound teams' issues. Set remote to search Linear itself, which also finds closed and older issues the local copy does not hold.",
+      "Search Linear issues by text. Answers instantly from VesnALIA's local copy of the bound teams' issues. Set remote to search Linear itself, which also finds closed and older issues the local copy does not hold.",
     parameters: z.object({
       query: z.string().min(1).describe("Words to look for in identifiers, titles and bodies."),
       limit: z.number().int().min(1).max(50).optional(),
@@ -417,7 +417,7 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_issue_get",
     description:
       "Read one Linear issue in full: its state, properties, description, sub-issues and recent comments.",
@@ -542,7 +542,7 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_issue_list",
     description:
       "List Linear issues from the bound teams, optionally filtered by state type, assignee or team.",
@@ -583,7 +583,7 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_project_list",
     description:
       "List the Linear projects the bound teams work on, with their status, lead, dates and how far along they are.",
@@ -620,7 +620,7 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_cycle_get",
     description:
       "The bound team's current cycle: when it ends, and what is in it. Answers that the team does not use cycles when it does not.",
@@ -646,12 +646,12 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_view_run",
     description:
       "Run one of the workspace's saved Linear views and list what it returns. Linear runs the filter itself, so the answer matches what the view shows in Linear.",
     instructions:
-      "A saved view's filter is opaque to bb — it is stored in Linear's internal dialect. Never try to reproduce one with linear_issue_list; run the view.",
+      "A saved view's filter is opaque to VesnALIA — it is stored in Linear's internal dialect. Never try to reproduce one with linear_issue_list; run the view.",
     parameters: z.object({
       viewId: z.string().min(1).describe("The saved view's id."),
     }),
@@ -681,7 +681,7 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
 
   /* ── Write ─────────────────────────────────────────────────────────────── */
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_comment",
     description: "Post a comment on a Linear issue.",
     parameters: z.object({
@@ -710,7 +710,7 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_comment_react",
     description: "Toggle your emoji reaction on a Linear issue or one of its comments.",
     parameters: z.object({
@@ -748,7 +748,7 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_comment_edit",
     description: "Edit one of your own Linear comments.",
     parameters: z.object({
@@ -775,7 +775,7 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_issue_update",
     description:
       "Change a Linear issue's state, assignee, priority, estimate or labels. Call linear_team_context first to get the ids — a state's name is not its id, and matching on a name is matching on English.",
@@ -855,7 +855,7 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_issue_create",
     description:
       "Create a Linear issue in the bound team. Call linear_team_context first if you want to set a state, assignee or labels — a state's name is not its id.",
@@ -911,7 +911,7 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_issue_set_parent",
     description: "Set or clear a Linear issue's parent.",
     parameters: z.object({
@@ -946,7 +946,7 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_issue_relate",
     description:
       "Record that one Linear issue blocks, duplicates or relates to another. Direction matters: the first issue is the one doing the blocking.",
@@ -982,7 +982,7 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_issue_attach",
     description:
       "Attach a link to a Linear issue — a pull request, a document, a dashboard. Linear turns a recognised URL into a rich attachment with live status.",
@@ -1015,10 +1015,10 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_thread_start",
     description:
-      "Start a bb thread from a Linear issue, in the project this thread belongs to. The new thread gets the issue's description, comments and acceptance criteria as context, and the issue moves to the team's started state.",
+      "Start a VesnALIA thread from a Linear issue, in the project this thread belongs to. The new thread gets the issue's description, comments and acceptance criteria as context, and the issue moves to the team's started state.",
     parameters: z.object({
       issue: z.string().min(1).describe("An identifier such as ENG-42, or an issue id."),
     }),
@@ -1041,9 +1041,9 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
 
   /*
    * The two tools no Linear MCP can have: they read and write the link
-   * between THIS bb thread and its issue, which exists only in bb.
+   * between THIS VesnALIA thread and its issue, which exists only in VesnALIA.
    */
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_thread_issue",
     description:
       "Read this thread's current issue, all active issues, previous work, suggestions and work revision.",
@@ -1064,10 +1064,10 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_thread_work",
     description: "Record this thread's current Linear work. Start replaces active work and keeps history; add tracks concurrent work; focus changes the current issue; finish ends work here without changing Linear status; remove dismisses a mistaken link; clear finishes all work here. Read linear_thread_issue for the revision.",
-    instructions: "Call when accepting or resuming a Linear task, changing focus, or finishing work, including taking the next task from a queue. Mere mentions and issue reads are not task acceptance. Keep BB work and Linear workflow status separate.",
+    instructions: "Call when accepting or resuming a Linear task, changing focus, or finishing work, including taking the next task from a queue. Mere mentions and issue reads are not task acceptance. Keep VesnALIA work and Linear workflow status separate.",
     parameters: z.object({ action: z.enum(WORK_ACTIONS),
       issue: z.string().min(1).nullable().describe("Issue identifier, id or URL. Null only for clear."),
       expectedRevision: z.number().int().nonnegative().optional().describe("Revision from linear_thread_issue; re-read and retry on conflict."),
@@ -1081,10 +1081,10 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "linear_thread_bind",
     description:
-      "Set this thread's sole current Linear issue, keeping previous work in history (or clear active work with null). Use linear_thread_work to add concurrent tasks or focus one. The binding drives the thread's header chip, the side panel, and the context every future turn receives. It writes bb's own link only — never Linear.",
+      "Set this thread's sole current Linear issue, keeping previous work in history (or clear active work with null). Use linear_thread_work to add concurrent tasks or focus one. The binding drives the thread's header chip, the side panel, and the context every future turn receives. It writes VesnALIA's own link only — never Linear.",
     parameters: z.object({
       issue: z
         .string()
@@ -1123,7 +1123,7 @@ export function registerTools(bb: BbPluginApi, deps: ToolDeps): void {
    * beats degrading, because an agent handed a tool it will then be refused
    * spends a turn discovering that.
    */
-  bb.agents.configure((ctx) => {
+  alia.agents.configure((ctx) => {
     const current = scopeFor(ctx.project.id, deps.bindings());
     if (current.primaryTeamId === null) {
       return { tools: [], skills: [], instructions: UNBOUND_INSTRUCTION };

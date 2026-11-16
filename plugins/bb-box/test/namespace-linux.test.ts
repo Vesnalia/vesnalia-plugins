@@ -26,7 +26,7 @@ function setup() {
     linuxPullScript: (ref, local) => (pulls.push(`${ref} as ${local}`), ":"),
     dockerCli: (instance) => {
       let cli = hosts.get(instance);
-      if (!cli) hosts.set(instance, (cli = new DockerCli(`unix:///run/bb-box/namespace/${instance}.sock`, fakeDockerHost({ name: instance, cpus: 2, memoryMiB: 4096 }).binary, async () => {})));
+      if (!cli) hosts.set(instance, (cli = new DockerCli(`unix:///run/alia-box/namespace/${instance}.sock`, fakeDockerHost({ name: instance, cpus: 2, memoryMiB: 4096 }).binary, async () => {})));
       return cli;
     },
     dockerOptions: { readyTimeoutMs: 20_000, selkiesLauncher: "/bin/sh" },

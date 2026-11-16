@@ -1,9 +1,9 @@
 /**
- * Send to chat: bb's own new-thread composer, in a dialog, opened on one card.
+ * Send to chat: VesnALIA's own new-thread composer, in a dialog, opened on one card.
  *
  * The composer owns the prompt editor and every picker — provider, model,
  * reasoning, project, environment, permission mode — so a provider without a
- * selectable model is bb's to leave out, not ours. It only resolves a request;
+ * selectable model is VesnALIA's to leave out, not ours. It only resolves a request;
  * the server starts the thread with the card's title and the card itself as
  * plugin metadata, and remembers the selections for the next card.
  *
@@ -15,8 +15,8 @@
 import { useEffect, useState, type ComponentProps } from "react";
 import {
   experimental_NewThreadComposer as NewThreadComposer,
-  useBbNavigate,
-} from "@get-bb/plugin-sdk/app";
+  useAliaNavigate,
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import type { BoardItem, ColumnId } from "../shared/board";
@@ -58,7 +58,7 @@ function SendBody({
   onSent(): void;
 }) {
   const rpc = useBoardRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { prompts, error: promptsError } = usePrompts();
   const [options, setOptions] = useState<SendOptions | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +93,7 @@ function SendBody({
     <div className="space-y-3">
       {options.project === null ? (
         <p className="text-sm text-muted-foreground">
-          No bb project has a git remote pointing at {item.repository}. Pick the project to work in below, or add
+          No VesnALIA project has a git remote pointing at {item.repository}. Pick the project to work in below, or add
           one whose checkout has that remote.
         </p>
       ) : others.length > 0 ? (
@@ -118,7 +118,7 @@ function SendBody({
             labels: item.labels,
           };
           try {
-            // bb documents the request as JSON-serialisable; its declared type
+            // VesnALIA documents the request as JSON-serialisable; its declared type
             // just does not say so, and the server validates what it reads.
             const json = request as unknown as NewThreadRequestInput;
             const { threadId } = await rpc.call("send", { card, request: json });

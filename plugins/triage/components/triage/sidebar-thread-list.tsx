@@ -1,11 +1,11 @@
 import * as React from "react";
 import {
   experimental_useSidebarThreadActions,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useSettings,
   type PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 import { ThreadTriageAction } from "./thread-triage-action";
 import { Icon } from "@/components/ui/icon";
@@ -48,7 +48,7 @@ function TriageSidebarSection({
   searchQuery,
 }: Omit<PluginThreadListProps, "Original" | "experimental_Original">) {
   const { snapshot, refresh } = useTriage();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const threads = experimental_useSidebarThreadActions();
   const [collapsed, setCollapsed] = React.useState(sectionCollapsed);
 
@@ -169,8 +169,8 @@ function TriageSidebarSection({
 }
 
 /**
- * The thread-list slot is exclusive: registering it replaces BB's whole list.
- * So this renders BB's list unconditionally and only adds Triage above it once
+ * The thread-list slot is exclusive: registering it replaces VesnALIA's whole list.
+ * So this renders VesnALIA's list unconditionally and only adds Triage above it once
  * the user opts in — while the setting loads, the sidebar is untouched.
  */
 function SidebarThreadList({

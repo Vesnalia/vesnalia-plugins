@@ -4,8 +4,8 @@ Play technical diagrams as a sequence of beats, not a keyframe dope sheet.
 
 - An **Animation editor** for `*.scene.json` files: stage on top, step strip below.
 - Scrub the playhead, drag a step boundary to retime it, and click a part to quote it into chat.
-- A starter file from the thread panel, the command palette, or `bb animation new`.
-- HTML export from the editor, `bb animation export`, or `animation_export_html`.
+- A starter file from the thread panel, the command palette, or `alia animation new`.
+- HTML export from the editor, `alia animation export`, or `animation_export_html`.
 - An inline chat preview: `::scene{file="docs/flow.scene.json"}`, or with a height: `::scene{file="docs/flow.scene.json" height=480}`.
 - A Settings page that explains how to create, open, and export scenes.
 
@@ -17,4 +17,4 @@ The format is compatible with Nimbalyst Animation documents. Existing `.anim.jso
 
 ## For agents
 
-The bundled skill covers part types, states, geometry, and canonical key order. Validate with `bb animation validate` or `animation_validate` before export.
+The bundled skill covers part types, states, geometry, and canonical key order. Validate with `alia animation validate` or `animation_validate` before export.

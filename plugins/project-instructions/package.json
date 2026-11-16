@@ -1,24 +1,16 @@
 {
-  "name": "bb-plugin-project-instructions",
+  "name": "alia-plugin-project-instructions",
   "version": "0.1.0",
-  "description": "Per-project agent instructions for bb, stored in bb rather than in your repository.",
+  "description": "Per-project agent instructions for VesnALIA, stored in VesnALIA rather than in your repository.",
   "license": "MIT",
   "author": "Roger Serra",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "instructions",
     "agents",
     "monorepo"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Hazihell/bb-plugin-project-instructions.git"
-  },
-  "homepage": "https://github.com/Hazihell/bb-plugin-project-instructions#readme",
-  "bugs": {
-    "url": "https://github.com/Hazihell/bb-plugin-project-instructions/issues"
-  },
   "files": [
     "dist",
     "README.md",
@@ -26,13 +18,13 @@
     "package.json"
   ],
   "engines": {
-    "bb": ">=0.39",
-    "bbPluginSdk": ">=0.4.8"
+    "alia": ">=0.39",
+    "aliaPluginSdk": ">=0.4.8"
   },
   "type": "module",
-  "bb": {
+  "alia": {
     "name": "Project Instructions",
-    "description": "Per-project agent instructions, stored in bb rather than in your repository.",
+    "description": "Per-project agent instructions, stored in VesnALIA rather than in your repository.",
     "branding": {
       "icon": "FileText"
     },
@@ -50,7 +42,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.8",
     "@radix-ui/react-dialog": "^1.1.19",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
@@ -60,5 +51,22 @@
     "hono": "^4.11.9",
     "sonner": "^2.0.8",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.8"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/project-instructions#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/project-instructions"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

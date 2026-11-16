@@ -1,6 +1,6 @@
 // Which model runs PR X-ray's agents. Nothing is selected by default: the spawn
-// then carries no model, so bb applies the user's own defaults.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// then carries no model, so VesnALIA applies the user's own defaults.
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { modelSelectionSchema, type ModelPurpose, type ModelSelection } from "../shared/schema";
 
 const STORAGE_KEYS: Record<ModelPurpose, string> = {
@@ -8,23 +8,23 @@ const STORAGE_KEYS: Record<ModelPurpose, string> = {
   tagging: "taggingModelSelection",
 };
 
-export function createModels(bb: BbPluginApi) {
+export function createModels(alia: AliaPluginApi) {
   async function selected(purpose: ModelPurpose): Promise<ModelSelection | null> {
-    const parsed = modelSelectionSchema.safeParse(await bb.storage.kv.get(STORAGE_KEYS[purpose]));
+    const parsed = modelSelectionSchema.safeParse(await alia.storage.kv.get(STORAGE_KEYS[purpose]));
     return parsed.success ? parsed.data : null;
   }
 
   async function select(purpose: ModelPurpose, selection: ModelSelection | null) {
-    if (selection === null) await bb.storage.kv.delete(STORAGE_KEYS[purpose]);
-    else await bb.storage.kv.set(STORAGE_KEYS[purpose], selection);
+    if (selection === null) await alia.storage.kv.delete(STORAGE_KEYS[purpose]);
+    else await alia.storage.kv.set(STORAGE_KEYS[purpose], selection);
   }
 
-  /** A valid starting value for the model picker, for when the user first overrides bb's default. */
+  /** A valid starting value for the model picker, for when the user first overrides VesnALIA's default. */
   async function pickerSeed(): Promise<ModelSelection | null> {
-    const providers = await bb.sdk.providers.list();
+    const providers = await alia.sdk.providers.list();
     for (const provider of providers) {
       // One logged-out provider shouldn't hide the picker from the others.
-      const models = await bb.sdk.providers.models({ providerId: provider.id }).then(
+      const models = await alia.sdk.providers.models({ providerId: provider.id }).then(
         (result) => result.models,
         () => [],
       );

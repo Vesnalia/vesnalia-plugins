@@ -3,7 +3,7 @@ import { askChoice, askChoices, askChoicesVia, JEV_PROVIDERS, JevError } from ".
 
 const question = {
   instructions: "Pick the project.",
-  options: { bb: "The BB app.", games: "Small games." },
+  options: { alia: "The VesnALIA app.", games: "Small games." },
 };
 
 function respond(status: number, body: unknown): typeof fetch {
@@ -17,7 +17,7 @@ describe("askChoice", () => {
       request = { url: String(url), init: init ?? {} };
       return new Response(
         JSON.stringify({
-          answers: { q0: { type: "choice", choice: "bb", probabilities: { bb: 0.9, games: 0.1 } } },
+          answers: { q0: { type: "choice", choice: "alia", probabilities: { alia: 0.9, games: 0.1 } } },
           usage: { inputTokens: 412 },
           providerMetadata: { typesafe: { confidence: { q0: 0.81 } } },
         }),
@@ -45,8 +45,8 @@ describe("askChoice", () => {
       },
     });
     expect(answer).toMatchObject({
-      choice: "bb",
-      probabilities: { bb: 0.9, games: 0.1 },
+      choice: "alia",
+      probabilities: { alia: 0.9, games: 0.1 },
       confidence: 0.81,
       inputTokens: 412,
     });
@@ -61,12 +61,12 @@ describe("askChoice", () => {
       question,
       fetchImpl: respond(200, {
         answers: {
-          q0: { type: "choice", choice: "invented", probabilities: { invented: 0.6, games: 0.3, bb: 0.1 } },
+          q0: { type: "choice", choice: "invented", probabilities: { invented: 0.6, games: 0.3, alia: 0.1 } },
         },
       }),
     });
     expect(answer.choice).toBe("games");
-    expect(answer.probabilities).toEqual({ games: 0.3, bb: 0.1 });
+    expect(answer.probabilities).toEqual({ games: 0.3, alia: 0.1 });
     expect(answer.confidence).toBeNull();
   });
 
@@ -102,11 +102,11 @@ describe("askChoice", () => {
     const fetchImpl: typeof fetch = async () => {
       calls++;
       if (calls === 1) return new Response("upstream timeout", { status: 504 });
-      return new Response(JSON.stringify({ answers: { q0: { type: "choice", choice: "bb" } } }));
+      return new Response(JSON.stringify({ answers: { q0: { type: "choice", choice: "alia" } } }));
     };
     const answer = await askChoice({ provider: "vercel", apiKey: "key", model: "m", state: "s", question, fetchImpl });
     expect(calls).toBe(2);
-    expect(answer.choice).toBe("bb");
+    expect(answer.choice).toBe("alia");
     expect(answer.probabilities).toEqual({});
   });
 
@@ -134,7 +134,7 @@ describe("askChoice on OpenRouter", () => {
           id: "gen-1",
           model: "typesafe/jev-1.13",
           answers: {
-            q0: { type: "choice", choice: "games", confidence: 0.77, probabilities: { bb: 0.2, games: 0.8 } },
+            q0: { type: "choice", choice: "games", confidence: 0.77, probabilities: { alia: 0.2, games: 0.8 } },
           },
           usage: { input_tokens: 388, output_tokens: 0, cost: 0.00001 },
         }),
@@ -146,7 +146,7 @@ describe("askChoice on OpenRouter", () => {
       apiKey: "sk-or-key",
       model: "typesafe/jev-1.13",
       state: { task: "Add a lap counter" },
-      question: { instructions: "Pick the project.", options: { bb: "The BB app.", games: null } },
+      question: { instructions: "Pick the project.", options: { alia: "The VesnALIA app.", games: null } },
       fetchImpl,
     });
 
@@ -159,12 +159,12 @@ describe("askChoice on OpenRouter", () => {
       model: "typesafe/jev-1.13",
       state: { task: "Add a lap counter" },
       questions: {
-        q0: { type: "choice", instructions: "Pick the project.", criteria: { bb: "The BB app.", games: "" } },
+        q0: { type: "choice", instructions: "Pick the project.", criteria: { alia: "The VesnALIA app.", games: "" } },
       },
     });
     expect(answer).toMatchObject({
       choice: "games",
-      probabilities: { bb: 0.2, games: 0.8 },
+      probabilities: { alia: 0.2, games: 0.8 },
       confidence: 0.77,
       inputTokens: 388,
     });
@@ -195,14 +195,14 @@ describe("askChoicesVia", () => {
       urls.push(String(url));
       return String(url) === JEV_PROVIDERS.vercel.url
         ? new Response("{}", { status: 429 })
-        : new Response(JSON.stringify({ answers: { q0: { type: "choice", choice: "bb" } } }));
+        : new Response(JSON.stringify({ answers: { q0: { type: "choice", choice: "alia" } } }));
     };
     const answers = await askChoicesVia([vercel, openrouter], {
       state: "s",
       questions: { project: question },
       fetchImpl,
     });
-    expect(answers.project?.choice).toBe("bb");
+    expect(answers.project?.choice).toBe("alia");
     expect(urls).toEqual([JEV_PROVIDERS.vercel.url, JEV_PROVIDERS.openrouter.url]);
   });
 
@@ -230,7 +230,7 @@ describe("askChoices", () => {
       return new Response(
         JSON.stringify({
           answers: {
-            q0: { type: "choice", choice: "bb", probabilities: { bb: 0.6, games: 0.4 } },
+            q0: { type: "choice", choice: "alia", probabilities: { alia: 0.6, games: 0.4 } },
             q1: { type: "choice", choice: "high", probabilities: { low: 0.1, high: 0.9 } },
           },
           usage: { inputTokens: 900 },
@@ -252,7 +252,7 @@ describe("askChoices", () => {
     expect(calls).toBe(1);
     expect(Object.keys(body?.questions ?? {})).toEqual(["q0", "q1"]);
     expect(body?.questions.q1?.instructions).toBe("Pick the effort.");
-    expect(answers.project).toMatchObject({ choice: "bb", confidence: 0.5, inputTokens: 900 });
+    expect(answers.project).toMatchObject({ choice: "alia", confidence: 0.5, inputTokens: 900 });
     expect(answers["reasoning:0 (Opus 5)"]).toMatchObject({ choice: "high", confidence: 0.88 });
   });
 

@@ -20,7 +20,7 @@ of concrete recommendations the user requested.
 
 ## Verification
 
-- 62 unit and BB SDK integration tests passed, including gesture cancellation
+- 62 unit and VesnALIA SDK integration tests passed, including gesture cancellation
   and insertion through the public composer API without submission.
 - TypeScript check and plugin build passed.
 - Chrome at a 390 × 844 touch viewport: right swipe inserted once with zero
@@ -28,9 +28,9 @@ of concrete recommendations the user requested.
   not accept. Vertical scrolling moved the page. Desktop Tab also inserted
   without submitting. Screenshots were inspected before and after insertion.
 - Browser checks used the real compiled ghost decoration in an isolated
-  composer-markup fixture. BB composer insertion was verified separately in
-  its SDK harness. This is not a live BB installation test.
-- The build was subsequently installed on a live BB server, and the served
+  composer-markup fixture. VesnALIA composer insertion was verified separately in
+  its SDK harness. This is not a live VesnALIA installation test.
+- The build was subsequently installed on a live VesnALIA server, and the served
   frontend bundle was verified against the build. The user confirmed that
   swipe acceptance works on their iPad. The browser/version was not recorded;
   this is user-reported device verification, not a full Safari test matrix.
@@ -78,7 +78,7 @@ clarification. The final wording restores those cases. One overly narrow
 topic regex was widened to accept equivalent “update the cookie” wording;
 expected suggest/abstain labels stayed unchanged. These are regression cases
 used during refinement, not a held-out estimate of real-world acceptance.
-The direct-inference harness does not reproduce provider CLI or BB system
+The direct-inference harness does not reproduce provider CLI or VesnALIA system
 instructions. Results are specific to this model, effort and small sample.
 
 See [evaluation instructions](../prediction-evaluation.md) to reproduce the

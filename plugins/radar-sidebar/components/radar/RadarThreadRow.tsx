@@ -13,14 +13,14 @@ import {
   experimental_ProviderIcon as ProviderIcon,
   experimental_useSidebarThreadPullRequest,
   experimental_useSidebarThreadSplit,
-  useBbNavigate,
+  useAliaNavigate,
   useSidebarThreadDraft,
   useSidebarThreadRowStatus,
   useSidebarThreadShortcut,
-  type PluginBrowserBbSdk,
+  type PluginBrowserAliaSdk,
   type PluginSidebarThread,
   type PluginSidebarThreadActions,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { createPortal } from "react-dom";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -356,7 +356,7 @@ function RadarThreadRowImpl({
   projectColorHue?: number | null;
   collapse: RowCollapse | null;
   primaryHostId: string | null;
-  sdk: PluginBrowserBbSdk;
+  sdk: PluginBrowserAliaSdk;
   modelEpoch: number;
   density?: "comfortable" | "compact";
   isSelected?: boolean;
@@ -375,7 +375,7 @@ function RadarThreadRowImpl({
    *  then asks the host to confirm. */
   hasChildren?: boolean;
   /**
-   * False while a folded family or group hides the row. bb numbers jump
+   * False while a folded family or group hides the row. VesnALIA numbers jump
    * shortcuts over every marked row in DOM order, and a closing fold keeps
    * its rows mounted until its animation ends.
    */
@@ -385,7 +385,7 @@ function RadarThreadRowImpl({
   const rowStatus = useSidebarThreadRowStatus(thread.id);
   const shortcut = useSidebarThreadShortcut(thread.id);
   const { pullRequest } = experimental_useSidebarThreadPullRequest(thread.id);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { splitProps, layout: splitLayout } =
     experimental_useSidebarThreadSplit(thread.id);
 
@@ -1025,7 +1025,7 @@ function RadarThreadRowImpl({
         event.dataTransfer.setData(
           "application/json",
           JSON.stringify({
-            type: "bb-thread-drag",
+            type: "alia-thread-drag",
             threadIds: idsToDrag,
             title: thread.displayTitle,
           }),

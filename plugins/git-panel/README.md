@@ -1,6 +1,6 @@
-# bb-plugin-git-panel
+# alia-plugin-git-panel
 
-A BB plugin that adds a **Git worktree** tab to the thread panel. It shows the
+A VesnALIA plugin that adds a **Git worktree** tab to the thread panel. It shows the
 Git state of the workspace behind the current thread and runs the everyday
 commands against it: stage, unstage, commit, pull, push, fetch, sync, branch
 switch/create/rename, stash and pop.
@@ -11,14 +11,14 @@ dense file rows, and a tools row (pull, push, fetch, more).
 
 Git itself runs on the host that owns the workspace, through the plugin's host
 entry — plain `git` subprocesses with `GIT_TERMINAL_PROMPT=0`, in the
-environment's directory. The commit message is written by BB's own commit
-feature (`bb.sdk.environments.commit`); everything else is git.
+environment's directory. The commit message is written by VesnALIA's own commit
+feature (`alia.sdk.environments.commit`); everything else is git.
 
 ## Screenshots
 
 The panel beside a thread, with incoming commits to pull:
 
-![Git worktree panel in a BB thread](assets/screenshots/git-panel-1.png)
+![Git worktree panel in a VesnALIA thread](assets/screenshots/git-panel-1.png)
 
 The branch picker, with rename, new branch and search:
 
@@ -27,24 +27,24 @@ The branch picker, with rename, new branch and search:
 ## Install
 
 ```
-bb plugin install https://github.com/diip3sh/bb-plugin-git-panel
+alia plugin install https://github.com/diip3sh/bb-plugin-git-panel
 ```
 
 For local development, from a clone of this repo:
 
 ```
 npm install
-bb plugin install path:.
+alia plugin install path:.
 ```
 
 After editing sources, rebuild and reload:
 
 ```
-bb plugin build .
-bb plugin reload git-panel
+alia plugin build .
+alia plugin reload git-panel
 ```
 
-Or let `bb plugin dev` rebuild and reload on every save.
+Or let `alia plugin dev` rebuild and reload on every save.
 
 ## Source layout
 
@@ -64,7 +64,7 @@ Or let `bb plugin dev` rebuild and reload on every save.
 - `server.ts` — the backend. Resolves thread → environment → worktree path
   (erroring if the thread has no workspace or the workspace is not a Git repo),
   forwards each RPC to the right host, and returns fresh status after every
-  mutation. `commit` calls `bb.sdk.environments.commit`, so BB writes the
+  mutation. `commit` calls `alia.sdk.environments.commit`, so VesnALIA writes the
   message. No CLI command is registered.
 - `app.tsx` — the frontend, registered as
   `app.slots.threadPanelAction({ id: "git", title: "Git worktree" })`. Status
@@ -77,19 +77,19 @@ Or let `bb plugin dev` rebuild and reload on every save.
   summary and next action (`summaryOf`).
 - `app.css` — panel styles, host theme variables only.
 - `skills/git-worktree/SKILL.md` — a skill describing the panel to agents
-  working in a BB thread. BB imports it into agent threads automatically.
+  working in a VesnALIA thread. VesnALIA imports it into agent threads automatically.
 - `PLUGIN_OVERVIEW.md` — the marketplace listing body, shown under
-  `bb.description` on the plugin detail page.
+  `alia.description` on the plugin detail page.
 
 ## Build
 
 ```
 npm install
-bb plugin build .
-bb plugin reload git-panel
+alia plugin build .
+alia plugin reload git-panel
 ```
 
-`npm run build` runs `tsc --noEmit` first. `bb plugin build` writes
+`npm run build` runs `tsc --noEmit` first. `alia plugin build` writes
 `dist/server.js` + `server.meta.json` and `app.js` / `app.css` /
 `app.meta.json`. Ship `dist/` (npm tarball or committed for git installs) so
 people installing the plugin never need npm.
@@ -107,37 +107,37 @@ node --experimental-strip-types --test git-status.test.ts
 ## UI components
 
 `components/ui/` is vendored source you own (the shadcn model): edit the
-files freely — they never update out from under you. Add more from the BB
-component registry (the full shadcn set, version-matched to your BB install
+files freely — they never update out from under you. Add more from the VesnALIA
+component registry (the full shadcn set, version-matched to your VesnALIA install
 via the pinned ref in `components.json`):
 
 ```
-npx shadcn add @bb/select @bb/table
+npx shadcn add @alia-core/select @alia-core/table
 ```
 
-Run `npm install` once before `bb plugin build` — the vendored components'
-npm deps bundle into your dist. React, and BB-shimmed packages like the
+Run `npm install` once before `alia plugin build` — the vendored components'
+npm deps bundle into your dist. React, and ALIA-shimmed packages like the
 radix portal primitives and `sonner` (`import { toast } from "sonner"`
-reaches BB's own toaster), are provided by the BB app at runtime and never
+reaches VesnALIA's own toaster), are provided by the VesnALIA app at runtime and never
 bundled. Every shimmed package is declared in `devDependencies` at the
 host's version so those imports typecheck; keep them there (never in
-`dependencies`, which would bundle a second copy), and `bb plugin types`
+`dependencies`, which would bundle a second copy), and `alia plugin types`
 repins them alongside the SDK.
 
 ## Types & API reference
 
-The plugin API ships as the npm package `@get-bb/plugin-sdk`, pinned to an
+The plugin API ships as the npm package `@vesnalia/plugin-sdk`, pinned to an
 exact version in `devDependencies`. After `npm install`, the full surface is on
 disk at:
 
 ```
-node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts      # backend
-node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk-app.d.ts  # frontend
+node_modules/@vesnalia/plugin-sdk/bundled-types/alia-plugin-sdk.d.ts      # backend
+node_modules/@vesnalia/plugin-sdk/bundled-types/alia-plugin-sdk-app.d.ts  # frontend
 ```
 
-Keep the pin tracking the BB you actually run:
+Keep the pin tracking the VesnALIA you actually run:
 
 ```
-bb plugin types          # sync this plugin's SDK surface to the running BB
-bb plugin types --check  # CI: fail when it does not match
+alia plugin types          # sync this plugin's SDK surface to the running ALIA
+alia plugin types --check  # CI: fail when it does not match
 ```

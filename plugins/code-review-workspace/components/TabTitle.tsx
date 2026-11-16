@@ -1,5 +1,5 @@
 /**
- * A heading of the review's tabs in BB's side panel: what it is, then the review's id and name, so it's clear which
+ * A heading of the review's tabs in VesnALIA's side panel: what it is, then the review's id and name, so it's clear which
  * review it's for, "Review agent · api#4512 · Fix login race"; the name is cut first.
  */
 export function TabTitle({ title, reviewId, reviewName }: { title: string; reviewId?: string; reviewName?: string }) {

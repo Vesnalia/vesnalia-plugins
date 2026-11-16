@@ -11,7 +11,7 @@ it('uses project-bound Devin credentials without exposing them to the agent envi
   let receivedToken: string | undefined;
   let receivedPath: string | undefined;
   const server = createServer((req, res) => {
-    receivedToken = req.headers['x-bb-account-pool-token'] as string;
+    receivedToken = req.headers['x-alia-account-pool-token'] as string;
     receivedPath = req.url;
     req.resume(); res.end('{}');
   });

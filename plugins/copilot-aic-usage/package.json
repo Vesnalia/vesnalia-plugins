@@ -1,15 +1,15 @@
 {
-  "name": "bb-plugin-copilot-aic-usage",
+  "name": "alia-plugin-copilot-aic-usage",
   "version": "0.1.1",
   "type": "module",
   "engines": {
     "node": ">=22",
-    "bb": ">=0.43.4",
-    "bbPluginSdk": ">=0.5.9 <0.6"
+    "alia": ">=0.43.4",
+    "aliaPluginSdk": ">=0.6"
   },
-  "bb": {
+  "alia": {
     "name": "Copilot AI Credits",
-    "description": "Live session AI-credit usage for Copilot ACP threads in BB",
+    "description": "Live session AI-credit usage for Copilot ACP threads in VesnALIA",
     "branding": {
       "icon": "Gauge"
     },
@@ -24,7 +24,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.9",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -56,7 +55,7 @@
     "vaul": "^1.1.2",
     "vitest": "^4.1.11"
   },
-  "description": "Live session AI-credit usage for Copilot ACP threads in BB",
+  "description": "Live session AI-credit usage for Copilot ACP threads in VesnALIA",
   "license": "MIT",
   "files": [
     "dist",
@@ -70,8 +69,8 @@
     "PLUGIN_OVERVIEW.md"
   ],
   "scripts": {
-    "build": "bb plugin build",
-    "types": "bb plugin types",
+    "build": "alia plugin build",
+    "types": "alia plugin types",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm test && npm run build",
@@ -79,17 +78,26 @@
     "format:check": "prettier --check \"*.ts\" \"*.tsx\" \"src/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx}\""
   },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "copilot",
     "usage",
     "ai-credits"
   ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.9"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/copilot-aic-usage#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/balazstasi/bb-plugin-copilot-aic-usage.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/copilot-aic-usage"
   },
-  "homepage": "https://github.com/balazstasi/bb-plugin-copilot-aic-usage#readme",
   "bugs": {
-    "url": "https://github.com/balazstasi/bb-plugin-copilot-aic-usage/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

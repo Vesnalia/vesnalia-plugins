@@ -6,11 +6,11 @@
 
 ### Your next message, one gesture away.
 
-Suggests what you are likely to type next, as ghost text in an empty BB message box.<br>
+Suggests what you are likely to type next, as ghost text in an empty VesnALIA message box.<br>
 Press Tab or → (or swipe right) to make it an editable draft. Nothing is ever sent for you.
 
 ![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)
-![bb ≥ 0.46](https://img.shields.io/badge/bb-%E2%89%A5%200.46-c026d3)
+![VesnALIA ≥ 0.46](https://img.shields.io/badge/bb-%E2%89%A5%200.46-c026d3)
 ![Plugin SDK ≥ 0.6.49](https://img.shields.io/badge/plugin%20sdk-%E2%89%A5%200.6.49-701a75)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 
@@ -25,7 +25,7 @@ Press Tab or → (or swipe right) to make it an editable draft. Nothing is ever 
 <br>
 
 > [!NOTE]
-> The screenshots are real BB captures of a demo thread in a throwaway project.
+> The screenshots are real VesnALIA captures of a demo thread in a throwaway project.
 
 ## The problem
 
@@ -59,7 +59,7 @@ normal draft: edit it, send it, or delete it. **Shift+Tab** keeps its usual
 focus behaviour. On a touchscreen, swipe right inside the empty message box
 to accept the visible suggestion, including the padding around the text. While
 a suggestion is visible, that text area is reserved for autocomplete instead
-of BB’s sidebar gesture. Vertical scrolling and pinch zoom keep their usual
+of VesnALIA’s sidebar gesture. Vertical scrolling and pinch zoom keep their usual
 behaviour. The gesture inserts a draft only; it never sends.
 
 </td>
@@ -79,7 +79,7 @@ Nothing shows while the thread is running or the draft has text, mentions or att
 ### 🧠 Your choice of model
 
 By default it uses the conversation's own provider and model at low reasoning
-effort. Or pick a separate provider, model, effort and service tier with BB's
+effort. Or pick a separate provider, model, effort and service tier with VesnALIA's
 native picker.
 
 </td>
@@ -125,7 +125,7 @@ whenever one is available.
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/MacHatter1/bb-plugin-composer-predictions --yes
+alia plugin install git:https://github.com/MacHatter1/bb-plugin-composer-predictions --yes
 ```
 
 Predictions start right away. After the next reply, leave the message box
@@ -136,16 +136,16 @@ empty for a few seconds.
 
 ```sh
 git clone https://github.com/MacHatter1/bb-plugin-composer-predictions
-cd bb-plugin-composer-predictions
-npm install && bb plugin build
-bb plugin install path:$PWD --yes
+cd alia-plugin-composer-predictions
+npm install && alia plugin build
+alia plugin install path:$PWD --yes
 ```
 
 </details>
 
 **Requirements**
 
-- bb **0.46+** (Plugin SDK 0.6.49+)
+- VesnALIA **0.46+** (Plugin SDK 0.6.49+)
 - The prediction model available on the conversation's machine. A provider
   that can approve automatically runs the helper unattended. A provider that
   asks for approval can be used too: the helper opens beside the conversation
@@ -198,8 +198,8 @@ sequenceDiagram
 - **Remembered, not reused blindly.** A fingerprint covers the conversation,
   the prompt, the model and the budget. A saved result is shown only when the
   fingerprint still matches.
-- **Painted beside the editor.** BB has no ghost-text slot yet, so the overlay
-  relies on BB 0.46 composer markup. If it cannot find its own composer, it
+- **Painted beside the editor.** VesnALIA has no ghost-text slot yet, so the overlay
+  relies on VesnALIA 0.46 composer markup. If it cannot find its own composer, it
   shows nothing and leaves Tab alone.
 
 Context limits, cache rules, key handling and compatibility are covered in
@@ -207,13 +207,13 @@ Context limits, cache rules, key handling and compatibility are covered in
 
 ## Safety and cost
 
-- ✋ **Never sends.** Tab, → or a right swipe fills an empty draft through BB's
+- ✋ **Never sends.** Tab, → or a right swipe fills an empty draft through VesnALIA's
   public composer API. The plugin has no call to submit a message.
 - 🧾 **Never overwrites.** A suggestion is inserted only when the box has no
   text, mentions or attachments.
 - 🧵 **Leaves your thread alone.** Predictions run in separate hidden helpers,
   never in your conversation. Helpers left behind by a crash are cleaned up on
-  the next start. BB helpers are deleted after the source conversation moves on,
+  the next start. VesnALIA helpers are deleted after the source conversation moves on,
   with stop and archive completed first.
 - 💸 **Costs a model request per new reply.** Normal provider usage applies. A
   thread is watched from the first time you open it with an empty message box
@@ -227,28 +227,28 @@ Context limits, cache rules, key handling and compatibility are covered in
   conversation already uses. If you choose a separate model, its provider
   receives it too.
 - 🗄️ **Stores no copy of your conversation.** The plugin's database keeps the
-  suggestion, its status and a fingerprint. BB itself keeps each helper's
+  suggestion, its status and a fingerprint. VesnALIA itself keeps each helper's
   history, including the quoted conversation, as an archived hidden thread
-  until the conversation moves on; the plugin then uses BB's normal thread
+  until the conversation moves on; the plugin then uses VesnALIA's normal thread
   deletion to remove the helper. Provider-side sessions are archived where
   supported; this does not permanently delete them from the provider.
 - ⚠️ **Not a sandbox.** The helper is told not to use tools and to treat the
   conversation as quoted data. A provider that can approve automatically runs
   it in `auto` and the helper is stopped if it asks for approval or input.
   A provider that cannot is run in the mode that asks, and that approval is
-  shown to you. The plugin cannot remove BB's core tools or other plugins'
+  shown to you. The plugin cannot remove VesnALIA's core tools or other plugins'
   tools from the helper.
 
 ## CLI
 
-`bb composer-predictions <command> <thread-id> [--json]`. Without `--json`, a
+`alia composer-predictions <command> <thread-id> [--json]`. Without `--json`, a
 command prints the suggestion, or the status when there is none.
 
 ```sh
-bb composer-predictions show <thread-id>           # the suggestion, or its status
-bb composer-predictions show <thread-id> --json    # the full prediction state
-bb composer-predictions regenerate <thread-id>     # discard it and predict again
-bb composer-predictions dismiss <thread-id>        # hide the current suggestion
+alia composer-predictions show <thread-id>           # the suggestion, or its status
+alia composer-predictions show <thread-id> --json    # the full prediction state
+alia composer-predictions regenerate <thread-id>     # discard it and predict again
+alia composer-predictions dismiss <thread-id>        # hide the current suggestion
 ```
 
 <details>
@@ -266,7 +266,7 @@ bb composer-predictions dismiss <thread-id>        # hide the current suggestion
 | `generating` | A helper is working on it. |
 | `abstained` | The model chose to suggest nothing. |
 | `dismissed` | Dismissed with Escape or the CLI, or accepted. |
-| `error` | The prediction failed; `bb plugin logs composer-predictions` has the cause. |
+| `error` | The prediction failed; `alia plugin logs composer-predictions` has the cause. |
 | `idle` | Nothing to predict yet, such as while the thread is running. |
 
 </details>
@@ -278,7 +278,7 @@ showing.
 
 ## Settings
 
-`bb plugin config composer-predictions`, or **Settings → Plugins → Composer
+`alia plugin config composer-predictions`, or **Settings → Plugins → Composer
 Predictions**.
 
 <details>
@@ -289,15 +289,15 @@ Predictions**.
 | `enabled` | `true` | Suggest a next message in empty thread composers. |
 | `contextCharacters` | `48000` | Most characters of conversation sent for each prediction (4,000–120,000). |
 
-The **Prediction model** section is set in the app, not with `bb plugin
-config`. **Choose a separate model** opens BB's provider and model picker, and
+The **Prediction model** section is set in the app, not with `alia plugin
+config`. **Choose a separate model** opens VesnALIA's provider and model picker, and
 **Save prediction model** keeps it across reloads. **Use conversation model**
 goes back to the default. Changing a setting or the prediction model clears
 saved predictions, without touching any draft.
 
 The chooser tries available providers in order and uses the first usable
 model, preferring that provider's default. Failed catalogues are reported in
-settings and `bb plugin logs composer-predictions`, even when another provider
+settings and `alia plugin logs composer-predictions`, even when another provider
 works. **Retry** refreshes discovery. A fallback is only a picker default;
 it becomes your prediction model when you explicitly save it.
 
@@ -307,12 +307,12 @@ it becomes your prediction model when you explicitly save it.
 <summary><b>Turning it off</b></summary>
 
 ```sh
-bb plugin config composer-predictions set enabled false   # keep the plugin, stop predictions
-bb plugin disable composer-predictions                     # unload it entirely
-bb plugin enable composer-predictions
+alia plugin config composer-predictions set enabled false   # keep the plugin, stop predictions
+alia plugin disable composer-predictions                     # unload it entirely
+alia plugin enable composer-predictions
 ```
 
-`bb plugin remove composer-predictions` removes the plugin and its settings.
+`alia plugin remove composer-predictions` removes the plugin and its settings.
 
 </details>
 
@@ -322,13 +322,13 @@ bb plugin enable composer-predictions
 npm install
 npm test                           # Node.js 24+
 npm run typecheck
-bb plugin build
-bb plugin install path:$PWD --yes
-bb plugin dev                      # rebuild and reload on every save
+alia plugin build
+alia plugin install path:$PWD --yes
+alia plugin dev                      # rebuild and reload on every save
 ```
 
 ```
-server.ts           wires the coordinator to bb: settings, events, RPC, CLI, helpers, startup cleanup
+server.ts           wires the coordinator to alia: settings, events, RPC, CLI, helpers, startup cleanup
 app.tsx             the composer bridge, the ghost-text content script, the settings section
 model-settings.tsx  the Prediction model section
 contract.ts         the typed RPC contract and shared schemas
@@ -340,7 +340,7 @@ docs/               logo, design notes, per-release review records
 **Tests** use `node:test` through `tsx`. Unit tests cover context building,
 strict parsing and the coordinator's cancellation, concurrency and
 stale-dismissal rules. The ghost overlay's keyboard and touch handling and cleanup run in
-jsdom. The composer bridge and settings section run through BB's frontend SDK
+jsdom. The composer bridge and settings section run through VesnALIA's frontend SDK
 harness, and the server, helper cleanup, model routing and reloads through its
 fake plugin host, with a real SQLite file for the cache.
 
@@ -349,7 +349,7 @@ baseline Git revision with the current prompt using labelled cases and
 independent model requests. It is separate from `npm test`.
 
 `PLUGIN_OVERVIEW.md` is the store listing. Keep it in step with
-`bb.description` in `package.json`. Review and verification records for each
+`alia.description` in `package.json`. Review and verification records for each
 release are in [docs/reviews/](docs/reviews/).
 
 ## Licence

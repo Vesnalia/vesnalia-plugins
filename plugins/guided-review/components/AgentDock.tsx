@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useRpc, useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRpc, useRealtime } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../src/rpc-contract";
 import type { AgentMessage, AgentMessageContext } from "../src/store";
@@ -138,7 +138,7 @@ export const AgentDock = memo(function AgentDock({ targetKey, currentFile, curre
       {mode === "panel" && onCollapse && <Button variant="ghost" size="icon" className="hidden size-7 text-muted-foreground @min-[1024px]/review:inline-flex" aria-label="Collapse review panel" onClick={onCollapse}><Icon name="X" aria-hidden /></Button>}
     </div>
     <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3" aria-busy={busy}>
-      {loadError && <div role="alert" className="space-y-2 text-sm"><p>Couldn’t load the conversation. Your saved messages are still in BB.</p><Button variant="outline" size="sm" onClick={() => void refresh()}>Retry conversation</Button></div>}
+      {loadError && <div role="alert" className="space-y-2 text-sm"><p>Couldn’t load the conversation. Your saved messages are still in VesnALIA.</p><Button variant="outline" size="sm" onClick={() => void refresh()}>Retry conversation</Button></div>}
       {!loaded && !loadError && <p role="status" className="text-sm text-muted-foreground">Loading conversation…</p>}
       {loaded && !messages.length && <div className="space-y-2 py-4 text-sm leading-relaxed"><p>Ask about this change.</p><p className="text-muted-foreground">Discuss the current file, check a risk, or select lines in the diff for a focused question. Your conversation stays with this review.</p></div>}
       {messages.map((message) => <div key={message.id} className="space-y-1.5">

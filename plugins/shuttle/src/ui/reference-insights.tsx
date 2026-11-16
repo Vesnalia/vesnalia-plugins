@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { UrlLink } from "@get-bb/plugin-sdk/app";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
 import type { ReferenceLogOptions, ReferenceRecord } from "../contract";
 import type { ServerConfig } from "../config";
 import { prKey } from "../keys";

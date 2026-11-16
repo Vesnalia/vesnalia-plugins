@@ -13,7 +13,7 @@ vi.mock("./gh", async (orig) => {
   };
 });
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "./store";
 import { rerunReview } from "./rereview";
 import * as gh from "./gh";
@@ -26,15 +26,15 @@ function host() {
 }
 
 test("rerunReview re-fetches a PR diff, re-saves patch, sets generating, and returns ok", async () => {
-  const { bb } = host();
-  const store = createStore(bb);
+  const { alia } = host();
+  const store = createStore(alia);
   store.saveReview({
     targetKey: "pr-7", kind: "pr", number: 7, repo: "acme/web", status: "ready", createdAt: 1,
     projectId: "p1", headSha: "oldsha", gitRef: "main...feature",
   });
   store.savePatch("pr-7", "stale patch");
 
-  const res = await rerunReview({ bb, store, gh }, "pr-7");
+  const res = await rerunReview({ alia, store, gh }, "pr-7");
 
   expect(res).toEqual({ ok: true });
   expect(store.readPatch("pr-7").text).toContain("diff --git a/a.ts");
@@ -43,15 +43,15 @@ test("rerunReview re-fetches a PR diff, re-saves patch, sets generating, and ret
 });
 
 test("rerunReview re-fetches a local-ref diff via git when cwd is present", async () => {
-  const { bb } = host();
-  const store = createStore(bb);
+  const { alia } = host();
+  const store = createStore(alia);
   store.saveReview({
     targetKey: "ref-abc", kind: "ref", status: "ready", createdAt: 1,
     projectId: "p1", gitRef: "main...feature", cwd: "/repo",
   });
   store.savePatch("ref-abc", "stale patch");
 
-  const res = await rerunReview({ bb, store, gh }, "ref-abc");
+  const res = await rerunReview({ alia, store, gh }, "ref-abc");
 
   expect(res).toEqual({ ok: true });
   expect(store.readPatch("ref-abc").text).toContain("diff --git a/b.ts");
@@ -59,22 +59,22 @@ test("rerunReview re-fetches a local-ref diff via git when cwd is present", asyn
 });
 
 test("rerunReview fails a local-ref review with no stored cwd", async () => {
-  const { bb } = host();
-  const store = createStore(bb);
+  const { alia } = host();
+  const store = createStore(alia);
   store.saveReview({
     targetKey: "ref-abc", kind: "ref", status: "ready", createdAt: 1,
     projectId: "p1", gitRef: "main...feature",
   });
 
-  const res = await rerunReview({ bb, store, gh }, "ref-abc");
+  const res = await rerunReview({ alia, store, gh }, "ref-abc");
 
   expect(res.ok).toBe(false);
   expect(res.error).toMatch(/working dir/i);
 });
 
 test("rerunReview fails for an unknown target", async () => {
-  const { bb } = host();
-  const store = createStore(bb);
-  const res = await rerunReview({ bb, store, gh }, "missing");
+  const { alia } = host();
+  const store = createStore(alia);
+  const res = await rerunReview({ alia, store, gh }, "missing");
   expect(res.ok).toBe(false);
 });

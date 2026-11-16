@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { normalizeProjectIconPath } from "./project-icons";
 import {
@@ -178,7 +178,7 @@ const iconBase64Schema = z
   .min(1)
   .max(1_400_000)
   .regex(/^[A-Za-z0-9+/]*={0,2}$/, "Invalid image data");
-export const bbSidebarRpcContract = defineRpcContract({
+export const aliaSidebarRpcContract = defineRpcContract({
   getThreadLimits: {
     input: z.object({ keys: z.array(z.string().trim().min(1)).max(1000) }).strict(),
     output: z.record(z.string(), threadLimitStateSchema.nullable()),

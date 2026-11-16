@@ -110,8 +110,8 @@ test("parses the fields, with the setup guide's defaults", () => {
   assert.equal(all.host, "ssh://builder@docker.example:2222");
   assert.equal(all.boxes, 3);
   assert.equal(dockerConfig({ "host": "unix:///run/user/1000/docker.sock" }).host, "unix:///run/user/1000/docker.sock");
-  // A BB machine, reached through BB Box's relay (042).
-  assert.deepEqual([dockerConfig({ host: "bb:host_m1" }).host, dockerConfig({ host: "bb:host_m1" }).machine], ["bb:host_m1", "host_m1"]);
+  // A VesnALIA machine, reached through VesnALIA Box's relay (042).
+  assert.deepEqual([dockerConfig({ host: "alia:host_m1" }).host, dockerConfig({ host: "alia:host_m1" }).machine], ["alia:host_m1", "host_m1"]);
   assert.equal(dockerConfig({ host: "tcp://127.0.0.1:2375" }).host, "tcp://127.0.0.1:2375");
   assert.equal(dockerConfig({ host: "wsl://bbdocker" }).host, "wsl://bbdocker");
   assert.equal(dockerConfig({ host: "wsl://box@bbdocker" }).host, "wsl://box@bbdocker");
@@ -162,17 +162,17 @@ test("refuses fields it cannot use, and says which, at each field", () => {
   assert.deepEqual(none.problems, [{ path: "linux-image", message: "Docker: give a linux or a desktop image." }]);
 });
 
-test("reads its part of BB Box's configuration", () => {
+test("reads its part of VesnALIA Box's configuration", () => {
   const configuration = toConfiguration({ backends: [{ id: "docker", type: "docker", enabled: true, fields: { privileged: false, boxes: 3 } }] });
   assert.deepEqual(configuration.problems, []);
   const parsed = dockerDriver.parse(backendPart(configuration.document.backends[0]!, dockerDriver, configuration.secrets));
   assert.ok(parsed.ok);
   assert.equal(parsed.config.docker, false);
   assert.equal(parsed.config.boxes, 3);
-  // A field Docker does not have is a problem at its path, naming the key it has now when it is its old name in BB's settings.
+  // A field Docker does not have is a problem at its path, naming the key it has now when it is its old name in VesnALIA's settings.
   const wrong = toConfiguration({ backends: [{ id: "docker", type: "docker", enabled: true, fields: { "docker-privileged": true, colour: "blue" } }] });
   assert.deepEqual(wrong.problems, [
-    `backends.docker.docker-privileged: Backend docker has no field "docker-privileged". That was its name in BB's settings; here it is "privileged".`,
+    `backends.docker.docker-privileged: Backend docker has no field "docker-privileged". That was its name in VesnALIA's settings; here it is "privileged".`,
     `backends.docker.colour: Backend docker has no field "colour". The fields are ${Object.keys(dockerDriver.fields).join(", ")}.`,
   ]);
 });
@@ -311,8 +311,8 @@ test("acquires a box as a container labelled from its first write, claimed befor
 
   const container = fake.inspect(name);
   const imageLabels = new Set(["bbbox.image-version", "bbbox.fork-hold", "bbbox.image-record"]);
-  const setByBbBox = Object.fromEntries(Object.entries(container.Config.Labels).filter(([key]) => !imageLabels.has(key)));
-  assert.deepEqual(setByBbBox, {
+  const setByAliaBox = Object.fromEntries(Object.entries(container.Config.Labels).filter(([key]) => !imageLabels.has(key)));
+  assert.deepEqual(setByAliaBox, {
     "bbbox.backend": "docker",
     "bbbox.install": "test",
     "bbbox.box": box.boxId,
@@ -335,7 +335,7 @@ test("acquires a box as a container labelled from its first write, claimed befor
   assert.equal(after(create, "--shm-size"), "2048m");
   assert.equal(after(create, "--restart"), "unless-stopped");
   assert.equal(after(create, "--network"), "bbbox");
-  assert.deepEqual(create.slice(-2), ["bbbox/linux:1", "/usr/local/sbin/bb-box-start"]);
+  assert.deepEqual(create.slice(-2), ["bbbox/linux:1", "/usr/local/sbin/alia-box-start"]);
   // The network is made once, so boxes on it cannot reach each other.
   const network = fake.calls().filter((args) => args[0] === "network" && args[1] === "create");
   assert.deepEqual(network, [["network", "create", "--label", "bbbox.backend=docker", "--opt", "com.docker.network.bridge.enable_icc=false", "bbbox"]]);
@@ -452,7 +452,7 @@ test("a box made with an anonymous Docker volume keeps it, and a release still r
   assert.deepEqual(volumeNames(fake.binary), [neighbour]);
 });
 
-test("Docker over SSH and on a BB machine labels the same volume", async () => {
+test("Docker over SSH and on a VesnALIA machine labels the same volume", async () => {
   const ssh = setup({ host: "ssh://builder@192.0.2.10" });
   const guest = await ssh.backend.acquire(identity(), null, hooks().hooks, signal());
   const volume = `${guest.ref}-docker`;
@@ -466,16 +466,16 @@ test("Docker over SSH and on a BB machine labels the same volume", async () => {
   const context = {
     ...testContext(),
     machines: {
-      dockerHost: () => "unix:///tmp/bb-box-relay/host_m1.sock",
+      dockerHost: () => "unix:///tmp/alia-box-relay/host_m1.sock",
       ready: async () => {},
       name: () => "build-1",
       connected: async () => true,
     },
   };
-  const backend = new DockerBackend(dockerConfig({ host: "bb:host_m1" }), context, { binary: fake.binary, readyTimeoutMs: 2_000 });
+  const backend = new DockerBackend(dockerConfig({ host: "alia:host_m1" }), context, { binary: fake.binary, readyTimeoutMs: 2_000 });
   const made = await backend.acquire(identity(), null, hooks().hooks, signal());
   const machineLog = readFileSync(join(fake.root, "log"), "utf8").split("\n").filter(Boolean).map((line) => JSON.parse(line) as string[]);
-  assert.ok(machineLog.some((args) => args[0] === "-H" && args[1] === "unix:///tmp/bb-box-relay/host_m1.sock" && args[2] === "volume" && args[3] === "create"));
+  assert.ok(machineLog.some((args) => args[0] === "-H" && args[1] === "unix:///tmp/alia-box-relay/host_m1.sock" && args[2] === "volume" && args[3] === "create"));
   assert.deepEqual(volumeLabels(fake.binary, `${made.ref}-docker`), { "bbbox.volume-of": made.ref, "bbbox.install": "test" });
   await backend.release(made, releasing, signal());
   assert.throws(() => volumeLabels(fake.binary, `${made.ref}-docker`));
@@ -539,7 +539,7 @@ test("a GPU desktop on a desktop image built before gpu-bus-id stays unprivilege
   const desktop = (labels: Record<string, string>) =>
     writeFileSync(join(fake.root, "images.json"), JSON.stringify({ "bbbox/linux:1": { "bbbox.image-version": "1" }, "bbbox/linux-desktop:1": labels }));
   desktop({ "bbbox.image-version": "1" });
-  // Until BB Box has seen the image, the setting decides.
+  // Until VesnALIA Box has seen the image, the setting decides.
   assert.deepEqual(backend.kinds().map((kind) => kind.capabilities.features), [["docker"], ["docker"], ["docker"], ["docker"]]);
   assert.equal((await backend.capacity("linux-desktop", SMALL, [], signal())).ok, true);
   assert.deepEqual(backend.kinds().map((kind) => kind.capabilities.features), [["docker"], ["docker"], [], ["docker"]]);
@@ -619,7 +619,7 @@ test("when the placed GPU cannot be found, a GPU desktop's start leaves Xorg's c
     assert.equal(lost.conf, XORG_DEVICE);
   }
   const start = readFileSync(new URL("../setup/docker/start", import.meta.url), "utf8");
-  const fallback = `        if bus=$(/usr/local/libexec/bb-box/gpu-bus-id "$BBBOX_GPU_ID"); then
+  const fallback = `        if bus=$(/usr/local/libexec/alia-box/gpu-bus-id "$BBBOX_GPU_ID"); then
           display_env+=(GPU_BUS_ID="$bus")
         else
           display_env[0]=DISPLAY_MODE=cpu
@@ -640,7 +640,7 @@ test("on rootless Docker, offers no Docker once the daemon has said so, and make
   assert.equal(fake.inspect(guest.ref).HostConfig.Mounts.some((mount) => mount.Target === "/var/lib/docker"), false);
 });
 
-test("gives the address only where BB's server reaches the bridge", async () => {
+test("gives the address only where VesnALIA's server reaches the bridge", async () => {
   const { backend } = setup({}, { name: hostname() });
   const guest = await backend.acquire(identity(), null, hooks().hooks, signal());
   assert.match(guest.address ?? "", /^172\.30\.0\.\d+$/);
@@ -706,7 +706,7 @@ test("power is unknown when the daemon does not answer", async () => {
 test("removes the container when a box does not come up, and says why", async () => {
   const { fake, backend } = setup();
   fake.set({ failStart: true });
-  await assert.rejects(backend.acquire(identity(), null, hooks().hooks, signal()), /stopped as it started \(exited, exit code 1\)\. Its last output: bb-box-start: something went wrong/);
+  await assert.rejects(backend.acquire(identity(), null, hooks().hooks, signal()), /stopped as it started \(exited, exit code 1\)\. Its last output: alia-box-start: something went wrong/);
   assert.deepEqual(fake.containers(), []);
   assert.deepEqual(volumeNames(fake.binary), []);
   fake.set({ failStart: false, neverReady: true });
@@ -717,7 +717,7 @@ test("removes the container when a box does not come up, and says why", async ()
 
 test("refuses a missing image without pulling it", async () => {
   const { fake, backend } = setup({ "linux-image": "example/missing:1" });
-  await assert.rejects(backend.acquire(identity(), null, hooks().hooks, signal()), /has no image example\/missing:1, and BB Box never pulls one/);
+  await assert.rejects(backend.acquire(identity(), null, hooks().hooks, signal()), /has no image example\/missing:1, and ALIA Box never pulls one/);
   assert.deepEqual(volumeNames(fake.binary), []);
 });
 
@@ -727,7 +727,7 @@ test("leaves alone a container of the box's name that another box has, and goes 
   const name = containerName(box.boxId);
   execFileSync(fake.binary, ["network", "create", "bbbox"]);
   execFileSync(fake.binary, ["container", "create", "--name", name, "--label", "bbbox.backend=docker", "--label", "bbbox.install=test", "--label", "bbbox.box=bxanother00000", "--cpus", "1", "--memory", "512m", "--network", "bbbox", "bbbox/linux:1"]);
-  await assert.rejects(backend.acquire(box, null, hooks().hooks, signal()), /belongs to another box, so BB Box left it alone/);
+  await assert.rejects(backend.acquire(box, null, hooks().hooks, signal()), /belongs to another box, so ALIA Box left it alone/);
   assert.equal(fake.inspect(name).Config.Labels["bbbox.box"], "bxanother00000");
   assert.throws(() => volumeLabels(fake.binary, `${name}-docker`));
 
@@ -794,7 +794,7 @@ test("counts every install's containers and the memory limits of running ones", 
   await backend.acquire(identity(), null, hooks().hooks, signal());
   const full = await backend.capacity("linux", SMALL, [], signal());
   assert.equal(full.ok, false);
-  assert.match(full.message!, /has 2 of the 2 BB Box containers it may have, counting stopped boxes and other installs' boxes/);
+  assert.match(full.message!, /has 2 of the 2 ALIA Box containers it may have, counting stopped boxes and other installs' boxes/);
   await assert.rejects(backend.acquire(identity(), null, hooks().hooks, signal()), (error: unknown) => error instanceof BackendError && error.code === "no_capacity");
   assert.equal(fake.containers().length, 2);
 });
@@ -838,7 +838,7 @@ test("places GPU desktops per GPU, counting stopped ones", async () => {
   await backend.stop(first, signal());
   await backend.acquire(identity("linux-desktop", size), null, hooks().hooks, signal());
   const full = await backend.capacity("linux-desktop", size, [], signal());
-  assert.match(full.message!, /^No card on fake-docker can take a shared GPU now: card 0 has 1 box, the most a card may have \(calm-otter-\d+\) and card 1 has 1 box, the most a card may have \(calm-otter-\d+\)\. Release a box on a card, ask for a linux-desktop-cpu box, or raise the boxes per card in BB Box's Docker settings\.$/);
+  assert.match(full.message!, /^No card on fake-docker can take a shared GPU now: card 0 has 1 box, the most a card may have \(calm-otter-\d+\) and card 1 has 1 box, the most a card may have \(calm-otter-\d+\)\. Release a box on a card, ask for a linux-desktop-cpu box, or raise the boxes per card in ALIA Box's Docker settings\.$/);
   // A CPU desktop needs no GPU.
   assert.equal((await backend.capacity("linux-desktop-cpu", size, [], signal())).ok, true);
 });
@@ -915,7 +915,7 @@ test("the doctor checks the CLI, the daemon, the images, the network and the roo
   await make("other").acquire(identity(), null, hooks().hooks, signal());
   const again = await backend.doctor(signal());
   assert.match(again.notes[1]!, /leaves alone the containers of other installs on fake-docker: 1 of install other\. They still count against its room\./);
-  assert.match(again.checks.find((check) => check.id === "docker.network")!.detail, /Made by BB Box/);
+  assert.match(again.checks.find((check) => check.id === "docker.network")!.detail, /Made by ALIA Box/);
 
   writeFileSync(join(fake.root, "images.json"), JSON.stringify({ "bbbox/linux:1": { "bbbox.image-version": "0" } }));
   fake.set({ rootless: true, arch: "aarch64" });
@@ -936,19 +936,19 @@ test("the doctor checks the CLI, the daemon, the images, the network and the roo
 /** An image's record (049) as setup/docker/build.sh labels it, built `days` ago. */
 function record(days = 0, changes: Record<string, unknown> = {}): string {
   const built = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-  return JSON.stringify({ contract: 1, image: "standard", kind: "linux-desktop", arch: "x86_64", build: "build.20261003-021500-3f9c", built, os: "Ubuntu 24.04.5 LTS", pins: "d".repeat(64), bbApp: "a".repeat(64), tools: { node: "24.21.0" }, ...changes });
+  return JSON.stringify({ contract: 1, image: "standard", kind: "linux-desktop", arch: "x86_64", build: "build.20261003-021500-3f9c", built, os: "Ubuntu 24.04.5 LTS", pins: "d".repeat(64), aliaApp: "a".repeat(64), tools: { node: "24.21.0" }, ...changes });
 }
 
-test("the doctor judges each image by its record's label: contract, age, BB's app and pins (049)", async () => {
+test("the doctor judges each image by its record's label: contract, age, VesnALIA's app and pins (049)", async () => {
   const fake = fakeDockerHost();
   const [linuxPins, desktopPins, app] = ["l", "d", "a"].map((letter) => letter.repeat(64));
-  const images = { pins: async (set: string) => (set === "linux" ? linuxPins! : desktopPins!), bbApp: async () => app! };
+  const images = { pins: async (set: string) => (set === "linux" ? linuxPins! : desktopPins!), aliaApp: async () => app! };
   writeFileSync(
     join(fake.root, "images.json"),
     JSON.stringify({
       // A record finalizing gave the Docker host's whole filesystem as the image's size (#474).
       "bbbox/linux:1": { "bbbox.image-version": "1", "bbbox.image-record": record(1, { kind: "linux", pins: linuxPins, sizeGiB: 190.7 }) },
-      "bbbox/linux-desktop:1": { "bbbox.image-version": "1", "bbbox.gpu-bus-id": "1", "bbbox.image-record": record(20, { bbApp: null, pins: "x".repeat(64) }) },
+      "bbbox/linux-desktop:1": { "bbbox.image-version": "1", "bbbox.gpu-bus-id": "1", "bbbox.image-record": record(20, { aliaApp: null, pins: "x".repeat(64) }) },
       "bbbox/linux-desktop-wayland:1": { "bbbox.image-version": "1", "bbbox.image-record": record(1, { contract: 0 }) },
     }),
   );
@@ -967,15 +967,15 @@ test("the doctor judges each image by its record's label: contract, age, BB's ap
   const desktop = by("bbbox/linux-desktop:1");
   assert.equal(desktop.status, "warn");
   assert.match(desktop.detail, /^For linux-desktop-cpu(, linux-desktop)? boxes\. /);
-  assert.match(desktop.detail, /It is 20 days old, more than 14, .* It has no build of BB's app, .* It was built with other pins than this BB Box's/);
-  assert.equal(desktop.fix, "Build it again with this BB Box's setup/docker/build.sh --bb-url <BB's server URL>.");
+  assert.match(desktop.detail, /It is 20 days old, more than 14, .* It has no build of ALIA's app, .* It was built with other pins than this ALIA Box's/);
+  assert.equal(desktop.fix, "Build it again with this VesnALIA Box's setup/docker/build.sh --alia-url <VesnALIA's server URL>.");
 
   const wayland = by("bbbox/linux-desktop-wayland:1");
   assert.equal(wayland.status, "fail");
-  assert.match(wayland.detail, /It keeps image contract 0, and this BB Box needs 1, so its boxes may not work\./);
+  assert.match(wayland.detail, /It keeps image contract 0, and this ALIA Box needs 1, so its boxes may not work\./);
   assert.equal(report.ok, false);
 
-  // Built by an earlier bb-box: its layout, and no record.
+  // Built by an earlier alia-box: its layout, and no record.
   writeFileSync(join(fake.root, "images.json"), JSON.stringify({ "bbbox/linux:1": { "bbbox.image-version": "1" } }));
   const before = (await backend.doctor(signal())).checks.find((check) => check.id === "image.bbbox/linux:1")!;
   assert.equal(before.status, "warn");
@@ -1009,13 +1009,13 @@ test("image operations on Docker: an image box, its commit as an image with its 
   const box = await images.box(linux, "a small image", signal());
   assert.match(box.ref, /^bbbox-image-[0-9a-f]{12}$/);
   const made = fake.inspect(box.ref);
-  assert.deepEqual([made.Config.Image, made.Config.Labels["bbbox.image-box"], made.Config.Labels["bbbox.box"], made.Config.Hostname], ["bbbox/linux:1", "test", undefined, "bb-box-image"]);
+  assert.deepEqual([made.Config.Image, made.Config.Labels["bbbox.image-box"], made.Config.Labels["bbbox.box"], made.Config.Hostname], ["bbbox/linux:1", "test", undefined, "alia-box-image"]);
   assert.deepEqual(await backend.held(signal()), [], "an image box is no box's");
   assert.deepEqual((await images.list(signal())).boxes, [box.ref]);
 
   // Its capture: the record as finalizing leaves it, committed in the image's labels.
   const record = { contract: 1, image: "small", kind: "linux", arch: "x86_64", build: "build.20261003-030000-abcd", built: new Date().toISOString(), os: "Ubuntu 24.04.5 LTS", tools: {} };
-  assert.equal((await box.command.run(`mkdir -p /usr/share/bb-box/ && printf '%s\\n' '${JSON.stringify(record)}' > /usr/share/bb-box/image.json`)).exitCode, 0);
+  assert.equal((await box.command.run(`mkdir -p /usr/share/alia-box/ && printf '%s\\n' '${JSON.stringify(record)}' > /usr/share/alia-box/image.json`)).exitCode, 0);
   const captured = await images.capture(box, linux, "small", signal());
   assert.deepEqual([captured.ref, captured.build, captured.current], ["bbbox-image/small:20261003-030000-abcd", "build.20261003-030000-abcd", false]);
   const labels = JSON.parse(readFileSync(join(fake.root, "images.json"), "utf8"))["bbbox-image/small:20261003-030000-abcd"];
@@ -1040,9 +1040,9 @@ test("image operations on Docker: an image box, its commit as an image with its 
 
   // A new build of the standard image by build.sh, under a tag of its own, then the tag moved.
   const lines: string[] = [];
-  const built = await images.build!(linux, "/plugin/setup", { bbUrl: "https://bb.example.com", log: (line) => lines.push(line), signal: signal() });
+  const built = await images.build!(linux, "/plugin/setup", { aliaUrl: "https://bb.example.com", log: (line) => lines.push(line), signal: signal() });
   assert.match(built.ref, /^bbbox\/linux:refresh-[0-9a-z]+$/);
-  assert.deepEqual(scripts[0]!.args, ["--bb-url", "https://bb.example.com", "--tag", built.ref, "linux"]);
+  assert.deepEqual(scripts[0]!.args, ["--alia-url", "https://bb.example.com", "--tag", built.ref, "linux"]);
   assert.deepEqual([built.build, built.current, lines], ["build.20261003-021500-3f9c", false, ["built docker/build.sh"]]);
   const replaced = await images.replace(built, linux, signal());
   assert.deepEqual([replaced.ref, replaced.current, replaced.build], ["bbbox/linux:1", true, "build.20261003-021500-3f9c"]);
@@ -1102,7 +1102,7 @@ test("the doctor fails without a daemon or a CLI, and skips what depends on them
       ["image.bbbox/linux-desktop-wayland:1", "skipped"],
     ],
   );
-  assert.match(down.checks[1]!.fix!, /Start Docker on BB's server/);
+  assert.match(down.checks[1]!.fix!, /Start Docker on ALIA's server/);
   const missing = new DockerBackend(dockerConfig({ "host": "ssh://builder@docker.example" }), testContext(), { binary: join(fake.root, "no-such-docker") });
   assert.equal(missing.label, "Docker on docker.example");
   const report = await missing.doctor(signal());
@@ -1159,13 +1159,13 @@ test("the doctor says whether the docker calls to an ssh:// host share one SSH c
   assert.equal(await check(), undefined);
 });
 
-test("the doctor warns of a network BB Box did not make", async () => {
+test("the doctor warns of a network VesnALIA Box did not make", async () => {
   const { fake, backend } = setup();
   execFileSync(fake.binary, ["network", "create", "bbbox"]);
   const report = await backend.doctor(signal());
   const network = report.checks.find((check) => check.id === "docker.network")!;
   assert.equal(network.status, "warn");
-  assert.match(network.detail, /BB Box did not make the network bbbox/);
+  assert.match(network.detail, /ALIA Box did not make the network bbbox/);
 });
 
 test("runs commands, copies files and opens a shell through docker exec, as the box user", async () => {
@@ -1178,7 +1178,7 @@ test("runs commands, copies files and opens a shell through docker exec, as the 
   const result = await command!.run('printf "%s %s %s %s|" "$USER" "$LOGNAME" "$SHELL" "$LANG"; pwd');
   assert.equal(result.stdout, `box box /bin/bash C.UTF-8|${realpathSync(home)}\n`);
   // A command reads the display path's settings, as a login shell does in an LXC box.
-  writeFileSync(join(fake.root, "containers", guest.ref, "run", "bb-box", "display.env"), "DISPLAY=:99\n");
+  writeFileSync(join(fake.root, "containers", guest.ref, "run", "alia-box", "display.env"), "DISPLAY=:99\n");
   assert.equal((await command!.run('printf %s "$DISPLAY"')).stdout, ":99");
   const failed = await command!.run("echo no >&2; exit 4");
   assert.deepEqual([failed.exitCode, failed.stderr], [4, "no\n"]);
@@ -1230,15 +1230,15 @@ test("streams the desktop through socat under docker exec, with the box's VNC pa
     },
     auth: { type: "none" },
   });
-  mkdirSync(join(fake.root, "containers", cpu.ref, "var-lib", "bb-box"), { recursive: true });
-  writeFileSync(join(fake.root, "containers", cpu.ref, "var-lib", "bb-box", "vnc-password"), "s3cr3t\n");
+  mkdirSync(join(fake.root, "containers", cpu.ref, "var-lib", "alia-box"), { recursive: true });
+  writeFileSync(join(fake.root, "containers", cpu.ref, "var-lib", "alia-box", "vnc-password"), "s3cr3t\n");
   assert.deepEqual((await display!.open(signal())).auth, { type: "vnc-password", password: "s3cr3t" });
 
   // Only the GPU desktop resizes through the backend, and only while it is on the GPU.
   const gpu = await backend.acquire(identity("linux-desktop", size), null, hooks().hooks, signal());
   const [gpuDisplay] = (await backend.transports(gpu, "linux-desktop")).displays;
   assert.deepEqual(gpuDisplay?.minSize, { width: 800, height: 600 });
-  writeFileSync(join(fake.root, "containers", gpu.ref, "run", "bb-box", "display-mode"), "cpu\n");
+  writeFileSync(join(fake.root, "containers", gpu.ref, "run", "alia-box", "display-mode"), "cpu\n");
   assert.equal(await gpuDisplay!.resize!({ width: 1280, height: 800 }, signal()), "stream-server", "on the CPU, Xtigervnc takes the size by SetDesktopSize (072)");
   await assert.rejects(gpuDisplay!.resize!({ width: 0, height: 800 }, signal()), /cannot be 0 by 800 pixels/);
 });
@@ -1250,13 +1250,13 @@ test("streams the Wayland desktop with Apple's sign-in, as wayvnc asks, and resi
   assert.deepEqual(display?.minSize, { width: 800, height: 600 });
   assert.equal(others.length, 0, "an image without Selkies has no video (060)");
   const container = join(fake.root, "containers", box.ref);
-  mkdirSync(join(container, "var-lib", "bb-box"), { recursive: true });
-  writeFileSync(join(container, "var-lib", "bb-box", "vnc-password"), "s3cr3t\n");
+  mkdirSync(join(container, "var-lib", "alia-box"), { recursive: true });
+  writeFileSync(join(container, "var-lib", "alia-box", "vnc-password"), "s3cr3t\n");
   assert.deepEqual((await display!.open(signal())).auth, { type: "apple", user: "box", password: "s3cr3t" });
 
   // The script runs in the box, and says why Sway refused a size.
-  mkdirSync(join(container, "libexec", "bb-box"), { recursive: true });
-  const script = join(container, "libexec", "bb-box", "display");
+  mkdirSync(join(container, "libexec", "alia-box"), { recursive: true });
+  const script = join(container, "libexec", "alia-box", "display");
   writeFileSync(script, `#!/bin/sh\necho "$*" >>"${container}/display.log"\n[ "$2" != 40000x800 ] || { echo "Sway refused 40000x800" >&2; exit 1; }\n`);
   chmodSync(script, 0o755);
   await display!.resize!({ width: 1280, height: 800 }, signal());
@@ -1266,18 +1266,18 @@ test("streams the Wayland desktop with Apple's sign-in, as wayvnc asks, and resi
 
   // A box of an image with Selkies has video too, by choice (060).
   const video = await backend.acquire(identity("linux-desktop-wayland-cpu", { cores: 4, memoryMiB: 8192, diskGiB: null }), null, hooks().hooks, signal());
-  const launcher = join(fake.root, "containers", video.ref, "libexec", "bb-box", "selkies");
+  const launcher = join(fake.root, "containers", video.ref, "libexec", "alia-box", "selkies");
   mkdirSync(dirname(launcher), { recursive: true });
   writeFileSync(launcher, "#!/bin/sh\n");
   chmodSync(launcher, 0o755);
-  // And bb-box-cursor, as an image with Sway 1.11 has (060).
+  // And alia-box-cursor, as an image with Sway 1.11 has (060).
   const helper = join(dirname(launcher), "cursor");
   writeFileSync(helper, "#!/bin/sh\n");
   chmodSync(helper, 0o755);
   const shown = (await backend.transports(video, "linux-desktop-wayland-cpu")).displays;
   assert.deepEqual(shown.map((each) => [each.protocol, each.label, each.cursor ?? null]), [["rfb", "Desktop", null], ["selkies", "Desktop, as video", null]]);
 
-  // The pointer while a person holds control (#707, 060): an image without bb-box-cursor, as on 24.04, hides it from the
+  // The pointer while a person holds control (#707, 060): an image without alia-box-cursor, as on 24.04, hides it from the
   // picture, as before; one with it, Sway 1.11's, keeps Sway's theme, whose pointer neither stream paints. Sway's own command
   // stands in, recording the themes it is given, and GSettings' does nothing.
   const bin = join(fake.root, "bin");
@@ -1297,7 +1297,7 @@ test("streams the Wayland desktop with Apple's sign-in, as wayvnc asks, and resi
       await rfb!.pointer!(true);
       return readFileSync(join(bin, "themes"), "utf8").trim().split("\n");
     };
-    assert.deepEqual(await themes(box), ["bb-box-hidden", "default"], "an image without the helper hides the pointer, as before");
+    assert.deepEqual(await themes(box), ["alia-box-hidden", "default"], "an image without the helper hides the pointer, as before");
     assert.deepEqual(await themes(video), ["default", "default"], "an image with the helper keeps Sway's theme");
     // And only a box with the helper has its pointer followed.
     const follows = async (ref: typeof box) => (await backend.transports(ref, "linux-desktop-wayland-cpu")).displays[0]!.followPointer !== undefined;
@@ -1376,93 +1376,93 @@ test("two daemons that keep the same container id never share a rename", async (
   assert.equal((await shared.list("docker/relabel/")).length, 0);
 });
 
-test("a Docker host that is a BB machine is reached through BB Box's relay, named as BB names it, and an offline one takes no box and runs nothing (042)", async () => {
+test("a Docker host that is a VesnALIA machine is reached through VesnALIA Box's relay, named as VesnALIA names it, and an offline one takes no box and runs nothing (042)", async () => {
   const fake = fakeDockerHost();
   const state = { connected: true as boolean | null, readies: 0 };
   const context = {
     ...testContext(),
     machines: {
-      dockerHost: (hostId: string) => `unix:///tmp/bb-box-relay/${hostId}.sock`,
+      dockerHost: (hostId: string) => `unix:///tmp/alia-box-relay/${hostId}.sock`,
       ready: async (hostId: string) => {
         state.readies++;
-        if (state.connected !== true) throw new Error(`devpc is offline in BB.`);
+        if (state.connected !== true) throw new Error(`devpc is offline in VesnALIA.`);
         assert.equal(hostId, "host_m1");
       },
       name: () => "devpc",
       connected: async () => state.connected,
     },
   };
-  const backend = new DockerBackend(dockerConfig({ host: "bb:host_m1" }), context, { binary: fake.binary, readyTimeoutMs: 2_000 });
+  const backend = new DockerBackend(dockerConfig({ host: "alia:host_m1" }), context, { binary: fake.binary, readyTimeoutMs: 2_000 });
   assert.equal(backend.label, "Docker on devpc");
 
   const room = await backend.capacity("linux", SMALL, [], signal());
   assert.equal(room.ok, true, room.message ?? "");
   const raw = readFileSync(join(fake.root, "log"), "utf8").split("\n").filter(Boolean).map((line) => JSON.parse(line) as string[]);
-  assert.ok(raw.length && raw.every((args) => args[0] === "-H" && args[1] === "unix:///tmp/bb-box-relay/host_m1.sock"), "every command goes to the relay's socket");
+  assert.ok(raw.length && raw.every((args) => args[0] === "-H" && args[1] === "unix:///tmp/alia-box-relay/host_m1.sock"), "every command goes to the relay's socket");
   assert.ok(state.readies >= raw.length, "the relay is made ready before each command");
 
-  // Offline in BB: capacity says so from BB's view, with no command to the machine.
+  // Offline in VesnALIA: capacity says so from VesnALIA's view, with no command to the machine.
   state.connected = false;
   const before = fake.calls().length;
   const offline = await backend.capacity("linux", SMALL, [], signal());
-  assert.deepEqual([offline.ok, offline.message], [false, "devpc is offline in BB."]);
+  assert.deepEqual([offline.ok, offline.message], [false, "devpc is offline in VesnALIA."]);
   assert.equal(fake.calls().length, before);
   // A command on one of its boxes fails at once, saying so.
-  await assert.rejects(() => backend.transports({ ref: "bbbox-x", host: "devpc", address: null, size: null }, "linux"), /devpc is offline in BB\./);
+  await assert.rejects(() => backend.transports({ ref: "bbbox-x", host: "devpc", address: null, size: null }, "linux"), /devpc is offline in ALIA\./);
   const report = await backend.doctor(signal());
   const daemon = report.checks.find((check) => check.id === "docker.daemon");
   assert.equal(daemon?.status, "fail");
-  assert.match(daemon?.detail ?? "", /devpc is offline in BB\./);
-  assert.match(daemon?.fix ?? "", /bb box docker-check host_m1/);
+  assert.match(daemon?.detail ?? "", /devpc is offline in ALIA\./);
+  assert.match(daemon?.fix ?? "", /alia box docker-check host_m1/);
   assert.equal(report.checks.find((check) => check.id === "docker.cli")?.status, "ok", "the CLI's own version needs no machine");
 });
 
-test("a BB machine's OS is BB's word, kept in storage, so a restart knows a Windows PC before the host entry has answered again", async () => {
+test("a VesnALIA machine's OS is VesnALIA's word, kept in storage, so a restart knows a Windows PC before the host entry has answered again", async () => {
   const fake = fakeDockerHost();
   const state = { platform: null as GuestOs | null };
   const context = {
     ...testContext(),
     machines: { dockerHost: () => "unix:///tmp/relay/host_m1.sock", ready: async () => {}, name: () => "devpc", platform: () => state.platform, connected: async () => true },
   };
-  const backend = new DockerBackend(dockerConfig({ host: "bb:host_m1" }), context, { binary: fake.binary, readyTimeoutMs: 2_000 });
+  const backend = new DockerBackend(dockerConfig({ host: "alia:host_m1" }), context, { binary: fake.binary, readyTimeoutMs: 2_000 });
   await new Promise((resolve) => setTimeout(resolve, 50));
   assert.equal(backend.hostOs, null, "unknown until the host entry has answered");
-  // The host entry says BB's daemon runs in WSL on a Windows PC.
+  // The host entry says VesnALIA's daemon runs in WSL on a Windows PC.
   state.platform = "windows";
   assert.equal(backend.hostOs, "windows");
   await new Promise((resolve) => setTimeout(resolve, 50));
   assert.equal(await context.storage.get("host-os"), "windows", "kept with the host's name");
-  // After a restart BB has not answered yet: the kept OS stands until it does, and BB's word wins when it comes.
+  // After a restart VesnALIA has not answered yet: the kept OS stands until it does, and VesnALIA's word wins when it comes.
   state.platform = null;
-  const restarted = new DockerBackend(dockerConfig({ host: "bb:host_m1" }), context, { binary: fake.binary, readyTimeoutMs: 2_000 });
+  const restarted = new DockerBackend(dockerConfig({ host: "alia:host_m1" }), context, { binary: fake.binary, readyTimeoutMs: 2_000 });
   await new Promise((resolve) => setTimeout(resolve, 50));
   assert.equal(restarted.hostOs, "windows");
   state.platform = "linux";
   assert.equal(restarted.hostOs, "linux");
 });
 
-test("on a BB machine, the doctor's fix for a missing image is BB Box's own build there (042)", async () => {
+test("on a VesnALIA machine, the doctor's fix for a missing image is VesnALIA Box's own build there (042)", async () => {
   const fake = fakeDockerHost();
   writeFileSync(join(fake.root, "images.json"), JSON.stringify({}));
   const context = {
     ...testContext(),
     machines: { dockerHost: () => "unix:///tmp/relay/host_m1.sock", ready: async () => {}, name: () => "devpc", connected: async () => true },
   };
-  const backend = new DockerBackend(dockerConfig({ host: "bb:host_m1" }), context, { binary: fake.binary, readyTimeoutMs: 2_000 });
+  const backend = new DockerBackend(dockerConfig({ host: "alia:host_m1" }), context, { binary: fake.binary, readyTimeoutMs: 2_000 });
   const report = await backend.doctor(signal());
   const image = report.checks.find((check) => check.id === "image.bbbox/linux:1");
   assert.equal(image?.status, "fail");
-  assert.equal(image?.fix, "Run bb box docker-build devpc, or turn Docker on devpc off and on in BB Box's settings, to build it there.", "named as BB names it, which the command takes");
+  assert.equal(image?.fix, "Run alia box docker-build devpc, or turn Docker on devpc off and on in VesnALIA Box's settings, to build it there.", "named as VesnALIA names it, which the command takes");
 });
 
-test("on a BB machine, a command or a capacity check stops waiting when its signal aborts, though BB never answers, so a stopping plugin's sweep ends", async () => {
+test("on a VesnALIA machine, a command or a capacity check stops waiting when its signal aborts, though VesnALIA never answers, so a stopping plugin's sweep ends", async () => {
   const fake = fakeDockerHost();
   const never = new Promise<never>(() => {});
   const context = {
     ...testContext(),
     machines: { dockerHost: () => "unix:///tmp/relay/host_m1.sock", ready: () => never, name: () => "devpc", connected: () => never },
   };
-  const backend = new DockerBackend(dockerConfig({ host: "bb:host_m1" }), context, { binary: fake.binary, readyTimeoutMs: 2_000 });
+  const backend = new DockerBackend(dockerConfig({ host: "alia:host_m1" }), context, { binary: fake.binary, readyTimeoutMs: 2_000 });
   for (const call of [(signal: AbortSignal) => backend.held(signal), (signal: AbortSignal) => backend.capacity("linux", SMALL, [], signal)]) {
     const stopping = new AbortController();
     const started = Date.now();
@@ -1501,7 +1501,7 @@ test("a container's cores and memory resize live with docker update, with room f
 
   // 16 GiB, 4 of it this box's and 4 kept free: 8 GiB more fits, 9 GiB more does not; 10 cores are more than the host's.
   const tight = await backend.planResize(guest, "linux", { ...to, memoryMiB: 13 * 1024 }, [], signal());
-  assert.equal(tight.room.message, "fake-docker has 12 GiB of memory free and keeps 4 GiB free, so the 9 GiB more the box needs does not fit. Ask for less memory, release a box, or lower the memory kept free in BB Box's settings.");
+  assert.equal(tight.room.message, "fake-docker has 12 GiB of memory free and keeps 4 GiB free, so the 9 GiB more the box needs does not fit. Ask for less memory, release a box, or lower the memory kept free in VesnALIA Box's settings.");
   assert.equal((await backend.planResize(guest, "linux", { ...to, memoryMiB: 12 * 1024 }, [], signal())).room.ok, true);
   assert.equal((await backend.planResize(guest, "linux", { ...to, cores: 10 }, [], signal())).room.message, "fake-docker has 8 cores, fewer than the 10 asked for. Ask for at most 8 cores.");
 
@@ -1683,7 +1683,7 @@ test("on a host without LXCFS, boxes are made without its files and the doctor s
   assert.equal(desktop.fix, null);
 });
 
-test("a box is made without LXCFS's files when LXCFS went from the host after BB Box last looked, and without the CPUs online where LXCFS has none (062)", async () => {
+test("a box is made without LXCFS's files when LXCFS went from the host after VesnALIA Box last looked, and without the CPUs online where LXCFS has none (062)", async () => {
   const { fake, backend } = setup({}, { lxcfs: true, cpus: 8 });
   await backend.acquire(identity(), null, hooks().hooks, signal());
   fake.set({ lxcfs: false });
@@ -1726,7 +1726,7 @@ test("the sweep probes a host with boxes again before its probes are 10 minutes 
 
   const empty = fakeDockerHost();
   await new DockerBackend(dockerConfig(), testContext(), { binary: empty.binary, now: () => now }).maintain(signal());
-  assert.equal(existsSync(join(empty.root, "probes")), false, "a host with no BB Box box is not probed");
+  assert.equal(existsSync(join(empty.root, "probes")), false, "a host with no VesnALIA Box box is not probed");
 
   const a = await backend.acquire(identity("linux", one), null, hooks().hooks, signal());
   assert.equal(fake.inspect(a.ref).HostConfig.CpusetCpus, "27");

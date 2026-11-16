@@ -3,7 +3,7 @@ import Database from 'better-sqlite3';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {createFakePluginHost} from '@get-bb/plugin-sdk/testing';
+import {createFakePluginHost} from '@vesnalia/plugin-sdk/testing';
 import {AccountStore,QuotaStore,QUOTA_MIGRATIONS} from './store.js';
 import {providerEvidenceFromUsage as evidence,providerBudgetQuota as budget,ADDITIONAL_BUDGET_PROVIDERS,PROVIDER_BUDGET_MAX_AGE_MS} from './provider-budget.js';
 import {quotaFromUsage} from './usage.js';
@@ -72,9 +72,9 @@ it('all cached endpoints enforce project/purpose and keep unknown eligible accou
  const dataDir=await fs.mkdtemp(path.join(os.tmpdir(),'provider-budget-'));cleanup.push(()=>fs.rm(dataDir,{recursive:true,force:true}));
  const fetch=vi.fn<typeof globalThis.fetch>(async()=>{throw Error('unexpected upstream');});
  const host=createFakePluginHost({pluginId:'account-pool-balanced',dataDir,sdk:{hosts:{list:async()=>[{id:'fixture-host',name:'Fixture'}]},system:{providerStates:async()=>({providers:[]})}}});cleanup.push(()=>host.harness.lifecycle.dispose());
- await host.bb.storage.kv.set('config',{vpnOnlyProviders:[],vpnPolicyVersion:2});await createAccountPoolPlugin({fetch,fetchIpv4:fetch,now:()=>now})(host.bb);
+ await host.alia.storage.kv.set('config',{vpnOnlyProviders:[],vpnPolicyVersion:2});await createAccountPoolPlugin({fetch,fetchIpv4:fetch,now:()=>now})(host.alia);
  const service=host.harness.behavior.runService('hub');cleanup.push(async()=>{service.controller.abort();await service.done;});await new Promise(r=>setImmediate(r));
- const accounts=new AccountStore(host.bb.storage.kv,path.join(dataDir,'plugins',host.bb.pluginId,'secrets','accounts')),quotas=new QuotaStore(host.bb.storage.database());
+ const accounts=new AccountStore(host.alia.storage.kv,path.join(dataDir,'plugins',host.alia.pluginId,'secrets','accounts')),quotas=new QuotaStore(host.alia.storage.database());
  for(const p of ADDITIONAL_BUDGET_PROVIDERS){
   const add=()=>accounts.add({provider:p,kind:'api-key',label:'Private synthetic label',email:null,accountUuid:null,subscriptionType:null,rateLimitTier:null,enabled:true,autopilotAllowed:true,priority:100},{kind:'api-key',apiKey:'synthetic-private'});
   const first=await add(),unknown=await add(),foreign=await add(),notOpted=await add();
@@ -85,7 +85,7 @@ it('all cached endpoints enforce project/purpose and keep unknown eligible accou
   expect((await read('invalid')).status).toBe(401);expect((await read(token,'?projectId=foreign')).status).toBe(403);
   const noSecret=vi.spyOn(AccountStore.prototype,'readSecret').mockRejectedValue(Error('unexpected credential read'));
   const response=await read(),body=await response.json();expect(response.headers.get('cache-control')).toBe('no-store');
-  expect(body).toMatchObject({schema:'bb-account-pool/provider-budget/1',eligibilityScope:'shared-policy-superset',provider:p,projectId:'project-one',purpose:'autopilot',accounts:[{accountId:first.id,eligible:true},{accountId:unknown.id,eligible:true,budgetReady:false},{accountId:notOpted.id,eligible:false}]});
+  expect(body).toMatchObject({schema:'alia-account-pool/provider-budget/1',eligibilityScope:'shared-policy-superset',provider:p,projectId:'project-one',purpose:'autopilot',accounts:[{accountId:first.id,eligible:true},{accountId:unknown.id,eligible:true,budgetReady:false},{accountId:notOpted.id,eligible:false}]});
   expect(noSecret).not.toHaveBeenCalled();noSecret.mockRestore();
   expect(body.accounts[0].budgetReady).toBe(p!=='devin');
   expect(body.accounts).toHaveLength(3);expect(JSON.stringify(body)).not.toContain(foreign.id);expect(JSON.stringify(body)).not.toMatch(/synthetic|Private|apiKey/);expect(JSON.stringify(body)).not.toContain(token);
@@ -146,13 +146,13 @@ it('actual existing NeuralDeep collector stores numeric evidence and cached read
  const dataDir=await fs.mkdtemp(path.join(os.tmpdir(),'neuraldeep-budget-'));cleanup.push(()=>fs.rm(dataDir,{recursive:true,force:true}));
  const fetch=vi.fn<typeof globalThis.fetch>(async()=>Response.json(payload('neuraldeep')));
  const host=createFakePluginHost({pluginId:'account-pool-balanced',dataDir,sdk:{hosts:{list:async()=>[{id:'fixture-host',name:'Fixture'}]},system:{providerStates:async()=>({providers:[]})}}});cleanup.push(()=>host.harness.lifecycle.dispose());
- await host.bb.storage.kv.set('config',{vpnOnlyProviders:[],vpnPolicyVersion:2});await createAccountPoolPlugin({fetch,fetchIpv4:fetch,now:()=>now})(host.bb);
+ await host.alia.storage.kv.set('config',{vpnOnlyProviders:[],vpnPolicyVersion:2});await createAccountPoolPlugin({fetch,fetchIpv4:fetch,now:()=>now})(host.alia);
  const service=host.harness.behavior.runService('hub');cleanup.push(async()=>{service.controller.abort();await service.done;});await new Promise(r=>setImmediate(r));
- const accounts=new AccountStore(host.bb.storage.kv,path.join(dataDir,'plugins',host.bb.pluginId,'secrets','accounts'));
+ const accounts=new AccountStore(host.alia.storage.kv,path.join(dataDir,'plugins',host.alia.pluginId,'secrets','accounts'));
  const account=await accounts.add({provider:'neuraldeep',kind:'api-key',label:'Synthetic',email:null,accountUuid:null,subscriptionType:null,rateLimitTier:null,enabled:true,priority:100},{kind:'api-key',apiKey:'synthetic-private'});
  expect((await host.harness.behavior.runCli(['account','refresh',account.id])).exitCode).toBe(0);
  expect(fetch).toHaveBeenCalledTimes(1);expect(fetch.mock.calls[0]?.[0]).toBe('https://api.neuraldeep.ru/v1/limits');
- const quotas=new QuotaStore(host.bb.storage.database());expect(budget('neuraldeep',quotas.get(account.id),now).budgetReady).toBe(true);
+ const quotas=new QuotaStore(host.alia.storage.database());expect(budget('neuraldeep',quotas.get(account.id),now).budgetReady).toBe(true);
  expect(quotas.get(account.id).fiveHourUtilization).toBeNull();expect(quotas.get(account.id).sevenDayUtilization).toBeNull();
 });
 
@@ -191,9 +191,9 @@ it('budget includes a Claude account selected by Sonnet despite a blocked other-
  const dataDir=await fs.mkdtemp(path.join(os.tmpdir(),'family-budget-'));cleanup.push(()=>fs.rm(dataDir,{recursive:true,force:true}));
  const fetch=vi.fn<typeof globalThis.fetch>(async()=>Response.json({id:'synthetic-message',type:'message',role:'assistant',content:[],usage:{input_tokens:1,output_tokens:1},stop_reason:'end_turn'}));
  const host=createFakePluginHost({pluginId:'account-pool-balanced',dataDir,sdk:{hosts:{list:async()=>[{id:'fixture-host',name:'Fixture'}]},system:{providerStates:async()=>({providers:[]})}}});cleanup.push(()=>host.harness.lifecycle.dispose());
- await host.bb.storage.kv.set('config',{vpnOnlyProviders:[],vpnPolicyVersion:2});await createAccountPoolPlugin({fetch,fetchIpv4:fetch,now:()=>now})(host.bb);
+ await host.alia.storage.kv.set('config',{vpnOnlyProviders:[],vpnPolicyVersion:2});await createAccountPoolPlugin({fetch,fetchIpv4:fetch,now:()=>now})(host.alia);
  const service=host.harness.behavior.runService('hub');cleanup.push(async()=>{service.controller.abort();await service.done;});await new Promise(r=>setImmediate(r));
- const accounts=new AccountStore(host.bb.storage.kv,path.join(dataDir,'plugins',host.bb.pluginId,'secrets','accounts')),quotas=new QuotaStore(host.bb.storage.database());
+ const accounts=new AccountStore(host.alia.storage.kv,path.join(dataDir,'plugins',host.alia.pluginId,'secrets','accounts')),quotas=new QuotaStore(host.alia.storage.database());
  const account=await accounts.add({provider:'claude',kind:'api-key',label:'Synthetic',email:null,accountUuid:null,subscriptionType:null,rateLimitTier:null,enabled:true,priority:100},{kind:'api-key',apiKey:'synthetic-private'});
  const previous=quotas.get(account.id);previous.familyWeekly.other={utilization:1,status:'rejected',resetAt:reset,source:'usage',observedAt:now};
  quotas.put(quotaFromUsage(account.id,payload('claude'),previous,now)!);

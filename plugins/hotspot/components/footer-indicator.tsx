@@ -1,16 +1,16 @@
 // The always-visible Hotspot indicator in the app sidebar footer, and the
 // popover it opens.
 //
-// BB's footer slot draws only a fixed icon, so the indicator is mounted the
+// VesnALIA's footer slot draws only a fixed icon, so the indicator is mounted the
 // way other live footer readouts are (usage-tracker): an app overlay keeps one
-// <li> in the footer's menu row, re-attaching it when BB re-renders the
+// <li> in the footer's menu row, re-attaching it when VesnALIA re-renders the
 // sidebar, and portals React into it. The <li> carries this plugin's scope
 // attributes so its Tailwind classes apply. The server decides every kill;
 // this file only shows a plan and returns the plan id it was given.
 import { type FocusEvent, type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
-import { useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { Episode, KillPlanView, KillResultView, Overview, Status, rpcContract } from "../lib/contract";
 import {
   type FooterHeat,
@@ -23,7 +23,7 @@ import {
 } from "../lib/footer";
 import { bytesText, thermalLabel } from "../lib/labels";
 import { usePortalScopeProps } from "../lib/portal-scope";
-import { bbTotalTitle, cpuText, dayClockText, durationText, pct, threadMeta } from "../lib/present";
+import { aliaTotalTitle, cpuText, dayClockText, durationText, pct, threadMeta } from "../lib/present";
 import { RUNNING_CHANGED, SAMPLED } from "../lib/signals";
 import { emptyList, listRows, nextList } from "../lib/thread-list";
 import { cn } from "../lib/utils";
@@ -54,15 +54,15 @@ function visibleFooterMenu(): HTMLElement | null {
 function useFooterSlot(): HTMLLIElement | null {
   const scope = usePortalScopeProps();
   const [slot, setSlot] = useState<HTMLLIElement | null>(null);
-  const pluginId = scope["data-bb-plugin"];
+  const pluginId = scope["data-alia-plugin"];
   useEffect(() => {
     const item = document.createElement("li");
     item.setAttribute("data-sidebar", "menu-item");
     item.setAttribute("data-hotspot-footer", "");
-    item.setAttribute("data-bb-plugin-root", "");
-    if (pluginId !== undefined) item.setAttribute("data-bb-plugin", pluginId);
+    item.setAttribute("data-alia-plugin-root", "");
+    if (pluginId !== undefined) item.setAttribute("data-alia-plugin", pluginId);
     // Basis 0: the readout takes the row's spare width and truncates, and
-    // never makes BB's wrapping footer row spill onto a second line.
+    // never makes VesnALIA's wrapping footer row spill onto a second line.
     item.style.flex = "1 1 0%";
     item.style.minWidth = "0";
     // Watch only the footer's parent once the item is placed, so streamed
@@ -106,8 +106,8 @@ function useFooterSlot(): HTMLLIElement | null {
 
 
 /**
- * On a phone the footer lives in BB's sidebar drawer, which stays open when a
- * plugin navigates. Close it with BB's own sidebar toggle, and only when the
+ * On a phone the footer lives in VesnALIA's sidebar drawer, which stays open when a
+ * plugin navigates. Close it with VesnALIA's own sidebar toggle, and only when the
  * indicator really sits in an open drawer.
  */
 function closeSidebarDrawer(from: Element) {
@@ -383,7 +383,7 @@ function useNoShrink(reset: unknown) {
 
 function HotspotPopover({ state, close }: { state: StatusState; close: () => void }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { overview, refetch } = useOverview();
   const [plan, setPlan] = useState<KillPlanView | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -490,13 +490,13 @@ function HotspotPopover({ state, close }: { state: StatusState; close: () => voi
         {latest === null ? null : (
           <section {...hold.handlers} className="flex min-h-0 flex-1 flex-col border-t border-border pt-3 pb-1.5">
             {/*
-              The header row carries BB's total in the rows' own CPU and
+              The header row carries VesnALIA's total in the rows' own CPU and
               memory columns, so the total costs no height; the rows below
               read as parts of it.
             */}
             <div className="flex shrink-0 items-baseline gap-3 px-4 text-xs font-medium text-muted-foreground">
               <h3 className="min-w-0 flex-1 truncate">Busiest threads</h3>
-              {latest.bb == null ? (
+              {latest.alia == null ? (
                 threads.length === 0 ? null : (
                   <>
                     <span className={CPU_COLUMN}>CPU</span>
@@ -505,19 +505,19 @@ function HotspotPopover({ state, close }: { state: StatusState; close: () => voi
                   </>
                 )
               ) : (
-                <BbTotal bb={latest.bb} />
+                <AliaTotal alia={latest.alia} />
               )}
             </div>
             <div className="min-h-0 overflow-y-auto px-4 pt-1">
               {/*
                 The popover hangs from the footer, so any change in its height
                 moves everything above the change. The list keeps room for
-                three lines and the outside-BB line, and never shrinks while
+                three lines and the outside-ALIA line, and never shrinks while
                 open, except when the user hides the idle threads.
               */}
               <div ref={listRef} className={LIST_FLOOR}>
                 {threadCount === 0 ? (
-                  <Empty>No BB thread is using the CPU.</Empty>
+                  <Empty>No VesnALIA thread is using the CPU.</Empty>
                 ) : (
                   <ul>
                     {threads.map(({ thread, present }) => (
@@ -565,7 +565,7 @@ function HotspotPopover({ state, close }: { state: StatusState; close: () => voi
                   </button>
                 )}
                 {/*
-                  Its line is kept when nothing outside BB is busy, so the list
+                  Its line is kept when nothing outside VesnALIA is busy, so the list
                   does not grow when something is. The monitor button and its
                   failure share the line, so neither adds height.
                 */}
@@ -580,7 +580,7 @@ function HotspotPopover({ state, close }: { state: StatusState; close: () => voi
                     </p>
                   ) : (
                     <p className="min-w-0 flex-1 truncate tabular-nums text-muted-foreground">
-                      Also busy outside BB: {others.map((proc) => `${proc.name} ${pct(proc.cpu)}`).join(" · ")}
+                      Also busy outside VesnALIA: {others.map((proc) => `${proc.name} ${pct(proc.cpu)}`).join(" · ")}
                     </p>
                   )}
                   {status?.monitor == null ? null : (
@@ -638,19 +638,19 @@ function HotspotPopover({ state, close }: { state: StatusState; close: () => voi
 
 type ThreadEntry = NonNullable<Status["latest"]>["threads"][number];
 
-/** `BB total  23%  3.1 GB`, the figures in the CPU and memory columns; the split is in the tooltip. */
-function BbTotal({ bb }: { bb: NonNullable<NonNullable<Status["latest"]>["bb"]> }) {
-  const title = bbTotalTitle(bb);
+/** `VesnALIA total  23%  3.1 GB`, the figures in the CPU and memory columns; the split is in the tooltip. */
+function AliaTotal({ alia }: { alia: NonNullable<NonNullable<Status["latest"]>["alia"]> }) {
+  const title = aliaTotalTitle(alia);
   return (
     <>
       <span title={title} className="shrink-0 font-normal">
-        BB total
+        VesnALIA total
       </span>
       <span title={title} className={cn(CPU_COLUMN, "tabular-nums text-foreground")}>
-        {cpuText(bb.cpu)}
+        {cpuText(alia.cpu)}
       </span>
       <span title={title} className={cn(MEM_COLUMN, "tabular-nums text-foreground")}>
-        {bytesText(bb.memBytes)}
+        {bytesText(alia.memBytes)}
       </span>
       <span aria-hidden="true" className={ACTIONS_COLUMN} />
     </>
@@ -968,7 +968,7 @@ function EpisodeRow({ episode, onOpen }: { episode: Episode; onOpen: () => void 
           {episode.endAt === null ? <span className="text-destructive">still hot</span> : durationText(end - episode.startAt)}
         </span>
         <span className="min-w-0 flex-1 truncate text-muted-foreground">
-          {top === null ? "No BB thread to blame" : (top.title ?? top.threadId)}
+          {top === null ? "No VesnALIA thread to blame" : (top.title ?? top.threadId)}
         </span>
         <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
           <span aria-hidden="true" className={cn("size-2 rounded-sm", thermalSwatch(episode.peakThermal))} />
@@ -985,7 +985,7 @@ const CPU_COLUMN = "w-10 shrink-0 text-right";
 const MEM_COLUMN = "w-16 shrink-0 text-right";
 /** The "…" toggle; 44px wide under a finger. */
 const ACTIONS_COLUMN = "w-8 shrink-0 max-md:pointer-coarse:w-11";
-/** Room for three lines (rows or the idle fold), 32px each or 44px under a finger, and the outside-BB line. */
+/** Room for three lines (rows or the idle fold), 32px each or 44px under a finger, and the outside-ALIA line. */
 const LIST_FLOOR = "min-h-30 max-md:pointer-coarse:min-h-39";
 /** Room for three hot spells and the list's top padding. */
 const EPISODES_FLOOR = "min-h-25 max-md:pointer-coarse:min-h-34";

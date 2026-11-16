@@ -25,10 +25,10 @@ direction that failed this month can be retried on a newer model.
 
 ## How it works
 
-In bb each critic is a hidden child thread spawned with `bb thread spawn`, with
-the screenshot attached as an image. `scripts/bb-critics.sh` handles the
+In VesnALIA each critic is a hidden child thread spawned with `alia thread spawn`, with
+the screenshot attached as an image. `scripts/alia-critics.sh` handles the
 spawning, waiting and score parsing, and three repeats run at once. Critics
-prefer the `claude-code` provider when bb has one, then the session thread's
+prefer the `claude-code` provider when VesnALIA has one, then the session thread's
 own provider; `DESIGN_DIRECTOR_PROVIDER` overrides both.
 
 The scoring critic is always an Opus-class model and the spot check never

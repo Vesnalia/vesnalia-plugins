@@ -1,9 +1,9 @@
 # Auto Answer
 
-A BB plugin that stops you clicking **Next, Next, Next** through an agent's
+A VesnALIA plugin that stops you clicking **Next, Next, Next** through an agent's
 questions.
 
-When an agent asks for a decision, BB shows a question widget in place of the
+When an agent asks for a decision, VesnALIA shows a question widget in place of the
 composer — one tab per question, a list of options, and a "Next" / "Submit
 answer" button. Auto Answer starts a countdown the moment you pick an option and
 then presses that button for you: the next tab opens, and on the last tab the
@@ -22,13 +22,13 @@ answer.
   a tab / the button yourself.
 
 Default delay is **4 seconds**, configurable in Settings → Auto Answer or with
-`bb plugin config auto-answer`.
+`alia plugin config auto-answer`.
 
 ## Install
 
 ```sh
 npm install --include=dev
-bb plugin install .
+alia plugin install .
 ```
 
 ## Settings
@@ -41,7 +41,7 @@ bb plugin install .
 ## Command
 
 ```sh
-bb auto-answer status [--json]
+alia auto-answer status [--json]
 ```
 
 ## How it works
@@ -52,13 +52,13 @@ selection alike), portals the timer into a container it moves in beneath the sel
 on expiry clicks the widget's own primary button. Expiry is driven by a timer so
 the delay stays wall-clock even in a hidden window, while the bar is painted
 from an animation-frame loop straight onto the node — so it sweeps smoothly
-without re-rendering React sixty times a second. BB keeps ownership of the
+without re-rendering React sixty times a second. VesnALIA keeps ownership of the
 question state throughout — a fired countdown is exactly the click you would
 have made.
 
-Because it drives BB's rendered widget rather than a public slot API, it reads
+Because it drives VesnALIA's rendered widget rather than a public slot API, it reads
 the widget structure: option buttons are the `aria-pressed` buttons inside the
 options `fieldset`, and the primary button is the "Next" / "Submit answer"
 button outside it. Both are re-checked on every tick, and the countdown simply
-disappears if it stops finding them — so a BB release that reshapes the widget
+disappears if it stops finding them — so a VesnALIA release that reshapes the widget
 degrades to today's manual clicking rather than misfiring.

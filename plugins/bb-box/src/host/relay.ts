@@ -1,15 +1,15 @@
-// The machine's end of the Docker API relay (042), in bb-box's host entry.
-// "relay" opens a WebSocket out to bb-box's route on BB's server, with the
+// The machine's end of the Docker API relay (042), in alia-box's host entry.
+// "relay" opens a WebSocket out to alia-box's route on VesnALIA's server, with the
 // secret the call gives, and joins each channel the server opens to Docker,
 // found as the docker CLI here would find it. The worker holds a lease
-// while the relay is open, so BB's idle timer leaves it.
+// while the relay is open, so VesnALIA's idle timer leaves it.
 
 import { execFile, spawn } from "node:child_process";
 import { connect, type NetConnectOpts } from "node:net";
 import { constants } from "node:fs";
 import { access, readFile, stat, statfs } from "node:fs/promises";
 import { hostname, release, userInfo } from "node:os";
-import type { ExperimentalHostRpcContext, ExperimentalHostWorkerLease } from "@get-bb/plugin-sdk/host";
+import type { ExperimentalHostRpcContext, ExperimentalHostWorkerLease } from "@vesnalia/plugin-sdk/host";
 import { ATTACH_PING, forwarderReason, isLocalhost, readAfterHalfClose } from "../backends/docker/attach.ts";
 import { Mux, type Channel, type MuxOptions } from "../relay/mux.ts";
 
@@ -49,7 +49,7 @@ export interface RelayOptions {
   readonly deadMs?: number;
 }
 
-/** The OS of this machine for bb-box's forms: windows when BB's daemon runs in WSL (its kernel says microsoft), macos on a Mac, else linux. */
+/** The OS of this machine for alia-box's forms: windows when VesnALIA's daemon runs in WSL (its kernel says microsoft), macos on a Mac, else linux. */
 export function machinePlatform(platform: string = process.platform, kernel: string = release()): "linux" | "macos" | "windows" {
   if (platform === "win32" || /microsoft/i.test(kernel)) return "windows";
   if (platform === "darwin") return "macos";
@@ -99,13 +99,13 @@ export async function dockerEndpoint(env: NodeJS.ProcessEnv = process.env, platf
 }
 
 /**
- * Opens a WebSocket out to bb-box's route at `path` on BB's server, with
- * `secret`, and a Mux on it for channels bb-box opens: the Docker relay's
+ * Opens a WebSocket out to alia-box's route at `path` on VesnALIA's server, with
+ * `secret`, and a Mux on it for channels alia-box opens: the Docker relay's
  * and a file copy's (#492).
  */
 export function dial(path: string, secret: string, connect: ((url: string) => RelayWebSocket) | undefined, options: Omit<MuxOptions, "opener">): Mux {
-  const server = process.env.BB_SERVER_URL;
-  if (!server) throw new Error("BB_SERVER_URL is not set in the worker, so it cannot reach bb-box.");
+  const server = process.env.ALIA_SERVER_URL;
+  if (!server) throw new Error("ALIA_SERVER_URL is not set in the worker, so it cannot reach alia-box.");
   const url = `${server.replace(/^http/, "ws").replace(/\/$/, "")}${path}?s=${encodeURIComponent(secret)}`;
   const socket = (connect ?? ((to) => new WebSocket(to) as unknown as RelayWebSocket))(url);
   socket.binaryType = "arraybuffer";
@@ -114,8 +114,8 @@ export function dial(path: string, secret: string, connect: ((url: string) => Re
     if (event.data instanceof ArrayBuffer) mux.receive(new Uint8Array(event.data));
     else if (ArrayBuffer.isView(event.data)) mux.receive(new Uint8Array(event.data.buffer, event.data.byteOffset, event.data.byteLength));
   });
-  socket.addEventListener("close", () => mux.close("bb-box's side closed"));
-  socket.addEventListener("error", () => mux.close("the WebSocket to bb-box failed"));
+  socket.addEventListener("close", () => mux.close("alia-box's side closed"));
+  socket.addEventListener("error", () => mux.close("the WebSocket to alia-box failed"));
   return mux;
 }
 
@@ -125,7 +125,7 @@ function describe(endpoint: DockerEndpoint): string {
 }
 
 /**
- * What to do when Docker's socket refused BB's daemon, as when its user is
+ * What to do when Docker's socket refused VesnALIA's daemon, as when its user is
  * not in the socket's group, or was put in it after the daemon started.
  * Null for any other failure.
  */
@@ -133,25 +133,25 @@ export function refusal(endpoint: DockerEndpoint, error: NodeJS.ErrnoException, 
   if (error.code !== "EACCES" || !("path" in endpoint) || platform === "win32") return null;
   const { username, uid } = userInfo();
   // A systemd user service gets its groups from the user's manager, so restarting the service alone keeps the old ones.
-  const restart = platform === "linux" ? `restart ${username}'s services so BB's daemon has the group: sudo systemctl restart user@${uid}.service` : "restart BB's daemon";
+  const restart = platform === "linux" ? `restart ${username}'s services so VesnALIA's daemon has the group: sudo systemctl restart user@${uid}.service` : "restart VesnALIA's daemon";
   return `${username} may not use Docker's socket ${endpoint.path}. Add ${username} to its group, usually docker, then ${restart}.`;
 }
 
-/** What first-run setup needs to know of this machine (#setup): who BB's daemon runs as, how to restart it, KVM, and free disk. */
+/** What first-run setup needs to know of this machine (#setup): who VesnALIA's daemon runs as, how to restart it, KVM, and free disk. */
 export interface SetupFacts {
   readonly hostname: string;
   readonly user: string;
   /** The group of Docker's socket, and whether the daemon has it now. Null where there is no socket to read. */
   readonly socketGroup: string | null;
   readonly inSocketGroup: boolean | null;
-  /** The command that restarts BB's daemon with new groups, or null when bb-box cannot tell how it runs. */
+  /** The command that restarts VesnALIA's daemon with new groups, or null when alia-box cannot tell how it runs. */
   readonly restart: string | null;
   readonly kvm: "ok" | "denied" | "absent";
   /** Free disk where Docker keeps images, else at the root, in GB. */
   readonly freeGb: number | null;
 }
 
-/** How BB's daemon restarts with new groups, from its cgroup: a user service needs its user's manager restarted, a system one itself. */
+/** How VesnALIA's daemon restarts with new groups, from its cgroup: a user service needs its user's manager restarted, a system one itself. */
 export function restartFor(cgroup: string, uid: number): string | null {
   const path = cgroup.trim().split("\n").find((line) => line.startsWith("0::"))?.slice(3) ?? "";
   if (path.includes(`/user@${uid}.service/`)) return `sudo systemctl restart user@${uid}.service`;
@@ -185,7 +185,7 @@ export async function setupFacts(endpoint: DockerEndpoint | null, platform: Node
   };
 }
 
-/** Connects to Docker's endpoint and closes at once: whether it is there to relay to, and if not, why and whether it refused BB's daemon. */
+/** Connects to Docker's endpoint and closes at once: whether it is there to relay to, and if not, why and whether it refused VesnALIA's daemon. */
 function reachable(endpoint: DockerEndpoint, dial: (wsl: WslDocker) => DialStdio, timeoutMs = 3_000): Promise<{ reason: string; refused: boolean } | null> {
   if ("wsl" in endpoint) return reachableWsl(endpoint.wsl, dial, timeoutMs);
   return new Promise((resolve) => {
@@ -256,7 +256,7 @@ async function endpointAsked(dockerHost: string | undefined, fallback: RelayOpti
   const asked = dockerHost?.trim();
   if (asked) {
     const endpoint = endpointOf(asked);
-    if (!endpoint) throw new Error(`The Docker host from bb-box is ${asked}, which the relay cannot reach: it takes unix://, npipe://, tcp:// or wsl://.`);
+    if (!endpoint) throw new Error(`The Docker host from alia-box is ${asked}, which the relay cannot reach: it takes unix://, npipe://, tcp:// or wsl://.`);
     return endpoint;
   }
   return (fallback ?? dockerEndpoint)();
@@ -327,7 +327,7 @@ export function relayHandlers(options: RelayOptions = {}) {
       },
       relay: async ({ secret, path, dockerHost }: { secret: string; path: string; dockerHost?: string }, context: ExperimentalHostRpcContext) => {
         const endpoint = await endpointAsked(dockerHost, options.endpoint);
-        if (!process.env.BB_SERVER_URL) throw new Error("BB_SERVER_URL is not set in the worker, so it cannot reach bb-box.");
+        if (!process.env.ALIA_SERVER_URL) throw new Error("ALIA_SERVER_URL is not set in the worker, so it cannot reach alia-box.");
         const lease = context.experimental_retainWorker();
         leases.add(lease);
         const mux = dial(path, secret, options.connect, {

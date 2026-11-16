@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export const NAVIGATION_NOTICE_KEY = "bb-plugin-cursor-sidebar:navigation-notice:v1";
+export const NAVIGATION_NOTICE_KEY = "alia-plugin-cursor-sidebar:navigation-notice:v1";
 
 function readDismissed(): boolean {
   try {
@@ -31,7 +31,7 @@ export function NavigationNotice({ layout }: { layout: "Compact" | "Cursor" }) {
           This navigation is Cursor Sidebar&apos;s {layout} layout.
         </p>
         <p className="mt-1 text-muted-foreground">
-          To use BB&apos;s own, pick Rail or Top list under Settings → Appearance → Navigation.
+          To use VesnALIA&apos;s own, pick Rail or Top list under Settings → Appearance → Navigation.
         </p>
         <button
           type="button"

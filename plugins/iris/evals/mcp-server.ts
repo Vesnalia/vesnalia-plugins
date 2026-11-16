@@ -1,8 +1,8 @@
-// The tools an agent has in bb, served to the eval agent over MCP (stdio, JSON-RPC lines):
+// The tools an agent has in VesnALIA, served to the eval agent over MCP (stdio, JSON-RPC lines):
 // iris_docs and iris_examples look up props and examples, iris_check validates a block, and
-// iris_ask and iris_pin stand in for bb's: a picker is answered with its own starting values, a pin
+// iris_ask and iris_pin stand in for VesnALIA's: a picker is answered with its own starting values, a pin
 // is checked and kept nowhere. Every call is logged as a JSON line to $IRIS_EVAL_LOG for scoring.
-// Files and bb data aren't there in an eval, so load() stays pending, as it does before a
+// Files and VesnALIA data aren't there in an eval, so load() stays pending, as it does before a
 // file exists.
 //   npx tsx evals/mcp-server.ts
 import { appendFileSync } from "node:fs";
@@ -16,7 +16,7 @@ const families = exampleFamilies();
 const TOOLS = [
   {
     name: "iris_docs",
-    description: 'Returns every prop (type, default, meaning) and a working example for the Iris components you name; "React" gives the iris-react kit, "bb" the bb: live data shapes.',
+    description: 'Returns every prop (type, default, meaning) and a working example for the Iris components you name; "React" gives the iris-react kit, "VesnALIA" the VesnALIA: live data shapes.',
     inputSchema: { type: "object", properties: { components: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 10 } }, required: ["components"] },
   },
   {

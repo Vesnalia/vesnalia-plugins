@@ -1,14 +1,14 @@
-import { countDeleteCascade, useSidebarThreads } from "./bb-sdk";
+import { countDeleteCascade, useSidebarThreads } from "./alia-sdk";
 import { useEffect, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { useBbContext, useBbNavigate, useRpc, useSdk, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useAliaContext, useAliaNavigate, useRpc, useSdk, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { toast } from "./lib/toast";
-import type { bbSidebarRpcContract } from "./contract";
+import type { aliaSidebarRpcContract } from "./contract";
 import { threadDisplayTitle } from "./inbox";
 import { usePortalScopeProps } from "./lib/portal-scope";
 
 /**
- * The sidebar's own delete confirmation. bb's generic one says only "Delete
+ * The sidebar's own delete confirmation. VesnALIA's generic one says only "Delete
  * thread?", which is easy to misread across a busy list; this one names the
  * thread and its project, and counts the children that go with it.
  */
@@ -23,9 +23,9 @@ export function DeleteThreadDialog({
 }) {
   const { projects } = useSidebarThreads();
   const sdk = useSdk();
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
-  const navigate = useBbNavigate();
-  const context = useBbContext();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
+  const navigate = useAliaNavigate();
+  const context = useAliaContext();
   const portalScope = usePortalScopeProps();
   const [busy, setBusy] = useState(false);
   const submitting = useRef(false);
@@ -33,7 +33,7 @@ export function DeleteThreadDialog({
   const project = projects.find((candidate) => candidate.id === thread.projectId);
   const projectName = project && !project.isPersonal ? project.name : "Personal";
   const title = threadDisplayTitle(thread);
-  // null while bb counts. bb also deletes archived descendants and lifecycle
+  // null while VesnALIA counts. VesnALIA also deletes archived descendants and lifecycle
   // dependents, which the sidebar's thread list does not hold.
   const [childCount, setChildCount] = useState<number | null>(null);
 

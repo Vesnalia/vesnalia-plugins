@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { PLUGIN_CLI_OUTPUT_MAX_BYTES } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { PLUGIN_CLI_OUTPUT_MAX_BYTES } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { createCli, formatOverview, formatWorktree, formatWorktrees } from "../src/cli";
 import { overviewSchema, type Overview } from "../src/contract";
 import server from "../server";
@@ -110,7 +110,7 @@ function start(options: {
   const emit = (event: string, payload: object) => {
     for (const subscription of subscriptions) if (subscription.event === event) subscription.callback({ entity: event.split(":")[0], type: "changed", ...payload });
   };
-  return { ...result, subscriptions, unsubscribed, emit, ready: Promise.resolve(server(result.bb)) };
+  return { ...result, subscriptions, unsubscribed, emit, ready: Promise.resolve(server(result.alia)) };
 }
 
 describe("server", () => {
@@ -468,7 +468,7 @@ describe("server: every thread", () => {
       expect(statuses(harness)).toBe(4);
     });
 
-    it.each([["turn/completed"], ["turn/diff/updated"], ["item/backgroundTask/completed"], ["a type bb has not shipped yet"]])(
+    it.each([["turn/completed"], ["turn/diff/updated"], ["item/backgroundTask/completed"], ["a type VesnALIA has not shipped yet"]])(
       "drops the cache for %s without reading any item", async (type) => {
         const { harness, emit } = await warmed();
         emit("thread:changed", threadEvent("thr_2", [type]));
@@ -540,7 +540,7 @@ describe("server: every thread", () => {
     expect(statuses(harness)).toBe(3);
   });
 
-  it("reads an environment again when bb reports its work status, refs or status changed", async () => {
+  it("reads an environment again when VesnALIA reports its work status, refs or status changed", async () => {
     for (const change of ["work-status-changed", "git-refs-changed", "status-changed"]) {
       const { harness, ready, emit } = start(TWO);
       await ready;
@@ -719,7 +719,7 @@ describe("server: shell and archived threads", () => {
   });
 });
 
-describe("bb vantage --archived", () => {
+describe("alia vantage --archived", () => {
   const WITH_ARCHIVED = {
     tree: [PARENT, CHILD], archived: [DONE],
     status: (id: string) => (id === "env_1" ? statusOf(["README.md"]) : statusOf(["b.ts"], ["README.md"], "child-work")),
@@ -840,7 +840,7 @@ describe("server worktrees", () => {
   });
 });
 
-describe("bb vantage worktrees", () => {
+describe("alia vantage worktrees", () => {
   const TWO = { tree: [PARENT, CHILD], status: (id: string) => (id === "env_1" ? statusOf(["README.md"]) : statusOf(["b.ts"], ["README.md"], "child-work")) };
 
   it("prints one row per worktree with its columns, then the shared files", async () => {
@@ -884,7 +884,7 @@ describe("bb vantage worktrees", () => {
   });
 });
 
-describe("bb vantage worktree", () => {
+describe("alia vantage worktree", () => {
   const TREE = [PARENT, CHILD, { id: "thr_3", title: "Grandchild", parentThreadId: "thr_2", environmentId: null }];
   const TWO = { tree: TREE, status: (id: string) => (id === "env_1" ? statusOf(["README.md"]) : statusOf(["b.ts"], ["README.md"], "child-work")) };
 
@@ -1018,7 +1018,7 @@ describe("formatWorktree", () => {
     expect(text).not.toContain("Commit 20");
   });
 
-  it("prints every worktree of a thread that also works in a checkout outside bb", () => {
+  it("prints every worktree of a thread that also works in a checkout outside VesnALIA", () => {
     const text = formatWorktree(overview({
       threads: [threadSummary({ id: "thr_1", title: "Parent" })],
       worktrees: [worktree(), checkoutWorktree({ threadIds: ["thr_1"], committed: [fileChange({ path: "lib.rs" })] })],
@@ -1063,7 +1063,7 @@ describe("formatWorktree", () => {
   });
 });
 
-describe("bb vantage changes", () => {
+describe("alia vantage changes", () => {
   it("prints the overview as JSON for the thread it runs in", async () => {
     const { harness, ready } = start();
     await ready;
@@ -1128,7 +1128,7 @@ describe("formatOverview commits", () => {
     expect(text).toContain("    c000000  Commit 0");
     expect(text).toContain("    c400000  Commit 4");
     expect(text).not.toContain("Commit 5");
-    expect(text).toContain("    … 2 more (bb vantage worktree <thread>)");
+    expect(text).toContain("    … 2 more (VesnALIA vantage worktree <thread>)");
     expect(text.indexOf("commits by its threads")).toBeLessThan(text.indexOf("README.md"));
   });
 
@@ -1245,7 +1245,7 @@ describe("output limit", () => {
   });
 });
 
-describe("bb vantage --all", () => {
+describe("alia vantage --all", () => {
   const TWO = { tree: [PARENT, CHILD], status: (id: string) => (id === "env_1" ? statusOf(["README.md"]) : statusOf(["b.ts"], ["README.md"], "child-work")) };
 
   it("prints every thread's changes as JSON, without a thread", async () => {

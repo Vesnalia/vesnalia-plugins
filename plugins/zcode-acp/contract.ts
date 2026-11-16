@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { hostContract as usageHost, rpcContract as usageRpc } from "./usage/contract.js";
 import { acpHostContract, acpRpcContract } from "./acp-contract.js";
 export const hostContract = defineRpcContract({ ...usageHost, ...acpHostContract });

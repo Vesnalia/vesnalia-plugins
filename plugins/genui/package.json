@@ -1,9 +1,9 @@
 {
-  "name": "bb-plugin-genui",
+  "name": "alia-plugin-genui",
   "version": "0.3.2",
-  "description": "BB plugin: agents answer with charts, diagrams, maps, plans and forms rendered inline in the chat.",
+  "description": "VesnALIA plugin: agents answer with charts, diagrams, maps, plans and forms rendered inline in the chat.",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "generative-ui",
     "inline-ui",
     "charts",
@@ -12,23 +12,17 @@
   ],
   "author": "ComicBit",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/ComicBit/bb-plugin-genui#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ComicBit/bb-plugin-genui.git"
-  },
-  "bugs": "https://github.com/ComicBit/bb-plugin-genui/issues",
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "engines": {
-    "bb": ">=0.45",
-    "bbPluginSdk": ">=0.6.15"
+    "alia": ">=0.45",
+    "aliaPluginSdk": ">=0.6.15"
   },
-  "bb": {
+  "alia": {
     "name": "Generative UI",
     "description": "Lets agents answer with interactive UI rendered inline in chat.",
     "branding": {
@@ -45,7 +39,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.54",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -75,5 +68,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^4.1.11"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.54"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/genui#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/genui"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

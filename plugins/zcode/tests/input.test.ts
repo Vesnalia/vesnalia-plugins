@@ -88,7 +88,7 @@ it("preserves structured file mentions as model-visible references", async () =>
 });
 
 it("rejects missing files, directories and malformed image data without reading a model", async () => {
-  const directory = mkdtempSync(`${tmpdir()}/bb-zcode-input-`);
+  const directory = mkdtempSync(`${tmpdir()}/alia-zcode-input-`);
   await expect(
     nativeInput([{ type: "localFile", path: directory }], directory),
   ).rejects.toThrow(/unavailable/);

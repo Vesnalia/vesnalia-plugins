@@ -139,7 +139,7 @@
   list-style: none;
 }
 
-/* A nav panel can be narrow inside a wide bb window. These breakpoints follow
+/* A nav panel can be narrow inside a wide alia window. These breakpoints follow
  * the panel's content box, not the browser viewport, so opening a split or the
  * right panel cannot leave desktop columns squeezed into mobile space. */
 @container wk-dashboard (min-width: 48rem) {

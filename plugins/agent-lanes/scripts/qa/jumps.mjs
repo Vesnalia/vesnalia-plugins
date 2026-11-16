@@ -4,20 +4,20 @@
 // the moving layer, the ruler's ticks and the target block, so it shows the
 // glide is smooth and that ruler, blocks and lines move as one.
 //
-//   PLAYWRIGHT_DIR=/tmp/lanes-qa-tools node scripts/qa/jumps.mjs <harness|bb> [outDir]
+//   PLAYWRIGHT_DIR=/tmp/lanes-qa-tools node scripts/qa/jumps.mjs <harness|VesnALIA> [outDir]
 //
 // `harness` needs `npx vite --config app/timeline/harness/vite.config.ts`;
-// `bb` needs the plugin installed in the bb at BB_URL.
+// `VesnALIA` needs the plugin installed in the VesnALIA at ALIA_URL.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { BB, HARNESS, launch, sideBySide } from "./browser.mjs";
+import { ALIA, HARNESS, launch, sideBySide } from "./browser.mjs";
 
-const target = process.argv[2] === "bb" ? "bb" : "harness";
-const out = process.argv[3] ?? target === "bb" ? "docs/fidelity/live/jumps" : "docs/fidelity/jumps/harness";
+const target = process.argv[2] === "alia" ? "alia" : "harness";
+const out = process.argv[3] ?? target === "alia" ? "docs/fidelity/live/jumps" : "docs/fidelity/jumps/harness";
 mkdirSync(out, { recursive: true });
 
-// The harness draws its own theme from `theme`; bb follows the colour scheme.
-const placeOf = (scheme) => (target === "bb" ? `${BB}/plugins/agent-lanes/lanes` : `${HARNESS}?elapsed=6&speed=1&chrome=0&theme=${scheme}`);
+// The harness draws its own theme from `theme`; VesnALIA follows the colour scheme.
+const placeOf = (scheme) => (target === "alia" ? `${ALIA}/plugins/agent-lanes/lanes` : `${HARNESS}?elapsed=6&speed=1&chrome=0&theme=${scheme}`);
 
 async function open(browser, { scheme, phone }) {
   const context = await browser.newContext({
@@ -29,7 +29,7 @@ async function open(browser, { scheme, phone }) {
   });
   const page = await context.newPage();
   page.on("pageerror", (error) => console.error(`[page error] ${error.message}`));
-  if (target === "bb") {
+  if (target === "alia") {
     // Every lane, so lanes without a turn in the window show their jumpers.
     await page.addInitScript(() => localStorage.setItem("lanes:lanes:preferences", JSON.stringify({ filter: "all" })));
   }

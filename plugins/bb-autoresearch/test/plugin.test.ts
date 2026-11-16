@@ -1,4 +1,4 @@
-import { createFakePluginHost, makePluginAgentConfigurationContext } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makePluginAgentConfigurationContext } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createAutoresearchPlugin } from "../server.ts";
 import { CREATOR_TOOLS, STRATEGIST_TOOLS, WORKER_TOOLS } from "../src/tools.ts";
@@ -34,8 +34,8 @@ describe("plugin wiring: role-gated tools, CLI, reconciliation service", () => {
     host.refs.set("main", base);
     host.metric.set("T0", 1000);
     port.addThread("thr_study");
-    const fake = createFakePluginHost({ pluginId: "bb-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
-    await createAutoresearchPlugin({ port: () => port, seed: 1 })(fake.bb);
+    const fake = createFakePluginHost({ pluginId: "alia-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
+    await createAutoresearchPlugin({ port: () => port, seed: 1 })(fake.alia);
     harness = fake.harness;
   });
   afterEach(async () => {
@@ -124,7 +124,7 @@ describe("plugin wiring: role-gated tools, CLI, reconciliation service", () => {
     const unknown = await harness.behavior.runCli(["show", "nope"]);
     expect(unknown.exitCode).not.toBe(0);
     expect(unknown.stderr).toContain("no study named");
-    expect(unknown.stderr).toContain("Run `bb study list`");
+    expect(unknown.stderr).toContain("Run `alia study list`");
     expect((await harness.behavior.runCli(["show", "toy-size"])).stdout.length).toBeLessThan(60_100);
   });
 

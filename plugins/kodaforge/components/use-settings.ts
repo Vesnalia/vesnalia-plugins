@@ -1,5 +1,5 @@
 // One settings object for the whole browser: every open workspace re-renders when it
-// changes, including from another BB tab (the storage event).
+// changes, including from another VesnALIA tab (the storage event).
 import { useCallback, useSyncExternalStore } from "react";
 import { parseSettings, SETTINGS_KEY, type Settings } from "@/lib/settings";
 

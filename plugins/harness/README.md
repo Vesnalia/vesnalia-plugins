@@ -1,12 +1,12 @@
-# bb-plugin-harness
+# alia-plugin-harness
 
-A BB plugin for [Scott Fryxell's harness idea](https://scott-fryxell.github.io/blog/the-harness-is-the-thing): the harness is the fulcrum between your expectations and the model.
+A VesnALIA plugin for [Scott Fryxell's harness idea](https://scott-fryxell.github.io/blog/the-harness-is-the-thing): the harness is the fulcrum between your expectations and the model.
 
 **Explore → Plan → Worker → Critic → Promote.** Isolated roles. Explicit DAG. One node at a time. Auditable output in `artifacts/`.
 
 **Standard Harness** is the built-in, immutable default. Explore and Plan stay on the parent thread. Worker, Critic, and Promote spawn a visible child. Critic completes with **APPROVE**, **REWORK**, or **BLOCK**. Promote communicates. It is not a template.
 
-**Create Harness** clones Standard into a saved custom definition: name, description, per-phase instructions, parent/child execution, artifact policy, promote mode (`always` or `off`), and a correction ceiling. Built-ins are immutable. Starting snapshots the resolved definition into that thread's plan. This plugin injects only its own `harness-arc` skill; arbitrary BB skill names are not a custom-Harness control.
+**Create Harness** clones Standard into a saved custom definition: name, description, per-phase instructions, parent/child execution, artifact policy, promote mode (`always` or `off`), and a correction ceiling. Built-ins are immutable. Starting snapshots the resolved definition into that thread's plan. This plugin injects only its own `harness-arc` skill; arbitrary VesnALIA skill names are not a custom-Harness control.
 
 Ordinary chats stay inactive until you explicitly Start Harness.
 
@@ -18,33 +18,33 @@ Milestone Pipeline is removed from the product. Historical SQLite tables stay in
 - **Thread panel → Harness** — the same UI on the conversation
 - **Settings → Role routing** — host provider/model picker per role
 - **Composer banner** — current phase when a Harness is active
-- **`bb harness`** — status, start (`--harness <id>`), advance, init, plan commands
+- **`alia harness`** — status, start (`--harness <id>`), advance, init, plan commands
 - **Agent tools** — `harness_get_arc`, `harness_advance`, `harness_create_plan`, `harness_next_node`, `harness_complete_node`
 - **Skill** — `skills/harness-arc`
 
 ## Install
 
 ```
-cd ~/bb-plugin-sources/bb-plugin-harness
+cd ~/alia-plugin-sources/alia-plugin-harness
 npm install
-bb plugin install . --yes
+alia plugin install . --yes
 ```
 
-Reload after edits: `bb plugin reload harness`, or `bb plugin dev`.
+Reload after edits: `alia plugin reload harness`, or `alia plugin dev`.
 
 ## Use
 
 From a thread:
 
 ```
-bb harness status
-bb harness start --task "Ship the feature"
-bb harness start --task "Ship the feature" --harness <custom-id>
-bb harness plan create "Ship the feature"
-bb harness plan start <plan-id> worker
-bb harness plan complete <plan-id> critic --verdict APPROVE --summary "Holds"
-bb harness advance
-bb harness init
+alia harness status
+alia harness start --task "Ship the feature"
+alia harness start --task "Ship the feature" --harness <custom-id>
+alia harness plan create "Ship the feature"
+alia harness plan start <plan-id> worker
+alia harness plan complete <plan-id> critic --verdict APPROVE --summary "Holds"
+alia harness advance
+alia harness init
 ```
 
 `init` writes `HARNESS.md`, `artifacts/`, and `plans/` into the thread's workspace. Existing files are left alone.
@@ -56,12 +56,12 @@ On Start, advisory artifact policy best-effort creates `artifacts/harness/<plan-
 ## Remove
 
 ```
-bb plugin disable harness    # pause, keep data
-bb plugin remove harness     # unregister + delete plugin SQLite
-rm -rf ~/bb-plugin-sources/bb-plugin-harness
+alia plugin disable harness    # pause, keep data
+alia plugin remove harness     # unregister + delete plugin SQLite
+rm -rf ~/alia-plugin-sources/alia-plugin-harness
 ```
 
-Nothing is written into BB core. `bb harness init` only adds `artifacts/`, `plans/`, and `HARNESS.md` in the workspace you pointed it at.
+Nothing is written into VesnALIA core. `alia harness init` only adds `artifacts/`, `plans/`, and `HARNESS.md` in the workspace you pointed it at.
 
 ## Settings
 
@@ -75,7 +75,7 @@ Headless product-driver (poster-driver / `npm run make:animation`) is deferred.
 Custom Harnesses keep the five arcs. They do not become a generic DAG builder, hook runner, or automatic model router.
 Plugin RPC is not a tenant security boundary: the plugin runs in-process with the local user. Plan RPCs require the owning parent thread from `threads.get` so a stale UI or child thread cannot mutate another project by accident.
 
-Child token totals come from BB `thread/tokenUsage/updated` when present; missing usage stays null and no cost is invented. Inherited child routing uses `threads.defaultExecutionOptions` when BB provides it; otherwise provider/model stay null with source `inherited-unknown`.
+Child token totals come from VesnALIA `thread/tokenUsage/updated` when present; missing usage stays null and no cost is invented. Inherited child routing uses `threads.defaultExecutionOptions` when VesnALIA provides it; otherwise provider/model stay null with source `inherited-unknown`.
 
 ## License
 

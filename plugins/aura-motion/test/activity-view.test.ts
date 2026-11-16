@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test, { after } from "node:test";
 import { JSDOM } from "jsdom";
 import { act, fireEvent, waitFor } from "@testing-library/react";
-import { installTestPluginRuntime, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { CHANGED, defaults } from "../lib/model.ts";
 import type { ActivityResult } from "../lib/activity.ts";
 

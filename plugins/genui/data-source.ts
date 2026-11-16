@@ -7,14 +7,14 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { parseDataFile, type LoadedData } from "./core";
 import { THREAD_STORAGE_PREFIX } from "./core/file-target";
 
 export const MAX_DATA_BYTES = 2 * 1024 * 1024;
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
-/** One way to read a requested file: the root BB confines the read to, and the path in it. */
+/** One way to read a requested file: the root VesnALIA confines the read to, and the path in it. */
 interface Attempt {
   root: Root;
   target: string;
@@ -22,7 +22,7 @@ interface Attempt {
 
 /**
  * The host's /tmp, where agents and their tools write screenshots and
- * reports. BB refuses a root that is a symlink, and macOS's /tmp is one (to
+ * reports. VesnALIA refuses a root that is a symlink, and macOS's /tmp is one (to
  * /private/tmp), so a /tmp path is read through /private/tmp first and as
  * written second (Linux, where /private/tmp doesn't exist).
  */
@@ -94,10 +94,10 @@ function contains(root: string, target: string): boolean {
   return relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
 }
 
-async function threadRoots(bb: BbPluginApi, threadId: string): Promise<{ workspace: Root | null; storage: Root | null }> {
+async function threadRoots(alia: AliaPluginApi, threadId: string): Promise<{ workspace: Root | null; storage: Root | null }> {
   const [thread, storage] = await Promise.all([
-    bb.sdk.threads.get({ threadId, include: "environment" }),
-    bb.sdk.threads.storageLocation({ threadId }).catch(() => null),
+    alia.sdk.threads.get({ threadId, include: "environment" }),
+    alia.sdk.threads.storageLocation({ threadId }).catch(() => null),
   ]);
   const environment = "environment" in thread ? thread.environment : null;
   return {
@@ -110,14 +110,14 @@ async function threadRoots(bb: BbPluginApi, threadId: string): Promise<{ workspa
 }
 
 /** Reads one file of the thread's workspace, thread storage or /tmp; failures are values, never throws. */
-async function readThreadFile(bb: BbPluginApi, threadId: string, requested: string, maxBytes: number): Promise<FileContent> {
+async function readThreadFile(alia: AliaPluginApi, threadId: string, requested: string, maxBytes: number): Promise<FileContent> {
   let roots: { workspace: Root | null; storage: Root | null };
   try {
-    roots = await threadRoots(bb, threadId);
+    roots = await threadRoots(alia, threadId);
   } catch (cause) {
     return { ok: false, error: cause instanceof Error ? cause.message : String(cause) };
   }
-  // "$BB_THREAD_STORAGE/…" is the thread storage the agent writes artifacts
+  // "$ALIA_THREAD_STORAGE/…" is the thread storage the agent writes artifacts
   // to; other relative paths are workspace paths; absolute paths must sit
   // inside one of the two or in /tmp on the environment's host.
   const inside = (root: Root | null, target: string): Attempt[] =>
@@ -140,16 +140,16 @@ async function readThreadFile(bb: BbPluginApi, threadId: string, requested: stri
   }
   let first: FileContent | undefined;
   for (const attempt of attempts) {
-    const file = await readInRoot(bb, attempt, maxBytes);
+    const file = await readInRoot(alia, attempt, maxBytes);
     if (file.ok) return file;
     first ??= file;
   }
   return first!;
 }
 
-async function readInRoot(bb: BbPluginApi, { root, target }: Attempt, maxBytes: number): Promise<FileContent> {
+async function readInRoot(alia: AliaPluginApi, { root, target }: Attempt, maxBytes: number): Promise<FileContent> {
   try {
-    const result = await bb.sdk.files.read({ path: target, rootPath: root.path, hostId: root.hostId });
+    const result = await alia.sdk.files.read({ path: target, rootPath: root.path, hostId: root.hostId });
     if (!("content" in result)) return { ok: false, error: "the file could not be read" };
     if (result.sizeBytes > maxBytes) {
       return { ok: false, error: `${result.sizeBytes} bytes is over the ${maxBytes}-byte limit` };
@@ -196,29 +196,29 @@ async function loadMediaWith(
  * `raw` (Snippet) as its text unparsed. Failures are values, never throws.
  */
 export function loadThreadFile(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
   requested: string,
   { raw = false }: { raw?: boolean } = {},
 ): Promise<LoadedData> {
-  return loadWith((target, maxBytes) => readThreadFile(bb, threadId, target, maxBytes), requested, raw);
+  return loadWith((target, maxBytes) => readThreadFile(alia, threadId, target, maxBytes), requested, raw);
 }
 
 /** Reads one Image(path) file for a thread as a data URL. Failures are values, never throws. */
-export function loadThreadImage(bb: BbPluginApi, threadId: string, requested: string): Promise<LoadedImage> {
-  const read: FileReader = (target, maxBytes) => readThreadFile(bb, threadId, target, maxBytes);
+export function loadThreadImage(alia: AliaPluginApi, threadId: string, requested: string): Promise<LoadedImage> {
+  const read: FileReader = (target, maxBytes) => readThreadFile(alia, threadId, target, maxBytes);
   return loadMediaWith(read, requested, IMAGE_TYPES, MAX_IMAGE_BYTES, "images");
 }
 
 /** Reads one audio file for a thread (a Transcript's recording) as a data URL. Failures are values. */
-export function loadThreadAudio(bb: BbPluginApi, threadId: string, requested: string): Promise<LoadedImage> {
-  const read: FileReader = (target, maxBytes) => readThreadFile(bb, threadId, target, maxBytes);
+export function loadThreadAudio(alia: AliaPluginApi, threadId: string, requested: string): Promise<LoadedImage> {
+  const read: FileReader = (target, maxBytes) => readThreadFile(alia, threadId, target, maxBytes);
   return loadMediaWith(read, requested, AUDIO_TYPES, MAX_AUDIO_BYTES, "recordings");
 }
 
 /** Reads one file a Scene names (a model, environment or texture) for a thread as a data URL. Failures are values. */
-export function loadThreadAsset(bb: BbPluginApi, threadId: string, requested: string): Promise<LoadedImage> {
-  const read: FileReader = (target, maxBytes) => readThreadFile(bb, threadId, target, maxBytes);
+export function loadThreadAsset(alia: AliaPluginApi, threadId: string, requested: string): Promise<LoadedImage> {
+  const read: FileReader = (target, maxBytes) => readThreadFile(alia, threadId, target, maxBytes);
   return loadMediaWith(read, requested, ASSET_TYPES, MAX_ASSET_BYTES, "files");
 }
 

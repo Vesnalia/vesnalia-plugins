@@ -136,7 +136,7 @@ export class Pilot {
       const p = this.store.pilot(workId);
       if (p?.state === "on") throw new Error("the autopilot is already running this work");
       const opKey = `pilot:${workId}:${randomUUID().slice(0, 8)}`;
-      // The previous orchestrator thread («Start again») goes to the archive: bb cleans up its environment.
+      // The previous orchestrator thread («Start again») goes to the archive: VesnALIA cleans up its environment.
       if (p?.thread_id) await this.ports.archive(p.thread_id).catch(() => undefined);
       this.store.startPilot(workId, notes.trim().slice(0, 4000), opKey, this.now());
       this.log(workId, "autopilot started by the owner");

@@ -52,8 +52,8 @@ export function titleText(name: string): string {
 /** The identity as a thread's title says it: the id, then the name on one line and cut to 80 characters. */
 export const threadLine = (identity: ReviewIdentity) => identity.line === identity.id ? identity.id : `${identity.id} · ${titleText(identity.name)}`;
 
-/** A bb-managed branch reads as its slug: bb/snooze-checks-thr_ab12 is snooze-checks. */
-export const branchLabel = (branch: string) => branch.replace(/^bb\/(.+)-thr_[a-z0-9]+$/, "$1");
+/** A alia-managed branch reads as its slug: alia/snooze-checks-thr_ab12 is snooze-checks. */
+export const branchLabel = (branch: string) => branch.replace(/^alia\/(.+)-thr_[a-z0-9]+$/, "$1");
 
 /** The branch a local review's ref ends on: feat in main...feat. */
 const refHead = (gitRef: string) => gitRef.split(/\.{2,3}/).at(-1) || gitRef;
@@ -120,7 +120,7 @@ function endings(paths: readonly string[]): Map<string, string> {
 /**
  * What tells apart reviews whose ids would match in `reviews`, your list: the owner, where two repositories share a name;
  * the end of the folder's path, where two local reviews of one repository and branch read different folders; and the
- * ref as given, where they read the same folder, as main...feat and feat, or bb/feat-thr_a and feat, do.
+ * ref as given, where they read the same folder, as main...feat and feat, or alia/feat-thr_a and feat, do.
  */
 export function distinguish(reviews: readonly Identifiable[]): Map<string, Pick<ReviewPlace, "owner" | "folder" | "ref">> {
   // Each repository name's repositories, owner/name, in any case.

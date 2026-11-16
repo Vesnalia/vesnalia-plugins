@@ -13,7 +13,7 @@
     "item": {
      "type": "fileRead",
      "id": "da54ac74d5-i4",
-     "path": "/Users/dev/Documents/bb-plugin-playbooks/server.ts",
+     "path": "/Users/dev/Documents/alia-plugin-playbooks/server.ts",
      "status": "completed",
      "presentation": {
       "label": {
@@ -37,7 +37,7 @@
     "item": {
      "type": "fileRead",
      "id": "da54ac74d5-i5",
-     "path": "/Users/dev/Documents/bb-plugin-playbooks/server.ts",
+     "path": "/Users/dev/Documents/alia-plugin-playbooks/server.ts",
      "status": "completed",
      "presentation": {
       "label": {
@@ -61,7 +61,7 @@
     "item": {
      "type": "fileRead",
      "id": "da54ac74d5-i7",
-     "path": "/Users/dev/Documents/bb-plugin-playbooks/README.md",
+     "path": "/Users/dev/Documents/alia-plugin-playbooks/README.md",
      "status": "completed",
      "presentation": {
       "label": {
@@ -85,7 +85,7 @@
     "item": {
      "type": "agentMessage",
      "id": "da54ac74d5-i8",
-     "text": "**No, not manually, and with an important distinction between plugins:**\n\n1. **`workflows` (built-in) vs. `workflow` (standalone):**\n   * Playbooks depend on BB's built-in **`workflows`** engine (`id: \"workflows\"`), **not** the separate third-party/standalone **`workflow`** plugin (which uses `.workflow/` scripts).\n\n2. **Automatic enablement:**\n   * You do **not** need to manually enable the `workflows` plugin beforehand.\n   * Playbooks includes an `autoEnableWorkflows` setting (enabled by default in [server.ts](file:///Users/dev/Documents/bb-plugin-playbooks/server.ts#L266-L270)).\n   * When a playbook runs, [`ensureWorkflows()`](file:///Users/dev/Documents/bb-plugin-playbooks/server.ts#L469-L477) automatically verifies whether `workflows` is active and enables it on your behalf via `bb.sdk.plugins.enable({ pluginId: \"workflows\" })` if it was disabled.\n\nThe only scenario where manual intervention is required is if you explicitly disabled the `autoEnableWorkflows` setting in Playbooks' settings (`autoEnableWorkflows: false`)."
+     "text": "**No, not manually, and with an important distinction between plugins:**\n\n1. **`workflows` (built-in) vs. `workflow` (standalone):**\n   * Playbooks depend on VesnALIA's built-in **`workflows`** engine (`id: \"workflows\"`), **not** the separate third-party/standalone **`workflow`** plugin (which uses `.workflow/` scripts).\n\n2. **Automatic enablement:**\n   * You do **not** need to manually enable the `workflows` plugin beforehand.\n   * Playbooks includes an `autoEnableWorkflows` setting (enabled by default in [server.ts](file:///Users/dev/Documents/alia-plugin-playbooks/server.ts#L266-L270)).\n   * When a playbook runs, [`ensureWorkflows()`](file:///Users/dev/Documents/alia-plugin-playbooks/server.ts#L469-L477) automatically verifies whether `workflows` is active and enables it on your behalf via `alia.sdk.plugins.enable({ pluginId: \"workflows\" })` if it was disabled.\n\nThe only scenario where manual intervention is required is if you explicitly disabled the `autoEnableWorkflows` setting in Playbooks' settings (`autoEnableWorkflows: false`)."
     }
    }
   },
@@ -113,7 +113,7 @@
     "input": [
      {
       "type": "text",
-      "text": "$bb-plugin-repo",
+      "text": "$alia-plugin-repo",
       "mentions": [
        {
         "start": 0,
@@ -121,10 +121,10 @@
         "resource": {
          "kind": "command",
          "trigger": "$",
-         "name": "bb-plugin-repo",
+         "name": "alia-plugin-repo",
          "source": "skill",
          "origin": "user",
-         "label": "bb-plugin-repo",
+         "label": "alia-plugin-repo",
          "argumentHint": null
         }
        }
@@ -182,7 +182,7 @@
     "input": [
      {
       "type": "text",
-      "text": "$bb-plugin-repo",
+      "text": "$alia-plugin-repo",
       "mentions": [
        {
         "start": 0,
@@ -190,10 +190,10 @@
         "resource": {
          "kind": "command",
          "trigger": "$",
-         "name": "bb-plugin-repo",
+         "name": "alia-plugin-repo",
          "source": "skill",
          "origin": "user",
-         "label": "bb-plugin-repo",
+         "label": "alia-plugin-repo",
          "argumentHint": null
         }
        }

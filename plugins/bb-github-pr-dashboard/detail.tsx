@@ -4,7 +4,7 @@
 import { Component, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
-import { Markdown, UrlLink, experimental_useCodeTheme, useBbNavigate, useRpc, useSdk } from "@get-bb/plugin-sdk/app";
+import { Markdown, UrlLink, experimental_useCodeTheme, useAliaNavigate, useRpc, useSdk } from "@vesnalia/plugin-sdk/app";
 import { PatchDiff, type DiffLineAnnotation, type SelectedLineRange } from "@pierre/diffs/react";
 import type { rpcContract } from "./server";
 import {
@@ -50,7 +50,7 @@ import { cn } from "@/lib/utils";
 
 // Survives remounts so a resize or coming back shows the last result at once.
 const cachedDetails = new Map<string, PrDetail>();
-// `owner/name#123` of PRs just opened from a GitHub link elsewhere in bb; if one cannot load, it goes to GitHub instead.
+// `owner/name#123` of PRs just opened from a GitHub link elsewhere in VesnALIA; if one cannot load, it goes to GitHub instead.
 export const openedFromLink = new Set<string>();
 
 const CONCLUSION: Record<string, string> = {
@@ -220,15 +220,15 @@ function Composer({
 /** The PR on screen, for "Fix with agent" buttons deep in the tabs. */
 const PrContext = createContext<PrDetail | null>(null);
 
-/** Sends a comment or failed job to the bb thread on this PR's branch, else opens a new thread prefilled with it. */
+/** Sends a comment or failed job to the VesnALIA thread on this PR's branch, else opens a new thread prefilled with it. */
 /**
- * Hands a prompt to bb: `fix` goes to the thread already on the PR's branch (queued if busy), else opens New thread;
+ * Hands a prompt to VesnALIA: `fix` goes to the thread already on the PR's branch (queued if busy), else opens New thread;
  * `compose` always opens New thread. Either way the PR's project is preselected when one matches.
  */
 function useHandOff() {
   const rpc = useRpc<typeof rpcContract>();
   const sdk = useSdk();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const target = (pr: PrDetail) => rpc.call("pr_agent_target", { repo: pr.repo, number: pr.number, headRefName: pr.headRefName });
   const send = async (threadId: string, title: string, prompt: string) => {
     await sdk.threads.send({ threadId, mode: "queue-if-active", input: [{ type: "text", text: prompt, mentions: [] }] });
@@ -427,7 +427,7 @@ interface ReviewContext {
 
 export type DiffView = "inline" | "split";
 
-const VIEW_KEY = "bb-github-pr-dashboard:diff-view";
+const VIEW_KEY = "alia-github-pr-dashboard:diff-view";
 const savedView = (): DiffView => {
   try {
     return localStorage.getItem(VIEW_KEY) === "split" ? "split" : "inline";
@@ -869,7 +869,7 @@ function FilesTab({
   onChanged: () => void;
 }) {
   const [view, setViewState] = useState<DiffView>(savedView);
-  // bb's live code theme, so diffs match the rest of the app and follow light/dark switches.
+  // VesnALIA's live code theme, so diffs match the rest of the app and follow light/dark switches.
   const codeTheme = experimental_useCodeTheme();
   const setView = (next: DiffView) => {
     setViewState(next);
@@ -1535,7 +1535,7 @@ const GLYPHS: Record<string, ReactNode> = {
     </>
   ),
 };
-/** Lucide outlines bb's icon set lacks, drawn inline. */
+/** Lucide outlines VesnALIA's icon set lacks, drawn inline. */
 function Glyph({ name, className }: { name: keyof typeof GLYPHS; className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={cn("size-4", className)} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -1619,7 +1619,7 @@ function Menu({ label, items }: { label: string; items: MenuItem[] }) {
 
 type LinkThread = { id: string; title: string; project: string; updatedAt: number };
 
-/** Pick a bb thread to give this PR as context; its branch thread and its project's threads come first. */
+/** Pick a VesnALIA thread to give this PR as context; its branch thread and its project's threads come first. */
 function LinkToThread({ pr, onClose }: { pr: PrDetail; onClose: () => void }) {
   const { target, send } = useHandOff();
   const [threads, setThreads] = useState<LinkThread[] | null>(null);
@@ -1780,7 +1780,7 @@ function DraftButton({ prId, state, isDraft, onDone }: { prId: string; state: st
   );
 }
 
-/** A small pencil button; bb's icon set has no pencil, so it is drawn here. */
+/** A small pencil button; VesnALIA's icon set has no pencil, so it is drawn here. */
 function EditButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button
@@ -2034,8 +2034,8 @@ export function PrDetailView({
 }) {
   const key = `${repo}#${number}`;
   const rpc = useRpc<typeof rpcContract>();
-  const navNow = useBbNavigate();
-  // A ref, as useBbNavigate() changes with the route and load must not refetch on that.
+  const navNow = useAliaNavigate();
+  // A ref, as useAliaNavigate() changes with the route and load must not refetch on that.
   const nav = useRef(navNow);
   nav.current = navNow;
   const [detail, setDetail] = useState<PrDetail | null>(cachedDetails.get(key) ?? null);
@@ -2074,7 +2074,7 @@ export function PrDetailView({
           setError(null);
         },
         (cause: unknown) => {
-          // Opened from a link and nothing to show: open it on GitHub as bb would have, and go back to the link.
+          // Opened from a link and nothing to show: open it on GitHub as VesnALIA would have, and go back to the link.
           if (openedFromLink.delete(key) && !cachedDetails.has(key)) {
             nav.current.openUrl(`https://github.com/${repo}/pull/${number}`);
             history.back();
@@ -2152,7 +2152,7 @@ export function PrDetailView({
       }
       settle(el, NaN, 0);
     };
-    // bb's diff viewer lays files out a beat after they mount; scroll once the target stops moving.
+    // VesnALIA's diff viewer lays files out a beat after they mount; scroll once the target stops moving.
     const settle = (el: HTMLElement, last: number, n: number) => {
       const top = el.getBoundingClientRect().top;
       if (Math.abs(top - last) < 1 || n >= 12) return go(el);

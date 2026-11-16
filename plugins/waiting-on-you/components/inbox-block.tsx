@@ -7,12 +7,12 @@ import {
   experimental_ThreadActionsContextMenu as ThreadActionsContextMenu,
   experimental_ThreadStatusGlyph as ThreadStatusGlyph,
   ThreadTitle,
-  useBbNavigate,
+  useAliaNavigate,
   type PluginSidebarProject,
   type PluginSidebarThread,
   type PluginSidebarThreadIndicator,
   type PluginThreadActionTarget,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { formatTime, type InboxView } from "@/lib/inbox";
 import type {
@@ -40,7 +40,7 @@ const ROW_LABELS: Record<NeedKind, string> = {
   done: "done, unseen",
 };
 
-/** What bb's own status glyph draws for each category. */
+/** What VesnALIA's own status glyph draws for each category. */
 const CATEGORY_INDICATOR: Record<Category, PluginSidebarThreadIndicator> = {
   decision: "waiting-for-input",
   failed: "unread-error",
@@ -58,7 +58,7 @@ interface Swatch {
 }
 
 // Written out in full so Tailwind finds every class when it scans the source.
-// Text colors come from app.css, which follows bb's theme, not the OS.
+// Text colors come from app.css, which follows VesnALIA's theme, not the OS.
 export const PALETTE: Record<ColorName, Swatch> = {
   amber: {
     solid: "bg-amber-500",
@@ -115,7 +115,7 @@ const MUTED: Swatch = {
   text: "text-muted-foreground",
 };
 
-/** A key pill like the ones bb shows on its rows while ⌘ is held. */
+/** A key pill like the ones VesnALIA shows on its rows while ⌘ is held. */
 export function KeyHint({ label }: { label: string }) {
   return (
     <kbd className="shrink-0 rounded border border-border bg-background px-1 font-sans text-[10px] font-medium leading-4 text-muted-foreground">
@@ -125,8 +125,8 @@ export function KeyHint({ label }: { label: string }) {
 }
 
 /**
- * A category's mark: a dot, bb's own status glyph, or the chosen icon.
- * `indicator` lets a real row pass bb's exact state for the glyph.
+ * A category's mark: a dot, VesnALIA's own status glyph, or the chosen icon.
+ * `indicator` lets a real row pass VesnALIA's exact state for the glyph.
  */
 export function CategoryMark({
   category,
@@ -248,8 +248,8 @@ const InboxRow = memo(function InboxRow({
     alignColumns,
     titleWrap,
   } = settings;
-  const navigate = useBbNavigate();
-  // The block lives outside bb's thread list, so bb doesn't route these
+  const navigate = useAliaNavigate();
+  // The block lives outside VesnALIA's thread list, so VesnALIA doesn't route these
   // clicks for us: a plain anchor would reload the whole app. Keep the href
   // for middle-click and copy-link, and route ordinary clicks in place.
   const onClick = (event: MouseEvent<HTMLAnchorElement>) => {

@@ -7,11 +7,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
  */
 /** Dated buckets default open; this set holds the folded ones. An allow-list of
  * open buckets left every bucket but Today and Yesterday looking empty. */
-export const COLLAPSED_AGES_KEY = "bb-plugin-cursor-sidebar:collapsed-ages:v1";
+export const COLLAPSED_AGES_KEY = "alia-plugin-cursor-sidebar:collapsed-ages:v1";
 /** Pinned, folder and status groups default open; this set holds the collapsed ones. */
-export const COLLAPSED_GROUPS_KEY = "bb-plugin-cursor-sidebar:collapsed-groups:v1";
+export const COLLAPSED_GROUPS_KEY = "alia-plugin-cursor-sidebar:collapsed-groups:v1";
 /** The Chats heading and every project heading default open; this set holds the folded ones. */
-export const COLLAPSED_SECTIONS_KEY = "bb-plugin-cursor-sidebar:collapsed-sections:v1";
+export const COLLAPSED_SECTIONS_KEY = "alia-plugin-cursor-sidebar:collapsed-sections:v1";
 
 function loadIds(key: string): string[] {
   try {

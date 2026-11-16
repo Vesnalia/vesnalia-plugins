@@ -1,16 +1,16 @@
-# Office Viewer for BB
+# Office Viewer for VesnALIA
 
-Office Viewer adds file openers to BB for spreadsheets, Word documents, PowerPoint presentations, PDFs, HTML pages, images, video and audio. Its thread Studio panel also creates wireframe prototypes, slide decks and paint canvases.
+Office Viewer adds file openers to VesnALIA for spreadsheets, Word documents, PowerPoint presentations, PDFs, HTML pages, images, video and audio. Its thread Studio panel also creates wireframe prototypes, slide decks and paint canvases.
 
 ## Quick start
 
 ```sh
 npm install
 npm run build
-bb plugin install .
+alia plugin install .
 ```
 
-Requires BB 0.43 or later. Choose Office Viewer in BB Settings → File openers if another plugin claims the same extensions.
+Requires VesnALIA 0.43 or later. Choose Office Viewer in VesnALIA Settings → File openers if another plugin claims the same extensions.
 
 ## Web loading safety
 
@@ -18,7 +18,7 @@ Version 0.8.16 pins each request to validated public IP addresses, including red
 
 ## PDF reading position
 
-PDFs remember the page, position within the page, horizontal scroll and zoom per viewing thread in BB’s server-side plugin storage. Reopening that thread on another device restores its place. Refreshing keeps the current passage, and rapid close/reopen shares pending saves. Files opened outside a thread do not persist a reading position.
+PDFs remember the page, position within the page, horizontal scroll and zoom per viewing thread in VesnALIA’s server-side plugin storage. Reopening that thread on another device restores its place. Refreshing keeps the current passage, and rapid close/reopen shares pending saves. Files opened outside a thread do not persist a reading position.
 
 ## Documentation
 

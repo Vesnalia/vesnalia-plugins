@@ -141,7 +141,7 @@ test("a folder's tone is its files' when they agree, modified when they do not",
   assert.equal(tree.tone, "modified");
 });
 
-test("extensionOf reads extensions as BB's Filter files menu lists them", () => {
+test("extensionOf reads extensions as VesnALIA's Filter files menu lists them", () => {
   assert.equal(extensionOf("src/styles.CSS"), ".css");
   assert.equal(extensionOf("a.b/Makefile"), "");
   assert.equal(extensionOf(".gitignore"), "");

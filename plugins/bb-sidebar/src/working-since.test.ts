@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { idleSidebarThreadFields } from "./test-fixtures";
 import { reconcileWorkingSince, statusWithDuration } from "./working-since";
 

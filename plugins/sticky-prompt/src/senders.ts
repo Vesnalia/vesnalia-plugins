@@ -1,6 +1,6 @@
 // Who sent each user message.
 //
-// A message on screen tells us through the message metadata slot. BB marks
+// A message on screen tells us through the message metadata slot. VesnALIA marks
 // notices and messages from other threads in their text, which settles most
 // of the rest. For anything else, the outline id ends in the message's event
 // sequence (`<thread>:user-seed:<seq>`), and `threads.message` returns that
@@ -9,11 +9,11 @@
 import { userRowOf } from "./message";
 import type { Initiator } from "./registry";
 
-/** The sender BB's own prefix names, if the preview has one. */
+/** The sender VesnALIA's own prefix names, if the preview has one. */
 export function senderFromPreview(preview: string): Initiator | undefined {
   const text = preview.trimStart();
-  if (text.startsWith("[bb system]")) return "system";
-  if (text.startsWith("[bb message from thread:")) return "agent";
+  if (text.startsWith("[VesnALIA system]")) return "system";
+  if (text.startsWith("[VesnALIA message from thread:")) return "agent";
   return undefined;
 }
 
@@ -26,7 +26,7 @@ export function seqFromId(id: string): number | undefined {
 
 export type FetchMessage = (seq: number) => Promise<unknown>;
 
-/** Look one message up by its event sequence. Undefined when BB cannot say. */
+/** Look one message up by its event sequence. Undefined when VesnALIA cannot say. */
 export async function findSender(
   fetchMessage: FetchMessage,
   id: string,

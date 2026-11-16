@@ -1,8 +1,8 @@
 import "./check-test-machine.mjs";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@get-bb/plugin-sdk/testing/app";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@vesnalia/plugin-sdk/testing/app";
 import type { BoxHistoryView, BoxPageState, Contract, HistoryRange, HistoryStep, MetricPoint, MonitorReach, MonitorSnapshot } from "../src/plugin/contract.ts";
 import { HISTORY_RANGES } from "../src/monitor/history-view.ts";
 import type { BoxView } from "../src/plugin/views.ts";
@@ -174,7 +174,7 @@ afterEach(() => {
 
 function open(rpc: PluginRpcTestHandlers<Contract>) {
   const [panel] = app.navPanels;
-  return renderSlot(panel!, { subPath: `box/${BOX_ID}` }, { rpc, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "Fix the sign-in flow" }) } } });
+  return renderSlot(panel!, { subPath: `box/${BOX_ID}` }, { rpc, pluginId: "alia-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "Fix the sign-in flow" }) } } });
 }
 
 async function activity(): Promise<HTMLElement> {
@@ -294,10 +294,10 @@ test("G1: a shared slot's tiles are its own against its share, then the Mac's fo
 test("the Monitor off: nothing read, and the way to turn it on in Monitor settings", async () => {
   open(handlers({ page: () => page(boxView(), { is: "off", machineId: null, why: "The Monitor is off." }), reading: () => snapshot() }));
   const card = await activity();
-  expect(card.textContent).toContain("The Monitor is off, so BB Box reads nothing now.");
-  expect(within(card).getByRole("link", { name: "Turn it on in Monitor settings" }).getAttribute("href")).toBe("/settings/plugins/bb-box#option/monitor");
+  expect(card.textContent).toContain("The Monitor is off, so VesnALIA Box reads nothing now.");
+  expect(within(card).getByRole("link", { name: "Turn it on in Monitor settings" }).getAttribute("href")).toBe("/settings/plugins/alia-box#option/monitor");
   const processes = screen.getByRole("region", { name: "Top processes" });
-  expect(processes.querySelector("[data-processes-quiet]")!.textContent).toBe("The Monitor is off, so BB Box lists no processes.");
+  expect(processes.querySelector("[data-processes-quiet]")!.textContent).toBe("The Monitor is off, so VesnALIA Box lists no processes.");
 });
 
 test("G16: Live keeps reading while the box stops; once the stop is confirmed the card says it is stopped and not read, and when", async () => {
@@ -308,17 +308,17 @@ test("G16: Live keeps reading while the box stops; once the stop is confirmed th
   const stoppedAt = Date.now() - 60_000;
   state.page = () => page(boxView({ state: "stopped", log: { lastStop: { at: stoppedAt, by: { is: "person" } } } } as Partial<BoxView>), { is: "not-running", machineId: null, why: "calm-otter is not running." });
   await slot.behavior.emitRealtime("changed", { threadId: THREAD });
-  await waitFor(() => expect(screen.getByRole("region", { name: "Activity" }).textContent).toMatch(/calm-otter is stopped, so BB Box is not reading it\. It stopped 1 min ago, today at /));
+  await waitFor(() => expect(screen.getByRole("region", { name: "Activity" }).textContent).toMatch(/calm-otter is stopped, so ALIA Box is not reading it\. It stopped 1 min ago, today at /));
 });
 
-test("a box BB Box cannot read says the Monitor's words in Activity's frame, which keeps its size with empty charts; one it read before keeps its history", async () => {
-  const unreadable: MonitorReach = { is: "unreadable", machineId: null, why: "BB Box cannot read box calm-otter now: its BB machine is not answering BB, and it runs no shell BB Box can read without it." };
+test("a box VesnALIA Box cannot read says the Monitor's words in Activity's frame, which keeps its size with empty charts; one it read before keeps its history", async () => {
+  const unreadable: MonitorReach = { is: "unreadable", machineId: null, why: "VesnALIA Box cannot read box calm-otter now: its VesnALIA machine is not answering VesnALIA, and it runs no shell VesnALIA Box can read without it." };
   open(handlers({ page: () => page(boxView({ os: "windows" }), unreadable), reading: () => snapshot(), history: (range) => historyView(range, { newest: null }, () => ({ cpu: null, cpuBusiest: null, memory: null, memoryHighest: null, disk: null, down: null, up: null, covered: 0 })) }));
   const card = await activity();
-  expect(card.querySelector("[data-activity-quiet]")!.textContent).toContain("its BB machine is not answering BB");
+  expect(card.querySelector("[data-activity-quiet]")!.textContent).toContain("its VesnALIA machine is not answering VesnALIA");
   const usage = await within(card).findByRole("application", { name: "CPU and memory, the last 24 hours, by 10 minutes" });
   await waitFor(() => expect(document.getElementById(usage.getAttribute("aria-describedby")!)!.textContent).toMatch(/^No readings over the last 24 hours/));
-  expect(screen.getByRole("region", { name: "Top processes" }).querySelector("[data-processes-quiet]")!.textContent).toBe("BB Box cannot list calm-otter's processes.");
+  expect(screen.getByRole("region", { name: "Top processes" }).querySelector("[data-processes-quiet]")!.textContent).toBe("VesnALIA Box cannot list calm-otter's processes.");
   cleanup();
   forgetLive();
   open(handlers({ page: () => page(boxView({ os: "windows" }), unreadable), reading: () => snapshot() }));
@@ -585,7 +585,7 @@ test("a stopped box opens on 24 h with its stops shown, and Live says why it can
   usage.focus();
   fireEvent.keyDown(usage, { key: "End" });
   expect(usage.querySelector("[data-read-out]")!.textContent).toMatch(/: Stopped$/);
-  expect(screen.getByRole("region", { name: "Top processes" }).querySelector("[data-processes-quiet]")!.textContent).toBe("BB Box lists calm-otter's processes while it runs.");
+  expect(screen.getByRole("region", { name: "Top processes" }).querySelector("[data-processes-quiet]")!.textContent).toBe("VesnALIA Box lists calm-otter's processes while it runs.");
 });
 
 test("over 24 h the light band is each step's busiest minute, said where it is 5 points or more above the mean, and a partly read step says so", async () => {
@@ -613,19 +613,19 @@ test("a refresh that fails keeps the charts, and says so and when they were read
   cleanup();
   forgetLive();
   open(handlers({ page: () => page(boxView({ state: "stopped" }), { is: "not-running", machineId: null, why: null }), reading: () => snapshot(), history: () => {
-    throw new Error("BB did not answer.");
+    throw new Error("VesnALIA did not answer.");
   } }));
   const card = await activity();
   await waitFor(() => expect(card.querySelector("[data-history-stale]")).toBeTruthy());
   const stale = card.querySelector("[data-history-stale]")!;
   expect(stale.textContent).toMatch(/^Could not refresh: as read at /);
-  expect(stale.getAttribute("title")).toContain("BB did not answer.");
+  expect(stale.getAttribute("title")).toContain("VesnALIA did not answer.");
   const announced = card.querySelector('[role="status"][data-history-announce]')!;
-  expect(announced.textContent).toMatch(/^BB Box could not read calm-otter's history again \(.*BB did not answer\.\), so this is as read at .*\.$/);
+  expect(announced.textContent).toMatch(/^ALIA Box could not read calm-otter's history again \(.*ALIA did not answer\.\), so this is as read at .*\.$/);
   const usage = within(card).getByRole("application", { name: /^CPU and memory, the last 24 hours/ });
-  expect(document.getElementById(usage.getAttribute("aria-describedby")!)!.textContent).toMatch(/^BB Box could not read calm-otter's history again .* Over the last 24 hours/);
+  expect(document.getElementById(usage.getAttribute("aria-describedby")!)!.textContent).toMatch(/^ALIA Box could not read calm-otter's history again .* Over the last 24 hours/);
   const network = within(card).getByRole("application", { name: /^Download and upload, the last 24 hours/ });
-  expect(document.getElementById(network.getAttribute("aria-describedby")!)!.textContent).toMatch(/^BB Box could not read calm-otter's history again/);
+  expect(document.getElementById(network.getAttribute("aria-describedby")!)!.textContent).toMatch(/^ALIA Box could not read calm-otter's history again/);
 });
 
 test("7 d is by the hour, with each midnight marked; a missing hour says why in the read-out", async () => {
@@ -648,12 +648,12 @@ test("with box history off, 1 h, 24 h and 7 d keep what was read before under th
   fireEvent.click(await within(card).findByRole("radio", { name: "24 h" }));
   await waitFor(() => expect(card.querySelector("[data-history-off]")).toBeTruthy());
   expect(card.querySelector("[data-history-off]")!.textContent).toContain("Box history is off: what it kept stays.");
-  expect(within(card).getByRole("link", { name: "Monitor settings" }).getAttribute("href")).toBe("/settings/plugins/bb-box#option/monitor");
+  expect(within(card).getByRole("link", { name: "Monitor settings" }).getAttribute("href")).toBe("/settings/plugins/alia-box#option/monitor");
   expect(within(card).getByRole("application", { name: /^CPU and memory, the last 24 hours/ })).toBeTruthy();
   cleanup();
   forgetLive();
   forgetActivity();
-  open(handlers({ page: () => page(boxView()), reading: () => snapshot(), history: (range) => historyView(range, { full: "Box history's file is full, so BB Box stopped keeping box history." }) }));
+  open(handlers({ page: () => page(boxView()), reading: () => snapshot(), history: (range) => historyView(range, { full: "Box history's file is full, so VesnALIA Box stopped keeping box history." }) }));
   const full = await activity();
   fireEvent.click(await within(full).findByRole("radio", { name: "24 h" }));
   await waitFor(() => expect(full.querySelector("[data-history-full]")).toBeTruthy());
@@ -664,7 +664,7 @@ test("with box history off, 1 h, 24 h and 7 d keep what was read before under th
 test("with the Monitor off, Live cannot be chosen and what was read before stays on show", async () => {
   open(handlers({ page: () => page(boxView(), { is: "off", machineId: null, why: "The Monitor is off." }), reading: () => snapshot(), history: (range) => historyView(range, { monitor: false }) }));
   const card = await activity();
-  expect(card.textContent).toContain("The Monitor is off, so BB Box reads nothing now. What it read before stays.");
+  expect(card.textContent).toContain("The Monitor is off, so VesnALIA Box reads nothing now. What it read before stays.");
   expect(within(card).getByRole("radio", { name: "Live" }).getAttribute("aria-description")).toBe("The Monitor is off");
   expect(await within(card).findByRole("application", { name: /^CPU and memory, the last 24 hours/ })).toBeTruthy();
   expect(card.querySelector("[data-history-off]")).toBeNull();
@@ -723,7 +723,7 @@ test("disk starts hidden as it moves slowly, and its chip shows it", async () =>
   expect(usage.querySelector("[data-read-out]")!.textContent).toMatch(/Disk 20%$/);
 });
 
-test("the range chosen for a box is kept while the session lasts, as BB may draw the page again when the window narrows", async () => {
+test("the range chosen for a box is kept while the session lasts, as VesnALIA may draw the page again when the window narrows", async () => {
   open(handlers({ page: () => page(boxView()), reading: () => snapshot() }));
   fireEvent.click(await within(await activity()).findByRole("radio", { name: "7 d" }));
   expect(await within(await activity()).findByRole("application", { name: "CPU and memory, the last 7 days, by the hour" })).toBeTruthy();
@@ -785,7 +785,7 @@ test("a stopped box keeps the same frame while its history loads and after, with
   await within(card).findByRole("application", { name: "CPU and memory, the last 24 hours, by 10 minutes" });
   const before = layoutOf();
   expect(card.querySelector("[data-chart-words]")!.textContent).toBe("Reading its history…");
-  expect(card.querySelector("[data-activity-quiet]")!.textContent).toBe("calm-otter is stopped, so BB Box is not reading it.");
+  expect(card.querySelector("[data-activity-quiet]")!.textContent).toBe("calm-otter is stopped, so VesnALIA Box is not reading it.");
   release();
   await waitFor(() => expect(card.querySelector("[data-history-ready]")).toBeTruthy());
   expect(layoutOf()).toBe(before);
@@ -861,7 +861,7 @@ test("a reading that misses the GPU keeps its tile, lines and column, says the c
   await waitFor(() => expect(within(card).getByRole("region", { name: "GPU" }).textContent).toContain("not read"), { timeout: 15_000 });
   expect(layoutOf()).toBe(read);
   expect(within(card).getByRole("region", { name: "GPU" }).textContent).toContain("No reading of this card this time");
-  expect(localStorage.getItem("bb-box:activity:gpu-cards:bxlostcard001")).toBe("1");
+  expect(localStorage.getItem("alia-box:activity:gpu-cards:bxlostcard001")).toBe("1");
 }, 20_000);
 
 test("eight cards keep a clean grid: every tile bordered on wide screens, in rows of four", async () => {
@@ -921,13 +921,13 @@ test("the box page and Monitor share each scheduled fetch", async () => {
     ...handlers({ page: () => page(boxView(), { is: "read", machineId: "host_calm", why: null }), reading }),
     "monitor.machines": () => ({ machines: [{ id: "host_calm", name: "calm-otter", connected: true, isServer: false, isBox: true, boxId: BOX_ID }] }),
   };
-  localStorage.setItem("bb-box:monitor:machine", "host_calm");
+  localStorage.setItem("alia-box:monitor:machine", "host_calm");
   open(rpc);
   await vi.waitFor(() => expect(reading).toHaveBeenCalledTimes(1));
 
   const footer = app.experimentalSidebarFooterItems.find((item) => item.id === "status");
   if (!footer || !("component" in footer)) throw new Error("Monitor disclosure is missing");
-  renderSlot<{ dismiss: () => void }, Contract>(footer, { dismiss: vi.fn() }, { rpc, pluginId: "bb-box" });
+  renderSlot<{ dismiss: () => void }, Contract>(footer, { dismiss: vi.fn() }, { rpc, pluginId: "alia-box" });
   try {
     await vi.advanceTimersByTimeAsync(7000);
   } finally {
@@ -947,7 +947,7 @@ function probe2Cpu(): string {
 }
 
 async function probe2Select(name: string): Promise<void> {
-  const header = () => within(document.querySelector<HTMLElement>("[data-bb-box-monitor-header]")!).getByRole("button", { name: "Machine" });
+  const header = () => within(document.querySelector<HTMLElement>("[data-alia-box-monitor-header]")!).getByRole("button", { name: "Machine" });
   fireEvent.click(header());
   const list = await screen.findByRole("listbox", { name: "Machines" });
   fireEvent.click(within(list).getAllByRole("option").find((option) => option.textContent?.includes(name))!);
@@ -964,12 +964,12 @@ test("probe H: the Monitor visiting nine other machines does not blank the mount
     "monitor.machines": () => ({ machines: [{ id: boxMachine, name: "calm-otter", connected: true, isServer: false, isBox: true, boxId: BOX_ID }, ...others] }),
     "monitor.machine": ({ machineId: id }: { machineId: string }) => { calls.push(id); return id === boxMachine ? probe2At(40) : probe2At(81); },
   } as PluginRpcTestHandlers<Contract>;
-  localStorage.setItem("bb-box:monitor:machine", "host-other-0");
+  localStorage.setItem("alia-box:monitor:machine", "host-other-0");
   open(rpc);
   await waitFor(() => expect(probe2Cpu()).toContain("40"));
   const footer = app.experimentalSidebarFooterItems.find((item) => item.id === "status")!;
   if (!("component" in footer)) throw new Error("Monitor disclosure is missing");
-  renderSlot(footer, { dismiss: vi.fn() }, { rpc, pluginId: "bb-box" });
+  renderSlot(footer, { dismiss: vi.fn() }, { rpc, pluginId: "alia-box" });
 
   for (const other of others) {
     await probe2Select(other.name);

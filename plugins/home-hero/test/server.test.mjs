@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 import { readFileSync } from "node:fs";
 
@@ -10,8 +10,8 @@ const cases = [];
 const test = (name, fn) => cases.push({ name, fn });
 
 test("a fresh install has no name and no icon", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "home-hero" });
-  plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "home-hero" });
+  plugin(alia);
   assert.deepEqual(await harness.behavior.callRpc("getAppearance", null), {
     displayName: "",
     iconDataUrl: null,
@@ -20,8 +20,8 @@ test("a fresh install has no name and no icon", async () => {
 });
 
 test("the greeting name comes from settings, trimmed", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "home-hero" });
-  plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "home-hero" });
+  plugin(alia);
   await harness.behavior.setSettings({ displayName: "  Alex  " });
   assert.equal((await harness.behavior.callRpc("getAppearance", null)).displayName, "Alex");
   await harness.behavior.setSettings({ displayName: "" });
@@ -30,8 +30,8 @@ test("the greeting name comes from settings, trimmed", async () => {
 });
 
 test("a valid icon is stored and read back", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "home-hero" });
-  plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "home-hero" });
+  plugin(alia);
   const saved = await harness.behavior.callRpc("setIcon", { iconDataUrl: png });
   assert.equal(saved.iconDataUrl, png);
   assert.equal((await harness.behavior.callRpc("getAppearance", null)).iconDataUrl, png);
@@ -39,8 +39,8 @@ test("a valid icon is stored and read back", async () => {
 });
 
 test("an invalid upload is rejected and the previous icon survives", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "home-hero" });
-  plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "home-hero" });
+  plugin(alia);
   await harness.behavior.callRpc("setIcon", { iconDataUrl: png });
   await assert.rejects(harness.behavior.callRpc("setIcon", { iconDataUrl: svg }), /PNG, JPEG or WebP/);
   await assert.rejects(
@@ -52,8 +52,8 @@ test("an invalid upload is rejected and the previous icon survives", async () =>
 });
 
 test("a null icon removes it", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "home-hero" });
-  plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "home-hero" });
+  plugin(alia);
   await harness.behavior.callRpc("setIcon", { iconDataUrl: png });
   const cleared = await harness.behavior.callRpc("setIcon", { iconDataUrl: null });
   assert.equal(cleared.iconDataUrl, null);
@@ -62,8 +62,8 @@ test("a null icon removes it", async () => {
 });
 
 test("the icon survives a plugin reload", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "home-hero" });
-  plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "home-hero" });
+  plugin(alia);
   await harness.behavior.callRpc("setIcon", { iconDataUrl: png });
   const reloaded = await harness.lifecycle.reload(plugin);
   assert.equal((await reloaded.harness.behavior.callRpc("getAppearance", null)).iconDataUrl, png);

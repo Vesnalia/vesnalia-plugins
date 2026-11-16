@@ -1,4 +1,4 @@
-import type { PluginSettingDescriptors, StandardSchemaV1 } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptors, StandardSchemaV1 } from "@vesnalia/plugin-sdk";
 
 export const SETTINGS_CHANNEL = "settings";
 export const SETTINGS_LOCAL_CHANNEL = "switchboard:settings:local";
@@ -80,7 +80,7 @@ export const SETTING_DESCRIPTORS = {
   statusChips: { type: "boolean", label: "Status chips", description: "Show chips for filtering threads by status.", default: true },
   showAge: { type: "boolean", label: "Show age", description: "Show the time since each thread last needed attention.", default: true },
   showBranch: { type: "boolean", label: "Show branch", description: "Show each thread's environment branch name.", default: false },
-  showPullRequests: { type: "boolean", label: "Show pull requests", description: "Show bb's pull request badge, and other plugins' row badges, on root threads.", default: true },
+  showPullRequests: { type: "boolean", label: "Show pull requests", description: "Show VesnALIA's pull request badge, and other plugins' row badges, on root threads.", default: true },
   infoCard: {
     type: "select", label: "Thread info card",
     description: "Show a card with a thread's details when you hover or tab to its row.",

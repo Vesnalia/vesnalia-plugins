@@ -1,4 +1,4 @@
-/** Panel styles on BB theme tokens; every selector is scoped under `.bbae`. */
+/** Panel styles on VesnALIA theme tokens; every selector is scoped under `.bbae`. */
 export const styles = `
 .bbae{--line:var(--border);display:flex;flex-direction:column;height:100%;min-height:0;background:var(--background);color:var(--foreground);font-size:14px;position:relative}
 .bbae *{box-sizing:border-box}

@@ -4,7 +4,7 @@ import {
   experimental_useSidebarThreads as useSidebarThreads,
   useSettings,
   type PluginThreadListProps,
-} from "@bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { ThreadRow } from "./ThreadRow";
@@ -70,7 +70,7 @@ export function ProjectTree({
     publishProjectDepths(depthsById(rows));
   }, [rows]);
 
-  // The content script keys on this, so restyling bb's picker is part of the
+  // The content script keys on this, so restyling VesnALIA's picker is part of the
   // option rather than a standing change to its chrome.
   useEffect(() => {
     const root = document.documentElement;

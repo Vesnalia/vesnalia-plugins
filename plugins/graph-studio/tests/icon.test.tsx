@@ -5,8 +5,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { loadPluginApp, type CapturedPluginApp } from "@get-bb/plugin-sdk/testing/app";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { loadPluginApp, type CapturedPluginApp } from "@vesnalia/plugin-sdk/testing/app";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import graphStudio from "../server";
 import { GRAPH_STUDIO_ICON } from "../lib/icon";
 import { GraphStudioFlow } from "../components/graph-studio-icon";
@@ -49,7 +49,7 @@ describe("the Graph Studio icon", () => {
 
   it("is the icon of the # mention rows", async () => {
     const host = createFakePluginHost({ pluginId: "graph-studio" });
-    graphStudio(host.bb);
+    graphStudio(host.alia);
     const provider = host.harness.inspection.registrations.mentionProviders.find((entry) => entry.id === "graphs")!;
     const items = await provider.search({ query: "" } as never);
     expect(items.length).toBeGreaterThan(0);

@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { mkdir } from "node:fs/promises";
 
-assert(process.env.STEEL_CDP_URL, "Use this thread's bb surf project CDP URL");
+assert(process.env.STEEL_CDP_URL, "Use this thread's VesnALIA surf project CDP URL");
 const result = await build({
   stdin: { contents: `import React,{useState} from "react";import {createRoot} from "react-dom/client";
     import {SteelThreadPanel,SteelBrowserDirective} from "./app.tsx";
@@ -17,15 +17,15 @@ const result = await build({
     resolveDir: fileURLToPath(new URL("../", import.meta.url)), loader: "tsx" },
   bundle: true, write: false, outdir: "/tmp/cerq-panel-check", jsx: "automatic",
   plugins: [{ name: "sdk", setup(b) {
-    b.onResolve({ filter: /^@get-bb\/plugin-sdk\/app$/ }, () => ({ path: "sdk", namespace: "mock" }));
+    b.onResolve({ filter: /^@get-alia\/plugin-sdk\/app$/ }, () => ({ path: "sdk", namespace: "mock" }));
     b.onLoad({ filter: /.*/, namespace: "mock" }, () => ({ loader: "js", contents: `
       const rpc={call:async(method,input)=>{window.calls=(window.calls||[]).concat([{method,input}]);
         return {connected:true,uiUrl:"https://cerq-viewer.test/ui",sessions:[{status:"idle"}]};}};
       export const useRpc=()=>rpc;export const definePluginApp=()=>null;
       export const useSettings=()=>({values:{},isLoading:false});
       export const experimental_useSidebarThreads=()=>({status:"ready",projects:[]});
-      export const useBbContext=()=>({threadId:"t",projectId:"p"});
-      export const useBbNavigate=()=>({openThreadPanel:options=>{
+      export const useAliaContext=()=>({threadId:"t",projectId:"p"});
+      export const useAliaNavigate=()=>({openThreadPanel:options=>{
         window.openCalls=(window.openCalls||[]).concat([options]);return window.acceptPanel!==false;}});`
     }));
   } }],
@@ -37,7 +37,7 @@ const version = await (await fetch(new URL("/json/version", cdp))).json();
 const ws = new URL(version.webSocketDebuggerUrl); ws.host = cdp.host;
 const browser = await chromium.connectOverCDP(ws.toString());
 const context = browser.contexts()[0];
-const shots = process.env.BB_THREAD_STORAGE;
+const shots = process.env.ALIA_THREAD_STORAGE;
 if (shots) await mkdir(shots, { recursive: true });
 const pages = [];
 try {

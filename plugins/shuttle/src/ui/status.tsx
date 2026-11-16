@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { ConversationItem, PrDetails, PrView, ReviewDraft } from "../contract";
 import { mergeText, postText } from "../next";
 import { AgentControls } from "./agent";
@@ -197,7 +197,7 @@ function StatusRow({ pr, row, onTab }: { pr: PrView; row: Row; onTab(tab: PrTab)
   );
 }
 
-// bb's own tints: surface-destructive for trouble, a faint warning or success wash, a raised surface otherwise.
+// VesnALIA's own tints: surface-destructive for trouble, a faint warning or success wash, a raised surface otherwise.
 // surface-selected is the theme's primary, kept for what is selected.
 const TOP: Record<RowTone | "merged", string> = {
   ok: "bg-success/5",

@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-browserbase",
+  "name": "alia-plugin-browserbase",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.104"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.104"
   },
-  "bb": {
+  "alia": {
     "name": "Browserbase",
     "description": "Browse websites, extract page data, and automate web workflows with Browserbase.",
     "branding": {
@@ -25,7 +25,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.31",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -52,14 +51,27 @@
     "vaul": "^1.1.2"
   },
   "description": "Browse websites, extract page data, and automate web workflows with Browserbase.",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/browserbase/bb-plugin.git"
-  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --test server.test.mjs",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.31"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/browserbase#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/browserbase"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

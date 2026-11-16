@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers, RenderSlotOptions } from "@get-bb/plugin-sdk/testing/app";
-import type { ExperimentalThreadTabProps } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers, RenderSlotOptions } from "@vesnalia/plugin-sdk/testing/app";
+import type { ExperimentalThreadTabProps } from "@vesnalia/plugin-sdk/app";
 import { rpcContract } from "./contract";
 import type { LayerView, OperationPreview, StackView } from "./contract";
 import type { ChangedFile, DiffSnapshot } from "./lib/model";
@@ -311,7 +311,7 @@ describe("stack review", () => {
   });
 
   it("ignores a legacy repository-wide stack selection", async () => {
-    window.localStorage.setItem("bb-graphite-stack:scope:repo_1", JSON.stringify({ scope: "stack", anchor: "feature/checkout-ui" }));
+    window.localStorage.setItem("alia-graphite-stack:scope:repo_1", JSON.stringify({ scope: "stack", anchor: "feature/checkout-ui" }));
     const slot = renderTab();
     const rail = await slot.findByRole("list", { name: "Graphite stack" });
     await waitFor(() => expect(calls(slot, "layerFiles").map((input) => input.branch)).toContain("feature/checkout-api"));
@@ -325,7 +325,7 @@ describe("stack review", () => {
   it("defaults two worktrees in the same repository to their own branches", async () => {
     const first = stackView();
     const second = stackView({ environmentId: "env_other", currentBranch: "feature/checkout-ui" });
-    window.localStorage.setItem("bb-graphite-stack:scope:repo_1", JSON.stringify({ scope: "stack", anchor: "feature/checkout-api" }));
+    window.localStorage.setItem("alia-graphite-stack:scope:repo_1", JSON.stringify({ scope: "stack", anchor: "feature/checkout-api" }));
     const slot = renderTab({ props: { environment: { id: "env_other" } }, rpc: handlers({ stack: () => second }) });
     await waitFor(() => expect(calls(slot, "layerFiles").some((call) => call.branch === second.currentBranch)).toBe(true));
     expect(calls(slot, "layerFiles").some((call) => call.branch === first.currentBranch)).toBe(false);
@@ -809,7 +809,7 @@ describe("comments without a pull request", () => {
     fireEvent.click(await slot.findByRole("tab", { name: /Comments/u }));
     const review = await slot.findByRole("region", { name: "Finish review" });
     expect(within(review).getByText("Kept draft")).toBeTruthy();
-    expect(within(review).getByText(/BB keeps these pending comments/u)).toBeTruthy();
+    expect(within(review).getByText(/ALIA keeps these pending comments/u)).toBeTruthy();
     expect((within(review).getByRole("button", { name: "Submit review" }) as HTMLButtonElement).disabled).toBe(true);
   });
 });

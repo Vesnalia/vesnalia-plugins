@@ -333,12 +333,12 @@ describe("app-scoped diagnostics", () => {
   });
 
   it("matches the anonymized structure of the runtime fixture's real fatalError report", () => {
-    const text = '{"app_name":"ReplayFixture","timestamp":"2026-01-01 12:00:00.00 +0000","bundleID":"com.bb.simulator.replayfixture","bug_type":"309"}\n' +
+    const text = '{"app_name":"ReplayFixture","timestamp":"2026-01-01 12:00:00.00 +0000","bundleID":"com.alia.simulator.replayfixture","bug_type":"309"}\n' +
       JSON.stringify({ procName: "ReplayFixture", pid: 1234,
         procPath: `/Users/test/Library/Developer/CoreSimulator/Devices/${udid}/data/Containers/Bundle/Application/EXAMPLE/ReplayFixture.app/ReplayFixture`,
-        bundleInfo: { CFBundleIdentifier: "com.bb.simulator.replayfixture" },
+        bundleInfo: { CFBundleIdentifier: "com.alia.simulator.replayfixture" },
         exception: { codes: "0x0000000000000001, 0x0000000000000000", rawCodes: [1, 0], type: "EXC_BREAKPOINT", signal: "SIGTRAP" } });
-    expect(matchingCrashSummary(text, "com.bb.simulator.replayfixture", udid, 1234)).toBe("ReplayFixture: EXC_BREAKPOINT");
+    expect(matchingCrashSummary(text, "com.alia.simulator.replayfixture", udid, 1234)).toBe("ReplayFixture: EXC_BREAKPOINT");
   });
 
   it("reads only new .ips filenames, stores matching summaries once, and ignores late reports after cleanup", async () => {

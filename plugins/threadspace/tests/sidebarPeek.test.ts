@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountSidebarPeek, peekSupported, setSidebarCollapsed } from "../src/sidebarPeek";
 
-// Minimal copy of the BB sidebar markup that hover mode reads.
+// Minimal copy of the VesnALIA sidebar markup that hover mode reads.
 function fakeSidebar(state: "collapsed" | "expanded") {
   document.body.innerHTML = `<div class="peer" data-side="left" data-state="${state}"><div class="fixed"></div></div><button data-sidebar="trigger">Toggle</button>`;
   const peer = document.querySelector<HTMLElement>(".peer")!;
@@ -65,7 +65,7 @@ describe("sidebar hover mode", () => {
     unmount(); unmount = undefined;
     expect(document.documentElement.hasAttribute("data-ns-peek-mode")).toBe(false);
   });
-  it("collapses and expands through BB's own toggle, and reports missing markup", () => {
+  it("collapses and expands through VesnALIA's own toggle, and reports missing markup", () => {
     const { peer } = fakeSidebar("expanded");
     expect(peekSupported()).toBe(true);
     setSidebarCollapsed(true);

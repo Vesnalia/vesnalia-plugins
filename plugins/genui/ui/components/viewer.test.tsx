@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
-// Full screen while BB shows threads side by side: the view covers the pane
+// Full screen while VesnALIA shows threads side by side: the view covers the pane
 // of the block that opened it, not the whole window across both threads.
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FullScreen } from "./viewer";
 
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   experimental_usePluginId: () => "genui",
   useSettings: () => ({ values: { animations: false }, isLoading: false }),
   experimental_Icon: () => <span aria-hidden="true" />,
@@ -17,7 +17,7 @@ const PANE = { top: 0, left: 320, width: 560, height: 900 };
 let root: Root;
 let host: HTMLElement;
 
-/** BB's split view: `count` panes in a row, the block mounted in the first. */
+/** VesnALIA's split view: `count` panes in a row, the block mounted in the first. */
 function split(count: number): HTMLElement {
   const panes = Array.from({ length: count }, (_, index) => {
     const pane = document.createElement("div");
@@ -60,7 +60,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("FullScreen in BB's split view", () => {
+describe("FullScreen in VesnALIA's split view", () => {
   it("covers the pane of the block that opened it, and a tap on the rest of the window closes it", () => {
     host = split(2);
     const onClose = vi.fn();
@@ -71,7 +71,7 @@ describe("FullScreen in BB's split view", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("fills the window when BB shows one pane", () => {
+  it("fills the window when VesnALIA shows one pane", () => {
     host = split(1);
     const view = open();
     expect(view.style.left).toBe("");

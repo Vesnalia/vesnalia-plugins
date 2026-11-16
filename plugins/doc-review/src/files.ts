@@ -1,17 +1,17 @@
-// Where a document lives and how to read it. Files on the bb server's own
-// machine are read from disk; files on other machines go through bb.sdk.files
+// Where a document lives and how to read it. Files on the VesnALIA server's own
+// machine are read from disk; files on other machines go through alia.sdk.files
 // and, for rendering, are copied into the plugin's cache.
 import { readFile, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { z } from "zod";
 import type { openerSourceSchema } from "./contract.js";
 import type { DocRow } from "./store.js";
 
 export type OpenerSource = z.infer<typeof openerSourceSchema>;
 
-/** bb caps a preview lease at one hour. */
+/** VesnALIA caps a preview lease at one hour. */
 export const PREVIEW_LEASE_MS = 60 * 60 * 1000;
 
 /** Markdown bigger than this is refused: the panel renders it in one pass. */
@@ -27,7 +27,7 @@ export function isWindowsPath(absPath: string): boolean {
 /**
  * One spelling per file. POSIX paths are normalized as they are; Windows
  * paths get forward slashes and an upper-case drive letter, so `c:\a\b.md`
- * and `C:/a/b.md` open the same document. The bb server may run on Linux or
+ * and `C:/a/b.md` open the same document. The VesnALIA server may run on Linux or
  * macOS while the file sits on a Windows host, so `path.win32` is used
  * explicitly rather than the server's own `path`.
  */
@@ -56,7 +56,7 @@ export function joinPath(root: string, relative: string): string {
  */
 const REMOTE_READ_REUSE_MS = 2000;
 
-type RemoteFile = Awaited<ReturnType<BbPluginApi["sdk"]["files"]["read"]>>;
+type RemoteFile = Awaited<ReturnType<AliaPluginApi["sdk"]["files"]["read"]>>;
 
 export class DocFiles {
   private localHostIdPromise: Promise<string | null> | null = null;
@@ -74,7 +74,7 @@ export class DocFiles {
     const known = this.remoteReads.get(key);
     if (known) return known.file;
     const entry: { file: Promise<RemoteFile>; settledAtMs: number | null } = {
-      file: this.bb.sdk.files.read({ hostId, path: absPath }),
+      file: this.alia.sdk.files.read({ hostId, path: absPath }),
       settledAtMs: null,
     };
     this.remoteReads.set(key, entry);
@@ -95,13 +95,13 @@ export class DocFiles {
   }
 
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly cacheRoot: string,
   ) {}
 
-  /** The enrolled host id of the machine the bb server runs on. */
+  /** The enrolled host id of the machine the VesnALIA server runs on. */
   localHostId(): Promise<string | null> {
-    this.localHostIdPromise ??= this.bb.sdk.system.config().then(
+    this.localHostIdPromise ??= this.alia.sdk.system.config().then(
       (config) => config.primaryHostId ?? null,
       () => null,
     );
@@ -125,7 +125,7 @@ export class DocFiles {
   ): Promise<{ absPath: string; hostId: string | null }> {
     if (source.kind === "workspace") {
       if (source.environmentId) {
-        const environment = await this.bb.sdk.environments.get({
+        const environment = await this.alia.sdk.environments.get({
           environmentId: source.environmentId,
         });
         if (!environment.path) throw new Error("This environment has no checkout on disk yet.");
@@ -136,7 +136,7 @@ export class DocFiles {
       }
       // A project's own checkout, opened outside any thread.
       if (source.projectId) {
-        const project = await this.bb.sdk.projects.get({ projectId: source.projectId });
+        const project = await this.alia.sdk.projects.get({ projectId: source.projectId });
         const checkout =
           project.sources.find((candidate) => candidate.hostId === source.experimental_hostId) ??
           project.sources.find((candidate) => candidate.isDefault) ??
@@ -153,7 +153,7 @@ export class DocFiles {
       if (!source.threadId) throw new Error("This stored file has no thread.");
       // storageLocation names the root and its host without listing entries
       // (storagePaths refuses a request that asks for no entries).
-      const storage = await this.bb.sdk.threads.storageLocation({ threadId: source.threadId });
+      const storage = await this.alia.sdk.threads.storageLocation({ threadId: source.threadId });
       return {
         absPath: joinPath(storage.storageRootPath, rawPath),
         hostId: await this.canonicalHost(storage.hostId),
@@ -166,7 +166,7 @@ export class DocFiles {
     }
     let hostId: string | null = source.experimental_hostId ?? null;
     if (!hostId && source.environmentId) {
-      const environment = await this.bb.sdk.environments.get({
+      const environment = await this.alia.sdk.environments.get({
         environmentId: source.environmentId,
       });
       hostId = environment.hostId;
@@ -176,7 +176,7 @@ export class DocFiles {
 
   /**
    * A cheap change token. Local files use size and mtime; remote files use
-   * the content hash bb reports.
+   * the content hash VesnALIA reports.
    */
   async version(doc: DocRow): Promise<string | null> {
     if (doc.hostId === null) {
@@ -215,20 +215,20 @@ export class DocFiles {
 
   /**
    * A short-lived URL serving the document's directory, so relative images in
-   * Markdown resolve. Null when bb cannot mint one.
+   * Markdown resolve. Null when VesnALIA cannot mint one.
    */
   async assetBaseUrl(doc: DocRow): Promise<string | null> {
     try {
-      // Name this machine explicitly: bb refuses a preview without a host.
+      // Name this machine explicitly: VesnALIA refuses a preview without a host.
       const hostId = doc.hostId ?? (await this.localHostId());
-      const preview = await this.bb.sdk.files.createPreview({
+      const preview = await this.alia.sdk.files.createPreview({
         ...(hostId ? { hostId } : {}),
         rootPath: path.posix.dirname(doc.absPath),
         ttlMs: PREVIEW_LEASE_MS,
       });
       return preview.baseUrl;
     } catch (error) {
-      this.bb.log.warn(`no preview for ${path.posix.dirname(doc.absPath)}: ${String(error)}`);
+      this.alia.log.warn(`no preview for ${path.posix.dirname(doc.absPath)}: ${String(error)}`);
       return null;
     }
   }

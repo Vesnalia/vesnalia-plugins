@@ -1,7 +1,7 @@
 // Step 2: the apps agents may read (ticked apps are the boundary) and the sheets
 // to recommend, each with a note on what it answers.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { experimental_copyToClipboard, UrlLink } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard, UrlLink } from "@vesnalia/plugin-sdk/app";
 import type { Catalog, CatalogApp, CheckLinkResult, QlikAppSummary, QlikSheetSummary } from "../../contract";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";

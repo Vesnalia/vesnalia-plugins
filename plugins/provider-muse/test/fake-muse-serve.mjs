@@ -587,7 +587,7 @@ function handle(message) {
         return;
       }
       /**
-       * The refusal that is bb's fault, not the session's: an anchor from
+       * The refusal that is VesnALIA's fault, not the session's: an anchor from
        * another session's cursor space. Muse is fine; the read was wrong.
        */
       const badAnchor = process.env.FAKE_MUSE_VIEW_BAD_ANCHOR;

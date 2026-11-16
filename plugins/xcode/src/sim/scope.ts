@@ -1,7 +1,7 @@
 /**
  * Scope identity — keyed on the repo, never on a path.
  *
- * `sha256(checkoutPath)` is the opposite of machine-portable. bb creates a
+ * `sha256(checkoutPath)` is the opposite of machine-portable. VesnALIA creates a
  * per-thread git worktree, so every thread's environment has a *different*
  * checkout path: a path-keyed scope mints a fresh key per worktree, finds no
  * baseline, and reports all 148 previews as `added` on every run, forever.
@@ -17,11 +17,11 @@ import { relative, resolve, sep } from "node:path";
 import { run } from "./exec.js";
 
 export interface ScopeInput {
-  /** Absolute path to the checkout, from bb's environment. Display only. */
+  /** Absolute path to the checkout, from VesnALIA's environment. Display only. */
   checkoutPath: string;
   /** Absolute path to the resolved `.xcodeproj` / `.xcworkspace` / `Package.swift`. */
   projectPath: string | null;
-  /** bb's project id, the last resort for a checkout that is not a git repo. */
+  /** VesnALIA's project id, the last resort for a checkout that is not a git repo. */
   projectId: string;
 }
 

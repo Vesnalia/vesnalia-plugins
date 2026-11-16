@@ -1,7 +1,7 @@
 // Lanes are sections with a role (number key, auto-fill for Waiting). Each is
 // matched to a section by name once, then pinned by id, so renaming a lane's
 // section keeps its role. A pinned section that's gone is matched again.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 export type LaneId = "priority" | "waiting" | "later" | "low";
 export type LaneSections = Partial<Record<LaneId, string>>;
@@ -80,11 +80,11 @@ export function resolveLanes(sections: readonly { id: string; name: string }[], 
 }
 
 
-export async function laneSections(bb: BbPluginApi): Promise<LaneSections> {
-  const pinned = (await bb.storage.kv.get<LaneSections>("laneSections")) ?? {};
-  const sections = await bb.sdk.threadSections.list().catch(() => null);
+export async function laneSections(alia: AliaPluginApi): Promise<LaneSections> {
+  const pinned = (await alia.storage.kv.get<LaneSections>("laneSections")) ?? {};
+  const sections = await alia.sdk.threadSections.list().catch(() => null);
   if (sections === null) return pinned;
   const result = matchLanes(sections, pinned);
-  if (JSON.stringify(result) !== JSON.stringify(pinned)) await bb.storage.kv.set("laneSections", result);
+  if (JSON.stringify(result) !== JSON.stringify(pinned)) await alia.storage.kv.set("laneSections", result);
   return result;
 }

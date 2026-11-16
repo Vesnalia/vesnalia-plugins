@@ -1,34 +1,34 @@
 #!/usr/bin/env node
-// Development check: parses imported events with the installed bb server's own
-// stored-event parser, so a bb update that changes the event contract shows
+// Development check: parses imported events with the installed VesnALIA server's own
+// stored-event parser, so a VesnALIA update that changes the event contract shows
 // up before an import does.
 //
-//   node scripts/check-events.mjs <bb.db> [thread-id ...]
+//   node scripts/check-events.mjs <alia.db> [thread-id ...]
 //
 // With no thread IDs, every thread that has a thread/started event (the
 // marker this importer writes first) is checked. The database is opened
-// read-only. BB_APP_DIST overrides the bb server dist directory.
+// read-only. ALIA_APP_DIST overrides the VesnALIA server dist directory.
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import Database from "better-sqlite3";
 
-const dist = process.env.BB_APP_DIST
-  ?? "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist";
+const dist = process.env.ALIA_APP_DIST
+  ?? "/Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/server/dist";
 const [dbPath, ...threadIds] = process.argv.slice(2);
 if (!dbPath) {
-  console.error("Usage: node scripts/check-events.mjs <bb.db> [thread-id ...]");
+  console.error("Usage: node scripts/check-events.mjs <alia.db> [thread-id ...]");
   process.exit(2);
 }
 if (!existsSync(join(dist, "start-server.js"))) {
-  console.error(`bb server not found at ${dist}; set BB_APP_DIST`);
+  console.error(`alia server not found at ${dist}; set ALIA_APP_DIST`);
   process.exit(2);
 }
 
 // The parser is module-private, so load a copy of the server bundle that also
 // exports it. Loading the module defines code only; it never starts a server.
-const work = mkdtempSync(join(tmpdir(), "bb-event-check-"));
+const work = mkdtempSync(join(tmpdir(), "alia-event-check-"));
 mkdirSync(join(work, "dist"));
 for (const entry of readdirSync(dist)) {
   if (entry !== "start-server.js") symlinkSync(join(dist, entry), join(work, "dist", entry));

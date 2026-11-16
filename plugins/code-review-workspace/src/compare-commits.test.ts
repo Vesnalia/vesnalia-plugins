@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { testStore } from "./test-store.test-support";
 
 const runGh = vi.hoisted(() => vi.fn());
@@ -23,9 +23,9 @@ async function setUp() {
     if (compare?.endsWith("...c2bbbbb")) return ok(one("second"));
     return { stdout: "", stderr: "HTTP 404", code: 1 };
   });
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, base: "main", headSha: "c3ccccc", latestHeadSha: "c4ddddd", status: "ready", createdAt: 1 });
   await store.savePatch("pr-1", one("third"));
   return { harness, store, call: (method: string, input: unknown) => harness.behavior.callRpc(method as any, input as any) as Promise<any> };

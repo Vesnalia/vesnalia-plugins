@@ -1,9 +1,9 @@
-// Caps every custom section of bb's built-in sidebar thread list at a number
+// Caps every custom section of VesnALIA's built-in sidebar thread list at a number
 // of top-level threads and adds a "Load more" footer inside the same section.
 //
 // It decorates the bundled thread-list plugin's DOM instead of replacing the
 // list, so pinning, nesting, drag and drop, menus and status keep working.
-// The DOM contract it relies on (bb 0.46):
+// The DOM contract it relies on (VesnALIA 0.46):
 //   [data-sidebar="content"]                  scroll root of the list
 //     [data-sidebar-section-id="sec_…"]       one custom section, or
 //     [data-sidebar-visibility-group="threads"]  the built-in Threads group
@@ -36,7 +36,7 @@ const CSS = `
   display: flex;
   align-items: center;
   gap: 2px;
-  min-height: var(--bb-sidebar-row-height, 28px);
+  min-height: var(--alia-sidebar-row-height, 28px);
   padding-right: 4px;
 }
 [${FOOTER_ATTR}] button {
@@ -234,7 +234,7 @@ export class SectionLoadMore {
   ): void {
     const signature = `${hidden}|${limit > visible}`;
     // Align the labels with the thread titles above them.
-    const title = items[0]?.querySelector(".bb-thread-title");
+    const title = items[0]?.querySelector(".alia-thread-title");
     if (title) {
       const inset =
         title.getBoundingClientRect().left - footer.getBoundingClientRect().left;

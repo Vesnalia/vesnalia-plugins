@@ -1,11 +1,11 @@
 ---
 name: media-viewer
-description: Show images, screenshots, videos and audio to the user in BB's right panel or inline in chat, with zoom, pan and playback controls. Use whenever you present visual results or ask for visual feedback.
+description: Show images, screenshots, videos and audio to the user in VesnALIA's right panel or inline in chat, with zoom, pan and playback controls. Use whenever you present visual results or ask for visual feedback.
 ---
 
 # Media viewer
 
-The Media viewer plugin opens image, video and audio files in BB's right
+The Media viewer plugin opens image, video and audio files in VesnALIA's right
 panel with zoom, pan and playback controls. It also renders a `::media`
 directive inline in your reply.
 
@@ -18,19 +18,19 @@ Put the files you want to show in one folder in this thread's storage, then
 open the first one:
 
 ```sh
-dir="$BB_THREAD_STORAGE/media/login-review"
+dir="$ALIA_THREAD_STORAGE/media/login-review"
 mkdir -p "$dir"
 cp /path/to/before.png "$dir/01-before.png"
 cp /path/to/after.png "$dir/02-after.png"
-bb thread open "$BB_THREAD_ID" "$dir/01-before.png" --json
+alia thread open "$ALIA_THREAD_ID" "$dir/01-before.png" --json
 ```
 
 The viewer steps through every image, video and audio file in that folder,
 in name order, so number the files in the order you want them seen. A
 folder holding only the files you mean to show keeps the set clean.
 
-`bb thread open` accepts only paths in this thread's workspace or
-`$BB_THREAD_STORAGE`. Copy files from anywhere else, including another
+`alia thread open` accepts only paths in this thread's workspace or
+`$ALIA_THREAD_STORAGE`. Copy files from anywhere else, including another
 thread's storage, into your own storage first. Fetch files from another
 machine before copying them.
 
@@ -60,4 +60,4 @@ the right panel.
 - Video has play, frame step, a seek bar, speed from 0.25× to 2× and mute.
 
 Opening a file the viewer cannot decode shows an error. In the right panel
-it offers BB's own preview instead.
+it offers VesnALIA's own preview instead.

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { boundedErrorText } from "./backend-utils.js";
 import { boundedLine, ONE_LINE_MAX } from "./projection.js";
 import type { FeedStore } from "./store.js";
@@ -28,7 +28,7 @@ export function summaryInstructions(style: string | undefined): string {
 }
 
 type EventList = Awaited<
-  ReturnType<BbPluginApi["sdk"]["threads"]["events"]["list"]>
+  ReturnType<AliaPluginApi["sdk"]["threads"]["events"]["list"]>
 >;
 
 export function agentMessageText(event: Pick<EventList[number], "data">): string | null {
@@ -68,7 +68,7 @@ export function summaryPrompt(input: {
 
 /** The agent's latest message in the thread, or null when it has none. */
 export async function latestAgentMessage(
-  sdk: BbPluginApi["sdk"],
+  sdk: AliaPluginApi["sdk"],
   threadId: string,
 ): Promise<string | null> {
   const events = await sdk.threads.events.list({
@@ -89,7 +89,7 @@ export class Summaries {
   private readonly started = new Map<string, number>();
 
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly store: FeedStore,
     private readonly model: () => string,
     private readonly style: () => string | undefined,
@@ -129,19 +129,19 @@ export class Summaries {
       // A newer result's call wins; this answer is dropped.
       if (this.started.get(threadId) !== resultSeq) return;
       this.store.writeSummary(threadId, boundedLine(oneLine, ONE_LINE_MAX), resultSeq);
-      this.bb.log.info(
+      this.alia.log.info(
         `Feed summary for ${threadId} at seq ${resultSeq} took ${Math.round(performance.now() - startedAt)} ms.`,
       );
     } catch (error) {
       if (this.started.get(threadId) !== resultSeq) return;
       this.store.writeFailure(threadId, resultSeq);
-      this.bb.log.warn(
+      this.alia.log.warn(
         `Feed summary for ${threadId} at seq ${resultSeq} failed: ${boundedErrorText(error)}`,
       );
     } finally {
       if (this.started.get(threadId) === resultSeq) this.started.delete(threadId);
     }
-    this.bb.realtime.publish("feed-invalidated", { threadId, reason: "summary-written" });
+    this.alia.realtime.publish("feed-invalidated", { threadId, reason: "summary-written" });
   }
 
   private async prompt(
@@ -149,14 +149,14 @@ export class Summaries {
     resultSeq: number,
     previousLine: string | null,
   ): Promise<string> {
-    const [userEvent] = await this.bb.sdk.threads.events.list({
+    const [userEvent] = await this.alia.sdk.threads.events.list({
       threadId,
       types: ["client/turn/requested"],
       beforeSeq: String(resultSeq),
       order: "desc",
       limit: "1",
     });
-    const agentEvents = await this.bb.sdk.threads.events.list({
+    const agentEvents = await this.alia.sdk.threads.events.list({
       threadId,
       types: ["item/completed"],
       ...(userEvent === undefined ? {} : { afterSeq: String(userEvent.seq) }),

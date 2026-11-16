@@ -2,7 +2,7 @@
  * Every process name Hotspot shows, stores or returns: `node · vite`,
  * `node · next dev`, `node · tsc --watch`, `pnpm · test`, `vitest · worker`,
  * `python3 · pytest`, `Google Chrome`, `claude`. The drill-down, "Also busy
- * outside BB", stored samples and hot spells, kill plans and their results,
+ * outside VesnALIA", stored samples and hot spells, kill plans and their results,
  * the CLI and the agent tool all use friendlyName; a kill plan's command
  * column uses displayCommand.
  *
@@ -25,7 +25,7 @@
  */
 
 /**
- * argv[0] and the rest, the way the rules that recognise BB, terminals and
+ * argv[0] and the rest, the way the rules that recognise VesnALIA, terminals and
  * shells read it (lib/procs.ts, lib/kill.ts). `ps` joins argv with spaces and
  * macOS paths hold spaces, so argv[0] runs to the first space that starts a
  * flag, another path or a `VAR=value`. That can swallow arguments, so it is
@@ -70,7 +70,7 @@ const NODE_FLAGS: FlagRules = {
   code: new Set(["-e", "--eval", "-p", "--print"]),
 };
 const PYTHON_FLAGS: FlagRules = {
-  valueless: new Set(["-u", "-B", "-E", "-s", "-S", "-O", "-OO", "-q", "-b", "-bb", "-I", "-P"]),
+  valueless: new Set(["-u", "-B", "-E", "-s", "-S", "-O", "-OO", "-q", "-b", "-alia", "-I", "-P"]),
   oneValue: new Set(),
   code: new Set(["-c"]),
   module: "-m",

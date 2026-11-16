@@ -1,20 +1,20 @@
 // projects.attachments.upload; refusal; no remove (DESIGN §B.10, X54). `attachmentId` is opaque: a random id the
-// store maps to the stored item for a bounded time, so bb's absolute path of the stored file never leaves the
-// server (05 R2.42; BB-4). `promptInput` resolves ids back into bb's composer shape, text first.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// store maps to the stored item for a bounded time, so VesnALIA's absolute path of the stored file never leaves the
+// server (05 R2.42; ALIA-4). `promptInput` resolves ids back into VesnALIA's composer shape, text first.
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { ProviderError, type AttachmentRef, type ProviderHost } from "../../core/src/host/index.ts";
 import { randomBytes } from "node:crypto";
 import { asRecord, sdkCall } from "./errors.ts";
 
 export interface StoredAttachment { kind: "image" | "file"; path: string; name: string; mimeType: string; sizeBytes: number }
 
-/** bb's caps on what it attaches: 10 MB for an image, 25 MB for any other file (host-daemon `_he`, `ph`). */
-export const BB_ATTACHMENT_IMAGE_BYTES = 10 * 1024 * 1024;
-export const BB_ATTACHMENT_FILE_BYTES = 25 * 1024 * 1024;
+/** VesnALIA's caps on what it attaches: 10 MB for an image, 25 MB for any other file (host-daemon `_he`, `ph`). */
+export const ALIA_ATTACHMENT_IMAGE_BYTES = 10 * 1024 * 1024;
+export const ALIA_ATTACHMENT_FILE_BYTES = 25 * 1024 * 1024;
 /** How long an issued id stays valid: longer than the core's upload window after an approved call (30 min). */
 export const ATTACHMENT_TTL_MS = 60 * 60 * 1000;
 export const ATTACHMENT_STORE_MAX = 512;
-/** Live ids one owner may hold under the global cap; the owner is the workspace, the only key `upload` is given (BB-4b). */
+/** Live ids one owner may hold under the global cap; the owner is the workspace, the only key `upload` is given (ALIA-4b). */
 export const ATTACHMENT_STORE_MAX_PER_OWNER = 64;
 
 export interface AttachmentStore {
@@ -62,7 +62,7 @@ export type PromptItem =
   | { type: "localImage"; path: string }
   | { type: "localFile"; path: string; name: string; mimeType: string; sizeBytes: number };
 
-/** The prompt as bb's composer sends it: the text, then each attachment (R5.76). */
+/** The prompt as VesnALIA's composer sends it: the text, then each attachment (R5.76). */
 export function promptInput(text: string, attachments: readonly AttachmentRef[], store: AttachmentStore): PromptItem[] {
   return [
     { type: "text", text, mentions: [] },
@@ -73,22 +73,22 @@ export function promptInput(text: string, attachments: readonly AttachmentRef[],
   ];
 }
 
-export function createBbAttachments(bb: BbPluginApi, store: AttachmentStore): NonNullable<ProviderHost["attachments"]> {
+export function createAliaAttachments(alia: AliaPluginApi, store: AttachmentStore): NonNullable<ProviderHost["attachments"]> {
   return {
     refusal(meta) {
       const type = (meta.type.split(";")[0] ?? "").trim().toLowerCase();
-      if (/^image\/hei[cf](-sequence)?$/.test(type) || /\.hei[cf]$/i.test(meta.name)) return `“${meta.name}” is a HEIC/HEIF image, which bb does not attach; convert it to JPEG or PNG first`;
-      if (type.startsWith("image/") && meta.size > BB_ATTACHMENT_IMAGE_BYTES) return `“${meta.name}” is an image over 10 MB, the most bb attaches`;
-      if (!type.startsWith("image/") && meta.size > BB_ATTACHMENT_FILE_BYTES) return `“${meta.name}” is over 25 MB, the most bb attaches`;
+      if (/^image\/hei[cf](-sequence)?$/.test(type) || /\.hei[cf]$/i.test(meta.name)) return `“${meta.name}” is a HEIC/HEIF image, which VesnALIA does not attach; convert it to JPEG or PNG first`;
+      if (type.startsWith("image/") && meta.size > ALIA_ATTACHMENT_IMAGE_BYTES) return `“${meta.name}” is an image over 10 MB, the most VesnALIA attaches`;
+      if (!type.startsWith("image/") && meta.size > ALIA_ATTACHMENT_FILE_BYTES) return `“${meta.name}” is over 25 MB, the most VesnALIA attaches`;
       return null;
     },
     async upload(workspaceId, file, meta) {
       const stored = asRecord(
         await sdkCall("attachments.upload", () =>
-          bb.sdk.projects.attachments.upload({ projectId: workspaceId, clientFile: new Blob([Buffer.from(file)], { type: meta.type }), filename: meta.name, mimeType: meta.type }),
+          alia.sdk.projects.attachments.upload({ projectId: workspaceId, clientFile: new Blob([Buffer.from(file)], { type: meta.type }), filename: meta.name, mimeType: meta.type }),
         ),
       );
-      if (!stored || typeof stored.path !== "string") throw new ProviderError("other", "attachments.upload: bb returned no stored item");
+      if (!stored || typeof stored.path !== "string") throw new ProviderError("other", "attachments.upload: VesnALIA returned no stored item");
       return {
         attachmentId: store.issue(
           {

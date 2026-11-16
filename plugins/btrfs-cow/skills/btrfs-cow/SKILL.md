@@ -22,14 +22,14 @@ uncommitted changes the source had at copy time.
 
 Commands (run from any machine; `--machine` names where the checkout lives):
 
-- `bb btrfs-cow status --machine <name> <path>` shows the mode a checkout
+- `alia btrfs-cow status --machine <name> <path>` shows the mode a checkout
   would get and whether snapshots can be deleted without root.
-- `bb btrfs-cow convert --machine <name> <path>` turns a plain checkout into a
+- `alia btrfs-cow convert --machine <name> <path>` turns a plain checkout into a
   subvolume so future threads snapshot it in constant time. One-time; keeps
   the path. Ask before running it on a checkout someone is actively using.
 
 Spawn a child thread in one with:
 
 ```sh
-bb thread spawn --environment-provider btrfs-cow ...
+alia thread spawn --environment-provider btrfs-cow ...
 ```

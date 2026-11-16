@@ -114,7 +114,7 @@ export async function pruneOldDiffs(store: AsyncStore, now: number): Promise<str
     const pruned: string[] = [];
     for (const review of await tx.listReviews()) {
       const since = Math.min(review.archivedAt ?? Infinity, review.userArchivedAt ?? Infinity);
-      // A local review whose folder bb removed has nothing to read again, and nothing waits on it once archived.
+      // A local review whose folder VesnALIA removed has nothing to read again, and nothing waits on it once archived.
       const folderGone = review.kind === "ref" && !!review.feature?.folderGone && !!review.archivedAt;
       if (folderGone && now - since >= PRUNE_AFTER && !(await tx.getDraft(review.targetKey)).comments.length && await tx.hasPatch(review.targetKey)) {
         await tx.dropPatch(review.targetKey);

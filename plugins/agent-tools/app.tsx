@@ -1,5 +1,5 @@
 // Инструменты агентов: слева устройства и шлюзы, справа рабочая область —
-// таблицы «Каталог», «Новые», «CLI выбранной машины», «Скрытые» в стиле BB
+// таблицы «Каталог», «Новые», «CLI выбранной машины», «Скрытые» в стиле VesnALIA
 // (рамка, шапка колонок, умеренная плотность строк).
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
@@ -9,7 +9,7 @@ import {
   useRpc,
   experimental_ProviderIcon as ProviderIcon,
   experimental_useProviders as useProviders,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Overview, HostView } from "./server";
 import type {
   SkillBackup,
@@ -80,7 +80,7 @@ const PENDING_LIMIT = 12;
 type SkillBackupRow = SkillBackup & { hostId: string; hostName: string };
 
 /**
- * BB can remount a plugin page while keeping the same loaded app module. Keep
+ * VesnALIA can remount a plugin page while keeping the same loaded app module. Keep
  * the last catalog snapshot and explicit user feedback outside CatalogPage so
  * a background refresh does not replace the page with a loading screen or
  * silently dismiss the result/confirmation.
@@ -457,7 +457,7 @@ const skillStateLabels = (): Record<string, string> => ({
   copy: t("копия канона"),
   "linked-external": t("ссылка мимо канона"),
   "stray-link": t("лишняя ссылка"),
-  "bb-registry": t("дубль реестра BB"),
+  "alia-registry": t("дубль реестра ALIA"),
   "canonical-source": t("источник канона"),
 });
 
@@ -468,8 +468,8 @@ const skillStateHints = (): Record<string, string> => ({
   "linked-external":
     t("ссылка в проект: содержимое отличается от канона — копируем в канон, ссылку не трогаем"),
   "stray-link": t("ссылка в папке, которую мы не используем"),
-  "bb-registry":
-    t("ссылка в ~/.bb/skills — BB подставляет этот скилл в свои сессии сам, поэтому внутри BB он виден дважды; нужна только для запуска CLI вне BB"),
+  "alia-registry":
+    t("ссылка в ~/.vesnalia/skills — ALIA подставляет этот скилл в свои сессии сам, поэтому внутри ALIA он виден дважды; нужна только для запуска CLI вне ALIA"),
   "canonical-source": t("реальное хранилище, на которое ссылается канон"),
 });
 
@@ -479,7 +479,7 @@ const SKILL_STATE_COLOR: Record<string, string> = {
   copy: "bg-success",
   "linked-external": "bg-warning",
   "stray-link": "bg-border",
-  "bb-registry": "bg-warning",
+  "alia-registry": "bg-warning",
   "canonical-source": "bg-border",
 };
 
@@ -502,7 +502,7 @@ function SkillStateDot({ state }: { state: string }) {
 function SkillStateLegend() {
   return (
     <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-      {(["only-here", "copy", "diverged", "linked-external", "stray-link", "bb-registry", "canonical-source"] as const).map(
+      {(["only-here", "copy", "diverged", "linked-external", "stray-link", "alia-registry", "canonical-source"] as const).map(
         (state) => (
           <span key={state} className="inline-flex items-center gap-1.5">
             <SkillStateDot state={state} />
@@ -525,8 +525,8 @@ const skillFilters = (): Array<{ key: SkillFilterKey; label: string; hint: strin
   { key: "stray", label: t("Лишние ссылки"), hint: t("Ссылки в папках, которые мы не используем") },
   {
     key: "bbdup",
-    label: t("Дубли BB"),
-    hint: t("Ссылки в ~/.bb/skills: внутри BB скилл виден дважды, вне BB ссылка нужна — решение по каждой строке за тобой"),
+    label: t("Дубли ALIA"),
+    hint: t("Ссылки в ~/.vesnalia/skills: внутри ALIA скилл виден дважды, вне ALIA ссылка нужна — решение по каждой строке за тобой"),
   },
 ];
 
@@ -535,7 +535,7 @@ function skillFilterOf(state: string): SkillFilterKey | null {
   if (state === "only-here") return "new";
   if (state === "diverged" || state === "linked-external") return "diverged";
   if (state === "stray-link") return "stray";
-  if (state === "bb-registry") return "bbdup";
+  if (state === "alia-registry") return "bbdup";
   return null;
 }
 
@@ -655,7 +655,7 @@ function SkillCanon({ data, selected }: { data: Overview; selected: string | nul
           ["gaps", t("Не на всех машинах")],
           ["differs", t("Расходятся")],
           ["plugin", t("Отдаёт плагин")],
-          ["heavy", t("BB не примет")],
+          ["heavy", t("ALIA не примет")],
         ] as const).map(([key, label]) => (
           <Button
             key={key}
@@ -710,9 +710,9 @@ function SkillCanon({ data, selected }: { data: Overview; selected: string | nul
                       <Badge
                         variant="destructive"
                         className="ml-2 py-0 font-normal"
-                        title={t("Канон или копия в ~/.bb/skills больше 10 МБ — BB не подставит скилл в $")}
+                        title={t("Канон или копия в ~/.vesnalia/skills больше 10 МБ — ALIA не подставит скилл в $")}
                       >
-                        {t("BB не примет")} · {backupSize(Math.max(0, ...row.hosts.map((item) => item.bytes)))}
+                        {t("ALIA не примет")} · {backupSize(Math.max(0, ...row.hosts.map((item) => item.bytes)))}
                       </Badge>
                     ) : null}
                   </TableCell>
@@ -1033,7 +1033,7 @@ function DeviceList({
       </div>
       {section === "skills" || section === "settings" ? (
         <p className="px-2 text-xs text-muted-foreground">
-          {t("Навыки живут на хабе: BB отдаёт их в каждую сессию на любой машине.")}
+          {t("Навыки живут на хабе: ALIA отдаёт их в каждую сессию на любой машине.")}
         </p>
       ) : (
       <>
@@ -1395,7 +1395,7 @@ const pendingFilters = (): Array<{ key: PendingFilterKey; label: string; hint?: 
   { key: "local", label: t("Локальные") },
 ];
 
-/** Сегментированный переключатель среза — штатные вкладки BB, а не текст. */
+/** Сегментированный переключатель среза — штатные вкладки VesnALIA, а не текст. */
 function PendingFilters({
   value,
   onChange,
@@ -1935,7 +1935,7 @@ function PendingTable({
  * серверов с точкой состояния и действием «Включить»/«Выключить».
  */
 /**
- * Официальная эмблема CLI: берём запись провайдера BB как её читают штатные
+ * Официальная эмблема CLI: берём запись провайдера VesnALIA как её читают штатные
  * пикеры, поэтому логотип и подсветка совпадают с остальным приложением.
  * Для CLI без провайдера (Qwen, Kimi, Grok, MimoCode) показываем нейтральный значок.
  */
@@ -2310,7 +2310,7 @@ function GatewayAddDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent data-bb-ru-skip="" className="max-w-xl">
+      <DialogContent data-alia-ru-skip="" className="max-w-xl">
         <DialogHeader>
           <DialogTitle>{t("Добавить серверы за шлюз MetaMCP")}</DialogTitle>
             <DialogDescription>
@@ -2689,13 +2689,13 @@ function OpenCodeTabContent({
               {t("Любимая модель")}
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {t("Модель, которая автоматически выбирается при создании нового чата в BB и является основной в CLI OpenCode.")}
+              {t("Модель, которая автоматически выбирается при создании нового чата в VesnALIA и является основной в CLI OpenCode.")}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{t("Сейчас в BB:")}</span>
+            <span className="text-xs text-muted-foreground">{t("Сейчас в ALIA:")}</span>
             <Badge variant="secondary" className="font-mono text-xs bg-success/15 text-diff-added border-transparent">
-              {opencode.bbPreselectedModel ?? t("не задана")}
+              {opencode.aliaPreselectedModel ?? t("не задана")}
             </Badge>
           </div>
         </div>
@@ -2714,7 +2714,7 @@ function OpenCodeTabContent({
               </TableHeader>
               <TableBody>
                 {opencode.availableModels.map((m) => {
-                  const isPreselected = m.id === opencode.bbPreselectedModel;
+                  const isPreselected = m.id === opencode.aliaPreselectedModel;
                   return (
                     <TableRow key={m.id} className={cn("group", isPreselected && "bg-muted/40")}>
                       <TableCell className="px-3 py-2.5">
@@ -2735,7 +2735,7 @@ function OpenCodeTabContent({
                         <div className="flex flex-wrap items-center gap-1.5">
                           {isPreselected ? (
                             <Badge variant="secondary" className="bg-success/15 text-diff-added border-transparent text-xs font-normal">
-                              {t("⭐ Предустановлена в BB")}
+                              {t("⭐ Предустановлена в ALIA")}
                             </Badge>
                           ) : null}
                           {m.isDefaultInOpenCode ? (
@@ -3113,12 +3113,12 @@ function CatalogPage() {
     act(async () => {
       const result = await rpc.call("opencode_set_default_model", {
         modelId,
-        setAsBbDefault: true,
+        setAsAliaDefault: true,
         setAsOpenCodeDefault: true,
       });
       setNotice(
         result.ok
-          ? tp("Предустановленная модель: {0} (BB: {1}, хосты: {2})", modelId, result.bbUpdated ? t("обновлено") : t("пропущено"), result.updatedHosts)
+          ? tp("Предустановленная модель: {0} (ALIA: {1}, хосты: {2})", modelId, result.aliaUpdated ? t("обновлено") : t("пропущено"), result.updatedHosts)
           : t("Не удалось установить модель"),
       );
       return result.overview;
@@ -3222,7 +3222,7 @@ function CatalogPage() {
     new: skillRows.filter((row) => row.state === "only-here").length,
     diverged: skillRows.filter((row) => skillFilterOf(row.state) === "diverged").length,
     stray: skillRows.filter((row) => row.state === "stray-link").length,
-    bbdup: skillRows.filter((row) => row.state === "bb-registry").length,
+    bbdup: skillRows.filter((row) => row.state === "alia-registry").length,
   };
   const skillVisible =
     skillFilter === "all"
@@ -3365,7 +3365,7 @@ function CatalogPage() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div data-bb-ru-skip="" className="flex h-full min-h-0 min-w-0 overflow-hidden">
+      <div data-alia-ru-skip="" className="flex h-full min-h-0 min-w-0 overflow-hidden">
         <DeviceList
           data={data}
           selected={selected}
@@ -3583,7 +3583,7 @@ function CatalogPage() {
         </div>
       </div>
       <Dialog open={fanoutConfirmOpen} onOpenChange={setFanoutConfirmOpen}>
-        <DialogContent data-bb-ru-skip="" className="max-w-md">
+        <DialogContent data-alia-ru-skip="" className="max-w-md">
           <DialogHeader>
             <DialogTitle>{t("Обновить скиллы на всех машинах?")}</DialogTitle>
             <DialogDescription>

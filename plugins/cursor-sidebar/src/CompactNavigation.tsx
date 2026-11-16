@@ -4,11 +4,11 @@ import {
   experimental_useSidebarNavigation as useSidebarNavigation,
   type ExperimentalSidebarFooterDisclosureProps,
   type ExperimentalSidebarHeaderProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import { NavigationNotice } from "./NavigationNotice";
 
-/** Same gap BB uses between its own header controls (--bb-chrome-control-gap). */
+/** Same gap VesnALIA uses between its own header controls (--alia-chrome-control-gap). */
 const CONTROL_GAP = 4;
 
 const CONTROL_CLASS =
@@ -23,8 +23,8 @@ export function CompactNavigation() {
 }
 
 /**
- * Search on the left of the header row. BB's own sidebar
- * toggle sits in its fixed overlay to the left of this slot and BB's own
+ * Search on the left of the header row. VesnALIA's own sidebar
+ * toggle sits in its fixed overlay to the left of this slot and VesnALIA's own
  * back/forward buttons sit to the right of it, so neither is drawn here.
  */
 export function CompactNavigationHeader({

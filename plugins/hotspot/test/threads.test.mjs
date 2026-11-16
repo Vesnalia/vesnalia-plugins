@@ -55,7 +55,7 @@ test("named drops unknown ids, attaches titles and keeps order", () => {
   assert.equal(named(entries, known, 1).length, 1);
 });
 
-test("isNotFound recognises BB's 404 and nothing else", () => {
+test("isNotFound recognises VesnALIA's 404 and nothing else", () => {
   assert.equal(isNotFound(new Error("HTTP 404: Thread not found")), true);
   assert.equal(isNotFound({ code: "thread_not_found" }), true);
   assert.equal(isNotFound(Object.assign(new Error("x"), { status: 404 })), true);

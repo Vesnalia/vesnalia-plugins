@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { experimental_useRpcMutation, experimental_useRpcQuery, type StandardSchemaV1InferInput } from "@get-bb/plugin-sdk/app";
+import { experimental_useRpcMutation, experimental_useRpcQuery, type StandardSchemaV1InferInput } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { ProjectSummary, rpcContract } from "../contract";
 import { contract } from "./contract-client";
@@ -146,7 +146,7 @@ export type Method = keyof Contract & string;
 type Input<M extends Method> = StandardSchemaV1InferInput<Contract[M]["input"]>;
 
 /**
- * A live read through bb's query cache: it loads again when a change invalidates its tags (rpc-tags.ts) and after bb
+ * A live read through VesnALIA's query cache: it loads again when a change invalidates its tags (rpc-tags.ts) and after VesnALIA
  * reconnects, and reopens from the cache. `data` is undefined until it first loads. With `keep`, the last data stays while
  * another input loads, so a scrubbed view does not flash "Loading…", and goes once that input fails, so the page says
  * why. Until `enabled`, it loads nothing.
@@ -193,7 +193,7 @@ export function useRun() {
 }
 
 /**
- * Runs a page action, one at a time, and says in bb's toast when it went through. A refusal needs no toast of Loom's: bb's
+ * Runs a page action, one at a time, and says in VesnALIA's toast when it went through. A refusal needs no toast of Loom's: VesnALIA's
  * query client shows one for every failed write. Resolves true when it went through.
  */
 export function useAction() {
@@ -233,8 +233,8 @@ export function SyncButton({ label, title, syncing, disabled = false, onSync }: 
 }
 
 /**
- * Reads the project's open pull requests now, or only `key`'s, and says in bb's toast what the reads found: a warning when
- * one failed, waits or is still going. A refusal gets bb's own toast, as every failed write does.
+ * Reads the project's open pull requests now, or only `key`'s, and says in VesnALIA's toast what the reads found: a warning when
+ * one failed, waits or is still going. A refusal gets VesnALIA's own toast, as every failed write does.
  */
 export function useSyncPullRequests(slug: string) {
   const sync = useLoomWrite("syncPullRequests");
@@ -254,7 +254,7 @@ export function useSyncPullRequests(slug: string) {
         if (result.problem) toast.warning(result.message);
         else toast.success(result.message);
       } catch {
-        // bb's query client already showed the refusal.
+        // VesnALIA's query client already showed the refusal.
       } finally {
         if (mounted.current) setSyncing(false);
       }

@@ -3,7 +3,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { chromium } from "playwright";
-import { bb, boxes, containerOf, docker, expect, home, makeReport, pause, rpc, skipSetup, waitFor } from "./live-lib.mjs";
+import { alia, boxes, containerOf, docker, expect, home, makeReport, pause, rpc, skipSetup, waitFor } from "./live-lib.mjs";
 
 const run = promisify(execFile);
 const label = process.argv[2] ?? "run";
@@ -55,7 +55,7 @@ function parseTop(text) {
   });
 }
 
-await check("Follow-up", "a thread with no title heads its card on the Threads tab with its first prompt, as BB's sidebar does", async () => {
+await check("Follow-up", "a thread with no title heads its card on the Threads tab with its first prompt, as VesnALIA's sidebar does", async () => {
   await page.goto(`${boxes}/threads`);
   const thread = process.env.LIVE_THREAD;
   const card = page.locator("section", { has: page.getByText(box.name, { exact: true }) }).first();
@@ -148,12 +148,12 @@ await check("Keyboard", "Tab reaches the legend and the chart; the arrows move a
 await shoot("ready-load");
 
 await check("Monitor", "the Monitor turned off: nothing read, and the way to turn it on; then on again: Live back", async () => {
-  bb(["box", "option", "set", "monitor.enabled=false"]);
-  await waitFor(async () => /The Monitor is off, so bb-box reads nothing now/.test(await activity().innerText()), "the off words", 30_000);
+  alia(["box", "option", "set", "monitor.enabled=false"]);
+  await waitFor(async () => /The Monitor is off, so alia-box reads nothing now/.test(await activity().innerText()), "the off words", 30_000);
   const href = await activity().getByRole("link", { name: "Turn it on in Monitor settings" }).getAttribute("href");
   const processes = await page.getByRole("region", { name: "Top processes" }).count();
   await shoot("monitor-off");
-  bb(["box", "option", "set", "monitor.enabled=true"]);
+  alia(["box", "option", "set", "monitor.enabled=true"]);
   await waitFor(async () => /^Read at /.test(await status()), "Live again", 40_000);
   return `off: link ${href}, processes card ${processes ? "shown" : "gone"}; on: ${await status()}`;
 });
@@ -170,7 +170,7 @@ await check("G16", "Live keeps reading while the box stops, and once stopped the
   const stoppingStill = /Stopping/.test(await page.locator("h1 + p").innerText());
   if (shots) await page.screenshot({ path: join(shotDir, "stopping-1440-light.png"), fullPage: true });
   rmSync(join(home, "flags", "stop-slow"), { force: true });
-  await waitFor(async () => /is stopped, so bb-box is not reading it/.test(await activity().innerText()), "the stopped words", 60_000);
+  await waitFor(async () => /is stopped, so alia-box is not reading it/.test(await activity().innerText()), "the stopped words", 60_000);
   const words = await activity().innerText();
   expect(before !== during && stoppingStill, `reading moved from "${before}" to "${during}" while stopping: ${stoppingStill}`);
   await shoot("stopped");

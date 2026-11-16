@@ -2,7 +2,7 @@ import { expect, test, vi } from "vitest";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import type { ReviewMeta } from "./store";
 import { runGit } from "./gh";
 import { splitPatchByFile } from "./patch";
@@ -96,9 +96,9 @@ test("a local review's file is read with git on either side of its range, or fro
 });
 
 test("getFileContents reads a file of the review's diff", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ ...pr, headSha: "head6" });
   await store.savePatch("pr-1", patch);
   runGh.mockImplementation(github({ "src/a.ts?ref=base1": oldText, "src/a.ts?ref=head6": newText }));
@@ -151,9 +151,9 @@ test("a local review reads .gitattributes at the start of its range", async () =
 });
 
 test("getGeneratedFiles lists the review's changed files its repo declares generated", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ ...pr, headSha: "head9" });
   await store.savePatch("pr-1", patch);
   runGh.mockImplementation(github({ ".gitattributes?ref=base9": "src/a.ts linguist-generated\n" }, "base9"));
@@ -161,9 +161,9 @@ test("getGeneratedFiles lists the review's changed files its repo declares gener
 });
 
 test("list_review_files calls the files the repo declares generated what they are", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ ...pr, headSha: "head10" });
   await store.savePatch("pr-1", patch);
   await store.setAssistantThread("pr-1", "thread-test");

@@ -71,7 +71,7 @@ function stashSubjects(cwd: string): string {
 }
 
 function handledStashes(cwd: string): string {
-  return git(cwd, ["for-each-ref", "--format=%(objectname)", "refs/bb-gh-stack/stash-state/"])
+  return git(cwd, ["for-each-ref", "--format=%(objectname)", "refs/alia-gh-stack/stash-state/"])
     .stdout;
 }
 
@@ -111,7 +111,7 @@ test("conflicting tracked edits are auto-stashed and restored on their owner bra
     assert.equal(currentBranch(cwd), "target");
     assert.equal(readFileSync(join(cwd, "shared.txt"), "utf8"), "target\n");
     assert.equal(readFileSync(join(cwd, "untracked-note.txt"), "utf8"), "never stash me\n");
-    assert.match(stashSubjects(cwd), /bb-gh-stack:auto-stash:v1:/);
+    assert.match(stashSubjects(cwd), /alia-gh-stack:auto-stash:v1:/);
     assert.match(stashSubjects(cwd), /handmade stash/);
     assert.deepEqual(await activeAutoStashOwners(deps), new Set(["source"]));
 
@@ -126,7 +126,7 @@ test("conflicting tracked edits are auto-stashed and restored on their owner bra
     assert.match(git(cwd, ["diff", "--cached", "--name-only"]).stdout, /shared\.txt/);
     assert.match(git(cwd, ["diff", "--name-only"]).stdout, /shared\.txt/);
     assert.equal(readFileSync(join(cwd, "untracked-note.txt"), "utf8"), "never stash me\n");
-    assert.match(stashSubjects(cwd), /bb-gh-stack:auto-stash:v1:/);
+    assert.match(stashSubjects(cwd), /alia-gh-stack:auto-stash:v1:/);
     assert.match(stashSubjects(cwd), /handmade stash/);
     assert.match(stashSubjects(cwd), /handmade stash above/);
     assert.match(handledStashes(cwd), /^[0-9a-f]{40,64}$/m);
@@ -180,7 +180,7 @@ test("a failed retry restores the exact plugin stash and leaves handmade stashes
     assert.equal(outcome.ok, false);
     assert.equal(currentBranch(cwd), "source");
     assert.equal(readFileSync(join(cwd, "shared.txt"), "utf8"), "source work\n");
-    assert.match(stashSubjects(cwd), /bb-gh-stack:auto-stash:v1:/);
+    assert.match(stashSubjects(cwd), /alia-gh-stack:auto-stash:v1:/);
     assert.match(stashSubjects(cwd), /handmade stash/);
     assert.match(handledStashes(cwd), /^[0-9a-f]{40,64}$/m);
   } finally {
@@ -208,7 +208,7 @@ test("a restore conflict preserves the stash and records durable recovery state"
     assert.equal(back.ok, false);
     assert.equal(currentBranch(cwd), "source");
     assert.match(git(cwd, ["status", "--short"]).stdout, /^UU shared\.txt$/m);
-    assert.match(stashSubjects(cwd), /bb-gh-stack:auto-stash:v1:/);
+    assert.match(stashSubjects(cwd), /alia-gh-stack:auto-stash:v1:/);
     assert.match(handledStashes(cwd), /^[0-9a-f]{40,64}$/m);
   } finally {
     rmSync(cwd, { recursive: true, force: true });

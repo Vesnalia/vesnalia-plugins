@@ -9,7 +9,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { loadPluginApp } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp } from "@vesnalia/plugin-sdk/testing/app";
 import { useStl, fetchStl } from "./use-stl";
 import { MAX_BYTES } from "./geometry";
 import { BufferGeometry } from "three";
@@ -45,7 +45,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("BB STL opener", () => {
+describe("VesnALIA STL opener", () => {
   it("registers an STL opener", async () => {
     const app = await loadPluginApp(() => import("./app"));
     expect(app.fileOpeners[0].extensions).toEqual(["stl"]);
@@ -89,7 +89,7 @@ describe("BB STL opener", () => {
     ui.unmount();
     expect(graphics.dispose).toHaveBeenCalledTimes(2);
   });
-  it("shows a recoverable load error, retries and can delegate to BB", async () => {
+  it("shows a recoverable load error, retries and can delegate to VesnALIA", async () => {
     vi.mocked(fetch).mockRejectedValueOnce(new Error("Host offline"));
     const { StlPreview } = await import("./app");
     render(

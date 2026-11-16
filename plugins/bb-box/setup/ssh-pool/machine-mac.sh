@@ -1,8 +1,8 @@
 #!/bin/sh
-# bb-box's helper on a Mac in the SSH host pool (047). bb-box's admin user
+# alia-box's helper on a Mac in the SSH host pool (047). alia-box's admin user
 # runs it through sudo, and runs nothing else as root. It has the commands,
 # input, output and exit codes of the Linux helper, machine.sh, and one more,
-# display. setup-mac.sh installs it as /usr/local/libexec/bb-box/machine.
+# display. setup-mac.sh installs it as /usr/local/libexec/alia-box/machine.
 #
 #   machine status [grants | xcode]
 #                                 grants: also Cua Driver's grants, and whether a viewer's input
@@ -15,7 +15,7 @@
 #   machine grant                 stdin: install, box, program, permission (repeated), target
 #   machine granted <generation>  stdin: install, box
 #
-# A Mac VM that is itself the box, as Tart's are, runs the helper from bb-box
+# A Mac VM that is itself the box, as Tart's are, runs the helper from alia-box
 # through sudo with 3 more commands, for its user, with no owner marker and
 # no reset, as the VM goes with the box:
 #
@@ -27,7 +27,7 @@
 #   machine init
 #   machine version
 #
-# Input on stdin is one name=value per line. The state lives in /var/db/bb-box:
+# Input on stdin is one name=value per line. The state lives in /var/db/alia-box:
 #
 #   generation   completed resets, written last by each reset
 #   owner        the box that holds the Mac; made with ln, so one claim wins
@@ -39,8 +39,8 @@
 #
 # Each box gets a new standard user, bbx-<generation>, whose UID is 70000
 # plus the generation modulo 10000. It is hidden from the login window and in
-# the _developer group, and its home is macOS's template with bb-box's,
-# /usr/local/share/bb-box/home, on top. The reset makes the next box's user
+# the _developer group, and its home is macOS's template with alia-box's,
+# /usr/local/share/alia-box/home, on top. The reset makes the next box's user
 # ahead and signs it in, so a free Mac has it at the console:
 #
 # 1. It makes the next user, with a random password, and sets it as the
@@ -83,8 +83,8 @@ export PATH LC_ALL
 ROOT=
 
 VERSION=2
-STATE=$ROOT/var/db/bb-box
-TEMPLATE=$ROOT/usr/local/share/bb-box/home
+STATE=$ROOT/var/db/alia-box
+TEMPLATE=$ROOT/usr/local/share/alia-box/home
 # Cua Driver's bundle ID, which macOS keys its screen-capture approval by.
 CUA_BUNDLE=com.trycua.driver
 # The Data volume, where everything a box can write is. /Users, /private and the like are firmlinks to it.
@@ -100,14 +100,14 @@ ID_SPAN=10000
 # Remote Login or Screen Sharing allows only some users, their group exists,
 # and box users join it.
 JOINS="_developer com.apple.access_ssh com.apple.access_screensharing"
-DEVICE_HOST=$ROOT/usr/local/libexec/bb-box/device-host
+DEVICE_HOST=$ROOT/usr/local/libexec/alia-box/device-host
 SLOTS_STATE=$STATE/host
 EXIT_LENT_WHOLE=7
 EXIT_SLOTS_HELD=3
 CONTAINERS_PROCESS=containermanagerd
 HOMES=/Users
 SNAPSHOT_PROBE=1
-SNAPSHOT_HOOK=$ROOT/usr/local/libexec/bb-box/snapshot-machine
+SNAPSHOT_HOOK=$ROOT/usr/local/libexec/alia-box/snapshot-machine
 SNAPSHOT_HOOK_SECONDS=30
 SNAPSHOT_HOOK_GRACE_SECONDS=2
 SNAPSHOT_HOOK_OUT=$STATE/snapshot-hook.out.$$
@@ -141,7 +141,7 @@ attribute() { dscl . -read "/Users/$1" "$2" 2>/dev/null | sed -n -e "s/^$2: //p"
 # users with a login shell, a UID from 500 to below the box users', not
 # hidden, whose home others or the staff group, which box users are in, may
 # enter. macOS makes a home drwxr-x--- for staff, so an administrator's
-# credentials there, such as BB's or an agent CLI's, are readable by boxes.
+# credentials there, such as ALIA's or an agent CLI's, are readable by boxes.
 open_homes() {
   dscl . -list /Users UniqueID 2>/dev/null | while read -r user uid; do
     number "$uid" && [ "$uid" -ge 500 ] && [ "$uid" -lt "$ID_BASE" ] || continue
@@ -170,7 +170,7 @@ lock() {
   mkdir -p "$STATE"
   exec 9>>"$STATE/lock"
   perl -e 'use Fcntl ":flock"; open(my $f, ">&=", 9) or exit 1; $SIG{ALRM} = sub { exit 3 }; alarm $ARGV[0]; flock($f, $ARGV[0] ? LOCK_EX : LOCK_EX | LOCK_NB) or exit 3' "$1" ||
-    quit 3 "Another bb-box command holds the Mac's lock."
+    quit 3 "Another alia-box command holds the Mac's lock."
 }
 
 # Runs a command for at most $1 seconds. The watchdog ends its sleep when it is stopped.
@@ -552,7 +552,7 @@ status() {
   done
   command -v curl >/dev/null 2>&1 || missing="$missing curl"
   echo "missing=${missing# }"
-  # What BB's installer and a box's GitHub access need: Node.js with npm, git and gh.
+  # What ALIA's installer and a box's GitHub access need: Node.js with npm, git and gh.
   echo "node=$(node --version 2>/dev/null | head -n 1)"
   lacks=''
   for tool in npm git gh; do
@@ -577,7 +577,7 @@ status() {
   # System Integrity Protection: off lets the helper grant permissions (058).
   case $(csrutil status 2>/dev/null) in *disabled*) echo sip=0 ;; *enabled*) echo sip=1 ;; *) echo sip= ;; esac
   # The desktop as video (060), once setup-mac.sh has built it.
-  if [ -x /usr/local/bin/bb-box-stream ]; then echo stream=1; else echo stream=0; fi
+  if [ -x /usr/local/bin/alia-box-stream ]; then echo stream=1; else echo stream=0; fi
   case ${1:-} in
     xcode) xcode ;;
     *) known_xcode ;;
@@ -595,13 +595,13 @@ status() {
 }
 
 # Makes box user $1 with UID $2 and a random password, from macOS's home
-# template and bb-box's. The password file is written last, so a user
+# template and alia-box's. The password file is written last, so a user
 # without one is half made.
 make_user() {
   user=$1 uid=$2
   holder=$(dscl . -list /Users UniqueID 2>/dev/null | awk -v id="$uid" '$2 == id { print $1; exit }')
   if [ -n "$holder" ]; then
-    echo "UID $uid belongs to $holder. bb-box's box users take UIDs $ID_BASE to $((ID_BASE + ID_SPAN - 1))." >&2
+    echo "UID $uid belongs to $holder. alia-box's box users take UIDs $ID_BASE to $((ID_BASE + ID_SPAN - 1))." >&2
     return 1
   fi
   password=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 24)
@@ -609,7 +609,7 @@ make_user() {
   # The password goes through stdin. The full name is the user's own, as
   # sysadminctl refuses one another user has. It can fail and still exit 0.
   said=$(printf '%s\n' "$password" |
-    sysadminctl -addUser "$user" -fullName "bb-box $user" -UID "$uid" -password - -home "/Users/$user" 2>&1)
+    sysadminctl -addUser "$user" -fullName "alia-box $user" -UID "$uid" -password - -home "/Users/$user" 2>&1)
   if [ "$(attribute "$user" UniqueID)" != "$uid" ]; then
     reason=$(printf '%s\n' "$said" | sed -n 's/^.*sysadminctl\[[0-9:]*\] //p' | grep -v -e '^-*$' -e 'clear text password' -e 'Creating user record' | tail -n 1)
     if [ -n "$reason" ]; then echo "sysadminctl did not make $user: $reason" >&2; else echo "sysadminctl did not make $user." >&2; fi
@@ -647,7 +647,7 @@ make_user() {
     >"$home/Library/Preferences/loginwindow.plist" || return 1
   screen_approvals "$home" || return 1
   chown -R "$uid:20" "$home" || return 1
-  # No notices that background items were added, such as Cua's and BB's daemons, as in Tart's image.
+  # No notices that background items were added, such as Cua's and ALIA's daemons, as in Tart's image.
   launchctl disable "gui/$uid/com.apple.backgroundtaskmanagement.agent" >/dev/null 2>&1
   mkdir -p "$STATE/passwords" && chmod 700 "$STATE/passwords" || return 1
   (umask 077 && printf '%s\n' "$password" | put "$STATE/passwords/$user") || return 1
@@ -728,7 +728,7 @@ begin_sign_in() {
   who=$(console)
   case $who in
     '' | root | "$PREFIX"*) ;;
-    *) fail "$who is signed in at the Mac's console, so the Mac cannot sign the next box's user in. Sign $who out, then reset the Mac: sudo /usr/local/libexec/bb-box/machine reset" ;;
+    *) fail "$who is signed in at the Mac's console, so the Mac cannot sign the next box's user in. Sign $who out, then reset the Mac: sudo /usr/local/libexec/alia-box/machine reset" ;;
   esac
   printf 'user=%s\nmethod=%s\nsince=%s\n' "$1" "$2" "$(now)" | put "$STATE/signin"
   case $2 in
@@ -854,7 +854,7 @@ tcc_known() {
   columns=$(sqlite3 "$1" 'PRAGMA table_info(access);' 2>/dev/null | cut -d '|' -f 2 | paste -sd ' ' -)
   [ "$columns" = "$TCC_COLUMNS_MACOS_26" ] || [ "$columns" = "$TCC_COLUMNS_MACOS_27" ]
 }
-UNKNOWN_TCC="TCC's database on this Mac has columns bb-box does not know, as a newer macOS may have, so it writes nothing there. A person grants permissions in System Settings, or a newer bb-box may know them."
+UNKNOWN_TCC="TCC's database on this Mac has columns alia-box does not know, as a newer macOS may have, so it writes nothing there. A person grants permissions in System Settings, or a newer alia-box may know them."
 grant_state() {
   if sip_off; then echo sip=0; else echo sip=1; fi
   if tcc_known "$ROOT$TCC"; then echo tcc=1; else echo tcc=0; fi
@@ -905,7 +905,7 @@ old_leftovers() {
 # entry with that date years ahead keeps the prompt away. The programs: Cua
 # Driver, by its bundle ID; screencapture and the like run by box_run, which
 # replayd charges to sshd-keygen-wrapper, by its path; and, in a Tart VM,
-# what a desktop command starts through bb-box's launcher, by its URL. The
+# what a desktop command starts through alia-box's launcher, by its URL. The
 # grants to capture at all are the operator's (Cua's) or 058's; this is the
 # per-user notice on top of them. The file is the helper's: it is written
 # whole, owned by root until the caller gives the home to the user.
@@ -917,7 +917,7 @@ screen_approvals() { # home
     printf '%s' '<?xml version="1.0" encoding="UTF-8"?>' \
       '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
       '<plist version="1.0"><dict>'
-    for client in "$CUA_BUNDLE" /usr/libexec/sshd-keygen-wrapper file:///usr/local/libexec/bb-box/Launcher.app/; do
+    for client in "$CUA_BUNDLE" /usr/libexec/sshd-keygen-wrapper file:///usr/local/libexec/alia-box/Launcher.app/; do
       printf '%s' "<key>$client</key><dict><key>kScreenCaptureAlertableUsageCount</key><integer>1</integer><key>kScreenCaptureApprovalLastAlerted</key><date>$now</date><key>kScreenCaptureApprovalLastUsed</key><date>$now</date><key>kScreenCapturePrivacyHintDate</key><date>$((year + 5))-01-01T00:00:00Z</date><key>kScreenCapturePrivacyHintPolicy</key><integer>2592000</integer></dict>"
     done
     printf '%s\n' '</dict></plist>'
@@ -935,19 +935,19 @@ screen_approvals() { # home
 # in its own session. A keychain without the identity, as a failed attempt
 # leaves, is made again. $STATE/signing names the user that has it, for
 # box_status.
-SIGNING="bb-box local code signing"
+SIGNING="alia-box local code signing"
 signing_identity() { # user uid
   user=$1 uid=$2
   home=$(attribute "$user" NFSHomeDirectory)
   [ -n "$home" ] && number "$uid" || return 1
-  keychain=$home/Library/Keychains/bb-box-signing.keychain-db
+  keychain=$home/Library/Keychains/alia-box-signing.keychain-db
   run() { launchctl asuser "$uid" /usr/bin/sudo -n -H -u "$user" -- "$@"; }
   rm -f "$STATE/signing"
   run security unlock-keychain -p "" "$keychain" >/dev/null 2>&1
   if ! run security find-identity -p codesigning "$keychain" 2>/dev/null | grep -qF "\"$SIGNING\""; then
     rm -f "$ROOT$keychain"
     # In /tmp, which the user can enter: under sudo, mktemp's own folder is root's alone.
-    work=$(mktemp -d /tmp/bb-box-signing.XXXXXX) || return 1
+    work=$(mktemp -d /tmp/alia-box-signing.XXXXXX) || return 1
     secret=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 24)
     printf '%s\n' '[req]' 'distinguished_name = dn' 'prompt = no' 'x509_extensions = ext' '[dn]' "CN = $SIGNING" '[ext]' \
       'basicConstraints = critical,CA:false' 'keyUsage = critical,digitalSignature' 'extendedKeyUsage = critical,codeSigning' >"$work/cert.cnf"
@@ -977,11 +977,11 @@ signing_identity() { # user uid
 }
 
 # The desktop at the 2x mode of its size, for user $1's session only, where
-# the display offers one (setup-mac.sh's bb-box-display). Best effort: a 1x
+# the display offers one (setup-mac.sh's alia-box-display). Best effort: a 1x
 # desktop still works.
 hidpi() { # user uid
-  [ -x "$ROOT/usr/local/bin/bb-box-display" ] || return 0
-  launchctl asuser "$2" /usr/bin/sudo -n -H -u "$1" -- /usr/local/bin/bb-box-display hidpi >/dev/null 2>&1
+  [ -x "$ROOT/usr/local/bin/alia-box-display" ] || return 0
+  launchctl asuser "$2" /usr/bin/sudo -n -H -u "$1" -- /usr/local/bin/alia-box-display hidpi >/dev/null 2>&1
 }
 
 # The microphone and the camera for box_run's commands, by default (058), in
@@ -1056,7 +1056,7 @@ grant() {
   [ -n "$home" ] || fail "Box user $user has no home."
   case $program in
     "$home"/* | /Applications/*) ;;
-    *) quit 8 "$program is not in $home or /Applications. bb-box grants permissions only to the box user's programs and to apps in /Applications." ;;
+    *) quit 8 "$program is not in $home or /Applications. alia-box grants permissions only to the box user's programs and to apps in /Applications." ;;
   esac
   path=$ROOT$program
   [ -e "$path" ] || quit 8 "There is no $program."
@@ -1072,13 +1072,13 @@ grant() {
     client=$program
   fi
   identifier=$(codesign -dv "$path" 2>&1 | sed -n 's/^Identifier=//p')
-  [ -n "$identifier" ] || quit 8 "$program is not signed. Sign it, with the box's identity: codesign -s \"bb-box local code signing\" --identifier <id> <program>."
+  [ -n "$identifier" ] || quit 8 "$program is not signed. Sign it, with the box's identity: codesign -s \"alia-box local code signing\" --identifier <id> <program>."
   case "$client $identifier" in
-    com.apple.* | *" com.apple."*) quit 8 "$program is Apple's. bb-box grants nothing to Apple's programs." ;;
+    com.apple.* | *" com.apple."*) quit 8 "$program is Apple's. alia-box grants nothing to Apple's programs." ;;
   esac
   case $(basename "$program") in
     Terminal.app | iTerm.app | sh | bash | zsh | dash | ksh | fish | python* | ruby | perl* | node | osascript)
-      quit 8 "$program runs any script, so a grant would reach every script. bb-box grants nothing to shells, terminals or interpreters." ;;
+      quit 8 "$program runs any script, so a grant would reach every script. alia-box grants nothing to shells, terminals or interpreters." ;;
   esac
   requirement=$(codesign -d -r- "$path" 2>&1 | sed -n 's/^designated => //p;s/^# designated => //p' | head -n 1)
   [ -n "$requirement" ] || quit 8 "$program has no code requirement."
@@ -1092,7 +1092,7 @@ grant() {
   user_db=$(user_tcc "$user")
   now=$(now)
   for permission in $permissions; do
-    entry=$(service_of "$permission") || { echo "refused=$permission bb-box grants accessibility, screen-recording, input-monitoring, microphone, camera, system-audio and automation."; continue; }
+    entry=$(service_of "$permission") || { echo "refused=$permission alia-box grants accessibility, screen-recording, input-monitoring, microphone, camera, system-audio and automation."; continue; }
     service=${entry% *} where=${entry#* }
     db=$ROOT$TCC object=UNUSED object_type=0
     if [ "$where" = u ]; then
@@ -1198,7 +1198,7 @@ refuse_while_whole() {
 slot() {
   verb=${1:-}
   [ $# -eq 0 ] || shift
-  slots_set_up || quit 2 "This Mac has no iOS slots set up. Run bb-box's setup-mac.sh on it, with Xcode and its iOS platform, and the whole setup folder beside it."
+  slots_set_up || quit 2 "This Mac has no iOS slots set up. Run alia-box's setup-mac.sh on it, with Xcode and its iOS platform, and the whole setup folder beside it."
   case $verb in
     status | summary)
       [ $# -eq 0 ] || quit 2 "usage: machine slot $verb"
@@ -1234,7 +1234,7 @@ slot() {
     keep-app)
       [ $# -eq 0 ] || quit 2 "usage: machine slot keep-app"
       caller=${SUDO_USER:-}
-      [ -n "$caller" ] && [ "$caller" != root ] || quit 2 "machine slot keep-app copies BB's app from the home of the user who runs it through sudo."
+      [ -n "$caller" ] && [ "$caller" != root ] || quit 2 "machine slot keep-app copies ALIA's app from the home of the user who runs it through sudo."
       home=$(dscl . -read "/Users/$caller" NFSHomeDirectory 2>/dev/null | sed -n 's/^NFSHomeDirectory: //p')
       [ -n "$home" ] || quit 2 "$caller has no home."
       { grep -E '^(server|digest)=' || true; printf 'from=%s\n' "$home"; } | exec /bin/sh "$DEVICE_HOST" keep-app
@@ -1260,14 +1260,14 @@ claim() {
   lock 0
   if [ -e "$STATE/owner" ] || [ -e "$STATE/resetting" ]; then quit 3 "Another box holds the Mac."; fi
   current=$(generation)
-  number "$current" || quit 5 "The Mac has no reset generation in $STATE. Run bb-box's setup-mac.sh on it."
+  number "$current" || quit 5 "The Mac has no reset generation in $STATE. Run alia-box's setup-mac.sh on it."
   [ "$current" = "$expected" ] || quit 6 "The Mac is at reset generation $current, not $expected."
   user=$PREFIX$current
   problem=$(dirt "$user" | head -n 1)
   [ -z "$problem" ] || quit 5 "An earlier box left $problem."
   uid=$((ID_BASE + current % ID_SPAN))
   if [ "$(attribute "$user" UniqueID)" != "$uid" ] || [ ! -s "$STATE/passwords/$user" ]; then
-    quit 5 "Box user $user is not ready. Reset the Mac: sudo /usr/local/libexec/bb-box/machine reset"
+    quit 5 "Box user $user is not ready. Reset the Mac: sudo /usr/local/libexec/alia-box/machine reset"
   fi
   close_slots_or_quit "$EXIT_SLOTS_HELD"
   printf 'install=%s\nbox=%s\nthread=%s\nname=%s\nkind=%s\ncreated=%s\ngeneration=%s\nuser=%s\nuid=%s\n' \
@@ -1351,7 +1351,7 @@ finish() {
   fi
 
   # 4. Remove the old box users, with everything they own. A user's record
-  # goes last, so once nothing is left, as when bb-box asks again while the
+  # goes last, so once nothing is left, as when alia-box asks again while the
   # next user signs in, there is nothing to sweep.
   if [ -n "$(dirt "$next_user" | head -n 1)" ]; then
     [ -z "$old" ] || remove_user "$old" "$old_uid"
@@ -1394,14 +1394,14 @@ release() {
     if number "$current" && [ "$current" -gt "$expected" ]; then echo released=already; else echo released=none; fi
     exit 0
   fi
-  [ "$(field "$marker" install)" = "$install" ] || quit 4 "Another bb-box install holds the Mac."
+  [ "$(field "$marker" install)" = "$install" ] || quit 4 "Another alia-box install holds the Mac."
   [ -z "$box" ] || [ "$(field "$marker" box)" = "$box" ] || quit 4 "Another box holds the Mac."
   [ "$(field "$marker" generation)" = "$expected" ] || quit 4 "The Mac has moved on to a later box."
   finish "$marker"
 }
 
 # For a Mac out of service: resets whatever is on it. It leaves alone a Mac
-# a box holds, whoever asks, and from bb-box, a Mac another install is
+# a box holds, whoever asks, and from alia-box, a Mac another install is
 # resetting. An operator runs it with no input, and it waits while the Mac
 # signs the next user in.
 reset() {
@@ -1409,7 +1409,7 @@ reset() {
   read_input optional
   lock 900
   if [ -e "$STATE/owner" ]; then
-    quit 4 "Box $(field "$STATE/owner" name) of bb-box install $(field "$STATE/owner" install) holds the Mac. Release the box first."
+    quit 4 "Box $(field "$STATE/owner" name) of alia-box install $(field "$STATE/owner" install) holds the Mac. Release the box first."
   elif [ ! -e "$STATE/resetting" ]; then
     close_slots_or_quit 4
     current=$(generation)
@@ -1420,7 +1420,7 @@ reset() {
   other=$(field "$marker" install)
   if [ -n "$install" ] && [ "$other" != "$install" ]; then
     [ -n "$other" ] || quit 4 "An operator's reset of the Mac has not finished. Run it again on the Mac."
-    quit 4 "Another bb-box install, $other, is resetting the Mac."
+    quit 4 "Another alia-box install, $other, is resetting the Mac."
   fi
   if [ -n "$install" ]; then
     finish "$marker"
@@ -1453,7 +1453,7 @@ display() {
 }
 
 # The box's grants (058), for box_status: sip=0 or 1, tcc=1 when TCC's
-# database is one bb-box knows, macos=, signing=1 when the box
+# database is one alia-box knows, macos=, signing=1 when the box
 # user has its signing identity, then a line
 # grant=<permission> TAB <client> TAB <target> for each, oldest first.
 granted() {

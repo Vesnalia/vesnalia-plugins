@@ -1,4 +1,4 @@
-import type { RuntimePermissionPolicy } from "@get-bb/plugin-sdk/provider-bridge";
+import type { RuntimePermissionPolicy } from "@vesnalia/plugin-sdk/provider-bridge";
 import { z } from "zod";
 
 // Keep registration and bridge admission in sync. Restricted modes require an

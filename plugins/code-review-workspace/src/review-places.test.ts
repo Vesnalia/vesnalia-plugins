@@ -1,11 +1,11 @@
 import { expect, test } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { reviewIdentity } from "../lib/review-identity";
 import { remoteRepo } from "./review-places";
 import { testStore } from "./test-store.test-support";
 
-const bbSdk = {
+const aliaSdk = {
   projects: { list: async () => [{ id: "p1", kind: "standard", name: "api", gitRemoteUrl: "git@github.com:flosports/api.git" }, { id: "p2", kind: "personal", name: "Personal", gitRemoteUrl: null }] },
   system: { config: async () => ({ primaryHostId: "host_server" }) },
   hosts: { get: async () => ({ id: "host_server", name: "MaxBook", status: "connected", lifecycle: { phase: "ready" } }) },
@@ -20,9 +20,9 @@ test("a remote's URL gives its owner and repository, in each form git takes", ()
 });
 
 test("the list and an open review carry where a local review's code is, and what tells apart ids that would match", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: bbSdk as any });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: aliaSdk as any });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "ref-1", kind: "ref", gitRef: "HEAD", cwd: "/Users/ana/src/api", status: "ready", createdAt: 1, projectId: "p1" });
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "flosports/api", number: 4512, title: "Fix login race", status: "ready", createdAt: 2, projectId: "p1" });
   await store.saveReview({ targetKey: "pr-2", kind: "pr", repo: "acme/api", number: 7, title: "Other", status: "ready", createdAt: 3, projectId: "p1" });
@@ -41,10 +41,10 @@ test("the list and an open review carry where a local review's code is, and what
   expect(reviewIdentity(review).where).toBe("MaxBook · ~/src/api");
 });
 
-test("with no local review, nothing is asked of bb for places", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: bbSdk as any });
-  await plugin(bb);
-  const store = testStore(bb);
+test("with no local review, nothing is asked of VesnALIA for places", async () => {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: aliaSdk as any });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "flosports/api", number: 4512, title: "Fix login race", status: "ready", createdAt: 2, projectId: "p1" });
   await harness.behavior.callRpc("listReviews", null);
   await harness.behavior.callRpc("getReviewBundle", { targetKey: "pr-1" });
@@ -53,9 +53,9 @@ test("with no local review, nothing is asked of bb for places", async () => {
 });
 
 test("a PR's page names its owner as the list does, where only a local review's repository shares its name", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: bbSdk as any });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: aliaSdk as any });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "ref-1", kind: "ref", gitRef: "HEAD", cwd: "/src/api", status: "ready", createdAt: 1, projectId: "p1" });
   await store.saveReview({ targetKey: "pr-2", kind: "pr", repo: "acme/api", number: 7, title: "Other", status: "ready", createdAt: 3, projectId: "p1" });
   const { reviews } = await harness.behavior.callRpc("listReviews", null) as { reviews: any[] };
@@ -65,9 +65,9 @@ test("a PR's page names its owner as the list does, where only a local review's 
 });
 
 test("the list and a review's page give a local review with no title its guide's title, which names it", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: bbSdk as any });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: aliaSdk as any });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "ref-1", kind: "ref", gitRef: "main...feat", cwd: "/src/api", status: "ready", createdAt: 1, projectId: "p1" });
   await store.saveGuide("ref-1", { title: "Snooze flaky checks", intent: "I", sections: [], unplacedFiles: [] } as any);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "flosports/api", number: 4512, title: "Fix login race", status: "ready", createdAt: 2, projectId: "p1" });
@@ -79,11 +79,11 @@ test("the list and a review's page give a local review with no title its guide's
   expect(review.guideTitle).toBe("Snooze flaky checks");
 });
 
-test("a folder's review is where its folder is: its repository, machine and path, its bb branch read as its slug", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: bbSdk as any });
-  await plugin(bb);
-  const store = testStore(bb);
-  const feature = { environmentId: "env1", hostId: "host_laptop", machine: "FloMac", path: "/Users/ana/src/web-wt", branch: "bb/snooze-checks-thr_ab12", baseRef: "main", repo: "flosports/web" };
+test("a folder's review is where its folder is: its repository, machine and path, its VesnALIA branch read as its slug", async () => {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: aliaSdk as any });
+  await plugin(alia);
+  const store = testStore(alia);
+  const feature = { environmentId: "env1", hostId: "host_laptop", machine: "FloMac", path: "/Users/ana/src/web-wt", branch: "alia/snooze-checks-thr_ab12", baseRef: "main", repo: "flosports/web" };
   await store.saveReview({ targetKey: "br-1", kind: "ref", gitRef: feature.branch, title: "Snooze flaky checks", status: "ready", createdAt: 1, projectId: "p1" });
   await store.setLifecycle("br-1", { feature });
   // Its project's remote is another repository's: the folder's own stands.

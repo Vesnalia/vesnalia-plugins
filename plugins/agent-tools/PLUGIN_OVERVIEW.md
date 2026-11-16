@@ -1,8 +1,8 @@
-## Agent Tools for BB — servers and skills across every machine
+## Agent Tools for VesnALIA — servers and skills across every machine
 
 Nothing on the laptop, a dozen servers on the workstation, half of them on a
 second machine, and skills scattered across five folders? The plugin collects
-MCP configurations from every CLI agent and skill folders on every BB machine
+MCP configurations from every CLI agent and skill folders on every VesnALIA machine
 into one view, then brings them into line with a shared catalogue and canon.
 
 ## Included
@@ -16,13 +16,13 @@ into one view, then brings them into line with a shared catalogue and canon.
 - MetaMCP gateway reads through its API key, showing which servers are behind
   it.
 - The **Skills** tab: the `~/.agents/skills` canon; **copies / new / divergent
-  / unnecessary links / BB duplicates** views; and one-click rules; the canon
+  / unnecessary links / VesnALIA duplicates** views; and one-click rules; the canon
   synchronizes through its own git remote.
-- The `bb tools` CLI and its agent skill.
+- The `alia tools` CLI and its agent skill.
 
 Claude Code, Codex, OpenCode, Cursor, Antigravity, Gemini, Qwen, Kimi, Grok,
 Crush, and the local MetaMCP gateway are supported. Other detected CLIs are
-shown as-is and marked when BB cannot operate on them.
+shown as-is and marked when VesnALIA cannot operate on them.
 
 ## Boundaries
 

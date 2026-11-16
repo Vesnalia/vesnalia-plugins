@@ -1,7 +1,7 @@
 /**
- * What a selection in a tab's terminal does, as in bb's own terminal: when
+ * What a selection in a tab's terminal does, as in VesnALIA's own terminal: when
  * the mouse lets go of a non-empty selection, an "Add to chat" button floats
- * by the pointer, and — when bb's "Copy on select" setting is on — the text
+ * by the pointer, and — when VesnALIA's "Copy on select" setting is on — the text
  * goes to the clipboard with a "Selection copied" toast.
  *
  * Only a selection the user made counts: both happen on the release of a
@@ -9,7 +9,7 @@
  * other way (output, a program, the terminal clearing it).
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { experimental_copyToClipboard } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import { Icon } from "@/components/ui/icon";
@@ -21,7 +21,7 @@ import type { LiveTerminal } from "./live-terminals";
 export interface SelectionAnchor {
   x: number;
   y: number;
-  /** Below the pointer after a drag downwards, above it otherwise, as bb places it. */
+  /** Below the pointer after a drag downwards, above it otherwise, as VesnALIA places it. */
   side: "top" | "bottom";
 }
 
@@ -30,9 +30,9 @@ export interface TerminalSelection {
   anchor: SelectionAnchor;
 }
 
-/** How far down a drag must end, in pixels, for the button to go below the pointer (bb's threshold). */
+/** How far down a drag must end, in pixels, for the button to go below the pointer (VesnALIA's threshold). */
 const DOWNWARD_DRAG_PX = 4;
-/** The button's gap from the pointer and its margin from the view's edges (bb's). */
+/** The button's gap from the pointer and its margin from the view's edges (VesnALIA's). */
 const SIDE_OFFSET_PX = 6;
 const EDGE_PADDING_PX = 8;
 
@@ -41,7 +41,7 @@ export function anchorFor(press: { x: number; y: number } | null, release: { x: 
   return { x: release.x - view.left, y: release.y - view.top, side };
 }
 
-/** Copies `text` the way bb's terminal does, with the same toasts. */
+/** Copies `text` the way VesnALIA's terminal does, with the same toasts. */
 export async function copySelection(text: string): Promise<boolean> {
   const copied = await experimental_copyToClipboard({ text });
   if (copied) toast.success("Selection copied");
@@ -147,7 +147,7 @@ export function useTerminalSelection(
   return { selection, dismiss, onPointerDown };
 }
 
-/** bb's selection menu: the popover chrome and its one action's button. */
+/** VesnALIA's selection menu: the popover chrome and its one action's button. */
 const MENU_CLASS =
   "pointer-events-auto absolute z-50 flex w-auto items-center gap-0.5 rounded-md border bg-popover p-0.5 text-popover-foreground shadow-md outline-none animate-in fade-in-0 zoom-in-95";
 const ACTION_CLASS =
@@ -155,7 +155,7 @@ const ACTION_CLASS =
 
 /**
  * The floating "Add to chat" button, centred on the pointer and kept inside
- * the view, above or below it as bb's own is.
+ * the view, above or below it as VesnALIA's own is.
  */
 export function SelectionMenu({ anchor, onAddToChat }: { anchor: SelectionAnchor; onAddToChat: () => void }) {
   const menu = useRef<HTMLDivElement>(null);

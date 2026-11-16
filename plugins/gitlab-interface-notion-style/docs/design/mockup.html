@@ -444,7 +444,7 @@ table.db td.name{font-weight:500}
 
   <!-- 5 HOME -->
   <section class="screen" id="home">
-    <div class="shead"><h2>5 · Home</h2><span>секция на главной BB</span></div>
+    <div class="shead"><h2>5 · Home</h2><span>секция на главной VesnALIA</span></div>
     <div class="split">
       <div class="frame"><div class="page"><div class="home">
         <div class="row" style="margin-bottom:12px"><h2 class="t-sec" style="margin:0">GitLab</h2><span class="grow"></span><div class="seg"><button>Week</button><button class="on">Month</button><button>Year</button></div></div>
@@ -536,7 +536,7 @@ const open='<span class="status"><i class="dot d-green"></i>Open</span>';
 const V={
  issues:{ph:'Search issues…',act:'New issue',views:['All','Assigned to me|3','Mine'],filters:'<span class="fpill on"><span class="fslot"><svg class="i ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke-dasharray="2.6 2.6"/></svg><button class="fx" aria-label="Remove filter" title="Remove filter"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span><button class="lbl">Status: Open<svg class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span><button class="btn btn-ghost"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Filter</button><button class="btn btn-reset">Reset</button>',
   head:['Name','Author','Status','Assignee','Labels'],w:[null,170,110,170,150],
-  rows:[['Allow work in task worktrees <span class="tag t-blue">⚡ agent</span>',av('DS'),open,av('MK'),'<span class="tag t-red">bug</span>'],['Reduce generated tests in agent runs',av('NS'),open,av('MK'),'<span class="tag t-yellow">debt</span>'],['Review bb setup for the team',av('MK'),open,av('MK'),''],['tech debt: readable error back',av('DS'),open,'','<span class="tag t-purple">debt</span>']],foot:'+ New issue'},
+  rows:[['Allow work in task worktrees <span class="tag t-blue">⚡ agent</span>',av('DS'),open,av('MK'),'<span class="tag t-red">bug</span>'],['Reduce generated tests in agent runs',av('NS'),open,av('MK'),'<span class="tag t-yellow">debt</span>'],['Review VesnALIA setup for the team',av('MK'),open,av('MK'),''],['tech debt: readable error back',av('DS'),open,'','<span class="tag t-purple">debt</span>']],foot:'+ New issue'},
  mrs:{ph:'Search merge requests…',act:null,views:['All','Review requests|3','Mine'],filters:'<span class="fpill on"><span class="fslot"><svg class="i ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke-dasharray="2.6 2.6"/></svg><button class="fx" aria-label="Remove filter" title="Remove filter"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span><button class="lbl">Status: Open<svg class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span><button class="btn btn-ghost"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Filter</button><button class="btn btn-reset">Reset</button>',
   head:['Name','Author','Status','Reviewer','Pipeline'],w:[null,170,110,170,120],
   rows:[['!4629 Connect product tasks to the catalog',av('AL'),open,av('DK'),'<span class="tag t-red">Failed</span>'],['!4636 Weight product dialog',av('AG'),open,av('MK'),'<span class="status"><i class="dot d-green"></i>Passed</span>'],['!4601 Codex in registered worktrees <span class="tag t-gray">draft</span>',av('MK'),open,'','<span class="status"><i class="dot d-yellow"></i>Running</span>'],['!4598 End date on the documents tab',av('EA'),open,av('AG'),'<span class="status"><i class="dot d-green"></i>Passed</span>']]},
@@ -561,7 +561,7 @@ document.getElementById('dbfilters').addEventListener('click',e=>{const x=e.targ
  if(!f.querySelector('.fpill.on'))f.querySelector('.btn-reset')?.remove()});render('issues');
 const h=document.getElementById('heat');const tip=document.getElementById('tip');
 const lv=['var(--s2)','color-mix(in srgb,var(--green) 30%,transparent)','color-mix(in srgb,var(--green) 55%,transparent)','color-mix(in srgb,var(--green) 80%,transparent)','var(--green)'];
-const PR=['partners-backend','bb-plugin-gitlab','masterdata'];
+const PR=['partners-backend','alia-plugin-gitlab','masterdata'];
 const end=new Date(2026,10,2);const N=26*7;const nf=n=>n.toLocaleString('en-US').replace(/,/g,' ');
 for(let i=0;i<N;i++){const d=new Date(end);d.setDate(end.getDate()-(N-1-i));
  const r=Math.abs((Math.sin(i*12.9898)*43758.5453)%1);const we=d.getDay()===0||d.getDay()===6;

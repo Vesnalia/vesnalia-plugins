@@ -1,6 +1,6 @@
-// bb-plugin-deepseek-harness — DeepSeek Harness (dsh) as a first-class bb agent.
+// alia-plugin-deepseek-harness — DeepSeek Harness (dsh) as a first-class VesnALIA agent.
 //
-// The plugin owns four moving parts, all provisioned by `bb deepseek-harness install`:
+// The plugin owns four moving parts, all provisioned by `alia deepseek-harness install`:
 //   1. a launcher that boots dsh with the mode selected in the composer banner
 //   2. three dsh profiles: acp (standard), acp-creator, acp-minimal
 //   3. a dsh plugin (`run_command`) that exposes harness slash commands to ACP
@@ -14,7 +14,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const exec = promisify(execFile);
@@ -26,7 +26,7 @@ const modeSchema = z.enum(MODES);
 const threadIdSchema = z.string().min(3).max(80).regex(/^[A-Za-z0-9_-]+$/u);
 
 const HOME = os.homedir();
-const STATE_DIR = path.join(HOME, ".bb-dsh-modes");
+const STATE_DIR = path.join(HOME, ".alia-dsh-modes");
 const STATE_FILE = path.join(STATE_DIR, "state.json");
 const THREAD_DIR = path.join(STATE_DIR, "threads");
 const LAUNCHER = path.join(STATE_DIR, "launcher.mjs");
@@ -80,7 +80,7 @@ export const rpcContract = defineRpcContract({
     input: z.object({ mode: modeSchema, threadId: threadIdSchema.optional() }),
     output: z.object({ mode: modeSchema }),
   },
-  // Deployed dsh subagents for one bb thread. The roster comes from dsh's own
+  // Deployed dsh subagents for one VesnALIA thread. The roster comes from dsh's own
   // subagentCatalog projection; the activity line comes from the newest zstd
   // frame of that child's session log.
   subagents_get: {
@@ -186,7 +186,7 @@ function ensureLink(target: string, at: string): void {
 }
 
 /** Appended to every profile patch: run_command row + stable compaction policy. */
-const PROFILE_BLOCK = `# Managed by bb plugin deepseek-harness.
+const PROFILE_BLOCK = `# Managed by VesnALIA plugin deepseek-harness.
 # run_command exposes harness slash commands (e.g. /compact) to ACP clients.
 - insert:
     - id: command-tool
@@ -257,17 +257,17 @@ async function provision(): Promise<string[]> {
       },
     },
   ];
-  // BB_CLI is a Node script without an extension on Windows, so run it through
-  // this process's node; a bare "bb" from PATH is the fallback.
+  // ALIA_CLI is a Node script without an extension on Windows, so run it through
+  // this process's node; a bare "VesnALIA" from PATH is the fallback.
   const attempts: { cmd: string; prefix: string[] }[] = [];
-  const cli = process.env.BB_CLI;
+  const cli = process.env.ALIA_CLI;
   if (cli !== undefined) {
     const asScript = cli.endsWith(".cmd") ? cli.slice(0, -4) : cli;
     if (fs.existsSync(asScript)) attempts.push({ cmd: process.execPath, prefix: [asScript] });
   }
-  attempts.push({ cmd: "bb", prefix: [] });
+  attempts.push({ cmd: "alia", prefix: [] });
   let registered = false;
-  let lastError = "no bb binary found";
+  let lastError = "no VesnALIA binary found";
   for (const attempt of attempts) {
     const result = await run(attempt.cmd, [
       ...attempt.prefix,
@@ -307,8 +307,8 @@ function status(): string[] {
   } catch {
     acp = "";
   }
-  rows.push(`dsh-acp command patch: ${acp.includes("bbAcpRunCommand") ? "applied" : "not applied"}`);
-  rows.push(`dsh-acp session/load bridge: ${acp.includes("bbAcpLoadSessionBridge") ? "applied" : "not applied"}`);
+  rows.push(`dsh-acp command patch: ${acp.includes("aliaAcpRunCommand") ? "applied" : "not applied"}`);
+  rows.push(`dsh-acp session/load bridge: ${acp.includes("aliaAcpLoadSessionBridge") ? "applied" : "not applied"}`);
   const selfRepair = fs.existsSync(ACP_PATCH) && fs.existsSync(path.join(TOOL_ASSETS, "index.js"));
   rows.push(`upgrade self-repair: ${selfRepair ? "armed" : "missing (re-run install)"}`);
   return rows;
@@ -354,7 +354,7 @@ function readJson(file: string): any | null {
   }
 }
 
-/** First providerThreadId among a bb thread's events. */
+/** First providerThreadId among a VesnALIA thread's events. */
 function identityOf(events: unknown[]): string | null {
   for (const event of events) {
     const record = event as { data?: { providerThreadId?: unknown } };
@@ -366,15 +366,15 @@ function identityOf(events: unknown[]): string | null {
 
 const sessionCache = new Map<string, { id: string | null; at: number }>();
 
-/** Resolve a bb thread's dsh session id; the identity event carries it. */
-async function resolveSessionId(bb: BbPluginApi, threadId: string): Promise<string | null> {
+/** Resolve a VesnALIA thread's dsh session id; the identity event carries it. */
+async function resolveSessionId(alia: AliaPluginApi, threadId: string): Promise<string | null> {
   const hit = sessionCache.get(threadId);
   // A thread keeps one dsh session for its life; re-resolving costs a CLI spawn.
   if (hit !== undefined && Date.now() - hit.at < 600_000) return hit.id;
 
-  // Preferred: ask bb for the thread's events through the SDK.
+  // Preferred: ask VesnALIA for the thread's events through the SDK.
   try {
-    const events = await (bb.sdk as unknown as {
+    const events = await (alia.sdk as unknown as {
       threads: { events: { list: (input: unknown) => Promise<unknown[]> } };
     }).threads.events.list({ threadId, limit: 100 });
     if (Array.isArray(events)) {
@@ -389,12 +389,12 @@ async function resolveSessionId(bb: BbPluginApi, threadId: string): Promise<stri
   }
 
   const attempts: { cmd: string; prefix: string[] }[] = [];
-  const cli = process.env.BB_CLI;
+  const cli = process.env.ALIA_CLI;
   if (cli !== undefined) {
     const asScript = cli.endsWith(".cmd") ? cli.slice(0, -4) : cli;
     if (fs.existsSync(asScript)) attempts.push({ cmd: "node", prefix: [asScript] });
   }
-  attempts.push({ cmd: "bb", prefix: [] });
+  attempts.push({ cmd: "alia", prefix: [] });
 
   for (const attempt of attempts) {
     const result = await run(attempt.cmd, [...attempt.prefix, "thread", "log", threadId, "--json", "--limit", "100"]);
@@ -676,23 +676,23 @@ async function childDetail(childId: string): Promise<{
   return { prompt: trim(prompt, 1200), result: trim(result, 2200), steps: steps.slice(-20), toolCount };
 }
 
-export default async function plugin(bb: BbPluginApi): Promise<void> {
-  bb.rpc.register(rpcContract, {
+export default async function plugin(alia: AliaPluginApi): Promise<void> {
+  alia.rpc.register(rpcContract, {
     mode_get: ({ threadId }) => ({ mode: readState(), threadMode: threadId === undefined ? null : readThreadMode(threadId) }),
     mode_set: ({ mode, threadId }) => {
       writeState(mode);
       if (threadId !== undefined) writeThreadMode(threadId, mode);
-      bb.log.info(`dsh mode -> ${mode}${threadId === undefined ? "" : ` for ${threadId}`}`);
+      alia.log.info(`dsh mode -> ${mode}${threadId === undefined ? "" : ` for ${threadId}`}`);
       return { mode };
     },
     subagents_get: async ({ threadId }) => {
-      const sessionId = await resolveSessionId(bb, threadId);
+      const sessionId = await resolveSessionId(alia, threadId);
       if (sessionId === null) return { sessionId: null, children: [] };
       const children = await Promise.all(catalogOf(sessionId).map((entry) => childState(entry)));
       return { sessionId, children };
     },
     subagent_detail: async ({ threadId, childId }) => {
-      const sessionId = await resolveSessionId(bb, threadId);
+      const sessionId = await resolveSessionId(alia, threadId);
       // Only children this thread actually deployed are addressable.
       if (sessionId === null || !catalogOf(sessionId).some((entry) => entry.id === childId)) {
         return { prompt: null, result: null, steps: [], toolCount: 0 };
@@ -702,14 +702,14 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
     thread_mode: ({ threadId }) => threadMode(threadId),
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "deepseek-harness",
     summary: "Provision and inspect the DeepSeek Harness integration (dsh profiles, run_command plugin, ACP patch)",
     commands: [
-      { name: "install", summary: "Provision everything and register the acp-deepseek provider", usage: "bb deepseek-harness install" },
-      { name: "status", summary: "Report what is installed", usage: "bb deepseek-harness status [--json]" },
-      { name: "mode", summary: "Show or set the mode new threads use", usage: "bb deepseek-harness mode [standard|creator|minimal] [--json]" },
-      { name: "subagents", summary: "List the dsh subagents a thread deployed, with live status", usage: "bb deepseek-harness subagents [thread-id] [--json]" },
+      { name: "install", summary: "Provision everything and register the acp-deepseek provider", usage: "alia deepseek-harness install" },
+      { name: "status", summary: "Report what is installed", usage: "alia deepseek-harness status [--json]" },
+      { name: "mode", summary: "Show or set the mode new threads use", usage: "alia deepseek-harness mode [standard|creator|minimal] [--json]" },
+      { name: "subagents", summary: "List the dsh subagents a thread deployed, with live status", usage: "alia deepseek-harness subagents [thread-id] [--json]" },
     ],
     async run(argv) {
       const json = argv.includes("--json");
@@ -721,11 +721,11 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
         return reply({ lines }, lines.join("\n"));
       }
       if (command === "subagents") {
-        const threadId = value ?? process.env.BB_THREAD_ID;
+        const threadId = value ?? process.env.ALIA_THREAD_ID;
         if (threadId === undefined) {
-          return { exitCode: 1, stderr: "usage: bb deepseek-harness subagents [thread-id]" };
+          return { exitCode: 1, stderr: "usage: VesnALIA deepseek-harness subagents [thread-id]" };
         }
-        const sessionId = await resolveSessionId(bb, threadId);
+        const sessionId = await resolveSessionId(alia, threadId);
         const children = sessionId === null ? [] : await Promise.all(catalogOf(sessionId).map((entry) => childState(entry)));
         const rows = children.map((child) => {
           const age = child.elapsedMs === null ? "-" : `${(child.elapsedMs / 1000).toFixed(1)}s`;
@@ -737,7 +737,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
       if (command === "mode") {
         if (value === undefined) return reply({ mode: readState() }, `mode: ${readState()}`);
         if (!(MODES as readonly string[]).includes(value)) {
-          return { exitCode: 1, stderr: `usage: bb deepseek-harness mode <${MODES.join("|")}>` };
+          return { exitCode: 1, stderr: `usage: VesnALIA deepseek-harness mode <${MODES.join("|")}>` };
         }
         writeState(value as DshMode);
         return reply({ mode: value }, `mode: ${value}`);
@@ -746,7 +746,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
         const lines = status();
         return reply({ lines }, lines.join("\n"));
       }
-      return { exitCode: 1, stderr: "usage: bb deepseek-harness <install|status|mode>" };
+      return { exitCode: 1, stderr: "usage: VesnALIA deepseek-harness <install|status|mode>" };
     },
   });
 }

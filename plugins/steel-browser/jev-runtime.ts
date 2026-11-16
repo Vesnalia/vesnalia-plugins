@@ -54,9 +54,9 @@ import json, os, time, urllib.request
 import jev_ultrafast.browser as browser_module
 import jev_ultrafast.agent as agent_module
 def cdp(method, session_id=None, **params):
-    request=urllib.request.Request(os.environ["BB_JEV_BRIDGE"],
+    request=urllib.request.Request(os.environ["ALIA_JEV_BRIDGE"],
         data=json.dumps({"method":method,"params":params}).encode(),
-        headers={"Authorization":"Bearer "+os.environ["BB_JEV_TOKEN"],"Content-Type":"application/json"})
+        headers={"Authorization":"Bearer "+os.environ["ALIA_JEV_TOKEN"],"Content-Type":"application/json"})
     with urllib.request.urlopen(request, timeout=30) as response:
         payload=json.load(response)
     if "error" in payload: raise RuntimeError("Browser action failed; inspect before retrying")
@@ -69,7 +69,7 @@ class ProjectBrowser(browser_module.Browser):
         self.call("Emulation.setFocusEmulationEnabled", enabled=True)
     def close(self): pass
 agent_module.Browser=ProjectBrowser
-with agent_module.Agent("about:blank", os.environ["BB_JEV_GOAL"]) as agent:
+with agent_module.Agent("about:blank", os.environ["ALIA_JEV_GOAL"]) as agent:
     started=time.monotonic()
     for state in agent.run(): pass
     agent_ms=round((time.monotonic()-started)*1000)
@@ -158,7 +158,7 @@ export async function prepareJevEnvironment(
   values.TYPESAFE_API_KEY = config.jevApiKey?.trim() || values.TYPESAFE_API_KEY || "";
   values.TEXT_MODEL_API_KEY = config.jevTextModelApiKey?.trim() || values.TEXT_MODEL_API_KEY || "";
   if (!values.TYPESAFE_API_KEY?.trim() || !values.TEXT_MODEL_API_KEY?.trim()) {
-    throw new Error("Jev credentials are missing. Set both API keys in BB Surf settings or the optional credentials file.");
+    throw new Error("Jev credentials are missing. Set both API keys in VesnALIA Surf settings or the optional credentials file.");
   }
   const python = join(config.jevCheckout, ".venv/bin/python");
   try {
@@ -261,9 +261,9 @@ export async function runJevRuntime(
       signal,
       env: {
         ...runtime.env,
-        BB_JEV_BRIDGE: `http://127.0.0.1:${address.port}`,
-        BB_JEV_TOKEN: token,
-        BB_JEV_GOAL: goal,
+        ALIA_JEV_BRIDGE: `http://127.0.0.1:${address.port}`,
+        ALIA_JEV_TOKEN: token,
+        ALIA_JEV_GOAL: goal,
       },
     });
     return parseJevOutcome(result.stdout);

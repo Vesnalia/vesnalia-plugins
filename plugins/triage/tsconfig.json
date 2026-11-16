@@ -14,11 +14,11 @@
       "node"
     ],
     "paths": {
-      "@bb/plugin-sdk": [
-        "./types/bb-plugin-sdk.d.ts"
+      "@vesnalia/plugin-sdk": [
+        "./types/alia-plugin-sdk.d.ts"
       ],
-      "@bb/plugin-sdk/app": [
-        "./types/bb-plugin-sdk-app.d.ts"
+      "@vesnalia/plugin-sdk/app": [
+        "./types/alia-plugin-sdk-app.d.ts"
       ],
       "@/*": [
         "./*"

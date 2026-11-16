@@ -1,34 +1,26 @@
 {
-  "name": "bb-plugin-live-markdown",
+  "name": "alia-plugin-live-markdown",
   "version": "0.1.0",
-  "description": "Live-preview Markdown editing in bb's side panel, with saves that change only the text you typed.",
+  "description": "Live-preview Markdown editing in VesnALIA's side panel, with saves that change only the text you typed.",
   "license": "MIT",
   "author": "bottlebrushes",
-  "homepage": "https://github.com/bottlebrushes/bb-plugin-live-markdown#readme",
-  "bugs": {
-    "url": "https://github.com/bottlebrushes/bb-plugin-live-markdown/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/bottlebrushes/bb-plugin-live-markdown.git"
-  },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "markdown",
     "editor"
   ],
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "build": "env -u BB_CLI bb plugin build .",
-    "types:check": "env -u BB_CLI bb plugin types --check .",
+    "build": "env -u ALIA_CLI alia plugin build .",
+    "types:check": "env -u ALIA_CLI alia plugin types --check .",
     "check": "npm run types:check && npm run typecheck && npm run build"
   },
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.5.9"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.5.9"
   },
-  "bb": {
+  "alia": {
     "name": "Live Markdown",
     "description": "Edit Markdown in place with live preview: formatting renders as you type, tables stay editable tables, and saves change only the text you typed.",
     "branding": {
@@ -50,7 +42,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.9",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -75,5 +66,22 @@
     "tailwind-merge": "^3.4.0",
     "typescript": "^5.7.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.9"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/live-markdown#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/live-markdown"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

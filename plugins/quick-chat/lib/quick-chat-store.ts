@@ -10,7 +10,7 @@ export interface QuickChatState {
   focusRequest: number;
 }
 
-const THREAD_STORAGE_KEY = "bb-plugin-quick-chat:thread-id";
+const THREAD_STORAGE_KEY = "alia-plugin-quick-chat:thread-id";
 
 function readStoredThreadId(): string | null {
   try {

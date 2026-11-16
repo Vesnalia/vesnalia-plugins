@@ -327,7 +327,7 @@ function AreaLayer({
       ) : null}
       <div
         ref={layer}
-        // bb's swipe gestures (open the sidebar, close the panel) stay off while drawing.
+        // VesnALIA's swipe gestures (open the sidebar, close the panel) stay off while drawing.
         data-no-sidebar-swipe=""
         data-no-secondary-panel-swipe=""
         className="absolute inset-0 z-20 cursor-crosshair [-webkit-touch-callout:none]"
@@ -1401,7 +1401,7 @@ export function PagesDoc({
   return (
     <div
       ref={root}
-      // While words are selected here, a sideways drag is not bb's sidebar swipe.
+      // While words are selected here, a sideways drag is not VesnALIA's sidebar swipe.
       data-sidebar-swipe-selectable=""
       className={cn("doc-review-pages relative flex flex-col items-start", mode !== "text" && "select-none")}
       style={{

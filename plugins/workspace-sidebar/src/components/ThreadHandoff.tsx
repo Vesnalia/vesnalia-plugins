@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type ReactElement } from "react";
-import { useRpc, useBbNavigate, experimental_ProviderIcon as ProviderIcon } from "@get-bb/plugin-sdk/app";
+import { useRpc, useAliaNavigate, experimental_ProviderIcon as ProviderIcon } from "@vesnalia/plugin-sdk/app";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowTurnForwardIcon, InformationCircleIcon, Loading03Icon, Tick02Icon, RefreshIcon } from "@hugeicons/core-free-icons";
 import { toast } from "sonner";
@@ -31,7 +31,7 @@ export function ThreadHandoff({ threadId, sourceProviderId, currentModel, onOpen
   onOpenChange(open: boolean): void;
 }) {
   const rpc = useRpc<typeof rpcContract>();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const sidebar = useSidebar();
   const [open, setOpen] = useState(false);
   const [tooltipOpen, setTooltipOpen] = useState(false);
@@ -118,7 +118,7 @@ export function ThreadHandoff({ threadId, sourceProviderId, currentModel, onOpen
           <TooltipTrigger asChild>
             <PopoverTrigger asChild>
               <Button type="button" variant="ghost" size="icon" aria-label="Hand off thread" data-state={open ? "open" : "closed"}
-                className="bb-ws-row-action size-6 max-md:pointer-coarse:size-9" onPointerEnter={warm} onFocus={warm}
+                className="alia-ws-row-action size-6 max-md:pointer-coarse:size-9" onPointerEnter={warm} onFocus={warm}
                 onClick={event => { event.preventDefault(); event.stopPropagation(); changeOpen(!open); }}>
                 <HugeiconsIcon icon={ArrowTurnForwardIcon} data-icon="inline-start" aria-hidden />
               </Button>

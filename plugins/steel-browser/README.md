@@ -1,28 +1,28 @@
-# BB Surf
+# VesnALIA Surf
 
 Watch your agent through the Monitor icon in the thread header, or choose
 **Open browser panel** on a browser handoff. The live view opens on the right.
 Hover over the panel for two seconds to expand it to about two-thirds of the window,
 leaving the active thread visible beside it;
 moving back to chat shrinks it. **Expand browser panel** keeps it wide until
-you choose **Shrink browser panel** or press Escape in BB. Touch devices use
+you choose **Shrink browser panel** or press Escape in VesnALIA. Touch devices use
 these explicit controls. Expansion preserves the browser session and viewer,
 without dimming or blocking the remaining conversation.
 
-The interface follows BB's light/dark theme. BB Surf is the display name and
-`bb surf` is the public CLI command. Existing `steel-browser` plugin IDs,
+The interface follows VesnALIA's light/dark theme. VesnALIA Surf is the display name and
+`alia surf` is the public CLI command. Existing `steel-browser` plugin IDs,
 `::steel-browser{}` handoffs, project profiles, and saved settings remain
 compatible with existing installations. Steel Browser remains the name of the
 upstream browser engine.
 
-The installed plugin contributes browser instructions to every new BB agent
-session through `bb.agents.contributeInstructions`. Agents must check
-`bb surf project` before claiming browser access is unavailable,
+The installed plugin contributes browser instructions to every new VesnALIA agent
+session through `alia.agents.contributeInstructions`. Agents must check
+`alia surf project` before claiming browser access is unavailable,
 including when no dedicated browser tool appears in their tool list.
-Existing live sessions retain their original instructions until BB constructs
+Existing live sessions retain their original instructions until VesnALIA constructs
 a new provider session. This is agent guidance, not an OS-level browser lock.
 
-`bb surf project`, `bb surf run`, and the selected project's
+`alia surf project`, `alia surf run`, and the selected project's
 operational dashboard/session actions automatically provision and bind a missing
 project browser on the plugin server host. The all-projects overview remains
 read-only. Setup reuses a matching container after interrupted setup, waits for
@@ -30,13 +30,13 @@ Chromium, and verifies its project label, profile volume, and loopback ports
 before saving the binding.
 Setup is serialized within the plugin; Docker reserves the container name and
 ports across processes. A conflicting container fails without replacement.
-Docker and an enrolled BB Connect host matching the server's hostname are required.
+Docker and an enrolled VesnALIA Connect host matching the server's hostname are required.
 
 Existing bindings also pass through readiness checks: API health alone is not
 enough; Chromium CDP must respond. Both local probes run concurrently with a
 900ms timeout. A healthy result is reused for ten seconds; subsequent actions
 recheck for a stopped browser. Healthy saved bindings also check the viewer's
-BB Connect share on the Steel host. A missing share is restored only after
+VesnALIA Connect share on the Steel host. A missing share is restored only after
 validating the dedicated container, exposing only its API port and requiring
 the saved viewer origin to match. Every share check validates container
 ownership before trusting an existing route, and CDP is never exposed. Matching
@@ -61,8 +61,8 @@ instead of staying at Connecting indefinitely. Session mutations time out after
 30 seconds without automatic replay; work may still finish on the server, so
 refresh before trying again. Late responses do not replace the recovered state.
 
-Browser navigation stays in the current BB thread with no external viewer
-links. Website logins happen inside the remote browser. BB Connect
+Browser navigation stays in the current VesnALIA thread with no external viewer
+links. Website logins happen inside the remote browser. VesnALIA Connect
 authentication is separate: GitHub OAuth may refuse iframe embedding.
 If that blocks the viewer, report the authentication limitation rather than
 opening an external browser. Session health does not prove viewer access.
@@ -73,30 +73,30 @@ player in place, keeping one stream and the same active tab. Disconnecting the v
 the browser running; releasing a session closes it. Idle sessions remain usable.
 The play control connects the viewer; it does not start a jev-ultrafast agent.
 
-BB Surf gives BB a compact operational surface for a self-hosted
+VesnALIA Surf gives VesnALIA a compact operational surface for a self-hosted
 [Steel](https://github.com/steel-dev/steel-browser) instance. It shows service
 health and active sessions, creates browser sessions, and releases them with an
 explicit confirmation.
 
-In a BB thread, agents render the live browser inside chat by
+In a VesnALIA thread, agents render the live browser inside chat by
 emitting `::steel-browser{}`. The inline viewer and local CDP automation target
 the same Steel session, so agent actions remain visible without opening the
 right panel or navigating away from the thread. When its message scrolls away,
 the latest viewer follows the thread viewport in a compact position, capped to
 55% of the available height so the composer remains accessible. Dashboard state
-refreshes every fifteen seconds while BB is visible without reloading the iframe.
+refreshes every fifteen seconds while VesnALIA is visible without reloading the iframe.
 The inline viewer can be minimized to its compact header and restored without
 stopping the browser session. On phone-width or coarse-pointer clients, a new
 inline viewer starts minimized and does not load until the user explicitly
 restores it. Desktop clients keep the automatic viewer connection. Minimizing
 disconnects the player stream; restoring reconnects it. Only the latest inline
 browser message streams, and hidden browser tabs stop their viewers. A manual
-**BB Surf**
+**VesnALIA Surf**
 thread-panel action remains available from the panel launcher.
 
 ### Agent Configuration
 
-BB Tools / BB Surf exposes the jev-ultrafast checkout path, host-only
+VesnALIA Tools / VesnALIA Surf exposes the jev-ultrafast checkout path, host-only
 credentials file path, and text-model identifier. The inline viewer's settings
 icon shows those saved values. The adapter connects Jev's upstream observation
 and action loop to the project's existing page through a temporary authenticated
@@ -124,7 +124,7 @@ opens a tab without invoking Jev or changing engine policy.
 All viewer surfaces provide Copy, Paste, Reconnect and Take control. Focus the
 website field first, then use Paste. The local masked field supports native
 paste even when the browser denies the Clipboard API. Select Send to forward
-the value through Steel's existing `clipboardBridge`, not BB RPC or agent tools.
+the value through Steel's existing `clipboardBridge`, not VesnALIA RPC or agent tools.
 Values are cleared after sending/closing and are not persisted by this plugin.
 Use Copy after selecting text in the remote browser. It accepts only a
 short-lived response from the exact viewer window and authenticated origin.
@@ -148,48 +148,48 @@ session. Update the label after switching accounts. Forget removes only the
 label, never cookies or the website login.
 
 This follows Kernel's persistent-profile approach, but is not Kernel Managed
-Auth or Steel Cloud's credential vault. BB Taskboard's GitHub/Linear API
+Auth or Steel Cloud's credential vault. VesnALIA Taskboard's GitHub/Linear API
 connections are separate from browser sessions and are not imported. The
 plugin does not inspect or export cookies to guess account identities.
 
 ### Remote CLI HTTP 401
 
-If `bb plugin list` works but a plugin command returns HTTP 401, check whether
-`bb --help` and `"$BB_CLI" --help` report different server URLs. Some custom
-`~/.local/bin/bb` launchers invoke the app entrypoint and discard the injected
-authenticated host proxy. Such launchers should prefer BB's injected CLI:
+If `alia plugin list` works but a plugin command returns HTTP 401, check whether
+`alia --help` and `"$ALIA_CLI" --help` report different server URLs. Some custom
+`~/.local/bin/alia` launchers invoke the app entrypoint and discard the injected
+authenticated host proxy. Such launchers should prefer VesnALIA's injected CLI:
 
 ```sh
-if [ -n "${BB_CLI:-}" ] && [ "$BB_CLI" != "$0" ] && [ -x "$BB_CLI" ]; then
-  exec "$BB_CLI" "$@"
+if [ -n "${ALIA_CLI:-}" ] && [ "$ALIA_CLI" != "$0" ] && [ -x "$ALIA_CLI" ]; then
+  exec "$ALIA_CLI" "$@"
 fi
 ```
 
-Retain the launcher's existing fallback outside BB. Do not copy machine tokens
+Retain the launcher's existing fallback outside VesnALIA. Do not copy machine tokens
 or replace the proxy URL with the public website. Thread terminals also need
-their owning thread context; `bb terminal show "$BB_TERMINAL_SESSION_ID" --json`
+their owning thread context; `alia terminal show "$ALIA_TERMINAL_SESSION_ID" --json`
 returns its `threadId` when present. Agent sessions normally inject it already.
 
-Thread operations resolve BB's project identity server-side. Every project
+Thread operations resolve VesnALIA's project identity server-side. Every project
 requires its own Steel container and named Chromium volume. Missing bindings
 are created on demand by the CLI, and existing bindings cannot be silently overwritten or reused by
 another project. Legacy global endpoint settings remain for compatibility but
 are no longer used by the viewer or CLI. Existing global cookies are not copied.
 
-From a thread belonging to the intended project, run `bb surf project`
+From a thread belonging to the intended project, run `alia surf project`
 for automatic setup. The following manual commands are for recovery only:
 
 ```sh
-bb surf project
-bb connect expose <unused-api-port>
+alia surf project
+alia connect expose <unused-api-port>
 node plugins/steel-browser/scripts/provision-project.mjs <project-id> <unused-api-port> <unused-cdp-port> <returned-https-origin>
-bb surf bind <loopback-api-url> <loopback-cdp-url> <returned-https-origin>
+alia surf bind <loopback-api-url> <loopback-cdp-url> <returned-https-origin>
 ```
 
 Use exact values returned by these commands. Binding verifies the running
 container's project label, profile volume, ports and viewer domain. Provisioning
 is triggered by CLI browser work, not by opening an overview or thread. Ports stay on loopback and the
-viewer uses authenticated BB Connect. Cookie/profile volumes are sensitive host
+viewer uses authenticated VesnALIA Connect. Cookie/profile volumes are sensitive host
 data: never commit or export them through chat. Volume deletion loses logins.
 Persistent cookies survive restart after Chromium flushes them to its profile.
 Abrupt shutdown can lose recent writes; browser-session cookies also follow the
@@ -197,15 +197,15 @@ website's own expiry rules. A profile is not a guarantee that every site keeps
 you signed in forever.
 
 The CDP address is loopback on the Steel host, not necessarily on the agent's
-machine. For a remote BB thread, use the routed CLI for browser actions:
+machine. For a remote VesnALIA thread, use the routed CLI for browser actions:
 
 ```sh
-bb surf run https://example.com
-bb surf inspect
-bb surf click link "More information..."
-bb surf fill textbox "Search" "query"
-bb surf press Enter
-bb surf screenshot | jq -r .base64 | base64 --decode > /tmp/steel-page.png
+alia surf run https://example.com
+alia surf inspect
+alia surf click link "More information..."
+alia surf fill textbox "Search" "query"
+alia surf press Enter
+alia surf screenshot | jq -r .base64 | base64 --decode > /tmp/steel-page.png
 ```
 
 `inspect` returns the current URL, title, and a bounded accessibility snapshot.
@@ -218,26 +218,26 @@ viewer, never via agent command arguments.
 
 ## Engines
 
-BB Tools / BB Surf has project-scoped engine selection and a separate
+VesnALIA Tools / VesnALIA Surf has project-scoped engine selection and a separate
 fallback checkbox. Playwright is the default; fallback defaults off. Auto tries
 Jev first. Selecting Jev or Auto does not authorize paid API calls.
 
-Configure **Jev API key (TypeSafe)** and **Text-model API key** in BB Tools /
-BB Surf, alongside the checkout path and text-model identifier. Both key fields
-use BB's secret storage and are excluded from frontend setting values.
+Configure **Jev API key (TypeSafe)** and **Text-model API key** in VesnALIA Tools /
+VesnALIA Surf, alongside the checkout path and text-model identifier. Both key fields
+use VesnALIA's secret storage and are excluded from frontend setting values.
 The credentials-file path is optional. If set, it must still be a private
 (0600) dotenv file; saved keys override its corresponding keys, and an empty
 saved key falls back to the file. Provider options in the file remain supported.
 Saving credentials does not authorize a paid run.
 
 ```sh
-bb surf engine auto fallback-on
-bb surf run https://example.com
-bb surf run https://example.com "Read the page heading" --allow-paid
+alia surf engine auto fallback-on
+alia surf run https://example.com
+alia surf run https://example.com "Read the page heading" --allow-paid
 ```
 
 URL-only Playwright runs navigate directly. Natural-language Playwright tasks
-return `agent-handoff` with the project's CDP endpoint so the BB agent can carry
+return `agent-handoff` with the project's CDP endpoint so the VesnALIA agent can carry
 out the task; they are not falsely marked completed. Jev needs a goal, configured
 runtime/keys and explicit `--allow-paid`. A fallback is chosen only if preflight
 fails, never after browser execution begins. A Jev `done` result is the model's
@@ -252,26 +252,26 @@ Do not run multiple controllers against the same project's page.
 
 ## Install
 
-Steel, Docker and the optional Jev runtime must be reachable from the BB server
+Steel, Docker and the optional Jev runtime must be reachable from the VesnALIA server
 on dyaus. This implementation does not dispatch runners to a different host.
 
 ```sh
-bb plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.2.0 --subdirectory plugins/steel-browser --tag-prefix steel-browser/
-bb plugin reload steel-browser
+alia plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.2.0 --subdirectory plugins/steel-browser --tag-prefix steel-browser/
+alia plugin reload steel-browser
 ```
 
-You can also install `steel-browser@bb-community`. The published release may
+You can also install `steel-browser@alia-community`. The published release may
 lag the main-branch features described here. For a missing local installation,
 use [the recovery guide](../../docs/plugin-recovery.md); uninstalling deletes
 plugin settings and secrets.
 
-Open **BB Surf** in BB or use:
+Open **VesnALIA Surf** in VesnALIA or use:
 
 ```sh
-bb surf status
-bb surf sessions
-bb surf create
-bb surf release <session-id>
+alia surf status
+alia surf sessions
+alia surf create
+alia surf release <session-id>
 ```
 
 Each project instance supports one active session. Create refuses to replace
@@ -296,7 +296,7 @@ Run from the workspace root:
 
 ```sh
 npm install
-npm run check --workspace bb-plugin-steel-browser
+npm run check --workspace alia-plugin-steel-browser
 ```
 
 Steel is Apache-2.0 software maintained by Steel.dev. This plugin is not

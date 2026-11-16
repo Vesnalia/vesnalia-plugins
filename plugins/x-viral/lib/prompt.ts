@@ -1,4 +1,4 @@
-// Builds the hand-off prompt for a bb agent thread. The agent runs the outer
+// Builds the hand-off prompt for a VesnALIA agent thread. The agent runs the outer
 // autoresearch loop (semantic rewrites) that the plugin cannot do itself.
 import type { Opportunity } from "./opportunities";
 import type { PostContext } from "./features";

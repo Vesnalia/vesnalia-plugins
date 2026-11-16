@@ -60,10 +60,10 @@ export function useRealtimeConnectionState() {
 }
 
 export function experimental_usePluginId() {
-  return "bb-box";
+  return "alia-box";
 }
 
-export function useBbNavigate() {
+export function useAliaNavigate() {
   return { openUrl: async (url: string) => void window.open(url), toThread: () => undefined };
 }
 
@@ -71,6 +71,6 @@ export function useSdk() {
   return { threads: { get: async () => null } };
 }
 
-export function useBbContext() {
+export function useAliaContext() {
   return {};
 }

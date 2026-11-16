@@ -1,10 +1,10 @@
 /**
  * Plain in-memory stand-ins for the ports (`../ports.ts`) and the store, for tests. They record every
- * call so a test can assert what reached bb, and in what order.
+ * call so a test can assert what reached VesnALIA, and in what order.
  */
 import { resolve } from "node:path";
 
-import type { PluginKvStorage } from "@get-bb/plugin-sdk";
+import type { PluginKvStorage } from "@vesnalia/plugin-sdk";
 
 import type { Log } from "../log";
 import type {
@@ -42,7 +42,7 @@ export class FakeThreads implements ThreadsPort {
   private readonly failures = new Map<ThreadMethod, Error>();
   /** Calls held open until a test releases them, by method. */
   private readonly holds = new Map<ThreadMethod, Promise<void>>();
-  /** Each thread's turn events, in the order bb would number them. */
+  /** Each thread's turn events, in the order VesnALIA would number them. */
   private readonly turnEvents = new Map<string, { type: "started" | "completed"; seq: number; at: number }[]>();
   private readonly usages = new Map<string, ContextUsage>();
   /** What `restState` adds to a thread's status; absent fields are at rest. */
@@ -83,7 +83,7 @@ export class FakeThreads implements ThreadsPort {
     this.workspaces.set(environmentId, path);
   }
 
-  /** A thread's project and branch. A thread never given one answers null, as a thread bb does not have would. */
+  /** A thread's project and branch. A thread never given one answers null, as a thread VesnALIA does not have would. */
   setOrigin(id: string, origin: ThreadOrigin): void {
     this.origins.set(id, { ...origin });
   }
@@ -96,7 +96,7 @@ export class FakeThreads implements ThreadsPort {
     this.update(id, { status });
   }
 
-  /** Changes a thread's fields as bb would after some event, without a port call. */
+  /** Changes a thread's fields as VesnALIA would after some event, without a port call. */
   set(id: string, fields: Partial<ThreadInfo>): void {
     this.update(id, fields);
   }
@@ -121,7 +121,7 @@ export class FakeThreads implements ThreadsPort {
     else this.usages.set(id, { ...usage });
   }
 
-  /** Archives without recording a call, as the captain archiving it in bb would. */
+  /** Archives without recording a call, as the captain archiving it in VesnALIA would. */
   archiveNow(id: string): void {
     this.update(id, { archivedAt: this.clock++ });
   }
@@ -225,7 +225,7 @@ export class FakeThreads implements ThreadsPort {
       title: args.title,
       status: "starting",
       parentThreadId: args.parentThreadId ?? null,
-      // bb's own default when a spawn names none.
+      // VesnALIA's own default when a spawn names none.
       parentNotifications: args.parentNotifications ?? "auto",
       projectId: args.projectId,
       environmentId: args.environment.kind === "reuse" ? args.environment.environmentId : `env_${this.nextId}`,
@@ -328,7 +328,7 @@ export class FakeThreads implements ThreadsPort {
     this.calls.push({ method, args });
   }
 
-  /** A later turn of the event loop, after any hold on the method; rejects as bb's client does once aborted. */
+  /** A later turn of the event loop, after any hold on the method; rejects as VesnALIA's client does once aborted. */
   private async settle(method: ThreadMethod, signal: AbortSignal | undefined): Promise<void> {
     await tick();
     const held = this.holds.get(method);
@@ -400,7 +400,7 @@ export function fakeProjects(existing: { id: string; path: string; name?: string
   return new FakeProjects(existing);
 }
 
-/** `PluginKvStorage` over a Map, with values copied through JSON as bb's would be. */
+/** `PluginKvStorage` over a Map, with values copied through JSON as VesnALIA's would be. */
 export function memoryKv(): PluginKvStorage & { entries: Map<string, string> } {
   const entries = new Map<string, string>();
   return {

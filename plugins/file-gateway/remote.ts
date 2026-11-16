@@ -1,7 +1,7 @@
 import {Client as FtpClient} from 'basic-ftp';
 import {createRequire} from 'node:module';
 import type SftpClientType from 'ssh2-sftp-client';
-// Keep ssh2 optional native probes out of the BB bundler. Managed Git installs retain runtime dependencies.
+// Keep ssh2 optional native probes out of the VesnALIA bundler. Managed Git installs retain runtime dependencies.
 const SftpClient=createRequire(import.meta.url)('ssh2-sftp-client') as typeof SftpClientType;
 import {Writable} from 'node:stream';
 import {posix} from 'node:path';

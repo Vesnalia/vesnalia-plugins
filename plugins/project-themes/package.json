@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-project-themes",
+  "name": "alia-plugin-project-themes",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.45",
-    "bbPluginSdk": ">=0.6.15",
+    "alia": ">=0.45",
+    "aliaPluginSdk": ">=0.6.15",
     "node": ">=22.18.0"
   },
-  "bb": {
+  "alia": {
     "name": "Project Themes",
     "description": "Subtle project colors for thread rows, browser tabs and the background, with independent toggles.",
     "branding": {
@@ -20,7 +20,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.15",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -35,10 +34,10 @@
     "@testing-library/react": "^16.3.2"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
-    "dev": "bb plugin dev",
+    "dev": "alia plugin dev",
     "prepack": "npm run build"
   },
   "files": [
@@ -56,14 +55,22 @@
     "name": "lumenikoly",
     "url": "https://github.com/lumenikoly"
   },
+  "description": "Subtle project colors for thread rows, browser tabs and the background, with independent toggles.",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.15"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/project-themes#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lumenikoly/useful-bb-plugins.git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
     "directory": "plugins/project-themes"
   },
-  "homepage": "https://github.com/lumenikoly/useful-bb-plugins/tree/main/plugins/project-themes#readme",
-  "description": "Subtle project colors for thread rows, browser tabs and the background, with independent toggles.",
   "bugs": {
-    "url": "https://github.com/lumenikoly/useful-bb-plugins/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

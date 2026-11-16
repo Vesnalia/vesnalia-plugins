@@ -290,7 +290,7 @@ class FakeXhr {
       uploadId: params.get("uploadId") ?? "",
       offset: Number(params.get("offset") ?? "0"),
       text,
-      token: this.headers.get("x-bb-plugin-token") ?? "",
+      token: this.headers.get("x-alia-plugin-token") ?? "",
     });
     if (this.aborted || this.settled) return;
     this.settled = true;

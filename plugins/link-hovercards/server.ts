@@ -1,11 +1,11 @@
-// bb-plugin-link-hovercards — backend entry.
+// alia-plugin-link-hovercards — backend entry.
 //
 // Answers one question for the app: what does this link point at? GitHub goes
 // through the host entry (host.ts), which runs `gh` on the server's machine,
 // because the server has no child_process. Linear goes straight to its API with
 // the keys in settings. Each answer is kept briefly so hovering the same link
 // twice costs nothing.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   hostContract,
   rpcContract,
@@ -28,8 +28,8 @@ const LINEAR_TIMEOUT_MS = 10_000;
 
 type Result = GithubResult | LinearResult;
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     linearApiKeys: {
       type: "string",
       label: "Linear API keys",
@@ -39,7 +39,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   const cache = new Map<string, { at: number; result: Result }>();
   const inFlight = new Map<string, Promise<Result>>();
   /** API key → the workspace URL key it belongs to. */
@@ -76,9 +76,9 @@ export default async function plugin(bb: BbPluginApi) {
 
   /** The server's own machine, else any connected one. */
   async function hostId(): Promise<string | null> {
-    const own = (await bb.sdk.system.config()).primaryHostId;
+    const own = (await alia.sdk.system.config()).primaryHostId;
     if (own !== null) return own;
-    const hosts = await bb.sdk.hosts.list();
+    const hosts = await alia.sdk.hosts.list();
     return hosts.find((entry) => entry.status === "connected")?.id ?? null;
   }
 
@@ -128,12 +128,12 @@ export default async function plugin(bb: BbPluginApi) {
     return failure(lastError);
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     github: (ref) => remembered(`github:${ref.repo.toLowerCase()}#${ref.number}:${ref.kind}`, () => github(ref)),
     linear: (ref) => remembered(`linear:${ref.workspace}/${ref.identifier}`, () => linear(ref)),
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     cache.clear();
     inFlight.clear();
     keyWorkspaces.clear();

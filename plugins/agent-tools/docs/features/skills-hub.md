@@ -19,21 +19,21 @@ sources:
 ---
 # Hub skills and categories
 
-The hub skills feature manages BB's session-wide skill library, organizes skills into a two-level category tree, and exposes the work through the Skills page and `bb tools` (`hub-skills.ts:8-12`, `skills-page.tsx:140-199`, `skills-hub-service.ts:904-915`).
+The hub skills feature manages VesnALIA's session-wide skill library, organizes skills into a two-level category tree, and exposes the work through the Skills page and `alia tools` (`hub-skills.ts:8-12`, `skills-page.tsx:140-199`, `skills-hub-service.ts:904-915`).
 
 ## Purpose
 
-The hub library is `<experimental_dataDir>/skills` in the BB server process. BB stages these skills into sessions; the plugin stores category assignments and classifier state separately in BB key-value storage (`hub-skills.ts:8-12`, `skills-hub-service.ts:254-261`, `skills-hub-service.ts:283-309`). Machine skill folders are read to find skills missing from the hub; import copies them to the hub. The separate legacy machine-canon behavior is described in [Agent skill canon and rollout](skills.md).
+The hub library is `<experimental_dataDir>/skills` in the VesnALIA server process. VesnALIA stages these skills into sessions; the plugin stores category assignments and classifier state separately in VesnALIA key-value storage (`hub-skills.ts:8-12`, `skills-hub-service.ts:254-261`, `skills-hub-service.ts:283-309`). Machine skill folders are read to find skills missing from the hub; import copies them to the hub. The separate legacy machine-canon behavior is described in [Agent skill canon and rollout](skills.md).
 
 ## How it works
 
 1. `SkillsPage` loads `skills_hub`, holds the hub view and error state, polls every five seconds while classification is running, and fetches detail when a skill is selected (`skills-page.tsx:140-210`).
-2. `createSkillsHubService` sets the hub root from `bb.server.experimental_dataDir`, caches a skill listing for 15 seconds, reads the category tree, assignments, review queue and classifier state from KV, and exposes handlers (`skills-hub-service.ts:263-310`, `skills-hub-service.ts:479-521`, `skills-hub-service.ts:659-737`).
+2. `createSkillsHubService` sets the hub root from `alia.server.experimental_dataDir`, caches a skill listing for 15 seconds, reads the category tree, assignments, review queue and classifier state from KV, and exposes handlers (`skills-hub-service.ts:263-310`, `skills-hub-service.ts:479-521`, `skills-hub-service.ts:659-737`).
 3. `listHubSkills` enumerates top-level directories and describes each folder; `readHubSkill` rejects unsafe names or missing directories, then returns metadata, a capped `SKILL.md`, file list, and Git history (`hub-skills.ts:80-105`, `hub-skills.ts:147-163`).
 4. Classification first prunes assignments and review items for skills no longer on the hub, then places eligible family siblings, then queues remaining unplaced skills for the hidden model thread (`classifier.ts:223-253`).
 5. `placeByFamily` repeatedly places a skill when its same-prefix siblings already agree on a still-existing subsection; it writes `source: "family"` and does not change the category tree (`classifier.ts:175-200`, `categories.ts:169-190`).
 6. The model calls `agent_tools_skill_tree` and `agent_tools_skill_assign`. `applyModelAssign` rejects unknown or already assigned skill names, clamps confidence to 0..1, sends confidence below 0.6 to review, and otherwise validates/creates the two-level path and records a model assignment (`classifier.ts:76-88`, `classifier.ts:127-173`, `categories.ts:44-47`, `categories.ts:126-167`).
-7. Publishing from a connected machine packs an archive via host RPC; `publishArchive` unpacks to a temporary directory, requires exactly one safe skill folder, rejects blocking BB validation problems, optionally returns a dry-run result, backs up a replaced skill, installs it, and commits/pushes unless Git ignores that name (`skills-hub-service.ts:564-578`, `hub-skills.ts:276-332`).
+7. Publishing from a connected machine packs an archive via host RPC; `publishArchive` unpacks to a temporary directory, requires exactly one safe skill folder, rejects blocking VesnALIA validation problems, optionally returns a dry-run result, backs up a replaced skill, installs it, and commits/pushes unless Git ignores that name (`skills-hub-service.ts:564-578`, `hub-skills.ts:276-332`).
 8. Removing a hub skill validates the name and existence, snapshots its folder, deletes it, and commits/pushes unless ignored (`hub-skills.ts:347-357`).
 9. On service startup, a persisted `classifier.running` flag is reset and classification is kicked off again; errors in this recovery task are logged as warnings (`skills-hub-service.ts:390-398`).
 
@@ -43,7 +43,7 @@ The hub library is `<experimental_dataDir>/skills` in the BB server process. BB 
 | Model placement | Skill is present, has no prior assignment, confidence is at least 0.6, and category names pass validation (`classifier.ts:127-173`, `categories.ts:126-167`). | Assignment source is `model`; missing sections or subsections are created. |
 | Manual review | Model confidence is below 0.6, or two model attempts end without an assignment (`classifier.ts:141-149`, `classifier.ts:285-300`). | Review record remains available for explicit acceptance. |
 | Publish dry run | Archive passes validation and `dryRun` is true (`hub-skills.ts:276-307`). | Returns `ok: true` and replacement status without changing the hub or Git state. |
-| Publish rejection | Archive extraction fails, contains other than one top-level folder, has an unsafe name, or has blocking BB problems (`hub-skills.ts:282-302`, `hub-skills.ts:320-331`). | Returns `ok: false`; temporary extraction directory is removed in `finally`. |
+| Publish rejection | Archive extraction fails, contains other than one top-level folder, has an unsafe name, or has blocking VesnALIA problems (`hub-skills.ts:282-302`, `hub-skills.ts:320-331`). | Returns `ok: false`; temporary extraction directory is removed in `finally`. |
 | Hub removal | Name is invalid or the directory is absent (`hub-skills.ts:348-352`). | Returns `ok: false` with an error and does not remove a directory. |
 | Reload recovery | KV says classification was running when the service starts (`skills-hub-service.ts:390-398`). | Clears the flag, logs resumption, and starts a fresh classifier run from current hub/store state. |
 
@@ -67,10 +67,10 @@ The hub library is `<experimental_dataDir>/skills` in the BB server process. BB 
 2. It reads tree, assignments and review in parallel. Missing values become the seeded tree or empty arrays. Store mutations are chained through `storeLock` so overlapping UI and tool writes each read the prior result, then persist all three values (`skills-hub-service.ts:283-309`). Classifier state merges stored state with its empty defaults (`skills-hub-service.ts:312-314`).
 3. It builds the classifier adapters: skills without `SKILL.md` are skipped; configuration selects provider/model and either a configured project or the first personal/available project; the thread is hidden and gets only the classifier role metadata and category tools (`skills-hub-service.ts:316-362`, `skills-hub-service.ts:316-324`, `skills-hub-service.ts:400-442`).
 4. On startup, a persisted running flag is cleared and a new classifier run starts; recovery exceptions are logged (`skills-hub-service.ts:390-398`). It then registers the classifier tools and creates the hub handlers (`skills-hub-service.ts:400-420`, `skills-hub-service.ts:659-737`).
-5. `refreshMachines` visits every host returned by BB, stores each count or a truncated per-host error, then persists the full result (`skills-hub-service.ts:444-475`). `view` checks whether the root exists, reads skills/store/Git/classifier/machine/config state concurrently, and joins valid assignments and review entries onto listed skills (`skills-hub-service.ts:479-521`).
+5. `refreshMachines` visits every host returned by VesnALIA, stores each count or a truncated per-host error, then persists the full result (`skills-hub-service.ts:444-475`). `view` checks whether the root exists, reads skills/store/Git/classifier/machine/config state concurrently, and joins valid assignments and review entries onto listed skills (`skills-hub-service.ts:479-521`).
 6. Handlers return refreshed views after category edits, classification start, and machine refresh. Publish packs from a host, validates and installs the archive, invalidates cache and starts classification on successful real publish; pull catches pack/RPC errors into a failure object. Remove invalidates cache and returns the operation result with a fresh view; cleanup refreshes machine counts only when `dryRun` is false (`skills-hub-service.ts:564-590`, `skills-hub-service.ts:712-735`).
 7. The machine refresh records skill-home counts and discovered skills by host. Import selects discovered skills absent from the hub, packs and validates each one, then copies it into the hub; the source folder stays on the machine (`skills-hub-service.ts:444-475`, `skills-hub-service.ts:593-609`, `host-skills.ts:144-163`).
-8. The Settings tab renders `SettingsPage`; the Skills page's “change” action opens that tab. It loads classifier and cleanup settings, asks BB for provider models, and saves individual edits. Changing provider or model clears the saved classifier thread ID and count so the next skill starts a fresh thread (`app.tsx:919-940`, `app.tsx:3553-3558`, `skills-page.tsx:350-362`, `settings-page.tsx:37-79`, `settings-page.tsx:100-199`, `skills-hub-service.ts:617-678`).
+8. The Settings tab renders `SettingsPage`; the Skills page's “change” action opens that tab. It loads classifier and cleanup settings, asks VesnALIA for provider models, and saves individual edits. Changing provider or model clears the saved classifier thread ID and count so the next skill starts a fresh thread (`app.tsx:919-940`, `app.tsx:3553-3558`, `skills-page.tsx:350-362`, `settings-page.tsx:37-79`, `settings-page.tsx:100-199`, `skills-hub-service.ts:617-678`).
 
 | Service branch | Condition | Result or failure |
 |---|---|---|
@@ -79,7 +79,7 @@ The hub library is `<experimental_dataDir>/skills` in the BB server process. BB 
 | Missing category values | Tree, assignments or review key is absent. | Seed default tree and use empty assignment/review arrays (`skills-hub-service.ts:283-290`). |
 | No classifier project configured | Project ID setting is blank. | Choose a personal project, then the first listed project; throw when the list is empty (`skills-hub-service.ts:316-324`). |
 | Host refresh failure | One `skill_homes_count` call rejects. | Store that host with empty homes and an error string clipped to 200 characters; continue through the remaining hosts (`skills-hub-service.ts:444-475`). |
-| Machine skill scan | Machine folder cannot be resolved, is owned by a CLI/BB, or lacks a `SKILL.md`. | Do not include that folder in discovered skills; for repeated names, retain the copy with the newest `SKILL.md` mtime (`host-skills.ts:132-163`). |
+| Machine skill scan | Machine folder cannot be resolved, is owned by a CLI/ALIA, or lacks a `SKILL.md`. | Do not include that folder in discovered skills; for repeated names, retain the copy with the newest `SKILL.md` mtime (`host-skills.ts:132-163`). |
 | Provider/project/model list unavailable | Provider or project list call rejects; model lookup rejects. | Settings view uses an empty provider/project list; model lookup returns no models and a clipped error for display (`skills-hub-service.ts:617-656`). |
 | Settings save fails | The settings RPC rejects while saving a patch. | The page shows the error and clears its busy state (`settings-page.tsx:67-97`). |
 | Category write fails | Store callback, KV read, or one of the three KV writes rejects. | Handler rejects; lock chain recovers for the next call (`skills-hub-service.ts:283-309`). |
@@ -94,7 +94,7 @@ The hub library is `<experimental_dataDir>/skills` in the BB server process. BB 
 - RPC field bounds and required `dryRun` inputs are owned by the [API reference](../api.md) (`skills-hub-service.ts:154-223`).
 - Import only considers skills discovered on the selected machine that are absent from the hub. It copies through the publish validation path; it does not remove the source (`skills-hub-service.ts:593-609`).
 - Machine cleanup runs only when called explicitly; the Settings page setting controls whether the Skills page offers its cleanup button (`skills-hub-service.ts:728-735`, `skills-page.tsx:458-473`, `settings-page.tsx:180-199`).
-- Publishing replaces the destination only after the staged folder has no blocking BB validation problem; replacement snapshots live below `~/.agents/skills-backups` (`hub-skills.ts:298-319`, `hub-skills.ts:245-259`).
+- Publishing replaces the destination only after the staged folder has no blocking VesnALIA validation problem; replacement snapshots live below `~/.agents/skills-backups` (`hub-skills.ts:298-319`, `hub-skills.ts:245-259`).
 - Hub reads cap `SKILL.md` content at 200,000 characters and the file list at 400 entries; inaccessible or unsafe skill names produce `null` (`hub-skills.ts:45-46`, `hub-skills.ts:107-127`, `hub-skills.ts:147-163`).
 
 ### Category path creation (`ensurePath`)
@@ -148,6 +148,6 @@ This helper does not persist by itself: the category RPC wraps it in the seriali
 - [Agent Tools data model](../data-model.md)
 - [Agent Tools decisions](../decisions.md)
 - [Machine skill discovery](machine-skill-discovery.md)
-- [BB server skill mirror archive](skills-server-mirror.md)
+- [VesnALIA server skill mirror archive](skills-server-mirror.md)
 - [Agent skill canon and rollout](skills.md)
 - [Agent Tools overview](../overview.md)

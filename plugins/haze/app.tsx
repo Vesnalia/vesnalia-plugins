@@ -4,11 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import {
   definePluginApp,
-  useBbContext,
+  useAliaContext,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import {
   activeBackground,
@@ -49,7 +49,7 @@ function useSnapshot() {
   return { rpc, snapshot, setSnapshot, error, setError };
 }
 
-/** Follows BB's theme, which the pixel effects use to pick black or white paper. */
+/** Follows VesnALIA's theme, which the pixel effects use to pick black or white paper. */
 function useLightTheme(): boolean {
   const read = () => !document.documentElement.classList.contains("dark");
   const [light, setLight] = useState(read);
@@ -134,7 +134,7 @@ function unpaint(): void {
 /** Mounted once per window; keeps <html> in sync with the focused project's background. */
 function HazeRoot() {
   const { snapshot } = useSnapshot();
-  const { projectId } = useBbContext();
+  const { projectId } = useAliaContext();
   const background = snapshot ? activeBackground(snapshot, projectId) : null;
   const image = useEffectImage(background?.imageUrl ?? null, background?.settings.effect ?? "none");
   useEffect(() => {
@@ -486,7 +486,7 @@ function HazeSettingsPage() {
   const [busy, setBusy] = useState(false);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [projectId, setProjectId] = useState("");
-  const context = useBbContext();
+  const context = useAliaContext();
   useEffect(() => {
     rpc.call("projects", null).then((list) => {
       setProjects(list);

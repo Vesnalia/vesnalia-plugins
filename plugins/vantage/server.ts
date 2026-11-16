@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { createCli, type OverviewRequest } from "./src/cli";
 import { buildOverview, buildShell, type CollectDeps, type HostCall } from "./src/collect";
@@ -16,13 +16,13 @@ const MAX_RECORDED_EDITS = 50;
 const SETTINGS_CHANNEL = "vantage:settings";
 const FILE_ENVIRONMENT_CHANGES = ["work-status-changed", "git-refs-changed", "status-changed"];
 
-export default function vantage(bb: BbPluginApi): void {
-  const hostClient = bb.hosts.experimental_client({ contract: hostContract });
+export default function vantage(alia: AliaPluginApi): void {
+  const hostClient = alia.hosts.experimental_client({ contract: hostContract });
   // HostCall's generic method name is what the client's per-method return type cannot see through.
   const host: HostCall = <M extends HostMethod>(method: M, input: HostInput<M>, options: { hostId: string; signal?: AbortSignal }) =>
     hostClient.call(method, input, { ...options, timeoutMs: HOST_TIMEOUT_MS }) as Promise<HostOutput<M>>;
-  // bb.sdk only works while the plugin is bound, so it is read inside calls, never at load.
-  const events: EventsSdk = { threads: { events: { list: (args) => bb.sdk.threads.events.list(args) } } };
+  // alia.sdk only works while the plugin is bound, so it is read inside calls, never at load.
+  const events: EventsSdk = { threads: { events: { list: (args) => alia.sdk.threads.events.list(args) } } };
   const edits = createEditIndex(events);
   // A build that started before an invalidation, whoever caused it, may have read the old state, so no later request may join it.
   const cache = createRepoCache({ pending: (threadIds) => fileEvents.pending(threadIds), onInvalidate: () => building.clear() });
@@ -31,7 +31,7 @@ export default function vantage(bb: BbPluginApi): void {
   });
   const roots = createRootCache();
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     windowHours: {
       type: "number", default: 24, label: "Time window for the full-screen page (hours)",
       description: "The full-screen page shows threads active within this many hours, plus anything running and threads archived in that time.",
@@ -45,15 +45,15 @@ export default function vantage(bb: BbPluginApi): void {
     // Read by the app; the server only declares them.
     badge: {
       type: "boolean", default: true, label: "Badge the Vantage icon when a thread needs you",
-      description: "Shows on Vantage's icon in bb's navigation how many threads wait for your answer or failed.",
+      description: "Shows on Vantage's icon in VesnALIA's navigation how many threads wait for your answer or failed.",
     },
     toasts: {
       type: "boolean", default: false, label: "Show a toast when a thread needs you",
-      description: "Pops up a toast when a thread starts waiting for your answer or fails, unless you are looking at it. bb's own notifications are separate.",
+      description: "Pops up a toast when a thread starts waiting for your answer or fails, unless you are looking at it. VesnALIA's own notifications are separate.",
     },
     closestBase: {
       type: "boolean", default: true, label: "Compare with the closest base branch",
-      description: "Compares each worktree with whichever likely base its branch is fewest commits ahead of: the base bb records, that branch on origin, origin's default branch, origin/main or origin/master. Off, Vantage compares with the base bb records, as Vantage 0.8 did.",
+      description: "Compares each worktree with whichever likely base its branch is fewest commits ahead of: the base VesnALIA records, that branch on origin, origin's default branch, origin/main or origin/master. Off, Vantage compares with the base VesnALIA records, as Vantage 0.8 did.",
     },
     historyThreshold: {
       type: "number", default: 50, label: "Leave out branch history above this many commits",
@@ -71,32 +71,32 @@ export default function vantage(bb: BbPluginApi): void {
       experimental_schema: z.number().int().min(1).max(1_000_000),
     },
   });
-  const store = createReviewStore(() => bb.storage.kv);
-  const wholeStore = createWholeStore(() => bb.storage.kv);
+  const store = createReviewStore(() => alia.storage.kv);
+  const wholeStore = createWholeStore(() => alia.storage.kv);
   const countingOf = (values: { closestBase: boolean; historyThreshold: number; historyShare: number; folderLimit: number }): Counting => ({
     pick: values.closestBase, historyThreshold: values.historyThreshold, historyShare: values.historyShare, folderLimit: values.folderLimit,
   });
   const deps = async (): Promise<CollectDeps> => {
     const [values, whole] = await Promise.all([settings.get(), wholeStore.keys()]);
-    return { sdk: bb.sdk, host, edits, cache, roots, counting: countingOf(values), whole };
+    return { sdk: alia.sdk, host, edits, cache, roots, counting: countingOf(values), whole };
   };
   const COUNTING_KEYS = ["closestBase", "historyThreshold", "historyShare", "folderLimit"] as const;
   settings.onChange((next, prev) => {
     if (next.windowHours !== prev.windowHours || next.maxThreads !== prev.maxThreads || COUNTING_KEYS.some((key) => next[key] !== prev[key])) {
       cache.clear();
       building.clear();
-      bb.realtime.publish(SETTINGS_CHANNEL, {});
+      alia.realtime.publish(SETTINGS_CHANNEL, {});
     }
   });
 
   const unsubscribers = [
-    bb.sdk.subscribe({
+    alia.sdk.subscribe({
       event: "thread:changed",
       callback(event) {
         if (event.id !== undefined) fileEvents.handle(event.id, event.changes, event.metadata?.eventTypes);
       },
     }),
-    bb.sdk.subscribe({
+    alia.sdk.subscribe({
       event: "environment:changed",
       callback(event) {
         if (event.id === undefined || !event.changes.some((change) => FILE_ENVIRONMENT_CHANGES.includes(change))) return;
@@ -104,7 +104,7 @@ export default function vantage(bb: BbPluginApi): void {
       },
     }),
   ];
-  bb.onDispose(() => { for (const unsubscribe of unsubscribers) unsubscribe(); });
+  alia.onDispose(() => { for (const unsubscribe of unsubscribers) unsubscribe(); });
 
   const allOptionsFor = async (hours?: number) => {
     const { windowHours, maxThreads } = await settings.get();
@@ -137,7 +137,7 @@ export default function vantage(bb: BbPluginApi): void {
     return buildShell(input.target.kind === "all" ? { ...base, allOptions: await allOptionsFor() } : base, input);
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     shell: (input) => shell(input),
     overview: (input) => overview(input),
     patch: async (input) => loadPatch(await deps(), input),
@@ -148,13 +148,13 @@ export default function vantage(bb: BbPluginApi): void {
       await wholeStore.set(key, whole);
       // A page build started before the choice would answer the refresh with the old one.
       building.clear();
-      bb.realtime.publish(SETTINGS_CHANNEL, {});
+      alia.realtime.publish(SETTINGS_CHANNEL, {});
       return { ok: true as const };
     },
     reviewed: ({ keys }) => store.reviewed(keys),
     setReviewed: async (input) => {
       const marks = await store.setReviewed(input);
-      bb.rpc.experimental_invalidate([reviewedTag(input.key)]);
+      alia.rpc.experimental_invalidate([reviewedTag(input.key)]);
       return marks;
     },
     recordedEdits: async ({ threadIds, rawPaths }) => ({
@@ -163,11 +163,11 @@ export default function vantage(bb: BbPluginApi): void {
   });
   // `ancestorIds` runs from the parent up to the tree's root.
   const rootOf = async (threadId: string, signal: AbortSignal): Promise<string> => {
-    const found = await bb.sdk.threads.experimental_listAncestors({ threadIds: [threadId], signal });
+    const found = await alia.sdk.threads.experimental_listAncestors({ threadIds: [threadId], signal });
     return found.threads.find((entry) => entry.threadId === threadId)?.ancestorIds.at(-1) ?? threadId;
   };
-  bb.cli.register(createCli(async (input, signal) => (
+  alia.cli.register(createCli(async (input, signal) => (
     input.target.kind === "tree" ? buildOverview(await deps(), input, signal) : overview(input)
   ), rootOf));
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }

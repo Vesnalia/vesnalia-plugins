@@ -2,8 +2,8 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ThreadLimitState } from "./contract";
-import type { BbPluginApi, PluginSidebarThread } from "@get-bb/plugin-sdk";
-import { makeQueueEntry, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi, PluginSidebarThread } from "@vesnalia/plugin-sdk";
+import { makeQueueEntry, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { createWired } from "./test-wired";
 import { renderSlot } from "./test-slot";
 import {
@@ -79,7 +79,7 @@ function mount({
     sidebarThreads: {
       status: "ready",
       threads: child ? [thread({ id: "parent", title: "Parent work" }), limited] : [limited],
-      projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+      projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
     },
     rpc: {
       getSidebarSettings: () => ({ ...defaultSidebarSettings, inactiveThreadsEnabled: false, threadDisplay: display }),
@@ -141,11 +141,11 @@ describe("sidebar rate-limit recovery", () => {
     wired.harness.inspection.sdk.stub("threads.queuedMessages.list", async () => queue);
     wired.harness.inspection.sdk.stub(
       "threads.send",
-      async (args: Parameters<BbPluginApi["sdk"]["threads"]["send"]>[0]) => {
+      async (args: Parameters<AliaPluginApi["sdk"]["threads"]["send"]>[0]) => {
         const entry = makeQueueEntry({
           id: "continue_1",
           sendAt: args.sendAt!,
-          originPluginId: "bb-sidebar",
+          originPluginId: "alia-sidebar",
           content: args.input,
           state: "scheduled",
         });

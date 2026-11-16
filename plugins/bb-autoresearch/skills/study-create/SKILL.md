@@ -32,7 +32,7 @@ Pick the noise class:
 - `noisy`: wall-clock time, latency, throughput. Paired, interleaved runs with a bootstrap CI of the median and a sequential test. Calibration measures the noise first, and (`side_runs = "auto"`, the default) picks how many runs of `measure` make one side of a pair so a side lasts at least `min_side_seconds`: a benchmark that already loops internally for several seconds stays at one run. When best gets much faster later, the plugin recalibrates by itself (shorter runs are noisier relative to themselves; that isn't drift).
 - `expensive`: one run takes many minutes. One screening run per candidate against the calibrated per-run noise; a promising run is confirmed with `confirm_runs` (default 3) fresh runs.
 
-Pick the bench hosts (`oracle.bench_hosts`): `["local"]` (default) measures in plugin checkouts on this machine. Any other entry is a BB machine name or host id (see `bb host list`); that machine keeps its own clone and receives commits as git bundles. A dedicated, quiet machine of the production architecture is best. When the bench host is this machine (the laptop case), **single-machine mode** (`oracle.single_machine`, default `"auto"`) turns on: gates take the same bench lock as measurements, one at a time, so tests never run while a candidate is timed. Size the gate for that: its time now counts as bench time per candidate. `quiet_bench = true` also holds new worker turns while a measurement runs. Ask whether there is a **holdout** workload that lives only on the bench host (a different input set): it is run on every win before promotion, and agents only learn pass/fail.
+Pick the bench hosts (`oracle.bench_hosts`): `["local"]` (default) measures in plugin checkouts on this machine. Any other entry is a VesnALIA machine name or host id (see `alia host list`); that machine keeps its own clone and receives commits as git bundles. A dedicated, quiet machine of the production architecture is best. When the bench host is this machine (the laptop case), **single-machine mode** (`oracle.single_machine`, default `"auto"`) turns on: gates take the same bench lock as measurements, one at a time, so tests never run while a candidate is timed. Size the gate for that: its time now counts as bench time per candidate. `quiet_bench = true` also holds new worker turns while a measurement runs. Ask whether there is a **holdout** workload that lives only on the bench host (a different input set): it is run on every win before promotion, and agents only learn pass/fail.
 
 **Remote machines:** read [remote bench setup](references/remote-bench.md) before choosing a provider or drafting `[[oracle.remote_bench]]`. It covers production hardware matching, credentials/seed safety, setup, holdout delivery, rotation and gate placement.
 
@@ -74,7 +74,7 @@ The plugin commits each worker's worktree for it (`git add`), so a repo without 
 
 Guardrails are judged on a confidence interval, like the primary metric: a guardrail breaks a win only when its whole CI is beyond a limit; when the CI straddles a limit it is flagged inconclusive, not a rejection. Calibration measures each guardrail's noise and fails when its CI at a full evaluation is not narrower than the limit (such a guardrail can never be shown within it); the report names the fixes: loosen the limit, or raise `n_max` (or make its measurement steadier). With several bench hosts, each decides with its own win threshold and a candidate goes to the quietest free host; a host much noisier than the others is left out (`[oracle] max_host_noise_ratio`, default 2).
 
-Rules: globs are repo-relative (`**` spans directories). `bench_hosts` entries must name enrolled BB machines (checked when you call `study_propose`). A `remote_bench` entry is checked against its provider when the human approves the spec (calibration): available, enough machines, cores in range. Unknown keys are rejected.
+Rules: globs are repo-relative (`**` spans directories). `bench_hosts` entries must name enrolled VesnALIA machines (checked when you call `study_propose`). A `remote_bench` entry is checked against its provider when the human approves the spec (calibration): available, enough machines, cores in range. Unknown keys are rejected.
 
 ## 4. Submit
 
@@ -82,10 +82,10 @@ Call `study_propose` with the full TOML. If it returns errors, fix them and call
 
 Then tell the human, in two or three lines, that the study waits for them on the **Studies** page (sidebar → Studies → `<slug>`; the header badge of this thread links there):
 
-1. **Now — review the spec:** Studies → `<slug>` → Oracle. The human approves calibration (`bb study calibrate <slug>`); tests and baseline measurements run, but no worker starts yet.
-2. **Next — review calibration:** only when ready, the human approves starting workers (`bb study start <slug>`), which spends tokens and bench time.
+1. **Now — review the spec:** Studies → `<slug>` → Oracle. The human approves calibration (`alia study calibrate <slug>`); tests and baseline measurements run, but no worker starts yet.
+2. **Next — review calibration:** only when ready, the human approves starting workers (`alia study start <slug>`), which spends tokens and bench time.
 
-Keep optional idea seeding out of that handoff unless asked. Ideas can be added later on the Ideas tab or with `bb study ideas add`.
+Keep optional idea seeding out of that handoff unless asked. Ideas can be added later on the Ideas tab or with `alia study ideas add`.
 
 Keep numbers in the plugin's convention: better is positive, in the metric's own terms ("12% lower p99", "+12%").
 
@@ -95,4 +95,4 @@ Never approve, calibrate, start, or pause yourself (neither in the app nor with 
 
 ## Revising the spec later
 
-Once the study has run, `study_propose` with the same slug records a **pending** spec; the study keeps running on the old one. If the oracle is unchanged (budget, agents, scope limits), the human applies it on the Oracle tab ("Apply spec…", or `bb study approve <slug>`). If the oracle changed (metric, guardrails, commands, protocol, bench hosts, holdout, protected paths), the human approves and recalibrates there ("Approve and recalibrate…", or `bb study calibrate <slug>`): in-flight measurements are cancelled, best is calibrated under the new oracle, and approving that calibration opens a new segment.
+Once the study has run, `study_propose` with the same slug records a **pending** spec; the study keeps running on the old one. If the oracle is unchanged (budget, agents, scope limits), the human applies it on the Oracle tab ("Apply spec…", or `alia study approve <slug>`). If the oracle changed (metric, guardrails, commands, protocol, bench hosts, holdout, protected paths), the human approves and recalibrates there ("Approve and recalibrate…", or `alia study calibrate <slug>`): in-flight measurements are cancelled, best is calibrated under the new oracle, and approving that calibration opens a new segment.

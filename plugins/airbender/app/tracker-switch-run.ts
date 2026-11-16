@@ -6,7 +6,7 @@
 //
 // Why: the order differs by direction, and getting it wrong changes a
 // repository's tracker when the owner was told it would not be
-// (bead-bb-c9l.18). It is kept apart from the window so that every way
+// (bead-alia-c9l.18). It is kept apart from the window so that every way
 // through can be tested without one.
 //
 // Design notes:
@@ -19,7 +19,7 @@
 //   window closed half-way must not switch anything afterwards.
 //
 // Gotchas:
-// - No imports from React or BB: loaded by the tests as it is.
+// - No imports from React or VesnALIA: loaded by the tests as it is.
 
 /** How one copy ended. */
 export interface CopyEnd {

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { migrationSchema, type MigrationPage } from "./nudger-contract.js";
 import { LEGACY_ACTIVATION_KEY, LEGACY_DATA_PREFIX, LEGACY_SETTINGS_KEY, type ImportedSettings } from "./migration-storage.js";
 
@@ -8,7 +8,7 @@ export interface MigratableSettings {
   get(): Promise<{ detector?: string; typesafeApiKey?: string }>;
 }
 export interface MigrationOptions {
-  store: BbPluginApi["storage"]["kv"];
+  store: AliaPluginApi["storage"]["kv"];
   settings: MigratableSettings;
   readPage(cursor: string | null): Promise<MigrationPage>;
   signal?: AbortSignal;
@@ -23,7 +23,7 @@ export async function migrateHeadquarters(options: MigrationOptions): Promise<bo
   for (;;) {
     options.signal?.throwIfAborted();
     const page = migrationSchema.parse(await options.readPage(cursor));
-    // BB standard settings writes do not share our queue and have no CAS. Never write
+    // VesnALIA standard settings writes do not share our queue and have no CAS. Never write
     // settings during import: the operator saves their own key in Nudger's secret setting,
     // and that save turns Nudger on. The encrypted source stays intact.
     await settings.get();

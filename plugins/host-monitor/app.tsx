@@ -13,7 +13,7 @@ import { LineChart } from "echarts/charts";
 import { AriaComponent, DatasetComponent, GridComponent, MarkLineComponent, TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";
 import { SVGRenderer } from "echarts/renderers";
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 
 import { Badge } from "./components/ui/badge.tsx";
 import { Button } from "./components/ui/button.tsx";
@@ -302,13 +302,13 @@ function FleetDashboard() {
 
       <section className="host-monitor__fleet" aria-labelledby="fleet-heading">
         <header>
-          <div><h2 id="fleet-heading">Hosts</h2><p>Every machine enrolled in BB</p></div>
+          <div><h2 id="fleet-heading">Hosts</h2><p>Every machine enrolled in VesnALIA</p></div>
           <Badge>{visibleMachines.length} of {fleet?.total ?? 0}</Badge>
         </header>
         {fleet == null ? <FleetSkeleton /> : visibleMachines.length === 0 ? (
           <div className="host-monitor__empty">
             <strong>{fleet.total === 0 ? "No machines enrolled" : "No matching machines"}</strong>
-            <span>{fleet.total === 0 ? "Connect a machine to BB to begin monitoring." : `Nothing matches “${query.trim()}”.`}</span>
+            <span>{fleet.total === 0 ? "Connect a machine to VesnALIA to begin monitoring." : `Nothing matches “${query.trim()}”.`}</span>
           </div>
         ) : (
           <ul className="host-monitor__machine-grid">

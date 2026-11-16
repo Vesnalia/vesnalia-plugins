@@ -1,4 +1,4 @@
-<!-- bb-project-folders:agents:start -->
+<!-- alia-project-folders:agents:start -->
 # Section rules
 
 User instructions take priority. Read the project AGENTS.md and parent sections first — their rules apply alongside these.
@@ -22,15 +22,15 @@ User instructions take priority. Read the project AGENTS.md and parent sections 
 
 ## Files and autonomy
 - Keep the section root for real work (code, documents); everything temporary lives in its folder — artifacts/, notes/, tmp/ or a named subfolder.
-- Chat files go to .bb/chats/<chat id>/: reports in artifacts/, notes and handoff in notes/, throwaway work in tmp/.
-- Never edit thread.json or history/ — BB owns them.
+- Chat files go to .vesnalia/chats/<chat id>/: reports in artifacts/, notes and handoff in notes/, throwaway work in tmp/.
+- Never edit thread.json or history/ — VesnALIA owns them.
 - Inside the task scope decide yourself: don't ask what you can look up in the repository or docs.
-<!-- bb-project-folders:agents:end -->
+<!-- alia-project-folders:agents:end -->
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **bb-plugin-env-catalog** (950 symbols, 1774 relationships, 84 execution flows).
+This project is indexed by GitNexus as **alia-plugin-env-catalog** (950 symbols, 1774 relationships, 84 execution flows).
 
 > Index stale? Run `node .gitnexus/run.cjs analyze --index-only` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? Bootstrap with `npx`, `bunx`, or `pnpm dlx` — e.g. `bunx gitnexus@latest analyze` (npm 11 npx crash; #1939).
 
@@ -54,10 +54,10 @@ This project is indexed by GitNexus as **bb-plugin-env-catalog** (950 symbols, 1
 
 | Resource | Use for |
 | --- | --- |
-| `gitnexus://repo/bb-plugin-env-catalog/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/bb-plugin-env-catalog/clusters` | All functional areas |
-| `gitnexus://repo/bb-plugin-env-catalog/processes` | All execution flows |
-| `gitnexus://repo/bb-plugin-env-catalog/process/{name}` | Step-by-step execution trace |
+| `gitnexus://repo/alia-plugin-env-catalog/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/alia-plugin-env-catalog/clusters` | All functional areas |
+| `gitnexus://repo/alia-plugin-env-catalog/processes` | All execution flows |
+| `gitnexus://repo/alia-plugin-env-catalog/process/{name}` | Step-by-step execution trace |
 
 ## CLI
 

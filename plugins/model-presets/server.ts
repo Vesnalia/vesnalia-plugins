@@ -1,11 +1,11 @@
-// bb-plugin-model-presets — backend entry.
+// alia-plugin-model-presets — backend entry.
 //
-// Owns the preset list (ordered, in bb.storage.kv), the "active" preset the
+// Owns the preset list (ordered, in alia.storage.kv), the "active" preset the
 // user last applied from the new-thread composer, and the thread → preset
-// links that let `bb.agents.configure` inject a preset's custom instructions
+// links that let `alia.agents.configure` inject a preset's custom instructions
 // into every thread created with it.
 import { randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { parseShortcut, serializeShortcut } from "./lib/shortcut";
 import {
@@ -114,21 +114,21 @@ export function formatPresetInstructions(preset: Preset): string | null {
   return `Instructions from the "${preset.name}" model preset this thread was started with:\n\n${body}`;
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   // --- state -------------------------------------------------------------
-  // `bb.agents.configure` is synchronous, so everything it needs lives in
+  // `alia.agents.configure` is synchronous, so everything it needs lives in
   // memory and is written through to kv.
   let presets: Preset[] = parsePresets(
-    await bb.storage.kv.get<unknown>(KV_PRESETS),
+    await alia.storage.kv.get<unknown>(KV_PRESETS),
   );
   let activePresetId: string | null =
-    (await bb.storage.kv.get<string | null>(KV_ACTIVE)) ?? null;
+    (await alia.storage.kv.get<string | null>(KV_ACTIVE)) ?? null;
   let shortcut: string =
-    shortcutSchema.safeParse(await bb.storage.kv.get<string>(KV_SHORTCUT))
+    shortcutSchema.safeParse(await alia.storage.kv.get<string>(KV_SHORTCUT))
       .data ?? DEFAULT_SHORTCUT;
   const threadLinks = new Map<string, ThreadPresetLink>(
     Object.entries(
-      (await bb.storage.kv.get<Record<string, ThreadPresetLink>>(
+      (await alia.storage.kv.get<Record<string, ThreadPresetLink>>(
         KV_THREAD_LINKS,
       )) ?? {},
     ),
@@ -140,7 +140,7 @@ export default async function plugin(bb: BbPluginApi) {
     const parsed = z.array(presetSchema).safeParse(raw);
     if (!parsed.success) {
       if (raw !== undefined && raw !== null) {
-        bb.log.warn(`stored presets failed validation; starting empty`);
+        alia.log.warn(`stored presets failed validation; starting empty`);
       }
       return [];
     }
@@ -148,12 +148,12 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function persistPresets(): Promise<void> {
-    await bb.storage.kv.set(KV_PRESETS, presets);
-    bb.realtime.publish(PRESETS_CHANGED, { count: presets.length });
+    await alia.storage.kv.set(KV_PRESETS, presets);
+    alia.realtime.publish(PRESETS_CHANGED, { count: presets.length });
   }
   async function persistActive(): Promise<void> {
-    await bb.storage.kv.set(KV_ACTIVE, activePresetId);
-    bb.realtime.publish(PRESETS_CHANGED, { count: presets.length });
+    await alia.storage.kv.set(KV_ACTIVE, activePresetId);
+    alia.realtime.publish(PRESETS_CHANGED, { count: presets.length });
   }
   function persistThreadLinks(): void {
     if (threadLinks.size > MAX_THREAD_LINKS) {
@@ -162,10 +162,10 @@ export default async function plugin(bb: BbPluginApi) {
         .slice(0, threadLinks.size - MAX_THREAD_LINKS);
       for (const [threadId] of oldest) threadLinks.delete(threadId);
     }
-    bb.storage.kv
+    alia.storage.kv
       .set(KV_THREAD_LINKS, Object.fromEntries(threadLinks))
       .catch((error: unknown) => {
-        bb.log.warn(`failed to persist thread links: ${String(error)}`);
+        alia.log.warn(`failed to persist thread links: ${String(error)}`);
       });
   }
 
@@ -211,7 +211,7 @@ export default async function plugin(bb: BbPluginApi) {
     presets = remaining;
     if (activePresetId === id) {
       activePresetId = null;
-      await bb.storage.kv.set(KV_ACTIVE, null);
+      await alia.storage.kv.set(KV_ACTIVE, null);
     }
     await persistPresets();
     return true;
@@ -235,8 +235,8 @@ export default async function plugin(bb: BbPluginApi) {
   }
   async function setShortcut(next: string | null): Promise<string> {
     shortcut = next ?? DEFAULT_SHORTCUT;
-    await bb.storage.kv.set(KV_SHORTCUT, shortcut);
-    bb.realtime.publish(PRESETS_CHANGED, { count: presets.length });
+    await alia.storage.kv.set(KV_SHORTCUT, shortcut);
+    alia.realtime.publish(PRESETS_CHANGED, { count: presets.length });
     return shortcut;
   }
   async function setActive(id: string | null): Promise<string | null> {
@@ -249,7 +249,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   // --- rpc -----------------------------------------------------------------
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     presets_list: () => ({ presets, activePresetId, shortcut }),
     presets_create: (fields) => createPreset(fields),
     presets_update: ({ id, ...fields }) => updatePreset(id, fields),
@@ -264,7 +264,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // --- thread linking ------------------------------------------------------
-  bb.events.on("thread.created", ({ thread }) => {
+  alia.events.on("thread.created", ({ thread }) => {
     recentlyCreated.set(thread.id, Date.now());
     // Keep the map bounded; entries only matter for a few minutes.
     if (recentlyCreated.size > 200) {
@@ -274,12 +274,12 @@ export default async function plugin(bb: BbPluginApi) {
       }
     }
   });
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     recentlyCreated.delete(thread.id);
     if (threadLinks.delete(thread.id)) persistThreadLinks();
   });
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const preset = resolvePresetForThread(context);
     const instructions = preset === null ? null : formatPresetInstructions(preset);
     return {
@@ -320,11 +320,11 @@ export default async function plugin(bb: BbPluginApi) {
   // --- cli -----------------------------------------------------------------
   const usage = [
     "Usage:",
-    "  bb model-presets list [--json]",
-    "  bb model-presets show <id|name> [--json]",
-    "  bb model-presets thread [<thread-id>] [--json]",
-    "  bb model-presets add --name <name> --provider <id> --model <model> [--effort <level>] [--speed default|fast] [--instructions <text>] [--json]",
-    "  bb model-presets remove <id> [--json]",
+    "  VesnALIA model-presets list [--json]",
+    "  VesnALIA model-presets show <id|name> [--json]",
+    "  VesnALIA model-presets thread [<thread-id>] [--json]",
+    "  VesnALIA model-presets add --name <name> --provider <id> --model <model> [--effort <level>] [--speed default|fast] [--instructions <text>] [--json]",
+    "  VesnALIA model-presets remove <id> [--json]",
     "",
     "Presets are applied from the New thread screen; the CLI only manages them.",
   ].join("\n");
@@ -364,35 +364,35 @@ export default async function plugin(bb: BbPluginApi) {
     return { flags, positional };
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "model-presets",
     summary: "Manage the model presets offered on the New thread screen",
     commands: [
       {
         name: "list",
         summary: "List presets in menu order",
-        usage: "bb model-presets list [--json]",
+        usage: "alia model-presets list [--json]",
       },
       {
         name: "show",
         summary: "Show one preset",
-        usage: "bb model-presets show <id|name> [--json]",
+        usage: "alia model-presets show <id|name> [--json]",
       },
       {
         name: "thread",
         summary: "Show which preset a thread was started with",
-        usage: "bb model-presets thread [<thread-id>] [--json]",
+        usage: "alia model-presets thread [<thread-id>] [--json]",
       },
       {
         name: "add",
         summary: "Create a preset",
         usage:
-          "bb model-presets add --name <name> --provider <id> --model <model> [--effort <level>] [--speed default|fast] [--instructions <text>] [--json]",
+          "alia model-presets add --name <name> --provider <id> --model <model> [--effort <level>] [--speed default|fast] [--instructions <text>] [--json]",
       },
       {
         name: "remove",
         summary: "Delete a preset",
-        usage: "bb model-presets remove <id> [--json]",
+        usage: "alia model-presets remove <id> [--json]",
       },
     ],
     async run(argv, ctx) {
@@ -477,5 +477,5 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info(`loaded with ${presets.length} preset(s)`);
+  alia.log.info(`loaded with ${presets.length} preset(s)`);
 }

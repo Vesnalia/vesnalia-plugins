@@ -1,7 +1,7 @@
-# Installs bb-box-stream.exe (060), a Windows box's desktop as H.264 video,
+# Installs alia-box-stream.exe (060), a Windows box's desktop as H.264 video,
 # from the image's first logon and from its refresh, elevated:
 #
-#   install-stream.ps1 -Source <bb-box-stream.cs> [-Archive <openh264 .dll.bz2> -Version <version>]
+#   install-stream.ps1 -Source <alia-box-stream.cs> [-Archive <openh264 .dll.bz2> -Version <version>]
 #
 # With an archive, it puts Cisco's OpenH264 beside the program first: the
 # pinned .dll.bz2, downloaded from Cisco, unpacked with Git for Windows'
@@ -13,11 +13,11 @@
 # under emulation, which could not load the arm64 OpenH264.
 param([Parameter(Mandatory)] [string] $Source, [string] $Archive, [string] $Version)
 $ErrorActionPreference = 'Stop'
-$to = 'C:\Program Files\bb-box-tools\bb-box-stream'
+$to = 'C:\Program Files\alia-box-tools\alia-box-stream'
 New-Item -ItemType Directory -Force $to | Out-Null
 # A running server holds its program and the library.
-Stop-ScheduledTask -TaskName bb-box-stream -ErrorAction SilentlyContinue
-Get-Process bb-box-stream -ErrorAction SilentlyContinue | Stop-Process -Force
+Stop-ScheduledTask -TaskName alia-box-stream -ErrorAction SilentlyContinue
+Get-Process alia-box-stream -ErrorAction SilentlyContinue | Stop-Process -Force
 Start-Sleep -Seconds 1
 
 if ($Archive) {
@@ -34,11 +34,11 @@ if ($Archive) {
 $csc = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 $platform = @('/platform:x64')
 if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') {
-  $manifest = Join-Path $to 'bb-box-stream.manifest'
+  $manifest = Join-Path $to 'alia-box-stream.manifest'
   Set-Content $manifest -Encoding UTF8 @'
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <assemblyIdentity version="1.0.0.0" name="bb-box-stream"/>
+  <assemblyIdentity version="1.0.0.0" name="alia-box-stream"/>
   <application xmlns="urn:schemas-microsoft-com:asm.v3">
     <windowsSettings xmlns:ws2="http://schemas.microsoft.com/SMI/2024/WindowsSettings">
       <ws2:supportedArchitectures>amd64 arm64</ws2:supportedArchitectures>
@@ -48,15 +48,15 @@ if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') {
 '@
   $platform = @('/platform:anycpu', "/win32manifest:$manifest")
 }
-$out = & $csc /nologo /optimize /unsafe @platform /r:System.Drawing.dll /r:System.Windows.Forms.dll "/out:$to\bb-box-stream.exe" $Source 2>&1
-if ($LASTEXITCODE) { throw "csc could not compile bb-box-stream.exe: $out" }
+$out = & $csc /nologo /optimize /unsafe @platform /r:System.Drawing.dll /r:System.Windows.Forms.dll "/out:$to\alia-box-stream.exe" $Source 2>&1
+if ($LASTEXITCODE) { throw "csc could not compile alia-box-stream.exe: $out" }
 # What the program was built from, so a refresh builds it again only when its source changes.
-Set-Content "$to\bb-box-stream.source" (Get-FileHash $Source -Algorithm SHA256).Hash
+Set-Content "$to\alia-box-stream.source" (Get-FileHash $Source -Algorithm SHA256).Hash
 
 # The server runs as box in box's desktop session, unelevated, started on demand; it writes to its log there.
-$exe = "$to\bb-box-stream.exe"
-$command = "--headless cmd.exe /c `"(if not exist `"%LOCALAPPDATA%\bb-box`" mkdir `"%LOCALAPPDATA%\bb-box`") & `"$exe`" serve > `"%LOCALAPPDATA%\bb-box\stream.log`" 2>&1`""
+$exe = "$to\alia-box-stream.exe"
+$command = "--headless cmd.exe /c `"(if not exist `"%LOCALAPPDATA%\alia-box`" mkdir `"%LOCALAPPDATA%\alia-box`") & `"$exe`" serve > `"%LOCALAPPDATA%\alia-box\stream.log`" 2>&1`""
 $action = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\conhost.exe" -Argument $command
 $principal = New-ScheduledTaskPrincipal -UserId "$env:COMPUTERNAME\box" -LogonType Interactive -RunLevel Limited
 $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew
-Register-ScheduledTask -TaskName bb-box-stream -Action $action -Principal $principal -Settings $settings -Force | Out-Null
+Register-ScheduledTask -TaskName alia-box-stream -Action $action -Principal $principal -Settings $settings -Force | Out-Null

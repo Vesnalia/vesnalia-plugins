@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { interdiff } from "../src/interdiff";
 import type { FeedbackView } from "../lib/feedback";
@@ -98,7 +98,7 @@ test("a background reload keeps the diff the server leaves out, and reads the ch
   slot.lifecycle.unmount();
 });
 
-test("a workspace that takes another's place, as BB's layout switch remounts it, doesn't have the diff sent again", async () => {
+test("a workspace that takes another's place, as VesnALIA's layout switch remounts it, doesn't have the diff sent again", async () => {
   const bundle = vi.fn(({ knownRevision }: { knownRevision?: string }) => ({ review: { targetKey: "pr-42", kind: "pr", status: "ready", createdAt: 1, title: "Parse rows", headSha: "new", turn: turn() }, guide: structuredClone(guide), patch: knownRevision === "r1" ? null : patch, revision: "r1" }));
   const first = await renderWorkspace(() => ({}), { getReviewBundle: bundle });
   await first.slot.findByTestId("filediff");

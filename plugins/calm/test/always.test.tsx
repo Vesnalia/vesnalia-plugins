@@ -4,7 +4,7 @@
 // idle. Shown only while the agent works (the default), nothing changes.
 import { act } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { SCENES, sceneFor } from "../src/scenes";
 import { DEFAULT_PREFS, type Prefs, type SceneId, type ThreadPrefs } from "../src/settings";
 import { IDLE_TURN_MS, everyVisible } from "../src/idle-turns";
@@ -206,7 +206,7 @@ describe("showing scenes always", () => {
     await act(async () => { answer({ mood: idle, steps: 0, crew: [], projectId }); await vi.advanceTimersByTimeAsync(0); });
     expect(shown).toEqual([sceneFor(s.threadId, "each-project", 0, [], projectId).id]);
     s.slot.lifecycle.unmount();
-    // If bb gives no project, the thread's own scene shows rather than nothing.
+    // If VesnALIA gives no project, the thread's own scene shows rather than nothing.
     const t = strip({ mood: idle, prefs: { ...ALWAYS, scene: "each-project" }, state: () => ({ mood: idle, steps: 0, crew: [], projectId: null }) });
     await flush();
     expect(t.scene()).toBe(sceneFor(t.threadId, "each-thread").id);

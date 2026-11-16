@@ -7,7 +7,7 @@ const SNOOZED = "sec_snoozed";
 
 const record = (fields: Partial<SnoozeRecord> = {}): SnoozeRecord => ({ until: NOW - 1, note: null, snoozedAt: 500, ...fields });
 
-/** A fake bb whose thread sits in Snoozed until restored, as the real one does. */
+/** A fake VesnALIA whose thread sits in Snoozed until restored, as the real one does. */
 function fake(fields: Partial<WakeDeps<SnoozeRecord>> = {}, sectionId: string | null = SNOOZED) {
   const calls: string[] = [];
   const thread = { sectionId, archivedAt: null as number | null };

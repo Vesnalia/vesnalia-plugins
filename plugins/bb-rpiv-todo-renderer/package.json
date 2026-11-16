@@ -1,24 +1,16 @@
 {
-  "name": "bb-rpiv-todo-renderer",
+  "name": "alia-plugin-bb-rpiv-todo-renderer",
   "version": "0.1.2",
-  "description": "Projects Pi's @juicesharp/rpiv-todo list into BB's native composer to-do panel.",
+  "description": "Projects Pi's @juicesharp/rpiv-todo list into VesnALIA's native composer to-do panel.",
   "type": "module",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ZhenHuangLab/bb-rpiv-todo-renderer.git"
-  },
-  "homepage": "https://github.com/ZhenHuangLab/bb-rpiv-todo-renderer",
-  "bugs": {
-    "url": "https://github.com/ZhenHuangLab/bb-rpiv-todo-renderer/issues"
-  },
   "engines": {
-    "bb": ">=0.38",
-    "bbPluginSdk": ">=0.4.6"
+    "alia": ">=0.38",
+    "aliaPluginSdk": ">=0.4.6"
   },
-  "bb": {
+  "alia": {
     "name": "RPIV Todo",
-    "description": "Shows Pi rpiv-todo tasks in BB's composer to-do list. Reconstructs the live list from todo tool calls because BB only special-cases TodoWrite and Claude Task* tools.",
+    "description": "Shows Pi rpiv-todo tasks in VesnALIA's composer to-do list. Reconstructs the live list from todo tool calls because VesnALIA only special-cases TodoWrite and Claude Task* tools.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -30,9 +22,25 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.6",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.6"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/bb-rpiv-todo-renderer#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/bb-rpiv-todo-renderer"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../lib/review-preferences";
 import { defaultKnobs } from "../lib/knobs";
 import { patchReviewState } from "../lib/panel-state";
@@ -425,7 +425,7 @@ test("with every knob off, Finish review on a local review a thread started offe
   page.lifecycle.unmount(); bar.lifecycle.unmount();
 });
 
-test("with every knob off, a local review's files and comments offer no Open in editor, and never ask where the BB server is", async () => {
+test("with every knob off, a local review's files and comments offer no Open in editor, and never ask where the VesnALIA server is", async () => {
   const listMachines = vi.fn(() => ({ machines: [{ hostId: "server", name: "Server", connected: true, server: true }] }));
   const { page, bar, main } = await renderReview(allKnobsOff, { getReviewBundle: localBundle(), listMachines });
   fireEvent.click(await main().findByRole("button", { name: "Start reading: Parsing" }));
@@ -449,7 +449,7 @@ test("with Read REVIEW.md off, the Overview doesn't say the PR changes a file th
   off.page.lifecycle.unmount(); off.bar.lifecycle.unmount();
 });
 
-test("with Commands in BB's command palette off, the palette lists none of them", async () => {
+test("with Commands in VesnALIA's command palette off, the palette lists none of them", async () => {
   const app = await loadPluginApp(() => import("../app"));
   const commands = (app as unknown as { commandPaletteActions: { id: string; isAvailable?(context: unknown): boolean }[] }).commandPaletteActions;
   const context = { threadId: null, projectId: null, openPanel: () => false };

@@ -1,26 +1,26 @@
-# Shell tasks for BB
+# Shell tasks for VesnALIA
 
-Lets your BB agents run long-lived shell commands without blocking a turn.
+Lets your VesnALIA agents run long-lived shell commands without blocking a turn.
 
 ![Shell tasks panel showing completed and failed background commands](assets/shell-tasks-demo.png)
 
-Shell tasks adds a provider-independent `task` tool to [BB](https://github.com/get-bb/bb). Commands run on the thread's execution machine, survive plugin reloads and report completion back to the agent.
+Shell tasks adds a provider-independent `task` tool to [VesnALIA](https://github.com/get-bb/bb). Commands run on the thread's execution machine, survive plugin reloads and report completion back to the agent.
 
 ## Install
 
 Install the latest compatible `0.1.x` release:
 
 ```sh
-bb plugin install git:https://github.com/ahkohd/bb-plugin-shell-tasks.git@^0.1.0
+alia plugin install git:https://github.com/ahkohd/bb-plugin-shell-tasks.git@^0.1.0
 ```
 
-The plugin works with supported BB providers, including Pi.
+The plugin works with supported VesnALIA providers, including Pi.
 
 To nudge agents to choose Shell tasks over a provider's built-in background-task runner:
 
 ```sh
-bb plugin config shell-tasks set preferOverNativeBackgroundTasks true
-bb plugin reload shell-tasks
+alia plugin config shell-tasks set preferOverNativeBackgroundTasks true
+alia plugin reload shell-tasks
 ```
 
 The preference adds agent instructions; it does not disable provider tools.
@@ -28,7 +28,7 @@ The preference adds agent instructions; it does not disable provider tools.
 To disable Claude Code's background Bash commands and subagents:
 
 ```sh
-printf '1\n' | bb machine env set CLAUDE_CODE_DISABLE_BACKGROUND_TASKS
+printf '1\n' | alia machine env set CLAUDE_CODE_DISABLE_BACKGROUND_TASKS
 ```
 
 Start a new Claude thread afterwards. Add `--project <project-id>` to scope the setting. Shell tasks does not set it automatically.
@@ -48,7 +48,7 @@ Tasks appear as native tool rows, in a per-thread Shell tasks panel and as optio
 
 ## How it works
 
-Commands run through `/bin/sh` in the thread's environment directory. They inherit machine environment variables and receive `BB_THREAD_ID`, `BB_PROJECT_ID`, `BB_ENVIRONMENT_ID` and `BB_THREAD_STORAGE`. Standard output and standard error share one ordered log.
+Commands run through `/bin/sh` in the thread's environment directory. They inherit machine environment variables and receive `ALIA_THREAD_ID`, `ALIA_PROJECT_ID`, `ALIA_ENVIRONMENT_ID` and `ALIA_THREAD_STORAGE`. Standard output and standard error share one ordered log.
 
 `start` returns immediately with `status: "running"`. Its `pid` is the detached supervisor and process-group leader. Running tasks and result capture survive plugin worker and server reloads. Use `stop` rather than signalling the process directly.
 
@@ -70,15 +70,15 @@ A full final read, complete tail or clear acknowledges completion and suppresses
 npm install
 npm test
 npm run check
-bb plugin types --check
-bb plugin build
+alia plugin types --check
+alia plugin build
 ```
 
 Install or reload a development checkout:
 
 ```sh
-bb plugin install .
-bb plugin reload shell-tasks
+alia plugin install .
+alia plugin reload shell-tasks
 ```
 
 ## License

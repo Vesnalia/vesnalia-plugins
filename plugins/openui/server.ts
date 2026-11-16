@@ -1,9 +1,9 @@
-// bb-plugin-openui backend. Teaches agents OpenUI Lang (the prompt generated
+// alia-plugin-openui backend. Teaches agents OpenUI Lang (the prompt generated
 // from ui/library.ts by scripts/generate.ts) so their replies can carry
 // ```openui-lang blocks, which app.tsx renders. Adds three optional tools:
 // check_openui (parse a block), openui_examples and
 // openui_components (docs for components the prompt only names).
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { createParser } from "@openuidev/lang-core";
 import { z } from "zod";
 import { DOCS, EXAMPLES, PROMPT, ROOT, SCHEMA } from "./generated/openui";
@@ -61,8 +61,8 @@ export function componentDocs(names: string[]): { text: string; ok: boolean } {
   return { text: parts.join("\n\n"), ok: unknown.length === 0 };
 }
 
-export default (bb: BbPluginApi) => {
-  bb.agents.registerTool({
+export default (alia: AliaPluginApi) => {
+  alia.agents.registerTool({
     name: "openui_components",
     description:
       "Returns the signatures, usage notes and an example of OpenUI components that the prompt only names in its index (\"More components exist\"). Call it before using one of them.",
@@ -76,7 +76,7 @@ export default (bb: BbPluginApi) => {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "check_openui",
     description:
       "Parses a ```openui-lang block before you put it in your reply and lists errors: unknown components, wrong or missing arguments, undefined names, statements root can't reach. Optional.",
@@ -90,7 +90,7 @@ export default (bb: BbPluginApi) => {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "openui_examples",
     description: "Returns working OpenUI Lang example programs from OpenUI's built-in library. Optional.",
     parameters: z.object({}),
@@ -100,21 +100,21 @@ export default (bb: BbPluginApi) => {
     },
   });
 
-  const web = createWeb(bb.settings.define(WEB_SETTING));
-  bb.rpc.register(rpcContract, {
-    read_file: ({ threadId, path, media }) => readThreadFile(bb, threadId, path, media ? MAX_MEDIA_BYTES : MAX_TEXT_BYTES),
+  const web = createWeb(alia.settings.define(WEB_SETTING));
+  alia.rpc.register(rpcContract, {
+    read_file: ({ threadId, path, media }) => readThreadFile(alia, threadId, path, media ? MAX_MEDIA_BYTES : MAX_TEXT_BYTES),
     web_geocode: (input) => web.geocode(input),
     web_tile: (input) => web.tile(input),
     web_image_search: (input) => web.imageSearch(input),
     web_wiki_photo: (input) => web.wikiPhoto(input),
-    project_changes: ({ threadId, target, paths }) => readChanges(bb.sdk, threadId, target, paths),
-    project_patch: ({ threadId, target, path, revision }) => readPatch(bb.sdk, threadId, target, path, revision),
-    project_commits: ({ threadId, limit }) => readCommits(bb.sdk, threadId, limit ?? 20),
-    project_pull_request: ({ threadId }) => readPullRequest(bb.sdk, threadId),
-    project_environments: ({ threadId }) => readEnvironments(bb.sdk, threadId),
+    project_changes: ({ threadId, target, paths }) => readChanges(alia.sdk, threadId, target, paths),
+    project_patch: ({ threadId, target, path, revision }) => readPatch(alia.sdk, threadId, target, path, revision),
+    project_commits: ({ threadId, limit }) => readCommits(alia.sdk, threadId, limit ?? 20),
+    project_pull_request: ({ threadId }) => readPullRequest(alia.sdk, threadId),
+    project_environments: ({ threadId }) => readEnvironments(alia.sdk, threadId),
   });
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     // Same audience rule as genui: only sessions a person reads, not agent-spawned
     // workers or plugin-run threads (side chats excepted).
     const forPerson =

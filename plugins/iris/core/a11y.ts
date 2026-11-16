@@ -245,7 +245,7 @@ export function readAudit(report: unknown): Audit {
     if (pages.length && pages.every((p) => "nodes" in p && ("id" in p || "help" in p))) return readAxe({ violations: pages });
     return none("report must be an axe-core result ({violations, passes, ...}), the array @axe-core/cli writes, or a Lighthouse JSON report");
   }
-  if (!isObj(report)) return none("report must be an axe-core result or a Lighthouse JSON report, e.g. load(\"$BB_THREAD_STORAGE/axe.json\")");
+  if (!isObj(report)) return none("report must be an axe-core result or a Lighthouse JSON report, e.g. load(\"$ALIA_THREAD_STORAGE/axe.json\")");
   if (isObj(report.lhr)) return readLighthouse(report.lhr);
   if (isObj(report.audits) && (isObj(report.categories) || "lighthouseVersion" in report)) return readLighthouse(report);
   if ("violations" in report || "incomplete" in report || "passes" in report) return readAxe(report);

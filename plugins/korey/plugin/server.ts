@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { parseArgs } from "node:util";
-import type { BbPluginApi, PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginAgentToolResult } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   filePathsSchema,
@@ -58,75 +58,75 @@ const CONSULT_PREFIX = [
   "Return analysis or a draft only.",
   "",
 ].join("\n");
-const MAPPING_MARKER_PREFIX = "bb-korey";
+const MAPPING_MARKER_PREFIX = "alia-korey";
 const MAX_STORED_RESPONSE_BYTES = 64 * 1024;
 const INTERACTION_TIMEOUT_MS = 10 * 60_000;
 const API_TOKEN_URL = "https://app.korey.ai/settings/api-tokens";
-const TOKEN_SETUP_GUIDANCE = `Connect your Korey account with \`bb korey login\` or under Settings -> Installed plugins -> Korey. Alternatively, create a Korey personal access token at ${API_TOKEN_URL} and add it there.`;
+const TOKEN_SETUP_GUIDANCE = `Connect your Korey account with \`alia korey login\` or under Settings -> Installed plugins -> Korey. Alternatively, create a Korey personal access token at ${API_TOKEN_URL} and add it there.`;
 
 const CLI_COMMANDS = [
   {
     name: "status",
     summary: "Check Korey authentication",
-    usage: "bb korey status [--json]",
+    usage: "alia korey status [--json]",
   },
   {
     name: "login",
     summary: "Connect your Korey account with OAuth",
-    usage: "bb korey login [<redirect-url>] [--json]",
+    usage: "alia korey login [<redirect-url>] [--json]",
   },
   {
     name: "logout",
     summary: "Disconnect your Korey account",
-    usage: "bb korey logout [--json]",
+    usage: "alia korey logout [--json]",
   },
   {
     name: "threads",
     summary: "List owned Korey threads",
     usage:
-      "bb korey threads [query...] [--after <cursor>] [--limit <count>] [--json]",
+      "alia korey threads [query...] [--after <cursor>] [--limit <count>] [--json]",
   },
   {
     name: "show",
     summary: "Show a Korey thread and one page of messages",
     usage:
-      "bb korey show <korey-thread-id> [--after <cursor>] [--limit <count>] [--json]",
+      "alia korey show <korey-thread-id> [--after <cursor>] [--limit <count>] [--json]",
   },
   {
     name: "link",
-    summary: "Link a private Korey thread to a bb thread",
-    usage: "bb korey link <korey-thread-id> [--bb-thread <id>] [--json]",
+    summary: "Link a private Korey thread to a VesnALIA thread",
+    usage: "alia korey link <korey-thread-id> [--alia-thread <id>] [--json]",
   },
   {
     name: "unlink",
-    summary: "Remove a bb-to-Korey thread link",
-    usage: "bb korey unlink [--bb-thread <id>] [--json]",
+    summary: "Remove a alia-to-Korey thread link",
+    usage: "alia korey unlink [--alia-thread <id>] [--json]",
   },
   {
     name: "ask",
     summary:
       "Ask Korey to research connected tools or carry out a requested change",
     usage:
-      "bb korey ask <message...> [--change] [--file <path> ...] [--bb-thread <id>] [--json]",
+      "alia korey ask <message...> [--change] [--file <path> ...] [--alia-thread <id>] [--json]",
   },
   {
     name: "shortcut",
     summary:
       "Ask Korey to create or update a Shortcut Story at the user's request",
     usage: [
-      "bb korey shortcut create <instruction...> [--file <path> ...] [--bb-thread <id>] [--json]",
-      "bb korey shortcut update <story-id> <instruction...> [--file <path> ...] [--bb-thread <id>] [--json]",
+      "alia korey shortcut create <instruction...> [--file <path> ...] [--alia-thread <id>] [--json]",
+      "alia korey shortcut update <story-id> <instruction...> [--file <path> ...] [--alia-thread <id>] [--json]",
     ].join("\n  "),
   },
   {
     name: "operation",
     summary: "Inspect or safely recover a Korey operation",
     usage: [
-      "bb korey operation list [--limit <count>] [--bb-thread <id>] [--json]",
-      "bb korey operation show <operation-id> [--bb-thread <id>] [--json]",
-      "bb korey operation resume <operation-id> [--bb-thread <id>] [--json]",
-      "bb korey operation reconcile <operation-id> [--bb-thread <id>] [--json]",
-      "bb korey operation resolve <operation-id> <note...> [--bb-thread <id>] [--json]",
+      "alia korey operation list [--limit <count>] [--alia-thread <id>] [--json]",
+      "alia korey operation show <operation-id> [--alia-thread <id>] [--json]",
+      "alia korey operation resume <operation-id> [--alia-thread <id>] [--json]",
+      "alia korey operation reconcile <operation-id> [--alia-thread <id>] [--json]",
+      "alia korey operation resolve <operation-id> <note...> [--alia-thread <id>] [--json]",
     ].join("\n  "),
   },
 ];
@@ -248,7 +248,7 @@ function boundedText(text: string): { text: string; truncated: boolean } {
     .toString("utf8")
     .replace(/\uFFFD$/u, "");
   return {
-    text: `${prefix}\n\n[Response truncated by bb-plugin-korey; open the Korey conversation to read the full response.]`,
+    text: `${prefix}\n\n[Response truncated by alia-plugin-korey; open the Korey conversation to read the full response.]`,
     truncated: true,
   };
 }
@@ -282,9 +282,9 @@ function operationView(operation: OperationRecord) {
     error: operation.error,
     nextStep:
       operation.status === "awaiting-response"
-        ? `Use korey_resume_operation or bb korey operation resume ${operation.id}; this only reads the accepted message.`
+        ? `Use korey_resume_operation or VesnALIA korey operation resume ${operation.id}; this only reads the accepted message.`
         : operation.status === "reconcile-required"
-          ? `Use korey_reconcile_operation or bb korey operation reconcile ${operation.id}; do not send the request again.`
+          ? `Use korey_reconcile_operation or VesnALIA korey operation reconcile ${operation.id}; do not send the request again.`
           : null,
     createdAt: new Date(operation.createdAt).toISOString(),
     updatedAt: new Date(operation.updatedAt).toISOString(),
@@ -327,18 +327,18 @@ function parseCommonCliArgs(argv: string[]) {
     options: {
       after: { type: "string", multiple: true },
       change: { type: "boolean" },
-      "bb-thread": { type: "string", multiple: true },
+      "alia-thread": { type: "string", multiple: true },
       file: { type: "string", multiple: true },
       json: { type: "boolean" },
       limit: { type: "string", multiple: true },
     },
     strict: true,
   });
-  const bbThreadIds = values["bb-thread"];
+  const aliaThreadIds = values["alia-thread"];
   const afterValues = values.after;
   const limitValues = values.limit;
-  if (bbThreadIds !== undefined && bbThreadIds.length > 1) {
-    throw new Error("--bb-thread may be provided only once");
+  if (aliaThreadIds !== undefined && aliaThreadIds.length > 1) {
+    throw new Error("--alia-thread may be provided only once");
   }
   if (afterValues !== undefined && afterValues.length > 1) {
     throw new Error("--after may be provided only once");
@@ -357,7 +357,7 @@ function parseCommonCliArgs(argv: string[]) {
   return {
     after: afterValues?.[0],
     change: values.change ?? false,
-    bbThreadId: bbThreadIds?.[0],
+    aliaThreadId: aliaThreadIds?.[0],
     files: values.file === undefined ? [] : filePathsSchema.parse(values.file),
     json: values.json ?? false,
     limit,
@@ -372,7 +372,7 @@ function cliThreadId(
   const threadId = explicitThreadId ?? contextThreadId;
   if (threadId === undefined) {
     throw new Error(
-      "This command needs a bb thread. Run it inside an agent thread or pass --bb-thread <thread-id>.",
+      "This command needs a VesnALIA thread. Run it inside an agent thread or pass --alia-thread <thread-id>.",
     );
   }
   return threadId;
@@ -434,28 +434,28 @@ function usage(): string {
 function assertPrivateThread(thread: KoreyThread): void {
   if (!thread.is_private) {
     throw new Error(
-      `Korey thread ${thread.id} is shared. bb-plugin-korey links only private conversations.`,
+      `Korey thread ${thread.id} is shared. alia-plugin-korey links only private conversations.`,
     );
   }
 }
 
 function operationMarker(operationId: string, legacy = false): string {
   // Version 1 reconciliation requires the original uppercase marker.
-  const productName = legacy ? "bb".toUpperCase() : "bb";
+  const productName = legacy ? "alia".toUpperCase() : "alia";
   return `${productName} operation reference: ${operationId}`;
 }
 
 function consultationMarker(consultationId: string): string {
-  return `bb consultation reference: ${consultationId}`;
+  return `alia consultation reference: ${consultationId}`;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const host = bb.hosts.experimental_client({ contract: hostContract });
-  const db = bb.storage.database();
-  bb.storage.migrate(db, migrations);
+export default async function plugin(alia: AliaPluginApi) {
+  const host = alia.hosts.experimental_client({ contract: hostContract });
+  const db = alia.storage.database();
+  alia.storage.migrate(db, migrations);
   recoverInterruptedOperations(db);
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     apiToken: {
       type: "string",
       label: "Korey personal access token",
@@ -466,15 +466,15 @@ export default async function plugin(bb: BbPluginApi) {
       type: "string",
       label: "Korey account connection",
       description:
-        "Saved by Connect Korey and `bb korey login`. Remove it with Disconnect below or `bb korey logout`.",
+        "Saved by Connect Korey and `alia korey login`. Remove it with Disconnect below or `alia korey logout`.",
       secret: true,
     },
   });
 
   const connection = new KoreyConnection({
-    kv: bb.storage.kv,
+    kv: alia.storage.kv,
     callbackUrl: () =>
-      `${bb.server.loopbackBaseUrl}/api/v1/plugins/${bb.pluginId}/http${OAUTH_CALLBACK_PATH}`,
+      `${alia.server.loopbackBaseUrl}/api/v1/plugins/${alia.pluginId}/http${OAUTH_CALLBACK_PATH}`,
     readCredentials: async () => (await settings.get()).oauthCredentials,
     writeCredentials: async (value) => {
       await settings.experimental_set({ oauthCredentials: value });
@@ -482,7 +482,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // Covers sign-in, token refresh, and edits from the settings form or CLI.
-  settings.onChange(() => bb.realtime.publish(CONNECTION_SIGNAL_CHANNEL, null));
+  settings.onChange(() => alia.realtime.publish(CONNECTION_SIGNAL_CHANNEL, null));
 
   async function authState() {
     const values = await settings.get();
@@ -496,12 +496,12 @@ export default async function plugin(bb: BbPluginApi) {
     return { method, apiToken };
   }
 
-  // bb clears this notice only when the plugin reloads.
+  // VesnALIA clears this notice only when the plugin reloads.
   const setupNoticeShown = (await authState()).method === "none";
   if (setupNoticeShown) {
-    bb.status.needsConfiguration(TOKEN_SETUP_GUIDANCE);
+    alia.status.needsConfiguration(TOKEN_SETUP_GUIDANCE);
   }
-  const RELOAD_HINT = "Run `bb plugin reload korey` to clear the setup notice.";
+  const RELOAD_HINT = "Run `alia plugin reload korey` to clear the setup notice.";
 
   function clientFor(state: Awaited<ReturnType<typeof authState>>) {
     if (state.method === "oauth") {
@@ -542,7 +542,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.rpc.register(connectionRpcContract, {
+  alia.rpc.register(connectionRpcContract, {
     "connection.status": () => connectionView(),
     "connection.start": async () => ({
       authorizationUrl: (await connection.start()).authorizationUrl,
@@ -555,28 +555,28 @@ export default async function plugin(bb: BbPluginApi) {
       await connection.disconnect();
       return connectionView();
     },
-    // Deletes only bb's copy; the token stays valid in Korey until revoked there.
+    // Deletes only VesnALIA's copy; the token stays valid in Korey until revoked there.
     "connection.removeToken": async () => {
       await settings.experimental_set({ apiToken: null });
       return connectionView();
     },
   });
 
-  bb.http.route("GET", OAUTH_CALLBACK_PATH, async (context) => {
+  alia.http.route("GET", OAUTH_CALLBACK_PATH, async (context) => {
     try {
       await connection.complete(context.req.url);
     } catch (error) {
       return callbackPage(
         "Korey sign-in failed",
-        `${error instanceof Error ? error.message : String(error)} You can start again from bb.`,
+        `${error instanceof Error ? error.message : String(error)} You can start again from VesnALIA.`,
         400,
       );
     }
     const view = await connectionView();
     const connected =
       view.account === null
-        ? "bb is connected to Korey."
-        : `bb is connected to Korey as ${view.account}.`;
+        ? "alia is connected to Korey."
+        : `alia is connected to Korey as ${view.account}.`;
     return callbackPage(
       "Connected to Korey",
       `${connected} ${setupNoticeShown ? `${RELOAD_HINT} ` : ""}You can close this tab.`,
@@ -586,36 +586,36 @@ export default async function plugin(bb: BbPluginApi) {
 
   const threadTails = new Map<string, Promise<void>>();
   async function withThreadLock<T>(
-    bbThreadId: string,
+    aliaThreadId: string,
     run: () => Promise<T>,
   ): Promise<T> {
-    const previous = threadTails.get(bbThreadId) ?? Promise.resolve();
+    const previous = threadTails.get(aliaThreadId) ?? Promise.resolve();
     let release: () => void = () => undefined;
     const current = new Promise<void>((resolve) => {
       release = resolve;
     });
     const tail = previous.catch(() => undefined).then(() => current);
-    threadTails.set(bbThreadId, tail);
+    threadTails.set(aliaThreadId, tail);
     await previous.catch(() => undefined);
     try {
       return await run();
     } finally {
       release();
-      if (threadTails.get(bbThreadId) === tail) {
-        threadTails.delete(bbThreadId);
+      if (threadTails.get(aliaThreadId) === tail) {
+        threadTails.delete(aliaThreadId);
       }
     }
   }
 
-  async function bbThreadName(
-    bbThreadId: string,
+  async function aliaThreadName(
+    aliaThreadId: string,
     marker: string,
   ): Promise<string> {
-    const thread = await bb.sdk.threads.get({ threadId: bbThreadId });
+    const thread = await alia.sdk.threads.get({ threadId: aliaThreadId });
     const label = thread.title?.trim() || thread.id;
     const suffix = ` [${MAPPING_MARKER_PREFIX}:${marker}]`;
     return (
-      `bb: ${label}`
+      `alia: ${label}`
         .slice(0, 120 - suffix.length)
         .replace(/[\uD800-\uDBFF]$/u, "") + suffix
     );
@@ -673,30 +673,30 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<MappingRecord> {
     if (mapping.marker === null) {
       throw new Error(
-        `Korey mapping for ${mapping.bbThreadId} requires manual relinking.`,
+        `Korey mapping for ${mapping.aliaThreadId} requires manual relinking.`,
       );
     }
     const found = await findMappedThread(api, mapping.marker, signal);
     if (found === null) {
       throw new Error(
-        `Korey mapping creation for ${mapping.bbThreadId} has an unknown outcome. No exact marker match is visible yet; inspect Korey, then use bb korey link or unlink.`,
+        `Korey mapping creation for ${mapping.aliaThreadId} has an unknown outcome. No exact marker match is visible yet; inspect Korey, then use VesnALIA korey link or unlink.`,
       );
     }
     completeMappingCreate(db, {
-      bbThreadId: mapping.bbThreadId,
+      aliaThreadId: mapping.aliaThreadId,
       generation: mapping.generation,
       koreyThreadId: found.id,
     });
-    return getMapping(db, mapping.bbThreadId)!;
+    return getMapping(db, mapping.aliaThreadId)!;
   }
 
   async function ensureMapping(
     api: KoreyClient,
-    bbThreadId: string,
+    aliaThreadId: string,
     signal?: AbortSignal,
     newMappingClaim?: { previousGeneration: number; marker: string },
   ): Promise<{ created: boolean; mapping: MappingRecord }> {
-    let mapping = getMapping(db, bbThreadId);
+    let mapping = getMapping(db, aliaThreadId);
     if (newMappingClaim !== undefined) {
       const claimMatches =
         mapping === null
@@ -713,7 +713,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     if (mapping?.state === "ready") {
       if (mapping.koreyThreadId === null) {
-        throw new Error(`Stored Korey mapping for ${bbThreadId} is invalid`);
+        throw new Error(`Stored Korey mapping for ${aliaThreadId} is invalid`);
       }
       return { created: false, mapping };
     }
@@ -727,7 +727,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (mapping === null || mapping.state === "unlinked") {
       mapping = reserveMapping(
         db,
-        bbThreadId,
+        aliaThreadId,
         newMappingClaim?.marker ?? randomUUID(),
       );
     }
@@ -741,22 +741,22 @@ export default async function plugin(bb: BbPluginApi) {
       );
     }
     if (mapping.state !== "reserved" || mapping.marker === null) {
-      throw new Error(`Stored Korey mapping for ${bbThreadId} is invalid`);
+      throw new Error(`Stored Korey mapping for ${aliaThreadId} is invalid`);
     }
     let name: string;
     try {
-      name = await bbThreadName(bbThreadId, mapping.marker);
+      name = await aliaThreadName(aliaThreadId, mapping.marker);
       signal?.throwIfAborted();
     } catch (error) {
-      rejectMappingCreate(db, bbThreadId, mapping.generation, "reserved");
+      rejectMappingCreate(db, aliaThreadId, mapping.generation, "reserved");
       throw error;
     }
-    if (!beginMappingCreate(db, bbThreadId, mapping.generation)) {
-      const current = getMapping(db, bbThreadId);
+    if (!beginMappingCreate(db, aliaThreadId, mapping.generation)) {
+      const current = getMapping(db, aliaThreadId);
       if (current?.state === "ready" && current.koreyThreadId !== null) {
         return { created: false, mapping: current };
       }
-      throw new Error(`Korey mapping for ${bbThreadId} changed concurrently`);
+      throw new Error(`Korey mapping for ${aliaThreadId} changed concurrently`);
     }
     try {
       const created = await api.createEmptyThread(
@@ -767,21 +767,21 @@ export default async function plugin(bb: BbPluginApi) {
         signal,
       );
       completeMappingCreate(db, {
-        bbThreadId,
+        aliaThreadId,
         generation: mapping.generation,
         koreyThreadId: created.thread_id,
       });
-      return { created: true, mapping: getMapping(db, bbThreadId)! };
+      return { created: true, mapping: getMapping(db, aliaThreadId)! };
     } catch (error) {
       if (mutationWasRejected(error)) {
-        rejectMappingCreate(db, bbThreadId, mapping.generation);
+        rejectMappingCreate(db, aliaThreadId, mapping.generation);
         throw error;
       }
-      requireMappingReconciliation(db, bbThreadId, mapping.generation);
+      requireMappingReconciliation(db, aliaThreadId, mapping.generation);
       try {
         const reconciled = await reconcileMapping(
           api,
-          getMapping(db, bbThreadId)!,
+          getMapping(db, aliaThreadId)!,
           signal,
         );
         return { created: true, mapping: reconciled };
@@ -794,36 +794,36 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function linkThread(
-    bbThreadId: string,
+    aliaThreadId: string,
     koreyThreadId: string,
     signal?: AbortSignal,
   ): Promise<KoreyThread> {
-    return withThreadLock(bbThreadId, async () => {
-      assertCanChangeMapping(bbThreadId, koreyThreadId);
+    return withThreadLock(aliaThreadId, async () => {
+      assertCanChangeMapping(aliaThreadId, koreyThreadId);
       const api = await client();
       const thread = await api.getThread(koreyThreadId, signal);
       assertPrivateThread(thread);
-      assertCanChangeMapping(bbThreadId, thread.id);
-      setLinkedMapping(db, bbThreadId, thread.id);
+      assertCanChangeMapping(aliaThreadId, thread.id);
+      setLinkedMapping(db, aliaThreadId, thread.id);
       return thread;
     });
   }
 
-  async function unlinkThread(bbThreadId: string): Promise<boolean> {
-    return withThreadLock(bbThreadId, async () => {
-      assertCanChangeMapping(bbThreadId, null);
-      return setUnlinkedMapping(db, bbThreadId);
+  async function unlinkThread(aliaThreadId: string): Promise<boolean> {
+    return withThreadLock(aliaThreadId, async () => {
+      assertCanChangeMapping(aliaThreadId, null);
+      return setUnlinkedMapping(db, aliaThreadId);
     });
   }
 
   function assertCanChangeMapping(
-    bbThreadId: string,
+    aliaThreadId: string,
     destination: string | null,
   ): void {
-    const current = getMapping(db, bbThreadId)?.koreyThreadId ?? null;
+    const current = getMapping(db, aliaThreadId)?.koreyThreadId ?? null;
     if (current === destination) return;
-    const inherited = listUnresolvedOperations(db, bbThreadId, current).filter(
-      (operation) => operation.bbThreadId !== bbThreadId,
+    const inherited = listUnresolvedOperations(db, aliaThreadId, current).filter(
+      (operation) => operation.aliaThreadId !== aliaThreadId,
     );
     if (inherited.length > 0) {
       throw new Error(
@@ -833,16 +833,16 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function readAttachments(
-    bbThreadId: string,
+    aliaThreadId: string,
     paths: readonly string[],
     signal?: AbortSignal,
   ): Promise<PreparedAttachment[]> {
     if (paths.length === 0) return [];
-    const thread = await bb.sdk.threads.get({ threadId: bbThreadId });
+    const thread = await alia.sdk.threads.get({ threadId: aliaThreadId });
     if (thread.environmentId === null) {
       throw new Error("File attachments require a thread environment");
     }
-    const environment = await bb.sdk.environments.get({
+    const environment = await alia.sdk.environments.get({
       environmentId: thread.environmentId,
       signal,
     });
@@ -884,15 +884,15 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function sendConsultation(
-    bbThreadId: string,
+    aliaThreadId: string,
     prompt: string,
     signal?: AbortSignal,
     paths: readonly string[] = [],
   ): Promise<LinkedThread> {
-    const prepared = await readAttachments(bbThreadId, paths, signal);
-    return withThreadLock(bbThreadId, async () => {
+    const prepared = await readAttachments(aliaThreadId, paths, signal);
+    return withThreadLock(aliaThreadId, async () => {
       const api = await client();
-      const linked = await ensureMapping(api, bbThreadId, signal);
+      const linked = await ensureMapping(api, aliaThreadId, signal);
       const koreyThreadId = linked.mapping.koreyThreadId;
       if (koreyThreadId === null)
         throw new Error("Korey mapping is incomplete");
@@ -905,7 +905,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       const unsigned = {
         operationId: `korey-consult-${randomUUID()}`,
-        bbThreadId,
+        aliaThreadId,
         action: "consult" as const,
         storyId: null,
         instruction: prompt.trim(),
@@ -1025,8 +1025,8 @@ export default async function plugin(bb: BbPluginApi) {
     });
   }
 
-  function mappingDestination(bbThreadId: string) {
-    const mapping = getMapping(db, bbThreadId);
+  function mappingDestination(aliaThreadId: string) {
+    const mapping = getMapping(db, aliaThreadId);
     if (mapping === null) {
       return {
         kind: "new-private-thread" as const,
@@ -1052,16 +1052,16 @@ export default async function plugin(bb: BbPluginApi) {
       };
     }
     throw new Error(
-      `The Korey mapping for this bb thread is ${mapping.state}. Reconcile it with bb korey link or unlink before requesting a connector change.`,
+      `The Korey mapping for this VesnALIA thread is ${mapping.state}. Reconcile it with VesnALIA korey link or unlink before requesting a connector change.`,
     );
   }
 
   async function requestDestination(
     api: KoreyClient,
-    bbThreadId: string,
+    aliaThreadId: string,
     signal?: AbortSignal,
   ) {
-    const destination = mappingDestination(bbThreadId);
+    const destination = mappingDestination(aliaThreadId);
     if (destination.kind === "new-private-thread") return destination;
     const thread = await api.getThread(destination.koreyThreadId, signal);
     assertPrivateThread(thread);
@@ -1074,7 +1074,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function mappingStillMatches(request: OperationRequest): boolean {
-    const mapping = getMapping(db, request.bbThreadId);
+    const mapping = getMapping(db, request.aliaThreadId);
     if (request.destination.kind === "new-private-thread") {
       return mapping === null
         ? request.destination.mappingGeneration === 0
@@ -1108,20 +1108,20 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function assertNoUnresolvedOperations(
-    bbThreadId: string,
+    aliaThreadId: string,
     koreyThreadId: string | null,
   ): void {
-    const unresolved = listUnresolvedOperations(db, bbThreadId, koreyThreadId);
+    const unresolved = listUnresolvedOperations(db, aliaThreadId, koreyThreadId);
     const [first] = unresolved;
     if (first !== undefined) {
       const details = unresolved
         .map(
           (operation) =>
-            `${operation.id} (${operation.status}, originating bb thread ${operation.bbThreadId})`,
+            `${operation.id} (${operation.status}, originating VesnALIA thread ${operation.aliaThreadId})`,
         )
         .join(", ");
       throw new Error(
-        `An earlier Korey operation is unresolved: ${details}. This request was not sent. Inspect it here with korey_get_operation, or use bb korey operation show ${first.id} --bb-thread ${first.bbThreadId}, then resume or reconcile it. If the outcome remains unknown, ask the user before using bb korey operation resolve; do not submit a replacement automatically.`,
+        `An earlier Korey operation is unresolved: ${details}. This request was not sent. Inspect it here with korey_get_operation, or use VesnALIA korey operation show ${first.id} --alia-thread ${first.aliaThreadId}, then resume or reconcile it. If the outcome remains unknown, ask the user before using VesnALIA korey operation resolve; do not submit a replacement automatically.`,
       );
     }
   }
@@ -1134,8 +1134,8 @@ export default async function plugin(bb: BbPluginApi) {
     legacyApproval = false,
   ): string {
     const authorization = legacyApproval
-      ? "The user approved this external write through bb's confirmation UI."
-      : "The user requested this Shortcut change from bb.";
+      ? "The user approved this external write through VesnALIA's confirmation UI."
+      : "The user requested this Shortcut change from VesnALIA.";
     return request.action === "create"
       ? [
           authorization,
@@ -1161,7 +1161,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     if (request.action !== "change") return shortcutPrompt(request);
     return [
-      "The user requested this connector change from bb.",
+      "The user requested this connector change from VesnALIA.",
       operationMarker(request.operationId),
       "Carry out the requested change using your connected services and workspace conventions.",
       "Change only the requested targets and preserve unrelated settings. If the intended change or destination is unclear, ask for clarification before making changes.",
@@ -1304,7 +1304,7 @@ export default async function plugin(bb: BbPluginApi) {
         `Response polling can be resumed safely: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw new Error(
-        `Korey accepted operation ${operation.id}, but response polling did not complete. Use korey_resume_operation or bb korey operation resume ${operation.id}; do not submit a new request. ${error instanceof Error ? error.message : String(error)}`,
+        `Korey accepted operation ${operation.id}, but response polling did not complete. Use korey_resume_operation or VesnALIA korey operation resume ${operation.id}; do not submit a new request. ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -1329,7 +1329,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       linked = await ensureMapping(
         api,
-        operation.bbThreadId,
+        operation.aliaThreadId,
         signal,
         request.destination.kind === "new-private-thread"
           ? {
@@ -1430,10 +1430,10 @@ export default async function plugin(bb: BbPluginApi) {
       });
     }
 
-    // Recovery in a previous bb thread can change this conversation's journal
-    // while preparation awaits Korey, outside the current bb-thread lock.
+    // Recovery in a previous VesnALIA thread can change this conversation's journal
+    // while preparation awaits Korey, outside the current alia-thread lock.
     try {
-      assertNoUnresolvedOperations(operation.bbThreadId, koreyThread.id);
+      assertNoUnresolvedOperations(operation.aliaThreadId, koreyThread.id);
       signal?.throwIfAborted();
     } catch (error) {
       transitionOperation(db, {
@@ -1507,7 +1507,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       if (operation.status !== "awaiting-response") {
         throw new Error(
-          `Korey operation ${operation.id} has an unknown ${target} outcome. Use korey_reconcile_operation or bb korey operation reconcile ${operation.id}; never submit a replacement automatically.`,
+          `Korey operation ${operation.id} has an unknown ${target} outcome. Use korey_reconcile_operation or VesnALIA korey operation reconcile ${operation.id}; never submit a replacement automatically.`,
         );
       }
     }
@@ -1515,7 +1515,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function applyChange(
-    bbThreadId: string,
+    aliaThreadId: string,
     input: ChangeInput,
     signal?: AbortSignal,
   ): Promise<OperationRecord> {
@@ -1528,23 +1528,23 @@ export default async function plugin(bb: BbPluginApi) {
         `Invalid Shortcut story ID ${JSON.stringify(input.storyId)}`,
       );
     }
-    return withThreadLock(bbThreadId, async () => {
+    return withThreadLock(aliaThreadId, async () => {
       signal?.throwIfAborted();
-      const currentDestination = mappingDestination(bbThreadId);
+      const currentDestination = mappingDestination(aliaThreadId);
       assertNoUnresolvedOperations(
-        bbThreadId,
+        aliaThreadId,
         currentDestination.koreyThreadId,
       );
       const api = await client();
       const [prepared, identity, destination] = await Promise.all([
-        readAttachments(bbThreadId, input.files ?? [], signal),
+        readAttachments(aliaThreadId, input.files ?? [], signal),
         api.identity(signal),
-        requestDestination(api, bbThreadId, signal),
+        requestDestination(api, aliaThreadId, signal),
       ]);
       signal?.throwIfAborted();
       const unsigned = {
         operationId: `korey-${randomUUID()}`,
-        bbThreadId,
+        aliaThreadId,
         action: input.action,
         storyId,
         instruction: input.instruction.trim(),
@@ -1561,21 +1561,21 @@ export default async function plugin(bb: BbPluginApi) {
           "The Korey destination changed while preparing the request. Inspect the linked conversation before trying again.",
         );
       }
-      assertNoUnresolvedOperations(bbThreadId, destination.koreyThreadId);
+      assertNoUnresolvedOperations(aliaThreadId, destination.koreyThreadId);
       const operation = createOperation(db, request);
       return executeOperation(api, operation, request, prepared, signal);
     });
   }
 
   async function askKorey(
-    bbThreadId: string,
+    aliaThreadId: string,
     input: z.infer<typeof askInputSchema>,
     signal?: AbortSignal,
   ) {
     if (input.mode === "change") {
       return operationView(
         await applyChange(
-          bbThreadId,
+          aliaThreadId,
           {
             action: "change",
             instruction: input.prompt,
@@ -1586,7 +1586,7 @@ export default async function plugin(bb: BbPluginApi) {
       );
     }
     const result = await sendConsultation(
-      bbThreadId,
+      aliaThreadId,
       input.prompt,
       signal,
       input.files,
@@ -1600,14 +1600,14 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function operationForThread(
-    bbThreadId: string,
+    aliaThreadId: string,
     operationId: string,
   ): OperationRecord {
     const operation = getOperation(db, operationId);
-    const destination = getMapping(db, bbThreadId)?.koreyThreadId ?? null;
+    const destination = getMapping(db, aliaThreadId)?.koreyThreadId ?? null;
     if (
       operation === null ||
-      (operation.bbThreadId !== bbThreadId &&
+      (operation.aliaThreadId !== aliaThreadId &&
         (destination === null || operation.koreyThreadId !== destination))
     ) {
       throw new Error(`Unknown Korey operation ${operationId}`);
@@ -1616,45 +1616,45 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function operationsForThread(
-    bbThreadId: string,
+    aliaThreadId: string,
     limit: number,
   ): OperationRecord[] {
     return listOperations(
       db,
-      bbThreadId,
+      aliaThreadId,
       limit,
-      getMapping(db, bbThreadId)?.koreyThreadId ?? null,
+      getMapping(db, aliaThreadId)?.koreyThreadId ?? null,
     );
   }
 
   async function withOperationLock<T>(
-    bbThreadId: string,
+    aliaThreadId: string,
     operationId: string,
     run: (operation: OperationRecord) => Promise<T>,
   ): Promise<T> {
-    const operation = operationForThread(bbThreadId, operationId);
+    const operation = operationForThread(aliaThreadId, operationId);
     // Relinked and originating threads must serialize recovery of the same row.
-    return withThreadLock(operation.bbThreadId, async () =>
-      run(operationForThread(bbThreadId, operationId)),
+    return withThreadLock(operation.aliaThreadId, async () =>
+      run(operationForThread(aliaThreadId, operationId)),
     );
   }
 
   async function resumeOperation(
-    bbThreadId: string,
+    aliaThreadId: string,
     operationId: string,
     signal?: AbortSignal,
   ): Promise<OperationRecord> {
-    return withOperationLock(bbThreadId, operationId, async (operation) => {
+    return withOperationLock(aliaThreadId, operationId, async (operation) => {
       return finishOperationPolling(await client(), operation, signal);
     });
   }
 
   async function reconcileOperation(
-    bbThreadId: string,
+    aliaThreadId: string,
     operationId: string,
     signal?: AbortSignal,
   ): Promise<{ reconciled: boolean; operation: OperationRecord }> {
-    return withOperationLock(bbThreadId, operationId, async (current) => {
+    return withOperationLock(aliaThreadId, operationId, async (current) => {
       let operation = current;
       if (
         operation.status === "awaiting-response" ||
@@ -1694,12 +1694,12 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function resolveOperation(
-    bbThreadId: string,
+    aliaThreadId: string,
     operationId: string,
     note: string,
     signal?: AbortSignal,
   ): Promise<OperationRecord> {
-    const operation = operationForThread(bbThreadId, operationId);
+    const operation = operationForThread(aliaThreadId, operationId);
     if (
       operation.status !== "awaiting-response" &&
       operation.status !== "reconcile-required"
@@ -1726,9 +1726,9 @@ export default async function plugin(bb: BbPluginApi) {
       koreyThreadId: operation.koreyThreadId,
       note: resolutionNote.data,
     });
-    const interaction = await bb.ui.requestInput(
+    const interaction = await alia.ui.requestInput(
       {
-        threadId: bbThreadId,
+        threadId: aliaThreadId,
         rendererId: OPERATION_RESOLUTION_RENDERER_ID,
         title: "Resolve Korey operation manually",
         payload,
@@ -1753,7 +1753,7 @@ export default async function plugin(bb: BbPluginApi) {
         "Operation resolution was not confirmed for this operation and note.",
       );
     }
-    return withOperationLock(bbThreadId, operationId, async (current) => {
+    return withOperationLock(aliaThreadId, operationId, async (current) => {
       if (resolutionHash(current) !== payload.resolutionHash) {
         throw new Error(
           "The operation changed while resolution was pending. Inspect it again before resolving.",
@@ -1768,7 +1768,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "korey",
     summary: "Ask Korey to work with your connected tools",
     commands: CLI_COMMANDS,
@@ -1785,7 +1785,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (command === "status") {
           if (
             parsed.positional.length > 0 ||
-            parsed.bbThreadId !== undefined ||
+            parsed.aliaThreadId !== undefined ||
             parsed.files.length > 0 ||
             parsed.after !== undefined ||
             parsed.limit !== undefined
@@ -1804,7 +1804,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (command === "login") {
           if (
             parsed.positional.length > 1 ||
-            parsed.bbThreadId !== undefined ||
+            parsed.aliaThreadId !== undefined ||
             parsed.files.length > 0 ||
             parsed.after !== undefined ||
             parsed.limit !== undefined
@@ -1828,13 +1828,13 @@ export default async function plugin(bb: BbPluginApi) {
             parsed.json,
             { authorizationUrl, expiresAt: new Date(expiresAt).toISOString() },
             [
-              "Open this URL to connect bb to your Korey account:",
+              "Open this URL to connect VesnALIA to your Korey account:",
               "",
               `  ${authorizationUrl}`,
               "",
-              "bb finishes connecting when you approve access. If the browser ends on a page that cannot load, for example because bb runs on another computer, copy that page's address and run:",
+              "alia finishes connecting when you approve access. If the browser ends on a page that cannot load, for example because VesnALIA runs on another computer, copy that page's address and run:",
               "",
-              "  bb korey login '<address>'",
+              "  VesnALIA korey login '<address>'",
               "",
               "The link expires in 15 minutes.",
             ].join("\n"),
@@ -1843,7 +1843,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (command === "logout") {
           if (
             parsed.positional.length > 0 ||
-            parsed.bbThreadId !== undefined ||
+            parsed.aliaThreadId !== undefined ||
             parsed.files.length > 0 ||
             parsed.after !== undefined ||
             parsed.limit !== undefined
@@ -1864,8 +1864,8 @@ export default async function plugin(bb: BbPluginApi) {
           );
         }
         if (command === "threads") {
-          if (parsed.bbThreadId !== undefined || parsed.files.length > 0) {
-            throw new Error("threads does not accept --bb-thread or --file");
+          if (parsed.aliaThreadId !== undefined || parsed.files.length > 0) {
+            throw new Error("threads does not accept --alia-thread or --file");
           }
           const page = await (
             await client()
@@ -1880,7 +1880,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (command === "show") {
           if (
             parsed.positional.length !== 1 ||
-            parsed.bbThreadId !== undefined ||
+            parsed.aliaThreadId !== undefined ||
             parsed.files.length > 0
           ) {
             throw new Error("show requires exactly one Korey thread ID");
@@ -1911,17 +1911,17 @@ export default async function plugin(bb: BbPluginApi) {
           ) {
             throw new Error("link requires exactly one Korey thread ID");
           }
-          const bbThreadId = cliThreadId(parsed.bbThreadId, context.threadId);
+          const aliaThreadId = cliThreadId(parsed.aliaThreadId, context.threadId);
           const thread = await linkThread(
-            bbThreadId,
+            aliaThreadId,
             parsed.positional[0]!,
             context.signal,
           );
-          const value = { bbThreadId, koreyThread: thread };
+          const value = { aliaThreadId, koreyThread: thread };
           return cliOutput(
             parsed.json,
             value,
-            `Linked bb thread ${bbThreadId} to ${thread.name ?? thread.id}.`,
+            `Linked VesnALIA thread ${aliaThreadId} to ${thread.name ?? thread.id}.`,
           );
         }
         if (command === "unlink") {
@@ -1931,17 +1931,17 @@ export default async function plugin(bb: BbPluginApi) {
             parsed.after !== undefined ||
             parsed.limit !== undefined
           ) {
-            throw new Error("unlink accepts only --bb-thread and --json");
+            throw new Error("unlink accepts only --alia-thread and --json");
           }
-          const bbThreadId = cliThreadId(parsed.bbThreadId, context.threadId);
-          const removed = await unlinkThread(bbThreadId);
-          const value = { bbThreadId, removed };
+          const aliaThreadId = cliThreadId(parsed.aliaThreadId, context.threadId);
+          const removed = await unlinkThread(aliaThreadId);
+          const value = { aliaThreadId, removed };
           return cliOutput(
             parsed.json,
             value,
             removed
-              ? `Removed the Korey link for bb thread ${bbThreadId}.`
-              : `bb thread ${bbThreadId} had no Korey link.`,
+              ? `Removed the Korey link for VesnALIA thread ${aliaThreadId}.`
+              : `alia thread ${aliaThreadId} had no Korey link.`,
           );
         }
         if (command === "ask") {
@@ -1952,9 +1952,9 @@ export default async function plugin(bb: BbPluginApi) {
           ) {
             throw new Error("ask requires a message");
           }
-          const bbThreadId = cliThreadId(parsed.bbThreadId, context.threadId);
+          const aliaThreadId = cliThreadId(parsed.aliaThreadId, context.threadId);
           const result = await askKorey(
-            bbThreadId,
+            aliaThreadId,
             askInputSchema.parse({
               prompt: parsed.positional.join(" "),
               mode: parsed.change ? "change" : "consult",
@@ -1979,7 +1979,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (action !== "create" && action !== "update") {
             throw new Error("shortcut requires create or update");
           }
-          const bbThreadId = cliThreadId(parsed.bbThreadId, context.threadId);
+          const aliaThreadId = cliThreadId(parsed.aliaThreadId, context.threadId);
           let storyId: string | undefined;
           let instruction: string;
           if (action === "update") {
@@ -1997,7 +1997,7 @@ export default async function plugin(bb: BbPluginApi) {
             }
           }
           const operation = await applyChange(
-            bbThreadId,
+            aliaThreadId,
             {
               action,
               instruction,
@@ -2014,7 +2014,7 @@ export default async function plugin(bb: BbPluginApi) {
             throw new Error("operation does not accept --file or --after");
           }
           const [action, operationId, ...extra] = parsed.positional;
-          const bbThreadId = cliThreadId(parsed.bbThreadId, context.threadId);
+          const aliaThreadId = cliThreadId(parsed.aliaThreadId, context.threadId);
           if (action === "resolve") {
             if (
               operationId === undefined ||
@@ -2026,7 +2026,7 @@ export default async function plugin(bb: BbPluginApi) {
               );
             }
             const operation = await resolveOperation(
-              bbThreadId,
+              aliaThreadId,
               operationId,
               extra.join(" "),
               context.signal,
@@ -2042,7 +2042,7 @@ export default async function plugin(bb: BbPluginApi) {
               throw new Error("operation list accepts no operation ID");
             }
             const operations = operationsForThread(
-              bbThreadId,
+              aliaThreadId,
               parsed.limit ?? 20,
             ).map(operationView);
             return cliOutput(
@@ -2071,7 +2071,7 @@ export default async function plugin(bb: BbPluginApi) {
             );
           }
           if (action === "show") {
-            const operation = operationForThread(bbThreadId, operationId);
+            const operation = operationForThread(aliaThreadId, operationId);
             return cliOutput(
               parsed.json,
               operationView(operation),
@@ -2080,7 +2080,7 @@ export default async function plugin(bb: BbPluginApi) {
           }
           if (action === "resume") {
             const operation = await resumeOperation(
-              bbThreadId,
+              aliaThreadId,
               operationId,
               context.signal,
             );
@@ -2091,7 +2091,7 @@ export default async function plugin(bb: BbPluginApi) {
             );
           }
           const result = await reconcileOperation(
-            bbThreadId,
+            aliaThreadId,
             operationId,
             context.signal,
           );
@@ -2112,7 +2112,7 @@ export default async function plugin(bb: BbPluginApi) {
           error instanceof Error &&
           "code" in error &&
           error.code === "ERR_PARSE_ARGS_UNKNOWN_OPTION"
-            ? "Unknown option. See bb korey --help for supported options. Use -- before positional text starting with a dash."
+            ? "Unknown option. See VesnALIA korey --help for supported options. Use -- before positional text starting with a dash."
             : error instanceof Error
               ? error.message
               : String(error);
@@ -2124,7 +2124,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "korey_status",
     description:
       "Check the configured Korey identity and organization without changing anything.",
@@ -2136,7 +2136,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "korey_list_threads",
     description: "List the authenticated user's owned Korey threads.",
     parameters: z
@@ -2158,7 +2158,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "korey_get_thread",
     description: "Read a Korey thread and one paginated message page.",
     parameters: z
@@ -2184,14 +2184,14 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "korey_link_thread",
     description:
-      "Link an existing private Korey thread to the current bb thread so future requests continue it.",
+      "Link an existing private Korey thread to the current VesnALIA thread so future requests continue it.",
     parameters: z.object({ koreyThreadId: z.string().min(1) }).strict(),
     async execute({ koreyThreadId }, context) {
       return executeJsonTool(async () => ({
-        bbThreadId: context.threadId,
+        aliaThreadId: context.threadId,
         koreyThread: await linkThread(
           context.threadId,
           koreyThreadId,
@@ -2201,23 +2201,23 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "korey_unlink_thread",
     description:
-      "Remove the Korey conversation link for the current bb thread without changing the remote Korey thread.",
+      "Remove the Korey conversation link for the current VesnALIA thread without changing the remote Korey thread.",
     parameters: z.object({}).strict(),
     async execute(_input, context) {
       return executeJsonTool(async () => ({
-        bbThreadId: context.threadId,
+        aliaThreadId: context.threadId,
         removed: await unlinkThread(context.threadId),
       }));
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "korey_ask",
     description:
-      "Ask Korey to research connected services or perform user-requested changes, including feature-flag updates. Use mode change for requested actions and mode consult for research or drafts. Continues this bb thread's private Korey conversation.",
+      "Ask Korey to research connected services or perform user-requested changes, including feature-flag updates. Use mode change for requested actions and mode consult for research or drafts. Continues this VesnALIA thread's private Korey conversation.",
     instructions:
       'For "Ask Korey ..." requests, delegate the user’s desired outcome and relevant context. Use mode change when the user requested an action in a connected service, including LaunchDarkly feature-flag updates or Sentry issue changes. The user’s explicit request authorizes that change; ask only if its scope or destination is unclear. Use mode consult for research, questions, and drafts without changes. Prefer korey_shortcut_change for Shortcut Story creation or updates. These modes guide Korey through prompts; connector permissions remain in Korey. Never resend a consultation or change to retrieve its answer or retry an unknown outcome. For awaiting-response, use korey_resume_operation with the existing operation ID. For reconcile-required, use korey_reconcile_operation.',
     parameters: askInputSchema,
@@ -2228,7 +2228,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "korey_shortcut_change",
     description:
       "Ask Korey to create or update a Shortcut Story using its connector and workspace conventions. An explicit user request authorizes the change; no extra confirmation form is shown.",
@@ -2244,10 +2244,10 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "korey_list_operations",
     description:
-      "List recent Korey consultations and changes from this bb thread or its linked Korey conversation.",
+      "List recent Korey consultations and changes from this VesnALIA thread or its linked Korey conversation.",
     parameters: z
       .object({ limit: z.number().int().min(1).max(50).default(20) })
       .strict(),
@@ -2258,7 +2258,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "korey_get_operation",
     description:
       "Inspect one Korey consultation or change operation without sending or retrying it.",
@@ -2270,7 +2270,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "korey_resume_operation",
     description:
       "Resume read-only polling for an awaiting-response consultation or change, or refresh a korey-complete answer, using its recorded message ID. This never resends the request.",
@@ -2284,7 +2284,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "korey_reconcile_operation",
     description:
       "Read the linked Korey conversation to reconcile an ambiguous message dispatch. This never resends the request.",
@@ -2304,7 +2304,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.configure(() => ({
+  alia.agents.configure(() => ({
     tools: [
       "korey_status",
       "korey_list_threads",
@@ -2320,6 +2320,6 @@ export default async function plugin(bb: BbPluginApi) {
     ],
     skills: ["korey"],
     instructions:
-      'Korey brings its connected services to every bb harness. For "Ask Korey ..." requests, delegate the user’s goal and context. Use korey_ask with mode change for user-requested connector actions, including feature-flag updates, and mode consult for research, analysis, and drafts. Prefer korey_shortcut_change for Shortcut Story creation or updates. An explicit user request authorizes its change without a second confirmation. Connector setup, permissions, and reauthentication remain in Korey; request modes guide Korey through prompts. Consultations and changes return operation IDs. If a response is still pending, use korey_resume_operation with that ID to retrieve the answer. Never resend a request to retrieve its answer or retry an unknown outcome; inspect or reconcile the existing operation.',
+      'Korey brings its connected services to every VesnALIA harness. For "Ask Korey ..." requests, delegate the user’s goal and context. Use korey_ask with mode change for user-requested connector actions, including feature-flag updates, and mode consult for research, analysis, and drafts. Prefer korey_shortcut_change for Shortcut Story creation or updates. An explicit user request authorizes its change without a second confirmation. Connector setup, permissions, and reauthentication remain in Korey; request modes guide Korey through prompts. Consultations and changes return operation IDs. If a response is still pending, use korey_resume_operation with that ID to retrieve the answer. Never resend a request to retrieve its answer or retry an unknown outcome; inspect or reconcile the existing operation.',
   }));
 }

@@ -2,7 +2,7 @@ import "./check-test-machine.mjs";
 import { z } from "zod";
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
-import { renderSlot } from '@get-bb/plugin-sdk/testing/app';
+import { renderSlot } from '@vesnalia/plugin-sdk/testing/app';
 import { clearWorkspaces } from '../src/app/files-ui/workspace-memory.ts';
 import { Workspace } from '../src/app/files-ui/Workspace.tsx';
 import type { FilesTree } from '../src/core/files-tree.ts';
@@ -183,7 +183,7 @@ test('Markdown preview passes the original source to the host renderer', async (
   } });
   const file = await screen.findByRole('treeitem', { name: 'README.md' });
   await act(async () => fireEvent.click(file));
-  expect(screen.getByTestId('bb-markdown').textContent).toBe(content);
+  expect(screen.getByTestId('alia-markdown').textContent).toBe(content);
 });
 
 test('expanded folder toggle retries a missing listing', async () => {

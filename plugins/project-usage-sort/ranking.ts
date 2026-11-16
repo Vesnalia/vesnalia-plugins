@@ -1,5 +1,5 @@
 // Pure ranking and reorder planning, kept free of the plugin API so it can be
-// tested without a running bb.
+// tested without a running VesnALIA.
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PROJECT_SECTION_PREFIX = "project:";

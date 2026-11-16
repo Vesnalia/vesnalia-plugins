@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { MapTask, Snapshot } from "./server";
 export const now = new Date("2026-09-17T12:00:00").getTime();
 export function thread(

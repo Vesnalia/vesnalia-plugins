@@ -24,7 +24,7 @@ const record = (days: number, changes: Partial<ImageRecord> = {}): ImageRecord =
   os: "Ubuntu 24.04.5 LTS",
   aptSnapshot: null,
   pins: PINS,
-  bbApp: APP,
+  aliaApp: APP,
   tools: { node: "24.21.0" },
   nvidia: null,
   layer: null,
@@ -70,10 +70,10 @@ function jobs(backends: Backend[], options: { app?: string | { value: string }; 
   const job = new ImageJobs({
     backends: () => backends,
     setup: "/plugin/setup",
-    bbUrl: () => "https://bb.example.com",
-    facts: { pins: async () => PINS, bbApp: async () => (typeof options.app === "object" ? options.app.value : (options.app ?? APP)), ...(options.program ? { program: options.program } : {}) },
+    aliaUrl: () => "https://bb.example.com",
+    facts: { pins: async () => PINS, aliaApp: async () => (typeof options.app === "object" ? options.app.value : (options.app ?? APP)), ...(options.program ? { program: options.program } : {}) },
     storage,
-    afterBbUpdates: () => options.follow?.on ?? false,
+    afterAliaUpdates: () => options.follow?.on ?? false,
     changed: () => void (options.changes && options.changes.count++),
     now: () => clock.now,
     versions: versions as never,
@@ -96,7 +96,7 @@ function jobs(backends: Backend[], options: { app?: string | { value: string }; 
   return { job, refreshed, storage, clock };
 }
 
-test("an image is due when its guest program or prepare script is not the one this BB Box would build", async () => {
+test("an image is due when its guest program or prepare script is not the one this VesnALIA Box would build", async () => {
   const lxc = backend("proxmox-lxc", [
     build("9100", "linux", record(1, { program: "same" })),
     build("9101", "linux", record(1, { program: "other" })),
@@ -119,7 +119,7 @@ test("an image is due when its guest program or prepare script is not the one th
   assert.deepEqual(failed.job.unlistable(), ["docker did not list its images: docker on the machine did not answer"]);
 });
 
-test("images are due in 049's order: failing the doctor, past their interval, another BB app, other pins; Windows and project images wait (049)", async () => {
+test("images are due in 049's order: failing the doctor, past their interval, another VesnALIA app, other pins; Windows and project images wait (049)", async () => {
   const lxc = backend("proxmox-lxc", [
     build("9100", "linux", record(1)),
     build("9101", "linux-desktop-cpu", record(10)),
@@ -128,7 +128,7 @@ test("images are due in 049's order: failing the doctor, past their interval, an
     build("9104", "windows-desktop", null),
     build("7000", "linux", record(1), { image: "rust", current: false }),
   ]);
-  const tart = backend("tart", [build("mac1/bb-box-macos", "macos", record(20, { bbApp: null })), build("mac1/bb-box-linux", "linux-arm64", record(1, { bbApp: "b".repeat(64) }))]);
+  const tart = backend("tart", [build("mac1/alia-box-macos", "macos", record(20, { aliaApp: null })), build("mac1/alia-box-linux", "linux-arm64", record(1, { aliaApp: "b".repeat(64) }))]);
   const { job } = jobs([lxc.backend, tart.backend]);
   const views = await job.list();
   assert.deepEqual(
@@ -136,12 +136,12 @@ test("images are due in 049's order: failing the doctor, past their interval, an
     [
       ["proxmox-lxc/9103", "it fails the doctor"],
       ["proxmox-lxc/9101", "it is 10 days old, past its 7-day interval"],
-      ["tart/mac1/bb-box-linux", "it has another build of BB's app than BB's server gives"],
-      ["proxmox-lxc/9102", "it was built with other pins than this BB Box's"],
+      ["tart/mac1/alia-box-linux", "it has another build of VesnALIA's app than VesnALIA's server gives"],
+      ["proxmox-lxc/9102", "it was built with other pins than this VesnALIA Box's"],
       ["proxmox-lxc/9100", null],
-      ["tart/mac1/bb-box-macos", null],
+      ["tart/mac1/alia-box-macos", null],
     ],
-    "a macOS image is due after a month, and BB's app does not count on it",
+    "a macOS image is due after a month, and VesnALIA's app does not count on it",
   );
 });
 
@@ -166,24 +166,24 @@ test("a run removes what a run left, refreshes the due images most needed first,
   // The failed image waits until what it is built from changes; build tries it at once.
   const again = await job.refreshAll();
   assert.deepEqual(again.lines.find((line) => line.name === "proxmox-lxc/9101")?.outcome, "skipped");
-  assert.match(again.lines.find((line) => line.name === "proxmox-lxc/9101")!.detail, /bb box images build proxmox-lxc\/9101 tries again$/);
+  assert.match(again.lines.find((line) => line.name === "proxmox-lxc/9101")!.detail, /alia box images build proxmox-lxc\/9101 tries again$/);
   const tried = await job.build("proxmox-lxc/9101", { try: true, signal: AbortSignal.timeout(5_000) });
   assert.equal(tried.ok, false);
   assert.equal(refreshed.at(-1), "9101 (try)");
-  await assert.rejects(job.build("proxmox-lxc/9999", { signal: AbortSignal.timeout(5_000) }), /There is no image proxmox-lxc\/9999\. bb box images list names them: /);
+  await assert.rejects(job.build("proxmox-lxc/9999", { signal: AbortSignal.timeout(5_000) }), /There is no image proxmox-lxc\/9999\. alia box images list names them: /);
 });
 
-test("a failed image is tried again once BB's app changes, and an image waits when its host has no room", async () => {
+test("a failed image is tried again once VesnALIA's app changes, and an image waits when its host has no room", async () => {
   const lxc = backend("proxmox-lxc", [build("9101", "linux", record(10))]);
   const first = jobs([lxc.backend], { fail: ["9101"] });
   await first.job.refreshAll();
   const storage = first.storage;
-  // Another build of BB's app, with what the first run recorded.
+  // Another build of VesnALIA's app, with what the first run recorded.
   const job = new ImageJobs({
     backends: () => [lxc.backend],
     setup: "/plugin/setup",
-    bbUrl: () => null,
-    facts: { pins: async () => PINS, bbApp: async () => "c".repeat(64) },
+    aliaUrl: () => null,
+    facts: { pins: async () => PINS, aliaApp: async () => "c".repeat(64) },
     storage,
     now: () => NOW,
     versions: versions as never,
@@ -228,8 +228,8 @@ test("the failures the settings page's Status lists: each standard image whose l
   const passing = new ImageJobs({
     backends: () => on.backends,
     setup: "/plugin/setup",
-    bbUrl: () => null,
-    facts: { pins: async () => PINS, bbApp: async () => APP },
+    aliaUrl: () => null,
+    facts: { pins: async () => PINS, aliaApp: async () => APP },
     storage,
     now: () => NOW,
     versions: versions as never,
@@ -259,14 +259,14 @@ test("the doctor's checks: Nightly rebuilds, and each image whose last rebuild f
   const { job, clock } = jobs([lxc.backend], { fail: ["9101"] });
   const before = await job.checks();
   assert.deepEqual([before[0]!.name, before[0]!.status], ["Nightly rebuilds", "warn"]);
-  assert.equal(before[0]!.fix, `Turn on Rebuild each night on the Images page of BB Box's settings, or have a BB script automation run it each night: ${AUTOMATION}`);
+  assert.equal(before[0]!.fix, `Turn on Rebuild each night on the Images page of VesnALIA Box's settings, or have a VesnALIA script automation run it each night: ${AUTOMATION}`);
   await job.refreshAll();
   const after = await job.checks();
   assert.deepEqual([after[0]!.status, after[0]!.detail], ["ok", "The last run ended today, with a failure."]);
   assert.match(after[1]!.detail, /^Its last rebuild, on 2026-10-03, failed: The new build failed the kind's check: docker FAIL Its last line: the last line$/);
-  assert.equal(after[1]!.fix, "Fix the cause, then run bb box images build proxmox-lxc/9101. bb box images list shows its last lines.");
+  assert.equal(after[1]!.fix, "Fix the cause, then run alia box images build proxmox-lxc/9101. VesnALIA box images list shows its last lines.");
   clock.now += 9 * DAY;
-  assert.deepEqual([(await job.checks())[0]!.status, (await job.checks())[0]!.detail], ["warn", "No run of bb box images refresh has ended for 9 days."]);
+  assert.deepEqual([(await job.checks())[0]!.status, (await job.checks())[0]!.detail], ["warn", "No run of VesnALIA box images refresh has ended for 9 days."]);
   assert.deepEqual(await jobs([backend("ssh-pool", []).backend]).job.checks(), [], "no images, no checks");
   const firstNight = (await jobs([lxc.backend], { follow: { on: true } }).job.checks())[0]!;
   assert.deepEqual([firstNight.status, firstNight.detail, firstNight.fix], ["ok", "Rebuild each night is on, and no run has ended yet: the first is tonight.", null], "with the switch on, a new install is not told to turn it on");
@@ -284,7 +284,7 @@ test("a failed image is tried again by the next run once the program that builds
   assert.equal(unchanged.lines.find((line) => line.name === "proxmox-lxc/9101")?.outcome, "skipped");
   assert.deepEqual(refreshed, ["9101"]);
 
-  program.value = "the build scripts with a fix, after a BB Box update";
+  program.value = "the build scripts with a fix, after a VesnALIA Box update";
   clock.now += DAY;
   const changed = await job.refreshAll();
 
@@ -293,7 +293,7 @@ test("a failed image is tried again by the next run once the program that builds
 });
 
 test("a backend that refreshes its Windows images has them due monthly, and a failed refresh is tried again the next month (054)", async () => {
-  const windows = (days: number) => record(days, { kind: "windows-desktop", bbApp: null, os: "Windows 11 Pro" });
+  const windows = (days: number) => record(days, { kind: "windows-desktop", aliaApp: null, os: "Windows 11 Pro" });
   const qemu = backend("proxmox-qemu", [build("9104", "windows-desktop", null), build("9105", "windows-desktop", windows(20)), build("9106", "windows-desktop", windows(31))], { windows: true });
   const lxc = backend("proxmox-lxc", [build("9107", "windows-desktop", null)]);
   const clock = { now: NOW };
@@ -305,7 +305,7 @@ test("a backend that refreshes its Windows images has them due monthly, and a fa
       ["proxmox-qemu/9106", "it is 31 days old, past its 30-day interval"],
       ["proxmox-qemu/9105", null],
     ],
-    "BB's app does not count on Windows, and a backend that does not say it refreshes Windows keeps its Windows images out",
+    "VesnALIA's app does not count on Windows, and a backend that does not say it refreshes Windows keeps its Windows images out",
   );
   await job.refreshAll();
   assert.deepEqual(refreshed, ["9104", "9106"]);
@@ -319,13 +319,13 @@ test("a backend that refreshes its Windows images has them due monthly, and a fa
   assert.equal(refreshed.filter((ref) => ref === "9104").length, 2);
 });
 
-test("after a BB update, the Linux images with BB's old app are refreshed within the hour, alone, once, after any run going on, while the nightly switch is on", async () => {
+test("after a VesnALIA update, the Linux images with VesnALIA's old app are refreshed within the hour, alone, once, after any run going on, while the nightly switch is on", async () => {
   const NEW = "n".repeat(64);
   const lxc = backend("proxmox-lxc", [
     build("9100", "linux", record(1)),
     build("9101", "linux-desktop-cpu", record(10)),
-    // Due for its age alone, and BB's app is not judged on macOS: it waits for the night.
-    build("mac1", "macos", record(40, { bbApp: null })),
+    // Due for its age alone, and VesnALIA's app is not judged on macOS: it waits for the night.
+    build("mac1", "macos", record(40, { aliaApp: null })),
   ]);
   const app = { value: APP };
   const follow = { on: true };
@@ -334,52 +334,52 @@ test("after a BB update, the Linux images with BB's old app are refreshed within
   const { job, refreshed, clock } = jobs([lxc.backend], { app, follow, gate: () => held ?? Promise.resolve() });
 
   // Nothing carries another app: nothing to do.
-  assert.equal(await job.afterBbUpdate(), null);
+  assert.equal(await job.afterAliaUpdate(), null);
   assert.equal(await job.dueSoon(), null);
 
-  // BB is updated: noticed, and due soon, as the doctor and images list say.
+  // VesnALIA is updated: noticed, and due soon, as the doctor and images list say.
   app.value = NEW;
-  assert.equal(await job.afterBbUpdate(), "noticed");
+  assert.equal(await job.afterAliaUpdate(), "noticed");
   assert.deepEqual(await job.dueSoon(), { at: NOW + 15 * 60_000, names: ["proxmox-lxc/9101", "proxmox-lxc/9100"] });
-  const check = (await job.checks()).find((one) => one.id === "images.bb-update");
-  assert.equal(check?.detail, "BB was updated: proxmox-lxc/9101, proxmox-lxc/9100 have another build of BB's app than BB's server gives. A refresh of them starts by 02:15 UTC.");
+  const check = (await job.checks()).find((one) => one.id === "images.alia-update");
+  assert.equal(check?.detail, "VesnALIA was updated: proxmox-lxc/9101, proxmox-lxc/9100 have another build of VesnALIA's app than VesnALIA's server gives. A refresh of them starts by 02:15 UTC.");
   clock.now += 10 * 60_000;
-  assert.equal(await job.afterBbUpdate(), "waiting");
+  assert.equal(await job.afterAliaUpdate(), "waiting");
 
   // Its time comes while the night's run goes on: it waits for it.
   clock.now += 6 * 60_000;
   held = new Promise((resolve) => (open = resolve));
   const night = job.refreshAll();
   await new Promise((resolve) => setImmediate(resolve));
-  assert.equal(await job.afterBbUpdate(), "waiting");
+  assert.equal(await job.afterAliaUpdate(), "waiting");
   held = null;
   open();
   await night;
   refreshed.length = 0;
 
-  // Then it starts, with the images that have BB's old app alone, and once for this build of the app.
-  assert.equal(await job.afterBbUpdate(), "started");
-  const run = await job.refreshAll({ only: "bb-app" });
+  // Then it starts, with the images that have VesnALIA's old app alone, and once for this build of the app.
+  assert.equal(await job.afterAliaUpdate(), "started");
+  const run = await job.refreshAll({ only: "alia-app" });
   assert.deepEqual(refreshed, ["9101", "9100"]);
   assert.deepEqual(
     run.lines.filter((line) => line.name === "proxmox-lxc/mac1").map((line) => line.detail),
-    ["it is due for another reason than a BB update: the night refreshes it"],
+    ["it is due for another reason than a VesnALIA update: the night refreshes it"],
   );
-  assert.equal(await job.afterBbUpdate(), null);
+  assert.equal(await job.afterAliaUpdate(), null);
   assert.equal(await job.dueSoon(), null);
 
-  // With the nightly switch off, a BB update starts nothing.
+  // With the nightly switch off, a VesnALIA update starts nothing.
   app.value = "m".repeat(64);
   follow.on = false;
-  assert.equal(await job.afterBbUpdate(), null);
+  assert.equal(await job.afterAliaUpdate(), null);
   assert.equal(await job.dueSoon(), null);
 });
 
-test("a full run asked for during a BB update's run waits for it, then runs every due image", async () => {
+test("a full run asked for during a VesnALIA update's run waits for it, then runs every due image", async () => {
   const NEW = "n".repeat(64);
-  const lxc = backend("proxmox-lxc", [build("9100", "linux", record(1)), build("9102", "linux-desktop-wayland-cpu", record(10, { bbApp: NEW }))]);
+  const lxc = backend("proxmox-lxc", [build("9100", "linux", record(1)), build("9102", "linux-desktop-wayland-cpu", record(10, { aliaApp: NEW }))]);
   const { job, refreshed } = jobs([lxc.backend], { app: NEW });
-  const update = job.refreshAll({ only: "bb-app" });
+  const update = job.refreshAll({ only: "alia-app" });
   const night = job.refreshAll();
   await update;
   await night;
@@ -442,7 +442,7 @@ test("Try again rebuilds one image alone, due or not, even when its last rebuild
   assert.deepEqual(await job.startOne("proxmox-lxc/nope"), { started: false, message: "There is no image proxmox-lxc/nope on a backend that is on." });
 });
 
-test("bb box images list says a failed rebuild's reason with one full stop", () => {
+test("alia box images list says a failed rebuild's reason with one full stop", () => {
   const view = { name: "docker/linux", backend: "docker", build: build("linux", "linux", null), due: null, last: { at: NOW, ok: false, reason: "setup/docker/build.sh exited with 1.", build: null, seconds: 1, output: [], from: "x" } };
   assert.equal(imageLine(view), "docker/linux (linux): no record; not due; last rebuild 2026-10-03 failed: setup/docker/build.sh exited with 1.");
 });
@@ -450,20 +450,20 @@ test("bb box images list says a failed rebuild's reason with one full stop", () 
 test("the iOS image is due after 30 days or when the macOS image under it has a newer build, and comes after that macOS image (063, 3.2)", async () => {
   const runtime = { platform: "ios", os: "27.0", build: "24A434", xcode: "27.0", companion: "1.7.7" } as const;
   const devices = [{ model: "iPhone 18 Pro", native: "com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro", runtime }] as unknown as ImageRecord["devices"];
-  const ios = (days: number, base: string) => build("mac1/bb-box-ios", "ios", record(days, { kind: "ios", arch: "arm64", base, bbApp: null, devices }));
-  const macos = (days: number) => build("mac1/bb-box-macos", "macos", record(days, { kind: "macos", arch: "arm64", bbApp: null }));
+  const ios = (days: number, base: string) => build("mac1/alia-box-ios", "ios", record(days, { kind: "ios", arch: "arm64", base, aliaApp: null, devices }));
+  const macos = (days: number) => build("mac1/alia-box-macos", "macos", record(days, { kind: "macos", arch: "arm64", aliaApp: null }));
   const due = async (builds: ImageBuild[]) => (await jobs([backend("tart", builds).backend]).job.list()).map((view) => [view.name, view.due]);
   assert.deepEqual(await due([macos(5), ios(1, "build.5")]), [
-    ["tart/mac1/bb-box-ios", null],
-    ["tart/mac1/bb-box-macos", null],
+    ["tart/mac1/alia-box-ios", null],
+    ["tart/mac1/alia-box-macos", null],
   ]);
   assert.deepEqual(await due([macos(1), ios(3, "build.5")]), [
-    ["tart/mac1/bb-box-ios", "it is built on another build of the macOS image than build.1"],
-    ["tart/mac1/bb-box-macos", null],
+    ["tart/mac1/alia-box-ios", "it is built on another build of the macOS image than build.1"],
+    ["tart/mac1/alia-box-macos", null],
   ]);
   assert.deepEqual(await due([ios(40, "build.40"), macos(40)]), [
-    ["tart/mac1/bb-box-macos", "it is 40 days old, past its 30-day interval"],
-    ["tart/mac1/bb-box-ios", "it is 40 days old, past its 30-day interval"],
+    ["tart/mac1/alia-box-macos", "it is 40 days old, past its 30-day interval"],
+    ["tart/mac1/alia-box-ios", "it is 40 days old, past its 30-day interval"],
   ]);
-  assert.deepEqual(await due([build("mac1/bb-box-ios", "ios", record(1, { kind: "ios", base: "build.1", devices: null }))]), [["tart/mac1/bb-box-ios", "it fails the doctor"]]);
+  assert.deepEqual(await due([build("mac1/alia-box-ios", "ios", record(1, { kind: "ios", base: "build.1", devices: null }))]), [["tart/mac1/alia-box-ios", "it fails the doctor"]]);
 });

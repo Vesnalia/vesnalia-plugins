@@ -1,15 +1,15 @@
 /**
- * Opens a file of the first mate's home in bb's file preview. The home is the first mate's workspace, so
+ * Opens a file of the first mate's home in VesnALIA's file preview. The home is the first mate's workspace, so
  * the file is addressed by the first mate thread's environment and a path relative to the home.
  */
-import { useBbNavigate, useSdk } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useSdk } from "@vesnalia/plugin-sdk/app";
 import { useCallback } from "react";
 
 import { reportError } from "./notify";
 
 export function useOpenHomeFile(mateThreadId: string): (path: string) => void {
   const sdk = useSdk();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return useCallback(
     (path: string) => {
       sdk.threads
@@ -20,7 +20,7 @@ export function useOpenHomeFile(mateThreadId: string): (path: string) => void {
             target: { kind: "workspace", environmentId: thread.environmentId, path },
             location: null,
           });
-          if (!opened) throw new Error(`bb could not open ${path} here.`);
+          if (!opened) throw new Error(`alia could not open ${path} here.`);
         })
         .catch(reportError);
     },

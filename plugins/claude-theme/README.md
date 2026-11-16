@@ -1,20 +1,20 @@
-# Claude Theme for BB
+# Claude Theme for VesnALIA
 
-Terracotta accents with charcoal dark and off-white light palettes. An independent BB adaptation of **Claude Theme for VS Code by SK**, version **3.1.0**.
+Terracotta accents with charcoal dark and off-white light palettes. An independent VesnALIA adaptation of **Claude Theme for VS Code by SK**, version **3.1.0**.
 
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/Treo-Solutions/bb-plugin-claude-theme.git@^0.1.0
+alia plugin install git:https://github.com/Treo-Solutions/bb-plugin-claude-theme.git@^0.1.0
 ```
 
 In **Settings → Appearance**, select **Claude Theme** under Palette. Choose **Light**, **Dark** or **System** under Theme. System follows the operating system's preferred appearance. From the CLI:
 
 ```sh
-bb theme set plugin:claude-theme:claude-theme
+alia theme set plugin:claude-theme:claude-theme
 ```
 
-Requires BB **0.47.1 or later, below 1.0**, with Plugin SDK **0.6.79 or later, below 0.7**. No account or external service is required. The source VS Code extension does not need to be installed.
+Requires VesnALIA **0.47.1 or later, below 1.0**, with Plugin SDK **0.6.79 or later, below 0.7**. No account or external service is required. The source VS Code extension does not need to be installed.
 
 ## Dark
 
@@ -28,17 +28,17 @@ Requires BB **0.47.1 or later, below 1.0**, with Plugin SDK **0.6.79 or later, b
 
 Dark mode uses warm charcoal surfaces, beige text and terracotta accents. Light mode uses off-white surfaces, charcoal text and darker terracotta accents. Both include tinted hover and selection backgrounds, terracotta selected navigation labels and icons, and an underline on active tabs.
 
-Code previews and diffs use SK's original syntax files: **106 dark rules** and **94 light rules**, copied unchanged. Each mode maps its source's 16 terminal colours to BB's ANSI tokens. Fonts and layout use BB defaults.
+Code previews and diffs use SK's original syntax files: **106 dark rules** and **94 light rules**, copied unchanged. Each mode maps its source's 16 terminal colours to VesnALIA's ANSI tokens. Fonts and layout use VesnALIA defaults.
 
-The BB adaptation uses more readable low-emphasis labels, weaker selection tints in light mode, and SK's darker light-mode button colour to keep white labels above 4.5:1 contrast. Active-state styles target BB's native tab and current-page attributes; plugins with custom navigation may expose different states. The Warm variants are not included.
+The VesnALIA adaptation uses more readable low-emphasis labels, weaker selection tints in light mode, and SK's darker light-mode button colour to keep white labels above 4.5:1 contrast. Active-state styles target VesnALIA's native tab and current-page attributes; plugins with custom navigation may expose different states. The Warm variants are not included.
 
 ## Development
 
 ```sh
 npm ci --ignore-scripts
 npm run typecheck
-bb plugin build
-bb plugin install .
+alia plugin build
+alia plugin install .
 ```
 
 The plugin declares only a palette, CSS and code-colour files. Its required server factory is empty. It adds no background tasks, network calls, agent tools or settings.

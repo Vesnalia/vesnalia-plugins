@@ -1,6 +1,6 @@
 ---
 name: model-visibility
-description: Explain or troubleshoot the Hide Models plugin, which moves chosen model IDs out of BB's main model list into More models.
+description: Explain or troubleshoot the Hide Models plugin, which moves chosen model IDs out of VesnALIA's main model list into More models.
 ---
 Hide Models adds a settings page under **Settings → Plugins → Hide Models**. Each enabled provider lists its live catalog; checked model IDs are hidden from the main picker list.
 
@@ -10,13 +10,13 @@ Settings are stored as a provider-id to model-id JSON map in plugin settings. En
 
 The frontend is a content script over the desktop picker DOM. It resolves the active provider from the active top tab (never by provider index), maps only uniquely labeled rows, and fails open when the provider label, a row label, or the native More popover is ambiguous. It owns ArrowUp/ArrowDown/Enter while hidden main rows exist, restores hidden rows in search mode, and clicks the original native row from More clones so selection callbacks stay native.
 
-Compact/mobile viewports fail open. Desktop picker and desktop handoff are supported. A future BB picker layout change may require an update; the plugin never patches BB or uses React internals.
+Compact/mobile viewports fail open. Desktop picker and desktop handoff are supported. A future VesnALIA picker layout change may require an update; the plugin never patches VesnALIA or uses React internals.
 
 Useful commands:
 
 ```sh
-bb plugin config model-visibility
-bb plugin config model-visibility set hiddenModels '{"provider-id":["model-id"]}'
-bb plugin disable model-visibility
-bb plugin enable model-visibility
+alia plugin config model-visibility
+alia plugin config model-visibility set hiddenModels '{"provider-id":["model-id"]}'
+alia plugin disable model-visibility
+alia plugin enable model-visibility
 ```

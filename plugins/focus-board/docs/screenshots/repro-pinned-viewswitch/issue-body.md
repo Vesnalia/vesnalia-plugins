@@ -1,10 +1,10 @@
 ## Environment
 
-- Focus Board 1.1.1-dev (branch `bb/fix-view-switching-bugs-thr_cte95vu8xb`, fix landed in the same session)
+- Focus Board 1.1.1-dev (branch `alia/fix-view-switching-bugs-thr_cte95vu8xb`, fix landed in the same session)
 - macOS (Darwin), headless Chrome via the repo's screenshot harness (`scripts/screenshot/`)
 - Repro evidence: `docs/screenshots/repro-pinned-viewswitch/` (pre-fix probe: `pre-fix-probe.txt`, before/after column snapshots: `evidence.json`)
 
-## Reproduction steps (headless, no bb server)
+## Reproduction steps (headless, no VesnALIA server)
 
 1. Start the harness: `npm run build` once, then `npx vite --config scripts/screenshot/vite.config.ts --port 5199`.
 2. Open `http://localhost:5199/?groupBy=parent&demo=1` (Parent view).
@@ -15,7 +15,7 @@ The scripted repro (`node scripts/screenshot/repro-pinned-viewswitch.mjs`) drive
 
 ## Expected result
 
-The pinned child renders in the Attention view's far-left **Pinned** column, wearing its pin badge — the pin applied in the Parent view survives the view switch (pins are bb thread state, not per-view state).
+The pinned child renders in the Attention view's far-left **Pinned** column, wearing its pin badge — the pin applied in the Parent view survives the view switch (pins are VesnALIA thread state, not per-view state).
 
 ## Actual result
 

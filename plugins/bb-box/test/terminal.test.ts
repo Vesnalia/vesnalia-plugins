@@ -1,11 +1,11 @@
 import "./check-test-machine.mjs";
-// A terminal with its PTY on BB's server (src/transports/terminal.ts), and
+// A terminal with its PTY on VesnALIA's server (src/transports/terminal.ts), and
 // the sessions the plugin keeps for tabs that come and go (src/plugin/terminal.ts).
 
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
 import { test } from "node:test";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Boxes } from "../src/core/boxes.ts";
 import { closeReason, registerTerminals, TerminalSessions, type TerminalViewer } from "../src/plugin/terminal.ts";
 import { clampSize, openTerminal, ptyArgv } from "../src/transports/terminal.ts";
@@ -159,17 +159,17 @@ test("a close reason fits a WebSocket's 123 bytes, cut at a character", () => {
   assert.doesNotMatch(cutAccented, /\uFFFD/, "no broken character");
 });
 
-type Handlers = ReturnType<Parameters<BbPluginApi["http"]["experimental_websocket"]>[1]>;
+type Handlers = ReturnType<Parameters<AliaPluginApi["http"]["experimental_websocket"]>[1]>;
 
 /** The route's handlers for a box whose transport opens `command`, with the plugin's socket faked. */
 function route(command: Partial<CommandTransport> | null, options: { idleMs?: number; logged?: string[] } = {}) {
-  let handler: Parameters<BbPluginApi["http"]["experimental_websocket"]>[1] | null = null;
-  const bb = { pluginId: "bb-box", log: { info() {}, error() {} }, http: { experimental_websocket: (_path: string, given: typeof handler) => void (handler = given) } } as unknown as BbPluginApi;
+  let handler: Parameters<AliaPluginApi["http"]["experimental_websocket"]>[1] | null = null;
+  const alia = { pluginId: "alia-box", log: { info() {}, error() {} }, http: { experimental_websocket: (_path: string, given: typeof handler) => void (handler = given) } } as unknown as AliaPluginApi;
   const boxes = {
     find: async (id: string) => ({ id, name: "calm-otter", state: "ready" }),
     transports: async () => ({ command, displays: [], access: null }),
   } as unknown as Boxes;
-  const terminals = registerTerminals(bb, { boxes, idleMs: options.idleMs, logError: (operation, error) => options.logged?.push(`${operation}: ${error instanceof Error ? error.message : String(error)}`) });
+  const terminals = registerTerminals(alia, { boxes, idleMs: options.idleMs, logError: (operation, error) => options.logged?.push(`${operation}: ${error instanceof Error ? error.message : String(error)}`) });
   const open = (query: string): Handlers => handler!({ url: new URL(`http://bb.local/api/v1/plugins/bb-box/http/terminal?${query}`), request: new Request("http://bb.local/"), headers: new Headers() });
   return { terminals, open };
 }

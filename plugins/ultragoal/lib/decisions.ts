@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { GoalDecision } from "../contract.js";
 
 interface DecisionRow {
@@ -36,8 +36,8 @@ function newId(): string {
   return `dec_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function createDecisionStore(bb: BbPluginApi) {
-  const db = bb.storage.database();
+export function createDecisionStore(alia: AliaPluginApi) {
+  const db = alia.storage.database();
   const byThread = db.prepare(
     "SELECT * FROM goal_decisions WHERE thread_id = ? ORDER BY created_at ASC",
   );

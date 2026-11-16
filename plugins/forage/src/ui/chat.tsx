@@ -4,7 +4,7 @@ import {
  experimental_useRpcQuery as useQuery, useComposer,
  type ExperimentalPluginBrowserToolbarActionProps, type ExperimentalThreadContextSegmentInput, type ExperimentalThreadContextSegmentProps, type ExperimentalThreadInfoProps,
  type PluginCommandRegistration, type PluginMessageActionRegistration, type PluginMessageDirectiveProps, type PluginThreadActionRegistration, type PluginThreadHeaderActionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { THREAD_POLICIES, type ThreadPolicy } from "../research/policy.ts";
 import type { ThreadScope } from "../research/activity.ts";
 import { describe } from "./activity.tsx";
@@ -14,7 +14,7 @@ import { CHECK_TAB_ID, canOpenFromCommand, openFromCommand, registerOpener, useO
 import { POLICY_LABEL, useThreadProject } from "./research.tsx";
 
 const SNAPSHOT_ID = /^[\w.-]{1,200}$/u;
-// bb draws a message again whenever it scrolls back into view; record each citation once per app session.
+// VesnALIA draws a message again whenever it scrolls back into view; record each citation once per app session.
 const noted = new Set<string>();
 function parseLines(value: string | undefined): [number, number] | null {
  const match = /^\s*(\d{1,7})\s*(?:[-–]\s*(\d{1,7}))?\s*$/u.exec(value ?? "");

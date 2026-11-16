@@ -34,7 +34,7 @@ This file is the long form; the repository's [README](../README.md) has the
 short one.
 
 
-`bend setup` gets a repository ready with no BB:
+`bend setup` gets a repository ready with no VesnALIA:
 
 ```sh
 bend setup                      # reads only: every step, done or missing, and the command for each
@@ -166,7 +166,7 @@ itself.
 ## Syncing
 
 bend keeps a repository's issues in step with their remote by itself, for
-every tracker, with or without the tab (bead-bb-c9l.16):
+every tracker, with or without the tab (bead-alia-c9l.16):
 
 - **`bend sync`** syncs now, both ways, and says how it ended (synced,
   failed, busy, conflict, stuck), what was sent and what came in; exit
@@ -179,7 +179,7 @@ every tracker, with or without the tab (bead-bb-c9l.16):
   shows as "had recent pushes" after every sync. bend switches it off for
   every bd it starts, the setup steps' included (`DOLT_REMOTE_INFO_BRANCH`
   set and empty; a value you set yourself is kept). A `bd` typed in a terminal is not covered: set the
-  same variable in your own environment (bead-bb-7lb).
+  same variable in your own environment (bead-alia-7lb).
 - **`bend sync --status`** syncs nothing: what the issues are synced with,
   what waits, the last sync, the helper, and what is wrong (`trouble`).
   **`bend sync --log`** lists the syncs, newest first (`--failed` for only
@@ -255,7 +255,7 @@ without "scratch" in its name.
 
 The Airbender tab runs bend for every read and change of an issue
 (`server/bend.ts`, `server/store.ts`), and takes whatever tracker bend
-finds for the folder (bead-bb-c9l.6). It asks bend what the folder has
+finds for the folder (bead-alia-c9l.6). It asks bend what the folder has
 (`bend status --quick`: the tracker, the repository, its kinds of link,
 and whether changes are queued for a hosted tracker) and follows that:
 
@@ -265,7 +265,7 @@ and whether changes are queued for a hosted tracker) and follows that:
   to wait for GitHub;
 - the link picker offers the tracker's kinds;
 - what an agent is told names `bend` in every repository, beads too
-  (bead-bb-c9l.10): the step messages (`shared/standard-workflow.ts`), the
+  (bead-alia-c9l.10): the step messages (`shared/standard-workflow.ts`), the
   tools' texts (`server/agent-tools.ts`) and the rules that `bend setup
   instructions` writes (`bend/internal/instructions/rules.md`) exist once.
   The rules carry a version. A block the owner changed by hand that is

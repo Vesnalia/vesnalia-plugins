@@ -46,7 +46,7 @@ function bucket(buckets: ReturnType<typeof selectWorkingSet>, id: string): reado
 describe("the working set", () => {
   it("puts an issue you started in Linear somewhere, with no thread and no branch", () => {
     // Found live. Somebody moves an issue to In Progress in Linear and has not
-    // opened bb yet — the single most common state there is. Requiring a
+    // opened VesnALIA yet — the single most common state there is. Requiring a
     // branch meant it landed in no bucket at all, and the panel answered
     // "nothing needs you right now" while the thing you had just started sat
     // invisible.
@@ -120,7 +120,7 @@ describe("the working set", () => {
     expect(isWorkingSetEmpty(buckets)).toBe(true);
   });
 
-  it("still shows a finished issue whose bb thread is running", () => {
+  it("still shows a finished issue whose VesnALIA thread is running", () => {
     // The thread is the fact. An issue somebody closed while the agent is
     // still working on it is precisely the thing you need to be told about.
     const buckets = selectWorkingSet([row("i1", "s_done")], facts({ running: new Set(["i1"]) }));

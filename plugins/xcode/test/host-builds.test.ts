@@ -13,7 +13,7 @@
 import { chmodSync, existsSync, readFileSync, mkdirSync, mkdtempSync, realpathSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createHostEntry } from "../host";
@@ -375,16 +375,16 @@ describe("process identity", () => {
     expect(parseElapsedSeconds("01:02:03")).toBe(3723);
     expect(parseElapsedSeconds("2-00:00:01")).toBe(172_801);
     expect(parseElapsedSeconds("garbage")).toBeNull();
-    expect(parseIdentity("  01:00 /bin/sh -c x bb-xcode-build:abc\n", 1_000_000)).toEqual({
-      command: "/bin/sh -c x bb-xcode-build:abc",
+    expect(parseIdentity("  01:00 /bin/sh -c x alia-xcode-build:abc\n", 1_000_000)).toEqual({
+      command: "/bin/sh -c x alia-xcode-build:abc",
       startedAt: 940_000,
     });
     expect(parseIdentity("", 0)).toBeNull();
   });
 
   it("matches within the start-time tolerance, and only with the marker", () => {
-    const expected = { marker: "bb-xcode-build:abc", startedAt: 1_000_000 };
-    const at = (startedAt: number, command = "/bin/sh -c … bb-xcode-build:abc /usr/bin/xcodebuild") => ({
+    const expected = { marker: "alia-xcode-build:abc", startedAt: 1_000_000 };
+    const at = (startedAt: number, command = "/bin/sh -c … alia-xcode-build:abc /usr/bin/xcodebuild") => ({
       command,
       startedAt,
     });
@@ -432,7 +432,7 @@ describe("re-adoption by pid and start time", () => {
     const record: BuildRecord = {
       version: 1,
       buildId,
-      marker: `bb-xcode-build:${buildId}`,
+      marker: `alia-xcode-build:${buildId}`,
       pid: 4242,
       startedAt,
       root: "/w/App",

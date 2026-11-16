@@ -8,7 +8,7 @@
  * noVNC; nothing keeps it, logs it or sends it anywhere else.
  */
 import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
-import { useSettings } from "@get-bb/plugin-sdk/app";
+import { useSettings } from "@vesnalia/plugin-sdk/app";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -41,7 +41,7 @@ function CredentialsForm({ store, hostName, types }: { store: ScreenSessionStore
     <form onSubmit={submit} className="flex w-full max-w-sm flex-col gap-3 rounded-lg border border-border bg-card p-5 shadow-lg" autoComplete="off">
       <div>
         <h2 className="text-base font-semibold">Sign in to {hostName}</h2>
-        <p className="text-sm text-muted-foreground">A macOS user on that Mac. bb does not keep what you type here.</p>
+        <p className="text-sm text-muted-foreground">A macOS user on that Mac. VesnALIA does not keep what you type here.</p>
       </div>
       {types.map((type, index) => (
         <label key={type} className="flex flex-col gap-1 text-sm">

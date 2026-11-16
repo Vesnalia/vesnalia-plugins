@@ -1,6 +1,6 @@
-// Screenshots gallery examples as BB renders them, for visual checks without
-// a thread. Needs the plugin built and reloaded (`bb plugin build && bb plugin
-// reload genui`) and a running BB.
+// Screenshots gallery examples as VesnALIA renders them, for visual checks without
+// a thread. Needs the plugin built and reloaded (`alia plugin build && VesnALIA plugin
+// reload genui`) and a running VesnALIA.
 //
 //   node scripts/gallery-shot.mjs <name>... [--out dir] [--mobile] [--dark] [--webkit]
 //                                 [--click "text"]... [--wait ms] [--thread thr_…] [--url http://127.0.0.1:38886]
@@ -20,7 +20,7 @@ const args = process.argv.slice(2);
 const names = [];
 const clicks = [];
 let out = "/tmp/genui-gallery";
-let base = process.env.BB_URL ?? "http://127.0.0.1:38886";
+let base = process.env.ALIA_URL ?? "http://127.0.0.1:38886";
 let wait = 2500;
 let mobile = false;
 let dark = false;

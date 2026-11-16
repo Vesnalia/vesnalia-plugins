@@ -1,14 +1,14 @@
-// RouteTable → bb.http.route; Hono Context ↔ PagesRequest / PagesResponse (DESIGN §C.1). The one file where
-// bb's request and response types appear. Exact-match routes only: `/*` entries are skipped (R-S10).
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// RouteTable → alia.http.route; Hono Context ↔ PagesRequest / PagesResponse (DESIGN §C.1). The one file where
+// VesnALIA's request and response types appear. Exact-match routes only: `/*` entries are skipped (R-S10).
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Context } from "hono";
 import type { PagesRequest, PagesResponse, Route, RouteTable } from "../../core/src/host/index.ts";
 import { readerOf } from "./reader.ts";
 
-export function mountRoutes(bb: BbPluginApi, routes: RouteTable): void {
+export function mountRoutes(alia: AliaPluginApi, routes: RouteTable): void {
   for (const route of routes) {
-    if (route.path.endsWith("/*")) continue; // the prefix strategy is off on bb; the core registers the query form beside it
-    bb.http.route(route.method, route.path, async (c: Context) => toResponse(await route.handler(toRequest(c, route))), { auth: "local" });
+    if (route.path.endsWith("/*")) continue; // the prefix strategy is off on VesnALIA; the core registers the query form beside it
+    alia.http.route(route.method, route.path, async (c: Context) => toResponse(await route.handler(toRequest(c, route))), { auth: "local" });
   }
 }
 

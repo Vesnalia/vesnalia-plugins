@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   definePluginApp,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
   type ExperimentalThreadTabProps,
   type PluginNavPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Scope, WorkspaceOption } from "./server";
 import { groupWorkspaces } from "@/lib/workspaces";
 import { Workbench } from "@/components/Workbench";
@@ -49,7 +49,7 @@ function useDirtyWorkspaces(): Record<string, boolean> {
 
 function IdePage({ subPath }: PluginNavPanelProps) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [workspaces, setWorkspaces] = useState<WorkspaceOption[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {

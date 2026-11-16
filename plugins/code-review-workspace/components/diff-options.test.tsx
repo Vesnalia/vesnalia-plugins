@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { interdiff } from "../src/interdiff";
 import { patchReviewState } from "../lib/panel-state";
@@ -30,7 +30,7 @@ function fakeScreen(width: number, height: number, fine: boolean) {
 }
 
 const file = (path: string, line: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n@@ -1 +1 @@\n-x\n+${line}\n`;
-const patch = file("src/a.ts", "aa") + file("src/b.ts", "bb");
+const patch = file("src/a.ts", "aa") + file("src/b.ts", "alia");
 const guide = { title: "Guide", intent: "Parses rows.", unplacedFiles: [] as string[], sections: [{ id: "c1", title: "Parsing", overview: "Reads rows.", diffs: [{ file: "src/a.ts" }, { file: "src/b.ts" }] }] };
 const thread = { id: "t1", isResolved: false, isOutdated: false, path: "src/a.ts", line: 1, side: "RIGHT", comments: [{ id: "c", databaseId: 1, author: "bob", body: "Why?" }] };
 
@@ -51,7 +51,7 @@ async function renderWorkspace(review: Record<string, unknown> = {}) {
     markSeen: () => ({ ok: true }),
     getReviewThreads: () => ({ threads: [thread] }),
     getPrCommits: () => ({ commits: [{ sha: "new", headline: "Parse rows", committedAt: 2 }, { sha: "c1aaaaa", headline: "Read rows", committedAt: 1 }] }),
-    getSinceReview: () => ({ baseline: { sha: "old", at: 1, verdict: "COMMENT" }, files: interdiff(file("src/a.ts", "a0") + file("src/b.ts", "bb"), patch) }),
+    getSinceReview: () => ({ baseline: { sha: "old", at: 1, verdict: "COMMENT" }, files: interdiff(file("src/a.ts", "a0") + file("src/b.ts", "alia"), patch) }),
   } as any });
   await slot.findAllByTestId("filediff");
   return slot;

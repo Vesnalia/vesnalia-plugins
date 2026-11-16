@@ -1,4 +1,4 @@
-import type { PluginComposerScope } from "@get-bb/plugin-sdk/app";
+import type { PluginComposerScope } from "@vesnalia/plugin-sdk/app";
 
 export interface ChatTarget {
   key: string;

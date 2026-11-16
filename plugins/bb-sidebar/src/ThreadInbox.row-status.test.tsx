@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { renderSlot } from "./test-slot";
 import { inbox, defaultSidebarSettings, thread, listProps, loadInboxApp } from "./test-inbox";
 
@@ -9,7 +9,7 @@ vi.mock("sonner", async () => (await import("./test-inbox")).sonnerMock());
 
 await loadInboxApp();
 
-const projects = [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }];
+const projects = [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }];
 const sandbox = { icon: "SquareUnlock02", label: "Runs without an OS sandbox", tone: "error" } as const;
 const row = (title: string) => screen.getByRole("link", { name: new RegExp(title) }).closest("li") as HTMLElement;
 const glyph = (title: string) => row(title).querySelector(`[data-row-status="${sandbox.label}"]`);
@@ -31,7 +31,7 @@ function renderWithStatus(
 
 describe("row statuses from other plugins", () => {
   it.each(["full", "compact-all"])(
-    "draws bb's glyph with its tone in place of a quiet status (%s)",
+    "draws VesnALIA's glyph with its tone in place of a quiet status (%s)",
     async (display) => {
       renderWithStatus(
         [
@@ -62,7 +62,7 @@ describe("row statuses from other plugins", () => {
     renderWithStatus(
       [
         thread({ id: "busy", title: "Busy work", indicator: "runtime", indicatorLabel: "Working" }),
-        // The unread failure bb's indicator stands for.
+        // The unread failure VesnALIA's indicator stands for.
         thread({ id: "failed", title: "Failed work", indicator: "unread-error", isUnread: true, status: "error" }),
         thread({ id: "asking", title: "Asking work", indicator: "waiting-for-input", hasPendingInteraction: true }),
         thread({ id: "unsent", title: "Unsent work", queuedWork: "failed" }),
@@ -81,8 +81,8 @@ describe("row statuses from other plugins", () => {
     }
   });
 
-  // bb's resolver with this client's draft decides what shows.
-  it("shows bb's choice for a draft: the plugin status over a working draft, Drafting over Unread", async () => {
+  // VesnALIA's resolver with this client's draft decides what shows.
+  it("shows VesnALIA's choice for a draft: the plugin status over a working draft, Drafting over Unread", async () => {
     const agent = { workflows: 0, backgroundAgents: 1, backgroundCommands: 0, planMode: 0 };
     renderSlot(inbox, listProps, {
       sidebarThreads: {
@@ -124,8 +124,8 @@ describe("row statuses from other plugins", () => {
   });
 });
 
-describe("indicators bb adds after this build", () => {
-  it.each(["full", "compact-all"])("draws bb's glyph and label, then the age (%s)", async (display) => {
+describe("indicators VesnALIA adds after this build", () => {
+  it.each(["full", "compact-all"])("draws VesnALIA's glyph and label, then the age (%s)", async (display) => {
     renderWithStatus(
       [
         thread({
@@ -141,6 +141,6 @@ describe("indicators bb adds after this build", () => {
     await screen.findByRole("link", { name: /Future work/ });
     const status = within(row("Future work")).getByRole("img", { name: "Thread is doing something new" });
     expect(status.querySelector('[data-thread-status-glyph="future-kind"]')).not.toBeNull();
-    expect(status.querySelector(".bb-sidebar-still")).not.toBeNull();
+    expect(status.querySelector(".alia-sidebar-still")).not.toBeNull();
   });
 });

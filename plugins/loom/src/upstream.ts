@@ -57,7 +57,7 @@ export async function noteUpstreamChanges(ctx: EngineCtx, project: ProjectRow, s
       const text = upstreamChangedText(ticket.key, { key: dep.key, url: dep.pr_url, sha: dep.pushed_sha!, repo: dep.repo }, path);
       // A worker whose hand-back is not sent yet reads it with that work, once it has a worker slot.
       if (holdForWorker(store, ticket, text)) continue;
-      await ctx.bb.send(worker.row.thread_id, text).catch((error) => ctx.bb.log("warn", `Could not message ${worker.row.thread_id}: ${errText(error)}`));
+      await ctx.alia.send(worker.row.thread_id, text).catch((error) => ctx.alia.log("warn", `Could not message ${worker.row.thread_id}: ${errText(error)}`));
     }
   }
 }

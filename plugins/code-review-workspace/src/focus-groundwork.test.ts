@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { defaultPreferences, readPreferences } from "./preferences";
 import { testSql, testStore } from "./test-store.test-support";
 import { REVIEW_TABLES } from "./store";
@@ -20,15 +20,15 @@ test("focus settings default off, read fields independently, and discard unknown
 test.each(["**", "\n", "@x"])("unsafe focus label %j is rejected on save and dropped on read", async (label) => {
   const focuses = { ...defaults, enabled: true, githubLabel: false, focuses: [{ ...defaults.focuses[0], label }] };
   expect(readPreferences({}, null, focuses).focuses).toEqual({ ...focuses, focuses: [] });
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
   await expect(harness.behavior.callRpc("savePreferences", { preferences: { ...defaultPreferences, focuses }, revision: 0 })).rejects.toThrow();
   await harness.lifecycle.dispose();
 });
 
 test("focus labels are trimmed and accept letters, numbers and safe punctuation", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
   const focuses = { ...defaults, focuses: [{ ...defaults.focuses[0], label: "  文档 2._-  " }] };
   const result = await harness.behavior.callRpc("savePreferences", { preferences: { ...defaultPreferences, focuses }, revision: 0 }) as any;
   expect(result.preferences.focuses.focuses[0].label).toBe("文档 2._-");
@@ -37,9 +37,9 @@ test("focus labels are trimmed and accept letters, numbers and safe punctuation"
 
 test("githubLabel defaults per field; a page from Phase 0/1 keeps the saved label setting", async () => {
   expect(readPreferences({}, null, { enabled: true, githubLabel: "bad", focuses: [] }).focuses).toEqual({ ...defaults, enabled: true, focuses: [] });
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.savePreferences({ ...defaultPreferences, focuses: { ...defaults, githubLabel: false } }, 0);
   const { githubLabel: _omitted, ...older } = defaults;
   const saved = await harness.behavior.callRpc("savePreferences", { preferences: { ...defaultPreferences, focuses: { ...older, enabled: true } }, revision: 1 }) as any;
@@ -49,8 +49,8 @@ test("githubLabel defaults per field; a page from Phase 0/1 keeps the saved labe
 });
 
 test("focus settings save apart from value; a pre-focus build's save leaves the column intact", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb), sql = testSql(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia), sql = testSql(alia);
   const focuses = { ...defaults, enabled: true, githubLabel: false };
   await store.savePreferences({ ...defaultPreferences, focuses }, 0);
   expect((await store.getPreferences()).preferences.focuses).toEqual(focuses);
@@ -65,9 +65,9 @@ test("focus settings save apart from value; a pre-focus build's save leaves the 
 });
 
 test("pre-focus pages keep the saved settings, and focus saves drop fields this build does not know", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   const focuses = { ...defaults, enabled: true };
   await store.savePreferences({ ...defaultPreferences, focuses }, 0);
   const { focuses: _omitted, ...older } = defaultPreferences;
@@ -83,8 +83,8 @@ test("pre-focus pages keep the saved settings, and focus saves drop fields this 
 });
 
 test("focus tables allow future statuses, discard merged findings, move identities, and delete with their review", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb), sql = testSql(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia), sql = testSql(alia);
   for (const targetKey of ["from", "into"]) {
     await store.saveReview({ targetKey, kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1 });
     await sql.run(`INSERT INTO focus_threads (thread_id,target_key,run_id,focus_id,label,created_at) VALUES (?,?,?,?,?,?)`, [`thread-${targetKey}`, targetKey, "run", "docs", "Docs", 1]);

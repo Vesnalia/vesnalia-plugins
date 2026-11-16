@@ -1,11 +1,11 @@
 ---
 name: forage
-description: Configure or troubleshoot Forage's six web tools, provider/privacy ceilings, scoped sources, bounded crawls and zero-turn bb forage CLI.
+description: Configure or troubleshoot Forage's six web tools, provider/privacy ceilings, scoped sources, bounded crawls and zero-turn VesnALIA forage CLI.
 ---
 
 # Forage
 
-Forage registers `web_search`, `web_fetch`, `web_map`, `web_extract`, `web_crawl` and `web_diff` for every BB agent. Calls use one shared runtime with the CLI and the Research UI.
+Forage registers `web_search`, `web_fetch`, `web_map`, `web_extract`, `web_crawl` and `web_diff` for every VesnALIA agent. Calls use one shared runtime with the CLI and the Research UI.
 
 ## Operations
 
@@ -37,15 +37,15 @@ Web research per thread lives in the thread menu: `settings`, `docs`, `fresh`, `
 Web commands require explicit --project and --thread IDs and strict --input JSON (or --input-stdin). Their parameters match the tools. CLI calls do not start model turns.
 
 ```sh
-bb forage search --project PROJECT --thread THREAD --input '{"queries":["migration guide","known issues"],"profile":"docs"}'
-bb forage fetch --project PROJECT --thread THREAD --input '{"snapshotId":"SNAPSHOT","contentHash":"HASH","offset":1000}'
-bb forage crawl status --project PROJECT --thread THREAD --input '{"jobId":"JOB"}'
-bb forage sources list --project PROJECT --thread THREAD --input '{"limit":20}'
-bb forage status
-bb forage diagnostics
-bb forage clear
-bb forage doctor
-bb forage bench
+alia forage search --project PROJECT --thread THREAD --input '{"queries":["migration guide","known issues"],"profile":"docs"}'
+alia forage fetch --project PROJECT --thread THREAD --input '{"snapshotId":"SNAPSHOT","contentHash":"HASH","offset":1000}'
+alia forage crawl status --project PROJECT --thread THREAD --input '{"jobId":"JOB"}'
+alia forage sources list --project PROJECT --thread THREAD --input '{"limit":20}'
+alia forage status
+alia forage diagnostics
+alia forage clear
+alia forage doctor
+alia forage bench
 ```
 
 Sources list/show/export/delete accept project scope when --thread is omitted. Export returns a local-auth streamed NDJSON route, not a server file path. Delete needs exact delete-source:<scopeKey>:<sourceId> or delete-scope:<scopeKey>. Global prune requires prune-sources:all. Active-job sources require cancellation before deletion.

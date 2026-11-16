@@ -1,11 +1,11 @@
-// Headless click-through of the VCS Widget popup against a running bb.
+// Headless click-through of the VCS Widget popup against a running VesnALIA.
 //
 //   node scripts/live-check.mjs setup <repo>      create <repo>, <repo>.git (bare) and <repo>-clone2
 //   npm install --no-save puppeteer-core
 //   VCS_E2E_THREAD=thr_x VCS_E2E_PROJECT=proj_x node scripts/live-check.mjs run <repo>
 //
 // See docs/VERIFY.md for the scenario list. Needs system Chromium
-// (CHROMIUM, default /usr/bin/chromium) and bb at BB_SERVER_URL. Milestone 2
+// (CHROMIUM, default /usr/bin/chromium) and VesnALIA at ALIA_SERVER_URL. Milestone 2
 // scenarios live in live-check-m2.mjs; both share live-lib.mjs.
 import { existsSync, unlinkSync, writeFileSync } from "node:fs";
 import { GIT_ID, browserHelpers, recorder, sh, sleep } from "./live-lib.mjs";
@@ -39,7 +39,7 @@ if (mode === "setup") {
       process.exit(1);
     }
   }
-  console.log(`\nNow create a bb thread whose environment is ${REPO} and run with VCS_E2E_THREAD/VCS_E2E_PROJECT set.`);
+  console.log(`\nNow create a VesnALIA thread whose environment is ${REPO} and run with VCS_E2E_THREAD/VCS_E2E_PROJECT set.`);
   process.exit(0);
 }
 

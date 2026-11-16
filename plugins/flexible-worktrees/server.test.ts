@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { createFakePluginHost, makeMessageDispatchHookContext, makeThreadResponse, makeHostResponse, experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeMessageDispatchHookContext, makeThreadResponse, makeHostResponse, experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import { inputsSchema } from "./contract";
 import type { Plan } from "./inputs";
@@ -8,8 +8,8 @@ const signal = new AbortController().signal;
 const report = { step() {}, log() {} };
 
 it("registers retention policy and makes cleanup non-destructive", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "flexible-worktrees" });
-  plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "flexible-worktrees" });
+  plugin(alia);
   const provider = harness.registrations.environmentProviders.get("flexible-worktrees")!;
   expect(provider.policy.retireGraceMs).toBeNull();
   expect(await provider.remove({ environment: null, hostId: null, path: null, pathKey: "key", resource: null, attempt: 1, report, signal })).toEqual({ status: "removed" });
@@ -19,11 +19,11 @@ it("registers retention policy and makes cleanup non-destructive", async () => {
 
 type Envs = () => unknown[];
 function launch(action: Plan["action"], hostRpc: (method: string) => unknown, envs: Envs = () => []) {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "flexible-worktrees", experimental_callHostRpc: ({ method }) => hostRpc(method),
     sdk: { environments: { list: async () => envs() } } as never,
   });
-  plugin(bb);
+  plugin(alia);
   const fixture = makeMessageDispatchHookContext();
   const claim = vi.fn(async () => true);
   const inputs = inputsSchema.parse(action === "attach" ? { target: "path", path: "/repo" } : { target: "pr", number: 7 });
@@ -31,7 +31,7 @@ function launch(action: Plan["action"], hostRpc: (method: string) => unknown, en
   const base = { project: fixture.project!, host: makeHostResponse(), projectCheckout: { path: "/repo", experimental_ownsPath: false }, gitRemote: null, inputs };
   return {
     harness, claim, provider, base,
-    create: () => provider.create({ ...base, thread: makeThreadResponse(), suggestedBranchName: "bb/test", attempt: 1, pathKey: "key", experimental_claimPath: claim, report, signal }),
+    create: () => provider.create({ ...base, thread: makeThreadResponse(), suggestedBranchName: "alia/test", attempt: 1, pathKey: "key", experimental_claimPath: claim, report, signal }),
   };
 }
 const planned = (action: Plan["action"]): { plan: Plan; warnings: string[] } => ({
@@ -71,9 +71,9 @@ it("refuses to attach a path another provider manages, warns when sharing, and f
 
   const logs: string[] = [];
   const shared = launch("attach", attach, () => [env("project-checkout", false), env("flexible-worktrees", true)]);
-  const created = await shared.provider.create({ ...shared.base, thread: makeThreadResponse(), suggestedBranchName: "bb/test", attempt: 1, pathKey: "key", experimental_claimPath: shared.claim, report: { step() {}, log: line => logs.push(line) }, signal });
+  const created = await shared.provider.create({ ...shared.base, thread: makeThreadResponse(), suggestedBranchName: "alia/test", attempt: 1, pathKey: "key", experimental_claimPath: shared.claim, report: { step() {}, log: line => logs.push(line) }, signal });
   expect(created).toEqual(expect.objectContaining({ status: "created", ownsPath: false }));
-  expect(logs.join("\n")).toContain("Another BB environment already uses this checkout");
+  expect(logs.join("\n")).toContain("Another VesnALIA environment already uses this checkout");
   await shared.harness.lifecycle.dispose();
 
   const unknown = launch("attach", attach, () => { throw new Error("database busy"); });
@@ -88,7 +88,7 @@ it("refuses to attach a checkout another provider's environment owns in the same
   const owned = launch("attach", attach, () => [env("project-checkout", false, projectId, "env_kb")]);
   const refusal = await owned.provider.validate!(owned.base);
   expect(refusal).toEqual({ action: "refuse", message: expect.stringContaining('owned by the "project-checkout" environment provider (environment env_kb)') });
-  expect(refusal).toEqual({ action: "refuse", message: expect.stringContaining("bb environment delete env_kb") });
+  expect(refusal).toEqual({ action: "refuse", message: expect.stringContaining("alia environment delete env_kb") });
   await expect(owned.create()).rejects.toThrow("project-checkout");
   expect(owned.claim).not.toHaveBeenCalled();
   await owned.harness.lifecycle.dispose();
@@ -97,9 +97,9 @@ it("refuses to attach a checkout another provider's environment owns in the same
     const logs: string[] = [];
     const t = launch("attach", attach, () => envs);
     expect(await t.provider.validate!(t.base)).toEqual({ action: "accept" });
-    const created = await t.provider.create({ ...t.base, thread: makeThreadResponse(), suggestedBranchName: "bb/test", attempt: 1, pathKey: "key", experimental_claimPath: t.claim, report: { step() {}, log: line => logs.push(line) }, signal });
+    const created = await t.provider.create({ ...t.base, thread: makeThreadResponse(), suggestedBranchName: "alia/test", attempt: 1, pathKey: "key", experimental_claimPath: t.claim, report: { step() {}, log: line => logs.push(line) }, signal });
     expect(created).toEqual(expect.objectContaining({ status: "created", ownsPath: false }));
-    expect(logs.join("\n")).toContain("Another BB environment already uses this checkout");
+    expect(logs.join("\n")).toContain("Another VesnALIA environment already uses this checkout");
     await t.harness.lifecycle.dispose();
   }
 });
@@ -132,7 +132,7 @@ it("uses the project's template and default source consistently for choices, pre
   const source = (id: string, path: string, isDefault: boolean) => ({ id, projectId: fixture.project!.id, hostId: host.id, isDefault, path, type: "local_path" as const, createdAt: 0, updatedAt: 0 });
   const project = { ...fixture.project!, gitRemoteUrl: "git@github.com:team/repo.git", sources: [source("other", "/other", false), source("default", "/repo", true)] };
   const plannedResult = { plan: { action: "new-branch" as const, source: "/repo", path: "/resolved/feature", branch: "feature", start: "refs/heads/main", startLabel: "main", mergeBaseBranch: "main" }, warnings: [] };
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "flexible-worktrees",
     settings: { pathTemplate: "~/global/{branch}", projectOverrides: '{"github.com/team/*":"~/team/{repo}.{branch}"}' },
     sdk: { projects: { get: async () => project }, environments: { list: async () => [] } } as never,
@@ -143,7 +143,7 @@ it("uses the project's template and default source consistently for choices, pre
       throw new Error(`Unexpected method ${method}`);
     },
   });
-  plugin(bb);
+  plugin(alia);
   const scope = { projectId: project.id, hostId: host.id };
   const planCalls = () => harness.experimental_hostRpcCalls.filter(c => c.method === "plan");
   expect(await harness.behavior.callRpc("choices", scope)).toMatchObject({ pathTemplate: "~/team/{repo}.{branch}" });
@@ -156,7 +156,7 @@ it("uses the project's template and default source consistently for choices, pre
   expect(await provider.validate!(base)).toEqual({ action: "accept" });
   expect(planCalls().at(-1)).toMatchObject({ input: { pathTemplate: "~/team/{repo}.{branch}" } });
   const claim = vi.fn(async () => true);
-  expect((await provider.create({ ...base, thread: makeThreadResponse(), suggestedBranchName: "bb/test", attempt: 1, pathKey: "key", experimental_claimPath: claim, report, signal })).status).toBe("created");
+  expect((await provider.create({ ...base, thread: makeThreadResponse(), suggestedBranchName: "alia/test", attempt: 1, pathKey: "key", experimental_claimPath: claim, report, signal })).status).toBe("created");
   expect(claim).toHaveBeenCalledWith("/resolved/feature");
   expect(planCalls().at(-1)).toMatchObject({ input: { source: "/repo", pathTemplate: "~/team/{repo}.{branch}", pathKey: "key" } });
   await harness.behavior.setSettings({ projectOverrides: JSON.stringify({ [project.id]: "~/project/{pathKey}" }) });
@@ -165,8 +165,8 @@ it("uses the project's template and default source consistently for choices, pre
 });
 
 it("validates destination settings before saving and describes them concisely", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "flexible-worktrees" });
-  plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "flexible-worktrees" });
+  plugin(alia);
   const descriptors = harness.registrations.settingsDescriptors;
   expect(Object.keys(descriptors)).toEqual(["pathTemplate", "projectOverrides", "initSubmodules"]);
   expect(descriptors.pathTemplate.default).toBe("~/worktrees/{pathKey}");

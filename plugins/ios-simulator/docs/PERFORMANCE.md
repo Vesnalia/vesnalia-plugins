@@ -32,7 +32,7 @@ Use focused cancellation/reconnection and encoder lifecycle regressions,
 TypeScript, plugin/native builds and isolated real-browser playback/input
 checks. Record comparative timings and their limits. Machine CPU load is
 currently high; a busy machine alone does not establish a plugin regression.
-Native BB inspection remains limited by the previously reported Cua block.
+Native VesnALIA inspection remains limited by the previously reported Cua block.
 
 Final checks passed: 199 plugin tests, all 26 native support tests, TypeScript
 and plugin/native release builds. The bundled arm64 module is stripped and

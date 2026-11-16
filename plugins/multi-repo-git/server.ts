@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { hostContract, rpcContract } from "./contract.js";
 import registerRecent from "./lib/recent/server.js";
@@ -36,8 +36,8 @@ interface WorkspaceTarget {
   workspaceRoot: string;
 }
 
-export default function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     chatsPerPage: {
       type: "number",
       label: "Threads per page",
@@ -46,9 +46,9 @@ export default function plugin(bb: BbPluginApi) {
       experimental_schema: z.number().int().min(1).max(100),
     },
   });
-  const host = bb.hosts.experimental_client({ contract: hostContract });
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const host = alia.hosts.experimental_client({ contract: hostContract });
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE workspace_project_links (
       parent_project_id TEXT NOT NULL,
       child_project_id TEXT PRIMARY KEY,
@@ -69,7 +69,7 @@ export default function plugin(bb: BbPluginApi) {
     if (links.length === 0) return;
     // The built-in thread-list plugin owns these preferences now. Core's
     // sidebar.* preferences are only a one-time migration source.
-    const response = await bb.sdk.plugins.callRpc({
+    const response = await alia.sdk.plugins.callRpc({
       pluginId: "thread-list",
       method: "listPreferences",
       input: null,
@@ -80,7 +80,7 @@ export default function plugin(bb: BbPluginApi) {
     const current = response.preferences.sectionOrder;
     const next = arrangeWorkspaceSectionOrder(current, links);
     if (JSON.stringify(next) === JSON.stringify(current)) return;
-    await bb.sdk.plugins.callRpc({
+    await alia.sdk.plugins.callRpc({
       pluginId: "thread-list",
       method: "setPreference",
       input: { key: "sectionOrder", value: next },
@@ -89,11 +89,11 @@ export default function plugin(bb: BbPluginApi) {
   }
 
   async function readWorkspaceConfig(rootProjectId: string) {
-    await bb.sdk.projects.get({ projectId: rootProjectId });
+    await alia.sdk.projects.get({ projectId: rootProjectId });
     const children = await Promise.all(
       listWorkspaceLinks(db, rootProjectId).map(async (link) => {
         try {
-          const project = await bb.sdk.projects.get({ projectId: link.childProjectId });
+          const project = await alia.sdk.projects.get({ projectId: link.childProjectId });
           return {
             projectId: link.childProjectId,
             name: project.name,
@@ -116,7 +116,7 @@ export default function plugin(bb: BbPluginApi) {
   }
 
   async function readWorkspaceFolderBrowser(projectId: string, relativePath: string) {
-    const project = await bb.sdk.projects.get({ projectId });
+    const project = await alia.sdk.projects.get({ projectId });
     const connectedPaths = new Set(
       listWorkspaceLinks(db, projectId).map((link) => link.relativePath),
     );
@@ -148,8 +148,8 @@ export default function plugin(bb: BbPluginApi) {
     childProjectId: string,
   ): Promise<void> {
     const [parent, child] = await Promise.all([
-      bb.sdk.projects.get({ projectId: parentProjectId }),
-      bb.sdk.projects.get({ projectId: childProjectId }),
+      alia.sdk.projects.get({ projectId: parentProjectId }),
+      alia.sdk.projects.get({ projectId: childProjectId }),
     ]);
     for (const parentSource of parent.sources) {
       for (const childSource of child.sources) {
@@ -182,7 +182,7 @@ export default function plugin(bb: BbPluginApi) {
     parentProjectId: string,
     relativePath: string,
   ): Promise<void> {
-    const parent = await bb.sdk.projects.get({ projectId: parentProjectId });
+    const parent = await alia.sdk.projects.get({ projectId: parentProjectId });
     const resolvedSources: Array<{ hostId: string; path: string; name: string }> = [];
     for (const source of parent.sources) {
       try {
@@ -206,7 +206,7 @@ export default function plugin(bb: BbPluginApi) {
       throw new Error("The folder was not found inside an available source of this project.");
     }
 
-    const projects = await bb.sdk.projects.list();
+    const projects = await alia.sdk.projects.list();
     const normalized = (value: string) =>
       value.replaceAll("\\", "/").replace(/\/$/, "").toLocaleLowerCase();
     const existing = projects.find((project) =>
@@ -224,13 +224,13 @@ export default function plugin(bb: BbPluginApi) {
     } else {
       const [primary, ...additional] = resolvedSources;
       if (!primary) throw new Error("The folder source became unavailable.");
-      const created = await bb.sdk.projects.create({
+      const created = await alia.sdk.projects.create({
         name: primary.name,
         source: { type: "local_path", hostId: primary.hostId, path: primary.path },
       });
       childProjectId = created.id;
       for (const source of additional) {
-        await bb.sdk.projects.sources.add({
+        await alia.sdk.projects.sources.add({
           projectId: created.id,
           type: "local_path",
           hostId: source.hostId,
@@ -242,11 +242,11 @@ export default function plugin(bb: BbPluginApi) {
   }
 
   async function resolveWorkspace(threadId: string): Promise<WorkspaceTarget> {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (thread.environmentId === null) {
       throw new Error("This thread has no workspace environment.");
     }
-    const environment = await bb.sdk.environments.get({
+    const environment = await alia.sdk.environments.get({
       environmentId: thread.environmentId,
     });
     if (environment.status !== "ready" || environment.path === null) {
@@ -260,10 +260,10 @@ export default function plugin(bb: BbPluginApi) {
     };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     workspace_relations: async () => {
       await syncWorkspaceSectionOrder().catch((error: unknown) => {
-        bb.log.warn(`Could not synchronize workspace sidebar order: ${error instanceof Error ? error.message : String(error)}`);
+        alia.log.warn(`Could not synchronize workspace sidebar order: ${error instanceof Error ? error.message : String(error)}`);
       });
       return { links: listAllWorkspaceLinks(db).map((link) => ({
         parentProjectId: link.parentProjectId,
@@ -278,18 +278,18 @@ export default function plugin(bb: BbPluginApi) {
       readWorkspaceFolderBrowser(projectId, relativePath),
     workspace_link_project: async ({ parentProjectId, childProjectId, relativePath }) => {
       await Promise.all([
-        bb.sdk.projects.get({ projectId: parentProjectId }),
-        bb.sdk.projects.get({ projectId: childProjectId }),
+        alia.sdk.projects.get({ projectId: parentProjectId }),
+        alia.sdk.projects.get({ projectId: childProjectId }),
       ]);
       linkWorkspaceProject(db, { parentProjectId, childProjectId, relativePath });
       const config = await readWorkspaceConfig(parentProjectId);
-      bb.realtime.publish("workspaces-changed", { parentProjectId });
+      alia.realtime.publish("workspaces-changed", { parentProjectId });
       return config;
     },
     workspace_add_folder: async ({ parentProjectId, relativePath }) => {
       await addWorkspaceFolder(parentProjectId, relativePath.trim());
       const config = await readWorkspaceConfig(parentProjectId);
-      bb.realtime.publish("workspaces-changed", { parentProjectId });
+      alia.realtime.publish("workspaces-changed", { parentProjectId });
       return config;
     },
     workspace_add_folders: async ({ parentProjectId, relativePaths }) => {
@@ -297,7 +297,7 @@ export default function plugin(bb: BbPluginApi) {
         await addWorkspaceFolder(parentProjectId, relativePath);
       }
       const config = await readWorkspaceConfig(parentProjectId);
-      bb.realtime.publish("workspaces-changed", { parentProjectId });
+      alia.realtime.publish("workspaces-changed", { parentProjectId });
       return config;
     },
     workspace_update_folders: async ({ parentProjectId, relativePaths }) => {
@@ -317,19 +317,19 @@ export default function plugin(bb: BbPluginApi) {
         }
       }
       const config = await readWorkspaceConfig(parentProjectId);
-      bb.realtime.publish("workspaces-changed", { parentProjectId });
+      alia.realtime.publish("workspaces-changed", { parentProjectId });
       return config;
     },
     workspace_link_existing_project: async ({ parentProjectId, childProjectId }) => {
       await linkExistingProject(parentProjectId, childProjectId);
       const config = await readWorkspaceConfig(parentProjectId);
-      bb.realtime.publish("workspaces-changed", { parentProjectId });
+      alia.realtime.publish("workspaces-changed", { parentProjectId });
       return config;
     },
     workspace_unlink_project: async ({ parentProjectId, childProjectId }) => {
       unlinkWorkspaceProject(db, parentProjectId, childProjectId);
       const config = await readWorkspaceConfig(parentProjectId);
-      bb.realtime.publish("workspaces-changed", { parentProjectId });
+      alia.realtime.publish("workspaces-changed", { parentProjectId });
       return config;
     },
     workspace_status: async ({ threadId }) => {
@@ -417,6 +417,6 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  registerRecent(bb);
-  bb.log.info("Atrium — MonoRepo Projects loaded");
+  registerRecent(alia);
+  alia.log.info("Atrium — MonoRepo Projects loaded");
 }

@@ -4,9 +4,9 @@
 # finalize.sh runs it before it removes the build directory, then adds the
 # image's size (sizeGiB, null until then) once it is clean.
 #
-# The contract is what bb-box needs of an image. The pins' SHA-256 is of
+# The contract is what alia-box needs of an image. The pins' SHA-256 is of
 # pins.json, apt-snapshot and, for a desktop, desktop-pins.tsv, in that order,
-# as bb-box computes it from its own copy. Pins bb-box resolved to newer
+# as alia-box computes it from its own copy. Pins alia-box resolved to newer
 # versions (049) give the repository's in pins.json's `pinned`. build.env,
 # or the environment, may give BUILD_ID, DESKTOP_GPU and DESKTOP_SESSION.
 #
@@ -15,7 +15,7 @@ set -euo pipefail
 
 build=$1
 kind=$2
-out=${3:-/usr/share/bb-box}
+out=${3:-/usr/share/alia-box}
 arch=x86_64
 [ "$(uname -m)" = x86_64 ] || arch=arm64
 
@@ -31,7 +31,7 @@ if [ "$kind" = android ]; then
   image_kind=android
   pin_files+=("$build/android-pins.json")
   pin_set=android
-  encoder=$(/usr/local/bin/bb-box-h264 --version 2>/dev/null || true)
+  encoder=$(/usr/local/bin/alia-box-h264 --version 2>/dev/null || true)
   x264=
   case $encoder in x264*) x264=$(jq -r '.encoder[] | select(.name == "x264") | .version' "$build/android-pins.json") ;; esac
   tools=$(jq -c --slurpfile android "$build/android-pins.json" --arg x264 "$x264" \
@@ -79,10 +79,10 @@ jq -cn --arg kind "$image_kind" --arg arch "$arch" --arg build "$build_id" --arg
   --arg os "$(. /etc/os-release && echo "$PRETTY_NAME")" \
   --arg snapshot "$(sed -n 's/^apt_snapshot=//p' "$out/template-release" | grep -v '^none$' || true)" \
   --arg pins "$pins" \
-  --arg app "$(cat /home/*/.bb-machines/*/host-artifact.sha256 2>/dev/null | head -1 || true)" \
+  --arg app "$(cat /home/*/.alia-machines/*/host-artifact.sha256 2>/dev/null | head -1 || true)" \
   --arg nvidia "$nvidia" --arg program "$program" --argjson tools "$tools" --argjson devices "$devices" \
   '{contract: 1, image: "standard", kind: $kind, arch: $arch, build: $build, built: $built, base: null, os: $os,
-    aptSnapshot: ($snapshot | select(. != "") // null), pins: $pins, bbApp: ($app | select(. != "") // null),
+    aptSnapshot: ($snapshot | select(. != "") // null), pins: $pins, aliaApp: ($app | select(. != "") // null),
     tools: $tools, nvidia: ($nvidia | select(. != "") // null), layer: null, sizeGiB: null,
     program: ($program | select(. != "") // null)}
    + (if $devices == null then {} else {devices: $devices} end)' \

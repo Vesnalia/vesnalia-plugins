@@ -4,7 +4,7 @@ set -u
 tag=${1:?tag}
 shift
 here=$(cd "$(dirname "$0")" && pwd)
-shared=/Users/Shared/bb-box/docs/research/ios-shared-hosts
+shared=/Users/Shared/alia-box/docs/research/ios-shared-hosts
 work=${SHARED_WORK:-$HOME/shared}
 out=$work/runs/$tag
 seconds=${SECONDS_EACH:-30}

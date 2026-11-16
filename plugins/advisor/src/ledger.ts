@@ -1,7 +1,7 @@
 import { z } from "zod";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-type LedgerDatabase = ReturnType<BbPluginApi["storage"]["database"]>;
+type LedgerDatabase = ReturnType<AliaPluginApi["storage"]["database"]>;
 
 export const REVIEW_TRIGGERS = ["tool", "post-turn", "manual"] as const;
 export type ReviewTrigger = (typeof REVIEW_TRIGGERS)[number];

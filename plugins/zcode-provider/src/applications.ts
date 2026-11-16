@@ -8,7 +8,7 @@ export function pathsForZCode(bundle: string) {
   return { executable: join(bundle, 'Contents/Frameworks/ZCode Helper.app/Contents/MacOS/ZCode Helper'),
     script: join(bundle, 'Contents/Resources/glm/zcode.cjs'), builtin: join(bundle, 'Contents/Resources/config/provider/zcode-builtin.json') };
 }
-export function bbBundle(execPath = process.execPath): string | null {
+export function aliaBundle(execPath = process.execPath): string | null {
   const match = /^(.*\.app)\/Contents\/MacOS\/[^/]+$/.exec(execPath);
   return match?.[1] ?? null;
 }
@@ -59,7 +59,7 @@ export function createZCodeLocator(root: string, options: Parameters<typeof find
     return current;
   };
 }
-let locate = createZCodeLocator(join(homedir(), '.local/share/bb-zcode'));
+let locate = createZCodeLocator(join(homedir(), '.local/share/alia-zcode'));
 export function configureZCodeLocation(root: string, observe?: (value: Record<string, unknown>) => void) { locate = createZCodeLocator(root, {}, observe); }
 export function resolveZCode(force = false) { return locate(force); }
 // Explicit lazy lookup: importing the server never searches for ZCode.
@@ -69,5 +69,5 @@ export function loginCommand(paths = nativePaths(), args: readonly string[] = ['
   return `ELECTRON_RUN_AS_NODE=1 ZCODE_BUILTIN_PROVIDER_CONFIG_FILE=${shellQuote(paths.builtin)} ${[paths.executable, paths.script, ...args].map(shellQuote).join(' ')}`;
 }
 export function signInHint(_paths?: ReturnType<typeof pathsForZCode>): string {
-  return 'Open ZCode Desktop and sign in again to your individual Z.ai Coding Plan, then retry in bb. Your next turn reads the shared sign-in automatically.';
+  return 'Open ZCode Desktop and sign in again to your individual Z.ai Coding Plan, then retry in VesnALIA. Your next turn reads the shared sign-in automatically.';
 }

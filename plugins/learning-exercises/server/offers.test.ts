@@ -95,8 +95,8 @@ describe("OfferEngine", () => {
   });
 
   it("offers on the first turn of a top-level thread another plugin started (thr_58q9ui4bvc, a GitHub board card)", async () => {
-    // The observed case: a thread a GitHub board card started in bb's personal workspace, one turn,
-    // a commit in it. bb stamps `originPluginId: "github-board"` on it; the old rule refused every
+    // The observed case: a thread a GitHub board card started in VesnALIA's personal workspace, one turn,
+    // a commit in it. VesnALIA stamps `originPluginId: "github-board"` on it; the old rule refused every
     // plugin's thread, so the turn was never weighed and nothing was recorded.
     const { ports, runTurn, commit, store } = setup();
     const id = "thr_58q9ui4bvc";

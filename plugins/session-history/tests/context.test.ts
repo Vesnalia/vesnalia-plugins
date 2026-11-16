@@ -63,7 +63,7 @@ test("a bounded transcript cannot be misrepresented as complete context", () => 
 
 
 test("continuation titles survive direct and chunked context, including existing sessions", async () => {
-  const titled = { ...session, title: 'История сессий "Claude" в BB' };
+  const titled = { ...session, title: 'История сессий "Claude" в ALIA' };
   const text = fullTranscript(titled, { entries: [], truncated: false });
   const direct = continuationContext(titled, text);
   const chunked = continuationContext(titled, text, 2);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 import { setup } from "./helpers/done-fake-host";
 import { ERROR_ACK_METADATA_KEY } from "../lib/error-ack-metadata";
 

@@ -1,6 +1,6 @@
-export const MIKU_WALKING_STORAGE_KEY = "bb-plugin-miku:walking-enabled";
+export const MIKU_WALKING_STORAGE_KEY = "alia-plugin-miku:walking-enabled";
 
-const MIKU_WALKING_EVENT = "bb-plugin-miku:walking-change";
+const MIKU_WALKING_EVENT = "alia-plugin-miku:walking-change";
 
 type MovementStorage = Pick<Storage, "getItem" | "setItem">;
 

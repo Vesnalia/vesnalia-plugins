@@ -1,7 +1,7 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { createHash } from "node:crypto";
 
-type Kv = Pick<BbPluginApi["storage"]["kv"], "set" | "delete">;
+type Kv = Pick<AliaPluginApi["storage"]["kv"], "set" | "delete">;
 /** Fingerprint of an absent key. */
 const ABSENT = "";
 function fingerprint(value: unknown): string {

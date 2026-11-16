@@ -3,7 +3,7 @@
 // in the status line. Network operations start a background job and wait
 // for its result through `useJobs`.
 import { useCallback, useRef, useState } from "react";
-import { useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type {
   ActionResult,
@@ -74,7 +74,7 @@ interface UseVcsActionsOptions {
   waitForJob: (job: JobSummary) => Promise<ActionResult>;
   /**
    * No toasts: the caller shows `status` inline. The commit panel sits where
-   * bb stacks its toasts, so a toast there would cover the form it reports on.
+   * VesnALIA stacks its toasts, so a toast there would cover the form it reports on.
    */
   quiet?: boolean;
 }
@@ -499,7 +499,7 @@ export function useVcsActions({ threadId, overview, applyOverview, onCheckedOut,
       requestOrRun(
         {
           title: `New worktree from ${refLabel(ref)}`,
-          description: `Creates ${path} next to the repository with ${q(branchName)} checked out. Open it as a new bb environment to work there.`,
+          description: `Creates ${path} next to the repository with ${q(branchName)} checked out. Open it as a new VesnALIA environment to work there.`,
           tier: confirmTierFor(plan, tierContext()),
           confirmLabel: "Add worktree",
           command: gitCommandPreview(plan),

@@ -2,8 +2,8 @@
 // A stand-in for `ssh` in tests. It runs the remote command locally with
 // `sh -c`, in a home directory per host under $FAKE_SSH_DIR. A host is down
 // while $FAKE_SSH_DIR/down/<host> exists; $FAKE_SSH_DIR/up-after/<host> holds
-// how many more dials fail before it answers. Paths under /run/bb-box/ map to
-// run/bb-box/ in the host's home, where the desktop's display mode starts as
+// how many more dials fail before it answers. Paths under /run/alia-box/ map to
+// run/alia-box/ in the host's home, where the desktop's display mode starts as
 // gpu, or as $FAKE_SSH_DIR/display/<host> holds it (a mode line, then a reason).
 // /sys/module/nvidia/ maps to sys/module/nvidia/ there, the host's NVIDIA
 // driver, which has none until a test writes its version. Programs in bin/
@@ -15,7 +15,7 @@
 //
 // A host is Windows while $FAKE_SSH_DIR/windows/<host> exists. It refuses a
 // command line over 32,767 characters, as Windows does, and stands in for
-// PowerShell with bb-box's own commands: it decodes a script, or stages one
+// PowerShell with alia-box's own commands: it decodes a script, or stages one
 // in tmp/ in the host's home, then runs the script, less its PowerShell exit
 // check, with `sh -c`. When $FAKE_SSH_DIR/powershell/<host> exists, a sh
 // script that stands in for PowerShell, it runs that with the script as $1.
@@ -110,7 +110,7 @@ if (control) {
   process.exit(0);
 }
 const home = join(root, "home", host);
-const run = join(home, "run", "bb-box");
+const run = join(home, "run", "alia-box");
 mkdirSync(run, { recursive: true });
 if (!existsSync(join(run, "display-mode"))) {
   const forced = join(root, "display", host);
@@ -139,7 +139,7 @@ if (existsSync(join(root, "windows", host))) {
 }
 const powershell = join(root, "powershell", host);
 const shell = existsSync(powershell) ? [powershell] : ["-c"];
-const [binary, ...argv] = [...JSON.parse(process.env.FAKE_GROUP ?? "[]"), "sh", ...shell, script.replaceAll("/run/bb-box/", `${run}/`).replaceAll("/sys/module/nvidia/", `${home}/sys/module/nvidia/`).replaceAll("/usr/share/bb-box/nvidia-version", `${home}/usr/share/bb-box/nvidia-version`)];
+const [binary, ...argv] = [...JSON.parse(process.env.FAKE_GROUP ?? "[]"), "sh", ...shell, script.replaceAll("/run/alia-box/", `${run}/`).replaceAll("/sys/module/nvidia/", `${home}/sys/module/nvidia/`).replaceAll("/usr/share/alia-box/nvidia-version", `${home}/usr/share/alia-box/nvidia-version`)];
 const boxPath = pathWithHostStubs(root, [join(home, "bin"), join(root, "bin")], process.env.PATH);
 const refusal = refusalForRealHostTools("The fake ssh", boxPath);
 if (refusal) {

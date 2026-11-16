@@ -1,15 +1,15 @@
 {
-  "name": "bb-plugin-bb-live",
+  "name": "alia-plugin-bb-live",
   "version": "0.1.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.43.1",
-    "bbPluginSdk": ">=0.4.87",
+    "alia": ">=0.43.1",
+    "aliaPluginSdk": ">=0.4.87",
     "node": "^22.19.0 || ^24.0.0 || ^26.0.0"
   },
-  "bb": {
-    "name": "BB Live",
-    "description": "One persistent voice channel for your BB workspace.",
+  "alia": {
+    "name": "VesnALIA Live",
+    "description": "One persistent voice channel for your VesnALIA workspace.",
     "branding": {
       "icon": "Mic"
     },
@@ -24,7 +24,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -57,21 +56,13 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
-    "build": "bb plugin build",
-    "check": "npm run typecheck && npm test && bb plugin types --check && bb plugin build",
+    "build": "alia plugin build",
+    "check": "npm run typecheck && npm test && alia plugin types --check && alia plugin build",
     "prepack": "npm run check"
   },
-  "description": "A persistent voice channel for your BB workspace.",
+  "description": "A persistent voice channel for your VesnALIA workspace.",
   "license": "MIT",
   "author": "Jem (jem-computer)",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/jem-computer/bb-live.git"
-  },
-  "homepage": "https://github.com/jem-computer/bb-live#readme",
-  "bugs": {
-    "url": "https://github.com/jem-computer/bb-live/issues"
-  },
   "files": [
     "server.ts",
     "app.tsx",
@@ -85,5 +76,22 @@
     "LICENSE",
     "CONTRIBUTING.md",
     "PRODUCT-SPEC.md"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/bb-live#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/bb-live"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

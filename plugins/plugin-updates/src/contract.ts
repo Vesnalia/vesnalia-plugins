@@ -1,12 +1,12 @@
 // The RPC contract between server.ts and the frontend, plus the result types
 // both sides share. Imported as types by the frontend.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { Report } from "./report";
 import type { CheckFailure, PluginCheckFailure } from "./store";
 
 export type UpdateJob = Awaited<
-  ReturnType<BbPluginApi["sdk"]["plugins"]["experimental_startUpdate"]>
+  ReturnType<AliaPluginApi["sdk"]["plugins"]["experimental_startUpdate"]>
 >;
 
 export type OutOfRangeResult =
@@ -20,18 +20,18 @@ export type ManualSteps = { kind: "manual"; reason: "secret-settings" | "self"; 
 
 /**
  * One queued out-of-range update; `run` tells apart repeat updates of one
- * plugin. `waiting` means it's next, but waits for the plugin's bb update job.
+ * plugin. `waiting` means it's next, but waits for the plugin's VesnALIA update job.
  */
 export type OutOfRangeEntry = {
   run: number;
   id: string;
-  /** Re-read once it runs, in case a bb update job moved the plugin meanwhile. */
+  /** Re-read once it runs, in case a VesnALIA update job moved the plugin meanwhile. */
   from: string;
   to: string;
   state: "queued" | "waiting" | "running" | "done";
   /**
    * Set once done; `error` means it threw partway, so check the plugin by hand.
-   * `timed-out`: the bb job it waited on never ended, so it gave up untouched.
+   * `timed-out`: the VesnALIA job it waited on never ended, so it gave up untouched.
    */
   result?: OutOfRangeResult | { kind: "error"; error: string } | { kind: "timed-out" };
 };
@@ -59,7 +59,7 @@ export type DeferredUpdate = { id: string } & (
  * The last good check's report; null before the first one. `lastFailure`: a
  * later check failed, so the report is from `checkedAt` (`failures`: each
  * plugin's error, when every plugin's own check failed). `updateCheckFailures`:
- * plugins bb couldn't check in the last good check; their updates from an
+ * plugins VesnALIA couldn't check in the last good check; their updates from an
  * earlier check carry `stale`. All absent when unset.
  */
 export type ReportSnapshot = {

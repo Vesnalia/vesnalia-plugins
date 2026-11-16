@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { InboxDragOrder } from "./drag-reorder-geometry";
 import { allOrderUnits, layoutActiveGroups, projectGroupView, siblingScope, unitsAtScope } from "./environment-groups";
 import { mergeProjectOrder, projectOrderUnits, unitProjectId, visibleShelfThreads } from "./inbox-layout";

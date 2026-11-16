@@ -4,7 +4,7 @@
  * Its sidebar entry counts the open comment threads, and the window title names the open review.
  * Reviews no live thread can open are not listed; the page says how many and offers to delete them.
  */
-import { useBbNavigate, type ExperimentalBadge, type ExperimentalPageTitle, type PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, type ExperimentalBadge, type ExperimentalPageTitle, type PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -23,7 +23,7 @@ function countText(review: ReviewSummary): string {
 }
 
 function ReviewList({ subPath, compact }: { subPath: string; compact: boolean }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { data, error } = useReviews();
   const selected = parseReviewSubPath(subPath);
   if (data === undefined) return <p className="p-3 text-xs text-muted-foreground">{error === null ? "Loading the reviews…" : `Could not load the reviews: ${error}`}</p>;
@@ -57,7 +57,7 @@ export function ReviewsSidebar({ subPath }: PluginNavPanelProps) {
 }
 
 export function ReviewsPage({ subPath }: PluginNavPanelProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { data } = useReviews();
   const selected = parseReviewSubPath(subPath);
   if (selected === null) {

@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import plugin from '../server';
 import { JOBS_KEY, JOBS_CHANGED, type Job } from '../lib/observability';
 const hosts: ReturnType<typeof createFakePluginHost>[]=[];
 afterEach(async()=>{vi.unstubAllGlobals();for(const h of hosts.splice(0))await h.harness.behavior.dispose();});
 function deferred<T>() {let resolve!:(v:T)=>void;const promise=new Promise<T>(r=>resolve=r);return {promise,resolve};}
 async function setup(chat?: (url:string,init:RequestInit)=>Promise<Response>, endpoints=1) {
- const h=createFakePluginHost({pluginId:'ollama-fleet'});hosts.push(h);await plugin(h.bb);
- await h.bb.storage.kv.set('endpoints',Array.from({length:endpoints},(_,i)=>({id:`s${i}`,name:i?'Laptop':'Desktop PC',baseUrl:`http://server${i}.invalid:11434`,createdAt:new Date().toISOString()})));
+ const h=createFakePluginHost({pluginId:'ollama-fleet'});hosts.push(h);await plugin(h.alia);
+ await h.alia.storage.kv.set('endpoints',Array.from({length:endpoints},(_,i)=>({id:`s${i}`,name:i?'Laptop':'Desktop PC',baseUrl:`http://server${i}.invalid:11434`,createdAt:new Date().toISOString()})));
  vi.stubGlobal('fetch',vi.fn(async (url:string,init:RequestInit={})=>{
   if(url.endsWith('/api/tags'))return Response.json({models:[{name:url.includes('server0')?'qwen3-coder:a':'qwen3-coder:b'}]});
   if(url.endsWith('/api/ps'))return Response.json({models:[]});
@@ -67,16 +67,16 @@ describe('Fleet public registered paths',()=>{
  });
  it('snapshot, persisted metadata and signals contain no prompt/response/reasoning/endpoint',async()=>{
   const h=await setup();await h.harness.behavior.callRpc('fleet_route',input);await new Promise(r=>setTimeout(r,0));
-  const data=JSON.stringify([await h.bb.storage.kv.get(JOBS_KEY),h.harness.inspection.realtimeSignals.filter(s=>s.channel===JOBS_CHANGED)]);
+  const data=JSON.stringify([await h.alia.storage.kv.get(JOBS_KEY),h.harness.inspection.realtimeSignals.filter(s=>s.channel===JOBS_CHANGED)]);
   expect(data).not.toMatch(/RAW_PROMPT|RAW_RESPONSE|reasoning|server0\.invalid|baseUrl|https?:/);
  });
  it('observability KV failure does not fail successful route',async()=>{
-  const h=await setup();const original=h.bb.storage.kv.set.bind(h.bb.storage.kv);
-  vi.spyOn(h.bb.storage.kv,'set').mockImplementation(async(key,value)=>{if(key===JOBS_KEY)throw Error('KV');return original(key,value)});
+  const h=await setup();const original=h.alia.storage.kv.set.bind(h.alia.storage.kv);
+  vi.spyOn(h.alia.storage.kv,'set').mockImplementation(async(key,value)=>{if(key===JOBS_KEY)throw Error('KV');return original(key,value)});
   expect(await h.harness.behavior.callRpc('fleet_route',input)).toMatchObject({succeeded:true});expect((await h.snap()).jobs[0].state).toBe('completed');
  });
  it('observability publish failure does not fail successful route',async()=>{
-  const h=await setup();vi.spyOn(h.bb.realtime,'publish').mockImplementation(()=>{throw Error('signal')});
+  const h=await setup();vi.spyOn(h.alia.realtime,'publish').mockImplementation(()=>{throw Error('signal')});
   expect(await h.harness.behavior.callRpc('fleet_route',input)).toMatchObject({succeeded:true});
  });
  it('public input rejects excessive label and snapshot cap',async()=>{

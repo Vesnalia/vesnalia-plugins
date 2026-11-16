@@ -2,12 +2,12 @@
 
 The project LICENSE covers original project contributions. Third-party code retains its own license.
 
-## BB SDK and vendored registry UI
+## VesnALIA SDK and vendored registry UI
 
 Source: https://github.com/get-bb/bb . Registry refs are recorded in components.json.
 The local upstream tags desktop-v0.40.0 and desktop-v0.41.0 both contain this license.
-SDK 0.4.34 omits a license field/file in its npm package; its declared upstream repository is BB.
-The public SDK is supplied by BB at runtime; it is not a private BB import.
+SDK 0.4.34 omits a license field/file in its npm package; its declared upstream repository is VesnALIA.
+The public SDK is supplied by VesnALIA at runtime; it is not a private VesnALIA import.
 
 ```text
 MIT License

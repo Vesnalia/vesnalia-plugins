@@ -3,11 +3,11 @@ import { z } from "zod";
 import { tabCandidateSchema, tabEntrySchema, type TabEntry } from "./tabs-model";
 import { DEFAULT_WORKSPACE_ID, workspaceInfoSchema, type WorkspaceInfo } from "./workspaces";
 
-const SELECTION_KEY = "bb.tabs.workspace.v1";
-const PERSISTED_SELECTION_KEY = "bb.tabs.workspace.last.v1";
-const PARKED_ROUTE_KEY = "bb.tabs.workspace.parked.v1";
-const ACTIVE_TABS_KEY = "bb.tabs.workspace.active.v1";
-const CLOSED_TABS_KEY = "bb.tabs.closed.v1";
+const SELECTION_KEY = "alia.tabs.workspace.v1";
+const PERSISTED_SELECTION_KEY = "alia.tabs.workspace.last.v1";
+const PARKED_ROUTE_KEY = "alia.tabs.workspace.parked.v1";
+const ACTIVE_TABS_KEY = "alia.tabs.workspace.active.v1";
+const CLOSED_TABS_KEY = "alia.tabs.closed.v1";
 const closedTabsSchema = z
   .array(
     z

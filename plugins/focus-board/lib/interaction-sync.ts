@@ -1,7 +1,7 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 /**
- * The board's "needs you" state rides bb's sidebar thread rows
+ * The board's "needs you" state rides VesnALIA's sidebar thread rows
  * (`hasPendingInteraction`). The server clears that flag the moment an
  * interaction settles (see `settleInteractionTerminalState` — the SQL flag is
  * `EXISTS ... status = 'pending'`), but rows the board renders come from

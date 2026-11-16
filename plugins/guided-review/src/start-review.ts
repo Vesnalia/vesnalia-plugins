@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Store } from "./store";
 import { parseTarget, targetKey } from "./targets";
 import { ensureGitHeaders } from "./patch";
@@ -6,13 +6,13 @@ import { generateGuide } from "./generate";
 import { readPrSnapshot } from "./pr-snapshot";
 
 interface Deps {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   store: Store;
   gh: { runGh: typeof import("./gh").runGh; runGit: typeof import("./gh").runGit };
 }
 
 // Panel-driven counterpart to review-command.ts's PR branch: a user pastes a
-// full GitHub PR URL into the panel instead of running `bb review` in a
+// full GitHub PR URL into the panel instead of running `alia review` in a
 // terminal. Only full PR URLs are accepted here — a bare PR number or local
 // git ref needs a project-scoped cwd/branch that the nav panel doesn't have,
 // so those still route through the CLI.
@@ -25,7 +25,7 @@ export async function createPrReview(
     return {
       ok: false,
       error:
-        "Paste a full GitHub PR URL (github.com/owner/repo/pull/N). For a PR number or local ref, run `bb review` in a terminal.",
+        "Paste a full GitHub PR URL (github.com/owner/repo/pull/N). For a PR number or local ref, run `alia review` in a terminal.",
     };
   }
 
@@ -59,7 +59,7 @@ export async function createPrReview(
   deps.store.savePatch(key, ensureGitHeaders(patch));
 
   // Fire-and-forget generation; the panel refetches on the realtime signal.
-  void generateGuide(deps.bb, deps.store, key, args.projectId);
+  void generateGuide(deps.alia, deps.store, key, args.projectId);
 
   return { ok: true, targetKey: key };
 }

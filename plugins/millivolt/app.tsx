@@ -1,4 +1,4 @@
-// bb-plugin-millivolt — frontend entry.
+// alia-plugin-millivolt — frontend entry.
 //
 // One sidebar page:
 //   setup     — when nothing is installed yet: install, or adopt what exists
@@ -10,7 +10,7 @@
 // Everything is read over RPC; the operator token never reaches this bundle.
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type {
   MillivoltCandidate,
   MillivoltDiscovery,
@@ -842,7 +842,7 @@ function MillivoltPage() {
           {status?.embedUrl === null || status?.embedUrl === undefined ? (
             <div className="p-4">
               <EmptyState>
-                The in-bb dashboard needs a running millivolt and an operator token
+                The in-alia dashboard needs a running millivolt and an operator token
                 (Settings → millivolt). Use the Browser button in the meantime.
               </EmptyState>
             </div>

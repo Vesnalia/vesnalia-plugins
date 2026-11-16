@@ -1,11 +1,11 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 export type Sdk = {
-  plugins: Pick<BbPluginApi["sdk"]["plugins"], "callRpc">;
-  subscribe: BbPluginApi["sdk"]["subscribe"];
+  plugins: Pick<AliaPluginApi["sdk"]["plugins"], "callRpc">;
+  subscribe: AliaPluginApi["sdk"]["subscribe"];
 };
-export type ThreadEntry = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["list"]>>[number];
-export type EventRow = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["events"]["list"]>>[number];
+export type ThreadEntry = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["list"]>>[number];
+export type EventRow = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["events"]["list"]>>[number];
 export interface MessageIndex { lastMessageAt: number | null; lastSeq: number }
 export interface RecentRow { threadId: string; lastMessageAt: number }
 export const MESSAGE_TYPES = ["client/turn/requested", "item/completed", "system/manager/user_message"] as const;
@@ -25,7 +25,7 @@ export function messageTime(event: EventRow): number | null {
     nonempty = event.data.text.trim().length > 0;
   }
   if (!nonempty) return null;
-  if (!Number.isFinite(event.createdAt)) throw new Error("Некорректная дата сообщения BB");
+  if (!Number.isFinite(event.createdAt)) throw new Error("Некорректная дата сообщения ALIA");
   return event.createdAt;
 }
 

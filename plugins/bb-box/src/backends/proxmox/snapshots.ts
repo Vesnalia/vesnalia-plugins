@@ -96,7 +96,7 @@ export function snapshotsCheck(input: SnapshotsCheckInput): Pick<DoctorCheck, "s
   let rights: string;
   if (input.privileges instanceof Error) {
     rights = `${PRODUCT} cannot read the token's rights on ${path}: ${input.privileges.message.replace(/\.$/, "")}.`;
-    fixes.push("Check that BB's server reaches the Proxmox API, then run the checks again.");
+    fixes.push("Check that VesnALIA's server reaches the Proxmox API, then run the checks again.");
   } else {
     const held = input.privileges;
     const missing = SNAPSHOT_PRIVILEGES.filter((privilege) => !held.has(privilege));

@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { experimental_copyToClipboard, experimental_Icon as Icon, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard, experimental_Icon as Icon, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { ThreadDto, TicketDetail } from "../contract";
 import { endLabel, formatDuration } from "../format";
 import { Avatar, GHOST } from "./ticket-cards";
@@ -54,7 +54,7 @@ function labelTone(label: string, live: boolean): string {
 }
 
 function Agents({ ticket, now }: { ticket: TicketDetail; now: number }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const threads = ticket.threads.filter((thread) => thread.role === "worker" || thread.role === "reviewer");
   const workers = threads.filter((thread) => thread.role === "worker");
   return (

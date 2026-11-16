@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { TimelineResponse, ThreadEventRow } from "@/lib/bb-source";
+import type { TimelineResponse, ThreadEventRow } from "@/lib/alia-source";
 import { BOARD_LIMITS } from "@/lib/board-model";
-import { finalizeTimeline, normalizeBbTimeline, type TimelineCandidate } from "@/lib/timeline-model";
+import { finalizeTimeline, normalizeAliaTimeline, type TimelineCandidate } from "@/lib/timeline-model";
 
 function timeline(rows: unknown[], hasOlderRows = false): TimelineResponse {
   return {
@@ -23,8 +23,8 @@ function base(id: string, at: number, fields: Record<string, unknown>) {
 }
 
 function normalize(rows: unknown[], lifecycleEvents: unknown[] = [], limit?: number) {
-  return normalizeBbTimeline({
-    executionKey: "bb:thr",
+  return normalizeAliaTimeline({
+    executionKey: "alia:thr",
     threadId: "thr",
     timeline: timeline(rows),
     lifecycleEvents: lifecycleEvents as ThreadEventRow[],
@@ -33,13 +33,13 @@ function normalize(rows: unknown[], lifecycleEvents: unknown[] = [], limit?: num
   });
 }
 
-describe("BB execution timeline normalization", () => {
+describe("VesnALIA execution timeline normalization", () => {
   it("pages every event within a large source page, including identical timestamps", () => {
     const rows = Array.from({ length: 130 }, (_, i) => base(`d-${i}`, 100, { sourceSeqEnd: i, kind: "work", workKind: "delegation", status: "pending", childRef: null, description: `Task ${i}` }));
-    const first = normalizeBbTimeline({ executionKey: "bb:thr", threadId: "thr", timeline: timeline(rows), limit: 50 });
+    const first = normalizeAliaTimeline({ executionKey: "alia:thr", threadId: "thr", timeline: timeline(rows), limit: 50 });
     expect(first.nextBefore).toBeDefined();
-    const second = normalizeBbTimeline({ executionKey: "bb:thr", threadId: "thr", timeline: timeline(rows), limit: 50, before: first.nextBefore });
-    const third = normalizeBbTimeline({ executionKey: "bb:thr", threadId: "thr", timeline: timeline(rows), limit: 50, before: second.nextBefore });
+    const second = normalizeAliaTimeline({ executionKey: "alia:thr", threadId: "thr", timeline: timeline(rows), limit: 50, before: first.nextBefore });
+    const third = normalizeAliaTimeline({ executionKey: "alia:thr", threadId: "thr", timeline: timeline(rows), limit: 50, before: second.nextBefore });
     expect([first.events.length, second.events.length, third.events.length]).toEqual([50, 50, 30]);
     expect(new Set([...first.events, ...second.events, ...third.events].map(e => e.id)).size).toBe(130);
     expect(third.nextBefore).toBeUndefined();
@@ -152,20 +152,20 @@ describe("BB execution timeline normalization", () => {
   });
 
   it("sorts chronologically, collapses duplicate logical events, retains distinct tools, and marks bounds", () => {
-    const common = { executionKey: "bb:thr", source: "bb" as const, threadId: "thr", status: "running" as const, title: "Tool", summary: null, model: null, toolName: "read", target: null, phase: null, durationMs: null, attentionType: null, sourceMetadata: null };
+    const common = { executionKey: "alia:thr", source: "alia" as const, threadId: "thr", status: "running" as const, title: "Tool", summary: null, model: null, toolName: "read", target: null, phase: null, durationMs: null, attentionType: null, sourceMetadata: null };
     const candidates: TimelineCandidate[] = [
       { ...common, id: "later", fingerprint: "same", timestamp: 300, kind: "tool-start", sortSequence: 3 },
       { ...common, id: "older-duplicate", fingerprint: "same", timestamp: 100, kind: "tool-start", sortSequence: 1 },
       { ...common, id: "distinct", fingerprint: "other", timestamp: 200, kind: "tool-start", sortSequence: 2 },
     ];
-    const result = finalizeTimeline("bb:thr", "bb", candidates, { active: true, limit: 1, fetchedAt: 400 });
+    const result = finalizeTimeline("alia:thr", "alia", candidates, { active: true, limit: 1, fetchedAt: 400 });
     expect(result.events.map((event) => event.id)).toEqual(["later"]);
     expect(result.truncated).toBe(true);
     expect(result.active).toBe(true);
   });
 
   it("ignores malformed rows and exposes source truncation honestly", () => {
-    const result = normalizeBbTimeline({ executionKey: "bb:thr", threadId: "thr", timeline: timeline([null, {}, { id: "bad", kind: "work" }], true), now: 1 });
+    const result = normalizeAliaTimeline({ executionKey: "alia:thr", threadId: "thr", timeline: timeline([null, {}, { id: "bad", kind: "work" }], true), now: 1 });
     expect(result.events).toEqual([]);
     expect(result.truncated).toBe(true);
   });

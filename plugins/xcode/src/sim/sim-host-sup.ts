@@ -86,7 +86,7 @@ export interface SimHostHandle {
    * Authorises the MJPEG route and nothing else.
    *
    * It exists to be put in a URL. The panel streams straight from the capture
-   * host rather than through the bb server — the proxy hop cost 79% as much
+   * host rather than through the VesnALIA server — the proxy hop cost 79% as much
    * CPU as capturing and encoding the frames, all of it on the process every
    * other plugin shares — and an `<img>` cannot set a header, so the
    * credential has to travel in the query string where it lands in the DOM.
@@ -151,17 +151,17 @@ function onLines(
  * Start the child and wait for its handshake.
  *
  * `ELECTRON_RUN_AS_NODE: "1"` is unconditional. In the shipping desktop build
- * the bb server is itself a child of Electron, so `process.execPath` is the
+ * the VesnALIA server is itself a child of Electron, so `process.execPath` is the
  * Electron binary and it behaves as Node only while that variable is present.
- * bb's own agent-bridge code deliberately *deletes* it. The child still gets a
+ * VesnALIA's own agent-bridge code deliberately *deletes* it. The child still gets a
  * curated environment, but this one variable must be restored explicitly or
- * Electron launches a second full bb window instead of running the script.
+ * Electron launches a second full VesnALIA window instead of running the script.
  */
 export function startSimHost(deps: SpawnDeps, events: SimHostEvents): Promise<SimHostHandle> {
   const secret = newSecret();
   const streamToken = newSecret();
   const spawnFn = deps.spawnFn ?? spawn;
-  const scratch = mkdtempSync(join(tmpdir(), "bb-xcsim-host-"));
+  const scratch = mkdtempSync(join(tmpdir(), "alia-xcsim-host-"));
   const cleanupScratch = (): void => {
     try {
       rmSync(scratch, { recursive: true, force: true });

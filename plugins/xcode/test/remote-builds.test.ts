@@ -6,7 +6,7 @@
  * which runs the worker's `/bin/sh` wrapper over a fake xcodebuild. So these
  * cover the routing end to end: the server picks the Mac from the thread's
  * environment, the Mac validates and builds, and the verdict lands in the
- * same run table the live row, `xcode_status` and `bb xcode wait` read.
+ * same run table the live row, `xcode_status` and `alia xcode wait` read.
  *
  * The host signals are bridged by hand, so a test can drop them and prove the
  * reconcile path recovers on its own.
@@ -15,7 +15,7 @@
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createHostEntry } from "../host";
@@ -59,7 +59,7 @@ async function setup(options: { environmentHost?: string } = {}) {
   cleanups.push(() => mbp.experimental_dispose());
 
   const approvals: unknown[] = [];
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "xcode",
     hostRpc: async (call) => {
       if (call.hostId !== MBP.id) throw new Error(`host ${call.hostId} is offline`);
@@ -96,7 +96,7 @@ async function setup(options: { environmentHost?: string } = {}) {
   const original = Object.getOwnPropertyDescriptor(process, "platform")!;
   Object.defineProperty(process, "platform", { value: "linux", configurable: true });
   try {
-    await plugin(bb as never);
+    await plugin(alia as never);
   } finally {
     Object.defineProperty(process, "platform", original);
   }
@@ -221,7 +221,7 @@ describe("xcode_build for a checkout on another Mac", () => {
   });
 });
 
-describe("bb xcode run / wait / stop for a checkout on another Mac", () => {
+describe("alia xcode run / wait / stop for a checkout on another Mac", () => {
   it("names the machine on the confirmation, then tracks the run by id", async () => {
     const { harness, checkout, approvals } = await setup();
     const ctx = { threadId: THREAD, projectId: PROJECT, cwd: checkout };

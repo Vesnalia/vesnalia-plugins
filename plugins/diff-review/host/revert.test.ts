@@ -34,7 +34,7 @@ function repo(): string {
 const run = createRunGit();
 
 describe("reverting on the host", () => {
-  it("computes the revision bb's Git plugin lists: modes and blobs, the working copy hashed as git does", async () => {
+  it("computes the revision VesnALIA's Git plugin lists: modes and blobs, the working copy hashed as git does", async () => {
     const root = repo();
     writeFileSync(join(root, "a.txt"), "one\nTWO\n");
     expect(await currentRevision(run, root, "a.txt")).toBe(`100644:${git(root, "rev-parse", "HEAD:a.txt")}:100644:${git(root, "hash-object", "a.txt")}`);
@@ -122,14 +122,14 @@ describe("reverting on the host", () => {
     expect(readFileSync(join(root, "a.txt"), "utf8")).toBe("NEW UNREVIEWED EDIT\n");
   });
 
-  it("hashes the working file as bb does, its attributes applied, so a CRLF-normalized file reverts", async () => {
+  it("hashes the working file as VesnALIA does, its attributes applied, so a CRLF-normalized file reverts", async () => {
     const root = repo();
     writeFileSync(join(root, ".gitattributes"), "a.txt text eol=crlf\n");
     git(root, "add", ".gitattributes");
     git(root, "commit", "-q", "-m", "attributes");
     writeFileSync(join(root, "a.txt"), "one\r\nTWO\r\n");
     const revision = await currentRevision(run, root, "a.txt");
-    // bb's Git plugin runs `git hash-object -- a.txt`, which normalizes CRLF to LF.
+    // VesnALIA's Git plugin runs `git hash-object -- a.txt`, which normalizes CRLF to LF.
     expect(revision).toBe(`100644:${git(root, "rev-parse", "HEAD:a.txt")}:100644:${git(root, "hash-object", "a.txt")}`);
     await revert(run, { root, path: "a.txt", revision, hunks: null, patch: null });
     expect(git(root, "status", "--porcelain", "--", "a.txt")).toBe("");

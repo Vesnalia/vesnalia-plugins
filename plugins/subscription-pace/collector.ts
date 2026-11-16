@@ -294,7 +294,7 @@ function lastSpendDay(measure: Measure): string | null {
  * The credentials a measurement can need.
  *
  * `codex` is not a credential but the provider's own answer, fetched by the
- * caller through `bb.sdk.system.usageLimits()`. It arrives already resolved
+ * caller through `alia.sdk.system.usageLimits()`. It arrives already resolved
  * because the SDK is only reachable from the server, while the collector is
  * kept pure so its tests can drive it with a fixture. Null means no provider
  * answered for that id, which the slot reports as unavailable rather than zero.
@@ -312,7 +312,7 @@ export type CollectorKeys = {
    */
   opencodeFallbacks?: string[];
   codex: ProviderUsage | null;
-  /** What BB knows about the Codex provider itself, for explaining a failure. */
+  /** What VesnALIA knows about the Codex provider itself, for explaining a failure. */
   codexState?: ProviderState | null;
 };
 

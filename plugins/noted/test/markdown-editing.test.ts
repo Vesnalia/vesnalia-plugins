@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 
 const digest = (text: string) => createHash("sha256").update(text).digest("hex");
@@ -9,7 +9,7 @@ async function editor(enabled: boolean | undefined = true, path = "plan.md", bas
   let content = "# Original\n";
   let previewFails = false;
   const writes: unknown[] = [];
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "noted",
     settings: enabled === undefined ? {} : { markdownEditing: enabled, newWindow: enabled },
     sdk: {
@@ -33,10 +33,10 @@ async function editor(enabled: boolean | undefined = true, path = "plan.md", bas
       },
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   const session: any = await harness.behavior.callRpc("openSession", { threadId: "thr_a", path });
   const save = (text: string, sha = session.revision.sha256) => harness.behavior.callRpc("saveMarkdown", { sessionId: session.session.id, content: text, expectedSha256: sha });
-  return { bb, harness, session, save, writes, content: () => content, change: (text: string) => { content = text; }, failPreview: () => { previewFails = true; } };
+  return { alia, harness, session, save, writes, content: () => content, change: (text: string) => { content = text; }, failPreview: () => { previewFails = true; } };
 }
 
 describe("Markdown editing", () => {
@@ -105,7 +105,7 @@ describe("Markdown editing", () => {
 
   it("reports a committed save if realtime publication fails", async () => {
     const e = await editor();
-    e.bb.realtime.publish = () => { throw new Error("Plugin disposed"); };
+    e.alia.realtime.publish = () => { throw new Error("Plugin disposed"); };
     await expect(e.save("# Saved\n")).resolves.toEqual({ sha256: digest("# Saved\n") });
     expect(e.content()).toBe("# Saved\n");
   });

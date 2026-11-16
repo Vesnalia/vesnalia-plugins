@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-git-panel",
+  "name": "alia-plugin-git-panel",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Git worktree",
-    "description": "Git for the thread's workspace: stage, AI-commit, branch, and sync without leaving BB.",
+    "description": "Git for the thread's workspace: stage, AI-commit, branch, and sync without leaving VesnALIA.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -25,10 +25,9 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "npm run typecheck && bb plugin build ."
+    "build": "npm run typecheck && alia plugin build ."
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -54,22 +53,31 @@
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
   },
-  "description": "Git for the thread's workspace: stage, AI-commit, branch, and sync without leaving BB.",
+  "description": "Git for the thread's workspace: stage, AI-commit, branch, and sync without leaving VesnALIA.",
   "license": "MIT",
   "author": "Diip3sh <pilladipesh.pd@gmail.com>",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/diip3sh/bb-plugin-git-panel.git"
-  },
-  "homepage": "https://github.com/diip3sh/bb-plugin-git-panel#readme",
-  "bugs": {
-    "url": "https://github.com/diip3sh/bb-plugin-git-panel/issues"
-  },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "git",
     "worktree",
     "version-control",
     "thread-panel"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/git-panel#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/git-panel"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

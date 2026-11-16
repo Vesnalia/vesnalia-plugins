@@ -6,10 +6,10 @@ import {
   type FontsConfig,
 } from "./domain";
 
-export const CONFIG_STORAGE_KEY = "bb-plugin-fonts:config:v2";
-export const LEGACY_CONFIG_STORAGE_KEY = "bb-plugin-fonts:config:v1";
-export const CATALOG_STORAGE_KEY = "bb-plugin-fonts:catalog:v1";
-export const CHANNEL_NAME = "bb-plugin-fonts:v2";
+export const CONFIG_STORAGE_KEY = "alia-plugin-fonts:config:v2";
+export const LEGACY_CONFIG_STORAGE_KEY = "alia-plugin-fonts:config:v1";
+export const CATALOG_STORAGE_KEY = "alia-plugin-fonts:catalog:v1";
+export const CHANNEL_NAME = "alia-plugin-fonts:v2";
 
 interface StorageLike {
   getItem(key: string): string | null;

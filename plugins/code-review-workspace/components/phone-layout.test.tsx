@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { patchReviewState } from "../lib/panel-state";
 import { keep } from "../lib/remount";
@@ -90,7 +90,7 @@ test("on a phone the chapters sheet's header holds Chapters | All files, and the
   slot.lifecycle.unmount();
 });
 
-test("as BB remounts the page, as a phone turns, the new one has the chapters open, Find's text and the focus; later, nothing opens by itself", async () => {
+test("as VesnALIA remounts the page, as a phone turns, the new one has the chapters open, Find's text and the focus; later, nothing opens by itself", async () => {
   fakeSize(390, 844);
   let slot = await renderWorkspace();
   fireEvent.click(within(slot.getByRole("group", { name: "Review commands" })).getByRole("button", { name: /^pr-42, Chapters:/ }));
@@ -126,7 +126,7 @@ test("under a phone's sheet the code is inert: a scroll of it keeps the line a r
   slot.lifecycle.unmount();
 });
 
-test("as BB remounts the page, the line put back stays the place while it's put back: what's at the top then isn't kept", async () => {
+test("as VesnALIA remounts the page, the line put back stays the place while it's put back: what's at the top then isn't kept", async () => {
   fakeSize(390, 844);
   let slot = await renderWorkspace();
   const place = { file: "src/a.ts", index: "1,1", offset: 12 };
@@ -142,7 +142,7 @@ test("as BB remounts the page, the line put back stays the place while it's put 
   slot.lifecycle.unmount();
 });
 
-/** The review remounted by BB, as a phone turns, with `place` carried and the code last saved scrolled to `top`: its code's box. */
+/** The review remounted by VesnALIA, as a phone turns, with `place` carried and the code last saved scrolled to `top`: its code's box. */
 async function remountAt(place: { file: string; index: string; offset: number }, top: number) {
   fakeSize(390, 844);
   const slot = await renderWorkspace();
@@ -153,7 +153,7 @@ async function remountAt(place: { file: string; index: string; offset: number },
   return { slot: again, code: again.getByRole("main", { name: /^Review\b/ }).querySelector<HTMLElement>(":scope > .overflow-y-auto")! };
 }
 
-test("as BB remounts the page, a line not drawn yet, as in a large chapter, is looked for in its file, and gone to once it draws", async () => {
+test("as VesnALIA remounts the page, a line not drawn yet, as in a large chapter, is looked for in its file, and gone to once it draws", async () => {
   const { slot, code } = await remountAt({ file: "src/a.ts", index: "1,1", offset: 12 }, 400);
   // Its file waits to draw 3000px down the code, not where the saved position is at this width.
   code.querySelector<HTMLElement>("[data-file='src/a.ts']")!.getBoundingClientRect = () => new DOMRect(0, 3000 - code.scrollTop, 390, 8000);
@@ -167,13 +167,13 @@ test("as BB remounts the page, a line not drawn yet, as in a large chapter, is l
   slot.lifecycle.unmount();
 });
 
-test("as BB remounts the page, a line whose file has gone from the chapter is looked for where the code was", async () => {
+test("as VesnALIA remounts the page, a line whose file has gone from the chapter is looked for where the code was", async () => {
   const { slot, code } = await remountAt({ file: "src/gone.ts", index: "1,1", offset: 12 }, 400);
   await waitFor(() => expect(code.scrollTop).toBe(400));
   slot.lifecycle.unmount();
 });
 
-test("as BB remounts the page, a tap outside the code, as on the dock, ends putting the line back: the code stays where it goes, and that's the place", async () => {
+test("as VesnALIA remounts the page, a tap outside the code, as on the dock, ends putting the line back: the code stays where it goes, and that's the place", async () => {
   const { slot, code } = await remountAt({ file: "src/gone.ts", index: "1,1", offset: 12 }, 400);
   await waitFor(() => expect(code.scrollTop).toBe(400));
   fireEvent.pointerDown(within(slot.getByRole("group", { name: "Review commands" })).getByRole("button", { name: /^pr-42, Chapters:/ }));
@@ -186,7 +186,7 @@ test("as BB remounts the page, a tap outside the code, as on the dock, ends putt
   slot.lifecycle.unmount();
 });
 
-test("the code's scroll saved after its box has gone, as BB remounts the page, keeps the line the box had", async () => {
+test("the code's scroll saved after its box has gone, as VesnALIA remounts the page, keeps the line the box had", async () => {
   fakeSize(390, 844);
   const slot = await renderWorkspace();
   const place = { file: "src/a.ts", index: "1,1", offset: 12 };

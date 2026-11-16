@@ -1,25 +1,21 @@
 {
-  "name": "bb-plugin-usage-forecast",
+  "name": "alia-plugin-usage-forecast",
   "version": "0.4.20",
   "description": "Provider usage limits with a reset forecast, the thread context-window fill and auto-compact.",
   "private": true,
   "type": "module",
   "license": "MIT",
   "author": "ponomr",
-  "repository": {
-    "url": "https://github.com/ponomr/bb-plugin-usage-forecast.git",
-    "type": "git"
-  },
   "engines": {
-    "bbPluginSdk": ">=0.6.132 <0.7.0",
-    "bb": ">=0.49.0 <1.0.0"
+    "aliaPluginSdk": ">=0.6.132 <0.7.0",
+    "alia": ">=0.49.0 <1.0.0"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
-  "bb": {
+  "alia": {
     "name": "Usage Forecast",
     "description": "Provider usage limits with a reset forecast, the thread context-window fill and auto-compact.",
     "branding": {
@@ -29,9 +25,9 @@
     "app": "./app.tsx"
   },
   "dependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@radix-ui/react-slot": "^1.5.0",
-    "zod": "^4.6.5"
+    "zod": "^4.6.5",
+    "@vesnalia/plugin-sdk": "^0.6.132"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.3",
@@ -48,5 +44,14 @@
     "tailwind-merge": "^3.7.0",
     "typescript": "^5.7.0",
     "vitest": "^4.1.12"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/usage-forecast#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/usage-forecast"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

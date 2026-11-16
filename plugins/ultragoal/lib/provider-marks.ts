@@ -1,7 +1,7 @@
 /**
- * Provider marks lifted verbatim from bb's own bundle, so the sidebar draws the
+ * Provider marks lifted verbatim from VesnALIA's own bundle, so the sidebar draws the
  * same logos and brand colors as the composer's provider picker. Regenerate by
- * re-reading bb's app bundle if bb ships new providers.
+ * re-reading VesnALIA's app bundle if VesnALIA ships new providers.
  */
 export type ProviderMarkSpec = {
   label: string;

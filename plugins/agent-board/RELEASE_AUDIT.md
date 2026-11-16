@@ -1,4 +1,4 @@
-# Phase 8 release audit — bb-plugin-agent-board
+# Phase 8 release audit — alia-plugin-agent-board
 
 Audit date: 2026-09-05. Version: **0.6.0**, first public beta. No runtime product
 code changed; documentation, licensing, packaging metadata and fixture hygiene only.
@@ -34,7 +34,7 @@ that arbitrary strings can be classified perfectly.
 No node_modules, runtime databases, logs, cache directories, .env files, crash
 dumps or temporary evidence are tracked. Local ignored dependencies/builds are
 expected. Git source installation builds both bundles using declared runtime
-dependencies; `dist/` remains intentionally ignored. This was verified in BB's
+dependencies; `dist/` remains intentionally ignored. This was verified in VesnALIA's
 managed installer source, not inferred from scaffold README text. npm installs
 require prebuilt artifacts and remain an optional future distribution channel.
 No /tmp diagnostic artifacts are committed.
@@ -44,8 +44,8 @@ No /tmp diagnostic artifacts are committed.
 MIT approved for original code: **Copyright (c) 2026 Aaron Phifer**.
 Package `license` and LICENSE agree; lockfile root metadata matches.
 See [complete dependency inventory](DEPENDENCY_LICENSES.md) and
-[third-party notices](THIRD_PARTY_NOTICES.md). Vendored BB/shadcn notices are
-preserved. SDK npm metadata omits a license, but the declared upstream BB source
+[third-party notices](THIRD_PARTY_NOTICES.md). Vendored ALIA/shadcn notices are
+preserved. SDK npm metadata omits a license, but the declared upstream VesnALIA source
 is MIT. Hugeicons' missing free-core notice is covered by the upstream MIT
 clarification for free icons; no Pro pack is used. Development lightningcss is
 MPL-2.0 and is not redistributed in this source release. No non-redistributable
@@ -65,13 +65,13 @@ PLUGIN_OVERVIEW are prepared. No competitor comparison or major feature added.
 
 | Surface | Declared minimum | Evidence |
 | --- | --- | --- |
-| BB | >=0.40 | Current clean-path installs and live RPC smoke passed on a daemon whose install-built frontend metadata reports BB 0.40.0. |
+| VesnALIA | >=0.40 | Current clean-path installs and live RPC smoke passed on a daemon whose install-built frontend metadata reports VesnALIA 0.40.0. |
 | Public Plugin SDK | >=0.4.21 | Retained declared floor; this release was not comprehensively retested against every SDK version. |
 | Development/test types | — | Lockfile and clean tests use SDK 0.4.34. |
 | CLI/build toolchain | — | CLI 0.42.0 builds artifact metadata stamped SDK 0.4.47. |
-| Daemon-built frontend | — | Install rebuilt frontend with BB 0.40.0 / SDK 0.4.34 metadata. This stamp is not proof of every daemon runtime API version. |
+| Daemon-built frontend | — | Install rebuilt frontend with VesnALIA 0.40.0 / SDK 0.4.34 metadata. This stamp is not proof of every daemon runtime API version. |
 | Node/npm | No package engine claim | Clean install/test/build on Node 24.20.0 / npm 11.19.0. |
-| Historical live evidence | — | Reports phase-2/3/4 describe BB 0.40 / runtime SDK 0.4.21 observations; phase-0/1 describe BB 0.41 / SDK 0.4.34 build evidence. These are historical, not fresh tests of every 0.6.0 path. |
+| Historical live evidence | — | Reports phase-2/3/4 describe VesnALIA 0.40 / runtime SDK 0.4.21 observations; phase-0/1 describe VesnALIA 0.41 / SDK 0.4.34 build evidence. These are historical, not fresh tests of every 0.6.0 path. |
 
 ## Verification results
 
@@ -82,19 +82,19 @@ PLUGIN_OVERVIEW are prepared. No competitor comparison or major feature added.
 | Build | Passed in both environments. |
 | Public SDK scan | Passed as part of full suite; independently inspected imports and storage access. |
 | Clean source archive | Git alternate-index tree archived tracked/intended new source only, with no local node_modules or dist. Fresh npm ci, tests, typecheck and build passed. |
-| Clean-path BB install | Passed; original canonical plugin path restored afterward. |
+| Clean-path VesnALIA install | Passed; original canonical plugin path restored afterward. |
 | Advisory check | npm ci reported zero known vulnerabilities. |
 | Standalone | Fleet and Redteam disabled: native global and scoped RPCs passed. |
 | Fleet integration | Both enabled: completed real smoke job visible in Recent and its four-event lifecycle timeline. |
-| Native timeline | Live BB timeline returned bounded 50 events. |
+| Native timeline | Live VesnALIA timeline returned bounded 50 events. |
 | Attention dismissal / reconciliation | Full behavioral tests passed; fixture/browser and public RPC observation complement tests. No real user attention items dismissed for the audit. |
-| Global UI | Real BB-hosted UI captured with synthetic RPC fixtures. |
+| Global UI | Real ALIA-hosted UI captured with synthetic RPC fixtures. |
 | Scoped visual capture | Focus and multi-agent screenshot slots prepared, but capture was not completed: host-panel selection did not reach the scoped view. Scoped RPC and component tests pass; no fresh scoped browser pass claimed. |
 | Mobile | Chromium 360/412 px: document and plugin widths matched, zero horizontal overflow and zero page errors in successful capture. Reduced motion enabled. |
 | Physical Android | Not available; not claimed as tested. |
 
-Public-SDK audit: no private @bb imports, package-escaping imports, direct BB DB
-access, or private Fleet/Redteam imports. Native reads use BB APIs; presentation
+Public-SDK audit: no private @alia imports, package-escaping imports, direct VesnALIA DB
+access, or private Fleet/Redteam imports. Native reads use VesnALIA APIs; presentation
 dismissal uses public KV storage. Optional integrations use public
 `plugins.callRpc` with local validation schemas. Tests exercise missing/disabled,
 unknown-method, malformed, empty and failure cases. Hidden reasoning is excluded.

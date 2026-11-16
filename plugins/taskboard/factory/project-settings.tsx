@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRealtime, useRpc } from '@get-bb/plugin-sdk/app';
+import { useRealtime, useRpc } from '@vesnalia/plugin-sdk/app';
 import type { TaskboardRpcContract, WorkSource } from '../contract.js';
 import type { FactoryExecution, FactoryProjectStatus } from './contract.js';
 import { Button } from '../components/ui/button.js';

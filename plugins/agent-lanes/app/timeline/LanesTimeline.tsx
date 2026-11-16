@@ -1,4 +1,4 @@
-// bb Lanes timeline engine: one lane per thread, one block per agent turn
+// VesnALIA Lanes timeline engine: one lane per thread, one block per agent turn
 // growing into now, hand-off curves between threads, and decisions answered on
 // the block. Implements `TimelineProps` from shared/view.ts.
 //
@@ -1041,7 +1041,7 @@ function TimelineContent(props: TimelineProps) {
             <div
               ref={trackRef}
               className="bl-track"
-              // bb opens its sidebar on a rightward swipe; over time it pans instead.
+              // VesnALIA opens its sidebar on a rightward swipe; over time it pans instead.
               data-no-sidebar-swipe=""
               onPointerDown={onTrackPointerDown}
               onPointerMove={onTrackPointerMove}

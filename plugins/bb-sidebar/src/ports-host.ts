@@ -2,12 +2,12 @@ import { execFile } from "node:child_process";
 import { readFile, readlink, realpath } from "node:fs/promises";
 import { platform } from "node:os";
 import { promisify } from "node:util";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { closeOwnedPortProcesses } from "./close-owned-ports";
 import { portScanContract, type PortRoot } from "./port-scan-contract";
 import { attribute, parseCwds, parseDockerRows, parseListeners } from "./port-scan";
 import type { OpenPort, ThreadPullRequest } from "./contract";
-import { isBbInternalListener, parseProcessCommands } from "./port-processes";
+import { isAliaInternalListener, parseProcessCommands } from "./port-processes";
 import { macProcessEnvironment, threadIdFromEnvironment } from "./port-ownership";
 import { parseGhPullRequest } from "./pull-requests";
 
@@ -112,7 +112,7 @@ async function scanPorts(roots: PortRoot[], signal: AbortSignal) {
     const owner = attribute(cwd, canonicalRoots);
     if (!owner) return;
     const path = canonicalRoots.find((root) => root.environmentId === owner)!.path;
-    // Multiple BB environments can refer to the same checkout.
+    // Multiple VesnALIA environments can refer to the same checkout.
     for (const root of canonicalRoots.filter((root) => root.path === path)) {
       const key = `${root.environmentId}:${detail.port}`;
       // Docker enriches an observed listener; it must not replace its PID,
@@ -121,7 +121,7 @@ async function scanPorts(roots: PortRoot[], signal: AbortSignal) {
     }
   }
   for (const listener of listeners) {
-    if (isBbInternalListener(listener.processName, commands.get(listener.pid))) continue;
+    if (isAliaInternalListener(listener.processName, commands.get(listener.pid))) continue;
     const cwd = cwds.get(listener.pid);
     if (cwd && attribute(cwd, canonicalRoots)) {
       const ownerThreadId = await ownerThread(listener.pid);

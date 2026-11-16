@@ -1,8 +1,8 @@
-// Cross-machine transfer. Every bb thread is pinned to one enrolled machine,
+// Cross-machine transfer. Every VesnALIA thread is pinned to one enrolled machine,
 // so moving a session to another one is three decisions: which host, which
 // workspace on that host, and what working state has to travel alongside the
 // transcript because the git remote does not carry it.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export type WorkspaceMode = "reuse" | "checkout" | "worktree" | "personal";
@@ -17,11 +17,11 @@ export interface Machine {
 /** A transfer the user can fix by choosing differently; message is user-facing. */
 export class TransferError extends Error {}
 
-export async function listMachines(bb: BbPluginApi): Promise<Machine[]> {
-  const hosts = await bb.sdk.hosts.list();
+export async function listMachines(alia: AliaPluginApi): Promise<Machine[]> {
+  const hosts = await alia.sdk.hosts.list();
   let primaryHostId: string | null = null;
   try {
-    primaryHostId = (await bb.sdk.system.config()).primaryHostId ?? null;
+    primaryHostId = (await alia.sdk.system.config()).primaryHostId ?? null;
   } catch {
     // No primary reported — every machine is then treated as non-primary.
   }
@@ -44,8 +44,8 @@ export function matchMachine(machines: Machine[], needle: string): Machine | nul
   );
 }
 
-export async function resolveMachine(bb: BbPluginApi, needle: string): Promise<Machine> {
-  const machines = await listMachines(bb);
+export async function resolveMachine(alia: AliaPluginApi, needle: string): Promise<Machine> {
+  const machines = await listMachines(alia);
   const match = matchMachine(machines, needle);
   if (!match) {
     const known = machines.map((machine) => machine.name).join(", ") || "(none)";
@@ -57,7 +57,7 @@ export async function resolveMachine(bb: BbPluginApi, needle: string): Promise<M
 // --- Planning ---------------------------------------------------------------
 
 export interface TransferPlan {
-  /** Undefined targets bb's primary host, matching the spawn API. */
+  /** Undefined targets VesnALIA's primary host, matching the spawn API. */
   hostId: string | undefined;
   hostName: string | null;
   /** True when the target machine differs from the source thread's machine. */
@@ -88,7 +88,7 @@ export interface TransferInputs {
  *
  * Anything routed at an explicit `hostId` can reach another machine, and a
  * machine that is asleep or off the network does not fail fast — it just
- * never answers. Inside an rpc handler that stalls bb's shared event loop for
+ * never answers. Inside an rpc handler that stalls VesnALIA's shared event loop for
  * as long as the call takes, so every remote lookup here is bounded and
  * degrades to "unknown" instead.
  */
@@ -130,44 +130,44 @@ export function sourcePathOnHostFrom(
 
 /** The project's checkout on one host, preferring the default source. */
 export async function sourcePathOnHost(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   projectId: string,
   hostId: string,
 ): Promise<string | null> {
-  const sources = await projectSources(bb, projectId);
+  const sources = await projectSources(alia, projectId);
   return sourcePathOnHostFrom(sources, hostId);
 }
 
 /** One project-list fetch, reusable across every machine in a request. */
 export async function projectSources(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   projectId: string,
 ): Promise<readonly ProjectSourceLike[]> {
-  const projects = await bb.sdk.projects.list({ includePersonal: true }).catch(() => []);
+  const projects = await alia.sdk.projects.list({ includePersonal: true }).catch(() => []);
   return projects.find((candidate) => candidate.id === projectId)?.sources ?? [];
 }
 
 /** Provider discovery, bounded — an unreachable host yields no providers. */
 export async function listProvidersBounded(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   args: { hostId: string } | { environmentId: string } | undefined,
-): Promise<Awaited<ReturnType<BbPluginApi["sdk"]["providers"]["list"]>>> {
+): Promise<Awaited<ReturnType<AliaPluginApi["sdk"]["providers"]["list"]>>> {
   return withTimeout(
-    bb.sdk.providers.list(args).catch(() => []),
+    alia.sdk.providers.list(args).catch(() => []),
     REMOTE_LOOKUP_TIMEOUT_MS,
     [],
   );
 }
 
 async function hostHasBranch(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   projectId: string,
   hostId: string,
   branch: string,
 ): Promise<boolean> {
   // Listing branches runs git on `hostId`, which may be another machine.
   const result = await withTimeout(
-    bb.sdk.projects
+    alia.sdk.projects
       .branches({ projectId, hostId, query: branch, limit: "100" })
       .then((response) => response.branches.includes(branch))
       .catch(() => false),
@@ -180,14 +180,14 @@ async function hostHasBranch(
 /**
  * Decide where the handed-off thread runs and validate that it can. Throws
  * TransferError with an actionable message rather than letting a spawn fail
- * with a bb-internal one.
+ * with a alia-internal one.
  */
-export async function planTransfer(bb: BbPluginApi, inputs: TransferInputs): Promise<TransferPlan> {
+export async function planTransfer(alia: AliaPluginApi, inputs: TransferInputs): Promise<TransferPlan> {
   // Staying on the source machine must not depend on the host list, so a
   // failure to enumerate machines is only fatal when one was actually named.
   const machines = inputs.machine
-    ? await listMachines(bb)
-    : await listMachines(bb).catch(() => [] as Machine[]);
+    ? await listMachines(alia)
+    : await listMachines(alia).catch(() => [] as Machine[]);
   const source = inputs.sourceHostId
     ? (machines.find((machine) => machine.id === inputs.sourceHostId) ?? null)
     : null;
@@ -239,7 +239,7 @@ export async function planTransfer(bb: BbPluginApi, inputs: TransferInputs): Pro
   if (inputs.workspace === "personal") return plan;
 
   if (inputs.workspace === "checkout") {
-    const checkoutPath = hostId ? await sourcePathOnHost(bb, inputs.projectId, hostId) : null;
+    const checkoutPath = hostId ? await sourcePathOnHost(alia, inputs.projectId, hostId) : null;
     if (!checkoutPath) {
       throw new TransferError(
         `This project has no checkout on ${targetLabel} — add one to the project's sources first, or hand off to a new worktree or a blank workspace.`,
@@ -253,13 +253,13 @@ export async function planTransfer(bb: BbPluginApi, inputs: TransferInputs): Pro
   // default branch" meaning; crossing machines it would silently strand the
   // agent on the wrong history, so there the source branch is carried over.
   if (crossMachine && hostId) {
-    if (!(await sourcePathOnHost(bb, inputs.projectId, hostId))) {
+    if (!(await sourcePathOnHost(alia, inputs.projectId, hostId))) {
       throw new TransferError(
         `This project has no checkout on ${targetLabel}, so there is nothing to build a worktree from. Add a source for it there, or hand off to a blank personal workspace.`,
       );
     }
     if (inputs.sourceBranch) {
-      if (await hostHasBranch(bb, inputs.projectId, hostId, inputs.sourceBranch)) {
+      if (await hostHasBranch(alia, inputs.projectId, hostId, inputs.sourceBranch)) {
         plan.baseBranch = inputs.sourceBranch;
       } else {
         notes.push(
@@ -299,11 +299,11 @@ export interface WorkingState {
 export const MAX_PATCH_BYTES = 2_000_000;
 
 /**
- * bb's bundled Git plugin owns workspace git reads. These are the parts of its
- * `workspaceStatus` and `diff` results this plugin reads (`bb plugin rpc
- * inspect bb--git` prints the full contract).
+ * VesnALIA's bundled Git plugin owns workspace git reads. These are the parts of its
+ * `workspaceStatus` and `diff` results this plugin reads (`alia plugin rpc
+ * inspect alia--git` prints the full contract).
  */
-const GIT_PLUGIN_ID = "bb--git";
+const GIT_PLUGIN_ID = "alia--git";
 
 const gitUnavailableSchema = z.union([
   z.object({ outcome: z.literal("not_applicable"), message: z.string() }),
@@ -378,12 +378,12 @@ function patchCovers(patch: string, path: string): boolean {
  * only ever sees what has been pushed.
  */
 export async function captureWorkingState(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   environmentId: string,
 ): Promise<WorkingState | null> {
   let status: z.infer<typeof gitWorkspaceStatusSchema>;
   try {
-    status = await bb.sdk.plugins.callRpc({
+    status = await alia.sdk.plugins.callRpc({
       pluginId: GIT_PLUGIN_ID,
       method: "workspaceStatus",
       input: { environmentId },
@@ -415,7 +415,7 @@ export async function captureWorkingState(
   if (!state.dirty) return state;
 
   try {
-    const result = await bb.sdk.plugins.callRpc({
+    const result = await alia.sdk.plugins.callRpc({
       pluginId: GIT_PLUGIN_ID,
       method: "diff",
       input: { environmentId, target: { type: "uncommitted" }, maxDiffBytes: MAX_PATCH_BYTES },
@@ -452,12 +452,12 @@ export async function captureWorkingState(
  * or null when the write failed (never fatal — the handoff still goes).
  */
 export async function deliverPatch(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   options: { hostId: string; sourceThreadId: string; patch: string },
 ): Promise<string | null> {
-  const path = `/tmp/bb-handoff-${options.sourceThreadId}.patch`;
+  const path = `/tmp/alia-handoff-${options.sourceThreadId}.patch`;
   try {
-    const written = await bb.sdk.files.write({
+    const written = await alia.sdk.files.write({
       hostId: options.hostId,
       path,
       content: options.patch,

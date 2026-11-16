@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useBbContext } from "@get-bb/plugin-sdk/app";
+import { useAliaContext } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { FileTypeIcon } from "@/components/FileTypeIcon";
 import { Icon, type IconName } from "@/components/ui/icon";
@@ -170,7 +170,7 @@ function ResultGroup({
  * this word", which is the question a rename or an API change actually asks.
  */
 export function FileContentSearchPanel({ root }: { root: Workspace | null }) {
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const search = useSearchInFiles(root);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const queryRef = useRef<HTMLInputElement>(null);

@@ -1,17 +1,17 @@
 // @vitest-environment node
 import { readFileSync } from "node:fs";
-import { createFakePluginHost, makeMessageDispatchHookContext, makePluginAgentConfigurationContext, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeMessageDispatchHookContext, makePluginAgentConfigurationContext, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import plugin from "../server";
 import { TOOL_INSTRUCTIONS } from "../src/notes";
 
 const manifest = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
-  bb: { branding: { experimental_icons: Record<string, string> } };
+  alia: { branding: { experimental_icons: Record<string, string> } };
 };
-const ICONS = Object.keys(manifest.bb.branding.experimental_icons);
+const ICONS = Object.keys(manifest.alia.branding.experimental_icons);
 
 async function load(options: { settings?: Record<string, string | number | boolean>; callRpc?: () => Promise<unknown> } = {}) {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "flare",
     experimental_declaredIconNames: ICONS,
     settings: options.settings,
@@ -24,14 +24,14 @@ async function load(options: { settings?: Record<string, string | number | boole
       plugins: { callRpc: options.callRpc ?? (async () => ({ ok: true, channels: [] })) },
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   return harness;
 }
 
 const text = (result: unknown): string => (typeof result === "string" ? result : JSON.stringify(result));
 
 describe("the flare tool", () => {
-  it("is registered with its own row and instructions short enough for bb", async () => {
+  it("is registered with its own row and instructions short enough for VesnALIA", async () => {
     const harness = await load();
     const tools = harness.inspection.registrations.agentTools;
     const flare = tools.find((tool) => tool.name === "flare");
@@ -41,7 +41,7 @@ describe("the flare tool", () => {
   });
 
   it("advertises a schema no provider can reject a call against", async () => {
-    // pi validates arguments against the advertised schema before bb sees them, so an enum, a required list or a
+    // pi validates arguments against the advertised schema before VesnALIA sees them, so an enum, a required list or a
     // bound would turn an odd value into a failed call.
     const harness = await load();
     for (const tool of harness.inspection.registrations.agentTools) {
@@ -58,7 +58,7 @@ describe("the flare tool", () => {
     expect(body).not.toContain("A few lines");
     expect(body).toMatch(/a table, a mermaid diagram, or an image/);
     expect(TOOL_INSTRUCTIONS).toContain("does not cover a flare's body");
-    expect(TOOL_INSTRUCTIONS).toContain('Load("$BB_THREAD_STORAGE/<path>")');
+    expect(TOOL_INSTRUCTIONS).toContain('Load("$ALIA_THREAD_STORAGE/<path>")');
     expect(TOOL_INSTRUCTIONS).toContain("A body that is all prose is right only when there is nothing to see");
   });
 
@@ -70,7 +70,7 @@ describe("the flare tool", () => {
     expect(body).toContain("Prefer genui");
     expect(TOOL_INSTRUCTIONS).toContain("Markdown tables are a fallback");
     expect(TOOL_INSTRUCTIONS).toContain("If genui is installed");
-    expect(TOOL_INSTRUCTIONS).toContain("bb plugin list");
+    expect(TOOL_INSTRUCTIONS).toContain("alia plugin list");
     expect(TOOL_INSTRUCTIONS).toContain("without genui, use Markdown tables and mermaid");
   });
 
@@ -169,7 +169,7 @@ describe("the frontend reads", () => {
 });
 
 describe("thread events", () => {
-  it("tracks turns from bb's thread events", async () => {
+  it("tracks turns from VesnALIA's thread events", async () => {
     const harness = await load();
     const thread = makeThreadResponse({ id: "thr_a", status: "active" });
     await harness.behavior.emitThreadEvent("thread.active", { thread });
@@ -209,7 +209,7 @@ describe("the dispatch hook", () => {
   });
 });
 
-describe("bb flare", () => {
+describe("alia flare", () => {
   it("sends to the thread it runs in and lists its flares", async () => {
     const harness = await load();
     const sent = await harness.behavior.runCli(["send", "Tests", "pass", "--kind", "progress", "--body", "142 of 142"], { threadId: "thr_a" });
@@ -221,7 +221,7 @@ describe("bb flare", () => {
   });
 
   it("shows how to send a body with fenced blocks", async () => {
-    // The bb CLI's --<name>-stdin takes exactly one line, so a multi-line body goes through a file instead.
+    // The VesnALIA CLI's --<name>-stdin takes exactly one line, so a multi-line body goes through a file instead.
     const harness = await load();
     const help = await harness.behavior.runCli(["send", "--help"], { threadId: "thr_a" });
     expect(help.stdout).toContain('--body "$(cat body.md)"');

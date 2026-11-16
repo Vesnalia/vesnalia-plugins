@@ -1,6 +1,6 @@
 const arrow = [
   "B",
-  "BB",
+  "ALIA",
   "BWB",
   "BWWB",
   "BWWWB",
@@ -14,10 +14,10 @@ const arrow = [
   "BWWWBWWB",
   "BWWBBWWB",
   "BWB  BWWB",
-  "BB   BWWB",
+  "VesnALIA   BWWB",
   "B     BWWB",
   "      BWWB",
-  "       BB",
+  "       ALIA",
 ];
 
 interface Palette {

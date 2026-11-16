@@ -1,21 +1,21 @@
-// app/CodeEditor.tsx — the text view: a CodeMirror editor themed with BB's
+// app/CodeEditor.tsx — the text view: a CodeMirror editor themed with VesnALIA's
 // colours.
 //
 // What: an editable, syntax-highlighted text area for decrypted files
 // (dotenv, YAML, JSON, INI, plain text), with search, undo and
 // Ctrl/Cmd+S to save.
 //
-// Why: BB's own code component only displays code; it cannot be typed in.
+// Why: VesnALIA's own code component only displays code; it cannot be typed in.
 // CodeMirror is small, needs no web workers, and its colours can be taken
-// from BB's theme variables so it follows light, dark and custom palettes.
+// from VesnALIA's theme variables so it follows light, dark and custom palettes.
 //
 // Design notes:
 // - The editor is created once per mount and kept in a ref. A new `value`
 //   from outside (after a save or reload) replaces the document only when it
 //   differs from what the editor already holds, so typing never makes the
 //   cursor jump.
-// - Colours are BB's CSS variables (`--primary`, `--success`, …), never
-//   fixed colours, as BB asks of plugins.
+// - Colours are VesnALIA's CSS variables (`--primary`, `--success`, …), never
+//   fixed colours, as VesnALIA asks of plugins.
 // - Line wrapping is on: secrets (keys, tokens) are often single very long
 //   lines.
 

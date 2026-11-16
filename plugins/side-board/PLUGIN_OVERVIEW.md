@@ -8,10 +8,10 @@ Your agent's open questions, the bugs it noticed and the work it deferred stop s
 
 ## How it works
 
-The plugin gives every agent three tools, `board_add`, `board_close` and `board_list`, plus standing instructions to call them whenever it asks you something, notices a bug or defers work, and to close items in the same turn they are resolved. It works the same in Claude Code, Codex and other bb providers. You don't need to set anything up per thread.
+The plugin gives every agent three tools, `board_add`, `board_close` and `board_list`, plus standing instructions to call them whenever it asks you something, notices a bug or defers work, and to close items in the same turn they are resolved. It works the same in Claude Code, Codex and other VesnALIA providers. You don't need to set anything up per thread.
 
 A safety net watches each reply. If an agent asked a question or finished work without updating the board, it gets one short reminder. You can turn this off in the plugin settings.
 
 ## Requirements
 
-Nothing beyond bb. Boards are stored in bb's own database on your machine. There is no account, API key or external service.
+Nothing beyond VesnALIA. Boards are stored in VesnALIA's own database on your machine. There is no account, API key or external service.

@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { experimental_usePluginId, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_usePluginId, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 import { KNOB_RANGES, defaultKnobs, type KnobId, type Knobs } from "./knobs";
 import { defaultPreferences, type ReviewPreferences } from "./review-preferences";
@@ -12,7 +12,7 @@ interface Settings {
   fallback: ReviewPreferences;
 }
 
-/** Defaults outside a provider: tests, BB's title bar, BB's settings slot. */
+/** Defaults outside a provider: tests, VesnALIA's title bar, VesnALIA's settings slot. */
 export const SettingsContext = createContext<Settings>({ preferences: defaultPreferences, settled: Promise.resolve(defaultPreferences), fallback: defaultPreferences });
 
 const knobsKey = (pluginId: string) => `gr:knobs:${pluginId}`;

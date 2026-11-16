@@ -383,7 +383,7 @@ describe("archiving Shuttle's review threads", () => {
     expect(h.port.lifecycle.sort()).toEqual([`archive ${second}`, `archive ${threadId}`].sort());
   });
 
-  it("leaves a merged PR's review thread while bb says it or a thread under it works, though Shuttle last heard it idle", async () => {
+  it("leaves a merged PR's review thread while VesnALIA says it or a thread under it works, though Shuttle last heard it idle", async () => {
     const { h, threadId } = await reviewed();
     const setStatus = (id: string, status: string) => h.port.threads.set(id, { ...h.port.threads.get(id)!, status });
     setStatus(threadId, "active");
@@ -399,7 +399,7 @@ describe("archiving Shuttle's review threads", () => {
     await h.shuttle.archiveReviewThreads();
     expect(h.port.lifecycle).toEqual([]);
     h.port.threads.set("thr_critic2", { ...h.port.threads.get("thr_critic2")!, waiting: false });
-    // A critic's own helper at work holds it too: bb would archive it along with the rest.
+    // A critic's own helper at work holds it too: VesnALIA would archive it along with the rest.
     h.port.addThread("thr_helper", "Helper", false, { status: "active" });
     h.port.children.set("thr_critic1", ["thr_helper"]);
     await h.shuttle.archiveReviewThreads();
@@ -409,7 +409,7 @@ describe("archiving Shuttle's review threads", () => {
     expect(h.port.lifecycle).toEqual([`archive ${threadId}`]);
   });
 
-  it("waits for a hidden thread at work under the review thread, which bb lists only when asked, but never counts it as a critic", async () => {
+  it("waits for a hidden thread at work under the review thread, which VesnALIA lists only when asked, but never counts it as a critic", async () => {
     const { h, threadId, draftId } = await reviewed();
     h.port.addThread("thr_hidden", "Flares: Review acme/app#3", false, { status: "active", hidden: true });
     h.port.children.set(threadId, ["thr_critic1", "thr_critic2", "thr_hidden"]);
@@ -425,18 +425,18 @@ describe("archiving Shuttle's review threads", () => {
     expect(h.port.lifecycle).toEqual([`archive ${threadId}`]);
   });
 
-  it("leaves a merged PR's review thread that bb cannot answer for, or that is another open PR's agent", async () => {
+  it("leaves a merged PR's review thread that VesnALIA cannot answer for, or that is another open PR's agent", async () => {
     const { h, threadId } = await reviewed();
     const threadsById = h.port.threadsById.bind(h.port);
     h.port.threadsById = async () => {
-      throw new Error("bb is restarting");
+      throw new Error("alia is restarting");
     };
     h.lists.review_requested = [];
     h.views[3] = pr(3, { head: "h1", state: "merged" });
     await h.shuttle.lookup(KEY);
     await h.shuttle.closedSettled();
     expect(h.port.lifecycle).toEqual([]);
-    expect(h.port.logs.at(-1)).toContain("bb is restarting");
+    expect(h.port.logs.at(-1)).toContain("alia is restarting");
     h.port.threadsById = threadsById;
 
     // The review thread became the agent of another PR, still open.
@@ -503,7 +503,7 @@ describe("reviving a review thread for the PR's next review", () => {
     expect(h.port.lifecycle.at(-1)).toBe(`archive ${threadId}`);
   });
 
-  it("asks bb to build the workspace again when it was removed after the archive", async () => {
+  it("asks VesnALIA to build the workspace again when it was removed after the archive", async () => {
     const { h, threadId, draftId } = await reviewed();
     await h.shuttle.discardDraft(KEY, draftId);
     h.port.threads.set(threadId, { ...h.port.threads.get(threadId)!, canRestoreEnvironment: true });
@@ -512,7 +512,7 @@ describe("reviving a review thread for the PR's next review", () => {
     expect(h.port.sent.at(-1)!.threadId).toBe(threadId);
   });
 
-  it("starts a new thread, without bringing the old one back, when bb removed the old one's machine", async () => {
+  it("starts a new thread, without bringing the old one back, when VesnALIA removed the old one's machine", async () => {
     const { h, threadId, draftId } = await reviewed();
     await h.shuttle.discardDraft(KEY, draftId);
     h.port.threads.set(threadId, { ...h.port.threads.get(threadId)!, machineRemoved: true });
@@ -523,7 +523,7 @@ describe("reviving a review thread for the PR's next review", () => {
     h.port.spawnError = null;
     expect((await h.shuttle.review({ key: KEY })).threadId).toBe("thr_spawned2");
     expect(h.port.lifecycle).toEqual([`archive ${threadId}`]);
-    expect(lastEvent(h, "revive_failed")).toBe("The review of acme/app#3 went to a new thread: \u201cReview acme/app#3\u201d could not take it (bb removed its machine after it was archived).");
+    expect(lastEvent(h, "revive_failed")).toBe("The review of acme/app#3 went to a new thread: \u201cReview acme/app#3\u201d could not take it (VesnALIA removed its machine after it was archived).");
   });
 
   it("sends to a review thread that is not archived, as the last one's", async () => {

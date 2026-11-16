@@ -4,12 +4,12 @@ import {
   definePluginApp,
   experimental_useProviders,
   experimental_useSidebarThreads,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
-import type { bbOfficeRpcContract } from "./office-config-contract";
+} from "@vesnalia/plugin-sdk/app";
+import type { aliaOfficeRpcContract } from "./office-config-contract";
 import {
   DEFAULT_OFFICE_CONFIG,
   type OfficeConfig,
@@ -175,7 +175,7 @@ function useOfficeVisualTheme(appearance: OfficeAppearance): OfficeVisualTheme {
 }
 
 function useOfficeConfig(): OfficeConfig {
-  const rpc = useRpc<typeof bbOfficeRpcContract>();
+  const rpc = useRpc<typeof aliaOfficeRpcContract>();
   const [config, setConfig] = useState<OfficeConfig>(DEFAULT_OFFICE_CONFIG);
 
   const refresh = useCallback(() => {
@@ -183,7 +183,7 @@ function useOfficeConfig(): OfficeConfig {
       .call("readOfficeConfig", {})
       .then((snapshot) => setConfig(snapshot.config))
       .catch((error: Error) => {
-        console.error("BB Office could not load the office configuration", error);
+        console.error("VesnALIA Office could not load the office configuration", error);
       });
   }, [rpc]);
 
@@ -217,7 +217,7 @@ function useOfficeUsage(
   hostId: string | null,
   providers: readonly UsageProviderIdentity[],
 ): OfficeUsageSnapshot | null {
-  const rpc = useRpc<typeof bbOfficeRpcContract>();
+  const rpc = useRpc<typeof aliaOfficeRpcContract>();
   const [snapshot, setSnapshot] = useState<OfficeUsageSnapshot | null>(null);
   const providerIdsKey = providers
     .map((provider) => provider.providerId)
@@ -237,7 +237,7 @@ function useOfficeUsage(
           if (!cancelled) setSnapshot(next);
         })
         .catch((error: Error) => {
-          console.error("BB Office could not load provider usage", error);
+          console.error("VesnALIA Office could not load provider usage", error);
           if (!cancelled) setSnapshot(failedUsageSnapshot(providerIds));
         });
     };
@@ -258,7 +258,7 @@ function useOfficeUsage(
   return snapshot;
 }
 
-function BbOfficeFloatingOffice({
+function AliaOfficeFloatingOffice({
   activeThreadId,
   onOpenThread,
 }: {
@@ -269,8 +269,8 @@ function BbOfficeFloatingOffice({
   const providerState = experimental_useProviders();
   const officeConfig = useOfficeConfig();
   const appearance = parseOfficeAppearance(
-    officeConfig.appearance.mode === "follow-bb"
-      ? "Follow BB"
+    officeConfig.appearance.mode === "follow-alia"
+      ? "Follow VesnALIA"
       : officeConfig.appearance.mode === "neutral"
         ? "Neutral"
         : "Original",
@@ -317,7 +317,7 @@ function BbOfficeFloatingOffice({
               thread.title?.trim() ||
               thread.titleFallback?.trim() ||
               "Untitled thread",
-            title: workspace ?? "BB thread",
+            title: workspace ?? "VesnALIA thread",
             provider: providers.get(thread.providerId) ?? thread.providerId,
             worktreeId: thread.environment?.id ?? null,
             parentThreadId: thread.parentThreadId,
@@ -399,7 +399,7 @@ function BbOfficeFloatingOffice({
       workerCount={presentWorkers.length}
     >
       {(expanded) => (
-        <div className="bb-office-minimap">
+        <div className="alia-office-minimap">
           <OfficeCanvas
             chrome="floating"
             layoutKind="compact"
@@ -419,9 +419,9 @@ function BbOfficeFloatingOffice({
   );
 }
 
-function BbOfficeOverlay() {
-  const { threadId: activeThreadId } = useBbContext();
-  const navigate = useBbNavigate();
+function AliaOfficeOverlay() {
+  const { threadId: activeThreadId } = useAliaContext();
+  const navigate = useAliaNavigate();
   // The app overlay owns responsive behavior; it receives no sidebar props.
   const [isCompactViewport, setIsCompactViewport] = useState(
     () => window.matchMedia("(max-width: 767px)").matches,
@@ -443,7 +443,7 @@ function BbOfficeOverlay() {
   if (isCompactViewport) return null;
 
   return createPortal(
-    <BbOfficeFloatingOffice
+    <AliaOfficeFloatingOffice
       activeThreadId={activeThreadId}
       onOpenThread={openThread}
     />,
@@ -453,7 +453,7 @@ function BbOfficeOverlay() {
 
 export default definePluginApp((app) => {
   app.slots.experimental_appOverlay({
-    id: "bb-office-floating",
-    component: BbOfficeOverlay,
+    id: "alia-office-floating",
+    component: AliaOfficeOverlay,
   });
 });

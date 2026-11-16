@@ -1,7 +1,7 @@
-// The `bb hooks` command: argv parsing and every subcommand. Pure of the bb
+// The `alia hooks` command: argv parsing and every subcommand. Pure of the VesnALIA
 // API; server.ts supplies the stores, the registry and a test executor.
 import { parseArgs } from "node:util";
-import type { PluginCliCommandInfo, PluginCliContext, PluginCliResult } from "@get-bb/plugin-sdk";
+import type { PluginCliCommandInfo, PluginCliContext, PluginCliResult } from "@vesnalia/plugin-sdk";
 import { removeHook, useTemplate } from "./actions.js";
 import type { Catalog, CatalogRecord, RegistryEntry, TemplateRegistry } from "./catalog.js";
 import { starterCatalogJson } from "./catalog.js";
@@ -26,7 +26,7 @@ import type { HookTemplate } from "./templates.js";
 export interface TestResult {
   /** The JSON the hook received. */
   payload: Record<string, unknown>;
-  /** The BB_* variables the hook received (secrets excluded). */
+  /** The ALIA_* variables the hook received (secrets excluded). */
   env: Record<string, string>;
   outcome: RunOutcome;
   decision: Decision | null;
@@ -54,43 +54,43 @@ export interface CliDeps {
 }
 
 export const CLI_COMMANDS: PluginCliCommandInfo[] = [
-  { name: "list", summary: "List hooks", usage: "bb hooks list [--json]" },
-  { name: "events", summary: "List the events a hook can subscribe to", usage: "bb hooks events [--json]" },
-  { name: "templates", summary: "List premade hooks (bundled and from marketplace catalogs), or show one", usage: "bb hooks templates [<template>] [--search <text>] [--json]" },
+  { name: "list", summary: "List hooks", usage: "alia hooks list [--json]" },
+  { name: "events", summary: "List the events a hook can subscribe to", usage: "alia hooks events [--json]" },
+  { name: "templates", summary: "List premade hooks (bundled and from marketplace catalogs), or show one", usage: "alia hooks templates [<template>] [--search <text>] [--json]" },
   {
     name: "use",
     summary: "Create hooks from a template; catalog templates need --yes after you have read what they run",
-    usage: "bb hooks use <template|catalog/template> [--set key=value]… [--id <hook-id>] [--event <event>]… [--project <proj_id>] [--provider <id>] [--title <regex>] [--text <regex>] [--disabled] [--yes]",
+    usage: "alia hooks use <template|catalog/template> [--set key=value]… [--id <hook-id>] [--event <event>]… [--project <proj_id>] [--provider <id>] [--title <regex>] [--text <regex>] [--disabled] [--yes]",
   },
-  { name: "marketplace", summary: "Manage catalog sources: list, add, remove, refresh, search, validate, init", usage: "bb hooks marketplace <list|add <src>|remove <src>|refresh [src]|search <text>|validate <src>|init [--name <catalog>]|stats [on|off|ask]>" },
-  { name: "secrets", summary: "Encrypted values hooks reference as {{secret:NAME}}", usage: "bb hooks secrets <list|set <name> <value>|remove <name>>" },
-  { name: "show", summary: "Show one hook as JSON", usage: "bb hooks show <id>" },
+  { name: "marketplace", summary: "Manage catalog sources: list, add, remove, refresh, search, validate, init", usage: "alia hooks marketplace <list|add <src>|remove <src>|refresh [src]|search <text>|validate <src>|init [--name <catalog>]|stats [on|off|ask]>" },
+  { name: "secrets", summary: "Encrypted values hooks reference as {{secret:NAME}}", usage: "alia hooks secrets <list|set <name> <value>|remove <name>>" },
+  { name: "show", summary: "Show one hook as JSON", usage: "alia hooks show <id>" },
   {
     name: "add",
     summary: "Create a hook by hand (or replace one with the same id)",
     usage:
-      "bb hooks add <id> --event <event> (--command <shell> | --url <https://…>) [--project <proj_id>] [--provider <id>] [--title <regex>] [--text <regex>] [--timeout <ms>] [--cwd <dir>] [--header k=v]… [--on-error proceed|reject|wait] [--description <text>] [--disabled]",
+      "alia hooks add <id> --event <event> (--command <shell> | --url <https://…>) [--project <proj_id>] [--provider <id>] [--title <regex>] [--text <regex>] [--timeout <ms>] [--cwd <dir>] [--header k=v]… [--on-error proceed|reject|wait] [--description <text>] [--disabled]",
   },
-  { name: "edit", summary: "Change fields of an existing hook", usage: "bb hooks edit <id> [same flags as add] [--clear-match]" },
-  { name: "remove", summary: "Delete a hook (and secrets only it used)", usage: "bb hooks remove <id>" },
-  { name: "enable", summary: "Enable a hook", usage: "bb hooks enable <id>" },
-  { name: "disable", summary: "Disable a hook without deleting it", usage: "bb hooks disable <id>" },
-  { name: "test", summary: "Run a hook now with a sample payload (or a real thread's)", usage: "bb hooks test <id> [--thread <thread_id>] [--json]" },
-  { name: "history", summary: "Show recent hook runs", usage: "bb hooks history [--limit <n>] [--hook <id>] [--json] | bb hooks history clear" },
-  { name: "export", summary: "Print a hook as a template you can publish in a catalog", usage: "bb hooks export <id>" },
+  { name: "edit", summary: "Change fields of an existing hook", usage: "alia hooks edit <id> [same flags as add] [--clear-match]" },
+  { name: "remove", summary: "Delete a hook (and secrets only it used)", usage: "alia hooks remove <id>" },
+  { name: "enable", summary: "Enable a hook", usage: "alia hooks enable <id>" },
+  { name: "disable", summary: "Disable a hook without deleting it", usage: "alia hooks disable <id>" },
+  { name: "test", summary: "Run a hook now with a sample payload (or a real thread's)", usage: "alia hooks test <id> [--thread <thread_id>] [--json]" },
+  { name: "history", summary: "Show recent hook runs", usage: "alia hooks history [--limit <n>] [--hook <id>] [--json] | VesnALIA hooks history clear" },
+  { name: "export", summary: "Print a hook as a template you can publish in a catalog", usage: "alia hooks export <id>" },
 ];
 
 const USAGE = [
-  "Usage: bb hooks <command> [options]",
+  "Usage: VesnALIA hooks <command> [options]",
   "",
   ...CLI_COMMANDS.map((command) => `  ${command.usage}`),
   "",
-  "Start with `bb hooks templates` for premade hooks, e.g. `bb hooks use desktop-notify`.",
-  "Add more with `bb hooks marketplace add owner/repo` (a GitHub repo with hooks-catalog.json).",
-  "Events: run `bb hooks events`. Payload JSON arrives on the command's stdin",
-  "(or as the webhook POST body); BB_HOOK_EVENT, BB_THREAD_ID, BB_PROJECT_ID,",
-  "BB_THREAD_TITLE, BB_THREAD_STATUS and BB_PROVIDER_ID are set in the environment.",
-  "Commands run on the machine that hosts the BB server.",
+  "Start with `alia hooks templates` for premade hooks, e.g. `alia hooks use desktop-notify`.",
+  "Add more with `alia hooks marketplace add owner/repo` (a GitHub repo with hooks-catalog.json).",
+  "Events: run `alia hooks events`. Payload JSON arrives on the command's stdin",
+  "(or as the webhook POST body); ALIA_HOOK_EVENT, ALIA_THREAD_ID, ALIA_PROJECT_ID,",
+  "ALIA_THREAD_TITLE, ALIA_THREAD_STATUS and ALIA_PROVIDER_ID are set in the environment.",
+  "Commands run on the machine that hosts the VesnALIA server.",
 ].join("\n");
 
 const OPTIONS = {
@@ -137,7 +137,7 @@ function targetOf(hook: HookDefinition): string {
   return hook.command !== undefined ? `$ ${hook.command}` : `POST ${hook.url ?? ""}`;
 }
 
-/** One line, for tables and summaries; `bb hooks show` has the full text. */
+/** One line, for tables and summaries; `alia hooks show` has the full text. */
 function compactTarget(hook: HookDefinition, max = 80): string {
   const oneLine = targetOf(hook).replace(/\s+/g, " ").trim();
   return oneLine.length <= max ? oneLine : `${oneLine.slice(0, max - 1)}…`;
@@ -214,7 +214,7 @@ function buildHook(id: string, values: Values, existing: HookDefinition | null):
   else delete base.match;
 
   if (!(HOOK_EVENTS as readonly string[]).includes(base.event)) {
-    return { error: (base.event as string) === "" ? "--event is required; run `bb hooks events` for the list" : `unknown event "${base.event}"; run \`bb hooks events\` for the list` };
+    return { error: (base.event as string) === "" ? "--event is required; run `alia hooks events` for the list" : `unknown event "${base.event}"; run \`alia hooks events\` for the list` };
   }
   return base;
 }
@@ -263,7 +263,7 @@ function describeTemplate(entry: RegistryEntry, full: boolean): string {
     if (template.match !== undefined) lines.push(`  match: ${JSON.stringify(template.match)}`);
   }
   const example = template.params.filter((param) => param.required).map((param) => ` --set ${param.key}=…`).join("");
-  lines.push("", `Example: bb hooks use ${entry.ref}${example}${entry.source === "bundled" ? "" : " --yes"}`);
+  lines.push("", `Example: VesnALIA hooks use ${entry.ref}${example}${entry.source === "bundled" ? "" : " --yes"}`);
   return lines.join("\n");
 }
 
@@ -333,8 +333,8 @@ export function createCliRun(deps: CliDeps): (argv: string[], ctx: PluginCliCont
     const [command, id, ...rest] = positionals;
     if (values.help || command === undefined || command === "help") return ok(USAGE);
 
-    const requireId = (what = "a hook id"): PluginCliResult | string => (id === undefined ? fail(`bb hooks ${command} needs ${what}\n\n${USAGE}`) : id);
-    const notFound = (hookId: string) => fail(`No hook with id "${hookId}". Run "bb hooks list".`);
+    const requireId = (what = "a hook id"): PluginCliResult | string => (id === undefined ? fail(`alia hooks ${command} needs ${what}\n\n${USAGE}`) : id);
+    const notFound = (hookId: string) => fail(`No hook with id "${hookId}". Run "alia hooks list".`);
 
     try {
     switch (command) {
@@ -343,7 +343,7 @@ export function createCliRun(deps: CliDeps): (argv: string[], ctx: PluginCliCont
         const error = deps.store.lastError();
         if (values.json) return json({ hooks, error });
         const header = error !== null ? `WARNING: the hooks setting is invalid and no hooks are active: ${error}\n\n` : "";
-        if (hooks.length === 0) return ok(`${header}No hooks. Try: bb hooks templates, then bb hooks use <template>`);
+        if (hooks.length === 0) return ok(`${header}No hooks. Try: VesnALIA hooks templates, then VesnALIA hooks use <template>`);
         const rows = hooks.map((hook) => [hook.id, hook.event, hook.enabled ? "yes" : "no", hook.template ? `${hook.template.source === "bundled" || hook.template.source === undefined ? "" : `${hook.template.source}/`}${hook.template.id}` : "", matchOf(hook), compactTarget(hook, 60)]);
         return ok(header + table(rows, ["ID", "EVENT", "ENABLED", "TEMPLATE", "MATCH", "TARGET"]));
       }
@@ -359,8 +359,8 @@ export function createCliRun(deps: CliDeps): (argv: string[], ctx: PluginCliCont
           const rows = entries.map((entry) => [entry.ref, entry.source, entry.template.author ?? "", entry.template.kind, entry.template.events.map(shortEvent).join(","), entry.template.summary]);
           const sources = deps.marketplace.sources().length;
           return ok(
-            `${table(rows, ["TEMPLATE", "SOURCE", "AUTHOR", "KIND", "DEFAULT EVENTS", "WHAT IT DOES"])}\n\nDetails: bb hooks templates <template>   Create: bb hooks use <template> --set key=value` +
-              (sources === 0 ? "\nMore: bb hooks marketplace add owner/repo" : ""),
+            `${table(rows, ["TEMPLATE", "SOURCE", "AUTHOR", "KIND", "DEFAULT EVENTS", "WHAT IT DOES"])}\n\nDetails: VesnALIA hooks templates <template>   Create: VesnALIA hooks use <template> --set key=value` +
+              (sources === 0 ? "\nMore: VesnALIA hooks marketplace add owner/repo" : ""),
           );
         }
         const resolved = deps.registry.resolve(id);
@@ -394,14 +394,14 @@ export function createCliRun(deps: CliDeps): (argv: string[], ctx: PluginCliCont
         }
         if (values.json) return json({ hooks: result.hooks, secrets: result.secrets, shareInstalls: result.shareInstalls });
         const lines = result.hooks.map((hook) => `${result.replaced.includes(hook.id) ? "Replaced" : "Added"} hook "${hook.id}" on ${hook.event}${hook.match ? ` (${matchOf(hook)})` : ""}`);
-        for (const name of result.secrets) lines.push(`Stored secret "${name}" (encrypted; rotate with: bb hooks secrets set ${name} <value>)`);
+        for (const name of result.secrets) lines.push(`Stored secret "${name}" (encrypted; rotate with: VesnALIA hooks secrets set ${name} <value>)`);
         const first = result.hooks[0];
-        lines.push("", `Test it: bb hooks test ${first?.id ?? ""}   Inspect: bb hooks show ${first?.id ?? ""}`);
+        lines.push("", `Test it: VesnALIA hooks test ${first?.id ?? ""}   Inspect: VesnALIA hooks show ${first?.id ?? ""}`);
         if (result.entry.template.notes !== undefined) lines.push(`Note: ${result.entry.template.notes}`);
         if (result.shareInstalls === "ask") {
           lines.push(
             `The ${COUNTED_CATALOG.label} counts installs anonymously (template and version; nothing else).`,
-            `Share yours with "bb hooks marketplace stats on", or stop this note with "bb hooks marketplace stats off".`,
+            `Share yours with "alia hooks marketplace stats on", or stop this note with "alia hooks marketplace stats off".`,
           );
         }
         return ok(lines.join("\n"));
@@ -416,26 +416,26 @@ export function createCliRun(deps: CliDeps): (argv: string[], ctx: PluginCliCont
             const aliases = Object.entries(deps.marketplace.aliases());
             if (records.length === 0) {
               return ok(
-                `No catalogs configured.\n\nAdd one: bb hooks marketplace add owner/repo   (a GitHub repo with ${"hooks-catalog.json"} at its root)\n` +
+                `No catalogs configured.\n\nAdd one: VesnALIA hooks marketplace add owner/repo   (a GitHub repo with ${"hooks-catalog.json"} at its root)\n` +
                   (aliases.length > 0 ? `Aliases: ${aliases.map(([name]) => name).join(", ")}\n` : "") +
-                  "Publish your own: bb hooks marketplace init > hooks-catalog.json",
+                  "Publish your own: VesnALIA hooks marketplace init > hooks-catalog.json",
               );
             }
             return ok(table(records.map(formatCatalogRecord), ["CATALOG", "BY", "TEMPLATES", "FETCHED (UTC)", "STATUS", "URL"]));
           }
           case "add": {
-            if (arg === undefined) return fail("bb hooks marketplace add needs a source: an https URL, owner/repo, or an alias");
+            if (arg === undefined) return fail("alia hooks marketplace add needs a source: an https URL, owner/repo, or an alias");
             const result = await deps.marketplace.add(arg);
             if ("error" in result) return fail(result.error);
             if (values.json) return json(result.record);
             const count = result.record.catalog?.templates.length ?? 0;
-            return ok(`Added catalog "${result.record.catalog?.name ?? "?"}" (${count} template${count === 1 ? "" : "s"}) from ${result.record.url}\n\nBrowse: bb hooks templates --search <text>   Install: bb hooks use ${result.record.catalog?.name ?? "<catalog>"}/<template> --yes`);
+            return ok(`Added catalog "${result.record.catalog?.name ?? "?"}" (${count} template${count === 1 ? "" : "s"}) from ${result.record.url}\n\nBrowse: VesnALIA hooks templates --search <text>   Install: VesnALIA hooks use ${result.record.catalog?.name ?? "<catalog>"}/<template> --yes`);
           }
           case "remove": {
-            if (arg === undefined) return fail("bb hooks marketplace remove needs a source");
+            if (arg === undefined) return fail("alia hooks marketplace remove needs a source");
             const result = await deps.marketplace.remove(arg);
             if ("error" in result) return fail(result.error);
-            if (!result.removed) return fail(`"${arg}" is not a configured catalog. Run "bb hooks marketplace list".`);
+            if (!result.removed) return fail(`"${arg}" is not a configured catalog. Run "alia hooks marketplace list".`);
             return values.json ? json({ removed: true }) : ok(`Removed catalog ${arg}.`);
           }
           case "refresh": {
@@ -447,14 +447,14 @@ export function createCliRun(deps: CliDeps): (argv: string[], ctx: PluginCliCont
           }
           case "search": {
             const query = [arg, ...rest.slice(1)].filter((part) => part !== undefined).join(" ");
-            if (query.trim() === "") return fail("bb hooks marketplace search needs some text");
+            if (query.trim() === "") return fail("alia hooks marketplace search needs some text");
             const entries = deps.registry.search(query);
             if (values.json) return json(entries);
             if (entries.length === 0) return ok(`No templates match "${query}".`);
             return ok(table(entries.map((entry) => [entry.ref, entry.source, entry.template.kind, entry.template.summary]), ["TEMPLATE", "SOURCE", "KIND", "WHAT IT DOES"]));
           }
           case "validate": {
-            if (arg === undefined) return fail("bb hooks marketplace validate needs a source");
+            if (arg === undefined) return fail("alia hooks marketplace validate needs a source");
             const result = await deps.marketplace.validate(arg);
             if ("error" in result) return fail(`Invalid: ${result.error}`);
             if (values.json) return json(result);
@@ -466,7 +466,7 @@ export function createCliRun(deps: CliDeps): (argv: string[], ctx: PluginCliCont
           case "stats": {
             if (deps.stats === undefined) return fail("Install counts are not available here.");
             if (arg !== undefined) {
-              if (!(SHARE_INSTALLS as readonly string[]).includes(arg)) return fail(`bb hooks marketplace stats takes ${SHARE_INSTALLS.join(", ")}, not "${arg}"`);
+              if (!(SHARE_INSTALLS as readonly string[]).includes(arg)) return fail(`alia hooks marketplace stats takes ${SHARE_INSTALLS.join(", ")}, not "${arg}"`);
               await deps.stats.setConsent(arg as ShareInstalls);
             }
             const consent = deps.stats.consent();
@@ -476,7 +476,7 @@ export function createCliRun(deps: CliDeps): (argv: string[], ctx: PluginCliCont
             return ok(
               `Share anonymous install counts with the ${COUNTED_CATALOG.label}: ${state}.\n` +
                 `Only installs from that catalog are counted, and a report is the template id and version; nothing else.\n` +
-                (subscribed ? "" : `You are not subscribed to it; add it with "bb hooks marketplace add MacHatter1/bb-hooks-marketplace".`),
+                (subscribed ? "" : `You are not subscribed to it; add it with "alia hooks marketplace add MacHatter1/alia-hooks-marketplace".`),
             );
           }
           default:
@@ -493,7 +493,7 @@ export function createCliRun(deps: CliDeps): (argv: string[], ctx: PluginCliCont
             for (const hook of hooks) for (const ref of hookSecretRefs(hook)) usage.set(ref, (usage.get(ref) ?? 0) + 1);
             const secrets = deps.secrets.list().map((secret) => ({ ...secret, usedBy: usage.get(secret.name) ?? 0 }));
             if (values.json) return json(secrets);
-            if (secrets.length === 0) return ok("No secrets. Set one with: bb hooks secrets set <name> <value>, then reference it as {{secret:<name>}}.");
+            if (secrets.length === 0) return ok("No secrets. Set one with: VesnALIA hooks secrets set <name> <value>, then reference it as {{secret:<name>}}.");
             return ok(
               table(
                 secrets.map((secret) => [secret.name, secret.managed ? "template" : "manual", String(secret.usedBy), new Date(secret.updatedAt).toISOString().slice(0, 10)]),
@@ -503,7 +503,7 @@ export function createCliRun(deps: CliDeps): (argv: string[], ctx: PluginCliCont
           }
           case "set": {
             const value = rest[1];
-            if (name === undefined || value === undefined) return fail("bb hooks secrets set needs a name and a value");
+            if (name === undefined || value === undefined) return fail("alia hooks secrets set needs a name and a value");
             try {
               deps.secrets.set(name, value);
             } catch (cause) {
@@ -512,7 +512,7 @@ export function createCliRun(deps: CliDeps): (argv: string[], ctx: PluginCliCont
             return values.json ? json({ name }) : ok(`Stored secret "${name}" (encrypted). Reference it as {{secret:${name}}}.`);
           }
           case "remove": {
-            if (name === undefined) return fail("bb hooks secrets remove needs a name");
+            if (name === undefined) return fail("alia hooks secrets remove needs a name");
             if (!deps.secrets.remove(name)) return fail(`No secret "${name}".`);
             return values.json ? json({ removed: true }) : ok(`Removed secret "${name}".`);
           }

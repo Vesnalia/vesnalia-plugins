@@ -1,4 +1,4 @@
-import { experimental_copyToClipboard as copyToClipboard, experimental_THREAD_ACTION_GROUPS as GROUPS, type PluginThreadActionRegistration } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard as copyToClipboard, experimental_THREAD_ACTION_GROUPS as GROUPS, type PluginThreadActionRegistration } from "@vesnalia/plugin-sdk/app";
 import { SHARE_ICON } from "./Icons";
 import { useShared, type Rpc, type SharedThread } from "./state";
 

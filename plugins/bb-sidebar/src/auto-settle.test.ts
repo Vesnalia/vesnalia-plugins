@@ -65,7 +65,7 @@ describe("automatic settle policy", () => {
   it("returns a policy-settled thread without a PR only when it is out of policy reach", () => {
     const settled = lifecycle({ settledAt: NOW });
     expect(decideAutoSettledThread(settled, quietThread)).toBe("keep");
-    // Newer activity alone does not reopen it; bb's activity event does.
+    // Newer activity alone does not reopen it; VesnALIA's activity event does.
     expect(decideAutoSettledThread(settled, { ...quietThread, updatedAt: NOW })).toBe("keep");
     expect(decideAutoSettledThread(settled, { ...quietThread, pinnedAt: NOW })).toBe("unsettle");
     expect(decideAutoSettledThread(settled, { ...quietThread, status: "active" })).toBe("unsettle");

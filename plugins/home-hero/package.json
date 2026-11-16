@@ -1,21 +1,21 @@
 {
-  "name": "bb-plugin-home-hero",
+  "name": "alia-plugin-home-hero",
   "version": "0.1.3",
   "license": "MIT",
   "private": true,
   "type": "module",
-  "description": "BB plugin: a time-of-day greeting with an optional name and uploaded icon on the home screen.",
+  "description": "VesnALIA plugin: a time-of-day greeting with an optional name and uploaded icon on the home screen.",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "home",
     "greeting"
   ],
   "engines": {
-    "bb": ">=0.49.0",
+    "alia": ">=0.49.0",
     "node": ">=22.19.0",
-    "bbPluginSdk": ">=0.6.132"
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "Home Hero",
     "description": "Greet the home screen with the time of day, an optional name and an icon you upload.",
     "branding": {
@@ -26,8 +26,8 @@
     "skills": []
   },
   "dependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
-    "zod": "^4.6.5"
+    "zod": "^4.6.5",
+    "@vesnalia/plugin-sdk": "^0.6.132"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
@@ -44,17 +44,17 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build .",
+    "build": "alia plugin build .",
     "test": "node test/appearance.test.mjs && node test/greeting.test.mjs && node test/lifecycle.test.mjs && node test/mount.test.mjs && node test/server.test.mjs"
   },
   "author": "Lalit Rao",
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/home-hero#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lalitjeevanrao/bb-plugins.git",
-    "directory": "packages/bb-plugin-home-hero"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/home-hero"
   },
-  "homepage": "https://github.com/lalitjeevanrao/bb-plugins#readme",
   "bugs": {
-    "url": "https://github.com/lalitjeevanrao/bb-plugins/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

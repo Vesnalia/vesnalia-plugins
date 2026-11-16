@@ -18,7 +18,7 @@ export interface ImageSize {
 
 /**
  * Reads an image (see `UiRuntime.loadImage`), and answers at once what the
- * page already knows about one, so a block BB remounts (scrolled back to, or
+ * page already knows about one, so a block VesnALIA remounts (scrolled back to, or
  * its thread opened again) opens at its final size instead of growing when
  * its pictures arrive.
  */
@@ -54,7 +54,7 @@ export interface UiRuntime {
   /** Opens a workspace file, at `line` when given; null where the surface has no file viewer. */
   openFile: ((path: string, line?: number) => boolean | Promise<boolean>) | null;
   /**
-   * Reads an image: a file of the thread (workspace or `$BB_THREAD_STORAGE/…`)
+   * Reads an image: a file of the thread (workspace or `$ALIA_THREAD_STORAGE/…`)
    * or an https URL, fetched by the backend's address-checked proxy. Use it
    * for every image rather than putting an https URL in an <img>. Null where
    * the surface can't load images. Never rejects.
@@ -67,7 +67,7 @@ export interface UiRuntime {
    */
   holdHeight(): () => void;
   /**
-   * Reads a text file of the thread (workspace, `$BB_THREAD_STORAGE/…` or
+   * Reads a text file of the thread (workspace, `$ALIA_THREAD_STORAGE/…` or
    * /tmp; the gallery's own files in the gallery), for components that show
    * code at a location found in their data: a stack frame, a finding, an
    * uncovered line. Null where the surface can't read files. Never rejects.
@@ -91,7 +91,7 @@ export interface UiRuntime {
    */
   superseded: boolean;
   /**
-   * The thread whose reply holds this UI: what components that read BB's own
+   * The thread whose reply holds this UI: what components that read VesnALIA's own
    * state (the checkout's changes, subthreads) read it for. Null where there
    * is no thread (the gallery without `?thread=`).
    */

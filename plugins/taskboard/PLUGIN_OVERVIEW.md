@@ -1,4 +1,4 @@
-Bring external issues into BB with a project-scoped list or Kanban board. Each BB project selects GitHub, GitLab, Gitea, Linear or Jira.
+Bring external issues into VesnALIA with a project-scoped list or Kanban board. Each VesnALIA project selects GitHub, GitLab, Gitea, Linear or Jira.
 
 ## What you get
 
@@ -12,4 +12,4 @@ Self-hosted Gitea repositories use an existing tea login and an explicit host/ow
 
 ## Requirements
 
-Configure the selected provider for each project. Gitea requires tea 0.16 or newer on the BB server machine and a login with repository access. Authentication remains in tea. GitHub uses BB's GitHub integration; GitLab requires glab; Linear and Jira Cloud require their provider configuration. Gitea creation supports text, and status changes can be partial because label and state updates use separate requests.
+Configure the selected provider for each project. Gitea requires tea 0.16 or newer on the VesnALIA server machine and a login with repository access. Authentication remains in tea. GitHub uses VesnALIA's GitHub integration; GitLab requires glab; Linear and Jira Cloud require their provider configuration. Gitea creation supports text, and status changes can be partial because label and state updates use separate requests.

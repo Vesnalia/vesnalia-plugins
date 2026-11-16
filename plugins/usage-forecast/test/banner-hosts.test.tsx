@@ -3,7 +3,7 @@
 // marks them stale when that host is unavailable, and says when the host is
 // unknown instead of showing another host's windows.
 
-import { loadPluginApp } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp } from "@vesnalia/plugin-sdk/testing/app";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { backend, forecastOf, host, provider, render, snapshot, threadState, win } from "./app-fixtures";

@@ -49,7 +49,7 @@ Humans: replace each placeholder with <img width="250" src="...">.
 
 <!--
 - First bullet: the `npm run check` result, or the step that fails.
-- Manual steps in bb as "Open X, click Y, see Z", each marked as checked or not checked.
+- Manual steps in VesnALIA as "Open X, click Y, see Z", each marked as checked or not checked.
 - Never claim a manual check you didn't run.
 -->
 

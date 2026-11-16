@@ -1,19 +1,15 @@
 {
-  "name": "bb-plugin-feed",
+  "name": "alia-plugin-feed",
   "version": "0.1.0",
   "description": "One feed of the threads that need you.",
   "license": "MIT",
   "author": "Ryan Brown",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ryanbbrown/bb-plugin-feed.git"
-  },
   "type": "module",
   "engines": {
-    "bb": ">=0.43.0",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43.0",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Feed",
     "description": "One feed of the threads that need you.",
     "branding": {
@@ -26,7 +22,7 @@
     ]
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "test:backend": "vitest run projection.test.ts server.test.ts public-sdk-only.test.ts",
     "test:frontend": "vitest run app.test.tsx",
@@ -36,7 +32,6 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -67,5 +62,22 @@
     "vaul": "^1.1.2",
     "vitest": "^4.1.1"
   },
-  "private": true
+  "private": true,
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/feed#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/feed"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

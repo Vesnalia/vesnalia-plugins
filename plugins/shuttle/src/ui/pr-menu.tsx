@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { PrAction, PrView } from "../contract";
 import { useActions } from "./actions";
 import { BUTTON_OFF, BUTTON_ON, ICON_GHOST, ICON_GHOST_LARGE, ICON_GHOST_LARGE_ON } from "./common";

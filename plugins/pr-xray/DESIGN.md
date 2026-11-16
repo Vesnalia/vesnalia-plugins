@@ -1,6 +1,6 @@
 ---
 name: PR X-ray
-description: Understand a pull request before you review it, inside bb.
+description: Understand a pull request before you review it, inside VesnALIA.
 colors:
   foreground: "var(--foreground)"
   background: "var(--background)"
@@ -102,7 +102,7 @@ components:
 
 **Creative North Star: "The Light Table"**
 
-PR X-ray is a quiet, evenly lit surface where a change is laid out to be read. The chrome stays neutral and small so the code, the walkthrough and the diagrams are the subject. It is an Operate surface inside bb: dense, scannable, and native. Every color, font and radius comes from bb's active theme through CSS variables, so the plugin looks right in any bb theme, light or dark, without owning a palette of its own.
+PR X-ray is a quiet, evenly lit surface where a change is laid out to be read. The chrome stays neutral and small so the code, the walkthrough and the diagrams are the subject. It is an Operate surface inside VesnALIA: dense, scannable, and native. Every color, font and radius comes from VesnALIA's active theme through CSS variables, so the plugin looks right in any VesnALIA theme, light or dark, without owning a palette of its own.
 
 Brand lives in precise details, not decoration: a single amber "attention" voice for anything that changed or is unsent (files changed since viewed, pending comments, new commits, untrusted content), monospace for anything that is a path or a commit, and instant hover feedback. Depth is flat. Borders separate things; shadows are reserved for what floats above the page.
 
@@ -115,7 +115,7 @@ Brand lives in precise details, not decoration: a single amber "attention" voice
 
 ## Colors
 
-The palette is bb's neutral theme plus three semantic signals; the plugin never defines its own hues.
+The palette is VesnALIA's neutral theme plus three semantic signals; the plugin never defines its own hues.
 
 ### Primary
 - **Ink** (`foreground`): body text and the one solid button per area (inverted: ink background, paper text).
@@ -135,14 +135,14 @@ The palette is bb's neutral theme plus three semantic signals; the plugin never 
 - **Removed / Error** (`destructive`): deletions, errors, high severity.
 
 ### Named Rules
-**The Borrowed Light Rule.** Every color is a bb theme variable. Never write a hex value in plugin UI; if a role is missing, use the nearest bb token.
+**The Borrowed Light Rule.** Every color is a VesnALIA theme variable. Never write a hex value in plugin UI; if a role is missing, use the nearest VesnALIA token.
 
 **The One Attention Rule.** Anything that asks the reviewer to act uses the warning family. Don't add a second accent for attention.
 
 ## Typography
 
-**Body Font:** bb's sans (`--font-sans`)
-**Label/Mono Font:** bb's mono (`--font-mono`)
+**Body Font:** VesnALIA's sans (`--font-sans`)
+**Label/Mono Font:** VesnALIA's mono (`--font-mono`)
 
 **Character:** The host's system pairing, set small and tight. Mono marks things that are literally from the repo: file paths, commit SHAs, keyboard hints' targets, timers.
 
@@ -163,19 +163,19 @@ Content sits in a centered column up to 1400px wide, padded 16px on small screen
 
 ## Elevation & Depth
 
-Flat by default. Surfaces are separated by 1px theme borders and tonal fills, not shadows. A hairline shadow (`shadow-xs`) sits under comment cards and the diagram zoom toolbar so they read as objects on the table. Large shadows exist only for true floating layers: the chat launcher (`shadow-lg`) and the chat panel (`shadow-2xl`). Shadow values come from bb's theme.
+Flat by default. Surfaces are separated by 1px theme borders and tonal fills, not shadows. A hairline shadow (`shadow-xs`) sits under comment cards and the diagram zoom toolbar so they read as objects on the table. Large shadows exist only for true floating layers: the chat launcher (`shadow-lg`) and the chat panel (`shadow-2xl`). Shadow values come from VesnALIA's theme.
 
 ### Named Rules
 **The Light Table Rule.** Nothing on the page casts a real shadow. Only layers that float above it (chat, popovers, dialogs) do.
 
 ## Shapes
 
-Corners follow bb's `--radius`: controls and small panels use `md`, cards, the diagram area and the walkthrough panel `lg`, the chat panel `xl`. Chips, counters, pills and avatars are fully round. Diagram node shapes are drawn by the PR Lens renderer, not by us.
+Corners follow VesnALIA's `--radius`: controls and small panels use `md`, cards, the diagram area and the walkthrough panel `lg`, the chat panel `xl`. Chips, counters, pills and avatars are fully round. Diagram node shapes are drawn by the PR Lens renderer, not by us.
 
 ## Components
 
 ### Buttons
-Quiet and exact, from the bb kit (`components/ui/button.tsx`).
+Quiet and exact, from the VesnALIA kit (`components/ui/button.tsx`).
 - **Shape:** gently rounded (`rounded.md`), 36px tall, 32px for `sm`.
 - **Primary:** ink background, paper text, 90% on hover. At most one per area.
 - **Outline:** 1px input border, transparent, Touch fill on hover.
@@ -207,7 +207,7 @@ The diagrams are PR Lens renders (ADR 0001): an SVG the server draws in light an
 ## Do's and Don'ts
 
 ### Do:
-- **Do** use bb theme variables for every color, font, radius and shadow.
+- **Do** use VesnALIA theme variables for every color, font, radius and shadow.
 - **Do** build from `components/ui` before writing a new control.
 - **Do** route every "needs your attention" signal through the warning family (tint fill, 50–70% border, `warning-text`).
 - **Do** set repository text (paths, SHAs) in mono.

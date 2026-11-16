@@ -4,7 +4,7 @@ name="$1"; step="$2"; secs="$3"; msg="$4"; sendnow="$5"; span="${6:-150}"
 out=~/live-results/g17-$name.txt
 : > "$out"
 log() { echo "$(date -u +%T.%3N) $*" | tee -a "$out"; }
-holds=$(~/bbc plugin logs bb-box 2>/dev/null | grep -c "Holding snapshot operation")
+holds=$(~/bbc plugin logs alia-box 2>/dev/null | grep -c "Holding snapshot operation")
 if [ "$secs" = "-" ]; then ~/bbc box snapshot hold-next --at "$step" >/dev/null; else ~/bbc box snapshot hold-next --at "$step" --seconds "$secs" >/dev/null; fi
 log "armed hold at $step for $secs s"
 token="T$(date +%s%N | cut -c8-16)"
@@ -12,7 +12,7 @@ msg="$msg $token"
 ( ~/bbc box snapshot restore dev-desk "g17 base" --machine --replace --force > ~/live-results/g17-$name-restore.txt 2>&1; echo "restore command exit $?" >> ~/live-results/g17-$name-restore.txt ) &
 log "restore started"
 for i in $(seq 1 240); do
-  now=$(~/bbc plugin logs bb-box 2>/dev/null | grep -c "Holding snapshot operation")
+  now=$(~/bbc plugin logs alia-box 2>/dev/null | grep -c "Holding snapshot operation")
   [ "$now" -gt "$holds" ] && break
   sleep 0.5
 done
@@ -23,8 +23,8 @@ sleep 1
 q=$(~/bbc thread queue list "$ASKING" --json)
 log "queue: $(echo "$q" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const rows=JSON.parse(s); console.log(rows.map(r=>`${r.id} waitingOn=${JSON.stringify(r.waitingOn)}`).join("; ")||"empty")})')"
 if [ "$sendnow" = restart ]; then
-  ~/bbc plugin reload bb-box > /tmp/reload.txt 2>&1
-  log "reloaded bb-box"
+  ~/bbc plugin reload alia-box > /tmp/reload.txt 2>&1
+  log "reloaded alia-box"
   sleep 3
   log "queue after the reload: $(~/bbc thread queue list "$ASKING" --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const rows=JSON.parse(s); console.log(rows.map(r=>`${r.id} ${r.state} waitingOn=${JSON.stringify(r.waitingOn)}`).join("; ")||"empty")})')"
 fi

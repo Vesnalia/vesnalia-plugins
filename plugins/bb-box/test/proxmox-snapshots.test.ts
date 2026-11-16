@@ -25,11 +25,11 @@ test("each storage type restores what section 2 of 070 says", () => {
   assert.deepEqual(qemu("dir", "store:9104/base-9104-disk-1.raw,size=64G"), { restore: "none", words: "store (directory, raw files) takes no snapshots." });
   assert.deepEqual(qemu("lvm", "store:vm-9104-disk-1,size=64G"), {
     restore: "none",
-    words: "store (LVM) takes snapshots of VMs only as a preview in Proxmox VE 9, so BB Box restores none.",
+    words: "store (LVM) takes snapshots of VMs only as a preview in Proxmox VE 9, so VesnALIA Box restores none.",
   });
   assert.deepEqual(qemu("zfspool", "store:base-9104-disk-1,size=64G"), { restore: "newest-only", words: "store (ZFS) restores only the newest snapshot." });
   assert.deepEqual(lxc("iscsi"), { restore: "none", words: "store (iSCSI) takes no snapshots." });
-  assert.deepEqual(lxc("newfs"), { restore: "unknown", words: "BB Box does not know whether store (newfs) takes snapshots." });
+  assert.deepEqual(lxc("newfs"), { restore: "unknown", words: "VesnALIA Box does not know whether store (newfs) takes snapshots." });
 });
 
 test("the check passes a token with both rights, and names each one a token lacks", () => {
@@ -43,17 +43,17 @@ test("the check passes a token with both rights, and names each one a token lack
   const rerun = "Run host/setup-token.sh from the Proxmox LXC setup guide again, as root on node-1. It keeps the token and its secret, and adds the missing rights to the token's role.";
   assert.deepEqual(check(ROLE_ON_MAIN_BEFORE_070), {
     status: "warn",
-    detail: "The token lacks VM.Snapshot and VM.Snapshot.Rollback on /pool/boxes, so BB Box cannot take or restore snapshots. fast (LVM-thin) restores any snapshot.",
+    detail: "The token lacks VM.Snapshot and VM.Snapshot.Rollback on /pool/boxes, so VesnALIA Box cannot take or restore snapshots. fast (LVM-thin) restores any snapshot.",
     fix: rerun,
   });
   assert.deepEqual(check(TOKEN_ROLE.filter((privilege) => privilege !== "VM.Snapshot")), {
     status: "warn",
-    detail: "The token lacks VM.Snapshot on /pool/boxes, so BB Box cannot take or delete snapshots. fast (LVM-thin) restores any snapshot.",
+    detail: "The token lacks VM.Snapshot on /pool/boxes, so VesnALIA Box cannot take or delete snapshots. fast (LVM-thin) restores any snapshot.",
     fix: rerun,
   });
   assert.deepEqual(check(TOKEN_ROLE.filter((privilege) => privilege !== "VM.Snapshot.Rollback")), {
     status: "warn",
-    detail: "The token lacks VM.Snapshot.Rollback on /pool/boxes, so BB Box cannot restore snapshots. fast (LVM-thin) restores any snapshot.",
+    detail: "The token lacks VM.Snapshot.Rollback on /pool/boxes, so VesnALIA Box cannot restore snapshots. fast (LVM-thin) restores any snapshot.",
     fix: rerun,
   });
 });
@@ -85,8 +85,8 @@ test("the check says when it cannot read the token's rights", () => {
   const result = snapshotsCheck({ pool: "boxes", node: "node-1", guest: "lxc", privileges: new Error("Proxmox GET /access/permissions failed (0): cannot reach the Proxmox API: timed out."), storages: [] });
   assert.deepEqual(result, {
     status: "warn",
-    detail: "BB Box cannot read the token's rights on /pool/boxes: Proxmox GET /access/permissions failed (0): cannot reach the Proxmox API: timed out.",
-    fix: "Check that BB's server reaches the Proxmox API, then run the checks again.",
+    detail: "VesnALIA Box cannot read the token's rights on /pool/boxes: Proxmox GET /access/permissions failed (0): cannot reach the Proxmox API: timed out.",
+    fix: "Check that VesnALIA's server reaches the Proxmox API, then run the checks again.",
   });
 });
 
@@ -143,7 +143,7 @@ function setupToken() {
     { mode: 0o755 },
   );
   writeFileSync(join(bin, "id"), "#!/bin/sh\necho 0\n", { mode: 0o755 });
-  writeFileSync(join(bin, "openssl"), "#!/bin/sh\necho 'sha256 Fingerprint=AA:BB:CC'\n", { mode: 0o755 });
+  writeFileSync(join(bin, "openssl"), "#!/bin/sh\necho 'sha256 Fingerprint=AA:ALIA:CC'\n", { mode: 0o755 });
   writeFileSync(join(bin, "ip"), "#!/bin/sh\necho '1.1.1.1 via 192.0.2.1 dev vmbr0 src 192.0.2.10 uid 0'\n", { mode: 0o755 });
   const tokenFile = join(dir, "token", "proxmox-token.env");
   return {

@@ -6,7 +6,7 @@ import type {
   OpenCodeOp,
 } from "./contract.js";
 
-/** Providers that are considered standard/canonical for BB machines. */
+/** Providers that are considered standard/canonical for VesnALIA machines. */
 export const CANONICAL_OPENCODE_PROVIDERS = new Set<string>([
   "router9",
   "zai-coding-plan",

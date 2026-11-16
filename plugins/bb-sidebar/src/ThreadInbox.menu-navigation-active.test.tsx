@@ -31,7 +31,7 @@ describe("row context menu", () => {
               thread({ id: "thr_settle", title: "Settle from menu" }),
               thread({ id: "open", title: "Stay here" }),
             ],
-            projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+            projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
           },
           rpc: {
             listLifecycle: () => ({ rows: [] }),
@@ -75,7 +75,7 @@ describe("row context menu", () => {
               thread({ id: "current", title: "Current", createdAt: 20, isPinned }),
               thread({ id: "next", title: "Next", createdAt: 10 }),
             ],
-            projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+            projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
           },
           rpc: {
             listLifecycle: () => ({ rows: [] }),

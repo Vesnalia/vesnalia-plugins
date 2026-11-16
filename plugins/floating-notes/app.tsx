@@ -1,8 +1,8 @@
-// bb-plugin-notes — frontend entry.
+// alia-plugin-notes — frontend entry.
 //
 // Registrations: a content script that mounts the floating surfaces (window,
 // stickies, capture bar, note picker) into document.body; an app overlay that
-// is the content script's bridge into bb's React tree; the sidebar footer
+// is the content script's bridge into VesnALIA's React tree; the sidebar footer
 // toggle; the thread-header Scratchpad button (whose data hook doubles as the
 // visible-thread bridge for pinned stickies); the "Save as note" message
 // action; the composer's "Insert note" plus-menu item; and the nav panel and
@@ -12,13 +12,13 @@ import { createElement, useCallback, useEffect, useMemo, useRef, useState } from
 import { createRoot } from "react-dom/client";
 import {
   definePluginApp,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRealtime,
   useRealtimeConnectionState,
   useSdk,
   type PluginThreadActionDataInput,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { useIsCompactViewport } from "@/components/ui/hooks/use-compact-viewport";
 import { FloatingNotes } from "@/components/floating-notes";
@@ -30,7 +30,7 @@ import { notesStore, setPluginId } from "@/lib/store";
 import "./styles.css";
 
 /**
- * The content script's bridge into bb's React tree, mounted once per app
+ * The content script's bridge into VesnALIA's React tree, mounted once per app
  * window. It relays the server's realtime "changed" signal into the shared
  * store (so CLI and agent edits show up on every surface without polling),
  * catches up after a realtime reconnect, and executes thread-navigation
@@ -53,7 +53,7 @@ function NotesBridge() {
     wasConnected.current = connection === "connected";
   }, [connection]);
 
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { navigateRequest } = useControllerState();
   useEffect(() => controller.registerNavigator(), []);
   useEffect(() => {
@@ -82,7 +82,7 @@ interface HeaderData {
  */
 function useHeaderData({ threadIds }: PluginThreadActionDataInput): HeaderData {
   const sdk = useSdk();
-  const { threadId: focusedThreadId } = useBbContext();
+  const { threadId: focusedThreadId } = useAliaContext();
   const [resolved, setResolved] = useState(0);
 
   useEffect(() => {
@@ -173,7 +173,7 @@ export default definePluginApp((app) => {
   app.contentScripts.register({
     id: "floating-notes",
     mount({ signal, pluginId }) {
-      // Route every RPC at the id bb actually installed us under.
+      // Route every RPC at the id VesnALIA actually installed us under.
       setPluginId(pluginId);
       const container = document.createElement("div");
       document.body.append(container);
@@ -268,7 +268,7 @@ export default definePluginApp((app) => {
     },
   });
 
-  // Deliberately ONE message action: bb brands plugin actions with the
+  // Deliberately ONE message action: VesnALIA brands plugin actions with the
   // plugin's logo (per-action icon hints are ignored when branding exists),
   // so a second action renders as an identical twin button. Scratchpad
   // appends live in quick capture (Tab), the thread panel, and the agent tool.

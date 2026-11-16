@@ -33,7 +33,7 @@ function ffmpeg(input: Buffer, args: string[], signal: AbortSignal, cwd?: string
     child.stdin.on("error", () => undefined); // An early process exit can close stdin.
     child.once("error", () => {
       clearTimeout(timeout);
-      reject(new Error("Voice needs FFmpeg with Flite and Rubber Band on the BB server."));
+      reject(new Error("Voice needs FFmpeg with Flite and Rubber Band on the VesnALIA server."));
     });
     child.once("close", (code) => {
       clearTimeout(timeout);
@@ -47,7 +47,7 @@ function ffmpeg(input: Buffer, args: string[], signal: AbortSignal, cwd?: string
 
 /** Same two stages as audition 05. Text is file data, never shell/filter syntax. */
 export async function renderVoice(text: string, signal: AbortSignal): Promise<Buffer> {
-  const directory = await mkdtemp(join(tmpdir(), "bb-miku-voice-"));
+  const directory = await mkdtemp(join(tmpdir(), "alia-miku-voice-"));
   try {
     await writeFile(join(directory, "speech.txt"), text, { mode: 0o600 });
     const base = await ffmpeg(Buffer.alloc(0), [

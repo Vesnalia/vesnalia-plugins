@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-loom",
+  "name": "alia-plugin-loom",
   "version": "0.34.2",
   "private": true,
   "type": "module",
   "engines": {
-    "bb": ">=0.47",
-    "bbPluginSdk": ">=0.6.75"
+    "alia": ">=0.47",
+    "aliaPluginSdk": ">=0.6.75"
   },
-  "bb": {
+  "alia": {
     "name": "Loom",
     "description": "Run a software project with agents: a planner turns a goal into a validated spec and tickets, workers pick up tickets in their own worktrees, separate reviewers approve or request changes, and approved work merges into an integration branch or opens a pull request.",
     "branding": {
@@ -24,14 +24,14 @@
     ]
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@get-bb/plugin-sdk": "0.6.75",
     "smol-toml": "^1.9.1",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@vesnalia/plugin-sdk": "^0.6.75"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.3",
@@ -48,5 +48,14 @@
     "sonner": "^1.7.4",
     "typescript": "^5.7.0",
     "vitest": "^4.1.12"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/loom#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/loom"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

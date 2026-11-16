@@ -1,10 +1,10 @@
-# Cache Watch for BB
+# Cache Watch for VesnALIA
 
-Inspect prompt-cache usage in [BB](https://getbb.app) and optionally keep selected
+Inspect prompt-cache usage in [VesnALIA](https://getbb.app) and optionally keep selected
 idle threads active with time-limited, paid keepalive turns.
 
-Version **0.4.2**. Requires **BB ≥0.48** and **Plugin SDK ≥0.6.104**.
-Verified with BB 0.48.1 / SDK 0.6.104 on macOS.
+Version **0.4.2**. Requires **VesnALIA ≥0.48** and **Plugin SDK ≥0.6.104**.
+Verified with VesnALIA 0.48.1 / SDK 0.6.104 on macOS.
 
 ## Thread panel
 
@@ -14,7 +14,7 @@ Expand it for cache use on the **first request of that turn**, exact counts,
 report time, expiry, and manual refresh. Read and written each have an expanded
 sum (`request 1 + request 2 + … = turn total`), rounded to thousands of tokens
 (`k`). The written sum is shown even when every reported value is zero. The
-composer details have a bounded scroll area. The Cache row has Git-style hover highlighting and a chevron; click the same row to collapse it. BB's context-card layout shows the same data
+composer details have a bounded scroll area. The Cache row has Git-style hover highlighting and a chevron; click the same row to collapse it. VesnALIA's context-card layout shows the same data
 in a **Prompt cache** section. A standalone **Cache Watch** sidebar page is also
 available.
 
@@ -66,7 +66,7 @@ when opened from global navigation, so select a watch or enter a Thread ID there
 Older turns load in pages of 50; totals always cover all saved turns.
 Unknown fields are excluded from known subtotals and the number of affected turns
 is displayed. Reports without a turn boundary are counted separately and excluded.
-Old turns whose usage reports BB no longer retains cannot be reconstructed; they
+Old turns whose usage reports VesnALIA no longer retains cannot be reconstructed; they
 remain explicitly unreported rather than zero. Pending turns include usage so far.
 
 Statistics use a plugin-owned SQLite database and survive plugin/server reloads.
@@ -81,7 +81,7 @@ Only usage, turn boundaries, model selections, and the fixed keepalive marker ar
 persisted; request and response text are not stored. Deleting a thread removes
 its plugin statistics. Telemetry that disappeared before the plugin collected it
 is unavailable. Disabling the plugin pauses collection; re-enabling can backfill
-reports that BB still retains. These reads do not send model requests or enable
+reports that VesnALIA still retains. These reads do not send model requests or enable
 keepalive.
 
 ## Claude Code Telemetry
@@ -123,7 +123,7 @@ Claude Code Telemetry reports, per request, how many written cache tokens have a
 **5-minute** and a **1-hour** lifetime (`cacheWriteBreakdown`); tokens without a
 reported lifetime are counted as *unknown*. This applies whatever TTL was chosen
 for the session (Automatic / 5 minutes / 1 hour): Cache Watch shows what was
-actually written, not the selected setting, which BB does not expose to plugins.
+actually written, not the selected setting, which VesnALIA does not expose to plugins.
 
 - The expanded panel shows **Written by lifetime** (`5m · 1h · unknown`), and the
   per-request details add a matching rounded line. The unknown part is shown only
@@ -138,7 +138,7 @@ actually written, not the selected setting, which BB does not expose to plugins.
   latest report when the most recent cache write used a 1-hour lifetime, five
   minutes when it used a 5-minute one.
 - Saved statistics upgrade once by re-reading retained events (revision 4), so
-  lifetimes are recovered wherever BB still has the history. Events from before
+  lifetimes are recovered wherever VesnALIA still has the history. Events from before
   the provider reported lifetimes stay unknown.
 
 ## Cost estimates
@@ -157,9 +157,9 @@ The history lookup is bounded to 500 relevant events.
 
 Claude Code uses **Anthropic** pricing and branding. Its input counter excludes
 cache reads and writes: all four categories (uncached input, output, cache reads,
-cache writes) are priced separately. BB's `cachedInputTokens` for Claude combines
+cache writes) are priced separately. VesnALIA's `cachedInputTokens` for Claude combines
 reads and writes, so only the explicit `cacheReadInputTokens` field is used for
-reuse. Missing fields remain unknown. Current BB Claude Code usage reports are
+reuse. Missing fields remain unknown. Current VesnALIA Claude Code usage reports are
 turn aggregates, not individual model requests: first-request reuse is therefore
 shown as unknown. Repeated result notifications are deduplicated; bridge counter
 restarts across turns do not discard that turn's reported usage.
@@ -172,14 +172,14 @@ Sonnet 5.5/5/4.6/4.5/4, and Haiku 5.5/4.5, including dated IDs of those models
 card for requests whose prompt exceeds 100K tokens: Telemetry requests use the
 matching card, while turn totals above 100K show a range across both cards.
 Unknown aliases/models have no estimate. Write cost is a **5-minute–1-hour range** (1.25×–2× base input),
-since BB's aggregate TTL cannot separate mixed write lifetimes; Claude Code
+since VesnALIA's aggregate TTL cannot separate mixed write lifetimes; Claude Code
 Telemetry lifetimes replace that range with exact rates. Missing Claude
-write/read counts yield an unavailable cost rather than an assumed zero. BB does
+write/read counts yield an unavailable cost rather than an assumed zero. VesnALIA does
 not expose Claude SDK's reported cost here; this is a local API-rate estimate.
 
 Provider, model, rate source/date, token categories, write range and cost are
 persisted for both families. Existing snapshots are rebuilt once from saved
-telemetry to correct provider-specific accounting; discarded BB usage cannot be
+telemetry to correct provider-specific accounting; discarded VesnALIA usage cannot be
 recovered. Historical Codex input remains inclusive of caches, unlike Claude input.
 
 Amounts are **USD equivalents at Standard API short-context rates**, not actual
@@ -203,10 +203,10 @@ write premiums or keepalive costs and are not a net savings claim.
 Once the repository and first release are published:
 
 ```sh
-bb plugin install git:https://github.com/SergeyZh/bb-plugin-cache-watch.git@v0.4.2
+alia plugin install git:https://github.com/SergeyZh/bb-plugin-cache-watch.git@v0.4.2
 ```
 
-For compatible 0.x updates, use `@^0.3.0` instead of the exact tag. BB builds Git
+For compatible 0.x updates, use `@^0.3.0` instead of the exact tag. VesnALIA builds Git
 installs automatically. See [RELEASING.md](RELEASING.md) for first-publication steps.
 
 For a local source checkout, use Node.js 24 and npm:
@@ -215,10 +215,10 @@ For a local source checkout, use Node.js 24 and npm:
 npm ci --include=dev
 npm run check
 npm run build
-bb plugin install .
+alia plugin install .
 ```
 
-The local path must exist on the BB server machine. No separate API key is
+The local path must exist on the VesnALIA server machine. No separate API key is
 needed: ordinary turns use the thread's configured provider.
 
 ## Optional paid keepalive
@@ -229,7 +229,7 @@ that session and select its duration. The `/keepalive start`, `/keepalive stop`,
 and `/keepalive status` skills manage the current session through the agent
 (and invoke the LLM).
 
-For direct control **without the LLM**, open BB's command palette with
+For direct control **without the LLM**, open VesnALIA's command palette with
 **Cmd+Shift+P** (macOS) or **Ctrl+Shift+P**, then search for **Keepalive**:
 
 - **Show status** — displays the current session's state and next ping.
@@ -238,17 +238,17 @@ For direct control **without the LLM**, open BB's command palette with
 - **Stop keepalive**.
 
 Commands act on the session selected when invoked, call the plugin directly,
-and show results or errors as BB notifications. They are hidden without a
+and show results or errors as VesnALIA notifications. They are hidden without a
 selected session. Use the Cache panel to choose another duration.
 `/keepalive start for 2 hours` selects a different duration.
 
 Inspect or manage a specific thread from the CLI with:
 
 ```sh
-bb cache-watch status thr_example --json
-bb cache-watch list --json
-bb cache-watch start thr_example --hours 6
-bb cache-watch stop thr_example
+alia cache-watch status thr_example --json
+alia cache-watch list --json
+alia cache-watch start thr_example --hours 6
+alia cache-watch stop thr_example
 ```
 
 **Each ping is an ordinary paid agent turn, visible in the transcript.** It
@@ -286,10 +286,10 @@ event plus `promptCacheTtlMs`) or the marked Codex assumption. Event delivery ca
 lag request start. No live cache-state query is made, and a provider's long
 retention policy is not assumed to be a rolling TTL.
 
-This BB plugin is separate from **Barncore/cache-watch**, a Claude Code mod.
+This VesnALIA plugin is separate from **Barncore/cache-watch**, a Claude Code mod.
 That mod's default `guard refuse` mode intentionally drops the first prompt
 after its cache estimate expires. If installed, `/cache-watch guard warn` in
-Claude Code permits the first send through. BB may record that mod's warning as
+Claude Code permits the first send through. VesnALIA may record that mod's warning as
 an unhandled provider event rather than display it as an assistant message.
 
 ## Development and verification
@@ -297,12 +297,12 @@ an unhandled provider event rather than display it as an assistant message.
 ```sh
 npm ci --include=dev
 npm run check
-npm exec -- bb plugin types --check .
+npm exec -- alia plugin types --check .
 npm run build
 npm pack --dry-run
 ```
 
-The build CLI is pinned to BB 0.48.1 in development dependencies and does not
+The build CLI is pinned to VesnALIA 0.48.1 in development dependencies and does not
 need a running server. GitHub Actions runs type checking, the backend and frontend tests, SDK checks, and a build. See [CONTRIBUTING.md](CONTRIBUTING.md),
 [VERIFICATION.md](VERIFICATION.md), and [CHANGELOG.md](CHANGELOG.md).
 
@@ -321,12 +321,12 @@ expiry or net savings.
 In **Settings → Plugins → Cache Watch → Cache information position**, choose
 **Current position (thread context)** (default) or **Thread header**. The header
 button shows the estimated TTL and opens the full cache details and keepalive
-controls for that pane's session. On phones and narrow split panes BB moves
-header actions into the thread menu. BB SDK 0.6.104 does not provide a slot for
+controls for that pane's session. On phones and narrow split panes VesnALIA moves
+header actions into the thread menu. VesnALIA SDK 0.6.104 does not provide a slot for
 the bottom status bar or the native window title.
 
 Expiry countdowns in the header, cache details and context summaries use monospace digits.
-Header labels use a scoped content script because BB renders header action labels as plain text.
+Header labels use a scoped content script because VesnALIA renders header action labels as plain text.
 Their text is green while the estimated TTL remains, red after it elapses, and
 muted when the TTL is unknown. These colors reflect the estimate, not a live cache check.
 Response markers show the midpoint of the estimated cost range rounded to two

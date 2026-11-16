@@ -1,6 +1,6 @@
 // A per-thread switch and context meter, directly above the chat input.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { definePluginApp, useBbNavigate, useComposer, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate, useComposer, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { HandoffView, rpcContract } from "./server";
 
 const POLL_MS = 5_000;
@@ -40,7 +40,7 @@ function formatTokens(value: number): string {
 function HandoffBanner() {
   const composer = useComposer();
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const scope = composer.scope;
   const threadId = scope.kind === "thread" ? scope.threadId : null;
   const currentThread = useRef(threadId);
@@ -163,7 +163,7 @@ function HandoffBanner() {
       </button>
     </div>
     {state.stage === "preparing" && state.creating ? <div role="status" className="px-1.5">Starting part {state.part + 1}…</div>
-      : state.stage === "preparing" && state.stuck ? <div role="status" className="px-1.5">Starting part {state.part + 1} didn't finish. Ask the agent to run <code>bb context-handoff ready</code> again, or turn Auto handoff off to continue here.</div>
+      : state.stage === "preparing" && state.stuck ? <div role="status" className="px-1.5">Starting part {state.part + 1} didn't finish. Ask the agent to run <code>alia context-handoff ready</code> again, or turn Auto handoff off to continue here.</div>
       : state.stage === "preparing" && active ? <div role="status" className="px-1.5">Preparing handoff at a safe stopping point…</div>
       : state.requested && active ? <div role="status" className="px-1.5">Handing off at the next safe stopping point…</div> : null}
     {!state.enabled ? <div role="status" className="px-1.5">Automatic handoff is paused in plugin settings.</div> : null}

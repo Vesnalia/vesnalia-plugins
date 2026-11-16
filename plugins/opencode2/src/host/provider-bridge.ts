@@ -21,7 +21,7 @@ import {
   THREAD_DELTA_GRAMMAR_V3,
   turnStartParamsSchema,
   turnSteerParamsSchema,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import {
   emit,
   handleRuntimeResponse,
@@ -293,10 +293,10 @@ async function handle(request: RecordValue) {
     case "thread/fork": {
       const existing = sessions.get(params.threadId);
       const checkpointId = stringValue(params.sourceProviderCheckpointId);
-      // BB reuses the same BB thread ID when rewinding (or editing a past
+      // VesnALIA reuses the same VesnALIA thread ID when rewinding (or editing a past
       // message and resending): truncate the OpenCode session in place via
       // revert so files are restored and the session ID is preserved. A fork
-      // for a *new* BB thread copies history into a child session instead.
+      // for a *new* VesnALIA thread copies history into a child session instead.
       const sameThreadRewind =
         !!existing &&
         existing.providerThreadId === params.sourceProviderThreadId &&
@@ -306,8 +306,8 @@ async function handle(request: RecordValue) {
       if (!sameThreadRewind && !existing && checkpointId) {
         // No live session: this worker restarted, or another worker owns the
         // thread. A persisted same-thread mapping still identifies an
-        // in-place rewind. Without one (a genuinely new BB thread, or a
-        // source session held under another BB thread) fall through to fork
+        // in-place rewind. Without one (a genuinely new VesnALIA thread, or a
+        // source session held under another VesnALIA thread) fall through to fork
         // so a copy is made instead of truncating history that isn't ours.
         const sourceInMemory = sessionsByProviderId.get(
           params.sourceProviderThreadId,
@@ -362,7 +362,7 @@ async function handle(request: RecordValue) {
             }
           } else if (rewound.model) {
             // Stateless rewind (no live session to compare against): converge
-            // on BB's current selection like thread/resume does.
+            // on VesnALIA's current selection like thread/resume does.
             await ensureSessionModel(rewound, rewound.model, true);
           }
         } catch (error) {
@@ -442,7 +442,7 @@ async function handle(request: RecordValue) {
         active.manualCompaction = { itemId: messageId };
         active.opened.set(messageId, { type: "compaction" });
         emit(
-          session.bbThreadId,
+          session.aliaThreadId,
           manualCompactionStartDeltas(
             params.clientRequestId,
             active.providerTurnId,
@@ -465,12 +465,12 @@ async function handle(request: RecordValue) {
           });
         return;
       }
-      emit(session.bbThreadId, [
-        // Order matters: BB records turn/input/accepted only against an
+      emit(session.aliaThreadId, [
+        // Order matters: VesnALIA records turn/input/accepted only against an
         // already-started turn. Emitting input.accepted first (both carry the
         // same providerTurnId) makes the assembler scope the accepted event to
-        // a turn BB hasn't started yet, so it is dropped, the turn keeps zero
-        // accepted inputs, and BB hides Edit message / rejects edit-message
+        // a turn VesnALIA hasn't started yet, so it is dropped, the turn keeps zero
+        // accepted inputs, and VesnALIA hides Edit message / rejects edit-message
         // with "not accepted into exactly one turn".
         { kind: "turn.open", providerTurnId: active.providerTurnId },
         {
@@ -481,8 +481,8 @@ async function handle(request: RecordValue) {
       ]);
       sendResult(request.id, { threadId: params.threadId });
       // The beta prompt schema does not accept per-prompt `system` or `tools`.
-      // BB instructions use the session entry installed above; `disallowedTools`
-      // is enforced while building the BB dynamic MCP catalog, while native
+      // VesnALIA instructions use the session entry installed above; `disallowedTools`
+      // is enforced while building the VesnALIA dynamic MCP catalog, while native
       // OpenCode tool filtering has no supported beta API surface.
       // OpenCode reasoning effort is a model variant, and the prompt endpoint
       // accepts no model: switch the session model first so the effort picker
@@ -535,7 +535,7 @@ async function handle(request: RecordValue) {
       const clientRequestId = stringValue(params.clientRequestId);
       if (!clientRequestId)
         throw new Error("Missing clientRequestId for steered input");
-      // With steerMode "queue" BB keeps the follow-up row as "Steer pending"
+      // With steerMode "queue" VesnALIA keeps the follow-up row as "Steer pending"
       // until the bridge confirms acceptance, so always close the loop with
       // input.accepted (mirrors turn/start and the Codex bridge).
       let active = session.active;
@@ -553,7 +553,7 @@ async function handle(request: RecordValue) {
           settledTools: new Set<string>(),
         };
         session.active = active;
-        emit(session.bbThreadId, [
+        emit(session.aliaThreadId, [
           { kind: "turn.open", providerTurnId: active.providerTurnId },
         ]);
       }
@@ -587,7 +587,7 @@ async function handle(request: RecordValue) {
         active.checkpointId = id;
         active.promptIds.add(id);
         active.promptDelivered = true;
-        emit(session.bbThreadId, [
+        emit(session.aliaThreadId, [
           steerAcceptedDelta(clientRequestId, active.providerTurnId),
         ]);
         sendResult(request.id, { threadId: params.threadId });
@@ -622,7 +622,7 @@ async function handle(request: RecordValue) {
             { method: "DELETE" },
           )
           .catch(() => {});
-        await releaseDynamicTools(session, "The BB thread was discarded");
+        await releaseDynamicTools(session, "The VesnALIA thread was discarded");
       } else if (
         typeof params.providerThreadId === "string" &&
         params.providerThreadId
@@ -656,7 +656,7 @@ async function handle(request: RecordValue) {
       if (session) sessionsByProviderId.delete(session.providerThreadId);
       else if (typeof params.providerThreadId === "string")
         sessionsByProviderId.delete(params.providerThreadId);
-      // Drop the persisted mapping so a later thread/fork for this BB thread
+      // Drop the persisted mapping so a later thread/fork for this VesnALIA thread
       // ID cannot mistake a new session for an in-place rewind target.
       await openCodeServer
         .forgetSessionRegistration(params.threadId)
@@ -737,7 +737,7 @@ export const experimental_providerBridge = experimental_defineProviderBridge({
     openCodeServer.setDataDir(dataDir);
   },
   onClose: () => {
-    void shutdownBridge("BB runtime disconnected");
+    void shutdownBridge("VesnALIA runtime disconnected");
   },
   onSigterm: () => {
     void shutdownBridge();

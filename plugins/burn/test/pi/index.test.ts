@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { BbReporter } from "../../extensions/pi/bb-report.js";
+import type { AliaReporter } from "../../extensions/pi/alia-report.js";
 import { PLAIN } from "../../extensions/pi/draw.js";
 import burn, { createBurn } from "../../extensions/pi/index.js";
 import type { BurnPanel } from "../../extensions/pi/panel.js";
@@ -29,15 +29,15 @@ afterEach(() => {
 
 const writeSettings = (value: unknown) => writeFileSync(join(agentDir, "burn.json"), typeof value === "string" ? value : JSON.stringify(value));
 
-function setup(opts: { entries?: unknown[]; header?: unknown; mode?: string; hasUI?: boolean; bbPolicy?: BudgetPolicy | null } = {}) {
+function setup(opts: { entries?: unknown[]; header?: unknown; mode?: string; hasUI?: boolean; aliaPolicy?: BudgetPolicy | null } = {}) {
   const handlers = new Map<string, Handler>();
   const commands = new Map<string, Command>();
   const entries: unknown[] = opts.entries ?? [user(), assistant(1.5)];
   const sent: UsageReport[] = [];
-  let bbPolicy = opts.bbPolicy ?? null;
-  const reporter: BbReporter = {
+  let aliaPolicy = opts.aliaPolicy ?? null;
+  const reporter: AliaReporter = {
     report: vi.fn(async (report: UsageReport) => void sent.push(report)),
-    policy: () => bbPolicy,
+    policy: () => aliaPolicy,
   };
   const copy = vi.fn(async (_text: string) => {});
   const pi = {
@@ -99,8 +99,8 @@ function setup(opts: { entries?: unknown[]; header?: unknown; mode?: string; has
     spend,
     lastPill,
     overlay: () => overlay,
-    setBbPolicy: (p: BudgetPolicy | null) => {
-      bbPolicy = p;
+    setAliaPolicy: (p: BudgetPolicy | null) => {
+      aliaPolicy = p;
     },
   };
 }
@@ -164,7 +164,7 @@ describe("burn pi extension", () => {
     for (const name of ["session_start", "agent_start", "turn_end", "agent_end"]) expect(() => t.fire(name), name).not.toThrow();
   });
 
-  it("reports to bb with the fields pi sets", () => {
+  it("reports to VesnALIA with the fields pi sets", () => {
     const t = setup({ mode: "rpc" });
     t.fire("session_start");
     t.fire("agent_start");
@@ -347,13 +347,13 @@ describe("budgets", () => {
     expect(t.lastPill()).toContain(" / $10");
   });
 
-  it("takes bb's budget in a bb thread, falling back to pi's own when bb has none", async () => {
-    const t = setup({ mode: "rpc", bbPolicy: { budget: 20, stopAtBudget: false, notifyExpensiveTurn: false } });
+  it("takes VesnALIA's budget in a VesnALIA thread, falling back to pi's own when VesnALIA has none", async () => {
+    const t = setup({ mode: "rpc", aliaPolicy: { budget: 20, stopAtBudget: false, notifyExpensiveTurn: false } });
     await t.run("budget 4");
     await t.run("budget");
-    expect(notes(t.notify).at(-1)).toContain("$20, set in bb");
+    expect(notes(t.notify).at(-1)).toContain("$20, set in VesnALIA");
     expect(t.sent.at(-1)?.budget).toBe(4);
-    t.setBbPolicy({ budget: null, stopAtBudget: false, notifyExpensiveTurn: false });
+    t.setAliaPolicy({ budget: null, stopAtBudget: false, notifyExpensiveTurn: false });
     await t.run("budget");
     expect(notes(t.notify).at(-1)).toContain("$4, set for this thread");
   });
@@ -377,17 +377,17 @@ describe("budgets", () => {
     ]);
   });
 
-  it("does not alert when a session that is already over budget opens, nor in a bb thread", async () => {
+  it("does not alert when a session that is already over budget opens, nor in a VesnALIA thread", async () => {
     writeSettings({ defaultBudget: 10 });
     const t = setup({ entries: [user(), assistant(12)] });
     t.fire("session_start");
     t.fire("turn_end");
     expect(t.notify).not.toHaveBeenCalled();
-    const bb = setup({ mode: "rpc", entries: [user(), assistant(7)] });
-    bb.fire("session_start");
-    bb.spend(4);
-    bb.fire("turn_end");
-    expect(bb.notify).not.toHaveBeenCalled();
+    const alia = setup({ mode: "rpc", entries: [user(), assistant(7)] });
+    alia.fire("session_start");
+    alia.spend(4);
+    alia.fire("turn_end");
+    expect(alia.notify).not.toHaveBeenCalled();
   });
 
   it("reports a malformed burn.json once and uses the defaults", () => {
@@ -402,9 +402,9 @@ describe("budgets", () => {
 });
 
 describe("stopping at the budget", () => {
-  function crossing(opts: { settings?: unknown; mode?: string; bbPolicy?: BudgetPolicy } = {}) {
+  function crossing(opts: { settings?: unknown; mode?: string; aliaPolicy?: BudgetPolicy } = {}) {
     if (opts.settings) writeSettings(opts.settings);
-    const t = setup({ entries: [user(), assistant(9), { type: "custom", customType: BUDGET_ENTRY, data: { budget: 10 }, timestamp: new Date().toISOString() }], mode: opts.mode, bbPolicy: opts.bbPolicy });
+    const t = setup({ entries: [user(), assistant(9), { type: "custom", customType: BUDGET_ENTRY, data: { budget: 10 }, timestamp: new Date().toISOString() }], mode: opts.mode, aliaPolicy: opts.aliaPolicy });
     t.fire("session_start");
     t.fire("agent_start");
     t.spend(2);
@@ -446,10 +446,10 @@ describe("stopping at the budget", () => {
     expect(t.abort).not.toHaveBeenCalled();
   });
 
-  it("follows bb's policy in a bb thread, stopping without a notification", () => {
-    const off = crossing({ settings: { stopAtBudget: true }, mode: "rpc", bbPolicy: { budget: null, stopAtBudget: false, notifyExpensiveTurn: false } });
+  it("follows VesnALIA's policy in a VesnALIA thread, stopping without a notification", () => {
+    const off = crossing({ settings: { stopAtBudget: true }, mode: "rpc", aliaPolicy: { budget: null, stopAtBudget: false, notifyExpensiveTurn: false } });
     expect(off.abort).not.toHaveBeenCalled();
-    const on = crossing({ mode: "rpc", bbPolicy: { budget: 10, stopAtBudget: true, notifyExpensiveTurn: false } });
+    const on = crossing({ mode: "rpc", aliaPolicy: { budget: 10, stopAtBudget: true, notifyExpensiveTurn: false } });
     expect(on.abort).toHaveBeenCalledTimes(1);
     expect(on.notify).not.toHaveBeenCalled();
   });

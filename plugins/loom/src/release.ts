@@ -1,7 +1,7 @@
 // Releasing the environment of a worker whose ticket's pull request is open, and bringing the same thread back when the
 // pull request needs it again. A pull request can wait days for a person, and an idle worker holds its environment all
-// that time. Archiving its thread frees the environment; bb's restore later builds a new one on the worker's branch, so
-// the worker comes back with its whole conversation. When bb cannot restore it, a new worker takes over from the branch.
+// that time. Archiving its thread frees the environment; VesnALIA's restore later builds a new one on the worker's branch, so
+// the worker comes back with its whole conversation. When VesnALIA cannot restore it, a new worker takes over from the branch.
 import { workerOf } from "./checks";
 import type { ProjectRow, Store, ThreadRow, TicketRow } from "./db/store";
 import { formatDuration } from "./format";
@@ -42,14 +42,14 @@ function restackDue(spec: Spec, tickets: readonly TicketRow[], ticket: TicketRow
 
 /**
  * The tick's step on the pr strategy, unless the spec sets merge.release_workers = false: archives each idle worker
- * whose ticket's pull request is open, so bb frees its environment. Only a worker with nothing in flight goes: no fix
+ * whose ticket's pull request is open, so VesnALIA frees its environment. Only a worker with nothing in flight goes: no fix
  * round waiting for it, no question waiting for the human, no catch-up due, and a worktree that holds exactly the
  * reviewed commit, so nothing in it can be lost. A worker on a machine of its own also stays while a dependency in its
  * repo is open: its machine cannot come back, and the restacks that dependency causes run in its worktree.
  */
 export async function releaseIdleWorkers(ctx: EngineCtx, project: ProjectRow, spec: Spec): Promise<void> {
   if (spec.merge.strategy !== "pr" || !prSettings(spec).releaseWorkers) return;
-  const { store, bb } = ctx;
+  const { store, alia } = ctx;
   for (const seen of store.tickets(project.id, ["pr_open"])) {
     const tickets = store.tickets(project.id);
     const ticket = store.ticket(seen.id)!;
@@ -58,9 +58,9 @@ export async function releaseIdleWorkers(ctx: EngineCtx, project: ProjectRow, sp
     if (worker.standing !== "active" || worker.row.thread_id === null || worker.row.released_at !== null) continue;
     const threadId = worker.row.thread_id;
     try {
-      const thread = await bb.getThread(threadId);
-      if (thread?.status !== "idle" || (await bb.waitingOnUser([threadId])).length > 0) continue;
-      const environment = thread.environmentId === null ? null : await bb.getEnvironment(thread.environmentId);
+      const thread = await alia.getThread(threadId);
+      if (thread?.status !== "idle" || (await alia.waitingOnUser([threadId])).length > 0) continue;
+      const environment = thread.environmentId === null ? null : await alia.getEnvironment(thread.environmentId);
       if (environment?.path == null) continue;
       if (isRemote(project, environment) && upstreamOf(tickets, ticket).open.length > 0) continue;
       const state = await ctx.host.call(environment.hostId, "worktreeState", { worktree: environment.path, base: worktreeBaseOf(project, spec, ticket, environment) });
@@ -68,7 +68,7 @@ export async function releaseIdleWorkers(ctx: EngineCtx, project: ProjectRow, sp
       // began and did not finish can leave nothing uncommitted, and freeing the environment would lose it.
       if ((ticket.head_tree === null ? state.head !== ticket.head_sha : state.tree !== ticket.head_tree) || state.dirty || state.unfinishedMerge === true) continue;
     } catch (error) {
-      bb.log("warn", `Could not tell whether ${ticket.key}'s worker is idle: ${errText(error)}`);
+      alia.log("warn", `Could not tell whether ${ticket.key}'s worker is idle: ${errText(error)}`);
       continue;
     }
     if (store.ticket(ticket.id)?.state !== "pr_open") continue;
@@ -129,29 +129,29 @@ export async function advanceWakes(ctx: EngineCtx, projectId: number): Promise<v
 }
 
 /**
- * One step of bringing a released worker back: unarchive its thread, ask bb to restore its environment, and once the
+ * One step of bringing a released worker back: unarchive its thread, ask VesnALIA to restore its environment, and once the
  * environment is ready, give the ticket the new environment. Each step is safe to run again; the tick runs the next one.
  */
 export async function advanceWake(ctx: EngineCtx, seen: ThreadRow): Promise<void> {
-  const { store, bb } = ctx;
+  const { store, alia } = ctx;
   const row = store.thread(seen.id);
   if (row === null || !isWaking(row) || row.thread_id === null) return;
   const threadId = row.thread_id;
   const read = async () => {
-    const thread = await bb.getThread(threadId);
-    const environment = thread?.environmentId == null ? null : await bb.getEnvironment(thread.environmentId);
+    const thread = await alia.getThread(threadId);
+    const environment = thread?.environmentId == null ? null : await alia.getEnvironment(thread.environmentId);
     return { thread, environment };
   };
   try {
     let { thread, environment } = await read();
     if (thread === null || thread.deletedAt !== null) return await cannotWake(ctx, row, "its thread was deleted");
     if (thread.archivedAt !== null) {
-      await bb.unarchive(threadId);
+      await alia.unarchive(threadId);
       ({ thread, environment } = await read());
       if (thread === null) return await cannotWake(ctx, row, "its thread was deleted");
     }
     const failed = async () => {
-      const failure = await bb.latestSystemError(threadId).catch(() => null);
+      const failure = await alia.latestSystemError(threadId).catch(() => null);
       return failure?.code === "thread_provisioning_failed" ? provisioningFailure(failure) : null;
     };
     if (environment === null || environment.status === "destroyed") {
@@ -160,10 +160,10 @@ export async function advanceWake(ctx: EngineCtx, seen: ThreadRow): Promise<void
         if (problem !== null) return await wakeFailed(ctx, row, problem);
       }
       if (thread.status !== "idle" && thread.status !== "error") return;
-      // Unarchiving within the provider's grace period keeps the environment; past it, bb must build a new one.
-      if (thread.canRestoreEnvironment !== true) return await cannotWake(ctx, row, "bb cannot restore its environment");
+      // Unarchiving within the provider's grace period keeps the environment; past it, VesnALIA must build a new one.
+      if (thread.canRestoreEnvironment !== true) return await cannotWake(ctx, row, "alia cannot restore its environment");
       try {
-        await bb.restoreEnvironment(threadId);
+        await alia.restoreEnvironment(threadId);
       } catch (error) {
         return await wakeFailed(ctx, row, startProblemOf(error));
       }
@@ -172,12 +172,12 @@ export async function advanceWake(ctx: EngineCtx, seen: ThreadRow): Promise<void
     }
     if (environment?.status === "error" || (thread.status === "error" && environment?.status !== "ready")) {
       const problem = await failed();
-      return await wakeFailed(ctx, row, problem ?? { kind: "failed", message: "bb could not restore its environment" });
+      return await wakeFailed(ctx, row, problem ?? { kind: "failed", message: "alia could not restore its environment" });
     }
     if (environment == null || environment.path === null || environment.status === "creating" || environment.status === "provisioning" || thread.status === "starting" || thread.status === "pending") return;
     awake(ctx, row, thread.environmentId!, environment.branchName);
   } catch (error) {
-    bb.log("warn", `Could not bring back the worker ${threadId}; Loom tries again: ${errText(error)}`);
+    alia.log("warn", `Could not bring back the worker ${threadId}; Loom tries again: ${errText(error)}`);
   }
 }
 
@@ -198,8 +198,8 @@ function awake(ctx: EngineCtx, row: ThreadRow, environmentId: string, branch: st
 }
 
 /**
- * bb could not bring the environment back. The worker is released again and the ticket waits (StartWait) to try again;
- * a failure that happens START_GRACE times in a row, or one bb refuses outright, hands the ticket to a new worker.
+ * VesnALIA could not bring the environment back. The worker is released again and the ticket waits (StartWait) to try again;
+ * a failure that happens START_GRACE times in a row, or one VesnALIA refuses outright, hands the ticket to a new worker.
  */
 async function wakeFailed(ctx: EngineCtx, row: ThreadRow, problem: StartProblem): Promise<void> {
   const { store } = ctx;
@@ -219,11 +219,11 @@ async function wakeFailed(ctx: EngineCtx, row: ThreadRow, problem: StartProblem)
     }
   });
   store.changed(row.project_id);
-  await ctx.bb.archive(row.thread_id!).catch((error) => ctx.bb.log("warn", `Could not archive ${row.thread_id}: ${errText(error)}`));
+  await ctx.alia.archive(row.thread_id!).catch((error) => ctx.alia.log("warn", `Could not archive ${row.thread_id}: ${errText(error)}`));
 }
 
 /**
- * The released worker cannot come back: its thread is gone, or bb cannot restore its environment. A new worker takes
+ * The released worker cannot come back: its thread is gone, or VesnALIA cannot restore its environment. A new worker takes
  * the ticket from its branch, as when a worker is gone, and reads the ticket and where the earlier worker's thread is.
  */
 async function cannotWake(ctx: EngineCtx, row: ThreadRow, why: string): Promise<void> {
@@ -244,8 +244,8 @@ async function cannotWake(ctx: EngineCtx, row: ThreadRow, why: string): Promise<
   });
   store.changed(row.project_id);
   ctx.kick();
-  const thread = await ctx.bb.getThread(row.thread_id!).catch(() => null);
-  if (thread !== null && thread.archivedAt === null && thread.deletedAt === null) await ctx.bb.archive(row.thread_id!).catch((error) => ctx.bb.log("warn", `Could not archive ${row.thread_id}: ${errText(error)}`));
+  const thread = await ctx.alia.getThread(row.thread_id!).catch(() => null);
+  if (thread !== null && thread.archivedAt === null && thread.deletedAt === null) await ctx.alia.archive(row.thread_id!).catch((error) => ctx.alia.log("warn", `Could not archive ${row.thread_id}: ${errText(error)}`));
 }
 
 /** The provider stayed unavailable for the whole limit: the ticket blocks, so triage hears of it, and a requeue starts a new worker from the branch. */
@@ -261,7 +261,7 @@ async function blockUnavailable(ctx: EngineCtx, row: ThreadRow, wait: StartWait)
   });
   store.changed(row.project_id);
   ctx.kick();
-  await ctx.bb.archive(row.thread_id!).catch((error) => ctx.bb.log("warn", `Could not archive ${row.thread_id}: ${errText(error)}`));
+  await ctx.alia.archive(row.thread_id!).catch((error) => ctx.alia.log("warn", `Could not archive ${row.thread_id}: ${errText(error)}`));
 }
 
 /** Whether the worker's worktree was restored since it last submitted, so a message to it says what that means. */

@@ -4,15 +4,15 @@ function shellQuote(value: string): string {
   return `'${value.replaceAll("'", `'\"'\"'`)}'`;
 }
 
-export const LOGIN_INPUT_READY_MARKER = "BB_CLAUDE_LOGIN_INPUT_READY";
-export const LOGIN_AUTHORIZATION_READY_MARKER = "BB_CLAUDE_LOGIN_AUTHORIZATION_READY:";
-export const LOGIN_BROWSER_FAILED_MARKER = "BB_CLAUDE_LOGIN_BROWSER_FAILED";
+export const LOGIN_INPUT_READY_MARKER = "ALIA_CLAUDE_LOGIN_INPUT_READY";
+export const LOGIN_AUTHORIZATION_READY_MARKER = "ALIA_CLAUDE_LOGIN_AUTHORIZATION_READY:";
+export const LOGIN_BROWSER_FAILED_MARKER = "ALIA_CLAUDE_LOGIN_BROWSER_FAILED";
 
-const AUTHORIZATION_REOPEN_ARGUMENT = "--bb-reopen-authorization";
-const AUTHORIZATION_OPEN_ARGUMENT = "--bb-open-authorization";
+const AUTHORIZATION_REOPEN_ARGUMENT = "--alia-reopen-authorization";
+const AUTHORIZATION_OPEN_ARGUMENT = "--alia-open-authorization";
 export const AUTHORIZATION_NOT_READY_EXIT_CODE = 75;
 const AUTHORIZATION_HELPER_ERROR_EXIT_CODE = 78;
-const BB_TERMINAL_COMMAND_MAX_CHARACTERS = 10_000;
+const ALIA_TERMINAL_COMMAND_MAX_CHARACTERS = 10_000;
 const CLAUDE_MANUAL_REDIRECT_URI = "https://platform.claude.com/oauth/code/callback";
 const MANUAL_AUTHORIZATION_FALLBACK_DELAY_MS = 500;
 
@@ -26,7 +26,7 @@ function requireAbsoluteExecutablePath(value: string, error: string): string {
 function requireAbsoluteClaudePath(claudeExecutablePath: string): string {
   return requireAbsoluteExecutablePath(
     claudeExecutablePath,
-    "BB could not resolve the installed Claude Code executable.",
+    "VesnALIA could not resolve the installed Claude Code executable.",
   );
 }
 
@@ -44,7 +44,7 @@ function requireAuthorizationLauncherPath(value: string): string {
   if (
     launcherName !== "open-chrome-incognito" ||
     !directoryName ||
-    !/^bb-claude-login\.[A-Za-z0-9]+$/.test(directoryName)
+    !/^alia-claude-login\.[A-Za-z0-9]+$/.test(directoryName)
   ) {
     throw new Error("The Claude authorization helper path was invalid.");
   }
@@ -89,7 +89,7 @@ export function buildChromeIncognitoLauncher(browserExecutablePath?: string): st
   if (browserExecutablePath !== undefined) {
     requireAbsoluteExecutablePath(
       browserExecutablePath,
-      "BB could not resolve the Chrome executable.",
+      "VesnALIA could not resolve the Chrome executable.",
     );
   }
 
@@ -237,14 +237,14 @@ export function buildClaudeLoginCommand(
   const loginObserver = buildClaudeLoginObserver();
   const sttyExecutable = requireAbsoluteExecutablePath(
     options.sttyExecutablePath ?? "/bin/stty",
-    "BB could not resolve the stty executable.",
+    "VesnALIA could not resolve the stty executable.",
   );
   const script = [
     'mktemp_command=""',
     'for candidate in /usr/bin/mktemp /bin/mktemp; do if test -x "$candidate"; then mktemp_command="$candidate"; break; fi; done',
     'if test -z "$mktemp_command"; then mktemp_command="$(command -v mktemp 2>/dev/null || true)"; fi',
     'test -n "$mktemp_command" || exit 78',
-    'browser_dir="$("$mktemp_command" -d "${TMPDIR:-/tmp}/bb-claude-login.XXXXXX")" || exit 78',
+    'browser_dir="$("$mktemp_command" -d "${TMPDIR:-/tmp}/alia-claude-login.XXXXXX")" || exit 78',
     'browser_launcher="$browser_dir/open-chrome-incognito"',
     'browser_claim="$browser_launcher.captured"',
     'browser_loopback_claim="$browser_launcher.loopback-captured"',
@@ -260,7 +260,7 @@ export function buildClaudeLoginCommand(
     `/usr/bin/printf '%s' ${shellQuote(browserLauncher)} > "$browser_launcher" || exit 78`,
     '/bin/chmod 700 "$browser_launcher" || exit 78',
     `${shellQuote(sttyExecutable)} -echo >/dev/null 2>&1 || exit 79`,
-    `printf '%s%s\\n' ${shellQuote("BB_CLAUDE_LOGIN_")} ${shellQuote("INPUT_READY")}`,
+    `printf '%s%s\\n' ${shellQuote("ALIA_CLAUDE_LOGIN_")} ${shellQuote("INPUT_READY")}`,
     `command node -e ${shellQuote(loginObserver)} ${shellQuote(executable)} "$browser_launcher"`,
   ].join("; ");
   const compressedScript = gzipSync(script, { level: 9 }).toString("base64");
@@ -271,8 +271,8 @@ export function buildClaudeLoginCommand(
     'exec /bin/sh -c "$decoded_script"',
   ].join("; ");
   const command = `/bin/sh -c ${shellQuote(bootstrap)}`;
-  if (command.length > BB_TERMINAL_COMMAND_MAX_CHARACTERS) {
-    throw new Error("The Claude login helper exceeded BB's terminal command limit.");
+  if (command.length > ALIA_TERMINAL_COMMAND_MAX_CHARACTERS) {
+    throw new Error("The Claude login helper exceeded VesnALIA's terminal command limit.");
   }
   return command;
 }

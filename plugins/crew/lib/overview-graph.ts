@@ -23,7 +23,7 @@ export type OverviewSource = {
     branch: string | null;
     needsYou: number;
     members: ReadonlyArray<{ key: string; lead: boolean; activity: string; needsYou?: readonly string[] }>;
-    /** BB tasks carrying the label `crew-<name>` — the source of truth for factory crews, which never set `task` (BBP-84). */
+    /** VesnALIA tasks carrying the label `crew-<name>` — the source of truth for factory crews, which never set `task` (BBP-84). */
     labelTasks?: ReadonlyArray<{ key: string; title: string; status: string }>;
   }>;
   leadLinks: ReadonlyArray<{ from: string; to: string; count: number }>;
@@ -79,7 +79,7 @@ function crewActive(status: string, members: ReadonlyArray<{ activity: string }>
 /** States that mean the dependency/task is settled, not open work. */
 const DONE_STATES = new Set(["done", "merged", "satisfied"]);
 
-/** BB task statuses that mean the ticket is settled (§3.9: done or canceled). */
+/** VesnALIA task statuses that mean the ticket is settled (§3.9: done or canceled). */
 const DONE_TASK_STATUSES = new Set(["done", "canceled"]);
 
 /**

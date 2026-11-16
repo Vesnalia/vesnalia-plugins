@@ -87,8 +87,8 @@ const row = (threadId: string, kind: "above" | "below" | "child" = "child") =>
       sidebarThread({ id: "three", parentThreadId: "two" }), sidebarThread({ id: "four", parentThreadId: "three" }),
       sidebarThread({ id: "free" }),
     ], sections: [], layout: EMPTY_LAYOUT }));
-    expect(planDrop(chain, ["free"], row("four"))).toEqual({ ok: false, reason: "bb allows 4 levels of threads" });
-    expect(planDrop(chain, ["one"], row("free"))).toEqual({ ok: false, reason: "bb allows 4 levels of threads" });
+    expect(planDrop(chain, ["free"], row("four"))).toEqual({ ok: false, reason: "alia allows 4 levels of threads" });
+    expect(planDrop(chain, ["one"], row("free"))).toEqual({ ok: false, reason: "alia allows 4 levels of threads" });
   });
 
   it("refuses sorted root reordering but permits nesting and header moves", () => {

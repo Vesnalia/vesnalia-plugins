@@ -1,21 +1,21 @@
-# Sets up a Windows PC as a Docker host for bb-box's Docker backend: Docker
-# Engine in one WSL 2 distribution. BB on this PC uses host wsl://<name>,
+# Sets up a Windows PC as a Docker host for alia-box's Docker backend: Docker
+# Engine in one WSL 2 distribution. ALIA on this PC uses host wsl://<name>,
 # which reaches the daemon through wsl.exe and docker system dial-stdio.
-# A BB server on another machine uses SSH on the PC's own address. See README.md.
+# A ALIA server on another machine uses SSH on the PC's own address. See README.md.
 #
 # Run it in PowerShell 7.4 or later as an administrator, signed in as the
 # Windows user who will own the distribution, from a copy of this directory:
 #
-#   .\setup.ps1 -Key "ssh-ed25519 AAAA... bb@server"
+#   .\setup.ps1 -Key "ssh-ed25519 AAAA... alia@server"
 #
-# -Key is the public SSH key of the user BB runs as on BB's server, which
+# -Key is the public SSH key of the user ALIA runs as on ALIA's server, which
 # the docker CLI logs in with. Running it again keeps the distribution, its
 # images and its running boxes, updates its packages and replaces the key.
 #Requires -Version 7.4
 [CmdletBinding()]
 param(
   [Parameter(Mandatory)] [string] $Key,
-  # The distribution, and the Linux user bb-box logs in as.
+  # The distribution, and the Linux user alia-box logs in as.
   [string] $Name = "bbdocker",
   [string] $User = "box",
   # Windows' own OpenSSH keeps port 22.
@@ -121,9 +121,9 @@ Step "Set up Docker Engine and sshd in $Name"
 
 # 6. Let SSH through the Hyper-V firewall, which filters WSL's traffic.
 $wslVm = "{40E0AC32-46A5-438A-A0B2-2B479E8F2E90}"
-$rule = "bb-box-docker-wsl-ssh"
+$rule = "alia-box-docker-wsl-ssh"
 Remove-NetFirewallHyperVRule -Name $rule -ErrorAction SilentlyContinue
-New-NetFirewallHyperVRule -Name $rule -DisplayName "bb-box: SSH to $Name" -Direction Inbound `
+New-NetFirewallHyperVRule -Name $rule -DisplayName "alia-box: SSH to $Name" -Direction Inbound `
   -VMCreatorId $wslVm -Protocol TCP -LocalPorts $Port -Action Allow -ErrorAction Stop | Out-Null
 Step "Opened TCP port $Port in the Hyper-V firewall"
 
@@ -135,7 +135,7 @@ Step "Opened TCP port $Port in the Hyper-V firewall"
 # its mirrored network only 3 minutes later. Windows PowerShell runs the
 # wait, since it is always at the same path. In an SSH session USERDOMAIN
 # is WORKGROUP, so the task names the account from its token.
-$task = "bb-box WSL Docker host"
+$task = "alia-box WSL Docker host"
 $start = "`$up = (Get-Date) - (Get-CimInstance Win32_OperatingSystem).LastBootUpTime; " +
   "if (`$up.TotalSeconds -lt 60) { Start-Sleep -Seconds (60 - `$up.TotalSeconds) }; " +
   "$env:SystemRoot\System32\wsl.exe -d $Name -u root --exec /bin/sleep infinity"
@@ -160,9 +160,9 @@ if ($restart) {
   "WSL's settings changed while it ran. To apply them, run 'wsl --shutdown' when no box is busy:"
   "it stops every box, and the scheduled task starts $Name again within a minute."
 }
-"Done. When BB runs on this PC, set the Docker backend host to wsl://$Name"
-"When BB's server is another machine and this PC is a BB machine, leave host as bb:<this machine's ID> and set machine-docker-host to wsl://$Name"
+"Done. When ALIA runs on this PC, set the Docker backend host to wsl://$Name"
+"When ALIA's server is another machine and this PC is a ALIA machine, leave host as alia:<this machine's ID> and set machine-docker-host to wsl://$Name"
 "dockerd listens on its unix socket. Do not publish 127.0.0.1:2375: WSL's localhost forwarder drops attached output."
 "Do not set DOCKER_HOST to wsl://. docker.exe does not understand it."
-"When this PC is not a BB machine, set host to ssh://${User}@<this PC>:${Port}"
+"When this PC is not a ALIA machine, set host to ssh://${User}@<this PC>:${Port}"
 "This PC: $env:COMPUTERNAME, $($addresses -join ', ')"

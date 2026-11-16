@@ -37,7 +37,7 @@ The user wants the board to convey more task context without opening every modal
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Verified rich cards and linked subtask rows in installed BB browser screenshots. SDK provider badges use 14px artwork inside 24px circles; Codex and Claude aliases and two-letter fallback covered by tests. Browser report verifies narrow layout, drag/drop and draft preservation. All 58 tests, typecheck and build pass.
+Verified rich cards and linked subtask rows in installed VesnALIA browser screenshots. SDK provider badges use 14px artwork inside 24px circles; Codex and Claude aliases and two-letter fallback covered by tests. Browser report verifies narrow layout, drag/drop and draft preservation. All 58 tests, typecheck and build pass.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

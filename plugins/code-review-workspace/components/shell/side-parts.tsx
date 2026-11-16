@@ -17,7 +17,7 @@ function focusables(el: HTMLElement): HTMLElement[] {
   return Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE)).filter((item) => !item.closest("[hidden], [aria-hidden=\"true\"], [inert]") && !inClosedDetails(item));
 }
 
-/** Over the code a side is opaque, as the workspace is, whatever the alpha of BB's background. */
+/** Over the code a side is opaque, as the workspace is, whatever the alpha of VesnALIA's background. */
 export const OPAQUE = { backgroundColor: "rgb(from var(--background) r g b / 1)" };
 
 /**

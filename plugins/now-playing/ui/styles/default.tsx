@@ -1,4 +1,4 @@
-// Default: the original panel, drawn with bb's own theme tokens.
+// Default: the original panel, drawn with VesnALIA's own theme tokens.
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";

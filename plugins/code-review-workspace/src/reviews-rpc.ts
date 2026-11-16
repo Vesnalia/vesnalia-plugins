@@ -1,5 +1,5 @@
 // Reviews: the list, a review's page, and what it reads of the PR (checks, generated files, CODEOWNERS, file contents);
-// starting, rebuilding, stopping, archiving, pinning, renaming and deleting a review. Also bb review list.
+// starting, rebuilding, stopping, archiving, pinning, renaming and deleting a review. Also VesnALIA review list.
 import { hasFocusWorkers } from "./focus-run";
 import { forgetBefore } from "./fix-undo";
 import { changedFiles, splitPatchByFile } from "./patch";
@@ -33,18 +33,18 @@ import { ownPrOf, ownPrUnread, turnOptions } from "./turn-signals";
 import type { RpcHandlers, ServeDeps, Subcommands } from "./server-modules";
 
 export function register(deps: ServeDeps) {
-  const { bb, store, notifications, sync, changed, reviewOwners } = deps;
+  const { alia, store, notifications, sync, changed, reviewOwners } = deps;
   // Reviews leave the server with whose turn they are, how far your feedback got, and their place in a stack.
   // JSON round-trips drop the literal `undefined` fields rowToMeta leaves, which strict rpc output rejects.
   // A local review with no title of its own goes by its guide's (lib/review-identity.ts): `guideTitles`, by key.
-  // `agents`, by key: the review agent's status in BB, which the review's rows show (lib/review-indicator.ts).
+  // `agents`, by key: the review agent's status in VesnALIA, which the review's rows show (lib/review-indicator.ts).
   const decorate = async (review: ReviewMeta, options: TurnOptions, stacks: ReturnType<typeof findStacks>, places: ReturnType<typeof reviewPlaces>, guideTitles: ReadonlyMap<string, string>, agents: ReadonlyMap<string, AgentStatus>) => JSON.parse(JSON.stringify({
     ...review, turn: await sync.turnOf(review, undefined, options), progress: feedbackProgress(review), stack: stacks.get(review.targetKey) ?? null, place: places.get(review.targetKey) ?? null,
     guideTitle: guideTitles.get(review.targetKey) ?? null, agentStatus: agents.get(review.targetKey) ?? null,
   }));
-  /** The status in BB of each review's agent, by key, from `threads` (agents' thread ids by key), read outside the store's turn. */
+  /** The status in VesnALIA of each review's agent, by key, from `threads` (agents' thread ids by key), read outside the store's turn. */
   const statusesOf = async (threads: ReadonlyMap<string, string>) => {
-    const statuses = await agentStatuses(bb, [...threads.values()]);
+    const statuses = await agentStatuses(alia, [...threads.values()]);
     return new Map([...threads].flatMap(([key, threadId]) => { const status = statuses.get(threadId); return status ? [[key, status] as const] : []; }));
   };
   /** The guides' titles of `reviews`' local reviews with no title of their own. */
@@ -69,7 +69,7 @@ export function register(deps: ServeDeps) {
     const login = all.some(ownPrUnread) ? sync.cachedLogin() : null;
     const reviews = all.map((review) => ownPrOf(review, login));
     const stacks = findStacks(reviews);
-    const places = reviewPlaces(await placeFacts(bb, reviews), reviews);
+    const places = reviewPlaces(await placeFacts(alia, reviews), reviews);
     // Archive says which review one merged into another went to (src/merge.ts).
     const idOf = (key: string) => { const into = reviews.find((review) => review.targetKey === key); return into ? reviewIdentity({ ...into, place: places.get(key) }).id : null; };
     return await Promise.all(reviews.map(async ({ reviewBodies: _bodies, agentReads: _reads, prConversation: _said, ...review }) => ({
@@ -87,14 +87,14 @@ export function register(deps: ServeDeps) {
     try {
       patch = await diffAt(store, runGh, review, review.headSha);
     } catch (error) {
-      bb.log.warn(`Could not read the diff of ${targetKey} again: ${String(error)}`);
+      alia.log.warn(`Could not read the diff of ${targetKey} again: ${String(error)}`);
       const reason = (error instanceof Error ? error.message : String(error)).replace(/\.$/, "");
       const offline = /network|connect|resolve|timed? ?out|ENOTFOUND|ECONN|EAI_AGAIN|unreachable/i.test(reason);
       return `Couldn't read this review's diff from GitHub: ${reason}. The guide, your draft and notes are here${offline ? "; try again when GitHub can be reached" : ""}.`;
     }
     await store.savePatch(targetKey, patch);
     // The page's other reads ran without it. An empty diff changed nothing, and reloading would read it again.
-    if (patch) bb.realtime.publish(`review:${targetKey}`, { ts: Date.now() });
+    if (patch) alia.realtime.publish(`review:${targetKey}`, { ts: Date.now() });
   }
   const handlers = {
     async getReviewBundle({ targetKey, knownRevision }) {
@@ -103,14 +103,14 @@ export function register(deps: ServeDeps) {
       const into = tombstone?.mergedInto ? await store.getReview(tombstone.mergedInto) : null;
       if (into) {
         const all = await store.listReviews();
-        return { review: null, guide: null, patch: null, revision: "", mergedInto: { targetKey: into.targetKey, id: identityIn(await placeFacts(bb, all), all, into).id } };
+        return { review: null, guide: null, patch: null, revision: "", mergedInto: { targetKey: into.targetKey, id: identityIn(await placeFacts(alia, all), all, into).id } };
       }
       const diffError = await rereadPrunedDiff(targetKey);
       const { revision, found, listedNow, agent } = await store.exclusive(async (tx) => ({ revision: await reviewRevision(tx, targetKey), found: await tx.getReview(targetKey), listedNow: await tx.listReviews(), agent: await tx.getAssistantThread(targetKey) }));
       const owned = await withOwnPr(found);
       const agents = await statusesOf(new Map(agent ? [[targetKey, agent]] : []));
       // As the list asks it, so the page's id is the list's.
-      const facts = await placeFacts(bb, listedNow);
+      const facts = await placeFacts(alia, listedNow);
       // What the page shows of it, read in one turn.
       return store.exclusive(async (tx) => {
         const all = await tx.listReviews();
@@ -154,7 +154,7 @@ export function register(deps: ServeDeps) {
     async startReview({ input }) {
       let projectId: string | undefined;
       try {
-        projectId = await personalProjectId(bb);
+        projectId = await personalProjectId(alia);
       } catch {
         return { ok: false, error: "Couldn't resolve a project to run generation." };
       }
@@ -193,7 +193,7 @@ export function register(deps: ServeDeps) {
         return review && { review, patch: await tx.patch(targetKey) };
       });
       if (!read) return { files: [] };
-      return { files: await readGeneratedFiles({ runGh, runGit, bb }, read.review, changedFiles(read.patch)) };
+      return { files: await readGeneratedFiles({ runGh, runGit, alia }, read.review, changedFiles(read.patch)) };
     },
     async getCodeOwners({ targetKey }) {
       const read = await store.exclusive(async (tx) => {
@@ -213,7 +213,7 @@ export function register(deps: ServeDeps) {
       const { review } = read;
       const patchFile = splitPatchByFile(read.patch).find((f) => f.path === file);
       if (!patchFile) return { ok: false as const, error: `${file} isn’t in this review’s diff.` };
-      return readFileContents({ runGh, runGit, bb }, review, patchFile);
+      return readFileContents({ runGh, runGit, alia }, review, patchFile);
     },
 
     // Staleness and re-review, and the review's place in the list
@@ -248,7 +248,7 @@ export function register(deps: ServeDeps) {
     async stopGuide({ targetKey }) {
       if (!(await store.getPreferences()).preferences.knobs.stopGenerating) return { ok: false, error: "Stopping a guide is off in Settings." };
       // No alert either way: you stopped it.
-      return await stopGuide(bb, store, targetKey) === "restored" ? { ok: true, restored: true } : { ok: true };
+      return await stopGuide(alia, store, targetKey) === "restored" ? { ok: true, restored: true } : { ok: true };
     },
     async updateFeature({ targetKey }) {
       // A folder's review reads its folder on whichever machine it's on; a checkout's runs its diff again.
@@ -295,17 +295,17 @@ export function register(deps: ServeDeps) {
       if (!review) return { ok: true };
       // A guide worker can't be cancelled per review, and an answer in progress is the reviewer's to finish.
       if (review.status === "generating") return { ok: false, error: "Wait for the guide to finish generating, then delete the review." };
-      if (review.focusRun?.state === "finding" || review.focusRun?.state === "merging" || hasFocusWorkers(bb, targetKey)) return { ok: false, error: "Wait for the focus run to finish, then delete the review." };
-      if (await isAssistantAnswering(bb, store, targetKey)) return { ok: false, error: "Wait for the assistant to finish answering, then delete the review." };
+      if (review.focusRun?.state === "finding" || review.focusRun?.state === "merging" || hasFocusWorkers(alia, targetKey)) return { ok: false, error: "Wait for the focus run to finish, then delete the review." };
+      if (await isAssistantAnswering(alia, store, targetKey)) return { ok: false, error: "Wait for the assistant to finish answering, then delete the review." };
       // Its guide writers too: the current one, and older ones left archived, by their exact title.
-      const writers = await pluginThreadsTitled(bb, `${GUIDE_WORKER_TITLE}${targetKey}`).catch((error) => {
-        bb.log.warn(`Could not list the guide writers of ${targetKey}: ${String(error)}`);
+      const writers = await pluginThreadsTitled(alia, `${GUIDE_WORKER_TITLE}${targetKey}`).catch((error) => {
+        alia.log.warn(`Could not list the guide writers of ${targetKey}: ${String(error)}`);
         return [];
       });
       // Its threads are read in the turn that deletes it, so a thread recorded meanwhile is stopped with them.
       const deleted = await store.exclusive(async (tx) => {
         const run = (await tx.getReview(targetKey))?.focusRun;
-        if (run?.state === "finding" || run?.state === "merging" || hasFocusWorkers(bb, targetKey)) return { error: "Wait for the focus run to finish, then delete the review." };
+        if (run?.state === "finding" || run?.state === "merging" || hasFocusWorkers(alia, targetKey)) return { error: "Wait for the focus run to finish, then delete the review." };
         const writerIds = new Set([await tx.generationWorker(targetKey), ...writers]);
         const threadIds = new Set([await tx.getAssistantThread(targetKey), await tx.getAgentThread(targetKey), ...writerIds]);
         await tx.deleteReview(targetKey);
@@ -318,18 +318,18 @@ export function register(deps: ServeDeps) {
       await notifications.dismiss(targetKey).catch(() => {});
       changed(targetKey);
       await notifications.forget(targetKey).catch(() => {});
-      await forgetBefore(bb.storage.kv, targetKey);
+      await forgetBefore(alia.storage.kv, targetKey);
       for (const threadId of threadIds) {
         if (!threadId) continue;
         // A thread a failed stop or delete may leave running is kept to this review, as a replaced agent is.
         let left = false;
-        await bb.sdk.threads.stop({ threadId }).catch((error) => { left ||= !isMissingThread(error); });
-        await bb.sdk.threads.delete({ threadId, childThreadsConfirmed: false }).catch((error) => {
+        await alia.sdk.threads.stop({ threadId }).catch((error) => { left ||= !isMissingThread(error); });
+        await alia.sdk.threads.delete({ threadId, childThreadsConfirmed: false }).catch((error) => {
           if (isMissingThread(error)) return;
           left = true;
-          bb.log.warn(`Could not delete review thread ${threadId}: ${String(error)}`);
+          alia.log.warn(`Could not delete review thread ${threadId}: ${String(error)}`);
         });
-        if (left) await recordFormerWorker(bb, threadId, targetKey, writerIds.has(threadId) ? "writer" : "assistant");
+        if (left) await recordFormerWorker(alia, threadId, targetKey, writerIds.has(threadId) ? "writer" : "assistant");
       }
       return { ok: true };
     },

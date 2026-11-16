@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from '@get-bb/plugin-sdk';
+import { defineRpcContract, type AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 
 export const rpcContract = defineRpcContract({
@@ -7,19 +7,19 @@ export const rpcContract = defineRpcContract({
     output: z.array(z.object({ id: z.string(), projectId: z.string(), title: z.string(), project: z.string(), status: z.string() })).max(7),
   },
 });
-export default function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     layout: {
       type: 'select', label: 'Layout', options: ['horizontal', 'vertical'],
       experimental_optionLabels: { horizontal: 'Horizontal cards', vertical: 'Vertical list' },
       default: 'horizontal',
     },
   });
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async recent({ ids }) {
       const [threads, projects] = await Promise.all([
-        bb.sdk.threads.list({ archived: false, includeHidden: false }),
-        bb.sdk.projects.list(),
+        alia.sdk.threads.list({ archived: false, includeHidden: false }),
+        alia.sdk.projects.list(),
       ]);
       const names = new Map(projects.map(p => [p.id, p.name]));
       const rank = new Map([...new Set(ids)].map((id, i) => [id, i]));

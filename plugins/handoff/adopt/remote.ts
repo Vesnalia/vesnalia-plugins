@@ -1,5 +1,5 @@
 // Reading another machine's agent sessions. Locally the adapters use fs and a
-// sqlite3 subprocess directly; across machines the only primitives bb gives a
+// sqlite3 subprocess directly; across machines the only primitives VesnALIA gives a
 // plugin are the host file API and a host terminal, so every store gets a
 // reader here that speaks those two.
 //
@@ -7,7 +7,7 @@
 // stores that are addressable by path (Claude, Gemini), greps Codex rollouts
 // for the working directory, and queries OpenCode's SQLite — all writing one
 // TSV stream that the file API reads back.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { claudeProjectSlug } from "../capture";
 import { parseClaudeContent } from "./agents/claude";
 import { parseCodexContent } from "./agents/codex";
@@ -24,7 +24,7 @@ import {
 import type { AgentId, FoundSession, ParsedSession, SessionSummary } from "./transcript";
 
 export interface RemoteContext {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   hostId: string;
   hostName: string;
   home: string;
@@ -51,26 +51,26 @@ function sleep(ms: number): Promise<void> {
 /**
  * Run one shell script on an enrolled machine and return what it printed.
  *
- * bb's only remote-execution primitive is a terminal, so the script's stdout
+ * VesnALIA's only remote-execution primitive is a terminal, so the script's stdout
  * is redirected to a temp file and read back through the file API — no PTY
  * scraping, no ANSI, no prompt noise. The redirect is written to `.part` and
  * moved into place so a partial read is impossible.
  */
 export async function hostExec(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   hostId: string,
   script: string,
   options: { timeoutMs?: number } = {},
 ): Promise<string | null> {
   execCounter += 1;
-  const out = `/tmp/bb-handoff-remote-${Date.now()}-${execCounter}.out`;
-  // bb runs a terminal command through the machine's login shell, and on
+  const out = `/tmp/alia-handoff-remote-${Date.now()}-${execCounter}.out`;
+  // VesnALIA runs a terminal command through the machine's login shell, and on
   // macOS that is zsh, where a glob that matches nothing aborts the script.
   // These scripts are POSIX sh, so run them in sh whatever the login shell is.
   const command = `/bin/sh -c ${shellQuote(`{ ${script} ; } > ${shellQuote(`${out}.part`)} 2>/dev/null; mv ${shellQuote(`${out}.part`)} ${shellQuote(out)}`)}`;
   let terminalId: string | null = null;
   try {
-    const terminal = await bb.sdk.terminals.create({
+    const terminal = await alia.sdk.terminals.create({
       cols: 120,
       rows: 30,
       scope: { kind: "host_path", hostId, cwd: null },
@@ -80,12 +80,12 @@ export async function hostExec(
     terminalId = terminal.id;
     const deadline = Date.now() + (options.timeoutMs ?? EXEC_TIMEOUT_MS);
     for (;;) {
-      const session = await bb.sdk.terminals.get({ terminalId: terminal.id });
+      const session = await alia.sdk.terminals.get({ terminalId: terminal.id });
       if (session.status === "exited") break;
       if (Date.now() > deadline) return null;
       await sleep(EXEC_POLL_MS);
     }
-    const file = await bb.sdk.files.read({ hostId, path: out });
+    const file = await alia.sdk.files.read({ hostId, path: out });
     return file.contentEncoding === "base64"
       ? Buffer.from(file.content, "base64").toString("utf8")
       : file.content;
@@ -93,12 +93,12 @@ export async function hostExec(
     return null;
   } finally {
     if (terminalId) {
-      await bb.sdk.terminals.close({ terminalId, mode: "force" }).catch(() => {});
+      await alia.sdk.terminals.close({ terminalId, mode: "force" }).catch(() => {});
     }
     // On a timeout the redirect never got moved into place, so the `.part`
     // file is the one that would otherwise be left behind.
-    await bb.sdk.files.remove({ hostId, path: out }).catch(() => {});
-    await bb.sdk.files.remove({ hostId, path: `${out}.part` }).catch(() => {});
+    await alia.sdk.files.remove({ hostId, path: out }).catch(() => {});
+    await alia.sdk.files.remove({ hostId, path: `${out}.part` }).catch(() => {});
   }
 }
 
@@ -234,7 +234,7 @@ export async function listRemoteSessions(
   cwd: string,
   agentFilter?: AgentId | null,
 ): Promise<{ sessions: FoundSession[]; execFailed: boolean }> {
-  const output = await hostExec(ctx.bb, ctx.hostId, buildListScript(ctx.home, cwd));
+  const output = await hostExec(ctx.alia, ctx.hostId, buildListScript(ctx.home, cwd));
   if (output === null) return { sessions: [], execFailed: true };
   const sessions = parseListOutput(output, cwd);
   return {
@@ -276,7 +276,7 @@ async function findByFilename(
     // printed: a busy store holds tens of thousands. Quoted, it stays literal.
     // Claude names files with lowercase ids.
     const output = await hostExec(
-      ctx.bb,
+      ctx.alia,
       ctx.hostId,
       `p=${shellQuote(sessionId.toLowerCase())}; for c in ${claudeConfigDirs(ctx.home)}; do [ -d "$c/projects" ] || continue; for f in "$c/projects"/*/"$p"*.jsonl; do [ -f "$f" ] && printf '%s\\n' "$f"; done; done`,
     );
@@ -295,7 +295,7 @@ async function findByFilename(
     });
   }
   try {
-    const listing = await ctx.bb.sdk.files.list({
+    const listing = await ctx.alia.sdk.files.list({
       hostId: ctx.hostId,
       path: root,
       query: sessionId,
@@ -318,7 +318,7 @@ async function findGeminiByExec(ctx: RemoteContext, sessionId: string): Promise<
     `grep -rlF ${shellQuote(`"sessionId": "${sessionId}"`)} "$r" 2>/dev/null | head -n 3`,
     `find "$r" -type f -name ${shellQuote(`*${sessionId}*.json`)} 2>/dev/null | head -n 3`,
   ].join("; ");
-  const output = await hostExec(ctx.bb, ctx.hostId, script);
+  const output = await hostExec(ctx.alia, ctx.hostId, script);
   const hit = (output ?? "").split("\n").map((line) => line.trim()).find(Boolean);
   return hit ?? null;
 }
@@ -326,7 +326,7 @@ async function findGeminiByExec(ctx: RemoteContext, sessionId: string): Promise<
 async function findOpencodeByExec(ctx: RemoteContext, sessionId: string): Promise<SessionRow[]> {
   const db = opencodeDbPath(ctx.home);
   const script = `db=${shellQuote(db)}; [ -f "$db" ] && command -v sqlite3 >/dev/null 2>&1 && sqlite3 -readonly -json "$db" ${shellQuote(opencodeFindSql(sessionId))} | tr -d '\\n'`;
-  const output = await hostExec(ctx.bb, ctx.hostId, script);
+  const output = await hostExec(ctx.alia, ctx.hostId, script);
   if (!output?.trim()) return [];
   try {
     const parsed = JSON.parse(output.trim());
@@ -365,7 +365,7 @@ export async function findRemoteSession(
     // cwd directory, and retain every match so prefixes can be disambiguated.
     const root = `${ctx.home}/.pi/agent/sessions`;
     try {
-      const listing = await ctx.bb.sdk.files.list({
+      const listing = await ctx.alia.sdk.files.list({
         hostId: ctx.hostId, path: root, query: sessionId, limit: 50,
       });
       for (const file of pathsOfListing(listing)) {
@@ -411,7 +411,7 @@ export async function findRemoteSession(
 // --- Reading one session ----------------------------------------------------
 
 async function readRemoteFile(ctx: RemoteContext, path: string): Promise<string> {
-  const file = await ctx.bb.sdk.files.read({ hostId: ctx.hostId, path });
+  const file = await ctx.alia.sdk.files.read({ hostId: ctx.hostId, path });
   return file.contentEncoding === "base64"
     ? Buffer.from(file.content, "base64").toString("utf8")
     : file.content;
@@ -435,7 +435,7 @@ export async function readRemoteSession(
         (statement) => `sqlite3 -readonly -json "$db" ${shellQuote(statement)} | tr -d '\\n'; printf '\\n'`,
       ),
     ].join("; ");
-    const output = await hostExec(ctx.bb, ctx.hostId, script);
+    const output = await hostExec(ctx.alia, ctx.hostId, script);
     const lines = (output ?? "").split("\n");
     const decode = (line: string | undefined): Record<string, unknown>[] => {
       try {

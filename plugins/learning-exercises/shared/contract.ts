@@ -1,14 +1,14 @@
 /**
  * The RPCs between the app and the server. The server registers handlers for it (`server.ts`); the app
  * reads through `experimental_useRpcQuery`, which takes the contract as a value, and writes through
- * `useRpc<typeof rpcContract>()`. So this module must not import the SDK at run time: bb provides the SDK
+ * `useRpc<typeof rpcContract>()`. So this module must not import the SDK at run time: VesnALIA provides the SDK
  * root to the server bundle only, and a git install builds the app without it. `satisfies` gives the
  * checks `defineRpcContract` would.
  *
  * Every read carries `LEARNING_TAG`; the server invalidates it whenever an offer, a session or an
  * orientation changes, and every open banner, tab and menu reads again.
  */
-import type { PluginRpcContract } from "@get-bb/plugin-sdk";
+import type { PluginRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { OrientationBlockSchema, OrientationDepthSchema, OrientationSchema } from "./orientation";

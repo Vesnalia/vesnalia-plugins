@@ -1,4 +1,4 @@
-# release-pipeline run --dry-run — 2026-11-11 EST, thread thr_3p7dibb9a3, branch bb/hybrid-release-pipeline-the-deterministic-driver-thr_3p7dibb9a3 at cdf78df
+# release-pipeline run --dry-run — 2026-11-11 EST, thread thr_3p7dibb9a3, branch alia/hybrid-release-pipeline-the-deterministic-driver-thr_3p7dibb9a3 at cdf78df
 # Nothing below is written, committed, tagged, pushed or published: it is the plan, and every line reproduces on this branch.
 
 release-pipeline: run (dry run — nothing is written, tagged, pushed or published)
@@ -53,7 +53,7 @@ release-pipeline: run (dry run — nothing is written, tagged, pushed or publish
     
     #### The board's lanes
     
-    - **A lane's name and caret light up as a chip on hover.** The dropdown chips' faint tint read as nothing on the plain canvas; the pair now takes bb's interactive-state fill and its caret sharpens to full ink, so the lane menu reads as a target before you click it.
+    - **A lane's name and caret light up as a chip on hover.** The dropdown chips' faint tint read as nothing on the plain canvas; the pair now takes VesnALIA's interactive-state fill and its caret sharpens to full ink, so the lane menu reads as a target before you click it.
     
     ### Fixed
     

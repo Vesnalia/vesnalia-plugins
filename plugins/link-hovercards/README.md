@@ -1,7 +1,7 @@
 # Link Hovercards
 
-A [BB](https://getbb.app) plugin. Rest the pointer on a GitHub or Linear link
-anywhere in BB, or long-press it on a touch screen, and a card shows what it
+A [VesnALIA](https://getbb.app) plugin. Rest the pointer on a GitHub or Linear link
+anywhere in VesnALIA, or long-press it on a touch screen, and a card shows what it
 points at. You don't have to leave the thread.
 
 <p>
@@ -23,16 +23,16 @@ panels and every other part of the app.
 ## Install
 
 ```
-bb plugin install git:https://github.com/bborn/bb-plugin-link-hovercards.git
+alia plugin install git:https://github.com/bborn/bb-plugin-link-hovercards.git
 ```
 
-Or install **Link Hovercards** from the BB Community marketplace.
+Or install **Link Hovercards** from the VesnALIA Community marketplace.
 
 ## Requirements
 
-- **BB 0.44 or newer** (plugin SDK 0.5.29+).
+- **VesnALIA 0.44 or newer** (plugin SDK 0.5.29+).
 - **GitHub:** the [GitHub CLI](https://cli.github.com) signed in (`gh auth login`)
-  on the machine that runs the BB server. Cards show what that account can see.
+  on the machine that runs the VesnALIA server. Cards show what that account can see.
 - **Linear (optional):** a personal API key from Linear → Settings → Security &
   access, pasted into **Settings → Plugins → Link Hovercards → Linear API keys**.
   A key belongs to one workspace, so separate several with commas. The plugin
@@ -56,7 +56,7 @@ Or install **Link Hovercards** from the BB Community marketplace.
 - `server.ts` answers the `github` and `linear` RPCs, and caches answers and
   shares identical requests that are still in flight. Linear keys are secret
   settings and never reach the browser.
-- `host.ts` runs `gh pr view` and `gh api` on the BB server's machine, because a
+- `host.ts` runs `gh pr view` and `gh api` on the VesnALIA server's machine, because a
   plugin server entry can't start processes.
 
 ## Develop
@@ -65,8 +65,8 @@ Or install **Link Hovercards** from the BB Community marketplace.
 npm install
 npm test
 npm run typecheck
-bb plugin install .
-bb plugin build && bb plugin reload link-hovercards
+alia plugin install .
+alia plugin build && alia plugin reload link-hovercards
 ```
 
 ## License

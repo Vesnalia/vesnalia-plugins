@@ -1,6 +1,6 @@
 ## Give every specialist a clear role
 
-Create reusable profiles with instructions and optional provider, model, reasoning and permission defaults. Start focused threads or file jobs through BB Tasks using the included command reference.
+Create reusable profiles with instructions and optional provider, model, reasoning and permission defaults. Start focused threads or file jobs through VesnALIA Tasks using the included command reference.
 
 ## Optional companions
 

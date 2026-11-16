@@ -52,7 +52,7 @@ async function setup(rules: AutoCompactRules = { mate: RULE, crew: OFF }, kv = m
 }
 
 describe("sendCompactingIfDue", () => {
-  it("asks bb to compact first when autocompact would compact the thread now, and marks the idle stretch", async () => {
+  it("asks VesnALIA to compact first when autocompact would compact the thread now, and marks the idle stretch", async () => {
     const { threads, store, log, mate, lastTurn, deps, send } = await setup();
 
     await sendCompactingIfDue(deps, mate.id, "auto", send("hello"));
@@ -103,8 +103,8 @@ describe("sendCompactingIfDue", () => {
     expect(threads.callsTo("compact")).toEqual([]);
   });
 
-  describe("when bb fails the request", () => {
-    it("sends the message as asked after a refusal, which comes before bb accepts anything, and relaxes the mark", async () => {
+  describe("when VesnALIA fails the request", () => {
+    it("sends the message as asked after a refusal, which comes before VesnALIA accepts anything, and relaxes the mark", async () => {
       const { threads, store, log, mate, lastTurn, deps } = await setup();
       const accepted: SendMode[] = [];
       const send = async (mode: SendMode) => {
@@ -118,16 +118,16 @@ describe("sendCompactingIfDue", () => {
       expect(threads.sent).toEqual([]);
       expect(await store.compactionMark(mate.id)).toEqual({ afterSeq: lastTurn.seq, ok: false, at: NOW });
       expect(log.warnings).toEqual([
-        `bb would not compact ${mate.id} before a message to it, so the message goes as it is: HTTP 409: Context can only be compacted while the thread is idle or errored`,
+        `alia would not compact ${mate.id} before a message to it, so the message goes as it is: HTTP 409: Context can only be compacted while the thread is idle or errored`,
       ]);
     });
 
-    it("sends nothing again when the request failed after bb may have accepted it, and keeps the mark as accepted", async () => {
+    it("sends nothing again when the request failed after VesnALIA may have accepted it, and keeps the mark as accepted", async () => {
       const { store, mate, lastTurn, deps } = await setup();
       const accepted: SendMode[] = [];
       const send = async (mode: SendMode) => {
         accepted.push(mode);
-        // bb took it, and the answer was lost on the way back.
+        // VesnALIA took it, and the answer was lost on the way back.
         throw new TypeError("fetch failed");
       };
 
@@ -230,9 +230,9 @@ describe("sendCompactingIfDue", () => {
       expect(threads.callsTo("compact")).toEqual([]);
     });
 
-    it("sends as asked when a turn of bb's own ended while the message was assessing under the lock", async () => {
+    it("sends as asked when a turn of VesnALIA's own ended while the message was assessing under the lock", async () => {
       const { threads, store, mate, deps, whenLockRequested } = await setup();
-      // The under-lock assessment's context read is held; a message sent straight through bb runs a whole
+      // The under-lock assessment's context read is held; a message sent straight through VesnALIA runs a whole
       // turn meanwhile, so the thread is at rest again, but one minute after a turn, not ninety.
       let release: () => void = () => {};
       whenLockRequested(() => (release = threads.hold("contextUsage")));

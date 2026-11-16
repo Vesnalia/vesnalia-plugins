@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, waitFor, within } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { requestPanelFocus } from "../src/commands";
 import { LogRow, type LogRowProps } from "../src/log-row";
 import { SessionLogPanel } from "../src/panel";

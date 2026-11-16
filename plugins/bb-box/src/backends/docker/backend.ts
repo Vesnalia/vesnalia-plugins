@@ -1,16 +1,16 @@
 // The Docker backend: Linux boxes as containers on one Docker host, through
-// the docker CLI on BB's server (cli.ts). Commands, file copies and the
-// desktop's stream all go through `docker exec` (transport.ts), so bb-box
+// the docker CLI on VesnALIA's server (cli.ts). Commands, file copies and the
+// desktop's stream all go through `docker exec` (transport.ts), so alia-box
 // needs no network path to a box, and a Docker host over SSH works as the
 // local socket does (031).
 //
 // - Acquire: the box's container is named bbbox-<box ID>, so it is claimed
 //   before anything is made. It is made with its owner in its labels, on a
-//   network of bb-box's own, then started; its main process, setup/docker/
-//   start, writes /run/bb-box/ready once the box is up. There is no warm
+//   network of alia-box's own, then started; its main process, setup/docker/
+//   start, writes /run/alia-box/ready once the box is up. There is no warm
 //   pool: a container is ready in about a second.
 // - Capacity: the host's memory, less a reserve and the limits of the
-//   running bb-box containers; a most-boxes setting, counting every
+//   running alia-box containers; a most-boxes setting, counting every
 //   install's; and boxes per card for GPU boxes, from the cards the
 //   NVIDIA Container Toolkit lists as CDI devices. Boxes share the host's
 //   disk, so there is no disk limit, and a box keeps its image's disk.
@@ -82,7 +82,7 @@ import { DockerCli, LABELS, NO_SUCH, abortable, sshReuse, type ContainerInfo, ty
 import { BOX_START, boxVolumeName, createArgs, dockerVolumeCreateArgs, dockerVolumesOfArgs, hostnameOf, VOLUME_OF, type FirstStart } from "./box-container.ts";
 import { containerLxcfsProbeArgs, lxcfsFromContainerProbe, lxcfsFromProbe, lxcfsProbeArgs, type LxcfsOnHost } from "./lxcfs.ts";
 import { allotCpus, cpusBothAllow, cpusToPinTo, daemonCpusFromRefusal, formatCpuList, hostCpusFromProbe, movesOntoFreeCpus, resizeCpus, type CpuList } from "./cpus.ts";
-import { BB_MACHINE, DOCKER_KINDS, IMAGE_VERSION, type DockerConfig, type DockerKind } from "./config.ts";
+import { ALIA_MACHINE, DOCKER_KINDS, IMAGE_VERSION, type DockerConfig, type DockerKind } from "./config.ts";
 import { judgeImage, recordFromJson, type ImageRecord } from "../images.ts";
 import { CURSOR_HELPER, ImageFile, SELKIES_DISPLAY, followPointer, SelkiesPresence, WAYLAND_SELKIES_DISPLAY, selkiesDisplay } from "../selkies.ts";
 import { BOX_USER, DockerTransport } from "./transport.ts";
@@ -140,18 +140,18 @@ import { PRODUCT } from "../../brand.ts";
 import { withDesktopForkSafety } from "../../core/identity.ts";
 const READY_TIMEOUT_MS = 60_000;
 /** setup/docker/start writes it once the box is up. /run is a tmpfs, so it is new at each start. */
-const READY_FILE = "/run/bb-box/ready";
-const HELD_FILE = "/run/bb-box/held";
-const FORK_RELEASES = "/var/lib/bb-box/";
+const READY_FILE = "/run/alia-box/ready";
+const HELD_FILE = "/run/alia-box/held";
+const FORK_RELEASES = "/var/lib/alia-box/";
 const RELEASE_FORK = `install -d -m 0755 ${FORK_RELEASES} && printf '%s' "$1" >${FORK_RELEASES}fork-released`;
-const MACHINE_ATTACH_FIX = "Set machine-docker-host to wsl://<distro> on this backend. The host stays bb:<machine ID>. dockerd stays on its unix socket.";
+const MACHINE_ATTACH_FIX = "Set machine-docker-host to wsl://<distro> on this backend. The host stays VesnALIA:<machine ID>. dockerd stays on its unix socket.";
 const VNC_PORT = 5900;
 /** The desktop image writes a fresh VNC password here at each start, readable by the box user. */
-const VNC_PASSWORD_FILE = "/var/lib/bb-box/vnc-password";
-const DISPLAY_MODE_FILE = "/run/bb-box/display-mode";
-const DISPLAY_ENV = "DISPLAY=:99 XAUTHORITY=/run/bb-box/Xauthority";
+const VNC_PASSWORD_FILE = "/var/lib/alia-box/vnc-password";
+const DISPLAY_MODE_FILE = "/run/alia-box/display-mode";
+const DISPLAY_ENV = "DISPLAY=:99 XAUTHORITY=/run/alia-box/Xauthority";
 /** The Wayland desktop's display script, which resizes it (048). */
-const DISPLAY_SCRIPT = "/usr/local/libexec/bb-box/display";
+const DISPLAY_SCRIPT = "/usr/local/libexec/alia-box/display";
 /** The user wayvnc signs in, with the VNC password, on a Wayland desktop (048). */
 const WAYVNC_USER = "box";
 const MiB_PER_GiB = 1024;
@@ -200,7 +200,7 @@ export interface DockerBackendOptions {
   readonly ssh?: string;
   /** Where a Wayland box's image has Selkies' launcher, instead of SELKIES_LAUNCHER: a file the fake docker finds, in tests. */
   readonly selkiesLauncher?: string;
-  /** Where a Wayland box's image has bb-box-cursor, instead of CURSOR_HELPER: a file the test finds, in tests. */
+  /** Where a Wayland box's image has alia-box-cursor, instead of CURSOR_HELPER: a file the test finds, in tests. */
   readonly cursorHelper?: string;
   /** The longest an acquire may take, instead of the kind's. */
   readonly readyTimeoutMs?: number;
@@ -227,9 +227,9 @@ const BUILD_TARGET: Readonly<Record<DockerKind, string>> = {
 export const DOCKER_CHECK = String.raw`t() { name=$1; shift; if out=$("$@" 2>&1); then echo "$name ok   $(echo "$out" | head -n 1)"; else echo "$name FAIL $(echo "$out" | head -n 1)"; fi; }
 for tool in node git gh claude codex pi rg fd jj uv; do t "$tool" "$tool" --version; done
 [ "${"$"}{BBBOX_DOCKERD:-0}" != 1 ] || t "docker on first use" docker version --format '{{.Server.Version}}'
-if [ -e /usr/local/libexec/bb-box/display ]; then
-  for i in $(seq 1 60); do [ -s /run/bb-box/display-mode ] && break; sleep 1; done
-  t "display" cat /run/bb-box/display-mode
+if [ -e /usr/local/libexec/alia-box/display ]; then
+  for i in $(seq 1 60); do [ -s /run/alia-box/display-mode ] && break; sleep 1; done
+  t "display" cat /run/alia-box/display-mode
   ! command -v google-chrome >/dev/null || t "Chrome DevTools" sh -c 'd=$(mktemp -d); google-chrome --headless=new --no-first-run --user-data-dir="$d" --remote-debugging-port=9334 about:blank >/dev/null 2>&1 & c=$!; v=; for i in $(seq 1 60); do v=$(curl -sf http://127.0.0.1:9334/json/version) && break; sleep 0.25; done; kill $c; wait $c; rm -rf "$d"; echo "$v" | grep -o "Chrome/[0-9.]*"'
 fi`;
 
@@ -256,7 +256,7 @@ function runScript(script: string, args: readonly string[], env: NodeJS.ProcessE
   });
 }
 
-/** A container bb-box is making, counted against the host until docker lists it. */
+/** A container alia-box is making, counted against the host until docker lists it. */
 interface Placing {
   readonly backendId: string;
   readonly name: string;
@@ -318,7 +318,7 @@ const NONE_UNPLACED: Unplaced = { count: 0, memoryMiB: 0, gpuDesktops: 0 };
 
 interface HostState {
   readonly info: DockerInfo;
-  /** Every bb-box container on the host, of every install. */
+  /** Every alia-box container on the host, of every install. */
   readonly containers: readonly ContainerInfo[];
   readonly placing: readonly Placing[];
 }
@@ -363,7 +363,7 @@ const NAME_KEY = "host-name";
 /** The storage key of the host's OS, learned from a daemon over ssh://. */
 const OS_KEY = "host-os";
 
-/** This process's platform as a guest OS word: BB's server, for a local daemon. */
+/** This process's platform as a guest OS word: VesnALIA's server, for a local daemon. */
 function platformOs(platform: string): GuestOs {
   return platform === "darwin" ? "macos" : platform === "win32" ? "windows" : "linux";
 }
@@ -564,11 +564,11 @@ function kindTable(docker: string[], gpuDocker: boolean): Record<DockerKind, Box
   };
 }
 
-/** Where the docker CLI goes, for people: the host of an ssh:// address, a BB machine's name, or the local daemon. */
+/** Where the docker CLI goes, for people: the host of an ssh:// address, a VesnALIA machine's name, or the local daemon. */
 function hostWords(host: string | null, machines?: MachineAccess): string {
   if (!host) return "the local Docker host";
-  const machine = BB_MACHINE.exec(host)?.[1];
-  if (machine) return machines?.name(machine) ?? `BB machine ${machine}`;
+  const machine = ALIA_MACHINE.exec(host)?.[1];
+  if (machine) return machines?.name(machine) ?? `VesnALIA machine ${machine}`;
   if (host.startsWith("ssh://")) return host.slice(6).replace(/^[^@]*@/, "");
   if (host.startsWith("wsl://")) return host.slice("wsl://".length);
   return host;
@@ -599,15 +599,15 @@ export class DockerBackend implements Backend {
   readonly #cli: DockerCli;
   /** The daemon's facts, as it last gave them. */
   #info: DockerInfo | null = null;
-  /** Whether the desktop image's start points Xorg at the GPU placed, from its labels as last seen; null until bb-box has looked (#283). */
+  /** Whether the desktop image's start points Xorg at the GPU placed, from its labels as last seen; null until alia-box has looked (#283). */
   #gpuBusId: boolean | null = null;
-  /** The host's name as last known, kept in storage so a restart shows it before the daemon or BB has answered again (#265). */
+  /** The host's name as last known, kept in storage so a restart shows it before the daemon or VesnALIA has answered again (#265). */
   #knownName: string | null = null;
-  /** The host's OS as last learned, from BB for a BB machine or from the daemon over ssh://, kept with the name. */
+  /** The host's OS as last learned, from VesnALIA for a VesnALIA machine or from the daemon over ssh://, kept with the name. */
   #knownOs: GuestOs | null = null;
   /** Whether each Wayland box's image has Selkies (060). */
   readonly #selkies: SelkiesPresence;
-  /** Whether each Wayland box's image has bb-box-cursor (060). */
+  /** Whether each Wayland box's image has alia-box-cursor (060). */
   readonly #cursor: ImageFile;
   readonly #cursorHelper: string;
 
@@ -655,7 +655,7 @@ export class DockerBackend implements Backend {
     const machines = context.machines;
     this.#cli = options.cliReachingAHostAnotherBackendMade ?? (machine
       ? new DockerCli(machines?.dockerHost(machine) ?? null, options.binary, async () => {
-          if (!machines) throw new Error(`${PRODUCT} reaches BB machine ${machine} only when it runs in BB.`);
+          if (!machines) throw new Error(`${PRODUCT} reaches VesnALIA machine ${machine} only when it runs in VesnALIA.`);
           await machines.ready(machine);
         })
       : new DockerCli(config.host, options.binary));
@@ -664,7 +664,7 @@ export class DockerBackend implements Backend {
     void this.#recallName();
   }
 
-  /** Reads the name kept from the last run, and asks the daemon once when none is kept and the host is not a BB machine. */
+  /** Reads the name kept from the last run, and asks the daemon once when none is kept and the host is not a VesnALIA machine. */
   async #recallName(): Promise<void> {
     try {
       const kept = await this.#context.storage.get<string>(NAME_KEY);
@@ -688,7 +688,7 @@ export class DockerBackend implements Backend {
     await this.#context.storage.set(NAME_KEY, name).catch(() => {});
   }
 
-  /** Remembers the host's OS, as BB or the daemon over ssh:// said it, for the next start. */
+  /** Remembers the host's OS, as VesnALIA or the daemon over ssh:// said it, for the next start. */
   async #keepOs(os: GuestOs): Promise<void> {
     if (os === this.#knownOs) return;
     this.#knownOs = os;
@@ -696,7 +696,7 @@ export class DockerBackend implements Backend {
   }
 
   /**
-   * The OS of the machine the daemon runs on: BB's word for a BB machine
+   * The OS of the machine the daemon runs on: VesnALIA's word for a VesnALIA machine
    * (its host entry knows a Windows PC under WSL), kept so a restart knows
    * it before the host entry has answered again; this process's platform
    * for a local daemon; and the daemon's own words for one over ssh://,
@@ -725,13 +725,13 @@ export class DockerBackend implements Backend {
   }
 
   /**
-   * The Docker host for people: a BB machine by its name in BB, else by its
+   * The Docker host for people: a VesnALIA machine by its name in VesnALIA, else by its
    * own name once the daemon has answered (docker info's Name), else by its
    * address; none for a local daemon not yet asked.
    */
   get hosts(): readonly string[] {
     if (this.#config.machine) {
-      // The machine's name as BB has it (042); the last known one while BB's list has not answered yet.
+      // The machine's name as VesnALIA has it (042); the last known one while VesnALIA's list has not answered yet.
       const named = this.#context.machines?.name(this.#config.machine) ?? null;
       if (named) void this.#keepName(named);
       return [named ?? this.#knownName ?? hostWords(this.#config.host, this.#context.machines)];
@@ -798,16 +798,16 @@ export class DockerBackend implements Backend {
     return kind;
   }
 
-  /** How to build a missing or old image: on a BB machine, through bb-box itself (042). */
+  /** How to build a missing or old image: on a VesnALIA machine, through alia-box itself (042). */
   #buildFix(otherwise: string): string {
     const machine = this.#config.machine;
     if (!machine) return otherwise;
-    // By its name in BB, which the command takes, else by its ID.
+    // By its name in VesnALIA, which the command takes, else by its ID.
     const named = this.#context.machines?.name(machine) ?? machine;
-    return `Run bb box docker-build ${/^[A-Za-z0-9_.-]+$/.test(named) ? named : machine}, or turn Docker on ${this.#host} off and on in ${PRODUCT}'s settings, to build it there.`;
+    return `Run alia box docker-build ${/^[A-Za-z0-9_.-]+$/.test(named) ? named : machine}, or turn Docker on ${this.#host} off and on in ${PRODUCT}'s settings, to build it there.`;
   }
 
-  /** The host's name for people: a BB machine's as BB has it, else as the daemon gives it once it has answered. */
+  /** The host's name for people: a VesnALIA machine's as VesnALIA has it, else as the daemon gives it once it has answered. */
   get #host(): string {
     if (this.#config.machine) return hostWords(this.#config.host, this.#context.machines);
     return this.#info?.name || hostWords(this.#config.host);
@@ -818,10 +818,10 @@ export class DockerBackend implements Backend {
     const part = this.#gpuAsked(kind, size.gpu);
     const refusedPart = this.#partRefusal(kind, part);
     if (refusedPart) return { ok: false, message: refusedPart.person, agentMessage: refusedPart.agent, warm: null, hosts: [{ host: this.#host, ok: false, limits: [] }] };
-    // A BB machine that is offline takes no box, said at once from BB's view of it, with no call to it (042).
+    // A VesnALIA machine that is offline takes no box, said at once from VesnALIA's view of it, with no call to it (042).
     const machine = this.#config.machine;
     if (machine && (await abortable(this.#context.machines?.connected(machine) ?? Promise.resolve(null), signal)) !== true) {
-      return { ok: false, message: `${this.#host} is offline in BB.`, warm: null, hosts: [{ host: this.#host, ok: false, limits: [] }] };
+      return { ok: false, message: `${this.#host} is offline in VesnALIA.`, warm: null, hosts: [{ host: this.#host, ok: false, limits: [] }] };
     }
     let state: HostState;
     try {
@@ -1023,7 +1023,7 @@ export class DockerBackend implements Backend {
       return {
         is: "refused",
         refusal: {
-          person: `${capitalise(host)} cannot give a box a GPU now: ${why}. Run bb box doctor.`,
+          person: `${capitalise(host)} cannot give a box a GPU now: ${why}. Run alia box doctor.`,
           agent: `Not made: ${host} cannot give a box a GPU now: ${why}. Ask for gpu none, or ask the user. ${PRODUCT} changed nothing.`,
         },
         limits: [],
@@ -1042,7 +1042,7 @@ export class DockerBackend implements Backend {
     return { is: "refused", refusal: placementRefusal(host, part, what, result.blocks, await this.#titles(threadsNamed(result.blocks)), threadId), limits };
   }
 
-  /** The daemon's facts and every bb-box container on the host. */
+  /** The daemon's facts and every alia-box container on the host. */
   async #state(signal?: AbortSignal): Promise<HostState> {
     const [info, containers] = await Promise.all([this.#cli.info(signal), this.#cli.list({ [LABELS.backend]: "docker" }, signal)]);
     this.#info = info;
@@ -1130,7 +1130,7 @@ export class DockerBackend implements Backend {
     const other = this.#otherBackendOnDaemon();
     if (other === null) return null;
     return {
-      person: `${this.label} reaches the same Docker daemon as the backend ${other}, so ${PRODUCT} places no GPU box through it: two backends on one daemon would each count only their own boxes on its cards. Ask for gpu none here, or remove one of them in BB Box's settings.`,
+      person: `${this.label} reaches the same Docker daemon as the backend ${other}, so ${PRODUCT} places no GPU box through it: two backends on one daemon would each count only their own boxes on its cards. Ask for gpu none here, or remove one of them in VesnALIA Box's settings.`,
       agent: `Not made: ${this.label} reaches the same Docker daemon as another backend, so ${PRODUCT} places no GPU box through it. Ask for gpu none, or for another provider, or ask the user. ${PRODUCT} changed nothing.`,
     };
   }
@@ -1445,7 +1445,7 @@ export class DockerBackend implements Backend {
   #missedCards(box: BoxIdentity, host: string, missed: readonly WrongCard[], refusal: GpuRefusal | null): BackendError {
     const said = missed.map((wrong, at) => `${at ? "then " : ""}${wrong.named}: ${wrong.why}`).join("; ");
     const cards = listOf(missed.map((wrong) => wrong.named));
-    const person = `${box.name} did not get its card on ${host}: ${said}. ${PRODUCT} removed what it made, and new boxes leave ${cards} out for 10 minutes.${refusal ? ` No other card could take it: ${refusal.person}` : " Run bb box doctor."}`;
+    const person = `${box.name} did not get its card on ${host}: ${said}. ${PRODUCT} removed what it made, and new boxes leave ${cards} out for 10 minutes.${refusal ? ` No other card could take it: ${refusal.person}` : " Run alia box doctor."}`;
     const agentRefusal = refusal?.agent.replace(/^Not made: /, "").replace(new RegExp(` ${PRODUCT} changed nothing\\.$`), "");
     const agent = `Not made: ${box.name} did not get its card: ${said}. ${PRODUCT} removed what it made.${agentRefusal ? ` No other card could take it: ${agentRefusal}` : " Ask the user."}`;
     return new BackendError("no_capacity", person, agent);
@@ -1828,7 +1828,7 @@ export class DockerBackend implements Backend {
     }
     if (to === "whole" && known && !known.uuidKnown) {
       const refusal: GpuRefusal = {
-        person: `No card is free for ${name} alone: ${PRODUCT} could not read ${named}, so it cannot tell what uses it. Keep the GPU shared, or run bb box doctor.`,
+        person: `No card is free for ${name} alone: ${PRODUCT} could not read ${named}, so it cannot tell what uses it. Keep the GPU shared, or run alia box doctor.`,
         agent: `Not resized: no card is free for ${name} alone: ${PRODUCT} could not read ${named}. Keep the GPU shared, or ask the user. ${PRODUCT} changed nothing.`,
       };
       return change("live", refusal.person, refusal);
@@ -2033,7 +2033,7 @@ export class DockerBackend implements Backend {
   }
 
   async transports(guest: Guest, kind: string): Promise<BoxTransports> {
-    // The transport's commands go straight to the CLI, so a BB machine's relay is made ready first.
+    // The transport's commands go straight to the CLI, so a VesnALIA machine's relay is made ready first.
     await this.#cli.prepare();
     const command = new DockerTransport(this.#cli, guest.ref);
     const capabilities = this.kinds().find((candidate) => candidate.id === kind)?.capabilities;
@@ -2041,7 +2041,7 @@ export class DockerBackend implements Backend {
     const wayland = kind === "linux-desktop-wayland-cpu";
     // A Wayland box of an image built before Selkies was in it has no video (060).
     const video = !wayland || (await this.#selkies.has(guest.ref, command));
-    // An image with bb-box-cursor (060): Sway 1.11, whose streams paint no pointer, so none is hidden, and Sway keeps a theme
+    // An image with alia-box-cursor (060): Sway 1.11, whose streams paint no pointer, so none is hidden, and Sway keeps a theme
     // the cursor session and wayvnc send as the pointer's shape. One without keeps #707's hidden theme.
     const sends = wayland && (await this.#cursor.has(guest.ref, command));
     const displays = (capabilities?.displays ?? []).filter((display) => video || display.protocol !== "selkies").map(
@@ -2064,7 +2064,7 @@ export class DockerBackend implements Backend {
               minSize: MIN_DESKTOP,
             },
     );
-    // No SSH server runs in a box, and its Docker is reached only through it, so only BB's server reaches it.
+    // No SSH server runs in a box, and its Docker is reached only through it, so only VesnALIA's server reaches it.
     return { command, displays, access: null };
   }
 
@@ -2085,7 +2085,7 @@ export class DockerBackend implements Backend {
         version instanceof Error ? version.message : version.stderr.trim() || `exit code ${version.exitCode}`,
         this.#config.host?.startsWith("wsl://")
           ? `Check that wsl.exe can start ${hostWords(this.#config.host)} and that docker system dial-stdio there reaches Docker.`
-          : "Install the docker CLI on BB's server, on the PATH of the user BB runs as.",
+          : "Install the docker CLI on VesnALIA's server, on the PATH of the user VesnALIA runs as.",
       );
     } else {
       push("docker.cli", "docker CLI", "ok", version.stdout.trim());
@@ -2098,14 +2098,14 @@ export class DockerBackend implements Backend {
       } catch (error) {
         if (signal?.aborted) throw error;
         const fix = this.#config.machine
-          ? `Check that ${this.#host} is connected in BB and that Docker runs there. bb box docker-check ${this.#config.machine} reaches it through ${PRODUCT}'s relay.`
+          ? `Check that ${this.#host} is connected in VesnALIA and that Docker runs there. VesnALIA box docker-check ${this.#config.machine} reaches it through ${PRODUCT}'s relay.`
           : !this.#config.host
-          ? `Start Docker on BB's server, and let the user BB runs as use it (on Linux, add it to the docker group), or set the Docker host in ${PRODUCT}'s settings.`
+          ? `Start Docker on VesnALIA's server, and let the user VesnALIA runs as use it (on Linux, add it to the docker group), or set the Docker host in ${PRODUCT}'s settings.`
           : this.#config.host.startsWith("ssh://")
-            ? `Check that the user BB runs as logs in to ${hostWords(this.#config.host)} over SSH without a prompt, and that the user it logs in as may use Docker there.`
+            ? `Check that the user VesnALIA runs as logs in to ${hostWords(this.#config.host)} over SSH without a prompt, and that the user it logs in as may use Docker there.`
             : this.#config.host.startsWith("wsl://")
               ? `Check that wsl.exe can start ${hostWords(this.#config.host)} and that docker system dial-stdio there reaches Docker.`
-              : `Check that ${this.#config.host} is a Docker socket the user BB runs as may use.`;
+              : `Check that ${this.#config.host} is a Docker socket the user VesnALIA runs as may use.`;
         push("docker.daemon", "Docker daemon", "fail", message(error), fix);
       }
     } else {
@@ -2139,7 +2139,7 @@ export class DockerBackend implements Backend {
           "SSH connection reuse",
           "warn",
           `Each docker call to ${reuse.host} logs in over SSH again, which took about 0.2 s on a LAN against 30 ms on a shared connection (#97).`,
-          `In the ~/.ssh/config of the user BB runs as, give Host ${reuse.host} the lines ControlMaster auto, ControlPath ~/.ssh/cm-%C and ControlPersist 10m. See setup/docker/README.md.`,
+          `In the ~/.ssh/config of the user VesnALIA runs as, give Host ${reuse.host} the lines ControlMaster auto, ControlPath ~/.ssh/cm-%C and ControlPersist 10m. See setup/docker/README.md.`,
         );
       }
 
@@ -2187,7 +2187,7 @@ export class DockerBackend implements Backend {
       const judging = Promise.all([
         this.#context.images?.pins("linux") ?? null,
         this.#context.images?.pins("linux-desktop") ?? null,
-        this.#context.images?.bbApp(signal) ?? null,
+        this.#context.images?.aliaApp(signal) ?? null,
         this.#context.images?.chrome?.("x86_64") ?? null,
         this.#context.images?.chrome?.("arm64") ?? null,
       ]).catch(() => [null, null, null, null, null] as const);
@@ -2219,8 +2219,8 @@ export class DockerBackend implements Backend {
           const [linuxPins, desktopPins, app, chromeAmd, chromeArm] = await judging;
           const judged = judgeImage(
             record,
-            { os: "linux", pins: serves.includes("linux") ? linuxPins : desktopPins, bbApp: app, pinChrome: record?.arch === "arm64" ? chromeArm : chromeAmd },
-            this.#buildFix(`Build it again with this ${PRODUCT}'s setup/docker/build.sh --bb-url <BB's server URL>.`),
+            { os: "linux", pins: serves.includes("linux") ? linuxPins : desktopPins, aliaApp: app, pinChrome: record?.arch === "arm64" ? chromeArm : chromeAmd },
+            this.#buildFix(`Build it again with this ${PRODUCT}'s setup/docker/build.sh --alia-url <VesnALIA's server URL>.`),
           );
           push(id, name, judged.status, `For ${kinds} boxes. ${judged.detail}`, judged.fix);
         } else {
@@ -2331,7 +2331,7 @@ export class DockerBackend implements Backend {
     const sharing = this.#share ? backendsOn(this.#share, this.#daemonNow()).filter((id) => id !== this.id) : [];
     if (!sharing.length) return;
     const refused = this.#otherBackendOnDaemon();
-    const fix = "Remove the other backend in BB Box's settings, or point it at another Docker host.";
+    const fix = "Remove the other backend in VesnALIA Box's settings, or point it at another Docker host.";
     if (refused) {
       push("docker.one-backend", "One backend for this daemon", "warn", `${this.label} reaches the same Docker daemon as the backend ${refused}, so ${PRODUCT} places no GPU box through it, as two backends on one daemon would each count only their own boxes on its cards. Boxes with no GPU are made as usual.`, fix);
       return;
@@ -2649,7 +2649,7 @@ export class DockerBackend implements Backend {
     if (!names.includes(copiedInto) && await this.#copies.fenceOf(copiedInto)) await this.#dropDockerVolumeIfUnused(copiedInto, containerName, signal);
   }
 
-  /** The network bb-box keeps its boxes on, made the first time, on which they cannot reach each other. */
+  /** The network alia-box keeps its boxes on, made the first time, on which they cannot reach each other. */
   async #network(signal?: AbortSignal): Promise<void> {
     const network = this.#config.network;
     const found = await this.#cli.run(["network", "inspect", "--format", "{{.Name}}", network], { timeoutMs: 30_000, signal });
@@ -2790,9 +2790,9 @@ export class DockerBackend implements Backend {
    * off in the image, and the image-box label empty, so a box of it is a box.
    */
   async #capture(box: ImageBox, from: ImageBuild, image: string, signal: AbortSignal): Promise<ImageBuild> {
-    const read = await box.command.run("cat /usr/share/bb-box/image.json", { timeoutMs: 15_000, signal, maxOutputBytes: 64 * 1024 });
+    const read = await box.command.run("cat /usr/share/alia-box/image.json", { timeoutMs: 15_000, signal, maxOutputBytes: 64 * 1024 });
     const record = read.exitCode === 0 ? recordFromJson(read.stdout.trim()) : null;
-    if (!record) throw new Error(`Image box ${box.ref} has no image record in /usr/share/bb-box/image.json, which finalizing writes.`);
+    if (!record) throw new Error(`Image box ${box.ref} has no image record in /usr/share/alia-box/image.json, which finalizing writes.`);
     const tag = `bbbox-image/${image}:${record.build.replace(/^build\./, "")}`;
     await this.#cli.ok(["container", "stop", "--time", "30", box.ref], { timeoutMs: 120_000, signal });
     const label = (key: string, value: string) => ["--change", `LABEL ${key}=${JSON.stringify(value)}`];
@@ -2846,13 +2846,13 @@ export class DockerBackend implements Backend {
   }
 
   /** A new build of a configured image, by setup/docker/build.sh from `setup`, under a tag of its own until it replaces the image. */
-  async #buildStandard(current: ImageBuild, setup: string, options: { bbUrl: string | null; log: (line: string) => void; signal: AbortSignal }): Promise<ImageBuild> {
+  async #buildStandard(current: ImageBuild, setup: string, options: { aliaUrl: string | null; log: (line: string) => void; signal: AbortSignal }): Promise<ImageBuild> {
     const kind = DOCKER_KINDS.find((candidate) => this.#config.images[candidate] === current.ref);
     if (!kind || !current.current) throw new Error(`${current.ref} is not a configured image.`);
     const tag = `${current.ref.replace(/:[^:/]*$/, "")}:refresh-${Date.now().toString(36)}`;
     await this.#cli.prepare(options.signal);
     const env = { ...process.env, ...(this.#cli.host ? { DOCKER_HOST: this.#cli.host } : {}) };
-    const args = [...(options.bbUrl ? ["--bb-url", options.bbUrl] : []), "--tag", tag, BUILD_TARGET[kind]];
+    const args = [...(options.aliaUrl ? ["--alia-url", options.aliaUrl] : []), "--tag", tag, BUILD_TARGET[kind]];
     const code = await (this.#options.script ?? runScript)(join(setup, "docker", "build.sh"), args, env, options.log, options.signal);
     if (code !== 0) {
       await this.#cli.run(["image", "rm", tag], { timeoutMs: 120_000 }).catch(() => undefined);
@@ -2916,9 +2916,9 @@ export class DockerBackend implements Backend {
   /** Waits for the box's main process to say the box is up, in one `docker exec`. */
   async #ready(ref: string, deadline: number, signal?: AbortSignal, file = READY_FILE): Promise<void> {
     const seconds = Math.max(1, Math.ceil((deadline - Date.now()) / 1000));
-    const script = `i=0; while [ ! -e ${file} ]; do i=$((i+1)); [ "$i" -le ${seconds * 10} ] || exit 3; sleep 0.1; done; echo bb-box-ready`;
+    const script = `i=0; while [ ! -e ${file} ]; do i=$((i+1)); [ "$i" -le ${seconds * 10} ] || exit 3; sleep 0.1; done; echo alia-box-ready`;
     const result = await this.#cli.run(["exec", "--user", BOX_USER, ref, "/bin/sh", "-c", script], { timeoutMs: (seconds + 30) * 1000, signal });
-    if (result.exitCode === 0 && result.stdout.includes("bb-box-ready")) return;
+    if (result.exitCode === 0 && result.stdout.includes("alia-box-ready")) return;
     if (result.exitCode === 0) throw new Error(`docker exec ended without an exit status: ${ref} printed nothing, so exit 0 is not the command's status.`);
     if (signal?.aborted) throw signal.reason;
     const [found] = await this.#cli.inspect([ref], signal).catch(() => []);
@@ -2938,8 +2938,8 @@ export class DockerBackend implements Backend {
   }
 
   /**
-   * The container's address on bb-box's network, shown to people, when the
-   * BB server can reach it: on Linux with rootful Docker on this machine.
+   * The container's address on alia-box's network, shown to people, when the
+   * VesnALIA server can reach it: on Linux with rootful Docker on this machine.
    * Docker Desktop and rootless Docker keep the bridge in a VM or a namespace.
    */
   #address(container: ContainerInfo): string | null {

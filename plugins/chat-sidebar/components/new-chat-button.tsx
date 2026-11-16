@@ -1,8 +1,8 @@
 // "+" for a new chat, aware of the open folder: in a project's folder (or a
 // custom folder about one project) it starts the chat in that project, in a
-// section's folder it files it there, elsewhere it opens bb's New thread as
+// section's folder it files it there, elsewhere it opens VesnALIA's New thread as
 // usual. Right-click to pick any project.
-import { useBbNavigate, type PluginSidebarProject } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, type PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
 
 import {
   ContextMenu,
@@ -34,7 +34,7 @@ export function NewChatButton({
 }) {
   const t = useT();
   const label = useFolderLabel();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { colorOf } = useProjectColors();
 
   const startIn = folder?.startIn ?? null;

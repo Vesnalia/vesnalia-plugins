@@ -26,7 +26,7 @@ test("an HTML image becomes a link to its src, or its srcset's first url", () =>
   expect(linkImages('<img alt="nothing">')).toBe("Image: nothing");
 });
 
-// BB's HTML renders <video src poster> and <source src srcset>, which loaded from wherever they pointed (95-recheck P2 #2).
+// VesnALIA's HTML renders <video src poster> and <source src srcset>, which loaded from wherever they pointed (95-recheck P2 #2).
 test("an HTML video or source becomes links to what it would load", () => {
   expect(linkImages('<video poster="https://evil.test/p.png"></video>')).toBe("[Video poster](https://evil.test/p.png)&lt;/video>");
   expect(linkImages("<VIDEO controls src=https://evil.test/v.mp4 poster='https://evil.test/p.png' title=\"Demo\">")).toBe("[Video: Demo](https://evil.test/v.mp4) [Poster](https://evil.test/p.png)");
@@ -81,7 +81,7 @@ test("formatting HTML, code spans and fences stay as written", () => {
     "This returns `Array<string>`, not `![x]`.\n\n```ts\nconst xs: Array<string> = [];\nif (![\"a\"].includes(kind)) return <img src={logo} />;\n```",
     "- One `a<b>`\n- Two:\n  ```tsx\n  <img src={logo} alt=\"Logo\" />\n  ```\n\n> ```\n> <video poster={p} /> ![x](y)\n> ```\n\n~~~\n<script>![a](b)</script>\n~~~",
     "See [the docs](https://a.example/docs) for `Map<K, V>`.\n\n```\nunclosed <img src=x>",
-    // BB reads no single $ as math (96-recheck-3 P3).
+    // VesnALIA reads no single $ as math (96-recheck-3 P3).
     "Costs $5, and `Array<string>` is fine.",
   ]) expect(linkImages(text)).toBe(text);
   const shown = new DOMParser().parseFromString(linkImages("<details>\n<summary>More</summary>\n\nText\n\n</details>"), "text/html");
@@ -129,9 +129,9 @@ test("code spans it can't be sure of, and what follows a doubtful fence, are cha
   expect(linkImages("![a `]` b](https://evil.test/c.png)")).toBe("\\![a `]` b](https://evil.test/c.png)");
 });
 
-// BB read each of these as raw HTML where linkImages read a paragraph, so the code span or `\<` loaded (96-recheck-3 P2):
+// VesnALIA read each of these as raw HTML where linkImages read a paragraph, so the code span or `\<` loaded (96-recheck-3 P2):
 // `<pre/>` begins CommonMark's 7th HTML block, which runs to a blank line, and a footnote definition is a container.
-test("a code span or \\< that BB reads as raw HTML loads nothing", () => {
+test("a code span or \\< that VesnALIA reads as raw HTML loads nothing", () => {
   const media = ['`<img src="https://evil.test/x.png">`', '\\<Image src="https://evil.test/x.png">', '`<video poster="https://evil.test/x.png">`'];
   for (const [first, next] of [["", ""], ["> ", "> "], ["- ", "  "], ["01. ", "    "]]) {
     for (const payload of media) {
@@ -146,7 +146,7 @@ test("a code span or \\< that BB reads as raw HTML loads nothing", () => {
   expect(linkImages("a \\<b> c")).toBe("a &lt;b> c");
 });
 
-// A footnote reference defined later takes its label's backtick before a code span can, so BB read the tag after it as
+// A footnote reference defined later takes its label's backtick before a code span can, so VesnALIA read the tag after it as
 // raw HTML where linkImages kept it as code (96-recheck-4).
 test("a backtick in a footnote reference's label pairs with nothing", () => {
   const img = '<img src="https://evil.test/x.png">';
@@ -171,7 +171,7 @@ test("a long line of footnote openers is read in linear time", () => {
 }, 60_000);
 
 // An ordered item can interrupt a paragraph only from 1, and an empty one none, so after "a" an "01." line goes on
-// with it, and BB read the "fence" in it as text with raw HTML (96-fixes-4).
+// with it, and VesnALIA read the "fence" in it as text with raw HTML (96-fixes-4).
 test("a list item that can't interrupt a paragraph, or indented code, begins no fence", () => {
   expect(linkImages('a\n01. b\n    ``` <img src="https://evil.test/x.png">')).toBe("a\n01. b\n    ``` [Image](https://evil.test/x.png)");
   expect(linkImages('a\n01. b\n    ```\n    <img src="https://evil.test/x.png">')).toBe("a\n01. b\n    ```\n    [Image](https://evil.test/x.png)");
@@ -184,13 +184,13 @@ test("a list item that can't interrupt a paragraph, or indented code, begins no 
 });
 
 // A backtick fence's info string can't hold a backtick, but the test's `.` stopped at U+2028 and U+2029, so after one
-// it read a fence where BB reads a paragraph, and kept the raw <img> below it as code (bug bash SEC-1).
+// it read a fence where VesnALIA reads a paragraph, and kept the raw <img> below it as code (bug bash SEC-1).
 for (const [name, separator] of [["U+2028", "\u2028"], ["U+2029", "\u2029"]]) {
   test(`a backtick after ${name} in a backtick fence's info string opens no fence, so the image after it stays a link`, () => {
     const url = "https://evil.test/x.png";
     expect(linkImages(`\`\`\`a${separator}\`\n<img src="${url}">\n\`\`\``)).not.toContain("<img");
     expect(linkImages(`\`\`\`a${separator}\`\n![x](${url})\n\`\`\``)).not.toContain(`![x](${url})`);
-    // Blank lines between: BB reads the <img> as an HTML block of its own.
+    // Blank lines between: VesnALIA reads the <img> as an HTML block of its own.
     expect(linkImages(`\`\`\`${separator}\`\n\n<img src="${url}">\n\n\`\`\``)).not.toContain("<img");
     // The opener and the x are a paragraph's lines; only the last ``` (an unclosed fence of its own) may be code.
     const text = `\`\`\`a${separator}\`\nx\n\`\`\``;
@@ -200,7 +200,7 @@ for (const [name, separator] of [["U+2028", "\u2028"], ["U+2029", "\u2029"]]) {
 }
 
 // A table's rows were all changed like prose, so agents' tables of types showed Array&lt;T> (96-recheck-3 P3). A span
-// stays as written where it's one whether BB reads the row as cells or as a paragraph's line.
+// stays as written where it's one whether VesnALIA reads the row as cells or as a paragraph's line.
 test("a code span in a table's cell stays as written", () => {
   for (const text of [
     "| Type | Note |\n|---|:-:|\n| `Array<T>` | `![` and `<img src={logo} />` |\n| `a \\| b<c>` | x |",
@@ -219,8 +219,8 @@ test("a tab at the margin indents the line 4 columns", () => {
   expect(linkImages('  \t<img src="https://evil.test/ti.png">')).toBe("  \t[Image](https://evil.test/ti.png)");
 });
 
-// Keeping top-level indented code as written let BB load an image the reader took for code, after a list item that
-// began empty or a list start the reader refused, which BB reads as a list item's paragraph (71-review-security F1).
+// Keeping top-level indented code as written let VesnALIA load an image the reader took for code, after a list item that
+// began empty or a list start the reader refused, which VesnALIA reads as a list item's paragraph (71-review-security F1).
 test("an image after an empty list item or a refused list start stays a link", () => {
   const img = '<img src="https://evil.test/x.png">';
   const docs = [
@@ -236,7 +236,7 @@ test("an image after an empty list item or a refused list start stays a link", (
   for (const text of docs) expect(linkImages(text), text).not.toMatch(/<(?:img|video|source)\b|(?<!\\)!\[/i);
 });
 
-// BB's Markdown drops a leading BOM and reads an HTML block after it, where backticks are text, but linkImages read
+// VesnALIA's Markdown drops a leading BOM and reads an HTML block after it, where backticks are text, but linkImages read
 // the BOM as a paragraph's and kept the <img> between them as a code span (bug bash SEC-2).
 test("an image in backticks after a BOM and an HTML block's tag stays a link", () => {
   const url = "https://evil.test/x.png";
@@ -246,7 +246,7 @@ test("an image in backticks after a BOM and an HTML block's tag stays a link", (
   }
   // Without the BOM the same text was already safe.
   expect(linkImages(`<div>\n\`<img src="${url}">\``)).not.toContain("<img");
-  // BB drops only one: the BOM is kept, so that it doesn't drop a second, before a tag read as a paragraph's text.
+  // VesnALIA drops only one: the BOM is kept, so that it doesn't drop a second, before a tag read as a paragraph's text.
   const twice = `\uFEFF\uFEFF</details>\n\t\`<img src="${url}">\``;
   expect(linkImages(twice)).toBe(twice);
   expect(linkImages(`\uFEFF<b>\n\`<img src="${url}">\``).startsWith("\uFEFF<b>")).toBe(true);
@@ -304,14 +304,14 @@ test("an image in an image's alt text is its words, however deep", () => {
   expect(linkImages(`${"![".repeat(10_000)}x${"][]".repeat(10_000)}`)).not.toMatch(/(^|[^\\])!\[/);
 });
 
-// A kept <scheme: …> that holds a space isn't an autolink to BB, which read an image in it; and a reference image's
+// A kept <scheme: …> that holds a space isn't an autolink to VesnALIA, which read an image in it; and a reference image's
 // [ref] was copied out unread, an image in it too (bug bash S15, found by the untrusted-parsers harness).
-test("an image inside a kept <scheme: …> that BB can't read as an autolink stays text", () => {
+test("an image inside a kept <scheme: …> that VesnALIA can't read as an autolink stays text", () => {
   const url = "https://evil.test/x.png";
   expect(linkImages(`<https: !<!-- -->[b](${url}) >`)).toBe(`<https: \\![b](${url}) >`);
   expect(linkImages(`x <https: a !<!-- -->[b](${url}) >`)).toBe(`x <https: a \\![b](${url}) >`);
   expect(linkImages(`<https:!<!-- -->[b](${url})[\t'>>`)).toBe(`<https:\\![b](${url})[\t'>>`);
-  // An autolink, without a space, is a link to BB, and stays as written.
+  // An autolink, without a space, is a link to VesnALIA, and stays as written.
   expect(linkImages(`<https:a!<!-- -->[b](${url})>`)).toBe(`<https:a![b](${url})>`);
 });
 
@@ -355,7 +355,7 @@ function htmlLoads(html: string, anchors: boolean): string[] {
   const found: string[] = [];
   for (const element of Array.from(new DOMParser().parseFromString(html, "text/html").body.querySelectorAll("*"))) {
     if (LOADS.has(element.localName)) found.push(`<${element.localName}>`);
-    // An autolink parses as a tag named like `https:`: no element at all to BB.
+    // An autolink parses as a tag named like `https:`: no element at all to VesnALIA.
     if (element instanceof HTMLUnknownElement) continue;
     for (const { name, value } of Array.from(element.attributes)) {
       if (anchors && element.localName === "a") {
@@ -507,7 +507,7 @@ test("resolveLinks keeps a destination it can't resolve as written, as one the U
 });
 
 /**
- * What `markdown` would load, or link to but the web or email, as micromark reads it, as BB's Markdown does: its images,
+ * What `markdown` would load, or link to but the web or email, as micromark reads it, as VesnALIA's Markdown does: its images,
  * and its raw HTML's, read apart from linkImages's own reading of what's code.
  */
 function drawnLoads(markdown: string): string[] {

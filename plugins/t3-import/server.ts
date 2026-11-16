@@ -1,9 +1,9 @@
-// bb-plugin-t3-import: the `bb t3-import` command. `preview` reads T3 Code,
-// bb, and Claude Code state and changes nothing; `run --yes` backs up bb.db
+// alia-plugin-t3-import: the `alia t3-import` command. `preview` reads T3 Code,
+// VesnALIA, and Claude Code state and changes nothing; `run --yes` backs up alia.db
 // and writes the planned threads. See src/importer.ts for the plan rules.
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { PluginCliError, cliCommand, defineCli, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { PluginCliError, cliCommand, defineCli, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   planImport, runImport,
   type ImportFilters, type ImportPlan, type ImporterDeps, type LedgerEntry, type PlannedThread, type RunResult, type SessionMode,
@@ -26,17 +26,17 @@ const selectionOptions = {
     aliases: ["threads"],
     description: "T3 thread ID to import; a selected thread is imported even when settled or archived",
   },
-  "include-settled": { type: "boolean", description: "Also import threads marked settled in T3 Code, as open bb threads" },
+  "include-settled": { type: "boolean", description: "Also import threads marked settled in T3 Code, as open VesnALIA threads" },
   "archive-settled": {
     type: "boolean",
     aliases: ["settled-as-archived"],
-    description: "Also import settled threads, archived in bb at the time T3 settled them (takes precedence over --include-settled)",
+    description: "Also import settled threads, archived in VesnALIA at the time T3 settled them (takes precedence over --include-settled)",
   },
   "exclude-archived": { type: "boolean", description: "Leave out threads archived in T3 Code" },
   "empty-projects": {
     type: "boolean",
     aliases: ["include-empty-projects", "projects-without-threads"],
-    description: "Also create bb projects for selected T3 projects that have no thread to import (ignored with --thread)",
+    description: "Also create VesnALIA projects for selected T3 projects that have no thread to import (ignored with --thread)",
   },
   limit: { type: "integer", min: 1, max: 10_000, description: "Import at most this many threads" },
   session: {
@@ -48,8 +48,8 @@ const selectionOptions = {
   json: { type: "boolean", description: "Print machine-readable JSON" },
 } as const;
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     t3DataDir: {
       type: "string",
       label: "T3 Code data directory",
@@ -64,27 +64,27 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
   const { t3DataDir, claudeHome } = await settings.get();
-  const dataDir = bb.server.experimental_dataDir;
+  const dataDir = alia.server.experimental_dataDir;
 
   async function deps(): Promise<ImporterDeps> {
-    const hostId = (await bb.sdk.system.config()).primaryHostId;
+    const hostId = (await alia.sdk.system.config()).primaryHostId;
     if (hostId === null) {
-      throw new PluginCliError("bb has no primary host yet", { code: "no_primary_host", hint: "Run `bb status` and retry once the server machine is enrolled." });
+      throw new PluginCliError("alia has no primary host yet", { code: "no_primary_host", hint: "Run `alia status` and retry once the server machine is enrolled." });
     }
     const toRef = (project: { id: string; name: string; sources: { hostId: string; path: string }[] }) => ({
       id: project.id, name: project.name, sources: project.sources.map((source) => ({ hostId: source.hostId, path: source.path })),
     });
     return {
       t3DbPath: join(t3DataDir, "state.sqlite"),
-      bbDbPath: join(dataDir, "bb.db"),
+      aliaDbPath: join(dataDir, "alia.db"),
       claudeHome,
       backupDir: join(dataDir, "plugins", "t3-import", "backups"),
       hostId,
-      listProjects: async () => (await bb.sdk.projects.list()).map(toRef),
-      createProject: async (name, path) => toRef(await bb.sdk.projects.create({ name, source: { type: "local_path", hostId, path } })),
+      listProjects: async () => (await alia.sdk.projects.list()).map(toRef),
+      createProject: async (name, path) => toRef(await alia.sdk.projects.create({ name, source: { type: "local_path", hostId, path } })),
       ledger: {
-        get: (id) => bb.storage.kv.get<LedgerEntry>(`${LEDGER_PREFIX}${id}`),
-        set: (id, entry) => bb.storage.kv.set(`${LEDGER_PREFIX}${id}`, entry),
+        get: (id) => alia.storage.kv.get<LedgerEntry>(`${LEDGER_PREFIX}${id}`),
+        set: (id, entry) => alia.storage.kv.set(`${LEDGER_PREFIX}${id}`, entry),
       },
     };
   }
@@ -116,10 +116,10 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.cli.register(defineCli({
+  alia.cli.register(defineCli({
     name: "t3-import",
-    summary: "Import T3 Code threads into bb",
-    description: "Preview first with `bb t3-import preview`; nothing is written until `bb t3-import run --yes`.",
+    summary: "Import T3 Code threads into VesnALIA",
+    description: "Preview first with `alia t3-import preview`; nothing is written until `alia t3-import run --yes`.",
     commands: {
       preview: cliCommand({
         summary: "Show which T3 Code threads would be imported, without changing anything",
@@ -131,9 +131,9 @@ export default async function plugin(bb: BbPluginApi) {
         },
       }),
       run: cliCommand({
-        summary: "Import the previewed threads (backs up bb.db first; requires --yes)",
+        summary: "Import the previewed threads (backs up alia.db first; requires --yes)",
         aliases: ["import"],
-        options: { ...selectionOptions, yes: { type: "boolean", aliases: ["confirm"], description: "Write to bb; without it, only the preview is shown" } },
+        options: { ...selectionOptions, yes: { type: "boolean", aliases: ["confirm"], description: "Write to VesnALIA; without it, only the preview is shown" } },
         async run({ options }) {
           const { deps: resolved, plan: result, mode } = await plan(options);
           if (!options.yes) {
@@ -151,10 +151,10 @@ export default async function plugin(bb: BbPluginApi) {
         summary: "List T3 Code threads this plugin has imported",
         options: { json: { type: "boolean", description: "Print machine-readable JSON" } },
         async run({ options }) {
-          const keys = await bb.storage.kv.list(LEDGER_PREFIX);
+          const keys = await alia.storage.kv.list(LEDGER_PREFIX);
           const entries: (LedgerEntry & { t3ThreadId: string })[] = [];
           for (const key of keys) {
-            const entry = await bb.storage.kv.get<LedgerEntry>(key);
+            const entry = await alia.storage.kv.get<LedgerEntry>(key);
             if (entry) entries.push({ ...entry, t3ThreadId: key.slice(LEDGER_PREFIX.length) });
           }
           entries.sort((a, b) => a.importedAt - b.importedAt);
@@ -163,7 +163,7 @@ export default async function plugin(bb: BbPluginApi) {
           return {
             exitCode: 0,
             stdout: entries.map((entry) =>
-              `${entry.bbThreadId}  from T3 ${entry.t3ThreadId}  session ${entry.sessionMode}${entry.sessionId ? ` ${entry.sessionId}` : ""}  ${new Date(entry.importedAt).toISOString()}`,
+              `${entry.aliaThreadId}  from T3 ${entry.t3ThreadId}  session ${entry.sessionMode}${entry.sessionId ? ` ${entry.sessionId}` : ""}  ${new Date(entry.importedAt).toISOString()}`,
             ).join("\n"),
           };
         },
@@ -185,7 +185,7 @@ function planJson(plan: ImportPlan, mode: SessionMode) {
       reason: thread.reason,
       provider: thread.providerId,
       environmentPath: thread.environmentPath,
-      bbProject: thread.bbProject,
+      aliaProject: thread.aliaProject,
       session: thread.session.kind === "copy"
         ? { kind: "copy", sourceSessionId: thread.session.sourceSessionId }
         : thread.session,
@@ -212,12 +212,12 @@ function formatPlan(plan: ImportPlan, mode: SessionMode, options: { "include-set
     byProject.set(thread.t3.workspaceRoot, list);
   }
   for (const [root, threads] of byProject) {
-    const project = threads[0]!.bbProject;
-    lines.push(`${root} → bb project "${project.name}" (${project.id ?? "will be created"})`);
+    const project = threads[0]!.aliaProject;
+    lines.push(`${root} → VesnALIA project "${project.name}" (${project.id ?? "will be created"})`);
     for (const thread of threads) {
       const flags = [
         thread.t3.archivedAtMs !== null ? "archived" : null,
-        thread.t3.settled ? (thread.action === "import" && thread.t3.archivedAtMs === null && thread.archivedAtMs !== null ? "settled → archived in bb" : "settled") : null,
+        thread.t3.settled ? (thread.action === "import" && thread.t3.archivedAtMs === null && thread.archivedAtMs !== null ? "settled → archived in VesnALIA" : "settled") : null,
       ].filter(Boolean).join(", ");
       const label = `${thread.t3.title}${flags ? ` (${flags})` : ""}`;
       if (thread.action === "skip") {
@@ -230,7 +230,7 @@ function formatPlan(plan: ImportPlan, mode: SessionMode, options: { "include-set
   }
   for (const project of plan.projects) {
     lines.push(project.action === "create"
-      ? `${project.workspaceRoot} → bb project "${project.name}" (will be created, no threads to import)`
+      ? `${project.workspaceRoot} → VesnALIA project "${project.name}" (will be created, no threads to import)`
       : `${project.workspaceRoot} → skip project — ${project.reason}`);
   }
   const importing = plan.threads.filter((thread) => thread.action === "import").length;
@@ -244,7 +244,7 @@ function formatPlan(plan: ImportPlan, mode: SessionMode, options: { "include-set
   if (!options["include-settled"] && !options["archive-settled"] && plan.filtered.settled) {
     lines.push("Add --archive-settled to import settled threads as archived, or --include-settled to import them open.");
   }
-  if (importing + creating > 0) lines.push("Nothing was written. Run the same command as `bb t3-import run ... --yes` to import.");
+  if (importing + creating > 0) lines.push("Nothing was written. Run the same command as `alia t3-import run ... --yes` to import.");
   return lines.join("\n");
 }
 
@@ -258,11 +258,11 @@ function sessionLabel(thread: PlannedThread): string {
 
 function formatRun(result: RunResult): string {
   const lines: string[] = [];
-  for (const project of result.createdProjects) lines.push(`created   project "${project.name}" → ${project.bbProjectId} (${project.workspaceRoot})`);
+  for (const project of result.createdProjects) lines.push(`created   project "${project.name}" → ${project.aliaProjectId} (${project.workspaceRoot})`);
   for (const failure of result.failedProjects) lines.push(`FAILED    project "${failure.name}" (${failure.workspaceRoot}): ${failure.error}`);
-  if (result.backupPath) lines.push(`Backed up bb.db to ${result.backupPath}`);
+  if (result.backupPath) lines.push(`Backed up alia.db to ${result.backupPath}`);
   for (const thread of result.imported) {
-    lines.push(`imported  ${thread.title} → ${thread.bbThreadId} (${thread.events} events${thread.sessionId ? `, session ${thread.sessionId}` : ""})`);
+    lines.push(`imported  ${thread.title} → ${thread.aliaThreadId} (${thread.events} events${thread.sessionId ? `, session ${thread.sessionId}` : ""})`);
   }
   for (const failure of result.failed) lines.push(`FAILED    ${failure.title} (${failure.t3ThreadId}): ${failure.error}`);
   if (lines.length === 0) lines.push("Nothing to import.");
@@ -270,7 +270,7 @@ function formatRun(result: RunResult): string {
     const projects = result.createdProjects.length + result.failedProjects.length > 0
       ? `; ${result.createdProjects.length} project${result.createdProjects.length === 1 ? "" : "s"} created, ${result.failedProjects.length} failed`
       : "";
-    lines.push("", `${result.imported.length} imported, ${result.failed.length} failed${projects}. Reload the bb app if the threads do not appear.`);
+    lines.push("", `${result.imported.length} imported, ${result.failed.length} failed${projects}. Reload the VesnALIA app if the threads do not appear.`);
   }
   return lines.join("\n");
 }

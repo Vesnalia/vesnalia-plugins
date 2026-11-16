@@ -1,4 +1,4 @@
-import { createFakePluginHost, makeThreadResponse } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost, makeThreadResponse } from '@vesnalia/plugin-sdk/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import plugin from './server.js';
 import type { TurnLifecycleEvent } from './collector.js';
@@ -23,7 +23,7 @@ async function setup() {
   const state = (id: string) => states.get(id) ?? makeThreadResponse({
     id, status: 'active', runtime: { displayStatus: 'active', hostReconnectGraceExpiresAt: null },
   });
-  let { bb, harness } = createFakePluginHost({
+  let { alia, harness } = createFakePluginHost({
     pluginId: 'wakatime',
     sdk: { threads: {
       list: async ({ offset = 0, limit = 100 } = {}) => listed.slice(offset, offset + limit).map(state) as never,
@@ -40,9 +40,9 @@ async function setup() {
       } },
     } },
   });
-  await plugin(bb);
+  await plugin(alia);
   cleanups.push(() => harness.lifecycle.dispose());
-  const db = bb.storage.database();
+  const db = alia.storage.database();
   const summary = async () => await harness.behavior.callRpc('getSummary', { range: 'all', timezone: 'UTC' }) as {
     workingMs: number; agentRuntimeMs: number; agentCoverageMs: number;
     turnCount: number; projects: Array<{ name: string; workingMs: number }>;
@@ -53,8 +53,8 @@ async function setup() {
     await harness.behavior.emitThreadEvent(name, { thread: state(id), lastAssistantText: null, error: null });
   };
   return {
-    bb, harness, db, events, states, pending, summary, active, emit,
-    reload: async () => { ({ bb, harness } = await harness.lifecycle.reload(plugin)); },
+    alia, harness, db, events, states, pending, summary, active, emit,
+    reload: async () => { ({ alia, harness } = await harness.lifecycle.reload(plugin)); },
     list: (ids: string[]) => { listed = ids; },
     failEvents: (value: boolean) => { failEvents = value; },
     failStatus: (value: boolean) => { failStatus = value; },
@@ -68,7 +68,7 @@ const interaction = (seq: number, at: number, status: string, id = 'approval'): 
 });
 
 // Drive the actual plugin, including SQLite, SDK event paging, status checks,
-// reconciliation and RPC totals. No live BB threads or storage are touched.
+// reconciliation and RPC totals. No live VesnALIA threads or storage are touched.
 describe('strict active-turn accounting', () => {
   it.each(['thread.archived', 'thread.deleted', 'thread.idle', 'thread.failed'] as const)(
     '%s cannot turn a month-old completed turn into a month of work', async (event) => {

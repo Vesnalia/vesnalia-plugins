@@ -20,7 +20,7 @@ For each approved release:
    maintainer's explicit approval; this convention grants none.
 
 The What’s New UI reads bundled highlights; the separate update card checks
-GitHub release metadata and BB-eligible candidates. Announcement dismissal is
+GitHub release metadata and ALIA-eligible candidates. Announcement dismissal is
 stored in plugin KV for the exact version (latest 20 dismissed versions), so
 reloads retain dismissal, upgrades show new notes, and a recent downgrade
 retains its old dismissal. Release notes can be opened later from the dashboard.

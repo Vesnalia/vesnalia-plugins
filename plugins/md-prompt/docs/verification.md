@@ -1,6 +1,6 @@
 # Verification contract
 
-Written before the BB implementation. Verify in a real BB window using an
+Written before the VesnALIA implementation. Verify in a real VesnALIA window using an
 isolated headless browser. Do not submit a prompt or start an agent.
 
 Failure cases to exercise:

@@ -18,10 +18,10 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  *    re-scoping is delete-then-create. `allPublicTeams` is never used — it
  *    would haul other teams' data into the mirror and contradict the entire
  *    scoping promise.
- * 3. **A bb connect share link cannot be this URL.** It is session-gated;
+ * 3. **A VesnALIA connect share link cannot be this URL.** It is session-gated;
  *    Linear's delivery bot carries no session, gets the sign-in page, gets a
  *    non-200, and after the retry budget Linear disables the webhook. The
- *    plugin must never imply bb can provide the URL.
+ *    plugin must never imply VesnALIA can provide the URL.
  *
  * Linear retries a failed delivery **at most three times** (after 1 minute, 1
  * hour, and 6 hours) and then gives up, with no replay API. That is why the
@@ -39,7 +39,7 @@ export const RESOURCE_TYPES = [
   "Cycle",
   "IssueAttachment",
   // Existing registrations gain this on the next explicit
-  // `bb linear webhook enable`, which re-registers the declared set.
+  // `alia linear webhook enable`, which re-registers the declared set.
   "Reaction",
 ] as const;
 
@@ -208,7 +208,7 @@ export function webhookDeliveryKey(body: WebhookBody): string {
  *
  * Registration happens **only after** the plugin POSTs this to the configured
  * URL and it arrives at its own handler. Register on proof, not on hope: a
- * webhook registered against a URL that does not reach bb gets three failed
+ * webhook registered against a URL that does not reach VesnALIA gets three failed
  * deliveries and is then disabled by Linear, which is a worse state than never
  * having registered.
  */

@@ -2,13 +2,13 @@ import { homedir } from "node:os";
 import { isAbsolute, join } from "node:path";
 import { RECORD_DIR } from "../core/device-recording.ts";
 
-export const DEVICE_HOME = ".bb-box/device";
-export const SERVICE_LABEL = "app.bb-box.device";
-export const SYSTEMD_UNIT = "bb-box-device.service";
+export const DEVICE_HOME = ".alia-box/device";
+export const SERVICE_LABEL = "app.alia-box.device";
+export const SYSTEMD_UNIT = "alia-box-device.service";
 export const LAUNCH_AGENT = `Library/LaunchAgents/${SERVICE_LABEL}.plist`;
 export const SYSTEMD_USER_UNIT = `.config/systemd/user/${SYSTEMD_UNIT}`;
 export const SERVER_ENTRY = "src/device/main.ts";
-export const LAUNCHER = "bin/bb-box-device";
+export const LAUNCHER = "bin/alia-box-device";
 
 export const RESTART_DELAY_MS = 1000;
 export const START_LIMIT_INTERVAL_MS = 60_000;

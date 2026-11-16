@@ -1,4 +1,4 @@
-// bb-plugin-gitlab — the frontend bundle.
+// alia-plugin-gitlab — the frontend bundle.
 //
 // A GitLab panel: Issues / Merge requests as a filterable list (project
 // filter, Open/Closed chips, "Assigned to me", text search — all pushed to
@@ -29,13 +29,13 @@ import {
 import {
   definePluginApp,
   Markdown,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
   type PluginHomepageSectionProps,
   type PluginNavPanelProps,
   type PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { gitlabRpcContract } from "./server";
 import { Badge } from "@/components/ui/badge";
@@ -87,7 +87,7 @@ interface ProjectInfo {
   project: string;
   host: string;
   path: string;
-  bbProjectId: string | null;
+  aliaProjectId: string | null;
 }
 
 interface Item {
@@ -290,13 +290,13 @@ function routeToSubPath(route: Route): string {
 }
 
 function useSubPathRoute(subPath: string): [Route, (route: Route) => void] {
-  const bbNavigate = useBbNavigate();
+  const aliaNavigate = useAliaNavigate();
   const route = useMemo(() => parseSubPath(subPath), [subPath]);
   const navigate = useCallback(
     (next: Route) => {
-      bbNavigate.toPluginPanel(PANEL_PATH, { subPath: routeToSubPath(next) });
+      aliaNavigate.toPluginPanel(PANEL_PATH, { subPath: routeToSubPath(next) });
     },
-    [bbNavigate],
+    [aliaNavigate],
   );
   return [route, navigate];
 }
@@ -384,7 +384,7 @@ function useSpawn(): {
   spawningKey: string | null;
 } {
   const rpc = useRpc<typeof gitlabRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [spawningKey, setSpawningKey] = useState<string | null>(null);
   const spawn = useCallback(
     (kind: Kind, project: string, iid: number) => {
@@ -561,14 +561,14 @@ function StateBadge({ state, draft }: { state: string; draft?: boolean }) {
 }
 
 function ThreadPills({ links }: { links: ThreadLink[] | undefined }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   if (links === undefined || links.length === 0) return null;
   return (
     <span className="flex shrink-0 items-center gap-1">
       {links.map((link, index) => (
         <Badge
           key={link.threadId}
-          title={`Open BB thread ${link.threadId}`}
+          title={`Open VesnALIA thread ${link.threadId}`}
           onClick={(event) => {
             event.stopPropagation();
             navigate.toThread(link.threadId);
@@ -1781,8 +1781,8 @@ let hostCodeThemeObserver: MutationObserver | null = null;
 
 function getHostCodeTheme(): CodeTheme {
   hostCodeTheme ??= {
-    dark: document.documentElement.dataset.bbCodeThemeDark ?? "pierre-dark",
-    light: document.documentElement.dataset.bbCodeThemeLight ?? "pierre-light",
+    dark: document.documentElement.dataset.aliaCodeThemeDark ?? "pierre-dark",
+    light: document.documentElement.dataset.aliaCodeThemeLight ?? "pierre-light",
   };
   return hostCodeTheme;
 }
@@ -1793,8 +1793,8 @@ function subscribeHostCodeTheme(onStoreChange: () => void): () => void {
   hostCodeThemeObserver ??= new MutationObserver(() => {
     const current = getHostCodeTheme();
     const next: CodeTheme = {
-      dark: document.documentElement.dataset.bbCodeThemeDark ?? "pierre-dark",
-      light: document.documentElement.dataset.bbCodeThemeLight ?? "pierre-light",
+      dark: document.documentElement.dataset.aliaCodeThemeDark ?? "pierre-dark",
+      light: document.documentElement.dataset.aliaCodeThemeLight ?? "pierre-light",
     };
     if (next.dark === current.dark && next.light === current.light) return;
     hostCodeTheme = next;
@@ -1802,7 +1802,7 @@ function subscribeHostCodeTheme(onStoreChange: () => void): () => void {
   });
   hostCodeThemeObserver.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ["data-bb-code-theme-dark", "data-bb-code-theme-light"],
+    attributeFilter: ["data-alia-code-theme-dark", "data-alia-code-theme-light"],
   });
   return () => {
     hostCodeThemeListeners.delete(onStoreChange);
@@ -2389,7 +2389,7 @@ function PanelHeader() {
   );
 }
 
-const QUERY_KEY = "bb-plugin-gitlab:query";
+const QUERY_KEY = "alia-plugin-gitlab:query";
 const DEFAULT_QUERY = "is:open ";
 
 function ListView({
@@ -2509,7 +2509,7 @@ function GitlabRoutedBody({
   const projects = status?.projects ?? [];
   if (status !== null && status.projects.length === 0) {
     return (
-      <EmptyState message="No GitLab projects tracked yet. Create a BB project whose checkout has a GitLab origin remote, or add projects via the extraProjects plugin setting." />
+      <EmptyState message="No GitLab projects tracked yet. Create a VesnALIA project whose checkout has a GitLab origin remote, or add projects via the extraProjects plugin setting." />
     );
   }
 
@@ -2636,7 +2636,7 @@ function GitlabPanel({ subPath }: PluginNavPanelProps) {
 const HOMEPAGE_ROWS = 5;
 
 function RecentIssuesSection({ projectId }: PluginHomepageSectionProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const status = useStatus();
   const { spawn, spawningKey } = useSpawn();
   // A homepage project with no GitLab remote (and the no-project case) shows
@@ -2644,7 +2644,7 @@ function RecentIssuesSection({ projectId }: PluginHomepageSectionProps) {
   const scoped =
     projectId === null
       ? null
-      : (status?.projects.find((entry) => entry.bbProjectId === projectId)
+      : (status?.projects.find((entry) => entry.aliaProjectId === projectId)
           ?.project ?? null);
   const { items, error } = useItems({
     kind: "issue",

@@ -1,32 +1,32 @@
-# bb-plugin-firstmate
+# alia-plugin-firstmate
 
-Run firstmate-style agent crews inside [BB](https://github.com/get-bb/bb): one captain thread dispatches crewmate child threads, supervises them, and brings back finished work.
+Run firstmate-style agent crews inside [VesnALIA](https://github.com/get-bb/bb): one captain thread dispatches crewmate child threads, supervises them, and brings back finished work.
 
-The plugin implements the [firstmate](https://github.com/kunchenguid/firstmate) captain/crew protocol on BB primitives. A BB thread is the captain. Crews are child BB threads with their own managed worktrees. Status reports use the upstream protocol (`DONE:` / `BLOCKED:` / `FAILED:`), supervision rides on thread events instead of a tmux watcher, and merges are BB PR merges or ff-only local lands.
+The plugin implements the [firstmate](https://github.com/kunchenguid/firstmate) captain/crew protocol on VesnALIA primitives. A VesnALIA thread is the captain. Crews are child VesnALIA threads with their own managed worktrees. Status reports use the upstream protocol (`DONE:` / `BLOCKED:` / `FAILED:`), supervision rides on thread events instead of a tmux watcher, and merges are VesnALIA PR merges or ff-only local lands.
 
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/amrtawfik160/bb-plugin-firstmate
+alia plugin install git:https://github.com/amrtawfik160/bb-plugin-firstmate
 ```
 
 Or from a local checkout:
 
 ```sh
-bb plugin install path:/path/to/bb-plugin-firstmate --yes
+alia plugin install path:/path/to/alia-plugin-firstmate --yes
 ```
 
-Requires `bb >= 0.43` and `bbPluginSdk >= 0.4.87` (see `package.json` engines).
+Requires `alia >= 0.43` and `aliaPluginSdk >= 0.4.87` (see `package.json` engines).
 
 ## Quick start
 
 Run `/captain` in any thread to take the deck, then work in plain language or with the CLI:
 
 ```sh
-bb firstmate dispatch --project <project-id> -- "fix the flaky login test"
-bb firstmate watch                      # blocks until crews go idle (no polling)
-bb firstmate deliver <crew-id>          # committed + uncommitted diff, PR URL
-bb firstmate merge <crew-id> --yes      # merge green PR, or ff-only local land
+alia firstmate dispatch --project <project-id> -- "fix the flaky login test"
+alia firstmate watch                      # blocks until crews go idle (no polling)
+alia firstmate deliver <crew-id>          # committed + uncommitted diff, PR URL
+alia firstmate merge <crew-id> --yes      # merge green PR, or ff-only local land
 ```
 
 Crews end every task with a status verdict. `deliver` shows what they committed. You decide what lands.
@@ -62,30 +62,30 @@ Three layers, all event-driven:
 
 ## The real firstmate toolbelt
 
-The native tools cover the liaison loop. For the full bash policy engine (brief, gate, inbox, watch, merge, teardown, afk, bearings, backlog), the plugin drives upstream firstmate's `bin/` scripts with BB as the session backend:
+The native tools cover the liaison loop. For the full bash policy engine (brief, gate, inbox, watch, merge, teardown, afk, bearings, backlog), the plugin drives upstream firstmate's `bin/` scripts with VesnALIA as the session backend:
 
 ```sh
-bb firstmate init --real        # clone upstream firstmate, overlay backends/bb.sh, set config/backend=bb
-bb firstmate fm <script> ...    # run any bin/fm-<script>.sh with FM_BACKEND=bb
+alia firstmate init --real        # clone upstream firstmate, overlay backends/alia.sh, set config/backend=alia
+alia firstmate fm <script> ...    # run any bin/fm-<script>.sh with FM_BACKEND=alia
 ```
 
-`overlay/bin/backends/bb.sh` adapts firstmate's backend operations to BB: spawn becomes `bb thread spawn` into a managed worktree, capture becomes `bb thread output`, send becomes `bb thread tell`, kill becomes `bb thread stop`. Native dispatch writes the same `state/<id>.meta` ledger the scripts do, so `fm-peek`, `fm-send`, and the plugin's tools see one fleet.
+`overlay/bin/backends/alia.sh` adapts firstmate's backend operations to VesnALIA: spawn becomes `alia thread spawn` into a managed worktree, capture becomes `alia thread output`, send becomes `alia thread tell`, kill becomes `alia thread stop`. Native dispatch writes the same `state/<id>.meta` ledger the scripts do, so `fm-peek`, `fm-send`, and the plugin's tools see one fleet.
 
-BB-specific behavior in this fork:
+ALIA-specific behavior in this fork:
 
-- **Event-push watcher.** `backend=bb` reports push-capable. `fm-watch` blocks on `bb thread wait --status idle` instead of sleeping through its poll budget. A pending interaction surfaces as the blocked edge; the first window to finish wins the multi-window wait.
+- **Event-push watcher.** `backend=alia` reports push-capable. `fm-watch` blocks on `alia thread wait --status idle` instead of sleeping through its poll budget. A pending interaction surfaces as the blocked edge; the first window to finish wins the multi-window wait.
 - **Refusal-safe teardown.** `remove_worktree` inspects the crew worktree first and refuses dirty trees with the changed-file list, so `fm-teardown` aborts and keeps records instead of letting a later force-removal eat uncommitted work. Discarding is an explicit `forget --force`.
 - **No secondmate endpoint yet.** Domain captains use the native `secondmate register` instead.
 
 ## Configuration
 
-`bb plugin config firstmate` (or the plugin settings UI):
+`alia plugin config firstmate` (or the plugin settings UI):
 
 | Key | Default | Purpose |
 | --- | --- | --- |
 | `firstmateRepo` | upstream repo URL | Repo cloned by `init --real` |
 | `fmHome` | empty | Firstmate home on the host; set by `init --real` |
-| `defaultProvider` | blank | Crew provider id (blank = BB resolves) |
+| `defaultProvider` | blank | Crew provider id (blank = VesnALIA resolves) |
 | `defaultPermissionMode` | blank | Crew permission mode (blank = inherit) |
 | `supervisionEnabled` | on | Captain pings on done/fail/stuck |
 | `supervisionIntervalMin` | 5 | Stuck-check sweep interval |
@@ -103,15 +103,15 @@ The plugin ships catalog skills: `/captain` (take the deck, full contract), `/fi
 ```sh
 npm test                       # node --test over lib/ and server.test.ts
 npx tsc --noEmit               # typecheck
-bb plugin build                # compile dist/
-bb plugin reload firstmate     # reload the running plugin
+alia plugin build                # compile dist/
+alia plugin reload firstmate     # reload the running plugin
 ```
 
-The overlay patches (`overlay/firstmate-bb-backend.patch`, `overlay/firstmate-bb-teardown.patch`) must keep applying to pristine upstream firstmate; `overlay/install-bb-backend.py` verifies and installs them into a home. When changing dispatchers, run it against a fresh clone before committing.
+The overlay patches (`overlay/firstmate-alia-backend.patch`, `overlay/firstmate-alia-teardown.patch`) must keep applying to pristine upstream firstmate; `overlay/install-alia-backend.py` verifies and installs them into a home. When changing dispatchers, run it against a fresh clone before committing.
 
 ## Credits
 
-The captain/crew protocol, status grammar, and `bin/` toolbelt come from [kunchenguid/firstmate](https://github.com/kunchenguid/firstmate). This plugin maps that surface onto BB threads, worktrees, events, and diffs rather than porting the scripts.
+The captain/crew protocol, status grammar, and `bin/` toolbelt come from [kunchenguid/firstmate](https://github.com/kunchenguid/firstmate). This plugin maps that surface onto VesnALIA threads, worktrees, events, and diffs rather than porting the scripts.
 
 ## License
 

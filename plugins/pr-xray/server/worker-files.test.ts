@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { describe, expect, it, vi } from "vitest";
 import type { PrDetails } from "../shared/schema";
 import { createAnalysis } from "./analysis";
@@ -26,8 +26,8 @@ const pr = {
   threads: [],
 } as unknown as PrDetails;
 
-/** A bb where no project matches the PR, so workers run in the personal project. */
-function fakeBb() {
+/** A VesnALIA where no project matches the PR, so workers run in the personal project. */
+function fakeAlia() {
   const metadata = new Map<string, Record<string, unknown>>();
   const handlers = new Map<string, (event: { thread: { id: string } }) => void>();
   const kv = new Map<string, unknown>();
@@ -35,7 +35,7 @@ function fakeBb() {
     metadata.set("thr_1", input.pluginMetadata);
     return { id: "thr_1" };
   });
-  const bb = {
+  const alia = {
     log: { warn: vi.fn() },
     realtime: { publish: vi.fn() },
     agents: { registerTool: vi.fn() },
@@ -60,7 +60,7 @@ function fakeBb() {
       },
     },
   };
-  return { bb: bb as unknown as BbPluginApi, spawn, handlers, metadata };
+  return { alia: alia as unknown as AliaPluginApi, spawn, handlers, metadata };
 }
 
 describe("worker temp folders", () => {
@@ -84,7 +84,7 @@ describe("worker temp folders", () => {
 
 describe("the analysis diff", () => {
   function setup() {
-    const fake = fakeBb();
+    const fake = fakeAlia();
     const record = { id: "an_1", ref, status: "done", workerThreadId: "thr_1" };
     const store = {
       runningAnalyses: () => [],
@@ -99,7 +99,7 @@ describe("the analysis diff", () => {
       analysis: () => record,
     };
     const analysis = createAnalysis({
-      bb: fake.bb,
+      alia: fake.alia,
       store,
       github: {},
       models: { selected: async () => null },
@@ -146,14 +146,14 @@ describe("the analysis diff", () => {
 
 describe("a finished analysis whose worker was never cleaned up", () => {
   it("gets cleaned up by the next reconcile", async () => {
-    const fake = fakeBb();
+    const fake = fakeAlia();
     const store = {
       runningAnalyses: () => [],
       workersToClean: vi.fn(() => ["thr_old"]),
       markWorkerCleaned: vi.fn(),
     };
     const analysis = createAnalysis({
-      bb: fake.bb,
+      alia: fake.alia,
       store,
       github: {},
       models: {},
@@ -161,16 +161,16 @@ describe("a finished analysis whose worker was never cleaned up", () => {
       onDiagramNodesChanged: vi.fn(),
     } as unknown as Parameters<typeof createAnalysis>[0]);
     await analysis.reconcile();
-    expect(fake.bb.sdk.threads.archive).toHaveBeenCalledWith({ threadId: "thr_old" });
+    expect(fake.alia.sdk.threads.archive).toHaveBeenCalledWith({ threadId: "thr_old" });
     expect(store.markWorkerCleaned).toHaveBeenCalledWith("thr_old");
   });
 });
 
 describe("the chat context", () => {
   function setup() {
-    const fake = fakeBb();
+    const fake = fakeAlia();
     const chat = createChat({
-      bb: fake.bb,
+      alia: fake.alia,
       models: { selected: async () => null },
       loadPr: async () => pr,
       analysisFor: () => null,
@@ -190,23 +190,23 @@ describe("the chat context", () => {
   });
 
   it("does not destroy a healthy chat on a temporary failure", async () => {
-    const { chat, bb, metadata } = setup();
+    const { chat, alia, metadata } = setup();
     await chat.start(ref, "Why?");
     const dir = metadata.get("thr_1")?.tempDir as string;
-    vi.spyOn(bb.sdk.threads, "getPluginMetadata").mockRejectedValueOnce(new Error("HTTP 503: restarting"));
+    vi.spyOn(alia.sdk.threads, "getPluginMetadata").mockRejectedValueOnce(new Error("HTTP 503: restarting"));
     await expect(chat.get(ref)).rejects.toThrow("503");
-    expect(bb.sdk.threads.archive).not.toHaveBeenCalled();
+    expect(alia.sdk.threads.archive).not.toHaveBeenCalled();
     expect(await chat.get(ref)).toBe("thr_1");
     expect(existsSync(dir)).toBe(true);
     await chat.reset(ref);
   });
 
   it("starts one chat when two questions arrive together", async () => {
-    const { chat, bb, spawn } = setup();
+    const { chat, alia, spawn } = setup();
     const ids = await Promise.all([chat.start(ref, "One?"), chat.start(ref, "Two?")]);
     expect(ids).toEqual(["thr_1", "thr_1"]);
     expect(spawn).toHaveBeenCalledTimes(1);
-    expect(bb.sdk.threads.send).toHaveBeenCalledOnce();
+    expect(alia.sdk.threads.send).toHaveBeenCalledOnce();
     await chat.reset(ref);
   });
 });

@@ -11,7 +11,7 @@
 //   change. No timer: beads keeps its database in one local store, and polling
 //   would compete with an agent writing issues.
 
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { IssuesResult, rpcContract } from "../server/contract.ts";
 import { CHANGED_CHANNEL } from "../shared/constants.ts";
@@ -24,7 +24,7 @@ export interface Scope {
 
 /**
  * The last answer for each scope, and the request under way for it, kept
- * outside any one component (bead-bb-3pr).
+ * outside any one component (bead-alia-3pr).
  *
  * Why: three places on one screen load the same list (the panel, the line
  * above the message box, the buttons in it), and each sent its own request
@@ -134,7 +134,7 @@ export function useIssues(scope: Scope) {
     refresh();
   }, [refresh, key]);
   useEffect(() => {
-    // Coming back to BB after working in a terminal is the moment the list is
+    // Coming back to VesnALIA after working in a terminal is the moment the list is
     // most likely to be out of date: read anew, whatever the server kept.
     const onFocus = () => refresh(true);
     window.addEventListener("focus", onFocus);
@@ -144,7 +144,7 @@ export function useIssues(scope: Scope) {
   // sees made outside the plugin (an agent or a terminal running bd), so the
   // tab follows along on its own.
   // Such a read is not the owner looking: it is marked passive, so that
-  // bend does not count it as being used (bead-bb-c9l.16).
+  // bend does not count it as being used (bead-alia-c9l.16).
   const onChanged = useCallback(() => refresh(false, true), [refresh]);
   useRealtime(CHANGED_CHANNEL, onChanged);
   // Never another scope's list, also in the moment before the effect above

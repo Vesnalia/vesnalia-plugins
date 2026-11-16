@@ -1,19 +1,19 @@
 # Souls UI direction
 
-The audience is people managing reusable agent personas inside BB. The main
+The audience is people managing reusable agent personas inside VesnALIA. The main
 jobs are to recognize a soul, understand how it works, and choose its authority
 without losing the persona in configuration.
 
 ## Visual contract
 
 The pixel portrait is the identifying element. Everything around it is quiet:
-left-aligned text, a clear name, restrained dividers and native BB controls.
-No remote fonts, decorative gradients or new color literals. BB owns the palette
+left-aligned text, a clear name, restrained dividers and native VesnALIA controls.
+No remote fonts, decorative gradients or new color literals. VesnALIA owns the palette
 and typography, including custom themes. The base palette maps to background,
 foreground, muted, muted-foreground, border and ring; the current light theme
 is white, charcoal and neutral grays. Portraits supply each soul's color.
 
-Use BB's UI font for names, prose and controls; monospace only for the exact
+Use VesnALIA's UI font for names, prose and controls; monospace only for the exact
 agent preview and structured diffs. Names are 24px, section titles 14px, body
 14px with generous line height, and supporting labels 12px. Keep prose below
 approximately 75 characters per line where space allows.

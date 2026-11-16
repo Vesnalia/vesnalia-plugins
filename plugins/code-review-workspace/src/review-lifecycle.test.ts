@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "./store";
 import { recordPrState } from "./start-review";
 import { createReviewSync, type GithubReads, type TurnActions } from "./review-lifecycle";
@@ -36,7 +36,7 @@ afterEach(() => { vi.useRealTimers(); });
 async function setup(options: { pr?: Partial<PrFacts>; threads?: FeedbackThread[]; reviewed?: boolean; preferences?: Partial<typeof defaultPreferences> } = {}) {
   const published: any[] = [];
   const dismissed: any[] = [];
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: { update: async () => ({}), stop: async () => ({}), archive: async () => ({}) },
     plugins: { callRpc: async ({ method, input }: any) => {
       if (method === "activityCapabilities") return { version: 1 };
@@ -45,11 +45,11 @@ async function setup(options: { pr?: Partial<PrFacts>; threads?: FeedbackThread[
       return { accepted: true, id: "activity", duplicate: false };
     } },
   } as any });
-  const store = testStore(bb);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, headSha: "sha1", createdAt: 1, status: "ready", projectId: "p1" });
   if (options.preferences) await store.savePreferences({ ...defaultPreferences, ...options.preferences }, 0);
-  // A legacy review-agent worker, from before conversations moved into bb threads.
-  await testSql(bb).run(`INSERT INTO agent_threads (target_key,thread_id,created_at) VALUES ('pr-1','agent-1',1)`);
+  // A legacy review-agent worker, from before conversations moved into VesnALIA threads.
+  await testSql(alia).run(`INSERT INTO agent_threads (target_key,thread_id,created_at) VALUES ('pr-1','agent-1',1)`);
   await store.setAssistantThread("pr-1", "assistant-1");
   let now = T0;
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -68,9 +68,9 @@ async function setup(options: { pr?: Partial<PrFacts>; threads?: FeedbackThread[
     prepare: vi.fn(async () => true), checkPushes: vi.fn(async () => true), checkFixes: vi.fn(async () => true), autoStart: vi.fn(async () => true), projectId: async () => "p1",
     becomePr: vi.fn(async () => "skipped" as const),
   };
-  const sync = createReviewSync(bb, store, vi.fn() as any, { github, actions, now: () => now });
+  const sync = createReviewSync(alia, store, vi.fn() as any, { github, actions, now: () => now });
   return {
-    bb, harness, store, sync, github, actions, published, dismissed,
+    alia, harness, store, sync, github, actions, published, dismissed,
     at: (hoursAfter: number) => { now = T0 + hoursAfter * HOUR; vi.setSystemTime(now); },
     pr: (next: Partial<PrFacts>) => { pr = { ...pr, ...next }; },
     threads: (next: FeedbackThread[]) => { threads = next; },
@@ -187,8 +187,8 @@ test("an in-flight read cannot overwrite a newer local submission", async () => 
 });
 
 test("deleted workers are detached without losing the review conversation", async () => {
-  const { bb, sync, store, harness } = await setup();
-  await testSql(bb).run(`INSERT INTO agent_messages (target_key,role,text,context,created_at) VALUES ('pr-1','assistant','Keep this answer',NULL,1)`);
+  const { alia, sync, store, harness } = await setup();
+  await testSql(alia).run(`INSERT INTO agent_messages (target_key,role,text,context,created_at) VALUES ('pr-1','assistant','Keep this answer',NULL,1)`);
   harness.inspection.sdk.stub("threads.update", async () => { throw new Error("HTTP 404: Thread not found"); });
   await sync.all();
   expect(await store.getAgentThread("pr-1")).toBeNull();
@@ -300,7 +300,7 @@ test("snoozing until the author responds clears the alert, and leaving Needs rev
 });
 
 // bug bash HC-14: the dismissal ran unawaited with no catch, so its failure, such as kv's once a reload staled the
-// handle, was an unhandled rejection, which BB 0.46.1 exits on outside a service.
+// handle, was an unhandled rejection, which VesnALIA 0.46.1 exits on outside a service.
 test("a dismissal that fails on leaving Needs review is logged, not left unhandled", async () => {
   const s = await setup({ reviewed: true });
   await s.sync.all();
@@ -309,7 +309,7 @@ test("a dismissal that fails on leaving Needs review is logged, not left unhandl
   s.at(0.2);
   await s.sync.all(true);
   await vi.waitFor(() => expect(s.published).toHaveLength(1));
-  vi.spyOn(s.bb.storage.kv, "delete").mockRejectedValue(new Error("stale handle"));
+  vi.spyOn(s.alia.storage.kv, "delete").mockRejectedValue(new Error("stale handle"));
   await s.store.setLifecycle("pr-1", { snoozedAt: T0 + 0.3 * HOUR });
   s.at(0.4);
   const { crashes } = await watchCrashes(async () => { await s.sync.evaluate("pr-1"); });
@@ -367,7 +367,7 @@ test("a review you open while its re-review is being prepared doesn't alert you 
   s.at(0.35);
   await s.store.setLifecycle("pr-1", { preparedAt: T0 + 0.35 * HOUR });
   await s.sync.evaluate("pr-1");
-  await completionNotifications(s.bb, s.store).flush();
+  await completionNotifications(s.alia, s.store).flush();
   expect(s.published).toEqual([]);
   expect(await s.store.getReview("pr-1")).toMatchObject({ notifiedSignal: `re-requested:${T0 + 0.2 * HOUR}`, pendingAlert: null });
   // A later turn alerts as usual.
@@ -593,14 +593,14 @@ test("evaluations of one review run one at a time, so a signal is prepared once"
   expect(s.actions.prepare).toHaveBeenCalledTimes(1);
 });
 
-test("threads resolved before bb first read them don't count as just handled", async () => {
+test("threads resolved before VesnALIA first read them don't count as just handled", async () => {
   // Reviewed long ago; every thread was resolved before the upgrade; new commits and quiet since.
   const old = { ...thread("t1", "resolved"), replies: [{ author: "alice", bot: false, mine: false, body: "Done", createdAt: T0 - 4 * HOUR }] };
   const s = await setup({ reviewed: true, threads: [old], pr: { headSha: "sha2", commits: ["sha1", "sha2"], updatedAt: 2 } });
   await s.sync.all();
   s.at(1);
   await s.sync.all();
-  // It shows as your turn, but alerts and prepares nothing: it happened before bb was watching.
+  // It shows as your turn, but alerts and prepares nothing: it happened before VesnALIA was watching.
   expect(await s.sync.turnOf((await s.store.getReview("pr-1"))!)).toMatchObject({ group: "needs", reason: "handled" });
   expect(s.published).toHaveLength(0);
   expect(s.actions.prepare).not.toHaveBeenCalled();
@@ -680,7 +680,7 @@ test("turning on Include team requests fills the list with your teams' old reque
   expect((await s.store.listReviews()).filter((r) => r.status === "tracked")).toHaveLength(4);
   // Like discovery's first look, requests from before you turned it on are history: no guide runs for each.
   expect(s.actions.autoStart).not.toHaveBeenCalled();
-  await completionNotifications(s.bb, s.store).flush();
+  await completionNotifications(s.alia, s.store).flush();
   expect(s.published).toHaveLength(0);
   // A team request after that look is new: it starts its guide.
   vi.mocked(s.github.discover).mockImplementation(async ({ teams }) => teams ? [...old, { ...old[0], number: 9, title: "Team PR 9", url: "https://github.com/acme/api/pull/9" }] : []);
@@ -704,7 +704,7 @@ test("turning on Include PRs you've reviewed fills the list with what you review
   expect((await s.store.listReviews()).filter((r) => r.status === "tracked")).toHaveLength(2);
   expect(s.actions.autoStart).not.toHaveBeenCalled();
   expect(s.actions.prepare).not.toHaveBeenCalled();
-  await completionNotifications(s.bb, s.store).flush();
+  await completionNotifications(s.alia, s.store).flush();
   expect(s.published).toHaveLength(0);
 });
 
@@ -781,7 +781,7 @@ test("a pending request with no known time is history on the first read", async 
   expect(s.published).toHaveLength(0);
 });
 
-test("a dismissal bb sees happen prepares the re-review", async () => {
+test("a dismissal VesnALIA sees happen prepares the re-review", async () => {
   const s = await setup({ pr: { myReviews: [review("APPROVED", T0 - 5 * HOUR)] } });
   await s.sync.all();
   s.pr({ headSha: "sha2", commits: ["sha1", "sha2"], myReviews: [review("DISMISSED", T0 - 5 * HOUR)] });
@@ -792,7 +792,7 @@ test("a dismissal bb sees happen prepares the re-review", async () => {
 });
 
 test("history doesn't stop a later re-request on the same commit from being prepared", async () => {
-  // Already re-requested when bb first reads it, on sha2.
+  // Already re-requested when VesnALIA first reads it, on sha2.
   const s = await setup({ reviewed: true, pr: { headSha: "sha2", commits: ["sha1", "sha2"], requests: [{ at: T0 - HOUR, by: "alice", via: "user" }] } });
   await s.sync.all();
   expect(s.actions.prepare).not.toHaveBeenCalled();
@@ -985,7 +985,7 @@ test("sync health: an expired gh login, then a good read", async () => {
 });
 
 // runGh's answer when the gh binary can't be spawned (bug bash PRF-4).
-test("sync health: gh missing on the BB server reads as such, not as GitHub unreachable", async () => {
+test("sync health: gh missing on the VesnALIA server reads as such, not as GitHub unreachable", async () => {
   const s = await setup();
   s.github.viewer.login = async () => null;
   s.github.viewer.errors = () => ({ login: "gh could not start: spawn gh ENOENT", teams: null });
@@ -1289,7 +1289,7 @@ test("an outside author's settled pushes aren't checked on their own; the review
 });
 
 test("after an upgrade to new turn rules, turns found in events from before it are history; later ones act", async () => {
-  // Watched since long before, re-requested an hour before the upgrade, at a head bb hadn't read yet.
+  // Watched since long before, re-requested an hour before the upgrade, at a head VesnALIA hadn't read yet.
   const s = await setup({ reviewed: true, pr: { headSha: "sha2", commits: ["sha1", "sha2"], requests: [{ at: T0 - HOUR, by: "alice", via: "user" }] } });
   await s.store.setLifecycle("pr-1", { watchingSince: T0 - 10 * HOUR, watchedHead: "sha1" });
   await s.sync.all();
@@ -1308,17 +1308,17 @@ test("1.8.0's turn rules make only your own PRs' earlier comments history: a tea
   await s.store.setLifecycle("pr-1", { watchingSince: T0 - 10 * HOUR, watchedHead: "sha1" });
   await s.store.saveReview({ targetKey: "pr-own", kind: "pr", repo: "acme/web", number: 9, author: "me", headSha: "sha1", createdAt: 1, status: "tracked", projectId: "p1" });
   await s.store.setLifecycle("pr-own", { ownPr: true, watchingSince: T0 - 10 * HOUR, watchedHead: "sha1" });
-  await s.bb.storage.kv.set("turn-rules", 5);
+  await s.alia.storage.kv.set("turn-rules", 5);
   await s.sync.all();
   expect(s.actions.prepare).toHaveBeenCalledTimes(1);
   expect(await s.store.getReview("pr-own")).toMatchObject({ watchingSince: T0 });
-  expect(await s.bb.storage.kv.get("turn-rules")).toBe(6);
+  expect(await s.alia.storage.kv.get("turn-rules")).toBe(6);
 });
 
 test("once the turn rules are current, an event from before a pass still acts", async () => {
   const s = await setup({ reviewed: true, pr: { headSha: "sha2", commits: ["sha1", "sha2"], requests: [{ at: T0 - HOUR, by: "alice", via: "user" }] } });
   await s.store.setLifecycle("pr-1", { watchingSince: T0 - 10 * HOUR, watchedHead: "sha1" });
-  await s.bb.storage.kv.set("turn-rules", 6);
+  await s.alia.storage.kv.set("turn-rules", 6);
   await s.sync.all();
   expect(s.actions.prepare).toHaveBeenCalledTimes(1);
 });
@@ -1326,8 +1326,8 @@ test("once the turn rules are current, an event from before a pass still acts", 
 // Update guide and the page's check for new commits read their one PR with sync.one; with 200 reviews, a pass reads
 // GitHub in 20 batches, and a read of one review that joined it waited for every batch (bug bash PRF-1).
 test("a forced read of one review doesn't wait for the rest of a 200-review sync pass", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { update: async () => ({}), stop: async () => ({}), archive: async () => ({}) } } as any });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { update: async () => ({}), stop: async () => ({}), archive: async () => ({}) } } as any });
+  const store = testStore(alia);
   for (let i = 0; i < 200; i++) await store.saveReview({ targetKey: `pr-${i}`, kind: "pr", repo: "acme/web", number: i + 1, headSha: "sha1", createdAt: 1000 - i, status: "ready", projectId: "p1" });
   let batches = 0;
   const github: GithubReads = {
@@ -1346,7 +1346,7 @@ test("a forced read of one review doesn't wait for the rest of a 200-review sync
     threads: async () => [],
     discover: async () => [], ownPrs: async () => [],
   };
-  const sync = createReviewSync(bb, store, vi.fn() as any, { github });
+  const sync = createReviewSync(alia, store, vi.fn() as any, { github });
   const pass = sync.all(true);
   await new Promise((resolve) => setTimeout(resolve, 5));
   // The newest review, in the pass's first batch.
@@ -1360,8 +1360,8 @@ test("a forced read of one review doesn't wait for the rest of a 200-review sync
 }, 30_000);
 
 test("an evaluation clears an expired snooze in the turn that reads it, so a snooze set meanwhile stands", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { plugins: { callRpc: async () => null } } as any });
-  const backend = createStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { plugins: { callRpc: async () => null } } as any });
+  const backend = createStore(alia);
   // The new snooze is queued as the evaluation first reads the review, from outside its turn, as another caller's is.
   let reading = false;
   let reached!: () => void;
@@ -1376,7 +1376,7 @@ test("an evaluation clears an expired snooze in the turn that reads it, so a sno
     gate: { poll: async () => ({ kind: "unchanged" }) },
     facts: vi.fn(async () => new Map()), threads: vi.fn(async () => []), discover: vi.fn(async () => []), ownPrs: vi.fn(async () => []),
   };
-  const sync = createReviewSync(bb, store, vi.fn() as any, { github, now: () => T0 });
+  const sync = createReviewSync(alia, store, vi.fn() as any, { github, now: () => T0 });
   const snoozed = read.then(() => store.setLifecycle("pr-1", { snoozedAt: T0, snoozedUntil: T0 + 5 * HOUR }));
   reading = true;
   await sync.evaluate("pr-1");
@@ -1638,7 +1638,7 @@ test("your draft PR, one from a fork into the repo it came from, and one whose h
   const s = await setup();
   await s.sync.all();
   const feature = (branch: string, repo: string, remoteBranch?: string, pushedAs?: string) => ({ environmentId: "env1", hostId: "h1", machine: "MaxBook", path: "/src/web", branch, baseRef: "main", repo, ...remoteBranch ? { remoteBranch } : {}, ...pushedAs ? { pushedAs } : {} });
-  for (const [key, branch, repo, remoteBranch, pushedAs] of [["br-1", "feat/4", "acme/web"], ["br-2", "feat/5", "me/web"], ["br-3", "bb/nice-thr_a1", "acme/web", "feat/nice"], ["br-4", "bb/push-thr_b2", "acme/web", undefined, "feat/push"]] as const) {
+  for (const [key, branch, repo, remoteBranch, pushedAs] of [["br-1", "feat/4", "acme/web"], ["br-2", "feat/5", "me/web"], ["br-3", "alia/nice-thr_a1", "acme/web", "feat/nice"], ["br-4", "alia/push-thr_b2", "acme/web", undefined, "feat/push"]] as const) {
     await s.store.saveReview({ targetKey: key, kind: "ref", status: "ready", createdAt: 1, projectId: "p1" });
     await s.store.setLifecycle(key, { feature: feature(branch, repo, remoteBranch, pushedAs) });
   }
@@ -1701,7 +1701,7 @@ test("a 1.8.0 folder's review linked to your PR's review merges with it on disco
   const { targetKey } = await import("./targets");
   const view = (n: number) => ({ number: n, title: `Mine ${n}`, author: { login: "me" }, baseRefName: "main", headRefName: `feat/${n}`, url: `https://github.com/acme/web/pull/${n}`, headRefOid: "c0ffee", state: "OPEN" });
   const runGh = vi.fn(async (args: string[]) => ({ code: 0, stderr: "", stdout: args[1] === "diff" ? "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-a\n+b\n" : JSON.stringify(view(Number(args[2]))) }));
-  vi.mocked(s.actions.becomePr).mockImplementation((key, pr) => becomePr({ bb: s.bb, store: s.store, gh: { runGh, runGit: vi.fn() } as any, changed: vi.fn() }, key, pr));
+  vi.mocked(s.actions.becomePr).mockImplementation((key, pr) => becomePr({ alia: s.alia, store: s.store, gh: { runGh, runGit: vi.fn() } as any, changed: vi.fn() }, key, pr));
   const feature = (n: number, prReview: string) => ({ environmentId: "env1", hostId: "h1", machine: "MaxBook", path: "/src/web", branch: `feat/${n}`, baseRef: "main", repo: "acme/web", prReview });
   // #4's review was found on GitHub and has nothing of yours; #1's has its agent's conversation.
   const tracked = targetKey({ kind: "pr", repo: "acme/web", number: 4 });

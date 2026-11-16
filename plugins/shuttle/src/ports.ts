@@ -1,11 +1,11 @@
-// What Shuttle needs from bb, behind an interface so tests can fake it.
-import type { JsonValue } from "@get-bb/plugin-sdk";
+// What Shuttle needs from VesnALIA, behind an interface so tests can fake it.
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 import { ShuttleError } from "./ctx";
 import type { Workspace } from "./workspaces";
 
 /**
- * bb cannot start the thread now, though it may soon: its machine provider has no room or is not ready, its environment
- * provider says it is unavailable, or bb marked the error retryable. The message is bb's.
+ * VesnALIA cannot start the thread now, though it may soon: its machine provider has no room or is not ready, its environment
+ * provider says it is unavailable, or VesnALIA marked the error retryable. The message is VesnALIA's.
  */
 export class SpawnUnavailableError extends ShuttleError {
   override readonly name = "SpawnUnavailableError";
@@ -38,19 +38,19 @@ export interface ThreadInfo {
   branch: string | null;
   updatedAt: number | null;
   queuedMessageCount?: number;
-  /** bb hides it from thread lists unless asked, as with a thread another plugin keeps for itself. */
+  /** VesnALIA hides it from thread lists unless asked, as with a thread another plugin keeps for itself. */
   hidden?: boolean;
   /** The agent it runs on, such as pi; a send cannot change it. */
   providerId?: string | null;
   /** Its workspace was removed after an archive and its provider can build it again. */
   canRestoreEnvironment?: boolean;
-  /** bb removed, or is removing, the machine its workspace was on, so neither can come back. */
+  /** VesnALIA removed, or is removing, the machine its workspace was on, so neither can come back. */
   machineRemoved?: boolean;
-  /** bb set up a workspace for it; false for a thread whose workspace setup failed, left out when unknown. */
+  /** VesnALIA set up a workspace for it; false for a thread whose workspace setup failed, left out when unknown. */
   hasWorkspace?: boolean;
 }
 
-/** A bb environment provider, as Shuttle's settings and the server test read it. */
+/** A VesnALIA environment provider, as Shuttle's settings and the server test read it. */
 export interface EnvironmentProviderInfo {
   id: string;
   displayName: string;
@@ -61,7 +61,7 @@ export interface EnvironmentProviderInfo {
   machineProviderId: string | null;
 }
 
-/** A bb machine provider, which can give a thread a new machine of its own. */
+/** A VesnALIA machine provider, which can give a thread a new machine of its own. */
 export interface MachineProviderInfo {
   id: string;
   displayName: string;
@@ -89,7 +89,7 @@ export interface SkillInfo {
   description: string;
 }
 
-/** Burn, the plugin that reads what every thread used, is not installed or not running. The message is bb's. */
+/** Burn, the plugin that reads what every thread used, is not installed or not running. The message is VesnALIA's. */
 export class UsageUnavailableError extends ShuttleError {
   override readonly name = "UsageUnavailableError";
 }
@@ -125,12 +125,12 @@ export interface UsageRead {
   descendants: string[];
 }
 
-export interface BbPort {
+export interface AliaPort {
   spawnThread(args: SpawnArgs): Promise<string>;
   send(threadId: string, text: string, options?: SendOptions): Promise<void>;
   /** Stops the thread's work: a turn it runs is interrupted. Only the thread itself; its child threads go on. */
   stop(threadId: string): Promise<void>;
-  /** Archives the thread with its child threads; the ids bb archived, the thread's own included. */
+  /** Archives the thread with its child threads; the ids VesnALIA archived, the thread's own included. */
   archive(threadId: string): Promise<string[]>;
   /** Brings back only the thread itself: its child threads stay archived. */
   unarchive(threadId: string): Promise<void>;
@@ -141,25 +141,25 @@ export interface BbPort {
   getThread(threadId: string): Promise<ThreadInfo | null>;
   referenceContext(threadId: string): Promise<string[]>;
   threadOutput(threadId: string): Promise<string | null>;
-  /** Unarchived threads; bb's order is not by recency, so callers sort. */
+  /** Unarchived threads; VesnALIA's order is not by recency, so callers sort. */
   listThreads(limit: number): Promise<ThreadInfo[]>;
   /** These threads, archived or not, at most 200 ids; unknown and deleted ids are left out. */
   threadsById(threadIds: readonly string[]): Promise<ThreadInfo[]>;
   /** The thread's unarchived child threads, such as the critics a review starts. */
-  /** The unarchived threads right under it; `hidden` adds the ones bb leaves out of lists, such as another plugin's. */
+  /** The unarchived threads right under it; `hidden` adds the ones VesnALIA leaves out of lists, such as another plugin's. */
   childThreads(threadId: string, options?: { hidden?: boolean }): Promise<ThreadInfo[]>;
   listProjects(): Promise<ProjectInfo[]>;
   listSkills(projectId: string): Promise<SkillInfo[]>;
-  /** Every environment provider bb has, on any machine; bb tells availability only for a project on a machine, so this has none. */
+  /** Every environment provider VesnALIA has, on any machine; VesnALIA tells availability only for a project on a machine, so this has none. */
   environmentProviders(): Promise<EnvironmentProviderInfo[]>;
   machineProviders(): Promise<MachineProviderInfo[]>;
-  /** Changes Shuttle's own bb settings. */
+  /** Changes Shuttle's own VesnALIA settings. */
   setSettings(patch: { autoAgent?: boolean; inboxRequests?: boolean; pauseAutomations?: boolean }): Promise<void>;
   publish(tags?: string[]): void;
   /** Runs `fn` just before each publish reaches the page, such as to rebuild what its reads will ask for. */
   beforePublish?(fn: () => void): void;
   log(level: "info" | "warn" | "error", text: string): void;
-  /** Sends the user a notification through bb's push-notifications plugin; without it, only logs. */
+  /** Sends the user a notification through VesnALIA's push-notifications plugin; without it, only logs. */
   notify(title: string, body: string): Promise<void>;
   /** What the thread used, from the Burn plugin; throws UsageUnavailableError without Burn. */
   threadUsage(threadId: string): Promise<UsageRead>;

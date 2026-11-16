@@ -21,15 +21,15 @@ test("fleet is searchable, selected by cards, and protects dirty drafts", () => 
   assert.match(app, /Save or cancel dashboard changes before switching hosts/u);
 });
 
-test("history uses the optimized BB-style combobox instead of a native select", () => {
+test("history uses the optimized ALIA-style combobox instead of a native select", () => {
   assert.match(app, /<HistoryRangeSelect/u);
   assert.match(app, /<SelectTrigger aria-labelledby="host-monitor-history-label">/u);
   assert.match(app, /<SelectContent align="end">/u);
   assert.match(app, /const RANGE_OPTIONS: ReadonlyArray/u);
   assert.doesNotMatch(app, /<select/u);
-  assert.match(styles, /\.bb-select__content\s*\{[^}]*min-width:\s*var\(--radix-select-trigger-width\)/su);
-  assert.match(styles, /\.bb-select__item\[data-highlighted\]/u);
-  assert.match(styles, /\.bb-select__item\[data-state="checked"\]/u);
+  assert.match(styles, /\.alia-select__content\s*\{[^}]*min-width:\s*var\(--radix-select-trigger-width\)/su);
+  assert.match(styles, /\.alia-select__item\[data-highlighted\]/u);
+  assert.match(styles, /\.alia-select__item\[data-state="checked"\]/u);
 });
 
 test("narrow layout uses a snap host strip, one widget column, and compact processes", () => {
@@ -66,7 +66,7 @@ test("live dashboard widgets are draggable in customization mode", () => {
   assert.match(styles, /\.host-monitor__grid-item\[data-drop-position="after"\]::after/u);
 });
 
-test("typography and restrained accents use BB theme conventions", () => {
+test("typography and restrained accents use VesnALIA theme conventions", () => {
   assert.match(styles, /font-family:\s*"Inter Variable",\s*Inter,\s*sans-serif/u);
   assert.match(styles, /--host-monitor-widget-accent:\s*var\(--muted-foreground\)/u);
   assert.match(styles, /data-accent="cpu"[\s\S]*var\(--primary\)/u);

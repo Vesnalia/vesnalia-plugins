@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { hostContract } from "./host-contract";
 import { diffGitSnapshots, type GitRepoSnapshot, type GitSnapshotEvent } from "./git-detector";
@@ -97,7 +97,7 @@ const TOKENS_PER_EXPERIENCE = 5000;
 const TOKENS_PER_EGG_STEP = 2500;
 const STARTER_EXPERIENCE = 5 ** 3;
 const NATIONAL_DEX_SIZE = 1025;
-type Database = ReturnType<BbPluginApi["storage"]["database"]>;
+type Database = ReturnType<AliaPluginApi["storage"]["database"]>;
 export function chooseFallbackPokemonNumber(eventKey: string) {
 	return createHash("sha256").update(eventKey).digest().readUInt32BE(0) % NATIONAL_DEX_SIZE + 1;
 }
@@ -219,7 +219,7 @@ function milestoneDescription(input: z.infer<typeof recordInputSchema>) {
 	return `Caught by ${action} ${input.source} ${input.reference} - ${input.title}`;
 }
 
-async function recordMilestone(db: Database, bb: BbPluginApi, input: z.infer<typeof recordInputSchema>, eventKey?: string) {
+async function recordMilestone(db: Database, alia: AliaPluginApi, input: z.infer<typeof recordInputSchema>, eventKey?: string) {
 	const key = eventKey ?? createHash("sha256").update(JSON.stringify(input)).digest("hex");
 	if (db.prepare("SELECT id FROM captures WHERE event_key = ? LIMIT 1").get(key) !== undefined) {
 		return { caught: false as const, message: "This milestone was already rewarded." };
@@ -249,7 +249,7 @@ async function recordMilestone(db: Database, bb: BbPluginApi, input: z.infer<typ
 	if (insertion.changes === 0) {
 		return { caught: false as const, message: "This milestone was already rewarded." };
 	}
-	bb.realtime.publish(COLLECTION_CHANGED, { reason: input.milestone });
+	alia.realtime.publish(COLLECTION_CHANGED, { reason: input.milestone });
 	return { caught: true as const, message: isEgg ? "A mysterious rare Egg appeared!" : `${shiny ? "Shiny " : ""}${resolved.name} was caught!` };
 }
 
@@ -298,14 +298,14 @@ async function ensureCompanionRoster(db: Database, capture: Capture, legacyToken
 		.run(capture.id, legacyTokens, JSON.stringify(path));
 }
 
-async function activeCompanionCapture(db: Database, bb: BbPluginApi, captures: Capture[]) {
-	let captureId = await bb.storage.kv.get<string>("activeCompanionCaptureId");
+async function activeCompanionCapture(db: Database, alia: AliaPluginApi, captures: Capture[]) {
+	let captureId = await alia.storage.kv.get<string>("activeCompanionCaptureId");
 	let capture = captures.find((entry) => entry.id === captureId && !entry.isEgg) ?? null;
 	if (capture === null) {
 		capture = captures.find((entry) => entry.milestone === "starter_selected") ?? null;
 		if (capture === null) return null;
 		captureId = capture.id;
-		await bb.storage.kv.set("activeCompanionCaptureId", captureId);
+		await alia.storage.kv.set("activeCompanionCaptureId", captureId);
 	}
 	const legacy = db.prepare("SELECT total_tokens FROM companion_progress WHERE id = 1").get() as { total_tokens?: number } | undefined;
 	await ensureCompanionRoster(db, capture, capture.milestone === "starter_selected" ? Number(legacy?.total_tokens ?? 0) : 0);
@@ -313,12 +313,12 @@ async function activeCompanionCapture(db: Database, bb: BbPluginApi, captures: C
 	return companionState(capture, row.total_tokens, JSON.parse(row.evolution_path_json) as EvolutionStage[]);
 }
 
-async function readCollection(db: Database, bb: BbPluginApi): Promise<Collection> {
-	const starter = await bb.storage.kv.get<StarterId>("starter") ?? null;
+async function readCollection(db: Database, alia: AliaPluginApi): Promise<Collection> {
+	const starter = await alia.storage.kv.get<StarterId>("starter") ?? null;
 	let captures = readCaptures(db);
-	const companion = starter === null ? null : await activeCompanionCapture(db, bb, captures);
+	const companion = starter === null ? null : await activeCompanionCapture(db, alia, captures);
 	if (companion !== null) {
-		await recordReachedEvolutions(db, bb, companion.captureId);
+		await recordReachedEvolutions(db, alia, companion.captureId);
 		captures = readCaptures(db);
 	}
 	return { starter, companion, captures,
@@ -326,9 +326,9 @@ async function readCollection(db: Database, bb: BbPluginApi): Promise<Collection
 		shinyCaptures: captures.filter((capture) => capture.isShiny).length };
 }
 
-async function selectStarter(db: Database, bb: BbPluginApi, starterId: StarterId) {
-	const current = await bb.storage.kv.get<StarterId>("starter");
-	await bb.storage.kv.set("starter", starterId);
+async function selectStarter(db: Database, alia: AliaPluginApi, starterId: StarterId) {
+	const current = await alia.storage.kv.get<StarterId>("starter");
+	await alia.storage.kv.set("starter", starterId);
 	if (current === undefined) {
 		const starter = starters.find((entry) => entry.id === starterId)!;
 		await ensurePokemonDetails(db, starter);
@@ -339,24 +339,24 @@ async function selectStarter(db: Database, bb: BbPluginApi, starterId: StarterId
 			VALUES (?, ?, ?, ?, ?, 'starter_selected', 'Pokemon Catcher', 'starter', ?, ?, NULL, ?, 0, 'rare')
 		`).run(captureId, `starter:${starterId}`, starter.id, starter.name, starter.number, `${starter.name} joined your journey`,
 			`Chose ${starter.name} as your starter companion`, new Date().toISOString());
-		await bb.storage.kv.set("activeCompanionCaptureId", captureId);
+		await alia.storage.kv.set("activeCompanionCaptureId", captureId);
 		const capture = readCaptures(db).find((entry) => entry.id === captureId)!;
 		await ensureCompanionRoster(db, capture);
 	}
-	bb.realtime.publish(COLLECTION_CHANGED, { reason: "starter_selected" });
-	return readCollection(db, bb);
+	alia.realtime.publish(COLLECTION_CHANGED, { reason: "starter_selected" });
+	return readCollection(db, alia);
 }
 
-async function selectCompanion(db: Database, bb: BbPluginApi, captureId: string) {
+async function selectCompanion(db: Database, alia: AliaPluginApi, captureId: string) {
 	const capture = readCaptures(db).find((entry) => entry.id === captureId);
 	if (capture === undefined || capture.isEgg) throw new Error("Choose a caught or hatched Pokemon as your companion.");
 	await ensureCompanionRoster(db, capture);
-	await bb.storage.kv.set("activeCompanionCaptureId", capture.id);
-	bb.realtime.publish(COLLECTION_CHANGED, { reason: "companion_selected" });
-	return readCollection(db, bb);
+	await alia.storage.kv.set("activeCompanionCaptureId", capture.id);
+	alia.realtime.publish(COLLECTION_CHANGED, { reason: "companion_selected" });
+	return readCollection(db, alia);
 }
 
-async function recordReachedEvolutions(db: Database, bb: BbPluginApi, captureId: string) {
+async function recordReachedEvolutions(db: Database, alia: AliaPluginApi, captureId: string) {
 	const captures = readCaptures(db);
 	const origin = captures.find((entry) => entry.id === captureId);
 	if (origin === undefined) return;
@@ -387,12 +387,12 @@ async function recordReachedEvolutions(db: Database, bb: BbPluginApi, captureId:
 			});
 		}
 	}
-	if (evolutions.length > 0) bb.realtime.publish(COLLECTION_CHANGED, { reason: "companion_evolved", captureId, evolutions });
+	if (evolutions.length > 0) alia.realtime.publish(COLLECTION_CHANGED, { reason: "companion_evolved", captureId, evolutions });
 }
 
-async function resetCollection(db: Database, bb: BbPluginApi) {
-	await bb.storage.kv.delete("starter");
-	await bb.storage.kv.delete("activeCompanionCaptureId");
+async function resetCollection(db: Database, alia: AliaPluginApi) {
+	await alia.storage.kv.delete("starter");
+	await alia.storage.kv.delete("activeCompanionCaptureId");
 	db.transaction(() => {
 		db.prepare("DELETE FROM companion_roster").run();
 		db.prepare("DELETE FROM captures").run();
@@ -401,12 +401,12 @@ async function resetCollection(db: Database, bb: BbPluginApi) {
 		db.prepare("DELETE FROM thread_token_usage").run();
 		db.prepare("DELETE FROM incubator_state").run();
 	})();
-	bb.realtime.publish(COLLECTION_CHANGED, { reason: "reset" });
-	return readCollection(db, bb);
+	alia.realtime.publish(COLLECTION_CHANGED, { reason: "reset" });
+	return readCollection(db, alia);
 }
 
-async function addDemoReward(db: Database, bb: BbPluginApi, kind: "egg" | "shiny") {
-	if (await bb.storage.kv.get<StarterId>("starter") === undefined) throw new Error("Choose a starter before adding demo rewards.");
+async function addDemoReward(db: Database, alia: AliaPluginApi, kind: "egg" | "shiny") {
+	if (await alia.storage.kv.get<StarterId>("starter") === undefined) throw new Error("Choose a starter before adding demo rewards.");
 	const candidate: PokemonCandidate = kind === "egg"
 		? { id: "dratini", name: "Dratini", number: 147 }
 		: { id: "ponyta", name: "Ponyta", number: 77 };
@@ -424,8 +424,8 @@ async function addDemoReward(db: Database, bb: BbPluginApi, kind: "egg" | "shiny
 		isEgg ? "Added a mystery Egg for demo purposes" : "Added a shiny Pokemon for demo purposes",
 		new Date().toISOString(), kind === "shiny" ? 1 : 0, isEgg ? "rare" : "uncommon",
 		isEgg ? 255 * (Number(row?.hatch_counter ?? 40) + 1) : 0, isEgg ? 5 : 15, isEgg ? 10 : 12);
-	bb.realtime.publish(COLLECTION_CHANGED, { reason: `demo-${kind}` });
-	return readCollection(db, bb);
+	alia.realtime.publish(COLLECTION_CHANGED, { reason: `demo-${kind}` });
+	return readCollection(db, alia);
 }
 
 function sleep(ms: number, signal: AbortSignal) {
@@ -535,10 +535,10 @@ function milestoneInput(event: GitSnapshotEvent): z.infer<typeof recordInputSche
 	return { milestone: "branch_opened", source, reference: branch, title };
 }
 
-export default async function plugin(bb: BbPluginApi) {
-	const db = bb.storage.database();
+export default async function plugin(alia: AliaPluginApi) {
+	const db = alia.storage.database();
 	ensureTables(db);
-	const settings = bb.settings.define({
+	const settings = alia.settings.define({
 		githubToken: { type: "string", label: "GitHub personal access token", secret: true },
 		shortcutToken: { type: "string", label: "Shortcut API token", secret: true },
 		jiraApiToken: { type: "string", label: "Jira API token", secret: true },
@@ -548,13 +548,13 @@ export default async function plugin(bb: BbPluginApi) {
 		showEvolutionAnimations: { type: "boolean", label: "Show evolution animations", default: true },
 		bounceCompanionWhileRunning: { type: "boolean", label: "Bounce companion while agents run", default: true },
 	});
-	const host = bb.hosts.experimental_client({ contract: hostContract });
+	const host = alia.hosts.experimental_client({ contract: hostContract });
 	const lifecycle = new AbortController();
-	bb.onDispose(() => lifecycle.abort());
+	alia.onDispose(() => lifecycle.abort());
 
 	async function readSettings(): Promise<PokemonSettings> {
 		const values = await settings.get();
-		const watchedRepositories = await bb.storage.kv.get<string[]>("watchedRepositories") ?? [];
+		const watchedRepositories = await alia.storage.kv.get<string[]>("watchedRepositories") ?? [];
 		const [github, shortcut, jira] = await Promise.all([
 			githubConnection(values.githubToken),
 			shortcutConnection(values.shortcutToken),
@@ -571,29 +571,29 @@ export default async function plugin(bb: BbPluginApi) {
 			bounceCompanionWhileRunning: values.bounceCompanionWhileRunning,
 		};
 	}
-	bb.rpc.register(rpcContract, {
-		collection_get: () => readCollection(db, bb),
-		collection_reset: () => resetCollection(db, bb),
-		demo_reward_add: ({ kind }) => addDemoReward(db, bb, kind),
-		starter_select: ({ starterId }) => selectStarter(db, bb, starterId),
-		companion_select: ({ captureId }) => selectCompanion(db, bb, captureId),
+	alia.rpc.register(rpcContract, {
+		collection_get: () => readCollection(db, alia),
+		collection_reset: () => resetCollection(db, alia),
+		demo_reward_add: ({ kind }) => addDemoReward(db, alia, kind),
+		starter_select: ({ starterId }) => selectStarter(db, alia, starterId),
+		companion_select: ({ captureId }) => selectCompanion(db, alia, captureId),
 		settings_get: () => readSettings(),
 		preferences_get: async () => {
 			const { showEvolutionAnimations, bounceCompanionWhileRunning } = await settings.get();
 			return { showEvolutionAnimations, bounceCompanionWhileRunning };
 		},
 		settings_update: async ({ watchedRepositories, projectManagementTool, showEvolutionAnimations, bounceCompanionWhileRunning }) => {
-			const current = await bb.storage.kv.get<string[]>("watchedRepositories") ?? [];
+			const current = await alia.storage.kv.get<string[]>("watchedRepositories") ?? [];
 			const additions = watchedRepositories.filter((repository) => !current.includes(repository));
 			if (additions.length > 0) {
 				const available = (await githubConnection((await settings.get()).githubToken)).repositories.map((repository) => repository.fullName);
 				if (additions.some((repository) => !available.includes(repository))) throw new Error("One or more selected GitHub repositories are unavailable");
 			}
 			await Promise.all([
-				bb.storage.kv.set("watchedRepositories", [...new Set(watchedRepositories)].sort()),
+				alia.storage.kv.set("watchedRepositories", [...new Set(watchedRepositories)].sort()),
 				settings.experimental_set({ projectManagementTool, showEvolutionAnimations, bounceCompanionWhileRunning }),
 			]);
-			bb.realtime.publish("preferences-changed", { showEvolutionAnimations, bounceCompanionWhileRunning });
+			alia.realtime.publish("preferences-changed", { showEvolutionAnimations, bounceCompanionWhileRunning });
 			return readSettings();
 		},
 		connection_save: async (input) => {
@@ -616,23 +616,23 @@ export default async function plugin(bb: BbPluginApi) {
 		connection_disconnect: async ({ service }) => {
 			if (service === "github") {
 				await settings.experimental_set({ githubToken: null });
-				await bb.storage.kv.set("watchedRepositories", []);
+				await alia.storage.kv.set("watchedRepositories", []);
 			} else if (service === "shortcut") await settings.experimental_set({ shortcutToken: null });
 			else await settings.experimental_set({ jiraApiToken: null });
 			return readSettings();
 		},
 	});
 
-	bb.events.on("experimental_thread.events", async ({ thread }) => {
-		if (await bb.storage.kv.get<StarterId>("starter") === undefined) return;
+	alia.events.on("experimental_thread.events", async ({ thread }) => {
+		if (await alia.storage.kv.get<StarterId>("starter") === undefined) return;
 		const captures = readCaptures(db);
-		const activeCaptureId = await bb.storage.kv.get<string>("activeCompanionCaptureId")
+		const activeCaptureId = await alia.storage.kv.get<string>("activeCompanionCaptureId")
 			?? captures.find((capture) => capture.milestone === "starter_selected")?.id;
 		if (activeCaptureId === undefined) return;
 		const activeCapture = captures.find((capture) => capture.id === activeCaptureId);
 		if (activeCapture === undefined) return;
 		await ensureCompanionRoster(db, activeCapture);
-		const events = await bb.sdk.threads.events.list({
+		const events = await alia.sdk.threads.events.list({
 			threadId: thread.id,
 			types: ["thread/tokenUsage/updated"],
 			order: "desc",
@@ -667,7 +667,7 @@ export default async function plugin(bb: BbPluginApi) {
 			}
 			return { addedTokens: delta, eggSteps, hatchedCaptureIds };
 		})();
-		if (progress.addedTokens > 0) await recordReachedEvolutions(db, bb, activeCaptureId);
+		if (progress.addedTokens > 0) await recordReachedEvolutions(db, alia, activeCaptureId);
 		if (progress.addedTokens > 0) {
 			const hatchedIds = new Set(progress.hatchedCaptureIds);
 			const hatches = readCaptures(db).filter(({ id }) => hatchedIds.has(id)).map((capture) => ({
@@ -677,44 +677,44 @@ export default async function plugin(bb: BbPluginApi) {
 				spriteUrl: capture.isShiny ? capture.shinySpriteUrl : capture.spriteUrl,
 				isShiny: capture.isShiny,
 			}));
-			bb.realtime.publish(COLLECTION_CHANGED, hatches.length === 0 ? progress : { ...progress, reason: "egg_hatched", hatches });
+			alia.realtime.publish(COLLECTION_CHANGED, hatches.length === 0 ? progress : { ...progress, reason: "egg_hatched", hatches });
 		}
 	});
 
-	bb.agents.registerTool({
+	alia.agents.registerTool({
 		name: "pokemon_record_milestone", description: "Record a verified engineering milestone and catch a Pokemon reward.",
 		parameters: recordInputSchema,
 		presentation: { label: { pending: "Catching a Pokemon", completed: "Caught a Pokemon" }, icon: { glyph: "Sparkles" }, tint: { light: "#fff7d6", dark: "#4a3900" } },
-		execute: async (input) => (await recordMilestone(db, bb, input)).message,
+		execute: async (input) => (await recordMilestone(db, alia, input)).message,
 	});
-	bb.agents.configure(() => ({ tools: ["pokemon_record_milestone"], skills: ["pokemon-catcher"],
-		instructions: "After personally verifying a successful commit, closed pull request, or completed ticket, call pokemon_record_milestone exactly once with the real source, reference, and title. Branches and BB worktrees are detected automatically." }));
+	alia.agents.configure(() => ({ tools: ["pokemon_record_milestone"], skills: ["pokemon-catcher"],
+		instructions: "After personally verifying a successful commit, closed pull request, or completed ticket, call pokemon_record_milestone exactly once with the real source, reference, and title. Branches and VesnALIA worktrees are detected automatically." }));
 
-	const usage = ["Usage:", "  bb pokemon collection [--json]", `  bb pokemon starter <${starters.map((starter) => starter.id).join("|")}> [--json]`,
-		"  bb pokemon companion <capture-id> [--json]",
-		"  bb pokemon catch <branch_opened|commit_created|pr_closed|ticket_completed> --source <system> --reference <id> --title <title> [--url <url>] [--json]"].join("\n");
-	bb.cli.register({
+	const usage = ["Usage:", "  VesnALIA pokemon collection [--json]", `  VesnALIA pokemon starter <${starters.map((starter) => starter.id).join("|")}> [--json]`,
+		"  VesnALIA pokemon companion <capture-id> [--json]",
+		"  VesnALIA pokemon catch <branch_opened|commit_created|pr_closed|ticket_completed> --source <system> --reference <id> --title <title> [--url <url>] [--json]"].join("\n");
+	alia.cli.register({
 		name: "pokemon", summary: "Catch Pokemon for verified engineering milestones",
 		commands: [
-			{ name: "collection", summary: "Show caught Pokemon", usage: "bb pokemon collection [--json]" },
-			{ name: "starter", summary: "Choose a starter", usage: "bb pokemon starter <name> [--json]" },
-			{ name: "companion", summary: "Choose any caught Pokemon as your companion", usage: "bb pokemon companion <capture-id> [--json]" },
+			{ name: "collection", summary: "Show caught Pokemon", usage: "alia pokemon collection [--json]" },
+			{ name: "starter", summary: "Choose a starter", usage: "alia pokemon starter <name> [--json]" },
+			{ name: "companion", summary: "Choose any caught Pokemon as your companion", usage: "alia pokemon companion <capture-id> [--json]" },
 			{ name: "catch", summary: "Reward a completed milestone", usage: usage.split("\n").at(-1)! },
 		],
 		async run(argv) {
 			const json = argv.includes("--json"); const args = argv.filter((arg) => arg !== "--json");
 			if (args[0] === "collection") {
-				const collection = await readCollection(db, bb);
+				const collection = await readCollection(db, alia);
 				const captures = collection.captures.slice(0, 100);
 				return { exitCode: 0, stdout: json ? JSON.stringify({ ...collection, captures, capturesTruncated: captures.length < collection.captures.length }) : `${collection.totalCaptures} Pokemon caught (${collection.uniquePokemon} unique).` };
 			}
 			if (args[0] === "starter" && args[1] !== undefined && starters.some((starter) => starter.id === args[1])) {
-				const collection = await selectStarter(db, bb, args[1] as StarterId);
+				const collection = await selectStarter(db, alia, args[1] as StarterId);
 				return { exitCode: 0, stdout: json ? JSON.stringify(collection) : `${collection.companion?.pokemonName ?? "Starter"} is now your companion.` };
 			}
 			if (args[0] === "companion" && args[1] !== undefined) {
 				try {
-					const collection = await selectCompanion(db, bb, args[1]);
+					const collection = await selectCompanion(db, alia, args[1]);
 					return { exitCode: 0, stdout: json ? JSON.stringify(collection) : `${collection.companion?.pokemonName ?? "Pokemon"} is now your companion.` };
 				} catch (error) {
 					return { exitCode: 1, stderr: error instanceof Error ? error.message : String(error) };
@@ -724,7 +724,7 @@ export default async function plugin(bb: BbPluginApi) {
 				const value = (flag: string) => { const index = args.indexOf(flag); return index === -1 ? undefined : args[index + 1]; };
 				const parsed = recordInputSchema.safeParse({ milestone: args[1], source: value("--source"), reference: value("--reference"), title: value("--title"), url: value("--url") });
 				if (parsed.success) {
-					const result = await recordMilestone(db, bb, parsed.data);
+					const result = await recordMilestone(db, alia, parsed.data);
 					return { exitCode: 0, stdout: json ? JSON.stringify(result) : result.message };
 				}
 			}
@@ -734,7 +734,7 @@ export default async function plugin(bb: BbPluginApi) {
 
 	async function reconcile(signal: AbortSignal) {
 		const [projects, environments] = await Promise.all([
-			bb.sdk.projects.list({ signal }), bb.sdk.environments.list({ status: "ready", signal, limit: 500 }),
+			alia.sdk.projects.list({ signal }), alia.sdk.environments.list({ status: "ready", signal, limit: 500 }),
 		]);
 		const rootsByHost = new Map<string, Set<string>>();
 		for (const project of projects) for (const source of project.sources) {
@@ -754,7 +754,7 @@ export default async function plugin(bb: BbPluginApi) {
 						? `branch_opened:${event.branch}:`
 						: `${event.kind}:${event.branch ?? ""}:${path}`;
 					const eventKey = createHash("sha256").update(`${hostId}:${snapshot.repoId}:${eventIdentity}`).digest("hex");
-					await recordMilestone(db, bb, milestoneInput(event), eventKey);
+					await recordMilestone(db, alia, milestoneInput(event), eventKey);
 				}
 				db.prepare(`INSERT INTO git_detector_snapshots (host_id, repo_id, snapshot_json, updated_at) VALUES (?, ?, ?, ?)
 					ON CONFLICT(host_id, repo_id) DO UPDATE SET snapshot_json = excluded.snapshot_json, updated_at = excluded.updated_at`)
@@ -770,22 +770,22 @@ export default async function plugin(bb: BbPluginApi) {
 		return reconciliation;
 	}
 
-	bb.background.service("git-milestone-detector", {
+	alia.background.service("git-milestone-detector", {
 		async start(signal) {
 			while (!signal.aborted) {
-				try { await runReconcile(signal); } catch (error) { if (!signal.aborted) bb.log.warn(`Git milestone scan failed: ${error instanceof Error ? error.message : String(error)}`); }
+				try { await runReconcile(signal); } catch (error) { if (!signal.aborted) alia.log.warn(`Git milestone scan failed: ${error instanceof Error ? error.message : String(error)}`); }
 				await sleep(15_000, signal);
 			}
 		},
 	});
-	bb.events.on("thread.active", () => {
-		void runReconcile().catch((error) => { if (!lifecycle.signal.aborted) bb.log.warn(`Immediate Git milestone scan failed: ${error instanceof Error ? error.message : String(error)}`); });
+	alia.events.on("thread.active", () => {
+		void runReconcile().catch((error) => { if (!lifecycle.signal.aborted) alia.log.warn(`Immediate Git milestone scan failed: ${error instanceof Error ? error.message : String(error)}`); });
 	});
 
 	async function reconcileGithub(signal: AbortSignal) {
 		const values = await settings.get();
 		if (values.githubToken === undefined) return;
-		const watchedRepositories = await bb.storage.kv.get<string[]>("watchedRepositories") ?? [];
+		const watchedRepositories = await alia.storage.kv.get<string[]>("watchedRepositories") ?? [];
 		if (watchedRepositories.length === 0) return;
 		const projectManagementTool = projectManagementToolSchema.parse(values.projectManagementTool);
 		const headers = { Accept: "application/vnd.github+json", Authorization: `Bearer ${values.githubToken}`, "X-GitHub-Api-Version": "2022-11-28" };
@@ -800,11 +800,11 @@ export default async function plugin(bb: BbPluginApi) {
 			const row = db.prepare("SELECT event_id FROM github_event_cursors WHERE repository = ?").get(repository) as { event_id: string } | undefined;
 			if (row !== undefined) {
 				const cursorIndex = events.findIndex((event) => event.id === row.event_id);
-				if (cursorIndex === -1) bb.log.warn(`GitHub event cursor for ${repository} fell outside the latest 100 events; baselining current activity.`);
+				if (cursorIndex === -1) alia.log.warn(`GitHub event cursor for ${repository} fell outside the latest 100 events; baselining current activity.`);
 				else for (const event of events.slice(0, cursorIndex).reverse()) {
 					for (const milestone of githubMilestones(repository, event, projectManagementTool)) {
 						const { eventKey, ...input } = milestone;
-						await recordMilestone(db, bb, input, eventKey);
+						await recordMilestone(db, alia, input, eventKey);
 					}
 				}
 			}
@@ -814,10 +814,10 @@ export default async function plugin(bb: BbPluginApi) {
 		}
 	}
 
-	bb.background.service("github-milestone-detector", {
+	alia.background.service("github-milestone-detector", {
 		async start(signal) {
 			while (!signal.aborted) {
-				try { await reconcileGithub(signal); } catch (error) { if (!signal.aborted) bb.log.warn(`GitHub milestone scan failed: ${error instanceof Error ? error.message : String(error)}`); }
+				try { await reconcileGithub(signal); } catch (error) { if (!signal.aborted) alia.log.warn(`GitHub milestone scan failed: ${error instanceof Error ? error.message : String(error)}`); }
 				await sleep(60_000, signal);
 			}
 		},

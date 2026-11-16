@@ -19,51 +19,51 @@ It offers two kinds, from the same images as the Docker backend:
 
 Each box has a kernel of its own, so Docker in it needs no privilege on the
 host, where a Docker box with Docker is a privileged container, and Chrome
-runs with its own sandbox. That isolation is what this backend is for. Boxes join BB as machines, as
+runs with its own sandbox. That isolation is what this backend is for. Boxes join VesnALIA as machines, as
 other Linux boxes do.
 
-The host is the machine that runs BB, another machine over SSH, or a BB
-machine, through BB. bb-box installs its own `msb` there, at the release it
+The host is the machine that runs VesnALIA, another machine over SSH, or a VesnALIA
+machine, through VesnALIA. alia-box installs its own `msb` there, at the release it
 pins, and reaches inside a box with `msb exec`, so it needs no network path to
-the boxes. How bb-box drives a box is in the
+the boxes. How alia-box drives a box is in the
 [architecture](../../docs/architecture.md#microsandbox).
 
 ## What you need
 
 - A Linux host on x86_64 with `/dev/kvm`: the machine itself, or a VM with
-  nested virtualisation on. bb-box is tested on a Windows PC's WSL 2, where
+  nested virtualisation on. alia-box is tested on a Windows PC's WSL 2, where
   Hyper-V nests KVM, with glibc 2.28 or later.
 - The user who runs the boxes allowed to use `/dev/kvm`: on most
-  distributions, in the `kvm` group. On a BB machine that is the user BB's
-  app runs as; over SSH, the user bb-box logs in as; on BB's server, the user
-  BB runs as.
-- `curl` and `tar` on the host, with which bb-box installs `msb`.
+  distributions, in the `kvm` group. On a VesnALIA machine that is the user VesnALIA's
+  app runs as; over SSH, the user alia-box logs in as; on VesnALIA's server, the user
+  VesnALIA runs as.
+- `curl` and `tar` on the host, with which alia-box installs `msb`.
 - Docker on the host, to build the images, as for the Docker backend: about
-  28 GB free to build both. bb-box imports them from Docker into `msb`.
+  28 GB free to build both. alia-box imports them from Docker into `msb`.
 - Disk for `msb`: about 6 GB for both images once imported, and what each box
   writes. A box's disks are sparse, so they take only what it writes.
-- Memory for the boxes: bb-box keeps 4 GiB of the host's memory free by
+- Memory for the boxes: alia-box keeps 4 GiB of the host's memory free by
   default, and counts each running box's full size, so a host for a few
-  small boxes needs 16 GiB. A box that has joined BB holds about 0.5 GiB of
-  the host's memory while idle, once bb-box has had it drop its page cache
+  small boxes needs 16 GiB. A box that has joined VesnALIA holds about 0.5 GiB of
+  the host's memory while idle, once alia-box has had it drop its page cache
   (below). A host of mostly idle boxes can take more: see
   [Fit more boxes on a host](#fit-more-boxes-on-a-host).
-- For a host over SSH: the user BB runs as logs in to it with a key and no
+- For a host over SSH: the user VesnALIA runs as logs in to it with a key and no
   prompt.
 
 Before you rely on it:
 
-- **Beta.** `msb` is 0.7.7 and may change before 1.0. bb-box pins one
-  release, checks its SHA-256, and moves to a new one only in a bb-box
+- **Beta.** `msb` is 0.7.7 and may change before 1.0. alia-box pins one
+  release, checks its SHA-256, and moves to a new one only in a alia-box
   release that passes the conformance suite (see Update).
 - **Not a security boundary.** A box has its own kernel, but its user may use
-  `sudo`, and bb-box does not aim at isolation.
+  `sudo`, and alia-box does not aim at isolation.
 - **Not in LXC.** A Proxmox LXC container with `/dev/kvm` passed in runs
   boxes, but its seccomp filter stops `msb`'s snapshots and flat roots, which
   spares from forks will need. Use a VM or the machine itself.
 - **No GPU.** `msb` has no GPU, so there are no GPU desktops.
-- **Enrolment.** A box reaches BB's server through `msb`'s network, with the
-  profiles `public,private`, so BB on a private or tailnet address works. BB
+- **Enrolment.** A box reaches VesnALIA's server through `msb`'s network, with the
+  profiles `public,private`, so VesnALIA on a private or tailnet address works. VesnALIA
   on the host's localhost does not.
 
 ## Steps
@@ -78,30 +78,30 @@ id                             # the user is in its group, usually kvm
 sudo usermod -aG kvm "$USER"   # if not, then sign in again
 ```
 
-On a BB machine, BB's app keeps the groups it started with. After adding its
+On a VesnALIA machine, VesnALIA's app keeps the groups it started with. After adding its
 user to `kvm`, restart that user's services:
 `sudo systemctl restart user@$(id -u <user>).service`. In WSL, run
 `wsl --shutdown` from Windows instead, and start the distribution again.
 
 ### 2. Build the images
 
-bb-box never pulls an image. Build them with Docker on the host, from a
-checkout of bb-box, as for the [Docker backend](../docker/README.md#2-build-the-images):
+alia-box never pulls an image. Build them with Docker on the host, from a
+checkout of alia-box, as for the [Docker backend](../docker/README.md#2-build-the-images):
 
 ```sh
-git clone <bb-box repository> && cd bb-box
+git clone <alia-box repository> && cd alia-box
 setup/docker/build.sh linux desktop
 ```
 
-bb-box imports `bbbox/linux:1` and `bbbox/linux-desktop:1` into `msb` with
+alia-box imports `bbbox/linux:1` and `bbbox/linux-desktop:1` into `msb` with
 `docker save` and `msb load`: the linux image in about 6 s and the desktop in
 about 20 s, at the first box of each kind, or by its upkeep within a few
 minutes. It imports an image again when Docker's has changed. A host that is
 also a Docker backend's shares these images with it.
 
-A host without Docker, such as a Mac, needs no step here: bb-box builds each
-image there itself, in a microVM of its own, `bb-box-builder-<id>`, from
-Docker's `docker:dind` image, pinned by digest, the only image bb-box pulls.
+A host without Docker, such as a Mac, needs no step here: alia-box builds each
+image there itself, in a microVM of its own, `alia-box-builder-<id>`, from
+Docker's `docker:dind` image, pinned by digest, the only image alia-box pulls.
 It runs `setup/docker/build.sh` for the host's architecture inside, moves the
 image into `msb`, and removes the builder. The linux image took about 3
 minutes on a Mac; it needs 80 GiB free while it builds, and the first box of
@@ -113,20 +113,20 @@ A Mac with Apple silicon runs the arm64 kinds, `linux-arm64` and
 `linux-arm64-desktop-cpu` (040), from `bbbox/linux:1-arm64` and
 `bbbox/linux-desktop:1-arm64`, beside Tart's VMs of the same kinds and after
 them in the backend order. msb uses the Hypervisor framework, so the Mac
-needs nothing installed: reach it as a BB machine, `bb:<machine ID>`, or over
-`ssh://` as Tart's backend does. bb-box keeps `msb`, its state and the
+needs nothing installed: reach it as a VesnALIA machine, `alia:<machine ID>`, or over
+`ssh://` as Tart's backend does. alia-box keeps `msb`, its state and the
 images in its data folder on the Mac, about 2.4 GiB with the linux image and
 6 GiB with both. A Mac does not take back memory a box has used, so count
 each box at its full size there.
 
-### 3. Configure bb-box
+### 3. Configure alia-box
 
-On BB Box's settings page in BB, set up the microsandbox backend: fill in its
+On VesnALIA Box's settings page in VesnALIA, set up the microsandbox backend: fill in its
 fields, press Check, then Save and turn on.
 
 | Field | Default | Meaning |
 | --- | --- | --- |
-| `host` | empty | `bb:<machine ID>` for a BB machine, which bb-box reaches through BB, or `ssh://user@host`. Empty uses the machine that runs BB |
+| `host` | empty | `alia:<machine ID>` for a VesnALIA machine, which alia-box reaches through VesnALIA, or `ssh://user@host`. Empty uses the machine that runs VesnALIA |
 | `linux-image` | `bbbox/linux:1` | The image of linux boxes. Empty turns them off |
 | `desktop-image` | `bbbox/linux-desktop:1` | The image of linux-desktop-cpu boxes. Empty turns them off |
 | `linux-arm64-image` | `bbbox/linux:1-arm64` | The image of linux-arm64 boxes, on an arm64 host such as a Mac. Empty turns them off |
@@ -135,72 +135,72 @@ fields, press Check, then Save and turn on.
 | `docker-disk-gib` | 64 | The most each box's Docker disk may grow to |
 | `disk-gib` | 32 | The most a box's root disk may grow to, when no disk size is asked for |
 | `network` | `public,private` | `msb`'s network profiles for each box: `public` reaches the internet, `private` the host's local networks and tailnet |
-| `boxes` | 20 | The most bb-box microVMs on the host, running or stopped, of every bb-box install that uses it |
+| `boxes` | 20 | The most alia-box microVMs on the host, running or stopped, of every alia-box install that uses it |
 | `reserve-memory-mib` | 4096 | A new box is refused when the host would have less memory than this left, after the memory of the running boxes |
 | `memory-overcommit` | 1 | How many times the host's memory, less the memory kept free, the running boxes' sizes may add up to. 1 counts each box at its full size |
 
-`bb machine list` gives a BB machine's ID. From a terminal,
-`bb box config show --json` prints the configuration, and
-`bb box config apply <file>` saves it. A backend on a BB machine is:
+`alia machine list` gives a VesnALIA machine's ID. From a terminal,
+`alia box config show --json` prints the configuration, and
+`alia box config apply <file>` saves it. A backend on a VesnALIA machine is:
 
 ```json
-{ "id": "microsandbox", "type": "microsandbox", "enabled": true, "fields": { "host": "bb:host_abc123" } }
+{ "id": "microsandbox", "type": "microsandbox", "enabled": true, "fields": { "host": "alia:host_abc123" } }
 ```
 
 Another microsandbox backend, on another host, has an ID of its own, such as
 `microsandbox:devpc`.
 
-bb-box installs `msb` on the host the first time it needs it, which takes
+alia-box installs `msb` on the host the first time it needs it, which takes
 about 2 s. It keeps `msb`, its state and the images in a folder of its own:
 
 | Host | Folder |
 | --- | --- |
-| A BB machine | `microsandbox` in bb-box's data folder on the machine, such as `~/.bb-machines/<BB server>/plugins/bb-box/host-data/microsandbox` |
-| Over SSH, or BB's server | `~/.local/share/bb-box/microsandbox` |
+| A VesnALIA machine | `microsandbox` in alia-box's data folder on the machine, such as `~/.alia-machines/<ALIA server>/plugins/alia-box/host-data/microsandbox` |
+| Over SSH, or VesnALIA's server | `~/.local/share/alia-box/microsandbox` |
 
 Each box's Docker disk is `msb`'s own, and goes with the box. A box an
-earlier bb-box made has its Docker disk in the folder's `disks` instead,
+earlier alia-box made has its Docker disk in the folder's `disks` instead,
 which also goes with it.
 
 A box keeps the files it reads cached in its own memory, which the host
-cannot share. Every 3 minutes bb-box has each idle box drop that cache, so
-the host gets the memory back: an idle box that has joined BB holds about
+cannot share. Every 3 minutes alia-box has each idle box drop that cache, so
+the host gets the memory back: an idle box that has joined VesnALIA holds about
 0.5 GiB.
 
 #### Fit more boxes on a host
 
-bb-box counts each running box at its full size, though an idle box holds
+alia-box counts each running box at its full size, though an idle box holds
 about 0.5 GiB. On a host whose boxes are mostly idle agent boxes, raise
 `memory-overcommit` to fit more. At 2, the boxes' sizes may add up to twice
 the host's memory, less the memory kept free. A 64 GiB host that keeps 4 GiB
 free then takes 30 boxes of 4 GiB rather than 15. Raise `boxes` too, which
 is 20 by default.
 
-Above 1, bb-box also checks the memory the host has available now before it
+Above 1, alia-box also checks the memory the host has available now before it
 starts a box. A new box needs up to 2 GiB as it starts, or its size if less,
 on top of the memory kept free. So while the boxes are busy, a new box is
 refused, with the reason, until memory is free again.
 
 If busy boxes still need more memory than the host has, Linux ends one of
-the boxes rather than BB's daemon, as bb-box raises each box's
+the boxes rather than VesnALIA's daemon, as alia-box raises each box's
 `oom_score_adj`. Raise the setting a little at a time, such as to 1.5, and
 watch the host's memory.
 
-On a Mac, memory a box has used is not given back, so bb-box counts each
+On a Mac, memory a box has used is not given back, so alia-box counts each
 box there at its full size, whatever the setting, and the doctor warns when
 it is above 1. Tart's VMs share the Mac's memory too.
 
 `msb` needs a short path for its sockets, so when the folder's is long,
-`msb` reaches it through a link, `/tmp/bb-box-msb-<uid>`. bb-box never uses
+`msb` reaches it through a link, `/tmp/alia-box-msb-<uid>`. alia-box never uses
 your own `~/.microsandbox`.
 
 #### Spares
 
 A kind's spares (032) are boxes made ahead and enrolled, so a claimed box is
-a BB machine at once: set a kind's `spares` in the configuration. They go to
+a VesnALIA machine at once: set a kind's `spares` in the configuration. They go to
 the first backend in the order with room, so for microsandbox to hold them
 it must come before the kind's other backends. microsandbox makes a spare as
-it makes any box: a new microVM, about 2 s, then BB's enrolment, about 20 s,
+it makes any box: a new microVM, about 2 s, then VesnALIA's enrolment, about 20 s,
 which the spare hides. A spare stays running while it waits, as `msb stop`
 does not keep a box's session.
 
@@ -211,13 +211,13 @@ does not keep a box's session.
   about 1.5 GiB from enrolment, and up to its full size, 4 GiB for a small
   `linux-arm64` box, for as long as it waits. Keep spares there at 0 unless
   the Mac has room to spare.
-- bb-box does not fork spares from a prepared box. On a Mac, a fork took
+- alia-box does not fork spares from a prepared box. On a Mac, a fork took
   1.75 s against 1.8 s for a new box; on an ext4 host a fork copies the
   box's disk and is slower still (053).
 
 ### Snapshots
 
-bb-box takes, restores, forks, keeps and deletes snapshots of microsandbox
+alia-box takes, restores, forks, keeps and deletes snapshots of microsandbox
 boxes with `msb`'s own snapshots
 ([Snapshots](../../docs/guide/snapshots.md)). They live in `msb`'s folder on
 the host, apart from each box's microVM, and outlive it.
@@ -228,7 +228,7 @@ the host, apart from each box's microVM, and outlive it.
   box while `msb` captures its disk; with memory the box pauses for about a
   second. The take's answer says how long, from `msb`'s own log.
 - **A restore** makes the box a new microVM from the snapshot, with the
-  box's ID, name, labels and identity value, so it stays the same BB machine,
+  box's ID, name, labels and identity value, so it stays the same VesnALIA machine,
   then deletes the old one. The undo is a snapshot of the box once stopped.
 - **A fork** boots a new microVM from the snapshot's disk only, never its
   memory and never with `msb fork`, so nothing of its source runs in it. Its
@@ -237,14 +237,14 @@ the host, apart from each box's microVM, and outlive it.
   (`general.identityResetBackends`), as for the other backends.
 - **Chains.** `msb` keeps each box's snapshots in a chain, each taken after
   the one before, and refuses to delete one that others were taken after.
-  Each holds its own data, so bb-box deletes any of them with `--force`, and
+  Each holds its own data, so alia-box deletes any of them with `--force`, and
   says on each which one it was taken after.
 - **Keep** writes the keep date in the folder's `kept`, as `msb` cannot
   change a snapshot's labels. A kept snapshot stays on the host after its
   box's release, at its whole size, until its date.
-- **Only with `msb` 0.7.7**, the release whose snapshots bb-box measured.
+- **Only with `msb` 0.7.7**, the release whose snapshots alia-box measured.
   With any other, the doctor's Snapshots check warns and boxes take none.
-- **Not on a box an earlier bb-box made**: its Docker disk is a file of the
+- **Not on a box an earlier alia-box made**: its Docker disk is a file of the
   host's, which `msb` leaves out of a snapshot. Such a box says why, and
   works as before otherwise.
 - **Not in LXC**, as above.
@@ -254,22 +254,22 @@ the host, apart from each box's microVM, and outlive it.
 
 ## Check it worked
 
-Run `bb box doctor`. For the microsandbox backend it checks:
+Run `alia box doctor`. For the microsandbox backend it checks:
 
 - the host answers, runs Linux on x86_64, and its cores, memory and free disk;
-- `msb` is installed at the release bb-box pins;
+- `msb` is installed at the release alia-box pins;
 - `/dev/kvm` is there and the user may use it;
-- each image is in `msb`, or in Docker for bb-box to import, and how old it
+- each image is in `msb`, or in Docker for alia-box to import, and how old it
   is;
-- whether the host's `msb` is the release whose snapshots bb-box measured;
+- whether the host's `msb` is the release whose snapshots alia-box measured;
 - whether the host is an LXC container;
 - the room on the host for a box at each kind's default size.
 
 Its notes say how much disk `msb`'s state and images take.
 
-To try the backend without BB, run the conformance suite from a checkout of
-bb-box on the host. It acquires a box of each kind, checks it, and releases
-it; without BB it skips enrolment, and says so:
+To try the backend without VesnALIA, run the conformance suite from a checkout of
+alia-box on the host. It acquires a box of each kind, checks it, and releases
+it; without VesnALIA it skips enrolment, and says so:
 
 ```sh
 npm install
@@ -279,42 +279,42 @@ npm run conformance -- --backend microsandbox --settings msb.json
 
 ## Update
 
-- **msb.** A bb-box release that pins a new `msb` installs it the first time
-  it needs it, beside the old one in bb-box's folder, after checking its
-  SHA-256. Do not run `msb self update` on bb-box's `msb`: bb-box would put
+- **msb.** A alia-box release that pins a new `msb` installs it the first time
+  it needs it, beside the old one in alia-box's folder, after checking its
+  SHA-256. Do not run `msb self update` on alia-box's `msb`: alia-box would put
   its own release back. To free the space, remove the old release's folder,
   named by its version, such as `0.7.7`.
 - **Images.** On a host with Docker, rebuild them with `build.sh`, or let the
   nightly run rebuild Docker's
-  ([setup](../README.md#rebuild-images-each-night)). bb-box imports each
+  ([setup](../README.md#rebuild-images-each-night)). alia-box imports each
   changed image into `msb` within a few minutes.
 - **Images on a host without Docker**, such as a Mac: the nightly run
   rebuilds them there itself, once set up. It builds each in a builder
-  microVM with BB's app, so boxes enrol without downloading it, under a tag
+  microVM with VesnALIA's app, so boxes enrol without downloading it, under a tag
   of its own, then checks a box of the new build. Only when that passes
   does the build take the image's name. It needs 80 GiB free on the volume
   where `msb` keeps its images and build files, measured through any link
   to another volume. With less, the image waits for the next night, and
-  `bb box doctor` says so. `bb box images build <name>`, with the name
-  `bb box images list` gives, rebuilds one now. The build runs detached in
-  the builder, and bb-box checks on it every 10 seconds. When a build
-  fails, its last lines in `bb box images list --json` include the guest's
+  `alia box doctor` says so. `alia box images build <name>`, with the name
+  `alia box images list` gives, rebuilds one now. The build runs detached in
+  the builder, and alia-box checks on it every 10 seconds. When a build
+  fails, its last lines in `alia box images list --json` include the guest's
   kernel log and memory (`guest:`) and the builder's last `msb logs` lines
-  (`msb:`), as bb-box removes the builder.
+  (`msb:`), as alia-box removes the builder.
 - Boxes made before keep running from the image they started with.
 
 ## Remove
 
-1. In BB, release the backend's boxes, turn the backend off and remove it on
-   BB Box's settings page.
-2. On the host, remove bb-box's folder (see the table under step 3) and its
+1. In VesnALIA, release the backend's boxes, turn the backend off and remove it on
+   VesnALIA Box's settings page.
+2. On the host, remove alia-box's folder (see the table under step 3) and its
    link:
 
    ```sh
    bin=<folder>/bin/msb
    "$bin" ls                       # any boxes left
    "$bin" rm --force <name>
-   rm -rf <folder> /tmp/bb-box-msb-$(id -u)
+   rm -rf <folder> /tmp/alia-box-msb-$(id -u)
    ```
 
 3. Remove the images from Docker if no Docker backend uses them:
@@ -324,16 +324,16 @@ npm run conformance -- --backend microsandbox --settings msb.json
 
 - **"has no /dev/kvm"**: the host has no KVM. Use the machine itself, or turn
   on nested virtualisation for its VM.
-- **"BB's user may not use it"**: add the user to the `kvm` group (step 1),
+- **"VesnALIA's user may not use it"**: add the user to the `kvm` group (step 1),
   then restart its services so it has the group.
 - **"has no image"**: build the images with Docker on the host (step 2).
 - **Installing msb fails**: the host needs `curl` and `tar`, and to reach
   GitHub. "SHA-256 is ..., not ..." means the download was not the release
-  bb-box was tested with, so bb-box did not install it. Try again later.
-- **A box does not join BB**: check that BB's server URL resolves and
+  alia-box was tested with, so alia-box did not install it. Try again later.
+- **A box does not join VesnALIA**: check that VesnALIA's server URL resolves and
   connects from the host. Its address must be one the `network` profiles
   reach: keep `private` for a private or tailnet address.
-- **"belongs to another user"**: someone else owns `/tmp/bb-box-msb-<uid>`.
+- **"belongs to another user"**: someone else owns `/tmp/alia-box-msb-<uid>`.
   Remove it.
 - **A box does not come up**: `<folder>/bin/msb logs bbbox-<box ID>` shows
-  its output. bb-box's error says what it saw.
+  its output. alia-box's error says what it saw.

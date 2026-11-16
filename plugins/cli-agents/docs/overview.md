@@ -5,7 +5,7 @@ created: 2026-09-27
 updated: 2026-10-01
 status: active
 confidence: medium
-tags: [cli-agents, overview, bb-plugin]
+tags: [cli-agents, overview, alia-plugin]
 sources:
   - package.json
   - app.tsx
@@ -18,18 +18,18 @@ sources:
 
 # CLI Agents overview
 
-TL;DR: CLI Agents adds a BB composer picker that selects a native Claude Code, OpenCode, or Codex agent and binds it to a chat.
+TL;DR: CLI Agents adds a VesnALIA composer picker that selects a native Claude Code, OpenCode, or Codex agent and binds it to a chat.
 
 ## What it is
 
-CLI Agents is a BB plugin with a frontend composer action, a BB server module, and a host entry for machine-side CLI discovery and process setup (`package.json:9-20`). The picker is registered for new-thread and thread composers; in thread scope it appears for handoff composers, resolves the source thread’s project, and saves its choice in the project/provider pending record for the new thread (`app.tsx:495-505`, `app.tsx:23-38`, `lib/handoff-mode.ts:1-32`, `server.ts:89-101`).
+CLI Agents is a VesnALIA plugin with a frontend composer action, a VesnALIA server module, and a host entry for machine-side CLI discovery and process setup (`package.json:9-20`). The picker is registered for new-thread and thread composers; in thread scope it appears for handoff composers, resolves the source thread’s project, and saves its choice in the project/provider pending record for the new thread (`app.tsx:495-505`, `app.tsx:23-38`, `lib/handoff-mode.ts:1-32`, `server.ts:89-101`).
 
-The plugin supports three BB provider IDs: `claude-code`, `acp-opencode`, and `codex` (`contract.ts:3`). Claude Code and OpenCode receive native launch configuration; Codex selection contributes the profile's developer instructions through BB (`server.ts:221-228`, `adapters/launch.ts:29-60`).
+The plugin supports three VesnALIA provider IDs: `claude-code`, `acp-opencode`, and `codex` (`contract.ts:3`). Claude Code and OpenCode receive native launch configuration; Codex selection contributes the profile's developer instructions through VesnALIA (`server.ts:221-228`, `adapters/launch.ts:29-60`).
 
 ## Stack
 
-- TypeScript ES modules with React for the BB composer UI (`package.json:3-8`, `package.json:15-20`).
-- `@get-bb/plugin-sdk` 0.4.84 for BB plugin and host contracts (`package.json:31-33`).
+- TypeScript ES modules with React for the VesnALIA composer UI (`package.json:3-8`, `package.json:15-20`).
+- `@vesnalia/plugin-sdk` 0.4.84 for VesnALIA plugin and host contracts (`package.json:31-33`).
 - Zod for runtime validation of provider, selection, catalog, and RPC payloads (`package.json:22-30`, `contract.ts:3-35`).
 
 ## Quick start
@@ -39,16 +39,16 @@ The plugin declares its server, app, and host entry files and build command (`pa
 ```sh
 npm ci
 npm run build
-bb plugin install .
+alia plugin install .
 ```
 
-The BB install command is also listed in the root [README](../README.md).
+The VesnALIA install command is also listed in the root [README](../README.md).
 
 ## Where to look next
 
 - [Architecture](architecture.md) — component boundaries, contracts, and dispatch flow.
 - [Adapters](ADAPTERS.md) — discovery and launch behavior, plus the host RPC extension seam.
-- [Data model](data-model.md) — BB key-value records used for selections and thread state.
+- [Data model](data-model.md) — VesnALIA key-value records used for selections and thread state.
 - [Deployment](deployment.md) — local build and install procedure.
 - [Gotchas](gotchas.md) — unsupported targets and integration limits.
 

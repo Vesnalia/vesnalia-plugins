@@ -1,5 +1,5 @@
 // [REDWORK] Narrow-panel repro: on a WIDE window the media query reads
-// "desktop", but the operator can squeeze the bb panel itself to ~250px.
+// "desktop", but the operator can squeeze the VesnALIA panel itself to ~250px.
 // The collapsed header holds its own there; what clips is the thread pane:
 // the non-compact `<aside>` keeps its stored width beside the board, and
 // a wide pane juts past the panel's right edge (title + ✨ painted over
@@ -27,7 +27,7 @@ await mkdir(OUT, { recursive: true });
 await page.goto(BASE, { waitUntil: "networkidle0" });
 await sleep(1000);
 
-// Squeeze the plugin panel itself (simulating a narrow bb panel on the
+// Squeeze the plugin panel itself (simulating a narrow VesnALIA panel on the
 // wide window above). A stylesheet, not inline styles: opening the pane
 // remounts the panel and wipes inline overrides.
 const squeeze = async (width) => {
@@ -38,7 +38,7 @@ const squeeze = async (width) => {
       tag.id = "repro-squeeze";
       document.head.appendChild(tag);
     }
-    tag.textContent = `[data-bb-plugin="focus-board"] { width: ${width}px !important; min-width: ${width}px !important; max-width: ${width}px !important; outline: 1px solid red; }`;
+    tag.textContent = `[data-alia-plugin="focus-board"] { width: ${width}px !important; min-width: ${width}px !important; max-width: ${width}px !important; outline: 1px solid red; }`;
   }, width);
 };
 await squeeze(250);
@@ -53,7 +53,7 @@ async function snapshot(label) {
       const r = el.getBoundingClientRect();
       return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) };
     };
-    const panel = document.querySelector('[data-bb-plugin="focus-board"]');
+    const panel = document.querySelector('[data-alia-plugin="focus-board"]');
     const aside = document.querySelector('aside[role="complementary"]');
     const title = aside?.querySelector("h1, h2, [title]") ?? null;
     return {

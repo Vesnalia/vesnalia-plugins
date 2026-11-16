@@ -7,7 +7,7 @@ import type { HookDefinition } from "../src/definitions.js";
 import { createRunner } from "../src/runner.js";
 import { SECRET_MIGRATIONS, createSecretStore, decrypt, encrypt, envNameFor, generateKey, hookSecretRefs, referencedSecrets } from "../src/secrets.js";
 
-const dir = mkdtempSync(join(tmpdir(), "bb-hooks-secrets-"));
+const dir = mkdtempSync(join(tmpdir(), "alia-hooks-secrets-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 function openStore() {
@@ -26,8 +26,8 @@ describe("encryption", () => {
   });
 
   it("maps names to environment variables", () => {
-    expect(envNameFor("slack/webhookUrl")).toBe("BB_SECRET_SLACK_WEBHOOKURL");
-    expect(envNameFor("my-token.v2")).toBe("BB_SECRET_MY_TOKEN_V2");
+    expect(envNameFor("slack/webhookUrl")).toBe("ALIA_SECRET_SLACK_WEBHOOKURL");
+    expect(envNameFor("my-token.v2")).toBe("ALIA_SECRET_MY_TOKEN_V2");
   });
 });
 

@@ -1,5 +1,5 @@
 // HTML view: the page renders live in a sandboxed frame (opaque origin, so its
-// scripts cannot reach bb), and the bridge the server injects into it
+// scripts cannot reach VesnALIA), and the bridge the server injects into it
 // (src/html-bridge.ts) reports selections and picked elements and paints the
 // comments sent to it. In Text mode a selection gets a Comment button; in
 // Element mode a click on any block, button, or picture comments on it; in

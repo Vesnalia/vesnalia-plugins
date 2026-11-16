@@ -28,7 +28,7 @@ test("what's kept as the window resizes waits 300ms: a workspace that takes this
   const gone = present("pr-42");
   keep("pr-42", { panelOverlay: true });
   window.dispatchEvent(new Event("resize"));
-  // BB's old pane, at the window's new size, docks what was over the code.
+  // VesnALIA's old pane, at the window's new size, docks what was over the code.
   keep("pr-42", { panelOverlay: false });
   expect(carried("pr-42")).toEqual({ panelOverlay: true });
   vi.advanceTimersByTime(100);

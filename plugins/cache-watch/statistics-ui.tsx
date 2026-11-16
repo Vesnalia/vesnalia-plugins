@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRealtime, useRpc, type ExperimentalMessageMetadataProps } from '@get-bb/plugin-sdk/app';
+import { useRealtime, useRpc, type ExperimentalMessageMetadataProps } from '@vesnalia/plugin-sdk/app';
 import type { rpcContract } from './server';
 import type { SavedTurn, SessionStatistics } from './statistics';
 import { CostDetails, LastCacheUse, TurnUsageDetails, firstLabel, requestCount, writeLifetimesText } from './thread-cache';

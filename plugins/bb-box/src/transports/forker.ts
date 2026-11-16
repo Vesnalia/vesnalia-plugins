@@ -1,11 +1,11 @@
-// Starts bb-box's short-lived child processes from a small helper process,
-// not from BB's server. On Linux, libuv starts a child with fork, on the
-// loop's thread, and the fork copies the parent's page tables: with BB's
+// Starts alia-box's short-lived child processes from a small helper process,
+// not from VesnALIA's server. On Linux, libuv starts a child with fork, on the
+// loop's thread, and the fork copies the parent's page tables: with VesnALIA's
 // server at 3.5 GB, each spawn held every desktop's frames and input for
-// about 49 ms, and bb-box spawned about 47 a minute, an ssh client for each
+// about 49 ms, and alia-box spawned about 47 a minute, an ssh client for each
 // command (measured 22 October 2026). The helper is started once, and forks
 // in a few hundred microseconds; the child's output comes back over its IPC
-// channel. Should the helper not start, or end, bb-box spawns directly, as
+// channel. Should the helper not start, or end, alia-box spawns directly, as
 // before. Long-lived streams, a desktop's route or a terminal, are few and keep
 // their own pipes.
 
@@ -14,7 +14,7 @@ import { EventEmitter } from "node:events";
 import { PassThrough, Writable } from "node:stream";
 import { timedSpawn } from "./spawns.ts";
 
-/** What bb-box uses of a child process. */
+/** What alia-box uses of a child process. */
 export interface ChildLike extends EventEmitter {
   readonly stdin: Writable;
   readonly stdout: PassThrough | NonNullable<ChildProcess["stdout"]>;
@@ -37,13 +37,13 @@ const AHEAD = 16;
 const signalOnceStarted = (child, signal) => { if (!Number.isSafeInteger(child.pid) || child.pid <= 0) return; try { child.kill(signal); } catch {} };
 const send = (message, child) => {
   if (child) {
-    child.bbAhead = (child.bbAhead || 0) + 1;
-    if (child.bbAhead > AHEAD) { child.stdout.pause(); child.stderr.pause(); }
+    child.aliaAhead = (child.aliaAhead || 0) + 1;
+    if (child.aliaAhead > AHEAD) { child.stdout.pause(); child.stderr.pause(); }
   }
   process.send(message, undefined, undefined, () => {
     if (!child) return;
-    child.bbAhead--;
-    if (child.bbAhead <= AHEAD / 2 && !child.bbClosed) { child.stdout.resume(); child.stderr.resume(); }
+    child.aliaAhead--;
+    if (child.aliaAhead <= AHEAD / 2 && !child.aliaClosed) { child.stdout.resume(); child.stderr.resume(); }
   });
 };
 process.on("message", (m) => {
@@ -65,7 +65,7 @@ process.on("message", (m) => {
     }
     child.on("error", (e) => send({ op: "error", id: m.id, message: e.message, code: e.code }));
     child.on("exit", (code, signal) => send({ op: "exit", id: m.id, code, signal }));
-    child.on("close", (code, signal) => { child.bbClosed = true; children.delete(m.id); send({ op: "close", id: m.id, code, signal }); });
+    child.on("close", (code, signal) => { child.aliaClosed = true; children.delete(m.id); send({ op: "close", id: m.id, code, signal }); });
     return;
   }
   const child = children.get(m.id);
@@ -89,7 +89,7 @@ type Message =
   | { op: "error"; id: number; message: string; code?: string }
   | { op: "exit" | "close"; id: number; code: number | null; signal: NodeJS.Signals | null };
 
-/** A child the helper runs, as bb-box sees it. */
+/** A child the helper runs, as alia-box sees it. */
 class ForkedChild extends EventEmitter implements ChildLike {
   readonly stdin: Writable;
   readonly stdout = new PassThrough();
@@ -116,7 +116,7 @@ class ForkedChild extends EventEmitter implements ChildLike {
         done();
       },
     });
-    // bb-box destroys the output streams when it has what it wants: the helper reads no more.
+    // alia-box destroys the output streams when it has what it wants: the helper reads no more.
     for (const stream of [this.stdout, this.stderr]) stream.once("close", () => helper.send({ op: "drop", id }));
   }
 
@@ -255,19 +255,19 @@ class Helper {
 }
 
 let helper: Helper | null = null;
-/** When the helper last ended: it is not started again for a while, and bb-box spawns directly meanwhile. */
+/** When the helper last ended: it is not started again for a while, and alia-box spawns directly meanwhile. */
 let endedAt = 0;
 const RESTART_AFTER_MS = 30_000;
 /** How long a helper told to stop has before it is killed. */
 const STOP_WAIT_MS = 2_000;
 
-/** Whether children go through the helper: not where BB_BOX_DIRECT_SPAWN=1, as to compare. */
-const useHelper = () => process.env.BB_BOX_DIRECT_SPAWN !== "1";
+/** Whether children go through the helper: not where ALIA_BOX_DIRECT_SPAWN=1, as to compare. */
+const useHelper = () => process.env.ALIA_BOX_DIRECT_SPAWN !== "1";
 
 export interface StartOptions {
   readonly env?: NodeJS.ProcessEnv;
   readonly cwd?: string;
-  /** Where bb-box starts it, as the loop watch counts it, such as "ssh command". */
+  /** Where alia-box starts it, as the loop watch counts it, such as "ssh command". */
   readonly site: string;
   /** Its standard streams go nowhere, as for a process that stays in the background, rather than piped. */
   readonly stdio?: "ignore";
@@ -302,7 +302,7 @@ export function helperPid(): number | undefined {
   return helper?.alive ? helper.pid : undefined;
 }
 
-/** Ends the helper, and so its children, as when bb-box stops. */
+/** Ends the helper, and so its children, as when alia-box stops. */
 export function stopForker(): void {
   helper?.stop();
   helper = null;

@@ -2,7 +2,7 @@
 // Beside the list on wide panes, on its own page on narrow ones.
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { Markdown, UrlLink } from "@get-bb/plugin-sdk/app";
+import { Markdown, UrlLink } from "@vesnalia/plugin-sdk/app";
 import type { TicketDetail } from "./jira";
 import {
   Empty,

@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-cli-agents",
+  "name": "alia-plugin-cli-agents",
   "version": "0.2.5",
   "type": "module",
   "engines": {
-    "bb": ">=0.43.0",
-    "bbPluginSdk": ">=0.4.84"
+    "alia": ">=0.43.0",
+    "aliaPluginSdk": ">=0.4.84"
   },
-  "bb": {
+  "alia": {
     "name": "CLI Agents",
-    "description": "Choose native session agents for supported CLIs on local or remote BB machines.",
+    "description": "Choose native session agents for supported CLIs on local or remote VesnALIA machines.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -29,7 +29,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.84",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -58,10 +57,10 @@
     "vaul": "^1.1.2",
     "vitest": "^5.0.0"
   },
-  "description": "Choose native Claude Code, OpenCode and Codex session agents in BB on local or remote machines.",
+  "description": "Choose native Claude Code, OpenCode and Codex session agents in VesnALIA on local or remote machines.",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "agents",
     "claude-code",
     "opencode",
@@ -74,18 +73,10 @@
   ],
   "license": "MIT",
   "author": "VKirill",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VKirill/bb-plugin-cli-agents.git"
-  },
-  "homepage": "https://github.com/VKirill/bb-plugin-cli-agents#readme",
-  "bugs": {
-    "url": "https://github.com/VKirill/bb-plugin-cli-agents/issues"
-  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "check": "npm run typecheck && npm test && npm run build"
   },
   "files": [
@@ -107,5 +98,22 @@
     "tsconfig.json",
     "components.json",
     "docs"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.84"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/cli-agents#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/cli-agents"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

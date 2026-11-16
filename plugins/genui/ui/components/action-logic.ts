@@ -36,7 +36,7 @@ export function sendEffect(target: Answers["target"], open: boolean, picked: boo
 }
 
 export interface ActionIntent {
-  /** BB's icon for what pressing does; null when it only changes this UI. */
+  /** VesnALIA's icon for what pressing does; null when it only changes this UI. */
   readonly glyph: ActionGlyph | null;
   /** What pressing does in words, one line per action that leaves this UI; null when none does. */
   readonly hint: string | null;

@@ -4,4 +4,4 @@ STATUS: complete
 
 Prepare release 0.6.30 metadata.
 
-Attempt 1 accepted by Lane Pilot BB writer.
+Attempt 1 accepted by Lane Pilot VesnALIA writer.

@@ -1,15 +1,15 @@
-// bb-plugin-specs — spec documents that any BB project can read, annotate,
+// alia-plugin-specs — spec documents that any VesnALIA project can read, annotate,
 // chat about, and update.
 //
-// One SQLite store (bb.storage.database) serves five surfaces:
+// One SQLite store (alia.storage.database) serves five surfaces:
 //   - the Specs page and per-spec chat (app.tsx, over RPC)
-//   - `bb specs ...` (CLI, for humans and agents)
+//   - `alia specs ...` (CLI, for humans and agents)
 //   - native agent tools (specs_read / specs_write / specs_search / ...)
 //   - the per-resolution context digest injected into project threads
 //   - realtime signals so every open page refetches
 import { createHash, randomUUID } from "node:crypto";
 import { isAbsolute, resolve as resolvePath } from "node:path";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
@@ -729,10 +729,10 @@ function detectTextDecisions(content: string): string[] {
 // Plugin
 // ---------------------------------------------------------------------------
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("specs plugin loading");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("specs plugin loading");
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     digestMaxRows: {
       type: "number",
       label: "Max specs listed in thread context",
@@ -774,8 +774,8 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   let disposed = false;
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS specs (
       id TEXT PRIMARY KEY,
       slug TEXT NOT NULL,
@@ -941,15 +941,15 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function refreshProjectNames(): Promise<void> {
     try {
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       projectNames = new Map(projects.map((project) => [project.id, project.name]));
     } catch (error) {
-      bb.log.warn(`project cache refresh failed: ${String(error)}`);
+      alia.log.warn(`project cache refresh failed: ${String(error)}`);
     }
   }
 
   async function personalProjectId(): Promise<string> {
-    const projects = await bb.sdk.projects.list({ includePersonal: true });
+    const projects = await alia.sdk.projects.list({ includePersonal: true });
     const personal = projects.find((project) => project.kind === "personal");
     if (personal === undefined) throw new Error("No personal project found.");
     return personal.id;
@@ -976,7 +976,7 @@ export default async function plugin(bb: BbPluginApi) {
     const spec = findSpec(idOrSlug);
     if (spec === undefined) {
       throw new Error(
-        `No spec matches "${idOrSlug}". Use specs_search or \`bb specs list\` to find one.`,
+        `No spec matches "${idOrSlug}". Use specs_search or \`alia specs list\` to find one.`,
       );
     }
     return spec;
@@ -1394,7 +1394,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function publishChanged(specId: string, reason: string): void {
-    bb.realtime.publish(CHANGED, { specId, reason });
+    alia.realtime.publish(CHANGED, { specId, reason });
     if (["updated", "question-asked", "question-answered", "question-resolved", "question-dismissed", "question-reopened", "question-clarified", "annotation-removed", "decision-recorded", "research-done", "proposal-created", "proposal-applied", "proposal-rejected"].includes(reason)) {
       // Run after the surrounding transaction commits; applying a proposal also
       // records its incorporation state in that transaction.
@@ -1402,7 +1402,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (disposed) return;
         const runs = db.prepare("SELECT * FROM research WHERE status = 'done' AND result_spec_id = ?").all(specId) as ResearchRecord[];
         for (const run of runs) await prepareResearch(run.id);
-      }).catch((error) => { if (!disposed) bb.log.warn(`research integration: ${String(error)}`); });
+      }).catch((error) => { if (!disposed) alia.log.warn(`research integration: ${String(error)}`); });
     }
   }
 
@@ -1617,9 +1617,9 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<void> {
     for (const action of ["stop", "archive"] as const) {
       try {
-        await bb.sdk.threads[action]({ threadId });
+        await alia.sdk.threads[action]({ threadId });
       } catch (error) {
-        bb.log.warn(`deleted spec thread ${action} failed: ${String(error)}`);
+        alia.log.warn(`deleted spec thread ${action} failed: ${String(error)}`);
       }
     }
     throw new Error(`No spec with id ${specId}.`);
@@ -1635,7 +1635,7 @@ export default async function plugin(bb: BbPluginApi) {
       .get(spec.id) as { thread_id: string } | undefined;
     if (existing !== undefined) {
       try {
-        const thread = await bb.sdk.threads.get({ threadId: existing.thread_id });
+        const thread = await alia.sdk.threads.get({ threadId: existing.thread_id });
         if (thread !== null && thread !== undefined) {
           mustFindSpec(spec.id);
           return { threadId: existing.thread_id, created: false };
@@ -1652,7 +1652,7 @@ export default async function plugin(bb: BbPluginApi) {
       links[0] === undefined
         ? ({ type: "host", workspace: { type: "personal" } } as const)
         : ({ type: "project-default" } as const);
-    const thread = await bb.sdk.threads.spawn({
+    const thread = await alia.sdk.threads.spawn({
       projectId,
       environment,
       prompt:
@@ -1730,14 +1730,14 @@ export default async function plugin(bb: BbPluginApi) {
     if (chat !== undefined) threadIds.add(chat.thread_id);
     for (const threadId of threadIds) {
       try {
-        await bb.sdk.threads.stop({ threadId });
+        await alia.sdk.threads.stop({ threadId });
       } catch (error) {
-        bb.log.warn(`spec thread stop failed: ${String(error)}`);
+        alia.log.warn(`spec thread stop failed: ${String(error)}`);
       }
       try {
-        await bb.sdk.threads.archive({ threadId });
+        await alia.sdk.threads.archive({ threadId });
       } catch (error) {
-        bb.log.warn(`spec thread archive failed: ${String(error)}`);
+        alia.log.warn(`spec thread archive failed: ${String(error)}`);
       }
     }
     publishChanged(spec.id, "deleted");
@@ -1881,7 +1881,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       const chat = await ensureChatThread(spec, message);
       if (!chat.created) {
-        await bb.sdk.threads.send({
+        await alia.sdk.threads.send({
           threadId: chat.threadId,
           mode: "auto",
           input: [{ type: "text", text: message, mentions: [] }],
@@ -1895,7 +1895,7 @@ export default async function plugin(bb: BbPluginApi) {
       publishChanged(spec.id, "question-dispatched");
       return true;
     } catch (error) {
-      bb.log.warn(`question dispatch failed: ${String(error)}`);
+      alia.log.warn(`question dispatch failed: ${String(error)}`);
       return false;
     }
   }
@@ -2332,7 +2332,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (!disposed) {
         const latest = db.prepare("SELECT * FROM research WHERE id = ?").get(id) as ResearchRecord | undefined;
         if (latest !== undefined && latest.integration_key !== null && latest.result_spec_id !== null && findSpecById(latest.spec_id)?.status === "active" && findSpecById(latest.result_spec_id)?.status === "active" && latest.integration_key !== researchSourceKey(latest)) {
-          void prepareResearch(id).catch((error) => { if (!disposed) bb.log.warn(String(error)); });
+          void prepareResearch(id).catch((error) => { if (!disposed) alia.log.warn(String(error)); });
         }
       }
     }
@@ -2355,9 +2355,9 @@ export default async function plugin(bb: BbPluginApi) {
     publishChanged(report.id, "research-integration");
     if (run.integration_state === "preparing" && run.synthesis_thread_id !== null) {
       try {
-        await bb.sdk.threads.stop({ threadId: run.synthesis_thread_id });
-        await bb.sdk.threads.archive({ threadId: run.synthesis_thread_id });
-      } catch (error) { if (!disposed) bb.log.warn(`Previous research preparation cleanup failed: ${String(error)}`); }
+        await alia.sdk.threads.stop({ threadId: run.synthesis_thread_id });
+        await alia.sdk.threads.archive({ threadId: run.synthesis_thread_id });
+      } catch (error) { if (!disposed) alia.log.warn(`Previous research preparation cleanup failed: ${String(error)}`); }
     }
     if (disposed) return;
     if (blocked) return;
@@ -2371,7 +2371,7 @@ export default async function plugin(bb: BbPluginApi) {
     ].join("\n");
     try {
       const projectId = projectIdsFor(parent.id)[0] ?? await personalProjectId();
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         projectId,
         environment: projectIdsFor(parent.id).length === 0 ? { type: "host", workspace: { type: "personal" } } : { type: "project-default" },
         title: `Incorporate research: ${truncate(run.brief, 60)}`,
@@ -2388,8 +2388,8 @@ export default async function plugin(bb: BbPluginApi) {
         for (const specId of [parent.id, report.id]) db.prepare("INSERT OR REPLACE INTO thread_specs (thread_id, spec_id, mode, created_at) VALUES (?, ?, 'attached', ?)").run(thread.id, specId, nowIso());
         await reconcileResearchPreparation(researchById(id));
       } else {
-        await bb.sdk.threads.stop({ threadId: thread.id });
-        await bb.sdk.threads.archive({ threadId: thread.id });
+        await alia.sdk.threads.stop({ threadId: thread.id });
+        await alia.sdk.threads.archive({ threadId: thread.id });
       }
     } catch (error) {
       if (disposed) return;
@@ -2589,7 +2589,7 @@ export default async function plugin(bb: BbPluginApi) {
     ].join("\n");
     const chat = await ensureChatThread(spec, message);
     if (!chat.created) {
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.send({
         threadId: chat.threadId,
         mode: "auto",
         input: [{ type: "text", text: message, mentions: [] }],
@@ -2661,7 +2661,7 @@ export default async function plugin(bb: BbPluginApi) {
       "",
       "When done, reply with a single markdown report: a level-2 heading, under ~800 words, sources as links. End with a '## Open questions' list for anything the research could not settle.",
     ].join("\n");
-    const thread = await bb.sdk.threads.spawn({
+    const thread = await alia.sdk.threads.spawn({
       projectId,
       environment,
       prompt,
@@ -2750,7 +2750,7 @@ export default async function plugin(bb: BbPluginApi) {
       finalizeResearch(record, "failed", null, failure);
       return;
     }
-    const output = await bb.sdk.threads.output({ threadId });
+    const output = await alia.sdk.threads.output({ threadId });
     const text = output.output;
     if (text === null || text.trim() === "") {
       finalizeResearch(record, "failed", null, "The run produced no output.");
@@ -2766,7 +2766,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       return;
     }
-    const thread = await bb.sdk.threads.get({ threadId: record.synthesis_thread_id });
+    const thread = await alia.sdk.threads.get({ threadId: record.synthesis_thread_id });
     if (thread === null || thread === undefined || thread.deletedAt !== null || thread.archivedAt !== null || thread.status === "error" || thread.status === "idle") {
       finishResearchPreparation(record.synthesis_thread_id, "Preparation ended without a parent update. Try again.");
     }
@@ -2776,14 +2776,14 @@ export default async function plugin(bb: BbPluginApi) {
     const preparing = db.prepare("SELECT * FROM research WHERE (spec_id = ? OR result_spec_id = ?) AND integration_state = 'preparing'").all(specId, specId) as ResearchRecord[];
     for (const record of preparing) {
       try { await reconcileResearchPreparation(record); }
-      catch (error) { bb.log.warn(`research preparation reconcile failed: ${String(error)}`); }
+      catch (error) { alia.log.warn(`research preparation reconcile failed: ${String(error)}`); }
     }
     const running = db
       .prepare("SELECT * FROM research WHERE spec_id = ? AND status = 'running'")
       .all(specId) as ResearchRecord[];
     for (const record of running) {
       try {
-        const thread = await bb.sdk.threads.get({ threadId: record.thread_id });
+        const thread = await alia.sdk.threads.get({ threadId: record.thread_id });
         if (thread === null || thread === undefined || thread.deletedAt !== null) {
           finalizeResearch(record, "cancelled", null, "The research thread was deleted.");
         } else if (thread.archivedAt !== null) {
@@ -2794,7 +2794,7 @@ export default async function plugin(bb: BbPluginApi) {
           await completeResearchFromThread(record.thread_id, null);
         }
       } catch (error) {
-        bb.log.warn(`research reconcile failed: ${String(error)}`);
+        alia.log.warn(`research reconcile failed: ${String(error)}`);
       }
     }
   }
@@ -3198,7 +3198,7 @@ export default async function plugin(bb: BbPluginApi) {
     return parts.join("\n");
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_search",
     description:
       "Search the workspace's spec documents (title, summary, and body text). Returns matching specs with ids, slugs, revisions, and one-line summaries. Use before specs_read when the exact slug is unknown.",
@@ -3231,7 +3231,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_read",
     description:
       "Read a spec document in full, including its open annotations (review feedback). Accepts a spec id or slug. Marks the revision as seen for this thread so future changes surface in context.",
@@ -3255,7 +3255,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_write",
     description:
       "Update a spec document's content, title, or summary. With the plugin's default agentWriteMode=propose this records a proposal the user reviews and applies; set agentWriteMode=direct to write immediately. Pass expectedRevision (from the latest specs_read) so a concurrent edit is reported instead of overwritten.",
@@ -3307,7 +3307,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_propose",
     description:
       "Propose a spec change for the user to review instead of writing it. Pass expectedRevision from the latest specs_read to reject stale proposals. The Specs page shows the proposal as a diff with Apply / Reject.",
@@ -3353,7 +3353,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_decide",
     description:
       "Record a standalone decision for a spec (not tied to a question) in the decision log, so the record survives later prose rewrites.",
@@ -3386,7 +3386,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_decisions",
     description:
       "List recorded decisions (attributed, revision-linked, with accepted comments) for a spec or project.",
@@ -3425,7 +3425,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_research",
     description:
       "Start a research run for a spec. A background agent investigates the brief read-only and publishes the report as a child spec with its own questions and decisions.",
@@ -3452,7 +3452,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_create",
     description:
       "Create a new spec document and link it to a project. Use when the task calls for a written spec/design doc. Returns the id and slug.",
@@ -3494,7 +3494,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_annotate",
     description:
       "Leave an annotation (quoted review note) on a spec document. Use for feedback that should not silently change the spec.",
@@ -3532,7 +3532,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_reply",
     description:
       "Reply inside a question's (or note's) comment thread. Questions dispatched to you must be answered here, in the thread where the user asked.",
@@ -3556,7 +3556,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_questions",
     description:
       "List open questions across specs: open, answered but untriaged, in clarification, or closed. This is the loop's inbox — answer with specs_answer, ask for clarification with specs_clarify, decide with specs_resolve, or drop with specs_dismiss.",
@@ -3615,7 +3615,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_promote",
     description:
       "Promote a question written in the spec text (an item of a `## Open questions` section, or a `TBD:` / `TODO(question):` marker) into the question loop. Creates an anchored question and replaces the prose with a reference to it.",
@@ -3646,7 +3646,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_answer",
     description:
       "Record an answer for user acceptance. Set requiresSpecChange explicitly: false for an answer-only decision, true when a linked spec proposal is needed. Omission conservatively requires review of document impact.",
@@ -3671,7 +3671,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_clarify",
     description:
       "Ask a follow-up when an answer is not sufficient to decide. The parent question moves to 'clarify' and a linked follow-up question is created and returned.",
@@ -3697,7 +3697,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_resolve",
     description:
       "Close a question with a decision. Fold the decision into the spec first, then pass that new revision as foldedRevision so the audit trail links the decision to the content that carries it.",
@@ -3724,7 +3724,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_dismiss",
     description:
       "Drop a question without deciding it (out of scope, duplicate, no longer relevant). The reason is recorded in the audit history.",
@@ -3747,7 +3747,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_attach",
     description:
       "Attach a spec to the current thread so it appears in this thread's context digest, even if its project link would not include it.",
@@ -3772,7 +3772,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_detach",
     description:
       "Exclude a spec from the current thread's context digest, even when its project link would otherwise include it.",
@@ -3797,7 +3797,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "specs_delete",
     description:
       "Permanently delete a spec document, including its revision history and annotations. A linked chat thread is archived, not deleted. This cannot be undone.",
@@ -3847,23 +3847,23 @@ export default async function plugin(bb: BbPluginApi) {
 
   // Research runs finish on their own thread's lifecycle; the plugin turns a
   // completed run into a child spec. specs_get also reconciles stale rows.
-  bb.events.on("thread.idle", ({ thread }) => {
+  alia.events.on("thread.idle", ({ thread }) => {
     finishResearchPreparation(thread.id, "The agent finished without preparing a parent update. Try again.");
     void completeResearchFromThread(thread.id, null).catch((error: unknown) => {
-      bb.log.warn(`research completion failed: ${String(error)}`);
+      alia.log.warn(`research completion failed: ${String(error)}`);
     });
   });
-  bb.events.on("thread.failed", ({ thread, error }) => {
+  alia.events.on("thread.failed", ({ thread, error }) => {
     finishResearchPreparation(thread.id, error || "Preparing the parent update failed.");
     void completeResearchFromThread(
       thread.id,
       error === null || error === "" ? "The run failed." : error,
     ).catch((failure: unknown) => {
-      bb.log.warn(`research failure handling failed: ${String(failure)}`);
+      alia.log.warn(`research failure handling failed: ${String(failure)}`);
     });
   });
   for (const event of ["thread.archived", "thread.deleted"] as const) {
-    bb.events.on(event, ({ thread }) => {
+    alia.events.on(event, ({ thread }) => {
       finishResearchPreparation(thread.id, "The parent-update thread was closed. Try again.");
       const record = runningResearchForThread(thread.id);
       if (record !== undefined) {
@@ -3879,7 +3879,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
   }
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     try {
       const enabled =
         hasChatThread(context.thread.id) ||
@@ -3890,16 +3890,16 @@ export default async function plugin(bb: BbPluginApi) {
         skills: ["specs"],
       };
     } catch (error) {
-      bb.log.warn(`configure failed: ${String(error)}`);
+      alia.log.warn(`configure failed: ${String(error)}`);
       return { tools: [], skills: ["specs"] };
     }
   });
 
-  bb.agents.contributeInstructions(({ threadId, projectId }) => {
+  alia.agents.contributeInstructions(({ threadId, projectId }) => {
     try {
       return digestForThread(threadId, projectId);
     } catch (error) {
-      bb.log.warn(`digest failed: ${String(error)}`);
+      alia.log.warn(`digest failed: ${String(error)}`);
       return null;
     }
   });
@@ -3927,9 +3927,9 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ---- RPC (frontend data plane) -------------------------------------------
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     specs_list: async ({ projectId, query, includeArchived }) => {
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       return {
         specs: listSpecs({
           projectId: projectId ?? null,
@@ -4264,7 +4264,7 @@ export default async function plugin(bb: BbPluginApi) {
     thread_specs: async ({ threadId }) => {
       let projectId = "";
       try {
-        const thread = await bb.sdk.threads.get({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         projectId = thread?.projectId ?? "";
       } catch {
         projectId = "";
@@ -4322,7 +4322,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  // ---- CLI (`bb specs ...`) ------------------------------------------------
+  // ---- CLI (`alia specs ...`) ------------------------------------------------
 
   interface CliContext {
     cwd?: string;
@@ -4334,10 +4334,10 @@ export default async function plugin(bb: BbPluginApi) {
   async function hostIdForThread(threadId: string | undefined): Promise<string | null> {
     if (threadId === undefined) return null;
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       const environmentId = thread?.environmentId;
       if (environmentId === undefined || environmentId === null) return null;
-      const environment = await bb.sdk.environments.get({ environmentId });
+      const environment = await alia.sdk.environments.get({ environmentId });
       return environment?.hostId ?? null;
     } catch {
       return null;
@@ -4349,7 +4349,7 @@ export default async function plugin(bb: BbPluginApi) {
       ? filePath
       : resolvePath(ctx.cwd ?? ".", filePath);
     const hostId = await hostIdForThread(ctx.threadId);
-    const result = await bb.sdk.files.read(
+    const result = await alia.sdk.files.read(
       hostId === null ? { path: absolute } : { hostId, path: absolute },
     );
     if (result.contentEncoding !== undefined && result.contentEncoding !== "utf8") {
@@ -4388,40 +4388,40 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb specs list [--project <id>] [--all] [--json]",
-    "  bb specs search <query> [--json]",
-    "  bb specs read <id-or-slug> [--json]",
-    "  bb specs create <title> [--project <id>] [--mode pinned|auto|available] [--summary <text>] [--file <path>] [--json]",
-    "  bb specs write <id-or-slug> [--file <path>|--content <text>] [--title <t>] [--summary <s>] [--icon <emoji>] [--expected-revision <n>] [--json]",
-    "  bb specs attach <id-or-slug> [--thread <thread-id>] [--json]",
-    "  bb specs detach <id-or-slug> [--thread <thread-id>] [--json]",
-    "  bb specs link <id-or-slug> --project <id> [--mode pinned|auto|available] [--json]",
-    "  bb specs unlink <id-or-slug> --project <id> [--json]",
-    "  bb specs annotate <id-or-slug> --quote <text> --body <text> [--kind note|question] [--json]",
-    "  bb specs questions [<id-or-slug>] [--state open|answered|clarify|resolved|dismissed|all] [--project <id>] [--json]",
-    "  bb specs reply <annotation-id> <reply text> [--json]",
-    "  bb specs promote <id-or-slug> <question text as written> [--json]",
-    "  bb specs answer <annotation-id> --text <answer> [--no-spec-change] [--json]",
-    "  bb specs clarify <annotation-id> <follow-up question> [--json]",
-    "  bb specs resolve-question <annotation-id> --decision <text> [--folded-revision <n>] [--json]",
-    "  bb specs dismiss <annotation-id> [--reason <text>] [--json]",
-    "  bb specs propose <id-or-slug> [--file <path>|--content <text>] [--note <text>] [--question <annotation-id>] [--expected-revision <n>] [--json]",
-    "  bb specs proposals <id-or-slug> [--json]",
-    "  bb specs apply <proposal-id> [--json]",
-    "  bb specs reject <proposal-id> [--note <text>] [--json]",
-    "  bb specs decisions [<id-or-slug>] [--project <id>] [--json]",
-    "  bb specs decide <id-or-slug> --decision <text> [--rationale <text>] [--revision <n>] [--json]",
-    "  bb specs research <id-or-slug> <brief> [--json]",
-    "  bb specs diff <id-or-slug> --from <n> --to <n> [--json]",
-    "  bb specs revert <id-or-slug> --to <n> [--json]",
-    "  bb specs ack <id-or-slug> --revision <n> [--json]",
-    "  bb specs discuss <id-or-slug> <text> [--json]",
-    "  bb specs ask <id-or-slug> <text> [--json]",
-    "  bb specs annotations <id-or-slug> [--all] [--json]",
-    "  bb specs resolve <annotation-id> [--json]",
-    "  bb specs history <id-or-slug> [--limit <n>] [--json]",
-    "  bb specs chat <id-or-slug> [--json]",
-    "  bb specs delete <id-or-slug> --yes [--json]",
+    "  VesnALIA specs list [--project <id>] [--all] [--json]",
+    "  VesnALIA specs search <query> [--json]",
+    "  VesnALIA specs read <id-or-slug> [--json]",
+    "  VesnALIA specs create <title> [--project <id>] [--mode pinned|auto|available] [--summary <text>] [--file <path>] [--json]",
+    "  VesnALIA specs write <id-or-slug> [--file <path>|--content <text>] [--title <t>] [--summary <s>] [--icon <emoji>] [--expected-revision <n>] [--json]",
+    "  VesnALIA specs attach <id-or-slug> [--thread <thread-id>] [--json]",
+    "  VesnALIA specs detach <id-or-slug> [--thread <thread-id>] [--json]",
+    "  VesnALIA specs link <id-or-slug> --project <id> [--mode pinned|auto|available] [--json]",
+    "  VesnALIA specs unlink <id-or-slug> --project <id> [--json]",
+    "  VesnALIA specs annotate <id-or-slug> --quote <text> --body <text> [--kind note|question] [--json]",
+    "  VesnALIA specs questions [<id-or-slug>] [--state open|answered|clarify|resolved|dismissed|all] [--project <id>] [--json]",
+    "  VesnALIA specs reply <annotation-id> <reply text> [--json]",
+    "  VesnALIA specs promote <id-or-slug> <question text as written> [--json]",
+    "  VesnALIA specs answer <annotation-id> --text <answer> [--no-spec-change] [--json]",
+    "  VesnALIA specs clarify <annotation-id> <follow-up question> [--json]",
+    "  VesnALIA specs resolve-question <annotation-id> --decision <text> [--folded-revision <n>] [--json]",
+    "  VesnALIA specs dismiss <annotation-id> [--reason <text>] [--json]",
+    "  VesnALIA specs propose <id-or-slug> [--file <path>|--content <text>] [--note <text>] [--question <annotation-id>] [--expected-revision <n>] [--json]",
+    "  VesnALIA specs proposals <id-or-slug> [--json]",
+    "  VesnALIA specs apply <proposal-id> [--json]",
+    "  VesnALIA specs reject <proposal-id> [--note <text>] [--json]",
+    "  VesnALIA specs decisions [<id-or-slug>] [--project <id>] [--json]",
+    "  VesnALIA specs decide <id-or-slug> --decision <text> [--rationale <text>] [--revision <n>] [--json]",
+    "  VesnALIA specs research <id-or-slug> <brief> [--json]",
+    "  VesnALIA specs diff <id-or-slug> --from <n> --to <n> [--json]",
+    "  VesnALIA specs revert <id-or-slug> --to <n> [--json]",
+    "  VesnALIA specs ack <id-or-slug> --revision <n> [--json]",
+    "  VesnALIA specs discuss <id-or-slug> <text> [--json]",
+    "  VesnALIA specs ask <id-or-slug> <text> [--json]",
+    "  VesnALIA specs annotations <id-or-slug> [--all] [--json]",
+    "  VesnALIA specs resolve <annotation-id> [--json]",
+    "  VesnALIA specs history <id-or-slug> [--limit <n>] [--json]",
+    "  VesnALIA specs chat <id-or-slug> [--json]",
+    "  VesnALIA specs delete <id-or-slug> --yes [--json]",
   ].join("\n");
 
   function formatSummaryLine(record: SpecRecord): string {
@@ -4429,44 +4429,44 @@ export default async function plugin(bb: BbPluginApi) {
     return `${record.icon}  ${record.id}  ${record.slug}  v${record.revision}  ${record.title}${summary === "" ? "" : `  — ${summary}`}`;
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "specs",
     summary: "Read, search, annotate, and update project spec documents",
     commands: [
-      { name: "list", summary: "List spec documents", usage: "bb specs list [--project <id>] [--all] [--json]" },
-      { name: "search", summary: "Search spec documents", usage: "bb specs search <query> [--json]" },
-      { name: "read", summary: "Read a spec document", usage: "bb specs read <id-or-slug> [--json]" },
-      { name: "create", summary: "Create a spec document", usage: "bb specs create <title> [--project <id>] [--file <path>] [--json]" },
-      { name: "write", summary: "Update a spec document", usage: "bb specs write <id-or-slug> [--file <path>|--content <text>] [--expected-revision <n>] [--json]" },
-      { name: "attach", summary: "Attach a spec to a thread's context", usage: "bb specs attach <id-or-slug> [--thread <id>] [--json]" },
-      { name: "detach", summary: "Detach a spec from a thread's context", usage: "bb specs detach <id-or-slug> [--thread <id>] [--json]" },
-      { name: "link", summary: "Link a spec to a project", usage: "bb specs link <id-or-slug> --project <id> [--mode pinned|auto|available] [--json]" },
-      { name: "unlink", summary: "Unlink a spec from a project", usage: "bb specs unlink <id-or-slug> --project <id> [--json]" },
-      { name: "annotate", summary: "Annotate a spec with a note or question", usage: "bb specs annotate <id-or-slug> --quote <text> --body <text> [--kind note|question] [--json]" },
-      { name: "questions", summary: "List questions and their loop state", usage: "bb specs questions [<id-or-slug>] [--state <state>] [--project <id>] [--json]" },
-      { name: "reply", summary: "Reply inside a question's thread", usage: "bb specs reply <annotation-id> <reply text> [--json]" },
-      { name: "promote", summary: "Promote a question written in the spec text", usage: "bb specs promote <id-or-slug> <question text as written> [--json]" },
-      { name: "answer", summary: "Answer a question for triage", usage: "bb specs answer <annotation-id> --text <answer> [--no-spec-change] [--json]" },
-      { name: "clarify", summary: "Ask a follow-up question", usage: "bb specs clarify <annotation-id> <follow-up question> [--json]" },
-      { name: "resolve-question", summary: "Close a question with a decision", usage: "bb specs resolve-question <annotation-id> --decision <text> [--folded-revision <n>] [--json]" },
-      { name: "dismiss", summary: "Drop a question without deciding", usage: "bb specs dismiss <annotation-id> [--reason <text>] [--json]" },
-      { name: "propose", summary: "Propose a spec change for review", usage: "bb specs propose <id-or-slug> [--file <path>|--content <text>] [--note <text>] [--expected-revision <n>] [--json]" },
-      { name: "proposals", summary: "List proposals for a spec", usage: "bb specs proposals <id-or-slug> [--json]" },
-      { name: "apply", summary: "Apply a pending proposal", usage: "bb specs apply <proposal-id> [--json]" },
-      { name: "reject", summary: "Reject a pending proposal", usage: "bb specs reject <proposal-id> [--note <text>] [--json]" },
-      { name: "decisions", summary: "List recorded decisions", usage: "bb specs decisions [<id-or-slug>] [--project <id>] [--json]" },
-      { name: "decide", summary: "Record a standalone decision", usage: "bb specs decide <id-or-slug> --decision <text> [--rationale <text>] [--json]" },
-      { name: "research", summary: "Start a research run for a spec", usage: "bb specs research <id-or-slug> <brief> [--json]" },
-      { name: "diff", summary: "Diff two revisions", usage: "bb specs diff <id-or-slug> --from <n> --to <n> [--json]" },
-      { name: "revert", summary: "Revert a spec to a revision's content", usage: "bb specs revert <id-or-slug> --to <n> [--json]" },
-      { name: "ack", summary: "Acknowledge an agent-made revision", usage: "bb specs ack <id-or-slug> --revision <n> [--json]" },
-      { name: "discuss", summary: "Post context to the spec discussion", usage: "bb specs discuss <id-or-slug> <text> [--json]" },
-      { name: "ask", summary: "Ask the spec agent in its chat thread", usage: "bb specs ask <id-or-slug> <text> [--json]" },
-      { name: "annotations", summary: "List annotations", usage: "bb specs annotations <id-or-slug> [--all] [--json]" },
-      { name: "resolve", summary: "Resolve an annotation", usage: "bb specs resolve <annotation-id> [--json]" },
-      { name: "history", summary: "List spec revisions", usage: "bb specs history <id-or-slug> [--limit <n>] [--json]" },
-      { name: "chat", summary: "Ensure and print the spec's chat thread id", usage: "bb specs chat <id-or-slug> [--json]" },
-      { name: "delete", summary: "Permanently delete a spec and its history", usage: "bb specs delete <id-or-slug> --yes [--json]" },
+      { name: "list", summary: "List spec documents", usage: "alia specs list [--project <id>] [--all] [--json]" },
+      { name: "search", summary: "Search spec documents", usage: "alia specs search <query> [--json]" },
+      { name: "read", summary: "Read a spec document", usage: "alia specs read <id-or-slug> [--json]" },
+      { name: "create", summary: "Create a spec document", usage: "alia specs create <title> [--project <id>] [--file <path>] [--json]" },
+      { name: "write", summary: "Update a spec document", usage: "alia specs write <id-or-slug> [--file <path>|--content <text>] [--expected-revision <n>] [--json]" },
+      { name: "attach", summary: "Attach a spec to a thread's context", usage: "alia specs attach <id-or-slug> [--thread <id>] [--json]" },
+      { name: "detach", summary: "Detach a spec from a thread's context", usage: "alia specs detach <id-or-slug> [--thread <id>] [--json]" },
+      { name: "link", summary: "Link a spec to a project", usage: "alia specs link <id-or-slug> --project <id> [--mode pinned|auto|available] [--json]" },
+      { name: "unlink", summary: "Unlink a spec from a project", usage: "alia specs unlink <id-or-slug> --project <id> [--json]" },
+      { name: "annotate", summary: "Annotate a spec with a note or question", usage: "alia specs annotate <id-or-slug> --quote <text> --body <text> [--kind note|question] [--json]" },
+      { name: "questions", summary: "List questions and their loop state", usage: "alia specs questions [<id-or-slug>] [--state <state>] [--project <id>] [--json]" },
+      { name: "reply", summary: "Reply inside a question's thread", usage: "alia specs reply <annotation-id> <reply text> [--json]" },
+      { name: "promote", summary: "Promote a question written in the spec text", usage: "alia specs promote <id-or-slug> <question text as written> [--json]" },
+      { name: "answer", summary: "Answer a question for triage", usage: "alia specs answer <annotation-id> --text <answer> [--no-spec-change] [--json]" },
+      { name: "clarify", summary: "Ask a follow-up question", usage: "alia specs clarify <annotation-id> <follow-up question> [--json]" },
+      { name: "resolve-question", summary: "Close a question with a decision", usage: "alia specs resolve-question <annotation-id> --decision <text> [--folded-revision <n>] [--json]" },
+      { name: "dismiss", summary: "Drop a question without deciding", usage: "alia specs dismiss <annotation-id> [--reason <text>] [--json]" },
+      { name: "propose", summary: "Propose a spec change for review", usage: "alia specs propose <id-or-slug> [--file <path>|--content <text>] [--note <text>] [--expected-revision <n>] [--json]" },
+      { name: "proposals", summary: "List proposals for a spec", usage: "alia specs proposals <id-or-slug> [--json]" },
+      { name: "apply", summary: "Apply a pending proposal", usage: "alia specs apply <proposal-id> [--json]" },
+      { name: "reject", summary: "Reject a pending proposal", usage: "alia specs reject <proposal-id> [--note <text>] [--json]" },
+      { name: "decisions", summary: "List recorded decisions", usage: "alia specs decisions [<id-or-slug>] [--project <id>] [--json]" },
+      { name: "decide", summary: "Record a standalone decision", usage: "alia specs decide <id-or-slug> --decision <text> [--rationale <text>] [--json]" },
+      { name: "research", summary: "Start a research run for a spec", usage: "alia specs research <id-or-slug> <brief> [--json]" },
+      { name: "diff", summary: "Diff two revisions", usage: "alia specs diff <id-or-slug> --from <n> --to <n> [--json]" },
+      { name: "revert", summary: "Revert a spec to a revision's content", usage: "alia specs revert <id-or-slug> --to <n> [--json]" },
+      { name: "ack", summary: "Acknowledge an agent-made revision", usage: "alia specs ack <id-or-slug> --revision <n> [--json]" },
+      { name: "discuss", summary: "Post context to the spec discussion", usage: "alia specs discuss <id-or-slug> <text> [--json]" },
+      { name: "ask", summary: "Ask the spec agent in its chat thread", usage: "alia specs ask <id-or-slug> <text> [--json]" },
+      { name: "annotations", summary: "List annotations", usage: "alia specs annotations <id-or-slug> [--all] [--json]" },
+      { name: "resolve", summary: "Resolve an annotation", usage: "alia specs resolve <annotation-id> [--json]" },
+      { name: "history", summary: "List spec revisions", usage: "alia specs history <id-or-slug> [--limit <n>] [--json]" },
+      { name: "chat", summary: "Ensure and print the spec's chat thread id", usage: "alia specs chat <id-or-slug> [--json]" },
+      { name: "delete", summary: "Permanently delete a spec and its history", usage: "alia specs delete <id-or-slug> --yes [--json]" },
     ],
     async run(argv, ctx) {
       const json = argv.includes("--json");
@@ -5149,10 +5149,10 @@ export default async function plugin(bb: BbPluginApi) {
   // ---- background + lifecycle ---------------------------------------------
 
   await refreshProjectNames();
-  bb.background.schedule("refresh-projects", "*/10 * * * *", refreshProjectNames);
+  alia.background.schedule("refresh-projects", "*/10 * * * *", refreshProjectNames);
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
-    bb.log.info("specs plugin disposed");
+    alia.log.info("specs plugin disposed");
   });
 }

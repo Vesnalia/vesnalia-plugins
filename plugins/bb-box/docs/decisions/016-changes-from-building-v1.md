@@ -45,7 +45,7 @@ where the design did not fit or said too little:
 
 - The core names no SSH option in the interface. `SshAccess` is unchanged.
 - A fresh guest's key is never checked. That is acceptable on the
-  operator's own network, where bb-box's boxes run.
+  operator's own network, where alia-box's boxes run.
 - Setup scripts can be split as a backend needs, and a backend with nothing
   to run still has a guide.
 - Releases stay safe to repeat on real pools, as

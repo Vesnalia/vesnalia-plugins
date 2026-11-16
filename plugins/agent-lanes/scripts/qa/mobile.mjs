@@ -1,11 +1,11 @@
-// Lanes on a phone, in the live bb: screenshots at 390×844 in both themes,
-// and touch drags that check bb's swipe-to-open sidebar leaves the time axis
+// Lanes on a phone, in the live VesnALIA: screenshots at 390×844 in both themes,
+// and touch drags that check VesnALIA's swipe-to-open sidebar leaves the time axis
 // alone while a swipe from the avatars still opens it.
 //
 //   PLAYWRIGHT_DIR=/tmp/lanes-qa-tools node scripts/qa/mobile.mjs <outDir>
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { BB, launch } from "./browser.mjs";
+import { ALIA, launch } from "./browser.mjs";
 
 const out = process.argv[2] ?? "docs/fidelity/live/mobile";
 mkdirSync(out, { recursive: true });
@@ -20,7 +20,7 @@ async function phone(browser, scheme) {
   });
   const page = await context.newPage();
   page.on("pageerror", (error) => console.error(`[page error] ${error.message}`));
-  await page.goto(`${BB}/plugins/agent-lanes/lanes`, { waitUntil: "networkidle" });
+  await page.goto(`${ALIA}/plugins/agent-lanes/lanes`, { waitUntil: "networkidle" });
   await page.waitForSelector(".bl-track", { timeout: 15000 });
   await page.waitForTimeout(2000);
   return { context, page, cdp: await context.newCDPSession(page) };
@@ -37,7 +37,7 @@ async function drag(cdp, from, to, steps = 12) {
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
 }
 
-/** bb's mobile sidebar is open while its backdrop is. */
+/** VesnALIA's mobile sidebar is open while its backdrop is. */
 const sidebarOpen = (page) => page.evaluate(() => document.querySelector('[data-sidebar-mobile-backdrop][data-state="open"]') !== null);
 
 const checks = [];
@@ -58,7 +58,7 @@ try {
     await page.waitForTimeout(700);
     const live = await page.evaluate(() => document.querySelector(".bl")?.hasAttribute("data-live"));
     checks.push(["Rightward drag on the track pans back in time", live === false]);
-    checks.push(["…and does not open bb's sidebar", (await sidebarOpen(page)) === false]);
+    checks.push(["…and does not open VesnALIA's sidebar", (await sidebarOpen(page)) === false]);
     await page.screenshot({ path: join(out, "lanes-390-panned.png") });
 
     await context.close();
@@ -92,14 +92,14 @@ try {
     await context.close();
   }
 
-  // A rightward drag starting over the avatars still opens bb's sidebar.
+  // A rightward drag starting over the avatars still opens VesnALIA's sidebar.
   {
     const { context, page, cdp } = await phone(browser, "light");
     const names = await page.locator(".bl-name[data-kind='lane']").first().boundingBox();
     const y = names.y + names.height / 2;
     await drag(cdp, { x: Math.max(30, names.x + 18), y }, { x: 330, y }, 16);
     await page.waitForTimeout(800);
-    checks.push(["Rightward drag from the avatars opens bb's sidebar", await sidebarOpen(page)]);
+    checks.push(["Rightward drag from the avatars opens VesnALIA's sidebar", await sidebarOpen(page)]);
     await page.screenshot({ path: join(out, "lanes-390-sidebar.png") });
     await context.close();
   }

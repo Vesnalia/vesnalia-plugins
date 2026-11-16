@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { experimental_Icon as Icon, Markdown } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, Markdown } from "@vesnalia/plugin-sdk/app";
 import type { PrDetails, PrView, Reviewer } from "../contract";
 import { useActions } from "./actions";
 import { Avatar } from "./avatar";
@@ -18,7 +18,7 @@ import { TextSkeleton } from "./skeleton";
 
 const LONG_DESCRIPTION = 1500;
 
-/** The PR's own description, rendered by bb's sanitizing Markdown renderer; a long one is cut until asked. */
+/** The PR's own description, rendered by VesnALIA's sanitizing Markdown renderer; a long one is cut until asked. */
 export function Description({ prKey, body }: { prKey: string; body: string | null }) {
   const [expanded, setExpanded] = usePrState(prKey, "description", false);
   const long = body !== null && body.length > LONG_DESCRIPTION;
@@ -197,14 +197,14 @@ function RolePick({ pr, isAgent, label, tone }: { pr: PrView; isAgent: boolean; 
   );
 }
 
-/** The bb threads linked to the PR, the agent's marked as such; open, unlink, or link another. */
+/** The VesnALIA threads linked to the PR, the agent's marked as such; open, unlink, or link another. */
 export function Threads({ pr, compact = false }: { pr: PrView; compact?: boolean }) {
   const actions = useActions();
   const unlink = useShuttleMutation("unlink");
   const roleOf = (threadId: string, role: string): { label: string; tone: Tone } =>
     pr.agent?.threadId === threadId ? { label: "Agent", tone: "info" } : role === "review" ? { label: "Review", tone: "neutral" } : { label: "Reference", tone: "neutral" };
   return (
-    <PaneSection title="Threads in bb" label="Threads" aside={(
+    <PaneSection title="Threads in VesnALIA" label="Threads" aside={(
       <button type="button" className={BUTTON_GHOST} onClick={() => actions.link(pr)}>
         <Icon name="Link" className="size-3.5" aria-hidden />{compact ? "Link" : "Link a thread"}
       </button>

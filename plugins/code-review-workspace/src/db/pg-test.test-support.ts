@@ -2,7 +2,7 @@
 // (postgres://user:password@host:port/database, as scripts/test-postgres.sh prints it). Each fake host's database gets
 // a schema of its own, migrated by its first statement, which dropPgTestSchemas drops once its test is done.
 import { randomBytes } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { pgSql, type PgOptions, type PgSql } from "./pg";
 import { migratePg } from "./pg-migrations";
 import type { Sql, SqlValue } from "./sql";
@@ -26,9 +26,9 @@ export function testPgOptions(schema: string): PgOptions {
 /** A schema name no other test uses. */
 export const testSchemaName = () => `crw_test_${randomBytes(6).toString("hex")}`;
 
-/** The Sql over the schema of `bb`'s database, migrated before its first statement runs. */
-export function pgTestSql(bb: BbPluginApi): Sql {
-  const path = bb.storage.database().name;
+/** The Sql over the schema of `VesnALIA`'s database, migrated before its first statement runs. */
+export function pgTestSql(alia: AliaPluginApi): Sql {
+  const path = alia.storage.database().name;
   let entry = schemas.get(path);
   if (!entry) {
     const schema = testSchemaName();
@@ -39,9 +39,9 @@ export function pgTestSql(bb: BbPluginApi): Sql {
   return entry.sql;
 }
 
-/** Close the connection of `bb`'s schema, as the host closes its SQLite database; dropPgTestSchemas still drops it. */
-export async function endPgTestSql(bb: BbPluginApi): Promise<void> {
-  await schemas.get(bb.storage.database().name)?.pg.end();
+/** Close the connection of `VesnALIA`'s schema, as the host closes its SQLite database; dropPgTestSchemas still drops it. */
+export async function endPgTestSql(alia: AliaPluginApi): Promise<void> {
+  await schemas.get(alia.storage.database().name)?.pg.end();
 }
 
 /** `pg`, with migratePg run once before the first call. */

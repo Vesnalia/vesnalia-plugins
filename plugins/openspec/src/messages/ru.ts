@@ -43,7 +43,7 @@ export const ru = {
   "actionHint.apply": "Выполнить задачи",
   "actionHint.verify": "Сверить со specs",
   customAgentSettings: "Свои настройки агента",
-  bbDefaults: "По настройкам bb",
+  aliaDefaults: "По настройкам alia",
   firstMessage: "Первое сообщение",
   launching: "Запуск…",
   createAndLaunch: "Создать и запустить",

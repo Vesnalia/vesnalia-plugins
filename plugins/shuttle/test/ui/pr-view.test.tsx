@@ -279,7 +279,7 @@ describe("the PR view of your own PR", () => {
     fireEvent.click(within(conversation).getByRole("button", { name: "Newest first: show oldest first" }));
     expect(timeline()).toEqual(["IC1", "IC2", "T1", "R1:APPROVED", "R2:CHANGES_REQUESTED"]);
     expect(open.compareDocumentPosition(conversation.querySelector("[data-composer]")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(window.localStorage.getItem("bb-plugin-shuttle:conversation-order")).toBe('"oldest"');
+    expect(window.localStorage.getItem("alia-plugin-shuttle:conversation-order")).toBe('"oldest"');
 
     fireEvent.click(within(conversation).getByRole("button", { name: /Resolved: retry.ts:12/u }));
     expect(conversation.querySelector('article[data-thread="T1"]')!.textContent).toContain("Done in 7b13d22.");
@@ -288,14 +288,14 @@ describe("the PR view of your own PR", () => {
   });
 
   it("marks what came since the PR was last looked at as New", async () => {
-    window.localStorage.setItem("bb-plugin-shuttle:pr-seen", JSON.stringify({ [retryPr.key]: Date.now() - 90 * 60_000 }));
+    window.localStorage.setItem("alia-plugin-shuttle:pr-seen", JSON.stringify({ [retryPr.key]: Date.now() - 90 * 60_000 }));
     reloadPrefs();
     const { view } = await prPage(retryPr, {}, { items: retryItems, details: retryDetails });
     const conversation = tab(await view(), "conversation");
     await waitFor(() => expect(conversation.textContent).toContain("3 new since you looked"));
     const marked = [...conversation.querySelectorAll("[data-item]")].filter((node) => [...node.querySelectorAll("[data-pill]")].some((pill) => pill.textContent === "New")).map((node) => node.getAttribute("data-item"));
     expect(marked.sort()).toEqual(["R2:CHANGES_REQUESTED", "T2:C3", "T3:C4"]);
-    expect(JSON.parse(window.localStorage.getItem("bb-plugin-shuttle:pr-seen")!)[retryPr.key]).toBeGreaterThan(Date.now() - 10_000);
+    expect(JSON.parse(window.localStorage.getItem("alia-plugin-shuttle:pr-seen")!)[retryPr.key]).toBeGreaterThan(Date.now() - 10_000);
   });
 
   it("marks unsent feedback when the PR has no agent, and offers to send it to one", async () => {
@@ -942,7 +942,7 @@ describe("the PR view of someone else's PR", () => {
     // The whole review folds under each: what posted, then every finding with what became of it.
     const posted = rows[0]!.querySelector("details")!;
     expect(posted.querySelector("summary")!.textContent).toBe("The review you posted and 2 findings");
-    expect(posted.querySelector("[data-earlier-body] [data-testid='bb-markdown']")!.textContent).toBe("Posted **1**");
+    expect(posted.querySelector("[data-earlier-body] [data-testid='alia-markdown']")!.textContent).toBe("Posted **1**");
     const findings = [...posted.querySelectorAll<HTMLElement>("[data-earlier-finding]")];
     expect(findings.map((f) => [f.getAttribute("data-fate"), f.textContent])).toEqual([
       ["edited", "highedge/retry.ts:42· posted with your editsRetries never back off."],
@@ -1249,7 +1249,7 @@ describe("the PR view of someone else's PR", () => {
     expect(note.value).toBe(" Focus on filters. ");
     fireEvent.change(note, { target: { value: " Focus on filters and the fallback. " } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Start review" }));
-    await waitFor(() => expect(callsTo(slot, "review")).toEqual([{ key: theirs.key, presetId: "standard", note: "Focus on filters and the fallback.", projectId: "prj_bb" }]));
+    await waitFor(() => expect(callsTo(slot, "review")).toEqual([{ key: theirs.key, presetId: "standard", note: "Focus on filters and the fallback.", projectId: "prj_alia" }]));
   });
 
   it("opens the per-run review dialog from the preset dialog", async () => {
@@ -1259,7 +1259,7 @@ describe("the PR view of someone else's PR", () => {
     const dialog = await slot.findByRole("dialog", { name: "Review acme/app#2311622" });
     fireEvent.change(within(dialog).getByRole("textbox", { name: "Note for the reviewer" }), { target: { value: " focus on the fallback " } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Start review" }));
-    await waitFor(() => expect(callsTo(slot, "review")).toEqual([{ key: theirs.key, presetId: "standard", note: "focus on the fallback", projectId: "prj_bb" }]));
+    await waitFor(() => expect(callsTo(slot, "review")).toEqual([{ key: theirs.key, presetId: "standard", note: "focus on the fallback", projectId: "prj_alia" }]));
   });
 
   it("sends the next review to its archived review thread, says so, and still offers a new thread", async () => {
@@ -1280,12 +1280,12 @@ describe("the PR view of someone else's PR", () => {
     expect(select.value).toBe("thr_old");
     fireEvent.change(select, { target: { value: "" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Start review" }));
-    await waitFor(() => expect(callsTo(slot, "review")[1]).toEqual({ key: theirs.key, presetId: "standard", newThread: true, projectId: "prj_bb" }));
+    await waitFor(() => expect(callsTo(slot, "review")[1]).toEqual({ key: theirs.key, presetId: "standard", newThread: true, projectId: "prj_alia" }));
   });
 
   it("links a thread for reference from Threads", async () => {
     const { slot, view } = await prPage(theirs, {
-      threads: () => ({ threads: [{ id: "thr_x", title: "Edge retry budget notes", projectId: "prj_bb", status: "idle", updatedAt: null }] }),
+      threads: () => ({ threads: [{ id: "thr_x", title: "Edge retry budget notes", projectId: "prj_alia", status: "idle", updatedAt: null }] }),
       link: ({ key, threadId, role }) => ({ pr: { ...theirs, key, links: [link({ threadId, role: role! })] } }),
     });
     fireEvent.click(within(within(await view()).getByRole("region", { name: "Threads" })).getByRole("button", { name: "Link a thread" }));
@@ -1308,7 +1308,7 @@ describe("the PR view of someone else's PR", () => {
   it("makes a linked thread your PR's agent, which fixes its feedback, instead of offering a review", async () => {
     const before = { ...own, agent: agent({ threadId: "thr_agent", title: "CF token containment 2: retry WAF deletes", mode: "fix" }) };
     const { slot, view } = await prPage(before, {
-      threads: () => ({ threads: [{ id: "thr_fixer", title: "Fix the retry budget", projectId: "prj_bb", status: "idle", updatedAt: null }] }),
+      threads: () => ({ threads: [{ id: "thr_fixer", title: "Fix the retry budget", projectId: "prj_alia", status: "idle", updatedAt: null }] }),
       setAgent: ({ key, target, mode }) => ({ pr: { ...before, key, agent: agent({ threadId: target.kind === "existing" ? target.threadId : "thr_new", title: "Fix the retry budget", mode: mode ?? "fix" }) }, threadId: target.kind === "existing" ? target.threadId : "thr_new" }),
     });
     fireEvent.click(within(within(await view()).getByRole("region", { name: "Threads" })).getByRole("button", { name: "Link a thread" }));
@@ -1330,7 +1330,7 @@ describe("the PR view of someone else's PR", () => {
 
   it("defaults to making a linked thread the agent when your PR has none", async () => {
     const lonely = { ...own, agent: null };
-    const { slot, view } = await prPage(lonely, { threads: () => ({ threads: [{ id: "thr_fixer", title: "Fix the retry budget", projectId: "prj_bb", status: "idle", updatedAt: null }] }) });
+    const { slot, view } = await prPage(lonely, { threads: () => ({ threads: [{ id: "thr_fixer", title: "Fix the retry budget", projectId: "prj_alia", status: "idle", updatedAt: null }] }) });
     fireEvent.click(within(within(await view()).getByRole("region", { name: "Threads" })).getByRole("button", { name: "Link a thread" }));
     const dialog = await slot.findByRole("dialog");
     const purposes = within(dialog).getByRole("radiogroup", { name: "What it is for" });

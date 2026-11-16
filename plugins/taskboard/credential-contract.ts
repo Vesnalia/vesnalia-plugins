@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const bbProjectIdSchema = z.string().startsWith('proj_');
+export const aliaProjectIdSchema = z.string().startsWith('proj_');
 
 export const jiraBaseUrlSchema = z
   .string()
@@ -60,7 +60,7 @@ export type SecretMutation = z.infer<typeof secretMutationSchema>;
 
 export const projectCredentialsInteractionPayloadSchema = z
   .object({
-    projectId: bbProjectIdSchema,
+    projectId: aliaProjectIdSchema,
     projectName: z.string(),
     linearTeamKey: z.string(),
     jiraBaseUrl: jiraBaseUrlSchema,

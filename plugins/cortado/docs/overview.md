@@ -1,6 +1,6 @@
 ## What you get
 
-- **Cortado** follows bb's Light, Dark or System setting.
+- **Cortado** follows VesnALIA's Light, Dark or System setting.
 - **Cortado Dark** keeps the dark palette in both modes.
 - **Cortado Light** keeps the light palette in both modes.
 
@@ -16,13 +16,13 @@ Body text is 15.5:1 on the dark chat and 17.2:1 on the light one. A check that s
 
 ## How to use it
 
-Choose a palette in **Settings → Appearance → Palette**, or run `bb theme set plugin:cortado:cortado`. Use `cortado-dark` or `cortado-light` in place of the last `cortado` for the fixed palettes.
+Choose a palette in **Settings → Appearance → Palette**, or run `alia theme set plugin:cortado:cortado`. Use `cortado-dark` or `cortado-light` in place of the last `cortado` for the fixed palettes.
 
-Code renders in Fira Code and the terminal in FiraCode Nerd Font Mono. Install both, or bb falls back to your system's monospace font.
+Code renders in Fira Code and the terminal in FiraCode Nerd Font Mono. Install both, or VesnALIA falls back to your system's monospace font.
 
 ## Requirements
 
-bb 0.48 or later. The plugin adds CSS and color files only. It runs nothing in the background and uses no account or external service.
+VesnALIA 0.48 or later. The plugin adds CSS and color files only. It runs nothing in the background and uses no account or external service.
 
 ## Source
 

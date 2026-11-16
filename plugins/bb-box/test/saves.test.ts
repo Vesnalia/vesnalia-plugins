@@ -2,8 +2,8 @@ import "./check-test-machine.mjs";
 import assert from "node:assert/strict";
 import { join } from "node:path";
 import { mock, test } from "node:test";
-import type { BbPluginApi, PluginSettingValue } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi, PluginSettingValue } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { DRIVERS } from "../src/backends/index.ts";
 import { dockerDriver } from "../src/backends/docker/index.ts";
 import type { BackendDriver } from "../src/backends/types.ts";
@@ -14,7 +14,7 @@ import { DOCUMENT_KEY, SECRETS_KEY } from "../src/core/move.ts";
 import { RECEIPTS_KEPT_AT_LEAST, RECEIPTS_KEPT_MS, SAVED_KEY, keptReceipts, type SavedRecord, type StoredReceipt } from "../src/core/saves.ts";
 import { driverFields, type ApplyResult, type CheckResult, type ConfigState } from "../src/plugin/configuration.ts";
 import { DROPPED_REPLY_MESSAGE, ReplyDrops, liveChecksOn } from "../src/plugin/live-checks.ts";
-import { setup, type BbBox } from "../src/plugin/setup.ts";
+import { setup, type AliaBox } from "../src/plugin/setup.ts";
 import { fakeDriver } from "./fake-backend.ts";
 import { tempDir } from "./helpers.ts";
 
@@ -22,12 +22,12 @@ const THREAD = "thr_saves";
 const TOKEN = "made-up-token-0001";
 
 interface Started {
-  readonly app: () => BbBox;
+  readonly app: () => AliaBox;
   readonly rpc: <T>(method: string, input: unknown) => Promise<T>;
   readonly cli: (args: string[]) => Promise<{ exitCode?: number; stdout?: string; stderr?: string }>;
-  readonly kv: () => BbPluginApi["storage"]["kv"];
+  readonly kv: () => AliaPluginApi["storage"]["kv"];
   readonly failWrites: Set<string>;
-  readonly restart: () => Promise<BbBox>;
+  readonly restart: () => Promise<AliaBox>;
 }
 
 const disposals: (() => Promise<void>)[] = [];
@@ -35,10 +35,10 @@ test.afterEach(async () => {
   for (const dispose of disposals.splice(0)) await dispose().catch(() => {});
 });
 
-function withFailingWrites(bb: BbPluginApi, failWrites: ReadonlySet<string>): BbPluginApi {
-  const kv = bb.storage.kv;
+function withFailingWrites(alia: AliaPluginApi, failWrites: ReadonlySet<string>): AliaPluginApi {
+  const kv = alia.storage.kv;
   const storage = {
-    ...bb.storage,
+    ...alia.storage,
     kv: {
       get: <T,>(key: string) => kv.get<T>(key),
       list: (prefix?: string) => kv.list(prefix),
@@ -49,14 +49,14 @@ function withFailingWrites(bb: BbPluginApi, failWrites: ReadonlySet<string>): Bb
       },
     },
   };
-  return Object.create(bb, { storage: { value: storage } }) as BbPluginApi;
+  return Object.create(alia, { storage: { value: storage } }) as AliaPluginApi;
 }
 
 async function start(settings: Record<string, PluginSettingValue>, options: { liveChecks?: boolean; drivers?: BackendDriver<any>[] } = {}): Promise<Started> {
   const root = tempDir("saves");
   const threads = new Map([[THREAD, makeThreadResponse({ id: THREAD, projectId: "prj_saves", environmentId: "env_saves" })]]);
-  const { bb, harness } = createFakePluginHost({
-    pluginId: "bb-box",
+  const { alia, harness } = createFakePluginHost({
+    pluginId: "alia-box",
     settings,
     sdk: {
       threads: { get: async ({ threadId }: { threadId: string }) => threads.get(threadId)! },
@@ -64,13 +64,13 @@ async function start(settings: Record<string, PluginSettingValue>, options: { li
       projects: { machineEnvironment: async () => ({ builtInGit: { status: "logged in", statusMessage: "" }, inheritedVariables: [], variables: [] }) },
     } as never,
   });
-  await bb.storage.kv.set(INSTALL_ID_KEY, "earlier01");
+  await alia.storage.kv.set(INSTALL_ID_KEY, "earlier01");
   const failWrites = new Set<string>();
   const drivers = [fakeDriver(root), ...(options.drivers ?? [])];
-  const begin = (on: BbPluginApi) => setup(withFailingWrites(on, failWrites), { drivers, daemonParent: join(root, "no-daemon"), ...(options.liveChecks === undefined ? {} : { liveChecks: options.liveChecks }) });
-  let app = await begin(bb);
+  const begin = (on: AliaPluginApi) => setup(withFailingWrites(on, failWrites), { drivers, daemonParent: join(root, "no-daemon"), ...(options.liveChecks === undefined ? {} : { liveChecks: options.liveChecks }) });
+  let app = await begin(alia);
   let current = harness;
-  let kv = bb.storage.kv;
+  let kv = alia.storage.kv;
   disposals.push(() => current.lifecycle.dispose());
   return {
     app: () => app,
@@ -112,7 +112,7 @@ test("an apply with an operation ID stores its receipt in the same write as the 
   assert.equal(record.document.revision, before.revision + 1);
   assert.deepEqual(record.ledger.receipts.map((receipt) => [receipt.operation, receipt.revision]), [["op-1", before.revision + 1]]);
   assert.match(record.ledger.receipts[0]!.submission, /^[0-9a-f]{64}$/);
-  assert.deepEqual(await kv().get(DOCUMENT_KEY), record.document, "today's document key is a copy, for an earlier bb-box");
+  assert.deepEqual(await kv().get(DOCUMENT_KEY), record.document, "today's document key is a copy, for an earlier alia-box");
 
   const state = await rpc<ConfigState>("config.get", null);
   assert.deepEqual(state.receipts, [saved.receipt]);
@@ -246,7 +246,7 @@ test("a secret's version is the revision that last set or cleared it: replaced a
   assert.equal(new Set(versions).size, 4, `the same value set again is a new version: ${versions.join(", ")}`);
 
   const shown = await cli(["config", "show", "--json"]);
-  assert.deepEqual((JSON.parse(shown.stdout ?? "") as ConfigDocument).backends[0]!.fields.token, { set: true }, "bb box config show --json is as it was");
+  assert.deepEqual((JSON.parse(shown.stdout ?? "") as ConfigDocument).backends[0]!.fields.token, { set: true }, "alia box config show --json is as it was");
   assert.ok(!(shown.stdout ?? "").includes("version"));
   assert.ok(!JSON.stringify(back).includes(TOKEN));
 });
@@ -270,7 +270,7 @@ test("a file's content and the tailnet's credentials carry versions too, and an 
   assert.deepEqual(again.state.document.general.files, general.files);
 });
 
-test("a secret changed outside BB Box's saves, as by a write cut short, gets a version no save used, on a new revision", async () => {
+test("a secret changed outside VesnALIA Box's saves, as by a write cut short, gets a version no save used, on a new revision", async () => {
   const started = await start(ON);
   const before = await started.rpc<ConfigState>("config.get", null);
   const saved = await started.rpc<ApplyResult>("config.apply", { draft: withBoxesPerThread(before.document, 2), revision: before.revision });
@@ -287,7 +287,7 @@ test("a secret changed outside BB Box's saves, as by a write cut short, gets a v
   assert.equal((await started.rpc<ConfigState>("config.get", null)).revision, after.revision, "a start with nothing changed outside writes nothing");
 });
 
-test("a document an earlier BB Box saved since is read, and the receipts kept", async () => {
+test("a document an earlier VesnALIA Box saved since is read, and the receipts kept", async () => {
   const started = await start(ON);
   const before = await started.rpc<ConfigState>("config.get", null);
   const saved = await started.rpc<ApplyResult>("config.apply", { draft: withBoxesPerThread(before.document, 2), revision: before.revision, operation: "op-before" });
@@ -323,7 +323,7 @@ test("a backend's state names the revision its configuration last changed at, an
 
   const doctor = await cli(["doctor"]);
   assert.ok(doctor.exitCode !== undefined);
-  assert.equal(backend(await rpc<ConfigState>("config.get", null)).doctor?.revision, changed.state.revision, "bb box doctor checks the live backend, built from this revision");
+  assert.equal(backend(await rpc<ConfigState>("config.get", null)).doctor?.revision, changed.state.revision, "alia box doctor checks the live backend, built from this revision");
 });
 
 test("setup is done once a backend that is on makes a kind, and stays done when every backend is off, across a start", async () => {
@@ -344,7 +344,7 @@ test("setup is done once a backend that is on makes a kind, and stays done when 
   assert.deepEqual((await started.rpc<ConfigState>("config.get", null)).setupDone, on.state.setupDone);
 });
 
-test("config.migrated.remove removes the copy of BB's settings, as bb box config migrated --remove does", async () => {
+test("config.migrated.remove removes the copy of VesnALIA's settings, as VesnALIA box config migrated --remove does", async () => {
   const { rpc } = await start(ON);
   assert.ok((await rpc<ConfigState>("config.get", null)).migrated);
   const removed = await rpc<{ removed: boolean; state: ConfigState }>("config.migrated.remove", null);
@@ -377,8 +377,8 @@ test("in a live check, the reply-drop switch stores the save and then drops its 
 
 test("the reply-drop switch is off by default, and outside live checks it does not exist", async () => {
   assert.equal(liveChecksOn({}), false);
-  assert.equal(liveChecksOn({ BB_BOX_LIVE_CHECKS: "true" }), false);
-  assert.equal(liveChecksOn({ BB_BOX_LIVE_CHECKS: "1" }), true);
+  assert.equal(liveChecksOn({ ALIA_BOX_LIVE_CHECKS: "true" }), false);
+  assert.equal(liveChecksOn({ ALIA_BOX_LIVE_CHECKS: "1" }), true);
   const drops = new ReplyDrops();
   assert.equal(drops.take(), false);
 
@@ -391,7 +391,7 @@ test("the reply-drop switch is off by default, and outside live checks it does n
   assert.ok(saved.ok);
 
   const unset = await start(ON);
-  assert.equal(unset.app().replyDrops === null, !liveChecksOn(), "without the option, BB's server's environment decides");
+  assert.equal(unset.app().replyDrops === null, !liveChecksOn(), "without the option, VesnALIA's server's environment decides");
 });
 
 test("fields where empty turns boxes off are marked, and exist in their drivers", () => {

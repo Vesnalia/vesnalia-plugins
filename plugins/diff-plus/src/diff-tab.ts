@@ -1,5 +1,5 @@
-// BB's Diff tab as the folder tree finds and drives it. None of this is an SDK
-// contract: it is bb-app 0.47.1's markup (checked again on 0.48.1), so a BB
+// VesnALIA's Diff tab as the folder tree finds and drives it. None of this is an SDK
+// contract: it is alia-app 0.47.1's markup (checked again on 0.48.1), so a VesnALIA
 // update can move it, and then the tree simply does not show (findDiffTabs
 // finds nothing).
 //
@@ -11,7 +11,7 @@
 // The search box ("Search filenames") takes globs: `docs/**`, `*.md`, `!*.test.ts`.
 //
 // The "Filter files" menu (extensions, deleted, viewed) is not in the markup
-// while closed. bb--git keeps its choices in a module of its own, per
+// while closed. alia--git keeps its choices in a module of its own, per
 // environment, and hands them to the toolbar as its `filters` prop, so
 // readFilters takes them from the toolbar's React fiber.
 
@@ -170,7 +170,7 @@ async function waitFor<T>(find: () => T | null | undefined, frames = 20): Promis
 }
 
 /**
- * Types `value` into BB's search box, opening it if it is closed. An empty value
+ * Types `value` into VesnALIA's search box, opening it if it is closed. An empty value
  * closes the box, which clears the search. The box is a React input, so the
  * value goes through the native setter and an `input` event, as typing would.
  */
@@ -234,9 +234,9 @@ function cardPath(card: Element): string | null {
  * scroller holds one box whose children are the mounted cards (`[data-index]`).
  * An IntersectionObserver rooted at the scroller says which are on screen, so a
  * scroll costs the plugin nothing until a card enters or leaves the view. Cards
- * are handed to it as BB mounts them, seen by watching only the box's own
+ * are handed to it as VesnALIA mounts them, seen by watching only the box's own
  * children (not what renders inside a card); one-level watches on the list box,
- * the scroller's wrapper and the scroller notice BB replacing any of them.
+ * the scroller's wrapper and the scroller notice VesnALIA replacing any of them.
  */
 export function watchVisibleCards(tab: DiffTab, onPaths: (paths: readonly string[]) => void): () => void {
   const paths = new WeakMap<Element, string | null>();
@@ -354,7 +354,7 @@ export async function expandFile(tab: DiffTab, path: string): Promise<void> {
 
 /**
  * Calls `onChange` when a Diff tab may have appeared, gone, or changed scope.
- * BB keeps the right panel's element across navigation and remounts what is
+ * VesnALIA keeps the right panel's element across navigation and remounts what is
  * inside it, so the observer watches the panels (found again every second) and
  * skips changes inside a tab's file list, where scrolling mounts and unmounts
  * cards all the time. The Filter files menu is portalled outside the panel, and a

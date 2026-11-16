@@ -12,7 +12,7 @@ const variables = [
   { name: "repoPath", meaning: "Absolute source checkout root on the selected machine.", example: "/home/user/GIT/app" },
   { name: "checkoutParent", meaning: "Parent directory of that source checkout.", example: "/home/user/GIT" },
   { name: "branch", meaning: "The worktree's local branch, sanitized for the filesystem; detached PR worktrees use pr-<number>. The Git branch name is unchanged.", example: "feature/login becomes feature-login" },
-  { name: "pathKey", meaning: "BB's unique launch key. Include it to avoid destination-name collisions.", example: "thr_abc123" },
+  { name: "pathKey", meaning: "VesnALIA's unique launch key. Include it to avoid destination-name collisions.", example: "thr_abc123" },
 ];
 
 export function TemplateReference() {
@@ -51,14 +51,14 @@ export function TemplateReference() {
     <details className="rounded-lg border border-border">
       <summary className="cursor-pointer rounded-lg px-3 py-2.5 font-medium hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Per-project override examples</summary>
       <div className="grid gap-3 border-t border-border p-3 text-xs leading-relaxed">
-        <p>Map a BB project ID or remote identity to a complete template using the same variables:</p>
+        <p>Map a VesnALIA project ID or remote identity to a complete template using the same variables:</p>
         <pre className="whitespace-pre-wrap break-all rounded-md bg-muted p-3 font-mono">{JSON.stringify({
           "github.com/my-org/*": "{checkoutParent}/{repo}.{branch}",
           "proj_example": "~/special/{repo}/{pathKey}",
         }, null, 2)}</pre>
         <p>Project IDs win over remote matches. Exact remotes win over wildcards, then the most specific pattern wins. Equal matches use lexical key order.</p>
-        <p>HTTPS and SSH remote URLs normalize to <code className="font-mono">host/owner/repo</code>, without a trailing <code className="font-mono">.git</code>. Matching uses BB’s saved project URL, without network access.</p>
-        <p>No match uses the global template. An empty value uses <code className="font-mono">{DEFAULT_PATH_TEMPLATE}</code> for that project. Overrides stay in your BB settings, never in the repository.</p>
+        <p>HTTPS and SSH remote URLs normalize to <code className="font-mono">host/owner/repo</code>, without a trailing <code className="font-mono">.git</code>. Matching uses VesnALIA’s saved project URL, without network access.</p>
+        <p>No match uses the global template. An empty value uses <code className="font-mono">{DEFAULT_PATH_TEMPLATE}</code> for that project. Overrides stay in your VesnALIA settings, never in the repository.</p>
       </div>
     </details>
   </div>;

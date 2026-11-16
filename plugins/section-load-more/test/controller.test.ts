@@ -1,4 +1,4 @@
-// Runs the controller against a DOM shaped like bb's thread-list sidebar.
+// Runs the controller against a DOM shaped like VesnALIA's thread-list sidebar.
 // node --test test/  (Node 22.18+ strips the types; needs jsdom)
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
@@ -25,7 +25,7 @@ const doc = win.document;
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 
 function row(threadId: string, child = ""): string {
-  return `<div data-sidebar-windowed-item><a data-sidebar-thread-id="${threadId}"><span class="bb-thread-title">${threadId}</span></a>${child}</div>`;
+  return `<div data-sidebar-windowed-item><a data-sidebar-thread-id="${threadId}"><span class="alia-thread-title">${threadId}</span></a>${child}</div>`;
 }
 
 /** A custom section; item 5 is an off-screen placeholder, item 0 has a child. */

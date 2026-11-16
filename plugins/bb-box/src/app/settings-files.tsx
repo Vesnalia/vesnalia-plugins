@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { useId, useRef, useState } from "react";
 import { BoxDialog, DialogButton, useDialogAction } from "./box-dialog.tsx";
 import { Button } from "@/components/ui/button";
@@ -308,7 +308,7 @@ export function BoxFilesSection() {
       >
         <div className="space-y-2">
           <p>Boxes made from now on no longer get it. Boxes already made keep their copy.</p>
-          <p>Its content is deleted from BB Box and cannot be shown or got back. To use it again, paste it again.</p>
+          <p>Its content is deleted from VesnALIA Box and cannot be shown or got back. To use it again, paste it again.</p>
         </div>
       </BoxDialog>
     </Section>

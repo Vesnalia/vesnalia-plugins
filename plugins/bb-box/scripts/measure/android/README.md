@@ -1,13 +1,13 @@
 # Measuring what an Android device costs
 
 The harness behind [063's results](../../../docs/decisions/063-results.md):
-how fast each Android model draws on the CPU, what `bb-box-h264` costs to
+how fast each Android model draws on the CPU, what `alia-box-h264` costs to
 encode it, how frames reach the encoder, and how the picture holds up at
 8 Mbit/s. It runs in a Linux box with KVM, beside the emulator.
 
 | File | What it is |
 | --- | --- |
-| `bench.ts stream` | Reads the emulator's gRPC `streamScreenshot`, by its bytes (`--mode pipe`) or by shared memory (`--mode mmap`), and feeds `bb-box-h264` through `src/device/h264-encoder.ts`. Each window gives frames received and encoded a second, Mbit/s, the cores of the emulator, the helper and Node, encode ms and the emulator's resident memory. `--busy` scrolls the launcher's app list with `adb shell input swipe`, as the research did. `--no-encode` only counts frames. `--record` keeps raw frames for `picture.sh` |
+| `bench.ts stream` | Reads the emulator's gRPC `streamScreenshot`, by its bytes (`--mode pipe`) or by shared memory (`--mode mmap`), and feeds `alia-box-h264` through `src/device/h264-encoder.ts`. Each window gives frames received and encoded a second, Mbit/s, the cores of the emulator, the helper and Node, encode ms and the emulator's resident memory. `--busy` scrolls the launcher's app list with `adb shell input swipe`, as the research did. `--no-encode` only counts frames. `--record` keeps raw frames for `picture.sh` |
 | `bench.ts tear` | Two streams at once, one by shared memory and one by bytes: whether a frame read from shared memory is ever one the emulator never sent whole, with the read held back `--window` ms |
 | `bench.ts replay` | Plays a recording through one encoder at its own pace, and writes the H.264 |
 | `bench.ts snap` | Saves one raw frame, to check its size and orientation |
@@ -43,17 +43,17 @@ the emulator's whole process tree, the helper, and Node's own
 
 `device.ts` measures unit 4.1's Android driver
 ([063 results](../../../docs/decisions/063-results.md#unit-41-the-android-driver)):
-the device server in the box, as bb-box delivers it, with its viewer on the
-server's socket through `bb-box-device connect`. It runs as the box user,
+the device server in the box, as alia-box delivers it, with its viewer on the
+server's socket through `alia-box-device connect`. It runs as the box user,
 with this checkout copied into the box, in a box with the Android
 template's layer, or a box of the template itself.
 
 | Step | What it does |
 | --- | --- |
-| `device.ts deliver` | Delivers the device server from this checkout as bb-box does, with the devices of the image's record, or of `/usr/share/bb-box/android-devices.json` where the box has the layer but no record. `--device` names a first model |
-| `device.ts stream` | Connects as a viewer, times its hello and its first frame, then counts frames, key frames, Mbit/s and the gaps between frames in windows of `--window` seconds for `--seconds`, with the cores and resident memory of the server, `bb-box-h264` and the emulator's process tree. `--busy` scrolls with `adb shell input swipe`, as unit 2.4 did |
+| `device.ts deliver` | Delivers the device server from this checkout as alia-box does, with the devices of the image's record, or of `/usr/share/alia-box/android-devices.json` where the box has the layer but no record. `--device` names a first model |
+| `device.ts stream` | Connects as a viewer, times its hello and its first frame, then counts frames, key frames, Mbit/s and the gaps between frames in windows of `--window` seconds for `--seconds`, with the cores and resident memory of the server, `alia-box-h264` and the emulator's process tree. `--busy` scrolls with `adb shell input swipe`, as unit 2.4 did |
 | `device.ts keyframes` | Asks for a key frame `--times` times, 0.5 s apart, and times each to its arrival; `--busy` as above |
-| `device.ts kill-encoder` | Kills `bb-box-h264` while a viewer watches, and times the stall to the next key frame |
+| `device.ts kill-encoder` | Kills `alia-box-h264` while a viewer watches, and times the stall to the next key frame |
 | `device.ts kill-emulator` | Kills the emulator, and times the stall to the next key frame, or reports the state the server left the device in |
 | `device.ts kill-server` | Kills the device server, and times its hello and a key frame after it is back, and whether the emulator was kept |
 | `device.ts switch --device <model>` | Switches the box's device through a control connection, and times it to the answer |
@@ -99,7 +99,7 @@ line of JSON a step with its time and what the agent would read.
 
 | Option or step | What it does |
 | --- | --- |
-| `--tree dump`, `--tree server` | Stops the box's device server and runs one in this process, reading the tree only by `uiautomator dump`, or by bb-box's tree server with the dump when the server cannot run. Without it, the box's own server, delivered from this checkout |
+| `--tree dump`, `--tree server` | Stops the box's device server and runs one in this process, reading the tree only by `uiautomator dump`, or by alia-box's tree server with the dump when the server cannot run. Without it, the box's own server, delivered from this checkout |
 | `--person` | Starts with a person holding control |
 | `windows`, `observe`, `screenshot`, `act`, `type`, `launch`, `take_control` | The computer tools. `ref` is a reference, or `/pattern/` for the first line of the last tree that matches, or the `nth` |
 | `control`, `person`, `wait` | A `box_device` control, a person taking or handing back control, a pause |

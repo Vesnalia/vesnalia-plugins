@@ -21,7 +21,7 @@ import type { ThemeMode } from "../kit/types";
 
 const CHILD = {
   walk1: [".hh..", "hhhh.", ".ss..", ".sK..", "cccc.", "ccccs", ".cc..", ".b.b."],
-  walk2: [".hh..", "hhhh.", ".ss..", ".sK..", "cccc.", "ccccs", ".cc..", "..bb."],
+  walk2: [".hh..", "hhhh.", ".ss..", ".sK..", "cccc.", "ccccs", ".cc..", "..alia."],
   front: [".hhh.", "hhhhh", ".sss.", ".KsK.", "ccccc", "sccccs", ".ccc.", ".b.b."],
   /** Sitting on the sled, feet out front. */
   sit: [".hh...", "hhhh..", ".ss...", ".sK...", "cccc..", "ccccbb"],

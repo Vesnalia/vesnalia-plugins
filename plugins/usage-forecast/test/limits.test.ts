@@ -81,7 +81,7 @@ describe("Claude Code, 200 000 window", () => {
     expect(actsAt(95, ctx)!).toBeLessThan(200_000);
   });
 
-  it("compacting at 167 000 (what bb 0.49 reports): the bar is full there", () => {
+  it("compacting at 167 000 (what VesnALIA 0.49 reports): the bar is full there", () => {
     const ctx = readContext(claudeContext(167_000, 200_000), INHERIT, settings(), "claude-code")!;
     expect(ctx).toMatchObject({ limitTokens: 167_000, limitSource: "reported", percent: 100 });
     expect(actsAt(80, ctx)).toBe(133_600);

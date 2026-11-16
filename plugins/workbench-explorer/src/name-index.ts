@@ -5,7 +5,7 @@
  * `Agent-Harness/rules/ru-text-hygiene.mdc`, and a bare name resolves against
  * nothing: it is not under the thread root, and it is not the child of any
  * search root either, so the widening search in `reveal.ts` runs out of
- * spellings. Inside the thread's own environment `bb.sdk.environments.paths`
+ * spellings. Inside the thread's own environment `alia.sdk.environments.paths`
  * covers this, but that API is scoped to one environment, and most cited files
  * live in another project entirely.
  *

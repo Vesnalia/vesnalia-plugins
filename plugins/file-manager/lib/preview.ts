@@ -10,7 +10,7 @@ import type { FileEntry } from "../contract";
  * Deliberately narrower than "image formats": `tiff`, `heic`, `psd` and `ico`
  * are images that most browsers will not decode, and a tile that requests one
  * pays for the bytes and then falls back to the icon anyway. `svg` is in
- * because it renders everywhere — and because it arrives through bb's preview
+ * because it renders everywhere — and because it arrives through VesnALIA's preview
  * transport, not from this page's origin, so a hostile file cannot script the
  * panel it is displayed in.
  */

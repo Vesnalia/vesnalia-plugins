@@ -8,7 +8,7 @@
 // No map library: the projection, tiling and tour pace are mapMath.ts; tiles,
 // place names and photos come through the backend (web/lookups.ts).
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type RefObject } from "react";
-import { UrlLink, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useRpc } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { groupByDay, readPlaces, type MapPlace } from "../../core/map";
@@ -35,7 +35,7 @@ import {
   type View,
 } from "./mapMath";
 import { EASE_OUT_EXPO, reducedMotion, RISE, useAnimationsOff, useEntrance } from "./motion";
-import { NO_BB_SWIPE } from "./viewer";
+import { NO_ALIA_SWIPE } from "./viewer";
 import { Credit, Fill } from "./webMedia";
 
 /** How long the last place must stay unchanged before its name is looked up (it may still be streaming its lat/lng). */
@@ -576,7 +576,7 @@ export function MapView({ props }: { props: Props }) {
 
   return (
     // Tiles are not pictures to preview: keep image-preview plugins off them.
-    <div ref={rise} data-bb-image-preview-ignore="" className="@container min-w-0">
+    <div ref={rise} data-alia-image-preview-ignore="" className="@container min-w-0">
       {unnamed === -1 ? null : <ErrorLine message={`Map place ${unnamed + 1} needs a name`} />}
       <div className={cn("flex min-w-0 flex-col gap-3", !off && "@xl:flex-row @xl:items-start")}>
         {off ? (
@@ -592,7 +592,7 @@ export function MapView({ props }: { props: Props }) {
               aria-label={`Map of ${count} ${count === 1 ? "place" : "places"}. Arrow keys pan, plus and minus zoom, 0 shows every place.`}
               tabIndex={0}
               onKeyDown={onKeyDown}
-              {...NO_BB_SWIPE}
+              {...NO_ALIA_SWIPE}
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerEnd}

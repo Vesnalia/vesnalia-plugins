@@ -2,7 +2,7 @@
 // A running phase's spine flows; a running agent pulses. Clicking an agent opens the
 // thread it worked in. Polls while the run is live.
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Scope } from "../server";
 import type { AgentCall, RunHistory } from "@/lib/workflows";
 import { Icon } from "@/components/ui/icon";

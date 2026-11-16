@@ -1,13 +1,13 @@
 /**
- * Where the voice button goes in bb's compact composer.
+ * Where the voice button goes in VesnALIA's compact composer.
  *
- * bb draws a compact composer (collapsed, or phone width with a coarse
+ * VesnALIA draws a compact composer (collapsed, or phone width with a coarse
  * pointer) without a plugin action slot, so the app overlay has to host the
  * button and portal it in. Forms carry no thread id, so a host is paired to a
  * form by position, which only holds while the two lists line up.
  */
 
-/** What a compact host needs to know about one of bb's composers. */
+/** What a compact host needs to know about one of VesnALIA's composers. */
 export interface CompactComposer {
   readonly key: string;
   readonly scope: { readonly kind: string; readonly threadId?: string };
@@ -30,7 +30,7 @@ export interface CompactThreadComposer extends CompactComposer {
   readonly scope: { readonly kind: "thread"; readonly threadId: string };
 }
 
-/** The composers on screen that bb is drawing compact, and that we can host. */
+/** The composers on screen that VesnALIA is drawing compact, and that we can host. */
 export function compactThreadComposers(
   composers: readonly CompactComposer[],
 ): CompactThreadComposer[] {
@@ -41,11 +41,11 @@ export function compactThreadComposers(
 }
 
 /**
- * Pair each thread composer bb is drawing compact with a compact form.
+ * Pair each thread composer VesnALIA is drawing compact with a compact form.
  *
  * Returns null when the pairing cannot be trusted: no compact thread composer
  * on screen, or a form count that disagrees with ours (a composer we don't
- * host is in the way). Rendering nothing in that case leaves bb's own mic and
+ * host is in the way). Rendering nothing in that case leaves VesnALIA's own mic and
  * send working, which is better than a button in the wrong composer.
  */
 export function planCompactHosts(

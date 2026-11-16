@@ -282,7 +282,7 @@ function observed<T>(value: unknown, path: string, read: (value: unknown, path: 
     return { known, why: text(unknown.why, `${path}.why`, 1000) };
   }
   const seen = fields(value, path, ["known", "value", "at", "by"]);
-  return { known, value: read(seen.value, `${path}.value`), at: time(seen.at, `${path}.at`), by: oneOf(seen.by, `${path}.by`, ["bb-box", "outside"]) };
+  return { known, value: read(seen.value, `${path}.value`), at: time(seen.at, `${path}.at`), by: oneOf(seen.by, `${path}.by`, ["alia-box", "outside"]) };
 }
 
 function override<T>(value: unknown, path: string, read: (value: unknown, path: string) => T): Override<T> {
@@ -738,7 +738,7 @@ function hello(value: unknown, path: string): DeviceHello {
   return { ...said, bootedHere } as DeviceHello;
 }
 
-const SERVER_VERBS: readonly DeviceServerVerb[] = ["BB_DEVICE_HELLO", "BB_DEVICE_STATE", "BB_DEVICE_TOUCH", "BB_DEVICE_STILL", "BB_DEVICE_ANSWER", "BB_DEVICE_VIDEO"];
+const SERVER_VERBS: readonly DeviceServerVerb[] = ["ALIA_DEVICE_HELLO", "ALIA_DEVICE_STATE", "ALIA_DEVICE_TOUCH", "ALIA_DEVICE_STILL", "ALIA_DEVICE_ANSWER", "ALIA_DEVICE_VIDEO"];
 const VIDEO_WANTS_MOST = 64;
 const VIDEO_FPS_MOST = 1_000;
 const VIDEO_CORES_MOST = 64;
@@ -771,21 +771,21 @@ function videoReport(value: unknown, path: string): VideoReport {
 
 function serverMessage(verb: DeviceServerVerb, body: unknown): DeviceServerMessage {
   switch (verb) {
-    case "BB_DEVICE_HELLO":
+    case "ALIA_DEVICE_HELLO":
       return { verb, hello: hello(body, verb) };
-    case "BB_DEVICE_STATE":
+    case "ALIA_DEVICE_STATE":
       return { verb, state: deviceState(fields(body, verb, ["state"]).state, `${verb}.state`) };
-    case "BB_DEVICE_TOUCH": {
+    case "ALIA_DEVICE_TOUCH": {
       const read = fields(body, verb, ["contacts", "by", "generation"]);
       return { verb, contacts: contacts(read.contacts, `${verb}.contacts`), by: oneOf(read.by, `${verb}.by`, ["agent", "person"]), generation: whole(read.generation, `${verb}.generation`) };
     }
-    case "BB_DEVICE_STILL": {
+    case "ALIA_DEVICE_STILL": {
       const read = fields(body, verb, ["png", "generation"]);
       return { verb, png: base64(read.png, `${verb}.png`), generation: whole(read.generation, `${verb}.generation`) };
     }
-    case "BB_DEVICE_ANSWER":
+    case "ALIA_DEVICE_ANSWER":
       return { verb, answer: answer(body, verb) };
-    case "BB_DEVICE_VIDEO":
+    case "ALIA_DEVICE_VIDEO":
       return { verb, video: videoReport(fields(body, verb, ["video"]).video, `${verb}.video`) };
   }
 }
@@ -857,9 +857,9 @@ export function deviceRequestText(request: DeviceRequest): string {
 export function deviceServerMessageText(message: DeviceServerMessage): string {
   const { verb, ...body } = message;
   switch (message.verb) {
-    case "BB_DEVICE_HELLO":
+    case "ALIA_DEVICE_HELLO":
       return `${verb} ${JSON.stringify(message.hello)}`;
-    case "BB_DEVICE_ANSWER":
+    case "ALIA_DEVICE_ANSWER":
       return `${verb} ${JSON.stringify(message.answer)}`;
     default:
       return `${verb} ${JSON.stringify(body)}`;

@@ -2,7 +2,7 @@
 // session behind it (each card's outcome, undo, new arrivals). Pure (no React,
 // no SDK at runtime) so node:test covers it; catch-up.tsx renders it and owns
 // every side effect. server.ts uses countSince for the "since you looked" line.
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { FlowState } from "./server";
 
 /** Opens Catch up; the command, the palette and the home page dispatch it. */

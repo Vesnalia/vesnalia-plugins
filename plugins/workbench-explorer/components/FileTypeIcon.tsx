@@ -7,16 +7,16 @@ import {
   type IconTheme,
 } from "@/lib/material-icons";
 
-declare const __BB_PLUGIN_ID__: string | undefined;
+declare const __ALIA_PLUGIN_ID__: string | undefined;
 
-const PLUGIN_ID = typeof __BB_PLUGIN_ID__ === "string" ? __BB_PLUGIN_ID__ : "workbench-explorer";
+const PLUGIN_ID = typeof __ALIA_PLUGIN_ID__ === "string" ? __ALIA_PLUGIN_ID__ : "workbench-explorer";
 
 /** Served by the plugin's own route; the version in the URL lets the browser cache them for good. */
 function iconUrl(id: string): string {
   return `/api/v1/plugins/${encodeURIComponent(PLUGIN_ID)}/http/icon?n=${encodeURIComponent(id)}&v=${MATERIAL_ICONS_VERSION}`;
 }
 
-/** BB marks dark mode with a `dark` class on <html>; the light theme swaps a few icons. */
+/** VesnALIA marks dark mode with a `dark` class on <html>; the light theme swaps a few icons. */
 function subscribeTheme(listener: () => void): () => void {
   const observer = new MutationObserver(listener);
   observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });

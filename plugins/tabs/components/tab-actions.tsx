@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import * as Dialog from "@radix-ui/react-dialog";
-import { useSettings } from "@get-bb/plugin-sdk/app";
+import { useSettings } from "@vesnalia/plugin-sdk/app";
 import type { TabEntry } from "../lib/tabs-model";
 import type { TabAppearance } from "../lib/tab-appearance";
 import { Icon } from "./ui/icon";
@@ -64,46 +64,46 @@ export function TabActionsContextMenu({
       <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
       <ContextMenu.Portal>
         <ContextMenu.Content
-          className="bb-chat-tab-context-menu"
+          className="alia-chat-tab-context-menu"
           aria-label={t("Actions for “{title}”", { title })}
         >
           <ContextMenu.Item
-            className="bb-chat-tab-context-menu-item"
+            className="alia-chat-tab-context-menu-item"
             onSelect={() => onCopyLink(entry)}
           >
             <Icon name="Copy" aria-hidden />
             {t("Copy link")}
           </ContextMenu.Item>
           <ContextMenu.Item
-            className="bb-chat-tab-context-menu-item"
+            className="alia-chat-tab-context-menu-item"
             onSelect={() => onMarkUnread(entry)}
           >
             <Icon name="Mail" aria-hidden />
             {t("Mark as unread")}
           </ContextMenu.Item>
           <ContextMenu.Item
-            className="bb-chat-tab-context-menu-item"
+            className="alia-chat-tab-context-menu-item"
             onSelect={() => onSetPinned(entry, !isPinned)}
           >
             <Icon name={isPinned ? "PinOff" : "Pin"} aria-hidden />
             {isPinned ? t("Unpin") : t("Pin")}
           </ContextMenu.Item>
           <ContextMenu.Item
-            className="bb-chat-tab-context-menu-item"
+            className="alia-chat-tab-context-menu-item"
             onSelect={() => onSetFavorite(entry, !isFavorite)}
           >
             <Icon name="Star" aria-hidden />
             {isFavorite ? t("Remove from favorites") : t("Add to favorites")}
           </ContextMenu.Item>
           <ContextMenu.Sub>
-            <ContextMenu.SubTrigger className="bb-chat-tab-context-menu-item bb-chat-tabs-membership-trigger">
+            <ContextMenu.SubTrigger className="alia-chat-tab-context-menu-item alia-chat-tabs-membership-trigger">
               <Icon name="Circle" aria-hidden />
               {t("Tab color")}
-              <Icon name="ChevronRight" className="bb-chat-tabs-membership-chevron" aria-hidden />
+              <Icon name="ChevronRight" className="alia-chat-tabs-membership-chevron" aria-hidden />
             </ContextMenu.SubTrigger>
             <ContextMenu.Portal>
               <ContextMenu.SubContent
-                className="bb-chat-tab-context-menu"
+                className="alia-chat-tab-context-menu"
                 sideOffset={4}
                 collisionPadding={8}
               >
@@ -119,14 +119,14 @@ export function TabActionsContextMenu({
           </ContextMenu.Sub>
           {settings.values?.enableWorkspaces !== false ? (
             <ContextMenu.Sub>
-              <ContextMenu.SubTrigger className="bb-chat-tab-context-menu-item bb-chat-tabs-membership-trigger">
+              <ContextMenu.SubTrigger className="alia-chat-tab-context-menu-item alia-chat-tabs-membership-trigger">
                 <Icon name="ListTodo" aria-hidden />
                 {t("Show in workspaces")}
-                <Icon name="ChevronRight" className="bb-chat-tabs-membership-chevron" aria-hidden />
+                <Icon name="ChevronRight" className="alia-chat-tabs-membership-chevron" aria-hidden />
               </ContextMenu.SubTrigger>
               <ContextMenu.Portal>
                 <ContextMenu.SubContent
-                  className="bb-chat-tab-context-menu bb-chat-tabs-membership-menu"
+                  className="alia-chat-tab-context-menu alia-chat-tabs-membership-menu"
                   sideOffset={4}
                   collisionPadding={8}
                 >
@@ -136,7 +136,7 @@ export function TabActionsContextMenu({
             </ContextMenu.Sub>
           ) : null}
           <ContextMenu.Item
-            className="bb-chat-tab-context-menu-item"
+            className="alia-chat-tab-context-menu-item"
             onSelect={() => {
               // Let Radix restore focus to the trigger before the modal takes it.
               window.setTimeout(() => onRename({ entry, title }), 0);
@@ -145,9 +145,9 @@ export function TabActionsContextMenu({
             <Icon name="Edit" aria-hidden />
             {t("Rename")}
           </ContextMenu.Item>
-          <ContextMenu.Separator className="bb-chat-tab-context-menu-separator" />
+          <ContextMenu.Separator className="alia-chat-tab-context-menu-separator" />
           <ContextMenu.Item
-            className="bb-chat-tab-context-menu-item"
+            className="alia-chat-tab-context-menu-item"
             onSelect={() => onArchive(entry)}
           >
             <Icon name="Archive" aria-hidden />
@@ -179,7 +179,7 @@ function TabColorOptions({
       }
     >
       <ContextMenu.RadioItem
-        className="bb-chat-tab-context-menu-item"
+        className="alia-chat-tab-context-menu-item"
         value="project"
         disabled={colorSaving}
       >
@@ -191,12 +191,12 @@ function TabColorOptions({
       {appearance.palette.map((color, index) => (
         <ContextMenu.RadioItem
           key={index}
-          className="bb-chat-tab-context-menu-item"
+          className="alia-chat-tab-context-menu-item"
           value={String(index)}
           disabled={colorSaving}
         >
           <span
-            className="bb-chat-tabs-color-swatch"
+            className="alia-chat-tabs-color-swatch"
             style={{ backgroundColor: color }}
             aria-hidden
           />
@@ -270,30 +270,30 @@ export function RenameTabDialog({
       }}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className="bb-chat-tab-rename-overlay" />
-        <Dialog.Content className="bb-chat-tab-rename-dialog" lang={locale}>
-          <Dialog.Title className="bb-chat-tab-rename-title">{t("Rename chat")}</Dialog.Title>
-          <Dialog.Description className="bb-chat-tab-rename-description">
-            {t("The new title will also be shown in the BB sidebar.")}
+        <Dialog.Overlay className="alia-chat-tab-rename-overlay" />
+        <Dialog.Content className="alia-chat-tab-rename-dialog" lang={locale}>
+          <Dialog.Title className="alia-chat-tab-rename-title">{t("Rename chat")}</Dialog.Title>
+          <Dialog.Description className="alia-chat-tab-rename-description">
+            {t("The new title will also be shown in the VesnALIA sidebar.")}
           </Dialog.Description>
           <form onSubmit={(event) => void submit(event)}>
             <input
               autoFocus
-              className="bb-chat-tab-rename-input"
+              className="alia-chat-tab-rename-input"
               aria-label={t("New chat title")}
               maxLength={MAX_THREAD_TITLE_LENGTH}
               value={value}
               onChange={(event) => setValue(event.target.value)}
             />
             {error === null ? null : (
-              <p className="bb-chat-tab-rename-error" role="alert">
+              <p className="alia-chat-tab-rename-error" role="alert">
                 {error}
               </p>
             )}
-            <div className="bb-chat-tab-rename-actions">
+            <div className="alia-chat-tab-rename-actions">
               <button
                 type="button"
-                className="bb-chat-tab-dialog-button"
+                className="alia-chat-tab-dialog-button"
                 disabled={saving}
                 onClick={onClose}
               >
@@ -301,7 +301,7 @@ export function RenameTabDialog({
               </button>
               <button
                 type="submit"
-                className="bb-chat-tab-dialog-button bb-chat-tab-dialog-button-primary"
+                className="alia-chat-tab-dialog-button alia-chat-tab-dialog-button-primary"
                 disabled={saving}
               >
                 {saving ? t("Saving…") : t("Save")}

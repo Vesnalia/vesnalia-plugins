@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, GitBranch, Globe, LogIn, Pencil, RefreshCw, Trash2, X } from "lucide-react";
-import type { PluginRpcClient } from "@get-bb/plugin-sdk/app";
+import type { PluginRpcClient } from "@vesnalia/plugin-sdk/app";
 import type { AccountRecord, Scope, ServiceId, rpcContract } from "./contract.ts";
 import { SERVICES } from "./service-catalog.ts";
 

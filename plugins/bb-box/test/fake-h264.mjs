@@ -4,7 +4,7 @@ import { appendFileSync } from "node:fs";
 const log = process.env.FAKE_H264_LOG;
 const delayMs = Number(process.env.FAKE_H264_DELAY_MS ?? 0);
 const failAfter = Number(process.env.FAKE_H264_FAIL_AFTER ?? Infinity);
-process.stderr.write("bb-box-h264: fake 1, 8000 kbit/s, 1 thread\n");
+process.stderr.write("alia-box-h264: fake 1, 8000 kbit/s, 1 thread\n");
 
 let input = Buffer.alloc(0);
 let answering = Promise.resolve();
@@ -56,7 +56,7 @@ function take() {
       continue;
     }
     if (command !== "F" && command !== "S") {
-      process.stderr.write(`bb-box-h264: unknown command byte ${input[0]}\n`);
+      process.stderr.write(`alia-box-h264: unknown command byte ${input[0]}\n`);
       process.exit(2);
     }
     if (input.length < 9) return;
@@ -69,7 +69,7 @@ function take() {
     record({ command, width, height, mark });
     frames++;
     if (frames > failAfter) {
-      process.stderr.write("bb-box-h264: x264 failed to encode a frame\n");
+      process.stderr.write("alia-box-h264: x264 failed to encode a frame\n");
       process.exit(2);
     }
     last = { width, height, mark };

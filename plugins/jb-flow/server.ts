@@ -6,11 +6,11 @@ import { handBackInstructions } from "./status-prompt";
 // jb-flow: snooze threads until a date, a daily stale-thread digest, and the
 // state behind the Triage thread list in app.tsx.
 //
-// State lives in bb.storage.kv because thread plugin metadata is not part of
+// State lives in alia.storage.kv because thread plugin metadata is not part of
 // thread list rows; the sidebar needs every snooze and tag in one read.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { createActivity } from "./activity";
 import { createAwaiting } from "./awaiting";
@@ -66,24 +66,24 @@ const localConfigSchema = z.object({
   repoCommands: z.record(z.string(), z.array(repoCommandSchema)).default({}),
   projectShortNames: z.record(z.string(), z.string()).default({}),
   stripProjectPrefixes: z.array(z.string()).default([]),
-  /** Projects (by BB name) whose release-blocked threads are woken on release. */
+  /** Projects (by VesnALIA name) whose release-blocked threads are woken on release. */
   releaseWatch: z.record(z.string(), releaseWatchSchema).default({}),
 });
 type LocalConfig = z.infer<typeof localConfigSchema>;
 
-function loadLocalConfig(bb: BbPluginApi, settingJson: string): LocalConfig {
-  const file = readLocalConfigFile(bb);
+function loadLocalConfig(alia: AliaPluginApi, settingJson: string): LocalConfig {
+  const file = readLocalConfigFile(alia);
   if (!settingJson.trim()) return file;
   try {
     const fromSetting = localConfigSchema.partial().parse(JSON.parse(settingJson));
     return { ...file, ...Object.fromEntries(Object.entries(fromSetting).filter(([, value]) => value !== undefined)) };
   } catch (error) {
-    bb.log.warn(`ignoring invalid Advanced config setting: ${String(error)}`);
+    alia.log.warn(`ignoring invalid Advanced config setting: ${String(error)}`);
     return file;
   }
 }
 
-function readLocalConfigFile(bb: BbPluginApi): LocalConfig {
+function readLocalConfigFile(alia: AliaPluginApi): LocalConfig {
   // The bundle may run from the plugin root or from dist/, so try both.
   for (const relative of ["./local.config.json", "../local.config.json"]) {
     const path = fileURLToPath(new URL(relative, import.meta.url));
@@ -96,7 +96,7 @@ function readLocalConfigFile(bb: BbPluginApi): LocalConfig {
     try {
       return localConfigSchema.parse(JSON.parse(text));
     } catch (error) {
-      bb.log.warn(`ignoring invalid ${path}: ${String(error)}`);
+      alia.log.warn(`ignoring invalid ${path}: ${String(error)}`);
     }
   }
   return localConfigSchema.parse({});
@@ -167,7 +167,7 @@ export const rpcContract = defineRpcContract({
       threadId: z.string(),
       when: z.string().min(1).max(64),
       note: z.string().max(2000).nullable(),
-      /** `when` resolved in the browser's time zone; the server's may differ (bb Connect). */
+      /** `when` resolved in the browser's time zone; the server's may differ (VesnALIA Connect). */
       until: z.number().optional(),
     }),
     output: snoozeSchema,
@@ -253,7 +253,7 @@ export const rpcContract = defineRpcContract({
     }),
   },
   thread_reply: {
-    // Room for a long status report prompt; bb takes far longer messages than this.
+    // Room for a long status report prompt; VesnALIA takes far longer messages than this.
     input: z.object({ threadId: z.string(), text: z.string().min(1).max(20_000) }),
     output: z.object({ ok: z.boolean() }),
   },
@@ -327,15 +327,15 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-type Thread = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["list"]>>[number];
+type Thread = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["list"]>>[number];
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     workspaces: {
       type: "boolean",
       label: "Workspaces",
       description:
-        "Tabs across the top of BB that group projects, threads, sections and plugin tools. Off shows everything as before.",
+        "Tabs across the top of VesnALIA that group projects, threads, sections and plugin tools. Off shows everything as before.",
       default: true,
     },
     workspaceSwipe: {
@@ -354,7 +354,7 @@ export default async function plugin(bb: BbPluginApi) {
       type: "boolean",
       label: "⌘K opens the JB Flow palette",
       description:
-        "BB's Search threads key (⌘K unless you changed it) opens a palette that also finds messages, PRs, workspaces and projects, shows what needs you, and acts on any thread with Tab. BB's own search stays under Open quick palette → Search threads. Off gives the key back to BB.",
+        "VesnALIA's Search threads key (⌘K unless you changed it) opens a palette that also finds messages, PRs, workspaces and projects, shows what needs you, and acts on any thread with Tab. VesnALIA's own search stays under Open quick palette → Search threads. Off gives the key back to VesnALIA.",
       default: true,
     },
     catchUp: {
@@ -385,8 +385,8 @@ export default async function plugin(bb: BbPluginApi) {
     },
     polishShell: {
       type: "boolean",
-      label: "Polish the entire BB interface",
-      description: "Refine the sidebar, composer, conversation, panel tabs and menus across BB. Off restores BB's standard styling.",
+      label: "Polish the entire VesnALIA interface",
+      description: "Refine the sidebar, composer, conversation, panel tabs and menus across VesnALIA. Off restores VesnALIA's standard styling.",
       default: true,
     },
     threadMonitor: {
@@ -456,33 +456,33 @@ export default async function plugin(bb: BbPluginApi) {
   // A marketplace update replaces the plugin folder, and local.config.json with
   // it. Copy the file into the setting once, while it's still there.
   if (advancedConfig.trim() === "") {
-    const file = readLocalConfigFile(bb);
+    const file = readLocalConfigFile(alia);
     const used = Object.entries(file).filter(([, value]) => (Array.isArray(value) ? value.length : Object.keys(value).length) > 0);
     if (used.length > 0) {
       advancedConfig = JSON.stringify(Object.fromEntries(used), null, 2);
       await settings
         .experimental_set({ advancedConfig })
-        .then(() => bb.log.info("copied local.config.json into the Advanced config setting; the file is no longer needed"))
-        .catch((error) => bb.log.warn(`copying local.config.json failed: ${String(error)}`));
+        .then(() => alia.log.info("copied local.config.json into the Advanced config setting; the file is no longer needed"))
+        .catch((error) => alia.log.warn(`copying local.config.json failed: ${String(error)}`));
     }
   }
-  const localConfig = loadLocalConfig(bb, advancedConfig);
+  const localConfig = loadLocalConfig(alia, advancedConfig);
 
   // --- storage --------------------------------------------------------------
 
   async function getSnoozes(): Promise<Record<string, Snooze>> {
-    return (await bb.storage.kv.get<Record<string, Snooze>>("snoozes")) ?? {};
+    return (await alia.storage.kv.get<Record<string, Snooze>>("snoozes")) ?? {};
   }
   async function getTags(): Promise<Record<string, string[]>> {
-    return (await bb.storage.kv.get<Record<string, string[]>>("tags")) ?? {};
+    return (await alia.storage.kv.get<Record<string, string[]>>("tags")) ?? {};
   }
   async function getKept(): Promise<Record<string, number>> {
-    return (await bb.storage.kv.get<Record<string, number>>("kept")) ?? {};
+    return (await alia.storage.kv.get<Record<string, number>>("kept")) ?? {};
   }
   // One thread event can change several stores within milliseconds; publish
   // once after they settle so every window refetches once, not four times.
   // Async work can finish after a reload disposed this instance; publishing on
-  // the stale handle throws inside a timer, which takes the whole BB server down.
+  // the stale handle throws inside a timer, which takes the whole VesnALIA server down.
   let publishTimer: ReturnType<typeof setTimeout> | null = null;
   let disposed = false;
   function changed() {
@@ -493,13 +493,13 @@ export default async function plugin(bb: BbPluginApi) {
       publishTimer = null;
       if (disposed) return;
       try {
-        bb.realtime.publish(CHANGED, {});
+        alia.realtime.publish(CHANGED, {});
       } catch (error) {
-        bb.log.warn(`publish failed: ${String(error)}`);
+        alia.log.warn(`publish failed: ${String(error)}`);
       }
     }, 250);
   }
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
     if (publishTimer !== null) clearTimeout(publishTimer);
   });
@@ -533,9 +533,9 @@ export default async function plugin(bb: BbPluginApi) {
     machines.invalidateFor(thread.id);
     bumpDeck();
   };
-  bb.events.on("thread.active", onThreadState);
-  bb.events.on("thread.idle", onThreadState);
-  bb.onDispose(() => {
+  alia.events.on("thread.active", onThreadState);
+  alia.events.on("thread.idle", onThreadState);
+  alia.onDispose(() => {
     for (const wake of deckWaiters) wake();
   });
 
@@ -546,7 +546,7 @@ export default async function plugin(bb: BbPluginApi) {
   let snoozedCheckedAt = 0;
   async function findSnoozedSection(): Promise<string | null> {
     if (Date.now() - snoozedCheckedAt < 10_000) return snoozedSectionId;
-    const sections = await bb.sdk.threadSections.list();
+    const sections = await alia.sdk.threadSections.list();
     snoozedSectionId = sections.find((section) => section.name === SNOOZED_SECTION_NAME)?.id ?? null;
     snoozedCheckedAt = Date.now();
     return snoozedSectionId;
@@ -555,13 +555,13 @@ export default async function plugin(bb: BbPluginApi) {
     snoozedCheckedAt = 0;
     const existing = await findSnoozedSection();
     if (existing !== null) return existing;
-    snoozedSectionId = (await bb.sdk.threadSections.create({ name: SNOOZED_SECTION_NAME })).id;
+    snoozedSectionId = (await alia.sdk.threadSections.create({ name: SNOOZED_SECTION_NAME })).id;
     snoozedCheckedAt = Date.now();
     return snoozedSectionId;
   }
 
   async function listAllActiveThreads(): Promise<Thread[]> {
-    const threads = await listLiveThreads(bb);
+    const threads = await listLiveThreads(alia);
     // Filter as well: archived/hidden rows must never reach the digest.
     return threads.filter(
       (thread) => thread.archivedAt === null && thread.deletedAt === null && thread.visibility === "visible",
@@ -577,7 +577,7 @@ export default async function plugin(bb: BbPluginApi) {
     const run = snoozeLock.then(async () => {
       const snoozes = await getSnoozes();
       apply(snoozes);
-      await bb.storage.kv.set("snoozes", snoozes);
+      await alia.storage.kv.set("snoozes", snoozes);
     });
     snoozeLock = run.catch(() => undefined);
     return run;
@@ -595,7 +595,7 @@ export default async function plugin(bb: BbPluginApi) {
     note: string | null,
   ): Promise<Snooze> {
     const sectionId = await ensureSnoozedSection();
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     const snoozes = await getSnoozes();
     const previous = snoozes[threadId];
     const record: Snooze = {
@@ -606,7 +606,7 @@ export default async function plugin(bb: BbPluginApi) {
         previous?.fromSectionId ?? (thread.sectionId === sectionId ? null : thread.sectionId),
       snoozedAt: Date.now(),
     };
-    await bb.sdk.threads.update({ threadId, sectionId });
+    await alia.sdk.threads.update({ threadId, sectionId });
     await updateSnoozes((all) => {
       all[threadId] = record;
     });
@@ -618,8 +618,8 @@ export default async function plugin(bb: BbPluginApi) {
   type WakeContext = { sectionIds: Set<string>; waitingSectionId: string | null; waitingOthers: Record<string, number> };
   async function wakeContext(reason: "due" | "manual"): Promise<WakeContext> {
     const [sections, lanes, waitingOthers] = await Promise.all([
-      bb.sdk.threadSections.list(),
-      reason === "due" ? laneSections(bb) : Promise.resolve({ waiting: undefined }),
+      alia.sdk.threadSections.list(),
+      reason === "due" ? laneSections(alia) : Promise.resolve({ waiting: undefined }),
       reason === "due" ? awaiting.waitingOthers() : Promise.resolve({}),
     ]);
     return { sectionIds: new Set(sections.map((section) => section.id)), waitingSectionId: lanes.waiting ?? null, waitingOthers };
@@ -633,8 +633,8 @@ export default async function plugin(bb: BbPluginApi) {
     // flag is set when the thread went idle, from its last reply.
     // Only for a snooze that ran out; cancelling one puts the thread back where it was.
     if (reason === "due" && waitingSectionId !== null && threadId in waitingOthers) restoreTo = waitingSectionId;
-    await bb.sdk.threads.update({ threadId, sectionId: restoreTo });
-    if (reason === "due") await bb.sdk.threads.markUnread({ threadId });
+    await alia.sdk.threads.update({ threadId, sectionId: restoreTo });
+    if (reason === "due") await alia.sdk.threads.markUnread({ threadId });
   }
 
   async function unsnooze(threadId: string): Promise<boolean> {
@@ -650,7 +650,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
 
-  // Single flight: the check runs every minute, and a slow one (bb busy) must
+  // Single flight: the check runs every minute, and a slow one (VesnALIA busy) must
   // not overlap the next and send a snooze note twice.
   let wakeRun: Promise<number> | null = null;
   const wakeDue = () => (wakeRun ??= wakeDueNow().finally(() => (wakeRun = null)));
@@ -665,13 +665,13 @@ export default async function plugin(bb: BbPluginApi) {
     const inSnoozed = new Map(
       snoozedSectionId === null
         ? []
-        : (await listLiveThreads(bb, { sectionId: snoozedSectionId }).catch(() => [])).map((thread) => [thread.id, thread]),
+        : (await listLiveThreads(alia, { sectionId: snoozedSectionId }).catch(() => [])).map((thread) => [thread.id, thread]),
     );
     let context: Promise<WakeContext> | null = null;
     const { done, noteFailures, woken } = await wakeDueSnoozes(snoozes, {
       now: () => Date.now(),
       snoozedSectionId,
-      getThread: async (threadId) => inSnoozed.get(threadId) ?? bb.sdk.threads.get({ threadId }),
+      getThread: async (threadId) => inSnoozed.get(threadId) ?? alia.sdk.threads.get({ threadId }),
       isGoneError,
       markStarted: (threadId, record) =>
         updateSnoozes((all) => {
@@ -686,13 +686,13 @@ export default async function plugin(bb: BbPluginApi) {
         await wake(threadId, record, "due", await context);
       },
       sendNote: async (threadId, note) => {
-        await bb.sdk.threads.send({
+        await alia.sdk.threads.send({
           threadId,
           mode: "queue-if-active",
           input: [{ type: "text", text: `⏰ Snooze reminder: ${note}`, mentions: [] }],
         });
       },
-      warn: (message) => bb.log.warn(message),
+      warn: (message) => alia.log.warn(message),
     });
     // Against a fresh read, keyed by the record we saw, so a snooze set meanwhile
     // (or a re-snooze) survives.
@@ -712,7 +712,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function summarize(threadId: string): Promise<string> {
     try {
-      const outline = await bb.sdk.threads.conversationOutline({ threadId });
+      const outline = await alia.sdk.threads.conversationOutline({ threadId });
       const last =
         [...outline.items].reverse().find((item) => item.role === "assistant") ??
         outline.items.at(-1);
@@ -746,13 +746,13 @@ export default async function plugin(bb: BbPluginApi) {
       });
     }
     const digest = { generatedAt: now, items };
-    await bb.storage.kv.set("digest", digest);
+    await alia.storage.kv.set("digest", digest);
     changed();
     return digest;
   }
 
   async function readDigest(refresh: boolean): Promise<Digest> {
-    const cached = await bb.storage.kv.get<Digest>("digest");
+    const cached = await alia.storage.kv.get<Digest>("digest");
     if (refresh || cached === null || cached === undefined) return buildDigest();
     const kept = await getKept();
     const now = Date.now();
@@ -763,15 +763,15 @@ export default async function plugin(bb: BbPluginApi) {
     const failed: string[] = [];
     for (const threadId of threadIds) {
       try {
-        await bb.sdk.threads.archive({ threadId });
+        await alia.sdk.threads.archive({ threadId });
       } catch {
         failed.push(threadId);
       }
     }
-    const cached = await bb.storage.kv.get<Digest>("digest");
+    const cached = await alia.storage.kv.get<Digest>("digest");
     if (cached) {
       const archived = new Set(threadIds.filter((id) => !failed.includes(id)));
-      await bb.storage.kv.set("digest", {
+      await alia.storage.kv.set("digest", {
         ...cached,
         items: cached.items.filter((item) => !archived.has(item.threadId)),
       });
@@ -782,22 +782,22 @@ export default async function plugin(bb: BbPluginApi) {
 
   // Each thread's own auto-continue switch (thread monitor); absent = the setting.
   const autoContinueOverrides = async () =>
-    (await bb.storage.kv.get<Record<string, boolean>>("autoContinueThreads")) ?? {};
+    (await alia.storage.kv.get<Record<string, boolean>>("autoContinueThreads")) ?? {};
 
   // Late-bound: the awaiting tracker is created below.
-  const focus = createFocus(bb, () => awaiting.all(), () => findSnoozedSection());
-  const unreleased = createUnreleased(bb);
-  const machines = createMachines(bb);
-  const prTracker = createPrTracker(bb, changed);
-  const watchers = createWatchers(bb, localConfig.releaseWatch, async (threadId) => (await autoContinueOverrides())[threadId] ?? (await settings.get()).autoContinue, changed, async (threadId) =>
+  const focus = createFocus(alia, () => awaiting.all(), () => findSnoozedSection());
+  const unreleased = createUnreleased(alia);
+  const machines = createMachines(alia);
+  const prTracker = createPrTracker(alia, changed);
+  const watchers = createWatchers(alia, localConfig.releaseWatch, async (threadId) => (await autoContinueOverrides())[threadId] ?? (await settings.get()).autoContinue, changed, async (threadId) =>
     ((await prTracker.byThread())[threadId] ?? []).map(({ repo, state, mergedAt }) => ({ repo, state, mergedAt })),
   );
-  const activity = createActivity(bb, changed);
-  const threadStatus = createThreadStatus(bb, changed);
-  const awaiting = createAwaiting(bb, changed);
-  const nowStore = createNowStore(bb, changed);
+  const activity = createActivity(alia, changed);
+  const threadStatus = createThreadStatus(alia, changed);
+  const awaiting = createAwaiting(alia, changed);
+  const nowStore = createNowStore(alia, changed);
   // A status report's "**Due:**" line sets the deadline. Leaving it out later keeps the date.
-  bb.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
     if (!lastAssistantText || !(await settings.get()).nowQueue) return;
     const line = parseStatusReport(lastAssistantText, 0)?.due;
     const parsed = line ? parseDueLine(line) : null;
@@ -858,7 +858,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
       for (let index = 0; index < candidates.length; index += 8) {
         await Promise.all(
           candidates.slice(index, index + 8).map(async ({ thread }) => {
-            const output = await bb.sdk.threads.output({ threadId: thread.id }).catch(() => ({ output: null }));
+            const output = await alia.sdk.threads.output({ threadId: thread.id }).catch(() => ({ output: null }));
             // The ask is at the end of the message: show its last meaningful lines.
             const ask = (output.output ?? "")
               .split("\n")
@@ -885,8 +885,8 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
     return { items };
   }
 
-  const repo = createRepoCommands(bb, changed, localConfig.repoCommands);
-  const leftovers = createLeftovers(bb);
+  const repo = createRepoCommands(alia, changed, localConfig.repoCommands);
+  const leftovers = createLeftovers(alia);
 
   // --- RPC ------------------------------------------------------------------
 
@@ -914,9 +914,9 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
       awaiting.promised(),
       awaiting.waitingOthers(),
       awaiting.readyToGo(),
-      bb.storage.kv.get<string[]>("sectionOrder"),
-      bb.storage.kv.get<Record<string, string>>("sectionProjects"),
-      laneSections(bb),
+      alia.storage.kv.get<string[]>("sectionOrder"),
+      alia.storage.kv.get<Record<string, string>>("sectionProjects"),
+      laneSections(alia),
       machines.read(),
       prTracker.byThread(),
       watchingByThread(),
@@ -948,8 +948,8 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
     };
   }
 
-  const workspaces = createWorkspaceStorage(bb, changed);
-  bb.rpc.register(rpcContract, {
+  const workspaces = createWorkspaceStorage(alia, changed);
+  alia.rpc.register(rpcContract, {
     workspaces_get: () => workspaces.read(),
     workspace_save: (input) => workspaces.save(input),
     workspace_remove: async ({ id }) => { await workspaces.remove(id); return { ok: true }; },
@@ -974,7 +974,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
     auto_continue_set: async ({ threadId, enabled }) => {
       const overrides = await autoContinueOverrides();
       overrides[threadId] = enabled;
-      await bb.storage.kv.set("autoContinueThreads", overrides);
+      await alia.storage.kv.set("autoContinueThreads", overrides);
       // Switched off with a "continue" already queued: take it back.
       if (!enabled) await watchers.cancelAutoContinue(threadId);
       changed();
@@ -987,7 +987,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
       const unique = [...new Set(tags)];
       if (unique.length === 0) delete all[threadId];
       else all[threadId] = unique;
-      await bb.storage.kv.set("tags", all);
+      await alia.storage.kv.set("tags", all);
       changed();
       return { tags: unique };
     },
@@ -998,7 +998,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
       const kept = await getKept();
       const until = Date.now() + days * DAY_MS;
       for (const threadId of threadIds) kept[threadId] = until;
-      await bb.storage.kv.set("kept", kept);
+      await alia.storage.kv.set("kept", kept);
       changed();
       return { kept: threadIds.length };
     },
@@ -1006,8 +1006,8 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
     thread_status: ({ threadId, refresh }) => threadStatus.get(threadId, refresh),
     thread_preview: async ({ threadId }) => {
       const [output, outline] = await Promise.all([
-        bb.sdk.threads.output({ threadId }).catch(() => ({ output: null })),
-        bb.sdk.threads.conversationOutline({ threadId }).catch(() => ({ items: [] as Array<{ role: string; preview: string }> })),
+        alia.sdk.threads.output({ threadId }).catch(() => ({ output: null })),
+        alia.sdk.threads.conversationOutline({ threadId }).catch(() => ({ items: [] as Array<{ role: string; preview: string }> })),
       ]);
       const reply = output.output ?? "";
       // Markdown → plain text for one-line display.
@@ -1041,13 +1041,13 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
     },
     catch_up_card: async ({ threadId, since }) => {
       // The card embeds the thread itself; this adds what happened since you last read it.
-      const timeline = await bb.sdk.threads
+      const timeline = await alia.sdk.threads
         .timeline({ threadId, segmentLimit: "8", deferContent: "true", includeNestedRows: "false" })
         .catch(() => null);
       return { since: countSince(timeline?.rows ?? [], since, (timeline?.timelinePage.olderCursor ?? null) !== null) };
     },
     thread_stop: async ({ threadId }) => {
-      await bb.sdk.threads.stop({ threadId });
+      await alia.sdk.threads.stop({ threadId });
       return { ok: true };
     },
     thread_watch_ci: async ({ threadId }) => ({
@@ -1066,17 +1066,17 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
     next_needs_me: async ({ archiveThreadId }) => {
       // Worked out before archiving: the archived thread's place says where "next" is.
       const nextId = await nextThread(archiveThreadId ?? focus.focusedThreadId(), archiveThreadId);
-      if (archiveThreadId !== null) await bb.sdk.threads.archive({ threadId: archiveThreadId });
+      if (archiveThreadId !== null) await alia.sdk.threads.archive({ threadId: archiveThreadId });
       if (nextId === null) return { opened: null };
-      await bb.sdk.threads.open({ threadId: nextId, file: null });
+      await alia.sdk.threads.open({ threadId: nextId, file: null });
       return { opened: nextId };
     },
     decision_options: async ({ threadId }) => {
-      const output = await bb.sdk.threads.output({ threadId }).catch(() => ({ output: null }));
+      const output = await alia.sdk.threads.output({ threadId }).catch(() => ({ output: null }));
       return nextMove(output.output ?? "");
     },
     thread_reply: async ({ threadId, text }) => {
-      await bb.sdk.threads.send({ threadId, mode: "queue-if-active", input: [{ type: "text", text, mentions: [] }] });
+      await alia.sdk.threads.send({ threadId, mode: "queue-if-active", input: [{ type: "text", text, mentions: [] }] });
       return { ok: true };
     },
     your_move: () => yourMove(),
@@ -1084,14 +1084,14 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
     leftovers_get: ({ refresh }) => leftovers.read(refresh),
     leftovers_clean: () => leftovers.clean(),
     section_order_set: async ({ order }) => {
-      await bb.storage.kv.set("sectionOrder", order);
+      await alia.storage.kv.set("sectionOrder", order);
       changed();
       return { ok: true };
     },
     section_project_set: async ({ section, projectId }) => {
-      const current = (await bb.storage.kv.get<Record<string, string>>("sectionProjects")) ?? {};
+      const current = (await alia.storage.kv.get<Record<string, string>>("sectionProjects")) ?? {};
       const { [section]: _previous, ...rest } = current;
-      await bb.storage.kv.set("sectionProjects", projectId === null ? rest : { ...rest, [section]: projectId });
+      await alia.storage.kv.set("sectionProjects", projectId === null ? rest : { ...rest, [section]: projectId });
       changed();
       return { ok: true };
     },
@@ -1110,20 +1110,20 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
       return { ok: true };
     },
     migrate_areas: async ({ sectionIds, moveToSectionId }) => {
-      const sections = await bb.sdk.threadSections.list();
+      const sections = await alia.sdk.threadSections.list();
       const tags = await getTags();
       let tagged = 0;
       for (const sectionId of sectionIds) {
         const section = sections.find((candidate) => candidate.id === sectionId);
         if (section === undefined) continue;
         const tag = section.name.replace(/^[^\p{L}\p{N}]+/u, "").trim();
-        for (const thread of await listLiveThreads(bb, { sectionId })) {
+        for (const thread of await listLiveThreads(alia, { sectionId })) {
           tags[thread.id] = [...new Set([...(tags[thread.id] ?? []), tag])];
-          await bb.sdk.threads.update({ threadId: thread.id, sectionId: moveToSectionId });
+          await alia.sdk.threads.update({ threadId: thread.id, sectionId: moveToSectionId });
           tagged += 1;
         }
       }
-      await bb.storage.kv.set("tags", tags);
+      await alia.storage.kv.set("tags", tags);
       changed();
       return { tagged };
     },
@@ -1131,14 +1131,14 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
 
   // --- schedules ------------------------------------------------------------
 
-  bb.background.schedule("wake-snoozed", "* * * * *", async () => {
+  alia.background.schedule("wake-snoozed", "* * * * *", async () => {
     const woken = await wakeDue();
-    if (woken > 0) bb.log.info(`woke ${woken} snoozed thread(s)`);
+    if (woken > 0) alia.log.info(`woke ${woken} snoozed thread(s)`);
   });
-  bb.background.schedule("stale-digest", "0 8 * * 1-5", async () => {
+  alia.background.schedule("stale-digest", "0 8 * * 1-5", async () => {
     const digest = await buildDigest();
-    bb.log.info(`digest: ${digest.items.length} stale thread(s)`);
-    await pruneThreadData().catch((error) => bb.log.warn(`prune: ${String(error)}`));
+    alia.log.info(`digest: ${digest.items.length} stale thread(s)`);
+    await pruneThreadData().catch((error) => alia.log.warn(`prune: ${String(error)}`));
   });
 
   // Tags, "keep" marks and dev-server runs are per thread; drop them once the
@@ -1147,12 +1147,12 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
   async function forgetThreads(isGone: (threadId: string) => boolean) {
     const tags = await getTags();
     const kept = await getKept();
-    const runs = (await bb.storage.kv.get<Record<string, { threadId: string }>>("devRuns")) ?? {};
+    const runs = (await alia.storage.kv.get<Record<string, { threadId: string }>>("devRuns")) ?? {};
     const continues = await autoContinueOverrides();
     const goneContinues = Object.keys(continues).filter(isGone);
     if (goneContinues.length > 0) {
       for (const threadId of goneContinues) delete continues[threadId];
-      await bb.storage.kv.set("autoContinueThreads", continues);
+      await alia.storage.kv.set("autoContinueThreads", continues);
     }
     const goneTags = Object.keys(tags).filter(isGone);
     const goneKept = Object.entries(kept).filter(([threadId, until]) => isGone(threadId) || until < Date.now());
@@ -1161,9 +1161,9 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
     for (const threadId of goneTags) delete tags[threadId];
     for (const [threadId] of goneKept) delete kept[threadId];
     for (const [key] of goneRuns) delete runs[key];
-    await bb.storage.kv.set("tags", tags);
-    await bb.storage.kv.set("kept", kept);
-    await bb.storage.kv.set("devRuns", runs);
+    await alia.storage.kv.set("tags", tags);
+    await alia.storage.kv.set("kept", kept);
+    await alia.storage.kv.set("devRuns", runs);
     changed();
   }
   async function pruneThreadData() {
@@ -1172,14 +1172,14 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
     await awaiting.prune((threadId) => live.has(threadId));
     await nowStore.prune((threadId) => live.has(threadId));
   }
-  bb.events.on("thread.archived", ({ thread }) => forgetThreads((threadId) => threadId === thread.id));
+  alia.events.on("thread.archived", ({ thread }) => forgetThreads((threadId) => threadId === thread.id));
 
   // --- agent tool -----------------------------------------------------------
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "snooze_thread",
     description:
-      'Snooze the current BB thread until a later time. The thread leaves the user\'s active list and comes back unread when due. If a note is given it is sent to this thread as a prompt at wake time, so write it as an instruction to your future self (e.g. "Check whether Martin replied in #billing and summarize").',
+      'Snooze the current VesnALIA thread until a later time. The thread leaves the user\'s active list and comes back unread when due. If a note is given it is sent to this thread as a prompt at wake time, so write it as an instruction to your future self (e.g. "Check whether Martin replied in #billing and summarize").',
     instructions:
       "When work in this thread is blocked on someone else or on a future date, offer to call snooze_thread (when: 2h, 3d, 1w, tomorrow, mon, next-week, or YYYY-MM-DD) with a note describing what to check on wake-up.",
     parameters: z.object({
@@ -1200,7 +1200,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
       }
     },
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "wait_for_ci",
     description:
       "Wait for a GitHub PR's CI checks and/or new reviews/comments without polling. Registers a watch and returns immediately; when checks finish (with the failed log on failure), a review or comment arrives, or the PR merges/closes, a message is sent to this thread once it is idle; nothing is sent while it is still working. End your turn after calling it.",
@@ -1224,7 +1224,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
       }
     },
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "pr_status",
     description:
       "State of every PR this thread created (any repo, stack order): checks, review decision, conflicts, draft/merged, base/head. Served from the plugin's cache, refreshed every 3 minutes; pass refresh: true for a live read. Use this instead of gh pr view / gh pr checks to check PR state.",
@@ -1238,7 +1238,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
         await prTracker.refreshThread(ctx.threadId);
       }
       const prs = (await prTracker.byThread())[ctx.threadId] ?? [];
-      if (prs.length === 0) return "No PRs linked to this thread. PRs opened with gh pr create are linked automatically; others via `bb jb-flow pr-link <url> --self`.";
+      if (prs.length === 0) return "No PRs linked to this thread. PRs opened with gh pr create are linked automatically; others via `alia jb-flow pr-link <url> --self`.";
       return prs
         .map(
           (pr) =>
@@ -1252,10 +1252,10 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
   settings.onChange((next) => {
     agentSettings = next;
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "set_thread_due",
     description:
-      "Record a real deadline for the current BB thread, or clear one that no longer applies. The thread then rises in the user's sidebar as the date gets close. A date the user set themselves can't be changed from here.",
+      "Record a real deadline for the current VesnALIA thread, or clear one that no longer applies. The thread then rises in the user's sidebar as the date gets close. A date the user set themselves can't be changed from here.",
     instructions:
       "When this work has a real outside deadline (an invoice due date, a contract date, a customer meeting, a date someone else set), call set_thread_due with the date and what falls due. Never invent a date, and don't use it for your own goals or estimates. Call it with when: none once the deadline no longer applies.",
     parameters: z.object({
@@ -1283,7 +1283,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
       }
     },
   });
-  bb.agents.configure(() => ({
+  alia.agents.configure(() => ({
     tools: ["snooze_thread", "wait_for_ci", "pr_status", ...(agentSettings.nowQueue ? ["set_thread_due"] : [])],
     skills: [],
     ...(agentSettings.autoStatus && agentSettings.threadMonitor
@@ -1295,41 +1295,41 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
 
   const usage = [
     "Usage:",
-    "  bb jb-flow snooze <thread-id|--self> <when> [--note <text>]",
-    "  bb jb-flow unsnooze <thread-id|--self>",
-    "  bb jb-flow due <thread-id|--self> <when|none> [--reason <text>]",
-    "  bb jb-flow snoozed [--json]",
-    "  bb jb-flow wake-now",
-    "  bb jb-flow digest [--refresh] [--json]",
-    "  bb jb-flow focused [--json]                          The thread focused in BB",
-    "  bb jb-flow stop [<thread-id>|--focused]",
-    "  bb jb-flow tell <text…> [--thread <id>]              Send a message (default: focused thread)",
-    "  bb jb-flow needs-me [--json]                         Threads waiting on you",
-    "  bb jb-flow next                                      Open the next thread that needs you",
-    "  bb jb-flow wait-ci [--pr <n>] [--repo owner/name] [--for checks|reviews|both] [--self|<thread-id>]",
-    "  bb jb-flow watches [--json]                          Auto-continues, release waiters, CI watches",
-    "  bb jb-flow prs [--self|<thread-id>] [--json]         PRs a thread created (all repos, stack order)",
-    "  bb jb-flow pr-link <pr-url> [--self|<thread-id>] [--remove]",
-    "  bb jb-flow release-wait [--self|<thread-id>]         Wake this thread on the next release",
-    "  bb jb-flow check-now                                 Run the release and CI checks immediately",
-    "  bb jb-flow repo [--self|<thread-id>]                 List repo commands and runs",
-    "  bb jb-flow repo-run <command-id> [--self|<thread-id>]",
-    "  bb jb-flow repo-stop <command-id> [--self|<thread-id>]",
-    "  bb jb-flow repo-config <project-name> <json|reset>",
+    "  VesnALIA jb-flow snooze <thread-id|--self> <when> [--note <text>]",
+    "  VesnALIA jb-flow unsnooze <thread-id|--self>",
+    "  VesnALIA jb-flow due <thread-id|--self> <when|none> [--reason <text>]",
+    "  VesnALIA jb-flow snoozed [--json]",
+    "  VesnALIA jb-flow wake-now",
+    "  VesnALIA jb-flow digest [--refresh] [--json]",
+    "  VesnALIA jb-flow focused [--json]                          The thread focused in VesnALIA",
+    "  VesnALIA jb-flow stop [<thread-id>|--focused]",
+    "  VesnALIA jb-flow tell <text…> [--thread <id>]              Send a message (default: focused thread)",
+    "  VesnALIA jb-flow needs-me [--json]                         Threads waiting on you",
+    "  VesnALIA jb-flow next                                      Open the next thread that needs you",
+    "  VesnALIA jb-flow wait-ci [--pr <n>] [--repo owner/name] [--for checks|reviews|both] [--self|<thread-id>]",
+    "  VesnALIA jb-flow watches [--json]                          Auto-continues, release waiters, CI watches",
+    "  VesnALIA jb-flow prs [--self|<thread-id>] [--json]         PRs a thread created (all repos, stack order)",
+    "  VesnALIA jb-flow pr-link <pr-url> [--self|<thread-id>] [--remove]",
+    "  VesnALIA jb-flow release-wait [--self|<thread-id>]         Wake this thread on the next release",
+    "  VesnALIA jb-flow check-now                                 Run the release and CI checks immediately",
+    "  VesnALIA jb-flow repo [--self|<thread-id>]                 List repo commands and runs",
+    "  VesnALIA jb-flow repo-run <command-id> [--self|<thread-id>]",
+    "  VesnALIA jb-flow repo-stop <command-id> [--self|<thread-id>]",
+    "  VesnALIA jb-flow repo-config <project-name> <json|reset>",
     "",
     "<when>: 30m, 2h, 3d, 1w, today, tonight, tomorrow, mon…sun, next-week, YYYY-MM-DD, YYYY-MM-DDTHH:MM",
   ].join("\n");
 
   // --- cheap snapshots for external controllers (Stream Deck) ------------------
-  // The deck polls every few seconds while agents keep bb busy, so these read
+  // The deck polls every few seconds while agents keep VesnALIA busy, so these read
   // cached data: one thread list per 10s, no message bodies except the focused
   // thread's (re-read only when it changes).
 
-  type ListedThread = Awaited<ReturnType<typeof bb.sdk.threads.list>>[number];
+  type ListedThread = Awaited<ReturnType<typeof alia.sdk.threads.list>>[number];
   let threadListCache: { at: number; threads: Promise<ListedThread[]> } | null = null;
   function listThreadsCached(): Promise<ListedThread[]> {
     if (threadListCache === null || Date.now() - threadListCache.at > 10_000) {
-      const threads = listLiveThreads(bb);
+      const threads = listLiveThreads(alia);
       threadListCache = { at: Date.now(), threads };
       threads.catch(() => {
         threadListCache = null;
@@ -1365,13 +1365,13 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
   // Re-parse the focused thread's options only when it changes.
   let decisionCache: { key: string; options: ReturnType<typeof parseDecisionOptions> } | null = null;
   async function decisionsFor(threadId: string | null) {
-    const thread = threadId === null ? null : await bb.sdk.threads.get({ threadId }).catch(() => null);
+    const thread = threadId === null ? null : await alia.sdk.threads.get({ threadId }).catch(() => null);
     // Same rule as the composer buttons: only an idle thread is waiting on an answer.
     let options: ReturnType<typeof parseDecisionOptions> = [];
     if (thread !== null && thread.status === "idle") {
       const cacheKey = `${thread.id}:${thread.updatedAt}`;
       if (decisionCache?.key !== cacheKey) {
-        const output = await bb.sdk.threads.output({ threadId: thread.id }).catch(() => ({ output: null }));
+        const output = await alia.sdk.threads.output({ threadId: thread.id }).catch(() => ({ output: null }));
         decisionCache = { key: cacheKey, options: parseDecisionOptions(output.output ?? "") };
       }
       options = decisionCache.options;
@@ -1415,7 +1415,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
   async function nextThread(current: string | null, skip: string | null): Promise<string | null> {
     const needs = await focus.needsMe();
     if (!(await settings.get()).nowQueue) return needs.find((thread) => thread.id !== skip)?.id ?? null;
-    const { now } = await currentNow(await listLiveThreads(bb));
+    const { now } = await currentNow(await listLiveThreads(alia));
     // Pinned threads aren't in Now, but one that's blocked still needs you.
     return nextAfter([...new Set([...now.map((entry) => entry.id), ...needs.map((thread) => thread.id)])], current);
   }
@@ -1453,54 +1453,54 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
     };
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "jb-flow",
     summary: "Snooze threads and review the stale-thread digest",
     commands: [
-      { name: "workspaces", summary: "List workspaces or save/remove/assign using JSON", usage: 'bb jb-flow workspaces [save <json>|remove <id>|assign <thread-id> <workspace-id|unassigned|auto>]' },
+      { name: "workspaces", summary: "List workspaces or save/remove/assign using JSON", usage: 'alia jb-flow workspaces [save <json>|remove <id>|assign <thread-id> <workspace-id|unassigned|auto>]' },
       {
         name: "snooze",
         summary: "Snooze a thread until a time",
-        usage: "bb jb-flow snooze <thread-id|--self> <when> [--note <text>]",
+        usage: "alia jb-flow snooze <thread-id|--self> <when> [--note <text>]",
       },
       {
         name: "due",
         summary: "Set or clear a thread's deadline",
-        usage: "bb jb-flow due <thread-id|--self> <when|none> [--reason <text>]",
+        usage: "alia jb-flow due <thread-id|--self> <when|none> [--reason <text>]",
       },
       {
         name: "unsnooze",
         summary: "Wake a snoozed thread now",
-        usage: "bb jb-flow unsnooze <thread-id|--self>",
+        usage: "alia jb-flow unsnooze <thread-id|--self>",
       },
-      { name: "snoozed", summary: "List snoozed threads", usage: "bb jb-flow snoozed [--json]" },
-      { name: "wake-now", summary: "Run the due-snooze check immediately", usage: "bb jb-flow wake-now" },
-      { name: "leftovers", summary: "Worktree checkouts bb no longer tracks (--clean removes the merged ones)", usage: "bb jb-flow leftovers [--refresh] [--json] [--clean]" },
-      { name: "deck", summary: "One JSON snapshot for the Stream Deck: focused thread, Needs me, Your move, PRs", usage: "bb jb-flow deck [--wait <version>]" },
-      { name: "pr-radar", summary: "Threads with a PR to fix or merge (--open: jump to the next one)", usage: "bb jb-flow pr-radar [--json] [--open]" },
-      { name: "your-move", summary: "Threads waiting on a decision from you, oldest first", usage: "bb jb-flow your-move [--json] [--open]" },
-      { name: "focus-clients", summary: "Debug: the BB windows reporting focus, most recently used first", usage: "bb jb-flow focus-clients" },
-      { name: "focused", summary: "Print the thread focused in BB", usage: "bb jb-flow focused [--json]" },
-      { name: "decisions", summary: "Numbered options the focused thread is waiting on", usage: "bb jb-flow decisions [<thread-id>] [--json]" },
-      { name: "stop", summary: "Stop a thread's run (default: focused)", usage: "bb jb-flow stop [<thread-id>|--focused]" },
-      { name: "tell", summary: "Send a message to a thread (default: focused)", usage: "bb jb-flow tell <text…> [--thread <id>]" },
-      { name: "needs-me", summary: "List threads waiting on you", usage: "bb jb-flow needs-me [--json]" },
-      { name: "next", summary: "Open the next thread that needs you", usage: "bb jb-flow next" },
-      { name: "now", summary: "List the Now queue in order, and what's Moving", usage: "bb jb-flow now [--json]" },
-      { name: "wait-ci", summary: "Message a thread when its PR's CI finishes or reviews arrive", usage: "bb jb-flow wait-ci [--pr <n>] [--for checks|reviews|both] [--self|<thread-id>]" },
-      { name: "prs", summary: "List the PRs a thread created, across repos, in stack order", usage: "bb jb-flow prs [--self|<thread-id>] [--json]" },
-      { name: "pr-link", summary: "Link (or --remove) a PR to a thread", usage: "bb jb-flow pr-link <pr-url> [--self|<thread-id>] [--remove]" },
-      { name: "watches", summary: "List auto-continues, release waiters and CI watches", usage: "bb jb-flow watches [--json]" },
-      { name: "release-wait", summary: "Wake a thread on the next release", usage: "bb jb-flow release-wait [--self|<thread-id>]" },
-      { name: "check-now", summary: "Run the release and CI checks immediately", usage: "bb jb-flow check-now" },
-      { name: "repo", summary: "List repo commands and runs for a thread", usage: "bb jb-flow repo [--self|<thread-id>]" },
-      { name: "repo-run", summary: "Run a repo command in the thread's terminal", usage: "bb jb-flow repo-run <command-id> [--self|<thread-id>]" },
-      { name: "repo-stop", summary: "Stop a running repo command", usage: "bb jb-flow repo-stop <command-id> [--self|<thread-id>]" },
-      { name: "repo-config", summary: "Set or reset a project's repo commands", usage: "bb jb-flow repo-config <project-name> <json|reset>" },
+      { name: "snoozed", summary: "List snoozed threads", usage: "alia jb-flow snoozed [--json]" },
+      { name: "wake-now", summary: "Run the due-snooze check immediately", usage: "alia jb-flow wake-now" },
+      { name: "leftovers", summary: "Worktree checkouts VesnALIA no longer tracks (--clean removes the merged ones)", usage: "alia jb-flow leftovers [--refresh] [--json] [--clean]" },
+      { name: "deck", summary: "One JSON snapshot for the Stream Deck: focused thread, Needs me, Your move, PRs", usage: "alia jb-flow deck [--wait <version>]" },
+      { name: "pr-radar", summary: "Threads with a PR to fix or merge (--open: jump to the next one)", usage: "alia jb-flow pr-radar [--json] [--open]" },
+      { name: "your-move", summary: "Threads waiting on a decision from you, oldest first", usage: "alia jb-flow your-move [--json] [--open]" },
+      { name: "focus-clients", summary: "Debug: the VesnALIA windows reporting focus, most recently used first", usage: "alia jb-flow focus-clients" },
+      { name: "focused", summary: "Print the thread focused in VesnALIA", usage: "alia jb-flow focused [--json]" },
+      { name: "decisions", summary: "Numbered options the focused thread is waiting on", usage: "alia jb-flow decisions [<thread-id>] [--json]" },
+      { name: "stop", summary: "Stop a thread's run (default: focused)", usage: "alia jb-flow stop [<thread-id>|--focused]" },
+      { name: "tell", summary: "Send a message to a thread (default: focused)", usage: "alia jb-flow tell <text…> [--thread <id>]" },
+      { name: "needs-me", summary: "List threads waiting on you", usage: "alia jb-flow needs-me [--json]" },
+      { name: "next", summary: "Open the next thread that needs you", usage: "alia jb-flow next" },
+      { name: "now", summary: "List the Now queue in order, and what's Moving", usage: "alia jb-flow now [--json]" },
+      { name: "wait-ci", summary: "Message a thread when its PR's CI finishes or reviews arrive", usage: "alia jb-flow wait-ci [--pr <n>] [--for checks|reviews|both] [--self|<thread-id>]" },
+      { name: "prs", summary: "List the PRs a thread created, across repos, in stack order", usage: "alia jb-flow prs [--self|<thread-id>] [--json]" },
+      { name: "pr-link", summary: "Link (or --remove) a PR to a thread", usage: "alia jb-flow pr-link <pr-url> [--self|<thread-id>] [--remove]" },
+      { name: "watches", summary: "List auto-continues, release waiters and CI watches", usage: "alia jb-flow watches [--json]" },
+      { name: "release-wait", summary: "Wake a thread on the next release", usage: "alia jb-flow release-wait [--self|<thread-id>]" },
+      { name: "check-now", summary: "Run the release and CI checks immediately", usage: "alia jb-flow check-now" },
+      { name: "repo", summary: "List repo commands and runs for a thread", usage: "alia jb-flow repo [--self|<thread-id>]" },
+      { name: "repo-run", summary: "Run a repo command in the thread's terminal", usage: "alia jb-flow repo-run <command-id> [--self|<thread-id>]" },
+      { name: "repo-stop", summary: "Stop a running repo command", usage: "alia jb-flow repo-stop <command-id> [--self|<thread-id>]" },
+      { name: "repo-config", summary: "Set or reset a project's repo commands", usage: "alia jb-flow repo-config <project-name> <json|reset>" },
       {
         name: "digest",
         summary: "List stale unsectioned threads",
-        usage: "bb jb-flow digest [--refresh] [--json]",
+        usage: "alia jb-flow digest [--refresh] [--json]",
       },
     ],
     async run(argv, ctx) {
@@ -1564,7 +1564,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
             if (json) return { exitCode: 0, stdout: JSON.stringify(Object.fromEntries(snoozes)) };
             const lines = await Promise.all(
               snoozes.map(async ([threadId, record]) => {
-                const thread = await bb.sdk.threads.get({ threadId }).catch(() => null);
+                const thread = await alia.sdk.threads.get({ threadId }).catch(() => null);
                 return `${formatWhen(record.until).padEnd(16)} ${threadId}  ${thread?.title ?? ""}${record.note ? `  — ${record.note}` : ""}`;
               }),
             );
@@ -1609,11 +1609,11 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
             // Debug view: where each open thread lands in the triage sidebar, with
             // the tail of its last agent message to check the call against.
             const [threads, awaitingAll, byThread, watching, sections, promised, waitingOthers, readyToGo] = await Promise.all([
-              listLiveThreads(bb),
+              listLiveThreads(alia),
               awaiting.all(),
               prTracker.byThread(),
               watchingByThread(),
-              bb.sdk.threadSections.list(),
+              alia.sdk.threadSections.list(),
               awaiting.promised(),
               awaiting.waitingOthers(),
               awaiting.readyToGo(),
@@ -1649,7 +1649,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
                       : thread.sectionId === null && !watching[thread.id] && settled && quietFor(thread, Date.now()) > 2 * 3_600_000
                         ? "done"
                         : "lane";
-              const output = await bb.sdk.threads.output({ threadId: thread.id }).catch(() => ({ output: null }));
+              const output = await alia.sdk.threads.output({ threadId: thread.id }).catch(() => ({ output: null }));
               rows.push({
                 id: thread.id,
                 title: thread.title,
@@ -1693,7 +1693,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
               const queue = [...broken, ...ready];
               const next = queue.find((item) => item.threadId !== focused) ?? queue[0];
               if (next === undefined) return { exitCode: 0, stdout: "No PR needs you." };
-              await bb.sdk.threads.open({ threadId: next.threadId, file: null });
+              await alia.sdk.threads.open({ threadId: next.threadId, file: null });
               return { exitCode: 0, stdout: `Opened ${next.threadId}  ${next.title} (${next.pr})` };
             }
             if (json) return { exitCode: 0, stdout: JSON.stringify({ broken, ready }) };
@@ -1727,7 +1727,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
           case "release-wait": {
             const threadId = resolveThread(args[0] ?? "--self");
             if (threadId === undefined) break;
-            await watchers.registerReleaseWaiter(await bb.sdk.threads.get({ threadId }));
+            await watchers.registerReleaseWaiter(await alia.sdk.threads.get({ threadId }));
             return { exitCode: 0, stdout: `${threadId} will be woken on the next release (if its project has releaseWatch configured).` };
           }
           case "check-now":
@@ -1741,7 +1741,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
               const focused = focus.focusedThreadId();
               const next = items.find((item) => item.threadId !== focused) ?? items[0];
               if (next === undefined) return { exitCode: 0, stdout: "Nothing is waiting on you." };
-              await bb.sdk.threads.open({ threadId: next.threadId, file: null });
+              await alia.sdk.threads.open({ threadId: next.threadId, file: null });
               return { exitCode: 0, stdout: `Opened ${next.threadId}  ${next.title}` };
             }
             if (json) return { exitCode: 0, stdout: JSON.stringify({ count: items.length, items }) };
@@ -1763,7 +1763,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
           case "focused": {
             const threadId = focus.focusedThreadId();
             if (threadId === null) return { exitCode: 1, stderr: "No focused thread." };
-            const thread = await bb.sdk.threads.get({ threadId });
+            const thread = await alia.sdk.threads.get({ threadId });
             return {
               exitCode: 0,
               stdout: json
@@ -1785,7 +1785,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
           case "stop": {
             const threadId = resolveThread(args[0] ?? "--focused");
             if (threadId === undefined) return { exitCode: 1, stderr: "No focused thread." };
-            await bb.sdk.threads.stop({ threadId });
+            await alia.sdk.threads.stop({ threadId });
             return { exitCode: 0, stdout: `Stopped ${threadId}.` };
           }
           case "tell": {
@@ -1793,7 +1793,7 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
             const target = flag === -1 ? await focus.requireFocused() : args[flag + 1];
             const text = (flag === -1 ? args : args.slice(0, flag)).join(" ").trim();
             if (target === undefined || text === "") break;
-            await bb.sdk.threads.send({
+            await alia.sdk.threads.send({
               threadId: target,
               mode: "queue-if-active",
               input: [{ type: "text", text, mentions: [] }],
@@ -1820,13 +1820,13 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
             const focused = focus.focusedThreadId();
             const nextId = await nextThread(focused, focused);
             if (nextId === null) return { exitCode: 0, stdout: "Nothing needs you." };
-            await bb.sdk.threads.open({ threadId: nextId, file: null });
-            const next = await bb.sdk.threads.get({ threadId: nextId }).catch(() => null);
+            await alia.sdk.threads.open({ threadId: nextId, file: null });
+            const next = await alia.sdk.threads.get({ threadId: nextId }).catch(() => null);
             return { exitCode: 0, stdout: `Opened ${nextId}  ${next?.title ?? ""}` };
           }
           case "now": {
             if (!(await settings.get()).nowQueue) return { exitCode: 1, stderr: "Now and Focus is turned off in the plugin settings." };
-            const queue = await currentNow(await listLiveThreads(bb));
+            const queue = await currentNow(await listLiveThreads(alia));
             if (json) return { exitCode: 0, stdout: JSON.stringify({ count: queue.now.length, threads: queue.now, moving: queue.moving }) };
             const line = (entry: (typeof queue.now)[number]) => `${entry.focused ? "*" : " "} ${entry.id}  ${entry.title}  [${entry.reason}]`;
             return {
@@ -1902,5 +1902,5 @@ async function yourMove({ withAsk = true }: { withAsk?: boolean } = {}) {
     },
   });
 
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }

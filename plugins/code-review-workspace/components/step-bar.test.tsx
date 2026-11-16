@@ -3,7 +3,7 @@
 // overlay; with keys and the list closed, a brief hint; and on a review back to you, the "need you" pill.
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { patchReviewState } from "../lib/panel-state";
 import { defaultKnobs, type Knobs } from "../lib/knobs";
@@ -39,7 +39,7 @@ function phone() {
   restores.push(() => { globalThis.ResizeObserver = original; matchMedia.mockRestore(); });
 }
 
-/** BB's pane `width` × `height` on an iPad's touch screen wider than it: the ResizeObserver reports the pane, and media queries the window. */
+/** VesnALIA's pane `width` × `height` on an iPad's touch screen wider than it: the ResizeObserver reports the pane, and media queries the window. */
 function pane(width: number, height: number) {
   const original = globalThis.ResizeObserver;
   globalThis.ResizeObserver = class {
@@ -57,7 +57,7 @@ function pane(width: number, height: number) {
 
 const now = Date.now();
 const file = (path: string, line: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n@@ -1,2 +1,2 @@\n one\n-x\n+${line}\n`;
-const patch = file("src/a.ts", "aa") + file("src/b.ts", "bb");
+const patch = file("src/a.ts", "aa") + file("src/b.ts", "alia");
 const guide = { title: "Guide", intent: "Parses rows.", unplacedFiles: [] as string[], sections: [
   { id: "c1", title: "Parsing", overview: "Reads rows.", diffs: [{ file: "src/a.ts" }] },
   { id: "c2", title: "Caching", overview: "Keeps rows.", diffs: [{ file: "src/b.ts" }] },
@@ -299,8 +299,8 @@ test("back to you where Comments couldn't open beside the code, \"1 need you\" o
   slot.lifecycle.unmount();
 });
 
-test("back to you in BB's pane, narrower than its window, Comments can't dock there: the pill offers it", async () => {
-  // An iPad held upright with BB's thread list open: a 712px pane in a 1024px window, where Comments would dock.
+test("back to you in VesnALIA's pane, narrower than its window, Comments can't dock there: the pill offers it", async () => {
+  // An iPad held upright with VesnALIA's thread list open: a 712px pane in a 1024px window, where Comments would dock.
   pane(712, 1032);
   const slot = await renderWorkspace(backToYou);
   expect(await slot.findByRole("button", { name: "1 need you" })).toBeTruthy();

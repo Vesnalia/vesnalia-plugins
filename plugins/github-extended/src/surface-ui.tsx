@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { Button } from "./shared-ui.js";
 
 export function WorkItemHeading({

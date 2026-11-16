@@ -66,7 +66,7 @@ process.once("exit", () => {
 });
 
 function tempDir(prefix: string): string {
-  const dir = mkdtempSync(join(tmpdir(), `bb-box-${prefix}-`));
+  const dir = mkdtempSync(join(tmpdir(), `alia-box-${prefix}-`));
   made.push(dir);
   return dir;
 }
@@ -160,15 +160,15 @@ test("a Windows write compares the hash and can refuse", () => {
   const script = writeScript("windows", "C:\\Users\\box\\note.txt", "abc", "guard");
   assert.match(script, /Get-FileHash/);
   assert.match(script, /CONFLICT/);
-  assert.match(script, /\$bbFilesNow -ne \$bbFilesExpected/);
+  assert.match(script, /\$aliaFilesNow -ne \$aliaFilesExpected/);
   assert.match(script, /\.conflict-/);
   assert.match(script, /CreateNew/);
-  assert.doesNotMatch(script, /\$bbFilesAside/);
-  assert.match(script, /Get-FileHash -Algorithm SHA256 -LiteralPath \$bbFilesTmp/);
+  assert.doesNotMatch(script, /\$aliaFilesAside/);
+  assert.match(script, /Get-FileHash -Algorithm SHA256 -LiteralPath \$aliaFilesTmp/);
   assert.match(script, /\$ErrorActionPreference = 'Stop'/);
-  assert.match(script, /\$bbFilesTmp = \$null; try \{/);
-  assert.match(script, /finally \{ if \(\$null -ne \$bbFilesTmp\) \{ Remove-Item -LiteralPath \$bbFilesTmp -Force -ErrorAction SilentlyContinue \} \}/);
-  assert.equal((script.match(/try \{ \[IO\.File\]::Copy\(\$bbFilesTmp, \$bbFilesPath, \$true\) \} catch/g) ?? []).length, 2);
+  assert.match(script, /\$aliaFilesTmp = \$null; try \{/);
+  assert.match(script, /finally \{ if \(\$null -ne \$aliaFilesTmp\) \{ Remove-Item -LiteralPath \$aliaFilesTmp -Force -ErrorAction SilentlyContinue \} \}/);
+  assert.equal((script.match(/try \{ \[IO\.File\]::Copy\(\$aliaFilesTmp, \$aliaFilesPath, \$true\) \} catch/g) ?? []).length, 2);
   assert.equal(singleQuoted(script).some((part) => part.includes("`t")), false);
   assert.doesNotMatch(script, /printenv|Get-ChildItem Env:/);
 });
@@ -601,7 +601,7 @@ test("a conflict file is still written when the box cannot make a hard link", as
 
 function conflictNames(dir: string): string[] {
   return readdirSync(dir)
-    .filter((name) => name.includes("conflict") || name.startsWith(".bb-files"))
+    .filter((name) => name.includes("conflict") || name.startsWith(".alia-files"))
     .sort();
 }
 
@@ -870,7 +870,7 @@ test("a Windows search builds the hidden-file test in the script, and PowerShell
   assert.match(shown, /--null/);
   assert.doesNotMatch(shown, /flags\.hidden/);
   assert.doesNotMatch(hidden, /flags\.hidden/);
-  assert.match(shown, /\('\\' \+ \$_\.FullName\.Substring\(\$bbFilesRoot\.Length\)\) -notmatch '\\\\\\.'/);
+  assert.match(shown, /\('\\' \+ \$_\.FullName\.Substring\(\$aliaFilesRoot\.Length\)\) -notmatch '\\\\\\.'/);
   assert.match(hidden, /-and \(\$true\)/);
   const pwsh = spawnSync("pwsh", ["-NoProfile", "-Command", "exit 0"], { encoding: "utf8" });
   if (pwsh.error || pwsh.status !== 0) return;
@@ -883,7 +883,7 @@ test("a Windows search builds the hidden-file test in the script, and PowerShell
 
 test("the warm budget covers the encoded corpus, and the script stops before the cap", () => {
   assert.ok(WARM_OUT >= Math.ceil(CORPUS_BYTES / 3) * 4 + NAME_CAP * 48);
-  assert.match(warmScript("linux", "/home/box"), /bb_files_out/);
+  assert.match(warmScript("linux", "/home/box"), /alia_files_out/);
 });
 
 function singleQuoted(script: string): string[] {

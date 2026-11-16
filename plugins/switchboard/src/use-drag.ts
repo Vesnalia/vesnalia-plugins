@@ -38,7 +38,7 @@ interface Gesture {
 }
 interface AutoScroll { pxPerMs: number; frame: number; time: number | null; carry: number }
 type Ending = "drop" | "cancel" | "lost";
-// Any direction counts: bb's split drag takes over past the sidebar edge by dispatching Escape, which cancels this one.
+// Any direction counts: VesnALIA's split drag takes over past the sidebar edge by dispatching Escape, which cancels this one.
 const DRAG_START_PX = 5;
 const EDGE_PX = 32;
 const MAX_SCROLL_PX_PER_MS = 0.6;
@@ -207,7 +207,7 @@ export function useDrag(options: DragOptions): DragController {
     scroll.frame = requestAnimationFrame(scrollStep);
   }, [stopScrolling, track]);
 
-  // Only the sidebar scrolls: a drag heading for bb's split must not scroll the thread under the pointer.
+  // Only the sidebar scrolls: a drag heading for VesnALIA's split must not scroll the thread under the pointer.
   const steer = useCallback((current: Gesture) => {
     const { x, y } = pointer.current;
     const rect = current.scroller?.getBoundingClientRect();

@@ -1,17 +1,17 @@
-// The folder tree beside BB's Diff tab.
+// The folder tree beside VesnALIA's Diff tab.
 //
 // `TreeOverlay` is an app overlay: it finds each Diff tab on the page
 // (src/diff-tab.ts) and, for each, portals a toggle into the tab's toolbar and,
 // while the tree is on, a column into the box around its file list. A click on a
-// folder types `folder/**` into BB's own search box; a click on a file types its
-// path and opens its card. The list, its diffs and its filtering stay BB's.
+// folder types `folder/**` into VesnALIA's own search box; a click on a file types its
+// path and opens its card. The list, its diffs and its filtering stay VesnALIA's.
 //
 // The files come from the Git plugin's `files` read (through server.ts) for the scope the tab shows,
 // fetched only while a tree is on, and again when the environment's git state
 // changes. Nothing here reads the composer, so typing never re-renders the tree.
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { experimental_Icon as Icon, useBbContext, useRpc, useSdk } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaContext, useRpc, useSdk } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import {
   expandFile,
@@ -72,10 +72,10 @@ const STACK_BELOW = 600;
 
 // ---------------------------------------------------------------------------
 // Where the reader was, per thread and scope, for the rest of the page's life.
-// BB unmounts the Diff tab when another tab is shown (opening a file from a
+// VesnALIA unmounts the Diff tab when another tab is shown (opening a file from a
 // card's title does that), which drops its query and scroll; when the tab comes
 // back, the tree puts back the folders it had open, the row picked (through
-// BB's search box), its own scroll and the file list's place.
+// VesnALIA's search box), its own scroll and the file list's place.
 
 interface Place {
   paths: Set<string> | null;
@@ -97,7 +97,7 @@ const placeOf = (key: string): Place => {
 // The tree's width, once the reader has dragged its edge; until then the
 // stylesheet's default. Room is always left for the file list beside it. It is
 // a custom property so the stacked layout can ignore it.
-const WIDTH_KEY = "bb-plugin-diff-plus:tree-width";
+const WIDTH_KEY = "alia-plugin-diff-plus:tree-width";
 const WIDTH_VAR = "--diff-plus-tree-width";
 const MIN_WIDTH = 140;
 const LIST_ROOM = 240;
@@ -158,7 +158,7 @@ function useDiffTabs(fallbackThread: string | null): TabState[] {
       if (!frame) frame = requestAnimationFrame(check);
     };
     const stop = watchDiffTabs(schedule, () => current.map((state) => state.tab.list));
-    // Typing in BB's search box changes its value without touching the DOM. The box is in
+    // Typing in VesnALIA's search box changes its value without touching the DOM. The box is in
     // the tab's toolbar, so that is where this listens: a listener on the document would run
     // for every key typed in the composer, and a long frame there is blamed on it.
     const typed = (event: Event) => isFilterInput(event.target) && schedule();
@@ -187,7 +187,7 @@ function useDiffTabs(fallbackThread: string | null): TabState[] {
 }
 
 export function TreeOverlay() {
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const tabs = useDiffTabs(threadId);
   return (
     <>
@@ -270,7 +270,7 @@ function TabTree({ tab, label, query, filters, thread }: TabState) {
   }, [columnHost, layout, tab.list]);
 
   const scope = useMemo(() => scopeOf(label), [label]);
-  // A recent commit moved the merge base back so BB would show it (Picker.tsx);
+  // A recent commit moved the merge base back so VesnALIA would show it (Picker.tsx);
   // any other scope puts it back, so All and Committed changes mean what they did.
   const showsCommit = scope?.target === "commit";
   useEffect(() => {
@@ -467,7 +467,7 @@ function ResizeHandle({ column, list }: { column: HTMLElement; list: HTMLElement
 // ---------------------------------------------------------------------------
 // The files.
 
-/** What a Diff tab scope compares, in `bb--git`'s terms. */
+/** What a Diff tab scope compares, in `alia--git`'s terms. */
 type DiffTarget = { type: "uncommitted" } | { type: "all" | "branch_committed"; mergeBaseBranch: string } | { type: "commit"; sha: string };
 
 type Files =
@@ -560,7 +560,7 @@ function useChangedFiles(environmentId: string | null, scope: Scope | null): Fil
   return files.status === "ready" && files.for !== forKey ? LOADING : files;
 }
 
-/** How long after a Viewed box is ticked to read the marks again, so BB has saved it. */
+/** How long after a Viewed box is ticked to read the marks again, so VesnALIA has saved it. */
 const VIEWED_WAIT_MS = 800;
 
 /**
@@ -697,7 +697,7 @@ const Rows = memo(function Rows({ dir, depth, open, room, active, toggle, pick, 
               <button
                 type="button"
                 className="diff-plus-twisty"
-                // Not "Expand <path>": BB labels its file cards that way, and
+                // Not "Expand <path>": VesnALIA labels its file cards that way, and
                 // expandFile looks them up by label.
                 aria-label={`${child.path}/`}
                 aria-expanded={expanded}
@@ -1125,7 +1125,7 @@ interface TreeColumnProps {
   scope: Scope | null;
   files: Files;
   tree: TreeDir | null;
-  /** The files the tree holds, in BB's list order. */
+  /** The files the tree holds, in VesnALIA's list order. */
   shown: readonly TreeFile[] | null;
   paths: Set<string> | null;
   setOpen: React.Dispatch<React.SetStateAction<{ key: string; paths: Set<string> } | null>>;
@@ -1227,7 +1227,7 @@ function TreeColumn({ tab, query, scope, files, tree, shown, paths, setOpen }: T
         ) : (
           <Rows dir={tree} depth={0} open={paths} room={room} active={active} toggle={toggle} pick={pick} lit={lit} />
         )}
-        {files.status === "ready" && files.truncated && <p className="diff-plus-tree-note">BB cut this list short; query by path to find the rest.</p>}
+        {files.status === "ready" && files.truncated && <p className="diff-plus-tree-note">VesnALIA cut this list short; query by path to find the rest.</p>}
       </>
     );
   return (

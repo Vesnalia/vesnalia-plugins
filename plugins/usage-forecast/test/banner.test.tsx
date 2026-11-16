@@ -2,7 +2,7 @@
 // The composer band: headline, window bars with the pace marker, context bar,
 // auto-compact switch with the threshold it acts at, compact button, expanded view, Russian.
 
-import { loadPluginApp } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp } from "@vesnalia/plugin-sdk/testing/app";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import type { CompactResult, Tokens } from "../src/shared/contract";
@@ -686,7 +686,7 @@ describe("band, token line (UF-12)", () => {
     expect(input.monthStart).toBeLessThanOrEqual(input.dayStart);
   });
 
-  it("puts the full sums with cache reads and the BB-only note in the tooltip", async () => {
+  it("puts the full sums with cache reads and the ALIA-only note in the tooltip", async () => {
     render(Banner, {}, backend({ tokens: counted }));
     await expand();
     const title = (await screen.findByTestId("tokens-line")).getAttribute("title");
@@ -696,7 +696,7 @@ describe("band, token line (UF-12)", () => {
         "This thread: 86 000 (1 234 567).",
         "The provider today: 310 000 (2 500 000).",
         "The provider this month: 4 200 000 (31 000 000).",
-        "Counts BB threads only; use of the same account outside BB is not included.",
+        "Counts VesnALIA threads only; use of the same account outside VesnALIA is not included.",
       ].join("\n"),
     );
   });

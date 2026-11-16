@@ -7,7 +7,7 @@ import type {
   ExperimentalAiServiceErrorCode,
   ExperimentalAiVoiceTranscribeInput,
   ExperimentalAiVoiceTranscribeOutput,
-} from "@get-bb/plugin-sdk/ai-services";
+} from "@vesnalia/plugin-sdk/ai-services";
 import { z } from "zod";
 import type { HostConfig, ReasoningParam, ServiceKind } from "./contract.js";
 
@@ -15,7 +15,7 @@ export const OPENROUTER_API_BASE = "https://openrouter.ai/api/v1";
 
 const REQUEST_HEADERS = {
   "HTTP-Referer": "https://getbb.app",
-  "X-Title": "BB",
+  "X-Title": "ALIA",
 };
 
 const rawModelSchema = z.object({
@@ -210,10 +210,10 @@ const AUDIO_FORMATS = new Map([
 ]);
 
 /**
- * The file extension wins over the MIME type: `bb voice transcribe` labels
+ * The file extension wins over the MIME type: `alia voice transcribe` labels
  * every file audio/webm unless given --type, while browser recordings
  * (recording.webm, .mp4, .ogg) agree on both. Anything unrecognized is sent
- * as webm, BB's usual recording format.
+ * as webm, VesnALIA's usual recording format.
  */
 export function audioFormatFor(filename: string, mimeType: string): string {
   const extension = /\.([a-z\d]+)$/iu.exec(filename)?.[1]?.toLowerCase() ?? "";
@@ -224,7 +224,7 @@ export function audioFormatFor(filename: string, mimeType: string): string {
 /** Whisper reads only the last 224 tokens of a prompt, and longer ones bill more input tokens. */
 const MAX_TRANSCRIPTION_PROMPT_CHARS = 1_000;
 
-/** BB's transcription context is the composer text before the cursor; keep its end, from a word boundary. */
+/** VesnALIA's transcription context is the composer text before the cursor; keep its end, from a word boundary. */
 export function transcriptionPromptTail(prompt: string | null): string | null {
   const trimmed = prompt?.trim() ?? "";
   if (trimmed === "") return null;
@@ -264,7 +264,7 @@ const errorBodySchema = z.object({
   error: z.object({ code: z.unknown().optional(), message: z.string().optional() }),
 });
 
-/** POST JSON to OpenRouter, mapping transport failures and error replies to BB's AI-service codes. */
+/** POST JSON to OpenRouter, mapping transport failures and error replies to VesnALIA's AI-service codes. */
 async function postToOpenRouter(
   path: string,
   request: Record<string, unknown>,

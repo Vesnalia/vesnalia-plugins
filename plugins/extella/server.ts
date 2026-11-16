@@ -1,13 +1,13 @@
 import { z } from "zod";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { ExtellaClient, ExtellaError, NAME_PATTERN } from "./client.ts";
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     apiKey: {
       type: "string",
       label: "Extella API key",
-      description: "Token from extella.ai. Stored by bb in a 0600 file, never sent to the browser.",
+      description: "Token from extella.ai. Stored by VesnALIA in a 0600 file, never sent to the browser.",
       secret: true,
     },
     agentId: {
@@ -56,7 +56,7 @@ export default async function plugin(bb: BbPluginApi) {
     };
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "extella_search",
     description:
       "Search saved Extella programs by meaning. Returns names, descriptions and similarity (0–1). Use before writing a new script for a task.",
@@ -79,7 +79,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "extella_get",
     description: "Read one saved Extella program: description, language and full code.",
     presentation: { label: { pending: "Reading Extella program", completed: "Read Extella program" } },
@@ -94,7 +94,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "extella_run",
     description:
       "Run a saved Extella program with parameters on one of your devices and return its result. Takes 5–20 seconds; no model tokens are spent on the run itself.",
@@ -115,7 +115,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "extella_save",
     description:
       "Save a working Python function as an Extella program so later threads and other agents find it with extella_search. Refuses to replace an existing program unless overwrite is true.",
@@ -143,7 +143,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "extella_devices",
     description: "List the devices connected to this Extella account, with ids to pass to extella_run.",
     presentation: { label: { pending: "Listing Extella devices", completed: "Listed Extella devices" } },

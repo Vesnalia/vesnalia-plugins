@@ -1,4 +1,4 @@
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import { createCli } from "../src/server/cli";
 import type { Service } from "../src/server/rpc";
@@ -24,8 +24,8 @@ function cli(
     thread: async (threadId: string) =>
       ({ threadId, hostId: threadHosts[threadId] ?? null, providerId: threadProviders[threadId] ?? null }) as ThreadState,
   } as unknown as Service;
-  const { bb, harness } = createFakePluginHost({ pluginId: "usage-forecast" });
-  bb.cli.register(createCli(service, () => NOW, async () => hidden));
+  const { alia, harness } = createFakePluginHost({ pluginId: "usage-forecast" });
+  alia.cli.register(createCli(service, () => NOW, async () => hidden));
   return { calls, run: (...argv: string[]) => harness.runCli(argv) };
 }
 

@@ -1,16 +1,16 @@
-# bb-plugin-korey
+# alia-plugin-korey
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/5ee52bd2-9906-4cb5-90e2-06008258fad2">
   <img src="https://github.com/user-attachments/assets/1f1e0286-a3eb-4e67-950a-a5952358a9e7" alt="Korey Flow">
 </picture>
 
-**Ask Korey to work with your connected tools from any bb harness.**
+**Ask Korey to work with your connected tools from any VesnALIA harness.**
 
-bb lets you work across coding harnesses. Korey brings your connectors with you.
+VesnALIA lets you work across coding harnesses. Korey brings your connectors with you.
 Connect services such as Shortcut, Sentry, and LaunchDarkly in Korey, and use them
-from your bb conversations. Korey manages connector access and reauthentication
-in one place. Your bb harnesses share that access, without a separate MCP server
+from your VesnALIA conversations. Korey manages connector access and reauthentication
+in one place. Your VesnALIA harnesses share that access, without a separate MCP server
 to configure for each connector.
 
 Give Korey the outcome and the context. It knows how to talk to the connected
@@ -34,7 +34,7 @@ through Shortcut’s fields and workflow one step at a time.
 > Ask Korey to compare this implementation plan with the existing Shortcut
 > Stories and point out what we missed.
 
-The plugin keeps a private Korey conversation linked to each bb thread, so you
+The plugin keeps a private Korey conversation linked to each VesnALIA thread, so you
 can follow up with more context, attach workspace files, and continue the same
 conversation as you change harnesses.
 
@@ -46,7 +46,7 @@ your Korey workspace.
 
 ## Get started
 
-Requires a Korey account and bb 0.43.4 or newer. See
+Requires a Korey account and VesnALIA 0.43.4 or newer. See
 [compatibility and validation](docs/development.md) for the limits of those checks.
 
 1. Connect the services you want to use in [Korey](https://korey.ai). See
@@ -54,11 +54,11 @@ Requires a Korey account and bb 0.43.4 or newer. See
 2. Install the plugin:
 
    ```sh
-   bb plugin install https://github.com/useshortcut/bb-plugin-korey
+   alia plugin install https://github.com/useshortcut/bb-plugin-korey
    ```
 
 3. Select **Connect Korey** under **Settings → Installed plugins → Korey** in
-   bb, or run `bb korey login`, and approve access in the browser. See
+   VesnALIA, or run `alia korey login`, and approve access in the browser. See
    [connecting your Korey account](docs/usage.md#connecting-your-korey-account).
 
    Alternatively, [create a Korey personal access token](https://app.korey.ai/settings/api-tokens)
@@ -67,23 +67,23 @@ Requires a Korey account and bb 0.43.4 or newer. See
 
 4. Ask your agent: “Ask Korey…”
 
-Only the Korey connection is configured in bb. Keep each service’s connector
+Only the Korey connection is configured in VesnALIA. Keep each service’s connector
 settings and credentials in Korey, where reauthentication is handled across
 harnesses.
 
 Check your connection with:
 
 ```sh
-bb korey status
+alia korey status
 ```
 
 ## From the CLI
 
 ```sh
-bb korey ask "Summarize the Sentry errors introduced in our latest release"
-bb korey ask "Review this rollout plan against our LaunchDarkly flags" --file plan.md
-bb korey ask --change "Enable checkout-v2 in the shop project's staging environment"
-bb korey shortcut create "Create a Story for the bug investigated in this conversation"
+alia korey ask "Summarize the Sentry errors introduced in our latest release"
+alia korey ask "Review this rollout plan against our LaunchDarkly flags" --file plan.md
+alia korey ask --change "Enable checkout-v2 in the shop project's staging environment"
+alia korey shortcut create "Create a Story for the bug investigated in this conversation"
 ```
 
 Use `ask --change` for a requested connector action, and `shortcut create` or

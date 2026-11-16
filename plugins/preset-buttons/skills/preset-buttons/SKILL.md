@@ -13,8 +13,8 @@ thread opens on the intended harness rather than whatever the last thread used.
 ## Inspecting the active presets
 
 ```sh
-bb preset-buttons list          # the four currently shown, with their values
-bb preset-buttons list --json   # same, machine-readable
+alia preset-buttons list          # the four currently shown, with their values
+alia preset-buttons list --json   # same, machine-readable
 ```
 
 The output names the active set and, when the configured set could not be
@@ -23,10 +23,10 @@ honoured, a warning line saying so.
 ## Switching sets
 
 ```sh
-bb preset-buttons sets              # every selectable set, with ids
-bb preset-buttons use codex         # by id
-bb preset-buttons use "Codex only — the GPT ladder"   # or by label
-bb preset-buttons use custom        # the JSON set in this plugin's settings
+alia preset-buttons sets              # every selectable set, with ids
+alia preset-buttons use codex         # by id
+alia preset-buttons use "Codex only — the GPT ladder"   # or by label
+alia preset-buttons use custom        # the JSON set in this plugin's settings
 ```
 
 Switching reaches every open composer immediately: the plugin publishes the
@@ -34,7 +34,7 @@ change and the button row re-renders in place. No reload is needed.
 
 ## Editing the custom set
 
-Open Settings → Preset Buttons for the interactive editor. It uses BB's live
+Open Settings → Preset Buttons for the interactive editor. It uses VesnALIA's live
 provider/model catalogue and can change the label and icon, add, remove, and
 reorder 1-8 buttons. Each button's icon is chosen with a browse-and-search
 picker over the plugin's curated MIT-licensed HugeIcons pool (search by name,
@@ -44,15 +44,15 @@ activates the custom set, and open composers update immediately.
 The same custom set is writable from a terminal for scripting or recovery:
 
 ```sh
-bb plugin config preset-buttons set customPresets '[{"label":"Nano","providerId":"ollama","model":"qwen2.5:3b","reasoningLevel":"low"},{"label":"Big","providerId":"claude-code","model":"claude-opus-5-5","reasoningLevel":"max"}]'
-bb plugin config preset-buttons set presetSet "Custom — defined in this plugin's settings"
+alia plugin config preset-buttons set customPresets '[{"label":"Nano","providerId":"ollama","model":"qwen2.5:3b","reasoningLevel":"low"},{"label":"Big","providerId":"claude-code","model":"claude-opus-5-5","reasoningLevel":"max"}]'
+alia plugin config preset-buttons set presetSet "Custom — defined in this plugin's settings"
 ```
 
 A preset requires `label`, `providerId`, and `model`. Optional: `icon` (a plugin
 icon name, always prefixed `pb-`, e.g. `pb-Zap`), `reasoningLevel`,
 `serviceTier`, `permissionMode`, `id`. Missing `id`s are derived from the
 label, so authors do not have to invent them. The `pb-` prefix is deliberate:
-a bare `Zap`/`Star`/etc. would collide with a BB built-in of the same name and
+a bare `Zap`/`Star`/etc. would collide with a VesnALIA built-in of the same name and
 silently replace that built-in everywhere (including the top-left sidebar), so
 every registered icon carries the prefix.
 
@@ -63,9 +63,9 @@ than failing silently.
 
 ## Reading the current presets before spawning a thread
 
-`bb preset-buttons list --json` returns each preset's `providerId`, `model`,
+`alia preset-buttons list --json` returns each preset's `providerId`, `model`,
 and optional `reasoningLevel` / `serviceTier` / `permissionMode` — enough to
-pass the same combination to `bb thread spawn` and reproduce what the button
+pass the same combination to `alia thread spawn` and reproduce what the button
 would have done.
 
 ## Constraints

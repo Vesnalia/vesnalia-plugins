@@ -1,4 +1,4 @@
-import { experimental_usePluginId, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_usePluginId, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useMemo, type MouseEvent } from "react";
 import type { BackTo } from "./common.tsx";
 import { SETTINGS_PATH } from "./common.tsx";
@@ -7,7 +7,7 @@ import type { BoxOpens } from "./box-opens.tsx";
 import { boxView, cameFrom, currentPath, LIST, movedTo, rememberMove, subPathOf, wayBack, type BoxesRoute, type BoxPageRoute, type BoxViewRoute, type Origin } from "./box-route.ts";
 import { opensInNewTab } from "./modified-click.ts";
 
-const SETTINGS_BACK_WORDS = "Back to BB Box settings";
+const SETTINGS_BACK_WORDS = "Back to VesnALIA Box settings";
 
 const LIST_BACK_WORDS = "Back to boxes";
 
@@ -39,7 +39,7 @@ export interface BoxesNav {
 export type WayBackTo = BackTo & { readonly place: string };
 
 export function useBoxesNav(): BoxesNav {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const pluginId = experimental_usePluginId();
   return useMemo(() => {
     const href = (route: BoxesRoute) => boxesPath(pluginId, route);
@@ -61,7 +61,7 @@ export function useBoxesNav(): BoxesNav {
     };
     const back = (from: BoxPageRoute | BoxViewRoute, boxName: string | null): WayBackTo => {
       const way = wayBack(from);
-      if (way.to === "settings") return { label: SETTINGS_BACK_WORDS, place: "BB Box settings", href: SETTINGS_PATH };
+      if (way.to === "settings") return { label: SETTINGS_BACK_WORDS, place: "VesnALIA Box settings", href: SETTINGS_PATH };
       if (way.to === "list") return { label: LIST_BACK_WORDS, place: "Boxes", go: () => goBackTo(LIST) };
       return { label: boxName ? `Back to ${boxName}` : "Back to the box", place: boxName ?? "The box", go: () => goBackTo(way.route) };
     };

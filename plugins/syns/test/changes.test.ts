@@ -7,7 +7,7 @@ import { HEAD, OLD, failureOf, harness, resultOf } from "./harness.js";
 const V2 = "a19555a14ba6ccb3cb5e2cd11f23ac04be062b80";
 const V4 = "25ac0dbdca0dc6ec345001e858af7fc90555c4db";
 const V9 = "47cd481f0ea66680f23e688c6483fa490d239ac0";
-const AGENT = { author: "bartsoj", integration: "bb", run: "thr_rec_agent", trigger: "agent" };
+const AGENT = { author: "bartsoj", integration: "alia", run: "thr_rec_agent", trigger: "agent" };
 const CLAUDE = { author: "bartsoj", integration: "claude-code", run: "a3e4b73e-30df-4290-8e36-fbdff8ee5fc0", trigger: "agent" };
 const PAGE = { author: "bartsoj", integration: "syns-pages", run: "thr_rec_page", trigger: "page" };
 
@@ -25,7 +25,7 @@ const many = (count: number, size: number, from = OLD, to = HEAD) => ({
     oldSha: "1".repeat(40),
     newSha: "2".repeat(40),
     size,
-    provenance: { version: 6, publisher: "bartsoj", integration: "bb", run: "thr_1", trigger: "agent", recorded: true },
+    provenance: { version: 6, publisher: "bartsoj", integration: "alia", run: "thr_1", trigger: "agent", recorded: true },
     text: "x".repeat(size),
   })),
   deferred: [],

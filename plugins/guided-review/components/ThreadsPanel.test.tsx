@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 //
-// ThreadsPanel imports hooks (useRpc) from "@get-bb/plugin-sdk/app", which binds
-// to `globalThis.__bbPluginRuntime.pluginSdkApp` at module-evaluation time. A
+// ThreadsPanel imports hooks (useRpc) from "@vesnalia/plugin-sdk/app", which binds
+// to `globalThis.__aliaPluginRuntime.pluginSdkApp` at module-evaluation time. A
 // static `import { ThreadsPanel } from "./ThreadsPanel"` at the top of this file
 // would pull that module in (via the import graph) before `installTestPluginRuntime()`
 // ever runs, leaving `useRpc` permanently unbound. So: install the runtime first,
@@ -9,7 +9,7 @@
 // loadPluginApp's thunk pattern from the plugin-sdk testing docs).
 import { test, expect, vi, afterEach } from "vitest";
 import { cleanup, fireEvent } from "@testing-library/react";
-import { installTestPluginRuntime, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 installTestPluginRuntime();
 

@@ -1,4 +1,4 @@
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { createMark } from "./src/app/mark";
 import { IconsOverlay } from "./src/app/overlay";
 import { captureRegisteredIds } from "./src/app/registered-ids";

@@ -1,7 +1,7 @@
 // The "Player style" section on the plugin's settings page.
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { Appearance, AppearancePatch, rpcContract } from "../server";
 import { STYLES, hasAccent } from "../shared";
 import type { AccentStyle, PlayerStyle } from "../shared";
@@ -362,7 +362,7 @@ export function PlayerStyleSettings() {
             <p className="text-sm text-muted-foreground">
               {style === "cover"
                 ? "Cover takes its colors from the album art."
-                : `${STYLE_INFO[style].label} uses your bb theme's colors.`}
+                : `${STYLE_INFO[style].label} uses your VesnALIA theme's colors.`}
             </p>
           )}
         </div>

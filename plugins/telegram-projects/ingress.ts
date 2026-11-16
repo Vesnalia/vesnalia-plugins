@@ -28,7 +28,7 @@ export function routeUpdate(
   }
   if (from.id !== owner) return { kind: "ignore", callbackId };
   const callback: string | undefined = cq?.data;
-  if (callback && !callback.startsWith("bb:"))
+  if (callback && !callback.startsWith("alia:"))
     return { kind: "ignore", callbackId };
   const text: string | undefined =
     typeof m.text === "string"

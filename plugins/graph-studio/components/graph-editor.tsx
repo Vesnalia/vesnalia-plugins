@@ -11,7 +11,7 @@ import {
   // Aliased because JSX reads a lowercase tag as an intrinsic element.
   experimental_ProviderModelPicker as ProviderModelPicker,
   experimental_useProviders,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   CONDITION_OPS,
   END_NODE,
@@ -2066,8 +2066,8 @@ export function GraphEditor({
           On the command line
         </p>
         <CopyCommand command={runCommand(draft)} />
-        <CopyCommand command={`bb graph-studio show ${draft.id || "<graph-id>"}`} />
-        <CopyCommand command={`bb graph-studio export ${draft.id || "<graph-id>"} > file.json`} />
+        <CopyCommand command={`alia graph-studio show ${draft.id || "<graph-id>"}`} />
+        <CopyCommand command={`alia graph-studio export ${draft.id || "<graph-id>"} > file.json`} />
       </div>
     </div>
   );
@@ -2435,9 +2435,9 @@ export function GraphEditor({
             line:
           </p>
           <CopyCommand
-            command={`bb graph-studio export ${draft.id || "<graph-id>"} > file.json`}
+            command={`alia graph-studio export ${draft.id || "<graph-id>"} > file.json`}
           />
-          <CopyCommand command="bb graph-studio import file.json" />
+          <CopyCommand command="alia graph-studio import file.json" />
           {existing && onExport ? (
             <>
               <Button

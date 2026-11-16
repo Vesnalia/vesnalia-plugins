@@ -13,7 +13,7 @@ import { link, mkdir, mkdtemp, readdir, readFile, realpath, symlink, writeFile }
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { MAX_ARCHIVE_ENTRIES, type ArchiveListing } from "../../contract";
@@ -51,7 +51,7 @@ afterEach(async () => {
 });
 
 function lister(overrides: Partial<Parameters<typeof createArchiveLister>[1]> = {}): ArchiveLister {
-  return createArchiveLister(host.bb, {
+  return createArchiveLister(host.alia, {
     executables,
     canExtract: (format) => canExtractFormat(format, executables),
     ...overrides,
@@ -455,7 +455,7 @@ describe("path safety and errors", () => {
 
   it("is reachable through createArchives, on the same probe as extraction", async () => {
     await write("via.zip", makeZip([{ name: "a.txt", content: "a" }]));
-    const archives = await createArchives(host.bb, { jobs: createJobs(host.bb), executables });
+    const archives = await createArchives(host.alia, { jobs: createJobs(host.alia), executables });
 
     const listing = await archives.listArchive({ path: "via.zip" });
 

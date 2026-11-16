@@ -1,9 +1,9 @@
 /**
  * What a thread card can do, handed down through context so the cards Pierre renders inside the diff
- * (annotations) reach the same RPCs as the rest of the tab. A failed call shows bb's toast and
+ * (annotations) reach the same RPCs as the rest of the tab. A failed call shows VesnALIA's toast and
  * rejects, so the composer that started it keeps its text.
  */
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -35,13 +35,13 @@ export interface ReviewActions {
   openThread(threadId: string): void;
   /** Marks a file Viewed (folding it) or clears its mark. */
   setViewed(file: DiffFile, viewed: boolean): Promise<void>;
-  /** Opens the file in bb's preview, at the version the view shows; false when bb cannot. */
+  /** Opens the file in VesnALIA's preview, at the version the view shows; false when VesnALIA cannot. */
   openFile(file: DiffFile, line?: number): boolean;
   /** Whether `openFile` can open this file in this view. */
   canOpenFile(file: DiffFile): boolean;
   /** Whether the view's new side is the working copy, so a suggestion can be applied there. */
   canEditWorkingCopy: boolean;
-  /** Whether the view takes bb's Viewed marks. */
+  /** Whether the view takes VesnALIA's Viewed marks. */
   viewable: boolean;
   /** Whether a file of this view can be reverted (the uncommitted view, a file not renamed or copied). */
   canRevert(file: DiffFile): boolean;
@@ -104,7 +104,7 @@ export function ReviewActionsProvider({
   children: ReactNode;
 }) {
   const rpc = useRpc<RpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const actions = useMemo<ReviewActions>(
     () => ({
       create: (thread) =>

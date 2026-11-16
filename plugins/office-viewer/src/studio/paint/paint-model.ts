@@ -2,7 +2,7 @@
 import { z } from "zod";
 import { studioT } from "../../shared/i18n.ts";
 
-export const PAINT_FORMAT = "bb-paint" as const;
+export const PAINT_FORMAT = "alia-paint" as const;
 export const PAINT_VERSION = 1;
 
 export const PAINT_SIZE_PRESETS = {

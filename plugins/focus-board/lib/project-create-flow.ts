@@ -3,25 +3,25 @@ import { PROJECT_PATH_ROOT_REFUSAL, projectFolderName } from "./project-folder-n
 /**
  * The board's New project flows, through the board's one create path.
  *
- * The dialog's New project button follows bb's TYPICAL new-project flow
- * (decoded from bb 0.48.1's bundles — the main view's New project entry,
+ * The dialog's New project button follows VesnALIA's TYPICAL new-project flow
+ * (decoded from VesnALIA 0.48.1's bundles — the main view's New project entry,
  * its project-path dialog hook, and its create mutation): the NATIVE
- * folder picker opens on the bb client's own machine through
+ * folder picker opens on the VesnALIA client's own machine through
  * `hosts.pickFolder`, the project is named after the picked folder's last
  * segment, and `projects.create` receives that local_path source. A
  * cancelled pick creates nothing and the dialog rests, the same answer
- * bb's own flow gives a null pick.
+ * VesnALIA's own flow gives a null pick.
  *
  * The pick runs only when exactly ONE persistent host serves the board.
- * The plugin cannot read bb's own client-host id (the desktop API's
- * localDaemonHostId is not exposed to plugins; BbContext carries only
+ * The plugin cannot read VesnALIA's own client-host id (the desktop API's
+ * localDaemonHostId is not exposed to plugins; AliaContext carries only
  * project and thread ids), so the host can be honestly named as the
  * machine to ask only where the board's host list leaves no ambiguity:
- * one connected persistent host IS the bb client's machine. Any other
+ * one connected persistent host IS the VesnALIA client's machine. Any other
  * topology throws with the reason; the dialog arms its inline name field
  * with the reason shown — that field creates under the host's
- * bb-projects folder, the pre-picker shape the affordance shipped in and
- * still the closest equivalent of bb's own path-entry fallback.
+ * alia-projects folder, the pre-picker shape the affordance shipped in and
+ * still the closest equivalent of VesnALIA's own path-entry fallback.
  */
 
 /** The SDK surface the flow needs; structural, so test stubs satisfy it. */

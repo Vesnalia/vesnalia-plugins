@@ -1,4 +1,4 @@
-import type { BbPluginApi, ExperimentalPluginRpcHandlerContext } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, ExperimentalPluginRpcHandlerContext } from "@vesnalia/plugin-sdk";
 import { mkdir, open } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { setInterval as every } from "node:timers/promises";
@@ -21,8 +21,8 @@ import { decisionSchema, labelRequestSchema, snapshotSchema } from "./nudger-con
 import { type NudgerConfiguration } from "./rpc-contract.js";
 import { computeStats } from "./stats.js";
 
-const DECISIONS_USAGE = "bb nudger decisions [--since <ISO date|epoch ms>] [--out <path>]";
-const LABEL_USAGE = "bb nudger label <recordId> <wrong|clear> [--by <name>] [--note <text>]";
+const DECISIONS_USAGE = "alia nudger decisions [--since <ISO date|epoch ms>] [--out <path>]";
+const LABEL_USAGE = "alia nudger label <recordId> <wrong|clear> [--by <name>] [--note <text>]";
 
 /** `--name value` pairs; null when any token is not one. */
 function cliFlags(tokens: readonly string[]): Record<string, string> | null {
@@ -36,20 +36,20 @@ function cliFlags(tokens: readonly string[]): Record<string, string> | null {
 }
 
 /** Factory registration is synchronous and inert; only the passive background service loads native inventory. */
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(alia: AliaPluginApi) {
   const lifetime = new AbortController();
   const signal = lifetime.signal;
   // Saving a new key checks it, then sets `detector` and `enabled` (see configure()); explicit values otherwise stay the operator's.
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     typesafeApiKey: { type: "string", label: "Jev API key", secret: true, description: "Get one at console.typesafe.ai. Saving a new key checks it with Jev and turns Nudger on." },
     enabled: { type: "boolean", label: "Automatic continuation", description: "Send \"please continue\" when Jev judges that an agent stopped with work left. Off: Nudger checks nothing and sends nothing.", default: true },
     detector: { type: "select", label: "Judge", options: ["none", "jev"], experimental_optionLabels: { none: "Off", jev: "Jev" }, default: "none",
       description: "Jev reads only the last reply of a thread that stopped. Saving a key sets this to Jev." },
   });
-  const peer = createHeadquartersPeer(bb, signal);
+  const peer = createHeadquartersPeer(alia, signal);
   let recovery: RecoveryService | null = null;
   let continuation: Continuation | null = null;
-  let usage: UsageLedger = createUsageLedger({ store: bb.storage.kv, warn: message => bb.log.warn(message) });
+  let usage: UsageLedger = createUsageLedger({ store: alia.storage.kv, warn: message => alia.log.warn(message) });
   let ready: Promise<void> | null = null;
   let initializing = false;
   let operational = false;
@@ -81,11 +81,11 @@ export default function plugin(bb: BbPluginApi) {
     publishTimer = setTimeout(() => {
       publishTimer = undefined;
       if (signal.aborted) return;
-      bb.realtime.publish("nudger-changed-v1", { version: 1 });
+      alia.realtime.publish("nudger-changed-v1", { version: 1 });
       for (const [threadId, read] of bannerReads) {
         if (Date.now() - read.at > 6 * 60 * 60_000) { bannerReads.delete(threadId); continue; }
         const next = fingerprint(statusFor(threadId));
-        if (next !== read.fingerprint) { read.fingerprint = next; bb.realtime.publish("nudger-continuation-changed-v1", { threadId }); }
+        if (next !== read.fingerprint) { read.fingerprint = next; alia.realtime.publish("nudger-continuation-changed-v1", { threadId }); }
       }
     }, 1_000);
     publishTimer.unref();
@@ -118,12 +118,12 @@ export default function plugin(bb: BbPluginApi) {
     if (signal.aborted || notedKeyResult === `${fingerprint}:${result}`) return;
     notedKeyResult = `${fingerprint}:${result}`;
     void serial(async () => {
-      const state = await bb.storage.kv.get<KeyState>(KEY_STATE_KEY) ?? EMPTY_KEY_STATE;
+      const state = await alia.storage.kv.get<KeyState>(KEY_STATE_KEY) ?? EMPTY_KEY_STATE;
       if (state.check?.fingerprint === fingerprint && state.check.result === result) return;
-      await bb.storage.kv.set(KEY_STATE_KEY, { ...state, check: { fingerprint, result, at: Date.now(), detail: null } });
+      await alia.storage.kv.set(KEY_STATE_KEY, { ...state, check: { fingerprint, result, at: Date.now(), detail: null } });
       if (result === "rejected") await configure();
       changed();
-    }).catch(cause => { if (!signal.aborted) bb.log.warn(`Nudger could not record Jev's answer about the key: ${String(cause)}`); });
+    }).catch(cause => { if (!signal.aborted) alia.log.warn(`Nudger could not record Jev's answer about the key: ${String(cause)}`); });
   }
   async function configure() {
     const revision = settingsRevision;
@@ -132,12 +132,12 @@ export default function plugin(bb: BbPluginApi) {
     signal.throwIfAborted();
     const key = config.typesafeApiKey ?? "";
     const fingerprint = key ? keyFingerprint(key) : null;
-    let state = await bb.storage.kv.get<KeyState>(KEY_STATE_KEY) ?? EMPTY_KEY_STATE;
+    let state = await alia.storage.kv.get<KeyState>(KEY_STATE_KEY) ?? EMPTY_KEY_STATE;
     if (fingerprint && state.pending?.fingerprint === fingerprint) {
       const checked = keyChecked(state, { fingerprint, at: Date.now(), ...await checkJevKey(key, { signal }) });
       if (revision !== settingsRevision) return;
       state = checked.state; notedKeyResult = null;
-      await bb.storage.kv.set(KEY_STATE_KEY, state);
+      await alia.storage.kv.set(KEY_STATE_KEY, state);
       changed();
       // A newly saved key that Jev accepts turns Nudger on, whatever was switched off before.
       if (checked.activate) {
@@ -154,8 +154,8 @@ export default function plugin(bb: BbPluginApi) {
     recovery?.configure(null);
     configurationError = null;
     try {
-      const migration = await bb.storage.kv.get<{ complete: boolean }>(MIGRATION_KEY);
-      if (!migration?.complete && await bb.storage.kv.get(LEGACY_ACTIVATION_KEY)) throw new Error("Legacy migration is incomplete; observation continues, but imported detector settings wait for pause and per-thread policy restoration.");
+      const migration = await alia.storage.kv.get<{ complete: boolean }>(MIGRATION_KEY);
+      if (!migration?.complete && await alia.storage.kv.get(LEGACY_ACTIVATION_KEY)) throw new Error("Legacy migration is incomplete; observation continues, but imported detector settings wait for pause and per-thread policy restoration.");
       if (revision !== settingsRevision) return;
       if (config.enabled && config.detector === "jev") {
         if (!key) throw new Error("Paste your Jev API key in Nudger settings.");
@@ -168,12 +168,12 @@ export default function plugin(bb: BbPluginApi) {
     changed();
   }
   async function importLegacy(): Promise<boolean> {
-    if ((await bb.storage.kv.get<{ complete: boolean }>(MIGRATION_KEY))?.complete || !peer.present()) return false;
+    if ((await alia.storage.kv.get<{ complete: boolean }>(MIGRATION_KEY))?.complete || !peer.present()) return false;
     operational = false; configuredSignature = null;
     continuation?.cancelAll("Legacy policy restoration in progress");
     recovery?.configure(null);
-    try { return await migrateHeadquarters({ store: bb.storage.kv, settings, readPage: peer.readMigration, signal }); }
-    catch (cause) { if (!signal.aborted) bb.log.warn(`Nudger migration deferred: ${cause instanceof Error ? cause.message : String(cause)}`); return false; }
+    try { return await migrateHeadquarters({ store: alia.storage.kv, settings, readPage: peer.readMigration, signal }); }
+    catch (cause) { if (!signal.aborted) alia.log.warn(`Nudger migration deferred: ${cause instanceof Error ? cause.message : String(cause)}`); return false; }
   }
   async function load() {
     signal.throwIfAborted();
@@ -182,18 +182,18 @@ export default function plugin(bb: BbPluginApi) {
     await usage.flush();
     signal.throwIfAborted();
     blockers.clear(); cachedHistory = null; configuredSignature = null; operational = false;
-    usage = createUsageLedger({ store: bb.storage.kv, warn: message => bb.log.warn(message) });
-    continuation = createContinuation({ bb, cursor: threadId => recovery?.cursor(threadId) ?? null,
+    usage = createUsageLedger({ store: alia.storage.kv, warn: message => alia.log.warn(message) });
+    continuation = createContinuation({ alia, cursor: threadId => recovery?.cursor(threadId) ?? null,
       paused: () => initializing || !operational || (recovery?.status().paused ?? true),
-      onChange: threadId => { recovery?.noteNudge(threadId); if (!signal.aborted) bb.realtime.publish("nudger-continuation-changed-v1", { threadId }); } });
-    recovery = createRecoveryService({ bb, controlThreadIds: peer.currentControls, detector: null, continuation,
+      onChange: threadId => { recovery?.noteNudge(threadId); if (!signal.aborted) alia.realtime.publish("nudger-continuation-changed-v1", { threadId }); } });
+    recovery = createRecoveryService({ alia, controlThreadIds: peer.currentControls, detector: null, continuation,
       reportBlocker: async blocker => { blockers.set(blocker.threadId, blocker); changed(); }, onChange: changed });
     await continuation.start();
     await recovery.start();
     signal.throwIfAborted();
     await usage.backfill(recovery.records());
     await configure();
-    bb.realtime.publish("nudger-continuation-changed-v1", { threadId: null });
+    alia.realtime.publish("nudger-continuation-changed-v1", { threadId: null });
   }
   async function ensureReady() {
     signal.throwIfAborted();
@@ -207,7 +207,7 @@ export default function plugin(bb: BbPluginApi) {
   async function configuration(): Promise<NudgerConfiguration> {
     await ensureReady(); await changes;
     const config = await settings.get();
-    const state = await bb.storage.kv.get<KeyState>(KEY_STATE_KEY) ?? EMPTY_KEY_STATE;
+    const state = await alia.storage.kv.get<KeyState>(KEY_STATE_KEY) ?? EMPTY_KEY_STATE;
     const fingerprint = config.typesafeApiKey ? keyFingerprint(config.typesafeApiKey) : null;
     const check = fingerprint && state.check?.fingerprint === fingerprint ? state.check : null;
     return { version: 1 as const, enabled: config.enabled, detector: config.detector === "jev" ? "jev" : "none",
@@ -221,7 +221,7 @@ export default function plugin(bb: BbPluginApi) {
     if (recordedMessages.has(key)) return recordedMessages.get(key)!;
     let text: string | null = null;
     try {
-      const [row] = await bb.sdk.threads.events.list({ threadId: record.threadId, afterSeq: String(record.messageRevision - 1), order: "asc", limit: "1", types: ["item/completed"] });
+      const [row] = await alia.sdk.threads.events.list({ threadId: record.threadId, afterSeq: String(record.messageRevision - 1), order: "asc", limit: "1", types: ["item/completed"] });
       if (row?.type === "item/completed" && row.seq === record.messageRevision && row.data.item.type === "agentMessage" && row.data.item.id === record.messageId) text = row.data.item.text;
     } catch { return null; }
     if (recordedMessages.size > 2000) recordedMessages.clear();
@@ -248,7 +248,7 @@ export default function plugin(bb: BbPluginApi) {
     try {
       return await recovery!.rejudge(record.id, await jev(config.typesafeApiKey).classify(text, { signal })) ?? record;
     } catch (cause) {
-      if (!signal.aborted) bb.log.warn(`Nudger could not re-judge retained ending ${record.id}: ${cause instanceof Error ? cause.message : String(cause)}`);
+      if (!signal.aborted) alia.log.warn(`Nudger could not re-judge retained ending ${record.id}: ${cause instanceof Error ? cause.message : String(cause)}`);
       return record;
     }
   }
@@ -318,8 +318,8 @@ export default function plugin(bb: BbPluginApi) {
     bannerReads.set(threadId, { at: Date.now(), fingerprint: fingerprint(status) });
     return status;
   }
-  bb.experimental_hooks.on("message.dispatch", async context => {
-    const owned = context.experimental_submission?.pluginId === bb.pluginId || context.queuedMessages.some(row => row.originPluginId === bb.pluginId);
+  alia.experimental_hooks.on("message.dispatch", async context => {
+    const owned = context.experimental_submission?.pluginId === alia.pluginId || context.queuedMessages.some(row => row.originPluginId === alia.pluginId);
     if (owned) {
       const controls = await peer.currentControls();
       if (controls.includes(context.thread.id) || peer.contains(context.thread.id)) {
@@ -364,7 +364,7 @@ export default function plugin(bb: BbPluginApi) {
     } finally { await file.close(); }
     return { path, decisions, labelled, bytes };
   }
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     nudger_snapshot_v1: snapshot,
     nudger_history_v1: async ({ cursor }) => { await ensureReady(); return historyPage(history().records, cursor); },
     async nudger_pause_v1({ paused }, context) {
@@ -385,7 +385,7 @@ export default function plugin(bb: BbPluginApi) {
     nudger_continuation_toggle_v1: async ({ threadId, enabled }, context) => {
       requireOperator(context);
       await ensureReady();
-      return serial(async () => { await bb.sdk.threads.get({ threadId }); await continuation!.setEnabled(threadId, enabled); return banner(threadId); });
+      return serial(async () => { await alia.sdk.threads.get({ threadId }); await continuation!.setEnabled(threadId, enabled); return banner(threadId); });
     },
     nudger_settings_v1: configuration,
     async nudger_settings_set_v1({ version: _version, ...values }, context) {
@@ -405,23 +405,23 @@ export default function plugin(bb: BbPluginApi) {
       return label(request);
     },
   }, { experimental_discoverable: true });
-  const verifier = createRecoveryVerifier({ readShadowComparison: async () => await retainedValue<ShadowComparison>(bb.storage.kv, "detector/synthetic-shadow") ?? null,
+  const verifier = createRecoveryVerifier({ readShadowComparison: async () => await retainedValue<ShadowComparison>(alia.storage.kv, "detector/synthetic-shadow") ?? null,
     selectedDetectorId: async () => recovery?.status().detectorId ?? null });
-  bb.cli.register({ name: "nudger", summary: "Inspect guarded continuation; synthetic validation is explicit and never dispatches project work.", commands: [
-    { name: "status", summary: "Read passive inventory, gates and current recovery history.", usage: "bb nudger status" },
-    { name: "continuation", summary: "Read counts and continuation state, or toggle one existing thread.", usage: "bb nudger continuation [<threadId> [on|off]]" },
+  alia.cli.register({ name: "nudger", summary: "Inspect guarded continuation; synthetic validation is explicit and never dispatches project work.", commands: [
+    { name: "status", summary: "Read passive inventory, gates and current recovery history.", usage: "alia nudger status" },
+    { name: "continuation", summary: "Read counts and continuation state, or toggle one existing thread.", usage: "alia nudger continuation [<threadId> [on|off]]" },
     { name: "decisions", summary: "Export the 30-day decision log as JSONL (read-only); prints the file path and counts.", usage: DECISIONS_USAGE },
     { name: "label", summary: "Mark one decision wrong (or clear it); labelled decisions export as a test set.", usage: LABEL_USAGE },
-    { name: "verify", summary: "Validate the stored synthetic Jev validation without a model call.", usage: "bb nudger verify" },
-    { name: "shadow", summary: "Explicitly run Jev against the bundled synthetic corpus (paid calls).", usage: "bb nudger shadow --confirm-paid-synthetic" },
+    { name: "verify", summary: "Validate the stored synthetic Jev validation without a model call.", usage: "alia nudger verify" },
+    { name: "shadow", summary: "Explicitly run Jev against the bundled synthetic corpus (paid calls).", usage: "alia nudger shadow --confirm-paid-synthetic" },
   ], async run(args, context) {
     if (args[0] === "status" && args.length === 1) return { exitCode: 0, stdout: JSON.stringify(await snapshot(), null, 2) };
     if (args[0] === "continuation" && args.length <= 3) {
       await ensureReady();
       if (args.length === 1) return { exitCode: 0, stdout: JSON.stringify({ paused: recovery!.status().paused, ...continuation!.snapshot() }, null, 2) };
-      const threadId = args[1]!.trim(); await bb.sdk.threads.get({ threadId });
+      const threadId = args[1]!.trim(); await alia.sdk.threads.get({ threadId });
       if (args.length === 3) {
-        if (args[2] !== "on" && args[2] !== "off") return { exitCode: 1, stderr: "Usage: bb nudger continuation [<threadId> [on|off]]" };
+        if (args[2] !== "on" && args[2] !== "off") return { exitCode: 1, stderr: "Usage: VesnALIA nudger continuation [<threadId> [on|off]]" };
         await serial(() => continuation!.setEnabled(threadId, args[2] === "on"));
       }
       return { exitCode: 0, stdout: JSON.stringify({ threadId, enabled: continuation!.enabled(threadId), status: statusFor(threadId), ...continuation!.snapshot(threadId) }, null, 2) };
@@ -431,9 +431,9 @@ export default function plugin(bb: BbPluginApi) {
       const since = flags?.since === undefined ? undefined : /^\d+$/.test(flags.since) ? Number(flags.since) : Date.parse(flags.since);
       if (!flags || Object.keys(flags).some(name => name !== "since" && name !== "out") || Number.isNaN(since)) return { exitCode: 1, stderr: `Usage: ${DECISIONS_USAGE}` };
       await ensureReady();
-      const dataDir = bb.server.experimental_dataDir;
+      const dataDir = alia.server.experimental_dataDir;
       const path = flags.out !== undefined ? resolve(context.cwd ?? dataDir, flags.out)
-        : join(dataDir, "plugins", bb.pluginId, "exports", `decisions-${new Date().toISOString().replace(/[:.]/g, "-")}.jsonl`);
+        : join(dataDir, "plugins", alia.pluginId, "exports", `decisions-${new Date().toISOString().replace(/[:.]/g, "-")}.jsonl`);
       return { exitCode: 0, stdout: JSON.stringify(await exportDecisions(path, since), null, 2) };
     }
     if (args[0] === "label" && args.length >= 3) {
@@ -451,15 +451,15 @@ export default function plugin(bb: BbPluginApi) {
         const config = await settings.get();
         if (!config.typesafeApiKey) return { exitCode: 1, stderr: "Paste your Jev API key in Nudger settings. No fallback model is used." };
         const comparison = await runShadowComparison({ detectors: [jev(config.typesafeApiKey)], signal: context.signal ? AbortSignal.any([signal, context.signal]) : signal });
-        await bb.storage.kv.set("detector/synthetic-shadow", comparison); await usage.flush(); changed();
+        await alia.storage.kv.set("detector/synthetic-shadow", comparison); await usage.flush(); changed();
         return { exitCode: comparison.summaries.some(summary => summary.failures) ? 1 : 0, stdout: JSON.stringify(comparison, null, 2) };
       });
     }
-    return { exitCode: !args.length || args.length === 1 && ["--help", "-h"].includes(args[0]!) ? 0 : 1, stdout: "Usage: bb nudger <status|continuation [<threadId> [on|off]]|decisions [--since <date>] [--out <path>]|label <recordId> <wrong|clear>|verify|shadow --confirm-paid-synthetic>" };
+    return { exitCode: !args.length || args.length === 1 && ["--help", "-h"].includes(args[0]!) ? 0 : 1, stdout: "Usage: VesnALIA nudger <status|continuation [<threadId> [on|off]]|decisions [--since <date>] [--out <path>]|label <recordId> <wrong|clear>|verify|shadow --confirm-paid-synthetic>" };
   } });
   settings.onChange((next, prev) => {
     settingsRevision++;
-    // Native BB writes are already effective when this fires, outside the plugin queue.
+    // Native VesnALIA writes are already effective when this fires, outside the plugin queue.
     // Revoke the old detector immediately, and fence configure() awaits by revision.
     configuredSignature = null; operational = false;
     continuation?.cancelAll("Nudger detector or enablement settings changed");
@@ -469,12 +469,12 @@ export default function plugin(bb: BbPluginApi) {
     void serial(async () => {
       // A saved key is checked next. A new one then turns Nudger on; the key that already did never overrides a later "off".
       if (saved) {
-        const state = await bb.storage.kv.get<KeyState>(KEY_STATE_KEY) ?? EMPTY_KEY_STATE;
+        const state = await alia.storage.kv.get<KeyState>(KEY_STATE_KEY) ?? EMPTY_KEY_STATE;
         const fingerprint = keyFingerprint(saved);
-        await bb.storage.kv.set(KEY_STATE_KEY, { ...state, pending: { fingerprint, activate: fingerprint !== state.activated } });
+        await alia.storage.kv.set(KEY_STATE_KEY, { ...state, pending: { fingerprint, activate: fingerprint !== state.activated } });
       }
       if (recovery) await configure();
-    }).catch(cause => { if (!signal.aborted) bb.log.warn(`Nudger settings refresh failed: ${String(cause)}`); });
+    }).catch(cause => { if (!signal.aborted) alia.log.warn(`Nudger settings refresh failed: ${String(cause)}`); });
   });
   async function close() {
     lifetime.abort(); clearTimeout(publishTimer);
@@ -484,8 +484,8 @@ export default function plugin(bb: BbPluginApi) {
     })();
     await closing;
   }
-  bb.onDispose(close);
-  bb.background.service("nudger-watcher-v1", { async start(serviceSignal) {
+  alia.onDispose(close);
+  alia.background.service("nudger-watcher-v1", { async start(serviceSignal) {
     const stop = () => lifetime.abort();
     if (serviceSignal.aborted) stop(); else serviceSignal.addEventListener("abort", stop, { once: true });
     try {
@@ -497,7 +497,7 @@ export default function plugin(bb: BbPluginApi) {
         finally { initializing = false; }
         await configure(); await recovery!.refresh();
       });
-    } catch (cause) { if (!signal.aborted) { bb.log.error(`Nudger watcher stopped: ${cause instanceof Error ? cause.message : String(cause)}`); throw cause; } }
+    } catch (cause) { if (!signal.aborted) { alia.log.error(`Nudger watcher stopped: ${cause instanceof Error ? cause.message : String(cause)}`); throw cause; } }
     finally { serviceSignal.removeEventListener("abort", stop); await close(); }
   } });
 }

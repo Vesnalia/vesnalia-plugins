@@ -1,13 +1,13 @@
-// Who owns a Proxmox guest, as bb-box records it on the guest itself: tags,
+// Who owns a Proxmox guest, as alia-box records it on the guest itself: tags,
 // and the description, which the clone sets first. Both name the install as
-// well as the box (018), so the sweep finds every guest even if bb-box's
+// well as the box (018), so the sweep finds every guest even if alia-box's
 // storage is lost, and an install acts only on its own guests. Shared by the
 // Proxmox backends.
 
 import type { BoxIdentity, BoxOwner, Guest } from "../types.ts";
 import { ProxmoxError, parseTags, type PoolGuest, type Proxmox } from "./api.ts";
 
-export const TAG = "bb-box";
+export const TAG = "alia-box";
 export const INSTALL = "install.";
 export const BUILD = "build.";
 
@@ -49,7 +49,7 @@ export function installFromTags(tags: readonly string[]): string | null {
 }
 
 export function installFromDescription(text: unknown): string | null {
-  if (typeof text !== "string" || !text.startsWith("bb-box ")) return null;
+  if (typeof text !== "string" || !text.startsWith("alia-box ")) return null;
   return /^install (\S+)$/m.exec(text)?.[1] ?? null;
 }
 
@@ -63,7 +63,7 @@ export function boxTags(box: BoxIdentity, installId: string, template: number | 
 /** Written by the clone, before the tags, so an interrupted acquire still names its install and box. */
 export function describe(box: BoxIdentity, installId: string): string {
   return [
-    `bb-box ${box.name}`,
+    `alia-box ${box.name}`,
     `install ${installId}`,
     `box ${box.boxId}`,
     `thread ${box.threadId}`,
@@ -88,7 +88,7 @@ export function ownerFromTags(tags: readonly string[], name: string | null = nul
 }
 
 export function ownerFromDescription(text: unknown): BoxOwner | null {
-  if (typeof text !== "string" || !text.startsWith("bb-box ")) return null;
+  if (typeof text !== "string" || !text.startsWith("alia-box ")) return null;
   const field = (name: string) => new RegExp(`^${name} (\\S+)$`, "m").exec(text)?.[1];
   const threadId = field("thread");
   const boxId = field("box");
@@ -97,7 +97,7 @@ export function ownerFromDescription(text: unknown): BoxOwner | null {
   return {
     boxId,
     threadId,
-    name: field("bb-box") ?? null,
+    name: field("alia-box") ?? null,
     kind: field("kind") ?? null,
     createdAt: Number.isFinite(created) ? created : null,
   };
@@ -141,7 +141,7 @@ export async function templateBuild(api: Proxmox, guests: readonly PoolGuest[], 
  * `current` (#227). build.sh --replace keeps the template's VMID, and on
  * LVM-thin a clone of the old build keeps running, so the VMID alone does
  * not say. A guest records the build it was cloned from in `data.build`. One
- * made before bb-box recorded it came from the build if made after the
+ * made before alia-box recorded it came from the build if made after the
  * build began; the replace comes at the build's end, so one made during the
  * build counts too. With no build to compare, it did not.
  */

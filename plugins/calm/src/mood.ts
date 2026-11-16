@@ -1,4 +1,4 @@
-// What the strip should show for one thread, derived from bb's thread
+// What the strip should show for one thread, derived from VesnALIA's thread
 // lifecycle events. Pure functions so the rules are easy to test.
 
 export type MoodKind = "idle" | "working" | "waiting" | "rate" | "error";

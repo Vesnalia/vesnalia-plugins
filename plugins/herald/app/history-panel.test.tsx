@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 /**
- * The Herald tab while bb keeps it mounted but not showing: it reads nothing
- * and its clock stands still, and it catches up when it shows again. bb 0.48
+ * The Herald tab while VesnALIA keeps it mounted but not showing: it reads nothing
+ * and its clock stands still, and it catches up when it shows again. VesnALIA 0.48
  * says whether the tab is showing; the harness answers one value per render,
  * so the hook is replaced here by one the test can flip.
  */
 import { act, cleanup, screen } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { useSyncExternalStore } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -30,7 +30,7 @@ const visibility = vi.hoisted(() => {
   };
 });
 
-vi.mock("./bb-features", () => ({
+vi.mock("./alia-features", () => ({
   HAS_PANEL_CONTROLLER: true,
   useTabVisible: () => useSyncExternalStore(visibility.subscribe, visibility.get),
 }));

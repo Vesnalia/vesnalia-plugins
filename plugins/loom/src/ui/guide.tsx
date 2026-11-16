@@ -17,7 +17,7 @@ const ROLES: ReadonlyArray<[string, string]> = [
 ];
 
 const LIFE = ["queued", "working", "checking", "review", "approved", "merging", "done"];
-const TERMINAL = ["bb loom list", "bb loom approve <slug>", "bb loom start <slug>", "bb loom metrics <slug>"];
+const TERMINAL = ["alia loom list", "alia loom approve <slug>", "alia loom start <slug>", "alia loom metrics <slug>"];
 
 /** The five steps from a goal to merged work. */
 export function GuideSteps() {

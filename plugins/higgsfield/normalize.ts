@@ -1,7 +1,7 @@
 // Turns raw `higgsfield --json` payloads into typed dashboard data. The CLI's
 // JSON shapes are not a published contract, so every reader here accepts the
 // common field-name variants and degrades to null instead of throwing.
-// `bb higgsfield raw <what>` prints the untouched payload for tuning.
+// `alia higgsfield raw <what>` prints the untouched payload for tuning.
 import { z } from "zod";
 
 type Obj = Record<string, unknown>;

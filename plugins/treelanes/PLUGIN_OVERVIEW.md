@@ -19,15 +19,15 @@ Each task gets one Git worktree, one card on the board, and its own agents. You 
   Done          you merge
 ```
 
-A stage moves on only when its worker sends a Completion Receipt: passing checks bound to the task revision and the current files. A failed turn retries in the same thread, at most twice. The board keeps every step through a bb restart.
+A stage moves on only when its worker sends a Completion Receipt: passing checks bound to the task revision and the current files. A failed turn retries in the same thread, at most twice. The board keeps every step through a VesnALIA restart.
 
 ## Agent tools
 
-Agents use `treelanes_deliver`, `treelanes_get_context`, `treelanes_complete_stage`, `treelanes_move_card` and the other `treelanes_*` tools. People use `bb treelanes`; `bb treelanes help` lists every command.
+Agents use `treelanes_deliver`, `treelanes_get_context`, `treelanes_complete_stage`, `treelanes_move_card` and the other `treelanes_*` tools. People use `alia treelanes`; `alia treelanes help` lists every command.
 
 ## Requirements
 
-- bb 0.43 or later, and Git.
+- VesnALIA 0.43 or later, and Git.
 - At least one agent harness, such as Claude Code or Codex. Agent work counts against that harness's account and usage limits.
 - The GitHub CLI (`gh`), signed in, for PR Watch.
 

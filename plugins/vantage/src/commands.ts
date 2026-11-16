@@ -1,4 +1,4 @@
-import type { PluginCommandRegistration } from "@get-bb/plugin-sdk/app";
+import type { PluginCommandRegistration } from "@vesnalia/plugin-sdk/app";
 
 export const PANEL_ACTION_ID = "changes";
 

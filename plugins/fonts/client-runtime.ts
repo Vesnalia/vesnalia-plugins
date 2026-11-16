@@ -2,11 +2,11 @@ import { CHANNEL_NAME, loadConfig, saveConfig } from "./client-store";
 import { TypographyController, type ResolvedRoles } from "./client-typography";
 import { compareConfigVersions, normalizeConfig, type FontsConfig } from "./domain";
 
-const PREVIEW_EVENT = "bb-fonts:preview";
-const REVERT_EVENT = "bb-fonts:revert";
-const SAVE_EVENT = "bb-fonts:save";
-const EXTERNAL_SAVE_EVENT = "bb-fonts:external-save";
-const THEME_EVENT = "bb-fonts:theme-change";
+const PREVIEW_EVENT = "alia-fonts:preview";
+const REVERT_EVENT = "alia-fonts:revert";
+const SAVE_EVENT = "alia-fonts:save";
+const EXTERNAL_SAVE_EVENT = "alia-fonts:external-save";
+const THEME_EVENT = "alia-fonts:theme-change";
 
 interface SavedMessage {
   kind: "saved";
@@ -90,7 +90,7 @@ export function startTypographyClient(signal: AbortSignal) {
     }
   };
   const onStorage = (event: StorageEvent) => {
-    if (event.storageArea !== localStorage || !event.key?.includes("bb-plugin-fonts:config")) return;
+    if (event.storageArea !== localStorage || !event.key?.includes("alia-plugin-fonts:config")) return;
     const next = loadConfig();
     if (compareConfigVersions(next, saved) <= 0) return;
     saved = next;

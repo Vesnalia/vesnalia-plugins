@@ -7,7 +7,7 @@ import {
   useSidebarThreadDraft,
   useSidebarThreadRowStatus,
   type PluginSidebarThreadIndicator,
-} from '@get-bb/plugin-sdk/app';
+} from '@vesnalia/plugin-sdk/app';
 import { useEffect, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import type { StatusTarget } from './switcher';

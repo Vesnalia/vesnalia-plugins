@@ -2,7 +2,7 @@
 
 Researched and implemented October 17, 2026.
 
-Breathe now offers **Lavender, Ocean, Sage, Rose, and Amber**. Lavender remains the default, preserving the familiar wave. These are five complete palettes: wave bands, halo, floating dot, shimmer, sparks, ripples, phase label, and settings accents. BB adapts them to the host's light or dark appearance; Claude's SVG and terminal rendering retain their existing dark scene backdrop.
+Breathe now offers **Lavender, Ocean, Sage, Rose, and Amber**. Lavender remains the default, preserving the familiar wave. These are five complete palettes: wave bands, halo, floating dot, shimmer, sparks, ripples, phase label, and settings accents. VesnALIA adapts them to the host's light or dark appearance; Claude's SVG and terminal rendering retain their existing dark scene backdrop.
 
 ## What the evidence supports
 
@@ -26,7 +26,7 @@ Radix's color system separates backgrounds, borders, solid fills, and text by pu
 
 The new ramps were balanced using OKLCH before conversion to ordinary sRGB hex values. A shared lightness structure makes switching color less likely to cause a conspicuous brightness jump. The W3C defines Oklab/OKLCH as perceptual color spaces; final appearance still needs visual inspection on the real surface. sRGB tokens also work in the shared software renderer and terminal output, avoiding a browser-only color dependency. [W3C CSS Color 4, Oklab and OKLCH](https://www.w3.org/TR/css-color-4/#ok-lab).
 
-W3C's use-of-color guidance requires visible alternatives when color conveys information. Each option therefore has a written name, a selected checkmark, and a native radio state in BB. Keyboard focus is visible. Claude offers named buttons with a checkmark on the current choice. Phase instructions remain written text. [WCAG use of color](https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html).
+W3C's use-of-color guidance requires visible alternatives when color conveys information. Each option therefore has a written name, a selected checkmark, and a native radio state in VesnALIA. Keyboard focus is visible. Claude offers named buttons with a checkmark on the current choice. Phase instructions remain written text. [WCAG use of color](https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html).
 
 The contrast checks target at least 4.5:1 for phase text and 3:1 for the crest on representative light and dark surfaces. These are focused checks, not a claim of complete WCAG conformance. The faint baseline, halo, and sparks are decorative; they do not carry unique instructions. Arbitrary custom host themes may produce different contrast. [WCAG text contrast](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html), [non-text contrast](https://www.w3.org/WAI/WCAG22/understanding/non-text-contrast.html).
 
@@ -46,6 +46,6 @@ Lavender keeps the existing brand recognizable. Ocean and Sage cover distinct co
 
 ## Behavior and verification
 
-Picking a color changes only the settings preview until Apply. Undo or closing discards the draft. Applying a palette preserves timing and enablement. The live wave repaints without restarting its breathing clock or clearing an active ripple. Existing settings without a palette load Lavender. Unknown persisted palette values also fall back to Lavender; the BB save boundary rejects invalid values.
+Picking a color changes only the settings preview until Apply. Undo or closing discards the draft. Applying a palette preserves timing and enablement. The live wave repaints without restarting its breathing clock or clearing an active ripple. Existing settings without a palette load Lavender. Unknown persisted palette values also fall back to Lavender; the VesnALIA save boundary rejects invalid values.
 
-The shared palette table is used by BB's Canvas renderer and Claude's SVG/terminal adapter. Automated checks cover migration, strict saves, persistence, draft isolation, concurrent settings updates, all five distinct outputs, Still mode, timing continuity, and contrast. Visual inspection covers the rendered wave and controls in both appearances and at narrow settings widths. See `color-validation.md` for the completed verification record and its limits.
+The shared palette table is used by VesnALIA's Canvas renderer and Claude's SVG/terminal adapter. Automated checks cover migration, strict saves, persistence, draft isolation, concurrent settings updates, all five distinct outputs, Still mode, timing continuity, and contrast. Visual inspection covers the rendered wave and controls in both appearances and at narrow settings widths. See `color-validation.md` for the completed verification record and its limits.

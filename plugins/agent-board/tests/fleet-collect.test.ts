@@ -2,7 +2,7 @@ import { afterEach, describe, it, expect, vi } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { BOARD_CHANGED_CHANNEL } from "../contract/rpc";
 import type {
@@ -60,7 +60,7 @@ async function setup(fleet: () => unknown) {
     },
   });
   hosts.push(h);
-  await plugin(h.bb);
+  await plugin(h.alia);
   return { ...h, rpc };
 }
 describe("Fleet through Agent Board RPCs", () => {
@@ -80,11 +80,11 @@ describe("Fleet through Agent Board RPCs", () => {
         {},
       )) as GlobalDashboardSnapshot;
       const timeline = (await h.harness.behavior.callRpc("execution_timeline", {
-        source: "bb",
+        source: "alia",
         threadId: "parent",
-        executionKey: "bb:parent",
+        executionKey: "alia:parent",
       })) as ExecutionTimeline;
-      expect(board.cards.some((c) => c.source === "bb")).toBe(true);
+      expect(board.cards.some((c) => c.source === "alia")).toBe(true);
       expect(global.counts.active).toBe(1);
       expect(timeline.events).toEqual([]);
     },
@@ -101,9 +101,9 @@ describe("Fleet through Agent Board RPCs", () => {
       {},
     )) as GlobalDashboardSnapshot;
     const timeline = (await h.harness.behavior.callRpc("execution_timeline", {
-      source: "bb",
+      source: "alia",
       threadId: "parent",
-      executionKey: "bb:parent",
+      executionKey: "alia:parent",
     })) as ExecutionTimeline;
     expect(board.cards.filter((c) => c.source === "ollama-fleet")).toHaveLength(
       2,
@@ -150,7 +150,7 @@ describe("Fleet through Agent Board RPCs", () => {
       ).toHaveLength(count);
     },
   );
-  it("orphan timeline target returns lifecycle without a BB parent", async () => {
+  it("orphan timeline target returns lifecycle without a VesnALIA parent", async () => {
     const h = await setup(() => wire([job({ origin: null })]));
     const t = (await h.harness.behavior.callRpc("execution_timeline", {
       source: "ollama-fleet",

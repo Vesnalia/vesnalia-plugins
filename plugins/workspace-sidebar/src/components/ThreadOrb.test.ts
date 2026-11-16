@@ -36,7 +36,7 @@ describe("agentOrb", () => {
     expect(agentOrb(status("some-future-kind"))).toBeNull();
   });
 
-  it("prefers bb's own accessible label", () => {
+  it("prefers VesnALIA's own accessible label", () => {
     expect(agentOrb(status("runtime", { indicatorLabel: "Thread working" }))?.label).toBe("Thread working");
     expect(agentOrb(status("runtime"))?.label).toBe("The agent is running");
   });

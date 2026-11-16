@@ -1,10 +1,10 @@
-import type { DeltaPresentation } from "@get-bb/plugin-sdk/provider-bridge";
+import type { DeltaPresentation } from "@vesnalia/plugin-sdk/provider-bridge";
 import { z } from "zod";
 
 export const MUSE_PLUGIN_ID = "provider-muse";
 export const MUSE_PROVIDER_ID = "muse";
 
-export const MUSE_EXECUTABLE_ENV = "BB_MUSE_EXECUTABLE";
+export const MUSE_EXECUTABLE_ENV = "ALIA_MUSE_EXECUTABLE";
 export const MUSE_HOME_ENV = "MUSE_HOME";
 
 export const MUSE_DEFAULT_EXECUTABLE = "muse";
@@ -45,13 +45,13 @@ export const MUSE_APPROVAL_ALLOW_ALL = "allowAll";
 export const MUSE_APPROVAL_ON_REQUEST = "onRequest";
 
 /**
- * bb states a permission policy, not an approval prompt count. `full` is full
- * access, and `auto` names bb — not the user — as the reviewer; in both, a
+ * VesnALIA states a permission policy, not an approval prompt count. `full` is full
+ * access, and `auto` names VesnALIA — not the user — as the reviewer; in both, a
  * prompt per command is the provider failing to honour the policy. Only
  * `accept-edits`, where the reviewer is the user, leaves Muse asking.
  *
  * Muse's sandbox is a separate constraint from its approval mode, so a
- * workspace-scoped session keeps the sandbox that bb's scope implies while
+ * workspace-scoped session keeps the sandbox that VesnALIA's scope implies while
  * Muse stops asking.
  *
  * Selecting the mode is not the same as getting it: `allowAll` governs the

@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { Environment } from "../src/collect";
 import type { Commit, FileChange, Overview, Repo, SharedFile, ThreadSummary, Worktree } from "../src/contract";
 

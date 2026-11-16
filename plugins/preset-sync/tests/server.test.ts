@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   experimental_scanPublicSdkOnly,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { backgroundIntervalMs, installPluginFromPreset } from "../lib/service";
 
@@ -58,8 +58,8 @@ function createHost() {
 
 describe("plugin registration", () => {
   it("registers the preset CLI and stages a secret-safe capture", async () => {
-    const { bb, harness } = createHost();
-    await plugin(bb);
+    const { alia, harness } = createHost();
+    await plugin(alia);
 
     expect(harness.inspection.registrations.cli?.name).toBe("preset");
     expect(harness.inspection.registrations.settingsDescriptors.githubToken).toEqual(
@@ -109,7 +109,7 @@ describe("plugin registration", () => {
       resolvedCommit: "abc123",
       resolvedTag: "v0.2.4",
     };
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "preset-sync",
       sdk: {
         plugins: {
@@ -121,10 +121,10 @@ describe("plugin registration", () => {
               kind: "marketplace",
               entryId,
               pluginId: entryId,
-              displayName: "BB Sidebar",
+              displayName: "VesnALIA Sidebar",
               source: `${entryId}@${marketplace}`,
-              marketplace: marketplace ?? "bb-community",
-              marketplaceDisplayName: "BB Community",
+              marketplace: marketplace ?? "alia-community",
+              marketplaceDisplayName: "VesnALIA Community",
               official: true,
               author: { name: "Test", url: null },
               compatible: true,
@@ -137,17 +137,17 @@ describe("plugin registration", () => {
       },
     });
 
-    await installPluginFromPreset(bb, "bb-sidebar@bb-community");
+    await installPluginFromPreset(alia, "alia-sidebar@alia-community");
 
     expect(harness.inspection.sdk.callsTo("plugins.install")).toEqual([]);
     expect(harness.inspection.sdk.callsTo("plugins.catalog.installPlan")[0]?.[0]).toEqual({
-      entryId: "bb-sidebar",
-      marketplace: "bb-community",
+      entryId: "alia-sidebar",
+      marketplace: "alia-community",
       signal: undefined,
     });
     expect(harness.inspection.sdk.callsTo("plugins.catalog.install")[0]?.[0]).toEqual({
-      entryId: "bb-sidebar",
-      marketplace: "bb-community",
+      entryId: "alia-sidebar",
+      marketplace: "alia-community",
       confirmedSource: resolvedSource,
     });
     await harness.lifecycle.dispose();
@@ -155,7 +155,7 @@ describe("plugin registration", () => {
 
   it("keeps direct Git sources on the direct install API", async () => {
     const source = "git:https://github.com/example/plugin.git@main";
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "preset-sync",
       sdk: {
         plugins: {
@@ -164,7 +164,7 @@ describe("plugin registration", () => {
       },
     });
 
-    await installPluginFromPreset(bb, source);
+    await installPluginFromPreset(alia, source);
 
     expect(harness.inspection.sdk.callsTo("plugins.install")[0]?.[0]).toEqual({
       source,
@@ -175,8 +175,8 @@ describe("plugin registration", () => {
   });
 
   it("explains how to configure a repository before remote operations", async () => {
-    const { bb, harness } = createHost();
-    await plugin(bb);
+    const { alia, harness } = createHost();
+    await plugin(alia);
 
     const result = await harness.behavior.runCli(["status"]);
     expect(result.exitCode).toBe(1);

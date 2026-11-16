@@ -3,21 +3,21 @@
 // and per environment its git status and pull request, read lazily. The
 // shapes the backend (project/environments.ts) answers with, which the
 // renderer and the markdown fallback both read, and the pure helpers they
-// share. Nothing here talks to BB.
+// share. Nothing here talks to VesnALIA.
 import type { PullRequestInfo, ThreadDisplayStatus } from "./project";
 
-/** BB environment ids: `env_` and lowercase letters and digits. */
+/** VesnALIA environment ids: `env_` and lowercase letters and digits. */
 export const ENVIRONMENT_ID = /^env_[a-z0-9]{4,40}$/;
 
 /** Threads per environment the list carries (newest first); the counts cover all of them. */
 export const THREADS_PER_ENVIRONMENT = 5;
 
-/** What kind of place the environment is, as BB's environment picker names them. */
+/** What kind of place the environment is, as VesnALIA's environment picker names them. */
 export type EnvironmentKind = "checkout" | "worktree" | "managed-worktree" | "personal" | "folder" | "other";
 
 /**
- * Where the environment is in its life. `creating`: BB is still making it;
- * `retiring`: BB will remove it (its threads are archived); `destroyed`: its
+ * Where the environment is in its life. `creating`: VesnALIA is still making it;
+ * `retiring`: VesnALIA will remove it (its threads are archived); `destroyed`: its
  * workspace is gone for good; `host-gone`: the machine it lived on was removed.
  */
 export type EnvironmentLife = "ready" | "creating" | "error" | "retiring" | "destroyed" | "host-gone";
@@ -43,7 +43,7 @@ export interface EnvironmentInfo {
   /** The environment provider's id (`project-checkout`, `git-worktree`, a plugin's), for kind "other". */
   readonly provider: string | null;
   readonly path: string | null;
-  /** The branch BB last saw checked out. */
+  /** The branch VesnALIA last saw checked out. */
   readonly branch: string | null;
   readonly defaultBranch: string | null;
   /** What ahead/behind is measured against: the environment's merge-base branch, else the default branch. */
@@ -57,7 +57,7 @@ export interface EnvironmentInfo {
   readonly threadCounts: { readonly total: number; readonly live: number; readonly running: number; readonly needsInput: number };
   /** Epoch ms of the newest thread activity; null without threads. */
   readonly activeAt: number | null;
-  /** Epoch ms BB last changed the environment's record (orders environments without threads). */
+  /** Epoch ms VesnALIA last changed the environment's record (orders environments without threads). */
   readonly updatedAt: number;
   /** Git status and pull request, when read with the list (the markdown fallback); null: ask project_environment. */
   readonly detail: EnvironmentDetail | null;
@@ -67,7 +67,7 @@ export interface EnvironmentsView {
   readonly ok: true;
   /** Newest activity first. */
   readonly environments: readonly EnvironmentInfo[];
-  /** BB had more threads than were read, so thread counts may be short. */
+  /** VesnALIA had more threads than were read, so thread counts may be short. */
   readonly threadsTruncated: boolean;
   readonly fetchedAt: number;
 }
@@ -78,7 +78,7 @@ export interface CheckoutFailure {
   /** `missing`: the workspace folder no longer exists; `gone`: the environment was destroyed. */
   readonly reason: "missing" | "gone" | "not-git" | "unavailable";
   readonly message: string;
-  /** The workspace folder BB looked for, when it is missing. */
+  /** The workspace folder VesnALIA looked for, when it is missing. */
   readonly path: string | null;
 }
 
@@ -93,7 +93,7 @@ export interface CheckoutStatus {
   readonly base: string;
   /** The checkout is on its base branch. */
   readonly onBase: boolean;
-  /** Null when BB found no merge base. */
+  /** Null when VesnALIA found no merge base. */
   readonly ahead: number | null;
   readonly behind: number | null;
   readonly uncommitted: {
@@ -119,7 +119,7 @@ export interface EnvironmentDetail {
   readonly fetchedAt: number;
 }
 
-/** BB's answer for one environment's detail, or why there is none (not in this project, bad id). */
+/** VesnALIA's answer for one environment's detail, or why there is none (not in this project, bad id). */
 export type EnvironmentDetailResult = EnvironmentDetail | { readonly ok: false; readonly reason: "not-found" | "invalid" | "unavailable"; readonly message: string };
 
 // ── Shared wording and ordering ─────────────────────────────────────────────

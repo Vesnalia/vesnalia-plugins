@@ -5,7 +5,7 @@ import { Store } from "../src/db/store.ts";
 import { createHash, randomBytes } from "node:crypto";
 import type { BundleInfo, DiffSummary, ExecInput, ExecResult, HealthReport, JobInput, PrepareInput, PrepareResult, SnapshotInput, SnapshotResult } from "../src/host/contract.ts";
 import { HostJobLostError, LocalHostRunner, RunAbortedError, type HostRunner, type RunOptions } from "../src/host/runner.ts";
-import type { BbPort, EnvironmentInfo, HostInfo, ProviderUsage, SpawnWorkerArgs, ThreadActivityItem, ThreadInfo } from "../src/ports.ts";
+import type { AliaPort, EnvironmentInfo, HostInfo, ProviderUsage, SpawnWorkerArgs, ThreadActivityItem, ThreadInfo } from "../src/ports.ts";
 import { seededRng } from "../src/stats.ts";
 
 export function makeDb(): Database.Database {
@@ -450,7 +450,7 @@ export interface FakeThread extends ThreadInfo {
   metadata: Record<string, unknown>;
 }
 
-export class FakePort implements BbPort {
+export class FakePort implements AliaPort {
   threads = new Map<string, FakeThread>();
   envs = new Map<string, EnvironmentInfo>();
   /** Sent messages; `text` is the whole message, `summary` the human-visible part, `agentOnly` the agent-only block. */
@@ -478,7 +478,7 @@ export class FakePort implements BbPort {
     this.hosts.set(runner.hostId, runner);
     this.hostNames.set(runner.hostId, name);
   }
-  /** Other plugins' rpc handlers by plugin id (bench providers), called like bb.sdk.plugins.callRpc. */
+  /** Other plugins' rpc handlers by plugin id (bench providers), called like alia.sdk.plugins.callRpc. */
   plugins = new Map<string, (method: string, input: unknown) => Promise<unknown>>();
   async callPlugin(pluginId: string, method: string, input: unknown, outputSchema: import("zod").ZodType) {
     const p = this.plugins.get(pluginId);
@@ -513,7 +513,7 @@ export class FakePort implements BbPort {
     const env = `env_w${this.n}`;
     this.spawned.push(args);
     this.threads.set(id, { id, status: "active", archivedAt: null, deletedAt: null, environmentId: env, metadata: { ...args.metadata } });
-    this.envs.set(env, { id: env, hostId: this.hostId, path: `/wt/${id}`, branchName: `bb/${id}` });
+    this.envs.set(env, { id: env, hostId: this.hostId, path: `/wt/${id}`, branchName: `alia/${id}` });
     return { threadId: id, environmentId: this.spawnWithoutEnvironment ? null : env };
   }
   async send(threadId: string, text: string | { summary: string; detail: string }) {
@@ -588,7 +588,7 @@ export class FakePort implements BbPort {
     return this.usage;
   }
   pluginId() {
-    return "bb-autoresearch";
+    return "alia-autoresearch";
   }
   appUrl() {
     return null;
@@ -614,7 +614,7 @@ export class FakePort implements BbPort {
 export function makeCtx(host: HostRunner = new FakeHost(), clock = new Clock()): { ctx: Ctx; store: Store; port: FakePort; clock: Clock } {
   const store = new Store(makeDb(), clock.now);
   const port = new FakePort(host);
-  const ctx: Ctx = { store, bb: port, now: clock.now, rng: seededRng(42), benchLock: new HostMutex(), config: { workerCeiling: 64, tickMs: 1000, retryDelayMs: 0, finishingTimeoutMs: 3 * 60_000, hostStatusTtlMs: 0, harvestPollMs: 5, adhocHealthTries: 2, adhocHostWaitMs: 5_000, usagePollMs: 0, tokenPollMs: 0, liveDwellMs: 0 } };
+  const ctx: Ctx = { store, alia: port, now: clock.now, rng: seededRng(42), benchLock: new HostMutex(), config: { workerCeiling: 64, tickMs: 1000, retryDelayMs: 0, finishingTimeoutMs: 3 * 60_000, hostStatusTtlMs: 0, harvestPollMs: 5, adhocHealthTries: 2, adhocHostWaitMs: 5_000, usagePollMs: 0, tokenPollMs: 0, liveDwellMs: 0 } };
   return { ctx, store, port, clock };
 }
 

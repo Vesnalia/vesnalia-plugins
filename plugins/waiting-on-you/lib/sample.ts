@@ -3,7 +3,7 @@
 import type {
   PluginSidebarThread,
   PluginSidebarThreadIndicator,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { InboxView } from "@/lib/inbox";
 
 export const SAMPLE_PROJECTS: ReadonlyMap<string, string> = new Map([

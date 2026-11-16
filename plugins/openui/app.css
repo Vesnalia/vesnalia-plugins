@@ -1,4 +1,4 @@
-/* OpenUI's chat app draws the reply bubble around its UI; BB doesn't, so the fence draws a card like BB's own. */
+/* OpenUI's chat app draws the reply bubble around its UI; ALIA doesn't, so the fence draws a card like ALIA's own. */
 .openui-fence {
   margin: 0.75rem 0;
   padding: 14px 16px;
@@ -19,8 +19,8 @@
 @keyframes openui-pulse { 50% { opacity: 0.5; } }
 @media (prefers-reduced-motion: reduce) { .openui-diagram-pending { animation: none; } }
 
-/* Diagram: BB draws it as a code block (bordered box, "MERMAID" label) that looks pasted into the card.
-   shortcut: these selectors follow BB 0.49's Tailwind classes on its Mermaid block; re-check if BB restyles it. */
+/* Diagram: ALIA draws it as a code block (bordered box, "MERMAID" label) that looks pasted into the card.
+   shortcut: these selectors follow ALIA 0.49's Tailwind classes on its Mermaid block; re-check if ALIA restyles it. */
 .openui-diagram [class~="bg-surface-recessed"] {
   position: relative;
   margin: 0;
@@ -46,7 +46,7 @@
 /* Tall diagrams stay readable inline; the expand button shows them full size. */
 .openui-diagram [role="img"] svg { max-height: 480px; }
 
-/* Softer strokes: BB colours edges with --primary, which outweighs the faint node borders.
+/* Softer strokes: ALIA colours edges with --primary, which outweighs the faint node borders.
    !important because Mermaid's own <style> uses #id selectors. */
 .openui-diagram svg .flowchart-link,
 .openui-diagram svg .relation,

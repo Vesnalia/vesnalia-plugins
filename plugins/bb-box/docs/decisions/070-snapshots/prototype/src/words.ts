@@ -80,9 +80,9 @@ export function byWords(by: Actor, threads: readonly FakeThread[], withThread: b
     case "agent":
       return withThread ? `by the agent in ${threadTitle(threads, by.threadId)}` : "by the agent";
     case "command":
-      return "by a bb box command";
-    case "bb-box":
-      return `by bb-box: ${by.why}`;
+      return "by a VesnALIA box command";
+    case "alia-box":
+      return `by alia-box: ${by.why}`;
     case "form":
       return `on a yes given in ${threadTitle(threads, by.threadId)}`;
   }

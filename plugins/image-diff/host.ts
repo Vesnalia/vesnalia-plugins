@@ -1,6 +1,6 @@
 // Runs on the environment's host: turns a Git LFS object id into the object bytes.
 import { execFile } from "node:child_process";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostContract } from "./contract";
 import { isLfsPointer, pointerText } from "./lfs";
 

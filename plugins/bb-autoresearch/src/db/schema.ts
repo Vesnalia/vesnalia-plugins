@@ -425,8 +425,8 @@ export const MIGRATIONS: string[] = [
   // ---- v0.2.1 ----
   /**
    * The worker row (threads.id) that submitted the candidate: the live view and
-   * replay link lanes to candidates through it (a worker row may have no BB
-   * thread id). Backfilled from the BB thread id, then from the worker.phase
+   * replay link lanes to candidates through it (a worker row may have no VesnALIA
+   * thread id). Backfilled from the VesnALIA thread id, then from the worker.phase
    * events, which record each worker's latest candidate.
    */
   `ALTER TABLE candidates ADD COLUMN worker_id INTEGER`,
@@ -523,8 +523,8 @@ export const MIGRATIONS: string[] = [
   `ALTER TABLE candidates ADD COLUMN commit_title TEXT`,
   `ALTER TABLE candidates ADD COLUMN commit_body TEXT`,
   /**
-   * Measurements and gates an agent or the human asked for (`bb study
-   * measure`, `bb study gate`): the trust boundary's primitives for agent-run
+   * Measurements and gates an agent or the human asked for (`alia study
+   * measure`, `alia study gate`): the trust boundary's primitives for agent-run
    * harvests. Same bench hosts, lock and budget as candidates.
    */
   `CREATE TABLE adhoc_runs (

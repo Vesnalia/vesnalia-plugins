@@ -1,6 +1,6 @@
 // components/dialogs/FileViewerDialog.tsx — the built-in viewer (§8.12).
 //
-// bb's shared preview panel is the nicer surface and stays the first choice,
+// VesnALIA's shared preview panel is the nicer surface and stays the first choice,
 // but it does not exist everywhere: `experimental_openFilePreview` is wired up
 // by the thread split view and by the right-hand panel host, and by nothing
 // else. In the sidebar's own full-page File Manager the host answers `false`
@@ -18,8 +18,8 @@
 //     is what turns "unknown extension" into either a source view or an
 //     honest "no preview", never a wall of mojibake.
 //
-// Markdown renders through bb's own `Markdown`, and every other text through
-// bb's `experimental_SourceCode`, so a file looks here exactly like it looks
+// Markdown renders through VesnALIA's own `Markdown`, and every other text through
+// VesnALIA's `experimental_SourceCode`, so a file looks here exactly like it looks
 // in a thread — same theme, same highlighting, one implementation.
 //
 // An archive is the third case (§8.13): neither a URL nor a string, but its
@@ -27,7 +27,7 @@
 // `listArchive`. Its "Extract…" hands the entry back to the panel, which
 // swaps this dialog for its own ExtractDialog.
 import { useEffect, useState } from "react";
-import { Markdown, experimental_SourceCode as SourceCode } from "@get-bb/plugin-sdk/app";
+import { Markdown, experimental_SourceCode as SourceCode } from "@vesnalia/plugin-sdk/app";
 
 import type { FileEntry } from "../../contract";
 import { downloadEntry } from "../../lib/download";
@@ -107,7 +107,7 @@ function Placeholder({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Text, once it has arrived. Markdown gets bb's document renderer with the
+ * Text, once it has arrived. Markdown gets VesnALIA's document renderer with the
  * source one click away — a README is written to be read, but a file manager
  * is also where people come to check what a file literally says.
  */
@@ -214,7 +214,7 @@ export function FileViewerDialog({ open, onOpenChange, entry, onExtract }: FileV
       </div>
     );
   } else if (kind === "pdf" && url !== null) {
-    // A PDF is the one kind bb's transport serves that the browser renders in
+    // A PDF is the one kind VesnALIA's transport serves that the browser renders in
     // a frame of its own, complete with its own page controls.
     body = (
       <iframe
@@ -277,7 +277,7 @@ export function FileViewerDialog({ open, onOpenChange, entry, onExtract }: FileV
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         data-testid="fm-viewer"
-        // Wide and tall on purpose: this is the surface that replaces bb's
+        // Wide and tall on purpose: this is the surface that replaces VesnALIA's
         // preview panel, and a file read through a letterbox is not read.
         className="flex h-[85vh] max-h-[85vh] w-[min(72rem,95vw)] max-w-[min(72rem,95vw)] flex-col gap-0 overflow-hidden p-0"
       >

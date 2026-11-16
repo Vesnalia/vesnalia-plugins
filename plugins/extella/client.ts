@@ -1,4 +1,4 @@
-// Thin client for the Extella REST API. No bb imports, so it can be tested with plain node.
+// Thin client for the Extella REST API. No VesnALIA imports, so it can be tested with plain node.
 
 export interface ExtellaConfig {
   apiKey: string;
@@ -30,7 +30,7 @@ export class ExtellaClient {
     this.config = config;
     if (!config.apiKey) {
       throw new ExtellaError(
-        "Extella API key is not set. Open bb settings → Plugins → Extella and paste a key from extella.ai.",
+        "Extella API key is not set. Open VesnALIA settings → Plugins → Extella and paste a key from extella.ai.",
       );
     }
     if (!config.agentId) {

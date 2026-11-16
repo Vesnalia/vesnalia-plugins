@@ -13,7 +13,7 @@
  *
  * **Export to repo…** toggles `exportOpen`, which renders the export dialog under the buttons.
  */
-import { experimental_useAppPanel, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_useAppPanel, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -27,7 +27,7 @@ import { ORIENTATION_TAB_ID } from "./orientation-ids";
 import { verifyMessage } from "./orientation-tab";
 import { Section, useAct } from "./tab";
 
-const PERMISSION_LINE = "A background agent reads this project for a few minutes in this checkout. bb gives it permission to read and edit files; it is told not to edit anything.";
+const PERMISSION_LINE = "A background agent reads this project for a few minutes in this checkout. VesnALIA gives it permission to read and edit files; it is told not to edit anything.";
 
 type OrientationState = NonNullable<ReturnType<typeof useOrientation>["data"]>;
 
@@ -100,7 +100,7 @@ function SummaryView(props: { summary: OrientationSummary; environmentId: string
 function ReadyBlock(props: { threadId: string; orientation: Orientation; building: boolean; startable: boolean }) {
   const { threadId, orientation } = props;
   const rpc = useLearningRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const panel = experimental_useAppPanel();
   const { busy, act } = useAct();
   const [confirming, setConfirming] = useState(false);

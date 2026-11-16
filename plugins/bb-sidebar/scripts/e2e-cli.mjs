@@ -1,4 +1,4 @@
-// Drives `bb sidebar` against the scratch server from scripts/e2e/server.mjs.
+// Drives `alia sidebar` against the scratch server from scripts/e2e/server.mjs.
 // The transcript of every command is kept in e2e-artifacts/cli-transcript.log.
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -9,16 +9,16 @@ const transcript = [];
 const server = await startScratchServer();
 
 async function sidebar(argv, threadId) {
-  const env = threadId ? { ...server.env, BB_THREAD_ID: threadId } : server.env;
+  const env = threadId ? { ...server.env, ALIA_THREAD_ID: threadId } : server.env;
   const result = await server.cli(["sidebar", ...argv], { allowFailure: true, env });
   transcript.push(
-    `$ ${threadId ? `BB_THREAD_ID=${threadId} ` : ""}bb sidebar ${argv.join(" ")}  [exit ${result.code}]`,
+    `$ ${threadId ? `ALIA_THREAD_ID=${threadId} ` : ""}VesnALIA sidebar ${argv.join(" ")}  [exit ${result.code}]`,
   );
   transcript.push((result.stdout + result.stderr).trimEnd());
   return result;
 }
 async function rows() {
-  const response = await fetch(`${server.url}/api/v1/plugins/bb-sidebar/rpc/listLifecycle`, {
+  const response = await fetch(`${server.url}/api/v1/plugins/alia-sidebar/rpc/listLifecycle`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: "{}",

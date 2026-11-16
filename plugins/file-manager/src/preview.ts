@@ -8,8 +8,8 @@
 //     download route is the wrong tool for those: it is
 //     `application/octet-stream` with `no-store` and `Content-Disposition`,
 //     deliberately, so an <img src> on it would fight the very headers that
-//     make a download a download. bb already has the right primitive —
-//     `bb.sdk.files.createPreview` mints a short-lived URL rooted at one
+//     make a download a download. VesnALIA already has the right primitive —
+//     `alia.sdk.files.createPreview` mints a short-lived URL rooted at one
 //     folder — so this is only the §6 path clamp in front of it and one stable
 //     error code behind it.
 //   * `readTextFile` (§8.12) — everything the viewer renders as text. Capped,
@@ -18,7 +18,7 @@
 //     still have to open.
 import { open, stat } from "node:fs/promises";
 import type { Stats } from "node:fs";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import { MAX_TEXT_PREVIEW_BYTES, PREVIEW_TTL_MS } from "../contract";
 import { fmError, mapNodeError } from "./errors";
@@ -35,7 +35,7 @@ export interface CreatePreviewUrlOutput {
 }
 
 export async function createPreviewUrl(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   input: CreatePreviewUrlInput,
 ): Promise<CreatePreviewUrlOutput> {
   // The clamp comes first and is the ordinary one: whatever the URL can reach
@@ -46,15 +46,15 @@ export async function createPreviewUrl(
   let preview: { baseUrl: string; expiresAtMs: number };
   try {
     // No `hostId`: the root of this plugin is the home folder of the user
-    // running bb, so the files are on bb's own machine — which is what the
+    // running VesnALIA, so the files are on VesnALIA's own machine — which is what the
     // files area addresses when no host is named.
-    preview = await bb.sdk.files.createPreview({ rootPath: dir, ttlMs: PREVIEW_TTL_MS });
+    preview = await alia.sdk.files.createPreview({ rootPath: dir, ttlMs: PREVIEW_TTL_MS });
   } catch (error) {
     // A server too old to mint preview URLs, or one that refused this folder,
     // must not read as a broken plugin: thumbnails are decoration, and the
     // panel falls back to type icons on any rejection. One stable code keeps
     // that branch from string-matching whatever the host happened to say.
-    bb.log.warn(`could not create a preview URL for ${dir}: ${String(error)}`);
+    alia.log.warn(`could not create a preview URL for ${dir}: ${String(error)}`);
     throw fmError("unsupported", "previews are not available on this server");
   }
 

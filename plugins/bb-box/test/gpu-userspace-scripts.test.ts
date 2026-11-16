@@ -44,8 +44,8 @@ function fakeRoot(options: { driver?: string | null; os?: string | null; image?:
   };
   if (options.driver !== null) file("sys/module/nvidia/version", `${options.driver ?? "580.142"}\n`);
   if (options.os !== null) file("etc/os-release", options.os ?? 'NAME="Ubuntu"\nID=ubuntu\nVERSION_ID="24.04"\n');
-  if (options.image !== false) file("usr/share/bb-box/image.json", "{}\n");
-  if (options.desktop) file("etc/bb-box/desktop.env", options.desktop);
+  if (options.image !== false) file("usr/share/alia-box/image.json", "{}\n");
+  if (options.desktop) file("etc/alia-box/desktop.env", options.desktop);
   mkdirSync(join(root, "run"), { recursive: true });
   return root;
 }
@@ -59,7 +59,7 @@ function fakeDpkg(listing: string): string {
 
 function run(root: string, args: readonly string[], env: Record<string, string> = {}, bin: string | null = null) {
   const path = bin ? `${bin}:${process.env.PATH}` : process.env.PATH!;
-  const result = spawnSync("bash", [SCRIPT, ...args], { env: { ...process.env, ...env, BB_BOX_ROOT: root, PATH: path }, encoding: "utf8" });
+  const result = spawnSync("bash", [SCRIPT, ...args], { env: { ...process.env, ...env, ALIA_BOX_ROOT: root, PATH: path }, encoding: "utf8" });
   return { status: result.status, out: result.stdout, err: result.stderr.trim() };
 }
 
@@ -71,13 +71,13 @@ function mirror(driver: string, body = "a fake NVIDIA installer\n", sha?: string
   return `file://${base}`;
 }
 
-test("071 unit 12: the update script's check reads the box's architecture, system, BB Box's image, free space, the driver it sees and NVIDIA packages from apt, and BB Box judges it", () => {
+test("071 unit 12: the update script's check reads the box's architecture, system, VesnALIA Box's image, free space, the driver it sees and NVIDIA packages from apt, and VesnALIA Box judges it", () => {
   const root = fakeRoot();
   const clean = run(root, ["check"], {}, fakeDpkg("libnvidia-egl-wayland1 deinstall ok config-files\n"));
   assert.equal(clean.status, 0, clean.err);
   const lines = clean.out.trim().split("\n");
   assert.equal(lines.at(-1), "check done");
-  for (const line of ["os ubuntu 24.04", "image bb-box", "kernel-driver 580.142", "apt none"]) assert.ok(lines.includes(line), `${line} in ${clean.out}`);
+  for (const line of ["os ubuntu 24.04", "image alia-box", "kernel-driver 580.142", "apt none"]) assert.ok(lines.includes(line), `${line} in ${clean.out}`);
   assert.match(clean.out, /^free-mib \d+$/m);
   assert.match(clean.out, /^arch \S+$/m);
 
@@ -101,7 +101,7 @@ test("071 unit 12: the update script's check reads the box's architecture, syste
   assert.match(unreadable.out, /^apt unreadable$/m);
   assert.deepEqual(judgeUpdateCheck(unreadable.out.replace(/^arch .*$/m, "arch x86_64").replace(/^free-mib .*$/m, "free-mib 9000"), "580.142"), {
     ok: false,
-    why: "did not let BB Box list its packages from apt, so BB Box cannot tell whether NVIDIA's installer would conflict with them",
+    why: "did not let VesnALIA Box list its packages from apt, so VesnALIA Box cannot tell whether NVIDIA's installer would conflict with them",
   });
 
   const other = run(fakeRoot({ os: 'ID=debian\nVERSION_ID="12"\n', image: false, driver: null }), ["check"], {}, fakeDpkg(""));
@@ -148,12 +148,12 @@ test("071 unit 12: the update script installs with nvidia-userspace.sh, sets a d
   const done = run(desktop, ["install", dir]);
   assert.equal(done.status, 0, done.err);
   assert.equal(done.out, "display-mode auto\ninstalled 580.142\n");
-  assert.equal(readFileSync(join(desktop, "etc/bb-box/desktop.env"), "utf8"), "VNC_AUTH=password\nDISPLAY_MODE=auto\n");
+  assert.equal(readFileSync(join(desktop, "etc/alia-box/desktop.env"), "utf8"), "VNC_AUTH=password\nDISPLAY_MODE=auto\n");
   assert.equal(existsSync(dir), false, "the installer and its files are removed once installed");
 
   const server = fakeRoot();
   assert.equal(run(server, ["install", install(0)]).out, "installed 580.142\n");
-  assert.equal(existsSync(join(server, "etc/bb-box/desktop.env")), false);
+  assert.equal(existsSync(join(server, "etc/alia-box/desktop.env")), false);
 
   const failing = install(3);
   const failed = run(desktop, ["install", failing]);
@@ -161,17 +161,17 @@ test("071 unit 12: the update script installs with nvidia-userspace.sh, sets a d
   assert.equal(existsSync(failing), true, "kept for Update again");
   const unchanged = fakeRoot({ desktop: "DISPLAY_MODE=cpu\n" });
   run(unchanged, ["install", install(3)]);
-  assert.equal(readFileSync(join(unchanged, "etc/bb-box/desktop.env"), "utf8"), "DISPLAY_MODE=cpu\n");
+  assert.equal(readFileSync(join(unchanged, "etc/alia-box/desktop.env"), "utf8"), "DISPLAY_MODE=cpu\n");
 });
 
-test("071 unit 12: BB Box puts the update script and the installer's two scripts in the box as they are in setup/", () => {
+test("071 unit 12: VesnALIA Box puts the update script and the installer's two scripts in the box as they are in setup/", () => {
   const into = tempDir("nvidia-update-into");
   const command = updateFilesCommand(SETUP).replaceAll(UPDATE_DIR, into);
   const result = spawnSync("bash", ["-c", command], { encoding: "utf8" });
   assert.equal(result.status, 0, result.stderr);
   assert.equal(readFileSync(join(into, "nvidia-userspace-update.sh"), "utf8"), readFileSync(SCRIPT, "utf8"));
   assert.equal(readFileSync(join(into, "guest", "nvidia-userspace.sh"), "utf8"), readFileSync(join(GUEST, "nvidia-userspace.sh"), "utf8"));
-  assert.equal(readFileSync(join(into, "guest", "bb-box-nvidia-drivers.sh"), "utf8"), readFileSync(join(GUEST, "bb-box-nvidia-drivers.sh"), "utf8"));
+  assert.equal(readFileSync(join(into, "guest", "alia-box-nvidia-drivers.sh"), "utf8"), readFileSync(join(GUEST, "alia-box-nvidia-drivers.sh"), "utf8"));
   assert.ok(fetchCommand("580.142", SETUP).includes(readFileSync(SCRIPT).toString("base64")), "they go in with the download, the first step that changes the box");
   assert.equal(updateScriptText(SETUP), readFileSync(SCRIPT, "utf8"));
 });
@@ -187,10 +187,10 @@ test("071 unit 12: a reading of the version file and libnvidia-ml's version, whi
   assert.equal(judgeReading("file 570.86\nlibrary none\n", null, 5), null, "a reading that did not finish is none");
 });
 
-test("071 unit 12: BB Box's check of a box refuses, before anything changes, another architecture, another image, too little space, another driver, and a check it could not run as root", () => {
+test("071 unit 12: VesnALIA Box's check of a box refuses, before anything changes, another architecture, another image, too little space, another driver, and a check it could not run as root", () => {
   const check = (changes: Record<string, string>) =>
     judgeUpdateCheck(
-      Object.entries({ arch: "x86_64", os: "ubuntu 24.04", image: "bb-box", "free-mib": "9000", "kernel-driver": "580.142", apt: "none", ...changes })
+      Object.entries({ arch: "x86_64", os: "ubuntu 24.04", image: "alia-box", "free-mib": "9000", "kernel-driver": "580.142", apt: "none", ...changes })
         .map(([key, value]) => `${key} ${value}`)
         .concat("check done")
         .join("\n"),
@@ -199,22 +199,22 @@ test("071 unit 12: BB Box's check of a box refuses, before anything changes, ano
   assert.deepEqual(check({}), { ok: true, processes: [] });
   assert.deepEqual(check({ arch: "aarch64" }), { ok: false, why: "runs on aarch64, and NVIDIA's userspace is for x86_64 boxes only" });
   for (const changes of [{ os: "debian 12" }, { image: "other" }] as Record<string, string>[]) {
-    assert.deepEqual(check(changes), { ok: false, why: "is not on BB Box's own Linux image (Ubuntu 24.04 on x86_64), where BB Box knows NVIDIA's installer works" });
+    assert.deepEqual(check(changes), { ok: false, why: "is not on VesnALIA Box's own Linux image (Ubuntu 24.04 on x86_64), where VesnALIA Box knows NVIDIA's installer works" });
   }
   assert.deepEqual(check({ "free-mib": "900" }), { ok: false, why: "has 900 MiB free in /var/tmp, and NVIDIA's installer and its files need 2 GiB" });
   assert.deepEqual(check({ "kernel-driver": "570.86" }), { ok: false, why: "sees the host's NVIDIA driver as 570.86, not 580.142 as the host reports it" });
-  assert.deepEqual(judgeUpdateCheck("sudo: a password is required\n", "580.142"), { ok: false, why: "lets BB Box run nothing as root (sudo: a password is required)" });
-  assert.deepEqual(judgeUpdateCheck("arch x86_64\n", "580.142"), { ok: false, why: "did not finish BB Box's check", transient: true });
-  const busy = judgeUpdateCheck("arch x86_64\nos ubuntu 24.04\nimage bb-box\nfree-mib 9000\nkernel-driver 580.142\napt none\ngpu-process 3310 python3\ngpu-process 812 Xorg\ncheck done\n", "580.142");
+  assert.deepEqual(judgeUpdateCheck("sudo: a password is required\n", "580.142"), { ok: false, why: "lets VesnALIA Box run nothing as root (sudo: a password is required)" });
+  assert.deepEqual(judgeUpdateCheck("arch x86_64\n", "580.142"), { ok: false, why: "did not finish VesnALIA Box's check", transient: true });
+  const busy = judgeUpdateCheck("arch x86_64\nos ubuntu 24.04\nimage alia-box\nfree-mib 9000\nkernel-driver 580.142\napt none\ngpu-process 3310 python3\ngpu-process 812 Xorg\ncheck done\n", "580.142");
   assert.deepEqual(busy, { ok: true, processes: [{ pid: 3310, name: "python3" }, { pid: 812, name: "Xorg" }] });
 });
 
 test("071 unit 12: what an update says first names the versions and the programs that have the GPU open", () => {
   const processes = [3310, 3311, 3312, 3313, 3314].map((pid) => ({ pid, name: "python3" }));
-  assert.equal(planWords("lone-pine", reading("none", "none"), "580.142", []), "BB Box installs NVIDIA's userspace 580.142 in lone-pine, where it has none, then restarts it. Everything running in it stops.");
+  assert.equal(planWords("lone-pine", reading("none", "none"), "580.142", []), "VesnALIA Box installs NVIDIA's userspace 580.142 in lone-pine, where it has none, then restarts it. Everything running in it stops.");
   assert.equal(
     planWords("lone-pine", reading("570.86", "none"), "580.142", processes),
-    "BB Box installs NVIDIA's userspace 580.142 in lone-pine, over its half-installed userspace (libraries none, version file 570.86), then restarts it. Everything running in it stops: python3 (3310), python3 (3311), python3 (3312) and python3 (3313), and 1 more have the GPU open.",
+    "VesnALIA Box installs NVIDIA's userspace 580.142 in lone-pine, over its half-installed userspace (libraries none, version file 570.86), then restarts it. Everything running in it stops: python3 (3310), python3 (3311), python3 (3312) and python3 (3313), and 1 more have the GPU open.",
   );
 });
 
@@ -243,7 +243,7 @@ test("071 unit 12: an update cut short is settled by the next reading: failed, a
   assert.deepEqual(settledUpdate(update("unknown", "install"), reading("580.142", "580.142")).userspaceUpdate && { state: "failed", step: "restart" }, { state: "failed", step: "restart" });
   const half = settledUpdate(update("unknown", "install"), reading("570.86", "none")).userspaceUpdate!;
   assert.equal(half.step, "install");
-  assert.equal(half.error, "cut When BB Box read the box again, it had a half-installed NVIDIA userspace: no NVIDIA libraries and a version file that says 570.86.");
+  assert.equal(half.error, "cut When VesnALIA Box read the box again, it had a half-installed NVIDIA userspace: no NVIDIA libraries and a version file that says 570.86.");
 });
 
 test("071 unit 12: the checks after an update's restart: a card listed with CUDA working, and a desktop drawing and encoding on the GPU", () => {
@@ -258,14 +258,14 @@ test("071 unit 12: the checks after an update's restart: a card listed with CUDA
     );
   assert.equal(desktop({}), null);
   assert.equal(desktop({ "display-mode": "cpu", "display-reason": "host NVIDIA driver '580.142' does not match the template's '570.86'" }), "its desktop came up on the CPU (host NVIDIA driver '580.142' does not match the template's '570.86')");
-  assert.equal(desktop({ video: '{"frames":0}' }), 'its desktop\'s video sent no frames 30 s after its start: Selkies answered on 127.0.0.1:5980, but its stream sent BB Box\'s probe no video ({"frames":0})');
+  assert.equal(desktop({ video: '{"frames":0}' }), 'its desktop\'s video sent no frames 30 s after its start: Selkies answered on 127.0.0.1:5980, but its stream sent VesnALIA Box\'s probe no video ({"frames":0})');
   assert.equal(desktop({ nvenc: "no" }), "its desktop's video is not encoded with NVENC");
   assert.equal(judgeDesktopCheck("display-mode gpu\n"), "the desktop's check did not finish");
   assert.equal(desktop({ "display-mode": "none" }), "its display had not started 30 s after its start");
   assert.equal(desktop({ "selkies-http": "000" }), "its desktop's video was not ready 30 s after its start: Selkies on 127.0.0.1:5980 did not answer");
   assert.equal(desktop({ "selkies-http": "502" }), "its desktop's video was not ready 30 s after its start: Selkies on 127.0.0.1:5980 answered HTTP 502");
-  assert.equal(desktop({ "nvenc-sessions": "1 1" }), "its desktop's video is not encoded with NVENC: its card's encoder sessions did not rise while BB Box's probe watched it (1 before, 1 during)");
-  assert.equal(desktop({ "nvenc-sessions": "none none" }), "BB Box could not read its card's encoder sessions in the box, so it cannot tell that its video is encoded with NVENC");
+  assert.equal(desktop({ "nvenc-sessions": "1 1" }), "its desktop's video is not encoded with NVENC: its card's encoder sessions did not rise while VesnALIA Box's probe watched it (1 before, 1 during)");
+  assert.equal(desktop({ "nvenc-sessions": "none none" }), "VesnALIA Box could not read its card's encoder sessions in the box, so it cannot tell that its video is encoded with NVENC");
 });
 
 function desktopBin(curlAnswersFrom: number | null, framesFrom: number | null = 2, curlHangs = false): { readonly bin: string; readonly pgrepArgs: string } {
@@ -285,7 +285,7 @@ function desktopBin(curlAnswersFrom: number | null, framesFrom: number | null = 
 
 function desktopCheck(root: string, bin: string, waitS: number): Promise<string> {
   return new Promise((resolve, reject) => {
-    const child = spawn("bash", ["-c", DESKTOP_GPU_CHECK], { env: { ...process.env, BB_BOX_ROOT: root, BB_BOX_READY_WAIT_S: String(waitS), PATH: `${bin}:${process.env.PATH}` } });
+    const child = spawn("bash", ["-c", DESKTOP_GPU_CHECK], { env: { ...process.env, ALIA_BOX_ROOT: root, ALIA_BOX_READY_WAIT_S: String(waitS), PATH: `${bin}:${process.env.PATH}` } });
     let out = "";
     child.stdout.on("data", (chunk: Buffer) => (out += chunk.toString()));
     child.on("error", reject);
@@ -295,11 +295,11 @@ function desktopCheck(root: string, bin: string, waitS: number): Promise<string>
 
 test("071 unit 10, the gate's finding: the desktop's check after a restart waits, up to its bound, for the display and for Selkies to answer, then judges its video; and it reads NVENC only in Selkies' own process", async () => {
   const root = tempDir("desktop-check-root");
-  mkdirSync(join(root, "run", "bb-box"), { recursive: true });
+  mkdirSync(join(root, "run", "alia-box"), { recursive: true });
   const late = desktopBin(2);
   const checking = desktopCheck(root, late.bin, 20);
   await new Promise((resolve) => setTimeout(resolve, 2500));
-  writeFileSync(join(root, "run", "bb-box", "display-mode"), "gpu\n");
+  writeFileSync(join(root, "run", "alia-box", "display-mode"), "gpu\n");
   const out = await checking;
   assert.match(out, /^display-mode gpu$/m, "it waited for the display to start");
   assert.match(out, /^selkies-http 200$/m, "and for Selkies, which answered on its second try");
@@ -318,13 +318,13 @@ test("071 unit 10, the gate's finding: the desktop's check after a restart waits
 
 test("071 unit 10, Astra on a674ddea: the desktop's check keeps within its bound: each try of Selkies and each probe is cut to the time left, so a stream that never flows is judged on time", async () => {
   const root = tempDir("desktop-check-bound");
-  mkdirSync(join(root, "run", "bb-box"), { recursive: true });
-  writeFileSync(join(root, "run", "bb-box", "display-mode"), "gpu\n");
+  mkdirSync(join(root, "run", "alia-box"), { recursive: true });
+  writeFileSync(join(root, "run", "alia-box", "display-mode"), "gpu\n");
   const started = Date.now();
   const out = await desktopCheck(root, desktopBin(1, null).bin, 5);
   const elapsed = (Date.now() - started) / 1000;
   assert.ok(elapsed < 5.6, `it said 5 s, and took ${elapsed.toFixed(2)} s`);
-  assert.equal(judgeDesktopCheck(out), "its desktop's video sent no frames 5 s after its start: Selkies answered on 127.0.0.1:5980, but its stream sent BB Box's probe no video ({\"frames\":0,\"keys\":0,\"kbytes\":0})");
+  assert.equal(judgeDesktopCheck(out), "its desktop's video sent no frames 5 s after its start: Selkies answered on 127.0.0.1:5980, but its stream sent VesnALIA Box's probe no video ({\"frames\":0,\"keys\":0,\"kbytes\":0})");
   const hanging = Date.now();
   const silent = await desktopCheck(root, desktopBin(null, 2, true).bin, 3);
   const waited = (Date.now() - hanging) / 1000;
@@ -332,19 +332,19 @@ test("071 unit 10, Astra on a674ddea: the desktop's check keeps within its bound
   assert.equal(judgeDesktopCheck(silent), "its desktop's video was not ready 3 s after its start: Selkies on 127.0.0.1:5980 did not answer");
 });
 
-test("071 unit 12: BB Box's commands run as root through one wrapper, its quoting kept, and its check runs whole from its script on stdin, writing nothing in the box", { skip: process.getuid?.() !== 0 ? "needs root, as BB Box's commands in a box do" : false }, () => {
+test("071 unit 12: VesnALIA Box's commands run as root through one wrapper, its quoting kept, and its check runs whole from its script on stdin, writing nothing in the box", { skip: process.getuid?.() !== 0 ? "needs root, as VesnALIA Box's commands in a box do" : false }, () => {
   const quoted = spawnSync("bash", ["-c", asRoot(`printf '%s|%s\\n' "it's" "$(id -u)"`)], { encoding: "utf8" });
   assert.equal(quoted.status, 0, quoted.stderr);
   assert.equal(quoted.stdout, "it's|0\n");
   assert.equal(UPDATE_CHECK.includes(UPDATE_DIR), false, "the check writes nothing in the box: its script comes on stdin");
   const check = spawnSync("bash", ["-c", UPDATE_CHECK], { input: updateScriptText(SETUP), encoding: "utf8" });
   assert.equal(check.status, 0, check.stderr);
-  assert.match(check.stdout, /^arch \S+\nos .+\nimage (bb-box|other)\nfree-mib \d+\nkernel-driver \S+\napt .+\n(gpu-process \d+ .+\n)*check done\n$/);
+  assert.match(check.stdout, /^arch \S+\nos .+\nimage (alia-box|other)\nfree-mib \d+\nkernel-driver \S+\napt .+\n(gpu-process \d+ .+\n)*check done\n$/);
 });
 
 function lockedRoot(): { readonly root: string; readonly lock: string } {
   const root = fakeRoot();
-  return { root, lock: join(root, "run", "bb-box-nvidia-update.lock") };
+  return { root, lock: join(root, "run", "alia-box-nvidia-update.lock") };
 }
 
 function readingWithLock(lock: string): string {
@@ -363,7 +363,7 @@ test("071 unit 12: the update holds a lock in the box while it fetches and insta
   assert.equal(first.status, 0, first.err);
   const orphan = Number(readFileSync(pidFile, "utf8"));
   try {
-    assert.equal(updateRunning(readingWithLock(lock)), true, "an installer left running, as one BB Box's restart did not stop, keeps the lock");
+    assert.equal(updateRunning(readingWithLock(lock)), true, "an installer left running, as one VesnALIA Box's restart did not stop, keeps the lock");
     const again = run(root, ["install", tempDir("nvidia-update-dir")]);
     assert.notEqual(again.status, 0);
     assert.match(again.err, /an earlier update of NVIDIA's userspace is still running in this box/);
@@ -388,7 +388,7 @@ test("071 unit 12: a reading reports no update running where there is no lock fi
   assert.match(readingWithLock(lock), /^file \S+\nlibrary \S+\nuserspace read\n$/);
 });
 
-test("071 unit 12: the update's check reports an earlier update still running, and BB Box refuses on it", async () => {
+test("071 unit 12: the update's check reports an earlier update still running, and VesnALIA Box refuses on it", async () => {
   const { root, lock } = lockedRoot();
   writeFileSync(lock, "");
   const holder = spawn("flock", [lock, "sleep", "30"], { stdio: "ignore", detached: true });
@@ -399,7 +399,7 @@ test("071 unit 12: the update's check reports an earlier update still running, a
     assert.match(held.out, /^update running$/m);
     assert.deepEqual(judgeUpdateCheck(held.out.replace(/^arch .*$/m, "arch x86_64").replace(/^free-mib .*$/m, "free-mib 9000"), "580.142"), {
       ok: false,
-      why: "is still running an earlier update of NVIDIA's userspace, which must end before BB Box starts another",
+      why: "is still running an earlier update of NVIDIA's userspace, which must end before VesnALIA Box starts another",
       transient: true,
     });
   } finally {

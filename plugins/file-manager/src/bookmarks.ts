@@ -1,6 +1,6 @@
 // src/bookmarks.ts — §8.11. The folder shortcuts the toolbar's star writes.
 //
-// Why `bb.storage.kv` and not a setting (§7.1 said kv was unused in v0.1, and
+// Why `alia.storage.kv` and not a setting (§7.1 said kv was unused in v0.1, and
 // this is the case that changed its mind): a settings descriptor is a flat
 // scalar of one of four declared types, none of which is "list of records".
 // Encoding a JSON array into the `string` descriptor would put a blob on the
@@ -30,7 +30,7 @@
 // plugin could reach the method. An RPC on a frozen contract that no caller
 // can invoke is weight with no user behind it, so reordering waits for the
 // manage-bookmarks screen that would actually need it.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import path from "node:path";
 
 import {
@@ -126,7 +126,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 /**
  * Decode the kv row: drop anything unusable, dedupe by path, cap the length.
  *
- * A row recorded under a *different* root — the same bb data directory carried
+ * A row recorded under a *different* root — the same VesnALIA data directory carried
  * to a host whose home is somewhere else — is dropped rather than marked
  * unavailable. "Unavailable" tells the user to wait for the folder to come
  * back; a path outside the root can never be opened from here at all.
@@ -190,21 +190,21 @@ function clampLexically(input: string): string {
 /* Module                                                              */
 /* ------------------------------------------------------------------ */
 
-export function createBookmarks(bb: BbPluginApi): BookmarksModule {
+export function createBookmarks(alia: AliaPluginApi): BookmarksModule {
   async function read(): Promise<StoredBookmark[]> {
     try {
-      return decode(await bb.storage.kv.get<unknown>(BOOKMARKS_KEY));
+      return decode(await alia.storage.kv.get<unknown>(BOOKMARKS_KEY));
     } catch (error) {
       // A storage that cannot be read is not a reason to fail the panel's
       // bootstrap: the list degrades to empty and says so in the log. A
       // *write* still throws, because the user asked for that one.
-      bb.log.warn(`bookmarks are unreadable (${String(error)}); using an empty list`);
+      alia.log.warn(`bookmarks are unreadable (${String(error)}); using an empty list`);
       return [];
     }
   }
 
   async function write(items: readonly StoredBookmark[]): Promise<BookmarksResult> {
-    await bb.storage.kv.set(BOOKMARKS_KEY, items);
+    await alia.storage.kv.set(BOOKMARKS_KEY, items);
     return { bookmarks: await decorate(items) };
   }
 

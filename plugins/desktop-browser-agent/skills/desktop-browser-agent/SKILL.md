@@ -1,6 +1,6 @@
 ---
 name: desktop-browser-agent
-description: Drive native desktop apps and browser windows on the thread's machine through the cua_* tools (Cua Driver), and web pages in the user's own browser through the browser_* tools (Browser Bridge for bb extension). Use when the user asks to operate, automate, test, or inspect a real GUI application or web page (Outlook, Teams, a web app, a form, any desktop app), or when a task's outcome lives in a window or a tab rather than in files or a shell.
+description: Drive native desktop apps and browser windows on the thread's machine through the cua_* tools (Cua Driver), and web pages in the user's own browser through the browser_* tools (Browser Bridge for VesnALIA extension). Use when the user asks to operate, automate, test, or inspect a real GUI application or web page (Outlook, Teams, a web app, a form, any desktop app), or when a task's outcome lives in a window or a tab rather than in files or a shell.
 ---
 
 # Desktop & Browser Agent
@@ -123,7 +123,7 @@ and `browser_upload` attaches files without a picker.
 ## Browser tabs through the extension (`browser_*`)
 
 If you have `browser_*` tools, the user installed the optional Browser Bridge
-for bb extension. Prefer them for web pages in the user's own browser: they
+for VesnALIA extension. Prefer them for web pages in the user's own browser: they
 work in background tabs while the user keeps using the browser, and need no
 window, pid or foreground attach.
 

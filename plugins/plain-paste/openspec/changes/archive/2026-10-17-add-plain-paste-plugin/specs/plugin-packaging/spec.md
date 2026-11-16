@@ -2,15 +2,15 @@
 
 ## Purpose
 
-Defines what the repository must contain so the plugin can be released with semver tags and later submitted to the bb community marketplace.
+Defines what the repository must contain so the plugin can be released with semver tags and later submitted to the VesnALIA community marketplace.
 
 ## ADDED Requirements
 
 ### Requirement: Clean plugin package
-The repository SHALL contain a buildable bb plugin named `bb-plugin-plain-paste` (plugin ID `plain-paste`) with no scaffold demo code, sample slots or unused vendored files, and `bb plugin build` SHALL succeed.
+The repository SHALL contain a buildable VesnALIA plugin named `alia-plugin-plain-paste` (plugin ID `plain-paste`) with no scaffold demo code, sample slots or unused vendored files, and `alia plugin build` SHALL succeed.
 
 #### Scenario: Build
-- **WHEN** `bb plugin build` runs in the plugin directory
+- **WHEN** `alia plugin build` runs in the plugin directory
 - **THEN** it succeeds and produces the declared bundles
 
 #### Scenario: No scaffold leftovers
@@ -18,7 +18,7 @@ The repository SHALL contain a buildable bb plugin named `bb-plugin-plain-paste`
 - **THEN** it holds only code the plugin uses
 
 ### Requirement: Compatibility declaration
-`package.json` SHALL declare `engines` of `{ "bb": ">=0.46", "bbPluginSdk": ">=0.6.49" }`, a real `bb.description` and `bb.branding`, and a semver `version` starting at `0.1.0`.
+`package.json` SHALL declare `engines` of `{ "alia": ">=0.46", "aliaPluginSdk": ">=0.6.49" }`, a real `alia.description` and `alia.branding`, and a semver `version` starting at `0.1.0`.
 
 #### Scenario: Manifest check
 - **WHEN** `package.json` is read
@@ -39,7 +39,7 @@ The checklist SHALL cover: Office text-and-image paste, text-only clipboard, ima
 - **THEN** each listed case appears as a step with an expected result
 
 ### Requirement: Release readiness
-The repository SHALL be releasable from the public GitHub repo `dimiboi/bb-plugin-plain-paste` with annotated tags of the form `vX.Y.Z`, and no commit or tag SHALL be pushed without explicit approval from the repository owner.
+The repository SHALL be releasable from the public GitHub repo `dimiboi/alia-plugin-plain-paste` with annotated tags of the form `vX.Y.Z`, and no commit or tag SHALL be pushed without explicit approval from the repository owner.
 
 #### Scenario: Tag convention
 - **WHEN** the first release is prepared

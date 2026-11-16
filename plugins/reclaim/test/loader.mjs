@@ -2,7 +2,7 @@
  * Test-only module resolution.
  *
  * Production code imports siblings without an extension (`./roots`), which is
- * what BB's own loader and `bb plugin build` expect and what every other plugin
+ * what VesnALIA's own loader and `alia plugin build` expect and what every other plugin
  * in this workspace does. Bare Node ESM does not resolve those, so the tests
  * register a hook that retries with `.ts` before giving up. Nothing here
  * affects the shipped plugin.

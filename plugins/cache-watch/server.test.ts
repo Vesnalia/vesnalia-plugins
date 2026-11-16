@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createFakePluginHost, makeThreadResponse, makeMessageDispatchHookContext, experimental_scanPublicSdkOnly } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost, makeThreadResponse, makeMessageDispatchHookContext, experimental_scanPublicSdkOnly } from '@vesnalia/plugin-sdk/testing';
 import plugin from './server';
 import { PING, nextPingAt, type Watch } from './core';
 
@@ -16,7 +16,7 @@ async function setup() {
     queuedMessages: { list: async () => [] },
   } } });
   hosts.push(host);
-  await plugin(host.bb);
+  await plugin(host.alia);
   return { ...host, setThread: (next: typeof thread) => { thread = next; }, thread: () => thread };
 }
 async function start(host: Awaited<ReturnType<typeof setup>>, extra = {}) {
@@ -230,7 +230,7 @@ describe('Cache Watch lifecycle', () => {
   });
   it('migrates persisted four-minute watches to expiry scheduling on reload', async () => {
     const h = await setup();
-    await h.bb.storage.kv.set('watches-v1', [{ threadId, intervalMinutes: 4, armedAt: baseTime, until: baseTime + 3_600_000,
+    await h.alia.storage.kv.set('watches-v1', [{ threadId, intervalMinutes: 4, armedAt: baseTime, until: baseTime + 3_600_000,
       lastAttemptAt: null, sent: 0, error: null, disabled: false }]);
     const reloaded = await h.harness.lifecycle.reload(plugin);
     hosts.push(reloaded);

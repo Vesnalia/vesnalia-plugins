@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ReactNode } from "react";
-import { definePluginApp, experimental_useAppPanel, useBbNavigate, useRpc, useSdk, useSettings, type JsonValue, type PluginFileOpenerProps, type PluginThreadHeaderActionProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, experimental_useAppPanel, useAliaNavigate, useRpc, useSdk, useSettings, type JsonValue, type PluginFileOpenerProps, type PluginThreadHeaderActionProps } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type { Item, Scope, Snapshot } from "./src/contracts";
 import type { Anchor, Comment } from "./src/review-contract";
@@ -196,7 +196,7 @@ function ItemDetail({ scope, item, snapshot, threadId, toolbar, path, setPath, t
   </section>;
 }
 function Mentions({ scope, changeId, threadId, t }: { scope: Scope; changeId: string; threadId: string; t: Strings }) {
-  const rpc = useRpc<typeof rpcContract>(); const navigate = useBbNavigate();
+  const rpc = useRpc<typeof rpcContract>(); const navigate = useAliaNavigate();
   const found = useLive(useCallback(() => rpc.call("mentions", { ...scope, changeId }), [rpc, scope, changeId]), false, `mentions:${JSON.stringify([scope, changeId])}`);
   const rows = [...found.data ?? []].sort((a, b) => Number(b.id === threadId) - Number(a.id === threadId));
   return <section className="flex flex-col gap-2">
@@ -288,7 +288,7 @@ function FileReview({ scope, path, threadId, t }: { scope: Scope; path: string; 
     <ReviewDocument scope={scope} path={path} threadId={threadId} toolbar={toolbar} t={t} />
   </div>;
 }
-// File links in a thread chat: OpenSpec documents get the review, anything else keeps BB's preview.
+// File links in a thread chat: OpenSpec documents get the review, anything else keeps VesnALIA's preview.
 function SpecFileOpener({ path, source, Original }: PluginFileOpenerProps) {
   return source.kind === "workspace" && source.threadId && /^openspec\/.+\.md$/.test(path) ? <Workspace threadId={source.threadId} path={path} /> : <Original />;
 }

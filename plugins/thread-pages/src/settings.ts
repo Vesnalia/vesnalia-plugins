@@ -1,13 +1,13 @@
-// bb.settings.define: five settings, read live (DESIGN §D, D-bb-15). bb's settings are a config surface, not
+// alia.settings.define: five settings, read live (DESIGN §D, D-alia-15). VesnALIA's settings are a config surface, not
 // a store: the values the core owns are forwarded as `PagesSettings` and never kept a second time.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { createHash } from "node:crypto";
 import type { PagesSettings } from "./core.ts";
 
 /**
  * Five settings. 1.9's sixth, `homeSessionId`, is not declared and not read: the home designation is the core's
- * (`pages-core:home` in kv, `bb pages home`); a value 1.9 stored under that name is ignored here by construction,
- * since `readSettings` reads the five names below and nothing else (DESIGN §D, D-bb-15).
+ * (`pages-core:home` in kv, `alia pages home`); a value 1.9 stored under that name is ignored here by construction,
+ * since `readSettings` reads the five names below and nothing else (DESIGN §D, D-alia-15).
  */
 export interface Settings {
   readonly agentInstructions: boolean;
@@ -20,10 +20,10 @@ export interface Settings {
 export const DEFAULT_WORKING_LABEL = "Working — this is the last saved version";
 
 /**
- * Defaults earlier versions of this plugin shipped, by sha256: bb persists a default as the stored value, so an install
+ * Defaults earlier versions of this plugin shipped, by sha256: VesnALIA persists a default as the stored value, so an install
  * that came through those versions holds the then-default byte for byte (measured on the owner's install in 1.3.0,
  * `past-defaults.ts` of 1.3.0–1.9.0). A stored value equal to one reads as "the core's current text" — the operator
- * who never edited the instruction gets `bb pages` instead of `bb thread-page` (DR-4) and never a seed with 1.x's
+ * who never edited the instruction gets `alia pages` instead of `alia thread-page` (DR-4) and never a seed with 1.x's
  * `{{TITLE}}`/`{{DATE}}` placeholders; a value changed by one character is the operator's and is kept. Every hash 1.9
  * carried is carried here (review BI-2); the texts are in the public repository's tags, hashed in `test/settings.test.ts`.
  */
@@ -32,14 +32,14 @@ export const PAST_INSTRUCTION_DEFAULTS: ReadonlySet<string> = new Set([
   "88d9816fb6d27169b151db457df450f076de421cbf68f9b7b140a8483c0f7aef",
   // 1.3.0's instruction before the scenarios revised it; it ran unreleased on the owner's install.
   "733cfbea19e110e909ab0ee4e910b0dbd280060b005b8045f8dd970587357a24",
-  // The standing instruction of 1.3.0–1.9.0 (named `bb thread-page`).
+  // The standing instruction of 1.3.0–1.9.0 (named `alia thread-page`).
   "9dac5ab7d484d0d41bf94b0959f24761649fe8719cfd9c8510469077a7c8f557",
-  // The built-in text of 1.10.0–1.10.3 ("The page is the conversation"), as the spec writes it and as `bb pages status`
-  // printed it with `bb pages` filled. 1.10 stores "" by default, so these are an operator's verbatim copy of the then
+  // The built-in text of 1.10.0–1.10.3 ("The page is the conversation"), as the spec writes it and as `alia pages status`
+  // printed it with `alia pages` filled. 1.10 stores "" by default, so these are an operator's verbatim copy of the then
   // built-in text; it reads as the built-in text, so the copy moves to the short one (U54) as an untouched default would.
   "6758d43f21421e68d656b5c403bc3a6717ff208cd65888f2d01bc0eb6c2ee786",
   "b8a834fd921f346b7c36a266331f3589d87e8bc127063bfc729ff4d5f9e79b70",
-  // The short built-in text of 1.11.0–1.13.1 (U54), with its placeholders and with bb's words filled: an operator's
+  // The short built-in text of 1.11.0–1.13.1 (U54), with its placeholders and with VesnALIA's words filled: an operator's
   // verbatim copy moves to D-49's text as an untouched default would (B-0143).
   "754f0dc348c338641e89447acee3c4fa56516f53ee3ba267ab678788f57c7aa3",
   "342ea59dd696661e44eb1d76f9006726451d1f274bcec01e4599c8153cca02d6",
@@ -85,7 +85,7 @@ export const SETTING_DESCRIPTORS = {
   pageSeedHtml: {
     type: "string",
     label: "New-page starting file",
-    description: "Optional. HTML a new page starts from; {title} is replaced, escaped. Empty (the default): `bb pages init` creates no file and the agent writes the whole page. Existing pages are never rewritten.",
+    description: "Optional. HTML a new page starts from; {title} is replaced, escaped. Empty (the default): `alia pages init` creates no file and the agent writes the whole page. Existing pages are never rewritten.",
     experimental_multiline: true,
     default: "",
   },
@@ -103,8 +103,8 @@ export const SETTING_DESCRIPTORS = {
   },
 } as const;
 
-export async function defineSettings(bb: BbPluginApi): Promise<LiveSettings> {
-  const handle = bb.settings.define(SETTING_DESCRIPTORS);
+export async function defineSettings(alia: AliaPluginApi): Promise<LiveSettings> {
+  const handle = alia.settings.define(SETTING_DESCRIPTORS);
   let current = readSettings(await handle.get());
   const listeners: ((next: Settings) => void)[] = [];
   handle.onChange((next) => {
@@ -136,6 +136,6 @@ export function pagesSettingsOf(s: Settings): PagesSettings {
     workingLabel: s.workingLabel,
     seed: s.pageSeedHtml.trim() === "" || isPastSeedDefault(s.pageSeedHtml) ? null : s.pageSeedHtml,
     embedAnswerGrants: s.embedAnswerGrants,
-    audioInputDeviceId: null, // no slot on bb (DESIGN §D, O-12)
+    audioInputDeviceId: null, // no slot on VesnALIA (DESIGN §D, O-12)
   };
 }

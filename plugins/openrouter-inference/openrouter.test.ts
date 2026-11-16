@@ -177,7 +177,7 @@ describe("parseJsonObject", () => {
 });
 
 describe("errorCodeForStatus", () => {
-  it("maps HTTP statuses to BB's retry codes", () => {
+  it("maps HTTP statuses to VesnALIA's retry codes", () => {
     expect(errorCodeForStatus(401)).toBe("auth_required");
     expect(errorCodeForStatus(402)).toBe("rate_limited");
     expect(errorCodeForStatus(429)).toBe("rate_limited");
@@ -238,7 +238,7 @@ describe("audioFormatFor", () => {
     expect(audioFormatFor("recording.ogg", "audio/ogg;codecs=opus")).toBe("ogg");
   });
 
-  it("prefers the extension over bb voice transcribe's default MIME type", () => {
+  it("prefers the extension over VesnALIA voice transcribe's default MIME type", () => {
     expect(audioFormatFor("memo.WAV", "audio/webm")).toBe("wav");
   });
 
@@ -254,7 +254,7 @@ describe("transcriptionPromptTail", () => {
   it("drops blank prompts and keeps short ones whole", () => {
     expect(transcriptionPromptTail(null)).toBeNull();
     expect(transcriptionPromptTail("   ")).toBeNull();
-    expect(transcriptionPromptTail(" Fix the BB sidebar ")).toBe("Fix the BB sidebar");
+    expect(transcriptionPromptTail(" Fix the VesnALIA sidebar ")).toBe("Fix the VesnALIA sidebar");
   });
 
   it("keeps the last 1,000 characters of a long prompt, starting at a word", () => {
@@ -274,11 +274,11 @@ describe("buildTranscriptionRequest", () => {
   });
 
   it("passes the prompt context to providers that accept one", () => {
-    expect(buildTranscriptionRequest({ ...voiceInput, prompt: "Rename BB_TRANSCRIPTION" }, config)).toMatchObject({
+    expect(buildTranscriptionRequest({ ...voiceInput, prompt: "Rename ALIA_TRANSCRIPTION" }, config)).toMatchObject({
       provider: {
         options: {
-          openai: { prompt: "Rename BB_TRANSCRIPTION" },
-          groq: { prompt: "Rename BB_TRANSCRIPTION" },
+          openai: { prompt: "Rename ALIA_TRANSCRIPTION" },
+          groq: { prompt: "Rename ALIA_TRANSCRIPTION" },
         },
       },
     });
@@ -295,12 +295,12 @@ describe("buildTranscriptionRequest", () => {
 
 describe("transcribeWithOpenRouter", () => {
   it("posts the audio with the key and trims the transcript", async () => {
-    const fetchMock = stubResponse(200, { text: " Testing voice transcription in BB.", usage: { seconds: 2.6 } });
+    const fetchMock = stubResponse(200, { text: " Testing voice transcription in VesnALIA.", usage: { seconds: 2.6 } });
     const result = await transcribeWithOpenRouter(voiceInput, config, new AbortController().signal);
     expect(result).toEqual({
       ok: true,
       model: "openai/gpt-4o-mini-transcribe",
-      text: "Testing voice transcription in BB.",
+      text: "Testing voice transcription in VesnALIA.",
     });
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("https://openrouter.ai/api/v1/audio/transcriptions");

@@ -317,7 +317,7 @@ export class SimulatorService {
   }
 
   async screenshot(udid: string, signal?: AbortSignal): Promise<Screenshot> {
-    const dir = await mkdtemp(join(this.options.tmpDir ?? tmpdir(), "bb-ios-sim-"));
+    const dir = await mkdtemp(join(this.options.tmpDir ?? tmpdir(), "alia-ios-sim-"));
     try {
       const png = join(dir, "screen.png");
       await this.options.simctl.screenshot(udid, png, signal);
@@ -341,7 +341,7 @@ export class SimulatorService {
   }
 
   async screenshotPng(udid: string, signal?: AbortSignal): Promise<Uint8Array> {
-    const dir = await mkdtemp(join(this.options.tmpDir ?? tmpdir(), "bb-ios-sim-"));
+    const dir = await mkdtemp(join(this.options.tmpDir ?? tmpdir(), "alia-ios-sim-"));
     try {
       const png = join(dir, "screen.png");
       await this.options.simctl.screenshot(udid, png, signal);

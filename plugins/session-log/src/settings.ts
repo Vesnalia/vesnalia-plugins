@@ -1,4 +1,4 @@
-import type { PluginSettingDescriptors, StandardSchemaV1 } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptors, StandardSchemaV1 } from "@vesnalia/plugin-sdk";
 
 /** The realtime channel the server publishes on when a setting changes. */
 export const SETTINGS_CHANNEL = "settings";
@@ -96,7 +96,7 @@ export const SETTING_DESCRIPTORS = {
   showHidden: {
     type: "boolean",
     label: "Show hidden messages when the log opens",
-    description: "Input bb gives the agent but leaves out of the chat, such as plugin steers, mention context and retries.",
+    description: "Input VesnALIA gives the agent but leaves out of the chat, such as plugin steers, mention context and retries.",
     default: DEFAULT_SETTINGS.showHidden,
   },
   timeFormat: {

@@ -30,7 +30,7 @@ describe("parseRoute and formatRoute", () => {
     expect(awkward.slice("worktree/".length)).toMatch(/^[A-Za-z0-9._~-]+$/);
   });
 
-  it("survives what bb does to an address: encoding each segment once more leaves it unchanged", () => {
+  it("survives what VesnALIA does to an address: encoding each segment once more leaves it unchanged", () => {
     const { canonical } = parseRoute(`tree/thr_ab/worktree/${ENCODED}`);
     expect(canonical.split("/").map((segment) => encodeURIComponent(segment)).join("/")).toBe(canonical);
   });

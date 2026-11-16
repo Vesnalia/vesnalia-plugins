@@ -2,7 +2,7 @@
  * A row in the thread's Info tab: how many review comment threads its workspace has open, with a
  * button that opens the Review tab. Nothing for a workspace with none.
  */
-import { experimental_DetailRow as DetailRow, experimental_useAppPanel, type ExperimentalThreadInfoProps } from "@get-bb/plugin-sdk/app";
+import { experimental_DetailRow as DetailRow, experimental_useAppPanel, type ExperimentalThreadInfoProps } from "@vesnalia/plugin-sdk/app";
 
 import { Button } from "@/components/ui/button";
 

@@ -4,7 +4,7 @@ import { z } from "zod";
 
 /**
  * The bridge half of the tool proxy: a loopback socket the MCP servers Muse
- * spawns call back into. Muse never talks to bb directly — it calls a tool, the
+ * spawns call back into. Muse never talks to VesnALIA directly — it calls a tool, the
  * proxy forwards the call here, and the bridge asks the runtime to run it.
  *
  * One bridge process serves every thread, so the listener is a trust boundary
@@ -13,7 +13,7 @@ import { z } from "zod";
  *
  * So the token is not a property of the process. Each thread's MCP server gets
  * a **grant** minted here — its own secret, bound to that thread and to the
- * exact tool names bb declared for it — and a request is answered only where
+ * exact tool names VesnALIA declared for it — and a request is answered only where
  * the presented secret, the stated thread, and the named tool all belong to the
  * same grant. A thread that learns another's token still cannot use it: the
  * thread id it must send is the one the token is bound to, and the tools it

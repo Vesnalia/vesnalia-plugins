@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'vitest';
 import Database from 'better-sqlite3';
 import { createWorkItemStore } from '../store.js';
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 
 /** Minimal stand-in for the plugin API surface the store actually uses. */
 function testStore() {
   const db = new Database(':memory:');
   const applied: string[] = [];
-  const bb = {
+  const alia = {
     storage: {
       database: () => db,
       migrate: (target: Database.Database, migrations: readonly string[]) => {
@@ -18,8 +18,8 @@ function testStore() {
         }
       }
     }
-  } as unknown as BbPluginApi;
-  return { store: createWorkItemStore(bb), db };
+  } as unknown as AliaPluginApi;
+  return { store: createWorkItemStore(alia), db };
 }
 
 const VIEW = {
@@ -70,7 +70,7 @@ describe('board view persistence', () => {
   test('a corrupt row reads as null instead of throwing', () => {
     const { store, db } = testStore();
     db.prepare(
-      `INSERT INTO project_board_view (bb_project_id, view_json, updated_at)
+      `INSERT INTO project_board_view (alia_project_id, view_json, updated_at)
        VALUES (?, ?, ?)`
     ).run('proj_a', '{not json', new Date().toISOString());
 

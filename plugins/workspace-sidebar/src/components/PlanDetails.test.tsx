@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { PlanDetails } from "./PlanDetails";
 
 const harness = vi.hoisted(() => ({ call: vi.fn(), openThread: vi.fn() }));
-vi.mock("@get-bb/plugin-sdk/app", () => {
+vi.mock("@vesnalia/plugin-sdk/app", () => {
   const rpc = { call: harness.call };
   return { useRpc: () => rpc };
 });

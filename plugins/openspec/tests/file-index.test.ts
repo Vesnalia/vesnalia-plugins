@@ -15,7 +15,7 @@ import type {
   ExperimentalHostRpcContext,
   ExperimentalHostWatchListener,
   ExperimentalHostWatchOptions,
-} from "@get-bb/plugin-sdk/host";
+} from "@vesnalia/plugin-sdk/host";
 import { OpenSpecIndex } from "../src/file-index.ts";
 import { WatchPool } from "../src/watch-pool.ts";
 import type { hostSignals } from "../src/host-contract.ts";

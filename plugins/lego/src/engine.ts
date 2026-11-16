@@ -37,14 +37,14 @@ export interface WorkerLaunch {
   metadata: { bookId: string; role: "builder" | "master"; builderIndex: number | null };
 }
 
-/** The slice of bb.sdk the engine needs; server.ts adapts the real SDK. */
+/** The slice of alia.sdk the engine needs; server.ts adapts the real SDK. */
 export interface WorkerSdk {
   spawn(launch: WorkerLaunch): Promise<{ threadId: string }>;
   send(threadId: string, prompt: string, choice: AgentChoice, permissionMode: PermissionMode | null): Promise<void>;
   notify(threadId: string, text: string): Promise<void>;
   stop(threadId: string): Promise<void>;
   status(threadId: string): Promise<{ status: string; lastText: string | null } | null>;
-  /** False once BB has deleted the thread. */
+  /** False once VesnALIA has deleted the thread. */
   exists(threadId: string): Promise<boolean>;
 }
 
@@ -68,13 +68,13 @@ const NOTE_LIMIT = 500;
 /** A worker must have been dispatched this long before reconcile trusts an idle status. */
 const RECONCILE_GRACE_MS = 90_000;
 /**
- * Errors worth another try: BB under load answers 5xx, or a message.dispatch
+ * Errors worth another try: VesnALIA under load answers 5xx, or a message.dispatch
  * hook (such as a concurrency limit) times out. Neither leaves a thread or a
  * message behind, so retrying cannot duplicate work.
  */
 const TRANSIENT = /HTTP 5\d\d|did not (?:decide|respond)|timed? ?out|ECONN|socket hang up|temporarily|busy/iu;
 const RETRY_DELAYS_MS = [3_000, 10_000];
-/** How BB reports a thread that no longer exists. */
+/** How VesnALIA reports a thread that no longer exists. */
 const GONE = /HTTP 404|not found/iu;
 /** How much of a worker's own words a failure keeps. */
 const REASON_LIMIT = 2000;
@@ -568,7 +568,7 @@ export class BuildEngine {
   }
 
   /**
-   * BB deleted a thread. Books it planned keep their place on the shelf but
+   * VesnALIA deleted a thread. Books it planned keep their place on the shelf but
    * lose the link. A worker's link is cleared too; one that was mid-bag fails
    * it, so a retry starts a fresh thread instead of messaging a deleted one.
    */

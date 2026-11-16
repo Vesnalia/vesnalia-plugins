@@ -1,11 +1,11 @@
 // Guides a reload interrupted: they restart at load, or once their writer's machine reconnects.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { rerunReview } from "./rereview";
 import { guideWriterUnavailable } from "./generate";
 import type { AsyncStore } from "./store-queue";
 
 interface Deps {
-  bb: BbPluginApi; store: AsyncStore;
+  alia: AliaPluginApi; store: AsyncStore;
   gh: { runGh: typeof import("./gh").runGh; runGit: typeof import("./gh").runGit };
 }
 
@@ -23,10 +23,10 @@ export async function restartInterruptedGuide(deps: Deps, targetKey: string, sin
     .catch((error: unknown) => ({ ok: false, error: error instanceof Error ? error.message : String(error) }));
   if (restarted.ok) return;
   const exists = !!await deps.store.getReview(targetKey);
-  const waiting = exists && !!await guideWriterUnavailable(deps.bb, deps.store).catch(() => null);
+  const waiting = exists && !!await guideWriterUnavailable(deps.alia, deps.store).catch(() => null);
   if (waiting) await deps.store.setLifecycle(targetKey, { restartPending: { since } });
   else if (exists) await failed(deps, targetKey, restarted.error ?? "The guide couldn't restart.");
-  deps.bb.log.warn(`The interrupted guide for ${targetKey} didn't restart${waiting ? " yet" : ""}: ${restarted.error}`);
+  deps.alia.log.warn(`The interrupted guide for ${targetKey} didn't restart${waiting ? " yet" : ""}: ${restarted.error}`);
 }
 
 /** An interrupted guide whose restart threw outside rerunReview, as on finding its writers, stays failed, saying why. */
@@ -38,8 +38,8 @@ export async function interruptedGuideThrew(deps: Deps, targetKey: string, error
 /** The interrupted guide stays failed, its page saying `why`. */
 async function failed(deps: Deps, targetKey: string, why: string, now = Date.now()) {
   await deps.store.setLifecycle(targetKey, { guideError: { at: now, text: why } });
-  deps.bb.realtime.publish(`review:${targetKey}`, { ts: now });
-  deps.bb.realtime.publish("reviews", { ts: now });
+  deps.alia.realtime.publish(`review:${targetKey}`, { ts: now });
+  deps.alia.realtime.publish("reviews", { ts: now });
 }
 
 /** Restart the interrupted guides whose writer's machine is back, for up to RESTART_WAIT. */
@@ -56,14 +56,14 @@ export async function retryInterruptedGuides(deps: Deps, now = Date.now()): Prom
     return waiting;
   });
   for (const { targetKey, since } of waiting) {
-    const unavailable = await guideWriterUnavailable(deps.bb, deps.store).catch((error) => String(error));
+    const unavailable = await guideWriterUnavailable(deps.alia, deps.store).catch((error) => String(error));
     if (now - since >= RESTART_WAIT) {
       await deps.store.exclusive(async (tx) => {
         await tx.setLifecycle(targetKey, { restartPending: null });
         // An open page stops saying the guide restarts on its own, and says why it failed.
         await failed({ ...deps, store: tx }, targetKey, unavailable ?? "The guide writer's machine didn't reconnect in time.", now);
       });
-      deps.bb.log.warn(`The interrupted guide for ${targetKey} stays failed: ${unavailable ?? "its machine didn't reconnect in time"}`);
+      deps.alia.log.warn(`The interrupted guide for ${targetKey} stays failed: ${unavailable ?? "its machine didn't reconnect in time"}`);
       continue;
     }
     if (unavailable) continue;

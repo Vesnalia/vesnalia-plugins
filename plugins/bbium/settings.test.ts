@@ -21,8 +21,8 @@ test("parseSettings: disabledKeys keeps unique normal-mode keys only", () => {
 });
 
 test("parseSettings: keeps valid values", () => {
-  const s = parseSettings({ vimKeys: false, hintCharacters: "ASDF", scrollStep: 120, theme: "bb", customCss: "x{}" });
-  assert.deepEqual(s, { enabled: false, chars: "asdf", scrollStep: 120, theme: "bb", customCss: "x{}", disabledKeys: "" });
+  const s = parseSettings({ vimKeys: false, hintCharacters: "ASDF", scrollStep: 120, theme: "alia", customCss: "x{}" });
+  assert.deepEqual(s, { enabled: false, chars: "asdf", scrollStep: 120, theme: "alia", customCss: "x{}", disabledKeys: "" });
 });
 
 test("parseSettings: rejects bad values", () => {
@@ -34,7 +34,7 @@ test("parseSettings: rejects bad values", () => {
 });
 
 test("buildCss: custom CSS comes after the theme so it wins", () => {
-  const css = buildCss("bb", "[data-bbium-root] { --bbium-bg: red; }");
+  const css = buildCss("alia", "[data-bbium-root] { --bbium-bg: red; }");
   assert.ok(css.indexOf("var(--primary") < css.indexOf("--bbium-bg: red"));
   assert.match(css, /\.bbium-hint \.typed/);
 });

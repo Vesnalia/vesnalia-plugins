@@ -1,7 +1,7 @@
 // The "agent" template setting: inherit the triggering thread's provider and
-// model, or pick one with BB's own provider/model picker.
+// model, or pick one with VesnALIA's own provider/model picker.
 import { useMemo } from "react";
-import { experimental_ProviderModelPicker as ProviderModelPicker, experimental_useProviders as useProviders } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderModelPicker as ProviderModelPicker, experimental_useProviders as useProviders } from "@vesnalia/plugin-sdk/app";
 import { Checkbox } from "@/components/ui/checkbox";
 import { agentValueOf, parseAgentValue, type AgentChoice } from "../agent";
 

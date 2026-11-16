@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { useRpc, UrlLink } from "@get-bb/plugin-sdk/app";
+import { useRpc, UrlLink } from "@vesnalia/plugin-sdk/app";
 import type { MapTask, rpcContract } from "./server";
 import type { SettleInput, Settlement } from "./settlement-contract";
 import { Button } from "./components/ui/button";

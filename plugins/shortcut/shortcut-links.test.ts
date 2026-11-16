@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  openInBbFromRpcResponse,
+  openInAliaFromRpcResponse,
   shortcutStoryIdFromUrl,
   shortcutStoryPluginPath,
 } from "./shortcut-links";
@@ -31,18 +31,18 @@ describe("shortcutStoryPluginPath", () => {
   });
 });
 
-describe("openInBbFromRpcResponse", () => {
+describe("openInAliaFromRpcResponse", () => {
   it("reads the mode from a successful rpc response", () => {
-    expect(openInBbFromRpcResponse({ ok: true, result: { openInBb: true } })).toBe(true);
-    expect(openInBbFromRpcResponse({ ok: true, result: { openInBb: false } })).toBe(false);
+    expect(openInAliaFromRpcResponse({ ok: true, result: { openInAlia: true } })).toBe(true);
+    expect(openInAliaFromRpcResponse({ ok: true, result: { openInAlia: false } })).toBe(false);
   });
 
   it("rejects malformed payloads", () => {
-    expect(openInBbFromRpcResponse(null)).toBeNull();
-    expect(openInBbFromRpcResponse("ok")).toBeNull();
-    expect(openInBbFromRpcResponse({ ok: false, error: { code: "handler_error", message: "boom" } })).toBeNull();
-    expect(openInBbFromRpcResponse({ ok: true, result: null })).toBeNull();
-    expect(openInBbFromRpcResponse({ ok: true, result: { openInBb: "yes" } })).toBeNull();
-    expect(openInBbFromRpcResponse({ ok: true, result: {} })).toBeNull();
+    expect(openInAliaFromRpcResponse(null)).toBeNull();
+    expect(openInAliaFromRpcResponse("ok")).toBeNull();
+    expect(openInAliaFromRpcResponse({ ok: false, error: { code: "handler_error", message: "boom" } })).toBeNull();
+    expect(openInAliaFromRpcResponse({ ok: true, result: null })).toBeNull();
+    expect(openInAliaFromRpcResponse({ ok: true, result: { openInAlia: "yes" } })).toBeNull();
+    expect(openInAliaFromRpcResponse({ ok: true, result: {} })).toBeNull();
   });
 });

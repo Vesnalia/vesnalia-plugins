@@ -1,10 +1,10 @@
 import { createHash } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Config, Slot } from "./contract";
 import { AGGREGATOR_PROMPT } from "./prompts";
 
-export type Input = Parameters<BbPluginApi["sdk"]["threads"]["send"]>[0]["input"];
-export const MARKER = "[bb-moa-reference:";
+export type Input = Parameters<AliaPluginApi["sdk"]["threads"]["send"]>[0]["input"];
+export const MARKER = "[alia-moa-reference:";
 export function cleanInput(input: readonly Input[number][]): Input {
   return input.filter(b => !(b.type === "text" && b.visibility === "agent-only" && b.text.startsWith(MARKER)));
 }

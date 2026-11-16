@@ -1,4 +1,4 @@
-import type { MessageDispatchHookContext, MessageDispatchHookDecision } from "@get-bb/plugin-sdk";
+import type { MessageDispatchHookContext, MessageDispatchHookDecision } from "@vesnalia/plugin-sdk";
 import { RELOCATE_MARKER } from "./thread-move";
 
 export interface DispatchHookDeps {

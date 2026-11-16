@@ -41,7 +41,7 @@ The board exposes sortable fields but every selection is currently ascending, so
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Validation passed: sort direction is a separate accessible control and preserves the selected field. Unit tests cover ascending and descending behavior for ordinal, title, priority, due date, created date, and updated date, with missing values last. mise run test: 70 passed; mise run typecheck: passed; mise run build: passed; plugin reloaded from /Users/vulture/Projects/bb-plugin-backlog.
+Validation passed: sort direction is a separate accessible control and preserves the selected field. Unit tests cover ascending and descending behavior for ordinal, title, priority, due date, created date, and updated date, with missing values last. mise run test: 70 passed; mise run typecheck: passed; mise run build: passed; plugin reloaded from /Users/vulture/Projects/alia-plugin-backlog.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

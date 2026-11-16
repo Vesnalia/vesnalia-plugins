@@ -11,7 +11,7 @@ An agent that builds an app in a desktop box can only describe what it
 did. A short video of the app working says more, and costs the person
 watching the thread less. Everything needed is in the box already: its
 display, Chrome and computer use. Recording the box's own screen captures
-nothing outside it, unlike recording BB's UI on a person's computer
+nothing outside it, unlike recording VesnALIA's UI on a person's computer
 ([demo.md](../demo.md)).
 
 What is there today:
@@ -20,9 +20,9 @@ What is there today:
   (`customize-desktop.sh`, `customize-desktop-wayland.sh`). On X11 its
   `x11grab` reads the display. Sway on Wayland needs a wlroots recorder,
   such as `wf-recorder`, which the images lacked until #707.
-- BB shows a file inline in a thread through the inline-vis directive:
+- VesnALIA shows a file inline in a thread through the inline-vis directive:
   HTML or Markdown only, at most 5 MiB, in an opaque-origin iframe. A
-  video shows inline only inside an HTML file. The owner checked that BB
+  video shows inline only inside an HTML file. The owner checked that VesnALIA
   plays an MP4 there both as a `data:` URI and by a relative path to a
   file beside the page.
 - The README demo settled a lossless animated WebP for GitHub, which plays
@@ -74,7 +74,7 @@ thread's storage to open full size.
 ### Still stretches are cut, keeping a short pause
 
 Agent work has long still stretches: builds, waits and thinking. By
-default bb-box finds every stretch with no change for over 1 s
+default alia-box finds every stretch with no change for over 1 s
 (ffmpeg's `freezedetect`) and keeps 0.5 s of it, so a 5-minute session
 becomes a short clip and a pause still reads as a pause.
 `mpdecimate` with `setpts` is simpler, but shrinks each still stretch by a
@@ -94,7 +94,7 @@ both on a longer session.
   the clip's size, so no clip is capped or made again smaller. (Amended:
   the first build held the MP4 as a `data:` URI, which capped it at
   3.5 MB.)
-- **No WebP**: BB's preview plays the MP4.
+- **No WebP**: VesnALIA's preview plays the MP4.
 
 ### Where it goes
 
@@ -129,7 +129,7 @@ time was cut.
    `ddagrab` was the plan, but it needs a Direct3D 11 device, and a box
    drawn by WARP has none ("Failed to create D3D11VA device"). On a
    Proxmox QEMU box at 1280x800, gdigrab at 15 fps costs about a tenth of
-   a core while an agent types. bb-box starts ffmpeg hidden, with a console
+   a core while an agent types. alia-box starts ffmpeg hidden, with a console
    of its own, and stops it with `taskkill` without `/F`: ffmpeg sees its
    console close and ends its file whole, about half a second later.
    `/F` leaves a file that cannot be read, and the close reaches ffmpeg
@@ -151,7 +151,7 @@ green ✓ or a red ✗. The next step's pill replaces both.
   `Time::HiRes`, on Linux and macOS alike.
 - **The stop has two parts.** The box stops the capture and reports its
   length, size, start time, the still stretches to cut and the events.
-  bb-box then plans the clip: each event's place after the cuts and the
+  alia-box then plans the clip: each event's place after the cuts and the
   speed, where each pill shows, and a hold, a frozen frame, wherever a
   caption would otherwise stay up less than its reading time, one second
   and a word every 0.29 s, from 2 s to 6 s. The hold comes after the speed,
@@ -189,15 +189,15 @@ green ✓ or a red ✗. The next step's pill replaces both.
 
 ### Notifications are the agent's
 
-bb-box does not manage notifications. The skill says, in one line: clear
+alia-box does not manage notifications. The skill says, in one line: clear
 or dismiss notifications, and close windows that do not belong in the
 video, before starting a recording.
 
 ## Rejected
 
-- **Recording through the display stream bb-box already reads** (RFB or
+- **Recording through the display stream alia-box already reads** (RFB or
   Selkies) would cover every OS at once. But it moves full-frame traffic
-  and encoding onto BB's server for the whole recording, and the frame
+  and encoding onto VesnALIA's server for the whole recording, and the frame
   rate would follow the stream, not the work.
 - **A lossless WebP as the clip**, as the README has: thirty times the
   MP4's size for a desktop, for a thread that needs none of GitHub's
@@ -207,7 +207,7 @@ video, before starting a recording.
 
 - An agent shows its work in two calls, and the person sees it play in the
   thread.
-- Each OS needs its own capture command in bb-box, and macOS and Windows
+- Each OS needs its own capture command in alia-box, and macOS and Windows
   need ffmpeg in their images, which old images lack until rebuilt.
 - A recording uses about a tenth of the box's core while it runs, and its
   capture file stays in the box until the clip is made.

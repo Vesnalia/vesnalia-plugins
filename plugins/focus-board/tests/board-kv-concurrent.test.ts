@@ -13,7 +13,7 @@
 // The gate holds BOTH writers inside their kv.set before either writes, so
 // the interleaving is deterministic, never a timing coin flip.
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { GROUPS_KV_KEY } from "../lib/group-metadata";
 
@@ -43,7 +43,7 @@ async function setup(): Promise<{
       },
     },
   });
-  const kv = host.bb.storage.kv;
+  const kv = host.alia.storage.kv;
   const rawGet = kv.get.bind(kv);
   const rawSet = kv.set.bind(kv);
   // Unlike tests/rank-concurrent.test.ts, gated sets are NOT consumed: both
@@ -59,7 +59,7 @@ async function setup(): Promise<{
     }
     await rawSet(key, value);
   }) as typeof kv.set;
-  await plugin(host.bb);
+  await plugin(host.alia);
   return {
     callRpc: (method, input) =>
       host.harness.callRpc(method, input) as Promise<unknown>,

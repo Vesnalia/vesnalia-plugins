@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import {
   definePluginApp,
   useComposer,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   THREAD_REFERENCE_MIME,
   THREAD_REFERENCE_PROVIDER,
@@ -15,9 +15,9 @@ import {
 } from "./shared.js";
 
 const EDITOR_SELECTOR = '[contenteditable="true"], textarea';
-const SOURCE_MARKER = "data-bb-thread-reference-source";
-const HANDLE_MARKER = "data-bb-thread-reference-handle";
-const LINK_MARKER = "data-bb-thread-reference-link";
+const SOURCE_MARKER = "data-alia-thread-reference-source";
+const HANDLE_MARKER = "data-alia-thread-reference-handle";
+const LINK_MARKER = "data-alia-thread-reference-link";
 const MENTION_SELECTOR = "[data-prompt-mention-resource]";
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const SOURCE_CURSOR_CLASS = "cursor-grab";
@@ -79,7 +79,7 @@ function editorFromTarget(target: EventTarget | null): HTMLElement | null {
 
 function receiverOwnsEditor(root: HTMLElement, editor: HTMLElement): boolean {
   // The nearest ancestor containing exactly one editable is the composer
-  // surface in BB's current DOM. The bounded walk avoids treating the whole
+  // surface in VesnALIA's current DOM. The bounded walk avoids treating the whole
   // app shell as one composer when split panes are visible.
   let ancestor = root.parentElement;
   for (let depth = 0; ancestor !== null && depth < 12; depth += 1) {
@@ -178,7 +178,7 @@ function mountThreadReferenceContentScript({ signal }: { signal: AbortSignal }) 
   let observer: MutationObserver | null = null;
 
   const onDragStart = (event: Event) => {
-    // Do not let BB's native row drag gesture turn this into a split-view
+    // Do not let VesnALIA's native row drag gesture turn this into a split-view
     // navigation. Only the injected handle is a source for this plugin.
     event.stopPropagation();
     const handle = event.currentTarget;
@@ -202,7 +202,7 @@ function mountThreadReferenceContentScript({ signal }: { signal: AbortSignal }) 
       dataTransfer.setData(THREAD_REFERENCE_MIME, serializeThreadReferencePayload(payload));
       dataTransfer.setData(
         "text/plain",
-        `Reference BB thread: ${payload.label} (${payload.threadId})`,
+        `Reference VesnALIA thread: ${payload.label} (${payload.threadId})`,
       );
       dataTransfer.effectAllowed = "copy";
     } catch {
@@ -250,7 +250,7 @@ function mountThreadReferenceContentScript({ signal }: { signal: AbortSignal }) 
       handle.classList.add(...HANDLE_CLASS_NAMES);
       appendGripIcon(handle);
 
-      // BB marks native sidebar rows draggable for split-view navigation.
+      // VesnALIA marks native sidebar rows draggable for split-view navigation.
       // Disable that source while this plugin is active so only our handle
       // can start a drag, then restore the host value during cleanup.
       row.setAttribute("draggable", "false");
@@ -272,7 +272,7 @@ function mountThreadReferenceContentScript({ signal }: { signal: AbortSignal }) 
       );
       if (trailingControls !== undefined) {
         const hoverActions = trailingControls.querySelector<HTMLElement>(
-          ".bb-sidebar-hover-actions",
+          ".alia-sidebar-hover-actions",
         );
         if (hoverActions !== null) trailingControls.insertBefore(handle, hoverActions);
         else trailingControls.append(handle);
@@ -457,7 +457,7 @@ function ThreadReferenceComposerBridge() {
       ref={rootRef}
       hidden
       aria-hidden="true"
-      data-bb-thread-reference-bridge="true"
+      data-alia-thread-reference-bridge="true"
     />
   );
 }

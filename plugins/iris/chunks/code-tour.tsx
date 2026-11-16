@@ -1,8 +1,8 @@
 // CodeTour (chunk "codework"): a guided walk across real files. Each step reads
 // its file through the card's load() path (the thread's workspace only),
-// highlights its lines in bb's own source viewer and shows a markdown note.
+// highlights its lines in VesnALIA's own source viewer and shows a markdown note.
 
-import { experimental_SourceCode as SourceCode } from "@get-bb/plugin-sdk/app";
+import { experimental_SourceCode as SourceCode } from "@vesnalia/plugin-sdk/app";
 import { Chip, Glyph, Prose, Shimmer, cn, num, str, useEnv } from "@iris/ui";
 import { useEffect, useRef, type KeyboardEvent } from "react";
 import { isPendingValue } from "../core/evaluate";

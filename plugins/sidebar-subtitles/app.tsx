@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import * as Menu from '@radix-ui/react-dropdown-menu';
 import * as Popover from '@radix-ui/react-popover';
-import {definePluginApp, useRpc, useRealtime, experimental_Icon as Icon, type ExperimentalSidebarNavigationProps} from '@get-bb/plugin-sdk/app';
+import {definePluginApp, useRpc, useRealtime, experimental_Icon as Icon, type ExperimentalSidebarNavigationProps} from '@vesnalia/plugin-sdk/app';
 import type {rpcContract} from './server';
 import {navigationKey, orderedKeys, visibleKeys} from './navigation';
 import {usePortalScopeProps} from './lib/portal-scope';

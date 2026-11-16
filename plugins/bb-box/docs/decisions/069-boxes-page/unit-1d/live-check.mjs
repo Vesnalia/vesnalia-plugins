@@ -8,7 +8,7 @@ const label = process.argv[2] ?? "run";
 const { line, check, results } = makeReport(label);
 const SEARCH = "docker";
 const SORT_WORDS = "Sort: Created, descending";
-const LIST_PATHS = ["/plugins/bb-box/desktop", "/plugins/bb-box/desktop/threads", "/plugins/bb-box/desktop/machines"];
+const LIST_PATHS = ["/plugins/alia-box/desktop", "/plugins/alia-box/desktop/threads", "/plugins/alia-box/desktop/machines"];
 
 const all = await rpc("allBoxes");
 const threadBoxes = all.filter((entry) => entry.owner !== "yours" && entry.box.state !== "releasing");
@@ -152,7 +152,7 @@ const BACK = {
     if (at === "view") {
       await page.getByRole("link", { name: target.name, exact: true }).click();
       await heading(page);
-      expect(pathOf(page) === `/plugins/bb-box/desktop/box/${target.id}/from-list`, `the view's name led to ${pathOf(page)}`);
+      expect(pathOf(page) === `/plugins/alia-box/desktop/box/${target.id}/from-list`, `the view's name led to ${pathOf(page)}`);
     }
     await trail().click();
   },

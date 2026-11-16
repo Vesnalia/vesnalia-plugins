@@ -1,10 +1,10 @@
-import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { joinProjectPaths, resolveProjectPath } from "./path-policy";
 import type { ThreadEnvironmentTarget } from "./environment";
 
 export const DIRECTORY_COPY_LIMIT = 500;
 
-export type FilesSdk = BbPluginApi["sdk"]["files"];
+export type FilesSdk = AliaPluginApi["sdk"]["files"];
 
 export type DuplicateResult =
   | { outcome: "copied"; createdPaths: string[] }

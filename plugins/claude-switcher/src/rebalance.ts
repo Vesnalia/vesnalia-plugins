@@ -1,4 +1,4 @@
-// One pass that spreads the projects over the accounts (`bb claude-switcher
+// One pass that spreads the projects over the accounts (`alia claude-switcher
 // rebalance`). Aitor 2026-11-03: siloeads held 25 projects for its 4 seats
 // and the most Fable spent, while joytorm held 9. Each account gets a share
 // of the projects by the room left in its weekly, and no account ends more

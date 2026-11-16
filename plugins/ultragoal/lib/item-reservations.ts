@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-type PluginDatabase = ReturnType<BbPluginApi["storage"]["database"]>;
+type PluginDatabase = ReturnType<AliaPluginApi["storage"]["database"]>;
 
 export const ITEM_RESERVATION_TTL_MS = 10 * 60_000;
 
 /**
- * Cross-generation scheduler lock. The row is acquired before BB is asked to
+ * Cross-generation scheduler lock. The row is acquired before VesnALIA is asked to
  * create a child thread, so overlapping old/new plugin instances cannot both
  * pass a process-local availability check and spawn the same work item.
  */

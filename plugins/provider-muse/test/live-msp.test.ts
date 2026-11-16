@@ -7,15 +7,15 @@ import {
   experimental_captureBridgeJsonRpcOutput as captureBridgeJsonRpcOutput,
   type CapturedBridgeJsonRpcOutput,
   type CapturedBridgeNotification,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 
 /**
  * Drives the real `muse serve` binary. It needs a signed-in Muse Code install
  * and spends subscription tokens, so it only runs when asked for explicitly:
  *
- *   BB_MUSE_LIVE=1 npx vitest run test/live-msp.test.ts
+ *   ALIA_MUSE_LIVE=1 npx vitest run test/live-msp.test.ts
  */
-const live = process.env.BB_MUSE_LIVE === "1";
+const live = process.env.ALIA_MUSE_LIVE === "1";
 
 const { handleLine } = await import("../src/provider-bridge.js");
 
@@ -23,7 +23,7 @@ let output: CapturedBridgeJsonRpcOutput;
 let workspaceDir: string;
 
 beforeAll(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-muse-live-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "alia-muse-live-"));
   output = captureBridgeJsonRpcOutput();
 });
 
@@ -67,7 +67,7 @@ it.skipIf(!live)(
       method: "initialize",
       params: {
         protocolVersion: 2,
-        client: { name: "bb", version: "test" },
+        client: { name: "alia", version: "test" },
         grammarVersions: [3, 3],
       },
     });
@@ -163,7 +163,7 @@ it.skipIf(!live)(
         input: [
           {
             type: "text",
-            text: "Run the shell command `echo bb-muse-live` and then tell me its output.",
+            text: "Run the shell command `echo alia-muse-live` and then tell me its output.",
             mentions: [],
           },
         ],

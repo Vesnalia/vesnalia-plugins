@@ -1,8 +1,8 @@
 // Pin alerts reach the person here: an always-mounted overlay hears the server's "iris-alert" signal
-// and shows a toast in every visible bb window (bb keeps it in its notification center), plus a
-// desktop notification in bb's desktop app when bb may show them and the window isn't in front.
-// bb gives plugins no push to the phone; the pin's own mark and the thread's unread state carry it there.
-import { useBbNavigate, useRealtime } from "@get-bb/plugin-sdk/app";
+// and shows a toast in every visible VesnALIA window (VesnALIA keeps it in its notification center), plus a
+// desktop notification in VesnALIA's desktop app when VesnALIA may show them and the window isn't in front.
+// VesnALIA gives plugins no push to the phone; the pin's own mark and the thread's unread state carry it there.
+import { useAliaNavigate, useRealtime } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 interface AlertSignal {
@@ -23,18 +23,18 @@ function parse(payload: unknown): AlertSignal | null {
   return { threadId, pinId, message, title: str(p.title, 120) ?? message, threadTitle: str(p.threadTitle, 120) ?? "a thread" };
 }
 
-/** bb's desktop app marks its window; the phone app and plain browsers get the toast only. */
-const isDesktop = () => typeof window !== "undefined" && "bbDesktop" in window;
+/** VesnALIA's desktop app marks its window; the phone app and plain browsers get the toast only. */
+const isDesktop = () => typeof window !== "undefined" && "aliaDesktop" in window;
 
 export function PinAlertOverlay() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   useRealtime("iris-alert", (payload) => {
     const a = parse(payload);
     if (!a) return;
     const tag = `iris-alert:${a.threadId}:${a.pinId}`;
     const where = a.message === a.title ? `Pinned in ${a.threadTitle}` : `${a.title} · ${a.threadTitle}`;
     if (document.visibilityState === "visible") toast.warning(a.message, { id: tag, description: where, action: { label: "Open", onClick: () => navigate.toThread(a.threadId) } });
-    // A desktop notification only where bb already may show them; Iris never asks for the permission itself.
+    // A desktop notification only where VesnALIA already may show them; Iris never asks for the permission itself.
     if (isDesktop() && typeof Notification !== "undefined" && Notification.permission === "granted" && (document.visibilityState !== "visible" || !document.hasFocus())) {
       try {
         const n = new Notification(a.message, { body: where, tag });

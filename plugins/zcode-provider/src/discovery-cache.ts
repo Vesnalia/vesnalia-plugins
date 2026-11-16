@@ -1,4 +1,4 @@
-// Host-wide demand sharing for bb's separate catalogue/thread/Usage bridges.
+// Host-wide demand sharing for VesnALIA's separate catalogue/thread/Usage bridges.
 // Public normalized state only; never credentials or remote error bodies.
 import { mkdirSync, readFileSync, writeFileSync, renameSync, unlinkSync, statSync } from 'node:fs';
 import { join } from 'node:path';

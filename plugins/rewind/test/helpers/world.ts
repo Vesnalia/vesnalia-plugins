@@ -1,4 +1,4 @@
-// A small fake BB for server tests: threads with event logs, environments,
+// A small fake VesnALIA for server tests: threads with event logs, environments,
 // and the plugin loaded into the SDK's fake plugin host. Host RPC goes to the
 // real host handlers against temp directories, so snapshots and restores run
 // real git.
@@ -7,8 +7,8 @@ import {
   makeHostResponse,
   makeMessageDispatchHookContext,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
-import type { MessageDispatchHookContext } from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk/testing";
+import type { MessageDispatchHookContext } from "@vesnalia/plugin-sdk";
 import path from "node:path";
 import plugin from "../../server";
 import { createHostHandlers } from "../../src/host/handlers";
@@ -91,7 +91,7 @@ export interface WorldOptions {
   onFork?: (args: Record<string, unknown>, fork: FakeThread) => Promise<FakeEnvironment | null>;
   /** Fail event reads that filter by type (the plugin must filter locally). */
   rejectTypeFilter?: boolean;
-  /** `threads.editMessage`; throw to have bb refuse the edit. Default: accept. */
+  /** `threads.editMessage`; throw to have VesnALIA refuse the edit. Default: accept. */
   onEditMessage?: (args: Record<string, unknown>) => Promise<void> | void;
   /** Where `threads.storageLocation` says a thread's storage is. Default: outside every workspace. */
   storageRoot?: (threadId: string) => string;
@@ -144,7 +144,7 @@ export async function createWorld(options: WorldOptions = {}) {
     return thread;
   };
 
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "rewind",
     // Tests edit files right after a dispatch, so by default the gate holds
     // long enough for a snapshot to finish; gate tests set short holds.
@@ -225,7 +225,7 @@ export async function createWorld(options: WorldOptions = {}) {
         editMessage: async (args: Record<string, unknown>) => {
           edits.push(args);
           await options.onEditMessage?.(args);
-          // Like bb: the edited message and every later row go; the new text
+          // Like VesnALIA: the edited message and every later row go; the new text
           // is a new request.
           const thread = requireThread(String(args.threadId));
           const at = thread.conversation.findIndex((row) => row.role === "user" && row.sourceSeqEnd === Number(args.expectedRequestSequence));
@@ -275,7 +275,7 @@ export async function createWorld(options: WorldOptions = {}) {
       return result;
     },
   });
-  await plugin(bb);
+  await plugin(alia);
 
   function addThread(input: Partial<FakeThread> & { projectId?: string }): FakeThread {
     counter += 1;
@@ -388,7 +388,7 @@ export async function createWorld(options: WorldOptions = {}) {
   }
 
   return {
-    bb,
+    alia,
     harness,
     dataDir,
     threads,

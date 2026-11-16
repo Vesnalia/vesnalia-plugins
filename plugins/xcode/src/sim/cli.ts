@@ -1,5 +1,5 @@
 /**
- * `bb xcode sim …`
+ * `alia xcode sim …`
  *
  * Three rules this file exists to respect.
  *
@@ -10,13 +10,13 @@
  *
  * **`run` executes on the server**, so a path argument names a file on the
  * *invoking* machine. Anything that writes a user-supplied path resolves the
- * invoking host and goes through `bb.sdk.files`, never `node:fs` against a
+ * invoking host and goes through `alia.sdk.files`, never `node:fs` against a
  * `ctx.cwd`-relative path.
  *
- * **Remote viewing stays in bb.** The CLI never opens, shares, or returns a
- * simulator network endpoint. The main bb panel owns that surface.
+ * **Remote viewing stays in VesnALIA.** The CLI never opens, shares, or returns a
+ * simulator network endpoint. The main VesnALIA panel owns that surface.
  */
-import { PLUGIN_CLI_OUTPUT_MAX_BYTES } from "@get-bb/plugin-sdk";
+import { PLUGIN_CLI_OUTPUT_MAX_BYTES } from "@vesnalia/plugin-sdk";
 import { isAbsolute, relative, resolve } from "node:path";
 import type { Ctx } from "./context.js";
 import { overallState } from "./preflight.js";
@@ -84,18 +84,18 @@ export function positionals(argv: readonly string[]): string[] {
 }
 
 export const CLI_COMMANDS = [
-  { name: "doctor", summary: "Every prerequisite, its state, and the fix", usage: "bb xcode sim doctor [--json]" },
-  { name: "status", summary: "Live device and current state", usage: "bb xcode sim status [--json]" },
+  { name: "doctor", summary: "Every prerequisite, its state, and the fix", usage: "alia xcode sim doctor [--json]" },
+  { name: "status", summary: "Live device and current state", usage: "alia xcode sim status [--json]" },
   {
     name: "devices",
     summary: "Simulators, marking booted and which is live",
-    usage: "bb xcode sim devices [--json]",
+    usage: "alia xcode sim devices [--json]",
   },
-  { name: "live", summary: "Start or stop the live surface", usage: "bb xcode sim live [<device>] [--stop]" },
+  { name: "live", summary: "Start or stop the live surface", usage: "alia xcode sim live [<device>] [--stop]" },
   {
     name: "shot",
     summary: "Capture one frame",
-    usage: "bb xcode sim shot [--out <path>] [--label <s>] [--json]",
+    usage: "alia xcode sim shot [--out <path>] [--label <s>] [--json]",
   },
   {
     name: "stills",
@@ -103,57 +103,57 @@ export const CLI_COMMANDS = [
     // No `--set-baseline` here: the flag was advertised for months while the
     // handler read only `--device`, silently ignoring the promise. Baselines
     // are set on a finished run, where the look id exists to name.
-    usage: "bb xcode sim stills [--device <d>]  (then: baseline set <lookId>)",
+    usage: "alia xcode sim stills [--device <d>]  (then: baseline set <lookId>)",
   },
   {
     name: "onboard",
     summary: "Show the exact changes Stills needs — changes nothing without --apply",
-    usage: "bb xcode sim onboard [--apply] [--project <path>] [--json]",
+    usage: "alia xcode sim onboard [--apply] [--project <path>] [--json]",
   },
   {
     name: "look",
     summary: "One run's verdict",
-    usage: "bb xcode sim look [<lookId>] [--json]",
+    usage: "alia xcode sim look [<lookId>] [--json]",
   },
   {
     name: "history",
     summary: "One preview's frames over time, with commits",
-    usage: "bb xcode sim history <identity> [--json]",
+    usage: "alia xcode sim history <identity> [--json]",
   },
   {
     name: "baseline",
     summary: "Show, set or clear the baseline",
-    usage: "bb xcode sim baseline [show | set <lookId> | clear]",
+    usage: "alia xcode sim baseline [show | set <lookId> | clear]",
   },
   {
     name: "demos",
     summary: "List the demo states this plugin can render with no hardware",
-    usage: "bb xcode sim demos",
+    usage: "alia xcode sim demos",
   },
   {
     name: "demo-banner",
     summary: "Render one demo banner in this thread's composer for five minutes",
-    usage: "bb xcode sim demo-banner <state|off>",
+    usage: "alia xcode sim demo-banner <state|off>",
   },
   {
     name: "purge",
     summary: "Report and then remove every frame this plugin has stored",
-    usage: "bb xcode sim purge [--dry-run]",
+    usage: "alia xcode sim purge [--dry-run]",
   },
   {
     name: "card",
     summary: "Print the canonical directive for a run",
-    usage: "bb xcode sim card <lookId>",
+    usage: "alia xcode sim card <lookId>",
   },
   {
     name: "diff",
     summary: "Compare two runs",
-    usage: "bb xcode sim diff <lookA> <lookB> [--json]",
+    usage: "alia xcode sim diff <lookA> <lookB> [--json]",
   },
   {
     name: "drive",
     summary: "Run a short sequence of gestures",
-    usage: 'bb xcode sim drive "tap 0.5,0.9; type hello; swipe up; rotate landscape-left"',
+    usage: 'alia xcode sim drive "tap 0.5,0.9; type hello; swipe up; rotate landscape-left"',
   },
 ];
 
@@ -173,7 +173,7 @@ const AGENT_CAPTURE_COMMANDS = new Set([
 
 /**
  * A context whose project scope comes from the invocation rather than from
- * "whichever project bb lists first".
+ * "whichever project VesnALIA lists first".
  *
  * `run` executes on the server with no thread when someone types into a
  * terminal, so `cwd` is the only thing that says which repository they meant.
@@ -184,19 +184,19 @@ export function forInvocation(ctx: Ctx, cliCtx: CliContext): Ctx {
     ...(cliCtx.projectId === undefined ? {} : { projectId: cliCtx.projectId }),
     ...(cliCtx.cwd === undefined ? {} : { cwd: cliCtx.cwd }),
   };
-  // `cwd` is supplied by the invoking bb CLI itself. A bare thread/project id
+  // `cwd` is supplied by the invoking VesnALIA CLI itself. A bare thread/project id
   // is caller-selectable routing data and cannot authorize reading that
   // checkout's stored images or verdicts.
   const hasInvocationCheckout = cliCtx.cwd !== undefined;
   return {
     ...ctx,
     // An empty CLI context is not the panel's trusted "current project"
-    // request. It carries no authority to inherit the first project in bb.
+    // request. It carries no authority to inherit the first project in VesnALIA.
     scopeForThread: () =>
       hasInvocationCheckout ? ctx.scopeForInvocation(hints) : Promise.resolve(null),
     // Handlers built on this ctx re-resolve scope from their own hints; fold
     // the invocation `cwd` in so a bare-terminal `stills` resolves the repo
-    // the caller is standing in, never "whichever project bb lists first".
+    // the caller is standing in, never "whichever project VesnALIA lists first".
     // `cwd` is the weakest rung in `resolveScopeFor`, so a thread or project
     // hint still wins when one exists.
     scopeForInvocation: (handlerHints) =>
@@ -215,7 +215,7 @@ async function scopedLook(ctx: Ctx, lookId: string): Promise<ReturnType<typeof g
 }
 
 const NO_INVOCATION_SCOPE =
-  "Run this command from the bb thread checkout whose simulator data you want to access.\n";
+  "Run this command from the VesnALIA thread checkout whose simulator data you want to access.\n";
 
 export function makeCli(base: Ctx) {
   return async function run(argv: string[], cliCtx: CliContext): Promise<CliResult> {
@@ -376,7 +376,7 @@ async function live(ctx: Ctx, argv: string[]): Promise<CliResult> {
       stderr:
         wanted === null
           ? "No simulator to watch. Install an iOS runtime in Xcode → Settings → Components.\n"
-          : `No simulator matched "${wanted}". Run \`bb xcode sim devices\` to see what is installed.\n`,
+          : `No simulator matched "${wanted}". Run \`alia xcode sim devices\` to see what is installed.\n`,
     };
   }
   return {
@@ -391,7 +391,7 @@ async function live(ctx: Ctx, argv: string[]): Promise<CliResult> {
  * `--out` names a file on the **invoking** machine, not on the server's
  * filesystem: `run` executes on the server, and on an enrolled remote machine
  * `node:fs` against a `ctx.cwd`-relative path silently writes to the wrong
- * host's disk. The write goes through `bb.sdk.files` with the invoking host's
+ * host's disk. The write goes through `alia.sdk.files` with the invoking host's
  * id, resolved from the thread.
  *
  * Image bytes never go to stdout — only paths. Combined output has to fit
@@ -488,7 +488,7 @@ async function drive(ctx: Ctx, argv: string[], cliCtx: CliContext = {}): Promise
   if (script.trim() === "") {
     return {
       exitCode: 2,
-      stderr: 'Nothing to run. Try: bb xcode sim drive "tap 0.5,0.9; type hello; swipe up"\n',
+      stderr: 'Nothing to run. Try: VesnALIA xcode sim drive "tap 0.5,0.9; type hello; swipe up"\n',
     };
   }
 
@@ -504,7 +504,7 @@ async function drive(ctx: Ctx, argv: string[], cliCtx: CliContext = {}): Promise
 
   const device = ctx.live.currentDevice();
   if (device === null) {
-    return { exitCode: 1, stderr: "No simulator is running. Start one with `bb xcode sim live`.\n" };
+    return { exitCode: 1, stderr: "No simulator is running. Start one with `alia xcode sim live`.\n" };
   }
 
   // The lease holder is the invoking *thread*, exactly as the agent tools
@@ -692,7 +692,7 @@ async function look(ctx: Ctx, argv: string[]): Promise<CliResult> {
 async function history(ctx: Ctx, argv: string[]): Promise<CliResult> {
   const identity = positionals(argv)[0];
   if (identity === undefined) {
-    return { exitCode: 2, stderr: "Which preview? Try: bb xcode sim history preview:MyApp_LoginView.swift_Dark.png\n" };
+    return { exitCode: 2, stderr: "Which preview? Try: VesnALIA xcode sim history preview:MyApp_LoginView.swift_Dark.png\n" };
   }
   if ((await ctx.scopeForThread(null)) === null) {
     return { exitCode: 1, stderr: NO_INVOCATION_SCOPE };
@@ -749,7 +749,7 @@ async function baseline(
   }
   if (sub === "set") {
     const lookId = positionals(argv)[1];
-    if (lookId === undefined) return { exitCode: 2, stderr: "Which run? bb xcode sim baseline set <lookId>\n" };
+    if (lookId === undefined) return { exitCode: 2, stderr: "Which run? VesnALIA xcode sim baseline set <lookId>\n" };
     if ((await scopedLook(ctx, lookId)) === null) {
       return { exitCode: 1, stderr: `No run called ${lookId}.\n` };
     }
@@ -772,7 +772,7 @@ async function baseline(
           : `${lookId} is the baseline, replacing the one from ${result.replaced.slice(0, 7)}.\n`,
     };
   }
-  return { exitCode: 2, stderr: "bb xcode sim baseline [show | set <lookId> | clear]\n" };
+  return { exitCode: 2, stderr: "alia xcode sim baseline [show | set <lookId> | clear]\n" };
 }
 
 /**
@@ -783,7 +783,7 @@ async function baseline(
  */
 async function card(ctx: Ctx, argv: string[]): Promise<CliResult> {
   const lookId = positionals(argv)[0];
-  if (lookId === undefined) return { exitCode: 2, stderr: "Which run? bb xcode sim card <lookId>\n" };
+  if (lookId === undefined) return { exitCode: 2, stderr: "Which run? VesnALIA xcode sim card <lookId>\n" };
   if (!LOOK_ID_PATTERN.test(lookId)) {
     return { exitCode: 2, stderr: `"${lookId}" is not a run id.\n` };
   }
@@ -802,7 +802,7 @@ async function card(ctx: Ctx, argv: string[]): Promise<CliResult> {
 async function diffRuns(ctx: Ctx, argv: string[]): Promise<CliResult> {
   const [a, b] = positionals(argv);
   if (a === undefined || b === undefined) {
-    return { exitCode: 2, stderr: "bb xcode sim diff <lookA> <lookB>\n" };
+    return { exitCode: 2, stderr: "alia xcode sim diff <lookA> <lookB>\n" };
   }
   const [lookA, lookB] = await Promise.all([scopedLook(ctx, a), scopedLook(ctx, b)]);
   if (lookA === null || lookB === null) {
@@ -867,7 +867,7 @@ async function purge(ctx: Ctx, argv: string[], cliCtx: CliContext): Promise<CliR
   if (cliCtx.threadId === undefined && cliCtx.projectId === undefined) {
     return {
       exitCode: 1,
-      stderr: "Purging needs a person to confirm in a recent thread. Run it from a bb thread.\n",
+      stderr: "Purging needs a person to confirm in a recent thread. Run it from a VesnALIA thread.\n",
     };
   }
   let result;

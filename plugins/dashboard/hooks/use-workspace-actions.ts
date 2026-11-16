@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import type { useSdk } from "@get-bb/plugin-sdk/app";
+import type { useSdk } from "@vesnalia/plugin-sdk/app";
 import type { useWorkspace } from "./use-workspace";
 import type { useDashboardSnapshot } from "./use-dashboard-snapshot";
 import type { Translator } from "../i18n";

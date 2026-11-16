@@ -1,7 +1,7 @@
-// Snippet suggestions: mine bb's prompt history for prompts the user keeps
+// Snippet suggestions: mine VesnALIA's prompt history for prompts the user keeps
 // retyping, and propose them as reusable snippets.
 //
-// Pure functions — no node/bb imports — so the unit tests can drive the whole
+// Pure functions — no node/alia imports — so the unit tests can drive the whole
 // pipeline on plain arrays and the frontend can reuse the shaping helpers.
 //
 // The pipeline is: drop machine-written prompts -> normalize -> cluster
@@ -49,7 +49,7 @@ export const COVERED_THRESHOLD = 0.6;
 /** Longest run of differing words still worth turning into one fill-in. */
 export const MAX_SLOT_WORDS = 4;
 /**
- * Clustering is O(distinct²). A heavy bb holds six figures of prompt history,
+ * Clustering is O(distinct²). A heavy VesnALIA holds six figures of prompt history,
  * and the tail of it is a year old — the proposals worth making all come from
  * the recent end, so the corpus is capped there rather than left to grow into
  * a multi-second block of the server's shared event loop.
@@ -66,7 +66,7 @@ export const YIELD_EVERY = 200;
  */
 const LENGTH_RATIO_FLOOR = 0.45;
 
-/** Hand the event loop back so a long mine never blocks bb's server. */
+/** Hand the event loop back so a long mine never blocks VesnALIA's server. */
 function yieldToLoop(): Promise<void> {
   return new Promise<void>((resolve) => {
     if (typeof setImmediate === "function") setImmediate(resolve);
@@ -75,15 +75,15 @@ function yieldToLoop(): Promise<void> {
 }
 
 /**
- * Prompts bb itself (or another plugin) injected, not ones the user typed.
+ * Prompts VesnALIA itself (or another plugin) injected, not ones the user typed.
  * Kept to general shapes rather than any one plugin's wording: role framing,
- * bb-generated run/thread ids, and directive markers.
+ * alia-generated run/thread ids, and directive markers.
  */
 const MACHINE_PATTERNS: RegExp[] = [
   /^you are (an? |the )?[a-z]/i, // "You are Agent A", "You are a quick delegated worker"
   /^you (rewrite|will|must|should) /i,
-  /^\[bb [a-z]+ /i, // "[BB workflow name · run wfr_…]"
-  /\b(?:thr|wfr|rl|qk|prj|env)_[a-z0-9]{6,}\b/, // bb-generated ids
+  /^\[alia [a-z]+ /i, // "[VesnALIA workflow name · run wfr_…]"
+  /\b(?:thr|wfr|rl|qk|prj|env)_[a-z0-9]{6,}\b/, // alia-generated ids
   /^(?:relay|quick dispatch|workflow) [a-z0-9_]{6,}/i,
   /^round \d+ of \d+/i,
   /::[a-z][a-z-]*\{/, // ::directive markers
@@ -484,7 +484,7 @@ function lowerBound(entries: OpenCluster[], length: number): number {
  * Candidates come from a length-sorted window rather than the whole cluster
  * list: `similarityOf` already scores anything outside that window as 0, so
  * the window is a pure speedup, not a different answer. The pass yields to the
- * event loop periodically because it runs inside the bb server process.
+ * event loop periodically because it runs inside the VesnALIA server process.
  */
 export async function clusterPrompts(
   prompts: HistoryPrompt[],

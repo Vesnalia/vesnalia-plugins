@@ -1,4 +1,4 @@
-import type { PluginSidebarThread, PluginSidebarProject, experimental_useProviders } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread, PluginSidebarProject, experimental_useProviders } from "@vesnalia/plugin-sdk/app";
 export const provider:ReturnType<typeof experimental_useProviders>["providers"][number]={id:"codex",displayName:"Codex",pluginId:"codex",available:true,logoUrl:"/provider-logos/codex.svg",capabilities:{modelCatalogScope:"workspace",permissionModes:["full"],supportsFork:true,supportsNativeUserQuestion:true,supportsServiceTier:true,supportsSessionRewind:true,supportsThreadArchive:true,supportsThreadRename:true},completedTurnDisplay:"collapse",composerActions:[],maintenance:{health:true,installation:true,usage:true}};
 export const project:PluginSidebarProject={id:"p1",name:"Проект",isPersonal:false,href:"/projects/p1",settingsHref:"/projects/p1/settings"};
 export function thread(overrides:Partial<PluginSidebarThread>={}):PluginSidebarThread {

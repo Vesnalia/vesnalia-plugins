@@ -1,6 +1,6 @@
 /**
  * The Skills button in a thread's composer, with a live count, opening the
- * Skills list in bb's composer popup (`./composer-popup`).
+ * Skills list in VesnALIA's composer popup (`./composer-popup`).
  *
  * The count is asked for when the button mounts; each time the popup opens it
  * scans again and the count follows, through the list the two share. The button
@@ -10,7 +10,7 @@
  * `type="button"`: the button sits in the composer's form, where a button with
  * no type would send the message.
  */
-import { useComposer } from "@get-bb/plugin-sdk/app";
+import { useComposer } from "@vesnalia/plugin-sdk/app";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";

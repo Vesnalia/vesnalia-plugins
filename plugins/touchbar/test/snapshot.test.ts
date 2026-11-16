@@ -149,7 +149,7 @@ test("hidden, archived, and deleted threads are excluded by default", () => {
 
 test("summary and cards stay compact and useful", () => {
   const empty = buildSnapshot([], { cardLimit: 3, includeHidden: false });
-  assert.equal(renderSummary(empty), "BB idle");
+  assert.equal(renderSummary(empty), "VesnALIA idle");
   assert.equal(renderCard(empty, 0), "");
 
   const active = buildSnapshot(
@@ -162,6 +162,6 @@ test("summary and cards stay compact and useful", () => {
     ],
     { cardLimit: 3, includeHidden: false },
   );
-  assert.equal(renderSummary(active), "BB · 1 active");
+  assert.equal(renderSummary(active), "ALIA · 1 active");
   assert.equal(renderCard(active, 0), "● Touch Bar monitor · Personal");
 });

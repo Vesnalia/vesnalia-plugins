@@ -5,10 +5,10 @@
 // Fast with hundreds of pairs: one background queue diffs two pairs at a time,
 // tiles on screen first. Each job decodes both images once, keeps only the
 // counts, a small thumbnail and a small mask of the changes, and lets the
-// full images go. Paths stream through bb preview leases (file_url,
+// full images go. Paths stream through VesnALIA preview leases (file_url,
 // folder_files), so nothing is base64-encoded on the way.
 
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { Chip, CompareView, Glyph, InlineError, Shimmer, cn, literalStrings, num, str, useEnv } from "@iris/ui";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
@@ -73,7 +73,7 @@ interface JobResult {
 
 const urlCache = new Map<string, { at: number; until: number; url: Promise<string> }>();
 
-/** A URL for a source: https and data: as they are, paths through a bb preview lease. */
+/** A URL for a source: https and data: as they are, paths through a VesnALIA preview lease. */
 function resolveSide(side: Side, threadId: string | null, rpc: Rpc, source: string): Promise<string> {
   if (side.url) return Promise.resolve(side.url);
   const src = side.path;

@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Markdown, experimental_useSidebarThreads, useBbNavigate, useSdk, type PluginBrowserBbSdk } from "@get-bb/plugin-sdk/app";
+import { Markdown, experimental_useSidebarThreads, useAliaNavigate, useSdk, type PluginBrowserAliaSdk } from "@vesnalia/plugin-sdk/app";
 import type { QuestionRound } from "../planner-journey";
 import { BUTTON, BUTTON_PRIMARY, FIELD, messageOf } from "./common";
 import { PlannerMark } from "./planner-kit";
 
-type Interaction = Awaited<ReturnType<PluginBrowserBbSdk["threads"]["interactions"]["list"]>>[number];
+type Interaction = Awaited<ReturnType<PluginBrowserAliaSdk["threads"]["interactions"]["list"]>>[number];
 type PluginInteraction = Extract<Interaction, { origin: { kind: "plugin" } }>;
 type Answers = Record<string, { selected: string[]; freeText?: string }>;
 
-// bb's built-in Ask User Question and Better Ask share this renderer id and wire format.
+// VesnALIA's built-in Ask User Question and Better Ask share this renderer id and wire format.
 const ASK_RENDERER_ID = "ask-user-question";
 const MAX_FREE_TEXT = 4096;
 
@@ -46,13 +46,13 @@ export function questionsOf(data: unknown): AskQuestion[] | null {
 
 const isPluginRow = (row: Interaction): row is PluginInteraction => row.payload.kind === "plugin" && row.origin?.kind === "plugin";
 
-/** Whether bb's sidebar says the thread waits on the human, for a question or an approval. */
+/** Whether VesnALIA's sidebar says the thread waits on the human, for a question or an approval. */
 export function useWaiting(threadId: string): boolean {
   return experimental_useSidebarThreads().threads.find((thread) => thread.id === threadId)?.hasPendingInteraction === true;
 }
 
 /**
- * The planner's open plugin questions, which bb's embedded chat leaves out. Read while the sidebar says the thread waits on
+ * The planner's open plugin questions, which VesnALIA's embedded chat leaves out. Read while the sidebar says the thread waits on
  * the user, or while `also` says so: its thread events show a round still open that the sidebar does not.
  */
 export function usePendingQuestions(threadId: string, also = false) {
@@ -117,7 +117,7 @@ function roundOf(data: unknown, at: number): { id: string; status: string; round
     const answer = given[question.question];
     if (isString(answer)) answers.push({ header: isString(question.header) ? question.header : question.question, question: question.question, answer });
   }
-  // Without the structured payload, bb's own description has a "- question — answer" line for each.
+  // Without the structured payload, VesnALIA's own description has a "- question — answer" line for each.
   if (answers.length === 0 && isString(description.detail)) {
     for (const line of description.detail.split("\n")) {
       const match = /^- (.+?) — (.+)$/.exec(line.trim());
@@ -128,13 +128,13 @@ function roundOf(data: unknown, at: number): { id: string; status: string; round
   return { id: interaction.id, status: interaction.status, round: { id: interaction.id, title, askedAt: at, status: "open", answeredAt: null, answers } };
 }
 
-// bb returns at most 100 thread events a call; this many pages is far more question rounds than a planner asks.
+// VesnALIA returns at most 100 thread events a call; this many pages is far more question rounds than a planner asks.
 const EVENT_PAGE = 100;
 const MAX_PAGES = 10;
 
 /** The thread's interaction lifecycle events, oldest first, page by page. */
-async function readLifecycle(sdk: PluginBrowserBbSdk, threadId: string) {
-  const rows: Awaited<ReturnType<PluginBrowserBbSdk["threads"]["events"]["list"]>> = [];
+async function readLifecycle(sdk: PluginBrowserAliaSdk, threadId: string) {
+  const rows: Awaited<ReturnType<PluginBrowserAliaSdk["threads"]["events"]["list"]>> = [];
   for (let page = 0; page < MAX_PAGES; page++) {
     const after = rows.at(-1)?.seq;
     const next = await sdk.threads.events.list({ threadId, types: ["system/interaction/lifecycle"], limit: String(EVENT_PAGE), order: "asc", ...(after === undefined ? {} : { afterSeq: String(after) }) });
@@ -144,7 +144,7 @@ async function readLifecycle(sdk: PluginBrowserBbSdk, threadId: string) {
   return rows;
 }
 
-/** Every question round of the planner's thread, asked and answered, read from bb's thread events again when `stamp` changes. */
+/** Every question round of the planner's thread, asked and answered, read from VesnALIA's thread events again when `stamp` changes. */
 export function useQuestionRounds(threadId: string, stamp: string): QuestionRound[] {
   const sdk = useSdk();
   const [rounds, setRounds] = useState<QuestionRound[]>([]);
@@ -152,7 +152,7 @@ export function useQuestionRounds(threadId: string, stamp: string): QuestionRoun
   latest.current = sdk;
   useEffect(() => {
     let live = true;
-    // A bb without this API, or a refusal, leaves the rounds out: the page still shows Loom's own steps.
+    // A VesnALIA without this API, or a refusal, leaves the rounds out: the page still shows Loom's own steps.
     readLifecycle(latest.current, threadId)
       .then(
         (rows) => {
@@ -180,7 +180,7 @@ export function useQuestionRounds(threadId: string, stamp: string): QuestionRoun
 
 /** The planner's open questions as cards for Needs you, one question at a time. A question another plugin draws goes to the thread. */
 export function PlannerQuestions({ threadId, rows, error, respond }: { threadId: string } & Pick<ReturnType<typeof usePendingQuestions>, "rows" | "error" | "respond">) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   if (rows.length === 0 && error === null) return null;
   return (
     <>

@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { ThreadChat, experimental_useSidebarThreads, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { ThreadChat, experimental_useSidebarThreads, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { AskStep, ControlAction, PlannerAsk, PlannerVersion, PlannerView, ProjectView } from "../contract";
 import { specReviewBlocks } from "../format";
 import { operationalSummary } from "../next-step";
@@ -28,7 +28,7 @@ export interface PlannerPageProps {
 const NEED = "space-y-2 rounded-md border border-l-4 border-warning bg-card p-3";
 const CALM = "space-y-1 rounded-md border border-l-4 border-border-seam border-l-success bg-card p-3";
 
-/** The planner's thread status as bb's sidebar shows it. */
+/** The planner's thread status as VesnALIA's sidebar shows it. */
 function useStatus(threadId: string): Status {
   const thread = experimental_useSidebarThreads().threads.find((entry) => entry.id === threadId);
   if (thread === undefined) return "missing";
@@ -54,7 +54,7 @@ function planningStep(view: PlannerView, status: Status, steps: readonly Journey
 }
 
 function Strip({ view, status, questions, steps }: { view: PlannerView; status: Status; questions: number; steps: readonly JourneyStep[] }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const lastWords = [...steps].reverse().find((step) => step.kind === "turn" && step.text !== null);
   const on = status === "working" ? workingOn(steps) : null;
   const finished = view.projectState === "done" || view.projectState === "archived";
@@ -76,7 +76,7 @@ function Strip({ view, status, questions, steps }: { view: PlannerView; status: 
                   : view.versions.length > 0
                 ? [`Idle · v${view.versions.at(-1)!.version} is with you`, "border-border-seam text-muted-foreground"]
                 : ["Idle", "border-border-seam text-muted-foreground"];
-  const facts = [on === null ? "" : `on ${on}`, lastWords === undefined ? "" : `last turn ${timeLabel(lastWords.at, view.now)}`, status === "missing" ? "bb does not list its thread" : ""].filter((part) => part !== "");
+  const facts = [on === null ? "" : `on ${on}`, lastWords === undefined ? "" : `last turn ${timeLabel(lastWords.at, view.now)}`, status === "missing" ? "alia does not list its thread" : ""].filter((part) => part !== "");
   const current = view.approvedVersion === null && view.projectState !== "archived" ? planningStep(view, status, steps) : null;
   const latest = view.versions.at(-1)?.version;
   // At the Draft step with a version out, the planner writes the next one; past it, the newest one is in review or with you.
@@ -222,9 +222,9 @@ function AsksCard({ ask, project, versions, busy, onControl, onSpec, onTicket, o
   );
 }
 
-/** bb says the planner's thread waits on the human for something only its chat shows, such as a tool approval. */
+/** VesnALIA says the planner's thread waits on the human for something only its chat shows, such as a tool approval. */
 function WaitsInChat({ threadId }: { threadId: string }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <section data-waits-in-chat aria-label="The planner waits in its chat" className={NEED}>
       <div className="flex flex-wrap items-center gap-2">
@@ -260,7 +260,7 @@ function VersionCard({ view, project, onSpec }: { view: PlannerView; project: Pr
     facts.push([
       "!",
       <>
-        Loom's spec review did not finish: {review.reason}. Ask the planner to propose again, or approve it anyway with <code className="font-mono text-xs">bb loom approve {project.overview.slug}{draft ? "" : ` --version ${version}`} --skip-review</code>.
+        Loom's spec review did not finish: {review.reason}. Ask the planner to propose again, or approve it anyway with <code className="font-mono text-xs">alia loom approve {project.overview.slug}{draft ? "" : ` --version ${version}`} --skip-review</code>.
       </>,
     ]);
   else facts.push(["·", "No spec review ran for it."]);
@@ -339,7 +339,7 @@ export function PlannerPage({ threadId, project, busy = false, onControl, onSpec
   const status = useStatus(threadId);
   const view = remote.data ?? null;
   const rounds = useQuestionRounds(threadId, `${status}:${view?.steps.length ?? 0}`);
-  // bb's sidebar may leave the thread out, or lag behind the round its events show open: then the open questions are read anyway.
+  // VesnALIA's sidebar may leave the thread out, or lag behind the round its events show open: then the open questions are read anyway.
   const questions = usePendingQuestions(threadId, status === "missing" || rounds.some((round) => round.status === "open"));
   const [mode, setMode] = useState<"summary" | "chat">("summary");
   // Here, so a message being written survives the layout switching between one and two columns.
@@ -354,7 +354,7 @@ export function PlannerPage({ threadId, project, busy = false, onControl, onSpec
   if (view === null) return <p className="p-4 text-sm text-muted-foreground">This thread is not a Loom planner.</p>;
   const chapters: Chapter[] = journey(view, rounds);
   const steps = chapters.flatMap((chapter) => chapter.steps);
-  // The server refuses a planner that has ended; bb's sidebar may leave out a thread that still takes messages.
+  // The server refuses a planner that has ended; VesnALIA's sidebar may leave out a thread that still takes messages.
   const live = view.projectState !== "archived";
   const ask = view.ask !== null && view.ask.open && project !== null ? view.ask : null;
   const askedApprove = ask?.steps.some((step) => step.action === "approve" && !step.done) === true;
@@ -363,7 +363,7 @@ export function PlannerPage({ threadId, project, busy = false, onControl, onSpec
   const commented = view.steps.some((step) => step.kind === "notes" && step.version === waitingVersion);
   const versionCard = waitingVersion !== null && !askedApprove && !commented && (!specReviewBlocks(view.review) || view.review.kind === "failed");
   const pendingQuestions = questions.rows.length;
-  // bb says the thread waits, but on nothing this page can draw: a provider's own approval or question, which only its chat shows.
+  // VesnALIA says the thread waits, but on nothing this page can draw: a provider's own approval or question, which only its chat shows.
   const waitsInChat = status === "waiting" && questions.loaded && pendingQuestions === 0 && questions.error === null;
   // One Ask User Question round can hold several questions; the strip counts the questions, Needs you the rounds.
   const askedCount = questions.rows.reduce((sum, row) => sum + (questionsOf(row.payload.data)?.length ?? 1), 0);
@@ -437,7 +437,7 @@ export function PlannerPage({ threadId, project, busy = false, onControl, onSpec
             </button>
           ))}
         </div>
-        <span className="text-xs text-muted-foreground">{mode === "summary" ? "What the planner needs from you, and what it did step by step." : "The planner's whole thread, as bb shows it."}</span>
+        <span className="text-xs text-muted-foreground">{mode === "summary" ? "What the planner needs from you, and what it did step by step." : "The planner's whole thread, as VesnALIA shows it."}</span>
       </div>
       {mode === "chat" ? (
         <div className="h-[70vh] min-h-96">

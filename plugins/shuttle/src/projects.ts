@@ -1,4 +1,4 @@
-// Which bb project a PR's review thread belongs in: the project whose git remote is the PR's
+// Which VesnALIA project a PR's review thread belongs in: the project whose git remote is the PR's
 // repository, else the only project with that repository's name, else the default setting.
 import type { ProjectInfo } from "./ports";
 

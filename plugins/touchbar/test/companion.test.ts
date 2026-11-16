@@ -22,12 +22,12 @@ test("Host Monitor still provides every command consumed by Touch Bar", () => {
     assert.match(touchBarModel, new RegExp(`\\["host-monitor", "${command}"`));
     assert.match(hostMonitorServer, new RegExp(`name: "${command}"`));
   }
-  assert.match(hostMonitorServer, /bb\.cli\.register\(/u);
+  assert.match(hostMonitorServer, /alia\.cli\.register\(/u);
 });
 
 test("BetterTouchTool preset is global, persistent, bounded, and action-safe", () => {
   const preset = JSON.parse(
-    readFileSync(join(companion, "BB-Agent-Monitor.bttpreset"), "utf8"),
+    readFileSync(join(companion, "ALIA-Agent-Monitor.bttpreset"), "utf8"),
   ) as {
     BTTPresetName: string;
     BTTPresetContent: Array<{
@@ -40,7 +40,7 @@ test("BetterTouchTool preset is global, persistent, bounded, and action-safe", (
     }>;
   };
 
-  assert.equal(preset.BTTPresetName, "BB Agent Monitor");
+  assert.equal(preset.BTTPresetName, "VesnALIA Agent Monitor");
   assert.equal(preset.BTTPresetContent.length, 1);
   const global = preset.BTTPresetContent[0]!;
   assert.equal(global.BTTAppBundleIdentifier, "BT.G");
@@ -51,7 +51,7 @@ test("BetterTouchTool preset is global, persistent, bounded, and action-safe", (
     assert.equal(trigger.BTTTriggerConfig.BTTTouchBarScriptUpdateInterval, 2);
     assert.match(
       String(trigger.BTTTriggerConfig.BTTTouchBarShellScriptString),
-      /BBTouchBar\/bb-touchbar" card/u,
+      /BBTouchBar\/alia-touchbar" card/u,
     );
     assert.equal(trigger.BTTActionsToExecute.length, 1);
     assert.equal(trigger.BTTActionsToExecute[0]?.BTTPredefinedActionType, 206);
@@ -67,7 +67,7 @@ test("BetterTouchTool preset is global, persistent, bounded, and action-safe", (
 });
 
 test("companion scripts are POSIX-shell parseable and avoid eval", () => {
-  for (const name of ["bb-touchbar.sh", "install.sh"]) {
+  for (const name of ["alia-touchbar.sh", "install.sh"]) {
     const path = join(companion, name);
     execFileSync("/bin/sh", ["-n", path]);
     assert.doesNotMatch(readFileSync(path, "utf8"), /\beval\b/u);
@@ -79,7 +79,7 @@ test("companion scripts are POSIX-shell parseable and avoid eval", () => {
   assert.match(installer, /--preset/u);
 });
 
-test("Swift source plugin renders native status cards with safe BB actions", () => {
+test("Swift source plugin renders native status cards with safe VesnALIA actions", () => {
   const source = readFileSync(join(companion, "BBTouchBar.swift"), "utf8");
   assert.match(source, /BTT-Plugin-Type: TouchBar/u);
   assert.match(source, /BTTPluginInterface/u);
@@ -96,21 +96,21 @@ test("Swift source plugin renders native status cards with safe BB actions", () 
   assert.match(source, /override func mouseDown/u);
   assert.match(source, /badgeField/u);
   assert.match(source, /accentLayer/u);
-  assert.match(source, /BB Agent Monitor/u);
+  assert.match(source, /ALIA Agent Monitor/u);
   assert.match(source, /RUN/u);
   assert.match(source, /IDLE/u);
   assert.match(source, /INPUT/u);
-  assert.match(source, /Application Support\/BBTouchBar\/bb-path/u);
+  assert.match(source, /Application Support\/BBTouchBar\/alia-path/u);
   assert.match(source, /thread\.providerId\.uppercased\(\)/u);
   assert.doesNotMatch(source, /DFRFoundation|TouchBarServer|\/bin\/(?:ba|z)?sh/u);
 });
 
 test("package includes every companion and excludes a frontend entry", () => {
   const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
-    bb: Record<string, unknown>;
+    alia: Record<string, unknown>;
     files: string[];
   };
-  assert.equal(manifest.bb.app, undefined);
+  assert.equal(manifest.alia.app, undefined);
   assert.ok(manifest.files.includes("companion/"));
   assert.ok(manifest.files.includes("native/"));
   assert.ok(manifest.files.includes("assets/"));
@@ -143,7 +143,7 @@ test("native app owns the Control Strip and fullscreen panel without physical st
   const brewInstaller = readFileSync(join(native, "homebrew-install.sh"), "utf8");
   const brewUninstaller = readFileSync(join(native, "homebrew-uninstall.sh"), "utf8");
   const cask = readFileSync(
-    join(root, "..", "..", "Casks", "bb-touch-bar.rb"),
+    join(root, "..", "..", "Casks", "alia-touch-bar.rb"),
     "utf8",
   );
 
@@ -152,7 +152,7 @@ test("native app owns the Control Strip and fullscreen panel without physical st
   assert.match(controller, /DFRElementSetControlStripPresenceForIdentifier/u);
   assert.match(controller, /dismissSystemModalTouchBar/u);
   assert.match(controller, /minimizeSystemModalTouchBar/u);
-  assert.doesNotMatch(controller, /SummaryButton|labelWithString: "BB"/u);
+  assert.doesNotMatch(controller, /SummaryButton|labelWithString: "ALIA"/u);
   assert.match(controller, /private final class TouchBarScrollView: NSScrollView/u);
   assert.match(controller, /hasHorizontalScroller = false/u);
   assert.match(controller, /allowedTouchTypes = \.direct/u);
@@ -185,7 +185,7 @@ test("native app owns the Control Strip and fullscreen panel without physical st
   assert.match(controller, /settings carousel tapped/u);
   assert.match(controller, /settings host monitor tapped/u);
   assert.match(controller, /settings usage visibility tapped/u);
-  assert.doesNotMatch(controller, /bbPreviousProject|bbNextProject/u);
+  assert.doesNotMatch(controller, /aliaPreviousProject|aliaNextProject/u);
   assert.doesNotMatch(controller, /title: "[‹›]"/u);
   assert.match(controller, /projectDockTapped/u);
   assert.match(controller, /BBTouchBarSelectedProject/u);
@@ -205,18 +205,18 @@ test("native app owns the Control Strip and fullscreen panel without physical st
   assert.match(controller, /projectInitials/u);
   assert.match(controller, /provider == "cursor" \|\| provider == "acp-cursor"/u);
   assert.match(controller, /\.error: 0, \.blocked: 1, \.done: 2, \.working: 3/u);
-  assert.match(controller, /static let bbSettings/u);
-  assert.match(controller, /static let bbSettingsPanel/u);
-  assert.match(controller, /static let bbClose/u);
-  assert.match(controller, /static let bbDock/u);
-  assert.match(controller, /static let bbProject/u);
-  assert.match(controller, /static let bbCarousel/u);
-  assert.match(controller, /case \.bbSettings: return settingsItem/u);
-  assert.match(controller, /case \.bbSettingsPanel: return settingsPanelItem/u);
-  assert.match(controller, /case \.bbClose: return closeItem/u);
-  assert.match(controller, /case \.bbDock: return dockItem/u);
-  assert.match(controller, /case \.bbProject: return projectItem/u);
-  assert.match(controller, /case \.bbCarousel: return carouselItem/u);
+  assert.match(controller, /static let aliaSettings/u);
+  assert.match(controller, /static let aliaSettingsPanel/u);
+  assert.match(controller, /static let aliaClose/u);
+  assert.match(controller, /static let aliaDock/u);
+  assert.match(controller, /static let aliaProject/u);
+  assert.match(controller, /static let aliaCarousel/u);
+  assert.match(controller, /case \.aliaSettings: return settingsItem/u);
+  assert.match(controller, /case \.aliaSettingsPanel: return settingsPanelItem/u);
+  assert.match(controller, /case \.aliaClose: return closeItem/u);
+  assert.match(controller, /case \.aliaDock: return dockItem/u);
+  assert.match(controller, /case \.aliaProject: return projectItem/u);
+  assert.match(controller, /case \.aliaCarousel: return carouselItem/u);
   assert.match(controller, /identifiers\.append\(\.flexibleSpace\)/u);
   assert.doesNotMatch(controller, /PanelRootView|CompactControlButton/u);
   assert.match(controller, /compactWidth = projectFirst\s*\? 32/su);
@@ -231,8 +231,8 @@ test("native app owns the Control Strip and fullscreen panel without physical st
   assert.match(model, /timeout: 5/u);
   assert.match(model, /offlineFailureThreshold = 3/u);
   assert.match(model, /maximumDelay: TimeInterval = 30/u);
-  assert.match(model, /BB entering reconnecting after/u);
-  assert.match(model, /BB reconnected after/u);
+  assert.match(model, /ALIA entering reconnecting after/u);
+  assert.match(model, /ALIA reconnected after/u);
   assert.match(model, /posixPermissions: 0o600/u);
   assert.match(model, /terminateDeadline/u);
   assert.match(model, /Darwin\.kill\(process\.processIdentifier, SIGKILL\)/u);
@@ -278,7 +278,7 @@ test("native app owns the Control Strip and fullscreen panel without physical st
   assert.match(scrollViewSource, /override func scrollWheel/u);
   assert.doesNotMatch(scrollViewSource, /override func hitTest|override func mouseDown/u);
   assert.match(controller, /bar\.defaultItemIdentifiers = panelIdentifiers\(\)/u);
-  assert.match(controller, /configurationVisible \? \.bbSettingsPanel : \.bbList/u);
+  assert.match(controller, /configurationVisible \? \.aliaSettingsPanel : \.aliaList/u);
   assert.match(controller, /settingsPanelItem\.view = scrollContainer\(groups\)/u);
   assert.match(controller, /title: "FILTERS"/u);
   assert.match(controller, /title: "SUBSCRIPTIONS"/u);
@@ -317,16 +317,16 @@ test("native app owns the Control Strip and fullscreen panel without physical st
   assert.match(controller, /private final class HostMetricView: NSButton/u);
   assert.match(controller, /#selector\(hostTapped/u);
   assert.match(controller, /AgentStore\.openHostMonitor/u);
-  assert.ok(controller.includes("opened host \\(hostId) in BB Host Monitor"));
+  assert.ok(controller.includes("opened host \\(hostId) in VesnALIA Host Monitor"));
   assert.match(controller, /usageVisibilityTapped/u);
   assert.match(controller, /hostVisibilityTapped/u);
-  assert.match(controller, /case \.bbUsage: return usageItem/u);
-  assert.match(controller, /case \.bbHostMonitor: return hostMonitorItem/u);
+  assert.match(controller, /case \.aliaUsage: return usageItem/u);
+  assert.match(controller, /case \.aliaHostMonitor: return hostMonitorItem/u);
   assert.match(controller, /message\("Reconnecting…"\)/u);
-  assert.match(controller, /snapshot\.connected \? "No BB threads" : "BB is offline"/u);
+  assert.match(controller, /snapshot\.connected \? "No ALIA threads" : "ALIA is offline"/u);
   assert.match(model, /\["touchbar", "open", entry\.id\], timeout: 5/u);
-  assert.ok(model.includes("opened thread \\(entry.id) in BB"));
-  assert.match(model, /dev\.bb\.desktop/u);
+  assert.ok(model.includes("opened thread \\(entry.id) in VesnALIA"));
+  assert.match(model, /dev\.alia\.desktop/u);
   assert.match(model, /activateBB/u);
   assert.match(model, /\["host-monitor", "open", hostId\]/u);
   assert.doesNotMatch(model, /readabilityHandler\s*=/u);
@@ -357,19 +357,19 @@ test("native app owns the Control Strip and fullscreen panel without physical st
   assert.match(menuBar, /Open at Login/u);
   assert.match(menuBar, /PropertyListSerialization\.data/u);
   assert.match(menuBar, /app\.getbb\.touchbar\.native\.plist/u);
-  assert.match(menuBar, /Quit BB Touch Bar/u);
+  assert.match(menuBar, /Quit ALIA Touch Bar/u);
   assert.match(menuBar, /menu\.popUp/u);
   assert.doesNotMatch(menuBar, /performClick/u);
   assert.match(main, /applicationWillTerminate/u);
   assert.match(build, /DFRFoundation/u);
   assert.match(build, /codesign --force --sign -/u);
-  assert.match(build, /BB_TOUCHBAR_SIGN_IDENTITY/u);
+  assert.match(build, /ALIA_TOUCHBAR_SIGN_IDENTITY/u);
   assert.match(packager, /BBTouchBar-\$VERSION-universal\.zip/u);
   assert.match(packager, /notarytool submit/u);
   assert.match(packager, /stapler staple/u);
   assert.match(brewInstaller, /launchctl bootstrap/u);
   assert.match(brewUninstaller, /launchctl bootout/u);
-  assert.match(cask, /cask "bb-touch-bar"/u);
+  assert.match(cask, /cask "alia-touch-bar"/u);
   assert.match(cask, /app "package-#\{version\}\/BBTouchBar\.app"/u);
   assert.match(cask, /postflight do/u);
   assert.doesNotMatch(cask, /RELEASE_SHA256/u);

@@ -28,7 +28,7 @@ test("covering the window (full screen on an iPhone), it keeps clear of each edg
   for (const side of ["top", "right", "bottom", "left"]) expect(safe(el, side)).toBe(`max(0px, env(safe-area-inset-${side}) - 0px)`);
 });
 
-test("under BB's title bar and beside its thread list, only what of each inset reaches it", () => {
+test("under VesnALIA's title bar and beside its thread list, only what of each inset reaches it", () => {
   stubWindow(932, 430);
   const el = workspace(new DOMRect(320, 48, 612, 382));
   renderHook(() => useSafeArea(el));
@@ -45,7 +45,7 @@ test("as the window resizes (a rotation), again", () => {
   el.getBoundingClientRect = () => rect;
   renderHook(() => useSafeArea(el));
   expect(safe(el, "right")).toBe("max(0px, env(safe-area-inset-right) - 0px)");
-  // BB keeps its pane 59px clear of each side held sideways.
+  // VesnALIA keeps its pane 59px clear of each side held sideways.
   stubWindow(932, 430);
   rect = new DOMRect(59, 48, 814, 382);
   act(() => { window.dispatchEvent(new Event("resize")); });

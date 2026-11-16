@@ -47,6 +47,6 @@ jobs:
       - run: bun install --frozen-lockfile --production --omit=optional --ignore-scripts
         env:
           NODE_ENV: production
-      - name: Install bb build CLI
-        run: bun add --global --ignore-scripts bb-app@0.43.4
-      - run: bb plugin build .
+      - name: Install alia build CLI
+        run: bun add --global --ignore-scripts alia-app@0.43.4
+      - run: alia plugin build .

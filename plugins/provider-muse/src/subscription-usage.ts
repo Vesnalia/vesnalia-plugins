@@ -7,7 +7,7 @@ import { z } from "zod";
  * pushed the first time a host sees a model response and whenever the numbers
  * move, and `usage/read` returns the same payload on demand. Both describe the
  * last response the host received — a fresh `muse serve` that has made no model
- * call knows nothing — so a reading is captured from the hosts bb's threads
+ * call knows nothing — so a reading is captured from the hosts VesnALIA's threads
  * already run rather than bought with a probe request against the user's quota.
  */
 export const MUSE_USAGE_CHANGED_METHOD = "usage/changed";
@@ -56,7 +56,7 @@ function percent(value: number): number {
 }
 
 /**
- * Turns a reading into bb usage windows as of `nowMs`. A reading outlives the
+ * Turns a reading into VesnALIA usage windows as of `nowMs`. A reading outlives the
  * window it describes whenever no Muse thread has run since, so a meter whose
  * reset has passed is reported as spent-nothing rather than as the old number.
  * The weekly block turns over on a fixed boundary and rolls forward a week at
@@ -96,7 +96,7 @@ export interface MuseUsageStore {
 
 /**
  * Keeps the newest reading in memory and on disk. Every thread runs its own
- * `muse serve`, and bb may run several bridge workers at once, so readings
+ * `muse serve`, and VesnALIA may run several bridge workers at once, so readings
  * arrive from many hosts and out of order; the arrival stamp decides which one
  * stands. The file is shared by every worker on the machine: whichever one
  * answers a usage request sees the reading another worker's thread received,

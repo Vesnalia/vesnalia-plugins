@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-// Which review you're in, at a glance (lib/review-identity.ts): BB's title bar and the window's title, the band's id
-// chip, the page bar, the hero's rename, the phone's dock, and BB's thread list.
+// Which review you're in, at a glance (lib/review-identity.ts): VesnALIA's title bar and the window's title, the band's id
+// chip, the page bar, the hero's rename, the phone's dock, and VesnALIA's thread list.
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, render as draw, renderHook, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { patchReviewState } from "../lib/panel-state";
 import { localIdOf, reviewIdentity } from "../lib/review-identity";
@@ -66,21 +66,21 @@ function rpc(reviews: Record<string, Record<string, unknown> | null>, rename = v
   } as any;
 }
 
-/** The panel at `subPath`, in a host with page titles unless `untitled`, as BB's from before them. */
+/** The panel at `subPath`, in a host with page titles unless `untitled`, as VesnALIA's from before them. */
 async function render(subPath: string, reviews: Record<string, Record<string, unknown> | null>, rename?: ReturnType<typeof vi.fn>, untitled = false) {
   const app = await loadPluginApp(() => import("../app"));
   const panel = app.navPanels[0]!;
   return renderSlot(untitled ? { component: panel.component } : panel, { subPath }, { rpc: rpc(reviews, rename) });
 }
 
-test("BB's title bar and the window's title lead with the open review's id, its name after, a crumb BB cuts first; All reviews and Settings keep the panel's name", async () => {
+test("VesnALIA's title bar and the window's title lead with the open review's id, its name after, a crumb VesnALIA cuts first; All reviews and Settings keep the panel's name", async () => {
   pane(1400);
   patchReviewState("pr-1", { activeId: "c1" });
   const review = await render("pr-1", { "pr-1": pr });
   await review.findAllByTestId("filediff");
   await waitFor(() => expect(review.experimental_pageTitle).toEqual({ breadcrumbs: [{ label: "api#4512" }, { label: "Fix login race" }], windowTitle: "api#4512 · Fix login race" }));
   // Two panes, each its own review, each its own title.
-  const other = await render("ref-1", { "ref-1": { kind: "ref", gitRef: "main...bb/snooze-checks-thr_ab12", cwd: "/Users/ana/src/web", name: "Snoozing", status: "ready", createdAt: 1, place: { repo: "flosports/web", machine: "MaxBook", path: "/Users/ana/src/web" } } });
+  const other = await render("ref-1", { "ref-1": { kind: "ref", gitRef: "main...alia/snooze-checks-thr_ab12", cwd: "/Users/ana/src/web", name: "Snoozing", status: "ready", createdAt: 1, place: { repo: "flosports/web", machine: "MaxBook", path: "/Users/ana/src/web" } } });
   await other.findAllByTestId("filediff");
   await waitFor(() => expect(other.experimental_pageTitle).toMatchObject({ breadcrumbs: [{ label: "web:snooze-checks" }, { label: "Snoozing" }], windowTitle: "web:snooze-checks · Snoozing" }));
   expect(review.experimental_pageTitle).toMatchObject({ windowTitle: "api#4512 · Fix login race" });
@@ -93,7 +93,7 @@ test("BB's title bar and the window's title lead with the open review's id, its 
   }
 });
 
-test("beside BB's side panel on a desktop, a review narrower than a phone's has its title as one line, which BB cuts at its end", async () => {
+test("beside VesnALIA's side panel on a desktop, a review narrower than a phone's has its title as one line, which VesnALIA cuts at its end", async () => {
   pane(560);
   const root = document.documentElement;
   Object.defineProperty(root, "clientWidth", { configurable: true, value: 1440 });
@@ -122,7 +122,7 @@ test("the band keeps the id's chip at 480px, the review's title giving way first
   const chip = chipWidth(reviewIdentity(pr as any));
   // A tablet's band with the chapters over the code: their toggle, Find, ‹, Fold and Diff options at 44px.
   expect(bandFit(480, 5, 44, null, { chip })).toMatchObject({ back: false, title: false });
-  // The title only where the whole breadcrumb fits beside it; in full screen, where BB's title bar doesn't name the
+  // The title only where the whole breadcrumb fits beside it; in full screen, where VesnALIA's title bar doesn't name the
   // review, before All reviews.
   expect(bandFit(1100, 3, 32, null, { chip })).toMatchObject({ back: true, title: true });
   expect(bandFit(700, 3, 32, null, { chip })).toMatchObject({ back: false, title: false });
@@ -146,7 +146,7 @@ test("the band keeps the id's chip at 480px, the review's title giving way first
   slot.lifecycle.unmount();
 });
 
-test("the band leaves the review's name to BB's title bar where that shows it, and has it after the id where it doesn't", async () => {
+test("the band leaves the review's name to VesnALIA's title bar where that shows it, and has it after the id where it doesn't", async () => {
   pane(1600);
   patchReviewState("pr-1", { activeId: "c1" });
   for (const untitled of [false, true]) {
@@ -190,11 +190,11 @@ test("the Overview's title renames the review in place: Enter saves, Esc leaves 
 
 test("a local review's Overview says it's Local, where its checkout is, its id, and its range as a PR's branches", async () => {
   pane(1400);
-  const slot = await render("ref-1", { "ref-1": { kind: "ref", gitRef: "main...bb/snooze-checks-thr_ab12", cwd: "/Users/ana/src/web", status: "ready", createdAt: 1, place: { repo: "flosports/web", machine: "MaxBook", path: "/Users/ana/src/web" } } });
+  const slot = await render("ref-1", { "ref-1": { kind: "ref", gitRef: "main...alia/snooze-checks-thr_ab12", cwd: "/Users/ana/src/web", status: "ready", createdAt: 1, place: { repo: "flosports/web", machine: "MaxBook", path: "/Users/ana/src/web" } } });
   const main = within(await slot.findByRole("main", { name: "Review: Local review of snooze-checks in flosports/web: Guide, on MaxBook in ~/src/web" }));
   const hero = within(main.getByRole("heading", { level: 2, name: "Guide" }).closest("header")!);
   for (const fact of ["Local", "MaxBook", "~/src/web", "web:snooze-checks", "main", "snooze-checks", "snooze-checks into main"]) expect(hero.getByText(fact), fact).toBeTruthy();
-  expect(hero.queryByText("main...bb/snooze-checks-thr_ab12")).toBeNull();
+  expect(hero.queryByText("main...alia/snooze-checks-thr_ab12")).toBeNull();
   // The machine has a laptop, the folder a folder.
   expect(hero.getByText("MaxBook").previousElementSibling?.getAttribute("data-icon")).toBe("Laptop");
   expect(hero.getByText("~/src/web").previousElementSibling?.getAttribute("data-icon")).toBe("Folder");
@@ -203,7 +203,7 @@ test("a local review's Overview says it's Local, where its checkout is, its id, 
 
 test("a folder's review's Overview has its base and branch, and its id without the folder's end, which is beside it", async () => {
   pane(1400);
-  const feature = { environmentId: "env1", hostId: "h", machine: "MaxBook", path: "/Users/ana/src/web-wt", branch: "bb/snooze-checks-thr_ab12", baseRef: "release/2", repo: "flosports/web" };
+  const feature = { environmentId: "env1", hostId: "h", machine: "MaxBook", path: "/Users/ana/src/web-wt", branch: "alia/snooze-checks-thr_ab12", baseRef: "release/2", repo: "flosports/web" };
   const slot = await render("br-1", { "br-1": { kind: "ref", gitRef: feature.branch, title: "Snooze flaky checks", status: "ready", createdAt: 1, feature, place: { repo: "flosports/web", machine: "MaxBook", path: feature.path, folder: "web-wt" } } });
   const main = within(await slot.findByRole("main", { name: /^Review: Local review of snooze-checks/ }));
   const hero = within(main.getByRole("heading", { level: 2, name: "Snooze flaky checks" }).closest("header")!);
@@ -212,7 +212,7 @@ test("a folder's review's Overview has its base and branch, and its id without t
   slot.lifecycle.unmount();
 });
 
-test("on a phone, the dock's chapter tab has the review's id over the chapter, and BB's narrow title bar the line as one title, as its crumbs would run into each other", async () => {
+test("on a phone, the dock's chapter tab has the review's id over the chapter, and VesnALIA's narrow title bar the line as one title, as its crumbs would run into each other", async () => {
   pane(390, { height: 844, phone: true });
   patchReviewState("pr-1", { activeId: "c1" });
   const slot = await render("pr-1", { "pr-1": pr });
@@ -225,7 +225,7 @@ test("on a phone, the dock's chapter tab has the review's id over the chapter, a
   slot.lifecycle.unmount();
 });
 
-// BB's own colors, as its app's stylesheet sets them (0.47.1's index-*.css): achromatic OKLCH lightness, where a
+// VesnALIA's own colors, as its app's stylesheet sets them (0.47.1's index-*.css): achromatic OKLCH lightness, where a
 // color-mix of two is the mix of their lightness. Luminance is lightness cubed.
 const THEMES = {
   light: { canvas: 1, ink: 0.3211, muted: 0.44 },
@@ -238,7 +238,7 @@ test("an id's muted text keeps 4.5:1 or more on every surface it sits on, in bot
   expect(ID_CHIP).toContain("text-muted-foreground");
   expect(ID_CHIP).toContain("bg-muted");
   for (const [name, theme] of Object.entries(THEMES)) {
-    // The page and cards, the chip's muted fill (11% and 16% ink), and BB's thread list (2.2% and 4.3%).
+    // The page and cards, the chip's muted fill (11% and 16% ink), and VesnALIA's thread list (2.2% and 4.3%).
     for (const surface of [theme.canvas, mix(theme, 0.11), mix(theme, 0.16), mix(theme, 0.022), mix(theme, 0.043)]) {
       expect(contrast(theme.muted, surface), `${name} on ${surface}`).toBeGreaterThanOrEqual(4.5);
     }
@@ -246,12 +246,12 @@ test("an id's muted text keeps 4.5:1 or more on every surface it sits on, in bot
 });
 
 test("a long repository's chip cuts only its name, never the PR's number, and says the whole id on hover and to a screen reader", () => {
-  const identity = reviewIdentity({ targetKey: "pr-1", kind: "pr", repo: "get-bb/bb-plugin-code-review-workspace", number: 123, title: "Fix" });
+  const identity = reviewIdentity({ targetKey: "pr-1", kind: "pr", repo: "get-alia/alia-plugin-code-review-workspace", number: 123, title: "Fix" });
   const { container } = draw(<ReviewIdChip identity={identity} />);
   const chip = container.querySelector<HTMLElement>("[data-review-id]")!;
-  expect(chip.getAttribute("title")).toBe("get-bb/bb-plugin-code-review-workspace#123 · Fix");
+  expect(chip.getAttribute("title")).toBe("get-alia/alia-plugin-code-review-workspace#123 · Fix");
   const [spoken, repo, tail] = Array.from(chip.children) as HTMLElement[];
-  expect([spoken.className, spoken.textContent]).toEqual(["sr-only", "bb-plugin-code-review-workspace#123"]);
+  expect([spoken.className, spoken.textContent]).toEqual(["sr-only", "alia-plugin-code-review-workspace#123"]);
   expect(repo.className.split(" ")).toEqual(expect.arrayContaining(["truncate", "min-w-0"]));
   expect(tail.textContent).toBe("#123");
   expect(tail.className.split(" ")).toEqual(expect.arrayContaining(["shrink-0", "whitespace-nowrap"]));
@@ -261,7 +261,7 @@ test("a long repository's chip cuts only its name, never the PR's number, and sa
 });
 
 test("a folder's review that became its PR's keeps its id from before, derived from its folder and branch", () => {
-  const feature = { branch: "bb/snooze-checks-thr_ab12", repo: "acme/api", path: "/Users/ana/src/api" };
+  const feature = { branch: "alia/snooze-checks-thr_ab12", repo: "acme/api", path: "/Users/ana/src/api" };
   expect(reviewIdentity({ targetKey: "br-1", kind: "pr", repo: "acme/api", number: 4512 }).id).toBe("api#4512");
   expect(localIdOf({ targetKey: "br-1", feature })).toBe("api:snooze-checks");
   // Without a repository, the folder names it, as it did.
@@ -282,10 +282,10 @@ test("two panes on one review keep its title until the last of them closes", () 
   expect(result.current).toBeNull();
 });
 
-test("a local review goes by one name everywhere: its row, BB's thread list, its Overview and its title all take its guide's title", async () => {
+test("a local review goes by one name everywhere: its row, VesnALIA's thread list, its Overview and its title all take its guide's title", async () => {
   pane(1400);
   const turn = { group: "needs", reason: "requested", label: "", signal: null, at: Date.now() - 60_000, notify: false, blocking: false, updated: false, eventAt: null, failed: false };
-  const local = { kind: "ref", gitRef: "main...bb/snooze-checks-thr_ab12", cwd: "/Users/ana/src/web", status: "ready", createdAt: 1, turn,
+  const local = { kind: "ref", gitRef: "main...alia/snooze-checks-thr_ab12", cwd: "/Users/ana/src/web", status: "ready", createdAt: 1, turn,
     guideTitle: "Guide", place: { repo: "flosports/web", machine: "MaxBook", path: "/Users/ana/src/web" } };
   const app = await loadPluginApp(() => import("../app"));
   const reviews = [{ targetKey: "ref-1", ...local }];
@@ -295,13 +295,13 @@ test("a local review goes by one name everywhere: its row, BB's thread list, its
   const row = (await list.findByText("Guide")).closest("button")!;
   expect(within(row).getAllByText("web:snooze-checks").length).toBeGreaterThan(0);
   list.lifecycle.unmount();
-  // BB's thread list.
-  document.body.insertAdjacentHTML("beforeend", `<div data-bb-plugin-root data-bb-plugin="thread-list"><div><div data-sidebar-visibility-group="threads"><div data-sidebar-sticky-group><div data-sidebar="group-label">Threads</div></div></div></div></div>`);
+  // VesnALIA's thread list.
+  document.body.insertAdjacentHTML("beforeend", `<div data-alia-plugin-root data-alia-plugin="thread-list"><div><div data-sidebar-visibility-group="threads"><div data-sidebar-sticky-group><div data-sidebar="group-label">Threads</div></div></div></div></div>`);
   const sidebar = renderSlot(app.appOverlays.find((overlay) => overlay.id === "needs-review")!, {}, { rpc: { listReviews: () => ({ reviews }), pinReview: () => ({ ok: true }), getPreferences: () => settings }, sidebarThreads: { status: "ready", threads: [] } });
   expect(await within(document.body).findByRole("link", { name: /^Guide/ })).toBeTruthy();
   sidebar.lifecycle.unmount();
   document.body.innerHTML = "";
-  // Its Overview and BB's title bar.
+  // Its Overview and VesnALIA's title bar.
   const page = await render("ref-1", { "ref-1": local });
   expect(await page.findByRole("heading", { level: 2, name: "Guide" })).toBeTruthy();
   await waitFor(() => expect(page.experimental_pageTitle).toMatchObject({ breadcrumbs: [{ label: "web:snooze-checks" }, { label: "Guide" }] }));

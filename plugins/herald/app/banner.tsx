@@ -1,11 +1,11 @@
 /**
  * The sentence above a thread's composer. In Paseo, Herald left a card in the
- * agent's transcript; a bb plugin cannot add a row to a thread's timeline, so
+ * agent's transcript; a VesnALIA plugin cannot add a row to a thread's timeline, so
  * the sentence sits where the user is about to answer instead — and stays,
  * read or not, through the next turn, until the next event replaces it. A
  * kind that is switched off gets no banner.
  */
-import { useComposer } from "@get-bb/plugin-sdk/app";
+import { useComposer } from "@vesnalia/plugin-sdk/app";
 
 import { Icon } from "@/components/ui/icon";
 
@@ -27,11 +27,11 @@ const LABELS = {
 export function HeraldBanner() {
   const { scope } = useComposer();
   const { entries } = useEntries();
-  // The banner is registered for thread composers only. bb 0.44 reports the
+  // The banner is registered for thread composers only. VesnALIA 0.44 reports the
   // thread's queued message instead while the user edits one, so that counts
   // as the thread too.
   const threadId = scope.kind === "thread" || scope.kind === "queued-message" ? scope.threadId : null;
-  // Herald's own entry, not the panel's join with bb's unread state: the
+  // Herald's own entry, not the panel's join with VesnALIA's unread state: the
   // sentence stays here once the thread is read, and through the next turn,
   // until the next event replaces it.
   const entry = threadId === null ? undefined : entries?.find((candidate) => candidate.threadId === threadId);

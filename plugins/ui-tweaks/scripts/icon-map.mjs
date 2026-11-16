@@ -1,11 +1,11 @@
 /**
- * BB shared icon name -> icon-pack artwork.
+ * VesnALIA shared icon name -> icon-pack artwork.
  *
- * Names are BB's built-in icon names. Brand marks and provider logos are
+ * Names are VesnALIA's built-in icon names. Brand marks and provider logos are
  * deliberately absent so packs never replace them. `lucide` names are
  * @iconify-json/lucide icon ids. Iconoir and Tabler prefer their names from
  * PACK_ICON_ALIASES below, then fall back to the Lucide id when that pack has
- * it. A pack may omit a name; that name keeps BB's built-in artwork.
+ * it. A pack may omit a name; that name keeps VesnALIA's built-in artwork.
  */
 export const ICON_MAP = {
   // Core icons

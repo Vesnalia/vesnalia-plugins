@@ -1,21 +1,13 @@
 {
-  "name": "bb-plugin-ultragoal",
+  "name": "alia-plugin-ultragoal",
   "version": "0.29.0",
   "description": "Provider-neutral durable UltraGoals for Codex, Cursor, OpenCode, Claude Code, and Pi, with scheduled workers, verification, and defect remediation.",
   "license": "MIT",
   "author": "Braedon Saunders",
   "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/braedonsaunders/bb-plugin-ultragoal.git"
-  },
-  "bugs": {
-    "url": "https://github.com/braedonsaunders/bb-plugin-ultragoal/issues"
-  },
-  "homepage": "https://github.com/braedonsaunders/bb-plugin-ultragoal#readme",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "ultragoal",
     "agents",
     "orchestration"
@@ -34,10 +26,10 @@
     "host-contract.ts"
   ],
   "engines": {
-    "bb": ">=0.39",
-    "bbPluginSdk": ">=0.4.8"
+    "alia": ">=0.39",
+    "aliaPluginSdk": ">=0.4.8"
   },
-  "bb": {
+  "alia": {
     "name": "UltraGoal",
     "description": "Provider-neutral durable UltraGoals for Codex, Cursor, OpenCode, Claude Code, and Pi, with scheduled workers, verification, and defect remediation.",
     "branding": {
@@ -57,7 +49,6 @@
     "test": "tsx --test lib/*.test.ts"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.8",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -66,5 +57,22 @@
     "hono": "^4.13.4",
     "tsx": "^4.23.12",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.8"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/ultragoal#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/ultragoal"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

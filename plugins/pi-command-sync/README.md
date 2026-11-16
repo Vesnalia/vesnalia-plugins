@@ -1,15 +1,15 @@
-# Pi Command Sync for BB
+# Pi Command Sync for VesnALIA
 
-Makes BB's `/` menu show the commands your Pi actually has, and answers those
-commands inside BB instead of sending them to the model.
+Makes VesnALIA's `/` menu show the commands your Pi actually has, and answers those
+commands inside VesnALIA instead of sending them to the model.
 
-BB's built-in **Pi** provider (`pi`) runs Pi in RPC mode. This addon does not
+VesnALIA's built-in **Pi** provider (`pi`) runs Pi in RPC mode. This addon does not
 replace that provider: it registers no provider, exports no provider bridge,
 changes no default and migrates no thread. It plugs a launcher and a Pi
-extension into the provider BB already has.
+extension into the provider VesnALIA already has.
 
 ```
-BB `/` menu  ──►  ~/.pi/bb-commands catalogs  ──►  provider-pi bridge
+ALIA `/` menu  ──►  ~/.pi/alia-commands catalogs  ──►  provider-pi bridge
                         ▲                                  ▲
               written by a Pi extension            reads them per project
               loaded by our launcher               (adapter repair, below)
@@ -17,13 +17,13 @@ BB `/` menu  ──►  ~/.pi/bb-commands catalogs  ──►  provider-pi bridg
 
 ## The problem
 
-- BB renders the command menu from **its own** command roots, not from Pi's
+- VesnALIA renders the command menu from **its own** command roots, not from Pi's
   registry, so Pi extensions, skills, prompts and native commands stay invisible
   in the composer.
-- Slash text BB does not recognise falls through to the model: a real,
+- Slash text VesnALIA does not recognise falls through to the model: a real,
   billable turn just to print a status line — and terminal-only controls such
   as `/login`, `/tree` or `/resume` cannot work in a headless RPC child at all.
-- BB 0.45.0's plugin SDK has **no additive API** for one plugin to register
+- VesnALIA 0.45.0's plugin SDK has **no additive API** for one plugin to register
   native-command roots or handled-command completion for another plugin's
   provider. That missing hook is why this addon ships in two parts.
 
@@ -35,24 +35,24 @@ The plugin's backend registers an environment contribution on the existing
 provider:
 
 ```ts
-bb.providers.experimental_contributeEnv("pi", async ({ hostId }) => {
+alia.providers.experimental_contributeEnv("pi", async ({ hostId }) => {
   const { launcher } = await host.call("prepareRuntime", null, { hostId });
-  return [{ name: "BB_PI_BRIDGE_COMMAND", value: launcher, reason: "Load native Pi commands in BB" }];
+  return [{ name: "ALIA_PI_BRIDGE_COMMAND", value: launcher, reason: "Load native Pi commands in ALIA" }];
 });
 ```
 
-`BB_PI_BRIDGE_COMMAND` is the documented public provider-environment surface, so
-BB itself decides to start new Pi processes through our launcher. Nothing is
-written into BB's files.
+`ALIA_PI_BRIDGE_COMMAND` is the documented public provider-environment surface, so
+VesnALIA itself decides to start new Pi processes through our launcher. Nothing is
+written into VesnALIA's files.
 
 ### 2. Launcher and runtime (`host.ts`, `runtime/commands.ts`)
 
-On first use, the host entry writes a private runtime directory under BB's data
+On first use, the host entry writes a private runtime directory under VesnALIA's data
 dir (`<dataDir>/runtime/<sha256(…)>/`, mode `0700`):
 
 - `commands.ts` — this addon's Pi extension (mode `0600`), generated from
   `runtime/commands.ts` and inlined into the bundle by `scripts/prepare-extension.mjs`;
-- `pi-bb` — a shell launcher (mode `0700`) that exports `BB_PI_COMMAND_MENU_DIR`
+- `pi-alia` — a shell launcher (mode `0700`) that exports `ALIA_PI_COMMAND_MENU_DIR`
   and `exec`s Pi with `--extension <commands.ts>`.
 
 The launcher prefers the Pi CLI resolved next to the running Node
@@ -60,10 +60,10 @@ The launcher prefers the Pi CLI resolved next to the running Node
 checked) and falls back to `pi` on `PATH`. Terminal Pi is untouched: the
 extension is loaded only through this launcher.
 
-One launcher deliberately owns `BB_PI_BRIDGE_COMMAND`: a second addon cannot
+One launcher deliberately owns `ALIA_PI_BRIDGE_COMMAND`: a second addon cannot
 replace it without replacing this one. To cooperate instead, the launcher also
 appends one further extension when another plugin supplies all five
-`BB_PI_SUBAGENTS_*` variables, and skips it for the `--no-session` discovery
+`ALIA_PI_SUBAGENTS_*` variables, and skips it for the `--no-session` discovery
 child. Without those variables the launcher is exactly the simple form above.
 
 ### 3. Catalog publishing (`runtime/commands.ts`)
@@ -72,7 +72,7 @@ On every `session_start` — and therefore on every `/reload` — the extension
 reads `pi.getCommands()` and writes **content-addressed** Markdown snapshots:
 
 ```
-~/.pi/bb-commands/
+~/.pi/alia-commands/
 ├── global.json                                  # { snapshot, skillRoots }
 ├── projects/<sha256(cwd)>.json                  # same shape, project scope
 └── catalog/<sha256(entries)>/
@@ -86,7 +86,7 @@ excluded from the command list but their `SKILL.md` roots are recorded as
 `skillRoots` with `user` or `project` origin, and a project pointer only ever
 contributes project-scoped roots.
 
-### 4. Bridge adapter (`tools/pi-runtime/ensure-bb-slash-completion.py`)
+### 4. Bridge adapter (`tools/pi-runtime/ensure-alia-slash-completion.py`)
 
 Because the SDK has no hook, the installed `provider-pi` bundle itself carries
 the read side. The helper patches that installed artifact with four exact
@@ -102,17 +102,17 @@ string edits, all checked before writing:
 4. pass `cwd` into `resolveNativeRoots` so the per-project pointer can be found.
 
 It rewrites nothing when the bundle does not match exactly, keeps
-`.before-bb-slash-completion` and `.before-bb-slash-completion-<digest12>`
+`.before-alia-slash-completion` and `.before-alia-slash-completion-<digest12>`
 backups, updates `artifactDigest`, and expects the matching backup plus
-`bb plugin reload provider-pi` afterwards. See
+`alia plugin reload provider-pi` afterwards. See
 [docs/compatibility.md](docs/compatibility.md).
 
 ### 5. Discovery without a model (`host.ts`)
 
-`bb pi-command-sync sync` runs the launcher as
+`alia pi-command-sync sync` runs the launcher as
 
 ```sh
-pi-bb --mode rpc --no-session        # in the requested workspace
+pi-alia --mode rpc --no-session        # in the requested workspace
 ```
 
 writes `{"type":"get_commands","id":"pi-command-sync"}` to its stdin, waits for
@@ -126,41 +126,41 @@ omitted.
 
 | Component | Version |
 | --- | --- |
-| BB | 0.45.0 |
-| `@get-bb/plugin-sdk` | 0.6.15 |
+| VesnALIA | 0.45.0 |
+| `@vesnalia/plugin-sdk` | 0.6.15 |
 | Node | 22+ |
 | Pi | `@earendil-works/pi-coding-agent` installed |
 
 Linux is tested. macOS is declared but unverified; Windows is refused by the
-host entry. The adapter repair is pinned to **one** BB 0.45.0 build and is
-**not** a fix that works on an arbitrary BB installation — see
+host entry. The adapter repair is pinned to **one** VesnALIA 0.45.0 build and is
+**not** a fix that works on an arbitrary VesnALIA installation — see
 [docs/compatibility.md](docs/compatibility.md) before assuming it applies.
 
 ## Install
 
 ```sh
 git clone https://github.com/Diffuzmetall/bb-plugin-pi-command-sync
-cd bb-plugin-pi-command-sync
+cd alia-plugin-pi-command-sync
 npm ci
-npm run build          # generates extension-source.ts, then `bb plugin build`
+npm run build          # generates extension-source.ts, then `alia plugin build`
 
-bb plugin install "$PWD" --yes
-bb pi-command-sync sync --host <host-id> --cwd /absolute/workspace
+alia plugin install "$PWD" --yes
+alia pi-command-sync sync --host <host-id> --cwd /absolute/workspace
 ```
 
-`<host-id>` comes from `bb host list`. Omitting `--cwd` syncs global resources
+`<host-id>` comes from `alia host list`. Omitting `--cwd` syncs global resources
 only; the command prints `{"providerId":"pi","commands":N,"skillRoots":M}`.
 
 If the bridge has not been repaired yet on this host, apply the adapter and
 reload it:
 
 ```sh
-python3 tools/pi-runtime/ensure-bb-slash-completion.py
-bb plugin reload provider-pi
+python3 tools/pi-runtime/ensure-alia-slash-completion.py
+alia plugin reload provider-pi
 ```
 
-BB can also install straight from the repository URL
-(`bb plugin install https://github.com/Diffuzmetall/bb-plugin-pi-command-sync`),
+VesnALIA can also install straight from the repository URL
+(`alia plugin install https://github.com/Diffuzmetall/bb-plugin-pi-command-sync`),
 which builds the plugin on the host and needs `npm`; the local-path route above
 is the one verified here.
 
@@ -168,8 +168,8 @@ is the one verified here.
 
 ```sh
 npm run build
-bb plugin reload pi-command-sync
-bb plugin enable pi-command-sync
+alia plugin reload pi-command-sync
+alia plugin enable pi-command-sync
 ```
 
 Keep using **Pi**, not a new provider. A Pi process that was already running
@@ -180,7 +180,7 @@ history.
 
 ## Commands
 
-Run inside BB, answered by the extension without a model request:
+Run inside VesnALIA, answered by the extension without a model request:
 
 | Command | Behaviour |
 | --- | --- |
@@ -189,11 +189,11 @@ Run inside BB, answered by the extension without a model request:
 | `/session` | Session id, name, model, thinking level, context usage (JSON) |
 | `/name [name]` | Show or set the session name |
 | `/thinking [level]` | Show or set `off…max` |
-| `/model [provider/model]` | Show or set the model; the BB picker owns persistent selection |
+| `/model [provider/model]` | Show or set the model; the VesnALIA picker owns persistent selection |
 | `/compact [instructions]` | Compact context — **the only command here that calls a model** |
 
 Terminal-only controls (`/settings`, `/tree`, `/login`, `/resume`, `/fork`,
-`/export`, …) are registered as explainers: they print why BB cannot forward
+`/export`, …) are registered as explainers: they print why VesnALIA cannot forward
 them and make no model request, instead of silently costing a turn.
 
 ## Verification
@@ -217,7 +217,7 @@ node tests/completion-check.mjs < /absolute/installed/provider-pi/host.mjs
   produce native results and **no** model turn.
 
 They leave their isolated fixtures in place on purpose. None of them proves that
-an already-running BB thread adopted the new launcher, and the adapter helper is
+an already-running VesnALIA thread adopted the new launcher, and the adapter helper is
 the only component that touches files outside this repository.
 
 ## Layout
@@ -237,19 +237,19 @@ docs/compatibility.md              what the adapter patches and why
 ## Uninstall
 
 ```sh
-bb plugin remove pi-command-sync
+alia plugin remove pi-command-sync
 ```
 
-Then restore the bridge backups if you want an unpatched BB:
+Then restore the bridge backups if you want an unpatched VesnALIA:
 
 ```sh
 cd <installed provider-pi directory>
-mv host.js.before-bb-slash-completion host.js
-mv host.meta.json.before-bb-slash-completion host.meta.json
-bb plugin reload provider-pi
+mv host.js.before-alia-slash-completion host.js
+mv host.meta.json.before-alia-slash-completion host.meta.json
+alia plugin reload provider-pi
 ```
 
-`~/.pi/bb-commands` is only a cache; delete it whenever you like.
+`~/.pi/alia-commands` is only a cache; delete it whenever you like.
 
 ## License
 

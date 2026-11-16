@@ -1,4 +1,4 @@
-// Project artwork: an icon or logo found in each project's files, or the BB
+// Project artwork: an icon or logo found in each project's files, or the VesnALIA
 // glyph its package.json names, so a project heading can look like the
 // project rather than like every other folder.
 //
@@ -6,8 +6,8 @@
 // for the life of the window: a project's artwork changes about never, and
 // the server keeps its own TTL cache behind the call anyway.
 import { useEffect, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarProject } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 
 export type ProjectArtwork =

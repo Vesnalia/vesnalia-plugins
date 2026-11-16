@@ -1,11 +1,11 @@
 // The keyboard-reachable twin of every drag gesture.
 //
-// bb ships no menu for a replaced thread list, but exposes everything its own
+// VesnALIA ships no menu for a replaced thread list, but exposes everything its own
 // menu does through experimental_useSidebarThreadActions — including
-// requestDelete, which opens bb's confirmation rather than deleting silently.
+// requestDelete, which opens VesnALIA's confirmation rather than deleting silently.
 import { useRef, type ReactNode } from "react";
 import { toast } from "sonner";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -45,7 +45,7 @@ const SNOOZE_CHOICES = [
 
 /**
  * Everything the drag does, from the keyboard. A thread cannot be dragged
- * into another project — bb owns that — so what is left is its position in
+ * into another project — VesnALIA owns that — so what is left is its position in
  * the list it is already in.
  */
 function OrderMenu({ item, canReorder = true }: { item: ItemRef; canReorder?: boolean }) {

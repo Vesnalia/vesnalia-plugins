@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 
 it("keeps list remote resolution local by default and sends only canonical repo identity after opt-in", async () => {
@@ -56,7 +56,7 @@ it("keeps list remote resolution local by default and sends only canonical repo 
     },
   });
   try {
-    await plugin(h.bb);
+    await plugin(h.alia);
     const call = h.harness.behavior.callRpc;
     type List = {
       roots: {

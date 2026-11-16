@@ -1,7 +1,7 @@
 // Channels over one message link, for the Docker API relay (042). Each
 // channel is a Node Duplex carrying bytes both ways. A side sends only as
 // much as the other has granted, INITIAL_WINDOW at first, and grants more as
-// its reader drains, since BB's plugin socket has no backpressure (request
+// its reader drains, since VesnALIA's plugin socket has no backpressure (request
 // 2). Each direction ends on its own: `docker exec` and `docker cp` close
 // their input before their output. A ping every PING_MS finds a dead link.
 //
@@ -12,7 +12,7 @@ import { Duplex } from "node:stream";
 
 /**
  * What a side may send before the other grants more. The worker reaches the
- * server through BB's public URL, so even a PC on the LAN can be tens of ms
+ * server through VesnALIA's public URL, so even a PC on the LAN can be tens of ms
  * away: 256 KiB carried 8 MiB/s at 30 ms, 1 MiB 34 MiB/s. Memory stays
  * bounded at this much per open channel on each side.
  */

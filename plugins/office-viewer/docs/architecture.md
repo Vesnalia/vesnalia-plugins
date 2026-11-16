@@ -5,7 +5,7 @@ created: 2026-10-13
 updated: 2026-10-18
 status: active
 confidence: medium
-tags: [office-viewer, architecture, bb-plugin]
+tags: [office-viewer, architecture, alia-plugin]
 sources:
   - app.tsx
   - server.ts
@@ -28,18 +28,18 @@ sources:
 
 # Office Viewer architecture
 
-TL;DR: BB hosts the React plugin app and plugin server; file openers and thread Studio tools call server RPC for file and thread-storage operations (`app.tsx:19-61`; `server.ts:462-479`).
+TL;DR: VesnALIA hosts the React plugin app and plugin server; file openers and thread Studio tools call server RPC for file and thread-storage operations (`app.tsx:19-61`; `server.ts:462-479`).
 
 ## System Context
 
 ```mermaid
 C4Context
-  Person(user, "BB user", "Opens and works with files")
-  System(bb, "BB", "Dispatches files and hosts the plugin")
-  System_Ext(hosts, "BB file hosts", "Own files and previews")
+  Person(user, "ALIA user", "Opens and works with files")
+  System(alia, "ALIA", "Dispatches files and hosts the plugin")
+  System_Ext(hosts, "ALIA file hosts", "Own files and previews")
   System(plugin, "Office Viewer", "File openers and file operations")
-  Rel(user, bb, "Selects or opens a file")
-  Rel(bb, plugin, "Loads app slots and RPC")
+  Rel(user, alia, "Selects or opens a file")
+  Rel(alia, plugin, "Loads app slots and RPC")
   Rel(plugin, hosts, "Reads previews and writes edits")
 ```
 
@@ -47,15 +47,15 @@ C4Context
 
 ```mermaid
 C4Container
-  Person(user, "BB user", "Opens files")
+  Person(user, "ALIA user", "Opens files")
   System_Boundary(plugin, "Office Viewer plugin") {
     Container(app, "React app", "TypeScript, React", "File opener UI and parsers")
-    Container(server, "Plugin server", "BB Plugin SDK", "RPC, asset routes, file resolution")
+    Container(server, "Plugin server", "ALIA Plugin SDK", "RPC, asset routes, file resolution")
   }
-  System_Ext(bb, "BB host", "Plugin slots, RPC transport, composer")
-  System_Ext(files, "BB file services", "Host files, previews, writes")
-  Rel(user, bb, "Opens file")
-  Rel(bb, app, "Renders selected opener")
+  System_Ext(alia, "ALIA host", "Plugin slots, RPC transport, composer")
+  System_Ext(files, "ALIA file services", "Host files, previews, writes")
+  Rel(user, alia, "Opens file")
+  Rel(alia, app, "Renders selected opener")
   Rel(app, server, "RPC calls")
   Rel(server, files, "Reads, previews, writes")
 ```
@@ -77,11 +77,11 @@ The UI registers six file opener slots, two thread-panel actions, a settings sec
 
 ```mermaid
 sequenceDiagram
-  participant BB as BB app
+  participant ALIA as ALIA app
   participant UI as File opener
   participant RPC as Plugin server
   participant Host as Owning file host
-  BB->>UI: dispatch path and source
+  ALIA->>UI: dispatch path and source
   UI->>RPC: open(source, path)
   RPC->>Host: resolve, check and create preview
   Host-->>RPC: preview URL
@@ -119,7 +119,7 @@ Spreadsheet client edits and save behavior are documented in [Spreadsheet editin
 
 ## Cross-cutting concerns
 
-The plugin server registers HTTP asset routes and the RPC contract through the BB Plugin SDK (`server.ts:356-479`). File access is through `bb.sdk.files`, `bb.sdk.hosts`, threads, environments and projects (`src/server/locate.ts:22-36`; `server.ts:480-569`). Selected file read/preview/write errors are converted to path/host-aware messages (`server.ts:344-354`).
+The plugin server registers HTTP asset routes and the RPC contract through the VesnALIA Plugin SDK (`server.ts:356-479`). File access is through `alia.sdk.files`, `alia.sdk.hosts`, threads, environments and projects (`src/server/locate.ts:22-36`; `server.ts:480-569`). Selected file read/preview/write errors are converted to path/host-aware messages (`server.ts:344-354`).
 
 <!-- lane-pilot:backlinks -->
 ## Referenced by

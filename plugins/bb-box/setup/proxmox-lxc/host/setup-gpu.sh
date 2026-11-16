@@ -5,21 +5,21 @@ here=$(cd "$(dirname "$0")" && pwd)
 usage() {
   cat <<'EOF'
 usage: setup-gpu.sh [--pool <name>]... [--downgrade]
-                        install or upgrade bb-box-gpu, the host's GPU helper,
+                        install or upgrade alia-box-gpu, the host's GPU helper,
                         keeping writes as they are: off on a first install
        setup-gpu.sh --writes on [--check]
        setup-gpu.sh --writes off
                         turn the helper's writes on or off, on its own
        setup-gpu.sh --remove [--force]
-                        remove it, and put back bb-box-gpu-memory.timer.
-                        Refused while bb-box-gpu 0.4.0 or later is
+                        remove it, and put back alia-box-gpu-memory.timer.
+                        Refused while alia-box-gpu 0.4.0 or later is
                         installed, without --force, as below
 
   --pool <name>   serve this pool as well as BBBOX_POOL and the pools
-                  /etc/bb-box/gpu.conf already lists; give it once per pool
+                  /etc/alia-box/gpu.conf already lists; give it once per pool
   --writes on     let the helper write guests' NVIDIA and DRM device lines.
                   Only once this release's helper is installed and
-                  reporting, as its own step. It first runs bb-box-gpu
+                  reporting, as its own step. It first runs alia-box-gpu
                   --preview, which shows what the helper's first pass with
                   writes on would write, and refuses if that is any guest
   --check         with --writes on: print the preview and change nothing
@@ -34,9 +34,9 @@ on; cut short before that, writes stay off.
                   ledger a newer protocol wrote, which the helper then
                   rebuilds from the guests
 
-Install puts in the program, its two units and /etc/bb-box/gpu.conf, makes
+Install puts in the program, its two units and /etc/alia-box/gpu.conf, makes
 the ledger's folder and starts the helper. It writes the GPU report in the
-notes of VM bb-box-gpu-memory, as bb-box-gpu-memory.timer did, with its own
+notes of VM alia-box-gpu-memory, as alia-box-gpu-memory.timer did, with its own
 lines added. The timer is retired only once the helper has written a fresh,
 healthy report; if it does not, the helper is stopped, the timer stays, and
 this exits 1.
@@ -50,13 +50,13 @@ newer protocol, without --downgrade.
 Removal starts the timer, and waits for it to write the report, before it
 stops the helper. It keeps gpu.conf and the ledger.
 
-From bb-box-gpu 0.4.0 the helper starts, stops and deletes bb-box's guests on
-this host, and each BB that has read its report keeps that: with the helper
-removed, such a BB starts, stops and releases none of its boxes here. So
+From alia-box-gpu 0.4.0 the helper starts, stops and deletes alia-box's guests on
+this host, and each ALIA that has read its report keeps that: with the helper
+removed, such a ALIA starts, stops and releases none of its boxes here. So
 --remove is refused while 0.4.0 or later is installed. To stop the helper's
 writes, run --writes off; it still starts, stops and deletes guests. To go
-back to Proxmox's API, run setup-gpu.sh --downgrade from the BB Box release
-with bb-box-gpu 0.2.0: each BB reads bb-box-gpu 0.2.0 in the report at its
+back to Proxmox's API, run setup-gpu.sh --downgrade from the ALIA Box release
+with alia-box-gpu 0.2.0: each ALIA reads alia-box-gpu 0.2.0 in the report at its
 next doctor run or box action here, and uses the API again. Remove it after
 that, if at all.
   --force         with --remove: remove 0.4.0 or later all the same
@@ -64,11 +64,11 @@ that, if at all.
 Whenever the helper is stopped, the timer is already running, so the report
 always has a writer, even if this run is killed. A run that is interrupted
 or fails part way leaves a writer running and says which. It keeps the
-install from before it in /var/lib/bb-box-gpu/setup-backup, and the next run
+install from before it in /var/lib/alia-box-gpu/setup-backup, and the next run
 puts that back if its helper does not report.
 
 No run of this script changes a guest's device lines or tags; with writes
-on, the helper does, for the markers bb-box writes. Writes are on only when
+on, the helper does, for the markers alia-box writes. Writes are on only when
 gpu.conf says so and both units run the helper without --dry-run, which
 --writes on and --writes off set together. Run as root on the Proxmox host.
 Idempotent: a run with nothing to do says "nothing changed".
@@ -140,15 +140,15 @@ heartbeat_wait=${asked_wait:-$((helper_heartbeat + 15))}
 root=${BBBOX_ROOT:-}
 units=$root/etc/systemd/system
 sbin=$root/usr/local/sbin
-program=$sbin/bb-box-gpu
-conf=$root/etc/bb-box/gpu.conf
-state=$root/var/lib/bb-box-gpu
+program=$sbin/alia-box-gpu
+conf=$root/etc/alia-box/gpu.conf
+state=$root/var/lib/alia-box-gpu
 ledger=$state/ledger
 backup=$state/setup-backup
-timer_state=$root/run/bb-box-gpu-memory
+timer_state=$root/run/alia-box-gpu-memory
 qemu=$root/etc/pve/qemu-server
-report_name=bb-box-gpu-memory
-helper_units=(bb-box-gpu.service bb-box-gpu-boot.service)
+report_name=alia-box-gpu-memory
+helper_units=(alia-box-gpu.service alia-box-gpu-boot.service)
 unhealthy_report='^#[[:space:]]*error (the ledger is protocol|the pass could not finish|cannot write the helper.s state)'
 changed=0
 expect_writes=off
@@ -188,8 +188,8 @@ copy_into_place() {
 
 writers_now() {
   local running=()
-  if systemctl is-active --quiet bb-box-gpu.service; then running+=("bb-box-gpu"); fi
-  if systemctl is-active --quiet bb-box-gpu-memory.timer; then running+=("bb-box-gpu-memory.timer"); fi
+  if systemctl is-active --quiet alia-box-gpu.service; then running+=("alia-box-gpu"); fi
+  if systemctl is-active --quiet alia-box-gpu-memory.timer; then running+=("alia-box-gpu-memory.timer"); fi
   echo "${running[*]}"
 }
 
@@ -198,7 +198,7 @@ keep_a_writer() {
   writers=$(writers_now)
   if [ -z "$writers" ]; then
     install_timer >/dev/null 2>&1
-    systemctl start bb-box-gpu-memory.timer >/dev/null 2>&1
+    systemctl start alia-box-gpu-memory.timer >/dev/null 2>&1
     run_timer_once
     writers=$(writers_now)
     [ -n "$writers" ] || { [ -e "$program" ] && start_helper >/dev/null 2>&1; }
@@ -208,7 +208,7 @@ keep_a_writer() {
   if [ -n "$writers" ]; then
     echo "setup-gpu.sh: stopped part way, while $phase (exit status $status); the report is written by ${writers// / and }" >&2
   else
-    echo "setup-gpu.sh: stopped part way, while $phase (exit status $status), and neither bb-box-gpu nor bb-box-gpu-memory.timer could be started, so nothing writes the report: see systemctl status bb-box-gpu bb-box-gpu-memory.timer" >&2
+    echo "setup-gpu.sh: stopped part way, while $phase (exit status $status), and neither alia-box-gpu nor alia-box-gpu-memory.timer could be started, so nothing writes the report: see systemctl status alia-box-gpu alia-box-gpu-memory.timer" >&2
   fi
   if [ -d "$backup" ]; then
     echo "setup-gpu.sh: the install from before this run is kept in $backup; run setup-gpu.sh again, and it is put back if the helper does not report" >&2
@@ -220,7 +220,7 @@ on_exit() {
   trap - EXIT
   trap '' INT TERM HUP
   set +e
-  rm -f "$conf.new" "$conf.setup-new" "$program.setup-new" "$sbin/bb-box-gpu-memory.setup-new" "$units"/bb-box-gpu*.setup-new "$ledger.setup-new" "$backup/ledger.setup-new"
+  rm -f "$conf.new" "$conf.setup-new" "$program.setup-new" "$sbin/alia-box-gpu-memory.setup-new" "$units"/alia-box-gpu*.setup-new "$ledger.setup-new" "$backup/ledger.setup-new"
   if [ "$settled" = 0 ] && [ "$phase" != checking ]; then keep_a_writer "$status"; fi
   rm -rf "$backup.new"
   exit "$status"
@@ -233,7 +233,7 @@ trap 'exit 129' HUP
 version_of() {
   local name version word protocol
   read -r name version word protocol _ < <(perl "$1" --version 2>/dev/null) || true
-  if [ "${name:-}" = bb-box-gpu ] && [ "${word:-}" = protocol ] &&
+  if [ "${name:-}" = alia-box-gpu ] && [ "${word:-}" = protocol ] &&
     [[ "${version:-}" =~ ^[0-9]+(\.[0-9]+)*$ ]] && [[ "${protocol:-}" =~ ^[0-9]+$ ]]; then
     echo "$version $protocol"
   fi
@@ -246,7 +246,7 @@ newer_than() {
 writes_of() {
   local conf_file=$1 unit_file=$2
   if [ -f "$conf_file" ] && grep -Eq '^[[:space:]]*writes[[:space:]]+on[[:space:]]*$' "$conf_file" &&
-    [ -f "$unit_file" ] && grep -q '^ExecStart=/usr/local/sbin/bb-box-gpu' "$unit_file" &&
+    [ -f "$unit_file" ] && grep -q '^ExecStart=/usr/local/sbin/alia-box-gpu' "$unit_file" &&
     ! grep -q '^ExecStart=.* --dry-run' "$unit_file"; then
     echo on
   else
@@ -258,7 +258,7 @@ rendered_unit() {
   local name=$1 writes=$2 out
   out=$(mktemp "$state/$name.rendered.XXXXXX")
   if [ "$writes" = on ]; then
-    sed 's#^\(ExecStart=/usr/local/sbin/bb-box-gpu.*\) --dry-run$#\1#' "$here/$name" >"$out"
+    sed 's#^\(ExecStart=/usr/local/sbin/alia-box-gpu.*\) --dry-run$#\1#' "$here/$name" >"$out"
   else
     cp "$here/$name" "$out"
   fi
@@ -301,8 +301,8 @@ report_is_fresh() {
   snapshot=$(description_text "$vmid")
   at=$(line_of "$snapshot" 'at [0-9]\{1,\}')
   at=${at#at }
-  helper=$(line_of "$snapshot" 'helper bb-box-gpu .*')
-  if [[ "$helper" == "helper bb-box-gpu $version protocol $protocol writes $expect_writes "* ]] && [ "${at:-0}" -ge "$since" ] &&
+  helper=$(line_of "$snapshot" 'helper alia-box-gpu .*')
+  if [[ "$helper" == "helper alia-box-gpu $version protocol $protocol writes $expect_writes "* ]] && [ "${at:-0}" -ge "$since" ] &&
     { [ -z "$unlike" ] || [ "$snapshot" != "$unlike" ]; } && ! grep -Eq "$unhealthy_report" <<<"$snapshot"; then
     report_line=$helper
     serves_line=$(line_of "$snapshot" 'serves .*')
@@ -323,8 +323,8 @@ wait_for_report() {
 }
 
 start_helper() {
-  systemctl reset-failed bb-box-gpu.service >/dev/null 2>&1 || true
-  systemctl start bb-box-gpu.service
+  systemctl reset-failed alia-box-gpu.service >/dev/null 2>&1 || true
+  systemctl start alia-box-gpu.service
 }
 
 unit_known() {
@@ -332,7 +332,7 @@ unit_known() {
 }
 
 timer_present() {
-  unit_known bb-box-gpu-memory.timer || [ -e "$sbin/bb-box-gpu-memory" ]
+  unit_known alia-box-gpu-memory.timer || [ -e "$sbin/alia-box-gpu-memory" ]
 }
 
 timer_files_changed=0
@@ -341,44 +341,44 @@ install_timer() {
   local before=$changed
   changed=0
   install -d -m 0755 "$units" "$sbin"
-  put 0755 "$here/bb-box-gpu-memory" "$sbin/bb-box-gpu-memory"
-  put 0644 "$here/bb-box-gpu-memory.service" "$units/bb-box-gpu-memory.service"
-  put 0644 "$here/bb-box-gpu-memory.timer" "$units/bb-box-gpu-memory.timer"
+  put 0755 "$here/alia-box-gpu-memory" "$sbin/alia-box-gpu-memory"
+  put 0644 "$here/alia-box-gpu-memory.service" "$units/alia-box-gpu-memory.service"
+  put 0644 "$here/alia-box-gpu-memory.timer" "$units/alia-box-gpu-memory.timer"
   timer_files_changed=$changed
   changed=$((before | timer_files_changed))
   systemctl daemon-reload
-  systemctl is-enabled --quiet bb-box-gpu-memory.timer 2>/dev/null || systemctl enable --quiet bb-box-gpu-memory.timer
+  systemctl is-enabled --quiet alia-box-gpu-memory.timer 2>/dev/null || systemctl enable --quiet alia-box-gpu-memory.timer
 }
 
 run_timer_once() {
   rm -f "$timer_state"
-  systemctl reset-failed bb-box-gpu-memory.service >/dev/null 2>&1 || true
-  systemctl start bb-box-gpu-memory.service >/dev/null 2>&1 && [ -s "$timer_state" ]
+  systemctl reset-failed alia-box-gpu-memory.service >/dev/null 2>&1 || true
+  systemctl start alia-box-gpu-memory.service >/dev/null 2>&1 && [ -s "$timer_state" ]
 }
 
 start_timer() {
-  if [ "$timer_files_changed" = 0 ] && systemctl is-active --quiet bb-box-gpu-memory.timer; then return 0; fi
-  systemctl start bb-box-gpu-memory.timer
-  said "put back bb-box-gpu-memory.timer, which writes the report every 15 s when a GPU's memory moves"
+  if [ "$timer_files_changed" = 0 ] && systemctl is-active --quiet alia-box-gpu-memory.timer; then return 0; fi
+  systemctl start alia-box-gpu-memory.timer
+  said "put back alia-box-gpu-memory.timer, which writes the report every 15 s when a GPU's memory moves"
 }
 
 start_fallback_timer() {
-  systemctl is-active --quiet bb-box-gpu-memory.timer && return 0
-  phase="starting bb-box-gpu-memory.timer, to write the report while bb-box-gpu restarts"
+  systemctl is-active --quiet alia-box-gpu-memory.timer && return 0
+  phase="starting alia-box-gpu-memory.timer, to write the report while alia-box-gpu restarts"
   local before=$changed
   install_timer >/dev/null
   changed=$before
-  systemctl start bb-box-gpu-memory.timer
-  said "started bb-box-gpu-memory.timer while bb-box-gpu restarts, so the report has a writer throughout"
+  systemctl start alia-box-gpu-memory.timer
+  said "started alia-box-gpu-memory.timer while alia-box-gpu restarts, so the report has a writer throughout"
 }
 
 retire_timer() {
-  phase="retiring bb-box-gpu-memory.timer"
-  systemctl disable --now --quiet bb-box-gpu-memory.timer ||
-    hand_over_to_timer "bb-box-gpu-memory.timer could not be stopped"
-  systemctl stop bb-box-gpu-memory.service ||
-    hand_over_to_timer "bb-box-gpu-memory.service could not be stopped"
-  rm -f "$units/bb-box-gpu-memory.timer" "$units/bb-box-gpu-memory.service" "$sbin/bb-box-gpu-memory"
+  phase="retiring alia-box-gpu-memory.timer"
+  systemctl disable --now --quiet alia-box-gpu-memory.timer ||
+    hand_over_to_timer "alia-box-gpu-memory.timer could not be stopped"
+  systemctl stop alia-box-gpu-memory.service ||
+    hand_over_to_timer "alia-box-gpu-memory.service could not be stopped"
+  rm -f "$units/alia-box-gpu-memory.timer" "$units/alia-box-gpu-memory.service" "$sbin/alia-box-gpu-memory"
   systemctl daemon-reload
 }
 
@@ -389,23 +389,23 @@ finish() {
 
 hand_over_to_timer() {
   local why=$1 stopped=1 wrote=1
-  phase="handing the report to bb-box-gpu-memory.timer"
+  phase="handing the report to alia-box-gpu-memory.timer"
   install_timer
-  if ! systemctl start bb-box-gpu-memory.timer || ! systemctl is-active --quiet bb-box-gpu-memory.timer; then
+  if ! systemctl start alia-box-gpu-memory.timer || ! systemctl is-active --quiet alia-box-gpu-memory.timer; then
     finish
-    echo "setup-gpu.sh: $why, and bb-box-gpu-memory.timer could not be started, so bb-box-gpu is left as it is: see systemctl status bb-box-gpu bb-box-gpu-memory.timer" >&2
+    echo "setup-gpu.sh: $why, and alia-box-gpu-memory.timer could not be started, so alia-box-gpu is left as it is: see systemctl status alia-box-gpu alia-box-gpu-memory.timer" >&2
     exit 1
   fi
   systemctl disable --now --quiet "${helper_units[@]}" || stopped=0
   run_timer_once || wrote=0
   finish
   local first=""
-  [ "$wrote" = 1 ] || first="; its first run wrote no report: see journalctl -u bb-box-gpu-memory"
+  [ "$wrote" = 1 ] || first="; its first run wrote no report: see journalctl -u alia-box-gpu-memory"
   if [ "$stopped" = 0 ]; then
-    echo "setup-gpu.sh: $why; bb-box-gpu could not be stopped either, and bb-box-gpu-memory.timer writes the report too$first: see systemctl status bb-box-gpu" >&2
+    echo "setup-gpu.sh: $why; alia-box-gpu could not be stopped either, and alia-box-gpu-memory.timer writes the report too$first: see systemctl status alia-box-gpu" >&2
     exit 1
   fi
-  echo "setup-gpu.sh: $why, so bb-box-gpu is stopped and disabled, and bb-box-gpu-memory.timer writes the report$first: see journalctl -u bb-box-gpu" >&2
+  echo "setup-gpu.sh: $why, so alia-box-gpu is stopped and disabled, and alia-box-gpu-memory.timer writes the report$first: see journalctl -u alia-box-gpu" >&2
   exit 1
 }
 
@@ -417,7 +417,7 @@ begin_backup() {
     rm -rf "$backup.new"
     install -d -m 0700 "$backup.new"
     local file
-    for file in "$program" "$units/bb-box-gpu.service" "$units/bb-box-gpu-boot.service" "$conf" "$ledger"; do
+    for file in "$program" "$units/alia-box-gpu.service" "$units/alia-box-gpu-boot.service" "$conf" "$ledger"; do
       [ ! -e "$file" ] || cp -p "$file" "$backup.new/$(basename "$file")"
     done
     printf '%s\n' "$installed" >"$backup.new/installed"
@@ -429,7 +429,7 @@ begin_backup() {
   fi
   read -r old_version old_protocol <"$backup/installed" || true
   if [ -f "$backup/timer-before" ]; then read -r timer_was_there <"$backup/timer-before" || true; fi
-  if [ ! -e "$backup/bb-box-gpu" ]; then old_version="" old_protocol=""; fi
+  if [ ! -e "$backup/alia-box-gpu" ]; then old_version="" old_protocol=""; fi
 }
 
 keep_stopped_helpers_ledger() {
@@ -443,8 +443,8 @@ keep_stopped_helpers_ledger() {
 ledger_note=""
 
 put_previous_back() {
-  phase="putting back bb-box-gpu $old_version"
-  copy_into_place "$backup/bb-box-gpu" "$program"
+  phase="putting back alia-box-gpu $old_version"
+  copy_into_place "$backup/alia-box-gpu" "$program"
   local unit
   for unit in "${helper_units[@]}"; do
     if [ -e "$backup/$unit" ]; then copy_into_place "$backup/$unit" "$units/$unit"; fi
@@ -457,7 +457,7 @@ put_previous_back() {
       local kept_as
       kept_as=$ledger.from-$new_version-$(date +%s)
       mv "$ledger" "$kept_as"
-      ledger_note="; the ledger bb-box-gpu $new_version wrote is kept as $kept_as"
+      ledger_note="; the ledger alia-box-gpu $new_version wrote is kept as $kept_as"
     fi
     if [ -n "$set_aside" ]; then
       mv "$set_aside" "$ledger"
@@ -472,24 +472,24 @@ roll_back() {
   local why=$1
   if [ -z "$old_version" ]; then hand_over_to_timer "$why"; fi
   start_fallback_timer
-  phase="stopping bb-box-gpu $new_version"
-  systemctl stop bb-box-gpu.service || true
+  phase="stopping alia-box-gpu $new_version"
+  systemctl stop alia-box-gpu.service || true
   put_previous_back
-  phase="starting bb-box-gpu $old_version again"
-  expect_writes=$(writes_of "$backup/gpu.conf" "$backup/bb-box-gpu.service")
+  phase="starting alia-box-gpu $old_version again"
+  expect_writes=$(writes_of "$backup/gpu.conf" "$backup/alia-box-gpu.service")
   local since before
   since=$(date +%s)
   before=$(description_text "$vmid")
   if ! start_helper || ! wait_for_report "$heartbeat_wait" "$since" "$old_version" "$old_protocol" "$before"; then
-    hand_over_to_timer "$why, and bb-box-gpu $old_version, put back, wrote no fresh, healthy report either"
+    hand_over_to_timer "$why, and alia-box-gpu $old_version, put back, wrote no fresh, healthy report either"
   fi
   if [ "$timer_was_there" = 0 ] && timer_present; then
     retire_timer
     wait_for_report "$heartbeat_wait" "$since" "$old_version" "$old_protocol" ||
-      hand_over_to_timer "$why, and bb-box-gpu $old_version's report did not come back once the timer stopped"
+      hand_over_to_timer "$why, and alia-box-gpu $old_version's report did not come back once the timer stopped"
   fi
   finish
-  echo "setup-gpu.sh: $why, so bb-box-gpu $old_version is back as it was, with its settings and ledger$ledger_note: see journalctl -u bb-box-gpu" >&2
+  echo "setup-gpu.sh: $why, so alia-box-gpu $old_version is back as it was, with its settings and ledger$ledger_note: see journalctl -u alia-box-gpu" >&2
   exit 1
 }
 
@@ -517,17 +517,17 @@ clean_preview() {
   output=$(perl "$preview_of" --preview 2>"$errors") || status=$?
   printf '%s\n' "$output" | sed 's/^/setup-gpu.sh: /'
   if [ "$status" != 0 ] || ! grep -q '^preview: writes on would write ' <<<"$output" || grep -q '^error: ' <<<"$output"; then
-    echo "setup-gpu.sh: what bb-box-gpu --preview said besides:" >&2
+    echo "setup-gpu.sh: what alia-box-gpu --preview said besides:" >&2
     tail -20 "$errors" | sed 's/^/setup-gpu.sh:   /' >&2
     rm -f "$errors"
-    die "bb-box-gpu --preview could not show what writes on would do (exit status $status; see its error and incomplete lines above), so $outcome. Put right what it names, then run this again. Nothing was changed."
+    die "alia-box-gpu --preview could not show what writes on would do (exit status $status; see its error and incomplete lines above), so $outcome. Put right what it names, then run this again. Nothing was changed."
   fi
   rm -f "$errors"
   if grep -q '^preview: pve-container .* is not a version this release was tested on' <<<"$output"; then
-    die "bb-box-gpu $new_version was not tested on the pve-container installed here, so it would write no guest even with writes on, and $outcome. Nothing was changed."
+    die "alia-box-gpu $new_version was not tested on the pve-container installed here, so it would write no guest even with writes on, and $outcome. Nothing was changed."
   fi
   if grep -q '^would write CT ' <<<"$output"; then
-    die "with writes on, bb-box-gpu $new_version would write the guests above on its first pass, so $outcome. Find why with journalctl -u bb-box-gpu and the report's would lines: each write must be explained before writes come on. Nothing was changed."
+    die "with writes on, alia-box-gpu $new_version would write the guests above on its first pass, so $outcome. Find why with journalctl -u alia-box-gpu and the report's would lines: each write must be explained before writes come on. Nothing was changed."
   fi
 }
 
@@ -537,14 +537,14 @@ preview_writes_on() {
     die "an earlier run did not finish, and the install from before it is kept in $backup: run setup-gpu.sh without --writes first, then --writes on. Nothing was changed."
   fi
   if [ "$installed_version" != "$new_version" ]; then
-    die "writes come on only for this release's helper once it runs, and bb-box-gpu ${installed_version:-none} is installed: run setup-gpu.sh without --writes first, to install bb-box-gpu $new_version with writes off, then --writes on. Nothing was changed."
+    die "writes come on only for this release's helper once it runs, and alia-box-gpu ${installed_version:-none} is installed: run setup-gpu.sh without --writes first, to install alia-box-gpu $new_version with writes off, then --writes on. Nothing was changed."
   fi
   expect_writes=$now_writes
-  if ! systemctl is-active --quiet bb-box-gpu.service || ! report_is_fresh $(($(date +%s) - 90)) "$new_version" "$new_protocol"; then
-    die "bb-box-gpu $new_version has written no fresh, healthy report in VM $vmid in the last 90 s, so its writes do not come on: see systemctl status bb-box-gpu. Nothing was changed."
+  if ! systemctl is-active --quiet alia-box-gpu.service || ! report_is_fresh $(($(date +%s) - 90)) "$new_version" "$new_protocol"; then
+    die "alia-box-gpu $new_version has written no fresh, healthy report in VM $vmid in the last 90 s, so its writes do not come on: see systemctl status alia-box-gpu. Nothing was changed."
   fi
   if [[ "$report_line" != *" tested" ]]; then
-    die "bb-box-gpu $new_version was not tested on the pve-container installed here ($report_line), so it would write no guest even with writes on. Nothing was changed."
+    die "alia-box-gpu $new_version was not tested on the pve-container installed here ($report_line), so it would write no guest even with writes on. Nothing was changed."
   fi
   clean_preview "$program" "writes stay off"
   if [ "$check_only" = 1 ]; then
@@ -558,30 +558,30 @@ install_helper() {
   command -v nvidia-smi >/dev/null || die "nvidia-smi is missing (it comes with NVIDIA's driver)"
   perl -MPVE::LXC -MPVE::LXC::Config -MPVE::QemuConfig -MPVE::Cluster -MPVE::INotify -e 1 2>/dev/null ||
     die "Proxmox's Perl modules do not load: run this on a Proxmox VE host"
-  perl -c "$here/bb-box-gpu" >/dev/null 2>&1 || die "$here/bb-box-gpu does not compile with this host's Perl"
+  perl -c "$here/alia-box-gpu" >/dev/null 2>&1 || die "$here/alia-box-gpu does not compile with this host's Perl"
   local release installed="" current_version=""
-  release=$(version_of "$here/bb-box-gpu")
-  [ -n "$release" ] || die "$here/bb-box-gpu does not say its version"
+  release=$(version_of "$here/alia-box-gpu")
+  [ -n "$release" ] || die "$here/alia-box-gpu does not say its version"
   read -r new_version new_protocol <<<"$release"
   if [ -e "$program" ]; then installed=$(version_of "$program"); fi
   if [ -n "$installed" ]; then read -r current_version _ <<<"$installed"; fi
   if [ -n "$current_version" ] && newer_than "$current_version" "$new_version" && [ "$downgrade" = 0 ]; then
-    die "bb-box-gpu $current_version is installed, newer than this release's $new_version: run the newer release's setup-gpu.sh, or give --downgrade to install $new_version. Nothing was changed."
+    die "alia-box-gpu $current_version is installed, newer than this release's $new_version: run the newer release's setup-gpu.sh, or give --downgrade to install $new_version. Nothing was changed."
   fi
   local written_by
   written_by=$(ledger_protocol)
   if [ -n "$written_by" ] && [ "$written_by" -gt "$new_protocol" ] && [ "$downgrade" = 0 ]; then
-    die "the ledger, $ledger, was written by protocol $written_by, newer than this release's protocol $new_protocol: run the newer release's setup-gpu.sh, or give --downgrade to set the ledger aside, which bb-box-gpu $new_version then rebuilds from the guests. Nothing was changed."
+    die "the ledger, $ledger, was written by protocol $written_by, newer than this release's protocol $new_protocol: run the newer release's setup-gpu.sh, or give --downgrade to set the ledger aside, which alia-box-gpu $new_version then rebuilds from the guests. Nothing was changed."
   fi
   vmid=$(report_vmid) || true
   [ -n "$vmid" ] || die "no VM named $report_name on this node: run setup-gpu-report.sh first, which makes the report's VM"
   local current_writes want_writes
-  current_writes=$(writes_of "$conf" "$units/bb-box-gpu.service")
+  current_writes=$(writes_of "$conf" "$units/alia-box-gpu.service")
   want_writes=${asked_writes:-$current_writes}
   if [ "$want_writes" = on ] && [ "$current_writes" = off ]; then preview_writes_on "$current_version" "$current_writes"; fi
   if [ "$want_writes" = on ] && [ "$current_writes" = on ] && [ "$current_version" != "$new_version" ] && [ "$check_only" = 0 ]; then
-    echo "setup-gpu.sh: writes are on, so bb-box-gpu $new_version's preview runs before it replaces ${current_version:-the helper}:"
-    clean_preview "$here/bb-box-gpu" "bb-box-gpu ${current_version:-installed} stays as it is; run setup-gpu.sh --writes off first to upgrade with writes off"
+    echo "setup-gpu.sh: writes are on, so alia-box-gpu $new_version's preview runs before it replaces ${current_version:-the helper}:"
+    clean_preview "$here/alia-box-gpu" "alia-box-gpu ${current_version:-installed} stays as it is; run setup-gpu.sh --writes off first to upgrade with writes off"
   fi
   if [ "$check_only" = 1 ]; then
     echo "setup-gpu.sh: --check: writes are on already; nothing was changed"
@@ -591,7 +591,7 @@ install_helper() {
   if timer_present; then timer_was_there=1; fi
 
   phase="keeping a copy of the install before this run"
-  install -d -m 0755 "$root/etc/bb-box" "$units" "$sbin"
+  install -d -m 0755 "$root/etc/alia-box" "$units" "$sbin"
   if [ ! -d "$state" ]; then
     install -d -m 0700 "$state"
     said "made $state for the ledger"
@@ -621,65 +621,65 @@ install_helper() {
   fi
 
   phase="replacing the program and its units"
-  put 0755 "$here/bb-box-gpu" "$program"
-  put_unit bb-box-gpu.service "$want_writes"
-  put_unit bb-box-gpu-boot.service "$want_writes"
+  put 0755 "$here/alia-box-gpu" "$program"
+  put_unit alia-box-gpu.service "$want_writes"
+  put_unit alia-box-gpu-boot.service "$want_writes"
   systemctl daemon-reload
-  if ! systemctl is-enabled --quiet bb-box-gpu-boot.service 2>/dev/null; then
-    systemctl enable --quiet bb-box-gpu-boot.service
-    said "enabled bb-box-gpu-boot.service, the boot pass before pve-guests.service, with writes $want_writes"
+  if ! systemctl is-enabled --quiet alia-box-gpu-boot.service 2>/dev/null; then
+    systemctl enable --quiet alia-box-gpu-boot.service
+    said "enabled alia-box-gpu-boot.service, the boot pass before pve-guests.service, with writes $want_writes"
   fi
-  if ! systemctl is-enabled --quiet bb-box-gpu.service 2>/dev/null; then
-    systemctl enable --quiet bb-box-gpu.service
-    said "enabled bb-box-gpu.service, with writes $want_writes"
+  if ! systemctl is-enabled --quiet alia-box-gpu.service 2>/dev/null; then
+    systemctl enable --quiet alia-box-gpu.service
+    said "enabled alia-box-gpu.service, with writes $want_writes"
   fi
 
   local since ledger_too_new=0 unproven=0
   if [ -n "$written_by" ] && [ "$written_by" -gt "$new_protocol" ]; then ledger_too_new=1; fi
   if [ "$backup_made_now" = 0 ] && ! report_is_fresh $(($(date +%s) - 90)) "$new_version" "$new_protocol"; then unproven=1; fi
-  if [ "$changed" = 1 ] || [ "$ledger_too_new" = 1 ] || [ "$unproven" = 1 ] || ! systemctl is-active --quiet bb-box-gpu.service; then
+  if [ "$changed" = 1 ] || [ "$ledger_too_new" = 1 ] || [ "$unproven" = 1 ] || ! systemctl is-active --quiet alia-box-gpu.service; then
     start_fallback_timer
-    phase="stopping bb-box-gpu"
-    systemctl stop bb-box-gpu.service || roll_back "bb-box-gpu.service could not be stopped"
+    phase="stopping alia-box-gpu"
+    systemctl stop alia-box-gpu.service || roll_back "alia-box-gpu.service could not be stopped"
     keep_stopped_helpers_ledger
     if [ "$ledger_too_new" = 1 ] && [ -e "$ledger" ]; then
       phase="setting the ledger aside"
       set_aside=$ledger.protocol-$written_by-$(date +%s)
       mv "$ledger" "$set_aside"
-      said "set aside the ledger, written by protocol $written_by, as $set_aside: bb-box-gpu $new_version speaks protocol $new_protocol and rebuilds it from the guests"
+      said "set aside the ledger, written by protocol $written_by, as $set_aside: alia-box-gpu $new_version speaks protocol $new_protocol and rebuilds it from the guests"
     fi
-    phase="starting bb-box-gpu $new_version"
+    phase="starting alia-box-gpu $new_version"
     since=$(date +%s)
     local before
     before=$(description_text "$vmid")
-    start_helper || roll_back "bb-box-gpu $new_version did not start"
+    start_helper || roll_back "alia-box-gpu $new_version did not start"
     if [ -n "$old_version" ] && [ "$old_version" != "$new_version" ]; then
-      said "restarted bb-box-gpu.service on $new_version, which was $old_version, with writes $want_writes; gpu.conf and the ledger are kept"
+      said "restarted alia-box-gpu.service on $new_version, which was $old_version, with writes $want_writes; gpu.conf and the ledger are kept"
     elif [ "$want_writes" != "$current_writes" ]; then
-      said "restarted bb-box-gpu.service with writes $want_writes, which were $current_writes; the ledger is kept"
+      said "restarted alia-box-gpu.service with writes $want_writes, which were $current_writes; the ledger is kept"
     else
-      said "started bb-box-gpu.service, with writes $want_writes"
+      said "started alia-box-gpu.service, with writes $want_writes"
     fi
-    phase="waiting for bb-box-gpu $new_version's report"
+    phase="waiting for alia-box-gpu $new_version's report"
     wait_for_report "$first_pass_wait" "$since" "$new_version" "$new_protocol" "$before" ||
-      roll_back "bb-box-gpu $new_version wrote no fresh, healthy report with writes $want_writes in VM $vmid within $first_pass_wait s"
+      roll_back "alia-box-gpu $new_version wrote no fresh, healthy report with writes $want_writes in VM $vmid within $first_pass_wait s"
   else
-    phase="reading bb-box-gpu's report"
+    phase="reading alia-box-gpu's report"
     since=$(($(date +%s) - 90))
     wait_for_report "$heartbeat_wait" "$since" "$new_version" "$new_protocol" ||
-      hand_over_to_timer "bb-box-gpu wrote no fresh, healthy report with writes $want_writes in VM $vmid within $heartbeat_wait s"
+      hand_over_to_timer "alia-box-gpu wrote no fresh, healthy report with writes $want_writes in VM $vmid within $heartbeat_wait s"
   fi
 
   if timer_present; then
     retire_timer
     if [ "$timer_was_there" = 1 ]; then
-      said "stopped, disabled and removed bb-box-gpu-memory.timer and its service, as bb-box-gpu writes the report; VM $vmid and the token's PVEAuditor on it stay"
+      said "stopped, disabled and removed alia-box-gpu-memory.timer and its service, as alia-box-gpu writes the report; VM $vmid and the token's PVEAuditor on it stay"
     else
-      said "stopped and removed bb-box-gpu-memory.timer again, as bb-box-gpu writes the report"
+      said "stopped and removed alia-box-gpu-memory.timer again, as alia-box-gpu writes the report"
     fi
-    phase="waiting for bb-box-gpu's report once the timer stopped"
+    phase="waiting for alia-box-gpu's report once the timer stopped"
     wait_for_report "$first_pass_wait" "$since" "$new_version" "$new_protocol" ||
-      hand_over_to_timer "bb-box-gpu's report in VM $vmid did not come back within $first_pass_wait s once the timer stopped"
+      hand_over_to_timer "alia-box-gpu's report in VM $vmid did not come back within $first_pass_wait s once the timer stopped"
   fi
   finish
 
@@ -700,21 +700,21 @@ remove_helper() {
   if [ -e "$program" ]; then installed=$(version_of "$program"); fi
   if [ -n "$installed" ]; then read -r removing _ <<<"$installed"; fi
   if [ -n "$removing" ] && does_power "$removing" && [ "$force" = 0 ]; then
-    die "bb-box-gpu $removing is installed, which starts, stops and deletes bb-box's guests on this host, and each BB that has read its report keeps that: with it removed, such a BB would start, stop and release none of its boxes here. To stop its writes, run setup-gpu.sh --writes off. To go back to Proxmox's API, run setup-gpu.sh --downgrade from the BB Box release with bb-box-gpu 0.2.0: each BB reads that version in the report at its next doctor run or box action here, and uses the API again. --force removes it all the same. Nothing was changed."
+    die "alia-box-gpu $removing is installed, which starts, stops and deletes alia-box's guests on this host, and each ALIA that has read its report keeps that: with it removed, such a ALIA would start, stop and release none of its boxes here. To stop its writes, run setup-gpu.sh --writes off. To go back to Proxmox's API, run setup-gpu.sh --downgrade from the ALIA Box release with alia-box-gpu 0.2.0: each ALIA reads that version in the report at its next doctor run or box action here, and uses the API again. --force removes it all the same. Nothing was changed."
   fi
-  phase="putting bb-box-gpu-memory.timer back"
+  phase="putting alia-box-gpu-memory.timer back"
   install_timer
   local helper_ran=0 unit stuck=""
-  if systemctl is-active --quiet bb-box-gpu.service; then helper_ran=1; fi
+  if systemctl is-active --quiet alia-box-gpu.service; then helper_ran=1; fi
   if [ "$helper_ran" = 1 ]; then
-    if ! systemctl start bb-box-gpu-memory.timer || ! run_timer_once; then
+    if ! systemctl start alia-box-gpu-memory.timer || ! run_timer_once; then
       settled=1
-      echo "setup-gpu.sh: bb-box-gpu-memory.timer is in place, but it could not be started or wrote no report: see journalctl -u bb-box-gpu-memory; it needs nvidia-smi to work. So bb-box-gpu was not stopped, and nothing of it was removed; run setup-gpu.sh --remove again once the timer can write the report" >&2
+      echo "setup-gpu.sh: alia-box-gpu-memory.timer is in place, but it could not be started or wrote no report: see journalctl -u alia-box-gpu-memory; it needs nvidia-smi to work. So alia-box-gpu was not stopped, and nothing of it was removed; run setup-gpu.sh --remove again once the timer can write the report" >&2
       exit 1
     fi
-    said "put back bb-box-gpu-memory.timer, which writes the report every 15 s when a GPU's memory moves; it wrote the report before bb-box-gpu stopped"
+    said "put back alia-box-gpu-memory.timer, which writes the report every 15 s when a GPU's memory moves; it wrote the report before alia-box-gpu stopped"
   fi
-  phase="stopping and removing bb-box-gpu"
+  phase="stopping and removing alia-box-gpu"
   for unit in "${helper_units[@]}"; do
     if unit_known "$unit"; then
       systemctl disable --now --quiet "$unit" || stuck="$stuck $unit"
@@ -729,15 +729,15 @@ remove_helper() {
   systemctl daemon-reload
   [ "$helper_ran" = 1 ] || start_timer
   run_timer_once ||
-    echo "setup-gpu.sh: bb-box-gpu-memory.timer runs, but its first run once bb-box-gpu was gone wrote no report: see journalctl -u bb-box-gpu-memory; it needs nvidia-smi to work" >&2
+    echo "setup-gpu.sh: alia-box-gpu-memory.timer runs, but its first run once alia-box-gpu was gone wrote no report: see journalctl -u alia-box-gpu-memory; it needs nvidia-smi to work" >&2
   settled=1
   [ -z "$stuck" ] || { echo "setup-gpu.sh: could not stop$stuck: see systemctl status" >&2; exit 1; }
   if [ "$changed" = 1 ]; then
     echo "setup-gpu.sh: kept $conf and the ledger in $state; no guest's device lines or tags were changed"
     if [ -n "$removing" ] && does_power "$removing"; then
-      echo "setup-gpu.sh: removed bb-box-gpu $removing with --force: each BB that read its report starts, stops and releases none of its boxes on this host until a helper reports again, as after setup-gpu.sh --downgrade from the BB Box release with bb-box-gpu 0.2.0"
+      echo "setup-gpu.sh: removed alia-box-gpu $removing with --force: each ALIA that read its report starts, stops and releases none of its boxes on this host until a helper reports again, as after setup-gpu.sh --downgrade from the ALIA Box release with alia-box-gpu 0.2.0"
     fi
-    echo "setup-gpu.sh: bb-box starts a box with a GPU marker only once a helper reports its grant: to remove the helper for good, run bb box gpu mark --undo from each BB first"
+    echo "setup-gpu.sh: alia-box starts a box with a GPU marker only once a helper reports its grant: to remove the helper for good, run alia box gpu mark --undo from each ALIA first"
   else
     echo "setup-gpu.sh: nothing changed"
   fi

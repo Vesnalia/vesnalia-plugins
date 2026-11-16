@@ -22,7 +22,7 @@ const execFileAsync = promisify(execFile);
 const temporaryDirectories: string[] = [];
 
 async function temporaryDirectory() {
-  const directory = await mkdtemp(join(tmpdir(), "bb-usage-host-scan-"));
+  const directory = await mkdtemp(join(tmpdir(), "alia-usage-host-scan-"));
   temporaryDirectories.push(directory);
   return directory;
 }

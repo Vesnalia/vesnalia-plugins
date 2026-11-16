@@ -1,7 +1,7 @@
 // Seat history of the last week, in the plugin's own SQLite database (Aitor
 // 2026-11-05: «sobre lo del switcher que guarde los últimos días de
 // historial, pues vale»). The samples used to go to one kv row, and from the
-// third day on it passed bb's 256 KB limit: every store failed (662 failures
+// third day on it passed VesnALIA's 256 KB limit: every store failed (662 failures
 // in the log from 2026-11-03 to 2026-11-05) and a reload kept the last good
 // one. One row per account and measurement here, pruned at 7 days.
 
@@ -9,7 +9,7 @@
 export const HISTORIAL_DIAS = 7;
 export const HISTORIAL_MS = HISTORIAL_DIAS * 24 * 60 * 60_000;
 
-/** Append-only: bb's migrate records each statement by its index. */
+/** Append-only: VesnALIA's migrate records each statement by its index. */
 export const HISTORIAL_MIGRATIONS = [
   `CREATE TABLE seat_samples (
     at INTEGER NOT NULL,
@@ -54,9 +54,9 @@ export interface SampleRow {
   at: number;
   account: string;
   running: number;
-  /** Seats reserved for bb threads about to start. */
+  /** Seats reserved for VesnALIA threads about to start. */
   reserved: number;
-  /** Seats held from outside bb (reserve); null in samples kept before 0.2.43. */
+  /** Seats held from outside VesnALIA (reserve); null in samples kept before 0.2.43. */
   external: number | null;
   /** Threads waiting for a seat on it then; null in samples kept before 0.2.43. */
   waiting: number | null;

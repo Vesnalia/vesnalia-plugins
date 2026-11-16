@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
-import { useComposer } from "@get-bb/plugin-sdk/app";
+import { useComposer } from "@vesnalia/plugin-sdk/app";
 import { composerScopeKey, registerChatTarget } from "@/lib/chat-draft-bus";
 
-/** Mounted by BB inside each composer, so it writes only to that draft. */
+/** Mounted by VesnALIA inside each composer, so it writes only to that draft. */
 export function ChatDraftBridge() {
   const composer = useComposer();
   const scope = composer.scope;

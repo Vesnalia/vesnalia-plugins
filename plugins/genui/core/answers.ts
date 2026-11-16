@@ -49,7 +49,7 @@ export interface MentionRange {
   readonly to: number;
 }
 
-/** The composer's text and its mention pills, as BB's `ComposerDraft`. */
+/** The composer's text and its mention pills, as VesnALIA's `ComposerDraft`. */
 export interface DraftText<M extends MentionRange> {
   readonly text: string;
   readonly mentions: readonly M[];

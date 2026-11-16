@@ -1,5 +1,5 @@
 /**
- * The settings bb renders as a form (`bb.settings.define(SETTINGS)`), and how
+ * The settings VesnALIA renders as a form (`alia.settings.define(SETTINGS)`), and how
  * the app reads them back through `useSettings()`.
  *
  * Every value here is one the *app* reads — which providers to show, how to
@@ -13,14 +13,14 @@
  *
  * Only a type is imported from the SDK, so the app may import this module.
  */
-import type { PluginSettingDescriptor } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptor } from "@vesnalia/plugin-sdk";
 
 import { PROVIDERS } from "./providers";
 
 /**
  * How much of the blended price is input; the rest is output. Picked from a
  * list rather than typed, because a free number would imply a precision the
- * ranking does not have. The option *is* its label in bb's form, so it reads
+ * ranking does not have. The option *is* its label in VesnALIA's form, so it reads
  * as the split itself.
  *
  * There is no single right answer, which is why it is a setting: an agent that

@@ -5,17 +5,17 @@ import {
   makeMessageDispatchHookContext,
   makePluginAgentConfigurationContext,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.ts";
 
 type Harness = ReturnType<typeof createFakePluginHost>["harness"];
 
 async function load(): Promise<Harness> {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "souls",
     agentSkillIds: ["souls"],
   });
-  await plugin(bb);
+  await plugin(alia);
   return harness;
 }
 
@@ -321,7 +321,7 @@ test("souls_select can bind an existing child without adopting it here", async (
   }
 });
 
-test("bb souls select --next-child arms from the invoking thread", async () => {
+test("alia souls select --next-child arms from the invoking thread", async () => {
   const harness = await load();
   try {
     await createSoul(harness, "Ada");

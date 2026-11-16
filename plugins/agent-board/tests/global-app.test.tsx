@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { cleanup, fireEvent } from "@testing-library/react";
-import { loadPluginApp, renderSlot, type CapturedPluginApp, type RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot, type CapturedPluginApp, type RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { AttentionItem, BoardCard, ExecutionTimeline, GlobalDashboardSnapshot, GlobalExecution, TimelineEvent } from "@/contract/rpc";
 import { BOARD_CHANGED_CHANNEL } from "@/contract/rpc";
 const GLOBAL_DISCOVERY_INTERVAL_MS = 20_000;
@@ -25,8 +25,8 @@ afterEach(() => {
 function boardCard(overrides: Partial<BoardCard> = {}): BoardCard {
   const status = overrides.status ?? "running";
   return {
-    key: "global-card", parentKey: null, depth: 0, kind: "thread", source: "bb",
-    title: "Auth refactor", subtitle: "BB", status,
+    key: "global-card", parentKey: null, depth: 0, kind: "thread", source: "alia",
+    title: "Auth refactor", subtitle: "ALIA", status,
     column: status === "running" ? "active" : status === "queued" || status === "waiting" ? "plan" : "output",
     threadId: "thr_auth", providerId: "pi", providerLabel: "Pi", model: "qwen3:8b",
     startedAt: Date.now() - 5_000, completedAt: null, durationMs: null, phaseTitle: "Code review",
@@ -41,23 +41,23 @@ function execution(key: string, overrides: Partial<GlobalExecution> = {}): Globa
 }
 
 function attention(overrides: Partial<AttentionItem> = {}): AttentionItem {
-  return { id: "attention:auth:action", executionKey: "bb:auth", type: "action-required", status: "open", title: "Auth refactor", message: "Approval required", firstObservedAt: Date.now() - 10_000, updatedAt: Date.now(), threadId: "thr_auth", source: "bb", ...overrides };
+  return { id: "attention:auth:action", executionKey: "alia:auth", type: "action-required", status: "open", title: "Auth refactor", message: "Approval required", firstObservedAt: Date.now() - 10_000, updatedAt: Date.now(), threadId: "thr_auth", source: "alia", ...overrides };
 }
 
 function snapshot(overrides: Partial<GlobalDashboardSnapshot> = {}): GlobalDashboardSnapshot {
   return {
-    active: [execution("bb:auth")], attention: [], recent: [],
+    active: [execution("alia:auth")], attention: [], recent: [],
     counts: { active: 1, waiting: 0, attention: 0, recent: 0, failures: 0 },
     unavailableSources: [], partial: false, dismissedCount: 0, fetchedAt: Date.now(), ...overrides,
   };
 }
 
 function timelineEvent(id: string, timestamp: number, overrides: Partial<TimelineEvent> = {}): TimelineEvent {
-  return { id, executionKey: "bb:auth", source: "bb", timestamp, kind: "execution-start", status: "running", title: "Execution started", summary: null, model: null, toolName: null, target: null, phase: null, durationMs: null, threadId: "thr_auth", attentionType: null, sourceMetadata: { sourceId: id, sequence: timestamp }, ...overrides };
+  return { id, executionKey: "alia:auth", source: "alia", timestamp, kind: "execution-start", status: "running", title: "Execution started", summary: null, model: null, toolName: null, target: null, phase: null, durationMs: null, threadId: "thr_auth", attentionType: null, sourceMetadata: { sourceId: id, sequence: timestamp }, ...overrides };
 }
 
 function executionTimeline(overrides: Partial<ExecutionTimeline> = {}): ExecutionTimeline {
-  return { executionKey: "bb:auth", source: "bb", events: [timelineEvent("start", 100)], active: false, truncated: false, sourceWarning: null, fetchedAt: 500, ...overrides };
+  return { executionKey: "alia:auth", source: "alia", events: [timelineEvent("start", 100)], active: false, truncated: false, sourceWarning: null, fetchedAt: 500, ...overrides };
 }
 
 function mountGlobal(options: Parameters<typeof renderSlot>[2] = {}): RenderedSlot {
@@ -82,7 +82,7 @@ describe("global operations rendering", () => {
     slot.unmount();
   });
   it("keeps healthy diagnostics and filters collapsed while remembering a saved view", async () => {
-    const run = execution("bb:auth", { projectId: "p1", projectName: "Project One" });
+    const run = execution("alia:auth", { projectId: "p1", projectName: "Project One" });
     const options = { rpc: { global_dashboard: () => snapshot({ active: [run] }) } };
     const slot = mountGlobal(options);
     await slot.findByText("Auth refactor");
@@ -99,7 +99,7 @@ describe("global operations rendering", () => {
     next.unmount();
   });
   it("expands observed child activity without inventing its model or thread", async () => {
-    const run = execution("bb:auth", { children: [boardCard({ key: "native", title: "Review tests", kind: "delegation", threadId: null, ownerThreadId: "thr_auth", model: null, activity: { text: "Command: npm test", at: 100, kind: "command" } })] });
+    const run = execution("alia:auth", { children: [boardCard({ key: "native", title: "Review tests", kind: "delegation", threadId: null, ownerThreadId: "thr_auth", model: null, activity: { text: "Command: npm test", at: 100, kind: "command" } })] });
     const slot = mountGlobal({ rpc: { global_dashboard: () => snapshot({ active: [run] }) } });
     await slot.findByText("Auth refactor");
     fireEvent.click(slot.getByText(/Observed agents/));
@@ -117,7 +117,7 @@ describe("global operations rendering", () => {
     slot.unmount();
   });
   it("separates finished turns from independently verified work", async () => {
-    const recent = execution("bb:done", { card: boardCard({ status: "completed", outputPreview: "Done", review: { objective: "Fix auth", goalStatus: null, changedPaths: ["src/auth.ts"] } }) });
+    const recent = execution("alia:done", { card: boardCard({ status: "completed", outputPreview: "Done", review: { objective: "Fix auth", goalStatus: null, changedPaths: ["src/auth.ts"] } }) });
     const slot = mountGlobal({ rpc: { global_dashboard: () => snapshot({ active: [], recent: [recent] }) } });
     expect(await slot.findByText("Turn finished — review needed")).toBeTruthy();
     expect(slot.getByText(/Fix auth/)).toBeTruthy();
@@ -139,9 +139,9 @@ describe("global operations rendering", () => {
     slot.unmount();
   });
 
-  it("renders multiple BB and Redteam executions with truthful live treatment", async () => {
+  it("renders multiple VesnALIA and Redteam executions with truthful live treatment", async () => {
     const redteam = execution("redteam:scan", { card: boardCard({ key: "red", source: "redteam", kind: "phase", title: "Redteam — Tiny lab", threadId: null, providerId: null, providerLabel: null, model: "qwen3:8b" }) });
-    const slot = mountGlobal({ rpc: { global_dashboard: () => snapshot({ active: [execution("bb:auth"), redteam], counts: { active: 2, waiting: 0, attention: 0, recent: 0, failures: 0 } }) } });
+    const slot = mountGlobal({ rpc: { global_dashboard: () => snapshot({ active: [execution("alia:auth"), redteam], counts: { active: 2, waiting: 0, attention: 0, recent: 0, failures: 0 } }) } });
     expect(await slot.findByText("Auth refactor")).toBeTruthy();
     expect(slot.getByText("Redteam — Tiny lab")).toBeTruthy();
     expect(slot.getAllByTestId("kanban-live-indicator")).toHaveLength(2);
@@ -160,7 +160,7 @@ describe("global operations rendering", () => {
   });
 
   it("renders failed recent work statically with bounded output", async () => {
-    const failed = execution("bb:failed", { card: boardCard({ key: "failed", title: "Deploy test", status: "failed", completedAt: Date.now() - 500, durationMs: 2_000, errorPreview: "Provisioning failed", activity: null }) });
+    const failed = execution("alia:failed", { card: boardCard({ key: "failed", title: "Deploy test", status: "failed", completedAt: Date.now() - 500, durationMs: 2_000, errorPreview: "Provisioning failed", activity: null }) });
     const slot = mountGlobal({ rpc: { global_dashboard: () => snapshot({ active: [], recent: [failed], counts: { active: 0, waiting: 0, attention: 0, recent: 1, failures: 0 } }) } });
     expect(await slot.findByText("Deploy test")).toBeTruthy();
     expect(slot.getByText("Provisioning failed")).toBeTruthy();
@@ -177,7 +177,7 @@ describe("global operations rendering", () => {
   });
 
   it("keeps reasoning and prompts out of global rendering", async () => {
-    const poisoned = execution("bb:poison", { card: boardCard({ promptPreview: "SECRET REASONING", outputPreview: null }) });
+    const poisoned = execution("alia:poison", { card: boardCard({ promptPreview: "SECRET REASONING", outputPreview: null }) });
     const slot = mountGlobal({ rpc: { global_dashboard: () => snapshot({ active: [poisoned] }) } });
     await slot.findByText("Auth refactor");
     expect(slot.container.textContent).not.toContain("SECRET REASONING");
@@ -196,7 +196,7 @@ describe("global operations rendering", () => {
 
   it("keeps every global section shrinkable with pathological bounded content", async () => {
     const longTitle = `Continue ${LONG_TOKEN} ${LONG_URL}`;
-    const active = execution("bb:pathological-active", {
+    const active = execution("alia:pathological-active", {
       card: boardCard({
         key: "pathological-active",
         title: longTitle,
@@ -208,13 +208,13 @@ describe("global operations rendering", () => {
     });
     const restoredAttention = attention({
       id: "attention:restored:failed",
-      executionKey: "bb:restored",
+      executionKey: "alia:restored",
       type: "failed",
       title: longTitle,
       message: LONG_ERROR,
       updatedAt: Date.now() + 1,
     });
-    const recent = execution("bb:pathological-recent", {
+    const recent = execution("alia:pathological-recent", {
       card: boardCard({
         key: "pathological-recent",
         title: longTitle,
@@ -359,10 +359,10 @@ describe("terminal-state self-correction in the hook", () => {
 
 describe("latestPublicUpdate excerpt rendering", () => {
   it("renders a 2–3-line excerpt on active execution cards only", async () => {
-    const withExcerpt = execution("bb:auth", {
+    const withExcerpt = execution("alia:auth", {
       card: boardCard({ latestPublicUpdate: "Reconciled the terminal state; all counts are now truthful." }),
     });
-    const recentToo = execution("bb:done", {
+    const recentToo = execution("alia:done", {
       card: boardCard({ key: "done", title: "Finished run", status: "completed", completedAt: Date.now() - 1_000, durationMs: 5_000, activity: null, latestPublicUpdate: "Recent text should not appear as an excerpt." }),
     });
     const slot = mountGlobal({
@@ -384,7 +384,7 @@ describe("latestPublicUpdate excerpt rendering", () => {
   });
 
   it("omits the excerpt entirely when there is no public update", async () => {
-    const noText = execution("bb:quiet", { card: boardCard({ key: "quiet", latestPublicUpdate: null }) });
+    const noText = execution("alia:quiet", { card: boardCard({ key: "quiet", latestPublicUpdate: null }) });
     const slot = mountGlobal({ rpc: { global_dashboard: () => snapshot({ active: [noText] }) } });
     await slot.findByText("Auth refactor");
     expect(slot.container.querySelector('[data-part="public-update"]')).toBeNull();
@@ -407,7 +407,7 @@ describe("lazy shared execution timeline", () => {
     await slot.findByText("New after reconnect");
     fireEvent.click(slot.getByRole("button", { name: "Load earlier activity" }));
     await slot.findByText("Missed during reconnect");
-    expect(history).toHaveBeenLastCalledWith({ source: "bb", executionKey: "bb:auth", threadId: "thr_auth", cursor: "bridge" });
+    expect(history).toHaveBeenLastCalledWith({ source: "alia", executionKey: "alia:auth", threadId: "thr_auth", cursor: "bridge" });
     slot.unmount();
   });
   it("loads earlier history, keeps it during live refresh, and retries without losing the list", async () => {
@@ -464,15 +464,15 @@ describe("lazy shared execution timeline", () => {
   });
 
   it("opens the same Timeline action for a recent execution", async () => {
-    const recent = execution("bb:done", { card: boardCard({ key: "done", title: "Finished run", status: "completed", completedAt: Date.now(), activity: null }) });
-    const slot = mountGlobal({ rpc: { global_dashboard: () => snapshot({ active: [], recent: [recent], counts: { active: 0, waiting: 0, attention: 0, recent: 1, failures: 0 } }), execution_timeline: () => executionTimeline({ executionKey: "bb:done", events: [] }) } });
+    const recent = execution("alia:done", { card: boardCard({ key: "done", title: "Finished run", status: "completed", completedAt: Date.now(), activity: null }) });
+    const slot = mountGlobal({ rpc: { global_dashboard: () => snapshot({ active: [], recent: [recent], counts: { active: 0, waiting: 0, attention: 0, recent: 1, failures: 0 } }), execution_timeline: () => executionTimeline({ executionKey: "alia:done", events: [] }) } });
     const trigger = await slot.findByRole("button", { name: "Open timeline for Finished run" });
     trigger.click();
     expect(await slot.findByText("No public operational events are available.")).toBeTruthy();
     slot.unmount();
   });
 
-  it("opens a Redteam timeline without inventing a BB thread", async () => {
+  it("opens a Redteam timeline without inventing a VesnALIA thread", async () => {
     const redteam = execution("redteam:scan-1", { card: boardCard({ key: "scan", source: "redteam", kind: "phase", title: "Redteam — Tiny lab", threadId: null, scanId: "scan-1" }) });
     const rpcTimeline = vi.fn(async () => executionTimeline({ executionKey: "redteam:scan-1", source: "redteam", events: [timelineEvent("phase", 100, { executionKey: "redteam:scan-1", source: "redteam", kind: "phase-complete", status: "completed", title: "Code review completed", phase: "Code review" })] }));
     const slot = mountGlobal({ rpc: { global_dashboard: () => snapshot({ active: [redteam] }), execution_timeline: rpcTimeline } });

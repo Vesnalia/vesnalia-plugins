@@ -161,8 +161,8 @@ export function place(world: World, backend: BackendId, gpu: GpuPart, desktop: b
   if (gpu === "whole" && !world.settings[backend].wholeCards) {
     return {
       card: null,
-      person: `Whole cards are off in BB Box's ${info.label} settings. Choose a shared GPU.`,
-      agent: `Whole cards are off on ${host}. Ask for gpu shared, or ask the user. bb-box changed nothing.`,
+      person: `Whole cards are off in VesnALIA Box's ${info.label} settings. Choose a shared GPU.`,
+      agent: `Whole cards are off on ${host}. Ask for gpu shared, or ask the user. alia-box changed nothing.`,
       short: "Whole cards are off",
       states: "whole cards are off there",
       agentFix: "Ask for gpu shared, or ask the user.",
@@ -177,14 +177,14 @@ export function place(world: World, backend: BackendId, gpu: GpuPart, desktop: b
   if (chosen) return { card: chosen, person: null, agent: null, short: null, states: null, agentFix: null };
   const what = gpu === "whole" ? "a whole card" : "a shared GPU";
   const states = cards.map((card) => cardState(world, card, gpu, need, except));
-  const personFix = gpu === "whole" ? "Release one of them, or choose a shared GPU." : "Release one of them, choose no GPU, or raise the boxes per card in BB Box's settings.";
+  const personFix = gpu === "whole" ? "Release one of them, or choose a shared GPU." : "Release one of them, choose no GPU, or raise the boxes per card in VesnALIA Box's settings.";
   const own = ownBoxes(world, cards, thread, except);
   const other = gpu === "whole" ? "ask for gpu shared" : "ask for gpu none";
   const agentFix = own.length ? `Release one of your own boxes there (${listed(own)}), ${other}, or ask the user.` : `${capital(other)}, or ask the user.`;
   return {
     card: null,
     person: `No card on ${host} can take ${what} now. ${states.join(". ")}. ${personFix}`,
-    agent: `No card on ${host} can take ${what} now. ${states.map((each, index) => (index ? lowerFirst(each) : each)).join("; ")}. ${agentFix} bb-box changed nothing.`,
+    agent: `No card on ${host} can take ${what} now. ${states.map((each, index) => (index ? lowerFirst(each) : each)).join("; ")}. ${agentFix} alia-box changed nothing.`,
     short: capital(cards.map((card) => shortState(world, card, gpu, need, except)).join("; ")),
     states: states.map(lowerFirst).join("; "),
     agentFix,
@@ -199,7 +199,7 @@ export function planGpu(world: World, box: FakeBox, to: GpuPart): GpuPlan {
   const fromCard = cardById(world, box.card);
   const stopped = box.state === "stopped";
   const base = { from: box.gpu, to, fromCard, others: [] as FakeBox[], yields: [] as FakeBox[], installs: null as string | null };
-  const refuse = (person: string, agent = `${person} bb-box changed nothing.`): GpuPlan => ({ ...base, toCard: null, way: "no", person, agent });
+  const refuse = (person: string, agent = `${person} alia-box changed nothing.`): GpuPlan => ({ ...base, toCard: null, way: "no", person, agent });
   if (to === box.gpu) return { ...base, toCard: fromCard, way: "same", person: null, agent: null };
   const backend = backendOf(box.backend);
   if (box.gpu === "none" || to === "none") {
@@ -213,14 +213,14 @@ export function planGpu(world: World, box: FakeBox, to: GpuPart): GpuPlan {
     return { ...base, installs, others: holders(world, placed.card, box.id), yields: to === "whole" ? waitingFor(world, placed.card, box.id) : [], toCard: placed.card, way: stopped ? "stopped" : "restart", person: null, agent: null };
   }
   if (to === "shared") return { ...base, toCard: fromCard, others: fromCard ? holders(world, fromCard, box.id) : [], way: stopped ? "stopped" : "live", person: null, agent: null };
-  if (!world.settings[box.backend].wholeCards) return refuse(`Whole cards are off in BB Box's ${backend.label} settings.`, `Whole cards are off on ${backend.host}. Keep the GPU shared, or ask the user. bb-box changed nothing.`);
+  if (!world.settings[box.backend].wholeCards) return refuse(`Whole cards are off in VesnALIA Box's ${backend.label} settings.`, `Whole cards are off on ${backend.host}. Keep the GPU shared, or ask the user. alia-box changed nothing.`);
   const here = fromCard ? holders(world, fromCard, box.id) : [];
   if (fromCard && !here.length) {
     return { ...base, toCard: fromCard, yields: waitingFor(world, fromCard, box.id), way: stopped ? "stopped" : "live", person: null, agent: null };
   }
   const hereWords = fromCard ? `${capital(cardName(fromCard))} has ${listed(here.map(boxWord))} on it.` : "";
   if (!backend.canChangeDevices) {
-    return refuse(`${hereWords} On ${backend.label} a box cannot move to another card. Keep the GPU shared, or make a new box with a whole card.`, `${hereWords} On ${backend.label} a box cannot move to another card. Keep the GPU shared, or ask the user. bb-box changed nothing.`);
+    return refuse(`${hereWords} On ${backend.label} a box cannot move to another card. Keep the GPU shared, or make a new box with a whole card.`, `${hereWords} On ${backend.label} a box cannot move to another card. Keep the GPU shared, or ask the user. alia-box changed nothing.`);
   }
   const placed = place(world, box.backend, "whole", box.desktop, { except: box.id });
   if (placed.card && placed.card.id !== fromCard?.id) {
@@ -236,7 +236,7 @@ export function planGpu(world: World, box: FakeBox, to: GpuPart): GpuPlan {
     way: "no",
     others: here,
     person: `No card is free for ${box.name} alone. ${hereWords}${elsewhere.length ? ` ${elsewhere.join(" ")}` : ""} Release one of them, or keep the GPU shared.`,
-    agent: `No card is free for ${box.name} alone. ${hereWords}${elsewhere.length ? ` ${elsewhere.join(" ")}` : ""} ${own.length ? `Release one of your own boxes there (${listed(own)}), keep the GPU shared, or ask the user.` : "Keep the GPU shared, or ask the user."} bb-box changed nothing.`,
+    agent: `No card is free for ${box.name} alone. ${hereWords}${elsewhere.length ? ` ${elsewhere.join(" ")}` : ""} ${own.length ? `Release one of your own boxes there (${listed(own)}), keep the GPU shared, or ask the user.` : "Keep the GPU shared, or ask the user."} alia-box changed nothing.`,
   };
 }
 

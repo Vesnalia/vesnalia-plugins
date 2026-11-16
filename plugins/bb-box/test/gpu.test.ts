@@ -26,7 +26,7 @@ test("071 unit 1: a kind's GPU when not asked for is shared for linux-desktop an
     "windows-desktop": "none",
     ios: "none",
     android: "none",
-    "a-kind-bb-box-does-not-know": "none",
+    "a-kind-alia-box-does-not-know": "none",
   };
   assert.deepEqual(Object.fromEntries(Object.keys(expected).map((kind) => [kind, gpuWhenNotAsked(kind)])), expected);
   assert.deepEqual(Object.fromEntries(Object.keys(expected).map((kind) => [kind, chooseGpu(kind)])), Object.fromEntries(Object.entries(expected).map(([kind, gpu]) => [kind, { ok: true, gpu }])));
@@ -83,7 +83,7 @@ test("071 unit 1: a record from before GPU parts reads shared only for a linux-d
   assert.equal(recordedGpu({ kind: "linux", capabilities: gpu, size: SMALL }), "none", "only a desktop had a GPU before");
   assert.equal(recordedGpu({ kind: "linux", capabilities: none, size: { ...SMALL, gpu: "whole" } }), "whole");
   assert.equal(recordedGpu({ kind: "linux-desktop", capabilities: gpu, size: { ...SMALL, gpu: "none" } }), "none");
-  assert.equal(recordedGpu({ kind: "linux-desktop", capabilities: gpu, size: { ...SMALL, gpu: "two" as GpuPart } }), "shared", "a part BB Box does not know reads as before");
+  assert.equal(recordedGpu({ kind: "linux-desktop", capabilities: gpu, size: { ...SMALL, gpu: "two" as GpuPart } }), "shared", "a part VesnALIA Box does not know reads as before");
   assert.equal(userspaceOf({ kind: "linux" }), "unknown");
   assert.equal(userspaceOf({ kind: "linux", nvidiaUserspace: null }), "unknown");
   assert.equal(userspaceOf({ kind: "linux", nvidiaUserspace: "580.142" }), "580.142");

@@ -31,7 +31,7 @@ URL=https://dl.google.com/chrome/mac/universal/stable/GGRO/googlechrome.dmg
 TEAM=EQHXZ8M8AV
 APP="$ROOT/Applications/Google Chrome.app"
 POLICIES="$ROOT/Library/Preferences/com.google.Chrome"
-READER="$ROOT/usr/local/libexec/bb-box/chrome-policies.mjs"
+READER="$ROOT/usr/local/libexec/alia-box/chrome-policies.mjs"
 
 die() { echo "mac-chrome.sh: $*" >&2; exit 1; }
 version() { plutil -extract CFBundleShortVersionString raw "$1/Contents/Info.plist" 2>/dev/null || :; }
@@ -83,7 +83,7 @@ done
 mkdir -p "$(dirname "$READER")"
 cat >"$READER" <<'JS'
 // Lists the policies Google Chrome applies, as chrome://policy shows them: name, value, scope, level and status.
-// From bb-box's mac-chrome.sh. Run as the user whose Chrome it is: node chrome-policies.mjs
+// From alia-box's mac-chrome.sh. Run as the user whose Chrome it is: node chrome-policies.mjs
 import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";

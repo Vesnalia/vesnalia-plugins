@@ -1,4 +1,4 @@
-import type { useSidebarThreads } from "./bb-sdk";
+import type { useSidebarThreads } from "./alia-sdk";
 import { useInboxActions, useInboxEnvironment } from "./InboxContext";
 import { ProjectScopeSelect } from "./ProjectScopeSelect";
 import { ProjectFavicon } from "./ProjectFavicon";
@@ -58,7 +58,7 @@ export function ProjectScopeControls({
                 onDragStart={(event) => {
                   event.stopPropagation();
                   event.dataTransfer.effectAllowed = "move";
-                  event.dataTransfer.setData("application/x-bb-sidebar-pinned-project", project.id);
+                  event.dataTransfer.setData("application/x-alia-sidebar-pinned-project", project.id);
                   setDraggingId(project.id);
                 }}
                 onDragOver={(event) => {

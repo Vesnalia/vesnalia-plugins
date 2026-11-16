@@ -1,8 +1,8 @@
-// bb-plugin-chat-sidebar — frontend. Replaces the sidebar's thread list with
+// alia-plugin-chat-sidebar — frontend. Replaces the sidebar's thread list with
 // a messenger-style chat list. Everything else in the sidebar (New thread,
-// the navigation rail, the footer) stays bb's.
+// the navigation rail, the footer) stays VesnALIA's.
 import "./app.css";
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 
 import { ChatList } from "./components/chat-list";
 import { ProjectModelDefaults } from "./components/project-model-defaults";

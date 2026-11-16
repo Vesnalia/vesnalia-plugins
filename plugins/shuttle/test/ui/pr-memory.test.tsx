@@ -25,7 +25,7 @@ async function fill(detail: HTMLElement) {
   openTab(detail, "conversation");
   fireEvent.click(await within(detail).findByRole("button", { name: "Reply" }));
   fireEvent.change(within(detail).getByRole("textbox", { name: "Reply to alice" }), { target: { value: "Unfinished reply" } });
-  const comment = within(detail).queryByRole("textbox", { name: "Comment on bb#21" });
+  const comment = within(detail).queryByRole("textbox", { name: "Comment on VesnALIA#21" });
   if (comment !== null) fireEvent.change(comment, { target: { value: "Unfinished comment" } });
 }
 
@@ -33,7 +33,7 @@ async function fill(detail: HTMLElement) {
 function expectRestored(detail: HTMLElement, phone = false) {
   expect(selectedTab(detail)).toBe("conversation");
   expect((within(detail).getByRole("textbox", { name: "Reply to alice" }) as HTMLTextAreaElement).value).toBe("Unfinished reply");
-  if (!phone) expect((within(detail).getByRole("textbox", { name: "Comment on bb#21" }) as HTMLTextAreaElement).value).toBe("Unfinished comment");
+  if (!phone) expect((within(detail).getByRole("textbox", { name: "Comment on VesnALIA#21" }) as HTMLTextAreaElement).value).toBe("Unfinished comment");
 }
 
 function expectDescriptionOpen(detail: HTMLElement) {
@@ -179,6 +179,6 @@ describe("PR view session memory", () => {
     const restored = await find(again.slot.container, "[data-detail]");
     await within(restored).findByRole("button", { name: "Reply" });
     expect(within(restored).queryByRole("textbox", { name: "Reply to alice" })).toBeNull();
-    expect((within(restored).getByRole("textbox", { name: "Comment on bb#21" }) as HTMLTextAreaElement).value).toBe("");
+    expect((within(restored).getByRole("textbox", { name: "Comment on VesnALIA#21" }) as HTMLTextAreaElement).value).toBe("");
   });
 });

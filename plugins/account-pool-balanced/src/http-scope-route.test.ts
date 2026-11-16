@@ -25,7 +25,7 @@ it('binds the actual dispatcher to acceptance and rechecks after asynchronous ho
       transport:'http-connect',endpoint:'http://proxy.example:18444/',secretRef,failure:'closed'});
     await egress.bind(accountId,{id:'corporate',version:1});
     const route=await egress.acquire(accountId,'session'),profile=route.profile!;
-    const scope={schema:'bb-account-pool/client-account-scope/1' as const,accountIds:[accountId],egress:{id:profile.id,version:profile.version}};
+    const scope={schema:'alia-account-pool/client-account-scope/1' as const,accountIds:[accountId],egress:{id:profile.id,version:profile.version}};
     const assertAllowed=()=>{if(!clientRouteAllowed(route,scope,accountId,1000))throw new EgressUnavailable();};
     expect(clientRouteAllowed(route,scope,accountId,1000)).toBe(false);
     const input:HttpScopeAcceptance={accountId,hostId:'host-one',profile:{id:profile.id,version:profile.version},

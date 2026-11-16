@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { ChildProcess } from "node:child_process";
 import {
@@ -233,17 +233,17 @@ export interface AndroidDependencies {
   exec?: AndroidExec; tools?: () => AndroidTools; spawn?: AndroidSpawn;
   agentControl?: () => AgentControl;
 }
-export function registerAndroid(bb: BbPluginApi, dependencies: AndroidDependencies = {}) {
+export function registerAndroid(alia: AliaPluginApi, dependencies: AndroidDependencies = {}) {
   const tools = dependencies.tools ?? (() => resolveAndroidTools());
   const service = new AndroidService({ exec: dependencies.exec ?? createAndroidExec(), tools,
     spawn: dependencies.spawn ?? spawnAndroidEmulator,
-    publish: (channel, payload) => bb.realtime.publish(channel, payload) });
+    publish: (channel, payload) => alia.realtime.publish(channel, payload) });
   const mode = () => dependencies.agentControl?.() ?? "ask";
   const controlled = async <T,>(threadId: string, serial: string, work: () => Promise<T>) => {
     service.assertAttached(threadId, serial);
     return work();
   };
-  bb.rpc.register(androidRpcContract, {
+  alia.rpc.register(androidRpcContract, {
     async androidState({ threadId }) {
       const paths = tools(), problems: string[] = [];
       if (!paths.adb) problems.push("Android platform-tools (adb) were not found. Install them in Android Studio's SDK Manager, or set ANDROID_HOME / ANDROID_SDK_ROOT to an existing SDK.");
@@ -267,7 +267,7 @@ export function registerAndroid(bb: BbPluginApi, dependencies: AndroidDependenci
     async androidSetConsent({ threadId, serial, allow }) { service.setConsent(threadId, service.assertAttached(threadId, serial), allow); return { ok: true as const }; },
     async androidInstallAndLaunch({ threadId, serial, apkPath, packageName }) { await controlled(threadId, serial, () => service.adb.installAndLaunch(serial, apkPath, packageName)); return { ok: true as const }; },
   });
-  bb.http.route("GET", "/android/screenshot", async (c) => {
+  alia.http.route("GET", "/android/screenshot", async (c) => {
     const threadId = c.req.query("threadId") ?? "", serial = c.req.query("serial") ?? "";
     try {
       const bytes = await service.screenshot(threadId, serial, c.req.raw.signal);
@@ -281,7 +281,7 @@ export function registerAndroid(bb: BbPluginApi, dependencies: AndroidDependenci
     if (mode() === "never") throw new Error("Agent control of emulators is turned off in the simulator plugin settings. The user can still use the panel.");
     if (mode() === "always" || service.consentFor(threadId, device) === true) return;
     if (service.consentFor(threadId, device) === false) throw new Error(`The user declined agent control of ${device.name}. They can allow it in the Android panel.`);
-    const answer = await bb.ui.requestInput({ threadId, rendererId: "device-consent",
+    const answer = await alia.ui.requestInput({ threadId, rendererId: "device-consent",
       title: `Allow the agent to control ${device.name}`, payload: { name: device.name, runtime: "Android emulator" } }, { signal });
     const allow = answer.outcome === "submitted" && answer.value !== null && typeof answer.value === "object" && (answer.value as { allow?: unknown }).allow === true;
     service.setConsent(threadId, device, allow);
@@ -295,13 +295,13 @@ export function registerAndroid(bb: BbPluginApi, dependencies: AndroidDependenci
       const selected = await service.resolve(ctx.threadId, query, allowDefault, ctx.signal);
       await consent(ctx.threadId, selected, ctx.signal);
       const device = await service.attach(ctx.threadId, selected, ctx.signal);
-      bb.realtime.publish("android-agent-activity", { serial: device.serial, active: true });
+      alia.realtime.publish("android-agent-activity", { serial: device.serial, active: true });
       try { return await work(device); }
-      finally { bb.realtime.publish("android-agent-activity", { serial: device.serial, active: false }); }
+      finally { alia.realtime.publish("android-agent-activity", { serial: device.serial, active: false }); }
     } catch (error) { return failure(error); }
   }
   const deviceParam = z.string().min(1).max(200).optional().describe("Android virtual-device name or emulator serial; defaults to this thread's attached emulator.");
-  bb.agents.registerTool({ name: "android_sim_list_devices", description: "List installed Android virtual devices and running emulators. Physical devices are excluded.", parameters: z.object({}),
+  alia.agents.registerTool({ name: "android_sim_list_devices", description: "List installed Android virtual devices and running emulators. Physical devices are excluded.", parameters: z.object({}),
     async execute(_params, ctx) {
       try {
         const devices = await service.devices(ctx.signal);
@@ -309,28 +309,28 @@ export function registerAndroid(bb: BbPluginApi, dependencies: AndroidDependenci
         return devices.length ? devices.map((d) => `${d.serial && attached.includes(d.serial) ? "*" : "-"} ${d.name} — ${d.state} — ${d.id}`).join("\n") : "No Android virtual devices found. Create one in Android Studio's Device Manager.";
       } catch (error) { return failure(error); }
     } });
-  bb.agents.registerTool({ name: "android_sim_attach", description: "Start an existing Android emulator if needed and show its screenshot preview in the simulator panel beside this thread. Requires an installed Android SDK and AVD; does not control physical devices.", parameters: z.object({ device: deviceParam }),
+  alia.agents.registerTool({ name: "android_sim_attach", description: "Start an existing Android emulator if needed and show its screenshot preview in the simulator panel beside this thread. Requires an installed Android SDK and AVD; does not control physical devices.", parameters: z.object({ device: deviceParam }),
     execute: ({ device }, ctx) => withDevice(ctx, device, true, async (d) => `Attached ${d.name} (${d.serial}). The Android panel refreshes screenshots about once per second; tap and swipe it directly.`) });
-  bb.agents.registerTool({ name: "android_sim_screenshot", description: "Capture this thread's attached Android emulator as PNG. Use after launching an app and after UI changes to verify what is shown.", parameters: z.object({ device: deviceParam }),
+  alia.agents.registerTool({ name: "android_sim_screenshot", description: "Capture this thread's attached Android emulator as PNG. Use after launching an app and after UI changes to verify what is shown.", parameters: z.object({ device: deviceParam }),
     execute: ({ device }, ctx) => withDevice(ctx, device, false, async (d) => {
       const bytes = await service.screenshot(ctx.threadId, d.serial, ctx.signal);
       if (bytes.byteLength > 4 * 1024 * 1024) throw new Error("The Android screenshot exceeds the 4 MiB agent image limit. Reduce the emulator display resolution, then capture again.");
       const { width, height } = pngDimensions(bytes);
       return { content: [{ type: "text", text: `${d.name} — ${width}×${height}` }, { type: "image", data: bytes.toString("base64"), mimeType: "image/png" }] };
     }) });
-  bb.agents.registerTool({ name: "android_sim_tap", description: "Tap normalized x/y coordinates (0–1) on the attached Android emulator. Optional holdMs performs a long press.", parameters: z.object({ device: deviceParam, x: coordinate, y: coordinate, holdMs: z.number().int().min(0).max(5000).optional() }),
+  alia.agents.registerTool({ name: "android_sim_tap", description: "Tap normalized x/y coordinates (0–1) on the attached Android emulator. Optional holdMs performs a long press.", parameters: z.object({ device: deviceParam, x: coordinate, y: coordinate, holdMs: z.number().int().min(0).max(5000).optional() }),
     execute: ({ device, x, y, holdMs }, ctx) => withDevice(ctx, device, false, async (d) => { await service.adb.tap(d.serial, x, y, holdMs, ctx.signal); return `Tapped ${d.name} at ${x}, ${y}.`; }) });
-  bb.agents.registerTool({ name: "android_sim_swipe", description: "Swipe between normalized coordinates on the attached Android emulator. Duration is 50–5000 ms.", parameters: z.object({ device: deviceParam, ...swipe }),
+  alia.agents.registerTool({ name: "android_sim_swipe", description: "Swipe between normalized coordinates on the attached Android emulator. Duration is 50–5000 ms.", parameters: z.object({ device: deviceParam, ...swipe }),
     execute: ({ device, fromX, fromY, toX, toY, durationMs }, ctx) => withDevice(ctx, device, false, async (d) => { await service.adb.swipe(d.serial, fromX, fromY, toX, toY, durationMs, ctx.signal); return `Swiped on ${d.name}.`; }) });
-  bb.agents.registerTool({ name: "android_sim_type", description: "Type into the focused Android field: printable ASCII and newline only, at most 2000 characters. Percent signs and Unicode are not supported by adb input.", parameters: z.object({ device: deviceParam, text: z.string().min(1).max(2000) }),
+  alia.agents.registerTool({ name: "android_sim_type", description: "Type into the focused Android field: printable ASCII and newline only, at most 2000 characters. Percent signs and Unicode are not supported by adb input.", parameters: z.object({ device: deviceParam, text: z.string().min(1).max(2000) }),
     execute: ({ device, text }, ctx) => withDevice(ctx, device, false, async (d) => { await service.adb.text(d.serial, text, ctx.signal); return `Typed ${text.length} characters on ${d.name}.`; }) });
-  bb.agents.registerTool({ name: "android_sim_press_button", description: "Press an Android emulator hardware/navigation button: home, back, overview, power, volume, enter or backspace.", parameters: z.object({ device: deviceParam, button }),
+  alia.agents.registerTool({ name: "android_sim_press_button", description: "Press an Android emulator hardware/navigation button: home, back, overview, power, volume, enter or backspace.", parameters: z.object({ device: deviceParam, button }),
     execute: ({ device, button }, ctx) => withDevice(ctx, device, false, async (d) => { await service.adb.button(d.serial, button, ctx.signal); return `Pressed ${button} on ${d.name}.`; }) });
-  bb.agents.registerTool({ name: "android_sim_install_and_launch", description: "Install an APK from an absolute path on the BB server host and launch its Android package. Attach an emulator first. packageName is required (for example com.example.app).", parameters: z.object({ device: deviceParam, apkPath: z.string().min(1).max(4096), packageName: z.string().min(1).max(200) }),
+  alia.agents.registerTool({ name: "android_sim_install_and_launch", description: "Install an APK from an absolute path on the VesnALIA server host and launch its Android package. Attach an emulator first. packageName is required (for example com.example.app).", parameters: z.object({ device: deviceParam, apkPath: z.string().min(1).max(4096), packageName: z.string().min(1).max(200) }),
     execute: ({ device, apkPath, packageName }, ctx) => withDevice(ctx, device, false, async (d) => { await service.adb.installAndLaunch(d.serial, apkPath, packageName, ctx.signal); return `Installed and launched ${packageName} on ${d.name}.`; }) });
-  bb.agents.registerTool({ name: "android_sim_launch", description: "Launch an installed Android package on the attached emulator.", parameters: z.object({ device: deviceParam, packageName: z.string().min(1).max(200) }),
+  alia.agents.registerTool({ name: "android_sim_launch", description: "Launch an installed Android package on the attached emulator.", parameters: z.object({ device: deviceParam, packageName: z.string().min(1).max(200) }),
     execute: ({ device, packageName }, ctx) => withDevice(ctx, device, false, async (d) => { await service.adb.launch(d.serial, packageName, ctx.signal); return `Launched ${packageName} on ${d.name}.`; }) });
-  bb.agents.registerTool({ name: "android_sim_detach", description: "Detach this thread's Android emulator. Optional shutdown also stops it, provided no other thread is attached. Leave it attached unless the user asks otherwise.", parameters: z.object({ device: deviceParam, shutdown: z.boolean().optional() }),
+  alia.agents.registerTool({ name: "android_sim_detach", description: "Detach this thread's Android emulator. Optional shutdown also stops it, provided no other thread is attached. Leave it attached unless the user asks otherwise.", parameters: z.object({ device: deviceParam, shutdown: z.boolean().optional() }),
     async execute({ device, shutdown }, ctx) {
       try {
         const selected = await service.resolve(ctx.threadId, device, false, ctx.signal);
@@ -340,10 +340,10 @@ export function registerAndroid(bb: BbPluginApi, dependencies: AndroidDependenci
         return `${shutdown ? "Shut down" : "Detached"} ${selected.name}.`;
       } catch (error) { return failure(error); }
     } });
-  const release = (threadId: string) => { void service.releaseThread(threadId).catch((error) => bb.log.warn(`Android emulator cleanup failed: ${describe(error)}`)); };
-  bb.events.on("thread.archived", ({ thread }) => release(thread.id));
-  bb.events.on("thread.deleted", ({ thread }) => release(thread.id));
-  bb.onDispose(() => service.dispose());
+  const release = (threadId: string) => { void service.releaseThread(threadId).catch((error) => alia.log.warn(`Android emulator cleanup failed: ${describe(error)}`)); };
+  alia.events.on("thread.archived", ({ thread }) => release(thread.id));
+  alia.events.on("thread.deleted", ({ thread }) => release(thread.id));
+  alia.onDispose(() => service.dispose());
   return service;
 }
 

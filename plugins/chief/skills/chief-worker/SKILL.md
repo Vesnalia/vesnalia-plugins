@@ -5,7 +5,7 @@ description: Report managed work evidence, blockers, and recommendations to Chie
 
 # Chief-managed worker or reviewer
 
-Own the assigned outcome in your existing BB thread and worktree.
+Own the assigned outcome in your existing VesnALIA thread and worktree.
 
 - Keep scope aligned to the brief and project `chief.md` rules.
 - Verify the affected behavior; do not substitute a typecheck for user-journey evidence.

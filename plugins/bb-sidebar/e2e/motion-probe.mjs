@@ -2,9 +2,9 @@
 // the FLIP invariant: on the frame the list motion starts, every row and shelf
 // that existed before the click is drawn exactly where it was. A shelf that
 // "goes up and down" without moving breaks it on that first frame.
-// Self-contained so it can also be pasted into a live bb page by hand.
+// Self-contained so it can also be pasted into a live VesnALIA page by hand.
 export async function probeShelfToggle(label) {
-  const root = document.querySelector("[data-bb-sidebar-root]");
+  const root = document.querySelector("[data-alia-sidebar-root]");
   const scroller = root.querySelector("[data-list-motion-scroller]");
   const section = [...root.querySelectorAll("section[aria-label]")].find(
     (node) => node.getAttribute("aria-label") === label,

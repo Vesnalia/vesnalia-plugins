@@ -144,7 +144,7 @@ describe("environmentFor: new machines", () => {
 
   it("starts workers on a new machine from the repo's machine provider, with its inputs filled in", () => {
     const settings = settingsOn(onBoxes);
-    // bb refuses null inputs for git-worktree; the named base is the one the managed worktree starts from.
+    // VesnALIA refuses null inputs for git-worktree; the named base is the one the managed worktree starts from.
     expect(spawnEnvironment(settings, values, "worker")).toEqual({ providerId: "git-worktree", inputs: { branch: { kind: "named", name: values.base } }, machine: { providerId: "boxes", inputs: { name: values.branch } } });
     expect(usesNewMachine(settings, "worker")).toBe(true);
     expect(usesNewMachine(settingsWith(undefined), "worker")).toBe(false);

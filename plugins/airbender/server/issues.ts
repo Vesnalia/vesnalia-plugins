@@ -6,7 +6,7 @@
 // step, its size, and an epic's branch.
 //
 // Why: the tab reads issues by running `bend`, as agents do, so there is
-// one code path to the tracker (bead-bb-c9l.4). bend gives what is
+// one code path to the tracker (bead-alia-c9l.4). bend gives what is
 // common to every tracker; what only the tab knows is added here: the
 // workflow's labels, the tab's own names for links, and the owner's rule
 // that an issue whose open sub-issues are all blocked is blocked itself.
@@ -21,7 +21,7 @@
 //   its own for requirements yet, and the text must read and edit as before.
 //
 // Gotchas:
-// - No BB import here, and relative imports carry their .ts extension: node
+// - No VesnALIA import here, and relative imports carry their .ts extension: node
 //   runs this file directly in the tests.
 
 import { CLOSED_STATUS } from "../shared/constants.ts";
@@ -68,7 +68,7 @@ const BLOCKED_BY = "blocked-by";
 
 /**
  * Prefix of the label that records which step of its workflow an issue is at
- * (bead-bb-e2b), e.g. `step:plan`. A plain label, like the category: beads'
+ * (bead-alia-e2b), e.g. `step:plan`. A plain label, like the category: beads'
  * own `bd set-state` would record every change as a closed child issue,
  * which would clutter each issue's sub-issues.
  */
@@ -104,7 +104,7 @@ const BRANCH_STEPS = new Set(
  * the move into it always records one. An issue that carries the label
  * without a branch did not get there by a move. It was created with `bd
  * create --parent`, which copies every label of the parent, under an epic
- * that waits on its branch (bead-bb-c9l.17). Shown at that step it could
+ * that waits on its branch (bead-alia-c9l.17). Shown at that step it could
  * not be started, so it counts as not started; its first move replaces the
  * stray label.
  */
@@ -133,13 +133,13 @@ export function sizeOf(labels: string[]): string | null {
 
 /**
  * The key an epic's branch is stored under in the issue's metadata
- * (bead-bb-ty5.2): the branch all of its issues are worked on.
+ * (bead-alia-ty5.2): the branch all of its issues are worked on.
  *
  * In metadata, not in a label like the step and the size. It began as a
  * label `branch:<name>`, and beads' GitHub sync sends labels to GitHub,
- * which refuses one longer than 50 characters; the branch BB gives a work
+ * which refuses one longer than 50 characters; the branch VesnALIA gives a work
  * tree is longer, so such an epic could not be created on GitHub at all
- * (bead-bb-d6x). Metadata is visible in beads, travels with the issue, and
+ * (bead-alia-d6x). Metadata is visible in beads, travels with the issue, and
  * is not sent.
  */
 export const BRANCH_KEY = "branch";

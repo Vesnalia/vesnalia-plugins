@@ -1,5 +1,5 @@
 import type { ComponentProps, CSSProperties, HTMLAttributes, ReactNode } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { InlineThreadTitle } from "./InlineThreadTitle";
 import { ProjectFavicon, ProjectStripe } from "./ProjectFavicon";
 import { ThreadDetailsTooltip } from "./ThreadDetailsTooltip";
@@ -40,7 +40,7 @@ export function CompactRow({
   isDragging?: boolean;
   isRenaming: boolean;
   onRenamingChange: (editing: boolean) => void;
-  /** Runs on a click that bb's link routing opens; it does not navigate. */
+  /** Runs on a click that VesnALIA's link routing opens; it does not navigate. */
   onOpen: () => void;
   rowProps?: HTMLAttributes<HTMLDivElement> & Record<`data-${string}`, string | undefined>;
   linkProps?: Pick<
@@ -71,10 +71,10 @@ export function CompactRow({
       {showProject && projectName ? <ProjectStripe projectId={thread.projectId} view="collapsed" /> : null}
       <ThreadDetailsTooltip thread={thread} disabled={isRenaming || isDragging} isOpen={isActive}>
         <a
-          // Both attributes, or bb's nine thread shortcuts stop finding rows.
+          // Both attributes, or VesnALIA's nine thread shortcuts stop finding rows.
           data-sidebar-thread-shortcut-target=""
           data-sidebar-thread-id={thread.id}
-          // bb routes a plain click in place and a Cmd/Ctrl-click to a split.
+          // VesnALIA routes a plain click in place and a Cmd/Ctrl-click to a split.
           href={thread.href}
           aria-label={label}
           aria-current={isActive ? "page" : undefined}
@@ -114,7 +114,7 @@ export function CompactRow({
                   : cn(
                       "max-w-[40%] shrink truncate",
                       projectColor
-                        ? "bb-sidebar-project-name"
+                        ? "alia-sidebar-project-name"
                         : !muted || isActive
                           ? "text-muted-foreground/70"
                           : "text-muted-foreground/50 group-hover/slim:text-muted-foreground/70",

@@ -1,5 +1,5 @@
 // Small presentational pieces for the study page. Host tokens only (bg-card,
-// text-foreground, border-border, …) so they follow BB's light and dark
+// text-foreground, border-border, …) so they follow VesnALIA's light and dark
 // themes; every state carries a word or glyph, never color alone.
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";

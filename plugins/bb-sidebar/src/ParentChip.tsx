@@ -1,6 +1,6 @@
-import { useProviders, useSidebarThreads } from "./bb-sdk";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
-import type { ThreadHeaderActionProps } from "./bb-sdk";
+import { useProviders, useSidebarThreads } from "./alia-sdk";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
+import type { ThreadHeaderActionProps } from "./alia-sdk";
 import { Icon } from "./components/Icon";
 import { Tooltip } from "./components/Tooltip";
 import { cn } from "./lib/utils";
@@ -21,7 +21,7 @@ export function ParentChip({ threadId, isCompactViewport }: ThreadHeaderActionPr
   const { threads } = useSidebarThreads();
   const { providers } = useProviders();
   const settings = useSidebarSettings();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
 
   const parent = parentOf(threads, threadId);
   if (parent === null) return null;

@@ -21,7 +21,7 @@ import {
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { KataComment, KataIssue, KataIssueDetail, KataLinkPeer } from "@/lib/kata-types";
 import {

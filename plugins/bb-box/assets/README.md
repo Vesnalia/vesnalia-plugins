@@ -1,10 +1,10 @@
 # Icons
 
 Glyphs the panel ships, declared in `package.json` under
-`bb.branding.experimental_icons` and used as `<plugin id>/<name>`.
+`alia.branding.experimental_icons` and used as `<plugin id>/<name>`.
 
 - `icon.svg`, `monitor.svg`, `phone.svg`, `server.svg`, `terminal.svg`,
-  `laptop.svg`, `plug.svg`: bb-box's own, drawn in BB's stroke style.
+  `laptop.svg`, `plug.svg`: alia-box's own, drawn in VesnALIA's stroke style.
   `phone.svg` is the Device tab's icon, `monitor.svg` the Desktop tab's and
   `terminal.svg` the Terminal tab's. `icon.svg` is also
   declared as `box`, the Boxes page's sidebar icon.

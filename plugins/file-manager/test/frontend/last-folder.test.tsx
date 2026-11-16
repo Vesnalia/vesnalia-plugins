@@ -3,7 +3,7 @@
 // PATHBAR-SPEC §1 / §9.3 — "come back where I left off", end to end through the
 // real panel.
 //
-// The harness has no router: `useBbNavigate()` records the call instead of
+// The harness has no router: `useAliaNavigate()` records the call instead of
 // re-rendering the panel with a new `subPath`. Two helpers stand in for the
 // host, and both are the honest simulation of what it does:
 //
@@ -12,12 +12,12 @@
 //     host's own router;
 //   * `cleanup()` + a fresh `renderSlot` is a *remount* (leaving the panel and
 //     coming back), and adding `resetLastFolderStore()` to it is a *cold page
-//     load* (a reload, or a bb restart): tier 1 — module scope — is gone and
+//     load* (a reload, or a VesnALIA restart): tier 1 — module scope — is gone and
 //     the only thing left is the `localStorage` row.
 import { cleanup, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers, RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers, RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 import type { FileEntry, FileManagerContract, Preferences } from "../../contract";
 
@@ -344,7 +344,7 @@ describe("location memory — recording (§1.4)", () => {
     });
 
     cleanup();
-    expect(LAST_FOLDER_STORAGE_KEY).toBe("bb-plugin-file-manager:last-folder:v1");
+    expect(LAST_FOLDER_STORAGE_KEY).toBe("alia-plugin-file-manager:last-folder:v1");
     expect(storedRow()).toEqual({ path: DOCS, root: ROOT });
     expect(navigations(slot)).toHaveLength(0);
   });
@@ -476,7 +476,7 @@ describe("location memory — reopening (§1.5)", () => {
     });
   });
 
-  it("reopens it after a reload or a bb restart (tier 2)", async () => {
+  it("reopens it after a reload or a VesnALIA restart (tier 2)", async () => {
     await mountSettled(rpcFor({ startFolder: SITE }), "docs");
     await waitFor(() => {
       expect(readLastFolder()?.path).toBe(DOCS);

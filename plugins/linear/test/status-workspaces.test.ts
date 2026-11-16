@@ -107,7 +107,7 @@ describe("renderStatus with several workspaces", () => {
       name: null,
       urlKey: null,
       viewerName: null,
-      keyState: "set · workspace not read yet (checking) — bb linear refresh reads it",
+      keyState: "set · workspace not read yet (checking) — VesnALIA linear refresh reads it",
       teams: null,
       issuesCached: 0,
       projectsCached: 0,
@@ -115,7 +115,7 @@ describe("renderStatus with several workspaces", () => {
     };
     const text = renderStatus(report({ workspaces: [CAFFEINATED, unread] }));
     expect(text).toContain("Linear API key 2: set · workspace not read yet");
-    expect(text).toContain("bb linear refresh");
+    expect(text).toContain("alia linear refresh");
   });
 
   it("keeps the single-workspace shape unsplit", () => {

@@ -17,7 +17,7 @@ import {
   it,
   vi,
 } from "vitest";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import hostEntry from "./host";
 
 vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -91,14 +91,14 @@ describe("host entry", () => {
           "-a",
           "dev",
           "-l",
-          "bb-team:x",
+          "alia-team:x",
         ],
       });
       expect(created.ok).toBe(true);
       const issue = JSON.parse(created.stdout) as { id: string };
       const listed = await call<{ stdout: string; ok: boolean }>("bd", {
         cwd: repo,
-        args: ["list", "--all", "--limit", "0", "--label", "bb-team:x"],
+        args: ["list", "--all", "--limit", "0", "--label", "alia-team:x"],
       });
       expect(listed.ok).toBe(true);
       expect(

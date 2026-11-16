@@ -47,7 +47,7 @@ test("the mobile navigation strip owns its pointer gesture without blocking vert
     assert.match(
       body,
       /event\.stopPropagation\(\)/,
-      `${handler} must keep BB's sidebar recognizer from seeing the strip gesture`,
+      `${handler} must keep VesnALIA's sidebar recognizer from seeing the strip gesture`,
     );
     assert.doesNotMatch(
       body,

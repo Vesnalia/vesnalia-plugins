@@ -10,8 +10,8 @@ import { H264Encoder, H264EncoderStopped, UNIT_HEADER_BYTES, UnitReader, type En
 
 const here = dirname(fileURLToPath(import.meta.url));
 const FAKE_HELPER = join(here, "fake-h264.mjs");
-const BUILT_HELPER = process.env.BB_BOX_H264;
-const BUILT_ENCODERS = (process.env.BB_BOX_H264_ENCODERS ?? "x264 openh264").split(/\s+/).filter(Boolean) as H264EncoderName[];
+const BUILT_HELPER = process.env.ALIA_BOX_H264;
+const BUILT_ENCODERS = (process.env.ALIA_BOX_H264_ENCODERS ?? "x264 openh264").split(/\s+/).filter(Boolean) as H264EncoderName[];
 
 function unitBytes(data: number[], key: boolean, width: number, height: number, micros: number): Buffer {
   const head = Buffer.alloc(UNIT_HEADER_BYTES);
@@ -205,19 +205,19 @@ test("when the helper stops, reading frames fails with its own words", async () 
     const frames = encoder.frames();
     await take(frames, 1);
     encoder.submit(solidFrame(4, 2, [2, 0, 0]));
-    await assert.rejects(frames.next(), (error: unknown) => error instanceof H264EncoderStopped && error.message === "bb-box-h264: x264 failed to encode a frame");
+    await assert.rejects(frames.next(), (error: unknown) => error instanceof H264EncoderStopped && error.message === "alia-box-h264: x264 failed to encode a frame");
   } finally {
     delete process.env.FAKE_H264_FAIL_AFTER;
   }
 });
 
 test("a helper that cannot start says so", async () => {
-  const encoder = new H264Encoder({ helper: join(tmpdir(), "no-such-bb-box-h264") });
-  await assert.rejects(encoder.frames().next(), /bb-box-h264 did not start: spawn .*ENOENT/);
+  const encoder = new H264Encoder({ helper: join(tmpdir(), "no-such-alia-box-h264") });
+  await assert.rejects(encoder.frames().next(), /alia-box-h264 did not start: spawn .*ENOENT/);
 });
 
 for (const name of BUILT_ENCODERS) {
-  const skip = BUILT_HELPER ? false : "BB_BOX_H264 names no built helper";
+  const skip = BUILT_HELPER ? false : "ALIA_BOX_H264 names no built helper";
 
   test(`${name}: the first frame is a key frame with SPS and PPS, at the frame's size, in constrained baseline`, { skip }, async () => {
     const encoder = new H264Encoder({ helper: BUILT_HELPER!, encoder: name });
@@ -320,11 +320,11 @@ test("the encode meter gives the cores a software stream's frames took over its 
   assert.equal(meter.cores(), 0);
 });
 
-test("a simulator stream yields bb-box-h264's frames until it is stopped, and says why the encoder stopped when it fails (065)", async () => {
+test("a simulator stream yields alia-box-h264's frames until it is stopped, and says why the encoder stopped when it fails (065)", async () => {
   const { simulatorStream } = await import("../src/device/simulator-video.ts");
   const dir = mkdtempSync(join(tmpdir(), "simulator-stream-"));
   try {
-    const helper = join(dir, "bb-box-h264");
+    const helper = join(dir, "alia-box-h264");
     writeFileSync(helper, `#!/bin/sh\nexec "${process.execPath}" "${join(here, "fake-simulator-h264.ts")}" "$@"\n`, { mode: 0o755 });
     let stop!: () => void;
     const stopped = new Promise<void>((resolve) => (stop = resolve));
@@ -342,7 +342,7 @@ test("a simulator stream yields bb-box-h264's frames until it is stopped, and sa
         (async () => {
           for await (const _ of simulatorStream({ helper, udid: "U-2" }, new Promise(() => {}), AbortSignal.timeout(10_000), 1)) void _;
         })(),
-        /^Error: bb-box-h264 stopped: the device U-2 showed no screen within 30 s; is it booted\?$/,
+        /^Error: alia-box-h264 stopped: the device U-2 showed no screen within 30 s; is it booted\?$/,
       );
     } finally {
       delete process.env.FAKE_H264_FAILS;

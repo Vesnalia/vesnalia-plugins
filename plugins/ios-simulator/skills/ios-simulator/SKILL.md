@@ -1,6 +1,6 @@
 ---
 name: ios-simulator
-description: Build, run, see, and drive an iOS app in Apple's iOS Simulator from a BB thread with the ios_sim_* tools. Use when the user asks to run, test, check, debug, or look at an iOS, iPadOS, SwiftUI, UIKit, React Native, Flutter, or Expo app, or to verify a UI change on a simulator.
+description: Build, run, see, and drive an iOS app in Apple's iOS Simulator from a VesnALIA thread with the ios_sim_* tools. Use when the user asks to run, test, check, debug, or look at an iOS, iPadOS, SwiftUI, UIKit, React Native, Flutter, or Expo app, or to verify a UI change on a simulator.
 ---
 
 # iOS Simulator
@@ -58,7 +58,7 @@ device between the human and agent; only one thread controls a device.
    result, and say what you saw. Do not claim a UI works without a screenshot
    that shows it.
 6. **Leave the device attached** when you finish, unless the user asks you to
-   shut it down. BB shuts down simulators this plugin booted when the thread
+   shut it down. VesnALIA shuts down simulators this plugin booted when the thread
    is archived or deleted.
 
 ## Rules

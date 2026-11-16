@@ -1,5 +1,5 @@
 /**
- * The MCP server Muse spawns to reach bb's injected tools.
+ * The MCP server Muse spawns to reach VesnALIA's injected tools.
  *
  * It ships as source rather than a file in the plugin package because only the
  * built `host.js` artifact reaches a host machine — the bridge writes this into
@@ -7,19 +7,19 @@
  *
  * It holds no logic of its own: every call is proxied to the bridge over a
  * loopback socket guarded by a per-process token, and the bridge is what talks
- * to bb.
+ * to VesnALIA.
  */
 export const MUSE_TOOL_PROXY_SCRIPT = String.raw`#!/usr/bin/env node
 import { createConnection } from "node:net";
 import { createInterface } from "node:readline";
 
-const port = Number(process.env.BB_MUSE_TOOL_PORT);
-const token = process.env.BB_MUSE_TOOL_TOKEN;
-const threadId = process.env.BB_MUSE_TOOL_THREAD_ID;
-const toolsJson = process.env.BB_MUSE_TOOLS;
+const port = Number(process.env.ALIA_MUSE_TOOL_PORT);
+const token = process.env.ALIA_MUSE_TOOL_TOKEN;
+const threadId = process.env.ALIA_MUSE_TOOL_THREAD_ID;
+const toolsJson = process.env.ALIA_MUSE_TOOLS;
 
 if (!Number.isInteger(port) || port <= 0 || !token || !threadId || !toolsJson) {
-  process.stderr.write("bb-bridge MCP: missing proxy environment\n");
+  process.stderr.write("alia-bridge MCP: missing proxy environment\n");
   process.exit(1);
 }
 
@@ -52,7 +52,7 @@ function callBridge(payload) {
     socket.on("error", reject);
     socket.on("end", () => {
       if (!buffer.includes("\n")) {
-        reject(new Error("bb bridge closed without a response"));
+        reject(new Error("alia bridge closed without a response"));
       }
     });
   });
@@ -72,7 +72,7 @@ async function handle(message) {
             ? params.protocolVersion
             : "2024-11-05",
         capabilities: { tools: {} },
-        serverInfo: { name: "bb-bridge", version: "1.0.0" },
+        serverInfo: { name: "alia-bridge", version: "1.0.0" },
       },
     });
     return;

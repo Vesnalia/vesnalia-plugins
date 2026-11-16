@@ -9,12 +9,12 @@ import { createPortal } from "react-dom";
 import { BorderBeam } from "border-beam";
 import {
   experimental_NewThreadComposer as NewThreadComposer,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../server";
-import type { NewThreadRequest } from "@get-bb/plugin-sdk";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk";
 import { cn } from "../lib/utils";
 import { usePortalScopeProps } from "../lib/portal-scope";
 import { PersistentResponsiveDrawerShell } from "./ui/responsive-overlay";
@@ -133,14 +133,14 @@ const PRESET_PICKER_CSS = `
 
 // Compact viewport, plain CSS. The bottom sheet is capped at
 // 92dvh minus the software keyboard (the shell publishes the keyboard height
-// as --bb-drawer-keyboard-inset on the panel), and the card's header, footer,
+// as --alia-drawer-keyboard-inset on the panel), and the card's header, footer,
 // handle and safe-area padding take roughly 18rem of that. The editor
 // scroller gets whatever is left, so the footer with Create never ends up
 // below the keyboard where it cannot be tapped. The 5rem floor keeps the
 // editor usable on very short viewports; the sheet scrolls past it instead.
 const DRAWER_CSS = `
 [data-ultra-launcher-presets][data-presentation="drawer"] form .overflow-y-auto:has([contenteditable]) {
-  max-height: max(5rem, min(38dvh, calc(92dvh - var(--bb-drawer-keyboard-inset, 0px) - 18rem)));
+  max-height: max(5rem, min(38dvh, calc(92dvh - var(--alia-drawer-keyboard-inset, 0px) - 18rem)));
 }
 `;
 
@@ -237,7 +237,7 @@ const prefersReducedMotion = () =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 export function LauncherOverlay() {
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const rpc = useRpc<typeof rpcContract>();
   useEffect(() => { const close = () => setOpen(false); window.addEventListener(EDIT_PRESETS_EVENT, close); return () => window.removeEventListener(EDIT_PRESETS_EVENT, close); }, []);
 
@@ -566,7 +566,7 @@ export function LauncherOverlay() {
     <div
       {...scopeProps}
       role="dialog"
-      // Only advertise a modal while open. bb's shortcut layer treats any
+      // Only advertise a modal while open. VesnALIA's shortcut layer treats any
       // mounted [aria-modal="true"] / [role="dialog"][data-state="open"] that
       // is not inert as an open modal and suppresses every app shortcut
       // (Cmd+K, Cmd+P, Cmd+Shift+P, ...), so a closed-but-mounted overlay

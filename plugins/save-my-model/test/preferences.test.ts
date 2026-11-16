@@ -99,17 +99,17 @@ test("normalizes empty and malformed hosts to one browser-wide scope", () => {
 
 test("recovers the selected provider from the legacy unscoped key", () => {
   const { localStorage } = installStorage();
-  localStorage.setItem("bb.promptbox.provider", "codex");
+  localStorage.setItem("alia.promptbox.provider", "codex");
   assert.equal(readProviderPreference("host-a"), "codex");
 });
 
 test("reads provider-scoped legacy values before matching unscoped values", () => {
   const { localStorage } = installStorage();
-  localStorage.setItem("bb.promptbox.provider", "codex");
-  localStorage.setItem("bb.promptbox.model", "unscoped");
-  localStorage.setItem("bb.promptbox.reasoning", "low");
-  localStorage.setItem("bb.promptbox.model-codex-1", "provider-scoped");
-  localStorage.setItem("bb.promptbox.reasoning-codex-1", "xhigh");
+  localStorage.setItem("alia.promptbox.provider", "codex");
+  localStorage.setItem("alia.promptbox.model", "unscoped");
+  localStorage.setItem("alia.promptbox.reasoning", "low");
+  localStorage.setItem("alia.promptbox.model-codex-1", "provider-scoped");
+  localStorage.setItem("alia.promptbox.reasoning-codex-1", "xhigh");
 
   assert.equal(readPreference("host-a")?.model, "provider-scoped");
   assert.equal(readPreference("host-a")?.reasoningLevel, "xhigh");
@@ -117,9 +117,9 @@ test("reads provider-scoped legacy values before matching unscoped values", () =
 
 test("recovers a complete unscoped legacy selection without a provider argument", () => {
   const { localStorage } = installStorage();
-  localStorage.setItem("bb.promptbox.provider", "codex");
-  localStorage.setItem("bb.promptbox.model", "o3");
-  localStorage.setItem("bb.promptbox.reasoning", "high");
+  localStorage.setItem("alia.promptbox.provider", "codex");
+  localStorage.setItem("alia.promptbox.model", "o3");
+  localStorage.setItem("alia.promptbox.reasoning", "high");
 
   assert.deepEqual(readPreference("host-a"), {
     hostId: "host-a",
@@ -131,9 +131,9 @@ test("recovers a complete unscoped legacy selection without a provider argument"
 
 test("uses unscoped legacy values only for their owning provider", () => {
   const { localStorage } = installStorage();
-  localStorage.setItem("bb.promptbox.provider", "codex");
-  localStorage.setItem("bb.promptbox.model", "o3");
-  localStorage.setItem("bb.promptbox.reasoning", "high");
+  localStorage.setItem("alia.promptbox.provider", "codex");
+  localStorage.setItem("alia.promptbox.model", "o3");
+  localStorage.setItem("alia.promptbox.reasoning", "high");
 
   assert.equal(readPreference("host-a", "codex")?.model, "o3");
   assert.equal(readPreference("host-a", "claude"), null);
@@ -141,8 +141,8 @@ test("uses unscoped legacy values only for their owning provider", () => {
 
 test("keeps a legacy model when no reasoning was stored", () => {
   const { localStorage } = installStorage();
-  localStorage.setItem("bb.promptbox.provider", "codex");
-  localStorage.setItem("bb.promptbox.model", "o3");
+  localStorage.setItem("alia.promptbox.provider", "codex");
+  localStorage.setItem("alia.promptbox.model", "o3");
 
   assert.deepEqual(readPreference("host-a"), {
     hostId: "host-a",
@@ -182,16 +182,16 @@ test("rejects an explicitly invalid provider instead of using selected fallback"
 test("contains malformed and oversized storage while listing", () => {
   const { localStorage } = installStorage();
   localStorage.setItem(
-    "bb.save-my-model.v3:execution:%E0%A4%A:codex",
+    "alia.save-my-model.v3:execution:%E0%A4%A:codex",
     "{}",
   );
   localStorage.setItem(
-    "bb.save-my-model.v3:execution:oversized:codex",
+    "alia.save-my-model.v3:execution:oversized:codex",
     "x".repeat(2_049),
   );
   for (let index = 0; index < 205; index += 1) {
     localStorage.setItem(
-      `bb.save-my-model.v3:execution:host-${index}:codex`,
+      `alia.save-my-model.v3:execution:host-${index}:codex`,
       JSON.stringify({ model: "o3", reasoningLevel: "high" }),
     );
   }
@@ -202,13 +202,13 @@ test("contains malformed and oversized storage while listing", () => {
 
 test("listing never turns an invalid explicit key into provider fallback", () => {
   const { localStorage } = installStorage();
-  localStorage.setItem("bb.save-my-model.v3:provider:host-a", "codex");
+  localStorage.setItem("alia.save-my-model.v3:provider:host-a", "codex");
   localStorage.setItem(
-    "bb.save-my-model.v3:execution:host-a:%00invalid",
+    "alia.save-my-model.v3:execution:host-a:%00invalid",
     JSON.stringify({ model: "wrong", reasoningLevel: "high" }),
   );
   localStorage.setItem(
-    "bb.save-my-model.v3:execution:host-a:codex",
+    "alia.save-my-model.v3:execution:host-a:codex",
     JSON.stringify({ model: "right", reasoningLevel: "medium" }),
   );
 
@@ -226,12 +226,12 @@ test("bounds examined plugin records independently of valid results", () => {
   const { localStorage } = installStorage();
   for (let index = 0; index < 1_001; index += 1) {
     localStorage.setItem(
-      `bb.save-my-model.v3:execution:%00bad-${index}:codex`,
+      `alia.save-my-model.v3:execution:%00bad-${index}:codex`,
       "{}",
     );
   }
   localStorage.setItem(
-    "bb.save-my-model.v3:execution:host-a:codex",
+    "alia.save-my-model.v3:execution:host-a:codex",
     JSON.stringify({ model: "after-bound", reasoningLevel: "high" }),
   );
 
@@ -257,18 +257,18 @@ test("lists and clears a selected provider even before a model is saved", () => 
 test("ignores malformed values and clears only plugin-owned keys", () => {
   const { localStorage } = installStorage();
   localStorage.setItem(
-    "bb.save-my-model.v3:execution:host-a:codex",
+    "alia.save-my-model.v3:execution:host-a:codex",
     "not-json",
   );
-  localStorage.setItem("bb.save-my-model.v3:provider:host-a", "codex");
-  localStorage.setItem("bb.save-my-model.v2:project:host:codex", "old");
-  localStorage.setItem("bb.promptbox.provider", "codex");
+  localStorage.setItem("alia.save-my-model.v3:provider:host-a", "codex");
+  localStorage.setItem("alia.save-my-model.v2:project:host:codex", "old");
+  localStorage.setItem("alia.promptbox.provider", "codex");
   localStorage.setItem("other", "keep");
 
   assert.equal(readPreference("host-a", "codex"), null);
   clearPreferences();
   assert.equal(localStorage.getItem("other"), "keep");
-  assert.equal(localStorage.getItem("bb.promptbox.provider"), "codex");
-  assert.equal(localStorage.getItem("bb.save-my-model.v3:provider:host-a"), null);
-  assert.equal(localStorage.getItem("bb.save-my-model.v2:project:host:codex"), null);
+  assert.equal(localStorage.getItem("alia.promptbox.provider"), "codex");
+  assert.equal(localStorage.getItem("alia.save-my-model.v3:provider:host-a"), null);
+  assert.equal(localStorage.getItem("alia.save-my-model.v2:project:host:codex"), null);
 });

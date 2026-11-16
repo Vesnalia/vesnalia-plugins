@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import type { ExperimentalPanelTab } from "@get-bb/plugin-sdk/app";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import type { ExperimentalPanelTab } from "@vesnalia/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { describe, expect, it, vi } from "vitest";
 import { AutoHidePanel } from "./app";
 

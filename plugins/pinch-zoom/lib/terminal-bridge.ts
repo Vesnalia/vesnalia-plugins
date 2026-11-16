@@ -1,13 +1,13 @@
 /**
  * FNXC:PinchZoom 2026-11-13-12:39:
- * Applies the terminal text size to bb's xterm terminals.
+ * Applies the terminal text size to VesnALIA's xterm terminals.
  *
- * bb hard-codes `fontSize: 12` in ThreadTerminalView and exposes no SDK API for terminal font size, and xterm keeps no DOM back-reference to its Terminal.
+ * VesnALIA hard-codes `fontSize: 12` in ThreadTerminalView and exposes no SDK API for terminal font size, and xterm keeps no DOM back-reference to its Terminal.
  * The component stores the instance in a `useRef` (`terminalRef`), so we walk the React fiber of the element the terminal was opened into and look for a ref whose `current` is the Terminal that owns this `.xterm` element.
- * This depends on bb internals: if the lookup fails, the terminal is left untouched (fail-safe) rather than guessed at.
+ * This depends on VesnALIA internals: if the lookup fails, the terminal is left untouched (fail-safe) rather than guessed at.
  *
- * After changing `options.fontSize`, xterm re-measures cells but cols/rows only change when bb's fit runs.
- * bb fits (and sends the PTY resize) from a ResizeObserver on the container, so we nudge the container's content box by 1px for one frame to trigger that same path instead of resizing the PTY ourselves.
+ * After changing `options.fontSize`, xterm re-measures cells but cols/rows only change when VesnALIA's fit runs.
+ * VesnALIA fits (and sends the PTY resize) from a ResizeObserver on the container, so we nudge the container's content box by 1px for one frame to trigger that same path instead of resizing the PTY ourselves.
  */
 
 interface XtermLike {
@@ -76,7 +76,7 @@ export function findTerminal(xtermElement: HTMLElement): XtermLike | null {
   return null;
 }
 
-/** Triggers bb's own ResizeObserver → fitAddon.fit() → PTY resize path. */
+/** Triggers VesnALIA's own ResizeObserver → fitAddon.fit() → PTY resize path. */
 function nudgeRefit(container: HTMLElement): void {
   if (pendingNudges.has(container)) return;
   pendingNudges.add(container);

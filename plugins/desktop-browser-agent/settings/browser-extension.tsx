@@ -24,7 +24,7 @@ function CopyPath({ value }: { value: string }) {
   );
 }
 
-/** The optional Browser Bridge for bb: off until the user turns it on here. */
+/** The optional Browser Bridge for VesnALIA: off until the user turns it on here. */
 export function BrowserExtensionSettings() {
   const { rpc, view, error, busy, run, load } = useBrowserView();
   if (view === null) return <SectionState error={error} />;
@@ -36,11 +36,11 @@ export function BrowserExtensionSettings() {
 
   const steps = (
     <ol className="list-decimal space-y-1.5 pl-5">
-      <li>Install the bridge above. It lets the extension talk to bb on this machine; Remove bridge undoes it.</li>
+      <li>Install the bridge above. It lets the extension talk to VesnALIA on this machine; Remove bridge undoes it.</li>
       <li>
         Add{" "}
         <a className={LINK_CLASS} href={EXTENSION_STORE_URL} target="_blank" rel="noreferrer">
-          Browser Bridge for bb from the Chrome Web Store
+          Browser Bridge for VesnALIA from the Chrome Web Store
         </a>
         . To run a local build instead, open <code className="text-foreground">brave://extensions</code> or <code className="text-foreground">chrome://extensions</code>, turn on Developer mode, choose Load unpacked, and pick
         {view.extensionDir === null ? (

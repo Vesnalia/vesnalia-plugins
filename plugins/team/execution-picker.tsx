@@ -1,7 +1,7 @@
-// Adapt optional role fields to BB's concrete picker value without saving defaults.
+// Adapt optional role fields to VesnALIA's concrete picker value without saving defaults.
 import { useEffect, useState } from "react";
-import { experimental_ProviderModelPicker as ProviderModelPicker, useSdk } from "@get-bb/plugin-sdk/app";
-import type { ExperimentalProviderModelPickerRouting, ExperimentalProviderModelPickerValue, PluginBrowserBbSdk } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderModelPicker as ProviderModelPicker, useSdk } from "@vesnalia/plugin-sdk/app";
+import type { ExperimentalProviderModelPickerRouting, ExperimentalProviderModelPickerValue, PluginBrowserAliaSdk } from "@vesnalia/plugin-sdk/app";
 
 export interface ExecutionModel { providerId?: string; model?: string; reasoningLevel?: string; serviceTier?: string }
 export interface ProjectModelRoutingState {
@@ -21,8 +21,8 @@ export interface ExecutionModelPickerProps {
   language?: "en" | "ru";
 }
 
-/** Models belong to the requested BB provider; routeProviderId names an upstream service. */
-export async function resolveExecutionDraft(sdk: PluginBrowserBbSdk, value: ExecutionModel | undefined,
+/** Models belong to the requested VesnALIA provider; routeProviderId names an upstream service. */
+export async function resolveExecutionDraft(sdk: PluginBrowserAliaSdk, value: ExecutionModel | undefined,
   routing: ExperimentalProviderModelPickerRouting | undefined, signal?: AbortSignal): Promise<ExperimentalProviderModelPickerValue> {
   const route = routing?.kind === "environment" ? { environmentId: routing.environmentId } : routing?.kind === "host" ? { hostId: routing.hostId } : {};
   const load = (providerId?: string) => sdk.providers.models({ ...route, ...(providerId ? { providerId } : {}), signal });

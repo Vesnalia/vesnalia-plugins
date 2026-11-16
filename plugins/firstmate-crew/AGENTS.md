@@ -1,6 +1,6 @@
 # AGENTS.md
 
-A bb plugin: **FirstMate**. The captain talks to one "first mate" agent, an ordinary pinned bb thread, and it
+A VesnALIA plugin: **FirstMate**. The captain talks to one "first mate" agent, an ordinary pinned VesnALIA thread, and it
 runs a crew of worker threads, each in its own worktree. The plugin adds a board of the crew, a few
 commands, a watch runner, and the charter the first mate follows. It is a port of the Paseo `firstmate`
 plugin in `gpambrozio/paseo-plugins`; the design and its decisions are in
@@ -8,37 +8,37 @@ plugin in `gpambrozio/paseo-plugins`; the design and its decisions are in
 
 The repo root `AGENTS.md` covers what every plugin here shares: the per-folder npm layout, the commands,
 the SDK surface, the dependency rules. This file covers only what is specific to `firstmate`. Checked
-against bb 0.44.0 and `@get-bb/plugin-sdk` 0.5.29; the pinned launch and the interruption notices
-(below) against bb 0.45.0 and SDK 0.6.15, which the plugin needs since 0.2.4; the board's one-request
-crew metadata read against bb 0.46.0 and SDK 0.6.37, which it needs since 0.5.0; autocompact (0.6.0)
-against bb 0.46.1's server and the same SDK; the board's live reads, the `experimental_tab`, compact-first
-sends and the host toolchain (0.7.0) against SDK 0.6.94, built with bb 0.47.1 (which it needs since 0.7.0)
-and 0.48.0; the Notify parent guard (0.8.0) against bb 0.48.1, with the same SDK.
+against VesnALIA 0.44.0 and `@vesnalia/plugin-sdk` 0.5.29; the pinned launch and the interruption notices
+(below) against VesnALIA 0.45.0 and SDK 0.6.15, which the plugin needs since 0.2.4; the board's one-request
+crew metadata read against VesnALIA 0.46.0 and SDK 0.6.37, which it needs since 0.5.0; autocompact (0.6.0)
+against VesnALIA 0.46.1's server and the same SDK; the board's live reads, the `experimental_tab`, compact-first
+sends and the host toolchain (0.7.0) against SDK 0.6.94, built with VesnALIA 0.47.1 (which it needs since 0.7.0)
+and 0.48.0; the Notify parent guard (0.8.0) against VesnALIA 0.48.1, with the same SDK.
 
 ## Orientation
 
 | File | What it owns |
 | --- | --- |
-| `server.ts` | Wiring only: settings, the RPCs, `bb firstmate-crew`, the watch and autocompact services, the thread events that invalidate the `fleet` tag (created, active, idle, failed, archived, a pending interaction, and a thread moving to or from the first mate), and the `fleet.load` producer that invalidates it every `refreshSeconds` while a board watches. Every decision lives in `server/`. |
+| `server.ts` | Wiring only: settings, the RPCs, `alia firstmate-crew`, the watch and autocompact services, the thread events that invalidate the `fleet` tag (created, active, idle, failed, archived, a pending interaction, and a thread moving to or from the first mate), and the `fleet.load` producer that invalidates it every `refreshSeconds` while a board watches. Every decision lives in `server/`. |
 | `shared/contract.ts`, `shared/types.ts` | The RPC contract (zod), the card and fleet shapes, the crew metadata keys, `STATE_DIR`. The app imports the contract as a value (`experimental_useRpcQuery` takes it), so it imports nothing from the SDK at run time. |
 | `server/mate.ts` | Launch, adopt, release, restart, compact, `askMate`; the `mate` lock; the stored id. |
 | `server/crew.ts` | Steer, interrupt, end, relaunch, board note. |
 | `server/fleet.ts` | The first mate's children joined to backlog items on `task`; the seven columns; `ReportCache`. |
-| `server/cli.ts` | `bb firstmate-crew crew spawn` and `bb firstmate-crew tell` (words or `--message-base64`, always under the relay line). |
-| `server/bb-ports.ts`, `server/ports.ts` | The narrow `ThreadsPort` and `ProjectsPort` over `bb.sdk`, so everything else is tested against fakes. Where the machine rule below lives. |
-| `server/store.ts` | `bb.storage.kv`: the first mate's thread id, the switched-off watches and autocompact's marks. Nothing else. |
-| `server/settings.ts` | `bb.settings.define`: home directory, crew provider/model/reasoning, board refresh, and autocompact's six (on, thousands of tokens, idle minutes, for the first mate and for the crew). The token thresholds are set in thousands (`*KTokens`, ×1,000 in `autoCompactRules`) because bb's number field shows no thousands separators. |
-| `server/autocompact.ts` | One autocompact check: which thread is at rest, idle long enough (bb's cache deadline, else the idle minutes) and over its threshold; the once-per-idle-stretch marks; `dueNow` for one thread. |
-| `server/compact-first.ts` | A message to a thread autocompact would compact now goes with bb's `compactFirst`. |
+| `server/cli.ts` | `alia firstmate-crew crew spawn` and `alia firstmate-crew tell` (words or `--message-base64`, always under the relay line). |
+| `server/alia-ports.ts`, `server/ports.ts` | The narrow `ThreadsPort` and `ProjectsPort` over `alia.sdk`, so everything else is tested against fakes. Where the machine rule below lives. |
+| `server/store.ts` | `alia.storage.kv`: the first mate's thread id, the switched-off watches and autocompact's marks. Nothing else. |
+| `server/settings.ts` | `alia.settings.define`: home directory, crew provider/model/reasoning, board refresh, and autocompact's six (on, thousands of tokens, idle minutes, for the first mate and for the crew). The token thresholds are set in thousands (`*KTokens`, ×1,000 in `autoCompactRules`) because VesnALIA's number field shows no thousands separators. |
+| `server/autocompact.ts` | One autocompact check: which thread is at rest, idle long enough (VesnALIA's cache deadline, else the idle minutes) and over its threshold; the once-per-idle-stretch marks; `dueNow` for one thread. |
+| `server/compact-first.ts` | A message to a thread autocompact would compact now goes with VesnALIA's `compactFirst`. |
 | `server/home.ts`, `charter.ts`, `charter-file.ts` | Preparing the home; rendering `AGENTS.md`; the charter following the plugin until edited. |
 | `server/backlog.ts`, `suggestions.ts`, `crew-report.ts` | Parsing `data/backlog.md`, `data/suggestions.md` and `data/suggestions-dismissed.md`, and a worker's closing status line. |
 | `server/files.ts` | Confinement to the home (through symlinks) and `replaceTextIfUnchanged`. |
-| `server/watch-schedule.ts`, `watch-files.ts`, `watch-run.ts`, `watches.ts`, `watch-delivery.ts`, `watch-notes.ts` | Crontab parsing, which files are watches, one script run (through bb's host toolchain), the runner and its queue, when the queue reaches the first mate, and the line the captain sees with the saved note behind it. |
+| `server/watch-schedule.ts`, `watch-files.ts`, `watch-run.ts`, `watches.ts`, `watch-delivery.ts`, `watch-notes.ts` | Crontab parsing, which files are watches, one script run (through VesnALIA's host toolchain), the runner and its queue, when the queue reaches the first mate, and the line the captain sees with the saved note behind it. |
 | `server/serialize.ts` | One-at-a-time per key. |
-| `server/log.ts` | The `Log` every server module logs through, wired to `bb.log` in `server.ts`. |
+| `server/log.ts` | The `Log` every server module logs through, wired to `alia.log` in `server.ts`. |
 | `server/templates.ts`, `templates.generated.ts` | Reading the templates; the generated module. See below. |
 | `server/testing/` | `createFakeSdk` and the other fakes. |
-| `skills/fm/` | The `/fm` skill bb puts in every thread: it pipes the user's request, base64, into `tell --message-base64-stdin`. Its test is `server/fm-skill.test.ts`, because bb copies the skill's folder into threads whole. |
+| `skills/fm/` | The `/fm` skill VesnALIA puts in every thread: it pipes the user's request, base64, into `tell --message-base64-stdin`. Its test is `server/fm-skill.test.ts`, because VesnALIA copies the skill's folder into threads whole. |
 | `templates/` | **Everything the plugin writes into the home**, laid out as it lands there, plus `messages/` (what the plugin says to the first mate) and `parts/` (pieces inside other files). The first mate's behaviour is `templates/data/charter.md`. |
 | `app.tsx`, `app/` | The "FirstMate" action tab (`experimental_tab`; `panel.tsx` branches on the thread), the board and cards, the settings section, the command palette entries, and the overlay that expands watch notes in chat. `use-fleet.ts` is the board's one read. |
 | `components/ui/`, `lib/`, `hooks/` | Vendored shadcn components and helpers. |
@@ -53,52 +53,52 @@ Do not break these; each was paid for.
 - **Sends never interrupt.** The captain's words go with mode `"auto"` (crew steer: `"steer"`); watch
   output goes with `"queue-if-active"`, so a turn that started meanwhile holds it. The one exception to
   the mode is `"compact-first"` (`server/compact-first.ts`), which only a thread at rest and due for
-  autocompact gets: bb queues it as `queue-if-active` after the compaction. Only bb's outright refusal
+  autocompact gets: VesnALIA queues it as `queue-if-active` after the compaction. Only VesnALIA's outright refusal
   (HTTP 400 or 409, which it answers before queuing anything; `CompactFirstRefused` from the port) sends
   the message again with its own mode. Any other failure — a lost answer, a timeout, a 5xx — may have
-  come after bb accepted it, so it is passed on and never resent.
+  come after VesnALIA accepted it, so it is passed on and never resent.
 - **One message to the first mate in flight at a time** from the app (the board's buttons, suggestions and
   the command palette share `app/send-gate.ts`), so a double press sends once.
 - **Restart and Compact are refused while the first mate is mid-turn** — they go only when the first mate
   is idle or errored (buttons and server). Restart clears context on the same thread, so crew stay its
   children and two first mates cannot exist.
 - **Launch and adopt run under the `mate` lock**, and a launch that fails after the project exists stores
-  no id. A launch spawns the first mate with `pinned: true` (bb 0.45), so nothing can fail between the
+  no id. A launch spawns the first mate with `pinned: true` (VesnALIA 0.45), so nothing can fail between the
   spawn and storing its id; there is no separate pin call. Adopt does not pin, and restart keeps the
   same thread and so its pin.
-- **Only a thread whose workspace is the home can be adopted** (compared by real path, on the bb server's
+- **Only a thread whose workspace is the home can be adopted** (compared by real path, on the VesnALIA server's
   machine). The charter is the home's `AGENTS.md`, and the board opens home files through the first
   mate's environment, so a first mate working elsewhere would see neither.
 - **Only the first mate spawns crew.** `crew spawn` refuses any other calling thread.
 - **Crew are spawned with Notify parent `auto`, and nothing in the plugin changes it afterwards.** The
-  first mate learns of a crewmate's finished turns only from bb's parent notices, so `crew spawn`
+  first mate learns of a crewmate's finished turns only from VesnALIA's parent notices, so `crew spawn`
   (relaunches with `--environment` included) passes `parentNotifications: "auto"` rather than inherit a
-  project's or bb's default. bb 0.48.1 puts the setting in every thread menu and the sidebar's
+  project's or VesnALIA's default. VesnALIA 0.48.1 puts the setting in every thread menu and the sidebar's
   multi-select; the captain may set `stuck` or `off` on purpose, so the plugin only reports it: the card
   says so (`parentNotificationsWarning` in `app/format.ts`) and the charter (§3, §7) has the first mate
-  read `parentNotifications` from `bb thread list --json` and watch such a crewmate itself. bb fires no
+  read `parentNotifications` from `alia thread list --json` and watch such a crewmate itself. VesnALIA fires no
   event when the setting changes, so the board shows it on its next refresh. The field is on server
   thread rows since SDK 0.6.75, so it needs no re-pin.
 - **A relayed message is a request, never the captain's word.** Work one starts, steers or relaunches
   carries `(hold: captain's word to merge)` until the captain answers in the first mate's chat, which
   overrides `+yolo` and standing merge orders (the charter, §0 and §4); the existing hold field is the
   record, so it survives restarts and relaunches. Every message `tell` delivers opens with
-  `Relayed by bb firstmate-crew tell, from …:` (`RELAY_PREFIX` in `server/cli.ts`, named in the charter;
-  a test ties the two). The thread it names is `ctx.threadId`, which the caller's `BB_THREAD_ID` sets, so
-  the line says "as the sender claims"; project and branch are bb's for that id, on one line. Nothing
+  `Relayed by alia firstmate-crew tell, from …:` (`RELAY_PREFIX` in `server/cli.ts`, named in the charter;
+  a test ties the two). The thread it names is `ctx.threadId`, which the caller's `ALIA_THREAD_ID` sets, so
+  the line says "as the sender claims"; project and branch are VesnALIA's for that id, on one line. Nothing
   authenticates the person behind a relay, so the charter limits what one can do instead: the first mate
   may start or steer work for it, but merges, anything destructive or irreversible, publishing,
   credentials and settings need the captain in its own chat. Messages from the board and the command
   palette are not relays and go unmarked.
-- **`tell` never reads a file.** Text arrives as words or as `--message-base64` (the skill uses bb's
+- **`tell` never reads a file.** Text arrives as words or as `--message-base64` (the skill uses VesnALIA's
   `--message-base64-stdin`, read on the caller's machine), strict base64 of UTF-8. Exactly one trailing
   "\n" is dropped, because the skill's heredoc always adds one; the 12,000-byte limit applies after
   that; everything else, a leading byte-order mark included, is sent exactly as decoded. A test runs the
-  skill's own pipeline through `sh` against a stub `bb`. A server-side file read would let a sandboxed caller relay any file the server can
+  skill's own pipeline through `sh` against a stub `alia`. A server-side file read would let a sandboxed caller relay any file the server can
   read, and would only work on the server's machine.
 - **`/fm` is the user's to start.** `tell` speaks for the captain, so the skill is hidden
   from the model (`disable-model-invocation: true` for Claude Code, `agents/openai.yaml`
-  `allow_implicit_invocation: false` for Codex) and its description says it is user-triggered. bb keeps
+  `allow_implicit_invocation: false` for Codex) and its description says it is user-triggered. VesnALIA keeps
   frontmatter keys it does not know and copies the folder as it is.
 - **Templates are data.** The charter follows the plugin until the captain edits it, detected by
   fingerprint; then a changed plugin charter goes beside it as `data/charter.new.md` with a board notice.
@@ -142,18 +142,18 @@ Do not break these; each was paid for.
 - **Autocompact never touches a thread that is not at rest, and compacts each idle stretch once.** At
   rest is `isAtRest` in `server/autocompact.ts`: status and runtime status `idle`, no queued message, no
   pending interaction, no background agent. Idle time runs from the thread's latest `turn/completed`
-  event in bb's log, never from when the plugin saw something, so a reload cannot reset it. Every
-  attempt leaves a mark naming that event's `seq`, written as accepted *before* the request goes to bb:
+  event in VesnALIA's log, never from when the plugin saw something, so a reload cannot reset it. Every
+  attempt leaves a mark naming that event's `seq`, written as accepted *before* the request goes to VesnALIA:
   a mark that cannot be saved stops the compaction, and a refusal only relaxes it afterwards, so failed
   bookkeeping errs on waiting. A message to a due thread (`compact-first.ts`) takes the `mate` lock too,
-  assesses again under it, reads the last finished turn once more (a turn sent straight to bb takes no
-  lock), and leaves the same mark before it asks bb to compact first; the check's
+  assesses again under it, reads the last finished turn once more (a turn sent straight to VesnALIA takes no
+  lock), and leaves the same mark before it asks VesnALIA to compact first; the check's
   compaction reads the mark again under the lock. So the check, another message, a launch, an adoption or
   a release that holds the lock first is respected, and one idle stretch is compacted once. Nothing that
-  sends through `compact-first.ts` may hold the lock (restart sends directly). When `threads.context` carries bb's `compactionOfferAt` (bb 0.47,
+  sends through `compact-first.ts` may hold the lock (restart sends directly). When `threads.context` carries VesnALIA's `compactionOfferAt` (VesnALIA 0.47,
   behind its `compactExpiredCache` experiment), that cache deadline replaces the idle minutes; the token
   threshold and every at-rest rule stay. A marked thread is skipped until `turn/started` events after it show a
-  turn of its own — two when bb accepted, because the compaction is itself a turn, one when it refused.
+  turn of its own — two when VesnALIA accepted, because the compaction is itself a turn, one when it refused.
   Marks are one kv key per thread (`autoCompaction:<id>`), never one value that a large crew could push
   past 256 KB. Once a request is sent the check ends, whatever its bookkeeping does: one compaction per
   check. Every compaction runs under the `mate` lock, where the stored first mate, the crewmate's parent,
@@ -164,24 +164,24 @@ Do not break these; each was paid for.
   1,000 threads it admits no new ones and logs one summary, rather than evicting and logging again. Only the first mate and its live children are candidates; marks of anything else are
   dropped.
 - **Nothing throws into the server's event loop.** Services and listeners catch and log per tick;
-  everything is released in `bb.onDispose`.
-- **Server code logs only through the injected `Log` (`server/log.ts`), wired to `bb.log`**, never
-  `console`, whose output does not reach `bb plugin logs firstmate-crew`.
+  everything is released in `alia.onDispose`.
+- **Server code logs only through the injected `Log` (`server/log.ts`), wired to `alia.log`**, never
+  `console`, whose output does not reach `alia plugin logs firstmate-crew`.
 - Colour only through semantic Tailwind classes.
 
 ## Decisions to keep
 
-- **No `bb.host`.** The home and the watch scripts live on the machine running the bb server, and the
+- **No `alia.host`.** The home and the watch scripts live on the machine running the VesnALIA server, and the
   plugin reads and writes them from `server.ts`. That is wrong the day the captain wants the first mate's
   home on another enrolled machine; it was chosen because the first mate's home is a local directory
   registered as a project, and every crew spawn resolves to the server's machine anyway (below). Watches
-  run only while bb does, on that machine, in its local time.
-- **The machine rule for spawns.** bb 0.44 rejects a spawn into a host workspace without a `hostId`
+  run only while VesnALIA does, on that machine, in its local time.
+- **The machine rule for spawns.** VesnALIA 0.44 rejects a spawn into a host workspace without a `hostId`
   (only `personal` is exempt). The home gets the server's primary host (`system.config().primaryHostId`).
   A crew worktree gets the host of the project's source on the server's host if it has one, else the
   project's default source, else the first source. Reusing an environment names no machine. A project
-  with no machine fails with a sentence that says so. All in `server/bb-ports.ts`.
-- **Why the templates are generated.** `bb plugin build` compiles the server into one script in bb's
+  with no machine fails with a sentence that says so. All in `server/alia-ports.ts`.
+- **Why the templates are generated.** `alia plugin build` compiles the server into one script in VesnALIA's
   cache, and nothing at run time names the plugin's folder. So `templates/` is the source of truth and
   `npm run gen:templates` writes it into `server/templates.generated.ts`, which is checked in. A test
   fails when the two differ byte for byte; run the script after any change under `templates/`.
@@ -194,106 +194,106 @@ Do not break these; each was paid for.
   `<home>/.firstmate/watches.json`, and each script's own state is `<home>/.firstmate/watch-state/<name>/`.
   The queue can reach 20 runs of 16,000 characters, past kv's 256 KB per value, and the state belongs with
   the home it describes. Only `disabledWatches` (a short list of names) is in kv.
-- **Watches are plugin-owned, not bb automations.** bb's automations run a stored snapshot and do not
+- **Watches are plugin-owned, not VesnALIA automations.** VesnALIA's automations run a stored snapshot and do not
   deliver a run's output to a thread.
-- **A watch note is a line for the captain and the whole message for the agent.** bb's directives render
+- **A watch note is a line for the captain and the whole message for the agent.** VesnALIA's directives render
   only in assistant messages and a plugin cannot restyle a user message, so the note is sent as two text
   inputs: a visible line ending in a path mention (the "full note" chip) to the message saved in
   `<home>/.firstmate/watch-notes/`, and the whole message with `visibility: "agent-only"`. The first
   mate's workspace is the home, so the mention's workspace-relative path opens there. A note that cannot
   be saved goes whole, as a plain message, with a warning in the log.
 - **The chip expands in place through an app overlay** (`app/watch-note-expander.tsx`). It catches clicks
-  on chips whose `data-prompt-mention-resource` names a note, stops bb opening the file, and portals the
-  note — read back into runs by the `watch.note` RPC — after the chip's block. That attribute is bb's
+  on chips whose `data-prompt-mention-resource` names a note, stops VesnALIA opening the file, and portals the
+  note — read back into runs by the `watch.note` RPC — after the chip's block. That attribute is VesnALIA's
   markup, not the SDK's contract: if it changes, the chip falls back to opening the file, and the first
-  mate is unaffected. Check it after a bb upgrade.
+  mate is unaffected. Check it after a VesnALIA upgrade.
 - **While a first mate is aboard, its own workspace is the home** (`activeHome` in `server/mate.ts`). The
   board, End's check, suggestions, the charter, restart, the watches and the notes all use it; the home
   setting names only where the next launch or adoption goes. So changing the setting mid-voyage cannot
   mix another home's backlog, charter or watches with this crew. With no first mate, the setting is
   the home.
-- **The board reads through bb's live queries.** `fleet.load` carries the `fleet` tag; the server
+- **The board reads through VesnALIA's live queries.** `fleet.load` carries the `fleet` tag; the server
   invalidates it on every event that changes the board and, through `experimental_whileWatched`, every
   `refreshSeconds` while any board watches it, so one wait serves every window and stops when the last
-  board goes. bb owns retries and the re-read after a reconnect. The tab passes
-  `experimental_useTabVisible()` (bb 0.48) as the read's `enabled`, because bb keeps a closed panel's tab
-  mounted; the settings section is not a tab and is always enabled. bb builds the app against its own
-  list of `@get-bb/plugin-sdk/app` exports: bb 0.47 refuses a named import of one it lacks and resolves a
-  namespace read of one to nothing. A git install keeps the bundle its bb built after bb is upgraded, so
-  `app/tab-visible.ts` reads the hook at run time from `globalThis.__bbPluginRuntime.pluginSdkApp`, the
+  board goes. VesnALIA owns retries and the re-read after a reconnect. The tab passes
+  `experimental_useTabVisible()` (VesnALIA 0.48) as the read's `enabled`, because VesnALIA keeps a closed panel's tab
+  mounted; the settings section is not a tab and is always enabled. VesnALIA builds the app against its own
+  list of `@vesnalia/plugin-sdk/app` exports: VesnALIA 0.47 refuses a named import of one it lacks and resolves a
+  namespace read of one to nothing. A git install keeps the bundle its VesnALIA built after VesnALIA is upgraded, so
+  `app/tab-visible.ts` reads the hook at run time from `globalThis.__aliaPluginRuntime.pluginSdkApp`, the
   object every bundle's shim reads the SDK's members from. `app/built-bundle.test.tsx` loads the
-  `dist/app.js` bb built (CI builds it before the tests) on a runtime that has the hook. The palette command opens the tab through
-  `ctx.experimental_panel` (bb 0.48) and falls back to bb 0.47's `openPanel`; bb 0.48's build warns about
+  `dist/app.js` VesnALIA built (CI builds it before the tests) on a runtime that has the hook. The palette command opens the tab through
+  `ctx.experimental_panel` (VesnALIA 0.48) and falls back to VesnALIA 0.47's `openPanel`; VesnALIA 0.48's build warns about
   that fallback, which is expected.
-- **Watches run through `@get-bb/plugin-sdk/process`.** `experimental_spawnHostProcess` gives a script the
-  PATH bb gives its own tools. It is a server subpath bundled from the plugin's own install, so the SDK is
+- **Watches run through `@vesnalia/plugin-sdk/process`.** `experimental_spawnHostProcess` gives a script the
+  PATH VesnALIA gives its own tools. It is a server subpath bundled from the plugin's own install, so the SDK is
   a `dependency`, not a devDependency. It still runs each script in its own process group. The toolchain
-  reads the login shell only when asked or after a command it starts is not found, and bb 0.47 never
+  reads the login shell only when asked or after a command it starts is not found, and VesnALIA 0.47 never
   asks; a script whose own child is missing exits 1, which asks nothing. So `watch-run.ts` has it read
   the login shell once per load, before the first script, and stops waiting if the plugin stops.
-- **The tab's icon is the plugin's own SVG** (`icons/ship.svg`, declared in `bb.branding.experimental_icons`
-  as `firstmate-crew/ship`): `experimental_tab` requires an icon, and bb's built-in set has no ship.
-  `bb.branding.icon` still names `Ship`, which bb draws as its generic bolt; changing it changes the
+- **The tab's icon is the plugin's own SVG** (`icons/ship.svg`, declared in `alia.branding.experimental_icons`
+  as `firstmate-crew/ship`): `experimental_tab` requires an icon, and VesnALIA's built-in set has no ship.
+  `alia.branding.icon` still names `Ship`, which VesnALIA draws as its generic bolt; changing it changes the
   marketplace entry, so it waits for one.
-- **The board is a thread tab, not a nav panel.** The first mate is a normal thread in bb's own chat; the
-  Files view was dropped because its workspace is the home, which bb's file panel already opens.
+- **The board is a thread tab, not a nav panel.** The first mate is a normal thread in VesnALIA's own chat; the
+  Files view was dropped because its workspace is the home, which VesnALIA's file panel already opens.
 - **End archives.** Immediate when the task is in the backlog's Done; otherwise a confirmation, because
-  bb removes the worktree after its grace period and only committed work can be restored.
+  VesnALIA removes the worktree after its grace period and only committed work can be restored.
 - **The board's gear opens `/settings/plugins/firstmate-crew` by pushing that route.** The panel SDK hands
-  `openSettings()` only to sidebar-footer actions; bb 0.44's app routes plugin settings there and uses
+  `openSettings()` only to sidebar-footer actions; VesnALIA 0.44's app routes plugin settings there and uses
   react-router browser history, so `app/open-plugin-settings.ts` pushes the route with the router's
-  `{ usr, key, idx }` state and dispatches `popstate`. It is an internal route: if a bb upgrade moves it,
+  `{ usr, key, idx }` state and dispatches `popstate`. It is an internal route: if a VesnALIA upgrade moves it,
   the gear lands on a not-found page, and this is the place to fix.
 - **Autocompact has its own one-minute service, not the watch runner's tick.** The runner exists only
   for a prepared home and stops with it; autocompact concerns threads, not the home. Its first check is a
   minute after load, so a reload's new instance does not check while the old one is being disposed. Its
   log is the plugin's log only: the board has no activity feed, and adding one was out of scope.
-- **A crewmate's compaction wakes the first mate.** bb 0.46.1 reports every root turn of a child to its
+- **A crewmate's compaction wakes the first mate.** VesnALIA 0.46.1 reports every root turn of a child to its
   parent, the compaction's included (`addParentTurnNotificationFollowUp` has no exemption), so the first
   mate gets a `completed` notice with nothing new in it. The charter does not mention autocompact: the
   captain chose to leave it unchanged, so the first mate reads that notice like any other.
 - **Relaunch is a message to the first mate**, which spawns the replacement with `--environment` set to
   the old worker's environment. The old thread stays stopped, not archived, so the shared worktree lives.
 
-## What bb made moot
+## What VesnALIA made moot
 
 Dropped from the Paseo plugin, on purpose:
 
 - `daemon-session.ts`, `cli.ts`, `send.ts`, `crew-seen.ts`, `home-name.ts`, `uploads.ts`,
   `shared/attachments.ts`, `data-dir.ts`, `host-imports.test.ts`, `sdk-types.ts`, `host-types.ts`.
-- The heartbeat: bb notifies a parent when a child's turn completes, fails or is interrupted, and when
+- The heartbeat: VesnALIA notifies a parent when a child's turn completes, fails or is interrupted, and when
   the child needs attention (blocked on a permission or a question).
 - Finding crew by label, the steer relay and its timing rules, clearing attention by raw frame,
   `activeTurnBehavior`, draft persistence on `globalThis`, home and project renaming through the CLI.
 - On the client: the chat, transcript, Watch view, permission and question cards, context meter,
   attachments, drafts, keyboard handling, launch picker, Files view and the drag split,
   and their pure helpers (`transcript-rows`, `activity-rows`, `questions`, `keys`, `open-file`,
-  `file-links`, `markdown-parse`). Compact asks bb for its own `/compact` turn (`threads.compact`).
+  `file-links`, `markdown-parse`). Compact asks VesnALIA for its own `/compact` turn (`threads.compact`).
 
 ## What the first checks found
 
-Run against bb 0.44.0 before the design was settled:
+Run against VesnALIA 0.44.0 before the design was settled:
 
 - **A turn the captain starts on a child notifies its parent.** The child's turn request records
-  `initiator: "user"`, and the parent still receives `[bb system] @thread:<child> completed: …` after it.
+  `initiator: "user"`, and the parent still receives `[alia system] @thread:<child> completed: …` after it.
   That is why the steer relay is not ported. Every crew turn wakes the first mate, whoever started it.
 - **There is no composer slash-command API.** `app.composer.customize` takes only `actions`, `banners`,
   `plusMenu` and `richText`, and the slash typeahead is host-owned: it lists skills. So `/fm` is a skill
-  (`skills/fm/`), which bb imports into every thread; Claude Code receives the typed `/fm …` as is.
+  (`skills/fm/`), which VesnALIA imports into every thread; Claude Code receives the typed `/fm …` as is.
 
-- **A crewmate blocked on a permission wakes the first mate.** bb sends the parent a system message
+- **A crewmate blocked on a permission wakes the first mate.** VesnALIA sends the parent a system message
   (`systemMessageKind: "child-needs-attention"`): `@thread:<child> needs help. Blocked on file-change
   approval: …`, and the live run's first mate approved it from there. Questions go through the same
   pending-interaction path but were not staged live.
 
-- **bb 0.45 tells a parent why a child's work was cut short, and says nothing for a stop by hand.** A
+- **VesnALIA 0.45 tells a parent why a child's work was cut short, and says nothing for a stop by hand.** A
   child interrupted by host loss or a daemon restart gets `@thread:<child> was interrupted because its host
   connection was lost` (or `… because its host daemon restarted`); one whose setup failed before its first
   turn, `… failed during workspace setup before a turn began`; one whose queued message ran out of retries,
-  `… could not send a queued message after retrying`. A manual stop (`bb thread stop`, the board's
-  Interrupt) sends nothing at all, where bb 0.44 sent `was interrupted` with a "do not resume" line. The
+  `… could not send a queued message after retrying`. A manual stop (`alia thread stop`, the board's
+  Interrupt) sends nothing at all, where VesnALIA 0.44 sent `was interrupted` with a "do not resume" line. The
   charter (§7) quotes those words and says what to do with each; `server/charter.test.ts` keeps them on
-  one line each. Read from bb 0.45.0's server, not staged live.
+  one line each. Read from VesnALIA 0.45.0's server, not staged live.
 
 The live run added two: a spawn needs a `hostId` (fixed, see the machine rule), and a crew spawn without
 `--title` gets the brief's first line, which is the same "You are a crewmate" line for every brief, so the
@@ -301,11 +301,11 @@ charter tells the first mate to always pass `--title`.
 
 ## Known gaps
 
-- **A `/fm` request is capped at 12,000 bytes.** bb 0.44's `--<flag>-stdin` takes one line of at most
-  16 KiB; base64 of 12,000 bytes and the heredoc's new line is 16,004 characters. The multi-line `--stdin` that `bb guide plugins` describes is not in
+- **A `/fm` request is capped at 12,000 bytes.** VesnALIA 0.44's `--<flag>-stdin` takes one line of at most
+  16 KiB; base64 of 12,000 bytes and the heredoc's new line is 16,004 characters. The multi-line `--stdin` that `alia guide plugins` describes is not in
   0.44's CLI; it could lift the cap when it is.
 - **`/fm` has not been run in a live thread.** It was built without reloading the plugin, which the
-  running first mate depends on. That bb passes Claude Code the typed `/fm …` unchanged was read from bb
+  running first mate depends on. That VesnALIA passes Claude Code the typed `/fm …` unchanged was read from VesnALIA
   0.44's provider code. `agents/openai.yaml` is Codex's skill policy and is untested here.
 
 - **An interrupted turn keeps the previous status line.** `threads.output` returns the last assistant text
@@ -326,10 +326,10 @@ npm install --include=dev --cache "$TMPDIR/npm-cache"
 npm run gen:templates            # after any change under templates/
 npx vitest run
 npx tsc --noEmit
-bb plugin build
-bb plugin reload firstmate-crew       # read the exit code; a failed reload keeps the old instance
+alia plugin build
+alia plugin reload firstmate-crew       # read the exit code; a failed reload keeps the old instance
 ```
 
-Test against the running bb from a scratch home (`bb plugin config firstmate-crew set homeDirectory <path>`),
-never `~/FirstMate`, and reset the setting afterwards. `bb plugin rpc call firstmate-crew <method>` reaches
-every RPC (`list` shows only discoverable ones). Never restart the bb server.
+Test against the running VesnALIA from a scratch home (`alia plugin config firstmate-crew set homeDirectory <path>`),
+never `~/FirstMate`, and reset the setting afterwards. `alia plugin rpc call firstmate-crew <method>` reaches
+every RPC (`list` shows only discoverable ones). Never restart the VesnALIA server.

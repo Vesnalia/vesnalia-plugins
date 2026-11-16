@@ -3,14 +3,14 @@ import type {
   DeltaPresentation,
   DeltaItemShape,
   JsonValue,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import {
   experimental_fileReadPresentation as sdkFileReadPresentation,
   experimental_searchPresentation as sdkSearchPresentation,
   experimental_webSearchPresentation as sdkWebSearchPresentation,
   experimental_webFetchPresentation as sdkWebFetchPresentation,
   experimental_planStepsPresentation as sdkPlanStepsPresentation,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import { z } from "zod";
 import { record, text } from "./protocol.js";
 
@@ -24,7 +24,7 @@ export const toolPresentation = (
 });
 
 /**
- * The extension item kind carrying a dynamic-workflow graph. Declared to bb in
+ * The extension item kind carrying a dynamic-workflow graph. Declared to VesnALIA in
  * `server.ts` (`extensionKinds`) and rendered by the plugin frontend's
  * `experimental_timelineRenderer` registration.
  */
@@ -33,7 +33,7 @@ export const WORKFLOW_GRAPH_EXTENSION_KIND = "zcode/workflow-graph";
 const WORKFLOW_TOOL_NAMES = new Set(["CreateWorkflow"]);
 
 /**
- * Ingest schema for the extension payload (bb validates before persisting).
+ * Ingest schema for the extension payload (VesnALIA validates before persisting).
  * The graph body is upstream-bounded JSON; only the envelope is load-bearing.
  */
 export const workflowGraphPayloadSchema = z.looseObject({
@@ -133,7 +133,7 @@ const cap = (value: string, limit = 64 * 1024) => value.slice(0, limit);
 type Specialized = { item: DeltaItemShape; presentation: DeltaPresentation };
 
 /**
- * Maps known native coding tools onto bb's rich row shapes. Unknown tools and
+ * Maps known native coding tools onto VesnALIA's rich row shapes. Unknown tools and
  * inputs without the expected fields fall back to the generic tool row; a
  * failed close also falls back so the error stays visible.
  */

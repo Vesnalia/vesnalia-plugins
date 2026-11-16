@@ -1,4 +1,4 @@
-// Inline glyphs, so no view depends on which built-in icon names a bb version ships.
+// Inline glyphs, so no view depends on which built-in icon names a VesnALIA version ships.
 // The Forage tool glyphs match icons/*.svg; the rest are Lucide paths.
 export const GLYPHS: Record<string, string> = {
  "forage": '<path d="M6 18C5.5 11 10 4.8 20 4c-.8 10-7 14.5-14 14Z"/><path d="M6 18 14.5 9.5"/><path d="M6 18 3 21"/>',

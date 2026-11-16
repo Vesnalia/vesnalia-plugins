@@ -91,7 +91,7 @@ export class KoreyOAuth {
         "content-type": "application/json",
       },
       JSON.stringify({
-        client_name: "bb Korey plugin",
+        client_name: "VesnALIA Korey plugin",
         redirect_uris: [redirectUri],
         token_endpoint_auth_method: "none",
         grant_types: ["authorization_code", "refresh_token"],
@@ -369,7 +369,7 @@ export class OAuthTokenSource implements KoreyCredentials {
           ) {
             await this.store.rejected?.().catch(() => undefined);
             throw new KoreyOAuthError(
-              "Korey sign-in expired or was revoked. Reconnect with `bb korey login` or under Settings -> Installed plugins -> Korey.",
+              "Korey sign-in expired or was revoked. Reconnect with `alia korey login` or under Settings -> Installed plugins -> Korey.",
               error.code,
             );
           }

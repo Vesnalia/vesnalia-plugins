@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { waitFor } from "@testing-library/react";
-import { loadPluginApp, mountPluginContentScripts } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, mountPluginContentScripts } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_APPEARANCE } from "../src/appearance.js";

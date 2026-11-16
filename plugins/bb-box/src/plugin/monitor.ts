@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { cpus, loadavg, platform, totalmem } from "node:os";
 import { setTimeout as sleep } from "node:timers/promises";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { calculateCpuUsage, clampPercentage, createCollector, readAvailableMemoryBytes, readCpuTimes, type Collector, type CpuTimes, type ProcessScope } from "../monitor/collector.ts";
 import { containerCapacity, containerCpuPercent, containerMemory, readContainer, type ContainerCounters } from "../monitor/container.ts";
 import { createDemandSampler } from "../monitor/demand-sampler.ts";
@@ -14,7 +14,7 @@ import type { MonitorConfig } from "../core/document.ts";
 import type { DoctorCheck } from "../backends/types.ts";
 import { PRODUCT } from "../brand.ts";
 
-export const MONITOR_OFF_WORDS = "The Monitor is off. Turn it on under Monitor in BB Box's settings.";
+export const MONITOR_OFF_WORDS = "The Monitor is off. Turn it on under Monitor in VesnALIA Box's settings.";
 export const SERVER_MACHINE = "server";
 export const BOX_MACHINE_PREFIX = "box:";
 const SELF_ENROLLED_PROVIDERS: ReadonlySet<string> = new Set(["manual"]);
@@ -59,15 +59,15 @@ export interface LightSampler {
 }
 
 export function unreadableWords(name: string): string {
-  return `${PRODUCT} cannot read box ${name}: it is not a BB machine and runs no shell ${PRODUCT} can read.`;
+  return `${PRODUCT} cannot read box ${name}: it is not a VesnALIA machine and runs no shell ${PRODUCT} can read.`;
 }
 
 export function offlineMachineWords(name: string): string {
-  return `${PRODUCT} cannot read box ${name} now: its BB machine is not answering BB, and it runs no shell ${PRODUCT} can read without it.`;
+  return `${PRODUCT} cannot read box ${name} now: its VesnALIA machine is not answering VesnALIA, and it runs no shell ${PRODUCT} can read without it.`;
 }
 
 export function stillJoiningWords(name: string): string {
-  return `${PRODUCT} cannot read box ${name} now: it is still joining BB, and it runs no shell ${PRODUCT} can read without it.`;
+  return `${PRODUCT} cannot read box ${name} now: it is still joining VesnALIA, and it runs no shell ${PRODUCT} can read without it.`;
 }
 
 export function unreadReason(name: string, enrol: { readonly state: string; readonly hostId: string | null }): string {
@@ -110,7 +110,7 @@ export function monitorChecks(config: MonitorConfig, latest: readonly { type: st
     name: "Background monitoring",
     status: late || failing ? "warn" : "ok",
     detail: summary ? `Last summary at ${new Date(summary.timestamp).toISOString()}.${failing ? " Its last sample or write failed." : ""}` : "No summary recorded yet.",
-    fix: late || failing ? "bb box monitor logs shows its records. It samples every 30 seconds and writes a summary each minute." : null,
+    fix: late || failing ? "alia box monitor logs shows its records. It samples every 30 seconds and writes a summary each minute." : null,
   });
   return checks;
 }
@@ -170,14 +170,14 @@ interface RouteReader {
   readonly sampler: ReturnType<typeof createDemandSampler<MonitorSnapshot>>;
 }
 
-export function createMonitor(bb: BbPluginApi, deps: MonitorDeps) {
+export function createMonitor(alia: AliaPluginApi, deps: MonitorDeps) {
   let config: MonitorConfig = deps.settings();
   const refreshIntervalMs = () => config.refreshIntervalSeconds * 1000;
   const serverCollector = deps.serverCollector ?? createCollector({ refreshIntervalMs });
   const serverSampler = createDemandSampler({ collect: serverCollector.collect, intervalMs: refreshIntervalMs, reset: serverCollector.reset });
   const routeReaders = new Map<string, RouteReader>();
   const lightSampler = deps.lightSampler ?? createLightSampler();
-  const pressure = createPressureMonitor(bb, (signal) => lightSampler.read(signal), () => lightSampler.reset());
+  const pressure = createPressureMonitor(alia, (signal) => lightSampler.read(signal), () => lightSampler.reset());
   pressure.configure(config.enabled && config.backgroundMonitoring, config.pressureNotifications);
 
   const requireOn = () => {
@@ -207,7 +207,7 @@ export function createMonitor(bb: BbPluginApi, deps: MonitorDeps) {
     const readOnce = async (signal: AbortSignal) => {
       const result = await deps.runInBox(box.id, script, ROUTE_TIMEOUT_MS);
       signal.throwIfAborted();
-      if (result.exitCode !== 0 && !result.stdout.includes("@@bb-box-monitor:")) throw new Error(`Box ${box.name} did not answer the reading (exit code ${result.exitCode ?? "none"}).`);
+      if (result.exitCode !== 0 && !result.stdout.includes("@@alia-box-monitor:")) throw new Error(`Box ${box.name} did not answer the reading (exit code ${result.exitCode ?? "none"}).`);
       return collector.snapshot({ sections: routeSections(result.stdout), receivedAt: performance.now() });
     };
     const sampler = createDemandSampler<MonitorSnapshot>({
@@ -305,10 +305,10 @@ export function createMonitor(bb: BbPluginApi, deps: MonitorDeps) {
 
 export type Monitor = ReturnType<typeof createMonitor>;
 
-export function startMonitor(bb: BbPluginApi, deps: MonitorDeps): Monitor {
-  const monitor = createMonitor(bb, deps);
-  bb.background.service("monitor", { start: (signal) => monitor.start(signal) });
-  bb.onDispose(() => monitor.dispose());
+export function startMonitor(alia: AliaPluginApi, deps: MonitorDeps): Monitor {
+  const monitor = createMonitor(alia, deps);
+  alia.background.service("monitor", { start: (signal) => monitor.start(signal) });
+  alia.onDispose(() => monitor.dispose());
   return monitor;
 }
 

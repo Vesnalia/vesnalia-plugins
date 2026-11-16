@@ -5,9 +5,9 @@ description: "Unified encrypted catalog of API keys, FTP/SFTP, SSH keys, and sit
 
 # Env Catalog
 
-> **Reading is free.** `env_get` (and `bb env-catalog get NAME --raw` in a shell) returns the value at once from any session: no grant, no form, no wait. Every read, save and delete is written to the issuance journal (thread, project, name, time, your optional `purpose`; never the value), shown on the Env Catalog page as «Журнал выдачи». Keep the value out of the chat reply and out of files (`~/.config/...`, `.env` in a repo): load it into a shell variable or pipe it straight to the consumer, and ask again next time instead of caching it.
+> **Reading is free.** `env_get` (and `alia env-catalog get NAME --raw` in a shell) returns the value at once from any session: no grant, no form, no wait. Every read, save and delete is written to the issuance journal (thread, project, name, time, your optional `purpose`; never the value), shown on the Env Catalog page as «Журнал выдачи». Keep the value out of the chat reply and out of files (`~/.config/...`, `.env` in a repo): load it into a shell variable or pipe it straight to the consumer, and ask again next time instead of caching it.
 
-Encrypted storage on the BB server for API keys, FTP/FTPS/SFTP accounts, SSH private keys, and site logins. Every enrolled machine sees the same catalog.
+Encrypted storage on the VesnALIA server for API keys, FTP/FTPS/SFTP accounts, SSH private keys, and site logins. Every enrolled machine sees the same catalog.
 
 ## When to Use
 
@@ -16,7 +16,7 @@ Encrypted storage on the BB server for API keys, FTP/FTPS/SFTP accounts, SSH pri
    - `env_get` with the exact name: the value comes back at once.
 2. **If it is missing:** call `env_request` with `name` and `kind` (`secret` | `ftp` | `ssh` | `login`). Never ask the user to paste secrets into chat.
 3. **If they already pasted a credential in the thread** and asked you to keep it: save it with `env_set` (and do not repeat it in your reply). If they did not ask to keep it, use it for the task and tell them it is not saved.
-4. **File Gateway FTP** is only for browsing site files inside BB. Use Env Catalog when a script, `ssh`, deploy, or API call needs the credential.
+4. **File Gateway FTP** is only for browsing site files inside VesnALIA. Use Env Catalog when a script, `ssh`, deploy, or API call needs the credential.
 
 Do not repeat decrypted secrets in the chat reply. Use them in tools and commands.
 
@@ -92,10 +92,10 @@ Deletes an entry (recorded in the journal). Delete only what the owner asked you
 Every command works from any session, an agent shell included; reads, saves and deletes are journalled. `get` accepts `--purpose "text"` for the journal.
 
 ```bash
-bb env-catalog list [--kind ssh]
-bb env-catalog get OVH_SSH --raw --purpose "deploy"   # prints the secret at once; do not paste the output into the chat
-bb env-catalog set OPENAI_API_KEY sk-proj-... --service OpenAI
-bb env-catalog set OVH_SSH --kind ssh --host 1.2.3.4 --user ubuntu --private-key "-----BEGIN…"
-bb env-catalog request OVH_SSH --kind ssh --purpose "Deploy"
-bb env-catalog export --format json      # prints every secret: only when the owner asked for an export
+alia env-catalog list [--kind ssh]
+alia env-catalog get OVH_SSH --raw --purpose "deploy"   # prints the secret at once; do not paste the output into the chat
+alia env-catalog set OPENAI_API_KEY sk-proj-... --service OpenAI
+alia env-catalog set OVH_SSH --kind ssh --host 1.2.3.4 --user ubuntu --private-key "-----BEGIN…"
+alia env-catalog request OVH_SSH --kind ssh --purpose "Deploy"
+alia env-catalog export --format json      # prints every secret: only when the owner asked for an export
 ```

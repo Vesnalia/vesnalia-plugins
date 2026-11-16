@@ -32,14 +32,14 @@ The RPC contract pairs server operations with their input and output schemas. Th
 ## How it works
 
 1. The RPC contract validates server operation inputs and outputs; its branch details and failure results are in [Contract and operation details](api-contracts-details.md#rpccontract) (`server.ts:173-630`, `server.ts:3579`).
-2. The host contract validates device-operation payloads, while callers select a host in BB call options; dispatch and filesystem outcomes are in [Contract and operation details](api-contracts-details.md#movehostcontract) (`move-contract.ts:10-64`, `host.ts:7-19`).
+2. The host contract validates device-operation payloads, while callers select a host in VesnALIA call options; dispatch and filesystem outcomes are in [Contract and operation details](api-contracts-details.md#movehostcontract) (`move-contract.ts:10-64`, `host.ts:7-19`).
 3. Section removal's archive, unbind and purge paths, preconditions and partial failures are in [Contract and operation details](api-contracts-details.md#removesection) (`section-remove.ts:48-238`).
 
 Detailed `rpcContract` validation branches and outcomes are documented in [Contract and operation details](api-contracts-details.md#rpccontract) (`server.ts:173-630`).
 
 ### `createAutoArchive` sweep lifecycle
 
-1. The coordinator accepts the BB thread SDK, a live config getter, optional clock and interval functions, and an optional logger object. Missing clock/timer functions use the platform defaults; it keeps one shared in-flight promise (`auto-archive.ts:60-71`, `auto-archive.ts:113-118`).
+1. The coordinator accepts the VesnALIA thread SDK, a live config getter, optional clock and interval functions, and an optional logger object. Missing clock/timer functions use the platform defaults; it keeps one shared in-flight promise (`auto-archive.ts:60-71`, `auto-archive.ts:113-118`).
 2. Creating the coordinator immediately starts an initial sweep and installs an hourly interval. Both callers catch unexpected sweep rejection and log it; `dispose` clears the interval (`auto-archive.ts:175-190`).
 3. Each sweep reads config at run time. Disabled config returns zero without listing. Enabled config pages unarchived threads by 200, deduplicates repeated IDs, and stops on a short page or a page that adds no new IDs (`auto-archive.ts:120-150`).
 4. It captures one `now` value for the sweep, passes each thread/config/clock value to `isStale`, and sequentially archives eligible IDs. Successful archive calls increment the returned count; each rejected archive is debug-logged and the loop continues (`auto-archive.ts:142-164`). The predicate's decision sequence is documented in [Chat staleness predicate](api/chat-staleness.md) (`auto-archive.ts:92-110`).
@@ -64,12 +64,12 @@ The host inventory collector's source-by-source results and failure behavior are
 ## Business rules
 
 - `folderId: null` means project-root placement; it does not mean “no placement” (`server.ts:228-236`).
-- `moveHostContract` operation schemas omit `hostId`; server callers select the destination host through the BB host client's call options (`move-contract.ts:10-55`, `project-move.ts:135-139`, `project-move.ts:172-175`).
+- `moveHostContract` operation schemas omit `hostId`; server callers select the destination host through the VesnALIA host client's call options (`move-contract.ts:10-55`, `project-move.ts:135-139`, `project-move.ts:172-175`).
 - Section removal preserves a shared directory for `unbind`; purge refuses a shared path (`section-remove.ts:119-150`, `section-remove.ts:222-233`).
 
 ## Public API
 
-The plugin registers `rpcContract` on BB RPC; host operations use `moveHostContract` through BB’s host client (`server.ts:3579`, `move-contract.ts:10-63`). See [API and commands](api.md) for the operation inventory.
+The plugin registers `rpcContract` on VesnALIA RPC; host operations use `moveHostContract` through VesnALIA’s host client (`server.ts:3579`, `move-contract.ts:10-63`). See [API and commands](api.md) for the operation inventory.
 
 ## Gotchas
 

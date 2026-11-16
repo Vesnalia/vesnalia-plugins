@@ -216,7 +216,7 @@ export function compareTitles(a: string, b: string): number {
  *
  * A locale-sensitive sort on a cache key produces a *different ordering on
  * different machines*, which turns a stable key into an unstable one and makes
- * two bb hosts on one workspace disagree about what they have already seen.
+ * two VesnALIA hosts on one workspace disagree about what they have already seen.
  */
 export function compareIds(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;

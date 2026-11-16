@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 /**
  * Messages this plugin sends itself (stalled-turn restart, continuation
@@ -7,14 +7,14 @@ import type { BbPluginApi } from "@get-bb/plugin-sdk";
  * plugin recognises its own continuations later: it never answers one of its
  * own messages with another.
  */
-export const OWN_MESSAGE_TAG = "[bb provider-retry-advanced";
+export const OWN_MESSAGE_TAG = "[VesnALIA provider-retry-advanced";
 export const STALL_TAG = `${OWN_MESSAGE_TAG}: stalled turn]`;
 export const NUDGE_TAG = `${OWN_MESSAGE_TAG}: continue]`;
 export const UNFINISHED_TAG = `${OWN_MESSAGE_TAG}: unfinished request]`;
 export const WORKFLOW_TAG = `${OWN_MESSAGE_TAG}: interrupted workflow]`;
 
 const CHECK_STATE_HINT =
-  "Before re-running anything you started (commands, child threads, workflows), check its current state. Resume an interrupted BB workflow with `bb workflows run … --resume <run-id>`; restart an interrupted Claude Code workflow from its last finished step.";
+  "Before re-running anything you started (commands, child threads, workflows), check its current state. Resume an interrupted VesnALIA workflow with `alia workflows run … --resume <run-id>`; restart an interrupted Claude Code workflow from its last finished step.";
 
 export function stallText(minutes: number): string {
   return `${STALL_TAG} Your previous turn made no progress for ${minutes} minutes and was stopped automatically. Continue the task from where it stopped. ${CHECK_STATE_HINT}`;
@@ -36,7 +36,7 @@ export function unfinishedText(args: { failedAt: number; automation: boolean; ac
  */
 export function workflowText(labels: string[]): string {
   const list = labels.join(", ");
-  return `${WORKFLOW_TAG} BB restarted while your Claude Code workflow ${list} was still running in the background, and the restart stopped it. First check that run's current status and what its interrupted steps already did outside the session (files, commands, messages, child threads). Then resume that same run with the Workflow tool and \`resumeFromRunId\` set to its run id (from the result of the Workflow call that started it), so agents that already finished return their cached results; agents that were mid-step run again. If the run or its journal is gone, say so and do not create a new run on your own. Then continue the task.`;
+  return `${WORKFLOW_TAG} VesnALIA restarted while your Claude Code workflow ${list} was still running in the background, and the restart stopped it. First check that run's current status and what its interrupted steps already did outside the session (files, commands, messages, child threads). Then resume that same run with the Workflow tool and \`resumeFromRunId\` set to its run id (from the result of the Workflow call that started it), so agents that already finished return their cached results; agents that were mid-step run again. If the run or its journal is gone, say so and do not create a new run on your own. Then continue the task.`;
 }
 
 /** The execution a turn ran with; replayed so a continuation runs the way the turn ran. */
@@ -106,13 +106,13 @@ export function isAutomaticRetry(request: TurnRequest): boolean {
   return request.retryOfRequestId !== null && request.initiator === "system";
 }
 
-type EventsList = BbPluginApi["sdk"]["threads"]["events"]["list"];
+type EventsList = AliaPluginApi["sdk"]["threads"]["events"]["list"];
 
 export async function listEvents(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   args: { threadId: string; types?: string[]; afterSeq?: number; beforeSeq?: number; order: "asc" | "desc"; limit: number },
 ): Promise<RawEvent[]> {
-  const list = bb.sdk.threads.events.list as unknown as (input: Record<string, unknown>) => ReturnType<EventsList>;
+  const list = alia.sdk.threads.events.list as unknown as (input: Record<string, unknown>) => ReturnType<EventsList>;
   return (await list({
     threadId: args.threadId,
     ...(args.types === undefined ? {} : { types: args.types }),
@@ -123,13 +123,13 @@ export async function listEvents(
   })) as unknown as RawEvent[];
 }
 
-export async function latestRequest(bb: BbPluginApi, threadId: string): Promise<TurnRequest | null> {
-  const [event] = await listEvents(bb, { threadId, types: ["client/turn/requested"], order: "desc", limit: 1 });
+export async function latestRequest(alia: AliaPluginApi, threadId: string): Promise<TurnRequest | null> {
+  const [event] = await listEvents(alia, { threadId, types: ["client/turn/requested"], order: "desc", limit: 1 });
   return event === undefined ? null : parseRequest(event);
 }
 
-export async function requestsAfter(bb: BbPluginApi, threadId: string, afterSeq: number): Promise<TurnRequest[]> {
-  return (await listEvents(bb, { threadId, types: ["client/turn/requested"], afterSeq, order: "asc", limit: 100 })).map(parseRequest);
+export async function requestsAfter(alia: AliaPluginApi, threadId: string, afterSeq: number): Promise<TurnRequest[]> {
+  return (await listEvents(alia, { threadId, types: ["client/turn/requested"], afterSeq, order: "asc", limit: 100 })).map(parseRequest);
 }
 
 /** Items that are the model's own output, not a tool it runs. */
@@ -141,10 +141,10 @@ function itemOf(event: RawEvent): { id: string; type: string } {
 }
 
 /** Types of tool items (commands, tool calls, subagents, compaction…) started after `afterSeq` and not completed. */
-export async function openToolItems(bb: BbPluginApi, threadId: string, afterSeq: number): Promise<string[]> {
-  const started = await listEvents(bb, { threadId, types: ["item/started"], afterSeq, order: "desc", limit: 50 });
+export async function openToolItems(alia: AliaPluginApi, threadId: string, afterSeq: number): Promise<string[]> {
+  const started = await listEvents(alia, { threadId, types: ["item/started"], afterSeq, order: "desc", limit: 50 });
   if (started.length === 0) return [];
-  const completed = await listEvents(bb, { threadId, types: ["item/completed"], afterSeq, order: "desc", limit: 200 });
+  const completed = await listEvents(alia, { threadId, types: ["item/completed"], afterSeq, order: "desc", limit: 200 });
   const done = new Set(completed.map((event) => itemOf(event).id));
   return started
     .map(itemOf)
@@ -153,14 +153,14 @@ export async function openToolItems(bb: BbPluginApi, threadId: string, afterSeq:
 }
 
 /** How many tool items (commands, tool calls, subagents…) the turn after `afterSeq` ran; capped at 200. */
-export async function countToolItems(bb: BbPluginApi, threadId: string, afterSeq: number): Promise<number> {
-  const items = await listEvents(bb, { threadId, types: ["item/started", "item/completed"], afterSeq, order: "desc", limit: 200 });
+export async function countToolItems(alia: AliaPluginApi, threadId: string, afterSeq: number): Promise<number> {
+  const items = await listEvents(alia, { threadId, types: ["item/started", "item/completed"], afterSeq, order: "desc", limit: 200 });
   return new Set(items.map(itemOf).filter((item) => !MODEL_ITEM_TYPES.has(item.type)).map((item) => item.id)).size;
 }
 
 /** Child threads still running: a parent that ends its turn while they work is waiting, not stuck. */
-export async function runningChildren(bb: BbPluginApi, threadId: string): Promise<number> {
-  const rows = (await bb.sdk.threads.list({ parentThreadId: threadId, archived: false, includeHidden: true, limit: 200 })) as unknown as Array<{ status: string }>;
+export async function runningChildren(alia: AliaPluginApi, threadId: string): Promise<number> {
+  const rows = (await alia.sdk.threads.list({ parentThreadId: threadId, archived: false, includeHidden: true, limit: 200 })) as unknown as Array<{ status: string }>;
   return rows.filter((row) => row.status === "active" || row.status === "starting").length;
 }
 
@@ -174,9 +174,9 @@ interface ListRow {
  * workflows). A turn waiting on it is not stalled, and stopping the thread
  * would kill that work, so every automatic action here leaves such a thread alone.
  */
-export async function openBackgroundWork(bb: BbPluginApi, threadId: string): Promise<number> {
+export async function openBackgroundWork(alia: AliaPluginApi, threadId: string): Promise<number> {
   for (let offset = 0; ; offset += 200) {
-    const page = (await bb.sdk.threads.list({ archived: false, includeHidden: true, limit: 200, offset })) as unknown as ListRow[];
+    const page = (await alia.sdk.threads.list({ archived: false, includeHidden: true, limit: 200, offset })) as unknown as ListRow[];
     const row = page.find((thread) => thread.id === threadId);
     if (row !== undefined) {
       const activity = row.activity ?? {};
@@ -186,8 +186,8 @@ export async function openBackgroundWork(bb: BbPluginApi, threadId: string): Pro
   }
 }
 
-export async function hasPendingInteraction(bb: BbPluginApi, threadId: string): Promise<boolean> {
-  return (await bb.sdk.threads.interactions.list({ threadId })).length > 0;
+export async function hasPendingInteraction(alia: AliaPluginApi, threadId: string): Promise<boolean> {
+  return (await alia.sdk.threads.interactions.list({ threadId })).length > 0;
 }
 
 const PERMISSION_MODES = new Set(["accept-edits", "auto", "full", "workspace-write"]);
@@ -198,11 +198,11 @@ const PERMISSION_MODES = new Set(["accept-edits", "auto", "full", "workspace-wri
  * (never steers) and passes the `message.dispatch` hooks like any message.
  */
 export async function sendAgentOnly(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   args: { threadId: string; text: string; execution: Execution | null },
 ): Promise<void> {
   const execution = args.execution ?? {};
-  const send = bb.sdk.threads.send as unknown as (input: Record<string, unknown>) => Promise<unknown>;
+  const send = alia.sdk.threads.send as unknown as (input: Record<string, unknown>) => Promise<unknown>;
   await send({
     threadId: args.threadId,
     input: [{ type: "text", text: args.text, mentions: [], visibility: "agent-only" }],

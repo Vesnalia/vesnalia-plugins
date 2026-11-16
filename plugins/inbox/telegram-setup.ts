@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { telegramRequest, TelegramError } from "./telegram-api";
 import type { StoredSettings } from "./setup";
@@ -19,7 +19,7 @@ const META_KEY = "setup:telegram";
 const SUSPENDED_KEY = "setup:telegram-suspended";
 const fingerprint = (token: string, chatId: string) => createHash("sha256").update(token).update("\0").update(chatId).digest("hex");
 
-export function createTelegramSetup(bb: BbPluginApi, settings: { get(): Promise<StoredSettings> }) {
+export function createTelegramSetup(alia: AliaPluginApi, settings: { get(): Promise<StoredSettings> }) {
   let pending: Pending | null = null;
   let expiry: ReturnType<typeof setTimeout> | null = null;
   let queue = Promise.resolve();
@@ -28,7 +28,7 @@ export function createTelegramSetup(bb: BbPluginApi, settings: { get(): Promise<
   let updating = false;
   const controller = new AbortController();
   function clear() { pending = null; if (expiry) clearTimeout(expiry); expiry = null; }
-  bb.onDispose(() => { controller.abort(); clear(); });
+  alia.onDispose(() => { controller.abort(); clear(); });
   function serial<T>(run: () => Promise<T>): Promise<T> {
     if (updating) return Promise.reject(new Error("An update is running. Reopen Settings after it finishes."));
     operations++;
@@ -51,17 +51,17 @@ export function createTelegramSetup(bb: BbPluginApi, settings: { get(): Promise<
     try {
       // Host secret-file and database writes are not atomic. Persist a delivery
       // barrier first so crashes or partial writes cannot mix a token and chat.
-      await bb.storage.kv.set(SUSPENDED_KEY, true);
-      await bb.sdk.plugins.updateSettings({ pluginId: bb.pluginId, values });
-      await bb.storage.kv.delete(SUSPENDED_KEY);
+      await alia.storage.kv.set(SUSPENDED_KEY, true);
+      await alia.sdk.plugins.updateSettings({ pluginId: alia.pluginId, values });
+      await alia.storage.kv.delete(SUSPENDED_KEY);
     }
     catch { throw new Error("Couldn’t save the Telegram connection. Alerts are paused; reconnect from Settings to recover."); }
     finally { writing = false; }
   }
   async function status() {
     const cfg = await settings.get();
-    const configured = !writing && !(await bb.storage.kv.get<boolean>(SUSPENDED_KEY)) && Boolean(cfg.telegramBotToken && cfg.telegramChatId);
-    const stored = await bb.storage.kv.get<Metadata>(META_KEY);
+    const configured = !writing && !(await alia.storage.kv.get<boolean>(SUSPENDED_KEY)) && Boolean(cfg.telegramBotToken && cfg.telegramChatId);
+    const stored = await alia.storage.kv.get<Metadata>(META_KEY);
     const metadata = configured && stored?.fingerprint === fingerprint(cfg.telegramBotToken!, cfg.telegramChatId) ? stored : null;
     return { configured, chatId: configured ? cfg.telegramChatId : null,
       botUsername: metadata?.botUsername ?? null, name: metadata?.name ?? null, lastTest: metadata?.lastTest ?? null };
@@ -78,7 +78,7 @@ export function createTelegramSetup(bb: BbPluginApi, settings: { get(): Promise<
     },
     withConnection: <T>(run: (cfg: StoredSettings & { telegramBotToken: string }) => Promise<T>): Promise<T | null> => serial(async () => {
       const cfg = await settings.get();
-      if (!cfg.telegramBotToken || !cfg.telegramChatId || await bb.storage.kv.get<boolean>(SUSPENDED_KEY)) return null;
+      if (!cfg.telegramBotToken || !cfg.telegramChatId || await alia.storage.kv.get<boolean>(SUSPENDED_KEY)) return null;
       // This gate spans reads, link resolution and delivery. A disconnect waits
       // for an already-started send and prevents every later queued send.
       return run({ ...cfg, telegramBotToken: cfg.telegramBotToken });
@@ -124,32 +124,32 @@ export function createTelegramSetup(bb: BbPluginApi, settings: { get(): Promise<
       const p = requirePairing(id);
       if (!p.candidate) throw new Error("Open the bot and press Start before confirming your chat.");
       await save({ telegramBotToken: p.token, telegramChatId: p.candidate.chatId });
-      await bb.storage.kv.set(META_KEY, { fingerprint: fingerprint(p.token, p.candidate.chatId), botUsername: p.botUsername, name: p.candidate.name } satisfies Metadata);
+      await alia.storage.kv.set(META_KEY, { fingerprint: fingerprint(p.token, p.candidate.chatId), botUsername: p.botUsername, name: p.candidate.name } satisfies Metadata);
       clear();
     }),
     cancel: (id: string) => serial(async () => { requirePairing(id); clear(); return { ok: true }; }),
     test: () => serial(async () => {
       const cfg = await settings.get();
-      if (!cfg.telegramBotToken || !cfg.telegramChatId || await bb.storage.kv.get<boolean>(SUSPENDED_KEY)) throw new Error("Connect Telegram before sending a test.");
+      if (!cfg.telegramBotToken || !cfg.telegramChatId || await alia.storage.kv.get<boolean>(SUSPENDED_KEY)) throw new Error("Connect Telegram before sending a test.");
       const key = fingerprint(cfg.telegramBotToken, cfg.telegramChatId);
-      const stored = await bb.storage.kv.get<Metadata>(META_KEY);
+      const stored = await alia.storage.kv.get<Metadata>(META_KEY);
       const metadata: Metadata = stored?.fingerprint === key ? stored : { fingerprint: key };
       try {
         const raw = await telegramRequest(cfg.telegramBotToken, "sendMessage", {
-          chat_id: cfg.telegramChatId, text: "Needs You — test notification\nYour BB installation can send alerts to this chat. Return to Needs You to finish setup.",
+          chat_id: cfg.telegramChatId, text: "Needs You — test notification\nYour VesnALIA installation can send alerts to this chat. Return to Needs You to finish setup.",
         }, controller.signal);
         if (!raw || typeof raw !== "object" || !("message_id" in raw) || !Number.isSafeInteger(raw.message_id)) throw new TelegramError("Telegram did not acknowledge this test. Try again.");
-        await bb.storage.kv.set(META_KEY, { ...metadata, lastTest: { ok: true, at: Date.now() } });
+        await alia.storage.kv.set(META_KEY, { ...metadata, lastTest: { ok: true, at: Date.now() } });
         return { ok: true };
       } catch (error) {
-        await bb.storage.kv.set(META_KEY, { ...metadata, lastTest: { ok: false, at: Date.now() } });
+        await alia.storage.kv.set(META_KEY, { ...metadata, lastTest: { ok: false, at: Date.now() } });
         throw error;
       }
     }),
     disconnect: () => serial(async () => {
       clear();
       await save({ telegramBotToken: null, telegramChatId: "" });
-      await bb.storage.kv.delete(META_KEY);
+      await alia.storage.kv.delete(META_KEY);
     }),
   };
 }

@@ -1,6 +1,6 @@
 # Project Explorer
 
-A git-aware file tree and editor inside the bb thread right panel.
+A git-aware file tree and editor inside the VesnALIA thread right panel.
 
 Open a thread, click **New tab** in the right panel, and pick **Project
 Explorer**. The tab shows the thread environment's workspace: a file tree on
@@ -15,7 +15,7 @@ the left, a viewer/editor on the right.
   - red, struck through — deleted (`D`)
   - purple — unmerged / conflict (`U`)
   - A collapsed folder inherits amber when anything beneath it changed.
-- **View** with bb's own syntax highlighting and code theme.
+- **View** with VesnALIA's own syntax highlighting and code theme.
   Files ending in a newline are normalized only for the preview to avoid a
   host renderer line-count mismatch; their editable contents stay unchanged.
   If the host highlighter cannot render a file, the panel keeps working and
@@ -42,10 +42,10 @@ opening a small one:
   tree, no retained memory.
 - Git status is **one** call for the whole workspace, indexed into a `Map`
   once per refresh, not a call per file.
-- Viewing reuses bb's `experimental_SourceCode`, and editing is a plain
+- Viewing reuses VesnALIA's `experimental_SourceCode`, and editing is a plain
   `textarea`. The plugin ships no editor engine and no highlighter, so the
   frontend bundle stays small.
-- Images stream through bb's temporary, workspace-confined preview URLs instead
+- Images stream through VesnALIA's temporary, workspace-confined preview URLs instead
   of crossing the plugin RPC as base64.
 
 ## Safety
@@ -70,9 +70,9 @@ See [CHANGELOG.md](./CHANGELOG.md) for release notes.
 
 ```
 npm install --include=dev
-bb plugin build
-bb plugin install .
-bb plugin dev                                # rebuild + reload on save
+alia plugin build
+alia plugin install .
+alia plugin dev                                # rebuild + reload on save
 ```
 
 Git colours need a thread whose environment is a git repository. In a

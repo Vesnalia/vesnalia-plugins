@@ -28,7 +28,7 @@ describe("renderReplyMarkdown", () => {
     expect(markdown).toContain("Total **$290**");
     expect(markdown).not.toContain("```ui");
     expect(markdown).toContain("```ts\nconst keep = true;\n```");
-    expect(markdown).toContain("_Interactive app: Bouncing ball. Open this reply in BB to use it._");
+    expect(markdown).toContain("_Interactive app: Bouncing ball. Open this reply in VesnALIA to use it._");
     expect(markdown.endsWith("Done.")).toBe(true);
   });
 
@@ -95,7 +95,7 @@ describe("checkSpec", () => {
     const { ok, report } = await checkSpec(spec, noFiles);
     expect(ok).toBe(false);
     expect(report).toContain("1:12 error: Shader: image, line 3: `nope` is not declared");
-    expect(report).toContain("_GPU shader (1 pass). Open this reply in BB to see it._");
+    expect(report).toContain("_GPU shader (1 pass). Open this reply in VesnALIA to see it._");
   });
 
   it("reports a scene that breaks once it moves, and asset files it can't read", async () => {

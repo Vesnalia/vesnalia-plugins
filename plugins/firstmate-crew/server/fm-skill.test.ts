@@ -1,5 +1,5 @@
 /**
- * The `/fm` skill (`skills/fm/`). bb copies a plugin's skill directories into every thread as they are,
+ * The `/fm` skill (`skills/fm/`). VesnALIA copies a plugin's skill directories into every thread as they are,
  * so this test lives here rather than beside the skill, where it would be copied too.
  */
 import { readFile } from "node:fs/promises";
@@ -26,7 +26,7 @@ describe("the /fm skill", () => {
 
   it("pipes the request as one base64 line into tell, and asks for the request when there is none", async () => {
     const { body } = await skillFile();
-    expect(body).toContain("base64 <<'FM_REQUEST_END' | tr -d '\\n' | bb firstmate-crew tell --message-base64-stdin");
+    expect(body).toContain("base64 <<'FM_REQUEST_END' | tr -d '\\n' | VesnALIA firstmate-crew tell --message-base64-stdin");
     expect(body).toContain("ask the user what to send");
   });
 

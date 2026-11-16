@@ -7,7 +7,7 @@ const COPY_ICON =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';
 const DONE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 
-/** An inline code chip in a chat message. Fenced blocks (<pre>) already have BB's own Copy code. */
+/** An inline code chip in a chat message. Fenced blocks (<pre>) already have VesnALIA's own Copy code. */
 export function copyableChip(target: EventTarget | null): HTMLElement | null {
   if (!(target instanceof Element)) return null;
   const code = target.closest<HTMLElement>("code");
@@ -35,7 +35,7 @@ async function writeClipboard(text: string): Promise<boolean> {
 
 /**
  * One floating copy button that follows the hovered code chip. It lives in <body>,
- * so BB's message markup, text selection and selection-copy stay untouched.
+ * so VesnALIA's message markup, text selection and selection-copy stay untouched.
  */
 export function mountInlineCodeCopy({ signal }: { signal: AbortSignal }) {
   if (signal.aborted) return;

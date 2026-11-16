@@ -22,7 +22,7 @@ test('empty worktree list stays empty', () => {
 });
 
 test('on-demand inspection is read-only, rejects unknown paths and reports local evidence', () => {
-  const repo = realpathSync(mkdtempSync(join(tmpdir(), 'bb-branch-graph-')));
+  const repo = realpathSync(mkdtempSync(join(tmpdir(), 'alia-branch-graph-')));
   const git = (...args) => execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', stdio: ['ignore','pipe','pipe'] });
   try {
     git('init', '-b', 'main');

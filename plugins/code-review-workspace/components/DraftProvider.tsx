@@ -1,6 +1,6 @@
 import type { SubmitWarning } from "../src/submit-review";
 import { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../src/rpc-contract";
 import type { ReviewItem } from "../lib/review-state";
@@ -219,7 +219,7 @@ function useDraftState({ targetKey, activeChapterId, activeFiles, files = active
     void load();
     return () => { mounted.current = false; };
   }, [load]);
-  // The review assistant, `bb review`, or another window changed the draft while it's open.
+  // The review assistant, `alia review`, or another window changed the draft while it's open.
   const refresh = useCallback(() => {
     void enqueue(() => rpc.call("getDraft", { targetKey })).then((result) => apply(result as { draft: Draft })).catch(() => {});
   }, [enqueue, rpc, targetKey, apply]);
@@ -789,12 +789,12 @@ function useDraftState({ targetKey, activeChapterId, activeFiles, files = active
     change: changeBody, save: () => { void saveSummary(body.trim()); }, askAgent: () => { void askAgent(); }, cancel: () => { closeComposer(); if (asking) focusReply(SUMMARY_AT, false); else focusSummary(); },
   } : null;
   // A folder's review in a GitHub repo becomes its PR's once the branch has one; a checkout's never does.
-  const hint = isLocal ? review?.feature?.repo ? "Nothing goes to GitHub yet. Once it has a PR, this review becomes the PR’s." : "Local review. Comments and notes stay in this BB installation."
+  const hint = isLocal ? review?.feature?.repo ? "Nothing goes to GitHub yet. Once it has a PR, this review becomes the PR’s." : "Local review. Comments and notes stay in this VesnALIA installation."
     : writing ? asking ? "Send or cancel your message to the agent before submitting." : onSummary ? "Save or cancel the summary before submitting." : "Add the comment you’re writing to the draft before submitting."
     : rebuilding ? "The guide is rebuilding for new commits. Submit when it’s ready."
     : staleComments.length ? `The diff changed after these comments were drafted: ${staleComments.map((c) => `${c.file}:${c.line}`).join(", ")}. Edit or remove ${staleComments.length === 1 ? "it" : "them"}, or submit anyway to move ${staleComments.length === 1 ? "it" : "them"} into the summary.`
     : needsSummary ? "Requesting changes needs a summary: say what has to change."
-    : "Drafts stay in BB until you submit.";
+    : "Drafts stay in VesnALIA until you submit.";
   const suggested = draft.suggestedVerdict;
   const changes = summaryChanges(draft);
   // A longer hint grows the footer over the end of the draft: keep the box you're typing in above it, its buttons

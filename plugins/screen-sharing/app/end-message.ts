@@ -21,10 +21,10 @@ function sentence(text: string): string {
   return /[.!?]$/.test(capital) ? capital : `${capital}.`;
 }
 
-export const CLOSED_BY_USER_MESSAGE = "Closed from bb with Close all.";
+export const CLOSED_BY_USER_MESSAGE = "Closed from VesnALIA with Close all.";
 
-/** The relay stopped answering with its socket still open (liveness.ts): bb restarting, or the network gone. */
-export const LOST_MESSAGE = `Lost the connection to bb: nothing came back for ${LOST_AFTER_MS / 1000} seconds. Connect again once bb is reachable.`;
+/** The relay stopped answering with its socket still open (liveness.ts): VesnALIA restarting, or the network gone. */
+export const LOST_MESSAGE = `Lost the connection to VesnALIA: nothing came back for ${LOST_AFTER_MS / 1000} seconds. Connect again once VesnALIA is reachable.`;
 
 export function endMessage(end: SessionEnd): string {
   if (end.securityFailure !== null) return `Sign-in failed: ${sentence(end.securityFailure)}`;
@@ -32,16 +32,16 @@ export function endMessage(end: SessionEnd): string {
   if (close === null) return "Disconnected.";
   switch (close.code) {
     case CloseCode.idle:
-      return `Closed after ${SESSION_LIMITS.idleMinutes} minutes with nothing passing between bb and the Mac.`;
+      return `Closed after ${SESSION_LIMITS.idleMinutes} minutes with nothing passing between VesnALIA and the Mac.`;
     case CloseCode.maxAge:
       return `Closed after ${SESSION_LIMITS.maxHours} hours, the longest a session lasts.`;
     case CloseCode.closedByUser:
       return CLOSED_BY_USER_MESSAGE;
     case CloseCode.stopping:
-    case CloseCode.bbPluginReloaded:
+    case CloseCode.aliaPluginReloaded:
       return "Closed because the Screen Sharing plugin stopped or reloaded.";
     case CloseCode.policy:
-      return `bb refused the session${close.reason === "" ? "" : ` (${close.reason})`}. Try again.`;
+      return `alia refused the session${close.reason === "" ? "" : ` (${close.reason})`}. Try again.`;
     case CloseCode.failed:
       return close.reason === "" ? "The relay failed." : sentence(close.reason);
     case CloseCode.normal:

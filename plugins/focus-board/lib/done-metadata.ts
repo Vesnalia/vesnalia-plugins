@@ -3,8 +3,8 @@
 // Done = per-thread plugin metadata in the board's own namespace: key
 // "done" → { doneAt: ISO-8601 string, keep?: boolean }. Absent key = not
 // done. These helpers are pure — no host, no SDK — so the RPC layer and
-// tests can drive them without a bb host.
-import type { JsonValue } from "@get-bb/plugin-sdk";
+// tests can drive them without a VesnALIA host.
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 
 /** The board's Done key inside its thread plugin-metadata namespace. */
 export const DONE_METADATA_KEY = "done";

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import packageInfo from "./package.json" with { type: "json" };
 export const updateSchema = z.object({
   outcome: z.enum(["update-available", "current", "incompatible", "pinned", "unavailable"]),
@@ -12,7 +12,7 @@ export const updateRpc = {
   setupApplyUpdate: { input: z.object({ candidateVersion: z.string().min(1).max(512) }).strict(),
     output: z.object({ outcome: z.enum(["updated", "current", "rolled-back"]), version: z.string().nullable() }) },
 };
-export function createUpdates(bb: BbPluginApi, withUpdate: <T>(run: () => Promise<T>) => Promise<T>) {
+export function createUpdates(alia: AliaPluginApi, withUpdate: <T>(run: () => Promise<T>) => Promise<T>) {
   let cache: UpdateStatus | null = null;
   let checking: Promise<UpdateStatus> | null = null;
   let applying = false;
@@ -21,12 +21,12 @@ export function createUpdates(bb: BbPluginApi, withUpdate: <T>(run: () => Promis
     if (!force && cache && Date.now() - cache.checkedAt < 15 * 60_000) return cache;
     checking = (async () => {
       try {
-        const entry = (await bb.sdk.plugins.checkUpdates({ pluginId: bb.pluginId })).find(e => e.id === bb.pluginId);
+        const entry = (await alia.sdk.plugins.checkUpdates({ pluginId: alia.pluginId })).find(e => e.id === alia.pluginId);
         if (!entry) throw new Error("missing result");
         const detail = {
-          "update-available": "A compatible release is ready. Your preferences and Telegram connection stay in BB when you update.",
+          "update-available": "A compatible release is ready. Your preferences and Telegram connection stay in VesnALIA when you update.",
           current: "You’re on the latest compatible release.",
-          incompatible: "A newer release requires a newer BB or Node version. Update your BB host, then check again.",
+          incompatible: "A newer release requires a newer VesnALIA or Node version. Update your VesnALIA host, then check again.",
           pinned: "This installation is pinned or local. A marketplace or Git version-range installation can follow compatible releases.",
           unavailable: "Couldn’t resolve updates for this installation. Try checking again.",
         }[entry.outcome];
@@ -34,7 +34,7 @@ export function createUpdates(bb: BbPluginApi, withUpdate: <T>(run: () => Promis
           latestVersion: entry.candidate?.display ?? entry.blocked?.version ?? null,
           candidateVersion: entry.candidate?.version ?? null, detail, checkedAt: Date.now() };
         return cache;
-      } catch { cache = null; throw new Error("Couldn’t check for updates. Check the BB host’s connection and try again."); }
+      } catch { cache = null; throw new Error("Couldn’t check for updates. Check the VesnALIA host’s connection and try again."); }
       finally { checking = null; }
     })();
     return checking;
@@ -51,8 +51,8 @@ export function createUpdates(bb: BbPluginApi, withUpdate: <T>(run: () => Promis
           throw new Error("The available update changed or is blocked. Check again before updating.");
         }
         let result;
-        try { result = await bb.sdk.plugins.applyUpdate({ pluginId: bb.pluginId }); }
-        catch { throw new Error("BB couldn’t complete the update. Check for updates before trying again."); }
+        try { result = await alia.sdk.plugins.applyUpdate({ pluginId: alia.pluginId }); }
+        catch { throw new Error("VesnALIA couldn’t complete the update. Check for updates before trying again."); }
         cache = null;
         return { outcome: result.outcome, version: result.to?.display ?? null };
       }); } finally { applying = false; }

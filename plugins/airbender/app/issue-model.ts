@@ -6,7 +6,7 @@
 // pickers, the wording of links, and the filter shape.
 //
 // Why: this is the logic most likely to be subtly wrong, and none of it needs
-// React or BB. Kept apart from the components so it can be loaded and tested
+// React or VesnALIA. Kept apart from the components so it can be loaded and tested
 // with plain node (see app/issue-model.test.ts).
 //
 // Design notes:
@@ -14,7 +14,7 @@
 //   uses the reader's locale.
 //
 // Gotchas:
-// - No React, no BB SDK and no "@/..." imports in this file, and relative
+// - No React, no VesnALIA SDK and no "@/..." imports in this file, and relative
 //   imports carry their .ts extension: node runs it directly in the tests.
 // - Types from the backend are imported as types only.
 
@@ -58,7 +58,7 @@ export function byUrgency(left: Issue, right: Issue): number {
  *
  * "Blocked" wins over the issue's own status, because an issue that waits on
  * unfinished work cannot be picked up whatever its status says; except
- * Someday, which the owner chose (bead-bb-26g): a set-aside issue stays in
+ * Someday, which the owner chose (bead-alia-26g): a set-aside issue stays in
  * Someday whatever it waits on. "Other" catches any custom status.
  */
 export function toSections(issues: Issue[]): Section[] {
@@ -123,7 +123,7 @@ export function formatWhen(timestamp: string): string {
 
 /**
  * When an issue was created and last changed, as the opened issue shows it
- * (bead-bb-tj4): "Created 3 Oct 2026, 20:31 · Changed 5 Oct 2026, 09:02".
+ * (bead-alia-tj4): "Created 3 Oct 2026, 20:31 · Changed 5 Oct 2026, 09:02".
  *
  * "Changed" is left out when it reads the same as "Created" (an issue never
  * changed since), and each part is left out when the tracker gave no time.
@@ -145,7 +145,7 @@ export function issueTimes(issue: {
 }
 
 /**
- * A short date for a closed-up card (bead-bb-tj4, the user: "a short date
+ * A short date for a closed-up card (bead-alia-tj4, the user: "a short date
  * like 10/15/26"): the day the issue was last changed, or created when it
  * has no changed time, in the reader's own numeric format.
  *
@@ -422,7 +422,7 @@ export function descendantIdsOf(
  * Why epic mode may not be entered, or may not stay, on an issue; null when
  * it may.
  *
- * The user's rule (bead-bb-ha9): "Only issue from the epic can be current
+ * The user's rule (bead-alia-ha9): "Only issue from the epic can be current
  * ... if the current issue selected is not from the epic, then you cannot
  * enter epic mode." The epic itself counts, and so does no current issue at
  * all. "From the epic" is at any depth.
@@ -460,7 +460,7 @@ export interface FocusMemory {
 
 /**
  * What epic mode remembers after the user enters an epic, leaves epic mode,
- * or dismisses the offer to go back (bead-bb-fmg: "return to epic mode
+ * or dismisses the offer to go back (bead-alia-fmg: "return to epic mode
  * button - when you exited temporarily and want to go back without
  * scanning all epics").
  *

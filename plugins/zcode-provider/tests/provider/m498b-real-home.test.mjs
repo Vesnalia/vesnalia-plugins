@@ -3,22 +3,22 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync, realpathSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
-import { sanitizeInheritedChildProcessEnv } from '@get-bb/plugin-sdk/provider-bridge';
+import { sanitizeInheritedChildProcessEnv } from '@vesnalia/plugin-sdk/provider-bridge';
 import { api, plugin } from './helpers.mjs';
 
 const options = { permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null };
 test('O138 launch inherits the same ordinary environment as native Codex without a storage override', () => {
   const parent = { HOME: '/user', PATH: '/user/bin', USER: 'fixture', SHELL: '/bin/zsh', CUSTOM_CONTEXT: 'fixture',
-    BB_PROVIDER_BRIDGE_RECORD_DIR: '/internal', NODE_ENV: 'development', ZCODE_STORAGE_DIR: '/obsolete' };
+    ALIA_PROVIDER_BRIDGE_RECORD_DIR: '/internal', NODE_ENV: 'development', ZCODE_STORAGE_DIR: '/obsolete' };
   const expected = sanitizeInheritedChildProcessEnv({ env: parent }); delete expected.ZCODE_STORAGE_DIR;
   assert.deepEqual(api.childEnvironment(parent, {}), expected);
-  const actual = api.childEnvironment(parent, { ZCODE_SESSION_DB_PATH: '/bb/db', ZCODE_DATA_BASE_DIR: '/bb/login', ZCODE_LOG_DIR: '/bb/log' });
+  const actual = api.childEnvironment(parent, { ZCODE_SESSION_DB_PATH: '/alia/db', ZCODE_DATA_BASE_DIR: '/alia/login', ZCODE_LOG_DIR: '/alia/log' });
   assert.equal(actual.HOME, '/user'); assert.equal(actual.CUSTOM_CONTEXT, 'fixture');
-  assert.equal(actual.ZCODE_STORAGE_DIR, undefined); assert.equal(actual.ZCODE_SESSION_DB_PATH, '/bb/db');
+  assert.equal(actual.ZCODE_STORAGE_DIR, undefined); assert.equal(actual.ZCODE_SESSION_DB_PATH, '/alia/db');
 });
 
 test('O138 preparation leaves user configuration and instructions unchanged; simple session binding and DB paths remain stable', async () => {
-  const root = mkdtempSync(join(tmpdir(), 'm498b-')), home = join(root, 'user'), data = join(root, 'bb'), cwd = join(root, 'project');
+  const root = mkdtempSync(join(tmpdir(), 'm498b-')), home = join(root, 'user'), data = join(root, 'alia'), cwd = join(root, 'project');
   const config = join(home, '.zcode/cli/config.json'), instructions = join(home, '.zcode/AGENTS.md'), desktop = join(home, '.zcode/v2/settings.json');
   for (const file of [config, instructions, desktop]) { mkdirSync(dirname(file), { recursive: true }); writeFileSync(file, 'USER_SENTINEL'); }
   mkdirSync(cwd); const builtin = join(root, 'builtin.json'); writeFileSync(builtin, '{}');
@@ -26,15 +26,15 @@ test('O138 preparation leaves user configuration and instructions unchanged; sim
   const rt = api.createNativeServices(data, { auth, personalHome: home, discovery: () => ({ installed: true, supported: true, version: 'fixture', sha256: 'fixture' }),
     paths: { executable: process.execPath, script: resolve('tests/provider/fake-v4.mjs'), builtin }, configure: async () => {} });
   try {
-    const legacy = api.sessionDataDir(data, cwd, 'legacy'), binding = join(legacy, 'bb-binding.json');
+    const legacy = api.sessionDataDir(data, cwd, 'legacy'), binding = join(legacy, 'alia-binding.json');
     mkdirSync(legacy, { recursive: true }); writeFileSync(binding, JSON.stringify({ threadId: 'legacy', cwd: realpathSync(cwd), nativeSessionId: 'native-legacy' }));
     const db = join(legacy, 'db.sqlite'); mkdirSync(dirname(db), { recursive: true }); writeFileSync(db, 'OLD_HISTORY');
-    // bb 0.49.0's resolved thread environment, observed on the own live stand.
-    const envVars = { BB_THREAD_ID: 'legacy', BB_PROJECT_ID: 'proj_fixture', BB_ENVIRONMENT_ID: 'env_fixture',
-      BB_THREAD_STORAGE: '/bb/thread-storage', BB_CLI: '/bb/bin/bb', BB_SERVER_URL: 'http://127.0.0.1:12345',
-      BB_HOST_DAEMON_PORT: '12346', ZCODE_STORAGE_DIR: '/obsolete' };
-    const setup = await rt.services.prepare(cwd, api.executionOptions({ ...options, instructions: 'BB_PRIVATE', envVars }), { threadId: 'legacy', providerThreadId: 'native-legacy' });
-    for (const [key, value] of Object.entries(envVars).filter(([key]) => key.startsWith('BB_')))
+    // VesnALIA 0.49.0's resolved thread environment, observed on the own live stand.
+    const envVars = { ALIA_THREAD_ID: 'legacy', ALIA_PROJECT_ID: 'proj_fixture', ALIA_ENVIRONMENT_ID: 'env_fixture',
+      ALIA_THREAD_STORAGE: '/alia/thread-storage', ALIA_CLI: '/alia/bin/alia', ALIA_SERVER_URL: 'http://127.0.0.1:12345',
+      ALIA_HOST_DAEMON_PORT: '12346', ZCODE_STORAGE_DIR: '/obsolete' };
+    const setup = await rt.services.prepare(cwd, api.executionOptions({ ...options, instructions: 'ALIA_PRIVATE', envVars }), { threadId: 'legacy', providerThreadId: 'native-legacy' });
+    for (const [key, value] of Object.entries(envVars).filter(([key]) => key.startsWith('ALIA_')))
       assert.equal(setup.launch.env[key], value, `explicit thread environment ${key}`);
     assert.equal(setup.launch.env.HOME, home); assert.equal(setup.launch.env.ZCODE_SESSION_DB_PATH, db);
     assert.equal(setup.launch.env.ZCODE_DATA_BASE_DIR, undefined, 'MCP OAuth must use the shared Desktop credential store');
@@ -42,7 +42,7 @@ test('O138 preparation leaves user configuration and instructions unchanged; sim
     for (const file of [config, instructions, desktop]) assert.equal(readFileSync(file, 'utf8'), 'USER_SENTINEL');
     assert.equal(existsSync(join(legacy, '.zcode/AGENTS.md')), false);
     assert.equal(setup.launch.env.ZCODE_STORAGE_DIR, undefined);
-    assert.equal(setup.backgroundTaskStore, join(legacy, 'bb-background-tasks.json'));
+    assert.equal(setup.backgroundTaskStore, join(legacy, 'alia-background-tasks.json'));
     assert.equal(setup.launch.args.includes('--require'), false);
   } finally { await rt.close(); rmSync(root, { recursive: true }); }
 });

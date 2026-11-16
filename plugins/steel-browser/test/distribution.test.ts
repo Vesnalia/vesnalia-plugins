@@ -1,48 +1,48 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 
-test("declares an independent BB app, server, CLI skill, and pinned SDK", async () => {
+test("declares an independent VesnALIA app, server, CLI skill, and pinned SDK", async () => {
   const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
-  assert.equal(packageJson.name, "bb-plugin-steel-browser");
-  assert.equal(packageJson.bb.name, "BB Surf");
-  assert.equal(packageJson.bb.server, "./server.ts");
-  assert.equal(packageJson.bb.app, "./app.tsx");
-  assert.deepEqual(packageJson.bb.skills, ["./skills/steel-browser"]);
-  assert.equal(packageJson.devDependencies["@get-bb/plugin-sdk"], "0.4.21");
-  assert.equal(packageJson.devDependencies["bb-app"], "0.40.0");
-  assert.match(packageJson.scripts.build, /^env -u BB_CLI /u);
+  assert.equal(packageJson.name, "alia-plugin-steel-browser");
+  assert.equal(packageJson.alia.name, "VesnALIA Surf");
+  assert.equal(packageJson.alia.server, "./server.ts");
+  assert.equal(packageJson.alia.app, "./app.tsx");
+  assert.deepEqual(packageJson.alia.skills, ["./skills/steel-browser"]);
+  assert.equal(packageJson.devDependencies["@vesnalia/plugin-sdk"], "0.4.21");
+  assert.equal(packageJson.devDependencies["alia-app"], "0.40.0");
+  assert.match(packageJson.scripts.build, /^env -u ALIA_CLI /u);
   assert.ok(packageJson.files.includes("jev-runtime.ts"));
 });
 
 test("registers the public surf CLI contract", async () => {
   const host = createFakePluginHost({ pluginId: "steel-browser" });
   try {
-    plugin(host.bb);
+    plugin(host.alia);
     const cli = host.harness.inspection.registrations.cli;
     assert.equal(cli?.name, "surf");
     assert.deepEqual(cli?.commands.map(({ name, usage }) => ({ name, usage })), [
-      { name: "status", usage: "bb surf status" },
-      { name: "sessions", usage: "bb surf sessions" },
-      { name: "create", usage: "bb surf create" },
-      { name: "release", usage: "bb surf release <session-id>" },
-      { name: "project", usage: "bb surf project" },
-      { name: "bind", usage: "bb surf bind <api-url> <cdp-url> <viewer-origin>" },
-      { name: "engine", usage: "bb surf engine <playwright|jev|auto> <fallback-on|fallback-off>" },
-      { name: "run", usage: "bb surf run <url> [goal] [--allow-paid]" },
-      { name: "tabs", usage: "bb surf tabs" },
-      { name: "inspect", usage: "bb surf inspect" },
-      { name: "click", usage: "bb surf click <role> <exact-name>" },
-      { name: "fill", usage: "bb surf fill <role> <exact-name> <value>" },
-      { name: "press", usage: "bb surf press <key>" },
-      { name: "screenshot", usage: "bb surf screenshot" },
+      { name: "status", usage: "alia surf status" },
+      { name: "sessions", usage: "alia surf sessions" },
+      { name: "create", usage: "alia surf create" },
+      { name: "release", usage: "alia surf release <session-id>" },
+      { name: "project", usage: "alia surf project" },
+      { name: "bind", usage: "alia surf bind <api-url> <cdp-url> <viewer-origin>" },
+      { name: "engine", usage: "alia surf engine <playwright|jev|auto> <fallback-on|fallback-off>" },
+      { name: "run", usage: "alia surf run <url> [goal] [--allow-paid]" },
+      { name: "tabs", usage: "alia surf tabs" },
+      { name: "inspect", usage: "alia surf inspect" },
+      { name: "click", usage: "alia surf click <role> <exact-name>" },
+      { name: "fill", usage: "alia surf fill <role> <exact-name> <value>" },
+      { name: "press", usage: "alia surf press <key>" },
+      { name: "screenshot", usage: "alia surf screenshot" },
     ]);
     const help = await host.harness.runCli(["--help"]);
     assert.equal(help.exitCode, 0);
-    assert.match(help.stdout ?? "", /^bb surf status$/mu);
-    assert.match(help.stdout ?? "", /^bb surf screenshot$/mu);
+    assert.match(help.stdout ?? "", /^alia surf status$/mu);
+    assert.match(help.stdout ?? "", /^alia surf screenshot$/mu);
   } finally {
     await host.harness.dispose();
   }
@@ -50,8 +50,8 @@ test("registers the public surf CLI contract", async () => {
 
 test("contributes Steel discovery instructions to new agent sessions", async () => {
   const server = await readFile(new URL("../server.ts", import.meta.url), "utf8");
-  assert.match(server, /bb\.agents\.contributeInstructions/u);
-  assert.match(server, /first run `bb surf project`/u);
+  assert.match(server, /alia\.agents\.contributeInstructions/u);
+  assert.match(server, /first run `alia surf project`/u);
   assert.match(server, /Never claim Steel is unavailable/u);
   assert.match(server, /emit ::steel-browser\{\}/u);
   assert.match(server,
@@ -90,5 +90,5 @@ test("ships the required operational and responsive UI states", async () => {
   assert.match(skill, /current thread is the only browser surface/u);
   assert.match(skill,
     /whenever you ask the\s+user to enter credentials, sign in, complete MFA, approve consent, or perform\s+another manual browser action,[\s\S]+line in that same assistant message:[\s\S]+::steel-browser\{\}[\s\S]+Never tell the user to use an embedded browser "above" unless this response\s+contains the directive\. Repeat the directive for later sign-in, MFA, consent,\s+or manual-action handoffs; an earlier viewer message is not sufficient\./u);
-  assert.match(skill, /bb surf release/u);
+  assert.match(skill, /alia surf release/u);
 });

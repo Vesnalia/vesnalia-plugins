@@ -1,12 +1,12 @@
 # Docker in WSL on a Windows PC
 
-This makes a Windows PC a Docker host for bb-box's
+This makes a Windows PC a Docker host for alia-box's
 [Docker backend](../docker/README.md). Docker Engine runs in one WSL 2
-distribution, `bbdocker`, and listens on its unix socket only. When BB runs
-on this PC, the backend's host is `wsl://bbdocker`. bb-box reaches the
+distribution, `bbdocker`, and listens on its unix socket only. When VesnALIA runs
+on this PC, the backend's host is `wsl://bbdocker`. alia-box reaches the
 daemon with `wsl.exe` and `docker system dial-stdio`, inside the
 distribution, so the bytes never cross WSL's localhost forwarder. The
-distribution also runs SSH on port 2222, for a BB server on another machine.
+distribution also runs SSH on port 2222, for a VesnALIA server on another machine.
 
 It works on every edition of Windows 11, Home too, needs no Docker Desktop,
 and runs before anyone signs in. A box is ready 2 to 4 s after it is asked
@@ -28,7 +28,7 @@ How it works:
   timeout, so it keeps running with nobody using it. It also turns off WSLg,
   WSL's Linux GUI support, whose compositor crashes with nobody signed in.
   Mirrored networking is how SSH from another machine reaches the
-  distribution. It is not how bb-box on this PC reaches Docker.
+  distribution. It is not how alia-box on this PC reaches Docker.
 - dockerd stays on its unix socket. Nothing listens on `127.0.0.1:2375`.
   WSL's localhost forwarder, which a program on Windows uses to reach a TCP
   port inside the distribution, drops an attached stream once the client
@@ -38,7 +38,7 @@ How it works:
   and the daemon's reply comes back on the process's stdout.
 - A rule in the Hyper-V firewall, which filters WSL's traffic, lets port 2222
   in. The Windows firewall can stay on.
-- A scheduled task, "bb-box WSL Docker host", starts the distribution when
+- A scheduled task, "alia-box WSL Docker host", starts the distribution when
   Windows starts, before anyone signs in, and keeps it running. It brings the
   distribution back within a minute after `wsl --shutdown`.
 
@@ -58,20 +58,20 @@ How it works:
   watch the free space on the PC's drive instead.
 - The PC must not sleep: in Settings, under Power, set sleep on mains power to
   Never, or run `powercfg /change standby-timeout-ac 0`.
-- The machine that runs BB must reach the PC on TCP port 2222.
+- The machine that runs VesnALIA must reach the PC on TCP port 2222.
 
 ## Steps
 
 ### 1. Set up the PC
 
-1. On the machine that runs BB, as the user BB runs as, find its public SSH
+1. On the machine that runs VesnALIA, as the user VesnALIA runs as, find its public SSH
    key, such as `~/.ssh/id_ed25519.pub`. Make one with `ssh-keygen -t ed25519`
    if it has none.
 2. Copy this directory to the PC.
 3. Open PowerShell 7 as an administrator in it, and run:
 
    ```powershell
-   .\setup.ps1 -Key "ssh-ed25519 AAAA... bb@server"
+   .\setup.ps1 -Key "ssh-ed25519 AAAA... alia@server"
    ```
 
 4. If it says to restart Windows, restart, then run it again. The first run
@@ -93,13 +93,13 @@ prints the host to use and the PC's addresses. Its options:
 ### 2. Build the images
 
 On this PC, run the build inside the distribution, on dockerd's unix socket.
-`cd` to a checkout of bb-box. `/mnt/c/...` is a path on the PC's `C:` drive:
+`cd` to a checkout of alia-box. `/mnt/c/...` is a path on the PC's `C:` drive:
 
 ```powershell
-wsl.exe -d bbdocker -u box -e bash -lc "cd /mnt/c/src/bb-box && setup/docker/build.sh"
+wsl.exe -d bbdocker -u box -e bash -lc "cd /mnt/c/src/alia-box && setup/docker/build.sh"
 ```
 
-From a BB server on another machine, log in once to accept the PC's host key,
+From a VesnALIA server on another machine, log in once to accept the PC's host key,
 then build:
 
 ```sh
@@ -107,23 +107,23 @@ ssh -p 2222 box@<pc> true
 DOCKER_HOST=ssh://box@<pc>:2222 setup/docker/build.sh
 ```
 
-### 3. Configure bb-box
+### 3. Configure alia-box
 
 Set up the Docker backend as its [guide](../docker/README.md) says.
 
-When BB runs on this PC, set `host` to `wsl://bbdocker`. That is the
+When VesnALIA runs on this PC, set `host` to `wsl://bbdocker`. That is the
 distribution's name. `wsl://box@bbdocker` is the same with the Linux user
-named. bb-box runs `wsl.exe -d bbdocker -u box -e docker`, and dial-stdio
+named. alia-box runs `wsl.exe -d bbdocker -u box -e docker`, and dial-stdio
 for the relay, against the unix socket. Do not set `tcp://127.0.0.1:2375`.
 
-When BB's server is another machine and this PC is a BB machine, leave
-`host` as `bb:<this machine's ID>`. Set `machine-docker-host` to
-`wsl://bbdocker`. bb-box sends that when the machine's relay opens, and the
+When VesnALIA's server is another machine and this PC is a VesnALIA machine, leave
+`host` as `alia:<this machine's ID>`. Set `machine-docker-host` to
+`wsl://bbdocker`. alia-box sends that when the machine's relay opens, and the
 Windows daemon dials `wsl.exe` and `docker system dial-stdio`. It does not
 read the machine's `DOCKER_HOST` or docker context, which stay as they are.
 Do not point those at `wsl://`: `docker.exe` does not understand it.
 
-When this PC is not a BB machine, set `host` to `ssh://box@<pc>:2222`. Use
+When this PC is not a VesnALIA machine, set `host` to `ssh://box@<pc>:2222`. Use
 the PC's name or a fixed address: a DHCP address can change.
 
 Set Memory kept free (`reserve-memory-mib`) to 1024. WSL's memory limit
@@ -134,7 +134,7 @@ refuses a desktop box.
 
 ```sh
 wsl.exe -d bbdocker -u box -e docker info
-bb box doctor
+alia box doctor
 ```
 
 From another machine, `DOCKER_HOST=ssh://box@<pc>:2222 docker info` is the
@@ -154,14 +154,14 @@ are not tested: use `linux-desktop-cpu`.
 
 ## Remove
 
-1. In BB, release the backend's boxes, and turn the Docker backend off or
+1. In VesnALIA, release the backend's boxes, and turn the Docker backend off or
    remove it.
 2. On the PC, in PowerShell as an administrator, signed in as the user who
    set it up:
 
    ```powershell
-   Unregister-ScheduledTask -TaskName "bb-box WSL Docker host" -Confirm:$false
-   Get-NetFirewallHyperVRule | Where-Object DisplayName -like "bb-box: SSH to *" | Remove-NetFirewallHyperVRule
+   Unregister-ScheduledTask -TaskName "alia-box WSL Docker host" -Confirm:$false
+   Get-NetFirewallHyperVRule | Where-Object DisplayName -like "alia-box: SSH to *" | Remove-NetFirewallHyperVRule
    wsl --unregister bbdocker
    ```
 
@@ -172,19 +172,19 @@ are not tested: use `linux-desktop-cpu`.
 ## When it goes wrong
 
 - **`docker run` or `docker exec` from Windows prints nothing and exits 0**:
-  that is WSL's localhost forwarder. When BB runs on this PC, the host is
-  `wsl://bbdocker`, not `tcp://127.0.0.1:2375`. When BB's server is another
-  machine, `host` stays `bb:<this machine's ID>` and `machine-docker-host`
-  is `wsl://bbdocker`. dockerd stays on its unix socket. bb-box's doctor
+  that is WSL's localhost forwarder. When VesnALIA runs on this PC, the host is
+  `wsl://bbdocker`, not `tcp://127.0.0.1:2375`. When VesnALIA's server is another
+  machine, `host` stays `alia:<this machine's ID>` and `machine-docker-host`
+  is `wsl://bbdocker`. dockerd stays on its unix socket. alia-box's doctor
   fails a Windows machine whose Docker is at `tcp://127.0.0.1` when an
   attached command's output does not come back, and a box command whose
   stream ends without an exit status fails instead of reporting exit 0.
 - **`Connection refused` on port 2222**: check that the distribution runs,
   with `wsl --list --verbose` as the user who set it up, and that the
-  scheduled task runs: `Get-ScheduledTask "bb-box WSL Docker host"`.
+  scheduled task runs: `Get-ScheduledTask "alia-box WSL Docker host"`.
 - **Connection timed out**: check the Hyper-V firewall rule, with
-  `Get-NetFirewallHyperVRule | Where-Object DisplayName -like "bb-box: SSH to *"`,
-  and any firewall between BB's machine and the PC.
+  `Get-NetFirewallHyperVRule | Where-Object DisplayName -like "alia-box: SSH to *"`,
+  and any firewall between VesnALIA's machine and the PC.
 - **`wsl --install` fails over SSH, saying WSL is not installed**:
   `setup.ps1` installs WSL from its GitHub release instead.
 - **A message at WSL's first start that nested virtualisation is not

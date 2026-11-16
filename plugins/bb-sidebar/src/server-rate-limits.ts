@@ -5,12 +5,12 @@ import { runThreadTasks } from "./thread-tasks";
 import { portScanContract } from "./port-scan-contract";
 import type { createServerLifecycle } from "./server-lifecycle";
 
-export function createServerRateLimits({ bb }: ServerContext, lifecycle: ReturnType<typeof createServerLifecycle>) {
-  const host = bb.hosts.experimental_client({ contract: portScanContract });
+export function createServerRateLimits({ alia }: ServerContext, lifecycle: ReturnType<typeof createServerLifecycle>) {
+  const host = alia.hosts.experimental_client({ contract: portScanContract });
   const controller = new AbortController();
-  bb.onDispose(() => controller.abort());
+  alia.onDispose(() => controller.abort());
   const locks = new Map<string, Promise<unknown>>();
-  const changed = () => bb.realtime.publish(RATE_LIMITS_CHANNEL, {});
+  const changed = () => alia.realtime.publish(RATE_LIMITS_CHANNEL, {});
   // Thread events arrive in bursts and every open sidebar refetches on each ping, so publish the first event at
   // once and fold the rest of each one-second window into a single trailing ping.
   let burst: ReturnType<typeof setTimeout> | undefined;
@@ -35,16 +35,16 @@ export function createServerRateLimits({ bb }: ServerContext, lifecycle: ReturnT
     changed();
     openBurst();
   };
-  bb.onDispose(() => clearTimeout(burst));
+  alia.onDispose(() => clearTimeout(burst));
   for (const event of ["thread.failed", "thread.active", "thread.idle", "thread.deleted"] as const) {
-    bb.events.on(event, threadChanged);
+    alia.events.on(event, threadChanged);
   }
 
   async function scheduledContinue(threadId: string) {
-    const queue = await bb.sdk.threads.queuedMessages.list({ threadId });
+    const queue = await alia.sdk.threads.queuedMessages.list({ threadId });
     return queue.find(
       (entry) =>
-        entry.originPluginId === bb.pluginId &&
+        entry.originPluginId === alia.pluginId &&
         entry.sendAt !== null &&
         entry.content.length === 1 &&
         entry.content[0]?.type === "text" &&
@@ -53,12 +53,12 @@ export function createServerRateLimits({ bb }: ServerContext, lifecycle: ReturnT
   }
 
   async function read(threadId: string): Promise<ThreadLimitState | null> {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (thread.archivedAt !== null || thread.deletedAt !== null) return null;
     const scheduled = await scheduledContinue(threadId);
     let limit: ThreadLimitState | null = null;
     if (thread.status === "error" || scheduled) {
-      const events = await bb.sdk.threads.events.list({
+      const events = await alia.sdk.threads.events.list({
         threadId,
         order: "desc",
         limit: "100",
@@ -67,7 +67,7 @@ export function createServerRateLimits({ bb }: ServerContext, lifecycle: ReturnT
       limit = rateLimitDetails(events);
       if (limit?.resetsAt === null && /try again at/i.test(limit.message) && thread.environmentId) {
         try {
-          const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+          const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
           const { timeZone } = await host.call(
             "timeZone",
             {},
@@ -113,8 +113,8 @@ export function createServerRateLimits({ bb }: ServerContext, lifecycle: ReturnT
     if (sendAt <= Date.now() + 1000) return;
     await lifecycle.withPinParentChange(threadId, async () => {
       if (lifecycle.readOne(threadId)?.snoozedUntil === sendAt) return;
-      const thread = await bb.sdk.threads.get({ threadId });
-      if (thread.pinnedAt !== null) await bb.sdk.threads.unpin({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
+      if (thread.pinnedAt !== null) await alia.sdk.threads.unpin({ threadId });
       lifecycle.write({
         threadId,
         settledAt: null,
@@ -155,14 +155,14 @@ export function createServerRateLimits({ bb }: ServerContext, lifecycle: ReturnT
         if (at === null) throw new Error("Choose a time because the provider did not report its reset time");
         if (at <= now) throw new Error("Choose a future time");
         if (limit.resetsAt !== null && at < limit.resetsAt) throw new Error("Choose a time after the limit resets");
-        const result = await bb.sdk.threads.send({
+        const result = await alia.sdk.threads.send({
           threadId,
           input: [{ type: "text", text: "Continue", mentions: [] }],
           mode: "queue-if-active",
           sendAt: at,
-          originPluginId: bb.pluginId,
+          originPluginId: alia.pluginId,
         });
-        if (result.delivery !== "queued") throw new Error("BB did not queue the scheduled message");
+        if (result.delivery !== "queued") throw new Error("VesnALIA did not queue the scheduled message");
         try {
           await snoozeScheduled(threadId, at);
         } finally {
@@ -176,7 +176,7 @@ export function createServerRateLimits({ bb }: ServerContext, lifecycle: ReturnT
         const entry = await scheduledContinue(threadId);
         if (!entry || entry.id !== queuedMessageId) throw new Error("This scheduled Continue is no longer queued");
         if (entry.state === "claimed") throw new Error("The scheduled Continue is already being sent");
-        await bb.sdk.threads.queuedMessages.delete({ threadId, queuedMessageId });
+        await alia.sdk.threads.queuedMessages.delete({ threadId, queuedMessageId });
         await lifecycle.withPinParentChange(threadId, async () => {
           if (lifecycle.readOne(threadId)?.snoozedUntil === entry.sendAt) lifecycle.clear(threadId);
         });

@@ -13,13 +13,13 @@ import { RestoredNote, SaveBar, saveOnEnter, useDraft, type Draft } from "./sett
 import { INVALID_BORDER } from "./size-field.ts";
 
 const MODE_WORDS: Readonly<Record<TailnetMode, string>> = {
-  off: "No: BB is reached without one",
+  off: "No: VesnALIA is reached without one",
   oauth: "Yes, with a Tailscale OAuth client",
 };
 
 const SECRET_HELP: Readonly<Record<"clientId" | "clientSecret", string>> = {
   clientId: "From Tailscale's admin console, under Settings, Trust credentials, as the tailnet guide shows.",
-  clientSecret: "Tailscale shows it once, beside the client's ID. BB Box never shows it again, only whether it is set.",
+  clientSecret: "Tailscale shows it once, beside the client's ID. VesnALIA Box never shows it again, only whether it is set.",
 };
 
 const TAILNET_PATHS: readonly Path[] = (["mode", "tags", "clientId", "clientSecret"] as const).map(tailnetPath);
@@ -56,7 +56,7 @@ function ModeRow({ draft, state }: { draft: Draft; state: ConfigState }) {
       label="Join machines to the tailnet"
       description={
         <>
-          Cloud machines, such as Namespace's Macs and Hetzner's servers, need it when BB is on a Tailscale tailnet.
+          Cloud machines, such as Namespace's Macs and Hetzner's servers, need it when VesnALIA is on a Tailscale tailnet.
           {deletesCredentials ? <span className="mt-0.5 block text-warning-text">Saving No deletes the saved OAuth client ID and secret.</span> : null}
         </>
       }
@@ -160,7 +160,7 @@ export function NetworkOptions() {
   return (
     <div className="space-y-6">
       <RestoredNote draft={draft} />
-      <Group title="Tailnet" description="When BB is on a Tailscale tailnet, machines BB Box makes join it, each with a single-use key BB Box makes. These settings are saved together.">
+      <Group title="Tailnet" description="When VesnALIA is on a Tailscale tailnet, machines VesnALIA Box makes join it, each with a single-use key VesnALIA Box makes. These settings are saved together.">
         <Card>
           <Rows>
             <ModeRow draft={draft} state={draft.latest} />

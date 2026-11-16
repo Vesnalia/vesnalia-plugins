@@ -70,7 +70,7 @@ joins the scene while the main agent works. A child that is waiting on you
 shows an amber "!", one that failed wears a tiny rain cloud. Past four members
 (six stars) the rest show as "+3". The full scene only ever means the main
 agent is working. When it goes idle while helpers work on, Calm shows nothing
-and leaves it to bb's own child thread bar. It speaks up only when a helper
+and leaves it to VesnALIA's own child thread bar. It speaks up only when a helper
 needs you, with a half-height mini scene in the current scene's style. In the
 Pasture, a sheep waits at a closed gate under a small amber "!" with the dog
 sitting beside it, facing you. At sea, a small boat bobs with its lantern
@@ -80,7 +80,7 @@ three helpers show, then "+2". Beside it, small and quiet, the words: "1
 helper is waiting on you", "1 helper failed", or both combined. Tap a figure
 to open that helper's thread, or the words to open the first one waiting on
 you. A failed helper drops off once you have opened it, from the alert or
-anywhere else in bb, and stays gone after a reload or a bb restart. A thread
+anywhere else in VesnALIA, and stays gone after a reload or a VesnALIA restart. A thread
 with no children looks exactly as before.
 
 **Time and seasons.** The light follows your local clock: clear by day, dusky
@@ -108,7 +108,7 @@ label appears where it lands the joke. Switch them off under **Little gags**.
 
 The strip shows only on the thread you're viewing. Opening and closing take a
 quick 180ms height ease, so the prompt box glides instead of jumping. It
-follows bb's light and dark mode and your system's reduced-motion setting,
+follows VesnALIA's light and dark mode and your system's reduced-motion setting,
 where the strip opens and closes without easing and each moment becomes a
 still picture that still shows the state (no surprises, no hops). It runs at
 up to 30 frames a second and pauses while the tab or the strip is out of

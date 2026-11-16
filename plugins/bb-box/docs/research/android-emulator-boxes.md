@@ -1,7 +1,7 @@
 # Android emulator boxes
 
-How bb-box could give a thread an Android emulator as a box: its screen
-streamed into BB's panel inside a device frame, device controls beside it,
+How alia-box could give a thread an Android emulator as a box: its screen
+streamed into VesnALIA's panel inside a device frame, device controls beside it,
 control shared between a person and the agent, adb for the agent, and
 computer use on the device. Issue #161 asks for it.
 
@@ -21,7 +21,7 @@ Android emulator 37.2.12.0, platform-tools 37.0.1, and the Android 15
 
 1. **Stream:** read the emulator's own screen through its gRPC service
    (`streamScreenshot`), encode it to H.264 in the box, and speak 060's
-   protocol, as `bb-box-stream` does on macOS and Windows. It gives the
+   protocol, as `alia-box-stream` does on macOS and Windows. It gives the
    device's own pixels, needs no desktop and no app in the device, and is
    the quickest way measured: 58 ms from tap to an encoded frame in the
    box. scrcpy is the fallback, and the way for real devices later.
@@ -67,9 +67,9 @@ the raw results in [results](android-emulator-boxes/results/):
   path against the gRPC stream, and check what text arrives.
 
 Tap to frame is measured in the box: from the touch leaving the client to
-the frame decoded in the box. It leaves out BB's relay, the network and the
+the frame decoded in the box. It leaves out VesnALIA's relay, the network and the
 browser's decoding, which are the same as for any desktop's video: about
-25 ms at the median through BB's server
+25 ms at the median through VesnALIA's server
 ([060](../decisions/060-every-desktop-streams-as-video-through-one-viewer.md)).
 The decoder is given whole frames: an H.264 parser fed a byte stream holds
 each frame until the next begins, which on a still screen added 100 to
@@ -125,7 +125,7 @@ Notes on the table:
   closed. With the window open the gRPC stream got slower too: 65 ms and
   26 fps, as the window draws every frame as well.
 - **The emulator's WebRTC bridge** (`rtc_service_v2.proto`, and
-  `libandroid-webrtc.so` ships in the emulator) was not measured. BB's
+  `libandroid-webrtc.so` ships in the emulator) was not measured. VesnALIA's
   plugin routes carry only TCP, so WebRTC's media cannot reach the panel
   ([desktop streaming](desktop-streaming.md#what-bbs-plugin-api-allows)).
 - **First frames:** gRPC sends the current screen at once. scrcpy starts
@@ -135,10 +135,10 @@ Notes on the table:
   change, as for desktop resizes.
 
 **Recommendation:** the emulator's gRPC screen, encoded in the box by a
-small server of bb-box's own that speaks 060's subset, as `bb-box-stream`
+small server of alia-box's own that speaks 060's subset, as `alia-box-stream`
 does on macOS and Windows. It sends whole frames of the device's own
 pixels, only when they change, and needs nothing inside the device. On the
-box alone a tap takes 50 to 58 ms to reach an encoded frame; through BB,
+box alone a tap takes 50 to 58 ms to reach an encoded frame; through VesnALIA,
 expect about 80 to 85 ms, close to what the iOS note expects for the
 simulator, and over 060's 50 ms bar for desktops.
 
@@ -192,7 +192,7 @@ What was seen:
 **Recommendation:** each viewer with control holds one gRPC connection to
 the box's server, which holds the emulator's. Pointer down, move and up map
 to touches in the device's pixels, scaled from the video's. Keys go by name.
-BB's **Type text** field, and any character with no US key, go as
+VesnALIA's **Type text** field, and any character with no US key, go as
 `setClipboard` and Paste. Two fingers from a mouse need a modifier, as in
 Android Studio, where Ctrl and drag pinches.
 
@@ -256,7 +256,7 @@ checked.
 
 The Tart Linux VM ran on an M4-class Mac, which Apple's Virtualization
 framework can give nested virtualization from macOS 15. Tart would have to
-start the VM with it on. That is a change to bb-box's Tart backend, not
+start the VM with it on. That is a change to alia-box's Tart backend, not
 tried here. An arm64 VM would run the `arm64-v8a` system images.
 
 Boot, on the Proxmox QEMU VM:
@@ -398,7 +398,7 @@ draws, which are Google's artwork and were not looked at here.
 
 ## Open questions for the owner
 
-1. **The stream server:** a small server of bb-box's own on the
+1. **The stream server:** a small server of alia-box's own on the
    emulator's gRPC, as recommended, or scrcpy, which also serves real
    phones later but encodes in the guest, at half size to keep up?
 2. **GPU:** a device box draws on the CPU, at most about 35 fps at
@@ -413,7 +413,7 @@ draws, which are Google's artwork and were not looked at here.
    Store. Play images need a Google sign-in for the store, which a box
    should not hold.
 6. **adb and control:** the agent's adb can send input while a person holds
-   control. Leave it, or refuse `input` through bb-box's own tools while a
+   control. Leave it, or refuse `input` through alia-box's own tools while a
    person has control?
 7. **Tart nested virtualization:** turn it on in the Tart backend so Mac
    hosts can run arm64 devices?

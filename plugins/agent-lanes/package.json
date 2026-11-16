@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-agent-lanes",
+  "name": "alia-plugin-agent-lanes",
   "version": "0.1.4",
   "type": "module",
   "engines": {
-    "bb": ">=0.45",
-    "bbPluginSdk": ">=0.6.15"
+    "alia": ">=0.45",
+    "aliaPluginSdk": ">=0.6.15"
   },
-  "bb": {
+  "alia": {
     "name": "Lanes",
     "description": "Where every agent is right now: a live timeline with a lane per thread, turns growing into now, hand-offs drawn between agents, and approvals right on the block.",
     "branding": {
@@ -24,7 +24,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.15",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -57,7 +56,7 @@
   "description": "Where every agent is right now: a live timeline with a lane per thread, turns growing into now, hand-offs drawn between agents, and approvals right on the block.",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run"
   },
   "allowScripts": {
@@ -65,15 +64,27 @@
   },
   "license": "MIT",
   "author": "Tom McKenzie",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/grrowl/bb-lanes.git"
-  },
-  "homepage": "https://github.com/grrowl/bb-lanes#readme",
   "keywords": [
-    "bb-plugin",
-    "bb",
+    "alia-plugin",
+    "alia",
     "agents",
     "timeline"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.15"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/agent-lanes#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/agent-lanes"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

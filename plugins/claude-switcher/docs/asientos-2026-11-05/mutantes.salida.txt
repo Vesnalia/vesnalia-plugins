@@ -13,7 +13,7 @@ muerto M11 history --dias admite 8 · Tests  1 failed | 1064 passed | 1 skipped 
 muerto M12 una retención movida a otra cuenta no libera la de antes (Codex ASIENTOS-001) · Tests  1 failed | 1121 passed | 1 skipped (1277)
 muerto M13 las muestras de kv no quedan en memoria si la base no las admite (Codex ASIENTOS-002) · Tests  1 failed | 1062 passed | 1 skipped (1277)
 muerto M14 sin borrar kv no se lee la base (Codex ASIENTOS-002) · Tests  1 failed | 1063 passed | 1 skipped (1277)
-muerto M15 las retenciones de fuera se guardan sumadas a las de bb (Codex ASIENTOS-003) · Tests  1 failed | 1061 passed | 1 skipped (1277)
+muerto M15 las retenciones de fuera se guardan sumadas a las de VesnALIA (Codex ASIENTOS-003) · Tests  1 failed | 1061 passed | 1 skipped (1277)
 muerto M16 una plaza abandonada al fallar un movimiento no despierta la cola (Codex ASIENTOS-R2-001) · Tests  1 failed | 1250 passed | 1 skipped (1277)
 muerto M17 las reservas caducadas no se sueltan antes de juzgar con hermanos (Codex ASIENTOS-R2-002) · Tests  1 failed | 1251 passed | 1 skipped (1277)
 muerto M18 un turno que arranca en otra cuenta que su plaza no la suelta a la cola (Codex ASIENTOS-R3-002) · Tests  1 failed | 1120 passed | 1 skipped (1277)

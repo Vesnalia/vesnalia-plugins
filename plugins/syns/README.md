@@ -1,6 +1,6 @@
-# Syns bb plugin
+# Syns VesnALIA plugin
 
-A bb plugin that gives
+A VesnALIA plugin that gives
 [Thread Pages](https://github.com/unifedev/bb-thread-pages) read and write access
 to the calling session's [Syns](https://syns.dev) repository, through the Syns
 CLI. The short product description is in [PLUGIN_OVERVIEW.md](./PLUGIN_OVERVIEW.md).
@@ -9,7 +9,7 @@ CLI. The short product description is in [PLUGIN_OVERVIEW.md](./PLUGIN_OVERVIEW.
 page                     threadPage.invoke("syns.readMany", { paths })
   ↓ Thread Pages bridge  validated against this plugin's declared schema, rate-limited, no dialog
 server half              session → machine and folder; method → CLI arguments; CLI failure → code + reason
-  ↓ bb host call
+  ↓ alia host call
 host half                runs `syns … --json` in that folder, on that machine
   ↓
 Syns CLI → Syns API      the only thing that touches the repository
@@ -17,17 +17,17 @@ Syns CLI → Syns API      the only thing that touches the repository
 
 ## Install
 
-On bb: bb 0.43 or later and Thread Pages 1.13.4 or later; on Claude Code: Unife Pages 0.5.4 or later (see *On Claude
+On VesnALIA: VesnALIA 0.43 or later and Thread Pages 1.13.4 or later; on Claude Code: Unife Pages 0.5.4 or later (see *On Claude
 Code* below): the first that show a document a page holds as a frame of the page held in its folder, which the
 workspace runs each app in. Both need
 the Syns CLI, 0.3.25 or later — installed and logged in (`syns login`) on every machine whose
 sessions should reach a repository (`syns upgrade`). An older CLI's refusal comes back in its own words.
 
 ```sh
-bb plugin install https://github.com/synsdev/syns-bb-plugin
+alia plugin install https://github.com/synsdev/syns-bb-plugin
 ```
 
-The bb plugin id is `syns`: Thread Pages takes a contributor's namespace from the
+The VesnALIA plugin id is `syns`: Thread Pages takes a contributor's namespace from the
 plugin id, and the methods are `syns.*`.
 
 | Setting | Default | Meaning |
@@ -47,7 +47,7 @@ claude plugin install syns --marketplace synsdev/syns-claude-plugins
 or this plugin alone (it brings Unife Pages): `claude plugin install syns-pages --marketplace
 synsdev/syns-claude-plugins`. Its `unife-pages.json` names `bin/syns-pages.mjs`, a self-contained bundle of the same
 table and dispatch (`npm run build:claude`). The Unife Pages daemon starts the process and supervises it, and it
-registers the same declaration as on bb. For development, load the checkout with `claude --plugin-dir …/hosts/claude`
+registers the same declaration as on VesnALIA. For development, load the checkout with `claude --plugin-dir …/hosts/claude`
 beside Unife Pages. The CLI runs on this machine, in the folder the
 daemon names for the calling session. Settings are the environment: `SYNS_PATH` (the executable) and
 `SYNS_PAGES_INSTRUCTION=0` (declare no fragment). `node hosts/claude/bin/syns-pages.mjs` also runs by hand.
@@ -74,7 +74,7 @@ repository, signing in when the push asks for it), that what the person keeps
 using is an app: a folder holding an `index.html`, while the page reports and asks,
 and that the page and every app fit the workspace's design.
 
-The full method reference is in `bb pages guide`.
+The full method reference is in `alia pages guide`.
 
 ## The methods
 
@@ -107,10 +107,10 @@ and its refusals the CLI's own: the plugin is a thin adapter. The sharing and
 visibility methods reach other people at once; a page offers them only on a
 control the reader presses, saying who gets what.
 
-Each page call is one CLI run, on bb and on Claude Code alike; a scoped call's first in a minute also runs the
+Each page call is one CLI run, on VesnALIA and on Claude Code alike; a scoped call's first in a minute also runs the
 scope check, `syns repo --json --within=<session folder>`. A call is answered within 25 seconds, and at that limit
-its run is stopped. Every request the CLI sends names the host in its User-Agent: `SYNS_CALLER` is `bb-plugin` on
-bb and `claude-pages` on Claude Code. On bb the host worker is held until 15 minutes after the last run.
+its run is stopped. Every request the CLI sends names the host in its User-Agent: `SYNS_CALLER` is `alia-plugin` on
+VesnALIA and `claude-pages` on Claude Code. On VesnALIA the host worker is held until 15 minutes after the last run.
 
 `version` is a commit SHA and opaque. Every file write requires
 `base`, the version the page last read; a moved head refuses it as `conflict`
@@ -123,7 +123,7 @@ Failures carry a fixed `code` and usually a `reason`: `no_repo`, `no_access`,
 as an upload `syns.writeBinary` gathered with `hold: true`.
 
 Page authors get the full reference, generated from the code, with
-`bb pages guide`, section *Capabilities from contributors*.
+`alia pages guide`, section *Capabilities from contributors*.
 
 ## Known limits
 
@@ -132,7 +132,7 @@ Page authors get the full reference, generated from the code, with
 - **Pictures cross in pieces.** A page call carries at most 1 MiB, so bytes
   travel as base64 in 720 KiB pieces; an 8 MiB photo is 12 calls each way. The
   plugin holds a picture being gathered or read in memory for a minute between
-  pieces, and bb's host calls carry at most 8 MiB, so larger standard input and
+  pieces, and VesnALIA's host calls carry at most 8 MiB, so larger standard input and
   output cross between the plugin's two halves in slices, also in memory only.
 - **Pages show published state.** An agent's edits in the folder reach a page
   after its turn ends and is pushed.
@@ -161,11 +161,11 @@ that table. Add an entry and its test; touch nothing else.
 ```sh
 npm install
 npm test            # no network, no login — the CLI is replayed from recordings. Two suites read beyond this folder and are
-                    # skipped without it: the fragment's slot from this machine's `bb pages status`, and the
+                    # skipped without it: the fragment's slot from this machine's `alia pages status`, and the
                     # declaration through the protocol's own code, read from a Unife monorepo checkout
                     # (UNIFE_MONO, else ../../unife-mono)
 npm run typecheck
-npm run build       # bb plugin build
+npm run build       # alia plugin build
 ```
 
 Argument safety is not optional: the CLI is started with an argument array,
@@ -176,7 +176,7 @@ texts on standard input. A page's path, pattern or text is never read as a flag.
 
 The verification tools, the live fixture page among them, are in
 [`verify/`](./verify/README.md). The specification, every decision with its
-reasoning, and the measured facts about bb, Thread Pages and the CLI that the
+reasoning, and the measured facts about VesnALIA, Thread Pages and the CLI that the
 code rests on live in the Syns repository `bartsoj/syns`, under `products/pages/`.
 
 ## Licence

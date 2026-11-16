@@ -1,6 +1,6 @@
 # Verification
 
-Checked on 2026-10-30 with BB 0.48.1, Plugin SDK 0.6.104, and Node.js 24 on macOS.
+Checked on 2026-10-30 with VesnALIA 0.48.1, Plugin SDK 0.6.104, and Node.js 24 on macOS.
 This public report omits local paths, prompts, and session identifiers.
 
 ## 2026-11-01 update
@@ -16,25 +16,25 @@ This public report omits local paths, prompts, and session identifiers.
   direct RPC, notifications, error recovery, and cleanup on unmount.
 - Both banner details and context-card controls were tested for session binding,
   duration selection, enable, renew, and stop.
-- A live remote UI check reached the BB Connect sign-in page in an isolated
+- A live remote UI check reached the VesnALIA Connect sign-in page in an isolated
   desktop browser tab. New controls were verified with the frontend harness;
-  visual verification in an authenticated live BB page remains uncompleted.
+  visual verification in an authenticated live VesnALIA page remains uncompleted.
 - The two-ping test below used the previous fixed-interval implementation.
 
 ## Automated checks (2026-10-30)
 
 - TypeScript strict type checking.
-- 22 backend and frontend tests using BB's official fake host and frontend harness.
+- 22 backend and frontend tests using VesnALIA's official fake host and frontend harness.
 - Public-SDK import scanning and SDK version checks.
-- BB server/app bundle compilation and npm package-content inspection.
+- VesnALIA server/app bundle compilation and npm package-content inspection.
 - An isolated source export built successfully after
   `npm ci --omit=dev --omit=optional --ignore-scripts`, matching Git installation
-  dependency handling. The external pinned BB CLI built both server and app
+  dependency handling. The external pinned VesnALIA CLI built both server and app
   artifacts without any development dependencies in that export.
 
 The runtime-only npm audit reported no vulnerabilities. The full development
 toolchain audit reported nine findings (one moderate, seven high, one critical),
-including transitive dependencies of the pinned BB CLI and its bundled npm.
+including transitive dependencies of the pinned VesnALIA CLI and its bundled npm.
 These development dependencies are not installed with the plugin's Git runtime
 dependencies. No breaking automatic dependency upgrades were applied.
 
@@ -60,7 +60,7 @@ the right panel edge. A current Codex report showed a green countdown with
 `assumed 30m`; an older report showed red `Estimated TTL elapsed · assumed 30m`.
 Computed browser styles confirmed both colors. Claude Code's reported one-hour
 TTL also produced a countdown. UI checks sent no prompts and enabled no watches.
-The context-card surface was verified with the frontend harness; the live BB
+The context-card surface was verified with the frontend harness; the live VesnALIA
 layout used the composer banner.
 
 ## Two-ping Central Codex test
@@ -90,8 +90,8 @@ the user to send again. The resend proceeded normally.
 The cause was the separate **Barncore/cache-watch 1.1.3 Claude Code mod**, enabled
 with persisted `guard: refuse`. Its `prompt.submit` hook intentionally drops a
 cold send once. Its documented `/cache-watch guard warn` command permits the
-first send. BB recorded the warning as an unhandled provider event rather than
-an ordinary assistant message. The BB plugin had no watches enabled and its
+first send. VesnALIA recorded the warning as an unhandled provider event rather than
+an ordinary assistant message. The VesnALIA plugin had no watches enabled and its
 admission hook permits user messages; a regression test covers that behavior.
 No Claude settings were changed during the investigation.
 
@@ -113,10 +113,10 @@ No Claude settings were changed during the investigation.
   boundaries, historical metadata backfill after an old cursor, and exclusion of
   unrelated extension payloads. Compact formulas mark remainders/incomplete
   observations without adding a request table.
-- No Claude Code Telemetry BB threads existed during this integration check.
-  A paid end-to-end BB UI turn was not started, and existing Claude Code providers
+- No Claude Code Telemetry VesnALIA threads existed during this integration check.
+  A paid end-to-end VesnALIA UI turn was not started, and existing Claude Code providers
   or other active sessions were not restarted. The provider repository has its
-  own SDK live-accounting verification; this does not substitute for a BB UI run.
+  own SDK live-accounting verification; this does not substitute for a VesnALIA UI run.
 
 ## Release 0.3.0 checks (2026-11-01)
 

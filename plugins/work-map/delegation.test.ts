@@ -44,7 +44,7 @@ function item(overrides: Partial<WorkItem> = {}): WorkItem {
     children: [],
     scope: "Test project",
     issue: false,
-    bbProjectId: "proj_test",
+    aliaProjectId: "proj_test",
     ...overrides,
   };
 }
@@ -168,10 +168,10 @@ describe("the standing brief handed to a delegated agent", () => {
 });
 
 describe("what stops a handover before the click", () => {
-  it("refuses an area with no bb project to start an agent in, naming it", () => {
-    const unlinked = item({ bbProjectId: null });
+  it("refuses an area with no VesnALIA project to start an agent in, naming it", () => {
+    const unlinked = item({ aliaProjectId: null });
     expect(blockedReason(unlinked, "delegate")).toBe(
-      "project not linked to a bb project",
+      "project not linked to a VesnALIA project",
     );
     // Closing and snoozing it never needed an agent, so they stay available.
     expect(eligible(unlinked, "done")).toBe(true);
@@ -233,12 +233,12 @@ describe("what stops a handover before the click", () => {
   });
   it("lists the unlinked reason in a bulk plan, so the dialog can show it", () => {
     const plan = bulkPlan(
-      [item({ id: "a" }), item({ id: "b", bbProjectId: null })],
+      [item({ id: "a" }), item({ id: "b", aliaProjectId: null })],
       "delegate",
     );
     expect(plan.take.map((row) => row.id)).toEqual(["a"]);
     expect(plan.skip.map(({ why }) => why)).toEqual([
-      "project not linked to a bb project",
+      "project not linked to a VesnALIA project",
     ]);
   });
 });
@@ -267,8 +267,8 @@ describe("the brief handed to an area's orchestrator", () => {
     expect(ORCHESTRATOR_PROMPT).toContain("child thread of yourself");
     expect(ORCHESTRATOR_PROMPT).toContain("attached to that task");
     // A task dispatch cannot set a parent, so the two-step path is the path.
-    expect(ORCHESTRATOR_PROMPT).toContain("bb thread spawn --parent-self");
-    expect(ORCHESTRATOR_PROMPT).toContain("bb tasks attach <task> --thread");
+    expect(ORCHESTRATOR_PROMPT).toContain("alia thread spawn --parent-self");
+    expect(ORCHESTRATOR_PROMPT).toContain("alia tasks attach <task> --thread");
     expect(ORCHESTRATOR_PROMPT).toContain("Check both sides before you rely on it");
   });
   it("carries the concurrency limit as the one number, never a loose 3", () => {
@@ -280,9 +280,9 @@ describe("the brief handed to an area's orchestrator", () => {
     // to count before every spawn, and what to do at the cap.
     expect(ORCHESTRATOR_PROMPT).toContain("hard cap, not a target");
     expect(ORCHESTRATOR_PROMPT).toContain(
-      "bb thread list --parent-thread <your thread id> --json",
+      "alia thread list --parent-thread <your thread id> --json",
     );
-    expect(ORCHESTRATOR_PROMPT).toContain("bb thread wait <id>");
+    expect(ORCHESTRATOR_PROMPT).toContain("alia thread wait <id>");
   });
   it("pushes a short result once, then ends every task done or in Review", () => {
     expect(ORCHESTRATOR_PROMPT).toContain("not its whole transcript");
@@ -294,13 +294,13 @@ describe("the brief handed to an area's orchestrator", () => {
     expect(ORCHESTRATOR_PROMPT).toContain("never re-brief or re-run it");
   });
   it("closes every thread it started and leaves exactly one review task", () => {
-    expect(ORCHESTRATOR_PROMPT).toContain("archive it (`bb thread archive <id>`)");
+    expect(ORCHESTRATOR_PROMPT).toContain("archive it (`alia thread archive <id>`)");
     expect(ORCHESTRATOR_PROMPT).toContain("create exactly one task in this area");
     expect(ORCHESTRATOR_PROMPT).toContain("Closed without you (N)");
     expect(ORCHESTRATOR_PROMPT).toContain(
       "update its description instead of creating a second",
     );
-    expect(ORCHESTRATOR_PROMPT).toContain("archive yourself (`bb thread archive --self`)");
+    expect(ORCHESTRATOR_PROMPT).toContain("archive yourself (`alia thread archive --self`)");
     expect(ORCHESTRATOR_PROMPT).toContain("Nothing you started stays open");
     expect(reportTitle("Test project", 4, 2)).toBe(
       "Test project orchestrator: 4 done, 2 need you",

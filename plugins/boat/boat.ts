@@ -1,7 +1,7 @@
-// Boat (boat.dev) REST client and a bb MachineExecutor over its commands API.
+// Boat (boat.dev) REST client and a VesnALIA MachineExecutor over its commands API.
 // Only what the machine provider needs. Never log the API key or sandbox URLs.
 import { randomUUID } from "node:crypto";
-import type { MachineExecutor, MachineExecutorRequest } from "@get-bb/plugin-sdk";
+import type { MachineExecutor, MachineExecutorRequest } from "@vesnalia/plugin-sdk";
 
 const BASE = "https://boat.dev/api/v1";
 
@@ -186,7 +186,7 @@ export class Boat {
 const quote = (argv: string[]) => argv.map((a) => (/^[\w@%+=:,./-]+$/.test(a) ? a : `'${a.replace(/'/g, `'\\''`)}'`)).join(" ");
 
 /**
- * bb's bootstrap runs argv + stdin through this. Boat runs one shell string with an
+ * VesnALIA's bootstrap runs argv + stdin through this. Boat runs one shell string with an
  * empty HOME and no stdin, so we quote argv, set HOME, and pass stdin via a temp file.
  * Output arrives once, when the command ends.
  */
@@ -196,7 +196,7 @@ export function boatExecutor(boat: Boat, boxId: string): MachineExecutor {
       const env = "export HOME=/home/user XDG_RUNTIME_DIR=/run/user/$(id -u); cd /home/user;";
       let command = `${env} ${quote(req.command)} </dev/null`;
       if (req.stdin.length > 0) {
-        const f = `/tmp/bb-stdin-${randomUUID()}`;
+        const f = `/tmp/alia-stdin-${randomUUID()}`;
         await boat.writeFile(boxId, f, req.stdin, req.signal);
         command = `${env} chmod 600 ${f}; ${quote(req.command)} <${f}; rc=$?; rm -f ${f}; exit $rc`;
       }

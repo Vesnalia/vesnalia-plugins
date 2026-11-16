@@ -1,4 +1,4 @@
-Make a BB thread delegate every unit of work. Your orchestrator reads, plans,
+Make a VesnALIA thread delegate every unit of work. Your orchestrator reads, plans,
 asks, delegates and reports; child worker threads carry out its briefs in the
 same environment.
 
@@ -12,7 +12,7 @@ continues, so detected direct work can be recorded, corrected or stopped.
 Use the delegation icon or the **Orchestrator mode** row in the `+` menu to
 toggle one thread. The strip above the input shows the enforcement level,
 recent direct work and a **Turn off** button. The draft gains a left-edge
-accent. BB may group the icon under **More plugin actions**.
+accent. VesnALIA may group the icon under **More plugin actions**.
 
 In the root new-thread composer, the switch controls the new-thread default.
 It applies only to qualifying root threads created while the default is on,
@@ -29,7 +29,7 @@ a timeout leaves the worker running.
 
 Workers run on the project's remembered provider and model unless the settings
 section's **Which provider and model workers use** gives them their own, using
-BB's own provider and model picker: picking a provider scopes the models to it,
+VesnALIA's own provider and model picker: picking a provider scopes the models to it,
 and a single delegation can override the result in the tool call. The same
 section can name a provider and model to retry a failed worker on, once. An id
 the catalog does not offer is refused with the alternatives named.
@@ -56,20 +56,20 @@ session keeps its existing instructions. The watchdog skips historical work
 and grants grace turns during the transition: one when enabled while idle, or
 the active turn and the next one when enabled mid-turn.
 
-BB exposes no pre-tool-call veto. Block mode detects and stops; a fast write
+VesnALIA exposes no pre-tool-call veto. Block mode detects and stops; a fast write
 can complete before that stop. Classification uses timeline row kinds and tool
 names, so this is a coordination aid, not a security boundary. Workers share
 your environment and use ordinary provider resources.
 
 ## CLI and settings
 
-`bb orchestrator-mode` provides `status`, `on`, `off`, `violations` (including
+`alia orchestrator-mode` provides `status`, `on`, `off`, `violations` (including
 `--clear`), `default`, `worker` and `contract`. Thread commands accept
 `--thread`; every command supports `--json`. Settings control the new-thread
 default, enforcement, read-only command handling, the corrective-message cap,
 the contract level, worker retention and the two fan-out caps. The worker
 execution and its presets are stored by the plugin and edited in Settings or
-with `bb orchestrator-mode worker`; `contract` prints the exact instructions a
+with `alia orchestrator-mode worker`; `contract` prints the exact instructions a
 thread receives.
 
-Requires bb 0.44+ and Plugin SDK 0.5.29+. Licensed under MIT.
+Requires VesnALIA 0.44+ and Plugin SDK 0.5.29+. Licensed under MIT.

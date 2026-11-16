@@ -3,7 +3,7 @@
  *
  * Split out from the components so the frontend tests can assert **the
  * sentence** — the sentence is the contract, not the class name — and so the
- * panel, `bb xcode sim doctor` and the empty state cannot drift into three
+ * panel, `alia xcode sim doctor` and the empty state cannot drift into three
  * vocabularies for one situation.
  */
 import { joinWords } from "../../src/sim/format.js";
@@ -129,7 +129,7 @@ export function liveVeil(
   switch (state.kind) {
     case "unsupported":
       return neutral(
-        "Xcode Simulators drives Xcode and the iOS simulator, so it only works when the bb server itself runs on macOS.",
+        "Xcode Simulators drives Xcode and the iOS simulator, so it only works when the VesnALIA server itself runs on macOS.",
       );
 
     case "intel-blocked":
@@ -230,7 +230,7 @@ export function liveVeil(
       return state.crashes >= 2
         ? {
             sentence: "The capture process has crashed twice.",
-            detail: "`bb plugin logs xcode-simulators` has the reason.",
+            detail: "`alia plugin logs xcode-simulators` has the reason.",
             tone: "dead",
             actions: [{ label: "Try again", kind: "retry", udid: state.device?.udid }],
             skeleton: false,

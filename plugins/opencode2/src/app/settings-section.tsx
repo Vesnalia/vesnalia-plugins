@@ -1,4 +1,4 @@
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import {
   modelSettingsSchema,
   opencodeSettingsRpcContract,
@@ -300,7 +300,7 @@ export function SettingsSection() {
           />
           <SettingRow
             title="Allow OpenCode subagents"
-            description="Let OpenCode delegate to its own subagents (shown as delegation rows). When off, OpenCode hides its subagent tool and agents delegate through BB instead."
+            description="Let OpenCode delegate to its own subagents (shown as delegation rows). When off, OpenCode hides its subagent tool and agents delegate through VesnALIA instead."
             checked={settings?.disableSubagents === false}
             disabled={busy}
             label="Allow OpenCode subagents"
@@ -309,14 +309,14 @@ export function SettingsSection() {
             }}
           />
           <SettingRow
-            title="Keep BB tools inside BB"
-            description="OpenCode shares MCP servers across a directory, so its own sessions (TUI, web) would list BB threads' tools. Adds one deny rule for bb_opencode2_* to your global OpenCode config; turning this off removes it."
-            checked={settings?.hideBbToolsOutsideBb !== false}
+            title="Keep VesnALIA tools inside VesnALIA"
+            description="OpenCode shares MCP servers across a directory, so its own sessions (TUI, web) would list VesnALIA threads' tools. Adds one deny rule for alia_opencode2_* to your global OpenCode config; turning this off removes it."
+            checked={settings?.hideAliaToolsOutsideAlia !== false}
             disabled={busy}
-            label="Keep BB tools inside BB"
+            label="Keep VesnALIA tools inside VesnALIA"
             onCheckedChange={(next) => {
               if (settings)
-                void save({ ...settings, hideBbToolsOutsideBb: next });
+                void save({ ...settings, hideAliaToolsOutsideAlia: next });
             }}
           />
         </div>
@@ -456,7 +456,7 @@ export function SettingsSection() {
       <div className="text-xs text-muted-foreground">
         {isSaving
           ? "Saving…"
-          : "Settings apply from the next turn. The model picker updates when BB refreshes its model list."}
+          : "Settings apply from the next turn. The model picker updates when VesnALIA refreshes its model list."}
       </div>
     </div>
   );

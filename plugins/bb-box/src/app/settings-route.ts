@@ -14,7 +14,7 @@ export type SettingsView =
 
 export const OVERVIEW: SettingsView = { page: "overview" };
 
-export const OPEN_SETTINGS_VIEW_EVENT = "bb-box:open-settings-view";
+export const OPEN_SETTINGS_VIEW_EVENT = "alia-box:open-settings-view";
 
 export function isOptionPage(id: string): id is OptionPage {
   return (OPTION_PAGES as readonly string[]).includes(id);
@@ -64,7 +64,7 @@ export function onSettingsPage(): boolean {
   return typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === SETTINGS_PATH;
 }
 
-export const HISTORY_KEY = "bbBoxSettings";
+export const HISTORY_KEY = "aliaBoxSettings";
 
 export interface HistoryEntry {
   readonly depth: number;

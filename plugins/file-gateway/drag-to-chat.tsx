@@ -1,8 +1,8 @@
 import React,{useEffect,useRef,useState} from 'react';
-import {useComposer} from '@get-bb/plugin-sdk/app';
+import {useComposer} from '@vesnalia/plugin-sdk/app';
 import {decodeReference,encodeReference} from './reference.js';
-export const GATEWAY_DRAG='application/x-bb-file-gateway-reference';
-const DRAG_EVENT='bb-file-gateway-drag-active';
+export const GATEWAY_DRAG='application/x-alia-file-gateway-reference';
+const DRAG_EVENT='alia-file-gateway-drag-active';
 export function beginFileDrag(event:React.DragEvent,hostId:string,path:string,name:string){
  const id=encodeReference({hostId,path});const label=`${name}: ${path}`;
  event.dataTransfer.effectAllowed='copy';event.dataTransfer.setData(GATEWAY_DRAG,JSON.stringify({id,label}));event.dataTransfer.setData('text/plain',JSON.stringify({source:'File Gateway',hostId,path}));

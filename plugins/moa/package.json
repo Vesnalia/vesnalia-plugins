@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-moa",
+  "name": "alia-plugin-moa",
   "version": "0.1.0-beta.9",
   "type": "module",
   "engines": {
-    "bb": ">=0.43.1",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43.1",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Mixture of Agents",
     "description": "Two independent advisors before each message, with shared model settings, configurable fallback and per-message history.",
     "branding": {
@@ -26,7 +26,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -56,10 +55,10 @@
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.6.0"
   },
-  "description": "Mixture of Agents (MoA) for BB: parallel dual-model consultation, shared settings, configurable fallback and per-message history.",
+  "description": "Mixture of Agents (MoA) for VesnALIA: parallel dual-model consultation, shared settings, configurable fallback and per-message history.",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "moa",
     "mixture-of-agents",
     "multi-agent",
@@ -72,7 +71,7 @@
   "license": "MIT",
   "author": "Kirill Vechkasov",
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm test && npm run build"
@@ -107,12 +106,21 @@
     "i18n.ts",
     "settings.tsx"
   ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/moa#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/VKirill/bb-plugin-moa.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/moa"
   },
-  "homepage": "https://github.com/VKirill/bb-plugin-moa#readme",
   "bugs": {
-    "url": "https://github.com/VKirill/bb-plugin-moa/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -4,12 +4,12 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { api, host, plugin, snapshot } from './helpers.mjs';
-import { threadDeltaSchema } from '@get-bb/plugin-sdk/provider-bridge';
-import { experimental_createDeltaAssembler } from '@get-bb/plugin-sdk/provider-bridge/testing';
+import { threadDeltaSchema } from '@vesnalia/plugin-sdk/provider-bridge';
+import { experimental_createDeltaAssembler } from '@vesnalia/plugin-sdk/provider-bridge/testing';
 const resource = { kind:'command',source:'command',origin:'builtin',trigger:'/',name:'compact',label:'compact',argumentHint:null };
 const input = (suffix='') => [{type:'text',text:'/compact'+suffix,mentions:[{start:0,end:8,resource}]}];
 const options = { permissionMode:'full',permissionScope:'full',approvalReviewer:null,permissionEscalation:null,model:'GLM-5.3',reasoningLevel:'max',envVars:{} };
-test('M471 bb advertises manual compaction to enable its structured command',async()=>{
+test('M471 VesnALIA advertises manual compaction to enable its structured command',async()=>{
   let registration;
   await plugin({settings:{define:()=>({get:async()=>({authMode:'desktop'}),onChange:()=>{}})},providers:{register:value=>{registration=value;return{};}}});
   assert.equal(registration.capabilities.supportsManualCompaction,true);

@@ -151,7 +151,7 @@ describe("decorateReferenceMentions", () => {
   });
 
   it("leaves the host's numeric mention form and arbitrary @word@ text inert", () => {
-    // A numeric form like `@291@` is not a bb reference the pane can route:
+    // A numeric form like `@291@` is not a VesnALIA reference the pane can route:
     // it never carries a target id, so converting it would invent
     // navigation. Arbitrary `@handle@` prose stays raw for the same reason.
     const root = message("<p>message 291 marker @291@ stays raw</p>");
@@ -167,7 +167,7 @@ describe("decorateReferenceMentions", () => {
       '<a href="x">@project:proj_api</a>' +
         "<pre><code>@project:proj_api in a block</code></pre>" +
         "<p><code>@project:proj_api</code>" +
-        '<bb-thread-mention data-thread-id="thr_glyph_glue">host chip</bb-thread-mention>' +
+        '<alia-thread-mention data-thread-id="thr_glyph_glue">host chip</alia-thread-mention>' +
         "</p>",
     );
     decorateReferenceMentions(root, labels);
@@ -180,22 +180,22 @@ describe("decorateReferenceMentions", () => {
       "@project:proj_api in a block",
     );
     // The host painted its own chip there — untouched by the repaint scan.
-    const host = root.querySelector("bb-thread-mention")!;
+    const host = root.querySelector("alia-thread-mention")!;
     expect(host.textContent).toBe("host chip");
     expect(host.closest("[data-focus-board-ref-kind]")).toBeNull();
   });
 
   it("repaints the host's EMPTY mention elements, which render as nothing", () => {
     // When the message carries no mention metadata the host's autolink still
-    // emits a `bb-thread-mention` element — but with no chip renderer wired
+    // emits a `alia-thread-mention` element — but with no chip renderer wired
     // it stays an empty inline custom element: the token vanishes from view.
     // Both attribute spellings the host ships must resolve.
     const root = message(
-      "<p>Homelab thread <bb-thread-mention data-thread-id=\"thr_glyph_glue\"></bb-thread-mention> done; then <bb-thread-mention dataThreadId=\"thr_missing_1\" dataMessageSeq=\"3\"></bb-thread-mention>.</p>",
+      "<p>Homelab thread <alia-thread-mention data-thread-id=\"thr_glyph_glue\"></alia-thread-mention> done; then <alia-thread-mention dataThreadId=\"thr_missing_1\" dataMessageSeq=\"3\"></alia-thread-mention>.</p>",
     );
     decorateReferenceMentions(root, labels);
     const repainted = root.querySelectorAll<HTMLElement>(
-      "bb-thread-mention[data-focus-board-ref-kind]",
+      "alia-thread-mention[data-focus-board-ref-kind]",
     );
     expect(repainted).toHaveLength(2);
     expect(repainted[0]!.textContent).toBe(
@@ -217,10 +217,10 @@ describe("decorateReferenceMentions", () => {
     // A repaint pass must not rebuild or restyle a chip the host itself
     // rendered: only EMPTY mentions (the renderer-less shape) are claimed.
     const root = message(
-      '<bb-thread-mention data-thread-id="thr_glyph_glue"><span class="host-chip">Wrap check</span></bb-thread-mention>',
+      '<alia-thread-mention data-thread-id="thr_glyph_glue"><span class="host-chip">Wrap check</span></alia-thread-mention>',
     );
     decorateReferenceMentions(root, labels);
-    const host = root.querySelector("bb-thread-mention")!;
+    const host = root.querySelector("alia-thread-mention")!;
     expect(host.textContent).toBe("Wrap check");
     expect(host.className).toBe("");
     expect(decoratedReferencePaneTarget(host)).toBeNull();

@@ -83,7 +83,7 @@ describe("checkAutoCompact", () => {
     expect(h.log.infos).toEqual([`Autocompact compacted crewmate ${thread.id} "Fix the bug": 250,000 tokens, idle 75 minutes.`]);
   });
 
-  it("says when bb's figure is an estimate", async () => {
+  it("says when VesnALIA's figure is an estimate", async () => {
     const h = await harness({ crew: on() });
     const thread = crewmate(h, 75, 250_000);
     h.threads.setUsage(thread.id, { usedTokens: 250_000, estimated: true, cacheExpiresAt: null });
@@ -112,7 +112,7 @@ describe("checkAutoCompact", () => {
     expect((await checkAutoCompact(h.deps))?.threadId).toBe(thread.id);
   });
 
-  it("waits for bb's prompt-cache deadline instead of the idle time when bb gives one", async () => {
+  it("waits for VesnALIA's prompt-cache deadline instead of the idle time when VesnALIA gives one", async () => {
     const h = await harness({ crew: on({ idleMinutes: 60 }) });
     const early = crewmate(h, 10, 250_000, "Early");
     h.threads.setUsage(early.id, { usedTokens: 250_000, estimated: false, cacheExpiresAt: NOW - 5 * MINUTE });
@@ -122,7 +122,7 @@ describe("checkAutoCompact", () => {
     const done = await checkAutoCompact(h.deps);
     expect(done?.threadId).toBe(early.id);
     expect(h.log.infos).toEqual([
-      `Autocompact compacted crewmate ${early.id} "Early": 250,000 tokens, idle 10 minutes, past bb's prompt-cache deadline.`,
+      `Autocompact compacted crewmate ${early.id} "Early": 250,000 tokens, idle 10 minutes, past VesnALIA's prompt-cache deadline.`,
     ]);
 
     // The other one's cache is still warm, though it is long past the idle minutes.
@@ -131,7 +131,7 @@ describe("checkAutoCompact", () => {
     expect((await checkAutoCompact(h.deps))?.threadId).toBe(late.id);
   });
 
-  it("keeps the token threshold when bb's deadline has passed", async () => {
+  it("keeps the token threshold when VesnALIA's deadline has passed", async () => {
     const h = await harness({ crew: on({ minTokens: 200_000 }) });
     const thread = crewmate(h, 10, 150_000);
     h.threads.setUsage(thread.id, { usedTokens: 150_000, estimated: false, cacheExpiresAt: NOW - MINUTE });
@@ -181,7 +181,7 @@ describe("checkAutoCompact", () => {
     expect(h.threads.callsTo("compact")).toEqual([]);
   });
 
-  it("does nothing, and reads nothing of bb, with both rules off", async () => {
+  it("does nothing, and reads nothing of VesnALIA, with both rules off", async () => {
     const h = await harness();
     crewmate(h, 75, 250_000);
     h.threads.calls.length = 0;
@@ -221,7 +221,7 @@ describe("checkAutoCompact", () => {
     expect(h.locks()).toBe(0);
   });
 
-  it("does nothing with no first mate aboard, or one bb no longer has", async () => {
+  it("does nothing with no first mate aboard, or one VesnALIA no longer has", async () => {
     const h = await harness({ mate: on(), crew: on() });
     crewmate(h, 75, 250_000);
     h.threads.archiveNow(h.mateId);
@@ -309,7 +309,7 @@ describe("checkAutoCompact", () => {
       const thread = crewmate(before, 75, 250_000);
       await checkAutoCompact(before.deps);
 
-      // A new plugin instance over the same storage, reading the same bb.
+      // A new plugin instance over the same storage, reading the same VesnALIA.
       const after = { ...before.deps, store: createStore(kv) };
       expect(await checkAutoCompact(after)).toBeNull();
       expect(before.threads.callsTo("compact")).toEqual([[thread.id]]);
@@ -331,10 +331,10 @@ describe("checkAutoCompact", () => {
     const h = await harness({ crew: on() });
     const broken = crewmate(h, 75, 250_000, "Broken");
     const fine = crewmate(h, 75, 250_000, "Fine");
-    h.threads.failNext("lastTurnEnd", new Error("bb is busy"));
+    h.threads.failNext("lastTurnEnd", new Error("alia is busy"));
 
     expect((await checkAutoCompact(h.deps))?.threadId).toBe(fine.id);
-    expect(h.log.warnings).toEqual([`Autocompact could not check crewmate ${broken.id} "Broken": bb is busy`]);
+    expect(h.log.warnings).toEqual([`Autocompact could not check crewmate ${broken.id} "Broken": VesnALIA is busy`]);
   });
 
   describe("the mark, written before the request (finding: a failed write)", () => {
@@ -350,7 +350,7 @@ describe("checkAutoCompact", () => {
       return kv;
     }
 
-    it("is in the store, as accepted, by the time the request reaches bb", async () => {
+    it("is in the store, as accepted, by the time the request reaches VesnALIA", async () => {
       const h = await harness({ crew: on() });
       const thread = crewmate(h, 75, 250_000);
       const seen: unknown[] = [];
@@ -380,7 +380,7 @@ describe("checkAutoCompact", () => {
       ]);
     });
 
-    it("ends the check once a request is sent, even when noting bb's refusal fails, and keeps the stricter mark", async () => {
+    it("ends the check once a request is sent, even when noting VesnALIA's refusal fails, and keeps the stricter mark", async () => {
       const h = await harness({ crew: on() }, failingMarks(2));
       const first = crewmate(h, 75, 250_000, "One");
       crewmate(h, 75, 250_000, "Two");
@@ -391,7 +391,7 @@ describe("checkAutoCompact", () => {
       expect(h.threads.callsTo("compact")).toEqual([[first.id]]);
       expect(await h.store.compactionMark(first.id)).toMatchObject({ ok: true });
       expect(h.log.warnings).toContain(
-        `Autocompact could not note that bb refused to compact ${first.id}, so it waits for two turns instead of one: storage is full`,
+        `Autocompact could not note that VesnALIA refused to compact ${first.id}, so it waits for two turns instead of one: storage is full`,
       );
     });
 
@@ -527,16 +527,16 @@ describe("checkAutoCompact", () => {
     it("warns once while a thread's read keeps failing the same way, and again after it recovers", async () => {
       const h = await harness({ crew: on() });
       const thread = crewmate(h, 75, 10_000);
-      const warning = `Autocompact could not check crewmate ${thread.id} "Fix the bug": bb is busy`;
+      const warning = `Autocompact could not check crewmate ${thread.id} "Fix the bug": VesnALIA is busy`;
 
       for (let n = 0; n < 3; n += 1) {
-        h.threads.failNext("lastTurnEnd", new Error("bb is busy"));
+        h.threads.failNext("lastTurnEnd", new Error("alia is busy"));
         await checkAutoCompact(h.deps);
       }
       expect(h.log.warnings).toEqual([warning]);
 
       await checkAutoCompact(h.deps); // recovers
-      h.threads.failNext("lastTurnEnd", new Error("bb is busy"));
+      h.threads.failNext("lastTurnEnd", new Error("alia is busy"));
       await checkAutoCompact(h.deps);
       expect(h.log.warnings).toEqual([warning, warning]);
     });
@@ -544,9 +544,9 @@ describe("checkAutoCompact", () => {
     it("warns again when the failure changes", async () => {
       const h = await harness({ crew: on() });
       crewmate(h, 75, 10_000);
-      h.threads.failNext("lastTurnEnd", new Error("bb is busy"));
+      h.threads.failNext("lastTurnEnd", new Error("alia is busy"));
       await checkAutoCompact(h.deps);
-      h.threads.failNext("lastTurnEnd", new Error("bb went away"));
+      h.threads.failNext("lastTurnEnd", new Error("alia went away"));
       await checkAutoCompact(h.deps);
 
       expect(h.log.warnings).toHaveLength(2);
@@ -555,16 +555,16 @@ describe("checkAutoCompact", () => {
     it("warns once while the first mate and its crew cannot be read", async () => {
       const h = await harness({ crew: on() });
       for (let n = 0; n < 3; n += 1) {
-        h.threads.failNext("children", new Error("bb is busy"));
+        h.threads.failNext("children", new Error("alia is busy"));
         await checkAutoCompact(h.deps);
       }
-      expect(h.log.warnings).toEqual(["Autocompact could not read the first mate and its crew: bb is busy"]);
+      expect(h.log.warnings).toEqual(["Autocompact could not read the first mate and its crew: VesnALIA is busy"]);
     });
 
     it("forgets the failures of threads that are gone, and remembers a bounded number", async () => {
       const h = await harness({ crew: on() });
       const thread = crewmate(h, 75, 10_000);
-      h.threads.failNext("lastTurnEnd", new Error("bb is busy"));
+      h.threads.failNext("lastTurnEnd", new Error("alia is busy"));
       await checkAutoCompact(h.deps);
       expect(h.deps.failures.size).toBe(1);
 
@@ -595,7 +595,7 @@ describe("checkAutoCompact", () => {
       const lastTurnEnd = h.threads.lastTurnEnd.bind(h.threads);
       h.threads.lastTurnEnd = async (id, signal) => {
         await lastTurnEnd(id, signal);
-        throw new Error("bb is busy");
+        throw new Error("alia is busy");
       };
 
       const counts: number[] = [];

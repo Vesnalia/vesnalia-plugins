@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { experimental_Icon as Icon, Markdown, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, Markdown, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { ChecksItem, CheckStep, MergeItem, PostDto, PrFeedbackItem, PrTextItem, ReviewDto, rpcContract, ThreadDto } from "../contract";
 import { formatDuration, plural } from "../format";
 import type { AuthorKind } from "../states";
@@ -191,7 +191,7 @@ const SEVERITY_TONES: Record<string, string> = { blocking: "text-destructive-tex
 
 /** A reviewer's verdict with its findings. `notes` are the reviewer's notes as post cards; `footer` is Reply and its composer. */
 export function ReviewCard({ review, post, thread, now, notes, footer }: { review: ReviewDto; post: PostDto; thread: ThreadDto | null; now: number; notes: ReactNode; footer: ReactNode }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [expanded, setExpanded] = useState(false);
   const approved = review.verdict === "approved";
   const summary = review.summary ?? post.body;

@@ -1,9 +1,9 @@
-// bb-plugin-human-tasks — the steps only the user can do, handed over by agents.
+// alia-plugin-human-tasks — the steps only the user can do, handed over by agents.
 //
 // Agents create tasks with the `human_task_create` tool (or the
-// `bb human-tasks add` CLI). Each task remembers the thread that asked for it.
+// `alia human-tasks add` CLI). Each task remembers the thread that asked for it.
 // When the user finishes it, the plugin tells that thread, but only if the
-// thread still exists and is not archived. Blocking tasks also open bb's
+// thread still exists and is not archived. Blocking tasks also open VesnALIA's
 // native input form in the thread, so it shows as waiting on the user and
 // push notifications fire. The design rationale lives in .sitbeh/.
 import { randomUUID } from "node:crypto";
@@ -12,8 +12,8 @@ import {
   cliCommand,
   defineCli,
   defineRpcContract,
-  type BbPluginApi,
-} from "@get-bb/plugin-sdk";
+  type AliaPluginApi,
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { HANDOFF_METHODS, KINDS } from "./lib/model";
 
@@ -368,7 +368,7 @@ function secretCommand(todo: Todo): string | null {
   const names = todo.secrets.map((secret) => secret.name).join(" ");
   const describe = todo.secrets.map((secret) => `--describe ${secret.name} "${shellSafe(secret.description)}"`).join(" ");
   const envFile = todo.envFile ? ` --write-env "${shellSafe(todo.envFile)}"` : "";
-  return `bb secret request ${names} --purpose "${shellSafe(todo.title)}" ${describe}${envFile}`;
+  return `alia secret request ${names} --purpose "${shellSafe(todo.title)}" ${describe}${envFile}`;
 }
 
 function completionMessage(todo: Todo, role: "requester" | "watcher"): string {
@@ -405,7 +405,7 @@ function handBackMessage(todo: Todo): string {
   return [
     `[Human tasks] The user wants you to do "${todo.title}" (task ${todo.id}) yourself instead.`,
     todo.handbackNote ? `They said: ${todo.handbackNote}` : "",
-    "In this thread, tell them exactly what you need and how to give it to you: an MCP server to connect, a scoped API key (collect it with `bb secret request`, never in chat), a CLI login, or permission to use their signed-in bb browser. Wait for it, then do the task. Ask before anything irreversible: payments, deletions, sending messages.",
+    "In this thread, tell them exactly what you need and how to give it to you: an MCP server to connect, a scoped API key (collect it with `alia secret request`, never in chat), a CLI login, or permission to use their signed-in VesnALIA browser. Wait for it, then do the task. Ask before anything irreversible: payments, deletions, sending messages.",
     'When it\'s done, call `human_task_update` with action "complete", a one-line summary, and `method` (how you got access), so similar tasks come to you next time. If you can\'t do it, use action "send_back" with the reason.',
   ]
     .filter(Boolean)
@@ -426,8 +426,8 @@ function questionMessage(todo: Todo, question: string): string {
 
 // ---- Plugin ------------------------------------------------------------------
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     notifyOnComplete: {
       type: "boolean",
       label: "Tell the requesting thread when a task is done",
@@ -437,7 +437,7 @@ export default async function plugin(bb: BbPluginApi) {
     askInThreadForBlocking: {
       type: "boolean",
       label: "Show blocking tasks as a form in the thread",
-      description: "A blocking task also opens bb's input form in the requesting thread. The thread then shows as waiting on you, and push notifications fire.",
+      description: "A blocking task also opens VesnALIA's input form in the requesting thread. The thread then shows as waiting on you, and push notifications fire.",
       default: true,
     },
     keepFinishedDays: {
@@ -449,14 +449,14 @@ export default async function plugin(bb: BbPluginApi) {
     systemNotifications: {
       type: "boolean",
       label: "System notification for new tasks",
-      description: "When bb is in the background, show a system notification as a new task arrives. Uses the browser's notification permission.",
+      description: "When VesnALIA is in the background, show a system notification as a new task arrives. Uses the browser's notification permission.",
       default: true,
     },
   });
 
-  const db = bb.storage.database();
+  const db = alia.storage.database();
   // Append-only: never edit or reorder shipped statements.
-  bb.storage.migrate(db, [
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS todos (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -618,15 +618,15 @@ export default async function plugin(bb: BbPluginApi) {
       const { open, blocking } = stats();
       const signal: TodosChangedSignal = { threadIds: pendingThreads === null ? null : [...pendingThreads], open, blocking };
       pendingThreads = new Set();
-      bb.realtime.publish(TODOS_CHANGED, signal);
+      alia.realtime.publish(TODOS_CHANGED, signal);
     }, 40);
   }
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     if (publishTimer !== null) clearTimeout(publishTimer);
   });
   function announce(todo: Todo, event: TaskEventSignal["event"], detail: string | null): void {
     const signal: TaskEventSignal = { id: todo.id, title: todo.title, event, detail };
-    bb.realtime.publish(TASK_EVENT, signal);
+    alia.realtime.publish(TASK_EVENT, signal);
   }
 
   /** What the page and agents see: open tasks and recently finished ones. */
@@ -659,7 +659,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   const projectsCache = cached(30_000, async () => {
-    const projects = await bb.sdk.projects.list({ includePersonal: true });
+    const projects = await alia.sdk.projects.list({ includePersonal: true });
     return {
       names: new Map(projects.map((project) => [project.id, project.name])),
       personalId: projects.find((project) => project.kind === "personal")?.id ?? null,
@@ -668,7 +668,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   /** Null when the bots plugin is not installed, disabled, or failing. */
   const botsDirectory = cached(30_000, async (): Promise<BotsDirectory> =>
-    bb.sdk.plugins.callRpc({ pluginId: BOTS_PLUGIN_ID, method: "bots_list", input: null, outputSchema: botsListSchema }),
+    alia.sdk.plugins.callRpc({ pluginId: BOTS_PLUGIN_ID, method: "bots_list", input: null, outputSchema: botsListSchema }),
   );
 
   function toBotInfo(bot: BotsDirectory["bots"][number]): BotInfo {
@@ -687,7 +687,7 @@ export default async function plugin(bb: BbPluginApi) {
       const owner = owners.get(current);
       if (owner !== undefined) return owner;
       seen.add(current);
-      const thread = await bb.sdk.threads.get({ threadId: current });
+      const thread = await alia.sdk.threads.get({ threadId: current });
       current = thread.parentThreadId ?? thread.sourceThreadId;
     }
     return null;
@@ -698,7 +698,7 @@ export default async function plugin(bb: BbPluginApi) {
   function threadInfo(threadId: string): Promise<{ title: string | null; state: ThreadState }> {
     const hit = threadCache.get(threadId);
     if (hit && Date.now() - hit.at < 15_000) return hit.value;
-    const value = bb.sdk.threads.get({ threadId }).then(
+    const value = alia.sdk.threads.get({ threadId }).then(
       (thread) => ({
         title: thread.title ?? thread.titleFallback ?? null,
         state: (thread.deletedAt !== null ? "deleted" : thread.archivedAt !== null ? "archived" : "live") as ThreadState,
@@ -812,13 +812,13 @@ export default async function plugin(bb: BbPluginApi) {
   async function sendIfLive(threadId: string, text: string): Promise<{ sent: boolean; reason: string; queuedId?: string }> {
     let thread;
     try {
-      thread = await bb.sdk.threads.get({ threadId });
+      thread = await alia.sdk.threads.get({ threadId });
     } catch {
       return { sent: false, reason: "no longer exists" };
     }
     if (thread.deletedAt !== null) return { sent: false, reason: "was deleted" };
     if (thread.archivedAt !== null) return { sent: false, reason: "is archived" };
-    const result = await bb.sdk.threads.send({ threadId, mode: "queue-if-active", input: [{ type: "text", text, mentions: [] }] });
+    const result = await alia.sdk.threads.send({ threadId, mode: "queue-if-active", input: [{ type: "text", text, mentions: [] }] });
     return result.delivery === "queued" ? { sent: true, reason: "", queuedId: result.queuedMessage.id } : { sent: true, reason: "" };
   }
 
@@ -859,7 +859,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (result.sent) recentlyNotified.set(todo.sourceThreadId, Date.now());
         detail = result.sent ? "The requesting thread was told" : `The requesting thread ${result.reason}`;
       } catch (error) {
-        bb.log.warn(`notify failed for task ${todo.id}: ${String(error)}`);
+        alia.log.warn(`notify failed for task ${todo.id}: ${String(error)}`);
         requester = "failed";
         detail = `Could not tell the thread: ${String(error)}`.slice(0, 300);
       }
@@ -871,7 +871,7 @@ export default async function plugin(bb: BbPluginApi) {
         try {
           if ((await sendIfLive(watcher, completionMessage(todo, "watcher"))).sent) watchersTold += 1;
         } catch (error) {
-          bb.log.warn(`notify watcher ${watcher} failed for task ${todo.id}: ${String(error)}`);
+          alia.log.warn(`notify watcher ${watcher} failed for task ${todo.id}: ${String(error)}`);
         }
       }
     }
@@ -936,7 +936,7 @@ export default async function plugin(bb: BbPluginApi) {
   // ---- In-thread form for blocking tasks ---------------------------------------
 
   /**
-   * Show the task as bb's native input form in its thread. Inside a tool call
+   * Show the task as VesnALIA's native input form in its thread. Inside a tool call
    * the eventual return value reaches the agent; outside one, completion goes
    * through the normal thread message. Resolves with the final task state.
    */
@@ -950,7 +950,7 @@ export default async function plugin(bb: BbPluginApi) {
     updateColumns(todo.id, { form_state: "shown" });
     changed(todo);
     try {
-      const result = await bb.ui.requestInput(
+      const result = await alia.ui.requestInput(
         {
           threadId: todo.sourceThreadId,
           rendererId: "task",
@@ -967,7 +967,7 @@ export default async function plugin(bb: BbPluginApi) {
         },
         { signal: controller.signal },
       );
-      // The user closing it ("Later") or bb dropping it for good means: don't show it again.
+      // The user closing it ("Later") or VesnALIA dropping it for good means: don't show it again.
       if (result.outcome === "cancelled" && ["user", "timeout", "thread-stopped", "thread-deleted"].includes(result.reason)) {
         updateColumns(todo.id, { form_state: "deferred" });
       }
@@ -980,7 +980,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
     } catch (error) {
       // Aborts end up here on some hosts; the task state below decides.
-      if (!controller.signal.aborted) bb.log.warn(`in-thread form failed for task ${todo.id}: ${String(error)}`);
+      if (!controller.signal.aborted) alia.log.warn(`in-thread form failed for task ${todo.id}: ${String(error)}`);
     } finally {
       signal?.removeEventListener("abort", forward);
       const entry = waiting.get(todo.id);
@@ -1009,7 +1009,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (threadId === null || !(await settings.get()).askInThreadForBlocking) return;
     const rows = selectAwaitingForm.all({ thread: threadId, now: Date.now() });
     if (rows.length === 0) return;
-    const thread = await bb.sdk.threads.get({ threadId }).catch(() => null);
+    const thread = await alia.sdk.threads.get({ threadId }).catch(() => null);
     if (!thread || thread.archivedAt !== null || thread.deletedAt !== null || thread.status !== "idle") return;
     if ("hasPendingInteraction" in thread && thread.hasPendingInteraction) return;
     const first = rows.map(fromRow).find((todo) => !waiting.has(todo.id));
@@ -1029,7 +1029,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (!todo.blocking || todo.handedBack || todo.sourceThreadId === null || waiting.has(todo.id)) continue;
       if (todo.snoozedUntil !== null && todo.snoozedUntil > Date.now()) continue;
       try {
-        const thread = await bb.sdk.threads.get({ threadId: todo.sourceThreadId });
+        const thread = await alia.sdk.threads.get({ threadId: todo.sourceThreadId });
         if (thread.archivedAt !== null || thread.deletedAt !== null) continue;
         if (thread.status !== "idle" || ("hasPendingInteraction" in thread && thread.hasPendingInteraction)) continue;
         void askInThread(todo, false);
@@ -1040,11 +1040,11 @@ export default async function plugin(bb: BbPluginApi) {
     for (const threadId of pendingThreads) await openPendingForms(threadId);
   }
   const rearmTimer = setTimeout(() => void rearmBlockingForms(), 3000);
-  bb.onDispose(() => clearTimeout(rearmTimer));
+  alia.onDispose(() => clearTimeout(rearmTimer));
 
   // ---- Snoozes come back; resumed agents are noted ------------------------------
 
-  bb.background.schedule("resurface", "* * * * *", async () => {
+  alia.background.schedule("resurface", "* * * * *", async () => {
     const due = selectDueSnoozes.all(Date.now());
     for (const row of due) {
       updateColumns(row.id, { snoozed_until: null });
@@ -1056,12 +1056,12 @@ export default async function plugin(bb: BbPluginApi) {
     if (due.length > 0) changed();
   });
 
-  bb.background.schedule("prune", "17 3 * * *", async () => {
+  alia.background.schedule("prune", "17 3 * * *", async () => {
     const days = Number((await settings.get()).keepFinishedDays);
     if (!Number.isFinite(days) || days <= 0) return;
     const removed = pruneFinished.run(Date.now() - days * 24 * 60 * 60 * 1000).changes;
     if (removed > 0) {
-      bb.log.info(`pruned ${removed} finished tasks older than ${days} days`);
+      alia.log.info(`pruned ${removed} finished tasks older than ${days} days`);
       changed();
     }
   });
@@ -1083,8 +1083,8 @@ export default async function plugin(bb: BbPluginApi) {
       changed({ sourceThreadId: thread.id, watcherThreadIds: [] });
     }
   };
-  bb.events.on("thread.active", markResumed);
-  bb.events.on("thread.idle", (payload) => {
+  alia.events.on("thread.active", markResumed);
+  alia.events.on("thread.idle", (payload) => {
     markResumed(payload);
     void openPendingForms(payload.thread.id);
   });
@@ -1103,14 +1103,14 @@ export default async function plugin(bb: BbPluginApi) {
       changed(todo);
     }
   };
-  bb.events.on("thread.archived", closeThreadForms);
-  bb.events.on("thread.deleted", closeThreadForms);
+  alia.events.on("thread.archived", closeThreadForms);
+  alia.events.on("thread.deleted", closeThreadForms);
 
   /**
    * Deleting the queued "do it yourself" message before the agent saw it
    * takes the task back: it returns to the user and the agent is told nothing.
    */
-  bb.events.on("message.cancelled", ({ entry }) => {
+  alia.events.on("message.cancelled", ({ entry }) => {
     const row = selectByHandbackMessage.get(entry.id);
     if (!row) return;
     const todo = fromRow(row);
@@ -1119,7 +1119,7 @@ export default async function plugin(bb: BbPluginApi) {
     announce(todo, "handback_cancelled", null);
     changed(todo);
   });
-  bb.events.on("message.dispatched", ({ entry }) => {
+  alia.events.on("message.dispatched", ({ entry }) => {
     const row = selectByHandbackMessage.get(entry.id);
     if (row) updateColumns(row.id, { handback_message_id: null });
   });
@@ -1158,11 +1158,11 @@ export default async function plugin(bb: BbPluginApi) {
     let projectId = input.projectId ?? null;
     if (input.threadId) {
       try {
-        const thread = await bb.sdk.threads.get({ threadId: input.threadId });
+        const thread = await alia.sdk.threads.get({ threadId: input.threadId });
         threadTitle = thread.title ?? thread.titleFallback ?? null;
         projectId = projectId ?? thread.projectId;
       } catch (error) {
-        bb.log.warn(`could not read source thread ${input.threadId}: ${String(error)}`);
+        alia.log.warn(`could not read source thread ${input.threadId}: ${String(error)}`);
       }
     }
     const duplicate = findDuplicate(input.title, projectId);
@@ -1182,7 +1182,7 @@ export default async function plugin(bb: BbPluginApi) {
       const directory = await botsDirectory();
       if (directory !== null) {
         botId = await resolveBotId(input.threadId, directory).catch((error: unknown) => {
-          bb.log.warn(`could not resolve bot for thread ${input.threadId}: ${String(error)}`);
+          alia.log.warn(`could not resolve bot for thread ${input.threadId}: ${String(error)}`);
           return null;
         });
       }
@@ -1213,7 +1213,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (botId) from = (await botsDirectory())?.bots.find((bot) => bot.id === botId)?.name ?? from;
     if (todo.snoozedUntil === null) {
       const signal: TaskCreatedSignal = { id, title: todo.title, blocking: todo.blocking, kind: todo.kind, from };
-      bb.realtime.publish(TASK_CREATED, signal);
+      alia.realtime.publish(TASK_CREATED, signal);
     }
     return { outcome: "created", todo };
   }
@@ -1228,7 +1228,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ---- RPC ---------------------------------------------------------------------
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     todos_list: async (input) => {
       const directory = await botsDirectory();
       return {
@@ -1284,7 +1284,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   const errorResult = (text: string) => ({ content: [{ type: "text" as const, text }], isError: true });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "human_task_create",
     description:
       "Hand the user a step only a human can do (sign in somewhere, click through a console, create a credential, pay, " +
@@ -1357,7 +1357,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "human_task_update",
     description:
       "Act on a human task this thread created. action: edit (default; fix any field), dismiss (no longer needed), " +
@@ -1440,7 +1440,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "human_task_list",
     description: "List human tasks: by default the unfinished ones this thread created or joined; scope all = this project.",
     presentation: { label: { pending: "Checking human tasks", completed: "Checked human tasks" }, suppress: true },
@@ -1463,13 +1463,13 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ---- CLI -----------------------------------------------------------------------
 
-  const notFound = (id: string) => new PluginCliError(`no task with id ${id}`, { code: "task_not_found", hint: "Run `bb human-tasks list` to see ids." });
+  const notFound = (id: string) => new PluginCliError(`no task with id ${id}`, { code: "task_not_found", hint: "Run `alia human-tasks list` to see ids." });
   const reply = (json: boolean, value: unknown, text: string) => ({ exitCode: 0, stdout: json ? JSON.stringify(value) : text });
   const jsonOption = { type: "boolean", description: "Emit machine-readable JSON" } as const;
-  const idPositional = [{ name: "id", description: "Task id from `bb human-tasks list`", required: true }] as const;
+  const idPositional = [{ name: "id", description: "Task id from `alia human-tasks list`", required: true }] as const;
   /**
    * From inside a thread, the shell sees this project only, without other
-   * threads' notes. Best-effort: bb tells plugins the calling thread but can't
+   * threads' notes. Best-effort: VesnALIA tells plugins the calling thread but can't
    * stop an agent from hiding it, so this guards against mistakes, not malice.
    */
   const visibleTo = (ctx: { threadId?: string | undefined; projectId?: string | undefined }) => (todo: Todo): Todo | null => {
@@ -1478,7 +1478,7 @@ export default async function plugin(bb: BbPluginApi) {
     return todo.sourceThreadId === ctx.threadId ? todo : redacted(todo);
   };
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "human-tasks",
       summary: "Steps only you can do, handed over by agents: list, show, add",
@@ -1527,7 +1527,7 @@ export default async function plugin(bb: BbPluginApi) {
             blocking: { type: "boolean", description: "Your work cannot continue until this is done" },
             "reply-prompt": { type: "string", description: `What you need back, as a question (max ${REPLY_PROMPT_MAX} chars)` },
             secret: { type: "string", repeatable: true, description: "A credential you need back, as NAME or NAME:description. Repeat for more. Needs --env-file." },
-            "env-file": { type: "string", description: "The .env file `bb secret request` should write the credentials to" },
+            "env-file": { type: "string", description: "The .env file `alia secret request` should write the credentials to" },
             due: { type: "string", description: "Due date, ISO format (2026-11-02)" },
             "not-before": { type: "string", description: "Hide until this ISO date-time" },
             "agent-needs": {

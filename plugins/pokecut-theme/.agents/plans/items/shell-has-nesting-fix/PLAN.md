@@ -1,4 +1,4 @@
-## Bug (measured on live BB with 0.5.19, browser QA @thr_ie4fw8an2p, 1440px)
+## Bug (measured on live VesnALIA with 0.5.19, browser QA @thr_ie4fw8an2p, 1440px)
 With Back/Forward («Назад»/«Вперёд», x 252..312) in the sidebar top row, the Проект button is still the full pill x 72..166.7 and overlaps New thread (x 140.5..248) by 26px, covering its icon; a click at x 145 hits Проект. The icon-only rules in src/theme/base.css (around lines 390–425) never apply because they nest `:has()` inside `:has()`:
 ```
 [data-variant="sidebar"][data-side="left"]:has(

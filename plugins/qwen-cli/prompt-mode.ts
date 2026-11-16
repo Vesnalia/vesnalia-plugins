@@ -1,4 +1,4 @@
-// Maps BB's promptMode to Qwen Code ACP session options.
+// Maps VesnALIA's promptMode to Qwen Code ACP session options.
 // Qwen Code uses the same ACP mode convention as Gemini CLI / Antigravity.
 
 export function mapPromptMode(line: string, parsedLine?: unknown): string {

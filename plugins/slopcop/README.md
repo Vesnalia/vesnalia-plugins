@@ -1,24 +1,24 @@
 # 🚨 SlopCop
 
-A [BB](https://github.com/ymichael/bb) plugin that handles new GitHub issues and reviews pull requests.
+A [VesnALIA](https://github.com/ymichael/bb) plugin that handles new GitHub issues and reviews pull requests.
 
 Define **rules** with a prompt, repository, triggers, and conditions. SlopCop watches
-GitHub, dispatches a BB agent, and verifies its response with the `gh` CLI. A rule can
+GitHub, dispatches a VesnALIA agent, and verifies its response with the `gh` CLI. A rule can
 listen for new issues, ready pull requests, new commits, or any combination.
 
 ```
-GitHub  ←(gh)—  watcher  →  rule matcher  →  dispatcher  →  BB agent
+GitHub  ←(gh)—  watcher  →  rule matcher  →  dispatcher  →  ALIA agent
                    │                                          │
              plugin SQLite  ←—— verified runs ——  gh issue / gh pr
 ```
 
 ## Install
 
-Requires BB ≥ 0.35 and an authenticated [`gh`](https://cli.github.com) on the machine
-running the BB server.
+Requires VesnALIA ≥ 0.35 and an authenticated [`gh`](https://cli.github.com) on the machine
+running the VesnALIA server.
 
 ```sh
-bb plugin install git:https://github.com/SawyerHood/bb-slop-cop.git@main
+alia plugin install git:https://github.com/SawyerHood/bb-slop-cop.git@main
 ```
 
 ## Quick start
@@ -27,23 +27,23 @@ New rules start in **shadow mode**: they run the full review and store the body,
 post nothing. Read the result, then promote to live.
 
 ```sh
-bb slopcop rules add \
+alia slopcop rules add \
   --name security-sweep \
   --repo owner/repo \
   --project my-project \
   --paths "src/auth/**,src/payments/**" \
   --prompt "Review the diff for auth and payment issues. Post findings with gh pr review --comment."
 
-bb slopcop check security-sweep 482   # would it match? if not, exactly why not
-bb slopcop dispatch security-sweep 482
-bb slopcop show                       # the review it would have posted
-bb slopcop rules edit security-sweep --live
+alia slopcop check security-sweep 482   # would it match? if not, exactly why not
+alia slopcop dispatch security-sweep 482
+alia slopcop show                       # the review it would have posted
+alia slopcop rules edit security-sweep --live
 ```
 
 Listen for new bug reports with the same rule system:
 
 ```sh
-bb slopcop rules add \
+alia slopcop rules add \
   --name issue-triage \
   --repo owner/repo \
   --project my-project \
@@ -56,10 +56,10 @@ The first issue poll records the open backlog. It does not dispatch agents for i
 Later issues dispatch once. A full review queue delays the event until a later poll.
 The default trust gate handles only issues from repository members and collaborators.
 
-To put all new review threads in one BB section, set its name or ID:
+To put all new review threads in one VesnALIA section, set its name or ID:
 
 ```sh
-bb plugin config slopcop set defaultThreadSection "Automated reviews"
+alia plugin config slopcop set defaultThreadSection "Automated reviews"
 ```
 
 Clear the setting to create review threads without a section.
@@ -81,7 +81,7 @@ only" filter still runs on a drive-by who landed one typo fix a year ago. Only
 default. `--trust past_contributors` and `--trust anyone` exist and are named honestly.
 The same gate protects issue rules because issue text is also an untrusted prompt source.
 
-Note that BB's permission modes are `full`, `auto`, and `accept-edits` — **none is
+Note that VesnALIA's permission modes are `full`, `auto`, and `accept-edits` — **none is
 read-only**. There is no "run the agent sandboxed" option, so the trust gate is the
 real protection rather than one layer of several.
 
@@ -168,7 +168,7 @@ GitHub publishes no whoami for such a token. `slopcop-login` derives the bot log
 the app slug instead, and `authenticatedLogin()` falls back to it. Without that, the
 account guard in `verifyLive` would disarm and count anyone's comment as possibly ours.
 
-Then set `botGhPath` to `~/.slopcop/slopcop-gh` and check `bb slopcop status`.
+Then set `botGhPath` to `~/.slopcop/slopcop-gh` and check `alia slopcop status`.
 
 Two consequences worth knowing:
 
@@ -181,17 +181,17 @@ Two consequences worth knowing:
 
 |                                                           |                                                 |
 | --------------------------------------------------------- | ----------------------------------------------- |
-| `bb slopcop rules`                                        | List rules                                      |
-| `bb slopcop rules add\|edit <rule>`                       | Create or update (see flags below)              |
-| `bb slopcop rules enable\|disable\|rm <rule>`             | Toggle or delete                                |
-| `bb slopcop check <rule> <number> [--issue]`              | Dry run — match, or the exact reason it did not |
-| `bb slopcop dispatch <rule> <number> [--issue] [--force]` | Run now                                         |
-| `bb slopcop runs [--rule <r>] [--limit N]`                | Recent runs                                     |
-| `bb slopcop show [run-id]`                                | A run and the review body it produced           |
-| `bb slopcop verify [run-id]`                              | Re-check a live run's comments against GitHub   |
-| `bb slopcop status`                                       | gh auth, watched repos, poll interval           |
+| `alia slopcop rules`                                        | List rules                                      |
+| `alia slopcop rules add\|edit <rule>`                       | Create or update (see flags below)              |
+| `alia slopcop rules enable\|disable\|rm <rule>`             | Toggle or delete                                |
+| `alia slopcop check <rule> <number> [--issue]`              | Dry run — match, or the exact reason it did not |
+| `alia slopcop dispatch <rule> <number> [--issue] [--force]` | Run now                                         |
+| `alia slopcop runs [--rule <r>] [--limit N]`                | Recent runs                                     |
+| `alia slopcop show [run-id]`                                | A run and the review body it produced           |
+| `alia slopcop verify [run-id]`                              | Re-check a live run's comments against GitHub   |
+| `alia slopcop status`                                       | gh auth, watched repos, poll interval           |
 
-Plugin settings: `defaultThreadSection` accepts a BB thread section name or ID.
+Plugin settings: `defaultThreadSection` accepts a VesnALIA thread section name or ID.
 SlopCop fails a run with a clear error if that section no longer exists. `botGhPath`
 switches every GitHub call to a bot identity — see above.
 
@@ -222,10 +222,10 @@ a rule that listens to both target types.
 Use a keyword trigger to run a rule only after an explicit request:
 
 ```sh
-bb slopcop rules add \
+alia slopcop rules add \
   --name requested-review \
   --repo owner/repo \
-  --project <bb-project-name> \
+  --project <alia-project-name> \
   --trigger comment_matches,pr_description_matches \
   --keyword "@slopcop" \
   --requester-trust write_access \
@@ -254,8 +254,8 @@ without posting) · `skipped` (matched nothing, e.g. blocked by the trust gate) 
 npm install
 npx vitest run     # matcher, markers, triggers, verification
 npx tsc --noEmit
-bb plugin install .
-bb plugin dev      # rebuild + reload on save
+alia plugin install .
+alia plugin dev      # rebuild + reload on save
 ```
 
 The interesting logic is pure and unit-tested: `lib/matcher.ts` (globs, trust gate,

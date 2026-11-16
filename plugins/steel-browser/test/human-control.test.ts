@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { PluginKvStorage } from "@get-bb/plugin-sdk";
+import type { PluginKvStorage } from "@vesnalia/plugin-sdk";
 import type { Dashboard } from "../contract.ts";
 import { liveViewerUrl, trustedViewerMessage, validatePaste } from "../viewer-protocol.ts";
 import { SignIns } from "../sign-ins.ts";

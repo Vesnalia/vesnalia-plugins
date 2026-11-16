@@ -1,8 +1,8 @@
 /**
  * Watching one Mac's process table for Xcode builds.
  *
- * The same code runs in two places: in the server, for the machine running bb,
- * and in the `bb.host` worker on every other Mac the plugin watches. That is
+ * The same code runs in two places: in the server, for the machine running VesnALIA,
+ * and in the `alia.host` worker on every other Mac the plugin watches. That is
  * the point of it living here rather than in the collector — a build on a
  * MacBook is read on the MacBook, with that Mac's `ps`, `lsof` and disk, and
  * reported the way a build on the server always was.

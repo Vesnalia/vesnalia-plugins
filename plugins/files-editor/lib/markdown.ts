@@ -17,11 +17,11 @@ export function isMarkdownPath(path: string): boolean {
   return MARKDOWN_EXTENSIONS.has(extensionOf(path));
 }
 
-/** What the pane shows: rendered markdown, BB's source viewer, or an editor. */
+/** What the pane shows: rendered markdown, VesnALIA's source viewer, or an editor. */
 export type FileViewMode = "preview" | "read" | "edit";
 
 /**
- * BB's markdown renderer is its chat message renderer: it parses the whole
+ * VesnALIA's markdown renderer is its chat message renderer: it parses the whole
  * document and builds the entire element tree in one synchronous pass, with no
  * virtualization — unlike the source viewer, which measures and settles over
  * several frames. A long README is tens of kilobytes, so a million characters

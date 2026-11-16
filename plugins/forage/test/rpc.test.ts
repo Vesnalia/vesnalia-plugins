@@ -6,7 +6,7 @@ import { fixtureServices } from "./fixtures/ui/services.ts";
 
 const fixtures: ReturnType<typeof fixtureServices>[] = [];
 afterEach(async () => { for (const f of fixtures.splice(0)) await f.close(); });
-function setup() { const f = fixtureServices(); fixtures.push(f); const api = createSourcesRpc(f.bb, f); registerSourcesRpc(f.bb, api); return { ...f, api, call: f.harness.behavior.callRpc }; }
+function setup() { const f = fixtureServices(); fixtures.push(f); const api = createSourcesRpc(f.alia, f); registerSourcesRpc(f.alia, api); return { ...f, api, call: f.harness.behavior.callRpc }; }
 
 describe("Sources RPC", () => {
  it("validates project visibility and thread relationship before repository access", async () => {

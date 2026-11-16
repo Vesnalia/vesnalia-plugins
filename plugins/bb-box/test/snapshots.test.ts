@@ -35,7 +35,7 @@ test("a take is recorded and pinned before the backend is asked, records the pro
   assert.equal(snapshot.name, "Fri 10:42");
   assert.equal(snapshot.note, "a note");
   assert.deepEqual(snapshot.by, { is: "command" });
-  assert.equal(snapshot.ref, `bb${snapshot.id}`);
+  assert.equal(snapshot.ref, `alia${snapshot.id}`);
   assert.equal(snapshot.owner, "thread");
   assert.equal(answer.counted, 1);
   assert.equal(answer.operation.state, "done");
@@ -106,7 +106,7 @@ test("room: a take is refused past 85% full, or when it would pass 85%, or past 
   assert.match(memory.message, /would be \d+% full with its memory/);
   state.provider.percentFull = 30;
   state.provider.metadataPercentFull = 81;
-  assert.match((await rejection(state.snapshots.take(COMMAND, box, standing(box)))).message, /metadata is 81% full, and BB Box takes no snapshot past 80%, 5 points below your settings' 85%/);
+  assert.match((await rejection(state.snapshots.take(COMMAND, box, standing(box)))).message, /metadata is 81% full, and ALIA Box takes no snapshot past 80%, 5 points below your settings' 85%/);
   state.provider.metadataPercentFull = 10;
   state.provider.percentFull = 84;
   const reserved: SnapshotOperation = {
@@ -159,7 +159,7 @@ test("Settings' room: a take is refused past it, and past 5 points below it of t
   assert.match((await rejection(state.snapshots.take(COMMAND, box, standing(box)))).message, /storage fast is 61% full, and your settings take no snapshot past 60%.*raise the limit in Settings, Snapshots\.$/);
   state.provider.percentFull = 40;
   state.provider.metadataPercentFull = 56;
-  assert.match((await rejection(state.snapshots.take(COMMAND, box, standing(box)))).message, /metadata is 56% full, and BB Box takes no snapshot past 55%, 5 points below your settings' 60%/);
+  assert.match((await rejection(state.snapshots.take(COMMAND, box, standing(box)))).message, /metadata is 56% full, and ALIA Box takes no snapshot past 55%, 5 points below your settings' 60%/);
   state.provider.metadataPercentFull = 10;
   const agent: Caller = { is: "agent", threadId: THREAD };
   const taken = await state.snapshots.take(agent, box, standing(box), { name: "the agent's" });
@@ -192,7 +192,7 @@ test("G10: the paid ceiling bounds the monthly rate held: a take that would pass
   state.settings = { ceilings: { [state.backend.id]: 3 } };
   assert.equal(state.snapshots.paidOn(state.backend.id).past, true, "a ceiling lowered below the rate is past");
   await state.snapshots.sweep();
-  assert.equal(state.store.records().length, 2, "BB Box never deletes to get under the ceiling");
+  assert.equal(state.store.records().length, 2, "VesnALIA Box never deletes to get under the ceiling");
   assert.match((await rejection(state.snapshots.take(COMMAND, box, standing(box)))).message, /to about \$5\.04 a month, past your ceiling of \$3\.00/);
   state.settings = { ceilings: { [state.backend.id]: 5.04 } };
   assert.equal((await state.snapshots.take(COMMAND, box, standing(box), { name: "three" })).snapshot?.state, "ready", "a rate equal to the ceiling is within it");
@@ -206,12 +206,12 @@ test("G10: the paid ceiling bounds the monthly rate held: a take that would pass
   assert.equal(state.snapshots.paidOn(state.backend.id).spent.toFixed(4), spent.toFixed(4), "the month's spend outlives a restart");
 });
 
-test("a price BB Box does not know is admitted for the person, and refused for an agent", async () => {
+test("a price VesnALIA Box does not know is admitted for the person, and refused for an agent", async () => {
   const state = world();
   const box = await readyBox(state);
   state.price = { amount: 0, currency: "USD", per: "day", known: false };
   const agent: Caller = { is: "agent", threadId: THREAD };
-  assert.equal((await rejection(state.snapshots.take(agent, box, standing(box)))).message, "BB Box does not know what a snapshot on Fake host costs, so only you can take one there.");
+  assert.equal((await rejection(state.snapshots.take(agent, box, standing(box)))).message, "VesnALIA Box does not know what a snapshot on Fake host costs, so only you can take one there.");
   assert.equal((await state.snapshots.take(COMMAND, box, standing(box))).snapshot?.state, "ready");
   const paid = state.snapshots.paidOn(state.backend.id);
   assert.deepEqual([paid.held.count, paid.held.unknown, paid.held.monthly], [1, 1, 0]);
@@ -226,7 +226,7 @@ test("a locked guest and a plan that cannot take are refused with their words, b
   assert.equal(locked.message, `Fake host left box ${box.name} locked (rollback), so it takes no snapshot. Run \`pct unlock 214\` on pve-1.`);
   state.provider.locked = null;
   state.provider.takeWhy = "The Proxmox token lacks VM.Snapshot on /pool/bbbox.";
-  assert.equal((await rejection(state.snapshots.take(COMMAND, box, standing(box)))).message, `BB Box cannot take a snapshot of box ${box.name} now: The Proxmox token lacks VM.Snapshot on /pool/bbbox.`);
+  assert.equal((await rejection(state.snapshots.take(COMMAND, box, standing(box)))).message, `VesnALIA Box cannot take a snapshot of box ${box.name} now: The Proxmox token lacks VM.Snapshot on /pool/bbbox.`);
   assert.equal(state.store.records().length, 0);
 });
 
@@ -263,7 +263,7 @@ test("G1: a take the provider leaves part-made is incomplete, never ready; delet
   assert.equal(state.provider.held.size, 0);
 });
 
-test("a take BB Box cannot confirm stays taking and pinned, and the next sweep settles it from the provider", async () => {
+test("a take VesnALIA Box cannot confirm stays taking and pinned, and the next sweep settles it from the provider", async () => {
   const state = world();
   const box = await readyBox(state);
   state.provider.take = "unknown";
@@ -277,7 +277,7 @@ test("a take BB Box cannot confirm stays taking and pinned, and the next sweep s
   await state.snapshots.sweep();
   assert.equal(state.store.records()[0]?.state, "ready");
   assert.equal(state.store.unsettled().length, 0);
-  assert.match(state.log.events(box.id).at(-1)!.words!, /confirmed after BB Box restarted/);
+  assert.match(state.log.events(box.id).at(-1)!.words!, /confirmed after ALIA Box restarted/);
 });
 
 test("G9: two takes at once run one after the other and end in two ready snapshots with their own names", async () => {
@@ -370,7 +370,7 @@ test("G9: a take and a release: the release waits for the take, then its snapsho
   assert.equal(state.store.records().length, 0);
   const kinds = state.kinds(box.id);
   assert.deepEqual(kinds.slice(kinds.indexOf("snapshot-taken")), ["snapshot-taken", "released", "snapshot-deleted"]);
-  assert.deepEqual(state.log.events(box.id).at(-1)?.by, { is: "bb-box", why: "its box was released" });
+  assert.deepEqual(state.log.events(box.id).at(-1)?.by, { is: "alia-box", why: "its box was released" });
 });
 
 test("G9: a delete and a take of the same box, and two deletes of one snapshot, end consistent", async () => {
@@ -395,7 +395,7 @@ test("restart in the middle of a take: after its task began it is confirmed read
   assert.equal(state.store.records()[0]?.state, "taking");
   await state.restart();
   await held;
-  assert.equal(state.store.unsettled()[0]?.step, "task", "its task was recorded before BB Box stopped");
+  assert.equal(state.store.unsettled()[0]?.step, "task", "its task was recorded before VesnALIA Box stopped");
   assert.equal(await state.snapshots.recover(), 1);
   assert.equal(state.store.records()[0]?.state, "ready");
   assert.equal(state.store.pins().size, 0);
@@ -408,7 +408,7 @@ test("restart in the middle of a take: after its task began it is confirmed read
   await state.snapshots.recover();
   const failed = state.store.records().find((record) => record.name === "mid-plan");
   assert.equal(failed?.state, "failed");
-  assert.equal(failed?.error, "BB Box restarted before the take began, and fake has no such snapshot.");
+  assert.equal(failed?.error, "VesnALIA Box restarted before the take began, and fake has no such snapshot.");
   assert.equal(state.provider.held.size, 1, "it was never taken again");
 });
 
@@ -426,7 +426,7 @@ test("restart in the middle of a delete: after its task began it is confirmed go
   state.holds.step = null;
   await state.snapshots.recover();
   assert.equal(state.store.record(one.id), null);
-  assert.match(state.log.events(box.id).at(-1)!.words!, /confirmed after BB Box restarted/);
+  assert.match(state.log.events(box.id).at(-1)!.words!, /confirmed after ALIA Box restarted/);
 
   state.holds.step = "planned";
   const second = state.snapshots.delete(COMMAND, standing(box), two.id).catch((error: unknown) => error);
@@ -525,14 +525,14 @@ test("G2: a backend that leaves the settings makes its snapshots unavailable, an
   state.active = false;
   await state.snapshots.sweep();
   assert.equal(state.store.record(snapshot.id)?.state, "unavailable");
-  assert.equal(state.store.record(snapshot.id)?.error, "its backend is not in BB Box's settings");
+  assert.equal(state.store.record(snapshot.id)?.error, "its backend is not in VesnALIA Box's settings");
   const held = state.snapshots.heldOn(state.backend.id)!;
   assert.equal(held.words, "1 snapshot on fake, an unknown size, at no charge");
   const problems = checkDocument(emptyDocument(), {}, [], { backends: new Map(), hosts: new Map(), snapshots: new Map([[state.backend.id, held]]) });
   assert.deepEqual(problems, [
     {
       path: `backends.${state.backend.id}`,
-      message: `Backend ${state.backend.id} holds 1 snapshot on fake, an unknown size, at no charge, so it cannot be removed or renamed. Delete them first, or forget them with bb box snapshot forget ${state.backend.id}: BB Box then drops its records of them, and they may still exist there and be billed.`,
+      message: `Backend ${state.backend.id} holds 1 snapshot on fake, an unknown size, at no charge, so it cannot be removed or renamed. Delete them first, or forget them with VesnALIA box snapshot forget ${state.backend.id}: VesnALIA Box then drops its records of them, and they may still exist there and be billed.`,
     },
   ]);
   assert.equal(state.snapshots.forgetBackend(state.backend.id).length, 1);
@@ -636,21 +636,21 @@ test("with snapshots.db unwritable, a take is refused before it starts and the d
   const snapshots = new Snapshots({ ledger: store, boxes: state.boxes, backends: { get: () => state.backend, active: () => [state.backend] }, notify: () => {}, logError: () => {} });
   const error = await rejection(snapshots.take(COMMAND, box, standing(box)));
   assert.equal(error.code, "unreachable");
-  assert.equal(error.message, "BB Box could not set up snapshots.db: disk I/O error. So BB Box takes no snapshot until it can.");
+  assert.equal(error.message, "VesnALIA Box could not set up snapshots.db: disk I/O error. So VesnALIA Box takes no snapshot until it can.");
   assert.equal(state.provider.held.size, 0);
   const [check] = store.checks();
   assert.equal(check?.status, "fail");
   assert.equal(check?.id, "snapshots");
 });
 
-test("snapshots.db is a file of its own beside BB Box's database, attached with its migrations, and an operation row outlives its snapshot for 30 days only", () => {
+test("snapshots.db is a file of its own beside VesnALIA Box's database, attached with its migrations, and an operation row outlives its snapshot for 30 days only", () => {
   const state = world();
   assert.equal(state.store.file.attached, true);
   assert.equal(state.store.file.spec.file, "snapshots.db");
   assert.equal(state.store.file.migrationsRun, SNAPSHOT_MIGRATIONS.length);
   const [check] = state.store.checks();
   assert.equal(check?.status, "ok");
-  assert.match(check!.detail, /^BB Box's records of snapshots and their operations, in snapshots\.db, attached to BB Box's database: 0 snapshots, 0 operations not settled/);
+  assert.match(check!.detail, /^ALIA Box's records of snapshots and their operations, in snapshots\.db, attached to ALIA Box's database: 0 snapshots, 0 operations not settled/);
   const done: SnapshotOperation = {
     id: "opdoneaaaaaaaa",
     request: null,
@@ -703,10 +703,10 @@ test("the box log's migration for identity resets keeps every event and allows i
   const db = new Database(join(root, "data.db"));
   migrateFile(db, "main", "_migrations", BOX_LOG_MIGRATIONS.slice(0, 4));
   db.prepare("INSERT INTO box_events (box, thread, name, at, kind, who) VALUES ('bx1', 'thr', 'amber-fox', 1, 'snapshot-taken', 'person')").run();
-  assert.throws(() => db.prepare("INSERT INTO box_events (box, thread, name, at, kind, who) VALUES ('bx1', 'thr', 'amber-fox', 2, 'identity-reset', 'bb-box')").run(), /CHECK constraint/);
+  assert.throws(() => db.prepare("INSERT INTO box_events (box, thread, name, at, kind, who) VALUES ('bx1', 'thr', 'amber-fox', 2, 'identity-reset', 'alia-box')").run(), /CHECK constraint/);
   assert.equal(migrateFile(db, "main", "_migrations", BOX_LOG_MIGRATIONS), 1);
-  db.prepare("INSERT INTO box_events (box, thread, name, at, kind, who) VALUES ('bx1', 'thr', 'amber-fox', 2, 'identity-reset', 'bb-box')").run();
-  db.prepare("INSERT INTO box_events (box, thread, name, at, kind, who) VALUES ('bx1', 'thr', 'amber-fox', 3, 'enrolled-again', 'bb-box')").run();
+  db.prepare("INSERT INTO box_events (box, thread, name, at, kind, who) VALUES ('bx1', 'thr', 'amber-fox', 2, 'identity-reset', 'alia-box')").run();
+  db.prepare("INSERT INTO box_events (box, thread, name, at, kind, who) VALUES ('bx1', 'thr', 'amber-fox', 3, 'enrolled-again', 'alia-box')").run();
   assert.deepEqual(db.prepare("SELECT seq, kind FROM box_events ORDER BY seq").all(), [
     { seq: 1, kind: "snapshot-taken" },
     { seq: 2, kind: "identity-reset" },
@@ -734,11 +734,11 @@ test("after a restart, a take whose task Proxmox no longer has and whose snapsho
   assert.equal(state.store.record(record!.id)?.state, "taking");
   const [operation] = state.store.unsettled();
   assert.equal(operation?.state, "unknown");
-  assert.match(operation!.error!, /no longer has its task, and fake has no such snapshot, so BB Box cannot tell how it ended/);
+  assert.match(operation!.error!, /no longer has its task, and fake has no such snapshot, so ALIA Box cannot tell how it ended/);
   assert.equal(state.store.pins().has(record!.id), true, "its pin stays");
 });
 
-test("after a restart, a task BB Box cannot read leaves the operation unknown and pinned, whatever the listing shows", async () => {
+test("after a restart, a task VesnALIA Box cannot read leaves the operation unknown and pinned, whatever the listing shows", async () => {
   const state = world();
   const box = await readyBox(state);
   await heldAt(state, "task", () => state.snapshots.take(COMMAND, box, standing(box), { name: "unread" }));
@@ -808,7 +808,7 @@ test("a release during a sweep's listing leaves no ghost record and no false los
   assert.deepEqual(state.kinds(box.id).filter((kind) => kind === "snapshot-lost"), []);
 });
 
-test("the sweeps together: a leftover guest of an ended thread goes at once with its found snapshots; one whose thread BB has not said ended twice stays", async () => {
+test("the sweeps together: a leftover guest of an ended thread goes at once with its found snapshots; one whose thread VesnALIA has not said ended twice stays", async () => {
   const state = world();
   const found = await readyBox(state);
   const plain = await readyBox(state);
@@ -820,7 +820,7 @@ test("the sweeps together: a leftover guest of an ended thread goes at once with
   state.tick(1000);
   await state.snapshots.sweep();
   await state.boxes.sweep();
-  assert.notEqual(await state.backend.power(found.guest!), null, "BB said the thread ended once only");
+  assert.notEqual(await state.backend.power(found.guest!), null, "VesnALIA said the thread ended once only");
   assert.equal(state.store.records().length, 1, "found again");
   state.tick(3 * 60_000);
   await state.snapshots.sweep();
@@ -864,17 +864,17 @@ test("with snapshots.db unreadable, the box sweep keeps every leftover guest", a
   assert.match(broken.holdsGuest(state.backend.id, box.guest!.ref)!, /cannot read its snapshots' records/);
 });
 
-test("a memory take checks and reserves the storage Proxmox saves the memory on, and is refused when BB Box cannot plan it", async () => {
+test("a memory take checks and reserves the storage Proxmox saves the memory on, and is refused when VesnALIA Box cannot plan it", async () => {
   const state = world();
   const box = await readyBox(state);
   state.provider.memoryStorage = { ...state.provider.storage(), key: "fake:state", name: "state", percentFull: 99, usedBytes: 99 * 2 ** 30 };
   assert.match((await rejection(state.snapshots.take(COMMAND, box, standing(box), { memory: true }))).message, /storage state is 99% full/);
   assert.equal((await state.snapshots.take(COMMAND, box, standing(box))).snapshot?.state, "ready", "a disk take does not use it");
   state.provider.memoryStorage = null;
-  state.provider.memoryWhy = "Proxmox would save its memory on one of a, b, and BB Box cannot tell which.";
+  state.provider.memoryWhy = "Proxmox would save its memory on one of a, b, and VesnALIA Box cannot tell which.";
   assert.equal(
     (await rejection(state.snapshots.take(COMMAND, box, standing(box), { memory: true }))).message,
-    `BB Box cannot take a snapshot of box ${box.name} with its memory: Proxmox would save its memory on one of a, b, and BB Box cannot tell which.`,
+    `VesnALIA Box cannot take a snapshot of box ${box.name} with its memory: Proxmox would save its memory on one of a, b, and VesnALIA Box cannot tell which.`,
   );
 });
 
@@ -933,14 +933,14 @@ test("an existing snapshots.db that cannot be opened fails closed: no empty ledg
   assert.equal(files.shared, false, "the box log still attaches");
   assert.match(files.snapshots.problem ?? "", /^its existing snapshots\.db cannot be opened: /);
   const store = new SnapshotStore({ file: files.snapshots });
-  assert.match(store.problem ?? "", /^BB Box could not set up snapshots\.db: its existing snapshots\.db cannot be opened/);
+  assert.match(store.problem ?? "", /^ALIA Box could not set up snapshots\.db: its existing snapshots\.db cannot be opened/);
   assert.equal(store.checks()[0]?.status, "fail");
-  assert.match(store.checks()[0]!.detail, /^BB Box could not set up its snapshots' records in snapshots\.db: its existing snapshots\.db cannot be opened/);
+  assert.match(store.checks()[0]!.detail, /^ALIA Box could not set up its snapshots' records in snapshots\.db: its existing snapshots\.db cannot be opened/);
   const inMain = handle!.prepare("SELECT COUNT(*) AS count FROM main.sqlite_master WHERE name = 'snapshots'").get() as { count: number };
-  assert.equal(inMain.count, 0, "no empty ledger in BB Box's database");
+  assert.equal(inMain.count, 0, "no empty ledger in VesnALIA Box's database");
 });
 
-test("records kept in BB Box's database while its handle refused to attach move into snapshots.db once it can", () => {
+test("records kept in VesnALIA Box's database while its handle refused to attach move into snapshots.db once it can", () => {
   const root = tempDir("snapshots-move");
   let plain: Database.Database | null = null;
   const open = () => (plain?.open ? plain : (plain = new Database(join(root, "data.db"))));
@@ -1008,9 +1008,9 @@ test("a box is first ready with its identity marker, written with its backend's 
   const state = world({ identityTool: guest.tool, identityRoot: guest.root });
   withIdentitySource(state, "eth");
   const box = await readyBox(state);
-  assert.equal(readFileSync(join(guest.root, "etc/bb-box/identity"), "utf8"), `bb-box identity 1\nbox ${box.id}\nsource eth\nmac bc:24:11:aa:f1:b6\n`);
+  assert.equal(readFileSync(join(guest.root, "etc/alia-box/identity"), "utf8"), `alia-box identity 1\nbox ${box.id}\nsource eth\nmac bc:24:11:aa:f1:b6\n`);
   assert.equal(typeof box.timings.identity, "number");
-  assert.equal(typeof box.identityMarkedAt, "number", "BB Box records that it armed the box, so only armed boxes are checked for a reset");
+  assert.equal(typeof box.identityMarkedAt, "number", "VesnALIA Box records that it armed the box, so only armed boxes are checked for a reset");
   assert.deepEqual(state.boxLogs.filter((line) => line.includes("identity marker")), []);
   const taken = (await state.snapshots.take(COMMAND, box, standing(box))).snapshot!;
   assert.equal(taken.forkSafe, 9);
@@ -1034,7 +1034,7 @@ test("a take is not fork-safe, and says so, when the box's image has no identity
   const unsettled = identityGuest();
   const noSource = world({ identityTool: unsettled.tool, identityRoot: unsettled.root });
   await notForkSafe(noSource, await readyBox(noSource), "a backend whose identity source is not settled writes no marker");
-  assert.equal(readFileSync(join(unsettled.root, "run/bb-box-identity/boot"), "utf8"), "unarmed\n");
+  assert.equal(readFileSync(join(unsettled.root, "run/alia-box-identity/boot"), "utf8"), "unarmed\n");
 
   const changed = identityGuest();
   const moved = world({ identityTool: changed.tool, identityRoot: changed.root });
@@ -1053,7 +1053,7 @@ test("a take is not fork-safe, and says so, when the box's image has no identity
   const off = world({ identityTool: switchedOff.tool, identityRoot: switchedOff.root, markersOn: false });
   withIdentitySource(off, "eth");
   const offBox = await readyBox(off);
-  assert.equal(existsSync(join(switchedOff.root, "etc/bb-box/identity")), false, "markers are off for its backend until the rollout turns them on");
+  assert.equal(existsSync(join(switchedOff.root, "etc/alia-box/identity")), false, "markers are off for its backend until the rollout turns them on");
   assert.equal(offBox.identityMarkedAt ?? null, null);
   await notForkSafe(off, offBox, "its backend's markers are off");
 
@@ -1067,9 +1067,9 @@ test("a take is not fork-safe, and says so, when the box's image has no identity
 
 test("070 unit 11b review, Opus 4: a value-source box that a reset left with no marker gets it written again at its next start; a box unarmed by hand and a MAC-source box are left as they are", async () => {
   const unmark = (root: string, boot: string) => {
-    for (const file of ["etc/bb-box/identity", "var/lib/bb-box/identity-armed"]) spawnSync("rm", ["-f", join(root, file)]);
-    mkdirSync(join(root, "run/bb-box-identity"), { recursive: true });
-    writeFileSync(join(root, "run/bb-box-identity/boot"), `${boot}\n`);
+    for (const file of ["etc/alia-box/identity", "var/lib/alia-box/identity-armed"]) spawnSync("rm", ["-f", join(root, file)]);
+    mkdirSync(join(root, "run/alia-box-identity"), { recursive: true });
+    writeFileSync(join(root, "run/alia-box-identity/boot"), `${boot}\n`);
   };
   const restart = async (state: World, box: BoxRecord) => {
     await state.boxes.stop(THREAD, box.id);
@@ -1082,18 +1082,18 @@ test("070 unit 11b review, Opus 4: a value-source box that a reset left with no 
   const box = await readyBox(state);
   unmark(guest.root, "reset");
   await restart(state, box);
-  assert.equal(readFileSync(join(guest.root, "etc/bb-box/identity"), "utf8"), `bb-box identity 1\nbox ${box.id}\nsource value\nvalue bxpending\n`);
+  assert.equal(readFileSync(join(guest.root, "etc/alia-box/identity"), "utf8"), `alia-box identity 1\nbox ${box.id}\nsource value\nvalue bxpending\n`);
   assert.ok(state.boxLogs.some((line) => line === `Wrote box ${box.name}'s identity marker again: a reset had left it none, as it found no value to write one with.`), state.boxLogs.join("\n"));
   unmark(guest.root, "unarmed");
   await restart(state, box);
-  assert.equal(existsSync(join(guest.root, "etc/bb-box/identity")), false, "unarmed by hand, it stays unarmed");
+  assert.equal(existsSync(join(guest.root, "etc/alia-box/identity")), false, "unarmed by hand, it stays unarmed");
   const lxc = identityGuest();
   const proxmox = world({ identityTool: lxc.tool, identityRoot: lxc.root });
   withIdentitySource(proxmox, "eth");
   const lxcBox = await readyBox(proxmox);
   unmark(lxc.root, "reset");
   await restart(proxmox, lxcBox);
-  assert.equal(existsSync(join(lxc.root, "etc/bb-box/identity")), false, "Proxmox's boxes are as they were");
+  assert.equal(existsSync(join(lxc.root, "etc/alia-box/identity")), false, "Proxmox's boxes are as they were");
 });
 
 test("a Docker box's marker holds the value its start saw, and a box whose start saw none is not armed", async () => {
@@ -1102,13 +1102,13 @@ test("a Docker box's marker holds the value its start saw, and a box whose start
   const state = world({ identityTool: guest.tool, identityRoot: guest.root });
   withIdentitySource(state, "value");
   const box = await readyBox(state);
-  assert.equal(readFileSync(join(guest.root, "etc/bb-box/identity"), "utf8"), `bb-box identity 1\nbox ${box.id}\nsource value\nvalue bxpending\n`);
+  assert.equal(readFileSync(join(guest.root, "etc/alia-box/identity"), "utf8"), `alia-box identity 1\nbox ${box.id}\nsource value\nvalue bxpending\n`);
   assert.equal((await state.snapshots.take(COMMAND, box, standing(box))).snapshot?.forkSafe, 9);
 
   const before = identityGuest();
   const old = world({ identityTool: before.tool, identityRoot: before.root });
   withIdentitySource(old, "value");
   const oldBox = await readyBox(old);
-  assert.ok(old.boxLogs.some((line) => line.startsWith(`Wrote no identity marker in box ${oldBox.name}`) && line.includes("this boot saw no value from bb-box")), old.boxLogs.join("\n"));
+  assert.ok(old.boxLogs.some((line) => line.startsWith(`Wrote no identity marker in box ${oldBox.name}`) && line.includes("this boot saw no value from alia-box")), old.boxLogs.join("\n"));
   assert.equal(oldBox.state, "ready");
 });

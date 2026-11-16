@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { freshPressureState, isPressureState, type PressureState, type PressureEvent } from "./pressure.ts";
 import { isAlertNotice } from "./alert-receiver.ts";
 import { mainCapBytes } from "../plugin/attached-files.ts";
@@ -15,13 +15,13 @@ function parseNotice(payload: string, sequence?: number): AlertNotice[] {
   } catch { return []; }
 }
 
-export function createMonitorStore(bb: Pick<BbPluginApi, "storage">) {
-  const db = bb.storage.database();
+export function createMonitorStore(alia: Pick<AliaPluginApi, "storage">) {
+  const db = alia.storage.database();
   db.pragma("cache_size = -256");
   db.pragma("busy_timeout = 100");
   db.pragma("wal_autocheckpoint = 64");
   db.pragma("journal_size_limit = 1048576");
-  bb.storage.migrate(db, [
+  alia.storage.migrate(db, [
     "CREATE TABLE pressure_logs (slot INTEGER PRIMARY KEY, sequence INTEGER NOT NULL UNIQUE, type TEXT NOT NULL, payload TEXT NOT NULL CHECK(length(CAST(payload AS BLOB)) <= 1024))",
     "CREATE TABLE pressure_state (id INTEGER PRIMARY KEY CHECK(id = 1), payload TEXT NOT NULL)",
     "CREATE INDEX pressure_logs_type_sequence ON pressure_logs(type, sequence)",

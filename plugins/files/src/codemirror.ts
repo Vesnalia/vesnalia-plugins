@@ -32,7 +32,7 @@ import {
 
 export const languageCompartment = new Compartment();
 
-const bbEditorTheme = EditorView.theme({
+const aliaEditorTheme = EditorView.theme({
   "&": {
     height: "100%",
     color: "var(--foreground)",
@@ -99,7 +99,7 @@ export function editorExtensions(args: {
       if (update.docChanged) args.onChange(update.state.doc.toString());
     }),
     EditorView.lineWrapping,
-    bbEditorTheme,
+    aliaEditorTheme,
   ];
 }
 

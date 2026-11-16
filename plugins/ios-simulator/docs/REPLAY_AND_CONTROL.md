@@ -52,7 +52,7 @@ Test rolling/keyframe retention and byte bounds, immutable saves, cleanup,
 wrong-thread and stale-socket rejection, in-flight handoff cancellation, and
 playback disposal/timestamp behavior. Run full tests, TypeScript and plugin
 build, reload locally, then verify human/agent handoff and capture/playback in
-native BB on the dedicated simulator. Do not drive another thread's device.
+native VesnALIA on the dedicated simulator. Do not drive another thread's device.
 
 Record completed checks and remaining live verification in
 `REPLAY_VERIFICATION.md`. The published v0.1.0 tag and its marketplace

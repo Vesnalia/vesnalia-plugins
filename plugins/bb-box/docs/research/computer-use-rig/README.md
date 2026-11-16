@@ -1,7 +1,7 @@
 # Computer-use rig
 
 The local desktop used for the measurements in
-[computer use](../computer-use.md). It is a test rig, not a bb-box template:
+[computer use](../computer-use.md). It is a test rig, not a alia-box template:
 VNC has no password and Chrome runs without its sandbox.
 
 It builds accessibility-cli at the measured commit, as released

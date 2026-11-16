@@ -2,7 +2,7 @@
 // ON CONFLICT upserts, explicit INSERT column lists, and an ORDER BY with a tie-breaker on every query that returns
 // more than one row. The store's queue (src/store-queue.ts) runs one Store call at a time over it.
 import { AsyncLocalStorage } from "node:async_hooks";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 export type SqlValue = string | number | null;
 
@@ -38,7 +38,7 @@ export function boundParams(params: readonly SqlValue[]): SqlValue[] {
   });
 }
 
-type Database = ReturnType<BbPluginApi["storage"]["database"]>;
+type Database = ReturnType<AliaPluginApi["storage"]["database"]>;
 
 /** A transaction, or a savepoint in one, while `fn` runs. */
 interface Frame { depth: number; open: boolean }

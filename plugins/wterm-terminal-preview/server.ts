@@ -2,7 +2,7 @@ import { Buffer } from "node:buffer";
 import { createHash, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { posix as path } from "node:path";
-import { defineRpcContract, type BbPluginApi } from "@bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
 	nextLinkedRecords,
@@ -17,7 +17,7 @@ export const MAX_FILE_UPLOAD_BYTES = 25 * 1024 * 1024;
 const UPLOAD_PATH = "/upload";
 const WASM_PATH = "/ghostty-vt.wasm";
 const NERD_FONT_PATH = "/symbols-nerd-font-mono-v3.5.0.woff2";
-const UPLOAD_DIRECTORY = ".bb-wterm-uploads";
+const UPLOAD_DIRECTORY = ".alia-wterm-uploads";
 const IMAGE_EXTENSIONS = new Set([
 	"avif",
 	"gif",
@@ -76,7 +76,7 @@ export function bundledNerdFontUrl(moduleUrl = import.meta.url): URL {
 }
 
 type PluginHttpContext = Parameters<
-	Parameters<BbPluginApi["http"]["route"]>[2]
+	Parameters<AliaPluginApi["http"]["route"]>[2]
 >[0];
 
 class UploadError extends Error {
@@ -189,24 +189,24 @@ export function createBytesCache(
 }
 
 async function linkedTerminalRecords(
-	bb: BbPluginApi,
+	alia: AliaPluginApi,
 	threadId: string,
 ): Promise<LinkedTerminalRecord[]> {
-	return parseLinkedRecords(await bb.storage.kv.get(terminalLinksKey(threadId)));
+	return parseLinkedRecords(await alia.storage.kv.get(terminalLinksKey(threadId)));
 }
 
 async function saveLinkedTerminalRecords(
-	bb: BbPluginApi,
+	alia: AliaPluginApi,
 	threadId: string,
 	records: readonly LinkedTerminalRecord[],
 ): Promise<void> {
 	const unique = new Map<string, LinkedTerminalRecord>();
 	for (const record of records) unique.set(record.id, record);
-	await bb.storage.kv.set(terminalLinksKey(threadId), [...unique.values()]);
+	await alia.storage.kv.set(terminalLinksKey(threadId), [...unique.values()]);
 }
 
 async function withLinkedTerminalIds<Value>(
-	bb: BbPluginApi,
+	alia: AliaPluginApi,
 	threadId: string,
 	update: (current: LinkedTerminalRecord[]) => Promise<Value>,
 ): Promise<Value> {
@@ -220,7 +220,7 @@ async function withLinkedTerminalIds<Value>(
 	terminalLinkWrites.set(key, queued);
 	await previous;
 	try {
-		return await update(await linkedTerminalRecords(bb, threadId));
+		return await update(await linkedTerminalRecords(alia, threadId));
 	} finally {
 		release();
 		if (terminalLinkWrites.get(key) === queued) terminalLinkWrites.delete(key);
@@ -228,12 +228,12 @@ async function withLinkedTerminalIds<Value>(
 }
 
 async function rememberLinkedTerminal(
-	bb: BbPluginApi,
+	alia: AliaPluginApi,
 	threadId: string,
 	terminalId: string,
 ): Promise<void> {
-	await withLinkedTerminalIds(bb, threadId, async (current) => {
-		await saveLinkedTerminalRecords(bb, threadId, [
+	await withLinkedTerminalIds(alia, threadId, async (current) => {
+		await saveLinkedTerminalRecords(alia, threadId, [
 			...current,
 			{ id: terminalId, firstUnavailableAt: null },
 		]);
@@ -253,11 +253,11 @@ function unavailableLinkedSession(terminalId: string): Session {
 	};
 }
 
-async function loadLinkedTerminals(bb: BbPluginApi, threadId: string) {
-	const linkedRecords = await linkedTerminalRecords(bb, threadId);
+async function loadLinkedTerminals(alia: AliaPluginApi, threadId: string) {
+	const linkedRecords = await linkedTerminalRecords(alia, threadId);
 	const linkedResults = await Promise.allSettled(
 		linkedRecords.map((record) =>
-			bb.sdk.terminals.get({ terminalId: record.id }),
+			alia.sdk.terminals.get({ terminalId: record.id }),
 		),
 	);
 	const now = Date.now();
@@ -270,9 +270,9 @@ async function loadLinkedTerminals(bb: BbPluginApi, threadId: string) {
 				record.firstUnavailableAt !== linkedRecords[index]?.firstUnavailableAt,
 		);
 	if (changed) {
-		void withLinkedTerminalIds(bb, threadId, async (current) => {
+		void withLinkedTerminalIds(alia, threadId, async (current) => {
 			await saveLinkedTerminalRecords(
-				bb,
+				alia,
 				threadId,
 				reconcileLinkedRecords(current, linkedRecords, linkedResults, now),
 			);
@@ -290,10 +290,10 @@ async function loadLinkedTerminals(bb: BbPluginApi, threadId: string) {
 	return { sessions, unavailableIds };
 }
 
-async function sessionsForThread(bb: BbPluginApi, threadId: string) {
+async function sessionsForThread(alia: AliaPluginApi, threadId: string) {
 	const [legacy, linked] = await Promise.all([
-		bb.sdk.terminals.list({ scope: legacyScope(threadId) }),
-		loadLinkedTerminals(bb, threadId),
+		alia.sdk.terminals.list({ scope: legacyScope(threadId) }),
+		loadLinkedTerminals(alia, threadId),
 	]);
 	return [
 		...new Map(
@@ -305,10 +305,10 @@ async function sessionsForThread(bb: BbPluginApi, threadId: string) {
 	];
 }
 
-async function listedSessionsForThread(bb: BbPluginApi, threadId: string) {
+async function listedSessionsForThread(alia: AliaPluginApi, threadId: string) {
 	const [legacy, linked] = await Promise.all([
-		bb.sdk.terminals.list({ scope: legacyScope(threadId) }),
-		loadLinkedTerminals(bb, threadId),
+		alia.sdk.terminals.list({ scope: legacyScope(threadId) }),
+		loadLinkedTerminals(alia, threadId),
 	]);
 	const unavailable = linked.unavailableIds.map(unavailableLinkedSession);
 	return [
@@ -323,7 +323,7 @@ async function listedSessionsForThread(bb: BbPluginApi, threadId: string) {
 }
 
 async function handleUpload(
-	bb: BbPluginApi,
+	alia: AliaPluginApi,
 	context: PluginHttpContext,
 ): Promise<Response> {
 	try {
@@ -331,7 +331,7 @@ async function handleUpload(
 		const terminalId = requiredQuery(context, "terminalId");
 		const fileName = requiredQuery(context, "fileName");
 		const mime = context.req.query("mime")?.trim() || "application/octet-stream";
-		const sessions = await sessionsForThread(bb, threadId);
+		const sessions = await sessionsForThread(alia, threadId);
 		const terminal = sessions.find((item) => item.id === terminalId);
 		if (!terminal) {
 			throw new UploadError(404, "terminal is not in the requested thread");
@@ -343,7 +343,7 @@ async function handleUpload(
 		}
 		const target = buildUploadPath(terminal.initialCwd, fileName);
 		const expectedSha256 = createHash("sha256").update(bytes).digest("hex");
-		const result = await bb.sdk.files.write({
+		const result = await alia.sdk.files.write({
 			hostId: terminal.hostId,
 			path: target.uploadPath,
 			rootPath: target.rootPath,
@@ -411,17 +411,17 @@ async function ghosttyWasmBytes(): Promise<Uint8Array> {
 	return pending;
 }
 
-export default function plugin(bb: BbPluginApi) {
-	bb.rpc.register(wtermRpcContract, {
+export default function plugin(alia: AliaPluginApi) {
+	alia.rpc.register(wtermRpcContract, {
 		async listSessions({ threadId }) {
-			return listedSessionsForThread(bb, threadId);
+			return listedSessionsForThread(alia, threadId);
 		},
 		async createTerminal({ threadId }) {
-			const thread = await bb.sdk.threads.get({ threadId });
+			const thread = await alia.sdk.threads.get({ threadId });
 			if (!thread.environmentId) {
 				throw new Error("Thread has no terminal environment");
 			}
-			const result = await bb.sdk.terminals.create({
+			const result = await alia.sdk.terminals.create({
 				scope: {
 					kind: "environment",
 					environmentId: thread.environmentId,
@@ -431,18 +431,18 @@ export default function plugin(bb: BbPluginApi) {
 				start: { mode: "shell" },
 				title: "Wterm terminal",
 			});
-			await rememberLinkedTerminal(bb, threadId, result.id);
+			await rememberLinkedTerminal(alia, threadId, result.id);
 			return mapSession(result);
 		},
 		async restartTerminal({ threadId, terminalId }) {
-			const sessions = await sessionsForThread(bb, threadId);
+			const sessions = await sessionsForThread(alia, threadId);
 			if (!sessions.some((item) => item.id === terminalId))
 				throw new Error("Terminal is not in the requested thread");
-			const replacement = await bb.sdk.terminals.restart({ terminalId });
-			await withLinkedTerminalIds(bb, threadId, async (linkedRecords) => {
+			const replacement = await alia.sdk.terminals.restart({ terminalId });
+			await withLinkedTerminalIds(alia, threadId, async (linkedRecords) => {
 				if (!linkedRecords.some((record) => record.id === terminalId)) return;
 				await saveLinkedTerminalRecords(
-					bb,
+					alia,
 					threadId,
 					linkedRecords.map((record) =>
 						record.id === terminalId
@@ -454,10 +454,10 @@ export default function plugin(bb: BbPluginApi) {
 			return mapSession(replacement);
 		},
 	});
-	bb.http.route("POST", UPLOAD_PATH, (context) => handleUpload(bb, context), {
+	alia.http.route("POST", UPLOAD_PATH, (context) => handleUpload(alia, context), {
 		auth: "token",
 	});
-	bb.http.route(
+	alia.http.route(
 		"GET",
 		WASM_PATH,
 		async () =>
@@ -469,7 +469,7 @@ export default function plugin(bb: BbPluginApi) {
 			}),
 		{ auth: "token" },
 	);
-	bb.http.route(
+	alia.http.route(
 		"GET",
 		NERD_FONT_PATH,
 		async () =>

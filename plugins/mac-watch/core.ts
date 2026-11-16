@@ -281,7 +281,7 @@ export function parsePs(text: string): Proc[] {
     const match = /^\s*(\d+)\s+([\d.]+)\s+(\d+)\s+(.+)$/.exec(line);
     if (!match) continue;
     const path = match[4]!.trim();
-    // Name an app after its outermost bundle, so helpers group under it: ".../bb.app/Contents/..." → "bb".
+    // Name an app after its outermost bundle, so helpers group under it: ".../alia.app/Contents/..." → "VesnALIA".
     const bundle = /^(.*?\/([^/]+)\.app)\//.exec(path);
     const name = bundle?.[2] ?? path.split("/").pop() ?? path;
     procs.push({ pid: Number(match[1]), name, cpu: Number(match[2]), memory: Number(match[3]) * 1024, app: bundle?.[1] ?? null });

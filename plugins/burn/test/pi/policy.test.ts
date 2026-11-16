@@ -42,20 +42,20 @@ describe("effectivePolicy", () => {
     });
   });
 
-  it("takes bb's policy in a bb thread, with pi's own budget only when bb has none", () => {
-    const bb = { budget: 20, stopAtBudget: false, notifyExpensiveTurn: true };
+  it("takes VesnALIA's policy in a VesnALIA thread, with pi's own budget only when VesnALIA has none", () => {
+    const alia = { budget: 20, stopAtBudget: false, notifyExpensiveTurn: true };
     const local = settings({ defaultBudget: 10, stopAtBudget: true });
-    expect(effectivePolicy(bb, 4, local)).toEqual(bb);
-    expect(effectivePolicy({ ...bb, budget: null }, 4, local)).toEqual({ ...bb, budget: 4 });
-    expect(effectivePolicy({ ...bb, budget: null }, undefined, local)).toEqual({ ...bb, budget: 10 });
-    expect(effectivePolicy({ ...bb, budget: null }, null, local)).toEqual({ ...bb, budget: null });
+    expect(effectivePolicy(alia, 4, local)).toEqual(alia);
+    expect(effectivePolicy({ ...alia, budget: null }, 4, local)).toEqual({ ...alia, budget: 4 });
+    expect(effectivePolicy({ ...alia, budget: null }, undefined, local)).toEqual({ ...alia, budget: 10 });
+    expect(effectivePolicy({ ...alia, budget: null }, null, local)).toEqual({ ...alia, budget: null });
   });
 });
 
 describe("describeBudget", () => {
   it("names where the budget in effect comes from", () => {
-    const bb = { budget: 20, stopAtBudget: false, notifyExpensiveTurn: false };
-    expect(describeBudget(bb, 4, settings())).toContain("$20, set in bb");
+    const alia = { budget: 20, stopAtBudget: false, notifyExpensiveTurn: false };
+    expect(describeBudget(alia, 4, settings())).toContain("$20, set in VesnALIA");
     expect(describeBudget(null, 4, settings({ defaultBudget: 10 }))).toContain("$4, set for this thread");
     expect(describeBudget(null, null, settings({ defaultBudget: 10 }))).toContain("No budget: turned off for this thread");
     expect(describeBudget(null, undefined, settings({ defaultBudget: 10 }))).toContain("$10, the default");

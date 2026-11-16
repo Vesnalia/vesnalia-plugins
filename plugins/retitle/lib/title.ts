@@ -1,5 +1,5 @@
 // The prompt for the helper model, and the cleanup of its answer. These
-// functions are pure, so the tests can run them without a bb server.
+// functions are pure, so the tests can run them without a VesnALIA server.
 
 /** Characters of conversation sent to the model. */
 export const MAX_TRANSCRIPT_CHARS = 12_000;
@@ -11,7 +11,7 @@ export interface OutlineItem {
 }
 
 /**
- * bb cuts each outline message to 200 characters. Keep the first message,
+ * VesnALIA cuts each outline message to 200 characters. Keep the first message,
  * because it gives the task, and then add messages from the newest back.
  */
 export function buildTranscript(
@@ -55,7 +55,7 @@ export function buildPrompt(args: {
   // The conversation comes first and the task last. With the task first, a
   // small model sometimes answered the instructions ("I understand…") and
   // ignored the conversation. The examples show the exact answer format. The
-  // title rules copy bb's own title prompt, so these titles look like bb's.
+  // title rules copy VesnALIA's own title prompt, so these titles look like VesnALIA's.
   const examples = EXAMPLES.map(([emoji, text]) => (args.emoji ? `${emoji} ${text}` : text));
   return [
     "Here is a conversation between a user and a coding agent.",

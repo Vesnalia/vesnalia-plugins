@@ -1,8 +1,8 @@
-// @smsunarto/bb-plugin-gh-stack — stacked-PR visibility and actions for BB threads.
+// @smsunarto/alia-plugin-gh-stack — stacked-PR visibility and actions for VesnALIA threads.
 //
 // Runs `gh stack` commands in a thread's workspace (server host):
 // view --json for the panel, plus sync / submit / init actions.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -407,7 +407,7 @@ function mapExitCode(result: GhResult): { kind: StackErrorKind; message: string 
     return {
       kind: "gh-missing",
       message:
-        "The gh CLI was not found on the BB server host. Install it and the gh-stack extension: gh extension install github/gh-stack.",
+        "The gh CLI was not found on the VesnALIA server host. Install it and the gh-stack extension: gh extension install github/gh-stack.",
     };
   }
   if (result.timedOut) {
@@ -897,7 +897,7 @@ const PR_METADATA_FRESH_MS = 60_000;
 // panel shows state-only rows instead.
 const PR_METADATA_MAX_AGE_MS = 30 * 60_000;
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   // Per-thread cache of the last computed getStack payload; lastReadAt is the
   // watched-thread signal for the idle-event refresh.
   const stackCache = new Map<
@@ -915,7 +915,7 @@ export default async function plugin(bb: BbPluginApi) {
   const workspaceMutationVersions = new Map<string, number>();
   // gh-stack's own lock covers only metadata persistence. This guard covers
   // the full checkout/rebase/push/PR operation and rejects overlap rather
-  // than letting two BB panels mutate one repository concurrently.
+  // than letting two VesnALIA panels mutate one repository concurrently.
   const activeWorkspaceMutations = new Set<string>();
   // A handled stash apply is also recorded durably. Keep its OID blocked in
   // memory as a fail-safe if that state write only partly succeeds.
@@ -1053,7 +1053,7 @@ export default async function plugin(bb: BbPluginApi) {
     for (const [threadId, key] of threadWorkspaceKeys) {
       if (key !== workspaceKey) continue;
       const fetchedAt = stackCache.get(threadId)?.fetchedAt ?? Date.now();
-      bb.realtime.publish("stack-updated", { threadId, fetchedAt });
+      alia.realtime.publish("stack-updated", { threadId, fetchedAt });
     }
   }
 
@@ -1064,7 +1064,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function loadSettings(): Promise<Settings> {
     if (settingsCache) return settingsCache;
-    const parsed = settingsSchema.safeParse(await bb.storage.kv.get<unknown>(SETTINGS_KEY));
+    const parsed = settingsSchema.safeParse(await alia.storage.kv.get<unknown>(SETTINGS_KEY));
     settingsCache = parsed.success ? parsed.data : { ...DEFAULT_SETTINGS };
     return settingsCache;
   }
@@ -1084,7 +1084,7 @@ export default async function plugin(bb: BbPluginApi) {
   // Waiters for hidden helper threads (Suggest): resolved by the idle/failed
   // lifecycle events below.
   const idleWaiters = new Map<string, (text: string | null) => void>();
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) => {
     clearRecoveryForThread(thread.id);
     const waiter = idleWaiters.get(thread.id);
     if (waiter) {
@@ -1106,12 +1106,12 @@ export default async function plugin(bb: BbPluginApi) {
       refreshStackInBackground(thread.id);
     }
   });
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     clearRecoveryForThread(thread.id);
     stackCache.delete(thread.id);
     threadWorkspaceKeys.delete(thread.id);
   });
-  bb.events.on("thread.failed", ({ thread }) => {
+  alia.events.on("thread.failed", ({ thread }) => {
     clearRecoveryForThread(thread.id);
     const waiter = idleWaiters.get(thread.id);
     if (waiter) {
@@ -1147,7 +1147,7 @@ export default async function plugin(bb: BbPluginApi) {
   };
 
   async function resolveWorkspace(threadId: string): Promise<Workspace> {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (!thread.environmentId) {
       threadWorkspaceKeys.delete(threadId);
       return {
@@ -1159,7 +1159,7 @@ export default async function plugin(bb: BbPluginApi) {
         },
       };
     }
-    const environment = await bb.sdk.environments.get({
+    const environment = await alia.sdk.environments.get({
       environmentId: thread.environmentId,
     });
     if (!environment.path || !environment.isGitRepo) {
@@ -1173,7 +1173,7 @@ export default async function plugin(bb: BbPluginApi) {
         },
       };
     }
-    // gh runs on the BB server host; a workspace on a remote machine
+    // gh runs on the VesnALIA server host; a workspace on a remote machine
     // won't exist here.
     if (!existsSync(environment.path)) {
       threadWorkspaceKeys.delete(threadId);
@@ -1182,7 +1182,7 @@ export default async function plugin(bb: BbPluginApi) {
         key: null,
         error: {
           kind: "workspace-missing",
-          message: `Workspace path ${environment.path} does not exist on the BB server host (remote environments are not supported).`,
+          message: `Workspace path ${environment.path} does not exist on the VesnALIA server host (remote environments are not supported).`,
         },
       };
     }
@@ -1209,7 +1209,7 @@ export default async function plugin(bb: BbPluginApi) {
     for (const [cachedThreadId, key] of threadWorkspaceKeys) {
       if (key !== workspaceKey) continue;
       stackCache.delete(cachedThreadId);
-      bb.realtime.publish("stack-updated", { threadId: cachedThreadId, fetchedAt });
+      alia.realtime.publish("stack-updated", { threadId: cachedThreadId, fetchedAt });
       // A compute that overlapped this mutation is intentionally not cached.
       // Once it releases the per-thread slot, run a stable post-mutation
       // compute so realtime listeners cannot remain on its stale checkout.
@@ -1282,7 +1282,7 @@ export default async function plugin(bb: BbPluginApi) {
       };
     }
 
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (
       thread.status === "active" ||
       thread.status === "starting" ||
@@ -1319,7 +1319,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
 
     const outcome = await withWorkspaceMutation(workspace, async () => {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (
         thread.status === "active" ||
         thread.status === "starting" ||
@@ -1363,7 +1363,7 @@ export default async function plugin(bb: BbPluginApi) {
       const target = planned.target;
       const args =
         target.kind === "branch" ? ["stack", "checkout", "--", target.name] : ["stack", "trunk"];
-      bb.log.info(`running gh ${args.join(" ")} in ${workspace.cwd}`);
+      alia.log.info(`running gh ${args.join(" ")} in ${workspace.cwd}`);
       const result = await runGh(args, workspace.cwd, 30_000);
       const checkedOut = await currentBranchName(workspace.cwd);
       if (checkedOut === target.name) {
@@ -1441,7 +1441,7 @@ export default async function plugin(bb: BbPluginApi) {
           fetchedAt,
           lastReadAt,
         });
-        bb.realtime.publish("stack-updated", { threadId, fetchedAt });
+        alia.realtime.publish("stack-updated", { threadId, fetchedAt });
         return stamped;
       })
       .finally(() => {
@@ -1454,7 +1454,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   function refreshStackInBackground(threadId: string): void {
     refreshStack(threadId).catch((error: unknown) => {
-      bb.log.warn(
+      alia.log.warn(
         `background stack refresh failed for ${threadId}: ${error instanceof Error ? error.message : String(error)}`,
       );
     });
@@ -1654,7 +1654,7 @@ export default async function plugin(bb: BbPluginApi) {
     };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async getStack({ threadId, refresh }) {
       const cached = stackCache.get(threadId);
       if (refresh !== true && cached) {
@@ -1691,7 +1691,7 @@ export default async function plugin(bb: BbPluginApi) {
         return { ok: false, message: workspace.error.message, detail: null };
       }
       return withWorkspaceMutation(workspace, async () => {
-        const thread = await bb.sdk.threads.get({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         if (
           thread.status === "active" ||
           thread.status === "starting" ||
@@ -1756,7 +1756,7 @@ export default async function plugin(bb: BbPluginApi) {
 
         // Validation above may await GitHub. Recheck immediately before the
         // mutation so an agent cannot start working underneath the checkout.
-        const latestThread = await bb.sdk.threads.get({ threadId });
+        const latestThread = await alia.sdk.threads.get({ threadId });
         if (
           latestThread.status === "active" ||
           latestThread.status === "starting" ||
@@ -1773,7 +1773,7 @@ export default async function plugin(bb: BbPluginApi) {
           runGit: (args, timeoutMs) => runGit(args, cwd, timeoutMs),
           checkout: (targetBranch) => {
             const args = ["stack", "checkout", "--", targetBranch];
-            bb.log.info(`running gh ${args.join(" ")} in ${cwd}`);
+            alia.log.info(`running gh ${args.join(" ")} in ${cwd}`);
             return runGh(args, cwd, 30_000);
           },
           currentBranch: () => currentBranchName(cwd),
@@ -1846,7 +1846,7 @@ export default async function plugin(bb: BbPluginApi) {
       const args = draft
         ? ["pr", "ready", String(prNumber), "--undo"]
         : ["pr", "ready", String(prNumber)];
-      bb.log.info(`running gh ${args.join(" ")} in ${cwd}`);
+      alia.log.info(`running gh ${args.join(" ")} in ${cwd}`);
       const result = await runGh(args, cwd, 30_000);
       const detail = outputTail(result);
       if (result.failedToSpawn || result.timedOut || result.code !== 0) {
@@ -1910,7 +1910,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (workspace.error) {
         return { ok: false, message: workspace.error.message, detail: null };
       }
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (
         thread.status === "active" ||
         thread.status === "starting" ||
@@ -2084,7 +2084,7 @@ export default async function plugin(bb: BbPluginApi) {
               : step === "prune"
                 ? ["stack", "sync", "--prune"]
                 : ["stack", "sync"];
-          bb.log.info(`running gh ${args.join(" ")} in ${cwd}`);
+          alia.log.info(`running gh ${args.join(" ")} in ${cwd}`);
           const result = await runGh(args, cwd, 180_000);
           detail = joinDetails(detail, outputTail(result));
           const warning = partialSuccessWarning(
@@ -2108,7 +2108,7 @@ export default async function plugin(bb: BbPluginApi) {
               recoveryLeases.set(workspace.key, lease);
               syncHandoffAt.set(handoffKey, Date.now());
               try {
-                await bb.sdk.threads.send({
+                await alia.sdk.threads.send({
                   threadId,
                   mode: "auto",
                   input: [
@@ -2131,7 +2131,7 @@ export default async function plugin(bb: BbPluginApi) {
                   recoveryLeases.delete(workspace.key);
                 }
                 syncHandoffAt.delete(handoffKey);
-                bb.log.warn(`sync handoff failed: ${reason}`);
+                alia.log.warn(`sync handoff failed: ${reason}`);
                 return {
                   ok: false,
                   message:
@@ -2385,7 +2385,7 @@ export default async function plugin(bb: BbPluginApi) {
         const invalid = await validateBranchRef(cwd, branch);
         if (invalid) return { ok: false, message: invalid, detail: null };
 
-        bb.log.info(`running gh stack init ${branch} in ${cwd}`);
+        alia.log.info(`running gh stack init ${branch} in ${cwd}`);
         const result = await runGh(["stack", "init", branch], cwd, 60_000);
         const detail = outputTail(result);
         if (result.code !== 0) {
@@ -2479,7 +2479,7 @@ export default async function plugin(bb: BbPluginApi) {
 
         // gh stack add only works from the top branch; navigate there first.
         // Uncommitted changes follow the checkout onto the new branch.
-        bb.log.info(`running gh stack top && gh stack add ${branch} in ${cwd}`);
+        alia.log.info(`running gh stack top && gh stack add ${branch} in ${cwd}`);
         const top = await runGh(["stack", "top"], cwd, 30_000);
         if (top.failedToSpawn || top.timedOut || top.code !== 0) {
           return failAdd(mapExitCode(top).message, outputTail(top));
@@ -2509,13 +2509,13 @@ export default async function plugin(bb: BbPluginApi) {
     },
 
     async suggestStackName({ threadId }) {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       const settings = await loadSettings();
 
       // Heuristic fallback when the agent path is unavailable or times out.
       let fallback = (thread.title ?? thread.titleFallback ?? "").trim();
       if (!fallback && thread.environmentId) {
-        const environment = await bb.sdk.environments.get({
+        const environment = await alia.sdk.environments.get({
           environmentId: thread.environmentId,
         });
         const branchName = environment.branchName;
@@ -2530,7 +2530,7 @@ export default async function plugin(bb: BbPluginApi) {
       // Ask the thread's own harness: hidden helper thread in the same
       // environment and provider, read-only naming task.
       try {
-        const helper = await bb.sdk.threads.spawn({
+        const helper = await alia.sdk.threads.spawn({
           projectId: thread.projectId,
           environment: { type: "reuse", environmentId: thread.environmentId },
           providerId: thread.providerId,
@@ -2539,16 +2539,16 @@ export default async function plugin(bb: BbPluginApi) {
           prompt: suggestNamePrompt(settings.conventionalCommits),
         });
         const text = await waitForIdle(helper.id, 90_000);
-        void bb.sdk.threads
+        void alia.sdk.threads
           .delete({ threadId: helper.id, childThreadsConfirmed: true })
           .catch(() => {});
         const name = text ? sanitizeTitle(text) : "";
         if (!name) {
-          bb.log.warn("suggestStackName: helper thread returned no title; using fallback");
+          alia.log.warn("suggestStackName: helper thread returned no title; using fallback");
         }
         return { name: name || fallback };
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `suggestStackName: helper thread failed (${error instanceof Error ? error.message : String(error)}); using fallback`,
         );
         return { name: fallback };
@@ -2575,7 +2575,7 @@ export default async function plugin(bb: BbPluginApi) {
       const detectedPrefix =
         stackCache.get(threadId)?.payload.detectedBranchPrefix ??
         (await currentBranchPrefix(workspace.cwd));
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.send({
         threadId,
         mode: "auto",
         input: [
@@ -2609,7 +2609,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (normalized.prefix) {
         const invalid = await validateBranchRef(
           process.cwd(),
-          `${normalized.prefix}bb-stack-check`,
+          `${normalized.prefix}alia-stack-check`,
         );
         if (invalid) {
           return {
@@ -2624,7 +2624,7 @@ export default async function plugin(bb: BbPluginApi) {
         branchPrefix: normalized.prefix,
         conventionalCommits,
       };
-      await bb.storage.kv.set(SETTINGS_KEY, next);
+      await alia.storage.kv.set(SETTINGS_KEY, next);
       settingsCache = next;
       // Cached payloads only carry settings and the prefix derived from them,
       // so patch them in place rather than paying for a gh recompute — and
@@ -2636,12 +2636,12 @@ export default async function plugin(bb: BbPluginApi) {
           settings: next,
           branchPrefix: next.branchPrefix || entry.payload.detectedBranchPrefix,
         };
-        bb.realtime.publish("stack-updated", {
+        alia.realtime.publish("stack-updated", {
           threadId: cachedThreadId,
           fetchedAt: entry.fetchedAt,
         });
       }
-      bb.log.info(
+      alia.log.info(
         `settings saved: prefix="${next.branchPrefix}" conventionalCommits=${next.conventionalCommits}`,
       );
       return { ok: true, message: null, settings: next };

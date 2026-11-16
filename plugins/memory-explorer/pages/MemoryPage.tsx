@@ -1,6 +1,6 @@
 // The Memory page.
 //
-// BB memory as a knowledge base, read through `knowledge_list` (server.ts).
+// VesnALIA memory as a knowledge base, read through `knowledge_list` (server.ts).
 // The Table tab lists every memory with its type's icon and colour
 // (type-style.ts), filtered by type and searched by name, label, aliases,
 // email, Slack id and summary, sortable by column. The Graph tab draws every
@@ -10,8 +10,8 @@
 // (MemoryDetail.tsx). Nothing watches memory: Refresh reads it again.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent, ReactNode, RefObject } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginRpcResult } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcResult } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { ENTITY_TYPES, KIND_TYPES, matchesQuery, type GraphNode } from "../knowledge";
 import { conceptSummary, conceptTitle, relativeDay, typeStyle } from "../type-style";

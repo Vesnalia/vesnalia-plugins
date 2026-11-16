@@ -1,18 +1,18 @@
-# Browser Bridge for bb
+# Browser Bridge for VesnALIA
 
-An optional Chromium extension (Manifest V3) for the Desktop & Browser Agent bb plugin.
-It lets coding agents in bb work in your browser tabs, in
+An optional Chromium extension (Manifest V3) for the Desktop & Browser Agent VesnALIA plugin.
+It lets coding agents in VesnALIA work in your browser tabs, in
 the background, while you keep using the browser. Works in Brave, Chrome, Edge
 and Chromium on macOS and Linux.
 
-An unofficial community extension, not affiliated with or endorsed by bb or
-Cua AI. "bb" in the name only says which app it works with; the icon is this
+An unofficial community extension, not affiliated with or endorsed by VesnALIA or
+Cua AI. "VesnALIA" in the name only says which app it works with; the icon is this
 project's own.
 
 ## How it works
 
 ```
-agent ─▶ bb plugin server ─▶ host worker ─▶ Unix socket ─▶ bridge.mjs ─▶ extension ─▶ tab
+agent ─▶ alia plugin server ─▶ host worker ─▶ Unix socket ─▶ bridge.mjs ─▶ extension ─▶ tab
                                              (0600, per browser)   (native messaging)   (chrome.debugger)
 ```
 
@@ -52,7 +52,7 @@ npm run build:extension     # writes browser-extension/dist
 Open `brave://extensions` or `chrome://extensions`, turn on Developer mode,
 choose **Load unpacked**, and pick `browser-extension/dist`. The manifest's
 `key` pins the unpacked id to `apeidchlabamkkpmahikoiingkhdcagf`, which the
-bridge's `allowed_origins` names. Then, in bb under **Settings → Plugins → Desktop & Browser Agent**, turn on
+bridge's `allowed_origins` names. Then, in VesnALIA under **Settings → Plugins → Desktop & Browser Agent**, turn on
 **Offer browser_* tools (extension)** in the **Browser extension** card and
 install the bridge there.
 
@@ -64,18 +64,18 @@ to end in a throwaway headless Chromium profile.
 | Permission | Why |
 | --- | --- |
 | `debugger` | Trusted clicks, hovers, typing and keys, screenshots, and answering a page's dialogs, in background tabs |
-| `nativeMessaging` | Talk to the bridge that bb installs on the same machine |
+| `nativeMessaging` | Talk to the bridge that VesnALIA installs on the same machine |
 | `tabs`, `tabGroups` | List and open tabs, and group the tabs agents open |
 | `storage` | Remember whether agents are paused and whether to show their cursor |
-| `alarms` | Reconnect to the bridge after bb or the browser restarts |
+| `alarms` | Reconnect to the bridge after VesnALIA or the browser restarts |
 | `file:///*` host access | Attach a file an agent uploads to a page's file input. The browser allows it only once you turn on **Allow access to file URLs**; the extension never opens or reads `file://` pages |
 
 **Privacy.** The extension makes no network requests of its own, has no
 analytics, and collects nothing for its developer. It hands page text, tab
-titles and URLs, and screenshots only to the bb agent on the same computer
+titles and URLs, and screenshots only to the VesnALIA agent on the same computer
 that asked for them, through the local bridge. That agent is a coding agent
 the user runs, and it sends what it reads to the AI model provider the user
-chose in bb (such as Anthropic or OpenAI), under that provider's terms. A file
+chose in VesnALIA (such as Anthropic or OpenAI), under that provider's terms. A file
 an agent uploads goes only to the page whose file input it fills. Data
 is not sold or used for anything but the agent's task. **Pause agents** in
 the popup stops all access.
@@ -83,7 +83,7 @@ the popup stops all access.
 ## Publishing to the Chrome Web Store
 
 ```sh
-npm run package --workspace browser-extension   # browser-bridge-for-bb-<version>.zip, without "key"
+npm run package --workspace browser-extension   # browser-bridge-for-alia-<version>.zip, without "key"
 ```
 
 The store item is [`aaidacbpcgjigclcoffjlcpnkmpnpgcc`](https://chromewebstore.google.com/detail/aaidacbpcgjigclcoffjlcpnkmpnpgcc);

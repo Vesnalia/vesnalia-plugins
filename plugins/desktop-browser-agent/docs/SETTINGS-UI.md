@@ -2,7 +2,7 @@
 
 Where: **Settings → Plugins → Desktop & Browser Agent**.
 
-bb renders the declarative configuration form first. The plugin then registers
+VesnALIA renders the declarative configuration form first. The plugin then registers
 six sibling settings cards so each concern has its own boundary instead of
 appearing as a nested card inside one large group:
 
@@ -13,7 +13,7 @@ appearing as a nested card inside one large group:
    the provider list. A row shows its result only while it follows the mode.
    **Provider's own** is offered only for providers that have their own
    computer use.
-3. **Browser extension** is the optional Browser Bridge for bb. A checkbox
+3. **Browser extension** is the optional Browser Bridge for VesnALIA. A checkbox
    (off by default, labelled **Offer `browser_*` tools (extension)**) offers the
    `browser_*` tools; only when it is on does the card show each machine's
    bridge (Install bridge / Remove bridge, and which browsers are set up or
@@ -36,12 +36,12 @@ appearing as a nested card inside one large group:
 
 Rows stay on one line. Where a routing mode or checklist item has extra detail,
 a `?` icon slides in when the row is hovered and shows the detail in a tooltip
-on hover or keyboard focus. `bb cua tools` prints the same tool list.
+on hover or keyboard focus. `alia cua tools` prints the same tool list.
 
-The routing mode is not a declared setting. bb renders every declared setting
+The routing mode is not a declared setting. VesnALIA renders every declared setting
 in its configuration form and has no way to hide one, so a declared mode would
 appear twice: as that form's select and as the radio card. The mode lives in
-plugin storage instead; the card and `bb cua mode` both write it.
+plugin storage instead; the card and `alia cua mode` both write it.
 
 ## Installer dialog
 
@@ -69,7 +69,7 @@ same live state without restarting the installer.
 The collapsed header shows the platform, online state, overall status, and
 completed required checks. Expanding it shows:
 
-- bb machine connection,
+- VesnALIA machine connection,
 - Cua Driver installation and version,
 - driver service availability or its automatic start behavior,
 - macOS Accessibility and Screen Recording grants,
@@ -104,13 +104,13 @@ Ideas only; nothing here ships.
 ## CLI equivalents
 
 ```text
-bb cua status [--host <id>] [--json]
-bb cua mode <prefer-native|cua-everywhere|off>
-bb cua policy [<providerId> <cua|native|off|inherit>] [--json]
-bb cua tools [--host <id>]
-bb cua call <tool> [<json-args>] [--host <id>]
-bb cua expose run_script call
-bb cua browser [status|install|uninstall|on|off] [--host <id>] [--json]
-bb cua browser call browser_tabs '{}'
-bb plugin config desktop-browser-agent set browserTools false
+alia cua status [--host <id>] [--json]
+alia cua mode <prefer-native|cua-everywhere|off>
+alia cua policy [<providerId> <cua|native|off|inherit>] [--json]
+alia cua tools [--host <id>]
+alia cua call <tool> [<json-args>] [--host <id>]
+alia cua expose run_script call
+alia cua browser [status|install|uninstall|on|off] [--host <id>] [--json]
+alia cua browser call browser_tabs '{}'
+alia plugin config desktop-browser-agent set browserTools false
 ```

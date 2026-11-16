@@ -1,5 +1,5 @@
 /*
- * An older webview shipped by bb drops every CSS rule whose selector carries a
+ * An older webview shipped by VesnALIA drops every CSS rule whose selector carries a
  * backslash escape, which is exactly what Tailwind emits for arbitrary values
  * (`text-[44px]` -> `.text-\[44px\]`) and fractional spacing (`gap-1.5` ->
  * `.gap-1\.5`). The page still renders, so the breakage is silent: icons fall

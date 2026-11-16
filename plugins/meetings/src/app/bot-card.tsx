@@ -3,7 +3,7 @@
 // clearAvatar, DESIGN §14).
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent } from "react";
-import { useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRealtime } from "@vesnalia/plugin-sdk/app";
 import type { BotProfile } from "../shared/rpc-contract";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";

@@ -1,4 +1,4 @@
-// Generates the BB theme stylesheets and the palette module from the upstream
+// Generates the VesnALIA theme stylesheets and the palette module from the upstream
 // `ayu` package (github.com/ayu-theme/ayu-colors).
 //
 //   npm run generate
@@ -9,13 +9,13 @@
 //
 // How this maps, and why it is not a 1:1 copy of ayu's editor themes
 // ------------------------------------------------------------------
-// Ayu and BB stack their surfaces in opposite directions.
+// Ayu and VesnALIA stack their surfaces in opposite directions.
 //
 // Ayu names three surfaces: `surface.base` (window chrome — sidebar, status
 // bar), `surface.lift` (the editor), and `ui.panel`/`ui.popup` on top. Base is
 // the DARKEST of them; the editor sits lifted above it.
 //
-// BB has one anchor, `--canvas`, and derives everything else from it by mixing
+// VesnALIA has one anchor, `--canvas`, and derives everything else from it by mixing
 // in `--ink`. Every derivation moves AWAY from canvas — including the sidebar,
 // which is `color-mix(in oklch, var(--ink) 2.2%, var(--canvas))`, i.e. always a
 // step lighter. `--background`, `--card` and `--popover` all default to plain
@@ -29,7 +29,7 @@
 // the whole app flattens into a single muddy tone.
 //
 // The surfaces ayu places below or above the editor are then set explicitly,
-// because BB would otherwise derive them in the wrong direction.
+// because VesnALIA would otherwise derive them in the wrong direction.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -68,7 +68,7 @@ const ANSI = [
 function tokens(variant) {
   const { syntax, terminal, vcs, editor, ui, common, palette } = variant;
   const uiFg = ui.fg.hex();
-  // bb draws status text (a finished thread's sidebar label, passing checks)
+  // VesnALIA draws status text (a finished thread's sidebar label, passing checks)
   // in --success-foreground. Ayu Light's vcs.added is 2.2:1 on its canvas, so
   // there the text takes the darkest green ayu publishes, palette.green.l1
   // (3.3:1). The dark variants keep vcs.added, which is well above 3:1.
@@ -98,7 +98,7 @@ function tokens(variant) {
     ["--canvas", editor.bg.hex()],
     ["--ink", editor.fg.hex()],
 
-    ["/* chrome — ayu puts this BELOW the content; BB would derive it above */"],
+    ["/* chrome — ayu puts this BELOW the content; VesnALIA would derive it above */"],
     ["--sidebar", ui.bg.hex()], // ayu surface.base
     ["--sidebar-border", line],
     ["--sidebar-accent", ui.selection.active.hex()],
@@ -109,7 +109,7 @@ function tokens(variant) {
     ["--surface-raised", ui.panel.bg.hex()],
     ["--surface-raised-solid", ui.panel.bg.hex()],
 
-    // BB builds every neutral fill by mixing `--ink` into `--canvas`. Ayu's ink
+    // VesnALIA builds every neutral fill by mixing `--ink` into `--canvas`. Ayu's ink
     // is a WARM grey (mirage #cccac2) and its surfaces are cool navy, so those
     // mixes come out tan: inline-code chips at #282225, table fills at #1a1e25,
     // against a #10141c app. Ayu keeps its chrome cool by washing surfaces with
@@ -123,22 +123,22 @@ function tokens(variant) {
     ["--surface-recessed-solid", ui.bg.hex()],
     ["--surface-recessed-soft-solid", ui.bg.hex()],
 
-    ["/* lines and overlays — ayu draws these far subtler than BB derives them */"],
+    ["/* lines and overlays — ayu draws these far subtler than VesnALIA derives them */"],
     ["--border", line],
     ["--border-hairline", line],
     ["--border-seam", line],
     ["--input", `${uiFg}33`],
     ["--state-hover", ui.selection.normal.hex()],
     ["--state-active", ui.selection.active.hex()],
-    // BB defaults this to solid `var(--primary)`; ayu selects rows with a
+    // VesnALIA defaults this to solid `var(--primary)`; ayu selects rows with a
     // neutral wash and keeps the accent for focus.
     ["--surface-selected", ui.selection.active.hex()],
 
     ["/* accent */"],
     ["--primary", accent],
     ["--primary-foreground", common.accent.on.hex()],
-    // BB derives --file-accent from --timeline-accent; ayu pins both to the
-    // entity blue, so timeline labels and file links use ayu blue, not bb blue.
+    // VesnALIA derives --file-accent from --timeline-accent; ayu pins both to the
+    // entity blue, so timeline labels and file links use ayu blue, not VesnALIA blue.
     ["--timeline-accent", syntax.entity.hex()],
     ["--file-accent", syntax.entity.hex()],
 
@@ -160,10 +160,10 @@ function tokens(variant) {
   ];
 }
 
-// BB's own tiers sit close to `--ink` (78% / 71.5% / 68% lightness against ink
+// VesnALIA's own tiers sit close to `--ink` (78% / 71.5% / 68% lightness against ink
 // at 81%) because `--muted-foreground` carries a lot of ordinary secondary text.
 // Ayu's `ui.fg` is far dimmer than that — it is a tab-label colour, not a body
-// tier — so these follow BB's documented anchor-derived recipe instead and pick
+// tier — so these follow VesnALIA's documented anchor-derived recipe instead and pick
 // up the palette's hue through `--ink` and `--canvas`.
 const TEXT_TIERS = [
   ["--muted-foreground", "color-mix(in oklch, var(--ink) 78%, var(--canvas))"],
@@ -172,17 +172,17 @@ const TEXT_TIERS = [
 ];
 
 /**
- * BB highlights code with sugar-high, whose tokens read their colour from
+ * VesnALIA highlights code with sugar-high, whose tokens read their colour from
  * `--sh-*` custom properties — so ayu's syntax palette, the part of the theme
  * that actually carries its identity, is reachable from CSS after all.
  *
- * These are declared ON `.bb-code-highlight` by BB itself, not inherited from
+ * These are declared ON `.alia-code-highlight` by VesnALIA itself, not inherited from
  * `:root`, so an element-level declaration is required to override them; a
- * `:root` block would lose to BB's own rule. `.dark .bb-code-highlight` is
- * repeated to outrank BB's dark override at equal specificity (this stylesheet
+ * `:root` block would lose to VesnALIA's own rule. `.dark .alia-code-highlight` is
+ * repeated to outrank VesnALIA's dark override at equal specificity (this stylesheet
  * is injected last, so equal specificity wins on order).
  *
- * `--sh-identifier`, `--sh-sign` and `--sh-space` are left alone: BB already
+ * `--sh-identifier`, `--sh-sign` and `--sh-space` are left alone: VesnALIA already
  * points them at `--foreground` / `--muted-foreground`, which are ayu's
  * `editor.fg` and a dimmed tier of it. sugar-high's `sign` covers all
  * punctuation rather than just operators, so painting it ayu's salmon
@@ -214,7 +214,7 @@ function block(selector, entries) {
 
 /**
  * Each ayu variant is a whole theme, the way ayu ships them everywhere else, so
- * one stylesheet paints both of BB's modes: selecting Ayu Dark gives you Ayu
+ * one stylesheet paints both of VesnALIA's modes: selecting Ayu Dark gives you Ayu
  * Dark whichever way the light/dark switch is set. `color-scheme` follows the
  * palette so native scrollbars and form controls match it.
  */
@@ -230,10 +230,10 @@ function stylesheet({ variant, scheme, note }) {
       ...TEXT_TIERS,
     ]),
     "",
-    "/* Syntax highlighting (sugar-high). Declared at element level because BB",
-    "   sets these on .bb-code-highlight itself, not on :root. */",
+    "/* Syntax highlighting (sugar-high). Declared at element level because VesnALIA",
+    "   sets these on .alia-code-highlight itself, not on :root. */",
     block(
-      ".bb-code-highlight,\n.light .bb-code-highlight,\n.dark .bb-code-highlight",
+      ".alia-code-highlight,\n.light .alia-code-highlight,\n.dark .alia-code-highlight",
       codeTokens(ayu[variant]),
     ),
     "",
@@ -254,7 +254,7 @@ for (const theme of THEMES) {
 
 // --- palette module ---------------------------------------------------------
 
-/** Flatten a variant into dotted keys -> hex, for `bb ayu colors`. */
+/** Flatten a variant into dotted keys -> hex, for `alia ayu colors`. */
 function flatten(node, path = [], out = {}) {
   for (const [key, value] of Object.entries(node)) {
     if (value && typeof value.hex === "function") out[[...path, key].join(".")] = value.hex();

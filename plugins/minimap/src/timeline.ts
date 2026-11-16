@@ -1,4 +1,4 @@
-import type { useSdk } from "@get-bb/plugin-sdk/app";
+import type { useSdk } from "@vesnalia/plugin-sdk/app";
 import { applyDelta, flatten, itemsOf, mergeNewest, prependOlder, type Memo, type Row } from "./rows.ts";
 import type { Item } from "./model.ts";
 

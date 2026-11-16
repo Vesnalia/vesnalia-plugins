@@ -1,5 +1,5 @@
 // A terminal in a box, in a thread panel tab of its own: xterm over the
-// plugin's WebSocket, /terminal, to a shell whose PTY is on BB's server
+// plugin's WebSocket, /terminal, to a shell whose PTY is on VesnALIA's server
 // (src/plugin/terminal.ts). The plugin keeps the shell while the tab is
 // away, so this tab keeps a session ID for the browser tab, as the desktop
 // keeps its viewer ID: switching panel tabs attaches to the same shell. When
@@ -12,9 +12,9 @@ import { Terminal } from "@xterm/xterm";
 import {
   experimental_Icon as Icon,
   experimental_usePluginId,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { useIsCompactViewport } from "@/components/ui/hooks/use-compact-viewport";
@@ -67,7 +67,7 @@ export function terminalTitle(box: Pick<BoxView, "name">, compactViewport = fals
 
 /** Opens a box's terminal tab in the thread's panel. */
 export function useOpenTerminal(): (box: BoxView) => void {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const compactViewport = useIsCompactViewport();
   return (box) => {
     navigate.openThreadPanel({
@@ -109,7 +109,7 @@ const encoder = new TextEncoder();
 
 /** xterm's stylesheet, in the page once. */
 function ensureStyles(): void {
-  const id = "bb-box-xterm-css";
+  const id = "alia-box-xterm-css";
   if (document.getElementById(id)) return;
   const style = document.createElement("style");
   style.id = id;
@@ -117,7 +117,7 @@ function ensureStyles(): void {
   document.head.appendChild(style);
 }
 
-/** A BB theme token as a colour xterm takes: the browser resolves the token, a canvas reads it back. */
+/** A VesnALIA theme token as a colour xterm takes: the browser resolves the token, a canvas reads it back. */
 function tokenColor(token: string, fallback: string): string {
   try {
     const probe = document.createElement("span");
@@ -156,7 +156,7 @@ function randomId(): string {
 
 function storedSession(boxId: string): string | null {
   try {
-    return window.sessionStorage.getItem(`bb-box:terminal:${boxId}`);
+    return window.sessionStorage.getItem(`alia-box:terminal:${boxId}`);
   } catch {
     return null;
   }
@@ -164,7 +164,7 @@ function storedSession(boxId: string): string | null {
 
 function storeSession(boxId: string, id: string): void {
   try {
-    window.sessionStorage.setItem(`bb-box:terminal:${boxId}`, id);
+    window.sessionStorage.setItem(`alia-box:terminal:${boxId}`, id);
   } catch {
     // Storage may be off. Then a remount gets a new shell.
   }
@@ -289,7 +289,7 @@ export class TerminalClient implements Kept {
 
   /**
    * Draws with WebGL, which measures each glyph once on a canvas. The DOM renderer measures each new character in the page,
-   * and BB's page can make each measurement slow: a first prompt waited 2 s for it. Where WebGL is missing or its context is
+   * and VesnALIA's page can make each measurement slow: a first prompt waited 2 s for it. Where WebGL is missing or its context is
    * lost, xterm draws with the DOM renderer again. Loaded once the element is in the page: loaded before, it sizes its canvas
    * for a pixel ratio of 1 and draws a Retina screen's glyphs twice as large.
    */
@@ -305,7 +305,7 @@ export class TerminalClient implements Kept {
 
   #describeItsKeys(): void {
     const words = document.createElement("span");
-    words.id = `bb-box-terminal-keys-${randomId()}`;
+    words.id = `alia-box-terminal-keys-${randomId()}`;
     words.className = "sr-only";
     words.textContent = TERMINAL_KEYS_WORDS;
     this.element.appendChild(words);
@@ -404,11 +404,11 @@ export function TerminalPanel({
  * The bare Terminal launcher tab, made a real shortcut (Task A): one box with a
  * terminal opens straight away, several offer a chooser, and none sends you to the
  * Box panel. As with the desktop, the SDK 0.5.29 has no way to hide the launcher
- * row (docs/bb-requests.md #14), so the shortcut lives here, not in the action's run().
+ * row (docs/alia-requests.md #14), so the shortcut lives here, not in the action's run().
  */
 function TerminalChooser({ threadId }: { threadId: string }) {
   const rpc = useRpc<Contract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const open = useOpenTerminal();
   const { value: state, error } = useLive<PanelState>(
     threadId,

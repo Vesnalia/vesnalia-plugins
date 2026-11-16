@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { installTestPluginRuntime, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { portalScopeProps } from "../src/portal-scope";
 import { BulkBar } from "../src/bulk-bar";
 import { EMPTY_LAYOUT } from "../src/layout";
@@ -25,7 +25,7 @@ const openWithPointer = (name: string) => fireEvent.pointerDown(screen.getByRole
 
 describe("portal scope", () => {
   it("marks portalled content as this plugin's overlay root", () => {
-    expect(portalScopeProps()).toMatchObject({ "data-bb-portaled-overlay": "", "data-bb-plugin-root": "" });
+    expect(portalScopeProps()).toMatchObject({ "data-alia-portaled-overlay": "", "data-alia-plugin-root": "" });
   });
 
   for (const path of sources) {
@@ -39,7 +39,7 @@ describe("portal scope", () => {
   it("renders the view menu and its checked choices inside the plugin scope", () => {
     const slot = renderSlot({ component: ViewMenu }, { settings: DEFAULT_SETTINGS, onChange: vi.fn() });
     openWithPointer("View options");
-    expect(screen.getByRole("menu").hasAttribute("data-bb-plugin-root")).toBe(true);
+    expect(screen.getByRole("menu").hasAttribute("data-alia-plugin-root")).toBe(true);
     const checked = screen.getByRole("menuitemradio", { name: "Comfortable" });
     expect(checked.getAttribute("aria-checked")).toBe("true");
     expect(checked.querySelector("[data-sb-check]")).not.toBeNull();
@@ -53,16 +53,16 @@ describe("portal scope", () => {
     render(<SectionMenu group={group} unreadCount={0} hueOverride={null} onRename={vi.fn()}
       onSetHue={vi.fn()} onNewThread={vi.fn()} onMarkAllRead={vi.fn()} onDelete={vi.fn()} />);
     openWithPointer("Section actions");
-    expect(screen.getByRole("menu").hasAttribute("data-bb-plugin-root")).toBe(true);
+    expect(screen.getByRole("menu").hasAttribute("data-alia-plugin-root")).toBe(true);
     fireEvent.click(screen.getByRole("menuitem", { name: /Delete section/ }));
     const dialog = screen.getByRole("alertdialog");
-    expect(dialog.hasAttribute("data-bb-plugin-root")).toBe(true);
-    expect(document.querySelectorAll("[data-bb-portaled-overlay]").length).toBeGreaterThanOrEqual(2);
+    expect(dialog.hasAttribute("data-alia-plugin-root")).toBe(true);
+    expect(document.querySelectorAll("[data-alia-portaled-overlay]").length).toBeGreaterThanOrEqual(2);
   });
 
   it("renders the selection bar's archive dialog inside the plugin scope", () => {
     render(<BulkBar count={2} childCount={1} groups={[group]} onMove={vi.fn()} onArchive={vi.fn()} onClear={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Archive" }));
-    expect(screen.getByRole("alertdialog").hasAttribute("data-bb-plugin-root")).toBe(true);
+    expect(screen.getByRole("alertdialog").hasAttribute("data-alia-plugin-root")).toBe(true);
   });
 });

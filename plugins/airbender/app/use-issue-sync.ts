@@ -6,10 +6,10 @@
 // that button is to be marked as failing.
 //
 // Why: syncing runs by itself every few minutes and shows nothing while it
-// works (bead-bb-0bz). The owner asked to be able to see when the last one
-// was and what it did, on the button and in the menu (bead-bb-6a9), and to
+// works (bead-alia-0bz). The owner asked to be able to see when the last one
+// was and what it did, on the button and in the menu (bead-alia-6a9), and to
 // have failures shown prominently, "because ... it can mess up the data"
-// (bead-bb-c9l.16): what is wrong is worked out by bend, as `trouble`, and
+// (bead-alia-c9l.16): what is wrong is worked out by bend, as `trouble`, and
 // every place here that warns goes by it.
 //
 // Design notes:
@@ -21,7 +21,7 @@
 //   (a sync made in a terminal, or by bend's helper). Those re-reads are
 //   marked passive, so that bend does not take them for the owner using it.
 
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useState } from "react";
 import type { RefusedChange, rpcContract } from "../server/contract.ts";
 import { CHANGED_CHANNEL } from "../shared/constants.ts";

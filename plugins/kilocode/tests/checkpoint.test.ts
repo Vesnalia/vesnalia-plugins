@@ -27,7 +27,7 @@ afterEach(() => {
 const live = (sessionId: string, userCount: number, extra: Record<string, unknown> = {}) => ({
   kind: "live",
   sessionId,
-  bbThreadId: "thr_demo",
+  aliaThreadId: "thr_demo",
   cwd: "/workspace",
   userCount,
   seeded: true,
@@ -37,9 +37,9 @@ const live = (sessionId: string, userCount: number, extra: Record<string, unknow
 
 describe("state registry", () => {
   it("resolves the default directory identically everywhere, env override wins", () => {
-    expect(stateDirFrom({})).toBe(path.join(os.tmpdir(), "bb-kilo-state"));
-    expect(stateDirFrom({ BB_KILO_STATE_DIR: "" })).toBe(path.join(os.tmpdir(), "bb-kilo-state"));
-    expect(stateDirFrom({ BB_KILO_STATE_DIR: "/custom/state" })).toBe("/custom/state");
+    expect(stateDirFrom({})).toBe(path.join(os.tmpdir(), "alia-kilo-state"));
+    expect(stateDirFrom({ ALIA_KILO_STATE_DIR: "" })).toBe(path.join(os.tmpdir(), "alia-kilo-state"));
+    expect(stateDirFrom({ ALIA_KILO_STATE_DIR: "/custom/state" })).toBe("/custom/state");
   });
 
   it("round-trips records atomically and only under safe ids", () => {

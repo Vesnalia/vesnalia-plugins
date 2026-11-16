@@ -8,20 +8,20 @@ export PATH LC_ALL
 ROOT=
 
 VERSION=7
-HOST=$ROOT/var/db/bb-box/host
-SHARE=$ROOT/usr/local/share/bb-box
+HOST=$ROOT/var/db/alia-box/host
+SHARE=$ROOT/usr/local/share/alia-box
 IOS_SHARE=$SHARE/ios
 SLOT_HOME=$SHARE/slot-home
 DAEMONS=$ROOT/Library/LaunchDaemons
 DATA=$ROOT/System/Volumes/Data
 SIM_STORE=$ROOT/private/var/tmp
-SLOT_LOGS=$ROOT/private/var/log/bb-box-slots
-INSTALLED=/usr/local/libexec/bb-box/device-host
-PORTS_PROGRAM=/usr/local/libexec/bb-box/device-host-ports
-HOST_LABEL=app.bb-box.device-host
-PORTS_LABEL=app.bb-box.device-host.ports
-DEVICE_LABEL=app.bb-box.device
-BB_LABEL=app.bb-box.bb
+SLOT_LOGS=$ROOT/private/var/log/alia-box-slots
+INSTALLED=/usr/local/libexec/alia-box/device-host
+PORTS_PROGRAM=/usr/local/libexec/alia-box/device-host-ports
+HOST_LABEL=app.alia-box.device-host
+PORTS_LABEL=app.alia-box.device-host.ports
+DEVICE_LABEL=app.alia-box.device
+ALIA_LABEL=app.alia-box.alia
 PREFIX=bbd-
 SLOT_UID_BASE=80000
 SLOT_UID_SPAN=10000
@@ -93,7 +93,7 @@ take_lock() {
   perl -e 'use Fcntl ":flock"; open(my $f, ">&=", $ARGV[0]) or exit 1; $SIG{ALRM} = sub { exit 3 }; alarm $ARGV[1]; flock($f, $ARGV[1] ? LOCK_EX : LOCK_EX | LOCK_NB) or exit 3' "$fd" "$wait"
 }
 
-lock_host() { take_lock 9 "$HOST/lock" "$1" || quit "$EXIT_LOST" "Another bb-box command holds this host's lock."; }
+lock_host() { take_lock 9 "$HOST/lock" "$1" || quit "$EXIT_LOST" "Another alia-box command holds this host's lock."; }
 unlock_host() { exec 9>&-; }
 
 held_elsewhere() {
@@ -303,7 +303,7 @@ make_user() {
   fi
   password=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 24)
   [ "${#password}" = 24 ] || return 1
-  said=$(printf '%s\n' "$password" | sysadminctl -addUser "$user" -fullName "bb-box $user" -UID "$uid" -password - -home "/Users/$user" 2>&1)
+  said=$(printf '%s\n' "$password" | sysadminctl -addUser "$user" -fullName "alia-box $user" -UID "$uid" -password - -home "/Users/$user" 2>&1)
   if [ "$(attribute "$user" UniqueID)" != "$uid" ]; then
     reason=$(printf '%s\n' "$said" | sed -n 's/^.*sysadminctl\[[0-9:]*\] //p' | grep -v -e '^-*$' -e 'clear text password' -e 'Creating user record' | tail -n 1)
     echo "sysadminctl did not make $user${reason:+: $reason}." >&2
@@ -320,12 +320,12 @@ make_user() {
   [ -d "$home" ] || return 1
   if [ -d "$SLOT_HOME" ]; then cp -Rc "$SLOT_HOME/." "$home/" 2>/dev/null || cp -R "$SLOT_HOME/." "$home/" || return 1; fi
   base=$(port_base "$id")
-  printf '%s\n' "export BB_PORT_BASE=$base BB_PORT_COUNT=$PORT_COUNT" >>"$home/.zshenv" || return 1
-  mkdir -p "$home/.bb-box/device" || return 1
-  printf 'base=%s\ncount=%s\n' "$base" "$PORT_COUNT" >"$home/.bb-box/ports" || return 1
-  printf '%s\n' "$id" >"$home/.bb-box/device/host-managed" || return 1
+  printf '%s\n' "export ALIA_PORT_BASE=$base ALIA_PORT_COUNT=$PORT_COUNT" >>"$home/.zshenv" || return 1
+  mkdir -p "$home/.alia-box/device" || return 1
+  printf 'base=%s\ncount=%s\n' "$base" "$PORT_COUNT" >"$home/.alia-box/ports" || return 1
+  printf '%s\n' "$id" >"$home/.alia-box/device/host-managed" || return 1
   chown -R "$uid:20" "$home" || return 1
-  chmod 700 "$home" "$home/.bb-box" "$home/.bb-box/device" || return 1
+  chmod 700 "$home" "$home/.alia-box" "$home/.alia-box/device" || return 1
   : >"$(slot_dir "$id")/user-made"
 }
 
@@ -450,7 +450,7 @@ plist_environment() {
   printf '  </dict>\n'
 }
 
-DEVICE_SERVER_WAIT='d="$HOME/.bb-box/device"; until [ -f "$d/current/src/device/bb-box-device.sh" ] && [ -f "$d/devices.json" ]; do sleep 1; done; exec /bin/sh "$d/current/src/device/bb-box-device.sh" serve'
+DEVICE_SERVER_WAIT='d="$HOME/.alia-box/device"; until [ -f "$d/current/src/device/alia-box-device.sh" ] && [ -f "$d/devices.json" ]; do sleep 1; done; exec /bin/sh "$d/current/src/device/alia-box-device.sh" serve'
 
 write_device_daemon() {
   id=$1
@@ -462,7 +462,7 @@ write_device_daemon() {
     plist_string Label "$DEVICE_LABEL.$user"
     plist_string UserName "$user"
     plist_string GroupName staff
-    plist_environment HOME "$home" USER "$user" LOGNAME "$user" PATH "$DAEMON_PATH" BB_PORT_BASE "$(port_base "$id")" BB_PORT_COUNT "$PORT_COUNT"
+    plist_environment HOME "$home" USER "$user" LOGNAME "$user" PATH "$DAEMON_PATH" ALIA_PORT_BASE "$(port_base "$id")" ALIA_PORT_COUNT "$PORT_COUNT"
     plist_arguments /bin/sh -c "$DEVICE_SERVER_WAIT"
     plist_string WorkingDirectory "$home"
     printf '  <key>RunAtLoad</key><true/>\n  <key>KeepAlive</key><true/>\n  <key>ThrottleInterval</key><integer>1</integer>\n'
@@ -512,7 +512,7 @@ load_slot_daemons() {
 unload_slot_daemons() {
   id=$1
   user=$(slot_user "$id")
-  for label in "$DEVICE_LABEL.$user" "$BB_LABEL.$user"; do unload_daemon "$label"; done
+  for label in "$DEVICE_LABEL.$user" "$ALIA_LABEL.$user"; do unload_daemon "$label"; done
   rm -f "$(slot_dir "$id")/loaded"
 }
 
@@ -520,8 +520,8 @@ copy_server() {
   id=$1 from=$2
   [ -n "$from" ] || return 0
   user=$(slot_user "$id") uid=$(slot_uid "$id")
-  device=$(home_of "$id")/.bb-box/device
-  [ ! -L "$(home_of "$id")/.bb-box" ] && [ ! -L "$device" ] && [ ! -L "$device/server" ] || { echo "$user's device folder is a link." >&2; return 1; }
+  device=$(home_of "$id")/.alia-box/device
+  [ ! -L "$(home_of "$id")/.alia-box" ] && [ ! -L "$device" ] && [ ! -L "$device/server" ] || { echo "$user's device folder is a link." >&2; return 1; }
   [ ! -e "$device/current" ] || return 0
   case $from in /*) ;; *) echo "server= must be an absolute path to a device server's folder." >&2; return 1 ;; esac
   version=$(readlink "$ROOT$from/current" 2>/dev/null)
@@ -644,7 +644,7 @@ resetting_step() {
 carry_on() {
   id=$1
   dir=$(slot_dir "$id")
-  take_lock 8 "$dir/lock" 900 || quit "$EXIT_LOST" "Another bb-box command is working on slot $id."
+  take_lock 8 "$dir/lock" 900 || quit "$EXIT_LOST" "Another alia-box command is working on slot $id."
   while [ -f "$dir/slot" ]; do
     case $(state "$id" is):$(state "$id" step) in
       making:user) making_step "$id" user device make_user "$id" ;;
@@ -909,51 +909,51 @@ refresh_ready_homes() {
   for id in $(slot_ids); do
     [ "$(state "$id" is)" = ready ] && [ ! -e "$(slot_dir "$id")/claim" ] && user_made "$id" 2>/dev/null || continue
     home=$(home_of "$id") uid=$(slot_uid "$id")
-    [ ! -L "$home" ] && [ ! -L "$home/.bb-machines" ] && [ ! -L "$home/.bb-machines/$server" ] || continue
-    rm -rf "$home/.bb-machines/$server"
-    [ -d "$SLOT_HOME/.bb-machines/$server" ] || continue
-    mkdir -p "$home/.bb-machines" && chmod 700 "$home/.bb-machines" &&
-      cp -Rc "$SLOT_HOME/.bb-machines/$server" "$home/.bb-machines/$server" 2>/dev/null || cp -RP "$SLOT_HOME/.bb-machines/$server" "$home/.bb-machines/$server" || continue
-    chown -R "$uid:20" "$home/.bb-machines" || continue
+    [ ! -L "$home" ] && [ ! -L "$home/.alia-machines" ] && [ ! -L "$home/.alia-machines/$server" ] || continue
+    rm -rf "$home/.alia-machines/$server"
+    [ -d "$SLOT_HOME/.alia-machines/$server" ] || continue
+    mkdir -p "$home/.alia-machines" && chmod 700 "$home/.alia-machines" &&
+      cp -Rc "$SLOT_HOME/.alia-machines/$server" "$home/.alia-machines/$server" 2>/dev/null || cp -RP "$SLOT_HOME/.alia-machines/$server" "$home/.alia-machines/$server" || continue
+    chown -R "$uid:20" "$home/.alia-machines" || continue
     echo "refreshed=$id"
   done
 }
 
 keep_app() {
   read_input "server digest from"
-  case $server in '' | .* | *[!A-Za-z0-9.-]*) quit 2 "keep-app needs server=, the folder of BB's server under .bb-machines." ;; esac
-  printf '%s' "$digest" | grep -Eqx '[a-f0-9]{64}' || quit 2 "keep-app needs digest=, the SHA-256 BB's server gives for its app."
+  case $server in '' | .* | *[!A-Za-z0-9.-]*) quit 2 "keep-app needs server=, the folder of ALIA's server under .alia-machines." ;; esac
+  printf '%s' "$digest" | grep -Eqx '[a-f0-9]{64}' || quit 2 "keep-app needs digest=, the SHA-256 ALIA's server gives for its app."
   case $from in /*) ;; *) quit 2 "keep-app needs from=, the absolute home of the host's own user." ;; esac
   case $from in */"$PREFIX"* | *..*) quit 2 "keep-app copies only from the host's own user, not $from." ;; esac
-  source=$ROOT$from/.bb-machines/$server
+  source=$ROOT$from/.alia-machines/$server
   owner=$(owner_of "$ROOT$from")
   number "$owner" && [ "$owner" -ne 0 ] || quit 2 "$from is not a user's home."
   lock_host 120
-  staging=$SHARE/bb-app-staging.$$
+  staging=$SHARE/alia-app-staging.$$
   rm -rf "$staging"
   kept=no why=''
-  if [ ! -d "$source/npm/lib/node_modules/bb-app" ] || [ -L "$source" ] || [ -L "$source/npm" ]; then
-    why="$from has no BB app for $server"
+  if [ ! -d "$source/npm/lib/node_modules/alia-app" ] || [ -L "$source" ] || [ -L "$source/npm" ]; then
+    why="$from has no ALIA app for $server"
   elif [ "$(owner_of "$source/npm")" != "$owner" ]; then
-    why="BB's app in $from is not owned by its user"
+    why="ALIA's app in $from is not owned by its user"
   elif ! why=$(sound_app_tree "$source/npm"); then
-    why="BB's app in $from was not copied: $why"
+    why="ALIA's app in $from was not copied: $why"
   else
     mkdir -p "$staging/$server" && chmod 700 "$staging" "$staging/$server"
     if ! { cp -RPc "$source/npm" "$staging/$server/npm" 2>/dev/null || { rm -rf "$staging/$server/npm" && cp -RP "$source/npm" "$staging/$server/npm"; }; } ||
       ! cp -P "$source/host-artifact.sha256" "$staging/$server/host-artifact.sha256" 2>/dev/null; then
-      why="BB's app in $from could not be copied"
+      why="ALIA's app in $from could not be copied"
     elif [ -L "$staging/$server/host-artifact.sha256" ] || [ "$(cat "$staging/$server/host-artifact.sha256")" != "$digest" ]; then
-      why="BB's app in $from is another build than $digest"
+      why="ALIA's app in $from is another build than $digest"
     elif ! why=$(sound_app_tree "$staging/$server/npm" "$owner"); then
-      why="BB's app in $from changed as it was copied: $why"
+      why="ALIA's app in $from changed as it was copied: $why"
     else
       chown -R -h 0:0 "$staging" && chmod 600 "$staging/$server/host-artifact.sha256" && kept=yes why=''
     fi
   fi
-  rm -rf "$SLOT_HOME/.bb-machines"
-  if [ "$kept" = yes ]; then mv "$staging" "$SLOT_HOME/.bb-machines"; else rm -rf "$staging"; fi
-  printf 'digest=%s\nserver=%s\nkept=%s\nsince=%s\n' "$digest" "$server" "$kept" "$(now)" | put "$HOST/bb-app"
+  rm -rf "$SLOT_HOME/.alia-machines"
+  if [ "$kept" = yes ]; then mv "$staging" "$SLOT_HOME/.alia-machines"; else rm -rf "$staging"; fi
+  printf 'digest=%s\nserver=%s\nkept=%s\nsince=%s\n' "$digest" "$server" "$kept" "$(now)" | put "$HOST/alia-app"
   refresh_ready_homes
   unlock_host
   echo "kept=$kept"
@@ -1168,7 +1168,7 @@ release() {
     held)
       holder=$dir/claim
       [ -f "$holder" ] || holder=$dir/released
-      [ "$(field "$holder" install)" = "$install" ] || quit "$EXIT_NOT_OURS" "Another bb-box install holds slot $id."
+      [ "$(field "$holder" install)" = "$install" ] || quit "$EXIT_NOT_OURS" "Another alia-box install holds slot $id."
       [ "$(field "$holder" box)" = "$box" ] || quit "$EXIT_NOT_OURS" "Another box holds slot $id."
       set_state "$id" is=releasing "box=$box"
       decide_last "$id" "$box"
@@ -1301,8 +1301,8 @@ reset() {
 
 newest_installer_daemon() {
   home=$1 uid=$2 user=$3
-  users_folder "$home/.bb-machines" "$uid" || return 1
-  for dir in "$home"/.bb-machines/*; do
+  users_folder "$home/.alia-machines" "$uid" || return 1
+  for dir in "$home"/.alia-machines/*; do
     users_folder "$dir" "$uid" && users_own "$dir/install-daemon.pid" "$uid" || continue
     pid=$(as_user "$user" cat "$dir/install-daemon.pid" 2>/dev/null)
     number "$pid" || continue
@@ -1334,13 +1334,13 @@ daemon() {
   unlock_host
   user=$(slot_user "$id") uid=$(slot_uid "$id")
   home=$(home_of "$id")
-  found=$(newest_installer_daemon "$home" "$uid" "$user") || fail "BB's installer left no daemon running as $user: run BB's command with BB_INSTALL_SKIP_SERVICE=1 first."
+  found=$(newest_installer_daemon "$home" "$uid" "$user") || fail "ALIA's installer left no daemon running as $user: run ALIA's command with ALIA_INSTALL_SKIP_SERVICE=1 first."
   data=${found% *} pid=${found##* }
   port=''
   ! users_own "$data/host-daemon-port" "$uid" || port=$(as_user "$user" cat "$data/host-daemon-port" 2>/dev/null)
-  number "$port" || fail "BB's installer left no daemon port in ${data#"$ROOT"}."
+  number "$port" || fail "ALIA's installer left no daemon port in ${data#"$ROOT"}."
   command=$(ps -ww -o command= -p "$pid" 2>/dev/null)
-  [ -n "$command" ] || fail "BB's daemon, process $pid, ended before the helper read its command."
+  [ -n "$command" ] || fail "ALIA's daemon, process $pid, ended before the helper read its command."
   set --
   set -f
   for word in $command; do [ "$word" = --supervise ] || set -- "$@" "$word"; done
@@ -1348,23 +1348,23 @@ daemon() {
   case $1 in
     /*) ;;
     *)
-      program=$(PATH=$DAEMON_PATH command -v "$1") || fail "BB's daemon runs $1, which is not in $DAEMON_PATH."
+      program=$(PATH=$DAEMON_PATH command -v "$1") || fail "ALIA's daemon runs $1, which is not in $DAEMON_PATH."
       shift
       set -- "$program" "$@"
       ;;
   esac
   case " $* " in *" --host-daemon-port "*) ;; *) set -- "$@" --host-daemon-port "$port" ;; esac
-  label=$BB_LABEL.$user
+  label=$ALIA_LABEL.$user
   mkdir -p "$dir/daemons"
   log=$(slot_log "$user")
-  make_slot_log "$user" "$uid" || fail "Could not make ${log#"$ROOT"} for BB's daemon."
+  make_slot_log "$user" "$uid" || fail "Could not make ${log#"$ROOT"} for ALIA's daemon."
   {
     plist_head
     plist_string Label "$label"
     plist_string UserName "$user"
     plist_string GroupName staff
-    plist_environment HOME "/Users/$user" USER "$user" LOGNAME "$user" PATH "$DAEMON_PATH" BB_DATA_DIR "${data#"$ROOT"}" BB_APP_NPM_PREFIX "${data#"$ROOT"}/npm" \
-      BB_PORT_BASE "$(port_base "$id")" BB_PORT_COUNT "$PORT_COUNT"
+    plist_environment HOME "/Users/$user" USER "$user" LOGNAME "$user" PATH "$DAEMON_PATH" ALIA_DATA_DIR "${data#"$ROOT"}" ALIA_APP_NPM_PREFIX "${data#"$ROOT"}/npm" \
+      ALIA_PORT_BASE "$(port_base "$id")" ALIA_PORT_COUNT "$PORT_COUNT"
     plist_arguments "$@"
     plist_string WorkingDirectory "/Users/$user"
     printf '  <key>RunAtLoad</key><true/>\n  <key>KeepAlive</key><true/>\n  <key>ThrottleInterval</key><integer>2</integer>\n'
@@ -1379,7 +1379,7 @@ daemon() {
     [ "$waited" -lt 50 ] || { as_user "$user" kill -KILL "$pid" 2>/dev/null; break; }
     sleep 0.2
   done
-  load_daemon "$dir/daemons/$label.plist" || fail "launchd did not load BB's daemon for $user."
+  load_daemon "$dir/daemons/$label.plist" || fail "launchd did not load ALIA's daemon for $user."
   echo "daemon=$label"
   echo "port=$port"
 }
@@ -1392,14 +1392,14 @@ stale_work() {
   done
 }
 
-clear_bb_state_after_boot() {
+clear_alia_state_after_boot() {
   boot=$(boot_id)
   [ "$(cat "$HOST/resumed-boot" 2>/dev/null)" != "$boot" ] || return 0
   mkdir -p "$HOST"
   for id in $(slot_ids); do
     user=$(slot_user "$id") uid=$(slot_uid "$id") home=$(home_of "$id")
-    users_folder "$home/.bb-machines" "$uid" || continue
-    for data in "$home"/.bb-machines/*; do
+    users_folder "$home/.alia-machines" "$uid" || continue
+    for data in "$home"/.alia-machines/*; do
       users_folder "$data" "$uid" || continue
       as_user "$user" rm -rf "$data/daemon.lock.lock" "$data/install-daemon.pid"
     done
@@ -1409,7 +1409,7 @@ clear_bb_state_after_boot() {
 
 resume() {
   [ ! -t 0 ] || exec </dev/null
-  clear_bb_state_after_boot
+  clear_alia_state_after_boot
   for id in $(stale_work); do later /bin/sh "$SELF" continue "$id"; done
   if sweep_waiting && ! held_elsewhere "$HOST/sweep.lock"; then later /bin/sh "$SELF" reset; fi
   echo "resumed=$(stale_work | wc -l | tr -d ' ')"
@@ -1522,8 +1522,8 @@ status() {
   echo "runtime=$(runtime_line | cut -f 1)"
   echo "model=$(default_model | cut -f 1)"
   echo "counted=$(counted)"
-  echo "bb-app=$(field "$HOST/bb-app" digest)"
-  echo "bb-app-kept=$(field "$HOST/bb-app" kept)"
+  echo "alia-app=$(field "$HOST/alia-app" digest)"
+  echo "alia-app-kept=$(field "$HOST/alia-app" kept)"
   for box in $(live_promises); do printf 'promise=%s\t%s\t%s\n' "$box" "$(field "$HOST/promises/$box" install)" "$(field "$HOST/promises/$box" since)"; done
   for id in $(slot_ids); do
     claim=$(slot_dir "$id")/claim
@@ -1566,7 +1566,7 @@ host_daemon_plists() {
     plist_string Label "$HOST_LABEL"
     plist_arguments /bin/sh "$INSTALLED" run
     printf '  <key>RunAtLoad</key><true/>\n  <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>\n  <key>ThrottleInterval</key><integer>10</integer>\n'
-    plist_string StandardErrorPath /var/log/bb-box-device-host.log
+    plist_string StandardErrorPath /var/log/alia-box-device-host.log
     plist_tail
   } | put "$HOST/$HOST_LABEL.plist"
   {

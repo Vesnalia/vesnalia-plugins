@@ -16,10 +16,10 @@ parallel. You play the aggregator: you weigh what they say.
      none, ask about what the user is working on now.
    - `context`: what the advisors need, since they cannot see this
      conversation: the goal, relevant files and findings, what has been tried.
-   - `preset`: only when the user names a preset (`bb moa-provider list` shows the
+   - `preset`: only when the user names a preset (`alia moa-provider list` shows the
      ids). Otherwise the default preset answers.
 2. It returns at once with a `::moa-advisors{id="…"}` line. Write that line
-   in your reply straight away, on its own line: BB shows it as a live
+   in your reply straight away, on its own line: VesnALIA shows it as a live
    panel, so the user watches each advisor answer.
 3. Call `moa_answers` with the round `moa_ask` gave you. It waits about
    45 seconds at a time. If it reports they are still working, call it
@@ -27,7 +27,7 @@ parallel. You play the aggregator: you weigh what they say.
    not answer the user in the meantime. Then it returns their answers.
 4. Then answer the user yourself: where the advisors agree or disagree, what
    you would do, and why. Start that answer with the same `::moa-advisors`
-   line, on its own line: when the turn finishes, BB folds its steps (and the
+   line, on its own line: when the turn finishes, VesnALIA folds its steps (and the
    first panel with them) and keeps only your answer in view.
 
 If `moa_ask` or `moa_answers` is not available in this session, say so: tools are fixed when a

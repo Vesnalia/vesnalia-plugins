@@ -1,7 +1,7 @@
 // Settings and the translator, read once at the top of the list and shared
 // with every row through context.
 import { createContext, useContext, useMemo, type ReactNode } from "react";
-import { useSettings } from "@get-bb/plugin-sdk/app";
+import { useSettings } from "@vesnalia/plugin-sdk/app";
 
 import { createTranslator, resolveLocale, type Translator } from "@/lib/i18n";
 import { parseSettings, type ChatSettings } from "@/lib/settings";

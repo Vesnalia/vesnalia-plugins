@@ -97,7 +97,7 @@ describe("chapters, notes and transcripts", () => {
     expect(computePeaks([], 3)).toEqual([0, 0, 0]);
   });
   it("names media from paths and URLs", () => {
-    expect([mediaName("$BB_THREAD_STORAGE/a/demo%20cut.mp4"), mediaName("https://x.test/v/clip.webm?t=3")]).toEqual(["demo cut.mp4", "clip.webm"]);
+    expect([mediaName("$ALIA_THREAD_STORAGE/a/demo%20cut.mp4"), mediaName("https://x.test/v/clip.webm?t=3")]).toEqual(["demo cut.mp4", "clip.webm"]);
   });
 });
 
@@ -271,7 +271,7 @@ describe("players and files in the catalog", () => {
     expect(findComponent("Video")?.name).toBe("VideoPlayer");
     expect(findComponent("Tree")?.aliases).not.toContain("FileTree");
   });
-  it("keeps every reference section under bb's cap", () => {
+  it("keeps every reference section under VesnALIA's cap", () => {
     for (const s of referenceSections()) expect(s.text.length).toBeLessThanOrEqual(4096);
   });
 });

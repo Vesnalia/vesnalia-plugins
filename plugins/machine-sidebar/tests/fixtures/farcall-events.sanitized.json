@@ -1,5 +1,5 @@
 {
- "source": "Real event shapes of codex_worker run/run_batch tool calls in a bb coordinator thread; all prompts and results replaced with neutral example text.",
+ "source": "Real event shapes of codex_worker run/run_batch tool calls in a VesnALIA coordinator thread; all prompts and results replaced with neutral example text.",
  "events": [
   {
    "id": "evt_2jahcqcfu9",
@@ -29,7 +29,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e"
+         "/tmp/alia-tgb-e2e"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -45,7 +45,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e"
+         "/tmp/alia-tgb-e2e"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -96,7 +96,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e"
+         "/tmp/alia-tgb-e2e"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -112,7 +112,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e"
+         "/tmp/alia-tgb-e2e"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -164,7 +164,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -228,7 +228,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -295,7 +295,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -311,7 +311,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot2"
+         "/tmp/alia-tgb-e2e/slot2"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -364,7 +364,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -380,7 +380,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot2"
+         "/tmp/alia-tgb-e2e/slot2"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -434,7 +434,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -502,7 +502,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -571,7 +571,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot2"
+         "/tmp/alia-tgb-e2e/slot2"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -589,7 +589,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -605,7 +605,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot4"
+         "/tmp/alia-tgb-e2e/slot4"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -658,7 +658,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot2"
+         "/tmp/alia-tgb-e2e/slot2"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -676,7 +676,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -692,7 +692,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot4"
+         "/tmp/alia-tgb-e2e/slot4"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -746,7 +746,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot2"
+         "/tmp/alia-tgb-e2e/slot2"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -764,7 +764,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -817,7 +817,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot2"
+         "/tmp/alia-tgb-e2e/slot2"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -835,7 +835,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -885,7 +885,7 @@
       "sandbox": "workspace-write",
       "network_access": true,
       "writable_roots": [
-       "/tmp/bb-tgb-e2e/slot4"
+       "/tmp/alia-tgb-e2e/slot4"
       ],
       "timeout_seconds": 7100,
       "max_result_chars": 12000,
@@ -931,7 +931,7 @@
       "sandbox": "workspace-write",
       "network_access": true,
       "writable_roots": [
-       "/tmp/bb-tgb-e2e/slot4"
+       "/tmp/alia-tgb-e2e/slot4"
       ],
       "timeout_seconds": 7100,
       "max_result_chars": 12000,
@@ -1144,7 +1144,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1175,7 +1175,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot6"
+         "/tmp/alia-tgb-e2e/slot6"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1228,7 +1228,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1259,7 +1259,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot6"
+         "/tmp/alia-tgb-e2e/slot6"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1313,7 +1313,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1344,7 +1344,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot6"
+         "/tmp/alia-tgb-e2e/slot6"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1397,7 +1397,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1428,7 +1428,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot6"
+         "/tmp/alia-tgb-e2e/slot6"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1483,7 +1483,7 @@
         "network_access": true,
         "writable_roots": [
          "/Users/me/projects/example-worktrees/tgb-w4",
-         "/tmp/bb-tgb-e2e/slot6"
+         "/tmp/alia-tgb-e2e/slot6"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1501,7 +1501,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1570,7 +1570,7 @@
         "network_access": true,
         "writable_roots": [
          "/Users/me/projects/example-worktrees/tgb-w4",
-         "/tmp/bb-tgb-e2e/slot6"
+         "/tmp/alia-tgb-e2e/slot6"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1588,7 +1588,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1653,7 +1653,7 @@
       "sandbox": "workspace-write",
       "network_access": true,
       "writable_roots": [
-       "/tmp/bb-tgb-e2e/slot1"
+       "/tmp/alia-tgb-e2e/slot1"
       ],
       "timeout_seconds": 7100,
       "max_result_chars": 12000,
@@ -1699,7 +1699,7 @@
       "sandbox": "workspace-write",
       "network_access": true,
       "writable_roots": [
-       "/tmp/bb-tgb-e2e/slot1"
+       "/tmp/alia-tgb-e2e/slot1"
       ],
       "timeout_seconds": 7100,
       "max_result_chars": 12000,
@@ -1750,7 +1750,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot3"
+         "/tmp/alia-tgb-e2e/slot3"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1766,7 +1766,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot4"
+         "/tmp/alia-tgb-e2e/slot4"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1819,7 +1819,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot3"
+         "/tmp/alia-tgb-e2e/slot3"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1835,7 +1835,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot4"
+         "/tmp/alia-tgb-e2e/slot4"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1889,7 +1889,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1908,7 +1908,7 @@
         "network_access": true,
         "writable_roots": [
          "/Users/me/projects/example-worktrees/tgb-w4",
-         "/tmp/bb-tgb-e2e/slot6"
+         "/tmp/alia-tgb-e2e/slot6"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1961,7 +1961,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -1980,7 +1980,7 @@
         "network_access": true,
         "writable_roots": [
          "/Users/me/projects/example-worktrees/tgb-w4",
-         "/tmp/bb-tgb-e2e/slot6"
+         "/tmp/alia-tgb-e2e/slot6"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -2030,7 +2030,7 @@
       "sandbox": "workspace-write",
       "network_access": true,
       "writable_roots": [
-       "/tmp/bb-tgb-e2e/slot4"
+       "/tmp/alia-tgb-e2e/slot4"
       ],
       "timeout_seconds": 7100,
       "max_result_chars": 12000,
@@ -2076,7 +2076,7 @@
       "sandbox": "workspace-write",
       "network_access": true,
       "writable_roots": [
-       "/tmp/bb-tgb-e2e/slot4"
+       "/tmp/alia-tgb-e2e/slot4"
       ],
       "timeout_seconds": 7100,
       "max_result_chars": 12000,
@@ -2124,7 +2124,7 @@
       "network_access": true,
       "writable_roots": [
        "/Users/me/projects/example-worktrees/tgb-w4",
-       "/tmp/bb-tgb-e2e/slot6"
+       "/tmp/alia-tgb-e2e/slot6"
       ],
       "timeout_seconds": 7100,
       "max_result_chars": 8000,
@@ -2171,7 +2171,7 @@
       "network_access": true,
       "writable_roots": [
        "/Users/me/projects/example-worktrees/tgb-w4",
-       "/tmp/bb-tgb-e2e/slot6"
+       "/tmp/alia-tgb-e2e/slot6"
       ],
       "timeout_seconds": 7100,
       "max_result_chars": 8000,
@@ -2218,7 +2218,7 @@
       "sandbox": "workspace-write",
       "network_access": true,
       "writable_roots": [
-       "/tmp/bb-tgb-e2e/slot4"
+       "/tmp/alia-tgb-e2e/slot4"
       ],
       "timeout_seconds": 7100,
       "max_result_chars": 8000,
@@ -2264,7 +2264,7 @@
       "sandbox": "workspace-write",
       "network_access": true,
       "writable_roots": [
-       "/tmp/bb-tgb-e2e/slot4"
+       "/tmp/alia-tgb-e2e/slot4"
       ],
       "timeout_seconds": 7100,
       "max_result_chars": 8000,
@@ -2311,7 +2311,7 @@
       "sandbox": "workspace-write",
       "network_access": true,
       "writable_roots": [
-       "/tmp/bb-tgb-e2e/slot1"
+       "/tmp/alia-tgb-e2e/slot1"
       ],
       "timeout_seconds": 7100,
       "max_result_chars": 8000,
@@ -2357,7 +2357,7 @@
       "sandbox": "workspace-write",
       "network_access": true,
       "writable_roots": [
-       "/tmp/bb-tgb-e2e/slot1"
+       "/tmp/alia-tgb-e2e/slot1"
       ],
       "timeout_seconds": 7100,
       "max_result_chars": 8000,
@@ -2408,7 +2408,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -2426,7 +2426,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot3"
+         "/tmp/alia-tgb-e2e/slot3"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -2445,7 +2445,7 @@
         "network_access": true,
         "writable_roots": [
          "/Users/me/projects/example-worktrees/tgb-w4",
-         "/tmp/bb-tgb-e2e/slot6"
+         "/tmp/alia-tgb-e2e/slot6"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -2461,7 +2461,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot8"
+         "/tmp/alia-tgb-e2e/slot8"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -2514,7 +2514,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot1"
+         "/tmp/alia-tgb-e2e/slot1"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -2532,7 +2532,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot3"
+         "/tmp/alia-tgb-e2e/slot3"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -2551,7 +2551,7 @@
         "network_access": true,
         "writable_roots": [
          "/Users/me/projects/example-worktrees/tgb-w4",
-         "/tmp/bb-tgb-e2e/slot6"
+         "/tmp/alia-tgb-e2e/slot6"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -2567,7 +2567,7 @@
         "sandbox": "workspace-write",
         "network_access": true,
         "writable_roots": [
-         "/tmp/bb-tgb-e2e/slot8"
+         "/tmp/alia-tgb-e2e/slot8"
         ],
         "allow_non_git": false,
         "timeout_seconds": 7100,
@@ -2617,7 +2617,7 @@
       "sandbox": "workspace-write",
       "network_access": true,
       "writable_roots": [
-       "/tmp/bb-tgb-e2e/slot1"
+       "/tmp/alia-tgb-e2e/slot1"
       ],
       "timeout_seconds": 7100,
       "max_result_chars": 10000,
@@ -2663,7 +2663,7 @@
       "sandbox": "workspace-write",
       "network_access": true,
       "writable_roots": [
-       "/tmp/bb-tgb-e2e/slot1"
+       "/tmp/alia-tgb-e2e/slot1"
       ],
       "timeout_seconds": 7100,
       "max_result_chars": 10000,

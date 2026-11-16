@@ -44,7 +44,7 @@ describe("starting a session", () => {
       expect(ports.sends).toHaveLength(1);
       // One visible line, the brief agent-only (spike S5: an agent-only part alone shows no message).
       expect(ports.sends[0]!.visible).toMatch(/^Learning exercise on/);
-      expect(ports.sends[0]!.agentOnly).toContain("bb learning ask");
+      expect(ports.sends[0]!.agentOnly).toContain("alia learning ask");
       expect(ports.sends[0]!.agentOnly).not.toContain("Ask every question with the `learning_ask` tool");
       expect(store.session(started.sessionId)?.mode).toBe("here");
     }
@@ -140,7 +140,7 @@ describe("asking through the tool", () => {
     ["timeout", "paused", "the question waited 30 minutes"],
     ["user", "paused", "you paused it"],
     ["thread-stopped", "paused", "its thread was stopped"],
-    ["plugin-disposed", "paused", "bb restarted or the plugin reloaded while a question was open"],
+    ["plugin-disposed", "paused", "alia restarted or the plugin reloaded while a question was open"],
     ["thread-deleted", "abandoned", null],
   ] as const)("a card cancelled by %s leaves the session %s", async (reason, state, why) => {
     const { start, ports, store, sessions } = setup();
@@ -157,7 +157,7 @@ describe("asking through the tool", () => {
     await expect(sessions.ask(WORK, ASK, "tool")).rejects.toThrow("no learning session");
   });
 
-  it("binds a fork that calls before bb answered the fork with its id", async () => {
+  it("binds a fork that calls before VesnALIA answered the fork with its id", async () => {
     const { start, ports, store, sessions } = setup();
     const { sessionId, threadId } = await start();
     // Undo the binding, as if the agent called in before `fork` returned.
@@ -278,7 +278,7 @@ describe("lifecycle", () => {
     store.setSessionState(sessionId, "awaiting-answer", 1);
     // A new copy of the plugin over the same store.
     new SessionService(ports, store, () => settingsWith()).pauseOrphanedCards();
-    expect(store.session(sessionId)).toMatchObject({ state: "paused", pauseReason: "bb restarted or the plugin reloaded while a question was open" });
+    expect(store.session(sessionId)).toMatchObject({ state: "paused", pauseReason: "alia restarted or the plugin reloaded while a question was open" });
   });
 
   it("abandons a session paused for 30 days", async () => {

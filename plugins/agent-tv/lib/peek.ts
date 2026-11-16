@@ -1,4 +1,4 @@
-// bb-plugin-agent-tv — hover peek.
+// alia-plugin-agent-tv — hover peek.
 //
 // The wall lives in the sidebar footer, so reaching it should cost nothing
 // more than resting the pointer there. This module adds that: dwell on the

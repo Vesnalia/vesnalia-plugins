@@ -1,8 +1,8 @@
 # Doc Review
 
-Read and comment on documents inside bb: Markdown, PDF, Word, PowerPoint,
+Read and comment on documents inside VesnALIA: Markdown, PDF, Word, PowerPoint,
 Excel, and HTML open in a panel tab beside the chat, and a live site opened in
-bb's browser takes comments right on its pages. Comment the way you would in Figma,
+VesnALIA's browser takes comments right on its pages. Comment the way you would in Figma,
 then hand every comment to an agent in one message — in the current chat or a
 new one. The agent closes each comment with a note, so the tab shows what was
 fixed and what still needs you, and you answer it right in the comment's
@@ -19,16 +19,16 @@ PowerPoint, and Excel rendering and its classic PDF view live here now.
 
 | Files | How they show |
 | --- | --- |
-| `.md`, `.markdown` | Rendered with bb's Markdown styles; comments map to source lines; `#section` links scroll to the heading, relative file links open from the document's folder |
+| `.md`, `.markdown` | Rendered with VesnALIA's Markdown styles; comments map to source lines; `#section` links scroll to the heading, relative file links open from the document's folder |
 | `.pdf` | Page by page, with a selectable text layer |
 | Word: `docx`, `doc`, `odt`, `rtf` and templates | Converted to PDF by LibreOffice, then page by page |
 | PowerPoint: `pptx`, `ppt`, `odp` and templates | Converted to PDF by LibreOffice, then slide by slide |
 | Excel: `xlsx`, `xlsm`, `xls`, `xlsb`, `ods` and templates | A grid with sheet tabs, formatting, merged cells, frozen panes, zoom |
-| `.html`, `.htm` | The live page in a sandboxed frame: its styles, pictures, and scripts next to the file load as usual; `#section` links scroll the page, relative file links open in bb's file preview |
+| `.html`, `.htm` | The live page in a sandboxed frame: its styles, pictures, and scripts next to the file load as usual; `#section` links scroll the page, relative file links open in VesnALIA's file preview |
 
-Any matching file opened in bb — a link in a message, the file picker,
-`bb thread open` — renders in a panel tab. A file attached to a chat message
-is the exception: its chip opens bb's own preview, which plugins cannot take
+Any matching file opened in VesnALIA — a link in a message, the file picker,
+`alia thread open` — renders in a panel tab. A file attached to a chat message
+is the exception: its chip opens VesnALIA's own preview, which plugins cannot take
 over. For those, press the Doc Review button in the message's action bar, or
 add a **Doc Review** tab to the chat's side panel: it lists the files attached
 in the chat and opens the one you pick (straight away when there is only
@@ -96,7 +96,7 @@ Enter sends a message there) or pick another way from the menu beside it:
 **when the agent is done** (waits for its current work), **right now** (joins
 the work it is doing), or **To a new chat** (same project, model, and
 workspace, fresh context). The
-agent runs `bb doc-review resolve` or `bb doc-review reply`; the tab moves each
+agent runs `alia doc-review resolve` or `alia doc-review reply`; the tab moves each
 comment to *Done* or *Needs you* with the agent's note, live. The reviewed
 file is never modified by the plugin; comments live in its own database.
 
@@ -131,7 +131,7 @@ with and press **Download PDF**. In it:
 
 ![Left: the download menu with PDF with comments and a name to sign with. Right: the exported page with a highlight, a drawing, a box and numbered badges](../../media/doc-review/catalog-export-pdf.png)
 
-When someone with Doc Review opens that PDF in bb, a bar over it offers to
+When someone with Doc Review opens that PDF in VesnALIA, a bar over it offers to
 **Import** the comments: into the PDF, or into the file they were written on
 (the deck or document) when it sits next to the PDF. Imported comments are
 drafts under their author's name: change them, reply to them, add your own,
@@ -144,7 +144,7 @@ shows the file as it is.
 
 ## Live sites
 
-In the desktop app, a site opened in bb's browser (a stand, a staging server,
+In the desktop app, a site opened in VesnALIA's browser (a stand, a staging server,
 a running app) is reviewed on the page itself. Press **Review** beside the
 address bar: a bar at the bottom of the page switches between **Text**
 (select and comment; the page stays clickable), **Element** (click a block,
@@ -162,7 +162,7 @@ agent gets the site, each comment's page, and the quote or the element's
 HTML, and is asked to change the code behind the page and ship it the way
 the project does.
 
-Only bb Desktop lets a plugin into its browser's pages: the web app and
+Only VesnALIA Desktop lets a plugin into its browser's pages: the web app and
 phones show no Review button. A link to another page of the site keeps the
 review on; after a full reload the controls come back within a few seconds.
 The controls switch off when the tab is hidden behind another panel tab.
@@ -170,17 +170,17 @@ The controls switch off when the tab is hidden behind another panel tab.
 ## Install
 
 ```sh
-bb plugin install path:"/path/to/bb-plugins" --plugin doc-review --yes
+alia plugin install path:"/path/to/alia-plugins" --plugin doc-review --yes
 ```
 
-bb opens a file with the first matching plugin in id order, so Doc Review is
+VesnALIA opens a file with the first matching plugin in id order, so Doc Review is
 the default for these formats unless you pin another viewer under
 **Settings → File openers**. *Open with → Doc Review (view and comment)* is in
 every file link's context menu.
 
 ## Requirements
 
-On the machine the bb server runs on:
+On the machine the VesnALIA server runs on:
 
 | Tool | Needed for |
 | --- | --- |
@@ -216,13 +216,13 @@ The bundled skill (`skills/doc-review`) tells the agent how to apply a batch
 and report back. The command:
 
 ```sh
-bb doc-review list                          # comments sent to this thread, still waiting
-bb doc-review list --status all --all-threads
-bb doc-review show <id>                     # with its thread
-bb doc-review resolve <id...> --note "what changed"
-bb doc-review reply <id> --note "question or reason"
-bb doc-review export deck.pptx --as "Name"  # writes "deck (comments).pdf" next to it
-bb doc-review import "deck (comments).pdf" --into deck.pptx
+alia doc-review list                          # comments sent to this thread, still waiting
+alia doc-review list --status all --all-threads
+alia doc-review show <id>                     # with its thread
+alia doc-review resolve <id...> --note "what changed"
+alia doc-review reply <id> --note "question or reason"
+alia doc-review export deck.pptx --as "Name"  # writes "deck (comments).pdf" next to it
+alia doc-review import "deck (comments).pdf" --into deck.pptx
 ```
 
 ## How it works
@@ -239,7 +239,7 @@ bb doc-review import "deck (comments).pdf" --into deck.pptx
   shows the copy with the same view as any stored file.
 - `src/viewer.ts` (from Document Viewer) converts Word and PowerPoint files
   with LibreOffice into a size- and age-bounded cache, copies files from other
-  hosts, mints links for the classic view and downloads (bb's preview
+  hosts, mints links for the classic view and downloads (VesnALIA's preview
   transport, or a ranged stream for large local files), and reads workbooks
   into grid models (`src/spreadsheet`).
 - `src/render.ts` renders PDF pages to PNG with `pdftoppm` on first view, at
@@ -252,14 +252,14 @@ bb doc-review import "deck (comments).pdf" --into deck.pptx
   viewport and fetches their images with cancellation, so flicking through a
   long document does not queue hundreds of renders.
 - Markdown is split into top-level blocks (`marked` lexer) and rendered with
-  bb's `Markdown` component, so a selection maps back to source lines.
+  VesnALIA's `Markdown` component, so a selection maps back to source lines.
   Highlights use the CSS Custom Highlight API.
 - HTML pages are served by the plugin's `/html` route with a `<base>` pointing
-  at bb's preview of the file's folder (so relative styles, pictures, and
+  at VesnALIA's preview of the file's folder (so relative styles, pictures, and
   scripts load) and the bridge from `src/html-bridge.ts` first in the head, so
   it answers while a large page is still arriving. The page runs in a frame
   sandboxed without `allow-same-origin`, and the response carries the same
-  sandbox as a CSP header, so its scripts cannot reach bb even when the URL is
+  sandbox as a CSP header, so its scripts cannot reach VesnALIA even when the URL is
   opened on its own. The bridge reports selections and picked elements to the
   panel with `postMessage` and paints the comments the panel sends back.
   Pages in `<iframe srcdoc>` frames get the bridge too (in the served markup,
@@ -279,11 +279,11 @@ bb doc-review import "deck (comments).pdf" --into deck.pptx
 - Live sites: the Review button (`ui/web-review.tsx`, a Browser toolbar
   action) installs the controls (`src/web-ui.ts`) and the bridge into the
   page's isolated world with `experimental_page.evaluate`. A Browser tab is
-  a native view above the bb window, so the controls are drawn in the page,
+  a native view above the VesnALIA window, so the controls are drawn in the page,
   in a shadow root, rather than by the panel. The bridge talks to them
   through `window.__docReviewHost` instead of `postMessage`, leaves the
   page's frames alone, and sends no copy of the page; the controls ask the
-  button for everything else over `bb.postMessage`, and the button answers
+  button for everything else over `alia.postMessage`, and the button answers
   through `__docReviewWeb.fromPlugin`. A drawing's picture is the tab's own
   screenshot (`web.capture`: the desktop browser instances on connected
   machines are asked for the tab, and the one that has it is remembered).
@@ -316,7 +316,7 @@ bb doc-review import "deck (comments).pdf" --into deck.pptx
 
 ## Known limits
 
-- Rendering runs on the bb server's machine; files on other hosts are copied
+- Rendering runs on the VesnALIA server's machine; files on other hosts are copied
   there first (up to 64 MB).
 - Page numbers in Word files come from LibreOffice's layout and can differ
   from Word's own.
@@ -337,20 +337,20 @@ bb doc-review import "deck (comments).pdf" --into deck.pptx
   at its top, without jumping to its `#section`.
 - HTML pages run with an opaque origin: `localStorage` is unavailable and a
   page's own `fetch` of files next to it is refused. A relative link to a file
-  opens it in bb's file preview, at `#L12` or `:12` when the link names a
+  opens it in VesnALIA's file preview, at `#L12` or `:12` when the link names a
   line, and only inside the document's folder: a link above it is refused.
   A link to a site leaves the page and shows a bar to return; comments work
   on the reviewed file only.
 - Inside frames, comments work where the frame's page comes from `srcdoc`; a
   frame that loads another file or a site shows as is, without comments.
-- bb's preview of the folder lasts an hour; an HTML page left open longer may
+- VesnALIA's preview of the folder lasts an hour; an HTML page left open longer may
   fail to load pictures it had not loaded yet until it is reopened. A page
   reopened within half an hour comes from the plugin's memory, compressed,
   without reading the file again.
 - Files on a Windows machine open by their `C:\…` path; `c:\a\b.html` and
   `C:/a/b.html` are the same document with the same comments.
-- Live sites need bb Desktop, and the browser APIs they use are experimental
-  in bb's plugin SDK. Frames inside a live page take no comments, and a
+- Live sites need VesnALIA Desktop, and the browser APIs they use are experimental
+  in VesnALIA's plugin SDK. Frames inside a live page take no comments, and a
   comment cannot be edited there (delete it and write it again, or edit it
   on the Doc Review page).
 
@@ -360,6 +360,6 @@ bb doc-review import "deck (comments).pdf" --into deck.pptx
 npm install
 npm test           # vitest: formats, conversions, caches, workbook readers, anchors, exports
 npx tsc --noEmit
-bb plugin build .
-bb plugin dev .    # rebuild + reload on save
+alia plugin build .
+alia plugin dev .    # rebuild + reload on save
 ```

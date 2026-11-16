@@ -266,7 +266,7 @@ export function OfficeCanvas({
         const renderOffice = () => {
           const context = canvas.getContext("2d");
           if (!context)
-            throw new Error("BB Office could not create a canvas context");
+            throw new Error("VesnALIA Office could not create a canvas context");
           const viewport = viewportRef.current;
           const renderLayout = renderLayoutRef.current ?? layout;
           const offsets = renderFrame(
@@ -452,7 +452,7 @@ export function OfficeCanvas({
         setStatus("ready");
       })
       .catch((error: Error) => {
-        console.error("BB Office initialization failed", error);
+        console.error("VesnALIA Office initialization failed", error);
         if (!cancelled) setStatus("error");
       });
 
@@ -587,28 +587,28 @@ export function OfficeCanvas({
 
   return (
     <section
-      className={`bb-office-canvas-shell bb-office-canvas-shell-${chrome}`}
+      className={`alia-office-canvas-shell alia-office-canvas-shell-${chrome}`}
       data-appearance={officeTheme.appearance}
       data-color-mode={officeTheme.mode}
     >
       {chrome === "preview" ? (
-        <header className="bb-office-canvas-header">
+        <header className="alia-office-canvas-header">
           <div>
-            <p className="bb-office-canvas-kicker">
+            <p className="alia-office-canvas-kicker">
               {isLive
                 ? `${count} live thread${count === 1 ? "" : "s"}`
                 : `${count}-thread review`}
             </p>
             <h1>{officeName}</h1>
           </div>
-          <p className="bb-office-canvas-summary-line">
+          <p className="alia-office-canvas-summary-line">
             {summaryLabel(plan)}
             {hasFrontDesk ? " · 1 front desk" : " · south entrance"}
           </p>
         </header>
       ) : null}
 
-      <div className="bb-office-canvas-stage">
+      <div className="alia-office-canvas-stage">
         <canvas
           ref={canvasRef}
           aria-label={`${officeName}, ${count}-thread office${selectedAgentId === null ? "" : ", current thread highlighted"}`}
@@ -617,11 +617,11 @@ export function OfficeCanvas({
           onMouseMove={onPointerMove}
         />
         {status === "ready" && layoutKind === "compact" ? (
-          <div ref={usageLayerRef} className="bb-office-canvas-usage-layer">
+          <div ref={usageLayerRef} className="alia-office-canvas-usage-layer">
             {usagePosters.map((poster) => (
               <a
                 key={poster.providerId}
-                className="bb-office-canvas-usage-hotspot"
+                className="alia-office-canvas-usage-hotspot"
                 href={usageSettingsHref}
                 style={{
                   left: poster.placement.x - 2,
@@ -629,7 +629,7 @@ export function OfficeCanvas({
                   width: poster.placement.width + 4,
                   height: poster.placement.height + 8,
                 }}
-                aria-label={`${poster.displayName} usage: ${usagePosterSummary(poster)}. Open BB usage settings.`}
+                aria-label={`${poster.displayName} usage: ${usagePosterSummary(poster)}. Open VesnALIA usage settings.`}
                 onBlur={hideUsagePoster}
                 onFocus={() => showUsagePoster(poster.providerId)}
                 onMouseEnter={() => showUsagePoster(poster.providerId)}
@@ -641,7 +641,7 @@ export function OfficeCanvas({
         {visibleUsagePoster ? (
           <aside
             ref={usageCueRef}
-            className="bb-office-canvas-usage-cue"
+            className="alia-office-canvas-usage-cue"
             data-side="above"
             data-positioned="false"
             role="tooltip"
@@ -651,29 +651,29 @@ export function OfficeCanvas({
           </aside>
         ) : null}
         {status === "loading" ? (
-          <div className="bb-office-canvas-message">
+          <div className="alia-office-canvas-message">
             Loading the Pixel Agents office…
           </div>
         ) : null}
         {status === "error" ? (
-          <div className="bb-office-canvas-message bb-office-canvas-message-error">
+          <div className="alia-office-canvas-message alia-office-canvas-message-error">
             The authored office failed its layout or asset validation.
           </div>
         ) : null}
         {status === "ready" && sourceStatus === "loading" ? (
-          <div className="bb-office-canvas-message">
-            Connecting live bb threads…
+          <div className="alia-office-canvas-message">
+            Connecting live VesnALIA threads…
           </div>
         ) : null}
         {status === "ready" && sourceStatus === "error" ? (
-          <div className="bb-office-canvas-message bb-office-canvas-message-error">
+          <div className="alia-office-canvas-message alia-office-canvas-message-error">
             Live thread data is temporarily unavailable.
           </div>
         ) : null}
         {chrome !== "preview" && visibleOccupant ? (
           <aside
             ref={cueRef}
-            className="bb-office-canvas-hover-cue"
+            className="alia-office-canvas-hover-cue"
             data-side="above"
             data-positioned="false"
             role="tooltip"

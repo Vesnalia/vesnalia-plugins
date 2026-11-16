@@ -1,5 +1,5 @@
 /**
- * Stand-in for `@get-bb/plugin-sdk/app` used only by the screenshot harness.
+ * Stand-in for `@vesnalia/plugin-sdk/app` used only by the screenshot harness.
  * Vite aliases the SDK specifier to this module, so the real app code
  * (app.tsx + components/) renders unmodified against simulated data.
  *
@@ -247,7 +247,7 @@ export function mountRegisteredConfigSection(): void {
   createRoot(rootElement).render(<Section {...( {} as Record<string, never>)} />);
 }
 
-export function useBbNavigate(): unknown {
+export function useAliaNavigate(): unknown {
   return {
     toThread: () => {},
     toProject: () => {},
@@ -453,7 +453,7 @@ let simThreads: readonly SimThread[] = EMPTY_MODE
 /**
  * The sidebar store's revision: the React hook subscribes to it, so a host
  * push (or a mock action's rewrite) re-renders the board against the fresh
- * array — the way real bb's sidebar hook re-reads over its subscription.
+ * array — the way real VesnALIA's sidebar hook re-reads over its subscription.
  * Without this, a simulated push only re-rendered surfaces the app happened
  * to re-render for its own reasons, so UAT could never race a live update
  * against an in-flight gesture.
@@ -502,7 +502,7 @@ let simArchived: readonly SimThread[] = [];
  * ("cove 0dac60e") poses; empty runs keep the UAT fixtures pinned. */
 const github = (issue: number, kind: "issue" | "pull") => ({
   tracker: "github" as const,
-  repo: "cristoslc/bb-plugin-focus-board",
+  repo: "cristoslc/alia-plugin-focus-board",
   issue,
   kind,
   href: `https://github.com/cristoslc/bb-plugin-focus-board/${kind === "pull" ? "pull" : "issues"}/${issue}`,
@@ -750,7 +750,7 @@ const mockSdk = {
     // The errored card's Retry entry (issue #405): recorded in `uatCalls` as
     // `threads.retry` (the SDK level the real call rides, the same recording
     // seam `hosts.pickFolder` uses), with `?retryFails=<reason>` arming a
-    // refusal so a suite can pin the board surfacing bb's reason.
+    // refusal so a suite can pin the board surfacing VesnALIA's reason.
     retry: async (args?: { threadId: string }) => {
       uatCalls.push({ method: "threads.retry", args });
       const reason = PAGE_PARAMS.get("retryFails");
@@ -776,7 +776,7 @@ const mockSdk = {
         type: "persistent",
       },
     ],
-    // bb's native folder picker, mocked: a fixed picked folder by default so
+    // VesnALIA's native folder picker, mocked: a fixed picked folder by default so
     // the dialog's typical-flow create can be driven end to end and
     // screenshotted without an OS dialog. `?folderPick=cancel` (null path —
     // the operator's cancel answer) and `?folderPick=unavailable` (a refused
@@ -849,30 +849,30 @@ export function useSdk(): unknown {
 }
 
 /**
- * A replica of bb's host composer for the harness: the real one is bb's
- * bundled NewThreadComposer (its DOM lives in bb's own renderer), which the
+ * A replica of VesnALIA's host composer for the harness: the real one is VesnALIA's
+ * bundled NewThreadComposer (its DOM lives in VesnALIA's own renderer), which the
  * harness has no host for. The replica keeps the structure the New project
  * button's work needs evidence about: the promptbox (the rounded "Ask
  * anything." area with its model row and send button — the send button keeps
  * the old mock's recording contract, firing onSubmit with a minimal request)
- * and, under it, the pickers row bb's shared compose component renders as
+ * and, under it, the pickers row VesnALIA's shared compose component renders as
  * `data-new-thread-footer` with its class recipe and the three pickers ("No
  * project ⌄" on the left; ⌄-pickers "Default" and the accent-colored "Full
  * Access" on the right, the operator's screenshot's row). The row's classes
- * are bb's own; where bb's narrow variants sit on classes the plugin's
+ * are VesnALIA's own; where VesnALIA's narrow variants sit on classes the plugin's
  * compiled CSS does not carry (`max-md:gap-1`, `max-md:mt-0` — a mock that
  * invents utilities gets silent no-ops), the replica leaves them off: the
  * row's narrow padding shifts a hair, never the geometry the placement
  * proof asserts.
  *
  * The mock SDK must track every specifier app.tsx imports from
- * '@get-bb/plugin-sdk/app' or the harness fails to boot (it did: the ✨
+ * '@vesnalia/plugin-sdk/app' or the harness fails to boot (it did: the ✨
  * child-thread composer import was missing here and the harness rendered an
  * empty root).
  */
 export function experimental_NewThreadComposer(props: Record<string, unknown>): ReactNode {
   // The seeded project's own name when the dialog seeds one (the created
-  // project's id after a picked-folder create), else bb's projectless
+  // project's id after a picked-folder create), else VesnALIA's projectless
   // "No project" — the picker's label, so the harness can prove the
   // spawn-project selection the modal's seed drives.
   const seededName =
@@ -1087,7 +1087,7 @@ if (OVERVIEW_MODE) {
 /* ── The shared host row (`?sharedHost=<token>`) ──────────────────────────
  *
  * Every module variable above is one window's copy of a row the REAL host
- * owns once. With two pages open, each page needs the other's writes: bb's
+ * owns once. With two pages open, each page needs the other's writes: VesnALIA's
  * second window learns about a fold, a done mark, a rank move or a group
  * write through a realtime signal and a refetch, never through page memory.
  *
@@ -1289,7 +1289,7 @@ const simRpcBase = async (method: string, args?: unknown): Promise<unknown> => {
   if (method === "tracker_status") {
     const { repo, numbers } = args as { repo: string; numbers: number[] };
     const statuses: Record<string, { kind: string; state: string }> = {};
-    if (repo === "cristoslc/bb-plugin-focus-board") {
+    if (repo === "cristoslc/alia-plugin-focus-board") {
       for (const n of numbers) {
         if (n >= 43 && n <= 59) statuses[String(n)] = { kind: "pull", state: "MERGED" };
         else if (n === 17 || n === 21) statuses[String(n)] = { kind: "issue", state: "OPEN" };
@@ -1364,7 +1364,7 @@ const simRpcBase = async (method: string, args?: unknown): Promise<unknown> => {
   if (method === "thread_reparent") {
     // The server's semantics, abbreviated for the harness: the real handler
     // re-checks lib/reparent against fresh rows, then calls threads.update
-    // and bb's host pushes the changed thread back over the sidebar bridge.
+    // and VesnALIA's host pushes the changed thread back over the sidebar bridge.
     // The mock IS the whole chain, so it rewrites the simulated sidebar row
     // and re-renders — the board then nests the card via the normal
     // buildFamilyIndex pass. Refusals throw, the way the real RPC's
@@ -1385,7 +1385,7 @@ const simRpcBase = async (method: string, args?: unknown): Promise<unknown> => {
   }
   if (method === "thread_autotitle") {
     // Deterministic canned reply: the real server builds the title from the
-    // thread's first prompt over bb's selected AI service; a UAT pass
+    // thread's first prompt over VesnALIA's selected AI service; a UAT pass
     // exercises the editor's commit-on-return flow with this. The override
     // targets name the path the fallback modal simulated with.
     const { pluginId, serviceId, useThreadModel } = (args ?? {}) as {
@@ -1407,7 +1407,7 @@ const simRpcBase = async (method: string, args?: unknown): Promise<unknown> => {
     if (FAIL_AUTOTITLE_KINDS.delete(kind)) {
       if (kind === "plain") {
         throw new Error(
-          "Title task is not set to a plugin AI service. Choose one under Settings → AI services → thread-title (bb cloud and automatic run inside bb and cannot be invoked from plugins).",
+          "Title task is not set to a plugin AI service. Choose one under Settings → AI services → thread-title (VesnALIA cloud and automatic run inside VesnALIA and cannot be invoked from plugins).",
         );
       }
       if (useThreadModel === true) {
@@ -1431,7 +1431,7 @@ const simRpcBase = async (method: string, args?: unknown): Promise<unknown> => {
     // The fallback modal's menu: one ready alternative (the simulated
     // selection itself is excluded), one disabled with its blocker, and the
     // thread-model probe available. `sim-nobridge` mirrors the live shape
-    // the real board carries (bb cloud / provider-codex): ready, but
+    // the real board carries (VesnALIA cloud / provider-codex): ready, but
     // without the complete bridge — it must render BLOCKED, because a pick
     // routes thread_autotitle at a plugin whose RPC surface has no method.
     return {
@@ -1651,13 +1651,13 @@ const PENDING_QUESTION_FIXTURE =
   new URLSearchParams(window.location.search).has("pendingQuestion");
 
 /**
- * A host-faithful queued-message row, pinned to bb's own QueuedMessagesList
- * markup and classes (issue #296). The point is the classes: bb's row control
+ * A host-faithful queued-message row, pinned to VesnALIA's own QueuedMessagesList
+ * markup and classes (issue #296). The point is the classes: VesnALIA's row control
  * is `opacity-0 pointer-events-none` at rest and leans on the host's
  * `@media (hover:none)` reveal utilities to become tappable on a touch device,
  * while the Send control lives in a container hidden below `md` until the "…"
  * control reveals it. The harness loads the plugin's compiled `app.css`,
- * scoped to the plugin root exactly as bb scopes it, so a row built with the
+ * scoped to the plugin root exactly as VesnALIA scopes it, so a row built with the
  * host's classes exercises the real collision. Rendered only with
  * `?queuedSend=1`; Send removes the row so a suite can prove the whole tap
  * path.
@@ -1743,7 +1743,7 @@ function MockQueuedSendRow(): ReactNode {
  * Does this harness run carry the file-change-title fixture? Captured at
  * module load like QUEUED_SEND_FIXTURE; `?fileChange=1` renders one
  * host-faithful file-change row title (the file-accent path segment inside
- * TimelineTitleView's tooltip wrapper, as bb 0.48.1 renders it in the pane
+ * TimelineTitleView's tooltip wrapper, as VesnALIA 0.48.1 renders it in the pane
  * with no title-action resolver) for the pane-gap frames.
  */
 const FILE_CHANGE_FIXTURE =

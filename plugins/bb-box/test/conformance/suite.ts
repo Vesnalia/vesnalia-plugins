@@ -118,18 +118,18 @@ const SIMULATOR_SCRIPT = [
   '[ -n "$udid" ] || { echo "no iPhone device under an iOS runtime" >&2; exit 1; }',
   'trap \'xcrun simctl shutdown "$udid" 2>/dev/null\' EXIT',
   'xcrun simctl bootstatus "$udid" -b >/dev/null',
-  'xcrun simctl spawn "$udid" defaults write bb-box.conformance said -string ok',
-  'xcrun simctl spawn "$udid" defaults read bb-box.conformance said',
+  'xcrun simctl spawn "$udid" defaults write alia-box.conformance said -string ok',
+  'xcrun simctl spawn "$udid" defaults read alia-box.conformance said',
 ].join("\n");
 
-/** Enrolment in a live BB server. */
-export interface ConformanceBb {
+/** Enrolment in a live VesnALIA server. */
+export interface ConformanceAlia {
   /**
-   * Runs BB's bootstrap in the box with the box ID as the key. The suite
-   * calls it again after a stop and start, as BB Box does (017).
+   * Runs VesnALIA's bootstrap in the box with the box ID as the key. The suite
+   * calls it again after a stop and start, as VesnALIA Box does (017).
    */
   enrol(box: BoxIdentity, command: CommandTransport, signal: AbortSignal): Promise<void>;
-  /** Whether the box's BB machine is connected to the server. */
+  /** Whether the box's VesnALIA machine is connected to the server. */
   connected(box: BoxIdentity, signal: AbortSignal): Promise<boolean>;
 }
 
@@ -153,7 +153,7 @@ export interface ConformanceOptions {
   /** Checks this run cannot do, with the reason. */
   readonly skip?: Partial<Record<ConformanceCheck, string>>;
   /** Without it, only what enrolment needs in the box is checked. */
-  readonly bb?: ConformanceBb;
+  readonly alia?: ConformanceAlia;
   /** For each step that talks to the backend. */
   readonly timeoutMs?: number;
   readonly testDevice?: boolean;
@@ -165,7 +165,7 @@ const THREAD = "thr_conformance";
 export const CONFORMANCE_INSTALL = "conformance";
 const MiB = 1024 * 1024;
 const ID = /^[a-z0-9][a-z0-9-]*$/;
-/** After a stop and start, the box is connected to BB again this soon after it is ready (017). */
+/** After a stop and start, the box is connected to VesnALIA again this soon after it is ready (017). */
 const RECONNECT_MS = 3_000;
 /** Prints the SHA-256 of stdin, on Linux and macOS. */
 const SHA256 = "if command -v sha256sum >/dev/null 2>&1; then sha256sum; else shasum -a 256; fi | cut -c1-64";
@@ -412,7 +412,7 @@ export async function testDeviceCase(command: CommandTransport, kind: BoxKind, f
     const keyframeMs = keys[1]! - asked;
     await watching.close();
     await servers.dispose();
-    const killed = await command.run(inBox(os, 'kill -9 "$(cat "$HOME/.bb-box/device/server.pid")"'), { timeoutMs: 10_000 });
+    const killed = await command.run(inBox(os, 'kill -9 "$(cat "$HOME/.alia-box/device/server.pid")"'), { timeoutMs: 10_000 });
     assert.equal(killed.exitCode, 0, `the server was killed: ${killed.stderr}`);
     const down = Date.now();
     let backMs: number | null = null;
@@ -429,7 +429,7 @@ export async function testDeviceCase(command: CommandTransport, kind: BoxKind, f
     return { helloMs, keyframeMs, backMs: backMs! };
   } finally {
     await servers.dispose();
-    await command.run(inBox(os, `f="$HOME/.bb-box/device/current/src/device/bb-box-device.sh"; [ ! -f "$f" ] || sh "$f" stop`), { timeoutMs: 30_000 }).catch(() => undefined);
+    await command.run(inBox(os, `f="$HOME/.alia-box/device/current/src/device/alia-box-device.sh"; [ ! -f "$f" ] || sh "$f" stop`), { timeoutMs: 30_000 }).catch(() => undefined);
   }
 }
 
@@ -712,16 +712,16 @@ export async function conformance(options: ConformanceOptions): Promise<void> {
             const data = randomBytes(32 * MiB);
             data[0] = 0;
             data[1] = 255;
-            const path = `bb-box-conformance/dir with space/it's ${box.name}.bin`;
+            const path = `alia-box-conformance/dir with space/it's ${box.name}.bin`;
             await command.writeFile(path, data, { mode: "0600", signal: signal() });
             const inBox = await command.run(posix ? `cd "$HOME" && cat -- ${quote(path)} | ${SHA256}` : windowsSha256(path), { timeoutMs: 60_000 });
             assert.equal(inBox.stdout.trim(), sha256(data), "the file in the box matches");
             const make = posix
-              ? `cd "$HOME" && head -c ${32 * MiB} /dev/urandom > bb-box-conformance/out.bin && cat bb-box-conformance/out.bin | ${SHA256}`
-              : `$b = [byte[]]::new(${32 * MiB}); [Random]::new().NextBytes($b); [IO.File]::WriteAllBytes((Join-Path $HOME 'bb-box-conformance/out.bin'), $b); ${windowsSha256("bb-box-conformance/out.bin")}`;
+              ? `cd "$HOME" && head -c ${32 * MiB} /dev/urandom > alia-box-conformance/out.bin && cat alia-box-conformance/out.bin | ${SHA256}`
+              : `$b = [byte[]]::new(${32 * MiB}); [Random]::new().NextBytes($b); [IO.File]::WriteAllBytes((Join-Path $HOME 'alia-box-conformance/out.bin'), $b); ${windowsSha256("alia-box-conformance/out.bin")}`;
             const out = await command.run(make, { timeoutMs: 60_000 });
             assert.equal(out.exitCode, 0, out.stderr);
-            const read = await command.readFile("bb-box-conformance/out.bin", { maxBytes: 32 * MiB, signal: signal() });
+            const read = await command.readFile("alia-box-conformance/out.bin", { maxBytes: 32 * MiB, signal: signal() });
             assert.equal(read.length, 32 * MiB);
             assert.equal(sha256(read), out.stdout.trim(), "the file read out matches");
             await assert.rejects(command.readFile(path, { maxBytes: 10 }), /larger than 10 bytes/);
@@ -729,7 +729,7 @@ export async function conformance(options: ConformanceOptions): Promise<void> {
               const mode = await command.run(`cd "$HOME" && (stat -c %a ${quote(path)} 2>/dev/null || stat -f %Lp ${quote(path)})`);
               assert.equal(mode.stdout.trim(), "600");
             }
-            await command.run(posix ? 'cd "$HOME" && rm -rf bb-box-conformance' : "Remove-Item -LiteralPath (Join-Path $HOME 'bb-box-conformance') -Recurse -Force");
+            await command.run(posix ? 'cd "$HOME" && rm -rf alia-box-conformance' : "Remove-Item -LiteralPath (Join-Path $HOME 'alia-box-conformance') -Recurse -Force");
           });
 
           if (capabilities.enrol) {
@@ -742,10 +742,10 @@ export async function conformance(options: ConformanceOptions): Promise<void> {
               assert.equal(result.exitCode, 0, `the box needs sh, tar, curl or wget and a writable home: ${result.stderr}`);
             });
 
-            it("enrols in BB", { timeout, skip: skip.enrol ?? (options.bb ? false : "needs a live BB server") }, async () => {
+            it("enrols in VesnALIA", { timeout, skip: skip.enrol ?? (options.alia ? false : "needs a live VesnALIA server") }, async () => {
               const { command } = need();
-              await options.bb!.enrol(box, command, signal());
-              await until(() => options.bb!.connected(box, signal()), timeout, "the box connects to BB");
+              await options.alia!.enrol(box, command, signal());
+              await until(() => options.alia!.connected(box, signal()), timeout, "the box connects to VesnALIA");
               enrolled = true;
             });
           }
@@ -898,7 +898,7 @@ export async function conformance(options: ConformanceOptions): Promise<void> {
                 let windows: unknown;
                 let problem: string;
                 try {
-                  const session = await McpSession.open(channel, { client: { name: "bb-box-conformance", version: "1" }, timeoutMs: 20_000 });
+                  const session = await McpSession.open(channel, { client: { name: "alia-box-conformance", version: "1" }, timeoutMs: 20_000 });
                   try {
                     const listed = await session.call("list_windows", {}, { timeoutMs: 20_000 });
                     windows = listed.structuredContent?.windows;
@@ -922,7 +922,7 @@ export async function conformance(options: ConformanceOptions): Promise<void> {
             it(`opens an app, ${editor}, whose window appears on the desktop`, { timeout, skip: skip["computer-use"] ?? (editor ? false : `no stock app is known for ${capabilities.os}`) }, async () => {
               const { command } = need();
               const channel = await command.spawn!(driverCommand(capabilities.os, computerUse.socket), signal());
-              const session = await McpSession.open(channel, { client: { name: "bb-box-conformance", version: "1" }, timeoutMs: 20_000 });
+              const session = await McpSession.open(channel, { client: { name: "alia-box-conformance", version: "1" }, timeoutMs: 20_000 });
               try {
                 const windows = async () => {
                   const listed = await session.call("list_windows", {}, { timeoutMs: 20_000 });
@@ -1016,13 +1016,13 @@ export async function conformance(options: ConformanceOptions): Promise<void> {
             restartedAt = Date.now();
           });
 
-          it("reconnects to BB within 3 s of being ready after a stop and start", { timeout, skip: stopStart || (options.bb && capabilities.enrol ? false : "needs a live BB server") }, async (t) => {
+          it("reconnects to VesnALIA within 3 s of being ready after a stop and start", { timeout, skip: stopStart || (options.alia && capabilities.enrol ? false : "needs a live VesnALIA server") }, async (t) => {
             if (!enrolled) return t.skip("the box did not enrol");
             if (restartedAt === null) return t.skip("the box did not stop and start");
             const { command } = need();
-            // BB Box starts BB's daemon again with the same key after a start.
-            await options.bb!.enrol(box, command, signal());
-            await until(() => options.bb!.connected(box, signal()), Math.max(0, restartedAt + RECONNECT_MS - Date.now()), "the box reconnects to BB", 100);
+            // VesnALIA Box starts VesnALIA's daemon again with the same key after a start.
+            await options.alia!.enrol(box, command, signal());
+            await until(() => options.alia!.connected(box, signal()), Math.max(0, restartedAt + RECONNECT_MS - Date.now()), "the box reconnects to VesnALIA", 100);
           });
 
           const offer = backend.snapshotting?.(kind.id) ?? null;
@@ -1261,7 +1261,7 @@ export async function conformance(options: ConformanceOptions): Promise<void> {
 
           it("a new instance on empty storage with the same install ID names the box's owner", { timeout, skip: skip.recovery ?? false }, async () => {
             const { guest } = need();
-            // As when BB Box loses its storage: the sweep rebuilds the box's record from this.
+            // As when VesnALIA Box loses its storage: the sweep rebuilds the box's record from this.
             const fresh = await options.create(new MemoryStorage(), CONFORMANCE_INSTALL);
             others.push(fresh);
             const held = (await fresh.held(signal())).find((other) => other.ref === guest.ref);
@@ -1488,8 +1488,8 @@ export async function conformance(options: ConformanceOptions): Promise<void> {
 
           // As a build's script and finalizing leave it: a file of the image's, and its record, where the OS keeps it (049, 054).
           const os = kinds.find((kind) => kind.id === standard.kind)?.capabilities.os;
-          const dir = os === "windows" ? "C:\\bb-box" : os === "macos" ? "/usr/local/share/bb-box" : "/usr/share/bb-box";
-          const marker = `BB Box conformance ${randomBytes(4).toString("hex")}`;
+          const dir = os === "windows" ? "C:\\alia-box" : os === "macos" ? "/usr/local/share/alia-box" : "/usr/share/alia-box";
+          const marker = `VesnALIA Box conformance ${randomBytes(4).toString("hex")}`;
           const build = `build.conformance-${Date.now()}`;
           const record = { contract: 1, image: "conformance", kind: standard.kind, arch: "", build, built: new Date().toISOString(), os: "", tools: {} };
           const script =

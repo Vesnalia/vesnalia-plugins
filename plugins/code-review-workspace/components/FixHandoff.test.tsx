@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { DraftProviderProps } from "./DraftProvider";
 import { defaultPreferences } from "../src/preferences";
 
@@ -78,7 +78,7 @@ test("someone else's PR with no main thread doesn't offer it, and with no commen
 const local = { review: { targetKey: "k", kind: "ref", gitRef: "HEAD", sourceThreadId: "coder" }, isLocal: true };
 const open = (over: Record<string, unknown> = {}) => () => ({ thread: { threadId: "coder", title: "Retry uploads", state: "open", machine: "MaxBook", ...over } });
 
-test("a main thread with no title BB's list or the review knows is called Main thread", async () => {
+test("a main thread with no title VesnALIA's list or the review knows is called Main thread", async () => {
   const slot = await renderTray({ getSourceThread: open({ title: null }) }, local);
   const region = within(await slot.findByRole("region", { name: "Send to the main thread" }));
   expect(region.getByRole("button", { name: "Change main thread" }).closest("p")!.textContent).toBe("Main thread · MaxBook · Change main thread");
@@ -109,7 +109,7 @@ test("a review with a main thread leads with Send N to it, by its title and mach
   expect(status.textContent).toBe("Queued for Retry uploads: it’s busy, and gets 1 comment when its turn ends. · Watch · Main thread ↗");
   fireEvent.click(within(status).getByRole("button", { name: "Main thread" }));
   expect(slot.inspection.navigateCalls).toContainEqual({ method: "toThread", threadId: "coder" });
-  // Watch shows it beside the review instead, in BB's Main thread tab.
+  // Watch shows it beside the review instead, in VesnALIA's Main thread tab.
   panel.open.mockClear();
   fireEvent.click(within(status).getByRole("button", { name: "Watch" }));
   expect(panel.open.mock.calls).toEqual([["main"]]);

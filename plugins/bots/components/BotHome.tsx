@@ -1,9 +1,9 @@
 import { useRef, useState } from "react";
 import {
   experimental_NewThreadComposer as NewThreadComposer,
-  useBbNavigate,
-} from "@get-bb/plugin-sdk/app";
-import type { NewThreadRequest } from "@get-bb/plugin-sdk/app";
+  useAliaNavigate,
+} from "@vesnalia/plugin-sdk/app";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -176,7 +176,7 @@ export function BotHeader({
           <DialogHeader>
             <DialogTitle>Delete {displayName(bot)}?</DialogTitle>
             <DialogDescription>
-              Its chats stay in BB but stop following these instructions.
+              Its chats stay in VesnALIA but stop following these instructions.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -208,7 +208,7 @@ export function BotHome({
 }) {
   useRelativeClock();
   const rpc = useBotsRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [instructionsExpanded, setInstructionsExpanded] = useState(false);
   const [archivedExpanded, setArchivedExpanded] = useState(false);
 

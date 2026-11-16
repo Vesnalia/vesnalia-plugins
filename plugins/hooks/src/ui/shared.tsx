@@ -1,6 +1,6 @@
 // Data context, shared types and the small presentational pieces every tab uses.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../rpc";
 import { Badge as UiBadge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
@@ -368,4 +368,4 @@ export function templateKey(entry: TemplateEntry): string {
  * Seed for the thread that "New hook" opens. The user finishes the sentence;
  * the create-hook skill triggers on the request itself.
  */
-export const NEW_HOOK_PROMPT = "Create a new bb hook that ";
+export const NEW_HOOK_PROMPT = "Create a new VesnALIA hook that ";

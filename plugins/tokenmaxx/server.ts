@@ -1,4 +1,4 @@
-import { type BbPluginApi, defineRpcContract } from "@get-bb/plugin-sdk";
+import { type AliaPluginApi, defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { createLoginSessions } from "./tokenmaxx/login.js";
 import {
@@ -118,8 +118,8 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     binaryPath: {
       type: "string",
       label: "tokenmaxx binary",
@@ -138,7 +138,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const logins = createLoginSessions(bb);
+  const logins = createLoginSessions(alia);
 
   const context = async () => {
     const values = await settings.get();
@@ -162,7 +162,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   const announce = async () => {
     const state = await currentState();
-    bb.realtime.publish(STATE_CHANNEL, { fingerprint: fingerprint(state) });
+    alia.realtime.publish(STATE_CHANNEL, { fingerprint: fingerprint(state) });
     return state;
   };
 
@@ -177,7 +177,7 @@ export default async function plugin(bb: BbPluginApi) {
     };
   };
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     state: () => currentState(),
 
     refresh: async () => {
@@ -258,7 +258,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.background.service("poll", {
+  alia.background.service("poll", {
     async start(signal) {
       let previous = "";
       while (!signal.aborted) {
@@ -267,10 +267,10 @@ export default async function plugin(bb: BbPluginApi) {
           const next = fingerprint(state);
           if (next !== previous) {
             previous = next;
-            bb.realtime.publish(STATE_CHANNEL, { fingerprint: next });
+            alia.realtime.publish(STATE_CHANNEL, { fingerprint: next });
           }
         } catch (error) {
-          bb.log.warn(`poll failed: ${error instanceof Error ? error.message : String(error)}`);
+          alia.log.warn(`poll failed: ${error instanceof Error ? error.message : String(error)}`);
         }
         const { refreshMs } = await context();
         await new Promise<void>((wake) => {
@@ -288,7 +288,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     await logins.closeAll();
   });
 }

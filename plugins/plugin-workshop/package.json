@@ -1,10 +1,10 @@
 {
   "name": "plugin-workshop",
   "version": "0.1.1",
-  "description": "A bb plugin for building and changing bb plugins on a board, with one agent per stage from idea to rollout and an optional autopilot.",
+  "description": "A VesnALIA plugin for building and changing VesnALIA plugins on a board, with one agent per stage from idea to rollout and an optional autopilot.",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "plugin-development",
     "agents",
     "autopilot",
@@ -12,12 +12,12 @@
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.37"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.37"
   },
-  "bb": {
+  "alia": {
     "name": "Plugin Workshop",
-    "description": "Build bb plugins from idea to production with one agent per stage — context, feasibility, spec, mockup, implementation, verification and rollout — and an optional autopilot.",
+    "description": "Build VesnALIA plugins from idea to production with one agent per stage — context, feasibility, spec, mockup, implementation, verification and rollout — and an optional autopilot.",
     "branding": {
       "icon": "./icons/board.svg",
       "experimental_icons": {
@@ -36,7 +36,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.37",
     "@testing-library/react": "^16.0.0",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
@@ -50,5 +49,22 @@
     "typescript": "^5.7.0",
     "vitest": "^4.1.11"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/plugin-workshop#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/plugin-workshop"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

@@ -1,21 +1,21 @@
 // Run with `npm test`. Node 22.18+ (24 here) runs the TypeScript source directly:
-// no build, no extra packages. The plugin SDK's fake host stands in for BB.
+// no build, no extra packages. The plugin SDK's fake host stands in for VesnALIA.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin, { parseSuggestionOutput, parseSuggestions } from "../server.ts";
 import { modelStubs } from "./helpers.mjs";
 
 // Raw worker outputs from the prompt A/B (Haiku 5.5, the "compact" prompt, runs 1
-// and 8), exactly as BB returned them: a JSON array whose items are STRINGS that
+// and 8), exactly as VesnALIA returned them: a JSON array whose items are STRINGS that
 // contain JSON objects, so the plugin used to show `{"label": …` as the label.
-const RUN_1 = String.raw`["{\"label\": \"Show the saved model in plugin storage\", \"why\": \"Confirms the picked model persisted via followups_model_get RPC or storage file\"}", "{\"label\": \"Run a suggestion and read plugin logs\", \"why\": \"Verifies the worker used the new model and logged no fallback warning\"}", "{\"label\": \"Clear the setting and recheck the default\", \"why\": \"Confirms unset reverts to BB primary default codex/gpt-6.1-sol\"}"]`;
+const RUN_1 = String.raw`["{\"label\": \"Show the saved model in plugin storage\", \"why\": \"Confirms the picked model persisted via followups_model_get RPC or storage file\"}", "{\"label\": \"Run a suggestion and read plugin logs\", \"why\": \"Verifies the worker used the new model and logged no fallback warning\"}", "{\"label\": \"Clear the setting and recheck the default\", \"why\": \"Confirms unset reverts to VesnALIA primary default codex/gpt-6.1-sol\"}"]`;
 const RUN_8 = String.raw`["{\"label\": \"Run the suggestion-to-banner check\", \"why\": \"Full suggestion path on the new code has not run yet this turn\"}", "{\"label\": \"Show the followups plugin log\", \"why\": \"Log shows whether the worker used the picked model or fell back\"}", "{\"label\": \"Clear the model setting back to default\", \"why\": \"Reverting confirms the default returns with no errors in the log\"}"]`;
 
 const EXPECTED_RUN_1 = [
   { label: "Show the saved model in plugin storage", why: "Confirms the picked model persisted via followups_model_get RPC or storage file" },
   { label: "Run a suggestion and read plugin logs", why: "Verifies the worker used the new model and logged no fallback warning" },
-  { label: "Clear the setting and recheck the default", why: "Confirms unset reverts to BB primary default codex/gpt-6.1-sol" },
+  { label: "Clear the setting and recheck the default", why: "Confirms unset reverts to VesnALIA primary default codex/gpt-6.1-sol" },
 ];
 const EXPECTED_RUN_8 = [
   { label: "Run the suggestion-to-banner check", why: "Full suggestion path on the new code has not run yet this turn" },
@@ -70,7 +70,7 @@ async function suggestionsShownFor(workerOutput) {
       ...modelStubs(),
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   await host.harness.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: "t" }), lastAssistantText: "I changed the footer." });
   for (let i = 0; i < 100 && meta.status !== "ready" && meta.status !== "empty"; i++) await new Promise((r) => setTimeout(r, 40));
   const got = await host.harness.callRpc("followups_get", { threadId: "t" });

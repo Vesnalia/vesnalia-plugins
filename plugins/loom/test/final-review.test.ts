@@ -23,8 +23,8 @@ const ticket = () => ticketOf(h, "CSV-1");
 const posts = () => h.store.posts(ticket().id);
 const dataOf = (outcome: string) => posts().filter((post) => (JSON.parse(post.data_json) as { outcome?: string }).outcome === outcome).map((post) => ({ post, data: JSON.parse(post.data_json) as Record<string, any> }));
 const merges = () => h.host.callsTo("prMerge");
-const spawns = () => (h.bb.callsTo("spawnThread") as Array<[SpawnArgs]>).map(([args]) => args).filter((args) => args.metadata.role === "final-review");
-const reviewer = () => h.bb.threads.get(String(JSON.parse(h.store.ticketEvents(ticket().id, [FINAL_BOUND]).at(-1)!.data_json).thread))!;
+const spawns = () => (h.alia.callsTo("spawnThread") as Array<[SpawnArgs]>).map(([args]) => args).filter((args) => args.metadata.role === "final-review");
+const reviewer = () => h.alia.threads.get(String(JSON.parse(h.store.ticketEvents(ticket().id, [FINAL_BOUND]).at(-1)!.data_json).thread))!;
 const poll = async (ctx: EngineCtx = h.ctx, ms = 5 * 60_000) => {
   h.clock.advance(ms);
   await pollPullRequests(ctx, ctx.store.projectBySlug("csv")!);
@@ -110,9 +110,9 @@ describe("the final review before a merge", () => {
     approved();
     await poll();
     verdict("pass");
-    const real = h.bb.projectCheckout.bind(h.bb);
+    const real = h.alia.projectCheckout.bind(h.alia);
     let lookups = 0;
-    h.bb.projectCheckout = async (id: string, host: string) => {
+    h.alia.projectCheckout = async (id: string, host: string) => {
       lookups += 1;
       // The second lookup is the merge's own, after the read: Loom pushes a new commit meanwhile.
       if (lookups === 2) h.store.updateTicket(ticket().id, { pushed_sha: "sq-new" });
@@ -173,7 +173,7 @@ describe("the final review before a merge", () => {
     const restarted: EngineCtx = { ...h.ctx, store: new Store(h.db, h.clock.now) };
     await poll(restarted);
     expect(spawns()).toEqual([]);
-    expect(h.bb.callsTo("findSpawnedThread")).toEqual([["tok-lost"]]);
+    expect(h.alia.callsTo("findSpawnedThread")).toEqual([["tok-lost"]]);
     expect(dataOf("final_review_unfinished")[0]!.post.body).toContain("Loom restarted before the reviewer started");
     await poll(restarted);
     expect(spawns()).toHaveLength(1);
@@ -222,7 +222,7 @@ describe("the final review before a merge", () => {
     expect(dataOf("final_review_unfinished").every(({ data }) => data.why === "timeout")).toBe(true);
     const held = dataOf("final_review_held");
     expect(held).toHaveLength(1);
-    expect(held[0]!.post.body).toContain("bb loom auto-merge csv retry --ticket CSV-1");
+    expect(held[0]!.post.body).toContain("alia loom auto-merge csv retry --ticket CSV-1");
     expect(merges()).toEqual([]);
     expect(finalBadge(h.store, spec(), ticket())).toMatchObject({ state: "held" });
     expect(setAutoMerge(h.store, project(), "retry", ticket())).toContain("final review again");
@@ -233,10 +233,10 @@ describe("the final review before a merge", () => {
   it("does not merge when the reviewer fails to start; it tries again after the wait", async () => {
     await openPr(FINAL());
     approved();
-    h.bb.spawnError = (args) => (args.metadata.role === "final-review" ? new Error("no such provider") : null);
+    h.alia.spawnError = (args) => (args.metadata.role === "final-review" ? new Error("no such provider") : null);
     await poll();
-    expect(dataOf("final_review_unfinished")[0]!.post.body).toContain("bb could not start the reviewer: no such provider");
-    h.bb.spawnError = null;
+    expect(dataOf("final_review_unfinished")[0]!.post.body).toContain("alia could not start the reviewer: no such provider");
+    h.alia.spawnError = null;
     expect(spawns()).toHaveLength(1);
     await poll();
     expect(spawns()).toHaveLength(2);
@@ -249,7 +249,7 @@ describe("the final review before a merge", () => {
     await poll();
     reviewer().status = "idle";
     await poll();
-    expect(h.bb.sent(reviewer().id).at(-1)).toContain("Call loom_final_review now");
+    expect(h.alia.sent(reviewer().id).at(-1)).toContain("Call loom_final_review now");
     await poll();
     expect(dataOf("final_review_unfinished")[0]!.data.why).toBe("idle");
     expect(merges()).toEqual([]);
@@ -262,7 +262,7 @@ describe("the final review before a merge", () => {
     verdict("fail", "The merge of main dropped the header row the second criterion needs.", true);
     await poll(h.ctx, 0);
     expect(ticket().state).toBe("working");
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("dropped the header row");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("dropped the header row");
     expect(merges()).toEqual([]);
     const round = posts().map((post) => JSON.parse(post.data_json) as Record<string, any>).find((data) => data.outcome === "pr_feedback")!;
     expect(round.counted).toBe(1);

@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import { reportCli } from '../../src/report-cli.ts';
 import { reportEvents } from '../../src/problem-report.ts';
 
 const sentinel = 'SENTINEL_private_prompt_token_header_/home/private/project';
-const local = { bb: '0.47.1', ZCode: '3.15.1', CLI: '0.16.9', plugin: '0.1.0', macOS: '26.0',
+const local = { alia: '0.47.1', ZCode: '3.15.1', CLI: '0.16.9', plugin: '0.1.0', macOS: '26.0',
   state: 'installed', ZCodePath: sentinel, cliLogin: 'set', events: ['native-startup', sentinel] };
 function safe(result) {
   const output = (result.stdout ?? '') + (result.stderr ?? '');
@@ -19,7 +19,7 @@ function safe(result) {
 test('report CLI root metadata, help, usage, JSON and server-local scope through SDK harness', async () => {
   let reads = 0;
   const cli = reportCli(async () => { reads++; return { local, settings: { backupKey: sentinel, headers: sentinel, prompt: sentinel } }; });
-  const { bb, harness: sdk } = createFakePluginHost({ pluginId: 'report-test' }); bb.cli.register(cli);
+  const { alia, harness: sdk } = createFakePluginHost({ pluginId: 'report-test' }); alia.cli.register(cli);
   assert.equal(cli.rendersHelp, true); assert.ok(Array.isArray(cli.commands));
   const ctx = { get cwd() { throw Error('remote invoking host path must never be read'); } };
   for (const argv of [['--help'], ['-h'], ['help'], ['--json', '--help']]) {
@@ -47,10 +47,10 @@ test('report failures, hostile fields and missing data cannot leak content or be
     const result = await cli.run(argv, {}); assert.equal(result.exitCode, 1); safe(result);
     if (argv.length) assert.equal(JSON.parse(result.stdout).error.code, 'report_unavailable');
   }
-  const cli = reportCli(async () => ({ local: { ...local, bb: sentinel, macOS: sentinel, ZCode: sentinel,
+  const cli = reportCli(async () => ({ local: { ...local, alia: sentinel, macOS: sentinel, ZCode: sentinel,
     CLI: sentinel, plugin: sentinel, state: sentinel, cliLogin: sentinel, events: Array(30000).fill(sentinel) }, settings: { authMode: sentinel } }));
   const result = await cli.run(['--json'], {}); safe(result);
-  const report = JSON.parse(result.stdout); assert.equal(report.bb, null); assert.deepEqual(report.events, []);
+  const report = JSON.parse(result.stdout); assert.equal(report.alia, null); assert.deepEqual(report.events, []);
   assert.equal(report.desktopCredentialFile, 'absent'); assert.equal(report.settings.authMode, 'desktop');
 });
 test('report projects fixed events from logs without writing session/config files', () => {

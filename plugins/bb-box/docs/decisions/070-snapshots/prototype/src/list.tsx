@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -331,7 +331,7 @@ export function BoxesList({ tab }: { tab: Tab }) {
           onSelect={(next) => go({ page: "list", tab: next }, { replace: true })}
         />
         <div className="flex shrink-0 items-center gap-1.5">
-          <IconButton label="BB Box settings" icon="Settings" className="size-8" onClick={() => go({ page: "settings", section: "" })} />
+          <IconButton label="VesnALIA Box settings" icon="Settings" className="size-8" onClick={() => go({ page: "settings", section: "" })} />
           <Button type="button" variant="secondary" size="sm" className="h-8" onClick={() => store.say("New box opens the form, as today.")}>
             <Icon name="Plus" className="size-4" aria-hidden />
             New box

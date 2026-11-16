@@ -33,7 +33,7 @@
      "key": "tls-fingerprint",
      "type": "string",
      "label": "TLS fingerprint",
-     "description": "The SHA-256 fingerprint of the Proxmox API's certificate, from the setup guide's token file. bb-box then trusts that certificate alone. Leave empty to check the certificate against its CA.",
+     "description": "The SHA-256 fingerprint of the Proxmox API's certificate, from the setup guide's token file. alia-box then trusts that certificate alone. Leave empty to check the certificate against its CA.",
      "default": "",
      "group": "connection"
     },
@@ -66,7 +66,7 @@
      "key": "ssh-private-key",
      "type": "string",
      "label": "SSH private key",
-     "description": "The unencrypted OpenSSH private key the templates were built with (the setup guide's BBBOX_SSH_KEY). Leave empty and bb-box makes one and shows its public key, which the templates must then accept.",
+     "description": "The unencrypted OpenSSH private key the templates were built with (the setup guide's BBBOX_SSH_KEY). Leave empty and alia-box makes one and shows its public key, which the templates must then accept.",
      "secret": true,
      "group": "credentials"
     },
@@ -147,7 +147,7 @@
      "key": "addresses",
      "type": "string",
      "label": "Box addresses",
-     "description": "The range bb-box hands out. The n-th VMID gets the n-th address. Leave empty to use the whole subnet except the gateway.",
+     "description": "The range alia-box hands out. The n-th VMID gets the n-th address. Leave empty to use the whole subnet except the gateway.",
      "default": "10.200.0.10-10.200.0.254",
      "group": "advanced"
     },
@@ -171,7 +171,7 @@
      "key": "ssh-user",
      "type": "string",
      "label": "SSH user",
-     "description": "The user in the templates that bb-box and BB work as.",
+     "description": "The user in the templates that alia-box and VesnALIA work as.",
      "default": "box",
      "group": "advanced"
     },
@@ -247,7 +247,7 @@
      "key": "tls-fingerprint",
      "type": "string",
      "label": "TLS fingerprint",
-     "description": "The SHA-256 fingerprint of the Proxmox API's certificate, from the setup guide's token file. bb-box then trusts that certificate alone. Leave empty to check the certificate against its CA.",
+     "description": "The SHA-256 fingerprint of the Proxmox API's certificate, from the setup guide's token file. alia-box then trusts that certificate alone. Leave empty to check the certificate against its CA.",
      "group": "connection",
      "default": "",
      "inherits": {
@@ -324,7 +324,7 @@
      "key": "ssh-private-key",
      "type": "string",
      "label": "SSH private key",
-     "description": "Paste BBBOX_SSH_KEY, the private key build.sh put in the template, or leave it empty to use Proxmox LXC's. With neither, bb-box makes a key, which the template does not accept until you add its public key.",
+     "description": "Paste BBBOX_SSH_KEY, the private key build.sh put in the template, or leave it empty to use Proxmox LXC's. With neither, alia-box makes a key, which the template does not accept until you add its public key.",
      "secret": true,
      "group": "credentials",
      "inherits": {
@@ -371,15 +371,15 @@
      "key": "android-templates",
      "type": "string",
      "label": "Android templates",
-     "description": "VMIDs of the Android templates, separated by spaces or commas: the Linux template with the Android SDK, the emulator and a booted device for each model. setup/proxmox-qemu/build.sh android builds one, on a host with nested virtualization, and the nightly job refreshes it monthly. bb-box offers android boxes from it while linux-kvm is on and its record lists its devices.",
+     "description": "VMIDs of the Android templates, separated by spaces or commas: the Linux template with the Android SDK, the emulator and a booted device for each model. setup/proxmox-qemu/build.sh android builds one, on a host with nested virtualization, and the nightly job refreshes it monthly. alia-box offers android boxes from it while linux-kvm is on and its record lists its devices.",
      "group": "boxes",
      "default": ""
     },
     {
      "key": "windows-enrol",
      "type": "boolean",
-     "label": "Windows boxes as BB machines",
-     "description": "Windows boxes join BB as machines, so threads and terminals can use them, as Linux and macOS boxes do. Off, they are boxes only.",
+     "label": "Windows boxes as VesnALIA machines",
+     "description": "Windows boxes join VesnALIA as machines, so threads and terminals can use them, as Linux and macOS boxes do. Off, they are boxes only.",
      "group": "boxes",
      "default": true
     },
@@ -419,7 +419,7 @@
      "key": "addresses",
      "type": "string",
      "label": "Box addresses",
-     "description": "The range bb-box hands out. The n-th VMID gets the n-th address. Keep it apart from the Proxmox LXC backend's. Leave empty to use the whole subnet except the gateway.",
+     "description": "The range alia-box hands out. The n-th VMID gets the n-th address. Keep it apart from the Proxmox LXC backend's. Leave empty to use the whole subnet except the gateway.",
      "group": "advanced",
      "default": "10.200.0.150-10.200.0.254"
     },
@@ -443,7 +443,7 @@
      "key": "ssh-user",
      "type": "string",
      "label": "SSH user",
-     "description": "The user in the template that bb-box and BB work as.",
+     "description": "The user in the template that alia-box and VesnALIA work as.",
      "group": "advanced",
      "default": "box"
     },
@@ -489,7 +489,7 @@
      "key": "machines",
      "type": "string",
      "label": "Machines",
-     "description": "One line per machine: a name, [user@]host[:port], its kinds, and optionally via=<jump host>, reset=machine and labels=<words>. For example \"build-1 192.0.2.21 linux\" or \"mac-mini 192.0.2.30 macos,macos-desktop\". ios on a Mac lends iOS slots there, each a macOS user with its own device, for ios boxes asked for with shared: true; ios:<slots> sets how many, where bb-box would estimate them from the Mac. setup/ssh-pool/setup.sh, or setup-mac.sh on a Mac, prints the line for each machine.",
+     "description": "One line per machine: a name, [user@]host[:port], its kinds, and optionally via=<jump host>, reset=machine and labels=<words>. For example \"build-1 192.0.2.21 linux\" or \"mac-mini 192.0.2.30 macos,macos-desktop\". ios on a Mac lends iOS slots there, each a macOS user with its own device, for ios boxes asked for with shared: true; ios:<slots> sets how many, where alia-box would estimate them from the Mac. setup/ssh-pool/setup.sh, or setup-mac.sh on a Mac, prints the line for each machine.",
      "experimental_multiline": true,
      "default": "",
      "group": "boxes"
@@ -498,7 +498,7 @@
      "key": "known-hosts",
      "type": "string",
      "label": "Host keys",
-     "description": "known_hosts lines for every machine and jump host, as setup.sh and setup-mac.sh print them. bb-box connects only to a machine whose key is here.",
+     "description": "known_hosts lines for every machine and jump host, as setup.sh and setup-mac.sh print them. alia-box connects only to a machine whose key is here.",
      "experimental_multiline": true,
      "default": "",
      "group": "connection"
@@ -507,7 +507,7 @@
      "key": "ssh-private-key",
      "type": "string",
      "label": "SSH private key",
-     "description": "An unencrypted OpenSSH private key that the machines' admin user accepts. Leave empty and bb-box makes one and shows its public key, which you then give setup.sh.",
+     "description": "An unencrypted OpenSSH private key that the machines' admin user accepts. Leave empty and alia-box makes one and shows its public key, which you then give setup.sh.",
      "secret": true,
      "group": "credentials"
     },
@@ -515,7 +515,7 @@
      "key": "ios-hosts-most",
      "type": "number",
      "label": "Slots for ios boxes per Mac",
-     "description": "The most iOS slots a Mac whose line lists ios has making, ready or held at once. It is lent whole only while it lends none. Unset, bb-box estimates it for each Mac: the fewest of its cores over 1.3, its memory over 1.5 GiB after 8 GiB for the Mac, and what its video encoder allows. ios:<slots> on a Mac's line wins.",
+     "description": "The most iOS slots a Mac whose line lists ios has making, ready or held at once. It is lent whole only while it lends none. Unset, alia-box estimates it for each Mac: the fewest of its cores over 1.3, its memory over 1.5 GiB after 8 GiB for the Mac, and what its video encoder allows. ios:<slots> on a Mac's line wins.",
      "group": "advanced"
     },
     {
@@ -574,7 +574,7 @@
      "key": "ssh-private-key",
      "type": "string",
      "label": "SSH private key",
-     "description": "The unencrypted OpenSSH private key that each Mac's user and each image's VM user accept. Leave empty and bb-box makes one and shows its public key.",
+     "description": "The unencrypted OpenSSH private key that each Mac's user and each image's VM user accept. Leave empty and alia-box makes one and shows its public key.",
      "secret": true,
      "group": "credentials"
     },
@@ -583,7 +583,7 @@
      "type": "string",
      "label": "macOS image",
      "description": "The Tart VM on each Mac that macos boxes, with no desktop shown, are cloned from. Empty turns them off.",
-     "default": "bb-box-macos",
+     "default": "alia-box-macos",
      "group": "boxes"
     },
     {
@@ -591,14 +591,14 @@
      "type": "string",
      "label": "macOS desktop image",
      "description": "The Tart VM on each Mac that macos-desktop boxes are cloned from. Empty turns them off.",
-     "default": "bb-box-macos",
+     "default": "alia-box-macos",
      "group": "boxes"
     },
     {
      "key": "linux-image",
      "type": "string",
      "label": "Linux image (arm64)",
-     "description": "The Tart VM on each Mac that linux-arm64 boxes are cloned from, as setup/tart/prepare-linux-image.sh builds it (bb-box-linux). Empty turns them off.",
+     "description": "The Tart VM on each Mac that linux-arm64 boxes are cloned from, as setup/tart/prepare-linux-image.sh builds it (alia-box-linux). Empty turns them off.",
      "default": "",
      "group": "boxes"
     },
@@ -606,7 +606,7 @@
      "key": "linux-desktop-image",
      "type": "string",
      "label": "Linux desktop image (arm64)",
-     "description": "The Tart VM on each Mac that linux-arm64-desktop-cpu boxes are cloned from, as setup/tart/prepare-linux-image.sh --desktop builds it (bb-box-linux-desktop). Empty turns them off.",
+     "description": "The Tart VM on each Mac that linux-arm64-desktop-cpu boxes are cloned from, as setup/tart/prepare-linux-image.sh --desktop builds it (alia-box-linux-desktop). Empty turns them off.",
      "default": "",
      "group": "boxes"
     },
@@ -614,7 +614,7 @@
      "key": "windows-image",
      "type": "string",
      "label": "Windows image (arm64)",
-     "description": "The Windows image on each Mac, in ~/.bb-box/qemu/images, that windows-arm64-desktop boxes are made from, run by QEMU. Empty turns them off.",
+     "description": "The Windows image on each Mac, in ~/.alia-box/qemu/images, that windows-arm64-desktop boxes are made from, run by QEMU. Empty turns them off.",
      "default": "",
      "group": "boxes"
     },
@@ -622,7 +622,7 @@
      "key": "ios-image",
      "type": "string",
      "label": "iOS image",
-     "description": "The Tart VM on each Mac that ios boxes are cloned from, as setup/tart/prepare-ios-image.sh builds it on the macOS image (bb-box-ios): idb_companion and a booted-once, slimmed iPhone 18 Pro, iPhone 17 and iPad Pro 13-inch (M5). bb-box checks and refreshes it with the macOS image. Empty, the default, turns it off. ios boxes are not offered yet.",
+     "description": "The Tart VM on each Mac that ios boxes are cloned from, as setup/tart/prepare-ios-image.sh builds it on the macOS image (alia-box-ios): idb_companion and a booted-once, slimmed iPhone 18 Pro, iPhone 17 and iPad Pro 13-inch (M5). alia-box checks and refreshes it with the macOS image. Empty, the default, turns it off. ios boxes are not offered yet.",
      "default": "",
      "group": "boxes"
     },
@@ -637,8 +637,8 @@
     {
      "key": "windows-enrol",
      "type": "boolean",
-     "label": "Windows boxes as BB machines",
-     "description": "Windows boxes join BB as machines, so threads and terminals can use them, as Linux and macOS boxes do. Off, they are boxes only.",
+     "label": "Windows boxes as VesnALIA machines",
+     "description": "Windows boxes join VesnALIA as machines, so threads and terminals can use them, as Linux and macOS boxes do. Off, they are boxes only.",
      "default": true,
      "group": "boxes"
     },
@@ -646,7 +646,7 @@
      "key": "video",
      "type": "boolean",
      "label": "Video by default for macOS desktops",
-     "description": "macOS desktops open as video, from bb-box-stream in the image, not VNC. Off by default: they open as VNC, which is already smooth on a Tart Mac, at 52 to 55 frames a second, and a person can choose video under Display. Video uses much less bandwidth, about 1.2 Mbit/s against 20 while scrolling, but a key shows a little later, about 57 ms against 31.",
+     "description": "macOS desktops open as video, from alia-box-stream in the image, not VNC. Off by default: they open as VNC, which is already smooth on a Tart Mac, at 52 to 55 frames a second, and a person can choose video under Display. Video uses much less bandwidth, about 1.2 Mbit/s against 20 while scrolling, but a key shows a little later, about 57 ms against 31.",
      "default": false,
      "group": "boxes"
     },
@@ -654,7 +654,7 @@
      "key": "vm-user",
      "type": "string",
      "label": "VM user",
-     "description": "The user in the macOS images that bb-box and BB work as. It is logged in to the desktop automatically. Linux boxes work as box.",
+     "description": "The user in the macOS images that alia-box and VesnALIA work as. It is logged in to the desktop automatically. Linux boxes work as box.",
      "default": "admin",
      "group": "advanced"
     },
@@ -662,7 +662,7 @@
      "key": "vms-per-host",
      "type": "number",
      "label": "VMs per Mac",
-     "description": "The most macOS VMs that run on each Mac at once, counting every VM Tart runs there, not only bb-box's. At most 2, which Apple's licence and the Virtualization framework allow.",
+     "description": "The most macOS VMs that run on each Mac at once, counting every VM Tart runs there, not only alia-box's. At most 2, which Apple's licence and the Virtualization framework allow.",
      "default": 2,
      "group": "advanced"
     },
@@ -694,7 +694,7 @@
      "key": "ios-hosts-most",
      "type": "number",
      "label": "Slots per shared iOS host",
-     "description": "The most slots a shared iOS host has making, ready or held at once. Unset, bb-box estimates it for each Mac: the fewest of the host's cores over 1.3, its memory over 1.5 GiB after 8 GiB for the host, and what the Mac's video encoder allows. A Mac's own value wins.",
+     "description": "The most slots a shared iOS host has making, ready or held at once. Unset, alia-box estimates it for each Mac: the fewest of the host's cores over 1.3, its memory over 1.5 GiB after 8 GiB for the host, and what the Mac's video encoder allows. A Mac's own value wins.",
      "group": "advanced"
     },
     {
@@ -757,7 +757,7 @@
      "key": "user",
      "type": "string",
      "label": "User",
-     "description": "The user bb-box logs in to the Mac as, which runs tart.",
+     "description": "The user alia-box logs in to the Mac as, which runs tart.",
      "group": "connection",
      "default": ""
     },
@@ -765,7 +765,7 @@
      "key": "host-keys",
      "type": "string",
      "label": "Host keys",
-     "description": "The Mac's SSH host keys as known_hosts lines. ssh-keyscan -t ed25519 <address> prints one. bb-box checks them on every connection.",
+     "description": "The Mac's SSH host keys as known_hosts lines. ssh-keyscan -t ed25519 <address> prints one. alia-box checks them on every connection.",
      "experimental_multiline": true,
      "group": "connection",
      "default": ""
@@ -774,7 +774,7 @@
      "key": "ios-hosts-most",
      "type": "number",
      "label": "Slots per shared iOS host",
-     "description": "The most slots a shared iOS host on this Mac has, over the backend's setting and bb-box's estimate for the Mac. Empty for those.",
+     "description": "The most slots a shared iOS host on this Mac has, over the backend's setting and alia-box's estimate for the Mac. Empty for those.",
      "group": "advanced"
     },
     {
@@ -788,7 +788,7 @@
      "key": "ios-hosts-memory-gib",
      "type": "number",
      "label": "Memory of a shared iOS host (GiB)",
-     "description": "The memory of a shared iOS host's VM on this Mac, over the backend's setting and bb-box's estimate. Empty for those.",
+     "description": "The memory of a shared iOS host's VM on this Mac, over the backend's setting and alia-box's estimate. Empty for those.",
      "group": "advanced"
     }
    ],
@@ -818,7 +818,7 @@
      "key": "host",
      "type": "string",
      "label": "Host",
-     "description": "Where the Docker daemon is, as unix:///path/to/docker.sock, ssh://user@host, or bb:<machine ID> for a BB machine, which bb-box reaches through BB. Empty uses the docker CLI's own default on BB's server: DOCKER_HOST, its current context, or the local socket. Over SSH, BB's server user must log in without a prompt.",
+     "description": "Where the Docker daemon is, as unix:///path/to/docker.sock, ssh://user@host, or VesnALIA:<machine ID> for a VesnALIA machine, which alia-box reaches through VesnALIA. Empty uses the docker CLI's own default on VesnALIA's server: DOCKER_HOST, its current context, or the local socket. Over SSH, VesnALIA's server user must log in without a prompt.",
      "group": "connection",
      "default": ""
     },
@@ -874,7 +874,7 @@
      "key": "network",
      "type": "string",
      "label": "Network",
-     "description": "The Docker network bb-box makes for its boxes, apart from the host's other containers.",
+     "description": "The Docker network alia-box makes for its boxes, apart from the host's other containers.",
      "group": "advanced",
      "default": "bbbox"
     },
@@ -882,7 +882,7 @@
      "key": "boxes",
      "type": "number",
      "label": "Most boxes",
-     "description": "The most bb-box containers on the host at once, running or stopped, counting those of every bb-box install that uses it.",
+     "description": "The most alia-box containers on the host at once, running or stopped, counting those of every alia-box install that uses it.",
      "group": "advanced",
      "default": 10
     },
@@ -906,7 +906,7 @@
   {
    "type": "microsandbox",
    "label": "microsandbox",
-   "description": "Linux boxes, with or without a desktop, as microVMs that start in under a second, on a Linux host with KVM or a Mac. bb-box installs its own msb there.",
+   "description": "Linux boxes, with or without a desktop, as microVMs that start in under a second, on a Linux host with KVM or a Mac. alia-box installs its own msb there.",
    "nature": "virtual",
    "kinds": [
     "linux",
@@ -920,7 +920,7 @@
      "key": "host",
      "type": "string",
      "label": "Host",
-     "description": "The host that runs the boxes, a Linux host with KVM or a Mac: ssh://user@host, or bb:<machine ID> for a BB machine, which bb-box reaches through BB. Empty uses BB's server. bb-box installs its own msb there, in a folder of its own.",
+     "description": "The host that runs the boxes, a Linux host with KVM or a Mac: ssh://user@host, or VesnALIA:<machine ID> for a VesnALIA machine, which alia-box reaches through VesnALIA. Empty uses VesnALIA's server. alia-box installs its own msb there, in a folder of its own.",
      "group": "connection",
      "default": ""
     },
@@ -928,7 +928,7 @@
      "key": "linux-image",
      "type": "string",
      "label": "Linux image",
-     "description": "The image linux boxes run. bb-box imports it from Docker on the host, where setup/docker/build.sh builds it. Empty turns them off.",
+     "description": "The image linux boxes run. alia-box imports it from Docker on the host, where setup/docker/build.sh builds it. Empty turns them off.",
      "group": "boxes",
      "default": "bbbox/linux:1"
     },
@@ -936,7 +936,7 @@
      "key": "desktop-image",
      "type": "string",
      "label": "Desktop image",
-     "description": "The image linux-desktop-cpu boxes run. bb-box imports it from Docker on the host, where setup/docker/build.sh builds it. Empty turns them off.",
+     "description": "The image linux-desktop-cpu boxes run. alia-box imports it from Docker on the host, where setup/docker/build.sh builds it. Empty turns them off.",
      "group": "boxes",
      "default": "bbbox/linux-desktop:1"
     },
@@ -944,7 +944,7 @@
      "key": "linux-arm64-image",
      "type": "string",
      "label": "Linux image (arm64)",
-     "description": "The image linux-arm64 boxes run, on an arm64 host such as a Mac. bb-box imports it from Docker on the host, or builds it there with setup/docker/build.sh --arch arm64 in a microVM of its own. Empty turns them off.",
+     "description": "The image linux-arm64 boxes run, on an arm64 host such as a Mac. alia-box imports it from Docker on the host, or builds it there with setup/docker/build.sh --arch arm64 in a microVM of its own. Empty turns them off.",
      "group": "boxes",
      "default": "bbbox/linux:1-arm64"
     },
@@ -952,7 +952,7 @@
      "key": "desktop-arm64-image",
      "type": "string",
      "label": "Desktop image (arm64)",
-     "description": "The image linux-arm64-desktop-cpu boxes run, on an arm64 host such as a Mac. bb-box imports it from Docker on the host, or builds it there in a microVM of its own. Empty turns them off.",
+     "description": "The image linux-arm64-desktop-cpu boxes run, on an arm64 host such as a Mac. alia-box imports it from Docker on the host, or builds it there in a microVM of its own. Empty turns them off.",
      "group": "boxes",
      "default": "bbbox/linux-desktop:1-arm64"
     },
@@ -984,7 +984,7 @@
      "key": "network",
      "type": "string",
      "label": "Network profiles",
-     "description": "msb's network profiles for each box, comma-separated: public reaches the internet, private the host's local networks and tailnet, where BB's server often is.",
+     "description": "msb's network profiles for each box, comma-separated: public reaches the internet, private the host's local networks and tailnet, where VesnALIA's server often is.",
      "group": "advanced",
      "default": "public,private"
     },
@@ -992,7 +992,7 @@
      "key": "boxes",
      "type": "number",
      "label": "Most boxes",
-     "description": "The most bb-box microVMs on the host at once, running or stopped, counting those of every bb-box install that uses it.",
+     "description": "The most alia-box microVMs on the host at once, running or stopped, counting those of every alia-box install that uses it.",
      "group": "advanced",
      "default": 20
     },
@@ -1022,7 +1022,7 @@
   {
    "type": "hetzner",
    "label": "Hetzner Cloud",
-   "description": "Linux boxes on x86 or Arm, with or without a desktop, as containers on Docker hosts that bb-box makes in a Hetzner Cloud project as boxes need them, and deletes once they are idle.",
+   "description": "Linux boxes on x86 or Arm, with or without a desktop, as containers on Docker hosts that alia-box makes in a Hetzner Cloud project as boxes need them, and deletes once they are idle.",
    "nature": "virtual",
    "kinds": [
     "linux",
@@ -1037,7 +1037,7 @@
      "key": "token",
      "type": "string",
      "label": "API token",
-     "description": "A Read & Write API token of the Hetzner Cloud project bb-box makes its hosts in, from the project's Security page. The project should hold nothing else.",
+     "description": "A Read & Write API token of the Hetzner Cloud project alia-box makes its hosts in, from the project's Security page. The project should hold nothing else.",
      "secret": true,
      "group": "credentials"
     },
@@ -1045,7 +1045,7 @@
      "key": "location",
      "type": "string",
      "label": "Location",
-     "description": "Where hosts are made, such as nbg1 (Nuremberg), fsn1 (Falkenstein) or hel1 (Helsinki): near BB's server, as a desktop's stream crosses between them.",
+     "description": "Where hosts are made, such as nbg1 (Nuremberg), fsn1 (Falkenstein) or hel1 (Helsinki): near VesnALIA's server, as a desktop's stream crosses between them.",
      "group": "connection",
      "default": "nbg1"
     },
@@ -1085,7 +1085,7 @@
      "key": "monthly-limit-eur",
      "type": "number",
      "label": "Monthly limit (EUR)",
-     "description": "bb-box makes no host when this calendar month's spend so far, and an hour more of every host with the new one, would pass this many euros before VAT. A busy host keeps running until it is idle. 0 sets no limit. Hetzner has no limit of its own: set a cost alert in its Console too.",
+     "description": "alia-box makes no host when this calendar month's spend so far, and an hour more of every host with the new one, would pass this many euros before VAT. A busy host keeps running until it is idle. 0 sets no limit. Hetzner has no limit of its own: set a cost alert in its Console too.",
      "group": "boxes",
      "default": 20
     },
@@ -1093,7 +1093,7 @@
      "key": "host-image",
      "type": "string",
      "label": "Host image",
-     "description": "What hosts start from. An image name, such as ubuntu-26.04, is the base of the host image bb-box builds as a snapshot, with Docker, Tailscale and the box images in it, and rebuilds weekly or when its scripts change, keeping two; until the first is built, hosts start from the image itself. A snapshot's ID makes hosts start from that snapshot, and bb-box builds none.",
+     "description": "What hosts start from. An image name, such as ubuntu-26.04, is the base of the host image alia-box builds as a snapshot, with Docker, Tailscale and the box images in it, and rebuilds weekly or when its scripts change, keeping two; until the first is built, hosts start from the image itself. A snapshot's ID makes hosts start from that snapshot, and alia-box builds none.",
      "group": "advanced",
      "default": "ubuntu-26.04"
     },
@@ -1101,7 +1101,7 @@
      "key": "ssh-from",
      "type": "string",
      "label": "SSH from",
-     "description": "Only with the tailnet off: the addresses, as CIDRs separated by commas, that may reach a host's SSH over the internet, such as BB's server's public address. With the tailnet on, a host's SSH is reached on the tailnet alone.",
+     "description": "Only with the tailnet off: the addresses, as CIDRs separated by commas, that may reach a host's SSH over the internet, such as VesnALIA's server's public address. With the tailnet on, a host's SSH is reached on the tailnet alone.",
      "group": "advanced",
      "default": ""
     },
@@ -1141,7 +1141,7 @@
      "key": "boxes",
      "type": "number",
      "label": "Most boxes",
-     "description": "The most bb-box containers on the host at once, running or stopped, counting those of every bb-box install that uses it.",
+     "description": "The most alia-box containers on the host at once, running or stopped, counting those of every alia-box install that uses it.",
      "group": "advanced",
      "default": 10
     },
@@ -1157,7 +1157,7 @@
      "key": "network",
      "type": "string",
      "label": "Network",
-     "description": "The Docker network bb-box makes for its boxes, apart from the host's other containers.",
+     "description": "The Docker network alia-box makes for its boxes, apart from the host's other containers.",
      "group": "advanced",
      "default": "bbbox"
     }
@@ -1194,7 +1194,7 @@
      "key": "region",
      "type": "string",
      "label": "API region",
-     "description": "us or eu: where bb-box calls Namespace's API and its SSH gateway. Where the machines run is the workspace's regional preference, which Namespace's support sets.",
+     "description": "us or eu: where alia-box calls Namespace's API and its SSH gateway. Where the machines run is the workspace's regional preference, which Namespace's support sets.",
      "group": "connection",
      "default": "us"
     },
@@ -1210,7 +1210,7 @@
      "key": "machines",
      "type": "number",
      "label": "Most machines",
-     "description": "The most Namespace machines bb-box has at once. Each box is one machine, billed by the minute while it exists.",
+     "description": "The most Namespace machines alia-box has at once. Each box is one machine, billed by the minute while it exists.",
      "group": "boxes",
      "default": 2
     },
@@ -1226,14 +1226,14 @@
      "key": "largest-machine",
      "type": "string",
      "label": "Largest machine",
-     "description": "The largest Mac bb-box asks for, as cores x memory in GB, such as 6x14. A box that needs a larger one is refused before bb-box asks Namespace, so another backend can take it. Empty: the largest the workspace allows, which bb-box reads from Namespace when the token may, or learns the first time Namespace refuses a Mac for its size.",
+     "description": "The largest Mac alia-box asks for, as cores x memory in GB, such as 6x14. A box that needs a larger one is refused before alia-box asks Namespace, so another backend can take it. Empty: the largest the workspace allows, which alia-box reads from Namespace when the token may, or learns the first time Namespace refuses a Mac for its size.",
      "group": "boxes"
     },
     {
      "key": "ios-hosts-on",
      "type": "boolean",
      "label": "Shared iOS hosts",
-     "description": "Whether Namespace lends ios boxes as macOS users on a shared host: a Namespace Mac made for an ios box that finds no slot on a pool Mac or a Tart host, and deleted when its last box goes. It lends once bb-box has measured that Namespace's Macs run the iOS Simulator. A host takes the workspace's one Mac, so no macos box starts on Namespace while it lives.",
+     "description": "Whether Namespace lends ios boxes as macOS users on a shared host: a Namespace Mac made for an ios box that finds no slot on a pool Mac or a Tart host, and deleted when its last box goes. It lends once alia-box has measured that Namespace's Macs run the iOS Simulator. A host takes the workspace's one Mac, so no macos box starts on Namespace while it lives.",
      "group": "boxes",
      "default": true
     },
@@ -1241,7 +1241,7 @@
      "key": "ios-hosts-most",
      "type": "number",
      "label": "Slots a host lends at most",
-     "description": "Empty: bb-box estimates it from the Mac's cores, memory and video encoder, as for a pool Mac.",
+     "description": "Empty: alia-box estimates it from the Mac's cores, memory and video encoder, as for a pool Mac.",
      "group": "advanced"
     },
     {

@@ -6,10 +6,10 @@
 //
 // Why: when something the tab needs is missing (the beads program, beads in
 // the folder, Airbender's instructions for agents) the tab offers to set it
-// up instead of leaving the user at a dead end (bead-bb-80e). Beads' own
+// up instead of leaving the user at a dead end (bead-alia-80e). Beads' own
 // setup for a coding agent is no longer among them: its instructions
 // contradict the workflow, and the instructions step takes them out
-// (bead-bb-c9l.8).
+// (bead-alia-c9l.8).
 //
 // Design notes:
 // - One list of steps (setupSteps) drives both the card and the menu, so they
@@ -17,7 +17,7 @@
 // - The status is asked for on every refresh; that is cheap because the
 //   backend stops checking a condition once it is met.
 
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,7 +43,7 @@ import { WORKFLOW_CHOICES } from "../shared/workflows.ts";
 import type { WorkflowId } from "../shared/workflows.ts";
 
 /**
- * One thing that can be set up for a folder (bead-bb-80e), worked out from
+ * One thing that can be set up for a folder (bead-alia-80e), worked out from
  * the server's SetupStatus for both the setup card and the "more" menu.
  */
 export interface SetupStep {
@@ -76,14 +76,14 @@ export interface SetupStep {
   explain?: { lead: string; points: string[] };
   /**
    * Would be offered, but this folder is not where Airbender is set up (a
-   * worktree, another branch; bead-bb-25p): the card says where to go.
+   * worktree, another branch; bead-alia-25p): the card says where to go.
    */
   heldBack?: boolean;
 }
 
 /**
  * The steps that change the repository, so are only offered from its main
- * folder on the main branch (bead-bb-25p). Installing beads or bend is for
+ * folder on the main branch (bead-alia-25p). Installing beads or bend is for
  * the whole computer; signing in to GitHub is the owner's.
  */
 const CHANGES_REPOSITORY: readonly SetupAction[] = ["tracker", "init", "fetch", "rules", "facts", "commit", "sync"];
@@ -109,7 +109,7 @@ function Marked({ text }: { text: string }) {
 /**
  * Whether the rules for agents in the folder were changed by hand and are
  * from an earlier version than the current one: the owner then chooses
- * between the current rules and their own (bead-bb-c9l.10).
+ * between the current rules and their own (bead-alia-c9l.10).
  */
 const rulesBehind = (status: SetupStatus | null): boolean =>
   status?.instructions.rules === "behind" || status?.instructions.claudeRules === "behind";
@@ -117,7 +117,7 @@ const rulesBehind = (status: SetupStatus | null): boolean =>
 /**
  * Whether the folder has a CLAUDE.md that is a file of its own with none of
  * Airbender's rules in it: the owner then says what it is to be, a link to
- * AGENTS.md or a file with the same rules (bead-bb-c9l.12).
+ * AGENTS.md or a file with the same rules (bead-alia-c9l.12).
  */
 const claudeOpen = (status: SetupStatus | null): boolean =>
   status?.instructions.claudeFile === "file" && status.instructions.claudeRules === "none";
@@ -125,7 +125,7 @@ const claudeOpen = (status: SetupStatus | null): boolean =>
 /**
  * The mark of a tracker, for the line that says which one a project uses.
  *
- * Drawn here, like the tab's other small marks: BB's icon set draws a
+ * Drawn here, like the tab's other small marks: VesnALIA's icon set draws a
  * lightning bolt for a name it does not have. GitHub's is its own mark.
  * Beads has none that people know, so it gets a plain one of ours: three
  * beads on a thread. Any other tracker gets no mark, and takes no room.
@@ -158,7 +158,7 @@ function TrackerIcon({ name, className }: { name: string; className?: string }) 
  * the current ones: an earlier version of ours, or the owner's own from an
  * earlier version. The step is then an update, and is said as one: the
  * owner set the folder up before, and "get this folder ready" read as if
- * that had been lost (bead-bb-c9l.10).
+ * that had been lost (bead-alia-c9l.10).
  */
 const rulesUpdate = (status: SetupStatus | null) =>
   status?.instructions.rules === "old" ||
@@ -187,7 +187,7 @@ const replacesBeads = (status: SetupStatus | null) =>
 
 /**
  * All that is left of beads' agent setup is files that do nothing now
- * (bead-bb-cnv): said as such, not as instructions that steer the agents.
+ * (bead-alia-cnv): said as such, not as instructions that steer the agents.
  */
 const onlyBeadsFiles = (status: SetupStatus | null) =>
   status !== null &&
@@ -282,9 +282,9 @@ function setupSteps(status: SetupStatus): SetupStep[] {
     },
     // A folder with no issues gets one of two steps: fetch them, where
     // the folder's issue sync says its remote already holds them (a fresh
-    // clone, bead-bb-0bz), or start empty. What the fetch step is called
+    // clone, bead-alia-0bz), or start empty. What the fetch step is called
     // and says is the sync source's, not written here: another tracker's
-    // differs (bead-bb-6a9).
+    // differs (bead-alia-6a9).
     status.syncSteps.fetch !== null && !status.folderReady
       ? {
           key: "fetch",
@@ -412,7 +412,7 @@ function setupSteps(status: SetupStatus): SetupStep[] {
             explain: status.syncSteps.on.explain,
           },
         ]),
-    // Committing the files setup wrote, while there are any (bead-bb-25p):
+    // Committing the files setup wrote, while there are any (bead-alia-25p):
     // said in bend's words, like the sync's steps.
     ...(status.commitStep === null
       ? []
@@ -473,12 +473,12 @@ export function useSetup(scope: Scope, state: IssuesResult["state"] | null) {
   }, [reload, state]);
   useRealtime(CHANGED_CHANNEL, reload);
   useEffect(() => {
-    // Like the issue list: coming back to BB is when things have changed.
+    // Like the issue list: coming back to VesnALIA is when things have changed.
     window.addEventListener("focus", reload);
     return () => window.removeEventListener("focus", reload);
   }, [reload]);
   const storageKey =
-    status?.path == null ? null : `bb-plugin-airbender:setup-skipped:${status.path}`;
+    status?.path == null ? null : `alia-plugin-airbender:setup-skipped:${status.path}`;
   const [skipped, setSkipped] = useState<string[]>([]);
   useEffect(() => {
     if (storageKey === null) return;
@@ -531,7 +531,7 @@ export function SetupCard({
    * The key of the step that was confirmed and is being applied right now;
    * null when none is. That step shows a spinner in place of its buttons,
    * and the others cannot be started meanwhile: the owner had pressed, and
-   * the card went on looking as if nothing had happened (bead-bb-c9l.12).
+   * the card went on looking as if nothing had happened (bead-alia-c9l.12).
    */
   applying?: string | null;
   status: SetupStatus;
@@ -544,7 +544,7 @@ export function SetupCard({
   const offered = all.filter(
     (step) => step.needed && !skipped.includes(step.key),
   );
-  // Something to set up, held back here (bead-bb-25p): said instead.
+  // Something to set up, held back here (bead-alia-25p): said instead.
   const heldBack =
     status.notHere !== null &&
     all.some((step) => step.heldBack === true && !skipped.includes(step.key))
@@ -580,7 +580,7 @@ export function SetupCard({
           <span>
             Running in a terminal:{" "}
             <span className="font-medium">{status.running.title}</span>. Open
-            BB's terminal to watch it or to answer its questions.
+            VesnALIA's terminal to watch it or to answer its questions.
           </span>
         </p>
       )}
@@ -679,7 +679,7 @@ export function SetupMenu({
    */
   tracker?: { name: string; repository: string | null };
   /**
-   * Opens the window that switches the tracker (bead-bb-c9l.18); left out
+   * Opens the window that switches the tracker (bead-alia-c9l.18); left out
    * where it cannot be switched now.
    */
   onSwitchTracker?: () => void;
@@ -696,7 +696,7 @@ export function SetupMenu({
   issueSync?: { state: string; message: string | null; onLog: () => void };
 }) {
   const { open, setOpen, root } = useMenu();
-  // The setup steps are folded away until asked for (bead-bb-c9l.21, the
+  // The setup steps are folded away until asked for (bead-alia-c9l.21, the
   // owner: "setup can be under chevron because we don't need it all the
   // time ... it takes a lot of space"). Folded again each time the menu
   // is opened anew. What is missing is still said on the folded row, and
@@ -721,7 +721,7 @@ export function SetupMenu({
           setOpen((current) => !current);
         }}
       >
-        {/* Three dots, drawn here: BB's icon set has no "more" icon. */}
+        {/* Three dots, drawn here: VesnALIA's icon set has no "more" icon. */}
         <svg
           viewBox="0 0 24 24"
           fill="currentColor"
@@ -735,11 +735,11 @@ export function SetupMenu({
       </Button>
       {open ? (
         <MenuPanel className="w-80 max-w-[85vw]">
-          {/* Which tracker the project uses (bead-bb-c9l.21). First in the
+          {/* Which tracker the project uses (bead-alia-c9l.21). First in the
               menu, where the owner looks it up when they want to know; it
               used to stand in the toolbar, in the path's own hand, and read
               as part of the path. The switch to the other tracker is in
-              this same spot (bead-bb-c9l.18), as the owner placed it. */}
+              this same spot (bead-alia-c9l.18), as the owner placed it. */}
           {tracker === undefined ? null : (
             <>
               <div className="flex items-start gap-2 px-2 py-1 text-sm">
@@ -791,7 +791,7 @@ export function SetupMenu({
             </>
           )}
           {/* The issues' own sync with the repository's remote
-              (bead-bb-0bz): when it last happened, or what went wrong. Only
+              (bead-alia-0bz): when it last happened, or what went wrong. Only
               said here: syncing runs by itself, and the refresh button
               asks for one (the user: "the rest is in the menu"). */}
           {issueSync === undefined ? null : (
@@ -801,7 +801,7 @@ export function SetupMenu({
                   user: "issue sync, it was synced one minute ago"). They
                   were two rows, "Issue sync" with the state and "Sync
                   log…" under it; the owner had them made one
-                  (bead-bb-c9l.18). Syncing runs by itself, and refresh
+                  (bead-alia-c9l.18). Syncing runs by itself, and refresh
                   asks for one, so the row does not start a sync. */}
               <button
                 type="button"
@@ -911,9 +911,9 @@ export function SetupMenu({
               </button>
             ))
           )}
-          {/* Copying issues between beads and GitHub issues (bead-bb-rh3).
+          {/* Copying issues between beads and GitHub issues (bead-alia-rh3).
               Under Setup, with the steps: it is done once or twice in a
-              project's life, not day to day (bead-bb-c9l.21). Called
+              project's life, not day to day (bead-alia-c9l.21). Called
               "import and export", not "sync": it used to stand beside
               "Issue sync" under the name "Sync with GitHub", and the two
               are different things. */}
@@ -933,12 +933,12 @@ export function SetupMenu({
             </button>
           )}
           {/* Where the plugin's settings are. In words, because a tab has
-              no way to open that page (asked of BB in get-bb/bb#5014); the
+              no way to open that page (asked of VesnALIA in get-alia/alia#5014); the
               user asked to be directed there from here. */}
           <div className="my-1 border-t border-border" />
           <p className="px-2 py-1 text-xs text-muted-foreground">
             Settings (background sizing and its model, the bd command, the
-            GitHub token): in BB under Tools, then Airbender.
+            GitHub token): in VesnALIA under Tools, then Airbender.
           </p>
         </MenuPanel>
       ) : null}
@@ -1195,7 +1195,7 @@ function InstructionsBody({
  * @param onRun Called with the chosen option: the install method's id, the
  *   keys of the facts to carry over (a JSON list), or null; and, for the
  *   tracker in a folder that looks like someone else's project, `anyway`
- *   true when the owner chose to set up there all the same (bead-bb-dof).
+ *   true when the owner chose to set up there all the same (bead-alia-dof).
  */
 export function SetupDialog({
   step,
@@ -1208,7 +1208,7 @@ export function SetupDialog({
   onRun: (step: SetupStep, option: string | null, anyway?: boolean) => void;
   onClose: () => void;
 }) {
-  // In a folder that looks like someone else's project (bead-bb-dof): keep
+  // In a folder that looks like someone else's project (bead-alia-dof): keep
   // the issues in GitHub issues in a repository of the owner's (the safe
   // way, so the one chosen to begin with), or set up here anyway.
   const foreign = step?.action === "tracker" ? (status?.foreign ?? null) : null;
@@ -1283,7 +1283,7 @@ export function SetupDialog({
                       : "Adds the rules agents work by here. It changes files in the repository; nothing is run in a terminal."
               : step?.action === "facts"
                 ? "Choose which saved facts agents should keep seeing."
-                : "Runs in a BB terminal, so you can watch it and answer anything it asks."}
+                : "Runs in a VesnALIA terminal, so you can watch it and answer anything it asks."}
           </DialogDescription>
         </DialogHeader>
         {foreign !== null ? (
@@ -1455,7 +1455,7 @@ export function SetupDialog({
             </div>
           </div>
         ) : (
-          // The instructions step (bead-bb-c9l.12): one block per thing the
+          // The instructions step (bead-alia-c9l.12): one block per thing the
           // owner has to decide, each with what was found and its answers
           // right under it, and apart from those a plain list of what is
           // done without asking. The first version put every finding in one

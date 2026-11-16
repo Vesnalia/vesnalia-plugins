@@ -8,7 +8,7 @@ import {
   type KeyboardEvent,
   type SyntheticEvent,
 } from "react";
-import { useSdk } from "@get-bb/plugin-sdk/app";
+import { useSdk } from "@vesnalia/plugin-sdk/app";
 import { cn } from "./lib/utils";
 
 export const CompactViewportContext = createContext(false);

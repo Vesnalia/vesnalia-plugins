@@ -26,7 +26,7 @@ TL;DR: A bilingual settings section stores validated chat style preferences thro
 
 ## Purpose
 
-The settings section lets a BB user choose a pending-row loader and tool-row appearance, toggle individual chat styling features, and reset to defaults (`settings-section.tsx:49-109`). The app translates those values into `data-pk-loader`, `data-pk-chips`, and `data-pk-off` attributes (`settings.ts:52-59`, `app.tsx:33-41`).
+The settings section lets a VesnALIA user choose a pending-row loader and tool-row appearance, toggle individual chat styling features, and reset to defaults (`settings-section.tsx:49-109`). The app translates those values into `data-pk-loader`, `data-pk-chips`, and `data-pk-off` attributes (`settings.ts:52-59`, `app.tsx:33-41`).
 
 ## How it works
 
@@ -41,7 +41,7 @@ The settings section lets a BB user choose a pending-row loader and tool-row app
 
 | Setting | Values | Default | Effect |
 |---|---|---|---|
-| `loader` | `pokecut` (Gradient ring), `drive` (Pixel sweep), `dots` (Round pixels), `orbit`, `coins`, `bb` (BB's own icon) | `pokecut` | Changes the pending work-row icon (`settings.ts:4-6`, `i18n.ts:31-38`) |
+| `loader` | `pokecut` (Gradient ring), `drive` (Pixel sweep), `dots` (Round pixels), `orbit`, `coins`, `alia` (VesnALIA's own icon) | `pokecut` | Changes the pending work-row icon (`settings.ts:4-6`, `i18n.ts:31-38`) |
 | `toolChips` | `surface` (Filled card), `outline` (Outline only), `plain` | `surface` | Changes how a single tool-call row is drawn (`settings.ts:8-9`, `i18n.ts:39-43`) |
 | Boolean feature toggles | `true` / `false` | `true` for all | False values become tokens in `data-pk-off` (`settings.ts:11-27`, `settings.ts:36-40`) |
 | Settings locale | `auto`, `en`, `ru` | `auto` | Stored separately in browser local storage (`i18n.ts:145-152`, `i18n.ts:184-190`) |
@@ -94,4 +94,4 @@ The context meter marks usage below 60% as low, 60% through below 85% as mid, an
 
 - [Architecture](../architecture.md)
 - [Gotchas](../gotchas.md)
-- [Pokecut Theme for BB overview](../overview.md)
+- [Pokecut Theme for VesnALIA overview](../overview.md)

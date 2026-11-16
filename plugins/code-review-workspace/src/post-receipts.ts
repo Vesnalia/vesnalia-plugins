@@ -1,15 +1,15 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { setTimeout as delay } from "node:timers/promises";
 import type { Draft } from "./draft";
 import type { AsyncStore } from "./store-queue";
 
 /**
  * What GitHub took that the store hadn't recorded yet: written before recording it and dropped once it's recorded, so
- * a Submit or Send after a failed record finishes recording it instead of posting it a second time. Kept in bb's kv,
+ * a Submit or Send after a failed record finishes recording it instead of posting it a second time. Kept in VesnALIA's kv,
  * which needs no Postgres and outlasts a reload; in memory only when kv refuses it, as it does a value over 256 KB, or
  * there's none, as for a submitter a test makes.
  */
-export function postReceipts(kv?: BbPluginApi["storage"]["kv"]) {
+export function postReceipts(kv?: AliaPluginApi["storage"]["kv"]) {
   const memory = new Map<string, unknown>();
   return {
     /** Keys of the replies being sent: a second Send of one meanwhile would find no receipt yet, and post it again. */

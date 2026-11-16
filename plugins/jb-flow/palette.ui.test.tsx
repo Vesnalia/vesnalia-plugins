@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { RenderSlotOptions } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginSidebarThread, PluginThreadActionEntry } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { RenderSlotOptions } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginSidebarThread, PluginThreadActionEntry } from "@vesnalia/plugin-sdk/app";
 import type { FlowState } from "./server";
 import type { WorkspaceState } from "./workspaces";
 import { selectWorkspace, setWorkspacesEnabled } from "./workspace-client";
@@ -165,7 +165,7 @@ afterEach(() => {
 });
 
 describe("palette shortcut", () => {
-  it("takes bb's search key only while the setting is on", async () => {
+  it("takes VesnALIA's search key only while the setting is on", async () => {
     const off = await mount({ settings: { palette: false } });
     await act(async () => {});
     expect(pressSearchKey()).toBe(false);
@@ -206,7 +206,7 @@ describe("palette shortcut", () => {
     expect(await slot.findByRole("combobox")).toBeTruthy();
   });
 
-  it("assumes ⌘K when bb's config can't be read", async () => {
+  it("assumes ⌘K when VesnALIA's config can't be read", async () => {
     const slot = await mount({ keybindings: null });
     await openPalette(slot);
   });
@@ -293,7 +293,7 @@ describe("palette results", () => {
 describe("palette thread actions", () => {
   const archive = vi.fn();
   const hostActions = (): readonly PluginThreadActionEntry[] => [
-    { key: "bb--core/archive", pluginId: "bb--core", group: "manage", action: { label: "Archive", icon: "Archive", run: async () => archive() } },
+    { key: "alia--core/archive", pluginId: "alia--core", group: "manage", action: { label: "Archive", icon: "Archive", run: async () => archive() } },
     { key: "test-plugin/workspace", pluginId: "test-plugin", group: "organize", action: { label: "Workspace", icon: "Layers", run: async () => {} } },
   ];
 
@@ -371,7 +371,7 @@ describe("palette thread actions", () => {
     expect(slot.queryByRole("option", { name: /Set due date/ })).toBeNull();
   });
 
-  it("answers a numbered decision and runs bb's own actions", async () => {
+  it("answers a numbered decision and runs VesnALIA's own actions", async () => {
     const slot = await mount({
       threadActions: hostActions,
       rpc: { decision_options: () => ({ options: [{ n: 1, text: "Ship it", recommended: true }, { n: 2, text: "Wait", recommended: false }] }) },

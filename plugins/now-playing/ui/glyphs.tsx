@@ -1,4 +1,4 @@
-// Plugin-owned glyphs: BB's icon set has no media controls.
+// Plugin-owned glyphs: VesnALIA's icon set has no media controls.
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 

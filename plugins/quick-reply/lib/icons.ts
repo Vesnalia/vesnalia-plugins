@@ -4,10 +4,10 @@
 //   `help-circle` and `message` (v3.49.0), and a helper that builds an <svg>.
 // Why: emoji come with their own colors and shapes (❓ is tall and narrow
 //   next to 👍), so the four buttons looked uneven. Line icons share one size
-//   and stroke, take the surrounding text color, and match BB's own buttons.
+//   and stroke, take the surrounding text color, and match VesnALIA's own buttons.
 // Design notes: the paths are copied rather than installed as a package; four
 //   icons do not justify a dependency. The content script builds plain DOM, so
-//   it cannot use BB's React icon component.
+//   it cannot use VesnALIA's React icon component.
 // License: Tabler Icons, MIT License, Copyright (c) 2020-2026 Paweł Kuna,
 //   https://github.com/tabler/tabler-icons
 

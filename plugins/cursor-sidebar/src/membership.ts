@@ -1,7 +1,7 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 export const STANDALONE = "standalone-chats";
-/** A native BB Project's section key. */
+/** A native VesnALIA Project's section key. */
 export const NATIVE_PROJECT_PREFIX = "native:";
 export const projectSectionId = (id: string) => `${NATIVE_PROJECT_PREFIX}${id}`;
 export const nativeProjectSectionId = projectSectionId;

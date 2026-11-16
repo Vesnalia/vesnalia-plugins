@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { hostContract, inputsSchema, rpcContract } from "./contract";
 import { DEFAULT_PATH_TEMPLATE, projectOverridesSettingSchema, shortPath, templateSchema, type Inputs, type PlanResult } from "./inputs";
 import { projectTemplate } from "./settings";
@@ -7,8 +7,8 @@ export { rpcContract } from "./contract";
 const PROVIDER_ID = "flexible-worktrees";
 const message = (error: unknown) => error instanceof Error ? error.message : String(error);
 
-export default function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     pathTemplate: {
       type: "string", label: "Worktree path template",
       description: `Complete destination, including the folder name. Blank uses ${DEFAULT_PATH_TEMPLATE}. See the template reference below.`,
@@ -25,40 +25,40 @@ export default function plugin(bb: BbPluginApi) {
       default: true,
     },
   });
-  const host = bb.hosts.experimental_client({ contract: hostContract });
-  type Project = Awaited<ReturnType<typeof bb.sdk.projects.get>>;
+  const host = alia.hosts.experimental_client({ contract: hostContract });
+  type Project = Awaited<ReturnType<typeof alia.sdk.projects.get>>;
   /** The template for this project: project ID entry, most specific remote pattern, then the global setting. */
   const templateFor = async (project: Pick<Project, "id" | "gitRemoteUrl">) => projectTemplate(await settings.get(), project.id, project.gitRemoteUrl);
   /** The project's checkout on this machine (its default source first) and its destination template. */
   async function scope(projectId: string, hostId: string) {
-    const project = await bb.sdk.projects.get({ projectId });
+    const project = await alia.sdk.projects.get({ projectId });
     const sources = project.sources.filter(s => s.hostId === hostId);
     const source = sources.find(s => s.isDefault) ?? sources[0];
     if (!source) throw new Error("This project has no checkout on the selected machine");
     return { source: source.path, pathTemplate: await templateFor(project) };
   }
   /**
-   * Attaching a path another provider may remove would leave this thread without files, and BB core refuses
+   * Attaching a path another provider may remove would leave this thread without files, and VesnALIA core refuses
    * to launch into a path that another provider's environment in the same project owns. Refuse both up front.
    */
   async function checkAttach(result: PlanResult, projectId: string, hostId: string) {
     if (result.plan.action !== "attach") return result;
-    let envs: Awaited<ReturnType<typeof bb.sdk.environments.list>> = [];
-    try { envs = await bb.sdk.environments.list({ hostId, path: result.plan.path }); } catch (error) {
+    let envs: Awaited<ReturnType<typeof alia.sdk.environments.list>> = [];
+    try { envs = await alia.sdk.environments.list({ hostId, path: result.plan.path }); } catch (error) {
       // Fail closed: attaching without knowing whether another provider may delete the path is unsafe.
-      throw new Error(`Couldn’t check whether another BB environment manages \`${shortPath(result.plan.path)}\` (${message(error)}). Retry in a moment.`);
+      throw new Error(`Couldn’t check whether another VesnALIA environment manages \`${shortPath(result.plan.path)}\` (${message(error)}). Retry in a moment.`);
     }
     const live = envs.filter(e => e.status !== "destroyed" && e.lifecycle.phase !== "destroyed");
     if (live.some(e => (e.managed || e.workspaceProvisionType === "managed-worktree") && e.environmentProviderId !== PROVIDER_ID)) {
-      throw new Error(`\`${shortPath(result.plan.path)}\` belongs to another BB environment that may remove it when its threads close. Choose that environment in the environment picker to share it.`);
+      throw new Error(`\`${shortPath(result.plan.path)}\` belongs to another VesnALIA environment that may remove it when its threads close. Choose that environment in the environment picker to share it.`);
     }
     // Core rejects the launch when a same-project environment here has a different provider, managed or not.
     const owner = live.find(e => e.projectId === projectId && e.environmentProviderId !== null && e.environmentProviderId !== PROVIDER_ID);
     if (owner) {
-      throw new Error(`\`${shortPath(result.plan.path)}\` is owned by the "${owner.environmentProviderId}" environment provider (environment ${owner.id}). Choose that environment in the environment picker to share it, or archive its threads and delete it (\`bb environment delete ${owner.id}\`) to attach it with Flexible Worktrees.`);
+      throw new Error(`\`${shortPath(result.plan.path)}\` is owned by the "${owner.environmentProviderId}" environment provider (environment ${owner.id}). Choose that environment in the environment picker to share it, or archive its threads and delete it (\`alia environment delete ${owner.id}\`) to attach it with Flexible Worktrees.`);
     }
     return live.length
-      ? { ...result, warnings: [...result.warnings, "Another BB environment already uses this checkout. To share it, choose that environment in the environment picker instead."] }
+      ? { ...result, warnings: [...result.warnings, "Another VesnALIA environment already uses this checkout. To share it, choose that environment in the environment picker instead."] }
       : result;
   }
   async function preflight({ source, pathTemplate }: { source: string; pathTemplate: string }, projectId: string, hostId: string, inputs: Inputs) {
@@ -93,7 +93,7 @@ export default function plugin(bb: BbPluginApi) {
     };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async choices({ projectId, hostId }) {
       const { source, pathTemplate } = await scope(projectId, hostId);
       return { ...await host.call("choices", { source }, { hostId }), pathTemplate };
@@ -111,7 +111,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.experimental_environments.register({
+  alia.experimental_environments.register({
     id: PROVIDER_ID, displayName: "Flexible Worktrees",
     description: "Work on a PR, branch, or new task in its own worktree, or reuse a checkout. Files are always retained.",
     icon: "FolderGit", requires: { gitCheckout: true }, inputs: inputsSchema,
@@ -129,7 +129,7 @@ export default function plugin(bb: BbPluginApi) {
     restore: ctx => launch(ctx, { restoreFrom: ctx.previous.environment.environmentProviderInstanceKey ?? ctx.previous.environment.id }),
     async remove() {
       // Intentionally non-destructive, including cancellation and explicit environment deletion.
-      // User-chosen directories and branches remain available outside BB.
+      // User-chosen directories and branches remain available outside VesnALIA.
       return { status: "removed" };
     },
   });

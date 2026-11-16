@@ -44,7 +44,7 @@ async function setup(url: string, settings: Record<string, unknown> = {}, events
     usageWindows: true, flushSeconds: 3600, usagePollSeconds: 300, ...settings,
   };
   let disposeHook: (() => unknown) | undefined;
-  const bb: any = {
+  const alia: any = {
     log: { debug: () => {}, info: () => {}, warn: (m: string) => logs.push(m), error: () => {} },
     settings: { define: () => ({ get: async () => values, onChange: (f: any) => (onChange = f) }) },
     status: { needsConfiguration: (m: string) => logs.push(`needs: ${m}`) },
@@ -70,7 +70,7 @@ async function setup(url: string, settings: Record<string, unknown> = {}, events
       plugins: { callRpc: async ({ outputSchema }: any) => outputSchema.parse(usage) },
     },
   };
-  await plugin(bb);
+  await plugin(alia);
   const ac = new AbortController();
   return {
     emit: async (name: string, t: any) => { await handlers.get(name)!({ thread: t }); },
@@ -110,22 +110,22 @@ describe("plugin", () => {
     const metrics = c.hits.find((h) => h.path === "/v1/metrics")!;
     expect(traces.headers["x-otlp-token"]).toBe("tok123");
     const attrs = (o: any) => Object.fromEntries(o.attributes.map((a: any) => [a.key, Object.values(a.value)[0]]));
-    expect(attrs(traces.body.resourceSpans[0].resource)).toMatchObject({ "service.name": "bb", "deployment.environment": "test" });
+    expect(attrs(traces.body.resourceSpans[0].resource)).toMatchObject({ "service.name": "alia", "deployment.environment": "test" });
     const span = traces.body.resourceSpans[0].scopeSpans[0].spans[0];
     expect(span.name).toBe("chat claude-x");
     expect(span.status).toEqual({ code: 2 });
     expect(span.traceId).toBe(traceIdOf("t1"));
     expect(span.parentSpanId).toBe(threadSpanIdOf("t1"));
     expect(attrs(span)).toMatchObject({
-      "bb.thread.id": "t1", "bb.project.id": "proj_1", "bb.project.name": "personal", "session.id": "sess-1",
+      "alia.thread.id": "t1", "alia.project.id": "proj_1", "alia.project.name": "personal", "session.id": "sess-1",
       "gen_ai.request.model": "claude-x", "gen_ai.usage.input_tokens": "100", "gen_ai.usage.output_tokens": "30",
-      "gen_ai.usage.cache_read.input_tokens": "20", "bb.turn.status": "failed",
-      "bb.machine.id": "host_a", "bb.machine.name": "rufipc",
+      "gen_ai.usage.cache_read.input_tokens": "20", "alia.turn.status": "failed",
+      "alia.machine.id": "host_a", "alia.machine.name": "rufipc",
     });
-    const turns = metrics.body.resourceMetrics[0].scopeMetrics[0].metrics.find((m: any) => m.name === "bb.turns");
-    expect(attrs(turns.sum.dataPoints[0])).toMatchObject({ "bb.machine.name": "rufipc" });
+    const turns = metrics.body.resourceMetrics[0].scopeMetrics[0].metrics.find((m: any) => m.name === "alia.turns");
+    expect(attrs(turns.sum.dataPoints[0])).toMatchObject({ "alia.machine.name": "rufipc" });
     const names = metrics.body.resourceMetrics[0].scopeMetrics[0].metrics.map((m: any) => m.name);
-    expect(names).toEqual(expect.arrayContaining(["gen_ai.client.token.usage", "gen_ai.client.operation.duration", "bb.gen_ai.client.cost", "bb.thread.transitions"]));
+    expect(names).toEqual(expect.arrayContaining(["gen_ai.client.token.usage", "gen_ai.client.operation.duration", "alia.gen_ai.client.cost", "alia.thread.transitions"]));
     // Privacy: prompt, reply, error text and the thread title appear nowhere on the wire.
     expect(JSON.stringify(c.hits)).not.toContain(CANARY);
   });
@@ -139,7 +139,7 @@ describe("plugin", () => {
     await p.emit("thread.deleted", thread("child", { parentThreadId: "root" }));
     await p.flush();
     const spans = c.hits.find((h) => h.path === "/v1/traces")!.body.resourceSpans[0].scopeSpans[0].spans;
-    const thr = spans.find((s: any) => s.name === "bb.thread");
+    const thr = spans.find((s: any) => s.name === "alia.thread");
     expect(spans.every((s: any) => s.traceId === traceIdOf("root"))).toBe(true);
     expect(thr.parentSpanId).toBe(threadSpanIdOf("root"));
   });
@@ -169,11 +169,11 @@ describe("plugin", () => {
     const p = await setup(c.url, {}, {}, usage);
     await p.run();
     const m = c.hits.find((h) => h.path === "/v1/metrics")!.body.resourceMetrics[0].scopeMetrics[0].metrics;
-    const g = m.find((x: any) => x.name === "bb.provider.usage.used_percent").gauge.dataPoints[0];
+    const g = m.find((x: any) => x.name === "alia.provider.usage.used_percent").gauge.dataPoints[0];
     expect(g.asDouble).toBe(42);
     const ga = Object.fromEntries(g.attributes.map((a: any) => [a.key, Object.values(a.value)[0]]));
-    expect(ga["bb.machine.name"]).toBe("box");
-    expect(ga["bb.provider.account"]).toMatch(/^[0-9a-f]{12}$/);
+    expect(ga["alia.machine.name"]).toBe("box");
+    expect(ga["alia.provider.account"]).toMatch(/^[0-9a-f]{12}$/);
     expect(JSON.stringify(c.hits)).not.toContain("example.com");
     expect(JSON.stringify(c.hits)).not.toContain("me@");
   });
@@ -191,7 +191,7 @@ describe("plugin", () => {
     await p.emit("thread.created", thread("t2"));
     await p.flush();
     const sent = c.hits.find((h) => h.path === "/v1/metrics")!.body.resourceMetrics[0].scopeMetrics[0].metrics;
-    expect(sent.map((m: any) => m.name)).toEqual(["bb.thread.transitions"]);
+    expect(sent.map((m: any) => m.name)).toEqual(["alia.thread.transitions"]);
     expect(sent[0].sum.dataPoints).toHaveLength(1);
   });
 
@@ -205,7 +205,7 @@ describe("plugin", () => {
     c.hits.length = 0;
     await p.flush();
     const names = c.hits.find((h) => h.path === "/v1/metrics")!.body.resourceMetrics[0].scopeMetrics[0].metrics.map((m: any) => m.name);
-    expect(names).toEqual(expect.arrayContaining(["bb.turns", "gen_ai.client.token.usage"]));
+    expect(names).toEqual(expect.arrayContaining(["alia.turns", "gen_ai.client.token.usage"]));
   });
 
   it("keeps spans when the collector fails and delivers them on the next flush", async () => {

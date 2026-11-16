@@ -1,20 +1,20 @@
-// bb-plugin-scoped-skills — skills that only some agents receive.
+// alia-plugin-scoped-skills — skills that only some agents receive.
 //
-// BB gives every skill in ~/.bb/skills to every thread. This plugin keeps a
+// VesnALIA gives every skill in ~/.vesnalia/skills to every thread. This plugin keeps a
 // library of skills that each carry a scope (which agents, optionally which
-// models) and, through bb.agents.configure, hands a thread only the skills
+// models) and, through alia.agents.configure, hands a thread only the skills
 // whose scope matches the thread's agent and model.
 //
 // Storage: the plugin database is the source of truth (skills, files,
 // scopes). On load and after every change the library is written to
-// ./library, a manifest skill root BB scans. Keeping the truth in the
+// ./library, a manifest skill root VesnALIA scans. Keeping the truth in the
 // database means a plugin update, which replaces the plugin folder, never
 // loses the library.
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import os from "node:os";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   materializeLibrary,
@@ -125,12 +125,12 @@ interface SkillRow {
   updated_at: string;
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   // SCOPED_SKILLS_LIBRARY_DIR exists for tests, so a test run never rewrites
   // the live plugin's library folder.
   const libraryDir = process.env.SCOPED_SKILLS_LIBRARY_DIR ?? path.join(findPluginRoot(), "library");
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS skills (
        name TEXT PRIMARY KEY,
        description TEXT NOT NULL,
@@ -197,30 +197,30 @@ export default async function plugin(bb: BbPluginApi) {
       })),
     );
     scopes = new Map(all.map((row) => [row.name, scopeOf(row)]));
-    bb.realtime.publish(LIBRARY_CHANGED, { count: all.length });
+    alia.realtime.publish(LIBRARY_CHANGED, { count: all.length });
   }
 
   async function listAgents(): Promise<Agent[]> {
     try {
-      const providers = await bb.sdk.providers.list();
+      const providers = await alia.sdk.providers.list();
       return providers.map((provider) => ({ id: provider.id, name: provider.displayName }));
     } catch (error) {
-      bb.log.warn(`could not list providers: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`could not list providers: ${error instanceof Error ? error.message : String(error)}`);
       return [];
     }
   }
 
   async function listProjects(): Promise<Project[]> {
     try {
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       return projects.map((project) => ({ id: project.id, name: project.name, gitRemoteUrl: project.gitRemoteUrl ?? null }));
     } catch (error) {
-      bb.log.warn(`could not list projects: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`could not list projects: ${error instanceof Error ? error.message : String(error)}`);
       return [];
     }
   }
 
-  /** Reject agent ids BB does not know, so a typo cannot hide a skill forever. */
+  /** Reject agent ids VesnALIA does not know, so a typo cannot hide a skill forever. */
   async function checkAgents(agents: string[] | null): Promise<void> {
     if (agents === null) return;
     const known = await listAgents();
@@ -237,7 +237,7 @@ export default async function plugin(bb: BbPluginApi) {
     const row = db
       .prepare(`SELECT name, description, agents, models, projects, source, updated_at FROM skills WHERE name = ?`)
       .get(name) as SkillRow | undefined;
-    if (row === undefined) throw new SkillImportError(`No scoped skill named "${name}". Run "bb scoped-skills list".`);
+    if (row === undefined) throw new SkillImportError(`No scoped skill named "${name}". Run "alia scoped-skills list".`);
     return row;
   }
 
@@ -280,7 +280,7 @@ export default async function plugin(bb: BbPluginApi) {
       for (const file of skill.files) insertFile.run(skill.name, file.path, file.content, file.executable ? 1 : 0);
     })();
     sync();
-    bb.log.info(`imported skill ${skill.name} (${skill.files.length} files)`);
+    alia.log.info(`imported skill ${skill.name} (${skill.files.length} files)`);
     return summarize(getRow(skill.name));
   }
 
@@ -324,7 +324,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // The core of the plugin: per thread, select only the skills whose scope
   // matches. Must stay synchronous and only name skills that exist on disk.
-  bb.agents.configure((context) => ({
+  alia.agents.configure((context) => ({
     tools: [...TOOL_NAMES],
     skills: [
       GUIDE_SKILL,
@@ -336,7 +336,7 @@ export default async function plugin(bb: BbPluginApi) {
     ],
   }));
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     library_list: async () => ({
       skills: rows().map(summarize),
       agents: await listAgents(),
@@ -370,7 +370,7 @@ export default async function plugin(bb: BbPluginApi) {
     return `- ${skill.name} → ${who}${models}${projects}`;
   };
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "scoped_skills_list",
     description:
       "List the skills managed by the Scoped Skills plugin and which agents (and models) receive each one, plus which agent this thread runs on. Use when the user asks which skills an agent gets, why a skill is missing in this thread, or before changing a skill's scope.",
@@ -383,7 +383,7 @@ export default async function plugin(bb: BbPluginApi) {
       const names = new Map(agents.map((agent) => [agent.id, agent.name]));
       let current = "unknown";
       try {
-        const thread = await bb.sdk.threads.get({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         current = names.get(thread.providerId) ?? thread.providerId;
       } catch {
         // The list is still useful without the current thread's agent.
@@ -397,7 +397,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "scoped_skills_set_scope",
     description:
       "Change which agents (and optionally which models and projects) receive a scoped skill. Only call this when the user asks to restrict, widen, or move a skill. agents: provider ids such as codex or claude-code, or [\"all\"]. models: optional globs such as gpt-5*. projects: optional globs matched against a project's id, name or git remote, such as *emergentbase/*. Omitting models or projects keeps the current value.",
@@ -420,7 +420,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "scoped_skills_import",
     description:
       "Copy a skill folder (one containing SKILL.md) from this machine into the Scoped Skills library with a scope. Only call this when the user asks to add or convert a skill into a scoped skill. The original folder is left untouched; tell the user they can delete it afterwards.",
@@ -453,14 +453,14 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb scoped-skills list [--json]",
-    "  bb scoped-skills import <folder> --agents <ids|all> [--models <globs>] [--projects <globs>] [--replace] [--json]",
-    "  bb scoped-skills scope <name> --agents <ids|all> [--models <globs|all>] [--projects <globs|all>] [--json]",
-    "  bb scoped-skills remove <name> [--json]",
-    "  bb scoped-skills preview --agent <id> [--model <model>] [--project <id|name>] [--json]",
-    "  bb scoped-skills agents [--json]",
+    "  VesnALIA scoped-skills list [--json]",
+    "  VesnALIA scoped-skills import <folder> --agents <ids|all> [--models <globs>] [--projects <globs>] [--replace] [--json]",
+    "  VesnALIA scoped-skills scope <name> --agents <ids|all> [--models <globs|all>] [--projects <globs|all>] [--json]",
+    "  VesnALIA scoped-skills remove <name> [--json]",
+    "  VesnALIA scoped-skills preview --agent <id> [--model <model>] [--project <id|name>] [--json]",
+    "  VesnALIA scoped-skills agents [--json]",
     "",
-    "Agent ids come from `bb scoped-skills agents` (e.g. codex, claude-code).",
+    "Agent ids come from `alia scoped-skills agents` (e.g. codex, claude-code).",
     "Lists are comma-separated. Globs use * (models: gpt-5*; projects match id, name or",
     "git remote: *emergentbase/*).",
   ].join("\n");
@@ -480,28 +480,28 @@ export default async function plugin(bb: BbPluginApi) {
   }
   const splitList = (value: string | undefined) => (value === undefined ? undefined : value.split(","));
 
-  bb.cli.register({
+  alia.cli.register({
     name: "scoped-skills",
     summary: "Give skills only to the agents, models and projects that should have them",
     commands: [
-      { name: "list", summary: "List scoped skills and who receives them", usage: "bb scoped-skills list [--json]" },
+      { name: "list", summary: "List scoped skills and who receives them", usage: "alia scoped-skills list [--json]" },
       {
         name: "import",
         summary: "Copy a skill folder into the library with a scope",
-        usage: "bb scoped-skills import <folder> --agents <ids|all> [--models <globs>] [--projects <globs>] [--replace]",
+        usage: "alia scoped-skills import <folder> --agents <ids|all> [--models <globs>] [--projects <globs>] [--replace]",
       },
       {
         name: "scope",
         summary: "Change which agents/models/projects receive a skill",
-        usage: "bb scoped-skills scope <name> --agents <ids|all> [--models <globs|all>] [--projects <globs|all>]",
+        usage: "alia scoped-skills scope <name> --agents <ids|all> [--models <globs|all>] [--projects <globs|all>]",
       },
-      { name: "remove", summary: "Delete a skill from the library", usage: "bb scoped-skills remove <name>" },
+      { name: "remove", summary: "Delete a skill from the library", usage: "alia scoped-skills remove <name>" },
       {
         name: "preview",
         summary: "Show which scoped skills a thread on an agent/model/project would get",
-        usage: "bb scoped-skills preview --agent <id> [--model <model>] [--project <id|name>]",
+        usage: "alia scoped-skills preview --agent <id> [--model <model>] [--project <id|name>]",
       },
-      { name: "agents", summary: "List the agent ids you can scope to", usage: "bb scoped-skills agents" },
+      { name: "agents", summary: "List the agent ids you can scope to", usage: "alia scoped-skills agents" },
     ],
     async run(argv) {
       const args = [...argv];
@@ -580,7 +580,7 @@ export default async function plugin(bb: BbPluginApi) {
             if (projectArg !== undefined && projectArg !== "") {
               const all = await listProjects();
               project = all.find((p) => p.id === projectArg || p.name.toLowerCase() === projectArg.toLowerCase()) ?? null;
-              if (project === null) return fail(`No project "${projectArg}". Use a project id or exact name from \`bb project list\`.`);
+              if (project === null) return fail(`No project "${projectArg}". Use a project id or exact name from \`alia project list\`.`);
             }
             const result = preview(agent, model, project);
             return reply(
@@ -599,7 +599,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

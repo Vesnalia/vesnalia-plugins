@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 // Radix tooltips position through floating-ui, which observes element size;
 // jsdom has no ResizeObserver, so give it an inert one.
@@ -333,7 +333,7 @@ describe("settings sections", () => {
     fireEvent.focus(hint);
     expect((await slot.findByRole("tooltip")).textContent).toContain("macOS may ask once when the first screenshot is taken");
     fireEvent.blur(hint);
-    expect(slot.queryByText("Available to bb")).toBeNull();
+    expect(slot.queryByText("Available to VesnALIA")).toBeNull();
     expect(slot.queryByText("Allowed for CuaDriver.app")).toBeNull();
     expect(await slot.findByText("v0.36.0 · tested")).toBeTruthy();
 

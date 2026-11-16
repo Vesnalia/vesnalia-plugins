@@ -7,7 +7,7 @@ import {nativeProbeLaunchSchema,nativeProbeResultSchema,type NativeProbeLaunch,t
 /** Read launch metadata references only, never provider auth or Pooler clients. */
 async function target(executorId:string){
  if(platform()!=='linux')throw Error('native-diagnostic-runtime-unavailable');
- const primary=path.join(homedir(),'.config/oxi-bb/agy-native.json');
+ const primary=path.join(homedir(),'.config/oxi-alia/agy-native.json');
  const metadata=async(file:string)=>{
   const fd=await open(file,constants.O_RDONLY|constants.O_NOFOLLOW|constants.O_NONBLOCK);
   try{const stat=await fd.stat();if(!stat.isFile()||stat.uid!==process.getuid?.()||(stat.mode&0o077)||stat.size>16384)throw Error('native-diagnostic-metadata');

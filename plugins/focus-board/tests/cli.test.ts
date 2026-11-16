@@ -2,13 +2,13 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import type { FakePluginHarness } from "@get-bb/plugin-sdk/testing";
-import type { PluginCliExecutionResult } from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import type { FakePluginHarness } from "@vesnalia/plugin-sdk/testing";
+import type { PluginCliExecutionResult } from "@vesnalia/plugin-sdk";
 import server from "../server";
 
-type Bb = BbPluginApi;
+type Alia = AliaPluginApi;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const NOW = Date.parse("2026-09-25T12:00:00.000Z");
@@ -17,8 +17,8 @@ function iso(msAgo: number): string {
   return new Date(NOW - msAgo).toISOString();
 }
 
-describe("bb focus-board done/snooze/link CLI", () => {
-  let bb: Bb;
+describe("alia focus-board done/snooze/link CLI", () => {
+  let alia: Alia;
   let harness: FakePluginHarness;
   let metadata: Map<string, Record<string, unknown>>;
   let listedThreads: ReturnType<typeof makeThreadResponse>[];
@@ -83,9 +83,9 @@ describe("bb focus-board done/snooze/link CLI", () => {
         },
       },
     });
-    bb = host.bb;
+    alia = host.alia;
     harness = host.harness;
-    await server(bb);
+    await server(alia);
   }
 
   afterEach(async () => {
@@ -145,7 +145,7 @@ describe("bb focus-board done/snooze/link CLI", () => {
       metadata.set("thr_gone", {
         done: { doneAt: iso(2 * DAY_MS), keep: true },
       });
-      await bb.storage.kv.set("done-index", ["thr_gone"]);
+      await alia.storage.kv.set("done-index", ["thr_gone"]);
 
       const result = await harness.behavior.runCli(["done", "list"]);
       expect(result.exitCode).toBe(0);
@@ -162,7 +162,7 @@ describe("bb focus-board done/snooze/link CLI", () => {
     it("exits 0 and names an index-only id whose thread is gone", async () => {
       await load();
       notFound404 = true;
-      await bb.storage.kv.set("done-index", ["thr_gone"]);
+      await alia.storage.kv.set("done-index", ["thr_gone"]);
 
       const result = await harness.behavior.runCli(["done", "list"]);
       expect(result.exitCode).toBe(0);
@@ -173,7 +173,7 @@ describe("bb focus-board done/snooze/link CLI", () => {
     it("marks a gone index id stale in --json (doneAt null, inLiveList false)", async () => {
       await load();
       notFound404 = true;
-      await bb.storage.kv.set("done-index", ["thr_gone"]);
+      await alia.storage.kv.set("done-index", ["thr_gone"]);
 
       const result = await harness.behavior.runCli(["done", "list", "--json"]);
       expect(result.exitCode).toBe(0);
@@ -192,7 +192,7 @@ describe("bb focus-board done/snooze/link CLI", () => {
     it("names several gone index ids without crashing", async () => {
       await load();
       notFound404 = true;
-      await bb.storage.kv.set("done-index", ["thr_g1", "thr_g2", "thr_g3"]);
+      await alia.storage.kv.set("done-index", ["thr_g1", "thr_g2", "thr_g3"]);
 
       const result = await harness.behavior.runCli(["done", "list", "--json"]);
       expect(result.exitCode).toBe(0);
@@ -211,7 +211,7 @@ describe("bb focus-board done/snooze/link CLI", () => {
     it("reports every index id as gone when the whole index outlives its threads", async () => {
       await load();
       notFound404 = true;
-      await bb.storage.kv.set("done-index", ["thr_g1", "thr_g2"]);
+      await alia.storage.kv.set("done-index", ["thr_g1", "thr_g2"]);
 
       const result = await harness.behavior.runCli(["done", "list"]);
       expect(result.exitCode).toBe(0);
@@ -227,7 +227,7 @@ describe("bb focus-board done/snooze/link CLI", () => {
         threadId: "thr_live",
         done: true,
       });
-      await bb.storage.kv.set("done-index", [
+      await alia.storage.kv.set("done-index", [
         "thr_live",
         "thr_gone_a",
         "thr_gone_b",
@@ -254,7 +254,7 @@ describe("bb focus-board done/snooze/link CLI", () => {
 
     it("still fails loud on a non-404 error from the metadata read", async () => {
       await load();
-      await bb.storage.kv.set("done-index", ["thr_bad"]);
+      await alia.storage.kv.set("done-index", ["thr_bad"]);
       metadataErrors.set("thr_bad", new Error("disk on fire"));
 
       const result = await harness.behavior.runCli(["done", "list"]);
@@ -286,7 +286,7 @@ describe("bb focus-board done/snooze/link CLI", () => {
       await load();
       // The legacy KV row is imported on demand inside done_list: ids
       // arrive stamped with the import time (no fabricated ages).
-      await bb.storage.kv.set("done-thread-ids", ["thr_old"]);
+      await alia.storage.kv.set("done-thread-ids", ["thr_old"]);
       const result = await harness.behavior.runCli(["done", "list"]);
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("thr_old");
@@ -398,7 +398,7 @@ describe("bb focus-board done/snooze/link CLI", () => {
         keep: true,
       });
       await harness.behavior.runCli(["done", "clear", "thr_a"]);
-      const raw: unknown = await bb.storage.kv.get("sweep-keep-flags");
+      const raw: unknown = await alia.storage.kv.get("sweep-keep-flags");
       expect(raw).toEqual({ thr_a: { keep: true } });
     });
 
@@ -434,7 +434,7 @@ describe("bb focus-board done/snooze/link CLI", () => {
   });
 
   describe("retired config commands", () => {
-    it("the plugin CLI no longer carries config show or config set (the declared settings edit through `bb plugin config focus-board` and the settings modal)", async () => {
+    it("the plugin CLI no longer carries config show or config set (the declared settings edit through `alia plugin config focus-board` and the settings modal)", async () => {
       await load();
       const result = await harness.behavior.runCli(["config", "show"]);
       expect(result.exitCode).toBe(1);
@@ -489,7 +489,7 @@ describe("bb focus-board done/snooze/link CLI", () => {
 describe("runCli result normalization", () => {
   it("returns exitCode/stdout/stderr", async () => {
     const host = createFakePluginHost({ pluginId: "focus-board" });
-    await server(host.bb);
+    await server(host.alia);
     const result: PluginCliExecutionResult = await host.harness.behavior.runCli(
       ["--help"],
     );

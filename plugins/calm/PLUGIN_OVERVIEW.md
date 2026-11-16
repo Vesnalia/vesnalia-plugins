@@ -1,4 +1,4 @@
-A little world above bb's prompt box while your agent works. Sixteen pixel-art scenes, a gag every few minutes, and an amber light when it needs you.
+A little world above VesnALIA's prompt box while your agent works. Sixteen pixel-art scenes, a gag every few minutes, and an amber light when it needs you.
 
 ## Small adventures
 
@@ -22,14 +22,14 @@ Child threads join as helpers, small figures in their own colors. Tap one for de
 
 ## Make it yours
 
-Choose when scenes show: while the agent works, or always. The settings page has live scene tiles and switches for optional touches. Choose Still pictures for stationary art that continues to show the agent's state. Calm follows bb's light or dark mode and your system's reduced-motion setting, and pauses when out of sight.
+Choose when scenes show: while the agent works, or always. The settings page has live scene tiles and switches for optional touches. Choose Still pictures for stationary art that continues to show the agent's state. Calm follows VesnALIA's light or dark mode and your system's reduced-motion setting, and pauses when out of sight.
 
 A scene icon in each thread's header lets you pin a scene or turn Calm off just there.
 
-## Local to your bb
+## Local to your VesnALIA
 
-Requires bb 0.45 or later. No external service, paid account, or separate install. Calm reads thread activity and stores preferences, per-thread scene choices, run counts, and dismissed helper alerts in your own bb. It adds no telemetry.
+Requires VesnALIA 0.45 or later. No external service, paid account, or separate install. Calm reads thread activity and stores preferences, per-thread scene choices, run counts, and dismissed helper alerts in your own VesnALIA. It adds no telemetry.
 
-Tested on bb 0.45. A few experimental bb APIs have fallbacks. Rate-limit return times depend on the provider, and seasons follow northern-hemisphere months.
+Tested on VesnALIA 0.45. A few experimental VesnALIA APIs have fallbacks. Rate-limit return times depend on the provider, and seasons follow northern-hemisphere months.
 
 Inspired by Kun Chen's [firstmate](https://github.com/kunchenguid/firstmate). All the art and code are new.

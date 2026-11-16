@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
-import { experimental_useRpcQuery as useRpcQuery, useSdk } from "@get-bb/plugin-sdk/app";
+import { experimental_useRpcQuery as useRpcQuery, useSdk } from "@vesnalia/plugin-sdk/app";
 import { withSeen, type Attention } from "./attention";
 import { RESPONSIBILITIES, contract } from "./contract";
 
-/** `loaded`: Responsibilities answered, or it is not there and only BB's own data counts. */
+/** `loaded`: Responsibilities answered, or it is not there and only VesnALIA's own data counts. */
 export type AttentionState = { attention: ReadonlyMap<string, Attention>; loaded: boolean };
 
 /** The seen marks this browser made: without Responsibilities they keep a seen failure out of the columns. */
@@ -27,7 +27,7 @@ function subscribeSeen(listener: () => void) {
 }
 
 /**
- * Responsibilities' records with this browser's seen marks. BB keeps the last
+ * Responsibilities' records with this browser's seen marks. VesnALIA keeps the last
  * snapshot while a read fails, and reads again on the `attention` tag and on
  * reconnect.
  */

@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-vps-watch",
+  "name": "alia-plugin-vps-watch",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.47",
-    "bbPluginSdk": ">=0.6.79"
+    "alia": ">=0.47",
+    "aliaPluginSdk": ">=0.6.79"
   },
-  "bb": {
+  "alia": {
     "name": "VPS Watch Lite",
     "description": "Lightweight Linux VPS monitoring over SSH. No remote agent.",
     "branding": {
@@ -21,7 +21,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.79",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -47,9 +46,22 @@
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
   },
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.79"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/vps-watch#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/architawr/bb-plugin-vps-watch.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/vps-watch"
   },
-  "license": "MIT"
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

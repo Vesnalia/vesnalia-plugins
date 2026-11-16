@@ -1,7 +1,7 @@
 import type {
   PluginSidebarThread,
   PluginThreadActionTarget,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 export function toThreadActionTarget(
   thread: PluginSidebarThread,

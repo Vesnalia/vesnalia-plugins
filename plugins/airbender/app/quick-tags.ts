@@ -4,7 +4,7 @@
 // finding the tag under the caret, and suggesting completions for it.
 //
 // Why: the user wanted to set type, priority and category without leaving the
-// title field (bead-bb-ky8). The parsing is pure text work, kept apart from
+// title field (bead-alia-ky8). The parsing is pure text work, kept apart from
 // the form so it can be tested with plain node (see app/quick-tags.test.ts).
 //
 // Gotchas:
@@ -21,16 +21,16 @@ interface QuickTags {
   type: IssueType | null;
   priority: number | null;
   category: string | null;
-  /** `#someday`: create it straight into Someday (bead-bb-26g). */
+  /** `#someday`: create it straight into Someday (bead-alia-26g). */
   someday: boolean;
 }
 
 /**
- * Reads the quick tags out of a new issue's title (bead-bb-ky8):
+ * Reads the quick tags out of a new issue's title (bead-alia-ky8):
  *
  * - `#task`, `#bug` and the other issue types set the type;
  * - `#p0` to `#p4` set the priority;
- * - `#someday` files it in Someday (bead-bb-26g);
+ * - `#someday` files it in Someday (bead-alia-26g);
  * - `$name` sets the category.
  *
  * A tag counts only as a word of its own (at the start, or after a space),

@@ -1,11 +1,11 @@
-// bb-plugin-lobu — frontend entry. Compiled by `bb plugin build`; React and
-// the SDK come from the bb app at load time.
+// alia-plugin-lobu — frontend entry. Compiled by `alia plugin build`; React and
+// the SDK come from the VesnALIA app at load time.
 import {
   definePluginApp,
   experimental_THREAD_ACTION_GROUPS,
-  type PluginBrowserBbSdk,
+  type PluginBrowserAliaSdk,
   useSdk,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { LobuHome } from "@/components/home";
 import { LobuPage } from "@/components/lobu-page";
 import { SetupSettings } from "@/components/setup";
@@ -18,7 +18,7 @@ const PLUGIN_ID = "lobu";
 
 // Message actions get no SDK client of their own; the thread action's
 // app-wide data hook hands it over. It is the same client for every thread.
-let sdk: PluginBrowserBbSdk | null = null;
+let sdk: PluginBrowserAliaSdk | null = null;
 
 async function openReview(threadId: string, text: string) {
   if (sdk === null) throw new Error("Lobu is still loading. Try again in a moment.");
@@ -33,7 +33,7 @@ async function openReview(threadId: string, text: string) {
 
 export default definePluginApp((app) => {
   // The Lobu page in the sidebar: what needs you, what agents remember, and
-  // what is paired, all from the login bb uses.
+  // what is paired, all from the login VesnALIA uses.
   app.slots.navPanel({
     id: "lobu",
     title: "Lobu",
@@ -42,13 +42,13 @@ export default definePluginApp((app) => {
     component: LobuPage,
   });
 
-  // The New thread screen: setup until bb is connected, then what a new
+  // The New thread screen: setup until VesnALIA is connected, then what a new
   // thread in the project starts with. Settings: the Lobu account.
   app.slots.homepageSection({ id: "lobu", title: "Lobu", component: LobuHome });
   app.slots.settingsSection({
     id: "account",
     title: "Lobu account",
-    description: "Where agents in bb save and search memory.",
+    description: "Where agents in VesnALIA save and search memory.",
     component: SetupSettings,
   });
 
@@ -72,14 +72,14 @@ export default definePluginApp((app) => {
       openReview(threadId, selectedText?.trim() ? selectedText : message.text),
   });
 
-  // Lobu's own page of everything bb saved.
+  // Lobu's own page of everything VesnALIA saved.
   app.slots.experimental_threadAction({
     id: "open-in-lobu",
-    title: "Open what bb saved in Lobu",
+    title: "Open what VesnALIA saved in Lobu",
     icon: "lobu/lobu",
     group: experimental_THREAD_ACTION_GROUPS.organize,
     item: ({ sdk: client, navigate }) => ({
-      label: "Open what bb saved in Lobu",
+      label: "Open what VesnALIA saved in Lobu",
       icon: "lobu/lobu",
       run: async () => {
         const { url } = await client.plugins.callRpc({
@@ -88,7 +88,7 @@ export default definePluginApp((app) => {
           input: {},
           outputSchema: z.object({ url: z.string().nullable() }),
         });
-        if (url === null) throw new Error("bb has not saved anything to Lobu through this login yet.");
+        if (url === null) throw new Error("alia has not saved anything to Lobu through this login yet.");
         navigate.openUrl(url);
       },
     }),

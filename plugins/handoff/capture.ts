@@ -1,7 +1,7 @@
 // Session capture: page a thread's event log and project it into a
 // provider-independent transcript, plus locate the provider's native session
 // file (Claude Code / Codex) for raw-fidelity reference.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { projectInputs, renderInput } from "./capture-inputs";
 
 export const CAPS = {
@@ -207,7 +207,7 @@ export function projectEvents(rows: EventRowLike[]): ProjectedTranscript {
     if (!record) continue;
     const entry = renderItem(record.item);
     if (!entry) continue;
-    // Drop a provider echo of an input already rebuilt from bb's request events.
+    // Drop a provider echo of an input already rebuilt from VesnALIA's request events.
     const echo = record.item.type === "userMessage" && !entry.nested &&
       inputs.isEcho(record.seq, renderInput(record.item.content));
     if (!echo) entries.push({ ...entry, seq: record.seq });
@@ -244,7 +244,7 @@ export interface NativeSessionQuery {
  * environment host. Null when unknown provider, underivable home, or missing.
  */
 export async function findNativeSessionPath(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   query: NativeSessionQuery,
 ): Promise<string | null> {
   const { providerId, providerThreadId, hostId, workspacePath } = query;
@@ -257,7 +257,7 @@ export async function findNativeSessionPath(
   const target = nativeSessionTarget(providerId, home, workspacePath, providerThreadId);
   if (!target) return null;
   try {
-    const listing = await bb.sdk.files.list({ hostId, path: target.dir, query: target.query, limit: 100 });
+    const listing = await alia.sdk.files.list({ hostId, path: target.dir, query: target.query, limit: 100 });
     const hit = listing.files.find((file) => target.matches(file.path));
     return hit ? `${target.dir}/${hit.path}` : null;
   } catch {
@@ -327,19 +327,19 @@ export interface CaptureOptions {
 const EVENT_PAGE_SIZE = 100;
 
 export async function captureThread(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
   options?: CaptureOptions,
 ): Promise<CapturedSession> {
   // deno-lint-ignore no-explicit-any
-  const thread = (await bb.sdk.threads.get({ threadId })) as any;
+  const thread = (await alia.sdk.threads.get({ threadId })) as any;
   const environmentId: string | null = thread.environmentId ?? null;
   let workspacePath: string | null = null;
   let branchName: string | null = null;
   let hostId: string | undefined;
   if (environmentId) {
     try {
-      const environment = await bb.sdk.environments.get({ environmentId });
+      const environment = await alia.sdk.environments.get({ environmentId });
       workspacePath = environment.path;
       branchName = environment.branchName;
       hostId = environment.hostId;
@@ -352,11 +352,11 @@ export async function captureThread(
   let afterSeq: string | undefined;
   const untilSeq = options?.untilSeq ?? null;
   // A partial capture anchored at a user message ends at that message's request
-  // event; bb accepts or rejects it a few events later. Keep reading past the
+  // event; VesnALIA accepts or rejects it a few events later. Keep reading past the
   // cutoff for those verdicts only, so the input is not shown as unconfirmed.
   const awaitingVerdict = new Set<string>();
   for (;;) {
-    const page = (await bb.sdk.threads.events.list({
+    const page = (await alia.sdk.threads.events.list({
       threadId,
       afterSeq,
       limit: String(EVENT_PAGE_SIZE),
@@ -397,14 +397,14 @@ export async function captureThread(
     latestOutput = [...entries].reverse().find((entry) => entry.kind === "assistant")?.body ?? null;
   } else {
     try {
-      latestOutput = (await bb.sdk.threads.output({ threadId })).output;
+      latestOutput = (await alia.sdk.threads.output({ threadId })).output;
     } catch {
       // No output yet — fine.
     }
   }
 
   const providerId: string = thread.providerId ?? "unknown";
-  const nativeSessionPath = await findNativeSessionPath(bb, {
+  const nativeSessionPath = await findNativeSessionPath(alia, {
     providerId,
     providerThreadId,
     hostId,

@@ -1,21 +1,21 @@
 import { imageUrl, snapshotSchema, type Snapshot } from "./model.ts";
 import { CAPY_CSS, mountCapyEffect, type CapyEffect } from "./capy-effect.ts";
 
-export const LOCAL_CHANGE = "bb:aura:changed";
+export const LOCAL_CHANGE = "alia:aura:changed";
 export const TARGETS = ':is([id="thread-detail-timeline-panel"], [id="root-compose-main-panel"])';
 export const NEW_THREAD_TARGET = '[id="root-compose-main-panel"]';
 export function targetsFor(snapshot: Snapshot): string { return snapshot.settings.newThreadOnly ? NEW_THREAD_TARGET : TARGETS; }
 export function backgroundRules(selector: string): string { return `${selector}{position:relative;isolation:isolate;}`; }
-// BB's page header sits inside the decorated panel and uses a translucent scrim.
+// VesnALIA's page header sits inside the decorated panel and uses a translucent scrim.
 // Keep the wallpaper below that chrome band unless the user opts in, so the top
 // bar cannot pick up the background by default.
 export function topbarBackgroundRule(selector: string, show: boolean): string {
-  return `${selector} .aura-capy-layer{top:${show ? "0" : "var(--bb-app-chrome-row-height, 48px)"};}`;
+  return `${selector} .aura-capy-layer{top:${show ? "0" : "var(--alia-app-chrome-row-height, 48px)"};}`;
 }
 
 // Center only the full New thread compose layout. Auto margins collapse when
 // the draft grows taller than the viewport, keeping it reachable by scrolling.
-// Scope the override to BB's md breakpoint: below it the host already pins the
+// Scope the override to VesnALIA's md breakpoint: below it the host already pins the
 // composer to the bottom of the viewport, which is the right reach for phones,
 // so mobile must keep the native compact layout untouched.
 export const COMPOSE_CENTER = `
@@ -45,7 +45,7 @@ ${NEW_THREAD_TARGET} :is([data-testid="root-compose-compact-recents-offset"],[da
 }
 }
 `;
-// BB only renders the compact Recent list below its md breakpoint, so the
+// VesnALIA only renders the compact Recent list below its md breakpoint, so the
 // list's surface lives there too. It replaces the host's opaque sticky header
 // band with a quiet heading rule and hairline row dividers inside one card,
 // keeping the wallpaper visible above and around it.
@@ -136,7 +136,7 @@ export const READING_SURFACE = `
 [id="thread-detail-timeline-panel"] [data-scroll-footer] > .bg-background:has(> .mx-auto) > [data-overflow-fade] {
   left:50%; right:auto; width:min(760px,100%); transform:translateX(-50%);
 }
-/* BB intentionally lets wide Markdown tables extend beyond the text column.
+/* VesnALIA intentionally lets wide Markdown tables extend beyond the text column.
    Paint the whole scrollable table surface, including its overflow area. */
 [id="thread-detail-timeline-panel"] [data-markdown-preview] table,
 [id="thread-detail-timeline-panel"] [data-markdown-preview] div:has(> table) {
@@ -167,7 +167,7 @@ export function mountBackground(signal: AbortSignal): () => void {
     if (!current?.settings.enabled) return;
     for (const element of document.querySelectorAll<HTMLElement>(targetsFor(current))) {
       const existing = effects.get(element);
-      // BB can reuse the same panel element when navigating between a
+      // VesnALIA can reuse the same panel element when navigating between a
       // conversation and New thread. Reapply its surface-specific dimming.
       if (existing) existing.update(current.settings, imageUrl(current.image));
       else effects.set(element, mountCapyEffect(element, current.settings, imageUrl(current.image)));

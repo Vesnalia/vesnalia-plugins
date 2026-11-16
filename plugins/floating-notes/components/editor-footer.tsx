@@ -220,7 +220,7 @@ export function EditorFooter({
           }}
           placeholder="tag"
           aria-label="New tag"
-          className="bb-fn-input w-16 rounded-full border border-border bg-transparent px-1.5 leading-4 outline-none"
+          className="alia-fn-input w-16 rounded-full border border-border bg-transparent px-1.5 leading-4 outline-none"
         />
       ) : (
         <button

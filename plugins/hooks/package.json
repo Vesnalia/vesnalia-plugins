@@ -1,19 +1,19 @@
 {
-  "name": "bb-plugin-hooks",
+  "name": "alia-plugin-hooks",
   "version": "0.4.1",
   "type": "module",
   "description": "Run shell commands or webhooks on thread events, and gate message dispatch with custom policy.",
   "license": "MIT",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc -p .",
     "test": "vitest run"
   },
-  "bb": {
+  "alia": {
     "name": "Hooks",
     "description": "Run your own shell commands or webhooks on thread events, and gate message dispatch with custom policy.",
     "branding": {
@@ -27,7 +27,9 @@
     },
     "server": "./server.ts",
     "app": "./app.tsx",
-    "skills": ["skills"]
+    "skills": [
+      "skills"
+    ]
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "4.3.5",
@@ -40,7 +42,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.9",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -67,8 +68,21 @@
     "vaul": "^1.1.2",
     "vitest": "^3.2.4"
   },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.9"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/hooks#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MacHatter1/bb-plugin-hooks.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/hooks"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

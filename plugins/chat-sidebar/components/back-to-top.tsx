@@ -1,4 +1,4 @@
-// "Back to top": sticks to the bottom corner of bb's scroll area once the
+// "Back to top": sticks to the bottom corner of VesnALIA's scroll area once the
 // list is scrolled down. Zero height, so it adds no space to the list.
 import { Icon } from "@/components/ui/icon";
 import { useT } from "./chat-context";

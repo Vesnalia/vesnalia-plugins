@@ -492,10 +492,10 @@ describe("WatchRunner", () => {
     const { instance, log } = runner(
       paths,
       { a: () => ok("news") },
-      { deliver: async () => Promise.reject(new Error("bb is unreachable")) },
+      { deliver: async () => Promise.reject(new Error("alia is unreachable")) },
     );
     await instance.tick(MINUTE);
-    expect(log.errors).toEqual([expect.stringMatching(/Could not send the watches' output to the first mate: bb is unreachable/)]);
+    expect(log.errors).toEqual([expect.stringMatching(/Could not send the watches' output to the first mate: alia is unreachable/)]);
     expect(JSON.parse(await readFile(paths.stateFile, "utf8")).queue).toHaveLength(1);
   });
 

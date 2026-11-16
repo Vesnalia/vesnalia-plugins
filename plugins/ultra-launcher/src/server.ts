@@ -4,10 +4,10 @@ import { createPresetStore } from "./lib/preset-store";
 import { createSelectionStore, selectedPresetSchema } from "./lib/selection-store";
 import { SELECTION_CHANNEL } from "./lib/selection";
 import { resolveDefaultPresets, type Catalog, type CatalogModel } from "./lib/default-presets";
-import { defineRpcContract, type BbPluginApi, type NewThreadRequest } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi, type NewThreadRequest } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
-// Forward additive composer fields to BB, which validates the spawn request.
+// Forward additive composer fields to VesnALIA, which validates the spawn request.
 const newThreadRequestSchema = z.looseObject({
   projectId: z.string(),
   providerId: z.string(),
@@ -33,7 +33,7 @@ export const rpcContract = defineRpcContract({
 });
 
 const HOST_COMMAND = "thread.new" as const;
-/** BB's own web-only default for `thread.new`; keeps "New thread" reachable. */
+/** VesnALIA's own web-only default for `thread.new`; keeps "New thread" reachable. */
 const RELOCATED_SHORTCUT = {
   key: "o",
   mod: true,
@@ -69,15 +69,15 @@ type HotkeyStatus =
   | { state: "free"; reason: "claimed" | "not-bound" | "user-override" }
   | { state: "taken"; reason: "host-default" | "user-override" };
 
-async function hotkeyStatus(bb: BbPluginApi): Promise<HotkeyStatus> {
-  const config = await bb.sdk.system.config();
+async function hotkeyStatus(alia: AliaPluginApi): Promise<HotkeyStatus> {
+  const config = await alia.sdk.system.config();
   const override = config.keybindingOverrides.find(
     (entry) => entry.command === HOST_COMMAND,
   );
   const hostHoldsModN = config.keybindings.some(
     (binding) => binding.command === HOST_COMMAND && isModN(binding.shortcut),
   );
-  const claimed = (await bb.storage.kv.get<boolean>(CLAIM_KEY)) === true;
+  const claimed = (await alia.storage.kv.get<boolean>(CLAIM_KEY)) === true;
   if (hostHoldsModN) {
     return { state: "taken", reason: override ? "user-override" : "host-default" };
   }
@@ -88,30 +88,30 @@ async function hotkeyStatus(bb: BbPluginApi): Promise<HotkeyStatus> {
 
 /** Move `thread.new` off Mod+N. No-op when it is already free, and never
  * overwrites an override the user set themselves. */
-async function claimHotkey(bb: BbPluginApi): Promise<HotkeyStatus> {
-  const status = await hotkeyStatus(bb);
+async function claimHotkey(alia: AliaPluginApi): Promise<HotkeyStatus> {
+  const status = await hotkeyStatus(alia);
   if (status.state === "free") return status;
   if (status.reason === "user-override") {
-    bb.log.warn(
+    alia.log.warn(
       `${HOST_COMMAND} is bound to Mod+N by a user override; leaving it alone. ` +
-        `Run \`bb settings keyboard set ${HOST_COMMAND} disabled\` to free Ctrl/Cmd+N.`,
+        `Run \`alia settings keyboard set ${HOST_COMMAND} disabled\` to free Ctrl/Cmd+N.`,
     );
     return status;
   }
-  const config = await bb.sdk.system.config();
-  await bb.sdk.system.updateKeyboardSettings([
+  const config = await alia.sdk.system.config();
+  await alia.sdk.system.updateKeyboardSettings([
     ...config.keybindingOverrides.filter((entry) => entry.command !== HOST_COMMAND),
     { command: HOST_COMMAND, shortcut: { ...RELOCATED_SHORTCUT } },
   ]);
-  await bb.storage.kv.set(CLAIM_KEY, true);
-  bb.log.info(`moved ${HOST_COMMAND} to Mod+Shift+O; Ctrl/Cmd+N now opens Ultra Launcher`);
+  await alia.storage.kv.set(CLAIM_KEY, true);
+  alia.log.info(`moved ${HOST_COMMAND} to Mod+Shift+O; Ctrl/Cmd+N now opens Ultra Launcher`);
   return { state: "free", reason: "claimed" };
 }
 
-async function releaseHotkey(bb: BbPluginApi): Promise<HotkeyStatus> {
-  const claimed = (await bb.storage.kv.get<boolean>(CLAIM_KEY)) === true;
+async function releaseHotkey(alia: AliaPluginApi): Promise<HotkeyStatus> {
+  const claimed = (await alia.storage.kv.get<boolean>(CLAIM_KEY)) === true;
   if (claimed) {
-    const config = await bb.sdk.system.config();
+    const config = await alia.sdk.system.config();
     const ownedOverride = config.keybindingOverrides.find((entry) => {
       const shortcut = entry.shortcut;
       return entry.command === HOST_COMMAND && shortcut !== null &&
@@ -120,42 +120,42 @@ async function releaseHotkey(bb: BbPluginApi): Promise<HotkeyStatus> {
         !shortcut.control && !shortcut.alt;
     });
     if (ownedOverride) {
-      await bb.sdk.system.updateKeyboardSettings(
+      await alia.sdk.system.updateKeyboardSettings(
         config.keybindingOverrides.filter((entry) => entry !== ownedOverride),
       );
-      bb.log.info(`restored ${HOST_COMMAND} to BB's default binding`);
+      alia.log.info(`restored ${HOST_COMMAND} to VesnALIA's default binding`);
     }
-    await bb.storage.kv.delete(CLAIM_KEY);
+    await alia.storage.kv.delete(CLAIM_KEY);
   }
-  return hotkeyStatus(bb);
+  return hotkeyStatus(alia);
 }
 
 function describe(status: HotkeyStatus): string {
   switch (`${status.state}/${status.reason}`) {
     case "free/claimed":
-      return "Ctrl/Cmd+N opens Ultra Launcher (BB's New thread moved to Mod+Shift+O by this plugin).";
+      return "Ctrl/Cmd+N opens Ultra Launcher (VesnALIA's New thread moved to Mod+Shift+O by this plugin).";
     case "free/not-bound":
-      return "Ctrl/Cmd+N opens Ultra Launcher (BB does not bind it).";
+      return "Ctrl/Cmd+N opens Ultra Launcher (VesnALIA does not bind it).";
     case "free/user-override":
-      return "Ctrl/Cmd+N opens Ultra Launcher (you rebound BB's New thread yourself).";
+      return "Ctrl/Cmd+N opens Ultra Launcher (you rebound VesnALIA's New thread yourself).";
     case "taken/host-default":
-      return "BB's New thread still owns Ctrl/Cmd+N in the desktop app; run `bb ultra-launcher claim`.";
+      return "VesnALIA's New thread still owns Ctrl/Cmd+N in the desktop app; run `alia ultra-launcher claim`.";
     case "taken/user-override":
-      return "You bound BB's New thread to Ctrl/Cmd+N yourself; run `bb settings keyboard set thread.new disabled` to free it.";
+      return "You bound VesnALIA's New thread to Ctrl/Cmd+N yourself; run `alia settings keyboard set thread.new disabled` to free it.";
     default:
       return `${status.state} (${status.reason})`;
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     takeOverNewThreadHotkey: {
       type: "boolean",
       label: "Take over Ctrl/Cmd+N",
       description:
-        "Move BB's own New thread shortcut to Mod+Shift+O so Ctrl/Cmd+N opens the Ultra Launcher dialog in the desktop app. Turning this off restores BB's default.",
+        "Move VesnALIA's own New thread shortcut to Mod+Shift+O so Ctrl/Cmd+N opens the Ultra Launcher dialog in the desktop app. Turning this off restores VesnALIA's default.",
       default: true,
     },
   });
@@ -164,16 +164,16 @@ export default async function plugin(bb: BbPluginApi) {
   // combination this machine can actually run. A provider whose catalog fails
   // to load (signed out, CLI missing) simply contributes nothing.
   const loadCatalog = async (): Promise<Catalog> => {
-    const providers = await bb.sdk.providers.list();
+    const providers = await alia.sdk.providers.list();
     const entries = await Promise.all(
       providers
         .filter((provider) => provider.available)
         .map(async (provider): Promise<[string, readonly CatalogModel[]]> => {
           try {
-            const result = await bb.sdk.providers.models({ providerId: provider.id });
+            const result = await alia.sdk.providers.models({ providerId: provider.id });
             return [provider.id, result.modelLoadError ? [] : result.models];
           } catch (error) {
-            bb.log.warn(`catalog for ${provider.id} unavailable: ${error instanceof Error ? error.message : String(error)}`);
+            alia.log.warn(`catalog for ${provider.id} unavailable: ${error instanceof Error ? error.message : String(error)}`);
             return [provider.id, []];
           }
         }),
@@ -181,49 +181,49 @@ export default async function plugin(bb: BbPluginApi) {
     return new Map(entries);
   };
   const presetStore = createPresetStore({
-    read: () => bb.storage.kv.get("model-presets.v1"),
-    write: (value) => bb.storage.kv.set("model-presets.v1", value),
+    read: () => alia.storage.kv.get("model-presets.v1"),
+    write: (value) => alia.storage.kv.set("model-presets.v1", value),
     defaults: async () => resolveDefaultPresets(await loadCatalog()),
   });
   const selectionStore = createSelectionStore({
-    read: () => bb.storage.kv.get("model-presets.selected.v1"),
-    write: (value) => bb.storage.kv.set("model-presets.selected.v1", value),
+    read: () => alia.storage.kv.get("model-presets.selected.v1"),
+    write: (value) => alia.storage.kv.set("model-presets.selected.v1", value),
   });
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     get_presets: () => presetStore.read(),
     restore_default_presets: async () => {
       const next = await presetStore.restoreDefaults();
-      bb.realtime.publish(PRESETS_CHANNEL, { revision: next.revision });
+      alia.realtime.publish(PRESETS_CHANNEL, { revision: next.revision });
       return next;
     },
     get_selected_preset: () => selectionStore.read(),
     set_selected_preset: async ({ presetId }) => {
       const next = await selectionStore.write(presetId);
-      bb.realtime.publish(SELECTION_CHANNEL, next);
+      alia.realtime.publish(SELECTION_CHANNEL, next);
       return next;
     },
     save_presets: async ({ expectedRevision, presets }) => {
       const next = await presetStore.save(expectedRevision, presets);
-      bb.realtime.publish(PRESETS_CHANNEL, { revision: next.revision });
+      alia.realtime.publish(PRESETS_CHANNEL, { revision: next.revision });
       return next;
     },
     create_thread: async ({ request }) => {
-      // BB validates environment and prompt inputs at the spawn boundary.
-      const thread = await bb.sdk.threads.spawn(request as NewThreadRequest);
-      bb.log.info(`created thread ${thread.id}`);
+      // VesnALIA validates environment and prompt inputs at the spawn boundary.
+      const thread = await alia.sdk.threads.spawn(request as NewThreadRequest);
+      alia.log.info(`created thread ${thread.id}`);
       return { threadId: thread.id };
     },
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "ultra-launcher",
     summary: "Manage Ultra Launcher hotkeys and model presets",
     commands: [
-      { name: "presets", summary: "List saved model presets", usage: "bb ultra-launcher presets" },
-      { name: "restore-defaults", summary: "Replace saved presets with the recommended defaults", usage: "bb ultra-launcher restore-defaults" },
-      { name: "status", summary: "Show whether Ctrl/Cmd+N opens Ultra Launcher", usage: "bb ultra-launcher status" },
-      { name: "claim", summary: "Move BB's New thread off Ctrl/Cmd+N", usage: "bb ultra-launcher claim" },
-      { name: "release", summary: "Restore BB's default New thread binding", usage: "bb ultra-launcher release" },
+      { name: "presets", summary: "List saved model presets", usage: "alia ultra-launcher presets" },
+      { name: "restore-defaults", summary: "Replace saved presets with the recommended defaults", usage: "alia ultra-launcher restore-defaults" },
+      { name: "status", summary: "Show whether Ctrl/Cmd+N opens Ultra Launcher", usage: "alia ultra-launcher status" },
+      { name: "claim", summary: "Move VesnALIA's New thread off Ctrl/Cmd+N", usage: "alia ultra-launcher claim" },
+      { name: "release", summary: "Restore VesnALIA's default New thread binding", usage: "alia ultra-launcher release" },
     ],
     run: async (argv) => {
       const [action = "status"] = argv;
@@ -233,31 +233,31 @@ export default async function plugin(bb: BbPluginApi) {
       }
       if (action === "restore-defaults") {
         const next = await presetStore.restoreDefaults();
-        bb.realtime.publish(PRESETS_CHANNEL, { revision: next.revision });
+        alia.realtime.publish(PRESETS_CHANNEL, { revision: next.revision });
         return { exitCode: 0, stdout: JSON.stringify(next, null, 2) + "\n" };
       }
       if (!["status", "claim", "release"].includes(action)) {
         return {
           exitCode: 2,
-          stderr: "usage: bb ultra-launcher [status|presets|restore-defaults|claim|release]\n",
+          stderr: "usage: VesnALIA ultra-launcher [status|presets|restore-defaults|claim|release]\n",
         };
       }
       const status =
         action === "claim"
-          ? await claimHotkey(bb)
+          ? await claimHotkey(alia)
           : action === "release"
-            ? await releaseHotkey(bb)
-            : await hotkeyStatus(bb);
+            ? await releaseHotkey(alia)
+            : await hotkeyStatus(alia);
       return { exitCode: 0, stdout: `${describe(status)}\n` };
     },
   });
 
   const syncHotkey = async (takeOver: boolean) => {
     try {
-      const status = takeOver ? await claimHotkey(bb) : await releaseHotkey(bb);
-      bb.log.info(`hotkey: ${describe(status)}`);
+      const status = takeOver ? await claimHotkey(alia) : await releaseHotkey(alia);
+      alia.log.info(`hotkey: ${describe(status)}`);
     } catch (error) {
-      bb.log.warn(`hotkey sync failed: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`hotkey sync failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 

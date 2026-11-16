@@ -20,7 +20,7 @@ sources:
 
 # Data model
 
-TL;DR: The plugin persists one normalized preference object under the KV key `prefs`; locale and theme mode are stored separately in BB browser local storage.
+TL;DR: The plugin persists one normalized preference object under the KV key `prefs`; locale and theme mode are stored separately in VesnALIA browser local storage.
 
 ## Schema overview
 
@@ -66,7 +66,7 @@ The plugin KV record is read and written by the server; the complete shape and d
 | Field | Meaning | Allowed values / origin |
 |---|---|---|
 | `key` | KV key identifying this record | Constant `prefs` (`server.ts:10`) |
-| `loader` | Pending-row animation selection | `pokecut`, `drive`, `dots`, `orbit`, `coins`, `bb`; defaults to `pokecut` (`settings.ts:4-6`, `settings.ts:36-40`) |
+| `loader` | Pending-row animation selection | `pokecut`, `drive`, `dots`, `orbit`, `coins`, `alia`; defaults to `pokecut` (`settings.ts:4-6`, `settings.ts:36-40`) |
 | `toolChips` | Tool-call row surface treatment | `surface`, `outline`, `plain`; defaults to `surface` (`settings.ts:8-9`, `settings.ts:36-40`) |
 | `promptBar` | Enables prompt/composer styling helpers | Boolean; defaults `true` (`settings.ts:12-14`, `settings.ts:36-40`) |
 | `userBubbles` | Enables user-message bubble styling | Boolean; defaults `true` (`settings.ts:14-15`, `settings.ts:36-40`) |
@@ -88,7 +88,7 @@ The plugin KV record is read and written by the server; the complete shape and d
 | Record | Key | Value meaning | Allowed values / origin |
 |---|---|---|---|
 | Locale preference | `pokecut-theme:locale` | Overrides the UI language detector | `en` or `ru`; missing/invalid value means automatic detection (`i18n.ts:142-152`, `i18n.ts:180-190`) |
-| BB theme mode | `bb.theme` | Selects BB's appearance mode | `light`, `dark`, or `system`; unknown or missing values read as `system` (`theme-mode.tsx:9-19`) |
+| VesnALIA theme mode | `alia.theme` | Selects VesnALIA's appearance mode | `light`, `dark`, or `system`; unknown or missing values read as `system` (`theme-mode.tsx:9-19`) |
 
 These browser local-storage values are not plugin KV records.
 
@@ -106,15 +106,15 @@ The plugin preference record has no status-like field. Updates replace its norma
 
 | Use case | Writer | Reader | Retention / cleanup |
 |---|---|---|---|
-| Save chat appearance settings | `setPrefs` server handler via BB plugin KV (`server.ts:15-19`) | `getPrefs`, app overlay, settings form (`server.ts:13-14`, `prefs.ts:8-26`) | Persists in BB plugin storage; no cleanup job appears in this repository (`server.ts:13-19`) |
+| Save chat appearance settings | `setPrefs` server handler via VesnALIA plugin KV (`server.ts:15-19`) | `getPrefs`, app overlay, settings form (`server.ts:13-14`, `prefs.ts:8-26`) | Persists in VesnALIA plugin storage; no cleanup job appears in this repository (`server.ts:13-19`) |
 | Reset chat appearance | `resetPrefs` server handler (`server.ts:22-24`) | Same preference readers | Replaces prior value with defaults |
 | Locale choice | Settings section calls `setLocale` (`settings-section.tsx:58-69`) | `detectLocale`, settings section, theme helpers (`i18n.ts:172-190`) | Browser local storage; no cleanup job appears in this repository |
-| BB theme mode | Sidebar footer switch writes `bb.theme` (`theme-mode.tsx:43-59`) | BB and `readThemeMode` (`theme-mode.tsx:13-30`) | BB browser local storage; BB owns interpretation |
+| VesnALIA theme mode | Sidebar footer switch writes `alia.theme` (`theme-mode.tsx:43-59`) | VesnALIA and `readThemeMode` (`theme-mode.tsx:13-30`) | VesnALIA browser local storage; VesnALIA owns interpretation |
 
-The server also reads BB-owned thread and environment data to construct transient RPC responses; it does not persist those records (`server.ts:28-53`).
+The server also reads ALIA-owned thread and environment data to construct transient RPC responses; it does not persist those records (`server.ts:28-53`).
 
 <!-- lane-pilot:backlinks -->
 ## Referenced by
 
 - [Architecture](architecture.md)
-- [Pokecut Theme for BB overview](overview.md)
+- [Pokecut Theme for VesnALIA overview](overview.md)

@@ -5,7 +5,7 @@ import {
   experimental_ProviderModelPicker as ProviderModelPicker,
   useRpc,
   type ExperimentalProviderModelPickerValue as PickerValue,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type { z } from "zod";
 import type { preferencesSchema, Diagnosis } from "./settings";
@@ -67,8 +67,8 @@ function Panel() {
     } catch {
       setNotice(
         t(
-          "Не удалось выполнить действие. Проверь подключение к BB.",
-          "Action failed. Check your connection to BB.",
+          "Не удалось выполнить действие. Проверь подключение к ALIA.",
+          "Action failed. Check your connection to VesnALIA.",
         ),
       );
     } finally {
@@ -81,8 +81,8 @@ function Panel() {
     } catch {
       setNotice(
         t(
-          "Укажи полный адрес BB с https://",
-          "Enter the full BB URL starting with https://",
+          "Укажи полный адрес ALIA с https://",
+          "Enter the full VesnALIA URL starting with https://",
         ),
       );
       return;
@@ -110,11 +110,11 @@ function Panel() {
       <main className="max-w-4xl mx-auto p-6 pb-12 space-y-4">
         <header className="tg-strip flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">Telegram · BB</h1>
+            <h1 className="text-2xl font-semibold">Telegram · VesnALIA</h1>
             <p className="text-sm text-muted-foreground mt-1">
               {t(
-                "Темы проектов, отчёты агентов, задачи и чат с BB.",
-                "Project topics, agent reports, tasks and chat with BB.",
+                "Темы проектов, отчёты агентов, задачи и чат с ALIA.",
+                "Project topics, agent reports, tasks and chat with VesnALIA.",
               )}
             </p>
           </div>
@@ -365,8 +365,8 @@ function Overview(props: {
           <div className="tg-inner space-y-2">
             <p className="text-sm">
               {t(
-                "Если темы бота уже есть, привяжи их командой bb telegram-projects bind <project-id> <topic-id>, иначе создай набор тем.",
-                "If the bot already has topics, bind them with bb telegram-projects bind <project-id> <topic-id>; otherwise create the topic set.",
+                "Если темы бота уже есть, привяжи их командой VesnALIA telegram-projects bind <project-id> <topic-id>, иначе создай набор тем.",
+                "If the bot already has topics, bind them with VesnALIA telegram-projects bind <project-id> <topic-id>; otherwise create the topic set.",
               )}
             </p>
             <button
@@ -551,7 +551,7 @@ const GROUPS: {
   },
 ];
 
-// Full agent reply or a summary written by any BB model the user picks.
+// Full agent reply or a summary written by any VesnALIA model the user picks.
 function ReportTab(props: {
   t: T;
   rpc: Rpc;
@@ -615,8 +615,8 @@ function ReportTab(props: {
               "The card carries the agent's whole reply in a collapsed block.",
             )
           : t(
-              "Выбранная модель BB пишет 3–6 пунктов: что сделано, итог, что требует внимания. Модель работает в скрытом треде и только с текстом ответа. Если саммери не готово за 3 минуты, приходит полный ответ. Короткие ответы приходят как есть.",
-              "The chosen BB model writes 3–6 points: what was done, the result, what needs attention. It runs in a hidden thread on the reply text only. If the summary is not ready within 3 minutes, the full reply is sent. Short replies are sent as is.",
+              "Выбранная модель ALIA пишет 3–6 пунктов: что сделано, итог, что требует внимания. Модель работает в скрытом треде и только с текстом ответа. Если саммери не готово за 3 минуты, приходит полный ответ. Короткие ответы приходят как есть.",
+              "The chosen VesnALIA model writes 3–6 points: what was done, the result, what needs attention. It runs in a hidden thread on the reply text only. If the summary is not ready within 3 minutes, the full reply is sent. Short replies are sent as is.",
             )}
       </p>
       {form.reportMode === "summary" && (
@@ -628,12 +628,12 @@ function ReportTab(props: {
             <ProviderModelPicker value={value} onChange={choose} />
           ) : (
             <span className="text-sm text-muted-foreground">
-              {t("Загружаю модели BB…", "Loading BB models…")}
+              {t("Загружаю модели ALIA…", "Loading VesnALIA models…")}
             </span>
           )}
           {!form.summaryProvider && value && (
             <span className="text-sm text-muted-foreground">
-              {t("модель BB по умолчанию", "BB default model")}
+              {t("модель ALIA по умолчанию", "VesnALIA default model")}
             </span>
           )}
         </div>
@@ -1066,7 +1066,7 @@ function ConnectionTab(props: {
       <Owner t={t} rpc={rpc} busy={props.busy} action={props.action} />
       <Section title={t("Ссылки в сообщениях", "Links in messages")}>
         <label className="block font-medium">
-          {t("Публичный адрес BB", "Public BB URL")}
+          {t("Публичный адрес ALIA", "Public VesnALIA URL")}
           <input
             type="url"
             className="tg-input block w-full mt-2"
@@ -1185,8 +1185,8 @@ function Owner(props: {
           </li>
           <li>
             {t(
-              "Бот ответит «Бот привязан к BB», и эта страница обновится сама.",
-              "The bot replies that it is linked to BB, and this page updates by itself.",
+              "Бот ответит «Бот привязан к ALIA», и эта страница обновится сама.",
+              "The bot replies that it is linked to VesnALIA, and this page updates by itself.",
             )}
           </li>
         </ol>
@@ -1295,10 +1295,10 @@ function GeneralTab(props: {
           onChange={(v) => setForm({ ...form, enabled: v })}
         />
         <Toggle
-          title={t("Общение с BB", "Chat with BB")}
+          title={t("Общение с ALIA", "Chat with VesnALIA")}
           hint={t(
-            "Сообщения и голос из подключённой темы поступают в чат BB.",
-            "Text and voice from connected topics go to the BB chat.",
+            "Сообщения и голос из подключённой темы поступают в чат ALIA.",
+            "Text and voice from connected topics go to the VesnALIA chat.",
           )}
           checked={form.chatEnabled}
           onChange={(v) => setForm({ ...form, chatEnabled: v })}
@@ -1319,8 +1319,8 @@ function GeneralTab(props: {
           className="tg-input block w-full mt-2"
           value={form.timeZone}
           placeholder={t(
-            "Например, Europe/Moscow. Пусто — часовой пояс сервера BB",
-            "For example, Europe/London. Empty uses the BB server's zone",
+            "Например, Europe/Moscow. Пусто — часовой пояс сервера ALIA",
+            "For example, Europe/London. Empty uses the VesnALIA server's zone",
           )}
           onChange={(e) =>
             setForm({ ...form, timeZone: e.target.value.trim() })

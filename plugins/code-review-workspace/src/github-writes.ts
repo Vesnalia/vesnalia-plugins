@@ -173,13 +173,13 @@ const REFUSALS: { kind: string; match: RegExp; error: string | ((text: string, a
   { kind: "missing-scope", match: /organization teams|required scopes?|not been granted|needs the "[^"]+" scope/i, error: (text) => {
     const scope = text.match(/scopes? \[([^\]]+)\]/i)?.[1] ?? text.match(/needs the "([^"]+)" scope/i)?.[1] ?? (/organization teams/i.test(text) ? "read:org" : undefined);
     return scope
-      ? `The GitHub login on the BB server is missing the ${scope} scope. Run gh auth refresh -h github.com -s ${scope.replace(/\s+/g, "")} there, then try again.`
-      : "The GitHub login on the BB server is missing a scope this needs. Run gh auth status there to see its scopes.";
+      ? `The GitHub login on the VesnALIA server is missing the ${scope} scope. Run gh auth refresh -h github.com -s ${scope.replace(/\s+/g, "")} there, then try again.`
+      : "The GitHub login on the VesnALIA server is missing a scope this needs. Run gh auth status there to see its scopes.";
   } },
   // unverified (H2): SAML single sign-on refusals
-  { kind: "sso", match: /SAML|single sign-on/i, error: "This organization requires single sign-on, and the GitHub login on the BB server isn't authorized for it. Authorize it on GitHub, then try again." },
+  { kind: "sso", match: /SAML|single sign-on/i, error: "This organization requires single sign-on, and the GitHub login on the VesnALIA server isn't authorized for it. Authorize it on GitHub, then try again." },
   // unverified (H2): a token that can't reach the repo
-  { kind: "token", match: /not accessible by (personal access token|integration)/i, error: "The GitHub token on the BB server isn't allowed to do this on this repo. Give it access, or sign in again with gh auth login, then try again." },
+  { kind: "token", match: /not accessible by (personal access token|integration)/i, error: "The GitHub token on the VesnALIA server isn't allowed to do this on this repo. Give it access, or sign in again with gh auth login, then try again." },
   // unverified (H2): role refusals beyond HTTP 403
   { kind: "forbidden", match: /must have (admin|push|write|maintain)|does not have (the correct )?permissions?|\bFORBIDDEN\b/i, error: (_, action) => forbidden(action) },
 ];

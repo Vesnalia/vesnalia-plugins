@@ -107,7 +107,7 @@ describe("Insights › Usage", () => {
     expect((within(nav).getByLabelText("Pick a day") as HTMLInputElement).min).toBe(addDays(today, -3));
   });
 
-  it("says it needs Burn when bb has no Burn, and shows no figures", async () => {
+  it("says it needs Burn when VesnALIA has no Burn, and shows no figures", async () => {
     const { slot } = await page("insights/usage", { usage: () => usage({ source: { state: "missing", message: 'unknown plugin "burn"', at: NOW, unread: 7 } }) });
     const note = await find(slot.container, "[data-usage-source=missing]");
     expect(note.textContent).toContain("Token usage comes from the Burn plugin");

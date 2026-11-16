@@ -1,21 +1,12 @@
 {
-  "name": "@smsunarto/bb-plugin-agent-proxy",
+  "name": "@smsunarto/alia-plugin-agent-proxy",
   "version": "0.2.4",
   "description": "Run CLIProxyAPI as a persistent macOS or Linux service with OAuth accounts, providers, usage, and agent wiring.",
   "license": "MIT",
   "author": "Scott Sunarto",
-  "homepage": "https://github.com/smsunarto/bb-plugins/tree/main/plugins/agent-proxy",
-  "bugs": {
-    "url": "https://github.com/smsunarto/bb-plugins/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/smsunarto/bb-plugins.git",
-    "directory": "plugins/agent-proxy"
-  },
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "cliproxyapi",
     "proxy",
     "llm",
@@ -29,10 +20,10 @@
   },
   "type": "module",
   "engines": {
-    "bb": ">=0.40.0 <1.0.0",
-    "bbPluginSdk": ">=0.4.21"
+    "alia": ">=0.40.0 <1.0.0",
+    "aliaPluginSdk": ">=0.4.21"
   },
-  "bb": {
+  "alia": {
     "name": "Agent Proxy",
     "description": "Run CLIProxyAPI as a persistent macOS or Linux service with OAuth accounts, providers, usage, and agent wiring.",
     "branding": {
@@ -76,7 +67,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.21",
     "@radix-ui/react-dialog": "^1.1.19",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
@@ -89,9 +79,26 @@
   },
   "scripts": {
     "dev": "bun ../../scripts/dev-plugin.ts",
-    "build": "bb plugin build .",
+    "build": "alia plugin build .",
     "typecheck": "tsc --noEmit",
     "test": "bun test --timeout=30000 test/*.test.ts",
     "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.21"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/agent-proxy#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/agent-proxy"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

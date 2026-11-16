@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-project-explorer",
+  "name": "alia-plugin-project-explorer",
   "version": "0.1.4",
   "type": "module",
   "engines": {
-    "bb": ">=0.42",
-    "bbPluginSdk": ">=0.4.47"
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.4.47"
   },
-  "bb": {
+  "alia": {
     "name": "Project Explorer",
     "description": "A git-aware file tree and editor in the thread side panel.",
     "branding": {
@@ -21,7 +21,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.47",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -31,9 +30,22 @@
     "typescript": "^5.7.0"
   },
   "license": "MIT",
-  "description": "A git-aware file tree and editor in the BB thread side panel.",
+  "description": "A git-aware file tree and editor in the VesnALIA thread side panel.",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.47"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/project-explorer#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ninjasweb/bb-plugin-project-explorer.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/project-explorer"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -179,7 +179,7 @@ describe("wording (pure)", () => {
     const code = clipWords("Replace the scan with a cheap `lineStartIndex` table built once", 40);
     expect(code).toBe("Replace the scan with a cheap…");
     expect((code.match(/`/gu) ?? []).length % 2).toBe(0);
-    expect(clipWords("Use `a` and `bb` then more words", 20)).toBe("Use `a` and `bb`…");
+    expect(clipWords("Use `a` and `VesnALIA` then more words", 20)).toBe("Use `a` and `alia`…");
     expect(clipWords("short", 80)).toBe("short");
     // One word longer than the limit: cut it, but drop backticks rather than leave one open.
     expect(clipWords("`averyveryverylongidentifier`", 10)).toBe("averyver…");

@@ -13,7 +13,7 @@
 // It returns rows, not raw state, so the loader effect can key off what is
 // actually on screen.
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { useRealtime, useRealtimeConnectionState } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState } from "@vesnalia/plugin-sdk/app";
 
 import { FS_CHANNEL, type FileEntry } from "../contract";
 import { parseRpcError } from "../lib/errors";

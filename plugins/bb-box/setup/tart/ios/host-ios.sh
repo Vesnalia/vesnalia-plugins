@@ -7,8 +7,8 @@ here=$1
 owner=$2
 step() { printf '%s  %s\n' "$(date +%H:%M:%S)" "$*" >&2; }
 
-share=/usr/local/share/bb-box
-libexec=/usr/local/libexec/bb-box
+share=/usr/local/share/alia-box
+libexec=/usr/local/libexec/alia-box
 helper=$libexec/device-host
 [ "$(id -u)" = 0 ] || die "run it as root"
 id -u "$owner" >/dev/null 2>&1 || die "there is no user $owner"

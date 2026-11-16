@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { dirname, extname, join, relative, sep } from "node:path";
-import type { BbPluginApi, PluginCliContext, PluginCliResult, PluginRpcHandlers } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginCliContext, PluginCliResult, PluginRpcHandlers } from "@vesnalia/plugin-sdk";
 import { transformForExport, transformForReview } from "./lib/html-transform";
 import { buildCompanionNote } from "./lib/kb-note";
 import { buildFeedbackMessage } from "./lib/message";
@@ -11,7 +11,7 @@ import { isMarkdownPath, sourceDocumentHtml } from "./lib/source-document";
 import { openStore, type Revision, type Session, type Store } from "./lib/store";
 
 type Runtime = {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   store: Store;
   dataDir: string;
   capabilities: { newWindow: boolean; markdownEditing: boolean };
@@ -47,18 +47,18 @@ function requireRevision(store: Store, sessionId: string): Revision {
 }
 
 function publish(runtime: Runtime, sessionId: string, revisionId: string, reason: ChangeReason): void {
-  runtime.bb.realtime.publish("noted:session-changed", { sessionId, revisionId, reason });
+  runtime.alia.realtime.publish("noted:session-changed", { sessionId, revisionId, reason });
 }
 
 async function displayPathFor(runtime: Runtime, session: Session): Promise<string> {
   if (session.sourceKind === "thread-storage") {
-    const storage = await runtime.bb.sdk.threads.storageLocation({ threadId: session.producerThreadId });
+    const storage = await runtime.alia.sdk.threads.storageLocation({ threadId: session.producerThreadId });
     return relativePathWithinRoot(storage.storageRootPath, session.absolutePath);
   }
   if (session.sourceKind === "workspace") {
-    const thread = await runtime.bb.sdk.threads.get({ threadId: session.producerThreadId });
+    const thread = await runtime.alia.sdk.threads.get({ threadId: session.producerThreadId });
     if (thread.environmentId !== null) {
-      const environment = await runtime.bb.sdk.environments.get({ environmentId: thread.environmentId });
+      const environment = await runtime.alia.sdk.environments.get({ environmentId: thread.environmentId });
       if (typeof environment.path === "string") return relative(environment.path, session.absolutePath);
     }
   }
@@ -71,7 +71,7 @@ async function captureRevision(
   trigger: Revision["trigger"],
 ): Promise<{ html: string; revision: Revision; changed: boolean }> {
   const latest = runtime.store.latestRevision(session.id);
-  const file = await runtime.bb.sdk.files.read({
+  const file = await runtime.alia.sdk.files.read({
     hostId: session.hostId ?? undefined,
     path: session.absolutePath,
   }).catch((error: unknown) => {
@@ -108,7 +108,7 @@ function assetReaderFor(
       }
     }
     try {
-      const file = await runtime.bb.sdk.files.read({
+      const file = await runtime.alia.sdk.files.read({
         hostId,
         path: absolutePath,
       });
@@ -134,15 +134,15 @@ async function sourceLocation(runtime: Runtime, source: {
   let relativeFile = source.absolutePath.slice(rootPath.length + 1);
 
   if (source.sourceKind === "thread-storage") {
-    const storage = await runtime.bb.sdk.threads.storageLocation({
+    const storage = await runtime.alia.sdk.threads.storageLocation({
       threadId: source.producerThreadId,
     });
     rootPath = storage.storageRootPath;
     relativeFile = relativePathWithinRoot(rootPath, source.absolutePath);
   } else if (source.sourceKind === "workspace") {
-    const thread = await runtime.bb.sdk.threads.get({ threadId: source.producerThreadId });
+    const thread = await runtime.alia.sdk.threads.get({ threadId: source.producerThreadId });
     if (thread.environmentId !== null) {
-      const environment = await runtime.bb.sdk.environments.get({
+      const environment = await runtime.alia.sdk.environments.get({
         environmentId: thread.environmentId,
       });
       if (typeof environment.path === "string") {
@@ -165,7 +165,7 @@ async function readAndTransform(runtime: Runtime, session: Session, trigger: Rev
   const captured = await captureRevision(runtime, session, trigger);
   const assetRootPath = dirname(session.absolutePath);
   const previewLocation = await sourceLocation(runtime, session);
-  const preview = await runtime.bb.sdk.files.createPreview({
+  const preview = await runtime.alia.sdk.files.createPreview({
     hostId: session.hostId ?? undefined,
     rootPath: previewLocation.rootPath,
     ttlMs: 600_000,
@@ -217,10 +217,10 @@ async function sessionPayload(runtime: Runtime, sessionId: string, trigger: Revi
 }
 
 export async function openSessionCore(runtime: Runtime, input: OpenSessionInput) {
-  const viewThreadId = await resolveRole(runtime.bb.sdk, input.threadId, input.view);
-  const replyThreadId = await resolveRole(runtime.bb.sdk, input.threadId, input.replyTo);
+  const viewThreadId = await resolveRole(runtime.alia.sdk, input.threadId, input.view);
+  const replyThreadId = await resolveRole(runtime.alia.sdk, input.threadId, input.replyTo);
   const artifact = await resolveArtifact(
-    runtime.bb.sdk,
+    runtime.alia.sdk,
     input.threadId,
     input.path,
     undefined,
@@ -238,7 +238,7 @@ export async function openSessionCore(runtime: Runtime, input: OpenSessionInput)
     if (ended !== undefined && input.reopen !== true) {
       throw new Error("session ended; pass reopen to open it again");
     }
-    const producerThread = await runtime.bb.sdk.threads.get({ threadId: input.threadId });
+    const producerThread = await runtime.alia.sdk.threads.get({ threadId: input.threadId });
     session = runtime.store.createSession({
       producerThreadId: input.threadId,
       viewThreadId,
@@ -268,7 +268,7 @@ export async function openSessionCore(runtime: Runtime, input: OpenSessionInput)
     publish(runtime, session.id, payload.revision.id, "roles");
   }
   if (session.viewThreadId === input.threadId && session.sourceKind !== "host") {
-    await runtime.bb.sdk.threads.open({
+    await runtime.alia.sdk.threads.open({
       threadId: session.viewThreadId,
       file: { path: payload.displayPath, source: session.sourceKind, lineNumber: null },
     });
@@ -278,11 +278,11 @@ export async function openSessionCore(runtime: Runtime, input: OpenSessionInput)
 }
 
 const CLI_USAGES = {
-  open: "Usage: bb noted open <file> [--view <thread>] [--reply-to <thread>] [--reopen] [--json]",
-  reply: "Usage: bb noted reply <text...> [--json]",
-  status: "Usage: bb noted status [<file>] [--json]",
-  end: "Usage: bb noted end <file>",
-  file: "Usage: bb noted file <file> --to <folder> --title <title> --summary <text> [--profile <name>] [--json]",
+  open: "Usage: VesnALIA noted open <file> [--view <thread>] [--reply-to <thread>] [--reopen] [--json]",
+  reply: "Usage: VesnALIA noted reply <text...> [--json]",
+  status: "Usage: VesnALIA noted status [<file>] [--json]",
+  end: "Usage: VesnALIA noted end <file>",
+  file: "Usage: VesnALIA noted file <file> --to <folder> --title <title> --summary <text> [--profile <name>] [--json]",
 } as const;
 
 type ParsedCliArgs = {
@@ -347,10 +347,10 @@ async function runNotedCli(
     && command !== "end"
     && command !== "file"
   ) {
-    return { exitCode: 1, stderr: "Usage: bb noted <open|reply|status|end|file>" };
+    return { exitCode: 1, stderr: "Usage: VesnALIA noted <open|reply|status|end|file>" };
   }
   if (ctx.threadId === undefined) {
-    return { exitCode: 1, stderr: `bb noted ${command} must run inside a bb thread` };
+    return { exitCode: 1, stderr: `alia noted ${command} must run inside a VesnALIA thread` };
   }
 
   const parsed = parseCliArgs(argv.slice(1));
@@ -416,7 +416,7 @@ async function runNotedCli(
       const file = parsed.positionals[0];
       if (file !== undefined) {
         const artifact = await resolveArtifact(
-          runtime.bb.sdk,
+          runtime.alia.sdk,
           threadId,
           file,
           ctx.cwd,
@@ -456,7 +456,7 @@ async function runNotedCli(
       const file = parsed.positionals[0];
       if (file === undefined) return { exitCode: 1, stderr: CLI_USAGES.end };
       const artifact = await resolveArtifact(
-        runtime.bb.sdk,
+        runtime.alia.sdk,
         threadId,
         file,
         ctx.cwd,
@@ -482,13 +482,13 @@ async function runNotedCli(
       return { exitCode: 1, stderr: CLI_USAGES.file };
     }
     const artifact = await resolveArtifact(
-      runtime.bb.sdk,
+      runtime.alia.sdk,
       threadId,
       file,
       ctx.cwd,
       runtime.dataDir,
     );
-    const source = await runtime.bb.sdk.files.read({
+    const source = await runtime.alia.sdk.files.read({
       hostId: artifact.hostId,
       path: artifact.absolutePath,
     });
@@ -523,14 +523,14 @@ async function runNotedCli(
     const noteName = `${created}_${slug}.md`;
     const htmlPath = join(parsed.to, htmlName);
     const notePath = join(parsed.to, noteName);
-    await runtime.bb.sdk.files.write({
+    await runtime.alia.sdk.files.write({
       hostId: artifact.hostId,
       path: htmlPath,
       rootPath: parsed.to,
       content: exported.html,
       expectedSha256: null,
     });
-    await runtime.bb.sdk.files.write({
+    await runtime.alia.sdk.files.write({
       hostId: artifact.hostId,
       path: notePath,
       rootPath: parsed.to,
@@ -559,19 +559,19 @@ async function runNotedCli(
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  const store = openStore(db, (database, statements) => bb.storage.migrate(database, statements));
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  const store = openStore(db, (database, statements) => alia.storage.migrate(database, statements));
+  const settings = alia.settings.define({
     newWindow: { type: "boolean", label: "Review windows", default: false },
     markdownEditing: { type: "boolean", label: "Markdown editing", default: false },
   });
-  const runtime: Runtime = { bb, store, dataDir: bb.server.experimental_dataDir, capabilities: await settings.get() };
+  const runtime: Runtime = { alia, store, dataDir: alia.server.experimental_dataDir, capabilities: await settings.get() };
   settings.onChange((next) => {
     runtime.capabilities = next;
-    bb.realtime.publish("noted:capabilities-changed", next);
+    alia.realtime.publish("noted:capabilities-changed", next);
   });
-  bb.cli.register({
+  alia.cli.register({
     name: "noted",
     summary: "Review HTML and Markdown artifacts with the user in the side panel (built on Lavish)",
     commands: [
@@ -599,7 +599,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (!isMarkdownPath(session.absolutePath)) throw new Error("Only Markdown files can be edited.");
       let written;
       try {
-        written = await bb.sdk.files.write({
+        written = await alia.sdk.files.write({
           hostId: session.hostId ?? undefined,
           path: session.absolutePath,
           content,
@@ -608,7 +608,7 @@ export default async function plugin(bb: BbPluginApi) {
         });
         if (written.outcome === "conflict") throw new Error("The file changed since editing began. Your draft has not been saved.");
       } catch (error) {
-        bb.log.warn(JSON.stringify({ event: "noted.markdown.save", sessionId, outcome: "failed" }));
+        alia.log.warn(JSON.stringify({ event: "noted.markdown.save", sessionId, outcome: "failed" }));
         throw error;
       }
       const { sha256, sizeBytes } = written;
@@ -616,11 +616,11 @@ export default async function plugin(bb: BbPluginApi) {
         const latest = store.latestRevision(sessionId);
         const revision = latest?.sha256 === sha256 ? latest : store.addRevision(sessionId, sha256, sizeBytes, "manual");
         publish(runtime, sessionId, revision.id, "revision");
-        bb.log.info(JSON.stringify({ event: "noted.markdown.save", sessionId, outcome: "saved", revisionId: revision.id }));
+        alia.log.info(JSON.stringify({ event: "noted.markdown.save", sessionId, outcome: "saved", revisionId: revision.id }));
       } catch {
         // The file is committed. getSession reconciles its revision on the next read.
         try {
-          bb.log.warn(JSON.stringify({ event: "noted.markdown.save", sessionId, outcome: "saved_refresh_pending" }));
+          alia.log.warn(JSON.stringify({ event: "noted.markdown.save", sessionId, outcome: "saved_refresh_pending" }));
         } catch { /* The plugin may have been disposed while the host write completed. */ }
       }
       return { sha256 };
@@ -694,7 +694,7 @@ export default async function plugin(bb: BbPluginApi) {
       });
       let batch;
       try {
-        const result = await bb.sdk.threads.send({
+        const result = await alia.sdk.threads.send({
           threadId: session.replyThreadId,
           mode,
           input: [{ type: "text", text: messageText, mentions: [] }],
@@ -726,8 +726,8 @@ export default async function plugin(bb: BbPluginApi) {
     },
   } satisfies PluginRpcHandlers<typeof rpcContract>;
 
-  bb.rpc.register(rpcContract, handlers);
-  bb.agents.contributeInstructions(({ threadId }) => {
+  alia.rpc.register(rpcContract, handlers);
+  alia.agents.contributeInstructions(({ threadId }) => {
     const sessions = store.listSessionsForThread(threadId).filter((session) =>
       session.status === "open" && session.replyThreadId === threadId
     );
@@ -739,7 +739,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
 
-  bb.events.on("thread.idle", async ({ thread }) => {
+  alia.events.on("thread.idle", async ({ thread }) => {
     const sessions = store.listSessionsForThread(thread.id).filter((session) =>
       session.status === "open"
       && (session.producerThreadId === thread.id || session.replyThreadId === thread.id)
@@ -760,9 +760,9 @@ export default async function plugin(bb: BbPluginApi) {
       publish(runtime, session.id, revision.id, "ended");
     }
   };
-  bb.events.on("thread.deleted", endReplyThreadSessions);
-  bb.events.on("thread.archived", endReplyThreadSessions);
+  alia.events.on("thread.deleted", endReplyThreadSessions);
+  alia.events.on("thread.archived", endReplyThreadSessions);
 
-  bb.log.info("noted loaded");
-  bb.onDispose(() => bb.log.info("noted disposed"));
+  alia.log.info("noted loaded");
+  alia.onDispose(() => alia.log.info("noted disposed"));
 }

@@ -349,7 +349,7 @@ describe("model catalog", () => {
 });
 
 describe("permission policy", () => {
-  it("stops asking whenever bb, not the user, is the reviewer", async () => {
+  it("stops asking whenever VesnALIA, not the user, is the reviewer", async () => {
     const { museApprovalMode } = await import("../src/vocabulary.js");
     expect(
       museApprovalMode({
@@ -374,12 +374,12 @@ describe("permission policy", () => {
     ).toBe("onRequest");
   });
 
-  it("matches an MCP tool name back to the tool bb declared", async () => {
+  it("matches an MCP tool name back to the tool VesnALIA declared", async () => {
     const { stripMcpPrefix } = await import("../src/provider-bridge.js");
-    expect(stripMcpPrefix("mcp__bb_bridge__ultragoal_state")).toBe(
+    expect(stripMcpPrefix("mcp__alia_bridge__ultragoal_state")).toBe(
       "ultragoal_state",
     );
-    expect(stripMcpPrefix("mcp__bb_bridge.ultragoal_state")).toBe(
+    expect(stripMcpPrefix("mcp__alia_bridge.ultragoal_state")).toBe(
       "ultragoal_state",
     );
     expect(stripMcpPrefix("muse.bash")).toBe("muse.bash");
@@ -387,22 +387,22 @@ describe("permission policy", () => {
 });
 
 describe("session instructions", () => {
-  it("delivers bb's instructions ahead of the user's prompt", async () => {
+  it("delivers VesnALIA's instructions ahead of the user's prompt", async () => {
     const { withInstructions } = await import("../src/provider-bridge.js");
     const parts = withInstructions(
       [{ type: "text", text: "Continue from @thread:thr_x" }],
-      "You are working inside bb.",
+      "You are working inside VesnALIA.",
     );
     expect(parts).toEqual([
       {
         type: "text",
-        text: "<system_instructions>\nYou are working inside bb.\n</system_instructions>",
+        text: "<system_instructions>\nYou are working inside VesnALIA.\n</system_instructions>",
       },
       { type: "text", text: "Continue from @thread:thr_x" },
     ]);
   });
 
-  it("leaves the prompt untouched when bb sent no instructions", async () => {
+  it("leaves the prompt untouched when VesnALIA sent no instructions", async () => {
     const { withInstructions } = await import("../src/provider-bridge.js");
     const parts = [{ type: "text" as const, text: "hello" }];
     expect(withInstructions(parts, null)).toEqual(parts);
@@ -424,7 +424,7 @@ describe("handoff into a replaced session", () => {
     );
   });
 
-  it("carries the user's own words, not the wrappers bb added", async () => {
+  it("carries the user's own words, not the wrappers VesnALIA added", async () => {
     const { handoffTranscript } = await import("../src/provider-bridge.js");
     expect(
       handoffTranscript([
@@ -483,7 +483,7 @@ describe("turn failure classification", () => {
     expect(classified.hint).toBeNull();
   });
 
-  it("types an expired login and a rate limit for bb to act on", async () => {
+  it("types an expired login and a rate limit for VesnALIA to act on", async () => {
     const { classifyTurnFailure } = await import("../src/recovery.js");
     const auth = classifyTurnFailure(failed("request failed: 401 unauthorized"));
     expect(auth.hint).toMatchObject({ kind: "authRequired" });
@@ -566,7 +566,7 @@ describe("typed provider errors", () => {
 });
 
 describe("error classification", () => {
-  it("maps the conditions bb's retry policy acts on", async () => {
+  it("maps the conditions VesnALIA's retry policy acts on", async () => {
     const { museProviderErrorInfo } = await import("../src/error-info.js");
     const category = (message: string, kind?: string) =>
       museProviderErrorInfo(kind === undefined ? { message } : { kind, message })
@@ -612,7 +612,7 @@ describe("error classification", () => {
 });
 
 /**
- * The grammar check the unit assertions above cannot make: bb's own assembler
+ * The grammar check the unit assertions above cannot make: VesnALIA's own assembler
  * discards an `item.*Delta` that names no turn, so a bridge can emit a
  * perfectly-shaped delta for every token and still put nothing on screen until
  * the item's terminal snapshot lands. These run the real assembler.
@@ -620,7 +620,7 @@ describe("error classification", () => {
 describe("assembled stream", () => {
   async function assemble(deltas: readonly unknown[]): Promise<string[]> {
     const { experimental_createDeltaAssembler: createDeltaAssembler } =
-      await import("@get-bb/plugin-sdk/provider-bridge/testing");
+      await import("@vesnalia/plugin-sdk/provider-bridge/testing");
     const assembler = createDeltaAssembler({ providerId: "muse" });
     return assembler
       .assemble({
@@ -692,7 +692,7 @@ describe("assembled stream", () => {
  * Muse accepts an image on the wire and then cannot keep it: the model behind
  * it rejects the session the moment that media replays as history — "retained
  * media history is unsupported by target provider `muse`". That costs the
- * conversation, not just the image, so bb does not send one.
+ * conversation, not just the image, so VesnALIA does not send one.
  *
  * And when Muse reads one with its own tool, the failure must say so. It is
  * the same recovery as a route change but not the same cause, and reporting a

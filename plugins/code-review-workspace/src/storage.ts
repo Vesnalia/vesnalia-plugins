@@ -2,7 +2,7 @@
 // The kv marker storage:owner names the one that holds this install's reviews; the storage CLI moves them and it. Until
 // the settings and the marker agree, and the Postgres settings are complete, the plugin is in maintenance: it serves its
 // CLI and nothing else, and never falls back to SQLite. Settings apply when the plugin loads.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import pg from "pg";
 import { pgSql, PgWriterLockError, type PgOptions, type PgSql, type PgSsl } from "./db/pg";
 
@@ -12,11 +12,11 @@ type Backend = "sqlite" | "postgres";
 
 const BACKENDS: readonly Backend[] = ["sqlite", "postgres"];
 
-function defineStorageSettings(bb: BbPluginApi) {
-  return bb.settings.define({
+function defineStorageSettings(alia: AliaPluginApi) {
+  return alia.settings.define({
     storageBackend: {
       type: "select", label: "Storage", options: ["sqlite", "postgres"], default: "sqlite",
-      description: "Where the reviews are kept: SQLite, in BB's data directory, or Postgres. Changing this alone stops the plugin at its next load, until bb review storage migrate (or export-sqlite --replace-data-db) moves the reviews, or it's set back.",
+      description: "Where the reviews are kept: SQLite, in VesnALIA's data directory, or Postgres. Changing this alone stops the plugin at its next load, until VesnALIA review storage migrate (or export-sqlite --replace-data-db) moves the reviews, or it's set back.",
     },
     postgresUrl: {
       type: "string", label: "Postgres URL",
@@ -25,7 +25,7 @@ function defineStorageSettings(bb: BbPluginApi) {
     postgresPassword: { type: "string", label: "Postgres password", secret: true },
     postgresSchema: {
       type: "string", label: "Postgres schema", default: "code_review_workspace",
-      description: "The schema the tables are in. bb review storage migrate creates it if it's missing; the plugin never does.",
+      description: "The schema the tables are in. VesnALIA review storage migrate creates it if it's missing; the plugin never does.",
     },
     postgresSsl: {
       type: "select", label: "Postgres TLS", options: ["verify-full", "require", "disable"], default: "require",
@@ -40,7 +40,7 @@ function defineStorageSettings(bb: BbPluginApi) {
 
 export type StorageSettings = Awaited<ReturnType<ReturnType<typeof defineStorageSettings>["get"]>>;
 
-/** What bb review storage status reports. */
+/** What VesnALIA review storage status reports. */
 export interface StorageStatus {
   /** storageBackend, as the settings have it. */
   readonly configured: string;
@@ -74,18 +74,18 @@ export function redactor(settings: StorageSettings) {
 }
 
 /**
- * Define the storage settings and choose the backend from them and storage:owner. Reads bb.db alone, so the factory
+ * Define the storage settings and choose the backend from them and storage:owner. Reads alia.db alone, so the factory
  * can call it while the instance a reload replaces still holds Postgres: a Postgres choice has connected to nothing.
  */
-export async function chooseStorage(bb: BbPluginApi): Promise<StorageChoice> {
-  const defined = defineStorageSettings(bb);
-  defined.onChange(() => { bb.log.info(`Storage settings changed: they apply once the plugin reloads (bb plugin reload ${bb.pluginId}).`); });
+export async function chooseStorage(alia: AliaPluginApi): Promise<StorageChoice> {
+  const defined = defineStorageSettings(alia);
+  defined.onChange(() => { alia.log.info(`Storage settings changed: they apply once the plugin reloads (VesnALIA plugin reload ${alia.pluginId}).`); });
   const settings = await defined.get();
-  const marked = await bb.storage.kv.get<unknown>(STORAGE_OWNER_KEY);
+  const marked = await alia.storage.kv.get<unknown>(STORAGE_OWNER_KEY);
   // Every install before Postgres kept its reviews in SQLite.
   const owner = marked ?? "sqlite";
   const status: StorageStatus = { configured: settings.storageBackend, owner: typeof owner === "string" ? owner : JSON.stringify(owner), state: "maintenance", problem: null };
-  const reload = `bb plugin reload ${bb.pluginId}`;
+  const reload = `alia plugin reload ${alia.pluginId}`;
   const maintenance = (problem: string): StorageChoice => {
     status.problem = problem;
     return { kind: "maintenance", status, settings };
@@ -95,15 +95,15 @@ export async function chooseStorage(bb: BbPluginApi): Promise<StorageChoice> {
   }
   if (settings.storageBackend !== owner) {
     return maintenance(owner === "sqlite"
-      ? `Code Review Workspace's storage is set to Postgres, but its reviews are in SQLite. Run bb review storage migrate to copy them to Postgres, then ${reload}. To stay on SQLite, set storageBackend back to sqlite and reload.`
-      : `Code Review Workspace's storage is set to SQLite, but its reviews are in Postgres. Set storageBackend back to postgres and reload (${reload}), or run bb review storage export-sqlite --replace-data-db to copy them to SQLite first.`);
+      ? `Code Review Workspace's storage is set to Postgres, but its reviews are in SQLite. Run alia review storage migrate to copy them to Postgres, then ${reload}. To stay on SQLite, set storageBackend back to sqlite and reload.`
+      : `Code Review Workspace's storage is set to SQLite, but its reviews are in Postgres. Set storageBackend back to postgres and reload (${reload}), or run alia review storage export-sqlite --replace-data-db to copy them to SQLite first.`);
   }
   if (owner === "sqlite") return { kind: "sqlite", status: { ...status, state: "serving" }, settings };
   const redact = redactor(settings);
   let connection: PgSql;
   try {
     connection = pgSql(pgOptions(settings, (error) => {
-      bb.log.warn(`Lost the connection to Postgres: ${redact(String(error))}. The next store call connects again.`);
+      alia.log.warn(`Lost the connection to Postgres: ${redact(String(error))}. The next store call connects again.`);
     }));
   } catch (error) {
     return maintenance(`Code Review Workspace can't use Postgres: ${redact(error instanceof Error ? error.message : String(error))}. Fix the setting, then ${reload}.`);
@@ -137,7 +137,7 @@ export function describe(error: unknown): string {
   if (typeof code === "string" && UNSIGNED.has(code)) return `verify-full: the server's certificate isn't signed by the CA in postgresCaPem, or by one of Node's CAs when it's empty (${code})`;
   if (code === "ERR_TLS_CERT_ALTNAME_INVALID") return `verify-full: the server's certificate doesn't name the host in postgresUrl (${code})`;
   if (code === "CERT_HAS_EXPIRED" || code === "CERT_NOT_YET_VALID") return `verify-full: the server's certificate isn't valid now (${code})`;
-  if (error instanceof PgWriterLockError) return `${error.message}. Stop the other BB using this schema, or give this one a schema of its own (postgresSchema)`;
+  if (error instanceof PgWriterLockError) return `${error.message}. Stop the other VesnALIA using this schema, or give this one a schema of its own (postgresSchema)`;
   if (error instanceof AggregateError && error.errors.length) return error.errors.map(describe).join("; ");
   return error instanceof Error ? error.message : String(error);
 }
@@ -146,7 +146,7 @@ export interface OpenTiming {
   /** The wait after the first failure, doubling after each one after it. */
   firstRetryMs: number;
   maxRetryMs: number;
-  /** How long Postgres may be out of reach, as after a power cut that BB came back from first, before it's reported. */
+  /** How long Postgres may be out of reach, as after a power cut that VesnALIA came back from first, before it's reported. */
   unreachableGraceMs: number;
 }
 
@@ -175,10 +175,10 @@ export function unlessAborted<T>(attempt: Promise<T>, signal: AbortSignal): Prom
  * Open Postgres storage with `open`, trying again until it works, waiting twice as long after each failure up to
  * maxRetryMs, or until `signal` aborts, which returns null at once. Each failure is logged and becomes the status's
  * problem. needsConfiguration hears it, without the URL or password, unless Postgres has only been out of reach for less
- * than unreachableGraceMs. BB keeps that status until the plugin reloads, even once a later try gets through.
+ * than unreachableGraceMs. VesnALIA keeps that status until the plugin reloads, even once a later try gets through.
  */
 export async function openPostgres<T>(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   storage: Extract<StorageChoice, { kind: "postgres" }>,
   signal: AbortSignal,
   open: () => Promise<T>,
@@ -199,10 +199,10 @@ export async function openPostgres<T>(
       status.problem = problem;
       const now = Date.now();
       unreachableSince = unreachable(error) ? unreachableSince ?? now : null;
-      bb.log.warn(`Could not open Code Review Workspace's Postgres storage: ${problem}. Trying again in ${retryMs / 1000} s.`);
+      alia.log.warn(`Could not open Code Review Workspace's Postgres storage: ${problem}. Trying again in ${retryMs / 1000} s.`);
       if ((unreachableSince === null || now - unreachableSince >= timing.unreachableGraceMs) && problem !== reported) {
         reported = problem;
-        bb.status.needsConfiguration(`Code Review Workspace can't open its Postgres storage: ${problem}. It keeps trying, and serves once it gets through; this status stays until the plugin reloads (bb plugin reload ${bb.pluginId}).`);
+        alia.status.needsConfiguration(`Code Review Workspace can't open its Postgres storage: ${problem}. It keeps trying, and serves once it gets through; this status stays until the plugin reloads (VesnALIA plugin reload ${alia.pluginId}).`);
       }
       await pause(retryMs, signal);
       if (signal.aborted) return null;
@@ -212,7 +212,7 @@ export async function openPostgres<T>(
     if (opened === null) return null;
     status.state = "serving";
     status.problem = null;
-    if (reported) bb.log.info(`Code Review Workspace's Postgres storage is open. Its needs-configuration status stays until the plugin reloads (bb plugin reload ${bb.pluginId}).`);
+    if (reported) alia.log.info(`Code Review Workspace's Postgres storage is open. Its needs-configuration status stays until the plugin reloads (VesnALIA plugin reload ${alia.pluginId}).`);
     return opened;
   }
 }

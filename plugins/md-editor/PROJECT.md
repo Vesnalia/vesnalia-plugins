@@ -19,16 +19,16 @@ sources:
 
 ## Identity
 
-- BB plugin package: `bb-plugin-md-editor`, version `0.1.4` (`package.json:1-3`).
+- VesnALIA plugin package: `alia-plugin-md-editor`, version `0.1.4` (`package.json:1-3`).
 - Plugin display name: Markdown PRO (`package.json:9-11`).
 - License: MIT (`package.json:94`).
 - Product summary: [overview](docs/overview.md).
 
 ## Entry points
 
-- BB app: `app.tsx` (`package.json:15-16`).
+- VesnALIA app: `app.tsx` (`package.json:15-16`).
 - Server RPC plugin: `server.ts` (`package.json:15-16`).
-- BB skill directory: `skills/` (`package.json:17-19`).
+- VesnALIA skill directory: `skills/` (`package.json:17-19`).
 - File-opening lifecycle: [file access](docs/file-access.md).
 
 ## Critical invariants
@@ -46,7 +46,7 @@ sources:
 
 ## Common gotchas
 
-- Tab menu depends on BB tab-strip data attributes (`tabs.ts:8-12`). See [gotchas](docs/gotchas.md).
+- Tab menu depends on VesnALIA tab-strip data attributes (`tabs.ts:8-12`). See [gotchas](docs/gotchas.md).
 - Rich edits normalize Markdown; source mode compares and saves the full source text (`app.tsx:270-277`, `app.tsx:273-278`).
 - Mermaid mouse edits apply to flowcharts and graph diagrams (`mermaid-edit.ts:20-22`). See [rendering](docs/rendering.md).
 - Editor typography preference behavior: [editor](docs/editor.md#how-it-works).
@@ -56,8 +56,8 @@ sources:
 - `npm install` — install dependencies.
 - `npm test` — run the Node test suites (`package.json:90`).
 - `npm run typecheck` — run TypeScript checking (`package.json:91`).
-- `npm run build` — build the BB plugin (`package.json:92`).
-- `bb plugin install . --yes` — install a local build (`README.md:28-36`).
+- `npm run build` — build the VesnALIA plugin (`package.json:92`).
+- `alia plugin install . --yes` — install a local build (`README.md:28-36`).
 
 ## Where to look next
 

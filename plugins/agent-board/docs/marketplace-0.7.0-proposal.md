@@ -1,12 +1,12 @@
 # Marketplace update proposal — not submitted
 
-Current reviewed entry: `get-bb/marketplace/entries/agent-board.json`, source
+Current reviewed entry: `get-alia/marketplace/entries/agent-board.json`, source
 range `^0.6.1`. Preserve its id, source URL, category, author, icon and existing
 reviewed synthetic screenshot. After 0.7.0 publication, propose:
 
 ```json
 {
-  "description": "Follow live BB agent activity, freshness, completion outcomes and monitoring health. Filter and group visible work by project, repository, provider or status. Optional Ollama Fleet and Redteam add worker visibility. Requires BB 0.40+; BB 0.46.0 recommended.",
+  "description": "Follow live ALIA agent activity, freshness, completion outcomes and monitoring health. Filter and group visible work by project, repository, provider or status. Optional Ollama Fleet and Redteam add worker visibility. Requires ALIA 0.40+; ALIA 0.46.0 recommended.",
   "source": {
     "git": {
       "url": "https://github.com/aaronphifer/bb-plugin-agent-board.git",

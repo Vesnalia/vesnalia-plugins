@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { hostContract } from "./background.ts";
 
@@ -144,9 +144,9 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+export default function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE tasks (id TEXT PRIMARY KEY, data TEXT NOT NULL)`,
     `CREATE TABLE launches (id TEXT PRIMARY KEY, thread_id TEXT NOT NULL)`,
     `CREATE TABLE sections (id TEXT PRIMARY KEY, name TEXT NOT NULL, icon TEXT NOT NULL)`,
@@ -170,7 +170,7 @@ export default function plugin(bb: BbPluginApi) {
     db.prepare(
       "INSERT INTO tasks(id,data) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data",
     ).run(task.id, JSON.stringify(task));
-    bb.realtime.publish("changed", {});
+    alia.realtime.publish("changed", {});
     return task;
   };
   const change = (id: string, fn: (t: Task) => void) => {
@@ -215,7 +215,7 @@ export default function plugin(bb: BbPluginApi) {
           parsed.map((title) => ({ id: randomUUID(), title, parentId: null })),
         );
     });
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   const controllers = new Map<string, AbortController>();
   let wake: () => void = () => {};
   // Interrupted jobs are visible failures, never automatically repeated after reload.
@@ -237,7 +237,7 @@ export default function plugin(bb: BbPluginApi) {
         controllers.get(j.id)?.abort();
       }
   };
-  bb.background.service("assistant", {
+  alia.background.service("assistant", {
     async start(signal) {
       while (!signal.aborted) {
         const task = list().find(
@@ -265,7 +265,7 @@ export default function plugin(bb: BbPluginApi) {
           t.jobs.find((j) => j.id === job.id)!.status = "running";
         });
         try {
-          const hosts = await bb.sdk.hosts.list();
+          const hosts = await alia.sdk.hosts.list();
           const machine =
             hosts.find(
               (h) => h.status === "connected" && h.type === "persistent",
@@ -289,7 +289,7 @@ Previous results for the selected objective: ${JSON.stringify(
               .map((j) => j.answer.slice(0, 6000)),
           )}
 User instructions: ${job.instruction}
-Return JSON: answer — the useful result in Markdown; suggestions — an array of suggested steps. Do not create threads, call bb my-tasks, or modify the checklist. Do not mark work as complete. Breaking down tasks and exploring ideas need no tools. For help, you may research available data; do not make external changes or claim an action is complete when you only described it. Return all results as text without saving files. Describe limitations and missing information in answer.`;
+Return JSON: answer — the useful result in Markdown; suggestions — an array of suggested steps. Do not create threads, call VesnALIA my-tasks, or modify the checklist. Do not mark work as complete. Breaking down tasks and exploring ideas need no tools. For help, you may research available data; do not make external changes or claim an action is complete when you only described it. Return all results as text without saving files. Describe limitations and missing information in answer.`;
           const result = await host.call(
             "run",
             {
@@ -340,7 +340,7 @@ Return JSON: answer — the useful result in Markdown; suggestions — an array 
       }
     },
   });
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     list: () => list(),
     add: ({ title, sectionId }) => add(title, sectionId),
     sections: () => sections(),
@@ -362,7 +362,7 @@ Return JSON: answer — the useful result in Markdown; suggestions — an array 
       db.prepare(
         "INSERT INTO sections(id,name,icon) VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,icon=excluded.icon",
       ).run(section.id, name, icon);
-      bb.realtime.publish("changed", {});
+      alia.realtime.publish("changed", {});
       return section;
     },
     sectionRemove: ({ id }) => {
@@ -376,7 +376,7 @@ Return JSON: answer — the useful result in Markdown; suggestions — an array 
           db.prepare("DELETE FROM sections WHERE id=?").run(id).changes > 0
         );
       })();
-      bb.realtime.publish("changed", {});
+      alia.realtime.publish("changed", {});
       return { removed };
     },
     patch: ({ id, changes }) =>
@@ -465,21 +465,21 @@ Return JSON: answer — the useful result in Markdown; suggestions — an array 
       return job;
     },
   });
-  bb.cli.register({
+  alia.cli.register({
     name: "my-tasks",
     summary: "Apple Style Tasks personal checklist",
     commands: [
-      { name: "list", summary: "List tasks", usage: "bb my-tasks list" },
-      { name: "get", summary: "Show task details", usage: "bb my-tasks get <id>" },
+      { name: "list", summary: "List tasks", usage: "alia my-tasks list" },
+      { name: "get", summary: "Show task details", usage: "alia my-tasks get <id>" },
       {
         name: "add",
         summary: "Add a task for later",
-        usage: "bb my-tasks add <title>",
+        usage: "alia my-tasks add <title>",
       },
       {
         name: "propose",
         summary: "Suggest steps for the user to choose",
-        usage: "bb my-tasks propose <id> <JSON-array-of-strings>",
+        usage: "alia my-tasks propose <id> <JSON-array-of-strings>",
       },
     ],
     async run(argv) {
@@ -505,7 +505,7 @@ Return JSON: answer — the useful result in Markdown; suggestions — an array 
           return {
             exitCode: 1,
             stderr:
-              "bb my-tasks list | get <id> | add <title> | propose <id> <JSON array>",
+              "alia my-tasks list | get <id> | add <title> | propose <id> <JSON array>",
           };
         return { exitCode: 0, stdout: JSON.stringify(result) };
       } catch (error) {

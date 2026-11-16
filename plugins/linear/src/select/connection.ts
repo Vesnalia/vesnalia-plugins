@@ -8,7 +8,7 @@ import type { BudgetView, ConnectionState } from "../contract.js";
  * Connection section renders.
  *
  * This is what replaces a DOM test. `renderSlot` lives in
- * `@bb/plugin-sdk/testing/app`, which is part of a package that is not on npm,
+ * `@vesnalia/plugin-sdk/testing/app`, which is part of a package that is not on npm,
  * so it cannot run in a fork's CI — and a plugin whose UI is only verifiable
  * on the author's machine is a plugin whose UI regresses. Making the states a
  * discriminated union and the components thin switches over it moves every
@@ -112,7 +112,7 @@ export function classifyVerificationFailure(input: {
 }
 
 /**
- * A one-line summary for `bb linear status` and for the plugin's status
+ * A one-line summary for `alia linear status` and for the plugin's status
  * detail — the same facts as the section above, in the register of a terminal.
  */
 export function describeConnection(state: ConnectionState): string {

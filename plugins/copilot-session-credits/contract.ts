@@ -1,9 +1,9 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 
 export const threadId = z.string().regex(/^thr_[a-zA-Z0-9_-]{1,100}$/);
-// Pi sessions are BB bridge files: `pi_<uuid>` at start, `thr_<id>` after an edit/rewind fork. Copilot CLI uses a bare UUID.
+// Pi sessions are VesnALIA bridge files: `pi_<uuid>` at start, `thr_<id>` after an edit/rewind fork. Copilot CLI uses a bare UUID.
 export const sessionId = z.string().regex(/^((pi_)?[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|thr_[a-zA-Z0-9_-]{1,100})$/i);
 export const isPiSession = (value: string) => /^(pi_|thr_)/.test(value);
 export const readinessSchema = z.object({ state: z.enum(["unconfirmed", "ready", "unsupported", "error", "disabled"]), runtimeVersion: z.string().max(64).nullable(), reason: z.string().max(200) }).strict();

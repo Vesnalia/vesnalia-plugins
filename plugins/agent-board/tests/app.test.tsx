@@ -4,7 +4,7 @@
 // reconnect reconcile, navigation, loading/error/empty states.
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
-import { loadPluginApp, renderSlot, type CapturedPluginApp, type RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot, type CapturedPluginApp, type RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { BoardCard, BoardSnapshot, ExecutionTimeline } from "@/contract/rpc";
 import { BOARD_CHANGED_CHANNEL } from "@/contract/rpc";
 
@@ -24,7 +24,7 @@ function card(kind: BoardCard["kind"], title: string, overrides: Partial<BoardCa
     parentKey: null,
     depth: 0,
     kind,
-    source: "bb",
+    source: "alia",
     title,
     subtitle: null,
     status,
@@ -128,8 +128,8 @@ function snapshotFixture(overrides: Partial<BoardSnapshot> = {}): BoardSnapshot 
 
 function timelineFixture(overrides: Partial<ExecutionTimeline> = {}): ExecutionTimeline {
   return {
-    executionKey: "bb:thr_root", source: "bb", active: false, truncated: false, sourceWarning: null, fetchedAt: 1_000,
-    events: [{ id: "event-1", executionKey: "bb:thr_root", source: "bb", timestamp: 1_000, kind: "tool-complete", status: "completed", title: "Read file completed", summary: null, model: null, toolName: "read_file", target: "package.json", phase: null, durationMs: 200, threadId: "thr_root", attentionType: null, sourceMetadata: { sourceId: "row-1", sequence: 1 } }],
+    executionKey: "alia:thr_root", source: "alia", active: false, truncated: false, sourceWarning: null, fetchedAt: 1_000,
+    events: [{ id: "event-1", executionKey: "alia:thr_root", source: "alia", timestamp: 1_000, kind: "tool-complete", status: "completed", title: "Read file completed", summary: null, model: null, toolName: "read_file", target: "package.json", phase: null, durationMs: 200, threadId: "thr_root", attentionType: null, sourceMetadata: { sourceId: "row-1", sequence: 1 } }],
     ...overrides,
   };
 }
@@ -556,7 +556,7 @@ function twoScanSnapshot(): BoardSnapshot {
   return solo; // placeholder replaced below
 }
 
-function bbFocusSnapshot(): BoardSnapshot {
+function aliaFocusSnapshot(): BoardSnapshot {
   return snapshotFixture({
     counts: { running: 1, waiting: 0, queued: 2, completed: 0, failed: 0, interrupted: 0 },
     cards: [
@@ -798,7 +798,7 @@ describe("single-agent focus mode", () => {
   it("opens the hero thread and lazily fetches the shared timeline", async () => {
     const slot = mountBoard({
       rpc: {
-        board_snapshot: () => bbFocusSnapshot(),
+        board_snapshot: () => aliaFocusSnapshot(),
         execution_timeline: () => timelineFixture(),
       },
     });

@@ -138,7 +138,7 @@ plugin picks one from the title.
 - The banner and the side panel update by themselves (submitting the setup
   form opens the panel). Builders and the Master Builder run in child
   threads the user can open from the panel.
-- BB posts a short report here whenever a child thread finishes a turn.
+- VesnALIA posts a short report here whenever a child thread finishes a turn.
   Those are routine: do not act on them, poll, or message the builders. End
   your turn and wait for the plugin's `[Lego]` message.
 - This thread receives a message when the Master Builder finishes or a
@@ -152,11 +152,11 @@ plugin picks one from the title.
 
 ## CLI
 
-`bb lego list`, `bb lego status <bookId>`, `bb lego cancel <bookId>`, and
-`bb lego retry <bookId> [--bag <bagId>]` mirror the tools. Builder and Master
-Builder threads can report with `bb lego step <n>`, `bb lego bag-done
---summary …`, `bb lego blocked --reason …`, `bb lego assembled <n>`, and
-`bb lego complete --summary …`
+`alia lego list`, `alia lego status <bookId>`, `alia lego cancel <bookId>`, and
+`alia lego retry <bookId> [--bag <bagId>]` mirror the tools. Builder and Master
+Builder threads can report with `alia lego step <n>`, `alia lego bag-done
+--summary …`, `alia lego blocked --reason …`, `alia lego assembled <n>`, and
+`alia lego complete --summary …`
 when their tools are unavailable. If the user wants to see Lego without
-starting real agents, `bb lego demo` prints a sample book in this thread with
+starting real agents, `alia lego demo` prints a sample book in this thread with
 simulated builders; they press Play on its banner.

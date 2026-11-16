@@ -14,7 +14,7 @@ export type { StyleProps } from "./types";
 interface StyleInfo {
   label: string;
   component: ComponentType<StyleProps>;
-  /** The style draws its own case, so the panel drops bb's frame. */
+  /** The style draws its own case, so the panel drops VesnALIA's frame. */
   frameless: boolean;
 }
 
@@ -25,5 +25,5 @@ export const STYLE_INFO: Record<PlayerStyle, StyleInfo> = {
   hifi: { label: "Hi-Fi", component: HiFiStyle, frameless: true },
   terminal: { label: "Terminal", component: TerminalStyle, frameless: true },
   pocket: { label: "Pocket", component: PocketStyle, frameless: true },
-  bbamp: { label: "bb-amp", component: BbampStyle, frameless: true },
+  bbamp: { label: "alia-amp", component: BbampStyle, frameless: true },
 };

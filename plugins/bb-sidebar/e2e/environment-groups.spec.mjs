@@ -32,7 +32,7 @@ for (const [name, theme, width] of [
     );
     await expect(shelf(page, "Pinned").getByRole("region")).toHaveCount(0);
     mkdirSync("e2e-artifacts", { recursive: true });
-    const sidebar = page.locator("[data-bb-sidebar-root]");
+    const sidebar = page.locator("[data-alia-sidebar-root]");
     await page.addStyleTag({ path: "e2e/snapshot.css" });
     await page.mouse.move(1000, 750);
     expect(Math.round((await sidebar.boundingBox()).width)).toBe(width);

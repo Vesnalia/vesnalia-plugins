@@ -178,7 +178,7 @@ export function insights(ctx: Ctx, range: InsightsView["range"]): InsightsView {
       id: "no-agent",
       tone: "info",
       title: `${noAgent.length} of your ${openMine.length} open PRs have no agent.`,
-      detail: `Their reviews and failed checks wait until you see them.${speed}${suggested ? ` ${suggested} were opened by a bb thread that auto agent can pick.` : ""}`,
+      detail: `Their reviews and failed checks wait until you see them.${speed}${suggested ? ` ${suggested} were opened by a VesnALIA thread that auto agent can pick.` : ""}`,
       action: ctx.settings().autoAgent ? null : { id: "auto_agent", label: "Turn on auto agent", key: null },
     });
   }

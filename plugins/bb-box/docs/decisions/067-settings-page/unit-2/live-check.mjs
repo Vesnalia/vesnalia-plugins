@@ -6,17 +6,17 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
-const bbCli = process.env.LIVE_BB_CLI ?? join(process.env.HOME ?? "", "fbb");
-const dataDir = process.env.LIVE_BB_DATA ?? join(process.env.HOME ?? "", "bbdata");
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
+const aliaCli = process.env.LIVE_ALIA_CLI ?? join(process.env.HOME ?? "", "fbb");
+const dataDir = process.env.LIVE_ALIA_DATA ?? join(process.env.HOME ?? "", "bbdata");
 const shots = process.env.LIVE_SHOTS ?? join(process.cwd(), "shots");
 const runs = Number(process.env.LIVE_RUNS ?? 3);
 const chosen = process.argv.slice(2);
 const exec = promisify(execFile);
 mkdirSync(shots, { recursive: true });
 
-const APPLY = "**/api/v1/plugins/bb-box/rpc/config.apply";
-const GET = "**/api/v1/plugins/bb-box/rpc/config.get";
+const APPLY = "**/api/v1/plugins/alia-box/rpc/config.apply";
+const GET = "**/api/v1/plugins/alia-box/rpc/config.get";
 
 function expect(condition, message) {
   if (!condition) throw new Error(message);
@@ -33,7 +33,7 @@ function gate() {
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -52,7 +52,7 @@ async function otherTab(change, operation) {
 }
 
 async function cli(...args) {
-  const { stdout } = await exec(bbCli, args, { maxBuffer: 1 << 24 });
+  const { stdout } = await exec(aliaCli, args, { maxBuffer: 1 << 24 });
   return stdout;
 }
 
@@ -66,9 +66,9 @@ async function agentApplies(change) {
 const armDroppedReply = () => cli("box", "config", "drop-replies");
 
 function storedContentIs(path, expected) {
-  const db = new DatabaseSync(join(dataDir, "bb.db"), { readOnly: true });
+  const db = new DatabaseSync(join(dataDir, "alia.db"), { readOnly: true });
   try {
-    const row = db.prepare("select value from plugin_kv where plugin_id = 'bb-box' and key = 'config/secrets'").get();
+    const row = db.prepare("select value from plugin_kv where plugin_id = 'alia-box' and key = 'config/secrets'").get();
     const secrets = row ? JSON.parse(row.value) : {};
     return secrets["@general"]?.[`file:${path}`] === expected;
   } finally {
@@ -129,13 +129,13 @@ async function tab(viewport = { width: 1440, height: 1000 }) {
 }
 
 async function open(page, hash, heading) {
-  await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   await page.getByRole("heading", { name: heading, exact: true }).waitFor();
 }
 
 async function leaveBySidebar(page) {
   await page.getByRole("link", { name: "General", exact: true }).first().click();
-  await page.waitForURL((url) => !url.pathname.includes("/plugins/bb-box"));
+  await page.waitForURL((url) => !url.pathname.includes("/plugins/alia-box"));
 }
 
 async function comeBack(page, heading) {
@@ -263,9 +263,9 @@ const checks = {
     });
     const releaseReads = holdReads();
     await filesBar(page).getByRole("button", { name: "Save files" }).click();
-    const looking = await barSays(filesBar(page), /^Save not confirmed: BB Box did not reply\. Looking for this save's receipt…/);
+    const looking = await barSays(filesBar(page), /^Save not confirmed: ALIA Box did not reply\. Looking for this save's receipt…/);
     releaseReads();
-    const words = await barSays(filesBar(page), /^Saved at revision \d+\. The reply was lost; BB Box's receipt for this save confirms it\. Since then, changed elsewhere: the content of ~\/\.cfg\/lost-\d+\.json \(revision \d+\)\./);
+    const words = await barSays(filesBar(page), /^Saved at revision \d+\. The reply was lost; ALIA Box's receipt for this save confirms it\. Since then, changed elsewhere: the content of ~\/\.cfg\/lost-\d+\.json \(revision \d+\)\./);
     const after = await stored();
     const receipts = receiptsOf(after, applies[0].operation);
     expect(receipts.length === 1, "one receipt for the save");
@@ -283,7 +283,7 @@ const checks = {
     await refreshField(page).fill("13");
     applyHandlers.push((route) => route.abort("failed"));
     await refreshField(page).press("Enter");
-    const unknown = await barSays(monitorBar(page), /^Save not confirmed: BB Box has no receipt for it yet\. Your changes are still here\. Saving again resends the same request, which BB Box applies at most once\./);
+    const unknown = await barSays(monitorBar(page), /^Save not confirmed: ALIA Box has no receipt for it yet\. Your changes are still here\. Saving again resends the same request, which ALIA Box applies at most once\./);
     expect((await stored()).revision === before.revision, "nothing was stored");
     await monitorBar(page).getByRole("button", { name: "Save again" }).click();
     const saved = await barSays(monitorBar(page), /^Saved/);
@@ -353,16 +353,16 @@ const checks = {
     await armDroppedReply();
     const releaseReads = holdReads();
     await monitorBar(page).getByRole("button", { name: "Save", exact: true }).click();
-    const looking = await barSays(monitorBar(page), /^Save not confirmed: BB Box did not reply\. Looking for this save's receipt…/);
+    const looking = await barSays(monitorBar(page), /^Save not confirmed: ALIA Box did not reply\. Looking for this save's receipt…/);
     await leaveBySidebar(page);
     const operation = applies[0].operation;
     const stamp = Date.now();
     for (let save = 0; save < 505; save += 1) await otherTab(setGeneral({ boxesPerThread: save % 5 }), `agent-${stamp}-${save}`);
     const now = await stored();
-    expect(receiptsOf(now, operation).length === 0 && now.receipts.length === 500, "BB Box no longer lists the save's receipt");
+    expect(receiptsOf(now, operation).length === 0 && now.receipts.length === 500, "VesnALIA Box no longer lists the save's receipt");
     releaseReads();
     await comeBack(page, "Monitor");
-    const words = await barSays(monitorBar(page), /^Save not confirmed: this save is older than the receipts BB Box keeps\./);
+    const words = await barSays(monitorBar(page), /^Save not confirmed: this save is older than the receipts ALIA Box keeps\./);
     await pause(1_500);
     expect(applies.length === 1, "the save was never sent again");
     expect(!(await monitorBar(page).getByRole("button", { name: "Save again" }).count()), "it offers no Save again");
@@ -445,7 +445,7 @@ const checks = {
     const { page } = await tab();
     await open(page, "#option/monitor", "Monitor");
     await refreshField(page).fill("18");
-    await page.getByRole("button", { name: "BB Box settings" }).click();
+    await page.getByRole("button", { name: "VesnALIA Box settings" }).click();
     await page.locator('[data-row-key="option-boxes"]').click();
     await page.getByRole("heading", { name: "Boxes", exact: true }).waitFor();
     await page.getByRole("button", { name: "Add file" }).click();
@@ -458,7 +458,7 @@ const checks = {
     const storage = await page.evaluate(() => JSON.stringify({ session: { ...sessionStorage }, local: { ...localStorage } }));
     expect(!storage.includes(secret), "the pasted content is in neither session nor local storage");
     expect(storage.includes(path), "the new file's path is kept");
-    await page.goto(`${base}/settings/plugins/bb-box#option/monitor`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${base}/settings/plugins/alia-box#option/monitor`, { waitUntil: "domcontentloaded" });
     const back = await page.getByText(/^Your unsaved changes to the Monitor are back/).textContent();
     expect((await refreshField(page).inputValue()) === "18", "the Monitor's change is back");
     let asked = false;
@@ -617,12 +617,12 @@ const checks = {
     const during = await barSays(monitorBar(page), /^Saving/);
     await refreshField(page).fill("15");
     late.open();
-    await barSays(monitorBar(page), /^Save not confirmed: BB Box did not reply\. Looking for this save's receipt…/);
+    await barSays(monitorBar(page), /^Save not confirmed: ALIA Box did not reply\. Looking for this save's receipt…/);
     releaseReads();
     await barSays(monitorBar(page), /^Saved at revision \d+\. The reply was lost/);
     await leaveBySidebar(page);
     await comeBack(page, "Monitor");
-    const words = await barSays(monitorBar(page), /^Saved at revision \d+\. The reply was lost; BB Box's receipt for this save confirms it\. Your newer change is not saved yet\./);
+    const words = await barSays(monitorBar(page), /^Saved at revision \d+\. The reply was lost; ALIA Box's receipt for this save confirms it\. Your newer change is not saved yet\./);
     const after = await stored();
     expect(after.document.monitor.refreshIntervalSeconds === 12 && after.revision === before.revision + 1 && receiptsOf(after, applies[0].operation).length === 1 && applies.length === 1, "12 is stored once");
     expect((await refreshField(page).inputValue()) === "15" && (await page.getByText("Changed", { exact: true }).count()) === 1, "15 is still shown and still an unsaved change");

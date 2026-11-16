@@ -12,7 +12,7 @@ import {
 import {
   experimental_ProviderModelPicker as ProviderModelPicker,
   type ExperimentalProviderModelPickerValue,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import { MOTION, type Mood } from "../motion";
 import { PORTRAIT_SIZE, portraitRuns } from "../portrait";

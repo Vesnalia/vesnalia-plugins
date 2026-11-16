@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, screen } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { ThreadRow, type ThreadRowProps, toActionTarget } from "../src/thread-row";
 import { DEFAULT_SETTINGS } from "../src/settings";
 import { sidebarThread } from "./fixtures";
@@ -25,10 +25,10 @@ function mount(overrides: Partial<ThreadRowProps> = {}, options: Record<string, 
 }
 
 describe("thread row", () => {
-  it("preserves navigation and shortcut hooks and bb's thread menu", () => {
+  it("preserves navigation and shortcut hooks and VesnALIA's thread menu", () => {
     const { slot, onNavigate, onToggle } = mount({}, {
       sidebarShortcuts: { t: { label: "⌘1", ariaKeyshortcuts: "Meta+1" } },
-      threadActions: () => [{ key: "bb--core/archive", pluginId: "bb--core", group: "thread", action: {
+      threadActions: () => [{ key: "alia--core/archive", pluginId: "alia--core", group: "thread", action: {
         label: "Archive", icon: "Archive", run: async () => {},
       } }],
     });
@@ -49,7 +49,7 @@ describe("thread row", () => {
   });
 
   it("keeps the menu trigger laid out while its menu is open so the menu stays anchored", () => {
-    const { slot } = mount({}, { threadActions: () => [{ key: "bb--core/archive", pluginId: "bb--core", group: "thread",
+    const { slot } = mount({}, { threadActions: () => [{ key: "alia--core/archive", pluginId: "alia--core", group: "thread",
       action: { label: "Archive", icon: "Archive", run: async () => {} } }] });
     const element = slot.container.querySelector<HTMLElement>("[data-sb-row]")!;
     expect(element.hasAttribute("data-menu-open")).toBe(false);
@@ -64,8 +64,8 @@ describe("thread row", () => {
   });
 
   const pinAndArchive = (target: { archivedAt: number | null }) => [
-    { key: "bb--core/pin", pluginId: "bb--core", group: "state", action: { label: "Pin", icon: "Pin", run: async () => {} } },
-    { key: "bb--core/archive", pluginId: "bb--core", group: "lifecycle", action: {
+    { key: "alia--core/pin", pluginId: "alia--core", group: "state", action: { label: "Pin", icon: "Pin", run: async () => {} } },
+    { key: "alia--core/archive", pluginId: "alia--core", group: "lifecycle", action: {
       label: target.archivedAt === null ? "Archive" : "Unarchive", icon: "Archive", run: async () => {} } },
   ];
 
@@ -120,7 +120,7 @@ describe("thread row", () => {
     }
   });
 
-  it("offers only Unarchive and bb's menu on an archived row, without jump shortcuts", () => {
+  it("offers only Unarchive and VesnALIA's menu on an archived row, without jump shortcuts", () => {
     const archived = { ...thread, isArchived: true, archivedAt: 120_000, isUnread: true };
     const { slot } = mount({ variant: "archived", row: { ...row, thread: archived, state: "unread", childCount: 0 } },
       { sidebarThreads: { threads: [archived] }, threadActions: pinAndArchive });
@@ -135,7 +135,7 @@ describe("thread row", () => {
     slot.unmount();
   });
 
-  it("uses bb's glyph for a draft or another plugin's row status", () => {
+  it("uses VesnALIA's glyph for a draft or another plugin's row status", () => {
     const { slot } = mount({}, { sidebarDraftThreadIds: ["t"] });
     expect(slot.container.querySelector('[data-thread-status-glyph="draft"]')).toBeTruthy();
     slot.unmount();
@@ -144,7 +144,7 @@ describe("thread row", () => {
     second.slot.unmount();
   });
 
-  it("composes drag after bb's anchor, selects with Alt and Shift, and intercepts Alt+arrows", () => {
+  it("composes drag after VesnALIA's anchor, selects with Alt and Shift, and intercepts Alt+arrows", () => {
     const drag = { onRowPointerDown: vi.fn(), consumeClick: vi.fn(() => false) };
     const onSelect = vi.fn(), onKeyboardMove = vi.fn();
     const { slot, onNavigate } = mount({ drag, onSelect, onKeyboardMove, isSelected: true, isDragging: true,
@@ -231,14 +231,14 @@ describe("thread row", () => {
     shelf.slot.unmount();
   });
 
-  it("passes a reusable environment to bb's menu", () => {
+  it("passes a reusable environment to VesnALIA's menu", () => {
     const target = toActionTarget(sidebarThread({ environment: {
       id: "env", path: "/work", name: "work", branchName: "main", isWorktree: false, providerId: null, workspaceDisplayKind: null,
     } }));
     expect(target.environment).toEqual({ id: "env", path: "/work" });
   });
 
-  it("draws bb's row metadata after a root thread's title and hands presses on it to the row", () => {
+  it("draws VesnALIA's row metadata after a root thread's title and hands presses on it to the row", () => {
     const drag = { onRowPointerDown: vi.fn(), consumeClick: vi.fn(() => false) };
     const onSelect = vi.fn();
     const { slot, onNavigate } = mount({ drag, onSelect });
@@ -267,7 +267,7 @@ describe("thread row", () => {
     twoLine.slot.unmount();
   });
 
-  it("tells bb's menu whether a child notifies its parent", () => {
+  it("tells VesnALIA's menu whether a child notifies its parent", () => {
     expect(toActionTarget(sidebarThread({ parentThreadId: "p", parentNotifications: "stuck" })).parentNotifications).toBe("stuck");
   });
 });

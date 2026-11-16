@@ -1,14 +1,14 @@
 // Light / dark / system switch in the sidebar footer, like Pokecut's segmented
-// control. BB keeps the preference in localStorage ("bb.theme") behind a storage
+// control. VesnALIA keeps the preference in localStorage ("alia.theme") behind a storage
 // subscription that only listens to `storage` events, so writing the key and
-// dispatching that event lets BB apply the mode with its own code — the
+// dispatching that event lets VesnALIA apply the mode with its own code — the
 // Appearance settings page shows the same choice.
 import { useSyncExternalStore } from "react";
 import { t, type I18nKey } from "./i18n";
 
 export type ThemeMode = "light" | "dark" | "system";
 export const THEME_MODES: ThemeMode[] = ["light", "dark", "system"];
-const KEY = "bb.theme";
+const KEY = "alia.theme";
 
 export function readThemeMode(): ThemeMode {
   try {
@@ -43,7 +43,7 @@ export function ThemeModeIcon({ className }: { className?: string }) {
 export function ThemeModeSwitch({ dismiss }: { dismiss(): void }) {
   const mode = useSyncExternalStore(subscribe, readThemeMode, () => "system" as ThemeMode);
   return (
-    <div className="pk-mode" data-bb-ru-skip="">
+    <div className="pk-mode" data-alia-ru-skip="">
       <div className="pk-mode-title">{t("themeMode")}</div>
       <div className="pk-segmented" role="radiogroup" aria-label={t("themeMode")}>
         {THEME_MODES.map((value) => (

@@ -26,7 +26,7 @@ describe("the panel's dates", () => {
   });
 });
 
-// The thread header vanished whenever its reads were slow or failed (bb
+// The thread header vanished whenever its reads were slow or failed (VesnALIA
 // busy, 2026-10-02): no DOM tests here, so these guard the two fixes.
 describe("the thread header's reads", () => {
   it("starts from the last list any view saw, and retries a failed read instead of staying empty", async () => {
@@ -69,7 +69,7 @@ describe("the new-thread account control", () => {
       () => setFailedReads((n) => n + 1),
     );
   }, [missing, projectId, readProject, failedReads]);`);
-    // bb's input lock only stops typing, not a send: not used (DESIGN).
+    // VesnALIA's input lock only stops typing, not a send: not used (DESIGN).
     expect(source).not.toContain("setInputLock");
     // Every read and change takes a ticket, so a late answer to an older
     // request cannot put back the account a project had before a pick.
@@ -82,7 +82,7 @@ describe("the new-thread account control", () => {
     expect(source).toContain("const shown = keep(ticket, next);");
     expect(source).toContain("return projectRead(next, shown, project);");
     expect(source).toContain("const shown = answers.accept(ticket, next);");
-    // The composer sits in bb's <form>, and the mobile menu trigger sets no
+    // The composer sits in VesnALIA's <form>, and the mobile menu trigger sets no
     // type of its own: without this, opening the menu sends the draft.
     expect(source).toMatch(/<DropdownMenuTrigger asChild>\s+<Button\s+type="button"/);
     expect(source).toContain("const keepsHelp = newThread && state.autoSwitch && !status.external;");
@@ -166,7 +166,7 @@ describe("the plugin's frontend registration", () => {
     expect(banner).not.toMatch(/threads\.(send|retry|update)|queuedMessages|setProjectAccount/);
   });
 
-  it("the advice banner reads again when bb's connection is back: a signal that added or took away the advice while it was down is lost (Sol B2-R2-004)", async () => {
+  it("the advice banner reads again when VesnALIA's connection is back: a signal that added or took away the advice while it was down is lost (Sol B2-R2-004)", async () => {
     const source = await readFile(new URL("./app.tsx", import.meta.url), "utf8");
     const banner = source.slice(source.indexOf("function ThreadAdvice()"), source.indexOf("export default definePluginApp"));
     // The connection's change decides (signalsBack, tested in src/ui.test.ts)...
@@ -194,14 +194,14 @@ describe("the plugin's frontend registration", () => {
 });
 
 /**
- * bb's Icon lives in the host's runtime (SDK 0.6.15, experimental_Icon); the
+ * VesnALIA's Icon lives in the host's runtime (SDK 0.6.15, experimental_Icon); the
  * SDK's own test runtime needs @testing-library/react, which this repo does
  * not carry: a bare stand-in is enough to read what a view says.
  */
 async function withIcon() {
   const React = await import("react");
-  const host = globalThis as { __bbPluginRuntime?: unknown };
-  host.__bbPluginRuntime ??= {
+  const host = globalThis as { __aliaPluginRuntime?: unknown };
+  host.__aliaPluginRuntime ??= {
     react: React,
     pluginSdkApp: {
       experimental_Icon: ({ name }: { name: string }) =>

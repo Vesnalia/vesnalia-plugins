@@ -315,7 +315,7 @@ export function createGithubAdapter(options: {
     const scoped = repositoryByIdentity.get(parsed.data.toLowerCase());
     if (!scoped) {
       throw new Error(
-        `GitHub repository ${repo} is outside this BB project's repository scope`
+        `GitHub repository ${repo} is outside this VesnALIA project's repository scope`
       );
     }
     return scoped;
@@ -325,7 +325,7 @@ export function createGithubAdapter(options: {
     if (!options.enabled) throw new Error('GitHub is disabled');
     if (repositories.length === 0) {
       throw new Error(
-        'No GitHub repository is mapped to this BB project on the current host'
+        'No GitHub repository is mapped to this VesnALIA project on the current host'
       );
     }
   }
@@ -408,7 +408,7 @@ export function createGithubAdapter(options: {
       !options.enabled
         ? 'Enable GitHub in Taskboard settings.'
         : repositories.length === 0
-          ? 'No GitHub repository is mapped to this BB project on the current host.'
+          ? 'No GitHub repository is mapped to this VesnALIA project on the current host.'
           : null,
     async list() {
       assertConfigured();

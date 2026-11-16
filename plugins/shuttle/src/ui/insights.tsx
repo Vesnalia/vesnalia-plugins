@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { experimental_Icon as Icon, experimental_usePluginId, UrlLink } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, experimental_usePluginId, UrlLink } from "@vesnalia/plugin-sdk/app";
 import type { InsightsView as Insights, ReferenceRecord } from "../contract";
 import { useActions } from "./actions";
 import { ActivityView, TONE_ICON } from "./activity";

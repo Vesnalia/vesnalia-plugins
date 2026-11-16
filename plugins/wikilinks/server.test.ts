@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   experimental_scanPublicSdkOnly,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.js";
 import type { StoredThinkingTrail } from "./thinking-trails.js";
 
@@ -37,11 +37,11 @@ function storedZip(fileName: string, content: Buffer): Buffer {
 
 describe("wikilinks server", () => {
   it("makes the bundled usage skill and trail tool available to new sessions", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "wikilinks",
       agentSkillIds: ["obsidian-at-home"],
     });
-    await plugin(bb);
+    await plugin(alia);
     const configuration = await harness.behavior.resolveAgentConfiguration({
       thread: { id: "thread-1", title: "Notes", parentThreadId: null, sourceThreadId: null },
       project: { id: "project-1", kind: "standard", name: "Notes", gitRemoteUrl: null },
@@ -57,8 +57,8 @@ describe("wikilinks server", () => {
   });
 
   it("stores branching thinking trails and joins click-through continuations", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "wikilinks" });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "wikilinks" });
+    await plugin(alia);
     const targetB = {
       kind: "workspace" as const,
       environmentId: "env-1",
@@ -178,7 +178,7 @@ describe("wikilinks server", () => {
   it("loads Markdown and resolves links to native workspace targets", async () => {
     const content =
       "Read [[Strategy]], [[Roadmap|the roadmap]], [[Canvas.tldraw|the canvas]], and [Example document.md](/workspace/Example%20document.md).";
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "wikilinks",
       sdk: {
         environments: {
@@ -217,7 +217,7 @@ describe("wikilinks server", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const result = await harness.behavior.callRpc("open_markdown", {
       path: "notes/Current.md",
@@ -319,7 +319,7 @@ describe("wikilinks server", () => {
   it("resolves chat wikilinks against the thread workspace", async () => {
     const content =
       "---\ntitle: Strategy\ntags: [work]\n---\n# Strategy\n\nA useful note. See [[notes/Details]].";
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "wikilinks",
       sdk: {
         threads: {
@@ -372,7 +372,7 @@ describe("wikilinks server", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const result = await harness.behavior.callRpc("resolve_chat_wikilink", {
       threadId: "thread-1",
@@ -439,7 +439,7 @@ describe("wikilinks server", () => {
 
   it("saves edited Markdown with a compare-and-swap guard", async () => {
     const writes: Array<Record<string, unknown>> = [];
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "wikilinks",
       sdk: {
         environments: {
@@ -467,7 +467,7 @@ describe("wikilinks server", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const written = await harness.behavior.callRpc("save_markdown", {
       path: "notes/Edit.md",
@@ -517,7 +517,7 @@ describe("wikilinks server", () => {
       0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3,
     ]);
     const archive = storedZip("preview.png", png);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "wikilinks",
       sdk: {
         environments: {
@@ -537,7 +537,7 @@ describe("wikilinks server", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const preview = await harness.behavior.callRpc("preview_file", {
       target: {
@@ -563,7 +563,7 @@ describe("wikilinks server", () => {
         "# Research\n\n## Useful angle\n\nThis paragraph explains why [[Target|the target]] matters alongside [[Related]].",
       "/backlink-workspace/Related.md": "# Related\n\nA related note.",
     };
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "wikilinks",
       sdk: {
         threads: {
@@ -598,7 +598,7 @@ describe("wikilinks server", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const preview = await harness.behavior.callRpc(
       "preview_chat_wikilink",
@@ -653,7 +653,7 @@ describe("wikilinks server", () => {
 
   it("fuzzily autocompletes unordered and mistyped note words from a cached index", async () => {
     let listCalls = 0;
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "wikilinks",
       sdk: {
         threads: {
@@ -688,7 +688,7 @@ describe("wikilinks server", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const unordered = (await harness.behavior.callRpc(
       "autocomplete_wikilinks",

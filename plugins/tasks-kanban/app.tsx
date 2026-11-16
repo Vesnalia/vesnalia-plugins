@@ -1,11 +1,11 @@
-// tasks-kanban — frontend: a project-wide Kanban over BB Tasks.
+// tasks-kanban — frontend: a project-wide Kanban over VesnALIA Tasks.
 //
 // One nav panel ("Task board"). It lists the linked tasks project's tasks
-// grouped into BB's six statuses, lets you drag cards between lanes (real
+// grouped into VesnALIA's six statuses, lets you drag cards between lanes (real
 // moves via the tasks plugin's boardMove), open a task to edit its fields,
 // manage labels, comment, create, and delete tasks. Every mutation goes
 // through server.ts, which proxies into the built-in tasks plugin — so this
-// board and `bb tasks` are the same data.
+// board and `alia tasks` are the same data.
 //
 // The UI is bilingual (en/ru), picked from the browser language; strings
 // live in lib/i18n.ts.
@@ -20,10 +20,10 @@ import {
 import type { DragEvent } from "react";
 import {
   definePluginApp,
-  useBbContext,
+  useAliaContext,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 // Type-only import: the inferred contract types are erased at build time,
 // so the app bundle never reaches the server implementation.
@@ -115,7 +115,7 @@ function msg(cause: unknown): string {
 
 function useBoard() {
   const rpc = useRpc<typeof rpcContract>();
-  const { projectId: bbProjectId } = useBbContext();
+  const { projectId: aliaProjectId } = useAliaContext();
   const [taskProjects, setTaskProjects] = useState<TaskProject[] | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[] | null>(null);
@@ -126,18 +126,18 @@ function useBoard() {
   const loadProjects = useCallback(() => {
     rpc
       .call("board_projects", null)
-      .then(({ projects, bbProjects }) => {
+      .then(({ projects, aliaProjects }) => {
         setTaskProjects(projects);
         setSelected((current) => {
           if (current !== null && projects.some((p) => p.id === current)) {
             return current;
           }
-          const linked = projects.find((p) => p.linkedBbProjectId === bbProjectId);
+          const linked = projects.find((p) => p.linkedAliaProjectId === aliaProjectId);
           return linked?.id ?? projects[0]?.id ?? null;
         });
       })
       .catch((cause) => setError(msg(cause)));
-  }, [rpc, bbProjectId]);
+  }, [rpc, aliaProjectId]);
 
   const loadTasks = useCallback(() => {
     if (selected === null) return;
@@ -180,7 +180,7 @@ function useBoard() {
     loadSettings();
   }, [loadSettings]);
   // server.ts publishes after every write — from this page, another client,
-  // the bb tasks CLI, or an agent — and after every settings change, so the
+  // the VesnALIA tasks CLI, or an agent — and after every settings change, so the
   // board never goes stale.
   useRealtime(BOARD_CHANGED_CHANNEL, () => {
     loadTasks();

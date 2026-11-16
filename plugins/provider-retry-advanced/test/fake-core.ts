@@ -1,7 +1,7 @@
 /**
- * An in-memory stand-in for the parts of BB core this plugin talks to.
+ * An in-memory stand-in for the parts of VesnALIA core this plugin talks to.
  *
- * `retry` ports core's own rules from bb-app 0.46.1
+ * `retry` ports core's own rules from alia-app 0.46.1
  * (server/src/services/threads/turn-retry.ts and turn-failed.ts): only a
  * thread in `error` with a failed most-recent request can be retried; a named
  * `turnRequestId` must be that request; one live retry per original request
@@ -17,7 +17,7 @@
  * that need a claimed row set its state by hand) and no provider: "same provider session" here only means core re-used the thread's
  * session id, which the real core does through its normal send path.
  */
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 
 /** A `threads.list` row: the `threads.get` DTO plus list-only fields. */
 type Thread = ReturnType<typeof makeThreadResponse> & {
@@ -69,7 +69,7 @@ export class CoreHttpError extends Error {
     message: string,
   ) {
     super(`HTTP ${status}: ${message}`);
-    this.name = "BbHttpError";
+    this.name = "AliaHttpError";
   }
 }
 
@@ -233,7 +233,7 @@ export class FakeCore {
   }
 
   /**
-   * Claude Code's Workflow tool call as BB records it: the call (with
+   * Claude Code's Workflow tool call as VesnALIA records it: the call (with
    * `resumeFromRunId` when it resumes a run), the background task it starts,
    * and the call's result, which names the run.
    */
@@ -284,7 +284,7 @@ export class FakeCore {
 
   /**
    * core's settleDanglingBackgroundTasks when the machine's daemon was
-   * replaced (BB restart, host daemon restart) or lost: every task still
+   * replaced (VesnALIA restart, host daemon restart) or lost: every task still
    * open is closed as stopped from the item it last stored, no presentation.
    */
   settleBackgroundTasks(threadId: string): void {

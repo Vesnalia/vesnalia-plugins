@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createFakePluginHost, makePluginAgentConfigurationContext } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost, makePluginAgentConfigurationContext } from '@vesnalia/plugin-sdk/testing';
 import plugin from './server.ts';
 test('version conflicts, global-only goals and current instructions', async () => {
- const { bb, harness } = createFakePluginHost({ pluginId: 'goals' });
- plugin(bb);
+ const { alia, harness } = createFakePluginHost({ pluginId: 'goals' });
+ plugin(alia);
  try {
   const input = { scope: 'global', revision: 0, course: 'Shared course', priorities: '', constraints: '' };
   await harness.behavior.callRpc('save', input);
@@ -20,8 +20,8 @@ test('version conflicts, global-only goals and current instructions', async () =
  } finally { await harness.lifecycle.dispose(); }
 });
 test('board migrates legacy text, preserves order, excludes completed goals and rejects stale updates', async () => {
- const { bb, harness } = createFakePluginHost({ pluginId: 'goals' });
- plugin(bb);
+ const { alia, harness } = createFakePluginHost({ pluginId: 'goals' });
+ plugin(alia);
  try {
   await harness.behavior.callRpc('save', { scope: 'global', revision: 0, course: 'Legacy course', priorities: 'Legacy focus', constraints: '' });
   const migrated = await harness.behavior.callRpc('boardRead', null) as any;

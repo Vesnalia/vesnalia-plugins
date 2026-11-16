@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { getReviewState, patchReviewState } from "../lib/panel-state";
 import { defaultKnobs } from "../lib/knobs";
@@ -286,7 +286,7 @@ test("a tracked review that can't start says why", async () => {
 test("the title bar's Finish review says what the draft would submit, and opens Finish review at the summary", async () => {
   const draft = { targetKey: "pr-42", verdict: "REQUEST_CHANGES", body: "Two asks.", comments: [{ file: "src/a.ts", line: 2, side: "RIGHT", body: "Handle it." }] };
   const { slot } = await renderWorkspace({}, { getDraft: vi.fn(() => ({ draft })) });
-  // In the band, where BB's title bar didn't take it.
+  // In the band, where VesnALIA's title bar didn't take it.
   const open = await slot.findByRole("button", { name: "Finish review: Request changes, 1 comment" });
   expect(open.textContent).toBe("Finish· 1");
   // It opens Finish review, never closes it: no pressed state.

@@ -57,7 +57,7 @@ export const memorySchema = z.object({
 });
 
 /** CPU, memory and process count over a set of processes. */
-export const bbPartSchema = z.object({
+export const aliaPartSchema = z.object({
   /** Share of the whole machine, 0–100. */
   cpu: z.number(),
   /** Resident memory summed over the processes; shared pages count once per process. */
@@ -66,13 +66,13 @@ export const bbPartSchema = z.object({
 });
 
 /**
- * Everything BB is running (lib/procs.ts, bbTotals): the total, and its two
- * parts, which never overlap: BB's own processes, and every process
+ * Everything VesnALIA is running (lib/procs.ts, aliaTotals): the total, and its two
+ * parts, which never overlap: VesnALIA's own processes, and every process
  * attributed to a thread.
  */
-export const bbTotalSchema = bbPartSchema.extend({
-  app: bbPartSchema,
-  threads: bbPartSchema,
+export const aliaTotalSchema = aliaPartSchema.extend({
+  app: aliaPartSchema,
+  threads: aliaPartSchema,
 });
 
 export const sampleSchema = z.object({
@@ -88,7 +88,7 @@ export const sampleSchema = z.object({
   threads: z.array(threadEntrySchema),
   procs: z.array(processEntrySchema),
   /** Null when `ps` failed, and in rows from older builds. */
-  bb: bbTotalSchema.nullable().default(null),
+  alia: aliaTotalSchema.nullable().default(null),
 });
 
 /** A process name inside a culprit thread, summed over the hot samples, by name (pids change). */
@@ -165,7 +165,7 @@ export type ThreadEntry = z.infer<typeof threadEntrySchema>;
 export type ThreadProcess = z.infer<typeof threadProcessSchema>;
 export type CulpritProcess = z.infer<typeof culpritProcessSchema>;
 export type Memory = z.infer<typeof memorySchema>;
-export type BbTotal = z.infer<typeof bbTotalSchema>;
+export type AliaTotal = z.infer<typeof aliaTotalSchema>;
 export type ProcessEntry = z.infer<typeof processEntrySchema>;
 export type Sample = z.infer<typeof sampleSchema>;
 export type Culprit = z.infer<typeof culpritSchema>;

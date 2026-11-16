@@ -1,15 +1,15 @@
 {
-  "name": "bb-plugin-threadspace",
+  "name": "alia-plugin-threadspace",
   "version": "0.2.2",
   "private": true,
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49"
   },
-  "bb": {
+  "alia": {
     "name": "Threadspace",
-    "description": "A Notion-style BB thread list: projects with emoji and colours, pinned threads per project, a waiting-for-you section and quiet status indicators.",
+    "description": "A Notion-style VesnALIA thread list: projects with emoji and colours, pinned threads per project, a waiting-for-you section and quiet status indicators.",
     "branding": {
       "icon": "PanelLeft"
     },
@@ -20,7 +20,7 @@
     ]
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "node --no-experimental-webstorage node_modules/vitest/vitest.mjs run",
     "screenshots:build": "esbuild screenshots/stand.tsx --bundle --outfile=screenshots/stand.bundle.js --format=iife --jsx=automatic --minify --loader:.json=json"
@@ -30,7 +30,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@radix-ui/react-dialog": "^1.1.19",
     "@radix-ui/react-popover": "^1.1.19",
     "@testing-library/react": "^16.3.2",
@@ -48,10 +47,23 @@
     "typescript": "^5.7.0",
     "vitest": "^3.2.4"
   },
-  "description": "A Notion-style BB thread list: projects with emoji and colours, pinned threads per project, a waiting-for-you section and quiet status indicators.",
+  "description": "A Notion-style VesnALIA thread list: projects with emoji and colours, pinned threads per project, a waiting-for-you section and quiet status indicators.",
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/threadspace#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/KosachMax/threadspace.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/threadspace"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

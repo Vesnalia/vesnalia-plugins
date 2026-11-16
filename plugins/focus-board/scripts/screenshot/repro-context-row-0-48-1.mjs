@@ -1,18 +1,18 @@
 // Runtime probe for the pane-parity audit's Gap 10.3 — the pane's
 // composer-context fallback row (components/pane-context-row.tsx), built
-// against bb 0.46.1's collapsed composer footer
-// (docs/composer-context-collapse-2026-10-16.md). The question: on bb
+// against VesnALIA 0.46.1's collapsed composer footer
+// (docs/composer-context-collapse-2026-10-16.md). The question: on VesnALIA
 // 0.48.1, does the pane's embedded composer still paint NO project/checkout
 // context at rest — the premise the fallback compensates for?
 //
-// bb 0.48.x rewrote the composer footer: the collapsed state now UNMOUNTS
+// VesnALIA 0.48.x rewrote the composer footer: the collapsed state now UNMOUNTS
 // the footer (no more attribute-flip collapse), and the desktop editor
 // starts expanded (`focusesEditorOnMount = !isPointerCoarse`), so on a
 // desktop pane the host's full environment summary may now paint at rest —
 // which would make the fallback dead code there, while a touch pane (editor
 // starts collapsed → footer unmounted) may still show nothing.
 //
-// Drives the LIVE bb web UI in both viewports and reads, inside the open
+// Drives the LIVE VesnALIA web UI in both viewports and reads, inside the open
 // pane:
 //   - the host footer (`[data-follow-up-composer-footer]`): mounted? and do
 //     its project/checkout chips reach the eye (the paint walk the app
@@ -24,7 +24,7 @@
 // reader's (the audit's decision lives in the docs).
 import puppeteer from "puppeteer-core";
 
-const APP = process.env.BB_APP ?? "http://127.0.0.1:38886/plugins/focus-board/board";
+const APP = process.env.ALIA_APP ?? "http://127.0.0.1:38886/plugins/focus-board/board";
 const THREAD_ID = process.env.THREAD_ID ?? "";
 if (!THREAD_ID) {
   console.error("Set THREAD_ID to a board card's thread with a project + checkout environment.");

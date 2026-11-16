@@ -99,7 +99,7 @@ test("a viewer joins as a Selkies viewer, gets what Selkies sends, and may only 
   await box.close();
 });
 
-test("Selkies' own cursor message reaches a viewer, unless BB Box sends the box's cursor itself; BB Box's own messages reach it whatever (060)", async () => {
+test("Selkies' own cursor message reaches a viewer, unless VesnALIA Box sends the box's cursor itself; VesnALIA Box's own messages reach it whatever (060)", async () => {
   let own = false;
   const { server, box, relay, settle } = setup({ ownCursor: () => own });
   const a = relay("a");
@@ -108,16 +108,16 @@ test("Selkies' own cursor message reaches a viewer, unless BB Box sends the box'
   await page.send('cursor,{"curdata":"AA==","hotx":0,"hoty":0}');
   await settle(a);
   assert.ok(a.got.includes('cursor,{"curdata":"AA==","hotx":0,"hoty":0}'), "as X11's Selkies sends the box's cursor");
-  // bb-box-cursor's: Selkies on Sway sends one arrow, whatever the shape.
+  // alia-box-cursor's: Selkies on Sway sends one arrow, whatever the shape.
   own = true;
   await page.send('cursor,{"curdata":"Ag==","hotx":0,"hoty":0}');
   await settle(a);
   assert.ok(!a.got.some((message) => typeof message === "string" && message.includes("Ag==")), "Selkies' arrow goes no further");
-  a.relay.tell("BB_POINTER,10,20");
-  assert.ok(a.got.includes("BB_POINTER,10,20"));
+  a.relay.tell("ALIA_POINTER,10,20");
+  assert.ok(a.got.includes("ALIA_POINTER,10,20"));
   await a.relay.close();
-  a.relay.tell("BB_POINTER,11,20");
-  assert.ok(!a.got.includes("BB_POINTER,11,20"), "nothing once it ended");
+  a.relay.tell("ALIA_POINTER,11,20");
+  assert.ok(!a.got.includes("ALIA_POINTER,11,20"), "nothing once it ended");
   await box.close();
 });
 
@@ -202,7 +202,7 @@ test("the box's clipboard reaches only the viewer with control", async () => {
 });
 
 test("where the video comes from elsewhere, the box's server takes the keys and gives the clipboard and the pointer's shape to the viewers, and is asked for no video, while the pointer goes to the video's source (#865)", async () => {
-  // The video's source, as bb-box-stream on a Mac for a Windows VM, and the box's own server, as bb-box-stream.exe.
+  // The video's source, as alia-box-stream on a Mac for a Windows VM, and the box's own server, as alia-box-stream.exe.
   const video = new FakeSelkies();
   const server = new FakeSelkies();
   const clock = new FakeClock();
@@ -239,14 +239,14 @@ test("where the video comes from elsewhere, the box's server takes the keys and 
   const text = `clipboard,${Buffer.from("copied in the box").toString("base64")}`;
   assert.ok(a.got.includes(text), "the viewer with control gets the clipboard");
   assert.ok(!b.got.includes(text), "a viewer without control does not");
-  const answered = 'BB_DEVICE_ANSWER {"id":"v1","ok":true}';
+  const answered = 'ALIA_DEVICE_ANSWER {"id":"v1","ok":true}';
   await server.pages[0]!.send(answered);
   await until("a device server's answer, to every viewer, which keeps only its own", () => a.got.includes(answered) && b.got.includes(answered));
   own = true;
   await server.pages[0]!.send('cursor,{"curdata":"x","hotx":0,"hoty":0}');
-  await server.pages[0]!.send("BB_PONG,1");
+  await server.pages[0]!.send("ALIA_PONG,1");
   await new Promise((resolve) => setTimeout(resolve, 50));
-  assert.ok(!a.got.some((message) => typeof message === "string" && (message.includes('"curdata":"x"') || message.startsWith("BB_PONG"))), "BB Box's own cursor wins, and the rest stays");
+  assert.ok(!a.got.some((message) => typeof message === "string" && (message.includes('"curdata":"x"') || message.startsWith("ALIA_PONG"))), "VesnALIA Box's own cursor wins, and the rest stays");
 
   // The box's server captures nothing: it is asked for no size, colour or key frame, which the viewers ask their source.
   const before = [...server.pages[0]!.received];
@@ -445,14 +445,14 @@ test("messages are told apart by their first field, and a pointer loses its sequ
   assert.equal(classify("REQUEST_CLIPBOARD"), "input");
   assert.equal(classify("r,1x1"), "drop");
   assert.equal(classify("kdx,1"), "drop");
-  assert.equal(classify('BB_DEVICE {"id":"a","type":"text","text":"日本"}'), "device");
-  assert.equal(classify("BB_DEVICE_STATE {}"), "drop");
+  assert.equal(classify('ALIA_DEVICE {"id":"a","type":"text","text":"日本"}'), "device");
+  assert.equal(classify("ALIA_DEVICE_STATE {}"), "drop");
   assert.equal(unsequenced("m,1,2,0,0,99"), "m,1,2,0,0");
   assert.equal(unsequenced("m2,1,2,0,0"), "m2,1,2,0,0");
   assert.equal(unsequenced("kd,65"), "kd,65");
 });
 
-test("a viewer's word on the largest frame it decodes goes to bb-box, not to Selkies (#864)", async () => {
+test("a viewer's word on the largest frame it decodes goes to alia-box, not to Selkies (#864)", async () => {
   const { server, box } = setup();
   const open = async () => server.channel();
   const end = viewer();
@@ -460,17 +460,17 @@ test("a viewer's word on the largest frame it decodes goes to bb-box, not to Sel
   const relay = new SelkiesRelay({ viewer: end.end, box, open, mayInput: () => false, onDecodes: (most) => void said.push(most) });
   await until("the viewer's page", () => server.pages.length === 1);
   const page = server.pages[0]!;
-  await relay.receive("BB_DECODES,139264");
-  await relay.receive("BB_DECODES,many");
+  await relay.receive("ALIA_DECODES,139264");
+  await relay.receive("ALIA_DECODES,many");
   await relay.receive("STOP_VIDEO");
   await until("the video request", () => page.received.at(-1) === "STOP_VIDEO");
   assert.deepEqual(said, [139264]);
-  assert.ok(!page.received.some((message) => typeof message === "string" && message.startsWith("BB_DECODES")), "Selkies never sees BB Box's own message");
+  assert.ok(!page.received.some((message) => typeof message === "string" && message.startsWith("ALIA_DECODES")), "Selkies never sees VesnALIA Box's own message");
   await relay.close();
   await box.close();
 });
 
-test("a viewer's word on 4:4:4 goes to bb-box, not to Selkies; BB Box asks the display for it over its controller connection", async () => {
+test("a viewer's word on 4:4:4 goes to alia-box, not to Selkies; VesnALIA Box asks the display for it over its controller connection", async () => {
   const { server, box } = setup();
   const open = async () => server.channel();
   const end = viewer();
@@ -478,28 +478,28 @@ test("a viewer's word on 4:4:4 goes to bb-box, not to Selkies; BB Box asks the d
   const relay = new SelkiesRelay({ viewer: end.end, box, open, mayInput: () => false, onFullColour: (yes) => void said.push(yes) });
   await until("the viewer's page", () => server.pages.length === 1);
   const page = server.pages[0]!;
-  await relay.receive("BB_FULLCOLOR,1");
-  await relay.receive("BB_FULLCOLOR,0");
-  await relay.receive("BB_FULLCOLOR,2");
+  await relay.receive("ALIA_FULLCOLOR,1");
+  await relay.receive("ALIA_FULLCOLOR,0");
+  await relay.receive("ALIA_FULLCOLOR,2");
   await relay.receive("STOP_VIDEO");
   await until("the video request", () => page.received.at(-1) === "STOP_VIDEO");
   assert.deepEqual(said, [true, false]);
-  assert.deepEqual(page.received, ["STOP_VIDEO"], "Selkies never sees BB Box's own message");
+  assert.deepEqual(page.received, ["STOP_VIDEO"], "Selkies never sees VesnALIA Box's own message");
   await box.fullColour(true);
   await until("the setting", () => !!server.pages.find((one) => one.role === "controller")?.received.includes('SETTINGS,{"displayId":"primary","video_fullcolor":true}'));
   await relay.close();
   await box.close();
 });
 
-test("BB Box follows a Windows box's pointer through bb-box-stream.exe, which says where it is once asked, and what it looks like (#865)", async () => {
+test("VesnALIA Box follows a Windows box's pointer through alia-box-stream.exe, which says where it is once asked, and what it looks like (#865)", async () => {
   const server = new FakeSelkies();
   const events: BoxPointer[] = [];
   const stop = new AbortController();
   const following = followWindowsPointer(async () => server.channel(), (event) => void events.push(event), stop.signal);
-  await until("the request", () => !!server.pages[0]?.received.includes("BB_POINTER_FOLLOW"));
+  await until("the request", () => !!server.pages[0]?.received.includes("ALIA_POINTER_FOLLOW"));
   const page = server.pages[0]!;
   const shape = 'cursor,{"curdata":"AAAA","hotx":1,"hoty":2}';
-  for (const message of ["BB_POINTER,10,20", shape, "BB_POINTER,", "BB_POINTER,x,y", "clipboard,aGk="]) await page.send(message);
+  for (const message of ["ALIA_POINTER,10,20", shape, "ALIA_POINTER,", "ALIA_POINTER,x,y", "clipboard,aGk="]) await page.send(message);
   await until("the events", () => events.length === 3);
   assert.deepEqual(events, [{ type: "position", x: 10, y: 20 }, { type: "shape", message: shape }, { type: "leave" }], "nothing else");
   stop.abort();

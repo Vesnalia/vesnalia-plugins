@@ -1,10 +1,10 @@
-import type { DynamicTool } from "@get-bb/plugin-sdk/provider-bridge";
+import type { DynamicTool } from "@vesnalia/plugin-sdk/provider-bridge";
 import type { DynamicToolsMcpProxy } from "./dynamic-tools-mcp.ts";
 
 /**
  * OpenCode's beta API does not publish a complete event schema. Keep its
  * untyped payloads behind this adapter type and normalize fields before they
- * reach BB protocol objects.
+ * reach VesnALIA protocol objects.
  */
 export type OpenCodeRecord = Record<string, any>;
 
@@ -50,7 +50,7 @@ export type ActiveTurn = {
 };
 
 export type SessionState = {
-  bbThreadId: string;
+  aliaThreadId: string;
   providerThreadId: string;
   cwd: string;
   permissionMode?: OpenCodePermissionMode;
@@ -71,9 +71,9 @@ export type SessionState = {
   contextWindow?: number | null;
   /** OpenCode agent the session is currently on. */
   agent?: string;
-  /** The agent chosen through BB's `agent` session option, kept across turns. */
+  /** The agent chosen through VesnALIA's `agent` session option, kept across turns. */
   agentChoice?: string;
-  /** Last session-options state published to BB, to skip repeats. */
+  /** Last session-options state published to VesnALIA, to skip repeats. */
   publishedAgentOptions?: string;
   usage: {
     input: number;

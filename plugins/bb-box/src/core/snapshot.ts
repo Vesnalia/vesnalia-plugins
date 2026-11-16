@@ -399,7 +399,7 @@ export interface Standing {
 export const NOT_THE_AGENTS = "That is the person's to do: ask them, in the thread.";
 export const MACHINE_RESTORES_SHIP = false;
 export const MACHINE_RESTORES_OFF = `${PRODUCT} does not restore a box threads run on yet: that stays off until ${PRODUCT} can hold every turn on it while it restores.`;
-export const MACHINES_RESTORE_DISK_ONLY = "A box threads run on is restored from disk snapshots only: a snapshot with its memory would bring back BB's daemon in the middle of its work.";
+export const MACHINES_RESTORE_DISK_ONLY = "A box threads run on is restored from disk snapshots only: a snapshot with its memory would bring back VesnALIA's daemon in the middle of its work.";
 
 function tookIt(snapshot: SnapshotRecord | null, threadId: string): boolean {
   return snapshot?.by.is === "agent" && snapshot.by.threadId === threadId;
@@ -522,8 +522,8 @@ export function byWords(by: Actor): string {
     case "agent":
       return `by the agent in thread ${by.threadId}`;
     case "command":
-      return "by a bb box command";
-    case "bb-box":
+      return "by a VesnALIA box command";
+    case "alia-box":
       return `by ${PRODUCT}: ${by.why}`;
     case "outside":
       return `outside ${PRODUCT}`;

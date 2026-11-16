@@ -1,18 +1,18 @@
-// bb-plugin-souls — backend.
+// alia-plugin-souls — backend.
 //
 // A soul is a reusable agent persona. This entry owns four things:
 //
 //   1. the store (SQLite, synchronous — see store.ts),
-//   2. `bb souls` for shells and scripts,
+//   2. `alia souls` for shells and scripts,
 //   3. agent tools, including `souls_propose`, which runs the AI-led interview
 //      ending in a review card the user approves, revises, or dismisses,
-//   4. `bb.agents.configure`, which injects the selected soul's persona into
+//   4. `alia.agents.configure`, which injects the selected soul's persona into
 //      the thread's instructions.
 //
 // The library page, the composer picker, and the review card live in app.tsx
 // and talk to (1) over the RPC contract below.
 import { createHash, randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   comparisonPrompt,
   delegationProbePrompt,
@@ -266,9 +266,9 @@ const SOUL_TOOLS = [
   ...TEAM_TOOLS,
 ] as const;
 
-export default async function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  const store = createSoulStore(bb, db);
+export default async function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  const store = createSoulStore(alia, db);
 
   // A side chat can read its source's persona, but does not inherit authority.
   function hiringForThread(threadId: string): boolean {
@@ -276,26 +276,26 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function changed() {
-    bb.realtime.publish(SOULS_CHANGED, { count: store.list().length });
+    alia.realtime.publish(SOULS_CHANGED, { count: store.list().length });
   }
 
   // A soul picked on the compose screen has no thread to bind yet, so it waits
   // here — in memory, mirrored to kv so a reload keeps it — and the dispatch
   // hook below binds it to the thread the user is about to start.
   let pending =
-    (await bb.storage.kv.get<{ soulId: string; at: number; allowDelegation?: boolean; hiringOverride?: boolean | null; pinnedRevision?: number | null }>(PENDING_KEY)) ??
+    (await alia.storage.kv.get<{ soulId: string; at: number; allowDelegation?: boolean; hiringOverride?: boolean | null; pinnedRevision?: number | null }>(PENDING_KEY)) ??
     null;
 
   // Compactions from before Souls first watched a thread are history. Kept in
   // kv, so one that lands while the plugin reloads still counts as new.
-  const watchingSince = (await bb.storage.kv.get<number>(WATCHING_KEY)) ?? Date.now();
-  await bb.storage.kv.set(WATCHING_KEY, watchingSince);
+  const watchingSince = (await alia.storage.kv.get<number>(WATCHING_KEY)) ?? Date.now();
+  await alia.storage.kv.set(WATCHING_KEY, watchingSince);
 
   function pendingSoul(): Soul | null {
     if (pending === null) return null;
     if (Date.now() - pending.at > PENDING_TTL_MS) {
       pending = null;
-      void bb.storage.kv.delete(PENDING_KEY).catch(() => undefined);
+      void alia.storage.kv.delete(PENDING_KEY).catch(() => undefined);
       return null;
     }
     const soul = store.find(pending.soulId);
@@ -307,7 +307,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function setPending(soulId: string | null, allowDelegation?: boolean, options: { hiringOverride?: boolean | null; pinnedRevision?: number | null } = {}): Promise<Soul | null> {
     if (soulId === null) {
       pending = null;
-      await bb.storage.kv.delete(PENDING_KEY);
+      await alia.storage.kv.delete(PENDING_KEY);
       changed();
       return null;
     }
@@ -316,7 +316,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (soul.archivedAt !== null) throw new Error("Restore this archived soul before selecting it.");
     if (options.pinnedRevision != null && store.version(soul.id, options.pinnedRevision) === null) throw new Error("That revision no longer exists.");
     pending = { soulId: soul.id, at: Date.now(), allowDelegation: allowDelegation ?? soul.defaultAllowDelegation, ...options };
-    await bb.storage.kv.set(PENDING_KEY, pending);
+    await alia.storage.kv.set(PENDING_KEY, pending);
     changed();
     return pendingSoul();
   }
@@ -326,7 +326,7 @@ export default async function plugin(bb: BbPluginApi) {
   /** What Souls needs of a thread, or null when it cannot be read. */
   async function threadRecord(threadId: string): Promise<ThreadRecord | null> {
     try {
-      const result = (await bb.sdk.threads.get({ threadId })) as unknown;
+      const result = (await alia.sdk.threads.get({ threadId })) as unknown;
       const thread = ((result as { thread?: unknown })?.thread ?? result) as Record<string, unknown> | null;
       const text = (value: unknown) => (typeof value === "string" ? value : null);
       return {
@@ -366,7 +366,7 @@ export default async function plugin(bb: BbPluginApi) {
     const allowDelegation = soul !== null && store.delegationForThread(threadId);
     const base = { soul: soul === null ? null : toSummary(soul), allowDelegation, allowHiring: hiringForThread(threadId), ...store.bindingOptions(threadId), session: null };
     try {
-      const rows = await bb.sdk.threads.events.list({
+      const rows = await alia.sdk.threads.events.list({
         threadId, types: ["thread/identity"], order: "desc", limit: "1",
       });
       const identity = rows[0];
@@ -387,21 +387,21 @@ export default async function plugin(bb: BbPluginApi) {
 
   // The public event-history signal refreshes evidence, not a guessed "applied"
   // flag. A configure call also happens on live turns and proves only preparation.
-  bb.events.on("experimental_thread.events", async ({ thread }) => {
+  alia.events.on("experimental_thread.events", async ({ thread }) => {
     if (store.soulForThread(thread.id) || store.resolutionAt(thread.id, Number.MAX_SAFE_INTEGER))
-      bb.realtime.publish("souls-session-changed", { threadId: thread.id });
+      alia.realtime.publish("souls-session-changed", { threadId: thread.id });
     await publishActivity(thread);
     await restoreAfterCompaction(thread);
   });
-  bb.events.on("thread.archived", ({ thread }) => {
+  alia.events.on("thread.archived", ({ thread }) => {
     store.releaseSession(thread.id);
     forgetActivity(thread.id);
     changed();
   });
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     store.forgetThread(thread.id);
     forgetActivity(thread.id);
-    void bb.storage.kv.delete(compactionKey(thread.id)).catch(() => undefined);
+    void alia.storage.kv.delete(compactionKey(thread.id)).catch(() => undefined);
     changed();
   });
 
@@ -432,7 +432,7 @@ export default async function plugin(bb: BbPluginApi) {
     let activity: Activity | null = null;
     try {
       if (thread.status === "active") {
-        const [latest] = await bb.sdk.threads.events.list({
+        const [latest] = await alia.sdk.threads.events.list({
           threadId: thread.id, types: ["item/started", "item/completed"], order: "desc", limit: "1",
         });
         // Between items the model is working out its next step.
@@ -447,7 +447,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (activityReads.get(thread.id) !== read) return;
     if (activities.get(thread.id) !== activity) {
       activities.set(thread.id, activity);
-      bb.realtime.publish("souls-activity", { threadId: thread.id, activity });
+      alia.realtime.publish("souls-activity", { threadId: thread.id, activity });
     }
     // A thread that lost its soul is followed until it settles, then dropped.
     if (!hasSoul && activity === null) forgetActivity(thread.id);
@@ -490,7 +490,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   /** The saved state, or null; a shape an older build wrote starts over. */
   async function compactionState(threadId: string): Promise<CompactionState | null> {
-    const parsed = compactionStateSchema.safeParse(await bb.storage.kv.get(compactionKey(threadId)));
+    const parsed = compactionStateSchema.safeParse(await alia.storage.kv.get(compactionKey(threadId)));
     return parsed.success ? parsed.data : null;
   }
 
@@ -501,9 +501,9 @@ export default async function plugin(bb: BbPluginApi) {
       previous.pending === next.pending &&
       (previous.attachedAt ?? null) === (next.attachedAt ?? null);
     if (same) return;
-    await bb.storage.kv.set(compactionKey(threadId), next);
+    await alia.storage.kv.set(compactionKey(threadId), next);
     if (previous?.pending !== next.pending)
-      bb.realtime.publish("souls-session-changed", { threadId });
+      alia.realtime.publish("souls-session-changed", { threadId });
   }
 
   const itemTypeOf = (row: { data: unknown } | undefined) =>
@@ -537,7 +537,7 @@ export default async function plugin(bb: BbPluginApi) {
     const soul = store.soulForThread(thread.id, thread.sourceThreadId ?? null);
     if (soul === null) return;
     try {
-      const [compacted] = await bb.sdk.threads.events.list({
+      const [compacted] = await alia.sdk.threads.events.list({
         threadId: thread.id, types: ["thread/compacted"], order: "desc", limit: "1",
       });
       const saved = await compactionState(thread.id);
@@ -554,12 +554,12 @@ export default async function plugin(bb: BbPluginApi) {
 
       if (state.pending && typeof state.attachedAt === "number") {
         const attachedAt = state.attachedAt;
-        const starts = await bb.sdk.threads.events.list({
+        const starts = await alia.sdk.threads.events.list({
           threadId: thread.id, types: ["turn/started", "turn/input/accepted"], order: "desc", limit: "5",
         });
         if (starts.some((row) => row.seq > state.seenSeq && row.createdAt >= attachedAt)) {
           state = { ...state, pending: false, attachedAt: null };
-          bb.log.info(`restored ${soul.name} with the next message after a compaction of ${thread.id}`);
+          alia.log.info(`restored ${soul.name} with the next message after a compaction of ${thread.id}`);
         } else if (Date.now() - attachedAt > ATTACH_WAIT_MS) {
           state = { ...state, attachedAt: null }; // That send never landed: still owed.
         }
@@ -567,8 +567,8 @@ export default async function plugin(bb: BbPluginApi) {
 
       if (state.pending && typeof state.attachedAt !== "number") {
         const [ends, items] = await Promise.all([
-          bb.sdk.threads.events.list({ threadId: thread.id, types: ["turn/completed"], order: "desc", limit: "2" }),
-          bb.sdk.threads.events.list({ threadId: thread.id, types: ["item/started"], order: "desc", limit: "1" }),
+          alia.sdk.threads.events.list({ threadId: thread.id, types: ["turn/completed"], order: "desc", limit: "2" }),
+          alia.sdk.threads.events.list({ threadId: thread.id, types: ["item/started"], order: "desc", limit: "1" }),
         ]);
         const endsSince = ends.filter((row) => row.seq > state.seenSeq);
         // The running turn's latest item: after the compaction and after the last turn ended.
@@ -577,7 +577,7 @@ export default async function plugin(bb: BbPluginApi) {
         const itemType = current ? itemTypeOf(latest) : undefined;
         const usingTools = itemType !== undefined && !NOT_TOOL_WORK.has(itemType);
         if (thread.status === "active" && usingTools && (await threadStatus(thread.id)) === "active") {
-          await bb.sdk.threads.send({
+          await alia.sdk.threads.send({
             threadId: thread.id,
             mode: "steer",
             input: [{
@@ -588,16 +588,16 @@ export default async function plugin(bb: BbPluginApi) {
             }],
           });
           state = { ...state, pending: false };
-          bb.log.info(`restored ${soul.name} mid-task after a compaction of ${thread.id}`);
+          alia.log.info(`restored ${soul.name} mid-task after a compaction of ${thread.id}`);
         } else if (endsSince.length >= 2) {
           // The turn that compacted ended, then a whole turn ran without it.
           state = { ...state, pending: false };
-          bb.log.info(`a turn ran without ${soul.name}'s reminder after compacting ${thread.id}; left to the pointer`);
+          alia.log.info(`a turn ran without ${soul.name}'s reminder after compacting ${thread.id}; left to the pointer`);
         }
       }
       await saveCompactionState(thread.id, state, saved);
     } catch (cause) {
-      bb.log.warn(`could not restore the persona after compacting ${thread.id}: ${String(cause)}`);
+      alia.log.warn(`could not restore the persona after compacting ${thread.id}: ${String(cause)}`);
     }
   }
 
@@ -605,7 +605,7 @@ export default async function plugin(bb: BbPluginApi) {
   // banner inserts one after a compaction; its item id names the thread, so
   // resolving it at send time carries that compaction's reminder. The reminder
   // is settled once the message reaches the thread, not here: a send can fail.
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: "soul",
     label: "Souls",
     search({ query }) {
@@ -661,7 +661,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (fromContext !== undefined && fromContext !== "") return fromContext;
     if (fromThread === undefined) return null;
     try {
-      const result = (await bb.sdk.threads.get({ threadId: fromThread })) as {
+      const result = (await alia.sdk.threads.get({ threadId: fromThread })) as {
         projectId?: unknown;
         thread?: { projectId?: unknown };
       };
@@ -739,7 +739,7 @@ export default async function plugin(bb: BbPluginApi) {
     const holdUntil = Date.now() + EVAL_HOLD_MS;
     for (const arm of arms) {
       try {
-        const spawned = await bb.sdk.threads.spawn({
+        const spawned = await alia.sdk.threads.spawn({
           projectId: input.projectId,
           prompt,
           title: `Eval · ${arm.label}`,
@@ -765,7 +765,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (bound !== null) continue;
       arm.error = `Could not bind ${arm.label}.`;
       try {
-        await bb.sdk.threads.delete({
+        await alia.sdk.threads.delete({
           threadId: arm.threadId,
           childThreadsConfirmed: true,
         });
@@ -779,13 +779,13 @@ export default async function plugin(bb: BbPluginApi) {
     for (const arm of arms) {
       if (arm.threadId === null || arm.error !== null) continue;
       try {
-        const rows = await bb.sdk.threads.queuedMessages.list({ threadId: arm.threadId });
+        const rows = await alia.sdk.threads.queuedMessages.list({ threadId: arm.threadId });
         const queued = rows[0];
         if (queued === undefined) {
           arm.error = "Held message was not listed. It starts when the hold expires, already bound.";
           continue;
         }
-        await bb.sdk.threads.queuedMessages.send({
+        await alia.sdk.threads.queuedMessages.send({
           threadId: arm.threadId,
           queuedMessageId: queued.id,
           mode: "auto",
@@ -823,7 +823,7 @@ export default async function plugin(bb: BbPluginApi) {
         const status = await threadStatus(arm.threadId);
         let output: string | null = null;
         try {
-          const result = await bb.sdk.threads.output({ threadId: arm.threadId });
+          const result = await alia.sdk.threads.output({ threadId: arm.threadId });
           output = result.output;
         } catch {
           output = null;
@@ -864,7 +864,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // --- rpc: what app.tsx calls ---------------------------------------------
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     souls_list: (input) => ({ souls: store.list(input?.includeArchived ?? false).map((soul) => toSummary(soul)) }),
     souls_get: ({ idOrName }) => ({ soul: store.find(idOrName) }),
     souls_import_preview: ({ source, filename, format }) => importAgentFile(source, filename, format),
@@ -909,12 +909,12 @@ export default async function plugin(bb: BbPluginApi) {
           skipped: status === null ? "unknown" : "running",
         };
       try {
-        await bb.sdk.threads.stop({ threadId });
+        await alia.sdk.threads.stop({ threadId });
         store.releaseSession(threadId);
         changed();
         return { soul: soul === null ? null : toSummary(soul), restarted: true, skipped: "" };
       } catch (cause) {
-        bb.log.warn(`could not release ${threadId}: ${String(cause)}`);
+        alia.log.warn(`could not release ${threadId}: ${String(cause)}`);
         return { soul: soul === null ? null : toSummary(soul), restarted: false, skipped: "stop-failed" };
       }
     },
@@ -957,7 +957,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (arm.threadId === null) return { threadId: null, injection: null, childCount: null };
         let childCount: number | null = null;
         try {
-          childCount = (await bb.sdk.threads.childSummary({ threadId: arm.threadId })).nonDeletedChildCount;
+          childCount = (await alia.sdk.threads.childSummary({ threadId: arm.threadId })).nonDeletedChildCount;
         } catch { /* No evidence is unknown, never a false passing result. */ }
         return { threadId: arm.threadId, injection: await threadSoulState(arm.threadId), childCount };
       }));
@@ -989,13 +989,13 @@ export default async function plugin(bb: BbPluginApi) {
 
   // --- agent configuration: the persona a selected soul contributes --------
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     try {
       const soul = store.soulForThread(
         context.thread.id,
         context.thread.sourceThreadId,
       );
-      bb.log.debug(
+      alia.log.debug(
         `configure thread=${context.thread.id} provider=${context.provider.id} soul=${soul?.id ?? "none"}`,
       );
       const allowDelegation = soul !== null && store.delegationForThread(context.thread.id);
@@ -1013,7 +1013,7 @@ export default async function plugin(bb: BbPluginApi) {
     } catch (cause) {
       // `configure` fails closed for the whole plugin if it throws: never let
       // one unreadable soul take the tools away from every thread.
-      bb.log.warn(`soul configuration failed: ${String(cause)}`);
+      alia.log.warn(`soul configuration failed: ${String(cause)}`);
       return { tools: [...SOUL_TOOLS], skills: ["souls"] };
     }
   });
@@ -1023,10 +1023,10 @@ export default async function plugin(bb: BbPluginApi) {
   const toolNotes = [
     "Souls are reusable agent personas the user picks per thread. Delegation consent comes from the user's saved soul default or per-thread checkbox. Tools apply that default but cannot change it; selecting a soul alone grants no additional consent.",
     "When the current soul has the user's saved Allow hiring permission, souls_hire creates and saves a specialist automatically. Check souls_list for an existing fit first. New hires cannot hire or delegate by default. Otherwise create with souls_propose and a user review card. Edits and deletes always require a review card. Tools cannot change hiring permission.",
-    "Prefer souls_team to read a saved roster and souls_spawn_child for model selection and handoffs. For CLI child starts, call souls_arm_child first, then `bb thread spawn --parent-self`. One arm binds one child. Finish a completed task with souls_finish_task to archive temporary hires.",
+    "Prefer souls_team to read a saved roster and souls_spawn_child for model selection and handoffs. For CLI child starts, call souls_arm_child first, then `alia thread spawn --parent-self`. One arm binds one child. Finish a completed task with souls_finish_task to archive temporary hires.",
   ].join(" ");
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "souls_list",
     description:
       "List the souls (reusable agent personas) the user has created, with the one this thread runs as.",
@@ -1053,7 +1053,7 @@ export default async function plugin(bb: BbPluginApi) {
           .join("\n");
       });
       return [
-        `${souls.length} soul(s). "*" marks the soul selected for this thread; bb souls status shows session injection evidence.`,
+        `${souls.length} soul(s). "*" marks the soul selected for this thread; VesnALIA souls status shows session injection evidence.`,
         ...lines,
         ``,
         `Bind one here with souls_select. Read your preferred roster with souls_team; use souls_spawn_child for managed child assignments, or souls_arm_child before a CLI spawn.`,
@@ -1061,7 +1061,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "souls_get",
     description:
       "Read one soul in full: the whole persona an agent adopts (job, hard limits, principles, voice, expertise, model preference). A thread running as a soul calls this to load its persona, which its instructions only point to.",
@@ -1096,7 +1096,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "souls_eval",
     description:
       "Compare a soul with a thread that has no soul, on the same prompt and the same project model. Omit run to print the prompt and a persona grade, and do not start anything. Set run only when the user asked to spend the runs. against adds other souls. baseline includes the no-soul arm (default true). Returns thread ids and does not wait.",
@@ -1168,7 +1168,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "souls_hire",
     description:
       "Create and save a specialist soul automatically when this thread's selected soul has the user's Allow hiring permission. Check souls_list for an existing fit first. No review card is shown. The new soul starts with hiring and child-thread defaults off. This does not spawn a thread or change your persona; use souls_arm_child before an authorized child spawn. Edits and deletes still require review.",
@@ -1201,7 +1201,7 @@ export default async function plugin(bb: BbPluginApi) {
         };
       }
       changed();
-      bb.log.info(`soul hired thread=${ctx.threadId} employer=${employer.id} hired=${hired.id}`);
+      alia.log.info(`soul hired thread=${ctx.threadId} employer=${employer.id} hired=${hired.id}`);
       return [
         `Hired ${hired.emoji} ${hired.name} (${hired.id}), saved automatically under ${employer.name}'s hiring permission.`,
         hired.role === "" ? null : `Job: ${hired.role}`,
@@ -1231,7 +1231,7 @@ export default async function plugin(bb: BbPluginApi) {
     const { draft, existing } = input;
     // Ticked as they are, so approving an edit never quietly drops consent.
     const runsHere = existing !== null && store.soulForThread(input.threadId)?.id === existing.id;
-    const result = await bb.ui.requestInput(
+    const result = await alia.ui.requestInput(
       {
         threadId: input.threadId,
         rendererId: "soul-review",
@@ -1317,7 +1317,7 @@ export default async function plugin(bb: BbPluginApi) {
     ].join("\n");
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "souls_propose",
     description:
       "Put a drafted soul in front of the user as a review card and wait for their decision. Approve saves it (and can bind it to this thread); revise returns their notes so you can improve the draft and propose again. For automatic specialist creation when the current soul has Allow hiring permission, use souls_hire instead.",
@@ -1389,7 +1389,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "souls_update",
     description:
       "Change specific fields of an existing soul the user asked you to tweak (a name, the voice, one principle, a model preference). The user sees the change on a review card and approves, revises or dismisses it; nothing changes before they approve. An approved change reaches every thread running the soul.",
@@ -1437,7 +1437,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "souls_delete",
     description:
       "Delete a soul. The user confirms on a card first; deleting it also unbinds it from every thread.",
@@ -1449,7 +1449,7 @@ export default async function plugin(bb: BbPluginApi) {
       const soul = store.find(idOrName);
       if (soul === null) return `No soul matches "${idOrName}".`;
       const threads = store.selections().filter((row) => row.soul.id === soul.id).length;
-      const result = await bb.ui.requestInput(
+      const result = await alia.ui.requestInput(
         {
           threadId: ctx.threadId,
           rendererId: "soul-delete",
@@ -1470,7 +1470,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "souls_select",
     description:
       "Bind a soul to this thread so its persona is injected into the thread's instructions. Pass threadId only for a child this thread spawned that has not started its first turn; any other thread's soul is its user's choice. To bind a child you are about to spawn, call souls_arm_child instead.",
@@ -1528,10 +1528,10 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "souls_arm_child",
     description:
-      "Arm the next child this thread spawns to run as a soul. Call it immediately before `bb thread spawn --parent-self` when a soul fits that child's job, then spawn. Skip it when no soul fits. One arm binds one child, before that child's first session. Arm again for the next child.",
+      "Arm the next child this thread spawns to run as a soul. Call it immediately before `alia thread spawn --parent-self` when a soul fits that child's job, then spawn. Skip it when no soul fits. One arm binds one child, before that child's first session. Arm again for the next child.",
     presentation: {
       label: { pending: "Arming the next child", completed: "Armed the next child" },
     },
@@ -1548,7 +1548,7 @@ export default async function plugin(bb: BbPluginApi) {
         changed();
         return [
           `The next child this thread spawns will run as ${soul.emoji} ${soul.name}.`,
-          `Spawn it now with bb thread spawn --parent-self, before you spawn anything else.`,
+          `Spawn it now with VesnALIA thread spawn --parent-self, before you spawn anything else.`,
           `The persona is bound before that child's first session. One arm covers one child and expires after five minutes.`,
         ].join("\n");
       } catch (cause) {
@@ -1558,13 +1558,13 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const teamTools = createSoulTeamTools(bb, store, changed);
+  const teamTools = createSoulTeamTools(alia, store, changed);
 
   // --- new threads: bind the soul chosen on the compose screen -------------
 
   // Dispatch admission runs before anything is provisioned, so a binding made
   // here is in place when the thread's first session is constructed.
-  bb.experimental_hooks.on("message.dispatch", async (context) => {
+  alia.experimental_hooks.on("message.dispatch", async (context) => {
     try {
       pendingSoul(); // drops an expired intent
       // A comparison thread is bound by the runner before its message is
@@ -1587,10 +1587,10 @@ export default async function plugin(bb: BbPluginApi) {
       ) {
         const soul = store.select(context.thread.id, intent.soulId, intent.allowDelegation === true, { hiringOverride: intent.hiringOverride, pinnedRevision: intent.pinnedRevision });
         pending = null;
-        await bb.storage.kv.delete(PENDING_KEY);
+        await alia.storage.kv.delete(PENDING_KEY);
         if (soul !== null) {
           changed();
-          bb.log.info(
+          alia.log.info(
             `new thread ${context.thread.id} starts as ${soul.name}`,
           );
         }
@@ -1599,7 +1599,7 @@ export default async function plugin(bb: BbPluginApi) {
       // provisioned, so the binding is in place for its first session.
       // Retries see the binding and do not take a second arm.
       // Our managed/eval starts bind their own soul and must not consume a CLI arm.
-      if (context.attempt === "start-turn" && context.originPluginId !== bb.pluginId) {
+      if (context.attempt === "start-turn" && context.originPluginId !== alia.pluginId) {
         for (const parentId of spawningThreadIds(context)) {
           const soul = store.claimChild(
             parentId,
@@ -1609,7 +1609,7 @@ export default async function plugin(bb: BbPluginApi) {
           );
           if (soul === null) continue;
           changed();
-          bb.log.info(
+          alia.log.info(
             `child thread ${context.thread.id} starts as ${soul.name} (armed by ${parentId})`,
           );
           break;
@@ -1619,7 +1619,7 @@ export default async function plugin(bb: BbPluginApi) {
     } catch (cause) {
       // A hook that throws FAILS THE ATTEMPT. A persona preference is never
       // worth a user's message, so this swallows everything.
-      bb.log.warn(`dispatch hook failed: ${String(cause)}`);
+      alia.log.warn(`dispatch hook failed: ${String(cause)}`);
     }
     return { action: "proceed" as const };
   });
@@ -1628,21 +1628,21 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb souls list [--json]",
-    "  bb souls show <soul> [--json]",
-    "  bb souls create <name> [--data <soul-json>] [--tagline <text>] [--role <text>]",
+    "  VesnALIA souls list [--json]",
+    "  VesnALIA souls show <soul> [--json]",
+    "  VesnALIA souls create <name> [--data <soul-json>] [--tagline <text>] [--role <text>]",
     "                         [--emoji <char>] [--personality <text>]",
     "                         [--expertise <a,b>] [--principles <a,b>] [--boundaries <a,b>]",
-    "  bb souls update <soul> --data <patch-json>",
-    "  bb souls delete <soul>",
-    "  bb souls current [--thread <id>] [--json]",
-    "  bb souls status [--thread <id>] [--json]",
-    "  bb souls select <soul> [--thread <id>] [--now | --next-child]",
-    "  bb souls unbind [--thread <id>]",
-    "  bb souls eval [soul] [--json]",
-    "  bb souls eval <soul> --run [--prompt <text>] [--against <soul>] [--no-baseline] [--project <id>] [--json]",
-    "  bb souls eval show [id] [--json]",
-    "  bb souls threads [--json]",
+    "  VesnALIA souls update <soul> --data <patch-json>",
+    "  VesnALIA souls delete <soul>",
+    "  VesnALIA souls current [--thread <id>] [--json]",
+    "  VesnALIA souls status [--thread <id>] [--json]",
+    "  VesnALIA souls select <soul> [--thread <id>] [--now | --next-child]",
+    "  VesnALIA souls unbind [--thread <id>]",
+    "  VesnALIA souls eval [soul] [--json]",
+    "  VesnALIA souls eval <soul> --run [--prompt <text>] [--against <soul>] [--no-baseline] [--project <id>] [--json]",
+    "  VesnALIA souls eval show [id] [--json]",
+    "  VesnALIA souls threads [--json]",
     "",
     "Prefer the AI-led interview: ask an agent to create a soul and it will",
     "interview you, then show a review card. <soul> is an id, name, or slug.",
@@ -1712,59 +1712,59 @@ export default async function plugin(bb: BbPluginApi) {
       .join("\n");
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "souls",
     summary: "Create, inspect, and apply souls — reusable agent personas",
     commands: [
-      { name: "list", summary: "List souls", usage: "bb souls list [--json]" },
-      { name: "status", summary: "Show selection, consent and session injection evidence", usage: "bb souls status [--thread <id>] [--json]" },
+      { name: "list", summary: "List souls", usage: "alia souls list [--json]" },
+      { name: "status", summary: "Show selection, consent and session injection evidence", usage: "alia souls status [--thread <id>] [--json]" },
       {
         name: "show",
         summary: "Show one soul and the persona it injects",
-        usage: "bb souls show <soul> [--json]",
+        usage: "alia souls show <soul> [--json]",
       },
       {
         name: "create",
         summary: "Create a soul from flags or a JSON draft",
-        usage: "bb souls create <name> [--data <soul-json>] [--tagline <text>]",
+        usage: "alia souls create <name> [--data <soul-json>] [--tagline <text>]",
       },
       {
         name: "update",
         summary: "Patch a soul's fields from JSON",
-        usage: "bb souls update <soul> --data <patch-json>",
+        usage: "alia souls update <soul> --data <patch-json>",
       },
       {
         name: "delete",
         summary: "Delete a soul and unbind it everywhere",
-        usage: "bb souls delete <soul>",
+        usage: "alia souls delete <soul>",
       },
       {
         name: "current",
         summary: "Show the soul a thread runs as",
-        usage: "bb souls current [--thread <id>] [--json]",
+        usage: "alia souls current [--thread <id>] [--json]",
       },
       {
         name: "select",
         summary:
           "Bind a soul to a thread, or arm the next child this thread spawns (--next-child)",
-        usage: "bb souls select <soul> [--thread <id>] [--now | --next-child]",
+        usage: "alia souls select <soul> [--thread <id>] [--now | --next-child]",
       },
       {
         name: "unbind",
         summary: "Clear a thread's soul",
-        usage: "bb souls unbind [--thread <id>]",
+        usage: "alia souls unbind [--thread <id>]",
       },
       {
         name: "threads",
         summary: "List threads and the souls they run as",
-        usage: "bb souls threads [--json]",
+        usage: "alia souls threads [--json]",
       },
       {
         name: "eval",
         summary:
           "Compare a soul with no soul on one prompt. --run starts the threads. show reads them.",
         usage:
-          "bb souls eval <soul> --run [--prompt <text>] [--against <soul>] [--project <id>]",
+          "alia souls eval <soul> --run [--prompt <text>] [--against <soul>] [--project <id>]",
       },
     ],
     async run(argv, ctx) {
@@ -1791,7 +1791,7 @@ export default async function plugin(bb: BbPluginApi) {
       // through a card the user approves, and binds only its own threads.
       if (ctx.threadId !== undefined && (command === "create" || command === "update" || command === "delete"))
         return fail(
-          `Inside a thread, use souls_hire to create a specialist when the current soul has Allow hiring permission. Otherwise use souls_propose, souls_update or souls_delete for a card the user approves. To change a soul yourself, use the Souls page, or run bb souls ${command} outside a thread.`,
+          `Inside a thread, use souls_hire to create a specialist when the current soul has Allow hiring permission. Otherwise use souls_propose, souls_update or souls_delete for a card the user approves. To change a soul yourself, use the Souls page, or run alia souls ${command} outside a thread.`,
         );
       if (
         ctx.threadId !== undefined && threadId !== undefined &&
@@ -1799,7 +1799,7 @@ export default async function plugin(bb: BbPluginApi) {
         !(await mayBind(ctx.threadId, threadId))
       )
         return fail(
-          `From inside a thread, bb souls ${command} changes only that thread or a child it spawned. Choose ${threadId}'s soul from its own + menu (Choose a soul…).`,
+          `From inside a thread, VesnALIA souls ${command} changes only that thread or a child it spawned. Choose ${threadId}'s soul from its own + menu (Choose a soul…).`,
         );
 
       switch (command) {
@@ -1812,7 +1812,7 @@ export default async function plugin(bb: BbPluginApi) {
           return reply(
             souls.map((soul) => toSummary(soul)),
             souls.length === 0
-              ? "No souls. Ask an agent to interview you about one, or run: bb souls create <name>"
+              ? "No souls. Ask an agent to interview you about one, or run: VesnALIA souls create <name>"
               : souls.map(formatSoul).join("\n\n"),
           );
         }
@@ -1947,7 +1947,7 @@ export default async function plugin(bb: BbPluginApi) {
               applied = ` Not released: the thread is ${status ?? "unreachable"}, so the persona applies when its session is next constructed.`;
             } else {
               try {
-                await bb.sdk.threads.stop({ threadId });
+                await alia.sdk.threads.stop({ threadId });
                 store.releaseSession(threadId);
                 changed();
                 applied = " Runtime released — the next turn runs as this soul.";
@@ -2078,7 +2078,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

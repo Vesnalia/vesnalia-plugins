@@ -1,10 +1,10 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { LANGUAGES } from "./i18n";
 
 export const ICONS_TAG = "icons";
 
-/** bb accepts icon registrations only for ids of letters, digits, `-` and `_`. */
+/** VesnALIA accepts icon registrations only for ids of letters, digits, `-` and `_`. */
 export const PROVIDER_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
 export const providerIdSchema = z.string().regex(PROVIDER_ID_PATTERN, "invalid provider id");
 export const colorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/, "color must look like #rrggbb");

@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { commentAsk, describeTask } from "./model";
 import { currentStatusSince } from "./attention-age";
@@ -35,7 +35,7 @@ const projectSchema = z.object({
   id: z.string(),
   name: z.string(),
   prefix: z.string(),
-  linkedBbProjectId: z.string().nullable().optional(),
+  linkedAliaProjectId: z.string().nullable().optional(),
   color: z.string().optional(),
   folderId: z.string().nullable().optional(),
 });
@@ -212,13 +212,13 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   const call = <T>(
     method: string,
     input: unknown,
     outputSchema: z.ZodType<T>,
   ) =>
-    bb.sdk.plugins.callRpc({
+    alia.sdk.plugins.callRpc({
       pluginId: "tasks",
       method,
       input: input as never,
@@ -232,7 +232,7 @@ export default async function plugin(bb: BbPluginApi) {
     revision++;
   };
   const { liveOrchestrators, ...delegationRpc } = delegationService(
-    bb,
+    alia,
     invalidate,
   );
   const delegation = { liveOrchestrators };
@@ -579,11 +579,11 @@ export default async function plugin(bb: BbPluginApi) {
     return result;
   }
   async function getPreferences() {
-    const keys = await bb.storage.kv.list("item:");
+    const keys = await alia.storage.kv.list("item:");
     const rows = await Promise.all(
       keys.map(async (key) => [
         key.slice(5),
-        await bb.storage.kv.get<Preference>(key),
+        await alia.storage.kv.get<Preference>(key),
       ]),
     );
     return preferencesSchema.parse(Object.fromEntries(rows));
@@ -601,14 +601,14 @@ export default async function plugin(bb: BbPluginApi) {
         throw new Error("Only project areas can be hidden from Overview.");
       if (snoozedUntil !== undefined && !id.startsWith("task:"))
         throw new Error("Only tasks can be snoozed.");
-      const current = (await bb.storage.kv.get<Preference>(`item:${id}`)) ?? {};
+      const current = (await alia.storage.kv.get<Preference>(`item:${id}`)) ?? {};
       const merged: Preference = { ...current, ...patch };
       // A snooze lives only here, never in Tasks; clearing drops the field.
       if (snoozedUntil) merged.snoozedUntil = snoozedUntil;
       else if (snoozedUntil !== undefined) delete merged.snoozedUntil;
       const next = preferenceSchema.parse(merged);
-      await bb.storage.kv.set(`item:${id}`, next);
-      bb.realtime.publish("preferences-changed", { id });
+      await alia.storage.kv.set(`item:${id}`, next);
+      alia.realtime.publish("preferences-changed", { id });
       return next;
     });
     preferenceWrite = write.catch(() => undefined);
@@ -616,7 +616,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
   // A repeated submit or attachment retry must never start another agent.
   const creations = new Map<string, Promise<SessionResult>>();
-  const management = managementService(bb, invalidate);
+  const management = managementService(alia, invalidate);
   async function attachSession(result: SessionResult) {
     if (!result.taskId) return result;
     try {
@@ -649,16 +649,16 @@ export default async function plugin(bb: BbPluginApi) {
       result = await attachSession(result);
       creations.set(requestId, Promise.resolve(result));
       try {
-        await bb.storage.kv.set(`session:${requestId}`, result);
+        await alia.storage.kv.set(`session:${requestId}`, result);
       } catch {
         /* The returned receipt reflects the attachment result. */
       }
     }
     return result;
   }
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     ...management,
-    ...settlementService(bb, invalidate),
+    ...settlementService(alia, invalidate),
     ...delegationRpc,
     createSession: ({ requestId, request, taskId }) => {
       const existing = creations.get(requestId);
@@ -668,7 +668,7 @@ export default async function plugin(bb: BbPluginApi) {
         );
       const creation = (async () => {
         const key = `session:${requestId}`;
-        const stored = await bb.storage.kv.get<SessionResult>(key);
+        const stored = await alia.storage.kv.get<SessionResult>(key);
         if (stored) return recoverCreation(requestId, stored, taskId);
         if (taskId) {
           // Validate the target before dispatch, including a task removed since the map loaded.
@@ -678,7 +678,7 @@ export default async function plugin(bb: BbPluginApi) {
             z.object({ task: z.object({ id: z.string() }) }),
           );
         }
-        const thread = await bb.sdk.threads.spawn({
+        const thread = await alia.sdk.threads.spawn({
           ...request,
           visibility: "visible",
         });
@@ -691,13 +691,13 @@ export default async function plugin(bb: BbPluginApi) {
         };
         // Save the created id before the second mutation so retries recover it.
         try {
-          await bb.storage.kv.set(key, result);
+          await alia.storage.kv.set(key, result);
         } catch {
           /* In-memory receipt still prevents repeat dispatch. */
         }
         result = await attachSession(result);
         try {
-          await bb.storage.kv.set(key, result);
+          await alia.storage.kv.set(key, result);
         } catch {
           /* Return the live session even if receipt persistence fails. */
         }
@@ -709,13 +709,13 @@ export default async function plugin(bb: BbPluginApi) {
     },
     retrySessionAttachment: async ({ requestId }) => {
       const result = await (creations.get(requestId) ??
-        bb.storage.kv.get<SessionResult>(`session:${requestId}`));
+        alia.storage.kv.get<SessionResult>(`session:${requestId}`));
       if (!result)
         throw new Error("No created session was found for this request.");
       const next = await attachSession(sessionResultSchema.parse(result));
       creations.set(requestId, Promise.resolve(next));
       try {
-        await bb.storage.kv.set(`session:${requestId}`, next);
+        await alia.storage.kv.set(`session:${requestId}`, next);
       } catch {
         /* Attachment succeeded; retain the in-memory receipt. */
       }
@@ -728,23 +728,23 @@ export default async function plugin(bb: BbPluginApi) {
     setPreference,
     layout: async () => {
       // An unreadable or older stored choice keeps the default view working.
-      const stored = await bb.storage.kv.get<unknown>("view:layout");
+      const stored = await alia.storage.kv.get<unknown>("view:layout");
       const parsed = layoutSchema.safeParse(stored);
       return parsed.success ? parsed.data : { layout: "overview" as const };
     },
     setLayout: async ({ layout }) => {
-      await bb.storage.kv.set("view:layout", { layout });
+      await alia.storage.kv.set("view:layout", { layout });
       return { layout };
     },
     legend: async () => {
       // Shut until opened once: on a phone the first area comes first.
       const parsed = legendSchema.safeParse(
-        await bb.storage.kv.get<unknown>("view:legend"),
+        await alia.storage.kv.get<unknown>("view:legend"),
       );
       return parsed.success ? parsed.data : { open: false };
     },
     setLegend: async ({ open }) => {
-      await bb.storage.kv.set("view:legend", { open });
+      await alia.storage.kv.set("view:legend", { open });
       return { open };
     },
     previews: async ({ threadIds, fresh }) => {
@@ -753,7 +753,7 @@ export default async function plugin(bb: BbPluginApi) {
           let cached = previews.get(threadId);
           if (fresh || !cached || Date.now() - cached.at > 15_000) {
             try {
-              const result = await bb.sdk.threads.output({ threadId });
+              const result = await alia.sdk.threads.output({ threadId });
               cached = {
                 at: Date.now(),
                 ...sessionPreview(result.output ?? ""),
@@ -780,14 +780,14 @@ export default async function plugin(bb: BbPluginApi) {
       return Object.fromEntries(entries);
     },
   });
-  bb.cli.register({
+  alia.cli.register({
     name: "work-map",
     summary: "Inspect Work Map and manage project areas",
     commands: [
       {
         name: "status",
         summary: "Check project, task and session-link coverage",
-        usage: "bb work-map status [--json]",
+        usage: "alia work-map status [--json]",
       },
       {
         name: "project",
@@ -798,16 +798,16 @@ export default async function plugin(bb: BbPluginApi) {
         name: "task",
         summary: "Add a backlog task to a project",
         usage:
-          "bb work-map task create --project KEY --title TITLE [--description TEXT] [--request-id UUID] [--json]",
+          "alia work-map task create --project KEY --title TITLE [--description TEXT] [--request-id UUID] [--json]",
       },
       {
         name: "attach",
         summary: "Connect an existing session to a task",
-        usage: "bb work-map attach TASK-KEY --thread THREAD-ID [--json]",
+        usage: "alia work-map attach TASK-KEY --thread THREAD-ID [--json]",
       },
     ],
     async run(argv) {
-      const usage = `Usage: bb work-map status [--json]\n${managementUsage}`;
+      const usage = `Usage: VesnALIA work-map status [--json]\n${managementUsage}`;
       if (!argv.length || argv[0] === "--help")
         return { exitCode: 0, stdout: usage };
       if (["project", "task", "attach"].includes(argv[0]))
@@ -840,7 +840,7 @@ export default async function plugin(bb: BbPluginApi) {
       };
     },
   });
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     previews.clear();
     details.clear();
     labelsByProject.clear();

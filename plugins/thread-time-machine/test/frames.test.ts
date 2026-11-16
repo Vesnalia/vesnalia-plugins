@@ -269,10 +269,10 @@ describe("synthetic edge cases", () => {
   it("tool calls show the tool, its arguments and its result", () => {
     const [frame] = buildFrames([
       ev("item/completed", {
-        item: { type: "toolCall", id: "t1", server: "bb", tool: "ultragoal_state", arguments: { plan_limit: 50 }, result: { ok: true } },
+        item: { type: "toolCall", id: "t1", server: "alia", tool: "ultragoal_state", arguments: { plan_limit: 50 }, result: { ok: true } },
       }),
     ]);
-    expect(frame.label).toBe("bb · ultragoal_state");
+    expect(frame.label).toBe("alia · ultragoal_state");
     expect(frame.detail).toContain('"plan_limit": 50');
     expect(frame.text).toContain('"ok": true');
   });

@@ -12,7 +12,7 @@ import {
 } from 'node:fs';
 import { homedir } from 'node:os';
 import { delimiter, dirname, join } from 'node:path';
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import {
   ACP_PLUGIN_ID,
   type CustomAgent,
@@ -170,23 +170,23 @@ function writeLegacyAgents(dataDir: string, agents: CustomAgent[]): boolean {
 
 type CliResult = { exitCode: number; stdout?: string; stderr?: string };
 
-function createAgentStore(bb: BbPluginApi) {
+function createAgentStore(alia: AliaPluginApi) {
   async function dataDir(): Promise<string> {
     try {
-      const config = await bb.sdk.system.config();
+      const config = await alia.sdk.system.config();
       if (config.dataDir.length > 0) return config.dataDir;
     } catch (error) {
-      bb.log.warn(`Could not resolve bb data directory through the SDK: ${String(error)}`);
+      alia.log.warn(`Could not resolve VesnALIA data directory through the SDK: ${String(error)}`);
     }
-    return process.env.BB_DATA_DIR ?? join(homedir(), '.bb');
+    return process.env.ALIA_DATA_DIR ?? join(homedir(), '.vesnalia');
   }
 
   async function readSettingAgents(): Promise<CustomAgent[] | null> {
     try {
-      const settings = await bb.sdk.plugins.getSettings({ pluginId: ACP_PLUGIN_ID });
+      const settings = await alia.sdk.plugins.getSettings({ pluginId: ACP_PLUGIN_ID });
       return parseCustomAgents(settings.values.customAgents);
     } catch (error) {
-      bb.log.warn(`Could not read ${ACP_PLUGIN_ID} customAgents: ${String(error)}`);
+      alia.log.warn(`Could not read ${ACP_PLUGIN_ID} customAgents: ${String(error)}`);
       return null;
     }
   }
@@ -202,7 +202,7 @@ function createAgentStore(bb: BbPluginApi) {
 
   async function writeSettingAgents(agents: CustomAgent[]): Promise<void> {
     const serialized = agents.length === 0 ? '' : stringifyCustomAgents(agents);
-    await bb.sdk.plugins.updateSettings({
+    await alia.sdk.plugins.updateSettings({
       pluginId: ACP_PLUGIN_ID,
       values: { customAgents: serialized },
     });
@@ -211,14 +211,14 @@ function createAgentStore(bb: BbPluginApi) {
   async function stripLegacyAgents(root: string): Promise<boolean> {
     const stripped = removeAgent(readLegacyAgents(root));
     if (!stripped.changed || !writeLegacyAgents(root, stripped.agents)) return false;
-    await bb.sdk.system.reloadConfig();
+    await alia.sdk.system.reloadConfig();
     return true;
   }
 
   async function provisionLegacy(root: string, managed: CustomAgent): Promise<boolean> {
     const next = upsertAgent(readLegacyAgents(root), managed);
     if (!next.changed || !writeLegacyAgents(root, next.agents)) return false;
-    await bb.sdk.system.reloadConfig();
+    await alia.sdk.system.reloadConfig();
     return true;
   }
 
@@ -293,9 +293,9 @@ async function readUsageWithAgentEnvOverInherited(store: AgentStore) {
   });
 }
 
-async function providerRegistered(bb: BbPluginApi): Promise<boolean> {
+async function providerRegistered(alia: AliaPluginApi): Promise<boolean> {
   try {
-    return (await bb.sdk.providers.list()).some((provider) => provider.id === PROFILE.providerId);
+    return (await alia.sdk.providers.list()).some((provider) => provider.id === PROFILE.providerId);
   } catch {
     return false;
   }
@@ -306,7 +306,7 @@ function failure(error: unknown): CliResult {
 }
 
 function cliCommands(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   store: AgentStore,
   usage: UsageSource
 ): Record<string, (argv: string[]) => Promise<CliResult>> {
@@ -351,7 +351,7 @@ function cliCommands(
         (settingAgents === null ? undefined : findOwnAgent(settingAgents)) ??
         findOwnAgent(legacyAgents);
       const binary = findBinary(entry);
-      const registered = await providerRegistered(bb);
+      const registered = await providerRegistered(alia);
       const setting = settingAgents?.some(isOwnAgent) ? 'present' : 'missing';
       const legacy = legacyAgents.some((agent) => isOwnAgent(agent) || isRenamedAgent(agent))
         ? 'present'
@@ -360,42 +360,42 @@ function cliCommands(
         `CLI: ${binary ?? 'NOT FOUND'}`,
         `ACP customAgents entry: ${setting}`,
         `legacy config.json entry: ${legacy}`,
-        `bb provider ${PROFILE.providerId}: ${registered ? 'registered' : 'NOT registered'}`,
+        `alia provider ${PROFILE.providerId}: ${registered ? 'registered' : 'NOT registered'}`,
       ];
       return { exitCode: binary && entry && registered ? 0 : 1, stdout: `${lines.join('\n')}\n` };
     },
   };
 }
 
-export default function plugin(bb: BbPluginApi) {
-  const store = createAgentStore(bb);
-  const usage = registerUsageSource(bb, () => readUsageWithAgentEnvOverInherited(store));
-  const commands = cliCommands(bb, store, usage);
+export default function plugin(alia: AliaPluginApi) {
+  const store = createAgentStore(alia);
+  const usage = registerUsageSource(alia, () => readUsageWithAgentEnvOverInherited(store));
+  const commands = cliCommands(alia, store, usage);
 
-  bb.background.service('provision', {
+  alia.background.service('provision', {
     async start() {
       try {
         const result = await store.provision(true);
-        bb.log.info(
+        alia.log.info(
           result.changed
             ? `registered ${PROFILE.providerId} with ${result.binary}`
             : `${PROFILE.providerId} is already configured`
         );
       } catch (error) {
         const message = String(error);
-        bb.log.error(message);
-        bb.status.needsConfiguration(message);
+        alia.log.error(message);
+        alia.status.needsConfiguration(message);
       }
     },
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: PROFILE.id,
     summary: `Manage the ${PROFILE.displayName} ACP provider.`,
     commands: [
       {
         name: 'status',
-        summary: 'Check the CLI and bb provider registration',
+        summary: 'Check the CLI and VesnALIA provider registration',
         usage: `${PROFILE.id} status`,
       },
       {
@@ -420,7 +420,7 @@ export default function plugin(bb: BbPluginApi) {
       if (handler) return handler(argv);
       return {
         exitCode: 2,
-        stderr: `Unknown subcommand "${command}". Use "bb ${PROFILE.id} status".\n`,
+        stderr: `Unknown subcommand "${command}". Use "VesnALIA ${PROFILE.id} status".\n`,
       };
     },
   });

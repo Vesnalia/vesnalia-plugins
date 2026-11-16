@@ -16,7 +16,7 @@ import {
 
 /** Neutral fixture label. The supervisors treat the label as opaque, so the
     tests derive every expected path and service target from this one value. */
-const TEST_LABEL = "com.example.bb.agent-proxy";
+const TEST_LABEL = "com.example.alia.agent-proxy";
 
 interface FakeJob {
   loaded: boolean;

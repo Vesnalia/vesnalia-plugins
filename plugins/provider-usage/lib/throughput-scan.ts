@@ -1,9 +1,9 @@
 import {
   bucketFromTotals,
   normalizeProviderId,
-  type BbUsageEvent,
-  type BbUsageTotal,
-} from "./bb-usage-scan";
+  type AliaUsageEvent,
+  type AliaUsageTotal,
+} from "./alia-usage-scan";
 import {
   THROUGHPUT_WINDOW_MS,
   type ThroughputRecorder,
@@ -16,11 +16,11 @@ import {
  */
 const POLL_GRACE_MS = 5 * 60_000;
 /**
- * BB rejects any thread-event page larger than this with a 400, so every read
+ * VesnALIA rejects any thread-event page larger than this with a 400, so every read
  * here pages rather than asking for its whole budget at once. Asking for more
  * is not merely trimmed — the request fails outright, which is silent to the
  * chart: the scanner catches, skips the thread, never stores a cursor, and
- * draws a confident flat zero. Keep every `limit` that reaches BB clamped here.
+ * draws a confident flat zero. Keep every `limit` that reaches VesnALIA clamped here.
  */
 const MAX_EVENT_PAGE = 100;
 /** Ceiling on the first-sight backfill, in events across all pages. */
@@ -54,24 +54,24 @@ export interface ThroughputScanDeps {
     beforeSeq?: number;
     order: "asc" | "desc";
     limit: number;
-  }) => Promise<BbUsageEvent[]>;
+  }) => Promise<AliaUsageEvent[]>;
   onError?: (error: unknown) => void;
 }
 
 interface ThreadCursor {
   lastSeq: number;
-  previousTotal: BbUsageTotal;
+  previousTotal: AliaUsageTotal;
 }
 
 /**
- * Turns BB's own `thread/tokenUsage/updated` stream into live deltas.
+ * Turns VesnALIA's own `thread/tokenUsage/updated` stream into live deltas.
  *
  * This is deliberately a different source from the daily chart's transcript
  * scanners. Those read each agent's files, which is right for history but says
- * nothing about *when* BB drove the work; the event stream is the only source
+ * nothing about *when* VesnALIA drove the work; the event stream is the only source
  * that is both current and uniform across every provider. Because it is the
  * one source here, no provider is excluded and nothing is counted twice — the
- * trade is that work run outside BB (an agent CLI in a bare terminal) reports
+ * trade is that work run outside VesnALIA (an agent CLI in a bare terminal) reports
  * no events and so does not appear.
  */
 export function createThroughputScanner(
@@ -89,7 +89,7 @@ export function createThroughputScanner(
    * drop a whole session's history onto one instant.
    *
    * The event's `last` field is not a way out. It is not uniformly "the last
-   * call": BB's Claude Code bridge reports usage accumulated since the provider
+   * call": VesnALIA's Claude Code bridge reports usage accumulated since the provider
    * session resumed, which has been observed at 55.9M against a 98.7M running
    * total — hours of earlier work, not a step. Trusting it produced exactly the
    * spike this guard exists to prevent.
@@ -101,7 +101,7 @@ export function createThroughputScanner(
    * starts; the alternative is a chart that invents millions of tokens.
    */
   const firstBucket = (
-    event: BbUsageEvent,
+    event: AliaUsageEvent,
     thread: ThroughputScanThread,
     nowMs: number,
   ) => {
@@ -123,8 +123,8 @@ export function createThroughputScanner(
   const readBaseline = async (
     threadId: string,
     nowMs: number,
-  ): Promise<BbUsageEvent[]> => {
-    const collected: BbUsageEvent[] = [];
+  ): Promise<AliaUsageEvent[]> => {
+    const collected: AliaUsageEvent[] = [];
     let beforeSeq: number | undefined;
     while (collected.length < BASELINE_LIMIT) {
       const limit = Math.min(MAX_EVENT_PAGE, BASELINE_LIMIT - collected.length);
@@ -157,8 +157,8 @@ export function createThroughputScanner(
   const readIncrement = async (
     threadId: string,
     afterSeq: number,
-  ): Promise<BbUsageEvent[]> => {
-    const collected: BbUsageEvent[] = [];
+  ): Promise<AliaUsageEvent[]> => {
+    const collected: AliaUsageEvent[] = [];
     let cursorSeq = afterSeq;
     while (collected.length < INCREMENT_LIMIT) {
       const limit = Math.min(MAX_EVENT_PAGE, INCREMENT_LIMIT - collected.length);
@@ -184,12 +184,12 @@ export function createThroughputScanner(
 
   const ingest = (
     thread: ThroughputScanThread,
-    events: BbUsageEvent[],
+    events: AliaUsageEvent[],
     cursor: ThreadCursor | undefined,
     nowMs: number,
   ): ThreadCursor => {
     const ordered = [...events].sort((a, b) => a.seq - b.seq);
-    let previous: BbUsageTotal = cursor?.previousTotal ?? {};
+    let previous: AliaUsageTotal = cursor?.previousTotal ?? {};
     let lastSeq = cursor?.lastSeq ?? 0;
     const providerId = normalizeProviderId(thread.providerId);
 
@@ -254,7 +254,7 @@ export function createThroughputScanner(
       let scanned = 0;
       for (const thread of candidates) {
         const cursor = cursors.get(thread.id);
-        let events: BbUsageEvent[];
+        let events: AliaUsageEvent[];
         try {
           events = cursor
             ? await readIncrement(thread.id, cursor.lastSeq)

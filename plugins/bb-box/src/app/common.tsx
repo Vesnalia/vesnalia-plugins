@@ -1,9 +1,9 @@
 // Pieces the panels share: live state from the server that follows its
 // change signals, a ticking clock, words for times, and small controls in
-// BB's style.
+// VesnALIA's style.
 
 import type { BoxForm } from "../backends/types.ts";
-import { experimental_Icon as Icon, useRealtime, useRealtimeConnectionState, UrlLink } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useRealtime, useRealtimeConnectionState, UrlLink } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -137,7 +137,7 @@ export function forThread(threadId: string) {
 export type Tone = "ok" | "busy" | "off" | "bad" | "warn";
 
 /**
- * BB's status dot: a filled dot in the tone's colour, a ring for off, a
+ * VesnALIA's status dot: a filled dot in the tone's colour, a ring for off, a
  * spinner for busy, in a box the height of one line of the text beside it
  * (leading-snug), so the dot and the spinner both centre on the status
  * line's first line (the operator's note of 2 October 2026: the spinner
@@ -202,10 +202,10 @@ export interface LineItem {
 }
 
 /**
- * A box row's second line: its dot, then its items separated by BB's middle
+ * A box row's second line: its dot, then its items separated by VesnALIA's middle
  * dot, on one line however narrow the panel. The state comes first and what
  * to act on next. Items that do not fit drop from the end, whole, with their
- * dot, rather than being cut mid-word: the BB machine's timing and the size
+ * dot, rather than being cut mid-word: the VesnALIA machine's timing and the size
  * go first, and the details say both. The state itself is cut only when it
  * alone does not fit. Hovering a line that lost anything shows all of it.
  */
@@ -352,7 +352,7 @@ export function RowTitle({ name, os, device = null, badges }: { name: string; os
 }
 
 /**
- * Items separated by BB's middle dot, wrapping where they must. Each item
+ * Items separated by VesnALIA's middle dot, wrapping where they must. Each item
  * carries its dot before it, and the list sits one dot's width to the left in
  * a box that clips, so the dot of whichever item starts a line, the first or
  * a wrapped one, is out of sight: no line begins with a dot (the operator,
@@ -376,7 +376,7 @@ export function Meta({ items, className }: { items: readonly (ReactNode | null |
   );
 }
 
-/** BB's ghost icon button with a tooltip, for a row's quick actions. */
+/** VesnALIA's ghost icon button with a tooltip, for a row's quick actions. */
 export function IconButton({
   label,
   icon,
@@ -386,7 +386,7 @@ export function IconButton({
   className,
 }: {
   label: string;
-  /** BB's icon by name, or one of the plugin's own glyphs. */
+  /** VesnALIA's icon by name, or one of the plugin's own glyphs. */
   icon: string | ReactNode;
   onClick: () => void;
   disabled?: boolean;
@@ -417,7 +417,7 @@ export function IconButton({
 }
 
 /**
- * IconButton's look, as a link: for a place in BB's app, such as its settings. BB's `openUrl` takes only http(s) URLs
+ * IconButton's look, as a link: for a place in VesnALIA's app, such as its settings. VesnALIA's `openUrl` takes only http(s) URLs
  * and returns false for an app path, so a button calling it with one does nothing; `UrlLink` routes an app path in the
  * app, as a real anchor (5 October 2026, when the Boxes page's settings button did nothing).
  */
@@ -438,7 +438,7 @@ export function IconLink({ label, icon, href, className }: { label: string; icon
   );
 }
 
-/** A toolbar's way back: an action, or a place in BB's app, which is a link (see IconLink). */
+/** A toolbar's way back: an action, or a place in VesnALIA's app, which is a link (see IconLink). */
 export type BackTo = { readonly label: string; readonly go: () => void } | { readonly label: string; readonly href: string };
 
 /** The back arrow at a toolbar's start. */
@@ -446,13 +446,13 @@ export function BackControl({ back }: { back: BackTo }) {
   return "href" in back ? <IconLink label={back.label} icon="ArrowLeft" href={back.href} className="-ml-1" /> : <IconButton label={back.label} icon="ArrowLeft" onClick={back.go} className="-ml-1" />;
 }
 
-/** bb-box's settings page in BB. */
-export const SETTINGS_PATH = "/settings/plugins/bb-box";
+/** alia-box's settings page in VesnALIA. */
+export const SETTINGS_PATH = "/settings/plugins/alia-box";
 
 /** The thread panel action that holds the Box panel, so a bare Desktop or Terminal tab can offer it. */
 export const BOXES_ACTION = "boxes";
 
-/** BB's chip: one small bordered word, as its machine picker and settings sections show one. */
+/** VesnALIA's chip: one small bordered word, as its machine picker and settings sections show one. */
 export function Badge({ children, tone = "muted", className, "data-badge-rank": rank }: { children: ReactNode; tone?: "muted" | "warn"; className?: string; "data-badge-rank"?: number }) {
   return <span data-badge-rank={rank} className={cn("shrink-0 rounded-sm border border-border bg-muted/40 px-1.5 py-0.5 text-2xs leading-none", tone === "warn" ? "text-warning-text" : "text-subtle-foreground", className)}>{children}</span>;
 }
@@ -524,7 +524,7 @@ export function KindBadges({
   shared?: boolean;
   /** A spare is ready (032). */
   ready?: boolean;
-  /** The BB machine this thread runs on (036), in the Box panel and the bare Desktop and Terminal choosers. One of the group, so its gap is the others' (the operator, 4 October 2026). */
+  /** The VesnALIA machine this thread runs on (036), in the Box panel and the bare Desktop and Terminal choosers. One of the group, so its gap is the others' (the operator, 4 October 2026). */
   machine?: boolean;
   className?: string;
 }) {
@@ -542,7 +542,7 @@ export function KindBadges({
       ))}
       {shared ? <Badge>Shared</Badge> : null}
       {ready ? <Badge>Ready now</Badge> : null}
-      {machine ? <Badge>BB machine</Badge> : null}
+      {machine ? <Badge>VesnALIA machine</Badge> : null}
     </span>
   );
 }
@@ -560,7 +560,7 @@ export function boxTitleBadges(box: BoxView, machine = false): readonly TitleBad
     ...badge(isArm64Badge(box.os, box.arch) && "arm64", BADGE_RANKS.more),
     ...hostFormBadges(box).map((form) => ({ label: formBadge(form), rank: BADGE_RANKS.form })),
     ...badge(box.shared && "Shared", BADGE_RANKS.shared),
-    ...badge(machine && "BB machine", BADGE_RANKS.form),
+    ...badge(machine && "VesnALIA machine", BADGE_RANKS.form),
   ];
 }
 
@@ -581,7 +581,7 @@ export function formBadge(form: BoxForm): string {
   return form === "Docker" ? "Container" : form;
 }
 
-/** BB's dashed empty panel. */
+/** VesnALIA's dashed empty panel. */
 export function EmptyPanel({ title, children, className, role }: { title?: string; children?: ReactNode; className?: string; role?: string }) {
   return (
     <div role={role} className={cn("rounded-md border border-dashed border-border px-6 py-6 text-center text-sm text-subtle-foreground", className)}>
@@ -593,7 +593,7 @@ export function EmptyPanel({ title, children, className, role }: { title?: strin
   );
 }
 
-/** A notice centred on a surface, in BB's card style: a line, a muted second line, at most one action. */
+/** A notice centred on a surface, in VesnALIA's card style: a line, a muted second line, at most one action. */
 export function ReleasedNotice({ name, back }: { name: string | null; back?: BackTo }) {
   const words = name ? `${name} has been released.` : "This box has been released.";
   if (!back) return <Notice detail="Close this tab when you are done with it.">{words}</Notice>;

@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { BbPluginApi, PluginRpcHandlers } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi, PluginRpcHandlers } from '@vesnalia/plugin-sdk';
 import plugin from '../src/server.ts';
 import { rpcContract, type Breakdown } from '../src/contract.ts';
 
-type Event = Awaited<ReturnType<BbPluginApi['sdk']['threads']['events']['list']>>[number];
+type Event = Awaited<ReturnType<AliaPluginApi['sdk']['threads']['events']['list']>>[number];
 const oldSession = '01a08732-c44f-7c70-8824-291c6c849c76';
 const newSession = '01a08732-c44f-7c70-8824-291c6c849c77';
 const identity = (seq: number, sessionId: string): Event => ({ id: `e${seq}`, seq, threadId: 'thr_test', createdAt: seq, scope: { kind: 'thread' }, type: 'thread/identity', data: { providerThreadId: sessionId } });
@@ -16,7 +16,7 @@ function inspection(boundary: number | null, events: Event[]) {
   const hostCalls: Array<{ sessionId: string; codexHome: string }> = [];
   const usage = { usedTokens: 12, modelContextWindow: 100, estimated: false };
   const detail: Breakdown = { entries: [], source: 'current-session.jsonl', compacted: false, notices: [] };
-  const bb = {
+  const alia = {
     settings: { define: () => ({ get: async () => ({ codexHome: '/custom/codex' }) }) },
     hosts: { experimental_client: () => ({ call: async (_method: string, input: typeof hostCalls[number]) => { hostCalls.push(input); return detail; } }) },
     rpc: { register: (_contract: typeof rpcContract, handlers: PluginRpcHandlers<typeof rpcContract>) => { inspect = handlers.inspect; } },
@@ -32,8 +32,8 @@ function inspection(boundary: number | null, events: Event[]) {
       environments: { get: async () => ({ hostId: 'host_test' }) },
       skills: { list: async () => ({ skills: [] }) },
     },
-  } as unknown as BbPluginApi;
-  plugin(bb);
+  } as unknown as AliaPluginApi;
+  plugin(alia);
   return {
     hostCalls, requests, usage,
     async read() { return rpcContract.inspect.output.parse(await inspect(rpcContract.inspect.input.parse({ threadId: 'thr_test', source: 'codex' }))); },

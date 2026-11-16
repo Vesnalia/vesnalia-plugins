@@ -202,7 +202,7 @@ test("Overview shows clickable file chips and activity, with no duplicate change
   await page.getByRole("tab", { name: "Overview", exact: true }).click();
   await page.emulateMedia({ colorScheme: "dark" });
   await page.locator('[data-pr-inbox="root"]').screenshot({
-    path: process.env.BB_PR_OVERVIEW_SCREENSHOT ?? "test-results/overview.png",
+    path: process.env.ALIA_PR_OVERVIEW_SCREENSHOT ?? "test-results/overview.png",
   });
 });
 
@@ -393,6 +393,6 @@ test("Checks groups jobs and shows failure annotations with commit links", async
   expect(calls).toBe(1);
   await page.emulateMedia({ colorScheme: "dark" });
   await page.locator('[data-pr-inbox="root"]').screenshot({
-    path: process.env.BB_PR_CHECKS_SCREENSHOT ?? "test-results/checks.png",
+    path: process.env.ALIA_PR_CHECKS_SCREENSHOT ?? "test-results/checks.png",
   });
 });

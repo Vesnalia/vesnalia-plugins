@@ -1,13 +1,13 @@
-// Layout regression for BB's wide Markdown-table markup, using Aura's real CSS.
+// Layout regression for VesnALIA's wide Markdown-table markup, using Aura's real CSS.
 // Run with: node --experimental-strip-types test/table-readability.browser.mjs
 import { chromium } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { READING_SURFACE } from '../lib/background.ts';
 import assert from 'node:assert/strict';
-const shots=process.env.BB_SCREENSHOT_DIR||process.env.BB_THREAD_STORAGE||tmpdir();
+const shots=process.env.ALIA_SCREENSHOT_DIR||process.env.ALIA_THREAD_STORAGE||tmpdir();
 await mkdir(shots+'/browser-tmp',{recursive:true});
-const browser=await chromium.launch({headless:true,...(process.env.BB_CHROMIUM_PATH?{executablePath:process.env.BB_CHROMIUM_PATH}:{}),env:{...process.env,TMPDIR:shots+'/browser-tmp'},args:['--no-sandbox']});
+const browser=await chromium.launch({headless:true,...(process.env.ALIA_CHROMIUM_PATH?{executablePath:process.env.ALIA_CHROMIUM_PATH}:{}),env:{...process.env,TMPDIR:shots+'/browser-tmp'},args:['--no-sandbox']});
 try {
  const page=await browser.newPage({viewport:{width:1440,height:850}});
  for(const dark of [false,true]){

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { isDeepStrictEqual } from "node:util";
 import { join } from "node:path";
 import { z } from "zod";
-import type { BbPluginApi, PluginRpcHandlers } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginRpcHandlers } from "@vesnalia/plugin-sdk";
 import { rpcContract, conflictRpcContract, probeRpcContract, globalStateSchema, projectStateSchema, updateStatusSchema, STATE_CHANGED } from "../shared/rpc.ts";
 import { loadCatalog, loadRuntimeNote, findPluginRoot, registeredSkillNames, detectPrerequisites } from "./files.ts";
 import { resolveSkillSelections, resolveSkills, type SkillSelection, applySkillChanges, defaultGlobal, defaultProject, type GlobalState, type ProjectState, type Scope } from "./resolve.ts";
@@ -13,7 +13,7 @@ import { loadRenameLedger, migrateStoredState } from "./migrations.ts";
 import { catalogStateSchema, resolvedSkillSchema, type CatalogState, type RenameLedger, type ResolvedSkill } from "../shared/state.ts";
 import { canonicalIdSchema } from "../shared/catalog.ts";
 import { scanSnapshotSchema, type ScanSnapshot, providerProbeSchema, type ProviderProbe } from "../shared/conflicts.ts";
-import { PluginScan, bbSkillDiscovery, resolveConflicts, resolveConflictChoices, installedBbVersion, type Discover } from "./conflicts.ts";
+import { PluginScan, aliaSkillDiscovery, resolveConflicts, resolveConflictChoices, installedAliaVersion, type Discover } from "./conflicts.ts";
 
 export interface CommittedDelivery {
   snapshot: ScanSnapshot;
@@ -38,20 +38,20 @@ export interface BackendOptions {
   renameLedger?: RenameLedger;
   readCommittedSnapshot?: ReadCommittedSnapshot;
   discoverConflicts?: Discover;
-  bbVersion?: string;
+  aliaVersion?: string;
   prerequisiteContext?: Pick<Parameters<typeof detectPrerequisites>[0], "tracker" | "conditionalCommands">;
   /** null skips the startup check in tests. Production checks after one second. */
   startupDelayMs?: number | null;
 }
 
-export async function startBackend(bb: BbPluginApi, options: BackendOptions = {}) {
+export async function startBackend(alia: AliaPluginApi, options: BackendOptions = {}) {
   const root = options.root ?? await findPluginRoot();
   const catalog = await loadCatalog(options.catalogPath ?? join(root, mirrorConfig.paths.catalog));
   const version = z.object({ version: z.string() }).parse(JSON.parse(await readFile(join(root, "package.json"), "utf8"))).version;
   const runtimeNote = await loadRuntimeNote(options.runtimeNotePath ?? join(root, mirrorConfig.paths.runtimeNote));
   const registered = options.registeredNames ?? await registeredSkillNames(root, catalog);
   const allowedNames = new Set(catalog.skills.flatMap(skill => [skill.canonicalId, skill.aliasName]).filter(name => registered.has(name)));
-  if (allowedNames.size !== catalog.skills.length * 2) bb.log.warn("Some Matt variants lack matching static registrations and cannot be selected");
+  if (allowedNames.size !== catalog.skills.length * 2) alia.log.warn("Some Matt variants lack matching static registrations and cannot be selected");
   const prerequisites = options.prerequisites ?? await detectPrerequisites({ catalog, ...options.prerequisiteContext });
   let global: GlobalState = defaultGlobal();
   const projects = new Map<string, ProjectState>();
@@ -74,10 +74,10 @@ export async function startBackend(bb: BbPluginApi, options: BackendOptions = {}
   const migrated = await migrateStoredState({
     catalog, ledger: options.renameLedger ?? await loadRenameLedger(join(root, "compat/renames.json")), serialize,
     storage: {
-      list: prefix => bb.storage.kv.list(prefix),
-      set: async (key, value) => { if (!malformedKeys.has(key)) await bb.storage.kv.set(key, value); },
+      list: prefix => alia.storage.kv.list(prefix),
+      set: async (key, value) => { if (!malformedKeys.has(key)) await alia.storage.kv.set(key, value); },
       get: async key => {
-        const value = await bb.storage.kv.get<unknown>(key);
+        const value = await alia.storage.kv.get<unknown>(key);
         if (value === undefined) return undefined;
         const schema = key === "global" ? globalStateSchema.strip().extend({ arrivalPolicy: globalStateSchema.shape.arrivalPolicy.strip() })
           : key.startsWith("project:") ? projectStateSchema.strip().extend({ conflicts: projectStateSchema.shape.conflicts.default({}) })
@@ -88,7 +88,7 @@ export async function startBackend(bb: BbPluginApi, options: BackendOptions = {}
         if (!schema) return value;
         const parsed = schema.safeParse(value);
         if (parsed.success) return parsed.data;
-        if (!malformedKeys.has(key)) bb.log.warn(`Ignoring malformed Matt Pocock state at ${key}`);
+        if (!malformedKeys.has(key)) alia.log.warn(`Ignoring malformed Matt Pocock state at ${key}`);
         malformedKeys.add(key);
         return undefined;
       },
@@ -111,32 +111,32 @@ export async function startBackend(bb: BbPluginApi, options: BackendOptions = {}
     },
   });
   if (update && !malformedKeys.has("updateStatus") && !isDeepStrictEqual(update, migrated.updateStatus)) {
-    await serialize(() => bb.storage.kv.set("updateStatus", update));
+    await serialize(() => alia.storage.kv.set("updateStatus", update));
   }
   const projectAt = (id: string): ProjectState => projects.get(id) ?? defaultProject();
   const projectFor = (scope: Scope): ProjectState | null => scope.kind === "global" ? null : projectAt(scope.projectId);
   const scanKey = "pluginScan";
   const legacyPrefixes = ["conflictSnapshot:", "conflictInvalidation:"];
   const names = catalog.skills.flatMap(skill => [skill.canonicalId, skill.aliasName]);
-  const bbVersion = options.bbVersion ?? await installedBbVersion();
-  const storedProbes = z.array(providerProbeSchema).safeParse(await bb.storage.kv.get<unknown>("conflictProbes"));
+  const aliaVersion = options.aliaVersion ?? await installedAliaVersion();
+  const storedProbes = z.array(providerProbeSchema).safeParse(await alia.storage.kv.get<unknown>("conflictProbes"));
   let probes: ProviderProbe[] = storedProbes.success ? storedProbes.data : [];
-  const scan = new PluginScan(options.discoverConflicts ?? bbSkillDiscovery(bb, names, message => bb.log.warn(message)), names, snapshot => {
+  const scan = new PluginScan(options.discoverConflicts ?? aliaSkillDiscovery(alia, names, message => alia.log.warn(message)), names, snapshot => {
     if (lifecycle.signal.aborted) return;
-    if (snapshot.complete) void serialize(() => bb.storage.kv.set(scanKey, snapshot))
-      .catch(error => { if (!lifecycle.signal.aborted) bb.log.warn(`Saving Matt plugin scan: ${errorMessage(error)}`); });
+    if (snapshot.complete) void serialize(() => alia.storage.kv.set(scanKey, snapshot))
+      .catch(error => { if (!lifecycle.signal.aborted) alia.log.warn(`Saving Matt plugin scan: ${errorMessage(error)}`); });
     publish();
   });
   const readCommittedSnapshot: ReadCommittedSnapshot = options.readCommittedSnapshot ?? ((scope, selections, project) => {
     const snapshot = scan.read();
-    return snapshot ? resolveConflicts({ catalog, selections, projectId: scope.projectId, project, snapshot, bbVersion, probes, providerId: scope.providerId }) : undefined;
+    return snapshot ? resolveConflicts({ catalog, selections, projectId: scope.projectId, project, snapshot, aliaVersion, probes, providerId: scope.providerId }) : undefined;
   });
 
   function conflictResponse(projectId: string) {
     const snapshot = scan.read() ?? null;
     if (!snapshot) return { snapshot, conflicts: [] };
     const project = projectAt(projectId);
-    const result = resolveConflicts({ catalog, projectId, project, snapshot, bbVersion, probes,
+    const result = resolveConflicts({ catalog, projectId, project, snapshot, aliaVersion, probes,
       selections: resolveSkillSelections(catalog, global, project, catalogState) });
     return { snapshot, conflicts: result.resolved.map(row => structuredClone(row.conflict)) };
   }
@@ -160,19 +160,19 @@ export async function startBackend(bb: BbPluginApi, options: BackendOptions = {}
       selectedIds.add(row.canonicalId);
       if (!selection.active) {
         const outcome = selection.reason === "off-dependency" ? "blocked" as const : "yielded" as const;
-        return { ...row, ...selection, active: false, bbName: null, outcome,
+        return { ...row, ...selection, active: false, aliaName: null, outcome,
           conflict: { ...row.conflict, outcome, effectiveName: null, reason: selection.reason } };
       }
-      if (!row.active && row.bbName === null) return row;
+      if (!row.active && row.aliaName === null) return row;
       const complete = snapshot.complete || !snapshot.affectedUnknownNames.some(name => name === skill.canonicalId || name === skill.aliasName);
-      const mapped = row.bbName !== skill.aliasName || committed.addendum.includes(`when Matt's skills reference ${skill.canonicalId}, load ${skill.aliasName}`);
+      const mapped = row.aliaName !== skill.aliasName || committed.addendum.includes(`when Matt's skills reference ${skill.canonicalId}, load ${skill.aliasName}`);
       const valid = selection.active && complete && row.active && row.conflict.snapshotGeneration === snapshot.generation &&
-        row.bbName === row.conflict.effectiveName &&
-        ((row.outcome === "canonical-selected" && row.bbName === skill.canonicalId) ||
-          (row.outcome === "alias-selected" && row.bbName === skill.aliasName)) &&
-        row.bbName !== null && allowedNames.has(row.bbName) && mapped;
+        row.aliaName === row.conflict.effectiveName &&
+        ((row.outcome === "canonical-selected" && row.aliaName === skill.canonicalId) ||
+          (row.outcome === "alias-selected" && row.aliaName === skill.aliasName)) &&
+        row.aliaName !== null && allowedNames.has(row.aliaName) && mapped;
       if (valid) return row;
-      return { ...row, active: false, bbName: null, outcome: "unknown" as const, reason: "off-scan" as const,
+      return { ...row, active: false, aliaName: null, outcome: "unknown" as const, reason: "off-scan" as const,
         conflict: { ...row.conflict, effectiveName: null, outcome: "unknown" as const,
           reason: "Delivery is unavailable: pending discovery, unregistered variant, or missing alias mapping." } };
     });
@@ -186,7 +186,7 @@ export async function startBackend(bb: BbPluginApi, options: BackendOptions = {}
         const blockedBy = skill?.dependsOn.flatMap(edge => (edge.kind === "hard" || edge.kind === "conditional-hard") &&
           !safe.some(dependency => dependency.canonicalId === edge.canonicalId && dependency.active) ? [edge.canonicalId] : []) ?? [];
         if (!blockedBy.length) continue;
-        Object.assign(row, { active: false, bbName: null, outcome: "blocked", reason: "off-dependency", blockedBy,
+        Object.assign(row, { active: false, aliaName: null, outcome: "blocked", reason: "off-dependency", blockedBy,
           conflict: { ...row.conflict, outcome: "blocked", effectiveName: null, reason: `Unavailable dependencies: ${blockedBy.join(", ")}` } });
         changed = true;
       }
@@ -195,7 +195,7 @@ export async function startBackend(bb: BbPluginApi, options: BackendOptions = {}
     const instructions = projectInstructions(result);
     if (!runtimeNote || (instructions !== null && instructions.length > 4096)) {
       for (const row of result.resolved) if (row.active) {
-        Object.assign(row, { active: false, bbName: null, outcome: "blocked", reason: "off-conflict",
+        Object.assign(row, { active: false, aliaName: null, outcome: "blocked", reason: "off-conflict",
           conflict: { ...row.conflict, outcome: "blocked", effectiveName: null, reason: "Runtime instructions are missing or exceed the 4096-character budget." } });
       }
     }
@@ -207,31 +207,31 @@ export async function startBackend(bb: BbPluginApi, options: BackendOptions = {}
   }
 
   const resolved = (scope: Scope) => resolveSkills(catalog, global, projectFor(scope), seenSkills, catalogState);
-  bb.agents.configure(ctx => {
+  alia.agents.configure(ctx => {
     try {
       const scope = z.object({ projectId: z.string(), providerId: z.string() }).parse({ projectId: ctx.project?.id, providerId: ctx.provider?.id });
       const entry = lifecycle.signal.aborted ? undefined : deliver(scope);
-      const names = entry?.resolved.flatMap(row => row.active && row.bbName ? [row.bbName] : []) ?? [];
+      const names = entry?.resolved.flatMap(row => row.active && row.aliaName ? [row.aliaName] : []) ?? [];
       const instructions = entry ? projectInstructions(entry) : null;
       return names.length <= 256 && instructions ? { tools: [], skills: names, instructions } : { tools: [], skills: [] };
     } catch (error) {
-      bb.log.error(`Configuring Matt Pocock skills: ${errorMessage(error)}`);
+      alia.log.error(`Configuring Matt Pocock skills: ${errorMessage(error)}`);
       return { tools: [], skills: [] };
     }
   });
 
 
   function publish() {
-    try { bb.realtime.publish(STATE_CHANGED, { changed: true }); }
-    catch (error) { bb.log.error(`Publishing Matt Pocock state: ${errorMessage(error)}`); }
+    try { alia.realtime.publish(STATE_CHANGED, { changed: true }); }
+    catch (error) { alia.log.error(`Publishing Matt Pocock state: ${errorMessage(error)}`); }
   }
   async function persistGlobal(next: GlobalState) {
-    await bb.storage.kv.set("global", next);
+    await alia.storage.kv.set("global", next);
     global = next;
     publish();
   }
   async function persistProject(projectId: string, next: ProjectState) {
-    await bb.storage.kv.set(`project:${projectId}`, next);
+    await alia.storage.kv.set(`project:${projectId}`, next);
     projects.set(projectId, next);
     publish();
   }
@@ -242,7 +242,7 @@ export async function startBackend(bb: BbPluginApi, options: BackendOptions = {}
     pendingCheck = (async () => {
       const next = await fetchUpdates(catalog, version, options.fetch, lifecycle.signal);
       return serialize(async () => {
-        await bb.storage.kv.set("updateStatus", next);
+        await alia.storage.kv.set("updateStatus", next);
         update = next;
         publish();
         return structuredClone(update);
@@ -264,8 +264,8 @@ export async function startBackend(bb: BbPluginApi, options: BackendOptions = {}
           .map(row => row.canonicalId === canonicalId ? { ...row, active: true } : row);
         const proposed = readCommittedSnapshot({ projectId, providerId: "" }, selected, next);
         const row = proposed && resolveConflictChoices({ catalog, selections: selected, projectId, project: next,
-          snapshot: proposed.snapshot, bbVersion, probes }).find(item => item.canonicalId === canonicalId);
-        if (!row || !row.bbName || !allowedNames.has(row.bbName) ||
+          snapshot: proposed.snapshot, aliaVersion, probes }).find(item => item.canonicalId === canonicalId);
+        if (!row || !row.aliaName || !allowedNames.has(row.aliaName) ||
           (choice === "both" ? row.outcome !== "alias-selected" : row.outcome !== "canonical-selected"))
           throw new Error(`Choice ${choice} blocked: ${row?.conflict.reason ?? "Discovery is pending"}; a registered and mapped variant is required`);
         const instructions = proposed ? projectInstructions(proposed) : null;
@@ -277,8 +277,8 @@ export async function startBackend(bb: BbPluginApi, options: BackendOptions = {}
     }),
     matt_pocock_record_probe: record => serialize(async () => {
       const probe = providerProbeSchema.parse(record);
-      const next = [...probes.filter(item => !(item.requirement === probe.requirement && item.bbVersion === probe.bbVersion && item.providerId === probe.providerId)), probe];
-      await bb.storage.kv.set("conflictProbes", next);
+      const next = [...probes.filter(item => !(item.requirement === probe.requirement && item.aliaVersion === probe.aliaVersion && item.providerId === probe.providerId)), probe];
+      await alia.storage.kv.set("conflictProbes", next);
       probes = next;
       publish();
       return { ok: true as const };
@@ -286,7 +286,7 @@ export async function startBackend(bb: BbPluginApi, options: BackendOptions = {}
     matt_pocock_state: async ({ scope }) => {
       await writes;
       // SDK list returns project DTOs directly, not a { projects } wrapper.
-      const available = await bb.sdk.projects.list({ includePersonal: true });
+      const available = await alia.sdk.projects.list({ includePersonal: true });
       return {
         installedPluginVersion: version,
         delivery: scope.kind === "project" ? deliveryState(scope.projectId) : null,
@@ -316,46 +316,46 @@ export async function startBackend(bb: BbPluginApi, options: BackendOptions = {}
       return { ok: true as const };
     }),
     matt_pocock_dismiss_start_here: ({ dismissed }) => serialize(async () => {
-      await bb.storage.kv.set("startHereDismissed", dismissed);
+      await alia.storage.kv.set("startHereDismissed", dismissed);
       startHereDismissed = dismissed;
       publish();
       return { ok: true as const };
     }),
     matt_pocock_mark_seen: () => serialize(async () => {
       const next = catalog.skills.map(skill => skill.canonicalId);
-      await bb.storage.kv.set("seenSkills", next);
+      await alia.storage.kv.set("seenSkills", next);
       seenSkills = next;
       publish();
       return { ok: true as const };
     }),
     matt_pocock_check_updates: () => checkUpdates(),
   };
-  bb.rpc.register({ ...rpcContract, ...conflictRpcContract, ...probeRpcContract }, handlers);
-  registerCli(bb, handlers);
-  bb.background.schedule("upstream-check", mirrorConfig.release.updateCron, async () => { await checkUpdates(); });
+  alia.rpc.register({ ...rpcContract, ...conflictRpcContract, ...probeRpcContract }, handlers);
+  registerCli(alia, handlers);
+  alia.background.schedule("upstream-check", mirrorConfig.release.updateCron, async () => { await checkUpdates(); });
   const delay = options.startupDelayMs === undefined ? 1000 : options.startupDelayMs;
   const timer = delay === null ? null : setTimeout(() => {
-    void checkUpdates().catch(error => bb.log.error(`Startup update check: ${errorMessage(error)}`));
+    void checkUpdates().catch(error => alia.log.error(`Startup update check: ${errorMessage(error)}`));
   }, delay);
   function deliveryState(projectId: string) {
     const entry = deliver({ projectId, providerId: "" });
     return entry ? { snapshot: structuredClone(entry.snapshot), resolved: structuredClone([...entry.resolved]) } : null;
   }
   // Per-scope scan state from 0.1.0–0.1.2 is obsolete.
-  for (const prefix of legacyPrefixes) for (const key of await bb.storage.kv.list(prefix)) {
-    await serialize(() => bb.storage.kv.delete(key)).catch(error => bb.log.warn(`Removing obsolete Matt scan state: ${errorMessage(error)}`));
+  for (const prefix of legacyPrefixes) for (const key of await alia.storage.kv.list(prefix)) {
+    await serialize(() => alia.storage.kv.delete(key)).catch(error => alia.log.warn(`Removing obsolete Matt scan state: ${errorMessage(error)}`));
   }
-  const stored = scanSnapshotSchema.safeParse(await bb.storage.kv.get<unknown>(scanKey));
+  const stored = scanSnapshotSchema.safeParse(await alia.storage.kv.get<unknown>(scanKey));
   if (stored.success) scan.restore(stored.data);
   void scan.refresh();
-  const unsubscribe = bb.sdk.subscribe?.({ event: "system:changed", callback: event => {
+  const unsubscribe = alia.sdk.subscribe?.({ event: "system:changed", callback: event => {
     if (!event.changes.includes("plugins-changed")) return;
     scan.invalidate(); publish();
   } });
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     unsubscribe?.(); scan.dispose();
     if (timer !== null) clearTimeout(timer);
     lifecycle.abort(new Error("Matt Pocock backend disposed"));
   });
-  bb.log.info(`loaded ${catalog.skills.length} Matt Pocock skills`);
+  alia.log.info(`loaded ${catalog.skills.length} Matt Pocock skills`);
 }

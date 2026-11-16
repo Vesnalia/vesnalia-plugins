@@ -48,7 +48,7 @@ export function pullRequestStatusLabel(pullRequest: DisplayPullRequest): string 
 
 export function pullRequestToneClass(pullRequest: DisplayPullRequest): string {
   if (pullRequest.state === "merged" || pullRequest.attention === "merged") {
-    return "text-[color:var(--bb-sidebar-pr-merged)]";
+    return "text-[color:var(--alia-sidebar-pr-merged)]";
   }
   if (
     pullRequest.attention === "blocked" ||
@@ -56,16 +56,16 @@ export function pullRequestToneClass(pullRequest: DisplayPullRequest): string {
     pullRequest.attention === "checks_failed" ||
     pullRequest.attention === "conflicts"
   ) {
-    return "text-[color:var(--bb-sidebar-pr-alert)]";
+    return "text-[color:var(--alia-sidebar-pr-alert)]";
   }
   if (pullRequest.state === "draft" || pullRequest.attention === "draft") {
     return "text-muted-foreground/60";
   }
   if (pullRequest.state === "closed" || pullRequest.attention === "closed") {
-    return "text-[color:var(--bb-sidebar-pr-alert)]";
+    return "text-[color:var(--alia-sidebar-pr-alert)]";
   }
   if (pullRequest.state === "open") {
-    return "text-[color:var(--bb-sidebar-pr-open)]";
+    return "text-[color:var(--alia-sidebar-pr-open)]";
   }
   return "text-muted-foreground";
 }

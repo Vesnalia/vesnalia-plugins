@@ -5,7 +5,7 @@ See [the changelog](../CHANGELOG.md) for the release boundary.
 
 ## Choosing an effort
 
-Select a NanoGPT model in bb, then use the reasoning picker. Every model offers
+Select a NanoGPT model in VesnALIA, then use the reasoning picker. Every model offers
 **Provider default**. Low, Medium, and High appear only when the detailed catalog
 advertises those exact values for the selected model. A model can offer a subset,
 such as High alone. Missing or unusable metadata leaves Provider default available.
@@ -15,7 +15,7 @@ sends an override, so it can behave differently from Provider default. Visible
 reasoning text is independent of the selection: a successful request can return
 an answer without a separate reasoning stream.
 
-| Picker label / incoming value | bb wire ID | Completion request |
+| Picker label / incoming value | VesnALIA wire ID | Completion request |
 | --- | --- | --- |
 | Provider default | `nanogpt:provider-default` | Omit `reasoning_effort`. |
 | Low | `nanogpt:effort:low` | `reasoning_effort: "low"` |
@@ -29,7 +29,7 @@ thinking budgets or infer unsupported levels from a generic reasoning flag.
 Levels such as `none`, `minimal`, `xhigh`, and `max` are outside the implemented
 subset, even if the upstream advertises them.
 
-## Catalog discovery and bb's cache
+## Catalog discovery and VesnALIA's cache
 
 The bridge requests `GET <baseUrl>/models?detailed=true` with the effective key.
 The client preserves each model's optional `reasoning_efforts` field. The shared
@@ -51,7 +51,7 @@ empty model list; it does not prove that the saved key is invalid.
 All returned model records use `reasoningDiscovery: "known"`. This marks the
 plugin's picker options as authoritative, including a default-only option set.
 It does not assert that missing upstream metadata has been discovered. The
-distinction matters because bb preserves previous known options when a later
+distinction matters because VesnALIA preserves previous known options when a later
 record is marked `unknown`; doing so could leave stale High options visible.
 
 The bridge capability cache has a five-minute TTL and a maximum of 16
@@ -120,7 +120,7 @@ review fully closed:
 
 | Priority | Regression / acceptance check | Expected evidence |
 | --- | --- | --- |
-| P2 | High metadata followed by missing, malformed, conflicting, or basic-only metadata, through bb's catalog consumer | Previous explicit options disappear; Provider default remains. |
+| P2 | High metadata followed by missing, malformed, conflicting, or basic-only metadata, through VesnALIA's catalog consumer | Previous explicit options disappear; Provider default remains. |
 | P2 | Cached negative lookup followed by fresh support, continued rejection, or refresh failure | Exactly one refresh; generation only after verified support; no refresh loop. |
 | P2 | Detailed response at 9 seconds followed by a stalled basic lookup | Timeout at 10 seconds total; caller abort also ends discovery. |
 | P2 | Cache TTL, eviction, and conflicting model/endpoint/account capabilities | No cross-identity reuse; expired/evicted entries are fetched again. |
@@ -133,4 +133,4 @@ review fully closed:
 For live acceptance, also reopen a thread saved with bare `medium`, switch to a
 model with a smaller supported subset, and inspect request omission for Provider
 default. Reasoning length or answer quality alone cannot verify the wire value.
-Record bb/SDK versions and distinguish real upstream responses from local mocks.
+Record alia/SDK versions and distinguish real upstream responses from local mocks.

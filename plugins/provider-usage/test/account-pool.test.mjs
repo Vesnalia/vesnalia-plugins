@@ -28,7 +28,7 @@ const { heroWindow, isActive, providerAvailabilityLabel } = await import("../lib
 
 const RESET_MS = Date.UTC(2026, 8, 15, 1, 46, 54);
 
-/** A pool status payload shaped like `bb pool status --json`. */
+/** A pool status payload shaped like `alia pool status --json`. */
 const poolStatus = (overrides = {}) => ({
   routing: { claude: false, codex: true },
   accounts: [
@@ -304,11 +304,11 @@ test("a pool that cannot be read leaves the dashboard untouched", () => {
   assert.deepEqual(normalizeAccountPool({}), {});
 });
 
-/** A stand-in `bb` that prints `payload`, or hangs when the marker file exists. */
+/** A stand-in `VesnALIA` that prints `payload`, or hangs when the marker file exists. */
 function fakePoolCli(payload) {
   const dir = mkdtempSync(join(tmpdir(), "pool-cli-"));
   const hang = join(dir, "hang");
-  const script = join(dir, "bb");
+  const script = join(dir, "alia");
   writeFileSync(join(dir, "payload.json"), JSON.stringify(payload));
   writeFileSync(
     script,

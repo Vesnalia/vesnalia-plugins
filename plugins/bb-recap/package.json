@@ -1,21 +1,15 @@
 {
-  "name": "bb-recap",
+  "name": "alia-plugin-bb-recap",
   "version": "0.2.4",
-  "description": "Generate concise, display-only summaries for BB threads",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MacHatter1/bb-recap.git",
-    "directory": "."
-  },
-  "homepage": "https://github.com/MacHatter1/bb-recap#readme",
+  "description": "Generate concise, display-only summaries for VesnALIA threads",
   "type": "module",
   "engines": {
-    "bb": ">=0.40",
-    "bbPluginSdk": ">=0.4.21"
+    "alia": ">=0.40",
+    "aliaPluginSdk": ">=0.4.21"
   },
-  "bb": {
+  "alia": {
     "name": "Recap",
-    "description": "Generate concise, display-only summaries for BB threads.",
+    "description": "Generate concise, display-only summaries for VesnALIA threads.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -26,7 +20,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.29",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -68,5 +61,22 @@
     "dist/server.js.map",
     "dist/server.meta.json"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.29"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/bb-recap#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/bb-recap"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

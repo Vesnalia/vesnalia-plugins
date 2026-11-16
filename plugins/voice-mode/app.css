@@ -1,5 +1,5 @@
-/* Voice Mode: our waveform button stands in for bb's send button while the
-   thread composer is empty; the live pill stands in for bb's mic. */
+/* Voice Mode: our waveform button stands in for alia's send button while the
+   thread composer is empty; the live pill stands in for alia's mic. */
 
 .voice-mode-host {
   display: contents;
@@ -16,7 +16,7 @@
   display: none;
 }
 
-/* Tooltip matching bb's: dark chip above the button, after a short delay. */
+/* Tooltip matching alia's: dark chip above the button, after a short delay. */
 .voice-mode-start {
   position: relative;
 }
@@ -51,14 +51,14 @@
   }
 }
 
-/* Our row at the bottom of the sidebar panel body: inset like bb's footer (p-2), no shrink. */
+/* Our row at the bottom of the sidebar panel body: inset like alia's footer (p-2), no shrink. */
 [data-voice-mode-sidebar-slot] {
   flex-shrink: 0;
   padding: 8px 8px 0;
 }
 
 /* Detailed widget: hovering the back row brightens its arrow like the icon buttons
-   (bb's stylesheet has no group-hover utilities). */
+   (alia's stylesheet has no group-hover utilities). */
 .voice-mode-back-row:hover > span:first-child,
 .voice-mode-back-row:focus-visible > span:first-child {
   color: var(--foreground);

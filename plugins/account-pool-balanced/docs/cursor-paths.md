@@ -22,7 +22,7 @@ on the hub; subscription credentials are never copied onto clients.
 
 ## How the gateway works
 
-BB's plugin HTTP router matches paths exactly. The wrapper starts an ephemeral localhost
+VesnALIA's plugin HTTP router matches paths exactly. The wrapper starts an ephemeral localhost
 forwarder and sends Cursor's RPC paths through the single `/cursor/rpc` route, preserving
 binary request bodies and streaming responses. The hub accepts methods in `aiserver.vN`
 and `agent.vN` service namespaces, plus Cursor's settings, traces and bundle routes.
@@ -88,7 +88,7 @@ restores failure/recovery semantics; it does not prevent upstream socket failure
 
 ## Controlled stream recovery check
 
-Use `bb pool stream-probe --thread <thread-id> --json` to inspect active Cursor
+Use `alia pool stream-probe --thread <thread-id> --json` to inspect active Cursor
 model response bodies for a single thread. It returns only server request UUIDs,
 thread IDs and byte counts. Auxiliary RPCs and responses without an attributed
 thread are excluded. No upstream operation or Guard policy change is performed.
@@ -96,13 +96,13 @@ thread are excluded. No upstream operation or Guard policy change is performed.
 In an explicitly authorized, synthetic test session, interrupt one observed body:
 
 ```sh
-bb pool stream-probe --thread <thread-id> --interrupt-request <request-uuid> --confirm --json
+alia pool stream-probe --thread <thread-id> --interrupt-request <request-uuid> --confirm --json
 ```
 
 The two identities must match the same currently open response with bytes read.
 A stale UUID, another thread, a header wait or an already finished request returns
 `interrupted: false`. One interruption removes the target; it cannot abort a new
-retry or a neighbouring stream. The command is an authenticated BB CLI operation,
+retry or a neighbouring stream. The command is an authenticated VesnALIA CLI operation,
 not an HTTP route for provider clients. It does not replay inference or tools.
 Observe the actual ACP failure, bounded native retry, preserved history and tool
 execution ledger independently. A controlled local body failure does not prove
@@ -124,13 +124,13 @@ notification is an observation only: it does not make assistant text retryable.
 Snapshots contain local counters, timing, prompt/token match booleans and
 transport framing state, never prompt IDs, session IDs, payloads, URLs, raw
 errors or credentials. The hub supplies its own request UUID in
-`x-bb-pool-request-id` only on Cursor model responses, replacing any upstream
+`x-alia-pool-request-id` only on Cursor model responses, replacing any upstream
 value. This links one launcher stream to a controlled stream-probe interruption.
 A transport end-envelope and the application-level `turnEnded` are separate
 conditions; these diagnostics alone do not establish recovery.
 
 On POSIX hosts the same failure snapshots are also appended privately to
-`cursor-pool-diagnostics.jsonl` in the existing `BB_THREAD_STORAGE` directory.
+`cursor-pool-diagnostics.jsonl` in the existing `ALIA_THREAD_STORAGE` directory.
 The file is limited to 1 MiB, uses mode 0600, refuses symlinks, and skips a write
 when busy or unavailable. This is needed because ACP retains stderr until exit.
 Diagnostics never create a new storage directory or change the ACP result.

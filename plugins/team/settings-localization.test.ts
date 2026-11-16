@@ -2,7 +2,7 @@
 // загрузке, контракт generatorSelection и сообщения об ошибках.
 
 import { describe, expect, it } from "vitest";
-import type { PluginSettingDescriptor } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptor } from "@vesnalia/plugin-sdk";
 import {
   GENERATOR_SELECTION_KV_KEY,
   SETTING_META,

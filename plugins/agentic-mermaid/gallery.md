@@ -23,7 +23,7 @@ gantt
 ```mermaid
 flowchart LR
   subgraph Client
-    U[User] --> UI[bb app]
+    U[User] --> UI[alia app]
   end
   subgraph Daemon
     UI -->|RPC| S[Server]
@@ -43,7 +43,7 @@ flowchart LR
 ```mermaid
 sequenceDiagram
   participant U as User
-  participant B as bb server
+  participant B as alia server
   participant A as Agent
   participant T as Tool
   U->>B: send message
@@ -122,7 +122,7 @@ pie title Tokens by provider
 
 ```mermaid
 mindmap
-  root((bb))
+  root((alia))
     Threads
       Turns
       Timeline
@@ -152,7 +152,7 @@ timeline
 
 ```mermaid
 journey
-  title Adding a diagram in bb
+  title Adding a diagram in alia
   section Ask
     Describe the system: 5: User
     Agent writes Mermaid: 4: Agent
@@ -173,7 +173,7 @@ quadrantChart
   quadrant-2 Ideal
   quadrant-3 Skip
   quadrant-4 Overbuilt
-  bb stock: [0.2, 0.3]
+  alia stock: [0.2, 0.3]
   beautiful-mermaid: [0.4, 0.75]
   agentic-mermaid: [0.45, 0.85]
   Archify: [0.9, 0.9]
@@ -196,10 +196,10 @@ xychart-beta
 
 ```mermaid
 architecture-beta
-  group bb(cloud)[bb app]
-  service ui(internet)[Chat UI] in bb
-  service plugin(server)[Plugin backend] in bb
-  service disk(disk)[Renderer chunks] in bb
+  group alia(cloud)[alia app]
+  service ui(internet)[Chat UI] in alia
+  service plugin(server)[Plugin backend] in alia
+  service disk(disk)[Renderer chunks] in alia
   ui:R --> L:plugin
   plugin:R --> L:disk
 ```
@@ -211,7 +211,7 @@ architecture-beta
 radar-beta
   title Renderer comparison
   axis look["Looks"], types["Types"], theme["Theming"], speed["Speed"], upkeep["Maintained"]
-  curve stock["bb stock"]{2, 5, 2, 3, 5}
+  curve stock["alia stock"]{2, 5, 2, 3, 5}
   curve agentic["agentic-mermaid"]{5, 4, 5, 4, 4}
   max 5
 ```

@@ -1,4 +1,4 @@
-// bb-plugin-preset-buttons — frontend entry.
+// alia-plugin-preset-buttons — frontend entry.
 //
 // One registration does the work: a composer customization scoped to the
 // NEW-THREAD composer, whose banner mounts PresetStrip. The banner is the only
@@ -10,7 +10,7 @@
 //
 // Scoping matters: `scopes: ["new-thread"]` keeps this off thread composers,
 // where there is no project picker to sit beside and no new thread to seed.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { PresetStrip } from "@/components/PresetStrip";
 import { PresetSettings } from "@/components/PresetSettings";
 import { ICON_GROUPS } from "@/lib/icons";
@@ -43,14 +43,14 @@ export default definePluginApp((app) => {
     ],
   });
 
-  // A complete interactive editor on the plugin settings page. It uses BB's
+  // A complete interactive editor on the plugin settings page. It uses VesnALIA's
   // live provider/model picker rather than asking people to author provider
   // ids and model names by hand.
   app.slots.settingsSection({
     id: "presets",
     title: "Preset buttons",
     description:
-      "Choose a starting set, then add, remove, reorder, rename, and configure the buttons with BB's live provider and model catalogue.",
+      "Choose a starting set, then add, remove, reorder, rename, and configure the buttons with VesnALIA's live provider and model catalogue.",
     component: PresetSettings,
   });
 });

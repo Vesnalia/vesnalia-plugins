@@ -1,8 +1,8 @@
-// Everything the user sets that is not a key. BB draws declared settings as one
+// Everything the user sets that is not a key. VesnALIA draws declared settings as one
 // flat card above the plugin's own sections, with no way to group them or to
 // leave one out, so only the keys and the choice between them are declared.
 // The rest lives here, in the plugin's own storage, where the settings page can
-// put each next to what it governs. `bb magic-compose preferences` reads and
+// put each next to what it governs. `alia magic-compose preferences` reads and
 // writes them from a shell. Shared by the server and the app.
 import { z } from "zod";
 
@@ -35,7 +35,7 @@ const fields = {
   projectInstructions: instructionsSchema,
   machineInstructions: instructionsSchema,
   environmentInstructions: instructionsSchema,
-  /** For threads `bb magic-compose spawn` starts. In the composer the picker is the user's. */
+  /** For threads `alia magic-compose spawn` starts. In the composer the picker is the user's. */
   permissionMode: z.enum(PERMISSION_MODES),
   jevModel: jevModelSchema,
   openRouterJevModel: jevModelSchema,

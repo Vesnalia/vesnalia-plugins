@@ -1,20 +1,20 @@
 ---
 name: spaces
-description: List or switch the user's Arc-style sidebar spaces (Work, Personal, …), or turn folders into projects in a space, with the `bb space` command.
+description: List or switch the user's Arc-style sidebar spaces (Work, Personal, …), or turn folders into projects in a space, with the `alia space` command.
 ---
 
 # Spaces
 
-Spaces groups bb projects into named spaces. The active space decides which
+Spaces groups VesnALIA projects into named spaces. The active space decides which
 project groups the sidebar thread list shows. A project in no space shows in
 every space.
 
-- `bb space list [--json]`: list spaces; `*` marks the active one, or
+- `alia space list [--json]`: list spaces; `*` marks the active one, or
   "All projects" when no space is active.
-- `bb space <name|number>`: switch, e.g. `bb space Work` or `bb space 2`.
-- `bb space off`: leave spaces, show all projects and restore the thread
+- `alia space <name|number>`: switch, e.g. `alia space Work` or `alia space 2`.
+- `alia space off`: leave spaces, show all projects and restore the thread
   list's previous grouping.
-- `bb space add [--space <name|number>] <folder>...`: make each folder a bb
+- `alia space add [--space <name|number>] <folder>...`: make each folder a VesnALIA
   project (or reuse the project that already points at it) and put it in the
   space; without `--space` the active space is used, and with no active space
   the projects are only created. A folder is a path, or a bare name that

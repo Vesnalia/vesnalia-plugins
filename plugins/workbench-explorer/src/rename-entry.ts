@@ -1,4 +1,4 @@
-import type { BbPluginApi, ExperimentalHostClient } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, ExperimentalHostClient } from "@vesnalia/plugin-sdk";
 import { hostContract } from "../host-contract";
 import { resolveUnderRoot, toRelativePath } from "./paths";
 import { resolveRoot } from "./roots";
@@ -21,7 +21,7 @@ export type RenameEntryResult =
  * folder. Uses statPath + listDirectory(showSkipped) so dotfiles work.
  */
 export async function renameEntry(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   host: ExperimentalHostClient<typeof hostContract>,
   input: RenameEntryInput,
 ): Promise<RenameEntryResult> {
@@ -101,7 +101,7 @@ export async function renameEntry(
   );
 
   try {
-    await bb.sdk.files.move({
+    await alia.sdk.files.move({
       hostId: root.hostId,
       sourcePath: absolute,
       destinationPath: destinationAbsolute,

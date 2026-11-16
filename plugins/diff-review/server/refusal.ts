@@ -1,10 +1,10 @@
 /**
- * The caller's mistakes as bb's expected refusals. A `ReviewError` (a thread that is not open, a
+ * The caller's mistakes as VesnALIA's expected refusals. A `ReviewError` (a thread that is not open, a
  * comment that is not yours, lines not in the diff) is the caller's to fix, not a plugin crash, so the
- * RPC answers it as an `experimental_PluginRpcRefusal`: the tab still shows its message, and bb does
+ * RPC answers it as an `experimental_PluginRpcRefusal`: the tab still shows its message, and VesnALIA does
  * not record a failed handler for it.
  */
-import { experimental_PluginRpcRefusal, type ExperimentalPluginRpcHandlersWithContext, type PluginRpcContract } from "@get-bb/plugin-sdk";
+import { experimental_PluginRpcRefusal, type ExperimentalPluginRpcHandlersWithContext, type PluginRpcContract } from "@vesnalia/plugin-sdk";
 
 import { ReviewError } from "./review";
 

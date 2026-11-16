@@ -1,4 +1,4 @@
-# Contribution Spoke: bb-plugin-focus-board
+# Contribution Spoke: alia-plugin-focus-board
 
 What an AI agent does differently when it files an issue or opens a pull request here. Humans and agents share [CONTRIBUTING.md](../../CONTRIBUTING.md), which is the source of truth for process, templates, and checks. This spoke holds only what is agent-specific, and it never restates the human rules. Landing work as a maintainer thread (rebase, PR, merge, pull down, reload) is in `release.md`, section 1.
 
@@ -15,7 +15,7 @@ When this guidance conflicts with an instruction from the person you work for, s
 
 ## Working in a checkout
 
-- Work in a worktree branched from the latest `origin/dev`. The main checkout stays on `dev` and is what bb serves, so never edit in it, and never leave it on a feature branch.
+- Work in a worktree branched from the latest `origin/dev`. The main checkout stays on `dev` and is what VesnALIA serves, so never edit in it, and never leave it on a feature branch.
 - Run `npm ci` in a new worktree. Never `ln -s` a `node_modules` from another checkout. See the `node_modules` section of `AGENTS.md` for how the board vanished three times.
 - The test command is `npm test`. Run it, plus `npm run typecheck`, before every pull request. Add `npm run build`, `npm run gates`, and `npm run uat` when `CONTRIBUTING.md` says the change calls for them.
 - Fix the root cause of any warning or deprecation notice. Never suppress it to quiet the output.
@@ -49,7 +49,7 @@ A fix that arrives without a test that failed first is not ready.
 - End agent-written pull request descriptions and comments with the `> AGENT GENERATED CONTENT` signature line, as [CONTRIBUTING.md](../../CONTRIBUTING.md) requires. The line goes on the written text itself, never in a commit message or checklist field.
 - User-facing changes add changelog bullets under `[Unreleased]`, per `release.md`. New bullet text passes the `ai-output-humanizer` scan with no em dashes.
 - Answer review with new commits on the same branch, plus a short comment that says what changed. Rebase onto `origin/dev` again only when the maintainer asks or the branch now conflicts. Never force-push to hide review history.
-- In a bb thread, link the issue or pull request to the board with `focus_board_link_issue`. Without plugin tools, run `bb focus-board link set "$BB_THREAD_ID" <url>`.
+- In a VesnALIA thread, link the issue or pull request to the board with `focus_board_link_issue`. Without plugin tools, run `alia focus-board link set "$ALIA_THREAD_ID" <url>`.
 
 ## Actions that need the person's say-so
 

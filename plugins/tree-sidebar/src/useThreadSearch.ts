@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { useRpc, type PluginSidebarThread } from "@bb/plugin-sdk/app";
-// Type-only, so the backend and @bb/plugin-sdk never reach the app bundle.
+import { useRpc, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
+// Type-only, so the backend and @vesnalia/plugin-sdk never reach the app bundle.
 import type { treeSidebarRpcContract } from "./server";
 import type { Snippet } from "./snippet";
 
@@ -29,9 +29,9 @@ const IDLE: ThreadSearchState = {
 const DEBOUNCE_MS = 150;
 
 /**
- * The host's search box, answered the way bb answers it.
+ * The host's search box, answered the way VesnALIA answers it.
  *
- * bb searches message bodies, not just titles, which is why a thread you
+ * VesnALIA searches message bodies, not just titles, which is why a thread you
  * remember by something you said in it is findable there. That search lives on
  * the server SDK, so this is an RPC round trip rather than a filter.
  *

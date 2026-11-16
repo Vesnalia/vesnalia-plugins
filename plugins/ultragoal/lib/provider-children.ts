@@ -4,8 +4,8 @@ import { openSqlite } from "./cursor-tokens.js";
 
 // Native subagent lifecycle straight from the provider's own store. OpenCode
 // runs task-tool subagents as child sessions of the parent session and records
-// them (with real titles) in opencode.db the moment they start — even when bb
-// never materializes a thread for them. bb's tool-call events only reveal a
+// them (with real titles) in opencode.db the moment they start — even when VesnALIA
+// never materializes a thread for them. VesnALIA's tool-call events only reveal a
 // task's title after it completes, so this is the one live source of names
 // for running native subagents.
 
@@ -40,9 +40,9 @@ export interface NativeTaskCall {
 
 /**
  * Task tool calls in the parent session, keyed by call id — which is exactly
- * bb's toolCall item id, so bb events pair to provider state with no
+ * VesnALIA's toolCall item id, so VesnALIA events pair to provider state with no
  * heuristics. The part's status is the authoritative liveness for the call:
- * bb's completion events can carry a rewritten tool name and killed subagents
+ * VesnALIA's completion events can carry a rewritten tool name and killed subagents
  * may never emit one at all.
  */
 export function getOpenCodeTaskCalls(parentSessionId: string): Map<string, NativeTaskCall> {

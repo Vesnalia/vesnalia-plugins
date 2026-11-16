@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -22,8 +22,8 @@ import { WorkspaceSession, useWorkspaceMemory, useWorkspaceState } from "./works
 
 const MIN_EXPLORER_PX = 220;
 const MAX_EXPLORER_PX = 560;
-const WIDTH_STORAGE_KEY = "bb-box:files-explorer-width";
-const HIDDEN_STORAGE_KEY = "bb-box:files-include-hidden";
+const WIDTH_STORAGE_KEY = "alia-box:files-explorer-width";
+const HIDDEN_STORAGE_KEY = "alia-box:files-include-hidden";
 
 export function Workspace({ threadId, boxId, os }: { threadId: string; boxId: string; os: GuestOs }) {
   return <WorkspaceSession key={JSON.stringify([threadId, boxId])} threadId={threadId} boxId={boxId}><WorkspaceBody boxId={boxId} os={os} /></WorkspaceSession>;

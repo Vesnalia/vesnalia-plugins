@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Store } from "./store";
 import { ensureGitHeaders } from "./patch";
 import { generateGuide } from "./generate";
@@ -6,7 +6,7 @@ import { gitDiffArgs } from "./gh";
 import { readPrSnapshot } from "./pr-snapshot";
 
 interface Deps {
-  bb: BbPluginApi; store: Store;
+  alia: AliaPluginApi; store: Store;
   gh: { runGh: typeof import("./gh").runGh; runGit: typeof import("./gh").runGit };
 }
 
@@ -27,7 +27,7 @@ export async function rerunReview(deps: Deps, targetKey: string): Promise<{ ok: 
       return { ok: false, error: error instanceof Error ? error.message : "Could not load the PR." };
     }
   } else if (m.kind === "ref" && m.gitRef) {
-    if (!m.cwd) return { ok: false, error: "Local-ref re-review needs the original working dir; re-run `bb review` in the terminal." };
+    if (!m.cwd) return { ok: false, error: "Local-ref re-review needs the original working dir; re-run `alia review` in the terminal." };
     const diff = await deps.gh.runGit(gitDiffArgs(m.gitRef), { cwd: m.cwd });
     if (diff.code !== 0) return { ok: false, error: diff.stderr || "git diff failed" };
     patch = diff.stdout;
@@ -38,6 +38,6 @@ export async function rerunReview(deps: Deps, targetKey: string): Promise<{ ok: 
 
   deps.store.savePatch(targetKey, ensureGitHeaders(patch));
   deps.store.saveReview({ ...m, status: "generating" });
-  void generateGuide(deps.bb, deps.store, targetKey, m.projectId);
+  void generateGuide(deps.alia, deps.store, targetKey, m.projectId);
   return { ok: true };
 }

@@ -109,7 +109,7 @@ const EN: Messages = {
   reportShow: "Show it inline in chat with the directive below:",
   reportOutRequired: {
     message: "--format html needs --out <file.html> (or use --format md)",
-    hint: 'In a thread: bb team report --out "$BB_THREAD_STORAGE/team-report.html"',
+    hint: 'In a thread: VesnALIA team report --out "$ALIA_THREAD_STORAGE/team-report.html"',
   },
 
   taskAdded: (id, role, title) => `task #${id} → ${role}: ${title}`,
@@ -117,35 +117,35 @@ const EN: Messages = {
   taskSendFailed: (id, error) => `package #${id} created, but sending it to the role failed: ${error}`,
   taskUpdated: (id, from, to) => `task #${id}: ${from} → ${to}`,
   taskRemoved: (id) => `task #${id} removed`,
-  taskListEmpty: "No open work packages. Add one: bb team task add <role> <title>",
+  taskListEmpty: "No open work packages. Add one: VesnALIA team task add <role> <title>",
   taskListTitle: (project) => `Work packages of "${project}":`,
   taskBusy: (role, ids) =>
     `note: ${role} already has a package in work (${ids}) — one active package per executor`,
   taskRoleUnknown: (role) => ({
-    message: `role "${role}" is neither in .bb/team.yaml nor bound to a team thread`,
-    hint: "Roles: bb team status",
+    message: `role "${role}" is neither in .vesnalia/team.yaml nor bound to a team thread`,
+    hint: "Roles: VesnALIA team status",
   }),
   taskNoThread: (role) => ({
     message: `role "${role}" has no team thread to send the package to`,
-    hint: "Spawn the team first: bb team create — or add the task without --send",
+    hint: "Spawn the team first: VesnALIA team create — or add the task without --send",
   }),
   reviewSubmissionRequired: () => ({
     message:
       "this step needs a grounded review report: attach --review JSON with result, artifacts, actual checks and remaining problems (each check is {what,result} or {what,notApplicable} with a justification — never both)",
-    hint: 'bb team task update <id> --status review --review \'{"result":"…","artifacts":[…],"checks":[{"what":"…","result":"…"}],"problems":[…]}\' — presence of text is not a passed check; a failed or not-run check stays a failure in its result',
+    hint: 'alia team task update <id> --status review --review \'{"result":"…","artifacts":[…],"checks":[{"what":"…","result":"…"}],"problems":[…]}\' — presence of text is not a passed check; a failed or not-run check stays a failure in its result',
   }),
   acceptanceReasonRequired: () => ({
     message:
       "accepting a package (done) needs grounds: a grounded review report on the task, and your reason stating what you checked and why it is enough; the manual path always requires a reason too",
-    hint: "bb team task done <id> --reason <why you accept> — or return it: bb team task update <id> --status todo --return-reason <concrete remark>",
+    hint: "alia team task done <id> --reason <why you accept> — or return it: VesnALIA team task update <id> --status todo --return-reason <concrete remark>",
   }),
   returnReasonRequired: () => ({
     message: "returning a package from review needs a concrete remark for the executor (the manual path needs it too)",
-    hint: "bb team task update <id> --status todo --return-reason <what exactly must change>",
+    hint: "alia team task update <id> --status todo --return-reason <what exactly must change>",
   }),
   submissionConflict: (expected, current) => ({
     message: `the review report changed since it was reviewed: expected submission "${expected}", the task now carries ${current}; nothing was changed`,
-    hint: "Re-read the current report (bb team task list --json shows the submission id), then accept or return with the new id in --expected-submission",
+    hint: "Re-read the current report (VesnALIA team task list --json shows the submission id), then accept or return with the new id in --expected-submission",
   }),
   taskBody: (id, title, note, leadRef) =>
     [
@@ -153,8 +153,8 @@ const EN: Messages = {
       ...(note ? ["", note] : []),
       "",
       leadRef
-        ? `When it is done: bb team task update ${id} --status review --review '<json: result, artifacts, checks[{what,result}|{what,notApplicable}], problems>' — then report to the lead role using bb team tell ${leadRef} --message-file -. Only the lead accepts packages (done).`
-        : `When it is done: bb team task update ${id} --status review --review '<json: result, artifacts, checks[{what,result}|{what,notApplicable}], problems>' — then report back.`,
+        ? `When it is done: VesnALIA team task update ${id} --status review --review '<json: result, artifacts, checks[{what,result}|{what,notApplicable}], problems>' — then report to the lead role using VesnALIA team tell ${leadRef} --message-file -. Only the lead accepts packages (done).`
+        : `When it is done: VesnALIA team task update ${id} --status review --review '<json: result, artifacts, checks[{what,result}|{what,notApplicable}], problems>' — then report back.`,
     ].join("\n"),
   taskStatusLine: (status) => `status: ${status}`,
 
@@ -163,7 +163,7 @@ const EN: Messages = {
   doctorAllGood: "All checks passed.",
   check: {
     config: "config",
-    configMissing: "no .bb/team.yaml — bb team init",
+    configMissing: "no .vesnalia/team.yaml — VesnALIA team init",
     providers: "providers",
     environments: "environments",
     prompts: "prompts",
@@ -173,29 +173,29 @@ const EN: Messages = {
     threads: "team threads",
   },
   doctorOk: "ok",
-  doctorMissingThread: (role) => `${role}: no thread yet — bb team create`,
+  doctorMissingThread: (role) => `${role}: no thread yet — VesnALIA team create`,
   doctorDuplicate: (role, ids) => `${role}: several threads (${ids}) — archive the extra ones`,
   doctorOrphan: (role, id) =>
     `${role}: thread ${id} carries a role missing from the config — re-add the role or archive the thread`,
   doctorWrongParent: (role, id) =>
-    `${role}: thread ${id} is not a child of the lead — re-run bb team create to re-link`,
-  doctorThreadError: (role, id) => `${role}: thread ${id} is in error — bb thread retry ${id}`,
+    `${role}: thread ${id} is not a child of the lead — re-run alia team create to re-link`,
+  doctorThreadError: (role, id) => `${role}: thread ${id} is in error — VesnALIA thread retry ${id}`,
   doctorUnknownVar: (role, name) => `${role}: prompt uses {{vars.${name}}}, not defined in vars:`,
   doctorGitignored:
-    ".bb is gitignored — commit .bb/team.yaml and .bb/team/ if the team is shared",
-  doctorPaused: "the team is paused — bb team resume",
+    ".vesnalia is gitignored — commit .vesnalia/team.yaml and .vesnalia/team/ if the team is shared",
+  doctorPaused: "the team is paused — VesnALIA team resume",
 
   replaceNoThread: (role) => ({
     message: `role "${role}" has no team thread to replace`,
-    hint: "Spawn it: bb team create",
+    hint: "Spawn it: VesnALIA team create",
   }),
   replaceAmbiguous: (role, ids) => ({
     message: `role "${role}" has several threads: ${ids}`,
-    hint: "Pick one: bb team replace <role> --thread <thr_…>",
+    hint: "Pick one: VesnALIA team replace <role> --thread <thr_…>",
   }),
   replaceNeedsPrompt: (role) => ({
     message: `role "${role}" has no prompt/promptFile — a fresh thread needs one`,
-    hint: "Add prompt or promptFile to the role in .bb/team.yaml",
+    hint: "Add prompt or promptFile to the role in .vesnalia/team.yaml",
   }),
   replaceThreadMismatch: (role, id) => `thread ${id} is not a "${role}" team thread`,
   replaceHandoff: (oldRef, output, tasks) =>
@@ -206,16 +206,16 @@ const EN: Messages = {
       ...(output ? ["Saved task checkpoint:", "", output] : ["It left no final report."]),
       ...(tasks ? ["", "Open work packages of the role:", tasks] : []),
       "",
-      "Continue from the saved task checkpoint. Address roles with bb team tell <role>; do not reload the previous conversation.",
+      "Continue from the saved task checkpoint. Address roles with VesnALIA team tell <role>; do not reload the previous conversation.",
     ].join("\n"),
   replaceDone: (role, oldId, newId) => `${role}: @thread:${oldId} → @thread:${newId}`,
   replaceArchived: (id) => `old thread archived: ${id}`,
   replaceKept: (id) => `old thread kept (unbound from the role): ${id}`,
   replaceReparented: (count) => `executors moved under the new lead: ${count}`,
   replaceConfigNote: (role, id) =>
-    `note: .bb/team.yaml binds role "${role}" to threadId ${id} — update or remove that line`,
+    `note: .vesnalia/team.yaml binds role "${role}" to threadId ${id} — update or remove that line`,
   replaceLeadNotice: (role, oldRef, newRef) =>
-    `Team change: role "${role}" moved from ${oldRef} to a fresh thread ${newRef} (bb team replace). Address the role using bb team tell <role>; it resolves the current session.`,
+    `Team change: role "${role}" moved from ${oldRef} to a fresh thread ${newRef} (VesnALIA team replace). Address the role using VesnALIA team tell <role>; it resolves the current session.`,
   replacePlan: (role, oldId) =>
     `would replace ${role}: ${oldId} → new thread (handoff: last report + open packages)`,
 
@@ -223,12 +223,12 @@ const EN: Messages = {
   stopped: (role, id) => `stopped ${role} — ${id}`,
   stopFailed: (role, error) => `${role}: stop failed — ${error}`,
   paused: (count) =>
-    `Team paused: ${count} executor thread(s). Agent messages to them wait in their queues; bb team resume releases them.`,
-  pausedAlready: "The team is already paused. Release it: bb team resume",
+    `Team paused: ${count} executor thread(s). Agent messages to them wait in their queues; VesnALIA team resume releases them.`,
+  pausedAlready: "The team is already paused. Release it: VesnALIA team resume",
   resumed: (count) => `Team resumed: ${count} thread(s); held messages are being delivered.`,
   notPaused: "The team is not paused.",
-  pauseWaitReason: "Team paused — bb team resume releases this message",
-  tellPausedNote: "note: the team is paused — the message waits until bb team resume",
+  pauseWaitReason: "Team paused — VesnALIA team resume releases this message",
+  tellPausedNote: "note: the team is paused — the message waits until VesnALIA team resume",
 
   notifyIdle: (role, threadId, excerpt) =>
     [
@@ -240,8 +240,8 @@ const EN: Messages = {
 
   templateTitle: (name) => `template: ${name}`,
   fromNoConfig: (name) => ({
-    message: `project "${name}" has no .bb/team.yaml to copy`,
-    hint: "Check the source: bb team status --project <name>",
+    message: `project "${name}" has no .vesnalia/team.yaml to copy`,
+    hint: "Check the source: VesnALIA team status --project <name>",
   }),
   fromStripped: (count) =>
     `removed ${count} threadId binding(s): threads belong to the source project`,
@@ -255,7 +255,7 @@ const EN: Messages = {
   versionOn: (team, files) => `team "${team}" is versioned now: commit ${files}`,
   versionOff: (team, files) => `team "${team}" is out of git now (${files} ignored); remove tracked copies with git rm --cached if needed`,
   versionBlocked:
-    "the root .gitignore ignores .bb/ entirely — replace it with `.bb/*` and `!.bb/teams/` to version teams",
+    "the root .gitignore ignores .vesnalia/ entirely — replace it with `.vesnalia/*` and `!.alia/teams/` to version teams",
   roleAdded: (role, team) => `role "${role}" added to team "${team}"`,
   roleExists: (role, team) => ({
     message: `team "${team}" already has a role "${role}"`,
@@ -272,11 +272,11 @@ const EN: Messages = {
   templateDeleted: (id) => `template "${id}" deleted`,
   templateNotFound: (id) => ({
     message: `template "${id}" not found`,
-    hint: "List: bb team template list",
+    hint: "List: VesnALIA team template list",
   }),
   templateBuiltin: (id) => ({
     message: `"${id}" is a built-in template and cannot be changed`,
-    hint: "Copy it under a new id: bb team template save <new-id> --from-template " + id,
+    hint: "Copy it under a new id: VesnALIA team template save <new-id> --from-template " + id,
   }),
   retitled: (count) => `threads renamed: ${count}`,
   versionedYes: "versioned (tracked in git)",
@@ -284,7 +284,7 @@ const EN: Messages = {
   relinked: (count) => `executors re-linked under the lead: ${count}`,
   onlyLeadAccepts: (role) => ({
     message: `only the lead accepts packages; "${role}" is an executor`,
-    hint: "Move it to review: bb team task update <id> --status review — and report to the lead",
+    hint: "Move it to review: VesnALIA team task update <id> --status review — and report to the lead",
   }),
   overviewNoSource: "The project has no folder (source) on a connected machine",
   overviewHostOffline: (host) => `Machine "${host}" is offline — team threads cannot start there`,
@@ -296,7 +296,7 @@ const RU: Messages = {
   reportShow: "Показать его в чате — директивой ниже:",
   reportOutRequired: {
     message: "для --format html нужен --out <файл.html> (или --format md)",
-    hint: 'В треде: bb team report --out "$BB_THREAD_STORAGE/team-report.html"',
+    hint: 'В треде: VesnALIA team report --out "$ALIA_THREAD_STORAGE/team-report.html"',
   },
 
   taskAdded: (id, role, title) => `пакет #${id} → ${role}: ${title}`,
@@ -304,35 +304,35 @@ const RU: Messages = {
   taskSendFailed: (id, error) => `пакет #${id} создан, но отправить его роли не удалось: ${error}`,
   taskUpdated: (id, from, to) => `пакет #${id}: ${from} → ${to}`,
   taskRemoved: (id) => `пакет #${id} удалён`,
-  taskListEmpty: "Открытых пакетов нет. Добавить: bb team task add <роль> <название>",
+  taskListEmpty: "Открытых пакетов нет. Добавить: VesnALIA team task add <роль> <название>",
   taskListTitle: (project) => `Пакеты работ проекта «${project}»:`,
   taskBusy: (role, ids) =>
     `заметка: у ${role} уже есть пакет в работе (${ids}) — один активный пакет на исполнителя`,
   taskRoleUnknown: (role) => ({
-    message: `роли "${role}" нет ни в .bb/team.yaml, ни среди тредов команды`,
-    hint: "Роли: bb team status",
+    message: `роли "${role}" нет ни в .vesnalia/team.yaml, ни среди тредов команды`,
+    hint: "Роли: VesnALIA team status",
   }),
   taskNoThread: (role) => ({
     message: `у роли "${role}" нет треда, чтобы отправить пакет`,
-    hint: "Сначала создайте команду: bb team create — или добавьте пакет без --send",
+    hint: "Сначала создайте команду: VesnALIA team create — или добавьте пакет без --send",
   }),
   reviewSubmissionRequired: () => ({
     message:
       "этот шаг требует содержательного отчёта ревью: приложите --review JSON с результатом, артефактами, фактическими проверками и оставшимися проблемами (каждая проверка — {what,result} или {what,notApplicable} с обоснованием, но не оба сразу)",
-    hint: 'bb team task update <id> --status review --review \'{"result":"…","artifacts":[…],"checks":[{"what":"…","result":"…"}],"problems":[…]}\' — наличие текста не равносильно пройденной проверке; проваленная или невыполнявшаяся проверка остаётся провалом в result',
+    hint: 'alia team task update <id> --status review --review \'{"result":"…","artifacts":[…],"checks":[{"what":"…","result":"…"}],"problems":[…]}\' — наличие текста не равносильно пройденной проверке; проваленная или невыполнявшаяся проверка остаётся провалом в result',
   }),
   acceptanceReasonRequired: () => ({
     message:
       "приёмка пакета (done) требует оснований: содержательный отчёт ревью у задачи и ваша причина — что именно проверено и почему этого достаточно; для ручного пути причина также обязательна",
-    hint: "bb team task done <id> --reason <почему принимаете> — или верните: bb team task update <id> --status todo --return-reason <конкретное замечание>",
+    hint: "alia team task done <id> --reason <почему принимаете> — или верните: VesnALIA team task update <id> --status todo --return-reason <конкретное замечание>",
   }),
   returnReasonRequired: () => ({
     message: "возврат пакета из review требует конкретного замечания исполнителю (для ручного пути тоже)",
-    hint: "bb team task update <id> --status todo --return-reason <что именно нужно исправить>",
+    hint: "alia team task update <id> --status todo --return-reason <что именно нужно исправить>",
   }),
   submissionConflict: (expected, current) => ({
     message: `отчёт ревью изменился с момента просмотра: ожидался submission «${expected}», в задаче сейчас ${current}; ничего не изменено`,
-    hint: "Перечитайте текущий отчёт (id submission виден в bb team task list --json) и повторите приёмку/возврат с новым id в --expected-submission",
+    hint: "Перечитайте текущий отчёт (id submission виден в VesnALIA team task list --json) и повторите приёмку/возврат с новым id в --expected-submission",
   }),
   taskBody: (id, title, note, leadRef) =>
     [
@@ -340,8 +340,8 @@ const RU: Messages = {
       ...(note ? ["", note] : []),
       "",
       leadRef
-        ? `По завершении: bb team task update ${id} --status review --review '<json: result, artifacts, checks[{what,result}|{what,notApplicable}], problems>' — и отчёт роли руководителя через bb team tell ${leadRef} --message-file -. Принимает пакет (done) только руководитель.`
-        : `По завершении: bb team task update ${id} --status review --review '<json: result, artifacts, checks[{what,result}|{what,notApplicable}], problems>' — и отчёт.`,
+        ? `По завершении: VesnALIA team task update ${id} --status review --review '<json: result, artifacts, checks[{what,result}|{what,notApplicable}], problems>' — и отчёт роли руководителя через VesnALIA team tell ${leadRef} --message-file -. Принимает пакет (done) только руководитель.`
+        : `По завершении: VesnALIA team task update ${id} --status review --review '<json: result, artifacts, checks[{what,result}|{what,notApplicable}], problems>' — и отчёт.`,
     ].join("\n"),
   taskStatusLine: (status) => `статус: ${status}`,
 
@@ -350,7 +350,7 @@ const RU: Messages = {
   doctorAllGood: "Все проверки пройдены.",
   check: {
     config: "конфиг",
-    configMissing: "нет .bb/team.yaml — bb team init",
+    configMissing: "нет .vesnalia/team.yaml — VesnALIA team init",
     providers: "провайдеры",
     environments: "окружения",
     prompts: "промпты",
@@ -360,29 +360,29 @@ const RU: Messages = {
     threads: "треды команды",
   },
   doctorOk: "ок",
-  doctorMissingThread: (role) => `${role}: треда ещё нет — bb team create`,
+  doctorMissingThread: (role) => `${role}: треда ещё нет — VesnALIA team create`,
   doctorDuplicate: (role, ids) => `${role}: несколько тредов (${ids}) — лишние архивируйте`,
   doctorOrphan: (role, id) =>
     `${role}: тред ${id} помечен ролью, которой нет в конфиге — верните роль или архивируйте тред`,
   doctorWrongParent: (role, id) =>
-    `${role}: тред ${id} не дочерний для руководителя — повторите bb team create`,
-  doctorThreadError: (role, id) => `${role}: тред ${id} в ошибке — bb thread retry ${id}`,
+    `${role}: тред ${id} не дочерний для руководителя — повторите VesnALIA team create`,
+  doctorThreadError: (role, id) => `${role}: тред ${id} в ошибке — VesnALIA thread retry ${id}`,
   doctorUnknownVar: (role, name) => `${role}: промпт использует {{vars.${name}}}, которой нет в vars:`,
   doctorGitignored:
-    ".bb в .gitignore — закоммитьте .bb/team.yaml и .bb/team/, если команда общая",
-  doctorPaused: "команда на паузе — bb team resume",
+    ".vesnalia в .gitignore — закоммитьте .vesnalia/team.yaml и .vesnalia/team/, если команда общая",
+  doctorPaused: "команда на паузе — VesnALIA team resume",
 
   replaceNoThread: (role) => ({
     message: `у роли "${role}" нет треда для замены`,
-    hint: "Создайте его: bb team create",
+    hint: "Создайте его: VesnALIA team create",
   }),
   replaceAmbiguous: (role, ids) => ({
     message: `у роли "${role}" несколько тредов: ${ids}`,
-    hint: "Укажите один: bb team replace <роль> --thread <thr_…>",
+    hint: "Укажите один: VesnALIA team replace <роль> --thread <thr_…>",
   }),
   replaceNeedsPrompt: (role) => ({
     message: `у роли "${role}" нет prompt/promptFile — новому треду нужен промпт`,
-    hint: "Добавьте prompt или promptFile роли в .bb/team.yaml",
+    hint: "Добавьте prompt или promptFile роли в .vesnalia/team.yaml",
   }),
   replaceThreadMismatch: (role, id) => `тред ${id} не является тредом роли "${role}"`,
   replaceHandoff: (oldRef, output, tasks) =>
@@ -393,16 +393,16 @@ const RU: Messages = {
       ...(output ? ["Сохранённый checkpoint задачи:", "", output] : ["Финального отчёта он не оставил."]),
       ...(tasks ? ["", "Открытые пакеты роли:", tasks] : []),
       "",
-      "Продолжай по checkpoint задачи. Адресуй сообщения через bb team tell <роль>; прежнюю беседу не загружай.",
+      "Продолжай по checkpoint задачи. Адресуй сообщения через VesnALIA team tell <роль>; прежнюю беседу не загружай.",
     ].join("\n"),
   replaceDone: (role, oldId, newId) => `${role}: @thread:${oldId} → @thread:${newId}`,
   replaceArchived: (id) => `старый тред архивирован: ${id}`,
   replaceKept: (id) => `старый тред оставлен (отвязан от роли): ${id}`,
   replaceReparented: (count) => `исполнителей перенесено к новому руководителю: ${count}`,
   replaceConfigNote: (role, id) =>
-    `заметка: .bb/team.yaml привязывает роль "${role}" к threadId ${id} — обновите или уберите строку`,
+    `заметка: .vesnalia/team.yaml привязывает роль "${role}" к threadId ${id} — обновите или уберите строку`,
   replaceLeadNotice: (role, oldRef, newRef) =>
-    `Изменение команды: роль "${role}" переехала из ${oldRef} в новый тред ${newRef} (bb team replace). Сообщения отправляй через bb team tell <роль>: он определяет актуальную сессию.`,
+    `Изменение команды: роль "${role}" переехала из ${oldRef} в новый тред ${newRef} (VesnALIA team replace). Сообщения отправляй через VesnALIA team tell <роль>: он определяет актуальную сессию.`,
   replacePlan: (role, oldId) =>
     `заменит ${role}: ${oldId} → новый тред (передача: последний отчёт + открытые пакеты)`,
 
@@ -410,12 +410,12 @@ const RU: Messages = {
   stopped: (role, id) => `остановлен ${role} — ${id}`,
   stopFailed: (role, error) => `${role}: остановить не удалось — ${error}`,
   paused: (count) =>
-    `Команда на паузе: тредов исполнителей ${count}. Сообщения агентов им ждут в очереди; bb team resume их отпустит.`,
-  pausedAlready: "Команда уже на паузе. Снять: bb team resume",
+    `Команда на паузе: тредов исполнителей ${count}. Сообщения агентов им ждут в очереди; VesnALIA team resume их отпустит.`,
+  pausedAlready: "Команда уже на паузе. Снять: VesnALIA team resume",
   resumed: (count) => `Пауза снята: тредов ${count}; придержанные сообщения доставляются.`,
   notPaused: "Команда не на паузе.",
-  pauseWaitReason: "Команда на паузе — bb team resume отпустит это сообщение",
-  tellPausedNote: "заметка: команда на паузе — сообщение дождётся bb team resume",
+  pauseWaitReason: "Команда на паузе — VesnALIA team resume отпустит это сообщение",
+  tellPausedNote: "заметка: команда на паузе — сообщение дождётся VesnALIA team resume",
 
   notifyIdle: (role, threadId, excerpt) =>
     [
@@ -427,8 +427,8 @@ const RU: Messages = {
 
   templateTitle: (name) => `шаблон: ${name}`,
   fromNoConfig: (name) => ({
-    message: `у проекта "${name}" нет .bb/team.yaml для копирования`,
-    hint: "Проверьте источник: bb team status --project <имя>",
+    message: `у проекта "${name}" нет .vesnalia/team.yaml для копирования`,
+    hint: "Проверьте источник: VesnALIA team status --project <имя>",
   }),
   fromStripped: (count) =>
     `убрано привязок threadId: ${count} — треды принадлежат исходному проекту`,
@@ -442,7 +442,7 @@ const RU: Messages = {
   versionOn: (team, files) => `команда "${team}" теперь версионируется: закоммитьте ${files}`,
   versionOff: (team, files) => `команда "${team}" выведена из git (${files} игнорируются); уже закоммиченные копии уберите git rm --cached`,
   versionBlocked:
-    "корневой .gitignore игнорирует весь .bb/ — замените строку на `.bb/*` и `!.bb/teams/`, чтобы версионировать команды",
+    "корневой .gitignore игнорирует весь .vesnalia/ — замените строку на `.vesnalia/*` и `!.alia/teams/`, чтобы версионировать команды",
   roleAdded: (role, team) => `роль "${role}" добавлена в команду "${team}"`,
   roleExists: (role, team) => ({
     message: `в команде "${team}" уже есть роль "${role}"`,
@@ -459,11 +459,11 @@ const RU: Messages = {
   templateDeleted: (id) => `шаблон "${id}" удалён`,
   templateNotFound: (id) => ({
     message: `шаблон "${id}" не найден`,
-    hint: "Список: bb team template list",
+    hint: "Список: VesnALIA team template list",
   }),
   templateBuiltin: (id) => ({
     message: `"${id}" — встроенный шаблон, его нельзя менять`,
-    hint: "Скопируйте под новым id: bb team template save <новый-id> --from-template " + id,
+    hint: "Скопируйте под новым id: VesnALIA team template save <новый-id> --from-template " + id,
   }),
   retitled: (count) => `переименовано тредов: ${count}`,
   versionedYes: "в git (версионируется)",
@@ -471,7 +471,7 @@ const RU: Messages = {
   relinked: (count) => `исполнителей заново привязано к руководителю: ${count}`,
   onlyLeadAccepts: (role) => ({
     message: `принимает пакеты только руководитель; "${role}" — исполнитель`,
-    hint: "Переведите в ревью: bb team task update <id> --status review — и отчитайтесь руководителю",
+    hint: "Переведите в ревью: VesnALIA team task update <id> --status review — и отчитайтесь руководителю",
   }),
   overviewNoSource: "У проекта нет папки (источника) на подключённой машине",
   overviewHostOffline: (host) => `Машина «${host}» не в сети — треды команды там не запустятся`,
@@ -482,13 +482,13 @@ const EN_LEAD_POLICY = `Autonomous lead operating rules (keep after session repl
 - Accept an ordinary goal, define the minimal sufficient solution for it, and run the work through the project's selected tracker by default. Do not ask "should this go to Beads?" and do not maintain a second tracker.
 - Plan work as small tracked packages. For each one set acceptance criteria, dependencies, order, and an assignee role. Create epics only when they genuinely group substantial work; never force an epic for trivial tasks.
 - Delegate by minimal cost: first try a ready-made command or script (no LLM); then give a narrow simple errand to the junior or an existing helper; only genuinely complex work goes to a stronger role. Reuse an existing helper for one-off errands, use the junior with a replaceable session for recurring simple work, and never keep a permanently thinking observer. Do not do executors' work yourself.
-- Make technical decisions yourself and record the reasons (decisions, checkpoint, or bb team tell lead). Choose models only from the team's approved roster; no arbitrary fallbacks and no unapproved extra paid calls. Do not promise features that are not implemented.
+- Make technical decisions yourself and record the reasons (decisions, checkpoint, or VesnALIA team tell lead). Choose models only from the team's approved roster; no arbitrary fallbacks and no unapproved extra paid calls. Do not promise features that are not implemented.
 - Verify by evidence, not by the presence of text: accept a package only with a grounded review report — result/artifacts, actual checks with results or a justified not-applicable, remaining problems. Filled-in fields are not a passed check; a model's self-report is not a test result.
 - Resource limits are enforced in code across lead, workers, helpers and retries. A failed attempt needs a concrete changed approach; do not bypass a hold with another card/session or blind model cycling. Check Team resources/report. Quota handoff only uses approved independent backups and a fresh verified checkpoint; without it, stop and explain. Context is not cumulative spend, unknown usage is not zero, and provider-internal retries/cost may be unavailable.
-- Accept or return concretely: accept with your reason (bb team task done <id> --reason … --expected-submission <report-id>), or return the package with a concrete remark (bb team task update <id> --status in-progress --return-reason … --expected-submission <report-id>). Executors never accept packages; your decision and the return reason stay recorded on the task. Escalate to the user only product priorities, scope boundaries, and significant costs.
+- Accept or return concretely: accept with your reason (VesnALIA team task done <id> --reason … --expected-submission <report-id>), or return the package with a concrete remark (VesnALIA team task update <id> --status in-progress --return-reason … --expected-submission <report-id>). Executors never accept packages; your decision and the return reason stay recorded on the task. Escalate to the user only product priorities, scope boundaries, and significant costs.
 - A request to discuss or plan does not grant permission to write code. An instruction to implement does; preserve existing authorization and do not ask for it again.
 - Keep a coordination task linked to your session with a checkpoint when managing work. Reuse a suitable existing lead task or epic; do not create duplicate coordination cards.
-- Before a handoff or session rotation, save a substantive checkpoint with bb team checkpoint <id> --file <absolute-json-path>.`;
+- Before a handoff or session rotation, save a substantive checkpoint with VesnALIA team checkpoint <id> --file <absolute-json-path>.`;
 
 const RU_LEAD_POLICY = `Правила автономного руководителя (сохраняй после замены сессии):
 - Принимай обычную цель, определяй минимально достаточное решение и по умолчанию веди работу в выбранном для проекта трекере. Не спрашивай «в Beads?» и не поддерживай второй трекер.
@@ -497,10 +497,10 @@ const RU_LEAD_POLICY = `Правила автономного руководит
 - Технические решения принимай сам и фиксируй причины (decisions, checkpoint или сообщение роли lead). Выбирай модели только из утверждённого roster команды; никаких произвольных fallback и несогласованных дополнительных платных вызовов. Не обещай ещё не реализованные возможности.
 - Проверяй по доказательствам, а не по наличию текста: принимай пакет только с содержательным отчётом ревью — результат/артефакты, фактические проверки с результатами или обоснованный not-applicable, оставшиеся проблемы. Заполненные поля — не прошедшая проверка; самоотчёт модели — не результат теста.
 - Лимиты ресурсов проверяет код для lead, исполнителей, helpers и повторов. После ошибки нужно конкретное изменение подхода; не обходи блокировку новой карточкой/сессией или перебором моделей. Смотри ресурсы Team/отчёт. Замена при квоте — только разрешённый независимый резерв и свежий проверенный checkpoint; без него остановись с объяснением. Контекст не равен накопленному расходу, неизвестный расход не равен нулю; внутренние retry/стоимость провайдера могут быть недоступны.
-- Принимай или возвращай конкретно: принимай с причиной (bb team task done <id> --reason … --expected-submission <report-id>) или возвращай пакет с конкретным замечанием (bb team task update <id> --status in-progress --return-reason … --expected-submission <report-id>). Исполнители никогда не принимают пакеты; твоё решение и причина возврата сохраняются в задаче. Эскалируй пользователю только продуктовые приоритеты, границы scope и существенные затраты.
+- Принимай или возвращай конкретно: принимай с причиной (VesnALIA team task done <id> --reason … --expected-submission <report-id>) или возвращай пакет с конкретным замечанием (VesnALIA team task update <id> --status in-progress --return-reason … --expected-submission <report-id>). Исполнители никогда не принимают пакеты; твоё решение и причина возврата сохраняются в задаче. Эскалируй пользователю только продуктовые приоритеты, границы scope и существенные затраты.
 - Просьба обсудить или спланировать не даёт разрешения писать код. Поручение реализовать даёт такое разрешение; сохраняй уже полученное разрешение и не спрашивай его повторно.
 - При руководстве работой свяжи сессию с задачей координации через checkpoint. Используй подходящую существующую задачу или эпик руководителя, не создавай дублирующую карточку координации.
-- Перед передачей дела или сменой сессии сохраняй содержательный checkpoint: bb team checkpoint <id> --file <абсолютный-путь.json>.`;
+- Перед передачей дела или сменой сессии сохраняй содержательный checkpoint: VesnALIA team checkpoint <id> --file <абсолютный-путь.json>.`;
 
 /** Persistent autonomous-lead policy text, localized. */
 export function leadAutonomyPolicy(lang: Language): string {
@@ -521,11 +521,11 @@ export function hasLeadPolicy(text: string, lang: Language): boolean {
 export function executorReviewPolicy(lang: Language): string {
   return lang === "ru"
     ? `Отчёт и приёмка пакета Team:
-- Завершив пакет, переведи его в review с содержательным отчётом: bb team task update <id> --status review --review '<json>'. JSON: result (что фактически сделано), artifacts[], checks[] — каждая запись {"what":…,"result": фактический результат} или {"what":…,"notApplicable": обоснование}, problems[] (оставшиеся проблемы).
+- Завершив пакет, переведи его в review с содержательным отчётом: VesnALIA team task update <id> --status review --review '<json>'. JSON: result (что фактически сделано), artifacts[], checks[] — каждая запись {"what":…,"result": фактический результат} или {"what":…,"notApplicable": обоснование}, problems[] (оставшиеся проблемы).
 - Не выдавай наличие текста за выполненную проверку: описывай только то, что реально запускал/проверял; для непрограммной работы допустим обоснованный not-applicable. Самоотчёт не заменяет проверку.
 - Никогда не принимай свой пакет сам (статус done/dropped — только руководитель или пользователь). При возврате с замечанием исправь конкретику из return-reason и снова подай отчёт в review.`
     : `Team package review and acceptance:
-- When your package is done, move it to review with a grounded report: bb team task update <id> --status review --review '<json>'. JSON: result (what was actually produced), artifacts[], checks[] — each {"what":…,"result": actual outcome} or {"what":…,"notApplicable": justification}, problems[] (remaining issues).
+- When your package is done, move it to review with a grounded report: VesnALIA team task update <id> --status review --review '<json>'. JSON: result (what was actually produced), artifacts[], checks[] — each {"what":…,"result": actual outcome} or {"what":…,"notApplicable": justification}, problems[] (remaining issues).
 - Never pass the presence of text off as a performed check: describe only what you actually ran/verified; for non-programmatic work a justified not-applicable is fine. A self-report is not a check.
 - Never accept your own package (done/dropped is for the lead or the user only). When it is returned with a remark, address the concrete return-reason and submit a fresh review report.`;
 }
@@ -534,11 +534,11 @@ export function executorReviewPolicy(lang: Language): string {
 export function sessionHandoffPolicy(lang: Language): string {
   return lang === "ru"
     ? `Передача сессии Team:
-- Продолжай один пакет в текущей сессии, включая связанные исправления. Если контекст мешает надёжному продолжению, сохрани содержательный checkpoint и запроси передачу: bb team checkpoint <id> --file <абсолютный-json-путь> --rotate. Для руководителя используй его задачу координации.
+- Продолжай один пакет в текущей сессии, включая связанные исправления. Если контекст мешает надёжному продолжению, сохрани содержательный checkpoint и запроси передачу: VesnALIA team checkpoint <id> --file <абсолютный-json-путь> --rotate. Для руководителя используй его задачу координации.
 - Поля JSON: goal, criteria[], progress, decisions[{what,why}], checks[{what,result}], blockers[], nextAction, files[]. Не выдумывай проверки и не копируй последний output вместо состояния. Заверши текущие операции; Team дождётся безопасной границы и сохранит окружение. Не создавай новый worktree или вторую задачу ради передачи.
 - Если цель, состояние или безопасное продолжение неясны — спроси руководителя, а руководитель пользователя. Не повторяй spawn/send при неоднозначном результате.`
     : `Team session handoff:
-- Keep one package in its session, including related fixes. When growing context prevents reliable continuation, save a substantive checkpoint and request handoff: bb team checkpoint <id> --file <absolute-json-path> --rotate. A lead uses its coordination task.
+- Keep one package in its session, including related fixes. When growing context prevents reliable continuation, save a substantive checkpoint and request handoff: VesnALIA team checkpoint <id> --file <absolute-json-path> --rotate. A lead uses its coordination task.
 - JSON fields: goal, criteria[], progress, decisions[{what,why}], checks[{what,result}], blockers[], nextAction, files[]. Never invent checks or copy the last output as state. Finish current operations; Team waits for a safe boundary and preserves the environment. Do not create another worktree or task just for handoff.
 - If the goal, state or safe continuation is unclear, ask the lead (the lead asks the user). Never repeat a spawn/send after an ambiguous result.`;
 }

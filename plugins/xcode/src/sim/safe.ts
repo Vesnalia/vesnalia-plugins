@@ -1,10 +1,10 @@
 /**
  * Staleness discipline.
  *
- * A `bb` handle captured before a reload throws `PluginContextStaleError` on
+ * A `VesnALIA` handle captured before a reload throws `PluginContextStaleError` on
  * use, and from a detached continuation Node raises that as an
- * `uncaughtException` that takes down the whole bb server — not just this
- * plugin. Every `bb.*` call that can outlive the instance goes through
+ * `uncaughtException` that takes down the whole VesnALIA server — not just this
+ * plugin. Every `VesnALIA.*` call that can outlive the instance goes through
  * `safely`, and every fire-and-forget goes through `detach`.
  *
  * `void promise` is not enough: it silences the lint, not the rejection.
@@ -41,7 +41,7 @@ export function safely<T>(isDisposed: IsDisposed, fn: () => T): T | undefined {
  * Fire-and-forget async work with a terminal error handler that can itself
  * never throw.
  *
- * `onError` is typically `bb.log.error`, which throws when the handle is
+ * `onError` is typically `alia.log.error`, which throws when the handle is
  * stale — so the reporting call is wrapped too. This is the exact failure mode
  * that kills the server: a stale error observed inside its own catch.
  */

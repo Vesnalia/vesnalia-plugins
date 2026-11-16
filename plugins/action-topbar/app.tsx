@@ -1,4 +1,4 @@
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { mountActionTopbar } from "./lib/action-topbar.js";
 import "./app.css";
 

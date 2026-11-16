@@ -1,12 +1,12 @@
 // Each rendered UI's height as it last settled, per block and width, kept in
 // localStorage. When a thread opens on a fresh page (the app started, the
 // plugin reloaded), a block holds that height while the files it reads, its
-// images and BB's answers arrive, so the reply is laid out at its final size
+// images and VesnALIA's answers arrive, so the reply is laid out at its final size
 // at once instead of growing under the reader. Within a page, useLoadedData's
 // cache already renders remounted blocks complete.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
-const STORAGE_KEY = "bb.genui.heights";
+const STORAGE_KEY = "alia.genui.heights";
 /** Blocks remembered, most recently settled kept. */
 export const MAX_BLOCKS = 400;
 /** Widths this close lay a block out alike. */
@@ -118,7 +118,7 @@ export function storedHeight(key: string, width: number | null = null): number |
  * element wrapping what it renders (its natural height is what is remembered)
  * and `minHeight` on that element's parent. The reservation ends once the
  * content reaches it, or after RESERVE_MS with nothing left loading. While
- * the block is `provisional` (BB hasn't said yet whether its choices stay),
+ * the block is `provisional` (VesnALIA hasn't said yet whether its choices stay),
  * no height is remembered, but the reservation still ends as usual.
  */
 export function useReservedHeight(key: string, loading: boolean, provisional = false) {

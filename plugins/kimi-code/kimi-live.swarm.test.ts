@@ -2,22 +2,22 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@get-bb/plugin-sdk/provider-bridge/testing";
+import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import { afterEach, beforeEach, expect, it } from "vitest";
 
 // Live integration test: a real turn that forces kimi to call its AgentSwarm
 // tool and asserts the swarm surfaces as a delegation item (not a generic
-// tool row). Spends model tokens, so it runs only when BB_KIMI_LIVE=1 is set
-// explicitly. Set BB_PROVIDER_BRIDGE_RECORD_DIR to also record the raw ACP
+// tool row). Spends model tokens, so it runs only when ALIA_KIMI_LIVE=1 is set
+// explicitly. Set ALIA_PROVIDER_BRIDGE_RECORD_DIR to also record the raw ACP
 // child IO — that recording is the source of the swarm event shapes pinned
 // in dialect.test.ts.
-const LIVE = process.env.BB_KIMI_LIVE === "1";
+const LIVE = process.env.ALIA_KIMI_LIVE === "1";
 const itLive = LIVE ? it : it.skip;
 
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-kimi-delegation-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "alia-kimi-delegation-"));
 });
 
 afterEach(() => {
@@ -128,17 +128,17 @@ itLive("surfaces a kimi Agent tool call", async () => {
     expect(workflow?.agents?.length).toBe(2);
     expect(settled).toBe(true);
 
-    // Fixture recording: BB_KIMI_FIXTURE_RECORD=<path> dumps the bridge's
+    // Fixture recording: ALIA_KIMI_FIXTURE_RECORD=<path> dumps the bridge's
     // outbound notifications as ndjson (workspace path and session id
     // redacted) for the committed replay fixture in fixtures.test.ts.
-    const fixturePath = process.env.BB_KIMI_FIXTURE_RECORD;
+    const fixturePath = process.env.ALIA_KIMI_FIXTURE_RECORD;
     if (fixturePath !== undefined) {
       const { writeFileSync, mkdirSync } = await import("node:fs");
       const { dirname } = await import("node:path");
       mkdirSync(dirname(fixturePath), { recursive: true });
       const redact = (text: string) =>
         text
-          .split(workspaceDir).join("/tmp/bb-kimi-fixture")
+          .split(workspaceDir).join("/tmp/alia-kimi-fixture")
           .split(providerThreadId).join("session_redacted");
       writeFileSync(
         fixturePath,

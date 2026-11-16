@@ -7,7 +7,7 @@ import { validWorkspacePath } from "../core/worktree";
 
 export type ImageTarget = { type: "uncommitted" } | { type: "all"; mergeBaseRef: string } | { type: "range"; from: string; to: string };
 const unavailable = (message: string): ImageSide => ({ kind: "unavailable", message: message.slice(0, 1000) });
-const tooLarge = () => unavailable("Image exceeds the 2 MiB preview limit. Open the file in BB to view it.");
+const tooLarge = () => unavailable("Image exceeds the 2 MiB preview limit. Open the file in VesnALIA to view it.");
 const missing: ImageSide = { kind: "missing" };
 function imageMime(bytes: Buffer, path: string): ImageMime | undefined {
   const start = bytes.subarray(0, 16);

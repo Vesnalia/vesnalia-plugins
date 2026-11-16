@@ -34,9 +34,9 @@ const rpc = { call: async (method: string, input: unknown) => {
 } };
 const navigate = { openUrl() {}, toThread() {} };
 const composer = { updateText() {}, focus() {} };
-(globalThis as any).__bbPluginRuntime = { pluginSdkApp: {
+(globalThis as any).__aliaPluginRuntime = { pluginSdkApp: {
   definePluginApp: (register: any) => { register({ contentScripts: { register() {} }, slots: { fileOpener: (slot: any) => { Opener = slot.component; } } }); return {}; },
-  useRpc: () => rpc, useBbNavigate: () => navigate, useComposer: () => composer,
+  useRpc: () => rpc, useAliaNavigate: () => navigate, useComposer: () => composer,
 } };
 const { PropertiesPanel } = await import("./app.tsx");
 const { RichMarkdownEditor } = await import("./rich.tsx");

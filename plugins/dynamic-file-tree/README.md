@@ -1,10 +1,10 @@
-# BB Plugin Dynamic File Tree
+# VesnALIA Plugin Dynamic File Tree
 
-An MVP BB plugin for browsing the active thread's Environment or Worktree in
+An MVP VesnALIA plugin for browsing the active thread's Environment or Worktree in
 the right thread sidebar.
 
 The plugin shows the active thread's project tree, Git status, line diffs, file
-size/mtime decorations, and BB's built-in preview for text, Markdown, and image
+size/mtime decorations, and VesnALIA's built-in preview for text, Markdown, and image
 files. Agent reads and writes are highlighted live; changed and deleted files
 receive temporary status markers. The panel follows the active thread instead
 of using a global working directory.
@@ -12,8 +12,8 @@ of using a global working directory.
 The gear menu controls diff counts, size/mtime columns, full paths, Nerd-Font
 icons, activity-driven auto-collapse, and the colors for reads, writes, Git
 states, and diff counts. Preferences are stored through the plugin's
-namespaced BB key-value storage; tree expansion itself is session state and is
-intentionally not persisted. The fixed tab uses BB's `FolderTree` icon; the
+namespaced VesnALIA key-value storage; tree expansion itself is session state and is
+intentionally not persisted. The fixed tab uses VesnALIA's `FolderTree` icon; the
 panel header uses `FolderTree`, `GitBranch`, `RefreshCw`, and `Settings2`.
 
 The user interface follows the host document or browser locale by default.
@@ -32,20 +32,20 @@ From this directory:
 
 ```bash
 npm install
-bb plugin types --check
-bb plugin build
+alia plugin types --check
+alia plugin build
 ```
 
 Install the local plugin while developing:
 
 ```bash
-bb plugin install . --yes
-bb plugin dev .
+alia plugin install . --yes
+alia plugin dev .
 ```
 
-The plugin uses the current BB SDK declarations from
-`node_modules/@get-bb/plugin-sdk/bundled-types/`. Run `bb plugin types` after
-upgrading BB so the package tracks the host SDK.
+The plugin uses the current VesnALIA SDK declarations from
+`node_modules/@vesnalia/plugin-sdk/bundled-types/`. Run `alia plugin types` after
+upgrading VesnALIA so the package tracks the host SDK.
 
 ## Reference and attribution
 

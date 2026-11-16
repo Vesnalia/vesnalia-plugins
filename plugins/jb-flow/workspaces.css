@@ -452,7 +452,7 @@
   --jf-workspace-bar-leading: 56px;
 }
 .jb-flow-workspace-bar:has([data-testid="app-layout-root"][data-framed]) {
-  --jf-workspace-bar-height: var(--bb-window-title-bar-height, 40px);
+  --jf-workspace-bar-height: var(--alia-window-title-bar-height, 40px);
   --jf-workspace-bar-leading: 216px;
 }
 .jb-flow-workspace-bar [data-testid="app-layout-root"] {
@@ -460,16 +460,16 @@
 }
 .jb-flow-workspace-bar [data-testid="app-layout-root"][data-framed] {
   padding-top: calc(
-    var(--bb-window-title-bar-height, 40px) + var(--jf-workspace-bar-height)
+    var(--alia-window-title-bar-height, 40px) + var(--jf-workspace-bar-height)
   );
 }
 .jb-flow-workspace-bar
   [data-testid="app-layout-root"]:not([data-framed])
   [data-sidebar="panel"] {
   top: var(--jf-workspace-bar-height);
-  height: calc(var(--bb-shell-height, 100dvh) - var(--jf-workspace-bar-height));
+  height: calc(var(--alia-shell-height, 100dvh) - var(--jf-workspace-bar-height));
 }
-/* The bar starts after bb's own title-row controls (window buttons, sidebar
+/* The bar starts after alia's own title-row controls (window buttons, sidebar
    toggle, back/forward) instead of covering them: on macOS the bar is a
    window-drag area, and a drag area over a button swallows its clicks. */
 .jf-workspace-topbar {

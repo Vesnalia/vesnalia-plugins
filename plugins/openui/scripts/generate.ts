@@ -1,6 +1,6 @@
 // Writes generated/openui.ts from the plugin's library (ui/library.ts):
 // - PROMPT: the core prompt. It describes only the CORE components in full and names every
-//   other one in an index (BB caps instructions at 32,768 chars; every char is paid per thread),
+//   other one in an index (VesnALIA caps instructions at 32,768 chars; every char is paid per thread),
 // - DOCS: signature, notes and example for every other component, served by openui_components,
 // - SCHEMA / ROOT: the full library, for check_openui's parser,
 // - EXAMPLES: OpenUI's stock examples that still parse.

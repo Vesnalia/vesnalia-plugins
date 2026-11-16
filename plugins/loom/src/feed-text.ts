@@ -78,7 +78,7 @@ export function feedText(event: EventRow, keys: Map<number, string>, { you = fal
       if (data.why === "interrupted") return `Loom stopped ${key}'s final review: ${String(data.message ?? "its pull request is not ready")}.`;
       return data.why === "superseded" ? `A newer push replaced the head of ${key}'s final review.` : `Loom's final review of ${key}'s pull request ended without a verdict: ${String(data.message ?? data.why)}.`;
     case "ticket.final_review_held":
-      return data.reason === "checkout" ? `Loom holds ${key}'s merge: the repo's checkout changed during its final review.` : data.reason === "partial" ? `Loom holds ${key}'s merge: its final review passed on an incomplete brief.` : data.reason === "scratch" ? `Loom holds ${key}'s merge: bb would not start its final reviewer in Loom's scratch directory.` : `Loom holds ${key}'s merge: its final review did not finish.`;
+      return data.reason === "checkout" ? `Loom holds ${key}'s merge: the repo's checkout changed during its final review.` : data.reason === "partial" ? `Loom holds ${key}'s merge: its final review passed on an incomplete brief.` : data.reason === "scratch" ? `Loom holds ${key}'s merge: VesnALIA would not start its final reviewer in Loom's scratch directory.` : `Loom holds ${key}'s merge: its final review did not finish.`;
     case "ticket.final_review_reset":
       return `${human} let ${key}'s final review try again.`;
     case "ticket.final_review_verified":

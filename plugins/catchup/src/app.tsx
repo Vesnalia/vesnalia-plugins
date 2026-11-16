@@ -5,13 +5,13 @@ import {
   useComposer,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   ExperimentalPanelController,
   ExperimentalProviderModelPickerValue,
   ExperimentalThreadActionTabProps,
   PluginSettingsSectionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   DEFAULT_RECAP_PROMPT,
   generationErrorMessage,
@@ -532,7 +532,7 @@ function RecapComposerBanner() {
   const bannerRef = useRef<HTMLDivElement>(null);
   const [isInlineMessageEditor, setIsInlineMessageEditor] = useState(false);
 
-  // ponytail: BB DOM-marker fallback; switch to ComposerView edit state when the host exposes it.
+  // ponytail: VesnALIA DOM-marker fallback; switch to ComposerView edit state when the host exposes it.
   useLayoutEffect(() => {
     const next = Boolean(bannerRef.current?.closest("[data-inline-message-editor-frame]"));
     setIsInlineMessageEditor((current) => current === next ? current : next);
@@ -806,10 +806,10 @@ function SettingsSectionBody() {
   return (
     <div className="space-y-3 text-sm">
       <p className="text-muted-foreground">
-        Choose the recap model with BB's native provider/model picker. With no saved choice, recaps use BB's primary default model.
+        Choose the recap model with VesnALIA's native provider/model picker. With no saved choice, recaps use VesnALIA's primary default model.
       </p>
       {modelLoading ? (
-        <p className="text-xs text-muted-foreground">Loading BB models…</p>
+        <p className="text-xs text-muted-foreground">Loading VesnALIA models…</p>
       ) : pickerValue ? (
         <ProviderModelPicker
           value={pickerValue}
@@ -819,12 +819,12 @@ function SettingsSectionBody() {
           disabled={modelSaving}
         />
       ) : (
-        <p role="alert" className="text-sm text-destructive">BB's model catalog is unavailable.</p>
+        <p role="alert" className="text-sm text-destructive">VesnALIA's model catalog is unavailable.</p>
       )}
       {modelError ? <p role="alert" className="text-sm text-destructive">{modelError}</p> : null}
       {selection ? (
         <p className="text-xs text-muted-foreground">
-          {configured ? "Saved selection" : "BB primary default"} · {selection.providerId}/{selection.model} · {selection.reasoningLevel} reasoning
+          {configured ? "Saved selection" : "VesnALIA primary default"} · {selection.providerId}/{selection.model} · {selection.reasoningLevel} reasoning
           {selection.serviceTier ? " · " + selection.serviceTier + " service tier" : ""}
         </p>
       ) : null}

@@ -1,12 +1,12 @@
 /**
  * The two things the Review tab changes in a workspace, both on the user's click: applying a comment's
- * suggested change, read and written through bb with `expectedSha256` once its lines are checked to
+ * suggested change, read and written through VesnALIA with `expectedSha256` once its lines are checked to
  * read as the view showed them; and reverting an uncommitted file or some of its hunks, done by the
  * host entry against the revision the tab showed.
  */
 import { posix } from "node:path";
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import { bodyParts, replaceLines } from "../shared/suggestion";
 import type { ReviewThread } from "../shared/types";
@@ -16,10 +16,10 @@ import type { HostRevert } from "./host-git";
 import { ReviewError, targetFromKey } from "./review";
 import type { ReviewStore } from "./store";
 
-type Sdk = BbPluginApi["sdk"];
+type Sdk = AliaPluginApi["sdk"];
 
 export interface SuggestionInput {
-  /** The bb thread whose tab asks. */
+  /** The VesnALIA thread whose tab asks. */
   threadId: string;
   reviewThreadId: string;
   commentId: string;
@@ -51,14 +51,14 @@ function text(file: { content: string; contentEncoding?: string }, path: string)
   return decoded;
 }
 
-/** What bb answered a write with: a conflict (someone wrote the file since it was read) is a refusal. */
+/** What VesnALIA answered a write with: a conflict (someone wrote the file since it was read) is a refusal. */
 function written(result: { outcome?: string }, path: string): void {
   if (result.outcome !== undefined && result.outcome !== "written") {
     throw new ReviewError(`${path} changed while it was being written; reload and try again.`, "changed");
   }
 }
 
-/** bb's and the Git plugin's failures, worded for the tab; the plugin's own refusals pass through. */
+/** VesnALIA's and the Git plugin's failures, worded for the tab; the plugin's own refusals pass through. */
 async function guarded<T>(work: () => Promise<T>): Promise<T> {
   try {
     return await work();
@@ -118,19 +118,19 @@ export class WorkspaceEdits {
       const environment = await workspaceOf(this.sdk, input.threadId);
       if (environment.path === null) throw new ReviewError("This workspace has no checkout.", "diff_unavailable");
       const files = await this.git.files(environment.id, { type: "uncommitted" }, false);
-      if (files.outcome !== "available") throw new ReviewError("bb could not list the workspace's changes.", "diff_unavailable");
+      if (files.outcome !== "available") throw new ReviewError("alia could not list the workspace's changes.", "diff_unavailable");
       const entry = files.files.find((row) => row.path === input.path);
       if (entry === undefined) throw new ReviewError(`${input.path} has no uncommitted change now.`, "changed");
       if (entry.revision !== input.revision) throw new ReviewError(`${input.path} changed since the diff was loaded; reload and try again.`, "changed");
       if (entry.changeKind === "renamed" || entry.changeKind === "copied" || entry.changeKind === "type_changed") {
-        throw new ReviewError(`A ${entry.changeKind.replace("_", " ")} file cannot be reverted here; use bb's diff panel or git.`, "invalid_place");
+        throw new ReviewError(`A ${entry.changeKind.replace("_", " ")} file cannot be reverted here; use VesnALIA's diff panel or git.`, "invalid_place");
       }
       let patch: string | null = null;
       if (input.hunks !== null) {
         if (entry.binary) throw new ReviewError("A binary file has no hunks; revert the whole file.", "invalid_place");
         const shipped = files.initialPatches.find((row) => row.path === entry.path);
         const loaded = shipped ?? (await this.git.patches(environment.id, { type: "uncommitted" }, false, [entry])).patches[0];
-        if (loaded === undefined) throw new ReviewError(`bb gave no diff for ${entry.path}.`, "diff_unavailable");
+        if (loaded === undefined) throw new ReviewError(`alia gave no diff for ${entry.path}.`, "diff_unavailable");
         if (loaded.truncated) throw new ReviewError(`${entry.path}'s diff is cut short, so its hunks cannot be reverted one by one; revert the whole file.`, "invalid_place");
         patch = loaded.patch;
       }

@@ -1,13 +1,13 @@
 # Rewind design
 
 Rewind lets a user undo an agent's file changes turn by turn, on every
-provider. bb's checkpoint forks only fork the conversation; Rewind snapshots
+provider. VesnALIA's checkpoint forks only fork the conversation; Rewind snapshots
 each thread's workspace at every turn boundary, shows what each turn changed,
 restores files to before any message (or after any reply), undoes restores,
 and forks a thread into a new worktree with the files as they were.
 
 This document records how it works, what it measured live, and where it
-deviates from the brief it was built from (SDK 0.5.9, bb 0.43.4).
+deviates from the brief it was built from (SDK 0.5.9, VesnALIA 0.43.4).
 
 ## Components
 
@@ -17,9 +17,9 @@ server.ts ───────────────────────�
   thread.active          → onThreadActive (a new thread's baseline)     │
   thread.idle / .failed  → onTurnEnded (after-turn)                     │
   thread.deleted         → onThreadDeleted                              │
-  bb.rpc (app, `bb plugin rpc call rewind …`), bb rewind CLI, agent     │
+  alia.rpc (app, `alia plugin rpc call rewind …`), alia rewind CLI, agent     │
   tools, daily retention schedule                                       │
-        │  bb.hosts.experimental_client(hostContract).call(…, {hostId}) │
+        │  alia.hosts.experimental_client(hostContract).call(…, {hostId}) │
         ▼                                                               │
 host.ts (runs on the thread's machine) ─ src/host/*                     │
   one shadow git repository per workspace, all git work serialized     │
@@ -71,14 +71,14 @@ same in non-git workspaces.
   ignored files from the shadow index, including an unchanged ignore file.
   Composed ignore sources use bounded reads with a 1 MiB cap; an oversized or
   unreadable source fails preparation explicitly, never silently truncates rules.
-- **bb's chat storage is not the user's.** bb keeps an automatically
-  updated copy of each chat in the workspace (`.bb/chats/<threadId>/`:
+- **VesnALIA's chat storage is not the user's.** VesnALIA keeps an automatically
+  updated copy of each chat in the workspace (`.vesnalia/chats/<threadId>/`:
   `thread.json`, `history/…`), and a thread's own storage can be configured
   inside a workspace too (`threads.storageLocation`). The host never
-  captures, diffs, or restores either: `.bb/chats/` is excluded in every
+  captures, diffs, or restores either: `.vesnalia/chats/` is excluded in every
   workspace, and the server passes the thread's storage directory as
   `excludePaths` (the host keeps those inside the workspace, remembered in
-  the shadow's `state.json`). The rest of `.bb/` (`.bb/plugins.json`) is user
+  the shadow's `state.json`). The rest of `.vesnalia/` (`.vesnalia/plugins.json`) is user
   content and captured as usual. Entries Rewind 0.1 captured there are
   dropped from the shadow index on the next snapshot; a restore of an older
   checkpoint that still holds them leaves the current copies exactly as they
@@ -142,14 +142,14 @@ same in non-git workspaces.
 | Before a message is sent | `message.dispatch` hook, when the thread has a ready environment | before-turn |
 | A brand-new thread's first message | its environment does not exist at dispatch, so on `thread.active`, first turn only | before-turn, label "Thread start", mark 0 |
 | A turn ends | `thread.idle` and `thread.failed` | after-turn |
-| On demand | panel button, `bb rewind checkpoint`, `rewind_checkpoint` tool, palette | manual |
+| On demand | panel button, `alia rewind checkpoint`, `rewind_checkpoint` tool, palette | manual |
 | Before every restore | inside the host restore call, atomically | pre-restore |
 
-The gate is the delicate part. BB's hook is fail-closed with a 10 s decision
+The gate is the delicate part. VesnALIA's hook is fail-closed with a 10 s decision
 box and runs under a **server-wide lock**, so a slow handler delays every
-dispatch in bb, not only its own thread. The hook can also answer `wait`,
+dispatch in VesnALIA, not only its own thread. The hook can also answer `wait`,
 which queues the message as a row with a card showing the reason, and
-`bb.experimental_hooks.recheck` asks core to re-attempt queued rows. Rewind
+`alia.experimental_hooks.recheck` asks core to re-attempt queued rows. Rewind
 uses both, so it holds the lock only briefly:
 
 - **Hold, then queue.** The gate starts the snapshot and holds the message at
@@ -172,7 +172,7 @@ uses both, so it holds the lock only briefly:
 - **Fail-open.** A failed snapshot rechecks at once; `sendAt` releases the
   message after 30 s whatever happens; on load the plugin fails snapshots a
   previous load left pending and calls `recheck`, so rows still waiting on
-  Rewind re-attempt and proceed. When the plugin is disabled, bb's orphan
+  Rewind re-attempt and proceed. When the plugin is disabled, VesnALIA's orphan
   sweep releases the rows it holds; across a reload a row stays queued
   until the new load's recheck (both seen live, see Measured live).
 - does not hold a steer (`join-turn`): the agent is already writing, so
@@ -214,7 +214,7 @@ carries `sourceSeqEnd`.
   stopped part way still ends an earlier message's claim on its checkpoint,
   but is never offered as a state to return to.
 
-**Proven live** (bb 0.43.4, Codex): the gate runs before the message's first
+**Proven live** (VesnALIA 0.43.4, Codex): the gate runs before the message's first
 event is appended. Message 2's before-turn checkpoint had mark 32 and the
 message's `client/turn/requested` event was seq 33; for a message typed in the
 app, the UI's "Rewind to here" sent `sourceSeqEnd` 78 (its
@@ -327,21 +327,21 @@ the agent believes its edits are on disk and may re-apply them or build on
 code that is gone. Rewind offers two ways to deal with that.
 
 **Restore files and edit this message** (the "Rewind to here" preview for
-your own messages, or `bb rewind restore <before-checkpoint> --yes
+your own messages, or `alia rewind restore <before-checkpoint> --yes
 --edit-message "…"` / `--edit-message-file <path>`). You edit the message
 first. Rewind restores the files to its before-checkpoint as a normal,
-undoable restore, and only then calls `bb.sdk.threads.editMessage({
-threadId, expectedRequestSequence, input, operationId })`. bb replaces the
+undoable restore, and only then calls `alia.sdk.threads.editMessage({
+threadId, expectedRequestSequence, input, operationId })`. VesnALIA replaces the
 selected turn and every later turn while keeping the workspace as it is
 (Codex, Claude Code, Pi), so files and conversation go back together in the
 same thread. `expectedRequestSequence` is the message's `sourceSeqEnd`,
-its `client/turn/requested` event (verified live, see Measured live). bb
+its `client/turn/requested` event (verified live, see Measured live). VesnALIA
 starts the edited turn without the dispatch gate, so Rewind takes its
 before-turn checkpoint (the restored files) itself, just before the edit,
 and drops it if the edit is refused. The files are written before the edit
 is sent, so the new turn cannot start on half-restored files. The option is
-offered only for messages a person typed (bb refuses others) and for
-providers that can rewind a session. If bb or the provider refuses anyway,
+offered only for messages a person typed (VesnALIA refuses others) and for
+providers that can rewind a session. If VesnALIA or the provider refuses anyway,
 the restore stays, the refusal is reported, and the note below is offered.
 
 **The note.** After any restore that did not rewind the conversation,
@@ -370,9 +370,9 @@ wrappers like `/bin/zsh -lc "…"` and `npx`), so `echo "git push"` and
 snapshot; older checkpoints are filled in when listed.
 
 The panel shows "This turn ran `git push`; Rewind can't undo that." on the
-turn; the preview, `bb rewind restore --dry-run`, and the restore's result
+turn; the preview, `alia rewind restore --dry-run`, and the restore's result
 list what the undone turns (and anything since the latest checkpoint) ran;
-`bb rewind show` lists a checkpoint's own.
+`alia rewind show` lists a checkpoint's own.
 
 ## Fork with files
 
@@ -418,14 +418,14 @@ The fork runs as a background job with a status the UI polls
   longer knows (older than an hour, so in-flight snapshots are safe), runs
   `git gc --prune=2.hours.ago` outside the lock, and removes shadows of
   workspaces that no longer have an environment or any checkpoint.
-- `bb rewind prune [--dry-run]` runs it now; `--thread <id> --yes` deletes
+- `alia rewind prune [--dry-run]` runs it now; `--thread <id> --yes` deletes
   one thread's checkpoints.
 
 ## Bounded cost
 
 | Bound | Value |
 | --- | --- |
-| Gate hold (bb's dispatch lock) | `gateHoldMs` (default 200 ms, at most 2 s) plus ≤ 250 ms for the event mark; hard limit 3.5 s |
+| Gate hold (VesnALIA's dispatch lock) | `gateHoldMs` (default 200 ms, at most 2 s) plus ≤ 250 ms for the event mark; hard limit 3.5 s |
 | Message queued behind its checkpoint | 30 s (`sendAt`), then it goes |
 | Message queued behind a restore | re-attempt every 20 min; never bypass an active restore |
 | File size | `maxFileSizeMB` (default 10 MB) |
@@ -442,25 +442,25 @@ The fork runs as a background job with a status the UI polls
 
 ## Measured live
 
-bb 0.43.4 on macOS, this repository (71 captured files, `node_modules` and
+VesnALIA 0.43.4 on macOS, this repository (71 captured files, `node_modules` and
 `dist/` ignored), local host, Codex threads.
 
 - Message gate, 8 dispatches that took a snapshot: waited p50 125 ms,
   p95/max 147 ms (snapshot p50 122 ms); 0 late, 0 failed. A brand-new
   thread's first dispatch skipped the gate in 0 ms (no environment yet).
 - First snapshot of a fresh worktree (71 files, baseline): 269 ms.
-- `bb rewind checkpoint` on a cold host worker, first snapshot included:
+- `alia rewind checkpoint` on a cold host worker, first snapshot included:
   0.47 s end to end.
 - Fork with files, end to end through the CLI: 2.2 s.
 
 With the queueing gate (61 dispatches, 30 of them real messages in other
 threads whose snapshots take 0.6–1 s):
 
-- **Held** (bb's lock): p50 43 ms, p95 202 ms, max 226 ms. **Queued**: 25
+- **Held** (VesnALIA's lock): p50 43 ms, p95 202 ms, max 226 ms. **Queued**: 25
   messages, p50 840 ms, p95 6.8 s, max 24.8 s. **Recheck to re-attempt**:
   p50 6 ms, p95 29 ms.
 - **A 40,000-file checkpoint**: the message was held 202 ms, queued with the
-  card, kept in its wait through two re-attempts bb made on its own, and
+  card, kept in its wait through two re-attempts VesnALIA made on its own, and
   re-attempted 6 ms after the checkpoint was saved (24.8 s). The checkpoint
   was exact, not late. A message sent meanwhile to another thread was held
   202 ms, queued 381 ms (its own snapshot slowed to 309 ms), and went 17 ms
@@ -469,11 +469,11 @@ threads whose snapshots take 0.6–1 s):
   queued ("Rewind: restoring files…"), checkpointed after the restore, and
   re-attempted 20 ms after the recheck. Its turn ran `ls e2e` and found the
   folder gone.
-- **Restore files and edit this message**, on Codex and on Claude Code: bb
+- **Restore files and edit this message**, on Codex and on Claude Code: VesnALIA
   accepted `expectedRequestSequence` = the message's `sourceSeqEnd` (its
   `client/turn/requested` event). The files went back (`one`, `extra.txt`
   gone), the new turn wrote `three`, and the timeline shows message 2
-  replaced (event 48 became 84; 37 became 53). bb refused a message another
+  replaced (event 48 became 84; 37 became 53). VesnALIA refused a message another
   thread had sent ("409: not an editable user turn"): the restore stayed and
   the note was offered, which is why such messages are no longer offered for
   editing. The edited turn does not pass the dispatch gate, so Rewind takes
@@ -481,9 +481,9 @@ threads whose snapshots take 0.6–1 s):
 - **Orphan sweep**: disabling Rewind while a message waited on it released
   the message within about a second; after a reload the row stayed queued
   until the new load's startup recheck, about a second later.
-- **`git push --dry-run`** in a turn showed up in `bb rewind show`,
+- **`git push --dry-run`** in a turn showed up in `alia rewind show`,
   `restore --dry-run`, and the restore result.
-- bb caps `threads.events.list` at 100 events and the timeline at 100
+- VesnALIA caps `threads.events.list` at 100 events and the timeline at 100
   segments per call; both are paged.
 
 ## Deviations from the brief, and why
@@ -505,7 +505,7 @@ threads whose snapshots take 0.6–1 s):
   snapshotted at drain: holding either would only add latency.
 - **A re-attempt while the checkpoint is still being saved keeps the
   message queued**, where the brief said every re-attempt of a row Rewind
-  queued proceeds. bb re-attempts queued rows on its own (seen live 2.8 s
+  queued proceeds. VesnALIA re-attempts queued rows on its own (seen live 2.8 s
   after a re-queue, with no recheck from anyone), and every recheck wakes
   every row. Followed literally, the rule released a 40,000-file
   checkpoint's message after 4 s, and that checkpoint came out late, the
@@ -520,14 +520,14 @@ threads whose snapshots take 0.6–1 s):
 - **The new-thread baseline** is a before-turn checkpoint with mark 0 taken
   on `thread.active`, flagged late only if a file-touching tool item had
   already started.
-- **`bb rewind undo` needs `--yes`** like restore: it writes files too.
+- **`alia rewind undo` needs `--yes`** like restore: it writes files too.
 - **Palette "checkpoint now"** borrows the RPC client of an invisible
   app-wide component, because palette commands run outside React and the
   SDK has no non-hook RPC client.
-- **"Rewind to here" is where bb shows message actions**: typed user
+- **"Rewind to here" is where VesnALIA shows message actions**: typed user
   messages and assistant replies. Messages another thread sent (rendered as
-  "Message from …" rows) have no action bar in bb 0.43; the panel and
-  `bb rewind` cover them.
+  "Message from …" rows) have no action bar in VesnALIA 0.43; the panel and
+  `alia rewind` cover them.
 
 ## Cross-platform
 
@@ -567,9 +567,9 @@ threads whose snapshots take 0.6–1 s):
 - Send now, and turns an agent starts by itself, skip Rewind's queue: such a
   turn can start while a restore writes files (the restore warns), and a
   message sent with Send now before its checkpoint finished gets a late one.
-- "Restore files and edit this message" depends on bb and the provider
-  accepting the edit (Codex, Claude Code, Pi in bb 0.43). The conversation
-  edit is bb's and cannot be undone by Rewind; the files can.
+- "Restore files and edit this message" depends on VesnALIA and the provider
+  accepting the edit (Codex, Claude Code, Pi in VesnALIA 0.43). The conversation
+  edit is VesnALIA's and cannot be undone by Rewind; the files can.
 - The command scan is a heuristic over shell syntax: a command hidden in a
   script file, an alias, or a program the detector does not know goes
   unreported, and a read-only database query is reported as a database
@@ -579,7 +579,7 @@ threads whose snapshots take 0.6–1 s):
   restore brings back the content but not a case-only rename. Restoring
   another workspace's checkpoint (a fork) does apply case differences.
 - Fork needs a git repository and a provider that can fork mid-history
-  (Codex, Claude Code, Pi); others fail with bb's error.
+  (Codex, Claude Code, Pi); others fail with VesnALIA's error.
 - Remote machines follow the same code path (host RPC to the environment's
   host) but were not tested live.
 - Windows is CI-ready, untested live (see Cross-platform).

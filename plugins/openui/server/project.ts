@@ -1,15 +1,15 @@
-// Live git state of the reply's own thread for the "BB project" components
+// Live git state of the reply's own thread for the "VesnALIA project" components
 // (Changes, Commits, PullRequest, Environments). Read-only. Every call starts
 // from the reply's thread id: its environment, or its project's environments;
 // a client never names an environment. This SDK has no git reads of its own,
-// so they go through BB's builtin plugins: bb--git (status, changed files,
-// patches) and bb--github-pr-status (pull requests). Failures are values.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// so they go through VesnALIA's builtin plugins: alia--git (status, changed files,
+// patches) and alia--github-pr-status (pull requests). Failures are values.
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
-type Sdk = BbPluginApi["sdk"];
-const GIT = "bb--git";
-const PULL_REQUESTS = "bb--github-pr-status";
+type Sdk = AliaPluginApi["sdk"];
+const GIT = "alia--git";
+const PULL_REQUESTS = "alia--github-pr-status";
 
 export const MAX_FILES = 300;
 /** Patch text sent inline with the file list, in total; the rest load when opened. */
@@ -24,7 +24,7 @@ export const NOT_GIT = "Not a git checkout";
 const fail = (error: string): Failure => ({ ok: false, error });
 const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
 
-/** A diff target as bb--git takes it. */
+/** A diff target as alia--git takes it. */
 export const gitTargetSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("uncommitted") }),
   z.object({ type: z.literal("all"), mergeBaseBranch: z.string().min(1).max(256) }),
@@ -149,12 +149,12 @@ export type EnvironmentRow = {
 };
 export type EnvironmentsResult = { ok: true; environments: EnvironmentRow[]; total: number } | Failure;
 
-/** BB's reason a checkout couldn't be read, in words. */
+/** VesnALIA's reason a checkout couldn't be read, in words. */
 export function notReadMessage(answer: NotRead): string {
   const code = answer.failure?.code;
   if (answer.outcome === "not_applicable" || code === "not_git_repo" || code === "workspace_type_mismatch") return NOT_GIT;
   if (answer.failure?.code === "path_not_found") return "The workspace folder is gone";
-  return answer.failure?.message ?? answer.message ?? "BB couldn't read the checkout";
+  return answer.failure?.message ?? answer.message ?? "VesnALIA couldn't read the checkout";
 }
 
 /** What to diff: a commit sha, the uncommitted work, or (default) the branch's work since its merge base, uncommitted included. */
@@ -218,7 +218,7 @@ export function changeRows(files: readonly GitFile[], patches: readonly GitPatch
   return { files: rows, total: wanted.length };
 }
 
-/** The branch's commits since its merge base, newest first (bb--git lists them oldest first). */
+/** The branch's commits since its merge base, newest first (alia--git lists them oldest first). */
 export function commitsView(workspace: Workspace, limit: number): CommitsResult {
   const base = workspace.mergeBase;
   const all = [...(base?.commits ?? [])].reverse();
@@ -253,7 +253,7 @@ type EnvironmentEntry = Pick<
   "id" | "name" | "projectId" | "branchName" | "isGitRepo" | "isWorktree" | "status" | "updatedAt"
 >;
 
-/** One environment's row; `status` null = bb--git couldn't be asked, undefined = not asked. */
+/** One environment's row; `status` null = alia--git couldn't be asked, undefined = not asked. */
 export function environmentRow(
   env: EnvironmentEntry,
   status: StatusRow | null | undefined,
@@ -291,7 +291,7 @@ async function ownThread(sdk: Sdk, threadId: string) {
   try {
     thread = await sdk.threads.get({ threadId });
   } catch {
-    return fail("BB has no such thread");
+    return fail("VesnALIA has no such thread");
   }
   if (thread.deletedAt !== null) return fail("This thread was deleted");
   return { ok: true as const, projectId: thread.projectId, environmentId: thread.environmentId };
@@ -311,7 +311,7 @@ function keyed<T extends z.ZodType>(sdk: Sdk, pluginId: string, method: string, 
 async function workspaceOf(sdk: Sdk, environmentId: string) {
   const rows = await keyed(sdk, GIT, "status", [environmentId], statusRow);
   const row = rows[environmentId];
-  if (row === undefined) return fail("BB's Git plugin returned no status");
+  if (row === undefined) return fail("VesnALIA's Git plugin returned no status");
   if (row.outcome !== "available") return fail(notReadMessage(row));
   return { ok: true as const, workspace: row.workspace };
 }
@@ -333,7 +333,7 @@ export async function readChanges(sdk: Sdk, threadId: string, requested: string 
     const { files, total } = changeRows(answer.files, answer.initialPatches, paths);
     return { ok: true, scope, target, files, total, truncated: answer.truncated || total > files.length };
   } catch (cause) {
-    return fail(`BB couldn't read the changes: ${message(cause)}`);
+    return fail(`VesnALIA couldn't read the changes: ${message(cause)}`);
   }
 }
 
@@ -341,7 +341,7 @@ export async function readPatch(sdk: Sdk, threadId: string, target: GitTarget, p
   try {
     const own = await ownEnvironment(sdk, threadId);
     if (!own.ok) return own;
-    // bb--git's patch key (its contract's gitPatchKey).
+    // alia--git's patch key (its contract's gitPatchKey).
     const key = JSON.stringify([own.environmentId, target, false, path, revision]);
     const row = (await keyed(sdk, GIT, "patches", [key], patchRow))[key];
     if (row === undefined) return fail("The file is no longer in this diff");
@@ -349,7 +349,7 @@ export async function readPatch(sdk: Sdk, threadId: string, target: GitTarget, p
     const { patch, truncated } = row.patch;
     return { ok: true, patch: patch.slice(0, MAX_PATCH_CHARS), truncated: truncated || patch.length > MAX_PATCH_CHARS };
   } catch (cause) {
-    return fail(`BB couldn't read the diff: ${message(cause)}`);
+    return fail(`VesnALIA couldn't read the diff: ${message(cause)}`);
   }
 }
 
@@ -360,7 +360,7 @@ export async function readCommits(sdk: Sdk, threadId: string, limit: number): Pr
     const status = await workspaceOf(sdk, own.environmentId);
     return status.ok ? commitsView(status.workspace, limit) : status;
   } catch (cause) {
-    return fail(`BB couldn't read the commits: ${message(cause)}`);
+    return fail(`VesnALIA couldn't read the commits: ${message(cause)}`);
   }
 }
 
@@ -374,7 +374,7 @@ export async function readPullRequest(sdk: Sdk, threadId: string): Promise<PullR
     if (row?.outcome === "unavailable") return fail(row.message);
     return { ok: true, branch: env.branchName, pullRequest: row?.outcome === "available" ? pullRequestView(row.pullRequest) : null };
   } catch (cause) {
-    return fail(`BB couldn't read the pull request: ${message(cause)}`);
+    return fail(`VesnALIA couldn't read the pull request: ${message(cause)}`);
   }
 }
 
@@ -402,7 +402,7 @@ export async function readEnvironments(sdk: Sdk, threadId: string): Promise<Envi
       total: listed.length,
     };
   } catch (cause) {
-    return fail(`BB couldn't list the environments: ${message(cause)}`);
+    return fail(`VesnALIA couldn't list the environments: ${message(cause)}`);
   }
 }
 
@@ -421,7 +421,7 @@ export const projectMethods = {
     input: z.object({
       threadId,
       target: gitTargetSchema,
-      // Repository-relative, as bb--git lists it.
+      // Repository-relative, as alia--git lists it.
       path: z.string().min(1).max(1024).refine((p) => !p.startsWith("/") && !p.split("/").includes("..") && !p.includes("\0"), "not a repository path"),
       revision: z.string().min(1).max(1024),
     }),

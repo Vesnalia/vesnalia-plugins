@@ -1,4 +1,4 @@
-const baseUrl = process.env.CHIME_BB_BASE_URL ?? "http://127.0.0.1:38886";
+const baseUrl = process.env.CHIME_ALIA_BASE_URL ?? "http://127.0.0.1:38886";
 const pluginUrl = `${baseUrl.replace(/\/$/, "")}/api/v1/plugins/chime/http`;
 const headers = { origin: new URL(baseUrl).origin };
 

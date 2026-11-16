@@ -11,7 +11,7 @@
 // { parkedAt: ISO-8601 string }. Absent key = nothing parked. These helpers
 // are pure — no host, no SDK — so the RPC layer and tests drive them
 // directly.
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 
 /** The board's pin-park key inside its thread plugin-metadata namespace. */
 export const PIN_PARK_METADATA_KEY = "pin";
@@ -63,7 +63,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * The thread id of a native `thread:changed` realtime event that carries the
  * `pin-state-changed` kind, or null when the event is not one.
  *
- * These events publish for every pin write from EVERY surface — bb's own
+ * These events publish for every pin write from EVERY surface — VesnALIA's own
  * sidebar, another panel instance, the CLI — which is what lets the board
  * reconcile a parked pin without actor attribution: a foreign surface taking
  * the pin back supersedes the park, while the lane exit's own unpin echo
@@ -82,9 +82,9 @@ export function pinStateChangeFromEvent(event: unknown): string | null {
  * The thread id of a native `thread:changed` event that touches the read
  * state, or null otherwise.
  *
- * The event alone does not say WHICH direction: bb publishes
+ * The event alone does not say WHICH direction: VesnALIA publishes
  * `read-state-changed` for both mark-read and mark-unread. The direction is
- * decided by a fresh read of the row, and bb's own writer map makes that
+ * decided by a fresh read of the row, and VesnALIA's own writer map makes that
  * reliable: `lastReadAt = null` comes from exactly one place — the deliberate
  * mark-unread route (`POST /threads/:id/unread`, the one the native thread
  * menu calls) — while every ambient "reading by composing" path

@@ -3,7 +3,7 @@
 Build a Pokémon collection while you ship software. New branches, commits,
 closed pull requests, and completed project-management work can trigger catches.
 Caught Pokémon retain their own experience, can become your active companion,
-and evolve as your BB token usage grows.
+and evolve as your VesnALIA token usage grows.
 
 The collection panel includes starter selection, shiny and rarity details,
 type and generation filters, a paginated Pokédex, Egg incubation, evolution
@@ -12,7 +12,7 @@ in the thread header and can run alongside active agent work.
 
 ## Activity sources
 
-Pokemon Catcher detects new branches and worktrees in repositories known to BB.
+Pokemon Catcher detects new branches and worktrees in repositories known to VesnALIA.
 Optional integrations can watch selected GitHub repositories for branches,
 commits, closed pull requests, and closed GitHub issues. Shortcut and Jira can
 also supply completed project-management work.

@@ -1,4 +1,4 @@
-/* shadcn/ui-derived — vendored from the BB plugin registry (@bb/card). */
+/* shadcn/ui-derived — vendored from the VesnALIA plugin registry (@alia-core/card). */
 import * as React from "react";
 
 import { cn } from "@/lib/utils";

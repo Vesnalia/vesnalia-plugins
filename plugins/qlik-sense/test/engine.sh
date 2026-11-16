@@ -3,8 +3,8 @@
 # The 2021 image's licence has expired, so the engine runs with a faked date
 # (libfaketime from Debian buster, glibc 2.28 like the image).
 set -euo pipefail
-NAME=bb-qlik-sense-test-engine
-LIB_DIR="$HOME/.cache/bb-qlik-sense-test"
+NAME=alia-qlik-sense-test-engine
+LIB_DIR="$HOME/.cache/alia-qlik-sense-test"
 LIB="$LIB_DIR/libfaketimeMT.so.1"
 
 if [ ! -f "$LIB" ]; then

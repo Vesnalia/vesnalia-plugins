@@ -100,9 +100,9 @@ export const worktreeInfoSchema = z.object({
   untracked: z.number(),
   conflicted: z.number(),
   operation: operationKindSchema.nullable(),
-  /** BB environment of this project whose path is this worktree, matched by realpath. */
+  /** VesnALIA environment of this project whose path is this worktree, matched by realpath. */
   environmentId: z.string().nullable(),
-  /** Every known BB environment at this path, including other projects' running ones. */
+  /** Every known VesnALIA environment at this path, including other projects' running ones. */
   environmentIds: z.array(z.string()),
   isAnchor: z.boolean(),
   statusError: z.string().nullable(),

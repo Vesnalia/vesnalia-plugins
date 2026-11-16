@@ -1,5 +1,5 @@
 // The pond continued inside the chat input: a canvas behind the editor, found
-// through bb's markup (see composer-dom.ts). The strip's loop paints it with
+// through VesnALIA's markup (see composer-dom.ts). The strip's loop paints it with
 // the rows of the same pond that lie below the strip, under a wash of the
 // chat input's own background so the text stays easy to read.
 

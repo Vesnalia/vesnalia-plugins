@@ -10,7 +10,7 @@ test('native config revision changes with installed builtin hint, no personal ov
   const root = mkdtempSync('/tmp/m498b3-config-'), builtin = join(root, 'builtin.json'), personal = join(root, 'personal.json');
   writeFileSync(builtin, '{}'); writeFileSync(personal, 'USER_SENTINEL');
   const auth = new api.ReadOnlyAuth(join(root, 'missing')); auth.read = () => ({ apiKey: 'SYNTHETIC_ONLY' });
-  const rt = api.createNativeServices(join(root, 'bb'), { auth, discovery: () => ({ installed: true }), paths: { executable: process.execPath, script: resolve('tests/provider/fake-v4.mjs'), builtin } });
+  const rt = api.createNativeServices(join(root, 'alia'), { auth, discovery: () => ({ installed: true }), paths: { executable: process.execPath, script: resolve('tests/provider/fake-v4.mjs'), builtin } });
   try {
     for (const revision of ['normalized-native-v1', 'normalized-native-v2']) {
       writeFileSync(builtin, JSON.stringify({ revision }));
@@ -24,8 +24,8 @@ test('native config revision changes with installed builtin hint, no personal ov
       const calls = [], child = { child: { pid: 1 }, generation: 1, nativePid: 1, closed: Promise.resolve(), close: async () => 0, request: async (method, params) => { calls.push({ method, params }); return {}; } };
       await setup.configure(child);
       assert.equal(calls.find(c => c.method === 'provider/updateAccountConfig').params.basedOnZCodeBuiltinRevision, revision);
-      assert.equal(existsSync(join(root, 'bb/data/zcode-builtin.json')), false);
-      assert.equal(existsSync(join(root, 'bb/data/provider-config.json')), false);
+      assert.equal(existsSync(join(root, 'alia/data/zcode-builtin.json')), false);
+      assert.equal(existsSync(join(root, 'alia/data/provider-config.json')), false);
       assert.equal(readFileSync(personal, 'utf8'), 'USER_SENTINEL');
       assert.equal(JSON.parse(readFileSync(builtin, 'utf8')).revision, revision);
     }

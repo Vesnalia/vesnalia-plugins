@@ -13,6 +13,6 @@ export default defineConfig({
      * The SDK ships one esbuild bundle per entry. Inlining it lets the CommonJS
      * interop shim see the `require` the setup file installs.
      */
-    server: { deps: { inline: [/@get-bb\/plugin-sdk/] } },
+    server: { deps: { inline: [/@get-alia\/plugin-sdk/] } },
   },
 });

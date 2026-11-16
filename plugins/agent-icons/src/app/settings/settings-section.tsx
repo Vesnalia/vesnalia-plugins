@@ -1,4 +1,4 @@
-import { experimental_useProviders, experimental_useRpcQuery } from "@get-bb/plugin-sdk/app";
+import { experimental_useProviders, experimental_useRpcQuery } from "@vesnalia/plugin-sdk/app";
 import { Button } from "../../../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card";
 import { iconsContract } from "../../shared/contract";
@@ -35,7 +35,7 @@ export function SettingsSection() {
   const absent = Object.keys(state.assignments)
     .filter((id) => !known.has(id))
     .sort();
-  const absentTitle = providers.status === "ready" ? s.notInBb : s.assignmentsTitle;
+  const absentTitle = providers.status === "ready" ? s.notInAlia : s.assignmentsTitle;
   const reloadPending = Object.keys(state.assignments).some((id) => needsReload(id, state));
 
   return (

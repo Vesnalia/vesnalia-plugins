@@ -1,12 +1,12 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { findPicker } from "./provider-picker.test-support";
 
 afterEach(cleanup);
 
-test("an edit made as soon as findPicker returns bb's picker fake sticks, though the picker showed with its mount effect pending", async () => {
+test("an edit made as soon as findPicker returns VesnALIA's picker fake sticks, though the picker showed with its mount effect pending", async () => {
   await loadPluginApp(() => import("../app"));
   const { ReviewSettings } = await import("./ReviewSettings");
   const record = { preferences: { ...defaultPreferences }, revision: 0 };
@@ -18,7 +18,7 @@ test("an edit made as soon as findPicker returns bb's picker fake sticks, though
   // it the moment it shows, while that effect is surely pending.
   const edited = new Promise<string>((resolve) => {
     const observer = new MutationObserver(() => {
-      if (!slot.queryByTestId("bb-provider-model-picker")) return;
+      if (!slot.queryByTestId("alia-provider-model-picker")) return;
       observer.disconnect();
       void findPicker(slot).then((picker) => {
         const model = within(picker).getByRole("textbox", { name: "Model" }) as HTMLInputElement;

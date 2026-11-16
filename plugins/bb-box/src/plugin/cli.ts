@@ -1,10 +1,10 @@
-// `bb box`: the same boxes from a terminal, for people and scripts. Commands
+// `alia box`: the same boxes from a terminal, for people and scripts. Commands
 // about a thread's boxes use the thread they run in, or --thread.
 
 import { wholeCardsOn } from "./whole-cards.ts";
 import { readFile } from "node:fs/promises";
 import { isAbsolute, resolve } from "node:path";
-import { PluginCliError, cliCommand, defineCli, type BbPluginApi, type PluginCliContext, type PluginCliResult } from "@get-bb/plugin-sdk";
+import { PluginCliError, cliCommand, defineCli, type AliaPluginApi, type PluginCliContext, type PluginCliResult } from "@vesnalia/plugin-sdk";
 import { BoxError, OPERATOR, describeError, isAcquiring, type BoxRecord } from "../core/boxes.ts";
 import { EVERYONE, NONE_SERVES_THREAD } from "../core/reserved.ts";
 import { BY_COMMAND } from "../core/box-log.ts";
@@ -14,7 +14,7 @@ import { LIVE_CHECKS_VARIABLE, type ReplyDrops } from "./live-checks.ts";
 import { PRESETS } from "../core/sizes.ts";
 import { SHARED_MACOS_WORDS } from "../core/device-host.ts";
 import { BUILD_FREE_GB } from "./docker-images.ts";
-import type { BbBox } from "./setup.ts";
+import type { AliaBox } from "./setup.ts";
 import { adminText, boxDetail, joinAgainWords, dockerText, kindResizeText, kindSnapshotText, resizeText, boxLine, configText, doctorText, idleWords, imageLine, ownImageLines, movedText, problemsText, startingWords, tryText, userspaceFixLine, versionsText } from "./views.ts";
 import { listensOnEveryAddress, reachableUrl, setupDocker, type ListenOffer } from "./setup-docker.ts";
 import { monitorCommands } from "./monitor-cli.ts";
@@ -33,7 +33,7 @@ const threadOption = {
 } as const;
 const jsonOption = { json: { type: "boolean", description: "Print JSON." } } as const;
 const deleteKeptOption = { "delete-kept": { type: "boolean", description: "Delete the snapshots of it you kept too, instead of copying them first so they outlive it." } } as const;
-/** A preset and any parts of a custom size (028). bb-box refuses a size above the kind's largest. */
+/** A preset and any parts of a custom size (028). alia-box refuses a size above the kind's largest. */
 /** A resize's size (061): parts left out stay as the box has them. */
 const resizeOptions = {
   size: { type: "enum", values: PRESETS, description: "A preset: its cores and memory. The disk stays as it is." },
@@ -45,14 +45,14 @@ const resizeOptions = {
   force: { type: "boolean", description: "Restart it even while threads are working on it, which ends their work." },
 } as const;
 const sizeOptions = {
-  size: { type: "enum", values: PRESETS, description: "A preset. Defaults to the kind's default preset; bb box kinds shows each kind's sizes." },
+  size: { type: "enum", values: PRESETS, description: "A preset. Defaults to the kind's default preset; VesnALIA box kinds shows each kind's sizes." },
   cores: { type: "integer", min: 1, max: 1024, description: "Cores, for a custom size. Parts left out come from the preset." },
   "memory-gib": { type: "integer", min: 1, max: 65536, description: "Memory in GiB, for a custom size: at least 2 for a Linux box." },
   "disk-gib": { type: "integer", min: 1, max: 65536, description: "Root disk in GiB, for a custom size. Presets keep the kind's own disk." },
 } as const;
-/** Where a box goes (044): a provider by its name from bb box kinds, its backend ID or its one host. */
+/** Where a box goes (044): a provider by its name from VesnALIA box kinds, its backend ID or its one host. */
 const onOption = {
-  on: { type: "string", description: "The provider to use, from bb box kinds, such as \"Docker on devpc\", or several with commas between (pve1,devpc) for the first with room among them: only they are tried. Without it, the first with room: those kept for the thread's project first, then the shared ones. One kept for other projects is refused." },
+  on: { type: "string", description: "The provider to use, from VesnALIA box kinds, such as \"Docker on devpc\", or several with commas between (pve1,devpc) for the first with room among them: only they are tried. Without it, the first with room: those kept for the thread's project first, then the shared ones. One kept for other projects is refused." },
 } as const;
 /** --on's names, one or several with commas between (044). */
 function providersOf(text: string): string | string[] {
@@ -61,7 +61,7 @@ function providersOf(text: string): string | string[] {
 }
 const CLI_JOIN_WAIT_MS = 2 * 60_000;
 const boxPositional = [{ name: "box", description: "The box's name or ID.", required: true }] as const;
-const machineOption = { machine: { type: "boolean", description: "The box is one of your machines, from bb box machines, not a thread's." } } as const;
+const machineOption = { machine: { type: "boolean", description: "The box is one of your machines, from VesnALIA box machines, not a thread's." } } as const;
 
 function out(text: string): PluginCliResult {
   return { exitCode: 0, stdout: `${text}\n` };
@@ -89,28 +89,28 @@ function portOf(url: string | null | undefined): number | null {
   return Number.isInteger(port) && port > 0 && port <= 65535 ? port : null;
 }
 
-export function bbServerPort(appUrl: string | null | undefined, machineServerUrl: string | null | undefined): number | null {
+export function aliaServerPort(appUrl: string | null | undefined, machineServerUrl: string | null | undefined): number | null {
   return portOf(appUrl) ?? portOf(machineServerUrl);
 }
 
-export function bbDirectListen(appUrl: string | null | undefined, machineServerUrl: string | null | undefined, tcp: string, tcp6: string, addresses: readonly string[]): ListenOffer | null {
-  const port = bbServerPort(appUrl, machineServerUrl);
+export function aliaDirectListen(appUrl: string | null | undefined, machineServerUrl: string | null | undefined, tcp: string, tcp6: string, addresses: readonly string[]): ListenOffer | null {
+  const port = aliaServerPort(appUrl, machineServerUrl);
   if (port === null || !listensOnEveryAddress(port, tcp, tcp6)) return null;
   return { port, url: reachableUrl(port, addresses) };
 }
 
-async function projectOfThread(app: Pick<BbBox, "projectOf">, threadId: string, option: string | undefined, ctx: PluginCliContext): Promise<string | null> {
+async function projectOfThread(app: Pick<AliaBox, "projectOf">, threadId: string, option: string | undefined, ctx: PluginCliContext): Promise<string | null> {
   const ownThread = option === undefined || option === ctx.threadId;
   return (ownThread ? ctx.projectId : null) ?? (await app.projectOf(threadId));
 }
 
 function threadOf(option: string | undefined, ctx: PluginCliContext): string {
   const threadId = option ?? ctx.threadId;
-  if (!threadId) throw new PluginCliError("No thread.", { code: "missing_required", hint: "Run this in a BB thread, or pass --thread <id>." });
+  if (!threadId) throw new PluginCliError("No thread.", { code: "missing_required", hint: "Run this in a VesnALIA thread, or pass --thread <id>." });
   return threadId;
 }
 
-/** Runs a command, turning bb-box's refusals into CLI errors that say what to do. */
+/** Runs a command, turning alia-box's refusals into CLI errors that say what to do. */
 async function guard(action: string, task: () => Promise<PluginCliResult>): Promise<PluginCliResult> {
   try {
     return await task();
@@ -124,7 +124,7 @@ async function guard(action: string, task: () => Promise<PluginCliResult>): Prom
 function replyDropCommands(drops: ReplyDrops) {
   return {
     "config drop-replies": cliCommand({
-      summary: `For live checks, with ${LIVE_CHECKS_VARIABLE}=1 on BB's server: the next config.apply calls from the settings page that save store the configuration and then drop their reply.`,
+      summary: `For live checks, with ${LIVE_CHECKS_VARIABLE}=1 on VesnALIA's server: the next config.apply calls from the settings page that save store the configuration and then drop their reply.`,
       options: { count: { type: "string", description: "How many replies to drop. 1 by default." }, off: { type: "boolean", description: "Drop no more replies." } },
       async run({ options }) {
         const count = options.off ? 0 : Number(options.count ?? "1");
@@ -139,13 +139,13 @@ function replyDropCommands(drops: ReplyDrops) {
 const fileArgument = [
   {
     name: "file",
-    description: "A JSON file in the form bb box config show --json prints. It is read on the machine BB's server runs on; a relative path is from where you run bb.",
+    description: "A JSON file in the form VesnALIA box config show --json prints. It is read on the machine VesnALIA's server runs on; a relative path is from where you run VesnALIA.",
     required: true,
   },
 ] as const;
 
-/** A configuration file, read where BB's server runs: the command runs there and gets no input. */
-/** A text file, read on the machine BB's server runs on, from where bb runs for a relative path. */
+/** A configuration file, read where VesnALIA's server runs: the command runs there and gets no input. */
+/** A text file, read on the machine VesnALIA's server runs on, from where VesnALIA runs for a relative path. */
 async function readTextFile(path: string, ctx: PluginCliContext, given: string): Promise<string> {
   const folder = ctx.cwd ?? process.cwd();
   try {
@@ -153,7 +153,7 @@ async function readTextFile(path: string, ctx: PluginCliContext, given: string):
   } catch (error) {
     throw new PluginCliError(`Cannot read the file given to ${given}: ${readFailure(error)}. Its path is not shown, as it may be a secret given by mistake.`, {
       code: "invalid_input",
-      hint: `A relative path is from ${folder}. The file is read on the machine BB's server runs on.`,
+      hint: `A relative path is from ${folder}. The file is read on the machine VesnALIA's server runs on.`,
     });
   }
 }
@@ -161,9 +161,9 @@ async function readTextFile(path: string, ctx: PluginCliContext, given: string):
 /** A comma-separated list, such as linux,linux-desktop-cpu. */
 const listOf = (value: unknown) => String(value ?? "").split(",").map((item) => item.trim()).filter(Boolean);
 
-const NO_SUCH_IMAGE = `There is no image by the name given. ${VALUE_NOT_SHOWN} bb box image list lists them.`;
+const NO_SUCH_IMAGE = `There is no image by the name given. ${VALUE_NOT_SHOWN} VesnALIA box image list lists them.`;
 
-function gpuTakes(app: BbBox): string {
+function gpuTakes(app: AliaBox): string {
   return `--gpu takes ${wholeCardsOn(app) ? "none, shared or whole" : "none or shared"}. ${VALUE_NOT_SHOWN}`;
 }
 
@@ -177,7 +177,7 @@ async function readConfigFile(path: string, ctx: PluginCliContext): Promise<unkn
   } catch (error) {
     throw new PluginCliError(`Cannot read the configuration file: ${readFailure(error)}. ${CONFIG_FILE_UNSHOWN}`, {
       code: "invalid_input",
-      hint: `A relative path is from ${folder}. The file is read on the machine BB's server runs on.`,
+      hint: `A relative path is from ${folder}. The file is read on the machine VesnALIA's server runs on.`,
     });
   }
   try {
@@ -187,7 +187,7 @@ async function readConfigFile(path: string, ctx: PluginCliContext): Promise<unkn
     const where = fault ? `, at line ${fault.line}, column ${fault.column}: ${fault.words}` : "";
     throw new PluginCliError(`The configuration file is not valid JSON${where}. ${CONFIG_FILE_UNSHOWN}`, {
       code: "invalid_input",
-      hint: "bb box config show --json prints the configuration as JSON to start from.",
+      hint: "alia box config show --json prints the configuration as JSON to start from.",
     });
   }
 }
@@ -196,9 +196,9 @@ function refused(problems: readonly Problem[], what: string): PluginCliResult {
   return { exitCode: 1, stderr: `${what}\n${problemsText(problems)}\n` };
 }
 
-/** bb box resize and bb box machines resize (061): a restart asks nothing more, but is refused while a person holds control, and while threads work on the box unless --force. */
+/** VesnALIA box resize and VesnALIA box machines resize (061): a restart asks nothing more, but is refused while a person holds control, and while threads work on the box unless --force. */
 async function resizeBox(
-  app: BbBox,
+  app: AliaBox,
   threadId: string,
   ref: string,
   options: { size?: string; cores?: number; "memory-gib"?: number; "disk-gib"?: number; gpu?: string; restart?: boolean; check?: boolean; force?: boolean },
@@ -216,13 +216,13 @@ async function resizeBox(
   });
 }
 
-/** A resize's answer, and what it means for the box's BB machine. */
-async function resizeWords(app: BbBox, answer: Awaited<ReturnType<typeof resizeBox>>, checked: boolean): Promise<string> {
+/** A resize's answer, and what it means for the box's VesnALIA machine. */
+async function resizeWords(app: AliaBox, answer: Awaited<ReturnType<typeof resizeBox>>, checked: boolean): Promise<string> {
   const machine = checked ? null : await app.machineCores(answer);
   return `${resizeText(answer, checked)}${machine ? `\n${machine}` : ""}`;
 }
 
-function resizeGpuOption(app: BbBox) {
+function resizeGpuOption(app: AliaBox) {
   return {
     gpu: {
       type: "string",
@@ -235,12 +235,12 @@ function resizeGpuOption(app: BbBox) {
   } as const;
 }
 
-export function registerCli(bb: BbPluginApi, app: BbBox): void {
+export function registerCli(alia: AliaPluginApi, app: AliaBox): void {
   const { boxes } = app;
-  bb.cli.register(
+  alia.cli.register(
     unquotedCli({
       name: "box",
-      summary: "Fast boxes for BB threads: list, acquire and release them, and check the backends.",
+      summary: "Fast boxes for VesnALIA threads: list, acquire and release them, and check the backends.",
       commands: {
         doctor: cliCommand({
           summary: "Check each backend's settings and host, and say how to fix what is wrong.",
@@ -259,7 +259,7 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
             const kinds = await app.kinds(threadId ? await app.boxes.audienceNow(threadId, await projectOfThread(app, threadId, options.thread, ctx)) : EVERYONE);
             if (options.json) return json(kinds);
             if (!kinds.length && app.boxes.kinds().length) return out(NONE_SERVES_THREAD);
-            if (!kinds.length) return out(`No backend is on, so there are no kinds. bb box setup docker sets up Docker on the machine that runs BB; or add one with bb box backend add <type>, or in ${PRODUCT}'s settings.`);
+            if (!kinds.length) return out(`No backend is on, so there are no kinds. VesnALIA box setup docker sets up Docker on the machine that runs VesnALIA; or add one with VesnALIA box backend add <type>, or in ${PRODUCT}'s settings.`);
             return out(
               kinds
                 .map((kind) => {
@@ -282,21 +282,21 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
         }),
         acquire: cliCommand({
           summary: "Acquire a box for a thread and wait until it answers.",
-          positionals: [{ name: "kind", description: "The kind of box, from bb box kinds.", required: true }],
+          positionals: [{ name: "kind", description: "The kind of box, from VesnALIA box kinds.", required: true }],
           options: {
             ...threadOption,
             ...jsonOption,
             ...sizeOptions,
             ...onOption,
-            image: { type: "string", description: 'The image to start from: a project\'s image, from bb box image list, or "standard". The thread\'s project\'s image for the kind by default.' },
+            image: { type: "string", description: 'The image to start from: a project\'s image, from VesnALIA box image list, or "standard". The thread\'s project\'s image for the kind by default.' },
             device: { type: "string", description: "For an ios or android box, the device it boots, such as iPhone 18 Pro or Pixel Fold. The kind's first by default." },
             "no-slim": { type: "boolean", description: "For an ios box: its iOS Simulator keeps every service, for an app that uses widgets, Siri, iCloud, Health, Wallet or the like. Slimmed by default." },
             gpu: {
               type: "string",
               get description() {
                 return wholeCardsOn(app)
-                  ? "The box's GPU: none; shared, one card other boxes may share; or whole, a card to itself. Left out, the kind's GPU when not asked for: shared for linux-desktop and none for linux unless bb box kind set --gpu changed it."
-                  : "The box's GPU: none, or shared, one card other boxes may share. Left out, the kind's GPU when not asked for: shared for linux-desktop and none for linux unless bb box kind set --gpu changed it.";
+                  ? "The box's GPU: none; shared, one card other boxes may share; or whole, a card to itself. Left out, the kind's GPU when not asked for: shared for linux-desktop and none for linux unless VesnALIA box kind set --gpu changed it."
+                  : "The box's GPU: none, or shared, one card other boxes may share. Left out, the kind's GPU when not asked for: shared for linux-desktop and none for linux unless VesnALIA box kind set --gpu changed it.";
               },
             },
             dedicated: { type: "boolean", description: "For an ios box: a macOS VM of its own, with sudo, brew install, its own cores, ports and desktop. Without it, an ios box is shared where a shared iOS host has room. Give it with a size: where a shared iOS host is set up, a size without it is refused." },
@@ -313,7 +313,7 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
               let box = await boxes.acquire({ threadId, projectId, kind: positionals.kind, size, ...(options.on ? { on: providersOf(options.on) } : {}), ...(options.image ? { image: String(options.image) } : {}), ...(options.device !== undefined ? { device: String(options.device) } : {}), ...(options["no-slim"] ? { slim: false } : {}), ...(gpu !== undefined ? { gpu } : {}), ...(options.dedicated ? { dedicated: true } : {}), ...(options.shared ? { shared: true } : {}), who: BY_COMMAND });
               if (!options["no-wait"]) box = (await boxes.settled(box)) ?? box;
               if (options.json) return json(app.view(box));
-              const follow = `bb box status ${box.name}${options.thread ? ` --thread ${threadId}` : ""}`;
+              const follow = `alia box status ${box.name}${options.thread ? ` --thread ${threadId}` : ""}`;
               return { exitCode: box.state === "failed" ? 1 : 0, stdout: `${boxDetail(box, app.control(box))}\n${options["no-wait"] ? "" : starting(box, boxes.stopping, follow)}` };
             }),
         }),
@@ -338,7 +338,7 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
           ],
           options: {
             ...threadOption,
-            machine: { type: "boolean", description: "The box is one of your machines, from bb box machines, not a thread's." },
+            machine: { type: "boolean", description: "The box is one of your machines, from VesnALIA box machines, not a thread's." },
             "timeout-seconds": { type: "integer", min: 1, max: 600, description: "Seconds before the command is stopped: 120 by default, at most 600." },
           },
           run: ({ positionals, options }, ctx) =>
@@ -362,26 +362,26 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
             }),
         }),
         machines: cliCommand({
-          summary: "List your machines: boxes you own, kept as BB machines, which no thread ending releases.",
+          summary: "List your machines: boxes you own, kept as VesnALIA machines, which no thread ending releases.",
           description: [
             "Its commands:",
-            "  bb box machines add <kind>        Add a machine of your own, of the kind",
-            "  bb box machines resize <machine>  Resize one of your machines",
-            "  bb box machines remove <machine>  Remove one of your machines and delete its disk",
+            "  VesnALIA box machines add <kind>        Add a machine of your own, of the kind",
+            "  VesnALIA box machines resize <machine>  Resize one of your machines",
+            "  VesnALIA box machines remove <machine>  Remove one of your machines and delete its disk",
             "Run one with --help for its options.",
           ].join("\n"),
           options: jsonOption,
           async run({ options }) {
             const machines = (await boxes.list(OPERATOR)).filter((box) => box.state !== "releasing").sort((a, b) => a.createdAt - b.createdAt);
             if (options.json) return json(machines.map(app.view));
-            if (!machines.length) return out("You have no machines. bb box machines add <kind> adds one.");
+            if (!machines.length) return out("You have no machines. VesnALIA box machines add <kind> adds one.");
             return out(machines.map(boxLine).join("\n"));
           },
         }),
         "machines add": cliCommand({
-          summary: "Add a machine of your own: a box of the kind, kept as a BB machine under the name until you remove it.",
-          positionals: [{ name: "kind", description: "The kind of box, from bb box kinds. It must be able to become a BB machine.", required: true }],
-          options: { ...jsonOption, ...sizeOptions, ...onOption, name: { type: "string", description: `Its name, which is also its BB machine's: a lower-case letter first, then letters, digits and "-". ${PRODUCT} picks one when left out.` }, "no-wait": { type: "boolean", description: "Return once the box is recorded." } },
+          summary: "Add a machine of your own: a box of the kind, kept as a VesnALIA machine under the name until you remove it.",
+          positionals: [{ name: "kind", description: "The kind of box, from VesnALIA box kinds. It must be able to become a VesnALIA machine.", required: true }],
+          options: { ...jsonOption, ...sizeOptions, ...onOption, name: { type: "string", description: `Its name, which is also its VesnALIA machine's: a lower-case letter first, then letters, digits and "-". ${PRODUCT} picks one when left out.` }, "no-wait": { type: "boolean", description: "Return once the box is recorded." } },
           run: ({ positionals, options }) =>
             guard("Adding the machine", async () => {
               const size = { preset: options.size, cores: options.cores, memoryGiB: options["memory-gib"], diskGiB: options["disk-gib"] };
@@ -389,33 +389,33 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
               if (!options["no-wait"]) box = await boxes.enrolled((await boxes.settled(box)) ?? box);
               if (options.json) return json(app.view(box));
               const failed = box.state === "failed" || (!options["no-wait"] && box.enrol.state === "failed");
-              const detail = `${boxDetail(box, app.control(box))}\n${options["no-wait"] ? "" : starting(box, boxes.stopping, "bb box machines")}`;
+              const detail = `${boxDetail(box, app.control(box))}\n${options["no-wait"] ? "" : starting(box, boxes.stopping, "alia box machines")}`;
               return failed ? { exitCode: 1, stderr: detail } : { exitCode: 0, stdout: detail };
             }),
         }),
         "machines resize": cliCommand({
           summary: "Resize one of your machines: its cores, memory, disk or GPU, where its backend can, live or with --restart. Parts left out stay as they are, and the disk only grows.",
-          positionals: [{ name: "machine", description: "The machine's name or ID, from bb box machines.", required: true }],
+          positionals: [{ name: "machine", description: "The machine's name or ID, from VesnALIA box machines.", required: true }],
           options: { ...resizeOptions, ...resizeGpuOption(app) },
           run: ({ positionals, options }) =>
             guard("Resizing the machine", async () => out(await resizeWords(app, await resizeBox(app, OPERATOR, positionals.machine, options), options.check === true))),
         }),
         "machines remove": cliCommand({
           summary: "Remove one of your machines: its box is released and its disk deleted. A machine a thread is working on is refused unless --force. Snapshots you kept are copied first, so they outlive it, unless --delete-kept.",
-          positionals: [{ name: "machine", description: "The machine's name or ID, from bb box machines.", required: true }],
+          positionals: [{ name: "machine", description: "The machine's name or ID, from VesnALIA box machines.", required: true }],
           options: { force: { type: "boolean", description: "Remove it even while threads are working on it, which ends their work." }, ...deleteKeptOption },
           run: ({ positionals, options }) =>
             guard("Removing the machine", async () => {
               const box = await boxes.get(OPERATOR, positionals.machine);
               const idle = options.force ? await app.threadsOn(box) : await app.checkInUse(box, "Releasing");
               if (options["delete-kept"]) await app.snapshots.unkeepForRelease(box, BY_COMMAND);
-              const left = await boxes.release(OPERATOR, box.id, "removed with bb box machines remove", BY_COMMAND);
+              const left = await boxes.release(OPERATOR, box.id, "removed with VesnALIA box machines remove", BY_COMMAND);
               if (left) return { exitCode: 1, stderr: `Machine ${left.name} is still being removed: ${(left.error ?? "the backend has not finished").replace(/\.$/, "")}. The sweep keeps trying.\n` };
               return out(`Removed machine ${box.name}.${idleWords(idle, false)}`);
             }),
         }),
         thread: cliCommand({
-          summary: "Start a child thread of a thread on one of its boxes, as a BB machine, with the thread's project.",
+          summary: "Start a child thread of a thread on one of its boxes, as a VesnALIA machine, with the thread's project.",
           positionals: boxPositional,
           options: { ...threadOption, ...jsonOption, prompt: { type: "string", description: "The child thread's first message.", required: true } },
           run: ({ positionals, options }, ctx) =>
@@ -434,7 +434,7 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
               const box = await boxes.get(threadId, positionals.box);
               const idle = options.force ? await app.threadsOn(box) : await app.checkInUse(box, "Releasing");
               if (options["delete-kept"]) await app.snapshots.unkeepForRelease(box, BY_COMMAND);
-              const left = await boxes.release(threadId, positionals.box, "released with bb box release", BY_COMMAND);
+              const left = await boxes.release(threadId, positionals.box, "released with VesnALIA box release", BY_COMMAND);
               if (left) return { exitCode: 1, stderr: `Box ${left.name} is still being released: ${(left.error ?? "the backend has not finished").replace(/\.$/, "")}. The sweep keeps trying.\n` };
               return out(`Released box ${positionals.box}.${idleWords(idle, false)}`);
             }),
@@ -465,14 +465,14 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
         }),
         enrol: cliCommand({
           summary:
-            "Add a ready box that is not a BB machine to BB again, as a thread's box, or with --machine one of your machines: BB's installer runs in it as its user. It does not restart, stop or resize the box. It stops only the BB daemon of a machine that BB no longer has. A box whose machine BB still has is left as it is, and recorded as a BB machine. Waits up to 2 minutes for the try.",
+            "Add a ready box that is not a VesnALIA machine to VesnALIA again, as a thread's box, or with --machine one of your machines: VesnALIA's installer runs in it as its user. It does not restart, stop or resize the box. It stops only the VesnALIA daemon of a machine that VesnALIA no longer has. A box whose machine VesnALIA still has is left as it is, and recorded as a VesnALIA machine. Waits up to 2 minutes for the try.",
           positionals: boxPositional,
           options: { ...threadOption, ...machineOption, ...jsonOption },
           run: ({ positionals, options }, ctx) =>
-            guard("Adding the box to BB", async () => {
+            guard("Adding the box to VesnALIA", async () => {
               const owner = options.machine ? OPERATOR : threadOf(options.thread, ctx);
               const answer = await app.joinAgain(owner, positionals.box, { waitMs: CLI_JOIN_WAIT_MS, ...(ctx.signal ? { signal: ctx.signal } : {}) });
-              const said = joinAgainWords(answer, options.machine ? "bb box machines" : `bb box status ${answer.box.name}${options.thread ? ` --thread ${owner}` : ""}`);
+              const said = joinAgainWords(answer, options.machine ? "alia box machines" : `alia box status ${answer.box.name}${options.thread ? ` --thread ${owner}` : ""}`);
               if (options.json) return { exitCode: said.failed ? 1 : 0, stdout: `${JSON.stringify({ is: answer.is, words: said.text, box: app.view(answer.box) }, null, 2)}\n` };
               return said.failed ? { exitCode: 1, stderr: `${said.text}\n` } : out(said.text);
             }),
@@ -495,9 +495,9 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
           positionals: [{ name: "name", description: "The image's name: a lower-case letter first, then letters, digits and \"-\".", required: true }],
           options: {
             kinds: { type: "string", description: "The kinds it builds on, comma-separated, such as linux,linux-desktop-cpu." },
-            "script-file": { type: "string", description: "The script, such as .bb/box-setup.sh, read where bb runs." },
-            "check-file": { type: "string", description: "A check run as the box user after the script, such as .bb/box-check.sh." },
-            project: { type: "string", description: "The BB projects whose boxes get it, by ID, comma-separated." },
+            "script-file": { type: "string", description: "The script, such as .vesnalia/box-setup.sh, read where VesnALIA runs." },
+            "check-file": { type: "string", description: "A check run as the box user after the script, such as .vesnalia/box-check.sh." },
+            project: { type: "string", description: "The VesnALIA projects whose boxes get it, by ID, comma-separated." },
             bake: { type: "string", description: "auto (after two boxes in 14 days), always, or never (the script at each start). auto by default." },
           },
           run: ({ positionals, options }, ctx) =>
@@ -505,7 +505,7 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
               const kinds = listOf(options.kinds);
               const projects = listOf(options.project);
               if (!kinds.length || !projects.length || !options["script-file"]) {
-                throw new PluginCliError("Give --kinds, --project and --script-file.", { code: "invalid_input", hint: "bb box image set rust-tools --kinds linux --script-file .bb/box-setup.sh --project <id>" });
+                throw new PluginCliError("Give --kinds, --project and --script-file.", { code: "invalid_input", hint: "alia box image set rust-tools --kinds linux --script-file .vesnalia/box-setup.sh --project <id>" });
               }
               const script = await readTextFile(String(options["script-file"]), ctx, "--script-file");
               const check = options["check-file"] ? await readTextFile(String(options["check-file"]), ctx, "--check-file") : undefined;
@@ -525,7 +525,7 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
         }),
         "image remove": cliCommand({
           summary: "Remove a project's image (049). Boxes of its kinds in its projects start from the standard images again.",
-          positionals: [{ name: "name", description: "The image's name, from bb box image list.", required: true }],
+          positionals: [{ name: "name", description: "The image's name, from VesnALIA box image list.", required: true }],
           run: ({ positionals }) =>
             guard("Removing the image", async () => {
               if (!app.configuration.exported().images?.[positionals.name]) throw new BoxError("not_found", NO_SUCH_IMAGE);
@@ -542,7 +542,7 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
               const images = app.configuration.exported().images ?? {};
               if (options.json) return json(images);
               const names = Object.keys(images).sort();
-              if (!names.length) return out("No project has an image. bb box image set sets one.");
+              if (!names.length) return out("No project has an image. VesnALIA box image set sets one.");
               const lines: string[] = [];
               for (const name of names) {
                 const image = images[name]!;
@@ -554,7 +554,7 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
         }),
         "image show": cliCommand({
           summary: `Print a project's image's script, and its check, as ${PRODUCT} keeps them (049).`,
-          positionals: [{ name: "name", description: "The image's name, from bb box image list.", required: true }],
+          positionals: [{ name: "name", description: "The image's name, from VesnALIA box image list.", required: true }],
           run: ({ positionals }) =>
             guard("Showing the image", async () => {
               const image = app.configuration.exported().images?.[positionals.name];
@@ -564,7 +564,7 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
         }),
         "image try": cliCommand({
           summary: "Try a project's image's script as a build runs it (049), on a kind it covers, and remove what the try made. It prints each check's result and the build's last lines, and exits 1 if one failed.",
-          positionals: [{ name: "name", description: "The image's name, from bb box image list.", required: true }],
+          positionals: [{ name: "name", description: "The image's name, from VesnALIA box image list.", required: true }],
           options: {
             kind: { type: "string", description: "The kind to try it on: its first kind by default." },
             on: { type: "string", description: "A backend's ID, such as proxmox-lxc: the first that builds the kind's images by default." },
@@ -603,7 +603,7 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
               return out(
                 [
                   ...(running ? [`A run has gone on since ${new Date(running).toISOString()}.`] : []),
-                  ...(soon ? [`BB was updated: a refresh of ${soon.names.join(", ")} starts by ${new Date(soon.at).toISOString()}, as ${soon.names.length === 1 ? "it has" : "they have"} another build of BB's app than BB's server gives.`] : []),
+                  ...(soon ? [`VesnALIA was updated: a refresh of ${soon.names.join(", ")} starts by ${new Date(soon.at).toISOString()}, as ${soon.names.length === 1 ? "it has" : "they have"} another build of VesnALIA's app than VesnALIA's server gives.`] : []),
                   ...views.map(imageLine),
                   ...own,
                 ].join("\n"),
@@ -612,7 +612,7 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
         }),
         "images refresh": cliCommand({
           summary:
-            "Rebuild the standard images that are due (049), one at a time, most needed first, and start none after the time limit. A BB script automation runs it each night. It ends with a line per image, and exits 1 if one failed. Should this command end first, the run goes on.",
+            "Rebuild the standard images that are due (049), one at a time, most needed first, and start none after the time limit. A VesnALIA script automation runs it each night. It ends with a line per image, and exits 1 if one failed. Should this command end first, the run goes on.",
           options: {
             pinned: { type: "boolean", description: "Build from the repository's pins alone." },
             hours: { type: "string", description: "Start no image after this many hours: 4 by default." },
@@ -624,7 +624,7 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
               const run = app.imageJobs.refreshAll({ pinned: !!options.pinned, limitMs: hours * 60 * 60_000 });
               const result = await new Promise<Awaited<typeof run>>((resolve, reject) => {
                 run.then(resolve, reject);
-                ctx.signal?.addEventListener("abort", () => reject(new Error("The command ended; the run goes on, and bb box images list shows its results.")), { once: true });
+                ctx.signal?.addEventListener("abort", () => reject(new Error("The command ended; the run goes on, and VesnALIA box images list shows its results.")), { once: true });
               });
               const text = result.lines.map((line) => `${line.name}: ${line.outcome}, ${line.detail}`).join("\n") || "No image is due.";
               return { exitCode: result.ok ? 0 : 1, stdout: `${text}\n` };
@@ -632,7 +632,7 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
         }),
         "images build": cliCommand({
           summary: "Rebuild one standard image now, due or not, and whatever its last rebuild did (049), and replace it when its trial box passes. --try checks a new build and keeps the old one.",
-          positionals: [{ name: "image", description: "The image, as <backend>/<ref>, from bb box images list.", required: true }],
+          positionals: [{ name: "image", description: "The image, as <backend>/<ref>, from VesnALIA box images list.", required: true }],
           options: { pinned: { type: "boolean", description: "Build from the repository's pins alone." }, try: { type: "boolean", description: "Build and check, then keep the old build." } },
           run: ({ positionals, options }, ctx) =>
             guard("Building the image", async () => {
@@ -659,12 +659,12 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
         }),
         "setup docker": cliCommand({
           summary:
-            "Set up Docker for boxes, as the Box panel's first run does: on the BB machine that runs BB, or --machine, turn Docker on with the Linux image alone and wait while it builds, usually 5 to 12 min. " +
+            "Set up Docker for boxes, as the Box panel's first run does: on the VesnALIA machine that runs VesnALIA, or --machine, turn Docker on with the Linux image alone and wait while it builds, usually 5 to 12 min. " +
             "Where something stands in the way, it gives that machine's line to fix it. --no-wait starts it and says how far the build is; run it again to see.",
           options: {
-            machine: { type: "string", description: "The BB machine, by ID or name, from bb machine list. The one that runs BB by default." },
+            machine: { type: "string", description: "The VesnALIA machine, by ID or name, from VesnALIA machine list. The one that runs VesnALIA by default." },
             "no-wait": { type: "boolean", description: "Start the build, and say how far it is, without waiting for it." },
-            "set-machine-access": { type: "boolean", description: "Where BB listens on every address and boxes cannot join, set Machine access to direct at an address they can reach. This changes BB's settings. Without it, the command only says it can." },
+            "set-machine-access": { type: "boolean", description: "Where VesnALIA listens on every address and boxes cannot join, set Machine access to direct at an address they can reach. This changes VesnALIA's settings. Without it, the command only says it can." },
           },
           run: ({ options }, ctx) =>
             guard("Setting up Docker", () =>
@@ -685,13 +685,13 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
                         return "";
                       }
                     };
-                    const config = await bb.sdk.system.config().catch(() => null);
+                    const config = await alia.sdk.system.config().catch(() => null);
                     const addresses = Object.values(networkInterfaces()).flatMap((entries) => entries?.filter((entry) => entry.family === "IPv4" && !entry.internal).map((entry) => entry.address) ?? []);
-                    return bbDirectListen(bb.server.experimental_appUrl, config?.generalSettings.machineServerUrl, read("/proc/net/tcp"), read("/proc/net/tcp6"), addresses);
+                    return aliaDirectListen(alia.server.experimental_appUrl, config?.generalSettings.machineServerUrl, read("/proc/net/tcp"), read("/proc/net/tcp6"), addresses);
                   },
                   setDirectAccess: async (url) => {
-                    const config = await bb.sdk.system.config();
-                    await bb.sdk.system.updateGeneralSettings({ ...config.generalSettings, machineServerUrl: url, defaultMachineAccess: "direct" });
+                    const config = await alia.sdk.system.config();
+                    await alia.sdk.system.updateGeneralSettings({ ...config.generalSettings, machineServerUrl: url, defaultMachineAccess: "direct" });
                   },
                 },
                 { ...(options.machine ? { machine: String(options.machine) } : {}), wait: !options["no-wait"], setAccess: options["set-machine-access"] === true, ...(ctx.signal ? { signal: ctx.signal } : {}) },
@@ -699,8 +699,8 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
             ),
         }),
         "docker-check": cliCommand({
-          summary: `Check that Docker on a BB machine answers through ${PRODUCT}'s Docker relay (042), with its version, cores and memory.`,
-          positionals: [{ name: "machine", description: "The BB machine's ID or name, from bb machine list.", required: true }],
+          summary: `Check that Docker on a VesnALIA machine answers through ${PRODUCT}'s Docker relay (042), with its version, cores and memory.`,
+          positionals: [{ name: "machine", description: "The VesnALIA machine's ID or name, from VesnALIA machine list.", required: true }],
           options: jsonOption,
           run: ({ positionals, options }, ctx) =>
             guard("Checking Docker on the machine", async () => {
@@ -716,12 +716,12 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
         }),
         "docker-build": cliCommand({
           summary:
-            `Build the images a BB machine that hosts Docker boxes lacks there, or has from another layout or with another build of BB's app, through ${PRODUCT}'s relay (042). Waits for the build. ` +
+            `Build the images a VesnALIA machine that hosts Docker boxes lacks there, or has from another layout or with another build of VesnALIA's app, through ${PRODUCT}'s relay (042). Waits for the build. ` +
             `Building all three needs about ${BUILD_FREE_GB} GB free there; with less, it does not start.`,
-          positionals: [{ name: "machine", description: `The BB machine's ID or name, from bb machine list. Its Docker must be added in ${PRODUCT}'s settings, under Add backend.`, required: true }],
+          positionals: [{ name: "machine", description: `The VesnALIA machine's ID or name, from VesnALIA machine list. Its Docker must be added in ${PRODUCT}'s settings, under Add backend.`, required: true }],
           run: ({ positionals }) =>
             guard("Building the images", async () => {
-              // From BB's record and the configuration: listing would look at every machine's Docker.
+              // From VesnALIA's record and the configuration: listing would look at every machine's Docker.
               const host = await app.dockerHostOf(positionals.machine);
               if (!host?.backend) throw new BoxError("not_found", `The machine given is not a Docker host in ${PRODUCT}'s settings. ${VALUE_NOT_SHOWN} Add its Docker under Add backend first.`);
               const build = await app.dockerImages.ensure(host.hostId);
@@ -732,7 +732,7 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
         }),
         "install-id": cliCommand({
           summary: "Show this install's ID, which it records on its guests. --set takes back the ID it had before it lost its storage.",
-          options: { ...jsonOption, set: { type: "string", description: "The ID to use from now on, as bb box doctor lists it." } },
+          options: { ...jsonOption, set: { type: "string", description: "The ID to use from now on, as VesnALIA box doctor lists it." } },
           run: ({ options }) =>
             guard("Setting the install ID", async () => {
               const before = app.backends.installId;
@@ -740,7 +740,7 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
               const installId = app.backends.installId;
               if (options.json) return json({ installId });
               if (installId === before) return out(`This install's ID is ${installId}.`);
-              return out(`This install's ID is now ${installId}. The next sweep restores the boxes of the guests that carry it; run bb box sweep to do it now.`);
+              return out(`This install's ID is now ${installId}. The next sweep restores the boxes of the guests that carry it; run alia box sweep to do it now.`);
             }),
         }),
         "config show": cliCommand({
@@ -788,7 +788,7 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
               const result = await app.configuration.apply(draft, typeof revision === "number" && !options.replace ? revision : null);
               if (options.json) return { exitCode: result.ok ? 0 : 1, stdout: `${JSON.stringify(result.ok ? withoutSecretVersions(result.state.document) : result.reason === "problems" ? { ...result, problems: unnamedProblems(result.problems) } : result, null, 2)}\n` };
               if (result.ok) {
-                const saved = `Saved revision ${result.state.revision}. bb box config show shows it, and bb box doctor checks the backends.`;
+                const saved = `Saved revision ${result.state.revision}. VesnALIA box config show shows it, and VesnALIA box doctor checks the backends.`;
                 return out(result.problems.length ? `${saved}\nSaved with these problems, in backends that are off:\n${problemsText(result.problems)}` : saved);
               }
               if (result.reason === "revision") {
@@ -796,30 +796,30 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
                   exitCode: 1,
                   stderr:
                     `The configuration changed since revision ${String(revision)}: it is at revision ${result.state.revision}. ` +
-                    "Run bb box config show --json again and make your change there, or, to save the file over it, remove its revision or use --replace.\n",
+                    "Run alia box config show --json again and make your change there, or, to save the file over it, remove its revision or use --replace.\n",
                 };
               }
               return refused(result.problems, "Nothing was saved. Fix these first:");
             }),
         }),
         "config migrated": cliCommand({
-          summary: `Show the copy of BB's settings ${PRODUCT} kept when it moved them into its configuration. --remove removes it.`,
+          summary: `Show the copy of VesnALIA's settings ${PRODUCT} kept when it moved them into its configuration. --remove removes it.`,
           options: { ...jsonOption, remove: { type: "boolean", description: "Remove the copy." } },
           async run({ options }) {
             if (options.remove) {
               const had = await app.configuration.removeMigrated();
-              return out(had ? "Removed the copy of BB's settings." : "There is no copy of BB's settings.");
+              return out(had ? "Removed the copy of VesnALIA's settings." : "There is no copy of VesnALIA's settings.");
             }
             const copy = await app.configuration.migrated();
             if (options.json) return json(copy);
-            return out(copy ? movedText(copy) : `There is no copy of BB's settings: ${PRODUCT} never moved any, or the copy was removed.`);
+            return out(copy ? movedText(copy) : `There is no copy of VesnALIA's settings: ${PRODUCT} never moved any, or the copy was removed.`);
           },
         }),
         ...(app.replyDrops ? replyDropCommands(app.replyDrops) : {}),
         ...configCommands(app.configuration, () => app.projects()),
         ...snapshotCommands(app),
         ...gpuCommands(app),
-        ...monitorCommands(bb, app.monitor, app.history),
+        ...monitorCommands(alia, app.monitor, app.history),
         sweep: cliCommand({
           summary: `Run the clean-up now: release the boxes of ended threads, finish interrupted work and remove leftovers, and settle and check ${PRODUCT}'s snapshots against each backend's.`,
           options: jsonOption,
@@ -833,8 +833,8 @@ export function registerCli(bb: BbPluginApi, app: BbBox): void {
                   `Boxes of ended threads released: ${report.released}`,
                   `Leftover guests removed: ${report.leftovers}`,
                   `Boxes restored from their guests: ${report.adopted}`,
-                  `Guests kept until BB says whether their thread ended: ${report.kept}`,
-                  `Boxes and guests kept until the next sweep, as BB says their thread ended only now: ${report.ending}`,
+                  `Guests kept until VesnALIA says whether their thread ended: ${report.kept}`,
+                  `Boxes and guests kept until the next sweep, as VesnALIA says their thread ended only now: ${report.ending}`,
                   `Interrupted acquires and releases carried on: ${report.resumed}`,
                   `Guests kept for the snapshots they hold: ${report.guarded}`,
                 ].join("\n"),

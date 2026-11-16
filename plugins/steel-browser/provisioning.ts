@@ -25,7 +25,7 @@ export function viewerOrigin(value: string): string {
   const url = new URL(value.trim());
   if (url.protocol !== "https:" || url.username || url.password
     || url.pathname !== "/" || url.search || url.hash) {
-    throw new Error("BB Connect did not return an authenticated HTTPS viewer origin.");
+    throw new Error("VesnALIA Connect did not return an authenticated HTTPS viewer origin.");
   }
   return url.origin;
 }
@@ -45,16 +45,16 @@ export async function ensureViewerShare(projectId: string, binding: Binding, dep
     throw new Error("Viewer share requires a dedicated loopback API port distinct from CDP.");
   }
   await (dependencies.verify ?? verifyProjectInstance)(projectId, binding);
-  const shares = JSON.parse(await command("bb", ["connect", "shares", "--host", host, "--json"]));
+  const shares = JSON.parse(await command("alia", ["connect", "shares", "--host", host, "--json"]));
   const share = shares.shares.find((entry: { port: number }) => entry.port === Number(api.port));
   if (share) {
     if (viewerOrigin(share.url) !== expected) {
-      throw new Error("Existing project viewer differs from BB Connect; refusing rebinding.");
+      throw new Error("Existing project viewer differs from VesnALIA Connect; refusing rebinding.");
     }
     return;
   }
   // A healthy local API does not imply its authenticated viewer is still shared.
-  const actual = viewerOrigin(await command("bb", ["connect", "expose", api.port, "--host", host]));
+  const actual = viewerOrigin(await command("alia", ["connect", "expose", api.port, "--host", host]));
   if (actual !== expected) {
     throw new Error("Restored project viewer differs from its saved binding; refusing rebinding.");
   }
@@ -78,11 +78,11 @@ export async function provisionProjectInstance(projectId: string, dependencies: 
     throw new Error("DNS servers must be IPv4 addresses.");
   }
   const hash = createHash("sha256").update(projectId).digest("hex");
-  const name = `bb-steel-${hash.slice(0, 24)}`;
+  const name = `alia-steel-${hash.slice(0, 24)}`;
   const profile = `${name}-profile`;
   // Explicit host selection is essential when the requesting thread is on a different machine.
   const expose = async (port: string) =>
-    viewerOrigin(await command("bb", ["connect", "expose", port, "--host", host]));
+    viewerOrigin(await command("alia", ["connect", "expose", port, "--host", host]));
   const names = await command("docker", ["ps", "-a", "--filter", `name=^/${name}$`, "--format", "{{.Names}}"]);
   let binding: Binding;
   let existingValidated = false;
@@ -100,7 +100,7 @@ export async function provisionProjectInstance(projectId: string, dependencies: 
     const apiPort = port("3000/tcp");
     const cdpPort = port("9223/tcp");
     const domain = instance.Config.Env?.find((entry: string) => entry.startsWith("DOMAIN="))?.slice(7);
-    if (instance.Config.Labels?.["bb.steel.project"] !== projectId || apiPort === cdpPort
+    if (instance.Config.Labels?.["alia.steel.project"] !== projectId || apiPort === cdpPort
       || instance.Config.Image !== IMAGE || !domain
       || !instance.Config.Env.includes("CHROME_USER_DATA_DIR=/profiles/chrome")
       || !instance.Config.Env.includes("USE_SSL=true")
@@ -111,7 +111,7 @@ export async function provisionProjectInstance(projectId: string, dependencies: 
     existingValidated = true;
     const expected = viewerOrigin(`https://${domain}`);
     const actual = await expose(apiPort);
-    if (actual !== expected) throw new Error("Existing project viewer differs from BB Connect; refusing rebinding.");
+    if (actual !== expected) throw new Error("Existing project viewer differs from VesnALIA Connect; refusing rebinding.");
     binding = { apiUrl: `http://127.0.0.1:${apiPort}`, cdpUrl: `http://127.0.0.1:${cdpPort}`, viewerUrl: actual };
     if (dependencies.existing && (Object.keys(binding) as (keyof Binding)[]).some(
       key => binding[key] !== dependencies.existing![key],
@@ -136,7 +136,7 @@ export async function provisionProjectInstance(projectId: string, dependencies: 
       throw new Error("The bound project container is missing; refusing to replace its saved endpoints or profile automatically.");
     }
     const used = new Set<number>();
-    const shares = JSON.parse(await command("bb", ["connect", "shares", "--host", host, "--json"]));
+    const shares = JSON.parse(await command("alia", ["connect", "shares", "--host", host, "--json"]));
     for (const share of shares.shares) used.add(share.port);
     const containers = (await command("docker", ["ps", "-a", "--format", "{{json .ID}}"]))
       .trim().split("\n").filter(Boolean).map(line => JSON.parse(line) as string);
@@ -178,7 +178,7 @@ export async function provisionProjectInstance(projectId: string, dependencies: 
 
 function dockerRunArgs(name: string, projectId: string, apiPort: number | string, cdpPort: number | string, domain: string, dns: readonly string[]): string[] {
   return ["run", "-d", "--init", "--restart", "unless-stopped", "--shm-size", "1g",
-    "--name", name, "--label", `bb.steel.project=${projectId}`,
+    "--name", name, "--label", `alia.steel.project=${projectId}`,
     ...dns.flatMap(server => ["--dns", server]),
     "-p", `127.0.0.1:${apiPort}:3000`, "-p", `127.0.0.1:${cdpPort}:9223`,
     "-e", `DOMAIN=${domain}`, "-e", "USE_SSL=true",
@@ -210,11 +210,11 @@ async function waitForBrowser(binding: Binding): Promise<void> {
     } catch { /* Chromium is still starting. */ }
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
-  throw new Error("Steel was provisioned but Chromium is not ready. Retry `bb surf project` to resume setup.");
+  throw new Error("Steel was provisioned but Chromium is not ready. Retry `alia surf project` to resume setup.");
 }
 export async function verifyProjectInstance(projectId: string, binding: Binding): Promise<void> {
   const hash = createHash("sha256").update(projectId).digest("hex").slice(0, 24);
-  const name = `bb-steel-${hash}`;
+  const name = `alia-steel-${hash}`;
   try {
     const { stdout } = await exec("docker", ["inspect", name], { timeout: 8000, maxBuffer: 65536 });
     const [instance] = JSON.parse(stdout);
@@ -223,7 +223,7 @@ export async function verifyProjectInstance(projectId: string, binding: Binding)
     const cdpPort = new URL(binding.cdpUrl).port;
     const matchesPort = (key: string, port: string) => ports[key]?.length === 1
       && ports[key][0].HostIp === "127.0.0.1" && ports[key][0].HostPort === port;
-    if (instance.Config.Labels["bb.steel.project"] !== projectId
+    if (instance.Config.Labels["alia.steel.project"] !== projectId
       || !instance.State.Running
       || !matchesPort("3000/tcp", apiPort) || !matchesPort("9223/tcp", cdpPort)
       || !instance.Config.Env.includes("CHROME_USER_DATA_DIR=/profiles/chrome")

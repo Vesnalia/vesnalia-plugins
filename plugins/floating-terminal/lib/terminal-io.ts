@@ -1,10 +1,10 @@
-// Byte and title plumbing between xterm and bb's terminal contract.
+// Byte and title plumbing between xterm and VesnALIA's terminal contract.
 //
 // Kept out of pump.ts so it is testable without a DOM or an xterm instance:
 // everything here is a pure function over strings and bytes.
 
 /**
- * bb's terminal contract rejects any write that decodes to more than this, so a
+ * VesnALIA's terminal contract rejects any write that decodes to more than this, so a
  * large paste has to be split rather than sent as one blob and refused whole.
  */
 export const INPUT_MAX_BYTES = 64 * 1024;
@@ -64,7 +64,7 @@ function isPathLike(path: string): boolean {
 }
 
 /**
- * The same rule bb's terminal applies: keep a title the shell meant as a title
+ * The same rule VesnALIA's terminal applies: keep a title the shell meant as a title
  * (`vim README.md`, `npm run dev`), drop the `user@host:path` one every prompt
  * emits. Here that matters twice over — the tab already says where it runs, so
  * echoing the path back would replace a useful label with a redundant one.
@@ -80,7 +80,7 @@ export function normalizeTerminalTitle(title: string): string | null {
 /**
  * The second half of the same question, asked where the directory is known.
  *
- * bb's terminal panel has no label of its own, so any title beats none. This
+ * VesnALIA's terminal panel has no label of its own, so any title beats none. This
  * window already says where every tab runs, which makes a whole class of titles
  * worse than the label they would replace: shells routinely retitle on every
  * prompt with the directory, or the directory and the branch, so an unfiltered

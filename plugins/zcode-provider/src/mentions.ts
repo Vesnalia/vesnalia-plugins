@@ -28,7 +28,7 @@ export function selectedMentions(input: readonly unknown[]) {
     for (const rawMention of mentions) {
       const m = record(rawMention), resource = record(m.resource);
       if (resource.kind !== 'command') continue;
-      if (resource.origin === 'builtin') throw Error('This bb built-in command is not supported by ZCode. Send an ordinary message instead.');
+      if (resource.origin === 'builtin') throw Error('This VesnALIA built-in command is not supported by ZCode. Send an ordinary message instead.');
       if (!Number.isSafeInteger(m.start) || !Number.isSafeInteger(m.end) || Number(m.start) < 0 || Number(m.end) <= Number(m.start) || Number(m.end) > text.length ||
           !['/', '$'].includes(String(resource.trigger)) || !['skill', 'command'].includes(String(resource.source)) ||
           !['user', 'project'].includes(String(resource.origin)) || typeof resource.name !== 'string' || !resource.name || /[\s\x00-\x1f\x7f]/u.test(resource.name) ||
@@ -58,7 +58,7 @@ export function resolveMentionTarget(m: SelectedMention, catalogue: unknown, ses
   const name = typeof row.qualifiedName === 'string' ? row.qualifiedName : String(row.name);
   if (!isAbsolute(path) || /[\x00-\x1f\x7f]/u.test(path) || !name || /[\s\x00-\x1f\x7f]/u.test(name)) throw Error('Native mention identity is invalid');
   if (m.source === 'command' && (name.split(':').length > 2 || name.split(':').at(-1) !== basename(path).replace(/\.md$/i, '').toLowerCase()))
-    throw Error('This native command name cannot be represented by bb');
+    throw Error('This native command name cannot be represented by VesnALIA');
   if (m.source === 'command' && row.disableNonInteractive === true) throw Error('This native command is unavailable in the ZCode app-server');
   if (m.source === 'skill') {
     const current = record(sessionSkills);
@@ -99,7 +99,7 @@ export async function convertMentions(input: readonly unknown[], lookup: (m: Sel
     const item = record(converted[first]); converted[first] = { ...item, text: '/' + command.name + '\n' + String(item.text) };
   }
   const files = targets.filter(t => t.loadWith === 'file');
-  if (files.length) converted.push({ type: 'text', text: 'Read the selected bb skills using the file tool before carrying out this request: ' + files.map(s => JSON.stringify(s.path)).join(', ') + '.', mentions: [], visibility: 'agent-only' });
+  if (files.length) converted.push({ type: 'text', text: 'Read the selected VesnALIA skills using the file tool before carrying out this request: ' + files.map(s => JSON.stringify(s.path)).join(', ') + '.', mentions: [], visibility: 'agent-only' });
   const skills = targets.filter(t => t.source === 'skill' && t.loadWith !== 'file');
   if (skills.length) converted.push({ type: 'text', text: 'Load the selected native skills with the Skill tool before carrying out this request: ' + [...new Set(skills.map(s => s.name))].map(n => JSON.stringify(n)).join(', ') + '.', mentions: [], visibility: 'agent-only' });
   return { input: converted, targets };

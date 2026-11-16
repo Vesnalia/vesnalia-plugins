@@ -2,8 +2,8 @@
 
 Status: accepted, 1 October 2026. Partly supersedes
 [013](013-docker-boxes-run-unprivileged.md). Extended by
-[042](042-a-docker-host-can-be-a-bb-machine.md): the Docker host can be a BB
-machine, reached through BB.
+[042](042-a-docker-host-can-be-a-alia-machine.md): the Docker host can be a VesnALIA
+machine, reached through VesnALIA.
 [082](082-docker-snapshots.md) supersedes the anonymous volume for a box
 made after it. A box made before keeps that volume, and a release still
 removes it.
@@ -12,12 +12,12 @@ removes it.
 
 The Docker backend runs boxes as containers on one Docker host, local or
 over `ssh://`. [013](013-docker-boxes-run-unprivileged.md) planned a start
-script that starts sshd and the RFB server, so bb-box would reach a box as it
+script that starts sshd and the RFB server, so alia-box would reach a box as it
 reaches a Proxmox LXC box: SSH for commands, and a TCP path to the RFB
 server for the desktop.
 
-That needs a network path from BB's server to each container. There is one
-only when BB's server is the Docker host itself, with rootful Docker on
+That needs a network path from VesnALIA's server to each container. There is one
+only when VesnALIA's server is the Docker host itself, with rootful Docker on
 Linux. Over `ssh://`, on Docker Desktop, where the containers are in a VM,
 and with rootless Docker, where the bridge is in a namespace of its own, the
 container's address cannot be reached. The `docker` CLI, which the backend
@@ -31,13 +31,13 @@ needs anyway to make and remove containers, reaches the box in every case.
 - The desktop stream is always `docker exec -i <box> socat -
   TCP:127.0.0.1:5900`, with the RFB password read through `docker exec`
   too. It is one route for every Docker host, and needs no published port.
-  A box's address is shown only when BB's server is the Docker host and
+  A box's address is shown only when VesnALIA's server is the Docker host and
   Docker is rootful, and nothing uses it.
 - The start script is the container's main process under `docker-init`. It
-  clears BB's daemon lock and PID file, starts what systemd starts in an LXC
-  box, then writes `/run/bb-box/ready`. bb-box waits for that file, then runs
-  BB's bootstrap, which starts BB's daemon, after every start
-  ([017](017-boxes-clear-bb-daemon-state-at-boot.md)). This supersedes 013's
+  clears VesnALIA's daemon lock and PID file, starts what systemd starts in an LXC
+  box, then writes `/run/alia-box/ready`. alia-box waits for that file, then runs
+  VesnALIA's bootstrap, which starts VesnALIA's daemon, after every start
+  ([017](017-boxes-clear-alia-daemon-state-at-boot.md)). This supersedes 013's
   line that the start script starts the daemon again.
 - linux-docker boxes run Docker in Docker: a privileged container with its
   own daemon and a volume for `/var/lib/docker`, not the host's socket. A
@@ -56,7 +56,7 @@ needs anyway to make and remove containers, reaches the box in every case.
   Capacity refuses a box that asks for a disk size, and gives no disk
   total.
 - Containers are made with `--pull never`, so a box runs only an image the
-  operator built. bb-box's network turns off traffic between containers.
+  operator built. alia-box's network turns off traffic between containers.
   Each image is one layer over Ubuntu's.
 - Chrome runs with `--no-sandbox`: Docker's default seccomp profile stops it
   making its sandbox's namespaces, and the container is the boundary.
@@ -71,7 +71,7 @@ the stream 0.6 s and the copy 2.2 to 3 s.
 ## Consequences
 
 - A Docker host over SSH works as a local rootful host does, with only the
-  `docker` CLI on BB's server. Docker Desktop and rootless Docker should
+  `docker` CLI on VesnALIA's server. Docker Desktop and rootless Docker should
   work the same way, but have not been tested. Rootless Docker cannot run
   privileged containers, so it has no linux-docker boxes: the doctor fails
   them there.

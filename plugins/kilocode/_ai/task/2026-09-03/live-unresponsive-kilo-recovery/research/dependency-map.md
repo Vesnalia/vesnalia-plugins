@@ -7,7 +7,7 @@ Scope: `attachOrSpawn`, health checks, session creation, thread/start, error ser
 
 ## 1. Executive Summary
 
-Startup recovery for an KiloCode-backed BB thread flows through three layers: the **provider bridge** (`src/bridge.ts`, JSON-RPC over stdio), the **process/lock manager** (`src/process.ts`, file-lock + spawn), and the **host handlers** (`src/host-handlers.ts`, RPC-callable diagnostics/reload). A live-but-unresponsive server currently fails fast (~3–4s of probes) with a single generic error and **no bounded recovery window and no stage identification** — exactly the gap in issue #3.
+Startup recovery for an KiloCode-backed VesnALIA thread flows through three layers: the **provider bridge** (`src/bridge.ts`, JSON-RPC over stdio), the **process/lock manager** (`src/process.ts`, file-lock + spawn), and the **host handlers** (`src/host-handlers.ts`, RPC-callable diagnostics/reload). A live-but-unresponsive server currently fails fast (~3–4s of probes) with a single generic error and **no bounded recovery window and no stage identification** — exactly the gap in issue #3.
 
 Top findings:
 
@@ -17,14 +17,14 @@ Top findings:
 4. **`ensureClient` already re-attaches when a cached client's health fails** (`src/bridge.ts:388-418`) — this is the natural insertion point for bounded recovery, and it is where the "did not answer in time" error is serialized via `publicErrorMessage` (`src/bridge.ts:381-386`).
 5. **The test shim omits `providerRecovery` from `BRIDGE_NOTIFICATION_METHODS`** (`tests/shims/provider-bridge.ts:18-20`), so `serveLost`'s recovery notification (`src/bridge.ts:625-629`) is currently untestable and would emit `method: undefined` under test. Any recovery work touching that path must extend the shim.
 
-Confidence: **HIGH** for call graph, lock semantics, and error contracts (all directly cited). **MEDIUM** for BB-side consumption of `providerRecovery` (SDK-internal, not in this repo — see Open Questions).
+Confidence: **HIGH** for call graph, lock semantics, and error contracts (all directly cited). **MEDIUM** for ALIA-side consumption of `providerRecovery` (SDK-internal, not in this repo — see Open Questions).
 
 ---
 
 ## 2. Architecture Overview
 
 ```
- BB app (settings UI)          BB core (thread lifecycle)         BB host worker
+ ALIA app (settings UI)          ALIA core (thread lifecycle)         ALIA host worker
       │ rpc "probe"/"reload"         │ thread/start (JSON-RPC)          │ host entry
       ▼                              ▼                                  ▼
  server.ts (rpcContract)     src/bridge.ts (provider bridge)      host.ts (handlers)
@@ -46,7 +46,7 @@ Confidence: **HIGH** for call graph, lock semantics, and error contracts (all di
 ```
 
 - **Bridge layer** (`src/bridge.ts`): JSON-RPC methods `initialize`, `provider/health`, `model/list`, `thread/start`, `thread/resume`, `thread/fork`, `turn/start`, `turn/steer`, `thread/stop`, `thread/name/set`, `skills/configure` (`src/bridge.ts:2255-2771`; method names in `tests/shims/provider-bridge.ts:3-16`).
-- **Process layer** (`src/process.ts`): host-wide lock at `~/.bb/plugins/kilo/kilo.lock.json` (`src/process.ts:51-59`), claim file for spawn races (`src/process.ts:61-65, 304-332`), detached spawn (`src/process.ts:340-356`).
+- **Process layer** (`src/process.ts`): host-wide lock at `~/.vesnalia/plugins/kilo/kilo.lock.json` (`src/process.ts:51-59`), claim file for spawn races (`src/process.ts:61-65, 304-332`), detached spawn (`src/process.ts:340-356`).
 - **Host layer** (`host.ts` + `src/host-handlers.ts`): `probe`, `reload`, `logs`, `listSessions`, `sessionSnapshot`, `settleSession`, `revert`, `unrevert`, `revertState`, `listAgents`, `listCommands`, `summarize`, `listMessageMeta`, `stampPermissionMode` (`host.ts:31-133`; contract schemas `contract.ts:42-181`).
 - **Client layer** (`src/client.ts`): SDK wrapper with per-call timeouts; `health()` has its own 3-attempt retry (`src/client.ts:223-247`).
 
@@ -55,7 +55,7 @@ Confidence: **HIGH** for call graph, lock semantics, and error contracts (all di
 ## 3. Data Flow Analysis — Startup (thread/start) End to End
 
 ```
-BB thread/start (JSON-RPC id)
+ALIA thread/start (JSON-RPC id)
   → bridge handlers[BRIDGE_REQUEST_METHODS.threadStart]      bridge.ts:2389
     → ensureClient()                                          bridge.ts:2403 → 388-418
         ├─ cached client? → client.health()  (3×800ms retry)  client.ts:223-247
@@ -83,8 +83,8 @@ BB thread/start (JSON-RPC id)
 ```
 
 **Failure serialization split** (`src/bridge.ts:2457-2464`):
-- Before `respondResult`: `respondError(id, BRIDGE_ERROR, message)` — BB sees a JSON-RPC error for thread/start.
-- After `respondResult`: `failIssuedTurn(threadId, message)` — BB sees a `turn.boundary status=failed` delta (`src/bridge.ts:491-512`).
+- Before `respondResult`: `respondError(id, BRIDGE_ERROR, message)` — VesnALIA sees a JSON-RPC error for thread/start.
+- After `respondResult`: `failIssuedTurn(threadId, message)` — VesnALIA sees a `turn.boundary status=failed` delta (`src/bridge.ts:491-512`).
 
 **Live-but-unresponsive path today** (server alive, health slow):
 1. `reclaimIfStale`: 3 probes, each times out at 800ms → classified `slow` → lock kept, returns `false` (`src/process.ts:174-178`). Worst case ≈ 2.85s.
@@ -116,7 +116,7 @@ A `session.create` timeout surfaces separately: `withTimeout(..., KILO_SETUP_MS=
 | `handleSummarize` | `src/host-handlers.ts:274` | once per host RPC | spawn | throws |
 | `probeKiloCode` | `src/probe.ts:81-85` | once per probe | `spawn: true` | catch → `ProbeResult.error` (`src/probe.ts:136-152`) |
 
-**Blast-radius note:** probe *spawns a serve at BB startup* (`src/probe.ts:78-85`, with a `ponytail:` comment acknowledging the tradeoff). Any change to `attachOrSpawn`'s error/timeout contract changes the probe's `error` string, which is validated by `contract.ts:23-40` (zod `probeOutput`) and rendered in settings (`src/app/settings-section.tsx:84`).
+**Blast-radius note:** probe *spawns a serve at VesnALIA startup* (`src/probe.ts:78-85`, with a `ponytail:` comment acknowledging the tradeoff). Any change to `attachOrSpawn`'s error/timeout contract changes the probe's `error` string, which is validated by `contract.ts:23-40` (zod `probeOutput`) and rendered in settings (`src/app/settings-section.tsx:84`).
 
 ### 4.2 Health-check producers/consumers
 
@@ -132,10 +132,10 @@ A `session.create` timeout surfaces separately: `withTimeout(..., KILO_SETUP_MS=
 | Operation | File:Line | Once-only guarantees |
 |---|---|---|
 | `createSession` | `src/bridge.ts:2410-2416` | once per `thread/start` unless `options.adoptSessionId` set; `createCount` counter exported for tests (`bridge.ts:247-249`) |
-| `bindSession` | `src/bridge.ts:755-775` | overwrites `sessions`/`sessionToThread` maps; emits `thread/identity` **every call** — a retry that re-binds re-notifies identity (idempotent for BB but observable) |
+| `bindSession` | `src/bridge.ts:755-775` | overwrites `sessions`/`sessionToThread` maps; emits `thread/identity` **every call** — a retry that re-binds re-notifies identity (idempotent for VesnALIA but observable) |
 | `thread/resume` | `src/bridge.ts:2468-2505` | `getSession` first (validates), then bind, then `joinRunningSession` if running |
 | `thread/fork` | `src/bridge.ts:2507-2545` | `forkSession` then bind then `replayHydrate` |
-| Session-id recovery from BB events | `src/session-bind.ts:1-20`, used by `server.ts:945-962` | reads `thread/identity` events — the BB-side record of the binding |
+| Session-id recovery from VesnALIA events | `src/session-bind.ts:1-20`, used by `server.ts:945-962` | reads `thread/identity` events — the ALIA-side record of the binding |
 
 ### 4.4 Error serialization contract
 
@@ -174,18 +174,18 @@ Settings button "Reload KiloCode"            src/app/settings-section.tsx:85-94
 
 ## 5. Public vs Internal APIs
 
-**Public (exported, consumed across modules or by BB):**
+**Public (exported, consumed across modules or by VesnALIA):**
 
 | Symbol | File:Line | Consumers |
 |---|---|---|
 | `attachOrSpawn`, `readLock`, `stopServe`, `recentServeLog` | `src/process.ts:281, 67, 106, 38` | bridge, host-handlers, probe, tests |
 | `reclaimIfStale`, `attachIfHealthy`, `portListening`, `isLockStale`, `pidAlive`, `isAbortTimeout`, `writeLock`, `removeLock`, `claimPath`, `lockPath`, `sharedLockDir`, `reclaimStaleClaim`, `kiloCodeServeEnvironment`, `resolveKiloCodeBinary` | `src/process.ts` (various) | tests + internal |
-| `experimental_providerBridge` | `src/bridge.ts:3669-3677` | `host.ts:27` re-export → BB SDK |
+| `experimental_providerBridge` | `src/bridge.ts:3669-3677` | `host.ts:27` re-export → VesnALIA SDK |
 | `handleLine`, `resetBridgeForTests`, `getCreateCount`, `ingestKiloCodeEvent`, `syncLiveTurnParts`, `syncSessionRevert`, `syncSessionTitle`, `hydrateBoundSession`, `recentUnknownLogLines` | `src/bridge.ts` (exports) | tests only |
 | Host handlers `handleProbe`…`handleStampPermissionMode`, `currentLock`, `evictClientsForTests` | `src/host-handlers.ts` | `host.ts:10-25`, tests |
 | `probeKiloCode`, `summarizeKiloCodeConfig` | `src/probe.ts:55, 37` | host-handlers, tests |
 | `acquireClient`, `createSdkClient`, `KiloCodeClient` type | `src/client.ts:654, 666, 30` | bridge, host-handlers, fake |
-| Host RPC contract (`probe`, `reload`, `logs`, …) | `contract.ts:42-181` | BB host protocol (zod-validated) |
+| Host RPC contract (`probe`, `reload`, `logs`, …) | `contract.ts:42-181` | VesnALIA host protocol (zod-validated) |
 | Plugin RPC contract (`threadProvider`, `probe`, `reload`, …) | `contract.ts:183-407` | app UI via `useRpc` (`src/app/settings-section.tsx:25`) |
 
 **Internal (not exported):** `ensureClient`, `bindSession`, `runPrompt`, `failIssuedTurn`, `serveLost`, `onStreamClosed`, `settleIssuedTurn`, `publicErrorMessage`, `probePort`, `removeLockIfOwned`, `signalServe`, `allocatePort` — all reachable only through the exported surface above. Recovery logic added inside `ensureClient`/`attachOrSpawn` needs no new public API; a *stage-labeled error type* would be the one candidate new export.
@@ -203,8 +203,8 @@ Settings button "Reload KiloCode"            src/app/settings-section.tsx:85-94
 
 **Duplicate-work hazards for a retry design:**
 - `createCount`/`fake.calls.create` assertions exist (`tests/bridge.test.ts:869-884`) — a retry must not create a second session for the same thread.
-- `bindSession` re-notification of `thread/identity` is observable by BB (`server.ts:954-958` reads these events); re-binding the *same* sessionId is benign, binding a *new* sessionId after partial work orphans the first.
-- `respondResult` before `runPrompt` means a crash mid-`runPrompt` leaves BB holding a valid thread with a failed turn — the retry-once rule must apply to the *stage that failed*, not the whole handler.
+- `bindSession` re-notification of `thread/identity` is observable by VesnALIA (`server.ts:954-958` reads these events); re-binding the *same* sessionId is benign, binding a *new* sessionId after partial work orphans the first.
+- `respondResult` before `runPrompt` means a crash mid-`runPrompt` leaves VesnALIA holding a valid thread with a failed turn — the retry-once rule must apply to the *stage that failed*, not the whole handler.
 
 ---
 
@@ -227,10 +227,10 @@ Settings button "Reload KiloCode"            src/app/settings-section.tsx:85-94
 
 ## 8. Risks and Considerations
 
-1. **Process-ownership safety.** `stopServe` is the only sanctioned kill, and it already guards against killing a replacement serve (`removeLockIfOwned`, `src/process.ts:86-90`; test `tests/process.test.ts:177-211`). Any automatic recycling must satisfy a stronger "proven idle" predicate than `reclaimIfStale`'s "port dead" — e.g. `sessionIsRunning` across bound sessions — and must never run while `liveTurns` is non-empty. The bridge's in-memory turn state (`src/bridge.ts:195-197`) is per-bridge-process; *another* BB worker's active turns are invisible here, which is why the issue demands operator action for persistent stalls.
+1. **Process-ownership safety.** `stopServe` is the only sanctioned kill, and it already guards against killing a replacement serve (`removeLockIfOwned`, `src/process.ts:86-90`; test `tests/process.test.ts:177-211`). Any automatic recycling must satisfy a stronger "proven idle" predicate than `reclaimIfStale`'s "port dead" — e.g. `sessionIsRunning` across bound sessions — and must never run while `liveTurns` is non-empty. The bridge's in-memory turn state (`src/bridge.ts:195-197`) is per-bridge-process; *another* VesnALIA worker's active turns are invisible here, which is why the issue demands operator action for persistent stalls.
 2. **Error-contract regression risk.** `attachOrSpawn`'s error strings are asserted verbatim in tests (`tests/process.test.ts:75`) and flow into the zod-validated probe output (`contract.ts:23-40`). Changing messages or adding structure must update both. `publicErrorMessage` (`src/bridge.ts:381-386`) collapses all timeouts to one string — stage information is lost exactly where issue #3 wants it preserved.
 3. **Double-response risk.** `thread/start` answers before prompting (`src/bridge.ts:2427`). A naive "retry the handler" wrapper would call `respondResult` twice or mix `respondError` after `respondResult`. Retry must wrap only the `ensureClient`/`createSession` stage, before the answer.
-4. **Duplicate BB work risk.** BB provisions thread + worktree before `thread/start` (issue context). A retry that creates a *second* KiloCode session after a partial first attempt leaves the first session orphaned but still bound in `sessionToThread` only if `bindSession` ran; if recovery happens between `createSession` and `bindSession`, the created session is fully orphaned (no BB record). Prefer reusing the created session id on retry, or creating only after recovery succeeds.
+4. **Duplicate VesnALIA work risk.** VesnALIA provisions thread + worktree before `thread/start` (issue context). A retry that creates a *second* KiloCode session after a partial first attempt leaves the first session orphaned but still bound in `sessionToThread` only if `bindSession` ran; if recovery happens between `createSession` and `bindSession`, the created session is fully orphaned (no VesnALIA record). Prefer reusing the created session id on retry, or creating only after recovery succeeds.
 5. **Probe spawns at startup** (`src/probe.ts:78-85`). If recovery adds waiting, probe latency grows for every settings-page load; the existing `ponytail:` comment there shows the authors already treat probe spawn as a bounded tradeoff.
 6. **Timing budget today.** Worst-case unresponsive path ≈ 2.85s (`reclaimIfStale`) + 0.8s (`attachIfHealthy`) + throw. `session.create` adds 8s (`KILO_SETUP_MS`, `src/client.ts:145`). A bounded recovery window should be sized against these existing constants, not new unbounded ones.
 7. **Host-handler fan-out.** 11 `attachOrSpawn` call sites in `host-handlers.ts` + 1 in `probe.ts` inherit any behavior change (longer waits, new error types). The `spawn:false` call sites (`host-handlers.ts:64, 253`) deliberately soft-fail; recovery logic must not make them block.
@@ -249,8 +249,8 @@ Settings button "Reload KiloCode"            src/app/settings-section.tsx:85-94
 
 ## 10. Open Questions (unverified — needs validation before implementation)
 
-1. **How does BB core consume `providerRecovery` / `restartRecommended`?** The notification is emitted at `src/bridge.ts:625-629` but the method constant lives in `@get-bb/plugin-sdk/provider-bridge` (node_modules, not inspected here). Whether BB surfaces it as UI guidance or silently logs is **UNVERIFIED**.
-2. **Does BB retry `thread/start` itself after a JSON-RPC error?** Not observable in this repo; the retry-once rule may need to be purely bridge-side. **UNVERIFIED.**
+1. **How does VesnALIA core consume `providerRecovery` / `restartRecommended`?** The notification is emitted at `src/bridge.ts:625-629` but the method constant lives in `@vesnalia/plugin-sdk/provider-bridge` (node_modules, not inspected here). Whether VesnALIA surfaces it as UI guidance or silently logs is **UNVERIFIED**.
+2. **Does VesnALIA retry `thread/start` itself after a JSON-RPC error?** Not observable in this repo; the retry-once rule may need to be purely bridge-side. **UNVERIFIED.**
 3. **What does `kilo serve` do to `/global/health` while a session is mid-model-call?** The `slow` classification (`src/process.ts:158`) is inferred from timeout behavior; whether a busy serve answers health quickly but stalls `session.create` is **UNVERIFIED** and determines whether health can serve as the "still alive" proof during recovery.
 4. **`server.ts` reload RPC wiring** — `rpcContract.reload` exists (`contract.ts:192-195`) and the settings UI calls it (`settings-section.tsx:44`), but the exact `server.ts` handler line forwarding to `host.call("reload")` was not read in full; the probe path shows the pattern (`server.ts:204-224`). **INFERRED, low risk.**
 
@@ -261,4 +261,4 @@ Settings button "Reload KiloCode"            src/app/settings-section.tsx:85-94
 | Before | Startup recovery behavior was unmapped; issue #3 needed callers, call order, error contracts, and test seams for attachOrSpawn/health/session-create/thread-start/reload. |
 | Now | Full cited dependency map delivered: 12 attachOrSpawn call sites, the ensureClient choke point, the pre/post-answer error split, the stopServe-only kill path, once-only guarantees (createSession, thread/identity, respondResult), and the test-shim providerRecovery gap. |
 | Next | Owning gather-context stage serializes this report to `_ai/task/2026-09-03/live-unresponsive-kilo-recovery/research/dependency-map.md`; design phase should target ensureClient + pre-answer retry and validate the four open questions. |
-| Confidence | 🟢 ≥85% on all cited call-graph, lock, and error-contract findings; 🟡 on BB-side providerRecovery consumption and serve behavior under load (Open Questions 1–3, node_modules/external not inspected). |
+| Confidence | 🟢 ≥85% on all cited call-graph, lock, and error-contract findings; 🟡 on ALIA-side providerRecovery consumption and serve behavior under load (Open Questions 1–3, node_modules/external not inspected). |

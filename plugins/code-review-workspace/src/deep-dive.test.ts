@@ -1,12 +1,12 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost, makeQueueEntry, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeQueueEntry, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { ASK_LIFETIME } from "./asks";
 import { testStore } from "./test-store.test-support";
 import { MARK_PART } from "./agent-chat.test-support";
 
 const file = (path: string, hunks: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n${hunks}`;
-const patch = file("src/a.ts", "@@ -1 +1 @@\n-a\n+aa\n@@ -9 +9 @@\n-i\n+ii\n") + file("src/b.ts", "@@ -1 +1 @@\n-b\n+bb\n");
+const patch = file("src/a.ts", "@@ -1 +1 @@\n-a\n+aa\n@@ -9 +9 @@\n-i\n+ii\n") + file("src/b.ts", "@@ -1 +1 @@\n-b\n+alia\n");
 const guide = {
   title: "Guide", intent: "Parses rows.", unplacedFiles: [] as string[],
   sections: [
@@ -16,7 +16,7 @@ const guide = {
 };
 
 async function host({ conversation = true, level = "medium", levels = ["low", "medium", "high", "xhigh"], provider = "codex" } = {}) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: {
       get: async () => ({ archivedAt: null, deletedAt: null, status: "idle", providerId: provider }),
       send: async () => ({ delivery: "sent" }),
@@ -27,8 +27,8 @@ async function host({ conversation = true, level = "medium", levels = ["low", "m
     providers: { list: async () => [{ id: "codex", reasoningLevels: levels.map((id) => ({ id, label: id })), capabilities: { permissionModes: ["auto"] } }] },
     projects: { defaultExecutionOptions: async () => ({ providerId: "codex", model: "gpt-6", reasoningLevel: level }) },
   } as any });
-  await plugin(bb);
-  const store = testStore(bb);
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1", projectId: "p1" });
   await store.savePatch("pr-1", patch);
   await store.saveGuide("pr-1", structuredClone(guide));
@@ -38,7 +38,7 @@ async function host({ conversation = true, level = "medium", levels = ["low", "m
   const idle = (id = "assistant") => harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id }), lastAssistantText: "Checked" });
   const signals = (channel: string) => harness.inspection.realtimeSignals.filter((signal) => signal.channel === channel).length;
   const tool = (name: string, input: Record<string, unknown>, threadId = "assistant") => harness.behavior.callAgentTool(name, input, { threadId }) as Promise<any>;
-  return { bb, harness, store, dig, sent, idle, signals, tool };
+  return { alia, harness, store, dig, sent, idle, signals, tool };
 }
 
 test("Dig deeper sends the chapter's files, hunks and focus, fenced as the guide's words, at high effort", async () => {

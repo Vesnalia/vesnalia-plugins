@@ -1,7 +1,7 @@
 # Model Pilot 0.4.5 release notes and requirements
 
-Model Pilot is an experimental BB plugin for AI model routing, coding agents, and usage reporting.
-The public source is [MahmoudElsayad/bb-model-pilot](https://github.com/MahmoudElsayad/bb-model-pilot).
+Model Pilot is an experimental VesnALIA plugin for AI model routing, coding agents, and usage reporting.
+The public source is [MahmoudElsayad/alia-model-pilot](https://github.com/MahmoudElsayad/bb-model-pilot).
 Original plugin code uses the MIT license with copyright 2026 Mahmoud Elsayad.
 Copied T3 Code portions retain the MIT notice in `notices/T3-CODE-LICENSE.txt`.
 
@@ -25,11 +25,11 @@ Compacting idle threads before the cache expires and a verifier before escalatin
 ## Changes in 0.4.4
 
 Subscription usage is now an input to routing.
-Model Pilot reads Codex limits from the Codex app server and Claude Code limits from the usage reports that BB sends during each turn.
+Model Pilot reads Codex limits from the Codex app server and Claude Code limits from the usage reports that VesnALIA sends during each turn.
 If an account is blocked, the classifier is not offered its models, and the route row shows a "Usage limit" badge.
 The model pick now considers only the models that the classifier was offered.
 Before, a GPT model could win a helper pick as the cheapest model in its tier, even when the Codex account was blocked.
-`bb auto status` and the dashboard's thread view now include the usage of the helpers that a thread started.
+`alia auto status` and the dashboard's thread view now include the usage of the helpers that a thread started.
 Before, a thread that used helpers reported only its own usage.
 
 ## Changes in 0.4.3
@@ -39,12 +39,12 @@ Before, it picked the option where the vote reached half, which sent close calls
 Codex, Claude Code, OpenAI, and Anthropic classifiers now return percent votes like Jev, so the same rule applies to them.
 Native Claude Code classification now finds the Claude login on macOS.
 Before, it reported "Not logged in" and every classification used the fallback route.
-`bb auto route` now prints the classifier's vote for every question.
+`alia auto route` now prints the classifier's vote for every question.
 
 ## Changes in 0.4.2
 
 Jev is the default classifier again.
-The Connection page offers Jev first, with an API key field, and Model in BB as the alternative.
+The Connection page offers Jev first, with an API key field, and Model in VesnALIA as the alternative.
 Model Pilot tests the Jev key before it saves the key as a secret plugin setting.
 Existing saved classifier choices stay unchanged.
 
@@ -60,10 +60,10 @@ Routing rows use the orange theme accent on their icons.
 
 The Git release source is `git:https://github.com/MahmoudElsayad/bb-model-pilot.git@^0.4.0`.
 The plugin identifier remains `auto-router`, and the provider identifier remains `auto`.
-Commands remain under `bb auto`.
+Commands remain under `alia auto`.
 The display name is Model Pilot.
 
-The BB Community marketplace submission is pending.
+The VesnALIA Community marketplace submission is pending.
 A submission does not make the plugin discoverable in the marketplace until its maintainers merge it.
 Direct Git installation uses the public tagged release independently of that review.
 The primary category is `agents-and-providers`.
@@ -71,27 +71,27 @@ The secondary category is `token-usage-and-limits`.
 
 ## Compatibility limits
 
-Version 0.4.5 targets BB 0.46 on macOS, bridge protocol 2, and grammar version 3.
-The adapter uses internal BB bridge files rather than a public reusable provider factory.
-A BB update can require an adapter update.
-Other platforms and BB versions do not have verified support.
+Version 0.4.5 targets VesnALIA 0.46 on macOS, bridge protocol 2, and grammar version 3.
+The adapter uses internal VesnALIA bridge files rather than a public reusable provider factory.
+A VesnALIA update can require an adapter update.
+Other platforms and VesnALIA versions do not have verified support.
 Model availability depends on each user's provider accounts.
-Test each supported BB release before expanding the compatibility range.
+Test each supported VesnALIA release before expanding the compatibility range.
 
 ## Accounts and payment
 
 Jev is the default classifier.
 It uses a separate TypeSafe API key and API billing, entered on the Connection page.
-Users can choose a model from BB's available Codex and Claude Code models instead.
+Users can choose a model from VesnALIA's available Codex and Claude Code models instead.
 Native classification uses the existing provider sign-in without a separate API key.
 Provider subscription limits and model access still apply.
-The model picker reads BB's provider catalog, not an account entitlement guarantee.
+The model picker reads VesnALIA's provider catalog, not an account entitlement guarantee.
 
 Legacy direct OpenAI and Anthropic API modes also require separate keys and billing.
 The plugin includes no extra credits, shared account, payment collection, or hosted inference service.
 Users pay their providers directly.
 The open-source license permits commercial use under its terms.
-BB marketplace checkout is not part of this release.
+VesnALIA marketplace checkout is not part of this release.
 
 ## Classifier and usage limits
 

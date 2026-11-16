@@ -4,7 +4,7 @@ import { z } from "zod";
  * Execution defaults: the provider, model, reasoning level, service tier,
  * permission mode and native session agent a new chat starts with.
  *
- * Nothing here replaces BB's own behaviour. A field that is not set anywhere
+ * Nothing here replaces VesnALIA's own behaviour. A field that is not set anywhere
  * is simply absent, and the composer falls back to the project's remembered
  * execution defaults exactly as before — including the folder the chat
  * starts in. What the plugin adds is a place to pin those values per
@@ -42,7 +42,7 @@ export type EnvironmentMode = (typeof ENVIRONMENT_MODES)[number];
 
 export const executionSchema = z.object({
   /**
-   * The provider and the model travel together: BB's picker resolves them as
+   * The provider and the model travel together: VesnALIA's picker resolves them as
    * one coherent value, and a model without its provider means nothing.
    */
   providerId: z.string().min(1).max(100).optional(),
@@ -57,7 +57,7 @@ export const executionSchema = z.object({
    */
   environmentMode: z.enum(ENVIRONMENT_MODES).optional(),
   /**
-   * The machine a new chat starts on. Absent leaves BB and the place's home
+   * The machine a new chat starts on. Absent leaves VesnALIA and the place's home
    * host alone. A host with no folder for this place falls back to home.
    */
   hostId: z.string().min(1).max(100).optional(),
@@ -182,7 +182,7 @@ export function normalizeExecution(value: Execution): Execution {
 }
 
 /**
- * What BB itself would start a chat with here — the project's remembered
+ * What VesnALIA itself would start a chat with here — the project's remembered
  * choice, or the catalog default when it has none. Fields stay nullable: this
  * is a picture of somebody else's state, not our own record.
  */
@@ -231,7 +231,7 @@ export function offeredMachineIds(
   return ids;
 }
 
-/** BB name when this host is known; otherwise the localized unknown label. */
+/** VesnALIA name when this host is known; otherwise the localized unknown label. */
 export function machineLabel(
   hostId: string,
   known: readonly NamedHost[],
@@ -263,7 +263,7 @@ export function placeOnHost(
   return copies.find((c) => c.hostId === pinnedHostId) ?? home;
 }
 
-/** Isolated managed worktree on this device; BB picks the default base branch. */
+/** Isolated managed worktree on this device; VesnALIA picks the default base branch. */
 export const managedWorktreeEnvironment = (hostId: string) => ({
   type: "host" as const,
   hostId,

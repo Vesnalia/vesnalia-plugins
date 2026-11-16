@@ -1,4 +1,4 @@
-// What bb-box's X11 desktop images run beside their VNC server (056), and its
+// What alia-box's X11 desktop images run beside their VNC server (056), and its
 // Wayland images beside wayvnc, capturing Sway (060): Selkies, which streams
 // the desktop as H.264 over WebSockets on the box's loopback, so it is reached
 // through the box's command transport. Its size is the RFB display's, which
@@ -7,7 +7,7 @@
 import type { DesktopDisplayCapability, DisplayCapability } from "./types.ts";
 import type { BoxPointer, CommandTransport, Display, Route } from "../transports/types.ts";
 
-/** Where the image's bb-box-selkies.service listens, on 127.0.0.1 only. */
+/** Where the image's alia-box-selkies.service listens, on 127.0.0.1 only. */
 export const SELKIES_PORT = 5980;
 
 /** The display an X11 desktop kind lists after its RFB one. */
@@ -15,31 +15,31 @@ export const SELKIES_DISPLAY: DesktopDisplayCapability = { id: "selkies", protoc
 
 /**
  * The display a Wayland desktop kind lists after its RFB one (060), which the
- * viewer opens by default, as on X11: through BB it followed a drag 13 ms
+ * viewer opens by default, as on X11: through VesnALIA it followed a drag 13 ms
  * closer on a LAN and 25 ms on a slow link than wayvnc, with no tearing and a
  * sixth of the bandwidth (measured 18 October 2026). It says no way to leave
  * the cursor out: Sway paints the pointer into each frame, as for wayvnc, and
  * the hidden cursor theme takes it out while a person holds control (#707).
  * Selkies on Sway sends the browser an arrow. Selkies is told a new size
  * before Sway takes it: told after, it sent black frames at the old size for
- * about 0.7 s through BB, and its new size came 1.25 s after the viewer's;
+ * about 0.7 s through VesnALIA, and its new size came 1.25 s after the viewer's;
  * told first, it came in 0.05 to 0.2 s, with none black (measured 18 October
  * 2026).
  */
 export const WAYLAND_SELKIES_DISPLAY: DesktopDisplayCapability = { id: "selkies", protocol: "selkies", resizable: true, tellSize: "first" };
 
 /** Where a Wayland image runs Selkies from: an image built before it has none (060). */
-export const SELKIES_LAUNCHER = "/usr/local/libexec/bb-box/selkies";
+export const SELKIES_LAUNCHER = "/usr/local/libexec/alia-box/selkies";
 
 /**
- * Where a Wayland image with Sway 1.11 or later has bb-box-cursor (060): the
+ * Where a Wayland image with Sway 1.11 or later has alia-box-cursor (060): the
  * box's pointer, where it is and what it looks like. An image without it,
  * such as one on Ubuntu 24.04, has the pointer hidden from the picture while
  * a person holds control (#707), as before.
  */
-export const CURSOR_HELPER = "/usr/local/libexec/bb-box/cursor";
+export const CURSOR_HELPER = "/usr/local/libexec/alia-box/cursor";
 
-/** A line bb-box-cursor writes, as a pointer event, or null for a line it cannot read. */
+/** A line alia-box-cursor writes, as a pointer event, or null for a line it cannot read. */
 export function pointerEvent(line: string): BoxPointer | null {
   try {
     const value = JSON.parse(line) as Record<string, unknown>;
@@ -62,13 +62,13 @@ export function pointerEvent(line: string): BoxPointer | null {
 }
 
 /**
- * Runs bb-box-cursor in the box's session, as the box user, and passes on
+ * Runs alia-box-cursor in the box's session, as the box user, and passes on
  * each change of the pointer until `signal` ends it or the helper ends, as
  * when the desktop restarts.
  */
 export async function followPointer(command: CommandTransport, onEvent: (event: BoxPointer) => void, signal: AbortSignal, helper = CURSOR_HELPER): Promise<void> {
   const script = `export XDG_RUNTIME_DIR="\${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-set -a; [ ! -r /run/bb-box/display.env ] || . /run/bb-box/display.env; set +a
+set -a; [ ! -r /run/alia-box/display.env ] || . /run/alia-box/display.env; set +a
 exec '${helper.replaceAll("'", "'\\''")}'`;
   let rest = "";
   const decoder = new TextDecoder();
@@ -119,10 +119,10 @@ export class ImageFile {
 
 /**
  * Where a GPU desktop's image has what lets its Selkies encode with NVENC
- * (#863): bb-box-nofbc, which its launcher preloads on the GPU path. An
+ * (#863): alia-box-nofbc, which its launcher preloads on the GPU path. An
  * image built before has a launcher that waits there, with no video.
  */
-export const GPU_VIDEO_MARKER = "/usr/local/lib/bb-box-nofbc.so";
+export const GPU_VIDEO_MARKER = "/usr/local/lib/alia-box-nofbc.so";
 
 /** Whether each Wayland box's image has Selkies (060). */
 export class SelkiesPresence extends ImageFile {

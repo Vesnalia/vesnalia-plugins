@@ -21,8 +21,8 @@ The agent may never see the new name:
 - An idle close or a reconnect makes every token stale.
 
 In each case the reference follows the renamed element with no tree or list
-of changes showing it. After a stale token, bb-box advises trying again, so
-the worst path was short: try again, and bb-box clicks "Delete account".
+of changes showing it. After a stale token, alia-box advises trying again, so
+the worst path was short: try again, and alia-box clicks "Delete account".
 
 The review of pull request #32 first suggested leaving the own name out of
 the place only for elements that hold content, that is, have a value. On a
@@ -32,11 +32,11 @@ would not keep 023's case.
 
 ## Decision
 
-- For each reference, bb-box records the role and name it last showed the
+- For each reference, alia-box records the role and name it last showed the
   agent: in a tree, in an action's list of changes or read-back, in a
   popup's items, or in an action's result.
 - An action on a reference whose element now has another role or name is
-  refused, with both: "e5 is now push button 'Delete account', but bb-box
+  refused, with both: "e5 is now push button 'Delete account', but alia-box
   last showed it as push button 'Cancel', so nothing was done."
 - The refusal shows the new name, so the next action on the reference goes
   ahead.

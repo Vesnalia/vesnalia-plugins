@@ -10,7 +10,7 @@ vi.mock("./gh", async (orig) => ({
   }),
 }));
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import type { ReviewLifecycle } from "./store";
 import { defaultPreferences } from "./preferences";
@@ -21,18 +21,18 @@ const PATCH = "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-a
 
 /** A ready review of a PR from someone outside acme, at sha1, with what didn't run on its own. */
 async function setup(lifecycle: ReviewLifecycle) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: { spawn: async ({ title }: { title: string }) => ({ id: title.startsWith("Review agent") ? "assistant" : "writer" }), get: async () => ({ archivedAt: null, deletedAt: null, status: "idle" }), wait: async () => new Promise(() => {}), archive: async () => ({}), stop: async () => ({}), send: async () => ({ delivery: "sent" }) },
     projects: { defaultExecutionOptions: async () => ({ providerId: "codex", model: "gpt-6", reasoningLevel: "low", permissionMode: "auto" }), list: async () => [] },
   } as any });
-  await plugin(bb);
-  const store = testStore(bb);
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, author: "mallory", status: "ready", createdAt: 1, projectId: "p1", headSha: "sha1" });
   await store.savePatch("pr-1", PATCH);
   await store.saveGuide("pr-1", { title: "Retry", intent: "Retry once", sections: [], unplacedFiles: [] } as any);
   await store.setLifecycle("pr-1", { authorAssociation: "FIRST_TIME_CONTRIBUTOR", ownPr: false, latestHeadSha: "sha1", ...lifecycle });
   const titles = () => harness.inspection.sdk.callsTo("threads.spawn").map(([args]) => (args as any).title);
-  return { bb, harness, store, titles };
+  return { alia, harness, store, titles };
 }
 
 test("Run starts the automatic review that didn't run, and approves agents on the guide's head", async () => {
@@ -69,7 +69,7 @@ test("Run rebuilds the guide first for a check on a PR retargeted to a new base"
 test("a run that can't start keeps its Run button, and approves nothing", async () => {
   const { harness, store } = await setup({ skippedRun: { run: "review", head: "sha1", at: 1 } });
   harness.inspection.sdk.stub("projects.defaultExecutionOptions", async () => null);
-  expect(await harness.behavior.callRpc("runSkipped", { targetKey: "pr-1" })).toEqual({ ok: false, error: "bb has no default agent for the review's project." });
+  expect(await harness.behavior.callRpc("runSkipped", { targetKey: "pr-1" })).toEqual({ ok: false, error: "alia has no default agent for the review's project." });
   expect(await store.getReview("pr-1")).toMatchObject({ skippedRun: { run: "review", head: "sha1", at: 1 }, approvedHead: null, approvedAt: null });
 });
 

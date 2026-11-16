@@ -1,5 +1,5 @@
 // Optional public Fleet adapter. This schema belongs to Agent Board; no Fleet imports.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { BoardCard, TimelineEvent } from "../contract/rpc";
 import type { GlobalExecutionGroup } from "./global-model";
@@ -151,11 +151,11 @@ export function addFleetGroups(
     const parent = j.origin
       ? result.find(
           (g) =>
-            g.source === "bb" &&
+            g.source === "alia" &&
             g.projectId === j.origin!.projectId &&
             (g.threadId === j.origin!.threadId ||
               g.cards.some(
-                (c) => c.source === "bb" && c.threadId === j.origin!.threadId,
+                (c) => c.source === "alia" && c.threadId === j.origin!.threadId,
               )),
         )
       : undefined;
@@ -174,25 +174,25 @@ export function addFleetGroups(
         updatedAt: Date.parse(j.updatedAt),
       });
     } else if (fleetActive(j)) {
-      // The bounded BB page may omit an older known origin. Group by that exact origin,
+      // The bounded VesnALIA page may omit an older known origin. Group by that exact origin,
       // never invent an orphan or infer ancestry from timing/model/title.
-      const key = `bb:${j.origin.threadId}`;
+      const key = `alia:${j.origin.threadId}`;
       let group = result.find((g) => g.key === key);
       if (!group) {
         const c = fleetCard(j);
         group = {
           key,
-          source: "bb",
-          title: "BB delegated work",
+          source: "alia",
+          title: "VesnALIA delegated work",
           threadId: j.origin.threadId,
           projectId: j.origin.projectId,
           cards: [
             {
               ...c,
               key: `thread:${j.origin.threadId}`,
-              source: "bb",
+              source: "alia",
               kind: "thread",
-              title: "BB delegated work",
+              title: "VesnALIA delegated work",
               threadId: j.origin.threadId,
               parentKey: null,
               isRoot: true,
@@ -298,7 +298,7 @@ export class FleetSource {
   private routeHints = new Map<string, string>();
   private polledFingerprint: string | null = null;
   constructor(
-    private bb: BbPluginApi,
+    private alia: AliaPluginApi,
     private now: () => number = Date.now,
   ) {}
   invalidate() {
@@ -351,7 +351,7 @@ export class FleetSource {
   private async request(): Promise<unknown> {
     if (!this.transport) {
       const pending = Promise.resolve().then(() =>
-        this.bb.sdk.plugins.callRpc({
+        this.alia.sdk.plugins.callRpc({
           pluginId: "ollama-fleet",
           method: "fleet_observability_snapshot",
           input: { limit: 20 },

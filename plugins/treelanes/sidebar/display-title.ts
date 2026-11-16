@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 export interface GeneratedTitle {
   threadId: string;
   original: string;

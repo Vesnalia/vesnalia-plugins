@@ -18,11 +18,11 @@ way ([architecture](../architecture.md#desktops-and-control)):
 | Windows on Proxmox | QEMU's VNC through Proxmox's `vncwebsocket` | RFB | WARP, no GPU; 20 fps when dragging |
 | Windows on a Mac | QEMU's VNC on the Mac's loopback (`virtio-gpu-pci`, `lossy=on`) | RFB | as above |
 
-Through BB's server on Linux, video and VNC drag with the same lag, about
+Through VesnALIA's server on Linux, video and VNC drag with the same lag, about
 25 ms at the median, and keys are as quick (056's comparison, corrected on
-17 October 2026). The worst of a drag's lag is BB's server stalling, which
+17 October 2026). The worst of a drag's lag is VesnALIA's server stalling, which
 no stream can fix (request 25 in
-[What bb-box asks of BB](../bb-requests.md)). Where VNC falls short is in
+[What alia-box asks of VesnALIA](../alia-requests.md)). Where VNC falls short is in
 frames: on the pool Mac at 2x it shows 14 a second
 ([060 results](060-results.md)).
 
@@ -58,7 +58,7 @@ checked yet.
 ## Decision
 
 **One viewer, one protocol.** The panel's video client, which already
-speaks Selkies' WebSocket protocol through bb-box's relay (056), becomes
+speaks Selkies' WebSocket protocol through alia-box's relay (056), becomes
 the viewer for every desktop. Each platform gets a server in the box that
 speaks the same subset: video frames (H.264, keyframes on request, frame
 IDs and acks for pacing), pointer and keyboard as Selkies' messages,
@@ -96,7 +96,7 @@ the measures below. All stay as the fallback.
 ## How smooth and sharp are measured
 
 The harness from 056's comparison, a viewer in headless Chrome through
-BB's server, grows to every platform:
+VesnALIA's server, grows to every platform:
 
 - **Frame time:** frames a second, and the gaps between them at the
   median, the 95th percentile and the worst, while a window is dragged and
@@ -109,7 +109,7 @@ BB's server, grows to every platform:
 - **Sharpness at 2x:** a fixed page of text at 2x, its region in the
   decoded frame compared with the box's own lossless screenshot by SSIM,
   still and right after a scroll.
-- **Cost:** the box's CPU, the bitrate through BB's server, and the idle
+- **Cost:** the box's CPU, the bitrate through VesnALIA's server, and the idle
   cost with and without a viewer.
 
 A platform's video replaces its VNC as the default once it matches
@@ -136,12 +136,12 @@ SSIM at least VNC's when still.
 
 ## Amended, 17 October 2026: the pool Macs' server
 
-`bb-box-stream` ([setup/ssh-pool/mac-stream.swift](../../setup/ssh-pool/mac-stream.swift)),
+`alia-box-stream` ([setup/ssh-pool/mac-stream.swift](../../setup/ssh-pool/mac-stream.swift)),
 which setup-mac.sh builds with swiftc into /usr/local/bin:
 
 - **Where it listens:** a unix socket in the box user's home,
-  `~/.bb-box/stream.sock`, in a folder only the box user can open. It has no
-  TCP port. bb-box reaches it with `bb-box-stream connect` over the box
+  `~/.alia-box/stream.sock`, in a folder only the box user can open. It has no
+  TCP port. alia-box reaches it with `alia-box-stream connect` over the box
   user's SSH, in the desktop session. That command starts the server if it
   is not running, and the server exits a minute after its last viewer goes.
 - **Permissions:** it runs as the box user, charged to sshd-keygen-wrapper.
@@ -162,7 +162,7 @@ which setup-mac.sh builds with swiftc into /usr/local/bin:
 Proxmox's QEMU (11.0.3, pve-qemu-kvm 11.0.3-4) has no Open H.264: noVNC
 offers it, and QEMU answers in Tight. So Windows boxes on Proxmox get a
 server of their own,
-[`bb-box-stream.exe`](../../setup/windows/bb-box-stream.cs), the Mac's
+[`alia-box-stream.exe`](../../setup/windows/alia-box-stream.cs), the Mac's
 counterpart, speaking the same subset:
 
 - **Built in the image:** the C# compiler of .NET Framework 4.8, which every
@@ -170,11 +170,11 @@ counterpart, speaking the same subset:
   its source changed
   ([`install-stream.ps1`](../../setup/windows/install-stream.ps1)).
   Cisco's OpenH264 is pinned by version, URL and SHA-256 and downloaded from
-  Cisco at build, as its licence asks; bb-box does not ship it.
+  Cisco at build, as its licence asks; alia-box does not ship it.
 - **Where it runs:** as box in box's desktop session, started on demand by a
-  scheduled task. It listens on the named pipe `bb-box-stream`, which only
-  box can open, and has no TCP port. bb-box reaches it with
-  `bb-box-stream.exe connect` over box's SSH. It exits a minute after its
+  scheduled task. It listens on the named pipe `alia-box-stream`, which only
+  box can open, and has no TCP port. alia-box reaches it with
+  `alia-box-stream.exe connect` over box's SSH. It exits a minute after its
   last viewer.
 - **Capture:** Desktop Duplication on the Basic Display adapter, whose image
   is in system memory: a staging texture's copy of it reads as black. About
@@ -193,6 +193,6 @@ counterpart, speaking the same subset:
   falls back to VNC.
 
 **Windows on a Mac (Tart, arm64) stays on VNC** for now: its image does not
-install bb-box-stream. Cisco does publish an arm64 Windows build of OpenH264
+install alia-box-stream. Cisco does publish an arm64 Windows build of OpenH264
 2.6.0, so the server can follow there once it is built and measured on arm64.
 

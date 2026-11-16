@@ -287,7 +287,7 @@ With it:
 
 - Input goes only to the focused window. Background delivery is refused
   ("the requested target has no focus-free input backend"), and Cua
-  refuses before doing anything, so bb-box's foreground retry
+  refuses before doing anything, so alia-box's foreground retry
   ([015](../decisions/015-computer-use-through-cua-driver.md)) runs. Typing
   into a floating window behind another worked (186 ms): Cua brings it to
   the front first.

@@ -3,7 +3,7 @@
 // systems export under an .xls name.
 //
 // SheetJS parses a whole file synchronously on the event loop, so files over
-// SHEETJS_MAX_BYTES are refused rather than stalling bb — converting them to
+// SHEETJS_MAX_BYTES are refused rather than stalling VesnALIA — converting them to
 // .xlsx lets the native reader stream them instead. SheetJS Community keeps
 // fills but no fonts, borders or alignment, hence fidelity "basic".
 import { readFile, stat } from "node:fs/promises";

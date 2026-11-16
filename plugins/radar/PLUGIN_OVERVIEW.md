@@ -4,7 +4,7 @@ Radar is a live panel of the pull requests and issues that need you, on **GitHub
 
 A lane is a saved query that can hit several hosts at once. The defaults cover reviews requested from you, mentions, assigned items and your own open PRs. Assigned issues leaves out a parent issue when one of its open sub-issues is assigned to you, so the child task shows once (the lane editor's "Hide parents of my sub-issues"). Results merge by last update, with unseen items marked and an unseen count on Radar's rail icon.
 
-- **Describe what to track** in plain words ("PRs from my team that touch billing, not drafts") and bb's configured AI drafts a lane for you.
+- **Describe what to track** in plain words ("PRs from my team that touch billing, not drafts") and VesnALIA's configured AI drafts a lane for you.
 - **Edit a lane** in a form with per-host sections, a live summary, chip inputs, and server-side filters for Gitstream history lanes.
 - **All**, **Issues**, **Pull requests** and **Reviews** views, switched from the panel title bar. Each lane has a category, inferred from its query or picked in the editor, that decides its view; All shows every lane.
 
@@ -18,7 +18,7 @@ The eye-off action on any row hides that one PR or issue from every lane, view, 
 
 ## Review and triage threads
 
-Every row can start a bb thread through bb's own new-thread composer, with the project picked from the repo. Threads land in a **Reviews** thread section and the row links to them until archived.
+Every row can start a VesnALIA thread through VesnALIA's own new-thread composer, with the project picked from the repo. Threads land in a **Reviews** thread section and the row links to them until archived.
 
 Your own open GitHub and Delta PRs also get **Rebase**: an inline confirm, then a rebase onto the latest base. GitHub uses its server-side rebase update. Delta has no server-side rebase, so once you point Radar at a local checkout it uses plain git against `origin`: a clean-only `git replay` in private refs (your worktree is untouched) and a lease-guarded push. Radar re-checks on the host that you wrote the PR before touching it. Gitstream history is read-only and never written to.
 
@@ -29,15 +29,15 @@ Radar threads get skills attached:
 
 ## Context from Slack
 
-Point Radar at a Slack MCP endpoint and it follows the public Slack threads that link your open GitHub issues and PRs and Delta PRs (in Focus), counting only messages by people. When a thread changes, bb's AI refreshes its short summary: decisions, owners, open questions, next steps.
+Point Radar at a Slack MCP endpoint and it follows the public Slack threads that link your open GitHub issues and PRs and Delta PRs (in Focus), counting only messages by people. When a thread changes, VesnALIA's AI refreshes its short summary: decisions, owners, open questions, next steps.
 
 The Slack icon on a row opens a popover with one row per thread: channel, who started it, replies and the summary. It shows on hover, badged with a check when threads link the item or a cross once a search finds none. Radar never updates issues by itself; hover a thread and "Post to issue/PR" (click twice) adds one comment with its context and link. Private channels and DMs are never searched.
 
 ## CLI and agent skill
 
-`bb radar` lists lanes and items, adds or edits lanes, sets focus and hides single items, so agents can answer "what needs my review?" through the bundled `radar` skill.
+`alia radar` lists lanes and items, adds or edits lanes, sets focus and hides single items, so agents can answer "what needs my review?" through the bundled `radar` skill.
 
 ## Requirements
 
 - `gh` signed in to GitHub. For Delta, `dt` signed in plus the host and repo in settings (and a checkout path for Rebase); for Gitstream history, `gs` plus the history toggle. Lanes skip sources that are not set up.
-- For drafting lanes and focus: a bb build with configured-provider AI, or the optional OpenAI-compatible fallback (base URL, the name of a bb server env var holding the key, and model, all in settings). Without either, Focus still matches repo and area names.
+- For drafting lanes and focus: a VesnALIA build with configured-provider AI, or the optional OpenAI-compatible fallback (base URL, the name of a VesnALIA server env var holding the key, and model, all in settings). Without either, Focus still matches repo and area names.

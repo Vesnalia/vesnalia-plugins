@@ -3,7 +3,7 @@
  * typed, with the number of launchd entries a cron expression becomes.
  */
 import { useCallback, useMemo, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 
 import type { RpcContract } from "../shared/contract";
 import type { Job } from "../shared/jobs";

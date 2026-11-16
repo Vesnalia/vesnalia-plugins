@@ -2,12 +2,12 @@
 # blocked rows, and the paths out of it. The behavior under test is the
 # frontend contract the live failure needed: a failed generation opens the
 # modal naming the reason (and never closes the editor), a ready-but-unbridged
-# service renders BLOCKED (the live board carries bb cloud / provider-codex in
+# service renders BLOCKED (the live board carries alia cloud / provider-codex in
 # exactly that shape — a pick would 404 on a plugin with no RPC method), a
 # pick routes the override the row names, and a success commits the rename on
 # the closed editor.
 #
-# The failure MESSAGES are the ones live bb produced (captured from the real
+# The failure MESSAGES are the ones live alia produced (captured from the real
 # board): the unset title-task selection every first ✨ click answered, and
 # the bridge-overflow "HTTP 400: rpc input validation failed" a long-opener
 # pick of the bridged service returned. The mock serves them via

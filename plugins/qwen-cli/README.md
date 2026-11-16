@@ -2,10 +2,10 @@
   <img src="assets/icon.svg" width="72" height="72" alt="Qwen plugin icon">
 </p>
 
-<h1 align="center">Qwen CLI for BB</h1>
+<h1 align="center">Qwen CLI for VesnALIA</h1>
 
 <p align="center">
-  Use your Qwen Code CLI account to code in BB — same models, same tools, no extra configuration.
+  Use your Qwen Code CLI account to code in VesnALIA — same models, same tools, no extra configuration.
 </p>
 
 <p align="center">
@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/BB-%E2%89%A5%200.48-blue" alt="BB version">
+  <img src="https://img.shields.io/badge/BB-%E2%89%A5%200.48-blue" alt="VesnALIA version">
   <img src="https://img.shields.io/badge/node-%E2%89%A5%2022-green" alt="Node version">
   <img src="https://img.shields.io/badge/license-MIT-brightgreen" alt="License">
   <img src="https://img.shields.io/badge/Qwen%20Code-v0.27-purple" alt="Qwen Code version">
@@ -25,21 +25,21 @@
 
 ---
 
-A community provider that connects [BB](https://getbb.app) to the [Qwen Code CLI](https://qwenlm.github.io/qwen-code-docs/). Keep your existing CLI sign-in, choose your models, and work with streamed responses and tool approvals inside BB.
+A community provider that connects [VesnALIA](https://getbb.app) to the [Qwen Code CLI](https://qwenlm.github.io/qwen-code-docs/). Keep your existing CLI sign-in, choose your models, and work with streamed responses and tool approvals inside VesnALIA.
 
-**Status:** available in the BB Community marketplace. Tested on Windows.
+**Status:** available in the VesnALIA Community marketplace. Tested on Windows.
 
 ## What you get
 
-- **One provider in BB** — select Qwen CLI when creating a thread
+- **One provider in VesnALIA** — select Qwen CLI when creating a thread
 - **Live model discovery** — models and reasoning options come from your CLI and account
 - **Plan and Build** — plan a task, then switch to implementation
 - **Permission controls** — Accept edits or Full access
 - **Usage tracking** — real token usage per model from Qwen's local logs
 - **Auto-approve** — automatically approve permission requests in Accept edits mode
-- **BB-native delegation** — optionally disable Qwen subagents so agents use `bb thread spawn`
+- **ALIA-native delegation** — optionally disable Qwen subagents so agents use `alia thread spawn`
 - **Rich tool cards** — command summaries, file reads, web fetches, and search results with clean output
-- **Native skills** — workspace `.qwen/skills` and personal `~/.qwen/skills` discovered in BB
+- **Native skills** — workspace `.qwen/skills` and personal `~/.qwen/skills` discovered in VesnALIA
 - **Togglable settings** — enable/disable the provider, toggle features without editing files
 
 ## Quick start
@@ -69,34 +69,34 @@ export OPENAI_BASE_URL="https://token-plan.ap-southeast-1.maas.aliyuncs.com/comp
 ### 3. Install the plugin
 
 ```sh
-bb plugin install qwen-cli
+alia plugin install qwen-cli
 ```
 
 Or from the repo directly:
 
 ```sh
-bb plugin install github:ols-md/bb-plugin-qwen-cli
+alia plugin install github:ols-md/alia-plugin-qwen-cli
 ```
 
 ### 4. Start a thread
 
-Select **Qwen CLI** in BB's provider picker, choose a model, and send a prompt.
+Select **Qwen CLI** in VesnALIA's provider picker, choose a model, and send a prompt.
 
 ```sh
-bb thread spawn --provider qwen-cli --model qwen3.8-max --prompt "Add rate limiting to the API"
+alia thread spawn --provider qwen-cli --model qwen3.8-max --prompt "Add rate limiting to the API"
 ```
 
 ## How it works
 
 ```
-Your BB thread → Plugin → BB's shared ACP bridge → qwen --acp → Qwen Code service
+Your ALIA thread → Plugin → ALIA's shared ACP bridge → qwen --acp → Qwen Code service
 ```
 
-The plugin launches `qwen --acp` on your machine. BB's shared [Agent Client Protocol](https://agentclientprotocol.com) bridge handles streaming, tool updates, approvals, and session communication. Authentication stays with the CLI — you never enter an API key into the plugin.
+The plugin launches `qwen --acp` on your machine. VesnALIA's shared [Agent Client Protocol](https://agentclientprotocol.com) bridge handles streaming, tool updates, approvals, and session communication. Authentication stays with the CLI — you never enter an API key into the plugin.
 
 ## Modes & permissions
 
-Workflow orchestration uses **BB Workflows**. The plugin disables Qwen's native
+Workflow orchestration uses **VesnALIA Workflows**. The plugin disables Qwen's native
 workflow tools and hides its Workflow mode control, including for resumed threads.
 Qwen workflow settings or environment opt-ins do not override this policy.
 
@@ -112,7 +112,7 @@ Qwen workflow settings or environment opt-ins do not override this policy.
 Open **Settings → Installed plugins → Qwen CLI** or use the CLI:
 
 ```sh
-bb plugin config qwen-cli set <key> <value>
+alia plugin config qwen-cli set <key> <value>
 ```
 
 | Setting | Default | What it does |
@@ -120,7 +120,7 @@ bb plugin config qwen-cli set <key> <value>
 | `enabled` | `true` | Show Qwen CLI in the provider picker |
 | `autoApprove` | `false` | Auto-approve permission requests in Accept edits mode |
 | `sandbox` | `false` | Run commands in Qwen's sandbox (`--sandbox`) |
-| `subagentsDisabled` | `false` | Block native subagent tools; agents delegate via `bb thread spawn` |
+| `subagentsDisabled` | `false` | Block native subagent tools; agents delegate via `alia thread spawn` |
 | `commandDescriptionsEnabled` | `true` | Show tool summaries instead of raw commands |
 
 ## Usage
@@ -129,25 +129,25 @@ Spawn threads with any Qwen model:
 
 ```sh
 # Standard
-bb thread spawn --provider qwen-cli --model qwen3.8-max --prompt "Refactor auth"
+alia thread spawn --provider qwen-cli --model qwen3.8-max --prompt "Refactor auth"
 
 # Plan mode
-bb thread spawn --provider qwen-cli --prompt-mode plan --prompt "Design caching layer"
+alia thread spawn --provider qwen-cli --prompt-mode plan --prompt "Design caching layer"
 
 # With reasoning
-bb thread spawn --provider qwen-cli --model deepseek-v4-pro-0813 --reasoning-level high --prompt "..."
+alia thread spawn --provider qwen-cli --model deepseek-v4-pro-0813 --reasoning-level high --prompt "..."
 ```
 
-Token usage per model is shown in BB's usage panel and `bb settings usage --refresh`.
+Token usage per model is shown in VesnALIA's usage panel and `alia settings usage --refresh`.
 
 ## Architecture
 
 ```
-bb-plugin-qwen-cli/
+alia-plugin-qwen-cli/
 ├── server.ts              Plugin registration, settings, provider declaration
 ├── host.ts                ACP bridge — launches qwen --acp, auto-approve filter
 ├── dialect.ts             Tool detection, classification, and presentation
-├── prompt-mode.ts         Maps BB plan mode to Qwen ACP session options
+├── prompt-mode.ts         Maps ALIA plan mode to Qwen ACP session options
 ├── usage.ts               Token usage tracking from Qwen's local logs
 ├── skills/qwen-cli/       Agent-facing skill documentation
 └── assets/                Qwen icon (currentColor SVG)
@@ -165,7 +165,7 @@ bb-plugin-qwen-cli/
 
 ## License
 
-[MIT](LICENSE). This project is independent of Alibaba, Qwen, and BB.
+[MIT](LICENSE). This project is independent of Alibaba, Qwen, and VesnALIA.
 
 ## Token Plan catalog refresh
 

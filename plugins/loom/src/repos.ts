@@ -4,8 +4,8 @@ import type { EnvironmentSpec, ForgeSpec, RepoSpec, Spec, WorktreeSpec } from ".
 export interface RepoSettings {
   /** The [[repo]] name, or null for the project's own repository in a single-repo spec. */
   name: string | null;
-  /** Null for the project's own repository: the caller uses the Loom project's bb project. */
-  bbProjectId: string | null;
+  /** Null for the project's own repository: the caller uses the Loom project's VesnALIA project. */
+  aliaProjectId: string | null;
   base: string;
   remote: string;
   /** The integration branch, which has the same name in every repo; null on the pr strategy. */
@@ -42,7 +42,7 @@ function settingsOf(spec: Spec, repo: RepoSpec | null): RepoSettings {
   const index = repo?.git_index_timeout_seconds ?? spec.merge.git_index_timeout_seconds;
   return {
     name: repo?.name ?? null,
-    bbProjectId: repo?.project ?? null,
+    aliaProjectId: repo?.project ?? null,
     base: repo?.base ?? spec.project.base,
     remote: repo?.remote ?? spec.merge.remote,
     // parseSpec fills merge.branch in on the integration strategy, as freshBase in workers.ts relies on too.

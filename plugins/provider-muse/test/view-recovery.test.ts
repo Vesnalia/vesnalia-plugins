@@ -8,12 +8,12 @@ import {
   experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness,
   type BridgeJsonRpcOutputMessage,
   type BridgeJsonRpcTestHarness,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 
 /**
  * Muse's live view can stop while the session keeps running: its materialized
  * projection is marked unavailable, push delivery goes silent, and the turn's
- * own `turn/completed` never reaches bb. Observed on this host as a thread that
+ * own `turn/completed` never reaches VesnALIA. Observed on this host as a thread that
  * read as working for two hours after Muse's session log recorded the turn
  * completed.
  *
@@ -24,9 +24,9 @@ import {
  */
 const fixtureDir = dirname(fileURLToPath(import.meta.url));
 
-const previousExecutable = process.env.BB_MUSE_EXECUTABLE;
+const previousExecutable = process.env.ALIA_MUSE_EXECUTABLE;
 const previousApiKey = process.env.META_API_KEY;
-process.env.BB_MUSE_EXECUTABLE = join(fixtureDir, "fake-muse-serve.mjs");
+process.env.ALIA_MUSE_EXECUTABLE = join(fixtureDir, "fake-muse-serve.mjs");
 process.env.META_API_KEY = "view-recovery-key";
 /**
  * The watchdog's own clock, shortened so the suite does not wait it out. These
@@ -35,13 +35,13 @@ process.env.META_API_KEY = "view-recovery-key";
  * with every other test file in this process and a 150ms stall inside the
  * conformance suite makes its timeline unrecognisable.
  */
-process.env.BB_MUSE_VIEW_STALL_MS = "150";
-process.env.BB_MUSE_VIEW_WATCHDOG_TICK_MS = "50";
+process.env.ALIA_MUSE_VIEW_STALL_MS = "150";
+process.env.ALIA_MUSE_VIEW_WATCHDOG_TICK_MS = "50";
 
 const { handleLine } = await import("../src/provider-bridge.js");
 
-delete process.env.BB_MUSE_VIEW_STALL_MS;
-delete process.env.BB_MUSE_VIEW_WATCHDOG_TICK_MS;
+delete process.env.ALIA_MUSE_VIEW_STALL_MS;
+delete process.env.ALIA_MUSE_VIEW_WATCHDOG_TICK_MS;
 
 let harness: BridgeJsonRpcTestHarness;
 let workspaceDir: string;
@@ -60,7 +60,7 @@ function newThreadId(): string {
 }
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-muse-view-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "alia-muse-view-"));
   harness = createBridgeJsonRpcTestHarness(handleLine);
   openedThreads = [];
   /**
@@ -88,14 +88,14 @@ afterEach(async () => {
   delete process.env.FAKE_MUSE_VIEW_UNREADABLE;
   delete process.env.FAKE_MUSE_VIEW_BAD_ANCHOR;
   delete process.env.FAKE_MUSE_RESUME_BROKEN;
-  delete process.env.BB_MUSE_VIEW_ABANDON_READS;
+  delete process.env.ALIA_MUSE_VIEW_ABANDON_READS;
   delete process.env.FAKE_MUSE_SESSION_STOPPED;
   delete process.env.FAKE_MUSE_LONG_COMMAND;
   rmSync(workspaceDir, { recursive: true, force: true });
 });
 
 afterAll(() => {
-  restore("BB_MUSE_EXECUTABLE", previousExecutable);
+  restore("ALIA_MUSE_EXECUTABLE", previousExecutable);
   restore("META_API_KEY", previousApiKey);
 });
 
@@ -132,7 +132,7 @@ async function runTurn(windowMs = 8_000): Promise<Record<string, unknown>[]> {
   const threadId = newThreadId();
   harness.sendRequest(1, "initialize", {
     protocolVersion: 1,
-    client: { name: "bb", version: "1" },
+    client: { name: "alia", version: "1" },
   });
   await harness.waitForResponse(1);
   harness.sendRequest(2, "thread/start", {
@@ -233,14 +233,14 @@ it("does not invent a completed turn while the view is merely quiet", async () =
 /**
  * Muse will hand back a session it can no longer serve a view for — the resume
  * succeeds and returns an empty view cursor. Carrying a thread on it means
- * every later turn runs unwatched, so bb declines it.
+ * every later turn runs unwatched, so VesnALIA declines it.
  */
 it("refuses to resume a session Muse can no longer show", async () => {
   /** A session the host knows, so the resume itself succeeds. */
   const seed = newThreadId();
   harness.sendRequest(1, "initialize", {
     protocolVersion: 1,
-    client: { name: "bb", version: "1" },
+    client: { name: "alia", version: "1" },
   });
   await harness.waitForResponse(1);
   harness.sendRequest(2, "thread/start", {
@@ -276,7 +276,7 @@ it("refuses to resume a session Muse can no longer show", async () => {
   );
   expect(warned).toBeDefined();
 
-  /** And bb is now on a session it can watch, not the one it was handed. */
+  /** And VesnALIA is now on a session it can watch, not the one it was handed. */
   const reset = deltas.filter((delta) => delta.kind === "session.reset");
   expect(reset.length).toBeGreaterThan(0);
 });
@@ -286,12 +286,12 @@ it("refuses to resume a session Muse can no longer show", async () => {
  *
  * A turn is the user's work in flight. Muse names exactly one condition as
  * unrecoverable by paging; every other way a page can fail — a rejected anchor,
- * a timeout — is bb failing to read, not Muse failing to run. Settling on those
+ * a timeout — is VesnALIA failing to read, not Muse failing to run. Settling on those
  * trades a thread that looks stuck for one that reports a failure over work
  * still running, which is the worse of the two.
  *
  * Observed: a `git log` took four minutes, the watchdog paged from a cursor
- * minted by a session bb had abandoned, Muse refused the anchor, and the bridge
+ * minted by a session VesnALIA had abandoned, Muse refused the anchor, and the bridge
  * killed a healthy turn.
  */
 it("re-reads from the start when an anchor is refused, and still recovers", async () => {
@@ -332,15 +332,15 @@ it("leaves the turn running when no page can be read at all", async () => {
  * no longer replay, "durable child logical sequence is duplicate or
  * non-monotonic". Nothing clears that: the defect is on disk, so every later
  * message resumes the same broken session and is rejected the same way, and
- * the thread is unusable for good. bb's own bookkeeping is what chose to
- * resume, so bb starts a fresh session rather than handing the user a dead
+ * the thread is unusable for good. VesnALIA's own bookkeeping is what chose to
+ * resume, so VesnALIA starts a fresh session rather than handing the user a dead
  * thread.
  */
 it("starts fresh when Muse refuses to reopen the session at all", async () => {
   process.env.FAKE_MUSE_RESUME_BROKEN = "1";
   harness.sendRequest(1, "initialize", {
     protocolVersion: 1,
-    client: { name: "bb", version: "1" },
+    client: { name: "alia", version: "1" },
   });
   await harness.waitForResponse(1);
   harness.sendRequest(2, "thread/resume", {
@@ -381,10 +381,10 @@ it("starts fresh when Muse refuses to reopen the session at all", async () => {
  * of the session's own view, all empty, distinguish stopped from slow.
  */
 it("settles a turn once repeated reads show the session has stopped", async () => {
-  process.env.BB_MUSE_VIEW_ABANDON_READS = "2";
+  process.env.ALIA_MUSE_VIEW_ABANDON_READS = "2";
   process.env.FAKE_MUSE_SESSION_STOPPED = "1";
   const deltas = await runTurn(6_000);
-  delete process.env.BB_MUSE_VIEW_ABANDON_READS;
+  delete process.env.ALIA_MUSE_VIEW_ABANDON_READS;
   delete process.env.FAKE_MUSE_SESSION_STOPPED;
 
   const boundary = deltas.find(
@@ -409,7 +409,7 @@ it("settles a turn once repeated reads show the session has stopped", async () =
  * turn — it just never reports `turn/started`. That is indistinguishable from a
  * prompt the provider answered without working, and settling it as a completed
  * turn silently discards what the user asked for. Observed in the wild: Muse
- * recorded `user_intent.accepted`, started nothing bb could see, and the turn
+ * recorded `user_intent.accepted`, started nothing VesnALIA could see, and the turn
  * was reported complete one second later with no output and no tools.
  *
  * Muse's own `turn/start` reply is the authority, so a turn it says it started
@@ -426,7 +426,7 @@ it("never reports a prompt done when Muse said it started a turn", async () => {
   );
   expect(fabricated).toEqual([]);
 
-  /** The turn Muse acknowledged is on the timeline and still bb's to account for. */
+  /** The turn Muse acknowledged is on the timeline and still VesnALIA's to account for. */
   expect(
     deltas.find(
       (delta) =>
@@ -444,16 +444,16 @@ it("never reports a prompt done when Muse said it started a turn", async () => {
  * unfinished run as `incomplete` — which is not one of MSP's terminals
  * (`completed | failed | cancelled`). Treating it as one ends a turn that is
  * working perfectly well. Observed on a four-minute foreground GPU command:
- * the read fired, folded `incomplete`, and bb reported the turn failed while
+ * the read fired, folded `incomplete`, and VesnALIA reported the turn failed while
  * Muse's own log had recorded no terminal at all and went on writing.
  */
 it("does not end a working turn because a page folded it unfinished", async () => {
   process.env.FAKE_MUSE_LONG_COMMAND = "1";
   /** Isolate the fold: the abandon path is a separate decision, tested above. */
-  process.env.BB_MUSE_VIEW_ABANDON_READS = "100000";
+  process.env.ALIA_MUSE_VIEW_ABANDON_READS = "100000";
   const deltas = await runTurn(3_000);
   delete process.env.FAKE_MUSE_LONG_COMMAND;
-  delete process.env.BB_MUSE_VIEW_ABANDON_READS;
+  delete process.env.ALIA_MUSE_VIEW_ABANDON_READS;
 
   expect(
     deltas.filter((delta) => delta.kind === "turn.boundary"),
@@ -500,7 +500,7 @@ it("never folds the same source record twice", async () => {
  * Approvals are protected delivery, not view events, so a page cannot replay
  * one — but a stream that drops events drops approvals too, and Muse holds the
  * whole session on one it is waiting for. Observed as a contributor silent for
- * fifteen minutes on `approval_wait.effect.started` while bb showed nothing
+ * fifteen minutes on `approval_wait.effect.started` while VesnALIA showed nothing
  * pending and had nothing to answer. `approval/listPending` is the authority,
  * so the fold is re-read whenever the stream has proven lossy.
  */
@@ -510,7 +510,7 @@ it("re-reads the pending approval fold after the stream drops", async () => {
   const threadId = newThreadId();
   harness.sendRequest(1, "initialize", {
     protocolVersion: 1,
-    client: { name: "bb", version: "1" },
+    client: { name: "alia", version: "1" },
   });
   await harness.waitForResponse(1);
   harness.sendRequest(2, "thread/resume", {

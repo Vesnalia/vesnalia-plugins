@@ -1,4 +1,4 @@
-project_name: "bb-plugin-backlog"
+project_name: "alia-plugin-backlog"
 default_status: "To Do"
 statuses: ["To Do", "In Progress", "Done"]
 labels: []

@@ -59,7 +59,7 @@ async function renderIcons(): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const profile = mkdtempSync(join(tmpdir(), "bb-box-og-"));
+  const profile = mkdtempSync(join(tmpdir(), "alia-box-og-"));
   try {
     for (const card of cards) {
       const shot = screenshot(card, profile);

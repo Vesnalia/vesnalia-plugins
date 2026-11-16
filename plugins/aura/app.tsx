@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server.ts";
 import { CHANGED, defaults, imageUrl, isAnimatedImage, SLOT_COUNT, type BackgroundSettings, type Snapshot } from "./lib/model.ts";
 import { backgroundRules, mountBackground, notifyChange } from "./lib/background.ts";
@@ -142,13 +142,13 @@ export function BackgroundEditor() {
             </div>
             <span className="aura-preview-footnote">AURA</span>
           </div>
-          <p className="aura-caption">{draft.newThreadOnly ? "Only on the New thread screen — existing conversations stay plain." : "Shown in all conversations and on New thread."} Images stay on your BB server.</p>
+          <p className="aura-caption">{draft.newThreadOnly ? "Only on the New thread screen — existing conversations stay plain." : "Shown in all conversations and on New thread."} Images stay on your VesnALIA server.</p>
         </div>
         <fieldset className="aura-controls" disabled={busy || !snapshot}>
           <legend className="aura-sr-only">Background controls</legend>
           <label className="aura-scope"><input type="checkbox" aria-label="New thread screen only" aria-describedby={`${id}-scope-help`} checked={draft.newThreadOnly} onChange={e => change("newThreadOnly", e.target.checked)} /><span><strong>New thread screen only</strong><small id={`${id}-scope-help`}>Hide Aura inside existing conversations.</small></span></label>
           <label className="aura-scope"><input type="checkbox" aria-label="Half wallpaper on New thread" checked={draft.dimmerEnabled} onChange={e => change("dimmerEnabled", e.target.checked)} /><span><strong>Half wallpaper on New thread</strong><small>On: wallpaper fades out halfway down. Off: full wallpaper. Chats always use full wallpaper.</small></span></label>
-          <label className="aura-scope"><input type="checkbox" aria-label="Top bar background" checked={draft.topbarBackground} onChange={e => change("topbarBackground", e.target.checked)} /><span><strong>Top bar background</strong><small>On: the wallpaper continues behind BB's top bar. Off: the top bar stays clean.</small></span></label>
+          <label className="aura-scope"><input type="checkbox" aria-label="Top bar background" checked={draft.topbarBackground} onChange={e => change("topbarBackground", e.target.checked)} /><span><strong>Top bar background</strong><small>On: the wallpaper continues behind VesnALIA's top bar. Off: the top bar stays clean.</small></span></label>
           <div className="aura-field">
             <span className="aura-field-title">Your image <span>optional</span></span>
             <button type="button" className="aura-upload" onClick={() => fileInput.current?.click()} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); void choose(e.dataTransfer.files[0]); }}>
@@ -168,7 +168,7 @@ export function BackgroundEditor() {
               : <div className="aura-field"><label className="aura-field-title" htmlFor={`${id}-pattern`}>Pattern</label><select id={`${id}-pattern`} value={draft.pattern} onChange={e => change("pattern", e.target.value as BackgroundSettings["pattern"])}>{Object.entries(PATTERN_LABELS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></div>}
             <SegmentedControl id={`${id}-dither`} label="Dither" help="Grain is random noise; larger grids look more ordered." value={draft.dither} options={DITHER_OPTIONS} onChange={value => change("dither", value as BackgroundSettings["dither"])} />
           </>}
-          {draft.effect === "pixels" && !currentImage && <><div className="aura-field"><label className="aura-field-title" htmlFor={`${id}-tint`}>Pixel color</label><select id={`${id}-tint`} value={draft.tint} onChange={e => change("tint", e.target.value as BackgroundSettings["tint"])}><option value="lavender">Lavender</option><option value="theme">Follow BB theme</option></select></div>
+          {draft.effect === "pixels" && !currentImage && <><div className="aura-field"><label className="aura-field-title" htmlFor={`${id}-tint`}>Pixel color</label><select id={`${id}-tint`} value={draft.tint} onChange={e => change("tint", e.target.value as BackgroundSettings["tint"])}><option value="lavender">Lavender</option><option value="theme">Follow VesnALIA theme</option></select></div>
           <Slider id={`${id}-strength`} label="Texture strength" value={draft.intensity} onChange={v => change("intensity", v)} /></>}
           {currentImage && <><Slider id={`${id}-opacity`} label="Image visibility" value={draft.imageOpacity} max={1} onChange={v => change("imageOpacity", v)} /><div className="aura-field"><label className="aura-field-title" htmlFor={`${id}-fit`}>Image fit</label><select id={`${id}-fit`} value={draft.fit} onChange={e => change("fit", e.target.value as BackgroundSettings["fit"])}><option value="cover">Fill the conversation</option><option value="contain">Show the whole image</option></select></div></>}
         </fieldset>

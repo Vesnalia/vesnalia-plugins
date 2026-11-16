@@ -13,7 +13,7 @@ import type {
   DeltaItemShape,
   DeltaPresentation,
   ThreadDelta,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 
 export interface MirrorEvent {
   type: string;
@@ -62,7 +62,7 @@ const CONSULT_PRESENTATION: DeltaPresentation = {
 
 /**
  * A presentation survives only with a glyph this plugin may emit: host glyphs,
- * or another plugin's glyph on a `server: "bb"` tool row (checked against the
+ * or another plugin's glyph on a `server: "VesnALIA"` tool row (checked against the
  * tool's own plugin). Other namespaced glyphs would be refused at ingest.
  */
 function presentationOf(item: Rec): DeltaPresentation | undefined {
@@ -71,8 +71,8 @@ function presentationOf(item: Rec): DeltaPresentation | undefined {
   if (!isRec(presentation) || !isRec(presentation.icon)) return undefined;
   const glyph = str(presentation.icon.glyph);
   if (glyph === undefined) return undefined;
-  const bbTool = item.type === "toolCall" && item.server === "bb";
-  const safeGlyph = glyph.includes("/") && !bbTool ? FALLBACK_GLYPH : glyph;
+  const aliaTool = item.type === "toolCall" && item.server === "alia";
+  const safeGlyph = glyph.includes("/") && !aliaTool ? FALLBACK_GLYPH : glyph;
   return {
     ...(presentation as unknown as DeltaPresentation),
     icon: { glyph: safeGlyph },

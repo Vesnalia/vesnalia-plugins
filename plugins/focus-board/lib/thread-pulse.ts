@@ -1,8 +1,8 @@
 // The server-side sampler behind the working dot's pulse (issue #279).
 //
-// The board cannot read a thread's token burn from the sidebar payload: bb's
+// The board cannot read a thread's token burn from the sidebar payload: VesnALIA's
 // `PluginSidebarThread` carries status and unread state but no usage numbers,
-// and the only honest source is `bb.sdk.threads.context`, one call per thread.
+// and the only honest source is `alia.sdk.threads.context`, one call per thread.
 // Polling that for every thread on the board would be the latency the operator
 // forbade, so the sampler is event-driven and demand-gated instead:
 //

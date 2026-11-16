@@ -1,22 +1,22 @@
 # Следующий шаг / Next Step
 
-Предлагает одно следующее сообщение в пустом поле ввода BB после ответа Codex.
+Предлагает одно следующее сообщение в пустом поле ввода VesnALIA после ответа Codex.
 Подсказка остаётся серым текстом, пока вы её не примете.
 
 - **Tab** — вставить подсказку в черновик и отредактировать.
 - **Esc** — скрыть подсказку для этого ответа.
 - На сенсорном экране подсказку можно принять нажатием; для редактирования коснитесь самого поля.
-- Отправка — обычная кнопка BB или Enter. Плагин не отправляет сообщения автоматически.
+- Отправка — обычная кнопка VesnALIA или Enter. Плагин не отправляет сообщения автоматически.
 
 Начатые черновики и вложения сохраняются. Пока агент отвечает, подсказки не показываются.
 Если подходящего продолжения нет, Codex может не предлагать следующий шаг.
 
 ## Требования
 
-- BB **0.49.0 или новее** с Plugin SDK **0.6.132 или новее** и включённым штатным Composer.
-- Команда `bb` доступна в терминале. В BB её можно подключить через Settings → General → Command line.
+- VesnALIA **0.49.0 или новее** с Plugin SDK **0.6.132 или новее** и включённым штатным Composer.
+- Команда `alia` доступна в терминале. В VesnALIA её можно подключить через Settings → General → Command line.
 - На машине, где выполняется диалог, установлен и авторизован Codex CLI: `codex --version`, `codex login`.
-- Для установки из Git — `git` на машине сервера BB. Зависимости и сборку такой установки выполняет сам BB.
+- Для установки из Git — `git` на машине сервера VesnALIA. Зависимости и сборку такой установки выполняет сам VesnALIA.
 - Для установки из локальной папки и разработки — Node.js и npm; проверено на Node.js **22.22.3**, npm **10.9.8** и Codex CLI **0.168.0**.
 
 Отдельный API-ключ в плагине не настраивается. Каждый пользователь использует собственную авторизацию Codex.
@@ -26,17 +26,17 @@
 Установите текущую версию из ветки `main`:
 
 ```sh
-bb plugin install "git:https://github.com/rutracker152/bb-plugin-next-step.git@main"
-bb next-step status
+alia plugin install "git:https://github.com/rutracker152/bb-plugin-next-step.git@main"
+alia next-step status
 ```
 
-BB загрузит исходники, установит зависимости и соберёт плагин. В окне подтверждения проверьте адрес и выбранную версию.
+VesnALIA загрузит исходники, установит зависимости и соберёт плагин. В окне подтверждения проверьте адрес и выбранную версию.
 Плагин включён по умолчанию и работает в диалогах с провайдером Codex.
 Обновления из ветки `main` проверяются и устанавливаются вручную:
 
 ```sh
-bb plugin outdated
-bb plugin update next-step
+alia plugin outdated
+alia plugin update next-step
 ```
 
 ## Установка из папки или архива
@@ -44,25 +44,25 @@ bb plugin update next-step
 Распакуйте исходники в постоянную папку и откройте её в терминале:
 
 ```sh
-cd bb-plugin-next-step
+cd alia-plugin-next-step
 npm ci --include=dev
 npm run build
-bb plugin install .
-bb next-step status
+alia plugin install .
+alia next-step status
 ```
 
 Локальная установка использует эту папку как источник. Сохраните её после установки.
-Ожидаемое состояние — `next-step@0.1.0 running` в выводе `bb plugin list`.
+Ожидаемое состояние — `next-step@0.1.0 running` в выводе `alia plugin list`.
 
 ## Настройки и команды
 
 Переключатель: **Настройки → Следующий шаг → Подсказка следующего шага**.
-Изменение применяется без перезапуска BB.
+Изменение применяется без перезапуска VesnALIA.
 
 ```sh
-bb plugin config next-step set enabled false
-bb plugin config next-step set enabled true
-bb next-step status --json
+alia plugin config next-step set enabled false
+alia plugin config next-step set enabled true
+alia next-step status --json
 ```
 
 Состояние включённого плагина без текущего запроса:
@@ -74,11 +74,11 @@ bb next-step status --json
 Получить подсказку для последнего ответа без отправки сообщения:
 
 ```sh
-bb next-step suggest --thread THREAD_ID --json
+alia next-step suggest --thread THREAD_ID --json
 ```
 
 Эта команда может выполнить запрос к Codex. Внутри диалога `--thread` можно опустить.
-Чтобы отключить весь плагин, используйте `bb plugin disable next-step`; для удаления — `bb plugin remove next-step`.
+Чтобы отключить весь плагин, используйте `alia plugin disable next-step`; для удаления — `alia plugin remove next-step`.
 
 ## Как обрабатываются данные
 
@@ -98,12 +98,12 @@ bb next-step suggest --thread THREAD_ID --json
 Состояние и журнал доступны командами:
 
 ```sh
-bb next-step status --json
-bb plugin logs next-step -n 20
+alia next-step status --json
+alia plugin logs next-step -n 20
 ```
 
 Отсутствие подсказки само по себе нормально: модель может решить, что полезного продолжения нет.
-При обновлении BB также проверьте совместимость: отображение подсказки использует DOM-маркеры штатного Composer.
+При обновлении VesnALIA также проверьте совместимость: отображение подсказки использует DOM-маркеры штатного Composer.
 
 ## Разработка и проверка
 
@@ -116,16 +116,16 @@ npm run check:clean
 ```
 
 `check:clean` создаёт временные копии исходников без `node_modules` и `dist`, проверяет production-сборку без devDependencies,
-а затем установку и команды плагина в отдельном временном экземпляре BB. Нужны `bb`, `bb-app` и доступ к npm.
-Основная установка BB и её настройки не изменяются. Временный сервер останавливается, а его данные удаляются.
+а затем установку и команды плагина в отдельном временном экземпляре VesnALIA. Нужны `alia`, `alia-app` и доступ к npm.
+Основная установка VesnALIA и её настройки не изменяются. Временный сервер останавливается, а его данные удаляются.
 
-Браузерная проверка требует Chromium (`npx playwright install chromium`), запущенный BB и завершённый диалог Codex:
+Браузерная проверка требует Chromium (`npx playwright install chromium`), запущенный VesnALIA и завершённый диалог Codex:
 
 ```sh
 NEXT_STEP_SMOKE_THREAD_ID=THREAD_ID node scripts/browser-smoke.mjs
 ```
 
-Скрипт использует `BB_SERVER_URL` и `BB_PROJECT_ID`, проверяет широкую и узкую компоновку с тестовой подсказкой и не отправляет сообщения агенту.
+Скрипт использует `ALIA_SERVER_URL` и `ALIA_PROJECT_ID`, проверяет широкую и узкую компоновку с тестовой подсказкой и не отправляет сообщения агенту.
 
 ## Лицензия
 

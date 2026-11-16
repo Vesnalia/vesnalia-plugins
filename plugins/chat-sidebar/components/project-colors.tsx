@@ -3,7 +3,7 @@
 // without a pick get distinct automatic colours (see `lib/colors.ts`).
 //
 // The last colours seen are kept for the page and in localStorage, so a list
-// that bb mounts again, or a reload, starts from them instead of falling back
+// that VesnALIA mounts again, or a reload, starts from them instead of falling back
 // to automatic colours while the backend answers.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -12,7 +12,7 @@ import {
   useRealtimeConnectionState,
   useRpc,
   type PluginSidebarProject,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 import {
   ContextMenuItem,
@@ -59,7 +59,7 @@ function sanitize(value: unknown): ProjectColorMap {
 const RETRIES = [1_000, 3_000, 10_000];
 const STORAGE_KEY = "chat-sidebar/project-colors";
 
-/** Last colours seen on this page; outlives a list that bb mounts again. */
+/** Last colours seen on this page; outlives a list that VesnALIA mounts again. */
 let remembered: ProjectColorMap | null = null;
 
 function recall(): ProjectColorMap {

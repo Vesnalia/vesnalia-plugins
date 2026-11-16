@@ -5,7 +5,7 @@
 // Viewed is kept per file revision, as chapters keep it per diff; its end says comments here go with Send, with Push and Finish review.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SelectedLineRange } from "@pierre/diffs";
-import { experimental_useCodeTheme, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_useCodeTheme, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { z } from "zod";
 import type { rpcContract } from "../src/rpc-contract";

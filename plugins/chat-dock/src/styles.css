@@ -1,6 +1,6 @@
 /*
- * The plugin's own classes, prefixed so nothing of BB's matches them. `bb plugin
- * build` scopes Tailwind utilities as `:where([data-bb-plugin=…]) .<utility>`, and BB's
+ * The plugin's own classes, prefixed so nothing of ALIA's matches them. `alia plugin
+ * build` scopes Tailwind utilities as `:where([data-alia-plugin=…]) .<utility>`, and ALIA's
  * elements carry the same class names, so every utility a plugin uses is matched
  * against the whole page on every style recalc. CSS imported here is passed through
  * as written. Values are the ones the Tailwind classes had.
@@ -61,7 +61,7 @@
   padding: 0 0.75rem 0.75rem;
 }
 
-/* The locked strip under the open tab. It lives in BB's panel, outside any plugin root. */
+/* The locked strip under the open tab. It lives in ALIA's panel, outside any plugin root. */
 .chat-dock-strip {
   flex-shrink: 0;
   border-top: 1px solid var(--border-seam);
@@ -69,15 +69,15 @@
 }
 
 /*
- * BB fades the composer's footer (environment, permission mode, context meter)
+ * ALIA fades the composer's footer (environment, permission mode, context meter)
  * out while the composer is 30rem wide or less, until it is expanded. Docked in
  * the split panel it is nearly always that narrow, so there the fade is undone:
- * BB's rule is unlayered (in a container style query), the footer's own values
+ * ALIA's rule is unlayered (in a container style query), the footer's own values
  * are layered utilities, and this file is unlayered too, so `revert-layer`
- * drops BB's rule and nothing else. `all` rather than a list of properties, so
- * whatever the fade sets is undone; should BB rename any of these attributes,
- * the footer just fades as BB intends. The compact variable itself is left
- * alone: BB's composer also reads it for its one-line layout. The phone's
+ * drops ALIA's rule and nothing else. `all` rather than a list of properties, so
+ * whatever the fade sets is undone; should ALIA rename any of these attributes,
+ * the footer just fades as ALIA intends. The compact variable itself is left
+ * alone: ALIA's composer also reads it for its one-line layout. The phone's
  * overlay frame is left out: there the footer shows on focus, as under the timeline.
  */
 [data-chat-dock-host="strip"] [data-follow-up-composer]:not([data-follow-up-composer-footer-visible]) [data-follow-up-composer-footer],
@@ -86,7 +86,7 @@
 }
 
 /*
- * The phone drawer's dock (`overlay.ts`): a layer in BB's React root, sized to
+ * The phone drawer's dock (`overlay.ts`): a layer in ALIA's React root, sized to
  * the drawer by script, with the frame holding the shell at its bottom. The
  * frame takes the host's class too, so it is drawn as the host would be.
  */

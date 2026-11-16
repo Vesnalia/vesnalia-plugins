@@ -99,7 +99,7 @@ test('M494 version A, second A, B, checked; health is concise without a CLI logi
   const root = mkdtempSync(join(tmpdir(), 'm494-health-')), auth = new api.ReadOnlyAuth(join(root, 'auth.json'));
   const checked = { ...api.compatibilityReference };
   const checkedTable = [{ tuple: checked, level: 'level1', pluginRevision: 'fixture', resultRef: 'fixture', evidenceRef: 'fixture' }];
-  let combination = { ...checked, bb: '9.1.0' }, installed = true;
+  let combination = { ...checked, alia: '9.1.0' }, installed = true;
   const paths = { executable: process.execPath, script: '/fixture/ZCode.app/Contents/Resources/glm/zcode.cjs', builtin: '/fixture/builtin' };
   const runtime = () => api.createNativeServices(root, { auth, paths,
     discovery: () => ({ installed, supported: true, sha256: null, version: '0.16.9' }), compatibility: () => api.compareCompatibility(combination, checkedTable) });
@@ -108,13 +108,13 @@ test('M494 version A, second A, B, checked; health is concise without a CLI logi
   try {
     let r = runtime(); assert.match(r.services.compatibilityWarning(), /9.1.0/); await r.close();
     r = runtime(); assert.equal(r.services.compatibilityWarning(), null);
-    combination = { ...combination, bb: '9.2.0' }; assert.match(r.services.compatibilityWarning(), /9.2.0/);
+    combination = { ...combination, alia: '9.2.0' }; assert.match(r.services.compatibilityWarning(), /9.2.0/);
     combination = checked; assert.equal(r.services.compatibilityWarning(), null);
     put(); const ready = (await r.services.health()).health;
     assert.equal(ready.statusMessage, 'Ready. ZCode: /fixture/ZCode.app.'); assert.equal(ready.loginCommand, null);
     r.services.observe({ event: 'catalogue-cache-recovery' });
     assert.equal((await r.services.health()).health.statusMessage, ready.statusMessage);
-    combination = { ...combination, bb: '9.2.0' }; assert.match((await r.services.health()).health.statusMessage, /Ready.*not been checked/);
+    combination = { ...combination, alia: '9.2.0' }; assert.match((await r.services.health()).health.statusMessage, /Ready.*not been checked/);
     unlinkSync(auth.path); assert.match((await r.services.health()).health.statusMessage, /Open ZCode Desktop and sign in again/);
     installed = false; assert.equal((await r.services.health()).health.status, 'not_installed');
     assert.doesNotMatch((await r.services.health()).health.statusMessage, /Open ZCode Desktop/); await r.close();

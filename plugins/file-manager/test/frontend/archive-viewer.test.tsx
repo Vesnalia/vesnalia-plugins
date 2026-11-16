@@ -7,8 +7,8 @@
 // hands over to the panel's own ExtractDialog and job, never a second path.
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@vesnalia/plugin-sdk/testing/app";
 
 import type {
   ArchiveEntry,
@@ -431,8 +431,8 @@ describe("where the contents are reached from", () => {
     expect(callsTo(slot, "listArchive")).toHaveLength(0);
   });
 
-  it("hands the archive to bb's preview panel where this surface has one", async () => {
-    // bb then opens it with the first matching file opener — this plugin's
+  it("hands the archive to VesnALIA's preview panel where this surface has one", async () => {
+    // VesnALIA then opens it with the first matching file opener — this plugin's
     // "Preview + location", which draws the same contents (§10.2).
     const slot = mount(baseRpc(), () => true);
     await slot.findByText(ZIP.name);

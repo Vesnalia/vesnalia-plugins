@@ -1,13 +1,13 @@
 /**
- * The plugin against bb's fake host: the relay route is registered with
- * "local" auth, tickets are only for machines bb has and only for the bb app,
+ * The plugin against VesnALIA's fake host: the relay route is registered with
+ * "local" auth, tickets are only for machines VesnALIA has and only for the VesnALIA app,
  * and nothing is ever exposed.
  *
  * The route is driven only with tickets it must refuse, so no test here
  * connects to this machine's real port 5900; server/relay.test.ts covers the
  * relay against a fake Screen Sharing, server/remote.test.ts the other Macs.
  */
-import { createFakePluginHost, makeHostResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeHostResponse } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it } from "vitest";
 
 import plugin from "./server";
@@ -28,7 +28,7 @@ async function load() {
     makeHostResponse({ id: "host_mini", name: "MacMini" }),
     makeHostResponse({ id: "host_laptop", name: "MacBook Pro" }),
   ]);
-  await plugin(host.bb);
+  await plugin(host.alia);
   return host;
 }
 
@@ -52,9 +52,9 @@ describe("the screen-sharing plugin", () => {
     expect(ticket.expiresAt).toBeGreaterThan(Date.now());
   });
 
-  it("refuses a machine bb does not have", async () => {
+  it("refuses a machine VesnALIA does not have", async () => {
     const { harness } = await load();
-    await expect(harness.callRpc("openSession", { hostId: "host_elsewhere" })).rejects.toThrow("bb has no such machine");
+    await expect(harness.callRpc("openSession", { hostId: "host_elsewhere" })).rejects.toThrow("alia has no such machine");
   });
 
   it("refuses other plugins", async () => {

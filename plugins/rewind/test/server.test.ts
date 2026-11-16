@@ -5,7 +5,7 @@ import fsPromises from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { syncBuiltinESMExports } from "node:module";
 import path from "node:path";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import plugin from "../server";
 import { GATE_HARD_LIMIT_MS } from "../src/constants";
@@ -365,7 +365,7 @@ describe("review safety regressions", () => {
     expect((await list(world, thread.id)).workspace?.running.map(t => t.id)).toContain(active.id);
     active.status = "idle"; active.runtimeStatus = "starting";
     await expect(world.rpc("restore", { threadId: thread.id, checkpointId: checkpoint.id })).rejects.toThrow(/running/u);
-    const firstPage = await world.bb.sdk.threads.list({ environmentId: environment.id, limit: 200 });
+    const firstPage = await world.alia.sdk.threads.list({ environmentId: environment.id, limit: 200 });
     world.harness.inspection.sdk.stub("threads.list", async (args: { offset?: number }) => {
       if ((args.offset ?? 0) >= 200) throw new Error("page unavailable");
       return firstPage;
@@ -437,7 +437,7 @@ describe("the message.dispatch gate", () => {
     const row = queuedRow(thread.id);
     await world.harness.behavior.emitThreadEvent("message.queued", { entry: row });
 
-    // The checkpoint is saved, then Rewind asks bb to re-attempt the message.
+    // The checkpoint is saved, then Rewind asks VesnALIA to re-attempt the message.
     const pending = (await list(world, thread.id)).checkpoints[0]!;
     expect(pending.status).toBe("pending");
     expect(await world.settled(pending.id)).toMatchObject({ status: "ok", late: false });
@@ -470,7 +470,7 @@ describe("the message.dispatch gate", () => {
     expect(first).toMatchObject({ action: "wait" });
     const row = queuedRow(thread.id);
     await world.harness.behavior.emitThreadEvent("message.queued", { entry: row });
-    // bb re-attempts the row on its own (or another plugin rechecks) before the checkpoint is saved.
+    // VesnALIA re-attempts the row on its own (or another plugin rechecks) before the checkpoint is saved.
     const started = Date.now();
     const again = await world.dispatch(thread, { queuedMessages: [row] });
     expect(Date.now() - started).toBeLessThan(100);
@@ -503,7 +503,7 @@ describe("the message.dispatch gate", () => {
     const quickRow = queuedRow(other.id);
     await world.harness.behavior.emitThreadEvent("message.queued", { entry: quickRow });
 
-    // The quick checkpoint is saved; bb's recheck walk re-attempts both rows.
+    // The quick checkpoint is saved; VesnALIA's recheck walk re-attempts both rows.
     await until(() => world.harness.inspection.recheckCount > rechecks);
     const started = Date.now();
     expect(await world.dispatch(thread, { queuedMessages: [slowRow] })).toMatchObject({ action: "wait", reason: "Rewind: saving a checkpoint…" });
@@ -824,13 +824,13 @@ describe("restores", () => {
     await expect(world.rpc("undo", { threadId: thread.id, restoreId: restores[0]!.id })).rejects.toThrow(/already undone/u);
   });
 
-  it("leaves bb's chat copies and the thread's own storage out of checkpoints, diffs, and restores", async () => {
+  it("leaves VesnALIA's chat copies and the thread's own storage out of checkpoints, diffs, and restores", async () => {
     const storage = new Map<string, string>();
     const { world, thread, workspace } = await setup({ storageRoot: (threadId) => storage.get(threadId) ?? path.join(path.sep, "elsewhere", threadId) });
-    storage.set(thread.id, path.join(workspace, ".bb-storage", thread.id));
+    storage.set(thread.id, path.join(workspace, ".alia-storage", thread.id));
     world.appendEvent(thread.id, "thread/started");
-    const chatCopy = path.join(".bb", "chats", thread.id, "thread.json");
-    const stored = path.join(".bb-storage", thread.id, "state.json");
+    const chatCopy = path.join(".vesnalia", "chats", thread.id, "thread.json");
+    const stored = path.join(".alia-storage", thread.id, "state.json");
     await turn(
       world,
       thread,
@@ -839,24 +839,24 @@ describe("restores", () => {
         await write(workspace, "scratch.txt", "one\n");
         await write(workspace, chatCopy, "{}\n");
         await write(workspace, stored, "{}\n");
-        await write(workspace, ".bb/plugins.json", "{}\n");
+        await write(workspace, ".vesnalia/plugins.json", "{}\n");
       },
       "write one",
     );
     const listed = await list(world, thread.id);
     const [before, after] = ["before-turn", "after-turn"].map((kind) => listed.checkpoints.find((checkpoint) => checkpoint.kind === kind)!);
-    expect(after!.changes.map((change) => change.path).sort()).toEqual([".bb/plugins.json", "scratch.txt"]);
+    expect(after!.changes.map((change) => change.path).sort()).toEqual([".vesnalia/plugins.json", "scratch.txt"]);
     expect(after!.stats).toMatchObject({ files: 2 });
     const snapshotCall = world.hostCalls.find((call) => call.method === "snapshot") as { input: { excludePaths?: string[] } };
-    expect(snapshotCall.input.excludePaths).toEqual([path.join(workspace, ".bb-storage", thread.id)]);
+    expect(snapshotCall.input.excludePaths).toEqual([path.join(workspace, ".alia-storage", thread.id)]);
 
     const diff = await world.rpc<{ files: Array<{ path: string }> }>("diff", { threadId: thread.id, from: before!.id, to: "current" });
-    expect(diff.files.map((file) => file.path).sort()).toEqual([".bb/plugins.json", "scratch.txt"]);
+    expect(diff.files.map((file) => file.path).sort()).toEqual([".vesnalia/plugins.json", "scratch.txt"]);
 
     await write(workspace, chatCopy, '{"turns":2}\n');
     const preview = await world.rpc<{ plan: { changes: Array<{ path: string; action: string }> } }>("preview", { threadId: thread.id, checkpointId: before!.id });
     expect(preview.plan.changes.map((change) => [change.path, change.action]).sort()).toEqual([
-      [".bb/plugins.json", "delete"],
+      [".vesnalia/plugins.json", "delete"],
       ["scratch.txt", "write"],
     ]);
     const restored = await world.rpc<RestoreOutcome>("restore", { threadId: thread.id, checkpointId: before!.id });
@@ -906,7 +906,7 @@ describe("restores", () => {
     // A read-only directory: the restore writes scratch.txt, then fails.
     await chmod(path.join(workspace, "locked"), 0o555);
     try {
-      await expect(world.rpc("restore", { threadId: thread.id, checkpointId: one.id })).rejects.toThrow(/did not finish[\s\S]*bb rewind undo/u);
+      await expect(world.rpc("restore", { threadId: thread.id, checkpointId: one.id })).rejects.toThrow(/did not finish[\s\S]*alia rewind undo/u);
       expect(await readFile(path.join(workspace, "scratch.txt"), "utf8")).toBe("one\n");
       const { restores } = await list(world, thread.id);
       expect(restores.at(-1)).toMatchObject({ kind: "restore", status: "failed", preRestoreCheckpointId: expect.any(String) });
@@ -967,7 +967,7 @@ describe("restores", () => {
     expect(cli.exitCode).not.toBe(0);
     const envelope = JSON.parse(cli.stdout) as { ok: boolean; error: { code: string; hint: string } };
     expect(envelope).toMatchObject({ ok: false, error: { code: "thread_running" } });
-    expect(envelope.error.hint).toContain(`bb thread stop ${sibling.id}`);
+    expect(envelope.error.hint).toContain(`alia thread stop ${sibling.id}`);
 
     thread.status = "active";
     await expect(world.rpc("restore", { threadId: thread.id, checkpointId: checkpoint.id })).rejects.toThrow(/this thread/u);
@@ -1003,14 +1003,14 @@ describe("keeping the conversation in step with the files", () => {
     return { ...context, first, second, turn };
   }
 
-  it("restores the files, then has bb replace the message; the edit goes out only once the files are back", async () => {
+  it("restores the files, then has VesnALIA replace the message; the edit goes out only once the files are back", async () => {
     const seen: Array<{ scratch: string; extra: boolean; decision: unknown }> = [];
     let world!: World;
     let threadId = "";
     let workspacePath = "";
     const context = await twoTurns({
       onEditMessage: async () => {
-        // bb dispatches the edited message: it must find the files restored
+        // VesnALIA dispatches the edited message: it must find the files restored
         // and pass the gate without being queued behind a restore.
         seen.push({
           scratch: await readFile(path.join(workspacePath, "scratch.txt"), "utf8"),
@@ -1054,7 +1054,7 @@ describe("keeping the conversation in step with the files", () => {
     expect(same.totalFiles).toBe(0);
   });
 
-  it("keeps the restore and offers a note when bb refuses the edit", async () => {
+  it("keeps the restore and offers a note when VesnALIA refuses the edit", async () => {
     const { world, thread, workspace, second } = await twoTurns({
       onEditMessage: () => {
         throw new Error("This provider cannot edit messages");
@@ -1114,12 +1114,12 @@ describe("keeping the conversation in step with the files", () => {
     const { world, thread, workspace } = await twoTurns();
     await expect(world.rpc("editMessage", { threadId: thread.id, sourceSeqEnd: 999, text: "x" })).rejects.toThrow(/no message that started a turn/u);
 
-    // Another thread's message (bb refuses to edit those), and a steer that joined its turn.
+    // Another thread's message (VesnALIA refuses to edit those), and a steer that joined its turn.
     const sent = world.userMessage(thread.id, "from another thread", { initiator: "agent" });
     const steer = world.userMessage(thread.id, "and also this", { turnId: `turn_${sent}` });
     const resolved = await world.rpc<{ message: { editable: boolean } | null }>("resolveMessage", { threadId: thread.id, message: { role: "user", sourceSeqEnd: sent } });
     expect(resolved.message?.editable).toBe(false);
-    await expect(world.rpc("editMessage", { threadId: thread.id, sourceSeqEnd: sent, text: "x" })).rejects.toThrow(/bb edits only messages you typed\. Nothing was restored/u);
+    await expect(world.rpc("editMessage", { threadId: thread.id, sourceSeqEnd: sent, text: "x" })).rejects.toThrow(/alia edits only messages you typed\. Nothing was restored/u);
     await expect(world.rpc("editMessage", { threadId: thread.id, sourceSeqEnd: steer, text: "x" })).rejects.toThrow(/no message that started a turn/u);
     expect(await readFile(path.join(workspace, "scratch.txt"), "utf8")).toBe("two\n");
     expect(world.edits).toHaveLength(0);
@@ -1134,7 +1134,7 @@ describe("keeping the conversation in step with the files", () => {
 
     const applied = await world.harness.behavior.runCli(["restore", id, "--yes", "--edit-message", "write three", "--thread", thread.id]);
     expect(applied.exitCode).toBe(0);
-    expect(applied.stdout).toContain("Replaced message 2: bb discarded it and every later turn");
+    expect(applied.stdout).toContain("Replaced message 2: VesnALIA discarded it and every later turn");
     expect(world.edits).toHaveLength(1);
 
     const plain = await world.harness.behavior.runCli(["restore", id, "--yes", "--thread", thread.id]);
@@ -1330,7 +1330,7 @@ describe("lifecycle events", () => {
 describe("retention", () => {
   /** Seed repeated saves of the same tree; retention needs history, not more captures. */
   function seedRepeatedCheckpoints(world: World, checkpointId: string, count: number): string[] {
-    const store = new RewindStore(world.bb.storage.database());
+    const store = new RewindStore(world.alia.storage.database());
     const source = store.getCheckpoint(checkpointId)!;
     const ids = Array.from({ length: count }, () => newId("ck"));
     for (const id of ids) {
@@ -1544,7 +1544,7 @@ describe("forking with files", () => {
   });
 });
 
-describe("the bb rewind CLI", () => {
+describe("the VesnALIA rewind CLI", () => {
   it("names the --thread flag when there is no calling thread", async () => {
     const { world } = await setup();
     const result = await world.harness.behavior.runCli(["list"]);

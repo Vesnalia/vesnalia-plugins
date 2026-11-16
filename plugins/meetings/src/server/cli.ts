@@ -1,13 +1,13 @@
-// `bb meetings …` (docs/dev/DESIGN.md §8.1). Output is English for agents,
+// `alia meetings …` (docs/dev/DESIGN.md §8.1). Output is English for agents,
 // every command takes --json, and output stays far below the 1 MiB CLI cap.
 import { readFile, stat } from "node:fs/promises";
 import {
   PluginCliError,
   cliCommand,
   defineCli,
-  type BbPluginApi,
+  type AliaPluginApi,
   type PluginCliResult,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { maskMeetingUrl } from "../shared/meeting-url.js";
 import { GOOGLE_CALLBACK_PATH, MEETING_STATUSES, type BotProfile, type GoogleStatus, type MeetingStatus } from "../shared/rpc-contract.js";
 import { AGENT_ACTIONS, parseAgentRequest, runAgentRequest } from "./agent-api.js";
@@ -82,14 +82,14 @@ function boundTail(text: string): string {
   return `[earlier lines cut]\n${tail.slice(tail.indexOf("\n") + 1)}`;
 }
 
-export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
+export function registerCli(alia: AliaPluginApi, service: MeetingsService): void {
   const pageLink = () => {
-    const base = bb.server.experimental_appUrl;
-    return base ? `${base.replace(/\/+$/, "")}/plugins/meetings/meetings` : "the Meetings page in bb (sidebar: «Встречи»)";
+    const base = alia.server.experimental_appUrl;
+    return base ? `${base.replace(/\/+$/, "")}/plugins/meetings/meetings` : "the Meetings page in VesnALIA (sidebar: «Встречи»)";
   };
   const redirectUri = () => {
-    const base = bb.server.experimental_appUrl;
-    return `${base ? base.replace(/\/+$/, "") : "<bb origin>"}${GOOGLE_CALLBACK_PATH}`;
+    const base = alia.server.experimental_appUrl;
+    return `${base ? base.replace(/\/+$/, "") : "<VesnALIA origin>"}${GOOGLE_CALLBACK_PATH}`;
   };
   const googleText = (status: GoogleStatus): string => {
     if (!status.configured) {
@@ -97,7 +97,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
         "Google Calendar: not set up.",
         "Create an OAuth client of type Web application in Google Cloud (Google Calendar API enabled), register the redirect URI",
         `  ${redirectUri()}`,
-        `and save its Client ID and secret on ${pageLink()} -> Google Календарь (or: bb plugin config meetings set googleClientId <id>).`,
+        `and save its Client ID and secret on ${pageLink()} -> Google Календарь (or: VesnALIA plugin config meetings set googleClientId <id>).`,
       ].join("\n");
     }
     if (!status.connected) {
@@ -112,7 +112,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
       `Google Calendar: connected${status.email ? ` as ${status.email}` : ""}`,
       `Watched calendars: ${watched.map((calendar) => `${calendar.summary}${calendar.primary ? " (primary)" : ""}`).join(", ") || "none"} [${watched.length} of ${status.calendars.length}]`,
       `Last sync: ${isoMinute(status.lastSyncAt)}${status.lastError ? `, error: ${status.lastError}` : ""}`,
-      `Upcoming meetings in the next 24 h: ${status.upcomingCount} (list them: bb meetings calendar)`,
+      `Upcoming meetings in the next 24 h: ${status.upcomingCount} (list them: VesnALIA meetings calendar)`,
       `Choose calendars on ${pageLink()} -> Google Календарь.`,
     ].join("\n");
   };
@@ -121,10 +121,10 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
       `Bot name: ${profile.botName}`,
       profile.avatar.hasAvatar
         ? `Avatar: set${profile.avatar.version !== null ? ` (updated ${isoMinute(profile.avatar.version)})` : ""}, camera in meetings: ${profile.avatar.enabled ? "on" : "off"}`
-        : `Avatar: none, the camera stays off (upload a picture on ${pageLink()} -> Бот, or: bb meetings bot --avatar <file on the bb server machine>)`,
+        : `Avatar: none, the camera stays off (upload a picture on ${pageLink()} -> Бот, or: VesnALIA meetings bot --avatar <file on the VesnALIA server machine>)`,
     ].join("\n");
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "meetings",
       summary: "Record Zoom, Google Meet, Telemost and Jitsi meetings with a notetaker bot",
@@ -213,7 +213,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
                 `Meeting ${row.id} "${row.title}": ${statusLineEn(row)}`,
                 `Link: ${maskMeetingUrl(row.url)}`,
                 outcome.en,
-                `Status: bb meetings show ${row.id}   Transcript: bb meetings transcript ${row.id}   Stop: bb meetings stop ${row.id}`,
+                `Status: VesnALIA meetings show ${row.id}   Transcript: VesnALIA meetings transcript ${row.id}   Stop: VesnALIA meetings stop ${row.id}`,
                 "",
               ].join("\n"),
             };
@@ -243,7 +243,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
               rows = service.listWithStatus(filter as MeetingStatus, input.options.limit);
             }
             if (input.options.json) return outJson({ meetings: rows.map((row) => agentView(service, row)) });
-            if (rows.length === 0) return out("No meetings. Start one with: bb meetings join <zoom link>");
+            if (rows.length === 0) return out("No meetings. Start one with: VesnALIA meetings join <zoom link>");
             const lines = [`${pad("ID", 20)} ${pad("STATUS", 17)} ${pad("WHEN", 17)} ${pad("LENGTH", 10)} TITLE`];
             for (const row of rows) {
               const when = row.scheduledAt !== null && row.status === "scheduled" ? row.scheduledAt : (row.startedAt ?? row.createdAt);
@@ -266,7 +266,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
               return outJson({ meeting: { ...detail, ...agentView(service, row) } });
             }
             return out(
-              `${describeMeetingEn(row)}\nNext: bb meetings transcript ${row.id}${row.status === "recording" ? ` | bb meetings stop ${row.id}` : ""}`,
+              `${describeMeetingEn(row)}\nNext: VesnALIA meetings transcript ${row.id}${row.status === "recording" ? ` | VesnALIA meetings stop ${row.id}` : ""}`,
             );
           }),
         }),
@@ -352,7 +352,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
             if (page.length === 0) notes.push(`No segments with id >= ${from} (total ${total}).`);
             if (more && last !== undefined) {
               notes.push(
-                `Showing segments ${page[0]?.id}-${last.id} of ${total}. Next page: bb meetings transcript ${row.id} --from ${last.id + 1}${format === "md" ? "" : ` --format ${format}`}`,
+                `Showing segments ${page[0]?.id}-${last.id} of ${total}. Next page: VesnALIA meetings transcript ${row.id} --from ${last.id + 1}${format === "md" ? "" : ` --format ${format}`}`,
               );
             }
             if (!row.transcriptFinal) notes.push(`Transcript is not final yet (${row.status}); speakers and text may still change.`);
@@ -430,7 +430,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
           run: (input) => guard(async () => {
             const row = await service.retranscribe(input.positionals.id);
             if (input.options.json) return outJson({ meeting: agentView(service, row) });
-            return out(`Re-transcribing ${row.id}. Follow progress: bb meetings show ${row.id}`);
+            return out(`Re-transcribing ${row.id}. Follow progress: VesnALIA meetings show ${row.id}`);
           }),
         }),
 
@@ -476,7 +476,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
             if (!input.options.yes) {
               throw new PluginCliError(`Refusing to delete ${input.positionals.id} without --yes`, {
                 code: "confirmation_required",
-                hint: `Run: bb meetings delete ${input.positionals.id} --yes`,
+                hint: `Run: VesnALIA meetings delete ${input.positionals.id} --yes`,
               });
             }
             const deleted = await service.delete(input.positionals.id);
@@ -501,7 +501,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
             lines.push(`GigaAM: ${report.gigaam.ready ? `ready at ${report.gigaam.url}` : `not ready (${report.gigaam.detail})`}`);
             lines.push(`Setup: ${report.setup.phase}${report.setup.message ? ` - ${report.setup.message}` : ""}`);
             lines.push(`Host data: ${report.hostDataDir}`);
-            if (!report.ready) lines.push("Install what is missing: bb meetings setup");
+            if (!report.ready) lines.push("Install what is missing: VesnALIA meetings setup");
             return out(lines.join("\n"));
           }),
         }),
@@ -512,7 +512,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
           run: (input) => guard(async () => {
             const report = await service.envSetup(input.options.force);
             if (input.options.json) return outJson(report);
-            return out(`Setup ${report.setup.phase}: ${report.setup.message || "started"}\nFollow progress: bb meetings doctor`);
+            return out(`Setup ${report.setup.phase}: ${report.setup.message || "started"}\nFollow progress: VesnALIA meetings doctor`);
           }),
         }),
 
@@ -562,7 +562,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
             if (!path.startsWith("/") && ctx.cwd) path = `${ctx.cwd.replace(/\/+$/, "")}/${path}`;
             const row = await service.importFile(path, input.options.title ?? null, ctx.threadId ?? null);
             if (input.options.json) return outJson({ meeting: agentView(service, row) });
-            return out(`Imported as ${row.id}: ${statusLineEn(row)}. Follow progress: bb meetings show ${row.id}`);
+            return out(`Imported as ${row.id}: ${statusLineEn(row)}. Follow progress: VesnALIA meetings show ${row.id}`);
           }),
         }),
 
@@ -589,7 +589,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
 
         "calendar skip": cliCommand({
           summary: "Do not join one calendar occurrence",
-          positionals: [{ name: "key", description: "Event key from `bb meetings calendar`", required: true }],
+          positionals: [{ name: "key", description: "Event key from `alia meetings calendar`", required: true }],
           options: { json },
           run: (input) => guard(async () => {
             const status = await service.calendar.setSkip(input.positionals.key, true);
@@ -600,7 +600,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
 
         "calendar unskip": cliCommand({
           summary: "Join a previously skipped calendar occurrence again",
-          positionals: [{ name: "key", description: "Event key from `bb meetings calendar`", required: true }],
+          positionals: [{ name: "key", description: "Event key from `alia meetings calendar`", required: true }],
           options: { json },
           run: (input) => guard(async () => {
             const status = await service.calendar.setSkip(input.positionals.key, false);
@@ -643,13 +643,13 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
         bot: cliCommand({
           summary: "Show or change the bot's name and avatar",
           description:
-            "Without options prints the bot's name and avatar. --avatar reads an image file on the machine where the bb server runs; from anywhere else upload the picture on the Meetings page.",
+            "Without options prints the bot's name and avatar. --avatar reads an image file on the machine where the VesnALIA server runs; from anywhere else upload the picture on the Meetings page.",
           options: {
             name: { type: "string", description: "New bot name shown in Zoom (1-64 characters)", placeholder: "NAME" },
             "show-avatar": { type: "enum", values: ["on", "off"], description: "Turn the camera with the avatar on or off in meetings" },
             avatar: {
               type: "string",
-              description: "PNG, JPEG or WebP (≤ 3 MiB) on the bb server machine to use as the avatar",
+              description: "PNG, JPEG or WebP (≤ 3 MiB) on the VesnALIA server machine to use as the avatar",
               placeholder: "PATH",
             },
             "clear-avatar": { type: "boolean", description: "Remove the avatar (the camera stays off)" },
@@ -693,7 +693,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
           },
           run: (input, ctx) =>
             guard(async () => {
-              const result = await runSelftest(bb, service, { timeoutMs: input.options.timeout, signal: ctx.signal, keep: input.options.keep });
+              const result = await runSelftest(alia, service, { timeoutMs: input.options.timeout, signal: ctx.signal, keep: input.options.keep });
               if (input.options.json) return { exitCode: result.ok ? 0 : 1, stdout: `${JSON.stringify(result)}\n` };
               const lines = [
                 `Selftest ${result.ok ? "passed" : "FAILED"} in ${result.seconds} s (meeting ${result.meetingId}${result.kept ? "" : ", deleted"})`,
@@ -703,7 +703,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
               ];
               if (result.error) lines.push(`Error:     ${result.error}`);
               for (const problem of result.problems) lines.push(`Problem:   ${problem}`);
-              if (!result.ok) lines.push(`Logs: bb meetings logs ${result.meetingId}   Environment: bb meetings doctor`);
+              if (!result.ok) lines.push(`Logs: VesnALIA meetings logs ${result.meetingId}   Environment: VesnALIA meetings doctor`);
               return { exitCode: result.ok ? 0 : 1, stdout: `${lines.join("\n")}\n` };
             }),
         }),
@@ -718,7 +718,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
               [
                 `Sign-in session ${status.session?.id ?? "-"} started: ${status.session?.detail ?? ""}`,
                 `Open ${pageLink()} -> Zoom account, sign in through the live view, then press «Готово».`,
-                "Then enable joining with the account: bb plugin config meetings set useZoomAccount true",
+                "Then enable joining with the account: VesnALIA plugin config meetings set useZoomAccount true",
               ].join("\n"),
             );
           }),
@@ -754,7 +754,7 @@ export function registerCli(bb: BbPluginApi, service: MeetingsService): void {
   );
 }
 
-/** An avatar image on the bb server machine (the CLI runs in the server process). */
+/** An avatar image on the VesnALIA server machine (the CLI runs in the server process). */
 async function readAvatarFile(path: string): Promise<Buffer> {
   let size: number;
   try {
@@ -764,9 +764,9 @@ async function readAvatarFile(path: string): Promise<Buffer> {
   } catch {
     throw new MeetingsError(
       "not_found",
-      `Файл ${path} не найден на машине сервера bb`,
-      `No image file at ${path} on the bb server machine`,
-      "The path is read where the bb server runs; from another machine upload the picture on the Meetings page",
+      `Файл ${path} не найден на машине сервера alia`,
+      `No image file at ${path} on the VesnALIA server machine`,
+      "The path is read where the VesnALIA server runs; from another machine upload the picture on the Meetings page",
     );
   }
   if (size > AVATAR_MAX_BYTES) {
@@ -783,7 +783,7 @@ function maskCalendar<T extends { upcoming: Array<{ url: string | null }> }>(sta
 
 function calendarText(status: Awaited<ReturnType<CalendarService["status"]>>): string {
   if (!status.configured) {
-    return "No calendars configured. Add ICS feed URLs in the plugin settings (calendarIcsUrls) or connect Google Calendar on the Meetings page (bb meetings google), then: bb meetings calendar sync";
+    return "No calendars configured. Add ICS feed URLs in the plugin settings (calendarIcsUrls) or connect Google Calendar on the Meetings page (VesnALIA meetings google), then: VesnALIA meetings calendar sync";
   }
   const lines = [
     `Calendars: ${status.feeds}, auto-join ${status.autoJoin ? "on" : "off"}, last sync ${isoMinute(status.lastSyncAt)}${status.lastError ? `, error: ${status.lastError}` : ""}`,

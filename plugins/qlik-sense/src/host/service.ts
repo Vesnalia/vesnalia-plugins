@@ -1,4 +1,4 @@
-// Everything the host entry does, independent of bb's RPC plumbing so tests can
+// Everything the host entry does, independent of VesnALIA's RPC plumbing so tests can
 // drive it directly: connection setup, sign-in check, the report catalog, the
 // "can't find a report" link check, and the agent tools.
 import { hostname } from "node:os";
@@ -25,8 +25,8 @@ interface Client {
   readonly apps: Map<string, q.QlikApp>;
 }
 
-const NOT_SET_UP = `Qlik Sense is not set up on this machine (${hostname()}). Ask the user to open Qlik Sense in the bb sidebar and sign in.`;
-const SETUP_HINT = "Ask the user to tick it in the bb sidebar → Qlik Sense → Reports.";
+const NOT_SET_UP = `Qlik Sense is not set up on this machine (${hostname()}). Ask the user to open Qlik Sense in the VesnALIA sidebar and sign in.`;
+const SETUP_HINT = "Ask the user to tick it in the VesnALIA sidebar → Qlik Sense → Reports.";
 
 export class QlikService {
   readonly state: StateFile;
@@ -281,7 +281,7 @@ export class QlikService {
 
   async #reportsText(catalog: Catalog): Promise<string> {
     if (!catalog.apps.length) {
-      return "No Qlik Sense reports are enabled yet. Ask the user to open Qlik Sense in the bb sidebar, sign in, and tick the reports you may use.";
+      return "No Qlik Sense reports are enabled yet. Ask the user to open Qlik Sense in the VesnALIA sidebar, sign in, and tick the reports you may use.";
     }
     const base = await this.#base();
     const lines = ["Qlik Sense reports enabled for you. Only these apps can be read; every other app is refused.", ""];

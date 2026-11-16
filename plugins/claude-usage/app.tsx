@@ -1,10 +1,10 @@
-// bb-plugin-claude-usage: the Usage page. One ccusage report per range feeds
+// alia-plugin-claude-usage: the Usage page. One ccusage report per range feeds
 // every view; filters (providers, model) and the cost/tokens switch are applied
 // here, so switching them never runs ccusage again.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import * as Menu from "@radix-ui/react-dropdown-menu";
-import { definePluginApp, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Session } from "./contract";
 import { addPrices, localDate, projectWindow, RANGES, sinceOf, splitCost, tokensOf, type Part, type Price, type Range, type Window } from "./usage";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import "./tokens.css";
 
 type Report = { generatedAt: number; days: { date: string; parts: Part[] }[]; sessions: Session[]; prices: Record<string, Price> };
 type Limits = {
-  source: "anthropic" | "bb" | null;
+  source: "anthropic" | "alia" | null;
   plan: string | null;
   windows: Window[];
   burn: { costPerHour: number; blockCost: number; blockEndsAt: string } | null;
@@ -912,7 +912,7 @@ function Row({ open, onToggle, main, value, sub, children, rowRef }: { open: boo
 const PAGE = 60;
 
 function SessionsList({ sessions, metric, colorOf, partsOf }: { sessions: Session[]; metric: Metric; colorOf: (m: string) => string; partsOf: (parts: Part[]) => Part[] }) {
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<"top" | "recent">("top");
   const [shown, setShown] = useState(PAGE);
@@ -1392,7 +1392,7 @@ function UsagePage() {
   );
 }
 
-/** Lucide's "gauge" (ISC), which bb's built-in icon set does not include. */
+/** Lucide's "gauge" (ISC), which VesnALIA's built-in icon set does not include. */
 function GaugeIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>

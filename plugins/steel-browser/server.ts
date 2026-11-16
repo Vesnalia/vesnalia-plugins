@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { rpcContract, scopeSchema, type CreateOptions, type Scope, type EnginePolicy, type ServiceId } from "./contract.ts";
 import { normalizeBaseUrl, SteelClient, SteelClientError } from "./steel-client.ts";
 import { ProjectBrowsers } from "./projects.ts";
@@ -20,22 +20,22 @@ function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-export default function steelBrowserPlugin(bb: BbPluginApi): void {
-  bb.agents.contributeInstructions(() => [
-    "BB Surf is installed in this BB environment, powered by Steel and available through the terminal CLI, even without a browser-specific tool in your tool list.",
-    "For any browser task (including AWS Console, website sign-in, screenshots, scraping, or navigation between web apps), read the steel-browser skill and first run `bb surf project` in the current thread.",
+export default function steelBrowserPlugin(alia: AliaPluginApi): void {
+  alia.agents.contributeInstructions(() => [
+    "VesnALIA Surf is installed in this VesnALIA environment, powered by Steel and available through the terminal CLI, even without a browser-specific tool in your tool list.",
+    "For any browser task (including AWS Console, website sign-in, screenshots, scraping, or navigation between web apps), read the steel-browser skill and first run `alia surf project` in the current thread.",
     "Never claim Steel is unavailable merely because no dedicated browser tool is exposed. Check the CLI result and report the exact binding or connection error.",
-    "The `bb surf project` command automatically provisions and binds a dedicated Steel browser if missing. Run it and continue, instead of stopping at 'no binding'. Use `bb surf run <url>` or Playwright attached to the returned project CDP endpoint. Do not launch a separate browser or use another project's binding or cookies.",
+    "The `alia surf project` command automatically provisions and binds a dedicated Steel browser if missing. Run it and continue, instead of stopping at 'no binding'. Use `alia surf run <url>` or Playwright attached to the returned project CDP endpoint. Do not launch a separate browser or use another project's binding or cookies.",
     "Before visible browser work, emit ::steel-browser{} on its own line in this thread. Whenever you ask the user to enter credentials, sign in, complete MFA, approve consent, or perform any other manual browser action, repeat ::steel-browser{} on its own line in that same assistant message; never refer to an embedded browser 'above' unless that response contains the directive. Keep navigation in that same Steel session so the user can watch. Never open Safari, local Chrome, an external window, or an external viewer link.",
     "Let the user enter website credentials and MFA directly into the embedded browser, never chat. If viewer authentication is blocked, report it without an external-browser fallback.",
-    "The browser UI and CLI are named BB Surf. Its Monitor icon and Open browser panel button show the agent's project browser on the right. Hover for two seconds to expand; leaving shrinks the hover view. Explicit Expand pins the wider view until Shrink or Escape in BB. The internal steel-browser plugin ID and ::steel-browser{} directive remain unchanged.",
+    "The browser UI and CLI are named VesnALIA Surf. Its Monitor icon and Open browser panel button show the agent's project browser on the right. Hover for two seconds to expand; leaving shrinks the hover view. Explicit Expand pins the wider view until Shrink or Escape in VesnALIA. The internal steel-browser plugin ID and ::steel-browser{} directive remain unchanged.",
     "Do not use --allow-paid without explicit permission. Inspect and verify results; neither agent-handoff nor a Jev done status is task completion.",
-    "If the project CDP loopback is on another host, use bb surf tabs/inspect/click/fill/press/screenshot. Routed actions default to the newest tab; use --tab <index> to target an older one. Do not enter credentials in CLI arguments.",
+    "If the project CDP loopback is on another host, use VesnALIA surf tabs/inspect/click/fill/press/screenshot. Routed actions default to the newest tab; use --tab <index> to target an older one. Do not enter credentials in CLI arguments.",
   ].join("\n"));
-  const projects = new ProjectBrowsers(bb.storage.kv);
-  const signIns = new SignIns(bb.storage.kv);
+  const projects = new ProjectBrowsers(alia.storage.kv);
+  const signIns = new SignIns(alia.storage.kv);
   const dashboards = new DashboardCache<Dashboard>();
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     jevCheckout: {
       type: "string",
       label: "jev-ultrafast checkout",
@@ -51,14 +51,14 @@ export default function steelBrowserPlugin(bb: BbPluginApi): void {
     jevApiKey: {
       type: "string",
       label: "Jev API key (TypeSafe)",
-      description: "Stored in BB's plugin secrets. Leave empty to use TYPESAFE_API_KEY from the optional credentials file.",
+      description: "Stored in VesnALIA's plugin secrets. Leave empty to use TYPESAFE_API_KEY from the optional credentials file.",
       secret: true,
       default: "",
     },
     jevTextModelApiKey: {
       type: "string",
       label: "Text-model API key",
-      description: "Stored in BB's plugin secrets. Leave empty to use TEXT_MODEL_API_KEY from the optional credentials file.",
+      description: "Stored in VesnALIA's plugin secrets. Leave empty to use TEXT_MODEL_API_KEY from the optional credentials file.",
       secret: true,
       default: "",
     },
@@ -79,10 +79,10 @@ export default function steelBrowserPlugin(bb: BbPluginApi): void {
   async function resolve(input: Scope) {
     const scope = scopeSchema.parse(input);
     const projectId = scope.threadId
-      ? (await bb.sdk.threads.get({ threadId: scope.threadId })).projectId
+      ? (await alia.sdk.threads.get({ threadId: scope.threadId })).projectId
       : scope.projectId!;
     if (scope.projectId && scope.projectId !== projectId) throw new Error("Thread and project do not match.");
-    const project = await bb.sdk.projects.get({ projectId });
+    const project = await alia.sdk.projects.get({ projectId });
     return { projectId, projectName: project.name };
   }
 
@@ -136,7 +136,7 @@ export default function steelBrowserPlugin(bb: BbPluginApi): void {
       return { opened: true };
     },
     async allProjects() {
-      const available = await bb.sdk.projects.list({ includePersonal: true });
+      const available = await alia.sdk.projects.list({ includePersonal: true });
       return Promise.all(available.map(async project => {
         const binding = await projects.binding(project.id);
         if (!binding) return { projectId: project.id, projectName: project.name, configured: false, connected: false, activeSessions: 0 };
@@ -191,43 +191,43 @@ export default function steelBrowserPlugin(bb: BbPluginApi): void {
     },
   };
 
-  bb.rpc.register(rpcContract, handlers);
+  alia.rpc.register(rpcContract, handlers);
 
   const usage = [
-    "bb surf status",
-    "bb surf sessions",
-    "bb surf create",
-    "bb surf release <session-id>",
-    "bb surf project",
-    "bb surf bind <api-url> <cdp-url> <viewer-origin>",
-    "bb surf engine <playwright|jev|auto> <fallback-on|fallback-off>",
-    "bb surf run <url> [goal] [--allow-paid]",
-    "bb surf tabs",
-    "bb surf inspect",
-    "bb surf click <role> <exact-name>",
-    "bb surf fill <role> <exact-name> <value>",
-    "bb surf press <key>",
-    "bb surf screenshot",
+    "alia surf status",
+    "alia surf sessions",
+    "alia surf create",
+    "alia surf release <session-id>",
+    "alia surf project",
+    "alia surf bind <api-url> <cdp-url> <viewer-origin>",
+    "alia surf engine <playwright|jev|auto> <fallback-on|fallback-off>",
+    "alia surf run <url> [goal] [--allow-paid]",
+    "alia surf tabs",
+    "alia surf inspect",
+    "alia surf click <role> <exact-name>",
+    "alia surf fill <role> <exact-name> <value>",
+    "alia surf press <key>",
+    "alia surf screenshot",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "surf",
     summary: "Inspect and manage self-hosted Steel browser sessions",
     commands: [
-      { name: "status", summary: "Print Steel connection status", usage: "bb surf status" },
-      { name: "sessions", summary: "List active Steel sessions", usage: "bb surf sessions" },
-      { name: "create", summary: "Create a browser session", usage: "bb surf create" },
-      { name: "release", summary: "Release one exact browser session", usage: "bb surf release <session-id>" },
-      { name: "project", summary: "Ensure this project's isolated browser and show its engine policy", usage: "bb surf project" },
-      { name: "bind", summary: "Assign a dedicated browser to this project", usage: "bb surf bind <api-url> <cdp-url> <viewer-origin>" },
-      { name: "engine", summary: "Set project engine and fallback policy", usage: "bb surf engine <playwright|jev|auto> <fallback-on|fallback-off>" },
-      { name: "run", summary: "Execute or hand off a project browser task", usage: "bb surf run <url> [goal] [--allow-paid]" },
-      { name: "tabs", summary: "List open project tabs by index", usage: "bb surf tabs" },
-      { name: "inspect", summary: "Read the current page's accessibility tree", usage: "bb surf inspect" },
-      { name: "click", summary: "Click one exactly named accessible element", usage: "bb surf click <role> <exact-name>" },
-      { name: "fill", summary: "Fill one exactly named accessible field", usage: "bb surf fill <role> <exact-name> <value>" },
-      { name: "press", summary: "Press a key in the active page", usage: "bb surf press <key>" },
-      { name: "screenshot", summary: "Return a base64 PNG of the active page", usage: "bb surf screenshot" },
+      { name: "status", summary: "Print Steel connection status", usage: "alia surf status" },
+      { name: "sessions", summary: "List active Steel sessions", usage: "alia surf sessions" },
+      { name: "create", summary: "Create a browser session", usage: "alia surf create" },
+      { name: "release", summary: "Release one exact browser session", usage: "alia surf release <session-id>" },
+      { name: "project", summary: "Ensure this project's isolated browser and show its engine policy", usage: "alia surf project" },
+      { name: "bind", summary: "Assign a dedicated browser to this project", usage: "alia surf bind <api-url> <cdp-url> <viewer-origin>" },
+      { name: "engine", summary: "Set project engine and fallback policy", usage: "alia surf engine <playwright|jev|auto> <fallback-on|fallback-off>" },
+      { name: "run", summary: "Execute or hand off a project browser task", usage: "alia surf run <url> [goal] [--allow-paid]" },
+      { name: "tabs", summary: "List open project tabs by index", usage: "alia surf tabs" },
+      { name: "inspect", summary: "Read the current page's accessibility tree", usage: "alia surf inspect" },
+      { name: "click", summary: "Click one exactly named accessible element", usage: "alia surf click <role> <exact-name>" },
+      { name: "fill", summary: "Fill one exactly named accessible field", usage: "alia surf fill <role> <exact-name> <value>" },
+      { name: "press", summary: "Press a key in the active page", usage: "alia surf press <key>" },
+      { name: "screenshot", summary: "Return a base64 PNG of the active page", usage: "alia surf screenshot" },
     ],
     async run(argv, context) {
       const [command, ...args] = argv;

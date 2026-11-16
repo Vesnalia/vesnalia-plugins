@@ -1,5 +1,5 @@
 // The SSH host pool backend. It lends Linux machines and Macs the operator
-// already has, reached over SSH, one box per machine. bb-box logs in as its
+// already has, reached over SSH, one box per machine. alia-box logs in as its
 // admin user on each machine and runs only its helper as root through sudo:
 // setup/ssh-pool/machine.sh, or machine-mac.sh on a Mac. The helper claims
 // the machine for a box by making a new user for it, bbx-<generation>, whose
@@ -9,16 +9,16 @@
 // without a reset between.
 //
 // The truth is on the machine (016, 018). The helper's markers in
-// /var/lib/bb-box, or /var/db/bb-box on a Mac, say which install and box
+// /var/lib/alia-box, or /var/db/alia-box on a Mac, say which install and box
 // hold it, or that it is being reset, and every method reads them before it
-// acts. bb-box's storage keeps only what the machine cannot say: that a
+// acts. alia-box's storage keeps only what the machine cannot say: that a
 // machine is out of service and why, the generation it last saw, and the
 // box on a machine that does not answer. A new instance on empty storage
 // finds every box from the markers.
 //
 // A reset that fails puts the machine out of service. It comes back when
 // returnToService resets it again, or when the operator runs the helper's
-// reset on the machine, which bb-box sees as a clean machine at a later
+// reset on the machine, which alia-box sees as a clean machine at a later
 // generation.
 //
 // A Mac (047) has no whole-machine reset. Its reset makes the next box's
@@ -146,7 +146,7 @@ function linuxOffer(docker: boolean): BoxKind {
 
 /**
  * A Mac's offers (047): its box user at the console, with the desktop and computer use for macos-desktop, Xcode when
- * every Mac has it, and the desktop as video when every Mac has bb-box-stream.
+ * every Mac has it, and the desktop as video when every Mac has alia-box-stream.
  */
 function macOffer(desktop: boolean, features: readonly string[], video = false): BoxKind {
   const tools = features.includes("ios-simulator") ? " It has Xcode and the iOS Simulator." : features.includes("xcode") ? " It has Xcode." : "";
@@ -205,7 +205,7 @@ export interface SshPoolBackendOptions {
   readonly macSilenceMs?: number;
 }
 
-/** What bb-box keeps about a machine. The machine's markers say the rest. */
+/** What alia-box keeps about a machine. The machine's markers say the rest. */
 interface MachineRecord {
   readonly state: PoolMember["state"];
   readonly since: number;
@@ -225,7 +225,7 @@ interface Probe {
   readonly problem: string | null;
 }
 
-/** A machine as bb-box sees it now. */
+/** A machine as alia-box sees it now. */
 interface View {
   readonly machine: SshPoolMachine;
   readonly probe: Probe;
@@ -352,16 +352,16 @@ function fits(status: MachineStatus | null, size: MachineSize): boolean {
   return size.diskGiB === null || (status!.diskGiB ?? 0) >= size.diskGiB;
 }
 
-/** BB's installer needs Node.js 22.19 or newer. */
+/** VesnALIA's installer needs Node.js 22.19 or newer. */
 function nodeFits(version: string): boolean {
   const [major = 0, minor = 0] = version.split(".").map(Number);
   return major > 22 || (major === 22 && minor >= 19);
 }
 
 const NODE_FIX =
-  "Install Node.js 22.19 or newer with npm, such as Node.js 24 from NodeSource or nodejs.org. Debian's and Ubuntu's own nodejs is too old. BB's installer needs it to enrol a box.";
+  "Install Node.js 22.19 or newer with npm, such as Node.js 24 from NodeSource or nodejs.org. Debian's and Ubuntu's own nodejs is too old. VesnALIA's installer needs it to enrol a box.";
 const GIT_FIX = "Install git and gh. On Debian or Ubuntu: sudo apt-get install git gh.";
-const MAC_NODE_FIX = "Install Node.js 22.19 or newer with Homebrew: brew install node. BB's installer needs it to enrol a box.";
+const MAC_NODE_FIX = "Install Node.js 22.19 or newer with Homebrew: brew install node. VesnALIA's installer needs it to enrol a box.";
 const MAC_GIT_FIX = "Install git and gh with Homebrew: brew install git gh.";
 const FULL_DISK_FIX = "In System Settings, General, Sharing, select the (i) beside Remote Login, and turn on Allow full disk access for remote users.";
 
@@ -376,7 +376,7 @@ function setupAs(machine: SshPoolMachine): string {
 
 /** Where the helper keeps its state. */
 function stateDir(machine: SshPoolMachine): string {
-  return machine.os === "macos" ? "/var/db/bb-box" : "/var/lib/bb-box";
+  return machine.os === "macos" ? "/var/db/alia-box" : "/var/lib/alia-box";
 }
 
 /** The helper's mode for a release or reset: "machine" only for a Linux machine with a whole-machine reset. A Mac has none (047). */
@@ -387,7 +387,7 @@ function resetMode(machine: SshPoolMachine): string[] {
 /** Why a free Mac cannot take a box, or null when it can (047). */
 function macProblem(mac: MacStatus, generation: number): string | null {
   const user = `${USER_PREFIX}${generation}`;
-  const reset = `Reset it there with "sudo /usr/local/libexec/bb-box/machine reset".`;
+  const reset = `Reset it there with "sudo /usr/local/libexec/alia-box/machine reset".`;
   if (mac.fileVault) return "FileVault is on, so the Mac cannot sign its box user in. Turn it off, then reset the Mac.";
   if (!mac.fullDisk) return `The helper lacks Full Disk Access, which the Mac's reset needs. ${FULL_DISK_FIX}`;
   if (mac.user !== user) return `Box user ${user} is not made. ${reset}`;
@@ -554,8 +554,8 @@ export class SshPoolBackend implements Backend {
       log: (message) => this.#context.log?.(message),
       logError: (operation, error) => this.#context.logError(operation, error),
       serverApp: async (signal) => {
-        const url = this.#context.bbUrl?.() ?? null;
-        const digest = url ? await this.#context.images?.bbApp(signal).catch(() => null) : null;
+        const url = this.#context.aliaUrl?.() ?? null;
+        const digest = url ? await this.#context.images?.aliaApp(signal).catch(() => null) : null;
         return url && digest ? { url, digest } : null;
       },
       sleep: this.#options.sleep,
@@ -598,7 +598,7 @@ export class SshPoolBackend implements Backend {
     return xcodes.every((xcode) => iosRuntime(xcode)) ? ["xcode", "ios-simulator"] : ["xcode"];
   }
 
-  /** Whether every Mac serving macos-desktop that answered the last survey has bb-box-stream, as #macFeatures does for Xcode. */
+  /** Whether every Mac serving macos-desktop that answered the last survey has alia-box-stream, as #macFeatures does for Xcode. */
   #macVideo(): boolean {
     const macs = (this.#surveyed ?? []).filter((view) => view.probe.status?.mac && this.#lists(view.machine, "macos-desktop"));
     return macs.length > 0 && macs.every((view) => view.probe.status!.mac!.stream);
@@ -636,7 +636,7 @@ export class SshPoolBackend implements Backend {
     const { ssh } = await this.#keys();
     const result = await ssh.run(this.#access(machine, machine.admin.user), encoderProbeScript(), { timeoutMs: (PROBE_SECONDS + 60) * 1000, signal, maxOutputBytes: 64 * 1024 });
     const probe = parseEncoderProbe(result.stdout);
-    if (probe.fps === null) this.#context.log?.(`bb-box could not measure the video encoder of ${mac}: ${probe.words ?? `exit code ${result.exitCode}`}.`);
+    if (probe.fps === null) this.#context.log?.(`alia-box could not measure the video encoder of ${mac}: ${probe.words ?? `exit code ${result.exitCode}`}.`);
     return probe.fps;
   }
 
@@ -816,7 +816,7 @@ export class SshPoolBackend implements Backend {
         signal.throwIfAborted();
         this.#claiming.add(machine.name);
         try {
-          // Without the signal: a claim cut short could finish on the machine after bb-box looked.
+          // Without the signal: a claim cut short could finish on the machine after alia-box looked.
           const docker = kind.capabilities.features.includes("docker") ? ["docker"] : [];
           const result = await this.#helper(machine, ["claim", String(generation), ...docker], claimInput(this.#context.installId, box, publicKey), CLAIM_TIMEOUT_MS);
           if (result.exitCode === EXIT.held || result.exitCode === EXIT.moved || result.exitCode === 255 || result.timedOut) continue;
@@ -888,7 +888,7 @@ export class SshPoolBackend implements Backend {
     const machine = this.#machines.get(guest.ref);
     const generation = whole(guest.data?.generation);
     const box = typeof guest.data?.box === "string" ? guest.data.box : null;
-    // A machine no longer in the settings is no longer bb-box's to reset. Its
+    // A machine no longer in the settings is no longer alia-box's to reset. Its
     // record goes with the box, so the doctor stops naming it.
     if (!machine) {
       const key = `${RECORD}${guest.ref}`;
@@ -985,7 +985,7 @@ export class SshPoolBackend implements Backend {
     if (poolSlotOf(guest)) return this.slots.power(guest, signal);
     const machine = this.#machines.get(guest.ref);
     // Out of the settings, the machine and its box user are as they were:
-    // the box keeps what bb-box knows until the line comes back, or someone
+    // the box keeps what alia-box knows until the line comes back, or someone
     // releases the box. "Gone" would lose its guest to the sweep's leftovers.
     if (!machine) return "unknown";
     const probe = await this.#status(machine, signal);
@@ -1168,7 +1168,7 @@ export class SshPoolBackend implements Backend {
   async doctor(signal?: AbortSignal): Promise<DoctorReport> {
     const checks: DoctorCheck[] = [];
     const macs = this.#config.machines.filter((machine) => machine.os === "macos");
-    const owners = macs.length ? (macs.length === this.#config.machines.length ? "/var/db/bb-box/owner" : "/var/lib/bb-box/owner, or /var/db/bb-box/owner on a Mac") : "/var/lib/bb-box/owner";
+    const owners = macs.length ? (macs.length === this.#config.machines.length ? "/var/db/alia-box/owner" : "/var/lib/alia-box/owner, or /var/db/alia-box/owner on a Mac") : "/var/lib/alia-box/owner";
     const notes: string[] = [`This install's ID is ${this.#context.installId}. The machines it holds name it in ${owners}.`];
     const pass = ([id, name]: Check, detail: string) => checks.push({ id, name, status: "ok", detail, fix: null });
     const warn = ([id, name]: Check, detail: string, fix: string) => checks.push({ id, name, status: "warn", detail, fix });
@@ -1237,7 +1237,7 @@ export class SshPoolBackend implements Backend {
           `${where} did not answer: ${probe.problem}`,
           hostKey
             ? `Put ${name}'s current host key in the host keys setting. ${mac ? "setup-mac.sh" : "setup.sh"} prints it.`
-            : `Check that ${name} is on and that BB's server reaches it, and that its admin user accepts ${PRODUCT}'s key: run ${mac ? "setup-mac.sh" : "setup.sh"} on it with --key and the public key below.`,
+            : `Check that ${name} is on and that VesnALIA's server reaches it, and that its admin user accepts ${PRODUCT}'s key: run ${mac ? "setup-mac.sh" : "setup.sh"} on it with --key and the public key below.`,
         );
         skip(...rest);
         continue;
@@ -1269,22 +1269,22 @@ export class SshPoolBackend implements Backend {
       const lacks = [...missing, ...forBB, ...forGit];
       const found = [
         ...(lacks.length ? [`${name} lacks ${lacks.join(", ")}.`] : []),
-        ...(oldNode ? [`${name} has Node.js ${node}, but BB's installer needs 22.19 or newer.`] : []),
+        ...(oldNode ? [`${name} has Node.js ${node}, but VesnALIA's installer needs 22.19 or newer.`] : []),
       ].join(" ");
       const [nodeFix, gitFix] = mac ? [MAC_NODE_FIX, MAC_GIT_FIX] : [NODE_FIX, GIT_FIX];
       const fixes = [
         ...(missing.length
-          ? [mac ? `Install ${missing.join(", ")}, or run ${setupWords(machine)} again.` : `Install ${missing.join(", ")}. curl-or-wget means either. Boxes need sh, tar and curl or wget to enrol in BB.`]
+          ? [mac ? `Install ${missing.join(", ")}, or run ${setupWords(machine)} again.` : `Install ${missing.join(", ")}. curl-or-wget means either. Boxes need sh, tar and curl or wget to enrol in VesnALIA.`]
           : []),
         ...(forBB.length || oldNode ? [nodeFix] : []),
         ...(forGit.length ? [gitFix] : []),
       ];
       if (missing.length || forBB.length || oldNode) fail(TOOLS, found, `On ${name}: ${fixes.join(" ")}`);
-      else if (forGit.length) warn(TOOLS, `${found} Boxes there enrol in BB, but cannot use the thread's GitHub access, which git takes through gh.`, `On ${name}: ${gitFix}`);
+      else if (forGit.length) warn(TOOLS, `${found} Boxes there enrol in VesnALIA, but cannot use the thread's GitHub access, which git takes through gh.`, `On ${name}: ${gitFix}`);
       else if (!enrolment) {
         warn(TOOLS, `The helper does not say whether ${name} has Node.js, npm, git and gh, which enrolment and the thread's GitHub access need.`, `Run this ${PRODUCT}'s ${setup}.`);
       } else {
-        const linger = mac ? "" : status.systemd ? " It has systemd, so BB's daemon lingers." : " There is no systemd, so BB's daemon runs without linger.";
+        const linger = mac ? "" : status.systemd ? " It has systemd, so VesnALIA's daemon lingers." : " There is no systemd, so VesnALIA's daemon runs without linger.";
         pass(TOOLS, `Everything the helper, enrolment and the thread's GitHub access need, with Node.js ${node}.${linger}`);
       }
       // A machine's Docker matters only when the pool's boxes get it.
@@ -1301,7 +1301,7 @@ export class SshPoolBackend implements Backend {
       // An operator's reset names no install.
       const install = status.owner?.install;
       if (install && install !== this.#context.installId) others.set(install, (others.get(install) ?? 0) + 1);
-      const reset = `"sudo /usr/local/libexec/bb-box/machine ${["reset", ...resetMode(machine)].join(" ")}"`;
+      const reset = `"sudo /usr/local/libexec/alia-box/machine ${["reset", ...resetMode(machine)].join(" ")}"`;
       if (view.state === "out-of-service") {
         warn(STATE, `Out of service: ${view.reason}`, `Fix the cause on ${name}, then reset it there with ${reset}. ${PRODUCT} lends it again once it is clean.`);
       } else if (view.state === "resetting" && status.owner && !install) {
@@ -1331,7 +1331,7 @@ export class SshPoolBackend implements Backend {
       const parts = [...others].map(([install, count]) => `${plural(count, "machine")} held by install ${install}`);
       notes.push(
         `This install leaves alone ${parts.join(", ")}. They still count against capacity. ` +
-          "If one of these IDs was this install's before it lost its storage, take it back with bb box install-id --set <id>.",
+          "If one of these IDs was this install's before it lost its storage, take it back with VesnALIA box install-id --set <id>.",
       );
     }
     const linux = this.#config.machines.filter((machine) => machine.os === "linux");
@@ -1341,7 +1341,7 @@ export class SshPoolBackend implements Backend {
       warn(
         DOCKER_CHECK,
         `${names} ${without.length === 1 ? "has" : "have"} no whole-machine reset, so none of the pool's linux boxes have Docker, and each says No Docker.`,
-        // bb-box runs one SSH host pool, so the fix is the lines, not a second pool.
+        // alia-box runs one SSH host pool, so the fix is the lines, not a second pool.
         `To give them Docker, set up a whole-machine reset on ${names} and add reset=machine to ${without.length === 1 ? "its line" : "their lines"}, as the SSH host pool's setup guide says.`,
       );
     }
@@ -1444,7 +1444,7 @@ export class SshPoolBackend implements Backend {
     const mac = status.mac!;
     const name = machine.name;
     const { pass, warn, fail } = report;
-    const reset = `reset ${name} there with "sudo /usr/local/libexec/bb-box/machine reset"`;
+    const reset = `reset ${name} there with "sudo /usr/local/libexec/alia-box/machine reset"`;
     if (mac.fileVault) {
       fail(ids.FILEVAULT, "FileVault is on, so after a restart the Mac waits for a password and signs no box user in.", `Turn FileVault off on ${name} in System Settings, Privacy and Security, wait until it has decrypted the disk, then ${reset}.`);
     } else pass(ids.FILEVAULT, "Off, so the Mac signs its box user in by itself after a restart.");
@@ -1473,7 +1473,7 @@ export class SshPoolBackend implements Backend {
       const homes = open.map((user) => `/Users/${user}`);
       warn(
         ids.HOMES,
-        `Box users can enter ${open.length === 1 ? "the home" : "the homes"} of ${open.join(", ")}, which macOS makes readable to the staff group they are in, so a box can read what is there, such as an agent CLI's or BB's credentials.`,
+        `Box users can enter ${open.length === 1 ? "the home" : "the homes"} of ${open.join(", ")}, which macOS makes readable to the staff group they are in, so a box can read what is there, such as an agent CLI's or VesnALIA's credentials.`,
         `On ${name}, as an administrator: sudo chmod 700 ${homes.join(" ")}`,
       );
     } else pass(ids.HOMES, "Box users cannot enter any person's home.");
@@ -1718,7 +1718,7 @@ export class SshPoolBackend implements Backend {
     }
   }
 
-  /** The machine's state from its own word, and from bb-box's record of it. */
+  /** The machine's state from its own word, and from alia-box's record of it. */
   #judge(machine: SshPoolMachine, probe: Probe, record: MachineRecord | null): { state: PoolMember["state"]; reason: string | null } {
     const out = (reason: string) => ({ state: "out-of-service" as const, reason });
     const { status } = probe;

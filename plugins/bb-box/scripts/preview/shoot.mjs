@@ -1,6 +1,6 @@
 // Renders every preview scene with headless Chrome, in both themes, into
 // the directory given (default scripts/preview/out). Run from the repository
-// root after `bb plugin build`; needs google-chrome, python3 and Node 22.
+// root after `alia plugin build`; needs google-chrome, python3 and Node 22.
 // It drives Chrome over its debugging protocol, waits for the harness to
 // say it is ready, and clips the screenshot to the frame.
 
@@ -22,7 +22,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 await mkdir(out, { recursive: true });
 const server = spawn("python3", ["-m", "http.server", String(PORT), "--bind", "127.0.0.1"], { stdio: "ignore" });
 // A profile of its own, so a run killed half-way leaves nothing for the next to trip on.
-const profile = await mkdtemp(join(tmpdir(), "bb-box-preview-"));
+const profile = await mkdtemp(join(tmpdir(), "alia-box-preview-"));
 const chrome = spawn("google-chrome", ["--headless=new", "--no-sandbox", "--disable-gpu", "--hide-scrollbars", `--user-data-dir=${profile}`, `--remote-debugging-port=${DEBUG}`, "--window-size=1200,1200", "about:blank"], { stdio: "ignore" });
 process.on("exit", () => {
   server.kill();
@@ -86,8 +86,8 @@ for (const scene of SCENES) {
     }
     await sleep(300);
     // The viewport is sized to the frame, so fixed overlays such as menus and
-    // popovers land where they would in BB, and the clip is the frame. It
-    // stays wider than BB's compact breakpoint, so menus and popovers keep
+    // popovers land where they would in VesnALIA, and the clip is the frame. It
+    // stays wider than VesnALIA's compact breakpoint, so menus and popovers keep
     // their desktop form rather than becoming bottom sheets.
     const box = await page.evaluate("(() => { const r = document.getElementById('frame').getBoundingClientRect(); return { x: 0, y: 0, width: Math.ceil(r.width + 32), height: Math.ceil(Math.min(r.height + 32, 1600)) }; })()");
     // A scene may ask for a narrow viewport (`viewport`), for the layout under Tailwind's sm breakpoint.

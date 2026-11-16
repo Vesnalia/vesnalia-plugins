@@ -30,8 +30,8 @@ function phosphorTheme(name: string, type: "dark" | "light", inks: Inks): Expres
 }
 
 export const codeThemes = [
-  phosphorTheme("bb-box-dark", "dark", { background: "#1c1c1c", text: "#e5e5e5", command: "#ffb224", flag: "#9db0c4", literal: "#e5e5e5", comment: "#a1a1a1" }),
-  phosphorTheme("bb-box-light", "light", { background: "#f4f3f0", text: "#171717", command: "#a85000", flag: "#4c6176", literal: "#171717", comment: "#6b6b6b" }),
+  phosphorTheme("alia-box-dark", "dark", { background: "#1c1c1c", text: "#e5e5e5", command: "#ffb224", flag: "#9db0c4", literal: "#e5e5e5", comment: "#a1a1a1" }),
+  phosphorTheme("alia-box-light", "light", { background: "#f4f3f0", text: "#171717", command: "#a85000", flag: "#4c6176", literal: "#171717", comment: "#6b6b6b" }),
 ];
 
 const fill = "var(--muted)";

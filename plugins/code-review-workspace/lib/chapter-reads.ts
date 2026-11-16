@@ -1,7 +1,7 @@
 // How long each of a review's chapters showed in a window in view, kept on the server (chapter_reads) so every device
 // counts it, and when you said a chapter's quick read was fine: lib/approve-guard.ts reads both.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 import type { ChapterRead } from "../src/store";
 

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import 'fake-indexeddb/auto';
 import { expect,it } from 'vitest';
-import {loadPluginApp,mountPluginContentScripts,renderSlot} from '@get-bb/plugin-sdk/testing/app';
+import {loadPluginApp,mountPluginContentScripts,renderSlot} from '@vesnalia/plugin-sdk/testing/app';
 it('registers cleanup-safe content scripts and a usable settings page without a nav takeover',async()=>{
  const app=await loadPluginApp(()=>import('./app'));
  const scripts=await mountPluginContentScripts(app,{pluginId:'typewriter',generation:1});

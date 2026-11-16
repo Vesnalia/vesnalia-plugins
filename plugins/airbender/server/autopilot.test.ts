@@ -4,7 +4,7 @@
 // the two ways a run ends.
 // Why: the order and the "never start what is blocked or worked on
 // elsewhere" rule are what the owner relies on when leaving an epic to
-// autopilot (bead-bb-8ff). The loop around the picker needs BB and is
+// autopilot (bead-alia-8ff). The loop around the picker needs VesnALIA and is
 // checked by running it.
 
 import assert from "node:assert/strict";
@@ -56,7 +56,7 @@ test("only the epic's own open sub-issues are looked at", () => {
   assert.deepEqual(nextIssue(issues, "e", NONE), { kind: "next", id: "mine" });
 });
 
-test("an issue in Someday is never started, and is not left to do (bead-bb-26g)", () => {
+test("an issue in Someday is never started, and is not left to do (bead-alia-26g)", () => {
   assert.deepEqual(
     nextIssue([sub("later", { status: "deferred", priority: 0 }), sub("now", { priority: 3 })], "e", NONE),
     { kind: "next", id: "now" },

@@ -29,7 +29,7 @@ sources:
 
 # Gotchas
 
-TL;DR: The main maintenance risks are generated CSS drift, DOM coupling to BB markup, and helper behavior that depends on browser storage or experimental BB APIs.
+TL;DR: The main maintenance risks are generated CSS drift, DOM coupling to VesnALIA markup, and helper behavior that depends on browser storage or experimental VesnALIA APIs.
 
 ## Critical
 
@@ -37,7 +37,7 @@ No critical gotcha was confirmed from the server entry points inspected (`server
 
 ## High
 
-### Another chat restyler can compete for the same BB selectors
+### Another chat restyler can compete for the same VesnALIA selectors
 
 **Problem:** The chat stylesheet is ported from Beautiful Chat, and base composer rules explicitly account for competing chat-restyling plugins (`src/theme/chat.css:1-5`, `src/theme/base.css:693-700`).
 
@@ -45,11 +45,11 @@ No critical gotcha was confirmed from the server entry points inspected (`server
 
 **Workaround:** Disable Beautiful Chat when using Pokecut's chat layer; the plugin skill gives this instruction (`skills/pokecut-theme/SKILL.md:73-74`).
 
-### File preview depends on experimental BB navigation and DOM title text
+### File preview depends on experimental VesnALIA navigation and DOM title text
 
 **Problem:** File targets are parsed from timeline title strings and opened through `experimental_openFilePreview` (`file-preview-links.ts:13-29`, `app.tsx:91-97`).
 
-**Risk:** Changes to BB's row markup or experimental navigation contract can prevent preview opening.
+**Risk:** Changes to VesnALIA's row markup or experimental navigation contract can prevent preview opening.
 
 **Workaround:** Keep the title parsing and target conversion aligned with the current row structure; the helper falls back to a synthetic Alt-click when target lookup or navigation fails (`file-preview-links.ts:46-59`).
 
@@ -65,7 +65,7 @@ No critical gotcha was confirmed from the server entry points inspected (`server
 
 ### DOM helpers must clean up their markers
 
-**Problem:** Helpers annotate BB DOM nodes and observe mutations; their returned cleanup functions remove attributes and stop observers (`context-meter.ts:44-63`, `timeline-marks.ts:20-33`, `message-times.ts:101-107`).
+**Problem:** Helpers annotate VesnALIA DOM nodes and observe mutations; their returned cleanup functions remove attributes and stop observers (`context-meter.ts:44-63`, `timeline-marks.ts:20-33`, `message-times.ts:101-107`).
 
 **Risk:** Skipping cleanup when adding a helper leaves stale marker state after changing themes or toggles.
 
@@ -83,7 +83,7 @@ No critical gotcha was confirmed from the server entry points inspected (`server
 
 ### Locale and theme mode use browser local storage
 
-**Problem:** Locale writes `pokecut-theme:locale`; the mode switch writes BB's `bb.theme` (`i18n.ts:145-152`, `theme-mode.tsx:9-25`).
+**Problem:** Locale writes `pokecut-theme:locale`; the mode switch writes VesnALIA's `alia.theme` (`i18n.ts:145-152`, `theme-mode.tsx:9-25`).
 
 **Risk:** Local-storage restrictions can block persistence; locale catches storage errors while `writeThemeMode` does not (`i18n.ts:184-190`, `theme-mode.tsx:22-25`).
 
@@ -93,4 +93,4 @@ No critical gotcha was confirmed from the server entry points inspected (`server
 ## Referenced by
 
 - [Architecture](architecture.md)
-- [Pokecut Theme for BB overview](overview.md)
+- [Pokecut Theme for VesnALIA overview](overview.md)

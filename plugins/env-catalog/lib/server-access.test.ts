@@ -1,4 +1,4 @@
-// End-to-end over server.ts with a hand-made `bb`: agents read, save and delete at once with no
+// End-to-end over server.ts with a hand-made `VesnALIA`: agents read, save and delete at once with no
 // grant, no form and no wait; every action lands in the issuance journal, never with the value.
 // (The SDK's fake host needs cron-parser, which this repo does not install.)
 import assert from "node:assert/strict";
@@ -19,7 +19,7 @@ async function boot() {
   let instructions = "";
   const forms: unknown[] = [];
   const db = new Database(":memory:");
-  const bb: any = {
+  const alia: any = {
     pluginId: "env-catalog",
     log: { info() {}, warn() {}, error() {}, debug() {} },
     server: { experimental_dataDir: mkdtempSync(join(tmpdir(), "ec-test-")) },
@@ -44,7 +44,7 @@ async function boot() {
     },
     onDispose() {},
   };
-  await plugin(bb);
+  await plugin(alia);
   const call = (method: string, input: unknown, ctx?: unknown) => handlers.get(method)!(input, ctx);
   await call("env_save", { name: "VASTAI_API_KEY", value: "sekret-value-1" });
   const tick = () => new Promise((r) => setTimeout(r, 20));
@@ -81,7 +81,7 @@ test("a missing name is answered with a hint", async () => {
   assert.equal((await h.call("journal_list", {})).entries.length, 0);
 });
 
-test("bb env-catalog get --raw works from any session at once", async () => {
+test("alia env-catalog get --raw works from any session at once", async () => {
   const h = await boot();
   const agent = { threadId: "thr_cli", projectId: "proj_1" };
   const raw = await h.cli().run(["get", "VASTAI_API_KEY", "--raw", "--purpose", "vast"], agent);
@@ -124,7 +124,7 @@ test("CLI set, delete, export need no caller mark and are journalled", async () 
   assert.deepEqual(outcomes, ["deleted", "saved"]);
 });
 
-test("the page RPCs and plugin reads work with no caller mark (stock BB)", async () => {
+test("the page RPCs and plugin reads work with no caller mark (stock VesnALIA)", async () => {
   const h = await boot();
   assert.equal((await h.call("env_get_value", { name: "VASTAI_API_KEY" })).value, "sekret-value-1");
   assert.match((await h.call("env_export", { format: "env" })).content, /VASTAI_API_KEY/);

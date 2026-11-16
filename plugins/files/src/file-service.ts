@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { resolveThreadEnvironment, type ThreadEnvironmentTarget } from "./environment";
 import { duplicateDirectory, duplicateFile } from "./duplicate";
 import {
@@ -19,7 +19,7 @@ const ROOT_DOTFILE_PROBES = [
   ".prettierrc", ".eslintrc", ".eslintrc.json", ".eslintrc.js"
 ];
 
-type FilesSdk = BbPluginApi["sdk"]["files"];
+type FilesSdk = AliaPluginApi["sdk"]["files"];
 
 interface TreeEntryLike {
   kind: "file" | "directory";
@@ -31,10 +31,10 @@ interface TreeEntryLike {
 
 /** Совместимый UI-бандл плагина готов принимать file-open через host. */
 async function pluginUiAvailable(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   pluginId: string,
 ): Promise<boolean> {
-  const { plugins } = await bb.sdk.plugins.list();
+  const { plugins } = await alia.sdk.plugins.list();
   const plugin = plugins.find((entry) => entry.id === pluginId);
   return (
     plugin?.status === "running" &&
@@ -43,13 +43,13 @@ async function pluginUiAvailable(
   );
 }
 
-async function openerPluginFlags(bb: BbPluginApi): Promise<{
+async function openerPluginFlags(alia: AliaPluginApi): Promise<{
   annotateAvailable: boolean;
   sqlAvailable: boolean;
 }> {
   const [annotateAvailable, sqlAvailable] = await Promise.all([
-    pluginUiAvailable(bb, "md-annotate"),
-    pluginUiAvailable(bb, "sql"),
+    pluginUiAvailable(alia, "md-annotate"),
+    pluginUiAvailable(alia, "sql"),
   ]);
   return { annotateAvailable, sqlAvailable };
 }
@@ -61,7 +61,7 @@ async function openerPluginFlags(bb: BbPluginApi): Promise<{
  * directory) directly onto `entries`.
  */
 async function appendRootDotfileProbes(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   environment: ThreadEnvironmentTarget,
   entries: TreeEntryLike[],
 ): Promise<void> {
@@ -71,7 +71,7 @@ async function appendRootDotfileProbes(
         const resolved = resolveProjectPath(environment.rootPath, name, { allowEmpty: false });
         try {
           // Try reading as file
-          await bb.sdk.files.read({
+          await alia.sdk.files.read({
             hostId: environment.hostId,
             rootPath: environment.rootPath,
             path: resolved.absolutePath,
@@ -91,7 +91,7 @@ async function appendRootDotfileProbes(
           }
 
           // If it failed but it's not a 404, it might be a directory
-          const dirResult = await bb.sdk.files.listPaths({
+          const dirResult = await alia.sdk.files.listPaths({
             hostId: environment.hostId,
             path: resolved.absolutePath,
             includeFiles: true,
@@ -136,15 +136,15 @@ function fileMetadata(
   };
 }
 
-export function createFileService(bb: BbPluginApi) {
+export function createFileService(alia: AliaPluginApi) {
   async function target(threadId: string) {
-    return resolveThreadEnvironment(bb.sdk, threadId);
+    return resolveThreadEnvironment(alia.sdk, threadId);
   }
 
   return {
     async listTree({ threadId, query }: { threadId: string; query: string }) {
       const environment = await target(threadId);
-      const result = await bb.sdk.files.listPaths({
+      const result = await alia.sdk.files.listPaths({
         hostId: environment.hostId,
         path: environment.rootPath,
         includeFiles: true,
@@ -164,10 +164,10 @@ export function createFileService(bb: BbPluginApi) {
       });
 
       if (query.length === 0) {
-        await appendRootDotfileProbes(bb, environment, entries);
+        await appendRootDotfileProbes(alia, environment, entries);
       }
 
-      const openerFlags = await openerPluginFlags(bb);
+      const openerFlags = await openerPluginFlags(alia);
 
       return {
         rootName: projectBasename(environment.rootPath),
@@ -185,7 +185,7 @@ export function createFileService(bb: BbPluginApi) {
       const resolved = resolveProjectPath(environment.rootPath, path, {
         allowEmpty: true,
       });
-      const result = await bb.sdk.hosts.directory({
+      const result = await alia.sdk.hosts.directory({
         hostId: environment.hostId,
         path: resolved.absolutePath,
       });
@@ -201,9 +201,9 @@ export function createFileService(bb: BbPluginApi) {
         return { path: resolved.relativePath, entries };
       }
 
-      await appendRootDotfileProbes(bb, environment, entries);
+      await appendRootDotfileProbes(alia, environment, entries);
 
-      const openerFlags = await openerPluginFlags(bb);
+      const openerFlags = await openerPluginFlags(alia);
 
       return {
         path: "",
@@ -215,7 +215,7 @@ export function createFileService(bb: BbPluginApi) {
 
     async openFile({ threadId, path }: { threadId: string; path: string }) {
       const parsed = parseRelativePath(path, { allowEmpty: false });
-      return bb.sdk.threads.open({
+      return alia.sdk.threads.open({
         threadId,
         file: {
           source: "workspace",
@@ -230,7 +230,7 @@ export function createFileService(bb: BbPluginApi) {
       const resolved = resolveProjectPath(environment.rootPath, path, {
         allowEmpty: false,
       });
-      const file = await bb.sdk.files.read({
+      const file = await alia.sdk.files.read({
         hostId: environment.hostId,
         rootPath: environment.rootPath,
         path: resolved.absolutePath,
@@ -259,7 +259,7 @@ export function createFileService(bb: BbPluginApi) {
       const resolved = resolveProjectPath(environment.rootPath, input.path, {
         allowEmpty: false,
       });
-      return bb.sdk.files.write({
+      return alia.sdk.files.write({
         hostId: environment.hostId,
         rootPath: environment.rootPath,
         path: resolved.absolutePath,
@@ -278,7 +278,7 @@ export function createFileService(bb: BbPluginApi) {
       const resolved = resolveProjectPath(environment.rootPath, input.path, {
         allowEmpty: false,
       });
-      return bb.sdk.files.write({
+      return alia.sdk.files.write({
         hostId: environment.hostId,
         rootPath: environment.rootPath,
         path: resolved.absolutePath,
@@ -292,7 +292,7 @@ export function createFileService(bb: BbPluginApi) {
       const resolved = resolveProjectPath(environment.rootPath, path, {
         allowEmpty: false,
       });
-      return bb.sdk.files.write({
+      return alia.sdk.files.write({
         hostId: environment.hostId,
         rootPath: environment.rootPath,
         path: resolved.absolutePath,
@@ -313,7 +313,7 @@ export function createFileService(bb: BbPluginApi) {
       const resolved = resolveProjectPath(environment.rootPath, path, {
         allowEmpty: false,
       });
-      return bb.sdk.files.mkdir({
+      return alia.sdk.files.mkdir({
         hostId: environment.hostId,
         rootPath: environment.rootPath,
         path: resolved.absolutePath,
@@ -337,7 +337,7 @@ export function createFileService(bb: BbPluginApi) {
         input.destinationPath,
         { allowEmpty: false },
       );
-      return bb.sdk.files.move({
+      return alia.sdk.files.move({
         hostId: environment.hostId,
         rootPath: environment.rootPath,
         sourcePath: source.absolutePath,
@@ -354,7 +354,7 @@ export function createFileService(bb: BbPluginApi) {
       const resolved = resolveProjectPath(environment.rootPath, input.path, {
         allowEmpty: false,
       });
-      return bb.sdk.files.remove({
+      return alia.sdk.files.remove({
         hostId: environment.hostId,
         rootPath: environment.rootPath,
         path: resolved.absolutePath,
@@ -370,7 +370,7 @@ export function createFileService(bb: BbPluginApi) {
     }) {
       const environment = await target(input.threadId);
       const args = {
-        files: bb.sdk.files,
+        files: alia.sdk.files,
         target: environment,
         sourcePath: input.sourcePath,
         destinationPath: input.destinationPath,
@@ -385,7 +385,7 @@ export function createFileService(bb: BbPluginApi) {
       const resolved = resolveProjectPath(environment.rootPath, path, {
         allowEmpty: false,
       });
-      const preview = await bb.sdk.files.createPreview({
+      const preview = await alia.sdk.files.createPreview({
         hostId: environment.hostId,
         rootPath: environment.rootPath,
       });

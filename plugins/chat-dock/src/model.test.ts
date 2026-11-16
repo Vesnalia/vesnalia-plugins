@@ -63,7 +63,7 @@ const cases: [string, Parameters<typeof plan>[0], Step][] = [
   ["the thread changed under the panel (a new shell in the column): replace the stale one", { want: "strip", held: "strip", columnShell: true, holds: true }, "replace"],
   ["the same in the tab", { want: "tab", held: "tab", columnShell: true, holds: true }, "replace"],
   ["a new shell while the other docking place holds a stale one: replace, not move", { want: "tab", held: "strip", columnShell: true, holds: true }, "replace"],
-  ["the host lost its shell (BB rebuilt it) and the column has none: release", { want: "strip", held: "strip", columnShell: false, holds: false }, "release"],
+  ["the host lost its shell (VesnALIA rebuilt it) and the column has none: release", { want: "strip", held: "strip", columnShell: false, holds: false }, "release"],
   ["the host lost its shell and the column offers one: replace", { want: "strip", held: "strip", columnShell: true, holds: false }, "replace"],
   ["the lock switched while the host is empty: release rather than move nothing", { want: "tab", held: "strip", columnShell: false, holds: false }, "release"],
 ];

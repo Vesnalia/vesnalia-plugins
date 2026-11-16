@@ -1,9 +1,9 @@
 // Shared between server.ts and host.ts. The host entry runs on the machine that
-// holds the workspace; the server calls it through BB's host RPC.
+// holds the workspace; the server calls it through VesnALIA's host RPC.
 import {
   defineRpcContract,
   type ExperimentalHostSignals,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const rootInput = z.object({ root: z.string().min(1) }).strict();

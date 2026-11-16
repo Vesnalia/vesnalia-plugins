@@ -1,11 +1,11 @@
 /**
  * Watch notes that expand in the chat. The first mate's watch messages show the captain one line and a
- * "full note" chip (`server/watch-delivery.ts`); bb gives a plugin no way to draw inside a user message,
- * so this app-wide overlay listens for clicks on those chips, keeps bb from opening the note as a file,
+ * "full note" chip (`server/watch-delivery.ts`); VesnALIA gives a plugin no way to draw inside a user message,
+ * so this app-wide overlay listens for clicks on those chips, keeps VesnALIA from opening the note as a file,
  * and portals the note, read back into its runs, just below the chip's line. A chip whose message leaves
  * the page takes its expanded note with it.
  */
-import { Markdown, useRpc } from "@get-bb/plugin-sdk/app";
+import { Markdown, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -26,7 +26,7 @@ let nextKey = 1;
 function open(chip: Element, file: string): Expanded {
   const container = document.createElement("div");
   // Marked as the plugin's, so its stylesheet applies here as it does in its own panels.
-  container.setAttribute("data-bb-plugin", "firstmate-crew");
+  container.setAttribute("data-alia-plugin", "firstmate-crew");
   (chip.closest("p, li, div") ?? chip).after(container);
   chip.setAttribute("aria-expanded", "true");
   return { key: nextKey++, chip, file, container };
@@ -48,7 +48,7 @@ export function WatchNoteExpander() {
       if (chip === null) return;
       const file = watchNoteFile(chip.getAttribute(CHIP_RESOURCE_ATTRIBUTE));
       if (file === null) return;
-      // Ours: bb would open the note in the file panel.
+      // Ours: VesnALIA would open the note in the file panel.
       event.preventDefault();
       event.stopPropagation();
       const shown = current.current.find((entry) => entry.chip === chip);
@@ -60,7 +60,7 @@ export function WatchNoteExpander() {
       }
     }
 
-    // A message bb re-renders or scrolls away leaves its chip detached; its note goes with it.
+    // A message VesnALIA re-renders or scrolls away leaves its chip detached; its note goes with it.
     const observer = new MutationObserver(() => {
       const gone = current.current.filter((entry) => !entry.chip.isConnected);
       if (gone.length === 0) return;

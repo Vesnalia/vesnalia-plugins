@@ -10,7 +10,7 @@
   priority, labels, and comments in place. Deleting asks for confirmation.
 - The same browser as a thread side panel, and `@` mentions that attach an
   issue's current state to a message.
-- `bb jira-dc` CLI for status, links, search, get, comment, transition, and spawn.
+- `alia jira-dc` CLI for status, links, search, get, comment, transition, and spawn.
 
 ## Agents
 
@@ -26,18 +26,18 @@ the Jira page never ask.
 
 ## Project links
 
-Link a BB project to one or more Jira projects. In that project's chats, agent
+Link a VesnALIA project to one or more Jira projects. In that project's chats, agent
 searches, `@` mentions, and the side panel stay within the linked projects, and
 a separate tool still searches all of Jira when you ask about something else.
 
-**Send to agent** starts a chat in the BB project linked to the issue's Jira
+**Send to agent** starts a chat in the VesnALIA project linked to the issue's Jira
 project. When none is linked, pick a project and link it in the same step.
 
 ## Requirements
 
 Jira Data Center (or Server with REST API v2). Enter your base URL
 (for example `https://jira.company.com`) and a Personal Access Token from
-Profile → Personal Access Tokens. The token is stored as a secret on the BB
+Profile → Personal Access Tokens. The token is stored as a secret on the VesnALIA
 server and used only for Jira's REST API. The plugin acts with that account's
 Jira permissions.
 

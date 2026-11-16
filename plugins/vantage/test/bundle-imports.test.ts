@@ -6,7 +6,7 @@ import { dirname, join, resolve } from "node:path";
 const root = join(__dirname, "..");
 const EXTENSIONS = [".ts", ".tsx"];
 
-// Every file the app entry reaches through relative imports, as bb's frontend build follows them.
+// Every file the app entry reaches through relative imports, as VesnALIA's frontend build follows them.
 function reachable(entry: string): string[] {
   const seen = new Set<string>();
   const visit = (file: string) => {
@@ -26,7 +26,7 @@ describe("the frontend bundle", () => {
   it("takes no value from the SDK's root package, which a git install leaves out", () => {
     const files = reachable(join(root, "app.tsx"));
     expect(files.some((file) => file.endsWith("src/contract.ts"))).toBe(true);
-    const offenders = files.filter((file) => /^\s*import\s+(?!type\b)[^;]*from\s+"@get-bb\/plugin-sdk"/m.test(readFileSync(file, "utf8")));
+    const offenders = files.filter((file) => /^\s*import\s+(?!type\b)[^;]*from\s+"@get-alia\/plugin-sdk"/m.test(readFileSync(file, "utf8")));
     expect(offenders.map((file) => file.slice(root.length + 1))).toEqual([]);
   });
 });

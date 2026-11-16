@@ -1,20 +1,20 @@
 # DeepSeek Harness
 
-Run DeepSeek Harness threads in bb, with its modes and its slash commands.
+Run DeepSeek Harness threads in VesnALIA, with its modes and its slash commands.
 
 ## What you get
 
 - **DeepSeek Harness as a provider.** dsh's ACP app is wired in as `acp-deepseek`, so a
-  dsh thread behaves like any other bb thread: streaming, tool calls, reasoning effort,
+  dsh thread behaves like any other VesnALIA thread: streaming, tool calls, reasoning effort,
   context usage, cancel.
 - **Standard, Creator, and Minimal modes.** A row above the composer picks which dsh
   composition boots. Creator adds Cordis runtime inspection, the present tool, and the
   plugin manager; Minimal keeps only file access, a shell, and compaction.
 - **Harness commands.** dsh's own slash-command registry (`/compact`, `/goal`,
   `/feedback`) is exposed to the agent through a bundled dsh plugin, and a bare command
-  line typed into bb runs directly without a model turn.
+  line typed into VesnALIA runs directly without a model turn.
 - **Session continuity.** Reopening a thread continues its dsh session with the earlier
-  context; the ACP patch bridges `session/load` onto dsh's resume path so bb's stable
+  context; the ACP patch bridges `session/load` onto dsh's resume path so VesnALIA's stable
   adapter can restore sessions.
 
 ## How it works
@@ -34,5 +34,5 @@ root is rejected by dsh's filesystem layer.
 
 ## For agents
 
-`bb deepseek-harness status` reports what is installed, `install` repairs it, and `mode`
+`alia deepseek-harness status` reports what is installed, `install` repairs it, and `mode`
 shows or changes the composition new threads use.

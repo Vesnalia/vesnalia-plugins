@@ -3,12 +3,12 @@ import {
   Markdown,
   definePluginApp,
   experimental_useSidebarThreads,
-  useBbNavigate,
+  useAliaNavigate,
   useComposerView,
   useRealtime,
   useRpc,
   type PluginPendingInteractionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { GoalAgent, GoalItem, GoalSnapshot, NowRow, WorkerTranscript, WorkerTranscriptEntry } from "./contract";
 import { rpcContract } from "./contract";
 import {
@@ -243,7 +243,7 @@ function GoalChrome() {
 
 function GoalPaneOpener() {
   const view = useComposerView();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const threadId = composerThreadId(view.scope);
   const { goal } = useGoal(threadId);
 
@@ -257,7 +257,7 @@ function GoalPaneOpener() {
 
 function GoalPlanPanel({ threadId }: { threadId: string }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const threadMeta = useThreadMeta(threadId);
   const { rpc, goal, setGoal, refresh } = useGoal(threadId);
   const ticking = Boolean(goal && goal.status === "active" && goal.agentRunning);
@@ -1331,7 +1331,7 @@ function GoalSettingsPanel({
               </button>
             </div>
             <span className="mt-1 block text-[11px] text-muted-foreground">
-              Only an explicit action in this pane can activate these rules. Agents and the bb ultragoal CLI cannot write them.
+              Only an explicit action in this pane can activate these rules. Agents and the VesnALIA ultragoal CLI cannot write them.
             </span>
             {briefNote ? <span className="mt-1 block text-[11px] text-foreground">{briefNote}</span> : null}
           </div>
@@ -2034,9 +2034,9 @@ export default definePluginApp((app) => {
   app.contentScripts.register({
     id: "ultragoal-thread-badges",
     mount({ pluginId, signal }) {
-      // A thread-row status glyph is displaced by BB's live running/error
+      // A thread-row status glyph is displaced by VesnALIA's live running/error
       // indicator, so it cannot be the always-present product pill. A scoped
-      // stylesheet targets BB's documented thread-row id attribute instead:
+      // stylesheet targets VesnALIA's documented thread-row id attribute instead:
       // no observer, no host node mutation, and no sidebar replacement.
       const style = document.createElement("style");
       style.dataset.ultragoalThreadBadges = "1";

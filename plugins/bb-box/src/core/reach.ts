@@ -110,7 +110,7 @@ export class ReachCheck {
     if (!rejoin) return false;
     if (this.#checkAfterRejoin.has(box.id)) return true;
     this.#checkAfterRejoin.add(box.id);
-    this.#deps.log(`${boxWords(box)} did not answer while it rejoins BB: ${error} bb-box checks it again once it has rejoined.`);
+    this.#deps.log(`${boxWords(box)} did not answer while it rejoins VesnALIA: ${error} alia-box checks it again once it has rejoined.`);
     const checkAgain = async () => {
       this.#checkAfterRejoin.delete(box.id);
       if (this.#disposed) return;
@@ -125,7 +125,7 @@ export class ReachCheck {
     const since = this.#now();
     const entry: Unanswered = { since, error, attempts, nextAt: null, timer: null, checking: null, host: box.guest?.host ?? null, name: box.name, thread: box.threadId };
     this.#unanswered.set(box.id, entry);
-    this.#deps.log(`${attempts ? `Check ${attempts} of ` : ""}${boxWords(box)}: it does not answer: ${error} bb-box checks again in ${delayAfter(attempts) / 60_000} min.`);
+    this.#deps.log(`${attempts ? `Check ${attempts} of ` : ""}${boxWords(box)}: it does not answer: ${error} alia-box checks again in ${delayAfter(attempts) / 60_000} min.`);
     this.#schedule(box.id, entry, since);
     this.#deps.changed(box);
   }
@@ -196,7 +196,7 @@ export class ReachCheck {
       }
       known.error = error;
       this.#schedule(boxId, known);
-      this.#deps.log(`Check ${known.attempts} of ${boxWords(box)}: it does not answer: ${error} bb-box checks again in ${delayAfter(known.attempts) / 60_000} min.`);
+      this.#deps.log(`Check ${known.attempts} of ${boxWords(box)}: it does not answer: ${error} alia-box checks again in ${delayAfter(known.attempts) / 60_000} min.`);
       this.#deps.changed(box);
     })().finally(() => {
       known.checking = null;

@@ -353,8 +353,8 @@ function normalizeProvider(
       planLabel: null,
       message:
         definition.id === "grok"
-          ? "Grok Build does not report subscription limits through bb yet."
-          : `${definition.name} usage was not reported by bb.`,
+          ? "Grok Build does not report subscription limits through VesnALIA yet."
+          : `${definition.name} usage was not reported by VesnALIA.`,
       windows: [],
     };
   }

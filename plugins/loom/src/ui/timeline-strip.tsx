@@ -770,7 +770,7 @@ export function TimelineStrip({ slug, at, onSeek, onTicket }: { slug: string; at
   })();
 
   const stateTime = past ? shownAt : Infinity;
-  // bb draws a plugin's panel on its recessed surface; the frame's solid colour matches it, so the fade over the future can too.
+  // VesnALIA draws a plugin's panel on its recessed surface; the frame's solid colour matches it, so the fade over the future can too.
   const page = "var(--surface-recessed-solid, var(--background))";
   const frameStyle = { "--loom-timeline-bg": past ? `color-mix(in oklab, var(--warning) 6%, ${page})` : page, background: FRAME } as CSSProperties;
   const ticketRows = rows.filter((row) => row.key !== null).length;

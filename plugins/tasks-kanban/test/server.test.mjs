@@ -1,9 +1,9 @@
 // Integration-style tests for the built server bundle (dist/server.js).
 //
 // We import the actual build output and drive its factory with a mocked
-// BbPluginApi: rpc.register captures the contract + handlers, and
-// bb.sdk.plugins.callRpc is faked so every handler's proxy path runs for
-// real. This verifies, without a live BB server, that:
+// AliaPluginApi: rpc.register captures the contract + handlers, and
+// alia.sdk.plugins.callRpc is faked so every handler's proxy path runs for
+// real. This verifies, without a live VesnALIA server, that:
 //   * every board_* method forwards the right method/input to the tasks plugin
 //   * results are shaped back correctly
 //   * the realtime channel is published exactly on successful writes
@@ -37,7 +37,7 @@ const makeTask = (over = {}) => ({
   ...over,
 });
 
-function fakeBbApi(results = {}) {
+function fakeAliaApi(results = {}) {
   const calls = [];
   const published = [];
   const disposed = [];
@@ -109,11 +109,11 @@ function fakeBbApi(results = {}) {
 }
 
 async function loadPlugin(results) {
-  const { api, calls, published, disposed, settingsValues } = fakeBbApi(
+  const { api, calls, published, disposed, settingsValues } = fakeAliaApi(
     results,
   );
   await mod.default(api);
-  assert.ok(api.contract, "factory must call bb.rpc.register");
+  assert.ok(api.contract, "factory must call alia.rpc.register");
   assert.ok(api.handlers, "factory must register handlers");
   return { api, calls, published, disposed, settingsValues };
 }
@@ -142,21 +142,21 @@ test("factory registers the full board_* contract", async () => {
   }
 });
 
-test("board_projects proxies listProjects + listBbProjects", async () => {
+test("board_projects proxies listProjects + listAliaProjects", async () => {
   const { api, calls } = await loadPlugin({
     [`${TASKS_PLUGIN}.listProjects`]: { projects: [{ p: 1 }] },
-    [`${TASKS_PLUGIN}.listBbProjects`]: { bbProjects: [{ id: "proj_x", name: "X" }] },
+    [`${TASKS_PLUGIN}.listAliaProjects`]: { aliaProjects: [{ id: "proj_x", name: "X" }] },
   });
-  // listProjects input is {} but listBbProjects input must be null.
+  // listProjects input is {} but listAliaProjects input must be null.
   const res = await api.handlers.board_projects();
   assert.deepEqual(calls.map((c) => c.method).sort(), [
-    "listBbProjects",
+    "listAliaProjects",
     "listProjects",
   ]);
-  assert.equal(calls.find((c) => c.method === "listBbProjects").input, null);
+  assert.equal(calls.find((c) => c.method === "listAliaProjects").input, null);
   assert.deepEqual(res, {
     projects: [{ p: 1 }],
-    bbProjects: [{ id: "proj_x", name: "X" }],
+    aliaProjects: [{ id: "proj_x", name: "X" }],
   });
 });
 
@@ -354,7 +354,7 @@ test("a settings change publishes the board channel", async () => {
 
 test("settings descriptors are complete with select controls", async () => {
   const { api } = await loadPlugin({});
-  assert.ok(api.settingDescriptors, "factory must call bb.settings.define");
+  assert.ok(api.settingDescriptors, "factory must call alia.settings.define");
   const keys = [
     "language",
     "sort",

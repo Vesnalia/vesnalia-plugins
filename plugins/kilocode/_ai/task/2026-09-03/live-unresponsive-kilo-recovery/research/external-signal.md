@@ -1,4 +1,4 @@
-# External Signal Research — bb-plugin-kilo #3 (live-but-unresponsive server recovery)
+# External Signal Research — alia-plugin-kilo #3 (live-but-unresponsive server recovery)
 
 **Versions verified:** `@kilo-ai/sdk` **1.18.21** (published 2026-08-21, npm registry) — matches `package.json`. KiloCode docs last updated Sep 3, 2026. Node.js docs v22.x LTS (repo devDep `@types/node ^22`). SDK source inspected from the published tarball (`dist/server.js`, `dist/client.js`, `dist/process.js`, `dist/gen/types.gen.d.ts`).
 
@@ -17,7 +17,7 @@
 **3. `POST /session` has no idempotency mechanism — a blind retry after an ambiguous timeout can create duplicate sessions.**
 - Source: https://kilo.ai/docs/server/ (Sessions: "`POST /session` — Create a new session — body: `{ parentID?, title? }`"). No idempotency key/header is documented anywhere in the server API surface (full API table reviewed).
 - **VERIFIED:** the endpoint exists with that body; **INFERRED:** because creation is a plain POST with no client-supplied idempotency token, re-issuing it after a timed-out-but-actually-succeeded request yields two sessions. The safe bounded-retry pattern is: attempt create → on timeout, re-probe via `session.list()`/`session.status` to detect whether the session already exists before retrying.
-- **What this changes:** the recovery loop must be *probe-then-act*, never *blind-retry-POST*. Session creation is the one stage where a retry can duplicate BB work; health/status probes are the idempotent stages.
+- **What this changes:** the recovery loop must be *probe-then-act*, never *blind-retry-POST*. Session creation is the one stage where a retry can duplicate VesnALIA work; health/status probes are the idempotent stages.
 
 **4. The SDK's own server-start path kills the spawned process on timeout — do not use `createKiloCode`/`createKiloCodeServer` for recovery against the locked server; use `createKiloCodeClient` (client-only, never spawns).**
 - Source: https://kilo.ai/docs/sdk/ ("Create client" vs "Client only": *"If you already have a running instance of kilo, you can create a client instance to connect to it"* — `createKiloCodeClient({ baseUrl })`).

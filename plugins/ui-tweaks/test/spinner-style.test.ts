@@ -19,7 +19,7 @@ test("parses spinner styles and falls back to Follow icon pack", () => {
     assert.equal(isSpinnerStyle(option.id), true);
   }
 
-  for (const value of [undefined, null, "", "BB Default", "solar-linear", 0, {}, []]) {
+  for (const value of [undefined, null, "", "VesnALIA Default", "solar-linear", 0, {}, []]) {
     assert.equal(parseSpinnerStyle(value), "follow");
     assert.equal(isSpinnerStyle(value), false);
   }

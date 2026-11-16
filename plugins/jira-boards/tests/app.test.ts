@@ -9,7 +9,7 @@ test("Jira side panel keeps the chat open and supports mention insertion and dra
     navigator: { value: dom.window.navigator, configurable: true }, HTMLElement: { value: dom.window.HTMLElement, configurable: true },
     MutationObserver: { value: dom.window.MutationObserver, configurable: true },
   });
-  const { loadPluginApp, renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+  const { loadPluginApp, renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
   const { fireEvent, waitFor } = await import("@testing-library/react");
   const app = await loadPluginApp(() => import("../app"));
   assert.equal(app.navPanels.length, 0, "Jira must not navigate away from the current chat");
@@ -46,7 +46,7 @@ test("Jira side panel keeps the chat open and supports mention insertion and dra
     assert.equal(transfer.data.get("text/plain"), "@APP-7");
     const clipboard = dom.window.document.createElement("div");
     clipboard.innerHTML = transfer.data.get("text/html")!;
-    const { experimental_readPromptMentionClipboard } = await import("@get-bb/plugin-sdk/app");
+    const { experimental_readPromptMentionClipboard } = await import("@vesnalia/plugin-sdk/app");
     const pill = experimental_readPromptMentionClipboard(clipboard.firstElementChild!);
     assert.equal(pill?.mention.kind, "plugin");
     assert.equal(pill?.mention.id, "APP-7");
@@ -92,7 +92,7 @@ test("a large board stops at the task limit and loads more on request", async ()
     navigator: { value: dom.window.navigator, configurable: true }, HTMLElement: { value: dom.window.HTMLElement, configurable: true },
     MutationObserver: { value: dom.window.MutationObserver, configurable: true },
   });
-  const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+  const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
   const { fireEvent, waitFor } = await import("@testing-library/react");
   const { JiraPanel, boardTaskLimit } = await import("../app");
   assert.equal(boardTaskLimit, 1000);
@@ -126,7 +126,7 @@ test("switching boards stops pagination and ignores a late response from the pre
     navigator: { value: dom.window.navigator, configurable: true }, HTMLElement: { value: dom.window.HTMLElement, configurable: true },
     MutationObserver: { value: dom.window.MutationObserver, configurable: true },
   });
-  const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+  const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
   const { fireEvent, waitFor } = await import("@testing-library/react");
   const { JiraSidePanel } = await import("../app");
   const issue = { key: "OLD-1", summary: "Old task", status: "Done", statusId: "1", assignee: "Sam", priority: "Low", type: "Task", url: "https://jira.example.test/browse/OLD-1" };
@@ -162,7 +162,7 @@ test("issue detail writes a comment, moves the ticket through a transition and a
     navigator: { value: dom.window.navigator, configurable: true }, HTMLElement: { value: dom.window.HTMLElement, configurable: true },
     MutationObserver: { value: dom.window.MutationObserver, configurable: true },
   });
-  const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+  const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
   const { fireEvent } = await import("@testing-library/react");
   const { JiraSidePanel } = await import("../app");
   let status = "To do";
@@ -227,7 +227,7 @@ test("the board footer switches swimlane grouping", async () => {
     navigator: { value: dom.window.navigator, configurable: true }, HTMLElement: { value: dom.window.HTMLElement, configurable: true },
     MutationObserver: { value: dom.window.MutationObserver, configurable: true },
   });
-  const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+  const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
   const { fireEvent } = await import("@testing-library/react");
   const { JiraSidePanel } = await import("../app");
   const issue = { key: "APP-7", summary: "Checkout", status: "To do", statusId: "1", assignee: "Sam", priority: "High", priorityId: "2", type: "Bug", url: "", parentKey: "APP-1", parentSummary: "Payments" };
@@ -257,7 +257,7 @@ test("the board reopens on the saved board, filters and grouping, and saves chan
     navigator: { value: dom.window.navigator, configurable: true }, HTMLElement: { value: dom.window.HTMLElement, configurable: true },
     MutationObserver: { value: dom.window.MutationObserver, configurable: true },
   });
-  const { renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+  const { renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
   const { fireEvent, waitFor } = await import("@testing-library/react");
   const { JiraSidePanel } = await import("../app");
   const issue = { key: "APP-7", summary: "Checkout", status: "To do", statusId: "1", assignee: "Sam", priority: "High", priorityId: "2", type: "Bug", url: "" };

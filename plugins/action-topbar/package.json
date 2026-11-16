@@ -1,21 +1,12 @@
 {
-  "name": "bb-plugin-action-topbar",
+  "name": "alia-plugin-action-topbar",
   "version": "0.1.5",
-  "description": "A compact main-thread topbar for BB panel tabs and draggable Actions.",
+  "description": "A compact main-thread topbar for VesnALIA panel tabs and draggable Actions.",
   "license": "MIT",
   "author": "Mateo Cerquetella",
-  "homepage": "https://github.com/mateocerquetella/bb-plugins/tree/main/plugins/action-topbar",
-  "bugs": {
-    "url": "https://github.com/mateocerquetella/bb-plugins/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mateocerquetella/bb-plugins.git",
-    "directory": "plugins/action-topbar"
-  },
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "actions",
     "tabs",
     "topbar",
@@ -26,10 +17,10 @@
     "access": "public"
   },
   "engines": {
-    "bb": ">=0.40",
-    "bbPluginSdk": ">=0.4.33"
+    "alia": ">=0.40",
+    "aliaPluginSdk": ">=0.4.33"
   },
-  "bb": {
+  "alia": {
     "name": "Action Topbar",
     "description": "Mirror open thread-panel tabs in a compact topbar with a searchable + launcher.",
     "branding": {
@@ -59,7 +50,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.21",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -86,10 +76,27 @@
   },
   "scripts": {
     "dev": "bun ../../scripts/dev-plugin.ts",
-    "build": "env -u BB_CLI bb plugin build .",
+    "build": "env -u ALIA_CLI alia plugin build .",
     "typecheck": "tsc --noEmit",
     "test": "node --test --experimental-strip-types test/*.test.ts",
     "check": "npm run typecheck && npm test && npm run build",
     "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.21"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/action-topbar#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/action-topbar"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

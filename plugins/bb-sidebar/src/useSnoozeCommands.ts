@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { filterByProjects, shelfRowIds, threadDisplayTitle, visibleInboxThreads } from "./inbox";
 import { BROWSER_EVENTS } from "./lib/browser-events";
 import type { SnoozeCommandRequest } from "./lib/snooze-commands";
@@ -30,12 +30,12 @@ export function useSnoozeCommands(
       const shown = filterByProjects(visibleInboxThreads(threads), scope);
       const thread = shown.find((candidate) => candidate.id === request.threadId);
       if (!thread) {
-        toast.error("This thread is not in the BB Sidebar");
+        toast.error("This thread is not in the VesnALIA Sidebar");
         return;
       }
       // A child has no shelf of its own while its parent's row carries it, so
       // it goes wherever that row goes and its menu offers no Snooze. Name the
-      // row, as `bb sidebar resume` does.
+      // row, as `alia sidebar resume` does.
       const rowId = shelfRowIds(shown).get(thread.id) ?? thread.id;
       const row = shown.find((candidate) => candidate.id === rowId) ?? thread;
       const title = threadDisplayTitle(thread);

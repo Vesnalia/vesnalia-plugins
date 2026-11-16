@@ -1,5 +1,5 @@
 // A short "waiting on you" list on the new-thread screen.
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { isFinished, isSnoozed } from "@/lib/tasks";
 import { KindIcon, Relations } from "./bits";
@@ -9,10 +9,10 @@ const SHOWN = 4;
 
 export function HomepageSection({ projectId }: { projectId: string | null }) {
   const { tasks } = useTasks({ openOnly: true });
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   if (tasks === null) return null;
   const open = tasks.filter((task) => !isFinished(task) && !isSnoozed(task) && !task.handedBack);
-  // bb always shows this section's title, so say so plainly when it is empty.
+  // VesnALIA always shows this section's title, so say so plainly when it is empty.
   if (open.length === 0) {
     return (
       <p className="flex items-center gap-2 px-1 text-sm text-muted-foreground">

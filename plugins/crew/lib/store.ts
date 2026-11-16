@@ -435,7 +435,7 @@ export type OpRow = {
   updatedAt: number;
 };
 
-/** For tests and anything without `bb.storage.migrate`: same append-only rule. */
+/** For tests and anything without `alia.storage.migrate`: same append-only rule. */
 export function migrateInPlace(db: Database): void {
   db.exec("CREATE TABLE IF NOT EXISTS _crew_migrations (idx INTEGER PRIMARY KEY)");
   const done = new Set(
@@ -1213,7 +1213,7 @@ export function createStore(db: Database, now: () => number = Date.now) {
       }));
     },
 
-    // --- where a member's thread works (BB picks the branch name, so it is read back)
+    // --- where a member's thread works (VesnALIA picks the branch name, so it is read back)
     setMemberEnv(memberRow: string, env: { environmentId: string | null; path: string | null; branch: string | null }): void {
       db.prepare(
         `INSERT INTO member_env (member_id, environment_id, path, branch, updated_at) VALUES (?, ?, ?, ?, ?)
@@ -1384,7 +1384,7 @@ export function createStore(db: Database, now: () => number = Date.now) {
     listGraphRunsForCrew(crewId: string): GraphRunRow[] {
       return (db.prepare("SELECT * FROM graph_runs WHERE crew_id = ? ORDER BY started_at, rowid").all(crewId) as Raw[]).map(toGraphRun);
     },
-    /** Open runs of this crew (bb crew stop cancels these). */
+    /** Open runs of this crew (VesnALIA crew stop cancels these). */
     listOpenGraphRunsForCrew(crewId: string): GraphRunRow[] {
       return (
         db
@@ -1420,7 +1420,7 @@ export function createStore(db: Database, now: () => number = Date.now) {
       }));
     },
     /**
-     * Remove every row of a crew, in one transaction (`bb crew delete`).
+     * Remove every row of a crew, in one transaction (`alia crew delete`).
      *
      * Messages that only concern this crew go; a cross-crew message keeps its
      * row for the other crew's history, with the deleted side's crew column

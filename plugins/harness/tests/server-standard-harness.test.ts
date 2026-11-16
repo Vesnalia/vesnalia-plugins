@@ -3,7 +3,7 @@ import {
   createFakePluginHost,
   makeThreadResponse,
   type FakePluginHost,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { REMOVED_MILESTONE_PIPELINE_ID, STANDARD_HARNESS_ID } from "../lib/definitions";
 
@@ -86,7 +86,7 @@ async function loadPlugin(options?: {
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   return Object.assign(host, {
     threads,
     setStopError(value: string | undefined) {
@@ -181,7 +181,7 @@ async function waitForNodeStatus(
 }
 
 function seedLegacyThreadPlan(
-  db: ReturnType<FakePluginHost["bb"]["storage"]["database"]>,
+  db: ReturnType<FakePluginHost["alia"]["storage"]["database"]>,
   args: { id: string; name: string; updatedAt: number; workerChildId: string | null },
 ) {
   db.prepare(
@@ -238,7 +238,7 @@ describe("standard and custom harnesses", () => {
     expect(status.plan?.nodes.find((node) => node.phase === "explore")?.execution).toBe("parent");
     expect(status.plan?.nodes.find((node) => node.phase === "worker")?.execution).toBe("child");
     expect(host.harness.inspection.sdk.callsTo("threads.spawn")).toEqual([]);
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     expect((db.prepare("SELECT COUNT(*) AS n FROM arcs").get() as { n: number }).n).toBe(1);
     expect((db.prepare("SELECT COUNT(*) AS n FROM harness_runs").get() as { n: number }).n).toBe(0);
     expect((db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='harness_runs'").get() as { name: string } | undefined)?.name).toBe(
@@ -356,7 +356,7 @@ describe("standard and custom harnesses", () => {
         harnessId: created.harness.id,
       }),
     ).rejects.toThrow(/unavailable/i);
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     expect((db.prepare("SELECT COUNT(*) AS n FROM arcs").get() as { n: number }).n).toBe(0);
     expect((db.prepare("SELECT COUNT(*) AS n FROM plans").get() as { n: number }).n).toBe(0);
   });
@@ -876,7 +876,7 @@ describe("standard and custom harnesses", () => {
 
   it("does not let historical Milestone rows block Standard start", async () => {
     host = await loadPlugin();
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare(
       `INSERT INTO harness_runs (
          id, project_id, parent_thread_id, template_id, status, task_packet_json, created_at, updated_at
@@ -902,7 +902,7 @@ describe("standard and custom harnesses", () => {
     );
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toMatch(/removed/i);
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     expect((db.prepare("SELECT COUNT(*) AS n FROM arcs").get() as { n: number }).n).toBe(0);
   });
 
@@ -999,7 +999,7 @@ describe("standard and custom harnesses", () => {
     ]);
     expect(results.filter((item) => item.status === "fulfilled").length).toBe(1);
     expect(results.filter((item) => item.status === "rejected").length).toBe(1);
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     expect((db.prepare("SELECT COUNT(*) AS n FROM arcs").get() as { n: number }).n).toBe(1);
     expect((db.prepare("SELECT COUNT(*) AS n FROM plans").get() as { n: number }).n).toBe(1);
   });
@@ -1208,7 +1208,7 @@ describe("standard and custom harnesses", () => {
       projectId: PROJECT,
     });
     await waitForNodeStatus(host, planId, "worker", "starting");
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare(
       "UPDATE plan_nodes SET status = 'pending' WHERE plan_id = ? AND status = 'starting'",
     ).run(planId);
@@ -1404,7 +1404,7 @@ describe("standard and custom harnesses", () => {
       status: "in_progress",
       childThreadId: childId,
     });
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     expect(
       (db.prepare("SELECT plan_id FROM arcs WHERE thread_id = ?").get(PARENT) as { plan_id: string }).plan_id,
     ).toBe(planId);
@@ -1431,7 +1431,7 @@ describe("standard and custom harnesses", () => {
 
   it("migrates arcs.plan_id and resolves legacy null bindings conservatively", async () => {
     host = await loadPlugin({ allowSpawn: true });
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     const columns = db.prepare("PRAGMA table_info(arcs)").all() as Array<{ name: string }>;
     expect(columns.some((column) => column.name === "plan_id")).toBe(true);
 
@@ -1446,7 +1446,7 @@ describe("standard and custom harnesses", () => {
 
     await host.harness.lifecycle.dispose();
     host = await loadPlugin({ allowSpawn: true });
-    const legacy = host.bb.storage.database();
+    const legacy = host.alia.storage.database();
     legacy.prepare("DELETE FROM arcs").run();
     legacy.prepare("DELETE FROM plan_node_attempts").run();
     legacy.prepare("DELETE FROM plan_nodes").run();
@@ -1476,7 +1476,7 @@ describe("standard and custom harnesses", () => {
 
     await host.harness.lifecycle.dispose();
     host = await loadPlugin({ allowSpawn: true });
-    const ambiguous = host.bb.storage.database();
+    const ambiguous = host.alia.storage.database();
     ambiguous.prepare("DELETE FROM arcs").run();
     ambiguous.prepare("DELETE FROM plan_node_attempts").run();
     ambiguous.prepare("DELETE FROM plan_nodes").run();
@@ -1547,7 +1547,7 @@ describe("standard and custom harnesses", () => {
 
   it("stops every live legacy child when plan_id is ambiguous then deletes the arc", async () => {
     host = await loadPlugin({ allowSpawn: true });
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare("DELETE FROM arcs").run();
     db.prepare("DELETE FROM plan_node_attempts").run();
     db.prepare("DELETE FROM plan_nodes").run();
@@ -1627,7 +1627,7 @@ describe("standard and custom harnesses", () => {
 
   it("keeps the legacy arc when an ambiguous Stop cannot stop a live child", async () => {
     host = await loadPlugin({ allowSpawn: true, stopError: "child still running" });
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare("DELETE FROM arcs").run();
     db.prepare("DELETE FROM plan_node_attempts").run();
     db.prepare("DELETE FROM plan_nodes").run();

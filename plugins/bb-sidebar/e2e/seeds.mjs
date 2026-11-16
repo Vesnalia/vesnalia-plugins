@@ -19,7 +19,7 @@ export async function seed(title, { projectId = fixture.projectId, root } = {}) 
     "--model",
     "gpt-5",
     "--environment",
-    root ?? join(fixture.env.BB_DATA_DIR, "repo"),
+    root ?? join(fixture.env.ALIA_DATA_DIR, "repo"),
   ]);
   const id = result.id ?? result.thread?.id;
   expect(id).toBeTruthy();
@@ -52,13 +52,13 @@ export const seededTest = test.extend({
     const threads = [];
     const paths = [];
     const git = promisify(execFile);
-    const repo = join(fixture.env.BB_DATA_DIR, "repo");
+    const repo = join(fixture.env.ALIA_DATA_DIR, "repo");
     try {
       for (const [branch, titles] of [
         ["feature/search", ["Implement search", "Review search changes"]],
         ["fix/menus", ["Fix keyboard navigation", "Add regression coverage"]],
       ]) {
-        const root = join(fixture.env.BB_DATA_DIR, branch.replace("/", "-"));
+        const root = join(fixture.env.ALIA_DATA_DIR, branch.replace("/", "-"));
         await git("git", ["-C", repo, "worktree", "add", "-b", branch, root], { env: fixture.env });
         paths.push(root);
         for (const title of titles) threads.push(await seed(title, { root }));
@@ -72,7 +72,7 @@ export const seededTest = test.extend({
     }
   },
   secondProject: async ({}, use) => {
-    const root = join(fixture.env.BB_DATA_DIR, "filter-repo");
+    const root = join(fixture.env.ALIA_DATA_DIR, "filter-repo");
     const git = promisify(execFile);
     await git("git", ["init", "--initial-branch=main", root], { env: fixture.env });
     await git(

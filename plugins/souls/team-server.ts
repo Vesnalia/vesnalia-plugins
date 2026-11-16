@@ -1,17 +1,17 @@
 import { z } from "zod";
-import type { BbPluginApi, MessageDispatchHookContext, MessageDispatchHookDecision } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, MessageDispatchHookContext, MessageDispatchHookDecision } from "@vesnalia/plugin-sdk";
 import type { SoulStore } from "./store.ts";
 import { renderHandoff, type Soul } from "./shared.ts";
 
 export const TEAM_TOOLS = ["souls_spawn_child", "souls_finish_task", "souls_team"] as const;
-type Execution = NonNullable<Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["defaultExecutionOptions"]>>>;
+type Execution = NonNullable<Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["defaultExecutionOptions"]>>>;
 
-export async function childExecution(bb: BbPluginApi, soul: Soul, environmentId: string, parentProviderId: string, inherited: Execution) {
+export async function childExecution(alia: AliaPluginApi, soul: Soul, environmentId: string, parentProviderId: string, inherited: Execution) {
   const fallback = { providerId: parentProviderId, model: inherited.model, permissionMode: inherited.permissionMode, reasoningLevel: inherited.reasoningLevel, serviceTier: inherited.serviceTier };
   if (soul.model === null) return { execution: fallback, warning: "" };
   try {
     const providerId = soul.model.providerId ?? parentProviderId;
-    const catalog = await bb.sdk.providers.models({ providerId, environmentId });
+    const catalog = await alia.sdk.providers.models({ providerId, environmentId });
     if (catalog.modelLoadError !== null) throw new Error(catalog.modelLoadError.detail ?? catalog.modelLoadError.code);
     const provider = catalog.providers.find((entry) => entry.id === providerId && entry.available);
     if (!provider) throw new Error(`Provider ${providerId} is unavailable`);
@@ -29,8 +29,8 @@ export async function childExecution(bb: BbPluginApi, soul: Soul, environmentId:
   }
 }
 
-export function createSoulTeamTools(bb: BbPluginApi, store: SoulStore, changed: () => void) {
-  bb.agents.registerTool({
+export function createSoulTeamTools(alia: AliaPluginApi, store: SoulStore, changed: () => void) {
+  alia.agents.registerTool({
     name: "souls_team",
     description: "Read this soul's preferred roster, hiring/delegation permissions, limits, current task and hiring history. Reads only; starts no work.",
     parameters: z.object({}),
@@ -51,7 +51,7 @@ export function createSoulTeamTools(bb: BbPluginApi, store: SoulStore, changed: 
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "souls_spawn_child",
     description: "Spawn a child as an existing or hired soul. Requires the current thread's delegation permission. Applies the soul's model preference with a visible fallback, inherits parent permissions, uses the manager's handoff template, and binds before work starts. Use a stable key for one assignment: retries return its existing receipt. Read-only children reuse the workspace; write children use an isolated worktree. Saved concurrent-child limits queue excess work. Never retry an uncertain spawn under a different key.",
     presentation: { label: { pending: "Starting a soul child", completed: "Soul child recorded" } },
@@ -71,16 +71,16 @@ export function createSoulTeamTools(bb: BbPluginApi, store: SoulStore, changed: 
       let childId: string | null = null;
       let spawnAttempted = false;
       try {
-        const parent = await bb.sdk.threads.get({ threadId: ctx.threadId });
+        const parent = await alia.sdk.threads.get({ threadId: ctx.threadId });
         if (parent.environmentId === null) throw new Error("The parent needs a workspace before starting a child.");
-        const inherited = await bb.sdk.threads.defaultExecutionOptions({ threadId: ctx.threadId });
+        const inherited = await alia.sdk.threads.defaultExecutionOptions({ threadId: ctx.threadId });
         if (inherited === null) throw new Error("The parent's execution permissions could not be resolved.");
-        const selection = await childExecution(bb, soul, parent.environmentId, parent.providerId, inherited);
-        const environment = await bb.sdk.environments.get({ environmentId: parent.environmentId });
+        const selection = await childExecution(alia, soul, parent.environmentId, parent.providerId, inherited);
+        const environment = await alia.sdk.environments.get({ environmentId: parent.environmentId });
         if (store.activeTask(ctx.threadId)?.id !== receipt.taskId || !store.delegationForThread(ctx.threadId)) throw new Error("The task or delegation permission changed before the child started.");
         if (input.access === "write" && (!environment.isGitRepo || environment.branchName === null)) throw new Error("Write children need a Git workspace with a known parent branch.");
         spawnAttempted = true;
-        const child = await bb.sdk.threads.spawn({
+        const child = await alia.sdk.threads.spawn({
           // Source-thread attribution requires originKind, which replaces the
           // hierarchy link. Keep both unset for a direct child.
           projectId: ctx.projectId, parentThreadId: ctx.threadId,
@@ -99,7 +99,7 @@ export function createSoulTeamTools(bb: BbPluginApi, store: SoulStore, changed: 
         changed();
         if (store.activeTask(ctx.threadId)?.id !== receipt.taskId) throw new Error("This task finished while the child was being created; its message remains held.");
         // Send-now bypasses all admission hooks. Recheck the held queue instead.
-        await bb.experimental_hooks.recheck("message.dispatch");
+        await alia.experimental_hooks.recheck("message.dispatch");
         store.updateSpawn(receipt.id, child.id, "released", selection.warning);
         return JSON.stringify({ ...store.spawnReceipt(receipt.id), execution: selection.execution, message: "Soul bound before first session. Normal queue admission has been requested; excess children stay queued under the saved concurrency limit." }, null, 2);
       } catch (cause) {
@@ -113,16 +113,16 @@ export function createSoulTeamTools(bb: BbPluginApi, store: SoulStore, changed: 
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "souls_finish_task",
     description: "Explicitly finish this manager thread's current task after its children settle. Archives its task-only hires, preserves permanent/promoted souls, and lets the next task start a fresh hiring allowance. Does not stop or delete threads. Refuses while children have queued or running work.",
     parameters: z.object({}),
     async execute(_input, ctx) {
       for (let offset = 0; ; offset += 100) {
-        const children = await bb.sdk.threads.list({ parentThreadId: ctx.threadId, includeHidden: true, limit: 100, offset });
+        const children = await alia.sdk.threads.list({ parentThreadId: ctx.threadId, includeHidden: true, limit: 100, offset });
         if (children.some((child) => child.status !== "idle" && child.status !== "error")) return { isError: true, content: [{ type: "text", text: "Children still have queued or running work. Finish them before closing this task." }] };
         for (const child of children) {
-          if ((await bb.sdk.threads.queuedMessages.list({ threadId: child.id })).length !== 0) return { isError: true, content: [{ type: "text", text: "A child still has queued work. Finish or cancel that work before closing this task." }] };
+          if ((await alia.sdk.threads.queuedMessages.list({ threadId: child.id })).length !== 0) return { isError: true, content: [{ type: "text", text: "A child still has queued work. Finish or cancel that work before closing this task." }] };
         }
         if (children.length < 100) break;
       }
@@ -135,7 +135,7 @@ export function createSoulTeamTools(bb: BbPluginApi, store: SoulStore, changed: 
   async function admit(context: MessageDispatchHookContext): Promise<MessageDispatchHookDecision> {
     if (context.originPluginId === "souls" && context.thread.parentThreadId !== null) {
       try {
-        const metadata = await bb.sdk.threads.getPluginMetadata({ threadId: context.thread.id });
+        const metadata = await alia.sdk.threads.getPluginMetadata({ threadId: context.thread.id });
         const id = z.object({ soulSpawnId: z.string() }).safeParse(metadata);
         if (id.success) {
           const receipt = store.spawnReceipt(id.data.soulSpawnId);
@@ -154,8 +154,8 @@ export function createSoulTeamTools(bb: BbPluginApi, store: SoulStore, changed: 
     try {
       // Read in lifecycle order: starting -> active can temporarily count
       // twice, but cannot disappear from both reads during admission.
-      const starting = await bb.sdk.threads.count({ parentThreadId: parentId, status: "starting" });
-      const active = await bb.sdk.threads.count({ parentThreadId: parentId, status: "active" });
+      const starting = await alia.sdk.threads.count({ parentThreadId: parentId, status: "starting" });
+      const active = await alia.sdk.threads.count({ parentThreadId: parentId, status: "active" });
       return active.total + starting.total >= limit
         ? { action: "wait", reason: `Soul child limit: ${limit} concurrent children for ${manager?.name ?? parentId}.`, sendAt: Date.now() + 5000 }
         : { action: "proceed" };

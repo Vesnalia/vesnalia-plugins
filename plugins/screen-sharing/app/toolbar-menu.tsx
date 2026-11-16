@@ -1,6 +1,6 @@
 /**
  * The session toolbar's menus (Send keys, Clipboard): a ghost button opening
- * a panel drawn inside the page, not bb's portalled dropdown, because a
+ * a panel drawn inside the page, not VesnALIA's portalled dropdown, because a
  * full-screen page hides anything portalled outside it and both menus are
  * meant for full screen too. A press outside closes it, as does the session
  * stopping taking input.

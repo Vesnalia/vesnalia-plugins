@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   definePluginApp,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
   type PluginNavPanelProps,
   type PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server.js";
 import type { DashboardData } from "./dashboard.js";
 import type { NativeModel } from "./routing/classifier-config.js";
@@ -14,7 +14,7 @@ import "./dashboard.css";
 
 function RoutingDashboard({ threadId }: { threadId?: string }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [days, setDays] = useState<DashboardDays>(30);
   const [baseline, setBaseline] = useState("claude-opus-5-5");
   const [data, setData] = useState<DashboardData | null>(null);
@@ -47,7 +47,7 @@ function RoutingDashboard({ threadId }: { threadId?: string }) {
         setNativeModels([]);
         setModelsWarnings([]);
         setModelsError(
-          cause instanceof Error ? cause.message : "BB models are unavailable.",
+          cause instanceof Error ? cause.message : "VesnALIA models are unavailable.",
         );
       }
     } finally {

@@ -13,20 +13,20 @@ exactly as typed.
 ## Controls
 
 Use the composer button, the plugin's Markdown highlighting setting, or
-`bb md-prompt on`, `bb md-prompt off`, `bb md-prompt toggle` and
-`bb md-prompt status`. Each command accepts `--json`.
+`alia md-prompt on`, `alia md-prompt off`, `alia md-prompt toggle` and
+`alia md-prompt status`. Each command accepts `--json`.
 
 ## How it works
 
-The client paints the draft through BB's public composer decoration API.
-It keeps BB's editor, selection, mentions, attachments and send controls.
+The client paints the draft through VesnALIA's public composer decoration API.
+It keeps VesnALIA's editor, selection, mentions, attachments and send controls.
 The backend stores only the enabled preference. Based on the MIT-licensed
 [md-prompt parser](https://github.com/nogu66/md-prompt).
 
 ## Requirements and limits
 
-Requires BB 0.47 or later with Plugin SDK 0.6.79 or later in the 0.6 series.
-Works with BB's native composer across agent providers. No external service,
+Requires VesnALIA 0.47 or later with Plugin SDK 0.6.79 or later in the 0.6 series.
+Works with VesnALIA's native composer across agent providers. No external service,
 paid account, API key or separate Claude Code installation is required.
 Drafts longer than 60,000 UTF-16 code units remain plain. Code cards use a
 fixed dark background and have gaps on empty lines.

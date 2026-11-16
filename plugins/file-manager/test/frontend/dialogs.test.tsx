@@ -7,8 +7,8 @@
 // submission, so the tests dispatch the same `submit` event the key produces).
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@vesnalia/plugin-sdk/testing/app";
 
 import type { FileEntry, FileManagerContract, Job } from "../../contract";
 
@@ -28,7 +28,7 @@ vi.mock("sonner", () => ({
 
 const app = await loadPluginApp(() => import("../../app"));
 // Imported through the thunk-installed runtime like the app itself: it binds
-// `@get-bb/plugin-sdk/app` at import time.
+// `@vesnalia/plugin-sdk/app` at import time.
 const { FolderPickerDialog } = await import("../../components/dialogs/FolderPickerDialog");
 const { resetUploadManager } = await import("../../hooks/useUploads");
 const { resetPanelSnapshot } = await import("../../components/panel-bus");

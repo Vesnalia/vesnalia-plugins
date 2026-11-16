@@ -1,5 +1,5 @@
 // Pure content transforms for wiring agent clients to the proxy. File IO stays
-// in server.ts (bb.sdk.files with CAS for user-owned files) so these are
+// in server.ts (alia.sdk.files with CAS for user-owned files) so these are
 // trivially testable.
 //
 // Hard constraint: ~/.claude.json and ~/.codex/config.toml must never be
@@ -145,7 +145,7 @@ export const CODEX_ENV_KEY = "AGENT_PROXY_API_KEY";
     ~/.codex/config.toml, at the cost of not inheriting it. */
 export function renderCodexConfig(openAiBaseUrl: string): string {
   return [
-    "# Managed by @smsunarto/bb-plugin-agent-proxy. Use via:",
+    "# Managed by @smsunarto/alia-plugin-agent-proxy. Use via:",
     `#   CODEX_HOME=<this dir> ${CODEX_ENV_KEY}=<local api key> codex`,
     'model_provider = "agent-proxy"',
     "",

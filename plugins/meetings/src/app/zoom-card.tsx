@@ -1,7 +1,7 @@
 // Zoom account card on the list page (zoom.status / loginStart / logout) and
 // the shared zoom-status hook.
 import { useCallback, useEffect, useState } from "react";
-import { useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRealtime } from "@vesnalia/plugin-sdk/app";
 import type { ZoomStatus } from "../shared/rpc-contract";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";

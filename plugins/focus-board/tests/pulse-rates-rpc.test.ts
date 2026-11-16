@@ -3,7 +3,7 @@
 // the point of the test — a plugin whose board nobody has open must register no
 // event subscription and read no thread's context.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 
 const TOKEN_EVENT = "thread/tokenUsage/updated";
@@ -78,7 +78,7 @@ afterEach(() => {
 describe("pulse_rates", () => {
   it("registers no thread subscription until a board asks, and only one ever", async () => {
     const h = makeHost();
-    await plugin(h.host.bb as never);
+    await plugin(h.host.alia as never);
     expect(h.subscribeCalls).toHaveLength(0);
     await h.callRpc("pulse_rates", null);
     expect(h.subscribeCalls).toHaveLength(1);
@@ -89,7 +89,7 @@ describe("pulse_rates", () => {
 
   it("answers an empty map before anything is measurable, never a fabricated zero", async () => {
     const h = makeHost();
-    await plugin(h.host.bb as never);
+    await plugin(h.host.alia as never);
     const answer = (await h.callRpc("pulse_rates", null)) as {
       rates: Record<string, number>;
       generatedAt: number;
@@ -100,7 +100,7 @@ describe("pulse_rates", () => {
 
   it("reads a thread's context on a token-usage event and reports tokens per second", async () => {
     const h = makeHost();
-    await plugin(h.host.bb as never);
+    await plugin(h.host.alia as never);
     await h.callRpc("pulse_rates", null);
 
     fire(h, "thr_a", [TOKEN_EVENT]);
@@ -120,7 +120,7 @@ describe("pulse_rates", () => {
 
   it("ignores an event whose types are not token usage", async () => {
     const h = makeHost();
-    await plugin(h.host.bb as never);
+    await plugin(h.host.alia as never);
     await h.callRpc("pulse_rates", null);
     fire(h, "thr_a", [NOISE_EVENT]);
     await flush();
@@ -129,7 +129,7 @@ describe("pulse_rates", () => {
 
   it("reads nothing before the first poll, even though it is subscribed", async () => {
     const h = makeHost();
-    await plugin(h.host.bb as never);
+    await plugin(h.host.alia as never);
     // No poll yet, so no subscription exists and nothing can have been read.
     expect(h.subscribeCalls).toHaveLength(0);
     expect(h.contextCalls).toEqual([]);
@@ -137,7 +137,7 @@ describe("pulse_rates", () => {
 
   it("unsubscribes on dispose", async () => {
     const h = makeHost();
-    await plugin(h.host.bb as never);
+    await plugin(h.host.alia as never);
     await h.callRpc("pulse_rates", null);
     expect(h.subscribeCalls).toHaveLength(1);
     await h.host.harness.dispose();

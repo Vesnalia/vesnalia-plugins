@@ -5,14 +5,14 @@
 // repository, through the real `bend` program (built from bend/) and the
 // real `bd`, and checks what the tab would then list.
 //
-// Why: the tab reads and changes issues by running bend (bead-bb-c9l.4).
+// Why: the tab reads and changes issues by running bend (bead-alia-c9l.4).
 // What must not change is what the tab shows and does, and that is decided
 // by three layers together: the store, bend with its beads adapter, and bd
 // itself. Only a test through all three catches a mismatch
 // between them.
 //
 // Design notes:
-// - The pieces of BB the store is built with are replaced by a few lines
+// - The pieces of VesnALIA the store is built with are replaced by a few lines
 //   each: a folder that is always the throwaway one, a current issue held
 //   in a variable, a log and a reload signal that are only collected.
 //
@@ -27,7 +27,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, test } from "node:test";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { LINK_KINDS } from "../shared/constants.ts";
 import type { Issue } from "./contract.ts";
 import type { CurrentBead } from "./current-bead.ts";
@@ -65,7 +65,7 @@ after(() => {
 
 /** How many times open tabs were told to reload. */
 let reloads = 0;
-/** The thread's current issue, as the store would keep it in BB. */
+/** The thread's current issue, as the store would keep it in VesnALIA. */
 let current: string | null = null;
 
 /**
@@ -76,10 +76,10 @@ let current: string | null = null;
  */
 function storeIn(path: string, bd: string | null = "bd") {
   return createStore({
-    bb: {
+    alia: {
       log: { warn: () => {} },
       realtime: { publish: () => void (reloads += 1) },
-    } as unknown as BbPluginApi,
+    } as unknown as AliaPluginApi,
     folders: {
       folderFor: async () => ({ path }),
       onOwnBranch: async () => false,
@@ -158,7 +158,7 @@ test("create and edit: a sub-issue takes its parent's category and nothing else"
     ["ux polish", "plan", "l", "t-1-checkout"],
   );
   // The step, the size and the branch are labels; a sub-issue must not
-  // start with its parent's (bead-bb-ty5.4).
+  // start with its parent's (bead-alia-ty5.4).
   assert.deepEqual(
     [issues.get(child)!.parentId, issues.get(child)!.category, issues.get(child)!.step, issues.get(child)!.size, issues.get(child)!.branch],
     [epic, "ux polish", null, null, null],
@@ -324,7 +324,7 @@ test("links of every kind, what blocks what, and moving", async (t) => {
   assert.equal((await listed(store)).get(b)!.parentId, null);
 });
 
-test("Someday: set aside, brought back, and created straight into it (bead-bb-26g)", async (t) => {
+test("Someday: set aside, brought back, and created straight into it (bead-alia-26g)", async (t) => {
   if (skip) return t.skip(skip);
   const store = storeIn(root);
   const id = await create(store, "Maybe later");
@@ -420,7 +420,7 @@ test("a folder without beads and a machine without bd are told apart", async (t)
   assert.deepEqual([noProgram.state, noProgram.message], ["no-bd", "no bd here"]);
   // Found by name, gone when run: the same answer, not a raw error. Asked
   // with a change, which always needs the program; a read may be answered
-  // from bend's copy of the issues without it (bead-bb-c9l.14).
+  // from bend's copy of the issues without it (bead-alia-c9l.14).
   const vanished = await storeIn(root, "bd-that-is-not-installed").createIssue({
     ...here,
     title: "No program",

@@ -1,12 +1,12 @@
 # Квоты планов
 
-Откройте **Provider usage** внизу боковой панели BB. Выберите машину, на которой установлен ZCode, затем **All** или отдельный источник ZCode.
+Откройте **Provider usage** внизу боковой панели VesnALIA. Выберите машину, на которой установлен ZCode, затем **All** или отдельный источник ZCode.
 
 <figure class="screenshot narrow">
 
-![Квоты Coding Plan и отдельный баланс токенов Start Plan в BB](/screenshots/plan-quotas.png)
+![Квоты Coding Plan и отдельный баланс токенов Start Plan в VesnALIA](/screenshots/plan-quotas.png)
 
-<figcaption>Скриншот BB, предоставленный пользователем. Значения относятся к моменту снимка и не являются текущим балансом или гарантией квоты.</figcaption>
+<figcaption>Скриншот VesnALIA, предоставленный пользователем. Значения относятся к моменту снимка и не являются текущим балансом или гарантией квоты.</figcaption>
 </figure>
 
 ## Как читать строки

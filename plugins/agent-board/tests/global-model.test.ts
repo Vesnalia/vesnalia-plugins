@@ -16,7 +16,7 @@ function card(overrides: Partial<BoardCard> = {}): BoardCard {
     parentKey: null,
     depth: 0,
     kind: "thread",
-    source: "bb",
+    source: "alia",
     title: "Work",
     subtitle: null,
     status,
@@ -44,8 +44,8 @@ function card(overrides: Partial<BoardCard> = {}): BoardCard {
 
 function group(overrides: Partial<GlobalExecutionGroup> = {}): GlobalExecutionGroup {
   return {
-    key: "bb:thr_root",
-    source: "bb",
+    key: "alia:thr_root",
+    source: "alia",
     title: "Root work",
     threadId: "thr_root",
     projectId: "proj_1",
@@ -99,12 +99,12 @@ describe("global logical execution model", () => {
     expect(JSON.stringify(execution)).not.toContain("hidden reasoning");
   });
 
-  it("keeps independent BB and Redteam executions separate", () => {
+  it("keeps independent VesnALIA and Redteam executions separate", () => {
     const result = buildGlobalDashboard([
-      group({ key: "bb:a", cards: [card({ key: "a", status: "running" })] }),
+      group({ key: "alia:a", cards: [card({ key: "a", status: "running" })] }),
       group({ key: "redteam:s1", source: "redteam", title: "Redteam — Lab", threadId: null, scanId: "s1", cards: [card({ key: "r", source: "redteam", kind: "phase", threadId: null, status: "running" })] }),
     ], { now: 2_000 });
-    expect(result.active.map((item) => item.key)).toEqual(["bb:a", "redteam:s1"]);
+    expect(result.active.map((item) => item.key)).toEqual(["alia:a", "redteam:s1"]);
     expect(result.counts.active).toBe(2);
   });
 
@@ -138,7 +138,7 @@ describe("Needs Attention derivation", () => {
   ] as const)("derives explicit %s state", (type, message) => {
     const items = deriveAttentionItems([group({ cards: [attention(type, message)] })], 2_000);
     expect(items).toHaveLength(1);
-    expect(items[0]).toMatchObject({ type, message, executionKey: "bb:thr_root", status: "open" });
+    expect(items[0]).toMatchObject({ type, message, executionKey: "alia:thr_root", status: "open" });
   });
 
   it("supports explicit question/input requests", () => {
@@ -164,10 +164,10 @@ describe("Needs Attention derivation", () => {
 
   it("keeps unrelated execution failures separate", () => {
     const items = deriveAttentionItems([
-      group({ key: "bb:a", cards: [attention("failed", "A failed")] }),
-      group({ key: "bb:b", cards: [attention("failed", "B failed")] }),
+      group({ key: "alia:a", cards: [attention("failed", "A failed")] }),
+      group({ key: "alia:b", cards: [attention("failed", "B failed")] }),
     ], 2_000);
-    expect(items.map((item) => item.executionKey).sort()).toEqual(["bb:a", "bb:b"]);
+    expect(items.map((item) => item.executionKey).sort()).toEqual(["alia:a", "alia:b"]);
   });
 
   it("orders action required before failures and waiting", () => {
@@ -263,7 +263,7 @@ describe("attention dismissal (presentation-only)", () => {
   const failedGroup = group({ cards: [attention("failed", "Provisioning failed")] });
 
   it("filters a dismissed condition from Needs attention and reports the count", () => {
-    const key = "bb:thr_root::failed::1000";
+    const key = "alia:thr_root::failed::1000";
     const result = buildGlobalDashboard([failedGroup], { now: 2_000, dismissedKeys: new Set([key]) });
     expect(result.attention).toEqual([]);
     expect(result.counts.attention).toBe(0);
@@ -274,7 +274,7 @@ describe("attention dismissal (presentation-only)", () => {
   it("keeps undismissed and differently-keyed items visible", () => {
     const result = buildGlobalDashboard([failedGroup], {
       now: 2_000,
-      dismissedKeys: new Set(["bb:thr_root::failed::9999", "bb:other::failed::1000"]),
+      dismissedKeys: new Set(["alia:thr_root::failed::9999", "alia:other::failed::1000"]),
     });
     expect(result.attention).toHaveLength(1);
     expect(result.counts.attention).toBe(1);
@@ -282,17 +282,17 @@ describe("attention dismissal (presentation-only)", () => {
   });
 
   it("keeps a dismissed failure visible in Recent (hiding is attention-only)", () => {
-    const key = "bb:thr_root::failed::1000";
+    const key = "alia:thr_root::failed::1000";
     const open = buildGlobalDashboard([failedGroup], { now: 2_000 });
-    expect(open.recent.map((item) => item.key)).toContain("bb:thr_root");
+    expect(open.recent.map((item) => item.key)).toContain("alia:thr_root");
 
     const dismissed = buildGlobalDashboard([failedGroup], { now: 2_000, dismissedKeys: new Set([key]) });
-    expect(dismissed.recent.map((item) => item.key)).toContain("bb:thr_root");
+    expect(dismissed.recent.map((item) => item.key)).toContain("alia:thr_root");
     expect(dismissed.recent).toEqual(open.recent); // recent is untouched by dismissal
   });
 
   it("keys on the condition: an unchanged condition stays dismissed, a new one reappears", () => {
-    const dismissedKeys = new Set(["bb:thr_root::failed::1000"]);
+    const dismissedKeys = new Set(["alia:thr_root::failed::1000"]);
     // Unchanged condition re-derived later: same updatedAt → still dismissed.
     const unchanged = buildGlobalDashboard([failedGroup], { now: 60_000, dismissedKeys });
     expect(unchanged.attention).toEqual([]);
@@ -315,7 +315,7 @@ describe("attention dismissal (presentation-only)", () => {
     ] });
     const result = buildGlobalDashboard([both], {
       now: 2_000,
-      dismissedKeys: new Set(["bb:thr_root::failed::1000"]),
+      dismissedKeys: new Set(["alia:thr_root::failed::1000"]),
     });
     expect(result.attention.map((item) => item.type)).toEqual(["waiting"]);
     expect(result.dismissedCount).toBe(1);

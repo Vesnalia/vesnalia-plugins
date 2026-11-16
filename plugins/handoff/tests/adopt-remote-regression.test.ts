@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -24,28 +24,28 @@ function remote(home: string, entries: string[] = [], probe: string | null = hom
     if (start.command.includes('"$HOME"')) {
       output = probe ?? "";
     } else {
-      // Run the command the way bb's host daemon does: through the login shell,
+      // Run the command the way VesnALIA's host daemon does: through the login shell,
       // which on macOS is zsh, where an unmatched glob is an error.
       execFileSync(LOGIN_SHELL, ["-c", start.command], { encoding: "utf8" });
-      const out = /\/tmp\/bb-handoff-remote-\d+-\d+\.out/.exec(start.command)![0];
+      const out = /\/tmp\/alia-handoff-remote-\d+-\d+\.out/.exec(start.command)![0];
       output = readFileSync(out, "utf8");
       rmSync(out, { force: true });
     }
     outputs.push(output);
     return { id: "terminal" };
   });
-  const bb = { sdk: {
+  const alia = { sdk: {
     hosts: { list: async () => [{ id: "remote", name: "laptop", status: "connected" }] },
     system: { config: async () => ({ primaryHostId: "server" }) },
     projects: { list: async () => [] },
     terminals: { create, get: async () => ({ status: "exited" }), close: async () => {} },
     files: {
       list: async ({ limit }: { limit: number }) => entries.slice(0, limit),
-      read: async ({ path }: { path: string }) => ({ content: path.startsWith("/tmp/bb-handoff-remote-") ? output : readFileSync(path, "utf8"), contentEncoding: "utf8" }),
+      read: async ({ path }: { path: string }) => ({ content: path.startsWith("/tmp/alia-handoff-remote-") ? output : readFileSync(path, "utf8"), contentEncoding: "utf8" }),
       remove: async () => {},
     },
-  } } as unknown as BbPluginApi;
-  return { bb, create, outputs, ctx: { bb, hostId: "remote", hostName: "laptop", home } };
+  } } as unknown as AliaPluginApi;
+  return { alia, create, outputs, ctx: { alia, hostId: "remote", hostName: "laptop", home } };
 }
 
 const ID = "7862d82b-39fa-4c03-935a-fab4a4649621";
@@ -96,7 +96,7 @@ describe("remote Claude id prefixes", () => {
     const home = store([`-work/${ID}.jsonl`, `-other/${OTHER}.jsonl`]);
     const found = await findRemoteSession(remote(home).ctx, "7862d82b", "claude");
     expect(found.map((f) => f.sessionId).sort()).toEqual([OTHER, ID].sort());
-    const result = await performAdoptRemote(remote(home).bb, { machine: "remote", sessionId: "7862d82b", agent: "claude", dryRun: true });
+    const result = await performAdoptRemote(remote(home).alia, { machine: "remote", sessionId: "7862d82b", agent: "claude", dryRun: true });
     expect(result).toMatchObject({ ok: false, code: "ambiguous" });
   });
 
@@ -130,37 +130,37 @@ describe("remote home discovery", () => {
   it("lists sessions without a project source or explicit home", async () => {
     const home = mkdtempSync(join(tmpdir(), "handoff-home-"));
     roots.push(home);
-    const { bb } = remote(home);
-    expect(await listRemoteSessionsForDirectory(bb, { machine: "remote", cwd: "/work" })).toMatchObject({ sessions: [], machine: "laptop" });
+    const { alia } = remote(home);
+    expect(await listRemoteSessionsForDirectory(alia, { machine: "remote", cwd: "/work" })).toMatchObject({ sessions: [], machine: "laptop" });
   });
 
   it("uses the same home discovery for adoption by id", async () => {
     const home = mkdtempSync(join(tmpdir(), "handoff-home-"));
     roots.push(home);
-    const { bb } = remote(home);
-    const result = await performAdoptRemote(bb, { machine: "remote", sessionId: ID, agent: "claude", dryRun: true });
+    const { alia } = remote(home);
+    const result = await performAdoptRemote(alia, { machine: "remote", sessionId: ID, agent: "claude", dryRun: true });
     expect(result).toMatchObject({ ok: false, code: "not-found" });
   });
 
   it("honors an explicit home without probing HOME", async () => {
-    const { bb, create } = remote("/nonexistent", [], "/different");
-    await listRemoteSessionsForDirectory(bb, { machine: "remote", cwd: "/work", home: "/nonexistent" });
+    const { alia, create } = remote("/nonexistent", [], "/different");
+    await listRemoteSessionsForDirectory(alia, { machine: "remote", cwd: "/work", home: "/nonexistent" });
     expect(create.mock.calls.every(([args]) => !args.start.command.includes('"$HOME"'))).toBe(true);
   });
 
   it.each([false, true])("falls back to project sources when the HOME probe fails (terminal failure: %s)", async (terminalFailure) => {
-    const { bb, create } = remote("/unused", [], "relative/path");
+    const { alia, create } = remote("/unused", [], "relative/path");
     if (terminalFailure) create.mockRejectedValueOnce(new Error("terminal unavailable"));
-    vi.spyOn(bb.sdk.projects, "list").mockResolvedValue([
+    vi.spyOn(alia.sdk.projects, "list").mockResolvedValue([
       { sources: [{ hostId: "remote", path: "/home/fallback/work" }] },
-    ] as Awaited<ReturnType<typeof bb.sdk.projects.list>>);
-    expect(await listRemoteSessionsForDirectory(bb, { machine: "remote", cwd: "/work" })).toMatchObject({ sessions: [], machine: "laptop" });
+    ] as Awaited<ReturnType<typeof alia.sdk.projects.list>>);
+    expect(await listRemoteSessionsForDirectory(alia, { machine: "remote", cwd: "/work" })).toMatchObject({ sessions: [], machine: "laptop" });
     expect(innerScript(create.mock.calls.at(-1)![0].start.command)).toContain("'/home/fallback/.claude' '/home/fallback'/.claude[-_.]?*");
   });
 
   it.each(["", "relative/path", "/home/user\nnoise"])("reports no-home for invalid probe output %j", async (probe) => {
-    const { bb } = remote("/unused", [], probe);
-    expect(await performAdoptRemote(bb, { machine: "remote", sessionId: ID, dryRun: true })).toMatchObject({ ok: false, code: "no-home" });
+    const { alia } = remote("/unused", [], probe);
+    expect(await performAdoptRemote(alia, { machine: "remote", sessionId: ID, dryRun: true })).toMatchObject({ ok: false, code: "no-home" });
   });
 });
 
@@ -193,7 +193,7 @@ describe("remote Claude profiles", () => {
 
   it("lists a profile's sessions for a directory", async () => {
     const { home, file } = homeWithProfile(".claude-work");
-    const result = await listRemoteSessionsForDirectory(remote(home).bb, { machine: "remote", cwd: "/work", home });
+    const result = await listRemoteSessionsForDirectory(remote(home).alia, { machine: "remote", cwd: "/work", home });
     expect(result).toMatchObject({ sessions: [{ agent: "claude", sessionId: ID, filePath: file }] });
   });
 
@@ -208,7 +208,7 @@ describe("remote Claude profiles", () => {
     mkdirSync(work, { recursive: true });
     writeFileSync(join(work, `${ID}.jsonl`), transcript(false));
     expect((await findRemoteSession(remote(home).ctx, ID, "claude")).map((s) => s.filePath)).toEqual([file]);
-    const listed = await listRemoteSessionsForDirectory(remote(home).bb, { machine: "remote", cwd: "/work", home });
+    const listed = await listRemoteSessionsForDirectory(remote(home).alia, { machine: "remote", cwd: "/work", home });
     expect(listed).toMatchObject({ sessions: [{ filePath: file }] });
     expect((listed as { sessions: unknown[] }).sessions).toHaveLength(1);
   });

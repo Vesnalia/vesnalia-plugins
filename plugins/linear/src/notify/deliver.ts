@@ -9,7 +9,7 @@ import { truncate } from "../format.js";
  * signal. This rung has no preconditions and never fails.
  *
  * **Rung 2 — only if the user named a peer.** There is no plugin-facing
- * notification API in bb (verified: no `notif*` symbol anywhere in the SDK
+ * notification API in VesnALIA (verified: no `notif*` symbol anywhere in the SDK
  * declarations), and there is no existing peer that could receive one — the
  * published iOS push plugin exposes `status`, `subscribe`, `unsubscribe`,
  * `removeDevice` and `sendTest`, and `sendTest` takes `z.null()`, so it cannot
@@ -19,8 +19,8 @@ import { truncate } from "../format.js";
  *
  * So: **no candidate list, no auto-detection.** This plugin publishes a
  * contract in `docs/push-contract.md` and calls only what the user put in
- * `pushPluginId`. The README says the true thing — "bb has no plugin
- * notification API, so these land in bb" — rather than "if a push plugin is
+ * `pushPluginId`. The README says the true thing — "alia has no plugin
+ * notification API, so these land in VesnALIA" — rather than "if a push plugin is
  * installed", which is true for nobody today.
  *
  * **Rung 3 — foreground.** The frontend raises a toast on the realtime signal.
@@ -39,7 +39,7 @@ export interface PushPayload {
 }
 
 export interface PeerDeps {
-  /** `bb.sdk.plugins.list()`, narrowed. */
+  /** `alia.sdk.plugins.list()`, narrowed. */
   readonly listPlugins: () => Promise<
     readonly { readonly id: string; readonly enabled: boolean; readonly status: string }[]
   >;

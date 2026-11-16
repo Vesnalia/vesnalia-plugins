@@ -219,7 +219,7 @@ comment you created.`
 }`;
 }
 
-/** A concise title for the spawned thread, shown in the BB sidebar. */
+/** A concise title for the spawned thread, shown in the VesnALIA sidebar. */
 export function buildThreadTitle(context: DispatchContext): string {
   const prefix =
     context.rule.mode === "shadow" ? "SlopCop (shadow)" : "SlopCop";

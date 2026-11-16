@@ -1,6 +1,6 @@
 ---
 name: worktree-ports
-description: Find which TCP ports are listening in a BB workspace (worktree) and which process or container owns them. Use when asked what is running in a worktree, which port a dev server is on, what URL reaches a running app, or to stop whatever holds a port.
+description: Find which TCP ports are listening in a VesnALIA workspace (worktree) and which process or container owns them. Use when asked what is running in a worktree, which port a dev server is on, what URL reaches a running app, or to stop whatever holds a port.
 ---
 
 # Worktree ports
@@ -13,8 +13,8 @@ per worktree — a server that is up is listed, a server that is down is not.
 ## Read the ports
 
 ```bash
-bb ports list           # grouped by worktree, with URLs
-bb ports list --json    # same data for scripting
+alia ports list           # grouped by worktree, with URLs
+alia ports list --json    # same data for scripting
 ```
 
 Under each worktree the app ports come first, unheaded; backing services
@@ -30,7 +30,7 @@ The `worktree_ports` agent tool returns the same listing, and takes an optional
 ## Stop a server
 
 ```bash
-bb ports release <environment-id> <port>
+alia ports release <environment-id> <port>
 ```
 
 The target is resolved by a fresh scan, so this can only stop something the
@@ -39,7 +39,7 @@ published container port stops its container.
 
 ## Label ports for a repo
 
-Commit `.bb/ports.json` in the repository to name ports in the UI. An existing
+Commit `.vesnalia/ports.json` in the repository to name ports in the UI. An existing
 `.superset/ports.json` is read as a fallback, so a repo already labelled for
 Superset needs no second file.
 

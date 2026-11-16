@@ -13,7 +13,7 @@ function facts(overrides: Partial<TurnFacts> = {}): TurnFacts {
 describe("relativize", () => {
   it("strips the workspace root, in either spelling of a macOS temp path", () => {
     expect(relativize("/var/folders/x/repo/src/a.ts", "/var/folders/x/repo")).toBe("src/a.ts");
-    // Claude Code reports /private/var/… for a workspace bb knows as /var/… (spike).
+    // Claude Code reports /private/var/… for a workspace VesnALIA knows as /var/… (spike).
     expect(relativize("/private/var/folders/x/repo/src/a.ts", "/var/folders/x/repo")).toBe("src/a.ts");
     expect(relativize("/var/folders/x/repo/src/a.ts", "/private/var/folders/x/repo/")).toBe("src/a.ts");
   });

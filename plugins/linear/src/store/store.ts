@@ -166,9 +166,9 @@ export interface IssueFilter {
   readonly includeArchived?: boolean;
   /** Default false. The panel's baseline is open work. */
   readonly includeCompleted?: boolean;
-  /** Only issues with bb work on this machine: an active thread, or a branch
+  /** Only issues with VesnALIA work on this machine: an active thread, or a branch
    *  or pull request resolved to them. */
-  readonly withBbWork?: boolean;
+  readonly withAliaWork?: boolean;
 }
 
 export interface IssueQuery extends IssueFilter {
@@ -399,7 +399,7 @@ export interface Store extends ThreadWorkStore {
   removeBinding(projectId: string, teamId: string): void;
   removeProjectBindings(projectId: string): void;
 
-  /** Disconnect means it: every mirror table emptied. `bb plugin remove` does
+  /** Disconnect means it: every mirror table emptied. `alia plugin remove` does
    *  **not** do this — the host deletes settings rows and the secrets
    *  directory and leaves `data.db` in place — so this is the only thing that
    *  removes a workspace's issue data from the machine. */
@@ -552,7 +552,7 @@ export function createStore(db: Database): Store {
       clauses.push(`(state.type IS NULL OR state.type NOT IN ('completed', 'canceled'))`);
     }
 
-    if (filter.withBbWork) {
+    if (filter.withAliaWork) {
       clauses.push(`(
         EXISTS (SELECT 1 FROM thread_work WHERE thread_work.issue_id = issue.id AND thread_work.status = 'active')
         OR EXISTS (SELECT 1 FROM pr_state WHERE pr_state.issue_id = issue.id)
@@ -590,7 +590,7 @@ export function createStore(db: Database): Store {
     const text = filter.text?.trim() ?? "";
     if (text !== "") {
       // Bounded, and ranked before it is bounded. better-sqlite3 is
-      // synchronous, so this subquery runs on the bb server's event loop —
+      // synchronous, so this subquery runs on the VesnALIA server's event loop —
       // and it is on the keystroke path (the panel search box and the `#`
       // mention menu both re-query per character). Every token is a prefix
       // match, so a one-character query matches a large fraction of a big
@@ -2228,7 +2228,7 @@ export function createStore(db: Database): Store {
           .prepare(
             `SELECT name FROM sqlite_master
               WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
-                AND name NOT LIKE '_bb_%' AND name NOT LIKE '%_fts_%'`,
+                AND name NOT LIKE '_alia_%' AND name NOT LIKE '%_fts_%'`,
           )
           .all() as { name: string }[]
       ).map((row) => row.name);

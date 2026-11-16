@@ -1,6 +1,6 @@
 // A fetch-backed twin of the `useRpc` hook.
 //
-// Ported from bb-plugin-floating-terminal. The floating surfaces are mounted
+// Ported from alia-plugin-floating-terminal. The floating surfaces are mounted
 // by a content script rather than a React slot, so they have no plugin React
 // context to read `useRpc` from. The wire format is public and stable, so we
 // speak it directly and keep the same contract-derived typing. The panels use
@@ -10,7 +10,7 @@ import type {
   PluginRpcClient,
   PluginRpcContract,
   PluginRpcResult,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 export class PluginRpcCallError extends Error {
   readonly code: string;

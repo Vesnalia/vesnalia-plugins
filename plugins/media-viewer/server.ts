@@ -1,8 +1,8 @@
-// bb-plugin-media-viewer backend: turns a file BB is opening (or a `::media`
-// directive's file) into BB's own streaming URL for it, plus the other media
+// alia-plugin-media-viewer backend: turns a file VesnALIA is opening (or a `::media`
+// directive's file) into VesnALIA's own streaming URL for it, plus the other media
 // files in the same folder so the viewer can step through them.
 import path from "node:path";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { mediaKind } from "./media.ts";
 
@@ -17,7 +17,7 @@ const sourceSchema = z
   .strict();
 export type MediaSource = z.infer<typeof sourceSchema>;
 
-// Where a file lives, for opening it in BB's right panel.
+// Where a file lives, for opening it in VesnALIA's right panel.
 const targetSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("workspace"), environmentId: z.string(), path: z.string() }).strict(),
   z.object({ kind: z.literal("host"), hostId: z.string(), path: z.string() }).strict(),
@@ -64,13 +64,13 @@ const encodeSegments = (file: string) => file.split("/").filter(Boolean).map(enc
 type Location = {
   /** Absolute folder holding the file on `hostId`, when siblings can be listed. */
   folder: { hostId: string; path: string } | null;
-  /** BB's file URL and panel target for a file name in the same folder. */
+  /** VesnALIA's file URL and panel target for a file name in the same folder. */
   sibling: (name: string) => { url: string; target: Target | null };
 };
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   async function threadEnvironment(threadId: string) {
-    const thread = await bb.sdk.threads.get({ threadId, include: "environment" });
+    const thread = await alia.sdk.threads.get({ threadId, include: "environment" });
     const environment = "environment" in thread ? thread.environment : null;
     if (!environment) throw new Error("This thread has no environment.");
     return environment;
@@ -81,7 +81,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (!source.threadId) throw new Error("A thread-storage file needs its thread.");
       const threadId = source.threadId;
       const relative = relativePath(file);
-      const storage = await bb.sdk.threads.storageLocation({ threadId });
+      const storage = await alia.sdk.threads.storageLocation({ threadId });
       const dir = path.posix.dirname(relative);
       return {
         folder: { hostId: storage.hostId, path: path.posix.join(storage.storageRootPath, dir) },
@@ -101,7 +101,7 @@ export default async function plugin(bb: BbPluginApi) {
       let environmentId = source.environmentId;
       if (!environmentId && !source.projectId && source.threadId) environmentId = (await threadEnvironment(source.threadId)).id;
       if (environmentId) {
-        const environment = await bb.sdk.environments.get({ environmentId });
+        const environment = await alia.sdk.environments.get({ environmentId });
         const id = environmentId;
         return {
           folder: environment.path ? { hostId: environment.hostId, path: path.posix.join(environment.path, dir) } : null,
@@ -122,9 +122,9 @@ export default async function plugin(bb: BbPluginApi) {
     }
     const absolute = absolutePath(file);
     let hostId = source.hostId;
-    if (!hostId && source.environmentId) hostId = (await bb.sdk.environments.get({ environmentId: source.environmentId })).hostId;
-    if (!hostId && source.threadId) hostId = (await bb.sdk.threads.storageLocation({ threadId: source.threadId })).hostId;
-    if (!hostId) hostId = (await bb.sdk.system.config()).primaryHostId;
+    if (!hostId && source.environmentId) hostId = (await alia.sdk.environments.get({ environmentId: source.environmentId })).hostId;
+    if (!hostId && source.threadId) hostId = (await alia.sdk.threads.storageLocation({ threadId: source.threadId })).hostId;
+    if (!hostId) hostId = (await alia.sdk.system.config()).primaryHostId;
     if (!hostId) throw new Error("Could not tell which machine holds this file.");
     const host = hostId;
     const dir = path.posix.dirname(absolute);
@@ -137,7 +137,7 @@ export default async function plugin(bb: BbPluginApi) {
     };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async resolve({ source, path: file }) {
       const name = path.posix.basename(file.replace(/\\/g, "/"));
       const kind = mediaKind(name);
@@ -147,11 +147,11 @@ export default async function plugin(bb: BbPluginApi) {
       let names: string[] = [];
       if (location.folder) {
         try {
-          const listing = await bb.sdk.hosts.directory(location.folder);
+          const listing = await alia.sdk.hosts.directory(location.folder);
           names = listing.entries.filter((entry) => entry.kind === "file" && mediaKind(entry.name)).map((entry) => entry.name);
         } catch (error) {
           // Stepping through the folder is a convenience; still show the file.
-          bb.log.warn(`could not list media folder: ${String(error)}`);
+          alia.log.warn(`could not list media folder: ${String(error)}`);
         }
       }
       if (!names.includes(name)) names.push(name);

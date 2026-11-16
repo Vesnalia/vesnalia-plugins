@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { t } from "./i18n";
 import { Button } from "./components/ui/button";
@@ -143,7 +143,7 @@ export function AgentsRulesEditor() {
           {t("Свои правила")}
           <Help
             text={t(
-              "Постоянные правила этого места: роутинг моделей, делегирование, порядок работы. «В файл» дописывает их в конец AGENTS.md и CLAUDE.md — они действуют и в консоли на машине. «В сессии BB» ничего не пишет на диск: текст попадает в инструкции агента, запущенного из BB, и действует весь разговор.",
+              "Постоянные правила этого места: роутинг моделей, делегирование, порядок работы. «В файл» дописывает их в конец AGENTS.md и CLAUDE.md — они действуют и в консоли на машине. «В сессии ALIA» ничего не пишет на диск: текст попадает в инструкции агента, запущенного из ALIA, и действует весь разговор.",
             )}
           />
         </span>
@@ -170,7 +170,7 @@ export function AgentsRulesEditor() {
           }
         >
           <option value="file">{t("В файл")}</option>
-          <option value="session">{t("В сессии BB")}</option>
+          <option value="session">{t("В сессии ALIA")}</option>
           <option value="both">{t("И туда и туда")}</option>
         </select>
       </label>
@@ -219,7 +219,7 @@ export type RuleDraft = {
   sectionTemplate: string;
   projectTemplate: string;
   custom: string;
-  /** Where custom rules apply: the files, BB sessions, or both. */
+  /** Where custom rules apply: the files, VesnALIA sessions, or both. */
   customTarget: "file" | "session" | "both";
   /** One-shot text added to the first message of a new chat here. */
   startup: string;
@@ -273,16 +273,16 @@ export function RuleFields({
             {t("Свои правила")}
             <Help
               text={t(
-                "Постоянные правила этого места: роутинг моделей, делегирование, порядок работы. «В файл» дописывает их в конец AGENTS.md и CLAUDE.md — они действуют и в консоли на машине. «В сессии BB» ничего не пишет на диск: текст попадает в инструкции агента, запущенного из BB, и действует весь разговор.",
+                "Постоянные правила этого места: роутинг моделей, делегирование, порядок работы. «В файл» дописывает их в конец AGENTS.md и CLAUDE.md — они действуют и в консоли на машине. «В сессии ALIA» ничего не пишет на диск: текст попадает в инструкции агента, запущенного из ALIA, и действует весь разговор.",
               )}
             />
           </span>
           {draft.mode === "manual" ? (
             <span className="pf-agents-target pf-agents-fixed">
-              {t("Куда применять")}: {t("только в сессии BB")}
+              {t("Куда применять")}: {t("только в сессии ALIA")}
               <Help
                 text={t(
-                  "В режиме «Свой файл» плагин не пишет в файлы, поэтому свои правила действуют только в сессиях, запущенных из BB.",
+                  "В режиме «Свой файл» плагин не пишет в файлы, поэтому свои правила действуют только в сессиях, запущенных из ALIA.",
                 )}
               />
             </span>
@@ -299,8 +299,8 @@ export function RuleFields({
                 }
               >
                 <option value="file">{t("В файл")}</option>
-                <option value="session">{t("В сессии BB")}</option>
-                <option value="both">{t("В файл и в сессию BB")}</option>
+                <option value="session">{t("В сессии ALIA")}</option>
+                <option value="both">{t("В файл и в сессию ALIA")}</option>
               </select>
             </label>
           )}

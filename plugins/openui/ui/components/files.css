@@ -1,4 +1,4 @@
-/* Hallmark · shape: app screen · scope: component group (Workspace files) · genre: modern-minimal · theme: BB (kit tokens) · states: 8 · v1.0.0 */
+/* Hallmark · shape: app screen · scope: component group (Workspace files) · genre: modern-minimal · theme: ALIA (kit tokens) · states: 8 · v1.0.0 */
 /* Workspace files: Snippet, File, FileImage, Logs, StackTrace, Transcript. Kit tokens only (see DESIGN.md). */
 /* Hallmark · waive 26b · controls are kit buttons and file links, never disabled · kit.css styles .bbui-btn:disabled; links here have no disabled state */
 
@@ -50,7 +50,7 @@
   .bbui-files-link:hover .bbui-files-dir { color: var(--bbui-accent); }
 }
 
-/* Snippet: a gutter beside BB's own highlighted code block, both on one 18px line grid. */
+/* Snippet: a gutter beside ALIA's own highlighted code block, both on one 18px line grid. */
 .bbui-files-code {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);

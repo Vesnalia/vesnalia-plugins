@@ -1,10 +1,10 @@
 /*
  * Quick Reply styles.
  *
- * Colors come from BB's theme variables (--popover, --border, --success, …)
- * so light and dark themes both work. The marks on BB's own elements are
+ * Colors come from ALIA's theme variables (--popover, --border, --success, …)
+ * so light and dark themes both work. The marks on ALIA's own elements are
  * driven purely by the data-lr-* attributes content.ts sets; no element is
- * inserted into BB's tree.
+ * inserted into ALIA's tree.
  */
 
 /* ---- marks on reply lines ---------------------------------------------- */
@@ -41,12 +41,12 @@ div[data-lr-vote] {
   padding-left: 0.5rem;
 }
 
-/* Comments are violet so they stand out from the reply text. BB's theme has
+/* Comments are violet so they stand out from the reply text. ALIA's theme has
    no blue or purple variable (only success, warning, destructive), so the
    color is fixed here; oklch at this lightness reads on both light and dark
    backgrounds, and the tint is mixed with transparent so it follows the
    theme. Violet rather than blue so a comment does not look like a link or
-   BB's own accents. */
+   ALIA's own accents. */
 :root {
   --lr-comment: oklch(0.62 0.19 290);
 }

@@ -16,7 +16,7 @@ import {
   useRpc,
   useSdk,
   useSettings,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../lib/contract";
 import {
@@ -44,7 +44,7 @@ const TURN_EVENT_TYPES = [
 
 /**
  * How the thread's latest turn ended. Read from the event log when the
- * thread's status changes, never polled: bb announces status changes, and the
+ * thread's status changes, never polled: VesnALIA announces status changes, and the
  * outcome cannot change without one.
  */
 function useTurnOutcome(threadId: string | null, status: string | null): TurnOutcome {

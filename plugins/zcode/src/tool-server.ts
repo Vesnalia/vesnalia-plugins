@@ -1,11 +1,11 @@
 import { createHash, randomBytes } from "node:crypto";
 import { createServer } from "node:http";
-import { dynamicToolSchema } from "@get-bb/plugin-sdk/provider-bridge";
+import { dynamicToolSchema } from "@vesnalia/plugin-sdk/provider-bridge";
 import { z } from "zod";
 import { ProtocolError } from "./client.js";
 import { record } from "./protocol.js";
 
-export type BbTool = z.infer<typeof dynamicToolSchema>;
+export type AliaTool = z.infer<typeof dynamicToolSchema>;
 export type ToolResult = {
   content: Array<
     | { type: "text"; text: string }
@@ -16,29 +16,29 @@ export type ToolResult = {
 
 /** One authenticated loopback MCP endpoint per native session; no child shim. */
 export async function createToolServer(
-  definitions: BbTool[],
+  definitions: AliaTool[],
   denied: string[],
-  call: (tool: BbTool, args: Record<string, unknown>) => Promise<ToolResult>,
+  call: (tool: AliaTool, args: Record<string, unknown>) => Promise<ToolResult>,
 ) {
   if (
     definitions.length > 256 ||
     new Set(definitions.map((t) => t.name)).size !== definitions.length
   )
     throw new ProtocolError(
-      "Invalid bb tool catalog: too many or duplicate tools.",
+      "Invalid VesnALIA tool catalog: too many or duplicate tools.",
       -32602,
     );
-  const tools = new Map<string, BbTool>();
+  const tools = new Map<string, AliaTool>();
   for (const tool of definitions) {
-    const alias = `bb_${createHash("sha256").update(tool.name).digest("hex").slice(0, 24)}`;
+    const alias = `alia_${createHash("sha256").update(tool.name).digest("hex").slice(0, 24)}`;
     if (
       denied.includes(tool.name) ||
-      denied.includes(`mcp__bb-bridge__${alias}`)
+      denied.includes(`mcp__alia-bridge__${alias}`)
     )
       continue;
     if (record(tool.inputSchema).type !== "object")
       throw new ProtocolError(
-        "A bb tool requires an object input schema.",
+        "A VesnALIA tool requires an object input schema.",
         -32602,
       );
     tools.set(alias, tool);
@@ -95,7 +95,7 @@ export async function createToolServer(
           result = {
             protocolVersion: p.protocolVersion ?? "2024-11-05",
             capabilities: { tools: {} },
-            serverInfo: { name: "bb-bridge", version: "1" },
+            serverInfo: { name: "alia-bridge", version: "1" },
           };
           break;
         case "ping":
@@ -112,7 +112,7 @@ export async function createToolServer(
           break;
         case "tools/call": {
           const tool = tools.get(String(p.name));
-          if (!tool) throw new ProtocolError("Unknown bb tool.", -32602);
+          if (!tool) throw new ProtocolError("Unknown VesnALIA tool.", -32602);
           if (
             p.arguments !== undefined &&
             (p.arguments === null ||
@@ -139,7 +139,7 @@ export async function createToolServer(
           message:
             error instanceof ProtocolError
               ? error.message
-              : "bb MCP request failed.",
+              : "VesnALIA MCP request failed.",
         },
       });
     }
@@ -153,17 +153,17 @@ export async function createToolServer(
   });
   const address = server.address();
   if (!address || typeof address === "string")
-    throw new Error("Cannot start bb MCP endpoint.");
+    throw new Error("Cannot start VesnALIA MCP endpoint.");
   return {
     definition: {
-      name: "bb-bridge",
+      name: "alia-bridge",
       type: "http" as const,
       url: `http://127.0.0.1:${address.port}/mcp`,
       headers: [{ name: "Authorization", value: `Bearer ${token}` }],
       timeoutMs: 10 * 60_000,
     },
     nativeNames: new Set(
-      [...tools.keys()].map((name) => `mcp__bb-bridge__${name}`),
+      [...tools.keys()].map((name) => `mcp__alia-bridge__${name}`),
     ),
     close() {
       active = false;

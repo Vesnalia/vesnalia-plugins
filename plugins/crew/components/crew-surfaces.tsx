@@ -11,8 +11,8 @@
 //   Apply / Stop / Edit / + New, and the CLI hint — drawn like Graph
 //   Studio's Library card so the two side panels read as one family.
 import { useCallback, useEffect, useState } from "react";
-import { useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginMessageDirectiveProps, PluginPendingInteractionProps, PluginThreadHeaderActionProps } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginMessageDirectiveProps, PluginPendingInteractionProps, PluginThreadHeaderActionProps } from "@vesnalia/plugin-sdk/app";
 import type { ActivityDto, CrewDto, rpcContract } from "../server";
 import { activityTone, reasonCounts, SEVERITY_TEXT, severityTint, topReasonLabel } from "../lib/topology";
 import { Button } from "@/components/ui/button";
@@ -100,7 +100,7 @@ export function CrewDirectiveCard({ attributes, message }: Pick<PluginMessageDir
   const name = CREW_NAME.test(attributes.crew ?? "") ? attributes.crew! : null;
   const projectId = message.projectId;
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [crew, setCrew] = useState<CrewDto | null | undefined>(undefined);
   const [views, setViews] = useState<ActivityDto[]>([]);
   const refetch = useCallback(() => {
@@ -270,7 +270,7 @@ export function CrewPanelHeader({
         </Button>
       </div>
       <p className="mt-3 text-[11px] text-muted-foreground">Or on the command line:</p>
-      <CopyCommand command={`bb crew apply ${crew.name}`} className="mt-1" />
+      <CopyCommand command={`alia crew apply ${crew.name}`} className="mt-1" />
     </div>
   );
 }

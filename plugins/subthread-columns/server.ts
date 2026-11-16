@@ -1,8 +1,8 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
-export default function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     columns: {
       type: "select",
       label: "Subthread columns",

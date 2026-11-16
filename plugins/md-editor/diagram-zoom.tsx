@@ -97,7 +97,7 @@ export function DiagramZoom({ source, onClose }: { source: SVGSVGElement; onClos
   }, [zoomBy]);
 
   return createPortal(
-    <div className="mdpro-zoom" role="dialog" aria-label={t("zoomDiagram")} data-bb-ru-skip onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <div className="mdpro-zoom" role="dialog" aria-label={t("zoomDiagram")} data-alia-ru-skip onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <div className="mdpro-zoom-card">
         <div
           ref={stage}

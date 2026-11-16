@@ -4,9 +4,9 @@ import {
   type TaskSnapshot,
 } from "./task-events";
 
-function snapshot(status: string, linkedBbProjectId: string | null): TaskSnapshot {
+function snapshot(status: string, linkedAliaProjectId: string | null): TaskSnapshot {
   return {
-    linkedBbProjectId,
+    linkedAliaProjectId,
     task: {
       id: "task-1",
       key: "MIKU-39",
@@ -32,7 +32,7 @@ describe("findCompletedTaskEvents", () => {
     expect(findCompletedTaskEvents(current, current)).toEqual([]);
   });
 
-  it("supports unlinked Tasks projects without inventing a bb project id", () => {
+  it("supports unlinked Tasks projects without inventing a VesnALIA project id", () => {
     const previous = new Map([["task-1", snapshot("todo", null)]]);
     const current = new Map([["task-1", snapshot("done", null)]]);
     expect(findCompletedTaskEvents(previous, current)).toEqual([

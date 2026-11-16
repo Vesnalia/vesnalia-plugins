@@ -5,5 +5,5 @@ export function Badge({
   tone = "neutral",
   ...props
 }: HTMLAttributes<HTMLSpanElement> & { tone?: "neutral" | "success" | "warning" | "destructive" }) {
-  return <span className={`bb-badge bb-badge--${tone} ${className}`.trim()} {...props} />;
+  return <span className={`alia-badge alia-badge--${tone} ${className}`.trim()} {...props} />;
 }

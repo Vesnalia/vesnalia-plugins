@@ -1,6 +1,6 @@
 // Notion Theme backend: the content-font setting, and the provider-limit
 // banner's state (what limit a thread hit and when it resets).
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { limitFromFailure, limitStateSchema, type LimitState } from "./src/limits";
 
@@ -19,14 +19,14 @@ export const rpcContract = defineRpcContract({
   limit_dismiss: { input: z.object({ threadId }).strict(), output: z.null() },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  // The content font lives in plugin storage, not in bb's settings form, so
+export default async function plugin(alia: AliaPluginApi) {
+  // The content font lives in plugin storage, not in VesnALIA's settings form, so
   // the settings page shows only the Ag tiles.
-  const readFont = async () => { const f = fontSchema.safeParse(await bb.storage.kv.get("font")); return f.success ? f.data : "default"; };
+  const readFont = async () => { const f = fontSchema.safeParse(await alia.storage.kv.get("font")); return f.success ? f.data : "default"; };
 
   const key = (id: string) => `limit:${id}`;
   async function read(id: string): Promise<LimitState | null> {
-    const parsed = limitStateSchema.safeParse(await bb.storage.kv.get(key(id)));
+    const parsed = limitStateSchema.safeParse(await alia.storage.kv.get(key(id)));
     if (!parsed.success) return null;
     // A window that has already reset needs no banner, unless a retry is pending.
     const s = parsed.data;
@@ -34,12 +34,12 @@ export default async function plugin(bb: BbPluginApi) {
     return s;
   }
   async function write(id: string, state: LimitState | null) {
-    if (state) await bb.storage.kv.set(key(id), state);
-    else await bb.storage.kv.delete(key(id));
-    bb.realtime.publish(LIMITS_CHANNEL, { threadId: id });
+    if (state) await alia.storage.kv.set(key(id), state);
+    else await alia.storage.kv.delete(key(id));
+    alia.realtime.publish(LIMITS_CHANNEL, { threadId: id });
   }
 
-  bb.events.on("turn.failed", async (e) => {
+  alia.events.on("turn.failed", async (e) => {
     const state = limitFromFailure({
       threadId: e.threadId,
       requestId: e.requestId,
@@ -49,16 +49,16 @@ export default async function plugin(bb: BbPluginApi) {
     if (state) await write(e.threadId, state);
   });
   // A turn that finished means the limit no longer blocks this thread.
-  bb.events.on("thread.idle", async ({ thread }) => {
-    if (await bb.storage.kv.get(key(thread.id))) await write(thread.id, null);
+  alia.events.on("thread.idle", async ({ thread }) => {
+    if (await alia.storage.kv.get(key(thread.id))) await write(thread.id, null);
   });
-  bb.events.on("thread.deleted", async ({ thread }) => { await bb.storage.kv.delete(key(thread.id)); });
+  alia.events.on("thread.deleted", async ({ thread }) => { await alia.storage.kv.delete(key(thread.id)); });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     font_get: async () => ({ font: await readFont() }),
     font_set: async ({ font }) => {
-      await bb.storage.kv.set("font", font);
-      bb.realtime.publish(FONT_CHANNEL, { font });
+      await alia.storage.kv.set("font", font);
+      alia.realtime.publish(FONT_CHANNEL, { font });
       return { font };
     },
     limit_get: ({ threadId }) => read(threadId),
@@ -66,7 +66,7 @@ export default async function plugin(bb: BbPluginApi) {
       const s = await read(threadId);
       if (!s) return null;
       const sendAt = s.resetsAtMs !== null && s.resetsAtMs > Date.now() ? s.resetsAtMs : undefined;
-      await bb.sdk.threads.retry({ threadId, turnRequestId: s.requestId, sendAt });
+      await alia.sdk.threads.retry({ threadId, turnRequestId: s.requestId, sendAt });
       const next = { ...s, retryScheduledAt: sendAt ?? Date.now() };
       await write(threadId, next);
       return next;

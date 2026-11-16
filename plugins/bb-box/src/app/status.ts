@@ -22,11 +22,11 @@ export interface Status {
 /** Words for timings whose names alone do not say what they are. */
 export const STEP_WORDS: Readonly<Record<string, string>> = {
   template: "waiting for the template",
-  enrol: "BB enrolment",
+  enrol: "VesnALIA enrolment",
   total: "total",
   spare: "claiming a spare",
   spareResume: "resuming it",
-  spareReconnect: "BB machine reconnecting",
+  spareReconnect: "VesnALIA machine reconnecting",
   spareSwitch: "switching its device",
   relabel: "naming it for its owner",
   clock: "setting the clock",
@@ -55,20 +55,20 @@ export function compactSize(words: string): string {
 }
 
 /**
- * What the status line says of an enrolled box's BB machine: how long it took
- * to join BB, or for a spare that waited stopped, how long after the claim BB
+ * What the status line says of an enrolled box's VesnALIA machine: how long it took
+ * to join VesnALIA, or for a spare that waited stopped, how long after the claim VesnALIA
  * showed it connected again with the thread's access (#539). A claimed spare
- * that ran has neither, and says "BB machine".
+ * that ran has neither, and says "VesnALIA machine".
  */
 function machineWords(box: BoxView): string {
   if (box.role === "machine") return "This thread's machine";
   const ms = box.timings.enrol ?? box.timings.spareReconnect;
-  return ms !== undefined ? `BB machine in ${seconds(ms)}` : "BB machine";
+  return ms !== undefined ? `VesnALIA machine in ${seconds(ms)}` : "VesnALIA machine";
 }
 
 /**
  * A box's status line: the state first, then what to act on (a desktop's
- * display on the CPU, who has control, a failed join), then the BB machine's
+ * display on the CPU, who has control, a failed join), then the VesnALIA machine's
  * timing and the size. A narrow row cuts the line from its end, and the
  * details say the timing and size too.
  */
@@ -98,11 +98,11 @@ export function statusOf(box: BoxView, now: number, myViewers: ReadonlySet<strin
       const state: StatusItem = { text: box.timings.total !== undefined ? `Ready in ${seconds(box.timings.total)}` : "Ready" };
       switch (box.enrol.state) {
         case "enrolling":
-          return { tone: "ok", items: [state, ...alerts, { text: box.joinTries ? `Joining BB, ${tryWords(box.joinTries.failed)}` : "Joining BB…" }, ...size] };
+          return { tone: "ok", items: [state, ...alerts, { text: box.joinTries ? `Joining VesnALIA, ${tryWords(box.joinTries.failed)}` : "Joining VesnALIA…" }, ...size] };
         case "enrolled":
           return { tone: "ok", items: [state, ...alerts, { text: machineWords(box) }, ...size] };
         case "failed":
-          return { tone: "ok", items: [state, { text: "Could not join BB", tone: "warn" }, ...alerts, ...size] };
+          return { tone: "ok", items: [state, { text: "Could not join VesnALIA", tone: "warn" }, ...alerts, ...size] };
         default:
           return { tone: "ok", items: [state, ...alerts, ...size] };
       }
@@ -125,7 +125,7 @@ export function startWords(box: BoxView): string {
   return stepWords(Object.entries(box.timings).flatMap(([step, ms]): [string, number][] => (step.startsWith("start.") ? [[step.slice("start.".length), ms]] : [])));
 }
 
-/** What the BB machine row of the details says. */
+/** What the VesnALIA machine row of the details says. */
 export function enrolWords(box: BoxView): string {
   switch (box.enrol.state) {
     case "enrolled":

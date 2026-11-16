@@ -2,7 +2,7 @@
 // expands to its patch in the host diff viewer. Both levels are bounded by
 // the server (file count and patch bytes).
 import { useEffect, useRef, useState } from "react";
-import { experimental_Diff as Diff } from "@get-bb/plugin-sdk/app";
+import { experimental_Diff as Diff } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { type DiffResult, useLoadable, useRewindRpc } from "./data";
@@ -18,7 +18,7 @@ function FilePatch({ threadId, from, to, path, comparison }: { threadId: string;
   const file = patch.data?.files[0];
   if (file === undefined) return <p className="text-xs text-muted-foreground">No difference any more.</p>;
   if (file.binary) return <p className="text-xs text-muted-foreground">Binary file; no text diff.</p>;
-  if (file.patch === null) return <p className="text-xs text-muted-foreground">The diff is too large to show here. Use `bb rewind diff` in a terminal.</p>;
+  if (file.patch === null) return <p className="text-xs text-muted-foreground">The diff is too large to show here. Use `alia rewind diff` in a terminal.</p>;
   return (
     <div className="overflow-hidden rounded-md border border-border text-xs">
       <Diff patch={file.patch} path={file.path} view="unified" overflow="scroll" />
@@ -85,7 +85,7 @@ export function FileDiffs({ threadId, from, to, emptyText = "No file changes." }
       ) : null}
       {data.filesTruncated ? (
         <p className="mt-1 text-[11px] text-muted-foreground">
-          {data.totalFiles - data.files.length} more files not listed. Use `bb rewind diff --stat` for the full list.
+          {data.totalFiles - data.files.length} more files not listed. Use `alia rewind diff --stat` for the full list.
         </p>
       ) : null}
     </div>

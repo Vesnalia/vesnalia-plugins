@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { PluginSidebarProject, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarProject, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { ActivitySpinner } from "./ActivitySpinner";
 import { Icon } from "./icons";
 import { useLanguage } from "./i18n";

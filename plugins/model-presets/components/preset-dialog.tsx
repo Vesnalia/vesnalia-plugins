@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import {
   experimental_ProviderModelPicker as ProviderModelPicker,
   type ExperimentalProviderModelPickerValue,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { Preset, PresetFields } from "@/server";
 import { MAX_INSTRUCTIONS_LENGTH } from "@/shared/constants";
 import { readComposerSelection } from "@/lib/composer-preferences";

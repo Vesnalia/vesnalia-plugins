@@ -1,13 +1,13 @@
 # Code Archaeology: Detached-Server Attach/Spawn, Health, Session Creation, Thread Binding, and Startup Failure (GitHub #3)
 
 **Target:** `_ai/task/2026-09-03/live-unresponsive-kilo-recovery/research/code-archaeology.md`
-**Scope:** `bb-plugin-kilo` worktree at commit `20e20ca`. Read-only. Every claim is cited; unverified items are listed in Open Questions.
+**Scope:** `alia-plugin-kilo` worktree at commit `20e20ca`. Read-only. Every claim is cited; unverified items are listed in Open Questions.
 
 ---
 
 ## 1. Executive Summary
 
-The plugin attaches to a single host-wide detached KiloCode serve via a lock file (`~/.bb/plugins/kilo/kilo.lock.json`). The issue #3 failure path is already partially fenced: a slow-but-alive serve keeps its lock and the plugin refuses to spawn a duplicate (`tests/process.test.ts:61-78`). However, when the locked serve is alive but not answering **within the strict 800 ms health probe**, startup fails immediately with a flat string error — there is no bounded recovery window, no stage identification (health vs attach vs `session.create`), and no structured safe-recovery guidance. The only operator lever is `reload`, which kills the serve **without proving it idle**.
+The plugin attaches to a single host-wide detached KiloCode serve via a lock file (`~/.vesnalia/plugins/kilo/kilo.lock.json`). The issue #3 failure path is already partially fenced: a slow-but-alive serve keeps its lock and the plugin refuses to spawn a duplicate (`tests/process.test.ts:61-78`). However, when the locked serve is alive but not answering **within the strict 800 ms health probe**, startup fails immediately with a flat string error — there is no bounded recovery window, no stage identification (health vs attach vs `session.create`), and no structured safe-recovery guidance. The only operator lever is `reload`, which kills the serve **without proving it idle**.
 
 Top findings:
 
@@ -15,16 +15,16 @@ Top findings:
 2. **Health has a small built-in retry (3 × 800 ms), `session.create` has a single 8 s timeout** — both unbounded-retry-free but with no recovery decision between them (`src/client.ts:223-247`, `src/client.ts:248-261`).
 3. **`providerRecovery` notification machinery exists but only fires for mid-session stream loss**, never at startup (`src/bridge.ts:619-630`), and has no test coverage.
 4. **`reload` (the "recycle" path) kills the serve unconditionally** — no idle proof (`src/process.ts:106-129`, `src/host-handlers.ts:38-50`), while the attach-only error message tells the operator to "recycle when idle" (`src/process.ts:298-302`). This is the gap the issue's "proven idle" criterion targets.
-5. **Startup probe spawns a serve at BB startup** (`src/probe.ts:78-85`, marked `ponytail:`), so the locked serve in the issue may be an idle probe-spawned serve — relevant to any future idle-classification design.
+5. **Startup probe spawns a serve at VesnALIA startup** (`src/probe.ts:78-85`, marked `ponytail:`), so the locked serve in the issue may be an idle probe-spawned serve — relevant to any future idle-classification design.
 
-Confidence: **HIGH** for the startup path and tests (all directly read); **MEDIUM** for BB-side behavior outside this repo (thread spawn → bridge `thread/start` wiring lives in the SDK).
+Confidence: **HIGH** for the startup path and tests (all directly read); **MEDIUM** for ALIA-side behavior outside this repo (thread spawn → bridge `thread/start` wiring lives in the SDK).
 
 ---
 
 ## 2. Architecture Overview
 
 ```
-BB app / CLI
+ALIA app / CLI
    │  rpc (contract.ts rpcContract)          host rpc (contract.ts hostContract)
    ▼                                          ▼
 server.ts (plugin entry)  ──host.call──▶  host.ts (host entry)
@@ -35,7 +35,7 @@ server.ts (plugin entry)  ──host.call──▶  host.ts (host entry)
    │                                            ▼                    ▼
    │                                      src/process.ts  ◄── attachOrSpawn (lock/claim/spawn)
    │                                            │
-   ▼ (BB spawns thread; SDK invokes bridge over stdio JSON-RPC)
+   ▼ (ALIA spawns thread; SDK invokes bridge over stdio JSON-RPC)
 src/bridge.ts  (experimental_providerBridge, exported via host.ts:27)
    │  ensureClient() ──► deps.attach (= attachOrSpawn) ──► deps.acquire (= createSdkClient)
    │  thread/start → createSession → bindSession → threadIdentity notification
@@ -46,16 +46,16 @@ src/client.ts (KiloCodeClient wrapper over @kilo-ai/sdk + raw fetch)
 Detached `kilo serve --port N --hostname 127.0.0.1` (spawned in src/process.ts:340-349)
 ```
 
-- **Lock/claim files are host-wide**, not per-dataDir: `lockPath()` ignores its argument and returns `~/.bb/plugins/kilo/kilo.lock.json` (`src/process.ts:51-59`; test `tests/process.test.ts:164-167`).
+- **Lock/claim files are host-wide**, not per-dataDir: `lockPath()` ignores its argument and returns `~/.vesnalia/plugins/kilo/kilo.lock.json` (`src/process.ts:51-59`; test `tests/process.test.ts:164-167`).
 - The bridge is a separate process from the plugin server: `host.ts:27` re-exports `experimental_providerBridge`; bridge state (`client`, `sessions`, `liveTurns`) is module-local (`src/bridge.ts:195-245`).
 
 ---
 
 ## 3. The Startup Path, End to End
 
-### 3.1 Entry: BB thread start → bridge `thread/start`
+### 3.1 Entry: VesnALIA thread start → bridge `thread/start`
 
-- BB spawns a thread; the SDK delivers `thread/start` to the bridge handler (`src/bridge.ts:2389-2466`).
+- VesnALIA spawns a thread; the SDK delivers `thread/start` to the bridge handler (`src/bridge.ts:2389-2466`).
 - First action inside the handler: `const active = await ensureClient();` (`src/bridge.ts:2403`).
 
 ### 3.2 `ensureClient` — attach + health + version gate (`src/bridge.ts:388-418`)
@@ -162,8 +162,8 @@ function bindSession(threadId: string, session: BoundSession): void {
   });
 ```
 
-- Binding is in-memory (`sessions` / `sessionToThread` maps, `src/bridge.ts:195-196`) plus a `threadIdentity` notification to BB.
-- Persistence on the BB side: `server.ts` recovers the session id from `thread/identity` events via `resolveSessionId` (`server.ts:945-962`) → `sessionIdFromThreadEvents` (`src/session-bind.ts:1-20`), used by every later RPC (revert, summarize, run chips, task children).
+- Binding is in-memory (`sessions` / `sessionToThread` maps, `src/bridge.ts:195-196`) plus a `threadIdentity` notification to VesnALIA.
+- Persistence on the VesnALIA side: `server.ts` recovers the session id from `thread/identity` events via `resolveSessionId` (`server.ts:945-962`) → `sessionIdFromThreadEvents` (`src/session-bind.ts:1-20`), used by every later RPC (revert, summarize, run chips, task children).
 - After binding, `thread/start` answers `{ providerThreadId }` (`src/bridge.ts:2427`), then optionally hydrates (adopt) or runs the first prompt (`src/bridge.ts:2429-2456`). Failures after the answer become `failIssuedTurn` → `turn.boundary status:"failed"` deltas (`src/bridge.ts:491-512`, `2457-2464`).
 
 ### 3.7 Startup failure surfacing
@@ -204,7 +204,7 @@ function bindSession(threadId: string, session: BoundSession): void {
 
 - **No `TODO`/`FIXME`/`HACK`/`XXX` markers exist in source** (grep across `src/`, `server.ts`, `host.ts`, `contract.ts`, `tests/` returns only the unrelated `TODO_TOOLS` constant in `src/todos.ts:15`).
 - `ponytail:` deliberate-simplification comments, the relevant ones:
-  - `src/probe.ts:78-80` — *"probe now spawns an idle serve at bb startup so the needs-configuration badge doesn't stick on a transient 'not attached'. If a resident idle serve becomes a problem, gate behind a plugin setting."* Directly relevant: the locked serve in issue #3 may be this probe-spawned idle serve, and the comment anticipates the exact class of problem.
+  - `src/probe.ts:78-80` — *"probe now spawns an idle serve at VesnALIA startup so the needs-configuration badge doesn't stick on a transient 'not attached'. If a resident idle serve becomes a problem, gate behind a plugin setting."* Directly relevant: the locked serve in issue #3 may be this probe-spawned idle serve, and the comment anticipates the exact class of problem.
   - `src/bridge.ts:893`, `src/bridge.ts:2570`, `src/map-delta.ts:316,521,609`, `src/run-chip.ts:142` — unrelated to startup.
 - Git history shows this area was hardened once for a *slower* variant of the same bug: commit `b5f9e96` *"fix: stop KiloCode start from aborting on a slow health ping"* introduced `probePort`'s ok/slow/dead triage, the 3-strike `reclaimIfStale`, health retry, and the leftover-lock no-spawn guard. Issue #3 is the residual case that commit deliberately did **not** solve: alive-but-slow *past* the guard, with no recovery path.
 
@@ -227,10 +227,10 @@ function bindSession(threadId: string, session: BoundSession): void {
 | C8 | `ensureClient` re-attaches when cached client fails health; wraps errors via `publicErrorMessage` which erases stage detail for timeouts | `src/bridge.ts:381-386,388-418` |
 | C9 | Version-window gate (`1.18.0–<1.19.0`) inside `ensureClient` | `src/bridge.ts:405-408`; `src/identity.ts:4-5,9-19` |
 | C10 | `thread/start` failure before answer → `BRIDGE_ERROR` with message only | `src/bridge.ts:2457-2461` |
-| C11 | Binding = in-memory maps + `threadIdentity` notification; BB recovers session id from `thread/identity` events | `src/bridge.ts:195-196,755-775`; `server.ts:945-962`; `src/session-bind.ts:1-20` |
+| C11 | Binding = in-memory maps + `threadIdentity` notification; VesnALIA recovers session id from `thread/identity` events | `src/bridge.ts:195-196,755-775`; `server.ts:945-962`; `src/session-bind.ts:1-20` |
 | C12 | `providerRecovery`/`restartRecommended` notification exists, fires only on mid-session serve loss | `src/bridge.ts:619-630,632-659` |
 | C13 | `reload` = `stopServe` = SIGTERM group → wait 3 s → SIGKILL → remove owned lock; **no idle check** | `src/process.ts:105-129`; `src/host-handlers.ts:38-50`; `server.ts:233-237` |
-| C14 | Startup probe spawns a serve (`spawn: true`) at BB startup | `src/probe.ts:78-85`; wired `host.ts:32-50`, `server.ts:204-232,644-661` |
+| C14 | Startup probe spawns a serve (`spawn: true`) at VesnALIA startup | `src/probe.ts:78-85`; wired `host.ts:32-50`, `server.ts:204-232,644-661` |
 | C15 | Duplicate-spawn safety is regression-tested | `tests/process.test.ts:61-78` |
 
 ### Gaps (what issue #3 asks for that does not exist today)
@@ -240,10 +240,10 @@ function bindSession(threadId: string, session: BoundSession): void {
 | G1 | **No bounded recovery attempt** for a live-but-slow locked serve. The only bounded wait (claim contention, C3a) does not apply; the leftover-lock guard throws on first pass. | `src/process.ts:288-296` — no loop between `attachIfHealthy` failure and the throw |
 | G2 | **No stage-specific structured error.** All startup failures collapse to a message string; `publicErrorMessage` actively erases the timeout/abort distinction into a generic sentence. No `{ stage, elapsedMs, recoveryAction }` shape anywhere. | `src/bridge.ts:381-386,2457-2461`; `respondError` `src/bridge.ts:315-325`; contract has no such field (`contract.ts` bridge errors are SDK-defined) |
 | G3 | **No safe-recovery guidance mechanism.** The error text says "recycle when idle" (`src/process.ts:300`) but `reload` performs no idle proof (C13) — the operator action the error recommends is exactly the unsafe one the issue forbids without proof. | `src/process.ts:298-302` vs `src/process.ts:105-129` |
-| G4 | **No startup-path use of `providerRecovery`.** The notification exists (C12) but startup failures emit nothing; BB never receives a structured "restartRecommended" for a stalled serve at thread start. | Only call site is `serveLost` (`src/bridge.ts:625`) |
+| G4 | **No startup-path use of `providerRecovery`.** The notification exists (C12) but startup failures emit nothing; VesnALIA never receives a structured "restartRecommended" for a stalled serve at thread start. | Only call site is `serveLost` (`src/bridge.ts:625`) |
 | G5 | **No test for persistent live-but-unresponsive at the bridge/startup level.** `tests/process.test.ts:61-78` covers the process-layer refusal; nothing tests repeated thread-start attempts against a locked unresponsive serve, elapsed-time bounds, or error shape. | Test inventory §4 |
 | G6 | **No retry-once-after-recovery machinery for thread start.** `thread/start` is single-shot; there is no bounded "one recovery opportunity, then one retry" path. | `src/bridge.ts:2389-2466` |
-| G7 | **Diagnostic logs are in-memory and unstructured** (80-line ring `src/debug-log.ts:1-27`; serve log 40 lines `src/process.ts:18,36-49`), exposed via `bb kilo logs` (`server.ts:757-760`). No stage/elapsed/recovery-decision records; also nothing that would leak prompts (prompts are never logged — `debugLog` calls log ids and 24-char text prefixes, e.g. `src/bridge.ts:372-377,1560-1565` — the 24-char prefixes are a privacy consideration for any new logging). | cited files |
+| G7 | **Diagnostic logs are in-memory and unstructured** (80-line ring `src/debug-log.ts:1-27`; serve log 40 lines `src/process.ts:18,36-49`), exposed via `alia kilo logs` (`server.ts:757-760`). No stage/elapsed/recovery-decision records; also nothing that would leak prompts (prompts are never logged — `debugLog` calls log ids and 24-char text prefixes, e.g. `src/bridge.ts:372-377,1560-1565` — the 24-char prefixes are a privacy consideration for any new logging). | cited files |
 
 ---
 
@@ -251,7 +251,7 @@ function bindSession(threadId: string, session: BoundSession): void {
 
 1. **Two health probes with different semantics.** `probePort` (process layer, ok/slow/dead) and `client.health()` (client layer, 3× retry, throws) must not be conflated; a recovery loop built on one will not be observed by the other. `src/process.ts:151-160` vs `src/client.ts:223-247`.
 2. **`ensureClient`'s cached-client health check** (`src/bridge.ts:389-400`) means a recovery path must handle both "no client yet" and "cached client just failed health" — the latter already drops subscriptions and re-attaches.
-3. **The lock is host-wide across all projects/hosts** (`src/process.ts:51-59`); any recovery wait serializes every BB worker on the machine. The existing claim-file TTL (5 s) and 8 s contention wait are the precedents for bounding it.
+3. **The lock is host-wide across all projects/hosts** (`src/process.ts:51-59`); any recovery wait serializes every VesnALIA worker on the machine. The existing claim-file TTL (5 s) and 8 s contention wait are the precedents for bounding it.
 4. **`probe` spawns at startup** (C14): a "prove idle before recycle" design can likely use `session/status` (`runningSessionIdsFromStatus`, `src/session-status.ts:37-60`, used in `src/client.ts:553-567` and `src/host-handlers.ts:81-92`) as the idle evidence source — it is already the plugin's only running-session oracle.
 5. **Error-message strings are load-bearing in tests**: `tests/process.test.ts:75` matches `/did not answer in time|Not spawning another/i`; changing wording breaks the regression net.
 6. **Bridge tests stub `attach`** (`tests/bridge.test.ts:66`), so bridge-level recovery tests will need either a real `attachOrSpawn` integration or a new injectable failure mode in `deps.attach`.
@@ -260,8 +260,8 @@ function bindSession(threadId: string, session: BoundSession): void {
 
 ## 8. Open Questions (unverified — outside this repo or not directly observable)
 
-- How BB's SDK maps a `thread/start` JSON-RPC `BRIDGE_ERROR` to user-visible UI (does the message string surface verbatim?) — the SDK (`@get-bb/plugin-sdk` 0.4.16) is a node_modules dependency, not read here. **INSUFFICIENT EVIDENCE.**
-- Whether `providerRecovery` (`kind: "restartRecommended"`) triggers any BB-side UI today — no consumer found in this repo; the SDK shim (`tests/shims/provider-bridge.ts`) only defines method-name constants.
+- How VesnALIA's SDK maps a `thread/start` JSON-RPC `BRIDGE_ERROR` to user-visible UI (does the message string surface verbatim?) — the SDK (`@vesnalia/plugin-sdk` 0.4.16) is a node_modules dependency, not read here. **INSUFFICIENT EVIDENCE.**
+- Whether `providerRecovery` (`kind: "restartRecommended"`) triggers any ALIA-side UI today — no consumer found in this repo; the SDK shim (`tests/shims/provider-bridge.ts`) only defines method-name constants.
 - What actually made the real server unresponsive (issue itself says unknown; `issue.md:11`).
 - Whether `AbortSignal.timeout(800)` under Node's fetch can produce non-`TimeoutError` abort shapes on all platforms — `isAbortTimeout` covers `TimeoutError`/`AbortError`/message regex (`src/process.ts:140-149`), but platform variance is unverified.
 
@@ -280,4 +280,4 @@ function bindSession(threadId: string, session: BoundSession): void {
 | Before | Issue #3: live locked KiloCode serve blocks thread startup with no bounded recovery or stage-specific error. |
 | Now | Full cited map of the attach/spawn/health/session.create/bind path, its tests, and 7 named gaps (G1–G7) separating confirmed safety behavior from missing recovery/diagnostics. |
 | Next | Approach ranking can build directly on G1–G3 (bounded recovery, structured stage errors, idle-proven recycle). |
-| Confidence | 🟢 ≥85% on all cited startup-path behavior and tests (directly read); 🟡 on BB SDK-side error surfacing (outside this repo, listed in Open Questions). |
+| Confidence | 🟢 ≥85% on all cited startup-path behavior and tests (directly read); 🟡 on VesnALIA SDK-side error surfacing (outside this repo, listed in Open Questions). |

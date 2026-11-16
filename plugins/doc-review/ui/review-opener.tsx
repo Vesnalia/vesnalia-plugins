@@ -12,11 +12,11 @@ import {
 } from "react";
 import { toast } from "sonner";
 import {
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   type PluginFileOpenerProps,
   type PluginFileOpenerSource,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -110,9 +110,9 @@ const messages = defineMessages(
     loading: "Loading…",
     couldNotRender: "Could not render this file.",
     tryAgain: "Try again",
-    openBbPreview: "Open bb's preview",
+    openAliaPreview: "Open VesnALIA's preview",
     webBefore: (name: string) =>
-      `Comments on ${name}, a live site. To see them on its pages, open it in bb's browser in the desktop app and press `,
+      `Comments on ${name}, a live site. To see them on its pages, open it in VesnALIA's browser in the desktop app and press `,
     webAfter: " beside the address bar.",
     openSite: (name: string) => `Open ${name}`,
     selectionMode: "Selection mode",
@@ -131,7 +131,7 @@ const messages = defineMessages(
     classicView: "Classic view: search, zoom, print",
     comment: "Comment",
     classic: "Classic",
-    showOwnPreview: "Show bb's own preview",
+    showOwnPreview: "Show VesnALIA's own preview",
     hideComments: "Hide comments",
     showComments: "Show comments",
     answeredSuffix: (n: number) => `, ${n} answered`,
@@ -140,7 +140,7 @@ const messages = defineMessages(
     backToReview: "Back to review",
     couldNotOpen: (reason: string) => `Doc Review could not open this file: ${reason}`,
     linkOutside: "This link points outside the document's folder, so Doc Review does not open it.",
-    linkNotOpened: "bb could not open this file in its preview.",
+    linkNotOpened: "alia could not open this file in its preview.",
   },
   {
     tools: (tool) => ({ pen: "Перо", line: "Линия", arrow: "Стрелка", rect: "Рамка" })[tool],
@@ -179,9 +179,9 @@ const messages = defineMessages(
     loading: "Загружаем…",
     couldNotRender: "Не удалось показать этот файл.",
     tryAgain: "Повторить",
-    openBbPreview: "Открыть просмотр bb",
+    openAliaPreview: "Открыть просмотр alia",
     webBefore: (name) =>
-      `Комментарии к сайту ${name}. Чтобы увидеть их на его страницах, откройте сайт во встроенном браузере bb в приложении для компьютера и нажмите `,
+      `Комментарии к сайту ${name}. Чтобы увидеть их на его страницах, откройте сайт во встроенном браузере alia в приложении для компьютера и нажмите `,
     webAfter: " рядом с адресной строкой.",
     openSite: (name) => `Открыть ${name}`,
     selectionMode: "Режим выделения",
@@ -200,7 +200,7 @@ const messages = defineMessages(
     classicView: "Обычный вид: поиск, масштаб, печать",
     comment: "Комментировать",
     classic: "Обычный вид",
-    showOwnPreview: "Показать просмотр bb",
+    showOwnPreview: "Показать просмотр alia",
     hideComments: "Скрыть комментарии",
     showComments: "Показать комментарии",
     answeredSuffix: (n) => `, с ответом: ${n}`,
@@ -209,7 +209,7 @@ const messages = defineMessages(
     backToReview: "Назад к ревью",
     couldNotOpen: (reason) => `Doc Review не смог открыть файл: ${reason}`,
     linkOutside: "Ссылка ведёт за пределы папки документа, Doc Review её не открывает.",
-    linkNotOpened: "bb не смог открыть этот файл в просмотре.",
+    linkNotOpened: "alia не смог открыть этот файл в просмотре.",
   },
 );
 
@@ -274,7 +274,7 @@ function useDocContent(doc: ReviewDoc) {
       if (doc.kind === "html") {
         return { kind: "html", ...(await rpc.call("doc.html", { docId: doc.id })) };
       }
-      // A live site is reviewed in bb's browser; here are only its comments.
+      // A live site is reviewed in VesnALIA's browser; here are only its comments.
       if (doc.kind === "web") return { kind: "web", version: doc.version };
       if (doc.kind === "spreadsheet") {
         const opened = await rpc.call("sheet.open", { docId: doc.id, locale: navigator.language || "en-US" });
@@ -333,7 +333,7 @@ function useDocLinks(doc: ReviewDoc) {
   return links;
 }
 
-/** `thread` does what Enter does in bb; `queue` and `steer` say it outright. */
+/** `thread` does what Enter does in VesnALIA; `queue` and `steer` say it outright. */
 type SendTarget = "thread" | "queue" | "steer" | "new";
 
 function SendMenu({
@@ -449,8 +449,8 @@ function SendMenu({
 }
 
 /**
- * Where bb resolves the Markdown's relative file links from: the workspace or
- * thread storage the file was opened in. Undefined where bb has no such root.
+ * Where VesnALIA resolves the Markdown's relative file links from: the workspace or
+ * thread storage the file was opened in. Undefined where VesnALIA has no such root.
  */
 function linkDocumentFor(
   doc: ReviewDoc,
@@ -484,22 +484,22 @@ export function Workspace({
   source: PluginFileOpenerSource;
   /** The opener's path, relative to the source's root. */
   path?: string;
-  /** Absent where bb's own preview is not available. */
+  /** Absent where VesnALIA's own preview is not available. */
   onShowOriginal?: () => void;
 }) {
   const t = useMessages(messages);
   const place = useMessages(placeWords);
   const count = useMessages(countWords);
   const rpc = useReviewRpc();
-  const navigate = useBbNavigate();
-  const context = useBbContext();
+  const navigate = useAliaNavigate();
+  const context = useAliaContext();
   const threadId = context.threadId ?? source.threadId ?? null;
   // Keyed on values: a new object would re-render every Markdown block.
   const linkDocument = useMemo(
     () => linkDocumentFor(doc, source, path, threadId),
     [doc.absPath, source.kind, source.environmentId, source.threadId, path, threadId], // eslint-disable-line react-hooks/exhaustive-deps
   );
-  // A relative link on an HTML page opens in bb's file preview. The page's
+  // A relative link on an HTML page opens in VesnALIA's file preview. The page's
   // own scripts can post the same message, so the path stays inside the
   // document's folder and a burst of them opens one preview, not a stream.
   const lastFileLink = useRef(0);
@@ -527,7 +527,7 @@ export function Workspace({
             : doc.previewHostId
               ? { kind: "host" as const, hostId: doc.previewHostId, path: link.path }
               : null;
-      // Older bb builds have no file preview to open.
+      // Older VesnALIA builds have no file preview to open.
       const opened =
         target !== null &&
         typeof navigate.experimental_openFilePreview === "function" &&
@@ -791,7 +791,7 @@ export function Workspace({
         </Button>
         {onShowOriginal ? (
           <Button type="button" variant="ghost" size="sm" onClick={onShowOriginal}>
-            {t.openBbPreview}
+            {t.openAliaPreview}
           </Button>
         ) : null}
       </div>

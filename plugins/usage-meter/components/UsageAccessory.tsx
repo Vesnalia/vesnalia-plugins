@@ -2,11 +2,11 @@
 //
 // Two jobs, both small. It prints the session limit next to the page's name, so
 // the number is readable even when the sidebar covers the footer rings. And,
-// because it is React and it is mounted whenever bb draws that row, it parks a
+// because it is React and it is mounted whenever VesnALIA draws that row, it parks a
 // navigate function for the content script, which has no hooks of its own and
 // would otherwise have to reload the whole app to open the page.
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 
 import type { rpcContract, UsageWindow } from "../server";
 import { PANEL_PATH, SESSION_LABEL, findWindow, percentOf, resetText } from "../lib/limits";
@@ -23,7 +23,7 @@ const TONE_CLASS = {
 } as const;
 
 export function UsageAccessory(): ReactNode {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const rpc = useRpc<typeof rpcContract>();
   const [session, setSession] = useState<UsageWindow | null>(null);
 

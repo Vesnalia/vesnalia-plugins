@@ -4,10 +4,10 @@ import {
   experimental_copyToClipboard,
   experimental_saveFile,
   UrlLink,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginRpcResult } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcResult } from "@vesnalia/plugin-sdk/app";
 import { isToolCall, laneBreakdown, turnStats, waitsOnUser, type Segment } from "./breakdown.js";
 import { BackLink } from "./overview.js";
 import type { rpcContract } from "./server.js";
@@ -64,7 +64,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-/** bb's own message link: the chat scrolls to `#msg=` on arrival. */
+/** VesnALIA's own message link: the chat scrolls to `#msg=` on arrival. */
 function messageLink(projectId: string, threadId: string, seq: number): string {
   const thread =
     projectId === "proj_personal"
@@ -1036,7 +1036,7 @@ function Details({
   onOpenThread: (target: Omit<Target, "fromTitle">) => void;
 }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [copied, setCopied] = useState(false);
   const [details, setDetails] = useState<SpanDetails | null>(null);
   const [loading, setLoading] = useState(false);

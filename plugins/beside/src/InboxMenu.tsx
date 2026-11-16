@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { experimental_Icon as BbIcon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as AliaIcon } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./components/Icon";
 import { cn } from "./lib/utils";
 import { usePortalScopeProps } from "./lib/portal-scope";
@@ -50,7 +50,7 @@ export function InboxMenu({
             "data-[state=open]:bg-state-active data-[state=open]:text-foreground",
           )}
         >
-          <BbIcon name="MoreHorizontal" className={BUTTON_ICON_CLASS} />
+          <AliaIcon name="MoreHorizontal" className={BUTTON_ICON_CLASS} />
         </button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>

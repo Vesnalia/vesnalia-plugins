@@ -34,7 +34,7 @@ export function sectionOptions(
 /**
  * Where the composer's chosen environment will run, as "Project / Section /
  * Subsection". Null when the environment is not a section of the tree: then
- * BB's own project chip already says everything there is to say.
+ * VesnALIA's own project chip already says everything there is to say.
  */
 export function environmentLabel(
   tree: SectionTree & { bindings: Record<string, string> },
@@ -65,7 +65,7 @@ export function environmentLabel(
 
 /**
  * The environment the New thread composer currently has selected, read from
- * the keys BB persists for its own pickers. There is no composer hook for
+ * the keys VesnALIA persists for its own pickers. There is no composer hook for
  * this yet, so the keys are read — never written — and anything unexpected
  * simply means "no section to show".
  */
@@ -77,7 +77,7 @@ export function composerEnvironmentId(
   try {
     const value =
       session.getItem(
-        `bb.promptbox.environment-${encodeURIComponent(projectId)}-1`,
+        `alia.promptbox.environment-${encodeURIComponent(projectId)}-1`,
       ) ?? "";
     return value.startsWith("reuse:") ? value.slice("reuse:".length) : null;
   } catch {
@@ -87,7 +87,7 @@ export function composerEnvironmentId(
 
 /**
  * The section chosen from the composer's own action or from the chip, kept
- * for the inputs control BB renders beside the provider and for the chip
+ * for the inputs control VesnALIA renders beside the provider and for the chip
  * itself: they live in different React trees and only meet through this.
  *
  * It outlives them both, in the tab's own storage. Applying a project
@@ -120,8 +120,8 @@ export const rememberPick = (next: ComposerPick | null) => {
 };
 /**
  * The pick as a store, because every surface that shows it is somewhere else:
- * the chip in BB's project control, the action in the composer's row, the
- * inputs control in BB's environment picker. A write has to reach all three,
+ * the chip in VesnALIA's project control, the action in the composer's row, the
+ * inputs control in VesnALIA's environment picker. A write has to reach all three,
  * and the same value has to outlive them — applying a project remounts every
  * plugin surface in the composer, and that is exactly when the pick was just
  * made. Hence the tab's storage underneath, read once and then kept, so the
@@ -159,28 +159,28 @@ export const recallPick = (projectId: string | null, hostId: string | null) => {
 
 /** A row of the chip menu: a project, one of its sections, or a group label. */
 export type ChipEntry = {
-  /** Null for a project BB knows and the plugin has no folder for. */
+  /** Null for a project VesnALIA knows and the plugin has no folder for. */
   folder: Folder | null;
   depth: number;
   projectId: string;
   projectName: string;
   kind: "project" | "section" | "group";
-  /** BB's implicit project: choosing it means "don't work in a project". */
+  /** VesnALIA's implicit project: choosing it means "don't work in a project". */
   personal?: boolean;
 };
 
-/** A project as BB's sidebar lists it. */
+/** A project as VesnALIA's sidebar lists it. */
 export type ChipProject = { id: string; name: string; isPersonal: boolean };
 
 /**
  * Every project and every section under it, parents before children, with the
- * depth its indent needs. This is the tree BB's own project chip is missing:
+ * depth its indent needs. This is the tree VesnALIA's own project chip is missing:
  * it lists projects and stops there, so a chat started from the New thread
  * screen could only ever land in a project root.
  *
- * `projects` is BB's own list, and it decides which projects are offered and
+ * `projects` is VesnALIA's own list, and it decides which projects are offered and
  * in which order: replacing the chip must not hide a project the plugin has
- * no folder for, least of all BB's implicit "don't work in a project". The
+ * no folder for, least of all VesnALIA's implicit "don't work in a project". The
  * plugin's tree only adds the sections underneath. Without that list the tree
  * speaks for itself.
  *

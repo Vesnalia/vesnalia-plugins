@@ -1,7 +1,7 @@
 import { accessSync, constants } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { experimental_hostToolchain } from "@get-bb/plugin-sdk/process";
+import { experimental_hostToolchain } from "@vesnalia/plugin-sdk/process";
 
 export function resolveAntigravityCommand(command: string, options?: { cwd?: string; env?: NodeJS.ProcessEnv }): string | null {
   const resolved = experimental_hostToolchain.resolve(command, options);
@@ -18,7 +18,7 @@ export function resolveAntigravityCommand(command: string, options?: { cwd?: str
   }
 }
 
-// Resolve on the agent host, where the CLI is installed, rather than the BB server.
+// Resolve on the agent host, where the CLI is installed, rather than the VesnALIA server.
 export function resolveAntigravityLaunchSpec(request: any): void {
   const params = request?.params;
   for (const options of [params?.providerOptions, params?.options?.providerOptions]) {

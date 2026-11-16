@@ -1,5 +1,5 @@
 /**
- * bb 0.47 has no shared host toolchain, so nothing has read the login shell's PATH into the one the SDK
+ * VesnALIA 0.47 has no shared host toolchain, so nothing has read the login shell's PATH into the one the SDK
  * bundles: the first watch must. Its own file, so the toolchain this process holds has read nothing yet.
  */
 import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";

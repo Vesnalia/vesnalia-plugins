@@ -1,11 +1,11 @@
 import { repository, type Page } from "./repo.ts";
 
-const installLine = /^[ \t]*```sh\n[ \t]*(bb plugin install [^\s`]+)[ \t]*\n/m;
+const installLine = /^[ \t]*```sh\n[ \t]*(alia plugin install [^\s`]+)[ \t]*\n/m;
 
 export function installCommand(pages: Page[]): string {
   const quickStart = pages.find((page) => page.id === "start/quick-start");
   const command = quickStart && installLine.exec(quickStart.markdown)?.[1];
-  if (!command) throw new Error("The home page and llms.txt take the install command from the quick start's sh block with bb plugin install, and the quick start has none");
+  if (!command) throw new Error("The home page and llms.txt take the install command from the quick start's sh block with VesnALIA plugin install, and the quick start has none");
   return command;
 }
 

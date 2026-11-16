@@ -1,7 +1,7 @@
 // The stack of pull requests a thread's branch belongs to, as the PR Stacks
-// plugin (bb-pr-stacks) infers it from the GitHub CLI.
+// plugin (alia-pr-stacks) infers it from the GitHub CLI.
 //
-// bb has no cross-plugin RPC, so this goes straight to that plugin's RPC
+// VesnALIA has no cross-plugin RPC, so this goes straight to that plugin's RPC
 // endpoint, the same POST the SDK client makes for our own methods. When the
 // plugin is not installed the endpoint 404s and the card simply has no stack
 // section; nothing here is an error the user can act on from a hover card.
@@ -11,7 +11,7 @@ import { Icon, type IconName } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
 export const STACK_ENDPOINT =
-  "/api/v1/plugins/bb-pr-stacks/rpc/stack_for_thread";
+  "/api/v1/plugins/alia-pr-stacks/rpc/stack_for_thread";
 
 type StackCheckState = "passing" | "failing" | "pending" | "none";
 
@@ -188,7 +188,7 @@ export function usePullRequestStack(threadId: string): {
 }
 
 /**
- * How a PR row links out. The card passes bb's `UrlLink`, which the desktop
+ * How a PR row links out. The card passes VesnALIA's `UrlLink`, which the desktop
  * app routes to the system browser; a plain anchor is the default so the list
  * renders outside a plugin slot, as in tests.
  */

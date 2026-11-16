@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { PluginSidebarProject } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import { Icon } from "./ui/icon";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";

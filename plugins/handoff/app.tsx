@@ -1,6 +1,6 @@
-// bb-plugin-handoff — frontend: two surfaces, one per direction.
+// alia-plugin-handoff — frontend: two surfaces, one per direction.
 //
-// Out: the "Hand off" thread panel — an operate-mode surface inside bb's
+// Out: the "Hand off" thread panel — an operate-mode surface inside VesnALIA's
 // shell that reads as one quiet form (route header source → target, target
 // picker, workspace, notes) with a sticky action footer that turns into a
 // live progress rail during a handoff.
@@ -9,16 +9,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   definePluginApp,
   Markdown,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "./server";
 import { AdoptSection } from "./adopt/section";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-// bb's vendored controls carry no coarse-pointer sizing of their own — the app
+// VesnALIA's vendored controls carry no coarse-pointer sizing of their own — the app
 // adds it per call site, so a plugin that wants to feel native must too.
 import { COARSE_POINTER_INPUT_HEIGHT_CLASS } from "@/components/ui/coarse-pointer-sizing";
 import {
@@ -306,7 +306,7 @@ function parseScope(params: unknown): HandoffScope | null {
 
 function HandoffPanel({ threadId, params }: { threadId: string; params?: unknown }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
 
   const initialScope = useMemo(() => parseScope(params), [params]);
   const [scopeCleared, setScopeCleared] = useState(false);

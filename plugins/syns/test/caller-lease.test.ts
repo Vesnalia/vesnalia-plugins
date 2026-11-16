@@ -6,10 +6,10 @@ import { runSyns } from "../src/syns-process.js";
 import { createLocalRunner } from "../hosts/claude/runner.js";
 import { fakeSyns } from "./fake-syns.js";
 
-// The SDK's host bundle loads only inside bb's host worker ("Dynamic require of child_process").
-vi.mock("@get-bb/plugin-sdk/host", () => ({ experimental_defineHostEntry: (entry: unknown) => entry }));
+// The SDK's host bundle loads only inside VesnALIA's host worker ("Dynamic require of child_process").
+vi.mock("@vesnalia/plugin-sdk/host", () => ({ experimental_defineHostEntry: (entry: unknown) => entry }));
 
-/** 0.9 (roadmap 280): each host names itself in SYNS_CALLER (rows 33, 34); bb holds its worker (rows 35, 36). */
+/** 0.9 (roadmap 280): each host names itself in SYNS_CALLER (rows 33, 34); VesnALIA holds its worker (rows 35, 36). */
 
 const dir = mkdtempSync(join(tmpdir(), "syns-caller-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -36,19 +36,19 @@ describe("SYNS_CALLER (rows 33, 34)", () => {
   });
 
   it("runSyns sets the caller's name over an inherited one, and the provenance cannot set it", async () => {
-    await runSyns(syns.bin, ["repo", "--json"], dir, undefined, 5000, new AbortController().signal, "bb-plugin", { SYNS_INTEGRATION: "syns-pages", SYNS_RUN: "thr_1", SYNS_TRIGGER: "page", SYNS_CALLER: "page-chose" });
-    expect(syns.runs()[0]!.env).toMatchObject({ SYNS_CALLER: "bb-plugin", SYNS_INTEGRATION: "syns-pages" });
+    await runSyns(syns.bin, ["repo", "--json"], dir, undefined, 5000, new AbortController().signal, "alia-plugin", { SYNS_INTEGRATION: "syns-pages", SYNS_RUN: "thr_1", SYNS_TRIGGER: "page", SYNS_CALLER: "page-chose" });
+    expect(syns.runs()[0]!.env).toMatchObject({ SYNS_CALLER: "alia-plugin", SYNS_INTEGRATION: "syns-pages" });
   });
 
-  it("bb: every process the host half starts has SYNS_CALLER=bb-plugin, over an inherited one (row 33)", async () => {
+  it("VesnALIA: every process the host half starts has SYNS_CALLER=alia-plugin, over an inherited one (row 33)", async () => {
     const entry = await freshEntry();
     await entry.handlers.run({ cwd: dir, args: ["repo", "--json"], timeoutMs: 5000, synsPath: syns.bin }, context());
     await entry.handlers.run({ cwd: dir, args: ["place", "--json"], env: { SYNS_INTEGRATION: "syns-pages", SYNS_RUN: "thr_1", SYNS_TRIGGER: "page" }, timeoutMs: 5000, synsPath: syns.bin }, context());
-    expect(syns.runs().map((run) => run.env.SYNS_CALLER)).toEqual(["bb-plugin", "bb-plugin"]);
+    expect(syns.runs().map((run) => run.env.SYNS_CALLER)).toEqual(["alia-plugin", "alia-plugin"]);
     expect(syns.runs()[1]!.env).toMatchObject({ SYNS_INTEGRATION: "syns-pages", SYNS_RUN: "thr_1", SYNS_TRIGGER: "page" });
   });
 
-  it("bb: the host contract's provenance holds exactly its three keys, so a page cannot set SYNS_CALLER (row 33)", async () => {
+  it("VesnALIA: the host contract's provenance holds exactly its three keys, so a page cannot set SYNS_CALLER (row 33)", async () => {
     const { hostContract } = await import("../src/contract.js");
     const input = (hostContract.run as { input: { safeParse(v: unknown): { success: boolean } } }).input;
     expect(input.safeParse({ cwd: "/w", args: ["place"], timeoutMs: 1000, env: { SYNS_INTEGRATION: "a", SYNS_RUN: "b", SYNS_TRIGGER: "c", SYNS_CALLER: "x" } }).success).toBe(false);
@@ -62,14 +62,14 @@ describe("SYNS_CALLER (rows 33, 34)", () => {
   });
 });
 
-describe("bb's worker lease (rows 35, 36)", () => {
+describe("VesnALIA's worker lease (rows 35, 36)", () => {
   afterEach(() => vi.useRealTimers());
   const MINUTE = 60_000;
 
   it("0 → 1 → 1 → 0 → 1: a run takes one, the next finds it, 15 minutes after the last the lease goes, a later run takes a new one (row 35)", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     const entry = await freshEntry();
-    const { experimental_createHostEntryHarness } = await import("@get-bb/plugin-sdk/testing/host");
+    const { experimental_createHostEntryHarness } = await import("@vesnalia/plugin-sdk/testing/host");
     const host = experimental_createHostEntryHarness(entry as never);
     const run = () => host.experimental_call("run", { cwd: dir, args: ["repo", "--json"], timeoutMs: 5000, synsPath: syns.bin });
     expect(host.experimental_getRetainedWorkerLeaseCount()).toBe(0);
@@ -90,7 +90,7 @@ describe("bb's worker lease (rows 35, 36)", () => {
   it("the timer starts only when the last active run ends (row 35)", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     const entry = await freshEntry();
-    const { experimental_createHostEntryHarness } = await import("@get-bb/plugin-sdk/testing/host");
+    const { experimental_createHostEntryHarness } = await import("@vesnalia/plugin-sdk/testing/host");
     const host = experimental_createHostEntryHarness(entry as never);
     syns.answer([{ verb: "repo", recording: "repo.ok" }, { verb: "slow", recording: "repo.ok", sleepMs: 300 }]);
     const slow = host.experimental_call("run", { cwd: dir, args: ["slow"], timeoutMs: 5000, synsPath: syns.bin });
@@ -112,7 +112,7 @@ describe("bb's worker lease (rows 35, 36)", () => {
     for (const order of ["expiry first", "run first"]) {
       vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
       const entry = await freshEntry();
-      const { experimental_createHostEntryHarness } = await import("@get-bb/plugin-sdk/testing/host");
+      const { experimental_createHostEntryHarness } = await import("@vesnalia/plugin-sdk/testing/host");
       const host = experimental_createHostEntryHarness(entry as never);
       const run = () => host.experimental_call("run", { cwd: dir, args: ["repo", "--json"], timeoutMs: 5000, synsPath: syns.bin });
       await run();

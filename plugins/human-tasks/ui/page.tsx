@@ -2,7 +2,7 @@
 // filters by project, bot, and kind. `/tasks/example` renders made-up tasks.
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { TaskKind, TodoView } from "../server";
 import { KINDS } from "@/lib/model";
 import { Button } from "@/components/ui/button";
@@ -117,7 +117,7 @@ function Group({
 }
 
 function Onboarding() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const examples: { kind: TaskKind; text: string }[] = [
     { kind: "access", text: "Create an API key or invite the bot to a repo" },
     { kind: "setup", text: "Add a DNS record or verify a domain" },
@@ -150,7 +150,7 @@ function TasksView({
   focusId,
   preview,
 }: ReturnType<typeof useTasks> & { focusId: string | null; preview: boolean }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [tab, setTab] = useState<Tab>("todo");
   const [project, setProject] = useState(ALL);
   const [bot, setBot] = useState(ALL);

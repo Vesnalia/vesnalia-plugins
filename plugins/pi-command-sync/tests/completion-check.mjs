@@ -5,7 +5,7 @@ let input = "";
 for await (const chunk of process.stdin) input += chunk;
 const start = input.indexOf("var Jn=class ");
 const end = input.indexOf(';import{homedir as FZ}', start);
-assert(start >= 0 && end > start, "Expected BB 0.45 PiRpcSession seam");
+assert(start >= 0 && end > start, "Expected VesnALIA 0.45 PiRpcSession seam");
 const sandbox = {
   s: value => value,
   Ym: 0, yE: 8, ih: 30000,
@@ -25,7 +25,7 @@ async function scenario(disposition, streaming = false, compacting = false, queu
     if (queued) session.observeQueue("followUp", ["queued text"]);
     return {disposition};
   }};
-  const prompt = session.prompt("/bb-probe");
+  const prompt = session.prompt("/alia-probe");
   await new Promise(resolve => setTimeout(resolve, 10));
   if (queued) {
     assert.equal(session.pendingRunSettlements.length, 0);

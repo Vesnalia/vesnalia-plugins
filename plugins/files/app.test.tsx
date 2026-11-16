@@ -19,7 +19,7 @@ vi.mock("@excalidraw/excalidraw", () => ({
 }));
 import {
   getCapturedPluginApp,
-  setBbContext,
+  setAliaContext,
   setRpcHandlers,
 } from "./test/plugin-sdk-app-runtime";
 
@@ -36,7 +36,7 @@ class TestResizeObserver {
 }
 
 beforeEach(() => {
-  setBbContext({ projectId: null, threadId: "thread-1" });
+  setAliaContext({ projectId: null, threadId: "thread-1" });
   Object.defineProperty(Range.prototype, "getClientRects", {
     configurable: true,
     value: () => [],
@@ -83,7 +83,7 @@ describe("Files plugin app", () => {
     expect(getCapturedPluginApp().threadPanelActions[0]).not.toHaveProperty("run");
   });
 
-  it("registers itself as BB's file opener for the editable extensions", () => {
+  it("registers itself as VesnALIA's file opener for the editable extensions", () => {
     const openers = getCapturedPluginApp().fileOpeners;
     expect(openers).toHaveLength(1);
     expect(openers[0]).toEqual(
@@ -248,7 +248,7 @@ describe("Files plugin app", () => {
     expect(view.queryByRole("button", { name: "Open in Annotate" })).toBeNull();
   });
 
-  it("reopens markdown with the preferred BB file viewer", async () => {
+  it("reopens markdown with the preferred VesnALIA file viewer", async () => {
     const openFile = vi.fn(() => ({ delivered: 1 }));
     setRpcHandlers({
       openFile,
@@ -369,7 +369,7 @@ describe("Files plugin app", () => {
       },
     });
 
-    setBbContext({ projectId: null, threadId: "thread-restore" });
+    setAliaContext({ projectId: null, threadId: "thread-restore" });
     const first = renderHook(() => useFilesWorkspace());
     await act(async () => {
       await first.result.current.openPath("README.md");
@@ -378,7 +378,7 @@ describe("Files plugin app", () => {
     act(() => first.result.current.setActivePath("README.md"));
 
     await waitFor(() => {
-      expect(window.localStorage.getItem('bb-plugin-files:workspace:["thread-restore",null,null]')).toContain("src/app.tsx");
+      expect(window.localStorage.getItem('alia-plugin-files:workspace:["thread-restore",null,null]')).toContain("src/app.tsx");
     });
     first.unmount();
 
@@ -400,9 +400,9 @@ describe("Files plugin app", () => {
       listDirectory: () => ({ path: "", rootName: "repo", entries: [], annotateAvailable: false, sqlAvailable: false }),
       readFile: (input: unknown) => ({ state: "text", path: (input as { path: string }).path, sha256: "sha", sizeBytes: 1, mimeType: null, modifiedAtMs: null, content: "x" }),
     });
-    setBbContext({ projectId: "project-a", threadId: "thread-1" });
+    setAliaContext({ projectId: "project-a", threadId: "thread-1" });
     const first = renderHook(() => useFilesWorkspace());
-    setBbContext({ projectId: "project-b", threadId: "thread-1" });
+    setAliaContext({ projectId: "project-b", threadId: "thread-1" });
     const second = renderHook(() => useFilesWorkspace());
     await act(async () => { await first.result.current.openPath("README.md"); await second.result.current.openPath("README.md"); });
     expect(first.result.current.tabs[0].id).not.toBe(second.result.current.tabs[0].id);
@@ -417,7 +417,7 @@ describe("Files plugin app", () => {
   ])("does not authorize file-opener sources without a host context", async (source) => {
     const listDirectory = vi.fn();
     const readFile = vi.fn();
-    setBbContext({ projectId: null, threadId: null });
+    setAliaContext({ projectId: null, threadId: null });
     setRpcHandlers({ listDirectory, readFile });
     render(
       <FilesPanel path="README.md" source={source} Original={() => null} />,
@@ -432,7 +432,7 @@ describe("Files plugin app", () => {
     const { renderHook } = await import("@testing-library/react");
     const handlers = { openFile: vi.fn(), saveFile: vi.fn(), createFile: vi.fn(), createDirectory: vi.fn(), movePath: vi.fn(), removePath: vi.fn(), readFile: vi.fn(), listDirectory: vi.fn() };
     setRpcHandlers(handlers);
-    setBbContext({ projectId: null, threadId: null });
+    setAliaContext({ projectId: null, threadId: null });
     const hook = renderHook(() => useFilesWorkspace());
     await act(async () => {
       await hook.result.current.openInPreferredViewer("README.md");
@@ -448,13 +448,13 @@ describe("Files plugin app", () => {
   it("does not import legacy thread-only state", async () => {
     const { useFilesWorkspace } = await import("./src/hooks/useFilesWorkspace");
     const { renderHook } = await import("@testing-library/react");
-    window.localStorage.setItem("bb-plugin-files:workspace:thread-1", JSON.stringify({ version: 1, openPaths: ["README.md", "src/../bad", "x".repeat(4097)], activePath: "README.md" }));
-    setBbContext({ projectId: "project-a", threadId: "thread-1" });
+    window.localStorage.setItem("alia-plugin-files:workspace:thread-1", JSON.stringify({ version: 1, openPaths: ["README.md", "src/../bad", "x".repeat(4097)], activePath: "README.md" }));
+    setAliaContext({ projectId: "project-a", threadId: "thread-1" });
     const first = renderHook(() => useFilesWorkspace());
     expect(first.result.current.tabs).toEqual([]);
-    expect(window.localStorage.getItem("bb-plugin-files:workspace:thread-1")).not.toBeNull();
+    expect(window.localStorage.getItem("alia-plugin-files:workspace:thread-1")).not.toBeNull();
     first.unmount();
-    setBbContext({ projectId: "project-b", threadId: "thread-1" });
+    setAliaContext({ projectId: "project-b", threadId: "thread-1" });
     const second = renderHook(() => useFilesWorkspace());
     expect(second.result.current.tabs).toEqual([]);
   });
@@ -471,8 +471,8 @@ describe("Files plugin app", () => {
   it("drops forged source records from v2 persistence", async () => {
     const { useFilesWorkspace } = await import("./src/hooks/useFilesWorkspace");
     const { renderHook } = await import("@testing-library/react");
-    window.localStorage.setItem('bb-plugin-files:workspace:["thread-1","environment-a","project-a"]', JSON.stringify({ version: 2, openFiles: [{ version: 1, source: { kind: "workspace", threadId: "thread-1", environmentId: "forged", projectId: "project-a" }, path: "README.md" }], activeFileId: "forged" }));
-    setBbContext({ projectId: "project-a", threadId: "thread-1" });
+    window.localStorage.setItem('alia-plugin-files:workspace:["thread-1","environment-a","project-a"]', JSON.stringify({ version: 2, openFiles: [{ version: 1, source: { kind: "workspace", threadId: "thread-1", environmentId: "forged", projectId: "project-a" }, path: "README.md" }], activeFileId: "forged" }));
+    setAliaContext({ projectId: "project-a", threadId: "thread-1" });
     const hook = renderHook(() => useFilesWorkspace());
     expect(hook.result.current.tabs).toEqual([]);
   });
@@ -485,7 +485,7 @@ describe("Files plugin app", () => {
     const view = render(<FilesPanel threadId="thread-1" params={null} />);
     fireEvent.click(await view.findByRole("treeitem", { name: /README\.md/ }));
     expect(await view.findByRole("button", { name: "Raw" })).toBeTruthy();
-    setBbContext({ projectId: "project-2", threadId: "thread-2" });
+    setAliaContext({ projectId: "project-2", threadId: "thread-2" });
     view.rerender(<FilesPanel threadId="thread-1" params={null} />);
     await waitFor(() => expect(view.queryByRole("button", { name: "Raw" })).toBeNull());
   });

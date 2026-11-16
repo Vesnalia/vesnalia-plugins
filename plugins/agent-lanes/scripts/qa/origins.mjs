@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { BB, HARNESS, launch } from './browser.mjs';
+import { ALIA, HARNESS, launch } from './browser.mjs';
 
 const out = process.argv[2] ?? 'docs/fidelity/live/origins';
 mkdirSync(out, { recursive: true });
@@ -27,7 +27,7 @@ function confirmed(block) {
   if (!requests.has(key)) {
     let initiator = null;
     try {
-      const events = JSON.parse(execFileSync('bb', ['thread', 'messages', block.threadId, '--after-seq', String(block.seq - 1), '--limit', '1', '--json'], {encoding:'utf8', stdio:['ignore','pipe','ignore']}));
+      const events = JSON.parse(execFileSync('alia', ['thread', 'messages', block.threadId, '--after-seq', String(block.seq - 1), '--limit', '1', '--json'], {encoding:'utf8', stdio:['ignore','pipe','ignore']}));
       const request = events.find(e => e.seq === block.seq && e.type === 'client/turn/requested');
       if (['user','agent','system'].includes(request?.data?.initiator)) initiator = request.data.initiator;
     } catch { /* Unreadable inputs stay unconfirmed. */ }
@@ -76,7 +76,7 @@ try {
       annotate(body);
       await route.fulfill({response,json:body});
     });
-    await page.goto(`${BB}/plugins/agent-lanes/lanes`,{waitUntil:'networkidle'});
+    await page.goto(`${ALIA}/plugins/agent-lanes/lanes`,{waitUntil:'networkidle'});
     await page.evaluate(dark=>document.documentElement.classList.toggle('dark',dark),scheme==='dark');
     await page.locator('.lanes-tray').click({position:{x:500,y:12}});
     await page.keyboard.press('1');
@@ -98,11 +98,11 @@ try {
     assert.equal(await human.locator('..').getAttribute('data-origin'),'user');
     const agent=page.locator('[data-block=e1]');
     assert.equal(await agent.locator('..').getAttribute('data-origin'),null);
-    const bb=page.locator('[data-block=m3]');
-    assert.equal(await bb.locator('..').getAttribute('data-origin'),'system');
-    const red=await bb.locator('..').evaluate(markerStyle);
+    const alia=page.locator('[data-block=m3]');
+    assert.equal(await alia.locator('..').getAttribute('data-origin'),'system');
+    const red=await alia.locator('..').evaluate(markerStyle);
     assert.equal(red.border,red.palette);
-    styles.push({scheme,surface:'bb-fixture',...red});
+    styles.push({scheme,surface:'alia-fixture',...red});
     assert.equal(await page.locator('[data-block=r2]').locator('..').getAttribute('data-origin'),null);
     assert.equal(await page.locator('.bl-curve[data-kind=tell][data-color=blue]').count()>0,true);
     const origin=human.locator('.bl-origin-hit');

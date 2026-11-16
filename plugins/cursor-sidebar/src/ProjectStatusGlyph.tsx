@@ -32,7 +32,7 @@ export function glyphStateForStatus(status: ThreadStatusKind): ActivityState {
   }
 }
 
-/** Existing BB Icon primitives, or an uploaded image; a chosen icon swaps the folder. */
+/** Existing VesnALIA Icon primitives, or an uploaded image; a chosen icon swaps the folder. */
 export function ProjectStatusGlyph({
   open,
   icon,

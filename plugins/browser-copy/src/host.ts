@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import {
   hostContract,
   elementInfoSchema,
@@ -12,12 +12,12 @@ const delay = (milliseconds: number) => {
 };
 
 const CLIPBOARD_HELPERS = `
-const __bbToast = (() => {
+const __aliaToast = (() => {
   let node = null;
   return (text, error) => {
     if (!node) {
       node = document.createElement("div");
-      node.id = "__bbToast";
+      node.id = "__aliaToast";
       node.style.cssText = "position:fixed;right:12px;bottom:12px;z-index:2147483647;" +
         "background:" + (error ? "rgba(176,52,52,.95)" : "rgba(22,26,32,.95)") + ";color:#fff;" +
         "padding:10px 14px;border-radius:10px;font:13px/1.45 -apple-system,Segoe UI,Roboto,sans-serif;" +
@@ -30,7 +30,7 @@ const __bbToast = (() => {
   };
 })();`;
 
-const STORE_CLEAR = `window.__bbCopyDone = null;`;
+const STORE_CLEAR = `window.__aliaCopyDone = null;`;
 
 /**
  * The desktop drops the CDP socket the moment control goes away — the user
@@ -98,7 +98,7 @@ const elementPickExpression = (wantImage: boolean) => `
   };
   const PICKABLE = "a, button, input, textarea, select, [role], h1, h2, h3, h4, h5, h6, p, li, td, th, img, video, [contenteditable], [onclick], [data-testid], article, section, div, span";
   const resolveTarget = (node) => (node instanceof Element ? node.closest(PICKABLE) || node : null);
-  const isOwnNode = (node) => node instanceof Element && node.closest("#__bbToast, #__bbCopyHighlight, #__bbCopyHighlightLabel") !== null;
+  const isOwnNode = (node) => node instanceof Element && node.closest("#__aliaToast, #__aliaCopyHighlight, #__aliaCopyHighlightLabel") !== null;
   const isRootNode = (element) => element === document.documentElement || element === document.body;
   let picked = false;
   const expireAt = performance.now() + 20000;
@@ -107,10 +107,10 @@ const elementPickExpression = (wantImage: boolean) => `
   const overlays = () => {
     if (box !== null) return;
     box = document.createElement("div");
-    box.id = "__bbCopyHighlight";
+    box.id = "__aliaCopyHighlight";
     box.style.cssText = "position:fixed;z-index:2147483645;pointer-events:none;display:none;border:2px solid #3b82f6;background:rgba(59,130,246,.15);border-radius:3px";
     badge = document.createElement("div");
-    badge.id = "__bbCopyHighlightLabel";
+    badge.id = "__aliaCopyHighlightLabel";
     badge.style.cssText = "position:fixed;z-index:2147483646;pointer-events:none;display:none;background:#2563eb;color:#fff;font:11px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;padding:2px 6px;border-radius:4px;max-width:60vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
     document.documentElement.appendChild(box);
     document.documentElement.appendChild(badge);
@@ -192,39 +192,39 @@ const elementPickExpression = (wantImage: boolean) => `
       clearInterval(beatWatchdog);
       beatWatchdog = null;
     }
-    window.__bbCopyBeat = null;
+    window.__aliaCopyBeat = null;
     if (document.documentElement.style.cursor === "crosshair") document.documentElement.style.cursor = "";
     dropBox();
-    const stray = document.getElementById("__bbCopyGuard");
+    const stray = document.getElementById("__aliaCopyGuard");
     if (stray && stray.parentNode) stray.remove();
     document.removeEventListener("mousemove", onMove, true);
     document.removeEventListener("click", onClick, true);
     window.removeEventListener("scroll", refresh, true);
     window.removeEventListener("resize", refresh, true);
-    if (window.__bbCopyCleanup === cleanup) window.__bbCopyCleanup = null;
+    if (window.__aliaCopyCleanup === cleanup) window.__aliaCopyCleanup = null;
   };
-  window.__bbCopyCleanup && window.__bbCopyCleanup();
+  window.__aliaCopyCleanup && window.__aliaCopyCleanup();
   const CONTROL_STALE_MS = 1500;
   const beatStale = () => {
-    const beat = window.__bbCopyBeat;
+    const beat = window.__aliaCopyBeat;
     return Number.isFinite(beat) && performance.now() - beat > CONTROL_STALE_MS;
   };
   let beatWatchdog = null;
-  window.__bbCopyBeat = performance.now();
+  window.__aliaCopyBeat = performance.now();
   const finish = async (element) => {
     const info = describe(element);
     const infoWithRect = { ...info, rect: (() => { const r = element.getBoundingClientRect(); return { x: r.left, y: r.top, width: r.width, height: r.height }; })() };
     if (!${wantImage}) {
       try {
         await navigator.clipboard.writeText(markdown(infoWithRect));
-        window.__bbCopyDone = { ok: true, element: infoWithRect };
-        __bbToast("Copied: " + ((info.text || info.name || info.role || info.tag) + "").slice(0, 120));
+        window.__aliaCopyDone = { ok: true, element: infoWithRect };
+        __aliaToast("Copied: " + ((info.text || info.name || info.role || info.tag) + "").slice(0, 120));
       } catch (e) {
-        window.__bbCopyDone = { ok: false, error: String(e && e.message || e), element: infoWithRect };
-        __bbToast("Clipboard write failed: " + (e && e.message || e), true);
+        window.__aliaCopyDone = { ok: false, error: String(e && e.message || e), element: infoWithRect };
+        __aliaToast("Clipboard write failed: " + (e && e.message || e), true);
       }
     } else {
-      window.__bbCopyDone = { ok: null, element: infoWithRect };
+      window.__aliaCopyDone = { ok: null, element: infoWithRect };
     }
     picked = true;
     cleanup();
@@ -254,7 +254,7 @@ const elementPickExpression = (wantImage: boolean) => `
   window.addEventListener("scroll", refresh, true);
   window.addEventListener("resize", refresh, true);
   document.documentElement.style.cursor = "crosshair";
-  window.__bbCopyCleanup = cleanup;
+  window.__aliaCopyCleanup = cleanup;
   // The host beats once per poll while it holds the pick. A silent window means
   // the controlling lease is gone, so stop swallowing the user's clicks rather
   // than waiting out the 20s expiry. The host polls 150ms apart, so a slightly
@@ -272,39 +272,39 @@ const clipAndWriteImageExpression = (image: { base64: string }) => `
     const bytes = Uint8Array.from(atob(${JSON.stringify(image.base64)}), (c) => c.charCodeAt(0));
     const blob = new Blob([bytes], { type: "image/png" });
     await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-    __bbToast("Element image copied to the clipboard");
+    __aliaToast("Element image copied to the clipboard");
   } catch (e) {
-    __bbToast("Clipboard write failed: " + (e && e.message || e), true);
+    __aliaToast("Clipboard write failed: " + (e && e.message || e), true);
   }
 })()`;
 
 const screenPickExpression = (image: { base64: string }, viewport: { x: number; y: number }) => `
 (() => {
   ${CLIPBOARD_HELPERS}
-  window.__bbCopyCleanup && window.__bbCopyCleanup();
+  window.__aliaCopyCleanup && window.__aliaCopyCleanup();
   const guard = document.createElement("div");
-  guard.id = "__bbCopyGuard";
+  guard.id = "__aliaCopyGuard";
   guard.style.cssText = "position:fixed;inset:0;z-index:2147483646;cursor:crosshair;background:transparent";
   document.documentElement.appendChild(guard);
   let done = false;
   const CONTROL_STALE_MS = 1500;
   const beatStale = () => {
-    const beat = window.__bbCopyBeat;
+    const beat = window.__aliaCopyBeat;
     return Number.isFinite(beat) && performance.now() - beat > CONTROL_STALE_MS;
   };
-  window.__bbCopyBeat = performance.now();
+  window.__aliaCopyBeat = performance.now();
   let beatWatchdog = null;
   const cleanup = () => {
     if (beatWatchdog !== null) {
       clearInterval(beatWatchdog);
       beatWatchdog = null;
     }
-    window.__bbCopyBeat = null;
+    window.__aliaCopyBeat = null;
     if (guard.parentNode) guard.remove();
     if (document.documentElement.style.cursor === "crosshair") document.documentElement.style.cursor = "";
-    if (window.__bbCopyCleanup === cleanup) window.__bbCopyCleanup = null;
+    if (window.__aliaCopyCleanup === cleanup) window.__aliaCopyCleanup = null;
   };
-  window.__bbCopyCleanup = cleanup;
+  window.__aliaCopyCleanup = cleanup;
   // Same reason as the element picker: if the controlling lease drops while the
   // guard is up, take the guard down instead of swallowing the next click.
   beatWatchdog = setInterval(() => {
@@ -317,11 +317,11 @@ const screenPickExpression = (image: { base64: string }, viewport: { x: number; 
       const bytes = Uint8Array.from(atob(${JSON.stringify(image.base64)}), (c) => c.charCodeAt(0));
       const blob = new Blob([bytes], { type: "image/png" });
       await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-      __bbToast("Screenshot copied to the clipboard");
-      window.__bbCopyDone = { ok: true };
+      __aliaToast("Screenshot copied to the clipboard");
+      window.__aliaCopyDone = { ok: true };
     } catch (e) {
-      __bbToast("Clipboard write failed: " + (e && e.message || e), true);
-      window.__bbCopyDone = { ok: false, error: String(e && e.message || e) };
+      __aliaToast("Clipboard write failed: " + (e && e.message || e), true);
+      window.__aliaCopyDone = { ok: false, error: String(e && e.message || e) };
     }
     cleanup();
   };
@@ -344,7 +344,7 @@ const screenPickExpression = (image: { base64: string }, viewport: { x: number; 
 const toastExpression = (text: string, error: boolean) => `
 (() => {
   ${CLIPBOARD_HELPERS}
-  __bbToast(${JSON.stringify(text)}, ${error});
+  __aliaToast(${JSON.stringify(text)}, ${error});
   return true;
 })()`;
 
@@ -559,7 +559,7 @@ async function waitForPick(
     const polled = await evaluate(
       connection,
       sessionId,
-      "(() => { window.__bbCopyBeat = performance.now(); const done = window.__bbCopyDone; window.__bbCopyDone = null; return done; })()",
+      "(() => { window.__aliaCopyBeat = performance.now(); const done = window.__aliaCopyDone; window.__aliaCopyDone = null; return done; })()",
     );
     if (polled !== null && typeof polled === "object")
       return polled as Record<string, unknown>;
@@ -603,7 +603,7 @@ export default experimental_defineHostEntry({
             await evaluate(
               connection,
               sessionId,
-              "window.__bbCopyCleanup && window.__bbCopyCleanup(); true",
+              "window.__aliaCopyCleanup && window.__aliaCopyCleanup(); true",
             ).catch(() => undefined);
             throw reason;
           },

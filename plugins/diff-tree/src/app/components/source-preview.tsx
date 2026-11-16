@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { File, VirtualizerContext } from "@pierre/diffs/react";
-import { experimental_useCodeTheme } from "@get-bb/plugin-sdk/app";
+import { experimental_useCodeTheme } from "@vesnalia/plugin-sdk/app";
 
 /** A bounded, complete source document; scrolling never changes its row window. */
 export function SourcePreview({ content, path }: { content: string; path: string }) {

@@ -1,9 +1,9 @@
 {
-  "name": "bb-plugin-human-tasks",
+  "name": "alia-plugin-human-tasks",
   "version": "0.1.1",
-  "description": "The steps only you can do, handed over by bb agents in one checklist.",
+  "description": "The steps only you can do, handed over by VesnALIA agents in one checklist.",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "human-in-the-loop",
     "tasks",
     "checklist",
@@ -13,21 +13,17 @@
   ],
   "license": "MIT",
   "author": "Konstantin Valiotti",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/kvaliotti/bb-plugin-human-tasks.git"
-  },
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49"
   },
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p .",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
-  "bb": {
+  "alia": {
     "name": "Human tasks",
     "description": "Collect the steps only you can do in one checklist; the agent that asked resumes when you finish.",
     "branding": {
@@ -42,7 +38,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -68,5 +63,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^3.2.7"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/human-tasks#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/human-tasks"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

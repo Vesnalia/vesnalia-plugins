@@ -5,7 +5,7 @@ import {
   createFakePluginHost,
   makeThreadResponse,
   experimental_scanPublicSdkOnly,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import { artifactsFor, changeForPath } from "../src/change-paths.ts";
 import plugin from "../server.ts";
 import { rpcContract } from "../src/contract.ts";
@@ -22,7 +22,7 @@ function setup() {
     "changes/archive/2026-10-01-old/tasks.md": "- [x] Done",
   };
   const state = { missing: false, failure: "", storeRoot: "/stores/team" };
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "openspec",
     experimental_callHostRpc: async ({ method, input }) => {
       if (state.failure) throw new Error(state.failure);
@@ -119,8 +119,8 @@ function setup() {
       projectId: "project-1",
     }),
   );
-  plugin(bb);
-  return { bb, harness, documents, environment, state };
+  plugin(alia);
+  return { alia, harness, documents, environment, state };
 }
 
 const target = { environmentId: "env-1", changeId: "example" };
@@ -328,9 +328,9 @@ test("root-level notes are not changes and oversized documents fail explicitly",
 });
 
 test("reattachment persists across reads and invalidates both cards and thread context", async () => {
-  const { bb, harness } = setup();
+  const { alia, harness } = setup();
   const invalidations: string[][] = [];
-  bb.rpc.experimental_invalidate = (tags) => {
+  alia.rpc.experimental_invalidate = (tags) => {
     invalidations.push([...tags]);
   };
   let metadata = { environmentId: "env-1", changeId: "draft" };

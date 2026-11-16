@@ -22,24 +22,24 @@ body:
     id: treelanes-version
     attributes:
       label: Treelanes version
-      description: Run `bb plugin list` and copy the treelanes line.
+      description: Run `alia plugin list` and copy the treelanes line.
     validations:
       required: true
   - type: input
-    id: bb-version
+    id: alia-version
     attributes:
-      label: bb version
-      description: Run `bb --version`.
+      label: alia version
+      description: Run `alia --version`.
     validations:
       required: true
   - type: textarea
     id: health
     attributes:
       label: Health output
-      description: Run `bb treelanes health` and paste the output. Remove private data first.
+      description: Run `alia treelanes health` and paste the output. Remove private data first.
       render: text
   - type: textarea
     id: screenshots
     attributes:
       label: Screenshots
-      description: Add a screenshot if the problem is visible in bb.
+      description: Add a screenshot if the problem is visible in alia.

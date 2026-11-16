@@ -66,7 +66,7 @@ describe("SentenceWriter", () => {
     const cwd = await w.write(node(`require("fs").writeFileSync("seen","");process.stdout.write(process.cwd())`), "p");
     expect(cwd).not.toBe(process.cwd());
     expect(cwd).toContain("herald-writer-");
-    // bb's host toolchain adds the usual install folders the server's own PATH may lack.
+    // VesnALIA's host toolchain adds the usual install folders the server's own PATH may lack.
     const localBin = join(homedir(), ".local", "bin");
     const onPath = node(`process.stdout.write(process.env.PATH.split(":").includes(${JSON.stringify(localBin)}) ? "yes" : "no")`);
     expect(await w.write(onPath, "p")).toBe("yes");

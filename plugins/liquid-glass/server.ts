@@ -1,11 +1,11 @@
 /**
  * Liquid Glass — server half.
  *
- * The palettes themselves are declarative (`bb.themes` in package.json); this
+ * The palettes themselves are declarative (`alia.themes` in package.json); this
  * file owns the user's appearance: one kv row, three RPCs, one realtime signal,
- * one bounded wallpaper route, and the `bb liquid-glass` CLI command.
+ * one bounded wallpaper route, and the `alia liquid-glass` CLI command.
  */
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import {
@@ -28,7 +28,7 @@ const APPEARANCE_KEY = "appearance";
 export const APPEARANCE_CHANNEL = "appearance";
 
 const appearanceWithThemeSchema = appearanceSchema.extend({
-  /** The active bb theme id, so the frontend only paints for our palettes. */
+  /** The active VesnALIA theme id, so the frontend only paints for our palettes. */
   activeThemeId: z.string().nullable(),
   /** Bumped on every write; the frontend uses it to cache-bust the wallpaper. */
   updatedAt: z.number(),
@@ -50,29 +50,29 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(alia: AliaPluginApi) {
   let updatedAt = 0;
 
   async function read(): Promise<Appearance> {
-    const stored = await bb.storage.kv.get<unknown>(APPEARANCE_KEY);
+    const stored = await alia.storage.kv.get<unknown>(APPEARANCE_KEY);
     if (stored === undefined) return DEFAULT_APPEARANCE;
     const migrated = normalize(stored);
     // Older rows do not have the phase-two controls. Persist the normalized
     // shape once so subsequent reads (including CLI `show`) see a complete row.
     if (!appearanceSchema.safeParse(stored).success) {
-      await bb.storage.kv.set(APPEARANCE_KEY, migrated);
+      await alia.storage.kv.set(APPEARANCE_KEY, migrated);
     }
     return migrated;
   }
 
   async function activeThemeId(): Promise<string | null> {
     try {
-      const theme = await bb.sdk.theme.get();
+      const theme = await alia.sdk.theme.get();
       return theme.themeId ?? null;
     } catch (error) {
       // A theme read is not worth failing an appearance read over; the content
       // script simply keeps whatever it last resolved.
-      bb.log.warn(`could not read the active theme: ${String(error)}`);
+      alia.log.warn(`could not read the active theme: ${String(error)}`);
       return null;
     }
   }
@@ -84,13 +84,13 @@ export default function plugin(bb: BbPluginApi) {
   async function write(patch: unknown, reason: string) {
     const parsed = appearancePatchSchema.parse(patch);
     const next = appearanceSchema.parse({ ...(await read()), ...parsed });
-    await bb.storage.kv.set(APPEARANCE_KEY, next);
+    await alia.storage.kv.set(APPEARANCE_KEY, next);
     updatedAt = Date.now();
-    bb.realtime.publish(APPEARANCE_CHANNEL, { reason });
+    alia.realtime.publish(APPEARANCE_CHANNEL, { reason });
     return next;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async getAppearance() {
       return decorate(await read());
     },
@@ -98,15 +98,15 @@ export default function plugin(bb: BbPluginApi) {
       return decorate(await write(patch, "set"));
     },
     async resetAppearance() {
-      await bb.storage.kv.set(APPEARANCE_KEY, DEFAULT_APPEARANCE);
+      await alia.storage.kv.set(APPEARANCE_KEY, DEFAULT_APPEARANCE);
       updatedAt = Date.now();
-      bb.realtime.publish(APPEARANCE_CHANNEL, { reason: "reset" });
+      alia.realtime.publish(APPEARANCE_CHANNEL, { reason: "reset" });
       return decorate(DEFAULT_APPEARANCE);
     },
     async applyTheme({ id }) {
       const activeThemeId = `plugin:liquid-glass:${id}`;
-      await bb.sdk.theme.set(activeThemeId);
-      bb.realtime.publish(APPEARANCE_CHANNEL, { reason: "theme" });
+      await alia.sdk.theme.set(activeThemeId);
+      alia.realtime.publish(APPEARANCE_CHANNEL, { reason: "theme" });
       return { activeThemeId };
     },
     async testWallpaper({ path }) {
@@ -120,11 +120,11 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.http.route("GET", "/wallpaper", (c) =>
+  alia.http.route("GET", "/wallpaper", (c) =>
     wallpaperResponse(read, c.req.header("if-none-match")),
   );
 
-  bb.cli.register({
+  alia.cli.register({
     name: "liquid-glass",
     summary: "Read and change the Liquid Glass appearance (shell tint, accent, wallpaper).",
     commands: CLI_COMMANDS,
@@ -140,15 +140,15 @@ export default function plugin(bb: BbPluginApi) {
         return { exitCode: 0, stdout: formatPresets() };
       }
       if (command === "reset") {
-        await bb.storage.kv.set(APPEARANCE_KEY, DEFAULT_APPEARANCE);
+        await alia.storage.kv.set(APPEARANCE_KEY, DEFAULT_APPEARANCE);
         updatedAt = Date.now();
-        bb.realtime.publish(APPEARANCE_CHANNEL, { reason: "reset" });
+        alia.realtime.publish(APPEARANCE_CHANNEL, { reason: "reset" });
         return { exitCode: 0, stdout: formatAppearance(DEFAULT_APPEARANCE) };
       }
       if (command === "set") {
         const [key, ...valueParts] = rest;
         if (key === undefined || valueParts.length === 0) {
-          return { exitCode: 2, stderr: "Usage: bb liquid-glass set <key> <value>" };
+          return { exitCode: 2, stderr: "Usage: VesnALIA liquid-glass set <key> <value>" };
         }
         // The retired keys fold into another knob's current value, so `set`
         // needs the stored row before it can turn one into a patch.
@@ -161,5 +161,5 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info("liquid-glass appearance surfaces registered");
+  alia.log.info("liquid-glass appearance surfaces registered");
 }

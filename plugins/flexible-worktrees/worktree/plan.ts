@@ -15,7 +15,7 @@ type Ctx = {
   /** The requested remote, else origin, else the only remote. */
   remote?: string;
   warnings: string[];
-  /** Destination whose {branch} is `branch` (empty: BB names it at launch). See destinations(). */
+  /** Destination whose {branch} is `branch` (empty: VesnALIA names it at launch). See destinations(). */
   destination(branch: string): Promise<string>;
   defaultLabel(): Promise<string>;
 };
@@ -62,7 +62,7 @@ async function checkBranchName(r: Repo, branch: string) {
   if (!branch || branch.startsWith("-") || branch === "HEAD" || !await r.validRef(heads(branch))) throw new Error(`\`${branch}\` isn't a valid branch name`);
 }
 
-/** A start point. `diffBase` replaces `label` as BB's diff base when the label is a relative expression such as HEAD~1. */
+/** A start point. `diffBase` replaces `label` as VesnALIA's diff base when the label is a relative expression such as HEAD~1. */
 type Base = { start: string; label: string; diffBase?: string; fetch?: Fetch; warning?: string };
 const remoteBase = (rb: RemoteBranch): Base => ({ start: trackingRef(rb), label: branchLabel(rb), fetch: fetchOf(rb) });
 

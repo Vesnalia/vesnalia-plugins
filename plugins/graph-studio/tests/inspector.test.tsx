@@ -13,8 +13,8 @@ afterEach(cleanup);
 
 const OWN = resolve(__dirname, "../components/inspector.tsx");
 const TWINS = [
-  resolve(__dirname, "../../bb-plugin-graph-studio/components/inspector.tsx"),
-  resolve(__dirname, "../../bb-plugin-crew/components/inspector.tsx"),
+  resolve(__dirname, "../../alia-plugin-graph-studio/components/inspector.tsx"),
+  resolve(__dirname, "../../alia-plugin-crew/components/inspector.tsx"),
 ];
 
 describe("inspector", () => {

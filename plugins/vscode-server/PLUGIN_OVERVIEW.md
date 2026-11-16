@@ -1,6 +1,6 @@
 ## What you get
 
-Your own VS Code, inside BB. Point the plugin at a code-server or VS Code Server you already run and
+Your own VS Code, inside VesnALIA. Point the plugin at a code-server or VS Code Server you already run and
 each thread gets a panel that opens that editor at the thread's workspace — the same files the agent
 is working on, in the editor you already know, without leaving the app.
 
@@ -9,19 +9,19 @@ is working on, in the editor you already know, without leaving the app.
 - **One panel per thread.** In any thread, open the right panel, choose **Open new tab**, then
   **VS Code**. Reopening focuses the panel you already have instead of stacking another one.
 - **It opens where the thread works.** The panel loads the server at the thread environment's
-  workspace folder. A thread with no environment opens at its BB thread-storage folder instead.
+  workspace folder. A thread with no environment opens at its VesnALIA thread-storage folder instead.
 - **It follows your setting.** The panel re-reads its configuration when it opens; after changing the
   URL while a panel is open, use **Reload configuration** to apply it.
 
 ## Setting the server URL
 
-Set it in BB settings, or from the CLI:
+Set it in VesnALIA settings, or from the CLI:
 
 ```sh
-bb plugin config vscode-server set serverUrl https://code.example.com
+alia plugin config vscode-server set serverUrl https://code.example.com
 ```
 
-`VSCODE_SERVER_URL` in BB's server environment works too, and the plugin setting takes precedence. An
+`VSCODE_SERVER_URL` in VesnALIA's server environment works too, and the plugin setting takes precedence. An
 empty setting and an empty variable both leave the panel unconfigured. The URL must be absolute HTTP
 or HTTPS, must not contain credentials, and loses a trailing slash before it is embedded.
 
@@ -48,9 +48,9 @@ and **Open in Browser**.
 
 ## Requirements
 
-- BB desktop 0.41 or later.
+- VesnALIA desktop 0.41 or later.
 - A reachable HTTP or HTTPS code-server or VS Code Server.
-- That server's own authentication and network controls have to allow the BB client loading it. The
+- That server's own authentication and network controls have to allow the VesnALIA client loading it. The
   plugin does not proxy requests or weaken the server's authentication, so configure code-server with
   HTTPS and its normal auth when it is reachable beyond a trusted network.
 

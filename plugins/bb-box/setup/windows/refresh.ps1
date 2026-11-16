@@ -1,14 +1,14 @@
 # Refreshes a Windows image in a box of its current build (054): installs the
 # updates Windows Update offers, but not drivers, and each tool in the pins
 # whose installed version is not its pin, then writes the new image record.
-# Run by bb-box's refresh as box, elevated, over SSH, from C:\bb-box\build:
+# Run by alia-box's refresh as box, elevated, over SSH, from C:\alia-box\build:
 #
 #   refresh.ps1 -Pins <pins.json> -Record <image.json>
 #
 # The pins are setup/windows/pins.json's tools for the box's architecture.
-# With bb-url beside it, BB's server URL, it installs that server's BB app
+# With alia-url beside it, ALIA's server URL, it installs that server's ALIA app
 # too, so a box enrols without its download and npm install (#916).
-# The record is the new build's, which goes to C:\bb-box\image.json once all
+# The record is the new build's, which goes to C:\alia-box\image.json once all
 # is done. Exits 0 when done, 3010 when Windows needs a restart first (the
 # refresh restarts the box and runs this again), and 1 on a failure. Each
 # tool says its own version, so a run after a restart goes on from there.
@@ -21,7 +21,7 @@ function Set-Reg($path, $name, $value, $type = 'DWord') {
   if (-not (Test-Path $path)) { New-Item -Path $path -Force | Out-Null }
   New-ItemProperty -Path $path -Name $name -Value $value -PropertyType $type -Force | Out-Null
 }
-$dir = 'C:\bb-box\build'
+$dir = 'C:\alia-box\build'
 $restart = $false
 
 # Downloads a pinned file and checks its SHA-256, trying a few times.
@@ -56,7 +56,7 @@ function Update-Windows {
   Remove-Item $log, $done -ErrorAction SilentlyContinue
   Set-Content "$dir\updates.ps1" @'
 $ErrorActionPreference = 'Stop'
-$log = 'C:\bb-box\build\updates.log'
+$log = 'C:\alia-box\build\updates.log'
 function Say($text) { Add-Content $log "$(Get-Date -Format HH:mm:ss) $text" }
 # Another installation is going on: Windows' own updates, as Defender's run whatever the policy.
 $BUSY = 0x80240016
@@ -97,18 +97,18 @@ try {
     if ($reboot -or $failed) { break }
   }
   if ($busy) { $failed += $busy; Say "Windows was still installing updates of its own after 5 passes" }
-  Set-Content 'C:\bb-box\build\updates.json' (@{ found = $found; installed = $installed; failed = $failed; reboot = $reboot } | ConvertTo-Json -Compress)
+  Set-Content 'C:\alia-box\build\updates.json' (@{ found = $found; installed = $installed; failed = $failed; reboot = $reboot } | ConvertTo-Json -Compress)
 } catch {
   Say "FAILED: $_"
-  Set-Content 'C:\bb-box\build\updates.json' (@{ error = "$_" } | ConvertTo-Json -Compress)
+  Set-Content 'C:\alia-box\build\updates.json' (@{ error = "$_" } | ConvertTo-Json -Compress)
 }
 '@
   $action = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File $dir\updates.ps1"
   $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
   $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Hours 2) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-  Register-ScheduledTask -TaskName 'bb-box updates' -Action $action -Principal $principal -Settings $settings -Force | Out-Null
+  Register-ScheduledTask -TaskName 'alia-box updates' -Action $action -Principal $principal -Settings $settings -Force | Out-Null
   try {
-    Start-ScheduledTask -TaskName 'bb-box updates'
+    Start-ScheduledTask -TaskName 'alia-box updates'
     $seen = 0
     for ($waited = 0; -not (Test-Path $done); $waited += 5) {
       if ($waited -ge 7200) { throw 'Windows Update did not finish within 2 hours' }
@@ -116,11 +116,11 @@ try {
       # Its log as it comes, for the refresh's output.
       $lines = @(Get-Content $log -ErrorAction SilentlyContinue)
       if ($lines.Count -gt $seen) { $lines[$seen..($lines.Count - 1)] | ForEach-Object { Write-Output $_ }; $seen = $lines.Count }
-      if ((Get-ScheduledTask -TaskName 'bb-box updates').State -ne 'Running' -and -not (Test-Path $done)) { Start-Sleep -Seconds 2; if (-not (Test-Path $done)) { throw 'the Windows Update task ended without a result' } }
+      if ((Get-ScheduledTask -TaskName 'alia-box updates').State -ne 'Running' -and -not (Test-Path $done)) { Start-Sleep -Seconds 2; if (-not (Test-Path $done)) { throw 'the Windows Update task ended without a result' } }
     }
     $lines = @(Get-Content $log -ErrorAction SilentlyContinue)
     if ($lines.Count -gt $seen) { $lines[$seen..($lines.Count - 1)] | ForEach-Object { Write-Output $_ } }
-  } finally { Unregister-ScheduledTask -TaskName 'bb-box updates' -Confirm:$false -ErrorAction SilentlyContinue }
+  } finally { Unregister-ScheduledTask -TaskName 'alia-box updates' -Confirm:$false -ErrorAction SilentlyContinue }
   $result = Get-Content $done -Raw | ConvertFrom-Json
   if ($result.error) { throw "Windows Update: $($result.error)" }
   if ($result.failed) { throw "Windows Update could not install $($result.failed) of $($result.found) updates (above)" }
@@ -135,7 +135,7 @@ function Version-Of([scriptblock] $ask) {
 }
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 # The agent CLIs, each in a directory of its own on the machine's PATH (#561).
-$tools = 'C:\Program Files\bb-box-tools'
+$tools = 'C:\Program Files\alia-box-tools'
 $versions = @{
   'pwsh' = { & 'C:\Program Files\PowerShell\7\pwsh.exe' -NoProfile -Command '$PSVersionTable.PSVersion.ToString()' }
   'git' = { git --version }
@@ -149,7 +149,7 @@ $versions = @{
   'codex' = { & "$tools\codex\codex.exe" --version }
   'pi' = { & "$tools\pi\pi.exe" --version }
   'ffmpeg' = { & "$tools\ffmpeg\ffmpeg.exe" -version }
-  'openh264' = { Get-Content "$tools\bb-box-stream\openh264.version" }
+  'openh264' = { Get-Content "$tools\alia-box-stream\openh264.version" }
 }
 
 # Puts an agent CLI's program in its directory, in place of what was there, on the machine's PATH.
@@ -218,8 +218,8 @@ $installers = @{
     Copy-Item "$bin\ffprobe.exe" (Join-Path $tools ffmpeg)
     Remove-Item "$dir\ffmpeg" -Recurse -Force
   }
-  # bb-box-stream.exe's encoder (060), with the program built again beside it.
-  'openh264' = { param($pin, $file) & "$dir\install-stream.ps1" -Source "$dir\bb-box-stream.cs" -Archive $file -Version $pin.version }
+  # alia-box-stream.exe's encoder (060), with the program built again beside it.
+  'openh264' = { param($pin, $file) & "$dir\install-stream.ps1" -Source "$dir\alia-box-stream.cs" -Archive $file -Version $pin.version }
 }
 
 try {
@@ -241,16 +241,16 @@ try {
     Remove-Item $file -Force -ErrorAction SilentlyContinue
   }
   # The script that gives each clone its address at boot, as the setup has it now: the first logon put the first one in place.
-  if (Test-Path "$dir\boot.ps1") { Copy-Item "$dir\boot.ps1" 'C:\bb-box\boot.ps1' -Force; Step 'boot.ps1: as its source' }
-  # bb-box-stream.exe (060), built again when its source has changed, where the image has its encoder.
-  $stream = "$tools\bb-box-stream"
+  if (Test-Path "$dir\boot.ps1") { Copy-Item "$dir\boot.ps1" 'C:\alia-box\boot.ps1' -Force; Step 'boot.ps1: as its source' }
+  # alia-box-stream.exe (060), built again when its source has changed, where the image has its encoder.
+  $stream = "$tools\alia-box-stream"
   if (Test-Path "$stream\openh264.dll") {
-    $built = Get-Content "$stream\bb-box-stream.source" -ErrorAction SilentlyContinue
-    if ($built -ne (Get-FileHash "$dir\bb-box-stream.cs" -Algorithm SHA256).Hash -or -not (Test-Path "$stream\bb-box-stream.exe")) {
-      Step 'bb-box-stream.exe: built from its new source'
-      & "$dir\install-stream.ps1" -Source "$dir\bb-box-stream.cs"
-    } else { Step 'bb-box-stream.exe: as its source' }
-    # The pointer as the display's hardware cursor, so bb-box-stream can leave it out of the video, as the first logon has it.
+    $built = Get-Content "$stream\alia-box-stream.source" -ErrorAction SilentlyContinue
+    if ($built -ne (Get-FileHash "$dir\alia-box-stream.cs" -Algorithm SHA256).Hash -or -not (Test-Path "$stream\alia-box-stream.exe")) {
+      Step 'alia-box-stream.exe: built from its new source'
+      & "$dir\install-stream.ps1" -Source "$dir\alia-box-stream.cs"
+    } else { Step 'alia-box-stream.exe: as its source' }
+    # The pointer as the display's hardware cursor, so alia-box-stream can leave it out of the video, as the first logon has it.
     & "$dir\hardware-cursor.ps1" | ForEach-Object { Step $_ }
   }
   # Rust's stable toolchain, the latest, as on Linux boxes.
@@ -272,7 +272,7 @@ try {
   if ($open -and $open -notmatch 'force-renderer-accessibility') {
     Set-ItemProperty $handler -Name '(default)' -Value ($open -replace '(msedge\.exe"?)', '$1 --force-renderer-accessibility')
   }
-  & C:\bb-box\logon.ps1 -Shortcuts "$env:PUBLIC\Desktop", "$env:ProgramData\Microsoft\Windows\Start Menu\Programs"
+  & C:\alia-box\logon.ps1 -Shortcuts "$env:PUBLIC\Desktop", "$env:ProgramData\Microsoft\Windows\Start Menu\Programs"
 
   # Standard font smoothing, not ClearType, as the first logon has it since 060: video's 4:2:0 loses ClearType's fringes.
   Step 'Fonts: standard smoothing, not ClearType'
@@ -310,36 +310,36 @@ try {
 
   if ($restart) { Step 'a restart, then this again'; exit 3010 }
 
-  # BB's host app, where BB's installer looks for it, so enrolment skips its
+  # ALIA's host app, where ALIA's installer looks for it, so enrolment skips its
   # download and npm install, which took 35 s and more (#916). A box of a
-  # server that has built BB's app again since downloads it as before.
-  $bbApp = $null
-  $bbUrl = if (Test-Path "$dir\bb-url") { (Get-Content "$dir\bb-url" -Raw).Trim() } else { '' }
-  if ($bbUrl) {
+  # server that has built ALIA's app again since downloads it as before.
+  $aliaApp = $null
+  $aliaUrl = if (Test-Path "$dir\alia-url") { (Get-Content "$dir\alia-url" -Raw).Trim() } else { '' }
+  if ($aliaUrl) {
     # Node.js and npm, as installed in this run too.
     $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
-    $data = Join-Path $env:USERPROFILE ('.bb-machines\' + (([Uri] $bbUrl).Authority -replace '[^a-zA-Z0-9.-]', '-'))
+    $data = Join-Path $env:USERPROFILE ('.alia-machines\' + (([Uri] $aliaUrl).Authority -replace '[^a-zA-Z0-9.-]', '-'))
     New-Item -ItemType Directory -Force -Path $data | Out-Null
-    $tgz = Join-Path $dir 'bb-app.tgz'
-    $got = Invoke-WebRequest "$($bbUrl.TrimEnd('/'))/install/bb-app.tgz" -OutFile $tgz -UseBasicParsing -PassThru
-    $bbApp = "$($got.Headers['x-bb-artifact-sha256'])".Trim().ToLower()
-    if ($bbApp -notmatch '^[a-f0-9]{64}$' -or (Get-FileHash $tgz -Algorithm SHA256).Hash.ToLower() -ne $bbApp) { throw "bb-app.tgz does not match the server's digest" }
+    $tgz = Join-Path $dir 'alia-app.tgz'
+    $got = Invoke-WebRequest "$($aliaUrl.TrimEnd('/'))/install/alia-app.tgz" -OutFile $tgz -UseBasicParsing -PassThru
+    $aliaApp = "$($got.Headers['x-alia-artifact-sha256'])".Trim().ToLower()
+    if ($aliaApp -notmatch '^[a-f0-9]{64}$' -or (Get-FileHash $tgz -Algorithm SHA256).Hash.ToLower() -ne $aliaApp) { throw "alia-app.tgz does not match the server's digest" }
     & npm.cmd install -g --no-fund --no-audit --allow-scripts=better-sqlite3,node-pty,@parcel/watcher --prefix "$data\npm" $tgz 2>&1 | ForEach-Object { Step "npm: $_" }
-    if ($LASTEXITCODE) { throw "npm could not install BB's app: exit $LASTEXITCODE" }
-    & node.exe -e 'const r = process.argv[1]; require(r + "/node_modules/node-pty"); require(r + "/node_modules/@parcel/watcher")' "$data\npm\node_modules\bb-app"
-    if ($LASTEXITCODE) { throw "BB's app is installed, but its native add-ons (node-pty, @parcel/watcher) do not load" }
-    [IO.File]::WriteAllText("$data\host-artifact.sha256", "$bbApp`n")
+    if ($LASTEXITCODE) { throw "npm could not install ALIA's app: exit $LASTEXITCODE" }
+    & node.exe -e 'const r = process.argv[1]; require(r + "/node_modules/node-pty"); require(r + "/node_modules/@parcel/watcher")' "$data\npm\node_modules\alia-app"
+    if ($LASTEXITCODE) { throw "ALIA's app is installed, but its native add-ons (node-pty, @parcel/watcher) do not load" }
+    [IO.File]::WriteAllText("$data\host-artifact.sha256", "$aliaApp`n")
     Remove-Item $tgz -Force
-    Step "BB's app $($bbApp.Substring(0, 12)), from $bbUrl"
+    Step "ALIA's app $($aliaApp.Substring(0, 12)), from $aliaUrl"
   }
 
   # The record, with the edition this Windows says it is, such as Windows 11 Pro.
   $edition = (Get-CimInstance Win32_OperatingSystem).Caption -replace '^Microsoft ', ''
-  Step "The image record, C:\bb-box\image.json ($edition)"
+  Step "The image record, C:\alia-box\image.json ($edition)"
   $new = Get-Content $Record -Raw | ConvertFrom-Json
   if ($edition) { $new.os = $edition }
-  if ($bbApp) { $new.bbApp = $bbApp }
-  [IO.File]::WriteAllText('C:\bb-box\image.json', "$($new | ConvertTo-Json -Compress -Depth 5)`n")
+  if ($aliaApp) { $new.aliaApp = $aliaApp }
+  [IO.File]::WriteAllText('C:\alia-box\image.json', "$($new | ConvertTo-Json -Compress -Depth 5)`n")
   Step 'Cleaning up: temporary files and update downloads'
   Stop-Service wuauserv -Force -ErrorAction SilentlyContinue
   Remove-Item "$env:SystemRoot\SoftwareDistribution\Download\*" -Recurse -Force -ErrorAction SilentlyContinue

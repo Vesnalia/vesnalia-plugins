@@ -139,7 +139,7 @@ export class LiveRecorder {
   ) {
     this.dwellMs = opts.dwellMs ?? ctx.config.liveDwellMs ?? 3000;
     this.actionMs = opts.actionMs ?? ctx.config.liveActionMs ?? 3000;
-    this.bus = new DeltaBus((msg) => ctx.bb.publish(LIVE_CHANNEL, msg), opts.intervalMs ?? 250);
+    this.bus = new DeltaBus((msg) => ctx.alia.publish(LIVE_CHANNEL, msg), opts.intervalMs ?? 250);
     this.unsubscribe = ctx.store.onEvent((e) => this.onEvent(e));
   }
 
@@ -167,7 +167,7 @@ export class LiveRecorder {
       try {
         this.sync(id);
       } catch (e) {
-        this.ctx.bb.log("warn", `live sync ${id}: ${e instanceof Error ? e.message : String(e)}`);
+        this.ctx.alia.log("warn", `live sync ${id}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
   }
@@ -287,7 +287,7 @@ export class LiveRecorder {
         try {
           this.pushBand(studyId, id);
         } catch (e) {
-          if (!this.ctx.disposed) this.ctx.bb.log("warn", `live band c#${id}: ${e instanceof Error ? e.message : String(e)}`);
+          if (!this.ctx.disposed) this.ctx.alia.log("warn", `live band c#${id}: ${e instanceof Error ? e.message : String(e)}`);
         }
       }
     });
@@ -470,7 +470,7 @@ export function liveView(engine: Engine, s: StudyRow): LiveView {
   const ideas = new Map(store.ideas(s.id).map((i) => [i.id, i] as const));
   const threadsAll = store.threads(s.id, { role: "worker" });
   const workerKeyByThread = new Map(threadsAll.filter((t) => t.thread_id).map((t) => [t.thread_id!, t.id] as const));
-  // Lanes link to candidates through the plugin's own worker row; the BB thread id is the fallback.
+  // Lanes link to candidates through the plugin's own worker row; the VesnALIA thread id is the fallback.
   const workerKeyOf = (c: CandidateRow): number | null => c.worker_id ?? (c.thread_id ? (workerKeyByThread.get(c.thread_id) ?? null) : null);
 
   const queuedRows = store.candidates(s.id, { stages: ["queued"] }).sort((a, b) => (a.queued_at ?? 0) - (b.queued_at ?? 0) || a.id - b.id);

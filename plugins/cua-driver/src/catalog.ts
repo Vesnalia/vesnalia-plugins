@@ -301,7 +301,7 @@ export const CATALOG: readonly CatalogEntry[] = [
   tool(
     "browser_prepare",
     "browser",
-    "Prepare a driver-owned DevTools endpoint for a browser window. Attaching to a signed-in profile needs a launch grant the user configures outside bb.",
+    "Prepare a driver-owned DevTools endpoint for a browser window. Attaching to a signed-in profile needs a launch grant the user configures outside VesnALIA.",
     {
       pid: pid.optional(),
       window_id: windowId.optional(),

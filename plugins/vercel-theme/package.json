@@ -1,10 +1,10 @@
 {
-  "name": "bb-plugin-vercel-theme",
+  "name": "alia-plugin-vercel-theme",
   "version": "0.1.0",
-  "description": "A crisp Vercel-inspired light and dark theme for bb with Geist typography, true-black surfaces, and matching code colors.",
+  "description": "A crisp Vercel-inspired light and dark theme for VesnALIA with Geist typography, true-black surfaces, and matching code colors.",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "theme",
     "vercel",
     "geist",
@@ -12,22 +12,14 @@
   ],
   "license": "MIT",
   "author": "Divyesh Puri",
-  "homepage": "https://github.com/divyesh-puri/bb-plugin-vercel-theme#readme",
-  "bugs": {
-    "url": "https://github.com/divyesh-puri/bb-plugin-vercel-theme/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/divyesh-puri/bb-plugin-vercel-theme.git"
-  },
   "type": "module",
   "engines": {
-    "bb": ">=0.40.0 <1.0.0",
-    "bbPluginSdk": ">=0.4.21"
+    "alia": ">=0.40.0 <1.0.0",
+    "aliaPluginSdk": ">=0.4.21"
   },
-  "bb": {
+  "alia": {
     "name": "Vercel Theme",
-    "description": "A crisp Vercel-inspired palette for bb with Geist typography, true-black dark surfaces, and matching code colors.",
+    "description": "A crisp Vercel-inspired palette for VesnALIA with Geist typography, true-black dark surfaces, and matching code colors.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -57,14 +49,30 @@
     "server.ts"
   ],
   "scripts": {
-    "build": "npm run check && bb plugin build .",
+    "build": "npm run check && alia plugin build .",
     "check": "npm run typecheck && npm test",
     "typecheck": "tsc --noEmit",
     "test": "node --test test/*.test.mjs"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.21",
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.21"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/vercel-theme#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/vercel-theme"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

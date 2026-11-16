@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
-type Thread = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["list"]>>[number];
+type Thread = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["list"]>>[number];
 const reason = z.enum(["done", "unneeded"]);
 const ids = z.array(z.string().min(1)).min(1).max(100);
 const row = z.object({
@@ -34,7 +34,7 @@ export function blockedReason(t: Thread): string | null {
   return null;
 }
 
-// Match BB's cascading lifecycle, including hidden forks and explicit owners.
+// Match VesnALIA's cascading lifecycle, including hidden forks and explicit owners.
 export function archiveFamily(root: string, threads: Thread[]): Thread[] {
   const found = new Set([root]);
   let changed = true;
@@ -51,23 +51,23 @@ export function archiveFamily(root: string, threads: Thread[]): Thread[] {
   return threads.filter(t => found.has(t.id));
 }
 
-export function createCleaner(bb: BbPluginApi) {
+export function createCleaner(alia: AliaPluginApi) {
   const plans = new Map<string, { expires: number; roots: string[]; fingerprint: string; reason: z.infer<typeof reason> }>();
   const prefix = "cleaner:";
   async function all(archived: boolean) {
     const result: Thread[] = [];
     for (let offset = 0; ; offset += 500) {
-      const page = await bb.sdk.threads.list({ archived, includeHidden: true, limit: 500, offset });
+      const page = await alia.sdk.threads.list({ archived, includeHidden: true, limit: 500, offset });
       result.push(...page.filter(t => t.deletedAt === null && (t.archivedAt !== null) === archived));
       if (page.length < 500) return result;
     }
   }
   async function projectNames() {
-    return (await bb.sdk.projects.list({ includePersonal: true })).map(p => ({ id: p.id, name: p.name }));
+    return (await alia.sdk.projects.list({ includePersonal: true })).map(p => ({ id: p.id, name: p.name }));
   }
   async function rows(threads: Thread[], projects: { id: string; name: string }[]) {
     return Promise.all(threads.map(async t => {
-      const saved = await bb.storage.kv.get<{ reason: string }>(prefix + t.id);
+      const saved = await alia.storage.kv.get<{ reason: string }>(prefix + t.id);
       return { id: t.id, title: t.title ?? t.titleFallback ?? "Untitled thread", projectId: t.projectId,
         projectName: projects.find(p => p.id === t.projectId)?.name ?? t.projectId,
         updatedAt: t.updatedAt, archivedAt: t.archivedAt, status: t.runtime.displayStatus,
@@ -126,37 +126,37 @@ export function createCleaner(bb: BbPluginApi) {
           // Check again immediately before each host operation, including descendants.
           const fresh = targets([id], await all(false));
           if (fresh.some(t => !affected.some(old => old.id === t.id && old.updatedAt === t.updatedAt))) throw new Error("Thread changed; review it again");
-          const result = await bb.sdk.threads.archive({ threadId: id });
+          const result = await alia.sdk.threads.archive({ threadId: id });
           const batchId = randomUUID();
           for (const archivedId of result.archivedThreadIds) {
             archivedIds.add(archivedId);
-            await bb.storage.kv.set(prefix + archivedId, { reason: plan.reason, at: Date.now(), batchId, ...(archivedId === id ? { familyIds: result.archivedThreadIds } : {}) });
+            await alia.storage.kv.set(prefix + archivedId, { reason: plan.reason, at: Date.now(), batchId, ...(archivedId === id ? { familyIds: result.archivedThreadIds } : {}) });
           }
         } catch (error) { errors.push(`${id}: ${error instanceof Error ? error.message : String(error)}`); }
       }
-      bb.realtime.publish("inbox", { at: Date.now() });
+      alia.realtime.publish("inbox", { at: Date.now() });
       return { archivedIds: [...archivedIds], errors };
     },
     async cleanerRestore({ threadIds }: { threadIds: string[] }) {
       const restoredIds: string[] = [], errors: string[] = [];
       const restoreIds = new Set(threadIds);
       for (const id of threadIds) {
-        const saved = await bb.storage.kv.get<{ batchId?: string; familyIds?: string[] }>(prefix + id);
+        const saved = await alia.storage.kv.get<{ batchId?: string; familyIds?: string[] }>(prefix + id);
         if (saved?.batchId && Array.isArray(saved.familyIds)) for (const childId of saved.familyIds) {
-          const child = await bb.storage.kv.get<{ batchId?: string }>(prefix + childId);
+          const child = await alia.storage.kv.get<{ batchId?: string }>(prefix + childId);
           if (child?.batchId === saved.batchId) restoreIds.add(childId);
         }
       }
       for (const threadId of restoreIds) {
         try {
-          const thread = await bb.sdk.threads.get({ threadId });
+          const thread = await alia.sdk.threads.get({ threadId });
           if (thread.deletedAt !== null) throw new Error("Thread was deleted");
-          if (thread.archivedAt !== null) await bb.sdk.threads.unarchive({ threadId });
+          if (thread.archivedAt !== null) await alia.sdk.threads.unarchive({ threadId });
           restoredIds.push(threadId);
-          await bb.storage.kv.delete(prefix + threadId);
+          await alia.storage.kv.delete(prefix + threadId);
         } catch (error) { errors.push(`${threadId}: ${error instanceof Error ? error.message : String(error)}`); }
       }
-      bb.realtime.publish("inbox", { at: Date.now() });
+      alia.realtime.publish("inbox", { at: Date.now() });
       return { restoredIds, errors };
     },
   };

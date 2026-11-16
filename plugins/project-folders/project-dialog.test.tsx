@@ -18,8 +18,8 @@ const state = vi.hoisted(() => ({
   savePrefs: vi.fn(),
 }));
 const rpc = { call: state.call };
-vi.mock("@get-bb/plugin-sdk/app", async (original) => ({
-  ...(await original<typeof import("@get-bb/plugin-sdk/app")>()),
+vi.mock("@vesnalia/plugin-sdk/app", async (original) => ({
+  ...(await original<typeof import("@vesnalia/plugin-sdk/app")>()),
   definePluginApp: (initialize: unknown) => initialize,
   useRpc: () => rpc,
 }));

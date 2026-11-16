@@ -20,8 +20,8 @@ The plugin validates the open picker against the current catalog. If the active 
 
 ## Requirements and limits
 
-Experimental. Requires BB 0.47.1 on desktop. The compact and mobile picker fails open: the native menu is used unchanged.
+Experimental. Requires VesnALIA 0.47.1 on desktop. The compact and mobile picker fails open: the native menu is used unchanged.
 
-This is a DOM adapter over BB's picker markup, not a provider or catalog change. A future BB picker layout change can disable hiding until the plugin is updated. When the More menu cannot be validated, the plugin fails open.
+This is a DOM adapter over VesnALIA's picker markup, not a provider or catalog change. A future VesnALIA picker layout change can disable hiding until the plugin is updated. When the More menu cannot be validated, the plugin fails open.
 
 No external service, account, or API key is required.

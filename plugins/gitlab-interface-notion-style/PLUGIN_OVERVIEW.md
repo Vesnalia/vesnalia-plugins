@@ -1,6 +1,6 @@
 # GitLab Interface (Notion style)
 
-Your whole GitLab review loop, inside BB. Open a merge request, see in one line why it can't merge yet, answer the threads, approve and merge without switching to a browser tab. When something needs real work, hand it to an agent in one click.
+Your whole GitLab review loop, inside VesnALIA. Open a merge request, see in one line why it can't merge yet, answer the threads, approve and merge without switching to a browser tab. When something needs real work, hand it to an agent in one click.
 
 ## Know why a merge request is stuck
 
@@ -24,11 +24,11 @@ The new-thread page gets a GitLab section: your merge requests that need action,
 
 ## Agents do the rest
 
-Send any issue or merge request to an agent thread. Above the composer of a thread working on a branch, a strip shows what is next: commit, push, create the merge request or open it. The `bb gitlab-ui` command gives agents the same lists, comments, retries and pipelines the panel has.
+Send any issue or merge request to an agent thread. Above the composer of a thread working on a branch, a strip shows what is next: commit, push, create the merge request or open it. The `alia gitlab-ui` command gives agents the same lists, comments, retries and pipelines the panel has.
 
 ## Looks like the rest of your workspace
 
-Issues, merge requests, pipelines and branches are Notion-style databases with one search field, saved views and filter pills you remove with one click. Light and dark themes follow BB.
+Issues, merge requests, pipelines and branches are Notion-style databases with one search field, saved views and filter pills you remove with one click. Light and dark themes follow VesnALIA.
 
 ## Requirements
 

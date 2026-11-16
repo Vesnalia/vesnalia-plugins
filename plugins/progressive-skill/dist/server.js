@@ -14579,9 +14579,9 @@ var UsageTracker = class {
     this.dirty = false;
   }
 };
-async function plugin(bb) {
-  bb.log.info("bb-plugin-progressive-skill loaded");
-  const settings = bb.settings.define({
+async function plugin(alia) {
+  alia.log.info("alia-plugin-progressive-skill loaded");
+  const settings = alia.settings.define({
     budgetChars: {
       type: "string",
       label: "Skill list budget (chars)",
@@ -14598,18 +14598,18 @@ async function plugin(bb) {
   let { budgetChars, promoteScore } = await settings.get();
   let budget = Number(budgetChars) || LIST_BUDGET_CHARS;
   let promote = Number(promoteScore) || PROMOTE_SCORE;
-  const tracker = new UsageTracker(bb.storage.kv);
+  const tracker = new UsageTracker(alia.storage.kv);
   await tracker.load();
   settings.onChange((next) => {
     budgetChars = next.budgetChars;
     promoteScore = next.promoteScore;
     budget = Number(budgetChars) || LIST_BUDGET_CHARS;
     promote = Number(promoteScore) || PROMOTE_SCORE;
-    bb.log.info(`[progressive-skill] settings updated (budget ${budget} chars, promote \u2265 ${promote})`);
+    alia.log.info(`[progressive-skill] settings updated (budget ${budget} chars, promote \u2265 ${promote})`);
   });
   async function resolveEnvironment(threadId, projectId) {
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (thread.environmentId) {
         return { projectId, environmentId: thread.environmentId };
       }
@@ -14617,7 +14617,7 @@ async function plugin(bb) {
     }
     return { projectId, environmentId: null };
   }
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "progressive_skill_list",
     description: "List available skills ranked by usage frequency (recency-decayed), capped to a token budget. Call this when you need to decide which skills are worth loading \u2014 frequently-used skills rank first, rarely-used ones are trimmed to fit the budget. Returns the ranked list plus a 'promoted' marker on skills above the usage threshold.",
     parameters: external_exports.object({
@@ -14625,7 +14625,7 @@ async function plugin(bb) {
     }),
     async execute({ maxSkills }, ctx) {
       const env = await resolveEnvironment(ctx.threadId, ctx.projectId);
-      const skills = await bb.sdk.skills.list(env);
+      const skills = await alia.sdk.skills.list(env);
       const usage = tracker.snapshot();
       const ranked = skills.skills.map((s) => {
         const name = s.name ?? s.id ?? "";
@@ -14647,7 +14647,7 @@ async function plugin(bb) {
       return summary + "\n" + lines.join("\n");
     }
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "progressive_skill_used",
     description: "Record that you used a skill, so it ranks higher in future progressive_skill_list calls. Call this after actually loading/using a skill.",
     parameters: external_exports.object({
@@ -14659,9 +14659,9 @@ async function plugin(bb) {
       return `Recorded usage of '${skill}'. It will rank higher next time.`;
     }
   });
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     await tracker.save();
-    bb.log.info("bb-plugin-progressive-skill disposed");
+    alia.log.info("alia-plugin-progressive-skill disposed");
   });
 }
 export {

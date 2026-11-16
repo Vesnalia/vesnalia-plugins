@@ -11,7 +11,7 @@ vi.mock("@pierre/diffs/react", () => ({
   },
 }));
 
-import { installTestPluginRuntime } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime } from "@vesnalia/plugin-sdk/testing/app";
 import type { InlineDraft } from "./InlineDraft";
 import { MOVED_OUT, hunkPatch } from "../lib/diff-fixtures.test-support";
 

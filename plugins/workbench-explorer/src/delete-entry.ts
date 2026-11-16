@@ -1,4 +1,4 @@
-import type { BbPluginApi, ExperimentalHostClient } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, ExperimentalHostClient } from "@vesnalia/plugin-sdk";
 import { hostContract } from "../host-contract";
 import { resolveUnderRoot, toRelativePath } from "./paths";
 import { resolveRoot } from "./roots";
@@ -15,11 +15,11 @@ export type DeleteEntryResult =
 /**
  * Delete one file or folder in the tree. The workspace root is refused so a
  * context-menu click cannot wipe the root. Folders are removed recursively.
- * Uses host.removePath (not bb.sdk.files.remove) so dotfiles and symlinks are
+ * Uses host.removePath (not alia.sdk.files.remove) so dotfiles and symlinks are
  * handled correctly — symlinks are unlinked, never their targets.
  */
 export async function deleteEntry(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   host: ExperimentalHostClient<typeof hostContract>,
   input: DeleteEntryInput,
 ): Promise<DeleteEntryResult> {

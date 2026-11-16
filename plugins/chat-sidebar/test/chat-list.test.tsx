@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot, type TestThreadActionsResolver } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot, type TestThreadActionsResolver } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 import app from "../app";
 import { NOW, project, thread } from "./fixtures";
@@ -100,7 +100,7 @@ async function render(
 }
 
 describe("chat list", () => {
-  it("renders one row per root with bb's shortcut contract", async () => {
+  it("renders one row per root with VesnALIA's shortcut contract", async () => {
     const { view } = await render({ language: "English" });
     const anchors = view.container.querySelectorAll("a[data-sidebar-thread-shortcut-target]");
     expect([...anchors].map((anchor) => anchor.getAttribute("data-sidebar-thread-id"))).toEqual([
@@ -111,7 +111,7 @@ describe("chat list", () => {
     expect(screen.getByText("Needs you")).toBeTruthy();
   });
 
-  it("opens through bb's navigation and closes the mobile drawer", async () => {
+  it("opens through VesnALIA's navigation and closes the mobile drawer", async () => {
     const { view, onNavigate } = await render();
     const anchor = view.container.querySelector<HTMLAnchorElement>('a[data-sidebar-thread-id="thr_calm"]');
     if (anchor === null) throw new Error("row missing");
@@ -293,7 +293,7 @@ describe("chat list", () => {
     expect(await screen.findByText("Message search returned only the first 50 matches per group. Refine your search.")).toBeTruthy();
   });
 
-  it("marks a chat whose notifications are muted in bb", async () => {
+  it("marks a chat whose notifications are muted in VesnALIA", async () => {
     await render({ language: "English" }, (thread) =>
       thread.id === "thr_calm"
         ? [
@@ -311,7 +311,7 @@ describe("chat list", () => {
     expect(muted[0]?.closest("li")?.getAttribute("data-chat-row")).toBe("thr_calm");
   });
 
-  it("adds Add to folder to bb's thread menus only while the list is up", async () => {
+  it("adds Add to folder to VesnALIA's thread menus only while the list is up", async () => {
     const loaded = await loadPluginApp(app);
     const registration = loaded.threadActions.find((action) => action.id === "add-to-folder");
     expect(registration?.group).toBe("2_organize");

@@ -152,7 +152,7 @@ test("held lists every host's boxes with their host, and leaves out only a host 
   for (let i = 0; i < 4; i++) guests.push(await hetzner.acquire(identity(), null, hooks().value, signal()));
   const held = await hetzner.held(signal());
   assert.deepEqual(held.map((each) => each.ref).sort(), guests.map((each) => each.ref).sort());
-  assert.ok(held.every((each) => typeof each.data?.hetznerHost === "string" && each.host?.startsWith("bb-box-hz-test-")));
+  assert.ok(held.every((each) => typeof each.data?.hetznerHost === "string" && each.host?.startsWith("alia-box-hz-test-")));
   const lastHost = guests[3]!.data!.hetznerHost as string;
   dockerHosts.get(lastHost)!.set({ down: true });
   const answering = await hetzner.held(signal());
@@ -195,7 +195,7 @@ test("the doctor lists each host with its age, boxes and cost, the month's spend
   api.advanceClock(90 * 60_000);
   const raw = await import("../src/backends/hetzner/api.ts");
   await new raw.Hetzner({ token: FAKE_HETZNER_TOKEN, fetch: api.fetch, sleep: async () => {} }).createServer({
-    name: "bb-box-test-stray0001",
+    name: "alia-box-test-stray0001",
     serverType: "cpx42",
     location: "nbg1",
     imageNameOrSnapshotId: "ubuntu-24.04",
@@ -204,12 +204,12 @@ test("the doctor lists each host with its age, boxes and cost, the month's spend
   const report = await hetzner.doctor(signal());
   const byId = new Map(report.checks.map((each) => [each.id, each]));
   assert.equal(byId.get("hetzner.api")!.status, "ok");
-  assert.match(byId.get("hetzner.hosts")!.detail, /bb-box-hz-test-[a-z0-9]{8} \(cpx42\): ready, 90 minutes old, 1 box, EUR 0\.\d\d this month/);
+  assert.match(byId.get("hetzner.hosts")!.detail, /alia-box-hz-test-[a-z0-9]{8} \(cpx42\): ready, 90 minutes old, 1 box, EUR 0\.\d\d this month/);
   assert.equal(byId.get("hetzner.unclaimed")!.status, "warn");
-  assert.match(byId.get("hetzner.unclaimed")!.detail, /bb-box-test-stray0001/);
+  assert.match(byId.get("hetzner.unclaimed")!.detail, /alia-box-test-stray0001/);
   assert.match(byId.get("hetzner.spend")!.detail, /EUR 0\.\d\d before VAT so far this month of the EUR 100\.00 limit\. An hour more of the 1 host and a new one would take it to EUR 0\.\d\d\./);
   assert.match(byId.get("hetzner.type")!.detail, /8 cores, 16 GB memory, 320 GB disk in nbg1, EUR 0\.11 an hour and at most EUR 69\.99 a month with its IPv4, before VAT/);
-  assert.ok([...byId.keys()].some((id) => id.startsWith("hetzner.host.bb-box-hz-test-")));
+  assert.ok([...byId.keys()].some((id) => id.startsWith("hetzner.host.alia-box-hz-test-")));
   assert.doesNotMatch(JSON.stringify(report), new RegExp(FAKE_HETZNER_TOKEN));
 });
 
@@ -242,7 +242,7 @@ test("a host that never answers is deleted after the idle time; one that answere
   silentFromTheStart.add("silent01");
   const raw = await import("../src/backends/hetzner/api.ts");
   await new raw.Hetzner({ token: FAKE_HETZNER_TOKEN, fetch: api.fetch, sleep: async () => {} }).createServer({
-    name: "bb-box-test-silent01",
+    name: "alia-box-test-silent01",
     serverType: "cpx42",
     location: "nbg1",
     imageNameOrSnapshotId: "ubuntu-24.04",

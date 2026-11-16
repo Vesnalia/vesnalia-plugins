@@ -3,7 +3,7 @@
  * captain's words to it.
  *
  * The plugin never dispatches a crewmate. It gives the first mate a home and a charter and starts it
- * there; from then on the first mate owns intake, dispatch and supervision, with bb's own tools.
+ * there; from then on the first mate owns intake, dispatch and supervision, with VesnALIA's own tools.
  *
  * The first mate is found only by the id in the store (`store.ts`). It is seeded with
  * `{ role: "first-mate" }` metadata for display, never for lookup, so a released first mate stays
@@ -23,7 +23,7 @@ import type { Store } from "./store";
 import { TEMPLATES, message } from "./templates";
 
 export const MATE_TITLE = "First mate";
-/** The bb project the home is registered as. */
+/** The VesnALIA project the home is registered as. */
 export const PROJECT_NAME = "FirstMate";
 
 export interface MateDeps {
@@ -121,7 +121,7 @@ async function readyHome(settings: FirstmateSettings, home: string = homePath(se
  * starts a pinned first mate in it with the captain's opening. Refused when a first mate is already
  * aboard, so a second launch cannot start a second one.
  *
- * A failure before the thread exists leaves no stored id and names the step that failed. bb creates
+ * A failure before the thread exists leaves no stored id and names the step that failed. VesnALIA creates
  * the thread pinned in the same request, so there is no later step to fail between starting the first
  * mate and storing its id.
  */
@@ -154,7 +154,7 @@ export function launchMate(
   });
 }
 
-/** Whether the thread's workspace is the home, compared through symlinks, on the bb server's machine. */
+/** Whether the thread's workspace is the home, compared through symlinks, on the VesnALIA server's machine. */
 async function worksInHome(deps: MateDeps, thread: ThreadInfo, home: string): Promise<boolean> {
   if (thread.environmentId === null) return false;
   const workspace = await deps.threads.workspacePath(thread.environmentId);
@@ -223,9 +223,9 @@ export function restartMate(deps: MateDeps): Promise<void> {
 }
 
 /**
- * Has bb compact the first mate's conversation — the structured `/compact` turn its composer sends — to
+ * Has VesnALIA compact the first mate's conversation — the structured `/compact` turn its composer sends — to
  * free context. Refused mid-turn, like restart: a compaction must be a turn of its own, and a send would
- * bury it inside the running one. bb itself accepts an idle or errored thread.
+ * bury it inside the running one. VesnALIA itself accepts an idle or errored thread.
  */
 export function compactMate(deps: MateDeps): Promise<void> {
   return serialized(MATE_LOCK, async () => {

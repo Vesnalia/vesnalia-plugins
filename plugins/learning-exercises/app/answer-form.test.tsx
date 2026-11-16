@@ -4,7 +4,7 @@
  * reaches it), the fallback to the text box, and the answer read back in the transcript and the tab.
  */
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { EVERY_KIND, EVERY_KIND_ANSWER } from "../server/testing/forms";

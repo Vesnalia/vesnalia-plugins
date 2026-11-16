@@ -1,4 +1,4 @@
-import {definePluginApp} from '@get-bb/plugin-sdk/app';
+import {definePluginApp} from '@vesnalia/plugin-sdk/app';
 import {toast} from 'sonner';
 export function openSplit(documentRoot:Document=document){
  if(window.matchMedia('(max-width: 767px)').matches){toast.info('Splits are available on wide layouts.');return;}

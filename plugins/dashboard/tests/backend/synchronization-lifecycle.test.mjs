@@ -12,8 +12,8 @@ test("background synchronization ignores the prior queued RPC result", async con
     threads: { list: async () => { reads++; return []; } },
   } });
   try {
-    await host.bb.storage.kv.set("config-v1", { projects: [{ id: "p1", enabled: true, connectedAt: 1 }], launcher: [], sharedPool: true });
-    await plugin(host.bb);
+    await host.alia.storage.kv.set("config-v1", { projects: [{ id: "p1", enabled: true, connectedAt: 1 }], launcher: [], sharedPool: true });
+    await plugin(host.alia);
     await host.harness.behavior.callRpc("snapshot", null);
     const service = host.harness.behavior.runService("activity");
     context.mock.timers.tick(0);
@@ -37,7 +37,7 @@ activityTest("activity sync returns cached snapshots and commits settings while 
   assert.deepEqual(initial.tracked, []);
   const saved = await f.rpc("catalog_change", { type: "pool", enabled: false });
   assert.equal(saved.sharedPool, false);
-  assert.equal((await f.host.bb.storage.kv.get("config-v1")).sharedPool, false);
+  assert.equal((await f.host.alia.storage.kv.get("config-v1")).sharedPool, false);
   assert.equal(released, false);
   for (let i = 0; i < 5; i++) await f.rpc("snapshot");
   assert.equal(f.calls.length, 1);
@@ -59,7 +59,7 @@ activityTest("activity sync discards a pre-hide running row and rereads without 
   const hidden = await f.rpc("thread_hide", { threadId: "t1" });
   assert.equal(hidden.hidden, true);
   hold = false; held.resolve([listRow({ status: "active" })]); await f.tick();
-  assert.equal((await f.host.bb.storage.kv.get("thread:t1")).visible, false);
+  assert.equal((await f.host.alia.storage.kv.get("thread:t1")).visible, false);
   await f.tick(750);
   assert.equal((await f.rpc("snapshot")).tracked[0].visible, false);
 });
@@ -75,9 +75,9 @@ activityTest("activity sync discards rows read before restore and keeps the rest
   row = listRow({ latestAttentionAt: 250 });
   assert.deepEqual(await f.rpc("thread_restore", { threadId: "t1", undoToken }), { restored: true });
   hold = false; held.resolve([listRow({ latestAttentionAt: 200 })]); await f.tick();
-  assert.equal((await f.host.bb.storage.kv.get("thread:t1")).latestAttentionAt, 250);
+  assert.equal((await f.host.alia.storage.kv.get("thread:t1")).latestAttentionAt, 250);
   await f.tick(750);
-  assert.equal((await f.host.bb.storage.kv.get("thread:t1")).visible, true);
+  assert.equal((await f.host.alia.storage.kv.get("thread:t1")).visible, true);
 });
 
 activityTest("activity sync retains dirty events received during a full read and batches thread ids", async context => {
@@ -88,7 +88,7 @@ activityTest("activity sync retains dirty events received during a full read and
   held.resolve([listRow()]); await f.tick();
   await f.tick(750);
   assert.deepEqual(f.calls.filter(call => call.threadIds).map(call => call.threadIds), [["t1"]]);
-  assert.equal((await f.host.bb.storage.kv.get("thread:t1")).latestAttentionAt, 300);
+  assert.equal((await f.host.alia.storage.kv.get("thread:t1")).latestAttentionAt, 300);
 });
 
 activityTest("activity sync paginates every enabled project and only marks a completed full pass fresh", async context => {
@@ -111,7 +111,7 @@ activityTest("activity sync skips disabled projects and rejects a read from befo
   await f.rpc("catalog_change", { type: "remove", kind: "project", id: "p1" });
   await f.rpc("catalog_change", { type: "add", kind: "project", id: "p1" });
   held.resolve([listRow()]); await f.tick();
-  assert.equal(await f.host.bb.storage.kv.get("thread:t1"), undefined);
+  assert.equal(await f.host.alia.storage.kv.get("thread:t1"), undefined);
   assert.equal((await f.rpc("snapshot")).syncedAt, null);
   await f.tick(750);
   assert.ok((await f.rpc("snapshot")).syncedAt !== null);
@@ -148,13 +148,13 @@ activityTest("activity sync exposes failures without rejecting saved settings an
 
 activityTest("activity sync keeps partial progress and recovers after a tracking write failure", async context => {
   const f = await activityFixture(context, { rows: [listRow({ id: "a" }), listRow({ id: "b" })] });
-  const original = f.host.bb.storage.kv.set.bind(f.host.bb.storage.kv);
+  const original = f.host.alia.storage.kv.set.bind(f.host.alia.storage.kv);
   let fail = true;
-  f.host.bb.storage.kv.set = async (key, value) => { if (key === "thread:b" && fail) throw new Error("disk unavailable"); return original(key, value); };
+  f.host.alia.storage.kv.set = async (key, value) => { if (key === "thread:b" && fail) throw new Error("disk unavailable"); return original(key, value); };
   await f.tick();
   assert.equal((await f.rpc("snapshot")).syncError, "disk unavailable");
   assert.equal((await f.rpc("snapshot")).syncedAt, null);
-  assert.equal((await f.host.bb.storage.kv.get("thread:a")).visible, true);
+  assert.equal((await f.host.alia.storage.kv.get("thread:a")).visible, true);
   assert.equal((await f.rpc("catalog_change", { type: "pool", enabled: false })).sharedPool, false);
   fail = false; await f.tick(5_000);
   assert.equal((await f.rpc("snapshot")).syncError, null);
@@ -183,10 +183,10 @@ activityTest("activity sync stops without waiting for SDK and ignores late respo
   assert.equal(f.callbacks.size, 0);
   f.start(); await f.tick();
   assert.equal(f.signals[1].aborted, false);
-  assert.equal((await f.host.bb.storage.kv.get("thread:t1")).latestAttentionAt, 300);
+  assert.equal((await f.host.alia.storage.kv.get("thread:t1")).latestAttentionAt, 300);
   const signals = f.host.harness.realtimeSignals.length;
   held.resolve([listRow({ latestAttentionAt: 200 })]); await f.tick();
-  assert.equal((await f.host.bb.storage.kv.get("thread:t1")).latestAttentionAt, 300);
+  assert.equal((await f.host.alia.storage.kv.get("thread:t1")).latestAttentionAt, 300);
   assert.equal(f.host.harness.realtimeSignals.length, signals);
 });
 
@@ -248,8 +248,8 @@ activityTest("activity sync preserves a useful read when a concurrent configurat
   const held = deferredSyncRead();
   const f = await activityFixture(context, { list: () => held.promise, release: () => held.resolve([]) });
   await f.tick();
-  const original = f.host.bb.storage.kv.set.bind(f.host.bb.storage.kv);
-  f.host.bb.storage.kv.set = async (key, value) => { if (key === "config-v1") throw new Error("config disk unavailable"); return original(key, value); };
+  const original = f.host.alia.storage.kv.set.bind(f.host.alia.storage.kv);
+  f.host.alia.storage.kv.set = async (key, value) => { if (key === "config-v1") throw new Error("config disk unavailable"); return original(key, value); };
   await assert.rejects(f.rpc("catalog_change", { type: "remove", kind: "project", id: "p1" }), /config disk unavailable/);
   held.resolve([listRow()]); await f.tick();
   const snapshot = await f.rpc("snapshot");
@@ -274,13 +274,13 @@ activityTest("activity sync refreshes periodically even without snapshot reads o
 activityTest("activity sync mirrors an already-started durable write when stopped during its completion", async context => {
   const held = deferredSyncRead();
   const f = await activityFixture(context, { rows: [listRow({ status: "active", latestAttentionAt: 0 })], release: () => held.resolve() });
-  const original = f.host.bb.storage.kv.set.bind(f.host.bb.storage.kv);
-  f.host.bb.storage.kv.set = async (key, value) => {
+  const original = f.host.alia.storage.kv.set.bind(f.host.alia.storage.kv);
+  f.host.alia.storage.kv.set = async (key, value) => {
     await original(key, value);
     if (key === "thread:t1") await held.promise;
   };
   await f.tick();
-  assert.equal((await f.host.bb.storage.kv.get("thread:t1")).visible, true);
+  assert.equal((await f.host.alia.storage.kv.get("thread:t1")).visible, true);
   const signals = f.host.harness.realtimeSignals.length;
   await f.stop();
   held.resolve(); await f.tick();
@@ -293,8 +293,8 @@ activityTest("activity sync cannot publish or start storage writes after plugin 
   const held = deferredSyncRead();
   const f = await activityFixture(context, { list: () => held.promise, release: () => {} });
   let writes = 0;
-  const original = f.host.bb.storage.kv.set.bind(f.host.bb.storage.kv);
-  f.host.bb.storage.kv.set = async (...args) => { writes++; return original(...args); };
+  const original = f.host.alia.storage.kv.set.bind(f.host.alia.storage.kv);
+  f.host.alia.storage.kv.set = async (...args) => { writes++; return original(...args); };
   await f.tick();
   const signals = f.host.harness.realtimeSignals.length;
   await f.dispose();

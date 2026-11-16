@@ -1,4 +1,4 @@
-// Typeahead tap guard: BB applies a $ skill / @ mention on mousedown and the list
+// Typeahead tap guard: VesnALIA applies a $ skill / @ mention on mousedown and the list
 // unmounts at once, so on a phone the rest of the tap (the synthetic click) lands
 // on whatever is under the finger now, the mic included. After a pick, this eats
 // that one click when it falls outside the list.

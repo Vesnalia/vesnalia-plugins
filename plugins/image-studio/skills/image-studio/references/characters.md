@@ -31,10 +31,10 @@ Same as GUI: **Characters projects**, one per folder (the first generation creat
 Presets for `--tags`: `stylized`, `blocky` (Roblox-style avatar), `chibi`, `lowpoly`, `realistic`, `toon`, `painted`. A project with nothing fixed makes `ideas` try four presets; after the user picks one, set its tag and add the picture as a reference.
 
 ```
-bb image-studio character projects [--json]
-bb image-studio character project --theme "…" --tags stylized --notes "…"
-bb image-studio character ref --image image-studio/characters/<project>/<id>-soldier-model/front.png
-bb image-studio character delete --project <name>
+alia image-studio character projects [--json]
+alia image-studio character project --theme "…" --tags stylized --notes "…"
+alia image-studio character ref --image image-studio/characters/<project>/<id>-soldier-model/front.png
+alia image-studio character delete --project <name>
 ```
 
 ## Modes
@@ -47,7 +47,7 @@ bb image-studio character delete --project <name>
 | `equipment` | optional: whose items | **required**, up to 8, `;`-separated | the idea that shows them | `sheet.png` + `parts/<item>.png` (white squares, side view, tip to the right) + `manifest.json` |
 | `accessories` | optional: whose pieces | `accessories` **required**, up to 8 | the idea that shows them | worn pieces alone (helmet hollow, pauldrons, wings, cape), three-quarter view, `parts/<item>.png` for image-to-3D |
 
-Tool: `image_studio_character` (`mode`, `prompt`, `equipment`, `accessories`, `name`, `body`, `project`, `images`). `accessories` are worn pieces made apart from the body: left out of `model`/`turnaround` like `equipment`, drawn by mode `accessories`. Runs at once, no Send form. CLI: `bb image-studio character generate --mode … [--name soldier] [--body humanoid|quadruped|winged|legless] [--equipment "rifle; knife"] [--image <path or gallery id>]… --prompt "…" [--json]`. `name` is the short file name; without it the first words of the description are used.
+Tool: `image_studio_character` (`mode`, `prompt`, `equipment`, `accessories`, `name`, `body`, `project`, `images`). `accessories` are worn pieces made apart from the body: left out of `model`/`turnaround` like `equipment`, drawn by mode `accessories`. Runs at once, no Send form. CLI: `alia image-studio character generate --mode … [--name soldier] [--body humanoid|quadruped|winged|legless] [--equipment "rifle; knife"] [--image <path or gallery id>]… --prompt "…" [--json]`. `name` is the short file name; without it the first words of the description are used.
 
 Files: `image-studio/characters/<project>/<id>-<name>-<mode>/`. A turnaround or equipment sheet is cut by its white gaps; `missing` lists empty cells, `cleanGaps: false` in the manifest means some figures touched and were cut at their narrowest point, with a neighbour's tip dropped (check the edges, or re-cut).
 

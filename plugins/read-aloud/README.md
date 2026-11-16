@@ -1,4 +1,4 @@
-# bb-plugin-read-aloud
+# alia-plugin-read-aloud
 
 Speak any chat message out loud, with a streaming neural voice and a real
 transport: seek, speed, pause, stop.
@@ -15,14 +15,14 @@ Microsoft Edge's Read Aloud protocol directly over a WebSocket.
 ## Install
 
 ```bash
-bb plugin install <this directory or git url>
+alia plugin install <this directory or git url>
 ```
 
 That is the whole setup. Verify with:
 
 ```bash
-bb read-aloud status
-bb read-aloud voices en-GB     # filter the live voice catalog
+alia read-aloud status
+alia read-aloud voices en-GB     # filter the live voice catalog
 ```
 
 ## Settings
@@ -71,7 +71,7 @@ and remembers whatever worked, so the retry cost is paid once per install
 rather than once per synthesis. That is why `edge-tts-node`'s hard pin at 130
 is permanently broken while this is not. An explicit override is used verbatim
 and never escalated, because a version you set deliberately should mean what it
-says. `bb read-aloud status` reports which version is live and whether it was
+says. `alia read-aloud status` reports which version is live and whether it was
 negotiated or pinned.
 
 **Chunked into short turns, synthesized concurrently.** The service will stream
@@ -152,7 +152,7 @@ word up to the next one. Money and rate shorthand is spoken as words, so
 slash.
 
 **Auto-stop** happens two ways. Switching threads is detected in the overlay
-via `useBbContext()`. New prompts go through the backend: `thread.active`
+via `useAliaContext()`. New prompts go through the backend: `thread.active`
 publishes on a realtime channel and the overlay stops, filtered to the thread
 being read so background threads never interrupt you. The server-side signal
 covers every composer surface and layout, unlike a frontend submit hook.
@@ -165,7 +165,7 @@ and the overlay mounts and unmounts underneath it.
 
 ## Mobile
 
-Touch targets grow on coarse pointers using BB's own `coarse-pointer-sizing`
+Touch targets grow on coarse pointers using VesnALIA's own `coarse-pointer-sizing`
 classes. The pill clears the mobile composer and respects
 `env(safe-area-inset-bottom)`, constrains itself to the viewport width, and
 drops its text label first on narrow screens so the controls always fit.

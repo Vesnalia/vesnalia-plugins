@@ -28,7 +28,7 @@ class FakeKv implements KvLike {
 }
 
 const condition = {
-  executionKey: "bb:thr_auth",
+  executionKey: "alia:thr_auth",
   type: "failed" as const,
   updatedAt: 1_700_000_000_000,
 };
@@ -37,7 +37,7 @@ describe("attentionDismissalKey", () => {
   it("keys an unchanged condition identically across re-derivation", () => {
     // Same execution, same type, same source updatedAt → same key.
     expect(attentionDismissalKey(condition)).toBe(attentionDismissalKey({ ...condition }));
-    expect(attentionDismissalKey(condition)).toBe("bb:thr_auth::failed::1700000000000");
+    expect(attentionDismissalKey(condition)).toBe("alia:thr_auth::failed::1700000000000");
   });
 
   it("distinguishes type and condition version on the same execution", () => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRpc, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useRpc, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 
 export interface ThreadDiff { additions: number; deletions: number; partial?: boolean }

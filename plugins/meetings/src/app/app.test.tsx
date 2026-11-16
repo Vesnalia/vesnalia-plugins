@@ -5,8 +5,8 @@
 // transcript updates and the Zoom sign-in page.
 import { afterEach, describe, expect, it } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { EnvReport } from "../shared/contract";
 import type {
   BotProfile,
@@ -289,7 +289,7 @@ describe("list page", () => {
     // Environment banner and GigaAM warning
     expect(screen.getByText("Не хватает компонентов для записи встреч")).toBeTruthy();
     expect(screen.getByText("sudo apt-get install -y xvfb")).toBeTruthy();
-    expect(screen.getByText("bb gigaam status")).toBeTruthy();
+    expect(screen.getByText("alia gigaam status")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Установить компоненты" }));
     await screen.findByText(/Installing Xvfb/);
     expect(callsTo(slot, "env.setup")).toEqual([{ force: false }]);

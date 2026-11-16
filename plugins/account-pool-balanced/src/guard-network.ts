@@ -5,11 +5,11 @@ import {GuardRequiredError} from './network-errors.js';
 
 export function requiresGuardCheck(provider:PoolProvider):boolean {return provider!=='kimi'&&provider!=='zai';}
 export const guardDecisionSchema=z.object({
-  schema:z.literal('bb-vpn-guard/network-decision/1'),allowed:z.boolean(),
+  schema:z.literal('alia-vpn-guard/network-decision/1'),allowed:z.boolean(),
   reason:z.enum(['manual_block','vpn_unavailable','outside_scope','observe','connected','restore_required']),
 }).strict().refine(v=>v.allowed===['outside_scope','observe','connected'].includes(v.reason));
 export const hostGuardDecisionSchema=z.object({
-  schema:z.literal('bb-vpn-guard/network-decision/2'),hostId:z.string().min(1),allowed:z.boolean(),
+  schema:z.literal('alia-vpn-guard/network-decision/2'),hostId:z.string().min(1),allowed:z.boolean(),
   reason:z.enum(['manual_block','vpn_unavailable','outside_scope','observe','connected','restore_required','direct']),
 }).strict().refine(v=>v.allowed===['outside_scope','observe','connected','direct'].includes(v.reason));
 export function bindGuardNetworkDecision(value:unknown,hostId:string) {

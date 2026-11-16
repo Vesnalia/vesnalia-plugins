@@ -332,8 +332,8 @@ export interface Instead {
 
 export function insteadOf(part: CardPart, what: BoxWhat): Instead {
   if (part === "whole") return { person: "Release a box on one of the cards, or ask for gpu shared.", agent: "ask for gpu shared" };
-  if (what === "desktop") return { person: "Release a box on a card, ask for a linux-desktop-cpu box, or raise the boxes per card in BB Box's Docker settings.", agent: "ask for a linux-desktop-cpu box" };
-  return { person: "Release a box on a card, ask for gpu none, or raise the boxes per card in BB Box's Docker settings.", agent: "ask for gpu none" };
+  if (what === "desktop") return { person: "Release a box on a card, ask for a linux-desktop-cpu box, or raise the boxes per card in VesnALIA Box's Docker settings.", agent: "ask for a linux-desktop-cpu box" };
+  return { person: "Release a box on a card, ask for gpu none, or raise the boxes per card in VesnALIA Box's Docker settings.", agent: "ask for gpu none" };
 }
 
 export function placementRefusal(host: string, part: CardPart, what: BoxWhat, blocks: readonly CardBlock[], titles: ThreadTitles, threadId: string | null): GpuRefusal {
@@ -365,8 +365,8 @@ export function oneDeviceForEveryCardOf(info: { readonly gpus: readonly string[]
 }
 
 export function reachWords(host: string, privileged: boolean, oneDeviceForEveryCard: boolean): string | null {
-  if (privileged) return `On ${host}, every box with Docker in it can open every card, with a GPU or without. None and Whole card are what BB Box places, not what a box can reach.`;
-  if (oneDeviceForEveryCard) return `On ${host}, Docker gives every card as one device, so every box with a GPU can open every card. Whole card is what BB Box places, not what a box can reach.`;
+  if (privileged) return `On ${host}, every box with Docker in it can open every card, with a GPU or without. None and Whole card are what VesnALIA Box places, not what a box can reach.`;
+  if (oneDeviceForEveryCard) return `On ${host}, Docker gives every card as one device, so every box with a GPU can open every card. Whole card is what VesnALIA Box places, not what a box can reach.`;
   return null;
 }
 

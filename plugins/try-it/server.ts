@@ -1,5 +1,5 @@
 // Try It: an agent hands a running build to a person and gets their verdict back.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { summarize, urlProblem, type TryItAnswer } from "./lib/url";
 
@@ -10,7 +10,7 @@ export interface TryItPayload {
   checks: string[];
 }
 
-// BB rejects a longer submission detail. A person may take a while with a phone,
+// VesnALIA rejects a longer submission detail. A person may take a while with a phone,
 // well past the 10-minute default.
 const clip = (text: string) => (text.length <= 280 ? text : `${text.slice(0, 279)}…`);
 const WAIT_MS = 24 * 60 * 60 * 1000;
@@ -20,8 +20,8 @@ const answerSchema = z.object({
   note: z.string(),
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.agents.registerTool({
+export default async function plugin(alia: AliaPluginApi) {
+  alia.agents.registerTool({
     name: "try_it",
     description:
       "Ask the person to test a running build on their own device. Shows a public link, a QR code, what changed, and a checklist in place of the composer; returns their verdict per check.",
@@ -38,7 +38,7 @@ export default async function plugin(bb: BbPluginApi) {
       const problem = urlProblem(url);
       if (problem !== null) return { content: [{ type: "text", text: problem }], isError: true };
       const payload: TryItPayload = { title, url, changed, checks };
-      const answer = await bb.ui.requestInput(
+      const answer = await alia.ui.requestInput(
         {
           threadId,
           rendererId: "try-it",

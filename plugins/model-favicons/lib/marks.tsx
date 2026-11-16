@@ -1,11 +1,11 @@
-// Inline SVG marks for ACP agents bb has no shipped logo for.
+// Inline SVG marks for ACP agents VesnALIA has no shipped logo for.
 //
-// Every mark here is a monochrome `currentColor` path so it inherits the bb
+// Every mark here is a monochrome `currentColor` path so it inherits the VesnALIA
 // theme tint (light/dark) exactly like the built-in provider logos do, which
-// bb draws as a `currentColor` mask over the SVG asset.
+// VesnALIA draws as a `currentColor` mask over the SVG asset.
 //
 // The marks are the official ACP registry artwork (the same `registry-*.svg`
-// assets bb's own provider-acp plugin ships for registry agents), inlined as
+// assets VesnALIA's own provider-acp plugin ships for registry agents), inlined as
 // React so the `experimental_providerIcon` slot can render them without a
 // network fetch and without a separate logo endpoint.
 
@@ -16,7 +16,7 @@ export type MarkProps = { className?: string };
 export type Mark = ComponentType<MarkProps>;
 
 /**
- * Z.ai / GLM — the mark bb ships as `registry-glm-acp-agent.svg`.
+ * Z.ai / GLM — the mark VesnALIA ships as `registry-glm-acp-agent.svg`.
  * Used by the `acp-zcode` (ZCode, GLM OAuth) provider.
  */
 export function GlmIcon({ className }: MarkProps) {
@@ -40,9 +40,9 @@ export function GlmIcon({ className }: MarkProps) {
  * Used by the `acp-kimi-code` (Kimi Code) provider.
  *
  * The brand asset is two-colour: a black K and the signature blue corner
- * (#1783FF). BB renders a provider icon as a single-colour mask, so the
+ * (#1783FF). VesnALIA renders a provider icon as a single-colour mask, so the
  * corner is folded into the K's own shape here and the whole mark inherits
- * `currentColor` — the same treatment bb applies to every built-in logo.
+ * `currentColor` — the same treatment VesnALIA applies to every built-in logo.
  */
 export function KimiIcon({ className }: MarkProps) {
   return (
@@ -60,7 +60,7 @@ export function KimiIcon({ className }: MarkProps) {
 }
 
 /**
- * MiniMax Code — the mark bb ships as `registry-minimax-code.svg`.
+ * MiniMax Code — the mark VesnALIA ships as `registry-minimax-code.svg`.
  * Used by the `acp-minimax-code` provider (an "M" monogram).
  */
 export function MinimaxCodeIcon({ className }: MarkProps) {
@@ -79,7 +79,7 @@ export function MinimaxCodeIcon({ className }: MarkProps) {
 }
 
 /**
- * OpenCode — the mark bb ships as `registry-opencode.svg`.
+ * OpenCode — the mark VesnALIA ships as `registry-opencode.svg`.
  * Used by the `acp-opencode` provider.
  */
 export function OpenCodeIcon({ className }: MarkProps) {
@@ -105,7 +105,7 @@ export function OpenCodeIcon({ className }: MarkProps) {
 /**
  * A generic agent mark for custom ACP agents that have no bundled logo.
  *
- * bb draws a custom ACP agent's icon as the built-in "Toolbox" glyph, which
+ * VesnALIA draws a custom ACP agent's icon as the built-in "Toolbox" glyph, which
  * reads as "some agent" in every list at once. This is a neutral agent mark
  * (a terminal chevron in a rounded frame) so a custom agent is still
  * distinguishable from the Toolbox, without pretending to be a vendor logo.
@@ -130,7 +130,7 @@ export function GenericAgentIcon({ className }: MarkProps) {
 }
 
 /**
- * Qwen Code — the mark bb ships as `registry-qwen-code.svg`.
+ * Qwen Code — the mark VesnALIA ships as `registry-qwen-code.svg`.
  */
 export function QwenCodeIcon({ className }: MarkProps) {
   return (
@@ -148,7 +148,7 @@ export function QwenCodeIcon({ className }: MarkProps) {
 }
 
 /**
- * Claude — the mark bb ships as `registry-claude-acp.svg`.
+ * Claude — the mark VesnALIA ships as `registry-claude-acp.svg`.
  */
 export function ClaudeIcon({ className }: MarkProps) {
   return (
@@ -166,7 +166,7 @@ export function ClaudeIcon({ className }: MarkProps) {
 }
 
 /**
- * Codex — the mark bb ships as `registry-codex-acp.svg`.
+ * Codex — the mark VesnALIA ships as `registry-codex-acp.svg`.
  */
 export function CodexIcon({ className }: MarkProps) {
   return (
@@ -184,7 +184,7 @@ export function CodexIcon({ className }: MarkProps) {
 }
 
 /**
- * Gemini — the mark bb ships as `registry-gemini.svg`.
+ * Gemini — the mark VesnALIA ships as `registry-gemini.svg`.
  */
 export function GeminiIcon({ className }: MarkProps) {
   return (

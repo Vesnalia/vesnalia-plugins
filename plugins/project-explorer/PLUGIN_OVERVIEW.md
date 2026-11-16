@@ -22,15 +22,15 @@ repository, so a project with `node_modules` opens as quickly as an empty one,
 and a folder you never open costs nothing. Listings are cached for the life of
 the tab, and a collapsed folder unmounts its contents entirely.
 
-Files open with BB's own syntax highlighting and code theme. The **Edit**
+Files open with VesnALIA's own syntax highlighting and code theme. The **Edit**
 button swaps the viewer for a text editor: `Cmd+S` or `Ctrl+S` saves, `Tab`
 inserts two spaces, and a dot beside the path marks unsaved work. Closing a
-file with unsaved changes asks first. If BB's syntax renderer fails on a file,
+file with unsaved changes asks first. If VesnALIA's syntax renderer fails on a file,
 Project Explorer contains that failure and shows the same contents as plain
 text instead of replacing the entire panel with an error.
 
 Common image formats open directly in the panel, including SVG. Image bytes
-stream through BB's temporary workspace-confined preview URLs rather than the
+stream through VesnALIA's temporary workspace-confined preview URLs rather than the
 plugin RPC, and previews are capped at 25 MB.
 
 Drag the divider between the tree and viewer to resize the explorer down to a
@@ -41,14 +41,14 @@ Saving is compare-and-swap. The plugin sends back the SHA-256 the file had when
 you opened it, so if the agent edited that file while you were typing, the save
 stops and tells you instead of overwriting the agent's work.
 
-Dotfiles such as `.claude`, `.env`, and `.github` appear in the tree. BB's own
+Dotfiles such as `.claude`, `.env`, and `.github` appear in the tree. VesnALIA's own
 directory listing hides them, so the plugin reads the directory itself through
 a host entry that runs on the machine holding the files — which also means a
 workspace on a remote host behaves the same way. `.git` stays hidden.
 
 ## Also included
 
-A `bb project-explorer ls <path>` command lists any directory exactly as the
+A `alia project-explorer ls <path>` command lists any directory exactly as the
 tree sees it, with `--json` for scripting. Agents can use it to inspect the
 same workspace from a shell.
 

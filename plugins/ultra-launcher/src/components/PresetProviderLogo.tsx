@@ -1,4 +1,4 @@
-import { experimental_ProviderIcon as ProviderIcon, experimental_useProviders as useProviders } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderIcon as ProviderIcon, experimental_useProviders as useProviders } from "@vesnalia/plugin-sdk/app";
 import { originalProviderLogos } from "../lib/provider-logos";
 function OriginalProviderLogo({ providerId }: { providerId: string }) {
   const logo = originalProviderLogos[providerId === "claude" ? "claude-code" : providerId];

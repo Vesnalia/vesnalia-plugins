@@ -35,7 +35,7 @@ describe("openWorktreeTerminal", () => {
     expect(experimental_openTerminal).toHaveBeenCalledWith({ terminalId: "term_1" });
   });
 
-  it("returns false when bb cannot show the terminal, and lets a failed create reject", async () => {
+  it("returns false when VesnALIA cannot show the terminal, and lets a failed create reject", async () => {
     const create = vi.fn(async (..._args: unknown[]) => ({ id: "term_1" }));
     expect(await openWorktreeTerminal({ terminals: { create } } as never, { experimental_openTerminal: async () => false } as never, input)).toBe(false);
     create.mockRejectedValueOnce(new Error("no terminal for you"));
@@ -56,7 +56,7 @@ describe("openEnvironmentTerminal", () => {
     expect(experimental_openTerminal).toHaveBeenCalledWith({ terminalId: "term_7" });
   });
 
-  it("returns false when bb cannot show the terminal, and lets a failed create reject", async () => {
+  it("returns false when VesnALIA cannot show the terminal, and lets a failed create reject", async () => {
     const create = vi.fn(async (..._args: unknown[]) => ({ id: "term_7" }));
     expect(await openEnvironmentTerminal({ terminals: { create } } as never, { experimental_openTerminal: async () => false } as never, input)).toBe(false);
     create.mockRejectedValueOnce(new Error("nope"));

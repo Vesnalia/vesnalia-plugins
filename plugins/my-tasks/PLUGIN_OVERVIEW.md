@@ -4,4 +4,4 @@ Keep a personal checklist with sections, notes and nested steps. Completed items
 
 ## Requirements and data
 
-The checklist works locally in BB. Optional background assistance requires an authenticated Codex CLI on a connected machine and uses the selected provider account quota. Task context is sent to Codex when you request assistance. Runs have a ten-minute timeout and can be stopped. Tasks and saved results stay in the plugin database. New installations start empty.
+The checklist works locally in VesnALIA. Optional background assistance requires an authenticated Codex CLI on a connected machine and uses the selected provider account quota. Task context is sent to Codex when you request assistance. Runs have a ten-minute timeout and can be stopped. Tasks and saved results stay in the plugin database. New installations start empty.

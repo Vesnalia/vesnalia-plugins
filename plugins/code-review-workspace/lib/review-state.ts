@@ -10,7 +10,7 @@ import type { AgentStatus } from "./review-indicator";
 export type KeptApart = { targetKey: string; id: string; number: number; intoPr?: true; branch?: string };
 /**
  * A review as the server returns it, with its `turn`, `progress`, `stack`, `place`, a local review's `guideTitle`, and
- * its review agent's status in BB, `agentStatus`, attached.
+ * its review agent's status in VesnALIA, `agentStatus`, attached.
  */
 export type ReviewItem = Pick<ReviewMeta, "targetKey"> & Partial<ReviewMeta> & { turn?: Turn; progress?: ReturnType<typeof feedbackProgress>; stack?: StackPlace | null; place?: ReviewPlace | null; guideTitle?: string | null; mergedIntoId?: string | null; keptApart?: KeptApart | null; agentStatus?: AgentStatus | null; focusFindings?: import("../src/focus-model").FocusFinding[]; focusHead?: string | null };
 /** A guide's error when the reviewer stopped it before it was written (src/generate.ts stopGuide). */

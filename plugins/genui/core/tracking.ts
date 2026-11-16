@@ -1,5 +1,5 @@
 // Tracking data for Board, Roadmap and Status: reads what models write and
-// what `bb tasks list --json`, `gh issue list --json` and `gh pr list --json`
+// what `alia tasks list --json`, `gh issue list --json` and `gh pr list --json`
 // print into one card/item shape, and the calendar maths they share. Dates are
 // whole days (days since 1970-01-01, UTC), so no timezone ever moves a due
 // date; "today" is always passed in, never read from the clock here.
@@ -164,9 +164,9 @@ export interface BoardCard {
   readonly owners: readonly string[];
   readonly due: number | null;
   readonly url: string | null;
-  /** Agents working on a BB task now. */
+  /** Agents working on a VesnALIA task now. */
   readonly agents: number;
-  /** The parent task's key, for BB sub-tasks. */
+  /** The parent task's key, for VesnALIA sub-tasks. */
   readonly parent: string | null;
   /** When GitHub last saw a change (ms), for issues and pull requests. */
   readonly updated: number | null;
@@ -191,7 +191,7 @@ export interface Board {
   readonly hidden: number;
   /** Items left out for having no title. */
   readonly skipped: number;
-  /** `bb tasks list` stopped at its limit: there are more tasks than these. */
+  /** `alia tasks list` stopped at its limit: there are more tasks than these. */
   readonly truncated: boolean;
 }
 
@@ -404,7 +404,7 @@ function isPull(value: Value): boolean {
 
 /**
  * A board from a list of cards (`{title, status?, key?|id?, …}` or bare
- * titles), `bb tasks list --json` (`{tasks}`), or `gh issue list --json` /
+ * titles), `alia tasks list --json` (`{tasks}`), or `gh issue list --json` /
  * `gh pr list --json`. `columns` names the statuses to show, in order (empty
  * ones too); without it the known workflow order applies, unknown statuses
  * follow in first-seen order, and empty columns are left out.
@@ -433,11 +433,11 @@ export function readBoard(items: Field, columns?: Field): Read<Board> {
     if (github) source = pulls ? "pulls" : "issues";
     raw = items.map((item) => (github ? githubCard(item, pulls) : listCard(item)));
   } else if (items === undefined || items === null) {
-    return { ok: false, error: "Board needs a list of items, or Load a bb tasks or gh issue/pr list --json file" };
+    return { ok: false, error: "Board needs a list of items, or Load a VesnALIA tasks or gh issue/pr list --json file" };
   } else {
     return {
       ok: false,
-      error: "Board needs a list of {title, status?} items, bb tasks list --json ({tasks: […]}) or gh issue/pr list --json",
+      error: "Board needs a list of {title, status?} items, VesnALIA tasks list --json ({tasks: […]}) or gh issue/pr list --json",
     };
   }
 

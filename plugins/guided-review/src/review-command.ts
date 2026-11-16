@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Store } from "./store";
 import { parseTarget, targetKey } from "./targets";
 import { ensureGitHeaders } from "./patch";
@@ -10,7 +10,7 @@ import {
 } from "./gh";
 
 interface Deps {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   store: Store;
   gh: { runGh: typeof import("./gh").runGh; runGit: typeof import("./gh").runGit };
 }
@@ -28,11 +28,11 @@ export async function runReviewCommand(deps: Deps, argv: string[], ctx: Ctx) {
       return { exitCode: 2, stderr: `Unexpected argument: ${value}` };
     } else input = value;
   }
-  if (!input) return { exitCode: 2, stderr: "usage: bb review <pr-url | pr-number | git-ref> [--base <ref>]" };
-  if (!ctx.projectId) return { exitCode: 2, stderr: "Run `bb review` inside a project thread." };
+  if (!input) return { exitCode: 2, stderr: "usage: VesnALIA review <pr-url | pr-number | git-ref> [--base <ref>]" };
+  if (!ctx.projectId) return { exitCode: 2, stderr: "Run `alia review` inside a project thread." };
   const target = parseTarget(input, base);
   if (target.kind === "pr" && base) return { exitCode: 2, stderr: "--base is only supported for local git refs." };
-  if ((target.kind === "ref" || !target.repo) && !ctx.cwd) return { exitCode: 2, stderr: "A local ref or PR number needs a working directory. Run `bb review` in the repository." };
+  if ((target.kind === "ref" || !target.repo) && !ctx.cwd) return { exitCode: 2, stderr: "A local ref or PR number needs a working directory. Run `alia review` in the repository." };
   const cwd = ctx.cwd ? resolve(ctx.cwd) : undefined;
   let key = targetKey(target, cwd ? { projectId: ctx.projectId, cwd } : undefined);
   const now = Date.now();
@@ -83,7 +83,7 @@ export async function runReviewCommand(deps: Deps, argv: string[], ctx: Ctx) {
   deps.store.savePatch(key, ensureGitHeaders(patch));
 
   // Fire-and-forget generation; the panel refetches on the realtime signal.
-  void generateGuide(deps.bb, deps.store, key, ctx.projectId);
+  void generateGuide(deps.alia, deps.store, key, ctx.projectId);
 
   return {
     exitCode: 0,

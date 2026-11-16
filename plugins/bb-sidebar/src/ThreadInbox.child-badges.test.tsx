@@ -100,7 +100,7 @@ describe("ThreadInbox", () => {
       name: "3 child threads, 1 failed, 1 done, 1 working",
     });
     expect(badge.getAttribute("data-child-status")).toBe("failed");
-    expect(badge.className).toContain("bg-[color:var(--bb-sidebar-badge-failed-bg)]");
+    expect(badge.className).toContain("bg-[color:var(--alia-sidebar-badge-failed-bg)]");
     expect(badge.querySelector('[data-icon="CircleX"]')).not.toBeNull();
   });
 
@@ -119,7 +119,7 @@ describe("ThreadInbox", () => {
       name: "1 child thread, 1 working",
     });
     expect(badge.getAttribute("data-child-status")).toBe("working");
-    expect(badge.className).toContain("bg-[color:var(--bb-sidebar-badge-working-bg)]");
+    expect(badge.className).toContain("bg-[color:var(--alia-sidebar-badge-working-bg)]");
     expect(badge.querySelector('[data-icon="Working"]')).not.toBeNull();
     expect(screen.getByRole("list", { name: "Child threads" })).toBeDefined();
     expect(screen.getByText("Working child")).toBeDefined();
@@ -150,7 +150,7 @@ describe("ThreadInbox", () => {
       name: "2 child threads, 1 need you, 1 working",
     });
     expect(badge.getAttribute("data-child-status")).toBe("needs-you");
-    expect(badge.className).toContain("bg-[color:var(--bb-sidebar-badge-needs-you-bg)]");
+    expect(badge.className).toContain("bg-[color:var(--alia-sidebar-badge-needs-you-bg)]");
     expect(badge.querySelector('[data-icon="CircleQuestion"]')).not.toBeNull();
     expect(badge.querySelector('[data-icon="Working"]')).toBeNull();
   });
@@ -219,7 +219,7 @@ describe("ThreadInbox", () => {
             indicator: "runtime",
           }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         getSidebarSettings: () => ({
@@ -254,7 +254,7 @@ describe("ThreadInbox", () => {
             indicator: "runtime",
           }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       providers: { status: "ready", providers: defaultProviders },
       rpc: {
@@ -294,7 +294,7 @@ describe("ThreadInbox", () => {
             indicator: "runtime",
           }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       providers: { status: "ready", providers: defaultProviders },
       rpc: {
@@ -331,7 +331,7 @@ describe("ThreadInbox", () => {
             }),
           ),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       providers: { status: "ready", providers: childProviders },
       rpc: {
@@ -366,7 +366,7 @@ describe("ThreadInbox", () => {
           thread({ id: "old", title: "Old child", parentThreadId: "parent", createdAt: 101 }),
           thread({ id: "new", title: "New child", parentThreadId: "parent", createdAt: 102 }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: { getSidebarSettings: () => remoteSettings, listLifecycle: () => ({ rows: [] }) },
     });

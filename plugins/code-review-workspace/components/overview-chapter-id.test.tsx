@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "../src/store";
 import { checkGuideInput } from "../src/guide";
 import { defaultPreferences } from "../src/preferences";
@@ -21,7 +21,7 @@ afterEach(() => { window.innerWidth = windowWidth; });
 const file = (path: string, hunks: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n${hunks}`;
 const patch = [
   file("src/a.ts", "@@ -1 +1 @@\n-a\n+aa\n"),
-  file("src/b.ts", "@@ -1 +1 @@\n-b\n+bb\n"),
+  file("src/b.ts", "@@ -1 +1 @@\n-b\n+alia\n"),
   file("src/c.ts", "@@ -1 +1 @@\n-c\n+cc\n"),
 ].join("");
 const guide = {
@@ -62,8 +62,8 @@ const currentChapter = (slot: Slot) => chapters(slot).getAllByRole("button").fin
 test("a stored chapter whose id was overview leaves the Overview reachable, and a submitted one is refused", async () => {
   expect(checkGuideInput({ ...guide, sections: guide.sections.map((s) => ({ ...s, risk: "low" })) }).ok).toBe(false);
   // The guide as the store reads it back for the review's bundle.
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = queueStore(createStore(bb));
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = queueStore(createStore(alia));
   await store.saveGuide("pr-42", guide);
   // A first open shows the Overview: the guide's intent, and no chapter's code.
   const slot = await renderWorkspace(await store.getGuide("pr-42"));

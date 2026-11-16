@@ -87,8 +87,8 @@ describe("initials", () => {
 });
 
 describe("readBoard", () => {
-  it("reads bb tasks list --json: workflow order, keys, priorities, sub-tasks", () => {
-    const board = ok(readBoard(fixture("bb-tasks-orb.json")));
+  it("reads VesnALIA tasks list --json: workflow order, keys, priorities, sub-tasks", () => {
+    const board = ok(readBoard(fixture("alia-tasks-orb.json")));
     expect(board.source).toBe("tasks");
     expect(board.columns.map((column) => [column.label, column.cards.length])).toEqual([
       ["Backlog", 13],

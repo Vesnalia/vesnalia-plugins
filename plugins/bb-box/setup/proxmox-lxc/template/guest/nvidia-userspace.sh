@@ -20,25 +20,25 @@ for f in "$x_modules/drivers/nvidia_drv.so" /etc/vulkan/icd.d/nvidia_icd.json /u
   /usr/bin/nvidia-smi; do
   [ -e "$f" ] || die "the NVIDIA installer did not install $f"
 done
-install -d -m 0755 /usr/share/bb-box
-echo "$version" >/usr/share/bb-box/nvidia-version
-install -m 0755 "$build/guest/bb-box-nvidia-drivers.sh" /usr/local/sbin/bb-box-nvidia-drivers
-cat >/etc/systemd/system/bb-box-nvidia-drivers.service <<'EOF'
+install -d -m 0755 /usr/share/alia-box
+echo "$version" >/usr/share/alia-box/nvidia-version
+install -m 0755 "$build/guest/alia-box-nvidia-drivers.sh" /usr/local/sbin/alia-box-nvidia-drivers
+cat >/etc/systemd/system/alia-box-nvidia-drivers.service <<'EOF'
 [Unit]
-Description=bb-box: NVIDIA's EGL and Vulkan drivers shown only in a box with a card
+Description=alia-box: NVIDIA's EGL and Vulkan drivers shown only in a box with a card
 DefaultDependencies=no
 After=local-fs.target
-Before=sysinit.target bb-box-display.service
-ConditionPathExists=/usr/share/bb-box/nvidia-version
+Before=sysinit.target alia-box-display.service
+ConditionPathExists=/usr/share/alia-box/nvidia-version
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/local/sbin/bb-box-nvidia-drivers
+ExecStart=/usr/local/sbin/alia-box-nvidia-drivers
 
 [Install]
 WantedBy=sysinit.target
 EOF
-systemctl enable bb-box-nvidia-drivers.service >/dev/null
-/usr/local/sbin/bb-box-nvidia-drivers >&2
+systemctl enable alia-box-nvidia-drivers.service >/dev/null
+/usr/local/sbin/alia-box-nvidia-drivers >&2
 echo "$version"

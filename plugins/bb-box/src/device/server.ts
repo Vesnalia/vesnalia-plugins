@@ -291,18 +291,18 @@ export class DeviceServer {
 
   #reportToLease(): void {
     const lease = this.#lease;
-    if (lease && !lease.ws.closed) this.#send(lease, { verb: "BB_DEVICE_VIDEO", video: this.videoReport });
+    if (lease && !lease.ws.closed) this.#send(lease, { verb: "ALIA_DEVICE_VIDEO", video: this.videoReport });
   }
 
   #tellViewers(force: Connection | null = null): void {
     const words = this.#capWords;
     if (force) {
-      if (words !== null) this.#send(force, { verb: "BB_DEVICE_VIDEO", video: this.videoReport });
+      if (words !== null) this.#send(force, { verb: "ALIA_DEVICE_VIDEO", video: this.videoReport });
       return;
     }
     if (words === this.#viewersTold) return;
     this.#viewersTold = words;
-    const message: DeviceServerMessage = { verb: "BB_DEVICE_VIDEO", video: this.videoReport };
+    const message: DeviceServerMessage = { verb: "ALIA_DEVICE_VIDEO", video: this.videoReport };
     for (const connection of this.#connections) if (connection.role === "viewer") this.#send(connection, message);
   }
 
@@ -532,7 +532,7 @@ export class DeviceServer {
     const compared = JSON.stringify(rest);
     if (compared === this.#lastStateText) return;
     this.#lastStateText = compared;
-    this.#broadcast({ verb: "BB_DEVICE_STATE", state: shown });
+    this.#broadcast({ verb: "ALIA_DEVICE_STATE", state: shown });
     const text = `${JSON.stringify(shown)}\n`;
     this.#stateWrites = this.#stateWrites.then(() => writeWhole(this.#options.paths.state, text)).catch((error) => this.#log(`state: could not write: ${error}`));
   }
@@ -573,7 +573,7 @@ export class DeviceServer {
     ws.onMessage = (message) => this.#message(connection, message);
     if (role === "control" && !this.#takeLease(connection)) return;
     if (role === "viewer") ws.send("MODE websockets");
-    this.#send(connection, { verb: "BB_DEVICE_HELLO", hello: this.#hello(connection) });
+    this.#send(connection, { verb: "ALIA_DEVICE_HELLO", hello: this.#hello(connection) });
     if (role === "control" && this.#lease === connection) this.#reportToLease();
     if (role === "viewer") this.#tellViewers(connection);
     if (role !== "input") void this.#readSettings();
@@ -612,7 +612,7 @@ export class DeviceServer {
       return;
     }
     if (connection.role === "input" && this.#person.message(message)) return;
-    if (!message.startsWith("BB_DEVICE ")) return;
+    if (!message.startsWith("ALIA_DEVICE ")) return;
     const parsed = parseDeviceRequest(message);
     if (!parsed.ok) {
       const id = /"id"\s*:\s*"([A-Za-z0-9._:-]{1,64})"/.exec(message)?.[1];
@@ -674,7 +674,7 @@ export class DeviceServer {
       this.#log(`stills: no screenshot: ${error instanceof Error ? error.message : String(error)}`);
       return;
     }
-    const still: DeviceServerMessage = { verb: "BB_DEVICE_STILL", png: Buffer.from(png).toString("base64"), generation: this.#state.geometry?.generation ?? 0 };
+    const still: DeviceServerMessage = { verb: "ALIA_DEVICE_STILL", png: Buffer.from(png).toString("base64"), generation: this.#state.geometry?.generation ?? 0 };
     for (const connection of this.#connections) {
       if (!watchesStills(connection)) continue;
       connection.needsKey = false;
@@ -711,7 +711,7 @@ export class DeviceServer {
   }
 
   #answer(connection: Connection | null, answer: DeviceAnswer): void {
-    if (connection && !connection.ws.closed) this.#send(connection, { verb: "BB_DEVICE_ANSWER", answer });
+    if (connection && !connection.ws.closed) this.#send(connection, { verb: "ALIA_DEVICE_ANSWER", answer });
   }
 
   #keep(id: string, kept: Kept): void {
@@ -1151,7 +1151,7 @@ export class DeviceServer {
   #echo(contacts: readonly TouchContact[], by: InputSource): void {
     this.#recorder.touch(contacts);
     const generation = this.#state.geometry?.generation ?? 0;
-    for (const connection of this.#connections) if (connection.role === "viewer") this.#send(connection, { verb: "BB_DEVICE_TOUCH", contacts, by, generation });
+    for (const connection of this.#connections) if (connection.role === "viewer") this.#send(connection, { verb: "ALIA_DEVICE_TOUCH", contacts, by, generation });
   }
 
   async #control(id: string, control: DeviceControl, from: Connection): Promise<AnswerResult> {

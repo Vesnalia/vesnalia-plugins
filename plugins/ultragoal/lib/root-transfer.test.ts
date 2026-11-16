@@ -4,7 +4,7 @@ import {
   createFakePluginHost,
   makeThreadResponse,
   type FakePluginHost,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import { createDecisionStore } from "./decisions.ts";
 import { createFindingStore } from "./findings.ts";
 import { createItemStore } from "./items.ts";
@@ -25,7 +25,7 @@ function migratedHost(sdk?: Parameters<typeof createFakePluginHost>[0] extends i
     sdk,
   });
   hosts.push(host);
-  const db = host.bb.storage.database();
+  const db = host.alia.storage.database();
   db.exec(`
     CREATE TABLE goals (
       thread_id TEXT PRIMARY KEY,
@@ -43,7 +43,7 @@ function migratedHost(sdk?: Parameters<typeof createFakePluginHost>[0] extends i
     );
     INSERT INTO goals VALUES ('thr_sentinel', 'test', 'complete', NULL, 1, 1, 1, 0, 0, 0, NULL, NULL);
   `);
-  const goals = createGoalStore(host.bb);
+  const goals = createGoalStore(host.alia);
   db.prepare("DELETE FROM goals WHERE thread_id = 'thr_sentinel'").run();
   return { host, db, goals };
 }
@@ -62,12 +62,12 @@ function seedState(state: ReturnType<typeof migratedHost>) {
     verifyModelOverride: "openrouter/stealth/ox-alpha",
   });
   goals.setIntakeRow("thr_source", "row_old_intake");
-  const items = createItemStore(host.bb);
+  const items = createItemStore(host.alia);
   const [item] = items.upsert("thr_source", [
     { step: "Fix durable transfer", status: "in_progress", files: ["src/root.ts"], check: "npm test" },
     { step: "Verify durable transfer", status: "pending", deps: ["#1"] },
   ]);
-  const findings = createFindingStore(host.bb);
+  const findings = createFindingStore(host.alia);
   findings.report("thr_source", {
     title: "Transfer loses metadata",
     file: "src/root.ts:1",
@@ -75,7 +75,7 @@ function seedState(state: ReturnType<typeof migratedHost>) {
     fixFiles: ["src/root.ts", "test/root.test.ts"],
     check: "npm test -- root",
   });
-  const decisions = createDecisionStore(host.bb);
+  const decisions = createDecisionStore(host.alia);
   decisions.request("thr_source", { question: "Proceed?", options: ["Yes", "No"] });
   const insertAgent = db.prepare(`
     INSERT INTO collab_agents (
@@ -101,7 +101,7 @@ describe("durable root transfer", () => {
     const seeded = seedState(state);
     const originalGoal = state.goals.get("thr_source")!;
     const originalItems = seeded.items.list("thr_source");
-    const transfers = createRootTransferStore(state.host.bb);
+    const transfers = createRootTransferStore(state.host.alia);
     const before = transfers.inspect("thr_source", "thr_target");
     assert.deepEqual(before.counts, {
       goals: 1,
@@ -185,7 +185,7 @@ describe("durable root transfer", () => {
   it("rolls the entire IMMEDIATE transaction back on a forced goal update failure", () => {
     const state = migratedHost();
     seedState(state);
-    const transfers = createRootTransferStore(state.host.bb);
+    const transfers = createRootTransferStore(state.host.alia);
     transfers.prepare("thr_source", "thr_target", "row_target", "marker");
     transfers.setPhase("thr_source", "thr_target", "target_released");
     state.db.exec(`
@@ -227,7 +227,7 @@ describe("durable root transfer", () => {
       VALUES ('thr_target', 'thr_other', 'thr_other', '/root/collision', 1)
     `).run();
     assert.throws(
-      () => createRootTransferStore(state.host.bb).inspect("thr_source", "thr_target"),
+      () => createRootTransferStore(state.host.alia).inspect("thr_source", "thr_target"),
       /collab child thread_id/,
     );
   });
@@ -283,10 +283,10 @@ describe("durable root transfer", () => {
         display_name, item_id, role, retired_at
       ) VALUES ('thr_live2', 'thr_source', 'thr_source', '/root/live2', 1, 'Live 2', ?, 'worker', NULL)
     `).run(seeded.items.list("thr_source")[1]!.id);
-    const transfers = createRootTransferStore(state.host.bb);
+    const transfers = createRootTransferStore(state.host.alia);
     let wakeCount = 0;
     const dryRun = await executeRootTransfer({
-      bb: state.host.bb,
+      alia: state.host.alia,
       store: transfers,
       sourceThreadId: "thr_source",
       targetThreadId: "thr_target",
@@ -303,7 +303,7 @@ describe("durable root transfer", () => {
     assert.equal(state.goals.get("thr_target"), null);
 
     const execute = () => executeRootTransfer({
-      bb: state.host.bb,
+      alia: state.host.alia,
       store: transfers,
       sourceThreadId: "thr_source",
       targetThreadId: "thr_target",
@@ -333,7 +333,7 @@ describe("durable root transfer", () => {
     assert.equal(stopArgs[0]![0].threadId, "thr_target");
 
     const repaired = await executeRootTransfer({
-      bb: state.host.bb,
+      alia: state.host.alia,
       store: transfers,
       sourceThreadId: "thr_source",
       targetThreadId: "thr_target",
@@ -355,7 +355,7 @@ describe("a worker that already ended", () => {
     // one goal, every one refusing the transfer with a message implying
     // corruption. Archived means finished, not broken.
     const { host, db } = migratedHost();
-    const store = createRootTransferStore(host.bb);
+    const store = createRootTransferStore(host.alia);
     db.prepare(
       "INSERT INTO collab_agents (thread_id, root_thread_id, parent_thread_id, task_name, created_at, role) VALUES (?,?,?,?,?,?)",
     ).run("thr_gone", "thr_src", "thr_src", "/root/gone", 1, "worker");
@@ -372,7 +372,7 @@ describe("a worker that already ended", () => {
 
   it("leaves an already-retired row alone rather than restamping it", () => {
     const { host, db } = migratedHost();
-    const store = createRootTransferStore(host.bb);
+    const store = createRootTransferStore(host.alia);
     db.prepare(
       "INSERT INTO collab_agents (thread_id, root_thread_id, parent_thread_id, task_name, created_at, role, retired_at) VALUES (?,?,?,?,?,?,?)",
     ).run("thr_old", "thr_src", "thr_src", "/root/old", 1, "worker", 500);

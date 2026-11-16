@@ -1,15 +1,15 @@
 {
-  "name": "bb-plugin-magpie",
+  "name": "alia-plugin-magpie",
   "version": "0.2.1",
   "type": "module",
   "private": true,
   "engines": {
-    "bb": ">=0.45",
-    "bbPluginSdk": ">=0.6.37"
+    "alia": ">=0.45",
+    "aliaPluginSdk": ">=0.6.37"
   },
-  "bb": {
+  "alia": {
     "name": "Magpie",
-    "description": "Route BB agents through Magpie and monitor usage and subscriptions.",
+    "description": "Route VesnALIA agents through Magpie and monitor usage and subscriptions.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -26,11 +26,27 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.37",
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0",
     "react": "^19.0.0",
     "@types/react": "^19.0.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/magpie#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/magpie"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

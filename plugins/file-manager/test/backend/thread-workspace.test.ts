@@ -1,18 +1,18 @@
 // §10.3 — resolving a thread into the folder its code lives in.
 //
 // The interesting half is everything that is *not* a happy path, because none
-// of it is an error: a thread with no environment, an environment bb has not
+// of it is an error: a thread with no environment, an environment VesnALIA has not
 // provisioned, a worktree that has since been destroyed and a checkout outside
 // the home folder are four different answers the toolbar renders four
 // different ways. These hold that they come back as reasons rather than
 // throws, and that the root clamp is applied to the realpath and not to the
-// string bb handed over.
+// string VesnALIA handed over.
 import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import { resolveThreadWorkspace } from "../../src/locate";
 import { initRoot } from "../../src/root";
@@ -21,11 +21,11 @@ let root = "";
 let outside = "";
 
 /** Only the two SDK calls this resolver makes, stubbed per test. */
-function fakeBb(overrides: {
+function fakeAlia(overrides: {
   environmentId?: string | null;
   environmentPath?: string | null;
   threadFails?: boolean;
-}): BbPluginApi {
+}): AliaPluginApi {
   return {
     sdk: {
       threads: {
@@ -45,7 +45,7 @@ function fakeBb(overrides: {
         })),
       },
     },
-  } as unknown as BbPluginApi;
+  } as unknown as AliaPluginApi;
 }
 
 beforeEach(async () => {
@@ -61,10 +61,10 @@ afterEach(async () => {
 
 describe("resolveThreadWorkspace", () => {
   it("answers with the checkout of the thread's environment", async () => {
-    const checkout = path.join(root, "work", "bb-plugins");
+    const checkout = path.join(root, "work", "alia-plugins");
     await mkdir(checkout, { recursive: true });
 
-    const answer = await resolveThreadWorkspace(fakeBb({ environmentPath: checkout }), {
+    const answer = await resolveThreadWorkspace(fakeAlia({ environmentPath: checkout }), {
       threadId: "thr_1",
     });
 
@@ -72,15 +72,15 @@ describe("resolveThreadWorkspace", () => {
   });
 
   it("says the thread has no environment instead of throwing", async () => {
-    const answer = await resolveThreadWorkspace(fakeBb({ environmentId: null }), {
+    const answer = await resolveThreadWorkspace(fakeAlia({ environmentId: null }), {
       threadId: "thr_1",
     });
 
     expect(answer).toEqual({ path: null, insideRoot: false, reason: "no_environment" });
   });
 
-  it("says the environment has no checkout when bb records no path", async () => {
-    const answer = await resolveThreadWorkspace(fakeBb({ environmentPath: null }), {
+  it("says the environment has no checkout when VesnALIA records no path", async () => {
+    const answer = await resolveThreadWorkspace(fakeAlia({ environmentPath: null }), {
       threadId: "thr_1",
     });
 
@@ -88,10 +88,10 @@ describe("resolveThreadWorkspace", () => {
   });
 
   it("treats a destroyed worktree as no checkout, not as a failure", async () => {
-    // bb keeps the recorded path of a worktree it has already removed, so the
+    // VesnALIA keeps the recorded path of a worktree it has already removed, so the
     // string arrives and the directory does not.
     const answer = await resolveThreadWorkspace(
-      fakeBb({ environmentPath: path.join(root, "work", "gone") }),
+      fakeAlia({ environmentPath: path.join(root, "work", "gone") }),
       { threadId: "thr_1" },
     );
 
@@ -102,7 +102,7 @@ describe("resolveThreadWorkspace", () => {
     const notADir = path.join(root, "checkout.txt");
     await writeFile(notADir, "not a worktree\n");
 
-    const answer = await resolveThreadWorkspace(fakeBb({ environmentPath: notADir }), {
+    const answer = await resolveThreadWorkspace(fakeAlia({ environmentPath: notADir }), {
       threadId: "thr_1",
     });
 
@@ -111,20 +111,20 @@ describe("resolveThreadWorkspace", () => {
   });
 
   it("reports a checkout outside the home folder, and refuses to open it", async () => {
-    const answer = await resolveThreadWorkspace(fakeBb({ environmentPath: outside }), {
+    const answer = await resolveThreadWorkspace(fakeAlia({ environmentPath: outside }), {
       threadId: "thr_1",
     });
 
     expect(answer).toEqual({ path: outside, insideRoot: false, reason: "outside_root" });
   });
 
-  it("applies the clamp to the realpath, not to the string bb handed over", async () => {
+  it("applies the clamp to the realpath, not to the string VesnALIA handed over", async () => {
     // §6's whole point: a symlink *inside* the root that lands outside it must
     // not pass the prefix test just because its own name starts with the root.
     const link = path.join(root, "escape");
     await symlink(outside, link);
 
-    const answer = await resolveThreadWorkspace(fakeBb({ environmentPath: link }), {
+    const answer = await resolveThreadWorkspace(fakeAlia({ environmentPath: link }), {
       threadId: "thr_1",
     });
 
@@ -134,23 +134,23 @@ describe("resolveThreadWorkspace", () => {
   });
 
   it("follows a symlinked checkout that stays inside the root", async () => {
-    const real = path.join(root, "repos", "bb-plugins");
+    const real = path.join(root, "repos", "alia-plugins");
     await mkdir(real, { recursive: true });
     const link = path.join(root, "current");
     await symlink(real, link);
 
-    const answer = await resolveThreadWorkspace(fakeBb({ environmentPath: link }), {
+    const answer = await resolveThreadWorkspace(fakeAlia({ environmentPath: link }), {
       threadId: "thr_1",
     });
 
     expect(answer).toEqual({ path: real, insideRoot: true, reason: null });
   });
 
-  it("rejects when bb cannot answer for the thread at all", async () => {
+  it("rejects when VesnALIA cannot answer for the thread at all", async () => {
     // The one case that is a genuine failure: the panel turns it into a toast
     // and keeps the control clickable so the user can retry.
     await expect(
-      resolveThreadWorkspace(fakeBb({ threadFails: true }), { threadId: "thr_gone" }),
+      resolveThreadWorkspace(fakeAlia({ threadFails: true }), { threadId: "thr_gone" }),
     ).rejects.toThrow("thread not found");
   });
 });

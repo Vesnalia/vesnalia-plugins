@@ -1,6 +1,6 @@
 // The JB Flow palette: one search over threads, messages, PRs, workspaces,
 // projects and actions, with a triage home for an empty query and an action
-// list for any thread (Tab). It opens on the key bb's own thread search is
+// list for any thread (Tab). It opens on the key VesnALIA's own thread search is
 // bound to (⌘K by default) while the Palette setting is on, and from the
 // "Open JB Flow palette" command either way. Ranking lives in palette-model.ts.
 import "./palette.css";
@@ -13,13 +13,13 @@ import {
   experimental_useSidebarThreadPullRequest as useSidebarThreadPullRequest,
   experimental_useSidebarThreads as useSidebarThreads,
   experimental_useThreadActions as useThreadActions,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRpc,
   useSdk,
   useSettings,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread, PluginThreadActionEntry, PluginThreadActionTarget } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread, PluginThreadActionEntry, PluginThreadActionTarget } from "@vesnalia/plugin-sdk/app";
 import type { FlowState, rpcContract } from "./server";
 import {
   DEFAULT_SEARCH_SHORTCUT,
@@ -66,7 +66,7 @@ import { cn } from "@/lib/utils";
 export const PALETTE_EVENT = "jb-flow:palette";
 const FRECENCY_KEY = "jb-flow.palette.frecency";
 const RECENT_KEY = "jb-flow.palette.recent";
-// bb's own "a modal is open" test: its shortcuts stand down while one is.
+// VesnALIA's own "a modal is open" test: its shortcuts stand down while one is.
 const MODAL_OPEN = '[aria-modal="true"]:not([inert]):not([inert] *):not([data-state="closed"])';
 
 function readJson<T>(key: string, fallback: T): T {
@@ -97,14 +97,14 @@ const errorText = (cause: unknown) => (cause instanceof Error ? cause.message : 
 // --- opening -------------------------------------------------------------------------
 
 /**
- * Open state for the palette. While `enabled`, the keys bb's "Search threads"
+ * Open state for the palette. While `enabled`, the keys VesnALIA's "Search threads"
  * is bound to open it instead (rebinding moves the takeover; unbinding ends
  * it). The same keys close it either way. Also remembers the threads you visit
  * for the Recent section.
  */
 export function usePaletteTrigger(enabled: boolean) {
   const sdk = useSdk();
-  const context = useBbContext();
+  const context = useAliaContext();
   const [open, setOpen] = useState(false);
   const [shortcuts, setShortcuts] = useState<Shortcut[]>([DEFAULT_SEARCH_SHORTCUT]);
   const live = useRef({ open, shortcuts, enabled });
@@ -138,7 +138,7 @@ export function usePaletteTrigger(enabled: boolean) {
 
   useEffect(() => {
     const platform = currentPlatform();
-    // Capture phase, before bb's own listener, which skips handled events.
+    // Capture phase, before VesnALIA's own listener, which skips handled events.
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.isComposing || event.repeat) return;
       const state = live.current;
@@ -278,7 +278,7 @@ function useReplies(threadId: string | null): Reply[] {
   return replies?.threadId === threadId ? replies.options : [];
 }
 
-/** bb's full-text search over titles and messages, debounced like bb's own. */
+/** VesnALIA's full-text search over titles and messages, debounced like VesnALIA's own. */
 function useServerSearch(text: string, enabled: boolean, limit: number): ServerHit[] | null {
   const sdk = useSdk();
   const [result, setResult] = useState<{ query: string; hits: ServerHit[] } | null>(null);
@@ -309,13 +309,13 @@ function useServerSearch(text: string, enabled: boolean, limit: number): ServerH
 
 type FileHit = { name: string; path: string };
 
-/** bb's quick-open file search in one checkout; null while there's nothing to show. */
+/** VesnALIA's quick-open file search in one checkout; null while there's nothing to show. */
 function useFileSearch(projectId: string | null, environmentId: string | null, text: string, enabled: boolean): FileHit[] | null {
   const sdk = useSdk();
   const [result, setResult] = useState<{ key: string; files: FileHit[] } | null>(null);
   const query = text.trim();
   const key = `${environmentId}\n${query}`;
-  // bb's file search lists nothing for an empty query; the palette asks you to type instead.
+  // VesnALIA's file search lists nothing for an empty query; the palette asks you to type instead.
   const searchable = enabled && projectId !== null && environmentId !== null && query !== "";
   useEffect(() => {
     if (!searchable) return;
@@ -366,8 +366,8 @@ export function Palette({
 }) {
   const sdk = useSdk();
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
-  const context = useBbContext();
+  const navigate = useAliaNavigate();
+  const context = useAliaContext();
   const pluginId = usePluginId();
   const { threads, projects, sections: threadSections } = useSidebarThreads();
   const settings = useSettings().values;
@@ -480,7 +480,7 @@ export function Palette({
     (work: () => unknown, success?: string) => {
       ran.current = true;
       onClose();
-      // After the dialog unmounts and focus is back, like bb's own palette.
+      // After the dialog unmounts and focus is back, like VesnALIA's own palette.
       window.setTimeout(() => {
         Promise.resolve()
           .then(work)
@@ -496,10 +496,10 @@ export function Palette({
   );
 
   const projectName = (projectId: string) => projectsById.get(projectId)?.name ?? "this project";
-  // No project in view: leave the choice to bb's new-thread screen rather than guess.
+  // No project in view: leave the choice to VesnALIA's new-thread screen rather than guess.
   const composeProject = context.projectId ?? current?.projectId ?? null;
 
-  /** Everything you can do to one thread: replies, snooze, moves, PRs, then bb's and other plugins' actions. */
+  /** Everything you can do to one thread: replies, snooze, moves, PRs, then VesnALIA's and other plugins' actions. */
   const threadEntries = (thread: ThreadInfo, replies: readonly Reply[], hostActions: readonly PluginThreadActionEntry[], typed: string): Entry[] => {
     const entries: Entry[] = [];
     const id = thread.id;
@@ -686,7 +686,7 @@ export function Palette({
     entries.push({ id: "copy-id", title: "Copy thread ID", keywords: "clipboard", icon: <Icon name="Copy" />, run: () => copyToClipboard({ text: id }) });
     for (const entry of hostActions) {
       // Ours are listed above with their choices spelled out; Open in split leads.
-      if (entry.pluginId === pluginId || entry.key === "bb--core/split") continue;
+      if (entry.pluginId === pluginId || entry.key === "alia--core/split") continue;
       const action = entry.action;
       if (action.disabled) continue;
       const base = {
@@ -933,14 +933,14 @@ export function Palette({
         const threadId = current.id;
         done(async () => {
           if (secondary) {
-            if (!navigate.experimental_openFileExternally(options)) throw new Error("No editor is set up to open files from BB.");
+            if (!navigate.experimental_openFileExternally(options)) throw new Error("No editor is set up to open files from VesnALIA.");
             return;
           }
-          // An app overlay has no preview panel of its own (bb declines), so the
-          // file opens in the thread's panel the way `bb thread open <path>` does.
+          // An app overlay has no preview panel of its own (VesnALIA declines), so the
+          // file opens in the thread's panel the way `alia thread open <path>` does.
           if (navigate.experimental_openFilePreview(options)) return;
           const { delivered } = await sdk.threads.open({ threadId, file: { source: "workspace", path: item.path, lineNumber: null } });
-          if (delivered === 0) throw new Error("No BB window took the file; open the thread and try again.");
+          if (delivered === 0) throw new Error("No VesnALIA window took the file; open the thread and try again.");
         });
         return;
       }

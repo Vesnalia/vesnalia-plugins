@@ -2,7 +2,7 @@ import { useTitledThreads as useSidebarThreads } from "./useTitledThreads";
 import {
   experimental_useSidebarThreadActions as useSidebarThreadActions,
   type PluginThreadHeaderActionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "../components/ui/icon";
 import { cn } from "../lib/utils";
 import { Disc } from "./Disc";

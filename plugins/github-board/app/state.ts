@@ -2,13 +2,13 @@
  * The app's data: the board, the display preferences and the prompt templates,
  * each with the realtime signal that keeps every open window in step.
  *
- * The board is also kept at module scope. bb unmounts the page whenever the
+ * The board is also kept at module scope. VesnALIA unmounts the page whenever the
  * user opens a thread, and coming back should repaint at once rather than
  * wait on three searches; a non-forced load then runs underneath, answered
  * from the server's cache while that is fresh.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 
 import type { Board, BoardItem, PromptSettings } from "../shared/board";
 import type { RpcContract } from "../shared/contract";

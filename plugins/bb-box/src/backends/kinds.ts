@@ -3,7 +3,7 @@
 // names a kind and the features its box must have: linux-docker is linux
 // with Docker. Earlier IDs and aliases stay accepted wherever a kind ID comes
 // in: box_acquire, the configuration, stored records and the kind a guest
-// names. What bb-box shows uses the current IDs, and backends offer only kinds.
+// names. What alia-box shows uses the current IDs, and backends offer only kinds.
 
 import type { DevicePlatform } from "../core/device.ts";
 import type { Arch, GuestOs, Windowing } from "./types.ts";
@@ -80,7 +80,7 @@ export interface KindInfo {
   readonly device: DevicePlatform | null;
 }
 
-/** The kinds bb-box knows (027). A backend's own kind may describe itself more closely. */
+/** The kinds alia-box knows (027). A backend's own kind may describe itself more closely. */
 export const KIND_INFO: Readonly<Record<string, KindInfo>> = {
   linux: { label: "Linux", description: "A Linux box for builds, backend services and the agent's own work.", gpu: false, desktop: false, os: "linux", arch: "x86_64", windowing: "x11", features: [], device: null },
   "linux-desktop": { label: "Linux desktop", description: "A Linux desktop on a GPU, for computer use, browsers and app development.", gpu: true, desktop: true, os: "linux", arch: "x86_64", windowing: "x11", features: [], device: null },

@@ -16,13 +16,13 @@ sources:
   - AGENTS.md
 ---
 # Agent Tools decisions
-The active skills flow uses the BB server hub; machine skills are copied into it on import, while cleanup is a separate offered action (`skills-hub-service.ts:593-609`, `skills-hub-service.ts:728-735`). Earlier per-machine fan-out decisions below are superseded.
+The active skills flow uses the VesnALIA server hub; machine skills are copied into it on import, while cleanup is a separate offered action (`skills-hub-service.ts:593-609`, `skills-hub-service.ts:728-735`). Earlier per-machine fan-out decisions below are superseded.
 
 ## 004. The hub owns current skill management (active)
 
-**Context:** Machine skill folders duplicated skills already supplied by BB sessions, while deleting or replacing those folders without an explicit choice could remove user data (`server.ts:530-540`, `host-skills.ts:167-223`).
+**Context:** Machine skill folders duplicated skills already supplied by VesnALIA sessions, while deleting or replacing those folders without an explicit choice could remove user data (`server.ts:530-540`, `host-skills.ts:167-223`).
 
-**Decision:** Use the BB server's skill directory as the active library. Import copies only machine skills the hub lacks; machine cleanup is a separate action exposed when `skillsOfferCleanup` is enabled (`skills-hub-service.ts:593-609`, `skills-hub-service.ts:724-735`, `settings-page.tsx:180-199`).
+**Decision:** Use the VesnALIA server's skill directory as the active library. Import copies only machine skills the hub lacks; machine cleanup is a separate action exposed when `skillsOfferCleanup` is enabled (`skills-hub-service.ts:593-609`, `skills-hub-service.ts:724-735`, `settings-page.tsx:180-199`).
 
 **Status:** active
 
@@ -46,7 +46,7 @@ The active skills flow uses the BB server hub; machine skills are copied into it
 
 **Context:** The retained machine-canon implementation combines local candidates, Git synchronization and derived host homes (`server.ts:1314-1353`, `server.ts:1395-1522`).
 
-**Decision:** The retained `skills_fanout` RPC calls `runSkillsRollout`, which promotes candidates first, synchronizes host canons only when a remote is configured, fans out, then mirrors into the BB server process's `experimental_dataDir/skills` (`server.ts:2203-2206`, `server.ts:1572-1590`).
+**Decision:** The retained `skills_fanout` RPC calls `runSkillsRollout`, which promotes candidates first, synchronizes host canons only when a remote is configured, fans out, then mirrors into the VesnALIA server process's `experimental_dataDir/skills` (`server.ts:2203-2206`, `server.ts:1572-1590`).
 
 **Status:** superseded by #004
 

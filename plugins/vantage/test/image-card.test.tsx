@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { FileCard, type FileCardProps, type FileLoaders } from "../src/file-card";
 import { clearLoadedCache } from "../src/loaded";
 import type { FileChange } from "../src/contract";

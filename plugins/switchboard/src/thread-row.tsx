@@ -1,13 +1,13 @@
 import { memo, useMemo, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import type { DragController } from "./use-drag";
-import type { PluginSidebarThread, PluginThreadActionTarget, PluginThreadActionsInlineItem } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread, PluginThreadActionTarget, PluginThreadActionsInlineItem } from "@vesnalia/plugin-sdk/app";
 import {
   ThreadTitle, experimental_Icon as Icon, experimental_THREAD_ACTION_GROUPS as ACTION_GROUPS, experimental_ThreadActionsContextMenu as ThreadActionsContextMenu,
   experimental_ThreadActionsMenu as ThreadActionsMenu, experimental_ThreadStatusGlyph as ThreadStatusGlyph,
   experimental_ThreadRowMetadata as ThreadRowMetadata, experimental_useSidebarThreadSplit,
-  experimental_useThreadActions, useBbNavigate, useSidebarThreadDraft,
+  experimental_useThreadActions, useAliaNavigate, useSidebarThreadDraft,
   useSidebarThreadRowStatus, useSidebarThreadShortcut,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { InfoCard, useInfoCardMode } from "./info-card";
 import type { CollapseKey, HueId } from "./layout";
 import type { RowModel } from "./rows";
@@ -44,14 +44,14 @@ export interface ThreadRowProps {
   bulk?: RowBulk;
 }
 
-/** bb's menu for a multi-row selection, given only to the selected rows. */
+/** VesnALIA's menu for a multi-row selection, given only to the selected rows. */
 export interface RowBulk {
   threads: readonly PluginThreadActionTarget[];
   inline: readonly PluginThreadActionsInlineItem[];
   onEscape(): void;
 }
 
-const QUICK_ACTIONS = ["bb--core/archive"];
+const QUICK_ACTIONS = ["alia--core/archive"];
 
 export function toActionTarget(thread: PluginSidebarThread): PluginThreadActionTarget {
   const { id, projectId, parentThreadId, parentNotifications, archivedAt, pinnedAt, sectionId, isUnread, status, environment } = thread;
@@ -65,7 +65,7 @@ function ThreadRowView({ row, isActive, settings, now, projectName, onNavigate, 
   const { thread, state, depth, guides, isLast, childCount, collapsed, rollup, rollupCount } = row;
   const [menuOpen, setMenuOpen] = useState(false);
   const split = experimental_useSidebarThreadSplit(thread.id);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const rowStatus = useSidebarThreadRowStatus(thread.id);
   const draft = useSidebarThreadDraft(thread.id);
   const shortcut = useSidebarThreadShortcut(thread.id);

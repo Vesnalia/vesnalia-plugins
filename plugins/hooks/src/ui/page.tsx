@@ -1,6 +1,6 @@
 // The page: a stats strip, the tab strip, and the active tab's content.
 import { useEffect, useMemo, useState } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { Switch } from "@/components/ui/switch";
@@ -40,7 +40,7 @@ export function HooksPage({ subPath }: { subPath: string }) {
 }
 
 function PageBody({ subPath }: { subPath: string }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { data, error } = useOverview();
   const [tab, setTab] = useState<TabId>(() => tabFromSubPath(subPath));
   const [marketSource, setMarketSource] = useState<string | null>(null);

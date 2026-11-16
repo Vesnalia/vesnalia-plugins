@@ -2,7 +2,7 @@ import { spawn, execFileSync } from 'node:child_process';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import { PassThrough } from 'node:stream';
 import { setTimeout as delay } from 'node:timers/promises';
-import { experimental_recordProviderChildIo, sanitizeInheritedChildProcessEnv } from '@get-bb/plugin-sdk/provider-bridge';
+import { experimental_recordProviderChildIo, sanitizeInheritedChildProcessEnv } from '@vesnalia/plugin-sdk/provider-bridge';
 import { JsonLineDecoder } from './framing.ts';
 import { record } from './errors.ts';
 import { catalogueSupervisor } from './catalogue-supervisor.ts';
@@ -46,7 +46,7 @@ export class NativeRequestTimeout extends Error {
 }
 export function childEnvironment(parent: NodeJS.ProcessEnv, own: NodeJS.ProcessEnv, explicit: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
   const clean = sanitizeInheritedChildProcessEnv({ env: parent });
-  // bb sanitizes inherited state before applying the resolved thread environment.
+  // VesnALIA sanitizes inherited state before applying the resolved thread environment.
   const env: NodeJS.ProcessEnv = { ...clean, ...explicit };
   // Storage belongs to the user, as in Desktop. Only session/login/log paths
   // are owned overrides; never inherit an obsolete isolated storage override.
@@ -248,7 +248,7 @@ export class NativeProcess {
   write(value: unknown): void {
     if (!this.current || this.closing) throw new Error('Native child unavailable');
     // ZCode's strict request/response schemas are NOT JSON-RPC2 envelopes.
-    // bb envelopes stay on the host boundary; jsonrpc must not reach native.
+    // VesnALIA envelopes stay on the host boundary; jsonrpc must not reach native.
     const m = record(value), native: Record<string, unknown> = {};
     for (const key of ['id', 'method', 'params', 'result', 'error']) if (key in m) native[key] = m[key];
     this.recordedInput.write(recordingProjection(native));

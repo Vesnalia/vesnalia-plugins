@@ -66,10 +66,10 @@ Not found/verified: Windsurf Cascade multi-agent UX, Ellipsis internals, Amazon 
 | **check** | Pass/fail gate | GitHub checks, CodeRabbit "pre-merge checks", Devin "CI check" [8][25] | Reject. Implies binary result, not a conversable thing. |
 | **pass** | A run over the diff | Bugbot "passes" (internal) [14] | Describes a run, not an addressee. Reject. |
 | **role** | Permission/access | RBAC, Slack roles | Reject. |
-| **agent** | An LLM actor with instructions, tools, a name | Copilot "custom agents", Claude Code subagents, Linear agents, Cursor [6][29][36] | Best fit. BB already says "review agent", "Ask agent". |
+| **agent** | An LLM actor with instructions, tools, a name | Copilot "custom agents", Claude Code subagents, Linear agents, Cursor [6][29][36] | Best fit. VesnALIA already says "review agent", "Ask agent". |
 
 **Recommendation [O]:** noun = **agent**; each one is named by its focus ("Security", "Docs"). The word "focus" labels the settings field. Keep the current agent as the default, called "Review agent" (or "General") so the multi-agent UI is purely additive for people who never opt in.
-- Reasons: matches prior art vocabulary; matches BB's existing UI strings; carries no character; avoids the "reviewer" collision.
+- Reasons: matches prior art vocabulary; matches VesnALIA's existing UI strings; carries no character; avoids the "reviewer" collision.
 - Name = user-editable short label, 1–2 words, shown verbatim everywhere ("Security", not "Security agent") to keep chips short; "agent" appears only in headings and aria text.
 - Open: if "agent" gets overloaded (Main thread is also an agent), consider "review agent" as the full term in prose only.
 
@@ -106,7 +106,7 @@ Not found/verified: Windsurf Cascade multi-agent UX, Ellipsis internals, Amazon 
 
 ## 5. Takeaways for Code Review Workspace
 
-1. **One conversation per comment (and one dock), never one per agent.** Agents are *participants*, not containers. In BB's side panel keep a single "Review agent" tab (rename later), not a tab per agent. This is the direct answer to "tangled web" **[O]**. Evidence for the shape: ChatGPT `@` keeps context in one thread [39]; Linear replies live in the issue thread [30]; Claude Code subagents don't fork the main thread [36].
+1. **One conversation per comment (and one dock), never one per agent.** Agents are *participants*, not containers. In VesnALIA's side panel keep a single "Review agent" tab (rename later), not a tab per agent. This is the direct answer to "tangled web" **[O]**. Evidence for the shape: ChatGPT `@` keeps context in one thread [39]; Linear replies live in the issue thread [30]; Claude Code subagents don't fork the main thread [36].
 2. **Attribute with text, not color alone.** DESIGN.md already reserves agent magenta for "anything the assistant wrote" and requires text/icons with color. Add the agent's label on every comment header and chat message ("Security · Should fix"), and a small per-agent glyph/monogram. Make the label the primary distinction; use at most subtle tint variants of the agent tone **[O]**. Consider the GitHub post: label is part of the body or severity footer so authors see it too (Copilot footers [1]); open decision.
 3. **Addressee chip in every ask box, plus Ask ▾ on every comment.** "Asking: Security ▾", default = context's owner. "Second opinion" is a one-click Ask prefilled for a different agent. `@` switches the chip, doesn't route silently. Reply is attributed and lands in place **[O]** (patterns C+A+E, §3).
 4. **Merge before you show.** Cluster same-line/same-issue findings across agents into one card with "also flagged by Docs", cap per-agent comment count, and run agents independently so they don't anchor on each other; cross-agent reading happens only on explicit ask. Reuse the existing filter chips with an **Agent** field in Comments, so "show me only Security" is one tap **[O]**; supported by Quorum's clustering [28] and the CodeRabbit anchoring finding [5].

@@ -9,7 +9,7 @@ import type { Entry, Store } from "./store";
 import { memoryStore } from "./test-utils";
 import { OPENAI_KEY } from "./test-tokens";
 
-const input = { name: "Greeter", id: "hello", request: "the bb hello command" };
+const input = { name: "Greeter", id: "hello", request: "the VesnALIA hello command" };
 const EFFECTS = ["scaffold", "rename", "initCommit", "projects.create", "tasks.create"] as const;
 const whens = ["before", "after"] as const;
 
@@ -71,20 +71,20 @@ describe("validateNewPlugin", () => {
     "browser", "diagnostics", "environment", "file", "guide", "help", "machine", "marketplace", "plugin", "project", "prompt-history",
     "provider", "server", "settings", "skill", "status", "terminal", "theme", "thread", "updates", "voice",
   ];
-  it("ids that bb keeps for its own commands are refused with a word about it", () => {
-    for (const id of RESERVED) expect(validateNewPlugin({ name: "x", id, request: "x" }, taken), id).toEqual([`id ${id} is taken by a bb command — choose another one`]);
+  it("ids that VesnALIA keeps for its own commands are refused with a word about it", () => {
+    for (const id of RESERVED) expect(validateNewPlugin({ name: "x", id, request: "x" }, taken), id).toEqual([`id ${id} is taken by a VesnALIA command — choose another one`]);
   });
-  it("a Cyrillic name that transliterates to `status` gives a bb command", () => {
+  it("a Cyrillic name that transliterates to `status` gives a VesnALIA command", () => {
     const name = "Статус"; // Cyrillic on purpose: slugify transliterates it
     expect(slugify(name)).toBe("status");
-    expect(validateNewPlugin({ name, id: slugify(name), request: "x" }, taken)).toContain("id status is taken by a bb command — choose another one");
+    expect(validateNewPlugin({ name, id: slugify(name), request: "x" }, taken)).toContain("id status is taken by a VesnALIA command — choose another one");
   });
   it("an id similar to a reserved one is fine", () => {
     for (const id of ["status-board", "my-status", "files", "servers", "plugins"]) expect(validateNewPlugin({ name: "x", id, request: "x" }, taken), id).toEqual([]);
   });
-  it("the prefix bb-plugin- is refused: the folder would be bb-plugin-bb-plugin-x", () => {
-    expect(validateNewPlugin({ name: "x", id: "bb-plugin-hello", request: "x" }, taken)).toEqual(["id must not start with bb-plugin-"]);
-    expect(validateNewPlugin({ name: "x", id: "bb-plugins", request: "x" }, taken)).toEqual([]);
+  it("the prefix alia-plugin- is refused: the folder would be alia-plugin-alia-plugin-x", () => {
+    expect(validateNewPlugin({ name: "x", id: "alia-plugin-hello", request: "x" }, taken)).toEqual(["id must not start with alia-plugin-"]);
+    expect(validateNewPlugin({ name: "x", id: "alia-plugins", request: "x" }, taken)).toEqual([]);
   });
   it("an id of a plugin that is gone but left a history says whose it was", () => {
     const retired = new Map([["old", "Old one"]]);
@@ -125,35 +125,35 @@ describe("Creation.newPlugin", () => {
   it("records the plugin, the project, the task and the first stage", async () => {
     const workId = await creation.newPlugin(input);
     const w = store.work(workId)!;
-    expect(w).toMatchObject({ plugin_id: "hello", kind: "new", created: 1, stage: 1, tasks_project_id: "tp1", host_id: "host_1", request: "the bb hello command", outcome: null });
+    expect(w).toMatchObject({ plugin_id: "hello", kind: "new", created: 1, stage: 1, tasks_project_id: "tp1", host_id: "host_1", request: "the VesnALIA hello command", outcome: null });
     expect(store.plugin("hello")).toMatchObject({ name: "Greeter", dir: pluginDir("hello"), source: null, project_id: w.project_id });
     expect(ports.projects.rows.get(w.project_id!)).toMatchObject({ name: "Plugin · Greeter", dir: pluginDir("hello"), hostId: "host_1" });
     const task = ports.taskRows.get(w.task_id!)!;
     expect(task.key).toBe(w.task_key);
     expect(task.projectId).toBe("tp1");
-    expect(task.description).toContain("the bb hello command");
+    expect(task.description).toContain("the VesnALIA hello command");
     expect(task.description).toContain(taskMarker(workId));
     expect(store.entry(w)).toEqual({ key: `${workId}:enter:s1:i1`, stage: 1, from: 0, packet: null, error: null });
     expect(store.pendingOps(workId)).toEqual([]);
     expect(store.creatingWorks()).toEqual([]);
   });
   it("a token pasted into the request reaches the tracker task redacted; the work keeps the request for its agents", async () => {
-    const workId = await creation.newPlugin({ ...input, request: `the bb hello command, key ${OPENAI_KEY}` });
+    const workId = await creation.newPlugin({ ...input, request: `the VesnALIA hello command, key ${OPENAI_KEY}` });
     const w = store.work(workId)!;
     const task = ports.taskRows.get(w.task_id!)!;
-    expect(task.description).toContain("the bb hello command, key [redacted:sk-]");
+    expect(task.description).toContain("the VesnALIA hello command, key [redacted:sk-]");
     expect(task.description).not.toContain(OPENAI_KEY);
     expect(task.description).toContain(taskMarker(workId));
   });
   it("makes the first commit with a message and a git repository in the plugin folder", async () => {
     await creation.newPlugin(input);
-    expect(ports.calls.find((c) => c.effect === "initCommit")!.args).toEqual([pluginDir("hello"), "chore: scaffold plugin hello (bb plugin new)"]);
+    expect(ports.calls.find((c) => c.effect === "initCommit")!.args).toEqual([pluginDir("hello"), "chore: scaffold plugin hello (VesnALIA plugin new)"]);
     expect((await ports.git.facts(pluginDir("hello"))).head).not.toBeNull();
   });
   it("the nested scaffold is renamed and tmpDir removed", async () => {
     const workId = await creation.newPlugin(input);
     const tmp = tmpDirOf(workId);
-    expect(ports.calls.find((c) => c.effect === "rename")!.args).toEqual([`${tmp}/bb-plugin-hello`, pluginDir("hello")]);
+    expect(ports.calls.find((c) => c.effect === "rename")!.args).toEqual([`${tmp}/alia-plugin-hello`, pluginDir("hello")]);
     expect(await ports.fs.exists(tmp)).toBe(false);
     expect(await ports.fs.exists(pluginDir("hello"))).toBe(true);
     expect((await ports.fs.list(pluginDir("hello"))).sort()).toEqual([...SCAFFOLD_FILES].sort());
@@ -180,10 +180,10 @@ describe("Creation.newPlugin", () => {
   it("partial scaffold is redone, never adopted", async () => {
     const workId = await crashAt("scaffold", "after");
     const tmp = tmpDirOf(workId);
-    await ports.fs.remove(`${tmp}/bb-plugin-hello/node_modules`);
-    await ports.fs.remove(`${tmp}/bb-plugin-hello/package-lock.json`);
+    await ports.fs.remove(`${tmp}/alia-plugin-hello/node_modules`);
+    await ports.fs.remove(`${tmp}/alia-plugin-hello/package-lock.json`);
     // A leftover of the interrupted scaffold must not reach the plugin: the temporary folder is removed as a whole, not patched up.
-    ports.fs.put(`${tmp}/bb-plugin-hello/leftover.tmp`);
+    ports.fs.put(`${tmp}/alia-plugin-hello/leftover.tmp`);
     await makeCreation().advanceAll();
     expect(await ports.fs.exists(`${pluginDir("hello")}/leftover.tmp`)).toBe(false);
     expect(ports.count("scaffold")).toBe(2);
@@ -274,8 +274,8 @@ describe("Creation.newPlugin", () => {
       });
     });
     it("a reserved id or the prefix is refused, nothing is made", async () => {
-      await expect(creation.newPlugin({ ...input, id: "status" })).rejects.toThrow("id status is taken by a bb command — choose another one");
-      await expect(creation.newPlugin({ ...input, id: "bb-plugin-x" })).rejects.toThrow("id must not start with bb-plugin-");
+      await expect(creation.newPlugin({ ...input, id: "status" })).rejects.toThrow("id status is taken by a VesnALIA command — choose another one");
+      await expect(creation.newPlugin({ ...input, id: "alia-plugin-x" })).rejects.toThrow("id must not start with alia-plugin-");
       nothingMade();
     });
     it("a folder that nobody listed but that exists is taken too", async () => {
@@ -297,7 +297,7 @@ describe("Creation.newPlugin", () => {
       await expect(creation.newPlugin(input)).rejects.toThrow("plugins.list failed");
       nothingMade();
     });
-    it("the machine of bb cannot be told: nothing is made", async () => {
+    it("the machine of VesnALIA cannot be told: nothing is made", async () => {
       ports.serverHostId = async () => {
         throw new Error("hosts unavailable");
       };
@@ -338,7 +338,7 @@ describe("Creation.newPlugin", () => {
   });
   it("crash between markCreated and the first thread: reconcile spawns it exactly once", async () => {
     const limits = () => ({ maxBuilding: 2, minFreeDiskGb: 2 });
-    // bb died right after the transaction markCreated + entry into the first stage: the reconcile after creation did not run.
+    // VesnALIA died right after the transaction markCreated + entry into the first stage: the reconcile after creation did not run.
     const real = new Engine(store, ports, limits);
     engine.firstStageEntry.mockImplementation((w, now) => real.firstStageEntry(w, now));
     const first = await creation.newPlugin(input);
@@ -453,14 +453,14 @@ describe("the failure points", () => {
     expect(w.project_id).not.toBeNull();
     expect(now).toBe(ports.now());
   });
-  it("a scaffold that bb plugin new left incomplete (exit 0, npm install failed) is not taken: tmpDir is removed and it is made again", async () => {
+  it("a scaffold that VesnALIA plugin new left incomplete (exit 0, npm install failed) is not taken: tmpDir is removed and it is made again", async () => {
     const orig = ports.fs.scaffold.bind(ports.fs);
     let calls = 0;
     ports.fs.scaffold = async (id, tmp) => {
       await orig(id, tmp);
       if (++calls === 1) {
-        await ports.fs.remove(`${tmp}/bb-plugin-${id}/node_modules`);
-        await ports.fs.remove(`${tmp}/bb-plugin-${id}/package-lock.json`);
+        await ports.fs.remove(`${tmp}/alia-plugin-${id}/node_modules`);
+        await ports.fs.remove(`${tmp}/alia-plugin-${id}/package-lock.json`);
       }
     };
     const e = await creation.newPlugin(input).then(
@@ -483,7 +483,7 @@ describe("the failure points", () => {
   });
   it("a scaffold that is damaged after it was made (before the rename) stops the work for good: no new scaffold, no automatic retry", async () => {
     const workId = await crashAt("rename", "before");
-    await ports.fs.remove(`${tmpDirOf(workId)}/bb-plugin-hello/package.json`);
+    await ports.fs.remove(`${tmpDirOf(workId)}/alia-plugin-hello/package.json`);
     for (let pass = 1; pass <= 3; pass++) {
       await makeCreation().advanceAll();
       expect(store.work(workId), `pass ${pass}`).toMatchObject({ state: "error", created: 0 });
@@ -556,7 +556,7 @@ describe("a folder that is not ours at the place of the plugin", () => {
     ports.fs.put(foreign());
     await threePassesStayRefused(workId);
     expect(ports.count("rename")).toBe(0);
-    expect(await ports.fs.exists(`${tmpDirOf(workId)}/bb-plugin-hello`)).toBe(true);
+    expect(await ports.fs.exists(`${tmpDirOf(workId)}/alia-plugin-hello`)).toBe(true);
   });
   it("a refused work does not go on by itself when the owner removes the folder: it waits for a decision", async () => {
     const workId = await crashAt("rename", "before");
@@ -626,7 +626,7 @@ describe("scaffold: the retry limit", () => {
   const payload = (workId: string) => JSON.parse(store.op(`${workId}:create:scaffold`)!.payload ?? "null") as { failures: number; at: number } | null;
 
   it("a failing scaffold is retried at most every 5 minutes; after 3 failures the work stops with a refusal and is never retried", async () => {
-    ports.failAt("scaffold", "before"); // bb plugin new fails every time
+    ports.failAt("scaffold", "before"); // VesnALIA plugin new fails every time
     const e = (await creation.newPlugin(input).catch((x: unknown) => x)) as Error & { workId: string };
     const workId = e.workId;
     expect(e.message).toContain("retry in 5 minutes at the earliest");
@@ -662,7 +662,7 @@ describe("scaffold: the retry limit", () => {
   });
 
   it("a scaffold that succeeds on the second try finishes the creation", async () => {
-    ports.failAt("scaffold", "after"); // bb plugin new ran, but its reply was lost or failed — the scaffold may be in place
+    ports.failAt("scaffold", "after"); // VesnALIA plugin new ran, but its reply was lost or failed — the scaffold may be in place
     const workId = await creation.newPlugin(input).catch((x: { workId: string }) => x.workId);
     ports.failAt(null);
     ports.t += 5 * 60_000;
@@ -817,7 +817,7 @@ describe("the tracker project for work tasks", () => {
     const list = vi.spyOn(ports.plugins, "list");
     const host = vi.spyOn(ports, "serverHostId");
     const unset = new Creation(store, ports, catalog, () => ({ tasksProject: "" }), engine);
-    const NO_PROJECT = "no tracker project for work tasks is selected in the plugin settings (tasksProject) — project ids: `bb tasks project list`";
+    const NO_PROJECT = "no tracker project for work tasks is selected in the plugin settings (tasksProject) — project ids: `alia tasks project list`";
     const e = await unset.newPlugin(input).catch((x: unknown) => x);
     expect((e as Error).message).toBe(NO_PROJECT);
     expect((e as { workId?: string }).workId).toBeUndefined();

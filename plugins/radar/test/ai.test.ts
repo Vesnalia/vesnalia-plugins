@@ -1,22 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
 import { aiAvailable, aiBackend, aiDetail, aiOverrideSchema, AI_UNSUPPORTED, complete, fallbackBaseUrl } from "../ai";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-type AiHost = Pick<BbPluginApi, "experimental_ai">;
+type AiHost = Pick<AliaPluginApi, "experimental_ai">;
 const fallback = { baseUrl: "https://proxy.example.com", keyEnv: "RADAR_TEST_KEY", model: "fallback-model" };
 const env = { RADAR_TEST_KEY: "secret" };
 
 const signal = new AbortController().signal;
-const result = { text: "answer", providerId: "bb-provider", model: "bb-model" };
+const result = { text: "answer", providerId: "alia-provider", model: "alia-model" };
 
-describe("BB native completion", () => {
+describe("VesnALIA native completion", () => {
   it("detects an older host and never attempts a credential fallback", async () => {
     const host: AiHost = Object.create(null);
     expect(aiAvailable(host)).toBe(false);
     await expect(complete(host, null, "system", "prompt", 800, 45000, signal)).rejects.toThrow(AI_UNSUPPORTED);
   });
 
-  it("leaves provider/model resolution to BB by default and forwards bounds and cancellation", async () => {
+  it("leaves provider/model resolution to VesnALIA by default and forwards bounds and cancellation", async () => {
     const fn = vi.fn<AiHost["experimental_ai"]["complete"]>().mockResolvedValue(result);
     const host: AiHost = { experimental_ai: { complete: fn } };
     expect(aiAvailable(host)).toBe(true);
@@ -59,11 +59,11 @@ describe("fallback endpoint for hosts without experimental_ai", () => {
     expect(aiDetail(older, fallback, {})).toContain("$RADAR_TEST_KEY is not set");
   });
 
-  it("never uses the fallback when BB can complete", async () => {
+  it("never uses the fallback when VesnALIA can complete", async () => {
     const fn = vi.fn<AiHost["experimental_ai"]["complete"]>().mockResolvedValue(result);
     const fetchImpl = vi.fn<typeof fetch>();
     const host: AiHost = { experimental_ai: { complete: fn } };
-    expect(aiBackend(host, fallback, env)).toBe("bb");
+    expect(aiBackend(host, fallback, env)).toBe("alia");
     await expect(complete(host, null, "s", "p", 400, 45000, signal, fallback, env, fetchImpl)).resolves.toBe("answer");
     expect(fetchImpl).not.toHaveBeenCalled();
   });

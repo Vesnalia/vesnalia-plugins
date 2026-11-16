@@ -1,4 +1,4 @@
-Rad Binder restyles bb with the look of an 80s/90s school binder and Saturday-morning toy commercial, while keeping the conversation itself plain enough to read all day.
+Rad Binder restyles VesnALIA with the look of an 80s/90s school binder and Saturday-morning toy commercial, while keeping the conversation itself plain enough to read all day.
 
 ## What you get
 
@@ -14,10 +14,10 @@ Dark mode is after-school TV at night: neon on deep purple. Light mode is a lila
 
 ## Requirements
 
-- bb 0.43 or later.
+- VesnALIA 0.43 or later.
 - The display and body fonts are Futura and Avenir Next, which ship with macOS. On other systems the theme falls back to your system sans-serif.
 - No network requests, accounts or API keys. Everything is one stylesheet.
 
 ## Good to know
 
-Some decoration (the selected-row sticker, message plates and card stripes) targets bb's current markup. A future bb release can drop those touches; the colours and fonts stay.
+Some decoration (the selected-row sticker, message plates and card stripes) targets VesnALIA's current markup. A future VesnALIA release can drop those touches; the colours and fonts stay.

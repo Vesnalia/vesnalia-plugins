@@ -5,9 +5,9 @@
 //
 //   * the value is a local filesystem path, so it is client-side and never
 //     leaves the machine: `localStorage` through `lib/fm-store.ts`, not the
-//     plugin settings and not `bb.storage.kv` (§1.2 has the rejected
+//     plugin settings and not `alia.storage.kv` (§1.2 has the rejected
 //     alternatives on the record);
-//   * the hard root is the home directory of whoever runs bb, so the same
+//   * the hard root is the home directory of whoever runs VesnALIA, so the same
 //     browser profile can talk to two hosts with two different homes over
 //     time. The stored `root` turns "a path that happens to look plausible"
 //     into "a path recorded under a different root", which is dropped rather
@@ -17,7 +17,7 @@
 import { createSessionStore } from "./fm-store";
 import { isInsideRoot, isSamePath, normalizePath, subPathToAbsolute } from "./fm-paths";
 
-export const LAST_FOLDER_STORAGE_KEY = "bb-plugin-file-manager:last-folder:v1";
+export const LAST_FOLDER_STORAGE_KEY = "alia-plugin-file-manager:last-folder:v1";
 /** A path is bounded by PATH_MAX; this is the JSON envelope's ceiling. */
 export const LAST_FOLDER_MAX_BYTES = 8 * 1024;
 /** Mirrors `useTree`'s tier-2 debounce: one write per burst of navigation. */

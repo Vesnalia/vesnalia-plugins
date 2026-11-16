@@ -7,7 +7,7 @@
 // (group-hover opacity); the tests pin the structural contract.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Board } from "../components/board";
 import { buildColumns, type LaneHideOutcome } from "../components/grouping";
 import { thread } from "./thread-fixture";

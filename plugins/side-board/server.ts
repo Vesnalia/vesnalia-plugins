@@ -1,13 +1,13 @@
-// bb-plugin-side-board — backend.
+// alia-plugin-side-board — backend.
 //
-// One board per thread in bb.storage.kv. Four surfaces share it:
+// One board per thread in alia.storage.kv. Four surfaces share it:
 //   - agent tools board_add / board_close / board_list, so agents record
 //     questions, bugs and todos as structured items, not chat prose
 //   - instructions contributed to every thread, telling agents when to call them
 //   - a thread.idle safety net that nudges an agent whose reply raised or
 //     finished something without touching the board
 //   - RPC + realtime for the side panel in app.tsx
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   addItems,
@@ -48,8 +48,8 @@ This thread has a side board: a panel beside the chat listing the open questions
 - In chat, refer to items only by id: one line per new open question, e.g. \`Q3 · Clerk or Lucia? (recommend Clerk)\`, then: Answer by id, e.g. \`Q3 lucia\`, or \`go\` to take all recommendations. Do not restate bugs and todos in prose; the panel shows them.
 - \`board_list\` shows the current board when you need ids.`;
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     nudge: {
       type: "boolean",
       label: "Nudge agents that forget the board",
@@ -63,7 +63,7 @@ export default async function plugin(bb: BbPluginApi) {
   const key = (threadId: string) => `board:${threadId}`;
 
   async function readBoard(threadId: string): Promise<Board> {
-    const stored = await bb.storage.kv.get<unknown>(key(threadId));
+    const stored = await alia.storage.kv.get<unknown>(key(threadId));
     const parsed = boardSchema.safeParse(stored);
     return parsed.success ? parsed.data : emptyBoard();
   }
@@ -75,8 +75,8 @@ export default async function plugin(bb: BbPluginApi) {
     const previous = queues.get(threadId) ?? Promise.resolve();
     const next = previous.then(async () => {
       const { board, result } = change(await readBoard(threadId));
-      await bb.storage.kv.set(key(threadId), board);
-      bb.realtime.publish(BOARD_CHANGED, { threadId });
+      await alia.storage.kv.set(key(threadId), board);
+      alia.realtime.publish(BOARD_CHANGED, { threadId });
       return result;
     });
     const settled = next.catch(() => undefined);
@@ -87,11 +87,11 @@ export default async function plugin(bb: BbPluginApi) {
     return next;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     board_get: ({ threadId }) => readBoard(threadId),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "board_add",
     description:
       "Add questions for the user, bugs you noticed, or deferred todos to this thread's side board. Returns the ids (Q1, B1, T1) to use in chat.",
@@ -106,7 +106,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "board_close",
     description:
       "Close side-board items that were answered, fixed, done or dropped, each with a one-line resolution.",
@@ -123,7 +123,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "board_list",
     description: "List this thread's side board: open items first, then recently closed ones.",
     presentation: { label: { pending: "Reading the side board", completed: "Read the side board" }, suppress: true },
@@ -136,7 +136,7 @@ export default async function plugin(bb: BbPluginApi) {
   // Live counts, so an agent resuming a thread knows the board is not empty.
   // Contributions are synchronous; the cache is filled by thread.active below.
   const openSummary = new Map<string, string>();
-  bb.agents.contributeInstructions(({ threadId }) => {
+  alia.agents.contributeInstructions(({ threadId }) => {
     const summary = threadId === null ? undefined : openSummary.get(threadId);
     return summary === undefined ? RULES : `${RULES}\n\nOpen right now: ${summary}. Run \`board_list\` for ids.`;
   });
@@ -148,7 +148,7 @@ export default async function plugin(bb: BbPluginApi) {
   const turnStartedAt = new Map<string, string>();
   const nudged = new Set<string>();
 
-  bb.events.on("thread.active", async ({ thread }) => {
+  alia.events.on("thread.active", async ({ thread }) => {
     turnStartedAt.set(thread.id, new Date().toISOString());
     const c = counts(await readBoard(thread.id));
     const parts = [
@@ -160,7 +160,7 @@ export default async function plugin(bb: BbPluginApi) {
     else openSummary.set(thread.id, parts.join(", "));
   });
 
-  bb.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
     const startedAt = turnStartedAt.get(thread.id);
     turnStartedAt.delete(thread.id);
     if (nudged.delete(thread.id)) return;
@@ -173,18 +173,18 @@ export default async function plugin(bb: BbPluginApi) {
     if (!miss.unboarded && !miss.unclosed) return;
     nudged.add(thread.id);
     try {
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.send({
         threadId: thread.id,
         mode: "auto",
         input: [{ type: "text", text: nudgeText(miss), mentions: [] }],
       });
     } catch (cause) {
       nudged.delete(thread.id);
-      bb.log.warn(`nudge failed for ${thread.id}: ${String(cause)}`);
+      alia.log.warn(`nudge failed for ${thread.id}: ${String(cause)}`);
     }
   });
 
-  bb.events.on("thread.deleted", async ({ thread }) => {
-    await bb.storage.kv.delete(key(thread.id));
+  alia.events.on("thread.deleted", async ({ thread }) => {
+    await alia.storage.kv.delete(key(thread.id));
   });
 }

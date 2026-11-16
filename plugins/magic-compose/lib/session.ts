@@ -1,9 +1,9 @@
 // One Magic Compose session per composer on screen. It outlives the plugin's button:
-// BB rebuilds that whenever the composer's project changes, which Magic Compose itself
+// VesnALIA rebuilds that whenever the composer's project changes, which Magic Compose itself
 // causes, and a decision on its way must not be lost or asked for twice. The
 // session owns the scheduling, the hold on the composer's send, and the word
 // to the user when a round fails.
-import type { ExperimentalComposerSelection } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalComposerSelection } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { HOLD_ATTRIBUTE, holdSubmit } from "./composer-dom";
 import { changedSelection } from "./fill";
@@ -39,10 +39,10 @@ interface Entry {
   dispose(): void;
 }
 
-/** BB swaps the old button for the new within one render; this only has to outlast that. */
+/** VesnALIA swaps the old button for the new within one render; this only has to outlast that. */
 const DETACHED_GRACE_MS = 250;
 
-/** No surface is mounted to act through. Expected while BB rebuilds it, so not shown. */
+/** No surface is mounted to act through. Expected while VesnALIA rebuilds it, so not shown. */
 class DetachedError extends Error {}
 
 const entries = new WeakMap<HTMLElement, Entry>();
@@ -104,7 +104,7 @@ function createEntry(root: HTMLElement): Entry {
         showHold();
       },
       setMaySet(key) {
-        // Not on the first report, from a button BB has just (re)built.
+        // Not on the first report, from a button VesnALIA has just (re)built.
         if (maySet !== null && maySet !== key) live.reset();
         maySet = key;
       },

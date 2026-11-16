@@ -2,36 +2,36 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { OPTION_KEYS, OPTIONS } from "./options";
 // @ts-expect-error — plain ESM build script without types.
-import { buildBbTheme, regions } from "./scripts/themes.mjs";
+import { buildAliaTheme, regions } from "./scripts/themes.mjs";
 
 const read = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8");
 const theme = read("./theme.css");
-const themeBb = read("./theme-bb.css");
-const palette = read("./palettes/bb.css");
+const themeAlia = read("./theme-alia.css");
+const palette = read("./palettes/alia.css");
 const manifest = JSON.parse(read("./package.json"));
 
 describe("theme files", () => {
-  it("theme-bb.css is generated from theme.css and palettes/bb.css", () => {
-    expect(themeBb).toBe(buildBbTheme(theme, palette));
+  it("theme-alia.css is generated from theme.css and palettes/alia.css", () => {
+    expect(themeAlia).toBe(buildAliaTheme(theme, palette));
   });
 
   it("swaps every palette region", () => {
     expect([...regions(theme).keys()].sort()).toEqual([...regions(palette).keys()].sort());
-    expect(themeBb).not.toContain("#8839ef"); // Catppuccin Latte mauve
-    expect(themeBb).not.toContain("#cba6f7"); // Catppuccin Mocha mauve
+    expect(themeAlia).not.toContain("#8839ef"); // Catppuccin Latte mauve
+    expect(themeAlia).not.toContain("#cba6f7"); // Catppuccin Mocha mauve
   });
 
   it("rejects a palette that misses a region", () => {
-    expect(() => buildBbTheme(theme, "")).toThrow(/missing regions/);
+    expect(() => buildAliaTheme(theme, "")).toThrow(/missing regions/);
   });
 
-  it.each(["./theme.css", "./theme-bb.css"])("%s stays under bb's 256 KB theme limit", (file) => {
+  it.each(["./theme.css", "./theme-alia.css"])("%s stays under VesnALIA's 256 KB theme limit", (file) => {
     expect(read(file).length).toBeLessThan(256_000);
   });
 
   it("declares both themes with existing CSS files", () => {
-    expect(manifest.bb.themes.map((t: { id: string }) => t.id)).toEqual(["codex", "codex-bb"]);
-    for (const { css } of manifest.bb.themes) expect(() => read(css)).not.toThrow();
+    expect(manifest.alia.themes.map((t: { id: string }) => t.id)).toEqual(["codex", "codex-alia"]);
+    for (const { css } of manifest.alia.themes) expect(() => read(css)).not.toThrow();
   });
 });
 
@@ -58,7 +58,7 @@ describe("optional blocks", () => {
   });
 
   it("uses the plugin's own homepage section id", () => {
-    expect(theme).not.toMatch(/:bb-codex:|bb-codex-/);
+    expect(theme).not.toMatch(/:alia-codex:|alia-codex-/);
     expect(read("./app.css")).toContain("plugin-homepage:codex-theme:welcome");
   });
 });

@@ -1,4 +1,4 @@
-// Which Lobu workspaces the user's CLI logins reach, and which bb saves the
+// Which Lobu workspaces the user's CLI logins reach, and which VesnALIA saves the
 // saved-events link shows.
 import type { LobuApi } from "./lobu-api";
 import type { SavedRecord } from "./memory-contract";
@@ -39,8 +39,8 @@ export async function discoverWorkspaces(api: LobuApi, contexts: (string | null)
 }
 
 /**
- * Lobu's events page filtered to what bb saved, in the reachable workspace
- * bb saved to most recently. Null when bb saved nothing these workspaces hold.
+ * Lobu's events page filtered to what VesnALIA saved, in the reachable workspace
+ * VesnALIA saved to most recently. Null when VesnALIA saved nothing these workspaces hold.
  */
 export function savedEventsPath(saved: SavedRecord[], reachable: ReadonlySet<string>): string | null {
   const shown = saved.filter((record) => reachable.has(record.workspace));

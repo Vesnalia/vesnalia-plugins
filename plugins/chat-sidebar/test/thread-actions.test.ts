@@ -19,7 +19,7 @@ const t = ((key: string) => key) as never;
 const sections = [{ id: "sec_1", name: "Later", createdAt: 0, updatedAt: 0 }];
 
 describe("Thread action target", () => {
-  it("preserves parent notification settings and defaults older bb payloads to auto", () => {
+  it("preserves parent notification settings and defaults older VesnALIA payloads to auto", () => {
     for (const parentNotifications of ["auto", "stuck", "off"] as const)
       expect(toActionTarget(thread("child", { parentNotifications })).parentNotifications).toBe(parentNotifications);
     const { parentNotifications: _, ...legacy } = thread("child");

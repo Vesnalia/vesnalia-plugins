@@ -7,16 +7,16 @@
 //   4. initialize()/routing: advertise `loadSession` and answer `session/load`
 //      with dsh's persisted-session resume path.
 //
-// (4) matters for bb: its stable ACP adapter only restores a thread when the
+// (4) matters for VesnALIA: its stable ACP adapter only restores a thread when the
 // agent advertises the older `loadSession` capability, and it calls
 // `session/load` for that. dsh only advertised the newer
-// `sessionCapabilities.resume`, so bb always gave up and the thread continued
-// in a brand-new dsh session without the earlier context. bb already keeps the
+// `sessionCapabilities.resume`, so VesnALIA always gave up and the thread continued
+// in a brand-new dsh session without the earlier context. VesnALIA already keeps the
 // transcript on its side and ignores replayed updates while loading, so routing
 // `session/load` to the resume path restores the agent context without
 // duplicating history.
 //
-// The client (bb) prepends a system-instructions block to the first prompt, so
+// The client (VesnALIA) prepends a system-instructions block to the first prompt, so
 // the command matcher looks for the last text block that is exactly one command
 // line. The bridge injects neither `commands` nor an advertiser, so both helpers
 // reach the service with ctx.get("commands").
@@ -42,23 +42,23 @@ const FILE = path.join(
 );
 
 const PROMPT_ANCHOR = `\tasync prompt(params, imageEnabled, requestSignal) {\n\t\tthis.assertActive();\n`;
-const PROMPT_INJECT = `${PROMPT_ANCHOR}\t\tconst bbCommandLine = bbAcpCommandLine(params.prompt);\n\t\tif (bbCommandLine !== void 0) return bbAcpRunCommand(this, bbCommandLine, requestSignal);\n`;
+const PROMPT_INJECT = `${PROMPT_ANCHOR}\t\tconst aliaCommandLine = aliaAcpCommandLine(params.prompt);\n\t\tif (aliaCommandLine !== void 0) return aliaAcpRunCommand(this, aliaCommandLine, requestSignal);\n`;
 
 const SESSION_ANCHOR = `\t\t\tsessions.set(sessionId, record);\n`;
-const SESSION_INJECT = `${SESSION_ANCHOR}\t\t\tvoid bbAcpAdvertiseCommands(record);\n`;
+const SESSION_INJECT = `${SESSION_ANCHOR}\t\t\tvoid aliaAcpAdvertiseCommands(record);\n`;
 
 const LOAD_CAP_ANCHOR = `\t\t\t\tagentCapabilities: {\n\t\t\t\t\tmcpCapabilities: { http: true },`;
-const LOAD_CAP_INJECT = `\t\t\t\tagentCapabilities: {\n\t\t\t\t\t// bbAcpLoadSessionBridge: legacy ACP clients restore with session/load.\n\t\t\t\t\tloadSession: true,\n\t\t\t\t\tmcpCapabilities: { http: true },`;
+const LOAD_CAP_INJECT = `\t\t\t\tagentCapabilities: {\n\t\t\t\t\t// aliaAcpLoadSessionBridge: legacy ACP clients restore with session/load.\n\t\t\t\t\tloadSession: true,\n\t\t\t\t\tmcpCapabilities: { http: true },`;
 
 const LOAD_ROUTE_ANCHOR = `.onRequest(methods.agent.session.close,`;
 const LOAD_ROUTE_INJECT = `.onRequest(methods.agent.session.load, ({ params, signal }) => implementation.resumeSession(params, signal))${LOAD_ROUTE_ANCHOR}`;
 
 const HELPERS = `
-// bb patch (reapply with E:/dsh-plugins/dsh-acp-command-patch.mjs):
+// VesnALIA patch (reapply with E:/dsh-plugins/dsh-acp-command-patch.mjs):
 // 1) advertise the harness command registry so ACP clients can list it,
 // 2) run a prompt whose last text block is exactly one harness command,
 //    instead of opening a model turn.
-function bbAcpCommandList(record) {
+function aliaAcpCommandList(record) {
 \tconst commands = record.ctx.get?.("commands");
 \tif (commands === void 0) return [];
 \ttry {
@@ -67,8 +67,8 @@ function bbAcpCommandList(record) {
 \t\treturn [];
 \t}
 }
-async function bbAcpAdvertiseCommands(record) {
-\tconst availableCommands = bbAcpCommandList(record).map((entry) => ({
+async function aliaAcpAdvertiseCommands(record) {
+\tconst availableCommands = aliaAcpCommandList(record).map((entry) => ({
 \t\tname: entry.name,
 \t\tdescription: entry.description ?? "",
 \t\t...(entry.input?.hint ? { input: { hint: entry.input.hint } } : {})
@@ -83,7 +83,7 @@ async function bbAcpAdvertiseCommands(record) {
 \t\t// advertising is best-effort; never block session creation
 \t}
 }
-function bbAcpCommandLine(prompt) {
+function aliaAcpCommandLine(prompt) {
 \tif (!Array.isArray(prompt)) return void 0;
 \tlet candidate;
 \tfor (const block of prompt) {
@@ -93,7 +93,7 @@ function bbAcpCommandLine(prompt) {
 \t}
 \treturn candidate;
 }
-async function bbAcpRunCommand(record, line, signal) {
+async function aliaAcpRunCommand(record, line, signal) {
 \tconst commands = record.ctx.get?.("commands");
 \tif (commands === void 0) throw new Error("the ACP bridge cannot reach the commands service");
 \tconst execution = await commands.execute(record.agent, line, [], signal);
@@ -120,7 +120,7 @@ try {
   let source = original;
   const applied = [];
 
-  if (!source.includes("bbAcpRunCommand")) {
+  if (!source.includes("aliaAcpRunCommand")) {
     for (const [label, anchor] of [
       ["prompt()", PROMPT_ANCHOR],
       ["newSession()", SESSION_ANCHOR],
@@ -131,7 +131,7 @@ try {
     applied.push("command bridge");
   }
 
-  if (!source.includes("bbAcpLoadSessionBridge")) {
+  if (!source.includes("aliaAcpLoadSessionBridge")) {
     for (const [label, anchor] of [
       ["initialize() capabilities", LOAD_CAP_ANCHOR],
       ["request routing", LOAD_ROUTE_ANCHOR],
@@ -149,10 +149,10 @@ try {
 
   // Keep the pristine package copy for reference/repair, but never overwrite it
   // once it exists: it must stay the unpatched source.
-  if (!fs.existsSync(`${FILE}.pre-bb`)) fs.writeFileSync(`${FILE}.pre-bb`, original);
+  if (!fs.existsSync(`${FILE}.pre-alia`)) fs.writeFileSync(`${FILE}.pre-alia`, original);
   fs.writeFileSync(FILE, source);
   console.log("patched:", FILE, `(${applied.join(", ")})`);
-  console.log("backup:", `${FILE}.pre-bb`);
+  console.log("backup:", `${FILE}.pre-alia`);
 } catch (err) {
   console.error("patch failed:", err.message);
   process.exit(1);

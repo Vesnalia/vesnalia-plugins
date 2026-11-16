@@ -54,7 +54,7 @@ function item(
   assignee: string | null = 'Mateo'
 ): WorkItem {
   return {
-    bbProjectId: 'proj_test',
+    aliaProjectId: 'proj_test',
     source: 'linear',
     locator: key,
     key,

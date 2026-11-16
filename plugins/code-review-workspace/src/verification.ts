@@ -1,6 +1,6 @@
 // The review assistant's check of whether your feedback was addressed: how it
 // starts, and what its tools return. Nothing here writes to GitHub.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { FeatureReview, ReviewMeta } from "./store";
 import { isSecretPath, symlinkTarget } from "../lib/folder-files";
 import { changedLinkNow, pathAndFolders } from "./env-diff";
@@ -45,7 +45,7 @@ export function verificationContext(review: ReviewMeta, reason: string): string 
 }
 
 /**
- * Queued messages BB said it dispatched, or that were deleted from the queue, that were no check: one may be a check
+ * Queued messages VesnALIA said it dispatched, or that were deleted from the queue, that were no check: one may be a check
  * whose send hasn't returned yet. The last hundred are enough for the moments a send takes.
  */
 const leftQueue = new Map<string, "dispatched" | "cancelled">();
@@ -62,9 +62,9 @@ const REPLY_LIMIT = 6_000;
  * each against the diff its Send went at, with the main thread's last reply, someone else's words, to read for what it
  * didn't report.
  */
-async function fixesContext(bb: BbPluginApi, review: ReviewMeta, out: readonly OutComment[]): Promise<string> {
+async function fixesContext(alia: AliaPluginApi, review: ReviewMeta, out: readonly OutComment[]): Promise<string> {
   const send = review.sends?.at(-1);
-  const reply = send ? await bb.sdk.threads.output({ threadId: send.threadId }).then(({ output }) => output?.trim() || null, () => null) : null;
+  const reply = send ? await alia.sdk.threads.output({ threadId: send.threadId }).then(({ output }) => output?.trim() || null, () => null) : null;
   const unreported = out.filter((comment) => !reported(comment.claim)).length;
   return [
     `The reviewer sent ${out.length} comment${out.length === 1 ? "" : "s"} to the main thread, the thread that fixes the code; list_feedback lists them with what it reported${unreported ? `, ${unreported} not yet` : ""}. Check each against what changed since its Send, with read_changes_since_review and its send number, and judge the fix itself.`,
@@ -78,21 +78,21 @@ async function fixesContext(bb: BbPluginApi, review: ReviewMeta, out: readonly O
  * starts it on its own (automatic). With `fixes`, Check fixes instead: the comments you sent to fix, each against its
  * Send's diff, which no other check reads. False when it's turned off, there's nothing to check, or it can't start.
  */
-export async function startVerification(bb: BbPluginApi, store: AsyncStore, targetKey: string, reason: string, kind: TurnKind, { fixes = false }: { fixes?: boolean } = {}): Promise<boolean> {
+export async function startVerification(alia: AliaPluginApi, store: AsyncStore, targetKey: string, reason: string, kind: TurnKind, { fixes = false }: { fixes?: boolean } = {}): Promise<boolean> {
   const { prompt, review, out } = await store.exclusive(async (tx) => {
     const review = await tx.getReview(targetKey);
     return { prompt: reReviewCheckPrompt((await tx.getPreferences()).preferences), review, out: review ? commentsOut(await draftsOut(tx, review), review.threadSends) : [] };
   });
   if (!prompt || !review || (fixes ? !out.length : review.kind !== "pr" || !baselineOf(review).at)) return false;
-  const context = fixes ? [`Why now: ${reason}.`, await fixesContext(bb, review, out)].join("\n") : verificationContext(review, reason);
+  const context = fixes ? [`Why now: ${reason}.`, await fixesContext(alia, review, out)].join("\n") : verificationContext(review, reason);
   let sent: Awaited<ReturnType<typeof messageAssistant>>;
   try {
-    sent = await messageAssistant(bb, store, targetKey, prompt, context, { kind });
+    sent = await messageAssistant(alia, store, targetKey, prompt, context, { kind });
   } catch (error) {
-    bb.log.warn(`The feedback check for ${targetKey} didn't start: ${String(error)}`);
+    alia.log.warn(`The feedback check for ${targetKey} didn't start: ${String(error)}`);
     return false;
   }
-  // The check is about this commit, even if the author pushes while it runs. Already dispatched, as BB can say before the
+  // The check is about this commit, even if the author pushes while it runs. Already dispatched, as VesnALIA can say before the
   // send returns, it's no longer waiting in the queue (70-review #3); already deleted from it, it never runs. Read in a
   // turn of the queue, after an event's that came first has noted it.
   await store.exclusive(async (tx) => {
@@ -103,7 +103,7 @@ export async function startVerification(bb: BbPluginApi, store: AsyncStore, targ
     const withFixes = fixes || !!running?.verifyingSince && !!running.verifyingFixes;
     if (left !== "cancelled") await tx.setLifecycle(targetKey, { verifyingSince: Date.now(), verifyingHead: headOf(review), verifyingMessageId: queued, verifyingFixes: withFixes || null });
   });
-  bb.realtime.publish(`conversation:${targetKey}`, {});
+  alia.realtime.publish(`conversation:${targetKey}`, {});
   return true;
 }
 
@@ -211,8 +211,8 @@ export async function changesSinceReview(store: AsyncStore, run: Run, review: Re
   };
 }
 
-/** What reads the code now: GitHub for a PR, git for a checkout's review, BB for a folder's. */
-export interface CodeReaders { bb: BbPluginApi; run: Run; git: typeof runGit }
+/** What reads the code now: GitHub for a PR, git for a checkout's review, VesnALIA for a folder's. */
+export interface CodeReaders { alia: AliaPluginApi; run: Run; git: typeof runGit }
 
 /**
  * read_changes_since_review for a Send: the code now compared with the diff Send `n` went at, or the last Send's. Only
@@ -246,9 +246,9 @@ export async function changesSinceSend(store: AsyncStore, readers: CodeReaders, 
  * The review's diff as the code is now: a PR's at the head being checked, a folder's read again on its machine, with
  * the files it keeps out, or a checkout's run again.
  */
-async function codeNow(store: AsyncStore, { bb, run, git }: CodeReaders, review: ReviewMeta): Promise<{ patch: string; at?: string; hidden?: HiddenFile[] }> {
+async function codeNow(store: AsyncStore, { alia, run, git }: CodeReaders, review: ReviewMeta): Promise<{ patch: string; at?: string; hidden?: HiddenFile[] }> {
   if (review.feature && review.kind === "ref") {
-    const read = await readFeatureDiff(bb, review.feature, review.includeHidden ?? []);
+    const read = await readFeatureDiff(alia, review.feature, review.includeHidden ?? []);
     if (read.outcome !== "available") throw new Error(`Couldn't read the folder now, so what changed since the Send can't be told: ${read.message}`);
     return { patch: read.patch, hidden: read.hidden };
   }
@@ -328,7 +328,7 @@ const MAX_FOLDER_FILE_BYTES = 2 * 1024 * 1024;
  * points instead, which the same checks then meet, as a link to a link or to a secret.
  */
 function throughLink(path: string, link: { path: string; target: string }): string {
-  if (!link.target) return `${link.path} is a link BB didn't say the target of, so it isn't read.`;
+  if (!link.target) return `${link.path} is a link VesnALIA didn't say the target of, so it isn't read.`;
   const resolved = posix.normalize(posix.join(posix.dirname(link.path), link.target, path.slice(link.path.length)));
   if (link.target.startsWith("/") || resolved === ".." || resolved.startsWith("../")) return `${link.path} links to ${link.target}, outside the folder, so it isn't read.`;
   // Named from the folder's top, where the target as written is relative to the link.
@@ -336,16 +336,16 @@ function throughLink(path: string, link: { path: string; target: string }): stri
 }
 
 /**
- * A folder's review's file, on the folder's machine: as the folder has it now, read through BB inside the folder; or
+ * A folder's review's file, on the folder's machine: as the folder has it now, read through VesnALIA inside the folder; or
  * where its diff starts. A secret-looking file the review doesn't show stays unread unless the reviewer included it
  * (src/env-diff.ts). It never reads through a changed link, the file's own or a folder's above it, as the review's
  * diff (`patch`) or the folder's diff now shows one: it names where the link points instead. Paths compare in any
- * case, as a Mac's folders do. BB reads through a link inside the folder and answers with the link's own path, so only
+ * case, as a Mac's folders do. VesnALIA reads through a link inside the folder and answers with the link's own path, so only
  * a diff tells a link apart: a link committed before the diff's base, and unchanged since, still reads as its target,
  * and so does a path through one into a changed link (an old `o → sub` with a new `sub/x → ../.env`: `o/x`). This is a
  * filter for the plugin's own tool; the agent's shell reads what it likes.
  */
-async function folderFile(folder: { bb: BbPluginApi; patch?: string }, review: ReviewMeta & { feature: FeatureReview }, path: string, ref: FileRef): Promise<{ at: string; text: string } | string> {
+async function folderFile(folder: { alia: AliaPluginApi; patch?: string }, review: ReviewMeta & { feature: FeatureReview }, path: string, ref: FileRef): Promise<{ at: string; text: string } | string> {
   const { feature } = review;
   if (ref === "reviewed") return "A local review has no reviewed commit. Use ref \"current\" or \"base\".";
   const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
@@ -353,10 +353,10 @@ async function folderFile(folder: { bb: BbPluginApi; patch?: string }, review: R
   const files = splitPatchByFile(folder.patch ?? "");
   if (isSecretPath(path) && !files.some((file) => same(file.path, path)) && !included.some((at) => same(at, path))) return `${path} looks like a secret, so it isn't read for agents. The reviewer can include it from the review.`;
   if (ref === "base") {
-    const read = await readFeatureFile(folder.bb, feature, "old", path);
+    const read = await readFeatureFile(folder.alia, feature, "old", path);
     return "error" in read ? read.error : { at: short(feature.mergeBaseRef), text: read.text };
   }
-  if (feature.folderGone) return `BB removed this review's folder, so ${path} can't be read as it is now. Use ref "base".`;
+  if (feature.folderGone) return `VesnALIA removed this review's folder, so ${path} can't be read as it is now. Use ref "base".`;
   // A link the review's diff shows: every block of each, as a file replaced by a link has two.
   for (const at of pathAndFolders(path)) {
     const blocks = files.filter((file) => same(file.path, at));
@@ -364,12 +364,12 @@ async function folderFile(folder: { bb: BbPluginApi; patch?: string }, review: R
     if (target !== null) return throughLink(path, { path: blocks[0]!.path, target });
   }
   // A link made, or pointed elsewhere, since the review read the folder shows only in its diff now.
-  const now = await changedLinkNow(folder.bb, feature, path);
+  const now = await changedLinkNow(folder.alia, feature, path);
   if ("error" in now) return `Couldn't check ${path} in the folder before reading it: ${now.error}`;
   if (now.link) return throughLink(path, now.link);
   const root = feature.path.replace(/\/+$/, "");
   try {
-    const out = await folder.bb.sdk.files.read({ hostId: feature.hostId, rootPath: root, path: `${root}/${path}` });
+    const out = await folder.alia.sdk.files.read({ hostId: feature.hostId, rootPath: root, path: `${root}/${path}` });
     if (out.sizeBytes > MAX_FOLDER_FILE_BYTES) return `${path} is too large to read here.`;
     if (out.contentEncoding !== "utf8") return `${path} isn't text.`;
     return { at: "the working tree", text: out.content };
@@ -385,7 +385,7 @@ const MAX_FILE_LINES = 400;
  * read_file: a file at the diff's base, your reviewed commit, or the PR's head (a local review's new side), with line
  * numbers. A folder's review reads its folder through `folder` (folderFile).
  */
-export async function readFileAt(run: Run, git: typeof runGit, review: ReviewMeta, path: string, ref: FileRef, startLine = 1, endLine?: number, folder?: { bb: BbPluginApi; patch?: string }): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
+export async function readFileAt(run: Run, git: typeof runGit, review: ReviewMeta, path: string, ref: FileRef, startLine = 1, endLine?: number, folder?: { alia: AliaPluginApi; patch?: string }): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
   // A repo-relative path only: no "." or ".." segments that could reach another GitHub endpoint, and no backslashes, which
   // a Windows folder takes as separators.
   const segments = path.split("/");

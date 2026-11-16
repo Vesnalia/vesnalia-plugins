@@ -1,4 +1,4 @@
-import { normalizeProviderId } from "./bb-usage-scan";
+import { normalizeProviderId } from "./alia-usage-scan";
 import {
   isLiveThroughputThread,
   type ThroughputScanThread,
@@ -30,7 +30,7 @@ export interface LocalThroughputSource {
 
 export interface LocalThreadSessionInfo {
   sessionIds: string[];
-  /** BB's canonical token stream wins whenever the provider supplies it. */
+  /** VesnALIA's canonical token stream wins whenever the provider supplies it. */
   hasNativeUsage: boolean;
 }
 
@@ -68,8 +68,8 @@ function bucketDelta(current: TokenBucket, previous: TokenBucket): TokenBucket {
 /**
  * Fills holes left by provider bridges that do not emit
  * `thread/tokenUsage/updated`, without pulling unrelated terminal sessions
- * into BB's live chart. Provider thread identities map each local session back
- * to the BB thread that launched it. Native BB usage always takes precedence.
+ * into VesnALIA's live chart. Provider thread identities map each local session back
+ * to the VesnALIA thread that launched it. Native VesnALIA usage always takes precedence.
  */
 export function createLocalThroughputScanner(
   recorder: ThroughputRecorder,
@@ -101,7 +101,7 @@ export function createLocalThroughputScanner(
   };
 
   return {
-    /** Re-resolve provider identities after BB reports a thread change. */
+    /** Re-resolve provider identities after VesnALIA reports a thread change. */
     markDirty(threadId: string): void {
       const cached = sessionInfo.get(threadId);
       if (cached) cached.checkedAtMs = 0;

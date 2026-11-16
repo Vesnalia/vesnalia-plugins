@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot, type RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot, type RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { project, thread, provider } from "./fixtures";
 
 let slot:RenderedSlot|undefined;
@@ -15,10 +15,10 @@ async function mount(options:Parameters<typeof renderSlot>[2]={}) {
   return {slot,onNavigate};
 }
 describe("Notion sidebar",()=>{
-  it("follows the BB interface language before the browser language",async()=>{
+  it("follows the VesnALIA interface language before the browser language",async()=>{
     document.documentElement.lang="en-GB";
     vi.spyOn(navigator,"language","get").mockReturnValue("ru-RU");
-    await mount({threadActions:()=>[{key:"bb--core/archive",pluginId:"bb--core",group:"lifecycle",action:{label:"Archive",icon:"Archive",run:async()=>{}}}],sidebarThreads:{status:"ready",projects:[project],sections:[],threads:[thread({hasPendingInteraction:true}),thread({id:"error",displayTitle:"Сбой",status:"error"})]}});
+    await mount({threadActions:()=>[{key:"alia--core/archive",pluginId:"alia--core",group:"lifecycle",action:{label:"Archive",icon:"Archive",run:async()=>{}}}],sidebarThreads:{status:"ready",projects:[project],sections:[],threads:[thread({hasPendingInteraction:true}),thread({id:"error",displayTitle:"Сбой",status:"error"})]}});
     expect(screen.getByText("Projects")).toBeTruthy();
     expect(screen.getAllByRole("button",{name:"Archive Задача"}).length).toBe(2);
     expect(screen.getAllByRole("img",{name:"Waiting for you — question or approval"}).length).toBe(2);
@@ -43,7 +43,7 @@ describe("Notion sidebar",()=>{
     expect(await screen.findByRole("button",{name:"Свернуть проект Проект"})).toBeTruthy();
     expect(screen.getByRole("alert").textContent).toBe("Вставьте один эмодзи.");
   });
-  it("falls back to browser Russian when BB has no language attribute",async()=>{
+  it("falls back to browser Russian when VesnALIA has no language attribute",async()=>{
     document.documentElement.removeAttribute("lang");
     vi.spyOn(navigator,"language","get").mockReturnValue("ru-RU");
     await mount();
@@ -141,7 +141,7 @@ describe("Notion sidebar",()=>{
   });
   it("runs the host archive action for the hovered row without navigating",async()=>{
     const archive=vi.fn(async(_id:string)=>{});
-    const {slot,onNavigate}=await mount({threadActions:target=>[{key:"bb--core/archive",pluginId:"bb--core",group:"lifecycle",action:{label:"Archive",icon:"Archive",run:async()=>archive(target.id)}}]});
+    const {slot,onNavigate}=await mount({threadActions:target=>[{key:"alia--core/archive",pluginId:"alia--core",group:"lifecycle",action:{label:"Archive",icon:"Archive",run:async()=>archive(target.id)}}]});
     fireEvent.click(screen.getByRole("button",{name:"Архивировать Задача"}));
     await waitFor(()=>expect(archive).toHaveBeenCalledWith("t1"));
     expect(onNavigate).not.toHaveBeenCalled();expect(slot.inspection.navigateCalls).toHaveLength(0);
@@ -163,7 +163,7 @@ describe("Notion sidebar",()=>{
     await mount({sidebarThreads:{status:"ready",projects:[project],threads:[thread(),thread({id:"archived",isArchived:true,displayTitle:"Старый тред"}),thread({id:"helper",isHidden:true,displayTitle:"Внутренний тред"})],sections:[]}});
     expect(screen.queryByRole("link",{name:"Старый тред"})).toBeNull();expect(screen.queryByRole("link",{name:"Внутренний тред"})).toBeNull();
   });
-  it.each(["light","dark"] as const)("follows BB's %s mode despite an old local override",async(mode)=>{
+  it.each(["light","dark"] as const)("follows VesnALIA's %s mode despite an old local override",async(mode)=>{
     const oldPreference=mode==="dark"?"light":"dark";
     localStorage.setItem("plugin:threadspace:theme",JSON.stringify(oldPreference));
     const {slot}=await mount({codeTheme:{mode}});

@@ -201,7 +201,7 @@ describe("the declaration", () => {
 });
 
 describe("what agents are told", () => {
-  it("the fragment is within the protocol's 2,048 bytes, and the guide within GUIDE_MAX, 16 KiB less 512, both in UTF-8 (07 §The declaration grammar, S6.34); bb's slot is checked live in instruction-cap.test.ts", () => {
+  it("the fragment is within the protocol's 2,048 bytes, and the guide within GUIDE_MAX, 16 KiB less 512, both in UTF-8 (07 §The declaration grammar, S6.34); VesnALIA's slot is checked live in instruction-cap.test.ts", () => {
     expect(Buffer.byteLength(declaration.instruction!)).toBeLessThanOrEqual(2 * 1024);
     expect(GUIDE_MAX).toBe(16 * 1024 - 512);
     expect(Buffer.byteLength(declaration.guide)).toBeLessThanOrEqual(GUIDE_MAX);
@@ -279,7 +279,7 @@ describe("what agents are told", () => {
     expect(declaration.guide).not.toContain("null from outside pages");
     const history = declaration.methods.find((method) => method.name === "syns.history")!;
     expect(history.description).toContain("by.integration syns-pages and by.trigger page");
-    expect(history.description).not.toContain("by.run is the bb session");
+    expect(history.description).not.toContain("by.run is the VesnALIA session");
     expect(history.description).toContain("from offset"); // pages since B-0070 (S1.27)
     expect(history.description).not.toContain("No paging");
   });
@@ -304,7 +304,7 @@ describe("what agents are told", () => {
 
   it("the fragment and the guide name no host: the declaration is the same on every host (07 R-X1)", () => {
     for (const text of [declaration.instruction!, declaration.guide]) {
-      expect(text).not.toMatch(/\bbb (thread-page|pages|plugin)\b|unife-pages\.js|\$BB_|\bbb session\b/);
+      expect(text).not.toMatch(/\bbb (thread-page|pages|plugin)\b|unife-pages\.js|\$ALIA_|\bbb session\b/);
     }
   });
 
@@ -369,8 +369,8 @@ describe("what agents are told", () => {
 
 describe("no skills (D45)", () => {
   it("the plugin ships none: the manifest declares no skills folder, and there is none", () => {
-    const manifest = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { bb: Record<string, unknown> };
-    expect(manifest.bb).not.toHaveProperty("skills");
+    const manifest = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { alia: Record<string, unknown> };
+    expect(manifest.alia).not.toHaveProperty("skills");
     expect(existsSync(new URL("../skills", import.meta.url))).toBe(false);
   });
 });

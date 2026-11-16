@@ -1,10 +1,10 @@
 /**
- * bb's own "Copy on select" setting (Settings → General → Terminals), which this page's
- * terminals follow as bb's do.
+ * VesnALIA's own "Copy on select" setting (Settings → General → Terminals), which this page's
+ * terminals follow as VesnALIA's do.
  *
  * The app SDK reads it as `generalSettings.terminalCopyOnSelect` in
  * `useSdk().system.config()`, and `useSdk().subscribe({ event:
- * "system:config-changed" })` says when bb's settings were saved; the page
+ * "system:config-changed" })` says when VesnALIA's settings were saved; the page
  * reads it again then (`reload`, past the freshness window). The event is
  * only a hint — it is lost while the realtime link is down — so the page also
  * reads it when it opens, when the link comes back, when the window comes back
@@ -12,7 +12,7 @@
  * selection uses the latest answer.
  */
 
-/** bb's default for the setting. */
+/** VesnALIA's default for the setting. */
 export const COPY_ON_SELECT_DEFAULT = true;
 
 /** A read made less than this long ago is fresh enough for the next selection. */
@@ -48,7 +48,7 @@ export class CopyOnSelectSetting {
   }
 
   /**
-   * Reads the setting now, whatever was read before: bb said it changed, so a
+   * Reads the setting now, whatever was read before: VesnALIA said it changed, so a
    * fresh answer and a read already on its way may both predate the change.
    */
   reload(): Promise<boolean> {
@@ -66,10 +66,10 @@ export class CopyOnSelectSetting {
       (cause: unknown): boolean | Promise<boolean> => {
         if (!this.warned) {
           this.warned = true;
-          console.warn("terminals: could not read bb's Copy on select setting", cause);
+          console.warn("terminals: could not read VesnALIA's Copy on select setting", cause);
         }
         if (id !== this.reads) return this.latest();
-        // Keep the last answer; with none yet, bb's default.
+        // Keep the last answer; with none yet, VesnALIA's default.
         return this.value ?? COPY_ON_SELECT_DEFAULT;
       },
     );
@@ -80,7 +80,7 @@ export class CopyOnSelectSetting {
     return tracked;
   }
 
-  /** The newest read's answer: the one on its way, else the last value, else bb's default. */
+  /** The newest read's answer: the one on its way, else the last value, else VesnALIA's default. */
   private latest(): Promise<boolean> {
     return this.inFlight ?? Promise.resolve(this.value ?? COPY_ON_SELECT_DEFAULT);
   }

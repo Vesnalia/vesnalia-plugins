@@ -1,7 +1,7 @@
 /**
  * Executes a wrapped `xcodebuild` and tails its live result stream.
  *
- * Used by `bb xcode run -- xcodebuild …`. The wrapper is what upgrades a build
+ * Used by `alia xcode run -- xcodebuild …`. The wrapper is what upgrades a build
  * from "we can see the process exists" (Tier 0) to per-section live progress
  * with issues as they are emitted (Tier 3).
  */
@@ -85,7 +85,7 @@ export async function runWrapped(options: RunnerOptions): Promise<RunnerResult> 
   if (options.argv[0] !== "/usr/bin/xcodebuild") {
     throw new Error("Wrapped builds may execute only /usr/bin/xcodebuild.");
   }
-  const workDir = await mkdtemp(join(tmpdir(), "bb-xcode-"));
+  const workDir = await mkdtemp(join(tmpdir(), "alia-xcode-"));
   const streamPath = join(workDir, "stream.ndjson");
   // The stream file is scratch and dies with the workdir; the bundle is the
   // artifact and outlives it, so the two must not share a directory.
@@ -217,7 +217,7 @@ export async function runWrapped(options: RunnerOptions): Promise<RunnerResult> 
   options.detachSignal?.removeEventListener("abort", onDetach);
 
   // Nothing reads the stream file after the tail stops. Leaving the scratch
-  // directory behind meant one abandoned `bb-xcode-*` per wrapped build,
+  // directory behind meant one abandoned `alia-xcode-*` per wrapped build,
   // forever, waiting on whenever the OS decides to sweep its temp directory.
   // Only safe now that the bundle is written somewhere else.
   if (options.bundleDir) {

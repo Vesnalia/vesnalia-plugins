@@ -134,8 +134,8 @@ describe("describeBinding", () => {
 
 describe("buildBindingsView", () => {
   const projects = [
-    { id: "p1", name: "bb/api", kind: "standard" as const },
-    { id: "p2", name: "bb/marketing-site", kind: "standard" as const },
+    { id: "p1", name: "alia/api", kind: "standard" as const },
+    { id: "p2", name: "alia/marketing-site", kind: "standard" as const },
     { id: "p_personal", name: "Personal", kind: "personal" as const },
   ];
 

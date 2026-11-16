@@ -2,7 +2,7 @@
 // CLI. The CLI keeps its own OAuth credentials in ~/.config/higgsfield; this
 // worker only runs read-only account commands plus login/logout.
 import { execFile, spawn, type ChildProcess } from "node:child_process";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk";
 import { hostContract, hostSignals, type CliResult } from "./contract.js";
 
 const CALL_TIMEOUT_MS = 25_000;

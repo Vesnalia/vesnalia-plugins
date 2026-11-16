@@ -1,8 +1,8 @@
-# The thread pane's composer context: bb's collapsed footer, and the pane's paint-following probe
+# The thread pane's composer context: VesnALIA's collapsed footer, and the pane's paint-following probe
 
 Date: 2026-10-16. Thread: thr_9iwfimagwv ("Add missing project info"). Evidence:
 96 probe captures from the temporary instrument (PRs #218 and #225, both
-merged then removed by the fix), bb 0.46.1 host bundle, macOS desktop.
+merged then removed by the fix), VesnALIA 0.46.1 host bundle, macOS desktop.
 
 ## The report
 
@@ -11,7 +11,7 @@ second after opening, then it disappeared and never came back. The operator's
 own guess ("the input box opened over it") was closer than any of my first
 theories.
 
-## What bb 0.46.1 actually does
+## What VesnALIA 0.46.1 actually does
 
 The embedded `ThreadChat` the SDK hands plugin panels builds a full
 environment summary (`PluginThreadChat` chunk: project name query, environment
@@ -23,7 +23,7 @@ mount: `Project: <name>` and `Environment: <name>` chips
 (`[data-option-display]`, sr-only labels) plus a branch button
 (`[data-promptbox-hide-branch-compact]`).
 
-The catch: the footer belongs to bb's follow-up composer, which COLLAPSES
+The catch: the footer belongs to VesnALIA's follow-up composer, which COLLAPSES
 whenever the composer sits unexpanded. The collapse is an attribute flip
 (`data-follow-up-composer-footer-visible` removed) plus a 180ms CSS
 transition (`max-height`/`min-height`/`margin-top`/`opacity`), no mount and
@@ -53,11 +53,11 @@ vanish the operator saw.
 - The settle window (300ms) outlasts the 180ms transition so the walk reads
   settled geometry.
 
-## What to re-check on bb upgrades
+## What to re-check on VesnALIA upgrades
 
 - The footer's collapse attribute name and the 180ms transition.
 - The chip signatures (`data-option-display` labels, the hide-branch marker,
   the `Thread details: …` aria-label prefix).
-- Whether bb starts passing a compact summary to embedded chats — at that
+- Whether VesnALIA starts passing a compact summary to embedded chats — at that
   point the pane's fallback line goes quiet on its own whenever the host
   paints, and this whole module can shrink to a no-op guard.

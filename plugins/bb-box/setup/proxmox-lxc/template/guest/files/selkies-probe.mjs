@@ -1,4 +1,4 @@
-// bb-box: asks the box's Selkies for video, as its one page (a lone
+// alia-box: asks the box's Selkies for video, as its one page (a lone
 // role=viewer page gets none), and says what came in that time, for the
 // desktop check (#863).
 //   node selkies-probe.mjs <port> <seconds>

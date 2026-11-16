@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { DecisionChips, REPEATED_LIST_ATTR, repeatedList, repeatedReplyLines } from "./decision-choices";
 
 afterEach(cleanup);

@@ -73,7 +73,7 @@ describe("row context menu", () => {
         sidebarThreads: {
           status: "ready",
           threads: [thread({ id: "only", title: "Only thread" })],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         },
         rpc: {
           listLifecycle: () => ({ rows: [] }),
@@ -111,7 +111,7 @@ describe("row context menu", () => {
           thread({ id: "slow", title: "Slow settle", createdAt: 20 }),
           thread({ id: "elsewhere", title: "Elsewhere", createdAt: 10 }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),

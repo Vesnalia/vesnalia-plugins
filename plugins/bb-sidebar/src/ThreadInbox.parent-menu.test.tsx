@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { renderSlot } from "./test-slot";
 import {
   inbox,
@@ -21,7 +21,7 @@ await loadInboxApp();
 describe("parent thread menu", () => {
   it("orders parent choices by recent activity regardless of pin, shelf, or sidebar sort", async () => {
     const now = Date.now();
-    localStorage.setItem("bb-sidebar:active-sort:v1", "created");
+    localStorage.setItem("alia-sidebar:active-sort:v1", "created");
     renderSlot(inbox, listProps, {
       sidebarThreads: {
         status: "ready",
@@ -53,7 +53,7 @@ describe("parent thread menu", () => {
           thread({ id: "other", title: "Foreign pinned thread", projectId: "proj_other", isPinned: true }),
         ],
         projects: [
-          { id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" },
+          { id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" },
           { id: "proj_other", name: "docs", isPersonal: false, href: "", settingsHref: "" },
         ],
       },
@@ -139,7 +139,7 @@ describe("parent thread menu", () => {
           thread({ id: "grandchild", title: "Forbidden grandchild", parentThreadId: "descendant" }),
           thread({ id: "other", title: "Other project", projectId: "proj_other" }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: { listLifecycle: () => ({ rows: [] }), setThreadParent },
     });
@@ -186,7 +186,7 @@ describe("parent thread menu", () => {
     fireEvent.click(within(menu).getByRole("menuitemradio", { name: "Next parent" }));
     await waitFor(() =>
       expect(toastMocks.error).toHaveBeenCalledWith("Could not update parent", {
-        className: "bb-sidebar-toast",
+        className: "alia-sidebar-toast",
         description: "Parent is no longer available",
       }),
     );
@@ -208,7 +208,7 @@ describe("parent thread menu", () => {
         .filter((item) => item.getAttribute("aria-checked") === "true")
         .map((item) => item.textContent);
 
-    // bb never reports a fork's outcomes to its parent, whatever the setting says.
+    // VesnALIA never reports a fork's outcomes to its parent, whatever the setting says.
     it.each([
       ["a root thread", thread({ id: "root", title: "Root" })],
       ["a fork with a parent", thread({ id: "fork", title: "Fork", parentThreadId: "root", originKind: "fork" })],
@@ -298,11 +298,11 @@ describe("parent thread menu", () => {
       fireEvent.click(within(menu).getByRole("menuitemradio", { name: /^Off/ }));
       await waitFor(() =>
         expect(toastMocks.error).toHaveBeenCalledWith("Could not update parent notifications", {
-          className: "bb-sidebar-toast",
+          className: "alia-sidebar-toast",
           description: "offline",
         }),
       );
-      // Choosing closes the menu; reopening reads the setting bb still holds.
+      // Choosing closes the menu; reopening reads the setting VesnALIA still holds.
       const reopened = await openNotifications();
       await waitFor(() => expect(checked(reopened)).toEqual([expect.stringContaining("Every outcome")]));
     });

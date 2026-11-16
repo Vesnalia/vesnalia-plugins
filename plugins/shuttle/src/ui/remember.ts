@@ -21,12 +21,12 @@ function read(storage: StorageKind, key: string): unknown {
 }
 
 /**
- * A view choice this device remembers, shared by every Shuttle surface and followed across bb windows. A stored value
+ * A view choice this device remembers, shared by every Shuttle surface and followed across VesnALIA windows. A stored value
  * that no longer parses, such as one an older version wrote, reads as the default. `delay` batches frequent writes,
  * such as scroll positions, into one write. Session storage keeps unsent PR text in this tab only.
  */
 export function createStored<T>(name: string, initial: T, parse: (value: unknown) => T | null, delay = 0, storage: StorageKind = "localStorage") {
-  const key = `bb-plugin-shuttle:${name}`;
+  const key = `alia-plugin-shuttle:${name}`;
   const load = (): T => {
     const raw = read(storage, key);
     return raw === undefined ? initial : parse(raw) ?? initial;
@@ -48,7 +48,7 @@ export function createStored<T>(name: string, initial: T, parse: (value: unknown
     value = load();
     notify();
   };
-  // Another bb window wrote; without this, the next write here would put back what that window changed.
+  // Another VesnALIA window wrote; without this, the next write here would put back what that window changed.
   const onStorage = (event: StorageEvent) => {
     if (event.storageArea === window[storage] && (event.key === key || event.key === null)) reload();
   };

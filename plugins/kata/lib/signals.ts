@@ -10,5 +10,5 @@ export type KataSignal =
   | { type: "daemon.status"; available: boolean; message: string | null }
   /** A thread's linked issue changed (link, unlink). */
   | { type: "thread.link"; threadId: string }
-  /** A bb project's `.kata.toml` binding was (re)resolved to a different result. */
+  /** A VesnALIA project's `.kata.toml` binding was (re)resolved to a different result. */
   | { type: "binding.changed"; projectId: string };

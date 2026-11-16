@@ -7,7 +7,7 @@ export function AboutComputerUse() {
   return (
     <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
       <p>
-        Desktop & Browser Agent is an independent bb integration powered by <strong className="font-medium text-foreground">Cua Driver</strong>, the open-source desktop and browser automation runtime from Cua AI, Inc.
+        Desktop & Browser Agent is an independent VesnALIA integration powered by <strong className="font-medium text-foreground">Cua Driver</strong>, the open-source desktop and browser automation runtime from Cua AI, Inc.
       </p>
       <div className="flex flex-wrap gap-x-4 gap-y-2">
         <TextLink href={CUA_DOCS_URL}>Learn about Cua Driver</TextLink>

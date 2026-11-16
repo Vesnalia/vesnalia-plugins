@@ -1,6 +1,6 @@
 /** Always mounted; the only reader of the `state` RPC on the client. */
 import { useEffect } from "react";
-import { experimental_useProviders, experimental_useRpcQuery } from "@get-bb/plugin-sdk/app";
+import { experimental_useProviders, experimental_useRpcQuery } from "@vesnalia/plugin-sdk/app";
 import { iconsContract } from "../shared/contract";
 import { writeCachedIds } from "./registered-ids";
 import { setIconsState, setProviders } from "./store";

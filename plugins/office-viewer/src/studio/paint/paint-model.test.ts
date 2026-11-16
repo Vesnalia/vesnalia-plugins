@@ -19,7 +19,7 @@ test("parsePaintDoc round-trips a valid document", () => {
   doc.shapes.push(rect(), { ...ink, id: "s2", type: "pen", points: [0, 0, 8, 12, 20, 18] });
   const again = parsePaintDoc(JSON.stringify(doc));
   assert.deepEqual(again, doc);
-  assert.equal(again.format, "bb-paint");
+  assert.equal(again.format, "alia-paint");
   assert.equal(again.version, 1);
 });
 

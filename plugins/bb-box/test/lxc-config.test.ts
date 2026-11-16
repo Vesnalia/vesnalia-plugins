@@ -84,8 +84,8 @@ test("each flavour takes a list of templates, and GPU desktop templates name the
   assert.deepEqual(waylandOnly.flavours["desktop-wayland-cpu"].templates, [{ vmid: 9006, gpu: null }]);
 });
 
-test("the CPU Wayland desktop templates are a field of the configuration, never a BB setting (048)", () => {
-  assert.equal("proxmox-lxc-desktop-wayland-cpu-templates" in LXC_SETTINGS, false, "BB's settings are those from before 029");
+test("the CPU Wayland desktop templates are a field of the configuration, never a VesnALIA setting (048)", () => {
+  assert.equal("proxmox-lxc-desktop-wayland-cpu-templates" in LXC_SETTINGS, false, "VesnALIA's settings are those from before 029");
   const field = LXC_FIELDS["desktop-wayland-cpu-templates"]!;
   assert.deepEqual([field.label, field.group, field.type, field.default], ["CPU Wayland desktop templates", "boxes", "string", ""]);
   assert.equal(Object.keys(LXC_FIELDS).indexOf("desktop-wayland-cpu-templates"), Object.keys(LXC_FIELDS).indexOf("desktop-cpu-templates") + 1);
@@ -125,7 +125,7 @@ test("an unset Linux setting reads its key from before 027, and a set one wins",
   assert.deepEqual(warm({ ...earlier, "proxmox-lxc-linux-warm": null }), { linux: 2 }, "a cleared key is unset");
   assert.deepEqual(readEarlierLxc({ ...unset, ...earlier })!.fields["linux-templates"], "9010 9011");
 
-  // BB gives a declared default in place of an unset value, so the new keys declare none, and the old keys stay declared.
+  // VesnALIA gives a declared default in place of an unset value, so the new keys declare none, and the old keys stay declared.
   for (const field of ["templates", "warm"]) {
     const current = LXC_SETTINGS[`proxmox-lxc-linux-${field}`]!;
     const replaced = LXC_SETTINGS[`proxmox-lxc-headless-${field}`]!;

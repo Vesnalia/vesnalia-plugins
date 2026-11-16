@@ -19,7 +19,7 @@ describe("deleting a session", () => {
       const thread = reviews.createThread({ sessionId: session.id, filePath: "a.ts", side: "new", startLine: 1, endLine: 1, severity: null, anchorContent: null, body: "Why?" });
       reviews.addComment({ threadId: thread.id, authorType: "agent", authorName: "AI", body: "Because." });
       reviews.recordSend(session.id, "thr_1", [thread.id], "");
-      reviews.createRun({ sessionId: session.id, kind: "review", bbThreadId: "thr_run", reviewThreadId: null, focus: null, providerId: "claude-code", model: null, status: "running", parentThreadId: "thr_1" });
+      reviews.createRun({ sessionId: session.id, kind: "review", aliaThreadId: "thr_run", reviewThreadId: null, focus: null, providerId: "claude-code", model: null, status: "running", parentThreadId: "thr_1" });
       reviews.saveViewState("thr_1", session.id, { savedAt: 1 });
       return session;
     };
@@ -72,7 +72,7 @@ describe("mirroring GitHub's threads", () => {
     // What was done on the copy meanwhile: an agent's draft, a send, a run, a reply typed in a tab.
     reviews.addComment({ threadId: copy.id, authorType: "agent", authorName: "AI", body: "On the copy." });
     reviews.recordSend(session.id, "thr_1", [copy.id], "");
-    const run = reviews.createRun({ sessionId: session.id, kind: "mention", bbThreadId: "thr_run", reviewThreadId: copy.id, focus: null, providerId: "claude-code", model: null, status: "running" });
+    const run = reviews.createRun({ sessionId: session.id, kind: "mention", aliaThreadId: "thr_run", reviewThreadId: copy.id, focus: null, providerId: "claude-code", model: null, status: "running" });
     reviews.saveViewState("thr_1", session.id, { savedAt: 1, drafts: { [`reply:${copy.id}`]: { ...draft, body: "Typed on the copy" } }, expandedThreads: { [copy.id]: true }, collapsed: {}, scroll: null } as never);
     expect(reviews.threads(session.id).filter((thread) => thread.githubThreadId === "PRRT_9")).toHaveLength(2);
 

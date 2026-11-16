@@ -4,17 +4,17 @@ import { ProjectIconMark } from "./ProjectIconMark";
 import type { ProjectIcon } from "./project-icons";
 
 /**
- * BB's composer names the project with a plain folder glyph in three places:
+ * VesnALIA's composer names the project with a plain folder glyph in three places:
  * the label under a thread's prompt box, the project button on the New
- * thread screen and that button's project picker. BB has no project icon field, so this paints the sidebar's
- * chosen icon over that folder. Projects without an icon keep BB's folder.
+ * thread screen and that button's project picker. VesnALIA has no project icon field, so this paints the sidebar's
+ * chosen icon over that folder. Projects without an icon keep VesnALIA's folder.
  */
 
 /** Elements whose text names the project, and where their folder glyph sits. */
 const TARGET_SELECTOR = [
   '[data-follow-up-composer-footer] [data-option-display][title^="Project: "]',
   '[data-new-thread-footer] button[aria-label^="Project: "]',
-  // BB's project picker rows, which carry the project id directly.
+  // VesnALIA's project picker rows, which carry the project id directly.
   '[role="dialog"][aria-label="Project"] [cmdk-item][data-value^="proj_"]',
 ].join(", ");
 

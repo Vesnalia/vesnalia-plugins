@@ -26,7 +26,7 @@ function guardStub(unattributed: string): string {
     "#!/bin/sh",
     `record=\${${GUARD_RECORD_VARIABLE}:-'${unattributed}'}`,
     'printf \'%s\\n\' "$(basename "$0")${*:+ $*}" >> "$record"',
-    `printf 'BB Box test guard: a test ran the test machine'"'"'s own %s. Run it through a fake'"'"'s host stubs, in test/host-stubs.mjs.\\n' "$(basename "$0")\${*:+ $*}" >&2`,
+    `printf 'VesnALIA Box test guard: a test ran the test machine'"'"'s own %s. Run it through a fake'"'"'s host stubs, in test/host-stubs.mjs.\\n' "$(basename "$0")\${*:+ $*}" >&2`,
     `exit ${GUARD_EXIT_CODE}`,
   ].join("\n");
 }
@@ -66,7 +66,7 @@ function sharedGuardFolder(): string {
       rmSync(making, { recursive: true, force: true });
     }
   }
-  if (!ownedByThisUser(dir)) throw new Error(`BB Box's test guard folder ${dir} belongs to another user or others can write to it. Remove it and run the tests again.`);
+  if (!ownedByThisUser(dir)) throw new Error(`VesnALIA Box's test guard folder ${dir} belongs to another user or others can write to it. Remove it and run the tests again.`);
   return dir;
 }
 
@@ -122,7 +122,7 @@ export function installHostGuard(): HostGuard {
 }
 
 export function reachedTestMachineMessage(reached: readonly string[]): string {
-  return `This test file ran the test machine's own privileged tools, which BB Box's test guard stopped: ${reached.join("; ")}. Run them through a fake's host stubs, in test/host-stubs.mjs.`;
+  return `This test file ran the test machine's own privileged tools, which VesnALIA Box's test guard stopped: ${reached.join("; ")}. Run them through a fake's host stubs, in test/host-stubs.mjs.`;
 }
 
 function guardThisProcess(): HostGuard {

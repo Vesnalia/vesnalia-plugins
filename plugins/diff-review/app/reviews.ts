@@ -3,7 +3,7 @@
  * thread's Info row, and the ones no live thread can open, which the page offers to delete. Each re-reads when any review's threads change (`REVIEWS_CHANNEL`) and when the
  * realtime link comes back, since signals sent while it was down are lost.
  */
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { RpcContract } from "../shared/contract";

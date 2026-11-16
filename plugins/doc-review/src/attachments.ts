@@ -1,4 +1,4 @@
-// Files attached to chat messages, opened in Doc Review. bb keeps an attached
+// Files attached to chat messages, opened in Doc Review. VesnALIA keeps an attached
 // file in the project's attachment store, and its chip in the chat opens a
 // built-in preview no plugin can take over. So the panel lists a thread's
 // attachments, and the one the user picks is copied into the thread's
@@ -6,13 +6,13 @@
 // read and change it.
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { joinPath, type DocFiles } from "./files.js";
 import { docKindFor } from "./types.js";
 
 /** Where in the thread's storage the copies go. */
 export const COPY_FOLDER = "Doc Review";
-/** Messages looked through for attachments, newest first (bb lists at most 100 events at a time). */
+/** Messages looked through for attachments, newest first (VesnALIA lists at most 100 events at a time). */
 const MESSAGES_SCANNED = 100;
 /** The largest attachment copied for review. */
 const COPY_MAX_BYTES = 64 * 1024 * 1024;
@@ -30,7 +30,7 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 }
 
-/** A stored name bb gave an attachment: one path segment, nothing that climbs. */
+/** A stored name VesnALIA gave an attachment: one path segment, nothing that climbs. */
 function isStoredName(value: unknown): value is string {
   return typeof value === "string" && value.length > 0 && !/[/\\\u0000]/.test(value) && value !== "." && value !== "..";
 }
@@ -82,8 +82,8 @@ export function numbered(name: string, n: number): string {
   return `${name.slice(0, name.length - ext.length)} (${n})${ext}`;
 }
 
-export function createAttachments(deps: { bb: BbPluginApi; files: DocFiles }) {
-  const { bb, files } = deps;
+export function createAttachments(deps: { alia: AliaPluginApi; files: DocFiles }) {
+  const { alia, files } = deps;
 
   /**
    * The thread's attachments, newest first; with `seq`, the ones on that
@@ -91,11 +91,11 @@ export function createAttachments(deps: { bb: BbPluginApi; files: DocFiles }) {
    */
   async function list(threadId: string, seq: number | null): Promise<AttachedFile[]> {
     if (seq !== null) {
-      const found = await bb.sdk.threads.message({ threadId, seq }).catch(() => null);
+      const found = await alia.sdk.threads.message({ threadId, seq }).catch(() => null);
       const onMessage = filesOnMessage(found?.message);
       if (onMessage.length > 0) return onMessage;
     }
-    const events = await bb.sdk.threads.events.list({
+    const events = await alia.sdk.threads.events.list({
       threadId,
       types: ["client/turn/requested"],
       order: "desc",
@@ -120,16 +120,16 @@ export function createAttachments(deps: { bb: BbPluginApi; files: DocFiles }) {
    */
   async function copy(threadId: string, file: { path: string; name: string }): Promise<string> {
     if (!isStoredName(file.path)) throw new Error("This is not an attached file.");
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     const projectId = asRecord(thread)?.projectId;
     if (typeof projectId !== "string" || !projectId) throw new Error("This chat has no project to keep its attachments.");
-    const storage = await bb.sdk.threads.storageLocation({ threadId });
+    const storage = await alia.sdk.threads.storageLocation({ threadId });
     const hostId = await files.canonicalHost(storage.hostId);
 
     const read = async (relative: string): Promise<Buffer | null> => {
       const absPath = joinPath(storage.storageRootPath, relative);
       if (hostId === null) return await readFile(absPath).catch(() => null);
-      const found = await bb.sdk.files.read({ hostId, path: absPath }).catch(() => null);
+      const found = await alia.sdk.files.read({ hostId, path: absPath }).catch(() => null);
       return found ? Buffer.from(found.content, found.contentEncoding === "base64" ? "base64" : "utf8") : null;
     };
     /** Writes a new file; false when one of that name turned up first. */
@@ -145,7 +145,7 @@ export function createAttachments(deps: { bb: BbPluginApi; files: DocFiles }) {
           throw error;
         }
       }
-      const result = await bb.sdk.files.write({
+      const result = await alia.sdk.files.write({
         hostId,
         path: absPath,
         content: Buffer.from(bytes).toString("base64"),
@@ -158,10 +158,10 @@ export function createAttachments(deps: { bb: BbPluginApi; files: DocFiles }) {
     };
 
     const key = `attachment-copy:${threadId}:${file.path}`;
-    const known = await bb.storage.kv.get<string>(key);
+    const known = await alia.storage.kv.get<string>(key);
     if (known && (await read(known)) !== null) return known;
 
-    const attached = await bb.sdk.projects.attachments.read({ projectId, path: file.path });
+    const attached = await alia.sdk.projects.attachments.read({ projectId, path: file.path });
     if (attached.sizeBytes > COPY_MAX_BYTES) throw new Error("This file is too large to review.");
     const bytes = Buffer.from(attached.bytes);
     const name = copyName(file.name);
@@ -171,7 +171,7 @@ export function createAttachments(deps: { bb: BbPluginApi; files: DocFiles }) {
       if (there === null && !(await write(relative, bytes))) there = await read(relative);
       // A file of that name from before: the same bytes are this copy, others are another file.
       if (there !== null && !there.equals(bytes)) continue;
-      await bb.storage.kv.set(key, relative);
+      await alia.storage.kv.set(key, relative);
       return relative;
     }
     throw new Error("Could not find a free name for the copy.");

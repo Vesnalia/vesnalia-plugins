@@ -1,5 +1,5 @@
 import { test, expect, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore, placeOn, reanchorDraft, storeOn } from "./store";
 import type { Sql } from "./db/sql";
 import { renamedPaths } from "./patch";
@@ -14,8 +14,8 @@ vi.mock("./patch", async (original) => {
 });
 
 function store() {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  return testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  return testStore(alia);
 }
 
 test("review round-trips and lists newest first", async () => {
@@ -67,11 +67,11 @@ test("assistant thread ids round-trip and list", async () => {
 });
 
 test("legacy agent messages list oldest-first with context, and clear", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const s = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const s = testStore(alia);
   const insert = `INSERT INTO agent_messages (target_key,role,text,context,created_at) VALUES ('pr-1',?,?,?,1)`;
-  await testSql(bb).run(insert, ["user", "why flagged?", JSON.stringify({ file: "a.ts", startLine: 3, endLine: 5 })]);
-  await testSql(bb).run(insert, ["assistant", "because it's a test file", null]);
+  await testSql(alia).run(insert, ["user", "why flagged?", JSON.stringify({ file: "a.ts", startLine: 3, endLine: 5 })]);
+  await testSql(alia).run(insert, ["assistant", "because it's a test file", null]);
   const msgs = await s.listAgentMessages("pr-1");
   expect(msgs.map((m) => m.role)).toEqual(["user", "assistant"]);
   expect(msgs[0].context).toEqual({ file: "a.ts", startLine: 3, endLine: 5 });
@@ -81,8 +81,8 @@ test("legacy agent messages list oldest-first with context, and clear", async ()
 });
 
 test("deleteReview clears every per-review table and leaves other reviews intact", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const s = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const s = testStore(alia);
   for (const key of ["pr-1", "pr-2"]) {
     await s.saveReview({ targetKey: key, kind: "pr", number: 1, status: "ready", createdAt: 1 });
     await s.savePatch(key, "diff --git a/a.ts b/a.ts\n");
@@ -92,12 +92,12 @@ test("deleteReview clears every per-review table and leaves other reviews intact
     await s.setFileViewed(key, "a.ts", "hash");
     await s.addChapterOpenTime(key, "c1", 60_000);
     await s.setAssistantThread(key, `th-${key}`);
-    await testSql(bb).run(`INSERT INTO focus_threads (thread_id,target_key,run_id,focus_id,label,created_at) VALUES (?,?,?,?,?,?)`, [`focus-${key}`, key, "run", "docs", "Docs", 1]);
-    await testSql(bb).run(`INSERT INTO focus_findings (target_key,run_id,id,focus_id,label,file,line,side,severity,body,evidence,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+    await testSql(alia).run(`INSERT INTO focus_threads (thread_id,target_key,run_id,focus_id,label,created_at) VALUES (?,?,?,?,?,?)`, [`focus-${key}`, key, "run", "docs", "Docs", 1]);
+    await testSql(alia).run(`INSERT INTO focus_findings (target_key,run_id,id,focus_id,label,file,line,side,severity,body,evidence,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
       [key, "run", "f1", "docs", "Docs", "a.ts", 1, "RIGHT", "nit", "Wrong docs", "a.ts:1", "found"]);
-    // Legacy conversation rows, from before conversations moved into bb threads.
-    await testSql(bb).run(`INSERT INTO agent_threads (target_key,thread_id,created_at) VALUES (?,?,1)`, [key, `legacy-${key}`]);
-    await testSql(bb).run(`INSERT INTO agent_messages (target_key,role,text,context,created_at) VALUES (?,'user','question',NULL,1)`, [key]);
+    // Legacy conversation rows, from before conversations moved into VesnALIA threads.
+    await testSql(alia).run(`INSERT INTO agent_threads (target_key,thread_id,created_at) VALUES (?,?,1)`, [key, `legacy-${key}`]);
+    await testSql(alia).run(`INSERT INTO agent_messages (target_key,role,text,context,created_at) VALUES (?,'user','question',NULL,1)`, [key]);
     await s.setLifecycle(key, { userArchivedAt: 1 });
     await s.saveReviewerNotes(key, "private", 0);
     await s.setReviewContext(key, "Implements LIN-1");
@@ -114,7 +114,7 @@ test("deleteReview clears every per-review table and leaves other reviews intact
   await s.deleteReview("pr-1");
 
   // Every table keyed by review, including ones added after this test.
-  const sql = testSql(bb);
+  const sql = testSql(alia);
   const keyed = sql.dialect === "postgres"
     ? `SELECT table_name AS name FROM information_schema.columns WHERE table_schema=current_schema() AND column_name='target_key'`
     : `SELECT m.name FROM sqlite_master m JOIN pragma_table_info(m.name) c WHERE m.type='table' AND c.name='target_key'`;
@@ -178,12 +178,12 @@ test("a LOCAL comment is on Not pushed yet's diff: its code from there, never st
 });
 
 test("the summary keeps who wrote it and the verdicts around it, and a change clears the fields it leaves undefined", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const s = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const s = testStore(alia);
   await s.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, status: "ready", createdAt: 1 });
   const written = { verdict: null, comments: "0:811c9dc5" };
   await s.updateSummary("pr-1", { body: "Looks good.", bodyAuthor: "agent", suggestedVerdict: "APPROVE", written });
-  expect(await testStore(bb).getDraft("pr-1")).toEqual({ targetKey: "pr-1", verdict: "COMMENT", body: "Looks good.", comments: [], bodyAuthor: "agent", suggestedVerdict: "APPROVE", written });
+  expect(await testStore(alia).getDraft("pr-1")).toEqual({ targetKey: "pr-1", verdict: "COMMENT", body: "Looks good.", comments: [], bodyAuthor: "agent", suggestedVerdict: "APPROVE", written });
   // A comment change keeps the summary's fields.
   await s.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "x" });
   expect(await s.getDraft("pr-1")).toMatchObject({ bodyAuthor: "agent", suggestedVerdict: "APPROVE", written });
@@ -235,7 +235,7 @@ const thread = (id: string, isResolved: boolean): import("./github/types").Feedb
   body: "Fix this", createdAt: 1, isResolved, resolvedBy: null, isOutdated: false, replies: [], status: isResolved ? "resolved" : "open", replyAt: null,
 });
 
-test("feedback threads remember when bb first saw each one resolved", async () => {
+test("feedback threads remember when VesnALIA first saw each one resolved", async () => {
   const s = store();
   await s.saveFeedbackThreads("pr-1", [thread("t1", false), thread("t2", true)], 10);
   const first = await s.listFeedbackThreads("pr-1");
@@ -252,10 +252,10 @@ test("feedback threads remember when bb first saw each one resolved", async () =
 
 /** A Store over the test backend's tables, counting the statements that write `table`. */
 function countingWrites(table: string) {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
   // Migrated by the Store's own open; counted from here.
-  createStore(bb);
-  const sql = testSql(bb);
+  createStore(alia);
+  const sql = testSql(alia);
   const counts = { writes: 0 };
   const counted: Sql = {
     dialect: sql.dialect,
@@ -369,7 +369,7 @@ test("threads already resolved on the first read date from their last activity",
   const old = { ...thread("t1", true), createdAt: 100, replies: [{ author: "alice", bot: false, mine: false, body: "Done", createdAt: 500 }] };
   await s.saveFeedbackThreads("pr-1", [old, thread("t2", false)], 1);
   expect((await s.listFeedbackThreads("pr-1")).find((t) => t.id === "t1")?.resolvedSeenAt).toBe(500);
-  // Later, a newly resolved thread dates from when bb saw it.
+  // Later, a newly resolved thread dates from when VesnALIA saw it.
   await s.saveFeedbackThreads("pr-1", [old, { ...thread("t2", true), createdAt: 100 }], 2);
   expect((await s.listFeedbackThreads("pr-1")).find((t) => t.id === "t2")!.resolvedSeenAt).toBeGreaterThan(1_000_000);
 });
@@ -392,8 +392,8 @@ test("a failed or interrupted rebuild puts the previous guide and diff back", as
 });
 
 test("an interruption whose second restore fails puts nothing back, the first restore's savepoint going with the whole transaction", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const s = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const s = testStore(alia);
   for (const k of ["pr-1", "pr-2"]) {
     await s.saveReview({ targetKey: k, kind: "pr", number: 1, status: "ready", createdAt: 1, headSha: "sha1" });
     await s.savePatch(k, "old patch");
@@ -403,7 +403,7 @@ test("an interruption whose second restore fails puts nothing back, the first re
     await s.saveReview({ ...(await s.getReview(k))!, headSha: "sha2", status: "generating" });
     await s.beginGeneration(k);
   }
-  const sql = testSql(bb);
+  const sql = testSql(alia);
   const run = sql.run.bind(sql);
   let restores = 0;
   const failing = vi.spyOn(sql, "run").mockImplementation(async (text, params) => {
@@ -482,8 +482,8 @@ test("a thread known to be open and resolved since dates from now, even after an
 });
 
 test("the patch's hash is kept when it's saved, and its positions are parsed once per patch", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const s = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const s = testStore(alia);
   const one = "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-a\n+b\n";
   const two = one.replace("+b", "+c");
   await s.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, status: "ready", createdAt: 1 });
@@ -497,16 +497,16 @@ test("the patch's hash is kept when it's saved, and its positions are parsed onc
   expect(await s.patchHash("pr-1")).toBe(sha(two));
   expect((await s.diffPositions("pr-1")).get("a.ts")?.right.get(1)).toBe("c");
   // A patch saved before its hash was kept gets one when it's first needed.
-  await testSql(bb).run(`UPDATE patches SET hash=NULL`);
+  await testSql(alia).run(`UPDATE patches SET hash=NULL`);
   expect(await s.patchHash("pr-1")).toBe(sha(two));
   expect(await s.patchHash("pr-2")).toBe(sha(""));
 });
 
 test("a comment's severity round-trips, a draft saved before severities loads with none, and an edit changes or keeps it", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const s = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const s = testStore(alia);
   await s.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, status: "ready", createdAt: 1 });
-  await testSql(bb).run(`INSERT INTO drafts (target_key,verdict,body,comments) VALUES ('pr-1','COMMENT','',?)`, [JSON.stringify([{ file: "a.ts", line: 1, side: "RIGHT", body: "Old" }])]);
+  await testSql(alia).run(`INSERT INTO drafts (target_key,verdict,body,comments) VALUES ('pr-1','COMMENT','',?)`, [JSON.stringify([{ file: "a.ts", line: 1, side: "RIGHT", body: "Old" }])]);
   expect((await s.getDraft("pr-1")).comments).toEqual([{ file: "a.ts", line: 1, side: "RIGHT", body: "Old" }]);
   await s.upsertDraftComment("pr-1", { file: "a.ts", line: 2, side: "RIGHT", severity: "nit", body: "Spacing" });
   expect((await s.getDraft("pr-1")).comments[1]).toEqual({ file: "a.ts", line: 2, side: "RIGHT", severity: "nit", body: "Spacing" });
@@ -547,8 +547,8 @@ test("a stored guide's chapter with the Overview page's id reads back under an i
 // bug bash D6: a number no store column holds exactly, refused alike by both backends, where SQLite kept a fraction
 // as REAL and Postgres refused it as text, or kept one past 2^53 that it then couldn't read.
 test("a number parameter that isn't a safe integer is refused before it reaches either backend", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const s = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const s = testStore(alia);
   await s.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, status: "ready", createdAt: 1 });
   for (const viewedAt of [1.5, 2 ** 60, Number.NaN]) {
     await expect(s.setFileViewed("pr-1", "a.ts", "h", viewedAt)).rejects.toThrow(RangeError);
@@ -571,12 +571,12 @@ async function refuseWrites(sql: Sql, table: string) {
 test("a comment whose revisions row is refused leaves the draft as it was, and a draft that can't be written leaves the revisions", async () => {
   const PATCH = "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1,2 @@\n one\n+two\n";
   for (const refused of ["draft_comment_revisions", "drafts"]) {
-    const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-    const s = testStore(bb);
+    const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+    const s = testStore(alia);
     await s.saveReview({ targetKey: "pr-1", kind: "pr", status: "ready", createdAt: 1 });
     await s.savePatch("pr-1", PATCH);
     await s.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "Kept" });
-    const sql = testSql(bb);
+    const sql = testSql(alia);
     const revisions = () => sql.all(`SELECT file, line, side, patch_hash, code FROM draft_comment_revisions ORDER BY line`);
     const before = { draft: await s.getDraft("pr-1"), revisions: await revisions() };
     await refuseWrites(sql, refused);
@@ -589,15 +589,15 @@ test("a comment whose revisions row is refused leaves the draft as it was, and a
 // so the review's rows stayed at the old path until its cache entry went.
 test("renames a refused comment's save rolled back are still followed by the next read", async () => {
   const PATCH = "diff --git a/old.ts b/new.ts\nsimilarity index 90%\nrename from old.ts\nrename to new.ts\n--- a/old.ts\n+++ b/new.ts\n@@ -1 +1,2 @@\n a\n+b\n";
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const seed = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const seed = testStore(alia);
   await seed.saveReview({ targetKey: "pr-1", kind: "pr", status: "ready", createdAt: 1 });
   await seed.savePatch("pr-1", PATCH);
   await seed.upsertDraftComment("pr-1", { file: "new.ts", line: 1, side: "RIGHT", body: "Kept" });
   await seed.addDiscussionMessage("pr-1", { file: "old.ts", line: 2, side: "RIGHT" }, "reviewer", "Why?");
   // A store that hasn't followed this diff's renames yet, as after a reload.
-  const s = testStore(bb);
-  await refuseWrites(testSql(bb), "draft_comment_revisions");
+  const s = testStore(alia);
+  await refuseWrites(testSql(alia), "draft_comment_revisions");
   await expect(s.upsertDraftComment("pr-1", { file: "new.ts", line: 2, side: "RIGHT", body: "Not saved" })).rejects.toThrow("index row size exceeds btree maximum");
   expect((await s.listDiscussions("pr-1")).map((d) => d.file)).toEqual(["new.ts"]);
 });

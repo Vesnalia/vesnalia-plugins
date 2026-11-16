@@ -1,9 +1,9 @@
-// The slice of bb's bundled Git plugin (`bb--git`) RPC this plugin reads.
-// `bb plugin rpc inspect bb--git` prints the full schemas.
-import type { PluginRpcContract } from "@get-bb/plugin-sdk";
+// The slice of VesnALIA's bundled Git plugin (`alia--git`) RPC this plugin reads.
+// `alia plugin rpc inspect alia--git` prints the full schemas.
+import type { PluginRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
-export const BB_GIT = "bb--git";
+export const ALIA_GIT = "alia--git";
 
 /**
  * Identity with inference, the same shape the SDK's contract helper returns.

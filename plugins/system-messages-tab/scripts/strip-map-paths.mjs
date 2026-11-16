@@ -1,4 +1,4 @@
-// Removes this machine's absolute paths from the source maps `bb plugin build`
+// Removes this machine's absolute paths from the source maps `alia plugin build`
 // writes, so committed release artifacts do not reveal the build directory.
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";

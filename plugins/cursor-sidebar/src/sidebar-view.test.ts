@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { buildPooledOrdinarySection, buildSections, flattenShelf } from "./forest";
 import {
   coerceEnvironmentFilter,
@@ -194,7 +194,7 @@ test("environment filter falls back to the machine entry when cloud status is un
 });
 
 test("saved per-environment filter values are ignored instead of hiding threads", () => {
-  assert.equal(coerceEnvironmentFilter(["name:bb-plugins", "host:host_local", "__none__", "env_abc"]), null);
+  assert.equal(coerceEnvironmentFilter(["name:alia-plugins", "host:host_local", "__none__", "env_abc"]), null);
   assert.deepEqual(coerceEnvironmentFilter(["host:host_local", "machine:cloud"]), ["machine:cloud"]);
   assert.deepEqual(coerceEnvironmentFilter([]), []);
   assert.equal(coerceEnvironmentFilter(null), null);

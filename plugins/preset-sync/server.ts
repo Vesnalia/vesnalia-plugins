@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   applyResultSchema,
@@ -46,11 +46,11 @@ export const rpcContract = defineRpcContract({
 
 const usage = [
   "Usage:",
-  "  bb preset status [--json]",
-  "  bb preset diff [--json]",
-  "  bb preset capture [--json]",
-  "  bb preset push [--fresh] [--message <text>] [--json]",
-  "  bb preset pull --yes [--json]",
+  "  VesnALIA preset status [--json]",
+  "  VesnALIA preset diff [--json]",
+  "  VesnALIA preset capture [--json]",
+  "  VesnALIA preset push [--fresh] [--message <text>] [--json]",
+  "  VesnALIA preset pull --yes [--json]",
   "",
   "Pull is additive: local plugins absent from the preset are kept.",
   "Secret settings, credentials, sessions, and runtime data are never captured.",
@@ -77,8 +77,8 @@ function parseMessage(argv: string[]): { ok: true; message?: string } | { ok: fa
   return { ok: true, message };
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     repositoryUrl: {
       type: "string",
       label: "Preset repository",
@@ -94,13 +94,13 @@ export default async function plugin(bb: BbPluginApi) {
       type: "string",
       label: "GitHub token (optional)",
       description:
-        "Stored in BB's protected secrets file. Leave empty when Git Credential Manager or gh already authenticates Git.",
+        "Stored in VesnALIA's protected secrets file. Leave empty when Git Credential Manager or gh already authenticates Git.",
       secret: true,
     },
     gitAuthorName: {
       type: "string",
       label: "Git author name",
-      default: "BB Preset Sync",
+      default: "VesnALIA Preset Sync",
     },
     gitAuthorEmail: {
       type: "string",
@@ -118,13 +118,13 @@ export default async function plugin(bb: BbPluginApi) {
       type: "select",
       label: "Background check interval",
       description:
-        "How often to compare this BB installation with the Git preset. Select Off to disable background checks.",
+        "How often to compare this VesnALIA installation with the Git preset. Select Off to disable background checks.",
       options: ["Off", "1 minute", "5 minutes", "10 minutes", "15 minutes", "30 minutes", "60 minutes"],
       default: "5 minutes",
     },
   });
 
-  const service = new PresetSyncService(bb, async () => {
+  const service = new PresetSyncService(alia, async () => {
     const value = await settings.get();
     return {
       repositoryUrl: value.repositoryUrl ?? "",
@@ -139,7 +139,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   settings.onChange(() => service.wakeBackgroundCheck());
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     sync_status: () => service.status(),
     sync_cached_check: () => service.cachedCheck(),
     sync_preview: () => service.preview(),
@@ -148,38 +148,38 @@ export default async function plugin(bb: BbPluginApi) {
     sync_pull: () => service.pullAndApply(),
   });
 
-  bb.background.service("change-check", {
+  alia.background.service("change-check", {
     start: (signal) => service.runBackgroundChecks(signal),
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "preset",
-    summary: "Synchronize BB plugins and settings through a Git repository",
+    summary: "Synchronize VesnALIA plugins and settings through a Git repository",
     commands: [
       {
         name: "status",
-        summary: "Compare this BB installation with the Git preset",
-        usage: "bb preset status [--json]",
+        summary: "Compare this VesnALIA installation with the Git preset",
+        usage: "alia preset status [--json]",
       },
       {
         name: "diff",
         summary: "Preview changes that pull would apply",
-        usage: "bb preset diff [--json]",
+        usage: "alia preset diff [--json]",
       },
       {
         name: "capture",
-        summary: "Stage the current BB preset locally",
-        usage: "bb preset capture [--json]",
+        summary: "Stage the current VesnALIA preset locally",
+        usage: "alia preset capture [--json]",
       },
       {
         name: "push",
         summary: "Push the staged or freshly captured preset to Git",
-        usage: "bb preset push [--fresh] [--message <text>] [--json]",
+        usage: "alia preset push [--fresh] [--message <text>] [--json]",
       },
       {
         name: "pull",
         summary: "Pull and apply the Git preset after an explicit preview",
-        usage: "bb preset pull --yes [--json]",
+        usage: "alia preset pull --yes [--json]",
       },
     ],
     async run(argv, context) {
@@ -260,7 +260,7 @@ export default async function plugin(bb: BbPluginApi) {
                 stderr:
                   plan.changes.length === 0
                     ? undefined
-                    : 'Nothing was changed. Review the preview, then rerun with "bb preset pull --yes".',
+                    : 'Nothing was changed. Review the preview, then rerun with "alia preset pull --yes".',
               };
             }
             const result = await service.pullAndApply(context.signal);
@@ -287,5 +287,5 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info("ready: bb preset status|diff|capture|push|pull");
+  alia.log.info("ready: VesnALIA preset status|diff|capture|push|pull");
 }

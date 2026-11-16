@@ -136,7 +136,7 @@ describe("a major release beyond the range", () => {
 
   it.each([
     "git:https://fixture.invalid/fx@semver:^0.1.0",
-    // bb records a bare range as typed, with the range alongside.
+    // VesnALIA records a bare range as typed, with the range alongside.
     "git:https://fixture.invalid/fx@^0.1.0",
   ])("offers v1.0.0 to %s, skipping the in-range v0.1.1", (requested) => {
     const source = { requested, range: "^0.1.0", resolvedTag: "v0.1.0" };
@@ -170,8 +170,8 @@ describe("releaseCheckTarget", () => {
 
   it.each([
     ["builtin:tasks", "builtin"],
-    ["npm:bb-plugin-x@1.2.3", "npm"],
-    ["/Users/me/code/bb-plugin-x", "local"],
+    ["npm:alia-plugin-x@1.2.3", "npm"],
+    ["/Users/me/code/alia-plugin-x", "local"],
     ["git:https://github.com/a/b.git@main", "branch"],
     ["git:https://github.com/a/b.git", "branch"],
   ])("skips %s (%s)", (requested, reason) => {

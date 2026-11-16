@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 // Remote bench hosts on the surfaces: the Bench tab's remote section (entries,
 // machines, state, expiry, rotation, per-host calibration, a refused seed),
-// the bench host list, the Live bench strip, and `bb study bench` lines.
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+// the bench host list, the Live bench strip, and `alia study bench` lines.
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { configure, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createAutoresearchPlugin } from "../server.ts";
@@ -85,8 +85,8 @@ describe("frontend: remote bench hosts", () => {
     host.refs.set("main", host.commit("T0", null));
     host.metric.set("T0", 1000);
     port.addThread("thr_study");
-    const fake = createFakePluginHost({ pluginId: "bb-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
-    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0 } })(fake.bb);
+    const fake = createFakePluginHost({ pluginId: "alia-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
+    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0 } })(fake.alia);
     harness = fake.harness;
     await harness.behavior.callAgentTool("study_propose", { spec_toml: SPEC }, { threadId: "thr_study", projectId: "proj_1" });
     await harness.behavior.runCli(["calibrate", "toy-rb", "--wait"]);
@@ -153,7 +153,7 @@ describe("frontend: remote bench hosts", () => {
     expect(strip.textContent).toMatch(/replacement for #1/u);
   });
 
-  it("bb study bench lines name each machine's state, expiry, calibration and rotation", () => {
+  it("alia study bench lines name each machine's state, expiry, calibration and rotation", () => {
     const lines = remoteLines(remoteFixture(), Date.now()).join("\n");
     expect(lines).toMatch(/Remote bench 1: bench-provider-local · 2 machine\(s\) × 4 cores · 60 min each, replaced 12 min before the end · gates run there · seed ok/u);
     expect(lines).toMatch(/seed: credential scan matched: home\/\.netrc/u);

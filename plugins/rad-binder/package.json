@@ -1,15 +1,24 @@
 {
-  "name": "bb-plugin-rad-binder",
+  "name": "alia-plugin-rad-binder",
   "version": "0.1.0",
-  "description": "An 80s/90s school-binder and toy-commercial theme for bb: neon confetti, striped binder edges, chunky offset shadows and italic display headings.",
-  "keywords": ["bb", "bb-plugin", "theme", "retro", "80s", "90s", "neon", "memphis"],
+  "description": "An 80s/90s school-binder and toy-commercial theme for VesnALIA: neon confetti, striped binder edges, chunky offset shadows and italic display headings.",
+  "keywords": [
+    "alia",
+    "alia-plugin",
+    "theme",
+    "retro",
+    "80s",
+    "90s",
+    "neon",
+    "memphis"
+  ],
   "license": "MIT",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Rad Binder",
     "description": "An 80s/90s school-binder look: a deep-purple binder-spine sidebar with neon confetti, striped binder edges, chunky offset shadows on the composer, messages and cards, and bold italic display headings. Light and dark.",
     "branding": {
@@ -40,12 +49,28 @@
     "server.ts"
   ],
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.75",
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.75"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/rad-binder#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/rad-binder"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

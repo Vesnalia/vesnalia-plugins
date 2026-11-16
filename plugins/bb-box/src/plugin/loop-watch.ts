@@ -1,13 +1,13 @@
-// Watches the event loop bb-box runs on for stalls: BB's server's, which
-// bb-box's relays share with BB's own work and other plugins. Measured on 10 October 2026, a
-// desktop's frames through BB's server stood still for about 370 ms, twice
+// Watches the event loop alia-box runs on for stalls: VesnALIA's server's, which
+// alia-box's relays share with VesnALIA's own work and other plugins. Measured on 10 October 2026, a
+// desktop's frames through VesnALIA's server stood still for about 370 ms, twice
 // every 11 s, on VNC and video alike, while the box sent them evenly: a drag
 // lagged by up to a second. A timer that runs every 100 ms finds when the
 // loop could not run it, and garbage collection meanwhile is counted, so the
 // log says whether the process stalls, and whether collecting garbage is
 // why. A CPU profile (profile.ts) names the code. One line a minute at most, and none while the loop keeps up;
-// it tells too how many processes bb-box started that minute, and how long the spawn calls held the loop, as each
-// forks BB's server. And five minutes after a start, then once an hour, whatever happened, the server's memory:
+// it tells too how many processes alia-box started that minute, and how long the spawn calls held the loop, as each
+// forks VesnALIA's server. And five minutes after a start, then once an hour, whatever happened, the server's memory:
 // whether its heap grows, which makes each major collection longer.
 
 import { PerformanceObserver, constants, performance } from "node:perf_hooks";
@@ -19,7 +19,7 @@ const TICK_MS = 100;
 const STALL_MS = 250;
 const REPORT_MS = 60_000;
 const MEMORY_MS = 60 * 60_000;
-/** The first memory line comes this soon after a start, as bb-box often reloads within the hour. */
+/** The first memory line comes this soon after a start, as alia-box often reloads within the hour. */
 const FIRST_MEMORY_MS = 5 * 60_000;
 const MiB = 1024 * 1024;
 /** Garbage collections this long are counted. */
@@ -31,7 +31,7 @@ export interface LoopWatchOptions {
   now?(): number;
   /** Ticks and garbage collection come from the caller, for tests. */
   manual?: boolean;
-  /** The processes bb-box started, ever, and their spawn calls' time; and the longest call since last asked. */
+  /** The processes alia-box started, ever, and their spawn calls' time; and the longest call since last asked. */
   spawns?(): SpawnTotals;
   longestSpawn?(): number;
   /** The process's memory, as process.memoryUsage() gives it. */
@@ -112,7 +112,7 @@ export class LoopWatch {
     this.#report(now);
   }
 
-  /** The hour's line, the first five minutes after a start: the server's memory, and the processes bb-box started. */
+  /** The hour's line, the first five minutes after a start: the server's memory, and the processes alia-box started. */
   #memory(now: number): void {
     const minutes = Math.round((now - this.#memorySince) / 60_000);
     const period = minutes === 60 ? "the last hour" : `the last ${minutes} ${minutes === 1 ? "minute" : "minutes"}`;
@@ -135,7 +135,7 @@ export class LoopWatch {
       );
       this.#spawnedHour = spawns;
     }
-    this.#options.log(`BB's server, which runs bb-box: ${parts.join("; ")}.`);
+    this.#options.log(`VesnALIA's server, which runs alia-box: ${parts.join("; ")}.`);
   }
 
   gc(entry: GcEntry): void {
@@ -159,12 +159,12 @@ export class LoopWatch {
     const major = inside.filter((entry) => entry.major).length;
     const times = stalls.length === 1 ? "once" : `${stalls.length} times`;
     this.#options.log(
-      `BB's server, which runs bb-box, stood still ${times} in the last minute, for up to ${Math.round(longest)} ms: desktops' frames and input waited meanwhile. ` +
+      `VesnALIA's server, which runs alia-box, stood still ${times} in the last minute, for up to ${Math.round(longest)} ms: desktops' frames and input waited meanwhile. ` +
         (inside.length
           ? `Garbage collection ran for ${Math.round(gcMs)} ms of it, in ${inside.length} ${inside.length === 1 ? "collection" : "collections"}, ${major} of them major.`
           : "No garbage collection ran then: something else held the loop.") +
         (spawned
-          ? ` bb-box started ${spawned.count} ${spawned.count === 1 ? "process" : "processes"} in that minute, the spawn calls taking ${Math.round(spawned.ms)} ms in all, ${Math.round(longestSpawn)} ms at most.`
+          ? ` alia-box started ${spawned.count} ${spawned.count === 1 ? "process" : "processes"} in that minute, the spawn calls taking ${Math.round(spawned.ms)} ms in all, ${Math.round(longestSpawn)} ms at most.`
           : ""),
     );
   }

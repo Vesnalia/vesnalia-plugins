@@ -1,19 +1,19 @@
 # Memory Explorer
 
-A [bb](https://getbb.app) plugin that shows what your agents remember: BB memory
+A [VesnALIA](https://getbb.app) plugin that shows what your agents remember: VesnALIA memory
 as a searchable table and a zoomable link graph, with a detail drawer for each
 memory.
 
 ## Install
 
-From the plugin store in bb, or from this repository:
+From the plugin store in VesnALIA, or from this repository:
 
 ```sh
-bb plugin install git:https://github.com/d-asensio/bb-plugin-memory-explorer.git@^0.1.0
+alia plugin install git:https://github.com/d-asensio/bb-plugin-memory-explorer.git@^0.1.0
 ```
 
-It needs BB 0.48 or later and BB's own Memory plugin, which ships with BB but
-is not installed by default (`bb plugin install memory`, or **Memory** in the
+It needs VesnALIA 0.48 or later and VesnALIA's own Memory plugin, which ships with VesnALIA but
+is not installed by default (`alia plugin install memory`, or **Memory** in the
 plugin store). Memory Explorer stores nothing of its own: it reads and writes
 memories through the Memory plugin's RPC.
 
@@ -130,10 +130,10 @@ lines are the same relations, now drawn with their labels.
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `digestCommand` | empty | Runs after a preference is confirmed or discarded, for example a script that rebuilds a digest of your preferences. A program or script and its arguments, run without a shell; put a path with spaces in double quotes. A `.js`, `.mjs` or `.cjs` script runs with Node, and `BB_CLI` names the bb command. A failure is logged and never undoes the confirm. |
+| `digestCommand` | empty | Runs after a preference is confirmed or discarded, for example a script that rebuilds a digest of your preferences. A program or script and its arguments, run without a shell; put a path with spaces in double quotes. A `.js`, `.mjs` or `.cjs` script runs with Node, and `ALIA_CLI` names the VesnALIA command. A failure is logged and never undoes the confirm. |
 
 ```sh
-bb plugin config memory-explorer set digestCommand "/path/to/rebuild-digest.mjs --quiet"
+alia plugin config memory-explorer set digestCommand "/path/to/rebuild-digest.mjs --quiet"
 ```
 
 ## Related threads
@@ -150,8 +150,8 @@ also lists the cards filed under it.
 npm install --include=dev
 npm test             # unit tests (node:test, compiled with tsc)
 npm run typecheck
-bb plugin install .  # registers this folder
-bb plugin dev        # rebuilds and reloads on save
+alia plugin install .  # registers this folder
+alia plugin dev        # rebuilds and reloads on save
 ```
 
 - `server.ts`: settings, the `knowledge_*` RPC methods, related threads and

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { ProjectSummary } from "../contract";
 import { isMultiRepoProject } from "../format";
 import { HEADING, RepoChip, plural } from "./common";
@@ -16,7 +16,7 @@ export function linkLabel(url: string): string {
 
 /** The project's summary, what done means, and the way to its full goal and its planner, under the page's header. A narrow page shows the summary's first lines. */
 export function AboutStrip({ overview, onGoal }: { overview: ProjectSummary; onGoal(): void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [open, setOpen] = useState(false);
   const [full, setFull] = useState(false);
   const { about } = overview;

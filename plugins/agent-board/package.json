@@ -1,5 +1,5 @@
 {
-  "name": "bb-plugin-agent-board",
+  "name": "alia-plugin-agent-board",
   "version": "0.7.1",
   "type": "module",
   "files": [
@@ -28,12 +28,12 @@
     "verify:package": "node scripts/verify-package.mjs"
   },
   "engines": {
-    "bb": ">=0.40",
-    "bbPluginSdk": ">=0.4.21"
+    "alia": ">=0.40",
+    "aliaPluginSdk": ">=0.4.21"
   },
-  "bb": {
+  "alia": {
     "name": "Agent Board",
-    "description": "Live execution observability for BB agents, models, tools, and delegated workers.",
+    "description": "Live execution observability for VesnALIA agents, models, tools, and delegated workers.",
     "branding": {
       "icon": "Columns"
     },
@@ -48,7 +48,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.34",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -87,20 +86,29 @@
     "@parcel/watcher": true
   },
   "license": "MIT",
-  "description": "Live execution observability for BB agents, models, tools, and delegated workers.",
+  "description": "Live execution observability for VesnALIA agents, models, tools, and delegated workers.",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "observability",
     "agents",
     "execution",
     "dashboard"
   ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.34"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/agent-board#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aaronphifer/bb-plugin-agent-board.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/agent-board"
   },
-  "homepage": "https://github.com/aaronphifer/bb-plugin-agent-board#readme",
   "bugs": {
-    "url": "https://github.com/aaronphifer/bb-plugin-agent-board/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

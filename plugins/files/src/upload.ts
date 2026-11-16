@@ -1,13 +1,13 @@
 import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
-import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { resolveThreadEnvironment } from "./environment";
 import { joinProjectPaths, parseRelativePath, resolveProjectPath } from "./path-policy";
 
 export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
 type PluginHttpContext = Parameters<
-  Parameters<BbPluginApi["http"]["route"]>[2]
+  Parameters<AliaPluginApi["http"]["route"]>[2]
 >[0];
 
 class UploadError extends Error {
@@ -82,13 +82,13 @@ export async function readUploadBody(request: Request): Promise<Uint8Array> {
   return body;
 }
 
-export function createUploadHandler(bb: BbPluginApi) {
+export function createUploadHandler(alia: AliaPluginApi) {
   return async (context: PluginHttpContext): Promise<Response> => {
     try {
       const threadId = requiredQuery(context, "threadId");
       const fileName = requiredQuery(context, "fileName");
       const directory = context.req.query("directory") ?? "";
-      const environment = await resolveThreadEnvironment(bb.sdk, threadId);
+      const environment = await resolveThreadEnvironment(alia.sdk, threadId);
       const resolved = resolveProjectPath(
         environment.rootPath,
         uploadPath(directory, fileName),
@@ -96,7 +96,7 @@ export function createUploadHandler(bb: BbPluginApi) {
       );
       const bytes = await readUploadBody(context.req.raw);
       const sha256 = createHash("sha256").update(bytes).digest("hex");
-      const result = await bb.sdk.files.write({
+      const result = await alia.sdk.files.write({
         hostId: environment.hostId,
         rootPath: environment.rootPath,
         path: resolved.absolutePath,

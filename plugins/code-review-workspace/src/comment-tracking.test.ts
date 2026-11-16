@@ -2,7 +2,7 @@
 // Sends and the agent's activity, kept short; a diff's files beside its snapshot; and lifecycle keys that never stand in
 // for the review's own fields.
 import { expect, test } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { newCommentIds, type ReviewLifecycle, type ReviewMeta, type SendEntry } from "./store";
 import { toGithubReviewPayload, type Claim, type CommentLocation } from "./draft";
@@ -13,15 +13,15 @@ const AT: CommentLocation = { file: "a.ts", line: 1, side: "RIGHT" };
 const CLAIM: Claim = { outcome: "done", note: "Capped at 5.", commit: "abc1234", threadId: "thr_main", at: 5 };
 
 async function review() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", headSha: "sha1", status: "ready", createdAt: 1 });
   await store.savePatch("pr-1", PATCH);
   const call = (method: string, input: unknown) => harness.behavior.callRpc(method, input) as Promise<any>;
   const { revision } = await call("getReviewBundle", { targetKey: "pr-1" });
   const save = (comment: Record<string, unknown>) => call("saveDraftComment", { targetKey: "pr-1", revision, comment: { ...AT, ...comment } });
-  return { bb, store, call, save };
+  return { alia, store, call, save };
 }
 
 test("an edited sent comment keeps its id, Send and claim, and is open again, to go with the next Send", async () => {
@@ -92,8 +92,8 @@ test("a tracked comment posts to GitHub as it would untracked", async () => {
 });
 
 test("comment ids count up across reviews and Sends from the install's counter, in one turn of the queue each", async () => {
-  const { bb, store } = await review();
-  const kv = bb.storage.kv;
+  const { alia, store } = await review();
+  const kv = alia.storage.kv;
   const [first, second] = await Promise.all([newCommentIds(store, kv, 2), newCommentIds(store, kv, 1)]);
   expect([...first, ...second]).toEqual(["c1", "c2", "c3"]);
   expect(await store.exclusive((tx) => newCommentIds(tx, kv, 0))).toEqual([]);
@@ -101,13 +101,13 @@ test("comment ids count up across reviews and Sends from the install's counter, 
 });
 
 test("a counter kv lost, as a reinstall that kept Postgres loses it, starts after the highest id the reviews hold", async () => {
-  const { bb, store } = await review();
+  const { alia, store } = await review();
   await store.upsertDraftComment("pr-1", { ...AT, body: "Cap the retries." });
   await store.trackComments("pr-1", [{ at: AT, id: "c7", state: "sent", sendN: 1 }]);
   await store.saveReview({ targetKey: "pr-2", kind: "pr", number: 2, status: "ready", createdAt: 2 });
   await store.setLifecycle("pr-2", { threadSends: { PRRT_1: { id: "c12", sendN: 2 } }, sends: [{ n: 1, at: 1, threadId: "thr_fix", ids: ["c9"] }, { n: 2, at: 2, threadId: "thr_fix", ids: ["c12"] }] });
-  expect(await newCommentIds(store, bb.storage.kv, 1)).toEqual(["c13"]);
-  expect(await newCommentIds(store, bb.storage.kv, 1)).toEqual(["c14"]);
+  expect(await newCommentIds(store, alia.storage.kv, 1)).toEqual(["c13"]);
+  expect(await newCommentIds(store, alia.storage.kv, 1)).toEqual(["c14"]);
 });
 
 test("a diff's revisions and hidden files are kept beside its snapshot, and pruned with it", async () => {
@@ -151,7 +151,7 @@ test("1.8.0's lifecycle keys never stand in for a review's own fields, and read 
   await store.saveReview(meta);
   const columns = Object.keys((await store.getReview("ref-1"))!);
   const thread = { threadId: "thr_main", environmentId: "env-1", origin: "adopted" as const, since: 3 };
-  const fixer = { threadId: "thr_old", environmentId: "env-2", origin: "fresh" as const, since: 2, branch: "bb/fix-review-thr_old" };
+  const fixer = { threadId: "thr_old", environmentId: "env-2", origin: "fresh" as const, since: 2, branch: "alia/fix-review-thr_old" };
   const lifecycle: Required<Pick<ReviewLifecycle, "feature" | "mainThread" | "implementers" | "sends" | "threadSends" | "readyToApprove" | "letPush" | "includeHidden" | "activity">> = {
     feature: { environmentId: "env-1", hostId: "host-1", machine: "MaxBook", path: "/Users/casey/src/web", branch: "feature", baseRef: "main", repo: "acme/web", pausedOn: "other", folderGone: true },
     mainThread: thread,

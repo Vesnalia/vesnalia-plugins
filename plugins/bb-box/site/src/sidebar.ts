@@ -48,7 +48,7 @@ export function sidebar(pages: Page[]): SidebarGroup[] {
   const startHere = existing(pages, [
     { slug: "start", label: "Introduction" },
     { slug: "start/quick-start", label: "Quick start" },
-    { slug: "setup", label: "Setting up BB Box" },
+    { slug: "setup", label: "Setting up VesnALIA Box" },
     { slug: "guide/faq", label: "Common questions" },
   ]);
   const isInStartHere = (page: Page) => startHere.some((item) => item.slug === page.id);
@@ -76,12 +76,12 @@ export function sidebar(pages: Page[]): SidebarGroup[] {
       ],
     },
     {
-      label: "Developing BB Box",
+      label: "Developing VesnALIA Box",
       collapsed: true,
       items: existing(pages, [
         { slug: "architecture", label: "Architecture" },
-        { slug: "development", label: "Developing BB Box" },
-        { slug: "bb-requests", label: "What BB Box asks of BB" },
+        { slug: "development", label: "Developing VesnALIA Box" },
+        { slug: "alia-requests", label: "What VesnALIA Box asks of VesnALIA" },
       ]),
     },
     {

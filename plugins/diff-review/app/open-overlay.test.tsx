@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { parseReviewSubPath, reviewRoute, reviewSubPath } from "../shared/routes";
@@ -27,7 +27,7 @@ describe("opening a review from the command line", () => {
     expect(slot.inspection.navigateCalls).toEqual([]);
   });
 
-  it("prints the page's route with each segment encoded as bb's router keeps them", () => {
+  it("prints the page's route with each segment encoded as VesnALIA's router keeps them", () => {
     expect(reviewRoute("diff-review", { threadId: "thr_1", target: { kind: "uncommitted" } })).toBe(
       `/plugins/diff-review/reviews/thr_1/${encodeURIComponent(encodeURIComponent(JSON.stringify({ kind: "uncommitted" })))}`,
     );

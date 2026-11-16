@@ -24,11 +24,11 @@ export function TextShimmer({
   return (
     <span
       data-text-shimmer=""
-      className={cn("bb-ws-text-shimmer", className)}
+      className={cn("alia-ws-text-shimmer", className)}
       style={{
         backgroundImage:
           "linear-gradient(to right, color-mix(in srgb, var(--foreground) 45%, transparent) 30%, var(--foreground) 50%, color-mix(in srgb, var(--foreground) 45%, transparent) 70%)",
-        ["--bb-ws-shimmer-duration" as string]: `${duration}s`,
+        ["--alia-ws-shimmer-duration" as string]: `${duration}s`,
         ...style,
       }}
       {...props}

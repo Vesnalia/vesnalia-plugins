@@ -1,4 +1,4 @@
-// Headless click-through of the milestone 4 git log against a running bb:
+// Headless click-through of the milestone 4 git log against a running VesnALIA:
 // the Show Git Log quick action and palette row, the list with its ref
 // badges, the branch and message filters, the details drawer and per-file
 // diff, the per-commit context menu, cherry-pick, revert, reset, New Branch

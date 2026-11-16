@@ -80,7 +80,7 @@ describe("Acceptance", () => {
   it("opens evidence as a URL or a file with a line", () => {
     expect(evidenceTarget("https://example.com/run/4")).toEqual({ kind: "url", url: "https://example.com/run/4" });
     expect(evidenceTarget("tests/a.test.ts:42")).toEqual({ kind: "file", path: "tests/a.test.ts", line: 42 });
-    expect(evidenceTarget("$BB_THREAD_STORAGE/shot.png")).toEqual({ kind: "file", path: "$BB_THREAD_STORAGE/shot.png", line: null });
+    expect(evidenceTarget("$ALIA_THREAD_STORAGE/shot.png")).toEqual({ kind: "file", path: "$ALIA_THREAD_STORAGE/shot.png", line: null });
     expect(evidenceTarget("README.md:3")).toEqual({ kind: "file", path: "README.md", line: 3 });
     expect(evidenceTarget("localhost:3000")).toEqual({ kind: "file", path: "localhost:3000", line: null });
   });

@@ -1,11 +1,11 @@
-// Tracking: Board (a read-only kanban of BB tasks, GitHub issues or pull
+// Tracking: Board (a read-only kanban of VesnALIA tasks, GitHub issues or pull
 // requests, or written cards), Roadmap (a Gantt with lanes, milestones,
 // dependencies and a today line) and Status (a project-health report). The
 // reading and date maths live in core/tracking.ts; this file only draws.
 // Wide and narrow layouts switch on the frame's own width (container
 // queries), so a row opens at its final height without measuring first.
 import { useContext, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { relativeTime } from "../../core/project";
@@ -65,7 +65,7 @@ const TEXT_BUTTON = cn(
   FOCUS_RING,
 );
 
-/** Notes and details: small prose at every width (BB's markdown sizes its own paragraphs up on phones). */
+/** Notes and details: small prose at every width (VesnALIA's markdown sizes its own paragraphs up on phones). */
 const SMALL_PROSE =
   "min-w-0 text-xs leading-[18px] [overflow-wrap:anywhere] [&_li]:text-xs [&_p]:my-0 [&_p]:text-xs [&_p]:leading-[18px] [&>:first-child]:mt-0 [&>:last-child]:mb-0";
 
@@ -493,7 +493,7 @@ export function Board({ props }: { props: Props }) {
     working > 0 ? `${formatNumber(working)} with agents working` : null,
     board.hidden > 0 ? `${formatNumber(board.hidden)} in other columns not shown` : null,
     board.skipped > 0 ? `${formatNumber(board.skipped)} without a title left out` : null,
-    board.truncated ? "more in BB Tasks" : null,
+    board.truncated ? "more in VesnALIA Tasks" : null,
   ].filter((part) => part !== null);
   const metaLine = meta.flatMap((part, index) => (index === 0 ? [part] : [" · ", part]));
 

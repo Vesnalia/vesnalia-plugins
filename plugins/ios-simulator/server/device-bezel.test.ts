@@ -10,7 +10,7 @@ const cleanup: Array<() => Promise<void>> = [];
 afterEach(async () => { for (const dispose of cleanup.splice(0)) await dispose(); });
 
 async function fixture(options: { brokenImage?: boolean; badIdentifier?: boolean; composite?: boolean; mask?: boolean } = {}) {
-  const root = await mkdtemp(join(tmpdir(), "bb-bezel-test-"));
+  const root = await mkdtemp(join(tmpdir(), "alia-bezel-test-"));
   cleanup.push(() => rm(root, { recursive: true, force: true }));
   const bundle = join(root, "Test.simdevicetype");
   const chrome = join(root, "Chrome/test.devicechrome/Contents/Resources");

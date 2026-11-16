@@ -1,4 +1,4 @@
-import type { PluginFileOpenerSource } from "@get-bb/plugin-sdk";
+import type { PluginFileOpenerSource } from "@vesnalia/plugin-sdk";
 
 export function fileUrl(
   path: string,

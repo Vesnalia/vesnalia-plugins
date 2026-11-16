@@ -114,7 +114,7 @@ export function formatGoalCard(goal: GoalSnapshot): string {
     }
   }
   for (const decision of goal.decisions.slice(0, MAX_STATUS_DECISIONS)) {
-    lines.push(`NEEDS YOU: [${decision.id}] ${decision.question} — answer: bb ultragoal decide ${decision.id} <answer>`);
+    lines.push(`NEEDS YOU: [${decision.id}] ${decision.question} — answer: VesnALIA ultragoal decide ${decision.id} <answer>`);
   }
   if (goal.decisions.length > MAX_STATUS_DECISIONS) {
     lines.push(`NEEDS YOU: … ${goal.decisions.length - MAX_STATUS_DECISIONS} more decision(s) omitted`);

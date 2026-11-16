@@ -1,23 +1,23 @@
-# Elephant Goldfish for BB
+# Elephant Goldfish for VesnALIA
 
-A spec workspace for [BB](https://getbb.app), adapting Google's
+A spec workspace for [VesnALIA](https://getbb.app), adapting Google's
 [Elephant-Goldfish Model](https://github.com/google/elephant-goldfish-model)
 (EGM). Markdown specs stay in your checkout. A project page and a thread tab
 show reviews, findings, decisions and proposed changes together.
 
 [![Elephant Goldfish workspace showing review findings and a proposed spec change awaiting confirmation](screenshots/elephant-goldfish/spec-detail.png)](screenshots/elephant-goldfish/spec-detail.png)
 
-Long-form description for the BB Community marketplace: [PLUGIN_OVERVIEW.md](PLUGIN_OVERVIEW.md),
+Long-form description for the VesnALIA Community marketplace: [PLUGIN_OVERVIEW.md](PLUGIN_OVERVIEW.md),
 with current UI screenshots under [screenshots/](screenshots/).
 
 ## How it works
 
-- **Elephant**: your normal BB conversation. It knows the project and the
+- **Elephant**: your normal VesnALIA conversation. It knows the project and the
   decisions that led to the spec. It contests findings with a rationale or
   proposes a revised document.
-- **BB workers (default)**: each stage launches a new BB worker thread in the
+- **VesnALIA workers (default)**: each stage launches a new VesnALIA worker thread in the
   reviewed project's default (or selected thread) environment. Workers can use
-  tools and write according to BB's permission mode, so this mode requires
+  tools and write according to VesnALIA's permission mode, so this mode requires
   explicit installation-wide consent before the first launch.
 - **Advanced endpoint**: a fresh, tool-less OpenAI-compatible model call. It
   receives only the reviewer persona, document standard, numbered spec and the
@@ -26,15 +26,15 @@ with current UI screenshots under [screenshots/](screenshots/).
 - **You**: decide findings, inspect proposed changes and explicitly confirm
   application. Automatic re-review follows a successfully applied change.
 
-BB worker threads are not a sandbox. Revoking BB's own permissions changes what
+VesnALIA worker threads are not a sandbox. Revoking VesnALIA's own permissions changes what
 workers can do; the plugin's consent records only that this installation may
-launch them. Advanced endpoint reviews never use BB worker consent and never
-fall back to BB workers. If the selected engine is unavailable, the launch is
+launch them. Advanced endpoint reviews never use VesnALIA worker consent and never
+fall back to VesnALIA workers. If the selected engine is unavailable, the launch is
 refused with its reported reason.
 
 ## Install
 
-Requires BB 0.47 or newer, Plugin SDK 0.6.79, and Node 24 for the development
+Requires VesnALIA 0.47 or newer, Plugin SDK 0.6.79, and Node 24 for the development
 checks.
 
 ```sh
@@ -42,24 +42,24 @@ npm install
 npm run typecheck
 npm test
 npm run build
-bb plugin install . --yes
+alia plugin install . --yes
 ```
 
 The **Spec workspace** page appears in the sidebar, and an **Elephant Goldfish**
 tab beside each conversation. Register an existing Markdown file to start.
-The seven skills appear in BB's skill menu; after installing or reloading,
+The seven skills appear in VesnALIA's skill menu; after installing or reloading,
 busy agent sessions get the new catalog only at the next safe session start.
 
 ### Reviewer engines
 
-**BB workers** are the default and need no endpoint configuration. The launch
+**VesnALIA workers** are the default and need no endpoint configuration. The launch
 dialog describes their tool/write risk; cancelling it neither records consent
 nor starts a review. The plugin stores each spawned worker ID with its stage,
 stops and archives it after completion, cancellation or timeout, and attempts
 the same cleanup during restart reconciliation.
 
 Consent is installation-wide and revocable at any time from the same tab
-(**Revoke BB worker consent**); revoked consent again refuses BB launches, including automatic next rounds, ad hoc re-reviews and restart continuations, and stops an in-flight run at its next stage without falling back to another engine.
+(**Revoke VesnALIA worker consent**); revoked consent again refuses VesnALIA launches, including automatic next rounds, ad hoc re-reviews and restart continuations, and stops an in-flight run at its next stage without falling back to another engine.
 Advanced endpoint launches never consult or record it.
 
 **Advanced endpoint** is an optional tool-less mode. In the plugin settings,
@@ -69,17 +69,17 @@ choose `goldfish` for **Reviewer engine**, then set:
 |---|---|
 | `goldfishBaseUrl` | OpenAI-compatible base URL, ending in `/v1`; it is displayed in the UI and reports, so never embed credentials in it |
 | `goldfishModel` | Model id at that endpoint |
-| `goldfishApiKey` | Bearer key, stored by BB in its plugin secret store |
-| `goldfishApiKeyEnv` | Alternative: environment variable of the **BB server process** containing the key |
+| `goldfishApiKey` | Bearer key, stored by VesnALIA in its plugin secret store |
+| `goldfishApiKeyEnv` | Alternative: environment variable of the **VesnALIA server process** containing the key |
 | `goldfishTimeoutSeconds` | Per-reviewer timeout, default 300 s |
 
 Example (the key itself belongs in the masked settings field):
 
 ```sh
-bb plugin config elephant-goldfish set reviewerEngine goldfish
-bb plugin config elephant-goldfish set goldfishBaseUrl http://127.0.0.1:20128/v1
-bb plugin config elephant-goldfish set goldfishModel auto/best-reasoning
-bb egm status
+alia plugin config elephant-goldfish set reviewerEngine goldfish
+alia plugin config elephant-goldfish set goldfishBaseUrl http://127.0.0.1:20128/v1
+alia plugin config elephant-goldfish set goldfishModel auto/best-reasoning
+alia egm status
 ```
 
 With no configured or reachable selected engine, review launch is refused with a
@@ -101,7 +101,7 @@ rendered.
    include; selected files are shown before drafting. Empty, unavailable,
    failed and truncated search results are reported rather than invented.
 2. Guided and contextual Elephant actions draft an editable request into the
-   matching thread's BB composer. Review and edit it, then explicitly send it
+   matching thread's VesnALIA composer. Review and edit it, then explicitly send it
    yourself; drafting never starts an Elephant turn. If the composer already
    contains text, mentions or attachments, choose **Append** or **Cancel**;
    appending preserves the existing draft. For thread-bound actions on the
@@ -150,18 +150,18 @@ an explicit reading list: linked files and URLs are not fetched automatically.
 
 - Context is capped at 20 files and 400,000 characters. Omitted/missing context
   is recorded in the history. Advanced endpoint reviewers have no tools to fill
-  the gaps; BB workers retain only BB's normal tool permissions.
+  the gaps; VesnALIA workers retain only VesnALIA's normal tool permissions.
 - Apply checks the proposal's base version, retains a backup, atomically replaces
   the file and checks the result. It does not lock external editors: a concurrent
   edit may be overwritten or omitted, including writes through an open handle.
   Coordinate other writers before applying.
 - After a restart, interrupted apply intents are reconciled from pre/post hashes;
-  interrupted reviews become failed with partial results kept. Persisted BB
+  interrupted reviews become failed with partial results kept. Persisted VesnALIA
   worker IDs are best-effort stopped and archived before their interrupted
   stages are marked failed. If neither hash matches, the apply outcome is
   unknown, the backup is retained, and affected findings are released for
   decisions. The plugin never blindly re-applies a change.
-- The plugin works with local project sources visible to the BB server. It
+- The plugin works with local project sources visible to the VesnALIA server. It
   does not currently read or apply specs on another enrolled machine.
   Workspace choices must correspond to the same authorized local checkout for
   operations on registered specs; an incompatible thread environment cannot
@@ -171,18 +171,18 @@ an explicit reading list: linked files and URLs are not fetched automatically.
 ## Development
 
 ```sh
-npm run typecheck  # strict TypeScript against the pinned BB SDK
+npm run typecheck  # strict TypeScript against the pinned ALIA SDK
 npm test          # deterministic behavior tests; temporary workspaces and real SQLite
-npm run build     # BB server and frontend bundles
-bb plugin reload elephant-goldfish
+npm run build     # ALIA server and frontend bundles
+alia plugin reload elephant-goldfish
 ```
 
-The CLI `bb egm status` shows reviewer availability and registered specs.
-`bb plugin rpc list elephant-goldfish` and `bb plugin rpc inspect` expose the
+The CLI `alia egm status` shows reviewer availability and registered specs.
+`alia plugin rpc list elephant-goldfish` and `alia plugin rpc inspect` expose the
 schema-validated RPC contract for scripts. RPC is a trusted local API; callers
-with BB access have the same authority as the UI. Agent tools deliberately do
+with VesnALIA access have the same authority as the UI. Agent tools deliberately do
 not include decision/apply operations, but this is not an authorization boundary
-against a fully privileged BB agent that can invoke arbitrary CLI commands.
+against a fully privileged VesnALIA agent that can invoke arbitrary CLI commands.
 
 ## Licensing
 

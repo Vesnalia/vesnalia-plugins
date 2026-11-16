@@ -1,5 +1,5 @@
-// ponytail: no SDK footer slot yet; replace this scoped adapter when BB adds one.
-// Only our portal container moves. Never move or modify BB's context control.
+// ponytail: no SDK footer slot yet; replace this scoped adapter when VesnALIA adds one.
+// Only our portal container moves. Never move or modify VesnALIA's context control.
 export function attachCreditTarget(anchor, change) {
   const root = anchor?.closest('[data-app-composer]');
   if (!root) { change(null); return () => {}; }
@@ -20,8 +20,8 @@ export function attachCreditTarget(anchor, change) {
     if (!host) {
       host = anchor.ownerDocument.createElement('span');
       host.setAttribute('data-copilot-session-credit-info', '');
-      host.setAttribute('data-bb-plugin-root', '');
-      host.setAttribute('data-bb-plugin', 'copilot-session-credits');
+      host.setAttribute('data-alia-plugin-root', '');
+      host.setAttribute('data-alia-plugin', 'copilot-session-credits');
       host.style.display = 'contents';
     }
     if (host.parentNode !== group || host.nextSibling !== button)

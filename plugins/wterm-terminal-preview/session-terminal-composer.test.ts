@@ -134,6 +134,6 @@ describe("revealSessionTerminalPanel", () => {
 				openThreadPanel: () => false,
 				title: "Wterm terminal",
 			}),
-		).toThrow("This BB view could not switch to the session terminal.");
+		).toThrow("This VesnALIA view could not switch to the session terminal.");
 	});
 });

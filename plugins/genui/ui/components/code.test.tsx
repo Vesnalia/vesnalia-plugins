@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import type * as PluginSdkApp from "@get-bb/plugin-sdk/app";
+import type * as PluginSdkApp from "@vesnalia/plugin-sdk/app";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SourceView } from "./code";
 
-// BB's viewer, numbered as it mounts, so a new viewer is told from the old one.
+// VesnALIA's viewer, numbered as it mounts, so a new viewer is told from the old one.
 const viewers = vi.hoisted(() => ({ mounted: 0 }));
-vi.mock("@get-bb/plugin-sdk/app", async (importOriginal) => ({
+vi.mock("@vesnalia/plugin-sdk/app", async (importOriginal) => ({
   ...(await importOriginal<typeof PluginSdkApp>()),
   experimental_SourceCode: function SourceCode({ content }: { content: string }) {
     const [mount] = useState(() => ++viewers.mounted);

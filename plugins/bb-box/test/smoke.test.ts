@@ -34,7 +34,7 @@ test("the example settings read the setup guide's token file and key, and parse"
   writeFileSync(
     join(dir, "proxmox-token.env"),
     [
-      "# BB Box plugin: Proxmox API access. Secret: keep 0600.",
+      "# VesnALIA Box plugin: Proxmox API access. Secret: keep 0600.",
       "PROXMOX_API_URL=https://192.0.2.10:8006/api2/json",
       "PROXMOX_NODE=pve",
       "PROXMOX_TOKEN_ID=bbbox@pve!plugin",
@@ -57,7 +57,7 @@ test("the example settings read the setup guide's token file and key, and parse"
   assert.equal(parsed.config.proxmox.tlsFingerprint, FINGERPRINT);
 });
 
-test("a settings file may hold BB's settings from before the configuration, moved as BB Box moves them", () => {
+test("a settings file may hold VesnALIA's settings from before the configuration, moved as VesnALIA Box moves them", () => {
   const configuration = toConfiguration({ ...VALID, "proxmox-lxc-linux-warm": 2, "boxes-per-thread": 3 });
   const [backend] = configuration.document.backends;
   assert.equal(backend!.id, "proxmox-lxc");
@@ -126,8 +126,8 @@ test("a smoke run first releases what an earlier smoke run left, and leaves othe
   const { proxmox, values, drivers, lines, log } = fakes();
   const guest = (vmid: number, tags: string) =>
     proxmox.guests.set(vmid, { vmid, name: `left-${vmid}`, pool: "bbbox", status: "running", template: false, config: { tags } });
-  guest(9900, "bb-box;install.smoke;box.box_left;thread.smoke;kind.linux;template.9000");
-  guest(9801, "bb-box;install.other;box.box_theirs;thread.thr_x;kind.linux;template.9000");
+  guest(9900, "alia-box;install.smoke;box.box_left;thread.smoke;kind.linux;template.9000");
+  guest(9801, "alia-box;install.other;box.box_theirs;thread.thr_x;kind.linux;template.9000");
   const result = await smoke(values, { kind: "linux", command: "true", drivers, log });
 
   assert.deepEqual(result.problems, []);

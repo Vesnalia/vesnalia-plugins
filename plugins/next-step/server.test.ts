@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import { parseSuggestion, suggestionPrompt } from "./logic";
 
@@ -22,7 +22,7 @@ function setup(complete = vi.fn(async () => ({ suggestion: "Добавь пер�
     },
     experimental_callHostRpc: complete,
   });
-  plugin(host.bb);
+  plugin(host.alia);
   hosts.push(host);
   return {
     ...host, complete,
@@ -74,7 +74,7 @@ describe("next-message generation", () => {
     await host.harness.behavior.emitThreadEvent("thread.active", { thread: host.thread() });
     finish({ suggestion: "Это уже устарело." });
     await expect(request).resolves.toEqual({ key: null, text: null });
-    expect(await host.bb.storage.kv.get("suggestion:thread-test")).toBeUndefined();
+    expect(await host.alia.storage.kv.get("suggestion:thread-test")).toBeUndefined();
   });
 
   it("allows no suggestion when a task is finished", () => {

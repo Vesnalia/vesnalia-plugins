@@ -271,7 +271,7 @@ describe("v1 measurement quality (fake hosts)", () => {
     expect(store.benchHost(id, "host_a")!.excluded_json).toBeNull();
   });
 
-  it("1.0: `bb study measure` goes to the quietest host with that host's own threshold, and never to a host left out for its noise", async () => {
+  it("1.0: `alia study measure` goes to the quietest host with that host's own threshold, and never to a host left out for its noise", async () => {
     benchA.noise = uniform(3, 0.2);
     benchB.noise = uniform(4, 0.01);
     const id = await running(v1Spec());

@@ -9,7 +9,7 @@ export interface AgentTarget {
   label: string;
   /** Absolute skills directory (tilde already expanded). */
   dir: string;
-  /** BB agent provider id whose logo represents this agent, when one exists. */
+  /** VesnALIA agent provider id whose logo represents this agent, when one exists. */
   providerId?: string;
   /**
    * The agent also reads the shared hub (~/.agents/skills) natively, so a hub

@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from '@get-bb/plugin-sdk';
+import { defineRpcContract, type AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 import { defaultStatusTemplate, DEFAULT_CONTEXT_TEMPLATE, LEGACY_CONTEXT_TEMPLATE, validateStatusTemplate } from './status-template';
 import { collectTurnUsage, turnUsageSchema } from './turn-usage';
@@ -26,8 +26,8 @@ export const rpcContract = defineRpcContract({
   stop: { input: idInput, output: z.object({ stopped: z.boolean() }) },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     cacheShowBelowSeconds: {
       type: 'number', label: 'Show cache when TTL is at most (seconds)', default: 0,
       description: 'Hide cache information while the estimated TTL is above this threshold. 0 means always show. Unknown or elapsed TTL remains visible.',
@@ -37,15 +37,15 @@ export default async function plugin(bb: BbPluginApi) {
       type: 'select', label: 'Cache information position', default: 'context',
       options: ['context', 'header'],
       experimental_optionLabels: { context: 'Current position (thread context)', header: 'Thread header' },
-      description: 'The bottom status bar and native window title do not expose plugin slots in this BB version. On narrow screens the header button appears in the thread menu.',
+      description: 'The bottom status bar and native window title do not expose plugin slots in this VesnALIA version. On narrow screens the header button appears in the thread menu.',
     },
   });
-  const statistics = createStatistics(bb);
+  const statistics = createStatistics(alia);
   const KEY = 'watches-v1';
   // Migrate persisted fixed-interval leases to expiry scheduling on reload.
   const storedWatch = watchSchema.extend({ intervalMinutes: z.number().int().min(2).max(55).optional() })
     .transform(({ intervalMinutes: _legacyInterval, ...watch }) => watch);
-  const parsed = z.array(storedWatch).max(50).safeParse(await bb.storage.kv.get(KEY) ?? []);
+  const parsed = z.array(storedWatch).max(50).safeParse(await alia.storage.kv.get(KEY) ?? []);
   if (!parsed.success) throw new Error('Invalid Cache Watch storage; refusing to resume pings.');
   let watches: Watch[] = parsed.data;
   let disposed = false;
@@ -57,11 +57,11 @@ export default async function plugin(bb: BbPluginApi) {
     return result;
   }
   async function save() {
-    await bb.storage.kv.set(KEY, watches);
-    bb.realtime.publish('changed', null);
+    await alia.storage.kv.set(KEY, watches);
+    alia.realtime.publish('changed', null);
   }
   async function sample(threadId: string, providerId?: string): Promise<Sample | null> {
-    const rows = await bb.sdk.threads.events.list({ threadId, order: 'desc', limit: '1', types: ['thread/tokenUsage/updated'] });
+    const rows = await alia.sdk.threads.events.list({ threadId, order: 'desc', limit: '1', types: ['thread/tokenUsage/updated'] });
     const row = rows[0];
     if (!row || row.type !== 'thread/tokenUsage/updated') return null;
     const usage = row.data.tokenUsage;
@@ -72,11 +72,11 @@ export default async function plugin(bb: BbPluginApi) {
     };
   }
   async function costHistory(threadId: string) {
-    const rows: Awaited<ReturnType<typeof bb.sdk.threads.events.list>> = [];
+    const rows: Awaited<ReturnType<typeof alia.sdk.threads.events.list>> = [];
     let beforeSeq: string | undefined;
     // The SDK accepts at most 100 rows per page. Keep the entire lookup bounded.
     for (let page = 0; page < 5; page++) {
-      const batch = await bb.sdk.threads.events.list({ threadId, order: 'desc', limit: '100', beforeSeq,
+      const batch = await alia.sdk.threads.events.list({ threadId, order: 'desc', limit: '100', beforeSeq,
         types: ['thread/tokenUsage/updated', 'turn/started', 'client/turn/requested', 'client/turn/rejected', 'provider/modelFallback', 'thread/extensionState/updated'] });
       if (!batch.length) break;
       rows.push(...batch);
@@ -87,16 +87,16 @@ export default async function plugin(bb: BbPluginApi) {
     return rows;
   }
   async function status(threadId: string): Promise<CacheStatus> {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     const [last, context, costRows] = await Promise.all([
-      sample(threadId, thread.providerId), bb.sdk.threads.context({ threadId }),
+      sample(threadId, thread.providerId), alia.sdk.threads.context({ threadId }),
       costHistory(threadId),
     ]);
     const watch = watches.find(w => w.threadId === threadId) ?? null;
     const expiry = estimateExpiry(thread.providerId, last, context.usage?.compactionOfferAt);
     let turn = collectTurnUsage(costRows, thread.providerId);
     let cost = estimateTurnCost(thread.providerId, costRows);
-    // BB keeps only the last usage report of a finished turn; saved statistics
+    // VesnALIA keeps only the last usage report of a finished turn; saved statistics
     // retain every report collected while the turn ran.
     try {
       await statistics.sync(threadId, thread.providerId);
@@ -113,7 +113,7 @@ export default async function plugin(bb: BbPluginApi) {
     };
   }
   async function start(input: z.infer<typeof watchInput>): Promise<Watch> {
-    const thread = await bb.sdk.threads.get({ threadId: input.threadId });
+    const thread = await alia.sdk.threads.get({ threadId: input.threadId });
     if (thread.archivedAt !== null || thread.deletedAt !== null) throw new Error('Cannot watch an archived or deleted thread.');
     if (!watches.some(w => w.threadId === input.threadId) && watches.length >= 50) throw new Error('Limit: 50 watches. Stop another watch first.');
     const now = Date.now();
@@ -129,23 +129,23 @@ export default async function plugin(bb: BbPluginApi) {
     watches = watches.filter(w => w.threadId !== threadId);
     await save();
     // Cancel any of our pings deferred by another plugin's admission policy.
-    const queued = await bb.sdk.threads.queuedMessages.list({ threadId });
+    const queued = await alia.sdk.threads.queuedMessages.list({ threadId });
     for (const row of queued) {
-      if (row.originPluginId === bb.pluginId && row.content.length === 1 && row.content[0]?.type === 'text' && row.content[0].text === PING)
-        await bb.sdk.threads.queuedMessages.delete({ threadId, queuedMessageId: row.id });
+      if (row.originPluginId === alia.pluginId && row.content.length === 1 && row.content[0]?.type === 'text' && row.content[0].text === PING)
+        await alia.sdk.threads.queuedMessages.delete({ threadId, queuedMessageId: row.id });
     }
     return { stopped: watches.length !== oldLength };
   }
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     getStatusTemplate: async input => {
       const surface = input?.surface ?? 'header';
       const key = surface === 'header' ? 'status-template-v1' : 'status-template-context-v1';
-      const saved = statusTemplateSchema.safeParse(await bb.storage.kv.get(key));
+      const saved = statusTemplateSchema.safeParse(await alia.storage.kv.get(key));
       return { template: saved.success ? (surface === 'context' && saved.data === LEGACY_CONTEXT_TEMPLATE ? DEFAULT_CONTEXT_TEMPLATE : saved.data) : defaultStatusTemplate(surface) };
     },
     setStatusTemplate: async ({ template, surface = 'header' }) => {
-      await bb.storage.kv.set(surface === 'header' ? 'status-template-v1' : 'status-template-context-v1', template);
-      bb.realtime.publish('template-changed', null);
+      await alia.storage.kv.set(surface === 'header' ? 'status-template-v1' : 'status-template-context-v1', template);
+      alia.realtime.publish('template-changed', null);
       return { template };
     },
     status: ({ threadId }) => status(threadId),
@@ -159,20 +159,20 @@ export default async function plugin(bb: BbPluginApi) {
   // If a user starts work between our eligibility check and dispatch, reject
   // instead of steering or queuing the ping behind that work. Recheck leases
   // on every admission attempt (including waits held by other plugins).
-  bb.experimental_hooks.on('message.dispatch', ctx => {
-    if (ctx.originPluginId !== bb.pluginId || ctx.input.text !== PING) return { action: 'proceed' };
+  alia.experimental_hooks.on('message.dispatch', ctx => {
+    if (ctx.originPluginId !== alia.pluginId || ctx.input.text !== PING) return { action: 'proceed' };
     const watch = watches.find(w => w.threadId === ctx.thread.id);
     if (disposed || !watch || watch.disabled || watch.until <= Date.now() || ctx.attempt !== 'start-turn' || !eligible(ctx.thread))
       return { action: 'reject', message: 'Cache Watch ping cancelled: lease expired or thread is busy.' };
     return { action: 'proceed' };
   });
 
-  bb.background.schedule('keepalive', '* * * * *', () => serial(async () => {
+  alia.background.schedule('keepalive', '* * * * *', () => serial(async () => {
     for (const watch of watches) {
       if (disposed) return;
       if (watch.disabled || watch.until <= Date.now()) continue;
       try {
-        const [thread, last, context] = await Promise.all([bb.sdk.threads.get({ threadId: watch.threadId }), sample(watch.threadId), bb.sdk.threads.context({ threadId: watch.threadId })]);
+        const [thread, last, context] = await Promise.all([alia.sdk.threads.get({ threadId: watch.threadId }), sample(watch.threadId), alia.sdk.threads.context({ threadId: watch.threadId })]);
         if (disposed) return;
         if (thread.archivedAt !== null || thread.deletedAt !== null || thread.status === 'error') {
           watch.disabled = true;
@@ -187,11 +187,11 @@ export default async function plugin(bb: BbPluginApi) {
         watch.lastAttemptAt = Date.now();
         await save();
         if (disposed) return;
-        const result = await bb.sdk.threads.send({ threadId: watch.threadId, mode: 'start',
-          originPluginId: bb.pluginId, input: [{ type: 'text', text: PING, mentions: [] }] });
+        const result = await alia.sdk.threads.send({ threadId: watch.threadId, mode: 'start',
+          originPluginId: alia.pluginId, input: [{ type: 'text', text: PING, mentions: [] }] });
         if (result.delivery === 'queued') {
-          await bb.sdk.threads.queuedMessages.delete({ threadId: watch.threadId, queuedMessageId: result.queuedMessage.id });
-          watch.error = 'Ping deferred by BB; cancelled to avoid a stale keepalive.';
+          await alia.sdk.threads.queuedMessages.delete({ threadId: watch.threadId, queuedMessageId: result.queuedMessage.id });
+          watch.error = 'Ping deferred by VesnALIA; cancelled to avoid a stale keepalive.';
         } else {
           watch.sent += 1;
           watch.error = null;
@@ -205,12 +205,12 @@ export default async function plugin(bb: BbPluginApi) {
       }
     }
   }));
-  bb.onDispose(() => { disposed = true; });
+  alia.onDispose(() => { disposed = true; });
 
-  const usage = 'bb cache-watch status <thread-id> [--json]\nbb cache-watch list [--json]\nbb cache-watch start <thread-id> [--hours 6] [--json]\nbb cache-watch stop <thread-id> [--json]\nPings are ordinary paid turns, visible in the transcript. TTL is an estimate.';
-  bb.cli.register({
+  const usage = 'alia cache-watch status <thread-id> [--json]\nbb cache-watch list [--json]\nbb cache-watch start <thread-id> [--hours 6] [--json]\nbb cache-watch stop <thread-id> [--json]\nPings are ordinary paid turns, visible in the transcript. TTL is an estimate.';
+  alia.cli.register({
     name: 'cache-watch', summary: 'Inspect cache usage and opt in to bounded keepalive turns',
-    commands: ['status', 'list', 'start', 'stop'].map(name => ({ name, summary: `${name} cache watch`, usage: `bb cache-watch ${name} [--help]` })),
+    commands: ['status', 'list', 'start', 'stop'].map(name => ({ name, summary: `${name} cache watch`, usage: `alia cache-watch ${name} [--help]` })),
     async run(argv) {
       if (!argv.length || argv.includes('--help') || argv[0] === 'help') return { exitCode: 0, stdout: usage };
       try {

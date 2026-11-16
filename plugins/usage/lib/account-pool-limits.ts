@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { mergeLimitWindows, type ProviderLimitWindow, type UnifiedProviderLimit } from "./provider-limits";
 
@@ -99,7 +99,7 @@ function emailKey(limit: UnifiedProviderLimit) {
 }
 
 function localWindowsForPool(local: UnifiedProviderLimit, pool: UnifiedProviderLimit) {
-  // BB's local provider bridges use these labels for the same quota windows.
+  // VesnALIA's local provider bridges use these labels for the same quota windows.
   const aliases: Record<string, string> = { "weekly limit": "Weekly", "current session": "5 hours" };
   return local.windows.map((window) => {
     const label = aliases[window.label.trim().toLowerCase()];
@@ -152,14 +152,14 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: s
   }
 }
 
-export function createAccountPoolLimitsLoader(bb: BbPluginApi, timeoutMs = 5000, refreshTimeoutMs = 15_000) {
+export function createAccountPoolLimitsLoader(alia: AliaPluginApi, timeoutMs = 5000, refreshTimeoutMs = 15_000) {
   let cached: UnifiedProviderLimit[] = [];
   return async (options: { refreshAccountId?: string } = {}): Promise<{
     limits: UnifiedProviderLimit[]; error: string | null; refreshedAccountId?: string;
   }> => {
     try {
       const installed = await withTimeout(
-        bb.sdk.plugins.list({ signal: AbortSignal.timeout(timeoutMs) }), timeoutMs, "The account list timed out.",
+        alia.sdk.plugins.list({ signal: AbortSignal.timeout(timeoutMs) }), timeoutMs, "The account list timed out.",
       );
       if (!installed.plugins.some((plugin) => plugin.id === "account-pool" && plugin.enabled)) {
         cached = [];
@@ -173,7 +173,7 @@ export function createAccountPoolLimitsLoader(bb: BbPluginApi, timeoutMs = 5000,
       if (options.refreshAccountId) {
         const startedAt = Date.now();
         try {
-          const { account } = await withTimeout(bb.sdk.plugins.callRpc({
+          const { account } = await withTimeout(alia.sdk.plugins.callRpc({
             pluginId: "account-pool", method: "account.refreshUsage",
             input: { accountId: options.refreshAccountId }, outputSchema: refreshedAccountSchema,
           }), refreshTimeoutMs, "The account refresh timed out.");
@@ -186,11 +186,11 @@ export function createAccountPoolLimitsLoader(bb: BbPluginApi, timeoutMs = 5000,
             refreshError = "Account Pooler couldn’t confirm fresh limits for this account. Showing the last reported values.";
           }
         } catch (reason) {
-          bb.log.debug(`Account Pooler refresh unavailable: ${reason instanceof Error ? reason.message : String(reason)}`);
+          alia.log.debug(`Account Pooler refresh unavailable: ${reason instanceof Error ? reason.message : String(reason)}`);
           refreshError = "Couldn’t refresh this Account Pooler account. Showing the last reported values.";
         }
       }
-      const accounts = await withTimeout(bb.sdk.plugins.callRpc({
+      const accounts = await withTimeout(alia.sdk.plugins.callRpc({
         pluginId: "account-pool", method: "account.list", input: null, outputSchema: poolAccountsSchema,
       }), timeoutMs, "The account list timed out.");
       cached = accountPoolLimits(accounts);
@@ -204,7 +204,7 @@ export function createAccountPoolLimitsLoader(bb: BbPluginApi, timeoutMs = 5000,
       };
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : String(reason);
-      bb.log.debug(`Account Pooler limits unavailable: ${message}`);
+      alia.log.debug(`Account Pooler limits unavailable: ${message}`);
       return {
         limits: cached.map((limit) => ({
           ...limit,

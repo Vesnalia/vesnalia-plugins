@@ -1,4 +1,4 @@
-# Noted BB plugin
+# Noted VesnALIA plugin
 
 ## Working agreement
 
@@ -12,7 +12,7 @@ Run checks relevant to the change plus required repository gates. Broaden testin
 
 `server.ts` owns backend behavior, `app.tsx` and `components/` own the review UI, and `skills/` contains instructions delivered to agent sessions. Read `CONTRIBUTING.md` for contribution requirements. Keep the vendored Lavish SDK and its attribution intact.
 
-Use the installed BB SDK declarations as the API contract. For plugin code, load the available `bb-plugin-authoring` skill and only relevant references. Editing review instructions must preserve user authority over cross-thread messages, ending sessions, and vault exports. Opening a review is not an approval gate for unrelated authorized work.
+Use the installed VesnALIA SDK declarations as the API contract. For plugin code, load the available `alia-plugin-authoring` skill and only relevant references. Editing review instructions must preserve user authority over cross-thread messages, ending sessions, and vault exports. Opening a review is not an approval gate for unrelated authorized work.
 
 ## Verification
 

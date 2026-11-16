@@ -16,7 +16,7 @@
 //
 // Like the done/snooze/pin-park helpers, everything here is pure — no host,
 // no SDK — so the RPC layer and tests drive it directly.
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 
 /** The board's group-assignment key inside thread plugin metadata. */
 export const GROUP_METADATA_KEY = "group";

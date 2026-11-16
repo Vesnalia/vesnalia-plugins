@@ -1,5 +1,5 @@
 import { useId, useRef, useState } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { useLimitActions, useThreadLimit } from "./RateLimits";
 import { limitStatus, limitTime } from "./rate-limit-labels";
 import { Popover, PopoverAnchor, PopoverContent } from "./components/Popover";
@@ -46,8 +46,8 @@ export function RateLimitRecovery({ thread }: { thread: PluginSidebarThread }) {
           className={cn(
             "group/limit pointer-events-auto relative inline-grid h-5 shrink-0 items-center whitespace-nowrap text-2xs font-medium",
             limit.scheduled?.failed
-              ? "text-[color:var(--bb-sidebar-tone-error)]"
-              : "text-[color:var(--bb-sidebar-tone-pending)]",
+              ? "text-[color:var(--alia-sidebar-tone-error)]"
+              : "text-[color:var(--alia-sidebar-tone-pending)]",
           )}
         >
           <span

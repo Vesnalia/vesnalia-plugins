@@ -39,7 +39,7 @@ export function closeProblem(reason: CloseReason, message: string, targetRef: st
 // Without `source: "tui"` the daemon is stricter (probed on v0.16.0 with
 // `dry_run`): `done` needs a 40+ character message *and* at least one
 // evidence item; wontfix 60+, duplicate/superseded 20+ plus the target.
-// `bb kata` and the agent tools never claim to be the TUI.
+// `alia kata` and the agent tools never claim to be the TUI.
 
 export const AGENT_MIN_MESSAGE: Record<CloseReason, number> = {
   done: 40,

@@ -1,32 +1,32 @@
 # Android snapshot checks
 
-10 November 2026. Separate BB 0.49.0 in a Proxmox LXC Linux box, no account.
-BB Box was built and installed from the branch. The Android VM used
+10 November 2026. Separate VesnALIA 0.49.0 in a Proxmox LXC Linux box, no account.
+VesnALIA Box was built and installed from the branch. The Android VM used
 LVM-thin storage and nested KVM, with 8 cores, 16 GiB memory and 48 GiB disk.
 Only one Android box ran at a time.
 
-The test box was a personal machine (`bb box machines add android`) because
-a placeholder thread is swept when it does not exist in the separate BB.
-Account enrolment was unavailable, but BB Box commands and the panel worked.
+The test box was a personal machine (`alia box machines add android`) because
+a placeholder thread is swept when it does not exist in the separate VesnALIA.
+Account enrolment was unavailable, but VesnALIA Box commands and the panel worked.
 
 ## Restore and undo
 
-Commands used the separate BB's CLI wrapper. BOX and UNDO stand for the
-box name and the undo ID returned by BB Box.
+Commands used the separate VesnALIA's CLI wrapper. BOX and UNDO stand for the
+box name and the undo ID returned by VesnALIA Box.
 
 ```sh
-bb box machines add android --name android-check
-bb box run BOX 'timeout 90 adb wait-for-device; adb shell "echo A > /data/local/tmp/marker; sync; cat /data/local/tmp/marker"; echo A > /home/box/host-marker' --machine
-bb box snapshot take BOX --name marker-a --machine
-bb box run BOX 'timeout 90 adb wait-for-device; adb shell "echo B > /data/local/tmp/marker; sync; cat /data/local/tmp/marker"; echo B > /home/box/host-marker; cat /home/box/host-marker' --machine
-bb box snapshot restore BOX marker-a --replace --machine
-bb box run BOX 'timeout 90 adb wait-for-device; adb shell cat /data/local/tmp/marker; cat /home/box/host-marker' --machine
-bb box snapshot restore BOX UNDO --replace --machine
-bb box run BOX 'timeout 90 adb wait-for-device; adb shell cat /data/local/tmp/marker; cat /home/box/host-marker' --machine
+alia box machines add android --name android-check
+alia box run BOX 'timeout 90 adb wait-for-device; adb shell "echo A > /data/local/tmp/marker; sync; cat /data/local/tmp/marker"; echo A > /home/box/host-marker' --machine
+alia box snapshot take BOX --name marker-a --machine
+alia box run BOX 'timeout 90 adb wait-for-device; adb shell "echo B > /data/local/tmp/marker; sync; cat /data/local/tmp/marker"; echo B > /home/box/host-marker; cat /home/box/host-marker' --machine
+alia box snapshot restore BOX marker-a --replace --machine
+alia box run BOX 'timeout 90 adb wait-for-device; adb shell cat /data/local/tmp/marker; cat /home/box/host-marker' --machine
+alia box snapshot restore BOX UNDO --replace --machine
+alia box run BOX 'timeout 90 adb wait-for-device; adb shell cat /data/local/tmp/marker; cat /home/box/host-marker' --machine
 ```
 
 Outputs were B/B before restore, A/A after restore and B/B after undo.
-The device started through BB each time. No manual service start or boot
+The device started through VesnALIA each time. No manual service start or boot
 flag was used. Its server log reported a cold boot after undo.
 
 Memory snapshots, fork and Keep each refused with the disk-only or missing
@@ -34,7 +34,7 @@ identity reset reason. The Linux and Windows backend paths were unchanged.
 
 ## Panel
 
-Playwright with headless Chromium opened the separate BB's Box panel at
+Playwright with headless Chromium opened the separate VesnALIA's Box panel at
 1200 by 900 pixels. After undo, its device menu switched Pixel 8 to Pixel
 Fold and back. The Fold's server log reported a cold boot. Both markers
 still read B after switching back.
@@ -62,13 +62,13 @@ The documentation site built and its link check passed.
 
 ## Evidence for the retained design
 
-At 7d01cfda, before the boot-ID rule, two runs through BB restored A/A
+At 7d01cfda, before the boot-ID rule, two runs through VesnALIA restored A/A
 and undid to B/B without a manual service start. The existing unsaved
 marker selected cold boots. This is the live evidence for the retained
 design from [063](063-device-boxes.md).
 
 The first live failure used a manual
-`systemctl --user start bb-box-emulator@pixel_8`. That bypassed
+`systemctl --user start alia-box-emulator@pixel_8`. That bypassed
 `Emulator.start()`, including its marker check and cold-boot flags.
 The later clean stop removed the marker. The boot-ID rule does not fix
 manual service starts.

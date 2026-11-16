@@ -72,7 +72,7 @@ describe("toHistoryPrompt", () => {
   });
 });
 
-describe("stashing bb's own queue", () => {
+describe("stashing VesnALIA's own queue", () => {
   const message = (id: string, text?: string) => ({
     id,
     content: text === undefined ? [{ type: "image" }] : [{ type: "text", text }],
@@ -100,7 +100,7 @@ describe("stashing bb's own queue", () => {
     expect(result).toEqual({ stashed: 1, skipped: 0, error: null });
   });
 
-  it("undoes the copy when bb will not release the message", async () => {
+  it("undoes the copy when VesnALIA will not release the message", async () => {
     const order: string[] = [];
     const result = await stashMessages("t1", [message("a", "one")], {
       deleteMessage: async () => {

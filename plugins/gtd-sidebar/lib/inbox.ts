@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import { isThreadWorking } from "./lifecycle.ts";
 
 /**
@@ -142,7 +142,7 @@ export function filterByProject(
  * Archived threads never belong in the inbox — except the ones this plugin
  * parked, which it archives itself.
  *
- * Settling a thread archives it in bb, so leaving the flag alone to decide
+ * Settling a thread archives it in VesnALIA, so leaving the flag alone to decide
  * visibility would empty the settled shelf the instant anything landed on it.
  * A parked row is the plugin saying "I put it there", and that outranks the
  * archive it set.

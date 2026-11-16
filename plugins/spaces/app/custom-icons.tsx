@@ -1,5 +1,5 @@
-// Space icons bb does not ship, from the free Hugeicons set (stroke-rounded,
-// the same family as bb's own icons). Registered app-wide under a "Spaces"
+// Space icons VesnALIA does not ship, from the free Hugeicons set (stroke-rounded,
+// the same family as VesnALIA's own icons). Registered app-wide under a "Spaces"
 // prefix so they render through experimental_Icon like built-in names.
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
@@ -22,7 +22,7 @@ import {
   Video01Icon,
   Wallet01Icon,
 } from "@hugeicons/core-free-icons";
-import type { PluginAppBuilder } from "@get-bb/plugin-sdk/app";
+import type { PluginAppBuilder } from "@vesnalia/plugin-sdk/app";
 
 export const CUSTOM_SPACE_ICONS = {
   SpacesAirplane: Airplane01Icon,

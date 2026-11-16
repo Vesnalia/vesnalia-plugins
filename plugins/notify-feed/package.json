@@ -1,29 +1,59 @@
 {
-  "name": "bb-plugin-notify-feed",
+  "name": "alia-plugin-notify-feed",
   "version": "0.3.3",
   "description": "Keep your conversation from drowning in child-thread reports when a thread delegates work. Background messages and completion notices move to a Notifications tab beside the feed.",
   "license": "MIT",
   "author": "Sargares22 (https://github.com/Sargares22)",
-  "repository": { "type": "git", "url": "https://github.com/Sargares22/bb-plugin-notify-feed" },
-  "homepage": "https://github.com/Sargares22/bb-plugin-notify-feed#readme",
-  "bugs": { "url": "https://github.com/Sargares22/bb-plugin-notify-feed/issues" },
-  "keywords": ["bb", "bb-plugin", "agents", "child-threads", "notifications", "timeline"],
+  "keywords": [
+    "alia",
+    "alia-plugin",
+    "agents",
+    "child-threads",
+    "notifications",
+    "timeline"
+  ],
   "type": "module",
-  "engines": { "bb": ">=0.45", "bbPluginSdk": ">=0.6.15" },
-  "scripts": { "build": "bb plugin build", "typecheck": "tsc --noEmit" },
-  "bb": {
+  "engines": {
+    "alia": ">=0.45",
+    "aliaPluginSdk": ">=0.6.15"
+  },
+  "scripts": {
+    "build": "alia plugin build",
+    "typecheck": "tsc --noEmit"
+  },
+  "alia": {
     "name": "Notify Feed",
     "description": "Keep your conversation from drowning in child-thread reports when a thread delegates work. Background messages and completion notices move to a Notifications tab beside the feed.",
-    "branding": { "icon": "./assets/icon.svg" },
+    "branding": {
+      "icon": "./assets/icon.svg"
+    },
     "server": "./server.ts",
     "app": "./app.tsx",
     "skills": []
   },
-  "dependencies": { "zod": "^4.6.5" },
+  "dependencies": {
+    "zod": "^4.6.5"
+  },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.15",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.15"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/notify-feed#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/notify-feed"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

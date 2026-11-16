@@ -142,7 +142,7 @@ export const SetupView = ({ state, pending, actions, onLogin }: SetupViewProps) 
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-muted-foreground text-sm">
-            Signing in runs the provider's own login in a bb terminal. Credentials go straight to
+            Signing in runs the provider's own login in a VesnALIA terminal. Credentials go straight to
             the macOS Keychain.
           </p>
           <div className="flex flex-wrap gap-2">

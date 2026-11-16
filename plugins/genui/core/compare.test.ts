@@ -27,11 +27,11 @@ describe("readCompare", () => {
 
   it("reads objects with labels, notes and meta, and takes scalar keys beside src as meta", () => {
     const [reference, candidate] = images([
-      { src: " $BB_THREAD_STORAGE/pen.png ", label: "Pen reference", meta: { viewport: "1440×900", theme: "light", retina: true } },
+      { src: " $ALIA_THREAD_STORAGE/pen.png ", label: "Pen reference", meta: { viewport: "1440×900", theme: "light", retina: true } },
       { path: "C:\\shots\\live.png", name: "Live page", note: "after the hero fix", theme: "dark", build: 413, meta: { theme: "light (ignored, meta first)" } },
     ]);
     expect(reference).toEqual({
-      src: "$BB_THREAD_STORAGE/pen.png",
+      src: "$ALIA_THREAD_STORAGE/pen.png",
       label: "Pen reference",
       named: true,
       note: null,

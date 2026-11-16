@@ -3,7 +3,7 @@
 // Calendar connection (§13). Migrations are append-only: never edit or
 // reorder a statement once it has shipped.
 import { randomBytes } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type Database from "better-sqlite3";
 import type {
   MeetingSource,
@@ -116,9 +116,9 @@ export const MIGRATIONS: readonly string[] = [
   `ALTER TABLE meetings ADD COLUMN warning_notified_at INTEGER`,
 ];
 
-export function openDatabase(bb: BbPluginApi): Db {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [...MIGRATIONS]);
+export function openDatabase(alia: AliaPluginApi): Db {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [...MIGRATIONS]);
   return db;
 }
 

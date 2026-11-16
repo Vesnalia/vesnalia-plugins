@@ -15,7 +15,7 @@ import { isManualStatus, type ManualStatus } from "./status";
 import { PULL_REQUEST_MIGRATION } from "./pull-requests.server";
 
 /**
- * APPEND-ONLY. bb.storage.migrate hashes each statement by its index and
+ * APPEND-ONLY. alia.storage.migrate hashes each statement by its index and
  * refuses a changed one, so editing anything already in this array bricks the
  * plugin for every existing install. New columns go in a new ALTER TABLE
  * statement at the end.

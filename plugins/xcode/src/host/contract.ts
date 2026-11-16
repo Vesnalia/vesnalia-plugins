@@ -1,9 +1,9 @@
 /**
- * The contract between the server entry and the `bb.host` worker.
+ * The contract between the server entry and the `alia.host` worker.
  *
  * The worker runs on whichever enrolled Mac a thread's checkout lives on, so
  * this is the only way the server can start, watch, stop and read a tracked
- * build there. Everything crossing it is validated on both sides by bb; keep
+ * build there. Everything crossing it is validated on both sides by VesnALIA; keep
  * it plugin-local and import-light, because `host.ts` bundles it.
  *
  * Calls are addressed by `buildId`. The server mints it and records the run
@@ -15,7 +15,7 @@
  * parse, signal or delete anything the worker did not create itself.
  */
 
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const runStatus = z.enum([
@@ -36,7 +36,7 @@ const argvSchema = z.array(z.string().max(8192)).min(1).max(520);
 const buildRequest = z
   .object({
     argv: argvSchema,
-    /** The thread's checkout, as bb's environment names it on that host. */
+    /** The thread's checkout, as VesnALIA's environment names it on that host. */
     root: z.string().min(1).max(4096),
     /** Requested working directory; defaults to the checkout. */
     cwd: z.string().max(4096).optional(),

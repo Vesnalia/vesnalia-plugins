@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WorkshopPanel } from "./app/board";
 import { MOCKUP_CSP, withMockupCsp } from "./app/common";
@@ -35,7 +35,7 @@ const pcard = (id: string, over: Record<string, unknown> = {}) => ({
   id,
   name: id,
   column: "live",
-  bbState: "running",
+  aliaState: "running",
   stateStale: false,
   labels: [] as string[],
   reworkBlockers: [] as string[],
@@ -46,8 +46,8 @@ const pcard = (id: string, over: Record<string, unknown> = {}) => ({
 const board = (plugins: ReturnType<typeof pcard>[]) => ({ columns: COLUMNS, plugins });
 const pluginView = (over: Record<string, unknown> = {}) => ({
   ...pcard("demo", { name: "Demo" }),
-  source: "path:/srv/plugins/bb-plugin-demo",
-  dir: "/srv/plugins/bb-plugin-demo",
+  source: "path:/srv/plugins/alia-plugin-demo",
+  dir: "/srv/plugins/alia-plugin-demo",
   branch: "main",
   head: "abcdef1234567",
   dirtyCount: 0,
@@ -169,9 +169,9 @@ describe("workshop board", () => {
         board([
           pcard("alpha", { name: "Alpha", labels: ["main branch ≠ rolled-out commit"] }),
           pcard("betta", { name: "Beta", column: "context", work: { id: "w2", key: "TEST-2", stage: 1, state: "agent", reason: "", stale: false } }),
-          pcard("old1", { name: "Old1", column: "off", bbState: "disabled" }),
-          pcard("old2", { name: "Old2", column: "off", bbState: "disabled" }),
-          pcard("old3", { name: "Old3", column: "off", bbState: "not-installed", labels: ["not installed"] }),
+          pcard("old1", { name: "Old1", column: "off", aliaState: "disabled" }),
+          pcard("old2", { name: "Old2", column: "off", aliaState: "disabled" }),
+          pcard("old3", { name: "Old3", column: "off", aliaState: "not-installed", labels: ["not installed"] }),
         ]),
     });
     expect(await slot.findByText("Context · 1")).toBeTruthy();
@@ -194,15 +194,15 @@ describe("workshop board", () => {
     slot.lifecycle.unmount();
   });
 
-  it("puts a red frame on error, incompatible and missing plugins only, and says the bb state in words", async () => {
+  it("puts a red frame on error, incompatible and missing plugins only, and says the VesnALIA state in words", async () => {
     const slot = await mount({
       board: () =>
         board([
           pcard("ok", { name: "Healthy" }),
-          pcard("bad", { name: "Broken", bbState: "error" }),
-          pcard("inc", { name: "Mismatch", bbState: "incompatible" }),
-          pcard("gone", { name: "Vanished", bbState: "missing" }),
-          pcard("conf", { name: "Configure", bbState: "needs-configuration", labels: ["needs configuration"] }),
+          pcard("bad", { name: "Broken", aliaState: "error" }),
+          pcard("inc", { name: "Mismatch", aliaState: "incompatible" }),
+          pcard("gone", { name: "Vanished", aliaState: "missing" }),
+          pcard("conf", { name: "Configure", aliaState: "needs-configuration", labels: ["needs configuration"] }),
         ]),
     });
     const frame = async (name: string) => (await slot.findByText(name)).closest("button")!.className;
@@ -230,10 +230,10 @@ describe("workshop board", () => {
   });
 
   it("shows a work whose creation is not finished, with its error, opens it and cancels the creation", async () => {
-    const reason = "scaffold not created: bb plugin new failed";
+    const reason = "scaffold not created: VesnALIA plugin new failed";
     const view = workView({ created: false, key: null, stage: 1, state: "error", reason });
     const slot = await mount({
-      board: () => board([pcard("fresh", { name: "Fresh", column: "context", bbState: "not-installed", work: { id: "w1", key: null, stage: 1, state: "error", reason, stale: false } })]),
+      board: () => board([pcard("fresh", { name: "Fresh", column: "context", aliaState: "not-installed", work: { id: "w1", key: null, stage: 1, state: "error", reason, stale: false } })]),
       work: () => view,
       cancel: () => null,
     });
@@ -289,7 +289,7 @@ describe("plugin summary", () => {
         pastTasks: [{ key: "TEST-7", outcome: "done", finishedAt: 1_700_000_000_000 }, { key: "TEST-9", outcome: "canceled", finishedAt: null }],
       }),
     );
-    expect(slot.getByText("path:/srv/plugins/bb-plugin-demo")).toBeTruthy();
+    expect(slot.getByText("path:/srv/plugins/alia-plugin-demo")).toBeTruthy();
     expect(slot.getByText("main")).toBeTruthy();
     expect(slot.getByText("abcdef1")).toBeTruthy();
     expect(slot.getByText("1234567")).toBeTruthy();
@@ -429,7 +429,7 @@ describe("plugin actions by availability", () => {
   });
 
   it("shows «Enable», not «Disable», for a disabled plugin even while an action is running, with the reason", async () => {
-    const view = pluginView({ bbState: "disabled", availability: availability({ disable: "a rollout is in progress — wait", enable: "a rollout is in progress — wait", rollback: "a rollout is in progress — wait" }) });
+    const view = pluginView({ aliaState: "disabled", availability: availability({ disable: "a rollout is in progress — wait", enable: "a rollout is in progress — wait", rollback: "a rollout is in progress — wait" }) });
     const slot = await mount({ board: () => board([pcard("demo", { name: "Demo" })]), plugin: () => view });
     fireEvent.click(await slot.findByText("Demo"));
     await slot.findByText("Working copy");
@@ -555,7 +555,7 @@ describe("new plugin form", () => {
   it("puts the server's problems under the fields they belong to", async () => {
     const slot = await openForm({
       newPlugin: () => {
-        throw new Error("id status is taken by a bb command — choose another one; a description is required: what the plugin should do; something else");
+        throw new Error("id status is taken by a VesnALIA command — choose another one; a description is required: what the plugin should do; something else");
       },
     });
     fill(slot, "Status", "x");
@@ -568,7 +568,7 @@ describe("new plugin form", () => {
           return el!;
         })
       ).textContent;
-    expect(await under("id")).toBe("id status is taken by a bb command — choose another one");
+    expect(await under("id")).toBe("id status is taken by a VesnALIA command — choose another one");
     expect(await under("request")).toBe("a description is required: what the plugin should do");
     expect(slot.container.querySelector('[data-field="name"] [role="alert"]')).toBeNull();
     expect(slot.getByText("something else")).toBeTruthy();
@@ -616,12 +616,12 @@ describe("new plugin form", () => {
     fireEvent.click(slot.getByText("Create"));
     await slot.findByText(/«Status» is being created/);
     expect(slot.queryByLabelText("Name")).toBeNull();
-    fail(new Error("id status is taken by a bb command — choose another one"));
+    fail(new Error("id status is taken by a VesnALIA command — choose another one"));
     expect((await slot.findByLabelText("Name") as HTMLInputElement).value).toBe("Status");
     expect((slot.getByLabelText("Id") as HTMLInputElement).value).toBe("status");
     expect((slot.getByLabelText("Description") as HTMLTextAreaElement).value).toBe("show the status");
-    expect(slot.container.querySelector('[data-field="id"] [role="alert"]')!.textContent).toBe("id status is taken by a bb command — choose another one");
-    expect(slot.getByText("Creation of «Status»: the work was not recorded: id status is taken by a bb command — choose another one")).toBeTruthy();
+    expect(slot.container.querySelector('[data-field="id"] [role="alert"]')!.textContent).toBe("id status is taken by a VesnALIA command — choose another one");
+    expect(slot.getByText("Creation of «Status»: the work was not recorded: id status is taken by a VesnALIA command — choose another one")).toBeTruthy();
     expect(slot.queryByText(/«Status» is being created/)).toBeNull();
     expect(calls(slot, "newPlugin").length).toBe(1);
     slot.lifecycle.unmount();
@@ -661,8 +661,8 @@ describe("new plugin form", () => {
     await slot.findByText(/«Status» is being created/);
     fireEvent.click(slot.getByText("New plugin"));
     fill(slot, "Mail", "read mail");
-    fail(new Error("id status is taken by a bb command — choose another one"));
-    await slot.findByText("Creation of «Status»: the work was not recorded: id status is taken by a bb command — choose another one");
+    fail(new Error("id status is taken by a VesnALIA command — choose another one"));
+    await slot.findByText("Creation of «Status»: the work was not recorded: id status is taken by a VesnALIA command — choose another one");
     expect((slot.getByLabelText("Name") as HTMLInputElement).value).toBe("Mail");
     fireEvent.click(slot.getByText("Restore what you typed"));
     expect((slot.getByLabelText("Name") as HTMLInputElement).value).toBe("Status");

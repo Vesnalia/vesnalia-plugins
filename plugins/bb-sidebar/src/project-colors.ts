@@ -72,8 +72,8 @@ function textColor(color: string, darkTheme: boolean): string {
 
 export function projectColorStyle(color: string): CSSProperties {
   return {
-    "--bb-sidebar-project": color,
-    "--bb-sidebar-project-text-light": textColor(color, false),
-    "--bb-sidebar-project-text-dark": textColor(color, true),
+    "--alia-sidebar-project": color,
+    "--alia-sidebar-project-text-light": textColor(color, false),
+    "--alia-sidebar-project-text-dark": textColor(color, true),
   } as CSSProperties;
 }

@@ -5,15 +5,15 @@ import {
   loadPluginApp,
   renderSlot,
   type CapturedPluginApp,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import type {
-  BbNavigate,
+  AliaNavigate,
   ExperimentalPanelController,
   ExperimentalTabRegistration,
   ExperimentalThreadTabProps,
   JsonValue,
-  PluginBrowserBbSdk,
-} from "@get-bb/plugin-sdk/app";
+  PluginBrowserAliaSdk,
+} from "@vesnalia/plugin-sdk/app";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { GitHistoryHeaderButton, gitHistoryHeaderAction, registerHeaderShortcut } from "./app";
 import {
@@ -167,7 +167,7 @@ describe("Git history app", () => {
     expect(app.threadActions.some((action) => action.id === "git-history")).toBe(false);
   });
 
-  it("falls back to the labelled header action when bb lacks the icon slot", () => {
+  it("falls back to the labelled header action when VesnALIA lacks the icon slot", () => {
     const experimental_threadAction = vi.fn();
     expect(registerHeaderShortcut({ experimental_threadAction })).toBe("labelled");
     expect(experimental_threadAction).toHaveBeenCalledWith(gitHistoryHeaderAction);
@@ -186,8 +186,8 @@ describe("Git history app", () => {
     const openTab = vi.fn<ExperimentalPanelController["openTab"]>(() => true);
     const input = {
       thread: { id: "thread-1" } as Parameters<typeof headerAction.item>[0]["thread"],
-      sdk: {} as PluginBrowserBbSdk,
-      navigate: {} as BbNavigate,
+      sdk: {} as PluginBrowserAliaSdk,
+      navigate: {} as AliaNavigate,
       experimental_panel: { openTab } as unknown as ExperimentalPanelController,
     };
     expect(headerAction.item({ ...input, data: false })).toBeNull();

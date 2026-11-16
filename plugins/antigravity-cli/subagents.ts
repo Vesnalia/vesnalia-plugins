@@ -1,10 +1,10 @@
-import { threadStartParamsSchema, threadResumeParamsSchema, turnStartParamsSchema } from "@get-bb/plugin-sdk/provider-bridge";
-import { experimental_acpProviderBridge } from "@get-bb/plugin-sdk/provider-bridge/acp";
+import { threadStartParamsSchema, threadResumeParamsSchema, turnStartParamsSchema } from "@vesnalia/plugin-sdk/provider-bridge";
+import { experimental_acpProviderBridge } from "@vesnalia/plugin-sdk/provider-bridge/acp";
 
 export const ANTIGRAVITY_SUBAGENT_TOOLS: ReadonlySet<string> = new Set(["invoke_subagent", "define_subagent", "manage_subagents", "send_message"]);
 const titles = new Set(["invoke subagent", "running subagent", "subagent launched", "define subagent", "defining subagent", "manage subagents", "listing subagents", "stopping subagents", "send message", "messaging subagent"]);
 
-export const BB_SUBAGENT_DELEGATION_INSTRUCTIONS = "Native Antigravity subagent tools (invoke_subagent, define_subagent, manage_subagents, send_message) are disabled for this thread. Do not call invoke_subagent, define_subagent, manage_subagents, or send_message. When you need to delegate work to subagents or run parallel agent tasks, use BB threads via the bb CLI (bb thread spawn --parent-self ..., bb thread wait ..., bb thread tell ...) or perform the task directly in this thread.";
+export const ALIA_SUBAGENT_DELEGATION_INSTRUCTIONS = "Native Antigravity subagent tools (invoke_subagent, define_subagent, manage_subagents, send_message) are disabled for this thread. Do not call invoke_subagent, define_subagent, manage_subagents, or send_message. When you need to delegate work to subagents or run parallel agent tasks, use VesnALIA threads via the VesnALIA CLI (VesnALIA thread spawn --parent-self ..., VesnALIA thread wait ..., VesnALIA thread tell ...) or perform the task directly in this thread.";
 
 export function isNativeSubagentTool(value: unknown): boolean {
   if (typeof value !== "string") return false;
@@ -20,8 +20,8 @@ export function resolveProviderSubagentsEnabled(providerOptions: Record<string, 
 
 export function mergeSubagentInstructions(existing: string | null | undefined, providerSubagentsEnabled: boolean): string | undefined {
   if (providerSubagentsEnabled) return existing ?? undefined;
-  if (existing?.includes(BB_SUBAGENT_DELEGATION_INSTRUCTIONS)) return existing;
-  return existing ? `${existing}\n\n${BB_SUBAGENT_DELEGATION_INSTRUCTIONS}` : BB_SUBAGENT_DELEGATION_INSTRUCTIONS;
+  if (existing?.includes(ALIA_SUBAGENT_DELEGATION_INSTRUCTIONS)) return existing;
+  return existing ? `${existing}\n\n${ALIA_SUBAGENT_DELEGATION_INSTRUCTIONS}` : ALIA_SUBAGENT_DELEGATION_INSTRUCTIONS;
 }
 
 function record(value: unknown): Record<string, any> | undefined {

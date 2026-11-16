@@ -24,7 +24,7 @@
  * never used as a path.
  */
 import { useEffect, useState } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import type { rpcContract } from "../../src/sim/wire";
 import { LOOK_ID_PATTERN } from "../../src/sim/model.js";
@@ -41,7 +41,7 @@ export interface StillsDirectiveProps {
 
 export function StillsDirective({ attributes, source }: StillsDirectiveProps) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const lookId = attributes.look ?? "";
   const valid = LOOK_ID_PATTERN.test(lookId);
   const [summary, setSummary] = useState<LookSummary | null>(null);

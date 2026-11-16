@@ -1,7 +1,7 @@
 // Thin wrapper over the `gh` CLI.
 //
 // The plugin never stores a token: it shells out to the user's signed-in `gh`
-// session, the same way bb's own GitHub integrations do. That keeps credential
+// session, the same way VesnALIA's own GitHub integrations do. That keeps credential
 // handling in one audited place and means revoking `gh auth` revokes us too.
 import { execFile } from "node:child_process";
 import { readFile, stat } from "node:fs/promises";
@@ -97,7 +97,7 @@ export interface GhRunOptions {
    * Path to a file holding a GitHub token, injected as GH_TOKEN for this call.
    *
    * For servers whose environment carries a different token than the one you
-   * want the board to use — a bb server started before you re-authenticated,
+   * want the board to use — a VesnALIA server started before you re-authenticated,
    * or one running as a different user than the one who ran `gh auth login`.
    * The token is read at call time and never persisted by the plugin.
    */

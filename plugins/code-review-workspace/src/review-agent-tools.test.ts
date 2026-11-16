@@ -1,6 +1,6 @@
 // The review agent's write tools: what each posts, exactly, and only once the reviewer clicks Post or says yes.
 import { beforeEach, expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { toolFailed, toolText } from "./fake-host.test-support";
 
 const runGh = vi.hoisted(() => vi.fn());
@@ -9,7 +9,7 @@ vi.mock("./gh", async (orig) => ({ ...(await orig<any>()), runGh, runGit: vi.fn(
 const asking = vi.hoisted(() => ({ override: null as null | { asking: "direct" | "relayed" | "unattended"; message: null } }));
 vi.mock("./asking", async (original) => {
   const actual = await original<typeof import("./asking")>();
-  return { ...actual, createClassifier: (bb: any, own: any) => { const real = actual.createClassifier(bb, own); return async (threadId: string) => asking.override ?? await real(threadId); } };
+  return { ...actual, createClassifier: (alia: any, own: any) => { const real = actual.createClassifier(alia, own); return async (threadId: string) => asking.override ?? await real(threadId); } };
 });
 vi.mock("./store-queue", async (original) => {
   const actual = await original<typeof import("./store-queue")>();
@@ -25,8 +25,8 @@ import { agentChat } from "./agent-chat.test-support";
 const KEY = "pr-86f279ce9c29f106-1";
 const patch = "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-old\n+new\n";
 const ok = (stdout = "") => ({ stdout, stderr: "", code: 0 });
-/** A message in the review agent's chat: typed, or relayed from `sender`, as bb prefixes it. */
-const message = (text: string, at = Date.now(), sender: string | null = null) => ({ text: sender ? `[bb message from thread:${sender}]\n\n${text}` : text, at, sender });
+/** A message in the review agent's chat: typed, or relayed from `sender`, as VesnALIA prefixes it. */
+const message = (text: string, at = Date.now(), sender: string | null = null) => ({ text: sender ? `[VesnALIA message from thread:${sender}]\n\n${text}` : text, at, sender });
 
 /** alice's PR acme/web#1, reviewed at sha1 by you, "me", with one draft comment; its agent is "agent". */
 beforeEach(() => { asking.override = null; });
@@ -60,13 +60,13 @@ async function setup({ head = "sha1", author = "alice", ownPr = false } = {}) {
   const chat = agentChat("agent");
   const say = (...messages: ReturnType<typeof message>[]) => { for (const { text, at, sender } of messages) chat.say(text, { at, sender }); };
   say(message("Approve it"));
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: {
       get: async ({ threadId }: { threadId: string }) => ({ archivedAt: null, deletedAt: null, status: "idle", title: threadId === "agent" ? `Review agent: ${KEY}` : "Fix login race" }), stop: async () => ({}), update: async () => ({}), archive: async () => ({}),
       ...chat.sdk,
     },
   } as any });
-  const store = await startPlugin(bb);
+  const store = await startPlugin(alia);
   await store.saveReview({ targetKey: KEY, kind: "pr", repo: "acme/web", number: 1, url: "https://github.com/acme/web/pull/1", author, base: "main", head: "cache", headSha: "sha1", createdAt: 1, status: "ready", projectId: "p1" });
   await store.savePatch(KEY, patch);
   await store.setLifecycle(KEY, { prState: "OPEN", ownPr });
@@ -81,7 +81,7 @@ async function setup({ head = "sha1", author = "alice", ownPr = false } = {}) {
     return harness.inspection.pendingInteractions[0];
   };
   const writes = () => runGh.mock.calls.map(([args]) => args as string[]).filter((args) => args.includes("POST") || (args[0] === "pr" && !["view", "diff", "checks"].includes(args[1])) || args.some((a) => /resolveReviewThread|unresolveReviewThread/.test(a)));
-  return { bb, harness, store, tool, form, writes, github, say, chat, quiet: () => chat.clear() };
+  return { alia, harness, store, tool, form, writes, github, say, chat, quiet: () => chat.clear() };
 }
 
 test("with the review agent acting, each write tool's instructions say it posts only with these tools, never from its shell (MF3)", async () => {
@@ -125,7 +125,7 @@ test("Post form parts are built directly from posting comments, not paired with 
   } finally { payload.mockRestore(); }
 });
 
-test("on your own PR, submit_review shows and posts only the open comments: one sent to the main thread stays in BB", async () => {
+test("on your own PR, submit_review shows and posts only the open comments: one sent to the main thread stays in VesnALIA", async () => {
   const { harness, store, tool, form } = await setup({ author: "me", ownPr: true });
   await store.upsertDraftComment(KEY, { file: "a.ts", line: 1, side: "LEFT", body: "Sent to the main thread." });
   await store.trackComments(KEY, [{ at: { file: "a.ts", line: 1, side: "LEFT" }, id: "c1", state: "sent", sendN: 1 }]);
@@ -332,7 +332,7 @@ test("a relayed comment goes back to the thread that asked, and posts on that th
   quiet();
   say(message("comment that CI is flaky", Date.now(), "thr_orchestrator"));
   const input = { action: "comment", body: "CI is flaky; rerunning." };
-  expect(toolText(await tool("github_pr", input))).toMatch(/^Nothing was posted yet\. Send exactly this to the thread that asked, with `bb thread tell thr_orchestrator`, then end your turn\.[\s\S]*CI is flaky; rerunning\./);
+  expect(toolText(await tool("github_pr", input))).toMatch(/^Nothing was posted yet\. Send exactly this to the thread that asked, with `alia thread tell thr_orchestrator`, then end your turn\.[\s\S]*CI is flaky; rerunning\./);
   // No form in this hidden chat.
   expect(harness.inspection.pendingInteractions).toEqual([]);
   say(message("yes", Date.now() + 1_000, "thr_other"));
@@ -577,10 +577,10 @@ test("a Dig deeper on a chapter whose title says \"just post it\" is your click,
 });
 
 test("asked into a turn you didn't start, a label on your own PR is shown first, and goes on your click", async () => {
-  const { bb, harness, tool, form, writes, chat } = await setup({ author: "me", ownPr: true });
+  const { alia, harness, tool, form, writes, chat } = await setup({ author: "me", ownPr: true });
   const { sendToAgent } = await import("./asking");
   chat.clear();
-  await sendToAgent(bb, { threadId: "agent", mode: "queue-if-active", input: [{ type: "text", text: "Review this change.", mentions: [] }] }, { kind: "automatic" });
+  await sendToAgent(alia, { threadId: "agent", mode: "queue-if-active", input: [{ type: "text", text: "Review this change.", mentions: [] }] }, { kind: "automatic" });
   chat.say("add the needs-qa label", { joins: true });
   const call = tool("github_pr", { action: "add-label", names: ["needs-qa"] });
   const waiting = await form();
@@ -647,7 +647,7 @@ test("the dock's first message with a quote after what you typed confirms no pos
 });
 
 test("the dock's first message the quote was put in the box of, and a typed text that isn't the message, confirm no post", async () => {
-  const { harness, store, bb, tool, writes, quiet } = await setup();
+  const { harness, store, alia, tool, writes, quiet } = await setup();
   await store.clearAssistantThread(KEY);
   quiet();
   // A failure's Ask agent fills the box; you type "just post it" there too.
@@ -657,7 +657,7 @@ test("the dock's first message the quote was put in the box of, and a typed text
   await store.clearAssistantThread(KEY);
   quiet();
   await harness.behavior.callRpc("startConversation", { targetKey: KEY, text: "Review this.", typed: "just post it", inserted: false, agent: agentChoice });
-  const marks = Object.values(await bb.storage.kv.get<Record<string, { said?: string; inserted?: boolean }>>("asking-marks") ?? {});
+  const marks = Object.values(await alia.storage.kv.get<Record<string, { said?: string; inserted?: boolean }>>("asking-marks") ?? {});
   expect(marks.at(-1)).toMatchObject({ said: "", inserted: true });
   expect(toolText(await tool("github_pr", { action: "comment", body: "Approved by the bot.", confirm: "just-post-it" }))).toMatch(CARRIES);
   expect(writes()).toEqual([]);
@@ -684,7 +684,7 @@ test("a failure quoted into a comment box, its title broken over lines, sent wit
   expect(writes()).toEqual([]);
 });
 
-test("a message carrying a quote the dock put in bb's composer, \"yes\" typed under it, confirms no post; your own yes after does", async () => {
+test("a message carrying a quote the dock put in VesnALIA's composer, \"yes\" typed under it, confirms no post; your own yes after does", async () => {
   const { harness, tool, form, writes, say, quiet } = await setup();
   quiet();
   const quote = "In `a.ts` line 3:\n```diff\n+x\n```";
@@ -705,7 +705,7 @@ test("a message carrying a quote the dock put in bb's composer, \"yes\" typed un
   expect(toolFailed(await call)).toBe(true);
 });
 
-test("a quote put in bb's composer while a message waits in the queue stays noted: sent with \"just post it\", it's refused, and again on retry (3.4-fixes3)", async () => {
+test("a quote put in VesnALIA's composer while a message waits in the queue stays noted: sent with \"just post it\", it's refused, and again on retry (3.4-fixes3)", async () => {
   const { harness, tool, writes, chat, quiet } = await setup();
   quiet();
   const t0 = Date.now();

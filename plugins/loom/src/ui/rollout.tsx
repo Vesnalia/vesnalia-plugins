@@ -1,4 +1,4 @@
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { MergeEntry, MergeOrderView, RolloutCheckResult, RolloutMilestone, RolloutRequirement, RolloutStage, RolloutStep, RolloutView, RolloutWindow } from "../contract";
 import { BUTTON, BUTTON_PRIMARY, ConfirmButton, HEADING, RepoChip, listText, plural, useAction, useLoomWrite } from "./common";
@@ -90,7 +90,7 @@ function MarkButton({ target, live, busy, onMark, label }: { target: string; liv
   );
 }
 
-/** Copies through the clipboard API, or a selected text area where the page has none, such as bb opened over plain HTTP. */
+/** Copies through the clipboard API, or a selected text area where the page has none, such as VesnALIA opened over plain HTTP. */
 async function copyText(text: string): Promise<boolean> {
   try {
     if (navigator.clipboard !== undefined) {
@@ -1088,7 +1088,7 @@ export function RolloutTab({ slug, rollout, mergeOrder = null, now, onTicket }: 
 }
 
 function RolloutBody({ slug, view, mergeOrder, now, onTicket }: { slug: string; view: RolloutView; mergeOrder: MergeOrderView | null; now: number; onTicket(key: string): void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const send = useLoomWrite("markLive");
   const { busy, act } = useAction();
   const hoverOn = useStored(rolloutHover);

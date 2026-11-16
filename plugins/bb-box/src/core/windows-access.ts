@@ -1,6 +1,6 @@
-// The thread's access for commands in a Windows box that is a BB machine
+// The thread's access for commands in a Windows box that is a VesnALIA machine
 // (#560), as in Linux and macOS boxes: each command takes the named
-// variables from the newest process below BB's daemon that has the most of
+// variables from the newest process below VesnALIA's daemon that has the most of
 // them. Windows has no /proc and no `ps -E`, so a small reader reads each
 // process's environment block from its PEB, the way Windows' own tools do.
 // The env file carries the reader's C# source, packed; the first command
@@ -169,7 +169,7 @@ public static class @TYPE@ {
     }
   }
 
-  // Whether a process of BB's daemon runs.
+  // Whether a process of VesnALIA's daemon runs.
   public static bool Daemon(string parent) {
     var all = Snapshot();
     try {
@@ -184,7 +184,7 @@ public static class @TYPE@ {
 `;
 
 /** The reader's class, named for its source. */
-export const READER_TYPE = `BbBoxAccess${createHash("sha256").update(SOURCE).digest("hex").slice(0, 12)}`;
+export const READER_TYPE = `AliaBoxAccess${createHash("sha256").update(SOURCE).digest("hex").slice(0, 12)}`;
 
 /** The reader's source, as it is compiled. */
 export const READER_SOURCE = SOURCE.replace("@TYPE@", READER_TYPE);
@@ -202,20 +202,20 @@ function ps(value: string): string {
  * calls, not cmdlets, which would load their modules, about 60 ms more.
  */
 const LOAD_READER = `if (-not (${ps(READER_TYPE)} -as [type])) {
-    $bbDll = [IO.Path]::Combine($env:LOCALAPPDATA, 'bb-box', ${ps(`${READER_TYPE}.dll`)})
-    if (-not [IO.File]::Exists($bbDll)) {
-      New-Item -ItemType Directory -Force -Path (Split-Path $bbDll) | Out-Null
-      $bbZip = [IO.Compression.GZipStream]::new([IO.MemoryStream]::new([Convert]::FromBase64String('${PACKED}')), [IO.Compression.CompressionMode]::Decompress)
-      $bbNew = "$bbDll.$PID.dll"
-      Add-Type -TypeDefinition ([IO.StreamReader]::new($bbZip).ReadToEnd()) -OutputAssembly $bbNew -OutputType Library -ErrorAction Stop
-      Move-Item -LiteralPath $bbNew -Destination $bbDll -Force -ErrorAction SilentlyContinue
-      Remove-Item -LiteralPath $bbNew -Force -ErrorAction SilentlyContinue
+    $aliaDll = [IO.Path]::Combine($env:LOCALAPPDATA, 'alia-box', ${ps(`${READER_TYPE}.dll`)})
+    if (-not [IO.File]::Exists($aliaDll)) {
+      New-Item -ItemType Directory -Force -Path (Split-Path $aliaDll) | Out-Null
+      $aliaZip = [IO.Compression.GZipStream]::new([IO.MemoryStream]::new([Convert]::FromBase64String('${PACKED}')), [IO.Compression.CompressionMode]::Decompress)
+      $aliaNew = "$aliaDll.$PID.dll"
+      Add-Type -TypeDefinition ([IO.StreamReader]::new($aliaZip).ReadToEnd()) -OutputAssembly $aliaNew -OutputType Library -ErrorAction Stop
+      Move-Item -LiteralPath $aliaNew -Destination $aliaDll -Force -ErrorAction SilentlyContinue
+      Remove-Item -LiteralPath $aliaNew -Force -ErrorAction SilentlyContinue
     }
-    if (-not (${ps(READER_TYPE)} -as [type])) { $null = [Reflection.Assembly]::LoadFrom($bbDll) }
+    if (-not (${ps(READER_TYPE)} -as [type])) { $null = [Reflection.Assembly]::LoadFrom($aliaDll) }
   }`;
 
 /**
- * The env file's lines that set `names` from BB's daemon's processes, afresh
+ * The env file's lines that set `names` from VesnALIA's daemon's processes, afresh
  * each time it is sourced. A reader that cannot load or read leaves them
  * unset, and the command runs on.
  */
@@ -224,15 +224,15 @@ export function windowsAccessLoader(names: readonly string[], parent: string): s
   return `& {
   try {
   ${LOAD_READER}
-    $bbFound = [${READER_TYPE}]::Read(${ps(parent)}, [string[]]@(${names.map(ps).join(", ")}))
-    for ($i = 0; $i -lt $bbFound.Length; $i += 2) { [Environment]::SetEnvironmentVariable($bbFound[$i], $bbFound[$i + 1]) }
+    $aliaFound = [${READER_TYPE}]::Read(${ps(parent)}, [string[]]@(${names.map(ps).join(", ")}))
+    for ($i = 0; $i -lt $aliaFound.Length; $i += 2) { [Environment]::SetEnvironmentVariable($aliaFound[$i], $aliaFound[$i + 1]) }
   } catch {}
 }\r\n`;
 }
 
 /**
  * The access check's Windows form: exits `found` once the env file set the
- * required names, or any name when none is required, `waiting` while BB's
+ * required names, or any name when none is required, `waiting` while VesnALIA's
  * daemon runs without them, and `noDaemon` when none runs or the reader
  * cannot tell.
  */
@@ -252,21 +252,21 @@ exit ${exits.noDaemon}
  * both use GH_TOKEN, and fetches GitHub's SSH URLs over HTTPS, as on Linux
  * and macOS. Prints how long it took, in milliseconds.
  */
-export const WINDOWS_ACCESS_SETUP = `$bbClock = [Diagnostics.Stopwatch]::StartNew()
-$bbCode = 0
+export const WINDOWS_ACCESS_SETUP = `$aliaClock = [Diagnostics.Stopwatch]::StartNew()
+$aliaCode = 0
 if (Get-Command git -ErrorAction SilentlyContinue) {
   if (Get-Command gh -ErrorAction SilentlyContinue) {
     & gh auth setup-git *> $null
     if ($LASTEXITCODE -ne 0) {
       & git config --global --replace-all credential.https://github.com.helper ''
       if ($LASTEXITCODE -eq 0) { & git config --global --add credential.https://github.com.helper '!gh auth git-credential' }
-      if ($LASTEXITCODE -ne 0) { $bbCode = $LASTEXITCODE }
+      if ($LASTEXITCODE -ne 0) { $aliaCode = $LASTEXITCODE }
     }
   }
   & git config --global --replace-all url.https://github.com/.insteadOf git@github.com: '^git@github\\.com:$'
   if ($LASTEXITCODE -eq 0) { & git config --global --replace-all url.https://github.com/.insteadOf ssh://git@github.com/ '^ssh://git@github\\.com/$' }
-  if ($LASTEXITCODE -ne 0) { $bbCode = $LASTEXITCODE }
+  if ($LASTEXITCODE -ne 0) { $aliaCode = $LASTEXITCODE }
 }
-[Console]::Out.Write("$([int]$bbClock.Elapsed.TotalMilliseconds)\`n")
-exit $bbCode
+[Console]::Out.Write("$([int]$aliaClock.Elapsed.TotalMilliseconds)\`n")
+exit $aliaCode
 `;

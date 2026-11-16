@@ -6,8 +6,8 @@
 // show up in the ActivityTray and in the sidebar accessory.
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@vesnalia/plugin-sdk/testing/app";
 
 import { TOKEN_URL, UPLOAD_CHUNK_URL, type FileEntry, type FileManagerContract } from "../../contract";
 
@@ -301,7 +301,7 @@ describe("dropping files (§8.4 → §8.7)", () => {
     expect(first.method).toBe("POST");
     expect(first.url.startsWith(UPLOAD_CHUNK_URL)).toBe(true);
     expect(first.offset).toBe(0);
-    expect(first.headers["x-bb-plugin-token"]).toBe("test-token");
+    expect(first.headers["x-alia-plugin-token"]).toBe("test-token");
     expect(first.sentBytes).toBe(10);
 
     const second = await nextXhr(1);

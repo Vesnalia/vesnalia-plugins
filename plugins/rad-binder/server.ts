@@ -1,10 +1,10 @@
-// bb-plugin-rad-binder — backend entry.
+// alia-plugin-rad-binder — backend entry.
 //
-// The theme is declarative: `bb.themes` in package.json points bb at
-// theme.css, which bb reads straight from the plugin directory. `bb.server`
+// The theme is declarative: `alia.themes` in package.json points VesnALIA at
+// theme.css, which VesnALIA reads straight from the plugin directory. `alia.server`
 // is a required manifest field, so this factory only satisfies the loader.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded — contributes the Rad Binder theme");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded — contributes the Rad Binder theme");
 }

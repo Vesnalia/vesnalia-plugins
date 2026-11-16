@@ -8,7 +8,7 @@ verification: 1495 vitest tests pass across 100 files (full suite, including 13 
 
 # Security audit — 2026-10-10 (Openverse client in the wallpaper picker)
 
-[!NOTE] Same trust boundaries as the prior audits: this covers the plugin's own code, not the bb host or the SDK. The audit was remediation-first by construction: the gate refusal existed before the audit, and this document approves the remediated surface, red tests first. The picker's DOM behavior (gallery pick validation, thumbnails, url() paint) is unchanged by this work and keeps its prior coverage.
+[!NOTE] Same trust boundaries as the prior audits: this covers the plugin's own code, not the VesnALIA host or the SDK. The audit was remediation-first by construction: the gate refusal existed before the audit, and this document approves the remediated surface, red tests first. The picker's DOM behavior (gallery pick validation, thumbnails, url() paint) is unchanged by this work and keeps its prior coverage.
 
 ## Attack surface inventory
 

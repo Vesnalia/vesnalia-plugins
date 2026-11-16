@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { CLI_NOT_FOUND, SCOPE_OUTSIDE } from "./cli.js";
 import { hostContract } from "./contract.js";
 import { SLICE, createRelay } from "./relay.js";
@@ -7,14 +7,14 @@ import { scopeFolder, scopeInside } from "./scope.js";
 import { findSyns, runSyns } from "./syns-process.js";
 
 /**
- * bb's host half: runs on the session's machine, checks a scope there, and
+ * VesnALIA's host half: runs on the session's machine, checks a scope there, and
  * starts the CLI through syns-process.ts. Answers past one host call go back
  * in slices (D32). S2.6–S2.8
  */
 const relay = createRelay();
 
-/** The name every request of the CLI's carries in its User-Agent on bb (S2.24, D83; bartsoj/syns D-238). */
-export const CALLER = "bb-plugin";
+/** The name every request of the CLI's carries in its User-Agent on VesnALIA (S2.24, D83; bartsoj/syns D-238). */
+export const CALLER = "alia-plugin";
 
 /** How long the worker is held after the last run, so the next page call finds it warm (S2.25, D83). */
 export const HOLD_MS = 15 * 60_000;
@@ -110,7 +110,7 @@ async function run({ cwd, within, scope, args, env, stdin, stdinBase64, stdinFro
     if (gathered === undefined) return { exitCode: null, stdout: "", stderr: "", timedOut: false, spawnError: "the gathered standard input is no longer held", overflowed: false };
     input = Buffer.from(gathered, "base64");
   }
-  // The host context's signal: bb aborts it when the server half gives the call up (S2.14).
+  // The host context's signal: VesnALIA aborts it when the server half gives the call up (S2.14).
   const result = await runSyns(bin, args, folder, input, timeoutMs, signal, CALLER, env);
   // An answer past one host call goes back in slices (D32).
   if (result.stdout.length <= SLICE) return result;

@@ -14,7 +14,7 @@
 // pill lives, what it says, what it reports, and which cards light up.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { ParentLaneBoard } from "../components/parent-lane-board";
 import { buildParentLanes, laneRowThreads } from "../components/parent-lanes";
 import { armSweep } from "../lib/sweep";

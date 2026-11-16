@@ -19,16 +19,16 @@ export function IntegrationsPanel() {
   const absolute = (path: unknown, fallback: string) => new URL(typeof path === "string" ? path : fallback, window.location.origin).toString();
   const mcpUrl = absolute(meta?.personalMcpPath ?? meta?.mcpPath, "/api/v1/plugins/meetings/http/mcp");
   const apiUrl = absolute(meta?.personalApiPath ?? meta?.apiPath, "/api/v1/plugins/meetings/http/api");
-  const stdioConfig = JSON.stringify({ mcpServers: { meetings: { command: "node", args: ["/path/to/bb-plugin-meetings/integrations/mcp/stdio.mjs"] } } }, null, 2);
+  const stdioConfig = JSON.stringify({ mcpServers: { meetings: { command: "node", args: ["/path/to/alia-plugin-meetings/integrations/mcp/stdio.mjs"] } } }, null, 2);
   return <div className="space-y-3">
-    <p className="text-xs leading-relaxed text-muted-foreground">Внешние агенты работают с тем же реестром встреч BB через MCP и JSON API.</p>
+    <p className="text-xs leading-relaxed text-muted-foreground">Внешние агенты работают с тем же реестром встреч VesnALIA через MCP и JSON API.</p>
     <div className="space-y-2 rounded-md border border-border p-3">
       <div className="flex items-center justify-between gap-2"><p className="text-xs font-medium">MCP · stdio</p><CopyButton text={stdioConfig} label="Скопировать пример конфигурации MCP" /></div>
-      <p className="text-xs leading-relaxed text-muted-foreground">Укажите путь к плагину на машине агента. Команда bb должна уже иметь доступ к вашей BB; дополнительный токен не нужен.</p>
+      <p className="text-xs leading-relaxed text-muted-foreground">Укажите путь к плагину на машине агента. Команда VesnALIA должна уже иметь доступ к вашей VesnALIA; дополнительный токен не нужен.</p>
       <pre className="max-w-full overflow-x-auto whitespace-pre text-[11px] text-muted-foreground">{stdioConfig}</pre>
     </div>
     <details className="space-y-2 rounded-md border border-border p-3"><summary className="cursor-pointer text-xs font-medium">HTTP MCP и JSON API</summary>
-      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Через BB Connect клиенту также нужна авторизация BB. Токен плагина сам по себе не открывает доступ через getbb.app.</p>
+      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Через VesnALIA Connect клиенту также нужна авторизация VesnALIA. Токен плагина сам по себе не открывает доступ через getbb.app.</p>
       {[["MCP", mcpUrl], ["JSON API", apiUrl]].map(([label, url]) => <div key={label} className="min-w-0 pt-2"><p className="text-xs font-medium">{label}</p><div className="flex min-w-0 items-start gap-1"><code className="min-w-0 break-all text-xs text-muted-foreground">{url}</code><CopyButton text={url} label={`Скопировать адрес ${label}`} /></div></div>)}
     <p className="text-xs text-muted-foreground">{configured ? "Токен создан. Его значение повторно не показывается." : "Внешний доступ по токену ещё не настроен."}</p>
     {meta?.webhookHeader ? <p className="break-words text-xs text-muted-foreground">Подпись webhook: {String(meta.webhookHeader)} · {String(meta.webhookAlgorithm ?? "HMAC SHA-256")}</p> : null}

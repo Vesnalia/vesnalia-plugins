@@ -3,17 +3,17 @@ import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
-const dataDir = process.env.LIVE_BB_DATA ?? join(process.env.HOME ?? "", "bbdata");
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
+const dataDir = process.env.LIVE_ALIA_DATA ?? join(process.env.HOME ?? "", "bbdata");
 const shots = process.env.LIVE_SHOTS ?? join(process.cwd(), "shots");
 const runs = Number(process.env.LIVE_RUNS ?? 3);
 const side = process.env.LIVE_SIDE ?? "linux";
 const chosen = process.argv.slice(2);
 mkdirSync(shots, { recursive: true });
 
-const APPLY = "**/api/v1/plugins/bb-box/rpc/config.apply";
-const GET = "**/api/v1/plugins/bb-box/rpc/config.get";
-const CHECK = "**/api/v1/plugins/bb-box/rpc/config.check";
+const APPLY = "**/api/v1/plugins/alia-box/rpc/config.apply";
+const GET = "**/api/v1/plugins/alia-box/rpc/config.get";
+const CHECK = "**/api/v1/plugins/alia-box/rpc/config.check";
 
 function expect(condition, message) {
   if (!condition) throw new Error(message);
@@ -30,7 +30,7 @@ function gate() {
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -49,9 +49,9 @@ async function otherTab(change) {
 }
 
 function storedSecret(backend, key) {
-  const db = new DatabaseSync(join(dataDir, "bb.db"), { readOnly: true });
+  const db = new DatabaseSync(join(dataDir, "alia.db"), { readOnly: true });
   try {
-    const row = db.prepare("select value from plugin_kv where plugin_id = 'bb-box' and key = 'config/secrets'").get();
+    const row = db.prepare("select value from plugin_kv where plugin_id = 'alia-box' and key = 'config/secrets'").get();
     return (row ? JSON.parse(row.value) : {})[backend]?.[key];
   } finally {
     db.close();
@@ -69,7 +69,7 @@ async function resetLinux(run) {
       ...rest,
       backends: [
         { id: "docker", type: "docker", enabled: true, fields: {} },
-        { id: "proxmox-lxc", type: "proxmox-lxc", enabled: false, fields: { url: "https://127.0.0.1:9", "token-id": "bb-box@pve!made-up", "token-secret": `made-up-start-${run}` } },
+        { id: "proxmox-lxc", type: "proxmox-lxc", enabled: false, fields: { url: "https://127.0.0.1:9", "token-id": "alia-box@pve!made-up", "token-secret": `made-up-start-${run}` } },
       ],
     };
   });
@@ -130,7 +130,7 @@ async function tab(viewport = { width: 1440, height: 1000 }) {
 let onboardingSkipped = false;
 
 async function open(page, hash, title) {
-  const url = `${base}/settings/plugins/bb-box${hash}`;
+  const url = `${base}/settings/plugins/alia-box${hash}`;
   await page.goto(url, { waitUntil: "domcontentloaded" });
   if (!onboardingSkipped) {
     const skip = page.getByRole("button", { name: "Skip setup" });
@@ -149,7 +149,7 @@ const heading = (page, title) => page.locator("[data-page-heading]").filter({ ha
 
 async function leaveBySidebar(page) {
   await page.getByRole("link", { name: "General", exact: true }).first().click();
-  await page.waitForURL((url) => !url.pathname.includes("/plugins/bb-box"));
+  await page.waitForURL((url) => !url.pathname.includes("/plugins/alia-box"));
 }
 
 const bar = (page, what) => page.getByRole("region", { name: `Save ${what}` });
@@ -374,13 +374,13 @@ const macChecks = {
     const { page } = await tab();
     await open(page, "#backend/tart", "Tart");
     let estimates = null;
-    await waitFor(async () => (estimates = (await stored()).backends.find((backend) => backend.id === "tart")?.hostEstimates?.["mac-1"] ?? null) !== null, "bb-box to have read mac-1", 90_000);
+    await waitFor(async () => (estimates = (await stored()).backends.find((backend) => backend.id === "tart")?.hostEstimates?.["mac-1"] ?? null) !== null, "alia-box to have read mac-1", 90_000);
     await macRowOpen(page, "mac-1");
     const cores = field(page, "Cores of a shared iOS host on mac-1");
     await waitFor(async () => (await cores.getAttribute("placeholder")) === String(estimates["ios-hosts-cores"]), "the estimate inside the field");
     const coresRow = row(page, "backends/tart/hosts/mac-1/fields/ios-hosts-cores");
     const estimateWords = (await coresRow.getByText(/^Empty: /).textContent()).trim();
-    expect(estimateWords === `Empty: ${estimates["ios-hosts-cores"]} cores, bb-box's estimate for mac-1`, `the estimate says ${estimateWords}`);
+    expect(estimateWords === `Empty: ${estimates["ios-hosts-cores"]} cores, alia-box's estimate for mac-1`, `the estimate says ${estimateWords}`);
     await page.getByRole("button", { name: /^Show Shared iOS hosts/ }).click();
     await field(page, "Cores of a shared iOS host").fill("6");
     const fromTart = (await coresRow.getByText(/^Empty: /).textContent()).trim();

@@ -1,6 +1,6 @@
 // Where a review stands for another plugin (src/review-status.ts): who it waits on, whether you've approved the code as
 // it is now, and since when. Read from the review's turn (lib/turn.ts), so it says what All reviews, the alerts and
-// `bb review list` say. Pure, for the server.
+// `alia review list` say. Pure, for the server.
 import type { PushRun, SendEntry } from "../src/store";
 import { approvalHolds, type Turn, type TurnInput } from "./turn";
 

@@ -5,7 +5,7 @@ import {
   makeMessageDispatchHookContext,
   makePluginAgentConfigurationContext,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 import plugin from "../server";
 
@@ -14,7 +14,7 @@ const EXTERNAL = { providerId: "acp-opencode", model: "opencode/free-model" };
 
 async function setup(guide = "") {
   const hostCalls: { method: string; input: unknown; hostId: string }[] = [];
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "qlik-sense",
     settings: { allowedModels: "acp-opencode corp/*", guide },
     agentSkillIds: ["qlik-sense"],
@@ -28,7 +28,7 @@ async function setup(guide = "") {
       return { text: "QLIK DATA", isError: false };
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   const dispatch = (threadId: string, execution: { providerId: string; model: string | null }, sourceThreadId: string | null = null) =>
     harness.registrations.hooks["message.dispatch"]!(
       makeMessageDispatchHookContext({ thread: { id: threadId, sourceThreadId }, requestedExecution: execution }),

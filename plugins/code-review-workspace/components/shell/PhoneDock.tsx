@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useAppPanel } from "../../lib/app-panel";
 import { useDraftStatus } from "../../lib/draft-status";
 import { reviewIdentity, type ReviewIdentity } from "../../lib/review-identity";
@@ -19,7 +19,7 @@ import { OPAQUE } from "./side-parts";
 import { navigatorId } from "./TopBand";
 
 /**
- * Whether the focus is in a box you type in, in the review (`root`), which brings up a phone's keyboard; not one in BB's
+ * Whether the focus is in a box you type in, in the review (`root`), which brings up a phone's keyboard; not one in VesnALIA's
  * side panel, as the review agent's, which covers the page anyway.
  */
 function typingIn(el: Element | null, root: Element | null): boolean {
@@ -27,7 +27,7 @@ function typingIn(el: Element | null, root: Element | null): boolean {
 }
 
 /**
- * While the dock shows, toasts at the page's bottom sit above it rather than over it. BB shows them, with its own
+ * While the dock shows, toasts at the page's bottom sit above it rather than over it. VesnALIA shows them, with its own
  * toaster (sonner), outside the plugin: a style in the page's head lifts that toaster by what the dock covers.
  */
 function useToastsAbove(dock: HTMLElement | null) {
@@ -85,15 +85,15 @@ function DockId({ identity }: { identity: ReviewIdentity }) {
 /**
  * A phone's controls, at the bottom: All reviews, the chapter you're on, Comments, Ask agent, Main thread (with one),
  * and Full screen. The chapter and Comments are the tabs of the one sheet above it: the open one is pressed, and pressing
- * it again closes the sheet. Ask agent opens BB's side panel over the page; Main thread goes to the main thread. It
+ * it again closes the sheet. Ask agent opens VesnALIA's side panel over the page; Main thread goes to the main thread. It
  * makes way while you type in the review, for the keyboard, and for the lines you select (`hidden`).
  */
 export function PhoneDock({ hidden }: { hidden: boolean }) {
   const { targetKey, review, guide, sections, activeId, files, nav, panel, askAgent, fullscreen, leave, mainThread } = useWorkspace();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const appPanel = useAppPanel();
   const agentShown = useTabShown(targetKey, "agent") && !fullscreen.on;
-  // A phone has no band, and in full screen no title bar of BB's: the chapter's tab says which review this is.
+  // A phone has no band, and in full screen no title bar of VesnALIA's: the chapter's tab says which review this is.
   const identity = useMemo(() => reviewIdentity(review, guide.title), [review, guide.title]);
   const status = useDraftStatus(targetKey);
   const needsYou = useNeedsYou(targetKey);
@@ -165,7 +165,7 @@ export function PhoneDock({ hidden }: { hidden: boolean }) {
         {unsent > 0 && <span aria-hidden className="text-xs font-medium tabular-nums">{unsent}<span className="@max-[400px]/review:hidden"> to send</span></span>}
         {needsYou > 0 && <span aria-hidden className="absolute right-1.5 top-2 size-2 rounded-full bg-primary ring-2 ring-background" />}
       </Button>
-      {/* The agent opens in BB's side panel, over the page on a phone, whose tabs include the main thread's. */}
+      {/* The agent opens in VesnALIA's side panel, over the page on a phone, whose tabs include the main thread's. */}
       <Button variant="ghost" aria-label="Ask agent" aria-pressed={agentShown} className={tab} onClick={() => agentShown ? appPanel?.close() : askAgent()}>
         <Icon name="Sparkles" className="text-(--ansi-13)" aria-hidden />
       </Button>

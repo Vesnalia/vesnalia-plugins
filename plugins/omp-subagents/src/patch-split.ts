@@ -1,4 +1,4 @@
-// An agent's `.patch` may cover several files; bb's diff viewer takes a unified
+// An agent's `.patch` may cover several files; VesnALIA's diff viewer takes a unified
 // patch for exactly ONE file, so the patch is split per file first.
 
 export interface FilePatch {

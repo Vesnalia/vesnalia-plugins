@@ -23,7 +23,7 @@ test("devices list returns ids", opts, async () => {
 test("save, read, run a new program", opts, async () => {
   const name = "bbtest_word_count";
   const code = 'def bbtest_word_count(text: str) -> dict:\n    return {"status": "success", "value": len(text.split())}';
-  await api.save(name, "Test from bb plugin: count words in a text", code, { text: "a b" });
+  await api.save(name, "Test from VesnALIA plugin: count words in a text", code, { text: "a b" });
   const back = await api.get(name);
   assert.equal(back?.code.trim(), code.trim());
   const { result, runTimeMs } = await api.run(name, { text: "one two three" }, device);

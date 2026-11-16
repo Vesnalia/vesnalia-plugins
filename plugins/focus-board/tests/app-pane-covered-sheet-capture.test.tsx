@@ -21,7 +21,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-vi.mock("@get-bb/plugin-sdk/app", async () => await import("./helpers/app-fake-sdk"));
+vi.mock("@vesnalia/plugin-sdk/app", async () => await import("./helpers/app-fake-sdk"));
 
 // Count ThreadCard renders without changing behavior (the
 // app-hover-no-rerender precedents): a non-memoized wrapper invoked per
@@ -452,7 +452,7 @@ describe("the pane's covered-sheet skip (issue #406 stage 2)", () => {
       thr_focus: [
         {
           tracker: "github",
-          repo: "cristoslc/bb-plugin-focus-board",
+          repo: "cristoslc/alia-plugin-focus-board",
           issue: 406,
           kind: "issue",
           href: "https://github.com/cristoslc/bb-plugin-focus-board/issues/406",
@@ -506,7 +506,7 @@ describe("the pane's covered-sheet skip (issue #406 stage 2)", () => {
       thr_focus: [
         {
           tracker: "github",
-          repo: "cristoslc/bb-plugin-focus-board",
+          repo: "cristoslc/alia-plugin-focus-board",
           issue: 406,
           kind: "issue",
           href: "https://github.com/cristoslc/bb-plugin-focus-board/issues/406",

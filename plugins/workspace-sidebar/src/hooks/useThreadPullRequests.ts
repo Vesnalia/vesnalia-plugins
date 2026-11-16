@@ -5,8 +5,8 @@
 // goes through our server instead: one batched request per paint, cached
 // there by environment.
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 
 export interface ThreadPullRequest {

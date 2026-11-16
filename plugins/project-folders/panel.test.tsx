@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { beforeAll, afterEach, expect, it } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { installTestMatchMedia, setCompactViewport } from "./test-match-media";
 let app: Awaited<ReturnType<typeof loadPluginApp>>;
 beforeAll(async () => {
@@ -567,7 +567,7 @@ it("adopts an existing folder instead of moving the files", async () => {
   view.lifecycle.unmount();
 });
 
-it("saves custom rules for BB sessions and a startup instruction", async () => {
+it("saves custom rules for VesnALIA sessions and a startup instruction", async () => {
   const saves: { customTarget?: string; startup?: string }[] = [];
   const view = renderSlot(
     app.navPanels[0]!,

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { experimental_FileLink as FileLink } from "@get-bb/plugin-sdk/app";
+import { experimental_FileLink as FileLink } from "@vesnalia/plugin-sdk/app";
 import type { DraftComment } from "../src/draft";
 import { useEditorFile } from "../lib/review-links";
 import { cn } from "../lib/utils";
@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 const at = (line: number | null) => line && line > 0 ? { kind: "line" as const, line, column: null } : null;
 
-/** A review's file row: Open in editor, at `line` when given and the folder's line is it. BB decides where: its preview, its editor, or yours. */
+/** A review's file row: Open in editor, at `line` when given and the folder's line is it. VesnALIA decides where: its preview, its editor, or yours. */
 export function FileEditorLink({ file, line }: { file: string; line: number | null }) {
   const open = useEditorFile(file);
   if (!open) return null;

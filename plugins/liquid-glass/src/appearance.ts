@@ -1,7 +1,7 @@
 /**
  * The appearance model, shared by the server (kv + rpc + cli) and the frontend
  * (settings section + content script). Everything here is pure so it can be
- * unit-tested without a bb server or a DOM.
+ * unit-tested without a VesnALIA server or a DOM.
  *
  * The knob names and ranges mirror monocode's `src/lib/appearance.ts`: hue
  * 0-360 (default 240), saturation 0-100 (default 0), sidebar opacity 0.15-1
@@ -158,7 +158,7 @@ export type Palette = "dark" | "light";
 const THEME_ID_PREFIX = "plugin:liquid-glass:";
 
 /**
- * Which palette an active bb theme id selects, or null when the active theme
+ * Which palette an active VesnALIA theme id selects, or null when the active theme
  * is not one of ours (in which case the content script writes nothing).
  */
 export function paletteForThemeId(themeId: string | null): Palette | null {

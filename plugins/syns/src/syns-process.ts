@@ -6,7 +6,7 @@ import type { RunResult } from "./cli.js";
 
 /**
  * Finding the Syns CLI on a machine and running it with the arguments it is
- * given: what bb's host half (host-entry.ts) and any other host's runner call
+ * given: what VesnALIA's host half (host-entry.ts) and any other host's runner call
  * on the machine where the session's folder is. It opens no repository file;
  * its only file-system access is looking for the `syns` executable.
  * S2.6–S2.8, S2.10, S2.16

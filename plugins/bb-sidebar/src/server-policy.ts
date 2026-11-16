@@ -63,7 +63,7 @@ export function createServerPolicy(
       const keys = environmentIds.slice(start, start + MAX_PULL_REQUEST_KEYS);
       let rows: Record<string, unknown> = {};
       try {
-        rows = await ctx.bb.sdk.plugins.callRpc({
+        rows = await ctx.alia.sdk.plugins.callRpc({
           pluginId: GITHUB_PR_STATUS_PLUGIN_ID,
           method: "pullRequests",
           input: { keys },
@@ -73,7 +73,7 @@ export function createServerPolicy(
         pullRequestLookupFailing = false;
       } catch (error) {
         if (!pullRequestLookupFailing) {
-          ctx.bb.log.warn(
+          ctx.alia.log.warn(
             `GitHub PR Status lookup failed; threads with a workspace keep their place until it succeeds: ${
               error instanceof Error ? error.message : String(error)
             }`,
@@ -234,7 +234,7 @@ export function createServerPolicy(
       };
       let changes = decide(new Set());
       // Settling stops the runtime, which kills what its agent left running in
-      // the background, and bb cannot see that work when the provider does not
+      // the background, and VesnALIA cannot see that work when the provider does not
       // report it. A thread still serving a port, such as a dev server, stays
       // out of policy reach until it stops.
       const settling = new Set(changes.flatMap((change) => (change.decision === "settle" ? [change.threadId] : [])));
@@ -324,7 +324,7 @@ export function createServerPolicy(
       if (!policyEvaluationQueued) return;
       policyEvaluationQueued = false;
       void evaluatePolicies().catch((error) => {
-        ctx.bb.log.error(
+        ctx.alia.log.error(
           `Queued automatic settle evaluation failed: ${error instanceof Error ? error.message : String(error)}`,
         );
       });

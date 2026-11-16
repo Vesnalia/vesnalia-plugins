@@ -2,13 +2,13 @@ import type { Adapter } from "./adapters";
 import type { Runner } from "./adapters/exec";
 import type { Config, ServerConfig } from "./config";
 import type { Store } from "./db/store";
-import type { BbPort, ProjectInfo } from "./ports";
+import type { AliaPort, ProjectInfo } from "./ports";
 import type { Settings } from "./settings";
 
 /** Everything Shuttle's behavior modules share. */
 export interface Ctx {
   store: Store;
-  port: BbPort;
+  port: AliaPort;
   now(): number;
   settings(): Settings;
   config(): Config;

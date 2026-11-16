@@ -1,4 +1,4 @@
-# Atrium — MonoRepo Projects
+# Atrium - MonoRepo Projects
 
 Плагин адаптирован для VesnALIA из открытого каталога плагинов bb.
 

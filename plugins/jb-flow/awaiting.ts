@@ -2,7 +2,7 @@
 // next move to the user (a question, options to pick, a decision board, "reply
 // go"), or is the work wrapped up? Read-but-unanswered asks otherwise look
 // like finished threads ("Done") even though the agent is waiting on you.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { parseDecisionOptions } from "./decisions.ts";
 import { laneSections } from "./lanes.ts";
 import { listLiveThreads } from "./thread-list.ts";
@@ -140,7 +140,7 @@ const WAITS = new RegExp(
   [
     String.raw`\b([Ww]aiting|[Ww]ait) (for|on) (?![Yy]ou\b|CI\b|ci\b|(the|that) CI\b|[Cc]hecks?\b|(the|that|it|a|its|all) (CI|build|deploy|release|certificate|run|job|result|pipeline|tests?|workflows?|suite|checks?|migration|merge|GitHub Actions)\b|release\b|deploy\b|pipeline\b|tests?\b|workflows?\b|GitHub Actions\b|[Aa]ctions\b)\w`,
     String.raw`\b([Oo]nce|[Ww]hen|[Uu]ntil|[Aa]fter) ${PERSON} (replies|responds|answers|confirms|approves|reviews|sends|signs|gets back|has (replied|answered|confirmed|reviewed))`,
-    String.raw`\b(depends on|is up to|pending on|[Bb]locked on) ${PERSON}\b`,
+    String.raw`\b(depends on|is up to|pending on|[VesnALIA]locked on) ${PERSON}\b`,
     String.raw`\b(only )?pending reviewers?\b|\bawaiting (review|a reply|reply|response|approval|their|his|her)\b`,
     String.raw`\b(no|nothing|not) (reply|answer|response) (yet )?from\b`,
     String.raw`\b(check|look) (for|whether|if) (${PERSON}(’s|'s)? (reply|answer|response)|${PERSON} (replied|answered|responded|has (replied|answered)))`,
@@ -179,8 +179,8 @@ export function waitsOnOthers(text: string): boolean {
 /** A promise counts as stalled after the thread has been idle this long. */
 export const STALLED_AFTER_MS = 60 * 60_000;
 
-export function createAwaiting(bb: BbPluginApi, changed: () => void) {
-  const kv = bb.storage.kv;
+export function createAwaiting(alia: AliaPluginApi, changed: () => void) {
+  const kv = alia.storage.kv;
   // Threads go idle together; one queue for all the maps so a write never
   // replaces another thread's result with a stale copy.
   let lock: Promise<unknown> = Promise.resolve();
@@ -212,16 +212,16 @@ export function createAwaiting(bb: BbPluginApi, changed: () => void) {
     await setWaiting(threadId, hand === "waiting");
   };
 
-  bb.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
     const text = lastAssistantText ?? "";
     await classify(thread.id, text);
     // A thread you filed under "Waiting for others" goes back to Active once a
     // turn ends without waiting on anyone (it asks you, or it's done).
     if (waitsOnOthers(text)) return;
-    const current = await bb.sdk.threads.get({ threadId: thread.id }).catch(() => null);
+    const current = await alia.sdk.threads.get({ threadId: thread.id }).catch(() => null);
     if (current?.sectionId == null) return;
-    const { waiting } = await laneSections(bb);
-    if (waiting && current.sectionId === waiting) await bb.sdk.threads.update({ threadId: thread.id, sectionId: null });
+    const { waiting } = await laneSections(alia);
+    if (waiting && current.sectionId === waiting) await alia.sdk.threads.update({ threadId: thread.id, sectionId: null });
   });
   const clear = async ({ thread }: { thread: { id: string } }) => {
     await set(thread.id, false);
@@ -229,19 +229,19 @@ export function createAwaiting(bb: BbPluginApi, changed: () => void) {
     await setWaiting(thread.id, false);
     await setReady(thread.id, false);
   };
-  bb.events.on("thread.active", clear);
-  bb.events.on("thread.archived", clear);
+  alia.events.on("thread.active", clear);
+  alia.events.on("thread.archived", clear);
 
   // Classify threads that went idle before the plugin was watching.
-  bb.background.service("awaiting-backfill", {
+  alia.background.service("awaiting-backfill", {
     async start(signal) {
       // Bump when the rules change, so open threads are re-classified once.
       if ((await kv.get<number>("awaitingVersion")) !== AWAITING_VERSION) {
-        const threads = await listLiveThreads(bb, { signal });
+        const threads = await listLiveThreads(alia, { signal });
         for (const thread of threads) {
           if (signal.aborted) return;
           if (thread.status !== "idle" || thread.parentThreadId !== null) continue;
-          const output = await bb.sdk.threads.output({ threadId: thread.id, signal }).catch(() => null);
+          const output = await alia.sdk.threads.output({ threadId: thread.id, signal }).catch(() => null);
           if (output?.output) await classify(thread.id, output.output);
         }
         if (!signal.aborted) await kv.set("awaitingVersion", AWAITING_VERSION);

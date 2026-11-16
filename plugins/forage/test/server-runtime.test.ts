@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { createServerRuntime } from "../server.ts";
 import { artifact, attempt, threadScope } from "./sources/helpers.ts";
 import type { FetchedContent } from "../src/web/fetch.ts";
@@ -25,7 +25,7 @@ async function until(test: () => boolean) { const end = Date.now() + 2000; while
 describe("single server service graph", () => {
  it("drives all six native tools and CLI families against the same actual sources/jobs/RPC and diagnostic ring", async () => {
   const fake = fakeHost();
-  const runtime = await createServerRuntime(fake.bb, { search: async () => searchResponse, fetch: async url => page(url, url.endsWith("sitemap.xml") ? '<urlset><url><loc>https://example.com/docs</loc></url></urlset>' : "# Example\n\nBody"), crawl: { transport: async url => ({ response: new Response("", { status: 404 }), finalUrl: url, redirects: 0, acceptedRedirectBytes: 0, access: { network: "public", credentialed: false, requestScopeKey: null } }), fetchPage: async url => page(url) } });
+  const runtime = await createServerRuntime(fake.alia, { search: async () => searchResponse, fetch: async url => page(url, url.endsWith("sitemap.xml") ? '<urlset><url><loc>https://example.com/docs</loc></url></urlset>' : "# Example\n\nBody"), crawl: { transport: async url => ({ response: new Response("", { status: 404 }), finalUrl: url, redirects: 0, acceptedRedirectBytes: 0, access: { network: "public", credentialed: false, requestScopeKey: null } }), fetchPage: async url => page(url) } });
   const before = runtime.sources.recordRetrieval({ scope: threadScope(), origin: "fetch", artifact: artifact("# Before", { fetchedAt: new Date().toISOString() }), attempt: attempt() });
   const after = runtime.sources.recordRetrieval({ scope: threadScope(), origin: "fetch", artifact: artifact("# After", { fetchedAt: new Date().toISOString() }), attempt: attempt() });
   for (const [name, input] of Object.entries({ search: { query: "fixture" }, fetch: { url: "https://example.com/docs" }, map: { url: "https://example.com", maxIndexDocuments: 3 }, extract: { url: "https://example.com/docs", fields: ["headings"] }, diff: { beforeSnapshotId: before.snapshotId, afterSnapshotId: after.snapshotId }, crawl: { action: "list" } })) {
@@ -45,7 +45,7 @@ describe("single server service graph", () => {
   const fake = fakeHost(); let projectMissing = false;
   fake.harness.sdk.stub("projects.get", async ({ projectId }) => { if (projectMissing) throw Object.assign(new Error("missing"), { status: 404 }); return { id: projectId, name: "Fixture", createdAt: 1, updatedAt: 1, gitRemoteUrl: null, kind: "standard", sources: [] }; });
   fake.harness.sdk.stub("threads.get", async ({ threadId }) => { if (threadId === "missing") throw Object.assign(new Error("missing"), { status: 404 }); if (threadId === "transient") throw Object.assign(new Error("forbidden"), { status: 403 }); return makeThreadResponse({ id: threadId, projectId: "proj_a", archivedAt: 100 }); });
-  const runtime = await createServerRuntime(fake.bb);
+  const runtime = await createServerRuntime(fake.alia);
   for (const thread of ["missing", "transient", "archived"]) runtime.sources.recordRetrieval({ scope: threadScope(thread), origin: "fetch", artifact: artifact("# Fresh", { fetchedAt: new Date().toISOString() }), attempt: attempt() });
   runtime.jobs.create({ scope: threadScope("missing"), rootUrl: "https://example.com", backend: "local", includePaths: [], excludePaths: [], includeSubdomains: false, limits: { maxPages: 1, maxDepth: 0, maxBytes: 1000, maxDurationMs: 1000, concurrency: 1 } });
   await fake.harness.behavior.runSchedule("retention");
@@ -56,14 +56,14 @@ describe("single server service graph", () => {
  });
  it("fences a late capture through the authoritative thread-deleted event", async () => {
   const fake = fakeHost(); let entered!: () => void, release!: () => void; const started = new Promise<void>(resolve => { entered = resolve; }); const wait = new Promise<void>(resolve => { release = resolve; });
-  const runtime = await createServerRuntime(fake.bb, { fetch: async url => { entered(); await wait; return page(url); } });
+  const runtime = await createServerRuntime(fake.alia, { fetch: async url => { entered(); await wait; return page(url); } });
   const pending = runtime.executeFetch({ url: "https://example.com/docs" }, { scope: threadScope(), signal: new AbortController().signal }); await started;
   const event = await fake.harness.behavior.emitThreadEvent("thread.deleted", { thread: makeThreadResponse({ id: "thr_a", projectId: "proj_a", deletedAt: Date.now() }) }); expect(event.errors).toEqual([]);
   release(); await expect(pending).rejects.toThrow("Scope was cleared or deleted"); expect(runtime.sources.list({ scope: threadScope(), limit: 10 }).sources).toHaveLength(0);
  });
  it("updates the crawl config synchronously and revokes active captures on settings changes", async () => {
   const fake = fakeHost(); let entered!: () => void, release!: () => void; const started = new Promise<void>(resolve => { entered = resolve; }); const wait = new Promise<void>(resolve => { release = resolve; });
-  const runtime = await createServerRuntime(fake.bb, { fetch: async url => { entered(); await wait; return page(url); } });
+  const runtime = await createServerRuntime(fake.alia, { fetch: async url => { entered(); await wait; return page(url); } });
   const pending = runtime.executeFetch({ url: "https://example.com/docs" }, { scope: threadScope(), signal: new AbortController().signal }); await started;
   await fake.harness.behavior.setSettings({ privacyProfile: "private", allowedReaders: "direct", allowedBackends: "local" }); release();
   await expect(pending).rejects.toThrow("Forage policy changed"); expect((await runtime.getConfig()).privacyProfile).toBe("private");

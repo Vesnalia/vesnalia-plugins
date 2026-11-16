@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import * as commands from "./commands.js";
 import type { CommandContext } from "./commands.js";
 import type { AuthConnectionSummary } from "./types.js";
@@ -83,28 +83,28 @@ function fail(message: string): CliResult {
   return { exitCode: 1, stderr: message };
 }
 
-async function resolveHostId(bb: BbPluginApi, runCtx: CliRunContext): Promise<string | undefined> {
+async function resolveHostId(alia: AliaPluginApi, runCtx: CliRunContext): Promise<string | undefined> {
   if (!runCtx.threadId) return undefined;
-  const thread = await bb.sdk.threads.get({ threadId: runCtx.threadId });
+  const thread = await alia.sdk.threads.get({ threadId: runCtx.threadId });
   if (!thread.environmentId) return undefined;
-  const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+  const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
   return environment.hostId;
 }
 
-async function resolveScript(bb: BbPluginApi, flags: Flags, runCtx: CliRunContext): Promise<string> {
+async function resolveScript(alia: AliaPluginApi, flags: Flags, runCtx: CliRunContext): Promise<string> {
   const inline = stringFlag(flags, "script");
   if (inline !== undefined) return inline;
   const scriptFile = stringFlag(flags, "script-file");
   if (scriptFile === undefined) {
     throw new Error("eval requires --script <code> or --script-file <path>");
   }
-  const hostId = await resolveHostId(bb, runCtx);
-  const file = await bb.sdk.files.read({ path: scriptFile, hostId });
+  const hostId = await resolveHostId(alia, runCtx);
+  const file = await alia.sdk.files.read({ path: scriptFile, hostId });
   return file.content;
 }
 
 export async function runCli(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   ctx: CommandContext,
   argv: string[],
   runCtx: CliRunContext,
@@ -166,7 +166,7 @@ export async function runCli(
 
       case "eval": {
         const targetId = requirePositional(positionals, "target-id");
-        const script = await resolveScript(bb, flags, runCtx);
+        const script = await resolveScript(alia, flags, runCtx);
         const result = await commands.evaluateInTarget(ctx, targetId, script);
         const text = typeof result === "string" ? result : JSON.stringify(result);
         return ok(json, { result }, text);

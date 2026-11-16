@@ -40,8 +40,8 @@ Click **Connect Jira** and approve access in your browser; there is nothing to
 configure. To add another site later, Disconnect, then Connect again and grant
 both. The plugin signs in through Atlassian's Rovo MCP server
 (mcp.atlassian.com, v2), registering itself automatically. The refresh token is
-stored in a secret plugin setting on the BB server; the access token is kept
-in memory only. Requests go from the BB server to mcp.atlassian.com, and
+stored in a secret plugin setting on the VesnALIA server; the access token is kept
+in memory only. Requests go from the VesnALIA server to mcp.atlassian.com, and
 nothing else leaves your machine.
 
 ## Requirements

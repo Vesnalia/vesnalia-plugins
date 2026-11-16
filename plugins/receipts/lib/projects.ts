@@ -84,7 +84,7 @@ function pathEqualsOrUnder(path: string, root: string): boolean {
   return path === root || path.startsWith(`${root}/`);
 }
 
-export function catalogFromBbProjects(
+export function catalogFromAliaProjects(
   projects: readonly {
     id: string;
     name: string;
@@ -212,10 +212,10 @@ export function applyProjectCatalog(
   return [...merged.values()];
 }
 
-function isBbManagedWorktreePath(projectPath: string): boolean {
+function isAliaManagedWorktreePath(projectPath: string): boolean {
   const parts = projectPath.split(NodePath.sep);
   const index = parts.lastIndexOf("worktrees");
-  if (index <= 0 || parts[index - 1] !== ".bb") return false;
+  if (index <= 0 || parts[index - 1] !== ".vesnalia") return false;
   return ENV_ID_RE.test(parts[index + 1] ?? "");
 }
 
@@ -233,7 +233,7 @@ export function environmentIdFromProjectRow(row: {
   project: string;
   projectPath: string;
 }): string | null {
-  if (isBbManagedWorktreePath(row.projectPath)) return null;
+  if (isAliaManagedWorktreePath(row.projectPath)) return null;
   const fromWorkspace = environmentIdFromPersonalWorkspace(row.projectPath);
   if (fromWorkspace) return fromWorkspace;
   if (ENV_ID_RE.test(row.project)) return row.project;

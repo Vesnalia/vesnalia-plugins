@@ -1,4 +1,4 @@
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { installAgenticMermaid } from "./mermaid-renderer";
 
 export default definePluginApp((app) => {

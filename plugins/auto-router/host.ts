@@ -4,8 +4,8 @@ import {
 } from "./routing/native-classifier.js";
 import { withUsage, type ProviderUsage } from "./routing/usage.js";
 import {
-  bbRateLimitsSchema,
-  bbUsage,
+  aliaRateLimitsSchema,
+  aliaUsage,
   makeUsageReader,
   readCodexLimits,
   recordUsage,
@@ -35,7 +35,7 @@ import {
 } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { z } from "zod";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import {
   bridgeRequestEnvelopeSchema,
   createBridgeIo,
@@ -55,7 +55,7 @@ import {
   type AvailableModel,
   type ProviderBridgeContext,
   type ThreadDelta,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import { hostContract, delegationSchema } from "./contract.js";
 import { NO_JEV_CALL, type JevAsk, readJevKey } from "./routing/jev.js";
 import { modelInfo } from "./routing/models.js";
@@ -88,11 +88,11 @@ import {
   type RpcMessage,
 } from "./transport.js";
 
-export const DEFAULT_BB_ROOT =
-  "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app";
+export const DEFAULT_ALIA_ROOT =
+  "/Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app";
 const settingsSchema = z
   .object({
-    bbRoot: z.string().default(DEFAULT_BB_ROOT),
+    aliaRoot: z.string().default(DEFAULT_ALIA_ROOT),
     additionalWorkspaceWriteRoots: z.array(z.string()).optional(),
     nativeProviderOptions: z
       .object({
@@ -351,7 +351,7 @@ export function makeAutoBridge(
       return undefined;
     }
   }
-  /** Routing tool rows as BB shows them: the plan's assignments and each helper's model. */
+  /** Routing tool rows as VesnALIA shows them: the plan's assignments and each helper's model. */
   function decorated(session: Session, delta: ThreadDelta): ThreadDelta {
     if (
       (delta.kind !== "item.open" && delta.kind !== "item.close") ||
@@ -393,12 +393,12 @@ export function makeAutoBridge(
       modelInfo(session.saved.route?.model ?? "")?.provider ?? null;
     const report =
       delta.kind === "provider.rateLimits"
-        ? bbRateLimitsSchema.safeParse(delta.rateLimits)
+        ? aliaRateLimitsSchema.safeParse(delta.rateLimits)
         : null;
     const usage =
       report !== null
         ? report.success
-          ? bbUsage(report.data, now)
+          ? aliaUsage(report.data, now)
           : null
         : delta.kind === "provider.error" &&
             (delta.category ?? delta.errorInfo?.category) === "rate-limit" &&
@@ -556,7 +556,7 @@ export function makeAutoBridge(
           : "claude-code";
       const child = await launch({
         provider,
-        bbRoot: settings.bbRoot,
+        aliaRoot: settings.aliaRoot,
         dataDir: dataDir(),
         onMessage: (message) => nativeMessage(session, message),
         onExit: (error) => {
@@ -570,7 +570,7 @@ export function makeAutoBridge(
       session.native = child;
       const init = await child.request("initialize", {
         protocolVersion: 2,
-        client: { name: "bb-auto-router", version: "0.1.0" },
+        client: { name: "alia-auto-router", version: "0.1.0" },
         grammarVersions: [3, 3],
       });
       const initialized = z
@@ -588,7 +588,7 @@ export function makeAutoBridge(
         initialized.capabilities.grammarVersions[1] < 3
       ) {
         throw new Error(
-          "Installed BB provider bridge does not support grammar version 3",
+          "Installed VesnALIA provider bridge does not support grammar version 3",
         );
       }
       if (skills !== null) await child.request("skills/configure", skills);
@@ -639,7 +639,7 @@ export function makeAutoBridge(
     const continuation =
       method === "turn/steer" ||
       (previous !== null &&
-        /^\[bb system\]\s+@thread:thr_[a-z0-9]+ (completed|failed):/.test(
+        /^\[alia system\]\s+@thread:thr_[a-z0-9]+ (completed|failed):/.test(
           prompt,
         ));
     if (!continuation) {
@@ -842,8 +842,8 @@ export function makeAutoBridge(
         );
         const installed = await access(
           join(
-            settings.bbRoot,
-            "host-daemon/dist/bb-provider-bridge-worker.mjs",
+            settings.aliaRoot,
+            "host-daemon/dist/alia-provider-bridge-worker.mjs",
           ),
         ).then(
           () => true,
@@ -853,7 +853,7 @@ export function makeAutoBridge(
           status: installed ? "ready" : "not_installed",
           statusMessage: installed
             ? "Model Pilot uses your existing Codex and Claude Code sign-ins. Connect a separate classification API key in Model Pilot."
-            : "The configured BB installation does not contain provider bridges.",
+            : "The configured VesnALIA installation does not contain provider bridges.",
           accountEmail: null,
           planLabel: null,
           installedVersion: null,
@@ -877,7 +877,7 @@ export function makeAutoBridge(
         );
         if (saved.threadId !== resume.threadId)
           throw new Error(
-            "Saved Auto session belongs to a different BB thread",
+            "Saved Auto session belongs to a different VesnALIA thread",
           );
         return construct(resume, saved);
       }
@@ -1105,15 +1105,15 @@ async function askWithStoredKey(
       .then((text) =>
         z
           .object({
-            bbRoot: z.string(),
+            aliaRoot: z.string(),
             nativeProviderOptions: z.record(z.string(), z.unknown()).optional(),
           })
           .parse(JSON.parse(text)),
       )
-      .catch(() => ({ bbRoot: DEFAULT_BB_ROOT, nativeProviderOptions: {} }));
+      .catch(() => ({ aliaRoot: DEFAULT_ALIA_ROOT, nativeProviderOptions: {} }));
     return makeNativeClassifierAsk(configuration, {
       dataDir: dirname(credentialFile(dataDir)),
-      bbRoot: runtime.bbRoot,
+      aliaRoot: runtime.aliaRoot,
       providerOptions: runtime.nativeProviderOptions,
     })(state, questions);
   }
@@ -1221,7 +1221,7 @@ export default experimental_defineHostEntry({
         configuration,
         key,
         onePasswordReference,
-        bbRoot,
+        aliaRoot,
         nativeProviderOptions,
       },
       context,
@@ -1235,7 +1235,7 @@ export default experimental_defineHostEntry({
         await writePrivateFile(
           `${configurationFile(dataDir)}.runtime`,
           JSON.stringify({
-            bbRoot: bbRoot ?? DEFAULT_BB_ROOT,
+            aliaRoot: aliaRoot ?? DEFAULT_ALIA_ROOT,
             nativeProviderOptions,
           }),
         );
@@ -1275,7 +1275,7 @@ export default experimental_defineHostEntry({
       };
     },
     async testClassifier(
-      { candidate, onePasswordReference, bbRoot, nativeProviderOptions },
+      { candidate, onePasswordReference, aliaRoot, nativeProviderOptions },
       context,
     ) {
       const { key, ...configuration } = candidate;
@@ -1285,7 +1285,7 @@ export default experimental_defineHostEntry({
               dataDir: dirname(
                 credentialFile(context.experimental_paths.dataDir),
               ),
-              bbRoot: bbRoot ?? DEFAULT_BB_ROOT,
+              aliaRoot: aliaRoot ?? DEFAULT_ALIA_ROOT,
               providerOptions: nativeProviderOptions,
             })
           : makeClassifierAsk(configuration, {

@@ -1,8 +1,8 @@
 export const ICON_PACK_OPTIONS = [
   {
     id: "default",
-    label: "BB Default",
-    description: "BB's built-in icon set.",
+    label: "VesnALIA Default",
+    description: "VesnALIA's built-in icon set.",
   },
   {
     id: "lucide",
@@ -43,8 +43,8 @@ export const SPINNER_STYLE_OPTIONS = [
   },
   {
     id: "default",
-    label: "BB Default",
-    description: "BB's built-in spinner.",
+    label: "VesnALIA Default",
+    description: "VesnALIA's built-in spinner.",
   },
   {
     id: "lucide",

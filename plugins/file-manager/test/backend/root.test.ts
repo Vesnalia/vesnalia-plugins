@@ -61,10 +61,10 @@ describe("initRoot / getRoot", () => {
   });
 
   it("derives the staging directory from the resolved root", () => {
-    expect(getStagingDir()).toBe(path.join(root, ".bb-file-manager"));
-    expect(isStagingPath(path.join(root, ".bb-file-manager"))).toBe(true);
-    expect(isStagingPath(path.join(root, ".bb-file-manager", "uploads", "x.part"))).toBe(true);
-    expect(isStagingPath(path.join(root, ".bb-file-manager-other"))).toBe(false);
+    expect(getStagingDir()).toBe(path.join(root, ".alia-file-manager"));
+    expect(isStagingPath(path.join(root, ".alia-file-manager"))).toBe(true);
+    expect(isStagingPath(path.join(root, ".alia-file-manager", "uploads", "x.part"))).toBe(true);
+    expect(isStagingPath(path.join(root, ".alia-file-manager-other"))).toBe(false);
   });
 });
 

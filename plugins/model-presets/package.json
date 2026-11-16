@@ -1,26 +1,21 @@
 {
-  "name": "bb-plugin-model-presets",
+  "name": "alia-plugin-model-presets",
   "version": "0.1.0",
-  "description": "Model presets for the bb New thread composer: one click (or a shortcut and a number) sets provider, model, effort, speed, and per-thread instructions.",
+  "description": "Model presets for the VesnALIA New thread composer: one click (or a shortcut and a number) sets provider, model, effort, speed, and per-thread instructions.",
   "license": "MIT",
   "author": "Krzysztof Kraszewski",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/xkrsz/bb-model-presets.git"
-  },
-  "homepage": "https://github.com/xkrsz/bb-model-presets",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "model",
     "presets"
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.40",
-    "bbPluginSdk": ">=0.4.21"
+    "alia": ">=0.40",
+    "aliaPluginSdk": ">=0.4.21"
   },
-  "bb": {
+  "alia": {
     "name": "Model Presets",
     "description": "Presets for the New thread composer: provider, model, effort, speed, and custom thread instructions, with a keyboard shortcut.",
     "branding": {
@@ -31,7 +26,7 @@
     "skills": []
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },
@@ -44,7 +39,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.21",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -70,5 +64,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^3.2.7"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.21"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/model-presets#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/model-presets"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

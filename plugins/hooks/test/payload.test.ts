@@ -1,5 +1,5 @@
-import { makeMessageDispatchHookContext } from "@get-bb/plugin-sdk/testing";
-import type { MessageDispatchHookContext } from "@get-bb/plugin-sdk";
+import { makeMessageDispatchHookContext } from "@vesnalia/plugin-sdk/testing";
+import type { MessageDispatchHookContext } from "@vesnalia/plugin-sdk";
 import { describe, expect, it } from "vitest";
 import { prepareDispatch } from "../src/payload.js";
 

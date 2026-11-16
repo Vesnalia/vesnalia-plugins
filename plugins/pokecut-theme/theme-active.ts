@@ -1,5 +1,5 @@
-// Whether the Pokecut theme is the selected BB theme. The theme CSS declares
-// --pk-theme: pokecut on :root; BB swaps the CSS in <style id="bb-app-theme">
+// Whether the Pokecut theme is the selected VesnALIA theme. The theme CSS declares
+// --pk-theme: pokecut on :root; VesnALIA swaps the CSS in <style id="alia-app-theme">
 // when the user picks another theme, so a head observer catches every change.
 import { useSyncExternalStore } from "react";
 

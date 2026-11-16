@@ -2,7 +2,7 @@
 import { createContext, useContext, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { PluginSidebarThread, experimental_useThreadActions } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread, experimental_useThreadActions } from "@vesnalia/plugin-sdk/app";
 import { project, provider, thread } from "./fixtures";
 import { NotionSidebar } from "../app";
 
@@ -17,12 +17,12 @@ const onNavigate=vi.fn();
 let threads:PluginSidebarThread[]=[];
 const archiveActions=new Map<string,ReturnType<typeof experimental_useThreadActions>[number]["action"]>();
 
-vi.mock("@get-bb/plugin-sdk/app",async importOriginal=>{
-  const actual=await importOriginal<typeof import("@get-bb/plugin-sdk/app")>();
+vi.mock("@vesnalia/plugin-sdk/app",async importOriginal=>{
+  const actual=await importOriginal<typeof import("@vesnalia/plugin-sdk/app")>();
   return {...actual,
     // The host navigation hook consumes router location even though toThread
     // itself remains stable. A row must not subscribe to that route context.
-    useBbNavigate:()=>{useContext(RouteContext);return {...navigation};},
+    useAliaNavigate:()=>{useContext(RouteContext);return {...navigation};},
     useSdk:()=>({}),useRpc:()=>rpc,
     useRealtime:()=>{},useRealtimeConnectionState:()=>"connected",
     experimental_usePluginId:()=>"threadspace",
@@ -36,7 +36,7 @@ vi.mock("@get-bb/plugin-sdk/app",async importOriginal=>{
     experimental_useSidebarThreadSplit:()=>({splitProps:{}}),
     // The real SDK subscribes to its whole action store even when keys filters
     // to archive. Core Split action data changes with the focused route.
-    experimental_useThreadActions:(thread:PluginSidebarThread)=>{useContext(ActionStoreContext);const action=archiveActions.get(thread.id);return action?[{key:"bb--core/archive",pluginId:"bb--core",group:"lifecycle",action}]:[];},
+    experimental_useThreadActions:(thread:PluginSidebarThread)=>{useContext(ActionStoreContext);const action=archiveActions.get(thread.id);return action?[{key:"alia--core/archive",pluginId:"alia--core",group:"lifecycle",action}]:[];},
     experimental_ThreadStatusGlyph:()=>null,
     experimental_ThreadActionsContextMenu:({children}:{children:ReactNode})=>children,
     experimental_ThreadActionsMenu:({trigger}:{trigger:(props:ButtonHTMLAttributes<HTMLButtonElement>)=>ReactNode})=>trigger({}),

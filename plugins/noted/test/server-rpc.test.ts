@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { host } from "./helpers";
 
 describe("noted rpc", () => {
   it("opens a session for the caller with default roles and returns a transformed document", async () => {
-    const { bb, harness } = host(); await plugin(bb);
+    const { alia, harness } = host(); await plugin(alia);
     const r: any = await harness.behavior.callRpc("openSession", { threadId: "thr_a", path: "plan.html" });
     expect(r.session).toMatchObject({ producerThreadId: "thr_a", viewThreadId: "thr_a", replyThreadId: "thr_a", absolutePath: "/repo/plan.html", sourceKind: "workspace", status: "open" });
     expect(r.displayPath).toBe("plan.html"); expect(r.revisionNumber).toBe(1);
@@ -16,7 +16,7 @@ describe("noted rpc", () => {
   it("renders Markdown before injecting the annotation SDK", async () => {
     const h = host();
     h.setContent("# Review notes\n\n- Keep this\n- Change that\n\n[Home](../README.md)");
-    await plugin(h.bb);
+    await plugin(h.alia);
 
     const result: any = await h.harness.behavior.callRpc("openSession", {
       threadId: "thr_a",
@@ -36,7 +36,7 @@ describe("noted rpc", () => {
   it("does not read Markdown assets outside the workspace preview root", async () => {
     const h = host();
     h.setContent("![Outside](../../outside.png)");
-    await plugin(h.bb);
+    await plugin(h.alia);
 
     const result: any = await h.harness.behavior.callRpc("openSession", {
       threadId: "thr_a",
@@ -49,7 +49,7 @@ describe("noted rpc", () => {
     ]);
   });
   it("resolves view=parent and reopens the same open session", async () => {
-    const { bb, harness } = host(); await plugin(bb);
+    const { alia, harness } = host(); await plugin(alia);
     const a: any = await harness.behavior.callRpc("openSession", { threadId: "thr_loops", path: "packet.html", view: "parent" });
     expect(a.session.viewThreadId).toBe("thr_michael"); expect(a.session.replyThreadId).toBe("thr_loops");
     const b: any = await harness.behavior.callRpc("openSession", { threadId: "thr_loops", path: "packet.html", view: "parent" });
@@ -59,7 +59,7 @@ describe("noted rpc", () => {
   });
   it("send delivers to the reply thread with the chosen mode, records the batch, clears the queue", async () => {
     const sent: any[] = [];
-    const { bb, harness } = host(async (args) => { sent.push(args); return { ok: true, delivery: "queued" }; }); await plugin(bb);
+    const { alia, harness } = host(async (args) => { sent.push(args); return { ok: true, delivery: "queued" }; }); await plugin(alia);
     const o: any = await harness.behavior.callRpc("openSession", { threadId: "thr_loops", path: "packet.html", view: "parent" });
     await harness.behavior.callRpc("queuePrompt", { sessionId: o.session.id, uid: "u1", prompt: "shorter", selector: "#a", tag: "p", text: "Hi" });
     const s: any = await harness.behavior.callRpc("send", { sessionId: o.session.id, mode: "queue-if-active", endSession: false });
@@ -71,7 +71,7 @@ describe("noted rpc", () => {
     const g: any = await harness.behavior.callRpc("getSession", { sessionId: o.session.id }); expect(g.queued).toEqual([]);
   });
   it("keeps the queue and records a failed batch when send throws", async () => {
-    const { bb, harness } = host(async () => { throw new Error("thread archived"); }); await plugin(bb);
+    const { alia, harness } = host(async () => { throw new Error("thread archived"); }); await plugin(alia);
     const o: any = await harness.behavior.callRpc("openSession", { threadId: "thr_a", path: "plan.html" });
     await harness.behavior.callRpc("queuePrompt", { sessionId: o.session.id, uid: "u1", prompt: "x", selector: "#a", tag: "p", text: "Hi" });
     const s: any = await harness.behavior.callRpc("send", { sessionId: o.session.id, endSession: false });
@@ -79,7 +79,7 @@ describe("noted rpc", () => {
     const g: any = await harness.behavior.callRpc("getSession", { sessionId: o.session.id }); expect(g.queued).toHaveLength(1);
   });
   it("records a revision on thread.idle of the producer when the file changed", async () => {
-    const h = host(); const { bb, harness } = h; await plugin(bb);
+    const h = host(); const { alia, harness } = h; await plugin(alia);
     const o: any = await harness.behavior.callRpc("openSession", { threadId: "thr_a", path: "plan.html" });
     h.setContent(`<html><body><p id="a">Hi again</p></body></html>`);
     await harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: "thr_a" }), lastAssistantText: "done" });
@@ -88,7 +88,7 @@ describe("noted rpc", () => {
     expect(harness.realtimeSignals.filter((s) => (s.payload as any)?.reason === "revision")).toHaveLength(1);
   });
   it("ends sessions when the reply thread is deleted", async () => {
-    const { bb, harness } = host(); await plugin(bb);
+    const { alia, harness } = host(); await plugin(alia);
     await harness.behavior.callRpc("openSession", { threadId: "thr_a", path: "plan.html" });
     await harness.behavior.emitThreadEvent("thread.deleted", { thread: makeThreadResponse({ id: "thr_a" }) });
     const l: any = await harness.behavior.callRpc("listSessions", { threadId: "thr_a" });

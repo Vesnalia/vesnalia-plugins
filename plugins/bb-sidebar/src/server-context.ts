@@ -1,9 +1,9 @@
-import type { BbPluginApi, PluginRpcHandlers } from "@get-bb/plugin-sdk";
-import type { bbSidebarRpcContract } from "./contract";
+import type { AliaPluginApi, PluginRpcHandlers } from "@vesnalia/plugin-sdk";
+import type { aliaSidebarRpcContract } from "./contract";
 
 export interface ServerContext {
-  bb: BbPluginApi;
-  db: ReturnType<BbPluginApi["storage"]["database"]>;
+  alia: AliaPluginApi;
+  db: ReturnType<AliaPluginApi["storage"]["database"]>;
 }
 
-export type ServerHandlers = PluginRpcHandlers<typeof bbSidebarRpcContract>;
+export type ServerHandlers = PluginRpcHandlers<typeof aliaSidebarRpcContract>;

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { portScanContract, type PortRoot } from "./port-scan-contract";
 import type { OpenPort, PortSnapshot } from "./contract";
 
@@ -20,7 +20,7 @@ const isNestedUnder = (path: string, root: string) => path.startsWith(`${root.re
 
 /**
  * Open ports for the workspaces the app names. The app knows which threads
- * are live; bb has no notion of a settled thread, so the server no longer
+ * are live; VesnALIA has no notion of a settled thread, so the server no longer
  * lists threads to find workspaces. Results are cached per workspace for 30s,
  * and a workspace already being scanned is shared with later callers.
  *
@@ -28,10 +28,10 @@ const isNestedUnder = (path: string, root: string) => path.startsWith(`${root.re
  * thread only when the owner is that thread and the port is in that thread's
  * own workspace, which is the check the thread listing used to make here.
  */
-export function createPortDiscovery(bb: BbPluginApi) {
-  const host = bb.hosts.experimental_client({ contract: portScanContract });
+export function createPortDiscovery(alia: AliaPluginApi) {
+  const host = alia.hosts.experimental_client({ contract: portScanContract });
   const controller = new AbortController();
-  bb.onDispose(() => controller.abort());
+  alia.onDispose(() => controller.abort());
   const cache = new Map<string, { ports: OpenPort[]; at: number }>();
   const pending = new Map<string, Promise<ReadonlyMap<string, OpenPort[]>>>();
   let generation = 0;
@@ -42,7 +42,7 @@ export function createPortDiscovery(bb: BbPluginApi) {
     // One bulk status read instead of one get per environment: thread rows keep a stale path during teardown.
     const ready = new Map<string, { path: string; hostId: string }>();
     for (let offset = 0; ; offset += 500) {
-      const page = await bb.sdk.environments.list({ status: "ready", limit: 500, offset, signal: controller.signal });
+      const page = await alia.sdk.environments.list({ status: "ready", limit: 500, offset, signal: controller.signal });
       for (const env of page)
         if (env.status === "ready" && env.path) ready.set(env.id, { path: env.path, hostId: env.hostId });
       if (page.length < 500) break;
@@ -56,7 +56,7 @@ export function createPortDiscovery(bb: BbPluginApi) {
     // A listener belongs to the deepest workspace that contains it. A ready
     // workspace nested inside a requested one keeps its own listeners even
     // when nobody asked for it, so they are not moved up to the parent. The
-    // nesting is judged on bb's paths; the host compares resolved paths.
+    // nesting is judged on VesnALIA's paths; the host compares resolved paths.
     for (const [environmentId, env] of ready) {
       const roots = byHost.get(env.hostId);
       if (found.has(environmentId) || !roots?.some((root) => isNestedUnder(env.path, root.path))) continue;
@@ -82,7 +82,7 @@ export function createPortDiscovery(bb: BbPluginApi) {
         controller.signal.throwIfAborted();
         const attempts = Math.min((failures.get(hostId)?.attempts ?? 0) + 1, 5);
         failures.set(hostId, { attempts, retryAt: Date.now() + Math.min(30_000 * 2 ** (attempts - 1), 300_000) });
-        bb.log.debug(`Port scan failed on ${hostId}: ${String(error)}`);
+        alia.log.debug(`Port scan failed on ${hostId}: ${String(error)}`);
       }
     });
     return found;

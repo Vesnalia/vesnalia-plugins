@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { formatWorkItemContext, type WorkItem } from '../contract.js';
 import type { FactoryRecord } from './contract.js';
 import { factoryKey } from './state.js';
@@ -12,7 +12,7 @@ export const coordinatorTitle = (item: WorkItem, intentId: string) =>
   `${item.key}: coordinator [${intentId}]`;
 
 export function createCoordinatorLifecycle(
-  sdk: BbPluginApi['sdk'], store: ReturnType<typeof createFactoryStore>,
+  sdk: AliaPluginApi['sdk'], store: ReturnType<typeof createFactoryStore>,
   persist: (record: FactoryRecord) => FactoryRecord
 ) {
   async function observe(record: FactoryRecord, signal?: AbortSignal) {

@@ -1,4 +1,4 @@
-// BB owns workflow orchestration, including when resuming older Qwen threads.
+// VesnALIA owns workflow orchestration, including when resuming older Qwen threads.
 export const QWEN_WORKFLOW_ENV = { QWEN_CODE_DISABLE_WORKFLOWS: "1" };
 
 export function enforceWorkflowPolicy(request: any): void {
@@ -21,7 +21,7 @@ export function filterWorkflowOptions(message: any): void {
     message.result.sessionOptions = message.result.sessionOptions.filter((option: any) => option.id !== "workflow_mode");
   }
   for (const delta of Array.isArray(message.params?.deltas) ? message.params.deltas : []) {
-    if (delta.kind === "extension.state" && delta.extensionKind === "bb/session-options" &&
+    if (delta.kind === "extension.state" && delta.extensionKind === "alia/session-options" &&
         Array.isArray(delta.payload?.options)) {
       delta.payload.options = delta.payload.options.filter((option: any) => option.id !== "workflow_mode");
     }

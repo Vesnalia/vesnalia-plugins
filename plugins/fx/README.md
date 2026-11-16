@@ -1,13 +1,13 @@
-# bb-plugin-fx
+# alia-plugin-fx
 
-Run [fx](https://fx.sh/) as an agent provider inside BB, with model selection,
+Run [fx](https://fx.sh/) as an agent provider inside VesnALIA, with model selection,
 resumable sessions, and streamed replies and tool activity.
 
-<img width="600" height="380" alt="fx provider in BB" src="https://github.com/user-attachments/assets/f9eefc64-6604-4ad1-acf9-1be071d2712f" />
+<img width="600" height="380" alt="fx provider in VesnALIA" src="https://github.com/user-attachments/assets/f9eefc64-6604-4ad1-acf9-1be071d2712f" />
 
 ## Requirements
 
-- BB 0.42.1 or newer (plugin SDK 0.4.47).
+- VesnALIA 0.42.1 or newer (plugin SDK 0.4.47).
 - The fx CLI available as `fx` on each execution host's `PATH`.
 - An authenticated fx account on that host: run `fx login`, then `fx status --json`.
 - Model access, limits, and service charges depend on your fx account and model provider.
@@ -17,7 +17,7 @@ resumable sessions, and streamed replies and tool activity.
 Install the latest compatible 0.3.x release:
 
 ```sh
-bb plugin install git:https://github.com/MayankBansal12/bb-plugin-fx-provider.git@^0.3.0
+alia plugin install git:https://github.com/MayankBansal12/bb-plugin-fx-provider.git@^0.3.0
 ```
 
 Use `@v0.3.0` instead of `@^0.3.0` to pin the exact 0.3.0 release.
@@ -27,16 +27,16 @@ For a local checkout:
 ```sh
 npm ci
 npm run check
-bb plugin install .
+alia plugin install .
 ```
 
-After local changes, run `npm run build` and `bb plugin reload fx`.
-The provider appears as **fx** in BB, grouped with the other ACP agents.
-Its SVG mark follows the theme through BB's built-in provider icon rendering.
+After local changes, run `npm run build` and `alia plugin reload fx`.
+The provider appears as **fx** in VesnALIA, grouped with the other ACP agents.
+Its SVG mark follows the theme through VesnALIA's built-in provider icon rendering.
 
 ## How it works
 
-`server.ts` registers the provider through `bb.providers.register` and declares
+`server.ts` registers the provider through `alia.providers.register` and declares
 how to launch `fx acp`. `host.ts` uses the SDK's shared ACP bridge for sessions,
 streaming, and approvals. A small child-process adapter puts fx's actual `model` config option
 before its `provider` option: fx 0.0.7 marks both as category `model`, while the
@@ -54,9 +54,9 @@ selection through ACP. The catalog is cached per host.
 
 The launch spec pins `FX_PERMISSION_MODE=ask`, overriding an inherited `auto`
 or `yolo` mode. The bridge sends fx's `session/request_permission` requests to
-BB in `accept-edits` mode and allows them in `full` mode. BB's escalation policy
+VesnALIA in `accept-edits` mode and allows them in `full` mode. VesnALIA's escalation policy
 still applies. This is not a filesystem sandbox: fx's own configured rules,
-session grants, and tool admission can decide a call before fx asks BB.
+session grants, and tool admission can decide a call before fx asks VesnALIA.
 
 The plugin does not set fx's `mode` session option. It passes model selection
 and any advertised reasoning-effort choices through the bridge. The fx CLI
@@ -72,16 +72,16 @@ choices over ACP. Released fx 0.0.7 and 0.0.8 do not expose these; upstream
 [added model-specific ACP effort support](https://github.com/vercel-labs/fx/commit/32f3dc9ee07b9649ce10d6b24d1e30af0e20302a)
 after those releases. fx can still use its own saved effort preference.
 
-The required static `medium` capability is BB bookkeeping. Model discovery
+The required static `medium` capability is VesnALIA bookkeeping. Model discovery
 runs the shared bridge in a short-lived subprocess and removes its synthetic
 “agent-managed Medium” choice from the resulting catalog, including models
 left unprobed at the discovery deadline. Actual effort choices, including a
 real medium-only control, are preserved. When fx exposes no effort selector,
 the shared bridge sends no effort value and fx keeps its own preference.
 
-Registration uses the supported `bb.providers.register` API. The shared bridge
+Registration uses the supported `alia.providers.register` API. The shared bridge
 export and static launch options still use the SDK's published experimental
-names; the plugin does not use the removed `bb.agents.experimental_registerProvider`
+names; the plugin does not use the removed `alia.agents.experimental_registerProvider`
 API or the removed `supportsWorkflows` capability.
 
 ## Development and validation
@@ -106,10 +106,10 @@ GitHub Actions runs the same checks on pull requests and pushes to `main`.
   its server/host artifacts, and imports the host export. This catches missing
   production dependencies that a developer build would conceal.
 
-Keep `@get-bb/plugin-sdk` in **dependencies**, pinned to the tested version.
-BB bundles its `provider-bridge/acp` subpath from the plugin's own installation;
+Keep `@vesnalia/plugin-sdk` in **dependencies**, pinned to the tested version.
+VesnALIA bundles its `provider-bridge/acp` subpath from the plugin's own installation;
 managed Git installs omit development dependencies. `zod` is also needed by
-that bridge. The general `bb plugin types --check` advice to move the SDK to
+that bridge. The general `alia plugin types --check` advice to move the SDK to
 devDependencies does not apply to provider bridges.
 
 `PLUGIN_OVERVIEW.md` contains the marketplace description. Publish a new
@@ -117,6 +117,6 @@ immutable `vX.Y.Z` tag for each validated release. Update the marketplace range
 when a release falls outside it, and keep its overview and category current.
 
 The marketplace icon source is `assets/fx-marketplace.svg`. It has a transparent
-background so BB can tint it as an SVG mask. Vendor it into the marketplace
+background so VesnALIA can tint it as an SVG mask. Vendor it into the marketplace
 under a filename containing the first eight characters of its SHA-256 hash;
 do not add an opaque background to the SVG.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import {
   createFakePluginHost,
@@ -21,8 +21,8 @@ describe("automatic settle evaluation", () => {
   )("preserves a manually $shelf parent after trying $setting on and off", async ({ setting, shelf }) => {
     const old = Date.now() - 4 * 86400000;
     const quiet = { createdAt: old, updatedAt: old, latestAttentionAt: old };
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         plugins: {
           callRpc: pullRequestStatus(() =>
@@ -48,11 +48,11 @@ describe("automatic settle evaluation", () => {
         threads: { get: async ({ threadId }) => makeThreadResponse({ id: threadId }) },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
     // Existing manual shelves can have quiet children without lifecycle
     // rows, including settles made before settling applied to whole trees.
-    bb.storage
+    alia.storage
       .database()
       .prepare(
         `INSERT INTO thread_lifecycle
@@ -120,8 +120,8 @@ describe("automatic settle evaluation", () => {
       if (event === "thread.active") threads.push(projectThread({ id: "child", parentThreadId: "parent", ...quiet }));
       const entered = deferred<void>();
       const release = deferred<void>();
-      const { bb, harness } = createFakePluginHost({
-        pluginId: "bb-sidebar",
+      const { alia, harness } = createFakePluginHost({
+        pluginId: "alia-sidebar",
         sdk: {
           projects: { list: async () => projectsWith(threads) },
           threads: { get: async ({ threadId }) => makeThreadResponse({ id: threadId }) },
@@ -134,7 +134,7 @@ describe("automatic settle evaluation", () => {
           },
         },
       });
-      await plugin(bb);
+      await plugin(alia);
       disposers.push(() => harness.lifecycle.dispose());
       const evaluation = harness.behavior.callRpc("evaluateAutoSettle", {});
       await entered.promise;
@@ -167,15 +167,15 @@ describe("automatic settle evaluation", () => {
       projectThread({ id: "child", parentThreadId: "parent", environmentId: "env_child", ...quiet }),
     ];
     // A reload keeps only these options, so the thread listing is passed here.
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: { list: async () => projectsWith(threads) },
         threads: { get: async ({ threadId }) => makeThreadResponse({ id: threadId }), list: async () => threads },
         plugins: { callRpc: pullRequestStatus(() => availablePullRequest(prOpen ? "open" : "merged"), batches) },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
     await expect(harness.behavior.callRpc("evaluateAutoSettle", {})).resolves.toEqual({
       changedThreadIds: ["parent", "child"],
@@ -198,8 +198,8 @@ describe("automatic settle evaluation", () => {
     const quiet = { createdAt: old, updatedAt: old, latestAttentionAt: old };
     let parentPinned = true;
     let prOpen = false;
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           list: async () =>
@@ -218,7 +218,7 @@ describe("automatic settle evaluation", () => {
       },
     });
     let held: ReturnType<typeof deferred<void>> | null = null;
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
     await expect(harness.behavior.callRpc("evaluateAutoSettle", {})).resolves.toEqual({ changedThreadIds: ["child"] });
     parentPinned = false;
@@ -240,11 +240,11 @@ describe("automatic settle evaluation", () => {
     const old = Date.now() - 4 * 86400000;
     const quiet = { createdAt: old, updatedAt: old, latestAttentionAt: old };
     let child = projectThread({ id: "child", parentThreadId: "parent", projectId: "other", updatedAt: Date.now() });
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: { projects: { list: async () => projectsWith([projectThread({ id: "parent", ...quiet }), child]) } },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
     await expect(harness.behavior.callRpc("evaluateAutoSettle", {})).resolves.toEqual({ changedThreadIds: [] });
     child = { ...child, ...quiet, hasPendingInteraction: true };
@@ -262,8 +262,8 @@ describe("automatic settle evaluation", () => {
 
   it("settles inactive threads and publishes one batched refresh", async () => {
     const old = Date.now() - 4 * 24 * 60 * 60 * 1_000;
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           list: async () =>
@@ -279,7 +279,7 @@ describe("automatic settle evaluation", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     await expect(harness.behavior.callRpc("evaluateAutoSettle", {})).resolves.toEqual({
@@ -308,8 +308,8 @@ describe("automatic settle evaluation", () => {
       activePlanModeCount: 0,
       activeWorkflowCount: 0,
     };
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           list: async () =>
@@ -333,7 +333,7 @@ describe("automatic settle evaluation", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     await expect(harness.behavior.callRpc("evaluateAutoSettle", {})).resolves.toEqual({
@@ -360,8 +360,8 @@ describe("automatic settle evaluation", () => {
         environmentHostId: hostId,
       });
     const scans: Array<{ hostId: string; input: unknown }> = [];
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       experimental_callHostRpc: async ({ method, hostId, input }) => {
         expect(method).toBe("scan");
         scans.push({ hostId, input });
@@ -397,7 +397,7 @@ describe("automatic settle evaluation", () => {
         plugins: { callRpc: pullRequestStatus(() => ({ outcome: "absent" })) },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     await expect(harness.behavior.callRpc("evaluateAutoSettle", {})).resolves.toEqual({
@@ -420,15 +420,15 @@ describe("automatic settle evaluation", () => {
       latestAttentionAt: old,
       status: "idle" as const,
     };
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           list: async () => projectsWith([projectThread(fields)]),
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     await harness.behavior.callRpc("unsettle", {
@@ -446,8 +446,8 @@ describe("automatic settle evaluation", () => {
     const old = Date.now() - 60_000;
     const environmentId = "env_shared";
     const batches: string[][] = [];
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           list: async () =>
@@ -493,7 +493,7 @@ describe("automatic settle evaluation", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     await expect(harness.behavior.callRpc("evaluateAutoSettle", {})).resolves.toEqual({
@@ -518,8 +518,8 @@ describe("automatic settle evaluation", () => {
     const firstPullRequest = new Promise<ReturnType<typeof availablePullRequest>>((resolve) => {
       resolveFirstPullRequest = resolve;
     });
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: { list: async () => projectsWith([thread]) },
         plugins: {
@@ -530,7 +530,7 @@ describe("automatic settle evaluation", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     const firstEvaluation = harness.behavior.callRpc("evaluateAutoSettle", {});
@@ -575,8 +575,8 @@ describe("automatic settle evaluation", () => {
   it("asks GitHub nothing when both settle rules are off", async () => {
     const batches: string[][] = [];
     const old = Date.now() - 30 * 24 * 60 * 60_000;
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           list: async () =>
@@ -601,7 +601,7 @@ describe("automatic settle evaluation", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     await expect(harness.behavior.callRpc("evaluateAutoSettle", {})).resolves.toEqual({ changedThreadIds: [] });
@@ -613,8 +613,8 @@ describe("automatic settle evaluation", () => {
     let pullRequestState: "merged" | "open" = "merged";
     const batches: string[][] = [];
     let held: ReturnType<typeof deferred<void>> | null = null;
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           list: async () =>
@@ -638,7 +638,7 @@ describe("automatic settle evaluation", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     await expect(harness.behavior.callRpc("evaluateAutoSettle", {})).resolves.toEqual({ changedThreadIds: ["thr_pr"] });
@@ -660,8 +660,8 @@ describe("automatic settle evaluation", () => {
   it("clears policy-owned settled state when the user pins the thread", async () => {
     const old = Date.now() - 4 * 24 * 60 * 60 * 1_000;
     let pinnedAt: number | null = null;
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           list: async () =>
@@ -678,7 +678,7 @@ describe("automatic settle evaluation", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     await harness.behavior.callRpc("evaluateAutoSettle", {});

@@ -2,16 +2,16 @@
  * Tracked builds on the Mac this worker runs on.
  *
  * This is the host half of a tracked build whose checkout lives on an
- * enrolled Mac rather than on the machine running bb. The worker validates
+ * enrolled Mac rather than on the machine running VesnALIA. The worker validates
  * the request there, spawns `xcodebuild` detached, tails its result stream and
  * reports progress, and parses the bundle once it is done. The server keeps
  * the store, the engine and every surface; it reaches this through
  * `src/host/contract.ts`.
  *
  * The one thing that shapes everything here: **a build outlives its worker.**
- * Measured on bb 0.49 (`scout-xcode-detached-test`): a detached child of a
+ * Measured on VesnALIA 0.49 (`scout-xcode-detached-test`): a detached child of a
  * host worker survives a plugin reload, a disable/enable and the daemon's
- * five-minute idle stop, re-parented to launchd, and bb never cleans it up.
+ * five-minute idle stop, re-parented to launchd, and VesnALIA never cleans it up.
  * That is what a build needs — a reload must not kill a twenty-minute test
  * run — but it means the worker that finds out how the build went is usually
  * not the one that started it, and so cannot `wait()` for it. Hence:
@@ -394,7 +394,7 @@ export class HostBuilds {
     const intent: LaunchIntent = {
       version: 1,
       buildId,
-      marker: `bb-xcode-build:${buildId}`,
+      marker: `alia-xcode-build:${buildId}`,
       root: request.root,
       workingDir,
       argv: injected.argv,

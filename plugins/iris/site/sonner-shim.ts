@@ -1,4 +1,4 @@
-// Iris's views toast through bb's "sonner"; on the public site they show in the site's own toasts.
+// Iris's views toast through VesnALIA's "sonner"; on the public site they show in the site's own toasts.
 import { toast as show } from "./sdk-shim";
 
 type Opts = { action?: unknown; description?: string };

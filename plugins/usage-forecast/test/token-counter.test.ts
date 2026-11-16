@@ -1,4 +1,4 @@
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import { Storage } from "../src/server/storage";
 import { TokenCounter } from "../src/server/token-counter";
@@ -7,7 +7,7 @@ import { FakeThreads, NOW } from "./helpers";
 
 const DAY_START = NOW - 12 * HOUR_MS;
 
-function setup(threads = new FakeThreads(), kv = createFakePluginHost({ pluginId: "usage-forecast" }).bb.storage.kv) {
+function setup(threads = new FakeThreads(), kv = createFakePluginHost({ pluginId: "usage-forecast" }).alia.storage.kv) {
   const storage = new Storage(kv);
   const logs: string[] = [];
   let invalidations = 0;

@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const GH_API_VERSION = "2022-11-28";
@@ -9,7 +9,7 @@ const GH_HINT =
   "Install the GitHub CLI (https://cli.github.com), run `gh auth login`, and " +
   "grant Dependabot alert access. Classic/OAuth tokens need the `security_events` " +
   "scope; fine-grained tokens need read access to the repository's Dependabot alerts. " +
-  "Then run `bb plugin reload dependabot`.";
+  "Then run `alia plugin reload dependabot`.";
 
 const repoNameSchema = z.string().regex(/^[\w.-]+\/[\w.-]+$/);
 const severitySchema = z.enum(["low", "medium", "high", "critical"]);
@@ -346,20 +346,20 @@ export function validateDependabotCliArgs(argv: string[]): string | null {
   return null;
 }
 
-export default async function dependabotPlugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function dependabotPlugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     extraRepos: {
       type: "string",
       label: "Extra repositories",
       description:
-        'Comma-separated "owner/repo" values in addition to repositories discovered from BB projects.',
+        'Comma-separated "owner/repo" values in addition to repositories discovered from VesnALIA projects.',
       default: "",
     },
     defaultProject: {
       type: "project",
-      label: "Default BB project",
+      label: "Default VesnALIA project",
       description:
-        "Project used for fix threads when a repository is not discovered from a BB project.",
+        "Project used for fix threads when a repository is not discovered from a VesnALIA project.",
     },
     customPrompt: {
       type: "string",
@@ -371,8 +371,8 @@ export default async function dependabotPlugin(bb: BbPluginApi) {
     },
   });
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS alert_cache (
        repo TEXT PRIMARY KEY,
        groups_json TEXT NOT NULL,
@@ -421,8 +421,8 @@ export default async function dependabotPlugin(bb: BbPluginApi) {
     const threads = new Map<string, FixThread>();
     const limit = 100;
     for (let offset = 0; ; offset += limit) {
-      const page = await bb.sdk.threads.list({
-        originPluginId: bb.pluginId,
+      const page = await alia.sdk.threads.list({
+        originPluginId: alia.pluginId,
         archived: false,
         includeHidden: true,
         limit,
@@ -457,9 +457,9 @@ export default async function dependabotPlugin(bb: BbPluginApi) {
     "thread.archived",
     "thread.deleted",
   ] as const) {
-    bb.events.on(event, ({ thread }) => {
+    alia.events.on(event, ({ thread }) => {
       const linked = db.prepare("SELECT 1 FROM fix_threads WHERE thread_id = ?").get(thread.id);
-      if (linked !== undefined) bb.realtime.publish("alerts-changed", {});
+      if (linked !== undefined) alia.realtime.publish("alerts-changed", {});
     });
   }
 
@@ -511,7 +511,7 @@ export default async function dependabotPlugin(bb: BbPluginApi) {
       return repoCache.repos;
     }
     const byRepo = new Map<string, RepoInfo>();
-    const projects = await bb.sdk.projects.list();
+    const projects = await alia.sdk.projects.list();
     for (const project of projects) {
       const repo = project.gitRemoteUrl === null ? null : parseGithubRemote(project.gitRemoteUrl);
       if (repo !== null && !byRepo.has(repo)) {
@@ -537,7 +537,7 @@ export default async function dependabotPlugin(bb: BbPluginApi) {
     const { defaultProject } = await settings.get();
     if (defaultProject !== undefined) return defaultProject;
     throw new Error(
-      `No BB project is associated with ${repo}. Add its checkout to a BB project or configure the defaultProject setting.`,
+      `No VesnALIA project is associated with ${repo}. Add its checkout to a VesnALIA project or configure the defaultProject setting.`,
     );
   }
 
@@ -600,7 +600,7 @@ export default async function dependabotPlugin(bb: BbPluginApi) {
           ? [repo]
           : [];
     if (repo !== undefined && targets.length === 0) {
-      throw new Error(`${repo} is not tracked. Add it to a BB project or the extraRepos setting.`);
+      throw new Error(`${repo} is not tracked. Add it to a VesnALIA project or the extraRepos setting.`);
     }
     const groups: DependabotGroup[] = [];
     const errors: Array<{ repo: string; message: string }> = [];
@@ -658,7 +658,7 @@ export default async function dependabotPlugin(bb: BbPluginApi) {
         left.repo.localeCompare(right.repo) ||
         left.dependency.localeCompare(right.dependency),
     );
-    if (refreshed) bb.realtime.publish("alerts-changed", {});
+    if (refreshed) alia.realtime.publish("alerts-changed", {});
     return { groups, errors };
   }
 
@@ -682,7 +682,7 @@ export default async function dependabotPlugin(bb: BbPluginApi) {
   ): Promise<{ threadId: string }> {
     const tracked = (await discoverRepos()).some((entry) => entry.repo === repo);
     if (!tracked) {
-      throw new Error(`${repo} is not tracked. Add it to a BB project or the extraRepos setting.`);
+      throw new Error(`${repo} is not tracked. Add it to a VesnALIA project or the extraRepos setting.`);
     }
     const existingId = readFixThreadId(repo, ecosystem, dependency);
     if (existingId !== null && (await openFixThreads()).has(existingId)) {
@@ -690,7 +690,7 @@ export default async function dependabotPlugin(bb: BbPluginApi) {
     }
     await checkAuth(true);
     const { groups } = await refreshRepo(repo);
-    bb.realtime.publish("alerts-changed", {});
+    alia.realtime.publish("alerts-changed", {});
     const group = groups.find(
       (candidate) =>
         candidate.ecosystem === ecosystem.toLowerCase() && candidate.dependency === dependency,
@@ -701,7 +701,7 @@ export default async function dependabotPlugin(bb: BbPluginApi) {
       );
     }
     const { customPrompt } = await settings.get();
-    const thread = await bb.sdk.threads.spawn({
+    const thread = await alia.sdk.threads.spawn({
       projectId: await resolveProjectId(repo),
       environment: { type: "project-default" },
       title: `Fix ${dependency} Dependabot alerts in ${repo}`.slice(0, 120),
@@ -715,28 +715,28 @@ export default async function dependabotPlugin(bb: BbPluginApi) {
       dependency,
       thread.id,
     );
-    bb.realtime.publish("alerts-changed", {});
+    alia.realtime.publish("alerts-changed", {});
     return { threadId: thread.id };
   }
 
   try {
     await checkAuth();
   } catch (error) {
-    bb.status.needsConfiguration(error instanceof Error ? error.message : String(error));
+    alia.status.needsConfiguration(error instanceof Error ? error.message : String(error));
   }
 
-  bb.background.service("sync", {
+  alia.background.service("sync", {
     async start(signal) {
       while (!signal.aborted) {
         try {
           const result = await listAlerts(undefined, true);
           if (result.errors.length > 0) {
-            bb.log.warn(
+            alia.log.warn(
               `Dependabot refresh completed with ${result.errors.length} repository error(s)`,
             );
           }
         } catch (error) {
-          bb.log.warn(
+          alia.log.warn(
             `Dependabot refresh failed: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
@@ -755,7 +755,7 @@ export default async function dependabotPlugin(bb: BbPluginApi) {
     },
   });
 
-  bb.rpc.register(dependabotRpcContract, {
+  alia.rpc.register(dependabotRpcContract, {
     async status() {
       try {
         await checkAuth();
@@ -783,35 +783,35 @@ export default async function dependabotPlugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb dependabot repos",
-    "  bb dependabot alerts [owner/repo]",
-    "  bb dependabot refresh [owner/repo]",
-    "  bb dependabot fix <owner/repo> <ecosystem> <package>",
+    "  VesnALIA dependabot repos",
+    "  VesnALIA dependabot alerts [owner/repo]",
+    "  VesnALIA dependabot refresh [owner/repo]",
+    "  VesnALIA dependabot fix <owner/repo> <ecosystem> <package>",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "dependabot",
-    summary: "List grouped GitHub Dependabot alerts and send fixes to BB agents",
+    summary: "List grouped GitHub Dependabot alerts and send fixes to VesnALIA agents",
     commands: [
       {
         name: "repos",
         summary: "List tracked GitHub repositories",
-        usage: "bb dependabot repos",
+        usage: "alia dependabot repos",
       },
       {
         name: "alerts",
         summary: "List cached open alerts grouped by dependency",
-        usage: "bb dependabot alerts [owner/repo]",
+        usage: "alia dependabot alerts [owner/repo]",
       },
       {
         name: "refresh",
         summary: "Refresh Dependabot alerts from GitHub",
-        usage: "bb dependabot refresh [owner/repo]",
+        usage: "alia dependabot refresh [owner/repo]",
       },
       {
         name: "fix",
         summary: "Start one agent fix for all alerts on a dependency",
-        usage: "bb dependabot fix <owner/repo> <ecosystem> <package>",
+        usage: "alia dependabot fix <owner/repo> <ecosystem> <package>",
       },
     ],
     async run(argv) {

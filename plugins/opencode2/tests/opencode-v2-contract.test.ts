@@ -51,29 +51,29 @@ test("full mode allows everything and auto keeps OpenCode's agent rules", () => 
   );
   assert.deepEqual(
     sessionPermissionRules({ permissionMode: "auto", disableSubagents: false }),
-    [{ action: "bb_opencode2_*", resource: "*", effect: "deny" }],
+    [{ action: "alia_opencode2_*", resource: "*", effect: "deny" }],
   );
 });
 
-test("each session sees only its own BB tool server, and subagents are denied", () => {
+test("each session sees only its own VesnALIA tool server, and subagents are denied", () => {
   const rules = sessionPermissionRules({
     permissionMode: "accept-edits",
     disableSubagents: true,
-    dynamicToolServer: "bb_opencode2_abc",
-    dynamicToolNames: ["bb_echo"],
+    dynamicToolServer: "alia_opencode2_abc",
+    dynamicToolNames: ["alia_echo"],
   });
   assert.deepEqual(rules.slice(-4), [
-    { action: "bb_opencode2_*", resource: "*", effect: "deny" },
-    { action: "bb_opencode2_abc_*", resource: "*", effect: "allow" },
+    { action: "alia_opencode2_*", resource: "*", effect: "deny" },
+    { action: "alia_opencode2_abc_*", resource: "*", effect: "allow" },
     { action: "subagent", resource: "*", effect: "deny" },
     { action: "task", resource: "*", effect: "deny" },
   ]);
-  // Without BB tools, other threads' servers are still hidden.
+  // Without VesnALIA tools, other threads' servers are still hidden.
   assert.deepEqual(
     sessionPermissionRules({ permissionMode: "full", disableSubagents: false }),
     [
       { action: "*", resource: "*", effect: "allow" },
-      { action: "bb_opencode2_*", resource: "*", effect: "deny" },
+      { action: "alia_opencode2_*", resource: "*", effect: "deny" },
     ],
   );
 });
@@ -117,7 +117,7 @@ const model = (variants: string[], context?: number) => ({
   ...(context ? { limit: { context } } : {}),
 });
 
-test("maps OpenCode variants to BB reasoning levels, including aliases", () => {
+test("maps OpenCode variants to VesnALIA reasoning levels, including aliases", () => {
   const entry = modelCatalogEntry(
     model(["thinking", "minimal", "none", "max"], 200_000),
   );
@@ -232,7 +232,7 @@ test("reports touched files relative to the workspace", () => {
   assert.equal(workspacePath("/repo", "/elsewhere/b.ts"), "/elsewhere/b.ts");
 });
 
-test("renders BB dynamic tool calls as the BB tool", () => {
+test("renders VesnALIA dynamic tool calls as the VesnALIA tool", () => {
   const presentation = {
     icon: { glyph: "Globe" },
     label: { pending: "Opening page", completed: "Opened page" },
@@ -244,12 +244,12 @@ test("renders BB dynamic tool calls as the BB tool", () => {
       inputSchema: {},
       presentation,
     },
-    { name: "bb_echo", description: "Echo", inputSchema: {} },
+    { name: "alia_echo", description: "Echo", inputSchema: {} },
   ];
   const row = dynamicToolRow(
-    "bb_opencode2_abc",
+    "alia_opencode2_abc",
     tools,
-    "bb_opencode2_abc_browser_open",
+    "alia_opencode2_abc_browser_open",
     {
       url: "https://example.com",
     },
@@ -257,20 +257,20 @@ test("renders BB dynamic tool calls as the BB tool", () => {
   assert.equal(row?.item.tool, "browser_open");
   assert.deepEqual(row?.presentation, presentation);
   const echo = dynamicToolRow(
-    "bb_opencode2_abc",
+    "alia_opencode2_abc",
     tools,
-    "bb_opencode2_abc_bb_echo",
+    "alia_opencode2_abc_alia_echo",
     { text: "ping" },
   );
-  assert.equal(echo?.item.tool, "bb_echo");
+  assert.equal(echo?.item.tool, "alia_echo");
   assert.equal(echo?.presentation.title, "ping");
   assert.equal(
-    dynamicToolRow("bb_opencode2_abc", tools, "shell", {}),
+    dynamicToolRow("alia_opencode2_abc", tools, "shell", {}),
     undefined,
   );
 });
 
-test("derives BB skill roots from the skills OpenCode discovered", async () => {
+test("derives VesnALIA skill roots from the skills OpenCode discovered", async () => {
   const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
   const { join } = await import("node:path");
   const { tmpdir } = await import("node:os");
@@ -305,7 +305,7 @@ test("derives BB skill roots from the skills OpenCode discovered", async () => {
   );
 });
 
-test("forwards native OpenCode skill mentions, not only BB-configured ones", () => {
+test("forwards native OpenCode skill mentions, not only ALIA-configured ones", () => {
   const body = promptBody(
     [
       {
@@ -326,7 +326,7 @@ test("forwards native OpenCode skill mentions, not only BB-configured ones", () 
       },
     ],
     {
-      configuredSkillNames: new Set(["bb-cli"]),
+      configuredSkillNames: new Set(["alia-cli"]),
       nativeSkillNames: new Set(["unslop"]),
     },
   );

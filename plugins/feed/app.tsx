@@ -13,13 +13,13 @@ import {
   Markdown,
   definePluginApp,
   experimental_useSidebarThreads,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
   useSettings,
   type PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { FeedRow, rpcContract } from "./contract.js";
 
@@ -697,7 +697,7 @@ function FeedPanelContent({
   threadId: string;
   sectionIds: readonly string[];
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { rpc, state, setState, refresh, supersedeRefresh } =
     useQueueSnapshot(threadId, sectionIds);
   const [mutation, setMutation] = useState<string | null>(null);

@@ -3,7 +3,7 @@ import { hostname } from "node:os";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
 const shots = process.env.LIVE_SHOTS ?? join(process.cwd(), "shots");
 const runs = Number(process.env.LIVE_RUNS ?? 3);
 const chosen = process.argv.slice(2);
@@ -16,7 +16,7 @@ function expect(condition, message) {
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -42,7 +42,7 @@ async function reset(run) {
     backends: [
       { id: "docker", type: "docker", enabled: true, fields: {} },
       { id: "docker:2", type: "docker", enabled: false, fields: { host: "ssh://box@192.0.2.30" } },
-      { id: "proxmox-lxc", type: "proxmox-lxc", enabled: false, fields: { url: "https://192.0.2.10:8006", node: "pve-1", "token-id": "bb-box@pve!made-up", "token-secret": `made-up-secret-${run}` } },
+      { id: "proxmox-lxc", type: "proxmox-lxc", enabled: false, fields: { url: "https://192.0.2.10:8006", node: "pve-1", "token-id": "alia-box@pve!made-up", "token-secret": `made-up-secret-${run}` } },
       { id: "tart", type: "tart", enabled: false, fields: {}, hosts: [{ name: "mac-1", enabled: true, fields: { address: "192.0.2.20", user: "admin" } }] },
     ],
   }));
@@ -59,7 +59,7 @@ async function tab(viewport = { width: 1440, height: 1000 }, colorScheme = "dark
 }
 
 async function open(page, hash) {
-  const url = `${base}/settings/plugins/bb-box${hash}`;
+  const url = `${base}/settings/plugins/alia-box${hash}`;
   await page.goto(url, { waitUntil: "domcontentloaded" });
   if (!onboardingSkipped) {
     const skip = page.getByRole("button", { name: "Skip setup" });
@@ -296,9 +296,9 @@ const checks = {
     let back = 0;
     for (; back < 40; back += 1) {
       await page.keyboard.press("Shift+Tab");
-      if (await page.evaluate(() => document.activeElement?.textContent?.trim() === "BB Box settings")) break;
+      if (await page.evaluate(() => document.activeElement?.textContent?.trim() === "VesnALIA Box settings")) break;
     }
-    expect(back < 40, "Shift+Tab reached BB Box settings");
+    expect(back < 40, "Shift+Tab reached VesnALIA Box settings");
     await page.keyboard.press("Enter");
     await page.waitForURL((url) => url.hash === "");
     await pause(500);

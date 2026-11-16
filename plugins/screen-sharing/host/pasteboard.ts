@@ -28,7 +28,7 @@
  * killing the child in every case but a normal exit.
  *
  * These act on the pasteboard of the macOS account this process runs as: the
- * account bb runs as on that Mac. Another account's desktop, signed in to
+ * account VesnALIA runs as on that Mac. Another account's desktop, signed in to
  * through Screen Sharing, has a pasteboard of its own, which only root could
  * reach. `account` names it, so the page can say when the two differ.
  */

@@ -1,12 +1,12 @@
 // The onboarding step: whether Qlik Sense is set up on a machine, for a build's
-// setup page (Fleet Kit asks through `bb.sdk.plugins.callRpc`). The shape is
+// setup page (Fleet Kit asks through `alia.sdk.plugins.callRpc`). The shape is
 // shared by every plugin in this repository that has a setup step:
 //   input  { lang?: "en" | "ru", hostId?: string }
 //   output { state: "done" | "todo" | "problem", summary: string, path?: string }
 // Done means both halves of the setup: the sign-in passed its last check and at
 // least one report is enabled for agents. The answer comes from the saved state
 // only: no Qlik request, no password, no report names, no address or login.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { ConnectionStatus } from "../../contract";
 
@@ -30,7 +30,7 @@ export const setupStatusContract = defineRpcContract({
   },
 });
 
-/** Where a person sets Qlik up: the plugin's own page in the bb sidebar. */
+/** Where a person sets Qlik up: the plugin's own page in the VesnALIA sidebar. */
 export const SETUP_PATH = "/plugins/qlik-sense/qlik-sense";
 
 const TEXT = {
@@ -44,7 +44,7 @@ const TEXT = {
     noReports: "Signed in; now pick the reports agents may read",
     offline: "The machine with Qlik is not reachable",
     unreadable: "The plugin could not read its state on that machine",
-    noMachine: "No machine is connected to bb",
+    noMachine: "No machine is connected to VesnALIA",
   },
   ru: {
     done: (apps: number) => `Вход есть, отчётов для агентов: ${apps}`,
@@ -56,7 +56,7 @@ const TEXT = {
     noReports: "Вход есть, теперь выберите отчёты для агентов",
     offline: "Машина с Qlik не на связи",
     unreadable: "Плагин не смог прочитать своё состояние на этой машине",
-    noMachine: "К bb не подключена ни одна машина",
+    noMachine: "К alia не подключена ни одна машина",
   },
 } satisfies Record<SetupLang, Record<string, string | ((apps: number) => string)>>;
 

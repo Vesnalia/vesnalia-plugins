@@ -3,8 +3,8 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { makeTurnFailedEvent } from "@get-bb/plugin-sdk/testing";
-import type { PluginTurnFailedEvent } from "@get-bb/plugin-sdk";
+import { makeTurnFailedEvent } from "@vesnalia/plugin-sdk/testing";
+import type { PluginTurnFailedEvent } from "@vesnalia/plugin-sdk";
 import type { AccountUsage } from "./policy.js";
 import {
   bestAccount,
@@ -33,7 +33,7 @@ import {
 
 const NOW = Date.parse("2026-09-29T10:00:00.000Z");
 const HOUR = 60 * 60 * 1_000;
-// Literal on purpose: the same values bb's provider-retry uses (15 s buffer,
+// Literal on purpose: the same values VesnALIA's provider-retry uses (15 s buffer,
 // 30 s jitter, 5 attempts). Importing the constants would let them drift.
 const BUFFER = 15_000;
 const JITTER = 30_000;
@@ -213,7 +213,7 @@ describe("decideSwitch", () => {
   });
 
   it("under a warning report, waits on the failed account for the window that warned, not for the latest reset", () => {
-    // bb's latest stored report when the provider refused the turn: the
+    // VesnALIA's latest stored report when the provider refused the turn: the
     // session window warned, the weekly one did not and resets much later.
     const warned = failure();
     warned.rateLimits!.status = "warning";
@@ -399,7 +399,7 @@ describe("decideSwitch", () => {
     expect(declineReason(failure({ rateLimits: null }))).toBe(
       "no-rate-limit-state",
     );
-    // A limit the provider enforced while bb's latest report only warned is
+    // A limit the provider enforced while VesnALIA's latest report only warned is
     // judged; one with no limit reported is not.
     for (const [status, reason] of [
       ["warning", null],
@@ -674,7 +674,7 @@ describe("decideSwitch with a reserved model: a Max account that keeps it is no 
 });
 
 describe("a turn the account refused", () => {
-  // As bb reported it on 2026-09-30 for an account whose organization turned
+  // As VesnALIA reported it on 2026-09-30 for an account whose organization turned
   // off subscription access: no rate-limit report comes with it.
   const refused = (overrides: Partial<PluginTurnFailedEvent> = {}) =>
     failure({
@@ -723,7 +723,7 @@ describe("a turn the account refused", () => {
 });
 
 describe("a turn that failed for want of a session on its machine", () => {
-  // bb's log of 2026-11-10 (provider/error, errorInfo null): the texts
+  // VesnALIA's log of 2026-11-10 (provider/error, errorInfo null): the texts
   // Claude Code gave on a machine where the account had no session.
   it("is told by its text, whatever the case", () => {
     for (const text of [
@@ -758,7 +758,7 @@ describe("a turn that failed for want of a session on its machine", () => {
       expect(isSessionLoss(text), text).toBe(false);
   });
 
-  it("is judged as a refusal of the account, and tells itself apart from bb's own", () => {
+  it("is judged as a refusal of the account, and tells itself apart from VesnALIA's own", () => {
     const own = sessionLost(failure({ errorInfo: null, rateLimits: null }));
     expect(isRefusal(own)).toBe(true);
     expect(isSessionLost(own)).toBe(true);
@@ -773,7 +773,7 @@ describe("a turn that failed for want of a session on its machine", () => {
 });
 
 describe("a turn the network refused, not the account (2026-11-13)", () => {
-  // bb's log of 2026-11-13, 10:47 to 11:17: a provider/error with errorInfo
+  // VesnALIA's log of 2026-11-13, 10:47 to 11:17: a provider/error with errorInfo
   // unauthorized, HTTP 403, and Cloudflare's block page in its detail.
   it("is told by Cloudflare's block page, whatever the case", () => {
     for (const text of [
@@ -1321,15 +1321,15 @@ describe("decideAhead", () => {
 });
 
 describe("modelFamily", () => {
-  it("names the model of a bb model id as the usage API does", () => {
-    // Ids as `bb provider models claude-code` lists them (2026-09-30).
+  it("names the model of a VesnALIA model id as the usage API does", () => {
+    // Ids as `alia provider models claude-code` lists them (2026-09-30).
     expect(modelFamily("claude-opus-5-5")).toBe("Opus");
     expect(modelFamily("claude-fable-5-1")).toBe("Fable");
     expect(modelFamily("claude-sonnet-5")).toBe("Sonnet");
     expect(modelFamily("claude-haiku-4-5-20251001")).toBe("Haiku");
   });
 
-  // `bb thread tell --model opus` queues the alias as is (`queue list --json`,
+  // `alia thread tell --model opus` queues the alias as is (`queue list --json`,
   // 2026-11-03): read as "no model" it skipped the reserve and ran as Fable.
   it.each([
     ["claude-opus-5-5", "Opus"],
@@ -1349,7 +1349,7 @@ describe("modelFamily", () => {
     expect(modelFamily(id)).toBe(family);
   });
 
-  it("names nothing for a model bb has not resolved or another provider's model", () => {
+  it("names nothing for a model VesnALIA has not resolved or another provider's model", () => {
     for (const id of [
       null,
       "",
@@ -1448,7 +1448,7 @@ describe("reserveModel reaches each decision", () => {
   });
 });
 
-// D3 (2026-10-17): bb gives a plugin no model for a retry, so a thread in
+// D3 (2026-10-17): VesnALIA gives a plugin no model for a retry, so a thread in
 // the preferred model that no account can run is told to switch to Opus,
 // naming where an Opus turn of it would go. Whether Fable is left is judged
 // apart from the decision's reason: a wait, a wait beyond the maximum and
@@ -1628,7 +1628,7 @@ describe("opusInstead: a Fable thread no account can run is told to switch to Op
     expect(advice(rescued)).toBe("team5");
   });
 
-  /** Refused for Fable while the stored report only warned on the session (bb's report lags the refusal). */
+  /** Refused for Fable while the stored report only warned on the session (VesnALIA's report lags the refusal). */
   const warning = failure({
     rateLimits: {
       ...failure().rateLimits!,
@@ -1802,7 +1802,7 @@ describe("opusInstead: a Fable thread no account can run is told to switch to Op
       account: "team1",
     });
     expect(advice(opusThread)).toBeNull();
-    // The model's case does not matter (bb's family vs. the setting).
+    // The model's case does not matter (VesnALIA's family vs. the setting).
     expect(advice(fable({ preferredModel: "fable" }))).toBe("team2");
   });
 
@@ -2322,14 +2322,14 @@ describe("unreadTeamSeats", () => {
 
 /**
  * Calor's own source, when it is at hand: `CALOR_REPO`, else next to this repo
- * or in bb-plugins. Its tick text is the mark isCalorTick looks for; changed
+ * or in alia-plugins. Its tick text is the mark isCalorTick looks for; changed
  * there, the switcher would move projects for a tick again (Fable's final pass,
  * 2026-11-05).
  */
 const CALOR_TEXTOS = [
   process.env.CALOR_REPO,
-  fileURLToPath(new URL("../../bb-plugin-calor", import.meta.url)),
-  join(homedir(), "Desarrollo/bb-plugins/bb-plugin-calor"),
+  fileURLToPath(new URL("../../alia-plugin-calor", import.meta.url)),
+  join(homedir(), "Desarrollo/alia-plugins/alia-plugin-calor"),
 ]
   .filter((d): d is string => typeof d === "string" && d !== "")
   .map((d) => join(d, "src/textos.ts"))

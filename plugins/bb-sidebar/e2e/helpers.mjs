@@ -5,7 +5,7 @@ import { test as base, expect } from "@playwright/test";
 
 if (!process.env.E2E_FIXTURE) throw new Error("Use npm run e2e so the scratch launcher owns the server");
 export const fixture = JSON.parse(readFileSync(process.env.E2E_FIXTURE, "utf8"));
-if (new URL(fixture.url).port === "38886" || !fixture.env.BB_DATA_DIR.startsWith("/tmp/bb-sidebar-smoke-")) {
+if (new URL(fixture.url).port === "38886" || !fixture.env.ALIA_DATA_DIR.startsWith("/tmp/alia-sidebar-smoke-")) {
   throw new Error("E2E fixture must target a scratch server");
 }
 
@@ -19,7 +19,7 @@ for (const key of [
   "CLAUDE_CONFIG_DIR",
   "TMPDIR",
 ]) {
-  if (!fixture.env[key]?.startsWith(`${fixture.env.BB_DATA_DIR}/`))
+  if (!fixture.env[key]?.startsWith(`${fixture.env.ALIA_DATA_DIR}/`))
     throw new Error(`CLI ${key} must be inside scratch`);
 }
 
@@ -30,7 +30,7 @@ export const test = base.extend({
     page.on("console", (message) => {
       if (
         message.type() === "error" &&
-        /\[plugin:bb-sidebar\]|is not a function|ReferenceError|TypeError/.test(message.text())
+        /\[plugin:alia-sidebar\]|is not a function|ReferenceError|TypeError/.test(message.text())
       ) {
         errors.push(message.text());
       }
@@ -41,7 +41,7 @@ export const test = base.extend({
 });
 
 export async function cli(args) {
-  const { stdout } = await promisify(execFile)(fixture.bb, [...args, "--json"], {
+  const { stdout } = await promisify(execFile)(fixture.alia, [...args, "--json"], {
     env: fixture.env,
     timeout: 30_000,
   });
@@ -49,7 +49,7 @@ export async function cli(args) {
 }
 
 export async function rpc(request, method, input = {}) {
-  const response = await request.post(`${fixture.url}/api/v1/plugins/bb-sidebar/rpc/${method}`, { data: input });
+  const response = await request.post(`${fixture.url}/api/v1/plugins/alia-sidebar/rpc/${method}`, { data: input });
   expect(response.ok(), `RPC ${method}: ${await response.text()}`).toBe(true);
   const payload = await response.json();
   expect(payload.ok, `RPC ${method} failed`).toBe(true);
@@ -88,9 +88,9 @@ export async function reset(request) {
 export async function open(page, { theme = "light", width = 320, empty = false } = {}) {
   await page.addInitScript(
     ({ theme, width }) => {
-      localStorage.setItem("bb.theme", theme);
-      // bb 0.47.0 reserves 49 px for its navigation rail and border.
-      localStorage.setItem("bb.sidebar.width", String(width + 49));
+      localStorage.setItem("alia.theme", theme);
+      // VesnALIA 0.47.0 reserves 49 px for its navigation rail and border.
+      localStorage.setItem("alia.sidebar.width", String(width + 49));
     },
     { theme, width },
   );

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import {
@@ -29,7 +29,7 @@ function kimiWindowKind(label: string) {
   return "custom" as const;
 }
 
-export function registerUsageSource(bb: BbPluginApi) {
+export function registerUsageSource(alia: AliaPluginApi) {
   const cache = new Map<string, UsageMeasurement>();
   const pending = new Map<
     string,
@@ -41,7 +41,7 @@ export function registerUsageSource(bb: BbPluginApi) {
     refresh: boolean,
   ): Promise<UsageMeasurement> => {
     const [hostId, providerId] = locatorSchema.parse(JSON.parse(resourceId));
-    const host = await bb.sdk.hosts.get({ hostId }).catch((error: unknown) => {
+    const host = await alia.sdk.hosts.get({ hostId }).catch((error: unknown) => {
       if (error instanceof Error && "status" in error && error.status === 404) {
         throw new Error("Usage resource no longer exists.");
       }
@@ -62,7 +62,7 @@ export function registerUsageSource(bb: BbPluginApi) {
     if (host.status !== "connected") {
       return unavailable("Machine is disconnected.");
     }
-    const providers = await bb.sdk.providers.list({
+    const providers = await alia.sdk.providers.list({
       hostId,
       capability: "usage",
     });
@@ -87,7 +87,7 @@ export function registerUsageSource(bb: BbPluginApi) {
 
     return (async () => {
       try {
-        const result = await bb.sdk.system.usageLimits({
+        const result = await alia.sdk.system.usageLimits({
           hostId,
           providerId,
           refresh,
@@ -148,15 +148,15 @@ export function registerUsageSource(bb: BbPluginApi) {
     return promise;
   };
 
-  bb.rpc.register(
+  alia.rpc.register(
     usageSourceRpcContract,
     {
       async [usageListMethod]() {
-        const hosts = await bb.sdk.hosts.list();
+        const hosts = await alia.sdk.hosts.list();
         const resources = (
           await Promise.all(
             hosts.map(async (host) => {
-              const providers = await bb.sdk.providers.list({
+              const providers = await alia.sdk.providers.list({
                 hostId: host.id,
                 capability: "usage",
               });

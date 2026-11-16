@@ -19,12 +19,12 @@ const GLYPH_TINT = "size-3 text-muted-foreground/70";
  *
  * Always rendered, so the card's third line has a fixed right edge even when a
  * thread has no branch. Three sources, in order: a logo the host serves, the
- * mark this plugin carries for an agent BB knows, then a neutral dot for an
+ * mark this plugin carries for an agent VesnALIA knows, then a neutral dot for an
  * unknown provider — `providerId` is a free-form id, so that last case is
  * ordinary rather than exceptional.
  *
  * The host logo wins so that a plugin-supplied ACP agent shows its own artwork,
- * and so this plugin's copies retire on their own if BB ever serves marks for
+ * and so this plugin's copies retire on their own if VesnALIA ever serves marks for
  * the agents it ships.
  *
  * A host logo is drawn as a CSS mask rather than an `<img>`, so it takes the

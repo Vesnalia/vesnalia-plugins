@@ -3,9 +3,9 @@ import type { MouseEvent } from "react";
 import { experimental_Icon as Icon, ThreadTitle,
   experimental_ThreadStatusGlyph as ThreadStatusGlyph, experimental_ThreadActionsMenu as ThreadActionsMenu,
   experimental_ThreadActionsContextMenu as ThreadActionsContextMenu, experimental_useSidebarThreadSplit,
-  experimental_useSidebarThreads, useSidebarThreadRowStatus, useSidebarThreadDraft, useSidebarThreadShortcut, useBbNavigate, useSdk,
+  experimental_useSidebarThreads, useSidebarThreadRowStatus, useSidebarThreadDraft, useSidebarThreadShortcut, useAliaNavigate, useSdk,
   type PluginSidebarThread, type PluginThreadListProps,
-  type PluginThreadActionTarget } from "@get-bb/plugin-sdk/app";
+  type PluginThreadActionTarget } from "@vesnalia/plugin-sdk/app";
 import { RecentController, type RecentState } from "./recent-controller.js";
 import { workingThreadIds } from "./work-status.js";
 import { usePluginStylesheet } from "../../stylesheet.js";
@@ -16,7 +16,7 @@ const buttonClass = "rounded-md border border-sidebar-border px-2 py-1 text-xs h
 const RecentRow = memo(function RecentRow({ thread, project, at, active, working, top, onMenuChange, onNavigate }: {
   thread: PluginSidebarThread; project: string; at: number; active: boolean; working: boolean; top: number; onMenuChange(id: string | null): void; onNavigate(): void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const rowStatus = useSidebarThreadRowStatus(thread.id);
   const { hasUnsubmittedDraft } = useSidebarThreadDraft(thread.id);
   const indicator = hasUnsubmittedDraft && thread.indicator !== "unread-error" && thread.indicator !== "waiting-for-input"
@@ -52,7 +52,7 @@ const RecentRow = memo(function RecentRow({ thread, project, at, active, working
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex min-w-0 items-center gap-1">
-            <span className={`bb-thread-title min-w-0 truncate text-sm leading-5 ${thread.isUnread ? "font-semibold" : "font-normal"}`}><ThreadTitle threadId={thread.id} /></span>
+            <span className={`alia-thread-title min-w-0 truncate text-sm leading-5 ${thread.isUnread ? "font-semibold" : "font-normal"}`}><ThreadTitle threadId={thread.id} /></span>
             {working && thread.isUnread ? <span className="flex size-4 shrink-0 items-center justify-center" title={thread.indicator === "unread-error" ? thread.indicatorLabel ?? "Unread error" : "Unread"}>
               <ThreadStatusGlyph indicator={thread.indicator === "unread-error" ? "unread-error" : "unread-success"} size="compact" />
             </span> : null}
@@ -107,7 +107,7 @@ export function RecentThreadList({ activeThreadId, onNavigate }: PluginThreadLis
     return !thread || thread.isArchived || thread.isHidden || !projects.has(thread.projectId);
   });
   const error = state.status === "error" ? state.message : sidebar.status === "error"
-    ? "Could not load BB thread details." : metadataMissing && sidebar.status !== "loading"
+    ? "Could not load VesnALIA thread details." : metadataMissing && sidebar.status !== "loading"
       ? "Thread details changed. Refresh the list." : null;
   const loading = !error && (state.status === "loading" || sidebar.status === "loading");
   const refreshing = !loading && !error && state.status === "refreshing";

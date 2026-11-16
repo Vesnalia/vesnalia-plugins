@@ -1,4 +1,4 @@
-// Server side: the clock settings of the computer BB runs on. A browser only
+// Server side: the clock settings of the computer VesnALIA runs on. A browser only
 // sees its language list; macOS keeps the region (en_RU) and the "24-hour
 // time" switch in global preferences, which a page cannot read.
 import { execFile } from "node:child_process";

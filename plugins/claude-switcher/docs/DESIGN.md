@@ -13,9 +13,9 @@ account with session room but no weekly room cannot run a turn, and an
 account with weekly room but no Fable room cannot run a Fable turn.
 
 People who hold more than one subscription keep one login per Claude Code
-config directory (`CLAUDE_CONFIG_DIR`). bb runs every thread of a project
+config directory (`CLAUDE_CONFIG_DIR`). VesnALIA runs every thread of a project
 with that project's environment, so the account a thread uses is decided by
-one variable on the project. When a turn fails on a limit, bb and its
+one variable on the project. When a turn fails on a limit, VesnALIA and its
 bundled provider-retry plugin retry at the provider's reset; nothing moves
 the project to an account that could run the turn now.
 
@@ -39,12 +39,12 @@ created (below).
 | `src/forecast.ts`    | Pure: the usage samples of a window and the pace they give.                                                                                                                            |
 | `src/login.ts`       | A `claude auth login` run for one account directory: its phases, the fallback address and code, the timeout, and what a new directory shares with `~/.claude`.                         |
 | `bin/open-login.sh`  | The `BROWSER` of that login: opens an `https://` address in a private Chrome window, or the default browser.                                                                           |
-| `server.ts`          | Wires it to bb: settings, the Provider usage source, `thread.created`, `turn.failed`, `thread.idle`, project variables, retries, the history, CLI, realtime updates.                   |
+| `server.ts`          | Wires it to VesnALIA: settings, the Provider usage source, `thread.created`, `turn.failed`, `thread.idle`, project variables, retries, the history, CLI, realtime updates.                   |
 | `app.tsx`            | The Claude Switcher section in Settings, and the account control in a Claude Code thread's header and in the new-thread composer.                                                      |
 
 The policy and the decision are pure functions of their inputs (usage,
 the failure, `now`, a random number), so every rule below has a unit test
-that does not touch bb, the keychain or the network.
+that does not touch VesnALIA, the keychain or the network.
 
 ## Measuring usage
 
@@ -101,7 +101,7 @@ so both tools pick the same account.
 
 ## Placing a project before the first turn
 
-A project bb created after the plugin was installed starts on the default
+A project VesnALIA created after the plugin was installed starts on the default
 account, and so would fail its first turn whenever that account is out.
 When a thread is created (`thread.created`), `decidePlacement` looks at the
 measurements already in hand; it queries the accounts only when none has a
@@ -109,7 +109,7 @@ usable measurement, and if none can be measured the project is left alone
 (and still counts as new for its next thread):
 
 1. **A new project** goes to the best account under the policy above. A
-   project is new when bb created it after the plugin first ran (plugin
+   project is new when VesnALIA created it after the plugin first ran (plugin
    storage, key `installed-at`, compared with the project's `createdAt`)
    and it was never placed, kept, pinned (thread header, new-thread composer, Settings or `use`), or
    given a thread while `autoSwitch` was off (key `handled-projects`). A
@@ -136,7 +136,7 @@ stored, no project is moved for being new; the measured-block rule still
 applies.
 
 This check races the thread's first turn on purpose: it may have to query
-the accounts, and bb's dispatch checkpoint fails the turn when a plugin is
+the accounts, and VesnALIA's dispatch checkpoint fails the turn when a plugin is
 slow (the checkpoint is used only for the bounded rule of the next
 section). When the turn starts first, it runs where the
 project was; if it fails there, it is retried once on the new account (the
@@ -145,7 +145,7 @@ move), and a second failure is judged as below.
 
 ## Placing a turn by its model
 
-bb runs its `message.dispatch` checkpoint before each message is sent, and
+VesnALIA runs its `message.dispatch` checkpoint before each message is sent, and
 says there the model the turn will run with (`requestedExecution.model`);
 neither a thread row nor a failed turn carries one. The handler translates
 the id to the usage API's name (`claude-opus-5-5` → `Opus`), remembers it
@@ -158,7 +158,7 @@ The checkpoint fails a message whose handler throws or takes more than
 10 s, and runs every handler under one lock, so this one:
 
 - always answers `proceed`: it never refuses a message nor sends it to
-  bb's queue, and delays it 3 s at most;
+  VesnALIA's queue, and delays it 3 s at most;
 - decides on the measurements already in hand and asks the provider
   nothing;
 - catches every error (logged as a warning) and gives the placement up
@@ -168,7 +168,7 @@ The checkpoint fails a message whose handler throws or takes more than
   through this same checkpoint and would wait for itself.
 
 It does nothing for a message that joins a running turn or is queued
-behind one (the thread is starting, active or stopping: bb asks again when
+behind one (the thread is starting, active or stopping: VesnALIA asks again when
 it sends the message), a model id that is not a Claude model id (none
 resolved yet, an alias), a hidden thread, another provider, a variable the
 plugin did not set, or with `autoSwitch` off.
@@ -176,7 +176,7 @@ plugin did not set, or with `autoSwitch` off.
 A failed turn is judged against the model its thread was last sent with:
 kept in memory at the checkpoint (forgotten when the thread is archived)
 and, for a thread not seen there since the plugin started (a reload or a
-restart while a long turn ran), read from bb's log: the `execution.model`
+restart while a long turn ran), read from VesnALIA's log: the `execution.model`
 of the thread's newest `client/turn/requested` event. When neither names a
 Claude model (the log cannot be read, is empty, or holds an alias), the
 preferred model decides. On 2026-10-02 an Opus turn of 2 h 40 min failed
@@ -194,11 +194,11 @@ queries every account. The plugin acts only when all of these hold:
 - and either the turn hit a limit: the error category is `rate-limit`, the
   rate-limit state is `blocked` or `warning`, its kind is
   `subscription-window`, and the provider is `claude-code`. A warning
-  counts because bb sends the thread's latest stored report, and a
+  counts because VesnALIA sends the thread's latest stored report, and a
   provider that refuses the turn before reporting the limit reached
   leaves a warning there (2026-10-02: "rate limit rejected; type
   seven_day_overage_included" under a weekly warning, on an account the
-  usage API measured at 96 %). Accepted risk: bb's report is the latest
+  usage API measured at 96 %). Accepted risk: VesnALIA's report is the latest
   stored one, not tied to the failure, so a `rate-limit` failure that is
   not a subscription limit, under an old warning, is judged as one too;
   the cost is a needless move to an account that can run the turn,
@@ -258,7 +258,7 @@ model (every thread when none is set) and `switchAheadOtherPercent` = 0
 for threads sent with another model; each can be set alone. With a
 percentage set, a visible Claude Code thread turning idle is the trigger:
 the turn has ended, so moving the project interrupts nothing and spends no
-retry. The thread's model is read first from bb's log (the latest turn
+retry. The thread's model is read first from VesnALIA's log (the latest turn
 requested, which also names the sends that skip the checkpoint), then
 from the model the plugin last saw the thread sent with, then it is the
 preferred model; a thread whose model has no percentage costs no query.
@@ -319,12 +319,12 @@ day, either the moment the window reaches 100 % at that pace (when that is
 before its reset) or "lasts until the reset". It is a line of text in
 Settings, the header menu and `list`. No decision reads it.
 
-## Logging an account in from bb
+## Logging an account in from VesnALIA
 
 `claude auth login` needs no terminal: it listens on a localhost port,
 hands the consent address to `$BROWSER` (one executable path, no
 arguments), and completes when the browser comes back. `LoginFlow` runs it
-as a child process of bb's server, without a shell, with
+as a child process of VesnALIA's server, without a shell, with
 `CLAUDE_CONFIG_DIR` set to the account's directory (removed from the
 inherited environment for the default account) and `BROWSER` set to
 `bin/open-login.sh`. Exit 0 is Claude Code's word that it wrote the login
@@ -362,7 +362,7 @@ directory (the browser answered with the session it had).
   address (always printed, for when no window opens) and the prompt
   for a code; a failure message has every address replaced by `<url>`.
 - **One login at a time**, given up after 10 minutes, cancellable, and
-  stopped when the plugin is reloaded, disabled or bb shuts down. The
+  stopped when the plugin is reloaded, disabled or VesnALIA shuts down. The
   process is killed before the end is reported.
 - **What a failed login reports** is the last line it printed: addresses
   and the pasted code (whole, or either half of `code#state`, in any
@@ -376,7 +376,7 @@ directory (the browser answered with the session it had).
   when the login ends.
 - **No inherited credentials.** `ANTHROPIC_API_KEY`,
   `ANTHROPIC_AUTH_TOKEN`, `CLAUDE_CODE_OAUTH_TOKEN` and
-  `CLAUDE_CODE_OAUTH_REFRESH_TOKEN` of bb's environment are not passed
+  `CLAUDE_CODE_OAUTH_REFRESH_TOKEN` of VesnALIA's environment are not passed
   on: the login is for another account.
 - **The helper clears `BROWSER`.** On a Linux without a known desktop
   `xdg-open` runs `$BROWSER`, which is the helper itself; it unsets the
@@ -425,12 +425,12 @@ once: the retry's own failure is judged.
 
 ## Cooperating with provider-retry
 
-bb's bundled provider-retry plugin also listens to `turn.failed` and queues
-one retry at the reset the provider reported, and bb keeps one retry per
+VesnALIA's bundled provider-retry plugin also listens to `turn.failed` and queues
+one retry at the reset the provider reported, and VesnALIA keeps one retry per
 turn. The plugin never adds a second one:
 
 - **After a switch**, it sends the retry provider-retry already queued (the
-  project is on the new account by then). If bb answers that the thread is
+  project is on the new account by then). If VesnALIA answers that the thread is
   busy again, the queued row stays and runs when it frees.
 - **After a wait**, it replaces that retry with its own timed one. If
   queueing its own fails, it restores the one it removed.
@@ -460,36 +460,36 @@ The refresh token rotates on every refresh, so the plugin:
 ## Known limits
 
 - **A message sent while a composer pick is being saved** can start the
-  thread on the old account. bb gives plugins no way to hold a send: its
+  thread on the old account. VesnALIA gives plugins no way to hold a send: its
   input lock (`setInputLock`) only stops typing, and neither Enter nor the
-  Send button checks it (bb 0.44, read 2026-10-03). The pick still lands
+  Send button checks it (VesnALIA 0.44, read 2026-10-03). The pick still lands
   for the next turns, unless that first turn's own placement writes over it
   (see "an account picked by hand during the one read a placement
   before a turn makes" below).
 - **On a phone the new-thread control shows once the composer is open.**
-  bb leaves plugin actions out of its collapsed one-line composer (bb 0.44,
+  VesnALIA leaves plugin actions out of its collapsed one-line composer (VesnALIA 0.44,
   read 2026-10-03); a tap on the draft brings the control back.
-- **With four or more plugins adding composer actions**, bb shows three of
-  them in the row and the rest under "More plugin actions" (bb 0.44, read
+- **With four or more plugins adding composer actions**, VesnALIA shows three of
+  them in the row and the rest under "More plugin actions" (VesnALIA 0.44, read
   2026-10-03), so the control can open from inside that menu. Not tried.
 - **A refresh race can log an account out.** If a running `claude` session
   of the same account refreshes between the plugin's read and its write,
-  or bb stops while a rotated login is only in memory, that account needs
+  or VesnALIA stops while a rotated login is only in memory, that account needs
   `/login` again.
-- **A project's account set in bb's own settings shows in the views within
-  30 s.** bb has no batch read of machine environments, so the views share
+- **A project's account set in VesnALIA's own settings shows in the views within
+  30 s.** VesnALIA has no batch read of machine environments, so the views share
   one read of every project's account for 30 s (concurrent lists included);
   a change made by the plugin, or in the accounts it finds, drops it at once,
   and a view that needs a project the read lacks (one made a moment ago)
   reads again. The Refresh button, the
   account menu, logins, the CLI and every decision read fresh.
-- **Same machine only.** The variable is a path on bb's machine, set on
+- **Same machine only.** The variable is a path on VesnALIA's machine, set on
   the project's machine environment. The plugin does not check which host
   runs a thread, so a thread on another host may get a path that does not
   exist there, now at its first thread rather than only after a limit
-  (bb 0.44 resolves the machine environment per host; not tested with a
+  (VesnALIA 0.44 resolves the machine environment per host; not tested with a
   remote host).
-- **Plugin storage may outlive `bb plugin remove`.** In bb 0.44 removing a
+- **Plugin storage may outlive `alia plugin remove`.** In VesnALIA 0.44 removing a
   plugin deletes its settings but not, as far as its source shows, its
   key-value storage. A reinstall then reads the old install time, so
   projects created while the plugin was removed count as new at their next
@@ -497,13 +497,13 @@ The refresh token rotates on every refresh, so the plugin:
 - **The forecast is an average.** It is the pace since the window's
   first sample, so a burst at the end of a quiet week moves it slowly, and
   a window first seen late has a short, noisy history.
-- **A new thread's first turn runs where the project was.** In bb 0.44
+- **A new thread's first turn runs where the project was.** In VesnALIA 0.44
   the start of a new thread (its provisioning) runs alongside the dispatch
-  checkpoint, not after it: in the canary of 2026-09-30 bb resolved the
+  checkpoint, not after it: in the canary of 2026-09-30 VesnALIA resolved the
   thread's environment 1.9 s before the placement set the variable. So a
   placement counts from the thread's second turn; if the first one fails
   there on a limit or a refusal, it is retried once on the new account.
-- **A refusal is remembered in memory only.** A reload or a restart of bb
+- **A refusal is remembered in memory only.** A reload or a restart of VesnALIA
   forgets which accounts refused; the next refusal sets the account aside
   again. Settings and the thread header do not mark it: the account still
   shows its usage (though the header no longer offers it as the best one),
@@ -512,18 +512,18 @@ The refresh token rotates on every refresh, so the plugin:
   not certain. And the reverse: after a reload, a turn that started on
   the old account before it and is refused more than 60 s after a move is
   taken for a refusal of the project's current account, which is then set
-  aside for 6 hours; bb does not say which account ran a turn.
+  aside for 6 hours; VesnALIA does not say which account ran a turn.
 - **A pick by hand does not lift a refusal.** For the 6 hours a refused
   account is set aside, a project picked onto it by hand (header,
   new-thread composer, Settings, `use`) moves off again at its next message, with the reason
-  "refused a turn"; nothing but the clock or `bb plugin reload
+  "refused a turn"; nothing but the clock or `alia plugin reload
 claude-switcher` lifts it, not a new login either. A wait for another
   account's reset after a refusal says "Waiting for ...", without naming
   the refusal. A clock set back lengthens the 6 hours by as much.
 - **Every account refusing makes the plugin quiet for 6 hours.** Should an
   outage answer every account with `unauthorized`, each failure would set
   one account aside (up to the 5 attempts), and then no account is chosen:
-  projects stay where they are and bb's own retry decides, as without the
+  projects stay where they are and VesnALIA's own retry decides, as without the
   plugin.
 - **Moving ahead needs a turn to end.** A project whose only thread runs
   one very long turn is not moved ahead; if that turn fails on the limit,
@@ -561,10 +561,10 @@ claude-switcher` lifts it, not a new login either. A wait for another
   which one a project is on. A directory on the
   Claude account of another one can log in again while a thread uses it;
   that turn may fail as it would with `claude auth login` in a terminal.
-- **A login outlives a killed bb.** A reload, a disable and a shutdown
-  stop it; if bb's server is killed outright, `claude auth login` stays
+- **A login outlives a killed VesnALIA.** A reload, a disable and a shutdown
+  stop it; if VesnALIA's server is killed outright, `claude auth login` stays
   until it is ended by hand, waiting on a local port nobody else can use.
-- **Only four credentials are kept from the login.** The rest of bb's
+- **Only four credentials are kept from the login.** The rest of VesnALIA's
   environment reaches `claude` and, on Linux, the browser.
 - **A failed start names the command.** "could not run ..." repeats the
   `claudeCommand` setting as it is written.
@@ -585,7 +585,7 @@ claude-switcher` lifts it, not a new login either. A wait for another
 - **The private window is Chrome on macOS.** Elsewhere, and without
   Chrome, the login opens the default browser, which may be signed in to
   another Claude account.
-- **A login from bb needs the `claude` executable** in the `PATH` of bb's
+- **A login from VesnALIA needs the `claude` executable** in the `PATH` of VesnALIA's
   server, or its full path in `claudeCommand`.
 - **Shared transcripts are required.** A switch changes the whole config
   directory, so an account directory must share `projects/` (and normally
@@ -608,7 +608,7 @@ claude-switcher` lifts it, not a new login either. A wait for another
   variable can be seen and removed.
 - **A hand-pinned project on an account out of the preferred model** is
   moved when a thread is created, even if that thread will run another
-  model: bb does not tell the plugin a thread's model at creation. The
+  model: VesnALIA does not tell the plugin a thread's model at creation. The
   turn's own model decides again when its first message is sent.
 - **A project has one account, whatever its threads' models.** Two threads
   of a project sent with different models, when no single account can run
@@ -618,15 +618,15 @@ claude-switcher` lifts it, not a new login either. A wait for another
   any failed turn. A write of the variable already on its way at that
   moment still lands: the turn starts on the old account and its failure
   there is retried on the new one.
-- **Messages bb sends without its checkpoint** are neither placed nor
+- **Messages VesnALIA sends without its checkpoint** are neither placed nor
   remembered: a Send now of a queued message and an edited message sent
-  again (bb 0.44). A turn started that way after the thread's model
+  again (VesnALIA 0.44). A turn started that way after the thread's model
   changed runs where the project is and, if it fails, is judged by the
   model the thread was last sent with through the checkpoint.
-- **A message bb will hold for later** (scheduled, or waiting for an
-  interaction or a host) is placed when bb asks, which is before it is
+- **A message VesnALIA will hold for later** (scheduled, or waiting for an
+  interaction or a host) is placed when VesnALIA asks, which is before it is
   sent, and again when it is sent.
-- **With the checkpoint registered, bb asks the plugin before every
+- **With the checkpoint registered, VesnALIA asks the plugin before every
   message of every provider**, under its server-wide lock, and no longer
   takes its shortcut for draining queued messages. With `autoSwitch` off
   the handler answers at once.
@@ -644,7 +644,7 @@ claude-switcher` lifts it, not a new login either. A wait for another
 
 ## Measured in real use
 
-On bb 0.44 with Claude Code 2.1.284, a turn that failed on a subscription
+On VesnALIA 0.44 with Claude Code 2.1.284, a turn that failed on a subscription
 limit at 01:40:57 was switched to another account at 01:41:00, and the
 retried turn completed there at 01:42:52.
 
@@ -655,7 +655,7 @@ retried turn completed there at 01:42:52.
   until that account is blocked or, if the user set a percentage, close to
   its limit. A login happens only when the user asks for one, through
   Claude Code's own `claude auth login`.
-- **No per-thread accounts.** The environment belongs to the project in bb;
+- **No per-thread accounts.** The environment belongs to the project in VesnALIA;
   switching per thread would need a second mechanism and would split one
   project's sessions across directories.
 - **No switching on a forecast.** By default the plugin moves a project

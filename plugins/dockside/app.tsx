@@ -1,7 +1,7 @@
-// bb-plugin-dockside — a project-first replacement for bb's sidebar thread
+// alia-plugin-dockside — a project-first replacement for VesnALIA's sidebar thread
 // list. Root threads keep a stable position and expand their child agents in
 // place, so activity changes state without moving the user's navigation.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { ThreadInbox } from "@/components/inbox/thread-inbox";
 import { ParentChip } from "@/components/inbox/parent-chip";
 import { DocksideSettingsSection } from "@/components/settings/dockside-settings";

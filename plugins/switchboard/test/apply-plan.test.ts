@@ -45,7 +45,7 @@ describe("apply and undo", () => {
     expect(f.calls).toEqual(["expand:thread:b", "order:section:s", "order:parent:b", "update:a"]);
     expect(f.threads.update).toHaveBeenCalledWith({ threadId: "a", parentThreadId: "b" });
     expect(notify).toHaveBeenCalledWith(plan.summary, expect.objectContaining({
-      description: "bb tells the parent's agent about this in 2 seconds. Undo before then and nothing is sent.",
+      description: "alia tells the parent's agent about this in 2 seconds. Undo before then and nothing is sent.",
       action: expect.objectContaining({ label: "Undo" }),
     }));
     expect(f.announce).toHaveBeenCalledWith(plan.summary);

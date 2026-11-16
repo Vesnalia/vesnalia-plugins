@@ -23,7 +23,7 @@ const integratorYaml = duoYaml({
   groups: [{ id: "ops", members: [{ id: "int", lead: true, integrator: true, role: "Merges delivered crew branches into main." }] }],
 } as never);
 
-/** A crew whose worktrees live on `host` (null = BB names no host). */
+/** A crew whose worktrees live on `host` (null = VesnALIA names no host). */
 async function crewOn(host: string | null | undefined) {
   const env = setup();
   env.port.projectHost = host;
@@ -51,12 +51,12 @@ describe("selectBackend", () => {
   it("unknown worktree host → remote with reason", () => {
     const choice = selectBackend({ hostId: null, localHostId: "h1", local, remote: () => ({ ok: true, git: local }) });
     expect(choice).toMatchObject({ ok: false, hostId: null });
-    if (!choice.ok) expect(choice.reason).toMatch(/remote host unknown: BB does not name the worktree's host/);
+    if (!choice.ok) expect(choice.reason).toMatch(/remote host unknown: ALIA does not name the worktree's host/);
   });
   it("unknown server host → remote with reason, even for a named worktree host", () => {
     const choice = selectBackend({ hostId: "h1", localHostId: null, local, remote: () => ({ ok: true, git: local }) });
     expect(choice.ok).toBe(false);
-    if (!choice.ok) expect(choice.reason).toMatch(/remote host h1: BB does not name its own host/);
+    if (!choice.ok) expect(choice.reason).toMatch(/remote host h1: ALIA does not name its own host/);
   });
 });
 
@@ -130,7 +130,7 @@ describe("remote host: clear refusal", () => {
     // A request stored before the host check existed (or by an older plugin version).
     const { service, store, git, alpha } = await crewOn(REMOTE);
     const ops = await running(service, (service as unknown as { ctx: { port: never } }).ctx.port, integratorYaml);
-    const merge = store.insertMerge({ id: "mr_old", projectId: PROJECT, crewId: alpha.crew.id, branch: "bb/old", base: "main", requestedBy: "core-lead@alpha" });
+    const merge = store.insertMerge({ id: "mr_old", projectId: PROJECT, crewId: alpha.crew.id, branch: "alia/old", base: "main", requestedBy: "core-lead@alpha" });
     await expect(service.integration.integratorMerge(merge.id, ops.members["ops-int"]!)).rejects.toThrow(new RegExp(`remote host ${REMOTE}:`));
     await expect(service.integration.approve(merge.id)).rejects.toThrow(new RegExp(`remote host ${REMOTE}:`));
     const cli = await runCli(service, ["approve", merge.id], ctx, project);
@@ -147,17 +147,17 @@ describe("unknown host: treated as remote", () => {
     const { service, store, alpha } = await crewOn(null);
     withFile(service, duoYaml({ name: "alpha" }));
     const plan = await runCli(service, ["plan", "crew.yaml"], ctx, project);
-    expect(plan.stdout).toMatch(/integration unavailable on remote host unknown: BB does not name the worktree's host/);
+    expect(plan.stdout).toMatch(/integration unavailable on remote host unknown: ALIA does not name the worktree's host/);
     await expect(service.integration.request(alpha.crew, "core-lead@alpha")).rejects.toThrow(/remote host unknown/);
     expect(store.listMerges({ crewId: alpha.crew.id })).toHaveLength(0);
   });
 
-  it("BB not naming its own host makes every worktree remote", async () => {
+  it("VesnALIA not naming its own host makes every worktree remote", async () => {
     const env = setup();
     env.port.localHost = null;
     env.port.projectHost = "host_x";
     const alpha = await running(env.service, env.port, duoYaml({ name: "alpha" }));
-    await expect(env.service.integration.request(alpha.crew, "core-lead@alpha")).rejects.toThrow(/remote host host_x: BB does not name its own host/);
+    await expect(env.service.integration.request(alpha.crew, "core-lead@alpha")).rejects.toThrow(/remote host host_x: ALIA does not name its own host/);
   });
 });
 

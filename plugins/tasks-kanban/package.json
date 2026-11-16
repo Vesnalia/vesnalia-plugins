@@ -1,15 +1,11 @@
 {
-  "name": "bb-plugin-tasks-kanban",
+  "name": "alia-plugin-tasks-kanban",
   "version": "0.2.3",
-  "description": "A live Kanban board for BB's built-in Tasks: drag & drop across all six statuses, create, edit, comment, label. Russian and English UI.",
+  "description": "A live Kanban board for VesnALIA's built-in Tasks: drag & drop across all six statuses, create, edit, comment, label. Russian and English UI.",
   "type": "module",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/levkovalenko/bb-tasks-kanban.git"
-  },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "tasks",
     "kanban",
     "board",
@@ -17,17 +13,17 @@
     "backlog"
   ],
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
   "scripts": {
-    "build": "bb plugin build .",
+    "build": "alia plugin build .",
     "test": "node --test test/",
     "test:marketplace": "node test/marketplace.test.mjs"
   },
-  "bb": {
+  "alia": {
     "name": "Tasks Kanban",
-    "description": "A live Kanban board over BB's built-in Tasks: every card and column, drag & drop, create, edit, comment, label — project-wide. English and Russian UI.",
+    "description": "A live Kanban board over VesnALIA's built-in Tasks: every card and column, drag & drop, create, edit, comment, label — project-wide. English and Russian UI.",
     "branding": {
       "icon": "SectionMove"
     },
@@ -40,7 +36,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -67,5 +62,22 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.7.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/tasks-kanban#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/tasks-kanban"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

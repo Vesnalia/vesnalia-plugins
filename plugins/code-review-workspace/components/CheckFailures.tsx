@@ -1,5 +1,5 @@
 import { createContext, memo, useContext, useEffect, useRef, useState } from "react";
-import { UrlLink, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { z } from "zod";
 import type { rpcContract } from "../src/rpc-contract";
 import { sameLocation, type CommentLocation } from "../src/draft";

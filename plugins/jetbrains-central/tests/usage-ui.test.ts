@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import { createElement } from "react";
 import { fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { parseAllowance } from "../usage.js";
 import { threadUsageContract } from "../usage-contract.js";
-import type { ExperimentalThreadContextSegmentProps } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalThreadContextSegmentProps } from "@vesnalia/plugin-sdk/app";
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "https://bb.test/", pretendToBeVisual: true });
 Object.defineProperties(globalThis, {

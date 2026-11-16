@@ -1,4 +1,4 @@
-import { PluginCliError, cliCommand, defineCli, type PluginCliRegistration, type PluginCliResult } from "@get-bb/plugin-sdk";
+import { PluginCliError, cliCommand, defineCli, type PluginCliRegistration, type PluginCliResult } from "@vesnalia/plugin-sdk";
 import type { Store } from "./db/store";
 import type { Approved, Engine } from "./engine";
 import { setAutoMerge } from "./auto-merge";
@@ -18,7 +18,7 @@ const version = { type: "integer", min: 1, max: 1_000_000, description: "A spec 
 const toJson = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 const minute = (at: number) => `${new Date(at).toISOString().slice(0, 16)}Z`;
 
-const SLUG = { name: "slug", description: "The project's slug, from `bb loom list`.", required: true } as const;
+const SLUG = { name: "slug", description: "The project's slug, from `alia loom list`.", required: true } as const;
 const KEY = { name: "key", description: "A ticket key such as CSV-1.", required: true } as const;
 
 type HumanActionData = { slug?: string; key?: string; [extra: string]: unknown };
@@ -63,10 +63,10 @@ const out = (stdout: string): PluginCliResult => ({ exitCode: 0, stdout });
 
 function landStep(project: ProjectOverview): string {
   const { slug } = project;
-  if (!isMultiRepoProject(project)) return `Every ticket is finished. Land it with \`bb loom land ${slug}\`, which pushes the integration branch and opens one pull request.`;
+  if (!isMultiRepoProject(project)) return `Every ticket is finished. Land it with \`alia loom land ${slug}\`, which pushes the integration branch and opens one pull request.`;
   const toLand = project.repos.flatMap((repo) => (repo.toLand ? [repo.name!] : []));
-  if (toLand.length === 0) return `Every ticket is finished, and every repo with merged work is landed. Run \`bb loom land ${slug}\` to finish the project.`;
-  return `Every ticket is finished, and ${reposHave(toLand)} merged work that is not landed yet. Land ${toLand.length === 1 ? "it" : "them"} with \`bb loom land ${slug}\`, which pushes each repo's integration branch and opens its pull request.`;
+  if (toLand.length === 0) return `Every ticket is finished, and every repo with merged work is landed. Run \`alia loom land ${slug}\` to finish the project.`;
+  return `Every ticket is finished, and ${reposHave(toLand)} merged work that is not landed yet. Land ${toLand.length === 1 ? "it" : "them"} with \`alia loom land ${slug}\`, which pushes each repo's integration branch and opens its pull request.`;
 }
 
 function nextStep(project: ProjectOverview): string {
@@ -74,29 +74,29 @@ function nextStep(project: ProjectOverview): string {
   if (readyToLand(project)) return landStep(project);
   switch (project.state) {
     case "draft":
-      return `Read the spec with \`bb loom spec ${slug}\`, then approve it with \`bb loom approve ${slug}\`.`;
+      return `Read the spec with \`alia loom spec ${slug}\`, then approve it with \`alia loom approve ${slug}\`.`;
     case "ready":
-      return `Start it with \`bb loom start ${slug}\`.`;
+      return `Start it with \`alia loom start ${slug}\`.`;
     case "running":
-      return `Pause it with \`bb loom pause ${slug}\`.`;
+      return `Pause it with \`alia loom pause ${slug}\`.`;
     case "paused":
-      return `Resume it with \`bb loom resume ${slug}\`.`;
+      return `Resume it with \`alia loom resume ${slug}\`.`;
     default:
       return "";
   }
 }
 
 function formatList(projects: ProjectOverview[]): string {
-  if (projects.length === 0) return "No Loom projects yet. Open Loom in bb's left navigation and press New project, or ask a thread to plan one.\n";
+  if (projects.length === 0) return "No Loom projects yet. Open Loom in VesnALIA's left navigation and press New project, or ask a thread to plan one.\n";
   const width = Math.max(...projects.map((project) => project.slug.length));
   const rows = projects.map((project) => `${project.slug.padEnd(width)}  ${project.state.padEnd(8)}  ${project.key.padEnd(8)}  ${String(project.ticketCount).padStart(3)} ${project.ticketCount === 1 ? "ticket " : "tickets"}  ${project.name}`);
   return `${rows.join("\n")}\n`;
 }
 
-const bbProjectOf = (repo: RepoOverview) => (repo.bbProjectName === null ? repo.bbProjectId : `${repo.bbProjectName} (${repo.bbProjectId})`);
+const aliaProjectOf = (repo: RepoOverview) => (repo.aliaProjectName === null ? repo.aliaProjectId : `${repo.aliaProjectName} (${repo.aliaProjectId})`);
 
 function repoLine(repo: RepoOverview): string {
-  const parts = [repo.name!, `bb project ${bbProjectOf(repo)}`, `base ${repo.base}`];
+  const parts = [repo.name!, `alia project ${aliaProjectOf(repo)}`, `base ${repo.base}`];
   if (repo.branch !== null) {
     parts.push(`integration branch ${repo.branch}`);
     if (repo.prUrl !== null) parts.push(`pull request ${repo.prUrl}`);
@@ -112,7 +112,7 @@ function formatShow(project: ProjectOverview): string {
   const specLine =
     project.approvedVersion === null
       ? "Spec: not approved yet."
-      : `Spec: approved v${project.approvedVersion}${project.pendingVersion === null ? "" : `, pending v${project.pendingVersion} (read it with \`bb loom spec ${project.slug} --version ${project.pendingVersion}\`)`}.`;
+      : `Spec: approved v${project.approvedVersion}${project.pendingVersion === null ? "" : `, pending v${project.pendingVersion} (read it with \`alia loom spec ${project.slug} --version ${project.pendingVersion}\`)`}.`;
   const lines = [
     `${project.name} (${project.slug}) · ${project.state}`,
     `Goal: ${project.goal}`,
@@ -204,7 +204,7 @@ function newMetricLines(m: ProjectMetrics): string[] {
 
 // One line per repo landed, then what is left.
 function formatRepoLand(slug: string, result: Extract<LandResult, { repos: unknown }>, direct: boolean): string {
-  const again = `bb loom land ${slug}${direct ? " --direct" : ""}`;
+  const again = `alia loom land ${slug}${direct ? " --direct" : ""}`;
   const lines = result.repos.map((entry) => (entry.url === null ? `Landed the repo "${entry.repo}" on ${entry.pushed} at ${entry.sha.slice(0, 12)}.` : `Landed the repo "${entry.repo}": ${entry.url}`));
   const { unlanded } = result;
   if (result.done) lines.push("Every ticket is done or cancelled and every repo with merged work is landed, so the project is done.");
@@ -214,11 +214,11 @@ function formatRepoLand(slug: string, result: Extract<LandResult, { repos: unkno
 }
 
 function formatApprove(result: Approved): string {
-  const requeued = result.requeued.length === 0 ? "" : `Queued again, because bb never started ${its(result.requeued.length, "worker")}: ${result.requeued.join(", ")}.\n`;
-  const reviewed = result.backToReview.length === 0 ? "" : `Back in review, because bb refused to start ${its(result.backToReview.length, "reviewer")}: ${result.backToReview.join(", ")}.\n`;
+  const requeued = result.requeued.length === 0 ? "" : `Queued again, because VesnALIA never started ${its(result.requeued.length, "worker")}: ${result.requeued.join(", ")}.\n`;
+  const reviewed = result.backToReview.length === 0 ? "" : `Back in review, because VesnALIA refused to start ${its(result.backToReview.length, "reviewer")}: ${result.backToReview.join(", ")}.\n`;
   if (result.applied === "pending") return `Applied spec v${result.version} to ${result.slug}. Its tickets are unchanged.\n${requeued}${reviewed}`;
   const keys = result.tickets.length <= 8 ? result.tickets.join(", ") : `${result.tickets[0]} to ${result.tickets.at(-1)}`;
-  return `Approved ${result.slug}. It is ready with ${result.tickets.length} ${result.tickets.length === 1 ? "ticket" : "tickets"}: ${keys}.\nStart it with \`bb loom start ${result.slug}\`.\n`;
+  return `Approved ${result.slug}. It is ready with ${result.tickets.length} ${result.tickets.length === 1 ? "ticket" : "tickets"}: ${keys}.\nStart it with \`alia loom start ${result.slug}\`.\n`;
 }
 
 export function createCli(projects: Projects, engine: Engine, store: Store, now: () => number): PluginCliRegistration {
@@ -257,7 +257,7 @@ export function createCli(projects: Projects, engine: Engine, store: Store, now:
       spec: cliCommand({
         summary: "Print a project's spec as TOML (the approved version, or the draft)",
         positionals: [SLUG],
-        options: { version: { ...version, description: "A spec version; `bb loom show` names the pending one." }, json },
+        options: { version: { ...version, description: "A spec version; `alia loom show` names the pending one." }, json },
         run: ({ options, positionals }) =>
           guarded(() => {
             const spec = projects.spec(positionals.slug, options.version);
@@ -352,7 +352,7 @@ export function createCli(projects: Projects, engine: Engine, store: Store, now:
       post: cliCommand({
         summary: "Add your reply to a ticket's thread; a worker that holds the ticket gets it as a message (human only)",
         positionals: [KEY, { name: "text", description: "What to say.", required: true, variadic: true }],
-        options: { "reply-to": { type: "integer", min: 1, max: 2_147_483_647, description: "Answer this post (its #id from `bb loom ticket`). Without it the post starts a new top-level post." }, json },
+        options: { "reply-to": { type: "integer", min: 1, max: 2_147_483_647, description: "Answer this post (its #id from `alia loom ticket`). Without it the post starts a new top-level post." }, json },
         run: ({ options, positionals }, ctx) =>
           guarded(async () => {
             const post = await humanAction(deps, ctx, "post", { key: positionals.key }, () =>
@@ -484,8 +484,8 @@ export function createCli(projects: Projects, engine: Engine, store: Store, now:
             const finished = "Every ticket is done or cancelled, so the project is done.\n";
             if (options.json) return out(toJson(result));
             if ("repos" in result) return out(formatRepoLand(positionals.slug, result, direct));
-            if (result.url === null) return out(`Landed ${positionals.slug} on ${result.pushed} at ${result.sha.slice(0, 12)}.\n${result.done ? finished : `Run \`bb loom land${direct ? " --direct" : ""}\` again after more tickets merge to push them too.\n`}`);
-            return out(`Landed ${positionals.slug}: ${result.url}\n${result.done ? finished : "Run `bb loom land` again after more tickets merge to push them to the same pull request.\n"}`);
+            if (result.url === null) return out(`Landed ${positionals.slug} on ${result.pushed} at ${result.sha.slice(0, 12)}.\n${result.done ? finished : `Run \`alia loom land${direct ? " --direct" : ""}\` again after more tickets merge to push them too.\n`}`);
+            return out(`Landed ${positionals.slug}: ${result.url}\n${result.done ? finished : "Run `alia loom land` again after more tickets merge to push them to the same pull request.\n"}`);
           }),
       }),
       approve: cliCommand({
@@ -506,7 +506,7 @@ export function createCli(projects: Projects, engine: Engine, store: Store, now:
             return out(options.json ? toJson(result) : formatApprove(result));
           }),
       }),
-      start: lifecycle("Start an approved project: workers pick up its ready tickets by themselves (human only)", (slug, actor) => engine.start(slug, actor), "start", (slug) => `${slug} is running. Workers start by themselves; follow them with \`bb loom tickets ${slug}\`.`),
+      start: lifecycle("Start an approved project: workers pick up its ready tickets by themselves (human only)", (slug, actor) => engine.start(slug, actor), "start", (slug) => `${slug} is running. Workers start by themselves; follow them with \`alia loom tickets ${slug}\`.`),
       pause: cliCommand({
         summary: "Pause a running project (human only)",
         positionals: [SLUG],

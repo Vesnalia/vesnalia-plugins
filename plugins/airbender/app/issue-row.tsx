@@ -76,7 +76,7 @@ export function IssueRow({
   /**
    * This row is the issue the details window is showing, so it needs no
    * button to open the details window on itself. Its sub-issues are drawn
-   * as full-size rows: the window has the room (bead-bb-zty.2).
+   * as full-size rows: the window has the room (bead-alia-zty.2).
    */
   isDetailsRoot?: boolean;
   /**
@@ -164,7 +164,7 @@ export function IssueRow({
         )}
       >
         {/* When the issue was created and last changed, in the card's
-            bottom right corner (bead-bb-tj4: "i don't see date on the
+            bottom right corner (bead-alia-tj4: "i don't see date on the
             card"). Not on a compact sub-issue row, which is one line. */}
         {compact || corner === null ? null : (
           <span
@@ -307,7 +307,7 @@ export function IssueRow({
         {/* Opens the details window on this issue: the roomy view of an
             issue, with its sub-issues if it has any, and the only way to
             levels deeper than the one drawn here. On every issue (the
-            user's request, bead-bb-2oy); it used to be only on issues with
+            user's request, bead-alia-2oy); it used to be only on issues with
             sub-issues. Not on the issue the window is already showing. */}
         {isDetailsRoot ? null : (
           <Button
@@ -329,7 +329,7 @@ export function IssueRow({
             the details-window button because the two are the ways into an
             issue with sub-issues: a look in a window, or the list itself.
             Shown disabled, with the reason, while the thread's current
-            issue is not from this epic (the user's rule, bead-bb-ha9). */}
+            issue is not from this epic (the user's rule, bead-alia-ha9). */}
         {focusOffer === null || isDetailsRoot ? null : (
           <Button
             variant="ghost"
@@ -367,7 +367,7 @@ export function IssueRow({
             groupClassName="mx-1 mt-1.5"
             // Full size on the thread's current issue, where it is the one
             // thing to press. Everywhere else it is small and quiet (the
-            // user's request, bead-bb-q9v): when the thread has no current
+            // user's request, bead-alia-q9v): when the thread has no current
             // issue every open row carries one, and as bordered, full-size
             // buttons they crowded the titles and made rows grow. The quiet
             // look is the one the buttons inside an opened issue have: low,

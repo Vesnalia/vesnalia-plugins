@@ -1,4 +1,4 @@
-// bb-plugin-crew — frontend entry.
+// alia-plugin-crew — frontend entry.
 //
 // E1: the "Crews" nav panel with the crew list and a members table.
 // E2: the "Table & Feed" tab (members with activity, Needs-you rows on top,
@@ -15,7 +15,7 @@
 // `::crew` directive, palette commands and the confirmation form.
 //
 // Row icons: `experimental_setThreadRowStatus` exists only on the content
-// script context (bb-plugin-sdk.d.ts:18879–18898), which has no RPC client
+// script context (alia-plugin-sdk.d.ts:18879–18898), which has no RPC client
 // and no realtime hook. The content script is the only surface mounted for as
 // long as the app is open — the sidebar accessory is skipped on compact
 // viewports and in the icon rail (d.ts:17641–17652), the panel only while it
@@ -25,8 +25,8 @@
 // still apply them at once on realtime changes. Rows fetched before the
 // setter exists are kept and applied when it arrives.
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { definePluginApp, experimental_ProviderModelPicker as ProviderModelPicker, useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginComposerThreadRowStatus } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, experimental_ProviderModelPicker as ProviderModelPicker, useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginComposerThreadRowStatus } from "@vesnalia/plugin-sdk/app";
 import type { ActivityDto, ChannelDto, CrewDto, MemberDto, MessageDto, OverviewDto, rpcContract, WorkDto } from "./server";
 import { CrewFileEditor } from "./components/crew-file-editor";
 import { CREW_ICON, CrewTeam } from "./components/crew-icon";
@@ -210,7 +210,7 @@ export function MembersTable({
   onReply?: (address: string) => void;
 }) {
   if (members.length === 0) {
-    return <p className="text-sm text-muted-foreground">No members yet. Run bb crew apply.</p>;
+    return <p className="text-sm text-muted-foreground">No members yet. Run alia crew apply.</p>;
   }
   const byKey = new Map(activity.map((view) => [view.key, view]));
   const rows: Row[] = members.map((member) => ({ member, activity: byKey.get(member.key) ?? null }));
@@ -762,7 +762,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 /**
  * Commands (`commandPaletteAction`) run outside React and get no RPC client
- * (PluginCommandContext, bb-plugin-sdk.d.ts:18534–18549). The mounted panel,
+ * (PluginCommandContext, alia-plugin-sdk.d.ts:18534–18549). The mounted panel,
  * header and sidebar accessory hand theirs over here, the same bridge as the
  * row-status setter.
  */
@@ -851,7 +851,7 @@ export function TopologyTab({
     refetch();
     onChanged();
   };
-  if (members.length === 0) return <p className="text-sm text-muted-foreground">No members yet. Run bb crew apply.</p>;
+  if (members.length === 0) return <p className="text-sm text-muted-foreground">No members yet. Run alia crew apply.</p>;
   return (
     <div className="flex flex-col gap-2">
       {note ? (
@@ -952,7 +952,7 @@ function PanelScroll({ children }: { children: ReactNode }) {
 
 export function CrewDetailPanel({ threadId, params }: { threadId: string; params: unknown }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const direct = useMemo(() => crewRefFromParams(params), [params]);
   // No params (opened from the header or palette, not a directive): the panel's own thread names its crew.
   const [ref, setRef] = useState<{ crew: string; projectId: string } | null | undefined>(direct ?? undefined);
@@ -1079,7 +1079,7 @@ function DeleteCrewForm({ crew, onDone }: { crew: CrewDto; onDone: (text: string
         </label>
       ) : (
         <p className="text-xs text-muted-foreground">
-          The crew is {crew.status}. Stop it first (⋯ → Stop, or <code>bb crew stop {crew.name}</code>).
+          The crew is {crew.status}. Stop it first (⋯ → Stop, or <code>alia crew stop {crew.name}</code>).
         </p>
       )}
       {blockers.length > 0 ? (
@@ -1288,7 +1288,7 @@ export function crewProjects(crews: readonly CrewDto[]): { id: string; name: str
 
 function CrewsPage() {
   const rpc = useRpcBridge();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [crews, setCrews] = useState<CrewDto[] | null>(null);
   /** BBP-83: where on the zoom canvas you are — all projects, a project, a crew, an agent. */
   const [path, setPath] = useState<ZoomPath>({});
@@ -1448,7 +1448,7 @@ function CrewsPage() {
           <p className="text-sm text-muted-foreground">Loading crews…</p>
         ) : crews.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-            No crews yet. Try <code>bb crew templates</code> and <code>bb crew apply trio</code>.
+            No crews yet. Try <code>alia crew templates</code> and <code>alia crew apply trio</code>.
           </div>
         ) : (
           <div className="flex min-h-0 flex-1 gap-3">
@@ -1532,7 +1532,7 @@ function CrewsPage() {
                             act(
                               () => rpc.call("snapshot", { projectId: crew.projectId, name: crew.name, label: null }),
                               (r: { id: string; bindings: number; work: number; messages: number }) =>
-                                `Snapshot ${r.id}: ${r.bindings} bindings, ${r.work} open work items, ${r.messages} undelivered messages — bb crew restore ${r.id}`,
+                                `Snapshot ${r.id}: ${r.bindings} bindings, ${r.work} open work items, ${r.messages} undelivered messages — VesnALIA crew restore ${r.id}`,
                             )
                           }
                         >

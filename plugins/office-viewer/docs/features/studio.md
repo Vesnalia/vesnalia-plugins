@@ -43,7 +43,7 @@ Studio creates and edits thread-scoped visual documents. The panel chooses proto
 
 ## How it works
 
-1. The app registers Studio as a thread-panel action and adds a settings section; when BB exposes its optional header-action function, it also registers a thread-header entry (`app.tsx:56-61`).
+1. The app registers Studio as a thread-panel action and adds a settings section; when VesnALIA exposes its optional header-action function, it also registers a thread-header entry (`app.tsx:56-61`).
 2. The Studio panel presents the available tool cards and switches the selected tool; `StudioToolView` maps `prototype`, `slides` and `paint` to their editor components (`src/studio/studio-panel.tsx:70-90`; `src/studio/tools.tsx:19-27`).
 3. Each editor reads its tool state from the thread session. The prototype builder initializes its document, history, selection, zoom, edit scope and canvas state; slides and paint restore their deck or document and selection/view settings (`src/studio/prototype/builder.tsx:266-325`; `src/studio/slides/editor.tsx:39-63`; `src/studio/paint/paint.tsx:67-82`).
 4. The prototype editor composes a toolbar, left pane, canvas and inspector inside a responsive shell. The left pane manages pages, element layers, palette, components and styles; the inspector edits canvas or element properties, shared styles and interactions (`src/studio/prototype/builder.tsx:266-325`; `src/studio/prototype/left-pane.tsx:47-106`; `src/studio/prototype/inspector.tsx:33-99`; `src/studio/prototype/shell.tsx:34-97`).
@@ -67,7 +67,7 @@ Studio creates and edits thread-scoped visual documents. The panel chooses proto
 - Connectors are rendered separately from element faces and omit hidden connectors; their visible paths use connector routing, arrow markers, dashed style, opacity and labels (`src/studio/prototype/connector-layer.tsx:28-70`).
 - Generated prototype code uses absolute positions and Tailwind-style classes and is explicitly described as a starting point to refine before shipping (`src/studio/prototype/code-export.ts:142-166`).
 - Slide-board captures render at scale 2 as PNG and filter editor-only elements marked `data-proto-skip` (`src/studio/slides/slide-board.tsx:117-129`).
-- Paint documents use format `bb-paint`, version 1; slides use `bb-slides`, version 1 (`src/studio/paint/paint-model.ts:5-6`; `src/studio/slides/model.ts:13-16`).
+- Paint documents use format `alia-paint`, version 1; slides use `alia-slides`, version 1 (`src/studio/paint/paint-model.ts:5-6`; `src/studio/slides/model.ts:13-16`).
 
 ## Public API or commands
 

@@ -73,7 +73,7 @@ export async function fetchActivity(input: ActivityInput, graphql: Graphql = git
     return { status: [contributions, opened, merged, reviews].some(value => value === null) ? "partial" : "ready", message: null, data };
   } catch (cause) {
     return cause instanceof GitHubUnavailable
-      ? { status: "unavailable", message: "GitHub activity is unavailable. Authenticate the GitHub CLI on your BB server, then retry.", data: null }
+      ? { status: "unavailable", message: "GitHub activity is unavailable. Authenticate the GitHub CLI on your VesnALIA server, then retry.", data: null }
       : { status: "error", message: "Could not load verified GitHub activity. Please retry.", data: null };
   }
 }

@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-millivolt",
+  "name": "alia-plugin-millivolt",
   "version": "0.1.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49"
   },
-  "bb": {
+  "alia": {
     "name": "Millivolt",
-    "description": "Live AI traffic visibility and control: runs the millivolt proxy with bb and shows its dashboard in the sidebar.",
+    "description": "Live AI traffic visibility and control: runs the millivolt proxy with VesnALIA and shows its dashboard in the sidebar.",
     "branding": {
       "icon": "Activity"
     },
@@ -21,7 +21,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -49,16 +48,28 @@
   },
   "license": "MIT",
   "author": "Hemang Vellore (https://github.com/hv-V6)",
-  "homepage": "https://github.com/hv-V6/bb-plugin-millivolt#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/hv-V6/bb-plugin-millivolt.git"
-  },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "millivolt",
     "llm-proxy",
     "observability",
     "inference"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/millivolt#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/millivolt"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

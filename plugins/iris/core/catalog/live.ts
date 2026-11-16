@@ -1,13 +1,13 @@
 // Live project components: they read this thread's checkout, branch, pull
-// request, environments and threads from bb when the card renders, and keep
-// reading while it is on screen. Agents never retype what bb already knows.
+// request, environments and threads from VesnALIA when the card renders, and keep
+// reading while it is on screen. Agents never retype what VesnALIA already knows.
 import { component, p } from "./spec";
 
 export const LIVE_PROJECT = [
   component({
     name: "Changes",
     group: "Project",
-    summary: "Files changed in this thread's checkout with +/- counts; each expands to its diff. Live: reads bb's git state, never retyped.",
+    summary: "Files changed in this thread's checkout with +/- counts; each expands to its diff. Live: reads VesnALIA's git state, never retyped.",
     props: {
       target: p.str("Omit for the branch's work including uncommitted, \"uncommitted\" for only uncommitted work, or a commit sha"),
       paths: p.list("Only these files: paths, folders (\"core/\") or globs (\"**/*.test.ts\")", "string[]"),
@@ -51,7 +51,7 @@ export const LIVE_PROJECT = [
   component({
     name: "Threads",
     group: "Project",
-    summary: "Live status of bb threads: running, waiting on the person, done, failed. Omit ids for this thread's subthreads. Click one to open it.",
+    summary: "Live status of VesnALIA threads: running, waiting on the person, done, failed. Omit ids for this thread's subthreads. Click one to open it.",
     props: {
       ids: p.list("Thread ids (thr_...); omit for this thread's subthreads", "string[]"),
       title: p.str("Caption"),

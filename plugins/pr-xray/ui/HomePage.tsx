@@ -1,6 +1,6 @@
 // The panel root: open a PR and see recent reviews.
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import { uiStore } from "./store";
 import { errorMessage } from "./useReview";
 
 export function useOpenPr() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return useCallback(
     (input: string): string | null => {
       const ref = parsePrRef(input);
@@ -37,7 +37,7 @@ const STATUS_LABEL: Record<ReviewSummary["analysisStatus"], string> = {
 export function HomePage() {
   const rpc = useRpc<typeof rpcContract>();
   const openPr = useOpenPr();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [reviews, setReviews] = useState<ReviewSummary[] | null>(null);
@@ -117,7 +117,7 @@ export function HomePage() {
             listError ? null : <RecentSkeleton />
           ) : reviews.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-              No reviews yet. Use the command palette (“PR X-ray: Review a pull request”) from anywhere in bb.
+              No reviews yet. Use the command palette (“PR X-ray: Review a pull request”) from anywhere in VesnALIA.
             </div>
           ) : (
             <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">

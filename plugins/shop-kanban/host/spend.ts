@@ -9,18 +9,18 @@ import { homeDir } from "./run";
 // What harness sessions spent, from the transcripts the harnesses write on this host.
 //
 // omp:
-//   <agent dir>/sessions/<cwd>/<time>_<session id>.jsonl   the session bb talks to
+//   <agent dir>/sessions/<cwd>/<time>_<session id>.jsonl   the session VesnALIA talks to
 //   <that path without .jsonl>/<Agent>.jsonl                its subagents: task (inline and background), eval
 //   <that path without .jsonl>/<Agent>/<Sub>.jsonl          agent(), workpool, advisor, /tan; nested the same way
-// Pi, through bb's bridge:
-//   <bridge dir>/<provider thread id>.jsonl                 one per session; Pi's subagents are bb threads of their own
+// Pi, through VesnALIA's bridge:
+//   <bridge dir>/<provider thread id>.jsonl                 one per session; Pi's subagents are VesnALIA threads of their own
 //
 // Both write one JSON entry per line after a `{"type":"session"}` header; omp puts a `{"type":"title"}` slot
 // before it. A transcript's spend is its assistant replies' `usage.cost` plus the `usage.cost` other entries
 // carry for model calls of their own: omp's `model_usage` (judgments, completion probes, find), Pi's compactions
 // and cache warms. A `task` result repeats the child's reply spend, which the child's transcript already holds,
 // so results are never counted. omp's own figure (ACP `usage_update`) counts only its direct children's replies;
-// Pi reports none to bb.
+// Pi reports none to VesnALIA.
 //
 // A reply saved with tokens but no price is estimated: priced at the average rate, per token bucket, of the same
 // provider and model's priced replies across every transcript on this host. omp 18.13 saves every Shopify Auto
@@ -164,12 +164,12 @@ function ompSessionsDir(): string | null {
   return home && join(home, process.env.PI_CONFIG_DIR || ".omp", "agent", "sessions");
 }
 
-/** bb's Pi bridge dir, resolved as the bridge resolves it. Null when there is no home directory. */
+/** VesnALIA's Pi bridge dir, resolved as the bridge resolves it. Null when there is no home directory. */
 function piSessionsDir(): string | null {
-  const dir = process.env.BB_PI_BRIDGE_SESSION_DIR?.trim();
+  const dir = process.env.ALIA_PI_BRIDGE_SESSION_DIR?.trim();
   if (dir) return resolve(dir);
   const home = homeDir();
-  return home && join(home, ".bb", "pi-bridge-sessions");
+  return home && join(home, ".vesnalia", "pi-bridge-sessions");
 }
 
 /** Session id → transcript path, for every session under omp's sessions dir (one directory per cwd). */
@@ -432,7 +432,7 @@ export function ompSpend(sessionIds: readonly string[]): Promise<Record<string, 
 }
 
 /**
- * What each Pi session (bb provider thread id) spent; sessions with no transcript here are left out. bb's bridge
+ * What each Pi session (VesnALIA provider thread id) spent; sessions with no transcript here are left out. VesnALIA's bridge
  * names a transcript after the id; the contract admits only ids it keeps as they are.
  */
 export function piSpend(providerThreadIds: readonly string[]): Promise<Record<string, Spend>> {

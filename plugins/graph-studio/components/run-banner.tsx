@@ -8,10 +8,10 @@
 // and the answer box, in place instead of repeated through the history.
 import { useCallback, useEffect, useState } from "react";
 import {
-  useBbContext,
+  useAliaContext,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { RunDto, rpcContract } from "../server";
 import { Icon } from "@/components/ui/icon";
 import { GraphStudioFlow } from "./graph-studio-icon";
@@ -64,7 +64,7 @@ function writeCollapsed(collapsed: boolean): void {
 }
 
 export function GraphStudioRunBanner() {
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const rpc = useRpc<typeof rpcContract>();
   const openRun = useOpenRun();
   const [runs, setRuns] = useState<RunDto[]>([]);

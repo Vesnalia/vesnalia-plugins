@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { fileIcon, folderIcon } from "./file-icons.ts";
 
 test("a file name wins over its extension", () => {
-  assert.equal(fileIcon("bb-plugin-diff-plus/package.json"), "npm");
+  assert.equal(fileIcon("alia-plugin-diff-plus/package.json"), "npm");
   assert.equal(fileIcon("tsconfig.json"), "tsconfig");
   assert.equal(fileIcon("AGENTS.md"), "agents");
 });
@@ -37,7 +37,7 @@ test("anything else is a plain file, including names on Object.prototype", () =>
 
 test("folders take their name's icon, open or closed", () => {
   assert.equal(folderIcon("src", false), "folder-src");
-  assert.equal(folderIcon("bb-plugin-diff-plus/src", true), "folder-src-open");
+  assert.equal(folderIcon("alia-plugin-diff-plus/src", true), "folder-src-open");
   assert.equal(folderIcon("Tests", false), "folder-test");
   assert.equal(folderIcon("docs/content/docs", false), "folder-docs");
   assert.equal(folderIcon("whatever", false), "folder");

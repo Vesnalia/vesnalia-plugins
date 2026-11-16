@@ -1,27 +1,27 @@
-# Дизайн плагина Polza для bb
+# Дизайн плагина Polza для VesnALIA
 
 Решения приняты 2026-11-09 (Илья): свой провайдер, публичный плагин, OAuth-коллбэк на
-localhost сервера bb плюс ручная вставка кода, бэкенд Пользы не меняем, движок — Claude Code
+localhost сервера VesnALIA плюс ручная вставка кода, бэкенд Пользы не меняем, движок — Claude Code
 через Agent SDK, плагин сам ставит/обновляет Claude CLI, белый список моделей в настройках со
 стартовым набором, баланс в футере сайдбара и настройках (баланс организации и лимит ключа
 отдельно), расход в рублях по треду, цены моделей в описании пикера.
 
 ## Слои
-1. **server.ts** (процесс сервера bb)
-   - `bb.settings.define`: `apiKey` (secret), `baseUrl` (default `https://polza.ai/api`),
+1. **server.ts** (процесс сервера VesnALIA)
+   - `alia.settings.define`: `apiKey` (secret), `baseUrl` (default `https://polza.ai/api`),
      `models` (multiline JSON — белый список слагов), `defaultModel`, `subagentModel`, `haikuModel`.
-   - OAuth PKCE: RPC `login.start` → authorize URL; `bb.http.route GET /oauth/callback` (auth
+   - OAuth PKCE: RPC `login.start` → authorize URL; `alia.http.route GET /oauth/callback` (auth
      `none`, защищён `state`) принимает `code`, меняет на ключ в `/api/auth/token`, сохраняет
      через `settings.experimental_set({apiKey})`, отдаёт HTML «готово». RPC `login.complete`
      принимает вставленный `code` или полный URL (запасной путь для удалённого сервера).
-     `callback_url` = `${bb.server.loopbackBaseUrl}/api/v1/plugins/polza/http/oauth/callback`.
+     `callback_url` = `${alia.server.loopbackBaseUrl}/api/v1/plugins/polza/http/oauth/callback`.
    - RPC `account.get`: `/api/auth/userinfo`, `/v2/balance`, `/v1/key` (кэш 20 с); `account.logout`.
    - RPC `catalog.list`: `/v1/models?type=chat` (кэш 5 мин) для редактора белого списка.
-   - `bb.providers.register({id:"polza", …})`: `maintenance {health, installation}`, `usage:false`,
+   - `alia.providers.register({id:"polza", …})`: `maintenance {health, installation}`, `usage:false`,
      `models:{scope:"host"}`, `extensionKinds: { cost: {state} }`,
      `deriveProviderOptions` → `{polzaApiKey, polzaBaseUrl, polzaModels, …}` (ключ кэшируется в
      памяти сервера из секрета; попадает в бридж только внутри providerOptions, не в env-события).
-   - `bb.providers.experimental_contributeEnv("polza")`: `POLZA_BASE_URL`, `POLZA_MODELS`
+   - `alia.providers.experimental_contributeEnv("polza")`: `POLZA_BASE_URL`, `POLZA_MODELS`
      (JSON белого списка), `POLZA_SIGNED_IN` — несекретное; нужны `model/list` и `provider/health`,
      которые не получают providerOptions. Смена белого списка меняет fingerprint → кэш списка
      моделей сбрасывается.
@@ -50,4 +50,4 @@ localhost сервера bb плюс ручная вставка кода, бэ�
 - Ключ Пользи бессрочный, refresh нет: при 401 бридж шлёт `provider/recovery authRequired`,
   UI предлагает войти заново (повторный вход ротирует ключ).
 - Лимит на экране согласия по умолчанию 100 ₽/день — показываем в настройках `limit_remaining`.
-- Коллбэк на localhost работает, когда браузер и сервер bb на одной машине; иначе — вставка кода.
+- Коллбэк на localhost работает, когда браузер и сервер VesnALIA на одной машине; иначе — вставка кода.

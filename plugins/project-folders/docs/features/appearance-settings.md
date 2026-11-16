@@ -22,7 +22,7 @@ TL;DR: Shared preferences control chat lists, tree density and level styling; op
 
 ## Purpose
 
-The plugin stores common preferences on the BB server so the sidebar, management page and settings page read the same values (`preferences.ts:3-7`, `server.ts:3493-3538`).
+The plugin stores common preferences on the VesnALIA server so the sidebar, management page and settings page read the same values (`preferences.ts:3-7`, `server.ts:3493-3538`).
 
 ## How it works
 
@@ -90,7 +90,7 @@ The settings page has two JSON transfer scopes. Appearance export/import carries
 
 ## Gotchas
 
-- Language selection is browser-local; the rest of these preferences are stored in BB plugin storage (`i18n.tsx:39-48`, `server.ts:3493-3538`).
+- Language selection is browser-local; the rest of these preferences are stored in VesnALIA plugin storage (`i18n.tsx:39-48`, `server.ts:3493-3538`).
 - Changing a preset replaces level appearance settings, while per-item appearance has its own storage (`preferences.ts:117-153`, `server.ts:3517-3523`).
 - Full replacement import deletes existing durable plugin table rows before inserting the backup; the UI asks for confirmation (`backup.ts:179-190`, `appearance.tsx:1079-1094`).
 

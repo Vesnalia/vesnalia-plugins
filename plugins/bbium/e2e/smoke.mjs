@@ -1,13 +1,13 @@
-// End-to-end smoke test against a running bb with bbium installed.
-//   BB_URL=http://localhost:38886 npm run e2e
-// BB_THREAD=/projects/<id>/threads/<id> adds scroll checks on a long thread.
+// End-to-end smoke test against a running VesnALIA with bbium installed.
+//   ALIA_URL=http://localhost:38886 npm run e2e
+// ALIA_THREAD=/projects/<id>/threads/<id> adds scroll checks on a long thread.
 // Uses playwright-core chromium-headless-shell (not Chrome.app: its launch makes macOS reindex Shortcuts).
 // Missing: node node_modules/playwright-core/cli.js install chromium-headless-shell
 // It never clicks a button: it only focuses the composer by label. It types one
 // `f` into the composer and deletes it again.
 import { chromium } from "playwright-core";
 
-const url = process.env.BB_URL ?? "http://localhost:38886";
+const url = process.env.ALIA_URL ?? "http://localhost:38886";
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const pageErrors = [];
@@ -27,17 +27,17 @@ const focus = () =>
   });
 const composerText = () =>
   page.evaluate(() => [...document.querySelectorAll(".ProseMirror[contenteditable=true]")].at(-1)?.textContent ?? "");
-// bb blurs its composer on Esc; the check fails if that ever changes.
+// VesnALIA blurs its composer on Esc; the check fails if that ever changes.
 const leaveEditor = async () => {
   await page.keyboard.press("Escape");
   return (await focus()) !== "editor";
 };
 
 try {
-  // bb keeps a streaming connection open, so "networkidle" never fires; the fixed wait below covers lazy chunks.
+  // VesnALIA keeps a streaming connection open, so "networkidle" never fires; the fixed wait below covers lazy chunks.
   await page.goto(url, { waitUntil: "load" });
   await page.waitForTimeout(2500);
-  // bb may autofocus the composer on load; a bare `i` would then land in the draft.
+  // VesnALIA may autofocus the composer on load; a bare `i` would then land in the draft.
   await page.evaluate(() => document.activeElement?.blur?.());
   await page.keyboard.press("i");
   check("Esc leaves the composer", await leaveEditor());
@@ -95,8 +95,8 @@ try {
   await page.keyboard.press("g");
   check("gg is handled, not typed", (await hints()) === 0 && (await composerText()) === draft);
 
-  if (process.env.BB_THREAD) {
-    await page.goto(new URL(process.env.BB_THREAD, url).href, { waitUntil: "load" });
+  if (process.env.ALIA_THREAD) {
+    await page.goto(new URL(process.env.ALIA_THREAD, url).href, { waitUntil: "load" });
     await page.waitForTimeout(3000);
     await leaveEditor();
     const scrollTop = () =>

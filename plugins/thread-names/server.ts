@@ -1,25 +1,25 @@
-// bb-plugin-thread-names: the backend entry.
+// alia-plugin-thread-names: the backend entry.
 //
-// Registers an AI service for bb's `thread-title` task that names threads
+// Registers an AI service for VesnALIA's `thread-title` task that names threads
 // "category: two or three words", all lowercase, so a long sidebar list of
 // parallel threads reads at a glance.
 //
-// bb hands every title service its own fixed prompt ("sentence case, under
+// VesnALIA hands every title service its own fixed prompt ("sentence case, under
 // about 40 characters"). This service keeps only the material from that
 // prompt (the task, later messages, agent replies, current title), wraps it in
-// the naming rules below, and sends it to bb cloud through the bb-account
-// plugin, exactly as the built-in bb-ai plugin does. Same model, same account,
-// same daily budget; no extra keys. When bb cloud is off (`bb ai off`) or not
+// the naming rules below, and sends it to VesnALIA cloud through the alia-account
+// plugin, exactly as the built-in alia-ai plugin does. Same model, same account,
+// same daily budget; no extra keys. When VesnALIA cloud is off (`alia ai off`) or not
 // ready, the service is not ready either and sends nothing.
 //
 // The categories and the example names come from two plugin settings
-// (Settings > Installed plugins, or `bb plugin config thread-names`). A value
+// (Settings > Installed plugins, or `alia plugin config thread-names`). A value
 // that fails validation is refused when it is saved; a stored value that
 // still fails at run time is replaced by the defaults and logged.
 //
 // Any prompt that is not a title request (a commit message, if someone picks
-// this service for commits) goes to bb cloud unchanged.
-import type { BbPluginApi, PluginAiServiceStatus } from "@get-bb/plugin-sdk";
+// this service for commits) goes to VesnALIA cloud unchanged.
+import type { AliaPluginApi, PluginAiServiceStatus } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const PLUGIN_ID = "thread-names";
@@ -27,14 +27,14 @@ const SERVICE_ID = "short-names";
 // A title in the "category: name" form.
 const NAME_FORMAT = /^[a-z0-9][a-z0-9-]*: \S/u;
 const MAX_ATTEMPTS = 2;
-const BB_AI_PLUGIN = "bb-ai";
-const BB_ACCOUNT_PLUGIN = "bb-account";
-const BB_ACCOUNT_FETCH = "bb-account.v1.fetch";
+const ALIA_AI_PLUGIN = "alia-ai";
+const ALIA_ACCOUNT_PLUGIN = "alia-account";
+const ALIA_ACCOUNT_FETCH = "alia-account.v1.fetch";
 const COMPLETE_PATH = "/api/ai/v1/complete";
-// bb gives a title task 5-8 seconds; leave room for the status check.
+// VesnALIA gives a title task 5-8 seconds; leave room for the status check.
 const COMPLETE_TIMEOUT_MS = 6_500;
 
-// Markers of bb's `generateThreadMetadata` template (bb 0.49). If bb changes
+// Markers of VesnALIA's `generateThreadMetadata` template (VesnALIA 0.49). If VesnALIA changes
 // the template, `materialFrom` falls back to passing the whole prompt.
 const TITLE_PROMPT_HEAD = "You create concise titles for coding tasks.";
 const TASK_MARKER = "\nTask:\n";
@@ -51,7 +51,7 @@ export interface NamingConfig {
   examples: readonly string[];
 }
 
-// Categories: what kind of work the thread is, not which project. bb already
+// Categories: what kind of work the thread is, not which project. VesnALIA already
 // shows the project next to every thread.
 const DEFAULT_CATEGORIES: readonly Category[] = [
   { name: "feat", covers: "new features, endpoints, screens and the tests that come with them" },
@@ -61,7 +61,7 @@ const DEFAULT_CATEGORIES: readonly Category[] = [
   { name: "docs", covers: "readmes, guides, code comments, changelogs and specs" },
   { name: "research", covers: "questions, investigation, spikes, comparing options, reading code to learn how it works" },
   { name: "ops", covers: "CI/CD, deploys, releases, infrastructure, environments, databases and monitoring" },
-  { name: "agents", covers: "the agent setup itself: prompts, skills, MCP servers, plugins, workflows, bb configuration" },
+  { name: "agents", covers: "the agent setup itself: prompts, skills, MCP servers, plugins, workflows, VesnALIA configuration" },
 ];
 
 const DEFAULT_EXAMPLES: readonly string[] = [
@@ -194,7 +194,7 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-/** The thread material from bb's title prompt, or null if bb's template changed. */
+/** The thread material from VesnALIA's title prompt, or null if VesnALIA's template changed. */
 function materialFrom(prompt: string): string | null {
   const start = prompt.indexOf(TASK_MARKER);
   if (start === -1) return null;
@@ -208,11 +208,11 @@ function materialFrom(prompt: string): string | null {
   return material.trim();
 }
 
-export function buildNamingPrompt(bbPrompt: string, config: NamingConfig = DEFAULT_CONFIG): string {
-  const material = materialFrom(bbPrompt);
+export function buildNamingPrompt(aliaPrompt: string, config: NamingConfig = DEFAULT_CONFIG): string {
+  const material = materialFrom(aliaPrompt);
   const body =
     material ??
-    `The request below was written for a different title format. Use it only to understand the task.\n\n${bbPrompt}`;
+    `The request below was written for a different title format. Use it only to understand the task.\n\n${aliaPrompt}`;
   return `${namingRules(config)}
 
 Everything between <<< and >>> is material about the thread. Its own wording about title style does not apply; the rules above do.
@@ -224,8 +224,8 @@ If the material gives a current title, reply with it unchanged only when it alre
 Reply with the one line "<category>: <name>" and nothing else.`;
 }
 
-export default function threadNames(bb: BbPluginApi): void {
-  const settings = bb.settings.define({
+export default function threadNames(alia: AliaPluginApi): void {
+  const settings = alia.settings.define({
     categories: {
       type: "string",
       label: "Categories",
@@ -249,7 +249,7 @@ export default function threadNames(bb: BbPluginApi): void {
   function warnOnce(message: string): void {
     if (warned.has(message)) return;
     warned.add(message);
-    bb.log.warn(message);
+    alia.log.warn(message);
   }
 
   async function namingConfig(): Promise<NamingConfig> {
@@ -278,30 +278,30 @@ export default function threadNames(bb: BbPluginApi): void {
   async function cloudState(signal?: AbortSignal): Promise<PluginAiServiceStatus> {
     let state: PluginAiServiceStatus;
     try {
-      const overview = await bb.sdk.plugins.callRpc({
-        pluginId: BB_AI_PLUGIN,
+      const overview = await alia.sdk.plugins.callRpc({
+        pluginId: ALIA_AI_PLUGIN,
         method: "overview",
         input: null,
         outputSchema: overviewSchema,
         ...(signal === undefined ? {} : { signal }),
       });
       if (!overview.enabled) {
-        state = { ready: false, message: "bb cloud is off; turn it on with `bb ai on`" };
+        state = { ready: false, message: "alia cloud is off; turn it on with `alia ai on`" };
       } else if (!overview.status.ready) {
-        state = { ready: false, message: overview.status.message ?? "bb cloud is not ready" };
+        state = { ready: false, message: overview.status.message ?? "alia cloud is not ready" };
       } else {
         state = { ready: true };
       }
     } catch (error) {
-      state = { ready: false, message: `Can't reach bb cloud: ${errorMessage(error)}` };
+      state = { ready: false, message: `Can't reach VesnALIA cloud: ${errorMessage(error)}` };
     }
     return state;
   }
 
-  async function bbCloudComplete(prompt: string, signal: AbortSignal): Promise<string> {
-    const result = await bb.sdk.plugins.callRpc({
-      pluginId: BB_ACCOUNT_PLUGIN,
-      method: BB_ACCOUNT_FETCH,
+  async function aliaCloudComplete(prompt: string, signal: AbortSignal): Promise<string> {
+    const result = await alia.sdk.plugins.callRpc({
+      pluginId: ALIA_ACCOUNT_PLUGIN,
+      method: ALIA_ACCOUNT_FETCH,
       input: {
         target: "api",
         method: "POST",
@@ -313,30 +313,30 @@ export default function threadNames(bb: BbPluginApi): void {
       signal,
     });
     if (result.status !== 200) {
-      if (result.status === 401) throw new Error("Sign in to your bb account");
+      if (result.status === 401) throw new Error("Sign in to your VesnALIA account");
       const failure = errorBodySchema.safeParse(result.body);
-      throw new Error(failure.success ? failure.data.error.message : `bb cloud answered HTTP ${result.status}`);
+      throw new Error(failure.success ? failure.data.error.message : `alia cloud answered HTTP ${result.status}`);
     }
     const reply = completeBodySchema.safeParse(result.body);
-    if (!reply.success) throw new Error("bb cloud returned an invalid reply");
+    if (!reply.success) throw new Error("alia cloud returned an invalid reply");
     return reply.data.text;
   }
 
-  bb.experimental_aiServices.register({
+  alia.experimental_aiServices.register({
     id: SERVICE_ID,
-    displayName: "Short thread names (bb cloud)",
+    displayName: "Short thread names (VesnALIA cloud)",
     status: () => cloudState(),
     complete: async (prompt, { signal }) => {
-      // Checked on every call, so `bb ai off` stops this service at once.
+      // Checked on every call, so `alia ai off` stops this service at once.
       const state = await cloudState(signal);
       if (!state.ready) throw new Error(state.message);
-      if (!prompt.startsWith(TITLE_PROMPT_HEAD)) return bbCloudComplete(prompt, signal);
-      const reply = await bbCloudComplete(buildNamingPrompt(prompt, await namingConfig()), signal);
+      if (!prompt.startsWith(TITLE_PROMPT_HEAD)) return aliaCloudComplete(prompt, signal);
+      const reply = await aliaCloudComplete(buildNamingPrompt(prompt, await namingConfig()), signal);
       return reply.toLowerCase();
     },
   });
 
-  // bb skips the title for a first prompt under 5 words ("why is this 0?") and
+  // VesnALIA skips the title for a first prompt under 5 words ("why is this 0?") and
   // keeps the prompt text instead, and older threads carry sentence-case
   // titles. After each finished turn, a thread whose title is not yet in the
   // "category: name" form gets its title regenerated from the prompt and the
@@ -346,28 +346,28 @@ export default function threadNames(bb: BbPluginApi): void {
   const inFlight = new Set<string>();
 
   async function titlesUseThisService(): Promise<boolean> {
-    const services = aiServicesSchema.safeParse(await bb.sdk.system.aiServices());
+    const services = aiServicesSchema.safeParse(await alia.sdk.system.aiServices());
     const selection = services.success ? services.data.selections["thread-title"] : undefined;
     return selection?.mode === "service" && selection.pluginId === PLUGIN_ID && selection.serviceId === SERVICE_ID;
   }
 
-  bb.events.on("thread.idle", async ({ thread }) => {
+  alia.events.on("thread.idle", async ({ thread }) => {
     if (thread.archivedAt !== null || inFlight.has(thread.id)) return;
     const key = `thread:${thread.id}`;
     try {
-      const stored = threadMarkSchema.safeParse(await bb.storage.kv.get(key));
+      const stored = threadMarkSchema.safeParse(await alia.storage.kv.get(key));
       const mark = stored.success ? stored.data : { formatted: false, attempts: 0 };
       if (thread.title !== null && NAME_FORMAT.test(thread.title)) {
-        if (!mark.formatted) await bb.storage.kv.set(key, { ...mark, formatted: true });
+        if (!mark.formatted) await alia.storage.kv.set(key, { ...mark, formatted: true });
         return;
       }
       if (mark.formatted || mark.attempts >= MAX_ATTEMPTS) return;
       if (!(await titlesUseThisService())) return;
       inFlight.add(thread.id);
-      await bb.storage.kv.set(key, { ...mark, attempts: mark.attempts + 1 });
-      await bb.sdk.threads.experimental_regenerateTitle({ threadId: thread.id });
+      await alia.storage.kv.set(key, { ...mark, attempts: mark.attempts + 1 });
+      await alia.sdk.threads.experimental_regenerateTitle({ threadId: thread.id });
     } catch (error) {
-      bb.log.warn(`Could not rename thread ${thread.id}: ${errorMessage(error)}`);
+      alia.log.warn(`Could not rename thread ${thread.id}: ${errorMessage(error)}`);
     } finally {
       inFlight.delete(thread.id);
     }

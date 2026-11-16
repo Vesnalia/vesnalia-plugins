@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { EMPTY_PRESETS, PRESETS_CHANNEL, type ModelPreset, type PresetState } from "../lib/presets";
 export function usePresets() {

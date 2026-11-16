@@ -2,7 +2,7 @@
 // conversation (and its Info tab), so a dashboard (a build, a fleet, context use) stays in view and
 // keeps refreshing while the chat scrolls on. A pin holds a card, or follows a file the agent
 // rewrites. Pins follow the thread across devices.
-import { experimental_InfoSection as InfoSection, experimental_useThreadContextKind, useBbNavigate, useRpc, type ExperimentalThreadContextSegmentProps } from "@get-bb/plugin-sdk/app";
+import { experimental_InfoSection as InfoSection, experimental_useThreadContextKind, useAliaNavigate, useRpc, type ExperimentalThreadContextSegmentProps } from "@vesnalia/plugin-sdk/app";
 import { useState, type MouseEvent } from "react";
 import { alertText, needsAttention, type Pin } from "../core/pins";
 import type { PinsContract } from "../shared/pins-rpc";
@@ -99,7 +99,7 @@ export function PinnedSection({ threadId }: { threadId: string }) {
   );
 }
 
-/** The same pinned cards in the thread's Info tab, for bb setups without the context card. */
+/** The same pinned cards in the thread's Info tab, for VesnALIA setups without the context card. */
 export function PinnedInfoSection({ threadId }: { threadId: string }) {
   const pins = usePins(threadId);
   if (!pins?.length) return null;
@@ -110,16 +110,16 @@ export function PinnedInfoSection({ threadId }: { threadId: string }) {
   );
 }
 
-/** How many pinned cards bb's home page shows before "Show all". */
+/** How many pinned cards VesnALIA's home page shows before "Show all". */
 const HOME_FIRST = 4;
 
 /**
- * bb's home page: every open thread's pinned cards, live, the most recently pinned first. A thread's
- * title opens it. With nothing pinned anywhere, one line says how to pin (bb draws the heading either way).
+ * VesnALIA's home page: every open thread's pinned cards, live, the most recently pinned first. A thread's
+ * title opens it. With nothing pinned anywhere, one line says how to pin (VesnALIA draws the heading either way).
  */
 export function PinnedHome() {
   const threads = useAllPins();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [all, setAll] = useState(false);
   if (!threads) return <div className="iris-shimmer h-16 rounded-[14px]" aria-label="Loading pinned cards" />;
   const total = threads.reduce((n, t) => n + t.pins.length, 0);

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { checkHotspots, validateGuide } from "./guide";
 import plugin from "../server";
 import { toolFailed, toolText } from "./fake-host.test-support";
@@ -26,9 +26,9 @@ test("hotspots must be on new-file lines the diff shows", () => {
 });
 
 test("generate_review_guide refuses a hotspot off the diff, and keeps valid ones", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, status: "generating", createdAt: 1 });
   await store.savePatch("pr-1", patch);
   const generationId = await store.beginGeneration("pr-1");

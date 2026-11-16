@@ -1,7 +1,7 @@
-// bb-plugin-worktree-ports — frontend entry. A sidebar-footer disclosure with
+// alia-plugin-worktree-ports — frontend entry. A sidebar-footer disclosure with
 // one pill per listening port, plus an icon on the sidebar rows of threads
 // whose worktree is serving something.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import type { PortSnapshot } from "./server";
 import { pillName } from "./src/labels";
 import { createFooterIndicator } from "./src/ui/footer-indicator";

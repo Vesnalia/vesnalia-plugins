@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import type { Value } from "../../core/types";
 import { cn } from "@/lib/utils";
 import { RenderNode } from "../render";

@@ -1,6 +1,6 @@
 // RPC access and race-safe async reads for the Graphite Stack app.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../contract";
 import { errorMessage } from "./model";
 

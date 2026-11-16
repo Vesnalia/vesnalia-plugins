@@ -36,7 +36,7 @@ test('header controls can be hidden independently and restored', async t => {
     jsx: 'automatic',
     loader: { '.css': 'empty' }
   });
-  const { loadPluginApp, renderSlot } = await import('@get-bb/plugin-sdk/testing/app');
+  const { loadPluginApp, renderSlot } = await import('@vesnalia/plugin-sdk/testing/app');
   const app = await loadPluginApp(() => import(`${directory}/app.mjs`));
   const progress = app.threadHeaderActions.find(action => action.id === 'taskboard-live-progress');
   const pin = app.threadHeaderActions.find(action => action.id === 'open-taskboard-panel');

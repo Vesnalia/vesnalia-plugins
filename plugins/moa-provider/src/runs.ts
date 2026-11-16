@@ -1,6 +1,6 @@
 // Server-side orchestration of one MoA turn.
 //
-// Every slot of a preset runs as a hidden BB worker thread on its own
+// Every slot of a preset runs as a hidden VesnALIA worker thread on its own
 // provider, in the MoA thread's environment, owned by the MoA thread so it
 // archives and deletes with it. Advisors answer first, in parallel; the
 // aggregator then gets the user's input plus their notes and does the work.
@@ -10,11 +10,11 @@
 //
 // With a mid-turn fanout the aggregator also gets `moa_consult`, which asks
 // the advisors again while it works; with "every-n" the server nudges it to
-// call that tool every N tool calls, through BB's ordinary steer.
+// call that tool every N tool calls, through VesnALIA's ordinary steer.
 import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import type { ThreadDelta } from "@get-bb/plugin-sdk/provider-bridge";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import type { ThreadDelta } from "@vesnalia/plugin-sdk/provider-bridge";
 import { CONSULT_TOOL_NAME, MOA_PLUGIN_ID } from "./constants.js";
 import { AdvisorStream } from "./advisor-stream.js";
 import { AggregatorMirror, isToolCompletion } from "./mirror.js";
@@ -63,7 +63,7 @@ import type {
   TurnStatus,
 } from "./wire.js";
 
-type Sdk = BbPluginApi["sdk"];
+type Sdk = AliaPluginApi["sdk"];
 type Input = Record<string, unknown>[];
 
 /** Per-MoA-thread memory, in kv under `thread:<id>`. */
@@ -329,8 +329,8 @@ export interface MoaRunsDeps {
   loadStore(): Promise<PresetStore>;
   /** Stop an advisor that shows no progress for this long. */
   advisorIdleMs(): Promise<number>;
-  kv: BbPluginApi["storage"]["kv"];
-  log: BbPluginApi["log"];
+  kv: AliaPluginApi["storage"]["kv"];
+  log: AliaPluginApi["log"];
   /** Where advisor rounds are kept for their panels. */
   rounds: RoundStore;
   /** Tell open panels that a round changed. */
@@ -713,7 +713,7 @@ export class MoaRuns {
   ): Promise<string> {
     const { ctx, mirror } = consultation;
     consultation.rounds += 1;
-    // BB stores the aggregator's events, including this very `moa_consult`
+    // VesnALIA stores the aggregator's events, including this very `moa_consult`
     // call, before the call reaches the plugin. Mirror them before the panel
     // so the call's row comes first and the panel is followed directly by its
     // status line (which keeps it in view when the turn folds).
@@ -1070,7 +1070,7 @@ export class MoaRuns {
   /**
    * Count the aggregator's tool calls and, for "every-n", send a check-in
    * once N have passed since the advisors were last asked. It goes out as a
-   * BB steer, right after a tool call finished: providers that inject steers
+   * VesnALIA steer, right after a tool call finished: providers that inject steers
    * take it at the next step, and the ACP bridge cancels the running prompt
    * and continues with it, so nothing is cut off mid-command.
    */

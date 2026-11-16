@@ -1,21 +1,21 @@
 import { createContext, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode, type TextareaHTMLAttributes } from "react";
 import { createPortal } from "react-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { experimental_Icon as Icon, experimental_usePluginId } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, experimental_usePluginId } from "@vesnalia/plugin-sdk/app";
 import { initials } from "./format";
 import { useViewport } from "./viewport";
 
 /**
- * bb scopes a plugin's CSS to elements under [data-bb-plugin=<id>], so anything portalled to
- * document.body loses every class bb's own stylesheet lacks (such as size-[22px]) unless it
- * carries the scope itself, as bb's own overlays do.
+ * VesnALIA scopes a plugin's CSS to elements under [data-alia-plugin=<id>], so anything portalled to
+ * document.body loses every class VesnALIA's own stylesheet lacks (such as size-[22px]) unless it
+ * carries the scope itself, as VesnALIA's own overlays do.
  */
 export function usePortalScope() {
   const pluginId = experimental_usePluginId();
-  return { "data-bb-portaled-overlay": "", "data-bb-plugin-root": "", "data-bb-plugin": pluginId } as const;
+  return { "data-alia-portaled-overlay": "", "data-alia-plugin-root": "", "data-alia-plugin": pluginId } as const;
 }
 
-// The button vocabulary of bb's own Button: outline, the main action in --foreground (bb fills nothing with --primary), and ghost.
+// The button vocabulary of VesnALIA's own Button: outline, the main action in --foreground (VesnALIA fills nothing with --primary), and ghost.
 // Tailwind orders utilities in its stylesheet, not by their order in className, so a class added after one of these never
 // reliably beats one it already sets: each kind, size and state is a style of its own (test/ui/class-overrides.test.ts).
 const FOCUS = "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-default disabled:opacity-50";
@@ -195,7 +195,7 @@ export function Dialog({ title, subtitle, leading, onClose, footer, children, wi
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented || disableEscape.current) return;
-      // bb's "Back to app" and the PR panel also listen for Escape; the dialog on top owns it.
+      // VesnALIA's "Back to app" and the PR panel also listen for Escape; the dialog on top owns it.
       event.preventDefault();
       close.current();
     };
@@ -216,7 +216,7 @@ export function Dialog({ title, subtitle, leading, onClose, footer, children, wi
     </div>
   );
   if (phone) {
-    // In a portal, like bb's own sheets, so no scrolling or transformed ancestor can clip it.
+    // In a portal, like VesnALIA's own sheets, so no scrolling or transformed ancestor can clip it.
     return createPortal(
       <div {...scope} className="fixed inset-0 z-50">
         <div data-scrim className="absolute inset-0 bg-background/70" onClick={onClose} />
@@ -289,7 +289,7 @@ export function TipProvider({ children }: { children: ReactNode }) {
 }
 
 /**
- * What a control does, shown after a short rest of the pointer or on keyboard focus, in bb's colours, with its key when it has one.
+ * What a control does, shown after a short rest of the pointer or on keyboard focus, in VesnALIA's colours, with its key when it has one.
  * Focus that follows a click, such as a menu closed by a click handing focus back, is neither, so it shows nothing; touch never shows one.
  */
 export function Tip({ text, keys, side = "top", children }: { text: string; keys?: string; side?: "top" | "bottom" | "left" | "right"; children: ReactElement }) {
@@ -357,7 +357,7 @@ export function PageHeading({ title, description, children }: { title: string; d
 }
 
 /** An area's page, at most 900px wide. */
-/** A page fills the area beside bb's sidebar; its sections choose their columns from its width (a container), not the window's. */
+/** A page fills the area beside VesnALIA's sidebar; its sections choose their columns from its width (a container), not the window's. */
 export const PAGE = "@container w-full px-4 pb-10 pt-4 sm:px-5";
 
 const CONTROLS = "button, a, input, textarea, select, label, [role=menuitem], [role=option]";

@@ -49,7 +49,7 @@ test("a Proxmox LXC Wayland template is built from Ubuntu 26.04, and the rest fr
   const common = read("proxmox-lxc/host/common.sh");
   assert.match(common, /^BBBOX_OS_TEMPLATE=\$\{BBBOX_OS_TEMPLATE:-local:vztmpl\/ubuntu-24\.04-standard_/m);
   assert.match(common, /^BBBOX_OS_TEMPLATE_WAYLAND=\$\{BBBOX_OS_TEMPLATE_WAYLAND:-local:vztmpl\/ubuntu-26\.04-standard_26\.04-1_amd64\.tar\.zst\}$/m);
-  assert.match(read("proxmox-lxc/host/bb-box.env.example"), /^BBBOX_OS_TEMPLATE_WAYLAND=local:vztmpl\/ubuntu-26\.04-standard_26\.04-1_amd64\.tar\.zst$/m);
+  assert.match(read("proxmox-lxc/host/alia-box.env.example"), /^BBBOX_OS_TEMPLATE_WAYLAND=local:vztmpl\/ubuntu-26\.04-standard_26\.04-1_amd64\.tar\.zst$/m);
   const build = read("proxmox-lxc/template/build.sh");
   assert.match(build, /os_template=\$BBBOX_OS_TEMPLATE\n\[ -z "\$wayland" \] \|\| os_template=\$BBBOX_OS_TEMPLATE_WAYLAND\n/);
   assert.match(build, /pct create "\$ct" "\$os_template" /);

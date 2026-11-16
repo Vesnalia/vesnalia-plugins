@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-xcode",
+  "name": "alia-plugin-xcode",
   "version": "0.5.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "Xcode",
     "description": "Track Xcode builds and tests with no per-project configuration, and drive the simulators they run on — live streaming, full touch input, and SwiftUI preview diffs.",
     "branding": {
@@ -37,7 +37,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@pierre/diffs": "~1.2.12",
     "@radix-ui/react-alert-dialog": "^1.2.1",
     "@radix-ui/react-context-menu": "^2.4.1",
@@ -71,8 +70,21 @@
     "check": "npm run typecheck && npm run test"
   },
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/xcode#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vburojevic/bb-plugin-xcode.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/xcode"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

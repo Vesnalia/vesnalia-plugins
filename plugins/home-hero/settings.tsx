@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { MAX_ICON_BYTES, validateIconDataUrl } from "./appearance.ts";
 import { rpcContract } from "./contract.ts";
 
@@ -113,7 +113,7 @@ export function SettingsSection() {
         <div className="min-w-0 flex-1">
           <p className="min-w-0 text-sm font-normal text-foreground">Home hero icon</p>
           <p className="mt-0.5 text-xs leading-snug text-subtle-foreground/75">PNG, JPEG or WebP up to 256 KiB.</p>
-          <p className="text-xs leading-snug text-subtle-foreground/75">Stored with this plugin on the BB server; never committed to the repository.</p>
+          <p className="text-xs leading-snug text-subtle-foreground/75">Stored with this plugin on the VesnALIA server; never committed to the repository.</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {iconDataUrl ? (

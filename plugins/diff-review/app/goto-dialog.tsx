@@ -1,7 +1,7 @@
 /**
  * "Go to": one list of the view's files, its open comment threads and the views the picker offers,
  * filtered as you type; Enter or a click goes there. It stands in for diffity's ⌘P (files) and ⌘K
- * (comments, commits): bb keeps Mod+P and Mod+K for its own quick open and search.
+ * (comments, commits): VesnALIA keeps Mod+P and Mod+K for its own quick open and search.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 

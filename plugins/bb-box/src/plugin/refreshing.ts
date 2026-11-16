@@ -1,4 +1,4 @@
-// Values that are slow to fetch and seldom change, such as the names of BB's
+// Values that are slow to fetch and seldom change, such as the names of VesnALIA's
 // machine variables: kept per key, and once stale, refreshed in the
 // background while callers keep getting the last value.
 

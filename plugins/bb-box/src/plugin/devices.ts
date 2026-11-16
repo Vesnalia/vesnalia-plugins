@@ -546,7 +546,7 @@ export class DeviceServers {
     this.#deps.ledger?.forget(box.id);
     if (why.superseded) {
       held.view = { is: "superseded" };
-      this.#deps.log(`Box ${box.name}'s device server: a bb-box instance started later holds it now, so this one lets it be.`);
+      this.#deps.log(`Box ${box.name}'s device server: a alia-box instance started later holds it now, so this one lets it be.`);
     }
   }
 
@@ -635,7 +635,7 @@ export class DeviceServers {
   async #askHost(box: BoxRecord): Promise<boolean> {
     try {
       const asked = (await this.#deps.boxes.restartDeviceServer?.(box)) ?? false;
-      if (asked) this.#deps.log(`Box ${box.name}'s device server has not started; bb-box asked its shared iOS host to start it again.`);
+      if (asked) this.#deps.log(`Box ${box.name}'s device server has not started; alia-box asked its shared iOS host to start it again.`);
       return asked;
     } catch (error) {
       this.#deps.logError(`ask box ${box.name}'s host to start its device server`, error);
@@ -770,7 +770,7 @@ export class DeviceServers {
           name,
           status: behind || bad !== null ? "warn" : "ok",
           detail: `${said}the ${now.model}, ${now.power.is}.${deliveryWords}${badWords}`,
-          fix: bad !== null ? `Read ~/.bb-box/device/server.log in box ${box.name} for why version ${bad} did not answer.` : null,
+          fix: bad !== null ? `Read ~/.alia-box/device/server.log in box ${box.name} for why version ${bad} did not answer.` : null,
         });
       } else {
         const last = view.state;
@@ -796,7 +796,7 @@ export class DeviceServers {
     } else if (view.is === "waiting") {
       checks.push({ id, name, status: "ok", detail: `Version ${view.version ?? "none"}; version ${view.for} waits until ${view.why === "person" ? "the person hands back control" : "the recording ends"}.`, fix: null });
     } else if (view.is === "down") {
-      checks.push({ id, name, status: "fail", detail: view.words + badWords, fix: `Read ~/.bb-box/device/server.log in box ${box.name}. Once the cause is fixed, sh ~/.bb-box/device/current/src/device/bb-box-device.sh restart in the box starts it again, as a newer ${PRODUCT}'s delivery does.` });
+      checks.push({ id, name, status: "fail", detail: view.words + badWords, fix: `Read ~/.alia-box/device/server.log in box ${box.name}. Once the cause is fixed, sh ~/.alia-box/device/current/src/device/alia-box-device.sh restart in the box starts it again, as a newer ${PRODUCT}'s delivery does.` });
     } else if (view.is === "superseded") {
       checks.push({ id, name, status: "ok", detail: `A ${PRODUCT} instance started later holds this box's device.`, fix: null });
     } else {
@@ -830,7 +830,7 @@ export class DeviceServers {
         name,
         status: "fail",
         detail: `Device Hub runs on box ${box.name}'s macOS host. It takes the device's pasteboard, so pasting into the device stops working.${kills}`,
-        fix: `The device server kills it within 5 s. If it stays, its server is not running: read ~/.bb-box/device/server.log in box ${box.name}. Do not quit Device Hub: quitting it shuts the device down.`,
+        fix: `The device server kills it within 5 s. If it stays, its server is not running: read ~/.alia-box/device/server.log in box ${box.name}. Do not quit Device Hub: quitting it shuts the device down.`,
       };
     }
     return { id, name, status: "ok", detail: `Device Hub is not running.${kills}`, fix: null };

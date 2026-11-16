@@ -6,7 +6,7 @@ import {
   useComposer,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../../server";
 import { bricksPlaced, pieceCount, type BookState } from "../book";
 import { StatusPill } from "./BuildView";

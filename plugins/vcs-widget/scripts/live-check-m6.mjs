@@ -1,5 +1,5 @@
 // Headless click-through of the commit panel's three later additions against
-// a running bb: the file row's context menu (Copy Path, Discard), the group
+// a running VesnALIA: the file row's context menu (Copy Path, Discard), the group
 // header's Discard All Changes, and the two agent buttons that hand the
 // commit to the agent in this thread.
 //
@@ -17,7 +17,7 @@ if (!REPO) {
   console.error("usage: live-check-m6.mjs <repo path>");
   process.exit(2);
 }
-const BASE = process.env.BB_SERVER_URL ?? "http://127.0.0.1:38886";
+const BASE = process.env.ALIA_SERVER_URL ?? "http://127.0.0.1:38886";
 const H = await browserHelpers();
 const { step, summary } = recorder();
 const TS = Date.now().toString(36);
@@ -126,7 +126,7 @@ try {
 
   // M6-5 the agent takes the commit. The tree is clean by now, so the turn
   // this starts has nothing to do.
-  // The thread's own event log, not `bb thread history`: the prompt history
+  // The thread's own event log, not `alia thread history`: the prompt history
   // collapses identical prompts, so a second run would look like no message.
   // Only the plain one is clicked. Clicking "Agent Commit & Push" would tell a
   // real agent to push, and the only thing it would prove beyond this — that
@@ -146,7 +146,7 @@ try {
 
   // "LGTM - Commit" is a prefix of "LGTM - Commit & Push", so count the exact
   // one: a log that ever carries both must not read as two of the first.
-  const sentCount = () => (sh(`bb thread log ${H.THREAD}`).match(/LGTM - Commit(?! & Push)/g) ?? []).length;
+  const sentCount = () => (sh(`alia thread log ${H.THREAD}`).match(/LGTM - Commit(?! & Push)/g) ?? []).length;
   const before = sentCount();
   await page.click(`${PANEL} [data-testid="vcs-agent-commit-button"]`);
   const sentNotice = await waitNotice(/sent to the agent|queued/i);

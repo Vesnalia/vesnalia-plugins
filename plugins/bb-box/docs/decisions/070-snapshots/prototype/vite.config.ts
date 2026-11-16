@@ -11,7 +11,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), viteSingleFile()],
   resolve: {
     alias: [
-      { find: "@get-bb/plugin-sdk/app", replacement: sdkStandIn },
+      { find: "@vesnalia/plugin-sdk/app", replacement: sdkStandIn },
       { find: /^@\//, replacement: repository },
     ],
     dedupe: ["react", "react-dom"],

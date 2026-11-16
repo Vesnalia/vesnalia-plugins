@@ -1,4 +1,4 @@
-// src/locate.ts — turning a bb reference into a folder under the hard root.
+// src/locate.ts — turning a VesnALIA reference into a folder under the hard root.
 //
 // Two questions, one chain. "Where does this file link actually live?"
 // (`locateFile`, §10.2) and "where does this thread's code live?"
@@ -6,7 +6,7 @@
 // panel and end at an absolute path the §6 clamp has approved, so they share
 // this module and the environment lookup inside it.
 //
-// bb hands a file opener a path that is relative to whatever surface produced
+// VesnALIA hands a file opener a path that is relative to whatever surface produced
 // it: a worktree, a thread's storage directory, or nothing at all for a host
 // path. This turns that pair into an absolute path under the hard root, and
 // answers the question the panel asks next: which folder should open.
@@ -20,7 +20,7 @@
 import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import type { ThreadWorkspaceReason } from "../contract";
 import { fmError, isFileManagerError } from "./errors";
@@ -70,7 +70,7 @@ function globMatchHint(name: string): string | null {
 }
 
 /**
- * The checkout directory bb records for an environment, or null when it has
+ * The checkout directory VesnALIA records for an environment, or null when it has
  * none: an environment that is unprovisioned, still provisioning or destroyed
  * answers with no path at all.
  *
@@ -78,10 +78,10 @@ function globMatchHint(name: string): string | null {
  * thread's own folder resolve through exactly the same SDK call.
  */
 async function environmentCheckoutPath(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   environmentId: string,
 ): Promise<string | null> {
-  const environment = await bb.sdk.environments.get({ environmentId });
+  const environment = await alia.sdk.environments.get({ environmentId });
   return environment.path === null || environment.path === "" ? null : environment.path;
 }
 
@@ -91,14 +91,14 @@ async function environmentCheckoutPath(
  * Workspace paths are worktree-relative, thread-storage paths are relative to
  * the thread's storage root, and host paths are already absolute.
  */
-async function toAbsolutePath(bb: BbPluginApi, input: LocateFileInput): Promise<string> {
+async function toAbsolutePath(alia: AliaPluginApi, input: LocateFileInput): Promise<string> {
   const { source } = input;
 
   if (source.kind === "workspace") {
     if (source.environmentId === null) {
       throw fmError("unsupported", "this workspace file has no environment");
     }
-    const checkout = await environmentCheckoutPath(bb, source.environmentId);
+    const checkout = await environmentCheckoutPath(alia, source.environmentId);
     if (checkout === null) {
       throw fmError("unsupported", "this environment has no checkout on disk yet");
     }
@@ -111,9 +111,9 @@ async function toAbsolutePath(bb: BbPluginApi, input: LocateFileInput): Promise<
     }
     // Only the storage root matters, and `storageLocation` names it without
     // listing a single entry. `storagePaths` with both kinds switched off, the
-    // way this used to ask, is refused since bb 0.43 ("At least one path kind
+    // way this used to ask, is refused since VesnALIA 0.43 ("At least one path kind
     // must be included"), which broke every thread-storage link.
-    const storage = await bb.sdk.threads.storageLocation({ threadId: source.threadId });
+    const storage = await alia.sdk.threads.storageLocation({ threadId: source.threadId });
     return path.resolve(storage.storageRootPath, input.path);
   }
 
@@ -145,10 +145,10 @@ async function nearestExistingDir(startFrom: string): Promise<string> {
 }
 
 export async function locateFile(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   input: LocateFileInput,
 ): Promise<LocateFileOutput> {
-  const absolute = normalize(await toAbsolutePath(bb, input));
+  const absolute = normalize(await toAbsolutePath(alia, input));
   // Lexical first, so a path that is plainly outside the root never reaches
   // the filesystem — the same order §6 uses everywhere else.
   assertInside(absolute);
@@ -215,20 +215,20 @@ export interface ThreadWorkspaceOutput {
  *
  * It answers "you cannot go there" instead of throwing it. A thread with no
  * environment, an environment with no checkout and a checkout outside the home
- * folder are ordinary states of a healthy bb, and the toolbar renders each of
+ * folder are ordinary states of a healthy VesnALIA, and the toolbar renders each of
  * them differently — a rejection would flatten all three into one toast. Only
- * a thread bb itself cannot answer for rejects.
+ * a thread VesnALIA itself cannot answer for rejects.
  */
 export async function resolveThreadWorkspace(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   input: ThreadWorkspaceInput,
 ): Promise<ThreadWorkspaceOutput> {
-  const thread = await bb.sdk.threads.get({ threadId: input.threadId });
+  const thread = await alia.sdk.threads.get({ threadId: input.threadId });
   if (thread.environmentId === null) {
     return { path: null, insideRoot: false, reason: "no_environment" };
   }
 
-  const checkout = await environmentCheckoutPath(bb, thread.environmentId);
+  const checkout = await environmentCheckoutPath(alia, thread.environmentId);
   if (checkout === null) {
     return { path: null, insideRoot: false, reason: "no_checkout" };
   }
@@ -241,7 +241,7 @@ export async function resolveThreadWorkspace(
     const resolved = await realpath(normalize(checkout));
     if ((await stat(resolved)).isDirectory()) real = resolved;
   } catch {
-    // bb keeps the recorded path of a worktree that has since been destroyed,
+    // VesnALIA keeps the recorded path of a worktree that has since been destroyed,
     // so a directory that is no longer there is still just "no checkout".
   }
   if (real === null) {
@@ -249,7 +249,7 @@ export async function resolveThreadWorkspace(
   }
 
   if (!isInside(real)) {
-    // Reported rather than hidden: bb can run threads on checkouts anywhere,
+    // Reported rather than hidden: VesnALIA can run threads on checkouts anywhere,
     // and "outside your home folder" is a better answer than silence.
     return { path: real, insideRoot: false, reason: "outside_root" };
   }

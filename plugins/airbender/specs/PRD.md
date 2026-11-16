@@ -9,7 +9,7 @@ issues in the tracker; a requirement enters this document in the same commit
 as the code that implements it.
 
 Every requirement comes from the product owner. The issue that decided it is
-given in brackets, for example `[pp7]` means issue `bead-bb-pp7`; the reasons
+given in brackets, for example `[pp7]` means issue `bead-alia-pp7`; the reasons
 and the history are on that issue. `[—]` marks a decision made in conversation
 that has no issue of its own. Behaviour the owner did not specify is kept
 apart, in "Unspecified details" at the end.
@@ -1088,7 +1088,7 @@ breaking a requirement above.
   again. `[du7]`
 - Conversation titles: the AI name is asked for after every turn and is at
   most 60 characters; the model is told to keep the present name when it
-  still fits. A name BB gave by itself before Airbender wrote one is
+  still fits. A name VesnALIA gave by itself before Airbender wrote one is
   replaced. Hidden and archived conversations are never renamed. Summary
   names are off until a model is chosen; the default Gemini model is
   gemini-3.5-flash-lite. `[du7]`

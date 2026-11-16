@@ -1,5 +1,5 @@
 import { useMemo, useSyncExternalStore } from "react";
-import { experimental_usePluginId } from "@get-bb/plugin-sdk/app";
+import { experimental_usePluginId } from "@vesnalia/plugin-sdk/app";
 
 const stores = new Map<string, ReturnType<typeof createStore>>();
 

@@ -5,10 +5,10 @@ import {
   type PluginSidebarThread,
   type PluginSidebarThreadIndicator,
   type PluginSidebarThreadRowStatus,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { StillThreadStatusGlyph } from "./StillThreadStatusGlyph";
 import { useCallback, useMemo } from "react";
-import { resolveThreadStatus } from "./bb-sdk";
+import { resolveThreadStatus } from "./alia-sdk";
 import { isKnownIndicator, unhandledIndicator, type ThreadWorking } from "./child-status";
 import { isThreadWorkingForDisplay } from "./working-tree";
 import { cn } from "./lib/utils";
@@ -61,7 +61,7 @@ export function StatusOrTime({
     return <RateLimitRecovery thread={listedThread} />;
   }
   if (rowStatus) {
-    // bb's glyph for another plugin's status, in place of the label; the age stays.
+    // VesnALIA's glyph for another plugin's status, in place of the label; the age stays.
     return (
       <span className="flex items-center gap-1">
         <StillThreadStatusGlyph indicator="none" rowStatus={rowStatus} size="compact" />
@@ -71,7 +71,7 @@ export function StatusOrTime({
   }
   const status = threadShortStatus(thread);
   if (status === null && !isKnownIndicator(thread.indicator)) {
-    // A kind bb added after this build: bb's glyph and label, then the age.
+    // A kind VesnALIA added after this build: VesnALIA's glyph and label, then the age.
     return (
       <span className="flex items-center gap-1">
         <span
@@ -107,7 +107,7 @@ export function StatusOrTime({
 
 /**
  * A status another plugin set on the row, such as a drafts or sandbox marker.
- * bb's resolver decides where it shows, with this client's draft: in place of
+ * VesnALIA's resolver decides where it shows, with this client's draft: in place of
  * every status except live work, a failure, or a raised hand. On top of that,
  * the sidebar's provider limit, a pending interaction, and its failed-send
  * warning replace it too.
@@ -129,16 +129,16 @@ export function threadRowStatus(
 }
 
 /**
- * Folds an unsent composer draft into the indicator with bb's resolver, as
- * bb's own row does: the same inputs as the row status above, so both agree.
- * bb leaves drafts out of `indicator` because they are per-client, so a busy
+ * Folds an unsent composer draft into the indicator with VesnALIA's resolver, as
+ * VesnALIA's own row does: the same inputs as the row status above, so both agree.
+ * VesnALIA leaves drafts out of `indicator` because they are per-client, so a busy
  * thread with a draft becomes "working-draft" and an otherwise quiet one
- * "draft". The row status is left out of this call only because bb's `label`
+ * "draft". The row status is left out of this call only because VesnALIA's `label`
  * would then name it instead of the indicator; it never changes `indicator`.
  */
 export function threadWithDraft(thread: PluginSidebarThread, hasUnsubmittedDraft: boolean): PluginSidebarThread {
   // Not decided yet: a kind this build does not know cannot be worded, so a
-  // waiting message reads "Queued" there. bb's result under a draft would
+  // waiting message reads "Queued" there. VesnALIA's result under a draft would
   // replace that wording, so such a thread keeps its indicator.
   if (!hasUnsubmittedDraft || (!isKnownIndicator(thread.indicator) && thread.queuedWork === "waiting")) return thread;
   const { indicator, label } = resolveThreadStatus({ thread, hiddenThreads: [], hasUnsubmittedDraft, rowStatus: null });
@@ -168,7 +168,7 @@ interface ShortStatus {
   className: string;
   /** Live work gets a running duration; a verdict or a request does not. */
   showsDuration: boolean;
-  /** For statuses bb has no indicator for, so no accessible label either. */
+  /** For statuses VesnALIA has no indicator for, so no accessible label either. */
   ariaLabel?: string;
 }
 
@@ -202,12 +202,12 @@ function shortStatus(indicator: PluginSidebarThreadIndicator, indicatorLabel: st
     case "queued-failed":
     case "queued-waiting":
       // Worded from `queuedWork` in threadShortStatus, which also covers a
-      // queued send bb ranks below another indicator.
+      // queued send VesnALIA ranks below another indicator.
       return null;
     case "none":
       return null;
     default:
-      // A kind bb added after this build; StatusOrTime draws bb's glyph for it.
+      // A kind VesnALIA added after this build; StatusOrTime draws VesnALIA's glyph for it.
       unhandledIndicator(indicator);
       return null;
   }
@@ -215,7 +215,7 @@ function shortStatus(indicator: PluginSidebarThreadIndicator, indicatorLabel: st
 
 /**
  * A pending user interaction outranks any concurrently reported runtime, and a
- * message that failed to send outranks the rest. bb ranks its queued
+ * message that failed to send outranks the rest. VesnALIA ranks its queued
  * indicators below live work, and a waiting message below an unread result
  * too, so this reads `queuedWork` itself rather than wait for the indicator;
  * a row would otherwise look idle or merely busy. A waiting message only
@@ -260,7 +260,7 @@ export function threadStatusLabel(
 
 /**
  * A monitor is still a runtime, so the indicator keeps the usual spinner and
- * working duration. BB's accessible label carries the more precise state.
+ * working duration. VesnALIA's accessible label carries the more precise state.
  */
 function isMonitoringLabel(label: string | null): boolean {
   return label?.toLocaleLowerCase().includes("monitoring") ?? false;
@@ -270,23 +270,23 @@ function isMonitoringLabel(label: string | null): boolean {
 export function statusToneClass(indicator: PluginSidebarThreadIndicator): string {
   switch (indicator) {
     case "unread-error":
-      return "text-[color:var(--bb-sidebar-tone-error)]";
+      return "text-[color:var(--alia-sidebar-tone-error)]";
     case "waiting-for-input":
-      return "text-[color:var(--bb-sidebar-tone-pending)]";
+      return "text-[color:var(--alia-sidebar-tone-pending)]";
     case "unread-success":
-      return "text-[color:var(--bb-sidebar-tone-success)]";
+      return "text-[color:var(--alia-sidebar-tone-success)]";
     case "runtime":
     case "workflow":
     case "background-agent":
     case "background-command":
     case "plan-mode":
-      return "text-[color:var(--bb-sidebar-tone-working)]";
+      return "text-[color:var(--alia-sidebar-tone-working)]";
     case "draft":
     case "working-draft":
     case "queued-waiting":
-      return "text-[color:var(--bb-sidebar-tone-draft)]";
+      return "text-[color:var(--alia-sidebar-tone-draft)]";
     case "queued-failed":
-      return "text-[color:var(--bb-sidebar-tone-error)]";
+      return "text-[color:var(--alia-sidebar-tone-error)]";
     case "none":
       return "text-muted-foreground";
     default:

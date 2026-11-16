@@ -1,4 +1,4 @@
-// A flare's body is shown in the Flares tab the way bb shows a reply, so it may carry blocks only some installed
+// A flare's body is shown in the Flares tab the way VesnALIA shows a reply, so it may carry blocks only some installed
 // plugin can draw. Flare knows none of them: for the places that are not a reply (the banner, a notification, the note
 // a parent agent gets, an agent reading flares back) it keeps the prose and names each block instead. Any fenced block
 // with a language and any `::name{…}` line counts as a block, whoever draws it. Pure: the server and the app share it.

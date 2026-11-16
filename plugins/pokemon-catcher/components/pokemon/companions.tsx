@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { experimental_useSidebarThreads, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_useSidebarThreads, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { starters, type StarterId } from "../../pokemon";
 import { useCollection } from "../../hooks/use-collection";
@@ -150,7 +150,7 @@ export function ThreadCompanion({ threadId, isCompactViewport }: { threadId: str
 	const { collection } = useCollection();
 	const { threads } = experimental_useSidebarThreads();
 	const preferences = usePreferences();
-	const navigate = useBbNavigate();
+	const navigate = useAliaNavigate();
 	const thread = threads.find((candidate) => candidate.id === threadId);
 	const running = thread !== undefined && (thread.indicator === "runtime" || Object.values(thread.activity).some((count) => count > 0));
 	const bouncing = running && preferences?.bounceCompanionWhileRunning === true;

@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from
 import { createPortal } from "react-dom";
 import { Controls, Handle, Position, ReactFlow, ReactFlowProvider, type Connection, type Edge, type Node, type NodeProps } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { experimental_ProviderModelPicker } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderModelPicker } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";

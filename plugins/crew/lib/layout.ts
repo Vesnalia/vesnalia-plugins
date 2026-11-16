@@ -1,7 +1,7 @@
 // "Open all" (§4.6): the split for each member thread, in the order they
 // open. Up to three members sit side by side; from four on they form a
 // grid — the first row opens to the right, the rest opens downward under it,
-// which BB applies to the pane that opened last (live check: see README).
+// which VesnALIA applies to the pane that opened last (live check: see README).
 import type { OpenSplit } from "./thread-port";
 
 export function openLayout(count: number): OpenSplit[] {

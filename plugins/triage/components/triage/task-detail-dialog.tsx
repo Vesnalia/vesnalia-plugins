@@ -164,7 +164,7 @@ function TaskDetailDialog({
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Triage #{task.number}?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  The card and its event history are removed. The linked BB thread is kept.
+                  The card and its event history are removed. The linked VesnALIA thread is kept.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

@@ -4,7 +4,7 @@
 // too; while the review agent checks, only that; then Ready to re-review, with what the check found.
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { toast } from "sonner";
 import { defaultPreferences } from "../src/preferences";
 import { patchReviewState } from "../lib/panel-state";
@@ -167,7 +167,7 @@ test("a check that can't start says why; with the re-review check off there's no
 test("on your own PR with no folder, Send the rest takes the GitHub items not reported too, and asks where: a fresh fixer, or a fork", async () => {
   const own = {
     targetKey: KEY, kind: "pr", repo: "acme/web", number: 12, headSha: "a".repeat(40), status: "ready", createdAt: 1, title: "Retry uploads", ownPr: true, author: "me",
-    mainThread: { threadId: "fixer", environmentId: "env_fix", origin: "fresh", since: 1, branch: "bb/fix" }, sends: [{ ...send, threadId: "fixer", ids: ["c1", "c2", "c3", "c4"], stopped: { at: 2, why: "archived" } }],
+    mainThread: { threadId: "fixer", environmentId: "env_fix", origin: "fresh", since: 1, branch: "alia/fix" }, sends: [{ ...send, threadId: "fixer", ids: ["c1", "c2", "c3", "c4"], stopped: { at: 2, why: "archived" } }],
     threadSends: { PRRT_1: { id: "c4", sendN: 1 }, PRR_2: { id: "c5", sendN: 1, claim: { outcome: "done", threadId: "fixer", at: 3 } } }, fixes: tally({ sent: 5, reported: 2 }),
   };
   const sendToSourceThread = vi.fn(async (input: any) => input.thread === "fork"
@@ -189,8 +189,8 @@ test("on your own PR with no folder, Send the rest takes the GitHub items not re
 test("on your PR whose folder a fixer took over, Send the rest still asks as a fixer's does; what the review no longer has is said plainly", async () => {
   const own = {
     targetKey: KEY, kind: "pr", repo: "acme/web", number: 12, headSha: "a".repeat(40), status: "ready", createdAt: 1, title: "Retry uploads", ownPr: true, author: "me",
-    feature: { ...feature, environmentId: "env_fix", workBranch: "bb/fix" },
-    mainThread: { threadId: "fixer", environmentId: "env_fix", origin: "fresh", since: 1, branch: "bb/fix" }, sends: [{ ...send, threadId: "fixer", ids: ["c1", "c2", "c3", "c4"], stopped: { at: 2, why: "archived" } }],
+    feature: { ...feature, environmentId: "env_fix", workBranch: "alia/fix" },
+    mainThread: { threadId: "fixer", environmentId: "env_fix", origin: "fresh", since: 1, branch: "alia/fix" }, sends: [{ ...send, threadId: "fixer", ids: ["c1", "c2", "c3", "c4"], stopped: { at: 2, why: "archived" } }],
     threadSends: { PRRT_1: { id: "c4", sendN: 1 } }, fixes: tally({ sent: 4, reported: 1 }),
   };
   const sendToSourceThread = vi.fn(async () => ({ ok: true, delivery: "sent", title: "Fixes for web#12", threadId: "fresh2", sendN: 2, skipped: 1 }));

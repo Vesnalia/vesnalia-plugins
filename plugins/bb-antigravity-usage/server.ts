@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { usageHostContract } from "./usage-host-contract.js";
 
@@ -34,11 +34,11 @@ const contract = defineRpcContract({
   },
 });
 
-export default function plugin(bb: BbPluginApi): void {
-  const usageHost = bb.hosts.experimental_client({ contract: usageHostContract });
-  bb.rpc.register(contract, {
+export default function plugin(alia: AliaPluginApi): void {
+  const usageHost = alia.hosts.experimental_client({ contract: usageHostContract });
+  alia.rpc.register(contract, {
     [LIST_RESOURCES]: async () => ({
-      resources: (await bb.sdk.hosts.list()).filter((host) => host.status === "connected").map((host) => ({
+      resources: (await alia.sdk.hosts.list()).filter((host) => host.status === "connected").map((host) => ({
         accountKey: null, id: host.id, providerId: PROVIDER_ID, label: "Antigravity",
         scope: { kind: "host" as const, hostId: host.id, hostName: host.name },
       })),
@@ -56,5 +56,5 @@ export default function plugin(bb: BbPluginApi): void {
       if (state.status === "error") return { ...base, usage: { status: "error" as const, plan: null, accountEmail: null, planLabel: null, message: state.message } };
       return { ...base, usage: { status: state.status, plan: null, accountEmail: null, planLabel: null } };
     },
-  }, { experimental_discoverable: true, experimental_description: "Adds Antigravity quota windows to BB Provider Usage." });
+  }, { experimental_discoverable: true, experimental_description: "Adds Antigravity quota windows to VesnALIA Provider Usage." });
 }

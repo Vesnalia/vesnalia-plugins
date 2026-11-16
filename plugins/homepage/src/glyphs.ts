@@ -140,8 +140,8 @@ import {
 type Glyph = readonly (readonly [string, Readonly<Record<string, string | number>>])[];
 
 /**
- * BB's named icon vocabulary (`bb.branding.icon: "GridView"`) mapped to the
- * Hugeicons shapes BB draws for each name. Only these names are bundled, so
+ * VesnALIA's named icon vocabulary (`alia.branding.icon: "GridView"`) mapped to the
+ * Hugeicons shapes VesnALIA draws for each name. Only these names are bundled, so
  * the server stays small; unknown names fall through to image discovery.
  */
 const GLYPHS: Readonly<Record<string, Glyph>> = {
@@ -289,7 +289,7 @@ const GLYPHS: Readonly<Record<string, Glyph>> = {
 export const GLYPH_NAMES: readonly string[] = Object.keys(GLYPHS);
 
 /**
- * Render a BB icon name as a standalone monochrome SVG. The client draws it
+ * Render a VesnALIA icon name as a standalone monochrome SVG. The client draws it
  * as a CSS mask, so only the painted shape matters, never its colors.
  */
 export function renderGlyphSvg(name: string): string | null {

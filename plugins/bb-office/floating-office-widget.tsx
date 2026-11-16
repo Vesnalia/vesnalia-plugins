@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { BB_OFFICE_ASSET_ROOT } from "./asset-loader";
+import { ALIA_OFFICE_ASSET_ROOT } from "./asset-loader";
 import {
   clampFloatingOfficeState,
   defaultFloatingOfficeState,
@@ -27,8 +27,8 @@ import {
 import type { FloatingOfficeCollapsedKind } from "./floating-office-collapsed";
 import type { ThreadPresence } from "./office-allocator";
 
-const FLOATING_OFFICE_STORAGE_KEY = "bb-office:floating-office-placement";
-const LEGACY_COLLAPSED_STORAGE_KEY = "bb-office:office-collapsed";
+const FLOATING_OFFICE_STORAGE_KEY = "alia-office:floating-office-placement";
+const LEGACY_COLLAPSED_STORAGE_KEY = "alia-office:office-collapsed";
 const DRAG_ACTIVATION_DISTANCE_PX = 4;
 const KEYBOARD_MOVE_DISTANCE_PX = 16;
 const KEYBOARD_RESIZE_DISTANCE_PX = 16;
@@ -101,10 +101,10 @@ function FloorPlanIcon() {
 function WorkerSprite({ worker }: { worker: ThreadPresence }) {
   return (
     <span
-      className="bb-office-floating-worker-sprite"
+      className="alia-office-floating-worker-sprite"
       data-state={worker.status}
       style={{
-        backgroundImage: `url(${BB_OFFICE_ASSET_ROOT}/characters/char_${worker.palette}.png)`,
+        backgroundImage: `url(${ALIA_OFFICE_ASSET_ROOT}/characters/char_${worker.palette}.png)`,
         filter:
           worker.hueShift === 0
             ? undefined
@@ -370,22 +370,22 @@ export function FloatingOfficeWidget({
 
   return (
     <div
-      className="bb-office-floating-root"
+      className="alia-office-floating-root"
       data-dragging={isDragging}
       data-resizing={isResizing}
       aria-live="off"
     >
       <aside
-        className="bb-office-floating-widget"
+        className="alia-office-floating-widget"
         data-anchor-horizontal={state.anchorHorizontal}
         data-anchor-vertical={state.anchorVertical}
         data-mode={state.mode}
         style={widgetPosition}
-        aria-label="BB Office"
+        aria-label="VesnALIA Office"
       >
         <div
-          id="bb-office-floating-office-canvas"
-          className="bb-office-floating-office-canvas"
+          id="alia-office-floating-office-canvas"
+          className="alia-office-floating-office-canvas"
           data-visible={isExpanded}
           aria-hidden={!isExpanded}
         >
@@ -393,8 +393,8 @@ export function FloatingOfficeWidget({
         </div>
         <button
           type="button"
-          className="bb-office-floating-drag-handle"
-          aria-label="Move BB Office"
+          className="alia-office-floating-drag-handle"
+          aria-label="Move VesnALIA Office"
           aria-hidden={!isExpanded}
           tabIndex={isExpanded ? 0 : -1}
           title="Drag to move the office"
@@ -409,7 +409,7 @@ export function FloatingOfficeWidget({
         <button
           ref={collapseButtonRef}
           type="button"
-          className="bb-office-floating-collapse"
+          className="alia-office-floating-collapse"
           aria-label="Collapse office to current worker"
           aria-expanded="true"
           aria-hidden={!isExpanded}
@@ -423,8 +423,8 @@ export function FloatingOfficeWidget({
         </button>
         <button
           type="button"
-          className="bb-office-floating-resize"
-          aria-label="Resize BB Office"
+          className="alia-office-floating-resize"
+          aria-label="Resize VesnALIA Office"
           aria-hidden={!isExpanded}
           tabIndex={isExpanded ? 0 : -1}
           title="Drag or use arrow keys to resize"
@@ -438,20 +438,20 @@ export function FloatingOfficeWidget({
       <button
         ref={workerButtonRef}
         type="button"
-        className="bb-office-floating-worker"
+        className="alia-office-floating-worker"
         data-collapsed-kind={collapsedKind}
         data-visible={isCollapsedVisible}
         style={workerPosition}
-        aria-controls="bb-office-floating-office-canvas"
+        aria-controls="alia-office-floating-office-canvas"
         aria-expanded="false"
         aria-hidden={!isCollapsedVisible}
         tabIndex={isCollapsedVisible ? 0 : -1}
         aria-label={
           collapsedKind === "worker" && currentWorker
-            ? `Show BB Office. Current worker: ${currentWorker.name}`
-            : `Show BB Office. ${workerCount} workers present.`
+            ? `Show VesnALIA Office. Current worker: ${currentWorker.name}`
+            : `Show VesnALIA Office. ${workerCount} workers present.`
         }
-        title="Show BB Office"
+        title="Show VesnALIA Office"
         onClick={expand}
         onKeyDown={moveWithKeyboard}
         onPointerCancel={endDrag}
@@ -462,7 +462,7 @@ export function FloatingOfficeWidget({
         {collapsedKind === "worker" && currentWorker ? (
           <WorkerSprite worker={currentWorker} />
         ) : collapsedKind === "floorplan" ? (
-          <span className="bb-office-floating-floorplan">
+          <span className="alia-office-floating-floorplan">
             <FloorPlanIcon />
           </span>
         ) : null}

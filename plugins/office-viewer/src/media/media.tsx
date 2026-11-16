@@ -1,11 +1,11 @@
 // Office Viewer — media opener: images, GIFs, videos and audio with Download
-// and Copy; images open in the editor, video frames can be grabbed into it. The file is loaded into a Blob because BB's preview links don't answer
+// and Copy; images open in the editor, video frames can be grabbed into it. The file is loaded into a Blob because VesnALIA's preview links don't answer
 // Range requests: Safari won't play a video from them and Chrome can't seek.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Camera01Icon, PictureInPictureOnIcon, RepeatIcon } from "@hugeicons/core-free-icons";
-import { useRpc, type PluginFileOpenerProps } from "@get-bb/plugin-sdk/app";
+import { useRpc, type PluginFileOpenerProps } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../../server";
 import { Button } from "@/components/ui/button";
@@ -86,7 +86,7 @@ export function MediaOpener({ path: openedPath, source }: PluginFileOpenerProps)
   const viewer = useRef<ImageViewerHandle>(null);
   const video = useRef<HTMLVideoElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
-  // BB reuses the opener when a tab switches files; drop the old file's editor and bytes with it,
+  // VesnALIA reuses the opener when a tab switches files; drop the old file's editor and bytes with it,
   // or a video tab briefly gets the previous picture as its source and reports it can't play.
   useEffect(() => {
     setPath(openedPath);

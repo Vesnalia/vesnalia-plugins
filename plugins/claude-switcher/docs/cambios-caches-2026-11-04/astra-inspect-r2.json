@@ -8,7 +8,7 @@
     "Traced related writers and callers: new-project placement, after-turn placement, failure retries, background rescue, manual account changes and rebalance.",
     "Reviewed the added tests, their harness and mutation scripts; treated recorded results as supplied evidence.",
     "Reviewed analysis scripts, reports and decompressed dataset structures and content.",
-    "Inspected Calor’s tick text, retry/expiry handling and account-change checks, plus bb-app 0.48.1 dispatch rejection handling.",
+    "Inspected Calor’s tick text, retry/expiry handling and account-change checks, plus alia-app 0.48.1 dispatch rejection handling.",
     "Checked the corrected build metadata against CI configuration and UTC parsing against the plugin’s timestamp writer."
   ],
   "limitations": [

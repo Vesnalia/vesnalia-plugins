@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { pointLine, textLines } from "./markdown-points";
 import { markdownBlocks, type MarkdownBlock } from "./markdown-blocks";
 
-/** A block, as markdownBlocks reads it from `doc`, at `index`, drawn as `html` in an element, as BB's Markdown draws it. */
+/** A block, as markdownBlocks reads it from `doc`, at `index`, drawn as `html` in an element, as VesnALIA's Markdown draws it. */
 function drawn(doc: string, index: number, html: string): { block: MarkdownBlock; el: HTMLElement } {
   const block = markdownBlocks(doc).blocks[index];
   const el = document.createElement("div");

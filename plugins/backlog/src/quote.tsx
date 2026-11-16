@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { useBbNavigate, useComposer, useSdk } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useComposer, useSdk } from "@vesnalia/plugin-sdk/app";
 
-const PENDING = "bb-backlog-pending-quote:";
-const DELIVER = "bb-backlog-quote";
+const PENDING = "alia-backlog-pending-quote:";
+const DELIVER = "alia-backlog-quote";
 
 /** Selected text followed by where it came from, shown relative to the project checkout when possible. */
 export function quoteWithSource(text: string, file: string, root?: string) {
@@ -22,7 +22,7 @@ export function latestThread<T extends { updatedAt: number; archivedAt: number |
  */
 export function useSendQuote() {
  const sdk = useSdk();
- const navigate = useBbNavigate();
+ const navigate = useAliaNavigate();
  const composer = useComposer();
  return async (projectId: string, text: string) => {
   const latest = latestThread(await sdk.threads.list({ projectId, archived: false, hasParent: false }));

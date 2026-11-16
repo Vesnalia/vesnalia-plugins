@@ -2,7 +2,7 @@
 // hands hover, focus and taps to the overlay (overlay.tsx), which owns the card. A page script has no RPC
 // or config of its own, so the overlay registers itself as the bridge and says which links are Shuttle's.
 //
-// Only links in the timeline are taken: bb's own chrome and other plugins' panels keep their behaviour, and
+// Only links in the timeline are taken: VesnALIA's own chrome and other plugins' panels keep their behaviour, and
 // a link git-cards already decorates is left to it.
 
 export interface LinkTargetRef {
@@ -29,7 +29,7 @@ export interface Bridge {
   into(): boolean;
 }
 
-// bb's timeline rows and message columns; not a published contract, so a bb release can move them.
+// VesnALIA's timeline rows and message columns; not a published contract, so a VesnALIA release can move them.
 const SCOPE = "[data-timeline-row-id], [data-message-column]";
 const MARKED = "a[data-shuttle-link]";
 

@@ -16,46 +16,46 @@ export function treeScript(os: FsBox['os'], path: string | null, recursive: bool
   return `set -f
 cd -- ${path === null ? '\"$HOME\"' : sh(path)} || { printf 'UNREADABLE\\0'; exit 0; }
 printf 'ROOT\\0%s\\0' "$PWD"
-bb_tree_tmp=$(mktemp -d) || exit 1
-bb_tree_pid=
-bb_tree_cleanup() {
+alia_tree_tmp=$(mktemp -d) || exit 1
+alia_tree_pid=
+alia_tree_cleanup() {
   trap - 0 HUP INT TERM
-  if [ -n "$bb_tree_pid" ]; then kill "$bb_tree_pid" 2>/dev/null || :; wait "$bb_tree_pid" 2>/dev/null || :; fi
-  rm -f "$bb_tree_tmp/pipe"
-  rmdir "$bb_tree_tmp" 2>/dev/null || :
+  if [ -n "$alia_tree_pid" ]; then kill "$alia_tree_pid" 2>/dev/null || :; wait "$alia_tree_pid" 2>/dev/null || :; fi
+  rm -f "$alia_tree_tmp/pipe"
+  rmdir "$alia_tree_tmp" 2>/dev/null || :
 }
-trap 'bb_tree_cleanup' 0
-trap 'bb_tree_cleanup; exit 1' HUP INT TERM
-mkfifo "$bb_tree_tmp/pipe" || exit 1
+trap 'alia_tree_cleanup' 0
+trap 'alia_tree_cleanup; exit 1' HUP INT TERM
+mkfifo "$alia_tree_tmp/pipe" || exit 1
 if find . -maxdepth 0 -printf '' >/dev/null 2>&1; then
-  find . -mindepth 1 ${recursive ? '' : '-maxdepth 1'} ${selection} -printf '%y/%P\\n' > "$bb_tree_tmp/pipe" &
+  find . -mindepth 1 ${recursive ? '' : '-maxdepth 1'} ${selection} -printf '%y/%P\\n' > "$alia_tree_tmp/pipe" &
 else
-  find . -mindepth 1 ${recursive ? '' : '-maxdepth 1'} ${selection} -exec stat ${os === 'macos' ? "-f '%HT/%N'" : "-c '%F/%n'"} {} + > "$bb_tree_tmp/pipe" &
+  find . -mindepth 1 ${recursive ? '' : '-maxdepth 1'} ${selection} -exec stat ${os === 'macos' ? "-f '%HT/%N'" : "-c '%F/%n'"} {} + > "$alia_tree_tmp/pipe" &
 fi
-bb_tree_pid=$!
+alia_tree_pid=$!
 {
-rm -f "$bb_tree_tmp/pipe"
-rmdir "$bb_tree_tmp"
+rm -f "$alia_tree_tmp/pipe"
+rmdir "$alia_tree_tmp"
 awk 'BEGIN { n=0 } { p=index($0,"/"); if (!p) next; t=substr($0,1,p-1); name=substr($0,p+1); sub(/^\\.\\//,"",name); if (++n>${cap}) { printf "TRUNC%c",0; exit 3 }; printf "%s%c%s%c", (t=="d" || tolower(t)=="directory" ? "d" : "f"),0,name,0 }'
-} < "$bb_tree_tmp/pipe"
-bb_tree_read=$?
-if [ "$bb_tree_read" -eq 3 ]; then
-  kill "$bb_tree_pid" 2>/dev/null || :
-  wait "$bb_tree_pid" 2>/dev/null || :
-  bb_tree_pid=
-elif [ "$bb_tree_read" -ne 0 ]; then
-  kill "$bb_tree_pid" 2>/dev/null || :
-  wait "$bb_tree_pid" 2>/dev/null || :
-  bb_tree_pid=
+} < "$alia_tree_tmp/pipe"
+alia_tree_read=$?
+if [ "$alia_tree_read" -eq 3 ]; then
+  kill "$alia_tree_pid" 2>/dev/null || :
+  wait "$alia_tree_pid" 2>/dev/null || :
+  alia_tree_pid=
+elif [ "$alia_tree_read" -ne 0 ]; then
+  kill "$alia_tree_pid" 2>/dev/null || :
+  wait "$alia_tree_pid" 2>/dev/null || :
+  alia_tree_pid=
   printf 'ERR\\0'
   exit 0
 else
-  wait "$bb_tree_pid"
-  bb_tree_status=$?
-  bb_tree_pid=
-  if [ "$bb_tree_status" -ne 0 ]; then printf 'PARTIAL\\0'; fi
+  wait "$alia_tree_pid"
+  alia_tree_status=$?
+  alia_tree_pid=
+  if [ "$alia_tree_status" -ne 0 ]; then printf 'PARTIAL\\0'; fi
 fi
-bb_tree_pid=
+alia_tree_pid=
 printf 'DONE\\0'
 
 `;

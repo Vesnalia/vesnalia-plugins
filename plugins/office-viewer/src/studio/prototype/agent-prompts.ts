@@ -20,7 +20,7 @@ export function buildTextGeneratePrompt(opts: {
 }): string {
   const { width, height } = deviceCanvasSize(opts.device);
   return [
-    "Create or update a BB Office Studio wireframe JSON file for this screen.",
+    "Create or update a VesnALIA Office Studio wireframe JSON file for this screen.",
     "",
     `Target file (write valid JSON here): ${opts.wireframeAbsPath}`,
     `Schema reference (read first): ${opts.schemaAbsPath}`,
@@ -28,7 +28,7 @@ export function buildTextGeneratePrompt(opts: {
     `Canvas: ${width}×${height} px (${opts.device}). Fidelity: ${opts.fidelity}.`,
     "",
     "Requirements:",
-    "- format \"bb-wireframe\", version 2",
+    "- format \"alia-wireframe\", version 2",
     "- Use element types and props from WIREFRAME_SCHEMA.md",
     "- Snap positions to an 8px grid",
     "- Keep labels unique and descriptive",
@@ -46,7 +46,7 @@ export function buildScreenshotGeneratePrompt(opts: {
 }): string {
   const extra = opts.description.trim() ? `\n\nNotes:\n${opts.description.trim()}` : "";
   return [
-    "Recreate this screenshot as a BB Office Studio wireframe JSON file.",
+    "Recreate this screenshot as a VesnALIA Office Studio wireframe JSON file.",
     "",
     `Reference image: ${opts.refAbsPath}`,
     `Target file: ${opts.wireframeAbsPath}`,

@@ -85,7 +85,7 @@ const TABLE_DELIMITER = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/;
 
 /**
  * Tables are left out of the bar: rendered and hidden inside its one line,
- * BB's scrolling table wrapper lays the lines on top of each other.
+ * VesnALIA's scrolling table wrapper lays the lines on top of each other.
  */
 function withoutTables(source: string): string {
   const lines = source.split("\n");
@@ -104,14 +104,14 @@ function withoutTables(source: string): string {
 }
 
 /**
- * BB's own bubbles replace the sender prefix with a sender line. The bar has
+ * VesnALIA's own bubbles replace the sender prefix with a sender line. The bar has
  * no room for one: a thread mention stands in for the sending thread, and
- * BB's system prefix is dropped.
+ * VesnALIA's system prefix is dropped.
  */
 export function withoutSenderPrefix(text: string): string {
   return text
-    .replace(/^\s*\[bb message from thread:(thr_\w+)\]\s*/, "@thread:$1 ")
-    .replace(/^\s*\[bb system\]\s*/, "");
+    .replace(/^\s*\[alia message from thread:(thr_\w+)\]\s*/, "@thread:$1 ")
+    .replace(/^\s*\[alia system\]\s*/, "");
 }
 
 /**
@@ -142,13 +142,13 @@ export function barMarkdown(text: string, max = MAX_SOURCE): string {
   return cleanMarkdown(capped(withoutSenderPrefix(text).trim(), max));
 }
 
-/** One piece of the bar: Markdown text, or a mention BB draws as a chip. */
+/** One piece of the bar: Markdown text, or a mention VesnALIA draws as a chip. */
 export type BarPart =
   | { kind: "text"; markdown: string }
   | { kind: "mention"; label: string; resource: Record<string, unknown> };
 
 /**
- * A message split at its mentions, so each one can be drawn as BB draws it in
+ * A message split at its mentions, so each one can be drawn as VesnALIA draws it in
  * the bubble. Mention ranges index the stored text, so the sender prefix is
  * only removed when no mention comes before it.
  */
@@ -181,7 +181,7 @@ export function barParts(text: string, mentions: readonly MessageMention[], max 
 }
 
 /**
- * What BB's mention helpers expect for a stored mention. Stored plugin
+ * What VesnALIA's mention helpers expect for a stored mention. Stored plugin
  * mentions name their item `itemId`; the composer's shape names it `id`.
  */
 export function mentionTarget(part: Extract<BarPart, { kind: "mention" }>): Record<string, unknown> {

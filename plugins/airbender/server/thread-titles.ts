@@ -7,7 +7,7 @@
 // issue, has a small model write a title that says what it is doing now.
 //
 // Why: the user wants to see at a glance which issue each conversation is
-// working on (bead-bb-du7): "can we build it as part of Airbender to show
+// working on (bead-alia-du7): "can we build it as part of Airbender to show
 // which issue each thread is working on?" They agreed to these rules: a
 // name for the issue ("the current issue summarized in very short words",
 // no id); the old title back when the issue is cleared; a
@@ -35,14 +35,14 @@
 //   model chosen later replaces it.
 //
 // Gotchas:
-// - A conversation Airbender opens in a work tree is renamed only after BB
-//   has named its branch, which BB does from the conversation's first title.
+// - A conversation Airbender opens in a work tree is renamed only after VesnALIA
+//   has named its branch, which VesnALIA does from the conversation's first title.
 // - Hidden threads are left alone: the background sizing workers are told
 //   apart by their title (server/sizing.ts), so renaming one would break it.
 // - Nothing here may throw into its caller: a title is never worth failing a
 //   change of issue or a list for. Failures are logged.
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { CurrentBead } from "./current-bead.ts";
 import type { Store } from "./store.ts";
@@ -107,7 +107,7 @@ export interface Decision {
  * Decides a thread's title from its current issue.
  *
  * @param state What Airbender remembers about the thread's title.
- * @param threadTitle The thread's title now (null: none, BB shows its own).
+ * @param threadTitle The thread's title now (null: none, VesnALIA shows its own).
  * @param issueId The thread's current issue, or null.
  * @param desired The title for that issue (its short name); ignored when
  *   `issueId` is null.
@@ -170,7 +170,7 @@ export function summaryDue(
 ): { due: boolean; next: TitleState } {
   if (state.issueId !== null || state.manual) return { due: false, next: state };
   // A title Airbender did not write: the user's, unless Airbender never
-  // wrote one, in which case it is BB's first automatic title or none, and
+  // wrote one, in which case it is VesnALIA's first automatic title or none, and
   // is taken over.
   if (state.written !== null && threadTitle !== state.written) {
     return { due: false, next: { ...state, manual: true } };
@@ -191,7 +191,7 @@ type IssueRef = { id: string; title: string; description?: string };
 /** An issue's short name, kept with the title it was made from. */
 const shortNameSchema = z.object({ source: z.string(), name: z.string() });
 
-type ThreadDto = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["get"]>>;
+type ThreadDto = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["get"]>>;
 
 /**
  * Builds the title keeper for this plugin instance.
@@ -201,25 +201,25 @@ type ThreadDto = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["get"]>>;
  *   turn, which may also write a summary).
  */
 export function createThreadTitles({
-  bb,
+  alia,
   store,
   currentBead,
   readSettings,
   beforeRename = async () => {},
 }: {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   store: Store;
   currentBead: CurrentBead;
   readSettings: () => Promise<TitleSettings>;
   /**
    * Awaited before a thread is renamed: a conversation opened in a work
-   * tree has its branch named by BB after its first title, a moment after
+   * tree has its branch named by VesnALIA after its first title, a moment after
    * it is opened, so it is renamed only once that is done.
    */
   beforeRename?: (threadId: string) => Promise<void>;
 }) {
   const lifetime = new AbortController();
-  bb.onDispose(() => lifetime.abort());
+  alia.onDispose(() => lifetime.abort());
 
   // One piece of work per thread at a time, in order; a check asked for
   // while one is already waiting is not queued twice.
@@ -231,7 +231,7 @@ export function createThreadTitles({
     const next = before
       .then(work)
       .catch((cause) => {
-        bb.log.warn(`title of ${threadId}: ${cause instanceof Error ? cause.message : String(cause)}`);
+        alia.log.warn(`title of ${threadId}: ${cause instanceof Error ? cause.message : String(cause)}`);
       })
       .finally(() => {
         if (queues.get(threadId) === next) queues.delete(threadId);
@@ -241,12 +241,12 @@ export function createThreadTitles({
   }
 
   async function readState(threadId: string): Promise<TitleState> {
-    const own = (await bb.sdk.threads.getPluginMetadata({ threadId })) as Record<string, unknown>;
+    const own = (await alia.sdk.threads.getPluginMetadata({ threadId })) as Record<string, unknown>;
     return stateSchema.parse(own[TITLE_KEY] ?? EMPTY_STATE);
   }
 
   async function saveState(threadId: string, state: TitleState): Promise<void> {
-    await bb.sdk.threads.updatePluginMetadata({
+    await alia.sdk.threads.updatePluginMetadata({
       threadId,
       set: { [TITLE_KEY]: { ...state } },
     });
@@ -300,7 +300,7 @@ export function createThreadTitles({
     if (under !== undefined) return under;
     const asked = (async () => {
       const storeKey = `short-name:${issue.id}`;
-      const kept = shortNameSchema.safeParse(await bb.storage.kv.get(storeKey));
+      const kept = shortNameSchema.safeParse(await alia.storage.kv.get(storeKey));
       if (kept.success && kept.data.source === issue.title) return kept.data.name;
       const config = await summaryConfig();
       if (config !== null) {
@@ -312,11 +312,11 @@ export function createThreadTitles({
             AbortSignal.any([lifetime.signal, AbortSignal.timeout(SUMMARY_TIMEOUT_MS)]),
           );
           if (name !== null) {
-            await bb.storage.kv.set(storeKey, { source: issue.title, name });
+            await alia.storage.kv.set(storeKey, { source: issue.title, name });
             return name;
           }
         } catch (cause) {
-          bb.log.warn(`no short name for ${issue.id}: ${cause instanceof Error ? cause.message : String(cause)}`);
+          alia.log.warn(`no short name for ${issue.id}: ${cause instanceof Error ? cause.message : String(cause)}`);
         }
       }
       return fallbackShortName(issue.title);
@@ -341,7 +341,7 @@ export function createThreadTitles({
     known?: readonly IssueRef[],
   ): Promise<TitleState | null> {
     const settings = await readSettings();
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (!nameable(thread)) return null;
     const state = await readState(threadId);
     // With issue titles turned off nothing is written for an issue, but a
@@ -352,7 +352,7 @@ export function createThreadTitles({
     const decision = onIssue(state, thread.title, issueId, desired);
     if (decision.write !== undefined) {
       await beforeRename(threadId);
-      await bb.sdk.threads.update({ threadId, title: decision.write });
+      await alia.sdk.threads.update({ threadId, title: decision.write });
     }
     if (!sameState(state, decision.next)) await saveState(threadId, decision.next);
     return decision.next;
@@ -366,13 +366,13 @@ export function createThreadTitles({
   ): Promise<void> {
     const config = await summaryConfig();
     if (config === null) return;
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (!nameable(thread)) return;
     const due = summaryDue(state, thread.title);
     if (!sameState(state, due.next)) await saveState(threadId, due.next);
     if (!due.due) return;
 
-    const outline = await bb.sdk.threads.conversationOutline({ threadId });
+    const outline = await alia.sdk.threads.conversationOutline({ threadId });
     const messages = outline.items.map((item) => ({ role: item.role, text: item.preview }));
     if (messages.length === 0 && latestAssistantText === null) return;
     const title = await generateTitle(
@@ -388,10 +388,10 @@ export function createThreadTitles({
     if (title === null) return;
     // The model may take a while: the user may have renamed the thread, or
     // an issue may have been set, in the meantime.
-    const now = await bb.sdk.threads.get({ threadId });
+    const now = await alia.sdk.threads.get({ threadId });
     const latest = await readState(threadId);
     if (now.title !== thread.title || latest.issueId !== null || latest.manual) return;
-    if (title !== now.title) await bb.sdk.threads.update({ threadId, title });
+    if (title !== now.title) await alia.sdk.threads.update({ threadId, title });
     await saveState(threadId, { ...latest, written: title });
   }
 
@@ -431,7 +431,7 @@ export function createThreadTitles({
     const PAGE = 100;
     // Bounded, like current-bead.ts's heldAmong.
     for (let offset = 0; offset < 20 * PAGE; offset += PAGE) {
-      const threads = await bb.sdk.threads.list({ archived: false, limit: PAGE, offset });
+      const threads = await alia.sdk.threads.list({ archived: false, limit: PAGE, offset });
       for (const thread of threads) {
         if (lifetime.signal.aborted) return;
         if (thread.visibility === "hidden") continue;

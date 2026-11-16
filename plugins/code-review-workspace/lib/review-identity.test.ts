@@ -31,11 +31,11 @@ test("a local review goes by its repository and branch, on its machine and in it
   expect(reviewIdentity({ targetKey: "ref-2", kind: "ref", gitRef: "HEAD", cwd: "/home/ana/work/web" }).id).toBe("web:HEAD");
 });
 
-test("a bb-managed branch reads as its slug, in a local review's id too", () => {
-  expect(branchLabel("bb/snooze-checks-thr_ab12cd")).toBe("snooze-checks");
-  expect(branchLabel("feat/bb/x-thr_1")).toBe("feat/bb/x-thr_1");
-  expect(branchLabel("bb/snooze-checks")).toBe("bb/snooze-checks");
-  expect(reviewIdentity({ targetKey: "ref-1", kind: "ref", gitRef: "main...bb/snooze-checks-thr_ab12cd", place: { repo: "flosports/api" } }).id).toBe("api:snooze-checks");
+test("a alia-managed branch reads as its slug, in a local review's id too", () => {
+  expect(branchLabel("alia/snooze-checks-thr_ab12cd")).toBe("snooze-checks");
+  expect(branchLabel("feat/alia/x-thr_1")).toBe("feat/alia/x-thr_1");
+  expect(branchLabel("alia/snooze-checks")).toBe("alia/snooze-checks");
+  expect(reviewIdentity({ targetKey: "ref-1", kind: "ref", gitRef: "main...alia/snooze-checks-thr_ab12cd", place: { repo: "flosports/api" } }).id).toBe("api:snooze-checks");
 });
 
 test("a renamed review goes by your name, and a local review that became a PR keeps it", () => {
@@ -64,9 +64,9 @@ test("two repositories of one name show their owners, and two folders of one rep
   expect(distinguish([teammate, { ...teammate, targetKey: "pr-9", number: 1 }]).size).toBe(0);
 });
 
-test("bb's worktrees of one repository, whose folders all end in its name, read apart by their paths' ends", () => {
+test("VesnALIA's worktrees of one repository, whose folders all end in its name, read apart by their paths' ends", () => {
   const worktree = (key: string, thread: string, gitRef = "HEAD"): Identifiable => {
-    const path = `/Users/ana/.bb/worktrees/${thread}/api`;
+    const path = `/Users/ana/.vesnalia/worktrees/${thread}/api`;
     return { targetKey: key, kind: "ref", gitRef, cwd: path, place: { repo: "flosports/api", path } };
   };
   expect(ids([worktree("ref-1", "thr_a-1"), worktree("ref-2", "thr_b-1"), { targetKey: "ref-3", kind: "ref", gitRef: "HEAD", cwd: "/src/api", place: { repo: "flosports/api", path: "/src/api" } }]))
@@ -75,15 +75,15 @@ test("bb's worktrees of one repository, whose folders all end in its name, read 
 
 test("in one folder, refs that would read alike are said as given", () => {
   const at = (key: string, gitRef: string): Identifiable => ({ targetKey: key, kind: "ref", gitRef, cwd: "/src/api", place: { repo: "flosports/api", path: "/src/api" } });
-  expect(ids([at("ref-1", "main...feat"), at("ref-2", "feat"), at("ref-3", "bb/foo-thr_a1"), at("ref-4", "foo"), at("ref-5", "main...bar")]))
-    .toEqual(["api:main...feat", "api:feat", "api:bb/foo-thr_a1", "api:foo", "api:bar"]);
+  expect(ids([at("ref-1", "main...feat"), at("ref-2", "feat"), at("ref-3", "alia/foo-thr_a1"), at("ref-4", "foo"), at("ref-5", "main...bar")]))
+    .toEqual(["api:main...feat", "api:feat", "api:alia/foo-thr_a1", "api:foo", "api:bar"]);
   // Elsewhere, one of them with the folder too.
   expect(ids([at("ref-1", "feat"), at("ref-2", "main...feat"), { ...at("ref-3", "feat"), cwd: "/w/api", place: { repo: "flosports/api", path: "/w/api" } }]))
     .toEqual(["api:feat (src/api)", "api:main...feat (src/api)", "api:feat (w/api)"]);
 });
 
 test("a long repository's id keeps its number apart, which the chip never cuts", () => {
-  expect(reviewIdentity({ targetKey: "pr-1", kind: "pr", repo: "get-bb/bb-plugin-code-review-workspace", number: 123, title: "T" })).toMatchObject({ id: "bb-plugin-code-review-workspace#123", idRepo: "bb-plugin-code-review-workspace", idTail: "#123" });
+  expect(reviewIdentity({ targetKey: "pr-1", kind: "pr", repo: "get-alia/alia-plugin-code-review-workspace", number: 123, title: "T" })).toMatchObject({ id: "alia-plugin-code-review-workspace#123", idRepo: "alia-plugin-code-review-workspace", idTail: "#123" });
 });
 
 test("a thread's title has the name on one line, cut to 80 characters", () => {

@@ -1,8 +1,8 @@
 # Security model
 
-This plugin runs inside the long-lived bb server and can start Xcode and
+This plugin runs inside the long-lived VesnALIA server and can start Xcode and
 simulator processes on the server host. Treat agent tool arguments, the
-agent-facing `bb` CLI, Xcode projects, generated preview output, and every
+agent-facing `alia` CLI, Xcode projects, generated preview output, and every
 same-user local caller as untrusted input.
 
 The focused security regression suites are:
@@ -22,21 +22,21 @@ The focused security regression suites are:
 
 ## Tracked build boundary
 
-`bb xcode run` and the `xcode_build` tool execute only
+`alia xcode run` and the `xcode_build` tool execute only
 `/usr/bin/xcodebuild`. Their working directory and caller-selected input/output
 paths are confined, through real paths and existing symlink ancestors, to the
 invoking thread's checkout. Caller-provided result-stream and result-bundle
 paths are replaced with plugin-owned temporary paths. Host-mutating Xcode
 download, import, and provisioning modes are refused.
 
-Children receive a small environment allowlist rather than the bb server's
+Children receive a small environment allowlist rather than the VesnALIA server's
 provider, plugin, and tunnel credentials. Stream reads, individual streamed
 lines, output buffers, and temporary files are bounded. Apple and system
 helpers are resolved to fixed system paths rather than through `PATH`, and only
 four tracked builds may run concurrently.
 
 This is not an Xcode sandbox. A project build phase, compiler plugin, package
-plugin, or test can execute with the bb server user's filesystem, keychain, and
+plugin, or test can execute with the VesnALIA server user's filesystem, keychain, and
 network access. The current plugin SDK has no host execution primitive that
 attaches a thread's filesystem or network permission sandbox. Do not use the
 tracked runner for an untrusted checkout on a privileged host.
@@ -44,7 +44,7 @@ tracked runner for an untrusted checkout on a privileged host.
 ### Builds on another Mac
 
 When a thread's checkout lives on an enrolled Mac, the build runs there, in the
-plugin's `bb.host` worker, as that Mac's bb user. Everything above applies
+plugin's `alia.host` worker, as that Mac's VesnALIA user. Everything above applies
 unchanged, and is enforced **on that Mac**: the working directory and every
 path argument are resolved with real paths on the disk the build will use,
 never lexically on the server, where the checkout does not exist. The worker
@@ -71,7 +71,7 @@ same build: the process's command line must carry the build's marker, and its
 start time must match the record within two seconds. A recycled pid is never
 signalled. Signals reach the build's own process group, never the daemon's.
 Run rows are updated only by the Mac that ran them; a host signal carries
-bb's authenticated host id.
+VesnALIA's authenticated host id.
 
 ### Watching builds on another Mac
 
@@ -94,10 +94,10 @@ dir. What it reads is fenced on that Mac, with symlinks resolved there:
 - checkouts to scan for DerivedData only as existing directories, walked
   without following links.
 
-Replies are capped well under bb's 8 MiB host-RPC limit. A Mac is probed only
+Replies are capped well under VesnALIA's 8 MiB host-RPC limit. A Mac is probed only
 while a thread whose checkout is on it is active or was recently, while the
 person has opted it in, or while a build seen there is still open. Each Mac's
-probe is held to the same duty cycle as the local one. `bb xcode stop` refuses
+probe is held to the same duty cycle as the local one. `alia xcode stop` refuses
 a watched build on another Mac: the plugin signals only builds it started.
 
 Thread scoping compares machines as well as paths. Two Macs can hold the same
@@ -109,7 +109,7 @@ a build on another Mac through such a match.
 
 `serve-sim` runs in a disposable child process on an ephemeral `127.0.0.1`
 port. Its raw middleware includes shell-execution and token-disclosure routes,
-so it is never mounted directly and its port is never declared as a shared bb
+so it is never mounted directly and its port is never declared as a shared VesnALIA
 port.
 
 The child wrapper:
@@ -138,15 +138,15 @@ route-policy and response-scrubbing tests against the new middleware.
 ## Private simulator transport
 
 The plugin has no standalone public simulator viewer, public capability URL,
-public WebSocket listener, `bb connect` port declaration, exposure RPC,
+public WebSocket listener, `alia connect` port declaration, exposure RPC,
 exposure CLI verb, or exposure setting. Remote viewing is available only inside
-the main bb UI through same-origin plugin HTTP and typed RPC routes. Official
-remote bb access remains owner-session-gated by bb; the plugin routes themselves
-reuse bb's server and do not open another listener or publish the capture host's
+the main VesnALIA UI through same-origin plugin HTTP and typed RPC routes. Official
+remote VesnALIA access remains owner-session-gated by VesnALIA; the plugin routes themselves
+reuse VesnALIA's server and do not open another listener or publish the capture host's
 loopback port.
 
-On the server host, a local HTTP bb panel may use the capture host directly via
-a per-boot, per-device stream capability. An HTTPS or remote bb panel cannot
+On the server host, a local HTTP VesnALIA panel may use the capture host directly via
+a per-boot, per-device stream capability. An HTTPS or remote VesnALIA panel cannot
 reach that machine's loopback and automatically uses the same-origin `/stream`
 proxy. The proxy validates the active UDID and remains a byte-forwarder. The
 child admits at most four external pixel responses across direct and proxied
@@ -190,19 +190,19 @@ are checked against that same resolved scope. Machine-wide history and rescans
 are panel-only. Shim mutation, CLI-started host builds, and stopping host builds
 require a host-owned confirmation rendered in the invoking thread.
 
-Plugin RPC and HTTP routes use bb's `auth: "local"` Origin/CSRF boundary. It
+Plugin RPC and HTTP routes use VesnALIA's `auth: "local"` Origin/CSRF boundary. It
 accepts originless requests and is not a caller-credential check. The SDK does
 not expose caller identity or a trusted browser Origin to plugin handlers, so a
 same-user process with loopback access is part of the core trusted boundary and
 can call non-destructive simulator RPC and stream routes. Distinguishing that
-process from the signed-in panel requires a core bb
+process from the signed-in panel requires a core VesnALIA
 capability, not a plugin-side header the same caller could invent. Stills
 execution and destructive erase or purge still cross a host-owned confirmation
 boundary.
 
 ## Files and generated output
 
-`bb xcode sim shot --out` requires a thread checkout, rejects absolute and escaping
+`alia xcode sim shot --out` requires a thread checkout, rejects absolute and escaping
 paths before capture, supplies the checkout as the daemon-enforced write root,
 and uses atomic create-only writes with mode `0600`.
 
@@ -240,5 +240,5 @@ delivery, device-retargeting, restart-race, HID-smuggling, socket-flood,
 backpressure, and lifecycle hazards. Rather than maintaining a second remote
 authentication and transport surface, the feature and all of its public
 listeners, URLs, RPCs, CLI verbs, and UI controls were removed. Remote simulator
-viewing now stays inside bb's main UI, with bounded proxy and
+viewing now stays inside VesnALIA's main UI, with bounded proxy and
 presence concurrency.

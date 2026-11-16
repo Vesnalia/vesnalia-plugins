@@ -1,8 +1,8 @@
 // App-wide alerts: a count badge on the navigation icon, plus a toast (or a
-// system notification while bb is in the background) when a task arrives.
+// system notification while VesnALIA is in the background) when a task arrives.
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import type { CSSProperties } from "react";
-import { useBbNavigate, useRealtime, useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime, useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract, TaskCreatedSignal, TaskEventSignal, TodosChangedSignal } from "../server";
 import { useDebounced } from "./use-tasks";
@@ -74,7 +74,7 @@ export function NavIcon({ className }: { className?: string }) {
 /** Mounted once per window: feeds the badge and announces new tasks. */
 export function AlertsController() {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { values } = useSettings();
   const systemNotifications = values?.systemNotifications !== false;
 

@@ -29,7 +29,7 @@ test("071 unit 7: build.sh gives a template no empty device line where it has no
 });
 
 test("071 unit 7: the new guest scripts carry no comments beyond the shebang", () => {
-  for (const name of ["bb-box-nvidia-drivers.sh", "nvidia-userspace.sh"]) {
+  for (const name of ["alia-box-nvidia-drivers.sh", "nvidia-userspace.sh"]) {
     const text = readFileSync(fileURLToPath(new URL(`../setup/proxmox-lxc/template/guest/${name}`, import.meta.url)), "utf8");
     const comments = text.split("\n").slice(1).filter((line) => /^\s*#/.test(line));
     assert.deepEqual(comments, [], name);

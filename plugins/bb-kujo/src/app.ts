@@ -1,4 +1,4 @@
-import { definePluginApp } from '@get-bb/plugin-sdk/app';
+import { definePluginApp } from '@vesnalia/plugin-sdk/app';
 import { registerTablerIcons } from './icons.ts';
 import { mountSignal } from './effects.ts';
 

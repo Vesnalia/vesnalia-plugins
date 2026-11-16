@@ -3,7 +3,7 @@ import {
   useRealtime,
   useRpc,
   useSettings,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { WorkspaceConfig, WorkspaceFolderBrowser } from "./contract.js";
@@ -138,7 +138,7 @@ function WorkspaceEditor({
     if (
       removed.length > 0 &&
       !window.confirm(
-        `Remove ${removed.length} folder${removed.length === 1 ? "" : "s"} from this workspace? Their BB projects, chats, environments, worktrees, branches, and files will be kept.`,
+        `Remove ${removed.length} folder${removed.length === 1 ? "" : "s"} from this workspace? Their VesnALIA projects, chats, environments, worktrees, branches, and files will be kept.`,
       )
     ) {
       return;
@@ -175,7 +175,7 @@ function WorkspaceEditor({
     "Project";
 
   return createPortal(
-    <div data-bb-plugin="multi-repo-git">
+    <div data-alia-plugin="multi-repo-git">
       <button
         type="button"
         aria-label="Close workspace editor"
@@ -742,7 +742,7 @@ export function mountWorkspaceProjectMenu(): () => void {
       color: var(--foreground);
       outline: none;
     }
-    /* BB keeps the last native hover independently of Radix focus. While the
+    /* VesnALIA keeps the last native hover independently of Radix focus. While the
        injected item is the last hovered item, suppress that stale background
        without mutating React-owned attributes or destructive text colors. */
     [data-multi-repo-workspace-hover] [data-last-hovered]:not(:focus):not(:hover) {
@@ -1082,7 +1082,7 @@ export function mountWorkspaceProjectMenu(): () => void {
           "aria-label",
           collapsed ? "Expand main group" : "Collapse main group",
         );
-        // BB owns root-project content visibility through the native collapse.
+        // VesnALIA owns root-project content visibility through the native collapse.
         // The plugin only layers the independent `main` state on that content.
         setPluginHidden(rootContent, collapsed);
       }
@@ -1143,7 +1143,7 @@ export function mountWorkspaceProjectMenu(): () => void {
         }
 
         setPluginHidden(child, !rootExpanded);
-        // Newer BB wraps projects in independent visibility groups. Decorate
+        // Newer VesnALIA wraps projects in independent visibility groups. Decorate
         // their native rows in place; sectionOrder already groups those wrappers.
         if (cursor.parentElement === child.parentElement && cursor.nextElementSibling !== child) {
           cursor.insertAdjacentElement("afterend", child);

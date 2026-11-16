@@ -4,7 +4,7 @@ import {
   experimental_useSidebarThreadSplit as useSidebarThreadSplit,
   experimental_useSidebarThreadActions as useSidebarThreadActions,
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { RowContextMenu } from "@/components/inbox/row-context-menu";
@@ -189,7 +189,7 @@ export function ThreadCard({
               <>
                 {/* The shortcut/split contract requires an anchor, while the
                     controls remain sibling buttons above it. */}
-                {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- bb's
+                {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- VesnALIA's
                     shortcut and split-drag contracts require an anchor. */}
                 <a
                   data-sidebar-thread-shortcut-target=""
@@ -518,7 +518,7 @@ function ChildThreadRow({
             !isActive && layout !== null && "bg-sidebar-accent/25",
           )}
         >
-          {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- bb's
+          {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- VesnALIA's
               shortcut and split-drag contracts require an anchor. */}
           <a
             data-sidebar-thread-shortcut-target=""

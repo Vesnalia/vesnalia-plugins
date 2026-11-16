@@ -156,17 +156,17 @@ export class H264Encoder {
     this.#child.stderr.setEncoding("utf8");
     this.#child.stderr.on("data", (text: string) => {
       this.#stderr = (this.#stderr + text).slice(-4096);
-      const firstLine = this.#stderr.match(/^bb-box-h264: (.+), \d+ kbit\/s/m);
+      const firstLine = this.#stderr.match(/^alia-box-h264: (.+), \d+ kbit\/s/m);
       if (firstLine) described(firstLine[1]!);
     });
     this.#child.stdout.on("data", (chunk: Buffer) => this.#received(chunk));
     this.#child.stdin.on("error", () => {});
-    this.#child.on("error", (error) => this.#end(new H264EncoderStopped(`bb-box-h264 did not start: ${error.message}`)));
+    this.#child.on("error", (error) => this.#end(new H264EncoderStopped(`alia-box-h264 did not start: ${error.message}`)));
     this.#child.on("close", (code, signal) => {
       const words = this.#stderr.trim().split("\n").filter((line) => !/kbit\/s, \d+ threads?$/.test(line)).pop();
       if (code === 0 && !this.#reader.partial) this.#end(null);
-      else this.#end(new H264EncoderStopped(words ?? `bb-box-h264 stopped with ${signal ?? `exit code ${code}`}`));
-      described(words ?? "bb-box-h264 stopped");
+      else this.#end(new H264EncoderStopped(words ?? `alia-box-h264 stopped with ${signal ?? `exit code ${code}`}`));
+      described(words ?? "alia-box-h264 stopped");
     });
     if (options.sharedMemory !== undefined) {
       const path = Buffer.from(options.sharedMemory);

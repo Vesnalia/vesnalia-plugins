@@ -44,10 +44,10 @@ export interface RoomFromBuilds {
   readonly snapshotting: readonly HostRecord[];
 }
 
-export function bbBoxIsStopping(error: unknown, signal?: AbortSignal): boolean {
+export function aliaBoxIsStopping(error: unknown, signal?: AbortSignal): boolean {
   return Boolean(signal?.aborted) || STOPPING.test(error instanceof Error ? error.message : String(error));
 }
-const BUILD_DIR = "/var/lib/bb-box-build";
+const BUILD_DIR = "/var/lib/alia-box-build";
 
 type BuildPhase = "building" | "prepared" | "snapshotting";
 
@@ -62,7 +62,7 @@ export interface SavedBuild {
 export interface BuildPlan {
   readonly images: readonly { readonly image: string; readonly target: string }[];
   readonly architecture: Architecture;
-  readonly bbUrl: string | null;
+  readonly aliaUrl: string | null;
 }
 
 export interface BuildProgress {
@@ -78,7 +78,7 @@ export interface RemoteBuild {
 
 export function startBuildScript(plan: BuildPlan, setupTarBase64: string): string {
   const steps = plan.images.map(({ image, target }) => {
-    const args = [...(plan.bbUrl ? ["--bb-url", shellWord(plan.bbUrl)] : []), ...(plan.architecture === "arm" ? ["--arch", "arm64"] : []), "--tag", shellWord(image), shellWord(target)].join(" ");
+    const args = [...(plan.aliaUrl ? ["--alia-url", shellWord(plan.aliaUrl)] : []), ...(plan.architecture === "arm" ? ["--arch", "arm64"] : []), "--tag", shellWord(image), shellWord(target)].join(" ");
     return `echo "building ${image}"; bash "$d/setup/docker/build.sh" ${args} || { echo $? > "$d/exit"; exit 1; }`;
   });
   return [
@@ -86,16 +86,16 @@ export function startBuildScript(plan: BuildPlan, setupTarBase64: string): strin
     `d=${BUILD_DIR}`,
     'mkdir -p "$d"',
     '[ ! -e "$d/started" ] || exit 0',
-    `base64 -d > "$d/setup.tgz" <<'BB_BOX_SETUP'`,
+    `base64 -d > "$d/setup.tgz" <<'ALIA_BOX_SETUP'`,
     setupTarBase64.replace(/(.{76})/g, "$1\n"),
-    "BB_BOX_SETUP",
+    "ALIA_BOX_SETUP",
     'rm -rf "$d/setup" && mkdir -p "$d/unpacked" && tar -xzf "$d/setup.tgz" -C "$d/unpacked" && mv "$d/unpacked/setup" "$d/setup"',
-    `cat > "$d/run.sh" <<'BB_BOX_RUN'`,
+    `cat > "$d/run.sh" <<'ALIA_BOX_RUN'`,
     "#!/bin/bash",
     `d=${BUILD_DIR}`,
     ...steps,
     'echo 0 > "$d/exit"',
-    "BB_BOX_RUN",
+    "ALIA_BOX_RUN",
     ': > "$d/log"',
     'touch "$d/started"',
     'setsid nohup bash "$d/run.sh" >> "$d/log" 2>&1 < /dev/null &',
@@ -171,9 +171,9 @@ export function appLabel(appSha256: string | null): string | null {
   return appSha256 ? appSha256.slice(0, 16) : null;
 }
 
-export function runBuildScript(cli: DockerCli, image: string, target: string, bbUrl: string | null, log: (line: string) => void, signal: AbortSignal, setup = setupDir(), architecture: Architecture = "x86"): Promise<number | null> {
+export function runBuildScript(cli: DockerCli, image: string, target: string, aliaUrl: string | null, log: (line: string) => void, signal: AbortSignal, setup = setupDir(), architecture: Architecture = "x86"): Promise<number | null> {
   return new Promise((resolve) => {
-    const child = timedSpawn(() => spawn("bash", [join(setup, "docker", "build.sh"), ...(bbUrl ? ["--bb-url", bbUrl] : []), ...(architecture === "arm" ? ["--arch", "arm64"] : []), "--tag", image, target], { env: { ...process.env, DOCKER_HOST: cli.host ?? "" }, stdio: ["ignore", "pipe", "pipe"], signal }), "Hetzner Cloud host image build");
+    const child = timedSpawn(() => spawn("bash", [join(setup, "docker", "build.sh"), ...(aliaUrl ? ["--alia-url", aliaUrl] : []), ...(architecture === "arm" ? ["--arch", "arm64"] : []), "--tag", image, target], { env: { ...process.env, DOCKER_HOST: cli.host ?? "" }, stdio: ["ignore", "pipe", "pipe"], signal }), "Hetzner Cloud host image build");
     let rest = "";
     const read = (chunk: Buffer) => {
       const lines = (rest + chunk.toString("utf8")).split(/\r?\n|\r/);
@@ -248,7 +248,7 @@ export class HostImages {
       if (this.#told.has(key)) return;
       this.#told.add(key);
       const size = snapshot.compressedSizeGB === null ? "no size yet" : `${snapshot.compressedSizeGB.toFixed(1)} GB`;
-      log(`Host image snapshot ${snapshot.id} of build ${snapshot.labels[BUILD_LABEL] ?? "unknown"} (${snapshot.labels[ARCH_LABEL] ?? "x86"}) is ${snapshot.status}, ${size}: bb-box ${what}.`);
+      log(`Host image snapshot ${snapshot.id} of build ${snapshot.labels[BUILD_LABEL] ?? "unknown"} (${snapshot.labels[ARCH_LABEL] ?? "x86"}) is ${snapshot.status}, ${size}: alia-box ${what}.`);
     };
     for (const snapshot of all) {
       if (this.#waitingOn.has(snapshot.id)) continue;
@@ -302,7 +302,7 @@ export class HostImages {
     if (!newest) return "there is no host image yet";
     if (newest.labels[SETUP_LABEL] !== this.#fingerprint()) return `${PRODUCT}'s image scripts changed since the host image was built`;
     const app = appLabel(appSha256);
-    if (app && newest.labels[APP_LABEL] !== app) return "BB's server gives another build of its app than the host image has";
+    if (app && newest.labels[APP_LABEL] !== app) return "VesnALIA's server gives another build of its app than the host image has";
     if (nowMs - newest.createdAtMs > HOST_IMAGE_REBUILT_AFTER_MS) return "the host image is more than a week old";
     return null;
   }
@@ -314,7 +314,7 @@ export class HostImages {
       cliOf: (record: HostRecord) => DockerCli;
       run: (record: HostRecord, script: string, options: { timeoutMs: number; signal?: AbortSignal }) => Promise<{ exitCode: number | null; stdout?: string; stderr: string }>;
       remote: RemoteBuild;
-      bbUrl: string | null;
+      aliaUrl: string | null;
       architecture?: Architecture;
       appSha256: string | null;
       log: (line: string) => void;
@@ -334,7 +334,7 @@ export class HostImages {
       saved = next;
       await this.#storage?.set(savedKey(record.hostId), next);
     };
-    if (resumed) input.log(`bb-box carries on with the ${architecture} host image build on ${record.serverName}, from its ${saved.phase} step, which an earlier run of bb-box left.`);
+    if (resumed) input.log(`alia-box carries on with the ${architecture} host image build on ${record.serverName}, from its ${saved.phase} step, which an earlier run of alia-box left.`);
     this.#carryingOn.add(record.hostId);
     let ending: "done" | "failed" | "left" | "gave way" = "failed";
     let snapshotting: number | null = saved.imageId;
@@ -342,7 +342,7 @@ export class HostImages {
       await save(saved);
       if (saved.phase === "building") {
         if (!resumed) await this.#untilDockerAnswers(record, input.cliOf(record), input.sleep, signal);
-        await input.remote.start(record, { images: input.images, architecture, bbUrl: input.bbUrl }, signal);
+        await input.remote.start(record, { images: input.images, architecture, aliaUrl: input.aliaUrl }, signal);
         await this.#follow(record, input.remote, input.log, input.sleep, signal, new BuildLog(`hetzner-${architecture}-host-image-${record.hostId}`, this.#now(), input.buildLogDir));
         const prepared = await input.run(record, PREPARE_FOR_SNAPSHOT, { timeoutMs: 600_000, signal });
         if (prepared.exitCode !== 0) throw new Error(`${record.serverName} could not be made ready for its snapshot: ${prepared.stderr.trim().split("\n").pop() || `exit code ${prepared.exitCode}`}`);
@@ -378,7 +378,7 @@ export class HostImages {
         ending = "gave way";
         throw new BuildGaveWayToBoxes(`${PRODUCT} stopped the ${architecture} host image build on ${record.serverName}, at its ${saved.phase} step, and deleted the server, so a box gets its room. It builds again once boxes have not waited for room for 30 minutes.`);
       }
-      if (bbBoxIsStopping(error, signal)) ending = "left";
+      if (aliaBoxIsStopping(error, signal)) ending = "left";
       throw error;
     } finally {
       this.#carryingOn.delete(record.hostId);
@@ -387,13 +387,13 @@ export class HostImages {
       if (ending === "gave way") {
         await this.#storage?.delete(savedKey(record.hostId)).catch(() => undefined);
       } else if (ending === "left") {
-        input.log(`bb-box stopped while it built the ${architecture} host image on ${record.serverName}, at its ${saved.phase} step: it leaves the build server running, and the next run of bb-box carries on with it.`);
+        input.log(`alia-box stopped while it built the ${architecture} host image on ${record.serverName}, at its ${saved.phase} step: it leaves the build server running, and the next run of alia-box carries on with it.`);
       } else {
         const stillMaking = ending === "failed" && snapshotting !== null && (await this.#api.image(snapshotting).catch(() => null))?.status === "creating";
         await this.#storage?.delete(savedKey(record.hostId)).catch(() => undefined);
         if (stillMaking) {
           await this.#storage?.set(leftKey(record.hostId), true);
-          input.log(`Snapshot ${snapshotting} of ${record.serverName} is still being made, so bb-box keeps the build server until it is, and takes the snapshot as the host image once Hetzner Cloud has made it.`);
+          input.log(`Snapshot ${snapshotting} of ${record.serverName} is still being made, so alia-box keeps the build server until it is, and takes the snapshot as the host image once Hetzner Cloud has made it.`);
         } else {
           await this.#builds.delete(record.hostId).catch((error: unknown) => input.log(`the build server ${record.serverName} is left for the sweep: ${error instanceof Error ? error.message : String(error)}`));
         }
@@ -440,7 +440,7 @@ export class HostImages {
     for (let waited = 0; waited <= BUILD_WITHIN_MS; waited += BUILD_POLL_MS) {
       signal.throwIfAborted();
       const progress = await remote.progress(record, fromByte, signal).catch((error: unknown) => {
-        if (bbBoxIsStopping(error, signal)) throw error;
+        if (aliaBoxIsStopping(error, signal)) throw error;
         return null;
       });
       if (progress) {

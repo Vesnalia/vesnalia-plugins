@@ -1,7 +1,7 @@
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Folder } from "./server";
 const savedFolder = z.object({
   id: z.string(),
@@ -48,7 +48,7 @@ function withNestedGroups(all: Folder[], members: Folder[]): Folder[] {
   return out;
 }
 export function makeArchives(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   options: {
     folders: () => Folder[];
     canonical?: (hostId: string, path: string) => string;
@@ -59,7 +59,7 @@ export function makeArchives(
     changed: () => void;
   },
 ) {
-  const db = bb.storage.database();
+  const db = alia.storage.database();
   const list = () =>
     (
       db
@@ -100,10 +100,10 @@ export function makeArchives(
     return next;
   }
   async function threadInventory(projectId: string) {
-    const result: Awaited<ReturnType<typeof bb.sdk.threads.list>> = [];
+    const result: Awaited<ReturnType<typeof alia.sdk.threads.list>> = [];
     for (const archived of [false, true]) {
       for (let offset = 0; ; offset += 200) {
-        const page = await bb.sdk.threads.list({
+        const page = await alia.sdk.threads.list({
           projectId,
           includeHidden: true,
           archived,
@@ -125,7 +125,7 @@ export function makeArchives(
         const f = options.folders().find((f) => f.id === folderId);
         if (!f) throw new Error("Section not found.");
         const root = await options.root(f.projectId, f.hostId);
-        const otherProjects = await bb.sdk.projects.list();
+        const otherProjects = await alia.sdk.projects.list();
         if (
           otherProjects.some(
             (p) =>
@@ -139,9 +139,9 @@ export function makeArchives(
           )
         )
           throw new Error(
-            "This folder contains another BB project. Move it separately before archiving the section.",
+            "This folder contains another VesnALIA project. Move it separately before archiving the section.",
           );
-        const envs = await bb.sdk.environments.list();
+        const envs = await alia.sdk.environments.list();
         if (
           envs.some(
             (e) =>
@@ -153,7 +153,7 @@ export function makeArchives(
           )
         )
           throw new Error(
-            "An environment from another BB project uses this folder.",
+            "An environment from another VesnALIA project uses this folder.",
           );
         const envIds = new Set(
           envs
@@ -255,7 +255,7 @@ export function makeArchives(
           rootPath: root.path,
           archivePath: external
             ? f.path
-            : path.join(root.path, ".bb/archive/sections", id, "folder"),
+            : path.join(root.path, ".vesnalia/archive/sections", id, "folder"),
           external,
           createdAt: Date.now(),
           state: "archiving",
@@ -269,7 +269,7 @@ export function makeArchives(
       }
       try {
         await options.pending();
-        const currentEnvs = await bb.sdk.environments.list();
+        const currentEnvs = await alia.sdk.environments.list();
         const currentEnvIds = new Set(
           currentEnvs
             .filter(
@@ -311,18 +311,18 @@ export function makeArchives(
         }
 
         for (const id of a.restoreThreadIds) {
-          const t = await bb.sdk.threads.get({ threadId: id });
+          const t = await alia.sdk.threads.get({ threadId: id });
           if (["active", "starting", "pending", "stopping"].includes(t.status))
             throw new Error(
               "The chat started running. Wait for it to finish and retry archiving.",
             );
-          await bb.sdk.threads.stop({ threadId: id });
-          await bb.sdk.threads.archive({ threadId: id });
+          await alia.sdk.threads.stop({ threadId: id });
+          await alia.sdk.threads.archive({ threadId: id });
         }
         // A folder outside the project (a live website, say) stays in place:
         // only its chats and its tree record go to the archive.
         if (!a.external) {
-          const exists = await bb.sdk.hosts.pathsExist({
+          const exists = await alia.sdk.hosts.pathsExist({
             hostId: a.folder.hostId,
             paths: [a.folder.path, a.archivePath],
           });
@@ -334,19 +334,19 @@ export function makeArchives(
               "Both paths exist; the move stopped without overwriting files.",
             );
           if (exists.existence[a.folder.path]) {
-            await bb.sdk.files.mkdir({
+            await alia.sdk.files.mkdir({
               hostId: a.folder.hostId,
               rootPath: a.rootPath,
               path: path.dirname(a.archivePath),
               recursive: true,
             });
-            await bb.sdk.files.write({
+            await alia.sdk.files.write({
               hostId: a.folder.hostId,
               rootPath: a.rootPath,
               path: path.join(path.dirname(a.archivePath), "manifest.json"),
               content: JSON.stringify(a, null, 2),
             });
-            await bb.sdk.files.move({
+            await alia.sdk.files.move({
               hostId: a.folder.hostId,
               rootPath: a.rootPath,
               sourcePath: a.folder.path,
@@ -390,7 +390,7 @@ export function makeArchives(
       )
         throw new Error("Restore the parent section first.");
       try {
-        const exists = await bb.sdk.hosts.pathsExist({
+        const exists = await alia.sdk.hosts.pathsExist({
           hostId: a.folder.hostId,
           paths: [a.folder.path, a.archivePath],
         });
@@ -422,13 +422,13 @@ export function makeArchives(
         if (a.external) {
           // Nothing moved on archive, so nothing moves back.
         } else if (exists.existence[a.archivePath]) {
-          await bb.sdk.files.mkdir({
+          await alia.sdk.files.mkdir({
             hostId: a.folder.hostId,
             rootPath: a.rootPath,
             path: path.dirname(a.folder.path),
             recursive: true,
           });
-          await bb.sdk.files.move({
+          await alia.sdk.files.move({
             hostId: a.folder.hostId,
             rootPath: a.rootPath,
             sourcePath: a.archivePath,
@@ -452,7 +452,7 @@ export function makeArchives(
               ).run(f.id, f.hostId, f.path);
         })();
         for (const threadId of a.restoreThreadIds)
-          await bb.sdk.threads.unarchive({ threadId });
+          await alia.sdk.threads.unarchive({ threadId });
         db.prepare("DELETE FROM folder_archives WHERE id=?").run(id);
         options.changed();
         return a.folder;

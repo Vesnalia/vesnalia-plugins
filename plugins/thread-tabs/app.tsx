@@ -1,8 +1,8 @@
 // Thread Tabs UI: a tab strip above each thread's chat, with native composers for new tabs and a message action that forks into a tab.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { definePluginApp, useComposer, useRpc, useRealtime, useRealtimeConnectionState, useBbNavigate, experimental_copyToClipboard as copyToClipboard, Markdown, experimental_NewThreadComposer as NewThreadComposer, ThreadChat, experimental_ThreadStatusGlyph as ThreadStatusGlyph, experimental_useSidebarThreads } from "@get-bb/plugin-sdk/app";
-import type { ThreadChatMessageReference, NewThreadRequest } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useComposer, useRpc, useRealtime, useRealtimeConnectionState, useAliaNavigate, experimental_copyToClipboard as copyToClipboard, Markdown, experimental_NewThreadComposer as NewThreadComposer, ThreadChat, experimental_ThreadStatusGlyph as ThreadStatusGlyph, experimental_useSidebarThreads } from "@vesnalia/plugin-sdk/app";
+import type { ThreadChatMessageReference, NewThreadRequest } from "@vesnalia/plugin-sdk/app";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { toast } from "sonner";
@@ -24,7 +24,7 @@ function TabWorkspace({ rootThreadId, host, windowElement }: {
 }) {
     const rpc = useRpc<typeof rpcContract>();
     const portalScope = usePortalScopeProps();
-    const navigate = useBbNavigate();
+    const navigate = useAliaNavigate();
     const navigation = useRef(navigate);
     navigation.current = navigate;
     const { threads } = experimental_useSidebarThreads();
@@ -292,8 +292,8 @@ function TabsMount() {
             return;
         const host = document.createElement("div");
         host.setAttribute("data-session-tabs", "");
-        host.setAttribute("data-bb-plugin-root", "");
-        host.setAttribute("data-bb-plugin", "thread-tabs");
+        host.setAttribute("data-alia-plugin-root", "");
+        host.setAttribute("data-alia-plugin", "thread-tabs");
         windowElement.prepend(host);
         setTarget({ host, windowElement });
         return () => { host.remove(); windowElement.removeAttribute("data-session-tabs-active"); };

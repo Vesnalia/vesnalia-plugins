@@ -1,8 +1,8 @@
 /**
  * The settled / snoozed lifecycle, as pure functions over stored rows.
  *
- * This state lives in the PLUGIN's own database, never on bb's thread. That
- * keeps a plugin concept out of bb's schema and out of the host-daemon
+ * This state lives in the PLUGIN's own database, never on VesnALIA's thread. That
+ * keeps a plugin concept out of VesnALIA's schema and out of the host-daemon
  * protocol, and uninstalling the plugin takes its state with it.
  */
 
@@ -26,7 +26,7 @@ export interface ThreadLifecycleRow {
 export interface ThreadActivitySignals {
   hasPendingInteraction: boolean;
   isUnread: boolean;
-  /** Newest attention timestamp bb reports for the thread. */
+  /** Newest attention timestamp VesnALIA reports for the thread. */
   latestAttentionAt: number;
   /** The latest news is a finished turn the decision model will judge. */
   awaitsVerdict?: boolean;

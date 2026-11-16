@@ -1,7 +1,7 @@
 // A changed file's whole old and new contents, so the diff can show the code around its hunks.
 import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { FeatureReview, ReviewMeta } from "./store";
 import { ghErrorMessage, type runGh, type runGit } from "./gh";
@@ -83,14 +83,14 @@ const fileSide = z.discriminatedUnion("outcome", [
 ]);
 
 /**
- * A file of a local review's folder, on whichever machine it's on (`bb git file`): the old side at the commit its diff
+ * A file of a local review's folder, on whichever machine it's on (`alia git file`): the old side at the commit its diff
  * starts from, the new side as the folder has it now.
  */
-export async function readFeatureFile(bb: BbPluginApi | undefined, feature: Pick<FeatureReview, "environmentId" | "machine" | "mergeBaseRef">, side: "old" | "new", path: string): Promise<Read> {
-  if (!bb) return { error: `Couldn’t read ${path}: BB’s Git plugin isn’t reachable from here.` };
+export async function readFeatureFile(alia: AliaPluginApi | undefined, feature: Pick<FeatureReview, "environmentId" | "machine" | "mergeBaseRef">, side: "old" | "new", path: string): Promise<Read> {
+  if (!alia) return { error: `Couldn’t read ${path}: VesnALIA’s Git plugin isn’t reachable from here.` };
   if (!feature.mergeBaseRef) return { error: "This review hasn’t read its folder’s changes yet." };
   try {
-    const out = await callGit(bb, "fileSide", { environmentId: feature.environmentId, query: { target: "all", mergeBaseRef: feature.mergeBaseRef, path, side } }, fileSide);
+    const out = await callGit(alia, "fileSide", { environmentId: feature.environmentId, query: { target: "all", mergeBaseRef: feature.mergeBaseRef, path, side } }, fileSide);
     if (out.outcome === "unavailable") {
       if (out.code === "file_too_large") return tooLarge(path);
       return out.code === "ENOENT" ? { error: `${path} isn’t in the folder${side === "old" ? " at the diff’s base" : ""}.`, missing: true } : { error: `Couldn’t read ${path}: ${out.message}` };
@@ -100,7 +100,7 @@ export async function readFeatureFile(bb: BbPluginApi | undefined, feature: Pick
     return { text: out.file.content };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    // bb fails a read at a commit that hasn't the file with git's own words, where the folder hasn't it says ENOENT.
+    // VesnALIA fails a read at a commit that hasn't the file with git's own words, where the folder hasn't it says ENOENT.
     if (/exists on disk, but not in '|does not exist in '/.test(message)) return { error: `${path} isn’t in the folder at the diff’s base.`, missing: true };
     return { error: `Couldn’t read ${path} from ${feature.machine}: ${message}` };
   }
@@ -119,7 +119,7 @@ export async function localRevs(git: typeof runGit, review: ReviewMeta): Promise
 }
 
 /** A changed file's old and new contents (null for a side it doesn't exist on), when they agree with its diff. */
-export async function readFileContents(gh: { runGh: typeof runGh; runGit: typeof runGit; bb?: BbPluginApi }, review: ReviewMeta, file: PatchFile): Promise<FileContentsResult> {
+export async function readFileContents(gh: { runGh: typeof runGh; runGit: typeof runGit; alia?: AliaPluginApi }, review: ReviewMeta, file: PatchFile): Promise<FileContentsResult> {
   const rows = patchRows(file.text);
   if (rows.some((row) => row.kind === "header" && /^(Binary files |GIT binary patch)/.test(row.text))) return { ok: false, error: "A binary file shows as the diff only." };
   // GitHub sent no diff for it, so it may be binary, and there's no diff to check its contents against.
@@ -143,8 +143,8 @@ export async function readFileContents(gh: { runGh: typeof runGh; runGit: typeof
     readNew = () => githubFile(gh.runGh, repo, headSha, file.path);
   } else if (review.feature) {
     const { feature } = review;
-    readOld = () => readFeatureFile(gh.bb, feature, "old", oldPath);
-    readNew = () => readFeatureFile(gh.bb, feature, "new", file.path);
+    readOld = () => readFeatureFile(gh.alia, feature, "old", oldPath);
+    readNew = () => readFeatureFile(gh.alia, feature, "new", file.path);
   } else {
     const { cwd } = review;
     if (!cwd || !review.gitRef) return { ok: false, error: "This review has no checkout to read the file from." };
@@ -171,7 +171,7 @@ const declaredCache = new Map<string, string[]>();
  * The changed files the repo's root .gitattributes marks generated or vendored, read at the diff's old side
  * (a PR's merge base), so a change can't mark its own code generated.
  */
-export async function readGeneratedFiles(gh: { runGh: typeof runGh; runGit: typeof runGit; bb?: BbPluginApi }, review: ReviewMeta, paths: string[]): Promise<string[]> {
+export async function readGeneratedFiles(gh: { runGh: typeof runGh; runGit: typeof runGit; alia?: AliaPluginApi }, review: ReviewMeta, paths: string[]): Promise<string[]> {
   let attributes: Read;
   if (review.kind === "pr") {
     if (!review.repo || !review.base || !review.headSha) return [];
@@ -192,7 +192,7 @@ export async function readGeneratedFiles(gh: { runGh: typeof runGh; runGit: type
     }
     return declaredCache.get(declared)!;
   } else if (review.feature) {
-    attributes = await readFeatureFile(gh.bb, review.feature, "old", ".gitattributes");
+    attributes = await readFeatureFile(gh.alia, review.feature, "old", ".gitattributes");
   } else {
     if (!review.cwd || !review.gitRef) return [];
     const revs = await localRevs(gh.runGit, review);

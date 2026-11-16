@@ -1,4 +1,4 @@
-import type { PluginCliResult } from "@get-bb/plugin-sdk";
+import type { PluginCliResult } from "@vesnalia/plugin-sdk";
 import type { ParsedArgs } from "../args";
 import type { SkillService } from "../../service";
 

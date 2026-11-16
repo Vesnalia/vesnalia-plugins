@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-jb-flow",
+  "name": "alia-plugin-jb-flow",
   "version": "0.1.11",
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.54"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.54"
   },
-  "bb": {
+  "alia": {
     "name": "JB Flow",
     "description": "Workspaces for your projects, threads and tools, with triage, snooze, PR tracking and live agent activity.",
     "branding": {
@@ -29,7 +29,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.54",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -64,8 +63,21 @@
     "test:ui": "vitest run"
   },
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.54"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/jb-flow#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Johannes-Berggren/bb-plugin-jb-flow"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/jb-flow"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

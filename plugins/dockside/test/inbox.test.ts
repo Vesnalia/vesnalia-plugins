@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import type {
   PluginSidebarProject,
   PluginSidebarThread,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import {
   childrenOf,
   filterByProject,
@@ -177,7 +177,7 @@ describe("filtering", () => {
     );
   });
 
-  // Settling archives the thread in bb, so the archive flag alone would empty
+  // Settling archives the thread in VesnALIA, so the archive flag alone would empty
   // the settled shelf the moment anything landed on it.
   it("keeps an archived thread the plugin parked", () => {
     const threads = [
@@ -208,7 +208,7 @@ describe("filtering", () => {
 });
 
 describe("project thread groups", () => {
-  it("keeps bb's project order, pins roots within a project, and flattens descendants", () => {
+  it("keeps VesnALIA's project order, pins roots within a project, and flattens descendants", () => {
     const groups = groupThreadsByProject(
       [
         thread({ id: "root", projectId: "p1", createdAt: 10 }),

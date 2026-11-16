@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { createPlugin, type SimulatorState } from "../server";
 import { decodeHid, encodeHid, HID } from "../lib/sim-protocol";
 import type { TimelineEvent } from "../lib/session-types";
@@ -101,14 +101,14 @@ async function load(agentControl: "always" | "ask" | "never" = "always", deviceI
     status: () => ({ recording: false, bufferedMs: 0, bytes: 0, error: null, app: null, diagnostics: null, clips: [] }),
   };
   const fake = fakeStreams();
-  const { bb, harness } = createFakePluginHost({ pluginId: "ios-simulator", settings: { agentControl } });
-  await createPlugin({ exec, streams: fake.streams as unknown as StreamManager, replay: replay as unknown as ReplayRecorder })(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "ios-simulator", settings: { agentControl } });
+  await createPlugin({ exec, streams: fake.streams as unknown as StreamManager, replay: replay as unknown as ReplayRecorder })(alia);
   cleanups.push(() => harness.lifecycle.dispose());
   const state = async (threadId = OWNER.threadId) => await harness.behavior.callRpc("state", { threadId }) as SimulatorState;
   const attachAgent = () => harness.behavior.callAgentTool("ios_sim_attach", { device: UDID }, OWNER);
   const attachHuman = () => harness.behavior.callRpc("attach", { threadId: OWNER.threadId, device: UDID });
   const handoff = (mode: "human" | "agent") => harness.behavior.callRpc("control", { threadId: OWNER.threadId, udid: UDID, mode });
-  return { bb, harness, calls, state, attachAgent, attachHuman, handoff, setInputShadowed: (value: boolean) => { inputShadowed = value; }, ...fake };
+  return { alia, harness, calls, state, attachAgent, attachHuman, handoff, setInputShadowed: (value: boolean) => { inputShadowed = value; }, ...fake };
 }
 
 afterEach(async () => {
@@ -336,11 +336,11 @@ describe("iOS session control through the SDK host", () => {
   });
 
   it("cleans up a detached lease and orphan stream when CLI shutdown is cancelled during attachment persistence", async () => {
-    const { bb, harness, attachAgent, state, streams, calls } = await load();
+    const { alia, harness, attachAgent, state, streams, calls } = await load();
     await attachAgent();
     const persisting = deferred(), resume = deferred();
-    const write = bb.storage.kv.set.bind(bb.storage.kv);
-    const writeSpy = vi.spyOn(bb.storage.kv, "set").mockImplementation(async (key, value) => {
+    const write = alia.storage.kv.set.bind(alia.storage.kv);
+    const writeSpy = vi.spyOn(alia.storage.kv, "set").mockImplementation(async (key, value) => {
       if (key === "attachments") {
         persisting.resolve();
         await resume.promise;
@@ -417,13 +417,13 @@ describe("iOS session control through the SDK host", () => {
 
   it("preserves parallel consent grants on two devices and makes agents wait for the grants when control is published", async () => {
     const devices = [UDID, "SESSION-SECOND-PHONE"];
-    const { bb, harness, state, sent } = await load("ask", devices);
+    const { alia, harness, state, sent } = await load("ask", devices);
     for (const device of devices) {
       await harness.behavior.callRpc("attach", { threadId: OWNER.threadId, device });
     }
     const writing = deferred(), allowWrites = deferred();
-    const write = bb.storage.kv.set.bind(bb.storage.kv);
-    const writeSpy = vi.spyOn(bb.storage.kv, "set").mockImplementation(async (key, value) => {
+    const write = alia.storage.kv.set.bind(alia.storage.kv);
+    const writeSpy = vi.spyOn(alia.storage.kv, "set").mockImplementation(async (key, value) => {
       if (key === "consent") {
         writing.resolve();
         await allowWrites.promise;
@@ -431,8 +431,8 @@ describe("iOS session control through the SDK host", () => {
       await write(key, value);
     });
     const immediateInputs: Array<ReturnType<typeof harness.behavior.callAgentTool>> = [];
-    const publish = bb.realtime.publish.bind(bb.realtime);
-    const publishSpy = vi.spyOn(bb.realtime, "publish").mockImplementation((channel, payload) => {
+    const publish = alia.realtime.publish.bind(alia.realtime);
+    const publishSpy = vi.spyOn(alia.realtime, "publish").mockImplementation((channel, payload) => {
       publish(channel, payload);
       if (channel === "control-changed") {
         const change = payload as { udid: string; control: { mode: string } | null };

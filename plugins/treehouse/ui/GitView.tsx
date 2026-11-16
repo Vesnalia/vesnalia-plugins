@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { experimental_useAppPanel, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_useAppPanel, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { Change, CompareFile, CompareResult, RepoStatus, WorkspaceStatus } from "../contract";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -150,14 +150,14 @@ export function GitView({
   workspaceError: string | null;
   reload: () => void;
   signal: number;
-  /** Shows a diff in Treehouse's own tabs; without it diffs open as bb tabs. */
+  /** Shows a diff in Treehouse's own tabs; without it diffs open as VesnALIA tabs. */
   onOpenDiff?: (params: FileDiffParams | CompareDiffParams) => void;
-  /** Opens a workspace file in Treehouse's Files tabs; without it files open as bb tabs. */
+  /** Opens a workspace file in Treehouse's Files tabs; without it files open as VesnALIA tabs. */
   onOpenFile?: (path: string) => void;
   /** The open diff tab's id (its params as JSON), highlighted in the list. */
   activeDiff?: string | null;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [busy, setBusy] = useState<Map<string, string>>(() => new Map());
   const [notices, setNotices] = useState<Map<string, Notice>>(() => new Map());
   const panel = experimental_useAppPanel();

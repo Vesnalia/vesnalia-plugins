@@ -89,7 +89,7 @@ describe('manual stamp store', () => {
   });
 
   it('carries an unchanged figure through a period it was never measured in', () => {
-    // The user edits the figure while BB is not running, then measures a period
+    // The user edits the figure while VesnALIA is not running, then measures a period
     // later. Whatever was entered was entered in some period — marking it carried
     // is a maybe, but calling it freshly chosen would be a definite lie.
     const s = store();

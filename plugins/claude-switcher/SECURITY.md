@@ -10,7 +10,7 @@ Please do not open a public issue for a security problem. Use GitHub's
 private reporting instead: **Security → Report a vulnerability** on
 [this repository](https://github.com/Finolaina/bb-plugin-claude-switcher/security/advisories/new).
 
-Include the plugin and bb versions, your platform, and the steps to
+Include the plugin and VesnALIA versions, your platform, and the steps to
 reproduce. Never include real tokens, credentials files or keychain
 contents.
 
@@ -23,7 +23,7 @@ contents.
 - It sends tokens only to Anthropic's own OAuth and usage endpoints, the
   same ones the Claude Code CLI calls.
 - It writes `CLAUDE_CONFIG_DIR` (and removes it again on `release`) as a
-  project machine environment variable in bb. Outside bb's own storage,
+  project machine environment variable in VesnALIA. Outside VesnALIA's own storage,
   the only other things it writes are a new account's directory (below)
   and the refreshed login, back to the
   keychain item or `<dir>/.credentials.json` it was read from. On macOS
@@ -35,7 +35,7 @@ contents.
   set to that account's directory and `BROWSER` set to its own
   `bin/open-login.sh`, which accepts only an `https://` address and opens
   it in a private Chrome window (macOS) or the default browser. The login
-  does not inherit an API key or OAuth token from bb's environment. The plugin does
+  does not inherit an API key or OAuth token from VesnALIA's environment. The plugin does
   not see the password or the token of that login: Claude Code writes it
   to its own store. The consent address is never logged or stored; the
   fallback address the CLI prints is held in memory while the login runs

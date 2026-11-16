@@ -2,8 +2,8 @@
  * The tabs the Terminals page shows, and what the server pushes when they
  * change. No SDK import, so the app can use these at run time.
  *
- * A tab is one bb terminal session (`bb.sdk.terminals`) opened in the home
- * directory of one machine. The tab list belongs to the user's bb, not to a
+ * A tab is one VesnALIA terminal session (`alia.sdk.terminals`) opened in the home
+ * directory of one machine. The tab list belongs to the user's VesnALIA, not to a
  * window: every client shows the same tabs and drives the same shells.
  */
 import { z } from "zod";
@@ -41,9 +41,9 @@ export const TabSchema = z.object({
 export type Tab = z.infer<typeof TabSchema>;
 
 /**
- * A tab closed while bb had not made its shell yet. The shell may still be on
- * its way, so the server keeps this until bb has it (then ends it) or it is
- * past `OPENING_GRACE_MS` (bb never made it) — across reloads.
+ * A tab closed while VesnALIA had not made its shell yet. The shell may still be on
+ * its way, so the server keeps this until VesnALIA has it (then ends it) or it is
+ * past `OPENING_GRACE_MS` (VesnALIA never made it) — across reloads.
  */
 export const ClosingSchema = z.object({
   terminalId: z.string().min(1),
@@ -54,16 +54,16 @@ export const ClosingSchema = z.object({
 export type Closing = z.infer<typeof ClosingSchema>;
 
 /**
- * Where the tab's shell is: `opening` while bb has not made it yet (the tab is
+ * Where the tab's shell is: `opening` while VesnALIA has not made it yet (the tab is
  * stored first, see server/service.ts); `running` (or `starting`) on its
- * machine; `disconnected` while the machine is offline, which bb resumes when
- * it comes back; `ended` once the shell has exited or bb has closed the session.
+ * machine; `disconnected` while the machine is offline, which VesnALIA resumes when
+ * it comes back; `ended` once the shell has exited or VesnALIA has closed the session.
  */
 export const TabStatusSchema = z.enum(["opening", "starting", "running", "disconnected", "ended"]);
 
 /**
- * How long a stored tab may wait for bb to make its shell before it counts as
- * ended. bb gives up on opening a terminal after 10 s; this leaves room for a
+ * How long a stored tab may wait for VesnALIA to make its shell before it counts as
+ * ended. VesnALIA gives up on opening a terminal after 10 s; this leaves room for a
  * slow machine on top.
  */
 export const OPENING_GRACE_MS = 60_000;
@@ -71,9 +71,9 @@ export const OPENING_GRACE_MS = 60_000;
 export type TabStatus = z.infer<typeof TabStatusSchema>;
 
 /**
- * Whether the tab's shell is not ready to attach to: bb has no session yet
+ * Whether the tab's shell is not ready to attach to: VesnALIA has no session yet
  * (`opening`), or has one it is still starting on the machine (`starting`,
- * which bb answers an attach to with "not running").
+ * which VesnALIA answers an attach to with "not running").
  */
 export function isPending(status: TabStatus): boolean {
   return status === "opening" || status === "starting";
@@ -91,7 +91,7 @@ export const HostChoiceSchema = z.object({ id: z.string(), name: z.string() });
 
 export type HostChoice = z.infer<typeof HostChoiceSchema>;
 
-/** The status a tab shows for a bb terminal session's status. */
+/** The status a tab shows for a VesnALIA terminal session's status. */
 export function tabStatus(session: { status: "starting" | "running" | "disconnected" | "exited" } | null): TabStatus {
   if (session === null || session.status === "exited") return "ended";
   return session.status;

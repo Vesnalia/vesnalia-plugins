@@ -1,1 +1,1 @@
-export const PRODUCT = "BB Box";
+export const PRODUCT = "VesnALIA Box";

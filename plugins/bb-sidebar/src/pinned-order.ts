@@ -27,7 +27,7 @@ export function movePinnedIdByOffset(ids: readonly string[], movingId: string, o
   return movePinnedId(ids, movingId, ids[targetIndex]!, offset < 0 ? "before" : "after");
 }
 
-/** The neighboring ids expected by bb's threads.reorderPinned operation. */
+/** The neighboring ids expected by VesnALIA's threads.reorderPinned operation. */
 export function pinnedNeighbors(
   ids: readonly string[],
   movingId: string,
@@ -42,7 +42,7 @@ export function pinnedNeighbors(
   };
 }
 
-/** Sort the SDK's project groups by bb's global, binary-ordered pin key. */
+/** Sort the SDK's project groups by VesnALIA's global, binary-ordered pin key. */
 export function sortPinnedThreads<T extends { readonly id: string; readonly pinSortKey?: string | null }>(
   threads: readonly T[],
 ): T[] {

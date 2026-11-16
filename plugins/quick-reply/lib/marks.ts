@@ -3,7 +3,7 @@
 //
 // What: an in-memory store of line marks, grouped by thread and mirrored to
 //   localStorage, that the content script and the composer banner share.
-// Why: marks must survive BB re-rendering a reply, the timeline unloading
+// Why: marks must survive VesnALIA re-rendering a reply, the timeline unloading
 //   rows that scroll far away, switching threads, and reloading the app.
 // Design notes:
 //   - A line is identified by (rowId, text, occurrence): the timeline row of
@@ -17,7 +17,7 @@
 //     reviewed reply; threads untouched for 30 days are dropped on load.
 // Gotchas:
 //   - Both the content script and the React banner import this module from
-//     the same bundle, so they share one instance. Another BB window has its
+//     the same bundle, so they share one instance. Another VesnALIA window has its
 //     own instance; the `storage` event keeps them in step.
 //   - Storage access can throw (quota, privacy mode). Marks then live only in
 //     memory for this window, which is still usable.
@@ -28,9 +28,9 @@
  */
 export type Vote = "up" | "down" | "question" | null;
 
-/** Where a line is: enough to find it again after BB re-renders the reply. */
+/** Where a line is: enough to find it again after VesnALIA re-renders the reply. */
 export interface LineRef {
-  /** BB's `data-timeline-row-id` of the agent message, e.g. `thr_x:assistant:…`. */
+  /** VesnALIA's `data-timeline-row-id` of the agent message, e.g. `thr_x:assistant:…`. */
   rowId: string;
   /** Normalized text of the line (see lib/lines.ts). */
   text: string;
@@ -75,7 +75,7 @@ export interface MarksStore {
   reload(): void;
 }
 
-export const STORAGE_KEY = "bb-quick-reply:v1";
+export const STORAGE_KEY = "alia-quick-reply:v1";
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 const EMPTY: readonly LineMark[] = Object.freeze([]);
 
@@ -208,7 +208,7 @@ export function createMarksStore(
 let shared: MarksStore | null = null;
 
 /**
- * The store for this BB window, created on first use.
+ * The store for this VesnALIA window, created on first use.
  * Post-conditions: on first call, reads localStorage (when available).
  */
 export function marksStore(): MarksStore {

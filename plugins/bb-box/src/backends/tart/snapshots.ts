@@ -4,13 +4,13 @@ import { NO_PAUSE, type BoxOwner, type Guest, type HeldSnapshot, type HeldSnapsh
 import { IOS_IMAGE_KIND } from "./config.ts";
 import { ROLLBACK_BASE_GONE, TURN_NOT_TAKEN, named, parseConfig, parseFields, script, sections, type VmConfig } from "./host.ts";
 
-export const SNAPSHOTS_FOLDER = "bb-box-snapshots";
+export const SNAPSHOTS_FOLDER = "alia-box-snapshots";
 export const MACOS_FORK_SAFE_FROM = 3;
 export const LINUX_FORK_SAFE_FROM = 8;
 export const LINUX_FORK_KINDS: readonly string[] = ["linux-arm64", "linux-arm64-desktop-cpu"];
 export const TART_EXCLUDES = "the VM's network address, which the Mac's DHCP gives again";
 export const LINUX_NO_FORKS = "this Linux kind has no supported identity reset";
-export const WINDOWS_NO_FORKS = `Windows has no identity reset in ${PRODUCT}, so a fork or a kept copy would come up as its source, with its computer name, its machine identity and its BB machine`;
+export const WINDOWS_NO_FORKS = `Windows has no identity reset in ${PRODUCT}, so a fork or a kept copy would come up as its source, with its computer name, its machine identity and its VesnALIA machine`;
 export const WINDOWS_EXCLUDES = "Windows' memory and the apps open in it: Windows shuts down for the copy, and a restore starts it afresh";
 export const MIN_FREE_GIB = 20;
 export const NO_IMAGE_ATTACH = `the Mac's diskutil has no image attach, which ${PRODUCT} needs to clean a fork's disk of its source's identity before the fork first boots, and which macOS 27 has. So ${PRODUCT} makes no macOS forks on it, and keeps no macOS snapshot past its box's release`;
@@ -185,7 +185,7 @@ libc = ctypes.CDLL(None, use_errno=True)
 if libc.clonefile(os.fsencode(sys.argv[1]), os.fsencode(sys.argv[2]), 0) != 0:
     sys.exit("clonefile: " + os.strerror(ctypes.get_errno()))' "$1" "$2" && return 0
   rm -f "$2"
-  echo "APFS could not clone $1 here, and BB Box makes no full copy of a VM, which would take its whole size from the disk kept free." >&2
+  echo "APFS could not clone $1 here, and VesnALIA Box makes no full copy of a VM, which would take its whole size from the disk kept free." >&2
   return 1
 }
 copy_vm_files() {
@@ -202,7 +202,7 @@ ours() { [ -f "$1/label" ] && grep -qxF "install=$2" "$1/label"; }
 room_for_copy() {
   _free=$(free_gib "$1")
   [ "${"$"}{_free:-0}" -ge "$2" ] && return 0
-  echo "The VMs' volume $(volume_of "$1") has ${"$"}{_free:-0} GiB free, and BB Box copies a VM there only with at least $2 GiB free, as the copy grows as the VM changes." >&2
+  echo "The VMs' volume $(volume_of "$1") has ${"$"}{_free:-0} GiB free, and VesnALIA Box copies a VM there only with at least $2 GiB free, as the copy grows as the VM changes." >&2
   return 1
 }
 other_volume() {
@@ -213,32 +213,32 @@ container_of() { diskutil info "$1" 2>/dev/null | awk -F: '/APFS Container/ { gs
 scrub_disk() {
   _img=$1 _mac=$(container_of /) _dev= _mnt=
   can_attach || { echo "${NO_IMAGE_ATTACH.charAt(0).toUpperCase()}${NO_IMAGE_ATTACH.slice(1)}." >&2; return 1; }
-  [ -n "$_mac" ] || { echo "BB Box could not read the Mac's own APFS container, so it does not attach the fork's disk." >&2; return 1; }
+  [ -n "$_mac" ] || { echo "VesnALIA Box could not read the Mac's own APFS container, so it does not attach the fork's disk." >&2; return 1; }
   _out=$(diskutil image attach --noMount "$_img" 2>&1) || { echo "diskutil could not attach the fork's disk: $(printf '%s' "$_out" | tail -n 1)" >&2; return 1; }
   _dev=$(printf '%s\n' "$_out" | grep -o '/dev/disk[0-9]*' | head -n 1); _dev=${"$"}{_dev#/dev/}
   scrub_end() {
     [ -z "$_mnt" ] || { diskutil unmount "$_mnt" >/dev/null 2>&1 || diskutil unmount force "$_mnt" >/dev/null 2>&1; rmdir "$_mnt" 2>/dev/null; }
     [ -z "$_dev" ] || diskutil eject "$_dev" >/dev/null 2>&1 || diskutil eject force "$_dev" >/dev/null 2>&1 || :
   }
-  case $_dev in disk[0-9]*) ;; *) echo "diskutil attached the fork's disk as no device BB Box can read." >&2; scrub_end; return 1 ;; esac
-  [ "$_dev" != "$_mac" ] || { echo "The fork's disk came up as the Mac's own disk, so BB Box changed nothing." >&2; _dev=; return 1; }
+  case $_dev in disk[0-9]*) ;; *) echo "diskutil attached the fork's disk as no device VesnALIA Box can read." >&2; scrub_end; return 1 ;; esac
+  [ "$_dev" != "$_mac" ] || { echo "The fork's disk came up as the Mac's own disk, so VesnALIA Box changed nothing." >&2; _dev=; return 1; }
   _store=$(diskutil list "$_dev" 2>/dev/null | awk '$2 == "Apple_APFS" { print $NF; exit }')
-  case $_store in "$_dev"s[0-9]*) ;; *) echo "The fork's disk has no APFS store BB Box can read." >&2; scrub_end; return 1 ;; esac
+  case $_store in "$_dev"s[0-9]*) ;; *) echo "The fork's disk has no APFS store VesnALIA Box can read." >&2; scrub_end; return 1 ;; esac
   _box=$(container_of "$_store")
-  case $_box in disk[0-9]*) ;; *) echo "BB Box could not read the APFS container of the fork's disk." >&2; scrub_end; return 1 ;; esac
-  [ "$_box" != "$_mac" ] && [ "$_box" != "$_dev" ] || { echo "The fork's disk names the Mac's own container, so BB Box changed nothing." >&2; scrub_end; return 1; }
+  case $_box in disk[0-9]*) ;; *) echo "VesnALIA Box could not read the APFS container of the fork's disk." >&2; scrub_end; return 1 ;; esac
+  [ "$_box" != "$_mac" ] && [ "$_box" != "$_dev" ] || { echo "The fork's disk names the Mac's own container, so VesnALIA Box changed nothing." >&2; scrub_end; return 1; }
   _data=$(diskutil apfs list "$_box" 2>/dev/null | awk '/APFS Volume Disk \(Role\)/ && /\(Data\)/ { print $6; exit }')
   case $_data in "$_box"s[0-9]*) ;; *) echo "The fork's disk has no Data volume in its own container." >&2; scrub_end; return 1 ;; esac
   _mnt=$(mktemp -d "${"$"}{TMPDIR:-/tmp}/bbbox-fork.XXXXXX") || { scrub_end; return 1; }
   diskutil mount -mountPoint "$_mnt" "$_data" >/dev/null 2>&1 || { echo "diskutil could not mount the fork's Data volume." >&2; rmdir "$_mnt"; _mnt=; scrub_end; return 1; }
   [ -d "$_mnt/Users" ] || { echo "The fork's Data volume has no Users folder." >&2; scrub_end; return 1; }
-  for _f in "$_mnt"/Users/*/.bb-machines/* "$_mnt"/Users/*/.bb-machines/.set-aside/* "$_mnt"/private/var/root/.bb-machines/*; do
+  for _f in "$_mnt"/Users/*/.alia-machines/* "$_mnt"/Users/*/.alia-machines/.set-aside/* "$_mnt"/private/var/root/.alia-machines/*; do
     [ -d "$_f" ] || continue
     find "$_f" -mindepth 1 -maxdepth 1 ! -type d ! -name host-artifact.sha256 -delete && rm -rf "$_f/logs" "$_f/daemon.lock.lock" || { scrub_end; return 1; }
   done
-  rm -f "$_mnt"/Users/*/Library/LaunchAgents/app.getbb.host-daemon.*.plist "$_mnt"/Users/*/.config/bb-box/env "$_mnt"/Users/*/.config/bb-box/vm "$_mnt"/private/var/root/.config/bb-box/env "$_mnt"/private/etc/ssh/ssh_host_* || { scrub_end; return 1; }
-  _left=$(ls "$_mnt"/Users/*/Library/LaunchAgents/app.getbb.host-daemon.*.plist "$_mnt"/Users/*/.config/bb-box/env "$_mnt"/Users/*/.bb-machines/*/host-id "$_mnt"/Users/*/.bb-machines/*/auth.json "$_mnt"/private/etc/ssh/ssh_host_* 2>/dev/null)
-  [ -z "$_left" ] || { echo "The fork's disk still holds $(printf '%s' "$_left" | sed "s|$_mnt||g" | tr '\n' ' ')after BB Box removed them." >&2; scrub_end; return 1; }
+  rm -f "$_mnt"/Users/*/Library/LaunchAgents/app.getbb.host-daemon.*.plist "$_mnt"/Users/*/.config/alia-box/env "$_mnt"/Users/*/.config/alia-box/vm "$_mnt"/private/var/root/.config/alia-box/env "$_mnt"/private/etc/ssh/ssh_host_* || { scrub_end; return 1; }
+  _left=$(ls "$_mnt"/Users/*/Library/LaunchAgents/app.getbb.host-daemon.*.plist "$_mnt"/Users/*/.config/alia-box/env "$_mnt"/Users/*/.alia-machines/*/host-id "$_mnt"/Users/*/.alia-machines/*/auth.json "$_mnt"/private/etc/ssh/ssh_host_* 2>/dev/null)
+  [ -z "$_left" ] || { echo "The fork's disk still holds $(printf '%s' "$_left" | sed "s|$_mnt||g" | tr '\n' ' ')after VesnALIA Box removed them." >&2; scrub_end; return 1; }
   sync
   scrub_end
 }
@@ -286,7 +286,7 @@ mine "$vm" ${quote(input.install)} ${quote(input.box)} || { echo gone; exit 0; }
 now=$(state "$vm") || exit 1
 case $now in
   "") echo gone; exit 0 ;;
-  running) echo "$vm runs: BB Box takes a snapshot of a Tart VM only once it is suspended or stopped." >&2; exit 5 ;;
+  running) echo "$vm runs: VesnALIA Box takes a snapshot of a Tart VM only once it is suspended or stopped." >&2; exit 5 ;;
 esac
 mkdir -p "$snaps" || exit 1
 same_volume "$tart_vms/$vm" "$snaps" || { other_volume "$snaps" "$tart_vms"; exit 6; }
@@ -326,11 +326,11 @@ export function deleteScript(install: string, snapshot: string): string {
   return withSnapshots(String.raw`id=${quote(snapshot)}; sd="$snaps/$id"
 for e in "$sd" "$sd.part"; do
   [ -d "$e" ] || continue
-  ours "$e" ${quote(install)} || { echo "$e is not a snapshot of this install's, so BB Box leaves it." >&2; exit 4; }
+  ours "$e" ${quote(install)} || { echo "$e is not a snapshot of this install's, so VesnALIA Box leaves it." >&2; exit 4; }
   rm -rf "$sd.deleting" && mv "$e" "$sd.deleting" || exit 1
 done
 if [ -d "$sd.deleting" ]; then
-  ours "$sd.deleting" ${quote(install)} || { echo "$sd.deleting is not a snapshot of this install's, so BB Box leaves it." >&2; exit 4; }
+  ours "$sd.deleting" ${quote(install)} || { echo "$sd.deleting is not a snapshot of this install's, so VesnALIA Box leaves it." >&2; exit 4; }
   rm -rf "$sd.deleting" || exit 1
 fi
 echo deleted
@@ -511,7 +511,7 @@ mine "$vm" ${quote(install)} ${quote(box)} || { echo gone; exit 0; }
 ! rollback_running "$vm" || { echo "Another restore of $vm runs on the Mac." >&2; exit 9; }
 heal_rollback "$vm" || { [ $? = ${TURN_NOT_TAKEN} ] || echo "The VM's folder $v is missing, and the Mac has nothing whole to put back." >&2; exit 1; }
 [ -d "$v" ] || { echo "The VM's folder $v is gone." >&2; exit 1; }
-[ "$(state "$vm")" != running ] || { echo "$vm runs, so BB Box does not put a snapshot in its place." >&2; exit 5; }
+[ "$(state "$vm")" != running ] || { echo "$vm runs, so VesnALIA Box does not put a snapshot in its place." >&2; exit 5; }
 [ -d "$sd" ] && ours "$sd" ${quote(install)} || { echo "The Mac has no snapshot $id of this install's." >&2; exit 4; }
 [ "$(label_of "$sd" box)" = ${quote(box)} ] && [ "$(label_of "$sd" vm)" = "$vm" ] || { echo "Snapshot $id is not of $vm." >&2; exit 4; }
 same_volume "$v" "$snaps" || { other_volume "$snaps" "$tart_vms"; exit 6; }
@@ -521,12 +521,12 @@ undone() { rm -rf "$r"; journal "$vm" "undone $id $try"; echo "$1" >&2; exit "$2
 rm -rf "$r" "$a"
 copy_vm_files "$sd/vm" "$r" "" || undone "The copy of snapshot $id failed, and $vm is as it was." 1
 : > "$r/.complete"
-[ "$(state "$vm")" != running ] || undone "$vm started while BB Box copied snapshot $id, so it put nothing in its place." 5
-journal "$vm" "swapping $id $try $(this_shell)" || undone "BB Box could not record the swap, so it put nothing in the place of $vm." 1
+[ "$(state "$vm")" != running ] || undone "$vm started while VesnALIA Box copied snapshot $id, so it put nothing in its place." 5
+journal "$vm" "swapping $id $try $(this_shell)" || undone "VesnALIA Box could not record the swap, so it put nothing in the place of $vm." 1
 if mv "$v" "$a"; then
-  mv "$r" "$v" || { mv "$a" "$v"; undone "BB Box could not put snapshot $id in the place of $vm, so it put the VM back." 1; }
+  mv "$r" "$v" || { mv "$a" "$v"; undone "VesnALIA Box could not put snapshot $id in the place of $vm, so it put the VM back." 1; }
 else
-  undone "BB Box could not move $vm aside, so it put nothing in its place." 1
+  undone "VesnALIA Box could not move $vm aside, so it put nothing in its place." 1
 fi
 rm -f "$v/.complete"
 g=$(label_of "$sd" diskgb); [ -z "$g" ] || note_disk_gb "$v" "$g"
@@ -551,11 +551,11 @@ export function forkScript(input: { readonly install: string; readonly snapshot:
   return withSnapshots(String.raw`vm=${quote(input.vm)}; id=${quote(input.snapshot)}; sd="$snaps/$id"; v="$tart_vms/$vm"; s="$snaps/.fork-$vm"
 [ -d "$sd" ] && ours "$sd" ${quote(input.install)} || { echo "The Mac has no snapshot $id of this install's." >&2; exit 4; }
 same_volume "$sd" "$tart_vms" || { other_volume "$snaps" "$tart_vms"; exit 6; }
-[ ! -e "$v" ] || { echo "$v is there already, so BB Box makes no fork over it." >&2; exit 8; }
+[ ! -e "$v" ] || { echo "$v is there already, so VesnALIA Box makes no fork over it." >&2; exit 8; }
 room_for_copy "$snaps" ${input.minFreeGiB} || exit 7
 rm -rf "$s"
 copy_vm_files "$sd/vm" "$s" state.vzvmsave || { rm -rf "$s"; echo "The copy of snapshot $id failed." >&2; exit 1; }
-${input.macos ? `scrub_disk "$s/disk.img" || { rm -rf "$s"; echo "BB Box could not remove the source's identity from the fork's disk before its first boot, so it makes no fork." >&2; exit 10; }` : ""}
+${input.macos ? `scrub_disk "$s/disk.img" || { rm -rf "$s"; echo "VesnALIA Box could not remove the source's identity from the fork's disk before its first boot, so it makes no fork." >&2; exit 10; }` : ""}
 mv "$s" "$v" || { rm -rf "$s"; exit 1; }
 tart set "$vm" --random-mac || { echo "tart set --random-mac failed for $vm, so the fork would have its source's MAC address." >&2; exit 1; }
 ${input.macos ? `tart set "$vm" --random-serial || { echo "tart set --random-serial failed for $vm, so the fork would have its source's hardware identity." >&2; exit 1; }` : ""}

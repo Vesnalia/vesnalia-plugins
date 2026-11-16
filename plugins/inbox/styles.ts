@@ -1,4 +1,4 @@
-// Scoped to this plugin. Colors follow the host's current BB palette.
+// Scoped to this plugin. Colors follow the host's current VesnALIA palette.
 export const INBOX_STYLES = `
 .ny-cleaner-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:18px; }
 .ny-cleaner-heading h3 { font-size:16px; font-weight:600; margin:0; }

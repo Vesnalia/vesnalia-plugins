@@ -7,7 +7,7 @@ export function isLocalhost(host: string): boolean {
 }
 
 export function forwarderReason(address: string): string {
-  return `WSL's localhost forwarder at ${address} dropped an attached stream after the client closed its write side. docker run and docker exec then print nothing and exit 0. Set machine-docker-host to wsl://<distro> when the Docker host is a BB machine, or set the Docker host itself to wsl://<distro>. Leave dockerd on its unix socket.`;
+  return `WSL's localhost forwarder at ${address} dropped an attached stream after the client closed its write side. docker run and docker exec then print nothing and exit 0. Set machine-docker-host to wsl://<distro> when the Docker host is a VesnALIA machine, or set the Docker host itself to wsl://<distro>. Leave dockerd on its unix socket.`;
 }
 
 export function readAfterHalfClose(port: number, host: string, payload: string, timeoutMs = 3_000): Promise<string> {

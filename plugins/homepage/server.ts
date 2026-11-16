@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { ProjectIconCache } from "./src/project-icon-cache.js";
 import {
@@ -178,8 +178,8 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     showChatCounts: {
       type: "boolean",
       label: "Show chat counts",
@@ -235,7 +235,7 @@ export default function plugin(bb: BbPluginApi) {
   async function listReadyEnvironments(signal: AbortSignal): Promise<WorkspaceEnvironment[]> {
     const environments: WorkspaceEnvironment[] = [];
     for (let page = 0; page < MAX_ENVIRONMENT_PAGES; page += 1) {
-      const batch = await bb.sdk.environments.list({
+      const batch = await alia.sdk.environments.list({
         status: "ready",
         limit: ENVIRONMENT_PAGE_SIZE,
         offset: page * ENVIRONMENT_PAGE_SIZE,
@@ -265,7 +265,7 @@ export default function plugin(bb: BbPluginApi) {
     environmentId: string,
     signal: AbortSignal,
   ): Promise<WorkspaceStatusReading> {
-    const result = await bb.sdk.environments.status({ environmentId, signal });
+    const result = await alia.sdk.environments.status({ environmentId, signal });
     if (result.outcome === "not_applicable") {
       return { outcome: "unavailable", message: result.message };
     }
@@ -290,7 +290,7 @@ export default function plugin(bb: BbPluginApi) {
     listEnvironments: listReadyEnvironments,
     readStatus: readWorkspaceStatus,
   });
-  bb.onDispose(() => workspaceStatuses.dispose());
+  alia.onDispose(() => workspaceStatuses.dispose());
 
   function normalizeStoredProjectIds(stored: unknown): string[] {
     if (!Array.isArray(stored)) return [];
@@ -302,17 +302,17 @@ export default function plugin(bb: BbPluginApi) {
   }
 
   async function readPinnedProjects(): Promise<string[]> {
-    const stored = await bb.storage.kv.get<unknown>(PINNED_PROJECTS_KEY);
+    const stored = await alia.storage.kv.get<unknown>(PINNED_PROJECTS_KEY);
     return normalizeStoredProjectIds(stored);
   }
 
   async function readHiddenProjects(): Promise<string[]> {
-    const stored = await bb.storage.kv.get<unknown>(HIDDEN_PROJECTS_KEY);
+    const stored = await alia.storage.kv.get<unknown>(HIDDEN_PROJECTS_KEY);
     return normalizeStoredProjectIds(stored);
   }
 
   async function readProjectGroups(): Promise<ProjectGroup[]> {
-    const stored = await bb.storage.kv.get<unknown>(PROJECT_GROUPS_KEY);
+    const stored = await alia.storage.kv.get<unknown>(PROJECT_GROUPS_KEY);
     if (!Array.isArray(stored)) return [];
 
     const groups: ProjectGroup[] = [];
@@ -335,8 +335,8 @@ export default function plugin(bb: BbPluginApi) {
   }
 
   async function writeProjectGroups(groups: ProjectGroup[]): Promise<ProjectGroup[]> {
-    await bb.storage.kv.set(PROJECT_GROUPS_KEY, groups);
-    bb.realtime.publish("project-groups-changed", null);
+    await alia.storage.kv.set(PROJECT_GROUPS_KEY, groups);
+    alia.realtime.publish("project-groups-changed", null);
     return groups;
   }
 
@@ -352,7 +352,7 @@ export default function plugin(bb: BbPluginApi) {
     return result;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async listPinnedProjects() {
       return { projectIds: await readPinnedProjects() };
     },
@@ -365,8 +365,8 @@ export default function plugin(bb: BbPluginApi) {
             : [...current, projectId]
           : current.filter((id) => id !== projectId);
         if (next.length !== current.length) {
-          await bb.storage.kv.set(PINNED_PROJECTS_KEY, next);
-          bb.realtime.publish("pins-changed", null);
+          await alia.storage.kv.set(PINNED_PROJECTS_KEY, next);
+          alia.realtime.publish("pins-changed", null);
         }
         return { projectIds: next };
       });
@@ -463,8 +463,8 @@ export default function plugin(bb: BbPluginApi) {
             : [...current, projectId]
           : current.filter((id) => id !== projectId);
         if (next.length !== current.length) {
-          await bb.storage.kv.set(HIDDEN_PROJECTS_KEY, next);
-          bb.realtime.publish("hidden-projects-changed", null);
+          await alia.storage.kv.set(HIDDEN_PROJECTS_KEY, next);
+          alia.realtime.publish("hidden-projects-changed", null);
         }
         return { projectIds: next };
       });
@@ -473,20 +473,20 @@ export default function plugin(bb: BbPluginApi) {
       return runPreferenceMutation(async () => {
         const current = await readHiddenProjects();
         if (current.length > 0) {
-          await bb.storage.kv.delete(HIDDEN_PROJECTS_KEY);
-          bb.realtime.publish("hidden-projects-changed", null);
+          await alia.storage.kv.delete(HIDDEN_PROJECTS_KEY);
+          alia.realtime.publish("hidden-projects-changed", null);
         }
         return { projectIds: [] };
       });
     },
     async renameProject({ projectId, name }) {
-      const project = await bb.sdk.projects.update({ projectId, name });
+      const project = await alia.sdk.projects.update({ projectId, name });
       return { projectId: project.id, name: project.name };
     },
     async getProjectOpenContext({ projectId }) {
       const [project, config] = await Promise.all([
-        bb.sdk.projects.get({ projectId }),
-        bb.sdk.system.config(),
+        alia.sdk.projects.get({ projectId }),
+        alia.sdk.system.config(),
       ]);
       const source = project.sources.find((source) => source.isDefault) ?? project.sources[0];
       return {
@@ -516,16 +516,16 @@ export default function plugin(bb: BbPluginApi) {
   const iconCache = new ProjectIconCache<ProjectArtwork>((projectId, signal) =>
     findProjectArtwork(
       {
-        listFiles: (args) => bb.sdk.projects.files(args),
-        readFile: (args) => bb.sdk.projects.fileContent(args),
+        listFiles: (args) => alia.sdk.projects.files(args),
+        readFile: (args) => alia.sdk.projects.fileContent(args),
       },
       projectId,
       signal,
     ),
   );
-  bb.onDispose(() => iconCache.dispose());
+  alia.onDispose(() => iconCache.dispose());
 
-  bb.http.route("GET", "/project-icon", async (context) => {
+  alia.http.route("GET", "/project-icon", async (context) => {
     const projectId = context.req.query("projectId")?.trim();
     if (!projectId) return new Response(null, { status: 400 });
 
@@ -548,7 +548,7 @@ export default function plugin(bb: BbPluginApi) {
         },
       });
     } catch (error) {
-      bb.log.debug(
+      alia.log.debug(
         `Could not load an icon for project ${projectId}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return new Response(null, {

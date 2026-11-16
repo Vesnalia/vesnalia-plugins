@@ -10,7 +10,7 @@ The operator asked me to certify my intent to implement and merge the
 recommendations from the click-jump fix session. This file is the
 commitment record, per recommendation, with the verifiable done-state for
 each. Work happens on the fix branch
-`bb/fix-chat-clicks-near-the-bottom-of-the-pane-thr_6fzk5sjz79` (guard
+`alia/fix-chat-clicks-near-the-bottom-of-the-pane-thr_6fzk5sjz79` (guard
 commit `02e8e23` on top of `83d8b68`, release 0.5.17); dev has since moved
 to the 0.5.18 release plus the glyph-fusion work, so the branch takes dev
 in before anything else, and one unit does the whole walk:
@@ -24,13 +24,13 @@ in before anything else, and one unit does the whole walk:
 2. **Merge and release the fix** — COMMITTED HERE. Merge `origin/dev` into
    the fix branch, resolve, verify (`npm test`, `npm run typecheck`,
    `npm run build`), merge the branch into `dev` (done in the main
-   checkout, `~/code/bb-plugin-focus-board`, which is what bb serves), then
+   checkout, `~/code/alia-plugin-focus-board`, which is what VesnALIA serves), then
    the release walk for the next version (0.5.19 — 0.5.18 went out on
    another thread): one release commit bumping `package.json`,
    `APP_VERSION`, and `WHATS_NEW` with the changelog entry naming the guard
    and pointing at `docs/chat-click-jump-2026-09-29.md`; release-merge
    `dev` to `main` through a temporary worktree, annotated tag `v0.5.19`
-   (never retag), push, rebuild in the main checkout, `bb plugin reload
+   (never retag), push, rebuild in the main checkout, `alia plugin reload
    focus-board`.
 3. **Wheel tug-of-war (second symptom)** — DEFERRED, deliberately: one bug
    per report, so it gets its own upstream report after the first issue is

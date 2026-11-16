@@ -1,5 +1,5 @@
 import { randomUUID, randomBytes, timingSafeEqual } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { rpcContract, type SessionAuth, type LiveEvent } from "./src/contract";
 import {
@@ -57,16 +57,16 @@ type Session = {
   openingEventId?: string;
   endPromise?: Promise<void>;
 };
-export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
-  const preferences = await createPreferences(bb);
-  const secrets = bb.settings.define({
+export async function setup(alia: AliaPluginApi, live: LiveTransport = transport) {
+  const preferences = await createPreferences(alia);
+  const secrets = alia.settings.define({
     openaiApiKey: { type: "string", label: "OpenAI API key", secret: true },
   });
   const settings = {
     get: async () => ({ ...preferences.get(), ...(await secrets.get()) }),
   };
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE operator_state (singleton_key TEXT PRIMARY KEY, operator_thread_id TEXT NOT NULL, schema_version INTEGER NOT NULL, updated_at INTEGER NOT NULL)`,
     `CREATE TABLE voice_sessions (id TEXT PRIMARY KEY, openai_session_id TEXT, started_at INTEGER NOT NULL, ended_at INTEGER, focus_json TEXT NOT NULL, status TEXT NOT NULL, summary TEXT)`,
     `CREATE TABLE voice_session_events (session_id TEXT NOT NULL, sequence INTEGER NOT NULL, timestamp INTEGER NOT NULL, kind TEXT NOT NULL, payload_json TEXT NOT NULL, PRIMARY KEY(session_id,sequence))`,
@@ -145,7 +145,7 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
   async function listWorkspaceThreads() {
     const rows = [];
     for (let offset = 0; offset < 2000; offset += 200) {
-      const page = await bb.sdk.threads.list({
+      const page = await alia.sdk.threads.list({
         archived: false,
         includeHidden: false,
         limit: 200,
@@ -176,7 +176,7 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
   async function workspace() {
     const [rows, projects] = await Promise.all([
       listWorkspaceThreads(),
-      bb.sdk.projects.list({ includePersonal: true }),
+      alia.sdk.projects.list({ includePersonal: true }),
     ]);
     return {
       threads: rows
@@ -200,10 +200,10 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
     if (kind === "global") return { ...GLOBAL, explicit };
     if (!target) throw new Error("Choose a focus first.");
     if (kind === "project") {
-      const p = await bb.sdk.projects.get({ projectId: target });
+      const p = await alia.sdk.projects.get({ projectId: target });
       return { kind, id: p.id, label: p.name, explicit };
     }
-    const t = await bb.sdk.threads.get({ threadId: target });
+    const t = await alia.sdk.threads.get({ threadId: target });
     if (t.archivedAt || t.deletedAt)
       throw new Error("That thread is no longer available.");
     return {
@@ -252,14 +252,14 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
       const candidates = stored
         ? [stored.operator_thread_id]
         : [
-            ...(await bb.sdk.threads.list({
-              originPluginId: bb.pluginId,
+            ...(await alia.sdk.threads.list({
+              originPluginId: alia.pluginId,
               includeHidden: false,
               limit: 200,
               archived: false,
             })),
-            ...(await bb.sdk.threads.list({
-              originPluginId: bb.pluginId,
+            ...(await alia.sdk.threads.list({
+              originPluginId: alia.pluginId,
               includeHidden: false,
               limit: 200,
               archived: true,
@@ -268,19 +268,19 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
       for (const id of candidates) {
         let t;
         try {
-          t = await bb.sdk.threads.get({ threadId: id });
+          t = await alia.sdk.threads.get({ threadId: id });
         } catch (error) {
           if ((error as { status?: number }).status === 404) continue;
           // SDK adapters need not expose an HTTP status. Confirm absence through
           // successful authoritative lists before replacing a missing Operator.
           const [open, archived] = await Promise.all([
-            bb.sdk.threads.list({
-              originPluginId: bb.pluginId,
+            alia.sdk.threads.list({
+              originPluginId: alia.pluginId,
               archived: false,
               limit: 200,
             }),
-            bb.sdk.threads.list({
-              originPluginId: bb.pluginId,
+            alia.sdk.threads.list({
+              originPluginId: alia.pluginId,
               archived: true,
               limit: 200,
             }),
@@ -294,36 +294,36 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
           throw error;
         }
         if (t.deletedAt) continue;
-        const metadata = await bb.sdk.threads.getPluginMetadata({
+        const metadata = await alia.sdk.threads.getPluginMetadata({
           threadId: id,
         });
-        const project = await bb.sdk.projects.get({ projectId: t.projectId });
+        const project = await alia.sdk.projects.get({ projectId: t.projectId });
         if (
-          metadata.role !== "bb-live-operator" ||
+          metadata.role !== "alia-live-operator" ||
           metadata.schemaVersion !== 1 ||
           project.kind !== "personal" ||
           t.parentThreadId
         )
           continue;
         if (t.archivedAt) {
-          if (s) emit(s, "notice", "Reopening your BB Operator thread.", id);
-          await bb.sdk.threads.unarchive({ threadId: id });
+          if (s) emit(s, "notice", "Reopening your VesnALIA Operator thread.", id);
+          await alia.sdk.threads.unarchive({ threadId: id });
         }
-        await bb.sdk.threads.pin({ threadId: id });
+        await alia.sdk.threads.pin({ threadId: id });
         db.prepare(
           "INSERT OR REPLACE INTO operator_state VALUES (?,?,1,?)",
         ).run("operator", id, Date.now());
         return id;
       }
       const project = (
-        await bb.sdk.projects.list({ includePersonal: true })
+        await alia.sdk.projects.list({ includePersonal: true })
       ).find((p) => p.kind === "personal");
-      if (!project) throw new Error("BB Personal project is unavailable.");
+      if (!project) throw new Error("VesnALIA Personal project is unavailable.");
       const config = await settings.get();
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         projectId: project.id,
         environment: { type: "host", workspace: { type: "personal" } },
-        title: "BB Operator",
+        title: "VesnALIA Operator",
         visibility: "visible",
         permissionMode: "accept-edits",
         ...(config.operatorProvider
@@ -341,10 +341,10 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
         ...(config.operatorServiceTier !== "default"
           ? { serviceTier: config.operatorServiceTier }
           : {}),
-        pluginMetadata: { role: "bb-live-operator", schemaVersion: 1 },
+        pluginMetadata: { role: "alia-live-operator", schemaVersion: 1 },
         prompt:
           OPERATOR_PROMPT +
-          "\nInitialize as the visible BB Operator. Acknowledge readiness briefly, then wait for a coordination request. Do not start other work.",
+          "\nInitialize as the visible VesnALIA Operator. Acknowledge readiness briefly, then wait for a coordination request. Do not start other work.",
       });
       // Persist before pin so retrying a partial failure cannot create a duplicate.
       db.prepare("INSERT OR REPLACE INTO operator_state VALUES (?,?,1,?)").run(
@@ -352,7 +352,7 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
         thread.id,
         Date.now(),
       );
-      await bb.sdk.threads.pin({ threadId: thread.id });
+      await alia.sdk.threads.pin({ threadId: thread.id });
       return thread.id;
     })();
     try {
@@ -361,11 +361,11 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
       operatorPromise = null;
     }
   }
-  bb.agents.configure((ctx) => ({
+  alia.agents.configure((ctx) => ({
     tools: [],
     skills: [],
     ...(ctx.project.kind === "personal" &&
-    ctx.pluginMetadata.role === "bb-live-operator"
+    ctx.pluginMetadata.role === "alia-live-operator"
       ? { instructions: OPERATOR_PROMPT }
       : {}),
   }));
@@ -400,7 +400,7 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
     s.endPromise = Promise.resolve().then(async () => {
       s.status = "ending";
       s.abort.abort();
-      emit(s, "notice", reason + " BB work continues.");
+      emit(s, "notice", reason + " VesnALIA work continues.");
       if (s.socket) {
         await new Promise<void>((resolve) => {
           const timer = setTimeout(resolve, 1500);
@@ -496,12 +496,12 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
           result(
             s,
             d,
-            "This request needs visual review in BB. Open the relevant thread and use its normal composer or approval controls.",
+            "This request needs visual review in VesnALIA. Open the relevant thread and use its normal composer or approval controls.",
           );
           emit(
             s,
             "approval",
-            "Review this request in BB.",
+            "Review this request in VesnALIA.",
             s.focus.kind === "thread" ? s.focus.id : null,
           );
           return;
@@ -555,9 +555,9 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
             result(s, d, `Focused ${s.focus.label}.`);
             return;
           }
-          if (/^(global|all of bb|workspace)$/i.test(intent.target)) {
+          if (/^(global|all of alia|workspace)$/i.test(intent.target)) {
             setFocus(s, { ...GLOBAL, explicit: true });
-            result(s, d, "Focused all of BB.");
+            result(s, d, "Focused all of VesnALIA.");
             return;
           }
         }
@@ -598,13 +598,13 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
             );
             return;
           }
-          // Resolve again against BB before writing, and use the target project's
+          // Resolve again against VesnALIA before writing, and use the target project's
           // checkout/defaults rather than the Operator's Personal environment.
-          const project = await bb.sdk.projects.get({
+          const project = await alia.sdk.projects.get({
             projectId: projects[0].id,
           });
           update(d, "dispatched");
-          const thread = await bb.sdk.threads.spawn({
+          const thread = await alia.sdk.threads.spawn({
             projectId: project.id,
             environment:
               project.kind === "personal"
@@ -615,7 +615,7 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
             title: intent.message.trim().split("\n")[0].slice(0, 100),
             prompt: intent.message,
             pluginMetadata: {
-              role: "bb-live-task",
+              role: "alia-live-task",
               sessionId: s.id,
               delegationId: d.id,
             },
@@ -632,7 +632,7 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
           );
           append(
             s,
-            `Created ${title} in ${project.name}. BB reports ${thread.status}; the task is not yet verified complete.`,
+            `Created ${title} in ${project.name}. VesnALIA reports ${thread.status}; the task is not yet verified complete.`,
             d.id,
           );
           return;
@@ -661,7 +661,7 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
           );
           return;
         }
-        const target = await bb.sdk.threads.get({ threadId: matches[0].id });
+        const target = await alia.sdk.threads.get({ threadId: matches[0].id });
         s.names.set(
           target.id,
           target.title ?? target.titleFallback ?? "Untitled thread",
@@ -679,9 +679,9 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
         }
         if (intent.action === "status" || intent.action === "output") {
           const [output, queue, interactions] = await Promise.all([
-            bb.sdk.threads.output({ threadId: target.id }),
-            bb.sdk.threads.queuedMessages.list({ threadId: target.id }),
-            bb.sdk.threads.interactions.list({ threadId: target.id }),
+            alia.sdk.threads.output({ threadId: target.id }),
+            alia.sdk.threads.queuedMessages.list({ threadId: target.id }),
+            alia.sdk.threads.interactions.list({ threadId: target.id }),
           ]);
           result(
             s,
@@ -699,8 +699,8 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
             );
             return;
           }
-          await bb.sdk.threads.stop({ threadId: target.id });
-          const current = await bb.sdk.threads.get({ threadId: target.id });
+          await alia.sdk.threads.stop({ threadId: target.id });
+          const current = await alia.sdk.threads.get({ threadId: target.id });
           result(
             s,
             d,
@@ -743,11 +743,11 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
       result(
         s,
         d,
-        "A voice request is already being tracked for this thread. Use its BB composer to change that work, or wait for its result.",
+        "A voice request is already being tracked for this thread. Use its VesnALIA composer to change that work, or wait for its result.",
       );
       return;
     }
-    const thread = await bb.sdk.threads.get({ threadId: d.target });
+    const thread = await alia.sdk.threads.get({ threadId: d.target });
     if (thread.archivedAt || thread.deletedAt)
       throw new Error("Unavailable target");
     if (mode === "steer")
@@ -761,7 +761,7 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
     const input = [{ type: "text" as const, text: message, mentions: [] }];
     update(d, "dispatched");
     // start queues behind an active turn; auto may join the turn, so never use it for a default follow-up.
-    const sent = await bb.sdk.threads.send({
+    const sent = await alia.sdk.threads.send({
       threadId: d.target,
       input,
       mode: mode === "steer" ? "steer" : "start",
@@ -832,7 +832,7 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
     ) {
       if (typeof event.delta !== "string") return;
       const role =
-        event.type === "session.input_transcript.delta" ? "user" : "BB";
+        event.type === "session.input_transcript.delta" ? "user" : "ALIA";
       const text = clean(event.delta, s);
       const start = typeof event.start_ms === "number" ? event.start_ms : 0;
       const finish = typeof event.end_ms === "number" ? event.end_ms : start;
@@ -860,7 +860,7 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
         await delegate(s, parsed.data.delegation.id, parsed.data.offset_ms);
     }
   }
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     preferences: async () => preferences.get(),
     savePreferences: async (patch) => {
       const next = await preferences.update(patch);
@@ -869,13 +869,13 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
       return next;
     },
     operatorDefaults: async () => {
-      const providers = await bb.sdk.providers.list();
+      const providers = await alia.sdk.providers.list();
       const provider = providers.find((p) => p.available);
       if (!provider)
         throw new Error(
           "No agent provider is available on your primary machine.",
         );
-      const catalog = await bb.sdk.providers.models({
+      const catalog = await alia.sdk.providers.models({
         providerId: provider.id,
       });
       const model =
@@ -899,7 +899,7 @@ export async function setup(bb: BbPluginApi, live: LiveTransport = transport) {
         );
       const config = await settings.get();
       if (!config.openaiApiKey)
-        throw new Error("Add an OpenAI API key in BB Live settings.");
+        throw new Error("Add an OpenAI API key in VesnALIA Live settings.");
       const s: Session = {
         id: randomUUID(),
         token: randomBytes(32).toString("hex"),
@@ -988,7 +988,7 @@ ${redact(directory, [s.key])}`;
       } catch {
         await end(s, "Connection failed");
         throw new Error(
-          "Could not connect BB Live. Check API access, Operator settings, and microphone permissions.",
+          "Could not connect VesnALIA Live. Check API access, Operator settings, and microphone permissions.",
         );
       }
     },
@@ -1013,7 +1013,7 @@ ${redact(directory, [s.key])}`;
       else
         append(
           s,
-          "Stop speaking now and wait for the user. Do not cancel any BB work.",
+          "Stop speaking now and wait for the user. Do not cancel any VesnALIA work.",
           null,
           "instructions",
         );
@@ -1021,13 +1021,13 @@ ${redact(directory, [s.key])}`;
     },
   });
   const unsubscribers = [
-    bb.events.on("thread.idle", () => {
+    alia.events.on("thread.idle", () => {
       void reconcile().catch(() => {});
     }),
-    bb.events.on("thread.failed", () => {
+    alia.events.on("thread.failed", () => {
       void reconcile().catch(() => {});
     }),
-    bb.events.on("thread.active", async ({ thread }) => {
+    alia.events.on("thread.active", async ({ thread }) => {
       if (
         active &&
         (await settings.get()).spokenProgress === "verbose" &&
@@ -1040,12 +1040,12 @@ ${redact(directory, [s.key])}`;
           `${thread.title ?? thread.titleFallback ?? "Untitled thread"} is now running.`,
         );
     }),
-    bb.events.on("message.dispatched", ({ entry }) => {
+    alia.events.on("message.dispatched", ({ entry }) => {
       for (const d of delegations.values())
         if (d.queueId === entry.id && d.state === "dispatched")
           update(d, "working");
     }),
-    bb.events.on("message.cancelled", ({ entry }) => {
+    alia.events.on("message.cancelled", ({ entry }) => {
       for (const d of delegations.values())
         if (d.queueId === entry.id) {
           update(d, "cancelled");
@@ -1053,7 +1053,7 @@ ${redact(directory, [s.key])}`;
             result(active, d, "The queued request was cancelled.", "cancelled");
         }
     }),
-    bb.events.on("interaction.pending", ({ thread, interaction }) => {
+    alia.events.on("interaction.pending", ({ thread, interaction }) => {
       const s = active;
       if (!s || s.pending.some((x) => x.id === interaction.id)) return;
       if (
@@ -1070,14 +1070,14 @@ ${redact(directory, [s.key])}`;
           "Review in " +
           (thread.title ?? thread.titleFallback ?? "Untitled thread"),
       });
-      emit(s, "approval", "A visual interaction is waiting in BB.", thread.id);
+      emit(s, "approval", "A visual interaction is waiting in VesnALIA.", thread.id);
       append(
         s,
-        `A visual interaction is waiting in ${thread.title ?? thread.titleFallback ?? "Untitled thread"}. Open BB to review it.`,
+        `A visual interaction is waiting in ${thread.title ?? thread.titleFallback ?? "Untitled thread"}. Open VesnALIA to review it.`,
       );
     }),
     ...(["thread.archived", "thread.deleted"] as const).map((name) =>
-      bb.events.on(name, ({ thread }) => {
+      alia.events.on(name, ({ thread }) => {
         if (active?.focus.id === thread.id) {
           active.focus = { ...GLOBAL };
           setFocus(active, { ...GLOBAL });
@@ -1128,17 +1128,17 @@ ${redact(directory, [s.key])}`;
     for (const d of delegations.values()) {
       if (d.state !== "working" || !d.target) continue;
       try {
-        const thread = await bb.sdk.threads.get({ threadId: d.target });
+        const thread = await alia.sdk.threads.get({ threadId: d.target });
         if (isWorking(thread.status) || thread.updatedAt < d.requestedAt)
           continue;
         if (d.operator) {
-          const children = await bb.sdk.threads.list({
+          const children = await alia.sdk.threads.list({
             parentThreadId: d.target,
             limit: 200,
           });
           if (children.some((c) => isWorking(c.status))) continue;
         }
-        const output = await bb.sdk.threads.output({ threadId: d.target });
+        const output = await alia.sdk.threads.output({ threadId: d.target });
         const text = `${thread.title ?? thread.titleFallback ?? "Untitled thread"} is ${thread.status}. Latest agent report (task validation is in the thread): ${clean(output.output ?? "No final output was provided.", s ?? undefined).slice(0, 1000)}`;
         if (s?.id === d.sessionId)
           result(
@@ -1166,24 +1166,24 @@ ${redact(directory, [s.key])}`;
       ]);
       for (const threadId of targets) {
         try {
-          for (const interaction of await bb.sdk.threads.interactions.list({
+          for (const interaction of await alia.sdk.threads.interactions.list({
             threadId,
           })) {
             if (!s.pending.some((p) => p.id === interaction.id)) {
               s.pending.push({
                 id: interaction.id,
                 threadId,
-                title: "Review in BB",
+                title: "Review in VesnALIA",
               });
               emit(
                 s,
                 "approval",
-                "A visual interaction is waiting in BB.",
+                "A visual interaction is waiting in VesnALIA.",
                 threadId,
               );
               append(
                 s,
-                "A visual interaction is waiting in BB. Open the thread to review it.",
+                "A visual interaction is waiting in VesnALIA. Open the thread to review it.",
               );
             }
           }
@@ -1192,7 +1192,7 @@ ${redact(directory, [s.key])}`;
       s.pending = s.pending.slice(-20);
       for (const p of [...s.pending]) {
         try {
-          const rows = await bb.sdk.threads.interactions.list({
+          const rows = await alia.sdk.threads.interactions.list({
             threadId: p.threadId,
           });
           if (!rows.some((x) => x.id === p.id))
@@ -1233,7 +1233,7 @@ ${redact(directory, [s.key])}`;
     );
   };
   await prune();
-  bb.background.schedule("retention", "0 * * * *", prune);
+  alia.background.schedule("retention", "0 * * * *", prune);
   secrets.onChange((next) => {
     if (active) {
       if (next.openaiApiKey !== active.key)
@@ -1241,19 +1241,19 @@ ${redact(directory, [s.key])}`;
     }
     void prune();
   });
-  bb.cli.register({
-    name: "bb-live",
-    summary: "Inspect BB Live status",
+  alia.cli.register({
+    name: "alia-live",
+    summary: "Inspect VesnALIA Live status",
     commands: [
       {
         name: "operator",
-        summary: "Create or reuse the pinned BB Operator",
-        usage: "bb bb-live operator",
+        summary: "Create or reuse the pinned VesnALIA Operator",
+        usage: "alia alia-live operator",
       },
       {
         name: "status",
         summary: "Show configuration and recent session records",
-        usage: "bb bb-live status",
+        usage: "alia alia-live status",
       },
     ],
     async run(argv) {
@@ -1262,7 +1262,7 @@ ${redact(directory, [s.key])}`;
         return { exitCode: 0, stdout: JSON.stringify({ operatorId: id }) };
       }
       if (argv[0] && argv[0] !== "status")
-        return { exitCode: 1, stderr: "Usage: bb bb-live status | operator" };
+        return { exitCode: 1, stderr: "Usage: VesnALIA alia-live status | operator" };
       return {
         exitCode: 0,
         stdout: JSON.stringify({
@@ -1279,7 +1279,7 @@ ${redact(directory, [s.key])}`;
       };
     },
   });
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     disposed = true;
     clearInterval(timer);
     if (active) {

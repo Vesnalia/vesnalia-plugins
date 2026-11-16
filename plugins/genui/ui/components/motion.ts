@@ -7,7 +7,7 @@
 // when the system asks for reduced motion or the plugin's Animations setting
 // is off (reducedMotion, useMotionScope).
 import { createContext, useContext, useLayoutEffect, useRef, type RefObject } from "react";
-import { useSettings } from "@get-bb/plugin-sdk/app";
+import { useSettings } from "@vesnalia/plugin-sdk/app";
 import type { MOTION_SETTINGS } from "../../server";
 
 /** Exponential ease-out: fast start, long soft landing. */
@@ -54,10 +54,10 @@ const SYSTEM_REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)");
 const ANIMATIONS: keyof typeof MOTION_SETTINGS = "animations";
 /**
  * The Animations setting turned off, as a block last read it. Kept in
- * localStorage too: BB answers useSettings after the first blocks of a fresh
+ * localStorage too: VesnALIA answers useSettings after the first blocks of a fresh
  * page have mounted, and they would play the entrances the user turned off.
  */
-const ANIMATIONS_OFF_STORAGE = "bb.genui.animationsOff";
+const ANIMATIONS_OFF_STORAGE = "alia.genui.animationsOff";
 let animationsOff = readAnimationsOff();
 
 function readAnimationsOff(): boolean {
@@ -75,7 +75,7 @@ function rememberAnimationsOff(off: boolean): void {
     if (off) localStorage.setItem(ANIMATIONS_OFF_STORAGE, "1");
     else localStorage.removeItem(ANIMATIONS_OFF_STORAGE);
   } catch {
-    // Storage unavailable: a fresh page moves until BB answers.
+    // Storage unavailable: a fresh page moves until VesnALIA answers.
   }
 }
 
@@ -153,7 +153,7 @@ export function trackStream(cadence: StreamCadence, streaming: boolean, now: num
 
 /**
  * Until when (a `performance.now()` time) entrances stay still in a block,
- * and the block's stream cadence. BB's timeline unmounts rows that scroll out
+ * and the block's stream cadence. VesnALIA's timeline unmounts rows that scroll out
  * of view and remounts them on the way back; a block that already played its
  * entrance in this page sets `quietUntil` just past its remount, so
  * scrolling never replays it.

@@ -24,15 +24,15 @@ function rules(source = css): { selector: string; body: string }[] {
 }
 
 describe("app.css", () => {
-  it("never styles BB's own elements", () => {
-    // BB owns its sidebar, panel, toggle and navigation rail.
+  it("never styles VesnALIA's own elements", () => {
+    // VesnALIA owns its sidebar, panel, toggle and navigation rail.
     const selectors = rules().flatMap((rule) => rule.selector.split(/,(?![^()]*\))/));
     expect(selectors.filter((selector) => /\[data-sidebar=|\.group\.peer|\[data-testid=|\bhtml\b|data-radar-rail/.test(selector))).toEqual([]);
   });
 
   it("never anchors :has() on the page", () => {
     // body:has() made the browser restyle the page on every DOM change in
-    // BB: about 4-5ms per streamed chunk or tooltip in a 20k-element page.
+    // VesnALIA: about 4-5ms per streamed chunk or tooltip in a 20k-element page.
     const selectors = rules().flatMap((rule) => rule.selector.split(/,(?![^()]*\))/));
     expect(selectors.filter((selector) =>
       /(^|[\s>+~(])(body|html|:root)(\[[^\]]*\]|\.[\w-]+)*:has\(/.test(selector),

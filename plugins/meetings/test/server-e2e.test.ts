@@ -8,14 +8,14 @@
 //
 // The runtime is borrowed from .e2e/hostdata (scripts/dev-host-setup.mts
 // installs it) through symlinks; meeting directories go to .e2e/server-e2e.
-// A small HTTP server stands in for the bb server: it serves the fixtures and
+// A small HTTP server stands in for the VesnALIA server: it serves the fixtures and
 // forwards /api/v1/plugins/meetings/http/* to the plugin's routes.
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 import path from "node:path";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import hostEntry from "../host.js";
 import { hostContract } from "../src/shared/contract.js";
@@ -53,12 +53,12 @@ function prepareDataDir(): void {
 }
 
 function gigaamUrl(): string {
-  const status = JSON.parse(execFileSync("bb", ["gigaam", "status", "--json"], { encoding: "utf8" })) as { port: number | null };
+  const status = JSON.parse(execFileSync("alia", ["gigaam", "status", "--json"], { encoding: "utf8" })) as { port: number | null };
   if (status.port === null) throw new Error("GigaAM is not running");
   return `http://127.0.0.1:${status.port}`;
 }
 
-/** Fixtures under /fixtures/, plugin routes under /api/v1/plugins/meetings/http/ (like the bb server). */
+/** Fixtures under /fixtures/, plugin routes under /api/v1/plugins/meetings/http/ (like the VesnALIA server). */
 function startFrontServer(target: { loaded: Loaded | null }): Promise<{ server: http.Server; port: number }> {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
@@ -214,7 +214,7 @@ describe.runIf(enabled)("server + real host + mock meeting", () => {
     expect(page).toContain("[End of transcript]");
   });
 
-  it("passes `bb meetings selftest` against the mock page served by the plugin", { timeout: 6 * 60_000 }, async () => {
+  it("passes `alia meetings selftest` against the mock page served by the plugin", { timeout: 6 * 60_000 }, async () => {
     const { harness } = target.loaded!;
     const result = await harness.behavior.runCli(["selftest", "--json", "--timeout", "4m"]);
     console.log(result.stdout, result.stderr);

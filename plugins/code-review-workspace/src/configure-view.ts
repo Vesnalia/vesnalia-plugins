@@ -1,7 +1,7 @@
-// What bb.agents.configure reads, held in memory: BB doesn't await configure, so it can't wait its turn in the store's
+// What alia.agents.configure reads, held in memory: VesnALIA doesn't await configure, so it can't wait its turn in the store's
 // queue. The queue brings the view up to date at the end of each turn that may have changed it, before that turn's
 // caller resumes, so configure sees the store as it is between turns, as it did while the Store was synchronous.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Guide } from "./guide";
 import type { ReviewPreferences } from "./preferences";
 import type { ReviewMeta, Store } from "./store";
@@ -88,7 +88,7 @@ async function load(backend: Store, previous: Snapshot | null, changed: Readonly
 }
 
 /** The view of `backend`, read now: create it before anything else reaches the store. */
-export async function createConfigureView(bb: BbPluginApi, backend: Store): Promise<ConfigureView> {
+export async function createConfigureView(alia: AliaPluginApi, backend: Store): Promise<ConfigureView> {
   let snapshot = await load(backend, null, "all");
   /** Whether a call since the view was last brought up to date may have changed it. */
   let changed = false;
@@ -123,7 +123,7 @@ export async function createConfigureView(bb: BbPluginApi, backend: Store): Prom
         // Read again after the next turn, with what this one changed.
         changed = true;
         guides = reading === "all" || guides === "all" ? "all" : reading || guides ? new Set([...reading ?? [], ...guides ?? []]) : null;
-        bb.log.warn(`Could not read what agents are configured with: ${String(error)}`);
+        alia.log.warn(`Could not read what agents are configured with: ${String(error)}`);
       }
     },
     readAllAfterNextTurn() {
@@ -134,8 +134,8 @@ export async function createConfigureView(bb: BbPluginApi, backend: Store): Prom
       if (snapshot.focuses.some((focus) => focus.threadId === thread.id)) return "focus";
       if (assistantReview(thread.id)) return "assistant";
       if (generationOf(thread.id)) return "writer";
-      if (focusSpawnTitled(bb, thread.title)) return "focus";
-      for (const { title } of spawnsTitled(bb, thread.title)) {
+      if (focusSpawnTitled(alia, thread.title)) return "focus";
+      for (const { title } of spawnsTitled(alia, thread.title)) {
         if (title.startsWith(GUIDE_WORKER_TITLE)) return "writer";
         if (title.startsWith(ASSISTANT_TITLE)) return "assistant";
       }
@@ -144,7 +144,7 @@ export async function createConfigureView(bb: BbPluginApi, backend: Store): Prom
     threadReview(thread) {
       const recorded = assistantReview(thread.id) ?? generationOf(thread.id);
       if (recorded) return recorded;
-      return spawnsTitled(bb, thread.title)[0]?.targetKey ?? null;
+      return spawnsTitled(alia, thread.title)[0]?.targetKey ?? null;
     },
     preferences: () => snapshot.preferences,
     review: (targetKey) => snapshot.reviews.get(targetKey) ?? null,

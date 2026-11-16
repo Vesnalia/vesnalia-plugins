@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { PluginCommandContext } from "@get-bb/plugin-sdk";
+import type { PluginCommandContext } from "@vesnalia/plugin-sdk";
 import { Toggle, type Runtime } from "../src/toggle";
 import type { Focus, HostSnapshot, Surface } from "../src/host";
 

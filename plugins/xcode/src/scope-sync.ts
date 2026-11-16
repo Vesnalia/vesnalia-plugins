@@ -1,7 +1,7 @@
 /**
  * Resolving which checkout a thread owns, and caching the answer.
  *
- * `ThreadScopes` is the pure registry; this is the part that talks to bb and
+ * `ThreadScopes` is the pure registry; this is the part that talks to VesnALIA and
  * decides how long an answer is worth trusting.
  */
 
@@ -51,7 +51,7 @@ export interface ScopeSyncDeps {
     hostId?: string | null;
   }>;
   /**
-   * The machine running bb (`primaryHostId`), or null when unknown. Used to
+   * The machine running VesnALIA (`primaryHostId`), or null when unknown. Used to
    * normalize a scope's host: this machine is null, like its runs.
    */
   serverHostId(): Promise<string | null>;
@@ -91,7 +91,7 @@ export class ScopeSync {
     this.resolvedAt.delete(threadId);
   }
 
-  /** Resolve a thread's checkout through bb, honouring the TTLs above. */
+  /** Resolve a thread's checkout through VesnALIA, honouring the TTLs above. */
   async refresh(threadId: string, active: boolean): Promise<ThreadScope | null> {
     const now = this.now();
     const last = this.resolvedAt.get(threadId) ?? 0;
@@ -160,7 +160,7 @@ export class ScopeSync {
 
   /**
    * An environment's host as scopes and runs record it: null for the machine
-   * running bb. When that machine's identity is unknown, null too, which is
+   * running VesnALIA. When that machine's identity is unknown, null too, which is
    * also where `buildTargetFor` sends the build: the two must agree, or a
    * thread would not see the builds it just started.
    */

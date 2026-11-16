@@ -50,20 +50,20 @@ export function tp(ru: string, ...values: (string | number)[]): string {
   });
 }
 
-/** BB's document locale controls the page; CLI language remains a stored choice. */
+/** VesnALIA's document locale controls the page; CLI language remains a stored choice. */
 export function languageFromLocale(locale: string): Lang {
   return locale.toLowerCase().startsWith("ru") ? "ru" : "en";
 }
 
 // ---------------------------------------------------------- UI language
-/** Stored page-language choice: follow BB, or pin Russian / English. */
+/** Stored page-language choice: follow VesnALIA, or pin Russian / English. */
 export type UiLangChoice = "auto" | "ru" | "en";
 
 export function isUiLangChoice(value: unknown): value is UiLangChoice {
   return value === "auto" || value === "ru" || value === "en";
 }
 
-/** What the resolver looks at: BB's lang, Pokecut's resolved lang, Russifier state, chrome labels. */
+/** What the resolver looks at: VesnALIA's lang, Pokecut's resolved lang, Russifier state, chrome labels. */
 export type UiLangEnv = {
   htmlLang: string;
   pkLang: string | null;
@@ -76,7 +76,7 @@ const CYRILLIC = /[А-Яа-яЁё]/u;
 /**
  * Pick the page language. An explicit choice always wins; `auto` trusts
  * `<html lang>`, then Pokecut's `data-pk-lang` (it honours the user's own
- * override), then Cyrillic chrome labels — the Russifier translates BB's UI
+ * override), then Cyrillic chrome labels — the Russifier translates VesnALIA's UI
  * but leaves `<html lang>` as `en`.
  */
 export function resolveUiLang(choice: UiLangChoice, env: UiLangEnv): Lang {
@@ -98,7 +98,7 @@ export function readUiLangEnv(): UiLangEnv {
     // attributes unreachable — keep empty values
   }
   try {
-    env.russifierOff = globalThis.localStorage?.getItem("bb-plugin-ru:enabled") === "off";
+    env.russifierOff = globalThis.localStorage?.getItem("alia-plugin-ru:enabled") === "off";
   } catch {
     env.russifierOff = false;
   }

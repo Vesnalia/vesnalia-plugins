@@ -15,7 +15,7 @@ export const CHECK_DONE = "card check done";
 export const CARD_CHECK_COMMAND =
   "nvidia-smi --query-gpu=uuid,name,memory.total --format=csv,noheader,nounits 2>&1 | head -8; " +
   `if command -v python3 >/dev/null 2>&1; then printf 'cuinit %s\\n' "$(${CUDA_INIT} 2>&1 | tail -1)"; else echo 'cuinit no-python'; fi; ` +
-  "printf 'userspace %s\\n' \"$(cat /usr/share/bb-box/nvidia-version 2>/dev/null || echo none)\"; " +
+  "printf 'userspace %s\\n' \"$(cat /usr/share/alia-box/nvidia-version 2>/dev/null || echo none)\"; " +
   `echo '${CHECK_DONE}'`;
 
 export interface SeenCard {

@@ -97,7 +97,7 @@ function ghStub(state: GhState): Runner {
       if (state.delayMs > 0) await new Promise((resolve) => setTimeout(resolve, state.delayMs));
       if (state.mode === "unknown") {
         // The write reached GitHub, but the reply was lost.
-        state.postedMarkers.push(String(/bb-graphite-stack:review:[0-9a-f-]+/u.exec(payload.body)?.[0]));
+        state.postedMarkers.push(String(/alia-graphite-stack:review:[0-9a-f-]+/u.exec(payload.body)?.[0]));
         return { exitCode: null, stdout: "", stderr: "", stdoutBytes: 0, truncated: false, timedOut: true, spawnError: null, argv };
       }
       if (state.mode === "reject") {
@@ -163,7 +163,7 @@ describe.skipIf(!hasGt)("PR review flow with stubbed gh", () => {
     expect(path).toBe("repos/acme/demo/pulls/7/reviews");
     expect(JSON.stringify(payload)).not.toContain("PRIVATE-NOTE-BODY");
     expect(payload).toMatchObject({ event: "REQUEST_CHANGES", commit_id: state.prHead() });
-    expect(payload.body).toMatch(/^Looks close\n\n<!-- bb-graphite-stack:review:/u);
+    expect(payload.body).toMatch(/^Looks close\n\n<!-- alia-graphite-stack:review:/u);
     expect(payload.comments).toEqual([{ path: "src/checkout.ts", side: "RIGHT", line: 2, start_line: 1, start_side: "RIGHT", body: "Shared: rename this" }]);
     const notes = await server.call("notesList", env);
     expect(notes.notes.map((note: { body: string }) => note.body)).toContain("PRIVATE-NOTE-BODY");

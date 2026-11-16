@@ -58,30 +58,30 @@ const activeContext = await Promise.all([
 ]);
 
 const directGitInstall =
-  'bb plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.3.7 --subdirectory plugins/taskboard --tag-prefix taskboard/';
+  'alia plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.3.7 --subdirectory plugins/taskboard --tag-prefix taskboard/';
 const usageGitInstall =
-  'bb plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.1.17 --subdirectory plugins/usage-tracker --tag-prefix usage-tracker/';
+  'alia plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.1.17 --subdirectory plugins/usage-tracker --tag-prefix usage-tracker/';
 
 test('keeps Taskboard private and Git-buildable without npm publication hooks', () => {
   assert.equal(rootManifest.private, true);
   for (const script of ['build', 'check', 'test', 'typecheck']) {
     assert.equal(typeof rootManifest.scripts[script], 'string');
   }
-  assert.equal(taskboardManifest.name, 'bb-plugin-taskboard');
+  assert.equal(taskboardManifest.name, 'alia-plugin-taskboard');
   assert.equal(taskboardManifest.version, '0.3.7');
   assert.equal(taskboardManifest.private, true);
   assert.equal('publishConfig' in taskboardManifest, false);
   assert.equal('files' in taskboardManifest, false);
   assert.equal('prepack' in taskboardManifest.scripts, false);
-  assert.equal(taskboardManifest.bb.server, './server.ts');
-  assert.equal(taskboardManifest.bb.app, './app.tsx');
+  assert.equal(taskboardManifest.alia.server, './server.ts');
+  assert.equal(taskboardManifest.alia.app, './app.tsx');
   for (const script of ['build', 'dev', 'typecheck', 'test', 'check']) {
     assert.equal(typeof taskboardManifest.scripts[script], 'string');
   }
   assert.ok(Object.keys(taskboardManifest.dependencies).length > 0);
 });
 
-test('documents only BB Community and direct Git installation for Taskboard', () => {
+test('documents only VesnALIA Community and direct Git installation for Taskboard', () => {
   for (const document of [
     rootReadme,
     taskboardReadme,
@@ -90,15 +90,15 @@ test('documents only BB Community and direct Git installation for Taskboard', ()
     ...activeContext,
     ...activeNotices,
   ]) {
-    assert.doesNotMatch(document, /npm:bb-plugin-taskboard/u);
+    assert.doesNotMatch(document, /npm:alia-plugin-taskboard/u);
     assert.doesNotMatch(
       document,
-      /(?:npmjs\.com\/package|shields\.io\/npm\/v)\/bb-plugin-taskboard/u
+      /(?:npmjs\.com\/package|shields\.io\/npm\/v)\/alia-plugin-taskboard/u
     );
     assert.doesNotMatch(document, /npm remains.*distribution/iu);
   }
   for (const readme of [rootReadme, taskboardReadme]) {
-    assert.match(readme, /bb plugin install taskboard/u);
+    assert.match(readme, /alia plugin install taskboard/u);
     assert.ok(readme.includes(directGitInstall));
     assert.ok(readme.includes('https://github.com/get-bb/marketplace/pull/129'));
   }
@@ -108,7 +108,7 @@ test('documents only BB Community and direct Git installation for Taskboard', ()
 
 test('keeps Usage Tracker private and documents its Git release too', async () => {
   assert.equal(usageManifest.private, true);
-  assert.equal(usageManifest.name, 'bb-plugin-usage-tracker');
+  assert.equal(usageManifest.name, 'alia-plugin-usage-tracker');
   assert.equal(usageManifest.version, '0.1.17');
   assert.equal('publishConfig' in usageManifest, false);
   assert.equal('files' in usageManifest, false);
@@ -121,14 +121,14 @@ test('keeps Usage Tracker private and documents its Git release too', async () =
     ...activeContext,
     ...activeNotices,
   ]) {
-    assert.doesNotMatch(document, /npm:bb-plugin-usage-tracker/u);
+    assert.doesNotMatch(document, /npm:alia-plugin-usage-tracker/u);
     assert.doesNotMatch(
       document,
-      /(?:npmjs\.com\/package|shields\.io\/npm\/v)\/bb-plugin-usage-tracker/u
+      /(?:npmjs\.com\/package|shields\.io\/npm\/v)\/alia-plugin-usage-tracker/u
     );
   }
   for (const readme of [rootReadme, usageReadme]) {
-    assert.match(readme, /bb plugin install usage-tracker/u);
+    assert.match(readme, /alia plugin install usage-tracker/u);
     assert.ok(readme.includes(usageGitInstall));
   }
   await assert.rejects(

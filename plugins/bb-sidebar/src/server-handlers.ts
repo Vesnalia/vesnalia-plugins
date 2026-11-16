@@ -41,14 +41,14 @@ export function createServerHandlers(
 
   // Hover cards resolve model names on every open. Share one catalog request
   // per environment and provider for a few minutes instead of refetching.
-  const catalogs = new Map<string, { expiresAt: number; catalog: ReturnType<typeof ctx.bb.sdk.providers.models> }>();
+  const catalogs = new Map<string, { expiresAt: number; catalog: ReturnType<typeof ctx.alia.sdk.providers.models> }>();
   const providerCatalog = (environmentId: string, providerId: string) => {
     const now = Date.now();
     for (const [key, entry] of catalogs) if (entry.expiresAt <= now) catalogs.delete(key);
     const key = JSON.stringify([environmentId, providerId]);
     const cached = catalogs.get(key);
     if (cached) return cached.catalog;
-    const catalog = ctx.bb.sdk.providers.models({ environmentId, providerId });
+    const catalog = ctx.alia.sdk.providers.models({ environmentId, providerId });
     catalogs.set(key, { expiresAt: now + CATALOG_TTL_MS, catalog });
     // A failed lookup is retried on the next hover rather than cached.
     catalog.catch(() => {
@@ -79,11 +79,11 @@ export function createServerHandlers(
       }
     },
     async getThreadExecutionDetails({ threadId }) {
-      const options = await ctx.bb.sdk.threads.defaultExecutionOptions({ threadId });
+      const options = await ctx.alia.sdk.threads.defaultExecutionOptions({ threadId });
       if (!options) return null;
       const details = { model: options.model, reasoningLevel: options.reasoningLevel };
       try {
-        const thread = await ctx.bb.sdk.threads.get({ threadId });
+        const thread = await ctx.alia.sdk.threads.get({ threadId });
         if (!thread.environmentId) return details;
         const catalog = await providerCatalog(thread.environmentId, thread.providerId);
         const models = [...catalog.models, ...catalog.selectedOnlyModels];
@@ -106,10 +106,10 @@ export function createServerHandlers(
     },
     async setThreadParent({ threadId, parentThreadId }) {
       return withPinParentChange(threadId, async () => {
-        const thread = await ctx.bb.sdk.threads.get({ threadId });
+        const thread = await ctx.alia.sdk.threads.get({ threadId });
         if (parentThreadId === thread.parentThreadId) return { ok: true };
         // Validate the parent before unpinning: a rejected update must keep the pin.
-        await ctx.bb.sdk.threads.update({ threadId, parentThreadId });
+        await ctx.alia.sdk.threads.update({ threadId, parentThreadId });
         // A shelved tree keeps a row for every thread in it, so the new parent's
         // row tells whether this move puts unsettled work inside one. If so,
         // return the new ancestors to Active, as new child work does.
@@ -122,9 +122,9 @@ export function createServerHandlers(
           await wakeAncestors({ id: threadId, parentThreadId });
         if (parentThreadId != null && thread.pinnedAt != null) {
           try {
-            await ctx.bb.sdk.threads.unpin({ threadId });
+            await ctx.alia.sdk.threads.unpin({ threadId });
           } catch (error) {
-            ctx.bb.log.error(
+            ctx.alia.log.error(
               `Parent updated but unpinning failed for thread ${threadId}, parent ${parentThreadId}: ${error instanceof Error ? error.message : String(error)}`,
             );
             return { ok: true, unpinFailed: true as const };
@@ -135,9 +135,9 @@ export function createServerHandlers(
     },
     async deleteThread({ threadId, childThreadsConfirmed }) {
       // The sidebar shows its own confirmation naming the thread and project,
-      // so bb's generic one is skipped. Deletion is recursive; bb refuses it
+      // so VesnALIA's generic one is skipped. Deletion is recursive; VesnALIA refuses it
       // unless the caller confirmed the children too.
-      await ctx.bb.sdk.threads.delete({ threadId, childThreadsConfirmed });
+      await ctx.alia.sdk.threads.delete({ threadId, childThreadsConfirmed });
       return { ok: true };
     },
     regenerateTitle: ({ threadId }) => regenerateTitle(threadId),
@@ -152,7 +152,7 @@ export function createServerHandlers(
       else if (values.compactWorkingThreads !== undefined)
         next.threadDisplay = values.compactWorkingThreads ? "compact-working" : "full";
       writeSidebarSettings(next);
-      ctx.bb.realtime.publish(SIDEBAR_SETTINGS_CHANNEL, {});
+      ctx.alia.realtime.publish(SIDEBAR_SETTINGS_CHANNEL, {});
       if (
         next.autoSettleInactive !== stored.autoSettleInactive ||
         next.autoSettleAfterDays !== stored.autoSettleAfterDays ||
@@ -160,7 +160,7 @@ export function createServerHandlers(
       ) {
         policy.settingsChanged();
         void evaluatePolicies().catch((error) => {
-          ctx.bb.log.error(
+          ctx.alia.log.error(
             `Automatic settle evaluation failed after a settings change: ${error instanceof Error ? error.message : String(error)}`,
           );
         });
@@ -172,12 +172,12 @@ export function createServerHandlers(
     },
     async pin({ threadId }) {
       return withPinParentChange(threadId, async () => {
-        const thread = await ctx.bb.sdk.threads.get({ threadId });
+        const thread = await ctx.alia.sdk.threads.get({ threadId });
         if (thread.parentThreadId != null) {
           throw new Error("Child threads cannot be pinned");
         }
         // Preserve the previous shelf if the native pin fails.
-        await ctx.bb.sdk.threads.pin({ threadId });
+        await ctx.alia.sdk.threads.pin({ threadId });
         write({
           threadId,
           parkedAt: null,
@@ -190,7 +190,7 @@ export function createServerHandlers(
       });
     },
     async park({ threadId }) {
-      await ctx.bb.sdk.threads.unpin({ threadId });
+      await ctx.alia.sdk.threads.unpin({ threadId });
       write({
         threadId,
         parkedAt: Date.now(),
@@ -212,7 +212,7 @@ export function createServerHandlers(
       return { ok: true };
     },
     async snooze({ threadId, snoozedUntil }) {
-      await ctx.bb.sdk.threads.unpin({ threadId });
+      await ctx.alia.sdk.threads.unpin({ threadId });
       const now = Date.now();
       write({
         threadId,
@@ -227,15 +227,15 @@ export function createServerHandlers(
       return { ok: true, reclaim: await reclaimThreadResources(threadId) };
     },
     async releaseRuntimes({ threadIds }) {
-      // bb's archive force-closes a thread's terminals but only stops its
+      // VesnALIA's archive force-closes a thread's terminals but only stops its
       // runtime when a turn is in flight, so an idle thread archived from this
       // sidebar keeps its agent session loaded. Stopping an idle thread takes
-      // bb's release path instead. Archived threads still accept a stop, so
+      // VesnALIA's release path instead. Archived threads still accept a stop, so
       // this can race the archive, and a failure only misses a reclaim.
       await runThreadTasks(
         threadIds,
         async (threadId) => {
-          await ctx.bb.sdk.threads.stop({ threadId });
+          await ctx.alia.sdk.threads.stop({ threadId });
         },
         4,
       );
@@ -252,7 +252,7 @@ export function createServerHandlers(
       return { ok: true };
     },
     async reorderPinned({ threadId, previousThreadId, nextThreadId }) {
-      const reordered = await ctx.bb.sdk.threads.reorderPinned({
+      const reordered = await ctx.alia.sdk.threads.reorderPinned({
         threadId,
         previousThreadId,
         nextThreadId,
@@ -266,7 +266,7 @@ export function createServerHandlers(
     },
     async reorderInbox({ inboxThreadIds }) {
       replaceInboxOrder(inboxThreadIds);
-      ctx.bb.realtime.publish(INBOX_ORDER_CHANNEL, {});
+      ctx.alia.realtime.publish(INBOX_ORDER_CHANNEL, {});
       return { inboxThreadIds: readInboxOrder() };
     },
     async evaluateAutoSettle() {

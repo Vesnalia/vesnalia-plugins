@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { defaultPreferences } from "./preferences";
 import { generateGuide } from "./generate";
@@ -9,13 +9,13 @@ import { testStore } from "./test-store.test-support";
 
 const machine = (id: string, name: string, status: "connected" | "disconnected", phase = "active") => ({ id, name, status, type: "persistent", lifecycle: { phase } });
 const machines = [
-  machine("host_maxbook", "MaxBook", "connected"), machine("host_server", "bb-server-0", "connected"), machine("host_flomac", "FloMac", "connected"),
+  machine("host_maxbook", "MaxBook", "connected"), machine("host_server", "alia-server-0", "connected"), machine("host_flomac", "FloMac", "connected"),
   machine("host_old", "FloMac Original", "disconnected"), machine("host_gone", "Retired", "connected", "removing"),
 ];
 const codex = { providerId: "codex", model: "gpt-6", reasoningLevel: "low" } as const;
 
 async function host() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: { spawn: async () => ({ id: "worker" }), wait: async () => {}, archive: async () => {}, stop: async () => {}, get: async () => ({ archivedAt: null, deletedAt: null, status: "idle" }) },
     projects: { list: async () => [{ id: "proj_work", kind: "standard" }, { id: "proj_personal", kind: "personal" }] },
     hosts: {
@@ -24,16 +24,16 @@ async function host() {
     },
     system: { config: async () => ({ primaryHostId: "host_server" }) },
   } });
-  const store = testStore(bb);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", status: "ready", createdAt: 1, projectId: "proj_work" });
-  return { bb, harness, store };
+  return { alia, harness, store };
 }
 
-test("Review settings list persistent machines, the bb server first", async () => {
-  const { bb, harness } = await host();
-  await plugin(bb);
+test("Review settings list persistent machines, the VesnALIA server first", async () => {
+  const { alia, harness } = await host();
+  await plugin(alia);
   expect(await harness.behavior.callRpc("listMachines", null)).toEqual({ machines: [
-    { hostId: "host_server", name: "bb-server-0", connected: true, server: true },
+    { hostId: "host_server", name: "alia-server-0", connected: true, server: true },
     { hostId: "host_flomac", name: "FloMac", connected: true, server: false },
     { hostId: "host_old", name: "FloMac Original", connected: false, server: false },
     { hostId: "host_maxbook", name: "MaxBook", connected: true, server: false },
@@ -44,10 +44,10 @@ test("Review settings list persistent machines, the bb server first", async () =
 });
 
 test("agents on a chosen machine run in its personal workspace", async () => {
-  const { bb, harness, store } = await host();
+  const { alia, harness, store } = await host();
   await store.savePreferences({ ...defaultPreferences, guideAgent: { hostId: "host_flomac", providerId: "claude-code", model: "claude-opus-5-5", reasoningLevel: "high", permissionMode: "auto" } }, 0);
-  await generateGuide(bb, store, "pr-1", "proj_work");
-  await startConversation(bb, store, { targetKey: "pr-1", text: "Why?", agent: { hostId: "host_maxbook", ...codex }, kind: "ask" });
+  await generateGuide(alia, store, "pr-1", "proj_work");
+  await startConversation(alia, store, { targetKey: "pr-1", text: "Why?", agent: { hostId: "host_maxbook", ...codex }, kind: "ask" });
   const [guide, assistant] = harness.inspection.sdk.callsTo("threads.spawn").map(([args]) => args as any);
   expect(guide).toMatchObject({ projectId: "proj_personal", environment: { type: "host", hostId: "host_flomac", workspace: { type: "personal" } }, providerId: "claude-code", title: "Generate guide: pr-1" });
   expect(assistant).toMatchObject({ projectId: "proj_personal", environment: { type: "host", hostId: "host_maxbook", workspace: { type: "personal" } }, providerId: "codex" });
@@ -55,26 +55,26 @@ test("agents on a chosen machine run in its personal workspace", async () => {
 });
 
 test("an agent whose machine is offline or removed fails at once with the reason", async () => {
-  const { bb, harness, store } = await host();
-  expect(await machineUnavailable(bb, null, "guide writer")).toBeNull();
-  expect(await machineUnavailable(bb, { hostId: "host_flomac" }, "guide writer")).toBeNull();
-  expect(await machineUnavailable(bb, { hostId: "host_old" }, "guide writer")).toBe("FloMac Original is offline. Wake it, or choose another machine for the guide writer in Review settings.");
+  const { alia, harness, store } = await host();
+  expect(await machineUnavailable(alia, null, "guide writer")).toBeNull();
+  expect(await machineUnavailable(alia, { hostId: "host_flomac" }, "guide writer")).toBeNull();
+  expect(await machineUnavailable(alia, { hostId: "host_old" }, "guide writer")).toBe("FloMac Original is offline. Wake it, or choose another machine for the guide writer in Review settings.");
   for (const hostId of ["host_gone", "host_missing"]) {
-    expect(await machineUnavailable(bb, { hostId }, "guide writer")).toBe("The machine chosen for the guide writer was removed. Choose another in Review settings.");
+    expect(await machineUnavailable(alia, { hostId }, "guide writer")).toBe("The machine chosen for the guide writer was removed. Choose another in Review settings.");
   }
-  await expect(startConversation(bb, store, { targetKey: "pr-1", text: "Why?", agent: { hostId: "host_old", ...codex }, kind: "ask" }))
+  await expect(startConversation(alia, store, { targetKey: "pr-1", text: "Why?", agent: { hostId: "host_old", ...codex }, kind: "ask" }))
     .rejects.toThrow("FloMac Original is offline. Wake it, or choose another machine for the review assistant in Review settings.");
   expect(harness.inspection.sdk.callsTo("threads.spawn")).toEqual([]);
   expect(await store.getAssistantThread("pr-1")).toBeNull();
   // Only a missing machine reads as removed.
   harness.inspection.sdk.stub("hosts.get", async () => { throw new Error("Connection unavailable"); });
-  await expect(machineUnavailable(bb, { hostId: "host_flomac" }, "guide writer")).rejects.toThrow("Connection unavailable");
+  await expect(machineUnavailable(alia, { hostId: "host_flomac" }, "guide writer")).rejects.toThrow("Connection unavailable");
 });
 
 test("a new conversation names the assistant's chosen machine", async () => {
-  const { bb, store } = await host();
+  const { alia, store } = await host();
   await store.savePreferences({ ...defaultPreferences, assistantAgent: { hostId: "host_old", ...codex, permissionMode: "auto" } }, 0);
-  expect(await getConversation(bb, store, "pr-1")).toMatchObject({ defaults: { hostId: "host_old", ...codex }, machine: { name: "FloMac Original", connected: false } });
+  expect(await getConversation(alia, store, "pr-1")).toMatchObject({ defaults: { hostId: "host_old", ...codex }, machine: { name: "FloMac Original", connected: false } });
   await store.savePreferences({ ...defaultPreferences, assistantAgent: { hostId: "host_missing", ...codex, permissionMode: "auto" } }, 1);
-  expect((await getConversation(bb, store, "pr-1")).machine).toBeNull();
+  expect((await getConversation(alia, store, "pr-1")).machine).toBeNull();
 });

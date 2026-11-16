@@ -4,11 +4,11 @@
  * horizontally scrolling table is a poor way to read one, so a narrow panel
  * gets the same rows laid out to be read rather than scanned across.
  *
- * Every colour but the provider accents comes from bb's semantic classes. The
- * accents are a deliberate palette (`shared/providers.ts`), picked for bb's
+ * Every colour but the provider accents comes from VesnALIA's semantic classes. The
+ * accents are a deliberate palette (`shared/providers.ts`), picked for VesnALIA's
  * light/dark mode and applied as inline styles.
  */
-import { UrlLink } from "@get-bb/plugin-sdk/app";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
 import type { CSSProperties, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -73,7 +73,7 @@ export function accentOf(providerId: string, mode: ColorMode): string | undefine
 /**
  * A row is a link to the vendor's own page for that model, and the *whole* row
  * is the target rather than the name alone — neither layout has room for a
- * link affordance that earns its space. `UrlLink` opens it the way bb opens
+ * link affordance that earns its space. `UrlLink` opens it the way VesnALIA opens
  * every other web link, following the user's in-app/external browser choice.
  *
  * When `modelPageUrl` has no rule for an id, the row is a plain `div` and

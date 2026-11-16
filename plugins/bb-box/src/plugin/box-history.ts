@@ -128,7 +128,7 @@ export function historyRead(deps: HistoryReadDeps) {
     if (!os) {
       const current = hostId ? await stillReady(box) : null;
       if (current && hostId) await deps.unreachableHost(current, hostId).catch(() => undefined);
-      throw new Error(`${PRODUCT} cannot read box ${box.name} now: its BB machine is not answering BB, and it runs no shell ${PRODUCT} can read without it.`);
+      throw new Error(`${PRODUCT} cannot read box ${box.name} now: its VesnALIA machine is not answering VesnALIA, and it runs no shell ${PRODUCT} can read without it.`);
     }
     const { command } = await deps.boxes.transports(box);
     if (!command) throw new Error(`${PRODUCT} cannot run commands in box ${box.name}.`);

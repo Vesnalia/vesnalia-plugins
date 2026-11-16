@@ -1,16 +1,16 @@
-// bb-plugin-cursor-sidebar backend — order overlay, view prefs, project icons,
-// and the `bb cursor-sidebar icon` command.
+// alia-plugin-cursor-sidebar backend — order overlay, view prefs, project icons,
+// and the `alia cursor-sidebar icon` command.
 //
-// This state lives in the plugin's own SQLite database, never on a BB thread.
-// Uninstalling the plugin removes it. Native BB projects, threads, pins and
+// This state lives in the plugin's own SQLite database, never on a VesnALIA thread.
+// Uninstalling the plugin removes it. Native VesnALIA projects, threads, pins and
 // folders stay on the host.
 //
-// Derived from bb-plugin-thread-inbox (MIT, Copyright (c) 2026 Michael Yong);
+// Derived from alia-plugin-thread-inbox (MIT, Copyright (c) 2026 Michael Yong);
 // see THIRD-PARTY-NOTICES.md at the repository root.
 import { PROJECT_ICON_GLYPHS_METHOD } from "@wy3z/bb-suite/contracts";
 import { serveProjectIconGlyphs } from "@wy3z/bb-suite/project-icon/server";
 import { execFile } from "node:child_process";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   CLOUD_HOSTS_CHANNEL,
@@ -305,9 +305,9 @@ export const cursorSidebarRpcContract = defineRpcContract({
   },
 });
 
-export default function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, migrations);
+export default function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, migrations);
 
   const readIcons = (): Array<{ projectId: string; icon: string }> =>
     (
@@ -329,13 +329,13 @@ export default function plugin(bb: BbPluginApi) {
   };
 
   // Every icon write goes through here so open sidebars reload, whether it came
-  // from the picker or from `bb cursor-sidebar icon`.
+  // from the picker or from `alia cursor-sidebar icon`.
   const saveIcon = (projectId: string, icon: string | null): void => {
     writeIcon(projectId, icon);
-    bb.realtime.publish(PROJECT_ICON_CHANNEL, { projectId });
+    alia.realtime.publish(PROJECT_ICON_CHANNEL, { projectId });
   };
 
-  registerIconCli(bb, {
+  registerIconCli(alia, {
     read: (projectId) =>
       (
         db.prepare(`SELECT icon FROM project_icon WHERE project_id = ?`).get(projectId) as
@@ -397,27 +397,27 @@ export default function plugin(bb: BbPluginApi) {
   };
 
   const cloudHosts = createCloudHostWatcher({
-    list: (signal) => bb.sdk.hosts.list({ includeCreating: true, signal }),
-    publish: () => bb.realtime.publish(CLOUD_HOSTS_CHANNEL, {}),
+    list: (signal) => alia.sdk.hosts.list({ includeCreating: true, signal }),
+    publish: () => alia.realtime.publish(CLOUD_HOSTS_CHANNEL, {}),
   });
-  const unsubscribeHosts = bb.sdk.subscribe({
+  const unsubscribeHosts = alia.sdk.subscribe({
     event: "host:changed",
     callback: () => cloudHosts.notify(),
   });
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     unsubscribeHosts();
     cloudHosts.dispose();
   });
 
-  bb.rpc.register(cursorSidebarRpcContract, {
+  alia.rpc.register(cursorSidebarRpcContract, {
     transcript: ({ threadId }) =>
       new Promise((resolve, reject) => {
         execFile(
-          process.env.BB_CLI || "bb",
+          process.env.ALIA_CLI || "alia",
           ["thread", "log", threadId, "--all", "--format", "minimal"],
           { timeout: 30_000, maxBuffer: 8 * 1024 * 1024, encoding: "utf8" },
           (error, stdout, stderr) => {
-            if (error) reject(new Error((stderr || error.message).trim().split("\n")[0] ?? "bb thread log failed"));
+            if (error) reject(new Error((stderr || error.message).trim().split("\n")[0] ?? "alia thread log failed"));
             else resolve({ text: stdout });
           },
         );
@@ -426,7 +426,7 @@ export default function plugin(bb: BbPluginApi) {
       const workspaces = await Promise.all(
         [...new Set(environmentIds)].map(async (environmentId) => {
           try {
-            const env = await bb.sdk.environments.get({ environmentId });
+            const env = await alia.sdk.environments.get({ environmentId });
             return {
               environmentId,
               path: env.path,
@@ -441,7 +441,7 @@ export default function plugin(bb: BbPluginApi) {
       return { workspaces: workspaces.filter((env) => env !== null) };
     },
     async listWorkspaceTabs({ threadIds }) {
-      const sdk = bb.sdk as unknown as WorkspaceTabsSdk;
+      const sdk = alia.sdk as unknown as WorkspaceTabsSdk;
       const list = sdk.threads.experimental_listPluginMetadata;
       if (typeof list !== "function" || !(await workspacesPluginRunning(sdk))) {
         return { available: false, threads: [] };
@@ -464,14 +464,14 @@ export default function plugin(bb: BbPluginApi) {
       }
     },
     async primaryHost() {
-      const config = await bb.sdk.system.config();
+      const config = await alia.sdk.system.config();
       return { hostId: config.primaryHostId };
     },
     async cloudHosts() {
       return { hostIds: await cloudHosts.read() };
     },
     async deleteNativeProject({ projectId }) {
-      await bb.sdk.projects.delete({ projectId });
+      await alia.sdk.projects.delete({ projectId });
       db.prepare(`DELETE FROM project_icon WHERE project_id = ?`).run(projectId);
       return { ok: true as const };
     },
@@ -488,7 +488,7 @@ export default function plugin(bb: BbPluginApi) {
     },
     setSidebarView({ view }) {
       writeSidebarView(view);
-      bb.realtime.publish(SIDEBAR_VIEW_CHANNEL, {});
+      alia.realtime.publish(SIDEBAR_VIEW_CHANNEL, {});
       return { view };
     },
     async listThreadOrders() {
@@ -516,7 +516,7 @@ export default function plugin(bb: BbPluginApi) {
       });
       const result = replace(uniqueIds);
       if (result.applied) {
-        bb.realtime.publish(THREAD_ORDER_CHANNEL, { scope });
+        alia.realtime.publish(THREAD_ORDER_CHANNEL, { scope });
         return { threadIds: uniqueIds, revision: result.revision, applied: true };
       }
       const current = readOrders().find((order) => order.scope === scope);
@@ -528,20 +528,20 @@ export default function plugin(bb: BbPluginApi) {
     },
     async listThreadSections() {
       try {
-        const sections = await bb.sdk.threadSections.list();
+        const sections = await alia.sdk.threadSections.list();
         return { sections: sections.map((section) => ({ id: section.id, name: section.name })) };
       } catch {
         throw new Error("Thread sections are unavailable on this host.");
       }
     },
     async renameThreadSection({ id, name }) {
-      const section = await bb.sdk.threadSections.update({ id, name });
-      bb.realtime.publish(THREAD_SECTIONS_CHANNEL, { id: section.id });
+      const section = await alia.sdk.threadSections.update({ id, name });
+      alia.realtime.publish(THREAD_SECTIONS_CHANNEL, { id: section.id });
       return { section: { id: section.id, name: section.name } };
     },
     async deleteThreadSection({ id }) {
-      const result = await bb.sdk.threadSections.delete({ id });
-      bb.realtime.publish(THREAD_SECTIONS_CHANNEL, { id });
+      const result = await alia.sdk.threadSections.delete({ id });
+      alia.realtime.publish(THREAD_SECTIONS_CHANNEL, { id });
       return { updatedThreadCount: result.updatedThreadCount };
     },
     async setThreadSection({ threadIds, sectionId }) {
@@ -550,7 +550,7 @@ export default function plugin(bb: BbPluginApi) {
       const failed: string[] = [];
       for (const threadId of uniqueIds) {
         try {
-          await bb.sdk.threads.update({ threadId, sectionId });
+          await alia.sdk.threads.update({ threadId, sectionId });
           updated.push(threadId);
         } catch {
           failed.push(threadId);
@@ -559,12 +559,12 @@ export default function plugin(bb: BbPluginApi) {
       return { updated, failed };
     },
     async setThreadParent({ threadId, parentThreadId }) {
-      await bb.sdk.threads.update({ threadId, parentThreadId });
+      await alia.sdk.threads.update({ threadId, parentThreadId });
       return { threadId, parentThreadId };
     },
   });
 
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     try {
       const scopes = (
         db
@@ -583,7 +583,7 @@ export default function plugin(bb: BbPluginApi) {
         );
         for (const scope of scopes) bump.run(scope);
       })();
-      for (const scope of scopes) bb.realtime.publish(THREAD_ORDER_CHANNEL, { scope });
+      for (const scope of scopes) alia.realtime.publish(THREAD_ORDER_CHANNEL, { scope });
     } catch {
       // The store is closing during shutdown; its rows go with it.
     }

@@ -1,6 +1,6 @@
-# bb-plugin-wakatime
+# alia-plugin-wakatime
 
-Time tracking for [bb](https://getbb.app) — like WakaTime, but for your AI agent work.
+Time tracking for [VesnALIA](https://getbb.app) — like WakaTime, but for your AI agent work.
 
 ## What it measures
 
@@ -29,42 +29,42 @@ Threads waiting for permission approvals or user interactions do not count.
 Queued, idle, stopping, archived, deleted, and disconnected threads do not
 accrue open-ended time. A logical turn start, active runtime, and absence of
 pending interactions must all agree before live time is confirmed.
-Model attribution is sampled near live turn starts because bb's persisted turn
+Model attribution is sampled near live turn starts because VesnALIA's persisted turn
 events do not contain a model field; historical turns remain `unknown`.
 
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/MayankBansal12/bb-plugin-wakatime.git@main
+alia plugin install git:https://github.com/MayankBansal12/bb-plugin-wakatime.git@main
 ```
 
 Or pin a release:
 
 ```sh
-bb plugin install git:https://github.com/MayankBansal12/bb-plugin-wakatime.git@semver:^0.5.0 --tag-prefix ""
+alia plugin install git:https://github.com/MayankBansal12/bb-plugin-wakatime.git@semver:^0.5.0 --tag-prefix ""
 ```
 
 ## Use
 
 - **Dashboard** — sidebar → Activity (today / 7d / 30d / all).
-- **CLI** — `bb wakatime today` or `bb wakatime week`.
-- **Legacy history** — `bb wakatime recheck-history` finishes the automatic
+- **CLI** — `alia wakatime today` or `alia wakatime week`.
+- **Legacy history** — `alia wakatime recheck-history` finishes the automatic
   history verification immediately. Unavailable histories stay excluded and
   the command reports how many threads still await evidence.
 
 ## Privacy & data
 
 - 100% local: everything is stored in the plugin's own SQLite database on your
-  bb server (`<dataDir>/plugins/wakatime/data.db`). No network calls, no
+  VesnALIA server (`<dataDir>/plugins/wakatime/data.db`). No network calls, no
   telemetry.
 - Never stored: thread titles, prompts, messages, or file contents. Only
   intervals, stable project/host IDs for new rows, project/machine names,
   provider/model strings, attribution quality, closure reason, and turn counts.
 - The dashboard sends the browser's IANA timezone with each query. Stored
-  intervals are absolute timestamps, so agents and the bb server may run in
+  intervals are absolute timestamps, so agents and the VesnALIA server may run in
   different timezones without shifting the chart. If the server does not
   recognise the zone it falls back to its own and says so in the response, which
-  the hour and activity-graph panels label. The CLI uses the bb server's
+  the hour and activity-graph panels label. The CLI uses the VesnALIA server's
   timezone because a terminal invocation does not expose the viewer's browser
   timezone.
 

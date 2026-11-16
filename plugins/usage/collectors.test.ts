@@ -32,12 +32,12 @@ describe("usage collectors", () => {
 
   it("labels usage by project without retaining the full working directory", () => {
     const codex = [
-      { timestamp: "2026-08-09T00:00:00Z", type: "session_meta", payload: { id: "session-1", cwd: "/home/ai/code/bb-plugin-usage" } },
+      { timestamp: "2026-08-09T00:00:00Z", type: "session_meta", payload: { id: "session-1", cwd: "/home/ai/code/alia-plugin-usage" } },
       { timestamp: "2026-08-09T00:00:00Z", type: "turn_context", payload: { model: "gpt-5.6-sol" } },
       { timestamp: "2026-08-09T00:00:01Z", type: "event_msg", payload: { type: "token_count", info: { last_token_usage: { input_tokens: 10, output_tokens: 2 } } } },
     ].map(JSON.stringify).join("\n");
     const codexRecord = parseCodex(codex, machine)[0]!;
-    expect(codexRecord.project).toBe("bb-plugin-usage");
+    expect(codexRecord.project).toBe("alia-plugin-usage");
     expect(JSON.stringify(codexRecord)).not.toContain("/home/ai/code");
 
     const claude = JSON.stringify({

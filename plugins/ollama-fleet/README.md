@@ -1,6 +1,6 @@
 # Ollama Fleet
 
-Local inference routing and observability for BB. Connect multiple Ollama
+Local inference routing and observability for VesnALIA. Connect multiple Ollama
 servers, discover models, check health, and route a generation job to an
 appropriate model/server with bounded fallback.
 
@@ -14,7 +14,7 @@ Ollama C ─┘          └──────> optional Agent Board observabili
 
 Several Ollama machines mean several model inventories, manual model choices,
 and endpoints that may go offline. Fleet brings discovery, selection, fallback,
-and local delegation visibility into BB. It is an Ollama-specific tool, not an
+and local delegation visibility into VesnALIA. It is an Ollama-specific tool, not an
 orchestration framework. Recommendations use deterministic model-name heuristics,
 health, configured preferences, and available metadata; they are not quality guarantees.
 
@@ -24,30 +24,30 @@ health, configured preferences, and available metadata; they are not quality gua
 - Metadata checks and small generation tests with latency/throughput benchmarks.
 - Recommendations, reliability preferences, model overrides and bounded fallback.
 - Bounded health and generation history.
-- Safe job lifecycle, actual selected model/server, and BB origin linkage where available.
+- Safe job lifecycle, actual selected model/server, and VesnALIA origin linkage where available.
 - Sidebar dashboard, CLI, agent tools and public RPC.
 - Optional Agent Board integration; Fleet does not depend on Agent Board.
 
 ## Installation
 
-First public beta: **0.6.0**. Install the released Git tag with BB:
+First public beta: **0.6.0**. Install the released Git tag with VesnALIA:
 
 ```sh
-bb plugin install git:https://github.com/aaronphifer/bb-plugin-ollama-fleet.git@v0.6.0
+alia plugin install git:https://github.com/aaronphifer/bb-plugin-ollama-fleet.git@v0.6.0
 ```
 
-BB's managed Git installer installs runtime dependencies and builds the frontend
+VesnALIA's managed Git installer installs runtime dependencies and builds the frontend
 and server from source. Git releases intentionally omit `dist/`. A local path
 install uses your existing dependencies; prepare a checkout with:
 
 ```sh
 npm ci
-bb plugin build
-bb plugin install .
+alia plugin build
+alia plugin install .
 ```
 
 See [compatibility and release evidence](RELEASE_AUDIT.md). Declared floors are
-BB >=0.40 and SDK >=0.4.21; development SDK is locked at 0.4.34. These floors
+VesnALIA >=0.40 and SDK >=0.4.21; development SDK is locked at 0.4.34. These floors
 are not a claim that all supported versions have been live-tested.
 
 ## Configuration
@@ -55,11 +55,11 @@ are not a claim that all supported versions have been live-tested.
 Add an endpoint from the sidebar or CLI, using a friendly public display name:
 
 ```sh
-bb ollama-fleet add "Example workstation" http://ollama.example:11434
-bb ollama-fleet status
-bb ollama-fleet models
-bb ollama-fleet recommend coding --local-only
-bb ollama-fleet route general "Reply with READY" --local-only --max-attempts 1
+alia ollama-fleet add "Example workstation" http://ollama.example:11434
+alia ollama-fleet status
+alia ollama-fleet models
+alia ollama-fleet recommend coding --local-only
+alia ollama-fleet route general "Reply with READY" --local-only --max-attempts 1
 ```
 
 Replace `ollama.example` with your own Ollama server hostname. Use endpoints you trust.
@@ -91,7 +91,7 @@ Public RPC methods are `fleet_list` (null input), `fleet_add` (`name`, `baseUrl`
 
 [Agent Board >=0.6.0](https://github.com/aaronphifer/bb-plugin-agent-board)
 is an optional companion that visualizes Fleet jobs and delegated local workers.
-It uses only the public snapshot. Agent-tool calls can link jobs to their BB
+It uses only the public snapshot. Agent-tool calls can link jobs to their VesnALIA
 thread/project; direct
 CLI/RPC routes have null origin and appear as standalone jobs. Fleet remains
 independently installable and usable.
@@ -99,7 +99,7 @@ independently installable and usable.
 ## Privacy / Security
 
 Inference and endpoint probes target configured Ollama endpoints. The separate,
-explicit `bb-models sync` command contacts Ollama Cloud and modifies Pi files as
+explicit `alia-models sync` command contacts Ollama Cloud and modifies Pi files as
 documented below. Configured Ollama servers may themselves proxy cloud inference.
 HTTP redirect handling follows fetch defaults; the endpoint boundary is not a
 network sandbox. Choose trustworthy endpoints and network access controls.
@@ -107,9 +107,9 @@ network sandbox. Choose trustworthy endpoints and network access controls.
 The public job registry excludes raw prompts, responses, reasoning, credentials,
 and endpoint URLs. It keeps bounded metadata only. Observability failures do not
 control generation. Friendly endpoint/model names and caller labels may be
-visible to authorized BB users; redaction cannot make arbitrary text safe.
+visible to authorized VesnALIA users; redaction cannot make arbitrary text safe.
 Route results still return the prompt/answer to their caller. Health/test history
-is separate from the public job registry. Plugins run with BB's trust.
+is separate from the public job registry. Plugins run with VesnALIA's trust.
 See [SECURITY.md](SECURITY.md) for reporting readiness.
 
 ## Testing and routing constraints
@@ -120,9 +120,9 @@ Ollama durations, generated tokens, and tokens per second. `--prompt` accepts a
 quoted custom smoke-test prompt and implies `--generate`.
 
 ```
-bb ollama-fleet test <endpoint-id> qwen3-coder:30b
-bb ollama-fleet test <endpoint-id> qwen3-coder:30b --generate
-bb ollama-fleet test <endpoint-id> qwen3-coder:30b --prompt "Reply with READY"
+alia ollama-fleet test <endpoint-id> qwen3-coder:30b
+alia ollama-fleet test <endpoint-id> qwen3-coder:30b --generate
+alia ollama-fleet test <endpoint-id> qwen3-coder:30b --prompt "Reply with READY"
 ```
 
 `recommend --min-context <tokens>` lazily checks `/api/show` only for the
@@ -146,56 +146,56 @@ and tries the next candidate only when an attempt fails. The default is three
 attempts and the hard maximum is five because every fallback performs inference.
 
 ```
-bb ollama-fleet recommend coding --prefer-reliable
-bb ollama-fleet history <endpoint-id>
-bb ollama-fleet route coding "Return a TypeScript function that adds two numbers" \
+alia ollama-fleet recommend coding --prefer-reliable
+alia ollama-fleet history <endpoint-id>
+alia ollama-fleet route coding "Return a TypeScript function that adds two numbers" \
   --local-only --prefer-running --prefer-reliable --max-attempts 3
 ```
 
 ## Model overrides
 
-Overrides are matched case-insensitively by exact model name and persist in bb's
+Overrides are matched case-insensitively by exact model name and persist in VesnALIA's
 plugin storage. Omitted values keep their existing setting.
 
 ```
-bb ollama-fleet override list
-bb ollama-fleet override set ops:latest --tags security,general --priority 20
-bb ollama-fleet override set my-model:latest --location cloud
-bb ollama-fleet override set nomic-embed-text:latest --tags none
-bb ollama-fleet override clear ops:latest
+alia ollama-fleet override list
+alia ollama-fleet override set ops:latest --tags security,general --priority 20
+alia ollama-fleet override set my-model:latest --location cloud
+alia ollama-fleet override set nomic-embed-text:latest --tags none
+alia ollama-fleet override clear ops:latest
 ```
 
 A priority from `-100` to `100` adjusts the deterministic recommendation score.
 The recommendation result includes the score and reasons so routing decisions
 remain inspectable.
 
-## Ollama Cloud in BB's model list
+## Ollama Cloud in VesnALIA's model list
 
-BB's Pi provider reads `~/.pi/agent/models.json` for custom providers and its
-live `model/list` response feeds BB's model picker. Fleet can safely merge the
+VesnALIA's Pi provider reads `~/.pi/agent/models.json` for custom providers and its
+live `model/list` response feeds VesnALIA's model picker. Fleet can safely merge the
 current catalog from Ollama Cloud's authoritative `https://ollama.com/api/tags`
-endpoint without modifying BB core or replacing any other Pi providers:
+endpoint without modifying VesnALIA core or replacing any other Pi providers:
 
 ```
-bb ollama-fleet bb-models sync
-bb ollama-fleet bb-models status
+alia ollama-fleet alia-models sync
+alia ollama-fleet alia-models status
 ```
 
 The sync owns only the `ollama-cloud` provider entry. It preserves the rest of
 the JSON document, writes atomically with mode `0600`, and creates
 `models.json.ollama-fleet.bak` before changing an existing file. The catalog
 stores the environment-variable name `OLLAMA_API_KEY`, never its value. When
-that variable is available to BB, Fleet also writes the credential to Pi's
+that variable is available to VesnALIA, Fleet also writes the credential to Pi's
 protected `~/.pi/agent/auth.json` store with mode `0600`, preserving every
 other credential and backing up an existing file. This is required because a
-custom Pi provider cannot reliably inherit a newly added BB environment key.
+custom Pi provider cannot reliably inherit a newly added VesnALIA environment key.
 
 The catalog endpoint is live, so rerun `sync` when Ollama adds or retires cloud
 models. `remove` deletes Fleet's provider entry and its matching Pi credential
 while preserving every other provider and credential:
 
 ```
-bb ollama-fleet bb-models remove
+alia ollama-fleet alia-models remove
 ```
 
 ## Job observability (0.6.0)
@@ -237,7 +237,7 @@ Errors use a small categorical allowlist (always ≤360 characters), never raw
 provider messages. Caller labels and configured server/model names are public
 display metadata; callers must not intentionally put private content in them.
 
-Run `npm test`, `npm run typecheck`, and `bb plugin build`. Tests include the
+Run `npm test`, `npm run typecheck`, and `alia plugin build`. Tests include the
 public SDK dependency scan and actual registered RPC/agent-tool lifecycle paths.
 
 ## Bounds
@@ -250,7 +250,7 @@ calls may exceed the persisted window. Consumers must handle truncation.
 ## Known Limitations
 
 - No queue, token stream, per-attempt history API, or raw result preview.
-- Current BB tool context does not provide a tool-call ID.
+- Current VesnALIA tool context does not provide a tool-call ID.
 - Origin exists only where trusted agent-tool context supplies it.
 - Cancellation aborts HTTP and further fallback; it does not prove remote compute stopped.
 - Cloud catalog/Pi synchronization is explicit and filesystem-coupled; it is not generic provider routing.
@@ -261,11 +261,11 @@ calls may exceed the persisted window. Consumers must handle truncation.
 npm ci
 npm test
 npm run typecheck
-bb plugin build
+alia plugin build
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [CHANGELOG.md](CHANGELOG.md), and
-[release evidence](RELEASE_AUDIT.md). Git installs build from source using BB’s managed installer, so `dist/` is
+[release evidence](RELEASE_AUDIT.md). Git installs build from source using VesnALIA’s managed installer, so `dist/` is
 intentionally ignored. npm publication would need reviewed prebuilt artifacts,
 metadata and third-party notices; no npm release is prepared in this phase.
 

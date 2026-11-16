@@ -190,7 +190,7 @@ test("session/load restores the ZCode task so the next prompt is a continue", as
   again.close();
 });
 
-test("BB's <system_instructions> block is not forwarded to ZCode", async () => {
+test("VesnALIA's <system_instructions> block is not forwarded to ZCode", async () => {
   const { agent, cwd, dir } = setup();
   await agent.request("initialize", { protocolVersion: 1 });
   const s = await agent.request("session/new", { cwd, mcpServers: [] });
@@ -255,11 +255,11 @@ test("cancelling a pending permission request cancels the turn once", async () =
   agent.close();
 });
 
-test("BB's MCP servers are merged into <cwd>/.zcode/config.json and removed again; the project's own entries stay", async () => {
+test("VesnALIA's MCP servers are merged into <cwd>/.zcode/config.json and removed again; the project's own entries stay", async () => {
   const { agent, cwd, dir } = setup();
   fs.mkdirSync(path.join(cwd, ".zcode"));
   const file = path.join(cwd, ".zcode", "config.json");
-  fs.writeFileSync(file, JSON.stringify({ theme: "x", mcp: { servers: { mine: { type: "stdio", command: "own" }, "bb-keep": { type: "stdio", command: "project-owned" } } } }));
+  fs.writeFileSync(file, JSON.stringify({ theme: "x", mcp: { servers: { mine: { type: "stdio", command: "own" }, "alia-keep": { type: "stdio", command: "project-owned" } } } }));
   await agent.request("initialize", { protocolVersion: 1 });
   const servers = [
     { name: "bridge", command: "/usr/bin/node", args: ["a.js"], env: [{ name: "TOKEN", value: "t" }] },
@@ -269,13 +269,13 @@ test("BB's MCP servers are merged into <cwd>/.zcode/config.json and removed agai
   const s = await agent.request("session/new", { cwd, mcpServers: servers });
   const cfg = JSON.parse(fs.readFileSync(file, "utf8"));
   assert.equal(cfg.theme, "x");
-  assert.deepEqual(Object.keys(cfg.mcp.servers).sort(), ["bb-bridge", "bb-keep", "bb-web", "mine"]);
-  assert.deepEqual(cfg.mcp.servers["bb-bridge"], { type: "stdio", command: "/usr/bin/node", args: ["a.js"], env: { TOKEN: "t" } });
-  assert.deepEqual(cfg.mcp.servers["bb-web"], { type: "http", url: "https://x.test/mcp", headers: { Authorization: "Bearer z" } });
-  assert.equal(cfg.mcp.servers["bb-keep"].command, "project-owned");
+  assert.deepEqual(Object.keys(cfg.mcp.servers).sort(), ["alia-bridge", "alia-keep", "alia-web", "mine"]);
+  assert.deepEqual(cfg.mcp.servers["alia-bridge"], { type: "stdio", command: "/usr/bin/node", args: ["a.js"], env: { TOKEN: "t" } });
+  assert.deepEqual(cfg.mcp.servers["alia-web"], { type: "http", url: "https://x.test/mcp", headers: { Authorization: "Bearer z" } });
+  assert.equal(cfg.mcp.servers["alia-keep"].command, "project-owned");
   await agent.request("session/close", { sessionId: s.sessionId });
   const after = JSON.parse(fs.readFileSync(file, "utf8"));
-  assert.deepEqual(Object.keys(after.mcp.servers).sort(), ["bb-keep", "mine"]);
+  assert.deepEqual(Object.keys(after.mcp.servers).sort(), ["alia-keep", "mine"]);
   assert.equal(after.mcp.servers.mine.command, "own");
   agent.close();
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, ".zcode-bridge", "acp-mcp-injected.json"), "utf8")), {});
@@ -295,9 +295,9 @@ test("MCP: a registry entry of a dead process is swept by the next session", asy
   const { agent, cwd, dir } = setup();
   const stale = path.join(cwd, ".zcode", "config.json");
   fs.mkdirSync(path.dirname(stale));
-  fs.writeFileSync(stale, JSON.stringify({ mcp: { servers: { "bb-old": { type: "stdio", command: "x" } } } }));
+  fs.writeFileSync(stale, JSON.stringify({ mcp: { servers: { "alia-old": { type: "stdio", command: "x" } } } }));
   fs.mkdirSync(path.join(dir, ".zcode-bridge"), { recursive: true });
-  fs.writeFileSync(path.join(dir, ".zcode-bridge", "acp-mcp-injected.json"), JSON.stringify({ dead: { pid: 999999, file: stale, keys: ["bb-old"], createdFile: true, createdDir: true, at: 1 } }));
+  fs.writeFileSync(path.join(dir, ".zcode-bridge", "acp-mcp-injected.json"), JSON.stringify({ dead: { pid: 999999, file: stale, keys: ["alia-old"], createdFile: true, createdDir: true, at: 1 } }));
   await agent.request("initialize", { protocolVersion: 1 });
   const other = fs.mkdtempSync(path.join(os.tmpdir(), "zcode-acp-other-"));
   await agent.request("session/new", { cwd: other, mcpServers: [{ name: "bridge", command: "x" }] });
@@ -312,9 +312,9 @@ test("MCP: tools whose inputSchema has no top-level type get type object (ZCode 
     { name: "plain", inputSchema: { type: "object", properties: {} } },
     { name: "either", inputSchema: { $schema: "x", oneOf: [{ type: "object", properties: { a: { type: "string" } } }, { type: "object", properties: { b: { type: "string" } } }] } },
   ];
-  const s = await agent.request("session/new", { cwd, mcpServers: [{ name: "bb-bridge", command: "x", env: [{ name: "BB_ACP_DYNAMIC_TOOLS", value: JSON.stringify(tools) }, { name: "OTHER", value: "1" }] }] });
-  const env = JSON.parse(fs.readFileSync(path.join(cwd, ".zcode", "config.json"), "utf8")).mcp.servers["bb-bridge"].env;
-  const fixed = JSON.parse(env.BB_ACP_DYNAMIC_TOOLS);
+  const s = await agent.request("session/new", { cwd, mcpServers: [{ name: "alia-bridge", command: "x", env: [{ name: "ALIA_ACP_DYNAMIC_TOOLS", value: JSON.stringify(tools) }, { name: "OTHER", value: "1" }] }] });
+  const env = JSON.parse(fs.readFileSync(path.join(cwd, ".zcode", "config.json"), "utf8")).mcp.servers["alia-bridge"].env;
+  const fixed = JSON.parse(env.ALIA_ACP_DYNAMIC_TOOLS);
   assert.equal(fixed[0].inputSchema.type, "object");
   assert.equal(fixed[1].inputSchema.type, "object");
   assert.equal(fixed[1].inputSchema.oneOf.length, 2);

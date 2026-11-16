@@ -13,9 +13,9 @@
 // half) is gone (issue #236): it executed a process from the shipped
 // runtime, which the standing security law forbids
 // (docs/security-audit-2026-09-28.md,
-// docs/security-audit-2026-10-05-1.0.md), and no bb-native replacement
+// docs/security-audit-2026-10-05-1.0.md), and no alia-native replacement
 // can honestly vouch for a row the plugin did not see itself update. So
-// the judge answers only from the cache: bb's own event paths keep the
+// the judge answers only from the cache: VesnALIA's own event paths keep the
 // cache current, and when a row's evidence goes stale, the chip falling
 // to unsure-plain is the honest answer, not an old dot re-verified
 // nowhere.

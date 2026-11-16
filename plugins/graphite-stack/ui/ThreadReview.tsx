@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSdk } from "@get-bb/plugin-sdk/app";
+import { useSdk } from "@vesnalia/plugin-sdk/app";
 import type { Note, ThreadSummary } from "../contract";
 import { Button } from "@/components/ui/button";
 import { InlineError, Notice } from "./primitives";

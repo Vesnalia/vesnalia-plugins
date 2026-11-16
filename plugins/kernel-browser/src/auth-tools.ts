@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import * as commands from "./commands.js";
 import type { CommandContext } from "./commands.js";
@@ -22,32 +22,32 @@ export const AUTH_CLI_COMMANDS: CliCommandDescriptor[] = [
   {
     name: "auth-create",
     summary: "Create a managed auth connection for a profile and domain",
-    usage: "bb kernel-browser auth-create <domain> --profile <name> [--login-url <url>] [--allowed-domains <a.com,b.com>] [--json]",
+    usage: "alia kernel-browser auth-create <domain> --profile <name> [--login-url <url>] [--allowed-domains <a.com,b.com>] [--json]",
   },
   {
     name: "auth-list",
     summary: "List managed auth connections",
-    usage: "bb kernel-browser auth-list [--domain <domain>] [--profile <name>] [--json]",
+    usage: "alia kernel-browser auth-list [--domain <domain>] [--profile <name>] [--json]",
   },
   {
     name: "auth-get",
     summary: "Get a managed auth connection's current status",
-    usage: "bb kernel-browser auth-get <connection-id> [--json]",
+    usage: "alia kernel-browser auth-get <connection-id> [--json]",
   },
   {
     name: "auth-login",
     summary: "Start a hosted login (or automatic re-auth) flow",
-    usage: "bb kernel-browser auth-login <connection-id> [--json]",
+    usage: "alia kernel-browser auth-login <connection-id> [--json]",
   },
   {
     name: "auth-wait",
     summary: "Wait for a login flow to finish",
-    usage: "bb kernel-browser auth-wait <connection-id> [--timeout <seconds>] [--json]",
+    usage: "alia kernel-browser auth-wait <connection-id> [--timeout <seconds>] [--json]",
   },
   {
     name: "auth-delete",
     summary: "Delete a managed auth connection",
-    usage: "bb kernel-browser auth-delete <connection-id>",
+    usage: "alia kernel-browser auth-delete <connection-id>",
   },
 ];
 
@@ -56,8 +56,8 @@ function authStatusText(connection: AuthConnectionSummary): string {
   return `${connection.connectionId}  ${connection.domain}  profile=${connection.profileName}  status=${connection.status}${flow}`;
 }
 
-export function registerAuthTools(bb: BbPluginApi, ctx: CommandContext): void {
-  bb.agents.registerTool({
+export function registerAuthTools(alia: AliaPluginApi, ctx: CommandContext): void {
+  alia.agents.registerTool({
     name: "kernel_auth_create",
     description:
       "Create a Kernel managed auth connection for a profile and domain. Creates the profile if it doesn't " +
@@ -78,7 +78,7 @@ export function registerAuthTools(bb: BbPluginApi, ctx: CommandContext): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kernel_auth_list",
     description: "List Kernel managed auth connections, optionally filtered by domain and/or profile name.",
     parameters: z.object({
@@ -91,7 +91,7 @@ export function registerAuthTools(bb: BbPluginApi, ctx: CommandContext): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kernel_auth_get",
     description: "Get a Kernel managed auth connection's current status and in-progress flow state, if any.",
     parameters: z.object({ connectionId: z.string() }),
@@ -101,7 +101,7 @@ export function registerAuthTools(bb: BbPluginApi, ctx: CommandContext): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kernel_auth_login",
     description:
       "Start a login flow for a Kernel managed auth connection. Returns a hosted login URL for the user to " +
@@ -132,7 +132,7 @@ export function registerAuthTools(bb: BbPluginApi, ctx: CommandContext): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kernel_auth_wait",
     description:
       "Block until a Kernel managed auth connection's in-progress login flow reaches a terminal state " +
@@ -159,7 +159,7 @@ export function registerAuthTools(bb: BbPluginApi, ctx: CommandContext): void {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kernel_auth_delete",
     description: "Delete a Kernel managed auth connection and cancel any in-progress login flow.",
     parameters: z.object({ connectionId: z.string() }),

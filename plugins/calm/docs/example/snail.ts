@@ -26,7 +26,7 @@ const SNAIL: Record<"creep" | "look" | "shell", Sprite> = {
   look: [
     "b.b........",
     "b.b..ssss..",
-    ".bb.sSSSSs.",
+    ".alia.sSSSSs.",
     ".b.sSsssSs.",
     ".bbsSsSsSs.",
     ".bbbbbbbbb.",

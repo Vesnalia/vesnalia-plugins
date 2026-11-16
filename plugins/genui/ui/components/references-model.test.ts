@@ -19,7 +19,7 @@ describe("imageRef", () => {
   it("loads https URLs and thread files, refuses other schemes", () => {
     expect(imageRef("")).toEqual({ kind: "none" });
     expect(imageRef("images/bike.svg")).toEqual({ kind: "load", src: "images/bike.svg" });
-    expect(imageRef("$BB_THREAD_STORAGE/shot.png")).toEqual({ kind: "load", src: "$BB_THREAD_STORAGE/shot.png" });
+    expect(imageRef("$ALIA_THREAD_STORAGE/shot.png")).toEqual({ kind: "load", src: "$ALIA_THREAD_STORAGE/shot.png" });
     expect(imageRef("C:\\shots\\a.png")).toEqual({ kind: "load", src: "C:\\shots\\a.png" });
     expect(imageRef("https://cdn.example.com/a b.png")).toEqual({ kind: "load", src: "https://cdn.example.com/a%20b.png" });
     expect(imageRef("http://example.com/a.png").kind).toBe("invalid");

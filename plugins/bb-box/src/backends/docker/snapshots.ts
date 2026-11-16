@@ -17,7 +17,7 @@ export const RESTORE_START_ABOUT_MS = 5_000;
 export const KILL_ABOUT_MS = 1_000;
 export const DOCKER_FORK_SAFE_FROM = 7;
 
-export const FORK_HOLD_MISSING = "Its box was made from a Docker image that cannot hold a fork's services until BB Box has checked the fork. Rebuild the Docker images with setup/docker/build.sh, make a new box, and take a snapshot of that box.";
+export const FORK_HOLD_MISSING = "Its box was made from a Docker image that cannot hold a fork's services until VesnALIA Box has checked the fork. Rebuild the Docker images with setup/docker/build.sh, make a new box, and take a snapshot of that box.";
 
 const RESTORED_SUFFIX = /^-[0-9a-f]{8}$/;
 const VOLUME_COPY_MS_PER_GIB = 15_000;
@@ -186,7 +186,7 @@ export function mountRefusal(mounts: readonly SnapshotMount[]): string | null {
     && !(mount.type === "volume" && mount.destination === "/var/lib/docker" && mount.name)
     && !(mount.type === "tmpfs" && ["/run", "/dev/shm"].includes(mount.destination)));
   return unsupported
-    ? `This box uses shared storage at ${unsupported.destination}. BB Box cannot capture it with the box. Move the files into the box before taking a snapshot.`
+    ? `This box uses shared storage at ${unsupported.destination}. VesnALIA Box cannot capture it with the box. Move the files into the box before taking a snapshot.`
     : null;
 }
 

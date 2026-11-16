@@ -1,5 +1,5 @@
 import { stripVTControlCharacters } from "node:util";
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const READ_MAX_BYTES = 50 * 1024;
@@ -157,10 +157,10 @@ export const hostContract = defineRpcContract({
       title: z.string().optional(),
       cwd: z.string().min(1),
       env: z.object({
-        BB_THREAD_ID: z.string().min(1),
-        BB_PROJECT_ID: z.string().min(1),
-        BB_ENVIRONMENT_ID: z.string().min(1),
-        BB_THREAD_STORAGE: z.string().min(1),
+        ALIA_THREAD_ID: z.string().min(1),
+        ALIA_PROJECT_ID: z.string().min(1),
+        ALIA_ENVIRONMENT_ID: z.string().min(1),
+        ALIA_THREAD_STORAGE: z.string().min(1),
       }),
     }),
     output: hostResultSchema,

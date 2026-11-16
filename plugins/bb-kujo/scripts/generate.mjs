@@ -119,4 +119,4 @@ for(const name of [...new Set(Object.values(iconMap))].sort()) {
 const iconSource=`/* Generated from Tabler Icons 3.46.0 (MIT); assets/Tabler-LICENSE.txt. */\nexport const iconMap: Readonly<Record<string,string>> = ${JSON.stringify(iconMap)};\nexport const artwork: Readonly<Record<string,readonly (readonly [string, Readonly<Record<string,string>>])[]>> = ${JSON.stringify(artwork)};\n`;
 if(process.argv.includes('--check')) { if(await read('src/tabler.generated.ts')!==iconSource) throw new Error('Tabler artwork is stale; npm run generate'); }
 else await writeFile(join(root,'src/tabler.generated.ts'),iconSource);
-console.log(`Tabler: ${Object.keys(iconMap).length} bb names; ${Object.keys(artwork).length} local SVGs.`);
+console.log(`Tabler: ${Object.keys(iconMap).length} VesnALIA names; ${Object.keys(artwork).length} local SVGs.`);

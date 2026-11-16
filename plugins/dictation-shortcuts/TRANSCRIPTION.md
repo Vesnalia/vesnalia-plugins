@@ -1,15 +1,15 @@
-# How BB voice transcription selects a service
+# How VesnALIA voice transcription selects a service
 
-Verified against upstream get-bb/bb commit 91569fb and the shipped BB 0.46.1 Codex server/host bundles. No credentials are read by this plugin. Inspect `bb settings ai-services` to see which service your installation currently uses.
+Verified against upstream get-alia/alia commit 91569fb and the shipped VesnALIA 0.46.1 Codex server/host bundles. No credentials are read by this plugin. Inspect `alia settings ai-services` to see which service your installation currently uses.
 
-The agent selected for the conversation is independent of the voice service. A Claude thread can use Codex transcription. A running Codex CLI agent is not required: the plugin sends HTTP requests itself using credentials available on BB's primary host.
+The agent selected for the conversation is independent of the voice service. A Claude thread can use Codex transcription. A running Codex CLI agent is not required: the plugin sends HTTP requests itself using credentials available on VesnALIA's primary host.
 
 ## Request path
 
 1. Native voice recording finishes and produces an audio file.
 2. `sdk.system.transcribeVoice({ file, prompt?, signal? })` POSTs multipart form data to `/api/v1/system/voice-transcription`.
 3. `transcribeVoiceInput` runs the AI task `voice`. This path has no thread provider/model selector.
-4. Automatic considers loaded transcription services: bb cloud first, then other services sorted by plugin/service id. Unready services are skipped; failures can fall through to later candidates. Explicit selection considers only that service, and Off disables the task.
+4. Automatic considers loaded transcription services: VesnALIA cloud first, then other services sorted by plugin/service id. Unready services are skipped; failures can fall through to later candidates. Explicit selection considers only that service, and Off disables the task.
 5. The Codex AI-service plugin calls `codex.ai.transcribe` on the primary host. Readiness checks the host and usable saved Codex credentials, not an active coding-agent process. Readiness is not a successful live network/quota probe.
 6. With ChatGPT account auth the installed adapter calls `https://chatgpt.com/backend-api/transcribe`; with API-key auth it calls `https://api.openai.com/v1/audio/transcriptions`. Both submit a file and parse a final JSON text response. The shortcut plugin never sees or manages this authentication.
 
@@ -19,9 +19,9 @@ The agent selected for the conversation is independent of the voice service. A C
 - Codex credentials are missing/unusable on the primary host, or the host is offline: the Codex voice service is not ready. Expired credentials, quota and network errors can also make an actual transcription fail.
 - The `provider-codex` plugin is disabled/unloaded: its voice service is no longer registered.
 - No ready alternative is configured: voice input is unavailable; the server returns a `not_configured` error (501).
-- BB cloud is ready or another transcription plugin is configured: voice can work without Codex. Automatic can use it; an explicitly pinned Codex selection will not switch providers.
+- VesnALIA cloud is ready or another transcription plugin is configured: voice can work without Codex. Automatic can use it; an explicitly pinned Codex selection will not switch providers.
 
-Codex is not intrinsically required for BB voice input; any ready transcription service selected in BB can provide it.
+Codex is not intrinsically required for VesnALIA voice input; any ready transcription service selected in VesnALIA can provide it.
 
 ## Source pointers
 
@@ -32,4 +32,4 @@ Codex is not intrinsically required for BB voice input; any ready transcription 
 - [Host readiness and transcription handler](https://github.com/get-bb/bb/blob/91569fb/plugins/provider-codex/src/host.ts)
 - [Codex HTTP adapter](https://github.com/get-bb/bb/blob/91569fb/plugins/provider-codex/src/ai/chatgpt-client.ts)
 
-The upstream checkout is newer than the installed UI. The relevant Codex routing/readiness logic was additionally checked in the Codex provider bundles shipped with BB 0.46.1.
+The upstream checkout is newer than the installed UI. The relevant Codex routing/readiness logic was additionally checked in the Codex provider bundles shipped with VesnALIA 0.46.1.

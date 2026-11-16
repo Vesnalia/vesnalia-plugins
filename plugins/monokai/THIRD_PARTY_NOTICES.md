@@ -5,14 +5,14 @@ under its own terms, which follow.
 
 ---
 
-## bb — `get-bb/bb`
+## VesnALIA — `get-alia/alia`
 
 The plugin icon and the light and dark settings logos redraw the palette glyph
-from bb's own plugin icon registry.
+from VesnALIA's own plugin icon registry.
 
 | What                                                                                                             | Where                                                        |
 | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Palette glyph geometry, taken from bb-app 0.35.1 (`desktop-v0.35.1`, `9f4bea88dd6c7c611f4e5205a6f23b7bbaa3707f`) | `assets/icon.svg`, `assets/logo.svg`, `assets/logo-dark.svg` |
+| Palette glyph geometry, taken from alia-app 0.35.1 (`desktop-v0.35.1`, `9f4bea88dd6c7c611f4e5205a6f23b7bbaa3707f`) | `assets/icon.svg`, `assets/logo.svg`, `assets/logo-dark.svg` |
 
 ```text
 MIT License
@@ -44,7 +44,7 @@ Source: <https://github.com/get-bb/bb>
 
 ## Nothing else is bundled
 
-`themes/bb-monokai.css` and `dist/server.js` carry no third-party code. The
+`themes/alia-monokai.css` and `dist/server.js` carry no third-party code. The
 palette is an original set of values in the Monokai family; it copies no
 upstream colour file. "Monokai" is the name of the original colour scheme by
 Wimer Hazenberg and is used here only to describe the family the palette

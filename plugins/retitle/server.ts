@@ -1,15 +1,15 @@
-// bb-plugin-retitle — write thread titles with a small, fast model.
+// alia-plugin-retitle — write thread titles with a small, fast model.
 //
-// bb titles a thread one time, from the first message. This plugin writes a
+// VesnALIA titles a thread one time, from the first message. This plugin writes a
 // new title from the conversation: once after the first reply, and when you
-// press ⌘⌥R, run the quick-palette command, or run `bb retitle`. A setting
+// press ⌘⌥R, run the quick-palette command, or run `alia retitle`. A setting
 // also renames a thread again after a number of new messages.
 //
-// A plugin cannot call bb's own title model (BB_INFERENCE). So the plugin
+// A plugin cannot call VesnALIA's own title model (ALIA_INFERENCE). So the plugin
 // starts a short hidden helper thread on a small model, reads its answer, and
-// deletes it. The helper uses the environment of the renamed thread, so bb
+// deletes it. The helper uses the environment of the renamed thread, so VesnALIA
 // does not make a new worktree.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   AUTO_MODES,
@@ -33,8 +33,8 @@ export const rpcContract = defineRpcContract({
 export const HELPER_TITLE = "Retitle helper";
 const HELPER_POLL_MS = 1_000;
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     autoRename: {
       type: "select",
       label: "Automatic renaming",
@@ -60,14 +60,14 @@ export default async function plugin(bb: BbPluginApi) {
       type: "string",
       label: "Helper provider",
       description:
-        "Agent provider for the helper thread (see `bb provider list`). Leave empty to use the provider of the renamed thread.",
+        "Agent provider for the helper thread (see `alia provider list`). Leave empty to use the provider of the renamed thread.",
       default: "",
     },
     model: {
       type: "string",
       label: "Helper model",
       description:
-        "Model for the helper thread (see `bb provider models <provider>`). Leave empty to use a small model of the provider.",
+        "Model for the helper thread (see `alia provider models <provider>`). Leave empty to use a small model of the provider.",
       default: "",
     },
     timeoutSeconds: {
@@ -96,7 +96,7 @@ export default async function plugin(bb: BbPluginApi) {
     const configuredModel = config.model.trim();
     if (configuredModel !== "") return { providerId, model: configuredModel };
     try {
-      const catalog = await bb.sdk.providers.models(
+      const catalog = await alia.sdk.providers.models(
         thread.environmentId !== null
           ? { providerId, environmentId: thread.environmentId }
           : { providerId },
@@ -105,7 +105,7 @@ export default async function plugin(bb: BbPluginApi) {
       const model = pickSmallModel(providerId, available);
       return model !== undefined ? { providerId, model } : { providerId };
     } catch (error) {
-      bb.log.warn(`could not read ${providerId} models; using its default: ${String(error)}`);
+      alia.log.warn(`could not read ${providerId} models; using its default: ${String(error)}`);
       return { providerId };
     }
   }
@@ -114,7 +114,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function waitForHelper(helperId: string): Promise<void> {
     const deadline = Date.now() + config.timeoutSeconds * 1000;
     while (Date.now() < deadline) {
-      const helper = await bb.sdk.threads.get({ threadId: helperId });
+      const helper = await alia.sdk.threads.get({ threadId: helperId });
       if (helper.status === "idle") return;
       if (helper.status === "error" || helper.deletedAt !== null) {
         throw new Error(
@@ -134,16 +134,16 @@ export default async function plugin(bb: BbPluginApi) {
     targetArchived: boolean;
     prompt: string;
   }): Promise<string> {
-    let helper: Awaited<ReturnType<typeof bb.sdk.threads.spawn>>;
+    let helper: Awaited<ReturnType<typeof alia.sdk.threads.spawn>>;
     try {
-      helper = await bb.sdk.threads.spawn({
+      helper = await alia.sdk.threads.spawn({
         projectId: args.projectId,
         environment:
           args.environmentId !== null
             ? { type: "reuse", environmentId: args.environmentId }
             : { type: "project-default" },
         prompt: args.prompt,
-        // With an explicit title, bb does not write its own title for the helper.
+        // With an explicit title, VesnALIA does not write its own title for the helper.
         title: HELPER_TITLE,
         providerId: args.execution.providerId,
         ...(args.execution.model !== undefined ? { model: args.execution.model } : {}),
@@ -152,8 +152,8 @@ export default async function plugin(bb: BbPluginApi) {
         // Plugin metadata marks the helper as this plugin's thread, so
         // automatic renaming skips it.
         pluginMetadata: { helper: true },
-        // If the plugin stops during a run, bb removes the helper with its
-        // target. bb accepts only a live thread as the owner.
+        // If the plugin stops during a run, VesnALIA removes the helper with its
+        // target. VesnALIA accepts only a live thread as the owner.
         ...(args.targetArchived ? {} : { lifecycleOwnerThreadId: args.targetThreadId }),
       });
     } catch (error) {
@@ -162,27 +162,27 @@ export default async function plugin(bb: BbPluginApi) {
         `Could not start the helper on ${args.execution.providerId}: ${reason} Select a different provider in the Retitle settings.`,
       );
     }
-    bb.log.info(
+    alia.log.info(
       `helper ${helper.id} for ${args.targetThreadId}: ${args.execution.providerId}/${args.execution.model ?? "(provider default)"}`,
     );
     try {
       await waitForHelper(helper.id);
-      const { output } = await bb.sdk.threads.output({ threadId: helper.id });
+      const { output } = await alia.sdk.threads.output({ threadId: helper.id });
       if (output === null) throw new Error("The helper model returned no text.");
       return output;
     } finally {
-      await bb.sdk.threads.stop({ threadId: helper.id }).catch(() => {});
-      await bb.sdk.threads
+      await alia.sdk.threads.stop({ threadId: helper.id }).catch(() => {});
+      await alia.sdk.threads
         .delete({ threadId: helper.id, childThreadsConfirmed: true })
         .catch((error: unknown) => {
-          bb.log.warn(`could not delete helper thread ${helper.id}: ${String(error)}`);
+          alia.log.warn(`could not delete helper thread ${helper.id}: ${String(error)}`);
         });
     }
   }
 
   async function retitle(threadId: string) {
-    const thread = await bb.sdk.threads.get({ threadId });
-    const outline = await bb.sdk.threads.conversationOutline({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
+    const outline = await alia.sdk.threads.conversationOutline({ threadId });
     const transcript = buildTranscript(outline.items);
     if (transcript === "") throw new Error("This thread has no messages yet.");
 
@@ -206,10 +206,10 @@ export default async function plugin(bb: BbPluginApi) {
     );
     if (title === null) throw new Error("The helper model returned an empty title.");
 
-    await bb.sdk.threads.update({ threadId, title });
+    await alia.sdk.threads.update({ threadId, title });
     const record: TitleRecord = { title, messageCount: outline.items.length };
-    await bb.storage.kv.set(recordKey(threadId), record);
-    bb.log.info(`retitled ${threadId}: ${title}`);
+    await alia.storage.kv.set(recordKey(threadId), record);
+    alia.log.info(`retitled ${threadId}: ${title}`);
     return { title, previousTitle: thread.title ?? null };
   }
 
@@ -227,13 +227,13 @@ export default async function plugin(bb: BbPluginApi) {
     if (inFlight.has(thread.id)) return;
     const mode = parseAutoMode(config.autoRename);
     const renameEveryMessages = config.renameEveryMessages;
-    const record = (await bb.storage.kv.get<TitleRecord>(recordKey(thread.id))) ?? null;
+    const record = (await alia.storage.kv.get<TitleRecord>(recordKey(thread.id))) ?? null;
     const messageCount = needsMessageCount({ mode, renameEveryMessages, record })
-      ? (await bb.sdk.threads.conversationOutline({ threadId: thread.id })).items.length
+      ? (await alia.sdk.threads.conversationOutline({ threadId: thread.id })).items.length
       : null;
     const decision = decideAutoRename({
       thread,
-      pluginId: bb.pluginId,
+      pluginId: alia.pluginId,
       mode,
       renameEveryMessages,
       record,
@@ -242,35 +242,35 @@ export default async function plugin(bb: BbPluginApi) {
     if (decision.rename) await retitleOnce(thread.id);
   }
 
-  bb.events.on("thread.idle", ({ thread }) => {
+  alia.events.on("thread.idle", ({ thread }) => {
     void autoRetitle(thread).catch((error: unknown) => {
-      bb.log.warn(`automatic rename of ${thread.id} failed: ${String(error)}`);
+      alia.log.warn(`automatic rename of ${thread.id} failed: ${String(error)}`);
     });
   });
-  bb.events.on("thread.deleted", ({ thread }) => {
-    void bb.storage.kv.delete(recordKey(thread.id)).catch(() => {});
+  alia.events.on("thread.deleted", ({ thread }) => {
+    void alia.storage.kv.delete(recordKey(thread.id)).catch(() => {});
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     retitle: ({ threadId }) => retitleOnce(threadId),
   });
 
   const usage =
-    "Usage: bb retitle [<thread-id>] [--json]\n\nWithout an id, the command renames the current thread (BB_THREAD_ID).";
-  bb.cli.register({
+    "Usage: VesnALIA retitle [<thread-id>] [--json]\n\nWithout an id, the command renames the current thread (ALIA_THREAD_ID).";
+  alia.cli.register({
     name: "retitle",
     summary: "Write a new thread title from the conversation with a small model",
     commands: [
       {
         name: "thread",
         summary: "Rename a thread by id (default: the current thread)",
-        usage: "bb retitle [<thread-id>] [--json]",
+        usage: "alia retitle [<thread-id>] [--json]",
       },
     ],
     async run(argv, ctx) {
       const json = argv.includes("--json");
       const rest = argv.filter((arg) => arg !== "--json");
-      // `bb retitle thread <id>` agrees with the help text. The word is optional.
+      // `alia retitle thread <id>` agrees with the help text. The word is optional.
       if (rest[0] === "thread") rest.shift();
       if (rest.includes("--help") || rest.includes("-h") || rest[0] === "help") {
         return { exitCode: 0, stdout: usage };
@@ -280,7 +280,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       const threadId = rest[0] ?? ctx.threadId;
       if (!threadId) {
-        return { exitCode: 1, stderr: `No thread id, and BB_THREAD_ID is not set.\n\n${usage}` };
+        return { exitCode: 1, stderr: `No thread id, and ALIA_THREAD_ID is not set.\n\n${usage}` };
       }
       try {
         const result = await retitleOnce(threadId);

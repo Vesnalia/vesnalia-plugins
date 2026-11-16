@@ -80,7 +80,7 @@ const results = [];
   await page.close();
 
   // Case 2: pane opened on desktop, then the viewport shrinks below the
-  // compact breakpoint (the reload of a bb plugin also tears down and
+  // compact breakpoint (the reload of a VesnALIA plugin also tears down and
   // rebuilds the webview content the user sees mid-session).
   const page2 = await browser.newPage();
   await page2.setViewport({ ...DESKTOP, deviceScaleFactor: 2 });
@@ -106,7 +106,7 @@ const results = [];
   await page3.close();
 
   // Case 4: pane open, then a full page reload with the pane still meant to
-  // be open (or the app back at the board) — the bb reload the operator ran.
+  // be open (or the app back at the board) — the VesnALIA reload the operator ran.
   const page4 = await browser.newPage();
   await page4.setViewport({ ...DESKTOP, deviceScaleFactor: 2 });
   await page4.goto(`${BASE}?groupBy=status&demo=1`, { waitUntil: "domcontentloaded", timeout: 60_000 });

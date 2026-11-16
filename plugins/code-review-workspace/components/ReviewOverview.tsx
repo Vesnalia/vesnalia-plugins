@@ -1,5 +1,5 @@
 import { memo, useId, useState, type ReactNode } from "react";
-import { Markdown, UrlLink, useRpc } from "@get-bb/plugin-sdk/app";
+import { Markdown, UrlLink, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { z } from "zod";
 import type { rpcContract } from "../src/rpc-contract";

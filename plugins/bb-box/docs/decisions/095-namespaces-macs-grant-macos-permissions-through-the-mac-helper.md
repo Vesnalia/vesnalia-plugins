@@ -18,7 +18,7 @@ macOS VM runs the same helper as its own box (`vm-ready`, `vm-grant`,
 Namespace's Macs had no `box_grant`. An agent on one stopped at macOS's
 prompt, or asked a person to approve it in the desktop's viewer. Yet
 Namespace's Macs run with SIP off, `runner` can use `sudo` with no password,
-and root can read and write both TCC databases. BB Box already writes TCC
+and root can read and write both TCC databases. VesnALIA Box already writes TCC
 rows there for its desktop and Cua Driver.
 
 Namespace's image differs from Tart's in ways that matter here:
@@ -30,11 +30,11 @@ Namespace's image differs from Tart's in ways that matter here:
   charged to that agent, and run in the system's security session, where
   `runner`'s keychains are not on the search list.
 - A future Namespace image could turn SIP on, or move to a macOS whose
-  database BB Box does not know. BB Box cannot choose the image.
+  database VesnALIA Box does not know. VesnALIA Box cannot choose the image.
 
 ## Decision
 
-**A Namespace Mac box runs the Mac helper as Tart's macOS VMs do, and BB
+**A Namespace Mac box runs the Mac helper as Tart's macOS VMs do, and VesnALIA
 Box measures, per Mac, whether it can grant.**
 
 1. **One writer.** Namespace runs the helper's `vm-ready`, `vm-grant` and
@@ -54,7 +54,7 @@ Box measures, per Mac, whether it can grant.**
    with a timeout of its own of 10 seconds, so a Mac whose helper stalls
    delays its box by no more than that; `box_grant` and its own
    measurement keep a timeout of 60 seconds. The doctor runs `vm-granted`
-   again on each Mac box it holds. BB Box keeps what the last 20 Macs said,
+   again on each Mac box it holds. VesnALIA Box keeps what the last 20 Macs said,
    and the last 20 measurements that failed, across restarts. The doctor's
    check **macOS permissions on Namespace's Macs** says whether `box_grant`
    worked on them, which macOS they ran, and why any refused. Where a Mac's

@@ -123,16 +123,16 @@ export function random(seed: number): () => number {
 // ----- The scripted scenario -----
 
 export const GROUPS: FixtureGroup[] = [
-  { id: "project:bb-lanes", label: "bb-lanes" },
+  { id: "project:alia-lanes", label: "alia-lanes" },
   { id: "project:chillidonut", label: "chillidonut" },
   { id: "project:infra", label: "infra" },
 ];
 
 export const THREADS: FixtureThread[] = [
-  { id: "thr_coord", title: "Coordinate the Lanes build", model: "Opus 5.5", provider: "anthropic", branch: "main", group: "project:bb-lanes", parentId: null },
-  { id: "thr_backend", title: "Backend indexer", model: "GPT-6.1 Sol", provider: "openai", branch: "bb/lanes-backend", group: "project:bb-lanes", parentId: "thr_coord" },
-  { id: "thr_engine", title: "Timeline engine", model: "Opus 5.5", provider: "anthropic", branch: "bb/lanes-timeline", group: "project:bb-lanes", parentId: "thr_coord" },
-  { id: "thr_shell", title: "Shell and grouping", model: "GPT-6.1 Sol", provider: "openai", branch: "bb/lanes-shell", group: "project:bb-lanes", parentId: "thr_coord" },
+  { id: "thr_coord", title: "Coordinate the Lanes build", model: "Opus 5.5", provider: "anthropic", branch: "main", group: "project:alia-lanes", parentId: null },
+  { id: "thr_backend", title: "Backend indexer", model: "GPT-6.1 Sol", provider: "openai", branch: "alia/lanes-backend", group: "project:alia-lanes", parentId: "thr_coord" },
+  { id: "thr_engine", title: "Timeline engine", model: "Opus 5.5", provider: "anthropic", branch: "alia/lanes-timeline", group: "project:alia-lanes", parentId: "thr_coord" },
+  { id: "thr_shell", title: "Shell and grouping", model: "GPT-6.1 Sol", provider: "openai", branch: "alia/lanes-shell", group: "project:alia-lanes", parentId: "thr_coord" },
   { id: "thr_research", title: "Competitor research", model: "Opus 5.5", provider: "anthropic", branch: "pricing", group: "project:chillidonut", parentId: null },
   { id: "thr_writer", title: "Pricing page copy", model: "Sonnet 5.5", provider: "anthropic", branch: "pricing", group: "project:chillidonut", parentId: null },
   { id: "thr_review", title: "Review pricing copy", model: "GPT-6 Sol", provider: "openai", branch: "pricing", group: "project:chillidonut", parentId: null },
@@ -169,7 +169,7 @@ export function scenario(base: number, elapsed: number, options: ScenarioOptions
   const decided = (id: string) => options.decisions?.get(id);
   const decidedTime = (id: string) => options.decidedAt?.get(id) ?? base + elapsed * MINUTE;
 
-  // bb-lanes: a coordinator spawns three workers, who report back with tells.
+  // alia-lanes: a coordinator spawns three workers, who report back with tells.
   specs.push(
     { id: "c1", thread: "thr_coord", title: "Plan the Lanes build", start: t(-44), end: t(-33), tools: ["web", "edit"] },
     { id: "c2", thread: "thr_coord", title: "Write the spec and contracts", start: t(-31), end: t(-18.4), tools: ["edit", "command"] },
@@ -196,7 +196,7 @@ export function scenario(base: number, elapsed: number, options: ScenarioOptions
     end: pushDecision === "reject" ? decidedTime("s2") : at(12.5) && pushDecision ? t(12.5) : null,
     status: pushDecision === "reject" ? "failed" : pushDecision ? (at(12.5) ? "done" : "running") : "waiting",
     tools: ["command"],
-    ask: { prompt: "Run `git push origin bb/lanes-shell`? It updates the branch the coordinator merges from.", inline: true },
+    ask: { prompt: "Run `git push origin alia/lanes-shell`? It updates the branch the coordinator merges from.", inline: true },
   });
   if (at(6)) {
     specs.push({ id: "c4", thread: "thr_coord", title: "Merge the review fixes", start: t(6.3), end: at(10) ? t(10) : null, tools: ["command"], sender: "thr_backend" });
@@ -456,7 +456,7 @@ export function fixtureDetail(block: LaneBlock): BlockDetail {
       ? ["Working through the plan", "Ran the focused tests"]
       : ["Made the change and checked it", `${10 + (seed % 90)} tests passed`].slice(0, 1 + (seed % 2)));
   const recent: BlockDetail["recent"] = [];
-  if (block.tools.includes("command")) recent.push({ kind: "command", label: ["npm test", "git status", "npx tsc --noEmit", "bb plugin build"][seed % 4]! });
+  if (block.tools.includes("command")) recent.push({ kind: "command", label: ["npm test", "git status", "npx tsc --noEmit", "alia plugin build"][seed % 4]! });
   if (block.tools.includes("edit")) recent.push({ kind: "edit", label: ["app/timeline/layout.ts", "server/indexer.ts", "SPEC.md", "pricing/page.mdx"][seed % 4]! });
   if (block.tools.includes("web")) recent.push({ kind: "web", label: "search: usage-based pricing" });
   return { blockId: block.id, threadId: block.threadId, summary, prompt: block.title, recent };

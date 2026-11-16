@@ -1,7 +1,7 @@
 import { expect, test, vi } from "vitest";
 import { chromium, type Page } from "playwright";
 import { mkdir } from "node:fs/promises";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "../src/store";
 import plugin from "../server";
 import { runGh } from "../src/gh";
@@ -11,17 +11,17 @@ import { MARK_PART } from "../src/agent-chat.test-support";
 
 vi.mock("../src/gh", async (original) => ({ ...await original<typeof import("../src/gh")>(), runGh: vi.fn() }));
 
-/** BB keeps its side panel open or closed on the server, across sessions: each test starts with it closed. */
-async function hideBbPanel(page: Page) {
+/** VesnALIA keeps its side panel open or closed on the server, across sessions: each test starts with it closed. */
+async function hideAliaPanel(page: Page) {
   const hide = page.getByRole("button", { name: /^Hide right panel/ }).first();
   await hide.waitFor({ timeout: 3000 }).then(() => hide.click()).catch(() => {});
 }
 
-// The running BB supplies the real app shell and built plugin. Its plugin RPCs
+// The running VesnALIA supplies the real app shell and built plugin. Its plugin RPCs
 // are routed through the official test host, with real SQLite and mocked GitHub
 // and agent boundaries. No test review, comment or agent is sent to production.
-test.skipIf(!process.env.BB_E2E_URL)("fullscreen verdict → submitted → reload → merge → archive, with the review agent in BB's side panel", async () => {
-  const base = loopbackUrl("BB_E2E_URL", process.env.BB_E2E_URL!);
+test.skipIf(!process.env.ALIA_E2E_URL)("fullscreen verdict → submitted → reload → merge → archive, with the review agent in VesnALIA's side panel", async () => {
+  const base = loopbackUrl("ALIA_E2E_URL", process.env.ALIA_E2E_URL!);
   let prState = "OPEN";
   let approved = false;
   vi.mocked(runGh).mockImplementation(async (args) => {
@@ -34,18 +34,18 @@ test.skipIf(!process.env.BB_E2E_URL)("fullscreen verdict → submitted → reloa
     return { code: 0, stderr: "", stdout: JSON.stringify({ headRefOid: "sha1", state: prState }) };
   });
   let workerCount = 0;
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     get: async () => ({ archivedAt: null, deletedAt: null, status: "idle" }),
     spawn: async () => ({ id: `e2e-hidden-agent-${++workerCount}` }),
     stop: async () => ({}), update: async () => ({}), archive: async () => ({}),
   }, projects: { defaultExecutionOptions: async () => ({ providerId: "codex", model: "gpt-6", reasoningLevel: "low", permissionMode: "auto" }) } } });
-  await plugin(bb);
-  const store = queueStore(createStore(bb));
+  await plugin(alia);
+  const store = queueStore(createStore(alia));
   const key = "e2e-review";
   await store.saveReview({ targetKey: key, kind: "pr", number: 7, repo: "acme/web", title: "Validate incoming review data", author: "alice", status: "ready", createdAt: Date.now(), headSha: "sha1", projectId: "test-project" });
   await store.saveGuide(key, { title: "Validate incoming review data", intent: "Reject invalid values before they reach storage.", sections: [{ id: "validation", title: "Input validation", overview: "The entry point checks the value before saving it.", diffs: [{ file: "src/input.ts", description: "Reject blank values" }] }], unplacedFiles: [] } as any);
   await store.savePatch(key, 'diff --git a/src/input.ts b/src/input.ts\n--- a/src/input.ts\n+++ b/src/input.ts\n@@ -1 +1,2 @@\n+if (!value.trim()) throw new Error("Required");\n save(value);\n');
-  // Notes from before 0.6.0, when they had a tool of their own: Finish keeps them, in Stays in BB.
+  // Notes from before 0.6.0, when they had a tool of their own: Finish keeps them, in Stays in VesnALIA.
   await store.saveReviewerNotes(key, "Private: verify the staged rollout.", 0);
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
@@ -67,12 +67,12 @@ test.skipIf(!process.env.BB_E2E_URL)("fullscreen verdict → submitted → reloa
       await route.fulfill({ json: { ok: true, result } });
     } catch (error) { await route.fulfill({ status: 500, json: { ok: false, error: { message: String(error) } } }); }
   });
-  // The review's commands: in BB's title bar, at the band's end in full screen, and in a phone's dock.
+  // The review's commands: in VesnALIA's title bar, at the band's end in full screen, and in a phone's dock.
   const commands = page.getByRole("group", { name: "Review commands" });
   try {
     await page.goto(`${base}/plugins/code-review-workspace/review/settings/${key}`);
     // Collapse the unrelated Office overlay through its normal, browser-local control.
-    // Otherwise it can cover the plugin's editors in the shared BB test shell.
+    // Otherwise it can cover the plugin's editors in the shared VesnALIA test shell.
     const collapseOffice = page.getByRole("button", { name: "Collapse office to current worker", exact: true });
     await collapseOffice.waitFor({ timeout: 5000 }).then(() => collapseOffice.click()).catch(() => {});
     await page.getByRole("textbox", { name: "Guide instructions", exact: true }).fill("Explain compatibility and migrations.");
@@ -91,7 +91,7 @@ test.skipIf(!process.env.BB_E2E_URL)("fullscreen verdict → submitted → reloa
     await page.screenshot({ animations: "disabled", path: `${dir}/settings-mobile.png` });
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.getByRole("button", { name: "Back to review", exact: true }).click();
-    await hideBbPanel(page);
+    await hideAliaPanel(page);
     // A first open shows the Overview; reading starts at chapter 1.
     await page.getByRole("button", { name: /^Start reading: Input validation/ }).click();
     // Comments, docked beside the code; it stays closed or open across a reload.
@@ -134,7 +134,7 @@ test.skipIf(!process.env.BB_E2E_URL)("fullscreen verdict → submitted → reloa
     const verdicts = page.getByRole("group", { name: "Review verdict" });
     await verdicts.getByRole("button", { name: "Approve", exact: true }).waitFor();
     expect(await page.getByRole("combobox", { name: "Review verdict" }).count()).toBe(0);
-    // Private notes stay in BB: readable and editable in Finish, never sent.
+    // Private notes stay in VesnALIA: readable and editable in Finish, never sent.
     await page.getByText("Private notes", { exact: true }).click();
     const notes = page.getByRole("textbox", { name: "Private notes", exact: true });
     expect(await notes.inputValue()).toBe("Private: verify the staged rollout.");
@@ -184,13 +184,13 @@ test.skipIf(!process.env.BB_E2E_URL)("fullscreen verdict → submitted → reloa
     expect(submission?.[1]?.stdin).not.toContain("Private:");
     expect(submission?.[1]?.stdin).toContain("Please test whitespace-only input too.");
     expect(submission?.[1]?.stdin).toContain("The validation looks good with this test follow-up.");
-    // In full screen, the commands sit at the band's end; Ask agent leaves full screen for BB's side panel.
+    // In full screen, the commands sit at the band's end; Ask agent leaves full screen for VesnALIA's side panel.
     const askAgent = commands.getByRole("button", { name: "Ask agent", exact: true });
     await askAgent.click();
     await page.waitForFunction(() => !document.fullscreenElement);
     const assistant = page.getByRole("region", { name: "Review agent", exact: true });
     await assistant.waitFor();
-    // In BB's panel, not the review's: its own panel stays Comments' and Finish review's.
+    // In VesnALIA's panel, not the review's: its own panel stays Comments' and Finish review's.
     expect(await page.getByRole("complementary", { name: "Comments and Finish review", exact: true }).getByRole("region", { name: "Review agent" }).count()).toBe(0);
     expect(await askAgent.getAttribute("aria-pressed")).toBe("true");
     await page.getByPlaceholder(/Ask the agent/).fill("Explain the validation guard");
@@ -200,7 +200,7 @@ test.skipIf(!process.env.BB_E2E_URL)("fullscreen verdict → submitted → reloa
     await askAgent.focus();
     await page.getByRole("tooltip", { name: "Ask agent (a)", exact: true }).waitFor();
     await askAgent.press("Enter");
-    // BB keeps the tab while its panel is closed: the message is still there.
+    // VesnALIA keeps the tab while its panel is closed: the message is still there.
     expect(await page.getByRole("textbox", { name: "Ask the agent", exact: true }).inputValue()).toBe("Explain the validation guard");
     await page.screenshot({ animations: "disabled", path: `${dir}/assistant-tab.png` });
     // Comments beside it, and the agent's message kept.
@@ -209,20 +209,20 @@ test.skipIf(!process.env.BB_E2E_URL)("fullscreen verdict → submitted → reloa
     await page.screenshot({ animations: "disabled", path: `${dir}/assistant-tab-comments.png` });
     await commands.getByRole("button", { name: "Comments", exact: true }).click();
     await page.getByRole("button", { name: "Send", exact: true }).click();
-    // bb's ThreadChat takes over. The stubbed worker id has no thread in this bb.
+    // VesnALIA's ThreadChat takes over. The stubbed worker id has no thread in this VesnALIA.
     await assistant.getByText("This thread is no longer available.").waitFor();
     expect(harness.inspection.sdk.callsTo("threads.spawn")[0][0]).toMatchObject({ visibility: "hidden", title: `Review agent: web#7 · Validate incoming review data · ${key}`, pluginMetadata: { targetKey: key },
       input: [{ type: "text", text: "Explain the validation guard" }, MARK_PART] });
     expect(JSON.stringify(harness.inspection.sdk.callsTo("threads.spawn"))).not.toContain("Private: verify");
     await page.screenshot({ animations: "disabled", path: `${dir}/assistant-panel.png` });
     expect(await page.getByText("Open as thread", { exact: true }).count()).toBe(0);
-    // BB's panel opens again where it was.
+    // VesnALIA's panel opens again where it was.
     await page.reload();
     await assistant.waitFor();
     // Nothing left to submit, so the title bar has no Finish review: Comments' foot opens the submitted review.
     expect(await commands.getByRole("button", { name: /^Finish review:/ }).count()).toBe(0);
     await commands.getByRole("button", { name: "Comments", exact: true }).click();
-    // Beside BB's open panel, the review is narrower than Comments docks in, so Comments is over the code.
+    // Beside VesnALIA's open panel, the review is narrower than Comments docks in, so Comments is over the code.
     await page.getByRole("dialog", { name: "Comments", exact: true }).getByRole("button", { name: "Finish review", exact: true }).click();
     await page.getByRole("region", { name: "Submitted review" }).waitFor();
     await page.getByText("Private notes", { exact: true }).click();
@@ -240,7 +240,7 @@ test.skipIf(!process.env.BB_E2E_URL)("fullscreen verdict → submitted → reloa
     await archiveHeader.waitFor();
     expect(await page.getByRole("button", { name: /^Reviewed/ }).count()).toBe(0);
     expect((await store.getReview(key))?.archivedAt).toBeTypeOf("number");
-    // bb cannot send to an archived thread, so the assistant chat stays unarchived.
+    // VesnALIA cannot send to an archived thread, so the assistant chat stays unarchived.
     expect(harness.inspection.sdk.callsTo("threads.archive")).toHaveLength(0);
     await archiveHeader.click();
     await archive.getByText("Merged", { exact: true }).waitFor();
@@ -260,15 +260,15 @@ test.skipIf(!process.env.BB_E2E_URL)("fullscreen verdict → submitted → reloa
     if (await askAgent.getAttribute("aria-pressed") !== "true") await askAgent.click();
     await assistant.getByText("This thread is no longer available.").waitFor();
     expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1);
-    // A phone: the dock's Ask agent opens BB's panel over the page.
+    // A phone: the dock's Ask agent opens VesnALIA's panel over the page.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload();
-    await hideBbPanel(page);
+    await hideAliaPanel(page);
     await commands.getByRole("button", { name: "Ask agent", exact: true }).click();
     await assistant.getByText("This thread is no longer available.").waitFor();
     expect(await assistant.evaluate((element) => element.getBoundingClientRect().right <= innerWidth)).toBe(true);
     await page.screenshot({ animations: "disabled", path: `${dir}/assistant-mobile.png` });
-    await hideBbPanel(page);
+    await hideAliaPanel(page);
     await commands.getByRole("button", { name: "All reviews", exact: true }).click();
     await page.reload();
     await archiveHeader.waitFor();
@@ -283,17 +283,17 @@ test.skipIf(!process.env.BB_E2E_URL)("fullscreen verdict → submitted → reloa
 
 // The loop on a local review (notes/design/E7-plan.md QA 3): Send 3 to the main thread, which reports each, then Resolve
 // 2 and Reopen 1 on their cards; the next Send carries only the one reopened.
-test.skipIf(!process.env.BB_E2E_URL)("Send 3 → reports → Resolve 2 / Reopen 1 → the next Send carries 1", async () => {
-  const base = loopbackUrl("BB_E2E_URL", process.env.BB_E2E_URL!);
+test.skipIf(!process.env.ALIA_E2E_URL)("Send 3 → reports → Resolve 2 / Reopen 1 → the next Send carries 1", async () => {
+  const base = loopbackUrl("ALIA_E2E_URL", process.env.ALIA_E2E_URL!);
   vi.mocked(runGh).mockImplementation(async () => ({ code: 1, stderr: "no GitHub here", stdout: "" }));
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     get: async ({ threadId }: { threadId: string }) => ({ id: threadId, title: "Retry uploads", titleFallback: null, archivedAt: null, deletedAt: null, environmentId: null, status: "idle", visibility: "visible", originPluginId: null }),
     send: async () => ({ ok: true, delivery: "sent" }),
     experimental_listAncestors: async ({ threadIds }: { threadIds: string[] }) => ({ threads: threadIds.map((threadId) => ({ threadId, ancestorIds: [] })) }),
     stop: async () => ({}), update: async () => ({}), archive: async () => ({}),
   }, projects: { defaultExecutionOptions: async () => ({ providerId: "codex", model: "gpt-6", reasoningLevel: "low", permissionMode: "auto" }) } } as any });
-  await plugin(bb);
-  const store = queueStore(createStore(bb));
+  await plugin(alia);
+  const store = queueStore(createStore(alia));
   const key = "e2e-loop";
   await store.saveReview({ targetKey: key, kind: "ref", gitRef: "main...retry-uploads", title: "Retry uploads", status: "ready", createdAt: Date.now(), projectId: "test-project" });
   await store.setLifecycle(key, { sourceThreadId: "coder", sourceThreadAt: Date.now() });
@@ -331,7 +331,7 @@ test.skipIf(!process.env.BB_E2E_URL)("Send 3 → reports → Resolve 2 / Reopen 
   }
   try {
     await page.goto(`${base}/plugins/code-review-workspace/review/${key}`);
-    await hideBbPanel(page);
+    await hideAliaPanel(page);
     const collapseOffice = page.getByRole("button", { name: "Collapse office to current worker", exact: true });
     await collapseOffice.waitFor({ timeout: 5000 }).then(() => collapseOffice.click()).catch(() => {});
     await page.getByRole("button", { name: /^Start reading: Retries/ }).click();

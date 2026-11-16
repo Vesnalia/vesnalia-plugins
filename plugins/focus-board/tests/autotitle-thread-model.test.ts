@@ -1,6 +1,6 @@
 // Pure helpers behind the ✨ auto-rename thread-model probe (see
 // server.ts's thread_autotitle useThreadModel path): the probe prompt (the
-// shared bb-style title instructions plus the no-tools guardrail), the
+// shared alia-style title instructions plus the no-tools guardrail), the
 // timeline reader that extracts the probe's assistant reply, and the
 // settle check for the status poll. Pure so both can be tested without a
 // host.
@@ -24,7 +24,7 @@ const conversation = (
   ({ kind, role, text, id: `row_${text}` }) as unknown as AutotitleTimelineRow;
 
 describe("buildAutotitleProbePrompt", () => {
-  it("keeps the shared bb-style title instructions and appends the no-tools guardrail", () => {
+  it("keeps the shared alia-style title instructions and appends the no-tools guardrail", () => {
     const prompt = buildAutotitleProbePrompt("Fix the login redirect loop");
     // The head is the shared prompt: the same instructions the service
     // bridge serves, so both paths produce the same title style.
@@ -60,7 +60,7 @@ describe("assistantTextFromTimeline", () => {
   });
 
   it("strips think blocks the model wrapped its title in", () => {
-    // bb's own reply cleanup matches <think>/<thinking> blocks (an
+    // VesnALIA's own reply cleanup matches <think>/<thinking> blocks (an
     // unclosed one tolerates to end-of-text); the probe reader strips them
     // the same way before handing the text to the title cleaner.
     expect(
@@ -73,7 +73,7 @@ describe("assistantTextFromTimeline", () => {
         conversation("assistant", "<thinking>another musing</thinking>Fallback probe title"),
       ]),
     ).toBe("Fallback probe title");
-    // bb's exact semantics: an unclosed block consumes to end-of-text, so a
+    // VesnALIA's exact semantics: an unclosed block consumes to end-of-text, so a
     // leaked tag that never closes yields nothing usable — the caller fails
     // loud instead of shipping a truncated title.
     expect(
@@ -99,7 +99,7 @@ describe("probeSettled", () => {
   });
 });
 describe("firstUserPromptFromTimeline", () => {
-  it("takes the oldest user row when bb returns rows newest-first", () => {
+  it("takes the oldest user row when VesnALIA returns rows newest-first", () => {
     expect(
       firstUserPromptFromTimeline([
         { kind: "conversation", role: "user", sourceSeqStart: 30, text: "so why is it still refused?" },
@@ -141,7 +141,7 @@ describe("firstUserPromptFromTimeline", () => {
 
 describe("environment readiness refusal wording (issue #378)", () => {
   // The fallback modal serves these strings as the thread-model row's
-  // blocker text; each must name the actual blocker bb read off the row.
+  // blocker text; each must name the actual blocker VesnALIA read off the row.
   it("names the destroyed environment as the blocker", () => {
     expect(environmentNotSpawnableReason("destroyed")).toBe(
       "This thread's environment is destroyed, so a title probe cannot spawn in it",

@@ -4,8 +4,8 @@
 // link needs the directory. Fetched in one batch per set of unseen ids and
 // kept for the life of the sidebar: a checkout does not move.
 import { useEffect, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 
 export interface EnvironmentLocation {

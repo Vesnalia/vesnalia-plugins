@@ -1,5 +1,5 @@
-import { experimental_acpLaunchSpecSchema, experimental_acpProviderBridge } from "@get-bb/plugin-sdk/provider-bridge/acp";
-import { threadStartParamsSchema, threadResumeParamsSchema, turnStartParamsSchema } from "@get-bb/plugin-sdk/provider-bridge";
+import { experimental_acpLaunchSpecSchema, experimental_acpProviderBridge } from "@vesnalia/plugin-sdk/provider-bridge/acp";
+import { threadStartParamsSchema, threadResumeParamsSchema, turnStartParamsSchema } from "@vesnalia/plugin-sdk/provider-bridge";
 import { createBackgroundTaskTracker, defaultBackgroundTaskStatePath } from "./background-tasks.ts";
 import { ANTIGRAVITY_ACP_DIALECT_ID, applyThreadCommandDescriptions, onToolUpdate, registerAntigravityAcpDialect } from "./dialect.ts";
 import { modeControlOutput } from "./mode-controls.ts";

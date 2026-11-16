@@ -2,9 +2,9 @@
  * The last known good shelves, kept where a fresh mount can read them before
  * it paints.
  *
- * bb renders a different component for the settings routes, so the whole
+ * VesnALIA renders a different component for the settings routes, so the whole
  * thread list unmounts and comes back with every piece of local state reset —
- * while bb's own thread data returns from its cache instantly. That asymmetry
+ * while VesnALIA's own thread data returns from its cache instantly. That asymmetry
  * is the flicker: for one RPC round trip there are no rows, so every parked
  * thread reads as active, and a settled thread is filtered out of the list
  * altogether before it pops back onto its shelf.
@@ -16,7 +16,7 @@
  * Memory is read first, because a `setItem` that failed leaves the store
  * holding the older value and only memory holding the newer one. The one thing
  * memory cannot see is another WINDOW's write, and the settings route is
- * exactly where that bites: bb unmounts the list there and takes its
+ * exactly where that bites: VesnALIA unmounts the list there and takes its
  * `lifecycle` subscription with it, so a window parked on settings is told
  * nothing about a thread settled next door. A `storage` event fires in every
  * other document on the origin, so a foreign write drops the entry it names
@@ -30,7 +30,7 @@
  * user-writable and shared with every other script on the origin, so a decode
  * is a validation boundary at least as strict as the RPC schema it mirrors —
  * and it must never throw. It runs inside a `useState` initializer, and a
- * throw during render makes bb retire the plugin for the whole session and
+ * throw during render makes VesnALIA retire the plugin for the whole session and
  * fall back to its built-in list; a poisoned entry would do that on every
  * mount, surviving reload and reinstall, with no way for the dead plugin to
  * clear the value that killed it.
@@ -38,7 +38,7 @@
  * The cost, stated plainly because it is the one thing `server.ts` cannot
  * promise any more: thread ids, park timestamps, and provider ids, names and
  * logo paths leave the plugin's own SQLite file. They land in origin-global
- * web storage that bb's uninstall does not clear and every other installed
+ * web storage that VesnALIA's uninstall does not clear and every other installed
  * plugin can read.
  */
 
@@ -54,7 +54,7 @@ export const WARM_START_PROVIDERS_KEY = "gtd-sidebar:v1:providers";
 /**
  * What this plugin wrote under its old name, t3sidebar.
  *
- * A rename is a prefix retirement with none of a version bump's cover: bb
+ * A rename is a prefix retirement with none of a version bump's cover: VesnALIA
  * installs the renamed plugin under a new id, so the old install's uninstall
  * never runs and no later version of this file is ever asked for those keys
  * again. Nothing else on the origin will reclaim the space, so the first
@@ -169,7 +169,7 @@ function writeEntry(key: string, serialized: string, storage: WarmStartStorage |
     persistedTier.set(key, serialized);
     retireOldNameEntries(storage);
   } catch {
-    // Quota is shared with bb's own keys, so a full store is ordinary rather
+    // Quota is shared with VesnALIA's own keys, so a full store is ordinary rather
     // than exceptional. Memory carries this session on its own; forgetting
     // what the store holds is what makes the next write offer the value again
     // instead of recognising it as already written.
@@ -256,7 +256,7 @@ function decodeRow(value: unknown): ThreadLifecycleRow | null {
  *
  * `thread.deleted` only fires while the plugin is running, so a thread deleted
  * while it was stopped leaves its row behind for good; unbounded, that grows an
- * entry nobody prunes inside a quota shared with bb's own keys. Newest park
+ * entry nobody prunes inside a quota shared with VesnALIA's own keys. Newest park
  * first — by when it was made, which is what `parkedAt` exists to say — because
  * a park made minutes ago is the one whose shelf the user still has in mind.
  *
@@ -293,7 +293,7 @@ export const MAX_WARM_START_ENTRY_CHARS = 64 * 1024;
  * miss.
  *
  * One bad row rejects the whole payload. Half-accepting is the failure that
- * hurts: settling archives a thread in bb, so a dropped row does not make its
+ * hurts: settling archives a thread in VesnALIA, so a dropped row does not make its
  * thread read active, it makes the thread vanish from the sidebar entirely.
  * An over-long payload is rejected the same way and for the same reason — the
  * encoder never writes one, so anything over the cap was written by something
@@ -392,7 +392,7 @@ const LOGO_URL_BASE = "https://gtd-sidebar.invalid";
 /**
  * A logo the host serves, and nothing else.
  *
- * bb serves these as same-origin paths (`/api/v1/system/providers/<id>/logo`),
+ * VesnALIA serves these as same-origin paths (`/api/v1/system/providers/<id>/logo`),
  * and the glyph both probes the value with an `Image` and interpolates it into
  * a CSS `url("…")`, so a poisoned entry is a fetch to an arbitrary host on
  * every render of every row using that provider. A leading-slash test does not

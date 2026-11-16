@@ -1,12 +1,12 @@
 # Nerd Font symbols
 
 `nerd-symbols.css` is generated. It carries Symbols Nerd Font Mono as an inline
-`woff2`, because bb serves a plugin's `app.js` and `app.css` and nothing else —
+`woff2`, because VesnALIA serves a plugin's `app.js` and `app.css` and nothing else —
 a separate font file would have no URL to be fetched from.
 
 It exists for devices that cannot have a Nerd Font installed. iOS is the case
 that forced it: a shell that prints file icons (`eza --icons`, a powerline
-prompt) renders every one of them as a tofu box there, and bb ships no Nerd Font
+prompt) renders every one of them as a tofu box there, and VesnALIA ships no Nerd Font
 of its own. The family is listed **last** in the terminal's font stack and
 restricted by `unicode-range`, so a machine with a real Nerd Font installed
 keeps its own glyphs and metrics and never touches this.

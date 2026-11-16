@@ -3,7 +3,7 @@ import { z } from "zod";
 import { CATALOG, toolNamesForGroups } from "./catalog.js";
 
 describe("catalog", () => {
-  it("converts every tool schema to JSON schema the way bb does at registration", () => {
+  it("converts every tool schema to JSON schema the way VesnALIA does at registration", () => {
     const failures: string[] = [];
     for (const entry of CATALOG) {
       try {

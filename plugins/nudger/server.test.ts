@@ -4,8 +4,8 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setImmediate as nextTurn } from "node:timers/promises";
-import type { BbPluginApi, PluginThreadEventPayloads } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, makeMessageDispatchHookContext, makeQueueEntry, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi, PluginThreadEventPayloads } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, makeMessageDispatchHookContext, makeQueueEntry, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.js";
 import { decisionSchema, decisionsSchema, labelSchema, snapshotSchema, type MigrationPage, type NudgerSnapshot } from "./nudger-contract.js";
 import type { ThreadEventRow } from "./recovery-contract.js";
@@ -15,10 +15,10 @@ import { KEY_STATE_KEY } from "./jev-key.js";
 import { statsSchema } from "./stats.js";
 import type { ContinuationSnapshot } from "./continuation.js";
 
-type PluginInfo = Awaited<ReturnType<BbPluginApi["sdk"]["plugins"]["list"]>>["plugins"][number];
-type InventoryThread = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["list"]>>[number];
+type PluginInfo = Awaited<ReturnType<AliaPluginApi["sdk"]["plugins"]["list"]>>["plugins"][number];
+type InventoryThread = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["list"]>>[number];
 type FixtureThread = InventoryThread & PluginThreadEventPayloads["thread.idle"]["thread"];
-function fixture(options: { settings?: Record<string, string | boolean>; headquarters?: boolean; migration?: MigrationPage; beforePlugin?(bb: BbPluginApi): void } = {}) {
+function fixture(options: { settings?: Record<string, string | boolean>; headquarters?: boolean; migration?: MigrationPage; beforePlugin?(alia: AliaPluginApi): void } = {}) {
   // Lifecycle-event DTOs omit inventory-only environment/activity projections.
   // These fixtures have no environment, so their list projection explicitly has no host.
   const threads: FixtureThread[] = ["worker", "headquarters"].map(id => ({
@@ -36,7 +36,7 @@ function fixture(options: { settings?: Record<string, string | boolean>; headqua
     hasSettings: true, icon: null, iconUrl: null, icons: {}, isOrphanedBuiltin: false, logoDarkUrl: null, logoUrl: null, provenance: "direct",
     providerIds: [], publisherLabel: null, rootDir: "/fixture/headquarters", schedules: [], screenshots: [], services: [], source: "path:/fixture/headquarters", sourceDisplay: "Fixture", updateState: {},
   };
-  const { bb, harness } = createFakePluginHost({ pluginId: "nudger", settings: options.settings, sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "nudger", settings: options.settings, sdk: {
     plugins: {
       list: async () => ({ plugins: controls.present ? [{ ...installed, enabled: controls.enabled, status: controls.status }] : [] }),
       callRpc: async args => {
@@ -59,8 +59,8 @@ function fixture(options: { settings?: Record<string, string | boolean>; headqua
       queuedMessages: { delete: async () => ({ ok: true as const }) },
     },
   } });
-  options.beforePlugin?.(bb);
-  plugin(bb);
+  options.beforePlugin?.(alia);
+  plugin(alia);
   const snapshot = async (): Promise<NudgerSnapshot> => snapshotSchema.parse(await harness.callRpc("nudger_snapshot_v1", { version: 1 }));
   const config = async (): Promise<NudgerConfiguration> => configurationSchema.parse(await harness.callRpc("nudger_settings_v1", { version: 1 }));
   const dispatch = async (context: ReturnType<typeof makeMessageDispatchHookContext>) => harness.registrations.hooks["message.dispatch"]!(context);
@@ -77,7 +77,7 @@ function fixture(options: { settings?: Record<string, string | boolean>; headqua
     for (let attempt = 0; attempt < 100; attempt++) { const value = await snapshot(); if (predicate(value)) return value; await nextTurn(); }
     throw new Error("Expected live producer state did not arrive");
   }
-  return { bb, harness, threads, history, controls, snapshot, config, dispatch, finish, until };
+  return { alia, harness, threads, history, controls, snapshot, config, dispatch, finish, until };
 }
 /** `ending: null` answers in the shape judgments had before the `ending`/`waits_on`/`consequence` questions existed. */
 function jevResponse(classification: "continue" | "blocker" | "finished", ending: "request" | "operator_chosen" | "report" | null = "report") {
@@ -281,7 +281,7 @@ test("a leftover Luna choice reads as off, never classifies, and Luna-era histor
     assert.equal(value.status.classifying, false); assert.equal(value.status.detectorId, null);
     const config = configurationSchema.parse(await h.harness.callRpc("nudger_settings_v1", { version: 1 }));
     assert.equal(config.detector, "none"); assert.equal(config.active, false); assert.equal(config.error, null);
-    if (migration.settings.detector) assert.deepEqual(await h.bb.storage.kv.get(LEGACY_SETTINGS_KEY), { detector: "luna", keyAvailable: false });
+    if (migration.settings.detector) assert.deepEqual(await h.alia.storage.kv.get(LEGACY_SETTINGS_KEY), { detector: "luna", keyAvailable: false });
     if (migration.entries.length) {
       assert.equal(value.records.find(record => record.id === "legacy-luna")?.detector, lunaRecord.detector);
       const stats = statsSchema.parse(await h.harness.callRpc("nudger_stats_v1", { version: 1 }));
@@ -438,7 +438,7 @@ test("foreign plugins cannot mutate settings, secrets, enablement, pause, toggle
   await assert.rejects(h.harness.callRpc("nudger_continuation_cancel_v1", { threadId: "worker" }, foreign), /native operator/);
   await assert.rejects(h.harness.callRpc("nudger_pause_v1", { version: 1, paused: false }, foreign), /Only Headquarters/);
   assert.deepEqual(h.harness.sdk.calls, []);
-  assert.deepEqual(await h.bb.storage.kv.list(), []);
+  assert.deepEqual(await h.alia.storage.kv.list(), []);
   const settings = configurationSchema.parse(await h.harness.callRpc("nudger_settings_v1", { version: 1 }, foreign));
   assert.equal(settings.detector, "none"); assert.equal(settings.key, "saved"); assert.equal(settings.active, false);
   assert.equal((await h.snapshot()).status.classifying, false);
@@ -468,7 +468,7 @@ test("foreign toggle and cancel cannot alter an operator-owned pending decision"
   assert.doesNotMatch((await h.harness.runCli(["continuation", "worker"])).stdout, /"state": "pending"/);
 });
 
-test("late import shares the mutation lane while standard BB settings remain independently authoritative", async t => {
+test("late import shares the mutation lane while standard VesnALIA settings remain independently authoritative", async t => {
   t.mock.timers.enable({ apis: ["setInterval"] });
   // Jev refuses the new keys below, so nothing turns Nudger back on behind the explicit "off".
   const api = typesafe(t, () => 401, async () => { throw new Error("Concurrent explicit none must remain passive"); });
@@ -488,8 +488,8 @@ test("late import shares the mutation lane while standard BB settings remain ind
       { key: `recovery.records.${ownRecord.id}`, value: { ...ownRecord, reason: "Older imported reason" } },
       { key: "recovery.records.legacy-only", value: { ...ownRecord, id: "legacy-only", reason: "Imported retained history" } },
     );
-    const set = h.bb.storage.kv.set.bind(h.bb.storage.kv);
-    h.bb.storage.kv.set = async (key, value) => {
+    const set = h.alia.storage.kv.set.bind(h.alia.storage.kv);
+    h.alia.storage.kv.set = async (key, value) => {
       if (key === (gate === "marker" ? LEGACY_ACTIVATION_KEY : `${LEGACY_DATA_PREFIX}recovery.paused`)) { entered.resolve(); await release.promise; }
       return set(key, value);
     };
@@ -509,11 +509,11 @@ test("late import shares the mutation lane while standard BB settings remain ind
     const config = configurationSchema.parse(await h.harness.callRpc("nudger_settings_v1", { version: 1 }));
     // The new keys are checked; Jev refuses them, and the explicit "off" stands.
     assert.equal(config.detector, "none"); assert.equal(config.enabled, false); assert.equal(config.paused, true); assert.equal(config.key, "rejected");
-    assert.equal(await h.bb.storage.kv.get("recovery.paused"), true);
-    assert.equal(await h.bb.storage.kv.get("continuation.off.worker"), true);
-    assert.equal(await h.bb.storage.kv.get("continuation.off.headquarters"), true);
-    assert.equal(await h.bb.storage.kv.get(`${LEGACY_DATA_PREFIX}recovery.paused`), false);
-    assert.deepEqual(await h.bb.storage.kv.get(LEGACY_SETTINGS_KEY), { detector: "jev", keyAvailable: true });
+    assert.equal(await h.alia.storage.kv.get("recovery.paused"), true);
+    assert.equal(await h.alia.storage.kv.get("continuation.off.worker"), true);
+    assert.equal(await h.alia.storage.kv.get("continuation.off.headquarters"), true);
+    assert.equal(await h.alia.storage.kv.get(`${LEGACY_DATA_PREFIX}recovery.paused`), false);
+    assert.deepEqual(await h.alia.storage.kv.get(LEGACY_SETTINGS_KEY), { detector: "jev", keyAvailable: true });
     const banner = await h.harness.callRpc("nudger_continuation_status_v1", { threadId: "worker" });
     assert.equal(banner && typeof banner === "object" ? Reflect.get(banner, "nudgeCount") : null, 13);
     assert.match((await h.harness.runCli(["continuation", "worker"])).stdout, /"enabled": false/);
@@ -521,20 +521,20 @@ test("late import shares the mutation lane while standard BB settings remain ind
     const retained = await h.snapshot();
     assert.equal(retained.records.find(record => record.id === ownRecord.id)?.reason, ownRecord.reason);
     assert.equal(retained.records.find(record => record.id === "legacy-only")?.reason, "Imported retained history");
-    for (const key of await h.bb.storage.kv.list()) assert.doesNotMatch(JSON.stringify(await h.bb.storage.kv.get(key)), /legacy-secret|native-new-secret|rpc-new-secret/);
+    for (const key of await h.alia.storage.kv.list()) assert.doesNotMatch(JSON.stringify(await h.alia.storage.kv.get(key)), /legacy-secret|native-new-secret|rpc-new-secret/);
     service.controller.abort(); await service.done;
   }
   assert.equal(api.judgments(), 0);
 });
 
-test("a direct BB write fences an old configure read across awaits and immediately revokes paid configuration", async t => {
+test("a direct VesnALIA write fences an old configure read across awaits and immediately revokes paid configuration", async t => {
   const entered = Promise.withResolvers<void>(), release = Promise.withResolvers<void>();
   // Jev refuses the newly written key, so only the fence decides what runs.
   const api = typesafe(t, () => 401, async () => { throw new Error("Stale settings cannot activate a model"); });
-  const h = fixture({ settings: { detector: "jev", typesafeApiKey: "old-key" }, beforePlugin(bb) {
-    const get = bb.storage.kv.get.bind(bb.storage.kv);
+  const h = fixture({ settings: { detector: "jev", typesafeApiKey: "old-key" }, beforePlugin(alia) {
+    const get = alia.storage.kv.get.bind(alia.storage.kv);
     let first = true;
-    bb.storage.kv.get = async <T>(key: string): Promise<T | undefined> => {
+    alia.storage.kv.get = async <T>(key: string): Promise<T | undefined> => {
       const captured = await get<T>(key);
       if (first && key === KEY_STATE_KEY) { first = false; entered.resolve(); await release.promise; }
       return captured;
@@ -563,8 +563,8 @@ test("a fresh operator message durably overrides an imported Stop without modify
   const replacement = await current.reload(plugin); current = replacement.harness;
   const restored = snapshotSchema.parse(await current.callRpc("nudger_snapshot_v1", { version: 1 }));
   assert.equal(restored.status.threads.find(thread => thread.id === "worker")!.exclusion, null);
-  assert.equal(await replacement.bb.storage.kv.get("recovery.stopped.worker"), false);
-  assert.equal(await replacement.bb.storage.kv.get(`${LEGACY_DATA_PREFIX}recovery.stopped.worker`), true);
+  assert.equal(await replacement.alia.storage.kv.get("recovery.stopped.worker"), false);
+  assert.equal(await replacement.alia.storage.kv.get(`${LEGACY_DATA_PREFIX}recovery.stopped.worker`), true);
   assert.equal(fetch.mock.callCount(), 0);
 });
 
@@ -633,7 +633,7 @@ test("turning Nudger off survives saving the same key again; a new key or turnin
   const renewed = await h.config();
   assert.deepEqual([renewed.enabled, renewed.detector, renewed.active, renewed.key], [true, "jev", true, "connected"]);
   assert.equal(api.checks(), 3);
-  for (const key of await h.bb.storage.kv.list()) assert.doesNotMatch(JSON.stringify(await h.bb.storage.kv.get(key)), /first-key|second-key/);
+  for (const key of await h.alia.storage.kv.list()) assert.doesNotMatch(JSON.stringify(await h.alia.storage.kv.get(key)), /first-key|second-key/);
 });
 
 test("a key Jev rejects never turns Nudger on, and a key refused mid-run stops Jev at once with the reason shown", async t => {
@@ -685,7 +685,7 @@ test("an upgrade keeps explicit settings: a key saved before 0.1.1 is never trea
     const h = fixture({ settings }); t.after(() => h.harness.dispose());
     const config = await h.config();
     assert.deepEqual([config.enabled, config.detector, config.active, config.key], [settings.enabled ?? true, settings.detector ?? "none", active, "saved"], JSON.stringify(settings));
-    assert.equal(await h.bb.storage.kv.get(KEY_STATE_KEY), undefined);
+    assert.equal(await h.alia.storage.kv.get(KEY_STATE_KEY), undefined);
     await h.snapshot(); await h.finish("All done; nothing left to do.");
     await h.until(value => value.records[0]?.action === (active ? "finished" : "suppressed"));
     // A live answer from Jev is proof the key works.

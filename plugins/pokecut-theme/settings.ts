@@ -2,10 +2,10 @@
 // Pure so it can be tested; values arrive from plugin storage and are untrusted.
 
 /** Pending-row loader. pokecut is the accent-gradient ring; drive/dots/orbit are
-    BeautifulUI's variants, coins is Originkit's Coin Loader; bb keeps BB's own icon. */
-export const LOADERS = ["pokecut", "drive", "dots", "orbit", "coins", "bb"] as const;
+    BeautifulUI's variants, coins is Originkit's Coin Loader; VesnALIA keeps VesnALIA's own icon. */
+export const LOADERS = ["pokecut", "drive", "dots", "orbit", "coins", "alia"] as const;
 
-/** Tool call rows: filled chip, hairline only, or BB's plain row. */
+/** Tool call rows: filled chip, hairline only, or VesnALIA's plain row. */
 export const CHIP_STYLES = ["surface", "outline", "plain"] as const;
 
 /** Boolean preferences → the token the CSS looks for in `data-pk-off` when turned off. */

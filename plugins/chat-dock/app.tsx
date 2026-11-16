@@ -1,10 +1,10 @@
-// bb-plugin-chat-dock — frontend entry.
+// alia-plugin-chat-dock — frontend entry.
 //
-// Moves BB's own composer shell (the box, the cards above it, the chips under
+// Moves VesnALIA's own composer shell (the box, the cards above it, the chips under
 // it) out of the chat column while the thread's right panel is open: into a
 // Chat tab of its own, or, locked, into a strip under whichever tab is open. React
-// and @get-bb/plugin-sdk/app are provided by BB at load time, never bundled.
-import { definePluginApp, type ExperimentalTabRegistration } from "@get-bb/plugin-sdk/app";
+// and @vesnalia/plugin-sdk/app are provided by VesnALIA at load time, never bundled.
+import { definePluginApp, type ExperimentalTabRegistration } from "@vesnalia/plugin-sdk/app";
 import { Commands, dockingOn, toggleSetting } from "./src/Commands";
 import { Dock } from "./src/Dock";
 import { DockButton } from "./src/DockButton";

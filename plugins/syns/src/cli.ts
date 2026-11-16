@@ -1,5 +1,5 @@
 /**
- * The seam. Everything above this file talks to a `Runner`; in bb the Runner is
+ * The seam. Everything above this file talks to a `Runner`; in VesnALIA the Runner is
  * the call to the host half, in tests it is test/fake-runner.ts.
  * spec 02 §Argument safety, §Limits
  */

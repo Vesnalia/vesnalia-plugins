@@ -6,9 +6,9 @@ of their notices are retained in THIRD_PARTY_NOTICES.md, including the upstream
 Hugeicons free-icon clarification. No Pro icon pack is installed.
 
 The SDK npm package omits license metadata/text. Its package repository points
-to get-bb/bb; BB root LICENSE is MIT at both vendored registry tags
+to get-alia/alia; VesnALIA root LICENSE is MIT at both vendored registry tags
 (desktop-v0.40.0 and desktop-v0.41.0) and the reviewed current upstream source.
-Vendored BB/shadcn notices are preserved separately from the project MIT license.
+Vendored ALIA/shadcn notices are preserved separately from the project MIT license.
 
 MPL-2.0 entries belong to lightningcss and platform binaries in the development
 CSS toolchain. These binaries are not committed or distributed in the source Git
@@ -48,7 +48,7 @@ they do not imply every package is included in the compiled bundle.
 | @floating-ui/dom | 1.8.0 | MIT | development/optional |
 | @floating-ui/react-dom | 2.1.9 | MIT | development/optional |
 | @floating-ui/utils | 0.2.12 | MIT | development/optional |
-| @get-bb/plugin-sdk | 0.4.34 | Undeclared (SDK upstream MIT) | development/optional |
+| @vesnalia/plugin-sdk | 0.4.34 | Undeclared (SDK upstream MIT) | development/optional |
 | @hugeicons/core-free-icons | 4.3.0 | MIT | runtime/peer |
 | @hugeicons/react | 1.1.10 | MIT | runtime/peer |
 | @jridgewell/resolve-uri | 3.1.2 | MIT | development/optional |

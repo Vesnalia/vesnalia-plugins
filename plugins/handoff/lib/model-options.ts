@@ -1,6 +1,6 @@
 import { REASONING_LEVELS, type ReasoningLevel } from "../handoff";
 
-/** What `bb.sdk.providers.models()` reports per model, as far as the picker reads it. */
+/** What `alia.sdk.providers.models()` reports per model, as far as the picker reads it. */
 export interface ProviderModel {
   model: string;
   displayName: string;
@@ -23,7 +23,7 @@ function knownLevel(level: string): ReasoningLevel | null {
 }
 
 /**
- * bb reports reasoning efforts as plain strings, so a provider can list a
+ * VesnALIA reports reasoning efforts as plain strings, so a provider can list a
  * level newer than REASONING_LEVELS. Offer the levels a handoff can pass on
  * and leave the rest out, rather than failing the whole model list.
  */

@@ -38,15 +38,15 @@ Error messages are stable search keys; each is produced by exactly one module:
 
 | Message / behavior                                                             | Produced by          | Meaning                                                                                |
 | ------------------------------------------------------------------------------ | -------------------- | -------------------------------------------------------------------------------------- |
-| `ZCode was not found. Install ZCode or set the plugin executable setting.`     | `src/launch.ts`      | Resolution order (setting → `BB_ZCODE_EXECUTABLE` → PATH → macOS bundle) found nothing |
+| `ZCode was not found. Install ZCode or set the plugin executable setting.`     | `src/launch.ts`      | Resolution order (setting → `ALIA_ZCODE_EXECUTABLE` → PATH → macOS bundle) found nothing |
 | `Cannot launch ZCode: …` / `ZCode exited (signal/code)`                        | `src/client.ts`      | Child spawn failure or early exit; check executable and provider configuration         |
 | `ZCode stdin closed.`                                                          | `src/client.ts`      | Child closed stdin while requests were pending                                         |
 | `ZCode Coding Plan: cannot read the desktop configuration…`                    | `src/coding-plan.ts` | Desktop sign-in missing; open ZCode and sign in again                                  |
 | `The ZCode follow-up queue is full.`                                           | `src/bridge.ts`      | More than 32 pending follow-ups (bounded queue, by design)                             |
 | `This ZCode CLI does not expose compatible v4 history controls. Update ZCode.` | `src/lifecycle.ts`   | v4 row query failed schema check; CLI too old or protocol changed                      |
 | `ZCode returned inconsistent history rows.`                                    | `src/lifecycle.ts`   | Rows not strictly descending / outside the requested range                             |
-| `Invalid bb tool catalog: too many or duplicate tools.`                        | `src/tool-server.ts` | >256 tools or duplicate names                                                          |
-| `bb skill roots must be absolute paths (maximum 128).`                         | `src/skills.ts`      | bb sent relative skill paths or too many roots                                         |
+| `Invalid alia tool catalog: too many or duplicate tools.`                        | `src/tool-server.ts` | >256 tools or duplicate names                                                          |
+| `alia skill roots must be absolute paths (maximum 128).`                         | `src/skills.ts`      | VesnALIA sent relative skill paths or too many roots                                         |
 | Tool endpoint 401 / 404 / 405 / 413                                            | `src/tool-server.ts` | Bad bearer token or browser `Origin` / wrong path or inactive / non-POST / body >1 MiB |
 
 Bridge-level errors are thrown as `ProtocolError` (default code `-32000`);
@@ -64,8 +64,8 @@ deterministically:
   - raw peer for split UTF-8 frames and malformed/oversized input.
 - [tests/fixtures/mcp-server.mjs](../../tests/fixtures/mcp-server.mjs) - MCP
   server for startup configuration and tool execution paths.
-- [tests/fixtures/bb-extension-plugin/](../../tests/fixtures/bb-extension-plugin/)
-  - companion bb plugin for the tool/skill bridge tests.
+- [tests/fixtures/alia-extension-plugin/](../../tests/fixtures/alia-extension-plugin/)
+  - companion VesnALIA plugin for the tool/skill bridge tests.
 
 Pick the test file that covers the failing area
 ([tests/bridge.test.ts](../../tests/bridge.test.ts),
@@ -75,7 +75,7 @@ it rather than testing through the real CLI first.
 
 ## Marketplace and install issues
 
-A plain repository-page URL is rejected by bb with HTTP 422 because bb parses
+A plain repository-page URL is rejected by VesnALIA with HTTP 422 because VesnALIA parses
 every `https://` marketplace source as JSON. Use the raw manifest URL or the
 `git:` form; details and update commands are in
 [docs/marketplace.md](../../docs/marketplace.md).

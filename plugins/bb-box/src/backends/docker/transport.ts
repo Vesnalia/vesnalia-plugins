@@ -30,7 +30,7 @@ export const BOX_HOME = `/home/${BOX_USER}`;
 
 const PRELUDE =
   "set -a; [ ! -r /etc/environment ] || . /etc/environment; " +
-  "[ ! -r /run/bb-box/display.env ] || . /run/bb-box/display.env; set +a; ";
+  "[ ! -r /run/alia-box/display.env ] || . /run/alia-box/display.env; set +a; ";
 
 /** What docker says when the command never ran in the container. */
 const NOT_RUN =

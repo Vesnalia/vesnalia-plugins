@@ -110,17 +110,17 @@ it("creates a new untracked branch from the default branch or a named base", asy
   const fromDefault = await createWorktree({
     sourcePath: env.source,
     targetPath: target(env, "attempt-1"),
-    branch: { kind: "new", name: "bb/thread-1", base: null },
+    branch: { kind: "new", name: "alia/thread-1", base: null },
   });
   expect(fromDefault.baseBranch).toBe("main");
-  expect(git(fromDefault.path, "branch", "--show-current")).toBe("bb/thread-1");
+  expect(git(fromDefault.path, "branch", "--show-current")).toBe("alia/thread-1");
   expect(git(fromDefault.path, "rev-parse", "HEAD")).toBe(git(env.source, "rev-parse", "origin/main"));
   expect(() => git(fromDefault.path, "rev-parse", "--abbrev-ref", "@{upstream}")).toThrow();
 
   const fromFeature = await createWorktree({
     sourcePath: env.source,
     targetPath: target(env, "attempt-2"),
-    branch: { kind: "new", name: "bb/thread-2", base: "origin/feature" },
+    branch: { kind: "new", name: "alia/thread-2", base: "origin/feature" },
   });
   expect(fromFeature.baseBranch).toBe("feature");
   expect(existsSync(join(fromFeature.path, "feature"))).toBe(true);

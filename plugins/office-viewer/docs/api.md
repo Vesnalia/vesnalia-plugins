@@ -27,19 +27,19 @@ TL;DR: The plugin exposes typed RPC for file access and Studio tools, plus GET a
 
 ## Purpose
 
-The API connects BB file openers and thread tools to preview, file, asset and persistence operations on the owning BB host (`server.ts:462-569`; `server.ts:571-933`).
+The API connects VesnALIA file openers and thread tools to preview, file, asset and persistence operations on the owning VesnALIA host (`server.ts:462-569`; `server.ts:571-933`).
 
 ## How it works
 
-The server declares request/response schemas with Zod in `rpcContract`, then registers implementations through `bb.rpc.register` (`server.ts:48-321`; `server.ts:462-479`). File methods accept a `source`, path and optional locale; the resolver maps the source to a host and absolute path (`server.ts:48-58`; `src/server/locate.ts:91-133`). Studio methods use the current `threadId` to find thread storage and read or write tool files (`server.ts:120-321`; `server.ts:571-621`).
+The server declares request/response schemas with Zod in `rpcContract`, then registers implementations through `alia.rpc.register` (`server.ts:48-321`; `server.ts:462-479`). File methods accept a `source`, path and optional locale; the resolver maps the source to a host and absolute path (`server.ts:48-58`; `src/server/locate.ts:91-133`). Studio methods use the current `threadId` to find thread storage and read or write tool files (`server.ts:120-321`; `server.ts:571-621`).
 
 ## Modes
 
-RPC calls use BB's plugin SDK. HTTP routes serve versioned PDF.js/screenshot assets, prototype schema and icon data, and published prototype HTML/JSON (`server.ts:363-460`).
+RPC calls use VesnALIA's plugin SDK. HTTP routes serve versioned PDF.js/screenshot assets, prototype schema and icon data, and published prototype HTML/JSON (`server.ts:363-460`).
 
 ## Failures and compensation
 
-Invalid RPC payloads fail schema validation; location, missing-file, host-unavailable, parse and write errors propagate through handlers, with selected file errors rewritten to include host/path context (`server.ts:48-67`; `server.ts:344-354`; `server.ts:480-569`). `save` returns `conflict` when the read hash differs or BB's conditional write reports a conflict (`server.ts:548-569`). Versioned asset routes return 304 for a matching ETag (`server.ts:363-382`).
+Invalid RPC payloads fail schema validation; location, missing-file, host-unavailable, parse and write errors propagate through handlers, with selected file errors rewritten to include host/path context (`server.ts:48-67`; `server.ts:344-354`; `server.ts:480-569`). `save` returns `conflict` when the read hash differs or VesnALIA's conditional write reports a conflict (`server.ts:548-569`). Versioned asset routes return 304 for a matching ETag (`server.ts:363-382`).
 
 ## Routes
 
@@ -91,15 +91,15 @@ The public surface is the RPC contract and HTTP paths listed above; implementati
 
 ## Package shape
 
-`server.ts` owns route registration, payload validation and handler implementations; `src/server/locate.ts` resolves BB file source context; file openers and Studio tools call their corresponding methods (`server.ts:356-479`; `src/server/locate.ts:91-133`; `src/studio/prototype/builder.tsx:1264-1303`).
+`server.ts` owns route registration, payload validation and handler implementations; `src/server/locate.ts` resolves VesnALIA file source context; file openers and Studio tools call their corresponding methods (`server.ts:356-479`; `src/server/locate.ts:91-133`; `src/studio/prototype/builder.tsx:1264-1303`).
 
 ## Internal model
 
-The RPC contract carries BB file-source identity separately from a path. `locate` resolves that identity into `{hostId, absPath, rootPath}` before a file operation (`server.ts:48-58`; `src/server/locate.ts:14-20`; `src/server/locate.ts:91-133`).
+The RPC contract carries VesnALIA file-source identity separately from a path. `locate` resolves that identity into `{hostId, absPath, rootPath}` before a file operation (`server.ts:48-58`; `src/server/locate.ts:14-20`; `src/server/locate.ts:91-133`).
 
 ## Dependencies
 
-Zod validates contract inputs/outputs; BB Plugin SDK supplies RPC and HTTP registration; file operations use BB SDK file, host, thread, environment and project services (`server.ts:3-4`; `server.ts:356-479`; `src/server/locate.ts:22-36`).
+Zod validates contract inputs/outputs; VesnALIA Plugin SDK supplies RPC and HTTP registration; file operations use VesnALIA SDK file, host, thread, environment and project services (`server.ts:3-4`; `server.ts:356-479`; `src/server/locate.ts:22-36`).
 
 ## Gotchas
 

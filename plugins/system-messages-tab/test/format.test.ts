@@ -39,7 +39,7 @@ test("finds the time key in outline ids", () => {
 });
 
 test("finds the sender thread of a thread message", () => {
-  assert.equal(senderThreadOf("[bb message from thread:thr_cqw7gb868c] R: hi"), "thr_cqw7gb868c");
-  assert.equal(senderThreadOf("[bb message from thread:thr_x;reply=1] hi"), "thr_x");
-  assert.equal(senderThreadOf("[bb system] done"), null);
+  assert.equal(senderThreadOf("[VesnALIA message from thread:thr_cqw7gb868c] R: hi"), "thr_cqw7gb868c");
+  assert.equal(senderThreadOf("[VesnALIA message from thread:thr_x;reply=1] hi"), "thr_x");
+  assert.equal(senderThreadOf("[VesnALIA system] done"), null);
 });

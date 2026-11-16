@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { VERSION, buildDeclaration } from "../src/declaration.js";
 import { METHODS } from "../src/methods/index.js";
 import { PAGEHOST } from "../src/pagehost.js";
-import { fakeBb } from "./fake-bb.js";
+import { fakeAlia } from "./fake-alia.js";
 import { rec } from "./fake-runner.js";
 
 /** One page-script ask as Thread Pages sends it (unife-pages 07 R5.88). */
@@ -477,36 +477,36 @@ describe("a frame given a hash shows its document with that location.hash from i
   });
 });
 
-describe("the page script on bb (S2.27)", () => {
+describe("the page script on VesnALIA (S2.27)", () => {
   it("is declared, whatever agentInstructions says", () => {
     for (const agentInstructions of [true, false]) expect(buildDeclaration(METHODS, { agentInstructions }).pageScript).toBe(true);
   });
 
   it("answers the script at the plugin's version when the session's folder is a Syns repository, checked with one syns repo --json there", async () => {
     const asked: unknown[] = [];
-    const { handlers } = fakeBb({}, async (method, input, options) => (asked.push({ method, input, options }), rec("repo.ok")));
+    const { handlers } = fakeAlia({}, async (method, input, options) => (asked.push({ method, input, options }), rec("repo.ok")));
     expect(await handlers.threadPagesPageScript!(ask(null))).toEqual({ version: VERSION, script: PAGEHOST });
     expect(asked).toEqual([{ method: "run", input: { cwd: "/work/plans", args: ["repo", "--json"], timeoutMs: expect.any(Number) }, options: { hostId: "host_9", timeoutMs: expect.any(Number), signal: expect.any(AbortSignal) } }]);
     expect((asked[0] as { input: { timeoutMs: number } }).input.timeoutMs).toBeLessThanOrEqual(2_000);
   });
 
   it("answers the script for a placed folder too", async () => {
-    const { handlers } = fakeBb({}, async () => rec("repo.folder"));
+    const { handlers } = fakeAlia({}, async () => rec("repo.folder"));
     expect(await handlers.threadPagesPageScript!(ask(null))).toEqual({ version: VERSION, script: PAGEHOST });
   });
 
   it("answers only the version when the host already holds it, and the whole script for any other version", async () => {
-    const { handlers } = fakeBb({}, async () => rec("repo.ok"));
+    const { handlers } = fakeAlia({}, async () => rec("repo.ok"));
     expect(await handlers.threadPagesPageScript!(ask(VERSION))).toEqual({ version: VERSION });
     expect(await handlers.threadPagesPageScript!(ask("0.0.1"))).toEqual({ version: VERSION, script: PAGEHOST });
   });
 
   it("answers none outside a Syns repository, signed out, or when the CLI cannot run", async () => {
     for (const reply of [rec("no-identity"), rec("signed-out.repo"), rec("not-json")]) {
-      const { handlers } = fakeBb({}, async () => reply);
+      const { handlers } = fakeAlia({}, async () => reply);
       expect(await handlers.threadPagesPageScript!(ask(null))).toBeNull();
     }
-    const { handlers } = fakeBb({}, async () => {
+    const { handlers } = fakeAlia({}, async () => {
       throw new Error("host host_9 is offline");
     });
     expect(await handlers.threadPagesPageScript!(ask(null))).toBeNull();
@@ -514,7 +514,7 @@ describe("the page script on bb (S2.27)", () => {
 
   it("answers none, and runs nothing, with no session, no folder or a folder that is not an absolute path", async () => {
     const asked: unknown[] = [];
-    const { handlers } = fakeBb({}, async (method) => (asked.push(method), rec("repo.ok")));
+    const { handlers } = fakeAlia({}, async (method) => (asked.push(method), rec("repo.ok")));
     for (const one of [ask(null, null, null), ask(null, null), ask(null, { id: "p", path: "work/plans", machine: null }), ask(null, { id: "p", machine: null }), {}, null]) {
       expect(await handlers.threadPagesPageScript!(one)).toBeNull();
     }
@@ -522,7 +522,7 @@ describe("the page script on bb (S2.27)", () => {
   });
 
   it("answers none inside the host's 2 s when the check does not finish", async () => {
-    const { handlers } = fakeBb({}, () => new Promise(() => undefined));
+    const { handlers } = fakeAlia({}, () => new Promise(() => undefined));
     const started = Date.now();
     expect(await handlers.threadPagesPageScript!(ask(null))).toBeNull();
     expect(Date.now() - started).toBeLessThan(2_000);
@@ -576,15 +576,15 @@ describe("a frame gets what a Thread Page frame gets (B-0105, D91, D92)", () => 
     expect(await page.link("second.html#s", true)).toEqual({ went: [{ kind: "page", path: "second.html", hash: "#s", newTab: true }], asked: [] });
   });
 
-  it("opens another session's page on this host with pages.open once the host refuses it as its own, on bb's address and on Unife Pages' (Claude Code)", async () => {
-    const bb = linkOf({ kind: "repo", folder: "tools/app" });
+  it("opens another session's page on this host with pages.open once the host refuses it as its own, on VesnALIA's address and on Unife Pages' (Claude Code)", async () => {
+    const alia = linkOf({ kind: "repo", folder: "tools/app" });
     const a = "https://bart.getbb.app/api/v1/plugins/thread-pages/http/page?session=thr_other&path=notes.html#top";
-    expect(await bb.link(a)).toEqual({ went: [], asked: [refused(a), ["pages.open", { sessionId: "thr_other" }]] });
+    expect(await alia.link(a)).toEqual({ went: [], asked: [refused(a), ["pages.open", { sessionId: "thr_other" }]] });
     const cc = linkOf({ kind: "page", path: "index.html" }, "http://127.0.0.1:4848", ["http://127.0.0.1:4848", "http://localhost:4848"]);
     for (const b of ["http://127.0.0.1:4848/page?session=thr_other", "http://localhost:4848/page?session=thr_other"]) expect(await cc.link(b), b).toEqual({ went: [], asked: [refused(b), ["pages.open", { sessionId: "thr_other" }]] });
   });
 
-  it("opens the address an agent is given (bb Connect) while the reader is on the local origin, as the host counts both as its own (B-0105 F1)", async () => {
+  it("opens the address an agent is given (VesnALIA Connect) while the reader is on the local origin, as the host counts both as its own (B-0105 F1)", async () => {
     const local = linkOf({ kind: "repo", folder: "tools/app" }, "http://127.0.0.1:38886", ["http://127.0.0.1:38886", "https://bart.getbb.app"]);
     const a = "https://bart.getbb.app/api/v1/plugins/thread-pages/http/page?session=thr_other";
     expect(await local.link(a)).toEqual({ went: [], asked: [refused(a), ["pages.open", { sessionId: "thr_other" }]] });

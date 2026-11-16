@@ -1,5 +1,5 @@
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginMessageDirectiveProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginMessageDirectiveProps } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import type { AuthConnectionDto, rpcContract, ReplayDto, TargetDto } from "./src/rpc.js";

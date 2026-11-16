@@ -1,8 +1,8 @@
-// GitLab Interface (Notion style) — GitLab issues & merge requests inside BB.
+// GitLab Interface (Notion style) — GitLab issues & merge requests inside VesnALIA.
 //
 // Auth rides on the GitLab CLI: every host `glab auth status` reports as
 // logged in is a host this plugin can reach, so self-managed instances work
-// without extra configuration. Projects are discovered from each BB project's
+// without extra configuration. Projects are discovered from each VesnALIA project's
 // git remote (kept when its host is one of those authenticated hosts) plus an
 // optional extraProjects setting. A background service syncs open +
 // recently-closed issues/MRs into the plugin's SQLite cache; the frontend
@@ -16,9 +16,9 @@
 import { execFile } from "node:child_process";
 import {
   defineRpcContract,
-  type BbPluginApi,
+  type AliaPluginApi,
   type PluginCliContext,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { explainMergeFailure, mergeAllowance, mergeQuery } from "./lib/merge";
 import { groupOwnMergeRequest } from "./lib/dashboard";
@@ -56,7 +56,7 @@ const MAX_PATCH_BYTES = 20_000;
 
 const GLAB_HINT =
   "Install the GitLab CLI (https://gitlab.com/gitlab-org/cli) and run " +
-  "`glab auth login`, then `bb plugin reload gitlab-interface-notion-style`.";
+  "`glab auth login`, then `alia plugin reload gitlab-interface-notion-style`.";
 
 /**
  * "host/group/sub/project" — the host glab knows the instance by, then a path
@@ -84,7 +84,7 @@ const projectInfoSchema = z
     project: projectRefSchema,
     host: z.string().min(1),
     path: z.string().min(1),
-    bbProjectId: z.string().nullable(),
+    aliaProjectId: z.string().nullable(),
   })
   .strict();
 const itemSchema = z
@@ -651,7 +651,7 @@ export const gitlabRpcContract = defineRpcContract({
   },
   /**
    * The checkout state of a thread's environment, read with git in its path,
-   * so the chat strip works without the bb--git plugin.
+   * so the chat strip works without the alia--git plugin.
    */
   branchState: {
     input: z.object({ environmentId: z.string().min(1) }).strict(),
@@ -994,8 +994,8 @@ interface ProjectInfo {
   project: string;
   host: string;
   path: string;
-  /** The BB project whose remote points at it, when there is one. */
-  bbProjectId: string | null;
+  /** The VesnALIA project whose remote points at it, when there is one. */
+  aliaProjectId: string | null;
 }
 
 interface CachedItem {
@@ -1198,7 +1198,7 @@ export function countDiffLines(diff: string): {
 }
 
 // ---------------------------------------------------------------------------
-// `bb gitlab-ui` argument parsing. Pure, so the shape of every subcommand is
+// `alia gitlab-ui` argument parsing. Pure, so the shape of every subcommand is
 // testable without glab; resolving a target against the authenticated hosts
 // happens at run time (parseGitlabTarget).
 // ---------------------------------------------------------------------------
@@ -1222,7 +1222,7 @@ export interface GitlabListFilters {
 }
 
 export interface GitlabPipelineSelector {
-  /** Raw target as typed; null means the BB project the CLI runs in. */
+  /** Raw target as typed; null means the VesnALIA project the CLI runs in. */
   target: string | null;
   ref: string | null;
   pipelineId: number | null;
@@ -1243,7 +1243,7 @@ export type GitlabCliCommand =
   | ({ sub: "retry"; job: string | null } & GitlabPipelineSelector)
   | { sub: "run"; target: string | null; ref: string | null };
 
-/** Lines of each failed job's log `bb gitlab-ui pipeline` prints by default. */
+/** Lines of each failed job's log `alia gitlab-ui pipeline` prints by default. */
 export const DEFAULT_JOB_LOG_LINES = 30;
 
 interface FlagSpec {
@@ -1335,7 +1335,7 @@ export function parseGitlabCliArgs(
     const [target, ...words] = args;
     const body = words.join(" ").trim();
     if (target === undefined || body.length === 0) {
-      return { error: "Usage: bb gitlab-ui comment <issue-or-mr> <text…>" };
+      return { error: "Usage: VesnALIA gitlab-ui comment <issue-or-mr> <text…>" };
     }
     return { sub: "comment", target, body };
   }
@@ -1424,7 +1424,7 @@ export function parseGitlabCliArgs(
     }
     case "show":
       if (target === null) {
-        return { error: "Usage: bb gitlab-ui show <issue-or-mr>" };
+        return { error: "Usage: VesnALIA gitlab-ui show <issue-or-mr>" };
       }
       return { sub, target, json: booleans.has("json") };
     case "pipeline":
@@ -1459,7 +1459,7 @@ export function validateGitlabCliArgs(argv: string[]): string | null {
   return "error" in parsed ? parsed.error : null;
 }
 
-/** What a `bb gitlab-ui` target names, once resolved against glab's hosts. */
+/** What a `alia gitlab-ui` target names, once resolved against glab's hosts. */
 export type GitlabTarget =
   | { kind: "project"; project: string }
   | { kind: "issue" | "mr"; project: string; iid: number }
@@ -1702,14 +1702,14 @@ function listSetting(value: string): string[] {
     .filter((entry) => entry.length > 0);
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     extraProjects: {
       type: "string",
       label: "Extra projects",
       description:
         'Comma-separated "host/group/project" list to track in addition to the ' +
-        "projects discovered from BB projects. A bare path uses the default host.",
+        "projects discovered from VesnALIA projects. A bare path uses the default host.",
       default: "",
     },
     defaultHost: {
@@ -1784,14 +1784,14 @@ export default async function plugin(bb: BbPluginApi) {
     },
     defaultProject: {
       type: "project",
-      label: "Default BB project",
+      label: "Default VesnALIA project",
       description:
-        "Where agent threads spawn for GitLab projects that are not attached to a BB project.",
+        "Where agent threads spawn for GitLab projects that are not attached to a VesnALIA project.",
     },
   });
 
   // The panel re-reads its settings when they change, without a reload.
-  settings.onChange(() => bb.realtime.publish("settings-changed", {}));
+  settings.onChange(() => alia.realtime.publish("settings-changed", {}));
 
   // ------------------------------------------------------------------
   // glab CLI plumbing. The server process may have a trimmed PATH, so probe
@@ -1917,8 +1917,8 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   // ------------------------------------------------------------------
-  // Project discovery: BB project git remotes → host/path. The remote comes
-  // from BB's own project record, so a checkout living on an enrolled remote
+  // Project discovery: VesnALIA project git remotes → host/path. The remote comes
+  // from VesnALIA's own project record, so a checkout living on an enrolled remote
   // host resolves exactly like a local one.
   // ------------------------------------------------------------------
   let projectCache: { projects: ProjectInfo[]; fetchedAt: number } | null = null;
@@ -1932,33 +1932,33 @@ export default async function plugin(bb: BbPluginApi) {
       return projectCache.projects;
     }
     const byRef = new Map<string, ProjectInfo>();
-    const addRef = (ref: string, bbProjectId: string | null): void => {
+    const addRef = (ref: string, aliaProjectId: string | null): void => {
       if (byRef.has(ref)) return;
       const { host, path } = parseProjectRef(ref);
-      byRef.set(ref, { project: ref, host, path, bbProjectId });
+      byRef.set(ref, { project: ref, host, path, aliaProjectId });
     };
     try {
-      for (const bbProject of await bb.sdk.projects.list()) {
-        if (bbProject.gitRemoteUrl === null) continue;
-        const ref = parseGitlabRemote(bbProject.gitRemoteUrl, authenticatedHosts);
+      for (const aliaProject of await alia.sdk.projects.list()) {
+        if (aliaProject.gitRemoteUrl === null) continue;
+        const ref = parseGitlabRemote(aliaProject.gitRemoteUrl, authenticatedHosts);
         if (ref !== null) {
-          addRef(ref, bbProject.id);
+          addRef(ref, aliaProject.id);
           continue;
         }
         // Not one of glab's hosts. Say so once per sync: on a self-managed
         // instance the fix is `glab auth login --hostname <host>`, and silence
         // here reads as the plugin ignoring the project.
-        const remoteHost = bbProject.gitRemoteUrl.match(
+        const remoteHost = aliaProject.gitRemoteUrl.match(
           /^(?:[a-z][a-z0-9+.-]*:\/\/)?(?:[^@/\s]+@)?([^:/\s]+)/i,
         );
         if (remoteHost !== null) {
-          bb.log.debug(
-            `project ${bbProject.id} remote host ${remoteHost[1]} is not an authenticated glab host`,
+          alia.log.debug(
+            `project ${aliaProject.id} remote host ${remoteHost[1]} is not an authenticated glab host`,
           );
         }
       }
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `project discovery failed: ${
           error instanceof Error ? error.message : String(error)
         }`,
@@ -1969,7 +1969,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (raw.trim().length === 0) continue;
       const ref = normalizeProjectRef(raw, authenticatedHosts, defaultHost);
       if (ref !== null) addRef(ref, null);
-      else bb.log.warn(`ignoring malformed extraProjects entry "${raw}"`);
+      else alia.log.warn(`ignoring malformed extraProjects entry "${raw}"`);
     }
     const projects = [...byRef.values()];
     projectCache = { projects, fetchedAt: Date.now() };
@@ -1979,8 +1979,8 @@ export default async function plugin(bb: BbPluginApi) {
   // ------------------------------------------------------------------
   // SQLite cache of open issues + merge requests across tracked projects.
   // ------------------------------------------------------------------
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS items (
        project TEXT NOT NULL,
        iid INTEGER NOT NULL,
@@ -2133,7 +2133,7 @@ export default async function plugin(bb: BbPluginApi) {
         "UPDATE items SET labels = ? WHERE project = ? AND kind = ? AND iid = ?",
       ).run(JSON.stringify(patch.labels), project, kind, iid);
     }
-    bb.realtime.publish("data-changed", {});
+    alia.realtime.publish("data-changed", {});
   }
 
   async function syncAll(
@@ -2163,22 +2163,22 @@ export default async function plugin(bb: BbPluginApi) {
         replaceProjectRows(project, items);
         total += items.length;
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `sync failed for ${project}: ${
             error instanceof Error ? error.message : String(error)
           }`,
         );
       }
     }
-    await bb.storage.kv.set("sync-cursor", {
+    await alia.storage.kv.set("sync-cursor", {
       lastSyncedAt: new Date().toISOString(),
       projects: projects.length,
       items: total,
     });
     if (before !== JSON.stringify(fingerprint.all())) {
-      bb.realtime.publish("data-changed", { items: total });
+      alia.realtime.publish("data-changed", { items: total });
     }
-    bb.log.info(`synced ${total} item(s) across ${projects.length} project(s)`);
+    alia.log.info(`synced ${total} item(s) across ${projects.length} project(s)`);
     return { projects: projects.length, items: total };
   }
 
@@ -2188,7 +2188,7 @@ export default async function plugin(bb: BbPluginApi) {
   // an abort that lands mid-sync would otherwise register its listener on an
   // already-aborted signal, which never fires, and the reload would wait out
   // the full interval and report the plugin degraded.
-  bb.background.service("sync", {
+  alia.background.service("sync", {
     async start(signal) {
       while (!signal.aborted) {
         await syncAll();
@@ -2213,7 +2213,7 @@ export default async function plugin(bb: BbPluginApi) {
   try {
     await checkAuth();
   } catch (error) {
-    bb.status.needsConfiguration(
+    alia.status.needsConfiguration(
       error instanceof Error ? error.message : String(error),
     );
   }
@@ -2224,16 +2224,16 @@ export default async function plugin(bb: BbPluginApi) {
   // ------------------------------------------------------------------
   async function addLink(link: ThreadLink): Promise<void> {
     const key = `link:${link.kind}:${link.project}!${link.iid}`;
-    const existing = (await bb.storage.kv.get<ThreadLink[]>(key)) ?? [];
-    await bb.storage.kv.set(key, [...existing, link]);
-    bb.realtime.publish("links-changed", { key });
+    const existing = (await alia.storage.kv.get<ThreadLink[]>(key)) ?? [];
+    await alia.storage.kv.set(key, [...existing, link]);
+    alia.realtime.publish("links-changed", { key });
   }
 
   async function listAllLinks(): Promise<Record<string, ThreadLink[]>> {
-    const keys = await bb.storage.kv.list("link:");
+    const keys = await alia.storage.kv.list("link:");
     const result: Record<string, ThreadLink[]> = {};
     for (const key of keys) {
-      const links = await bb.storage.kv.get<ThreadLink[]>(key);
+      const links = await alia.storage.kv.get<ThreadLink[]>(key);
       if (links !== undefined && links.length > 0) {
         result[key.slice("link:".length)] = links;
       }
@@ -2244,14 +2244,14 @@ export default async function plugin(bb: BbPluginApi) {
   // ------------------------------------------------------------------
   // Spawning agent threads on issues / MR reviews.
   // ------------------------------------------------------------------
-  async function resolveBbProjectId(project: string): Promise<string> {
+  async function resolveAliaProjectId(project: string): Promise<string> {
     const projects = await discoverProjects();
     const info = projects.find((entry) => entry.project === project);
-    if (info?.bbProjectId != null) return info.bbProjectId;
+    if (info?.aliaProjectId != null) return info.aliaProjectId;
     const { defaultProject } = await settings.get();
     if (defaultProject) return defaultProject;
     throw new Error(
-      `No BB project is attached to ${project}. Create a project whose checkout has ` +
+      `No VesnALIA project is attached to ${project}. Create a project whose checkout has ` +
         "that origin remote, or set the defaultProject plugin setting.",
     );
   }
@@ -2265,7 +2265,7 @@ export default async function plugin(bb: BbPluginApi) {
     const noun = kind === "mr" ? "merge request" : "issue";
     const marker = kind === "mr" ? "!" : "#";
     const title = item?.title ?? `${noun} ${marker}${iid}`;
-    const bbProjectId = await resolveBbProjectId(project);
+    const aliaProjectId = await resolveAliaProjectId(project);
     const ref = `${project}${marker}${iid}`;
     const prompt =
       kind === "issue"
@@ -2293,8 +2293,8 @@ export default async function plugin(bb: BbPluginApi) {
               "Summarize your findings with file/line references. Do not push " +
               "changes or post to GitLab unless asked.",
           ].join("\n");
-    const thread = await bb.sdk.threads.spawn({
-      projectId: bbProjectId,
+    const thread = await alia.sdk.threads.spawn({
+      projectId: aliaProjectId,
       environment: { type: "project-default" },
       title: `${ref}: ${title}`.slice(0, 120),
       prompt,
@@ -2306,7 +2306,7 @@ export default async function plugin(bb: BbPluginApi) {
       threadId: thread.id,
       createdAt: new Date().toISOString(),
     });
-    bb.log.info(`spawned thread ${thread.id} for ${noun} ${ref}`);
+    alia.log.info(`spawned thread ${thread.id} for ${noun} ${ref}`);
     return { threadId: thread.id };
   }
 
@@ -2527,12 +2527,12 @@ export default async function plugin(bb: BbPluginApi) {
   // ------------------------------------------------------------------
   // rpc — the frontend data plane.
   // ------------------------------------------------------------------
-  bb.rpc.register(gitlabRpcContract, {
+  alia.rpc.register(gitlabRpcContract, {
     async contributionCalendar({ host, timeZone }) {
       return await contributionCalendar(host, timeZone);
     },
     async branchState({ environmentId }) {
-      const environment = await bb.sdk.environments.get({ environmentId });
+      const environment = await alia.sdk.environments.get({ environmentId });
       const path = environment.path;
       if (!environment.isGitRepo || path === null || path === "") {
         return { branch: null, headSha: null, dirty: false, aheadCount: 0 };
@@ -2556,7 +2556,7 @@ export default async function plugin(bb: BbPluginApi) {
       };
     },
     async workflowForBranch({ projectId, branch }) {
-      const project = (await discoverProjects()).find((row) => row.bbProjectId === projectId)?.project;
+      const project = (await discoverProjects()).find((row) => row.aliaProjectId === projectId)?.project;
       if (project === undefined) return { project: null, remoteHead: null, mergeRequestIid: null };
       const base = projectApiBase(project);
       const [branchResult, mrResult] = await Promise.all([
@@ -2579,7 +2579,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     /** () → auth/sync status for the panel banner. */
     async status() {
-      const cursor = await bb.storage.kv.get<{
+      const cursor = await alia.storage.kv.get<{
         lastSyncedAt: string;
         projects: number;
         items: number;
@@ -2765,7 +2765,7 @@ export default async function plugin(bb: BbPluginApi) {
         try {
           return await gitlabApi(project, endpoint);
         } catch (error) {
-          bb.log.warn(
+          alia.log.warn(
             `optional call ${endpoint} failed: ${
               error instanceof Error ? error.message : String(error)
             }`,
@@ -3324,8 +3324,8 @@ export default async function plugin(bb: BbPluginApi) {
         `Context: glab mr view ${iid} -R ${project}`,
         "Do not push, comment on GitLab or change branches unless asked.",
       ].join("\n");
-      const thread = await bb.sdk.threads.spawn({
-        projectId: await resolveBbProjectId(project),
+      const thread = await alia.sdk.threads.spawn({
+        projectId: await resolveAliaProjectId(project),
         environment: { type: "project-default" },
         title: `Review ${shas.length === 1 ? shas[0].slice(0, 8) : `${shas.length} commits`} of !${iid}`.slice(0, 120),
         prompt,
@@ -3355,14 +3355,14 @@ export default async function plugin(bb: BbPluginApi) {
         "",
         `Never push to ${target} directly. Report the new merge request link when done.`,
       ].join("\n");
-      const thread = await bb.sdk.threads.spawn({
-        projectId: await resolveBbProjectId(project),
+      const thread = await alia.sdk.threads.spawn({
+        projectId: await resolveAliaProjectId(project),
         environment: { type: "project-default" },
         title: `Cherry-pick !${iid} → ${target}`.slice(0, 120),
         prompt,
       });
       await addLink({ kind: "mr", project, iid, threadId: thread.id, createdAt: new Date().toISOString() });
-      bb.log.info(`spawned cherry-pick thread ${thread.id} for ${ref} → ${target}`);
+      alia.log.info(`spawned cherry-pick thread ${thread.id} for ${ref} → ${target}`);
       return { threadId: thread.id };
     },
 
@@ -3565,7 +3565,7 @@ export default async function plugin(bb: BbPluginApi) {
           input.project,
           await fetchProjectItems(gitlabApi, input.project),
         );
-        bb.realtime.publish("data-changed", {});
+        alia.realtime.publish("data-changed", {});
       } catch {
         // creation succeeded; the next scheduled sync will pick it up
       }
@@ -3599,16 +3599,16 @@ export default async function plugin(bb: BbPluginApi) {
     },
 
     /**
-     * { threadId } → the merge request most relevant to a BB thread: the
+     * { threadId } → the merge request most relevant to a VesnALIA thread: the
      * thread's own environment MR (the branch the agent pushed) first, else an
      * MR this thread was spawned to review. Null when neither exists.
      */
     async mergeRequestForThread({ threadId }) {
       try {
-        const thread = await bb.sdk.threads.get({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         if (thread.environmentId !== null) {
-          const result = await bb.sdk.plugins.callRpc({
-            pluginId: "bb--git",
+          const result = await alia.sdk.plugins.callRpc({
+            pluginId: "alia--git",
             method: "workspaceStatus",
             input: { environmentId: thread.environmentId },
             outputSchema: z.object({
@@ -3619,7 +3619,7 @@ export default async function plugin(bb: BbPluginApi) {
             }),
           });
           const branch = result.workspace?.branch.currentBranch;
-          const project = (await discoverProjects()).find((row) => row.bbProjectId === thread.projectId)?.project;
+          const project = (await discoverProjects()).find((row) => row.aliaProjectId === thread.projectId)?.project;
           if (result.outcome === "available" && branch && project) {
             const rows = z.array(gitlabMergeRequestRowSchema).parse(await gitlabApi(
               project,
@@ -3722,7 +3722,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: "issue",
     label: "GitLab issues",
     triggers: ["@", "#"],
@@ -3734,7 +3734,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: "mr",
     label: "GitLab merge requests",
     triggers: ["@", "!"],
@@ -3748,19 +3748,19 @@ export default async function plugin(bb: BbPluginApi) {
 
 
   // ------------------------------------------------------------------
-  // CLI: `bb gitlab-ui …` for agents and terminals.
+  // CLI: `alia gitlab-ui …` for agents and terminals.
   // ------------------------------------------------------------------
   const USAGE = [
     "Usage:",
-    "  bb gitlab-ui projects [--json]                List tracked GitLab projects",
-    "  bb gitlab-ui issues [project] [filters]       List cached issues",
-    "  bb gitlab-ui mrs [project] [filters]          List cached merge requests",
-    "  bb gitlab-ui sync                             Refresh the cache from GitLab now",
-    "  bb gitlab-ui show <item> [--json]             Issue or MR detail with comments (live)",
-    "  bb gitlab-ui comment <item> <text…>           Add a comment to an issue or MR",
-    "  bb gitlab-ui pipeline [target] [options]      Pipeline status, jobs, failed-job logs",
-    "  bb gitlab-ui retry [target] [options]         Retry failed jobs, or one job with --job",
-    "  bb gitlab-ui run [target] [--ref <branch>]    Start a new pipeline",
+    "  VesnALIA gitlab-ui projects [--json]                List tracked GitLab projects",
+    "  VesnALIA gitlab-ui issues [project] [filters]       List cached issues",
+    "  VesnALIA gitlab-ui mrs [project] [filters]          List cached merge requests",
+    "  VesnALIA gitlab-ui sync                             Refresh the cache from GitLab now",
+    "  VesnALIA gitlab-ui show <item> [--json]             Issue or MR detail with comments (live)",
+    "  VesnALIA gitlab-ui comment <item> <text…>           Add a comment to an issue or MR",
+    "  VesnALIA gitlab-ui pipeline [target] [options]      Pipeline status, jobs, failed-job logs",
+    "  VesnALIA gitlab-ui retry [target] [options]         Retry failed jobs, or one job with --job",
+    "  VesnALIA gitlab-ui run [target] [--ref <branch>]    Start a new pipeline",
     "",
     "List filters (issues, mrs):",
     "  --state open|closed|merged|all   default open; merged is MRs only",
@@ -3781,7 +3781,7 @@ export default async function plugin(bb: BbPluginApi) {
     "An item is host/group/app#7 (issue), host/group/app!12 (merge request), or",
     "its web URL. Quote refs in a shell: 'host/group/app!12'.",
     "A target is an item, a project (host/group/app), or a pipeline or job URL;",
-    "omitted, it is the GitLab project of the BB project the command runs in.",
+    "omitted, it is the GitLab project of the VesnALIA project the command runs in.",
   ].join("\n");
 
   const CLI_OUTPUT_MAX_BYTES = 900_000;
@@ -3803,7 +3803,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  /** A typed target, or — when omitted — the BB project the CLI runs in. */
+  /** A typed target, or — when omitted — the VesnALIA project the CLI runs in. */
   async function resolveCliTarget(
     raw: string | null,
     ctx: PluginCliContext,
@@ -3814,10 +3814,10 @@ export default async function plugin(bb: BbPluginApi) {
       const current =
         ctx.projectId === undefined
           ? undefined
-          : projects.find((entry) => entry.bbProjectId === ctx.projectId);
+          : projects.find((entry) => entry.aliaProjectId === ctx.projectId);
       if (current === undefined) {
         throw new Error(
-          "No target given, and this BB project has no GitLab remote. " +
+          "No target given, and this VesnALIA project has no GitLab remote. " +
             "Pass a project (host/group/app), an MR (host/group/app!12), or a URL.",
         );
       }
@@ -4013,7 +4013,7 @@ export default async function plugin(bb: BbPluginApi) {
       pipelineId = mr.head_pipeline?.id ?? null;
       if (pipelineId === null) {
         throw new Error(
-          `${project}!${target.iid} has no pipeline yet. Start one with \`bb gitlab-ui run\`.`,
+          `${project}!${target.iid} has no pipeline yet. Start one with \`alia gitlab-ui run\`.`,
         );
       }
     }
@@ -4053,7 +4053,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   // -------------------------------------------------------------------
-  // Pipeline core: one implementation behind both `bb gitlab-ui` and the
+  // Pipeline core: one implementation behind both `alia gitlab-ui` and the
   // panel's rpc methods, so the write paths are exercised by either.
   // -------------------------------------------------------------------
 
@@ -4171,7 +4171,7 @@ export default async function plugin(bb: BbPluginApi) {
       .sort((left, right) => left.id - right.id);
   }
 
-  /** Jobs whose logs `bb gitlab-ui pipeline` prints, so output stays bounded. */
+  /** Jobs whose logs `alia gitlab-ui pipeline` prints, so output stays bounded. */
   const MAX_LOGGED_JOBS = 5;
 
   async function cliPipeline(
@@ -4257,7 +4257,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (failed.length > MAX_LOGGED_JOBS && command.logs > 0) {
       sections.push(
         `${failed.length - MAX_LOGGED_JOBS} more failed job(s) not shown; ` +
-          "read one with `bb gitlab-ui pipeline <job URL>` or glab.",
+          "read one with `alia gitlab-ui pipeline <job URL>` or glab.",
       );
     }
     return sections.join("\n\n");
@@ -4302,7 +4302,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (retryable.length === 0) {
       return (
         `Nothing to retry: pipeline #${pipeline.id} (${pipeline.status}) has no ` +
-        "failed or canceled jobs. Start a fresh one with `bb gitlab-ui run`."
+        "failed or canceled jobs. Start a fresh one with `alia gitlab-ui run`."
       );
     }
     const { pipeline: retried } = await coreRetryPipeline(project, pipeline.id);
@@ -4332,7 +4332,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     if (target.kind !== "project") {
       throw new Error(
-        "`run` takes a project or a merge request; to re-run an existing pipeline use `bb gitlab-ui retry`.",
+        "`run` takes a project or a merge request; to re-run an existing pipeline use `alia gitlab-ui retry`.",
       );
     }
     const { pipeline, ref } = await coreRunPipeline(target.project, {
@@ -4352,7 +4352,7 @@ export default async function plugin(bb: BbPluginApi) {
       project: command.project ?? undefined,
     });
     if (cached.length === 0) {
-      return "Nothing cached. Run `bb gitlab-ui sync` first.";
+      return "Nothing cached. Run `alia gitlab-ui sync` first.";
     }
 
     // "@me" is per host: the glab user can differ between instances.
@@ -4430,62 +4430,62 @@ export default async function plugin(bb: BbPluginApi) {
       .join("\n");
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "gitlab-ui",
     summary: "Browse tracked GitLab projects, issues, merge requests, and pipelines",
     commands: [
       {
         name: "projects",
         summary: "List tracked GitLab projects",
-        usage: "bb gitlab-ui projects [--json]",
+        usage: "alia gitlab-ui projects [--json]",
       },
       {
         name: "issues",
         summary: "List cached issues, filtered by state, author, assignee, label",
         usage:
-          "bb gitlab-ui issues [host/group/project] [--state open|closed|all] [--mine] " +
+          "alia gitlab-ui issues [host/group/project] [--state open|closed|all] [--mine] " +
           "[--author <user|@me>] [--assignee <user|@me>] [--label <name>]... [--limit <n>] [--json]",
       },
       {
         name: "mrs",
         summary: "List cached merge requests, filtered by state, author, assignee, label, draft",
         usage:
-          "bb gitlab-ui mrs [host/group/project] [--state open|closed|merged|all] [--mine] " +
+          "alia gitlab-ui mrs [host/group/project] [--state open|closed|merged|all] [--mine] " +
           "[--author <user|@me>] [--assignee <user|@me>] [--reviewer <user|@me>] [--label <name>]... [--draft] [--limit <n>] [--json]",
       },
       {
         name: "sync",
         summary: "Refresh the cache from GitLab now",
-        usage: "bb gitlab-ui sync",
+        usage: "alia gitlab-ui sync",
       },
       {
         name: "show",
         summary: "Show an issue or merge request live, with its comments",
-        usage: "bb gitlab-ui show <host/group/project#iid | host/group/project!iid | URL> [--json]",
+        usage: "alia gitlab-ui show <host/group/project#iid | host/group/project!iid | URL> [--json]",
       },
       {
         name: "comment",
         summary: "Add a comment to an issue or merge request",
-        usage: "bb gitlab-ui comment <host/group/project#iid | host/group/project!iid | URL> <text…>",
+        usage: "alia gitlab-ui comment <host/group/project#iid | host/group/project!iid | URL> <text…>",
       },
       {
         name: "pipeline",
         summary: "Show a pipeline's status and jobs, with the tail of failed-job logs",
         usage:
-          "bb gitlab-ui pipeline [project | MR | pipeline/job URL] [--ref <branch> | --pipeline <id>] " +
+          "alia gitlab-ui pipeline [project | MR | pipeline/job URL] [--ref <branch> | --pipeline <id>] " +
           "[--logs <n>] [--json]",
       },
       {
         name: "retry",
         summary: "Retry a pipeline's failed jobs, or one job with --job",
         usage:
-          "bb gitlab-ui retry [project | MR | pipeline/job URL] [--ref <branch> | --pipeline <id>] " +
+          "alia gitlab-ui retry [project | MR | pipeline/job URL] [--ref <branch> | --pipeline <id>] " +
           "[--job <id|name>]",
       },
       {
         name: "run",
         summary: "Start a new pipeline on a branch or for a merge request",
-        usage: "bb gitlab-ui run [project | MR] [--ref <branch>]",
+        usage: "alia gitlab-ui run [project | MR] [--ref <branch>]",
       },
     ],
     async run(argv, ctx) {
@@ -4505,14 +4505,14 @@ export default async function plugin(bb: BbPluginApi) {
               stdout = JSON.stringify(projects, null, 2);
             } else if (projects.length === 0) {
               stdout =
-                "No tracked projects. Attach a BB project whose checkout has a GitLab " +
+                "No tracked projects. Attach a VesnALIA project whose checkout has a GitLab " +
                 "origin remote, or set extraProjects.";
             } else {
               stdout = projects
                 .map(
                   (entry) =>
                     `${entry.project}${
-                      entry.bbProjectId !== null ? `\t(${entry.bbProjectId})` : ""
+                      entry.aliaProjectId !== null ? `\t(${entry.aliaProjectId})` : ""
                     }`,
                 )
                 .join("\n");

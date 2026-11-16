@@ -1,8 +1,8 @@
 import type { z } from "zod";
-import type { PluginKvStorage } from "@get-bb/plugin-sdk";
+import type { PluginKvStorage } from "@vesnalia/plugin-sdk";
 
 /**
- * Typed, versioned access to `bb.storage.kv`.
+ * Typed, versioned access to `alia.storage.kv`.
  *
  * kv holds cursors and small state only — values cap at 256 KB, and anything
  * that grows belongs in the plugin's own SQLite. What lives here is the state
@@ -106,7 +106,7 @@ export const KV = {
     slot === "apiKey" ? "watermark:notifications" : `watermark:notifications:${slot}`,
   /** Webhook ids, one per bound team. */
   webhook: (teamId: string) => `webhook:${teamId}`,
-  /** The last rate-limit snapshot, so `bb linear budget` can answer without
+  /** The last rate-limit snapshot, so `alia linear budget` can answer without
    *  spending a request to find out. */
   budget: "budget",
   /** Account-wide UI preference. Sort only — see the persistence split. */

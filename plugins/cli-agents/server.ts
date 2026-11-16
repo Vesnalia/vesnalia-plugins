@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type {
-  BbPluginApi,
+  AliaPluginApi,
   ExperimentalPluginProviderEnvEntry,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import {
   hostContract,
   rpcContract,
@@ -24,24 +24,24 @@ export function tokensFrom(value: unknown): string[] {
     ),
   ];
 }
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   const profileInstructions = new Map<string, string>();
-  for (const key of await bb.storage.kv.list("instructions:")) {
-    const text = await bb.storage.kv.get<string>(key);
+  for (const key of await alia.storage.kv.list("instructions:")) {
+    const text = await alia.storage.kv.get<string>(key);
     if (typeof text === "string" && text.length <= 4096)
       profileInstructions.set(key.slice(13), text);
   }
-  bb.agents.contributeInstructions(
+  alia.agents.contributeInstructions(
     ({ threadId }) => profileInstructions.get(threadId) ?? null,
   );
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   async function resolveTarget(target: Target) {
-    const machine = await bb.sdk.hosts.get({ hostId: target.hostId });
+    const machine = await alia.sdk.hosts.get({ hostId: target.hostId });
     if (machine.status !== "connected")
       throw new Error("Selected machine is offline.");
-    const project = await bb.sdk.projects.get({ projectId: target.projectId });
+    const project = await alia.sdk.projects.get({ projectId: target.projectId });
     if (target.environmentId) {
-      const env = await bb.sdk.environments.get({
+      const env = await alia.sdk.environments.get({
         environmentId: target.environmentId,
       });
       if (
@@ -60,7 +60,7 @@ export default async function plugin(bb: BbPluginApi) {
     return source.path;
   }
   const binding = async (threadId: string) => {
-    const v = await bb.storage.kv.get<Selection>(`thread:${threadId}`);
+    const v = await alia.storage.kv.get<Selection>(`thread:${threadId}`);
     return v ? selectionSchema.parse(v) : null;
   };
   async function catalog(target: Target) {
@@ -86,31 +86,31 @@ export default async function plugin(bb: BbPluginApi) {
       token: randomUUID(),
       createdAt: Date.now(),
     };
-    await bb.storage.kv.set(`selection:${s.token}`, s);
-    await bb.storage.kv.set(`pending:${s.projectId}:${s.providerId}`, s);
+    await alia.storage.kv.set(`selection:${s.token}`, s);
+    await alia.storage.kv.set(`pending:${s.projectId}:${s.providerId}`, s);
     return { token: s.token, label: `Agent: ${agentId}` };
   }
   async function clearPending(projectId: string, providerId: string) {
-    await bb.storage.kv.delete(`pending:${projectId}:${providerId}`);
+    await alia.storage.kv.delete(`pending:${projectId}:${providerId}`);
     return true;
   }
   async function pending(projectId: string, providerId: string) {
-    const v = await bb.storage.kv.get<Selection>(
+    const v = await alia.storage.kv.get<Selection>(
       `pending:${projectId}:${providerId}`,
     );
     return v ? selectionSchema.parse(v) : null;
   }
   // Starred agents float to the top of the picker; kept per CLI for every machine.
   async function favorites(providerId: string) {
-    const stored = await bb.storage.kv.get<string[]>(`favorites:${providerId}`);
+    const stored = await alia.storage.kv.get<string[]>(`favorites:${providerId}`);
     return Array.isArray(stored)
       ? stored.filter((id) => typeof id === "string").slice(0, 200)
       : [];
   }
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     defaults: async ({ projectId }) => {
-      const project = await bb.sdk.projects.get({ projectId });
-      const defaults = await bb.sdk.projects.defaultExecutionOptions({
+      const project = await alia.sdk.projects.get({ projectId });
+      const defaults = await alia.sdk.projects.defaultExecutionOptions({
         projectId,
       });
       return {
@@ -127,35 +127,35 @@ export default async function plugin(bb: BbPluginApi) {
       clearPending(projectId, providerId),
     thread: ({ threadId }) => binding(threadId),
     threadProject: async ({ threadId }) => {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       return { projectId: thread.projectId };
     },
     favorites: ({ providerId }) => favorites(providerId),
     favorite: async ({ providerId, agentId, pinned }) => {
       const rest = (await favorites(providerId)).filter((id) => id !== agentId);
       const next = pinned ? [...rest, agentId].slice(-200) : rest;
-      await bb.storage.kv.set(`favorites:${providerId}`, next);
+      await alia.storage.kv.set(`favorites:${providerId}`, next);
       return next;
     },
   });
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: "selection",
     label: "CLI Agents",
     search: () => [],
     resolve: async (token) => {
-      const s = await bb.storage.kv.get<Selection>(`selection:${token}`);
+      const s = await alia.storage.kv.get<Selection>(`selection:${token}`);
       if (!s)
         throw new Error("Agent selection is missing. Choose the agent again.");
       return {
         context:
           s.providerId === "codex"
-            ? `${marker(token)}\nCodex instruction profile selected: ${s.agentId}. CLI Agents contributes its developer instructions through BB; other profile settings are not applied.`
+            ? `${marker(token)}\nCodex instruction profile selected: ${s.agentId}. CLI Agents contributes its developer instructions through VesnALIA; other profile settings are not applied.`
             : `${marker(token)}\nNative session agent selected: ${s.agentId}. CLI Agents applies this identity at process startup.`,
       };
     },
   });
   // Mentions carry each choice through native submission, avoiding cross-tab races.
-  bb.experimental_hooks.on("message.dispatch", async (ctx) => {
+  alia.experimental_hooks.on("message.dispatch", async (ctx) => {
     try {
       const isSupportedProvider = (
         providerSchema.options as readonly string[]
@@ -169,7 +169,7 @@ export default async function plugin(bb: BbPluginApi) {
         throw new Error("Select one session agent per chat.");
       let selected = await binding(ctx.thread.id);
       if (tokens.length) {
-        const candidate = await bb.storage.kv.get<Selection>(
+        const candidate = await alia.storage.kv.get<Selection>(
           `selection:${tokens[0]}`,
         );
         if (!candidate)
@@ -181,12 +181,12 @@ export default async function plugin(bb: BbPluginApi) {
         selected = selectionSchema.parse(candidate);
       } else if (!selected) {
         const pendingKey = `pending:${ctx.project.id}:${ctx.requestedExecution.providerId}`;
-        const candidate = await bb.storage.kv.get<Selection>(pendingKey);
+        const candidate = await alia.storage.kv.get<Selection>(pendingKey);
         if (candidate) {
           const parsed = selectionSchema.parse(candidate);
           if (!parsed.hostId || !ctx.host?.id || parsed.hostId === ctx.host.id) {
             selected = parsed;
-            await bb.storage.kv.delete(pendingKey);
+            await alia.storage.kv.delete(pendingKey);
           }
         }
       }
@@ -203,7 +203,7 @@ export default async function plugin(bb: BbPluginApi) {
           "The agent belongs to a different machine or project. Remove the Agent mention and choose it again.",
         );
       // The agent is picked before the chat has a workspace, so the selection
-      // records the project checkout. BB (or a plugin such as Projects &
+      // records the project checkout. VesnALIA (or a plugin such as Projects &
       // Sections) may then run the chat in another folder of the same project;
       // follow that folder. `prepare` below checks the agent exists there.
       const workspace = ctx.environment?.path;
@@ -224,11 +224,11 @@ export default async function plugin(bb: BbPluginApi) {
           { agentId: selected.agentId },
           { hostId: selected.hostId },
         );
-        await bb.storage.kv.set(`instructions:${ctx.thread.id}`, instructions);
+        await alia.storage.kv.set(`instructions:${ctx.thread.id}`, instructions);
         profileInstructions.set(ctx.thread.id, instructions);
       }
-      await bb.storage.kv.set(`thread:${ctx.thread.id}`, selected);
-      await bb.storage.kv.set(`env:${ctx.thread.id}`, prepared);
+      await alia.storage.kv.set(`thread:${ctx.thread.id}`, selected);
+      await alia.storage.kv.set(`env:${ctx.thread.id}`, prepared);
       return { action: "proceed" };
     } catch (e) {
       return {
@@ -238,33 +238,33 @@ export default async function plugin(bb: BbPluginApi) {
     }
   });
   for (const provider of ["claude-code", "acp-opencode"])
-    bb.providers.experimental_contributeEnv(provider, async (ctx) => {
+    alia.providers.experimental_contributeEnv(provider, async (ctx) => {
       const s = await binding(ctx.threadId);
       if (!s || s.providerId !== provider || s.hostId !== ctx.hostId) return [];
       return (
-        (await bb.storage.kv.get<ExperimentalPluginProviderEnvEntry[]>(
+        (await alia.storage.kv.get<ExperimentalPluginProviderEnvEntry[]>(
           `env:${ctx.threadId}`,
         )) ?? []
       );
     });
-  bb.cli.register({
+  alia.cli.register({
     name: "cli-agents",
-    summary: "Discover and select native CLI session agents on BB machines",
+    summary: "Discover and select native CLI session agents on VesnALIA machines",
     commands: [
       {
         name: "list",
         summary: "List agents in a project checkout",
-        usage: "bb cli-agents list PROVIDER HOST_ID PROJECT_ID",
+        usage: "alia cli-agents list PROVIDER HOST_ID PROJECT_ID",
       },
       {
         name: "select",
         summary: "Prepare a selection marker for a new chat",
-        usage: "bb cli-agents select PROVIDER HOST_ID PROJECT_ID AGENT",
+        usage: "alia cli-agents select PROVIDER HOST_ID PROJECT_ID AGENT",
       },
       {
         name: "thread",
         summary: "Show the agent bound to a chat",
-        usage: "bb cli-agents thread THREAD_ID",
+        usage: "alia cli-agents thread THREAD_ID",
       },
     ],
     async run(argv) {
@@ -282,7 +282,7 @@ export default async function plugin(bb: BbPluginApi) {
             result = { ...s, marker: marker(s.token) };
           } else
             throw new Error(
-              "Usage: bb cli-agents list|select PROVIDER HOST_ID PROJECT_ID [AGENT], or thread THREAD_ID",
+              "Usage: VesnALIA cli-agents list|select PROVIDER HOST_ID PROJECT_ID [AGENT], or thread THREAD_ID",
             );
         }
         return { exitCode: 0, stdout: JSON.stringify(result, null, 2) };

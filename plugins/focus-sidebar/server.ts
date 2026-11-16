@@ -1,9 +1,9 @@
 // Focus Sidebar — backend. Keeps the list's preferences (focus window and
 // whether closed threads show in the Archive) in plugin storage, so the
 // phone, the laptop, and every window share them, and exposes them over RPC
-// and the `bb focus-sidebar` CLI command. Also tells the list which threads
+// and the `alia focus-sidebar` CLI command. Also tells the list which threads
 // automations re-prompt on a schedule, for the Periodic tab.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { clampFocusHours, DEFAULT_FOCUS_HOURS } from "./lib/focus";
 
@@ -48,9 +48,9 @@ const AUTOMATIONS_CACHE_MS = 60_000;
 export const PREFS_CHANGED = "prefs-changed";
 const PREFS_KEY = "prefs";
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   async function readPrefs(): Promise<FocusPrefs> {
-    const stored = await bb.storage.kv.get<Partial<FocusPrefs>>(PREFS_KEY);
+    const stored = await alia.storage.kv.get<Partial<FocusPrefs>>(PREFS_KEY);
     return {
       focusHours: clampFocusHours(stored?.focusHours ?? DEFAULT_PREFS.focusHours),
       showClosed:
@@ -67,8 +67,8 @@ export default async function plugin(bb: BbPluginApi) {
   async function writePrefs(patch: Partial<FocusPrefs>): Promise<FocusPrefs> {
     const next = { ...(await readPrefs()), ...patch };
     next.focusHours = clampFocusHours(next.focusHours);
-    await bb.storage.kv.set(PREFS_KEY, next);
-    bb.realtime.publish(PREFS_CHANGED, next);
+    await alia.storage.kv.set(PREFS_KEY, next);
+    alia.realtime.publish(PREFS_CHANGED, next);
     return next;
   }
 
@@ -81,7 +81,7 @@ export default async function plugin(bb: BbPluginApi) {
       return cached.threadIds;
     }
     try {
-      const automations = await bb.sdk.plugins.callRpc({
+      const automations = await alia.sdk.plugins.callRpc({
         pluginId: "automations",
         method: "automations_list",
         input: { projectId },
@@ -96,12 +96,12 @@ export default async function plugin(bb: BbPluginApi) {
       return threadIds;
     } catch (error) {
       // Automations off or the call failed: keep what we knew.
-      bb.log.debug(`automations_list failed for ${projectId}: ${String(error)}`);
+      alia.log.debug(`automations_list failed for ${projectId}: ${String(error)}`);
       return cached?.threadIds ?? [];
     }
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     prefs_get: () => readPrefs(),
     prefs_set: (patch) => writePrefs(patch),
     periodic_threads: async ({ projectIds }) => {
@@ -112,10 +112,10 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb focus-sidebar show [--json]           Print the current settings",
-    "  bb focus-sidebar hours <1-168> [--json]  Keep threads active in the last N hours in Focus",
-    "  bb focus-sidebar closed <on|off> [--json] Show closed (archived) threads in the Archive tab",
-    "  bb focus-sidebar automations <on|off> [--json] Mix periodic (automation) threads into Focus (on) or keep them in the Periodic tab (off)",
+    "  VesnALIA focus-sidebar show [--json]           Print the current settings",
+    "  VesnALIA focus-sidebar hours <1-168> [--json]  Keep threads active in the last N hours in Focus",
+    "  VesnALIA focus-sidebar closed <on|off> [--json] Show closed (archived) threads in the Archive tab",
+    "  VesnALIA focus-sidebar automations <on|off> [--json] Mix periodic (automation) threads into Focus (on) or keep them in the Periodic tab (off)",
   ].join("\n");
 
   const describe = (prefs: FocusPrefs) =>
@@ -125,25 +125,25 @@ export default async function plugin(bb: BbPluginApi) {
       `Periodic (automation) threads: ${prefs.showAutomations ? "mixed into Focus" : "in the Periodic tab"}`,
     ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "focus-sidebar",
     summary: "Configure the Focus Sidebar thread list (focus window, closed and automation threads)",
     commands: [
-      { name: "show", summary: "Print the current settings", usage: "bb focus-sidebar show [--json]" },
+      { name: "show", summary: "Print the current settings", usage: "alia focus-sidebar show [--json]" },
       {
         name: "hours",
         summary: "Set how many hours of activity keep a thread in Focus",
-        usage: "bb focus-sidebar hours <1-168> [--json]",
+        usage: "alia focus-sidebar hours <1-168> [--json]",
       },
       {
         name: "closed",
         summary: "Show or hide closed (archived) threads in the Archive tab",
-        usage: "bb focus-sidebar closed <on|off> [--json]",
+        usage: "alia focus-sidebar closed <on|off> [--json]",
       },
       {
         name: "automations",
         summary: "Mix periodic (automation) threads into Focus (on) or keep them in the Periodic tab (off)",
-        usage: "bb focus-sidebar automations <on|off> [--json]",
+        usage: "alia focus-sidebar automations <on|off> [--json]",
       },
     ],
     async run(argv) {

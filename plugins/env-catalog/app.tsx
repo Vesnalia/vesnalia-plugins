@@ -5,7 +5,7 @@ import {
   useRealtime,
   useRpc,
   type PluginPendingInteractionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, EnvSummary } from "./server";
 import {
   ENV_REQUEST_RENDERER_ID,

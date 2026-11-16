@@ -7,7 +7,7 @@ adapter contract.
 
 ## Screenshots
 
-Captured in an isolated demo bb with made-up PRs on two fictional command servers (Acme and Acme Lab), in the default theme, light mode.
+Captured in an isolated demo VesnALIA with made-up PRs on two fictional command servers (Acme and Acme Lab), in the default theme, light mode.
 
 ![The Inbox, grouped by what to do](../../screenshots/shuttle/inbox.jpg)
 
@@ -24,7 +24,7 @@ Captured in an isolated demo bb with made-up PRs on two fictional command server
 Use **Pause automations** at the foot of Shuttle's sidebar or in Settings › Shuttle › Automations.
 Choose **For today** (until midnight in your browser's local time zone), **For 24 hours**,
 **For 1 week**, **Until a date and time** for a vacation, or **Until I resume**. A timed pause
-shows its return time, survives restarts, and expires even while bb is closed. If bb is closed
+shows its return time, survives restarts, and expires even while VesnALIA is closed. If VesnALIA is closed
 at that time, automation resumes when it next runs. **Resume now** ends it early; **Change pause**
 changes the duration.
 
@@ -82,7 +82,7 @@ keeps its words for the rest of the session; the Inbox's tabs share theirs. In R
 how many matches Hide bots and Hide quiet keep out.
 
 The header's search field finds PRs the same way among every PR Shuttle has, and so do a board's
-Add PRs dialog and `bb shuttle search`. There, open PRs come before merged and closed ones, so a long
+Add PRs dialog and `alia shuttle search`. There, open PRs come before merged and closed ones, so a long
 history never crowds them out of the 50 shown; the ranking above orders each.
 
 GitHub's lists read each PR's description, so a word in it finds PRs you never opened in Shuttle.
@@ -159,14 +159,14 @@ copy and the PR view's 30-second read; a PR it has not seen is never fetched on 
 of issues, so an issue card reads it from the server, as a commit or check Shuttle cannot place does, at most
 once a minute; only GitHub's adapter can read issues. An issue link whose number is a PR's shows the PR.
 Cards never write to the git server. A card for a resolved bare reference also offers local flag and correction controls.
-On a focused link, Down moves into its card. The script finds messages by bb's timeline markers, which
+On a focused link, Down moves into its card. The script finds messages by VesnALIA's timeline markers, which
 are not a published contract.
 
 ## Bare references and corrections
 
 Shuttle can resolve bare numbers such as `#90386` in displayed timeline messages.
 Complete URLs and qualified PR keys are matching evidence, not separate inferred references.
-The conversation row keeps BB’s subtle default link styling. Insights reuses Shuttle’s standard row
+The conversation row keeps VesnALIA’s subtle default link styling. Insights reuses Shuttle’s standard row
 buttons and cards, with a fixed Open thread label and the full title in its tooltip.
 It uses explicit
 PR or issue links and qualified keys in the message, PRs linked to the source thread (including
@@ -177,8 +177,8 @@ numbers are excluded. Custom message widgets and code-fence renderers are outsid
 
 The original message is not rewritten. A References row provides keyboard and phone access;
 activating a PR reference opens the thread’s Shuttle side panel, while an issue opens its card. Explicit external
-links follow BB's URL preference. Pointer hovering over the original text uses non-mutating ranges.
-These ranges still depend on BB's private timeline markers. CSS Custom Highlights draw the usual dotted
+links follow VesnALIA's URL preference. Pointer hovering over the original text uses non-mutating ranges.
+These ranges still depend on VesnALIA's private timeline markers. CSS Custom Highlights draw the usual dotted
 underline without replacing message text; the active reference uses a solid underline. Older browsers
 without that API show an explicit notice and retain the reference buttons.
 
@@ -220,8 +220,8 @@ are retained.
 
 ## Theme
 
-Shuttle draws only with bb's theme tokens (`--foreground`, `--surface-recessed`, `--state-hover`,
-`--surface-selected`, `--pr-merged`, the diff and terminal colours) and bb's own button, chip and count
+Shuttle draws only with VesnALIA's theme tokens (`--foreground`, `--surface-recessed`, `--state-hover`,
+`--surface-selected`, `--pr-merged`, the diff and terminal colours) and VesnALIA's own button, chip and count
 patterns, so it follows any theme. `--primary` is for links, focus and the selected row's edge, never a
 fill. Buttons, icon buttons and fields come in one shared style per kind, size and state (`BUTTON_ON`,
 `BUTTON_DANGER`, `ICON_GHOST_LARGE`, `FIELD_SMALL` and so on) in `src/ui/common.tsx`: Tailwind orders
@@ -248,24 +248,24 @@ editor switches one to this one.
 A review runs until its thread hands back a draft with `shuttle_review_draft`, or says it is over
 with `shuttle_review_done`. The end of a turn does not end it, so a review that waits on critics or
 other child threads stays under Reviewing. A review with nothing happening for 2 hours, in its
-thread or the threads under it, counts as gone quiet and comes to the Inbox. Shuttle asks bb first, so
+thread or the threads under it, counts as gone quiet and comes to the Inbox. Shuttle asks VesnALIA first, so
 a thread at work, or one waiting on your answer, keeps its review running. A review whose thread
 failed or went quiet runs again when the thread gets back to work.
 
-A thread whose workspace bb could not set up, because a machine or environment provider failed,
+A thread whose workspace VesnALIA could not set up, because a machine or environment provider failed,
 never ran its agent. Shuttle starts the same review again in a new thread, up to twice, and
 then stops and brings the PR to the Inbox. An auto review isn't started again while
 automations are paused, auto review is off or the PR is on the never auto review list. The PR's
 next review also skips such a thread.
 
-**Stop** ends a running review: bb stops the threads at work under its thread, such as critics,
+**Stop** ends a running review: VesnALIA stops the threads at work under its thread, such as critics,
 each on its own, then the review thread, and the PR's next step reads as if the review had not run.
 A stopped review does not resume, and a draft it hands back afterwards is refused. Auto review does
 not start it again on the same commit, nor on a new one unless **Again on new commits** is on. Stop
 one from its row under Reviewing, its Your review card or its ⋯ menu; **Stop all** under Reviewing
 asks first, can archive the threads and pause automations, so the queue does not refill at once.
-`bb shuttle stop [<pr>…] [--archive]` does the same; naming a PR whose review was already stopped
-stops its threads again, for one bb could not stop the first time.
+`alia shuttle stop [<pr>…] [--archive]` does the same; naming a PR whose review was already stopped
+stops its threads again, for one VesnALIA could not stop the first time.
 
 ### Auto review
 
@@ -275,13 +275,13 @@ with the rules in **Settings › Automations › Auto review**:
 - **At most** a number a day, and **Running at once** (5 by default): the rest wait, in the order
   they were asked, under Inbox › Reviewing. **Start now** there starts one with the auto review
   preset; a review you start yourself never waits and does not count toward either limit. A review
-  started again after bb could not set up its thread takes the place its first thread held, and
+  started again after VesnALIA could not set up its thread takes the place its first thread held, and
   one whose thread waits on your answer keeps its place until you answer.
 - **Skip idle PRs after** (14 days by default): a PR with no update for longer, whose request is as
   old, is left to you, and its activity says so once. A PR asked of you within that time is still
   reviewed, however old it is. 0 turns this off.
 - **Never auto review** lists PRs it never starts on, one key a line. A PR's ⋯ menu, the Inbox's
-  selection bar, **Never** in the queue and `bb shuttle skip <pr>… [--off]` add to it or take
+  selection bar, **Never** in the queue and `alia shuttle skip <pr>… [--off]` add to it or take
   from it. A review you start yourself still runs.
 
 A request only counts as new when Shuttle had not seen it. A server can answer a list without the
@@ -376,7 +376,7 @@ that pass every other check go to it, at most eight a draft.
 The draft's Your review tab shows what auto post would do, with a chip on each finding whose tooltip
 lists every check and the verifier's scores, and whether the approval rules would approve. When the
 draft is scheduled it shows when it posts, with **Stop** and **Post now**. **Check again** runs the
-checks once more, and so does `bb shuttle gate <pr>`; in a repository that posts, either may schedule it. `bb shuttle rescore` judges the
+checks once more, and so does `alia shuttle gate <pr>`; in a repository that posts, either may schedule it. `alia shuttle rescore` judges the
 findings of drafts checked in the last 30 days again, posted ones included, keeping each draft's holds.
 Posting a draft records which findings you kept, edited or dropped and the verdict you posted, and a
 discard records whether you discarded it or a newer review replaced it. **Insights › Auto post**
@@ -399,7 +399,7 @@ A review thread Shuttle started goes to the archive, with its child threads, onc
 you posted or discarded its draft, you reviewed the PR yourself, a newer review runs in another
 thread, or the PR merged or closed. A PR that merges or closes takes every review thread of it, failed
 ones too, as soon as Shuttle hears, whichever read brought the news: a sync, opening the PR, or the
-fast lane. A thread is archived only when bb says, at that moment, that neither it nor a thread under
+fast lane. A thread is archived only when VesnALIA says, at that moment, that neither it nor a thread under
 it works or waits on you, hidden threads such as another plugin's included, and Shuttle's own record agrees. A thread that is also linked to another
 PR still open, a review still running, a thread you picked or unlinked yourself, and a thread you
 brought back after Shuttle archived it all stay. The PR's next review brings the thread back without
@@ -431,7 +431,7 @@ the same stretch just before it: today against yesterday by this time, and an ea
 the whole day before. It has the totals, the median and 90th-percentile cost of a review,
 tokens by hour for today and by day otherwise, the token mix, what each preset, model and repository
 used, what the reviews bought (posted, waiting, discarded, replaced, no draft, failed), and every
-review in the period, costliest first, with its critics. `bb shuttle usage [--range today|7d|30d|90d]
+review in the period, costliest first, with its critics. `alia shuttle usage [--range today|7d|30d|90d]
 [--end YYYY-MM-DD] [--json]` prints the same; `--end` names the period's last day.
 
 The figures come from the [Burn](https://github.com/kalindudc/burn) plugin, which reads what every
@@ -579,5 +579,5 @@ src/ui/                React components; prefs.ts is what the page remembers on 
 ## Develop
 
 ```sh
-npm install && npm test && npm run typecheck && bb plugin build
+npm install && npm test && npm run typecheck && alia plugin build
 ```

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, mountPluginContentScripts, renderSlot, type RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, mountPluginContentScripts, renderSlot, type RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { NextStep } from "./app";
 
 function ComposerFixture() {

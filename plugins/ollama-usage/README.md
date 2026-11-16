@@ -1,13 +1,13 @@
 # Ollama Usage
 
-Shows the Ollama Cloud credit pool in BB's **Settings → Plugins → Provider
+Shows the Ollama Cloud credit pool in VesnALIA's **Settings → Plugins → Provider
 usage** view, next to the other usage sources, and in a sidebar footer card when
 that option is on.
 
-BB's usage collectors cover opencode's Go subscription, Claude Code and Kimi
+VesnALIA's usage collectors cover opencode's Go subscription, Claude Code and Kimi
 Code only, so an Ollama Cloud plan shows no limits at all. This plugin fills
 that gap without touching the provider: it registers the same
-`provider-usage.v1.*` RPC resources that BB's built-in Provider usage plugin
+`provider-usage.v1.*` RPC resources that VesnALIA's built-in Provider usage plugin
 discovers on any loaded plugin.
 
 ## What Ollama reports now
@@ -19,7 +19,7 @@ is spent. The only other limit is concurrency: 1 request on Free, 3 on Pro, 10
 on Max and Team.
 
 The pool is therefore published as one window of kind `custom` with a dollar
-cost, so BB renders both the percentage and the money:
+cost, so VesnALIA renders both the percentage and the money:
 
 ```
 Monthly credits: 53.05% used — $159.15 of $300.00, resets 2026-11-27T14:19:28Z
@@ -53,7 +53,7 @@ rather than as a window.
 
 - An Ollama Cloud key on the host: either `OLLAMA_API_KEY`, or a signed-in
   Ollama provider in OpenCode (the `ollama-cloud` entry of `auth.json`).
-- bb 0.49 or newer.
+- VesnALIA 0.49 or newer.
 
 A host without a key reports "unauthenticated"; a key Ollama rejects reports
 "expired" for a 403 and "unauthenticated" for a 401. Both are normal states of
@@ -62,7 +62,7 @@ the usage contract.
 ## Command
 
 ```
-bb ollama-usage show [--host <host-id>] [--range 24h|7d|30d] [--json]
+alia ollama-usage show [--host <host-id>] [--range 24h|7d|30d] [--json]
 ```
 
 Prints the same numbers from a terminal and forces a fresh measurement:

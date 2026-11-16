@@ -27,7 +27,7 @@ function record(days = 1, changes: Partial<ImageRecord> = {}): ImageRecord {
     os: "Ubuntu 24.04.3 LTS",
     aptSnapshot: "20260926T060000Z",
     pins: "p".repeat(64),
-    bbApp: "a".repeat(64),
+    aliaApp: "a".repeat(64),
     tools: { node: "24.21.0", "claude-code": "2.1.283" },
     nvidia: "580.95.05",
     layer: null,
@@ -37,19 +37,19 @@ function record(days = 1, changes: Partial<ImageRecord> = {}): ImageRecord {
   };
 }
 
-const facts = { os: "linux" as const, pins: "p".repeat(64), bbApp: "a".repeat(64), now: NOW };
+const facts = { os: "linux" as const, pins: "p".repeat(64), aliaApp: "a".repeat(64), now: NOW };
 const REBUILD = "Rebuild it.";
 
 test("a record reads from its JSON and from a description's last JSON line (049)", () => {
   const written = record();
   assert.deepEqual(parseImageRecord(JSON.parse(JSON.stringify(written))), written);
-  const description = `bb-box desktop template (GPU 0000:01:00.0), built 2026-10-02. See /usr/share/bb-box/template-release inside.\n${JSON.stringify(written)}\n`;
+  const description = `alia-box desktop template (GPU 0000:01:00.0), built 2026-10-02. See /usr/share/alia-box/template-release inside.\n${JSON.stringify(written)}\n`;
   assert.deepEqual(recordInDescription(description), written);
-  assert.equal(recordInDescription("BB Box linux template, built 2026-09-28."), null, "built before records");
-  assert.equal(recordInDescription("BB Box linux template\n{not json"), null);
+  assert.equal(recordInDescription("VesnALIA Box linux template, built 2026-09-28."), null, "built before records");
+  assert.equal(recordInDescription("VesnALIA Box linux template\n{not json"), null);
   assert.equal(parseImageRecord({ ...written, built: "yesterday" }), null);
   assert.equal(parseImageRecord({ kind: "linux" }), null);
-  // What it does not need it fills in, so a record from a later BB Box still reads.
+  // What it does not need it fills in, so a record from a later VesnALIA Box still reads.
   assert.deepEqual(parseImageRecord({ contract: 2, kind: "linux", build: "b", built: "2026-10-01T00:00:00Z", extra: true }), {
     contract: 2,
     image: "standard",
@@ -61,7 +61,7 @@ test("a record reads from its JSON and from a description's last JSON line (049)
     os: "",
     aptSnapshot: null,
     pins: "",
-    bbApp: null,
+    aliaApp: null,
     tools: {},
     nvidia: null,
     layer: null,
@@ -87,7 +87,7 @@ test("the pins' digest is the build's: Linux's files, or a script's pin lines, a
 
 const jq = spawnSync("jq", ["--version"]).status === 0;
 
-test("image-record.sh writes a record BB Box reads, with the pins' digest BB Box computes", { skip: !jq || !existsSync("/etc/os-release") }, async () => {
+test("image-record.sh writes a record VesnALIA Box reads, with the pins' digest VesnALIA Box computes", { skip: !jq || !existsSync("/etc/os-release") }, async () => {
   // As finalize.sh runs it after a GPU desktop's build, with a build directory and template-release.
   const dir = tempDir("image-record");
   const [build, out] = [join(dir, "build"), join(dir, "out")];
@@ -344,12 +344,12 @@ test("an image says what it is and how old", () => {
   assert.match(describeImage(record(300), NOW), /built 7 December 2025/);
 });
 
-test("a fresh image built with this BB Box's pins and BB's app passes", () => {
+test("a fresh image built with this VesnALIA Box's pins and VesnALIA's app passes", () => {
   const judged = judgeImage(record(), facts, REBUILD);
   assert.deepEqual([judged.status, judged.fix], ["ok", null]);
   assert.match(judged.detail, /^Standard image build\.\S+, built 2 October \(1 day ago\)/);
-  // What BB Box cannot tell does not count against it.
-  assert.equal(judgeImage(record(), { os: "linux", pins: null, bbApp: null, now: NOW }, REBUILD).status, "ok");
+  // What VesnALIA Box cannot tell does not count against it.
+  assert.equal(judgeImage(record(), { os: "linux", pins: null, aliaApp: null, now: NOW }, REBUILD).status, "ok");
 });
 
 test("a Windows image whose box user's password can expire warns that its boxes need a repair, and how to end it", () => {
@@ -360,12 +360,12 @@ test("a Windows image whose box user's password can expire warns that its boxes 
   const linux = judgeImage(record(1, { tools: {} }), facts, REBUILD);
 
   assert.deepEqual([expiring.status, expiring.fix], ["warn", REBUILD]);
-  assert.match(expiring.detail, / Its record does not say its box user's password never expires, so the password may expire 42 days after it was set, as Windows' default is, and Windows then no longer logs its boxes in to the desktop\. BB Box repairs each such box as it starts, with one more restart, about a minute, where nobody is logged in to it\./);
+  assert.match(expiring.detail, / Its record does not say its box user's password never expires, so the password may expire 42 days after it was set, as Windows' default is, and Windows then no longer logs its boxes in to the desktop\. ALIA Box repairs each such box as it starts, with one more restart, about a minute, where nobody is logged in to it\./);
   assert.equal(neverExpiring.status, "ok", neverExpiring.detail);
   assert.doesNotMatch(linux.detail, /password/);
 });
 
-test("an image warns when it has no record, is old, or has another BB app or other pins", () => {
+test("an image warns when it has no record, is old, or has another VesnALIA app or other pins", () => {
   const none = judgeImage(null, facts, REBUILD);
   assert.deepEqual([none.status, none.fix], ["warn", REBUILD]);
   assert.match(none.detail, /no image record/);
@@ -376,18 +376,18 @@ test("an image warns when it has no record, is old, or has another BB app or oth
   assert.equal(judgeImage(record(13.9), facts, REBUILD).status, "ok");
   assert.equal(judgeImage(record(59, { kind: "windows", tools: { "password-never-expires": "1" } }), { ...facts, os: "windows" }, REBUILD).status, "ok", "Windows images are rebuilt monthly");
 
-  const app = judgeImage(record(1, { bbApp: "b".repeat(64) }), facts, REBUILD);
+  const app = judgeImage(record(1, { aliaApp: "b".repeat(64) }), facts, REBUILD);
   assert.equal(app.status, "warn");
-  assert.match(app.detail, /another build of BB's app than BB's server gives, so each box downloads the app as it enrols/);
-  assert.match(judgeImage(record(1, { bbApp: null }), facts, REBUILD).detail, /It has no build of BB's app/);
+  assert.match(app.detail, /another build of ALIA's app than ALIA's server gives, so each box downloads the app as it enrols/);
+  assert.match(judgeImage(record(1, { aliaApp: null }), facts, REBUILD).detail, /It has no build of ALIA's app/);
 
   const pins = judgeImage(record(1, { pins: "q".repeat(64) }), facts, REBUILD);
   assert.deepEqual([pins.status, pins.fix], ["warn", REBUILD]);
-  assert.match(pins.detail, /built with other pins than this BB Box's/);
+  assert.match(pins.detail, /built with other pins than this ALIA Box's/);
 
   const chrome = judgeImage(record(1, { tools: { chrome: "156.0.8078.79" } }), { ...facts, pinChrome: "154.0.8037.92" }, REBUILD);
   assert.equal(chrome.status, "warn");
-  assert.match(chrome.detail, /Its Chrome is 156\.0\.8078\.79, newer than this BB Box's pin 154\.0\.8037\.92/);
+  assert.match(chrome.detail, /Its Chrome is 156\.0\.8078\.79, newer than this ALIA Box's pin 154\.0\.8037\.92/);
   assert.equal(chrome.fix, "Update the pins first, or leave this image until the pins catch up.");
   const alsoOld = judgeImage(record(15, { tools: { chrome: "156.0.8078.79" } }), { ...facts, pinChrome: "154.0.8037.92" }, REBUILD);
   assert.equal(alsoOld.fix, `Update the pins first, or leave this image until the pins catch up. ${REBUILD}`);
@@ -397,11 +397,11 @@ test("an image warns when it has no record, is old, or has another BB app or oth
 test("an image fails with an older contract, or NVIDIA's userspace other than the host's driver", () => {
   const contract = judgeImage(record(20, { contract: IMAGE_CONTRACT - 1 }), facts, REBUILD);
   assert.equal(contract.status, "fail");
-  assert.match(contract.detail, new RegExp(`It keeps image contract ${IMAGE_CONTRACT - 1}, and this BB Box needs ${IMAGE_CONTRACT}, so its boxes may not work\\. It is 20 days old`));
+  assert.match(contract.detail, new RegExp(`It keeps image contract ${IMAGE_CONTRACT - 1}, and this VesnALIA Box needs ${IMAGE_CONTRACT}, so its boxes may not work\\. It is 20 days old`));
   const newerChrome = { ...facts, pinChrome: "154.0.8037.92" };
   const failedAndNewer = judgeImage(record(1, { contract: IMAGE_CONTRACT - 1, tools: { chrome: "156.0.8078.79" } }), newerChrome, REBUILD);
   assert.equal(failedAndNewer.status, "fail");
-  assert.match(failedAndNewer.detail, /Its Chrome is 156\.0\.8078\.79, newer than this BB Box's pin 154\.0\.8037\.92/);
+  assert.match(failedAndNewer.detail, /Its Chrome is 156\.0\.8078\.79, newer than this ALIA Box's pin 154\.0\.8037\.92/);
   assert.equal(failedAndNewer.fix, REBUILD, "a failure is rebuilt; the pin line is only for a warning");
   const failedOldAndNewer = judgeImage(record(20, { contract: IMAGE_CONTRACT - 1, tools: { chrome: "156.0.8078.79" } }), newerChrome, REBUILD);
   assert.equal(failedOldAndNewer.fix, REBUILD);

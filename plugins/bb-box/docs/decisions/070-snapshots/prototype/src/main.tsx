@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import "./theme.css";
-import { experimental_Icon as Icon, OPEN_THREAD } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, OPEN_THREAD } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -28,7 +28,7 @@ function FormCard({ formId }: { formId: string }) {
   const losses = store.losses(box.id, BY_PERSON);
   const open = form.state === "waiting";
   return (
-    <section aria-label="BB Box asks you" className="rounded-lg border border-border bg-card">
+    <section aria-label="VesnALIA Box asks you" className="rounded-lg border border-border bg-card">
       <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 text-sm text-foreground">
         <BoxGlyph className="size-4 text-muted-foreground" />
         {open ? `Restore ${box.name} to "${snap.name}"?` : `Restore ${box.name}`}
@@ -47,9 +47,9 @@ function FormCard({ formId }: { formId: string }) {
           </ul>
         ) : null}
         <p className="text-xs text-subtle-foreground">
-          On Restore, bb-box holds new turns on {box.name}, waits up to 2 minutes for every thread there to finish its turn, stops the box, takes an undo, then restores. If what goes has changed by then, it asks again. Clean up the disk's next turn starts on the restored {box.name}, whose session files go back too.
+          On Restore, alia-box holds new turns on {box.name}, waits up to 2 minutes for every thread there to finish its turn, stops the box, takes an undo, then restores. If what goes has changed by then, it asks again. Clean up the disk's next turn starts on the restored {box.name}, whose session files go back too.
         </p>
-        <p className="text-xs text-subtle-foreground">An undo is always taken for a machine threads run on. bb-box records an answer here as a yes given in the thread: BB cannot yet say whether you or an agent gave it, so an agent must never answer this form. Once BB can say, the record names who answered.</p>
+        <p className="text-xs text-subtle-foreground">An undo is always taken for a machine threads run on. alia-box records an answer here as a yes given in the thread: VesnALIA cannot yet say whether you or an agent gave it, so an agent must never answer this form. Once VesnALIA can say, the record names who answered.</p>
         {form.words ? (
           <p role="status" className="flex items-center gap-1.5 text-xs text-foreground">
             {form.state === "waiting-idle" || form.state === "restoring" ? <Icon name="Loading" className="size-3 animate-spin motion-reduce:animate-none" aria-hidden /> : null}
@@ -79,7 +79,7 @@ function ThreadStandIn({ id }: { id: string }) {
     <div className="mx-auto w-full max-w-3xl space-y-4 px-4 pb-6 pt-3 md:px-5 md:pt-4">
       <TopRow trail={[{ words: "Back", go: () => history.back() }, { words: "Thread" }]} />
       <h1 className="text-base font-normal text-foreground">{thread?.title ?? id}</h1>
-      <p className="text-xs text-subtle-foreground">A stand-in for BB's thread, with the form bb-box opens through bb.ui.requestInput.</p>
+      <p className="text-xs text-subtle-foreground">A stand-in for VesnALIA's thread, with the form alia-box opens through alia.ui.requestInput.</p>
       {forms.length ? (
         <>
           <div className="rounded-lg bg-surface-raised px-4 py-3 text-sm text-foreground">The upgrade broke the display manager. I'll ask you to restore work-pc to the snapshot I took before it.</div>
@@ -89,7 +89,7 @@ function ThreadStandIn({ id }: { id: string }) {
           ))}
         </>
       ) : (
-        <p className="text-sm text-muted-foreground">BB's thread, not part of this prototype.</p>
+        <p className="text-sm text-muted-foreground">VesnALIA's thread, not part of this prototype.</p>
       )}
     </div>
   );
@@ -162,7 +162,7 @@ function ScenarioBar({ dark, setDark }: { dark: boolean; setDark: (dark: boolean
               go({ page: "box", id: "bxamberfox2q7k" });
               store.restartMidRestore();
             }}>
-              bb-box restarts mid-restore
+              alia-box restarts mid-restore
             </Button>
             <Button type="button" variant="outline" size="sm" className="h-7 w-full text-2xs" onClick={() => {
               go({ page: "list", tab: "snapshots" });
@@ -210,7 +210,7 @@ function ToastView() {
 function Chrome({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-full min-h-0 bg-background">
-      <nav aria-label="BB" className="flex w-11 shrink-0 flex-col items-center gap-3 bg-rail py-3 text-muted-foreground max-sm:hidden">
+      <nav aria-label="ALIA" className="flex w-11 shrink-0 flex-col items-center gap-3 bg-rail py-3 text-muted-foreground max-sm:hidden">
         <Icon name="Plus" className="size-4" aria-hidden />
         <button type="button" aria-label="Boxes" className="rounded-md bg-state-active p-1.5 text-foreground" onClick={() => go({ page: "list", tab: "snapshots" })}>
           <BoxGlyph className="size-4" />

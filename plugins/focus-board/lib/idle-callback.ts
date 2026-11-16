@@ -25,7 +25,7 @@ export const IDLE_CALLBACK_FALLBACK_MS = 400;
  *  pre-gate behavior, so a hung list can never blank the panel.
  *
  *  Sized from the MEASURED fan-in, never guessed (issue #424): the mount used
- *  to cost six per-thread metadata walks that serialize on bb's bridge —
+ *  to cost six per-thread metadata walks that serialize on VesnALIA's bridge —
  *  ~2.0-2.3s on a 358-thread workspace, which is why the retired 400ms value
  *  was the active path on every real mount and the board painted before the
  *  metadata landed. The aggregate mount read (`board_state_get`) collapses

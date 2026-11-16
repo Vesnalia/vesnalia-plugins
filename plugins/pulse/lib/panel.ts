@@ -1,5 +1,5 @@
 /**
- * Panel logic with no React or bb in it, so it can be tested: how the board reads a snapshot
+ * Panel logic with no React or VesnALIA in it, so it can be tested: how the board reads a snapshot
  * (expired snoozes, optimistic overlays, stale snapshots), counts, run health and snooze choices.
  */
 import type { Automation, MissedRun, PulseItem, PulseRun, PulseSnapshot } from "../types";

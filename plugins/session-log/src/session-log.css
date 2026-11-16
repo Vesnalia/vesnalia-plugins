@@ -1,4 +1,4 @@
-/* Colors come from the active bb theme, so tints follow any palette in light and dark. */
+/* Colors come from the active alia theme, so tints follow any palette in light and dark. */
 [data-sl-tint="agent"] { --sl-tint: var(--timeline-accent); }
 [data-sl-tint="tool"] { --sl-tint: var(--pr-merged); }
 [data-sl-tint="command"] { --sl-tint: var(--attention); }

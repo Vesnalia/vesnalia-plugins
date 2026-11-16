@@ -14719,9 +14719,9 @@ function formatWarningBlock(findings) {
 }
 
 // server.ts
-async function plugin(bb) {
-  bb.log.info("bb-plugin-security-guidance loaded");
-  const settings = bb.settings.define({
+async function plugin(alia) {
+  alia.log.info("alia-plugin-security-guidance loaded");
+  const settings = alia.settings.define({
     mode: {
       type: "select",
       label: "Mode",
@@ -14733,9 +14733,9 @@ async function plugin(bb) {
   let { mode } = await settings.get();
   settings.onChange((next) => {
     mode = next.mode;
-    bb.log.info(`[security-guidance] mode updated \u2192 ${mode}`);
+    alia.log.info(`[security-guidance] mode updated \u2192 ${mode}`);
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "security_scan",
     description: "Scan code content for known-dangerous security patterns (pickle.load, yaml.load, eval(, os.system, subprocess shell=True, dangerouslySetInnerHTML, verify=False, ECB mode, GitHub Actions injection, torch.load without weights_only=True, XXE-prone XML parsers, and more). Call this on content you are about to write to a file. Returns a warning block for every pattern matched. Pattern matches can be false positives \u2014 if the construct is safe in context, document why in a comment and continue; otherwise fix the code before writing it.",
     parameters: external_exports.object({
@@ -14753,8 +14753,8 @@ async function plugin(bb) {
       return formatWarningBlock(findings);
     }
   });
-  bb.onDispose(() => {
-    bb.log.info("bb-plugin-security-guidance disposed");
+  alia.onDispose(() => {
+    alia.log.info("alia-plugin-security-guidance disposed");
   });
 }
 export {

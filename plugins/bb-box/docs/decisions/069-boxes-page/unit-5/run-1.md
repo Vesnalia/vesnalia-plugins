@@ -5,24 +5,24 @@ Boxes: polite-prairie (bxze4nzjqa5343), desktop; zesty-acorn (bxjsdweqvxio5k), d
 ## Switch, then back, from every origin of G8
 
 ### polite-prairie, desktop
-- PASS [G8] polite-prairie: a row's quick Desktop, Terminal, Desktop, then back goes back in history to the list: desktop/from-list, terminal/from-list, desktop/from-list, then /plugins/bb-box/desktop/threads; history 4
-- PASS [G8] polite-prairie: a row's quick Desktop and Terminal, then the browser's Back goes to the list, as the switch replaced its entry: /plugins/bb-box/desktop/threads
-- PASS [G8] polite-prairie: a row's quick Desktop, Terminal, a reload, then back: the list it names, replacing: /plugins/bb-box/desktop
-- PASS [G8] polite-prairie: the page, Desktop, Terminal, Desktop, then back goes back in history to the page: back at /plugins/bb-box/desktop/box/bxze4nzjqa5343
+- PASS [G8] polite-prairie: a row's quick Desktop, Terminal, Desktop, then back goes back in history to the list: desktop/from-list, terminal/from-list, desktop/from-list, then /plugins/alia-box/desktop/threads; history 4
+- PASS [G8] polite-prairie: a row's quick Desktop and Terminal, then the browser's Back goes to the list, as the switch replaced its entry: /plugins/alia-box/desktop/threads
+- PASS [G8] polite-prairie: a row's quick Desktop, Terminal, a reload, then back: the list it names, replacing: /plugins/alia-box/desktop
+- PASS [G8] polite-prairie: the page, Desktop, Terminal, Desktop, then back goes back in history to the page: back at /plugins/alia-box/desktop/box/bxze4nzjqa5343
 - PASS [G8] polite-prairie: settings, the page, Desktop, Terminal, Desktop, then back: the page, then settings: the page, then settings
 - PASS [G8] polite-prairie: the same with a reload after the switch: the page, then settings
-- PASS [G8] polite-prairie: a view opened from settings by its link, Terminal, Desktop: its back is still the link to BB Box settings: settings
-- PASS [G8] polite-prairie: a view by URL with no origin, Terminal, Desktop, then back replaces with the page: /plugins/bb-box/desktop/box/bxze4nzjqa5343
+- PASS [G8] polite-prairie: a view opened from settings by its link, Terminal, Desktop: its back is still the link to VesnALIA Box settings: settings
+- PASS [G8] polite-prairie: a view by URL with no origin, Terminal, Desktop, then back replaces with the page: /plugins/alia-box/desktop/box/bxze4nzjqa5343
 
 ### zesty-acorn, device
-- PASS [G8] zesty-acorn: a row's quick Emulator, Terminal, Emulator, then back goes back in history to the list: device/from-list, terminal/from-list, device/from-list, then /plugins/bb-box/desktop/threads; history 16
-- PASS [G8] zesty-acorn: a row's quick Emulator and Terminal, then the browser's Back goes to the list, as the switch replaced its entry: /plugins/bb-box/desktop/threads
-- PASS [G8] zesty-acorn: a row's quick Emulator, Terminal, a reload, then back: the list it names, replacing: /plugins/bb-box/desktop
-- PASS [G8] zesty-acorn: the page, Emulator, Terminal, Emulator, then back goes back in history to the page: back at /plugins/bb-box/desktop/box/bxjsdweqvxio5k
+- PASS [G8] zesty-acorn: a row's quick Emulator, Terminal, Emulator, then back goes back in history to the list: device/from-list, terminal/from-list, device/from-list, then /plugins/alia-box/desktop/threads; history 16
+- PASS [G8] zesty-acorn: a row's quick Emulator and Terminal, then the browser's Back goes to the list, as the switch replaced its entry: /plugins/alia-box/desktop/threads
+- PASS [G8] zesty-acorn: a row's quick Emulator, Terminal, a reload, then back: the list it names, replacing: /plugins/alia-box/desktop
+- PASS [G8] zesty-acorn: the page, Emulator, Terminal, Emulator, then back goes back in history to the page: back at /plugins/alia-box/desktop/box/bxjsdweqvxio5k
 - PASS [G8] zesty-acorn: settings, the page, Emulator, Terminal, Emulator, then back: the page, then settings: the page, then settings
 - PASS [G8] zesty-acorn: the same with a reload after the switch: the page, then settings
-- PASS [G8] zesty-acorn: a view opened from settings by its link, Terminal, Emulator: its back is still the link to BB Box settings: settings
-- PASS [G8] zesty-acorn: a view by URL with no origin, Terminal, Emulator, then back replaces with the page: /plugins/bb-box/desktop/box/bxjsdweqvxio5k
+- PASS [G8] zesty-acorn: a view opened from settings by its link, Terminal, Emulator: its back is still the link to VesnALIA Box settings: settings
+- PASS [G8] zesty-acorn: a view by URL with no origin, Terminal, Emulator, then back replaces with the page: /plugins/alia-box/desktop/box/bxjsdweqvxio5k
 
 ## Each view works after a switch
 - PASS [live] polite-prairie: Desktop shows, Terminal connects after the switch, and Desktop shows again after the switch back: Desktop: "The agent has control."; Terminal connected 436 ms after the click and ran a typed command; Desktop "The agent has control." 419 ms after the click back

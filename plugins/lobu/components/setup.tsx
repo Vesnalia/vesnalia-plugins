@@ -1,9 +1,9 @@
-// Connecting bb to Lobu, like the Lobu Mac app: install the CLI, then sign in
-// to Lobu Cloud or run Lobu on this machine, and pick the login bb saves through. The New thread screen shows it as a card until bb is
+// Connecting VesnALIA to Lobu, like the Lobu Mac app: install the CLI, then sign in
+// to Lobu Cloud or run Lobu on this machine, and pick the login VesnALIA saves through. The New thread screen shows it as a card until VesnALIA is
 // connected; the plugin's settings page always shows it.
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { experimental_copyToClipboard, UrlLink, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard, UrlLink, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, SetupStatus } from "@/lib/contract";
 import { Button } from "@/components/ui/button";
 import { errorText } from "@/lib/format";
@@ -14,7 +14,7 @@ const SIGN_IN_POLL_MS = 3_000;
 
 const host = (origin: string) => origin.replace(/^https?:\/\//, "");
 
-/** Connected means bb can save: the CLI runs and the login it uses is signed in. */
+/** Connected means VesnALIA can save: the CLI runs and the login it uses is signed in. */
 export const isConnected = (status: SetupStatus) =>
   status.cli.state === "ready" && status.login !== null && status.login.problem === null;
 
@@ -99,9 +99,9 @@ function InstallStep({ status, reload }: { status: SetupStatus; reload: () => Pr
   const { cli } = status;
   const intro =
     cli.state === "missing"
-      ? "bb talks to Lobu through the lobu CLI, which is not installed yet."
+      ? "alia talks to Lobu through the lobu CLI, which is not installed yet."
       : cli.state === "outdated"
-        ? `Your lobu CLI is ${cli.version}; bb needs a newer one.`
+        ? `Your lobu CLI is ${cli.version}; VesnALIA needs a newer one.`
         : cli.state === "broken"
           ? `The lobu CLI did not start: ${cli.detail}`
           : null;
@@ -154,7 +154,7 @@ function InstallStep({ status, reload }: { status: SetupStatus; reload: () => Pr
 }
 
 /**
- * Switching the login bb uses, like the Lobu Mac app: Lobu Cloud, Lobu on this
+ * Switching the login VesnALIA uses, like the Lobu Mac app: Lobu Cloud, Lobu on this
  * machine, or another Lobu by URL. Each may be ready at once (a signed-in
  * login, a local Lobu already serving); otherwise this waits for it.
  */
@@ -254,9 +254,9 @@ const KIND_LABEL = { cloud: "Lobu Cloud", local: "Lobu on this machine" } as con
 
 /**
  * The CLI's contexts as a Mac-style CONTEXT disclosure: a collapsed section
- * with one row per context — its name + origin, a checkmark on the login bb
+ * with one row per context — its name + origin, a checkmark on the login VesnALIA
  * uses, and a "Signed in" badge on the other logins that are ready to switch
- * to. Clicking a row switches bb to it, signing in or starting it when needed.
+ * to. Clicking a row switches VesnALIA to it, signing in or starting it when needed.
  */
 function ContextAccordion({
   status,
@@ -339,7 +339,7 @@ function MissingCreators({ status, connect }: { status: SetupStatus; connect: Co
           <Button size="sm" variant="outline" disabled={connect.busy} onClick={connect.useLocal}>
             Run Lobu on this machine
           </Button>
-          <p className="text-xs text-muted-foreground">Your memory stays on this computer, and Lobu runs while bb does.</p>
+          <p className="text-xs text-muted-foreground">Your memory stays on this computer, and Lobu runs while VesnALIA does.</p>
         </div>
       )}
     </div>
@@ -364,7 +364,7 @@ function ChooseStep({ status, reload }: { status: SetupStatus; reload: () => Pro
   );
 }
 
-/** How many memories bb saved through this login, linking to them in Lobu. */
+/** How many memories VesnALIA saved through this login, linking to them in Lobu. */
 function SavedSummary() {
   const rpc = useRpc<typeof rpcContract>();
   const [saved, setSaved] = useState<{ url: string | null; count: number } | null>(null);
@@ -374,7 +374,7 @@ function SavedSummary() {
   if (saved === null || saved.count === 0) return null;
   return (
     <p className="text-xs text-muted-foreground">
-      bb has saved {saved.count === 1 ? "1 memory" : `${saved.count} memories`} there.{" "}
+      alia has saved {saved.count === 1 ? "1 memory" : `${saved.count} memories`} there.{" "}
       {saved.url === null ? null : (
         <UrlLink href={saved.url} className="text-foreground underline">
           Open in Lobu
@@ -425,7 +425,7 @@ export function Frame({ title, children, header }: { title?: string; children: R
   );
 }
 
-/** The New thread screen's setup card, shown until bb is connected. */
+/** The New thread screen's setup card, shown until VesnALIA is connected. */
 export function SetupCard({ status, reload }: { status: SetupStatus; reload: () => Promise<SetupStatus | null> }) {
   return (
     <Frame title="Connect Lobu">
@@ -449,7 +449,7 @@ export function SetupSettings() {
   return <Steps status={status} reload={reload} />;
 }
 
-/** For the thread panel: the steps while bb is not connected, nothing once it is. */
+/** For the thread panel: the steps while VesnALIA is not connected, nothing once it is. */
 export function SetupNotice() {
   const { status, reload } = useSetupStatus();
   if (status === null || isConnected(status)) return null;

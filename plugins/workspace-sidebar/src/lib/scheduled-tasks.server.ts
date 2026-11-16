@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { ScheduledTask, ScheduledTasksResult } from "./scheduled-tasks";
 
@@ -31,7 +31,7 @@ const overviewSchema = z.object({ automations: z.array(z.object({
   }),
 })) });
 
-export function createScheduledTasksReader(plugins: BbPluginApi["sdk"]["plugins"]) {
+export function createScheduledTasksReader(plugins: AliaPluginApi["sdk"]["plugins"]) {
   let pending: Promise<ScheduledTasksResult> | null = null;
   let cached: ScheduledTasksResult | null = null;
   let expiresAt = 0;
@@ -76,7 +76,7 @@ export const scheduledTaskRefSchema = z.object({ projectId: z.string().min(1), a
  * Run, pause or resume through the automations plugin. The sidebar never
  * edits an automation's prompt or script; those stay in the Automations panel.
  */
-export function createScheduledTasksActions(plugins: BbPluginApi["sdk"]["plugins"], invalidate: () => void) {
+export function createScheduledTasksActions(plugins: AliaPluginApi["sdk"]["plugins"], invalidate: () => void) {
   const call = async (method: "automations_run" | "automations_pause" | "automations_resume" | "automations_delete", input: { projectId: string; automationId: string }) => {
     try {
       await plugins.callRpc({ pluginId: "automations", method, input, outputSchema: z.unknown() });

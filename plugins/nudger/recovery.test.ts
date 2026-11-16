@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { RECOVERY_NUDGE, type FinalMessageClassifier, type FinalMessageJudgment, type RecoveryBlocker, type RecoveryRecord, type RecoveryService, type ThreadEventRow } from "./recovery-contract.js";
-import { createFakePluginHost, makeMessageDispatchHookContext, makeQueueEntry, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeMessageDispatchHookContext, makeQueueEntry, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { createRecoveryService } from "./recovery.js";
 import { DECISION_LIMITS, GATE, historyRecordIds, OUTCOME_WINDOW_MS } from "./decision-log.js";
 import { CHECK_IN_MS, createContinuation, NUDGE_STREAK_LIMIT, SCHEDULED_REASON, type Continuation } from "./continuation.js";
@@ -57,7 +57,7 @@ function fixture(count = 1, classify: FinalMessageClassifier["classify"] = async
     readComplete?: (threadId: string) => void;
   } = {};
   let sends = 0;
-  const { bb, harness } = createFakePluginHost({ sdk: {
+  const { alia, harness } = createFakePluginHost({ sdk: {
     projects: { list: async () => [{ id: "project", name: "Fixture" }] },
     threads: {
       list: async ({ offset = 0, limit = 100 } = {}) => { offsets.push(offset); return controls.list ? controls.list(offset, limit) : threads.slice(offset, offset + limit); },
@@ -83,8 +83,8 @@ function fixture(count = 1, classify: FinalMessageClassifier["classify"] = async
   } });
   let service: RecoveryService;
   const continuationSends: Array<Record<string, unknown>> = [];
-  const continuation: Continuation | null = withContinuation ? createContinuation({ bb, cursor: threadId => service.cursor(threadId), onChange: threadId => service.noteNudge(threadId) }) : null;
-  service = createRecoveryService({ bb, controlThreadIds: emptyControls,
+  const continuation: Continuation | null = withContinuation ? createContinuation({ alia, cursor: threadId => service.cursor(threadId), onChange: threadId => service.noteNudge(threadId) }) : null;
+  service = createRecoveryService({ alia, controlThreadIds: emptyControls,
     detector: { id: "fixture", classify: async (text, options) => { classified.push(text); signals.push(options?.signal); return classify(text, options); } },
     reportBlocker: async blocker => { reports.push(blocker); },
     onChange: () => { for (const waiter of waiters) waiter(); },
@@ -110,7 +110,7 @@ function fixture(count = 1, classify: FinalMessageClassifier["classify"] = async
     thread.status = "idle";
     await harness.emitThreadEvent("thread.idle", { thread, lastAssistantText: "Not an authoritative final item" });
   }
-  return { bb, service, harness, threads, history, metadata, reads, offsets, classified, signals, reports, controls, finish, until, waitForRecord, continuation, continuationSends, counts: () => ({ classifications: classified.length, sends }) };
+  return { alia, service, harness, threads, history, metadata, reads, offsets, classified, signals, reports, controls, finish, until, waitForRecord, continuation, continuationSends, counts: () => ({ classifications: classified.length, sends }) };
 }
 
 test("stock inventory enumerates every page and excludes hidden, child, own-origin and own-role threads", async t => {
@@ -462,7 +462,7 @@ test("known manual Stop remains suppressed across observer disposal and replacem
   await h.service.dispose();
   h.history.set(thread.id, [turn(thread.id, `run-${thread.id}`, 3)]);
   const replacement = createRecoveryService({
-    bb: h.bb, controlThreadIds: emptyControls,
+    alia: h.alia, controlThreadIds: emptyControls,
     detector: { id: "replacement", classify: async () => { throw new Error("Stopped thread cannot enter the detector"); } },
     reportBlocker: async () => { throw new Error("Stopped thread cannot route"); },
   });
@@ -487,7 +487,7 @@ test("admitted human input re-arms a stopped thread, survives replacement, and a
   // A replacement observer re-reads the old Stop row from history; the persisted re-arm keeps it inert.
   h.history.get(thread.id)!.push(turn(thread.id, "fresh-run", 11));
   const classified: string[] = [];
-  const replacement = createRecoveryService({ bb: h.bb, controlThreadIds: emptyControls,
+  const replacement = createRecoveryService({ alia: h.alia, controlThreadIds: emptyControls,
     detector: { id: "replacement", classify: async text => { classified.push(text); return judgment("finished"); } },
     reportBlocker: async () => {} });
   t.after(() => replacement.dispose());
@@ -612,7 +612,7 @@ test("a step starting during the countdown withholds the nudge; the unchanged en
   assert.equal(h.service.cursor(owner.id)?.waitingOn, "workflow");
   // Core runs the dispatch hook when the countdown sends.
   const decision = h.continuation!.decide(makeMessageDispatchHookContext({ thread: { id: owner.id, status: "idle" }, initiator: "system", input: { text: RECOVERY_NUDGE },
-    experimental_submission: { pluginId: h.bb.pluginId, data: { continuationNudge: nudge.nudgeId } } }));
+    experimental_submission: { pluginId: h.alia.pluginId, data: { continuationNudge: nudge.nudgeId } } }));
   assert.deepEqual(decision, { action: "reject", message: "Nudger didn't send its nudge: its workflow was running." });
   const withheld = h.continuation!.latest(owner.id)!;
   assert.deepEqual([withheld.state, withheld.cancelReason], ["withheld", WITHHELD_REASON.workflow]);
@@ -892,15 +892,15 @@ test("the v1 history view keeps what the dashboard and recovery read and nothing
 test("startup prunes records past both the decision log and the history view, and a restart restores exactly the retained ones", async t => {
   const h = fixture(); t.after(() => h.service.dispose());
   const { history, logOnly, dropped } = retentionCorpus(Date.now());
-  for (const record of [...history, ...logOnly, ...dropped]) await h.bb.storage.kv.set(`recovery.records.${record.id}`, record);
+  for (const record of [...history, ...logOnly, ...dropped]) await h.alia.storage.kv.set(`recovery.records.${record.id}`, record);
   await h.service.start();
   const historyIds = history.map(record => record.id).sort();
   const storedIds = [...history, ...logOnly].map(record => record.id).sort();
   assert.deepEqual(h.service.records().map(record => record.id).sort(), historyIds);
   assert.deepEqual((await h.service.decisions({ cursor: null })).decisions.map(decision => decision.id).sort(), storedIds);
-  assert.deepEqual((await h.bb.storage.kv.list("recovery.records.")).sort(), storedIds.map(id => `recovery.records.${id}`).sort());
+  assert.deepEqual((await h.alia.storage.kv.list("recovery.records.")).sort(), storedIds.map(id => `recovery.records.${id}`).sort());
   await h.service.dispose();
-  const restarted = createRecoveryService({ bb: h.bb, controlThreadIds: emptyControls, detector: null, reportBlocker: async () => undefined });
+  const restarted = createRecoveryService({ alia: h.alia, controlThreadIds: emptyControls, detector: null, reportBlocker: async () => undefined });
   t.after(() => restarted.dispose());
   await restarted.start();
   assert.deepEqual(restarted.records(), h.service.records());
@@ -912,7 +912,7 @@ test("every action's decision stays 30 days; past it only the history view's nud
   const now = Date.now();
   const corpus = [stored("latest", "thread-a", 0, now), stored("anchor", "thread-a", 300, now),
     ...ACTIONS.flatMap(action => [stored(`${action}-29d`, "thread-a", 29, now, { action }), stored(`${action}-31d`, "thread-a", 31, now, { action })])];
-  for (const record of corpus) await h.bb.storage.kv.set(`recovery.records.${record.id}`, record);
+  for (const record of corpus) await h.alia.storage.kv.set(`recovery.records.${record.id}`, record);
   await h.service.start();
   const kept = (await h.service.decisions({ cursor: null })).decisions;
   // A prior process's pending ending is retained as suppressed, never replayed.
@@ -926,9 +926,9 @@ test("over a hard cap the oldest decisions go first, the history view's own last
   const now = Date.now();
   // Spread over 8–18 days ago, all past the history view's week: only the newest (thread latest) and the oldest (anchor) are its own.
   const corpus = Array.from({ length: DECISION_LIMITS.count + 3 }, (_, index) => stored(`record-${String(index).padStart(5, "0")}`, "thread-a", 8 + index / 1000, now));
-  for (const record of corpus) await h.bb.storage.kv.set(`recovery.records.${record.id}`, record);
+  for (const record of corpus) await h.alia.storage.kv.set(`recovery.records.${record.id}`, record);
   await h.service.start();
-  const ids = (await h.bb.storage.kv.list("recovery.records.")).map(key => key.slice("recovery.records.".length)).sort();
+  const ids = (await h.alia.storage.kv.list("recovery.records.")).map(key => key.slice("recovery.records.".length)).sort();
   assert.equal(ids.length, DECISION_LIMITS.count);
   const oldest = corpus.at(-1)!.id;
   // The three dropped are the oldest ones the history view does not publish; its anchor stays.
@@ -970,7 +970,7 @@ test("a manual Stop within the window is the decision's outcome; a decision with
   const h = fixture(2, async () => judgment("finished")); t.after(() => h.service.dispose());
   // Records from before the decision log (no gate) never get an outcome; this one is a logged decision.
   const old = stored("old", "thread-1", 0, Date.now() - OUTCOME_WINDOW_MS - 60_000, { gate: "finished" });
-  await h.bb.storage.kv.set(`recovery.records.${old.id}`, old);
+  await h.alia.storage.kv.set(`recovery.records.${old.id}`, old);
   await h.service.start();
   await h.finish(0);
   const ending = await h.waitForRecord("thread-0", "finished");
@@ -1015,7 +1015,7 @@ test("an ending waiting on work it started gets a late check-in; after unanswere
   for (let sent = 0; sent < NUDGE_STREAK_LIMIT; sent++) {
     const nudge = sent === 0 ? checkIn : await h.continuation!.schedule(first);
     h.continuation!.decide(makeMessageDispatchHookContext({ thread: { id: thread.id, status: "idle" }, initiator: "user", input: { text: RECOVERY_NUDGE },
-      experimental_submission: { pluginId: h.bb.pluginId, data: { continuationNudge: nudge.nudgeId } } }));
+      experimental_submission: { pluginId: h.alia.pluginId, data: { continuationNudge: nudge.nudgeId } } }));
   }
   const seq = Math.max(...h.history.get(thread.id)!.map(row => row.seq));
   h.history.get(thread.id)!.push(turn(thread.id, "run-2", seq + 1), message(thread.id, "run-2", seq + 2, "Still running."), turn(thread.id, "run-2", seq + 3, true));
@@ -1030,13 +1030,13 @@ test("a wrong label persists with its decision across restarts until cleared, an
   const h = fixture(); t.after(() => h.service.dispose());
   const now = Date.now();
   const corpus = Array.from({ length: 450 }, (_, index) => stored(`record-${index}`, "thread-a", index / 100, now));
-  for (const record of corpus) await h.bb.storage.kv.set(`recovery.records.${record.id}`, record);
+  for (const record of corpus) await h.alia.storage.kv.set(`recovery.records.${record.id}`, record);
   await h.service.start();
   const labelled = await h.service.label("record-7", { label: "wrong", note: "was still working", by: "fixture-reviewer", at: now });
   assert.equal(labelled?.label?.by, "fixture-reviewer");
   assert.equal(await h.service.label("missing", { label: "wrong", note: null, by: "fixture-reviewer", at: now }), null);
   await h.service.dispose();
-  const restarted = createRecoveryService({ bb: h.bb, controlThreadIds: emptyControls, detector: null, reportBlocker: async () => undefined });
+  const restarted = createRecoveryService({ alia: h.alia, controlThreadIds: emptyControls, detector: null, reportBlocker: async () => undefined });
   t.after(() => restarted.dispose());
   await restarted.start();
   const seen: string[] = [];
@@ -1061,7 +1061,7 @@ test("an unchanged pause setting is not written again", async t => {
   const h = fixture(); t.after(() => h.service.dispose());
   await h.service.start();
   const writes: string[] = [];
-  const kv = h.bb.storage.kv;
+  const kv = h.alia.storage.kv;
   const set = kv.set.bind(kv);
   kv.set = async (key, value) => { writes.push(key); await set(key, value); };
   await h.service.setPaused(true);

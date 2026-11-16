@@ -1,5 +1,5 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("E Corp theme registered");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("E Corp theme registered");
 }

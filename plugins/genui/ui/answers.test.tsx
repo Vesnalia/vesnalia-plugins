@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
-// A reply with two ```ui blocks (two React roots, as BB mounts them) against
-// a composer that keeps its draft as text plus mention ranges, like BB's.
+// A reply with two ```ui blocks (two React roots, as VesnALIA mounts them) against
+// a composer that keeps its draft as text plus mention ranges, like VesnALIA's.
 import { useSyncExternalStore } from "react";
 import { act, cleanup, fireEvent, render, within } from "@testing-library/react";
-import type * as PluginSdkApp from "@get-bb/plugin-sdk/app";
-import type { ComposerDraftReplacement, ComposerDraftSnapshot, ComposerMention, PluginComposerApi } from "@get-bb/plugin-sdk/app";
+import type * as PluginSdkApp from "@vesnalia/plugin-sdk/app";
+import type { ComposerDraftReplacement, ComposerDraftSnapshot, ComposerMention, PluginComposerApi } from "@vesnalia/plugin-sdk/app";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { sheetFor } from "./answerSheet";
 import { SlotFence } from "./SlotFence";
@@ -21,13 +21,13 @@ interface FakeComposer {
   readonly sent: ComposerDraftSnapshot[];
   /** The user edits the draft by hand. */
   edit(next: (current: ComposerDraftSnapshot) => { text: string; mentions?: readonly ComposerMention[] }): void;
-  /** The user presses send: BB clears the draft and tells the plugin (when this composer reports submissions). */
+  /** The user presses send: VesnALIA clears the draft and tells the plugin (when this composer reports submissions). */
   send(): void;
   /** The user types `typed` one key at a time at `at` (default: the end), each key its own draft change. */
   type(typed: string, at?: number): void;
   /** The user attaches a file. */
   addAttachment(): void;
-  /** BB starts submitting: `isSubmitting` turns true, the draft object unchanged. */
+  /** VesnALIA starts submitting: `isSubmitting` turns true, the draft object unchanged. */
   startSubmit(): void;
 }
 
@@ -117,22 +117,22 @@ function fakeComposer(threadId: string, reports = true): FakeComposer {
   };
 }
 
-const bb = vi.hoisted(() => ({
+const alia = vi.hoisted(() => ({
   composers: null as null | FakeComposer,
   send: vi.fn(async () => ({})),
   superseded: false,
   supersededListeners: new Set<() => void>(),
 }));
 
-vi.mock("@get-bb/plugin-sdk/app", async (importOriginal) => ({
+vi.mock("@vesnalia/plugin-sdk/app", async (importOriginal) => ({
   ...(await importOriginal<typeof PluginSdkApp>()),
   useComposers: () => {
-    const fake = bb.composers;
+    const fake = alia.composers;
     useSyncExternalStore(fake?.subscribe ?? (() => () => undefined), () => fake?.version() ?? 0);
     return fake === null ? [] : [fake.composer];
   },
-  useSdk: () => ({ threads: { send: bb.send } }),
-  useBbNavigate: () => ({}),
+  useSdk: () => ({ threads: { send: alia.send } }),
+  useAliaNavigate: () => ({}),
   useRpc: () => ({ call: vi.fn() }),
   useSettings: () => ({ values: { animations: false }, isLoading: false }),
   Markdown: ({ content }: { content: string }) => <p>{content}</p>,
@@ -142,10 +142,10 @@ vi.mock("./useSuperseded", () => ({
   useSuperseded: () =>
     useSyncExternalStore(
       (listener) => {
-        bb.supersededListeners.add(listener);
-        return () => bb.supersededListeners.delete(listener);
+        alia.supersededListeners.add(listener);
+        return () => alia.supersededListeners.delete(listener);
       },
-      () => bb.superseded,
+      () => alia.superseded,
     ),
   useReplyIndex: () => 4,
 }));
@@ -153,8 +153,8 @@ vi.mock("./useSuperseded", () => ({
 /** A user message lands after the reply. */
 function supersede() {
   act(() => {
-    bb.superseded = true;
-    for (const listener of [...bb.supersededListeners]) listener();
+    alia.superseded = true;
+    for (const listener of [...alia.supersededListeners]) listener();
   });
 }
 
@@ -171,7 +171,7 @@ let fake: FakeComposer;
 let block1: HTMLElement;
 let block2: HTMLElement;
 
-/** Mounts the reply's two blocks as BB does: one root per fence. */
+/** Mounts the reply's two blocks as VesnALIA does: one root per fence. */
 function mountReply(threadId: string, Fence: typeof SlotFence = SlotFence) {
   const message = { id: `${threadId}:assistant:7`, threadId, turnId: "turn", projectId: "project" };
   const original = () => <pre />;
@@ -204,15 +204,15 @@ beforeEach(() => {
   localStorage.clear();
   thread++;
   fake = fakeComposer(`thr_${thread}`);
-  bb.composers = fake;
-  bb.send.mockClear();
-  bb.superseded = false;
+  alia.composers = fake;
+  alia.send.mockClear();
+  alia.superseded = false;
   mountReply(`thr_${thread}`);
 });
 
 afterEach(() => {
   cleanup();
-  bb.composers = null;
+  alia.composers = null;
   vi.unstubAllGlobals();
 });
 
@@ -253,7 +253,7 @@ describe("the composer is the answer sheet", () => {
     fireEvent.click(within(block1).getByRole("button", { name: "Basic" }));
     expect(pressed(block1, "Basic")).toBe("false");
     expect(fake.composer.draft.text).toBe("Thanks!\n\nProject name: Orbit\nWhich formats? JSON (not: CSV, XLSX)\n\nAsk @Sam");
-    expect(bb.send).not.toHaveBeenCalled();
+    expect(alia.send).not.toHaveBeenCalled();
   });
 
   it("deselects every answer when the user deletes the block from the draft, and leaves their text alone", async () => {
@@ -292,19 +292,19 @@ describe("the composer is the answer sheet", () => {
     // Block 2: the Form turns read-only with "Sent".
     expect(within(block2).getByText("Sent")).toBeTruthy();
     expect(within(block2).getByRole("checkbox", { name: "CSV" }).closest("fieldset")?.disabled).toBe(true);
-    expect(bb.send).not.toHaveBeenCalled();
+    expect(alia.send).not.toHaveBeenCalled();
   });
 
-  it("restores the picks after a reload from a fresh store, the sheet in localStorage and the draft BB kept", async () => {
+  it("restores the picks after a reload from a fresh store, the sheet in localStorage and the draft VesnALIA kept", async () => {
     act(() => fake.edit(() => ({ text: "Hi" })));
     fireEvent.click(within(block1).getByRole("button", { name: "Pro" }));
     const kept = fake.composer.draft.text;
     cleanup();
-    // A fresh page: new modules (an empty sheet registry), a new composer handle holding the draft BB kept.
+    // A fresh page: new modules (an empty sheet registry), a new composer handle holding the draft VesnALIA kept.
     vi.resetModules();
     const { SlotFence: Fresh } = await import("./SlotFence");
     fake = fakeComposer(`thr_${thread}`);
-    bb.composers = fake;
+    alia.composers = fake;
     act(() => fake.edit(() => ({ text: kept })));
     mountReply(`thr_${thread}`, Fresh);
     expect(fake.composer.draft.text).toBe("Hi\n\nPro");
@@ -363,7 +363,7 @@ describe("the composer is the answer sheet", () => {
     cleanup();
     thread++;
     fake = fakeComposer(`thr_${thread}`, false);
-    bb.composers = fake;
+    alia.composers = fake;
     mountReply(`thr_${thread}`);
     fireEvent.click(within(block1).getByRole("button", { name: "Pro" }));
     fireEvent.click(within(block2).getByRole("checkbox", { name: "CSV" }));
@@ -391,7 +391,7 @@ describe("the composer is the answer sheet", () => {
   it("stages a Form only on the user's own edit, never because the sheet's entry changed elsewhere", () => {
     fireEvent.click(within(block2).getByRole("checkbox", { name: "CSV" }));
     const sheet = sheetFor(`thr_${thread}`);
-    const block = `bb.genui.state:thr_${thread}:assistant:7#ui#1`;
+    const block = `alia.genui.state:thr_${thread}:assistant:7#ui#1`;
     const [staged] = sheet.snapshot(block).staged.values();
     // Another writer (a second window, say) replaces the entry.
     act(() => sheet.stage({ ...staged, text: "Elsewhere: yes" }));
@@ -413,7 +413,7 @@ describe("the composer is the answer sheet", () => {
     expect(within(block1).getByRole("button", { name: "Pro" })).toBeTruthy();
   });
 
-  it("writes a Form's pending typing when BB starts submitting, though the draft object is the same", () => {
+  it("writes a Form's pending typing when VesnALIA starts submitting, though the draft object is the same", () => {
     fireEvent.click(within(block2).getByRole("checkbox", { name: "CSV" }));
     fireEvent.change(within(block2).getByLabelText("Project name"), { target: { value: "Orbit" } });
     const before = fake.composer.draft;
@@ -424,13 +424,13 @@ describe("the composer is the answer sheet", () => {
 
   it("sends a pick at once only where the thread has no composer", async () => {
     cleanup();
-    bb.composers = null;
+    alia.composers = null;
     thread++;
     mountReply(`thr_${thread}`);
     await act(async () => {
       fireEvent.click(within(block1).getByRole("button", { name: "Pro" }));
     });
-    expect(bb.send).toHaveBeenCalledWith({ threadId: `thr_${thread}`, mode: "queue-if-active", input: [{ type: "text", text: "Pro", mentions: [] }] });
+    expect(alia.send).toHaveBeenCalledWith({ threadId: `thr_${thread}`, mode: "queue-if-active", input: [{ type: "text", text: "Pro", mentions: [] }] });
     // The Form keeps a fixed Send button there.
     expect(within(block2).getByRole("button", { name: "Send" })).toBeTruthy();
   });

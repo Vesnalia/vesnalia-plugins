@@ -1,21 +1,21 @@
 ---
 name: sidebar
-description: Read and file the threads the Ultra Sidebar shows, with the `bb sidebar` command. Use when asked to triage, file, pin, snooze, or reorder threads in the sidebar, or to inspect how the sidebar is grouped.
+description: Read and file the threads the Ultra Sidebar shows, with the `alia sidebar` command. Use when asked to triage, file, pin, snooze, or reorder threads in the sidebar, or to inspect how the sidebar is grouped.
 ---
 
 # Ultra Sidebar
 
-This bb has the Ultra Sidebar plugin installed. It replaces the sidebar thread
+This VesnALIA has the Ultra Sidebar plugin installed. It replaces the sidebar thread
 list with collapsible sections: a **Pinned** list on top, then the threads
-grouped by **project** or by **status**. Read and file them with `bb sidebar`.
+grouped by **project** or by **status**. Read and file them with `alia sidebar`.
 
 ## The model, in four rules
 
-1. A thread belongs to the project bb says it does. Nothing in this plugin
+1. A thread belongs to the project VesnALIA says it does. Nothing in this plugin
    moves it, and there is no other container — the sidebar has projects and
    nothing else.
 2. A **pinned** thread leaves its project and leads the whole list. Pinning is
-   bb's own, so it is the same pin bb's built-in sidebar shows.
+   VesnALIA's own, so it is the same pin VesnALIA's built-in sidebar shows.
 3. Every thread sits in one of five status buckets. **In progress** is the
    default, **In review** means its pull request is open, **Done** means
    merged or filed by hand, **Canceled** means its pull request was closed
@@ -34,22 +34,22 @@ plugin; their core visibility and ownership stay unchanged.
 ## Commands
 
 ```
-bb sidebar list [--project <id>]                 # threads with status and order
-bb sidebar status (in-progress|backlog|done|canceled) (--thread <id>)...
-bb sidebar snooze --thread <id> (--hours <n> | --until <epoch-ms> | --wake)
-bb sidebar order (--project <id> | --thread <id>)...
-bb sidebar unorder (--project <id> | --thread <id>)...
+alia sidebar list [--project <id>]                 # threads with status and order
+alia sidebar status (in-progress|backlog|done|canceled) (--thread <id>)...
+alia sidebar snooze --thread <id> (--hours <n> | --until <epoch-ms> | --wake)
+alia sidebar order (--project <id> | --thread <id>)...
+alia sidebar unorder (--project <id> | --thread <id>)...
 ```
 
-Every command accepts `--json`. Get project ids from `bb project list`.
+Every command accepts `--json`. Get project ids from `alia project list`.
 
-Pinning is not here: it belongs to bb, not to this plugin's store, and the
+Pinning is not here: it belongs to VesnALIA, not to this plugin's store, and the
 plugin SDK exposes it only to the sidebar itself. Pin from the row's pin
 button or its right-click menu.
 
 ## Status
 
-`bb sidebar status` sets the hand-picked buckets. `in-progress` clears the
+`alia sidebar status` sets the hand-picked buckets. `in-progress` clears the
 hand-picked status so the thread's own facts decide again. **In review** cannot
 be set by hand — open a pull request.
 
@@ -59,9 +59,9 @@ finished thread out of its project and down into the Done heading.
 ## Ordering
 
 Threads sort newest-created first until somebody places them by hand, in the
-sidebar by dragging or here with `bb sidebar order`. Placed threads hold their
+sidebar by dragging or here with `alia sidebar order`. Placed threads hold their
 positions; a brand new thread still arrives above them, so a hand-picked order
-never buries today's work. `bb sidebar unorder` hands rows back to recency,
+never buries today's work. `alia sidebar unorder` hands rows back to recency,
 the same as **Sort by most recent** in a section's right-click menu.
 
 Positions are global rather than per-section, so a drag inside a status bucket

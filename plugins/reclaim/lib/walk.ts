@@ -171,7 +171,7 @@ class TopFiles {
   private items: FileRecord[] = [];
   private floor = 0;
   // Written as an explicit field rather than a constructor parameter property:
-  // BB loads a path-installed plugin as TypeScript directly, and Node's
+  // VesnALIA loads a path-installed plugin as TypeScript directly, and Node's
   // strip-only mode rejects parameter properties.
   private readonly limit: number;
 

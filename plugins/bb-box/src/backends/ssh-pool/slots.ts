@@ -523,7 +523,7 @@ export class PoolSlots implements SlotLender {
         daemonPort: slotDaemonPortOf(guest),
         takeOver: async (signal) => {
           const result = await this.#access.helper(machine, ["slot", "daemon", slot], claimant, QUICK_MS, signal);
-          if (result.exitCode !== DEVICE_HOST_EXITS.done) throw new Error(`The pool's Mac ${machine.name} could not take over BB's daemon for slot ${slot}: ${said(result)}`);
+          if (result.exitCode !== DEVICE_HOST_EXITS.done) throw new Error(`The pool's Mac ${machine.name} could not take over VesnALIA's daemon for slot ${slot}: ${said(result)}`);
         },
       },
     };
@@ -573,7 +573,7 @@ export class PoolSlots implements SlotLender {
     if (this.#appKeeping.has(machine.name)) return;
     this.#appKeeping.add(machine.name);
     void this.#keepApp(machine)
-      .catch((error) => this.#access.logError(`keep BB's app on the pool's Mac ${machine.name}`, error))
+      .catch((error) => this.#access.logError(`keep VesnALIA's app on the pool's Mac ${machine.name}`, error))
       .finally(() => this.#appKeeping.delete(machine.name));
   }
 
@@ -583,7 +583,7 @@ export class PoolSlots implements SlotLender {
     const tried = this.#appTried.get(machine.name);
     if (tried?.digest === app.digest && Date.now() - tried.at < APP_TRIED_AGAIN_MS) return;
     const status = await this.#status(machine, signal).catch(() => null);
-    if (status?.bbAppKept && status.bbApp === app.digest) {
+    if (status?.aliaAppKept && status.aliaApp === app.digest) {
       this.#appKept.set(machine.name, app.digest);
       return;
     }
@@ -595,7 +595,7 @@ export class PoolSlots implements SlotLender {
       (input) => this.#access.helper(machine, ["slot", "keep-app"], input, QUICK_MS, signal),
     );
     if (!kept.kept) {
-      this.#access.log(`The pool's Mac ${machine.name} keeps no BB app for its iOS slots, so each slot downloads it: ${kept.why}`);
+      this.#access.log(`The pool's Mac ${machine.name} keeps no VesnALIA app for its iOS slots, so each slot downloads it: ${kept.why}`);
       return;
     }
     this.#appTried.delete(machine.name);

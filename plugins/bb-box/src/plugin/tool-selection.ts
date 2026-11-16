@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { registeredTools } from "./purposes.ts";
 import { acquireParameters, resizeParameters } from "./tools.ts";
@@ -11,7 +11,7 @@ import { PRODUCT } from "../brand.ts";
 type Parameters = Record<string, unknown>;
 
 interface Manifest {
-  readonly bb?: { readonly skills?: unknown };
+  readonly alia?: { readonly skills?: unknown };
 }
 
 function manifestOf(root: string): Manifest | null {
@@ -23,7 +23,7 @@ function manifestOf(root: string): Manifest | null {
 }
 
 export function pluginRootAmong(candidates: readonly string[]): string | null {
-  return candidates.find((root) => manifestOf(root)?.bb?.skills !== undefined) ?? null;
+  return candidates.find((root) => manifestOf(root)?.alia?.skills !== undefined) ?? null;
 }
 
 function pluginRoot(): string | null {
@@ -31,7 +31,7 @@ function pluginRoot(): string | null {
 }
 
 function skillsUnder(root: string): string[] | null {
-  const roots = manifestOf(root)?.bb?.skills;
+  const roots = manifestOf(root)?.alia?.skills;
   if (!Array.isArray(roots) || !roots.every((folder): folder is string => typeof folder === "string")) return null;
   const names: string[] = [];
   for (const folder of roots) {
@@ -69,16 +69,16 @@ export function withoutWholeCards(): ReadonlyMap<string, Parameters> {
   ]);
 }
 
-export function selectTools(bb: BbPluginApi, wholeCards: () => boolean, logError: (operation: string, error: unknown) => void, skills: readonly string[] | null = manifestSkills()): void {
+export function selectTools(alia: AliaPluginApi, wholeCards: () => boolean, logError: (operation: string, error: unknown) => void, skills: readonly string[] | null = manifestSkills()): void {
   if (skills === null) {
-    logError("tool selection", new Error(`${PRODUCT} could not read its skills' names, so it leaves BB's own tool selection in place, and box_acquire, box_fork and box_resize advertise gpu whole while whole cards are off.`));
+    logError("tool selection", new Error(`${PRODUCT} could not read its skills' names, so it leaves VesnALIA's own tool selection in place, and box_acquire, box_fork and box_resize advertise gpu whole while whole cards are off.`));
     return;
   }
   try {
     const narrowed = withoutWholeCards();
-    bb.agents.configure(() => {
+    alia.agents.configure(() => {
       const overrides = wholeCards() ? new Map<string, Parameters>() : narrowed;
-      return { tools: registeredTools(bb).map((name) => (overrides.has(name) ? { name, parameters: overrides.get(name)! } : name)), skills: [...skills] };
+      return { tools: registeredTools(alia).map((name) => (overrides.has(name) ? { name, parameters: overrides.get(name)! } : name)), skills: [...skills] };
     });
   } catch (error) {
     logError("tool selection", error);

@@ -3,7 +3,7 @@
  *
  * The forward-compatibility rule lives here: **every field added after v1 is
  * optional at the parse boundary regardless of what the interface claims.** A
- * baselined look is read months after it was written, bb validates RPC output
+ * baselined look is read months after it was written, VesnALIA validates RPC output
  * against the contract, and a row missing a newly-required key would take down
  * the whole card rather than one field. `parseLookMeta` and `parseSidecar` are
  * the only two functions allowed to interpret stored JSON.
@@ -756,7 +756,7 @@ export function scopeCount(db: Db): number {
   return row.n;
 }
 
-/** Every look, for `bb xcode sim purge` and for the doctor's disk figure. */
+/** Every look, for `alia xcode sim purge` and for the doctor's disk figure. */
 export function allLooks(db: Db): Look[] {
   const rows = db.prepare(`SELECT * FROM looks ORDER BY started_at ASC`).all() as LookRow[];
   return rows.map(toLook);

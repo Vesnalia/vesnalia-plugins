@@ -3,7 +3,7 @@
 // link under the pointer or in focus, or as a sheet after a tap on a phone.
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createPortal } from "react-dom";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { rpcContract, type LinkCard } from "../../contract";
 import { linkKey, parseGitLink } from "../../links";
 import { Dialog, usePortalScope } from "../common";
@@ -226,7 +226,7 @@ function HoverCard({ target, moved, cardRef, onPointerEnter, onPointerLeave, onF
   const scope = usePortalScope();
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const card = useShuttleQuery("linkCard", { url: target.url });
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   usePaintRead(target, card.data);
 
   useLayoutEffect(() => {
@@ -273,7 +273,7 @@ function usePaintRead(target: LinkTargetRef, card: LinkCard | undefined) {
 function LinkSheet({ target, onClose }: { target: LinkTargetRef; onClose(): void }) {
   const card = useShuttleQuery("linkCard", { url: target.url });
   usePaintRead(target, card.data);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const phone = useViewport() === "phone";
   return (
     <Dialog title={card.data?.label ?? "Link"} onClose={onClose}>

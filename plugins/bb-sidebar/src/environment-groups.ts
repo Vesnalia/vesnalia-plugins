@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import { layoutActiveThreadsByProject, projectOrderUnits, visibleShelfThreads } from "./inbox-layout";
 import type { GroupAlert, ProjectUnit, ProjectViewUnit } from "./inbox-layout";
 import { childStatusKind } from "./child-status";

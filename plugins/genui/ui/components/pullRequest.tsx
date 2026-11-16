@@ -1,9 +1,9 @@
-// PullRequest: the branch's pull request as BB knows it (project_pull_request):
+// PullRequest: the branch's pull request as VesnALIA knows it (project_pull_request):
 // number and title linking to it, state, base ← head, checks, review,
-// mergeability and BB's attention reason. Read-only. Live: it polls, with
+// mergeability and VesnALIA's attention reason. Read-only. Live: it polls, with
 // backoff, only while visible and while checks run or mergeability is
 // being computed.
-import { UrlLink, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useRpc } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import {
@@ -189,7 +189,7 @@ function PullRequestBody({ pr, now }: { pr: PullRequestInfo; now: number }) {
 const BAR = "animate-pulse rounded-sm bg-muted motion-reduce:animate-none";
 
 /**
- * The body's layout while BB answers, so the panel opens at about its final
+ * The body's layout while VesnALIA answers, so the panel opens at about its final
  * height instead of growing by a title, a refs line and three facts once the
  * answer comes. A phone wraps most titles onto two lines.
  */

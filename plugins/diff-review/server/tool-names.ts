@@ -1,4 +1,4 @@
-/** The agent tools' names, unique across every bb plugin, so each starts with the plugin's own. */
+/** The agent tools' names, unique across every VesnALIA plugin, so each starts with the plugin's own. */
 export const TOOL = {
   threads: "diff_review_threads",
   comment: "diff_review_comment",

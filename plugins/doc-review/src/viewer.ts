@@ -4,7 +4,7 @@
 // classic PDF view and downloads, and workbooks read into grid models.
 import { copyFile, mkdir, stat, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { contentTypeFor, extensionOf, isOoxmlSpreadsheetPath } from "../lib/formats.js";
 import { baseName, directoryName, pdfNameFor, previewUrlFor } from "../lib/pdf-paths.js";
 import { cacheKey, ConversionCache } from "./conversion-cache.js";
@@ -16,11 +16,11 @@ import { openSpreadsheet, type SpreadsheetReader } from "./spreadsheet/index.js"
 
 const LINK_TTL_MS = 60 * 60 * 1000;
 /**
- * bb's file-preview route reads a whole file into memory and refuses anything
+ * VesnALIA's file-preview route reads a whole file into memory and refuses anything
  * past this size, so bigger files fall back to this plugin's own ranged
- * stream. Preview is preferred below the ceiling because it is bb's native
+ * stream. Preview is preferred below the ceiling because it is VesnALIA's native
  * transport: it reaches other hosts and keeps working when the app is open
- * remotely through bb connect.
+ * remotely through VesnALIA connect.
  */
 const PREVIEW_MAX_BYTES = 25 * 1024 * 1024;
 /** Bump when conversion output changes, so older cache entries miss. */
@@ -68,11 +68,11 @@ interface Runtime {
 }
 
 export function createViewer(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   options: {
     /** The plugin's own data directory. */
     dataDir: string;
-    /** The host id of the machine the bb server runs on. */
+    /** The host id of the machine the VesnALIA server runs on. */
     localHostId: () => Promise<string | null>;
     /** The user's LibreOffice path setting; empty means find it automatically. */
     libreOfficePath: () => Promise<string>;
@@ -83,14 +83,14 @@ export function createViewer(
   const sweepTimer = setInterval(() => workbooks.sweep(), 60 * 1000);
   sweepTimer.unref();
   let runner: LibreOfficeRunner | null = null;
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     clearInterval(sweepTimer);
     registry.clear();
     workbooks.clear();
     runner?.dispose();
   });
 
-  bb.http.route("GET", DOCUMENT_ROUTE, (context) => handleDocumentRequest(context, registry));
+  alia.http.route("GET", DOCUMENT_ROUTE, (context) => handleDocumentRequest(context, registry));
 
   /** Cache folders and the converter, created on first use. */
   let runtimePromise: Promise<Runtime> | null = null;
@@ -140,7 +140,7 @@ export function createViewer(
     return await libreOfficeLookup.install;
   }
 
-  /** Mints a URL for one file: local disk when it must, bb preview otherwise. */
+  /** Mints a URL for one file: local disk when it must, VesnALIA preview otherwise. */
   async function mintLink(file: Located): Promise<ViewerLink> {
     // Streaming from local disk lets the browser fetch ranges and has no size
     // ceiling, so it carries the files preview cannot.
@@ -153,13 +153,13 @@ export function createViewer(
           sizeBytes: stats.size,
           contentType: contentTypeFor(file.absPath),
         });
-        return { url: `/api/v1/plugins/${bb.pluginId}/http${DOCUMENT_ROUTE}?id=${id}`, expiresAtMs };
+        return { url: `/api/v1/plugins/${alia.pluginId}/http${DOCUMENT_ROUTE}?id=${id}`, expiresAtMs };
       }
     }
     // Name the server's own host explicitly: with several hosts connected,
     // "no host" need not mean this machine.
     const previewHost = file.hostId ?? (await options.localHostId()) ?? undefined;
-    const preview = await bb.sdk.files.createPreview({
+    const preview = await alia.sdk.files.createPreview({
       ...(previewHost ? { hostId: previewHost } : {}),
       rootPath: directoryName(file.absPath),
       ttlMs: LINK_TTL_MS,
@@ -181,7 +181,7 @@ export function createViewer(
         sizeBytes: stats.size,
       };
     }
-    const read = await bb.sdk.files.read({ hostId: file.hostId, path: file.absPath });
+    const read = await alia.sdk.files.read({ hostId: file.hostId, path: file.absPath });
     if (read.sizeBytes > REMOTE_MAX_BYTES) {
       throw new Error(
         `This file is ${megabytes(read.sizeBytes)} MB on another host; files up to ${megabytes(REMOTE_MAX_BYTES)} MB are copied from there. Download it instead.`,
@@ -245,7 +245,7 @@ export function createViewer(
               convertInStaging(converter, install, file.path, baseName(originalPath), staging, "xlsx"),
           );
         } catch (cause: unknown) {
-          bb.log.warn(`LibreOffice could not convert ${originalPath}; reading it directly: ${String(cause)}`);
+          alia.log.warn(`LibreOffice could not convert ${originalPath}; reading it directly: ${String(cause)}`);
         }
       }
     }
@@ -269,7 +269,7 @@ export function createViewer(
   async function mintOwnFile(file: { path: string; name: string; contentType: string }): Promise<ViewerLink> {
     const stats = await stat(file.path);
     const { id, expiresAtMs } = registry.register({ ...file, sizeBytes: stats.size });
-    return { url: `/api/v1/plugins/${bb.pluginId}/http${DOCUMENT_ROUTE}?id=${id}`, expiresAtMs };
+    return { url: `/api/v1/plugins/${alia.pluginId}/http${DOCUMENT_ROUTE}?id=${id}`, expiresAtMs };
   }
 
   return { mintLink, mintOwnFile, localFile, convertedPdf, withWorkbook };

@@ -1,6 +1,6 @@
 /**
  * Opening the OS's own process monitor (Activity Monitor on macOS) on the
- * machine running BB's server, for the popover's and page's "Activity
+ * machine running VesnALIA's server, for the popover's and page's "Activity
  * Monitor" button.
  *
  * Only fixed argv is ever run, with no shell, so nothing from the frontend

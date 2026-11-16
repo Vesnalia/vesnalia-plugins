@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -91,7 +91,7 @@ function FactRow({ label, children }: { label: string; children: ReactNode }) {
 
 export function MachineCard({ config, machines, onCheck, checking }: { config: BackendConfig; machines: Machines; onCheck?: () => void; checking?: boolean }) {
   const host = machineOf(machines.hosts, config);
-  const hostId = (config.fields.host as string).slice("bb:".length);
+  const hostId = (config.fields.host as string).slice("alia:".length);
   const name = host?.name ?? hostId;
   const state = host ? hostState(host, config) : null;
   const build = host ? buildWords(host) : null;
@@ -99,7 +99,7 @@ export function MachineCard({ config, machines, onCheck, checking }: { config: B
   const fix = host?.fix?.command ? host.fix : null;
   const trouble = state && (state.tone === "bad" || state.tone === "warn");
   return (
-    <Group title="BB machine" description="A box here is a privileged container, root on the machine, and takes its memory.">
+    <Group title="VesnALIA machine" description="A box here is a privileged container, root on the machine, and takes its memory.">
       <Card>
         <Rows>
           <FactRow label="Machine">{name}</FactRow>
@@ -112,7 +112,7 @@ export function MachineCard({ config, machines, onCheck, checking }: { config: B
                 <Meta items={[<span key="state" className={cn(state.tone === "bad" && "text-destructive-text", state.tone === "warn" && "text-warning-text")}>{state.text}</span>, ...facts]} />
               </span>
             ) : (
-              <span className="text-destructive-text">BB lists no such persistent machine now</span>
+              <span className="text-destructive-text">VesnALIA lists no such persistent machine now</span>
             )}
           </FactRow>
           {build ? (
@@ -249,7 +249,7 @@ export function MachineOffersGroup({ machines }: { machines: Machines }) {
     row.focus();
     setAdded(null);
   });
-  const description = "Your own BB machines that run Docker, such as a PC with WSL. A box there is a privileged container, root on the machine, so none is used until you add it.";
+  const description = "Your own VesnALIA machines that run Docker, such as a PC with WSL. A box there is a privileged container, root on the machine, so none is used until you add it.";
   const offers = machines.hosts ? machineOffers(machines.hosts, state.document) : null;
   const listed = offers ? offers.ready.length + offers.cannot.length + offers.used.length + offers.offline.length : 0;
   const onAdded = (hostId: string) => {
@@ -258,14 +258,14 @@ export function MachineOffersGroup({ machines }: { machines: Machines }) {
   };
   return (
     <section ref={root}>
-      <Group title="Docker on your BB machines" description={description}>
+      <Group title="Docker on your VesnALIA machines" description={description}>
         {!offers ? (
           machines.error ? (
-            <RowNote note={`Your BB machines could not be listed: ${machines.error}`} />
+            <RowNote note={`Your VesnALIA machines could not be listed: ${machines.error}`} />
           ) : (
             <p className="flex items-center gap-2 px-1 text-xs text-subtle-foreground" role="status">
               <Icon name="Loading" className="animate-spin" aria-hidden />
-              Looking for Docker on your BB machines…
+              Looking for Docker on your VesnALIA machines…
             </p>
           )
         ) : listed ? (
@@ -282,13 +282,13 @@ export function MachineOffersGroup({ machines }: { machines: Machines }) {
               ))}
               {offers.offline.map((host) => (
                 <OfferRow key={host.hostId} host={host} tone="muted">
-                  <StateLine className="mt-0.5" tone="warn" words="Offline in BB" />
+                  <StateLine className="mt-0.5" tone="warn" words="Offline in VesnALIA" />
                 </OfferRow>
               ))}
             </Rows>
           </Card>
         ) : (
-          <p className="rounded-lg border border-dashed border-border px-4 py-3 text-xs text-subtle-foreground">No BB machine of yours has Docker. BB Box looks at connected, persistent machines it did not make.</p>
+          <p className="rounded-lg border border-dashed border-border px-4 py-3 text-xs text-subtle-foreground">No VesnALIA machine of yours has Docker. VesnALIA Box looks at connected, persistent machines it did not make.</p>
         )}
         {offers?.none.length ? (
           <p className="px-1 text-xs leading-snug text-subtle-foreground">

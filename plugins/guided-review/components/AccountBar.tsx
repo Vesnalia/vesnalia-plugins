@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useState } from "react";
-import { useRpc, useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRpc, useRealtime } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../src/rpc-contract";
 import { Button } from "./ui/button";
@@ -64,13 +64,13 @@ export const AccountBar = memo(function AccountBar() {
       <PopoverContent align="end" className="w-72 max-w-[calc(100vw-24px)] space-y-3 p-3">
         <div className="space-y-1">
           <p className="text-sm font-medium">GitHub account</p>
-          <p className="text-xs leading-relaxed text-muted-foreground">Reviews are submitted using this BB server’s active account.</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">Reviews are submitted using this VesnALIA server’s active account.</p>
         </div>
         <p role="status" className="text-sm">{loading ? "Checking account…" : failed ? "Account check unavailable" : active ? `Signed in as @${active}` : "No account connected"}</p>
         {!loading && (failed || !active) && <Button variant="outline" size="sm" onClick={refetch}>Check again</Button>}
-        {!loading && !active && <p className="text-xs leading-relaxed text-muted-foreground">Run <code className="font-mono">gh auth login</code> on the BB server to connect GitHub. Local git reviews work without GitHub.</p>}
+        {!loading && !active && <p className="text-xs leading-relaxed text-muted-foreground">Run <code className="font-mono">gh auth login</code> on the VesnALIA server to connect GitHub. Local git reviews work without GitHub.</p>}
         {accounts.some((account) => !account.active) && <div className="space-y-1 border-t border-border pt-2">
-          {accounts.map((account) => <Button key={account.login} variant="ghost" size="sm" className="w-full justify-between" disabled={switching !== null || account.active} aria-label={account.active ? `Current account @${account.login}` : `Use @${account.login} on this BB server`} onClick={() => void switchTo(account.login)}>
+          {accounts.map((account) => <Button key={account.login} variant="ghost" size="sm" className="w-full justify-between" disabled={switching !== null || account.active} aria-label={account.active ? `Current account @${account.login}` : `Use @${account.login} on this VesnALIA server`} onClick={() => void switchTo(account.login)}>
             <span className="truncate">{switching === account.login ? "Switching…" : `@${account.login}`}</span>
             {account.active && <Icon name="Check" className="size-4" aria-hidden />}
           </Button>)}

@@ -1,7 +1,7 @@
 // The visual explanation: PR Lens diagrams with pinned design comments, and
 // what to look at closely.
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { experimental_useCodeTheme as useCodeTheme, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_useCodeTheme as useCodeTheme, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -70,7 +70,7 @@ function DiagramExplain({
   graph,
   renders,
 }: ExplainTabProps & { graph: GraphDoc; renders: NonNullable<Result["renders"]> }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const theme = useCodeTheme().mode;
   const tabs = useMemo(() => diagramTabs(graph), [graph]);
   const [tabId, setTabId] = useState(tabs[0]!.id);
@@ -284,7 +284,7 @@ function DesignComments({
       <div className="flex items-start gap-2 border-b border-border p-3">
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium">Design comments</div>
-          <p className="text-xs text-muted-foreground">Kept in bb only. Comment on a node when the design is wrong.</p>
+          <p className="text-xs text-muted-foreground">Kept in VesnALIA only. Comment on a node when the design is wrong.</p>
         </div>
         <Button size="icon" variant="ghost" className="size-7" onClick={onClose} aria-label="Collapse design comments">
           <Icon name="X" />

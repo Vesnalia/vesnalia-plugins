@@ -1,6 +1,6 @@
 // Change Gate: the approval form in place of the composer, and the journal page.
 import { useCallback, useEffect, useState } from "react";
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type { GateEntry, GateRequest } from "./lib/journal";
 import { ICONS } from "./lib/icons";

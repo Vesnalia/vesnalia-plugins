@@ -337,8 +337,8 @@ export function createAutomationService(options?: {
   const now = options?.now ?? (() => new Date());
   const storeDir =
     options?.storeDir ??
-    process.env.BB_BRIDGE_DIR ??
-    path.join(homedir(), ".bb", "plugins", "zcode", "bridge-data");
+    process.env.ALIA_BRIDGE_DIR ??
+    path.join(homedir(), ".vesnalia", "plugins", "zcode", "bridge-data");
   const storePath = path.join(storeDir, "automations.json");
   let loaded: StoredAutomation[] | undefined;
   let loading: Promise<void> | undefined;
@@ -681,7 +681,7 @@ export function createAutomationService(options?: {
     if (method === "automation/list") {
       if (!context.cwd)
         throw new ProtocolError(
-          "No active bb session for this request.",
+          "No active VesnALIA session for this request.",
           -32601,
         );
       return list(context.cwd);
@@ -689,7 +689,7 @@ export function createAutomationService(options?: {
     if (method === "automation/delete") {
       if (!context.cwd)
         throw new ProtocolError(
-          "No active bb session for this request.",
+          "No active VesnALIA session for this request.",
           -32601,
         );
       return remove(raw, context.cwd);
@@ -697,7 +697,7 @@ export function createAutomationService(options?: {
     if (method === "automation/checkTaskBinding") {
       if (!context.cwd)
         throw new ProtocolError(
-          "No active bb session for this request.",
+          "No active VesnALIA session for this request.",
           -32601,
         );
       await load();
@@ -706,7 +706,7 @@ export function createAutomationService(options?: {
     if (method === "automation/create") {
       if (!context.threadId || !context.providerThreadId || !context.cwd)
         throw new ProtocolError(
-          "No active bb session for this request.",
+          "No active VesnALIA session for this request.",
           -32601,
         );
       return create(raw, {
@@ -719,7 +719,7 @@ export function createAutomationService(options?: {
     if (method === "automation/update") {
       if (!context.cwd)
         throw new ProtocolError(
-          "No active bb session for this request.",
+          "No active VesnALIA session for this request.",
           -32601,
         );
       return update(raw, context.cwd);
@@ -779,7 +779,7 @@ export function createAutomationService(options?: {
 
 export type AutomationService = ReturnType<typeof createAutomationService>;
 
-/** bb permission modes cannot express every native mode; collapse like the CLI port. */
+/** VesnALIA permission modes cannot express every native mode; collapse like the CLI port. */
 export function dispatchPermissionMode(
   mode: AutomationSnapshot["mode"],
 ): "plan" | "accept-edits" | "full" {

@@ -9,7 +9,7 @@ import type { FactoryRecord } from '../factory/contract.js';
 // @ts-expect-error Only the preview build adds component exports.
 import { KanbanCard, TrackerDetail, CreateIssueDialog } from '../app.js';
 const item = {
-  bbProjectId: 'proj_test', source: 'github' as const, locator: 'example/repo#42',
+  aliaProjectId: 'proj_test', source: 'github' as const, locator: 'example/repo#42',
   key: '#42', title: 'Keep saved filters when switching projects: saved-filter-preferences-with-an-unbroken-provider-identifier-that-must-wrap', description: '',
   url: '', status: 'Open', stateCategory: 'todo' as const, priority: null,
   assignee: null, project: null, labels: [], updatedAt: ''
@@ -99,7 +99,7 @@ function Preview() {
         composerDragEnabled={false} onOpen={() => window.factoryNavigation.push('card-open')}
         onPrepare={() => {}} onDragStart={() => {}} onDragEnd={() => {}} onKeyDown={() => {}} />
     </div>
-    <div id="preview-manual"><FactoryProgress item={{ ...item, bbProjectId: projectId }} /></div>
+    <div id="preview-manual"><FactoryProgress item={{ ...item, aliaProjectId: projectId }} /></div>
   </div></TooltipProvider>;
 }
 createRoot(document.querySelector('#root')!).render(<Preview />);

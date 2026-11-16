@@ -3,19 +3,19 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildBbTheme } from "./themes.mjs";
+import { buildAliaTheme } from "./themes.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => readFileSync(join(root, file), "utf8");
-const output = buildBbTheme(read("theme.css"), read("palettes/bb.css"));
+const output = buildAliaTheme(read("theme.css"), read("palettes/alia.css"));
 
 if (process.argv.includes("--check")) {
-  if (read("theme-bb.css") !== output) {
-    console.error("theme-bb.css is out of date; run `npm run build:themes`.");
+  if (read("theme-alia.css") !== output) {
+    console.error("theme-alia.css is out of date; run `npm run build:themes`.");
     process.exit(1);
   }
-  console.log("theme-bb.css is up to date.");
+  console.log("theme-alia.css is up to date.");
 } else {
-  writeFileSync(join(root, "theme-bb.css"), output);
-  console.log("Wrote theme-bb.css.");
+  writeFileSync(join(root, "theme-alia.css"), output);
+  console.log("Wrote theme-alia.css.");
 }

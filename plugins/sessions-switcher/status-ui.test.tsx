@@ -3,7 +3,7 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, it, vi } from 'vitest';
 const live = vi.hoisted(() => ({ threads: [{ id: 'a', indicator: 'runtime' }], draft: false, rowStatus: null as object | null }));
-vi.mock('@get-bb/plugin-sdk/app', () => ({
+vi.mock('@vesnalia/plugin-sdk/app', () => ({
  experimental_useSidebarThreads: () => ({ threads: live.threads }),
  useSettings: () => ({ values: {} }),
   experimental_useProviders: () => ({ providers: [] }),

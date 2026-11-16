@@ -1,9 +1,9 @@
 // Plugin Tailwind utilities are scoped to elements carrying these attributes, and portalled
 // menus and dialogs render outside the plugin root, so each one must carry them itself.
-// `bb plugin build` defines `__BB_PLUGIN_ID__`; tests run without it.
-declare const __BB_PLUGIN_ID__: string | undefined;
+// `alia plugin build` defines `__ALIA_PLUGIN_ID__`; tests run without it.
+declare const __ALIA_PLUGIN_ID__: string | undefined;
 
-export function portalScopeProps(): { "data-bb-portaled-overlay": ""; "data-bb-plugin-root": ""; "data-bb-plugin"?: string } {
-  const pluginId = typeof __BB_PLUGIN_ID__ === "string" ? __BB_PLUGIN_ID__ : undefined;
-  return { "data-bb-portaled-overlay": "", "data-bb-plugin-root": "", ...(pluginId === undefined ? {} : { "data-bb-plugin": pluginId }) };
+export function portalScopeProps(): { "data-alia-portaled-overlay": ""; "data-alia-plugin-root": ""; "data-alia-plugin"?: string } {
+  const pluginId = typeof __ALIA_PLUGIN_ID__ === "string" ? __ALIA_PLUGIN_ID__ : undefined;
+  return { "data-alia-portaled-overlay": "", "data-alia-plugin-root": "", ...(pluginId === undefined ? {} : { "data-alia-plugin": pluginId }) };
 }

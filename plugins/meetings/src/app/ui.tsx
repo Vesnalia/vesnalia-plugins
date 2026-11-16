@@ -1,7 +1,7 @@
 // Small presentational pieces shared by the Meetings pages.
 import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
-import { experimental_copyToClipboard } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard } from "@vesnalia/plugin-sdk/app";
 import type { MeetingSummary } from "../shared/rpc-contract";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +21,7 @@ import { useNow } from "./hooks";
 import { statusText, statusTone } from "./labels";
 import type { StatusTone } from "./labels";
 
-/** The scrolling page frame bb's own nav-panel pages use. */
+/** The scrolling page frame VesnALIA's own nav-panel pages use. */
 export function PageFrame({ wide = false, children }: { wide?: boolean; children: ReactNode }) {
   return (
     <div className="h-full min-h-0 flex-1 overflow-y-auto" data-meetings-scroll="">
@@ -32,7 +32,7 @@ export function PageFrame({ wide = false, children }: { wide?: boolean; children
   );
 }
 
-/** The dashed box bb's list pages use for loading and empty states. */
+/** The dashed box VesnALIA's list pages use for loading and empty states. */
 export function EmptyState({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div

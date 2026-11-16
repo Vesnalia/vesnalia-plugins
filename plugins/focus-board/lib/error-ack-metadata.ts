@@ -3,14 +3,14 @@
 // An acknowledged error is per-thread plugin metadata in the board's own
 // namespace: key "errorAck" → { ackedAt: ISO-8601 string }. Absent key = the
 // card's error signals still demand attention. These helpers are pure — no
-// host, no SDK — so the RPC layer and tests can drive them without a bb host
+// host, no SDK — so the RPC layer and tests can drive them without a VesnALIA host
 // (the contract `lib/done-metadata.ts` holds for its siblings).
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 
 /**
  * The board's error-ack key inside its thread plugin-metadata namespace.
  * A record's presence silences the board's error-signal attention for that
- * thread only; bb's own thread view is untouched.
+ * thread only; VesnALIA's own thread view is untouched.
  */
 export const ERROR_ACK_METADATA_KEY = "errorAck";
 

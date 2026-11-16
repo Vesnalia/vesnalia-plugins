@@ -7,8 +7,8 @@
  *
  * Two rules run through all of it.
  *
- * **`unavailable` is not `absent`.** bb's GitHub PR Status plugin returns a
- * three-outcome union, and bb's original lookup documented why: "'unavailable' means
+ * **`unavailable` is not `absent`.** VesnALIA's GitHub PR Status plugin returns a
+ * three-outcome union, and VesnALIA's original lookup documented why: "'unavailable' means
  * the lookup itself failed (gh missing, not authenticated, timeout,
  * unreachable workspace), so callers must not render it as 'no PR exists'."
  * They are separate cases here and named separately, so nobody can collapse
@@ -100,7 +100,7 @@ type SafePatternToken =
   | { readonly kind: "wildcard" };
 
 /** Linear calls this field a regex, but arbitrary backtracking syntax cannot
- * run on bb's event loop. Support the useful deterministic subset: anchors,
+ * run on VesnALIA's event loop. Support the useful deterministic subset: anchors,
  * literals, escaped literals, and `.*`. Everything else is refused. */
 function safeBranchPattern(raw: string): readonly SafePatternToken[] | null {
   let pattern = raw;
@@ -190,7 +190,7 @@ export function decideTransition(input: TransitionInput): TransitionDecision {
     return {
       move: false,
       reason: "lookup-unavailable",
-      detail: "bb couldn't reach the git host, so nothing was moved.",
+      detail: "alia couldn't reach the git host, so nothing was moved.",
     };
   }
 
@@ -304,7 +304,7 @@ export function noAutomationMessage(input: {
   readonly identifier: string;
 }): string {
   return (
-    `${input.teamName} has no git automation configured in Linear, so bb isn't moving ` +
+    `${input.teamName} has no git automation configured in Linear, so VesnALIA isn't moving ` +
     `${input.identifier} for its pull request. Set it up in Linear, or choose a review state for this binding.`
   );
 }

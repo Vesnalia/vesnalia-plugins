@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { createFakePluginHost, makePluginAgentConfigurationContext } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makePluginAgentConfigurationContext } from "@vesnalia/plugin-sdk/testing";
 
 const root = mkdtempSync(path.join(os.tmpdir(), "scoped-skills-plugin-"));
 process.env.SCOPED_SKILLS_LIBRARY_DIR = path.join(root, "library");
@@ -22,12 +22,12 @@ const providers = [
 ];
 
 async function load() {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "scoped-skills",
     agentSkillIds: ["scoped-skills", "brandkit", "gpt-only", "everywhere"],
     sdk: { providers: { list: async () => providers as never } },
   });
-  await plugin(bb);
+  await plugin(alia);
   return harness;
 }
 

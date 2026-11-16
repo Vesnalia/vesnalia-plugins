@@ -1,7 +1,7 @@
 // Import only produces drafts. The editor's explicit Create soul action is
 // the sole save path; source changes invalidate previews, Back preserves edits.
 import { useEffect, useId, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import type { ImportedAgent } from "../soul-import-formats";
 import { MAX_AGENT_IMPORT_LENGTH, soulTeamSchema, type AgentImportFormat, type Soul } from "../shared";

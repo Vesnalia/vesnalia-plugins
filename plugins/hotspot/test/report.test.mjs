@@ -67,8 +67,8 @@ test("clampText cuts at a line boundary under the limit", () => {
   assert.equal(clampText("short", 200), "short");
 });
 
-test("status and the window summary include the BB total, with its split", () => {
-  const bb = {
+test("status and the window summary include the VesnALIA total, with its split", () => {
+  const alia = {
     cpu: 23.4,
     memBytes: 3.1 * 1024 ** 3,
     processes: 41,
@@ -77,18 +77,18 @@ test("status and the window summary include the BB total, with its split", () =>
   };
   const base = { at: 0, thermal: 0, cpu: 50, load: 0.5, memory: null, threads: [], procs: [] };
   assert.match(
-    describeSample({ ...base, bb }).join("\n"),
-    /BB total 23%, 3\.1 GB, 41 processes \(app 5%, 1\.2 GB; threads 18%, 1\.9 GB\); memory sums/,
+    describeSample({ ...base, alia }).join("\n"),
+    /ALIA total 23%, 3\.1 GB, 41 processes \(app 5%, 1\.2 GB; threads 18%, 1\.9 GB\); memory sums/,
   );
-  assert.doesNotMatch(describeSample({ ...base, bb: null }).join("\n"), /BB total/);
-  const window = summarizeWindow([{ ...base, bb }, { ...base, bb: { ...bb, cpu: 40 } }, { ...base, bb: null }]);
-  assert.deepEqual(window.bb, { samples: 2, avgCpu: 31.7, peakCpu: 40, peakMemBytes: bb.memBytes });
-  assert.match(describeWindow(window, []).join("\n"), /BB total \(app and all threads\) CPU avg 32%, peak 40%; peak memory 3\.1 GB/);
-  assert.match(describeWindow(summarizeWindow([{ ...base, bb: null }]), []).join("\n"), /BB total: not recorded/);
+  assert.doesNotMatch(describeSample({ ...base, alia: null }).join("\n"), /ALIA total/);
+  const window = summarizeWindow([{ ...base, alia }, { ...base, alia: { ...alia, cpu: 40 } }, { ...base, alia: null }]);
+  assert.deepEqual(window.alia, { samples: 2, avgCpu: 31.7, peakCpu: 40, peakMemBytes: alia.memBytes });
+  assert.match(describeWindow(window, []).join("\n"), /ALIA total \(app and all threads\) CPU avg 32%, peak 40%; peak memory 3\.1 GB/);
+  assert.match(describeWindow(summarizeWindow([{ ...base, alia: null }]), []).join("\n"), /ALIA total: not recorded/);
 });
 
 test("status lists each thread's top processes under it; an episode names its culprits' processes", () => {
-  const base = { at: 0, thermal: 0, cpu: 50, load: 0.5, memory: null, procs: [], bb: null };
+  const base = { at: 0, thermal: 0, cpu: 50, load: 0.5, memory: null, procs: [], alia: null };
   const thread = {
     threadId: "thr_aaaaaaaaaa",
     title: "Home page",

@@ -90,7 +90,7 @@ test("messages carry a preview and tool rows do not", () => {
   assert.equal(items[2]!.tip, undefined);
 });
 
-test("work rows are named as BB names them, and a turn by its steps", () => {
+test("work rows are named as VesnALIA names them, and a turn by its steps", () => {
   const memo: Memo = new Map();
   const ran = { ...work("w", 3, "t1"), status: "completed", presentation: { label: { pending: "Running command", completed: "Ran command" }, title: "pnpm test" } };
   const going = { ...work("x", 4, "t1"), status: "pending", presentation: { label: { pending: "Running command", completed: "Ran command" }, title: "pnpm test" } };

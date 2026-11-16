@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   definePluginApp,
-  useBbContext,
+  useAliaContext,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "./server";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ interface ProjectRow {
 
 function ProjectInstructionsSettings() {
   const rpc = useRpc<typeof rpcContract>();
-  const { projectId } = useBbContext();
+  const { projectId } = useAliaContext();
 
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -162,7 +162,7 @@ export default definePluginApp((app) => {
     id: "project-instructions",
     title: "Project instructions",
     description:
-      "Text added to the system prompt of every thread in the chosen project. Stored in bb, never in the repository.",
+      "Text added to the system prompt of every thread in the chosen project. Stored in VesnALIA, never in the repository.",
     component: ProjectInstructionsSettings,
   });
 });

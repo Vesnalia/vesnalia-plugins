@@ -23,7 +23,7 @@ body:
       description: Enough detail for a reader to match your conditions.
       placeholder: |
         Focus Board: 1.2.0 (from the About tab)
-        bb: 0.43.2
+        alia: 0.43.2
         OS: macOS 15.2
         Surface: desktop app / browser (name and version)
         Settings that matter: grouping, filters, wallpaper, nesting toggle

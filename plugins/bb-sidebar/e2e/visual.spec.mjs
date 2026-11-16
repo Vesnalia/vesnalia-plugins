@@ -4,7 +4,7 @@ import { test, fixture, cli, rpc, shelf, link, expand, reset, open } from "./hel
 
 async function capture(page, testInfo, name) {
   await page.addStyleTag({ path: "e2e/snapshot.css" });
-  const sidebar = page.locator("[data-bb-sidebar-root]");
+  const sidebar = page.locator("[data-alia-sidebar-root]");
   await expect(sidebar).toHaveScreenshot(name);
   const actual = await sidebar.screenshot({ animations: "disabled" });
   const baseline = readFileSync(testInfo.snapshotPath(name));
@@ -30,7 +30,7 @@ for (const [name, theme, width] of [
     await expect(link(page, cedar.title, "Snoozed")).toBeVisible();
     await expect(link(page, delta.title, "Settled")).toBeVisible();
     await page.mouse.move(1000, 750);
-    const sidebar = page.locator("[data-bb-sidebar-root]");
+    const sidebar = page.locator("[data-alia-sidebar-root]");
     expect(Math.round((await sidebar.boundingBox()).width)).toBe(width);
     await capture(page, testInfo, `${name}.png`);
     await expect(shelf(page, "Active").getByRole("link")).toHaveCount(1);
@@ -66,7 +66,7 @@ test("sidebar snapshot empty Active", async ({ page, request }, testInfo) => {
   for (const { id } of fixture.threads) await rpc(request, "settle", { threadId: id });
   await open(page, { empty: true });
   await expect(page.getByText("All clear. Time to touch some grass.")).toBeVisible();
-  await expect(page.locator("[data-bb-sidebar-root]").getByRole("link")).toHaveCount(0);
+  await expect(page.locator("[data-alia-sidebar-root]").getByRole("link")).toHaveCount(0);
   await page.mouse.move(1000, 750);
   await capture(page, testInfo, "empty.png");
 });

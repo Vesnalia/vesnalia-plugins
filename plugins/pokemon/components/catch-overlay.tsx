@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useBbNavigate, useRealtime } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { PokemonSprite, TypeBadges } from "@/components/pokemon-bits";
 import { CATCH_CHANNEL, parseCatchEvent, type CatchEvent } from "@/lib/catch-event";
@@ -103,7 +103,7 @@ function CatchCard({
 
 /** Shows a card in the corner of the app for every Pokémon caught. */
 export function CatchOverlay() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [catches, setCatches] = useState<CatchEvent[]>([]);
 
   const onCatch = useCallback((payload: unknown) => {

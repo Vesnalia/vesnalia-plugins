@@ -1,4 +1,4 @@
-import type { PluginSidebarThread, PluginSidebarThreadIndicator, PluginSidebarThreadRowStatus } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread, PluginSidebarThreadIndicator, PluginSidebarThreadRowStatus } from "@vesnalia/plugin-sdk/app";
 import { messages, type Language } from "./messages";
 
 export type ThreadStateKind="working"|"waiting"|"error"|"queued"|"unread"|"draft"|"archived"|"native"|"none";
@@ -15,7 +15,7 @@ export function resolveThreadStatus(thread:PluginSidebarThread,rowStatus?:Plugin
   if(indicator==="queued-failed"||thread.queuedWork==="failed")return view("error",t.queuedError);
   if(thread.runtimeStatus==="waiting-for-host")return view("queued",t.waitingHost);
   if(thread.runtimeStatus==="provisioning")return view("queued",t.provisioning);
-  // Preserve another plugin's row glyph, matching BB's exception for runtime.
+  // Preserve another plugin's row glyph, matching VesnALIA's exception for runtime.
   if(rowStatus&&indicator!=="runtime")return {...view(rowStatus.tone==="error"?"error":"native",rowStatus.label),busy:rowStatus.tone==="running"};
   if(nativeLabels[indicator])return {...view("native",nativeLabels[indicator]!),busy:true};
   if(indicator==="runtime"||indicator==="working-draft"||["active","starting","stopping"].includes(thread.status)) {

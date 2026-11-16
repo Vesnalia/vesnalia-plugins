@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { z } from "zod";
 import type { Forge } from "../contract";
 import type { HostClient } from "./hosts";
@@ -81,19 +81,19 @@ export function newestMarks<T>(record: Record<string, T>, at: (value: T) => numb
  * A list's marks in one KV value: loaded once and shared, so every edit mutates the same record; saves run in order.
  * Marks that fail to parse start over from `schema`'s defaults.
  */
-export function marksStore<T>(bb: BbPluginApi, key: string, schema: z.ZodType<T>) {
+export function marksStore<T>(alia: AliaPluginApi, key: string, schema: z.ZodType<T>) {
   let loading: Promise<T> | null = null;
   let writing: Promise<unknown> = Promise.resolve();
   return {
     load(): Promise<T> {
-      loading ??= safe(() => bb.storage.kv.get<unknown>(key)).then((raw) => {
+      loading ??= safe(() => alia.storage.kv.get<unknown>(key)).then((raw) => {
         const parsed = schema.safeParse(raw);
         return parsed.success ? parsed.data : schema.parse({});
       });
       return loading;
     },
     save(marks: T) {
-      writing = writing.then(() => safe(() => bb.storage.kv.set(key, marks)));
+      writing = writing.then(() => safe(() => alia.storage.kv.set(key, marks)));
     },
   };
 }

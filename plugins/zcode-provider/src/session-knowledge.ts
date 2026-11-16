@@ -1,12 +1,12 @@
 import { existsSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import type { Snapshot } from './native.ts';
-import type { BbSkill } from './bb-skills.ts';
+import type { AliaSkill } from './alia-skills.ts';
 
-// Stored with bb's own native session, never in HOME/configuration. Pending
+// Stored with VesnALIA's own native session, never in HOME/configuration. Pending
 // means dispatch may have happened: an ACK cannot resolve that uncertainty.
 export class SessionKnowledge {
-  private state: { block: string; commandId: string | null; delivered: boolean; everDelivered: boolean; skills: BbSkill[]; frozen: boolean; compacts: string[]; needsReconcile: boolean };
+  private state: { block: string; commandId: string | null; delivered: boolean; everDelivered: boolean; skills: AliaSkill[]; frozen: boolean; compacts: string[]; needsReconcile: boolean };
   private file: string | undefined;
   constructor(file?: string) {
     this.file = file;
@@ -41,7 +41,7 @@ export class SessionKnowledge {
     this.state.needsReconcile = false; this.save();
     return retained;
   }
-  prepare(id: string, block: string, text: string, skills: BbSkill[] = []) {
+  prepare(id: string, block: string, text: string, skills: AliaSkill[] = []) {
     if (this.state.delivered) return text;
     if (this.state.commandId) return text; // Never repeat an uncertain prefix.
     if (this.state.frozen) { block = this.state.block; skills = this.state.skills; }

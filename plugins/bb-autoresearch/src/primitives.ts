@@ -2,7 +2,7 @@
 // commits against each other, and run the gates on any commit, with the
 // study's own protocol, guardrails, bench hosts, bench lock and budget.
 // Agents decide what to group, split, stack and publish; every number they
-// put in a PR comes from here (`bb study measure`, `bb study gate`).
+// put in a PR comes from here (`alia study measure`, `alia study gate`).
 //
 // Each request is a row in adhoc_runs (r<seq> per study) and a background
 // job; the CLI waits for it or returns at once (`--detach`). A plugin reload
@@ -123,14 +123,14 @@ export class Primitives {
    * verdicts back. A study without live workers always takes them.
    */
   refusal(study: StudyRow, liveWorkers: number): string | null {
-    if (study.state === "draft") return `${study.slug} is a draft: approve and calibrate it first (\`bb study calibrate ${study.slug}\`)`;
+    if (study.state === "draft") return `${study.slug} is a draft: approve and calibrate it first (\`alia study calibrate ${study.slug}\`)`;
     if (study.state === "archived") return `${study.slug} is archived: its bench checkouts are gone`;
     if (study.state === "calibrating") return `${study.slug} is calibrating; wait for it to finish`;
     if (!this.store.segment(study.id, study.segment)) return `${study.slug} has no calibrated segment yet`;
     if (liveWorkers > 0) {
       const busy = this.store.candidates(study.id, { stages: [...BENCH_BOUND_STAGES] }).length;
       if (busy > 0) {
-        const next = study.state === "running" ? `, or pause it (\`bb study pause ${study.slug}\`) or freeze it for harvest (\`bb study harvest ${study.slug}\`) first` : " (its workers are finishing their last submissions)";
+        const next = study.state === "running" ? `, or pause it (\`alia study pause ${study.slug}\`) or freeze it for harvest (\`alia study harvest ${study.slug}\`) first` : " (its workers are finishing their last submissions)";
         return `${study.slug} is running ${liveWorkers} worker(s) and its bench is busy (${busy} candidate(s) testing, queued or measuring). Measure when the bench is idle${next}`;
       }
     }
@@ -144,7 +144,7 @@ export class Primitives {
     if (r === "best" && study.best_sha) return study.best_sha;
     if (r === "base" && study.base_sha) return study.base_sha;
     const cand = /^c\/(\d+)$/u.exec(r);
-    const runner = this.ctx.bb.hostRunner(study.host_id!);
+    const runner = this.ctx.alia.hostRunner(study.host_id!);
     const rev = cand ? candidateRef(study.slug, Number(cand[1])) : r.replace(/^best(?=[~^])/u, study.best_sha ?? "best").replace(/^base(?=[~^])/u, study.base_sha ?? "base");
     const sha = await runner.resolveRef(study.repo_path!, rev);
     if (!sha) throw new PrimitiveRefused(`${JSON.stringify(ref)} does not name a commit in ${study.repo_path}`);
@@ -197,7 +197,7 @@ export class Primitives {
 
   private noHostText(study: StudyRow): string {
     const spec = this.store.spec(study);
-    return `${study.slug} has no online bench host${spec.oracle.remote_bench?.length && study.state === "paused" ? " (its remote machines are released while it is paused; freeze it for harvest with `bb study harvest`, which brings them up for its requests)" : ""}`;
+    return `${study.slug} has no online bench host${spec.oracle.remote_bench?.length && study.state === "paused" ? " (its remote machines are released while it is paused; freeze it for harvest with `alia study harvest`, which brings them up for its requests)" : ""}`;
   }
 
   /** Wait until a bench host is online (remote machines joining), up to adhocHostWaitMs. */
@@ -211,7 +211,7 @@ export class Primitives {
       const coming = this.remoteComing(study);
       if (!coming) throw new Error(this.noHostText(study));
       const waited = this.ctx.now() - since;
-      if (waited >= this.ctx.config.adhocHostWaitMs) throw new Error(`no bench host came online within ${Math.round(this.ctx.config.adhocHostWaitMs / 60_000)} min (${coming}); see \`bb study bench ${study.slug}\` and run it again`);
+      if (waited >= this.ctx.config.adhocHostWaitMs) throw new Error(`no bench host came online within ${Math.round(this.ctx.config.adhocHostWaitMs / 60_000)} min (${coming}); see \`alia study bench ${study.slug}\` and run it again`);
       this.progress(row, coming);
       await sleep(this.ctx.config.harvestPollMs, signal);
     }
@@ -450,7 +450,7 @@ export class Primitives {
   private async runGate(row: AdhocRunRow, signal: AbortSignal): Promise<void> {
     const study = this.store.study(row.study_id)!;
     const spec = this.store.spec(study);
-    const runner = this.ctx.bb.hostRunner(study.host_id!);
+    const runner = this.ctx.alia.hostRunner(study.host_id!);
     const serialized = gatesSerialized(this.store, study, spec);
     this.progress(row, serialized ? "waiting for the bench lock (single-machine mode: gates share it)" : "running the gates");
     const started = this.ctx.now();

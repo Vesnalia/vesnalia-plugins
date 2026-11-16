@@ -1,9 +1,9 @@
-// bb-plugin-guided-review — frontend entry.
+// alia-plugin-guided-review — frontend entry.
 //
 // Registers the "Guided Review" navPanel (a sidebar entry + its own route).
 // The panel routes by subPath: "" renders the review list, anything else
 // renders the chapter/diff workspace for that target.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { ReviewPanel } from "./components/ReviewPanel";
 import { ReviewSettings } from "./components/ReviewSettings";
 

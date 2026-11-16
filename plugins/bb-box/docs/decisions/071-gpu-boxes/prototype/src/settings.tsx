@@ -146,7 +146,7 @@ function GpuSection({ backend }: { backend: BackendId }) {
                     <span className="text-xs tabular-nums text-muted-foreground">{cardSummary(store, card)}</span>
                   </div>
                   <p className="mt-0.5 truncate font-mono text-2xs text-subtle-foreground">{card.id}</p>
-                  {card.outsideMiB > 0 ? <p className="mt-0.5 text-xs text-muted-foreground">{gib(card.outsideMiB)} in use outside bb-box's boxes.</p> : null}
+                  {card.outsideMiB > 0 ? <p className="mt-0.5 text-xs text-muted-foreground">{gib(card.outsideMiB)} in use outside alia-box's boxes.</p> : null}
                   {over.length ? (
                     <p className="mt-0.5 text-xs text-warning-text">
                       {on.length} boxes running, {over.length} over the limit of {settings.boxesPerCard}. They keep running; no new box goes on {cardName(card)} until it has room.
@@ -211,7 +211,7 @@ function KindDefaults() {
 export function SettingsPage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8 px-4 pb-6 pt-3 md:px-5 md:pt-4">
-      <TopRow trail={[{ words: "BB Box settings" }, { words: "Backends and kinds" }]} />
+      <TopRow trail={[{ words: "VesnALIA Box settings" }, { words: "Backends and kinds" }]} />
       <GpuSection backend="proxmox-lxc" />
       <GpuSection backend="docker" />
       <KindDefaults />

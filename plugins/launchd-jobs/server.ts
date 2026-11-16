@@ -6,7 +6,7 @@
 // count the sidebar shows (server/health.ts), and relays log changes to the
 // app while a log is being followed, and sends the opt-in push notification
 // when a job starts failing (server/failure-push.ts). See AGENTS.md.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { HEALTH_CHANGED, LOG_CHANGED, type Health } from "./shared/channels";
@@ -23,7 +23,7 @@ const WATCHED_HOSTS_KEY = "watched-hosts";
 /** The `hostId/id` of every failing job the push has already accounted for. */
 const NOTIFIED_FAILURES_KEY = "notified-failures";
 
-/** bb's built-in Push notifications plugin, and its send method (bb 0.48.1). */
+/** VesnALIA's built-in Push notifications plugin, and its send method (VesnALIA 0.48.1). */
 const PUSH_PLUGIN_ID = "push-notifications";
 const PUSH_SEND_METHOD = "notifications.send";
 const PushSentSchema = z.object({ ok: z.literal(true), channels: z.array(z.string()) });
@@ -42,39 +42,39 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const host = bb.hosts.experimental_client({ contract: hostContract, experimental_signals: hostSignals });
+export default async function plugin(alia: AliaPluginApi) {
+  const host = alia.hosts.experimental_client({ contract: hostContract, experimental_signals: hostSignals });
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     notifyOnFailure: {
       type: "boolean",
       label: "Push a notification when a job starts failing",
       description:
-        "One notification when a job's latest run fails, and nothing more until it runs successfully again or you open it. Sent through bb's Push notifications (bb 0.48.1 or newer); jobs already failing when you turn this on are not announced.",
+        "One notification when a job's latest run fails, and nothing more until it runs successfully again or you open it. Sent through VesnALIA's Push notifications (VesnALIA 0.48.1 or newer); jobs already failing when you turn this on are not announced.",
       default: false,
     },
   });
 
   const failurePush = createFailurePush({
     enabled: async () => (await settings.get()).notifyOnFailure,
-    load: async () => (await bb.storage.kv.get<string[]>(NOTIFIED_FAILURES_KEY)) ?? undefined,
-    save: (keys) => bb.storage.kv.set(NOTIFIED_FAILURES_KEY, keys),
-    // Feature-detected: on a bb before 0.48.1, or with Push notifications off, this throws and is logged once.
+    load: async () => (await alia.storage.kv.get<string[]>(NOTIFIED_FAILURES_KEY)) ?? undefined,
+    save: (keys) => alia.storage.kv.set(NOTIFIED_FAILURES_KEY, keys),
+    // Feature-detected: on a VesnALIA before 0.48.1, or with Push notifications off, this throws and is logged once.
     send: async ({ title, body }) => {
-      const sent = await bb.sdk.plugins.callRpc({
+      const sent = await alia.sdk.plugins.callRpc({
         pluginId: PUSH_PLUGIN_ID,
         method: PUSH_SEND_METHOD,
         input: { title, body },
         outputSchema: PushSentSchema,
       });
-      if (sent.channels.length === 0) bb.log.debug(`no notification channel is on for "${title}"`);
+      if (sent.channels.length === 0) alia.log.debug(`no notification channel is on for "${title}"`);
     },
-    warn: (message) => bb.log.warn(message),
+    warn: (message) => alia.log.warn(message),
   });
-  bb.onDispose(() => failurePush.dispose());
+  alia.onDispose(() => failurePush.dispose());
 
   async function knownHosts(): Promise<Map<string, { name: string; connected: boolean }>> {
-    const hosts = await bb.sdk.hosts.list();
+    const hosts = await alia.sdk.hosts.list();
     return new Map(
       hosts
         .filter((entry) => entry.lifecycle.phase !== "destroyed" && entry.lifecycle.phase !== "removing")
@@ -86,32 +86,32 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   const health = createHealthMonitor({
-    primaryHostId: async () => (await bb.sdk.system.config()).primaryHostId,
+    primaryHostId: async () => (await alia.sdk.system.config()).primaryHostId,
     knownHosts,
     hostHealth: (hostId) => host.call("health", {}, { hostId }),
-    loadWatched: async () => (await bb.storage.kv.get<string[]>(WATCHED_HOSTS_KEY)) ?? [],
-    saveWatched: (hostIds) => bb.storage.kv.set(WATCHED_HOSTS_KEY, hostIds),
-    publish: (value: Health) => bb.realtime.publish(HEALTH_CHANGED, value),
+    loadWatched: async () => (await alia.storage.kv.get<string[]>(WATCHED_HOSTS_KEY)) ?? [],
+    saveWatched: (hostIds) => alia.storage.kv.set(WATCHED_HOSTS_KEY, hostIds),
+    publish: (value: Health) => alia.realtime.publish(HEALTH_CHANGED, value),
     checked: (failing, unanswered) => void failurePush.observe(failing, unanswered),
     now: () => Date.now(),
-    warn: (message) => bb.log.warn(message),
+    warn: (message) => alia.log.warn(message),
   });
 
   /** Re-counts after something that can change the count, without making the caller wait or fail on it. */
   function recount(): void {
-    void health.refresh().catch((error: unknown) => bb.log.warn(`could not re-count failing jobs: ${String(error)}`));
+    void health.refresh().catch((error: unknown) => alia.log.warn(`could not re-count failing jobs: ${String(error)}`));
   }
 
-  bb.onDispose(
+  alia.onDispose(
     host.experimental_onSignal("logChanged", ({ hostId, payload }) => {
-      bb.log.debug(`log of ${payload.id} changed on ${hostId}`);
-      bb.realtime.publish(LOG_CHANGED, { hostId, id: payload.id });
+      alia.log.debug(`log of ${payload.id} changed on ${hostId}`);
+      alia.realtime.publish(LOG_CHANGED, { hostId, id: payload.id });
     }),
   );
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     hosts: async () => {
-      const [config, known] = await Promise.all([bb.sdk.system.config(), knownHosts()]);
+      const [config, known] = await Promise.all([alia.sdk.system.config(), knownHosts()]);
       return {
         primaryHostId: config.primaryHostId,
         hosts: [...known]
@@ -151,13 +151,13 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // launchd fires the jobs; this only re-reads how their last runs ended.
-  bb.background.service("health", {
+  alia.background.service("health", {
     async start(signal) {
       while (!signal.aborted) {
         try {
           await health.refresh();
         } catch (error) {
-          bb.log.warn(`could not count failing jobs: ${String(error)}`);
+          alia.log.warn(`could not count failing jobs: ${String(error)}`);
         }
         await sleep(HEALTH_POLL_MS, signal);
       }

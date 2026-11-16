@@ -29,25 +29,25 @@ function deadPid(): number {
   return Number(done.stdout.trim());
 }
 
-test("a folder BB Box makes says which process owns it, so a later run can tell whether that process is gone", async () => {
+test("a folder VesnALIA Box makes says which process owns it, so a later run can tell whether that process is gone", async () => {
   const base = tempDir("temp-owner");
-  const dir = await makeTempFolder("bb-box-ssh-", base);
+  const dir = await makeTempFolder("alia-box-ssh-", base);
   const view = linuxProcessView();
   assert.equal(readFileSync(join(dir, OWNER_FILE), "utf8"), ownerMark(view));
   assert.match(readFileSync(join(dir, OWNER_FILE), "utf8"), new RegExp(`^${process.pid} \\S+\\n$`));
-  const sync = makeTempFolderSync("bb-box-relay-", base);
+  const sync = makeTempFolderSync("alia-box-relay-", base);
   assert.ok(existsSync(join(sync, OWNER_FILE)));
   assert.deepEqual(sweepStaleTempFolders({ bases: [base] }).removed, [], "this process's own folders stay");
 });
 
-test("at start, BB Box removes its folders whose process is gone, or whose process ID another process has taken, and keeps a live one's", async () => {
+test("at start, VesnALIA Box removes its folders whose process is gone, or whose process ID another process has taken, and keeps a live one's", async () => {
   const base = tempDir("temp-sweep");
   const view = linuxProcessView();
-  const gone = folder(base, "bb-box-ssh-gone", `${deadPid()} 12345\n`);
-  const reused = folder(base, "bb-box-cm-reused", `${process.pid + 0} not-its-start\n`);
+  const gone = folder(base, "alia-box-ssh-gone", `${deadPid()} 12345\n`);
+  const reused = folder(base, "alia-box-cm-reused", `${process.pid + 0} not-its-start\n`);
   const sleeper = spawn("sleep", ["30"], { stdio: "ignore" });
   try {
-    const live = folder(base, "bb-box-relay-live", `${sleeper.pid} ${view.startToken(sleeper.pid!)}\n`);
+    const live = folder(base, "alia-box-relay-live", `${sleeper.pid} ${view.startToken(sleeper.pid!)}\n`);
     const result = sweepStaleTempFolders({ bases: [base], view: { ...view, pid: -1 } });
     assert.deepEqual([...result.removed].sort(), [gone, reused].sort());
     assert.deepEqual(result.kept, [live]);
@@ -58,21 +58,21 @@ test("at start, BB Box removes its folders whose process is gone, or whose proce
   }
 });
 
-test("a folder an earlier BB Box left with no owner goes once it is a day old and nothing uses it", async () => {
+test("a folder an earlier VesnALIA Box left with no owner goes once it is a day old and nothing uses it", async () => {
   const base = tempDir("temp-unmarked");
-  const young = folder(base, "bb-box-ssh-young");
-  const old = folder(base, "bb-box-ssh-old", undefined, 2 * DAY_MS);
+  const young = folder(base, "alia-box-ssh-young");
+  const old = folder(base, "alia-box-ssh-old", undefined, 2 * DAY_MS);
   const other = folder(base, "someone-else-old", undefined, 2 * DAY_MS);
   const result = sweepStaleTempFolders({ bases: [base] });
   assert.deepEqual(result.removed, [old]);
-  assert.ok(existsSync(young), "younger than a day: maybe a running older BB Box's");
-  assert.ok(existsSync(other), "only BB Box's folders");
+  assert.ok(existsSync(young), "younger than a day: maybe a running older VesnALIA Box's");
+  assert.ok(existsSync(other), "only VesnALIA Box's folders");
 });
 
 test("an old folder with no owner stays while a socket is bound in it or a process holds a file in it", async () => {
   const base = tempDir("temp-in-use");
-  const withSocket = folder(base, "bb-box-cm-master", undefined, 2 * DAY_MS);
-  const withFile = folder(base, "bb-box-ssh-open", undefined, 2 * DAY_MS);
+  const withSocket = folder(base, "alia-box-cm-master", undefined, 2 * DAY_MS);
+  const withFile = folder(base, "alia-box-ssh-open", undefined, 2 * DAY_MS);
   const server = createServer();
   await new Promise<void>((resolve) => server.listen(join(withSocket, "cm.sock"), resolve));
   const fd = openSync(join(withFile, "id"), "r");
@@ -92,7 +92,7 @@ test("an old folder with no owner stays while a socket is bound in it or a proce
 
 test("another user's folders are never touched", () => {
   const base = tempDir("temp-other-user");
-  const old = folder(base, "bb-box-ssh-theirs", `${deadPid()} 1\n`, 2 * DAY_MS);
+  const old = folder(base, "alia-box-ssh-theirs", `${deadPid()} 1\n`, 2 * DAY_MS);
   const result = sweepStaleTempFolders({ bases: [base], view: { ...linuxProcessView(), uid: (process.getuid?.() ?? 0) + 1 } });
   assert.deepEqual(result.removed, []);
   assert.ok(existsSync(old));

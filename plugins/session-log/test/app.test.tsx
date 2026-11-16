@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { toast } from "sonner";
-import type { ExperimentalPanelController, PluginCommandContext } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalPanelController, PluginCommandContext } from "@vesnalia/plugin-sdk/app";
 import {
   LOG_TAB, consumePanelFocus, createCommands, headerAction, onPanelFocusRequest, requestPanelFocus,
 } from "../src/commands";
@@ -132,7 +132,7 @@ describe("plugin app", () => {
     slot.lifecycle.unmount();
   });
 
-  it("leaves the phone header to bb, since the panel launcher already opens the log", async () => {
+  it("leaves the phone header to VesnALIA, since the panel launcher already opens the log", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const slot = renderSlot(app.threadHeaderActions[0]!, { ...headerProps, isCompactViewport: true }, {
       pluginId: "session-log", experimental_panel: { openTab: () => true },
@@ -185,12 +185,12 @@ describe("manifest", () => {
   const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 
   it("brands the plugin with the Logs glyph and declares it for the header and tab", () => {
-    expect(manifest.bb.branding).toEqual({ icon: "./icons/logs.svg", experimental_icons: { logs: "./icons/logs.svg" } });
+    expect(manifest.alia.branding).toEqual({ icon: "./icons/logs.svg", experimental_icons: { logs: "./icons/logs.svg" } });
     const entry = JSON.parse(readFileSync(join(root, "../../entries/session-log.json"), "utf8"));
     expect(entry.icon).toEqual({ url: "plugins/session-log/icons/logs.svg" });
   });
 
-  it("ships a monochrome 24px SVG that bb's icon validator accepts", () => {
+  it("ships a monochrome 24px SVG that VesnALIA's icon validator accepts", () => {
     const path = join(root, "icons/logs.svg");
     expect(existsSync(path)).toBe(true);
     const svg = readFileSync(path, "utf8");

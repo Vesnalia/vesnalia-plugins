@@ -1,5 +1,5 @@
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -15,7 +15,7 @@ const thread = (over = {}) => ({
 });
 
 let host = createFakePluginHost({
-  pluginId: "bb-agent-toolbox",
+  pluginId: "alia-agent-toolbox",
   sdk: {
     threads: {
       list: async () => [thread({ id: "thr_a" })],

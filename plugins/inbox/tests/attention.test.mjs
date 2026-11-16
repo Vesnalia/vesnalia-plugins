@@ -42,12 +42,12 @@ test('a finished entry survives a new run and a plugin reload until dismissed', 
 });
 
 test('dismissal hides that completion, including after reading, while a later completion returns', async () => {
-  const threads = [thread('done')], bb = host(threads), dismissed = new Map([['done', 100]]);
-  assert.equal((await buildSnapshot(bb, { dismissed })).items.length, 0);
+  const threads = [thread('done')], alia = host(threads), dismissed = new Map([['done', 100]]);
+  assert.equal((await buildSnapshot(alia, { dismissed })).items.length, 0);
   threads[0].lastReadAt = 500;
-  assert.equal((await buildSnapshot(bb, { dismissed })).items.length, 0);
+  assert.equal((await buildSnapshot(alia, { dismissed })).items.length, 0);
   threads[0].latestAttentionAt = 600;
-  assert.equal((await buildSnapshot(bb, { dismissed })).items[0].attentionAt, 600);
+  assert.equal((await buildSnapshot(alia, { dismissed })).items[0].attentionAt, 600);
 });
 
 test('active failure or question takes precedence over the retained completion', async () => {
@@ -62,9 +62,9 @@ test('active failure or question takes precedence over the retained completion',
 });
 
 test('finished items stay out of the waiting badge and unstarted threads stay out of the inbox', async () => {
-  const bb = host([thread('finished'), thread('new', { latestAttentionAt: 0, lastReadAt: null })]);
-  assert.equal((await buildSnapshot(bb)).total, 1);
-  assert.equal((await buildSnapshot(bb, { includeFinished: false })).total, 0);
+  const alia = host([thread('finished'), thread('new', { latestAttentionAt: 0, lastReadAt: null })]);
+  assert.equal((await buildSnapshot(alia)).total, 1);
+  assert.equal((await buildSnapshot(alia, { includeFinished: false })).total, 0);
 });
 
 test('finished entries are not silently limited to the first 25 or first 500 threads', async () => {
@@ -75,8 +75,8 @@ test('finished entries are not silently limited to the first 25 or first 500 thr
 });
 
 test('archived, deleted, and hidden threads are excluded even when previously retained', async () => {
-  const threads = [thread('archived'), thread('deleted'), thread('hidden')], bb = host(threads);
-  await buildSnapshot(bb);
+  const threads = [thread('archived'), thread('deleted'), thread('hidden')], alia = host(threads);
+  await buildSnapshot(alia);
   threads[0].archivedAt = 200; threads[1].deletedAt = 200; threads[2].visibility = 'hidden';
-  assert.equal((await buildSnapshot(bb)).items.length, 0);
+  assert.equal((await buildSnapshot(alia)).items.length, 0);
 });

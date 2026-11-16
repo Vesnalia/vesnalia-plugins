@@ -13,7 +13,7 @@ until Sway can run nested in its compositor.
 ## Context
 
 #45 asked for a Linux desktop on Wayland, where GTK 4, GPUI and Chrome draw
-natively, and where apps that need Wayland can be built and tested. bb-box's
+natively, and where apps that need Wayland can be built and tested. alia-box's
 Linux desktops are X11: XFCE on Xorg with the GPU, or on Xtigervnc.
 
 [The research](../research/wayland-desktop.md) ran headless compositors in
@@ -87,11 +87,11 @@ wayvnc.** It is a kind of its own. The X11 desktops stay as they are.
 **The compositor.** Sway 1.9 from Ubuntu, in the `desktop` template built
 with a Wayland option.
 
-- `bb-box-display.service` runs Sway as the box user, with
+- `alia-box-display.service` runs Sway as the box user, with
   `WLR_BACKENDS=headless`, `WLR_LIBINPUT_NO_DEVICES=1`,
-  `WLR_RENDERER=pixman` and `SWAYSOCK=/run/bb-box/sway.sock`. `display
+  `WLR_RENDERER=pixman` and `SWAYSOCK=/run/alia-box/sway.sock`. `display
   wait` waits for Sway's IPC, then writes `WAYLAND_DISPLAY` and `SWAYSOCK`
-  to `/run/bb-box/display.env`, which SSH commands and the units already
+  to `/run/alia-box/display.env`, which SSH commands and the units already
   read.
 - The session's environment: `XDG_SESSION_TYPE=wayland`,
   `XDG_CURRENT_DESKTOP=sway`, and no `DISPLAY` anywhere: not in
@@ -99,7 +99,7 @@ with a Wayland option.
   `WAYLAND_DISPLAY`, `SWAYSOCK` and the two `XDG_` variables into the box
   user's systemd and D-Bus activation environments, so the one
   accessibility bus and apps started through D-Bus see them.
-- Its config, `/etc/bb-box/sway.conf`:
+- Its config, `/etc/alia-box/sway.conf`:
   - `output HEADLESS-1 mode` with `DISPLAY_GEOMETRY`, 1920x1080 by
     default;
   - floating windows by default, so apps open at their own size, centred,
@@ -119,8 +119,8 @@ with a Wayland option.
 
 **The stream.** wayvnc 0.7.2 from Ubuntu.
 
-- `bb-box-vnc.service` runs `wayvnc -f 60 -o HEADLESS-1 -C
-  /run/bb-box/wayvnc.conf 0.0.0.0 5900` as the box user, after Sway and
+- `alia-box-vnc.service` runs `wayvnc -f 60 -o HEADLESS-1 -C
+  /run/alia-box/wayvnc.conf 0.0.0.0 5900` as the box user, after Sway and
   bound to it, with `Restart=always`. wayvnc's default of 30 frames a
   second halves what a viewer sees of an animation.
 - wayvnc once exited without a word during the resize tests, and not in
@@ -135,7 +135,7 @@ with a Wayland option.
 Diffie-Hellman (type 30), which the relay already speaks.
 
 - The unit writes `wayvnc.conf`, mode 0600, from
-  `/var/lib/bb-box/vnc-password` before it starts.
+  `/var/lib/alia-box/vnc-password` before it starts.
 - The display's `open()` returns `auth: {type: "apple", user: "box",
   password}`, where X11 displays return `vnc-password`. Viewers sign in to
   the relay as before.
@@ -152,9 +152,9 @@ Diffie-Hellman (type 30), which the relay already speaks.
   research has the fitting step.
 
 **Computer use.** Cua Driver at the template's pin, in the box user's
-`bb-box-cua-driver.service`, as on X11, with:
+`alia-box-cua-driver.service`, as on X11, with:
 
-- `/run/bb-box/display.env`, for `WAYLAND_DISPLAY` and `SWAYSOCK`;
+- `/run/alia-box/display.env`, for `WAYLAND_DISPLAY` and `SWAYSOCK`;
 - `CUA_DRIVER_RS_ENABLE_WAYLAND=1`, `XDG_SESSION_TYPE=wayland` and
   `XDG_CURRENT_DESKTOP=sway`;
 - a start after Sway: the display unit's `ExecStartPost` restarts it, as
@@ -165,7 +165,7 @@ Diffie-Hellman (type 30), which the relay already speaks.
 
 Without `SWAYSOCK`, Cua cannot tell windows apart and refuses. Input goes
 only to the focused window, so typing and keys go in the foreground: Cua
-refuses the background first, and bb-box tries again in the foreground, as
+refuses the background first, and alia-box tries again in the foreground, as
 015 has it. Cua brings the window to the front before it types.
 
 **An element click with no action.** When Cua refuses a click on an
@@ -173,17 +173,17 @@ element because it cannot inject input, `computer.ts` clicks the centre of
 the element's frame instead:
 
 - Cua gives frames in screen pixels, but a GTK 3 app's in the window's
-  own, and says `window` for both, so on a Wayland box bb-box reads a
+  own, and says `window` for both, so on a Wayland box alia-box reads a
   window's frames the way that puts more of them inside the window; the
   window's origin from `list_windows` then turns the frame into window
   pixels. A box's kind says whether its desktop is Wayland. Elsewhere
   frames are always the screen's, and one above or left of the window
-  belongs to an element scrolled out of view, so bb-box leaves them as
+  belongs to an element scrolled out of view, so alia-box leaves them as
   they are;
 - Cua takes pixels only after a `get_window_state` with a screenshot on
-  the same connection, so bb-box reads the window first when its session
+  the same connection, so alia-box reads the window first when its session
   has not;
-- the result says that bb-box clicked the element's centre, so the agent
+- the result says that alia-box clicked the element's centre, so the agent
   knows it was a click by position;
 - it applies to any kind where Cua refuses this way, and only to elements
   that have a frame.
@@ -262,7 +262,7 @@ who wants GNOME itself may get `linux-desktop-gnome` later. It would:
 - X11-only apps do not run on the Wayland kinds, and the kind's
   description says so. The X11 kinds are unchanged.
 - One more template and one more Docker image to build and keep current.
-- bb-box tracks Cua: when a release lists windows with Xwayland open,
+- alia-box tracks Cua: when a release lists windows with Xwayland open,
   Xwayland can be turned on, and the element-click fallback stays for
   apps without actions.
 - The GPU Wayland kind and Hyprland wait for the host's `modeset=1`.

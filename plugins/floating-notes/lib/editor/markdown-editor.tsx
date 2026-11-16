@@ -1,5 +1,5 @@
 /**
- * Self-contained CodeMirror 6 live-markdown editor for bb-plugin-notes.
+ * Self-contained CodeMirror 6 live-markdown editor for alia-plugin-notes.
  *
  * Owns exactly one EditorView for its lifetime: prop-identical re-renders
  * never touch it, `readOnly`/`placeholder` reconfigure via compartments, and

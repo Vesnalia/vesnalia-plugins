@@ -1,4 +1,4 @@
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import type { CrawlJobService, CrawlJobView } from "../../../src/jobs/model.ts";
 import { sourceScopeKey } from "../../../src/web/contracts.ts";
 import { CONFIG_DEFAULTS, type WebConfig } from "../../../src/web/config.ts";

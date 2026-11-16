@@ -104,7 +104,7 @@ async function classifySession(
   if (!hostId) {
     throw new SwitchAdmissionError(
       "machine-unavailable",
-      "BB could not identify this session's machine.",
+      "VesnALIA could not identify this session's machine.",
     );
   }
   if (thread.status === "idle" || thread.status === "error") return { hostId };
@@ -126,7 +126,7 @@ async function classifySession(
 
 function throwIfCancelled(signal: AbortSignal): void {
   if (signal.aborted) {
-    throw new Error("Claude login was cancelled. This BB session was not changed.");
+    throw new Error("Claude login was cancelled. This VesnALIA session was not changed.");
   }
 }
 
@@ -195,7 +195,7 @@ export async function switchClaudeAccount(
       if (request.mode === "login") {
         return { outcome: "login-changed-not-rebound" };
       }
-      throw new Error("This session changed before BB could release it.");
+      throw new Error("This session changed before VesnALIA could release it.");
     }
 
     if (request.mode === "current") {
@@ -207,8 +207,8 @@ export async function switchClaudeAccount(
     } catch {
       throw new Error(
         request.mode === "login"
-          ? "The Claude login changed, but BB could not release this session. Its history is safe; try again."
-          : "BB verified the Claude subscription login but could not release this session. Its history is safe; try again.",
+          ? "The Claude login changed, but VesnALIA could not release this session. Its history is safe; try again."
+          : "VesnALIA verified the Claude subscription login but could not release this session. Its history is safe; try again.",
       );
     }
 

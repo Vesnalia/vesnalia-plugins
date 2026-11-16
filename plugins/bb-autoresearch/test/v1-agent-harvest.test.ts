@@ -1,12 +1,12 @@
 // v1, agents own commits, harvest and publishing: worker-written commit
-// messages; harvest as a freeze; `bb study measure`, `gate`, `results` and
+// messages; harvest as a freeze; `alia study measure`, `gate`, `results` and
 // `evidence` (the plugin's trust-boundary primitives); reconciliation of
 // interrupted runs and of harvests the plugin was still running before 1.0.
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createAutoresearchPlugin } from "../server.ts";
 import { candidateCommitMessage, candidateFromMessage, checkCommitMessage, commitParts } from "../src/commit.ts";
@@ -68,8 +68,8 @@ describe("primitives and evidence through the CLI (fake host)", () => {
     host.metric.set("T0", 1000);
     port.addThread("thr_study");
     port.addThread("thr_agent");
-    const fake = createFakePluginHost({ pluginId: "bb-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
-    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0, harvestPollMs: 5 }, onEngine: (e) => (engine = e) })(fake.bb);
+    const fake = createFakePluginHost({ pluginId: "alia-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
+    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0, harvestPollMs: 5 }, onEngine: (e) => (engine = e) })(fake.alia);
     harness = fake.harness;
     expect(text(await harness.behavior.callAgentTool("study_propose", { spec_toml: fakeHostSpec(spec) }, { threadId: "thr_study", projectId: "proj_1" }))).toContain("Draft ready: `toy-size` · spec v1.");
     await cli(["calibrate", "toy-size", "--wait"]);
@@ -129,7 +129,7 @@ describe("primitives and evidence through the CLI (fake host)", () => {
     expect(host.refs.get("refs/studies/toy-size/harvest/h1")).toBe(study().best_sha);
     const notice = engine.ctx.store.notices(study().id).find((n) => n.kind === "harvest.frozen")!;
     expect(notice.text).toContain("study-harvest skill");
-    expect(notice.text).toContain("bb study evidence toy-size --json");
+    expect(notice.text).toContain("alia study evidence toy-size --json");
     // Already frozen: asking again shows it (a read, so the study thread may ask too).
     const again = await cli(["harvest", "toy-size"], "thr_study");
     expect(again.exitCode).toBe(0);
@@ -164,7 +164,7 @@ describe("primitives and evidence through the CLI (fake host)", () => {
     // --refreeze while best hasn't moved: refused, with the command that shows the freeze.
     const same = await cli(["harvest", "toy-size", "--refreeze", "--json"]);
     expect(same.exitCode).not.toBe(0);
-    expect(JSON.parse(same.stdout || same.stderr)).toMatchObject({ ok: false, error: { code: "study_error", message: expect.stringContaining("best hasn't moved since harvest h1 froze it"), hint: "Run `bb study harvest toy-size`." } });
+    expect(JSON.parse(same.stdout || same.stderr)).toMatchObject({ ok: false, error: { code: "study_error", message: expect.stringContaining("best hasn't moved since harvest h1 froze it"), hint: "Run `alia study harvest toy-size`." } });
     unchanged();
     // A study worker can't refreeze (a human control).
     expect((await cli(["harvest", "toy-size", "--refreeze"], "thr_w1")).stderr).toContain("this is a human control");
@@ -172,7 +172,7 @@ describe("primitives and evidence through the CLI (fake host)", () => {
     const h1Best = study().best_sha!;
     const moved = host.commit("T2", h1Best, "Later\n\nAutoresearch-Study: toy-size\nAutoresearch-Candidate: c/2");
     store.updateStudy(s.id, { best_sha: moved });
-    expect(await json(["harvest", "toy-size"])).toMatchObject({ canStart: false, canRefreeze: true, refreezeCommand: "bb study harvest toy-size --refreeze", harvest: { seq: 1 } });
+    expect(await json(["harvest", "toy-size"])).toMatchObject({ canStart: false, canRefreeze: true, refreezeCommand: "alia study harvest toy-size --refreeze", harvest: { seq: 1 } });
     const second = await json(["harvest", "toy-size", "--refreeze", "--wait"]);
     expect(second).toMatchObject({ message: expect.stringContaining("harvesting (h2)"), harvest: { seq: 2, state: "frozen", frozenRef: "refs/studies/toy-size/harvest/h2" } });
     expect(host.refs.get("refs/studies/toy-size/harvest/h2")).toBe(moved);
@@ -186,7 +186,7 @@ describe("primitives and evidence through the CLI (fake host)", () => {
     store.updateHarvest(waiting.id, { state: "cancelled" });
   });
 
-  it("bb study measure: B against A with the study's protocol and guardrails, on its bench host, audited and counted as bench time", async () => {
+  it("alia study measure: B against A with the study's protocol and guardrails, on its bench host, audited and counted as bench time", async () => {
     await setup();
     await win();
     await json(["harvest", "toy-size", "--wait"]);
@@ -223,7 +223,7 @@ describe("primitives and evidence through the CLI (fake host)", () => {
     expect((await cli(["measure", "toy-size", "--x", "best"])).exitCode).not.toBe(0);
   });
 
-  it("bb study gate: pass, a failure with its output tail, and a flaky pass; a worker can't ask", async () => {
+  it("alia study gate: pass, a failure with its output tail, and a flaky pass; a worker can't ask", async () => {
     await setup();
     await win();
     await json(["harvest", "toy-size", "--wait"]);
@@ -253,7 +253,7 @@ describe("primitives and evidence through the CLI (fake host)", () => {
     const busy = await cli(["measure", "toy-size", "base", "best"]);
     expect(busy.exitCode).not.toBe(0);
     expect(busy.stderr).toMatch(/running 1 worker\(s\) and its bench is busy \(1 candidate\(s\) testing, queued or measuring\)/u);
-    expect(busy.stderr).toContain("bb study pause toy-size");
+    expect(busy.stderr).toContain("alia study pause toy-size");
     engine.ctx.store.updateCandidate(c.id, { stage: "decided" });
     // Idle bench: allowed even while running.
     const detached = await json(["measure", "toy-size", "base", "best", "--detach"]);
@@ -265,7 +265,7 @@ describe("primitives and evidence through the CLI (fake host)", () => {
     expect(engine.primitives.refusal({ ...study(), state: "archived" }, 0)).toContain("archived");
   });
 
-  it("bb study evidence --json: the stable document, with commit messages, promotions, runs, and never the holdout", async () => {
+  it("alia study evidence --json: the stable document, with commit messages, promotions, runs, and never the holdout", async () => {
     await setup(DETERMINISTIC_SPEC.replace('noise = "deterministic"', 'noise = "deterministic"\n\n[oracle.holdout]\nmeasure = "holdout run --secret-workload"'));
     await win();
     await json(["harvest", "toy-size", "--wait"]);
@@ -357,9 +357,9 @@ describe("with real git (LocalHostRunner)", () => {
       const id = `thr_w${port.spawned.length + 1}`;
       port.spawned.push(args);
       const path = join(root, id);
-      sh(repo, "worktree", "add", "-q", "-b", `bb/${id}`, path, args.baseBranch);
+      sh(repo, "worktree", "add", "-q", "-b", `alia/${id}`, path, args.baseBranch);
       port.threads.set(id, { id, status: "active", archivedAt: null, deletedAt: null, environmentId: `env_${id}`, metadata: { ...args.metadata } });
-      port.envs.set(`env_${id}`, { id: `env_${id}`, hostId: "host_test", path, branchName: `bb/${id}` });
+      port.envs.set(`env_${id}`, { id: `env_${id}`, hostId: "host_test", path, branchName: `alia/${id}` });
       return { threadId: id, environmentId: `env_${id}` };
     };
     port.addThread("thr_study");

@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginThreadListProps } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginThreadListProps } from "@vesnalia/plugin-sdk/app";
 import { makeProject, makeThread, T0 } from "./fixtures";
 
 const projects = [
@@ -109,7 +109,7 @@ describe("thread list slot", () => {
       sidebarThreads: { status: "ready", threads, projects },
     });
     const anchor = slot.container.querySelector('[data-sidebar-thread-id="busy"]') as HTMLElement;
-    // jsdom cannot navigate; the host routes the plain click in bb.
+    // jsdom cannot navigate; the host routes the plain click in VesnALIA.
     const block = (event: Event) => event.preventDefault();
     window.addEventListener("click", block);
     fireEvent.click(anchor);

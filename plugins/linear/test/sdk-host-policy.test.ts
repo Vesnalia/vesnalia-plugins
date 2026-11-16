@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   normalizeAgentToolRegistration,
   parsePluginRowPresentation,
-} from "@get-bb/plugin-sdk/internal/host-policy";
+} from "@vesnalia/plugin-sdk/internal/host-policy";
 import { registerTools } from "../src/tools.js";
 
 /**
- * BB rejected v0.1.2 because SDK 0.4.16 refuses `experimental_statusLabels` at
+ * VesnALIA rejected v0.1.2 because SDK 0.4.16 refuses `experimental_statusLabels` at
  * registration, so the plugin errored out before its surface was registered.
  * These run every tool this plugin declares through the SDK's own host policy —
  * the same code that runs at startup — so the failure is caught here, not by a
@@ -19,14 +19,14 @@ function register(tool: any) {
 }
 function registeredTools(): any[] {
   const tools: any[] = [];
-  const bb: any = {
+  const alia: any = {
     agents: {
       registerTool: (tool: any) => tools.push(tool),
       configure: () => {},
     },
   };
   const deps = new Proxy({}, { get: () => deps }) as any;
-  registerTools(bb, deps);
+  registerTools(alia, deps);
   return tools;
 }
 

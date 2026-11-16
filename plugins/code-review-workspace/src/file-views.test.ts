@@ -1,5 +1,5 @@
 import { test, expect, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import type { FileView } from "./store";
 import { computeFileViewState, fileHashCache, hashForFile } from "./file-views";
@@ -39,9 +39,9 @@ test("hashForFile hashes only the file asked for", () => {
 });
 
 test("setFilesViewed marks a chapter's files in one call, hashing just those", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1", projectId: "p1" });
   await store.savePatch("pr-1", patch + "diff --git a/c.ts b/c.ts\n+three\n");
   vi.mocked(normalizedFileHash).mockClear();
@@ -57,9 +57,9 @@ test("setFilesViewed marks a chapter's files in one call, hashing just those", a
 });
 
 test("setFilesViewed with viewed false unmarks a chapter's files at once, for Undo", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1", projectId: "p1" });
   await store.savePatch("pr-1", patch + "diff --git a/c.ts b/c.ts\n+three\n");
   expect(await harness.behavior.callRpc("setFilesViewed", { targetKey: "pr-1", files: ["a.ts", "b.ts", "c.ts"], viewed: true })).toEqual({ ok: true, previous: [] });
@@ -68,9 +68,9 @@ test("setFilesViewed with viewed false unmarks a chapter's files at once, for Un
 });
 
 test("setFilesViewed returns the views it replaced, and Undo with them puts a file viewed at an older version back as changed since", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1", projectId: "p1" });
   await store.savePatch("pr-1", patch);
   // a.ts was viewed before its diff last changed.
@@ -88,9 +88,9 @@ test("setFilesViewed returns the views it replaced, and Undo with them puts a fi
 });
 
 test("a chapter's time in view adds up from every window, It's fine keeps the server's clock, and both read with the views", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1", projectId: "p1" });
   await store.savePatch("pr-1", patch);
   const call = (method: string, input: unknown) => harness.behavior.callRpc(method, input) as Promise<any>;
@@ -166,9 +166,9 @@ const manyFiles = (files: number, changed = -1) => Array.from({ length: files },
   [`diff --git a/src/f${f}.ts b/src/f${f}.ts`, `--- a/src/f${f}.ts`, `+++ b/src/f${f}.ts`, "@@ -1,2 +1,2 @@", `-old${f}`, f === changed ? "+changed" : `+new${f}`, " same", ""].join("\n")).join("");
 
 test("reading Viewed marks on a 2,000-file review hashes only the marked files, once per patch", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1 });
   await store.savePatch("pr-1", manyFiles(2000));
   const call = (name: "setFileViewed" | "getFileViews", input: object) => harness.behavior.callRpc(name, input as never);
@@ -193,9 +193,9 @@ test("reading Viewed marks on a 2,000-file review hashes only the marked files, 
 // bug bash D6: Undo's viewedAt was any number. On Postgres one past 2^53 was stored and then refused on every read of
 // the review's file views; a fraction, or a line past Postgres's integer, was an HTTP 500.
 test("numbers the store can't keep exactly are refused at the RPC, and the review's file views still read", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1", projectId: "p1" });
   await store.savePatch("pr-1", "diff --git a/a.ts b/a.ts\n+one\n");
   const call = (method: string, input: unknown) => harness.behavior.callRpc(method, input);

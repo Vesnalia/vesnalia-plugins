@@ -2,13 +2,13 @@
 /**
  * The page against a fake server: "+" opens straight away with one machine
  * and asks with several, tabs close, and an ended shell says so. The
- * terminals themselves (xterm and bb's socket) are replaced by a stub whose
+ * terminals themselves (xterm and VesnALIA's socket) are replaced by a stub whose
  * status the test sets.
  */
 import { fireEvent as domFireEvent } from "@testing-library/dom";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import type { PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
-import { renderSlot, type PluginRpcTestHandlers, type RenderSlotOptions } from "@get-bb/plugin-sdk/testing/app";
+import type { PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
+import { renderSlot, type PluginRpcTestHandlers, type RenderSlotOptions } from "@vesnalia/plugin-sdk/testing/app";
 import { TouchSensor } from "@dnd-kit/core";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -213,13 +213,13 @@ function server(hosts: HostChoice[], initial: TabView[] = []) {
   return { state, rpc };
 }
 
-/** What bb answers for its own settings and projects, and the sidebar's threads. */
+/** What VesnALIA answers for its own settings and projects, and the sidebar's threads. */
 interface Host {
   copyOnSelect?: boolean;
   projects?: { id: string; sources: { hostId: string; path: string }[] }[];
   sidebarThreads?: RenderSlotOptions<RpcContract>["sidebarThreads"];
   configReads?: { count: number };
-  /** Filled in by the page's `system:config-changed` subscription, to say bb saved its settings. */
+  /** Filled in by the page's `system:config-changed` subscription, to say VesnALIA saved its settings. */
   configChanged?: Set<() => void>;
 }
 
@@ -311,7 +311,7 @@ describe("the Terminals page", () => {
     expect(screen.getByRole("button", { name: "Mac mini" })).toBeTruthy();
   });
 
-  it("marks only the selected tab, the way bb marks its own, and moves the mark with the selection", async () => {
+  it("marks only the selected tab, the way VesnALIA marks its own, and moves the mark with the selection", async () => {
     const { rpc } = server(
       [{ id: "mini", name: "Mac mini" }],
       [tab("term_1", "mini", "Mac mini"), tab("term_2", "mini", "Mac mini")],
@@ -320,10 +320,10 @@ describe("the Terminals page", () => {
     render(rpc);
     const first = await screen.findByRole("button", { name: "Mac mini 1" });
     const second = screen.getByRole("button", { name: "Mac mini 2" });
-    // bb's tab pill: the element around the tab's button and its close button.
+    // VesnALIA's tab pill: the element around the tab's button and its close button.
     const pill = (button: HTMLElement) => button.closest("[data-tab-pill]") as HTMLElement;
 
-    // bb's "active" fill and full-strength text, against dimmer text on the others.
+    // VesnALIA's "active" fill and full-strength text, against dimmer text on the others.
     expect(pill(first).className).toMatch(/\bbg-state-active\b/);
     expect(pill(first).className).toMatch(/\btext-foreground\b/);
     expect(pill(second).className).not.toMatch(/\bbg-state-active\b/);
@@ -577,7 +577,7 @@ describe("the Terminals page", () => {
     async function dragTab(name: string, dx: number) {
       const button = screen.getByRole("button", { name });
       fireEvent.mouseDown(button, { button: 0, clientX: 50, clientY: 10 });
-      // Past bb's 8 px before a press becomes a drag (when it goes that far), then on to the drop.
+      // Past VesnALIA's 8 px before a press becomes a drag (when it goes that far), then on to the drop.
       fireEvent.mouseMove(document, { clientX: 50 + Math.sign(dx) * Math.min(Math.abs(dx), 10), clientY: 10 });
       await act(async () => undefined);
       fireEvent.mouseMove(document, { clientX: 50 + dx, clientY: 10 });
@@ -723,7 +723,7 @@ describe("the Terminals page", () => {
       const restore = layOutTabs();
       try {
         // One act for the move that starts the drag and the release, so React draws neither in between:
-        // dnd-kit 6.3.1 then calls neither onDragEnd nor onDragCancel (get-bb/bb#6847).
+        // dnd-kit 6.3.1 then calls neither onDragEnd nor onDragCancel (get-alia/alia#6847).
         fireEvent.mouseDown(screen.getByRole("button", { name: "Mac mini 1" }), { button: 0, clientX: 50, clientY: 10 });
         act(() => {
           domFireEvent.mouseMove(document, { clientX: 70, clientY: 10 });
@@ -837,7 +837,7 @@ describe("the Terminals page", () => {
       await screen.findByRole("button", { name: "Mac mini 1" });
       act(() => terminals.setStatus("term_2", { state: "offline", exitCode: null }));
       act(() => terminals.setStatus("term_3", { state: "ended", exitCode: 0 }));
-      // bb's pill sets the status apart by a margin, not a space.
+      // VesnALIA's pill sets the status apart by a margin, not a space.
       expect(await screen.findByRole("button", { name: "Mac mini 2(offline)" })).toBeTruthy();
       expect(screen.getByRole("button", { name: "MacBook Air(ended)" })).toBeTruthy();
     });
@@ -897,7 +897,7 @@ describe("the Terminals page", () => {
 
     async function shownTerminal(host: Host = {}) {
       const { rpc } = server([{ id: "mini", name: "Mac mini" }], [{ ...tab("term_1", "mini", "Mac mini"), name: "build" }]);
-      // The same object, so a test can change what bb answers later.
+      // The same object, so a test can change what VesnALIA answers later.
       host.sidebarThreads ??= sidebarThreads;
       const view = render(rpc, host);
       await screen.findByRole("button", { name: "build" });
@@ -905,12 +905,12 @@ describe("the Terminals page", () => {
       return view;
     }
 
-    it("floats Add to chat by the pointer and copies the text, with bb's toast", async () => {
+    it("floats Add to chat by the pointer and copies the text, with VesnALIA's toast", async () => {
       const view = await shownTerminal();
       await drag("term_1", "$ npm test\nok");
       const button = await screen.findByRole("button", { name: "Add to chat" });
       const menu = button.parentElement as HTMLElement;
-      // Dragged downwards: below the pointer, as bb places it.
+      // Dragged downwards: below the pointer, as VesnALIA places it.
       expect(menu.style.transform).toBe("translateX(-50%)");
       await waitFor(() => expect(view.experimental_clipboardWrites).toEqual([{ text: "$ npm test\nok" }]));
       expect(toasts.success).toEqual(["Selection copied"]);
@@ -923,7 +923,7 @@ describe("the Terminals page", () => {
       expect((button.parentElement as HTMLElement).style.transform).toBe("translate(-50%, -100%)");
     });
 
-    it("copies nothing when bb's Copy on select is off, and still offers Add to chat", async () => {
+    it("copies nothing when VesnALIA's Copy on select is off, and still offers Add to chat", async () => {
       const view = await shownTerminal({ copyOnSelect: false });
       await drag("term_1", "ok");
       expect(await screen.findByRole("button", { name: "Add to chat" })).toBeTruthy();
@@ -945,7 +945,7 @@ describe("the Terminals page", () => {
       await waitFor(() => expect(view.experimental_clipboardWrites).toEqual([{ text: "ok" }]));
     });
 
-    it("reads the setting again at once when bb says its settings were saved", async () => {
+    it("reads the setting again at once when VesnALIA says its settings were saved", async () => {
       const host: Host = { copyOnSelect: true, configReads: { count: 0 } };
       const view = await shownTerminal(host);
       await waitFor(() => expect(host.configReads!.count).toBeGreaterThan(0));
@@ -1092,12 +1092,12 @@ describe("the Terminals page", () => {
     });
 
     it("starts a new thread in the last project picked when the shell has not said where it is", async () => {
-      window.localStorage.setItem("bb-plugin-terminals:last-new-thread-project", "proj_personal");
+      window.localStorage.setItem("alia-plugin-terminals:last-new-thread-project", "proj_personal");
       await shownTerminal();
       await drag("term_1", "ok");
       fireEvent.click(await screen.findByRole("button", { name: "Add to chat" }));
       expect(await screen.findByRole("button", { name: "Project: Personal" })).toBeTruthy();
-      window.localStorage.removeItem("bb-plugin-terminals:last-new-thread-project");
+      window.localStorage.removeItem("alia-plugin-terminals:last-new-thread-project");
     });
   });
 });

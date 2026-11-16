@@ -14,9 +14,9 @@
 // click selects a node, a second click (or a click on the background) clears.
 // The wheel (or only a pinch, with `scrollZoom` off), two fingers on a touch
 // screen and the + / − bar zoom about the cursor, the fingers or the centre;
-// the canvas is marked so bb's own finger swipes (its sidebar) leave it alone.
+// the canvas is marked so VesnALIA's own finger swipes (its sidebar) leave it alone.
 // Full screen draws the graph over the whole window (a portal to the body, so
-// no layout of bb's can clip it); a first tap there lights a memory and its
+// no layout of VesnALIA's can clip it); a first tap there lights a memory and its
 // links, a second leaves full screen and opens it. Escape leaves it too.
 // Dragging the background pans, and dragging a
 // node moves it and pins it there (a dot marks it); double-clicking a pinned
@@ -29,7 +29,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, RefObject } from "react";
 import { createPortal } from "react-dom";
-import { experimental_usePluginId } from "@get-bb/plugin-sdk/app";
+import { experimental_usePluginId } from "@vesnalia/plugin-sdk/app";
 import {
   EDGE_LABEL_HEIGHT,
   arrowHead,
@@ -335,7 +335,7 @@ export function GraphView({
   // Full screen: the graph covers the whole window. A first tap on a memory
   // there lights it and its links (`tapped`); a second tap opens it.
   const [expanded, setExpanded] = useState(false);
-  // bb scopes a plugin's CSS to its own roots: the full-screen frame, portalled to the body, marks itself as one.
+  // VesnALIA scopes a plugin's CSS to its own roots: the full-screen frame, portalled to the body, marks itself as one.
   const pluginId = experimental_usePluginId();
   const [tapped, setTapped] = useState<string | null>(null);
   const viewportHeight = useViewportHeight(expanded);
@@ -931,11 +931,11 @@ export function GraphView({
       role={expanded ? "dialog" : undefined}
       aria-modal={expanded ? true : undefined}
       aria-label={expanded ? "Memory graph, full screen" : undefined}
-      // The marks bb gives its own plugin overlays, so this plugin's styles apply outside its page.
-      data-bb-plugin-root={expanded ? "" : undefined}
-      data-bb-plugin={expanded ? pluginId : undefined}
-      data-bb-portaled-overlay={expanded ? "" : undefined}
-      // bb opens its sidebar and side panel on a finger swipe, except where these marks say not to.
+      // The marks VesnALIA gives its own plugin overlays, so this plugin's styles apply outside its page.
+      data-alia-plugin-root={expanded ? "" : undefined}
+      data-alia-plugin={expanded ? pluginId : undefined}
+      data-alia-portaled-overlay={expanded ? "" : undefined}
+      // VesnALIA opens its sidebar and side panel on a finger swipe, except where these marks say not to.
       data-no-sidebar-swipe=""
       data-no-secondary-panel-swipe=""
       data-vaul-no-drag=""

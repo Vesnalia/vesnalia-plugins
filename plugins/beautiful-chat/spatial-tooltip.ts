@@ -5,7 +5,7 @@
 
 const SCOPE = "#thread-detail-timeline-panel, [data-app-composer]";
 const OPEN = '[data-state="delayed-open"], [data-state="instant-open"]';
-const GAP = 4; // Radix sideOffset in BB
+const GAP = 4; // Radix sideOffset in VesnALIA
 const EDGE = 8;
 const SKIP_MS = 300; // Radix skipDelayDuration default: sibling opens instantly within it
 

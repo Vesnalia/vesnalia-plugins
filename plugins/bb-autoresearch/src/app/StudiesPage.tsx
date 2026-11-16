@@ -1,11 +1,11 @@
 // The "Studies" nav panel: a list of studies at the root, and a study page
-// at /plugins/bb-autoresearch/studies/<slug>[/<tab>[/<candidate>]].
+// at /plugins/alia-autoresearch/studies/<slug>[/<tab>[/<candidate>]].
 //
 // Information hierarchy: the header says the state and what the study is
 // doing now; "Needs you" comes first on the Overview; then best vs base,
 // what's running, and the details. The study page is the primary surface;
 // the study thread is the conversation with the strategist.
-import { experimental_NewThreadComposer as NewThreadComposer, useBbContext, useBbNavigate, useSdk } from "@get-bb/plugin-sdk/app";
+import { experimental_NewThreadComposer as NewThreadComposer, useAliaContext, useAliaNavigate, useSdk } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -62,7 +62,7 @@ export function StudiesPanel({ subPath }: { subPath: string }) {
 }
 
 /**
- * The project a new study starts in: the one BB's route selects, else the
+ * The project a new study starts in: the one VesnALIA's route selects, else the
  * project of the most recently updated active study (the Studies panel isn't
  * a project route), else none (the human picks it). With `known`, a project
  * that no longer exists is never preselected.
@@ -75,14 +75,14 @@ export function defaultProjectFor(contextProjectId: string | null, studies: Read
 }
 
 /**
- * New study: bb's own new-thread composer, seeded with the study-create
+ * New study: VesnALIA's own new-thread composer, seeded with the study-create
  * prompt and the current project (see defaultProjectFor). The thread it
  * creates is an ordinary visible thread; the study-create skill takes it from
  * there, and it becomes the study thread.
  */
 function NewStudyDialog({ open, onOpenChange, projectId }: { open: boolean; onOpenChange: (v: boolean) => void; projectId: string | null }) {
   const sdk = useSdk();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const [focus, setFocus] = useState(1);
   useEffect(() => {
     if (open) setFocus((f) => f + 1);
@@ -131,8 +131,8 @@ export function StudiesAccessory() {
 }
 
 function StudyList() {
-  const nav = useBbNavigate();
-  const context = useBbContext();
+  const nav = useAliaNavigate();
+  const context = useAliaContext();
   const list = useLive((rpc) => rpc.call("studies.list"), []);
   const [showArchived, setShowArchived] = useState(false);
   const [composing, setComposing] = useState(false);
@@ -220,7 +220,7 @@ function StudyList() {
 }
 
 function StudyPage({ slug, tab: routeTab, candidate, replay }: { slug: string; tab: Tab | null; candidate: number | null; replay: { at: number | null } | null }) {
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const rpc = useStudyRpc();
   const o = useLive((r) => r.call("study.overview", { slug }), [slug]);
   // Without a tab in the route: Live while Running, Overview otherwise. Decided once per visit,

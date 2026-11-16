@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useBbContext } from "@get-bb/plugin-sdk/app";
+import { useAliaContext } from "@vesnalia/plugin-sdk/app";
 import { useDebug } from "./debug";
 import { configure, setLog } from "./reconcile";
 import { useOptions } from "./options";
@@ -7,10 +7,10 @@ import { useOptions } from "./options";
 /**
  * Renders nothing: tells the reconciler (`reconcile.ts`) whether a thread is showing,
  * what the options are and where the debug log is. Nothing renders through React
- * in the docking itself: BB owns every element involved.
+ * in the docking itself: VesnALIA owns every element involved.
  */
 export function Docking() {
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const { ready, enabled, locked } = useOptions();
   const log = useDebug();
   const thread = threadId !== null;

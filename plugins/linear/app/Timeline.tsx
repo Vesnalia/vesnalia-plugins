@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -67,7 +67,7 @@ export function Timeline({
     if (!targetAvailable || targetCommentId === null || targetCommentId === undefined) return;
     // Resolved threads expand in a child effect. Waiting one turn makes the
     // targeted reply exist before looking for it, without assuming that this
-    // is the only issue pane mounted in bb.
+    // is the only issue pane mounted in VesnALIA.
     let highlightTimer: number | undefined;
     let targetElement: HTMLElement | undefined;
     const scrollTimer = window.setTimeout(() => {

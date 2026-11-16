@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { deleteSecretFile, writeSecretFile } from './lib/secret-file.js';
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import type { SecretMutation } from './contract.js';
 
 export type CredentialSource = 'linear' | 'jira';
@@ -46,8 +46,8 @@ export interface LegacyCredentialMigrationResult {
   projectId: string | null;
 }
 
-export function createProjectCredentialVault(bb: BbPluginApi) {
-  const pluginDataDirectory = dirname(bb.storage.database().name);
+export function createProjectCredentialVault(alia: AliaPluginApi) {
+  const pluginDataDirectory = dirname(alia.storage.database().name);
   const credentialPath = (
     projectId: string,
     source: CredentialSource

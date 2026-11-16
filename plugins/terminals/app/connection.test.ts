@@ -1,5 +1,5 @@
 /**
- * The tab's line to bb's terminal socket: replay and resume without
+ * The tab's line to VesnALIA's terminal socket: replay and resume without
  * duplicates, acknowledgement after drawing, reconnecting, and when to stop.
  * A scripted socket and a manual clock stand in for the browser.
  */
@@ -186,7 +186,7 @@ describe("TerminalConnection", () => {
     expect(statuses.at(-1)?.state).toBe("live");
   });
 
-  it("carries on from where bb's replay starts when the oldest output is gone", () => {
+  it("carries on from where VesnALIA's replay starts when the oldest output is gone", () => {
     const { socket, written } = setup();
     socket().open();
     socket().receive({ type: "attached", replayStartSeq: 40, nextSeq: 42, session: running });
@@ -212,7 +212,7 @@ describe("TerminalConnection", () => {
     expect(sockets).toHaveLength(4);
   });
 
-  it("shows the machine offline while bb holds the shell for it", () => {
+  it("shows the machine offline while VesnALIA holds the shell for it", () => {
     const { socket, statuses } = setup();
     socket().open();
     socket().receive({ type: "attached", replayStartSeq: 0, nextSeq: 0, session: { status: "disconnected", exitCode: null } });
@@ -237,7 +237,7 @@ describe("TerminalConnection", () => {
     const kept = (from: number, to: number) =>
       Array.from({ length: to - from + 1 }, (_, index) => chunk(from + index, `line${from + index}\n`).chunk);
 
-    it("draws the output bb kept for it when the tab attaches after it ended", async () => {
+    it("draws the output VesnALIA kept for it when the tab attaches after it ended", async () => {
       const asked: number[] = [];
       const { socket, written, statuses } = setup({
         retained: async (sinceSeq) => {
@@ -246,7 +246,7 @@ describe("TerminalConnection", () => {
         },
       });
       socket().open();
-      // bb 0.48.1 attaching to an exited session: no replay, then exited.
+      // VesnALIA 0.48.1 attaching to an exited session: no replay, then exited.
       socket().receive({ type: "attached", replayStartSeq: 0, nextSeq: 0, session: exited });
       socket().receive({ type: "exited", session: exited });
       expect(statuses.at(-1)?.state).not.toBe("ended");
@@ -273,7 +273,7 @@ describe("TerminalConnection", () => {
       expect(written).toEqual(["line0\n", "line1\n", "line2\n", "line3\n", "line4\n"]);
     });
 
-    it("draws it when the shell exits while bb is still attaching, which bb reports as an error", async () => {
+    it("draws it when the shell exits while VesnALIA is still attaching, which VesnALIA reports as an error", async () => {
       const asked: number[] = [];
       const { socket, written, statuses } = setup({
         retained: async (sinceSeq) => {
@@ -282,14 +282,14 @@ describe("TerminalConnection", () => {
         },
       });
       socket().open();
-      // bb 0.48.1 rejecting the pending attach: no attached, no exited frame, only this.
+      // VesnALIA 0.48.1 rejecting the pending attach: no attached, no exited frame, only this.
       socket().receive({ type: "error", code: "terminal_exited", message: "Terminal session exited" });
       await expect.poll(() => statuses.at(-1)).toEqual({ state: "ended", exitCode: 7 });
       expect(asked).toEqual([0]);
       expect(written).toEqual(["line0\n", "line1\n"]);
     });
 
-    it("still says it ended when bb no longer has the output", async () => {
+    it("still says it ended when VesnALIA no longer has the output", async () => {
       const { socket, written, statuses } = setup({
         retained: async () => {
           throw new Error("terminal_output_unavailable");
@@ -302,7 +302,7 @@ describe("TerminalConnection", () => {
     });
   });
 
-  it("stops for good when bb no longer has the session", () => {
+  it("stops for good when VesnALIA no longer has the session", () => {
     const { clock, sockets, socket, statuses } = setup();
     socket().open();
     socket().receive({ type: "error", code: "terminal_not_found", message: "Terminal session not found" });
@@ -312,10 +312,10 @@ describe("TerminalConnection", () => {
     expect(sockets).toHaveLength(1);
   });
 
-  it("tries again when bb could not attach, though the socket stays open and answers pings", () => {
+  it("tries again when VesnALIA could not attach, though the socket stays open and answers pings", () => {
     const { clock, sockets, socket, statuses } = setup();
     socket().open();
-    // bb 0.48.1's failTerminalAttach: the client is forgotten, the socket is not closed.
+    // VesnALIA 0.48.1's failTerminalAttach: the client is forgotten, the socket is not closed.
     socket().receive({ type: "error", code: "terminal_attach_timeout", message: "Timed out attaching terminal session" });
     expect(socket().closed?.code).toBe(4001);
     expect(statuses.at(-1)?.state).toBe("offline");
@@ -328,7 +328,7 @@ describe("TerminalConnection", () => {
     expect(statuses.at(-1)?.state).toBe("live");
   });
 
-  it("tries again when bb never answers the attach", () => {
+  it("tries again when VesnALIA never answers the attach", () => {
     const { clock, sockets, socket } = setup();
     socket().open();
     for (let elapsed = 0; elapsed < ATTACH_TIMEOUT_MS; elapsed += HEARTBEAT_INTERVAL_MS / 3) {
@@ -340,10 +340,10 @@ describe("TerminalConnection", () => {
     expect(sockets).toHaveLength(2);
   });
 
-  it("waits for a shell bb is still starting instead of calling it ended", () => {
+  it("waits for a shell VesnALIA is still starting instead of calling it ended", () => {
     const { clock, sockets, socket, statuses, connection } = setup();
     const starting = { status: "starting", exitCode: null };
-    // bb 0.48.1 attaching to a session in its starting state.
+    // VesnALIA 0.48.1 attaching to a session in its starting state.
     for (let attempt = 0; attempt < 3; attempt += 1) {
       socket().open();
       socket().receive({ type: "attached", replayStartSeq: 0, nextSeq: 0, session: starting });
@@ -352,7 +352,7 @@ describe("TerminalConnection", () => {
       expect(connection.current.state).toBe("connecting");
       clock.advance(RECONNECT_DELAYS_MS[attempt]!);
     }
-    // Backing off, not hammering bb every 100 ms.
+    // Backing off, not hammering VesnALIA every 100 ms.
     expect(sockets.map((entry) => entry.sinceSeq)).toHaveLength(4);
     socket().open();
     socket().receive({ type: "attached", replayStartSeq: 0, nextSeq: 0, session: running });
@@ -373,7 +373,7 @@ describe("TerminalConnection", () => {
     const { clock, sockets, socket, statuses } = setup();
     socket().open();
     socket().receive({ type: "attached", replayStartSeq: 0, nextSeq: 0, session: running });
-    // Typing while the machine drops off: bb holds the shell and says so with session-updated.
+    // Typing while the machine drops off: VesnALIA holds the shell and says so with session-updated.
     socket().receive({ type: "error", code: "host_disconnected", message: "Host is not connected" });
     clock.advance(ATTACH_TIMEOUT_MS * 2);
     expect(socket().closed).toBeNull();
@@ -389,7 +389,7 @@ describe("TerminalConnection", () => {
     expect(socket().sent).toEqual([{ type: "input", dataBase64: encodeBase64(new TextEncoder().encode("echo hi\r")) }]);
   });
 
-  it("passes on the shell's size as bb reports it, and never sends one itself", () => {
+  it("passes on the shell's size as VesnALIA reports it, and never sends one itself", () => {
     const sizes: unknown[] = [];
     const { socket } = setup({ onSize: (size) => sizes.push(size) });
     socket().open();
@@ -400,11 +400,11 @@ describe("TerminalConnection", () => {
       { cols: 80, rows: 24 },
       { cols: 150, rows: 45 },
     ]);
-    // bb drops a resize from any socket but the one that attached last (bb 0.48.1).
+    // VesnALIA drops a resize from any socket but the one that attached last (VesnALIA 0.48.1).
     expect(socket().sent.filter((message) => (message as { type: string }).type === "resize")).toEqual([]);
   });
 
-  it("splits a large paste into messages bb accepts", () => {
+  it("splits a large paste into messages VesnALIA accepts", () => {
     const { socket, connection } = setup();
     socket().open();
     connection.sendInput("x".repeat(INPUT_CHUNK_BYTES * 2 + 5));

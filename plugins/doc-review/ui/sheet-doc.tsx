@@ -415,7 +415,7 @@ export function SheetDoc({
   return (
     <div
       ref={root}
-      // Sideways drags belong to the grid, not to bb's sidebar and panel swipes.
+      // Sideways drags belong to the grid, not to VesnALIA's sidebar and panel swipes.
       data-no-sidebar-swipe=""
       data-no-secondary-panel-swipe=""
       className="doc-review-sheet relative flex h-full min-h-0 flex-col"

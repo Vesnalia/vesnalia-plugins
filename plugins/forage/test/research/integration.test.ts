@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import type { PluginAgentConfigurationContext } from "@get-bb/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import type { PluginAgentConfigurationContext } from "@vesnalia/plugin-sdk";
 import { createServerRuntime } from "../../server.ts";
 import { artifact, attempt } from "../sources/helpers.ts";
 import type { FetchedContent } from "../../src/web/fetch.ts";
@@ -30,7 +30,7 @@ async function setup(fetch: (url: string, options: any) => Promise<FetchedConten
  fake.harness.sdk.stub("threads.updatePluginMetadata", async ({ threadId, set }: any) => { const next = { ...(metadata.get(threadId) ?? {}), ...(set ?? {}) }; metadata.set(threadId, next); return next; });
  fake.harness.sdk.stub("threads.experimental_listPluginMetadata", async ({ threadIds }: any) => ({ threads: (threadIds as string[]).filter((id) => metadata.has(id)).map((threadId) => ({ threadId, metadata: metadata.get(threadId)! as never })) }));
  cleanups.push(() => fake.harness.lifecycle.dispose());
- const runtime = await createServerRuntime(fake.bb, { search: async (query) => searched(query), fetch });
+ const runtime = await createServerRuntime(fake.alia, { search: async (query) => searched(query), fetch });
  const rpc = <T = any>(method: string, input: unknown, caller?: { kind: "plugin"; pluginId: string }) => fake.harness.behavior.callRpc(method, input, caller ? { experimental_caller: caller } : undefined) as Promise<T>;
  const tool = (name: string, input: unknown) => fake.harness.behavior.callAgentTool(name, input, ctx) as Promise<{ content: unknown; isError?: boolean }>;
  return { fake, runtime, rpc, tool, metadata };
@@ -125,7 +125,7 @@ describe("per-thread research", () => {
   expect(after).toMatchObject({ enabled: false, entries: [] });
  });
 
- it("answers bb's health probe, which sends no input", async () => {
+ it("answers VesnALIA's health probe, which sends no input", async () => {
   const { rpc } = await setup();
   for (const input of [null, undefined, {}]) expect(await rpc<any>("health", input)).toMatchObject({ providers: expect.any(Array), last24h: expect.any(Object) });
  });

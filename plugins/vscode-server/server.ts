@@ -1,7 +1,7 @@
 import { cp, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const profileImportStatusSchema = z.object({
@@ -158,8 +158,8 @@ export async function importLocalProfile(
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     serverUrl: {
       type: "string",
       label: "VS Code Server URL",
@@ -213,15 +213,15 @@ export default async function plugin(bb: BbPluginApi) {
     const { serverUrl } = await settings.get();
     const url = normalizeServerUrl(serverUrl) ?? normalizeServerUrl(process.env.VSCODE_SERVER_URL ?? "");
     const profile = await getProfile();
-    const storedProfile = await bb.storage.kv.get<ProfileImportStatus>("profile-import");
+    const storedProfile = await alia.storage.kv.get<ProfileImportStatus>("profile-import");
     if (url === null || threadId === null) return { url, profile: storedProfile ?? profile };
 
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     const workspacePath =
       thread.environmentId === null
-        ? (await bb.sdk.threads.storageLocation({ threadId })).storageRootPath
-        : (await bb.sdk.environments.get({ environmentId: thread.environmentId })).path ??
-          (await bb.sdk.threads.storageLocation({ threadId })).storageRootPath;
+        ? (await alia.sdk.threads.storageLocation({ threadId })).storageRootPath
+        : (await alia.sdk.environments.get({ environmentId: thread.environmentId })).path ??
+          (await alia.sdk.threads.storageLocation({ threadId })).storageRootPath;
     return { url: withWorkspaceFolder(url, workspacePath), profile: storedProfile ?? profile };
   };
   let activeImport: Promise<ProfileImportStatus> | null = null;
@@ -233,7 +233,7 @@ export default async function plugin(bb: BbPluginApi) {
 
     activeImportKey = importKey;
     activeImport = importLocalProfile(url, profile).then(async (result) => {
-      await bb.storage.kv.set("profile-import", result);
+      await alia.storage.kv.set("profile-import", result);
       return result;
     });
     try {
@@ -249,7 +249,7 @@ export default async function plugin(bb: BbPluginApi) {
   };
 
   const clearSettings = async (): Promise<void> => {
-    await bb.storage.kv.delete("profile-import");
+    await alia.storage.kv.delete("profile-import");
     await settings.experimental_set({
       serverUrl: "",
       sourceUserDataDirectory: "",
@@ -293,7 +293,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (url !== null) void importProfile(url);
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     vscode_server_url: ({ threadId }) => getResponse(threadId),
     discover_vscode_server_url: async ({ threadId }) => {
       const url = await captureLocalServer();

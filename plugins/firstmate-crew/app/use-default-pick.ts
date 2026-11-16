@@ -1,9 +1,9 @@
 /**
  * A starting choice for the model picker: the first available provider's default model. The picker is
- * controlled and needs a real provider and model to show, so this is read once from bb's own catalog
+ * controlled and needs a real provider and model to show, so this is read once from VesnALIA's own catalog
  * rather than hard-coded; after that the captain's picks replace it.
  */
-import { useSdk, type ExperimentalProviderModelPickerValue } from "@get-bb/plugin-sdk/app";
+import { useSdk, type ExperimentalProviderModelPickerValue } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useState } from "react";
 
 import { errorText } from "./notify";
@@ -23,7 +23,7 @@ export function useDefaultPick(): DefaultPick {
     async function find(): Promise<ExperimentalProviderModelPickerValue> {
       const providers = await sdk.providers.list();
       const provider = providers.find((candidate) => candidate.available) ?? providers[0];
-      if (provider === undefined) throw new Error("bb has no agent providers to start a first mate with.");
+      if (provider === undefined) throw new Error("alia has no agent providers to start a first mate with.");
       const { models } = await sdk.providers.models({ providerId: provider.id });
       const model = models.find((candidate) => candidate.isDefault) ?? models[0];
       if (model === undefined) throw new Error(`Provider ${provider.id} listed no models.`);

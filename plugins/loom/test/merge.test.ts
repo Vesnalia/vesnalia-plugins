@@ -17,7 +17,7 @@ const project = () => h.store.projectBySlug("csv")!;
 const spec = () => specOf(h.store, project());
 const posts = (key = "CSV-1") => h.store.posts(ticketOf(h, key).id);
 const lastPost = (kind: string, key = "CSV-1") => posts(key).filter((post) => post.kind === kind).at(-1)!;
-const archived = () => h.bb.callsTo("archive").map(([id]) => id);
+const archived = () => h.alia.callsTo("archive").map(([id]) => id);
 const queue = async () => {
   await runMergeQueue(h.ctx, project(), spec());
   await settleMerges(h.ctx);
@@ -85,7 +85,7 @@ describe("the integration merge", () => {
     expect(hostCallsSince(mark).map((call) => call.method)).toEqual(["ensureWorktree", "worktreeState", "merge"]);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", check_failures: 0, worker_thread_id: worker.thread_id });
     expect(h.store.thread(worker.id)).toMatchObject({ clock_at: h.clock.t, idle_count: 0 });
-    const sent = h.bb.sent(worker.thread_id!).at(-1)!;
+    const sent = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(sent).toContain("conflicts in 2 files");
     expect(sent).toContain("- src/model/a.ts\n- src/model/b.ts");
     expect(sent).toContain("git merge loom/csv");
@@ -114,7 +114,7 @@ describe("the integration merge", () => {
     expect(h.host.callsTo("resetHard")).toEqual([{ worktree: WORKTREE, sha: "base000" }]);
     expect(h.host.worktree(WORKTREE).head).toBe("base000");
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", check_failures: 1 });
-    const sent = h.bb.sent(worker.thread_id!).at(-1)!;
+    const sent = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(sent).toContain('"npm run e2e" exited with 1');
     expect(sent).toContain("FAILED e2e: expected 3 rows");
     const check = lastPost("check");
@@ -161,7 +161,7 @@ describe("the integration merge", () => {
     expect(check.body).toContain("changed the branch");
     expect(JSON.parse(check.data_json)).toMatchObject({ passed: false, afterMerge: true });
     expect(posts().filter((post) => post.kind === "merge")).toEqual([]);
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("changed the branch");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("changed the branch");
   });
 
   it("rolls back when an after_merge command exits 0 but left tracked files modified", async () => {
@@ -274,10 +274,10 @@ describe("the integration merge", () => {
     expect(project()).toMatchObject({ state: "paused", system_reason: "The Loom worktree at /x is on main, not loom/csv." });
   });
 
-  it("pauses when the bb project has no checkout on the host", async () => {
+  it("pauses when the VesnALIA project has no checkout on the host", async () => {
     await seedProject(h);
     await reachApproved(h);
-    h.bb.checkout = null;
+    h.alia.checkout = null;
     await queue();
     expect(project().state).toBe("paused");
     expect(project().system_reason).toContain("no checkout");
@@ -313,19 +313,19 @@ describe("the integration merge", () => {
   it("waits while a worker of the project is still being provisioned, then merges", async () => {
     await seedProject(h, withDocsTicket);
     await reachApproved(h, "CSV-1");
-    h.bb.provisionEnvironment = false;
+    h.alia.provisionEnvironment = false;
     const late = await startWorker(h, "CSV-3");
     expect(late.environment_id).toBeNull();
 
     await queue();
     expect(ticketOf(h, "CSV-1").state).toBe("approved");
 
-    h.bb.threads.get(late.thread_id!)!.environmentId = "env_slow";
-    h.bb.environments.set("env_slow", { path: "/wt/slow", branchName: "slow", hostId: "host_1", status: "provisioning" });
+    h.alia.threads.get(late.thread_id!)!.environmentId = "env_slow";
+    h.alia.environments.set("env_slow", { path: "/wt/slow", branchName: "slow", hostId: "host_1", status: "provisioning" });
     await queue();
     expect(ticketOf(h, "CSV-1").state).toBe("approved");
 
-    h.bb.environments.get("env_slow")!.status = "ready";
+    h.alia.environments.get("env_slow")!.status = "ready";
     await queue();
     expect(ticketOf(h, "CSV-1").state).toBe("done");
   });
@@ -414,7 +414,7 @@ describe("the integration merge on a multi-repo project", () => {
     await queue();
     expect(ticketOf(h, "CSV-1").state).toBe("working");
     expect(lastPost("merge").body).toBe('Merging into loom/csv in the repo "web" conflicted in: src/model/a.ts.');
-    const sent = h.bb.sent(worker.thread_id!).at(-1)!;
+    const sent = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(sent).toContain("git merge loom/csv`");
     expect(sent).toContain('the repo "web"');
   });
@@ -427,7 +427,7 @@ describe("the integration merge on a multi-repo project", () => {
     expect(h.host.callsTo("resetHard")).toEqual([{ worktree: WEB, sha: "base000" }]);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", check_failures: 1 });
     expect(lastPost("check").body).toContain('Checks after merging into loom/csv in the repo "web" failed.');
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain('the repo "web"');
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain('the repo "web"');
 
     await reachApproved(h, "CSV-2");
     h.host.onExec = (_input, worktree) => void (worktree.head = "x1");
@@ -445,11 +445,11 @@ describe("the integration merge on a multi-repo project", () => {
     expect(project()).toMatchObject({ state: "paused", system_reason: 'loom/csv in the repo "api" is checked out elsewhere; switch that checkout off it and resume' });
 
     h.store.setProjectState(project().id, "running", "human");
-    h.bb.checkouts.set("proj_api", {});
+    h.alia.checkouts.set("proj_api", {});
     await queue();
     expect(project().state).toBe("paused");
     expect(project().system_reason).toBe(
-      'Repo "api" (bb project proj_api) has no checkout on the machine host_1 that this Loom project uses. Clone it there with `bb project source add proj_api --clone --machine host_1`, then resume.',
+      'Repo "api" (VesnALIA project proj_api) has no checkout on the machine host_1 that this Loom project uses. Clone it there with `alia project source add proj_api --clone --machine host_1`, then resume.',
     );
     expect(ticketOf(h, "CSV-2").state).toBe("merging");
   });
@@ -459,7 +459,7 @@ describe("the integration merge on a multi-repo project", () => {
     await reachApproved(h, "CSV-1");
     h.clock.advance(1000);
     await reachApproved(h, "CSV-2");
-    h.bb.provisionEnvironment = false;
+    h.alia.provisionEnvironment = false;
     const late = await startWorker(h, "CSV-3");
     expect(ticketOf(h, "CSV-3").repo).toBe("web");
 
@@ -468,8 +468,8 @@ describe("the integration merge on a multi-repo project", () => {
     await queue();
     expect(ticketOf(h, "CSV-1").state).toBe("approved");
 
-    h.bb.threads.get(late.thread_id!)!.environmentId = "env_slow";
-    h.bb.environments.set("env_slow", { path: "/wt/slow", branchName: "slow", hostId: "host_1", status: "ready" });
+    h.alia.threads.get(late.thread_id!)!.environmentId = "env_slow";
+    h.alia.environments.set("env_slow", { path: "/wt/slow", branchName: "slow", hostId: "host_1", status: "ready" });
     await queue();
     expect(ticketOf(h, "CSV-1").state).toBe("done");
     expect(h.host.callsTo("merge").map((call) => call.worktree)).toEqual([API, WEB]);
@@ -537,12 +537,12 @@ describe("the pull request strategy", () => {
     await queue();
     expect([ticketOf(h, "CSV-1").state, ticketOf(h, "CSV-2").state]).toEqual(["pr_open", "pr_open"]);
     h.host.prStates.set(ticketOf(h, "CSV-2").pr_url!, "MERGED");
-    h.bb.checkouts.set("proj_web", {});
+    h.alia.checkouts.set("proj_web", {});
     h.clock.advance(5 * 60_000);
     const checked = ticketOf(h, "CSV-1").pr_checked_at;
     await pollPullRequests(h.ctx, project());
 
-    expect(project()).toMatchObject({ state: "paused", system_reason: expect.stringContaining('Repo "web" (bb project proj_web) has no checkout') });
+    expect(project()).toMatchObject({ state: "paused", system_reason: expect.stringContaining('Repo "web" (VesnALIA project proj_web) has no checkout') });
     expect(h.host.callsTo("prBatch")).toEqual([{ repo: "/src/api", host: "github.com", owner: "acme", name: "shop", numbers: [2], feedback: false }]);
     expect(ticketOf(h, "CSV-2").state).toBe("done");
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "pr_open", pr_checked_at: checked });
@@ -551,9 +551,9 @@ describe("the pull request strategy", () => {
   it("pauses with the clone command when the ticket's repo has no checkout to push from", async () => {
     await seedRepoProject(h, pr());
     await reachApproved(h, "CSV-2");
-    h.bb.checkouts.set("proj_api", {});
+    h.alia.checkouts.set("proj_api", {});
     await queue();
-    expect(project()).toMatchObject({ state: "paused", system_reason: expect.stringContaining("`bb project source add proj_api --clone --machine host_1`") });
+    expect(project()).toMatchObject({ state: "paused", system_reason: expect.stringContaining("`alia project source add proj_api --clone --machine host_1`") });
     expect(ticketOf(h, "CSV-2").state).toBe("merging");
     expect(h.host.callsTo("push")).toEqual([]);
   });
@@ -689,7 +689,7 @@ describe("the pull request strategy", () => {
     it("moves a closed pull request's ticket to blocked before it ends the worker, so nothing can slip in between", async () => {
       const { gate, polling } = await pollOpen();
       const worker = h.store.threads({ ticketId: ticketOf(h, "CSV-1").id, role: "worker" })[0]!;
-      h.bb.stopConfirms = false;
+      h.alia.stopConfirms = false;
       gate.resolve({ outcome: "ok", state: "CLOSED" });
       await polling;
       expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "blocked", blocked_reason: "the pull request was closed without merging", worker_thread_id: null, environment_id: null });
@@ -748,12 +748,12 @@ describe("the pull request strategy", () => {
     };
     /** Another running project on the same forge host, with one open pull request that is due. */
     const otherProject = async () => {
-      h.bb.addThread("thr_plan2", "idle");
+      h.alia.addThread("thr_plan2", "idle");
       const toml = specToml((doc) => {
         doc.project = { slug: "inv", name: "Invoices", key: "INV", goal: "Send each customer an invoice by email.", summary: "Send each customer an invoice by email." };
         pr()(doc);
       });
-      await h.projects.propose({ toml, threadId: "thr_plan2", bbProjectId: "proj_1", hostId: "host_1" });
+      await h.projects.propose({ toml, threadId: "thr_plan2", aliaProjectId: "proj_1", hostId: "host_1" });
       await h.projects.approve("inv", "human");
       const other = h.store.projectBySlug("inv")!;
       h.store.setProjectState(other.id, "running", "human");
@@ -788,7 +788,7 @@ describe("the pull request strategy", () => {
       expect(project().state).toBe("running");
       expect(waitOf()).toMatchObject({ failures: 4, since: first });
       expect(systemPosts()).toHaveLength(1);
-      expect(h.bb.calls.filter((call) => call.method === "log" && String(call.args[1]).includes("failed 4 times in a row"))).toHaveLength(1);
+      expect(h.alia.calls.filter((call) => call.method === "log" && String(call.args[1]).includes("failed 4 times in a row"))).toHaveLength(1);
     });
 
     it("pauses the project once the reads have failed for an hour, naming the pull request, the error and how long", async () => {
@@ -973,7 +973,7 @@ describe("the pull request strategy", () => {
         expect(backoff()).toBeUndefined();
         await pollPullRequests(h.ctx, other());
         expect(calls().at(-1)).toEqual(["https://github.com/acme/billing/pull/9"]);
-        expect(h.bb.calls.filter((call) => call.method === "log" && String(call.args[1]).includes("with a network error"))).toHaveLength(4);
+        expect(h.alia.calls.filter((call) => call.method === "log" && String(call.args[1]).includes("with a network error"))).toHaveLength(4);
       });
 
       it("pauses the project once the host's reads have failed for an hour, naming the host, the error and how long", async () => {
@@ -1620,7 +1620,7 @@ describe("land on a multi-repo project", () => {
     expect(await failure(land(single.ctx, "csv", { ...landArgs, repo: "web" }))).toMatchObject({
       code: "loom_invalid_input",
       message: "Cannot land one repo: csv has no [[repo]] tables, so it lands as one repository.",
-      hint: "Run `bb loom land csv` without --repo.",
+      hint: "Run `alia loom land csv` without --repo.",
     });
   });
 
@@ -1673,7 +1673,7 @@ describe("land on a multi-repo project", () => {
     expect(await failure(land(h.ctx, "csv", landArgs))).toEqual({
       code: "loom_unavailable",
       message: `Landed web (${PR(1)}); api and docs did not land. The repo "api" failed: git push to upstream failed: rejected`,
-      hint: "Fix that, then run `bb loom land csv` again to land every repo with merged work.",
+      hint: "Fix that, then run `alia loom land csv` again to land every repo with merged work.",
     });
     expect(h.host.callsTo("push").map((call) => call.repo)).toEqual(["/src/web", "/src/api"]);
     expect(Object.keys(repoRows())).toEqual(["web"]);
@@ -1703,7 +1703,7 @@ describe("land on a multi-repo project", () => {
     expect(await failure(land(h.ctx, "csv", { ...landArgs, repo: "web" }))).toEqual({
       code: "loom_unavailable",
       message: 'The repo "web" did not land: The gh CLI is not installed on this machine, or it is not on PATH.',
-      hint: "Fix that, then run `bb loom land csv --repo web`.",
+      hint: "Fix that, then run `alia loom land csv --repo web`.",
     });
     expect(repoRows()).toEqual({});
     expect(landed()).toEqual([]);
@@ -1717,7 +1717,7 @@ describe("land on a multi-repo project", () => {
     expect(await failure(land(h.ctx, "csv", direct))).toEqual({
       code: "loom_invalid_state",
       message: 'Landed web (origin/main at m1); api did not land. The repo "api" failed: Cannot land yet: a worker\'s worktree is still being created from loom/csv; try again in a moment.',
-      hint: "Fix that, then run `bb loom land csv --direct --repo api`.",
+      hint: "Fix that, then run `alia loom land csv --direct --repo api`.",
     });
     expect(h.host.callsTo("push")).toEqual([{ repo: "/src/web", remote: "origin", src: "m1", branch: "main" }]);
     expect(h.host.callsTo("fetchBranch")).toEqual([{ worktree: WEB, remote: "origin", branch: "main" }]);
@@ -1748,7 +1748,7 @@ describe("land on a multi-repo project", () => {
     expect(await failure(land(h.ctx, "csv", direct))).toEqual({
       code: "loom_invalid_state",
       message: 'The repo "web" did not land: Cannot land on origin/main: it conflicts with loom/csv in src/model/a.ts.',
-      hint: "Land it as a pull request with `bb loom land csv --repo web` and resolve the conflict there.",
+      hint: "Land it as a pull request with `alia loom land csv --repo web` and resolve the conflict there.",
     });
   });
 

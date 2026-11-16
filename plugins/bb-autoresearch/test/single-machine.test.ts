@@ -337,7 +337,7 @@ describe("quiet bench: hold new worker turns while a measurement runs", () => {
     expect(q({ threadId: "thr_someone_else" })).toEqual({ action: "proceed" });
     // Another machine isn't measuring.
     expect(q({ hostId: "host_other" })).toEqual({ action: "proceed" });
-    // A worker whose spawn is still in flight (no row has its thread id yet): BB says the plugin created it.
+    // A worker whose spawn is still in flight (no row has its thread id yet): VesnALIA says the plugin created it.
     expect(q({ threadId: "thr_spawning", spawnedByPlugin: true }).action).toBe("wait");
     expect(q({ threadId: "thr_not_ours", spawnedByPlugin: false })).toEqual({ action: "proceed" });
     expect(t.store.events(t.id, { kinds: ["quiet.held"] })).toHaveLength(2);
@@ -361,7 +361,7 @@ describe("quiet bench: hold new worker turns while a measurement runs", () => {
     t.clock.advance(1000);
     t.store.closeBenchInterval(a);
     t.clock.advance(1);
-    open(); // the next measurement starts before BB re-asks
+    open(); // the next measurement starts before VesnALIA re-asks
     t.clock.advance(1);
     expect(q()).toEqual({ action: "proceed" });
     // A fresh dispatch during the same measurement waits again.

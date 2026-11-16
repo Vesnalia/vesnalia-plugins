@@ -1,9 +1,9 @@
 // The public-surface contract test: the plugin must import only public SDK
 // entrypoints, Zod, Node builtins, relative package-local files, and the
-// explicitly documented shim/vendored surfaces below — never private @bb/*
+// explicitly documented shim/vendored surfaces below — never private @alia-core/*
 // workspace packages or paths that escape the package.
 import { describe, expect, it } from "vitest";
-import { experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -13,10 +13,10 @@ const packageRoot = fileURLToPath(new URL("..", import.meta.url));
 
 /**
  * Public packages beyond the SDK this plugin may import:
- * - react / react-dom: provided by the BB app at runtime (never bundled).
+ * - react / react-dom: provided by the VesnALIA app at runtime (never bundled).
  * - @/…: the package-local tsconfig path alias (baseUrl is the package root).
  * - radix portal families + clsx/tailwind-merge/class-variance-authority:
- *   UI primitives BB shims at runtime (declared in devDependencies).
+ *   UI primitives VesnALIA shims at runtime (declared in devDependencies).
  * - @hugeicons/*: the vendored icon set (declared in dependencies, bundled).
  */
 const ALLOW = [
@@ -44,20 +44,20 @@ describe("public SDK only", () => {
     expect(scan.files.length).toBeGreaterThan(0);
     expect(scan.files.some((file) => file.endsWith("server.ts"))).toBe(true);
     expect(scan.files.some((file) => file.endsWith("app.tsx"))).toBe(true);
-    expect(scan.files.some((file) => file.replaceAll("\\", "/").endsWith("lib/bb-source.ts"))).toBe(true);
+    expect(scan.files.some((file) => file.replaceAll("\\", "/").endsWith("lib/alia-source.ts"))).toBe(true);
   });
 
   it("still catches private packages and escaping paths", () => {
-    // Prove the scanner works: a throwaway package with a private @bb/*
+    // Prove the scanner works: a throwaway package with a private @alia-core/*
     // import and an escaping relative path must be flagged. (The import
     // strings are assembled from pieces so this test file itself stays clean
     // under the scanner's from-import regex.)
-    const badRoot = mkdtempSync(join(tmpdir(), "bb-scan-"));
+    const badRoot = mkdtempSync(join(tmpdir(), "alia-scan-"));
     writeFileSync(join(badRoot, "package.json"), "{}");
     // Assembled from pieces so this test file's own source never matches the
     // scanner's from-import regex.
     const fromWord = ["fr", "om"].join("");
-    const privatePkg = ["@bb/", "internal-helpers"].join("");
+    const privatePkg = ["@alia-core/", "internal-helpers"].join("");
     const escapePath = ["../../", "outside"].join("");
     writeFileSync(
       join(badRoot, "plugin.ts"),

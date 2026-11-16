@@ -13,7 +13,7 @@ import { fmError, mapNodeError } from "./errors";
 
 /**
  * The configured root before realpath resolution: the home directory of the
- * user running bb. Hard-coding one host's home ("/home/coder") made the plugin
+ * user running VesnALIA. Hard-coding one host's home ("/home/coder") made the plugin
  * fail to start anywhere else — macOS homes live under /Users.
  */
 export const DEFAULT_ROOT = homedir();
@@ -40,12 +40,12 @@ export function getRoot(): string {
   return root;
 }
 
-/** `<ROOT>/.bb-file-manager` — staging area, filtered from every listing. */
+/** `<ROOT>/.alia-file-manager` — staging area, filtered from every listing. */
 export function getStagingDir(): string {
   return path.join(root, STAGING_DIR_NAME);
 }
 
-/** Uploads live in `<ROOT>/.bb-file-manager/uploads`. */
+/** Uploads live in `<ROOT>/.alia-file-manager/uploads`. */
 export function getUploadsDir(): string {
   return path.join(getStagingDir(), "uploads");
 }

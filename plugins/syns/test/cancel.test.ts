@@ -11,8 +11,8 @@ import { alive, fakeSyns } from "./fake-syns.js";
 import { rec } from "./fake-runner.js";
 import { FAST, failureOf, harness } from "./harness.js";
 
-// The SDK's host bundle loads only inside bb's host worker ("Dynamic require of child_process").
-vi.mock("@get-bb/plugin-sdk/host", () => ({ experimental_defineHostEntry: (entry: unknown) => entry }));
+// The SDK's host bundle loads only inside VesnALIA's host worker ("Dynamic require of child_process").
+vi.mock("@vesnalia/plugin-sdk/host", () => ({ experimental_defineHostEntry: (entry: unknown) => entry }));
 
 /** 0.9 (roadmap 280): the 25 s limit stops the call's run, on both hosts (rows 27–32). */
 
@@ -107,7 +107,7 @@ describe("cli.run and the queue (rows 28, 29)", () => {
   });
 });
 
-describe("bb's runner (row 30)", () => {
+describe("alia's runner (row 30)", () => {
   it("passes the request's signal in host.call's options for run, stdinPart and outputPart", async () => {
     const seen: { method: string; options: Record<string, unknown> }[] = [];
     const big = "x".repeat(9 * 1024 * 1024);
@@ -156,7 +156,7 @@ describe("runSyns and the hosts' runners on abort (rows 31, 32)", () => {
   it("stops the process within 100 ms of the abort, as at its time limit, and answers timedOut (row 32)", async () => {
     syns.reset();
     const controller = new AbortController();
-    const pending = runSyns(syns.bin, ["repo", "--json"], dir, undefined, 20_000, controller.signal, "bb-plugin");
+    const pending = runSyns(syns.bin, ["repo", "--json"], dir, undefined, 20_000, controller.signal, "alia-plugin");
     await vi.waitFor(() => expect(syns.pids()).toHaveLength(1), { timeout: 5000 });
     const at = Date.now();
     controller.abort();
@@ -170,7 +170,7 @@ describe("runSyns and the hosts' runners on abort (rows 31, 32)", () => {
     syns.reset();
     const controller = new AbortController();
     controller.abort();
-    expect(await runSyns(syns.bin, ["repo", "--json"], dir, undefined, 20_000, controller.signal, "bb-plugin")).toMatchObject({ timedOut: true, spawnError: null });
+    expect(await runSyns(syns.bin, ["repo", "--json"], dir, undefined, 20_000, controller.signal, "alia-plugin")).toMatchObject({ timedOut: true, spawnError: null });
     await new Promise((resolve) => setTimeout(resolve, 200));
     expect(syns.runs()).toEqual([]);
   });
@@ -184,7 +184,7 @@ describe("runSyns and the hosts' runners on abort (rows 31, 32)", () => {
     writeFileSync(bin, `#!${process.execPath}\nconst fs = require("node:fs");\nprocess.on("SIGTERM", () => fs.writeFileSync(${JSON.stringify(marker)}, "1"));\nfs.writeFileSync(${JSON.stringify(started)}, String(process.pid));\nsetTimeout(() => undefined, 30000);\n`);
     chmodSync(bin, 0o755);
     const controller = new AbortController();
-    const pending = runSyns(bin, ["repo", "--json"], dir, undefined, 20_000, controller.signal, "bb-plugin");
+    const pending = runSyns(bin, ["repo", "--json"], dir, undefined, 20_000, controller.signal, "alia-plugin");
     await vi.waitFor(() => expect(existsSync(started)).toBe(true), { timeout: 5000 });
     controller.abort();
     const result = await pending;
@@ -204,9 +204,9 @@ describe("runSyns and the hosts' runners on abort (rows 31, 32)", () => {
     await vi.waitFor(() => expect(alive(syns.pids()[0]!)).toBe(false), { timeout: 2000 });
   });
 
-  it("bb: the host context's own signal aborting does the same (row 32)", async () => {
+  it("VesnALIA: the host context's own signal aborting does the same (row 32)", async () => {
     syns.reset();
-    const { experimental_createHostEntryHarness } = await import("@get-bb/plugin-sdk/testing/host");
+    const { experimental_createHostEntryHarness } = await import("@vesnalia/plugin-sdk/testing/host");
     const host = experimental_createHostEntryHarness(hostEntry as never);
     const controller = new AbortController();
     const pending = host.experimental_call("run", { cwd: dir, args: ["repo", "--json"], timeoutMs: 20_000, synsPath: syns.bin }, { signal: controller.signal });

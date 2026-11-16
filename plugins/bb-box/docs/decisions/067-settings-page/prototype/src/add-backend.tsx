@@ -17,7 +17,7 @@ export function AddBackend() {
   const [using, setUsing] = useState<string | null>(null);
   const [checking, setChecking] = useState<string | null>(null);
   const available = new Set(availableTypes(store.doc));
-  const machines = DOCKER_MACHINES.filter((machine) => !store.doc.backends.some((backend) => backend.fields.host === `bb:${machine.id}`));
+  const machines = DOCKER_MACHINES.filter((machine) => !store.doc.backends.some((backend) => backend.fields.host === `alia:${machine.id}`));
   const ready = machines.filter((machine) => machine.docker && !machine.fault);
   const faulty = machines.filter((machine) => machine.docker && machine.fault);
   const without = machines.filter((machine) => !machine.docker);
@@ -25,10 +25,10 @@ export function AddBackend() {
     <div className="space-y-6">
       <PageHeader title="Add a backend" description="Choose where new boxes run. Each backend has its own setup guide; its form follows the guide step by step." />
       {ready.length || faulty.length ? (
-        <section className="space-y-2.5" aria-label="Docker on your BB machines">
+        <section className="space-y-2.5" aria-label="Docker on your VesnALIA machines">
           <div>
-            <h3 className="text-xs font-medium text-foreground">Docker on your BB machines</h3>
-            <p className="mt-0.5 text-xs text-subtle-foreground">Ready now. A box there is a privileged container, root on the machine, so none is used until you choose it. BB Box builds its images there first.</p>
+            <h3 className="text-xs font-medium text-foreground">Docker on your VesnALIA machines</h3>
+            <p className="mt-0.5 text-xs text-subtle-foreground">Ready now. A box there is a privileged container, root on the machine, so none is used until you choose it. VesnALIA Box builds its images there first.</p>
           </div>
           <Card>
             <Rows>

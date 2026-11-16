@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-sidebar-plus",
+  "name": "alia-plugin-sidebar-plus",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.45",
-    "bbPluginSdk": ">=0.6.15"
+    "alia": ">=0.45",
+    "aliaPluginSdk": ">=0.6.15"
   },
-  "bb": {
+  "alia": {
     "name": "Sidebar Plus",
-    "description": "A custom BB sidebar thread list grouped by project.",
+    "description": "A custom VesnALIA sidebar thread list grouped by project.",
     "branding": {
       "icon": "PanelLeft"
     },
@@ -20,7 +20,6 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.37",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -30,7 +29,24 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build .",
+    "build": "alia plugin build .",
     "test": "npm run build && node --test tests/*.test.mts"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/sidebar-plus#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/sidebar-plus"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

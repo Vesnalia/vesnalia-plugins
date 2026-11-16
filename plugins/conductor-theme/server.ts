@@ -1,10 +1,10 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 /**
- * Conductor theme plugin for bb.
+ * Conductor theme plugin for VesnALIA.
  * The theme palette is declared in package.json manifest;
- * BB requires this load-safe backend entry to register the plugin.
+ * VesnALIA requires this load-safe backend entry to register the plugin.
  */
-export default function plugin(bb: BbPluginApi) {
-  bb.log.info("Conductor theme registered");
+export default function plugin(alia: AliaPluginApi) {
+  alia.log.info("Conductor theme registered");
 }

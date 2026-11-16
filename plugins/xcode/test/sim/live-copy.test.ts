@@ -6,7 +6,7 @@ import type { DeviceList, LiveState } from "../../app/sim/useLive.js";
  * One assertion per named state from the design, against **the sentence**.
  *
  * The sentence is the contract — a class name is not. `liveVeil` is a pure
- * function of state precisely so this suite needs no DOM, no bb and no Mac.
+ * function of state precisely so this suite needs no DOM, no VesnALIA and no Mac.
  */
 function state(over: Partial<LiveState> = {}): LiveState {
   return {
@@ -166,7 +166,7 @@ describe("the capture host restarting", () => {
   it("escalates on the second crash inside a minute", () => {
     const veil = liveVeil(state({ kind: "host-restarted", device: IPHONE, crashes: 2 }), devices());
     expect(veil.sentence).toBe("The capture process has crashed twice.");
-    expect(veil.detail).toBe("`bb plugin logs xcode-simulators` has the reason.");
+    expect(veil.detail).toBe("`alia plugin logs xcode-simulators` has the reason.");
     expect(veil.tone).toBe("dead");
   });
 });
@@ -222,10 +222,10 @@ describe("simctl failing", () => {
   });
 });
 
-describe("a bb server that is not on macOS", () => {
+describe("a VesnALIA server that is not on macOS", () => {
   it("explains rather than showing an empty panel", () => {
     const veil = liveVeil(state({ kind: "unsupported" }), null);
-    expect(veil.sentence).toContain("only works when the bb server itself runs on macOS");
+    expect(veil.sentence).toContain("only works when the VesnALIA server itself runs on macOS");
   });
 });
 

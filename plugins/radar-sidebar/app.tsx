@@ -1,9 +1,9 @@
-// bb-plugin-radar-sidebar — a thread list you can read at a glance, for BB.
+// alia-plugin-radar-sidebar — a thread list you can read at a glance, for VesnALIA.
 //
 // Replaces the sidebar thread list (activity-grouped threads, nested families,
 // loud attention states). Pick it under Settings → Appearance. Navigation
-// belongs to BB's own rail since 0.46, which retired the navigation slot.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+// belongs to VesnALIA's own rail since 0.46, which retired the navigation slot.
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { migrateLegacyPreferences } from "./components/storage";
 import { RadarThreadList } from "./components/radar/RadarThreadList";
 import "./app.css";

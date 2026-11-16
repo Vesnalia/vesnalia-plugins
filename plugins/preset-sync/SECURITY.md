@@ -1,7 +1,7 @@
 # Security
 
-Preset Sync handles configuration that may control full-trust BB plugins. Review
-`bb preset diff` before applying a preset from a repository you do not control.
+Preset Sync handles configuration that may control full-trust VesnALIA plugins. Review
+`alia preset diff` before applying a preset from a repository you do not control.
 
 The plugin excludes declared secret settings, credential-like keys and values,
 provider sessions, runtime data, and machine-local paths from captures. Git

@@ -9,13 +9,13 @@
 
 ## How it works
 
-A factory ties one bb project to one project in bb's Tasks tracker, so tasks also appear on the Tasks page. Builders and designers each get their own Git worktree, and QA and reviewers work in the builder's worktree for the same task. In the Agents section of the plugin settings, pick each role's provider (Claude Code, Codex or Cursor), model and reasoning level on one line. The defaults mix Claude Code and Codex, so independent reviewers run on different models.
+A factory ties one VesnALIA project to one project in VesnALIA's Tasks tracker, so tasks also appear on the Tasks page. Builders and designers each get their own Git worktree, and QA and reviewers work in the builder's worktree for the same task. In the Agents section of the plugin settings, pick each role's provider (Claude Code, Codex or Cursor), model and reasoning level on one line. The defaults mix Claude Code and Codex, so independent reviewers run on different models.
 
-Agents use the `bb factory` command: `create`, `start`, `assign`, `plan-ready`, `verdict`, `block`, `status`, `agents`, `archive`, `restore`, `rafter check` and `shadow compare`. Deleting a factory is only possible from the Factory page. A bundled skill teaches them the flow.
+Agents use the `alia factory` command: `create`, `start`, `assign`, `plan-ready`, `verdict`, `block`, `status`, `agents`, `archive`, `restore`, `rafter check` and `shadow compare`. Deleting a factory is only possible from the Factory page. A bundled skill teaches them the flow.
 
 ## Requirements
 
-- A Git repository added to bb as a project.
+- A Git repository added to VesnALIA as a project.
 - Accounts for the agent CLIs you pick per role, such as Claude Code, Codex or Cursor. Each agent uses its own subscription or API quota, and a factory runs several at once.
 - For PR review: a GitHub remote and the `gh` CLI signed in on the machine that holds the project. The factory only reviews same-repository PRs that your `gh` account opened.
 - Optional: a Rafter account (https://rafter.so). Scans send the PR branch to Rafter's servers and use your scan quota, two scans per PR.
@@ -23,7 +23,7 @@ Agents use the `bb factory` command: `create`, `start`, `assign`, `plan-ready`, 
 ## Safety
 
 - Agents never merge. Merging stays your decision.
-- New agents start in bb's auto permission mode, so commands outside the sandbox ask for your approval. Setting Agent permissions to full removes every approval: agents can then run any command on the machine.
+- New agents start in VesnALIA's auto permission mode, so commands outside the sandbox ask for your approval. Setting Agent permissions to full removes every approval: agents can then run any command on the machine.
 - A verdict counts only when the reviewer thread the factory started for that PR records it, so a builder can't approve its own work.
 - The plugin's host worker runs only `gh pr list`, `view`, `ready` and `comment`.
 - Rafter output and PR content are passed to reviewers as untrusted data.

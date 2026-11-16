@@ -95,7 +95,7 @@ describe("spawning the capture host", () => {
   });
 
   it("sets ELECTRON_RUN_AS_NODE unconditionally", async () => {
-    // In the shipping desktop build the bb server is itself a child of
+    // In the shipping desktop build the VesnALIA server is itself a child of
     // Electron, so `process.execPath` is the Electron binary and it behaves as
     // Node only while that variable is present.
     const child = fakeChild();
@@ -122,16 +122,16 @@ describe("spawning the capture host", () => {
     // Only the toolchain environment survives, and native scratch is private.
     expect(options.env.PATH).toBe(SIM_HOST_SYSTEM_PATH);
     expect(options.stdio).toEqual(["pipe", "pipe", "pipe"]);
-    expect(options.env.TMPDIR).toMatch(/bb-xcsim-host-/);
+    expect(options.env.TMPDIR).toMatch(/alia-xcsim-host-/);
     expect(statSync(options.env.TMPDIR!).mode & 0o777).toBe(0o700);
     child.emit("exit", 0, null);
   });
 
-  it("does not inherit bb or provider credentials", async () => {
+  it("does not inherit VesnALIA or provider credentials", async () => {
     const child = fakeChild();
     const spawnFn = vi.fn(() => child);
     const started = startSimHost(
-      { ...deps(spawnFn), env: { PATH: "/usr/bin", BB_SERVER_TOKEN: "no", OPENAI_API_KEY: "no" } },
+      { ...deps(spawnFn), env: { PATH: "/usr/bin", ALIA_SERVER_TOKEN: "no", OPENAI_API_KEY: "no" } },
       { onExit: () => {}, onLog: () => {} },
     );
     child.stdout.push('{"ok":true,"port":4242,"addon":true}\n');
@@ -141,7 +141,7 @@ describe("spawning the capture host", () => {
       string[],
       { env: NodeJS.ProcessEnv },
     ];
-    expect(options.env.BB_SERVER_TOKEN).toBeUndefined();
+    expect(options.env.ALIA_SERVER_TOKEN).toBeUndefined();
     expect(options.env.OPENAI_API_KEY).toBeUndefined();
     child.emit("exit", 0, null);
   });

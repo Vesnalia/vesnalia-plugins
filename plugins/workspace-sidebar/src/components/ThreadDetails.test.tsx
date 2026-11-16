@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { ThreadNode } from "../lib/resolve";
 import type { QueueSummary } from "../lib/thread-queue";
 import type { ProviderInfo } from "./sidebar-context";
@@ -16,7 +16,7 @@ const harness = vi.hoisted(() => ({
   queue: undefined as QueueSummary | undefined,
   stack: null as PullRequestStackData | null,
 }));
-vi.mock("@get-bb/plugin-sdk/app", () => {
+vi.mock("@vesnalia/plugin-sdk/app", () => {
   const rpc = { call: harness.goal };
   return {
   experimental_ProviderIcon: () => <span aria-hidden data-testid="provider-icon" />,
@@ -27,7 +27,7 @@ vi.mock("@get-bb/plugin-sdk/app", () => {
 vi.mock("./sidebar-context", () => ({
   useSidebar: () => ({
     artworkOf: () => null,
-    locationOf: () => ({ path: "/Users/test/src/bb", hostName: "mbp" }),
+    locationOf: () => ({ path: "/Users/test/src/alia", hostName: "mbp" }),
     openFolder: harness.openFolder,
     openThread: harness.openThread,
     manualStatusOf: () => null,
@@ -70,7 +70,7 @@ function node(overrides: Partial<PluginSidebarThread> = {}, children: ThreadNode
 const provider = { id: "codex", displayName: "Codex" } as ProviderInfo;
 const execution = { model: "gpt-6-astra", reasoningLevel: "medium", permissionMode: "auto", serviceTier: null };
 function card(overrides: Partial<Parameters<typeof ThreadDetails>[0]> = {}) {
-  return <ThreadDetails node={node()} projectName="bb" provider={provider} execution={execution} pullRequest={undefined} {...overrides} />;
+  return <ThreadDetails node={node()} projectName="alia" provider={provider} execution={execution} pullRequest={undefined} {...overrides} />;
 }
 
 beforeEach(() => {
@@ -93,7 +93,7 @@ describe("thread details", () => {
     expect(screen.queryByText("The agent is running")).toBeNull();
     expect(screen.queryByLabelText(/^Thread updated/)).toBeNull();
     expect(screen.queryByText(/Last active/)).toBeNull();
-    expect(screen.getByText("bb")).toBeTruthy();
+    expect(screen.getByText("alia")).toBeTruthy();
     expect(screen.getByText("main")).toBeTruthy();
     expect(screen.getByText("gpt-6-astra")).toBeTruthy();
     expect(document.querySelector('[data-machine-kind="laptop"]')).toBeTruthy();

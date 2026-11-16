@@ -329,7 +329,7 @@ test("G9 import-secret-storage: pasted text, valid or not, never reaches draft s
   assert.ok(importChanges(restored.latest!, restored.part(IMPORT_PART).edits).length > 0, "after a reload the page can still say what the import would have changed");
 });
 
-test("an import the page cannot apply as it is says why: a new file without its content, and a backend type this BB Box lacks", async () => {
+test("an import the page cannot apply as it is says why: a new file without its content, and a backend type this VesnALIA Box lacks", async () => {
   const server = await Server.start();
   const { registry } = await page(server);
   const file = exported(registry.latest!);
@@ -338,7 +338,7 @@ test("an import the page cannot apply as it is says why: a new file without its 
   const plan = importPlan(registry.latest!, await check(server, file), file);
   assert.deepEqual(plan.problems, [
     "~/.cfg/new.json is a new file for every box, and the file gives no content for it. Give its content, or leave the file out.",
-    "It has a backend of type gone-type, which this BB Box has no driver for, so the page cannot import it.",
+    "It has a backend of type gone-type, which this VesnALIA Box has no driver for, so the page cannot import it.",
   ]);
   assert.deepEqual(plan.values, []);
 });

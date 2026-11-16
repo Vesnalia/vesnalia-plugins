@@ -22,7 +22,7 @@ export class Bridge {
     this.node = new FakeNode({ writes: "off", ...(options.helperVersion ? { helperVersion: options.helperVersion } : {}) });
     this.proxmox.addTemplate(9000);
     this.proxmox.addTemplate(9001, { cores: "4", memory: "8192" });
-    this.proxmox.guests.set(REPORT_VMID, { vmid: REPORT_VMID, type: "qemu", name: "bb-box-gpu-memory", status: "stopped", template: false, config: { name: "bb-box-gpu-memory", description: "" } });
+    this.proxmox.guests.set(REPORT_VMID, { vmid: REPORT_VMID, type: "qemu", name: "alia-box-gpu-memory", status: "stopped", template: false, config: { name: "alia-box-gpu-memory", description: "" } });
   }
 
   guest(vmid: number, spec: GuestSpec, pending?: FakeGuest["pending"]): void {
@@ -105,14 +105,14 @@ export function today(bridge: Bridge): void {
   bridge.guest(7001, desktop("bx7001", "amber-fox", CARD_A, { running: true }));
   bridge.guest(7002, desktop("bx7002", "lone-pine", CARD_B));
   bridge.guest(7003, { box: "bx7003", name: "calm-reef", kind: "linux", lines: cardLines(CARD_A, "server"), running: true });
-  bridge.guest(7004, { description: `bb-box warm desktop\ninstall ${INSTALL}`, tags: ["bb-box", `install.${INSTALL}`, "warm", "template.9001", "bb-box-starting"], hostname: "bb-box-warm", lines: cardLines(CARD_B, "desktop"), running: true });
+  bridge.guest(7004, { description: `alia-box warm desktop\ninstall ${INSTALL}`, tags: ["alia-box", `install.${INSTALL}`, "warm", "template.9001", "alia-box-starting"], hostname: "alia-box-warm", lines: cardLines(CARD_B, "desktop"), running: true });
   bridge.guest(7005, { box: "bx7005", name: "tidy-glade", kind: "linux", running: true });
   bridge.guest(7006, { box: "bx7006", name: "cpu-desk", kind: "linux-desktop-cpu" });
-  bridge.guest(9001, { tags: ["bb-box", `install.${INSTALL}`], template: true, lines: cardLines(CARD_A, "desktop") });
+  bridge.guest(9001, { tags: ["alia-box", `install.${INSTALL}`], template: true, lines: cardLines(CARD_A, "desktop") });
   bridge.guest(7010, { ...boxLabels("bx7010", "other-box", "linux-desktop", "zz99"), lines: cardLines(CARD_A, "desktop"), running: true });
   bridge.guest(7011, { ...desktop("bx7011", "elsewhere"), pool: null });
   bridge.guest(7012, { ...heldCopyLabels("bx7001"), lines: cardLines(CARD_A, "desktop") });
-  bridge.guest(7013, { description: `bb-box image box: build\ninstall ${INSTALL}`, tags: ["bb-box", `install.${INSTALL}`, "image-box", "template.9001"], lines: cardLines(CARD_A, "desktop"), running: true });
-  bridge.guest(7014, { description: `bb-box warm desktop\ninstall ${INSTALL}`, tags: ["bb-box", `install.${INSTALL}`, "filling", "template.9001"], lines: cardLines(CARD_B, "desktop"), running: true });
-  bridge.guest(7015, { description: `bb-box warm desktop\ninstall ${INSTALL}`, tags: ["bb-box", `install.${INSTALL}`, "retired", "template.9001"], lines: cardLines(CARD_B, "desktop") });
+  bridge.guest(7013, { description: `alia-box image box: build\ninstall ${INSTALL}`, tags: ["alia-box", `install.${INSTALL}`, "image-box", "template.9001"], lines: cardLines(CARD_A, "desktop"), running: true });
+  bridge.guest(7014, { description: `alia-box warm desktop\ninstall ${INSTALL}`, tags: ["alia-box", `install.${INSTALL}`, "filling", "template.9001"], lines: cardLines(CARD_B, "desktop"), running: true });
+  bridge.guest(7015, { description: `alia-box warm desktop\ninstall ${INSTALL}`, tags: ["alia-box", `install.${INSTALL}`, "retired", "template.9001"], lines: cardLines(CARD_B, "desktop") });
 }

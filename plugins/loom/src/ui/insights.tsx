@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { ActivityMark, CurrentItem, EventLine, InsightsFilter, InsightsNumbers, InsightsWindow, Phrase, ProjectInsights, StoryGroup, StoryItem } from "../contract";
 import { formatDuration, plural } from "../format";
 import type { TicketState } from "../states";
@@ -632,7 +632,7 @@ function Story(props: StoryProps) {
 }
 
 function Current({ items, state, now, onTicket }: { items: CurrentItem[]; state: ProjectInsights["state"]; now: number; onTicket(key: string): void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const blocked = items.some((item) => item.kind === "blocked");
   return (
     <div data-insights-current className={`mt-3 rounded-md border px-3 ${blocked ? "border-destructive-text/40 bg-destructive-text/5" : "border-primary/50 bg-primary/5"}`}>

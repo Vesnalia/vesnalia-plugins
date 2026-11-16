@@ -1,6 +1,6 @@
-// Exposes bb SDK surfaces (threads, workspace, terminals) to any provider's agent sessions as agent tools.
+// Exposes VesnALIA SDK surfaces (threads, workspace, terminals) to any provider's agent sessions as agent tools.
 // Shared memory is not here on purpose; the built-in Memory plugin already covers it.
-import { type BbPluginApi } from "@get-bb/plugin-sdk";
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { type Flags, makeRegistrar, type ToolGroup } from "./src/lib/toolkit";
 import { registerThreadTools } from "./src/tools/threads";
 import { registerWorkspaceTools } from "./src/tools/workspace";
@@ -10,11 +10,11 @@ import { registerBrowserTools } from "./src/tools/browser";
 
 const GROUP_BLURBS: Record<ToolGroup, string> = {
   threads:
-    "inspect, message, create, wait for, retry, stop, archive, and read other bb threads directly to coordinate, delegate, or hand off work",
+    "inspect, message, create, wait for, retry, stop, archive, and read other VesnALIA threads directly to coordinate, delegate, or hand off work",
   workspace: "orient across projects and read/write workspace files",
-  terminals: "run and drive bb terminal sessions the user can watch live",
+  terminals: "run and drive VesnALIA terminal sessions the user can watch live",
   machines: "list enrolled machines and a project's workspaces (environments)",
-  browser: "open, list, close, and capture tabs in bb's desktop browser (tabs belong to the current thread)",
+  browser: "open, list, close, and capture tabs in VesnALIA's desktop browser (tabs belong to the current thread)",
 };
 
 const GROUP_FLAGS: Record<ToolGroup, keyof Flags> = {
@@ -25,11 +25,11 @@ const GROUP_FLAGS: Record<ToolGroup, keyof Flags> = {
   browser: "enableBrowser",
 };
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
   // Group toggles control what agents can touch; enableInteractionRespond (default off) gates approvals.
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     enableThreads: {
       type: "boolean",
       label: "Expose thread coordination tools to agents",
@@ -73,16 +73,16 @@ export default async function plugin(bb: BbPluginApi) {
   settings.onChange((next) => Object.assign(flags, next));
 
   // Register tools; the registrar gates on the live flag, catches errors, and truncates output.
-  const { register, registry } = makeRegistrar(bb, flags, GROUP_FLAGS);
-  registerThreadTools(bb, flags, register);
-  registerWorkspaceTools(bb, register);
-  registerTerminalTools(bb, register);
-  registerInfraTools(bb, register);
-  registerBrowserTools(bb, register);
+  const { register, registry } = makeRegistrar(alia, flags, GROUP_FLAGS);
+  registerThreadTools(alia, flags, register);
+  registerWorkspaceTools(alia, register);
+  registerTerminalTools(alia, register);
+  registerInfraTools(alia, register);
+  registerBrowserTools(alia, register);
 
   // Instructions appended to thread sessions; reads live flags, so it follows settings changes.
-  bb.agents.contributeInstructions(() => {
-    const lines: string[] = ["You have bb integration tools available:"];
+  alia.agents.contributeInstructions(() => {
+    const lines: string[] = ["You have VesnALIA integration tools available:"];
     for (const group of ["threads", "workspace", "terminals", "machines", "browser"] as ToolGroup[]) {
       const names = registry.filter((t) => t.group === group && flags[GROUP_FLAGS[group]]).map((t) => t.name);
       if (names.length === 0) continue;
@@ -97,20 +97,20 @@ export default async function plugin(bb: BbPluginApi) {
       "After spawning or messaging another thread, prefer bbtools_thread_wait over repeated bbtools_thread_get polling.",
     );
     lines.push(
-      "Prefer these over guessing when you need cross-thread state or bb project context.",
+      "Prefer these over guessing when you need cross-thread state or VesnALIA project context.",
     );
     return lines.join("\n");
   });
 
   // CLI to inspect the tool groups and their enabled state.
-  bb.cli.register({
-    name: "bb-agent-toolbox",
-    summary: "Inspect the BB Agent Toolbox plugin's tool groups",
+  alia.cli.register({
+    name: "alia-agent-toolbox",
+    summary: "Inspect the VesnALIA Agent Toolbox plugin's tool groups",
     commands: [
       {
         name: "status",
         summary: "Show the plugin's tool groups and their enabled state",
-        usage: "bb bb-agent-toolbox status [--json]",
+        usage: "alia alia-agent-toolbox status [--json]",
       },
     ],
     async run(argv) {

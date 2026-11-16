@@ -1,5 +1,5 @@
 // Bilingual editor for the chat-layer preferences, rendered on the plugin's
-// Settings page. BB's declarative settings form has no translations, so the
+// Settings page. VesnALIA's declarative settings form has no translations, so the
 // preferences live in plugin storage and this section edits them over RPC.
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { usePrefs } from "./prefs";
@@ -31,8 +31,8 @@ export function PokecutSettings() {
     return () => window.clearInterval(id);
   }, []);
 
-  if (error && !prefs) return <p className="pk-settings-error" data-bb-ru-skip="">{t("loadFailed")}</p>;
-  if (!prefs) return <p className="pk-settings-muted" data-bb-ru-skip="">{t("loading")}</p>;
+  if (error && !prefs) return <p className="pk-settings-error" data-alia-ru-skip="">{t("loadFailed")}</p>;
+  if (!prefs) return <p className="pk-settings-muted" data-alia-ru-skip="">{t("loading")}</p>;
 
   const save = async (patch: Partial<Prefs>) => {
     const previous = prefs;
@@ -47,7 +47,7 @@ export function PokecutSettings() {
   };
 
   return (
-    <div className="pk-settings" data-bb-ru-skip="">
+    <div className="pk-settings" data-alia-ru-skip="">
       <div className="pk-settings-heading">
         <h3>{t("sectionTitle")}</h3>
         <p>{t("sectionDescription")}</p>

@@ -42,7 +42,7 @@ export async function readPackageJsonAt(args: {
   tag: string;
   subdirectory?: string;
 }): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), "bb-plugin-updates-"));
+  const dir = await mkdtemp(join(tmpdir(), "alia-plugin-updates-"));
   try {
     await git(["init", "--bare", "--quiet", dir]);
     await git(["remote", "add", "origin", args.url], dir);

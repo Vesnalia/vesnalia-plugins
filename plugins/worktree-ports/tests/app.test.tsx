@@ -6,7 +6,7 @@ import {
   mountPluginContentScripts,
   renderSlot,
   type CapturedPluginApp,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import type { PortSnapshot } from "../server";
 
 const SNAPSHOT: PortSnapshot = {
@@ -19,7 +19,7 @@ const SNAPSHOT: PortSnapshot = {
       hostId: "host_1",
       hostName: "Laptop",
       name: null,
-      branchName: "bb/feature",
+      branchName: "alia/feature",
       path: "/w/env_a/repo",
       projectId: "proj_1",
       threads: [{ id: "thr_1", title: "Feature work" }],
@@ -120,7 +120,7 @@ function card(settings?: Record<string, string>, snapshot: PortSnapshot = SNAPSH
 describe("ports card", () => {
   it("leads with named app pills and keeps the rest behind a toggle", async () => {
     const slot = card();
-    await slot.findByText("bb/feature");
+    await slot.findByText("alia/feature");
     expect(await slot.findByText(":3000")).toBeTruthy();
     expect(await slot.findByText("Frontend")).toBeTruthy();
     expect(await slot.findByText(":4443")).toBeTruthy();
@@ -137,7 +137,7 @@ describe("ports card", () => {
 
   it("names the machine only when worktrees span more than one", async () => {
     const one = card();
-    await one.findByText("bb/feature");
+    await one.findByText("alia/feature");
     expect(one.queryByText("Laptop")).toBeNull();
     cleanup();
 
@@ -146,7 +146,7 @@ describe("ports card", () => {
       ...SNAPSHOT,
       groups: [
         group,
-        { ...group, environmentId: "env_b", hostId: "host_2", hostName: "Desktop", branchName: "bb/other" },
+        { ...group, environmentId: "env_b", hostId: "host_2", hostName: "Desktop", branchName: "alia/other" },
       ],
     });
     expect(await two.findByText("Laptop")).toBeTruthy();
@@ -178,7 +178,7 @@ describe("ports card", () => {
     expect(await slot.findByText("1 internal, no app")).toBeTruthy();
   });
 
-  it("hands a plain click to BB's own browser preference", async () => {
+  it("hands a plain click to VesnALIA's own browser preference", async () => {
     const slot = card();
     (await slot.findByLabelText("Open http://localhost:3000")).click();
     expect(slot.inspection.navigateCalls).toEqual([
@@ -186,7 +186,7 @@ describe("ports card", () => {
     ]);
   });
 
-  it("opens outside BB when the setting says so, and inverts on modifier-click", async () => {
+  it("opens outside VesnALIA when the setting says so, and inverts on modifier-click", async () => {
     const open = vi.fn();
     vi.stubGlobal("open", open);
     const slot = card({ openIn: "System browser" });

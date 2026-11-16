@@ -1,15 +1,15 @@
 {
-  "name": "bb-plugin-branch-graph",
+  "name": "alia-plugin-branch-graph",
   "version": "0.1.0",
   "license": "MIT",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.5.9"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.5.9"
   },
-  "bb": {
+  "alia": {
     "name": "Branch Graph",
-    "description": "See how your repositories, branches, worktrees, and BB threads connect on one canvas.",
+    "description": "See how your repositories, branches, worktrees, and VesnALIA threads connect on one canvas.",
     "branding": {
       "icon": "GitBranch"
     },
@@ -26,7 +26,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.9",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -51,5 +50,22 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.9"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/branch-graph#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/branch-graph"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

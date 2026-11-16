@@ -3,12 +3,12 @@ import { registerPreparation } from './preparation/server.js';
 import { createTicketImprovementService } from './ticket-improvement-service.js';
 import {
   PLUGIN_CLI_OUTPUT_MAX_BYTES,
-  type BbPluginApi,
+  type AliaPluginApi,
   type PluginRpcHandlers
-} from '@get-bb/plugin-sdk';
+} from '@vesnalia/plugin-sdk';
 import {
   FILTER_PRESET_STATE_JSON_MAX_LENGTH,
-  bbProjectIdSchema,
+  aliaProjectIdSchema,
   createIssueMetadataSchema,
   escapeExternalInlineText,
   escapeExternalJsonOutput,
@@ -121,18 +121,18 @@ export function formatFilterPresetCliJson(value: unknown): string {
 }
 
 function scopedItem(projectId: string, item: ExternalWorkItem): WorkItem {
-  return { bbProjectId: projectId, ...item };
+  return { aliaProjectId: projectId, ...item };
 }
 
 function scopedItemDetail(
   projectId: string,
   item: ExternalWorkItemDetail
 ): WorkItemDetail {
-  return { bbProjectId: projectId, ...item };
+  return { aliaProjectId: projectId, ...item };
 }
 
 function mentionId(item: WorkItem): string {
-  return `${item.bbProjectId}:${item.source}:${item.locator}`;
+  return `${item.aliaProjectId}:${item.source}:${item.locator}`;
 }
 
 function parseMentionId(value: string): {
@@ -145,7 +145,7 @@ function parseMentionId(value: string): {
   const projectId = value.slice(0, firstSeparator);
   const source = value.slice(firstSeparator + 1, secondSeparator);
   const locator = value.slice(secondSeparator + 1);
-  const parsedProjectId = bbProjectIdSchema.safeParse(projectId);
+  const parsedProjectId = aliaProjectIdSchema.safeParse(projectId);
   const parsedSource = workSourceSchema.safeParse(source);
   if (
     !parsedProjectId.success ||
@@ -239,7 +239,7 @@ export function parseTaskboardCliArguments(
   argv: string[]
 ): ParsedCliArguments {
   const allowedOptions = CLI_OPTIONS_BY_COMMAND.get(command);
-  if (!allowedOptions) throw new Error('Unknown bb taskboard command');
+  if (!allowedOptions) throw new Error('Unknown VesnALIA taskboard command');
 
   const positionals: string[] = [];
   const seenOptions = new Set<string>();
@@ -285,7 +285,7 @@ export function parseTaskboardCliArguments(
       continue;
     }
     if (!allowedOptions.has(argument)) {
-      throw new Error('Unsupported bb taskboard option');
+      throw new Error('Unsupported VesnALIA taskboard option');
     }
     if (seenOptions.has(argument)) {
       throw new Error(`${argument} may only be provided once`);
@@ -455,8 +455,8 @@ function refreshedItemCount(
     .reduce((total, entry) => total + entry.itemCount, 0);
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     showThreadHeaderProgress: {
       type: 'boolean',
       label: 'Show task progress in thread headers',
@@ -468,14 +468,14 @@ export default async function plugin(bb: BbPluginApi) {
       default: true
     }
   });
-  const store = createWorkItemStore(bb);
-  const factoryStore = createFactoryStore(bb.storage.database());
-  const empiricalHost = bb.hosts.experimental_client({ contract: hostContract });
-  const factory = createFactoryService(bb.sdk, factoryStore, projectId =>
-    bb.realtime.publish('taskboard:factory', { projectId }), {
+  const store = createWorkItemStore(alia);
+  const factoryStore = createFactoryStore(alia.storage.database());
+  const empiricalHost = alia.hosts.experimental_client({ contract: hostContract });
+  const factory = createFactoryService(alia.sdk, factoryStore, projectId =>
+    alia.realtime.publish('taskboard:factory', { projectId }), {
       getItem: identity => store.get(identity.projectId, identity.source, identity.locator) ?? null,
       async markStatus(item, target: FactoryStatusTarget) {
-        const live = await getLiveItem(item.bbProjectId, item.source, item.locator);
+        const live = await getLiveItem(item.aliaProjectId, item.source, item.locator);
         if (target !== 'done' && ['done', 'canceled'].includes(live.stateCategory)) {
           return {
             status: 'unavailable', target,
@@ -485,7 +485,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (target === 'done' && live.stateCategory === 'done') {
           return { status: 'synced', message: null, target, statusName: live.status };
         }
-        const options = await liveStatusOptions(item.bbProjectId, item.source, item.locator);
+        const options = await liveStatusOptions(item.aliaProjectId, item.source, item.locator);
         const option = target === 'review' ? reviewStatus(options)
           : target === 'done' ? doneStatus(options)
           : progressStatus(options);
@@ -498,7 +498,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (option.current) {
           return { status: 'synced', message: null, target, statusName: option.name };
         }
-        const updated = await updateItemStatus(item.bbProjectId, item.source, item.locator, option.id);
+        const updated = await updateItemStatus(item.aliaProjectId, item.source, item.locator, option.id);
         if (updated.stateCategory !== option.stateCategory) {
           throw new Error(`The tracker did not confirm ${statusTargetLabel(target)}.`);
         }
@@ -535,8 +535,8 @@ export default async function plugin(bb: BbPluginApi) {
       prior.checkoutRoot === run.checkoutRoot ? prior : null;
     try {
       const [thread, environment] = await Promise.all([
-        bb.sdk.threads.get({ threadId: run.threadId }),
-        bb.sdk.environments.get({ environmentId: run.environmentId })
+        alia.sdk.threads.get({ threadId: run.threadId }),
+        alia.sdk.environments.get({ environmentId: run.environmentId })
       ]);
       if (thread.projectId !== input.projectId || thread.environmentId !== run.environmentId ||
         environment.projectId !== input.projectId || !environment.hostId || !environment.path ||
@@ -585,7 +585,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
   const empiricalState = new Map<string, string>();
-  bb.background.service('taskboard-empirical-reconciliation', {
+  alia.background.service('taskboard-empirical-reconciliation', {
     async start(signal) {
       let offset = 0;
       while (!signal.aborted) {
@@ -602,7 +602,7 @@ export default async function plugin(bb: BbPluginApi) {
               : [observed.kind, observed.reason]);
             if (empiricalState.get(key) !== fingerprint) {
               empiricalState.set(key, fingerprint);
-              bb.realtime.publish('taskboard:factory', { projectId: record.projectId });
+              alia.realtime.publish('taskboard:factory', { projectId: record.projectId });
             }
           }));
         }
@@ -610,7 +610,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
     }
   });
-  bb.background.service('taskboard-factory-progress', {
+  alia.background.service('taskboard-factory-progress', {
     async start(signal) {
       await factory.recover();
       while (!signal.aborted) {
@@ -618,15 +618,15 @@ export default async function plugin(bb: BbPluginApi) {
           await factory.scan();
           await factory.poll(signal);
         }
-        catch (error) { if (!signal.aborted) bb.log.warn(`Factory progress: ${errorMessage(error)}`); }
+        catch (error) { if (!signal.aborted) alia.log.warn(`Factory progress: ${errorMessage(error)}`); }
         await sleep(2500, signal);
       }
     }
   });
-  const credentials = createProjectCredentialVault(bb);
+  const credentials = createProjectCredentialVault(alia);
 
   let projectRemotesForProbe: Awaited<
-    ReturnType<BbPluginApi['sdk']['projects']['list']>
+    ReturnType<AliaPluginApi['sdk']['projects']['list']>
   > | null = null;
 
   const GITLAB_SSH_REMOTE =
@@ -665,7 +665,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function liveProjects() {
-    const projects = await bb.sdk.projects.list({ includePersonal: true });
+    const projects = await alia.sdk.projects.list({ includePersonal: true });
     projectRemotesForProbe = projects;
     return projects;
   }
@@ -683,7 +683,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function projectById(projectId: string): Promise<TrackerProject> {
     const projects = await listProjects();
     const project = projects.find(entry => entry.id === projectId);
-    if (!project) throw new Error('BB project was not found');
+    if (!project) throw new Error('VesnALIA project was not found');
     return project;
   }
 
@@ -710,7 +710,7 @@ export default async function plugin(bb: BbPluginApi) {
   };
 
   function publishFilterPresetsChanged(projectId: string): void {
-    bb.realtime.publish('taskboard:presets-changed', { projectId });
+    alia.realtime.publish('taskboard:presets-changed', { projectId });
   }
 
   async function assertPresetProviderIsCurrent(
@@ -780,8 +780,8 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function githubReposForProject(projectId: string): Promise<string[]> {
     const [project, system] = await Promise.all([
-      bb.sdk.projects.get({ projectId }),
-      bb.sdk.system.config()
+      alia.sdk.projects.get({ projectId }),
+      alia.sdk.system.config()
     ]);
     return discoverGithubRepositories({
       project,
@@ -1049,11 +1049,11 @@ export default async function plugin(bb: BbPluginApi) {
       config.source === 'gitea' && destinations.length === 0
         ? 'Choose a tea login and Gitea repository in Manage.'
         : config.source === 'github' && destinations.length === 0
-        ? 'Map at least one GitHub repository to this BB project.'
+        ? 'Map at least one GitHub repository to this VesnALIA project.'
         : config.source === 'linear' && destinations.length === 0
-          ? 'Choose a Linear team key for this BB project in Manage.'
+          ? 'Choose a Linear team key for this VesnALIA project in Manage.'
           : config.source === 'gitlab' && destinations.length === 0
-            ? 'Choose a GitLab project (host/path) for this BB project in Manage.'
+            ? 'Choose a GitLab project (host/path) for this VesnALIA project in Manage.'
             : null;
     const configurationMessage = adapter.configured()
       ? null
@@ -1158,7 +1158,7 @@ export default async function plugin(bb: BbPluginApi) {
                 jql: config.jiraJql
               })
             : config.source === 'gitlab'
-              ? createGitlabAdapter(bb, true, projectId, config.gitlabProjectRef)
+              ? createGitlabAdapter(alia, true, projectId, config.gitlabProjectRef)
               : config.source === 'gitea'
                 ? createGiteaAdapter({ enabled: true, login: config.giteaLogin, projectRef: config.giteaProjectRef })
                 : createGithubAdapter({
@@ -1199,7 +1199,7 @@ export default async function plugin(bb: BbPluginApi) {
   ): void {
     if (config.source !== source) {
       throw new Error(
-        `${sourceName(source)} is not the selected tracker for this BB project`
+        `${sourceName(source)} is not the selected tracker for this VesnALIA project`
       );
     }
   }
@@ -1257,7 +1257,7 @@ export default async function plugin(bb: BbPluginApi) {
       const message = errorMessage(error);
       if (currentRevision(projectId, source) !== revision) return false;
       store.setSourceError(projectId, source, message);
-      bb.log.warn(
+      alia.log.warn(
         `${sourceName(source)} sync failed for ${projectId}: ${message}`
       );
       suspendSync(projectId, message);
@@ -1342,7 +1342,7 @@ export default async function plugin(bb: BbPluginApi) {
     );
     const nextStatuses = await statuses(projectId);
     if (changed) {
-      bb.realtime.publish('taskboard:changed', {
+      alia.realtime.publish('taskboard:changed', {
         projectId,
         source: source ?? null
       });
@@ -1357,7 +1357,7 @@ export default async function plugin(bb: BbPluginApi) {
     void Promise.all(
       sources.map(source => syncAll(projectId, source, false))
     ).catch((error: unknown) => {
-      bb.log.warn(
+      alia.log.warn(
         `Taskboard sync failed for ${projectId}: ${errorMessage(error)}`
       );
     });
@@ -1578,7 +1578,7 @@ export default async function plugin(bb: BbPluginApi) {
                     )
                   : Promise.resolve()
               ]);
-              bb.realtime.publish('taskboard:changed', {
+              alia.realtime.publish('taskboard:changed', {
                 projectId: input.projectId,
                 source: null
               });
@@ -1647,7 +1647,7 @@ export default async function plugin(bb: BbPluginApi) {
       })
     );
 
-    bb.realtime.publish('taskboard:changed', {
+    alia.realtime.publish('taskboard:changed', {
       projectId: savedConfig.projectId,
       source: null
     });
@@ -1667,7 +1667,7 @@ export default async function plugin(bb: BbPluginApi) {
     assertSelectedSource(projectId, source);
     if (!store.get(projectId, source, locator)) {
       throw new Error(
-        `${sourceName(source)} item is not cached for this BB project; refresh the project tracker first`
+        `${sourceName(source)} item is not cached for this VesnALIA project; refresh the project tracker first`
       );
     }
     const revision = currentRevision(projectId, source);
@@ -1713,7 +1713,7 @@ export default async function plugin(bb: BbPluginApi) {
     assertSelectedSource(projectId, source);
     if (!store.get(projectId, source, locator)) {
       throw new Error(
-        `${sourceName(source)} item is not cached for this BB project; refresh the project tracker first`
+        `${sourceName(source)} item is not cached for this VesnALIA project; refresh the project tracker first`
       );
     }
     const revision = currentRevision(projectId, source);
@@ -1774,7 +1774,7 @@ export default async function plugin(bb: BbPluginApi) {
     const cached = store.get(projectId, source, locator);
     if (!cached) {
       throw new Error(
-        `${sourceName(source)} item is not cached for this BB project; refresh the project tracker first`
+        `${sourceName(source)} item is not cached for this VesnALIA project; refresh the project tracker first`
       );
     }
     const revision = currentRevision(projectId, source);
@@ -1797,7 +1797,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       if (!store.get(projectId, source, locator)) {
         throw new Error(
-          `${sourceName(source)} item is no longer cached for this BB project`
+          `${sourceName(source)} item is no longer cached for this VesnALIA project`
         );
       }
       advanceSourceRevision(projectId, source);
@@ -1820,7 +1820,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       const item = scopedItem(projectId, withoutComments(externalItem));
       store.upsert(item);
-      bb.realtime.publish('taskboard:changed', { projectId, source });
+      alia.realtime.publish('taskboard:changed', { projectId, source });
       return item;
     });
     void mutation
@@ -1829,7 +1829,7 @@ export default async function plugin(bb: BbPluginApi) {
         () => syncAll(projectId, source, false)
       )
       .catch((error: unknown) => {
-        bb.log.warn(
+        alia.log.warn(
           `${sourceName(source)} reconciliation failed for ${projectId}: ${errorMessage(error)}`
         );
       });
@@ -1846,7 +1846,7 @@ export default async function plugin(bb: BbPluginApi) {
     assertSelectedSource(projectId, source);
     if (!store.get(projectId, source, locator)) {
       throw new Error(
-        `${sourceName(source)} item is not cached for this BB project; refresh the project tracker first`
+        `${sourceName(source)} item is not cached for this VesnALIA project; refresh the project tracker first`
       );
     }
     const revision = currentRevision(projectId, source);
@@ -1936,7 +1936,7 @@ export default async function plugin(bb: BbPluginApi) {
     assertSelectedSource(projectId, source);
     if (!store.get(projectId, source, locator)) {
       throw new Error(
-        `${sourceName(source)} item is not cached for this BB project; refresh the project tracker first`
+        `${sourceName(source)} item is not cached for this VesnALIA project; refresh the project tracker first`
       );
     }
     const revision = currentRevision(projectId, source);
@@ -1959,7 +1959,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       if (!store.get(projectId, source, locator)) {
         throw new Error(
-          `${sourceName(source)} item is no longer cached for this BB project`
+          `${sourceName(source)} item is no longer cached for this VesnALIA project`
         );
       }
       advanceSourceRevision(projectId, source);
@@ -1983,7 +1983,7 @@ export default async function plugin(bb: BbPluginApi) {
         );
       }
       store.upsert(scopedItem(projectId, withoutComments(externalItem)));
-      bb.realtime.publish('taskboard:changed', { projectId, source });
+      alia.realtime.publish('taskboard:changed', { projectId, source });
       return scopedItemDetail(projectId, externalItem);
     });
     void mutation
@@ -1992,7 +1992,7 @@ export default async function plugin(bb: BbPluginApi) {
         () => syncAll(projectId, source, false)
       )
       .catch((error: unknown) => {
-        bb.log.warn(
+        alia.log.warn(
           `${sourceName(source)} reconciliation failed for ${projectId}: ${errorMessage(error)}`
         );
       });
@@ -2128,7 +2128,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       const item = scopedItem(input.projectId, withoutComments(externalItem));
       store.upsert(item);
-      bb.realtime.publish('taskboard:changed', {
+      alia.realtime.publish('taskboard:changed', {
         projectId: input.projectId,
         source
       });
@@ -2138,19 +2138,19 @@ export default async function plugin(bb: BbPluginApi) {
       syncAll(input.projectId, source, forceRefresh)
     )
       .catch((error: unknown) => {
-        bb.log.warn(
+        alia.log.warn(
           `${sourceName(source)} reconciliation failed for ${input.projectId}: ${errorMessage(error)}`
         );
       });
     return mutation;
   }
 
-  const ticketImprovement = createTicketImprovementService(bb);
-  bb.background.service('ticket-improvement-cleanup', {
+  const ticketImprovement = createTicketImprovementService(alia);
+  alia.background.service('ticket-improvement-cleanup', {
     async start(signal) {
       while (!signal.aborted) {
         try { await ticketImprovement.sweep(); }
-        catch { if (!signal.aborted) bb.log.warn('Ticket improvement cleanup will retry.'); }
+        catch { if (!signal.aborted) alia.log.warn('Ticket improvement cleanup will retry.'); }
         await sleep(30_000, signal);
       }
     }
@@ -2168,7 +2168,7 @@ export default async function plugin(bb: BbPluginApi) {
       const policy = factoryStore.saveProjectPolicy(factoryProjectPolicySchema.parse({
         ...input, updatedAt: new Date().toISOString()
       }));
-      bb.realtime.publish('taskboard:factory', { projectId: input.projectId });
+      alia.realtime.publish('taskboard:factory', { projectId: input.projectId });
       return { policy, status: factoryStore.projectStatus(input.projectId, input.provider) };
     },
     async factoryExecutionOptions(input) {
@@ -2176,15 +2176,15 @@ export default async function plugin(bb: BbPluginApi) {
       const provider = projectConfig(input.projectId, true).source;
       const policy = factoryStore.getProjectPolicy(input.projectId, provider);
       const context = input.threadId
-        ? await bb.sdk.threads.get({ threadId: input.threadId }).catch(() => null)
+        ? await alia.sdk.threads.get({ threadId: input.threadId }).catch(() => null)
         : null;
       const routing = context?.environmentId
         ? { kind: 'environment' as const, environmentId: context.environmentId }
         : null;
       const [projectDefaults, threadDefaults] = await Promise.all([
-        bb.sdk.projects.defaultExecutionOptions({ projectId: input.projectId }).catch(() => null),
+        alia.sdk.projects.defaultExecutionOptions({ projectId: input.projectId }).catch(() => null),
         context && context.projectId === input.projectId && !context.deletedAt && !context.archivedAt
-          ? bb.sdk.threads.defaultExecutionOptions({ threadId: context.id }).then(value =>
+          ? alia.sdk.threads.defaultExecutionOptions({ threadId: context.id }).then(value =>
               value ? threadExecution(context.providerId, value) : null).catch(() => null)
           : Promise.resolve(null)
       ]);
@@ -2255,7 +2255,7 @@ export default async function plugin(bb: BbPluginApi) {
       return { record: item ? await factory.get(item) : null };
     },
     async factoryForThread(input) {
-      const thread = await bb.sdk.threads.get({ threadId: input.threadId });
+      const thread = await alia.sdk.threads.get({ threadId: input.threadId });
       await assertProjectExists(thread.projectId);
       const record = factory.forThread(input.threadId);
       if (record && record.projectId !== thread.projectId) throw new Error('Thread project mismatch.');
@@ -2285,7 +2285,7 @@ export default async function plugin(bb: BbPluginApi) {
       return { projects: await listProjects() };
     },
     async threadProject(input) {
-      const thread = await bb.sdk.threads.get({ threadId: input.threadId });
+      const thread = await alia.sdk.threads.get({ threadId: input.threadId });
       await assertProjectExists(thread.projectId);
       return { projectId: thread.projectId };
     },
@@ -2423,7 +2423,7 @@ export default async function plugin(bb: BbPluginApi) {
     async saveProjectBoardSettings(input) {
       await assertProjectExists(input.projectId);
       const settings = store.saveProjectBoardSettings(input);
-      bb.realtime.publish('taskboard:changed', {
+      alia.realtime.publish('taskboard:changed', {
         projectId: settings.projectId,
         source: null
       });
@@ -2459,8 +2459,8 @@ export default async function plugin(bb: BbPluginApi) {
       return { presets };
     }
   };
-  bb.rpc.register(taskboardRpcContract, handlers);
-  const preparation = registerPreparation(bb, {
+  alia.rpc.register(taskboardRpcContract, handlers);
+  const preparation = registerPreparation(alia, {
     assertProject: assertProjectExists,
     async task(projectId, source, locator) {
       await assertProjectExists(projectId);
@@ -2470,7 +2470,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   });
 
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: 'external-work-item',
     label: 'Taskboard',
     triggers: ['@', '#'],
@@ -2498,71 +2498,71 @@ export default async function plugin(bb: BbPluginApi) {
     }
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: 'taskboard',
     summary: 'Browse tasks and inspect durable preparation briefs',
     commands: [
       { name: 'factory', summary: 'Inspect, enable, pause, or scan the project factory',
-        usage: 'bb taskboard factory status|enable [concurrency]|pause|scan [--project <proj_id>] [--json]' },
-      {name: 'prepare', summary: 'List, inspect or export preparation packets without starting implementation', usage: 'bb taskboard prepare list [--project <id>] | show <id> | export <id>'},
+        usage: 'alia taskboard factory status|enable [concurrency]|pause|scan [--project <proj_id>] [--json]' },
+      {name: 'prepare', summary: 'List, inspect or export preparation packets without starting implementation', usage: 'alia taskboard prepare list [--project <id>] | show <id> | export <id>'},
       {
         name: 'status',
-        summary: 'Show connector status for a BB project',
-        usage: 'bb taskboard status [--project <proj_id>] [--json]'
+        summary: 'Show connector status for a VesnALIA project',
+        usage: 'alia taskboard status [--project <proj_id>] [--json]'
       },
       {
         name: 'list',
         summary: 'List cached project work, refreshing first by default',
         usage:
-          'bb taskboard list [--project <proj_id>] ' +
+          'alia taskboard list [--project <proj_id>] ' +
           '[--source linear|github|jira|gitlab|gitea] [--query <text>] ' +
           '[--preset <name>] [--cached] [--json]'
       },
       {
         name: 'show',
-        summary: 'Fetch one external issue in a BB project',
+        summary: 'Fetch one external issue in a VesnALIA project',
         usage:
-          'bb taskboard show <linear|github|jira|gitlab|gitea> <locator> [--project <proj_id>] [--json]'
+          'alia taskboard show <linear|github|jira|gitlab|gitea> <locator> [--project <proj_id>] [--json]'
       },
       {
         name: 'transitions',
         summary: 'List valid status targets for one external issue',
         usage:
-          'bb taskboard transitions <linear|github|jira|gitlab|gitea> <locator> [--project <proj_id>] [--json]'
+          'alia taskboard transitions <linear|github|jira|gitlab|gitea> <locator> [--project <proj_id>] [--json]'
       },
       {
         name: 'move',
         summary: 'Move one external issue to an exact listed status id',
         usage:
-          'bb taskboard move <linear|github|jira|gitlab|gitea> <locator> --status <id> [--project <proj_id>] [--json]'
+          'alia taskboard move <linear|github|jira|gitlab|gitea> <locator> --status <id> [--project <proj_id>] [--json]'
       },
       {
         name: 'refresh',
-        summary: "Refresh a BB project's external issue caches",
+        summary: "Refresh a VesnALIA project's external issue caches",
         usage:
-          'bb taskboard refresh [linear|github|jira|gitlab|gitea] [--project <proj_id>] [--json]'
+          'alia taskboard refresh [linear|github|jira|gitlab|gitea] [--project <proj_id>] [--json]'
       },
       {
         name: 'config',
         summary: 'Show or update nonsecret project connector configuration',
         usage:
-          'bb taskboard config [--project <proj_id>] [--source linear|github|jira|gitlab|gitea] [--linear-team <key>] [--jira-url <url>] [--jira-email <email>] [--jira-jql <text>] [--gitlab-project <ref>] [--gitea-login <name>] [--gitea-project <host/owner/repo>] [--json]'
+          'alia taskboard config [--project <proj_id>] [--source linear|github|jira|gitlab|gitea] [--linear-team <key>] [--jira-url <url>] [--jira-email <email>] [--jira-jql <text>] [--gitlab-project <ref>] [--gitea-login <name>] [--gitea-project <host/owner/repo>] [--json]'
       },
       {
         name: 'credentials',
         summary: 'Open a secure form for project connector credentials',
-        usage: 'bb taskboard credentials [--project <proj_id>] [--json]'
+        usage: 'alia taskboard credentials [--project <proj_id>] [--json]'
       },
       {
         name: 'presets',
         summary: 'List, save, rename, or delete project filter presets',
         usage:
-          'bb taskboard presets list [--project <proj_id>] [--json]\n' +
-          'bb taskboard presets save <name> --from-state <json> ' +
+          'alia taskboard presets list [--project <proj_id>] [--json]\n' +
+          'alia taskboard presets save <name> --from-state <json> ' +
           '[--project <proj_id>] [--json]\n' +
-          'bb taskboard presets rename <name> <new-name> ' +
+          'alia taskboard presets rename <name> <new-name> ' +
           '[--project <proj_id>] [--json]\n' +
-          'bb taskboard presets delete <name> ' +
+          'alia taskboard presets delete <name> ' +
           '[--project <proj_id>] [--json]'
       }
     ],
@@ -2592,12 +2592,12 @@ export default async function plugin(bb: BbPluginApi) {
           hasExplicitCommand ? argv.slice(1) : argv
         );
         const requireProject = async (): Promise<TrackerProject> => {
-          const parsedProject = bbProjectIdSchema.safeParse(
+          const parsedProject = aliaProjectIdSchema.safeParse(
             args.projectId ?? ctx.projectId
           );
           if (!parsedProject.success) {
             throw new Error(
-              'Choose a BB project with --project <proj_id> or run this command from a project thread'
+              'Choose a VesnALIA project with --project <proj_id> or run this command from a project thread'
             );
           }
           return projectById(parsedProject.data);
@@ -2630,7 +2630,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (command === 'status') {
           if (args.positionals.length > 0) {
             throw new Error(
-              'Usage: bb taskboard status [--project <proj_id>] [--json]'
+              'Usage: VesnALIA taskboard status [--project <proj_id>] [--json]'
             );
           }
           const project = await requireProject();
@@ -2653,7 +2653,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (command === 'refresh') {
           if (args.positionals.length > 1) {
             throw new Error(
-              'Usage: bb taskboard refresh [linear|github|jira|gitlab|gitea] [--project <proj_id>] [--json]'
+              'Usage: VesnALIA taskboard refresh [linear|github|jira|gitlab|gitea] [--project <proj_id>] [--json]'
             );
           }
           const project = await requireProject();
@@ -2697,7 +2697,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (command === 'list') {
           if (args.positionals.length > 0) {
             throw new Error(
-              'Usage: bb taskboard list [--project <proj_id>] ' +
+              'Usage: VesnALIA taskboard list [--project <proj_id>] ' +
                 '[--source linear|github|jira|gitlab|gitea] [--query <text>] ' +
                 '[--preset <name>] [--cached] [--json]'
             );
@@ -2761,7 +2761,7 @@ export default async function plugin(bb: BbPluginApi) {
               : narrowedItems
                   .map(
                     item =>
-                      `${escapeExternalInlineText(item.bbProjectId)}\t${sourceName(item.source)}\t${escapeExternalInlineText(item.key)}\t${escapeExternalInlineText(item.status)}\t${escapeExternalInlineText(item.assignee ?? '-')}\t${escapeExternalInlineText(item.title)}`
+                      `${escapeExternalInlineText(item.aliaProjectId)}\t${sourceName(item.source)}\t${escapeExternalInlineText(item.key)}\t${escapeExternalInlineText(item.status)}\t${escapeExternalInlineText(item.assignee ?? '-')}\t${escapeExternalInlineText(item.title)}`
                   )
                   .join('\n')
           };
@@ -2769,7 +2769,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (command === 'show') {
           if (args.positionals.length !== 2) {
             throw new Error(
-              'Usage: bb taskboard show <linear|github|jira|gitlab|gitea> <locator> [--project <proj_id>] [--json]'
+              'Usage: VesnALIA taskboard show <linear|github|jira|gitlab|gitea> <locator> [--project <proj_id>] [--json]'
             );
           }
           const project = await requireProject();
@@ -2793,7 +2793,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (command === 'transitions') {
           if (args.positionals.length !== 2) {
             throw new Error(
-              'Usage: bb taskboard transitions <linear|github|jira|gitlab|gitea> <locator> [--project <proj_id>] [--json]'
+              'Usage: VesnALIA taskboard transitions <linear|github|jira|gitlab|gitea> <locator> [--project <proj_id>] [--json]'
             );
           }
           const project = await requireProject();
@@ -2833,7 +2833,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (command === 'move') {
           if (args.positionals.length !== 2 || !args.statusId) {
             throw new Error(
-              'Usage: bb taskboard move <linear|github|jira|gitlab|gitea> <locator> --status <id> [--project <proj_id>] [--json]'
+              'Usage: VesnALIA taskboard move <linear|github|jira|gitlab|gitea> <locator> --status <id> [--project <proj_id>] [--json]'
             );
           }
           const project = await requireProject();
@@ -2857,7 +2857,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (command === 'config') {
           if (args.positionals.length > 0) {
             throw new Error(
-              'Usage: bb taskboard config [--project <proj_id>] [--source linear|github|jira|gitlab|gitea] [--linear-team <key>] [--jira-url <url>] [--jira-email <email>] [--jira-jql <text>] [--gitlab-project <ref>] [--gitea-login <name>] [--gitea-project <host/owner/repo>] [--json]'
+              'Usage: VesnALIA taskboard config [--project <proj_id>] [--source linear|github|jira|gitlab|gitea] [--linear-team <key>] [--jira-url <url>] [--jira-email <email>] [--jira-jql <text>] [--gitlab-project <ref>] [--gitea-login <name>] [--gitea-project <host/owner/repo>] [--json]'
             );
           }
           const parsedSource = args.source
@@ -2923,18 +2923,18 @@ export default async function plugin(bb: BbPluginApi) {
         if (command === 'credentials') {
           if (args.positionals.length > 0) {
             throw new Error(
-              'Usage: bb taskboard credentials [--project <proj_id>] [--json]'
+              'Usage: VesnALIA taskboard credentials [--project <proj_id>] [--json]'
             );
           }
           if (!ctx.threadId) {
             throw new Error(
-              'bb taskboard credentials must run from an active BB thread'
+              'alia taskboard credentials must run from an active VesnALIA thread'
             );
           }
           const project = await requireProject();
           const snapshot = await readCredentialFormSnapshot(project.id);
           const previous = snapshot.config;
-          const result = await bb.ui.requestInput(
+          const result = await alia.ui.requestInput(
             {
               threadId: ctx.threadId,
               rendererId: 'taskboard-credentials',
@@ -2993,7 +2993,7 @@ export default async function plugin(bb: BbPluginApi) {
           const rest = args.positionals.slice(1);
           if (!['list', 'save', 'rename', 'delete'].includes(verb)) {
             throw new Error(
-              'Usage: bb taskboard presets <list|save|rename|delete> ...'
+              'Usage: VesnALIA taskboard presets <list|save|rename|delete> ...'
             );
           }
           const project = await requireProject();
@@ -3001,7 +3001,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (verb === 'list') {
             if (rest.length > 0) {
               throw new Error(
-                'Usage: bb taskboard presets list ' +
+                'Usage: VesnALIA taskboard presets list ' +
                   '[--project <proj_id>] [--json]'
               );
             }
@@ -3021,7 +3021,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (verb === 'save') {
             if (rest.length !== 1 || !args.fromState) {
               throw new Error(
-                'Usage: bb taskboard presets save <name> ' +
+                'Usage: VesnALIA taskboard presets save <name> ' +
                   '--from-state <json> [--project <proj_id>] [--json]'
               );
             }
@@ -3054,7 +3054,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (verb === 'rename') {
             if (rest.length !== 2) {
               throw new Error(
-                'Usage: bb taskboard presets rename <name> <new-name> ' +
+                'Usage: VesnALIA taskboard presets rename <name> <new-name> ' +
                   '[--project <proj_id>] [--json]'
               );
             }
@@ -3076,7 +3076,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (verb === 'delete') {
             if (rest.length !== 1) {
               throw new Error(
-                'Usage: bb taskboard presets delete <name> ' +
+                'Usage: VesnALIA taskboard presets delete <name> ' +
                   '[--project <proj_id>] [--json]'
               );
             }
@@ -3091,7 +3091,7 @@ export default async function plugin(bb: BbPluginApi) {
             };
           }
         }
-        throw new Error('Unknown bb taskboard command');
+        throw new Error('Unknown VesnALIA taskboard command');
       } catch (error) {
         return { exitCode: 1, stderr: `${errorMessage(error)}\n` };
       }
@@ -3146,7 +3146,7 @@ export default async function plugin(bb: BbPluginApi) {
         selectedProjectIds
       );
       if (result.outcome === 'ambiguous-projects') {
-        bb.log.warn(
+        alia.log.warn(
           `${sourceName(source)} legacy credential needs manual project assignment`
         );
       }
@@ -3161,7 +3161,7 @@ export default async function plugin(bb: BbPluginApi) {
         await enqueueMutation(projectId, [source], async () => undefined);
         const result = await credentials.migrateLegacy(source, []);
         if (result.outcome === 'no-eligible-project') {
-          bb.log.warn(
+          alia.log.warn(
             'Jira legacy credential was preserved because the enabled project needs a Jira URL and email; assign the full credential bundle in Manage'
           );
         }
@@ -3177,12 +3177,12 @@ export default async function plugin(bb: BbPluginApi) {
         result.outcome === 'migrated' ||
         result.outcome === 'already-migrated'
       ) {
-        bb.realtime.publish('taskboard:changed', {
+        alia.realtime.publish('taskboard:changed', {
           projectId,
           source
         });
       } else if (result.outcome === 'destination-conflict') {
-        bb.log.warn(
+        alia.log.warn(
           `${sourceName(source)} legacy credential conflicts with the configured project credential`
         );
       }
@@ -3200,7 +3200,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
   }
 
-  bb.background.service('sync', {
+  alia.background.service('sync', {
     async start(signal) {
       // Let the UI paint from the SQLite cache first; sync right after.
       await sleep(BOOT_SYNC_DELAY_MS, signal);
@@ -3211,7 +3211,7 @@ export default async function plugin(bb: BbPluginApi) {
             await migrateLegacyCredentials();
             legacyMigrationFinished = true;
           } catch (error) {
-            bb.log.warn(
+            alia.log.warn(
               `Legacy credential migration deferred: ${errorMessage(error)}`
             );
           }
@@ -3242,14 +3242,14 @@ export default async function plugin(bb: BbPluginApi) {
               )
           );
         } catch (error) {
-          bb.log.warn(`Background sync failed: ${errorMessage(error)}`);
+          alia.log.warn(`Background sync failed: ${errorMessage(error)}`);
         }
         await sleep(SYNC_INTERVAL_MS, signal);
       }
     }
   });
 
-  bb.log.info(
+  alia.log.info(
     'Taskboard registered project-scoped Linear, GitHub, GitLab, Gitea, and Jira sources'
   );
 }

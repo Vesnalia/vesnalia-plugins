@@ -10,13 +10,13 @@ import {
   experimental_ThreadStatusGlyph as ThreadStatusGlyph,
   experimental_useSidebarThreads,
   experimental_usePluginId,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
   useSidebarThreadRowStatus,
   type ExperimentalBadge,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -143,8 +143,8 @@ function Sentence({ entry }: { entry: AttentionEntry | null }): ReactNode {
 }
 
 /**
- * The glyph bb's sidebar draws for the thread — unread, waiting for input,
- * running — with a status another plugin set on its row. Nothing while bb's
+ * The glyph VesnALIA's sidebar draws for the thread — unread, waiting for input,
+ * running — with a status another plugin set on its row. Nothing while VesnALIA's
  * list is still loading.
  */
 function StatusGlyph({ threadId, indicator }: { threadId: string; indicator: Row["indicator"] }) {
@@ -350,7 +350,7 @@ function hintFor(): string | null {
 
 export function HeraldPanel() {
   const { rows, error } = useRows();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const pluginId = experimental_usePluginId();
   const muted = useMutedHere();
   const now = useNow();
@@ -431,8 +431,8 @@ export function HeraldPanel() {
 }
 
 /**
- * The count on the panel's sidebar entry: a hook bb calls in the plugin's
- * scope (`experimental_useBadge`), not a component. `critical` is bb's tone for
+ * The count on the panel's sidebar entry: a hook VesnALIA calls in the plugin's
+ * scope (`experimental_useBadge`), not a component. `critical` is VesnALIA's tone for
  * something waiting on the user; nothing waiting draws no badge.
  */
 export function useWaitingBadge(): ExperimentalBadge | null {

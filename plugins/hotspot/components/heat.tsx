@@ -3,7 +3,7 @@
 // and who is to blame" before anything else. Colours come from the host's
 // status tokens so custom palettes and both themes follow.
 import type { ReactNode } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { Status } from "../lib/contract";
 import { type FooterHeat, footerView } from "../lib/footer";
 import { clockText, pct, verdict } from "../lib/present";
@@ -73,7 +73,7 @@ export function VerdictBlock({
   onNavigate?: () => void;
   children?: ReactNode;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const view = verdict({
     latest: status?.latest ?? null,
     hot: status?.open != null,

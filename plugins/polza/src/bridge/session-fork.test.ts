@@ -30,7 +30,7 @@ describe("forkClaudeSession", () => {
     configDirectory: string;
     transcriptDir: string;
   } {
-    const configDirectory = mkdtempSync(join(tmpdir(), "bb-claude-fork-"));
+    const configDirectory = mkdtempSync(join(tmpdir(), "alia-claude-fork-"));
     tempDirs.push(configDirectory);
     const transcriptDir = join(configDirectory, "projects", "-tmp-worktree");
     mkdirSync(transcriptDir, { recursive: true });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { fixtureRuntime } from "./runtime-helper.ts";
 import { CONFIG_DEFAULTS } from "../src/web/config.ts";
 import { doctor } from "../src/doctor.ts";
@@ -8,7 +8,7 @@ import { bench } from "../src/bench.ts";
 describe("offline diagnostics and bounded keyless doctor", () => {
  it("does not dispatch by default and never retains configured secrets", async () => {
   const fake = createFakePluginHost();
-  const runtime = fixtureRuntime(fake.bb, async () => ({ ...CONFIG_DEFAULTS, warnings: [], braveApiKey: "secret-brave", exaApiKey: "secret-exa", searxngUrl: "https://self.example" }));
+  const runtime = fixtureRuntime(fake.alia, async () => ({ ...CONFIG_DEFAULTS, warnings: [], braveApiKey: "secret-brave", exaApiKey: "secret-exa", searxngUrl: "https://self.example" }));
   let calls = 0;
   const report = await doctor(runtime, false, undefined, async () => { calls++; throw new Error("not allowed"); });
   expect(calls).toBe(0); expect(JSON.stringify(report)).not.toContain("secret-"); expect(JSON.stringify(report)).not.toContain("https://");
@@ -16,7 +16,7 @@ describe("offline diagnostics and bounded keyless doctor", () => {
  });
  it("makes one logical probe for each allowed keyless provider with fresh bounded deadlines and no account keys", async () => {
   const fake = createFakePluginHost();
-  const runtime = fixtureRuntime(fake.bb, async () => ({ ...CONFIG_DEFAULTS, warnings: [], searxngUrl: "https://self.example", braveApiKey: "brave", exaApiKey: "exa", tavilyApiKey: "tavily", firecrawlApiKey: "firecrawl", jinaApiKey: "jina" }));
+  const runtime = fixtureRuntime(fake.alia, async () => ({ ...CONFIG_DEFAULTS, warnings: [], searxngUrl: "https://self.example", braveApiKey: "brave", exaApiKey: "exa", tavilyApiKey: "tavily", firecrawlApiKey: "firecrawl", jinaApiKey: "jina" }));
   const providers: string[] = [];
   const report = await doctor(runtime, true, undefined, async (query, options, config, requested) => {
    providers.push(requested!); expect(options.context!.deadline.remainingMs()).toBeLessThanOrEqual(5000); expect(options.fallback).toBe(false);
@@ -28,7 +28,7 @@ describe("offline diagnostics and bounded keyless doctor", () => {
  });
  it("does not probe cloud providers under the private ceiling", async () => {
   const fake = createFakePluginHost();
-  const runtime = fixtureRuntime(fake.bb, async () => ({ ...CONFIG_DEFAULTS, profile: "private", privacyProfile: "private", warnings: [], searxngUrl: "https://self.example" }));
+  const runtime = fixtureRuntime(fake.alia, async () => ({ ...CONFIG_DEFAULTS, profile: "private", privacyProfile: "private", warnings: [], searxngUrl: "https://self.example" }));
   const providers: string[] = [];
   await doctor(runtime, true, undefined, async (_query, _options, _config, requested) => { providers.push(requested!); throw new Error("fixture upstream failure"); });
   expect(providers).toEqual(["searxng"]);

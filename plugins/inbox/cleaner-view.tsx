@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type { CleanerPreview, CleanerRow } from "./cleaner";
 import { Button } from "./components/ui/button";
@@ -34,7 +34,7 @@ export function ArchiveReview({ preview, close, complete }: {
       <DialogDescription>
         {preview?.items.length} thread{preview?.items.length === 1 ? "" : "s"}, including any children, will leave your sidebar. Conversation history stays available in Archived.
       </DialogDescription>
-      <p className="text-sm text-muted-foreground">BB may remove managed workspace files after archiving. Save any files you need first. Restoring a conversation does not recover removed files.</p>
+      <p className="text-sm text-muted-foreground">VesnALIA may remove managed workspace files after archiving. Save any files you need first. Restoring a conversation does not recover removed files.</p>
       <ul className="max-h-60 overflow-y-auto text-sm space-y-2" aria-label="Threads to archive">
         {preview?.items.map(item => <li key={item.id}><strong>{item.title}</strong><span className="block text-xs text-muted-foreground">{item.projectName}</span></li>)}
       </ul>
@@ -65,7 +65,7 @@ export function ArchiveThreadButton({ threadId, title }: { threadId: string; tit
 
 export function CleanerView() {
   const rpc = useRpc<typeof rpcContract>();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const [archived, setArchived] = useState(false);
   const [query, setQuery] = useState("");
   const [projectId, setProjectId] = useState<string | null>(null);

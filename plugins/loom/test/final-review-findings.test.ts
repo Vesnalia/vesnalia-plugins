@@ -22,8 +22,8 @@ const ticket = () => ticketOf(h, "CSV-1");
 const posts = () => h.store.posts(ticket().id);
 const dataOf = (outcome: string) => posts().filter((post) => (JSON.parse(post.data_json) as { outcome?: string }).outcome === outcome).map((post) => ({ post, data: JSON.parse(post.data_json) as Record<string, any> }));
 const merges = () => h.host.callsTo("prMerge");
-const spawns = () => (h.bb.callsTo("spawnThread") as Array<[SpawnArgs]>).map(([args]) => args).filter((args) => args.metadata.role === "final-review");
-const reviewer = () => h.bb.threads.get(String(JSON.parse(h.store.ticketEvents(ticket().id, [FINAL_BOUND]).at(-1)!.data_json).thread))!;
+const spawns = () => (h.alia.callsTo("spawnThread") as Array<[SpawnArgs]>).map(([args]) => args).filter((args) => args.metadata.role === "final-review");
+const reviewer = () => h.alia.threads.get(String(JSON.parse(h.store.ticketEvents(ticket().id, [FINAL_BOUND]).at(-1)!.data_json).thread))!;
 const poll = async (ctx: EngineCtx = h.ctx, ms = 5 * 60_000) => {
   h.clock.advance(ms);
   await pollPullRequests(ctx, ctx.store.projectBySlug("csv")!);
@@ -96,13 +96,13 @@ describe("finding 1: the reviewer cannot change Loom's shared checkout unseen", 
     approved();
     await poll();
     verdict("pass");
-    h.bb.stopConfirms = false;
+    h.alia.stopConfirms = false;
     await poll(h.ctx, 0);
     await poll();
     expect(merges()).toEqual([]);
     expect(reviewer().status).toBe("stopping");
     expect(h.host.callsTo("checkoutPrint")).toHaveLength(1);
-    h.bb.stopConfirms = true;
+    h.alia.stopConfirms = true;
     reviewer().status = "idle";
     await poll();
     expect(h.host.callsTo("checkoutPrint")).toHaveLength(2);
@@ -152,7 +152,7 @@ describe("finding 3: a running reviewer is stopped once its pull request is not 
     await poll(h.ctx, 60 * 60_000);
     await poll();
     expect(finalState(h.store, ticket().id, ticket().pushed_sha).open).toBeNull();
-    expect(h.bb.callsTo("stop").map(([id]) => id)).toContain(reviewer().id);
+    expect(h.alia.callsTo("stop").map(([id]) => id)).toContain(reviewer().id);
     expect(reviewer().archivedAt).not.toBeNull();
     expect(spawns()).toHaveLength(1);
     approved();

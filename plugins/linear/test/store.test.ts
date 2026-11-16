@@ -4,7 +4,7 @@ import { createTestStore, issue, member, NOW, state, team } from "./helpers/stor
 
 describe("the migration list", () => {
   it("is one statement per entry", () => {
-    // `bb.storage.migrate` uses the statement index as the migration id. Two
+    // `alia.storage.migrate` uses the statement index as the migration id. Two
     // statements in one entry means the second is invisible to the tracker and
     // re-runs — or, worse, silently never runs on an existing install.
     // `createTestStore` prepares each entry individually, and better-sqlite3
@@ -830,7 +830,7 @@ describe("bounded hot-path reads", () => {
 
 describe("forgetEverything", () => {
   it("leaves an empty schema and no data", () => {
-    // Disconnect means it. `bb plugin remove` does not do this — the host
+    // Disconnect means it. `alia plugin remove` does not do this — the host
     // deletes settings rows and the secrets directory and leaves data.db in
     // place — so this is the only thing that removes a workspace's issue data
     // from the machine.

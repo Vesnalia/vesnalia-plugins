@@ -1,7 +1,7 @@
 // Meeting summary: Markdown (rendered by the safe renderer), editable in place
 // (meetings.update summaryMd; an empty text clears it).
 import { memo, useId, useState } from "react";
-import { UrlLink } from "@get-bb/plugin-sdk/app";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
 import type { MeetingDetail } from "../shared/rpc-contract";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";

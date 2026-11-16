@@ -43,7 +43,7 @@ import { parseSearchQuery } from "@/lib/notes";
 import { cn } from "@/lib/utils";
 
 const SEARCH_DEBOUNCE_MS = 150;
-const LAST_NOTE_KEY = "bb-plugin-notes:last-note";
+const LAST_NOTE_KEY = "alia-plugin-notes:last-note";
 
 const COLOR_LABEL: Record<NoteColor, string> = {
   yellow: "Yellow",
@@ -415,7 +415,7 @@ export function NotesWindow() {
 
   const editorPane =
     selected === null ? (
-      <div className="bb-fn-editor-pane flex min-h-0 flex-col items-center justify-center gap-1 p-6 text-center">
+      <div className="alia-fn-editor-pane flex min-h-0 flex-col items-center justify-center gap-1 p-6 text-center">
         <p className="text-sm text-muted-foreground">
           {loaded ? "Select a note, or start one." : "Loading notes…"}
         </p>
@@ -428,7 +428,7 @@ export function NotesWindow() {
         )}
       </div>
     ) : (
-      <div className="bb-fn-editor-pane flex min-h-0 flex-col">
+      <div className="alia-fn-editor-pane flex min-h-0 flex-col">
         <div className="flex shrink-0 items-center gap-0.5 border-b border-border px-2 py-1">
           <Icon
             name={SCOPE_ICON[noteScope(selected).kind]}
@@ -472,7 +472,7 @@ export function NotesWindow() {
                   <Button variant="ghost" size="icon" className="size-6" aria-label="Color">
                     {selected.color !== null ? (
                       <span
-                        className={cn("bb-fn-swatch", `bb-fn-tint-${selected.color}`)}
+                        className={cn("alia-fn-swatch", `alia-fn-tint-${selected.color}`)}
                         aria-label="Note color"
                       />
                     ) : (
@@ -488,7 +488,7 @@ export function NotesWindow() {
                       key={color}
                       onSelect={() => void notesStore.updateNote({ id: selected.id, color })}
                     >
-                      <span className={cn("bb-fn-swatch", `bb-fn-tint-${color}`)} aria-hidden />
+                      <span className={cn("alia-fn-swatch", `alia-fn-tint-${color}`)} aria-hidden />
                       {COLOR_LABEL[color]}
                       {selected.color === color ? (
                         <Icon name="Check" className="ml-auto size-3.5" aria-hidden />
@@ -551,7 +551,7 @@ export function NotesWindow() {
           )}
         </div>
         {view === "trash" ? (
-          <div className="bb-fn-quiet-scroll min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap p-3 font-mono text-xs text-muted-foreground">
+          <div className="alia-fn-quiet-scroll min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap p-3 font-mono text-xs text-muted-foreground">
             {selected.body}
           </div>
         ) : (
@@ -561,7 +561,7 @@ export function NotesWindow() {
             autoFocus={focusEditorId === selected.id}
             className={
               selected.color !== null
-                ? `bb-fn-tint-${selected.color} bb-fn-tinted-editor`
+                ? `alia-fn-tint-${selected.color} alia-fn-tinted-editor`
                 : undefined
             }
           />
@@ -588,18 +588,18 @@ export function NotesWindow() {
     <>
       {sheet ? (
         <div
-          className="bb-fn-backdrop"
+          className="alia-fn-backdrop"
           data-state={open && armed ? "open" : "closed"}
           aria-hidden="true"
           onPointerDown={hide}
         />
       ) : null}
-      {/* bb treats any [role="dialog"][data-state="open"] on the page as an
+      {/* VesnALIA treats any [role="dialog"][data-state="open"] on the page as an
           open modal and turns its keyboard shortcuts off. The floating window
-          sits beside bb like a sticky, so it is a labelled region and bb's
+          sits beside VesnALIA like a sticky, so it is a labelled region and VesnALIA's
           shortcuts keep working while it is open. The sheet covers the screen
           behind a backdrop, so it stays a dialog and still holds them off.
-          Escape is stopped in onKeyDown either way, so bb never reads it as
+          Escape is stopped in onKeyDown either way, so VesnALIA never reads it as
           "Back to app". */}
       <div
         ref={rootRef}
@@ -610,12 +610,12 @@ export function NotesWindow() {
         tabIndex={-1}
         data-state={open && armed ? "open" : "closed"}
         data-layout={sheet ? "sheet" : "window"}
-        className="bb-fn-window fixed flex flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl outline-none"
+        className="alia-fn-window fixed flex flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl outline-none"
         onKeyDown={onKeyDown}
       >
         <div
           ref={handleRef}
-          data-bb-fn-handle=""
+          data-alia-fn-handle=""
           className={cn(
             "flex shrink-0 items-center gap-1 border-b border-border px-2 py-1.5",
             sheet ? "" : "cursor-grab active:cursor-grabbing",
@@ -692,14 +692,14 @@ export function NotesWindow() {
               });
             }}
             className={cn(
-              "bb-fn-list-pane border-r border-border",
+              "alia-fn-list-pane border-r border-border",
               sheet && selected !== null ? "hidden" : "",
             )}
           />
           {/* On the sheet, the editor replaces the list; a back affordance
               lives in its header via deselect. */}
           {sheet && selected !== null ? (
-            <div className="bb-fn-editor-pane flex min-h-0 flex-col">
+            <div className="alia-fn-editor-pane flex min-h-0 flex-col">
               <button
                 type="button"
                 className="flex shrink-0 items-center gap-1 px-2 py-1 text-xs text-muted-foreground"

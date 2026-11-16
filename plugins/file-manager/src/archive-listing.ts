@@ -13,7 +13,7 @@
 //     `--file` / `--`, and with stdin closed — so not even a password prompt
 //     can sit waiting for a keyboard nobody has.
 //
-// The RPC waits for the answer and bb has no way to call a request off, so
+// The RPC waits for the answer and VesnALIA has no way to call a request off, so
 // every listing is bounded three ways:
 //
 //   * members returned — MAX_ARCHIVE_ENTRIES; the rest are counted, not sent;
@@ -32,7 +32,7 @@ import { open, stat, type FileHandle } from "node:fs/promises";
 import path from "node:path";
 import type { Readable } from "node:stream";
 import type { Stats } from "node:fs";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { RandomAccessReader, fromRandomAccessReaderPromise, type ZipFile } from "yauzl";
 
 import {
@@ -290,7 +290,7 @@ interface RunResult {
 }
 
 export function createArchiveLister(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   options: ArchiveListerOptions,
 ): ArchiveLister {
   const { executables } = options;
@@ -621,7 +621,7 @@ export function createArchiveLister(
       if ("outcome" in zip) {
         outcome = zip.outcome;
       } else if (executables.sevenZip !== null) {
-        bb.log.info(`list ${fileName}: yauzl could not read it (${zip.unreadable}); trying 7z`);
+        alia.log.info(`list ${fileName}: yauzl could not read it (${zip.unreadable}); trying 7z`);
         outcome = await scanSevenZip(executables.sevenZip, archiveReal, fileName, collector, deadline);
       } else {
         throw fmError("archive_failed", `${fileName}: not a readable zip archive (${zip.unreadable})`);
@@ -639,7 +639,7 @@ export function createArchiveLister(
     }
 
     if (outcome.stoppedBy !== null && outcome.stoppedBy !== "entries") {
-      bb.log.info(
+      alia.log.info(
         `list ${fileName}: stopped (${outcome.stoppedBy}) after ${String(collector.scannedCount)} members`,
       );
     }
@@ -655,12 +655,12 @@ export function createArchiveLister(
 
   // A reload must not orphan a `tar` still decompressing a 20 GB archive.
   // Hooks run LIFO; nothing here needs anything another hook tears down.
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
     const running = [...live.values()];
     for (const stop of running) stop();
     if (running.length > 0) {
-      bb.log.info(`archive listing disposed — stopped ${String(running.length)} lister(s)`);
+      alia.log.info(`archive listing disposed — stopped ${String(running.length)} lister(s)`);
     }
   });
 

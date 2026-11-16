@@ -1,6 +1,6 @@
 import { Fragment, memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { SelectedLineRange } from "@pierre/diffs";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import type { CommentLocation } from "../src/draft";
 import { blockMarkdown, type MarkdownBlock } from "../lib/markdown-blocks";
 import { markdownDiff, rowChanges, type BlockStatus, type RenderedBlock } from "../lib/markdown-diff";
@@ -22,7 +22,7 @@ const UNCHANGED_RUN = 6;
 const REMOVED_RUN = 3;
 /** How long a text selection rests before it picks its blocks' lines. */
 const SELECTION_REST_MS = 150;
-/** What a probe of BB's Markdown draws: marked words show only once it draws this with `<del>` and `<ins>` elements. */
+/** What a probe of VesnALIA's Markdown draws: marked words show only once it draws this with `<del>` and `<ins>` elements. */
 const PROBE = "a<del>b</del><ins>c</ins>";
 
 // Set by the first probe that draws a <del> and an <ins>: every file after marks its words from the start. Never kept past the page.
@@ -30,8 +30,8 @@ let marksDrawn = false;
 export function resetMarksForTests() { marksDrawn = false; }
 
 /**
- * A hidden probe of BB's Markdown, which today draws sanitized `<del>` and `<ins>` though its contract doesn't promise
- * it: `onDrawn` once it draws the probe's `<del>` and `<ins>`. While its HTML loads, the first time, it draws without; a BB
+ * A hidden probe of VesnALIA's Markdown, which today draws sanitized `<del>` and `<ins>` though its contract doesn't promise
+ * it: `onDrawn` once it draws the probe's `<del>` and `<ins>`. While its HTML loads, the first time, it draws without; a VesnALIA
  * that drops raw HTML, or either tag, never does, so words are never marked.
  */
 function WordsProbe({ onDrawn }: { onDrawn: () => void }) {
@@ -61,7 +61,7 @@ const BAR: Record<BlockStatus, string> = {
 const SAID: Record<BlockStatus, string | null> = { added: "Added", changed: "Changed", removed: "Removed", unchanged: null };
 
 /**
- * The room above a block, after the block drawn `before` it, as BB's Markdown spaces a whole document: it draws one block
+ * The room above a block, after the block drawn `before` it, as VesnALIA's Markdown spaces a whole document: it draws one block
  * alone with no margin above its first element or below its last. Padding, not margin, so the bars of blocks next to
  * each other join. A list's items sit together, a loose list's a paragraph's space apart.
  */
@@ -115,7 +115,7 @@ function CommentButton({ anchor, onComment, top = 0, shown, label, tabIndex, onK
 
 /**
  * A table's comment buttons, one beside each row a comment can take, shown as the pointer is over it, and its rows'
- * `tints`: measured from the rows BB's Markdown drew (`tr`, in order), never changing them. Where it drew other rows than
+ * `tints`: measured from the rows VesnALIA's Markdown drew (`tr`, in order), never changing them. Where it drew other rows than
  * the source has, no tints, and `whole`. The buttons are one stop for the keyboard, the arrow keys moving between rows,
  * as a segmented control's choices are.
  */
@@ -178,7 +178,7 @@ type Row = { kind: "block"; index: number } | { kind: "fold"; key: string; from:
 
 /**
  * A Markdown file's change, rendered as GitHub's rich diff shows it, with the review's comments: each block of the new
- * file drawn by BB's Markdown, its images as links, with a bar for added or changed, and each removed block from the old
+ * file drawn by VesnALIA's Markdown, its images as links, with a bar for added or changed, and each removed block from the old
  * file, dimmed with a dashed bar, where it was. A changed block marks its changed words, struck or underlined, where its
  * Markdown lets it (lib/markdown-words.ts), and can show its version before above it. Runs of unchanged
  * blocks fold. Threads, drafts, CI failures and the comment box show after the block holding their line. A block the
@@ -213,7 +213,7 @@ export const RenderedMarkdown = memo(function RenderedMarkdown({ path, patch, ol
   }, [linkRoot, path]);
   const id = useId();
   const anchors = useMemo(() => items.map((item) => blockAnchor(lines, item)), [items, lines]);
-  // Each changed block's Markdown with its changed words marked, where they can be: drawn once BB's Markdown draws marks.
+  // Each changed block's Markdown with its changed words marked, where they can be: drawn once VesnALIA's Markdown draws marks.
   // Not a block whose version before is another's too, as a paragraph's halves once split: each would mark the other's
   // words deleted.
   const words = useMemo(() => {
@@ -331,7 +331,7 @@ export const RenderedMarkdown = memo(function RenderedMarkdown({ path, patch, ol
     const marked = ghost === undefined && marks ? words.get(index) : undefined;
     const commentAt = onComment && ((at: LineAnchor) => onComment({ file: path, ...at }));
     const showing = previous.has(index);
-    // A changed table's new and changed rows, tinted from a style of its own, once BB's Markdown has drawn its rows.
+    // A changed table's new and changed rows, tinted from a style of its own, once VesnALIA's Markdown has drawn its rows.
     const scope = `${id}-${index}`;
     const rowStates = ghost === undefined && item.block.rows && item.previous?.length === 1 && item.previous[0].rows ? rowChanges(item.previous[0], item.block) : [];
     const tints = rowStates.flatMap((state, row) => {
@@ -359,7 +359,7 @@ export const RenderedMarkdown = memo(function RenderedMarkdown({ path, patch, ol
             <TableRows block={item.block} side={item.side} lines={lines} tints={tints} onComment={commentAt}
               whole={anchor && commentAt && <CommentButton anchor={anchor} onComment={commentAt} />} />
           ) : anchor && commentAt && <CommentButton anchor={anchor} onComment={commentAt} />}
-          {/* Left of the comment button, on the block's first line, in the gutter: clear of the block's words, BB's own
+          {/* Left of the comment button, on the block's first line, in the gutter: clear of the block's words, VesnALIA's own
               controls, as a code block's Copy, and the block after it, however short the block. Shown as it is, on hover or
               keyboard focus, and while the version before shows; on a touch screen, where there's no hover and it's the only
               way to the version before, always. Hidden, it takes no pointer. */}

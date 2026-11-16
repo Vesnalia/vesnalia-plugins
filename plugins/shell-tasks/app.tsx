@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   definePluginApp,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   PluginMessageDirectiveProps,
   PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { toast } from "sonner";
 import type {
@@ -458,7 +458,7 @@ function TasksPanel({ threadId, params }: PluginThreadPanelProps) {
 }
 
 function TaskDirective({ attributes, message }: PluginMessageDirectiveProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const id = Number(attributes.id);
   const validId = Number.isInteger(id) && id > 0;
   const { data, error } = useTaskDetail(message.threadId, validId ? id : null);
@@ -527,7 +527,7 @@ function TaskDirective({ attributes, message }: PluginMessageDirectiveProps) {
 }
 
 function CompletionToasts() {
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   useRealtime("tasks-changed", (payload) => {
     if (
       !taskChanged(payload) ||

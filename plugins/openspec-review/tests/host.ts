@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp } from "node:fs/promises";
 import { resolve, join } from "node:path";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
-import type { ExperimentalHostWatchListener } from "@get-bb/plugin-sdk";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
+import type { ExperimentalHostWatchListener } from "@vesnalia/plugin-sdk";
 import entry from "../host.ts";
 const base = resolve(process.cwd(), ".tmp/host-tests"); await mkdir(base, { recursive: true });
 const root = await mkdtemp(join(base, "root-")); await mkdir(join(root, "openspec/changes"), { recursive: true });

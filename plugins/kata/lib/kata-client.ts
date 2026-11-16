@@ -2,7 +2,7 @@
 //
 // Discovery: `KATA_SERVER` wins (a `http(s)://` base URL or `unix://` socket);
 // otherwise `kata daemon locate --json` names the daemon's address (and, like
-// every kata command, starts a stopped local daemon). The bb server's PATH
+// every kata command, starts a stopped local daemon). The VesnALIA server's PATH
 // may not include the kata binary, so it is looked up with `which kata`, then
 // `~/.local/bin/kata`. The endpoint is cached and looked up again when a
 // request fails to connect. Once a connection has worked, that lookup uses

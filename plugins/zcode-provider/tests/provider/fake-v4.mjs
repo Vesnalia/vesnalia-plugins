@@ -122,7 +122,7 @@ if (mode === 'v4') {
           }, 80);
           return;
         }
-        const s = sessions[id], text = p.payload.text.startsWith('[bb session instructions]\n') ? p.payload.text.split('\n\n').slice(1).join('\n\n') : p.payload.text, turnId = randomUUID(), rowId = s.rows.totalCount + 1;
+        const s = sessions[id], text = p.payload.text.startsWith('[VesnALIA session instructions]\n') ? p.payload.text.split('\n\n').slice(1).join('\n\n') : p.payload.text, turnId = randomUUID(), rowId = s.rows.totalCount + 1;
         s.lastSendText = p.payload.text;
         s.config = { ...s.config, modelSelection: p.payload.modelSelection };
         const wait = ['/wait-for-interrupt', '/question', '/permission'].includes(text), zero = text === '/clear' || text === '/zero-before-ack';

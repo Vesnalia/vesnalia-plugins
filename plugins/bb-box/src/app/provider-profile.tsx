@@ -3,7 +3,7 @@
 // server when the popover opens, with one capacity call to the provider,
 // and never on every panel load.
 
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { Capacity, Limit } from "../backends/types.ts";

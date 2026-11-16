@@ -61,7 +61,7 @@ import { BoatApi, BoatError, SIZE_SHAPES, perWindow, isRunning, isStarting, isSt
 import { BOAT_STORAGE, SAVED_FACTS_KEY, SAVE_POLL_MS, SAVE_RUNNING_ABOUT_MS, SAVE_STOPPED_ABOUT_MS, SAVE_WAIT_MS, billOf, boatOffer, factsWith, forkStartWords, heldFrom, heldStateOf, parseSavedName, savedName, savedPrice, savedRefusal, startCostWords, type SavedFactsByName } from "./snapshots.ts";
 import { BOAT_KINDS, type BoatConfig, type BoatKind } from "./config.ts";
 import { BoatTemplates, BuildLeftRunning, CUA_READY, FAILED_BUILD_RETRY_MS, IDENTITY_RESET_KINDS, TEMPLATE_ROLE, TRIAL_ROLE, buildWaitWords, type TemplateDeps } from "./templates.ts";
-import { CANNOT_ENROL_FIX, bbReach, cannotEnrolWords, type BbReach } from "./reach-bb.ts";
+import { CANNOT_ENROL_FIX, aliaReach, cannotEnrolWords, type AliaReach } from "./reach-alia.ts";
 import { storedKeyPair } from "../ssh-key.ts";
 import { BACKEND_LABEL, BoatOwner, INSTALL_LABEL } from "./owner.ts";
 
@@ -103,22 +103,22 @@ const SSH_KEY = "ssh-key";
 const SSH_POLL_MS = 300;
 const STATE_WITHIN_MS = 5 * 60_000;
 const VNC_PORT = 5900;
-const VNC_PASSWORD_FILE = "/var/lib/bb-box/vnc-password";
-const DISPLAY_MODE_FILE = "/run/bb-box/display-mode";
+const VNC_PASSWORD_FILE = "/var/lib/alia-box/vnc-password";
+const DISPLAY_MODE_FILE = "/run/alia-box/display-mode";
 const DISPLAY_WAIT_MS = 300_000;
 const RESTORE_WAIT_MS = 5 * 60_000;
-export const BOAT_READY_FILE = "/run/bb-box/boat-ready";
+export const BOAT_READY_FILE = "/run/alia-box/boat-ready";
 const SETTLED_SCRIPT = `test -e ${BOAT_READY_FILE} && docker info >/dev/null 2>&1`;
 const SETTLE_KICK_AFTER_MS = 20_000;
-const SETTLE_KICK = "sudo -n systemctl daemon-reload; sudo -n systemctl start --no-block bb-box-boat-ready.service docker.service";
-const IDENTITY_SWITCH = "/usr/local/lib/bb-box/identity-reset-on";
+const SETTLE_KICK = "sudo -n systemctl daemon-reload; sudo -n systemctl start --no-block alia-box-boat-ready.service docker.service";
+const IDENTITY_SWITCH = "/usr/local/lib/alia-box/identity-reset-on";
 export const IDENTITY_BOOT_SCRIPT = [`if [ ! -x ${IDENTITY_TOOL} ] || [ ! -e ${IDENTITY_SWITCH} ]; then echo boot=off; exit 0; fi`, `sudo -n ${IDENTITY_TOOL} status`].join("\n");
-const IDENTITY_KICK = "sudo -n systemctl daemon-reload; sudo -n systemctl start --no-block bb-box-identity-settle.service";
+const IDENTITY_KICK = "sudo -n systemctl daemon-reload; sudo -n systemctl start --no-block alia-box-identity-settle.service";
 const IDENTITY_KICK_AFTER_MS = 10_000;
 const IDENTITY_DECIDED: ReadonlySet<string> = new Set(["off", "kept", "unarmed", "reset"]);
 const FORK_IDENTITY_DECIDED: ReadonlySet<string> = new Set(["kept", "reset"]);
 const FORK_IDENTITY_REFUSED: ReadonlySet<string> = new Set(["off", "unarmed"]);
-const NAME_PREFIX = "bb-box:";
+const NAME_PREFIX = "alia-box:";
 const MIB_PER_GB = 1024;
 const RESIZING: Resizing = { cores: "restart", memory: "restart", disk: "restart", shrinks: true };
 const RESTART_SECONDS: Readonly<Record<BoatKind, number>> = { linux: 60, "linux-desktop-cpu": 150, android: 300 };
@@ -303,7 +303,7 @@ export function stagingName(boxId: string, token: string, backendMark: string | 
 }
 
 export function stagingOf(name: string, backendMark: string | null = null): { readonly box: string; readonly token: string } | null {
-  const found = /^bb-box:restoring:(?:([a-z0-9-]+):)?(bx[a-z2-7]{12}):([a-z2-9]{8})$/.exec(name);
+  const found = /^alia-box:restoring:(?:([a-z0-9-]+):)?(bx[a-z2-7]{12}):([a-z2-9]{8})$/.exec(name);
   if (!found || (found[1] ?? null) !== backendMark) return null;
   return { box: found[2]!, token: found[3]! };
 }
@@ -373,12 +373,12 @@ export class BoatBackend implements Backend {
   #limits: { readonly at: number; readonly limits: Promise<BoatLimits> } | null = null;
   #lastLimits: BoatLimits | null = null;
   #lastAllowance: SavedAllowance | null = null;
-  #bbReach: { readonly at: number; readonly reach: Promise<BbReach> } | null = null;
+  #aliaReach: { readonly at: number; readonly reach: Promise<AliaReach> } | null = null;
   #androidOffer: DeviceOffer | null = null;
   #androidLeftOut: readonly string[] = [];
 
   constructor(config: BoatConfig, context: BackendContext, options: BoatBackendOptions = {}) {
-    if (!config.key) throw new BackendError("unsupported", "boat.dev has no API key: set it in BB Box's settings.");
+    if (!config.key) throw new BackendError("unsupported", "boat.dev has no API key: set it in VesnALIA Box's settings.");
     this.#config = config;
     this.#context = context;
     this.#options = options;
@@ -427,7 +427,7 @@ export class BoatBackend implements Backend {
 
   async withheldKinds(kind: string): Promise<readonly WithheldKind[]> {
     if (kind !== "android" || !(this.#offered() as readonly string[]).includes("android")) return [];
-    if (!this.#config.androidLicence) return [{ kind, why: "The Android SDK's licence is not accepted in boat.dev's settings in BB Box, so boat.dev offers no Android boxes. Turning Android SDK licence on there is the acceptance.", passing: false }];
+    if (!this.#config.androidLicence) return [{ kind, why: "The Android SDK's licence is not accepted in boat.dev's settings in VesnALIA Box, so boat.dev offers no Android boxes. Turning Android SDK licence on there is the acceptance.", passing: false }];
     if (this.#androidOffer) return [];
     const largest = largestAllowed(await this.#readLimits());
     const everyModel = deviceModels("android").map((model) => model.name);
@@ -481,7 +481,7 @@ export class BoatBackend implements Backend {
           " Release or stop a boat box, or ask another backend.",
       );
     }
-    if (mine + needed - 1 >= this.#config.mostBoxes) problems.push(`${this.label} has ${mine} of the ${this.#config.mostBoxes} sandboxes ${PRODUCT} may run on it at once${needed === 2 ? ", and this box's template needs one more while it is built" : ""}. Release or stop a boat box, or raise Most boxes in BB Box's settings.`);
+    if (mine + needed - 1 >= this.#config.mostBoxes) problems.push(`${this.label} has ${mine} of the ${this.#config.mostBoxes} sandboxes ${PRODUCT} may run on it at once${needed === 2 ? ", and this box's template needs one more while it is built" : ""}. Release or stop a boat box, or raise Most boxes in VesnALIA Box's settings.`);
     if (limits.computeCapSeconds !== null && limits.computeUsedSeconds !== null && limits.computeUsedSeconds >= limits.computeCapSeconds)
       problems.push("The boat trial's compute hours are used up. Make a payment in boat's dashboard to end the trial, or use another backend.");
     const window = limits.starts.find((each) => each.remaining <= 0);
@@ -534,8 +534,8 @@ export class BoatBackend implements Backend {
       const tailnet = this.#context.tailnet?.() ?? null;
       if (tailnet) await step("tailnet", () => this.#join(sandbox.id, box.name, tailnet, signal));
       const facts: GuestFact[] = [];
-      const reach = await this.#reachOfBb();
-      if (reach.from === "nowhere") facts.push({ label: "BB machine", value: `No. ${cannotEnrolWords(reach)} ${CANNOT_ENROL_FIX}` });
+      const reach = await this.#reachOfAlia();
+      if (reach.from === "nowhere") facts.push({ label: "VesnALIA machine", value: `No. ${cannotEnrolWords(reach)} ${CANNOT_ENROL_FIX}` });
       if (desktopDisplays(KINDS[kind].capabilities.displays).length) {
         const mode = await step("display", () => this.#display(sandbox.id, signal));
         if (mode) facts.push({ label: "Display", value: mode });
@@ -566,7 +566,7 @@ export class BoatBackend implements Backend {
       const token = guest.data.guest;
       await this.#dropStaging(box, token, staging, signal).catch(async (error: unknown) => {
         if (signal?.aborted) throw error;
-        if (await this.#stagingStopped(box, token, staging, signal)) this.#context.logError(`delete the sandbox deployed to restore box ${box}, which is stopped; bb-box's upkeep deletes it later`, error);
+        if (await this.#stagingStopped(box, token, staging, signal)) this.#context.logError(`delete the sandbox deployed to restore box ${box}, which is stopped; alia-box's upkeep deletes it later`, error);
         else stagingLeft = error;
       });
     }
@@ -969,7 +969,7 @@ export class BoatBackend implements Backend {
       await this.#dropStaging(box.boxId, token, staging.id, signal);
     } catch (error) {
       if (signal?.aborted) throw error;
-      this.#context.logError(`delete boat's sandbox ${staging.id}, deployed to make box ${box.boxId}'s sandbox from a saved snapshot; bb-box's upkeep deletes it later`, error);
+      this.#context.logError(`delete boat's sandbox ${staging.id}, deployed to make box ${box.boxId}'s sandbox from a saved snapshot; alia-box's upkeep deletes it later`, error);
       return claimed(made, staging.id);
     }
     const guest = claimed(made, null);
@@ -1150,15 +1150,15 @@ export class BoatBackend implements Backend {
         status: "fail",
         detail: message(error),
         fix: refused
-          ? "Make a new API key in boat's dashboard, or with boat api-key create, and set it in BB Box's settings."
+          ? "Make a new API key in boat's dashboard, or with boat api-key create, and set it in VesnALIA Box's settings."
           : error instanceof BoatError && error.kind === "unreachable"
-            ? "Check that BB's server reaches boat.dev on port 443, and boat's status page."
+            ? "Check that VesnALIA's server reaches boat.dev on port 443, and boat's status page."
             : null,
       });
       return { ok: false, summary: "boat.dev does not answer to the key.", checks, notes };
     }
     checks.push(this.#limitsCheck(limits));
-    checks.push(await this.#bbCheck());
+    checks.push(await this.#aliaCheck());
     checks.push(await this.#templatesCheck());
     if ((this.#offered() as readonly string[]).includes("android")) checks.push(this.#androidCheck(limits));
     const held = await this.#held(signal).catch(() => []);
@@ -1207,21 +1207,21 @@ export class BoatBackend implements Backend {
     };
   }
 
-  async #reachOfBb(): Promise<BbReach> {
-    if (!this.#bbReach || this.#now() - this.#bbReach.at > 5 * 60_000) {
-      const reach = bbReach(this.#context.bbUrl?.() ?? null, !!this.#context.tailnet?.(), this.#options.resolve).catch((): BbReach => ({ from: "unknown" }));
-      this.#bbReach = { at: this.#now(), reach };
+  async #reachOfAlia(): Promise<AliaReach> {
+    if (!this.#aliaReach || this.#now() - this.#aliaReach.at > 5 * 60_000) {
+      const reach = aliaReach(this.#context.aliaUrl?.() ?? null, !!this.#context.tailnet?.(), this.#options.resolve).catch((): AliaReach => ({ from: "unknown" }));
+      this.#aliaReach = { at: this.#now(), reach };
     }
-    return this.#bbReach.reach;
+    return this.#aliaReach.reach;
   }
 
-  async #bbCheck(): Promise<DoctorCheck> {
-    const reach = await this.#reachOfBb();
-    const check = { id: "boat.bb" as const, name: "Reaching BB" };
-    if (reach.from === "tailnet") return { ...check, status: "ok", detail: "Each boat box joins the tailnet as it starts, and reaches BB's server through it.", fix: null };
-    if (reach.from === "url") return { ...check, status: "ok", detail: `boat boxes reach BB's server at ${reach.host}, over the internet.`, fix: null };
+  async #aliaCheck(): Promise<DoctorCheck> {
+    const reach = await this.#reachOfAlia();
+    const check = { id: "boat.alia" as const, name: "Reaching VesnALIA" };
+    if (reach.from === "tailnet") return { ...check, status: "ok", detail: "Each boat box joins the tailnet as it starts, and reaches VesnALIA's server through it.", fix: null };
+    if (reach.from === "url") return { ...check, status: "ok", detail: `boat boxes reach VesnALIA's server at ${reach.host}, over the internet.`, fix: null };
     if (reach.from === "nowhere") return { ...check, status: "warn", detail: cannotEnrolWords(reach), fix: CANNOT_ENROL_FIX };
-    return { ...check, status: "skipped", detail: `${PRODUCT} knows no URL for BB's server here, so it cannot tell whether boat boxes reach it.`, fix: null };
+    return { ...check, status: "skipped", detail: `${PRODUCT} knows no URL for VesnALIA's server here, so it cannot tell whether boat boxes reach it.`, fix: null };
   }
 
   #androidCheck(limits: BoatLimits): DoctorCheck {
@@ -1433,11 +1433,11 @@ export class BoatBackend implements Backend {
       if (!kicked && this.#now() >= kickAt) {
         kicked = true;
         await command.run(SETTLE_KICK, { timeoutMs: 60_000, signal, maxOutputBytes: 4096 }).catch(() => undefined);
-        this.#context.log?.(`${this.#logName}: sandbox ${sandbox} had not run bb-box-boat-ready ${Math.round(SETTLE_KICK_AFTER_MS / 1000)} s after it answered, so bb-box started it.`);
+        this.#context.log?.(`${this.#logName}: sandbox ${sandbox} had not run alia-box-boat-ready ${Math.round(SETTLE_KICK_AFTER_MS / 1000)} s after it answered, so alia-box started it.`);
       }
       await this.#sleep(250, signal);
     }
-    throw new Error(`boat's sandbox ${sandbox} did not finish restoring its template in time: ${BOAT_READY_FILE} is missing or Docker does not answer${last ? ` (${last})` : ""}. Check bb-box-boat-ready.service and docker.service in the box.`);
+    throw new Error(`boat's sandbox ${sandbox} did not finish restoring its template in time: ${BOAT_READY_FILE} is missing or Docker does not answer${last ? ` (${last})` : ""}. Check alia-box-boat-ready.service and docker.service in the box.`);
   }
 
   async #identityDecided(sandbox: string, decided: ReadonlySet<string>, deadline: number, signal?: AbortSignal): Promise<void> {
@@ -1452,16 +1452,16 @@ export class BoatBackend implements Backend {
       if (read.exitCode === 0 && boot && decided === FORK_IDENTITY_DECIDED && FORK_IDENTITY_REFUSED.has(boot)) {
         throw new Error(`boat's sandbox ${sandbox}, a fork, says its identity check is ${boot === "off" ? "off" : "unarmed, with no marker"}, so it has not shown that it gave up its source's identity, and ${PRODUCT} lets nothing use it.`);
       }
-      if (read.exitCode === 0 && boot === "failed") throw new Error(`boat's sandbox ${sandbox} could not finish its identity reset, so ${PRODUCT} does not let its box user in, and BB's daemon and Tailscale stay off. The next start tries again; bb-box-identity.service in the box says why.`);
+      if (read.exitCode === 0 && boot === "failed") throw new Error(`boat's sandbox ${sandbox} could not finish its identity reset, so ${PRODUCT} does not let its box user in, and VesnALIA's daemon and Tailscale stay off. The next start tries again; alia-box-identity.service in the box says why.`);
       last = boot ? `its identity check says ${boot}` : read.stderr.trim();
       if (!kicked && this.#now() >= kickAt) {
         kicked = true;
         await command.run(IDENTITY_KICK, { timeoutMs: 60_000, signal, maxOutputBytes: 4096 }).catch(() => undefined);
-        this.#context.log?.(`${this.#logName}: sandbox ${sandbox} had not run its identity check ${Math.round(IDENTITY_KICK_AFTER_MS / 1000)} s after it answered, so bb-box started it.`);
+        this.#context.log?.(`${this.#logName}: sandbox ${sandbox} had not run its identity check ${Math.round(IDENTITY_KICK_AFTER_MS / 1000)} s after it answered, so alia-box started it.`);
       }
       await this.#sleep(250, signal);
     }
-    throw new Error(`boat's sandbox ${sandbox} did not finish checking whether it is a copy in time${last ? ` (${last})` : ""}, so ${PRODUCT} does not let its box user in. bb-box-identity.service in the box says why.`);
+    throw new Error(`boat's sandbox ${sandbox} did not finish checking whether it is a copy in time${last ? ` (${last})` : ""}, so ${PRODUCT} does not let its box user in. alia-box-identity.service in the box says why.`);
   }
 
   async #restored(sandbox: string, deadline: number, signal?: AbortSignal): Promise<void> {
@@ -1469,7 +1469,7 @@ export class BoatBackend implements Backend {
       await this.#api.waitFor(sandbox, (each) => each.hydrated, deadline, signal);
     } catch (error) {
       if (!(error instanceof BoatError && error.kind === "busy")) throw error;
-      this.#context.log?.(`${this.#logName}: sandbox ${sandbox} was still restoring its template ${Math.round(RESTORE_WAIT_MS / 1000)} s on, so bb-box goes on before boat has finished, and Cua Driver or the device server may not answer until they start again.`);
+      this.#context.log?.(`${this.#logName}: sandbox ${sandbox} was still restoring its template ${Math.round(RESTORE_WAIT_MS / 1000)} s on, so alia-box goes on before boat has finished, and Cua Driver or the device server may not answer until they start again.`);
     }
   }
 
@@ -1487,7 +1487,7 @@ export class BoatBackend implements Backend {
       if (mode) return mode;
       await this.#sleep(250, signal);
     }
-    throw new Error(`The box's desktop did not start: ${DISPLAY_MODE_FILE} is missing after ${Math.round(DISPLAY_WAIT_MS / 1000)} s. Check bb-box-display.service in boat's desktop template.`);
+    throw new Error(`The box's desktop did not start: ${DISPLAY_MODE_FILE} is missing after ${Math.round(DISPLAY_WAIT_MS / 1000)} s. Check alia-box-display.service in boat's desktop template.`);
   }
 
   async #join(sandbox: string, name: string, tailnet: Tailnet, signal?: AbortSignal): Promise<void> {

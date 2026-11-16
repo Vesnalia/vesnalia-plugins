@@ -2,7 +2,7 @@
 // to the host worker on the machine that owns the worktree, relays the
 // worker's signals (job progress, file watch) to open app pages, and keeps
 // the favourites.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   hostContract,
@@ -72,8 +72,8 @@ function isDeadlineFailure(error: unknown): boolean {
 
 const repoKey = (hostId: string, repoRoot: string) => `${hostId}\0${repoRoot}`;
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     updateStrategy: {
       type: "select",
       label: "Update Project strategy",
@@ -115,8 +115,8 @@ export default async function plugin(bb: BbPluginApi) {
 
   // Host calls are only legal from handlers, services and timers; creating
   // the client here is fine.
-  const host = bb.hosts.experimental_client({ contract: hostContract, experimental_signals: hostSignals });
-  const changes = createAfterMutation(bb);
+  const host = alia.hosts.experimental_client({ contract: hostContract, experimental_signals: hostSignals });
+  const changes = createAfterMutation(alia);
 
   // Which environments a host repository serves, learned from overviews, so
   // a watch or job signal (which only knows the repository) reaches the
@@ -160,7 +160,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function resolveTarget(threadId: string): Promise<RepositoryTarget | { unavailable: string }> {
     try {
-      return await repositoryForThread(bb, threadId);
+      return await repositoryForThread(alia, threadId);
     } catch (error) {
       if (error instanceof RepositoryUnavailableError) return { unavailable: error.message };
       throw error;
@@ -168,11 +168,11 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function transportFailure(reason: string, target: RepositoryTarget, error: unknown): GitError {
-    // bb's 30 s deadline, an offline host or a crashed worker: the daemon
+    // VesnALIA's 30 s deadline, an offline host or a crashed worker: the daemon
     // cancels the call, it does not undo git. Report a typed result and
     // refresh, because the mutation may well have completed.
     const message = error instanceof Error ? error.message : String(error);
-    bb.log.warn(`${reason} on ${target.environmentId} did not report back: ${message}`);
+    alia.log.warn(`${reason} on ${target.environmentId} did not report back: ${message}`);
     return {
       code: isDeadlineFailure(error) ? "timeout" : "git_failed",
       message: `${VERB[reason] ?? reason} did not report back: ${message}`,
@@ -182,9 +182,9 @@ export default async function plugin(bb: BbPluginApi) {
 
   function logMutation(reason: string, threadId: string, target: RepositoryTarget): void {
     // Every mutation is visible in the plugin log with the thread that asked
-    // for it: the RPC route is local-auth like all of bb's API, so this is the
+    // for it: the RPC route is local-auth like all of VesnALIA's API, so this is the
     // audit trail, not a guard (see docs/SAFETY.md).
-    bb.log.info(`${reason} requested for thread ${threadId} on ${target.hostId}:${target.repoPath}`);
+    alia.log.info(`${reason} requested for thread ${threadId} on ${target.hostId}:${target.repoPath}`);
   }
 
   async function withTarget(
@@ -231,7 +231,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     if (start.ok) {
       jobs.set(start.jobId, { environmentId: target.environmentId, hostId: target.hostId, reason });
-      bb.log.info(`${reason} job ${start.jobId} started for thread ${threadId}: ${start.command}`);
+      alia.log.info(`${reason} job ${start.jobId} started for thread ${threadId}: ${start.command}`);
     } else {
       remember(target, start.overview);
     }
@@ -264,12 +264,12 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function readFavourites(key: string): Promise<string[]> {
-    const stored = await bb.storage.kv.get<unknown>(key);
+    const stored = await alia.storage.kv.get<unknown>(key);
     return Array.isArray(stored) ? stored.filter((name): name is string => typeof name === "string") : [];
   }
 
   async function allFavourites(): Promise<FavouriteRepo[]> {
-    const keys = await bb.storage.kv.list(FAVOURITE_PREFIX);
+    const keys = await alia.storage.kv.list(FAVOURITE_PREFIX);
     const repos: FavouriteRepo[] = [];
     for (const key of keys) {
       const rest = key.slice(FAVOURITE_PREFIX.length);
@@ -284,7 +284,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   const readFailure = (error: GitError) => ({ ok: false as const, error });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async overview({ threadId }) {
       const target = await resolveTarget(threadId);
       if ("unavailable" in target) return unavailableOverview(target.unavailable);
@@ -368,7 +368,7 @@ export default async function plugin(bb: BbPluginApi) {
     async jobCancel({ threadId, jobId }) {
       const target = await resolveTarget(threadId);
       if ("unavailable" in target) return { cancelled: false };
-      bb.log.info(`job ${jobId} cancel requested for thread ${threadId}`);
+      alia.log.info(`job ${jobId} cancel requested for thread ${threadId}`);
       return host.call("jobCancel", { repoPath: target.repoPath, jobId }, { hostId: target.hostId });
     },
 
@@ -493,16 +493,16 @@ export default async function plugin(bb: BbPluginApi) {
 
     /**
      * The one method that touches no repository: it hands the commit to the
-     * agent in this thread. `queue-if-active` is what bb's own composer uses,
+     * agent in this thread. `queue-if-active` is what VesnALIA's own composer uses,
      * so a click during a running turn waits behind it instead of steering
      * it, and the input carries no `visibility`, which is what makes it an
      * ordinary user message in the transcript.
      */
     async sendToAgent({ threadId, variant }) {
       const { message } = AGENT_ACTIONS[variant];
-      bb.log.info(`agent ${variant} requested for thread ${threadId}`);
+      alia.log.info(`agent ${variant} requested for thread ${threadId}`);
       try {
-        const sent = await bb.sdk.threads.send({
+        const sent = await alia.sdk.threads.send({
           threadId,
           input: [{ type: "text", text: message, mentions: [] }],
           mode: "queue-if-active",
@@ -510,7 +510,7 @@ export default async function plugin(bb: BbPluginApi) {
         return { ok: true as const, delivery: sent.delivery };
       } catch (error) {
         const reason = error instanceof Error ? error.message : String(error);
-        bb.log.warn(`agent ${variant} for thread ${threadId} was not delivered: ${reason}`);
+        alia.log.warn(`agent ${variant} for thread ${threadId} was not delivered: ${reason}`);
         return {
           ok: false as const,
           error: {
@@ -535,9 +535,9 @@ export default async function plugin(bb: BbPluginApi) {
     async clearFavourites({ hostId, repoRoot }) {
       // The key is rebuilt here, so the caller can only ever address a
       // favourites row of this plugin's own store.
-      await bb.storage.kv.delete(favouriteKey(hostId, repoRoot));
-      bb.log.info(`favourites cleared for ${hostId}:${repoRoot}`);
-      bb.realtime.publish(CHANGED_CHANNEL, { hostId, reason: "favourites" });
+      await alia.storage.kv.delete(favouriteKey(hostId, repoRoot));
+      alia.log.info(`favourites cleared for ${hostId}:${repoRoot}`);
+      alia.realtime.publish(CHANGED_CHANNEL, { hostId, reason: "favourites" });
       return { repos: await allFavourites() };
     },
 
@@ -550,7 +550,7 @@ export default async function plugin(bb: BbPluginApi) {
           ? current
           : [...current, name].slice(-MAX_FAVOURITES)
         : current.filter((candidate) => candidate !== name);
-      await bb.storage.kv.set(key.key, names);
+      await alia.storage.kv.set(key.key, names);
       const target = await resolveTarget(threadId);
       if (!("unavailable" in target)) changes.publish(target.environmentId, "favourites");
       return { names };
@@ -558,7 +558,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // -------------------------------------------------------------------------
-  // Read-only surfaces: `bb vcs-widget` and one agent tool. Both go through
+  // Read-only surfaces: `alia vcs-widget` and one agent tool. Both go through
   // the same reader, which only ever calls the two reading host methods, so
   // no argv and no model can reach a mutation (docs/SAFETY.md).
   // -------------------------------------------------------------------------
@@ -584,19 +584,19 @@ export default async function plugin(bb: BbPluginApi) {
     },
   };
 
-  bb.cli.register({
+  alia.cli.register({
     name: CLI_NAME,
     summary: CLI_SUMMARY,
     commands: CLI_COMMANDS,
     run: (argv, ctx) => runCli(argv, ctx.threadId, cliReader),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "vcs_widget_status",
     description:
       "Read the git state of this thread's worktree: the current branch and upstream, the working tree counts, the branch lists or the recent commits. Read-only — it cannot check out, commit, push or change anything.",
     instructions:
-      "vcs_widget_status reads the same repository the user's VCS Widget popup shows. It cannot change git state, and neither can `bb vcs-widget`: checkout, commit, push, rebase and the rest are the human's to run from the popup, the Commit panel or the Git Log. Do not run `git` yourself to work around that unless the user asked for that change.",
+      "vcs_widget_status reads the same repository the user's VCS Widget popup shows. It cannot change git state, and neither can `alia vcs-widget`: checkout, commit, push, rebase and the rest are the human's to run from the popup, the Commit panel or the Git Log. Do not run `git` yourself to work around that unless the user asked for that change.",
     presentation: {
       label: { pending: "Reading the git state", completed: "Read the git state" },
     },
@@ -640,12 +640,12 @@ export default async function plugin(bb: BbPluginApi) {
     const known = jobs.get(payload.jobId);
     const environmentId = known?.environmentId ?? environmentsForRepo(hostId, payload.repoRoot)[0] ?? null;
     const relay: JobRealtimePayload = { environmentId, hostId, jobId: payload.jobId, event: payload.event };
-    bb.realtime.publish(JOB_CHANNEL, relay);
+    alia.realtime.publish(JOB_CHANNEL, relay);
     if (payload.event.kind !== "finished") return;
     jobs.delete(payload.jobId);
     const reason = known?.reason ?? "job";
     const result = payload.event.result;
-    bb.log.info(`${reason} job ${payload.jobId} finished: ${result.ok ? result.message : `${result.error.code}: ${result.error.message}`}`);
+    alia.log.info(`${reason} job ${payload.jobId} finished: ${result.ok ? result.message : `${result.error.code}: ${result.error.message}`}`);
     for (const target of environmentId === null ? environmentsForRepo(hostId, payload.repoRoot) : [environmentId]) {
       if (result.ok) changes.afterMutation(target, reason);
       else changes.publish(target, `${reason}:failed`);
@@ -662,7 +662,7 @@ export default async function plugin(bb: BbPluginApi) {
     const targets = environmentsForRepo(hostId, payload.repoRoot);
     if (targets.length === 0) {
       const everyone: ChangedPayload = { hostId, reason: payload.reason };
-      bb.realtime.publish(CHANGED_CHANNEL, everyone);
+      alia.realtime.publish(CHANGED_CHANNEL, everyone);
       return;
     }
     for (const environmentId of targets) changes.publish(environmentId, payload.reason);
@@ -671,7 +671,7 @@ export default async function plugin(bb: BbPluginApi) {
   // A crashed worker may have left a mutation half-reported; tell every open
   // popup to refetch (a payload without environmentId means "everyone").
   const offWorkerExit = host.experimental_onWorkerExit(({ hostId }) => {
-    bb.log.warn(`host worker on ${hostId} exited unexpectedly`);
+    alia.log.warn(`host worker on ${hostId} exited unexpectedly`);
     for (const [jobId, job] of jobs) {
       if (job.hostId !== hostId) continue;
       jobs.delete(jobId);
@@ -688,18 +688,18 @@ export default async function plugin(bb: BbPluginApi) {
           },
         },
       };
-      bb.realtime.publish(JOB_CHANNEL, relay);
+      alia.realtime.publish(JOB_CHANNEL, relay);
     }
-    bb.realtime.publish(CHANGED_CHANNEL, { hostId, reason: "worker-exit" });
+    alia.realtime.publish(CHANGED_CHANNEL, { hostId, reason: "worker-exit" });
   });
 
-  // bb's daemon watches every environment and reports git ref and work-tree
+  // VesnALIA's daemon watches every environment and reports git ref and work-tree
   // changes (agent checkouts, terminal commits). Republish them on our channel
   // so open popups refetch without polling.
   let disposed = false;
   let unsubscribe: (() => void) | null = null;
   try {
-    unsubscribe = bb.sdk.subscribe({
+    unsubscribe = alia.sdk.subscribe({
       event: "environment:changed",
       callback: (event) => {
         // An event already in flight when the plugin reloads must not touch
@@ -711,14 +711,14 @@ export default async function plugin(bb: BbPluginApi) {
       },
     });
   } catch (error) {
-    bb.log.warn(
+    alia.log.warn(
       `environment change subscription unavailable; popups refresh on open and after actions only: ${
         error instanceof Error ? error.message : String(error)
       }`,
     );
   }
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
     unsubscribe?.();
     offWorkerExit();
@@ -727,5 +727,5 @@ export default async function plugin(bb: BbPluginApi) {
     changes.dispose();
   });
 
-  bb.log.info("VCS Widget loaded");
+  alia.log.info("VCS Widget loaded");
 }

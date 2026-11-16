@@ -60,7 +60,7 @@ describe("isDarkColor", () => {
 describe("pickAccent", () => {
   const accent = { dark: "#f0916a", light: "#c2410c" };
 
-  it("takes the variant built for bb's appearance", () => {
+  it("takes the variant built for VesnALIA's appearance", () => {
     expect(pickAccent(accent, "dark")).toBe("#f0916a");
     expect(pickAccent(accent, "light")).toBe("#c2410c");
   });

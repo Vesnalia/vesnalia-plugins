@@ -26,7 +26,7 @@ interface Line {
 }
 
 export const HANGUP_COPY: Record<HangupReason, Line> = {
-  logoff: { headline: "NO CARRIER", detail: "Thanks for calling bbBBS. The line is free again.", action: "Redial" },
+  logoff: { headline: "NO CARRIER", detail: "Thanks for calling aliaBBS. The line is free again.", action: "Redial" },
   idle: { headline: "NO CARRIER", detail: "You went quiet, so the modem hung up. It happens to the best of us.", action: "Redial" },
   kicked: { headline: "NO CARRIER", detail: "The SysOp pulled the phone cord out of the wall.", action: "Redial" },
   bad_auth: {

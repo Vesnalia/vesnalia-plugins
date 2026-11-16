@@ -182,7 +182,7 @@ test("skill states: canonical, linked, duplicate, diverged and new", async () =>
       entries: [
         { name: "alpha", kind: "dir", target: null, hash: "aaa", hasSkillMd: true },
         { name: "beta", kind: "dir", target: null, hash: "bbb", hasSkillMd: true },
-        { name: "gamma", kind: "symlink", target: "/home/u/.bb/skills/gamma", hash: "ggg", hasSkillMd: true },
+        { name: "gamma", kind: "symlink", target: "/home/u/.vesnalia/skills/gamma", hash: "ggg", hasSkillMd: true },
       ],
     },
     {
@@ -192,11 +192,11 @@ test("skill states: canonical, linked, duplicate, diverged and new", async () =>
         { name: "beta", kind: "dir", target: null, hash: "bbb", hasSkillMd: true },
         { name: "alpha", kind: "dir", target: null, hash: "zzz", hasSkillMd: true },
         { name: "fresh", kind: "dir", target: null, hash: "fff", hasSkillMd: true },
-        { name: "ext", kind: "symlink", target: "/home/u/.bb/skills/ext", hash: "eee", hasSkillMd: true },
+        { name: "ext", kind: "symlink", target: "/home/u/.vesnalia/skills/ext", hash: "eee", hasSkillMd: true },
       ],
     },
     {
-      id: "bb", path: "/home/u/.bb/skills", exists: true,
+      id: "alia", path: "/home/u/.vesnalia/skills", exists: true,
       entries: [
         { name: "gamma", kind: "dir", target: null, hash: "ggg", hasSkillMd: true },
       ],
@@ -206,8 +206,8 @@ test("skill states: canonical, linked, duplicate, diverged and new", async () =>
   assert.deepEqual(by("alpha"), ["linked", "diverged"]);
   assert.deepEqual(by("beta"), ["copy"]);
   assert.deepEqual(by("fresh"), ["only-here"]);
-  // ссылка в дом BB — дубль реестра BB, а не безымянная внешняя ссылка
-  assert.deepEqual(by("ext"), ["bb-registry"]);
+  // ссылка в дом VesnALIA — дубль реестра VesnALIA, а не безымянная внешняя ссылка
+  assert.deepEqual(by("ext"), ["alia-registry"]);
   assert.deepEqual(by("gamma"), ["canonical-source"]);
   assert.equal(rows.filter((r) => r.name === "junk").length, 0);
 });

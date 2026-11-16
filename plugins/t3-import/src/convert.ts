@@ -1,8 +1,8 @@
-// Converts a T3 Code thread timeline into bb thread events. The shapes follow
-// the events bb's own Claude Code and Codex providers record: a user message
+// Converts a T3 Code thread timeline into VesnALIA thread events. The shapes follow
+// the events VesnALIA's own Claude Code and Codex providers record: a user message
 // is a client/turn/requested event followed by turn/started and
 // turn/input/accepted; agent output is item/completed rows; turn/completed
-// closes the turn. bb only replays these rows, so nothing is re-executed.
+// closes the turn. VesnALIA only replays these rows, so nothing is re-executed.
 import { randomBytes } from "node:crypto";
 import type { T3Entry, T3Thread, T3Timeline } from "./t3.ts";
 import { record, string } from "./t3.ts";
@@ -31,7 +31,7 @@ export interface History {
 }
 
 export interface ConvertOptions {
-  /** Session ID the bb thread resumes; null leaves the thread without a provider identity. */
+  /** Session ID the VesnALIA thread resumes; null leaves the thread without a provider identity. */
   providerThreadId: string | null;
 }
 

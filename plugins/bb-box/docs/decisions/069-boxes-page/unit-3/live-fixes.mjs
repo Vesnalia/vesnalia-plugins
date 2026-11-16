@@ -12,7 +12,7 @@ const steps = range === "1h" ? 60 : range === "24h" ? 144 : 168;
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 1900 } });
-await page.goto(`${base}/plugins/bb-box/desktop/box/${boxId}`);
+await page.goto(`${base}/plugins/alia-box/desktop/box/${boxId}`);
 const skip = page.getByText("Skip setup");
 if (await skip.waitFor({ timeout: 8000 }).then(() => true, () => false)) {
   await skip.click();

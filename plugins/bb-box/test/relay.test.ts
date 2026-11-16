@@ -132,7 +132,7 @@ import { spawn } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { userInfo } from "node:os";
 import { join } from "node:path";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { hostEntry } from "../src/host/entry.ts";
 import { endpointOf, refusal } from "../src/host/relay.ts";
 import { REOPEN_MS, RELAY_ROUTE, RelayHub } from "../src/relay/hub.ts";
@@ -164,9 +164,9 @@ test("the docker CLI's connections reach Docker on the machine through the relay
   const dir = tempDir("relay");
   const docker = await fakeDocker(join(dir, "docker.sock"));
   t.after(() => docker.close());
-  const saved = process.env.BB_SERVER_URL;
-  process.env.BB_SERVER_URL = "https://bb.example.com/";
-  t.after(() => (saved === undefined ? delete process.env.BB_SERVER_URL : (process.env.BB_SERVER_URL = saved)));
+  const saved = process.env.ALIA_SERVER_URL;
+  process.env.ALIA_SERVER_URL = "https://bb.example.com/";
+  t.after(() => (saved === undefined ? delete process.env.ALIA_SERVER_URL : (process.env.ALIA_SERVER_URL = saved)));
 
   let hub!: RelayHub;
   const { urls, connectTo } = joined(() => hub);
@@ -177,7 +177,7 @@ test("the docker CLI's connections reach Docker on the machine through the relay
     dir: tempDir("relay-hub"),
     open: async (hostId, secret) => {
       calls.push(hostId);
-      return worker.experimental_call("relay", { secret, path: `/api/v1/plugins/bb-box/http${RELAY_ROUTE}` });
+      return worker.experimental_call("relay", { secret, path: `/api/v1/plugins/alia-box/http${RELAY_ROUTE}` });
     },
     keep: async () => false,
     logError: () => {},
@@ -195,7 +195,7 @@ test("the docker CLI's connections reach Docker on the machine through the relay
   assert.deepEqual(JSON.parse(two.text), { path: "/containers/create", method: "POST", got: 300_000 });
   assert.deepEqual(calls, ["host_abc"], "one relay serves every connection");
   assert.equal(hub.reopening("host_abc"), false, "open");
-  assert.match(urls[0]!, /^wss:\/\/bb\.example\.com\/api\/v1\/plugins\/bb-box\/http\/docker-relay\?s=[0-9a-f]{32}$/);
+  assert.match(urls[0]!, /^wss:\/\/alia\.example\.com\/api\/v1\/plugins\/alia-box\/http\/docker-relay\?s=[0-9a-f]{32}$/);
   assert.equal(worker.experimental_getRetainedWorkerLeaseCount(), 1, "the worker holds a lease while the relay is open");
 
   // The same secret again is refused.
@@ -239,7 +239,7 @@ function hijackingDocker(listen: string | { host: string }, form: "101" | "200")
 }
 
 test("an attached run returns its output after the client half-closes, for a unix socket and a TCP port, in both hijack forms", async (t) => {
-  process.env.BB_SERVER_URL ??= "https://bb.example.com";
+  process.env.ALIA_SERVER_URL ??= "https://bb.example.com";
   const forms = ["101", "200"] as const;
   const targets = ["unix", "tcp"] as const;
   for (const target of targets) {
@@ -254,7 +254,7 @@ test("an attached run returns its output after the client half-closes, for a uni
       t.after(() => worker.experimental_dispose());
       hub = new RelayHub({
         dir: tempDir("relay-hub"),
-        open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/bb-box/http/docker-relay" }),
+        open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/alia-box/http/docker-relay" }),
         keep: async () => false,
         logError: () => {},
       });
@@ -297,12 +297,12 @@ test("a connection whose input ends first still gets its output, as docker exec 
   });
   await new Promise<void>((resolve) => docker.listen(join(dir, "docker.sock"), () => resolve()));
   t.after(() => docker.close());
-  process.env.BB_SERVER_URL ??= "https://bb.example.com";
+  process.env.ALIA_SERVER_URL ??= "https://bb.example.com";
   let hub!: RelayHub;
   const { connectTo } = joined(() => hub);
   const worker = experimental_createHostEntryHarness(hostEntry({ relay: { connect: connectTo, endpoint: async () => ({ path: join(dir, "docker.sock") }) } }));
   t.after(() => worker.experimental_dispose());
-  hub = new RelayHub({ dir: tempDir("relay-hub"), open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/bb-box/http/docker-relay" }), keep: async () => false, logError: () => {} });
+  hub = new RelayHub({ dir: tempDir("relay-hub"), open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/alia-box/http/docker-relay" }), keep: async () => false, logError: () => {} });
   t.after(() => hub.dispose());
   const path = (await hub.endpoint("host_half")).slice("unix://".length);
   const reply = await new Promise<string>((resolve, reject) => {
@@ -316,30 +316,30 @@ test("a connection whose input ends first still gets its output, as docker exec 
   assert.equal(reply, `read ${2 * 1024 * 1024}`);
 });
 
-test("a machine the relay cannot reach answers the docker CLI with the reason, and an idle relay closes when BB Box has no box there", async (t) => {
+test("a machine the relay cannot reach answers the docker CLI with the reason, and an idle relay closes when VesnALIA Box has no box there", async (t) => {
   const failing = new RelayHub({ dir: tempDir("relay-fail"), open: async () => Promise.reject(new Error("Host is not connected")), keep: async () => false, logError: () => {} });
   t.after(() => failing.dispose());
   const path = (await failing.endpoint("host_off")).slice("unix://".length);
   const answer = await get(path, "/_ping");
   assert.equal(answer.status, 503);
-  assert.equal(answer.text, "bb-box could not reach Docker on the BB machine: Host is not connected");
+  assert.equal(answer.text, "alia-box could not reach Docker on the VesnALIA machine: Host is not connected");
 
   const silent = new RelayHub({ dir: tempDir("relay-silent"), open: async () => {}, keep: async () => false, logError: () => {}, acceptMs: 100 });
   t.after(() => silent.dispose());
   const late = await get((await silent.endpoint("host_late")).slice("unix://".length), "/_ping");
-  assert.match(late.text, /the machine's worker did not connect to bb-box within 0 s/);
+  assert.match(late.text, /the machine's worker did not connect to alia-box within 0 s/);
 
   // An idle relay closes, so the worker's lease goes.
   const dir = tempDir("relay-idle");
   const docker = await fakeDocker(join(dir, "docker.sock"));
   t.after(() => docker.close());
-  process.env.BB_SERVER_URL ??= "https://bb.example.com";
+  process.env.ALIA_SERVER_URL ??= "https://bb.example.com";
   let hub!: RelayHub;
   const { connectTo } = joined(() => hub);
   const worker = experimental_createHostEntryHarness(hostEntry({ relay: { connect: connectTo, endpoint: async () => ({ path: join(dir, "docker.sock") }) } }));
   t.after(() => worker.experimental_dispose());
   const logs: string[] = [];
-  hub = new RelayHub({ dir: tempDir("relay-hub"), open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/bb-box/http/docker-relay" }), keep: async () => false, logError: () => {}, log: (line) => logs.push(line), idleMs: 50 });
+  hub = new RelayHub({ dir: tempDir("relay-hub"), open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/alia-box/http/docker-relay" }), keep: async () => false, logError: () => {}, log: (line) => logs.push(line), idleMs: 50 });
   t.after(() => hub.dispose());
   await get((await hub.endpoint("host_idle")).slice("unix://".length), "/_ping");
   for (let i = 0; i < 100 && worker.experimental_getRetainedWorkerLeaseCount(); i++) await new Promise((r) => setTimeout(r, 10));
@@ -349,34 +349,34 @@ test("a machine the relay cannot reach answers the docker CLI with the reason, a
 
 test("Docker the machine cannot reach answers the docker CLI with the machine's reason, not EOF, and the hub logs it", async (t) => {
   const missing = join(tempDir("relay-reset"), "docker.sock");
-  process.env.BB_SERVER_URL ??= "https://bb.example.com";
+  process.env.ALIA_SERVER_URL ??= "https://bb.example.com";
   let hub!: RelayHub;
   const { connectTo } = joined(() => hub);
   const worker = experimental_createHostEntryHarness(hostEntry({ relay: { connect: connectTo, endpoint: async () => ({ path: missing }) } }));
   t.after(() => worker.experimental_dispose());
   const logs: string[] = [];
-  hub = new RelayHub({ dir: tempDir("relay-hub"), open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/bb-box/http/docker-relay" }), keep: async () => false, logError: () => {}, log: (line) => logs.push(line) });
+  hub = new RelayHub({ dir: tempDir("relay-hub"), open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/alia-box/http/docker-relay" }), keep: async () => false, logError: () => {}, log: (line) => logs.push(line) });
   t.after(() => hub.dispose());
   const answer = await get((await hub.endpoint("host_nodocker")).slice("unix://".length), "/_ping");
   const reason = `Docker at ${missing}: connect ENOENT ${missing}`;
-  assert.deepEqual([answer.status, answer.text], [503, `bb-box could not reach Docker on the BB machine: ${reason}`]);
-  assert.ok(logs.includes(`Docker on BB machine host_nodocker did not answer: ${reason}`), logs.join("\n"));
+  assert.deepEqual([answer.status, answer.text], [503, `alia-box could not reach Docker on the VesnALIA machine: ${reason}`]);
+  assert.ok(logs.includes(`Docker on VesnALIA machine host_nodocker did not answer: ${reason}`), logs.join("\n"));
 });
 
-test("a worker socket that opens after BB Box stopped waiting is closed, so no relay keeps the worker's lease", async (t) => {
+test("a worker socket that opens after VesnALIA Box stopped waiting is closed, so no relay keeps the worker's lease", async (t) => {
   const dir = tempDir("relay-late");
   const docker = await fakeDocker(join(dir, "docker.sock"));
   t.after(() => docker.close());
-  process.env.BB_SERVER_URL ??= "https://bb.example.com";
+  process.env.ALIA_SERVER_URL ??= "https://bb.example.com";
   let hub!: RelayHub;
   // It upgrades at once, which takes its secret, and opens after the accept timer.
   const { connectTo } = joined(() => hub, { openAfterMs: 150 });
   const worker = experimental_createHostEntryHarness(hostEntry({ relay: { connect: connectTo, endpoint: async () => ({ path: join(dir, "docker.sock") }) } }));
   t.after(() => worker.experimental_dispose());
-  hub = new RelayHub({ dir: tempDir("relay-hub"), open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/bb-box/http/docker-relay" }), keep: async () => false, logError: () => {}, acceptMs: 50, pingMs: 10 });
+  hub = new RelayHub({ dir: tempDir("relay-hub"), open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/alia-box/http/docker-relay" }), keep: async () => false, logError: () => {}, acceptMs: 50, pingMs: 10 });
   t.after(() => hub.dispose());
   const late = await get((await hub.endpoint("host_late_open")).slice("unix://".length), "/_ping");
-  assert.match(late.text, /the machine's worker did not connect to bb-box within 0 s/);
+  assert.match(late.text, /the machine's worker did not connect to alia-box within 0 s/);
   assert.equal(worker.experimental_getRetainedWorkerLeaseCount(), 1, "the worker waits for its socket to open");
   for (let i = 0; i < 100 && worker.experimental_getRetainedWorkerLeaseCount(); i++) await new Promise((r) => setTimeout(r, 10));
   assert.equal(worker.experimental_getRetainedWorkerLeaseCount(), 0);
@@ -392,25 +392,25 @@ test("the worker finds Docker as the docker CLI would", () => {
   assert.equal(endpointOf("ssh://me@host"), null);
 });
 
-test("a Docker socket that refuses BB's daemon says to put its user in the socket's group and restart the daemon with it", () => {
+test("a Docker socket that refuses VesnALIA's daemon says to put its user in the socket's group and restart the daemon with it", () => {
   const { username, uid } = userInfo();
   const socket = { path: "/var/run/docker.sock" };
   const denied = Object.assign(new Error("connect EACCES /var/run/docker.sock"), { code: "EACCES" });
   assert.equal(
     refusal(socket, denied, "linux"),
-    `${username} may not use Docker's socket /var/run/docker.sock. Add ${username} to its group, usually docker, then restart ${username}'s services so BB's daemon has the group: sudo systemctl restart user@${uid}.service.`,
+    `${username} may not use Docker's socket /var/run/docker.sock. Add ${username} to its group, usually docker, then restart ${username}'s services so VesnALIA's daemon has the group: sudo systemctl restart user@${uid}.service.`,
   );
-  assert.equal(refusal(socket, denied, "darwin"), `${username} may not use Docker's socket /var/run/docker.sock. Add ${username} to its group, usually docker, then restart BB's daemon.`);
+  assert.equal(refusal(socket, denied, "darwin"), `${username} may not use Docker's socket /var/run/docker.sock. Add ${username} to its group, usually docker, then restart VesnALIA's daemon.`);
   assert.equal(refusal({ path: "\\\\.\\pipe\\docker_engine" }, denied, "win32"), null);
   assert.equal(refusal({ host: "127.0.0.1", port: 2375 }, denied, "linux"), null);
   assert.equal(refusal(socket, Object.assign(new Error("connect ENOENT /var/run/docker.sock"), { code: "ENOENT" }), "linux"), null);
 });
 
-test("a connection to a relay that went quiet asks BB first: it fails at once when the machine is offline, and gets a new relay when it is not; a worker's exit drops the relay", async (t) => {
+test("a connection to a relay that went quiet asks VesnALIA first: it fails at once when the machine is offline, and gets a new relay when it is not; a worker's exit drops the relay", async (t) => {
   const dir = tempDir("relay-stale");
   const docker = await fakeDocker(join(dir, "docker.sock"));
   t.after(() => docker.close());
-  process.env.BB_SERVER_URL ??= "https://bb.example.com";
+  process.env.ALIA_SERVER_URL ??= "https://bb.example.com";
   let hub!: RelayHub;
   const { connectTo } = joined(() => hub);
   // Pings far apart, so a relay goes quiet quickly in this test.
@@ -420,7 +420,7 @@ test("a connection to a relay that went quiet asks BB first: it fails at once wh
   let opens = 0;
   hub = new RelayHub({
     dir: tempDir("relay-hub"),
-    open: (_hostId, secret) => (opens++, worker.experimental_call("relay", { secret, path: "/api/v1/plugins/bb-box/http/docker-relay" })),
+    open: (_hostId, secret) => (opens++, worker.experimental_call("relay", { secret, path: "/api/v1/plugins/alia-box/http/docker-relay" })),
     keep: async () => true,
     offline: async () => offline,
     logError: () => {},
@@ -433,10 +433,10 @@ test("a connection to a relay that went quiet asks BB first: it fails at once wh
   assert.equal(opens, 1);
 
   await new Promise((r) => setTimeout(r, 100));
-  offline = "devpc is offline in BB.";
+  offline = "devpc is offline in VesnALIA.";
   const started = Date.now();
   const refused = await get(path, "/_ping");
-  assert.deepEqual([refused.status, refused.text], [503, "bb-box could not reach Docker on the BB machine: devpc is offline in BB."]);
+  assert.deepEqual([refused.status, refused.text], [503, "alia-box could not reach Docker on the VesnALIA machine: devpc is offline in VesnALIA."]);
   assert.ok(Date.now() - started < 1_000, "at once, not when the pings stop");
 
   // Back online: a new relay serves it.
@@ -447,7 +447,7 @@ test("a connection to a relay that went quiet asks BB first: it fails at once wh
   assert.equal((await get(path, "/_ping")).status, 200, "a quiet relay to a connected machine is replaced");
   assert.equal(opens, 3);
 
-  // BB says the machine's worker exited: the relay goes, and the next connection opens another.
+  // VesnALIA says the machine's worker exited: the relay goes, and the next connection opens another.
   hub.drop("host_pc", "the machine's worker exited");
   await new Promise((r) => setImmediate(r));
   assert.equal(hub.reopening("host_pc"), true, "lost: a box there is waited for (#415)");
@@ -458,12 +458,12 @@ test("a connection to a relay that went quiet asks BB first: it fails at once wh
 
 test("a file copy through the worker refuses a file outside its folder or missing, and keeps no file that does not match the box's (#492)", async (t) => {
   const dir = tempDir("file-relay");
-  process.env.BB_SERVER_URL ??= "https://bb.example.com";
+  process.env.ALIA_SERVER_URL ??= "https://bb.example.com";
   let relay!: FileRelay;
   const { connectTo } = joined(() => relay);
   const worker = experimental_createHostEntryHarness(hostEntry({ files: { connect: connectTo } }));
   t.after(() => worker.experimental_dispose());
-  relay = new FileRelay({ call: (_hostId, request) => worker.experimental_call("file", { ...request, path: `/api/v1/plugins/bb-box/http${FILE_ROUTE}` }) as never, logError: () => {} });
+  relay = new FileRelay({ call: (_hostId, request) => worker.experimental_call("file", { ...request, path: `/api/v1/plugins/alia-box/http${FILE_ROUTE}` }) as never, logError: () => {} });
   const nothing = async () => undefined;
 
   await assert.rejects(relay.copy("host_abc", { file: "/etc/hostname", root: dir, direction: "send" }, nothing), /\/etc\/hostname is not within /);
@@ -475,11 +475,11 @@ test("a file copy through the worker refuses a file outside its folder or missin
   const sending = (channel: NodeJS.WritableStream) => new Promise<void>((resolve) => channel.end("after", () => resolve()));
   await assert.rejects(relay.copy("host_abc", { file: join(dir, "kept.bin"), root: dir, direction: "receive", expect }, sending), /not the box's 5 bytes with 0{64}: the file may have changed in the box/);
   assert.equal(readFileSync(join(dir, "kept.bin"), "utf8"), "before");
-  assert.equal(existsSync(join(dir, "kept.bin.bb-box-part")), false);
+  assert.equal(existsSync(join(dir, "kept.bin.alia-box-part")), false);
 });
 
 test("wsl dial-stdio returns what it writes after the client half-closes", async (t) => {
-  process.env.BB_SERVER_URL ??= "https://bb.example.com";
+  process.env.ALIA_SERVER_URL ??= "https://bb.example.com";
   const dial = () => {
     const child = spawn(process.execPath, ["-e", "process.stdin.resume(); process.stdin.on('end', () => process.stdout.end('after-half-close'))"], { stdio: ["pipe", "pipe", "pipe"] });
     if (!child.stdin || !child.stdout || !child.stderr) throw new Error("dial-stdio did not open its pipes");
@@ -489,7 +489,7 @@ test("wsl dial-stdio returns what it writes after the client half-closes", async
   const { connectTo } = joined(() => hub);
   const worker = experimental_createHostEntryHarness(hostEntry({ relay: { connect: connectTo, endpoint: async () => ({ wsl: { distro: "bbdocker", user: "box" } }), dial } }));
   t.after(() => worker.experimental_dispose());
-  hub = new RelayHub({ dir: tempDir("relay-hub"), open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/bb-box/http/docker-relay" }), keep: async () => false, logError: () => {} });
+  hub = new RelayHub({ dir: tempDir("relay-hub"), open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/alia-box/http/docker-relay" }), keep: async () => false, logError: () => {} });
   t.after(() => hub.dispose());
   const socketPath = (await hub.endpoint("host_wsl")).slice("unix://".length);
   const reply = await new Promise<string>((resolve, reject) => {
@@ -504,7 +504,7 @@ test("wsl dial-stdio returns what it writes after the client half-closes", async
 });
 
 test("a relay open names the machine's Docker host, and the machine dials that instead of its own", async (t) => {
-  process.env.BB_SERVER_URL ??= "https://bb.example.com";
+  process.env.ALIA_SERVER_URL ??= "https://bb.example.com";
   const seen: string[] = [];
   const dial = (wsl: { distro: string; user: string | null }) => {
     seen.push(wsl.user ? `${wsl.user}@${wsl.distro}` : wsl.distro);
@@ -526,7 +526,7 @@ test("a relay open names the machine's Docker host, and the machine dials that i
   t.after(() => worker.experimental_dispose());
   hub = new RelayHub({
     dir: tempDir("relay-hub"),
-    open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/bb-box/http/docker-relay", dockerHost: "wsl://archlinux" }),
+    open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/alia-box/http/docker-relay", dockerHost: "wsl://archlinux" }),
     keep: async () => false,
     logError: () => {},
   });
@@ -550,7 +550,7 @@ test("a relay open names the machine's Docker host, and the machine dials that i
 });
 
 test("a dial-stdio child that exits without stdout gives the client the reason, and the hub logs it", async (t) => {
-  process.env.BB_SERVER_URL ??= "https://bb.example.com";
+  process.env.ALIA_SERVER_URL ??= "https://bb.example.com";
   const dial = () => {
     const child = spawn(process.execPath, ["-e", "process.stderr.end('no such distro', () => process.exit(1))"], { stdio: ["pipe", "pipe", "pipe"] });
     if (!child.stdin || !child.stdout || !child.stderr) throw new Error("dial-stdio did not open its pipes");
@@ -561,11 +561,11 @@ test("a dial-stdio child that exits without stdout gives the client the reason, 
   const worker = experimental_createHostEntryHarness(hostEntry({ relay: { connect: connectTo, endpoint: async () => ({ wsl: { distro: "missing", user: null } }), dial } }));
   t.after(() => worker.experimental_dispose());
   const logs: string[] = [];
-  hub = new RelayHub({ dir: tempDir("relay-hub"), open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/bb-box/http/docker-relay" }), keep: async () => false, logError: () => {}, log: (line) => logs.push(line) });
+  hub = new RelayHub({ dir: tempDir("relay-hub"), open: (_hostId, secret) => worker.experimental_call("relay", { secret, path: "/api/v1/plugins/alia-box/http/docker-relay" }), keep: async () => false, logError: () => {}, log: (line) => logs.push(line) });
   t.after(() => hub.dispose());
   const answer = await get((await hub.endpoint("host_wsl_fail")).slice("unix://".length), "/_ping");
-  assert.deepEqual([answer.status, answer.text], [503, "bb-box could not reach Docker on the BB machine: no such distro"]);
-  assert.ok(logs.includes("Docker on BB machine host_wsl_fail did not answer: no such distro"), logs.join("\n"));
+  assert.deepEqual([answer.status, answer.text], [503, "alia-box could not reach Docker on the VesnALIA machine: no such distro"]);
+  assert.ok(logs.includes("Docker on VesnALIA machine host_wsl_fail did not answer: no such distro"), logs.join("\n"));
 });
 
 test("a wsl host whose dial-stdio cannot start fails the docker check with the reason", async () => {

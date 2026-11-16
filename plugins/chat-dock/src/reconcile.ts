@@ -11,8 +11,8 @@ import { plan, type Want } from "./model";
  * single move, never through the column, so the lock switching is not seen.
  *
  * Every reconcile runs from a page-wide mutation observer, so it lands in the same
- * task as BB's own DOM change, before a paint: a shell that mounts with a new
- * thread's column is docked before it is ever drawn in the column, and when BB
+ * task as VesnALIA's own DOM change, before a paint: a shell that mounts with a new
+ * thread's column is docked before it is ever drawn in the column, and when VesnALIA
  * remounts the panel's column after a plugin setting write, which throws the
  * host out with the shell inside, the host is moved into the fresh column just
  * as invisibly. A backstop timer covers what the observer cannot see.
@@ -104,7 +104,7 @@ function tabIn(panel: Panel): Tab | undefined {
 
 /** Puts every pane's shell where it belongs. */
 export function reconcile(): void {
-  // A release can put a shell in a column that then belongs in a host again (a drawer BB replaced): look again.
+  // A release can put a shell in a column that then belongs in a host again (a drawer VesnALIA replaced): look again.
   for (let pass = 0; pass < 3 && reconcileOnce(); pass++);
 }
 
@@ -150,7 +150,7 @@ function reconcileOnce(): boolean {
       held.set(root, { kind, host, panel, dock: entry.dock });
       log("move", { from: entry.kind, to: kind });
     } else if (step === "keep" && entry && kind === "strip" && entry.host.parentElement !== panel.column) {
-      // The host's column was replaced under it, or it sat in the aside while BB had
+      // The host's column was replaced under it, or it sat in the aside while VesnALIA had
       // the panel flat and the column is back: into the right one, shell and all.
       panel.column.appendChild(entry.host);
       entry.panel = panel;

@@ -1,12 +1,12 @@
 // Server entry: exposes the host's Kimi Code limits as a usage source for
-// BB's built-in "Provider usage" view.
+// VesnALIA's built-in "Provider usage" view.
 //
 // The built-in provider-usage plugin discovers any loaded plugin that serves
 // `provider-usage.v1.listResources` and `provider-usage.v1.getResource`:
 // listResources declares the resources this plugin owns and getResource returns
 // the live numbers for exactly one of them. Nothing here touches the provider
 // itself, so it works beside the ACP-registry `acp-kimi-code` provider.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { hostContract, type HostUsageResult } from "./contract.js";
 
@@ -170,13 +170,13 @@ function formatReport(rows: readonly CliRow[]): string {
 }
 
 /** ACP provider that owns the Kimi Code subscription. The usage row is only
- * meaningful when that provider is part of this bb, so the plugin advertises no
+ * meaningful when that provider is part of this VesnALIA, so the plugin advertises no
  * resource without it. */
 const ACP_PROVIDER_ID = "acp-kimi-code";
 
-async function acpProviderReady(bb: BbPluginApi): Promise<boolean> {
+async function acpProviderReady(alia: AliaPluginApi): Promise<boolean> {
   try {
-    const catalog = await bb.sdk.providers.catalog();
+    const catalog = await alia.sdk.providers.catalog();
     const entry = catalog.find((candidate) => candidate.id === ACP_PROVIDER_ID);
     return (
       entry !== undefined &&
@@ -189,13 +189,13 @@ async function acpProviderReady(bb: BbPluginApi): Promise<boolean> {
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const hostClient = bb.hosts.experimental_client({ contract: hostContract });
+export default async function plugin(alia: AliaPluginApi) {
+  const hostClient = alia.hosts.experimental_client({ contract: hostContract });
 
   async function connectedHosts(): Promise<
     Array<{ id: string; name: string }>
   > {
-    const hosts = await bb.sdk.hosts.list({ includeCreating: false });
+    const hosts = await alia.sdk.hosts.list({ includeCreating: false });
     return hosts
       .filter((host) => host.status === "connected" && host.type !== "ephemeral")
       .map((host) => ({ id: host.id, name: host.name }));
@@ -262,13 +262,13 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.rpc.register(
+  alia.rpc.register(
     usageRpc,
     {
       "provider-usage.v1.listResources": async () => {
-        if (!(await acpProviderReady(bb))) return { resources: [] };
+        if (!(await acpProviderReady(alia))) return { resources: [] };
         const hosts = await connectedHosts();
-        // A host whose Kimi Code login is gone has nothing to meter: bb already
+        // A host whose Kimi Code login is gone has nothing to meter: VesnALIA already
         // reports the provider's auth state, and an "expired" row here would
         // only repeat it.
         const measured = await Promise.all(
@@ -321,15 +321,15 @@ export default async function plugin(bb: BbPluginApi) {
     return rows;
   }
 
-  // `bb kimi-usage` prints the same numbers from a terminal.
-  bb.cli.register({
+  // `alia kimi-usage` prints the same numbers from a terminal.
+  alia.cli.register({
     name: "kimi-usage",
     summary: "Show Kimi Code plan limits per host",
     commands: [
       {
         name: "show",
         summary: "Show limits for every connected host",
-        usage: "bb kimi-usage show [--host <id>] [--json]",
+        usage: "alia kimi-usage show [--host <id>] [--json]",
       },
     ],
     async run(argv) {

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { mirrorConfig } from "../mirror.config.ts";
-import type { BbPluginApi, PluginRpcHandlers } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginRpcHandlers } from "@vesnalia/plugin-sdk";
 import { conflictChoiceSchema, type ConflictChoice } from "../shared/conflicts.ts";
 import { canonicalIdSchema } from "../shared/catalog.ts";
 import type { rpcContract, conflictRpcContract, StateResponse } from "../shared/rpc.ts";
@@ -10,14 +10,14 @@ import { errorMessage } from "./updates.ts";
 const commandSchema = z.enum(["status", "list", "enable", "disable", "inherit", "check-updates", "conflicts", "resolve"]);
 type Command = z.infer<typeof commandSchema>;
 const commandUsage = {
-  conflicts: "bb matt-pocock-skills-for-bb conflicts [--project <id>] [--json]",
-  resolve: "bb matt-pocock-skills-for-bb resolve <id> --choice theirs|both|ours [--project <id>] [--json]",
-  status: "bb matt-pocock-skills-for-bb status [--json]",
-  list: "bb matt-pocock-skills-for-bb list [--project <id>] [--json]",
-  enable: "bb matt-pocock-skills-for-bb enable <id...> [--project <id>] [--json]",
-  disable: "bb matt-pocock-skills-for-bb disable <id...> [--project <id>] [--cascade] [--json]",
-  inherit: "bb matt-pocock-skills-for-bb inherit --project <id> [--json]",
-  "check-updates": "bb matt-pocock-skills-for-bb check-updates [--json]",
+  conflicts: "alia matt-pocock-skills-for-alia conflicts [--project <id>] [--json]",
+  resolve: "alia matt-pocock-skills-for-alia resolve <id> --choice theirs|both|ours [--project <id>] [--json]",
+  status: "alia matt-pocock-skills-for-alia status [--json]",
+  list: "alia matt-pocock-skills-for-alia list [--project <id>] [--json]",
+  enable: "alia matt-pocock-skills-for-alia enable <id...> [--project <id>] [--json]",
+  disable: "alia matt-pocock-skills-for-alia disable <id...> [--project <id>] [--cascade] [--json]",
+  inherit: "alia matt-pocock-skills-for-alia inherit --project <id> [--json]",
+  "check-updates": "alia matt-pocock-skills-for-alia check-updates [--json]",
 } satisfies Record<Command, string>;
 const summaries = {
   conflicts: "Refresh conflict sources and scoped outcomes", resolve: "Save a project conflict choice",
@@ -26,7 +26,7 @@ const summaries = {
   inherit: "Make a project use the global settings again", "check-updates": "Check upstream main and plugin releases",
 } satisfies Record<Command, string>;
 const usage = `Usage:\n${Object.values(commandUsage).map(line => `  ${line}`).join("\n")}`;
-const updateCommand = "bb plugin update matt-pocock-skills-for-bb";
+const updateCommand = "alia plugin update matt-pocock-skills-for-alia";
 const onOff = (value: boolean) => value ? "on" : "off";
 
 function parseArguments(command: Command, args: readonly string[], projectId?: string) {
@@ -64,7 +64,7 @@ function parseArguments(command: Command, args: readonly string[], projectId?: s
   if (command === "inherit" && scope.kind !== "project") throw new Error(commandUsage.inherit);
   if (command === "conflicts" || command === "resolve") {
     if (scope.kind === "global" && projectId) scope = { kind: "project", projectId };
-    if (scope.kind !== "project") throw new Error("Conflict commands require --project or a current bb project");
+    if (scope.kind !== "project") throw new Error("Conflict commands require --project or a current VesnALIA project");
   }
   if (command === "resolve" && (!choice || ids.length !== 1)) throw new Error(commandUsage.resolve);
   if (command === "enable" || command === "disable" || command === "resolve") {
@@ -103,7 +103,7 @@ function listRows(state: StateResponse, scope: Scope) {
       const delivery = entry.resolved.find(row => row.canonicalId === skill.canonicalId);
       return delivery ? [{
         projectId: delivery.conflict.projectId, generation: entry.snapshot.generation,
-        bbName: delivery.bbName, outcome: delivery.outcome, active: delivery.active,
+        aliaName: delivery.aliaName, outcome: delivery.outcome, active: delivery.active,
         requestedChoice: delivery.conflict.requestedChoice, reason: delivery.reason,
         conflictReason: delivery.conflict.reason,
       }] : [];
@@ -131,10 +131,10 @@ function listText(state: StateResponse, scope: Scope) {
     ];
     if (scope.kind === "project") {
       if (skill.deliveries.length === 0) {
-        lines.push(`  Delivery: scan pending; name=${skill.bbName ?? "none"}; active=${onOff(skill.active)}; outcome=${skill.outcome}; requested=${skill.conflict.requestedChoice}; reason=${skill.reason}; ${skill.conflict.reason}`);
+        lines.push(`  Delivery: scan pending; name=${skill.aliaName ?? "none"}; active=${onOff(skill.active)}; outcome=${skill.outcome}; requested=${skill.conflict.requestedChoice}; reason=${skill.reason}; ${skill.conflict.reason}`);
       }
       for (const delivery of skill.deliveries) {
-        lines.push(`  Delivery: project=${delivery.projectId}; scan=${delivery.generation}; name=${delivery.bbName ?? "none"}; active=${onOff(delivery.active)}; outcome=${delivery.outcome}; requested=${delivery.requestedChoice}; reason=${delivery.reason}; ${delivery.conflictReason}`);
+        lines.push(`  Delivery: project=${delivery.projectId}; scan=${delivery.generation}; name=${delivery.aliaName ?? "none"}; active=${onOff(delivery.active)}; outcome=${delivery.outcome}; requested=${delivery.requestedChoice}; reason=${delivery.reason}; ${delivery.conflictReason}`);
       }
     }
     return lines.join("\n");
@@ -142,8 +142,8 @@ function listText(state: StateResponse, scope: Scope) {
   return [heading, ...rows].join("\n");
 }
 
-export function registerCli(bb: BbPluginApi, handlers: PluginRpcHandlers<typeof rpcContract & typeof conflictRpcContract>) {
-  bb.cli.register({
+export function registerCli(alia: AliaPluginApi, handlers: PluginRpcHandlers<typeof rpcContract & typeof conflictRpcContract>) {
+  alia.cli.register({
     name: mirrorConfig.identity.cliName, summary: "Manage Matt Pocock skills globally or per project",
     commands: commandSchema.options.map(name => ({ name, summary: summaries[name], usage: commandUsage[name] })),
     async run(argv, context) {
@@ -179,13 +179,13 @@ export function registerCli(bb: BbPluginApi, handlers: PluginRpcHandlers<typeof 
             const state = await handlers.matt_pocock_state({ scope });
             const active = state.resolved.filter(skill => selectionFor(state, scope, skill).active).length;
             return reply(state, [
-              `Installed bb plugin version: ${state.installedPluginVersion ?? state.update?.installedPluginVersion ?? "unknown"}`,
+              `Installed VesnALIA plugin version: ${state.installedPluginVersion ?? state.update?.installedPluginVersion ?? "unknown"}`,
               `Bundled Matt Pocock skills ${state.catalog.upstream.version}`,
               "Matt's plugin manifest version at this commit",
               `Bundled SHA: ${state.catalog.upstream.commit}`,
               `Upstream committed date: ${state.catalog.upstream.committedAt}`,
               `Global selection: master=${onOff(state.global.enabled)}; active=${active}/${state.resolved.length}; project delivery is evaluated per provider`,
-              `Latest bb plugin version: ${state.update?.latestPluginVersion ?? "unknown"}`,
+              `Latest VesnALIA plugin version: ${state.update?.latestPluginVersion ?? "unknown"}`,
               `Latest upstream main SHA: ${state.update?.latestUpstreamCommit ?? "unknown"}`,
               `Upstream main commits listed before the bundled SHA: ${state.update?.upstreamAheadCount ?? "unknown"}`,
               "The main-history list count does not establish ancestry.",
@@ -215,7 +215,7 @@ export function registerCli(bb: BbPluginApi, handlers: PluginRpcHandlers<typeof 
               `Latest Matt Pocock main commit: ${result.latestUpstreamCommit ?? "unknown"}`,
               `Upstream main commits listed before the bundled SHA: ${result.upstreamAheadCount ?? "unknown"}`,
               "The main-history list count does not establish ancestry.",
-              `Latest bb plugin version: ${result.latestPluginVersion ?? "unknown"}`,
+              `Latest VesnALIA plugin version: ${result.latestPluginVersion ?? "unknown"}`,
               ...(result.error ? [`Update error: ${result.error}`] : []),
               `Update command: ${updateCommand}`,
             ].join("\n"));

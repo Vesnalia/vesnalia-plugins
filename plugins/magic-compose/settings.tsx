@@ -1,4 +1,4 @@
-// The Magic Compose settings page: the sections under BB's own card, which
+// The Magic Compose settings page: the sections under VesnALIA's own card, which
 // holds the API keys. They are laid out by the question Jev answers, with each
 // question's instructions beside the list it chooses from.
 import { type ReactNode, useCallback, useEffect, useState } from "react";
@@ -6,7 +6,7 @@ import {
   experimental_ProviderModelPicker as ProviderModelPicker,
   type PluginAppBuilder,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { DecisionSummary, rpcContract, ScopeOptions } from "./server";
 import type { RotationEntry } from "./lib/router";
 import {
@@ -433,7 +433,7 @@ function AboutSection() {
     <div className="space-y-2">
       <Instructions
         what="general instructions"
-        placeholder="I'm a solo developer. My main repo is bb."
+        placeholder="I'm a solo developer. My main repo is VesnALIA."
         value={preferences.generalInstructions}
         onSave={(generalInstructions) => save({ generalInstructions })}
       />
@@ -895,7 +895,7 @@ function MoreSection() {
             ))}
           </div>
           <p className="text-xs text-muted-foreground">
-            For threads started with <code>bb magic-compose spawn</code>, lowered where a machine or
+            For threads started with <code>alia magic-compose spawn</code>, lowered where a machine or
             provider allows less. In the composer, the permission picker is yours.
           </p>
         </div>
@@ -921,7 +921,7 @@ function MoreSection() {
   );
 }
 
-/** The plugin's sections, in the order they are read. BB's card with the API keys comes first. */
+/** The plugin's sections, in the order they are read. VesnALIA's card with the API keys comes first. */
 export function registerSettings(app: PluginAppBuilder): void {
   app.slots.settingsSection({
     id: "try",

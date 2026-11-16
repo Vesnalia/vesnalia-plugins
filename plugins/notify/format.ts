@@ -1,4 +1,4 @@
-// Pure text and policy helpers. No BB API, no child processes — everything
+// Pure text and policy helpers. No VesnALIA API, no child processes — everything
 // here is directly testable.
 
 /** Escaped markdown literals are parked at this offset while syntax is stripped. */
@@ -8,10 +8,10 @@ export const MAX_RUN_SECONDS = 30 * 24 * 60 * 60;
 
 /** A unique tag keeps a later turn from replacing an earlier macOS alert. */
 export function notificationTag(id: number): string {
-  return `bb-notify-${id}`;
+  return `alia-notify-${id}`;
 }
 
-/** Only the signed desktop app can post a notification attributed to bb. */
+/** Only the signed desktop app can post a notification attributed to VesnALIA. */
 export function isDesktopNotificationHost(desktopBridge: unknown): boolean {
   return desktopBridge !== undefined;
 }
@@ -102,7 +102,7 @@ export function plainText(markdown: string): string {
   );
 }
 
-/** BB entity ids are opaque slugs; reject anything else before acting on one. */
+/** VesnALIA entity ids are opaque slugs; reject anything else before acting on one. */
 export function isThreadId(value: string): boolean {
   return /^[A-Za-z0-9_-]{1,64}$/u.test(value);
 }
@@ -114,7 +114,7 @@ export function parseSeconds(value: string): number {
   return Math.min(parsed, MAX_RUN_SECONDS);
 }
 
-/** The flags `bb notify send` understands. Anything else is a typo. */
+/** The flags `alia notify send` understands. Anything else is a typo. */
 const SEND_FLAGS = new Set(["title", "thread", "message"]);
 
 export interface SendArgs {
@@ -126,7 +126,7 @@ export interface SendArgs {
 }
 
 /**
- * Parse the argument list of `bb notify send`.
+ * Parse the argument list of `alia notify send`.
  *
  * Hand-rolled because the plugin CLI hands over a raw argv, but strict where
  * the earlier pass was permissive: a misspelled flag used to swallow the word
@@ -172,7 +172,7 @@ export function parseSendArgs(
   if (message === "") {
     return {
       ok: false,
-      error: 'usage: bb notify send "<message>" [--title <text>] [--thread <id>]',
+      error: 'usage: VesnALIA notify send "<message>" [--title <text>] [--thread <id>]',
     };
   }
 

@@ -8,7 +8,7 @@ Do, for all three tools (Prototype, Paint, Slides) and the launcher:
    - a document already saved/opened → saved back to its own file (`Prototypes/<name>.wireframe.json` + PNG refreshed at most every 30 s; Paint/<name>…; Slides/<name>…);
    - a new unsaved document → `Prototypes/Без названия.wireframe.json` (Paint/Slides likewise), name made unique; renaming via «Сохранить как» moves it.
    A small status in the toolbar: «Сохранено» / «Сохранение…» / «Не сохранено — повторить» with time on hover.
-3. **Restore on open**: when the Studio tab mounts for a thread it reopens the last tool with its document and view state (memory → localStorage → last autosaved file of that tool in thread storage), so hiding/showing the panel, switching chats and reloading BB all bring the work back. «Новый» starts a new document explicitly (asking to keep/close the current one only if it has unsaved changes and autosave failed).
+3. **Restore on open**: when the Studio tab mounts for a thread it reopens the last tool with its document and view state (memory → localStorage → last autosaved file of that tool in thread storage), so hiding/showing the panel, switching chats and reloading VesnALIA all bring the work back. «Новый» starts a new document explicitly (asking to keep/close the current one only if it has unsaved changes and autosave failed).
 4. Undo history survives unmount within the session (memory store), not across reloads.
 5. Tests (node:test, .ts): session store get/set/serialise with caps, debounce/flush helper with fake timers, restore precedence (memory > localStorage > file list newest).
 

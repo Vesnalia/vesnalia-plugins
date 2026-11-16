@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import Database from "better-sqlite3";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import plugin from "../src/server.ts";
 import type { Recap, RecapSettings } from "../src/server.ts";
 
@@ -30,8 +30,8 @@ async function createHarness(options: {
     recap_display_mode_set: (input: { displayMode: RecapSettings["displayMode"] }) => Promise<{ displayMode: RecapSettings["displayMode"] }>;
   };
   const thread = (id: string) => ({ id, projectId: "p", environmentId: null, providerId: "p", status: "idle", visibility: "visible" as const, originPluginId: null, originKind: null, parentThreadId: null as string | null });
-  const bb = {
-    pluginId: "bb-recap",
+  const alia = {
+    pluginId: "alia-recap",
     storage: {
       database: () => db,
       migrate: (_: unknown, statements: string[]) => statements.forEach((statement) => db.exec(statement)),
@@ -55,8 +55,8 @@ async function createHarness(options: {
     rpc: { register: (_: unknown, registered: typeof handlers) => { handlers = registered; } },
     cli: { register: () => {} }, events: { on: (name: string, callback: (payload: unknown) => void) => { events.set(name, callback); } },
     realtime: { publish: () => {} }, log: { info: () => {}, warn: () => {} }, onDispose: (callback: typeof dispose) => { dispose = callback; },
-  } as unknown as BbPluginApi;
-  await plugin(bb);
+  } as unknown as AliaPluginApi;
+  await plugin(alia);
   return {
     db,
     settings,
@@ -175,8 +175,8 @@ test("does not submit a transcript if its thread is hidden during model lookup",
     visibility,
     originPluginId: null,
   });
-  const bb = {
-    pluginId: "bb-recap",
+  const alia = {
+    pluginId: "alia-recap",
     storage: {
       database: () => db,
       migrate: (_database: Database.Database, statements: string[]) => {
@@ -267,9 +267,9 @@ test("does not submit a transcript if its thread is hidden during model lookup",
     onDispose: (dispose: () => void | Promise<void>) => {
       disposers.push(dispose);
     },
-  } as unknown as BbPluginApi;
+  } as unknown as AliaPluginApi;
 
-  await plugin(bb);
+  await plugin(alia);
   try {
     const generation = handlers.recap_generate({
       threadId: "source-thread",
@@ -330,7 +330,7 @@ test("a running child thread keeps its parent active", async () => {
     children = [listedChild({ status: "idle" })];
     assert.ok((await harness.handlers.recap_generate({ threadId: "parent", automatic: false })).recap);
 
-    children = [listedChild({ id: "worker", status: "active", originPluginId: "bb-recap" })];
+    children = [listedChild({ id: "worker", status: "active", originPluginId: "alia-recap" })];
     harness.activate("parent");
     assert.ok((await harness.handlers.recap_generate({ threadId: "parent", automatic: false })).recap);
 

@@ -1,5 +1,5 @@
 // Click a markdown table in the timeline to open it full width in a modal
-// <dialog>. bb renders markdown tables as
+// <dialog>. VesnALIA renders markdown tables as
 //   [data-markdown-preview] div.my-2.flex > div.overflow-x-auto > table
 // We tag each such table, show a small expand button on hover, and open a
 // clone of the table in a top-layer dialog on click (Esc/backdrop closes).

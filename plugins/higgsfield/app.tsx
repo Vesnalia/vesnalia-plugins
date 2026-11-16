@@ -1,4 +1,4 @@
-// bb-plugin-higgsfield — the Higgsfield credits dashboard page.
+// alia-plugin-higgsfield — the Higgsfield credits dashboard page.
 //
 // The server's `dashboard` RPC returns every loaded transaction plus the
 // detected billing cycle and forecast; range-dependent numbers are computed
@@ -18,7 +18,7 @@ import {
   UrlLink,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { Dashboard, rpcContract } from "./server";
 import {
   dailyBalance,

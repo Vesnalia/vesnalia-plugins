@@ -1,9 +1,9 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { memberSchema, runSchema, type Audit } from "./contract";
 import { runReference, textOf, type Input } from "./core";
 import type { Store, Run } from "./store";
 
-type Event = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["events"]["list"]>>[number];
+type Event = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["events"]["list"]>>[number];
 type RequestEvent = Extract<Event, { type: "client/turn/requested" }>;
 const isRequest = (row: Event): row is RequestEvent => row.type === "client/turn/requested";
 function inputText(input: readonly Input[number][]) {
@@ -13,12 +13,12 @@ function clip(text: string, limit: number) {
   return text.length > limit ? `${text.slice(0, limit)}\n[Display truncated after ${limit} characters.]` : text;
 }
 
-export function createAudit(bb: BbPluginApi, store: Store) {
+export function createAudit(alia: AliaPluginApi, store: Store) {
   async function requests(threadId: string) {
     const result: RequestEvent[] = [];
     let beforeSeq: string | undefined;
     for (let page = 0; page < 5; page++) {
-      const rows = await bb.sdk.threads.events.list({ threadId, types: ["client/turn/requested"], order: "desc", limit: "100", ...(beforeSeq ? { beforeSeq } : {}) });
+      const rows = await alia.sdk.threads.events.list({ threadId, types: ["client/turn/requested"], order: "desc", limit: "100", ...(beforeSeq ? { beforeSeq } : {}) });
       result.push(...rows.filter(isRequest));
       if (rows.length < 100) break;
       const next = String(Math.min(...rows.map(row => row.seq)));
@@ -30,7 +30,7 @@ export function createAudit(bb: BbPluginApi, store: Store) {
   function runFromRequest(row: RequestEvent): Run | null {
     for (const block of row.data.input) {
       if (block.type !== "text" || block.visibility !== "agent-only") continue;
-      const id = block.text.match(/^\[bb-moa-reference:([0-9a-f-]{36})\]/)?.[1];
+      const id = block.text.match(/^\[alia-moa-reference:([0-9a-f-]{36})\]/)?.[1];
       const run = id ? store.get<Run>(`run:${id}`) : null;
       if (run?.threadId === row.threadId && run.advice
         && block.text === (runReference(run) as { text: string }).text) return run;

@@ -13,5 +13,5 @@ prompts/responses, or an unredacted exploit against a live installation.
 A private report should describe the affected version, minimal synthetic
 reproduction, expected behavior, observed behavior, and impact.
 
-Plugins execute with BB's trust. See README privacy and trust boundaries;
+Plugins execute with VesnALIA's trust. See README privacy and trust boundaries;
 preview redaction is defense in depth, not a guarantee that arbitrary text is safe.

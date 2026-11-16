@@ -1,11 +1,11 @@
-// bb-plugin-hats — switch the sidebar between named sets of projects.
+// alia-plugin-hats — switch the sidebar between named sets of projects.
 //
 // A hat is a name, an icon, and a set of projects; a project can be in any
 // number of hats. Switching to a hat hides every project that some other hat claims
 // but this one does not, by writing the thread list's `hiddenGroups`
 // preference. A project in no hat always shows.
 import { randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { HAT_ICONS } from "./icon-names";
 
@@ -72,14 +72,14 @@ const DEFAULT_STORE: Store = {
 
 class HatsError extends Error {}
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   async function listProjects(): Promise<Project[]> {
-    const projects = await bb.sdk.projects.list({ includePersonal: true });
+    const projects = await alia.sdk.projects.list({ includePersonal: true });
     return projects.map(({ id, name }) => ({ id, name }));
   }
 
   async function readStore(): Promise<Store> {
-    const stored = storeSchema.safeParse(await bb.storage.kv.get(STORE_KEY));
+    const stored = storeSchema.safeParse(await alia.storage.kv.get(STORE_KEY));
     return stored.success ? stored.data : structuredClone(DEFAULT_STORE);
   }
 
@@ -93,7 +93,7 @@ export default async function plugin(bb: BbPluginApi) {
         for (const id of hat.projectIds) if (!shown.has(id)) hidden.add(id);
       }
     }
-    const { preferences } = await bb.sdk.plugins.callRpc({
+    const { preferences } = await alia.sdk.plugins.callRpc({
       pluginId: THREAD_LIST,
       method: "listPreferences",
       input: null,
@@ -104,7 +104,7 @@ export default async function plugin(bb: BbPluginApi) {
     const kept = preferences.hiddenGroups.filter(
       (key) => !key.startsWith(PROJECT_PREFIX),
     );
-    await bb.sdk.plugins.callRpc({
+    await alia.sdk.plugins.callRpc({
       pluginId: THREAD_LIST,
       method: "setPreference",
       input: {
@@ -132,9 +132,9 @@ export default async function plugin(bb: BbPluginApi) {
     const run = queue.then(async () => {
       const { projects: _projects, ...store } = await readState();
       change(store);
-      await bb.storage.kv.set(STORE_KEY, store);
+      await alia.storage.kv.set(STORE_KEY, store);
       await applyStore(store);
-      bb.realtime.publish("changed", { activeId: store.activeId });
+      alia.realtime.publish("changed", { activeId: store.activeId });
       return readState();
     });
     queue = run.catch(() => undefined);
@@ -198,7 +198,7 @@ export default async function plugin(bb: BbPluginApi) {
       hat.projectIds = member ? [...others, projectId] : others;
     });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     state: () => readState(),
     wear: ({ id }) => wear(id),
     next: () => next(),
@@ -228,7 +228,7 @@ export default async function plugin(bb: BbPluginApi) {
     const [match] = matches;
     if (matches.length !== 1 || match === undefined) {
       throw new HatsError(
-        `No single ${kind} matches "${query}". Run "bb hats status" to see names.`,
+        `No single ${kind} matches "${query}". Run "alia hats status" to see names.`,
       );
     }
     return match;
@@ -261,32 +261,32 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb hats status [--json]",
-    "  bb hats wear <hat|none>",
-    "  bb hats next",
-    "  bb hats create <name> [icon]",
-    "  bb hats rename <hat> <new name>",
-    "  bb hats icon <hat> <icon>",
-    "  bb hats delete <hat>",
-    "  bb hats add <hat> <project>",
-    "  bb hats remove <hat> <project>",
-    "  bb hats icons",
+    "  VesnALIA hats status [--json]",
+    "  VesnALIA hats wear <hat|none>",
+    "  VesnALIA hats next",
+    "  VesnALIA hats create <name> [icon]",
+    "  VesnALIA hats rename <hat> <new name>",
+    "  VesnALIA hats icon <hat> <icon>",
+    "  VesnALIA hats delete <hat>",
+    "  VesnALIA hats add <hat> <project>",
+    "  VesnALIA hats remove <hat> <project>",
+    "  VesnALIA hats icons",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "hats",
     summary: "Switch the sidebar between named sets of projects",
     commands: [
-      { name: "status", summary: "Show hats, their projects, and the current hat", usage: "bb hats status [--json]" },
-      { name: "wear", summary: "Switch to a hat, or none to show every project", usage: "bb hats wear <hat|none>" },
-      { name: "next", summary: "Switch to the next hat in order", usage: "bb hats next" },
-      { name: "create", summary: "Create a hat", usage: "bb hats create <name> [icon]" },
-      { name: "rename", summary: "Rename a hat", usage: "bb hats rename <hat> <new name>" },
-      { name: "icon", summary: "Change a hat's icon", usage: "bb hats icon <hat> <icon>" },
-      { name: "delete", summary: "Delete a hat", usage: "bb hats delete <hat>" },
-      { name: "add", summary: "Add a project to a hat", usage: "bb hats add <hat> <project>" },
-      { name: "remove", summary: "Remove a project from a hat", usage: "bb hats remove <hat> <project>" },
-      { name: "icons", summary: "List the icons a hat can use", usage: "bb hats icons" },
+      { name: "status", summary: "Show hats, their projects, and the current hat", usage: "alia hats status [--json]" },
+      { name: "wear", summary: "Switch to a hat, or none to show every project", usage: "alia hats wear <hat|none>" },
+      { name: "next", summary: "Switch to the next hat in order", usage: "alia hats next" },
+      { name: "create", summary: "Create a hat", usage: "alia hats create <name> [icon]" },
+      { name: "rename", summary: "Rename a hat", usage: "alia hats rename <hat> <new name>" },
+      { name: "icon", summary: "Change a hat's icon", usage: "alia hats icon <hat> <icon>" },
+      { name: "delete", summary: "Delete a hat", usage: "alia hats delete <hat>" },
+      { name: "add", summary: "Add a project to a hat", usage: "alia hats add <hat> <project>" },
+      { name: "remove", summary: "Remove a project from a hat", usage: "alia hats remove <hat> <project>" },
+      { name: "icons", summary: "List the icons a hat can use", usage: "alia hats icons" },
     ],
     async run(argv) {
       const json = argv.includes("--json");

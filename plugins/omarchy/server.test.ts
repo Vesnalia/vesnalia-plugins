@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.js";
 
 const hostTheme = {
@@ -24,7 +24,7 @@ describe("server integration", () => {
     let primaryHostId = "host_pc";
     let connected = true;
     const calls: string[] = [];
-    let { bb, harness } = createFakePluginHost({
+    let { alia, harness } = createFakePluginHost({
       pluginId: "omarchy",
       sdk: {
         system: { config: () => ({ primaryHostId }) },
@@ -38,17 +38,17 @@ describe("server integration", () => {
         throw new Error(`Unexpected host method ${method}`);
       },
     });
-    await bb.storage.kv.set("preferences", { autoSync: true, syncCodeTheme: true, syncFavicon: false, animation: "smooth" });
+    await alia.storage.kv.set("preferences", { autoSync: true, syncCodeTheme: true, syncFavicon: false, animation: "smooth" });
     try {
-      await plugin(bb);
+      await plugin(alia);
       await harness.behavior.callRpc("setPreferences", { themeHostId: "host_pc" });
-      const overlay = await bb.storage.kv.get("client-theme");
+      const overlay = await alia.storage.kv.get("client-theme");
       primaryHostId = "host_dedi";
-      ({ bb, harness } = await harness.lifecycle.reload(plugin));
+      ({ alia, harness } = await harness.lifecycle.reload(plugin));
       expect(await harness.behavior.callRpc("sync", null)).toMatchObject({ phase: "synced", themeHostId: "host_pc" });
       connected = false;
       expect(await harness.behavior.callRpc("sync", null)).toMatchObject({ phase: "error", message: "Desktop is disconnected" });
-      expect(await bb.storage.kv.get("client-theme")).toEqual(overlay);
+      expect(await alia.storage.kv.get("client-theme")).toEqual(overlay);
       connected = true;
       expect(await harness.behavior.callRpc("sync", null)).toMatchObject({ phase: "synced" });
       expect(calls.every(id => id === "host_pc")).toBe(true);
@@ -59,7 +59,7 @@ describe("server integration", () => {
   it("preserves the overlay revision and sync timestamp until a palette or preference changes", async () => {
     vi.useFakeTimers();
     let theme = structuredClone(hostTheme);
-    let { bb, harness } = createFakePluginHost({
+    let { alia, harness } = createFakePluginHost({
       pluginId: "omarchy",
       sdk: {
         system: { config: () => ({ primaryHostId: "host-local" }) },
@@ -71,30 +71,30 @@ describe("server integration", () => {
       },
     });
     // Keep this test focused on palette writes rather than favicon selection.
-    await bb.storage.kv.set("preferences", { autoSync: true, syncCodeTheme: true, syncFavicon: false, animation: "smooth" });
+    await alia.storage.kv.set("preferences", { autoSync: true, syncCodeTheme: true, syncFavicon: false, animation: "smooth" });
     try {
-      await plugin(bb);
+      await plugin(alia);
       const first = await harness.behavior.callRpc("sync", null);
       expect(first).toMatchObject({ colors: { ansi: theme.colors.ansi } });
-      const overlay = await bb.storage.kv.get("client-theme");
+      const overlay = await alia.storage.kv.get("client-theme");
       vi.setSystemTime(Date.now() + 30_000);
       const repeated = await harness.behavior.callRpc("sync", null);
-      expect(await bb.storage.kv.get("client-theme")).toEqual(overlay);
+      expect(await alia.storage.kv.get("client-theme")).toEqual(overlay);
       expect(repeated).toEqual(first);
-      ({ bb, harness } = await harness.lifecycle.reload(plugin));
+      ({ alia, harness } = await harness.lifecycle.reload(plugin));
       await harness.behavior.callRpc("sync", null);
-      expect(await bb.storage.kv.get("client-theme")).toEqual(overlay);
+      expect(await alia.storage.kv.get("client-theme")).toEqual(overlay);
 
       theme = { ...theme, colors: { ...theme.colors, background: "#101010" } };
       vi.setSystemTime(Date.now() + 30_000);
       await harness.behavior.callRpc("sync", null);
-      const changed = await bb.storage.kv.get<{ css: string; revision: string }>("client-theme");
+      const changed = await alia.storage.kv.get<{ css: string; revision: string }>("client-theme");
       expect(changed).not.toEqual(overlay);
       expect(changed?.css).toContain("--canvas: #101010");
 
       vi.setSystemTime(Date.now() + 30_000);
       await harness.behavior.callRpc("setPreferences", { animation: "off" });
-      expect(await bb.storage.kv.get("client-theme")).not.toEqual(changed);
+      expect(await alia.storage.kv.get("client-theme")).not.toEqual(changed);
     } finally {
       await harness.lifecycle.dispose();
       vi.useRealTimers();
@@ -102,7 +102,7 @@ describe("server integration", () => {
   });
 
   it("serves a desktop/web overlay without changing the server palette used by mobile", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "omarchy",
       sdk: {
         system: { config: () => ({ primaryHostId: "host-local" }) },
@@ -118,10 +118,10 @@ describe("server integration", () => {
         throw new Error(`Unexpected host method ${method}`);
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
-    const result = await harness.behavior.callRpc("sync", null) as { phase: string; mode: string; bbThemeId: string };
-    expect(result).toMatchObject({ phase: "synced", mode: "dark", bbThemeId: "nord" });
+    const result = await harness.behavior.callRpc("sync", null) as { phase: string; mode: string; aliaThemeId: string };
+    expect(result).toMatchObject({ phase: "synced", mode: "dark", aliaThemeId: "nord" });
     expect(harness.inspection.sdk.callsTo("theme.set")).toEqual([]);
 
     const response = await harness.behavior.fetchHttp("GET", "/client-theme");

@@ -2,7 +2,7 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
 const out = process.env.LIVE_SHOTS ?? join(process.cwd(), "screens");
 mkdirSync(out, { recursive: true });
 
@@ -10,7 +10,7 @@ const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const browser = await chromium.launch();
 
 async function open(page, hash) {
-  await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   await page.locator(`[data-settings-view='${hash || "#"}']`).waitFor();
   await pause(800);
 }

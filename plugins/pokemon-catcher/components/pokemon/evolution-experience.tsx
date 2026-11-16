@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRealtime } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { usePreferences } from "../../hooks/use-preferences";
 import { spriteUrl } from "../../lib/pokemon/media";

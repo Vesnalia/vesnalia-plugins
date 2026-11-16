@@ -1,6 +1,6 @@
 # Notion Theme
 
-Notion's page colours and type for [BB](https://getbb.app), in light and dark.
+Notion's page colours and type for [VesnALIA](https://getbb.app), in light and dark.
 
 ![Notion Theme in light mode](screenshots/light.jpg)
 
@@ -14,7 +14,7 @@ Notion's page colours and type for [BB](https://getbb.app), in light and dark.
 
 ## What it does
 
-- One palette, `plugin:notion-theme:notion`, in Settings → Appearance and `bb theme list`. Light is Notion white / `#37352f`. Dark is `#191919`.
+- One palette, `plugin:notion-theme:notion`, in Settings → Appearance and `alia theme list`. Light is Notion white / `#37352f`. Dark is `#191919`.
 - Three content fonts — Default, Serif, Mono — applied to messages and the composer. The UI font stays Notion's default stack.
 - While the palette is on, menus, dialogs, switches, your message bubble, markdown and the prompt box follow Notion's shapes.
 - Hover cards close when the pointer leaves; a click pins them.
@@ -25,14 +25,14 @@ Notion's licensed fonts (Lyon-Text and the rest) are named first. The theme fall
 ## Install
 
 ```sh
-bb plugin install https://github.com/KosachMax/bb-plugin-notion-theme.git
-bb theme set plugin:notion-theme:notion
+alia plugin install https://github.com/KosachMax/bb-plugin-notion-theme.git
+alia theme set plugin:notion-theme:notion
 ```
 
-Back to BB's look:
+Back to VesnALIA's look:
 
 ```sh
-bb theme reset
+alia theme reset
 ```
 
 ## Font
@@ -40,7 +40,7 @@ bb theme reset
 On the plugin settings page, or:
 
 ```sh
-bb plugin config notion-theme set font serif
+alia plugin config notion-theme set font serif
 ```
 
 Values: `default`, `serif`, `mono`.
@@ -50,7 +50,7 @@ Values: `default`, `serif`, `mono`.
 ```sh
 npm install --include=dev
 npm run typecheck
-bb plugin build
+alia plugin build
 ```
 
 ## License

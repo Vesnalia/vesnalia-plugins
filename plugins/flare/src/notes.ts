@@ -26,7 +26,7 @@ export function nudgeText(minutes: number, again: boolean): string {
     again
       ? `${NUDGE_PREFIX} This turn has gone ${minutes} minutes since its last flare or reminder.`
       : `${NUDGE_PREFIX} This turn has run for ${minutes} minutes without a flare.`,
-    "If you finished a step, confirmed something, made a decision or hit a blocker since, use the flare tool (or `bb flare send`), then keep working. A title alone covers a quick status; render substantive evidence when a fitting engine is installed.",
+    "If you finished a step, confirmed something, made a decision or hit a blocker since, use the flare tool (or `alia flare send`), then keep working. A title alone covers a quick status; render substantive evidence when a fitting engine is installed.",
     "If there is nothing new, ignore this and carry on. Do not reply to this reminder.",
   ].join(" ");
 }
@@ -53,10 +53,10 @@ After many tool calls, check whether a flare-worthy moment went by. A turn of a 
 ## Render the evidence
 The title is one standalone line, about 80 characters; for a quick status it is the whole flare. For a finding with evidence, open the body with one or two sentences, then draw what you already measured or saved. A body that is all prose is right only when there is nothing to see. NEVER replace a chart, flow or screenshot with a wall of text.
 
-If genui is installed, prefer its \`ui\` components for evidence; if inline-vis is installed, use it for custom HTML/SVG. Markdown tables are a fallback, not the default with a suitable renderer. The Flares tab renders the body as a reply; a final-reply-only or plain-tool-input rule does not cover a flare's body. People read child agents' flares too. Missing check_ui or ui_examples does NOT mean genui is unavailable. If unsure, check installed renderers once with \`bb plugin list\`. Use this reference without extra tools or dependencies. If the renderer really is absent: without genui, use Markdown tables and mermaid.
+If genui is installed, prefer its \`ui\` components for evidence; if inline-vis is installed, use it for custom HTML/SVG. Markdown tables are a fallback, not the default with a suitable renderer. The Flares tab renders the body as a reply; a final-reply-only or plain-tool-input rule does not cover a flare's body. People read child agents' flares too. Missing check_ui or ui_examples does NOT mean genui is unavailable. If unsure, check installed renderers once with \`alia plugin list\`. Use this reference without extra tools or dependencies. If the renderer really is absent: without genui, use Markdown tables and mermaid.
 
 ## Compact genui reference
-In a complete \`\`\`ui fence: one expression per line, JS arrays/objects/variables, \`Load("$BB_THREAD_STORAGE/<path>")\`, named arguments last. Wrap in Card(title, children); Row(children) lays items side by side.
+In a complete \`\`\`ui fence: one expression per line, JS arrays/objects/variables, \`Load("$ALIA_THREAD_STORAGE/<path>")\`, named arguments last. Wrap in Card(title, children); Row(children) lays items side by side.
 - Counts: Metric(label, value, note?)
 - Timings/series: Chart(type, labels, series, unit: "ms"); type "bar" or "line", series a number array or {name: numberArray}
 - Attributes: Table(columns, rows), both arrays; rows contain value arrays
@@ -66,7 +66,7 @@ In a complete \`\`\`ui fence: one expression per line, JS arrays/objects/variabl
 - A change: save \`git diff -- <file>\` to thread storage, then Diff(Load(path)) per file. NEVER use Changes(), Commits(), PullRequest() or Threads(): they read the viewing thread, not the sender.
 - Phases/PRs: Steps([{title, detail, status}]); status "done", "current" or "blocked"
 A blocker says what failed and what the user can do; use Steps for several actions.
-Use the fitting component and measured data. Name files as \`$BB_THREAD_STORAGE/<path>\`; do not retype a saved report.
+Use the fitting component and measured data. Name files as \`$ALIA_THREAD_STORAGE/<path>\`; do not retype a saved report.
 
 Example body:
 
@@ -77,11 +77,11 @@ Example body:
     \`\`\`
 
 ## Inline-vis
-Use a complete \`\`\`inline-vis fence for small HTML/SVG with inline CSS/JS and data, using BB theme variables (--foreground, --primary). The companion has no sibling files. Do not build a page just for a status.
+Use a complete \`\`\`inline-vis fence for small HTML/SVG with inline CSS/JS and data, using VesnALIA theme variables (--foreground, --primary). The companion has no sibling files. Do not build a page just for a status.
 
 Drawing hints advise the NEXT flare; do not resend or reformat the saved one. Use Markdown if the suggested engine is absent. Hints share one budget: once per turn, or once an hour outside turns; never for blockers.
 
-Kinds: finding (default), progress, decision, blocker, summary. Notify only for urgency; blockers notify automatically. Finish with a normal final answer. If sending fails, retry once later if relevant; never stop or loop over it. \`flare_list\` recalls earlier flares. CLI: \`bb flare send "<title>" --body "$(cat body.md)"\`. Bodies: 60,000 characters.`;
+Kinds: finding (default), progress, decision, blocker, summary. Notify only for urgency; blockers notify automatically. Finish with a normal final answer. If sending fails, retry once later if relevant; never stop or loop over it. \`flare_list\` recalls earlier flares. CLI: \`alia flare send "<title>" --body "$(cat body.md)"\`. Bodies: 60,000 characters.`;
 
 export const SENT = "Flare sent. Keep working; nothing will reply.";
 export const DUPLICATE = "That flare was already sent a moment ago, so it went only once. Keep working.";

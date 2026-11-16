@@ -2,20 +2,20 @@
  * The thread header's way into the thread's Herald tab, the list of what
  * Herald said about its past turns.
  *
- * It is the megaphone of the older header slot on every bb, an icon button of
- * its own. bb 0.48's header thread actions (`placement: "header"`) would make
- * it a labelled button, but bb draws every plugin's header actions as one
+ * It is the megaphone of the older header slot on every VesnALIA, an icon button of
+ * its own. VesnALIA 0.48's header thread actions (`placement: "header"`) would make
+ * it a labelled button, but VesnALIA draws every plugin's header actions as one
  * split button — the first the main action, the rest in its dropdown — so
- * Herald would share a control with Diff Review's Review or bb's Commit. On
- * bb 0.48 the megaphone opens the tab, or closes it when it is already
- * showing, through the panel controller; bb 0.47 has none, so there it opens
+ * Herald would share a control with Diff Review's Review or VesnALIA's Commit. On
+ * VesnALIA 0.48 the megaphone opens the tab, or closes it when it is already
+ * showing, through the panel controller; VesnALIA 0.47 has none, so there it opens
  * the tab by its id.
  */
-import { useBbNavigate, type ExperimentalOpenTabOptions, type PluginAppSlots } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, type ExperimentalOpenTabOptions, type PluginAppSlots } from "@vesnalia/plugin-sdk/app";
 
 import { Icon } from "@/components/ui/icon";
 
-import { useAppPanel } from "./bb-features";
+import { useAppPanel } from "./alia-features";
 import { HERALD_ICONS } from "./icons";
 import { TipButton } from "./tip-button";
 
@@ -36,21 +36,21 @@ function MegaphoneButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-/** bb 0.48: the megaphone toggles the Herald tab of the thread whose header it is in. */
+/** VesnALIA 0.48: the megaphone toggles the Herald tab of the thread whose header it is in. */
 export function HeraldHeaderToggle(_props: { threadId: string }) {
   const panel = useAppPanel();
   return <MegaphoneButton onClick={() => void panel.toggleTab(HISTORY_TAB)} />;
 }
 
-/** bb 0.47: the megaphone opens the Herald tab by its id. */
+/** VesnALIA 0.47: the megaphone opens the Herald tab by its id. */
 export function HeraldHeaderAction(_props: { threadId: string }) {
-  const navigate = useBbNavigate() as unknown as LegacyNavigate;
+  const navigate = useAliaNavigate() as unknown as LegacyNavigate;
   return <MegaphoneButton onClick={() => void navigate.openThreadPanel({ actionId: HISTORY_PANEL_ACTION_ID })} />;
 }
 
 /**
- * The megaphone in the older header slot, which bb 0.48 still draws as its
- * own button: toggling through the panel controller where bb has one (0.48),
+ * The megaphone in the older header slot, which VesnALIA 0.48 still draws as its
+ * own button: toggling through the panel controller where VesnALIA has one (0.48),
  * opening by id otherwise.
  */
 export function registerHistoryOpener(slots: PluginAppSlots, hasPanelController: boolean): void {
@@ -61,12 +61,12 @@ export function registerHistoryOpener(slots: PluginAppSlots, hasPanelController:
   });
 }
 
-/** The older header slot, gone from the SDK's types since 0.6.92 and retired, still drawn, in bb 0.48. */
+/** The older header slot, gone from the SDK's types since 0.6.92 and retired, still drawn, in VesnALIA 0.48. */
 interface LegacySlots {
   experimental_threadHeaderAction(registration: { id: string; title: string; component: typeof HeraldHeaderAction }): void;
 }
 
-/** bb 0.47's way to open a thread tab, gone from the SDK's types since 0.6.88. */
+/** VesnALIA 0.47's way to open a thread tab, gone from the SDK's types since 0.6.88. */
 interface LegacyNavigate {
   openThreadPanel(options: { actionId: string }): boolean | Promise<boolean>;
 }

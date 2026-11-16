@@ -94,7 +94,7 @@ export function keyStep(event: {
   ctrlKey: boolean;
   altKey: boolean;
 }, hasCrosshair: boolean): KeyOutcome {
-  // Never swallow a host shortcut. Command-K belongs to bb, not to the device.
+  // Never swallow a host shortcut. Command-K belongs to VesnALIA, not to the device.
   if (event.metaKey || event.ctrlKey || event.altKey) return { kind: "ignore" };
 
   const jump = event.shiftKey ? CROSSHAIR_STEP_COARSE : CROSSHAIR_STEP;
@@ -143,7 +143,7 @@ export const LINE_HEIGHT_PX = 16;
  * `at` anchors the scroll to the pointer's position, so the list under the
  * cursor scrolls — rather than whatever happens to sit at the centre.
  *
- * `deltaMode` matters remotely: bb's own shell always sends pixels, but a
+ * `deltaMode` matters remotely: VesnALIA's own shell always sends pixels, but a
  * viewer on another browser may not — Firefox sends *lines*, and a line read
  * as a pixel is scrolling at a sixteenth of the intended speed, which feels
  * exactly like "slow or delayed".

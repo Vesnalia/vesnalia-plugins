@@ -1,11 +1,11 @@
 ---
 name: bearings
-description: Fleet digest from live BB crew state. Use when the user runs /bearings or asks for status, catch-up, or what's underway.
+description: Fleet digest from live VesnALIA crew state. Use when the user runs /bearings or asks for status, catch-up, or what's underway.
 ---
 
 # Bearings
 
-Call `firstmate_bearings` or `bb firstmate bearings`. That command owns the five sections. Do not scrape chat instead.
+Call `firstmate_bearings` or `alia firstmate bearings`. That command owns the five sections. Do not scrape chat instead.
 
 1. **Captain's Call** — decisions due, failed crews, PRs ready to merge with full `https://...` URL.
 2. **Recently Landed** — merged PRs, completed scouts.

@@ -1,21 +1,13 @@
 {
-  "name": "bb-plugin-provider-usage",
+  "name": "alia-plugin-provider-usage",
   "version": "0.15.1",
-  "description": "Live token throughput, remaining plan quota and reset windows for every signed-in provider, plus 7/30/90-day token volume from local transcripts and BB's own usage events.",
+  "description": "Live token throughput, remaining plan quota and reset windows for every signed-in provider, plus 7/30/90-day token volume from local transcripts and VesnALIA's own usage events.",
   "license": "MIT",
   "author": "Braedon Saunders",
   "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/braedonsaunders/bb-plugin-provider-usage.git"
-  },
-  "bugs": {
-    "url": "https://github.com/braedonsaunders/bb-plugin-provider-usage/issues"
-  },
-  "homepage": "https://github.com/braedonsaunders/bb-plugin-provider-usage#readme",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "usage",
     "quota",
     "tokens",
@@ -24,7 +16,7 @@
   "scripts": {
     "test": "node --experimental-strip-types --test test/*.test.mjs",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "files": [
     "app.tsx",
@@ -39,10 +31,10 @@
     "LICENSE"
   ],
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.37"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.37"
   },
-  "bb": {
+  "alia": {
     "name": "Provider Usage",
     "description": "Subscription limits, remaining quota, and global token usage across providers.",
     "branding": {
@@ -61,7 +53,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.37",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -85,5 +76,22 @@
     "tailwind-merge": "^3.4.0",
     "typescript": "^5.7.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/provider-usage#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/provider-usage"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,6 +1,6 @@
 // A stand-in for the plugin server on the other end of `moa_turn`: the tests
 // drive the real bridge and answer its tool calls from a scripted run log.
-import type { BridgeConformanceTransport } from "@get-bb/plugin-sdk/provider-bridge/testing";
+import type { BridgeConformanceTransport } from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import {
   MOA_TOOL_NAME,
   toolArgsSchema,

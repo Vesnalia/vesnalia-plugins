@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-files-editor",
+  "name": "alia-plugin-files-editor",
   "version": "0.1.8",
   "description": "VS Code-style file explorer and editor for the project or worktree behind a thread: search in files across the whole project, a file tree, editor tabs, syntax-highlighted viewing, find in file, and edit with save.",
   "type": "module",
   "engines": {
-    "bb": ">=0.48",
-    "bbPluginSdk": ">=0.6.88"
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.88"
   },
-  "bb": {
+  "alia": {
     "name": "Files",
     "description": "VS Code-style file explorer and editor for the project or worktree behind a thread: search in files across the whole project, a file tree, editor tabs, syntax-highlighted viewing, find in file, and edit with save.",
     "branding": {
@@ -32,7 +32,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -63,16 +62,8 @@
     "react-dom": "^19.0.0"
   },
   "license": "MIT",
-  "homepage": "https://github.com/abdoutelb/bb-plugin-files-editor#readme",
-  "bugs": {
-    "url": "https://github.com/abdoutelb/bb-plugin-files-editor/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/abdoutelb/bb-plugin-files-editor.git"
-  },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "files",
     "file-explorer",
     "grep",
@@ -101,5 +92,22 @@
     "skills",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/files-editor#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/files-editor"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

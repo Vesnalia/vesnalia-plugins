@@ -210,10 +210,10 @@ export async function spawnReviewers(ctx: EngineCtx, project: ProjectRow, spec: 
   return spawned;
 }
 
-export const REVIEWER_REFUSED = "bb refused to start a reviewer";
+export const REVIEWER_REFUSED = "alia refused to start a reviewer";
 export const REVIEWER_UNAVAILABLE = "no reviewer could start";
 
-/** A blocked ticket whose last block was bb refusing its reviewer, or its provider staying unavailable. Its work passed the checks at its head commit, and no worker has touched it since. */
+/** A blocked ticket whose last block was VesnALIA refusing its reviewer, or its provider staying unavailable. Its work passed the checks at its head commit, and no worker has touched it since. */
 export function blockedAtReview(ticket: TicketRow): boolean {
   const reason = ticket.blocked_reason ?? "";
   return ticket.state === "blocked" && ticket.head_sha !== null && (reason.startsWith(`${REVIEWER_REFUSED}:`) || reason.startsWith(`${REVIEWER_UNAVAILABLE}:`));
@@ -229,7 +229,7 @@ export function backToReview(ctx: EngineCtx, ticket: TicketRow, note: string, ho
   const { store } = ctx;
   const round = ticket.review_round + 1;
   store.tx(() => {
-    const reason = how.reason ?? "bb refused its reviewer, and a new spec version is approved";
+    const reason = how.reason ?? "alia refused its reviewer, and a new spec version is approved";
     store.setTicketState(ticket.id, "review", how.actor ?? LOOM_ACTOR, { head: ticket.head_sha, round, reason, ...(how.requeued === true ? { requeued: true, failures: 0 } : {}) });
     const linked = how.patch?.worker_thread_id === undefined ? ticket.worker_thread_id : how.patch.worker_thread_id;
     const kept = linked === null && specOf(store, store.project(ticket.project_id)!).merge.strategy === "pr" ? keptWorker(store, ticket) : null;
@@ -296,7 +296,7 @@ async function readDiff(ctx: EngineCtx, project: ProjectRow, spec: Spec, ticket:
     const now = ctx.now();
     const what = `Reading the diff of ${ticket.key} for review`;
     const wait = nextMergeWait(previous, { now, message: errText(error), ...failure });
-    ctx.bb.log("warn", `${what} failed ${plural(wait.failures, "time")} in a row with what looks like a temporary error: ${errText(error)}`);
+    ctx.alia.log("warn", `${what} failed ${plural(wait.failures, "time")} in a row with what looks like a temporary error: ${errText(error)}`);
     if (mergeWaitExpired(wait, now)) {
       waits.delete(ticket.id);
       pauseProject(ctx, project.id, mergeWaitReason(what, wait, now));
@@ -359,8 +359,8 @@ async function startReviewer(ctx: EngineCtx, projectId: number, seen: TicketRow,
   let spawned;
   try {
     const base = onMachine ? freshBase(spec, ticket.repo) : await localReviewBase(ctx, project, spec, ticket);
-    spawned = await ctx.bb.spawnThread({
-      bbProjectId: repo.bbProjectId ?? project.bb_project_id,
+    spawned = await ctx.alia.spawnThread({
+      aliaProjectId: repo.aliaProjectId ?? project.alia_project_id,
       hostId: project.host_id!,
       baseBranch: base,
       environment: spawnEnvironment(repo, { branch: threadBranch(project.slug, ticket.key, `review-${round}-${row.id}`), base }, "reviewer", ticketInputsOf(ticket)),
@@ -406,9 +406,9 @@ async function localReviewBase(ctx: EngineCtx, project: ProjectRow, spec: Spec, 
 }
 
 /**
- * A reviewer that did not start, or whose environment could not be provisioned, for a reason other than bb refusing it.
+ * A reviewer that did not start, or whose environment could not be provisioned, for a reason other than VesnALIA refusing it.
  * It waits and tries again (StartWait) with the same row and review; a failure counts as a reviewer that ended without a
- * verdict only once it has happened START_GRACE times in a row, and one bb or the provider says cannot start now never does.
+ * verdict only once it has happened START_GRACE times in a row, and one VesnALIA or the provider says cannot start now never does.
  */
 export async function reviewerStartFailed(ctx: EngineCtx, row: ThreadRow, problem: StartProblem): Promise<void> {
   const { store } = ctx;
@@ -499,7 +499,7 @@ async function verdict(ctx: EngineCtx, threadId: string, kind: "approved" | "cha
   await afterOutcome(ctx, ticket.id, outcome, row.id);
   const ending = endThread(ctx, store.thread(row.id)!, "verdict", { commit: false, move: null })
     .then(() => undefined)
-    .catch((error) => ctx.bb.log("warn", `Could not end reviewer ${threadId}: ${errText(error)}`))
+    .catch((error) => ctx.alia.log("warn", `Could not end reviewer ${threadId}: ${errText(error)}`))
     .finally(() => endingOwnOf(store).delete(ending));
   endingOwnOf(store).add(ending);
   return kind === "approved"
@@ -587,7 +587,7 @@ export async function onReviewerIdle(ctx: EngineCtx, seen: ThreadRow, reason: En
   if (idleAction(row.idle_count) === "nudge") {
     store.updateThread(row.id, { idle_count: row.idle_count + 1 });
     const ticket = store.ticket(row.ticket_id!)!;
-    await ctx.bb.send(row.thread_id, reviewerNudgeText(ticket.key, row.review_round));
+    await ctx.alia.send(row.thread_id, reviewerNudgeText(ticket.key, row.review_round));
   } else {
     await endThread(ctx, row, reason, { commit: false, move: null });
   }
@@ -595,7 +595,7 @@ export async function onReviewerIdle(ctx: EngineCtx, seen: ThreadRow, reason: En
 
 /**
  * A failed turn: rate limits are retried at the window's reset, even while paused, since pausing never stops a reviewer;
- * a thread whose environment bb could not provision is a reviewer that did not start; anything else counts like an idle.
+ * a thread whose environment VesnALIA could not provision is a reviewer that did not start; anything else counts like an idle.
  */
 export async function onReviewerTurnFailed(ctx: EngineCtx, event: TurnFailure): Promise<void> {
   const row = ctx.store.threadByThreadId(event.threadId);
@@ -605,10 +605,10 @@ export async function onReviewerTurnFailed(ctx: EngineCtx, event: TurnFailure): 
   if (event.errorInfo?.category === "rate-limit") {
     if (await retryRateLimited(ctx, row, project, event)) return;
   } else {
-    const failure = await ctx.bb.latestSystemError(event.threadId).catch(() => null);
+    const failure = await ctx.alia.latestSystemError(event.threadId).catch(() => null);
     if (failure?.code === "thread_provisioning_failed") {
       if (!ctx.store.claimThread(row.id, UNSTARTED)) return;
-      if (row.thread_id !== null) await ctx.bb.archive(row.thread_id).catch((error) => ctx.bb.log("warn", `Could not archive ${row.thread_id}: ${errText(error)}`));
+      if (row.thread_id !== null) await ctx.alia.archive(row.thread_id).catch((error) => ctx.alia.log("warn", `Could not archive ${row.thread_id}: ${errText(error)}`));
       await reviewerStartFailed(ctx, ctx.store.thread(row.id)!, provisioningFailure(failure));
       return;
     }

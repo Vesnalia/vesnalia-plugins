@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { fixtureRuntime } from "../runtime-helper.ts";
 import { CONFIG_DEFAULTS } from "../../src/web/config.ts";
 import { artifact, attempt, createRepository, threadScope } from "../sources/helpers.ts";
@@ -23,7 +23,7 @@ const cases: Array<{ name: string; documents: Record<string, string>; methods: s
 describe("independent final review regressions", () => {
  for (const scenario of cases) it(`maps and persists ${scenario.name} without losing discovery provenance`, async () => {
   const fake = createFakePluginHost({ pluginId: "forage-review" });
-  const runtime = fixtureRuntime(fake.bb, async () => ({ ...CONFIG_DEFAULTS, warnings: [] }), {
+  const runtime = fixtureRuntime(fake.alia, async () => ({ ...CONFIG_DEFAULTS, warnings: [] }), {
    fetch: async url => {
     const content = scenario.documents[new URL(url).pathname];
     const status = content === undefined ? 404 : 200;

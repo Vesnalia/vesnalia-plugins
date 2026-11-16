@@ -1,5 +1,5 @@
 /**
- * The offer engine (report v2 §1, feature #1): bb's thread events in, at most one live offer per
+ * The offer engine (report v2 §1, feature #1): VesnALIA's thread events in, at most one live offer per
  * thread out.
  *
  * - `thread.active`: a turn started. Any unanswered offer in the thread expires, and the workspace's
@@ -19,7 +19,7 @@ import { candidates, PathRules, relativize, type Candidate, type FileChange, typ
 import type { LearningSettings } from "./settings";
 import type { LearningStore } from "./store";
 
-/** The thread facts a lifecycle event carries (bb's `ThreadResponse`). */
+/** The thread facts a lifecycle event carries (VesnALIA's `ThreadResponse`). */
 export interface EventThread extends GateThread {
   id: string;
   projectId: string;

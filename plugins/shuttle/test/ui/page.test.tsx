@@ -42,7 +42,7 @@ describe("Shuttle page", () => {
     expect(lastNavigation(slot)).toEqual({ method: "toPluginPanel", path: "shuttle", options: { subPath: "reviews", replace: true } });
   });
 
-  it("keeps the area nav out of the page on a desktop: bb's sidebar holds it", async () => {
+  it("keeps the area nav out of the page on a desktop: VesnALIA's sidebar holds it", async () => {
     const { slot } = await reviews("reviews");
     await find(slot.container, `[data-pr="${first.key}"]`);
     expect(slot.queryByRole("navigation")).toBeNull();

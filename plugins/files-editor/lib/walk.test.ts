@@ -33,7 +33,7 @@ const walk = (overrides: Partial<Parameters<typeof walkDirectory>[0]> = {}) =>
   });
 
 describe("walkDirectory", () => {
-  it("lists dotfiles and dot-directories, which BB's own listing drops", async () => {
+  it("lists dotfiles and dot-directories, which VesnALIA's own listing drops", async () => {
     const { entries } = await walk();
     const paths = entries.map((entry) => entry.path);
     expect(paths).toContain(".gitignore");

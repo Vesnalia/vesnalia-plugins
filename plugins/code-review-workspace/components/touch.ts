@@ -1,11 +1,11 @@
-// Touch sizes for the plugin's own controls, kept out of components/ui (BB's kit): every control is a 44px target on
+// Touch sizes for the plugin's own controls, kept out of components/ui (VesnALIA's kit): every control is a 44px target on
 // a coarse pointer, an iPad's included, so these use pointer-coarse alone, without the kit's max-md guard.
 
 /** A control 44px tall on a coarse pointer, and at least as wide. */
 export const TOUCH_CONTROL = "pointer-coarse:h-11 pointer-coarse:min-w-11";
 
 /**
- * A button that keeps to 36px on a coarse pointer, with a 44px target around it: in BB's 48px title bar, and in the
+ * A button that keeps to 36px on a coarse pointer, with a 44px target around it: in VesnALIA's 48px title bar, and in the
  * 40px band of a phone held sideways.
  */
 export const TOUCH_COMPACT = "relative pointer-coarse:h-9 pointer-coarse:min-w-9 pointer-coarse:after:absolute pointer-coarse:after:-inset-1 pointer-coarse:after:content-['']";

@@ -254,7 +254,7 @@ html[data-lg-wallpaper="custom"] {
     var(--shadow-md, 0 4px 16px hsl(0 0% 0% / 0.4));
 }
 
-/* Strong, chromatic controls. bb's default button variant is `bg-foreground`,
+/* Strong, chromatic controls. alia's default button variant is `bg-foreground`,
    while plugin actions often use `bg-primary`, so both consume the same vivid
    pair. Checked toggles and active tabs follow the accent grammar too. */
 button.bg-primary,
@@ -283,13 +283,13 @@ button[role="switch"][aria-checked="true"] {
   --tw-ring-color: var(--ring);
 }
 
-.bb-sidebar-open-in-split-row {
-  --bb-sidebar-open-in-split-background: color-mix(in oklab, var(--primary) 10%, var(--sidebar));
+.alia-sidebar-open-in-split-row {
+  --alia-sidebar-open-in-split-background: color-mix(in oklab, var(--primary) 10%, var(--sidebar));
   outline: 1px dashed color-mix(in oklab, var(--primary) 50%, transparent);
   outline-offset: -1px;
 }
 
-.bb-sidebar-selected-row {
+.alia-sidebar-selected-row {
   box-shadow: inset 3px 0 0 var(--primary);
 }
 
@@ -301,7 +301,7 @@ button[role="switch"][aria-checked="true"] {
    constant blur stays on the host element so sticky/flex layout is untouched. */
 body { position: relative; isolation: isolate; background-color: var(--canvas); }
 [data-testid="route-loading-skeleton"] { background-color: var(--canvas); }
-:is([data-radix-popper-content-wrapper] > *, [role="dialog"], [role="menu"], [role="listbox"], [data-bb-portaled-overlay], [data-vaul-drawer-direction]:not([data-sidebar="panel"]), [data-sonner-toast], [cmdk-root], [data-testid="root-compose-compact-home"]) {
+:is([data-radix-popper-content-wrapper] > *, [role="dialog"], [role="menu"], [role="listbox"], [data-alia-portaled-overlay], [data-vaul-drawer-direction]:not([data-sidebar="panel"]), [data-sonner-toast], [cmdk-root], [data-testid="root-compose-compact-home"]) {
   background-color: hsl(var(--glass-h) var(--glass-s) var(--glass-l) / var(--glass-overlay-a));
   -webkit-backdrop-filter: blur(32px) saturate(1.2);
   backdrop-filter: blur(32px) saturate(1.2);
@@ -543,7 +543,7 @@ html [data-promptbox-shell] > .grid > * {
     visibility: visible;
     transition: visibility 0s;
   }
-  html[data-lg-compact-solid="on"] :is(main[data-sidebar="inset"], [data-testid="root-compose-compact-home"], [role="dialog"]:not([data-radix-popper-content-wrapper] > *), [data-bb-portaled-overlay], [data-vaul-drawer-direction]:not([data-sidebar="panel"]), [data-sonner-toast], [cmdk-root]) {
+  html[data-lg-compact-solid="on"] :is(main[data-sidebar="inset"], [data-testid="root-compose-compact-home"], [role="dialog"]:not([data-radix-popper-content-wrapper] > *), [data-alia-portaled-overlay], [data-vaul-drawer-direction]:not([data-sidebar="panel"]), [data-sonner-toast], [cmdk-root]) {
     background-color: hsl(var(--glass-h) var(--glass-s) var(--glass-l) / 0.96);
     -webkit-backdrop-filter: blur(32px) saturate(1.2); backdrop-filter: blur(32px) saturate(1.2);
   }
@@ -636,7 +636,7 @@ html [data-promptbox-shell] > .grid > * {
     background-image: linear-gradient(hsl(var(--glass-h) var(--glass-s) var(--glass-l) / var(--lg-home-dock-a, max(var(--lg-chrome-a, 0.72), var(--glass-pane-a)))), hsl(var(--glass-h) var(--glass-s) var(--glass-l) / var(--lg-home-dock-a, max(var(--lg-chrome-a, 0.72), var(--glass-pane-a)))));
     background-repeat: no-repeat;
     background-position: bottom;
-    background-size: 100% var(--bb-safe-area-bottom, env(safe-area-inset-bottom, 0px));
+    background-size: 100% var(--alia-safe-area-bottom, env(safe-area-inset-bottom, 0px));
   }
 }
 @media (prefers-reduced-transparency: reduce) {

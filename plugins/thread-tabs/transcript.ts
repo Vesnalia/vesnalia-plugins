@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 export interface TranscriptRow {
     id: string;
@@ -38,8 +38,8 @@ export function renderTranscript(rows: readonly TranscriptRow[], end: number, fu
 }
 
 /** Pages a thread's timeline into a Markdown transcript, throwing rather than truncating when a size limit is exceeded. */
-export async function collectTranscript(sdk: BbPluginApi["sdk"], threadId: string, sourceSeqEnd?: number, full = false) {
-    type Page = Extract<Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["timeline"]>>, { rows: unknown }>;
+export async function collectTranscript(sdk: AliaPluginApi["sdk"], threadId: string, sourceSeqEnd?: number, full = false) {
+    type Page = Extract<Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["timeline"]>>, { rows: unknown }>;
     const rows: TranscriptRow[] = [];
     let cursor: { anchorId: string; anchorSeq: number } | null = null;
     let end = sourceSeqEnd;

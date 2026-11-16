@@ -1,8 +1,8 @@
 # Third-party notices
 
 The UI components in `components/` and `lib/` (and their code bundled in
-`dist/app.js`) come from bb's component registry,
-[get-bb/bb](https://github.com/get-bb/bb), under this license:
+`dist/app.js`) come from VesnALIA's component registry,
+[get-alia/alia](https://github.com/get-bb/bb), under this license:
 
 ```
 MIT License

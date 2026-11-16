@@ -6,7 +6,7 @@
 // kept (focusBlock) and a few small helpers.
 //
 // Why: these decide where every issue appears. They are pure, so they are
-// tested here without BB or a browser.
+// tested here without VesnALIA or a browser.
 //
 // Run with `npm test`.
 import assert from "node:assert/strict";
@@ -91,7 +91,7 @@ test("each issue lands in the group for what can be done about it", () => {
   );
 });
 
-test("an issue in Someday stays there even when it waits on something (bead-bb-26g)", () => {
+test("an issue in Someday stays there even when it waits on something (bead-alia-26g)", () => {
   assert.equal(
     grouped([issue("a", { status: "deferred", blockedBy: [{ id: "x", title: "x" }] })]),
     "someday:a",
@@ -368,7 +368,7 @@ test("a path inside the home folder is shown with a tilde", () => {
   assert.equal(shortPath("/srv/x", ""), "/srv/x");
 });
 
-test("an issue's times: created, then changed when it differs (bead-bb-tj4)", () => {
+test("an issue's times: created, then changed when it differs (bead-alia-tj4)", () => {
   const created = "2026-10-03T20:31:00Z";
   const changed = "2026-10-05T09:02:00Z";
   assert.equal(
@@ -387,7 +387,7 @@ test("an issue's times: created, then changed when it differs (bead-bb-tj4)", ()
   assert.equal(issueTimes({ createdAt: null, updatedAt: null }), null);
 });
 
-test("a closed-up card's short date: last changed, else created (bead-bb-tj4)", () => {
+test("a closed-up card's short date: last changed, else created (bead-alia-tj4)", () => {
   const created = "2026-10-03T20:31:00Z";
   const changed = "2026-10-05T09:02:00Z";
   const day = (t: string) =>

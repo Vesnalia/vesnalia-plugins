@@ -1,10 +1,10 @@
 // Reports on the comments you sent (notes/design/E7-plan.md Part 2 §4). The thread that fixes them says what it did with
-// each, `bb review report <id> done|declined`, and `bb review ready` once it's finished, from any thread, attributed to
+// each, `alia review report <id> done|declined`, and `alia review ready` once it's finished, from any thread, attributed to
 // it. The review is Ready to re-review once every comment out is reported, or ready ran, and the review agent checks the
 // fixes then, once per Send. Idle alone never means done, as a main thread goes idle whenever it hands work to
 // subagents: the review shows "N of M reported · Check now" instead. Events missed while the plugin was down aren't
 // told again, so it reads the main threads again when it starts.
-import type { BbPluginApi, PluginCliContext, PluginCliResult, PluginThreadEventHandler } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginCliContext, PluginCliResult, PluginThreadEventHandler } from "@vesnalia/plugin-sdk";
 import type { Claim, CommentLocation } from "./draft";
 import type { ReviewMeta, SendEntry } from "./store";
 import type { AsyncStore } from "./store-queue";
@@ -23,8 +23,8 @@ import { reportCommit } from "./push";
 import type { EventListeners, RpcHandlers, ServeDeps, Subcommands } from "./server-modules";
 
 export const REPORT_USAGE = [
-  "usage: bb review report <id> done|declined [--note <text>] [--commit <sha>]",
-  "       bb review report --commit <sha>",
+  "usage: VesnALIA review report <id> done|declined [--note <text>] [--commit <sha>]",
+  "       VesnALIA review report --commit <sha>",
   "",
   "Says what you did with a comment the reviewer sent you, by the id its Send gave it (c12). Run it from any thread;",
   "the review shows which thread reported. Nothing goes to GitHub.",
@@ -32,14 +32,14 @@ export const REPORT_USAGE = [
   "  declined   you won't fix it; say why with --note",
   "  --note     what you did, or why not, in a line or two (up to 2,000 characters); quote it for your shell",
   "  --commit   the commit with the fix, by its SHA",
-  "Run `bb review ready` once you've finished with them all.",
+  "Run `alia review ready` once you've finished with them all.",
   "",
   "With --commit alone, after the reviewer's Push: the commit with the changes they reviewed. The review checks it, and",
   "says whether to push it.",
 ].join("\n");
 
 export const READY_USAGE = [
-  "usage: bb review ready [<review>]",
+  "usage: VesnALIA review ready [<review>]",
   "",
   "Says you've finished with the comments the reviewer sent you: the review goes back to them to re-review, with what",
   "you reported. Without <review>, it's the review whose comments were sent to this thread.",
@@ -47,7 +47,7 @@ export const READY_USAGE = [
 ].join("\n");
 
 const NOTE_LIMIT = 2_000;
-/** The most events bb gives in one page. */
+/** The most events VesnALIA gives in one page. */
 const EVENT_PAGE = 100;
 /** How far a request to a thread may seem to come before the Send that queued it, by the two clocks. */
 const CLOCK_SLACK = 60_000;
@@ -83,28 +83,28 @@ const waitsOn = (review: ReviewMeta, threadIds: ReadonlySet<string>) => {
 };
 
 export function register(deps: ServeDeps) {
-  const { bb, store, sync, changed } = deps;
+  const { alia, store, sync, changed } = deps;
 
   /** The reviews' ids as the reviewer sees them, `api:feat-x`, by key. */
   const idsOf = async (reviews: readonly ReviewMeta[]) => {
     const all = await store.listReviews();
-    const facts = await placeFacts(bb, all);
+    const facts = await placeFacts(alia, all);
     return new Map(reviews.map((review) => [review.targetKey, identityIn(facts, all, review).id]));
   };
   /** The calling thread and the threads above it: a subagent reports for the thread it works under. */
   const callerAndAbove = async (threadId: string | undefined): Promise<Set<string>> => {
     if (!threadId) return new Set();
-    const listed = await bb.sdk.threads.experimental_listAncestors?.({ threadIds: [threadId] }).catch(() => null);
+    const listed = await alia.sdk.threads.experimental_listAncestors?.({ threadIds: [threadId] }).catch(() => null);
     return new Set([threadId, ...listed?.threads.find((thread) => thread.threadId === threadId)?.ancestorIds ?? []]);
   };
-  /** Why a command can't run from here: a review's own agent, or a thread one of them started; one bb can't place fails closed. */
+  /** Why a command can't run from here: a review's own agent, or a thread one of them started; one VesnALIA can't place fails closed. */
   const refused = (ownReview: string | undefined, threadId: string | undefined) => refusedFromAgents(deps, ownReview, threadId, NOT_FROM_AGENTS);
 
   /** Tell the review's pages, and once it's ready, the sync: it alerts you and starts Check fixes. */
   const settled = (key: string, ready: boolean) => {
     changed(key);
-    bb.realtime.publish(`draft:${key}`, {});
-    if (ready) void sync.evaluate(key).catch((error) => bb.log.warn(`Could not tell the reviewer ${key} is ready to re-review: ${String(error)}`));
+    alia.realtime.publish(`draft:${key}`, {});
+    if (ready) void sync.evaluate(key).catch((error) => alia.log.warn(`Could not tell the reviewer ${key} is ready to re-review: ${String(error)}`));
   };
 
   async function report(args: string[], ctx: PluginCliContext, ownReview: string | undefined): Promise<PluginCliResult> {
@@ -157,7 +157,7 @@ export function register(deps: ServeDeps) {
     const named = (await idsOf([review])).get(key)!;
     // Once it's back with the reviewer, there's nothing left to run.
     const next = ready ? "That was the last one: the review goes back to the reviewer to re-review."
-      : tally.reported < tally.sent && !wasReady ? `${reportedText(tally)}. Report the rest, then run \`bb review ready\`.` : `${reportedText(tally)}.`;
+      : tally.reported < tally.sent && !wasReady ? `${reportedText(tally)}. Report the rest, then run \`alia review ready\`.` : `${reportedText(tally)}.`;
     return { exitCode: 0, stdout: `Reported ${id.trim()} ${outcome} on ${named}. ${next}` };
   }
 
@@ -192,7 +192,7 @@ export function register(deps: ServeDeps) {
     if (args[0]) {
       const given = args[0].trim();
       // Or by its id, as the Send's first line names it, which may be the one it had before it became its PR's.
-      const named = await reviewNamed(store, bb, given);
+      const named = await reviewNamed(store, alia, given);
       if (named && "ambiguous" in named) return { exitCode: 1, stderr: named.ambiguous };
       review = named ?? undefined;
       if (!review) {
@@ -204,9 +204,9 @@ export function register(deps: ServeDeps) {
       const mine = await callerAndAbove(ctx.threadId);
       const waiting = all.filter((r) => waitsOn(r, mine));
       if (waiting.length !== 1) {
-        if (!waiting.length) return { exitCode: 1, stderr: "No review's comments are waiting on this thread. Pass the review: bb review ready <review>." };
+        if (!waiting.length) return { exitCode: 1, stderr: "No review's comments are waiting on this thread. Pass the review: VesnALIA review ready <review>." };
         const ids = await idsOf(waiting);
-        return { exitCode: 2, stderr: `Comments from ${waiting.length} reviews wait on this thread: ${waiting.map((r) => ids.get(r.targetKey)).join(", ")}. Pass one: bb review ready <review>.` };
+        return { exitCode: 2, stderr: `Comments from ${waiting.length} reviews wait on this thread: ${waiting.map((r) => ids.get(r.targetKey)).join(", ")}. Pass one: VesnALIA review ready <review>.` };
       }
       review = waiting[0];
     }
@@ -221,14 +221,14 @@ export function register(deps: ServeDeps) {
   }
 
   /**
-   * Who runs `bb review ready` on `review`, as the review names them: its main thread, or a thread under one its Sends
+   * Who runs `alia review ready` on `review`, as the review names them: its main thread, or a thread under one its Sends
    * wait on; another thread, by its title; or a shell outside any thread.
    */
   async function readyBy(review: ReviewMeta, threadId: string | undefined): Promise<NonNullable<SendEntry["readyBy"]>> {
     if (!threadId) return { from: "shell" };
     const mine = await callerAndAbove(threadId);
     if ((review.sends ?? []).some((send) => send.readyAt === undefined && mine.has(send.threadId))) return { from: "main" };
-    const thread = await bb.sdk.threads.get({ threadId }).catch(() => null);
+    const thread = await alia.sdk.threads.get({ threadId }).catch(() => null);
     const title = thread?.title ?? thread?.titleFallback;
     return { from: "thread", ...title ? { title } : {} };
   }
@@ -273,7 +273,7 @@ export function register(deps: ServeDeps) {
       for (const review of reviews) {
         if (!review.feature || review.mainThread?.threadId !== thread.id || review.feature.folderGone) continue;
         await checkFeature(deps, review.targetKey).catch(() => {});
-        bb.realtime.publish(`folder:${review.targetKey}`, { ts: Date.now() });
+        alia.realtime.publish(`folder:${review.targetKey}`, { ts: Date.now() });
       }
     }
     await stoppedOn(reviews, thread.id, why);
@@ -290,15 +290,15 @@ export function register(deps: ServeDeps) {
 
   /**
    * Whether `threadId` took Send `send`'s message: a request to it since, with the line every Send ends with and each of
-   * its comments' ids. Null when bb's events can't say, as when a full page of them doesn't reach back to the Send.
+   * its comments' ids. Null when VesnALIA's events can't say, as when a full page of them doesn't reach back to the Send.
    */
   async function tookSend(threadId: string, send: SendEntry): Promise<boolean | null> {
     type Requested = { createdAt: number; data: { input?: Array<{ text?: string }> } };
-    const events = await bb.sdk.threads.events.list({ threadId, types: ["client/turn/requested"], order: "desc", limit: String(EVENT_PAGE) }).catch(() => null) as unknown as Requested[] | null;
+    const events = await alia.sdk.threads.events.list({ threadId, types: ["client/turn/requested"], order: "desc", limit: String(EVENT_PAGE) }).catch(() => null) as unknown as Requested[] | null;
     if (!events) return null;
     const carries = (event: Requested) => {
       const text = (event.data.input ?? []).map((part) => part.text ?? "").join("\n");
-      return text.includes("bb review report") && send.ids.every((id) => text.includes(`${id} · `));
+      return text.includes("alia review report") && send.ids.every((id) => text.includes(`${id} · `));
     };
     if (events.some((event) => event.createdAt >= send.at - CLOCK_SLACK && carries(event))) return true;
     return events.length >= EVENT_PAGE && (events.at(-1)?.createdAt ?? 0) > send.at - CLOCK_SLACK ? null : false;
@@ -313,18 +313,18 @@ export function register(deps: ServeDeps) {
     const reviews = (await store.listReviews()).filter((review) => review.sends?.some((send) => send.readyAt === undefined));
     const threads = new Set(reviews.flatMap((review) => review.sends!.filter((send) => send.readyAt === undefined).map((send) => send.threadId)));
     for (const threadId of threads) {
-      let thread: Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["get"]>> | null;
+      let thread: Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["get"]>> | null;
       try {
-        thread = await bb.sdk.threads.get({ threadId });
+        thread = await alia.sdk.threads.get({ threadId });
       } catch (error) {
         if (!isMissingThread(error)) continue;
         thread = null;
       }
       const gone = !thread || !!thread.archivedAt || !!thread.deletedAt;
       const queued = reviews.flatMap((review) => review.sends!.filter((send) => send.threadId === threadId && send.queued));
-      const listed = thread && !gone && queued.length ? await bb.sdk.threads.queuedMessages.list({ threadId }).catch(() => null) : null;
+      const listed = thread && !gone && queued.length ? await alia.sdk.threads.queuedMessages.list({ threadId }).catch(() => null) : null;
       // A queued Send whose message left the queue: the thread took it, if it's in the thread; else it was deleted from
-      // the queue, as message.cancelled says live, and its comments are open again. One bb can't say of stays queued.
+      // the queue, as message.cancelled says live, and its comments are open again. One VesnALIA can't say of stays queued.
       for (const send of listed ? queued.filter((send) => !listed.some((entry) => entry.id === send.queued)) : []) {
         const took = await tookSend(threadId, send);
         if (took !== null) await settleQueued(deps, { id: send.queued!, threadId }, took);
@@ -345,8 +345,8 @@ export function register(deps: ServeDeps) {
       if (!read.settled?.tally.sent) return { ok: false, error: "No comments are out with the main thread to check." };
       if (!read.prompt) return { ok: false, error: "The re-review check is off. Turn it on in Review settings." };
       // As Check again does: not into your own conversation with it.
-      if (await isAssistantAnswering(bb, store, targetKey)) return { ok: false, error: "The assistant is still answering. Try again when it finishes." };
-      if (!await startVerification(bb, store, targetKey, "the reviewer asked to check the fixes of the comments they sent", "ask", { fixes: true })) return { ok: false, error: "The review agent couldn't start. Open Ask agent to choose its agent." };
+      if (await isAssistantAnswering(alia, store, targetKey)) return { ok: false, error: "The assistant is still answering. Try again when it finishes." };
+      if (!await startVerification(alia, store, targetKey, "the reviewer asked to check the fixes of the comments they sent", "ask", { fixes: true })) return { ok: false, error: "The review agent couldn't start. Open Ask agent to choose its agent." };
       changed(targetKey);
       return { ok: true };
     },

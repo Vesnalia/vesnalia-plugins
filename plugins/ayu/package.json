@@ -1,19 +1,19 @@
 {
-  "name": "bb-plugin-ayu",
+  "name": "alia-plugin-ayu",
   "version": "0.3.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
   "scripts": {
     "generate": "node scripts/generate-themes.mjs",
     "screenshots": "node scripts/generate-screenshots.mjs",
     "typecheck": "tsc --noEmit"
   },
-  "bb": {
+  "alia": {
     "name": "Ayu",
-    "description": "The three ayu themes (Light, Dark and Mirage), with a palette explorer panel and a `bb ayu` color lookup.",
+    "description": "The three ayu themes (Light, Dark and Mirage), with a palette explorer panel and a `alia ayu` color lookup.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -54,7 +54,6 @@
     "app": "./app.tsx"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@radix-ui/react-dialog": "^1.3.1",
     "@radix-ui/react-tooltip": "^1.4.1",
     "@types/better-sqlite3": "^7.6.12",
@@ -80,5 +79,22 @@
     "@radix-ui/react-slot": "^1.3.0",
     "@radix-ui/react-tabs": "^1.1.21",
     "zod": "^4.3.6"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/ayu#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/ayu"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

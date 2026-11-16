@@ -289,7 +289,7 @@ describe("identifierFromBranch", () => {
     // understands gitBranchFormat and magic-word suffixes. This runs only when
     // that returns null.
     expect(identifierFromBranch("ada/eng-42-fix-the-flaky-login-test")).toBe("ENG-42");
-    expect(identifierFromBranch("bb/ENG-42-thing-thr_abc")).toBe("ENG-42");
+    expect(identifierFromBranch("alia/ENG-42-thing-thr_abc")).toBe("ENG-42");
     expect(identifierFromBranch("ENG-42")).toBe("ENG-42");
   });
 

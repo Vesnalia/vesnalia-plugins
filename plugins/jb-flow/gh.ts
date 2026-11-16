@@ -33,7 +33,7 @@ export function isTransient(error: ExecError, stderr: string): boolean {
 }
 
 let resolvedBin: string | null = null;
-/** gh's path, looked up once: bb's server may not have Homebrew on PATH. */
+/** gh's path, looked up once: VesnALIA's server may not have Homebrew on PATH. */
 export function ghBin(): string {
   resolvedBin ??= ["/opt/homebrew/bin/gh", "/usr/local/bin/gh"].find((path) => existsSync(path)) ?? "gh";
   return resolvedBin;

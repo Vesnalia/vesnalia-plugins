@@ -1,6 +1,6 @@
 # Making a box
 
-You make a box with the New box form. You choose its system, whether it has a desktop, its image, its size and where it runs. A thread can also start on a new box of its own, from BB's new-thread screen.
+You make a box with the New box form. You choose its system, whether it has a desktop, its image, its size and where it runs. A thread can also start on a new box of its own, from VesnALIA's new-thread screen.
 
 ## Where to make a box
 
@@ -8,8 +8,8 @@ You can make a box in 4 places:
 
 - the plus in a thread's Box panel: a box for that thread
 - **New box** on the Boxes page: one of your machines
-- **Add machine** in Settings, BB Box, Machines: one of your machines
-- BB's new-thread screen: a box the new thread runs on, which is described in [starting a thread on a new box](#starting-a-thread-on-a-new-box)
+- **Add machine** in Settings, VesnALIA Box, Machines: one of your machines
+- VesnALIA's new-thread screen: a box the new thread runs on, which is described in [starting a thread on a new box](#starting-a-thread-on-a-new-box)
 
 Agents make boxes with the `box_acquire` tool: see [agent tools](../reference/tools.md).
 
@@ -21,7 +21,7 @@ The form asks what you want, one step at a time. Each step narrows the next, so 
 
 ### System
 
-Choose Linux, macOS or Windows. Each card names the hosts that offer it, or how many providers do. For one of your machines, the form shows only the systems whose boxes can become BB machines.
+Choose Linux, macOS or Windows. Each card names the hosts that offer it, or how many providers do. For one of your machines, the form shows only the systems whose boxes can become VesnALIA machines.
 
 ### Architecture
 
@@ -45,19 +45,19 @@ The menu lists:
 - Standard: the box without any project's tools
 - other projects' images, each with its project's name
 
-For a Linux box, if your project has no image, the form offers to make one. Select **Make a box image for this project** at the bottom of the form. This opens BB's new-thread screen with a request for an agent to make it, ready for you to send.
+For a Linux box, if your project has no image, the form offers to make one. Select **Make a box image for this project** at the bottom of the form. This opens VesnALIA's new-thread screen with a request for an agent to make it, ready for you to send.
 
 ### Resources
 
-Choose Small, Medium or Large, or Custom to set the cores, memory in GiB and disk in GiB yourself. Each field says the most you can ask for. At that most or past it, a line under the fields says it is the largest for the kind, such as 'Up to 64 GiB of memory, the largest for Linux desktop (CPU) boxes.', and **Change it in Settings** opens the kind's sizes in BB Box's settings, where you can raise it. Leave the disk empty to keep the size the box's image comes with. The sizes for each kind are in [kinds and sizes](../reference/kinds.md).
+Choose Small, Medium or Large, or Custom to set the cores, memory in GiB and disk in GiB yourself. Each field says the most you can ask for. At that most or past it, a line under the fields says it is the largest for the kind, such as 'Up to 64 GiB of memory, the largest for Linux desktop (CPU) boxes.', and **Change it in Settings** opens the kind's sizes in VesnALIA Box's settings, where you can raise it. Leave the disk empty to keep the size the box's image comes with. The sizes for each kind are in [kinds and sizes](../reference/kinds.md).
 
-For a Linux server or an X11 desktop on x86_64, where a provider has NVIDIA cards, a GPU menu under the sizes offers None, Shared and Whole card. Whole card is listed only where a provider allows it. The menu starts on the kind's GPU when not asked for, until you choose. Where a desktop drawn by the CPU is offered too, **Desktop** opens on it, with None, unless the Linux desktop kind's GPU when not asked for is set to Shared or Whole card in BB Box's settings. The line under it says which card the box would get and how much of its memory was free when last read, or why no card can take it. A desktop with None is drawn without a graphics card. See [GPU boxes](gpu-boxes.md).
+For a Linux server or an X11 desktop on x86_64, where a provider has NVIDIA cards, a GPU menu under the sizes offers None, Shared and Whole card. Whole card is listed only where a provider allows it. The menu starts on the kind's GPU when not asked for, until you choose. Where a desktop drawn by the CPU is offered too, **Desktop** opens on it, with None, unless the Linux desktop kind's GPU when not asked for is set to Shared or Whole card in VesnALIA Box's settings. The line under it says which card the box would get and how much of its memory was free when last read, or why no card can take it. A desktop with None is drawn without a graphics card. See [GPU boxes](gpu-boxes.md).
 
 ### Provider
 
-A provider is where the box runs, such as a container host or a pool of physical machines. 'First with room' is chosen at first: BB Box tries the providers in the order listed, and uses the first with room for the box. You can choose one provider instead.
+A provider is where the box runs, such as a container host or a pool of physical machines. 'First with room' is chosen at first: VesnALIA Box tries the providers in the order listed, and uses the first with room for the box. You can choose one provider instead.
 
-A provider kept for some of your projects in BB Box's settings is listed only for a thread in one of them, and comes before the providers every project shares. A thread in another project, or in none, does not see it. See [backends kept for projects](settings.md#backends-kept-for-projects).
+A provider kept for some of your projects in VesnALIA Box's settings is listed only for a thread in one of them, and comes before the providers every project shares. A thread in another project, or in none, does not see it. See [backends kept for projects](settings.md#backends-kept-for-projects).
 
 Each provider's row says:
 
@@ -83,7 +83,7 @@ Name shows only when you add one of your machines. See [your machines](boxes.md#
 
 Select **Create box**. The box shows in the list at once, starting, and is usually ready in seconds. If no provider has room, the form stays open and says why.
 
-Where boxes cannot join BB yet, the form says so above the button, 'Boxes will not join BB yet.', with what to do and a link to [when a box does not join BB](boxes.md#when-a-box-does-not-join-bb). You can still make the box.
+Where boxes cannot join VesnALIA yet, the form says so above the button, 'Boxes will not join VesnALIA yet.', with what to do and a link to [when a box does not join VesnALIA](boxes.md#when-a-box-does-not-join-alia). You can still make the box.
 
 The form remembers the system, type and size you chose last, separately for boxes and machines. It does not remember the image.
 
@@ -91,9 +91,9 @@ The form remembers the system, type and size you chose last, separately for boxe
 
 ## Starting a thread on a new box
 
-In BB's new-thread screen, choose **New box** as the thread's machine. BB Box makes a box for the thread and BB copies the project onto it, so the thread runs there from its first message.
+In VesnALIA's new-thread screen, choose **New box** as the thread's machine. VesnALIA Box makes a box for the thread and VesnALIA copies the project onto it, so the thread runs there from its first message.
 
-The box can be Linux or macOS, not Windows: BB adds the new box as a machine with its installer for Linux and macOS only. For a thread on Windows, start the thread elsewhere and give it a Windows box.
+The box can be Linux or macOS, not Windows: VesnALIA adds the new box as a machine with its installer for Linux and macOS only. For a thread on Windows, start the thread elsewhere and give it a Windows box.
 
 The button beside it shows the box's kind, size and image. Select it to change them. The menu has 3 groups: Kind, Size and Image. In a project, the project's image is chosen at first. Outside a project, no image is chosen until you pick one.
 

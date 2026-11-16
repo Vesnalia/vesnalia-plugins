@@ -19,7 +19,7 @@ export interface WalkResult {
 
 /**
  * Recursive listing of a directory on the machine running this code: the
- * plugin's host entry, which BB starts on the machine the workspace lives on.
+ * plugin's host entry, which VesnALIA starts on the machine the workspace lives on.
  * Exclusions are applied while walking, so an excluded `vendor/` or `.git` is
  * never read and never counts toward `limit`.
  *
@@ -27,11 +27,11 @@ export interface WalkResult {
  * survives is the shallow part of the tree rather than an arbitrary deep
  * branch.
  *
- * Symlinks are skipped rather than followed, which is both what BB does and
+ * Symlinks are skipped rather than followed, which is both what VesnALIA does and
  * what keeps a cyclic link from hanging the walk.
  *
  * Throws if the ROOT cannot be read — a workspace that was deleted underneath
- * BB must not be reported as an empty one. Directories that fail mid-walk are
+ * VesnALIA must not be reported as an empty one. Directories that fail mid-walk are
  * skipped, since the rest of the tree is still worth returning.
  */
 export async function walkDirectory(options: WalkOptions): Promise<WalkResult> {

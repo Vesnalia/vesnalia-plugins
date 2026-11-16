@@ -5,7 +5,7 @@
 // Kill never scroll out of reach.
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { KillPlanView, KillResultView, rpcContract } from "../lib/contract";
 import { processSummary } from "../lib/present";
 import { cn } from "../lib/utils";
@@ -62,7 +62,7 @@ export function KillConfirm({ plan, onDone }: { plan: KillPlanView; onDone: (res
           </p>
         ) : count === 0 ? (
           <p className="text-muted-foreground">
-            Everything running in this thread is its agent, BB, an app or a helper, and those are always spared.
+            Everything running in this thread is its agent, VesnALIA, an app or a helper, and those are always spared.
           </p>
         ) : one !== null ? (
           <>
@@ -80,7 +80,7 @@ export function KillConfirm({ plan, onDone }: { plan: KillPlanView; onDone: (res
           <>
             <p className="font-medium text-foreground">{processSummary(plan.targets.map((target) => target.name))}</p>
             <p className="text-muted-foreground">
-              They get SIGTERM now and SIGKILL after 5 seconds if still running. The thread&apos;s agent, BB and your
+              They get SIGTERM now and SIGKILL after 5 seconds if still running. The thread&apos;s agent, VesnALIA and your
               apps keep running.
             </p>
           </>

@@ -2,7 +2,7 @@
 // window says (tracker-switch-words.ts).
 //
 // Why: the window's whole point is to say plainly what will happen before
-// anything does (bead-bb-c9l.18); these are its sentences and the button
+// anything does (bead-alia-c9l.18); these are its sentences and the button
 // that goes with each case.
 
 import assert from "node:assert/strict";

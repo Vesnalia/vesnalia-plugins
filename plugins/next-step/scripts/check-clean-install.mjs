@@ -10,13 +10,13 @@ import { promisify } from "node:util";
 
 const exec = promisify(execFile);
 const source = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const temporary = await mkdtemp(join(tmpdir(), "bb-next-step-clean-"));
+const temporary = await mkdtemp(join(tmpdir(), "alia-next-step-clean-"));
 const production = join(temporary, "production");
 const development = join(temporary, "development");
-const dataDir = join(temporary, "bb-data");
+const dataDir = join(temporary, "alia-data");
 // In particular, never inherit the user's server, thread, project or CLI credentials.
-const isolatedEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("BB_")));
-const report = { package: "bb-plugin-next-step", version: "0.1.0", node: process.version, checkedAt: new Date().toISOString(), steps: [] };
+const isolatedEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("ALIA_")));
+const report = { package: "alia-plugin-next-step", version: "0.1.0", node: process.version, checkedAt: new Date().toISOString(), steps: [] };
 let server;
 let serverOutput = "";
 
@@ -62,8 +62,8 @@ try {
 
   await run("Production: install without devDependencies or lifecycle scripts", "npm",
     ["ci", "--omit=dev", "--omit=optional", "--ignore-scripts", "--no-audit", "--no-fund"], production);
-  await assert.rejects(readFile(join(production, "node_modules/@get-bb/plugin-sdk/package.json")), { code: "ENOENT" });
-  await run("Production: build server, app and host from source", "bb", ["plugin", "build", "."], production);
+  await assert.rejects(readFile(join(production, "node_modules/@vesnalia/plugin-sdk/package.json")), { code: "ENOENT" });
+  await run("Production: build server, app and host from source", "alia", ["plugin", "build", "."], production);
   for (const artifact of ["app", "host", "server"]) {
     const metadata = JSON.parse(await readFile(join(production, "dist", `${artifact}.meta.json`), "utf8"));
     assert.equal(metadata.pluginId, "next-step");
@@ -81,10 +81,10 @@ try {
   let daemonPort = await freePort();
   while (daemonPort === serverPort) daemonPort = await freePort();
   const baseUrl = `http://127.0.0.1:${serverPort}`;
-  const serverEnv = { ...isolatedEnv, BB_DATA_DIR: dataDir, BB_TELEMETRY: "false" };
-  const cliEnv = { ...serverEnv, BB_SERVER_URL: baseUrl };
-  process.stdout.write("Start a separate BB server with an empty data directory\n");
-  server = spawn("bb-app", [
+  const serverEnv = { ...isolatedEnv, ALIA_DATA_DIR: dataDir, ALIA_TELEMETRY: "false" };
+  const cliEnv = { ...serverEnv, ALIA_SERVER_URL: baseUrl };
+  process.stdout.write("Start a separate VesnALIA server with an empty data directory\n");
+  server = spawn("alia-app", [
     "--bundled", "--no-in-app-updates", "--data-dir", dataDir,
     "--server-bind-host", "127.0.0.1", "--server-port", String(serverPort),
     "--host-daemon-port", String(daemonPort),
@@ -95,31 +95,31 @@ try {
   const deadline = Date.now() + 60000;
   while (true) {
     if (startError) throw startError;
-    if (server.exitCode !== null) throw new Error(`Temporary BB exited: ${serverOutput}`);
+    if (server.exitCode !== null) throw new Error(`Temporary VesnALIA exited: ${serverOutput}`);
     try {
       const response = await fetch(baseUrl, { signal: AbortSignal.timeout(1000) });
       if (response.ok) break;
     } catch { /* Wait for this instance to listen. */ }
-    if (Date.now() > deadline) throw new Error(`Temporary BB did not start: ${serverOutput}`);
+    if (Date.now() > deadline) throw new Error(`Temporary VesnALIA did not start: ${serverOutput}`);
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  const context = JSON.parse(await run("Verify the CLI targets only the temporary BB", "bb", ["status", "--json"], production, cliEnv));
+  const context = JSON.parse(await run("Verify the CLI targets only the temporary VesnALIA", "alia", ["status", "--json"], production, cliEnv));
   assert.equal(resolve(context.dataDir), resolve(dataDir));
   assert.equal(context.thread, null);
 
-  await run("Install the production-only copy into the empty BB", "bb", ["plugin", "install", production, "--yes", "--json"], production, cliEnv);
-  const inventory = JSON.parse(await run("Verify plugin load and frontend compatibility", "bb", ["plugin", "list", "--json"], production, cliEnv));
+  await run("Install the production-only copy into the empty VesnALIA", "alia", ["plugin", "install", production, "--yes", "--json"], production, cliEnv);
+  const inventory = JSON.parse(await run("Verify plugin load and frontend compatibility", "alia", ["plugin", "list", "--json"], production, cliEnv));
   const installed = inventory.plugins.find((plugin) => plugin.id === "next-step");
   assert.equal(installed?.status, "running");
   assert.equal(installed?.app?.bundle?.compatible, true);
   assert.equal(installed.rootDir, production);
-  const status = JSON.parse(await run("Run the installed plugin's command", "bb", ["next-step", "status", "--json"], production, cliEnv));
+  const status = JSON.parse(await run("Run the installed plugin's command", "alia", ["next-step", "status", "--json"], production, cliEnv));
   assert.deepEqual(status, { enabled: true, activeRequests: 0 });
-  await run("Disable suggestions in the test BB", "bb", ["plugin", "config", "next-step", "set", "enabled", "false"], production, cliEnv);
-  const disabled = JSON.parse(await run("Verify the changed setting", "bb", ["next-step", "status", "--json"], production, cliEnv));
+  await run("Disable suggestions in the test VesnALIA", "alia", ["plugin", "config", "next-step", "set", "enabled", "false"], production, cliEnv);
+  const disabled = JSON.parse(await run("Verify the changed setting", "alia", ["next-step", "status", "--json"], production, cliEnv));
   assert.equal(disabled.enabled, false);
-  await run("Enable suggestions in the test BB", "bb", ["plugin", "config", "next-step", "set", "enabled", "true"], production, cliEnv);
-  const enabled = JSON.parse(await run("Verify the restored setting", "bb", ["next-step", "status", "--json"], production, cliEnv));
+  await run("Enable suggestions in the test VesnALIA", "alia", ["plugin", "config", "next-step", "set", "enabled", "true"], production, cliEnv);
+  const enabled = JSON.parse(await run("Verify the restored setting", "alia", ["next-step", "status", "--json"], production, cliEnv));
   assert.deepEqual(enabled, { enabled: true, activeRequests: 0 });
 
   report.ok = true;

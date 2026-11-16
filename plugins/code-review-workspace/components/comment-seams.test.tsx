@@ -3,7 +3,7 @@
 // the "need you" pill over the code, and ] and [ through lib/comment-stops.
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { registerCommentStepper } from "../lib/comment-stops";
 import { patchReviewState } from "../lib/panel-state";
@@ -42,7 +42,7 @@ function phone() {
 }
 
 const file = (path: string, line: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n@@ -1 +1 @@\n-x\n+${line}\n`;
-const patch = file("src/a.ts", "aa") + file("src/b.ts", "bb");
+const patch = file("src/a.ts", "aa") + file("src/b.ts", "alia");
 const guide = { title: "Guide", intent: "Parses rows.", unplacedFiles: [] as string[], sections: [
   { id: "c1", title: "Parsing", overview: "Reads rows.", diffs: [{ file: "src/a.ts" }] },
   { id: "c2", title: "Caching", overview: "Keeps rows.", diffs: [{ file: "src/b.ts" }] },
@@ -101,7 +101,7 @@ test("] and [ step with what the Comments list registered, from the file you're 
   withdraw();
   // The draft's comment on src/b.ts, in the next chapter.
   fireEvent.keyDown(document.body, { key: "]" });
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   expect(current(slot)).toContain("Caching");
   expect(step).toHaveBeenCalledTimes(2);
   slot.lifecycle.unmount();

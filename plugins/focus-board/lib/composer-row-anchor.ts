@@ -1,11 +1,11 @@
 // The New project button's anchor onto the host composer's pickers row (the
 // New Thread dialog's "No project ⌄ … Default ⌄ … Full Access ⌄" line).
 //
-// The constraint this works inside (verified against the installed bb
-// 0.48.1 bundles): the pickers row is bb's own DOM inside the embedded
+// The constraint this works inside (verified against the installed VesnALIA
+// 0.48.1 bundles): the pickers row is VesnALIA's own DOM inside the embedded
 // composer — the plugin-facing `experimental_NewThreadComposer` wrapper
-// drops bb's `createProject` capability (upstream request
-// get-bb/bb#7015), so the row cannot host a plugin-rendered control, and
+// drops VesnALIA's `createProject` capability (upstream request
+// get-alia/alia#7015), so the row cannot host a plugin-rendered control, and
 // no composer-customization region reaches it either. The dialog therefore
 // renders the button itself and positions it ON the row's line: the row's
 // content starts one `padding-left` in from the wrapper's left edge, so a
@@ -17,22 +17,22 @@
 // between the composer's bottom edge and the row (the dialog grid gap and
 // the row's own margin) and the row's padding differ between the desktop
 // dialog and the compact drawer (`px-3.5` → `max-md:px-1`), and all of it
-// can move with any bb update. Reading the live row's geometry derives the
+// can move with any VesnALIA update. Reading the live row's geometry derives the
 // numbers per render, theme- and viewport-independent, and a
 // ResizeObserver re-derives them as the prompt area grows or the composer's
 // banner slot fills.
 //
-// The hook attribute `data-new-thread-footer` is bb's own stable DOM hook,
+// The hook attribute `data-new-thread-footer` is VesnALIA's own stable DOM hook,
 // rendered unconditionally by the shared compose component in both the main
-// view's path and the plugin-facing host path (verified in bb 0.48.1's
+// view's path and the plugin-facing host path (verified in VesnALIA 0.48.1's
 // NewThreadComposer bundle: the footer div is built outside any conditional,
 // directly under the `data-app-composer` root). When the row cannot be
-// found or measured — the tests' stub composers, or a future bb that
+// found or measured — the tests' stub composers, or a future VesnALIA that
 // renames the hook — the measure returns null and the caller keeps the
 // stacked shape the button shipped in (PR #361): the fallback is a tested,
 // always-working shape, never a silent guess at offsets.
 
-/** bb's own hook for the composer's pickers row. Queried STRICTLY INSIDE
+/** VesnALIA's own hook for the composer's pickers row. Queried STRICTLY INSIDE
  *  the modal's composer wrapper — never against the document. */
 export const COMPOSER_FOOTER_ROW_SELECTOR = '[data-new-thread-footer=""]';
 
@@ -105,7 +105,7 @@ export function measureFooterRowAnchor(
       buttonHeight,
     );
   }
-  // A positioned element now sits between wrapper and row (a future bb
+  // A positioned element now sits between wrapper and row (a future VesnALIA
   // markup change): fall back to rect pairs relative to the wrapper.
   const wrapBox = wrapper.getBoundingClientRect();
   const rowBox = row.getBoundingClientRect();

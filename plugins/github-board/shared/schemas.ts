@@ -2,7 +2,7 @@
  * The shapes the app and the server exchange outside the RPC contract's own
  * definition, and the realtime channels. Kept apart from `shared/contract.ts`
  * because the app needs these at run time, and the contract imports
- * `defineRpcContract` from the SDK root, which bb provides to the server
+ * `defineRpcContract` from the SDK root, which VesnALIA provides to the server
  * bundle only (see `app/imports.test.ts`).
  */
 import { z } from "zod";
@@ -10,7 +10,7 @@ import { z } from "zod";
 import { BoardItemSchema } from "./board";
 
 /**
- * How the board is drawn, for every client of this bb. Stored by the plugin
+ * How the board is drawn, for every client of this VesnALIA. Stored by the plugin
  * because neither is a form field: the filter is toggled in the board's own
  * menu and the width is dragged.
  */
@@ -72,7 +72,7 @@ export type SentCard = z.output<typeof SentCardSchema>;
 
 /**
  * The composer's `NewThreadRequest`, checked for the fields this plugin reads
- * and otherwise passed to `threads.spawn` as the composer built it; bb
+ * and otherwise passed to `threads.spawn` as the composer built it; VesnALIA
  * validates the rest.
  */
 export const NewThreadRequestSchema = z.looseObject({

@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
   type PluginNavPanelProps,
   type PluginRpcResult,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { CaughtSpecies, pokemonRpcContract, RecentCatch } from "../server";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -319,7 +319,7 @@ function playCry(url: string): void {
 }
 
 function CaughtEntryView({ speciesId, result }: { speciesId: number; result: CaughtEntry }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { entry, tally, history } = result;
   const now = Date.now();
   return (
@@ -488,7 +488,7 @@ function EntryPanel({ speciesId, onBack }: { speciesId: number | null; onBack: (
 
 export function PokedexPage({ subPath }: PluginNavPanelProps) {
   const rpc = useRpc<Rpc>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [pokedex, setPokedex] = useState<PokedexData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const refetch = useCallback(() => {

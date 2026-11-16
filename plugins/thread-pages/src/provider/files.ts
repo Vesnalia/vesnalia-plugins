@@ -1,8 +1,8 @@
-// files.* under the page root, paths relative to it (DESIGN §B.4, D-bb-10). `stat` is a `files.read` under the
-// root on bb (the SDK exposes no stat; the daemon's `host.file_metadata` is not reachable through it), kept for
+// files.* under the page root, paths relative to it (DESIGN §B.4, D-alia-10). `stat` is a `files.read` under the
+// root on VesnALIA (the SDK exposes no stat; the daemon's `host.file_metadata` is not reachable through it), kept for
 // the `read` that follows so the pair costs one round trip; `statIsCheap: false` (DR-15). `list` is
-// `files.listPaths`, a bounded walk of the subtree that answers `{ paths, truncated }` (BB-1, BB-3).
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// `files.listPaths`, a bounded walk of the subtree that answers `{ paths, truncated }` (ALIA-1, ALIA-3).
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { ProviderError, type ProviderHost } from "../../core/src/host/index.ts";
 import { asRecord, bodyCode, errorText, providerError } from "./errors.ts";
 import type { StorageLocation } from "./sessions.ts";
@@ -23,17 +23,17 @@ export function joinUnderRoot(root: string, relative: string): string {
 interface ReadResult { bytes: Uint8Array; sizeBytes: number; modifiedAtMs: number }
 
 /**
- * bb's daemon refuses `read_file` on a directory with `invalid_path` "Path is a directory, not a file"
+ * VesnALIA's daemon refuses `read_file` on a directory with `invalid_path` "Path is a directory, not a file"
  * (host-daemon `vW`); the same code names a path that escapes the root, which `joinUnderRoot` makes impossible
  * and a symlink that leaves the root ("escapes read root") must stay an error. The one message match in this
- * module, beside the code (D-bb-17).
+ * module, beside the code (D-alia-17).
  */
 export function isDirectoryRefusal(error: unknown): boolean {
   const cause = error instanceof ProviderError ? error.cause : error;
   return bodyCode(cause) === "invalid_path" && /is a directory/i.test(errorText(cause));
 }
 
-export function createBbFiles(bb: BbPluginApi, locate: (session: string) => Promise<StorageLocation>, now: () => number = Date.now): ProviderHost["files"] {
+export function createAliaFiles(alia: AliaPluginApi, locate: (session: string) => Promise<StorageLocation>, now: () => number = Date.now): ProviderHost["files"] {
   const memo = new Map<string, { at: number; result: Promise<ReadResult> }>();
   const abs = async (session: string, relative: string) => {
     const location = await locate(session);
@@ -43,7 +43,7 @@ export function createBbFiles(bb: BbPluginApi, locate: (session: string) => Prom
   async function readFresh(location: StorageLocation, path: string): Promise<ReadResult> {
     let raw: unknown;
     try {
-      raw = await bb.sdk.files.read({ hostId: location.hostId, path, rootPath: location.rootPath });
+      raw = await alia.sdk.files.read({ hostId: location.hostId, path, rootPath: location.rootPath });
     } catch (error) {
       throw providerError(error, "files.read");
     }
@@ -71,12 +71,12 @@ export function createBbFiles(bb: BbPluginApi, locate: (session: string) => Prom
   async function listDir(location: StorageLocation, path: string): Promise<{ entries: { name: string; path: string; kind: "file" | "dir" }[]; truncated: boolean }> {
     let raw: unknown;
     try {
-      raw = await bb.sdk.files.listPaths({ hostId: location.hostId, path, limit: LIST_LIMIT, includeFiles: true, includeDirectories: true });
+      raw = await alia.sdk.files.listPaths({ hostId: location.hostId, path, limit: LIST_LIMIT, includeFiles: true, includeDirectories: true });
     } catch (error) {
       throw providerError(error, "files.list");
     }
     const record = asRecord(raw);
-    const rows = Array.isArray(record?.paths) ? record.paths : []; // `host.list_paths` answers `paths`, not `files` (BB-1)
+    const rows = Array.isArray(record?.paths) ? record.paths : []; // `host.list_paths` answers `paths`, not `files` (ALIA-1)
     const prefix = `${path.replace(/\/+$/, "")}/`;
     const entries = rows
       .map(asRecord)
@@ -86,13 +86,13 @@ export function createBbFiles(bb: BbPluginApi, locate: (session: string) => Prom
         const relative = entryPath.startsWith(prefix) ? entryPath.slice(prefix.length) : entryPath;
         return { name: e.name as string, path: relative, kind: e.kind === "directory" || e.kind === "dir" ? ("dir" as const) : ("file" as const) };
       })
-      .filter((e) => !e.path.includes("/")); // direct children only; bb skips symlinks itself
+      .filter((e) => !e.path.includes("/")); // direct children only; VesnALIA skips symlinks itself
     return { entries, truncated: record?.truncated === true };
   }
 
   return {
     async stat(session, relative) {
-      if (relative.split("/").every((segment) => segment === "")) return { size: 0, mtimeMs: 0, kind: "dir" }; // the root itself: no call, nothing above it is listed (BB-7)
+      if (relative.split("/").every((segment) => segment === "")) return { size: 0, mtimeMs: 0, kind: "dir" }; // the root itself: no call, nothing above it is listed (ALIA-7)
       const { location, path } = await abs(session, relative);
       try {
         const read = await readAndKeep(location, path);
@@ -119,7 +119,7 @@ export function createBbFiles(bb: BbPluginApi, locate: (session: string) => Prom
         if (error instanceof ProviderError && error.code === "not_found") return [];
         throw error;
       }
-      if (listed.truncated) throw new ProviderError("unavailable", "bb cut the listing short", "listing_truncated");
+      if (listed.truncated) throw new ProviderError("unavailable", "alia cut the listing short", "listing_truncated");
       return listed.entries.map((e) => ({ name: e.name, kind: e.kind }));
     },
 
@@ -128,7 +128,7 @@ export function createBbFiles(bb: BbPluginApi, locate: (session: string) => Prom
       memo.delete(path);
       let written: unknown;
       try {
-        written = await bb.sdk.files.write({
+        written = await alia.sdk.files.write({
           hostId: location.hostId,
           path,
           rootPath: location.rootPath,
@@ -148,7 +148,7 @@ export function createBbFiles(bb: BbPluginApi, locate: (session: string) => Prom
       const { location, path } = await abs(session, relative);
       memo.delete(path);
       try {
-        await bb.sdk.files.remove({ hostId: location.hostId, path, rootPath: location.rootPath });
+        await alia.sdk.files.remove({ hostId: location.hostId, path, rootPath: location.rootPath });
       } catch (error) {
         throw providerError(error, "files.delete");
       }

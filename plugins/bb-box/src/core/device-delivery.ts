@@ -21,7 +21,7 @@ export const DEVICE_SERVER_FILES = [
   "src/device/android-video.ts",
   "src/device/annexb.ts",
   "src/device/apk.ts",
-  "src/device/bb-box-device.sh",
+  "src/device/alia-box-device.sh",
   "src/device/driver.ts",
   "src/device/emulator.ts",
   "src/device/frame-fanout.ts",
@@ -58,8 +58,8 @@ export const DEVICE_SERVER_FILES = [
 export const DELIVERY_EXITS = { delivered: 0, noNode: 4, recording: 6, noPrevious: 7 } as const;
 export const STATUS_EXITS = { running: 0, gaveUp: 3, none: 5 } as const;
 
-const DIR = '"$HOME/.bb-box/device"';
-const LAUNCHER = `${DIR}/current/src/device/bb-box-device.sh`;
+const DIR = '"$HOME/.alia-box/device"';
+const LAUNCHER = `${DIR}/current/src/device/alia-box-device.sh`;
 
 export interface ServerFile {
   readonly path: string;
@@ -116,9 +116,9 @@ export function deliveryStdin(delivery: Delivery): Uint8Array {
 
 const FIND_NODE =
   'node=; for n in "$(cat "$dir/node" 2>/dev/null)" "$(command -v node 2>/dev/null)" /opt/homebrew/bin/node /usr/local/bin/node /usr/bin/node; do if [ -n "$n" ] && [ -x "$n" ]; then node=$n; break; fi; done; ' +
-  `[ -n "$node" ] || { echo "bb-box: there is no Node.js in this box, which the device server runs on." >&2; exit ${DELIVERY_EXITS.noNode}; }; `;
+  `[ -n "$node" ] || { echo "alia-box: there is no Node.js in this box, which the device server runs on." >&2; exit ${DELIVERY_EXITS.noNode}; }; `;
 
-const RECORDING_GUARD = `if [ -s "$HOME/${RECORD_DIR}/pid" ] && kill -0 "$(cat "$HOME/${RECORD_DIR}/pid")" 2>/dev/null; then echo "bb-box: a recording runs in this box." >&2; exit ${DELIVERY_EXITS.recording}; fi; `;
+const RECORDING_GUARD = `if [ -s "$HOME/${RECORD_DIR}/pid" ] && kill -0 "$(cat "$HOME/${RECORD_DIR}/pid")" 2>/dev/null; then echo "alia-box: a recording runs in this box." >&2; exit ${DELIVERY_EXITS.recording}; fi; `;
 
 const UNPACK =
   'const fs=require("fs"),path=require("path"),zlib=require("zlib");const d=JSON.parse(zlib.gunzipSync(fs.readFileSync(0)).toString("utf8"));' +
@@ -142,7 +142,7 @@ export function deliveryScript(version: number): string {
     `ln -sfn "server/${version}" "$dir/current"; ` +
     `keep_previous=$(readlink "$dir/previous" 2>/dev/null || true); ` +
     `for each in "$dir"/server/*; do [ -d "$each" ] || continue; name="server/$(basename "$each")"; [ "$name" = "server/${version}" ] || [ "$name" = "$keep_previous" ] || rm -rf "$each"; done; ` +
-    `sh "$dir/current/src/device/bb-box-device.sh" install`
+    `sh "$dir/current/src/device/alia-box-device.sh" install`
   );
 }
 
@@ -150,9 +150,9 @@ export function rollbackScript(): string {
   return (
     `set -eu; dir=${DIR}; ` +
     `previous=$(readlink "$dir/previous" 2>/dev/null || true); ` +
-    `[ -n "$previous" ] && [ -d "$dir/$previous" ] || { echo "bb-box: there is no earlier device server to go back to." >&2; exit ${DELIVERY_EXITS.noPrevious}; }; ` +
+    `[ -n "$previous" ] && [ -d "$dir/$previous" ] || { echo "alia-box: there is no earlier device server to go back to." >&2; exit ${DELIVERY_EXITS.noPrevious}; }; ` +
     `ln -sfn "$previous" "$dir/current"; rm -f "$dir/previous"; ` +
-    `sh "$dir/current/src/device/bb-box-device.sh" install`
+    `sh "$dir/current/src/device/alia-box-device.sh" install`
   );
 }
 
@@ -179,7 +179,7 @@ export function parseStatus(exitCode: number | null, stdout: string, stderr: str
 }
 
 export function connectScript(): string {
-  return `f=${LAUNCHER}; [ -f "$f" ] || { echo "bb-box: this box has no device server yet." >&2; exit ${STATUS_EXITS.none}; }; exec sh "$f" connect`;
+  return `f=${LAUNCHER}; [ -f "$f" ] || { echo "alia-box: this box has no device server yet." >&2; exit ${STATUS_EXITS.none}; }; exec sh "$f" connect`;
 }
 
 export function deviceHubScript(): string {

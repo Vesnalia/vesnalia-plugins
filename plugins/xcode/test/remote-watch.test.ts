@@ -17,7 +17,7 @@ import Database from "better-sqlite3";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createHostEntry } from "../host";
@@ -243,7 +243,7 @@ describe("an Xcode.app build on the thread's Mac", () => {
 describe("the live row, end to end", () => {
   it("shows the thread's Xcode.app build on its Mac, and will not stop it from here", async () => {
     const mac = macBook();
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "xcode",
       settings: { scanIntervalSeconds: "1" },
       hostRpc: async (call) => {
@@ -269,7 +269,7 @@ describe("the live row, end to end", () => {
     const original = Object.getOwnPropertyDescriptor(process, "platform")!;
     Object.defineProperty(process, "platform", { value: "linux", configurable: true });
     try {
-      await plugin(bb as never);
+      await plugin(alia as never);
     } finally {
       Object.defineProperty(process, "platform", original);
     }

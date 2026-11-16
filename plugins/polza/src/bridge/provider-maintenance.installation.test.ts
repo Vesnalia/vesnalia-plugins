@@ -6,9 +6,9 @@ const state = vi.hoisted(() => ({
   compatibilityOnly: false,
 }));
 
-vi.mock("@get-bb/plugin-sdk/provider-bridge", async (importOriginal) => ({
+vi.mock("@vesnalia/plugin-sdk/provider-bridge", async (importOriginal) => ({
   ...(await importOriginal<
-    typeof import("@get-bb/plugin-sdk/provider-bridge")
+    typeof import("@vesnalia/plugin-sdk/provider-bridge")
   >()),
   experimental_resolveExecutablePath: async () => "/test/claude",
   experimental_probeNpmGlobalPackage: async () => {

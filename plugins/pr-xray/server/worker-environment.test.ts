@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { describe, expect, it, vi } from "vitest";
 import type { PrDetails } from "../shared/schema";
 import { prCloneEnvironment, prCloneTarget, spawnPrWorker } from "./worker-environment";
@@ -26,7 +26,7 @@ const webProject = {
 const started = vi.fn(async () => ({ status: "active", environmentId: "env_1" }));
 const fastTiming = { timeoutMs: 50, pollMs: 1 };
 
-function fakeBb(spawn: ReturnType<typeof vi.fn>, projects: unknown[] = [webProject], get: ReturnType<typeof vi.fn> = started) {
+function fakeAlia(spawn: ReturnType<typeof vi.fn>, projects: unknown[] = [webProject], get: ReturnType<typeof vi.fn> = started) {
   const personal = { id: "proj_personal", name: "Personal", kind: "personal" };
   return {
     log: { warn: vi.fn() },
@@ -35,7 +35,7 @@ function fakeBb(spawn: ReturnType<typeof vi.fn>, projects: unknown[] = [webProje
       projects: { list: vi.fn(async () => [...projects, personal]) },
       threads: { spawn, get, archive: vi.fn(async () => ({})) },
     },
-  } as unknown as BbPluginApi;
+  } as unknown as AliaPluginApi;
 }
 
 const personalSpawn = { ...input, projectId: "proj_personal", environment: { type: "project-default" } };
@@ -59,11 +59,11 @@ describe("spawnPrWorker", () => {
     const get = vi.fn(async () => {
       throw new Error("daemon restarting");
     });
-    const bb = fakeBb(spawn, [webProject], get);
-    const result = await spawnPrWorker(bb, pr, "/tmp/w", () => input, fastTiming);
+    const alia = fakeAlia(spawn, [webProject], get);
+    const result = await spawnPrWorker(alia, pr, "/tmp/w", () => input, fastTiming);
     expect(result.hasRepo).toBe(false);
     expect(spawn).toHaveBeenCalledTimes(2);
-    expect(bb.sdk.threads.archive).toHaveBeenCalledWith({ threadId: "thr_1" });
+    expect(alia.sdk.threads.archive).toHaveBeenCalledWith({ threadId: "thr_1" });
   });
 
   it("keeps waiting while the thread is active but has no worktree yet", async () => {
@@ -72,13 +72,13 @@ describe("spawnPrWorker", () => {
       .fn()
       .mockResolvedValueOnce({ status: "active", environmentId: null })
       .mockResolvedValue({ status: "error", environmentId: null });
-    const result = await spawnPrWorker(fakeBb(spawn, [webProject], get), pr, "/tmp/w", () => input, fastTiming);
+    const result = await spawnPrWorker(fakeAlia(spawn, [webProject], get), pr, "/tmp/w", () => input, fastTiming);
     expect(result.hasRepo).toBe(false);
   });
 
-  it("runs in a private copy of the PR's commit, never a bb worktree or the checkout", async () => {
+  it("runs in a private copy of the PR's commit, never a VesnALIA worktree or the checkout", async () => {
     const spawn = vi.fn(async () => ({ id: "thr_1" }));
-    const result = await spawnPrWorker(fakeBb(spawn), pr, "/tmp/w", () => input);
+    const result = await spawnPrWorker(fakeAlia(spawn), pr, "/tmp/w", () => input);
     expect(result.hasRepo).toBe(true);
     expect(clonePrCommit).toHaveBeenCalledWith({ projectPath: "/code/web", remoteUrl: "git@github.com:acme/web.git", headSha: pr.headSha, dir: "/tmp/w" });
     expect(spawn).toHaveBeenCalledExactlyOnceWith({
@@ -93,7 +93,7 @@ describe("spawnPrWorker", () => {
   it("falls back to no repository when the copy can't be made", async () => {
     vi.mocked(clonePrCommit).mockRejectedValueOnce(new Error("no such path"));
     const spawn = vi.fn(async () => ({ id: "thr_2" }));
-    const result = await spawnPrWorker(fakeBb(spawn), pr, "/tmp/w", () => input);
+    const result = await spawnPrWorker(fakeAlia(spawn), pr, "/tmp/w", () => input);
     expect(result).toEqual({ thread: { id: "thr_2" }, hasRepo: false });
     expect(spawn).toHaveBeenCalledExactlyOnceWith(personalSpawn);
   });
@@ -101,7 +101,7 @@ describe("spawnPrWorker", () => {
   it("uses the personal project with no repository for a fork", async () => {
     const spawn = vi.fn(async () => ({ id: "thr_1" }));
     const build = vi.fn(() => input);
-    const result = await spawnPrWorker(fakeBb(spawn), forkPr, "/tmp/w", build);
+    const result = await spawnPrWorker(fakeAlia(spawn), forkPr, "/tmp/w", build);
     expect(result.hasRepo).toBe(false);
     expect(build).toHaveBeenCalledExactlyOnceWith(false);
     expect(spawn).toHaveBeenCalledExactlyOnceWith(personalSpawn);
@@ -109,7 +109,7 @@ describe("spawnPrWorker", () => {
 
   it("uses the personal project when no project matches the repository", async () => {
     const spawn = vi.fn(async () => ({ id: "thr_1" }));
-    const result = await spawnPrWorker(fakeBb(spawn, []), pr, "/tmp/w", () => input);
+    const result = await spawnPrWorker(fakeAlia(spawn, []), pr, "/tmp/w", () => input);
     expect(result.hasRepo).toBe(false);
     expect(spawn).toHaveBeenCalledExactlyOnceWith(personalSpawn);
   });
@@ -121,17 +121,17 @@ describe("spawnPrWorker", () => {
     const get = vi.fn();
     get.mockResolvedValueOnce({ status: "starting", environmentId: null });
     get.mockResolvedValueOnce({ status: "error", environmentId: null });
-    const bb = fakeBb(spawn, [webProject], get);
-    const result = await spawnPrWorker(bb, pr, "/tmp/w", () => input, fastTiming);
+    const alia = fakeAlia(spawn, [webProject], get);
+    const result = await spawnPrWorker(alia, pr, "/tmp/w", () => input, fastTiming);
     expect(result).toEqual({ thread: { id: "thr_2" }, hasRepo: false });
-    expect(bb.sdk.threads.archive).toHaveBeenCalledWith({ threadId: "thr_1" });
+    expect(alia.sdk.threads.archive).toHaveBeenCalledWith({ threadId: "thr_1" });
     expect(spawn).toHaveBeenLastCalledWith(personalSpawn);
   });
 
   it("keeps a worker that errored after it got its environment", async () => {
     const spawn = vi.fn(async () => ({ id: "thr_1" }));
     const get = vi.fn(async () => ({ status: "error", environmentId: "env_1" }));
-    const result = await spawnPrWorker(fakeBb(spawn, [webProject], get), pr, "/tmp/w", () => input, fastTiming);
+    const result = await spawnPrWorker(fakeAlia(spawn, [webProject], get), pr, "/tmp/w", () => input, fastTiming);
     expect(result.hasRepo).toBe(true);
     expect(spawn).toHaveBeenCalledTimes(1);
   });
@@ -139,7 +139,7 @@ describe("spawnPrWorker", () => {
   it("counts a worker as started after the timeout", async () => {
     const spawn = vi.fn(async () => ({ id: "thr_1" }));
     const get = vi.fn(async () => ({ status: "starting", environmentId: null }));
-    const result = await spawnPrWorker(fakeBb(spawn, [webProject], get), pr, "/tmp/w", () => input, fastTiming);
+    const result = await spawnPrWorker(fakeAlia(spawn, [webProject], get), pr, "/tmp/w", () => input, fastTiming);
     expect(result.hasRepo).toBe(true);
     expect(spawn).toHaveBeenCalledTimes(1);
   });
@@ -148,7 +148,7 @@ describe("spawnPrWorker", () => {
     const spawn = vi.fn();
     spawn.mockRejectedValueOnce(new Error("no such branch"));
     spawn.mockResolvedValueOnce({ id: "thr_2" });
-    const result = await spawnPrWorker(fakeBb(spawn), pr, "/tmp/w", () => input);
+    const result = await spawnPrWorker(fakeAlia(spawn), pr, "/tmp/w", () => input);
     expect(result).toEqual({ thread: { id: "thr_2" }, hasRepo: false });
     expect(spawn).toHaveBeenLastCalledWith(personalSpawn);
   });

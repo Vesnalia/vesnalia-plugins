@@ -1,8 +1,8 @@
 // Claude Code keeps each session at
 // ~/.claude/projects/<cwd slug>/<session id>.jsonl, plus an optional
 // <session id>/ directory for subagent transcripts. Copying a session gives
-// the imported bb thread its own branch of the conversation, so continuing
-// it in bb never changes the session T3 Code resumes.
+// the imported VesnALIA thread its own branch of the conversation, so continuing
+// it in VesnALIA never changes the session T3 Code resumes.
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { cp, mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";

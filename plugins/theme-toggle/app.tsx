@@ -8,7 +8,7 @@
 // the menu is drawn as plain DOM on top of the app. The same content script
 // repaints the button's artwork, so the switch on it shows the appearance the
 // click would leave behind.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 const PLUGIN_ID = "theme-toggle";
@@ -22,9 +22,9 @@ const HOVER_MS = 600;
 // covers the gap the cursor crosses between the button and the panel.
 const CLOSE_GRACE_MS = 250;
 
-// Appearance is a client-side bb setting (jotai atomWithStorage, raw string).
+// Appearance is a client-side VesnALIA setting (jotai atomWithStorage, raw string).
 // The key and its values match the app's own useTheme.
-const MODE_KEY = "bb.theme";
+const MODE_KEY = "alia.theme";
 type Mode = "light" | "dark" | "system";
 const MODES: Array<{ id: Mode; label: string }> = [
   { id: "light", label: "Light" },
@@ -54,7 +54,7 @@ function writeMode(mode: Mode): void {
   } catch {
     /* private mode — the class toggle below still applies */
   }
-  // bb reads this key through atomWithStorage, which listens for `storage`.
+  // VesnALIA reads this key through atomWithStorage, which listens for `storage`.
   // The originating tab never receives that event, so dispatch a synthetic one
   // and let the app re-render normally instead of only swapping the class.
   window.dispatchEvent(
@@ -89,10 +89,10 @@ function resolvedMode(): "light" | "dark" {
 // the bottom-left one: day above the cut, night below it. The half that is on
 // is filled and holds its symbol punched through, the other half is an empty
 // outline with its symbol drawn small — so the fill moves from one half to the
-// other on every flip. BB renders branding.icon as a CSS mask over a span
+// other on every flip. VesnALIA renders branding.icon as a CSS mask over a span
 // inside its own button, so swapping that one mask keeps the host's chrome
 // untouched. Keep the night face here identical to icon.svg — that file is the
-// still version bb shows in the plugin catalog.
+// still version VesnALIA shows in the plugin catalog.
 //
 // A mask image reads alpha, so the symbol on the filled half is cut out
 // through an SVG mask instead of being painted in a lighter colour. The
@@ -156,7 +156,7 @@ function iconUrl(lit: "day" | "night", punched: string, drawn: string): string {
 const ICON_NIGHT = iconUrl("night", ICON_MOON_CUT, ICON_SUN_SMALL);
 const ICON_DAY = iconUrl("day", ICON_SUN_CUT, ICON_MOON_SMALL);
 
-// bb marks the masked span with the asset it painted; without it the host fell
+// VesnALIA marks the masked span with the asset it painted; without it the host fell
 // back to a named icon, and there is nothing to repaint.
 const ICON_SELECTOR = "[data-plugin-icon-asset]";
 
@@ -415,8 +415,8 @@ export default definePluginApp((app) => {
   app.slots.sidebarFooterAction({
     id: ACTION_ID,
     title: "Theme: click for light or dark, hold to choose",
-    // A name bb cannot resolve, so the button falls back to branding.icon — the
-    // span the content script repaints. Since bb 0.46 a built-in name such as
+    // A name VesnALIA cannot resolve, so the button falls back to branding.icon — the
+    // span the content script repaints. Since VesnALIA 0.46 a built-in name such as
     // "Palette" wins over branding, and an empty one drops the button.
     icon: "theme-toggle/artwork",
     run: () => {
@@ -481,7 +481,7 @@ export default definePluginApp((app) => {
       window
         .matchMedia("(prefers-color-scheme: dark)")
         .addEventListener("change", () => paintIcon(), { signal });
-      // bb's own settings write the same key without a storage event, so also
+      // VesnALIA's own settings write the same key without a storage event, so also
       // watch the class the CSS keys off: every real appearance change, from
       // wherever it came, ends up there.
       const rootObserver = new MutationObserver(() => paintIcon());

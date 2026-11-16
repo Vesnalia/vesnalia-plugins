@@ -6,8 +6,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, it } from "vitest";
-import type { PluginAgentToolResult } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { PluginAgentToolResult } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { CONFIG_DEFAULTS, type WebConfig } from "../../src/web/config.ts";
 import { createByteBudget, createDeadline } from "../../src/web/deadline.ts";
 import {
@@ -396,7 +396,7 @@ describe.sequential("H1A review regressions: tool batches", () => {
 			pluginId: "forage",
 			experimental_declaredIconNames: ["search", "fetch", "map", "extract", "crawl", "diff"],
 		});
-		registerTools(fake.bb, fixtureRuntime(fake.bb, async () => config({ timeoutMs: 1_000, concurrency: 2, searxngUrl: server.url, provider: "searxng", ...overrides })));
+		registerTools(fake.alia, fixtureRuntime(fake.alia, async () => config({ timeoutMs: 1_000, concurrency: 2, searxngUrl: server.url, provider: "searxng", ...overrides })));
 		return fake;
 	}
 

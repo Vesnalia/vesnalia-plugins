@@ -2,7 +2,7 @@
 // host's declarative settings form: the friendly view of what the raw JSON
 // field holds, with the switches people actually want and a way to the page.
 import { toast } from "sonner";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Switch } from "@/components/ui/switch";
@@ -21,7 +21,7 @@ export function SettingsSection() {
 
 function SettingsBody() {
   const { data, rpc, refetch } = useOverview();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const toggle = async (id: string, enabled: boolean) => {
     try {
       await rpc.call("hook_set_enabled", { id, enabled });

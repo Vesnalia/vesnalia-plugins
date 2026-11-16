@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-// The review page's tabs in BB's side panel: Review agent and Main thread, which show the review the page shows.
+// The review page's tabs in VesnALIA's side panel: Review agent and Main thread, which show the review the page shows.
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() }, Toaster: () => null }));
@@ -24,7 +24,7 @@ async function publish(targetKey: string, over: Record<string, unknown> = {}) {
   withdraws.push(publishWorkspace(testWorkspace(targetKey, { reviewId: `api:${targetKey}`, review: { targetKey, kind: "ref" }, ...over })));
 }
 
-test("a review's page has Review agent and Main thread in BB's side panel, flush, the agent by its own sparkle", async () => {
+test("a review's page has Review agent and Main thread in VesnALIA's side panel, flush, the agent by its own sparkle", async () => {
   const app = await loadPluginApp(() => import("../app"));
   const tabs = app.tabs.filter((tab) => tab.context.kind === "nav-panel");
   expect(tabs.map(({ id, title, icon, layout, context, availability }) => ({ id, title, icon, layout, context, availability }))).toEqual([
@@ -43,7 +43,7 @@ test("Review agent shows beside a review, not All reviews or Settings; Main thre
     return text;
   };
   expect(["local-a", "", "settings/local-a"].map((subPath) => visible("agent", subPath))).toEqual(["true", "false", "false"]);
-  // Loading: it shows, so a tab BB remembers doesn't blink; once the page shows without a guide, it doesn't.
+  // Loading: it shows, so a tab VesnALIA remembers doesn't blink; once the page shows without a guide, it doesn't.
   expect(visible("main", "local-a")).toBe("true");
   const { publishReviewTitle } = await import("../lib/workspace-store");
   const untitle = publishReviewTitle("local-a", { id: "api:local-a", name: "A", line: "api:local-a · A" });

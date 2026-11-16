@@ -1,7 +1,7 @@
 // New thread on its own row, under the sidebar header that holds the space
-// switcher. bb's header slot is a single fixed-height row and has no slot
+// switcher. VesnALIA's header slot is a single fixed-height row and has no slot
 // between the header and the thread list, so we portal a row into the
-// sidebar body right after the header. If bb's markup changes and the anchor
+// sidebar body right after the header. If VesnALIA's markup changes and the anchor
 // is gone, the button falls back into the header next to the switcher.
 import { useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";

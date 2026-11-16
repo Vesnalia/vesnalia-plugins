@@ -7,7 +7,7 @@ async function run(command,args) {
 }
 async function build() {
  if(running){dirty=true;return;} running=true;
- try { await run(process.execPath,['scripts/generate.mjs']); await run('bb',['plugin','build','.']); await run('bb',['plugin','reload','bb-kujo']); }
+ try { await run(process.execPath,['scripts/generate.mjs']); await run('alia',['plugin','build','.']); await run('alia',['plugin','reload','alia-kujo']); }
  catch(error){console.error(error.message);} finally{running=false;if(dirty){dirty=false;void build();}}
 }
 for(const path of ['src','themes','assets']) watch(path,{recursive:true},(_,name)=>{

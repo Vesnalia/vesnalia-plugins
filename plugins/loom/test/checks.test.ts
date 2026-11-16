@@ -76,7 +76,7 @@ describe("a passing submit", () => {
     expect(checkData().runs.map((run) => run.command)).toEqual(["npm run lint", "npm test"]);
     expect(lastCheck().body).toContain("Checks passed");
     expect(lastCheck().body).toContain("npm test (exit 0");
-    expect(h.bb.sent("thr_w1").at(-1)).toMatch(/^\[loom\] CSV-1: the checks passed.*review/s);
+    expect(h.alia.sent("thr_w1").at(-1)).toMatch(/^\[loom\] CSV-1: the checks passed.*review/s);
     expect(runs().map((run) => [run.stage, run.label, run.ok])).toEqual([
       ["check", "git commit", 1],
       ["check", "git status", 1],
@@ -138,7 +138,7 @@ describe("a failing submit", () => {
     expect(lastCheck().body).toContain("Checks failed");
     expect(lastCheck().body).toContain("no-unused-vars");
     expect(checkData()).toMatchObject({ passed: false });
-    const message = h.bb.sent("thr_w1").at(-1)!;
+    const message = h.alia.sent("thr_w1").at(-1)!;
     expect(message).toMatch(/^\[loom\] CSV-1: the check "npm run lint" exited with 2/);
     expect(message).toContain("no-unused-vars");
     expect(h.store.thread(row.id)).toMatchObject({ clock_at: h.clock.t, idle_count: 0 });
@@ -155,7 +155,7 @@ describe("a failing submit", () => {
     submit(h.ctx, "thr_w1", "done");
     await settleChecks(h.ctx);
     expect(ticketOf(h, "CSV-1").state).toBe("working");
-    expect(h.bb.sent("thr_w1").at(-1)).toContain("timed out");
+    expect(h.alia.sent("thr_w1").at(-1)).toContain("timed out");
   });
 
   it("fails without running any command when a protected path changed", async () => {
@@ -163,7 +163,7 @@ describe("a failing submit", () => {
     expect(h.host.callsTo("exec")).toEqual([]);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", check_failures: 1 });
     expect(checkData()).toMatchObject({ passed: false, protectedHits: ["db/migrations/001.sql"] });
-    expect(h.bb.sent("thr_w1").at(-1)).toContain("db/migrations/001.sql");
+    expect(h.alia.sent("thr_w1").at(-1)).toContain("db/migrations/001.sql");
   });
 
   it("fails a change outside the scope under enforce = reject", async () => {
@@ -171,7 +171,7 @@ describe("a failing submit", () => {
     expect(h.host.callsTo("exec")).toEqual([]);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", check_failures: 1 });
     expect(checkData()).toMatchObject({ passed: false, outside: ["package.json"] });
-    expect(h.bb.sent("thr_w1").at(-1)).toContain("package.json");
+    expect(h.alia.sent("thr_w1").at(-1)).toContain("package.json");
   });
 
   it("fails when a check command wrote a tracked file, or moved HEAD, while it ran", async () => {
@@ -183,7 +183,7 @@ describe("a failing submit", () => {
     await settleChecks(h.ctx);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", check_failures: 1 });
     expect(lastCheck().body).toContain("The worktree changed while the checks ran");
-    expect(h.bb.sent("thr_w1").at(-1)).toContain("must not write tracked files");
+    expect(h.alia.sent("thr_w1").at(-1)).toContain("must not write tracked files");
 
     h.host.onExec = (_input, worktree) => void ((worktree.dirty = false), (worktree.head = "somebody-else"));
     h.host.worktree(WORKTREE).dirty = true;
@@ -207,7 +207,7 @@ describe("a failing submit", () => {
 
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "blocked", check_failures: 2, blocked_reason: "checks failed 2 times", worker_thread_id: null });
     expect(h.store.thread(row.id)).toMatchObject({ state: "ended", end_reason: "blocked" });
-    expect(h.bb.callsTo("archive")).toEqual([["thr_w1"]]);
+    expect(h.alia.callsTo("archive")).toEqual([["thr_w1"]]);
     expect(project().triage_pending).toBe(1);
     expect(posts().at(-1)).toMatchObject({ kind: "block", author_kind: "loom" });
   });
@@ -249,7 +249,7 @@ describe("a ticket in one repo of a multi-repo project", () => {
     expect(h.host.callsTo("exec")).toEqual([]);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", check_failures: 1 });
     expect(checkData()).toMatchObject({ passed: false, protectedHits: ["web.lock"] });
-    expect(h.bb.sent("thr_w1").at(-1)).toContain("web.lock");
+    expect(h.alia.sent("thr_w1").at(-1)).toContain("web.lock");
   });
 
   it("still fails a top-level protected path in a repo that adds none, and lets a path another repo protects through as outside the scope", async () => {
@@ -277,7 +277,7 @@ describe("host errors and lost runs", () => {
     await settleChecks(h.ctx);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", check_failures: 0 });
     expect(posts().at(-1)).toMatchObject({ kind: "system", body: "The checks could not run: host disconnected. Submit again." });
-    expect(h.bb.sent("thr_w1").at(-1)).toBe("[loom] CSV-1: The checks could not run: host disconnected. Submit again.");
+    expect(h.alia.sent("thr_w1").at(-1)).toBe("[loom] CSV-1: The checks could not run: host disconnected. Submit again.");
 
     h.host.errors.exec = null;
     submit(h.ctx, "thr_w1", "again");
@@ -318,7 +318,7 @@ describe("host errors and lost runs", () => {
     await settleChecks(h.ctx);
     expect(ticketOf(h, "CSV-1").state).toBe("queued");
     expect(posts().filter((post) => post.kind === "check")).toEqual([]);
-    expect(h.bb.sent("thr_w1")).toEqual([]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
   });
 
   it("keeps a passing result when the worker is still being ended, and tells nobody", async () => {
@@ -329,7 +329,7 @@ describe("host errors and lost runs", () => {
     submit(h.ctx, "thr_w1", "done");
     await settleChecks(h.ctx);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "review", head_sha: "c1" });
-    expect(h.bb.sent("thr_w1")).toEqual([]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
   });
 
   it("runs a ticket stranded in checking again, as the tick and a restart do, and commits only once", async () => {
@@ -363,7 +363,7 @@ describe("host errors and lost runs", () => {
   });
 });
 
-describe("a worker whose environment bb attached after spawn returned", () => {
+describe("a worker whose environment VesnALIA attached after spawn returned", () => {
   it("can submit: the pipeline finds the environment through the thread and keeps it on the row and the ticket", async () => {
     await seedProject(h);
     const row = await startLateWorker(h);
@@ -378,9 +378,9 @@ describe("a worker whose environment bb attached after spawn returned", () => {
     expect(h.store.thread(row.id)!.environment_id).toBe("env_late");
   });
 
-  it("still fails as a host error, without a counted failure, when bb has no environment for the thread yet", async () => {
+  it("still fails as a host error, without a counted failure, when VesnALIA has no environment for the thread yet", async () => {
     await seedProject(h);
-    h.bb.provisionEnvironment = false;
+    h.alia.provisionEnvironment = false;
     await startWorker(h);
     submit(h.ctx, "thr_w1", "done");
     await settleChecks(h.ctx);
@@ -394,14 +394,14 @@ describe("a worker that is still ending", () => {
   async function endingWorker() {
     await seedProject(h);
     const row = await startWorker(h);
-    h.bb.stopConfirms = false;
+    h.alia.stopConfirms = false;
     h.store.setTicketState(ticketOf(h, "CSV-1").id, "checking", "loom");
     await endThread(h.ctx, row, "blocked", { commit: true });
     expect(h.store.thread(row.id)!.state).toBe("ending");
     return row;
   }
   const finishEnding = async (row: { id: number }) => {
-    h.bb.stopConfirms = true;
+    h.alia.stopConfirms = true;
     await resumeEnding(h.ctx, h.store.thread(row.id)!);
   };
 
@@ -422,7 +422,7 @@ describe("a worker that is still ending", () => {
   it("records a failed check but leaves the ticket, the failure count and the worker alone", async () => {
     await seedProject(h);
     const row = await startWorker(h);
-    h.bb.stopConfirms = false;
+    h.alia.stopConfirms = false;
     h.host.worktree(WORKTREE).dirty = true;
     let release!: () => void;
     const held = new Promise<void>((resolve) => (release = resolve));
@@ -446,7 +446,7 @@ describe("a worker that is still ending", () => {
 
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "checking", check_failures: 0, worker_thread_id: "thr_w1" });
     expect(lastCheck().body).toContain("Checks failed");
-    expect(h.bb.sent("thr_w1")).toEqual([]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
 
     await finishEnding(row);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "blocked", worker_thread_id: null });
@@ -455,7 +455,7 @@ describe("a worker that is still ending", () => {
   it("records a host error but leaves the ticket and the worker alone, and tells nobody", async () => {
     await seedProject(h);
     const row = await startWorker(h);
-    h.bb.stopConfirms = false;
+    h.alia.stopConfirms = false;
     h.host.worktree(WORKTREE).dirty = true;
     h.host.errors.exec = new Error("host disconnected");
     submit(h.ctx, "thr_w1", "done");
@@ -464,7 +464,7 @@ describe("a worker that is still ending", () => {
 
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "checking", check_failures: 0, worker_thread_id: "thr_w1" });
     expect(posts().at(-1)).toMatchObject({ kind: "system", body: "The checks could not run: host disconnected. Submit again." });
-    expect(h.bb.sent("thr_w1")).toEqual([]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
 
     await finishEnding(row);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "blocked", worker_thread_id: null });
@@ -489,7 +489,7 @@ describe("a project that is not running", () => {
 
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "working", check_failures: 1 });
     expect(lastCheck().body).toContain("src/a.ts: boom");
-    expect(h.bb.sent("thr_w1")).toEqual([]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
   });
 
   it("sends nothing for a passing result or a host error either, and a paused project that is not --now holds them too", async () => {
@@ -498,7 +498,7 @@ describe("a project that is not running", () => {
     submit(h.ctx, "thr_w1", "done");
     await settleChecks(h.ctx);
     expect(ticketOf(h, "CSV-1").state).toBe("review");
-    expect(h.bb.sent("thr_w1")).toEqual([]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
 
     h.store.setTicketState(ticketOf(h, "CSV-1").id, "working", "loom");
     h.host.onExec = null;
@@ -507,7 +507,7 @@ describe("a project that is not running", () => {
     await settleChecks(h.ctx);
     expect(ticketOf(h, "CSV-1").state).toBe("working");
     expect(posts().at(-1)).toMatchObject({ kind: "system" });
-    expect(h.bb.sent("thr_w1")).toEqual([]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
   });
 });
 
@@ -523,7 +523,7 @@ describe("a worker on a machine of its own", () => {
 
   it("brings the passed commit home, and reviews the home commit with its tree", async () => {
     const { row } = await submittedOnBox();
-    expect(h.bb.environments.get(row.environment_id!)!.hostId).toBe("host_box1");
+    expect(h.alia.environments.get(row.environment_id!)!.hostId).toBe("host_box1");
     submit(h.ctx, row.thread_id!, "Mapped orders to rows");
     await settleChecks(h.ctx);
     expect(ticketOf(h, "CSV-1")).toMatchObject({ state: "review", head_sha: "home1", head_tree: "c1" });
@@ -681,7 +681,7 @@ describe("a worker on a machine of its own", () => {
     expect(post).toMatchObject({ kind: "system", data_json: JSON.stringify({ outcome: "index_timeout", setting: "git_index_timeout_seconds" }) });
     expect(post.body).toContain("This is not a failure of your work and counts against nothing: call loom_submit again with the same work, and do not block the ticket for it.");
     expect(post.body).toContain("the human raises merge.git_index_timeout_seconds in the spec (it is 300 seconds now)");
-    expect(h.bb.sent(row.thread_id!).at(-1)).toBe(`[loom] CSV-1: ${post.body}`);
+    expect(h.alia.sent(row.thread_id!).at(-1)).toBe(`[loom] CSV-1: ${post.body}`);
     expect(h.store.thread(row.id)).toMatchObject({ ended_at: null });
 
     h.host.errors.importCommit = null;

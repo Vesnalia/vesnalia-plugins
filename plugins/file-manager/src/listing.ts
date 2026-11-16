@@ -243,7 +243,7 @@ export interface SearchDirInput {
   /**
    * Wall-clock budget for the walk, in ms. Omitted means "no budget", which is
    * what the panel's own search uses: a user pressed a button and is watching.
-   * The mention provider passes one because bb time-boxes its `search` at 2s
+   * The mention provider passes one because VesnALIA time-boxes its `search` at 2s
    * and drops the result — without a budget here the abandoned walk would keep
    * reading directories long after nobody was waiting for it.
    */

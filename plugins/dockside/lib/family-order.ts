@@ -1,6 +1,6 @@
 import type { ThreadFamily } from "./inbox.ts";
 
-export const FAMILY_ORDER_STORAGE_KEY = "bb.dockside.family-order.v1";
+export const FAMILY_ORDER_STORAGE_KEY = "alia.dockside.family-order.v1";
 export const MAX_ORDER_PROJECTS = 100;
 export const MAX_ORDER_ROOTS = 500;
 const MAX_ID_LENGTH = 200;

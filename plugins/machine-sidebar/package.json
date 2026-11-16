@@ -1,26 +1,21 @@
 {
-  "name": "bb-plugin-machine-sidebar",
+  "name": "alia-plugin-machine-sidebar",
   "version": "0.3.0",
-  "description": "bb thread list grouped by machine, then project, with title tag pills, an inactive group and optional Farcall worker tasks.",
+  "description": "alia thread list grouped by machine, then project, with title tag pills, an inactive group and optional Farcall worker tasks.",
   "license": "MIT",
   "author": "Kevin Kern",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/regenrek/bb-plugin-machine-sidebar.git"
-  },
-  "homepage": "https://github.com/regenrek/bb-plugin-machine-sidebar#readme",
   "keywords": [
-    "bb-plugin",
-    "bb",
+    "alia-plugin",
+    "alia",
     "sidebar",
     "threads"
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.44",
-    "bbPluginSdk": ">=0.5.29"
+    "alia": ">=0.44",
+    "aliaPluginSdk": ">=0.5.29"
   },
-  "bb": {
+  "alia": {
     "name": "Machine Sidebar",
     "description": "Thread list grouped by machine, then project, with [Tag] pills, branches, an Inactive group and optional Farcall worker tasks.",
     "branding": {
@@ -35,7 +30,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.29",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -67,6 +61,23 @@
   "scripts": {
     "typecheck": "tsc -p .",
     "test": "node --test tree.test.ts tags.test.ts && vitest run",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.29"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/machine-sidebar#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/machine-sidebar"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

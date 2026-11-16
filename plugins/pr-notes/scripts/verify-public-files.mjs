@@ -25,7 +25,7 @@ if (
 )
   throw new Error("Overview contains unsupported content");
 const forbidden =
-  /\/Users\/[A-Za-z0-9._-]+\/|\bthr_[a-z0-9]{8,}\b|BB_(?:API_)?TOKEN\s*=|gh[pousr]_[A-Za-z0-9]{20,}/;
+  /\/Users\/[A-Za-z0-9._-]+\/|\bthr_[a-z0-9]{8,}\b|ALIA_(?:API_)?TOKEN\s*=|gh[pousr]_[A-Za-z0-9]{20,}/;
 const excluded = new Set([
   "node_modules",
   "dist",

@@ -1,7 +1,7 @@
-// bb-plugin-realtime-gateway — Voice Mode connection for the Vercel AI Gateway.
+// alia-plugin-realtime-gateway — Voice Mode connection for the Vercel AI Gateway.
 //
 // Voice Mode discovers plugins that publish a `realtimeConnection` rpc and then
-// dials the returned wss:// URL from the bb server, carrying the supplied
+// dials the returned wss:// URL from the VesnALIA server, carrying the supplied
 // headers on the WebSocket handshake. This plugin mints a short-lived gateway
 // client secret and returns the gateway realtime URL with the gateway's
 // subprotocol-auth header (the same contract @ai-sdk/gateway's
@@ -13,12 +13,12 @@
 //   ai-gateway-realtime.v1, ai-gateway-auth.<token>[, ai-gateway-team.<b64url>]
 // which the gateway turns into an Authorization: Bearer <token> upstream.
 //
-// The `bb realtime-gateway test` CLI opens a session exactly the way Voice
+// The `alia realtime-gateway test` CLI opens a session exactly the way Voice
 // Mode's backend does (undici WebSocket + headers) and replays Voice Mode's
 // own session.update, so you can verify the handshake and the wire format
 // end-to-end before starting a real voice session.
 import { WebSocket as UndiciWebSocket } from "undici";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const GATEWAY_ORIGIN = "https://ai-gateway.vercel.sh";
@@ -46,15 +46,15 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     aiGatewayApiKey: {
       type: "string",
       label: "Vercel AI Gateway API key",
       description:
-        "From vercel.com → AI Gateway → API keys. Stored only on the bb server host.",
+        "From vercel.com → AI Gateway → API keys. Stored only on the VesnALIA server host.",
       default: "",
       secret: true,
     },
@@ -77,7 +77,7 @@ export default async function plugin(bb: BbPluginApi) {
     aiGatewayApiKey.trim() || process.env.AI_GATEWAY_API_KEY?.trim() || "";
 
   if (!gatewayKey) {
-    bb.log.warn(
+    alia.log.warn(
       "no Vercel AI Gateway key: set aiGatewayApiKey in Settings → Plugins → Realtime Gateway",
     );
   }
@@ -91,7 +91,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   /** POST with a hard timeout — an indefinite request must never wedge the CLI. */
   async function gatewayPost(path: string, body: unknown): Promise<unknown> {
-    bb.log.info(`gatewayPost ${path}`);
+    alia.log.info(`gatewayPost ${path}`);
     const controller = new AbortController();
     const kill = setTimeout(() => controller.abort(), 15000);
     try {
@@ -165,7 +165,7 @@ export default async function plugin(bb: BbPluginApi) {
     };
   }
 
-  bb.rpc.register(
+  alia.rpc.register(
     rpcContract,
     {
       realtimeConnection: async () => {
@@ -182,7 +182,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb realtime-gateway test [--model <gatewayModelSlug>]",
+    "  VesnALIA realtime-gateway test [--model <gatewayModelSlug>]",
     "",
     "Mints a client secret and opens a realtime session exactly as Voice",
     "Mode's backend would, sending its own session.update. Prints the first",
@@ -190,14 +190,14 @@ export default async function plugin(bb: BbPluginApi) {
     "wire format (the model id here overrides the plugin setting for this run).",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "realtime-gateway",
     summary: "Voice Mode realtime sessions through the Vercel AI Gateway",
     commands: [
       {
         name: "test",
         summary: "Mint a secret and probe the gateway realtime wire (one session)",
-        usage: "bb realtime-gateway test [--model <openai/gpt-realtime-…>]",
+        usage: "alia realtime-gateway test [--model <openai/gpt-realtime-…>]",
       },
     ],
     async run(argv) {
@@ -362,5 +362,5 @@ export default async function plugin(bb: BbPluginApi) {
     });
   }
 
-  bb.onDispose(() => bb.log.info("disposed"));
+  alia.onDispose(() => alia.log.info("disposed"));
 }

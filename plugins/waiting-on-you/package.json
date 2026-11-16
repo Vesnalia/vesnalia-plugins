@@ -1,9 +1,9 @@
 {
-  "name": "bb-plugin-waiting-on-you",
+  "name": "alia-plugin-waiting-on-you",
   "version": "0.1.0",
-  "description": "See which agent threads wait on your reply or failed, in a block above bb's sidebar thread list.",
+  "description": "See which agent threads wait on your reply or failed, in a block above VesnALIA's sidebar thread list.",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "needs-you",
     "attention",
     "sidebar",
@@ -11,20 +11,12 @@
   ],
   "author": "qwent71",
   "license": "MIT",
-  "homepage": "https://github.com/qwent71/bb-plugin-waiting-on-you#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/qwent71/bb-plugin-waiting-on-you.git"
-  },
-  "bugs": {
-    "url": "https://github.com/qwent71/bb-plugin-waiting-on-you/issues"
-  },
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49"
   },
-  "bb": {
+  "alia": {
     "name": "Waiting On You",
     "description": "A block above the thread list: threads waiting on your reply and threads that failed.",
     "branding": {
@@ -39,7 +31,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -66,6 +57,23 @@
     "vaul": "^1.1.2"
   },
   "scripts": {
-    "check": "tsc -p . && bb plugin build && node test/settings.check.mjs && node test/inbox.check.mts && node test/presets.check.mts && node test/shortcuts.check.mts"
+    "check": "tsc -p . && alia plugin build && node test/settings.check.mjs && node test/inbox.check.mts && node test/presets.check.mts && node test/shortcuts.check.mts"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/waiting-on-you#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/waiting-on-you"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

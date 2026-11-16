@@ -1,5 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const TOKEN_KEY = "agent-access-token.v1";
@@ -21,9 +21,9 @@ export interface AgentTokenManager {
   verify(token: string): Promise<boolean>;
 }
 
-export function createAgentTokenManager(bb: Pick<BbPluginApi, "storage">): AgentTokenManager {
+export function createAgentTokenManager(alia: Pick<AliaPluginApi, "storage">): AgentTokenManager {
   const read = async () => {
-    const parsed = storedTokenSchema.safeParse(await bb.storage.kv.get(TOKEN_KEY));
+    const parsed = storedTokenSchema.safeParse(await alia.storage.kv.get(TOKEN_KEY));
     return parsed.success ? parsed.data : null;
   };
   return {
@@ -34,11 +34,11 @@ export function createAgentTokenManager(bb: Pick<BbPluginApi, "storage">): Agent
     async create() {
       const token = `mtgs_${randomBytes(32).toString("base64url")}`;
       const createdAt = Date.now();
-      await bb.storage.kv.set(TOKEN_KEY, { hash: createHash("sha256").update(token).digest("hex"), createdAt });
+      await alia.storage.kv.set(TOKEN_KEY, { hash: createHash("sha256").update(token).digest("hex"), createdAt });
       return { token, createdAt };
     },
     async revoke() {
-      await bb.storage.kv.delete(TOKEN_KEY);
+      await alia.storage.kv.delete(TOKEN_KEY);
       return { configured: false, createdAt: null };
     },
     async verify(token) {

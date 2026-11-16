@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-auto-pin",
+  "name": "alia-plugin-auto-pin",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.40",
-    "bbPluginSdk": ">=0.4.21"
+    "alia": ">=0.40",
+    "aliaPluginSdk": ">=0.4.21"
   },
-  "bb": {
+  "alia": {
     "name": "Auto Pin",
     "description": "Automatically pin newly created visible root threads.",
     "branding": {
@@ -16,12 +16,11 @@
     "skills": []
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run --reporter=verbose",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.21",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -31,5 +30,22 @@
     "typescript": "^5.7.0",
     "vitest": "^3.2.4",
     "zod": "^4.3.6"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.21"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/auto-pin#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/auto-pin"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

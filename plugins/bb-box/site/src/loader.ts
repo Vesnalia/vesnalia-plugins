@@ -36,7 +36,7 @@ async function loadPages({ store, parseData, renderMarkdown, generateDigest, con
 
 export function repositoryDocs(): Loader {
   return {
-    name: "bb-box-repository-docs",
+    name: "alia-box-repository-docs",
     async load(context) {
       await loadPages(context);
       context.watcher?.add(watchedFolders);

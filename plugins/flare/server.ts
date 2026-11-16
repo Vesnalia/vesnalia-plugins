@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { registerCli } from "./src/cli";
 import { Companions } from "./src/companion";
 import { CompanionMarks } from "./src/marks";
@@ -24,18 +24,18 @@ function pause(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
-export default function flare(bb: BbPluginApi): void {
-  const settings = bb.settings.define(SETTING_DESCRIPTORS);
-  const db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+export default function flare(alia: AliaPluginApi): void {
+  const settings = alia.settings.define(SETTING_DESCRIPTORS);
+  const db = alia.storage.database();
+  alia.storage.migrate(db, MIGRATIONS);
   // Only this plugin writes its database, so a long wait means something is wrong; a flare must never sit behind it.
   db.pragma("busy_timeout = 500");
   const store = new FlareStore(db);
-  const flares = new FlareService(bb, store, async () => readSettings(await settings.get()), Date.now, new Companions(bb, store));
-  registerProvider(bb);
+  const flares = new FlareService(alia, store, async () => readSettings(await settings.get()), Date.now, new Companions(alia, store));
+  registerProvider(alia);
 
-  const marks = new CompanionMarks(bb);
-  bb.rpc.register(rpcContract, {
+  const marks = new CompanionMarks(alia);
+  alia.rpc.register(rpcContract, {
     banner: ({ threadId }) => flares.banner(threadId),
     marks: async ({ threadId }) => {
       const companion = store.companionOf(threadId);
@@ -48,42 +48,42 @@ export default function flare(bb: BbPluginApi): void {
       return { ok: true as const };
     },
   });
-  registerTools(bb, flares);
-  registerCli(bb, flares);
+  registerTools(alia, flares);
+  registerCli(alia, flares);
 
-  bb.events.on("thread.active", ({ thread }) => flares.onActive(thread));
-  bb.events.on("thread.idle", ({ thread }) => flares.onIdle(thread));
-  bb.events.on("thread.failed", ({ thread, error }) => flares.onFailed(thread, error));
-  bb.events.on("thread.deleted", ({ thread }) => flares.onDeleted(thread));
+  alia.events.on("thread.active", ({ thread }) => flares.onActive(thread));
+  alia.events.on("thread.idle", ({ thread }) => flares.onIdle(thread));
+  alia.events.on("thread.failed", ({ thread, error }) => flares.onFailed(thread, error));
+  alia.events.on("thread.deleted", ({ thread }) => flares.onDeleted(thread));
 
   // Reminders and a child's flares reach an agent as a steer, and a steer that finds no running turn would start
   // one, for example after it waited in the queue behind a question. Flare's notes alone never start a turn.
-  bb.experimental_hooks.on("message.dispatch", (ctx) => {
+  alia.experimental_hooks.on("message.dispatch", (ctx) => {
     try {
-      if (startsTurnWithOnlyFlareNotes(ctx, bb.pluginId)) {
+      if (startsTurnWithOnlyFlareNotes(ctx, alia.pluginId)) {
         return { action: "reject", message: "Flare dropped a background note for the agent because this thread's turn had already ended." };
       }
     } catch (error) {
-      bb.log.warn(`The dispatch check failed, so the message went ahead: ${String(error)}`);
+      alia.log.warn(`The dispatch check failed, so the message went ahead: ${String(error)}`);
     }
     return { action: "proceed" };
   });
 
-  bb.background.service("turns", {
+  alia.background.service("turns", {
     async start(signal) {
-      await flares.reconcile().catch((error: unknown) => bb.log.warn(`Could not match runs to running threads: ${String(error)}`));
+      await flares.reconcile().catch((error: unknown) => alia.log.warn(`Could not match runs to running threads: ${String(error)}`));
       while (!signal.aborted) {
         await pause(NUDGE_INTERVAL_MS, signal);
         if (signal.aborted) break;
-        await flares.nudge().catch((error: unknown) => bb.log.warn(`Reminders failed: ${String(error)}`));
+        await flares.nudge().catch((error: unknown) => alia.log.warn(`Reminders failed: ${String(error)}`));
       }
     },
   });
 
-  bb.background.schedule("prune", "17 3 * * *", async () => {
+  alia.background.schedule("prune", "17 3 * * *", async () => {
     const removed = await flares.prune((await settings.get()).keepDays);
-    if (removed > 0) bb.log.info(`Deleted ${removed} old flares`);
+    if (removed > 0) alia.log.info(`Deleted ${removed} old flares`);
   });
 
-  bb.onDispose(() => flares.settled());
+  alia.onDispose(() => flares.settled());
 }

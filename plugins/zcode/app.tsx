@@ -1,10 +1,10 @@
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import type {
   PluginTimelineRendererProps,
   PluginNavPanelProps,
   PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
-import { useBbContext, useRpc } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import { useAliaContext, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useState } from "react";
 import type { workflowRunsRpcContract } from "./src/runsContract.js";
 import type { WorkflowRunView } from "./src/runsContract.js";
@@ -447,7 +447,7 @@ function RunsTable({ state }: { state: RunsState }) {
 }
 
 function WorkflowHub({}: PluginNavPanelProps) {
-  const { projectId } = useBbContext();
+  const { projectId } = useAliaContext();
   const state = useWorkflowRuns(projectId ? { projectId } : null);
   return (
     <div style={{ display: "grid", gap: 10, padding: 12 }}>

@@ -10,12 +10,12 @@ each person's control read again (#318).
 ## Context
 
 Control lived in the plugin's memory only, so every update or reload of
-bb-box gave each person's control back to the agent. Since #139 the plugin
+alia-box gave each person's control back to the agent. Since #139 the plugin
 also set each desktop back to the agent's size as it stopped. In the check
 of #293, a deploy took control from the person and changed the size of the
 desktop they were using.
 
-BB starts a plugin's next instance before it stops the last one. It then
+VesnALIA starts a plugin's next instance before it stops the last one. It then
 waits up to 5 s for each of the last instance's services before that
 instance closes its viewers' connections. So the last instance cannot hand
 its state over as it stops, and the new instance cannot know when the
@@ -52,7 +52,7 @@ viewer's connection closes. The viewer tries again after 1 s, then after
 
 - An update or reload no longer takes control from a person whose viewer
   is open, nor changes their desktop's size.
-- If the person closed the viewer while bb-box restarted, the agent waits
+- If the person closed the viewer while alia-box restarted, the agent waits
   up to 60 s, or takes control back with `computer_take_control` (038).
 - A plugin that stops without disposing, as in a crash, leaves the latest
   stored control, so the next start gives the desktop's size back after

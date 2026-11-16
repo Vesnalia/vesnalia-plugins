@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import { isActivityIndicator } from "./StatusGlyph";
@@ -29,7 +29,7 @@ export function ThreadLeadStatus({
     isWorking(thread) ||
     isActivityIndicator(thread.indicator);
   if (working) {
-    // BB's default thread-row spinner size (size-4).
+    // VesnALIA's default thread-row spinner size (size-4).
     return (
       <Icon
         name="Loading"

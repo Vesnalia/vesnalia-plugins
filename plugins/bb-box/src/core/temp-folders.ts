@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { isSignallablePid } from "../transports/spawns.ts";
 
-export const TEMP_PREFIX = "bb-box-";
-export const OWNER_FILE = ".bb-box-owner";
+export const TEMP_PREFIX = "alia-box-";
+export const OWNER_FILE = ".alia-box-owner";
 export const UNMARKED_KEPT_FOR_MS = 24 * 3_600_000;
 
 export interface ProcessView {

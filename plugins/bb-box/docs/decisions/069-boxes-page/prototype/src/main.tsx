@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import "./theme.css";
-import { experimental_Icon as Icon, OPEN_THREAD } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, OPEN_THREAD } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,7 +23,7 @@ function ThreadStandIn({ id }: { id: string }) {
     <div className="mx-auto w-full max-w-3xl space-y-4 px-4 pb-6 pt-3 md:px-5 md:pt-4">
       <TopRow trail={[{ words: "Back", go: () => history.back() }, { words: "Thread" }]} />
       <h1 className="text-base font-medium text-foreground">{thread?.title ?? id}</h1>
-      <p className="text-sm text-muted-foreground">BB's thread, not part of this prototype. {thread ? (thread.running ? "It is working now." : `It has been idle for ${span(store.now - thread.activeAt)}.`) : ""}</p>
+      <p className="text-sm text-muted-foreground">VesnALIA's thread, not part of this prototype. {thread ? (thread.running ? "It is working now." : `It has been idle for ${span(store.now - thread.activeAt)}.`) : ""}</p>
     </div>
   );
 }
@@ -33,7 +33,7 @@ function SettingsStandIn({ section }: { section: string }) {
   const row = "flex items-center justify-between gap-4 px-4 py-3";
   return (
     <div className="mx-auto w-full max-w-3xl space-y-5 px-4 pb-6 pt-3 md:px-5 md:pt-4">
-      <TopRow trail={[{ words: "Back", go: () => history.back() }, { words: "BB Box settings" }]} />
+      <TopRow trail={[{ words: "Back", go: () => history.back() }, { words: "VesnALIA Box settings" }]} />
       <p className="text-sm text-muted-foreground">A stand-in for decision 067's settings page, with only what this prototype needs.</p>
       <section className={cn("overflow-hidden rounded-lg border border-border bg-card", section === "monitor" && "ring-1 ring-ring")}>
         <p className="border-b border-border px-4 py-2.5 text-sm font-medium text-foreground">Monitor</p>
@@ -166,7 +166,7 @@ function Chrome({ children, onBoxes }: { children: ReactNode; onBoxes: boolean }
   return (
     <div className="flex h-full min-h-0 bg-background">
       <>
-          <nav aria-label="BB" className="flex w-11 max-sm:hidden shrink-0 flex-col items-center gap-3 bg-rail py-3 text-muted-foreground">
+          <nav aria-label="ALIA" className="flex w-11 max-sm:hidden shrink-0 flex-col items-center gap-3 bg-rail py-3 text-muted-foreground">
             <Icon name="Plus" className="size-4" aria-hidden />
             <button type="button" aria-label="Boxes" className={cn("rounded-md p-1.5", onBoxes ? "bg-state-active text-foreground" : "hover:bg-state-hover")} onClick={() => go({ page: "list", tab: null })}>
               <BoxGlyph className="size-4" />

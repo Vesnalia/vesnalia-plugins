@@ -1,5 +1,5 @@
-// Plugin catalog: a board card is a plugin. The column, the state in bb, the labels and the reasons «Rework» is closed are computed
-// from facts (`PluginFacts`) by pure functions; `Catalog` gathers the facts from the store and the ports and reconciles the board with bb.
+// Plugin catalog: a board card is a plugin. The column, the state in VesnALIA, the labels and the reasons «Rework» is closed are computed
+// from facts (`PluginFacts`) by pure functions; `Catalog` gathers the facts from the store and the ports and reconciles the board with VesnALIA.
 
 import { editsText, MAIN_BRANCH } from "./gates";
 import { sourcePath, type GitFacts, type InstalledPlugin, type PluginState, type Ports } from "./ports";
@@ -10,7 +10,7 @@ import type { AttemptRow, PilotState, PluginRow, Store, WorkRow } from "./store"
 /** Everything known about a card at the time of the request. */
 export interface PluginFacts {
   row: PluginRow;
-  /** State in bb according to the last confirmed list; null — the plugin is not installed (or bb has never confirmed it yet). */
+  /** State in VesnALIA according to the last confirmed list; null — the plugin is not installed (or VesnALIA has never confirmed it yet). */
   installed: InstalledPlugin | null;
   /** The plugin's working copy in the plugins root (`PLUGINS_ROOT`); null — no folder (or git could not be read — then `gitError` is set). */
   git: GitFacts | null;
@@ -24,14 +24,14 @@ export interface PluginFacts {
   pilot?: PilotState | null;
 }
 
-/** Column: with an open work — the column of its stage; without a work — by bb: enabled — «In production», disabled or not installed — «Retired». */
+/** Column: with an open work — the column of its stage; without a work — by VesnALIA: enabled — «In production», disabled or not installed — «Retired». */
 export function columnOf(f: PluginFacts): Column {
   if (f.work) return STAGES.find((s) => s.no === f.work!.stage)?.column ?? "context";
   return f.installed !== null && f.installed.enabled ? "live" : "off";
 }
 
-/** The state in bb is shown separately from the column. `stale` — the last plugin list could not be fetched: this is the last confirmed state. */
-export function bbStateOf(f: PluginFacts): { state: PluginState | "not-installed"; stale: boolean } {
+/** The state in VesnALIA is shown separately from the column. `stale` — the last plugin list could not be fetched: this is the last confirmed state. */
+export function aliaStateOf(f: PluginFacts): { state: PluginState | "not-installed"; stale: boolean } {
   return { state: f.installed ? f.installed.state : "not-installed", stale: f.row.list_failed_at !== null };
 }
 
@@ -142,7 +142,7 @@ export class Catalog {
   private gitSeq = 0;
   /**
    * Running cache refreshes: `again` — another pass was requested while one was running (the earlier one may have started before the change); `state` — the
-   * next pass also needs to reconcile the plugin's state with bb, not just git.
+   * next pass also needs to reconcile the plugin's state with VesnALIA, not just git.
    */
   private readonly refreshing = new Map<string, { again: boolean; state: boolean; done: Promise<void> }>();
 
@@ -157,7 +157,7 @@ export class Catalog {
   ) {}
 
   /**
-   * Reconcile the board with bb: the list of installed plugins and the `bb-plugin-*` folders. Called at startup, every five minutes and on `system:changed`.
+   * Reconcile the board with VesnALIA: the list of installed plugins and the `alia-plugin-*` folders. Called at startup, every five minutes and on `system:changed`.
    *
    * If the list did not come, nothing is overwritten (name, folder and source stay as they were) and the cards get a failure mark: they are «stale», not
    * «not installed». New folders are not added without the list — whether they are installed is unknown. If one plugin fails to reconcile, the rest
@@ -206,7 +206,7 @@ export class Catalog {
     if (inst) {
       let state = inst.state;
       let error = inst.error;
-      // The folder is gone but bb still considers the plugin running: bb reports `missing` only when it loads the plugin from scratch.
+      // The folder is gone but VesnALIA still considers the plugin running: VesnALIA reports `missing` only when it loads the plugin from scratch.
       if (state !== "missing" && inst.rootDir !== null && !(await this.ports.fs.exists(inst.rootDir))) {
         state = "missing";
         error = `plugin folder is missing: ${inst.rootDir}`;
@@ -221,7 +221,7 @@ export class Catalog {
     this.errors.delete(id);
     if (dir !== null) {
       this.store.tx(() => {
-        // The name the owner entered at creation is not overwritten by the scaffold's name (`bb plugin new` puts the id into the manifest).
+        // The name the owner entered at creation is not overwritten by the scaffold's name (`alia plugin new` puts the id into the manifest).
         this.store.upsertSeen({ id, name: row?.name ?? folder?.name ?? id, dir, source: null }, now);
         this.store.setNotInstalled(id, now);
       });
@@ -273,8 +273,8 @@ export class Catalog {
   }
 
   /**
-   * Targeted reconcile of one plugin — after an owner action and after a rollout attempt step: its state in bb (one list request, this plugin's
-   * row; folders and other plugins are not touched) and the git of its working copy. Without it the column and the bb state on the board would wait
+   * Targeted reconcile of one plugin — after an owner action and after a rollout attempt step: its state in VesnALIA (one list request, this plugin's
+   * row; folders and other plugins are not touched) and the git of its working copy. Without it the column and the VesnALIA state on the board would wait
    * for the full catalog reconcile. A failed state reconcile is thrown after git is read. A plugin not on the board — nothing happens.
    */
   async refreshPlugin(id: string): Promise<void> {
@@ -324,7 +324,7 @@ export class Catalog {
     }
   }
 
-  /** The plugin's row from bb's list. If the list did not come, the previous confirmed state stays and the row is marked «stale». */
+  /** The plugin's row from VesnALIA's list. If the list did not come, the previous confirmed state stays and the row is marked «stale». */
   private async syncPlugin(id: string): Promise<void> {
     const row = this.store.plugin(id);
     if (!row) return;

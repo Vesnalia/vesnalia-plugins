@@ -1,4 +1,4 @@
-// bb-plugin-agent-board — the single-agent focus view.
+// alia-plugin-agent-board — the single-agent focus view.
 //
 // Renders when the board derives exactly ONE logical active execution
 // (see lib/focus-model.ts). Everything is truthful and bounded: no
@@ -7,7 +7,7 @@
 // restrained CSS driven by state changes, and fully disabled under
 // prefers-reduced-motion.
 import { useEffect, useRef, useState } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { BoardCard, BoardSnapshot } from "@/contract/rpc";
 import { cardElapsedMs, formatElapsed } from "@/lib/board-model";
 import type { FocusCompletedRow, FocusModel, FocusUpNextRow } from "@/lib/focus-model";
@@ -105,12 +105,12 @@ export function SingleAgentFocus({
   now: number;
 }) {
   const reducedMotion = usePrefersReducedMotion();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [showOther, setShowOther] = useState(false);
 
   const hero = model.hero;
   const executing = hero.status === "running" || hero.status === "starting";
-  const timelineTarget = timelineTargetForCard(hero, `bb:${snapshot.root.threadId}`);
+  const timelineTarget = timelineTargetForCard(hero, `alia:${snapshot.root.threadId}`);
 
   // Current-activity line: swap with a one-shot crossfade when the text
   // changes (never re-animates the whole card; no loop — a single bounded

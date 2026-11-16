@@ -1,13 +1,13 @@
 ---
 name: memory-explorer
-description: How the Memory Explorer page shows BB memory, how to link memories with typed relations, and the Notes rule. Read before writing or editing any memory meant to show on the page (an entity such as a person, company, team, system, integration, meeting or initiative, or an episode, procedure, decision, fact or preference), its `[[links]]` or `## Relations`, or a memory's `## Notes` section.
+description: How the Memory Explorer page shows VesnALIA memory, how to link memories with typed relations, and the Notes rule. Read before writing or editing any memory meant to show on the page (an entity such as a person, company, team, system, integration, meeting or initiative, or an episode, procedure, decision, fact or preference), its `[[links]]` or `## Relations`, or a memory's `## Notes` section.
 ---
 
 # Memory Explorer
 
-The user browses BB memory on the Memory Explorer page: a table, a drawer per
+The user browses VesnALIA memory on the Memory Explorer page: a table, a drawer per
 memory and a link graph. The plugin has no agent tool or command; read and
-write memory as you otherwise would (`bb memory …`, or the tool your host
+write memory as you otherwise would (`alia memory …`, or the tool your host
 provides for it).
 
 ## Never write Notes

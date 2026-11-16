@@ -1,10 +1,10 @@
-# Qlik Sense for bb
+# Qlik Sense for VesnALIA
 
 Agents read Qlik Sense Enterprise reports — sheets, tables, charts, pivots and
 KPIs — with filters, recalculated by the Qlik engine on every call. Read-only:
 nothing in Qlik changes.
 
-Setup is one page in the bb sidebar:
+Setup is one page in the VesnALIA sidebar:
 
 1. **Sign in.** Qlik address, `DOMAIN\user` login and password → *Save and check
    sign-in*.
@@ -22,19 +22,19 @@ Interface: English and Russian — the EN | RU switch is at the top of the page.
 ## Install
 
 ```sh
-bb plugin install git:github.com/xMinor-1/bb-plugins --plugin qlik-sense --yes
+alia plugin install git:github.com/xMinor-1/bb-plugins --plugin qlik-sense --yes
 ```
 
 ## Who gets the data
 
 Company data should reach only the models the company approved. The plugin
-enforces that in bb, not in the agent:
+enforces that in VesnALIA, not in the agent:
 
 - The Qlik tools and the `qlik-sense` skill are offered only to sessions whose
   provider and model match the allow-list. Other agents never see them.
 - Every tool call re-checks the model the thread is running *now*, so switching
   models mid-thread does not keep the tools working.
-- A thread that has received Qlik answers is marked. bb refuses to send that
+- A thread that has received Qlik answers is marked. VesnALIA refuses to send that
   thread — or a fork of it — to a model outside the list, because the whole
   history, Qlik answers included, would go to that model.
 
@@ -45,23 +45,23 @@ acp-opencode corp/*
 ```
 
 Set it in the panel or with
-`bb plugin config qlik-sense set allowedModels "acp-opencode corp/*"`.
+`alia plugin config qlik-sense set allowedModels "acp-opencode corp/*"`.
 A pre-configured install can also set `url`, the Qlik address suggested in the
 panel, so people only type their login and password.
 
 What this does not cover: an agent with shell access running as the same OS
 user can read anything that user can, including the password store. The guard
-keeps Qlik data from reaching models by accident; it is not a sandbox. bb's own
+keeps Qlik data from reaching models by accident; it is not a sandbox. VesnALIA's own
 AI services (thread titles, commit messages) send thread text to their
 service — turn them off in Settings → AI services when threads hold company data.
 
 ## The password
 
-The password stays on the machine where agents run, never on the bb server:
+The password stays on the machine where agents run, never on the VesnALIA server:
 
 | OS | Store |
 | --- | --- |
-| macOS | login Keychain (`security`, service `bb-qlik-sense`) |
+| macOS | login Keychain (`security`, service `alia-qlik-sense`) |
 | Windows | encrypted with the Windows account (DPAPI through PowerShell, cmdlets allowed in Constrained Language Mode) |
 | Linux, or when the OS store refuses | a file readable only by the user |
 
@@ -101,20 +101,20 @@ line starts a section. `qlik_guide` returns the first section and lists the
 others; `section` reads one of them. The tool answers allowed models only.
 Company details live in this setting, not in the plugin.
 
-It is a plain setting, not a secret: anyone who can run the bb CLI on this bb,
-including an agent with a shell, can read it with `bb plugin config`. Keep
+It is a plain setting, not a secret: anyone who can run the VesnALIA CLI on this VesnALIA,
+including an agent with a shell, can read it with `alia plugin config`. Keep
 passwords and figures out of it.
 
 ## How it works
 
 ```
-bb server (server.ts)                     machine where agents run (src/host.ts)
+alia server (server.ts)                     machine where agents run (src/host.ts)
   allow-list, tool gating, dispatch hook ──► Qlik sign-in, engine WebSocket,
   panel RPC                                  password store, report catalog
 ```
 
 - `server.ts` registers the tools, selects them per session with
-  `bb.agents.configure`, records each turn's model and refuses tainted turns in
+  `alia.agents.configure`, records each turn's model and refuses tainted turns in
   the `message.dispatch` hook, and relays panel calls. It stores no company
   data: only the allow-list and per-thread markers.
 - `src/host.ts` runs on the machine where the thread runs — the one that can
@@ -126,18 +126,18 @@ bb server (server.ts)                     machine where agents run (src/host.ts)
 - **Setup status for other plugins.** `setupStatus` answers a build's
   onboarding page, such as Fleet Kit's. Input
   `{ lang?: "en" | "ru", hostId?: string }`; without `hostId` it asks the
-  machine the Qlik page used last, else bb's own machine. Output
+  machine the Qlik page used last, else VesnALIA's own machine. Output
   `{ state: "done" | "todo" | "problem", summary, path }`: `done` once the
   sign-in passed its last check and at least one report is enabled for agents.
   `summary` is one line in `lang` with no address, login or report names,
   `path` is the Qlik page. It reads the saved state only and sends nothing to Qlik;
   a machine's answer serves for 5 seconds, and a change on the panel drops it.
   It is the only RPC method other plugins may call: the panel's methods refuse
-  any caller but the panel, the bb CLI and agents.
+  any caller but the panel, the VesnALIA CLI and agents.
 - The password store is asked whether a password is there without reading it
   (Keychain item attributes, the DPAPI or private file's presence), so frequent
   status checks do not touch the password.
-- bb runs its processes with `--use-system-ca`, so corporate certificate
+- VesnALIA runs its processes with `--use-system-ca`, so corporate certificate
   authorities trusted by the OS are trusted here too.
 
 ## Development
@@ -147,7 +147,7 @@ npm install
 npm run typecheck
 npm test            # unit tests, no Qlik needed
 npm run test:e2e    # starts Qlik Core in docker (test/engine.sh) and runs the engine suite
-bb plugin build .
+alia plugin build .
 ```
 
 The end-to-end suite seeds a test app in a local Qlik Core engine

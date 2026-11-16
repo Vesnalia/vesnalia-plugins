@@ -2,10 +2,10 @@
 // executor's grounded review submission, lead acceptance with a reason,
 // manual acceptance, returns with a remark, and the non-accepter callers
 // (helpers, threads of another team). No model calls; the built-in tracker
-// and BB threads are deterministic SDK fixtures.
+// and VesnALIA threads are deterministic SDK fixtures.
 
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 
 const CONFIG = `
@@ -48,7 +48,7 @@ function makeHost(threads: Array<Partial<FakeThread> & { id: string }>) {
       ...thread,
     });
   }
-  const files = new Map<string, string>([["/ws/demo/.bb/team.yaml", CONFIG]]);
+  const files = new Map<string, string>([["/ws/demo/.vesnalia/team.yaml", CONFIG]]);
   const toResponse = (thread: FakeThread) =>
     makeThreadResponse({
       id: thread.id,
@@ -88,7 +88,7 @@ function makeHost(threads: Array<Partial<FakeThread> & { id: string }>) {
       },
     ],
   });
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "team",
     settings: { defaultTracker: "builtin" },
     sdk: {
@@ -131,7 +131,7 @@ function makeHost(threads: Array<Partial<FakeThread> & { id: string }>) {
       },
     },
   });
-  return { bb, harness };
+  return { alia, harness };
 }
 
 const THREADS = [
@@ -170,8 +170,8 @@ const listTasks = async (harness: ReturnType<typeof makeHost>["harness"]) => {
 
 describe("verifiable acceptance flow (bbt-iwi.2)", () => {
   it("executor reports with grounds, lead accepts with a reason, manual path stays explicit", async () => {
-    const { bb, harness } = makeHost(THREADS);
-    await plugin(bb);
+    const { alia, harness } = makeHost(THREADS);
+    await plugin(alia);
     const as = (threadId: string) => ({ projectId: "proj_1", threadId });
     const cli = (args: string[], ctx?: { projectId: string; threadId: string }) =>
       harness.behavior.runCli([...args, "--project", "demo", "--team", "main"], ctx);
@@ -217,8 +217,8 @@ describe("verifiable acceptance flow (bbt-iwi.2)", () => {
   });
 
   it("return from review needs a concrete remark; the manual path needs a reason too", async () => {
-    const { bb, harness } = makeHost(THREADS);
-    await plugin(bb);
+    const { alia, harness } = makeHost(THREADS);
+    await plugin(alia);
     const as = (threadId: string) => ({ projectId: "proj_1", threadId });
     const cli = (args: string[], ctx?: { projectId: string; threadId: string }) =>
       harness.behavior.runCli([...args, "--project", "demo", "--team", "main"], ctx);
@@ -263,8 +263,8 @@ describe("verifiable acceptance flow (bbt-iwi.2)", () => {
   });
 
   it("no direct close bypass: manual overrides without a report are explicit; helpers and other teams never accept", async () => {
-    const { bb, harness } = makeHost(THREADS);
-    await plugin(bb);
+    const { alia, harness } = makeHost(THREADS);
+    await plugin(alia);
     const as = (threadId: string) => ({ projectId: "proj_1", threadId });
     const cli = (args: string[], ctx?: { projectId: string; threadId: string }) =>
       harness.behavior.runCli([...args, "--project", "demo", "--team", "main"], ctx);
@@ -297,8 +297,8 @@ describe("verifiable acceptance flow (bbt-iwi.2)", () => {
   });
 
   it("a stale expected id is a conflict without writes; a foreign project's lead never accepts here", async () => {
-    const { bb, harness } = makeHost(THREADS);
-    await plugin(bb);
+    const { alia, harness } = makeHost(THREADS);
+    await plugin(alia);
     const as = (threadId: string) => ({ projectId: "proj_1", threadId });
     const cli = (args: string[], ctx?: { projectId: string; threadId: string }) =>
       harness.behavior.runCli([...args, "--project", "demo", "--team", "main"], ctx);

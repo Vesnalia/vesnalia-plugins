@@ -1,7 +1,7 @@
 #!/bin/sh
 set -u
 tag=${1:?tag}
-here=$HOME/bb-box/docs/research/ios-shared-hosts
+here=$HOME/alia-box/docs/research/ios-shared-hosts
 out=$HOME/exp/runs/$tag
 mkdir -p "$out"
 log() { echo "$(date +%H:%M:%S) $*" | tee -a "$out/summary.txt"; }

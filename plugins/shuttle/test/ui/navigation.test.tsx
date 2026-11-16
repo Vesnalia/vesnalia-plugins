@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { fireEvent, waitFor, within } from "@testing-library/react";
-import type { PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import type { PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { rpcContract, type Overview } from "../../src/contract";
 import { formatRoute } from "../../src/ui/route";
 import { app, callsTo, handlers, mount, overview, pr, server, setViewport, unmountAll } from "./helpers";
@@ -73,7 +73,7 @@ describe("the page title", () => {
     });
   });
 
-  it("names only the last part on a phone, which bb shortens to fit instead of running it over the header's buttons", async () => {
+  it("names only the last part on a phone, which VesnALIA shortens to fit instead of running it over the header's buttons", async () => {
     setViewport(390);
     try {
       expect(await title("mine")).toEqual({ title: "Open" });

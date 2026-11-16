@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { BbPluginApi, PluginRpcHandlers } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi, PluginRpcHandlers } from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 import {
   preparationRpc,
@@ -26,7 +26,7 @@ const pause = (signal: AbortSignal) =>
     signal.addEventListener('abort', done, { once: true });
   });
 export function registerPreparation(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   dependencies: {
     assertProject: (projectId: string) => Promise<unknown>;
     task: (
@@ -36,8 +36,8 @@ export function registerPreparation(
     ) => Promise<TaskRef>;
   }
 ) {
-  const store = preparationStore(bb);
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const store = preparationStore(alia);
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   const scoped = (input: { id: string; projectId: string }) => {
     const p = store.get(input.id);
     if (p.projectId !== input.projectId)
@@ -46,7 +46,7 @@ export function registerPreparation(
   };
   function change(id: string, fn: (p: Preparation) => void) {
     const p = store.update(id, fn);
-    bb.realtime.publish('taskboard:preparation', {
+    alia.realtime.publish('taskboard:preparation', {
       projectId: p.projectId,
       id: p.id
     });
@@ -158,7 +158,7 @@ export function registerPreparation(
     },
     prepareGet: (input) => scoped(input),
     async prepareForThread(input) {
-      const t = await bb.sdk.threads.get({ threadId: input.threadId });
+      const t = await alia.sdk.threads.get({ threadId: input.threadId });
       return store.forThread(t.id, t.projectId);
     },
     prepareEdit(input) {
@@ -318,19 +318,19 @@ export function registerPreparation(
       };
     }
   };
-  bb.rpc.register(preparationRpc, handlers);
-  bb.ui.registerMentionProvider({
+  alia.rpc.register(preparationRpc, handlers);
+  alia.ui.registerMentionProvider({
     id: 'preparation',
     label: 'Prepare work',
     search: () => [],
     resolve(prepId) {
       const p = store.get(prepId);
       return {
-        context: `The user selected Taskboard Prepare work for this request. This is preparation only. Do not implement, edit, execute repository code, or start Empirical. Before doing anything else call the taskboard_prepare_start tool with preparationId ${JSON.stringify(p.id)}. That tool binds the actual BB settings and schedules repository investigation and prototype jobs in separate preparation storage. After the tool returns, tell the user to use the Prepare work panel and end your turn. Do not use any other tools. Original user request is preserved by Taskboard.`
+        context: `The user selected Taskboard Prepare work for this request. This is preparation only. Do not implement, edit, execute repository code, or start Empirical. Before doing anything else call the taskboard_prepare_start tool with preparationId ${JSON.stringify(p.id)}. That tool binds the actual VesnALIA settings and schedules repository investigation and prototype jobs in separate preparation storage. After the tool returns, tell the user to use the Prepare work panel and end your turn. Do not use any other tools. Original user request is preserved by Taskboard.`
       };
     }
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: 'taskboard_prepare_start',
     description:
       'Start a Taskboard preparation attached to this thread. This schedules preparation only and never implements target repository changes.',
@@ -339,29 +339,29 @@ export function registerPreparation(
       const p = store.get(input.preparationId);
       if (p.projectId !== ctx.projectId)
         throw new Error('Preparation project does not match this thread');
-      const t = await bb.sdk.threads.get({ threadId: ctx.threadId });
+      const t = await alia.sdk.threads.get({ threadId: ctx.threadId });
       if (t.projectId !== p.projectId) throw new Error('Wrong project');
       if (p.threadId && p.threadId !== t.id)
         throw new Error('Preparation is already attached to another thread');
       if (!t.environmentId)
-        throw new Error('BB has not resolved this thread environment yet');
-      const environment = await bb.sdk.environments.get({
+        throw new Error('VesnALIA has not resolved this thread environment yet');
+      const environment = await alia.sdk.environments.get({
         environmentId: t.environmentId
       });
       if (environment.projectId !== p.projectId || !environment.path)
         throw new Error('Selected project has no repository environment');
-      const execution = await bb.sdk.threads.defaultExecutionOptions({
+      const execution = await alia.sdk.threads.defaultExecutionOptions({
         threadId: t.id
       });
       if (!execution)
         throw new Error(
-          'BB has not resolved the execution settings yet. Retry the preparation tool.'
+          'VesnALIA has not resolved the execution settings yet. Retry the preparation tool.'
         );
       // The user may have edited the root draft after attaching preparation.
       // Recover the actual submitted text while retaining the initially captured request in messages.
       const prompts = p.threadId
         ? []
-        : await bb.sdk.threads.promptHistory({ threadId: t.id });
+        : await alia.sdk.threads.promptHistory({ threadId: t.id });
       const submitted = [...prompts]
         .sort((a, b) => a.createdAt - b.createdAt)
         .find((entry) =>
@@ -371,7 +371,7 @@ export function registerPreparation(
               part.mentions.some(
                 (m) =>
                   m.resource.kind === 'plugin' &&
-                  m.resource.pluginId === bb.pluginId &&
+                  m.resource.pluginId === alia.pluginId &&
                   m.resource.itemId === `preparation:${p.id}`
               )
           )
@@ -388,7 +388,7 @@ export function registerPreparation(
           ))
             if (
               mention.resource.kind === 'plugin' &&
-              mention.resource.pluginId === bb.pluginId &&
+              mention.resource.pluginId === alia.pluginId &&
               mention.resource.itemId === `preparation:${p.id}`
             )
               value = value.slice(0, mention.start) + value.slice(mention.end);
@@ -432,14 +432,14 @@ export function registerPreparation(
             'Investigate the repository context and draft the requested change.'
           );
       });
-      return 'Preparation started using this thread’s actual BB settings. The Prepare work panel shows the brief, sources and generation progress. End this turn now; do not implement or inspect the target repository yourself.';
+      return 'Preparation started using this thread’s actual VesnALIA settings. The Prepare work panel shows the brief, sources and generation progress. End this turn now; do not implement or inspect the target repository yourself.';
     }
   });
   async function ensureContext(p: Preparation, signal: AbortSignal) {
     if (p.context && p.artifactRoot) return p;
     if (!p.environmentId || !p.hostId)
       throw new Error('Preparation is not bound to an environment');
-    const e = await bb.sdk.environments.get({ environmentId: p.environmentId });
+    const e = await alia.sdk.environments.get({ environmentId: p.environmentId });
     if (
       e.projectId !== p.projectId ||
       e.hostId !== p.hostId ||
@@ -513,7 +513,7 @@ export function registerPreparation(
         { id: j.id },
         { hostId: p.hostId, signal }
       );
-      const t = await bb.sdk.threads.spawn({
+      const t = await alia.sdk.threads.spawn({
         projectId: p.projectId,
         environment: {
           type: 'host',
@@ -552,12 +552,12 @@ export function registerPreparation(
   async function reconcile(p: Preparation, j: Job) {
     if (!j.threadId) return;
     try {
-      const thread = await bb.sdk.threads.get({ threadId: j.threadId });
+      const thread = await alia.sdk.threads.get({ threadId: j.threadId });
       if (thread.status === 'error' || thread.deletedAt || thread.archivedAt) {
         fail(
           p.id,
           j.id,
-          'The BB agent job stopped or failed. Open its thread for details, then retry this alternative.'
+          'The VesnALIA agent job stopped or failed. Open its thread for details, then retry this alternative.'
         );
         return;
       }
@@ -568,7 +568,7 @@ export function registerPreparation(
           });
         return;
       }
-      const { output } = await bb.sdk.threads.output({ threadId: j.threadId });
+      const { output } = await alia.sdk.threads.output({ threadId: j.threadId });
       if (!output?.trim()) {
         if (!j.emptyOutputAt)
           change(p.id, (current) => {
@@ -631,7 +631,7 @@ export function registerPreparation(
       fail(p.id, j.id, errorText(e));
     }
   }
-  bb.background.service('preparation-jobs', {
+  alia.background.service('preparation-jobs', {
     async start(signal) {
       // A persisted "starting" without a thread id is ambiguous; never automatically duplicate a spawn.
       for (const p of store.pending())
@@ -640,7 +640,7 @@ export function registerPreparation(
             fail(
               p.id,
               j.id,
-              'BB reloaded while starting this job. Check recent Prepare threads before retrying; no duplicate job was launched.'
+              'VesnALIA reloaded while starting this job. Check recent Prepare threads before retrying; no duplicate job was launched.'
             );
       while (!signal.aborted) {
         try {
@@ -653,7 +653,7 @@ export function registerPreparation(
             }
           }
         } catch (e) {
-          if (!signal.aborted) bb.log.warn('Preparation jobs: ' + errorText(e));
+          if (!signal.aborted) alia.log.warn('Preparation jobs: ' + errorText(e));
         }
         await pause(signal);
       }

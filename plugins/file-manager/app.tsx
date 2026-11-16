@@ -2,12 +2,12 @@
 //
 // One nav panel, registered exactly as §10 of SPEC.md prescribes. `id` and
 // `path` must match /^[a-zA-Z0-9_-]+$/ or the whole frontend fails to
-// register, and `icon` must agree with `bb.branding.icon` in package.json
+// register, and `icon` must agree with `alia.branding.icon` in package.json
 // (which overrides it on compact surfaces). `fixedTabs` is
 // deliberately absent in v0.1: only the active fixed tab is mounted, so
 // closing the panel would strand the tree state.
 //
-// Plus one settings section (v0.3): bb's declarative settings form has no path
+// Plus one settings section (v0.3): VesnALIA's declarative settings form has no path
 // descriptor type, so `startFolder` would otherwise only be typeable by hand.
 // The section renders the real folder browser over the same setting.
 //
@@ -18,13 +18,13 @@
 //
 // Plus the two file openers (v0.6): "Open with File location" in the
 // right-click menu of a file link reveals that file in the side panel, and the
-// preview wrapper keeps the automatic per-extension pick looking like bb's own
+// preview wrapper keeps the automatic per-extension pick looking like VesnALIA's own
 // preview (§10.2).
 //
 // Plus one composer customization (v0.7): a row in the "+" menu that browses
-// the machine bb runs on, and the bare banner that is the only place its
+// the machine VesnALIA runs on, and the bare banner that is the only place its
 // dialog can be mounted from (§8.8).
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 
 import { LOCATION_OPENER_EXTENSIONS, PANEL_PATH } from "./contract";
 import { composerScopeKey, requestFilePick } from "./lib/composer-bus";
@@ -47,7 +47,7 @@ const messages = defineMessages(
     previewLocation: "Preview + location",
     fileLocation: "File location",
     fromFileManager: "From File Manager…",
-    attachDescription: "Attach a file from the machine bb runs on.",
+    attachDescription: "Attach a file from the machine VesnALIA runs on.",
   },
   {
     fileManager: "Файловый менеджер",
@@ -56,7 +56,7 @@ const messages = defineMessages(
     previewLocation: "Просмотр и расположение",
     fileLocation: "Расположение файла",
     fromFileManager: "Из файлового менеджера…",
-    attachDescription: "Прикрепить файл с машины, на которой работает bb.",
+    attachDescription: "Прикрепить файл с машины, на которой работает alia.",
   },
 );
 
@@ -73,7 +73,7 @@ export default definePluginApp((app) => {
   });
 
   // Rendered on the plugin's detail page, below the host-rendered descriptor
-  // form (which keeps `bb plugin config file-manager set startFolder …` and the
+  // form (which keeps `alia plugin config file-manager set startFolder …` and the
   // plain text field working).
   app.slots.settingsSection({
     id: "start-folder",
@@ -92,7 +92,7 @@ export default definePluginApp((app) => {
     component: FileManagerTab,
   });
 
-  // The same action on the root New thread screen, which bb keeps as a
+  // The same action on the root New thread screen, which VesnALIA keeps as a
   // separate slot from the thread one.
   app.slots.experimental_newThreadPanelAction({
     id: "file-manager",
@@ -103,7 +103,7 @@ export default definePluginApp((app) => {
   });
 
   // Right-clicking a file link in a message lists every matching opener as
-  // "Open with <title>" — but bb also picks one AUTOMATICALLY per extension,
+  // "Open with <title>" — but VesnALIA also picks one AUTOMATICALLY per extension,
   // and that pick is the first registration that matches. So the preview
   // wrapper is registered first: a plain click still shows the file, with one
   // strip on top that reveals it. Order here is load-bearing (§10.2).
@@ -122,7 +122,7 @@ export default definePluginApp((app) => {
   });
 
   // §8.8 — the composer's "+" menu lists files from YOUR machine; this row
-  // lists files from the machine bb runs on, which is the only tree this
+  // lists files from the machine VesnALIA runs on, which is the only tree this
   // plugin can see. `scopes` is omitted: every composer that can send a
   // message to an agent can also want one of those files.
   //

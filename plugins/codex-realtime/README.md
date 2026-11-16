@@ -2,7 +2,7 @@
 
 Lets [Voice Mode](https://github.com/steveafrost/bb-plugin-voice-mode) run on your ChatGPT
 subscription instead of an OpenAI API key. It uses the sign-in that `codex login` already keeps on
-the machine running the bb server.
+the machine running the VesnALIA server.
 
 Voice Mode, on its default **Connection: auto** setting, looks for an installed plugin that offers a
 realtime connection and uses it before its own API key. This plugin is one: when Voice Mode starts a
@@ -30,37 +30,37 @@ does not change.
   to renew it, or `codex login` to sign in again.
 - It does not pretend to be the Codex app. It sends the token as a plain bearer token, exactly as an
   API key is sent.
-- It gives the token only to the plugins you allow (Voice Mode to begin with). The bb app, `bb plugin
+- It gives the token only to the plugins you allow (Voice Mode to begin with). The VesnALIA app, `alia plugin
   rpc call` and agents in threads never get it.
 - It never logs or shows the token.
 
 ## What you need
 
-- bb 0.46 or later, and Voice Mode 0.1.9 or later on its default **Connection: auto** (or **plugin**).
-- The Codex CLI, signed in with **Sign in with ChatGPT** (`codex login`) on the machine running the bb
+- VesnALIA 0.46 or later, and Voice Mode 0.1.9 or later on its default **Connection: auto** (or **plugin**).
+- The Codex CLI, signed in with **Sign in with ChatGPT** (`codex login`) on the machine running the VesnALIA
   server. An API-key login has no ChatGPT token.
 - A ChatGPT plan that includes Codex.
 
 ## Install
 
 ```bash
-bb plugin install 'git:github.com/gpambrozio/bb-plugins@>=0.1.0' --plugin codex-realtime --tag-prefix codex-realtime/
+alia plugin install 'git:github.com/gpambrozio/bb-plugins@>=0.1.0' --plugin codex-realtime --tag-prefix codex-realtime/
 ```
 
 Then start a voice chat as usual. Voice Mode's log says `plugin codex-realtime connection` when it
 uses this plugin. If you installed this plugin before signing in to Codex, the Plugins page asks for
-configuration: sign in, then run `bb plugin reload codex-realtime`.
+configuration: sign in, then run `alia plugin reload codex-realtime`.
 
 On **Connection: auto**, a voice chat this plugin cannot serve falls back to Voice Mode's API key, and
 without one Voice Mode asks for a key; this plugin's reason is in Voice Mode's log
-(`bb plugin logs voice-mode`). Set Voice Mode's Connection to **plugin** to see the reason on screen
+(`alia plugin logs voice-mode`). Set Voice Mode's Connection to **plugin** to see the reason on screen
 instead.
 
 Uninstalling it puts Voice Mode back on its own API key.
 
 ## Settings
 
-In bb's **Settings → Plugins → ChatGPT Realtime Connection**.
+In VesnALIA's **Settings → Plugins → ChatGPT Realtime Connection**.
 
 **Realtime model.** The model Voice Mode talks to, `gpt-realtime-2.1` by default. While this plugin
 is installed, Voice Mode's own model setting does not apply; its voice setting still does.
@@ -71,7 +71,7 @@ token. `voice-mode` by default. Add another only if you trust it with your sign-
 ## When it stops working
 
 - **"No Codex login found" or "has no ChatGPT sign-in".** Run `codex login` and choose Sign in with
-  ChatGPT, on the machine running the bb server.
+  ChatGPT, on the machine running the VesnALIA server.
 - **"The ChatGPT sign-in … expired".** Run `codex` once, or `codex login`.
 - **The voice chat starts and then closes, with a sign-in that is not expired.** OpenAI may have
   stopped accepting the token for Realtime. `npm run live-check` in this folder opens one short

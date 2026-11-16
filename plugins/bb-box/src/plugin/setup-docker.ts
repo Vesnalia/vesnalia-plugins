@@ -1,6 +1,6 @@
-// bb box setup docker (the setup plan's PR 5): what the Box panel's first
-// run does, for an agent or a terminal. It picks the BB machine that can
-// take Docker boxes, the one that runs BB first, turns its Docker on with
+// VesnALIA box setup docker (the setup plan's PR 5): what the Box panel's first
+// run does, for an agent or a terminal. It picks the VesnALIA machine that can
+// take Docker boxes, the one that runs VesnALIA first, turns its Docker on with
 // the Linux image alone, and waits for the image to build. Where something
 // stands in the way, it gives that machine's own line to fix it. A plugin's
 // command cannot print as it goes, so it says how far the build is when it
@@ -12,7 +12,7 @@ import { building, needsSignIn, restartWords, setupTarget, type MachineAccessPro
 
 export interface ListenOffer {
   readonly port: number;
-  /** An address boxes can use, when BB listens on every address. */
+  /** An address boxes can use, when VesnALIA listens on every address. */
   readonly url: string | null;
 }
 
@@ -26,9 +26,9 @@ export interface SetupDockerDeps {
   readonly glanceMs?: number;
   /** A line as the build goes, for a terminal that shows it before the command ends. */
   say?(line: string): void;
-  /** BB listening on every address, and a URL boxes could use. */
+  /** VesnALIA listening on every address, and a URL boxes could use. */
   listening?(): Promise<ListenOffer | null>;
-  /** Sets BB's machine access to direct at that URL. The command asks before it calls this. */
+  /** Sets VesnALIA's machine access to direct at that URL. The command asks before it calls this. */
   setDirectAccess?(url: string): Promise<void>;
 }
 
@@ -38,7 +38,7 @@ export interface SetupDockerResult {
   readonly stderr?: string;
 }
 
-const AGAIN = "Run bb box setup docker again to wait for it, or with --no-wait to see how far it is.";
+const AGAIN = "Run alia box setup docker again to wait for it, or with --no-wait to see how far it is.";
 
 function minutes(ms: number): string {
   return ms < 60_000 ? `${Math.max(1, Math.round(ms / 1000))} s` : `${Math.round(ms / 60_000)} min`;
@@ -56,12 +56,12 @@ export function progressWords(setup: MachineSetup, now: number): string {
   return `Building ${targetsWords(build)} on ${setup.name}${step}, started ${minutes(Math.max(0, now - build.startedAt))} ago.`;
 }
 
-/** What to do where BB's machine access will not let boxes join BB, as the panel says it (#661). */
+/** What to do where VesnALIA's machine access will not let boxes join VesnALIA, as the panel says it (#661). */
 export function accessWords(access: MachineAccessProblem): string {
   const how = needsSignIn(access.message)
-    ? "Sign in to your bb account in BB, or set Machine access to Manual in BB's settings, under Machines, with an address boxes can reach, and have BB listen there: started with npx bb-app, add --server-bind-host 0.0.0.0. From a terminal: bb settings general machineServerUrl http://<address>:<port>, then bb settings general defaultMachineAccess direct."
-    : `${access.message.replace(/\.?$/, ".")} See Machine access in BB's settings, under Machines.`;
-  return `Boxes will not join BB yet. ${how}`;
+    ? "Sign in to your VesnALIA account in VesnALIA, or set Machine access to Manual in VesnALIA's settings, under Machines, with an address boxes can reach, and have VesnALIA listen there: started with npx alia-app, add --server-bind-host 0.0.0.0. From a terminal: VesnALIA settings general machineServerUrl http://<address>:<port>, then VesnALIA settings general defaultMachineAccess direct."
+    : `${access.message.replace(/\.?$/, ".")} See Machine access in VesnALIA's settings, under Machines.`;
+  return `Boxes will not join VesnALIA yet. ${how}`;
 }
 
 /** The machine `wanted` names, by ID or name, or the one first-run setup would take. */
@@ -69,13 +69,13 @@ function pick(machines: readonly MachineSetup[], wanted: string | undefined): Ma
   if (wanted) {
     const found = machines.find((setup) => setup.hostId === wanted) ?? machines.find((setup) => setup.name.toLowerCase() === wanted.toLowerCase());
     if (found) return found;
-    return machines.length ? `BB has no machine ${wanted} that can host boxes. These can: ${machines.map((setup) => setup.name).join(", ")}.` : `BB has no machine ${wanted} that can host boxes.`;
+    return machines.length ? `VesnALIA has no machine ${wanted} that can host boxes. These can: ${machines.map((setup) => setup.name).join(", ")}.` : `VesnALIA has no machine ${wanted} that can host boxes.`;
   }
   const target = setupTarget(machines) ?? machines.find((setup) => setup.state === "on" && setup.here) ?? machines.find((setup) => setup.state === "on");
   if (target) return target;
-  if (!machines.length) return "BB has no machine that can host boxes yet.";
-  const why = machines.map((setup) => `${setup.name}: ${setup.state === "none" ? "no Docker" : (setup.problem ?? "offline in BB").replace(/\.$/, "")}`).join("; ");
-  return `No BB machine has Docker that BB Box can use. ${why}. Install Docker Engine on one, or set up another backend in BB Box's settings.`;
+  if (!machines.length) return "VesnALIA has no machine that can host boxes yet.";
+  const why = machines.map((setup) => `${setup.name}: ${setup.state === "none" ? "no Docker" : (setup.problem ?? "offline in VesnALIA").replace(/\.$/, "")}`).join("; ");
+  return `No VesnALIA machine has Docker that VesnALIA Box can use. ${why}. Install Docker Engine on one, or set up another backend in VesnALIA Box's settings.`;
 }
 
 const LISTEN = "0A";
@@ -115,9 +115,9 @@ async function accessOffer(deps: SetupDockerDeps, access: MachineAccessProblem |
   if (!listening.url) return `\n${accessWords(access)}\nBB listens on every address, port ${listening.port}. It has no other address to give boxes.`;
   if (setAccess && deps.setDirectAccess) {
     await deps.setDirectAccess(listening.url);
-    return `\nSet Machine access to direct at ${listening.url}. That changes BB's settings.`;
+    return `\nSet Machine access to direct at ${listening.url}. That changes VesnALIA's settings.`;
   }
-  return `\n${accessWords(access)}\nBB listens on every address, port ${listening.port}. Run again with --set-machine-access to set Machine access to direct at ${listening.url}. That changes BB's settings.`;
+  return `\n${accessWords(access)}\nBB listens on every address, port ${listening.port}. Run again with --set-machine-access to set Machine access to direct at ${listening.url}. That changes VesnALIA's settings.`;
 }
 
 export async function setupDocker(deps: SetupDockerDeps, options: { machine?: string; wait: boolean; signal?: AbortSignal; setAccess?: boolean }): Promise<SetupDockerResult> {
@@ -126,19 +126,19 @@ export async function setupDocker(deps: SetupDockerDeps, options: { machine?: st
   if (typeof picked === "string") return { exitCode: 1, stderr: `${picked}\n` };
   const setup = picked;
   if (setup.state === "none") return { exitCode: 1, stderr: `${setup.name} has no Docker. Install Docker Engine there, then run this again.\n` };
-  if (setup.state === "offline") return { exitCode: 1, stderr: `${setup.name} is offline in BB. ${setup.problem ?? ""}`.trim() + "\n" };
+  if (setup.state === "offline") return { exitCode: 1, stderr: `${setup.name} is offline in VesnALIA. ${setup.problem ?? ""}`.trim() + "\n" };
   if (setup.state === "fix") {
     const lines = [setup.problem ?? `Docker on ${setup.name} cannot be used yet.`];
     if (setup.fix) {
       lines.push("", `On ${setup.name}, run:`, `  ${setup.fix}`, ...(setup.restart ? [`  ${setup.restart}`] : []), restartWords(setup.restart));
     }
-    lines.push("", "Then run bb box setup docker again.");
+    lines.push("", "Then run alia box setup docker again.");
     return { exitCode: 1, stderr: `${lines.join("\n")}\n` };
   }
   if (setup.state === "ready") {
     const result = await deps.setDockerHost(setup.hostId, true, true);
     if (!result.ok) {
-      const why = result.reason === "problems" ? result.problems.map((problem) => problem.message).join(" ") : "Someone else saved BB Box's settings at the same moment. Run this again.";
+      const why = result.reason === "problems" ? result.problems.map((problem) => problem.message).join(" ") : "Someone else saved VesnALIA Box's settings at the same moment. Run this again.";
       return { exitCode: 1, stderr: `Docker on ${setup.name} was not turned on: ${why}\n` };
     }
   }
@@ -156,11 +156,11 @@ export async function setupDocker(deps: SetupDockerDeps, options: { machine?: st
   if (!ended && !options.wait) {
     // The build has started, or was going already: say where it is.
     const current = (await deps.setups()).find((candidate) => candidate.hostId === setup.hostId);
-    if (current && building(current)) return { exitCode: 0, stdout: `Docker on ${setup.name} is on for BB Box. ${progressWords(current, now())} ${AGAIN}${after}\n` };
+    if (current && building(current)) return { exitCode: 0, stdout: `Docker on ${setup.name} is on for VesnALIA Box. ${progressWords(current, now())} ${AGAIN}${after}\n` };
   }
-  if (!ended) return { exitCode: 0, stdout: `Docker on ${setup.name} is on for BB Box, and its images go on building. ${AGAIN}${after}\n` };
+  if (!ended) return { exitCode: 0, stdout: `Docker on ${setup.name} is on for VesnALIA Box, and its images go on building. ${AGAIN}${after}\n` };
   const took = ended.endedAt !== null ? ` in ${minutes(ended.endedAt - ended.startedAt)}` : "";
-  if (ended.state === "failed") return { exitCode: 1, stderr: `Docker on ${setup.name} is on for BB Box, but ${targetsWords(ended)} did not build${took ? `, after${took.replace(/^ in/, "")}` : ""}: ${ended.detail ?? "no reason given"}\n` };
+  if (ended.state === "failed") return { exitCode: 1, stderr: `Docker on ${setup.name} is on for VesnALIA Box, but ${targetsWords(ended)} did not build${took ? `, after${took.replace(/^ in/, "")}` : ""}: ${ended.detail ?? "no reason given"}\n` };
   const built = ended.targets.length ? `${targetsWords(ended)[0]!.toUpperCase()}${targetsWords(ended).slice(1)} built${took}.` : "It has every image it needs.";
-  return { exitCode: 0, stdout: `Docker on ${setup.name} is set up for BB Box. ${built}${next}${after}\n` };
+  return { exitCode: 0, stdout: `Docker on ${setup.name} is set up for VesnALIA Box. ${built}${next}${after}\n` };
 }

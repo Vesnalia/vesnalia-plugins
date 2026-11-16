@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { RetryDiagnostic } from "./diagnostics.js";
 import {
   hasPendingInteraction,
@@ -31,7 +31,7 @@ const PENDING_CONTINUE_MS = 10 * 60_000;
 /** Restart records are kept this long; a turn that stalls again later is a new stall. */
 const RECORD_TTL_MS = 2 * 24 * 60 * 60_000;
 
-/** BB Workflows owns its hidden workers; their stalls are the engine's to handle. */
+/** VesnALIA Workflows owns its hidden workers; their stalls are the engine's to handle. */
 const WORKFLOW_ENGINE_PLUGIN_ID = "workflows";
 
 export const STALL_RETRY_REASON = "Stalled turn restarted";
@@ -43,7 +43,7 @@ export interface StallEntry {
   requestId: string | null;
   state: StallEntryState;
   reason: string;
-  /** Minutes without a new event while BB was awake. */
+  /** Minutes without a new event while VesnALIA was awake. */
   quietMinutes: number;
 }
 
@@ -93,7 +93,7 @@ interface ThreadState {
   activeBackgroundAgentCount?: number;
 }
 
-export function createStallWatchdog(bb: BbPluginApi, options: StallWatchdogOptions): StallWatchdog {
+export function createStallWatchdog(alia: AliaPluginApi, options: StallWatchdogOptions): StallWatchdog {
   const wait = options.wait ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   let lastWall = options.now();
   let lastMono = options.monotonic();
@@ -103,7 +103,7 @@ export function createStallWatchdog(bb: BbPluginApi, options: StallWatchdogOptio
   let last: WatchdogReport | null = null;
 
   /**
-   * Quiet time only counts while BB is awake. A sleeping Mac produces no
+   * Quiet time only counts while VesnALIA is awake. A sleeping Mac produces no
    * events and runs no checks, so after a wake every running turn looks
    * silent for hours; counting restarts at the wake instead.
    */
@@ -113,7 +113,7 @@ export function createStallWatchdog(bb: BbPluginApi, options: StallWatchdogOptio
     const wallGap = wall - lastWall;
     if (wallGap - (mono - lastMono) > SLEEP_GAP_MS || wallGap > MAX_CHECK_GAP_MS) {
       countingSince = wall;
-      bb.log.info(`Stall watchdog: BB was asleep or suspended for about ${Math.round(wallGap / 60_000)} min; counting quiet time from now.`);
+      alia.log.info(`Stall watchdog: VesnALIA was asleep or suspended for about ${Math.round(wallGap / 60_000)} min; counting quiet time from now.`);
     }
     lastWall = wall;
     lastMono = mono;
@@ -121,7 +121,7 @@ export function createStallWatchdog(bb: BbPluginApi, options: StallWatchdogOptio
 
   async function saveRecord(threadId: string, record: StallRecord): Promise<void> {
     records.set(threadId, record);
-    await bb.storage.kv.set(`stall:${threadId}`, record);
+    await alia.storage.kv.set(`stall:${threadId}`, record);
   }
 
   async function diagnose(threadId: string, requestId: string, at: number): Promise<void> {
@@ -131,12 +131,12 @@ export function createStallWatchdog(bb: BbPluginApi, options: StallWatchdogOptio
       availability: { kind: "not-routed" },
       decision: { kind: "retry", reason: STALL_RETRY_REASON, sendAt: at },
     };
-    await bb.storage.kv.set(`decision:${threadId}`, diagnostic);
+    await alia.storage.kv.set(`decision:${threadId}`, diagnostic);
   }
 
   /** Sends the one continue for a stopped turn once the thread is idle; returns what happened. */
   async function sendContinue(threadId: string, record: StallRecord): Promise<string> {
-    const thread = (await bb.sdk.threads.get({ threadId })) as unknown as ThreadState;
+    const thread = (await alia.sdk.threads.get({ threadId })) as unknown as ThreadState;
     if (thread.status === "stopping" || thread.status === "active" || thread.status === "starting" || thread.status === "pending") {
       return "stop-not-settled";
     }
@@ -146,31 +146,31 @@ export function createStallWatchdog(bb: BbPluginApi, options: StallWatchdogOptio
       return `stopped:${thread.status}`;
     }
     // A message that ran after the stop already moved the thread on.
-    if ((await latestRequest(bb, threadId))?.requestId !== record.requestId) {
+    if ((await latestRequest(alia, threadId))?.requestId !== record.requestId) {
       await saveRecord(threadId, { ...record, continued: true });
       return "stopped:thread-moved-on";
     }
     // Work queued on the thread runs now that it is idle and continues it anyway.
-    if ((await bb.sdk.threads.queue.list({ threadId })).length > 0) {
+    if ((await alia.sdk.threads.queue.list({ threadId })).length > 0) {
       await saveRecord(threadId, { ...record, continued: true });
       return "stopped:queued-message-continues";
     }
-    await sendAgentOnly(bb, { threadId, text: stallText(record.minutes), execution: record.execution });
+    await sendAgentOnly(alia, { threadId, text: stallText(record.minutes), execution: record.execution });
     await saveRecord(threadId, { ...record, continued: true });
-    bb.log.info(`Stall watchdog: sent one continue to ${threadId} for stalled turn ${record.requestId}.`);
+    alia.log.info(`Stall watchdog: sent one continue to ${threadId} for stalled turn ${record.requestId}.`);
     return "restarted";
   }
 
   async function settle(threadId: string): Promise<void> {
     for (let waited = 0; waited < STOP_SETTLE_MS; waited += STOP_POLL_MS) {
-      const thread = (await bb.sdk.threads.get({ threadId })) as unknown as ThreadState;
+      const thread = (await alia.sdk.threads.get({ threadId })) as unknown as ThreadState;
       if (thread.status !== "stopping" && thread.status !== "active") return;
       await wait(STOP_POLL_MS);
     }
   }
 
   async function quietSince(threadId: string): Promise<{ at: number; seq: number }> {
-    const [latest] = await listEvents(bb, { threadId, order: "desc", limit: 1 });
+    const [latest] = await listEvents(alia, { threadId, order: "desc", limit: 1 });
     return { at: Math.max(latest?.createdAt ?? 0, countingSince), seq: latest?.seq ?? 0 };
   }
 
@@ -179,9 +179,9 @@ export function createStallWatchdog(bb: BbPluginApi, options: StallWatchdogOptio
     if (thread.status !== "active") return `thread-${thread.status}`;
     if (options.isHeld(thread.id)) return "held";
     if (thread.originPluginId === WORKFLOW_ENGINE_PLUGIN_ID) return "workflow-engine-owned";
-    if (await hasPendingInteraction(bb, thread.id)) return "waiting-for-user";
-    if ((thread.activeBackgroundAgentCount ?? 0) > 0 || (await openBackgroundWork(bb, thread.id)) > 0) return "background-work-open";
-    const open = await openToolItems(bb, thread.id, afterSeq);
+    if (await hasPendingInteraction(alia, thread.id)) return "waiting-for-user";
+    if ((thread.activeBackgroundAgentCount ?? 0) > 0 || (await openBackgroundWork(alia, thread.id)) > 0) return "background-work-open";
+    const open = await openToolItems(alia, thread.id, afterSeq);
     if (open.length > 0) return `tool-running:${open[0]}`;
     return null;
   }
@@ -191,7 +191,7 @@ export function createStallWatchdog(bb: BbPluginApi, options: StallWatchdogOptio
     const quietMs = at - quiet.at;
     if (quietMs < limitMs) return null;
     const entry: StallEntry = { threadId, requestId: null, state: "skipped", reason: "", quietMinutes: Math.floor(quietMs / 60_000) };
-    const request = await latestRequest(bb, threadId);
+    const request = await latestRequest(alia, threadId);
     if (request === null) {
       entry.reason = "no-request";
       return entry;
@@ -201,26 +201,26 @@ export function createStallWatchdog(bb: BbPluginApi, options: StallWatchdogOptio
       entry.reason = "already-restarted-once";
       return entry;
     }
-    const thread = (await bb.sdk.threads.get({ threadId })) as unknown as ThreadState;
+    const thread = (await alia.sdk.threads.get({ threadId })) as unknown as ThreadState;
     const why = await leaveAlone(thread, request.seq);
     if (why !== null) {
       entry.reason = why;
       return entry;
     }
     if (!options.isArmed()) {
-      entry.reason = "not-armed (run: bb provider-retry-advanced arm)";
+      entry.reason = "not-armed (run: VesnALIA provider-retry-advanced arm)";
       return entry;
     }
     // The checks above took several reads; act only if nothing moved meanwhile.
     const again = await quietSince(threadId);
-    if (again.seq !== quiet.seq || (await hasPendingInteraction(bb, threadId))) {
+    if (again.seq !== quiet.seq || (await hasPendingInteraction(alia, threadId))) {
       entry.reason = "moved-meanwhile";
       return entry;
     }
     const minutes = Math.round(limitMs / 60_000);
     await saveRecord(threadId, { requestId: request.requestId, stoppedAt: at, continued: false, minutes, execution: request.execution });
-    bb.log.info(`Stall watchdog: ${threadId} made no progress for ${entry.quietMinutes} min (turn ${request.requestId}); stopping it to restart once.`);
-    await bb.sdk.threads.stop({ threadId });
+    alia.log.info(`Stall watchdog: ${threadId} made no progress for ${entry.quietMinutes} min (turn ${request.requestId}); stopping it to restart once.`);
+    await alia.sdk.threads.stop({ threadId });
     await settle(threadId);
     entry.reason = await sendContinue(threadId, records.get(threadId)!);
     entry.state = entry.reason === "restarted" ? "restarted" : "skipped";
@@ -253,14 +253,14 @@ export function createStallWatchdog(bb: BbPluginApi, options: StallWatchdogOptio
       report.entries.push({ threadId, requestId: record.requestId, state: reason === "restarted" ? "restarted" : "skipped", reason, quietMinutes: 0 });
     }
 
-    const runningThreads = await bb.sdk.threads.listRunning();
+    const runningThreads = await alia.sdk.threads.listRunning();
     report.running = runningThreads.length;
     for (const { id } of runningThreads) {
       try {
         const entry = await inspect(id, at, limitMs);
         if (entry !== null) report.entries.push(entry);
       } catch (error) {
-        bb.log.warn(`Stall watchdog could not check ${id}: ${String(error)}`);
+        alia.log.warn(`Stall watchdog could not check ${id}: ${String(error)}`);
         report.entries.push({ threadId: id, requestId: null, state: "skipped", reason: `error:${String(error)}`, quietMinutes: 0 });
       }
     }
@@ -270,10 +270,10 @@ export function createStallWatchdog(bb: BbPluginApi, options: StallWatchdogOptio
   return {
     async init() {
       const at = options.now();
-      for (const key of await bb.storage.kv.list("stall:")) {
-        const record = await bb.storage.kv.get<StallRecord>(key);
+      for (const key of await alia.storage.kv.list("stall:")) {
+        const record = await alia.storage.kv.get<StallRecord>(key);
         if (record === undefined) continue;
-        if (at - record.stoppedAt > RECORD_TTL_MS) await bb.storage.kv.delete(key);
+        if (at - record.stoppedAt > RECORD_TTL_MS) await alia.storage.kv.delete(key);
         else records.set(key.slice("stall:".length), record);
       }
     },
@@ -296,7 +296,7 @@ export function createStallWatchdog(bb: BbPluginApi, options: StallWatchdogOptio
 export async function runWatchdogLoop(args: {
   watchdog: StallWatchdog;
   signal: AbortSignal;
-  log: BbPluginApi["log"];
+  log: AliaPluginApi["log"];
   wait: (ms: number, signal: AbortSignal) => Promise<void>;
 }): Promise<void> {
   while (!args.signal.aborted) {

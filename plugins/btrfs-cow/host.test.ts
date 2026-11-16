@@ -57,7 +57,7 @@ describe("host entry", () => {
         operationId: "op1",
         sourcePath: source,
         pathKey: "key1",
-        branchName: "bb/thread",
+        branchName: "alia/thread",
         branchMode: "reset",
         timeoutMs: 60_000,
       },

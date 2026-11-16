@@ -1,5 +1,5 @@
-// `bb crew …` — argument parsing and text output. The server wires it to
-// `bb.cli.register`; tests call `runCli` directly with a fake service.
+// `alia crew …` — argument parsing and text output. The server wires it to
+// `alia.cli.register`; tests call `runCli` directly with a fake service.
 import { formatMessageLine } from "./agent";
 import { LIMIT_SETTING } from "./capacity";
 import { formatChannelLine } from "./channel";
@@ -14,79 +14,79 @@ import { MESSAGE_STATUSES, type CrewRow, type MessageRow, type MessageStatus } f
 import type { MemberResult } from "./sync";
 
 export const CLI_COMMANDS = [
-  { name: "list", summary: "List the crews of the project", usage: "bb crew list [--project <id|name>]" },
-  { name: "show", summary: "Show a crew: file version, status, members", usage: "bb crew show <crew>" },
-  { name: "plan", summary: "Preview what apply would do (read-only)", usage: "bb crew plan <crew|template|file.yaml> [--fresh <member>…]" },
+  { name: "list", summary: "List the crews of the project", usage: "alia crew list [--project <id|name>]" },
+  { name: "show", summary: "Show a crew: file version, status, members", usage: "alia crew show <crew>" },
+  { name: "plan", summary: "Preview what apply would do (read-only)", usage: "alia crew plan <crew|template|file.yaml> [--fresh <member>…]" },
   {
     name: "apply",
     summary: "Create or reconcile the crew's threads",
-    usage: "bb crew apply <crew|template|file.yaml> [--fresh <member>…] [--confirm-full]",
+    usage: "alia crew apply <crew|template|file.yaml> [--fresh <member>…] [--confirm-full]",
   },
-  { name: "stop", summary: "Stop running turns, optionally archive", usage: "bb crew stop <crew> [--archive]" },
+  { name: "stop", summary: "Stop running turns, optionally archive", usage: "alia crew stop <crew> [--archive]" },
   {
     name: "delete",
     summary: "Remove a stopped crew and all its data; threads are archived (default), deleted or kept",
-    usage: "bb crew delete <crew> [--threads archive|delete|keep] [--force]",
+    usage: "alia crew delete <crew> [--threads archive|delete|keep] [--force]",
   },
-  { name: "ps", summary: "Members and their thread state", usage: "bb crew ps [<crew>]" },
-  { name: "templates", summary: "List bundled crew templates", usage: "bb crew templates" },
-  { name: "export", summary: "Print the stored crew file as YAML", usage: "bb crew export <crew> > crew.yaml" },
+  { name: "ps", summary: "Members and their thread state", usage: "alia crew ps [<crew>]" },
+  { name: "templates", summary: "List bundled crew templates", usage: "alia crew templates" },
+  { name: "export", summary: "Print the stored crew file as YAML", usage: "alia crew export <crew> > crew.yaml" },
   {
     name: "send",
     summary: "Send a message as the human to a member (answers its open question)",
-    usage: "bb crew send <member@crew|member> <text…> [--subject <s>] [--crew <crew>] [--urgent] [--reply-to <msg>]",
+    usage: "alia crew send <member@crew|member> <text…> [--subject <s>] [--crew <crew>] [--urgent] [--reply-to <msg>]",
   },
-  { name: "broadcast", summary: "Send a message as the human to a whole crew or group", usage: "bb crew broadcast <crew> [--group <g>] <text…> [--subject <s>]" },
+  { name: "broadcast", summary: "Send a message as the human to a whole crew or group", usage: "alia crew broadcast <crew> [--group <g>] <text…> [--subject <s>]" },
   {
     name: "log",
     summary: "Every message: sent, held, stopped and rejected ones",
-    usage: "bb crew log [--crew <crew>] [--chain <id>] [--cross-crew] [--status <status>] [--limit <n>] [--full]",
+    usage: "alia crew log [--crew <crew>] [--chain <id>] [--cross-crew] [--status <status>] [--limit <n>] [--full]",
   },
-  { name: "needs", summary: "Members that currently need you", usage: "bb crew needs" },
-  { name: "whoami", summary: "The crew member this thread is (inside a member thread)", usage: "bb crew whoami" },
-  { name: "release", summary: "Deliver a held or loop-stopped message anyway", usage: "bb crew release <msg>" },
-  { name: "discard", summary: "Drop a held or loop-stopped message", usage: "bb crew discard <msg>" },
-  { name: "stop-chain", summary: "Stop delivering anything more on a chain", usage: "bb crew stop-chain <chain>" },
-  { name: "channel", summary: "Read the crew channel, or post to it as the human", usage: "bb crew channel <crew> [post <text…>] [--topic <t>] [--since <iso>]" },
+  { name: "needs", summary: "Members that currently need you", usage: "alia crew needs" },
+  { name: "whoami", summary: "The crew member this thread is (inside a member thread)", usage: "alia crew whoami" },
+  { name: "release", summary: "Deliver a held or loop-stopped message anyway", usage: "alia crew release <msg>" },
+  { name: "discard", summary: "Drop a held or loop-stopped message", usage: "alia crew discard <msg>" },
+  { name: "stop-chain", summary: "Stop delivering anything more on a chain", usage: "alia crew stop-chain <chain>" },
+  { name: "channel", summary: "Read the crew channel, or post to it as the human", usage: "alia crew channel <crew> [post <text…>] [--topic <t>] [--since <iso>]" },
   {
     name: "work",
     summary: "The crew's work queue",
     usage:
-      "bb crew work list|create|claim|unclaim|handoff|done|fail … --crew <crew>  (create <title…> [--owner <m>] [--tier p0-p3] [--due <iso>] [--body <b>] [--task <KEY>]; claim <id> --as <m>; handoff <id> <to> [note…]; done <id> [note…]; fail <id> <reason…>; list [--all])",
+      "alia crew work list|create|claim|unclaim|handoff|done|fail … --crew <crew>  (create <title…> [--owner <m>] [--tier p0-p3] [--due <iso>] [--body <b>] [--task <KEY>]; claim <id> --as <m>; handoff <id> <to> [note…]; done <id> [note…]; fail <id> <reason…>; list [--all])",
   },
-  { name: "merges", summary: "Merge requests of the project", usage: "bb crew merges [--all]" },
-  { name: "approve", summary: "Merge a merge request into main", usage: "bb crew approve <mr>" },
-  { name: "reject", summary: "Reject a merge request", usage: "bb crew reject <mr> [note…]" },
-  { name: "directory", summary: "All crews: task, status, branch, lead, dependencies", usage: "bb crew directory" },
-  { name: "deps", summary: "waitsFor dependencies and their state", usage: "bb crew deps [--crew <crew>]" },
+  { name: "merges", summary: "Merge requests of the project", usage: "alia crew merges [--all]" },
+  { name: "approve", summary: "Merge a merge request into main", usage: "alia crew approve <mr>" },
+  { name: "reject", summary: "Reject a merge request", usage: "alia crew reject <mr> [note…]" },
+  { name: "directory", summary: "All crews: task, status, branch, lead, dependencies", usage: "alia crew directory" },
+  { name: "deps", summary: "waitsFor dependencies and their state", usage: "alia crew deps [--crew <crew>]" },
   {
     name: "thread-limit",
-    summary: "Show the thread limit; set a plugin-side limit (BB's own setting is never changed)",
-    usage: "bb crew thread-limit [<n>|off]",
+    summary: "Show the thread limit; set a plugin-side limit (VesnALIA's own setting is never changed)",
+    usage: "alia crew thread-limit [<n>|off]",
   },
-  { name: "tick", summary: "Run the follow-up sweep and the dependency poll now", usage: "bb crew tick" },
-  { name: "snapshot", summary: "Record bindings, open work, undelivered messages and the channel cursor", usage: "bb crew snapshot <crew> [--label <text>]" },
-  { name: "snapshots", summary: "List a crew's snapshots", usage: "bb crew snapshots <crew>" },
-  { name: "restore", summary: "Restore a snapshot's bindings, work and messages, then apply", usage: "bb crew restore <snapshot>" },
-  { name: "reset", summary: "New shift: clear the context (same thread) or start a new thread", usage: "bb crew reset <member> --crew <crew> [--mode clear|new]" },
+  { name: "tick", summary: "Run the follow-up sweep and the dependency poll now", usage: "alia crew tick" },
+  { name: "snapshot", summary: "Record bindings, open work, undelivered messages and the channel cursor", usage: "alia crew snapshot <crew> [--label <text>]" },
+  { name: "snapshots", summary: "List a crew's snapshots", usage: "alia crew snapshots <crew>" },
+  { name: "restore", summary: "Restore a snapshot's bindings, work and messages, then apply", usage: "alia crew restore <snapshot>" },
+  { name: "reset", summary: "New shift: clear the context (same thread) or start a new thread", usage: "alia crew reset <member> --crew <crew> [--mode clear|new]" },
   {
     name: "handover",
     summary: "New shift with a brief: the old thread writes it, the new one gets it as a work item; messages are held meanwhile",
-    usage: "bb crew handover <member> --crew <crew> [--brief <text>] [--cancel]",
+    usage: "alia crew handover <member> --crew <crew> [--brief <text>] [--cancel]",
   },
   {
     name: "add-member",
     summary: "Add a member to the crew file and apply",
-    usage: "bb crew add-member <group>-<id> --crew <crew> [--role <r>] [--provider <p>] [--model <m>] [--permissions <p>] [--kickoff <k>] [--confirm-full]",
+    usage: "alia crew add-member <group>-<id> --crew <crew> [--role <r>] [--provider <p>] [--model <m>] [--permissions <p>] [--kickoff <k>] [--confirm-full]",
   },
-  { name: "remove-member", summary: "Remove a member from the crew file and apply; its thread is archived", usage: "bb crew remove-member <member> --crew <crew>" },
+  { name: "remove-member", summary: "Remove a member from the crew file and apply; its thread is archived", usage: "alia crew remove-member <member> --crew <crew>" },
   {
     name: "attach",
     summary: "Bind an existing thread of the project to a member (no spawn, kickoff as a message); without arguments: list candidates",
-    usage: "bb crew attach [<threadId> --as <member@crew>] [--replace]",
+    usage: "alia crew attach [<threadId> --as <member@crew>] [--replace]",
   },
-  { name: "detach", summary: "Release a member's thread from the crew (the thread stays)", usage: "bb crew detach <member> --crew <crew>" },
-  { name: "import", summary: "Store a crew.yaml (no threads touched) and show the plan", usage: "bb crew import <file.yaml>" },
+  { name: "detach", summary: "Release a member's thread from the crew (the thread stays)", usage: "alia crew detach <member> --crew <crew>" },
+  { name: "import", summary: "Store a crew.yaml (no threads touched) and show the plan", usage: "alia crew import <file.yaml>" },
 ] as const;
 
 export const USAGE = ["Usage:", ...CLI_COMMANDS.map((command) => `  ${command.usage}`), "", "Options: --project <id|name> (default: the current thread's project)"].join("\n");
@@ -215,7 +215,7 @@ export async function runCli(
   }
 
   const projectId = await resolveProject(args.project, ctx);
-  if (!projectId) return fail("No project: run inside a BB thread or pass --project <id|name>.");
+  if (!projectId) return fail("No project: run inside a VesnALIA thread or pass --project <id|name>.");
   const crewName = (id: string | null) => (id ? (service.ctx.store.getCrew(id)?.name ?? id) : null);
   const sent = (rows: MessageRow[]) => {
     const lines = rows.map((row) => `  ${row.toAddress.padEnd(28)} ${row.status}${row.reason ? `  (${row.reason})` : ""}  msg ${row.id}`);
@@ -252,7 +252,7 @@ export async function runCli(
         const crew = pickCrew(target);
         const [, , sub, ...words] = args.positional;
         if (sub === "post") {
-          if (words.length === 0) return fail("Usage: bb crew channel <crew> post <text…>");
+          if (words.length === 0) return fail("Usage: VesnALIA crew channel <crew> post <text…>");
           const { post, mentions } = service.channel.post(crew, { kind: "human" }, words.join(" "), args.values.topic ?? null);
           await service.flush();
           return ok([`posted ${post.id}`, ...mentions.map((row) => `  mention → ${row.toAddress}: ${store.getMessage(row.id)?.status}`)]);
@@ -287,23 +287,23 @@ export async function runCli(
             );
           }
           case "claim":
-            if (!id) return fail("Usage: bb crew work claim <id> --as <member>");
+            if (!id) return fail("Usage: VesnALIA crew work claim <id> --as <member>");
             return line(service.queue.claim(crew, human, id, args.values.as));
           case "unclaim":
-            if (!id) return fail("Usage: bb crew work unclaim <id>");
+            if (!id) return fail("Usage: VesnALIA crew work unclaim <id>");
             return line(service.queue.unclaim(crew, human, id));
           case "handoff": {
             const [to, ...note] = rest;
-            if (!id || !to) return fail("Usage: bb crew work handoff <id> <to> [note…]");
+            if (!id || !to) return fail("Usage: VesnALIA crew work handoff <id> <to> [note…]");
             const item = await service.queue.handoff(crew, human, id, to, note.join(" "));
             await service.flush();
             return line(item);
           }
           case "done":
-            if (!id) return fail("Usage: bb crew work done <id> [note…]");
+            if (!id) return fail("Usage: VesnALIA crew work done <id> [note…]");
             return line(service.queue.done(crew, human, id, rest.join(" ")));
           case "fail":
-            if (!id || rest.length === 0) return fail("Usage: bb crew work fail <id> <reason…>");
+            if (!id || rest.length === 0) return fail("Usage: VesnALIA crew work fail <id> <reason…>");
             return line(service.queue.fail(crew, human, id, rest.join(" ")));
           default:
             return fail(`Unknown work command "${sub}".`);
@@ -315,7 +315,7 @@ export async function runCli(
       }
       case "approve":
       case "reject": {
-        if (!target) return fail(`Usage: bb crew ${command} <mr>`);
+        if (!target) return fail(`Usage: VesnALIA crew ${command} <mr>`);
         const merge = store.getMerge(target);
         if (!merge || merge.projectId !== projectId) return fail(`No merge request "${target}" in this project.`);
         const after =
@@ -345,15 +345,15 @@ export async function runCli(
         if (target === "off") store.setSetting(LIMIT_SETTING, null);
         else if (target !== undefined) {
           const value = Number.parseInt(target, 10);
-          if (!Number.isFinite(value) || value < 1 || String(value) !== target) return fail("Usage: bb crew thread-limit [<n>|off]");
+          if (!Number.isFinite(value) || value < 1 || String(value) !== target) return fail("Usage: VesnALIA crew thread-limit [<n>|off]");
           store.setSetting(LIMIT_SETTING, String(value));
         }
         const reading = await service.limit();
         const running = await service.ctx.port.runningCount().catch(() => null);
         return ok([
           reading.limit === null
-            ? "Thread limit: not readable (bb concurrency-limit unavailable to the plugin); nothing is throttled."
-            : `Thread limit: ${reading.limit} (${reading.source === "plugin" ? "plugin-side, set with bb crew thread-limit; BB's setting is unchanged" : "BB concurrency limit"})`,
+            ? "Thread limit: not readable (VesnALIA concurrency-limit unavailable to the plugin); nothing is throttled."
+            : `Thread limit: ${reading.limit} (${reading.source === "plugin" ? "plugin-side, set with VesnALIA crew thread-limit; VesnALIA's setting is unchanged" : "VesnALIA concurrency limit"})`,
           `Running threads: ${running ?? "?"}`,
         ]);
       }
@@ -366,13 +366,13 @@ export async function runCli(
         ]);
       }
       case "snapshot": {
-        if (!target) return fail("Usage: bb crew snapshot <crew> [--label <text>]");
+        if (!target) return fail("Usage: VesnALIA crew snapshot <crew> [--label <text>]");
         const crew = pickCrew(target);
         const { id, data } = service.lifecycle.snapshot(crew, args.values.label ?? null);
         return ok([
           `snapshot ${id} of ${crew.name} (file v${data.fileVersion})`,
           `  ${data.bindings.length} binding(s), ${data.work.length} open work item(s), ${data.messages.length} undelivered message(s), channel at ${data.channel.lastId ?? "start"}`,
-          `  restore with: bb crew restore ${id}`,
+          `  restore with: VesnALIA crew restore ${id}`,
         ]);
       }
       case "snapshots": {
@@ -388,7 +388,7 @@ export async function runCli(
         );
       }
       case "restore": {
-        if (!target) return fail("Usage: bb crew restore <snapshot>");
+        if (!target) return fail("Usage: VesnALIA crew restore <snapshot>");
         const snapshot = store.getSnapshot(target);
         if (!snapshot || store.getCrew(snapshot.crewId)?.projectId !== projectId) return fail(`No snapshot "${target}" in this project.`);
         const report = await service.lifecycle.restore(target);
@@ -402,7 +402,7 @@ export async function runCli(
         return report.outcome.results.some((result) => result.result === "failed") ? { exitCode: 1, stdout: `${bound(lines.join("\n"))}\n` } : ok(lines);
       }
       case "reset": {
-        if (!target) return fail("Usage: bb crew reset <member> --crew <crew> [--mode clear|new]");
+        if (!target) return fail("Usage: VesnALIA crew reset <member> --crew <crew> [--mode clear|new]");
         const mode = args.values.mode ?? "clear";
         if (mode !== "clear" && mode !== "new") return fail("--mode must be clear or new");
         const crew = pickCrew(args.values.crew ?? crewOf(target));
@@ -410,7 +410,7 @@ export async function runCli(
         return result.result === "failed" ? { exitCode: 1, stdout: `${formatResults([result]).join("\n")}\n` } : ok(formatResults([result]));
       }
       case "handover": {
-        if (!target) return fail("Usage: bb crew handover <member> --crew <crew> [--brief <text>] [--cancel]");
+        if (!target) return fail("Usage: VesnALIA crew handover <member> --crew <crew> [--brief <text>] [--cancel]");
         const crew = pickCrew(args.values.crew ?? crewOf(target));
         if (args.flags.has("--cancel")) {
           const row = service.lifecycle.cancelHandover(crew, target);
@@ -449,7 +449,7 @@ export async function runCli(
         return outcome.results.some((result) => result.result === "failed") ? { exitCode: 1, stdout: `${bound(lines.join("\n"))}\n` } : ok(lines);
       }
       case "remove-member": {
-        if (!target) return fail("Usage: bb crew remove-member <member> --crew <crew>");
+        if (!target) return fail("Usage: VesnALIA crew remove-member <member> --crew <crew>");
         const crew = pickCrew(args.values.crew ?? crewOf(target));
         const outcome = await service.lifecycle.removeMember(crew, target);
         return ok([`${outcome.crew.name}: ${outcome.crew.status} (file v${outcome.crew.fileVersion})`, ...formatResults(outcome.results)]);
@@ -459,12 +459,12 @@ export async function runCli(
           const threads = await service.lifecycle.candidates(projectId);
           return ok(
             threads.length
-              ? ["Unassigned threads of the project (attach with bb crew attach <threadId> --as <member@crew>):", ...threads.map((t) => `  ${t.id}  ${t.status.padEnd(8)} ${t.providerId.padEnd(12)} ${t.title ?? "(untitled)"}`)]
+              ? ["Unassigned threads of the project (attach with VesnALIA crew attach <threadId> --as <member@crew>):", ...threads.map((t) => `  ${t.id}  ${t.status.padEnd(8)} ${t.providerId.padEnd(12)} ${t.title ?? "(untitled)"}`)]
               : "No unassigned threads in this project.",
           );
         }
         const as = args.values.as;
-        if (!as) return fail("Usage: bb crew attach <threadId> --as <member@crew> [--replace]");
+        if (!as) return fail("Usage: VesnALIA crew attach <threadId> --as <member@crew> [--replace]");
         const crew = pickCrew(args.values.crew ?? crewOf(as));
         const result = await service.lifecycle.attach(crew, target, as, { replace: args.flags.has("--replace") });
         await service.flush();
@@ -475,13 +475,13 @@ export async function runCli(
         ].filter(Boolean));
       }
       case "detach": {
-        if (!target) return fail("Usage: bb crew detach <member> --crew <crew>");
+        if (!target) return fail("Usage: VesnALIA crew detach <member> --crew <crew>");
         const crew = pickCrew(args.values.crew ?? crewOf(target));
         const { member, threadId } = await service.lifecycle.detach(crew, target);
         return ok(`${member.address} released ${threadId}; the thread stays, the next apply spawns a new one`);
       }
       case "import": {
-        if (!target) return fail("Usage: bb crew import <file.yaml>");
+        if (!target) return fail("Usage: VesnALIA crew import <file.yaml>");
         const file = await service.resolveFile(projectId, target.includes("/") || /\.ya?ml$/i.test(target) ? target : `./${target}`, ctx.cwd);
         const imported = await service.lifecycle.importFile(projectId, file.yaml);
         if (!imported.crew) return fail([`Not imported (${file.label}):`, ...formatProblems(imported.validation.problems)].join("\n"));
@@ -489,7 +489,7 @@ export async function runCli(
           `imported ${imported.crew.name}: file v${imported.crew.fileVersion}${imported.changed ? "" : " (unchanged, same file)"} — nothing applied yet`,
           ...formatProblems(imported.validation.problems),
           ...formatPlan(imported.items),
-          imported.items.every((item) => item.action === "reuse") ? "  plan: no change" : `  run bb crew apply ${imported.crew.name} to carry it out`,
+          imported.items.every((item) => item.action === "reuse") ? "  plan: no change" : `  run alia crew apply ${imported.crew.name} to carry it out`,
         ]);
       }
       case "send": {
@@ -547,20 +547,20 @@ export async function runCli(
       }
       case "release":
       case "discard": {
-        if (!target) return fail(`Usage: bb crew ${command} <msg>`);
+        if (!target) return fail(`Usage: VesnALIA crew ${command} <msg>`);
         const row = command === "release" ? service.delivery.release(target) : service.delivery.discard(target);
         if (command === "release") await service.delivery.drain();
         const after = service.ctx.store.getMessage(row.id)!;
         return ok(`  ${after.id} ${after.status}${after.reason ? `  (${after.reason})` : ""}`);
       }
       case "stop-chain": {
-        if (!target) return fail("Usage: bb crew stop-chain <chain>");
+        if (!target) return fail("Usage: VesnALIA crew stop-chain <chain>");
         const rows = service.delivery.stopChain(target);
         return ok(`chain ${target} stopped; ${rows.length} undelivered message(s) will not be sent.`);
       }
       case "list": {
         const crews = service.listCrews(projectId);
-        if (crews.length === 0) return ok("No crews in this project. Start with: bb crew templates");
+        if (crews.length === 0) return ok("No crews in this project. Start with: VesnALIA crew templates");
         const lines: string[] = [];
         for (const crew of crews) {
           const members = await service.members(crew);
@@ -575,7 +575,7 @@ export async function runCli(
           : command === "ps"
             ? service.listCrews(projectId)
             : [];
-        if (!target && command === "show") return fail("Usage: bb crew show <crew>");
+        if (!target && command === "show") return fail("Usage: VesnALIA crew show <crew>");
         if (crews.length === 0) return fail(target ? `No crew "${target}" in this project.` : "No crews in this project.");
         const lines: string[] = [];
         for (const crew of crews) {
@@ -587,9 +587,9 @@ export async function runCli(
               }${member.threadId ?? "-"}${member.shift !== null ? `  shift ${member.shift}` : ""}${member.lead ? "  lead" : ""}${
                 member.actualProvider !== null &&
                 (member.actualProvider !== member.provider || (member.actualModel !== null && member.actualModel !== member.model))
-                  ? `  DRIFT: BB reports ${member.actualProvider}/${member.actualModel ?? "?"}`
+                  ? `  DRIFT: VesnALIA reports ${member.actualProvider}/${member.actualModel ?? "?"}`
                   : member.actualProvider !== null
-                    ? `  (BB: ${member.actualProvider}/${member.actualModel ?? "?"})`
+                    ? `  (ALIA: ${member.actualProvider}/${member.actualModel ?? "?"})`
                     : ""
               }`,
             );
@@ -598,14 +598,14 @@ export async function runCli(
         return ok(lines);
       }
       case "export": {
-        if (!target) return fail("Usage: bb crew export <crew>");
+        if (!target) return fail("Usage: VesnALIA crew export <crew>");
         const crew = service.findCrew(projectId, target);
         const file = crew ? service.ctx.store.crewFile(crew.id) : null;
         if (!file) return fail(`No stored crew file for "${target}".`);
         return ok(file.yaml.trimEnd());
       }
       case "stop": {
-        if (!target) return fail("Usage: bb crew stop <crew> [--archive]");
+        if (!target) return fail("Usage: VesnALIA crew stop <crew> [--archive]");
         const crew = service.findCrew(projectId, target);
         if (!crew) return fail(`No crew "${target}" in this project.`);
         const results = await service.stop(crew, { archive: args.flags.has("--archive") });
@@ -624,7 +624,7 @@ export async function runCli(
         ]);
       }
       case "delete": {
-        if (!target) return fail("Usage: bb crew delete <crew> [--threads archive|delete|keep] [--force]");
+        if (!target) return fail("Usage: VesnALIA crew delete <crew> [--threads archive|delete|keep] [--force]");
         const mode = (args.values.threads ?? "archive") as DeleteThreadsMode;
         if (!DELETE_THREADS_MODES.includes(mode)) return fail(`--threads must be one of ${DELETE_THREADS_MODES.join(", ")}, not "${mode}".`);
         const crew = service.findCrew(projectId, target);
@@ -650,7 +650,7 @@ export async function runCli(
       }
       case "plan":
       case "apply": {
-        if (!target) return fail(`Usage: bb crew ${command} <crew|template|file.yaml>`);
+        if (!target) return fail(`Usage: VesnALIA crew ${command} <crew|template|file.yaml>`);
         const file = await service.resolveFile(projectId, target, ctx.cwd);
         const options = { fresh: args.fresh, confirmFull: args.flags.has("--confirm-full") };
         if (command === "plan") {

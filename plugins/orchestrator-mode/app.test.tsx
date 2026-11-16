@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot, type RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot, type RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { EnforcementLevel, Violation, WorkerConfig } from "./shared";
 
 const app = await loadPluginApp(() => import("./app"));

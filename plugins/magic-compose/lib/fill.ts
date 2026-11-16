@@ -2,7 +2,7 @@
 // the last word: it lowers a permission mode above the machine's limit, moves a
 // reasoning level the model lacks to the nearest one it has, and so on, and its
 // pickers show what it settled on.
-import type { ExperimentalComposerSelection } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalComposerSelection } from "@vesnalia/plugin-sdk/app";
 import type { DecisionSummary } from "../server";
 import type { MaySet } from "./preferences";
 import { REASONING_LEVELS } from "./reasoning";
@@ -60,7 +60,7 @@ export function changedSelection(
   previous: ExperimentalComposerSelection | null,
   next: ExperimentalComposerSelection,
 ): ExperimentalComposerSelection {
-  // A move sets everything again: BB remembers the environment per project,
+  // A move sets everything again: VesnALIA remembers the environment per project,
   // and each machine has its own model catalog to reconcile against.
   if (previous === null || placement(previous) !== placement(next)) return next;
   const sameModel =

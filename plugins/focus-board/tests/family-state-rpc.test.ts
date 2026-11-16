@@ -6,7 +6,7 @@
 // them, so every suite here throws "no RPC handler" before the wiring lands
 // (same shape as the group-RPC and link-RPC suites).
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { FAMILY_STATE_KV_KEY } from "../lib/family-state";
 
@@ -19,11 +19,11 @@ async function setup(opts: { threads?: string[] } = {}) {
       },
     },
   });
-  await plugin(host.bb as never);
+  await plugin(host.alia as never);
   return {
     host,
     harness: host.harness,
-    kv: host.bb.storage.kv,
+    kv: host.alia.storage.kv,
     callRpc: (method: string, input?: unknown) =>
       host.harness.callRpc(method, input) as Promise<unknown>,
   };

@@ -11,7 +11,7 @@ export const KIND_LABELS: Record<Kind, string> = {
   summary: "Summary",
 };
 
-/** Each kind's glyph, declared in the manifest's `bb.branding.experimental_icons`. */
+/** Each kind's glyph, declared in the manifest's `alia.branding.experimental_icons`. */
 export const KIND_ICONS: Record<Kind, string> = {
   finding: "flare/finding",
   progress: "flare/progress",

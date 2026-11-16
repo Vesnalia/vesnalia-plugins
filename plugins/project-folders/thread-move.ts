@@ -1,6 +1,6 @@
 import path from "node:path";
 import { z } from "zod";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Folder } from "./server";
 const jobSchema = z.object({
   threadId: z.string(),
@@ -14,8 +14,8 @@ const jobSchema = z.object({
   asked: z.number().optional(),
 });
 /**
- * BB has no plugin API for moving an existing chat's working directory
- * (get-bb/bb#3904), but every chat's own agent has the `update_environment_
+ * VesnALIA has no plugin API for moving an existing chat's working directory
+ * (get-alia/alia#3904), but every chat's own agent has the `update_environment_
  * directory` tool. So when core refuses, the move asks the chat to finish it:
  * one agent-only message, carrying this marker so the dispatch guard lets it
  * past the very barrier it is meant to lift.
@@ -24,7 +24,7 @@ export const RELOCATE_MARKER = "[project-folders:relocate]";
 export const relocationRequest = (to: string) =>
   `${RELOCATE_MARKER} Projects & Sections moved this chat to the section at ${to}. Call the update_environment_directory tool with exactly that path so your working directory follows, then reply with one short line naming the new directory. If that tool is not available to you, reply with exactly "No update_environment_directory tool" and nothing else — do not claim the directory changed. Do no other work in this turn.`;
 export function makeThreadMoves(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   options: {
     target: (input: {
       projectId: string;
@@ -45,7 +45,7 @@ export function makeThreadMoves(
     file?: (threadId: string, folderId: string | null) => void;
   },
 ) {
-  const db = bb.storage.database();
+  const db = alia.storage.database();
   /**
    * A barrier stops a chat only while its files are in flight. A chat that was
    * merely asked to switch directory has moved nothing yet, so it keeps
@@ -73,14 +73,14 @@ export function makeThreadMoves(
       throw new Error("This chat is already moving.");
     running.add(input.threadId);
     try {
-      const thread = await bb.sdk.threads.get({ threadId: input.threadId });
+      const thread = await alia.sdk.threads.get({ threadId: input.threadId });
       if (thread.projectId !== input.projectId || !thread.environmentId)
         throw new Error("Choose a section in this chat's project.");
       if (thread.archivedAt || !["idle", "error"].includes(thread.status))
         throw new Error(
           "Wait for the chat and its queued messages to finish before moving it.",
         );
-      const environment = await bb.sdk.environments.get({
+      const environment = await alia.sdk.environments.get({
         environmentId: thread.environmentId,
       });
       const folder = await options.target(input);
@@ -99,14 +99,14 @@ export function makeThreadMoves(
             hostId: folder.hostId,
             from,
             to: folder.path,
-            source: path.join(from, ".bb/chats", thread.id),
-            destination: path.join(folder.path, ".bb/chats", thread.id),
+            source: path.join(from, ".vesnalia/chats", thread.id),
+            destination: path.join(folder.path, ".vesnalia/chats", thread.id),
           };
       if (job.to !== folder.path)
         throw new Error("Finish the previous move to " + job.to + " first.");
       if (job.from === job.to) return { path: job.to };
       let existence = (
-        await bb.sdk.hosts.pathsExist({
+        await alia.sdk.hosts.pathsExist({
           hostId: job.hostId,
           paths: [job.source, job.destination],
         })
@@ -121,7 +121,7 @@ export function makeThreadMoves(
       );
       await options.pendingExports();
       existence = (
-        await bb.sdk.hosts.pathsExist({
+        await alia.sdk.hosts.pathsExist({
           hostId: job.hostId,
           paths: [job.source, job.destination],
         })
@@ -151,7 +151,7 @@ export function makeThreadMoves(
             JSON.stringify({ ...job, asked: Date.now() }),
           );
           options.file?.(thread.id, input.folderId ?? null);
-          await bb.sdk.threads.send({
+          await alia.sdk.threads.send({
             threadId: thread.id,
             // The chat is idle by now; "start" keeps this a turn of its own.
             mode: "start",
@@ -169,12 +169,12 @@ export function makeThreadMoves(
         }
       }
       if (existence[job.source]) {
-        await bb.sdk.files.mkdir({
+        await alia.sdk.files.mkdir({
           hostId: job.hostId,
           path: path.dirname(job.destination),
           recursive: true,
         });
-        await bb.sdk.files.move({
+        await alia.sdk.files.move({
           hostId: job.hostId,
           sourcePath: job.source,
           destinationPath: job.destination,
@@ -188,23 +188,23 @@ export function makeThreadMoves(
     }
   }
   /**
-   * Asks core to repoint the chat. Returns false when this BB has no such API
-   * — the documented case (get-bb/bb#3904), not an error to surface.
+   * Asks core to repoint the chat. Returns false when this VesnALIA has no such API
+   * — the documented case (get-alia/alia#3904), not an error to surface.
    */
   async function switchDirectory(
     threadId: string,
     request: { expectedEnvironmentId: string; path: string },
   ) {
     try {
-      const updated = await bb.sdk.threads.update({
+      const updated = await alia.sdk.threads.update({
         threadId,
         experimental_directory: {
           path: request.path,
           expectedEnvironmentId: request.expectedEnvironmentId,
         },
-      } as Parameters<typeof bb.sdk.threads.update>[0]);
+      } as Parameters<typeof alia.sdk.threads.update>[0]);
       const next = updated.environmentId
-        ? await bb.sdk.environments.get({
+        ? await alia.sdk.environments.get({
             environmentId: updated.environmentId,
           })
         : null;
@@ -232,12 +232,12 @@ export function makeThreadMoves(
     if (!saved) return false;
     const job = jobSchema.parse(JSON.parse(saved.data));
     if (!job.asked) return false;
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (!thread.environmentId) return false;
     // Wait for the turn the request started; only then is its answer final.
     if (thread.status !== "idle" || (thread.updatedAt ?? 0) <= job.asked)
       return false;
-    const environment = await bb.sdk.environments.get({
+    const environment = await alia.sdk.environments.get({
       environmentId: thread.environmentId,
     });
     if (environment.path !== job.to || environment.hostId !== job.hostId) {
@@ -247,17 +247,17 @@ export function makeThreadMoves(
     }
     // Exports in flight write into the old storage folder: let them land.
     await options.pendingExports();
-    const { existence } = await bb.sdk.hosts.pathsExist({
+    const { existence } = await alia.sdk.hosts.pathsExist({
       hostId: job.hostId,
       paths: [job.source, job.destination],
     });
     if (existence[job.source] && !existence[job.destination]) {
-      await bb.sdk.files.mkdir({
+      await alia.sdk.files.mkdir({
         hostId: job.hostId,
         path: path.dirname(job.destination),
         recursive: true,
       });
-      await bb.sdk.files.move({
+      await alia.sdk.files.move({
         hostId: job.hostId,
         sourcePath: job.source,
         destinationPath: job.destination,

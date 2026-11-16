@@ -19,7 +19,7 @@ function mediaScope(css: string): { start: number; end: number } {
   return mediaScopeFor(css, "min-width:768px");
 }
 
-test("keeps the compact New thread layout native below BB's desktop breakpoint", () => {
+test("keeps the compact New thread layout native below VesnALIA's desktop breakpoint", () => {
   const { start, end } = mediaScope(COMPOSE_CENTER);
   const outside = COMPOSE_CENTER.slice(0, start) + COMPOSE_CENTER.slice(end + 1);
   assert.equal(outside.trim(), "", "No compact-layout override may be emitted outside the desktop media block");
@@ -84,7 +84,7 @@ test("applies scoped backgrounds, disables cleanly and ignores a late fetch afte
     assert.ok(document.head.textContent!.includes(TARGETS));
     assert.ok(document.head.textContent!.includes("@media (max-width:767px)"));
     assert.ok(!document.head.textContent!.includes("aside"));
-    assert.ok(document.head.textContent!.includes(".aura-capy-layer{top:var(--bb-app-chrome-row-height, 48px);}"));
+    assert.ok(document.head.textContent!.includes(".aura-capy-layer{top:var(--alia-app-chrome-row-height, 48px);}"));
     const emitted = document.head.textContent!;
     const composeScope = mediaScope(emitted);
     const firstCompact = emitted.indexOf("root-compose-compact");

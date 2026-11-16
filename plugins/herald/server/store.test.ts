@@ -1,4 +1,4 @@
-import type { PluginKvStorage } from "@get-bb/plugin-sdk";
+import type { PluginKvStorage } from "@vesnalia/plugin-sdk";
 import { describe, expect, it } from "vitest";
 
 import type { AttentionEntry } from "../shared/herald";
@@ -26,7 +26,7 @@ function entry(overrides: Partial<AttentionEntry> = {}): AttentionEntry {
 }
 
 /**
- * Storage that answers a tick later, like bb's, and can hold a read open so a
+ * Storage that answers a tick later, like VesnALIA's, and can hold a read open so a
  * test can land events in the middle of it.
  */
 class FakeBackend implements StoreBackend {

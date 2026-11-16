@@ -1,6 +1,6 @@
-# bb-plugin-pinch-zoom
+# alia-plugin-pinch-zoom
 
-Pinch to change bb's app text size, or pinch over a terminal to change the
+Pinch to change VesnALIA's app text size, or pinch over a terminal to change the
 terminal's text size.
 
 | Gesture | Where | Changes |
@@ -23,8 +23,8 @@ Terminal font = 12px × text size × `terminalScale` × the device fine-tune fro
 pinching over a terminal, rounded and clamped to 8–32px.
 
 ```
-bb plugin config pinch-zoom set scope app
-bb plugin config pinch-zoom set composerScale 1.2
+alia plugin config pinch-zoom set scope app
+alia plugin config pinch-zoom set composerScale 1.2
 ```
 
 ## Layout
@@ -32,7 +32,7 @@ bb plugin config pinch-zoom set composerScale 1.2
 - `lib/zoom-core.ts` — pure sizing math and persistence parsing (unit-tested).
 - `lib/zoom-store.ts` — per-window store shared by gestures, the settings bridge and the settings section.
 - `lib/gestures.ts` — the content script: gesture routing, root font size, indicator.
-- `lib/terminal-bridge.ts` — finds bb's xterm instances and refits them.
+- `lib/terminal-bridge.ts` — finds VesnALIA's xterm instances and refits them.
 - `app.tsx` — registers the content script and the settings section.
 
 ## Develop
@@ -41,16 +41,16 @@ bb plugin config pinch-zoom set composerScale 1.2
 npm install --include=dev
 npm test
 npm run typecheck
-bb plugin install .
-bb plugin dev
+alia plugin install .
+alia plugin dev
 ```
 
 ## Known constraint
 
-bb hard-codes the terminal font size and exposes no SDK API for it. The plugin
+VesnALIA hard-codes the terminal font size and exposes no SDK API for it. The plugin
 finds each xterm `Terminal` through the React fiber of its container and
-triggers bb's own fit/PTY-resize path by nudging the container size for one
-frame. "Chat only" scope applies CSS `zoom` to bb's
-`[data-timeline-row-list="top-level"]` and `form[data-promptbox]`. A bb update
+triggers VesnALIA's own fit/PTY-resize path by nudging the container size for one
+frame. "Chat only" scope applies CSS `zoom` to VesnALIA's
+`[data-timeline-row-list="top-level"]` and `form[data-promptbox]`. A VesnALIA update
 to those components can break the matching part; whole-app text sizing does not
 depend on them.

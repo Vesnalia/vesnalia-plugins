@@ -2,7 +2,7 @@ import { isMainThread } from "node:worker_threads";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 
-// A second SQLite implementation must never open BB's WAL inside its process.
+// A second SQLite implementation must never open VesnALIA's WAL inside its process.
 // Refuse the unsafe worker_threads path before importing node:sqlite.
 if (!isMainThread) throw new Error("Recent SQLite reader requires a separate process.");
 

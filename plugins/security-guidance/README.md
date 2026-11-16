@@ -1,9 +1,9 @@
-# bb-plugin-security-guidance
+# alia-plugin-security-guidance
 
 Pattern-matched security warnings for code the agent writes. Port of the
-Hermes `security-guidance` plugin to BB's plugin model.
+Hermes `security-guidance` plugin to VesnALIA's plugin model.
 
-BB has no `transform_tool_result` hook (the Hermes plugin's delivery
+VesnALIA has no `transform_tool_result` hook (the Hermes plugin's delivery
 mechanism), so this port exposes the same 25-rule pattern engine as a native
 agent tool instead:
 

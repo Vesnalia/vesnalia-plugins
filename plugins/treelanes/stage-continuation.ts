@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { DELIVERY_SKILL_INSTRUCTION } from "./stage-prompts";
-type Db = ReturnType<BbPluginApi["storage"]["database"]>;
+type Db = ReturnType<AliaPluginApi["storage"]["database"]>;
 export const stageContinuationMigration = `CREATE TABLE worktree_stage_continuations (
   assignment TEXT NOT NULL, thread_id TEXT NOT NULL, turn_id TEXT NOT NULL,
   status TEXT NOT NULL, error TEXT, PRIMARY KEY(thread_id, turn_id)
@@ -9,15 +9,15 @@ export const stageContinuationMigration = `CREATE TABLE worktree_stage_continuat
 
 // A normal turn end without a receipt is incomplete delivery. A manual stop,
 // new user turn, pending input, or uncertain send never permits another send.
-export function createStageContinuation(bb: BbPluginApi, db: Db, disposed: () => boolean) {
+export function createStageContinuation(alia: AliaPluginApi, db: Db, disposed: () => boolean) {
   const read = (assignment: string) => db.prepare("SELECT status, error FROM worktree_stage_continuations WHERE assignment = ? ORDER BY rowid DESC LIMIT 1")
     .get(assignment) as { status: string; error: string | null } | undefined;
   async function resume(threadId: string, environmentId: string, stage: string, assignment: string, eligible: () => boolean) {
     if (disposed() || !eligible()) return;
-    const worker = await bb.sdk.threads.get({ threadId });
+    const worker = await alia.sdk.threads.get({ threadId });
     if (!worker || worker.status !== "idle" || worker.archivedAt || worker.deletedAt || worker.environmentId !== environmentId) return;
-    if ((await bb.sdk.threads.interactions.list({ threadId })).length || (await bb.sdk.threads.queuedMessages.list({ threadId })).length) return;
-    const events = await bb.sdk.threads.events.list({ threadId, types: ["turn/completed", "system/thread/interrupted", "client/turn/requested"], order: "desc", limit: "1" });
+    if ((await alia.sdk.threads.interactions.list({ threadId })).length || (await alia.sdk.threads.queuedMessages.list({ threadId })).length) return;
+    const events = await alia.sdk.threads.events.list({ threadId, types: ["turn/completed", "system/thread/interrupted", "client/turn/requested"], order: "desc", limit: "1" });
     const last = events[0];
     if (!last?.id || last.type !== "turn/completed" || last.data.status !== "completed" || disposed() || !eligible()) return;
     await sendOnce(threadId, last.id, assignment, `${DELIVERY_SKILL_INSTRUCTION}\nContinue this ${stage} step in the same thread; its normal turn ended without a receipt. Read fresh treelanes_get_context, finish the remaining work, and submit actual check evidence. For a blocker or nextAction, read /delivery's references/recovery.md.`, eligible);
@@ -34,7 +34,7 @@ export function createStageContinuation(bb: BbPluginApi, db: Db, disposed: () =>
     })();
     if (!claim) return;
     try {
-      await bb.sdk.threads.send({ threadId, mode: "start", input: [{ type: "text", mentions: [], text }] });
+      await alia.sdk.threads.send({ threadId, mode: "start", input: [{ type: "text", mentions: [], text }] });
       if (!disposed()) db.prepare("UPDATE worktree_stage_continuations SET status = 'sent' WHERE thread_id = ? AND turn_id = ?").run(threadId, turnId);
     } catch (error) {
       if (!disposed()) db.prepare("UPDATE worktree_stage_continuations SET status = 'uncertain', error = ? WHERE thread_id = ? AND turn_id = ?")
@@ -43,14 +43,14 @@ export function createStageContinuation(bb: BbPluginApi, db: Db, disposed: () =>
   }
   async function help(orchestratorId: string, workerId: string, environmentId: string, assignment: string, reason: string, eligible: () => boolean) {
     if (disposed() || !eligible()) return;
-    const coordinator = await bb.sdk.threads.get({ threadId: orchestratorId });
+    const coordinator = await alia.sdk.threads.get({ threadId: orchestratorId });
     if (!coordinator || coordinator.archivedAt || coordinator.deletedAt || coordinator.environmentId !== environmentId || coordinator.status !== "idle") return;
-    if ((await bb.sdk.threads.interactions.list({ threadId: orchestratorId })).length || (await bb.sdk.threads.queuedMessages.list({ threadId: orchestratorId })).length) return;
-    const coordinatorEvents = await bb.sdk.threads.events.list({ threadId: orchestratorId,
+    if ((await alia.sdk.threads.interactions.list({ threadId: orchestratorId })).length || (await alia.sdk.threads.queuedMessages.list({ threadId: orchestratorId })).length) return;
+    const coordinatorEvents = await alia.sdk.threads.events.list({ threadId: orchestratorId,
       types: ["turn/completed", "system/thread/interrupted", "client/turn/requested"], order: "desc", limit: "1" });
     if (coordinatorEvents[0]?.type === "system/thread/interrupted" ||
         (coordinatorEvents[0]?.type === "turn/completed" && coordinatorEvents[0].data.status === "interrupted")) return;
-    const events = await bb.sdk.threads.events.list({ threadId: workerId, types: ["turn/completed", "system/thread/interrupted", "client/turn/requested"], order: "desc", limit: "1" });
+    const events = await alia.sdk.threads.events.list({ threadId: workerId, types: ["turn/completed", "system/thread/interrupted", "client/turn/requested"], order: "desc", limit: "1" });
     if (events[0]?.type !== "turn/completed" || events[0].data.status !== "completed") return;
     const key = createHash("sha256").update(`${assignment}:${workerId}:${reason}`).digest("hex");
     await sendOnce(orchestratorId, key, `help:${assignment}`,

@@ -1,22 +1,14 @@
 {
-  "name": "bb-plugin-provider-brand-marks",
+  "name": "alia-plugin-provider-brand-marks",
   "version": "0.1.3",
   "type": "module",
-  "description": "Draw bb's provider logos in their own brand colours, tuned to whichever palette is active.",
+  "description": "Draw VesnALIA's provider logos in their own brand colours, tuned to whichever palette is active.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ChrBoebel/bb-plugin-provider-brand-marks.git"
-  },
-  "homepage": "https://github.com/ChrBoebel/bb-plugin-provider-brand-marks#readme",
-  "bugs": {
-    "url": "https://github.com/ChrBoebel/bb-plugin-provider-brand-marks/issues"
-  },
   "engines": {
-    "bb": ">=0.41",
-    "bbPluginSdk": ">=0.4.34"
+    "alia": ">=0.41",
+    "aliaPluginSdk": ">=0.4.34"
   },
-  "bb": {
+  "alia": {
     "name": "True Colors",
     "description": "Draws each provider logo in its own brand colour — Anthropic clay, OpenAI green, Pi steel blue, Hermes ultramarine — tuned in OKLCH to whichever palette is active, in both light and dark mode.",
     "branding": {
@@ -26,13 +18,29 @@
     "app": "./app.tsx"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.34",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.34"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/provider-brand-marks#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/provider-brand-marks"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

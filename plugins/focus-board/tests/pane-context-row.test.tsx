@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // The thread pane's composer-context fallback row.
 //
-// bb's own thread page passes both `environmentSummary` and
+// VesnALIA's own thread page passes both `environmentSummary` and
 // `compactEnvironmentSummary` to its promptbox, but the embedded
 // `ThreadChat` the SDK hands plugin panels passes only the full summary —
 // and the promptbox renders the compact one when its container is narrow,
@@ -13,7 +13,7 @@
 // the transcript whenever the host's chips are mounted but not actually
 // painted, and yields the moment they paint.
 //
-// The fixtures below mirror how bb 0.46.1 paints the context:
+// The fixtures below mirror how VesnALIA 0.46.1 paints the context:
 // `[data-option-display]` chips whose sr-only label reads "Project: " /
 // "Environment: ", `[data-promptbox-hide-branch-compact]` checkout chips,
 // the compact `Thread details: …` button, and the collapsed/expanded
@@ -29,14 +29,14 @@ import { CompactViewportOverrideProvider } from "../components/ui/hooks/use-comp
 
 const chatHolder = vi.hoisted(() => ({ content: null as ReactNode }));
 
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   // The pane's embedded chat is only imported for render; the observer
   // under test watches whatever DOM the mock paints. dangerouslySetInnerHTML
   // paints the fixtures as real DOM, matching how the host renders.
   ThreadChat: (): ReactNode => chatHolder.content,
   useSdk: () => ({ threads: { get: async () => ({}) } }),
   useRpc: () => ({ call: async () => ({ existence: {} }) }),
-  useBbNavigate: () => ({ toThread: () => {} }),
+  useAliaNavigate: () => ({ toThread: () => {} }),
   useSettings: () => ({ values: undefined, isLoading: false }),
 }));
 
@@ -184,7 +184,7 @@ describe("composerContextVisible probe", () => {
 });
 
 describe("probe paint state", () => {
-  // bb 0.46.1 collapses the composer's footer to height 0 (attribute-driven,
+  // VesnALIA 0.46.1 collapses the composer's footer to height 0 (attribute-driven,
   // animated) while the chips stay mounted; the chips' own rects still
   // measure, so presence proves nothing. The probe must follow the paint.
   it("reads chips clipped by a height-0 collapsed footer as absent", () => {
@@ -272,7 +272,7 @@ describe("thread pane composer-context fallback row", () => {
     const { queryByTestId, getByTestId } = renderPane(paneThread(worktreeContext));
     armFooterRects("collapsed");
     await waitFor(() => expect(getByTestId("pane-context-row")).toBeTruthy());
-    // bb's collapse is an attribute flip + CSS transition: no node mounts or
+    // VesnALIA's collapse is an attribute flip + CSS transition: no node mounts or
     // unmounts. The probe must wake on the attribute alone.
     const footer = document.querySelector("[data-follow-up-composer-footer]");
     if (!(footer instanceof HTMLElement)) throw new Error("mock footer missing");

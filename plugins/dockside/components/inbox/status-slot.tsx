@@ -1,7 +1,7 @@
 import type {
   PluginSidebarThread,
   PluginSidebarThreadIndicator,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import { semanticStateToneClass } from "@/lib/attention-state";
 import { relativeTimeLabel } from "@/lib/relative-time";

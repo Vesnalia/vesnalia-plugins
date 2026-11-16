@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { createPlugin } from "../server.js";
 import type { LinearClient } from "../src/linear/client.js";
 import { createStore } from "../src/store/store.js";
 import { issue, NOW, state, team } from "./helpers/store.js";
 
 /*
- * The Working set through the real server: which issues get bb facts is
+ * The Working set through the real server: which issues get VesnALIA facts is
  * decided in server.ts, not in buildWorkingSet, so a panel test that passes
  * facts in directly cannot see an issue the server never computed one for.
  */
@@ -32,7 +32,7 @@ const offline = new Proxy({} as LinearClient, {
 describe("Working set through the server", () => {
   it("files a running thread's old, low-priority issue under Running on a busy team", async () => {
     const thread = makeThreadResponse({ id: "t_run", projectId: "p", environmentId: null });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "linear",
       settings: { apiKey: "lin_api_test" },
       sdk: {
@@ -41,9 +41,9 @@ describe("Working set through the server", () => {
       },
     });
     cleanups.push(() => harness.lifecycle.dispose());
-    await createPlugin(() => offline)(bb as never);
+    await createPlugin(() => offline)(alia as never);
 
-    const store = createStore(bb.storage.database() as never);
+    const store = createStore(alia.storage.database() as never);
     store.putTeams([team("team_eng", "ENG")], NOW);
     store.replaceWorkflowStates("team_eng", [state("todo", "team_eng", "unstarted")]);
     // More recent, higher-priority issues than both the 300-row Working set
@@ -58,7 +58,7 @@ describe("Working set through the server", () => {
       NOW,
     );
     expect((await harness.behavior.runCli(["bind", "ENG", "--project", "p"])).exitCode).toBe(0);
-    await bb.storage.kv.set("backfilled:team_eng", { v: 1, at: NOW, issues: 601 });
+    await alia.storage.kv.set("backfilled:team_eng", { v: 1, at: NOW, issues: 601 });
     store.linkThread({ threadId: "t_run", issueId: "run", teamId: "team_eng", projectId: "p", createdAt: NOW, origin: "manual" });
 
     await harness.behavior.emitThreadEvent("thread.active", { thread });

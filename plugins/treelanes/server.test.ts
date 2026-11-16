@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import { makeWorkspaceSdk, shippedSkills } from "./test-workspace";
 import { automatedNextStage, reportsFinishedGrilling } from "./workflow";
@@ -178,7 +178,7 @@ describe("Board backend", () => {
     design.providerId = "codex";
     const spawned: unknown[] = [];
     const sdk = sdkFor([design]);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: {
         ...sdk,
@@ -202,7 +202,7 @@ describe("Board backend", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.callRpc("moveCard", {
       environmentId: "environment-one",
@@ -241,7 +241,7 @@ describe("Board backend", () => {
     tdd.providerId = "codex";
     const spawned: unknown[] = [];
     const sdk = sdkFor([tdd]);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: {
         ...sdk,
@@ -265,7 +265,7 @@ describe("Board backend", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.callRpc("moveCard", {
       environmentId: "environment-one",
@@ -298,7 +298,7 @@ describe("Board backend", () => {
     quality.providerId = "codex";
     const spawned: unknown[] = [];
     const sdk = sdkFor([quality]);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: {
         ...sdk,
@@ -339,7 +339,7 @@ describe("Board backend", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.callRpc("moveCard", {
       environmentId: "environment-one",
@@ -378,7 +378,7 @@ describe("Board backend", () => {
       const threads = [main];
       const spawned: unknown[] = [];
       const sdk = sdkFor(threads);
-      const { bb, harness } = createFakePluginHost({
+      const { alia, harness } = createFakePluginHost({
         pluginId: "treelanes",
         sdk: {
           ...sdk,
@@ -400,7 +400,7 @@ describe("Board backend", () => {
           },
         },
       });
-      await plugin(bb);
+      await plugin(alia);
 
       await harness.behavior.callRpc("moveCard", {
         environmentId: "environment-one",
@@ -444,7 +444,7 @@ describe("Board backend", () => {
     quality.providerId = "codex";
     const spawned: unknown[] = [];
     const sdk = sdkFor([main, quality]);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: {
         ...sdk,
@@ -462,7 +462,7 @@ describe("Board backend", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.callRpc("moveCard", {
       environmentId: "environment-one",
@@ -489,7 +489,7 @@ describe("Board backend", () => {
     simplify.providerId = "codex";
     const spawned: unknown[] = [];
     const sdk = sdkFor([simplify]);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       settings: {
         simplifyToPrMode: "ask",
@@ -518,7 +518,7 @@ describe("Board backend", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.callRpc("moveCard", {
       environmentId: "environment-one",
@@ -563,7 +563,7 @@ describe("Board backend", () => {
     simplify.providerId = "claude-code";
     const spawned: unknown[] = [];
     const sdk = sdkFor([simplify]);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: {
         ...sdk,
@@ -587,7 +587,7 @@ describe("Board backend", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.callRpc("moveCard", {
       environmentId: "environment-one",
@@ -623,7 +623,7 @@ describe("Board backend", () => {
     });
     thread.providerId = "claude-code";
     const sdk = sdkFor([thread]);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: {
         ...sdk,
@@ -639,7 +639,7 @@ describe("Board backend", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const result = await harness.behavior.callRpc("getComposerDefaults", {
       threadId: thread.id,
@@ -671,7 +671,7 @@ describe("Board backend", () => {
     };
     let spawned: unknown;
     const sdk = sdkFor([]);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: {
         ...sdk,
@@ -689,7 +689,7 @@ describe("Board backend", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const result = await harness.behavior.callRpc("createThread", { request });
 
@@ -715,11 +715,11 @@ describe("Board backend", () => {
       title: "Run strict review",
       parentThreadId: root.id,
     });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: sdkFor([root, child]),
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const message = await harness.behavior.callAgentTool(
       "treelanes_move_card",
@@ -765,7 +765,7 @@ describe("Board backend", () => {
     });
     const spawned: unknown[] = [];
     const sdk = sdkFor([thread]);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: {
         ...sdk,
@@ -778,7 +778,7 @@ describe("Board backend", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.callRpc("moveCard", {
       environmentId: "environment-one",
@@ -812,7 +812,7 @@ describe("Board backend", () => {
     tdd.providerId = "codex";
     const spawned: unknown[] = [];
     const sdk = sdkFor([tdd]);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: {
         ...sdk,
@@ -830,7 +830,7 @@ describe("Board backend", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.callAgentTool(
       "treelanes_move_card",
@@ -866,7 +866,7 @@ describe("Board backend", () => {
     const threads = [main];
     const spawned: unknown[] = [];
     const sdk = sdkFor(threads);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: {
         ...sdk,
@@ -890,7 +890,7 @@ describe("Board backend", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.callRpc("moveCard", {
       environmentId: "environment-one",
@@ -943,7 +943,7 @@ describe("Board backend", () => {
     const threads = [main];
     const spawned: ReturnType<typeof worktreeThread>[] = [];
     const sdk = sdkFor(threads);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: {
         ...sdk,
@@ -966,7 +966,7 @@ describe("Board backend", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.callRpc("moveCard", {
       environmentId: "environment-one",
@@ -1009,7 +1009,7 @@ describe("Board backend", () => {
     review.providerId = "codex";
     const spawned: unknown[] = [];
     const sdk = sdkFor([review]);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: {
         ...sdk,
@@ -1027,7 +1027,7 @@ describe("Board backend", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.callAgentTool(
       "treelanes_move_card",
@@ -1050,11 +1050,11 @@ describe("Board backend", () => {
   });
 
   it("maps /code-review to Code Review in agent instructions", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       agentSkillIds: shippedSkills,
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const configuration = await harness.behavior.resolveAgentConfiguration({
       thread: {
@@ -1092,8 +1092,8 @@ describe("Board backend", () => {
   });
 
   it("lists the fixed workflow stages through the CLI", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "treelanes" });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "treelanes" });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["stages"]);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("tickets\tTickets");
@@ -1114,11 +1114,11 @@ describe("Board backend", () => {
       title: "Grill the design",
       parentThreadId: root.id,
     });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: sdkFor([root, child]),
     });
-    await plugin(bb);
+    await plugin(alia);
     await harness.behavior.callRpc("moveCard", {
       environmentId: "environment-one",
       stage: "design",
@@ -1179,7 +1179,7 @@ describe("Board backend", () => {
     ];
     let spawnIndex = 0;
     const sdk = sdkFor(threads);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: {
         ...sdk,
@@ -1200,7 +1200,7 @@ describe("Board backend", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     await harness.behavior.callRpc("moveCard", {
       environmentId: "environment-one",
       stage: "design",
@@ -1259,8 +1259,8 @@ describe("Board backend", () => {
       latestAttentionAt: 100,
     };
     const sdk = sdkFor([settled, activeAgain]);
-    const { bb, harness } = createFakePluginHost({ pluginId: "treelanes", sdk });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "treelanes", sdk });
+    await plugin(alia);
     await harness.behavior.callRpc("settleThread", { threadId: settled.id });
     await harness.behavior.callRpc("settleThread", { threadId: activeAgain.id });
     activeAgain.latestAttentionAt = Date.now() + 60_000;
@@ -1278,8 +1278,8 @@ describe("Board backend", () => {
       id, projectId: "project-one", status: "idle", updatedAt: 1,
       parentThreadId: id === "child" ? "root" : null,
     }));
-    const { bb, harness } = createFakePluginHost({ pluginId: "treelanes", sdk: sdkFor(threads) });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "treelanes", sdk: sdkFor(threads) });
+    await plugin(alia);
     try {
       await expect(harness.behavior.callRpc("settleThread", { threadId: "child" })).resolves.toEqual({ ok: true });
       const board = await harness.behavior.callRpc("getBoard", { projectId: "project-one" }) as { cards: Array<{ threads: Array<{ id: string; canSettle: boolean }> }> };
@@ -1298,11 +1298,11 @@ describe("Board backend", () => {
       ...(reason === "outside" ? { environmentWorkspaceDisplayKind: "other" as const } : {}),
     };
     const sdk = sdkFor([]);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: { ...sdk, threads: { ...sdk.threads, get: async () => thread, list: async () => [thread] } },
     });
-    await plugin(bb);
+    await plugin(alia);
     try {
       await expect(harness.behavior.callRpc("settleThread", { threadId: thread.id })).rejects.toThrow(
         reason === "outside" ? "not on the board" : "live work or a pending question",
@@ -1322,11 +1322,11 @@ describe("Board backend", () => {
       }),
       environmentWorkspaceDisplayKind: "other" as const,
     };
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: sdkFor([thread]),
     });
-    await plugin(bb);
+    await plugin(alia);
     const board = (await harness.behavior.callRpc("getBoard", {
       projectId: "project-one",
     })) as { cards: unknown[] };
@@ -1335,8 +1335,8 @@ describe("Board backend", () => {
   });
 
   it("rejects an unknown stage", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "treelanes" });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "treelanes" });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["move", "ship"]);
     expect(result.exitCode).toBe(2);
     expect(result.stderr).toContain("Stage must be one of");

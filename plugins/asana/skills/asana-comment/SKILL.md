@@ -1,6 +1,6 @@
 ---
 name: asana-comment
-description: Use when writing any Asana comment, ticket reply, hand-back note, or status note on a task — enforces voice, brevity, and the no-narrator rule before the comment is posted with `bb asana comment` or `bb asana handoff`.
+description: Use when writing any Asana comment, ticket reply, hand-back note, or status note on a task — enforces voice, brevity, and the no-narrator rule before the comment is posted with `alia asana comment` or `alia asana handoff`.
 ---
 
 # Asana comments
@@ -8,8 +8,8 @@ description: Use when writing any Asana comment, ticket reply, hand-back note, o
 The comment is **the user writing to the reporter**. Not an assistant
 reporting to the user. Not a changelog. Not a conversation with yourself.
 
-Write it, then run the checks below BEFORE `bb asana comment` or
-`bb asana handoff --comment`. Most drafts fail at least one.
+Write it, then run the checks below BEFORE `alia asana comment` or
+`alia asana handoff --comment`. Most drafts fail at least one.
 
 ## The three rules
 
@@ -93,8 +93,8 @@ Open with the state: `Fixed.` / `Done.` / `Not a bug —` / `Already fixed on
 ## Handing back
 
 "Hand it back" means comment, then reassign to the **reporter**: whoever
-filed the task (`Filed by` in `bb asana task`), not the current assignee.
-`bb asana handoff <gid> --comment "..."` does both in that order. If the
+filed the task (`Filed by` in `alia asana task`), not the current assignee.
+`alia asana handoff <gid> --comment "..."` does both in that order. If the
 work went out as a pull request, push the branch and open the PR first, and
 put its link at the end of the comment. If the fix needs a new app build to
 reach the reporter, say so in the comment.

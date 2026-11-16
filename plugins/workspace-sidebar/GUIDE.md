@@ -1,16 +1,16 @@
 # Ultra Sidebar
 
-Group bb threads into collapsible sidebar sections — a pinned list on top,
+Group VesnALIA threads into collapsible sidebar sections — a pinned list on top,
 then by project or by status — with subagent threads nested under the thread
 that spawned them.
 
-> **This plugin replaces bb's sidebar thread list**, which is bb's one
+> **This plugin replaces VesnALIA's sidebar thread list**, which is VesnALIA's one
 > *exclusive* slot — only one plugin can fill the sidebar's scroll area. If you
 > have another thread-list plugin enabled, one of them wins and the other is
 > silently inactive. Choose between them under
 > **Settings → Appearance → Sidebar**. The choice is per client.
 >
-> bb keeps the New-thread button, the search action, the plugin nav rows and
+> VesnALIA keeps the New-thread button, the search action, the plugin nav rows and
 > the footer in every sidebar; this plugin owns the scrolling list only, so its
 > own controls live at the top of that list.
 
@@ -18,19 +18,19 @@ that spawned them.
 
 ```
 npm install --include=dev
-bb plugin install .
+alia plugin install .
 ```
 
-`bb plugin dev` gives you a save → rebuild → reload loop while working on it.
+`alia plugin dev` gives you a save → rebuild → reload loop while working on it.
 
 ## What it does
 
-- **Projects are the only containers.** Every thread sits under the project bb
+- **Projects are the only containers.** Every thread sits under the project VesnALIA
   says it belongs to, and each project renders as a collapsible section. There
   is nothing else to file things into, and nothing to set up.
 - **Pinned threads lead the list.** Pin a thread and it leaves its project for
   a **Pinned** section at the very top, where it stays until you unpin it. The
-  pin is bb's own, so it is the same pin bb's built-in sidebar shows, and a
+  pin is VesnALIA's own, so it is the same pin VesnALIA's built-in sidebar shows, and a
   pinned row names its own project since the heading above it does not.
 - **Or group by status instead**, and the five buckets replace the project
   sections. Rows name their project either way when the heading does not.
@@ -71,7 +71,7 @@ bb plugin install .
 - **The folder, branch and pull-request badges are links.** Hovering the
   folder or branch shows the checkout's path and which machine it is on;
   clicking reveals it in Finder (or the platform's file manager) when the
-  folder is on the machine bb runs on, and says where it is otherwise.
+  folder is on the machine VesnALIA runs on, and says where it is otherwise.
   Hovering the PR badge shows its title and state; clicking opens it in the
   browser. Both are in the right-click menu too, as **Open folder** and
   **Open pull request**. Pull request state refreshes every 30 seconds while
@@ -107,7 +107,7 @@ Windows/Linux also support Ctrl+Y. Undo is also available in each action toast.
 History holds the last 50 actions in this sidebar session and resets on reload.
 Bulk actions and drag operations undo in one step. Changes to the same rows in
 another client cause a conflict instead of being overwritten. Pinning, archiving
-and deleting continue to use bb's own flows and are outside this history.
+and deleting continue to use VesnALIA's own flows and are outside this history.
 
 Use **Ctrl/Cmd-click** to toggle selected threads and **Shift-click** for a range,
 or use the row checkboxes, revealed on hover, focus, or touch. The floating selection controls can move,
@@ -137,23 +137,23 @@ this window, the way browser history does. The quick palette lists the same
 two actions as **Back to previous thread** and **Forward to next thread**.
 See [skills/thread-history/SKILL.md](skills/thread-history/SKILL.md).
 
-Order, status and snooze live in this plugin's own SQLite database. bb's own
+Order, status and snooze live in this plugin's own SQLite database. VesnALIA's own
 projects and threads are never modified for them, so uninstalling loses that
 state and nothing else.
 
 ## From a terminal
 
-`bb sidebar` reads and files what the sidebar shows — see
+`alia sidebar` reads and files what the sidebar shows — see
 [skills/sidebar/SKILL.md](skills/sidebar/SKILL.md), which is also loaded into
 agent threads so agents can triage for you.
 
 ```
-bb sidebar list --project proj_abc123
-bb sidebar status done --thread thr_abc123
-bb sidebar snooze --thread thr_abc123 --hours 4
+alia sidebar list --project proj_abc123
+alia sidebar status done --thread thr_abc123
+alia sidebar snooze --thread thr_abc123 --hours 4
 ```
 
-Pinning is not there: it belongs to bb rather than to this plugin, and the
+Pinning is not there: it belongs to VesnALIA rather than to this plugin, and the
 plugin SDK exposes it only to the sidebar itself.
 
 ## Tests
@@ -166,7 +166,7 @@ npm run build
 
 Covers the resolver's ordering and pinning rules and the rendered list, including the
 assertion that every row carries `data-sidebar-thread-shortcut-target` and
-`data-sidebar-thread-id` — a DOM contract bb's keyboard shortcuts depend on,
+`data-sidebar-thread-id` — a DOM contract VesnALIA's keyboard shortcuts depend on,
 and one whose breakage is invisible until someone reaches for the keyboard.
 
 ### Thread status and change counts
@@ -174,7 +174,7 @@ and one whose breakage is invisible until someone reaches for the keyboard.
 The second row shows the project name and a small machine icon, followed by
 useful status and mode information. Status bucket names stay in section headings,
 with counts beside the heading. Status colors
-live on the indicators and labels; rows use BB's normal background. The
+live on the indicators and labels; rows use VesnALIA's normal background. The
 sidebar shows simple status without command text, tool steps, or elapsed
 timers.
 
@@ -210,24 +210,24 @@ Goal and scheduled-message details also open directly from their own chips.
 
 ## Sidebar layout and actions
 
-- Compact rows use BB's native background and theme colors, status colors on the icons and labels, and tree connectors for expanded groups and subagents.
+- Compact rows use VesnALIA's native background and theme colors, status colors on the icons and labels, and tree connectors for expanded groups and subagents.
 - Threads waiting on an answer or approval show a solid amber **Your turn** badge beside the title in both row layouts. A static return arrow replaces the activity animation until the request is resolved; opening or selecting the thread does not hide the badge.
 - Active titles retain neutral text shimmer; reduced-motion settings disable it. Agent, project, machine and modes share one supporting line; the View options → Agent switch hides the agent icon. Click Goal or the machine icon for details, including actual goal objective and usage.
 - Queued message times remain attached to their threads. The bottom dock holds two collapsible sections that stay in view however long the list is: **Scheduled** reads recurring and one-time automations and respects the project filter, and **Snoozed** lists parked threads with their wake time. Rows in the dock are built like thread rows: a glyph, the name, and one word on the right in its status colour (next run, "Failed 2h ago", "Paused", a live orb while "Running"). Clicking a schedule opens the thread that ran it; before the first run it shows the details instead. Hovering reveals Run now, Pause/Resume and an info button; right-click gives the same menu. The details popover has **Run now**, **Pause**/**Resume**, **Open last run**, and **Delete…**, which asks once more before removing the automation for good. Opening the Automations panel itself from the sidebar is not possible: the plugin SDK only navigates to a plugin's own panels. Missing or disabled Automations hides the section; loading failures offer Retry.
 - Select threads from the toolbar or right-click empty sidebar space. Checkboxes occupy a separate column; status icons remain visible. The small bottom selection menu reserves its own space and closes after an action, Escape, dismissal, or clicking away. Hidden selections remain counted. Cmd/Ctrl-click and Shift selection remain available.
 - Thread and section context menus group navigation, organization, preferences, and removal actions with icons. Right-click empty sidebar space for creation, selection, collapse/expand, and view options. Native text-field context menus remain available.
 - View options → Compact rows restores the detailed row layout.
-- Project headings, the project badge on rows, and the details card use each project's own artwork when it has some: the BB icon named by `bb.branding.icon` in its `package.json`, an icon or logo path declared there, or a conventionally named `favicon`, `icon`, `logo`, or `apple-touch-icon` file found in the project's default checkout (SVG, PNG, WebP, JPEG, or ICO, under 2 MB; SVGs are checked for scripts and external references before they are served). Projects without any keep the folder icon. View options → Project icons turns the lookup off.
+- Project headings, the project badge on rows, and the details card use each project's own artwork when it has some: the VesnALIA icon named by `alia.branding.icon` in its `package.json`, an icon or logo path declared there, or a conventionally named `favicon`, `icon`, `logo`, or `apple-touch-icon` file found in the project's default checkout (SVG, PNG, WebP, JPEG, or ICO, under 2 MB; SVGs are checked for scripts and external references before they are served). Projects without any keep the folder icon. View options → Project icons turns the lookup off.
 
 ### Active threads and detail cards
 
-Rows use BB’s native backgrounds, neutral title shimmer, and status colors on icons and labels. Native hover and selection states remain intact.
+Rows use VesnALIA’s native backgrounds, neutral title shimmer, and status colors on icons and labels. Native hover and selection states remain intact.
 
 The detail card pairs the full title with a status badge, combines project and machine context, and shows the model and reasoning level beside an inline Details disclosure. Execution settings load on demand even when model names are hidden in rows. Details reveals labeled execution settings, the folder, and exact update time. Threads needing attention include a direct action; goals, queue problems, and pull-request attention remain visible. Running threads omit the thread-record age, while fresh updates read “Just now.”
 
 ### Quick handoff
 
-Hover or keyboard-focus a thread and choose **Hand off thread**. Search is at the top, with provider icon tabs directly underneath. Click a provider tab, then a model, or choose **Same agent**. Use the arrow keys and Enter for keyboard selection. Tooltips explain the action and show full model names. The successor opens automatically and keeps the source checkout. Errors stay in the picker for retry. Requires the Ultra Topbar plugin; its equivalent CLI is `bb handoff THREAD-ID --provider PROVIDER-ID --model MODEL-ID`.
+Hover or keyboard-focus a thread and choose **Hand off thread**. Search is at the top, with provider icon tabs directly underneath. Click a provider tab, then a model, or choose **Same agent**. Use the arrow keys and Enter for keyboard selection. Tooltips explain the action and show full model names. The successor opens automatically and keeps the source checkout. Errors stay in the picker for retry. Requires the Ultra Topbar plugin; its equivalent CLI is `alia handoff THREAD-ID --provider PROVIDER-ID --model MODEL-ID`.
 
 Catalogs preload on hover or keyboard focus and cache for five minutes; loaded provider tabs switch without a network request, and search text stays intact. Successful model picks are remembered on this client and sorted by frequency, then recency. Provider tabs keep their original order.
 

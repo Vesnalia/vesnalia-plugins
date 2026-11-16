@@ -2,7 +2,7 @@
 // finished, standing on wooden shelves with a placard each. Click one to open
 // the thread that built it; a set whose thread was deleted stays, unlinked.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../../server";
 import { bricksPlaced, builtAt, type BookState } from "../book";
 import { designFor } from "../designs";
@@ -154,7 +154,7 @@ export function CollectorsShelf() {
   const [includeDemos, setIncludeDemos] = useState(false);
   const { books, total, demos, error, more } = useShelf(includeDemos);
   const { ref, columns } = useColumns(SLOT_MIN_WIDTH);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
 
   const items = books ?? [];
   const rows = Math.max(MIN_ROWS, Math.ceil(items.length / columns));
@@ -200,7 +200,7 @@ export function CollectorsShelf() {
         {books !== null && books.length === 0 ? (
           <p className="lego-shelf-empty">
             Finished Lego builds land here. Ask an agent for one with <code>/lego</code> and a task
-            {demos > 0 ? ", or tick Show demo builds above" : ", or run bb lego demo and press Play"}.
+            {demos > 0 ? ", or tick Show demo builds above" : ", or run alia lego demo and press Play"}.
           </p>
         ) : null}
         {books !== null && total > books.length ? (

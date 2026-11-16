@@ -1,16 +1,16 @@
-# bb-plugin-retitle
+# alia-plugin-retitle
 
-Writes [bb](https://getbb.app) thread titles with a small, fast model. The model
+Writes [VesnALIA](https://getbb.app) thread titles with a small, fast model. The model
 reads the conversation and writes a new title after the first reply, and each
 time you press ⌘⌥R.
 
-bb writes a title one time, from the first message. When the work changes, the
+VesnALIA writes a title one time, from the first message. When the work changes, the
 title does not. This plugin updates it.
 
 ## Install
 
 ```sh
-bb plugin install https://github.com/chug2k/bb-plugin-retitle
+alia plugin install https://github.com/chug2k/bb-plugin-retitle
 ```
 
 ## Use
@@ -23,14 +23,14 @@ bb plugin install https://github.com/chug2k/bb-plugin-retitle
 - **Header button.** Click the pencil button in the thread header.
 - **Quick palette.** Press ⌘⇧P and run "Retitle: rename thread from the
   conversation".
-- **CLI.** `bb retitle` renames the current thread. `bb retitle <thread-id>`
+- **CLI.** `alia retitle` renames the current thread. `alia retitle <thread-id>`
   renames a different thread.
 
 The plugin does not replace a title that you typed yourself. If you change a
-title, automatic renaming stops for that thread. ⌘⌥R and `bb retitle` still
+title, automatic renaming stops for that thread. ⌘⌥R and `alia retitle` still
 work.
 
-One exception: bb's own first title looks the same to the plugin as a typed
+One exception: VesnALIA's own first title looks the same to the plugin as a typed
 title. So if you type a title before the first reply ends, the first automatic
 rename replaces it.
 
@@ -48,11 +48,11 @@ on your machine. It then selects a small model from the provider's model list:
 ## Settings
 
 Change the settings in Settings → Installed plugins → Retitle, or with
-`bb plugin config retitle set <key> <value>`.
+`alia plugin config retitle set <key> <value>`.
 
 | Setting | Default | Function |
 | --- | --- | --- |
-| `autoRename` | After the first reply | "Off" renames only when you press ⌘⌥R or run `bb retitle`. |
+| `autoRename` | After the first reply | "Off" renames only when you press ⌘⌥R or run `alia retitle`. |
 | `renameEveryMessages` | 0 | After the first rename, rename again after this many new messages. 0 means never. |
 | `emoji` | on | Starts each title with one emoji, for example "🐛 Fix flaky login test". |
 | `providerId` | empty | Provider for the helper. Empty means the provider of the thread. |
@@ -61,13 +61,13 @@ Change the settings in Settings → Installed plugins → Retitle, or with
 
 ## How it works
 
-A plugin cannot call bb's own title model. So for each rename the plugin:
+A plugin cannot call VesnALIA's own title model. So for each rename the plugin:
 
-1. Reads the conversation outline of the thread. bb cuts each message to its
+1. Reads the conversation outline of the thread. VesnALIA cuts each message to its
    first 200 characters. The plugin keeps the first message and then the
    newest messages, up to 12,000 characters.
 2. Starts a hidden helper thread in the same environment as the renamed thread.
-   bb does not make a new worktree.
+   VesnALIA does not make a new worktree.
 3. Waits for the answer, sets the title, and deletes the helper thread.
 
 A rename takes about 15 seconds, because the provider must start an agent
@@ -83,8 +83,8 @@ archived threads.
 npm install --include=dev
 npm run typecheck
 npm test
-bb plugin build
-bb plugin install .
+alia plugin build
+alia plugin install .
 ```
 
 | File | Content |

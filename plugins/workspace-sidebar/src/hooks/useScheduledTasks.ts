@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../server";
 import type { ScheduledTask, ScheduledTasksResult } from "../lib/scheduled-tasks";

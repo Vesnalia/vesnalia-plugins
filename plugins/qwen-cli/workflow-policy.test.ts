@@ -18,7 +18,7 @@ test("native workflows stay disabled for discovery, new threads, resumes and tur
 
 test("workflow control is removed from model discovery and live session updates", () => {
   const options = [{ id: "workflow_mode", value: "on" }, { id: "mode", value: "plan" }];
-  const session = { kind: "extension.state", extensionKind: "bb/session-options", payload: { options } };
+  const session = { kind: "extension.state", extensionKind: "alia/session-options", payload: { options } };
   const unrelated = { kind: "extension.state", extensionKind: "other", payload: { options } };
   const message = { result: { models: [{ id: "qwen", sessionOptions: options }], sessionOptions: options }, params: { deltas: [session, unrelated] } };
   filterWorkflowOptions(message);

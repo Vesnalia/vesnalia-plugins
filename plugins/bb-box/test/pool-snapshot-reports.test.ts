@@ -16,7 +16,7 @@ const fake = fakeSsh();
 const disposed = disposedOnceTheFileEnds();
 
 function machine(host: string, flags: Record<string, string> = {}): void {
-  const state = join(fake.home(host), ".bb-box-state");
+  const state = join(fake.home(host), ".alia-box-state");
   rmSync(state, { recursive: true, force: true });
   mkdirSync(join(state, "flags"), { recursive: true });
   writeFileSync(join(state, "generation"), "0\n");
@@ -60,14 +60,14 @@ describe("Pool machines report whether they can snapshot (090)", () => {
 
     const { checks } = await backend.doctor();
 
-    assert.match(check(checks, "machine.build-1.snapshots").detail, /^Home snapshots: none: ext4 under \/home, which neither clones nor snapshots\. Machine snapshots: none: no snapshot hook is installed\. Probed just now\. BB Box takes no snapshots on the SSH host pool yet\.$/);
+    assert.match(check(checks, "machine.build-1.snapshots").detail, /^Home snapshots: none: ext4 under \/home, which neither clones nor snapshots\. Machine snapshots: none: no snapshot hook is installed\. Probed just now\. ALIA Box takes no snapshots on the SSH host pool yet\.$/);
     assert.match(check(checks, "machine.build-2.snapshots").detail, /^Home snapshots: btrfs subvolumes available under \/home, 40 GiB free\. Machine snapshots: none: no snapshot hook is installed\./);
     assert.match(check(checks, "machine.build-3.snapshots").detail, /^Home snapshots: none: its boxes have root through its whole-machine reset, .*\. Machine snapshots: hook found: machine scope, LVM thin \(bbvg\/thinpool, 12% full\)\./);
     assert.match(check(checks, "machine.mac-1.snapshots").detail, /^Home snapshots: APFS clones available under \/Users, 40 GiB free\./);
     assert.ok(["build-1", "build-2", "build-3", "mac-1"].every((name) => check(checks, `machine.${name}.snapshots`).status === "ok"));
     assert.equal(
       check(checks, "snapshot-offers").detail,
-      "2 of 4 machines could offer home snapshots (build-2, mac-1); 1 of 4 machines could offer machine snapshots by a hook (build-3). BB Box takes no snapshots on the SSH host pool yet.",
+      "2 of 4 machines could offer home snapshots (build-2, mac-1); 1 of 4 machines could offer machine snapshots by a hook (build-3). VesnALIA Box takes no snapshots on the SSH host pool yet.",
     );
   });
 
@@ -78,7 +78,7 @@ describe("Pool machines report whether they can snapshot (090)", () => {
 
     const { checks } = await backend.doctor();
 
-    assert.match(check(checks, "machine.build-5.snapshots").detail, /Machine snapshots: none: its snapshot hook speaks contract 2, and BB Box speaks 1\./);
+    assert.match(check(checks, "machine.build-5.snapshots").detail, /Machine snapshots: none: its snapshot hook speaks contract 2, and ALIA Box speaks 1\./);
     assert.match(check(checks, "machine.build-6.snapshots").detail, /Machine snapshots: none: its snapshot hook's describe failed: it exited with 1: lvs: volume group bbvg not found\./);
   });
 
@@ -97,7 +97,7 @@ describe("Pool machines report whether they can snapshot (090)", () => {
   });
 
   it("warns, with what to remove, when a machine's probe could not remove its trial", async () => {
-    const trial = "/home/.bb-box-snapshot-trials/4242";
+    const trial = "/home/.alia-box-snapshot-trials/4242";
     machine("192.0.2.82", { "homes-fs": "btrfs", "homes-why": `box homes are on btrfs under /home, but the helper could not remove its trial, which leaves ${trial}/snapshot, ${trial}`, "snapshot-left": `${trial}/snapshot ${trial}` });
     const backend = pool("build-10 192.0.2.82 linux");
 
@@ -117,7 +117,7 @@ describe("Pool machines report whether they can snapshot (090)", () => {
 
     const old = check(checks, "machine.build-7.snapshots");
     assert.equal(old.status, "warn");
-    assert.match(old.detail, /has not said whether it can snapshot: its helper is older than this BB Box's/);
+    assert.match(old.detail, /has not said whether it can snapshot: its helper is older than this ALIA Box's/);
     assert.match(old.fix ?? "", /setup\/ssh-pool\/setup\.sh/);
     assert.match(check(checks, "snapshot-offers").detail, /1 of 1 machine have not said \(build-7\)/);
   });
@@ -128,13 +128,13 @@ describe("Pool machines report whether they can snapshot (090)", () => {
     await pool("build-8 192.0.2.78 linux", storage).doctor();
     machine("192.0.2.78", { "homes-fs": "btrfs", "homes-snapshot": "btrfs" });
     const surveyed = pool("build-8 192.0.2.78 linux", new MemoryStorage());
-    writeFileSync(join(fake.home("192.0.2.78"), ".bb-box-state", "snapshots"), "snapshot.probe=1\nsnapshot.at=4102444800\nsnapshot.homes=/home\nsnapshot.filesystem=btrfs\nsnapshot.home=yes\nsnapshot.home.how=btrfs\nsnapshot.hook=none\n");
+    writeFileSync(join(fake.home("192.0.2.78"), ".alia-box-state", "snapshots"), "snapshot.probe=1\nsnapshot.at=4102444800\nsnapshot.homes=/home\nsnapshot.filesystem=btrfs\nsnapshot.home=yes\nsnapshot.home.how=btrfs\nsnapshot.hook=none\n");
 
     await surveyed.members();
     const later = pool("build-8 192.0.2.78 linux", storage);
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    assert.match(surveyed.noSnapshotsWhy(guestOn("build-8")) ?? "", /reports home snapshots: btrfs subvolumes available under \/home, but BB Box takes no snapshots on the SSH host pool yet/);
+    assert.match(surveyed.noSnapshotsWhy(guestOn("build-8")) ?? "", /reports home snapshots: btrfs subvolumes available under \/home, but ALIA Box takes no snapshots on the SSH host pool yet/);
     assert.match(later.noSnapshotsWhy(guestOn("build-8")) ?? "", /^its machine, build-8, takes no snapshots: for a home snapshot, xfs under \/home, which neither clones nor snapshots; for a machine snapshot, no snapshot hook is installed$/);
   });
 

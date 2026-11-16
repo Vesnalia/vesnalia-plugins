@@ -2,12 +2,12 @@ import { useState } from "react";
 import {
   experimental_ProviderModelPicker as ProviderModelPicker, experimental_useProviders,
   type ExperimentalProviderModelPickerValue,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { BUTTON, BUTTON_GHOST } from "./common";
 
 export type Execution = ExperimentalProviderModelPickerValue;
 
-/** A preset's agent fields; all unset means bb's default agent, model and thinking level. */
+/** A preset's agent fields; all unset means VesnALIA's default agent, model and thinking level. */
 interface ExecutionFields {
   providerId?: string;
   model?: string;
@@ -24,7 +24,7 @@ export function withExecution<T extends ExecutionFields>(fields: T, execution: E
   return { ...rest, providerId: execution.providerId, model: execution.model, ...(execution.reasoningLevel === "" ? {} : { reasoningLevel: execution.reasoningLevel }) } as T;
 }
 
-/** bb's own agent and model picker, or "bb default" with a way to pick one. */
+/** VesnALIA's own agent and model picker, or "alia default" with a way to pick one. */
 export function ExecutionPicker({ value, onChange, resetLabel }: { value: Execution | null; onChange(next: Execution | null): void; resetLabel: string | null }) {
   const providers = experimental_useProviders();
   const [seed, setSeed] = useState<Execution | null>(null);
@@ -33,7 +33,7 @@ export function ExecutionPicker({ value, onChange, resetLabel }: { value: Execut
     const first = providers.providers.find((provider) => provider.available) ?? null;
     return (
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span data-execution="default" className="text-muted-foreground">bb default: the agent, model and thinking level bb starts new threads with</span>
+        <span data-execution="default" className="text-muted-foreground">alia default: the agent, model and thinking level VesnALIA starts new threads with</span>
         <button type="button" className={BUTTON} disabled={first === null}
           title={first === null ? (providers.status === "loading" ? "Loading agents…" : "No agent is available") : undefined}
           onClick={() => first !== null && setSeed({ providerId: first.id, model: "", reasoningLevel: "" })}>

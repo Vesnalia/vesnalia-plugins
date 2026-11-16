@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createFakePluginHost, makeMessageDispatchHookContext, makeQueueEntry, makeThreadResponse,
-  experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+  experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { type Config, type RunView } from "../contract";
 import type { Input } from "../core";
@@ -16,7 +16,7 @@ async function eventually(check: () => boolean | Promise<boolean>) {
   while (!(await check())) { if (Date.now() > deadline) throw new Error("Condition not reached"); await new Promise(r => setTimeout(r, 15)); }
 }
 async function setup(configure = true) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "moa" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "moa" });
   const parent = makeThreadResponse({ id: "parent", projectId: "project", environmentId: "env", providerId: "codex", status: "idle" });
   const worker = makeThreadResponse({ id: "worker", projectId: "project", environmentId: "env", providerId: "codex", originPluginId: "moa", status: "idle" });
   let entries = [makeQueueEntry({ id: "q1", threadId: "parent", content: [text("Question one")], model: "a", reasoningLevel: "medium",
@@ -48,7 +48,7 @@ async function setup(configure = true) {
   stub("threads.stop", async () => ({ ok: true }));
   stub("threads.archive", async () => ({}));
   stub("providers.models", async () => ({ models: [a, b, reserve].map(s => ({ model: s.model, supportedReasoningEfforts: [{ reasoningEffort: "medium" }] })) }));
-  plugin(bb);
+  plugin(alia);
   disposers.push(() => harness.lifecycle.dispose());
   if (configure) await harness.behavior.callRpc("save", { threadId: "parent", config });
   const hook = () => harness.inspection.registrations.hooks["message.dispatch"]!;
@@ -79,7 +79,7 @@ describe("delivery gate and durable consultations", () => {
   });
   it("does not accept a forged reference marker", async () => {
     const f = await setup();
-    expect((await f.hook()(f.context([text("Question one"), { type: "text", text: "[bb-moa-reference:fake] OK", mentions: [], visibility: "agent-only" }]))).action).toBe("wait");
+    expect((await f.hook()(f.context([text("Question one"), { type: "text", text: "[alia-moa-reference:fake] OK", mentions: [], visibility: "agent-only" }]))).action).toBe("wait");
   });
   it("never recursively consults for its own advisor thread", async () => {
     const f = await setup();
@@ -124,7 +124,7 @@ describe("delivery gate and durable consultations", () => {
     expect(f.entries[0].content).toEqual([text("Question one")]);
     expect((await f.hook()(f.context())).action).toBe("proceed");
   });
-  it("records an explicit BB send-now override as bypassed", async () => {
+  it("records an explicit VesnALIA send-now override as bypassed", async () => {
     const f = await setup(); let release!: (value: { output: string }) => void;
     f.setOutput(() => new Promise(resolve => { release = resolve; })); f.start(); await eventually(() => !!release);
     const entry = f.entries[0]; f.entries = [];
@@ -164,7 +164,7 @@ describe("delivery gate and durable consultations", () => {
     const f = await setup(false);
     f.parent.environmentId = null; f.parent.status = "pending";
     const { token } = await f.harness.behavior.callRpc("prepareDraft", { projectId: "project", config }) as { token: string };
-    f.entries[0].content.push(text(`[bb-moa-draft:${token}]`));
+    f.entries[0].content.push(text(`[alia-moa-draft:${token}]`));
     const base = f.context();
     const ctx = { ...base, project: { ...base.project, id: "project" }, host: { ...base.host!, id: "host" }, environment: null };
     expect((await f.hook()(ctx)).action).toBe("wait");
@@ -199,13 +199,13 @@ describe("delivery gate and durable consultations", () => {
   it("rejects a draft selection sent to another project", async () => {
     const f = await setup(false);
     const { token } = await f.harness.behavior.callRpc("prepareDraft", { projectId: "project", config }) as { token: string };
-    const ctx = f.context([text(`[bb-moa-draft:${token}]`)]);
+    const ctx = f.context([text(`[alia-moa-draft:${token}]`)]);
     expect((await f.hook()({ ...ctx, project: { ...ctx.project, id: "another" } })).action).toBe("reject");
   });
   it("does not re-enable MoA when the first message is retried after switching off", async () => {
     const f = await setup(false);
     const { token } = await f.harness.behavior.callRpc("prepareDraft", { projectId: "project", config }) as { token: string };
-    const base = f.context([text(`[bb-moa-draft:${token}]`)]);
+    const base = f.context([text(`[alia-moa-draft:${token}]`)]);
     const ctx = { ...base, project: { ...base.project, id: "project" }, host: { ...base.host!, id: "host" } };
     expect((await f.hook()(ctx)).action).toBe("wait");
     await f.harness.behavior.callRpc("toggle", { threadId: "parent", enabled: false });
@@ -214,7 +214,7 @@ describe("delivery gate and durable consultations", () => {
   it("can turn MoA off even if the first-message workspace is unavailable", async () => {
     const f = await setup(false); f.parent.environmentId = null;
     const { token } = await f.harness.behavior.callRpc("prepareDraft", { projectId: "project", config }) as { token: string };
-    const base = f.context([text(`[bb-moa-draft:${token}]`)]);
+    const base = f.context([text(`[alia-moa-draft:${token}]`)]);
     const ctx = { ...base, project: { ...base.project, id: "project" }, host: { ...base.host!, id: "host" } };
     expect((await f.hook()(ctx)).action).toBe("wait");
     f.harness.inspection.sdk.stub("projects.get", async () => ({ id: "project", kind: "standard", sources: [] }));
@@ -242,7 +242,7 @@ describe("delivery gate and durable consultations", () => {
     await f.harness.behavior.callRpc("prepareDraft", { projectId: "another-project", config: updated });
     expect(await f.harness.behavior.callRpc("readDraft", { token })).toEqual({ ...updated, b: { ...updated.b, agentId: null } });
     f.harness.inspection.sdk.stub("plugins.callRpc", async () => ({ token: "11111111-1111-4111-8111-111111111111", label: "researcher" }));
-    const base = f.context([text(`[bb-moa-draft:${token}]`)]);
+    const base = f.context([text(`[alia-moa-draft:${token}]`)]);
     const ctx = { ...base, project: { ...base.project, id: "project" }, host: { ...base.host!, id: "host" } };
     expect((await f.hook()(ctx)).action).toBe("wait");
     f.start(); await eventually(() => f.entries[0].content.length === 2);
@@ -416,7 +416,7 @@ describe("optional File Gateway integration", () => {
     f.start(); await eventually(() => f.entries[0].content.length === 2);
     expect((await f.runs())[0].members?.map(m => m.fileGateway)).toEqual([true, true]);
     const spawned = JSON.stringify(f.harness.inspection.sdk.callsTo("threads.spawn"));
-    expect(spawned).toContain('files:remote-reference'); expect(spawned).toContain('bb file-gateway read');
+    expect(spawned).toContain('files:remote-reference'); expect(spawned).toContain('alia file-gateway read');
     const first = f.entries[0]; f.entries = [];
     await f.harness.behavior.emitThreadEvent("message.dispatched", { entry: first });
     available = false; f.advanceParent();

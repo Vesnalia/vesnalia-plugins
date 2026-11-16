@@ -63,7 +63,7 @@ test('expired, absent, exhausted, reserved, unknown amount/unit and server clock
   for (const code of [401, 403, 500]) assert.throws(() => startBalance({ code }, ids));
 });
 
-test('bb model namespace selects plan, key mismatch fails, global plan option is gone and Coding IDs are unchanged', async () => {
+test('alia model namespace selects plan, key mismatch fails, global plan option is gone and Coding IDs are unchanged', async () => {
   assert.deepEqual(selectedModel('start-plan/GLM-5.3-Flash'), { model: 'GLM-5.3-Flash', accountPlan: 'start-plan' });
   assert.deepEqual(selectedModel('GLM-5.3-Flash'), { model: 'GLM-5.3-Flash', accountPlan: 'coding-plan' });
   assert.throws(() => selectedModel('start-plan/')); assert.throws(() => selectedModel('start-plan/x/y'));

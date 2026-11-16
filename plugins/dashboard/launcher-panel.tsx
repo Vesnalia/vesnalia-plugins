@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
 import { useTranslation } from "./use-translation";
 
-const storageKey = "bb-dashboard:launcher-layout:v1";
+const storageKey = "alia-dashboard:launcher-layout:v1";
 const defaultWidth = 208;
 const minWidth = 176;
 const maxWidth = 480;

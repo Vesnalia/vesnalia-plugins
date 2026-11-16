@@ -3,7 +3,7 @@
 Owner: «у нас должны быть настройки Office Studio, и язык, который я выбрал, — на нём отображается весь интерфейс всех программ»; today some labels are raw English or mixed.
 
 1. **Settings**: a gear icon button in the Office Studio launcher header and in each tool's toolbar (Prototype, Paint, Slides) opening a «Настройки Office Studio» popover/dialog:
-   - Язык интерфейса: Как в BB (auto, current `detectLocale`) / Русский / English — applies immediately to the launcher and all tools without reload (make `t()` read a reactive locale: a tiny store with subscribe + a `useLocale()` hook; components re-render on change).
+   - Язык интерфейса: Как в VesnALIA (auto, current `detectLocale`) / Русский / English — applies immediately to the launcher and all tools without reload (make `t()` read a reactive locale: a tiny store with subscribe + a `useLocale()` hook; components re-render on change).
    - Прототип: размер экрана по умолчанию (preset), сетка (шаг 5/8/10 px, показывать/привязка), бейджи по умолчанию вкл/выкл, единицы px.
    - Рисование: цвет и толщина кисти по умолчанию.
    - Persist in plugin storage per user (SDK settings/kv if available in app code — check `useSettings`/PluginSettingDescriptors in the SDK types; otherwise localStorage key `office-studio.settings`). Also declare a plugin setting «Язык Office Studio» in the plugin's settings descriptors if the SDK supports it, kept in sync.

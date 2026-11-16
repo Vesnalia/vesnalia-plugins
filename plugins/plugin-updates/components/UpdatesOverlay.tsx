@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useBbNavigate, useRealtime } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { DEFERRED_UPDATE, NEW_UPDATES } from "../src/channels";
 import type { DeferredUpdate, OutOfRangeEntry } from "../src/contract";
@@ -62,7 +62,7 @@ function toastDeferred(update: DeferredUpdate) {
 
 /** Headless: owns the toasts for every app window. */
 export function UpdatesOverlay() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const open = useCallback(() => navigate.toPluginPanel(PANEL_PATH), [navigate]);
   useOutOfRangeQueue(toastOutOfRange);
   useRealtime(DEFERRED_UPDATE, (payload) => {

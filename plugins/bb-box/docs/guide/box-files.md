@@ -23,7 +23,7 @@ A device box, an iOS Simulator or an Android emulator, has no Files button. Open
 
 ## Reading and editing
 
-Select a file to open it. A text file opens up to 4 MB, and BB's source view colours it. An image opens up to 2 MB: png, jpg, jpeg, gif, webp, svg, bmp and ico. Past that, the view says the file is too large to open. You can show its first 256 KB. That slice cannot be saved from here.
+Select a file to open it. A text file opens up to 4 MB, and VesnALIA's source view colours it. An image opens up to 2 MB: png, jpg, jpeg, gif, webp, svg, bmp and ico. Past that, the view says the file is too large to open. You can show its first 256 KB. That slice cannot be saved from here.
 
 A Markdown file has **Preview**, **Read** and **Edit**. Other text has **Read** and **Edit**. Select the check mark to save, or press Ctrl or Command with S. The check mark stays disabled until the text has changed.
 

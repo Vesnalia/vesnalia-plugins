@@ -1,8 +1,8 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { JevConsequence } from "./detectors.js";
 
 /** Public history DTO, inferred without importing the SDK's internal type name. */
-export type ThreadEventRow = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["events"]["list"]>>[number];
+export type ThreadEventRow = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["events"]["list"]>>[number];
 
 export const RECOVERY_NUDGE = "please continue";
 

@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { startPlugin } from "./plugin-store.test-support";
 import { prReviewKey, reviewNamed, targetKey } from "./targets";
 import { toolText } from "./fake-host.test-support";
@@ -34,9 +34,9 @@ const thread = (id: string): FeedbackThread => ({ id, commentId: 1, reviewId: nu
 
 /** The PR's own review P, with something in every table, and the folder's review S that became the PR's. */
 async function setup({ agentOnBoth = true } = {}) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
-  const sql = testSql(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
+  const sql = testSql(alia);
   await store.saveReview({ targetKey: P, kind: "pr", repo: "acme/api", number: 7, url: "https://github.com/acme/api/pull/7", status: "ready", createdAt: 1, headSha: "sha-p" });
   await store.saveReview({ targetKey: S, kind: "pr", repo: "acme/api", number: 7, url: "https://github.com/acme/api/pull/7", status: "ready", createdAt: 2, headSha: "sha-s" });
   await store.savePatch(P, PATCH_P);
@@ -108,7 +108,7 @@ async function setup({ agentOnBoth = true } = {}) {
   };
   await store.setLifecycle(P, lifecycleP);
   await store.setLifecycle(S, lifecycleS);
-  return { bb, harness, store, sql, current };
+  return { alia, harness, store, sql, current };
 }
 
 const rows = async (sql: ReturnType<typeof testSql>, table: string, key: string) => (await sql.all<Record<string, unknown>>(`SELECT * FROM ${table} WHERE target_key=?`, [key])).length;
@@ -264,7 +264,7 @@ test("a comment a thread tracks, where the review that stays has its own, stays 
   await store.trackComments(P, [{ at: at(4), id: "c3", state: "sent", sendN: 1 }]);
   await store.trackComments(S, [{ at: at(5), id: "c7", state: "sent", sendN: 2 }]);
   await store.addDiscussionMessage(P, at(3), "reviewer", "On the same");
-  await mergeReviews({ bb: createFakePluginHost({ pluginId: "code-review-workspace" }).bb, store, changed: vi.fn() }, P, S);
+  await mergeReviews({ alia: createFakePluginHost({ pluginId: "code-review-workspace" }).alia, store, changed: vi.fn() }, P, S);
   const draft = await store.getDraft(S);
   expect(draft.comments.map((c) => [c.line, c.body, c.id, c.state, c.sendN])).toEqual([
     [5, "Same", "c7", "sent", 2], [6, "Mine at four", "c5", "sent", 2], [3, "Same", "c2", "sent", 3], [4, "Theirs at four", "c3", "sent", 3], [1, "Lost", undefined, undefined, undefined],
@@ -279,9 +279,9 @@ test("a comment a thread tracks, where the review that stays has its own, stays 
 
 // Review 2's case: P's comment at two moves to four, where P's tracked c3 was; at c3's own new place, S's other comment.
 test("a comment a thread tracks that can't stay where it was, its place taken, goes into the summary and stays with its id on the review merged away, where a report on it finds it; the tally counts it", async () => {
-  const { bb, harness, store } = await setup();
+  const { alia, harness, store } = await setup();
   await store.trackComments(P, [{ at: at(4), id: "c3", state: "sent", sendN: 1 }]);
-  await mergeReviews({ bb, store, changed: vi.fn() }, P, S);
+  await mergeReviews({ alia, store, changed: vi.fn() }, P, S);
   const draft = await store.getDraft(S);
   expect(draft.comments.map((c) => [c.line, c.body, c.id])).toEqual([[5, "Same", "c2"], [6, "Mine at four", "c5"], [4, "Why two?", "c1"], [1, "Lost", undefined]]);
   expect(draft.body).toBe("Mine\n\nTheirs\n\n- On `a.ts:4` (an earlier diff): Theirs at four");
@@ -295,7 +295,7 @@ test("a comment a thread tracks that can't stay where it was, its place taken, g
   // Out with the thread: S's c5, P's c1, c2 and c3, and the thread Sends c9 and c8.
   expect((await store.getReview(S))?.fixes).toEqual({ sent: 6, reported: 0, inferred: 0, checked: 1, fixed: 1 });
 
-  const queued = await startPlugin(bb);
+  const queued = await startPlugin(alia);
   for (const id of ["c1", "c2", "c5", "c8", "c9"]) expect(await harness.behavior.runCli(["report", id, "done"], {})).toMatchObject({ exitCode: 0 });
   // Not Ready to re-review while c3 is out.
   expect((await queued.getReview(S))?.fixes).toMatchObject({ sent: 6, reported: 5 });
@@ -308,9 +308,9 @@ test("a comment a thread tracks that can't stay where it was, its place taken, g
 });
 
 test("Check fixes lists a tracked comment left on the review merged away and records what it found of it, its inferred report there", async () => {
-  const { bb, store } = await setup();
+  const { alia, store } = await setup();
   await store.trackComments(P, [{ at: at(4), id: "c3", state: "sent", sendN: 1 }]);
-  await mergeReviews({ bb, store, changed: vi.fn() }, P, S);
+  await mergeReviews({ alia, store, changed: vi.fn() }, P, S);
   const review = (await store.getReview(S))!;
   expect(await describeFeedback(store, review)).toMatch(/\[c3\] a\.ts:4 · Send 3 · not reported/);
   expect((await assess(store, review, { items: [{ id: "c3", verdict: "addressed", evidence: "Fixed in a.ts", claimed: "done" }] }, "agent-s")).ok).toBe(true);
@@ -356,10 +356,10 @@ test("a merge that fails partway changes nothing", async () => {
 });
 
 test("a merge whose note to the agent, or tally, fails after the reviews merged changes nothing: the merge, the notice and the agent's note are one step", async () => {
-  const { bb, store, sql } = await setup();
+  const { alia, store, sql } = await setup();
   const before = { p: await store.getDraft(P), s: await store.getDraft(S), review: await store.getReview(S) };
   const dropping: typeof sql = { ...sql, run: (text, params) => /review_lifecycle/.test(text) && JSON.stringify(params).includes("agentPrNote") ? Promise.reject(new Error("Connection terminated unexpectedly")) : sql.run(text, params) };
-  await expect(mergeReviews({ bb, store: queueStore(storeOn(dropping)), changed: vi.fn() }, P, S)).rejects.toThrow("Connection terminated unexpectedly");
+  await expect(mergeReviews({ alia, store: queueStore(storeOn(dropping)), changed: vi.fn() }, P, S)).rejects.toThrow("Connection terminated unexpectedly");
   expect((await store.getReview(P))?.mergedInto).toBeUndefined();
   expect(await store.getDraft(P)).toEqual(before.p);
   expect(await store.getDraft(S)).toEqual(before.s);
@@ -367,8 +367,8 @@ test("a merge whose note to the agent, or tally, fails after the reviews merged 
 });
 
 test("a review merged into one that was merged in turn names the last: its PR's key, its key and its ids lead there", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   const prKey = targetKey({ kind: "pr", repo: "acme/api", number: 7 });
   for (const [k, createdAt] of [[prKey, 1], ["br-b", 2], ["br-c", 3]] as const) {
     await store.saveReview({ targetKey: k, kind: "pr", repo: "acme/api", number: 7, url: "https://github.com/acme/api/pull/7", status: "ready", createdAt });
@@ -376,7 +376,7 @@ test("a review merged into one that was merged in turn names the last: its PR's 
   await store.setLifecycle(prKey, { mergedInto: "br-b", archivedAt: 5 });
   await store.setLifecycle("br-b", { mergedInto: "br-c", archivedAt: 6 });
   expect(await prReviewKey(store, { repo: "acme/api", number: 7 })).toBe("br-c");
-  for (const named of [prKey, "br-b"]) expect(await reviewNamed(store, bb, named), named).toMatchObject({ targetKey: "br-c" });
+  for (const named of [prKey, "br-b"]) expect(await reviewNamed(store, alia, named), named).toMatchObject({ targetKey: "br-c" });
   // A merge that points back, which the store never makes, still ends.
   await store.setLifecycle("br-c", { mergedInto: prKey, archivedAt: 7 });
   expect(await prReviewKey(store, { repo: "acme/api", number: 7 })).toMatch(/^(pr-|br-)/);
@@ -386,7 +386,7 @@ test("a review merged into one that was merged in turn names the last: its PR's 
 test("merging twice, at once or later, merges once: nothing is copied again, what moved is kept, and the agent is told once", async () => {
   const { store } = await setup();
   await store.setLifecycle(S, { became: { at: 1, number: 7, url: "https://github.com/acme/api/pull/7", from: "api:feat", carried: 2, local: 0, outside: 0 } });
-  const deps = { bb: createFakePluginHost({ pluginId: "code-review-workspace" }).bb, store, changed: vi.fn() };
+  const deps = { alia: createFakePluginHost({ pluginId: "code-review-workspace" }).alia, store, changed: vi.fn() };
   expect(await Promise.all([mergeReviews(deps, P, S), mergeReviews(deps, P, S)])).toEqual([true, false]);
   const merged = (await store.getReview(S))!;
   expect(merged.mergedFrom).toHaveLength(1);
@@ -405,8 +405,8 @@ test("merging twice, at once or later, merges once: nothing is copied again, wha
 });
 
 test("a review merged away that keeps a tracked comment, its repo cleared: Archive names it by its link, and its page, link and id lead to the one it went into", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { get: async () => ({ archivedAt: null, deletedAt: null, status: "idle" }), update: async () => ({}) } } as any });
-  const store = await startPlugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { get: async () => ({ archivedAt: null, deletedAt: null, status: "idle" }), update: async () => ({}) } } as any });
+  const store = await startPlugin(alia);
   const prKey = targetKey({ kind: "pr", repo: "acme/api", number: 7 });
   for (const [k, createdAt] of [[prKey, 1], [S, 2]] as const) {
     await store.saveReview({ targetKey: k, kind: "pr", repo: "acme/api", number: 7, url: "https://github.com/acme/api/pull/7", title: "Snooze checks", status: "ready", createdAt });
@@ -414,20 +414,20 @@ test("a review merged away that keeps a tracked comment, its repo cleared: Archi
     await store.upsertDraftComment(k, comment(4, `${k}'s`));
     await store.trackComments(k, [{ at: at(4), id: `id-${k}`, state: "sent", sendN: 1 }]);
   }
-  await mergeReviews({ bb, store, changed: vi.fn() }, prKey, S);
+  await mergeReviews({ alia, store, changed: vi.fn() }, prKey, S);
   expect((await store.getReview(prKey))?.repo).toBeUndefined();
   const { reviews } = await harness.behavior.callRpc("listReviews", null) as { reviews: any[] };
   const row = reviews.find((review: any) => review.targetKey === prKey);
   expect(row).toMatchObject({ mergedIntoId: "api#7", turn: { group: "archive", reason: "merged-into" } });
   expect(reviewIdentity(row).id).toBe("api#7");
   expect(await harness.behavior.callRpc("getReviewBundle", { targetKey: prKey })).toMatchObject({ review: null, mergedInto: { targetKey: S, id: "api#7" } });
-  for (const named of [prKey, "api#7", "https://github.com/acme/api/pull/7"]) expect(await reviewNamed(store, bb, named), named).toMatchObject({ targetKey: S });
+  for (const named of [prKey, "api#7", "https://github.com/acme/api/pull/7"]) expect(await reviewNamed(store, alia, named), named).toMatchObject({ targetKey: S });
   expect(await prReviewKey(store, { repo: "acme/api", number: 7 })).toBe(S);
 });
 
 test("what's left of a merged review: its page opens the one it went into, Archive says so, its ids and link lead there, and its agent's tools say where the reviewer went", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { get: async () => ({ archivedAt: null, deletedAt: null, status: "idle" }), update: async () => ({}) } } as any });
-  const store = await startPlugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { get: async () => ({ archivedAt: null, deletedAt: null, status: "idle" }), update: async () => ({}) } } as any });
+  const store = await startPlugin(alia);
   const prKey = targetKey({ kind: "pr", repo: "acme/api", number: 7 });
   for (const [k, createdAt] of [[prKey, 1], [S, 2]] as const) {
     await store.saveReview({ targetKey: k, kind: "pr", repo: "acme/api", number: 7, url: "https://github.com/acme/api/pull/7", title: "Snooze checks", status: "ready", createdAt });
@@ -435,7 +435,7 @@ test("what's left of a merged review: its page opens the one it went into, Archi
   }
   await store.setAssistantThread(prKey, "agent-p");
   await store.setAssistantThread(S, "agent-s");
-  await mergeReviews({ bb, store, changed: vi.fn() }, prKey, S);
+  await mergeReviews({ alia, store, changed: vi.fn() }, prKey, S);
   // S's agent is told once, by its review tools' next answer if no message of the review's reaches it first.
   const note = "This review is PR #7: https://github.com/acme/api/pull/7. Since your last turn it and the PR's other review were merged into one: the comments, summaries and Sends of both are here now. Treat it as that PR.";
   const patchRead = async () => toolText(await harness.behavior.callAgentTool("read_review_patch", { targetKey: S }, { threadId: "agent-s" }));
@@ -446,7 +446,7 @@ test("what's left of a merged review: its page opens the one it went into, Archi
   const { reviews } = await harness.behavior.callRpc("listReviews", null) as { reviews: any[] };
   expect(reviews.find((review: any) => review.targetKey === prKey)).toMatchObject({ mergedIntoId: "api#7", turn: { group: "archive", reason: "merged-into" } });
   expect(statusWhy(reviews.find((review: any) => review.targetKey === prKey), defaultKnobs)?.text).toBe("Merged into api#7");
-  for (const named of [prKey, "api#7", "https://github.com/acme/api/pull/7"]) expect(await reviewNamed(store, bb, named), named).toMatchObject({ targetKey: S });
+  for (const named of [prKey, "api#7", "https://github.com/acme/api/pull/7"]) expect(await reviewNamed(store, alia, named), named).toMatchObject({ targetKey: S });
   expect(await prReviewKey(store, { repo: "acme/api", number: 7 })).toBe(S);
 
   const away = "This review was merged into `api#7`. The reviewer continues there.";

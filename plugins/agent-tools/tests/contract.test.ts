@@ -8,7 +8,7 @@ import {
 } from "../contract.ts";
 import { classifyLocal, fromDialect, toDialect } from "../normalize.ts";
 
-// BB's Cursor bridge writes JSON.stringify(dynamicTools) into this environment
+// VesnALIA's Cursor bridge writes JSON.stringify(dynamicTools) into this environment
 // value. Use synthetic tool descriptions, never a real bridge token or config.
 const dynamicTools = JSON.stringify(Array.from({ length: 76 }, (_, index) => ({
   name: `fixture_tool_${index}`,
@@ -21,9 +21,9 @@ test("Cursor bridge with tool schemas larger than 8192 survives the full host sc
   const raw = {
     command: "/runtime/bin/node",
     args: ["bridge.mjs"],
-    env: { BB_ACP_DYNAMIC_TOOLS: dynamicTools },
+    env: { ALIA_ACP_DYNAMIC_TOOLS: dynamicTools },
   };
-  const server = fromDialect("claude", "bb-bridge", raw)!;
+  const server = fromDialect("claude", "alia-bridge", raw)!;
   const scan = hostScanSchema.parse({
     hostname: "fixture-machine",
     platform: "darwin",
@@ -45,10 +45,10 @@ test("Cursor bridge with tool schemas larger than 8192 survives the full host sc
   });
   const scanned = scan.agents[0]!.servers[0]!;
   assert.deepEqual(toDialect("claude", scanned), raw);
-  assert.deepEqual(JSON.parse(scanned.env!.BB_ACP_DYNAMIC_TOOLS!), JSON.parse(dynamicTools));
+  assert.deepEqual(JSON.parse(scanned.env!.ALIA_ACP_DYNAMIC_TOOLS!), JSON.parse(dynamicTools));
   assert.equal(classifyLocal(scanned).localOnly, true);
   assert.equal(applyOpSchema.parse({ kind: "cursor", action: "upsert", server: scanned })
-    .server.env!.BB_ACP_DYNAMIC_TOOLS, dynamicTools);
+    .server.env!.ALIA_ACP_DYNAMIC_TOOLS, dynamicTools);
 });
 
 test("MCP environment values stay bounded at 131,072 characters without clipping", () => {

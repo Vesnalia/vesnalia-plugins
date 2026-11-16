@@ -239,7 +239,7 @@ test("a staged setup builds with the versions, and its image's record keeps the 
   assert.deepEqual([record.tools.codex, record.tools.gh, record.tools.chrome, record.aptSnapshot], [NEXT, NEXT, installed || "999.0.0.1", "20261003T000000Z"]);
 });
 
-test("bb box images versions says what a rebuild takes, a line per tool, its architectures together where they agree", () => {
+test("alia box images versions says what a rebuild takes, a line per tool, its architectures together where they agree", () => {
   const tool = (name: string, arch: string, pinned: string, version: string, source: string, kept: string | null = null) => ({ name, arch, pinned, version, source, kept });
   const text = versionsText({
     resolvedAt: "2026-10-03T02:15:00.000Z",
@@ -256,7 +256,7 @@ test("bb box images versions says what a rebuild takes, a line per tool, its arc
   assert.equal(
     text,
     [
-      "A rebuild of the standard Linux images now takes, against this BB Box's pins:",
+      "A rebuild of the standard Linux images now takes, against this VesnALIA Box's pins:",
       "  claude-code 2.1.288, pinned 2.1.283, for x86_64 and arm64: latest channel; manifest.json SHA-256 of 2.1.288.",
       "  gh 2.101.0, as pinned, for x86_64: nothing newer.",
       "  gh 2.101.0, as pinned, for arm64: upstream could not be read: HTTP 403.",

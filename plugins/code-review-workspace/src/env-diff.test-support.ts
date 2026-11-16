@@ -1,5 +1,5 @@
-// A folder on a machine, as bb's Git plugin (bb--git) and GitHub PR status plugin answer for it, for env-diff's tests.
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+// A folder on a machine, as VesnALIA's Git plugin (alia--git) and GitHub PR status plugin answer for it, for env-diff's tests.
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 
 export const BASE_SHA = "6251243c81c5a15e87d84926eed350082ee54bb9";
 
@@ -7,16 +7,16 @@ export interface FolderFile {
   path: string;
   origin?: "tracked" | "untracked";
   binary?: boolean;
-  /** Lines changed: past 500 bb loads the diff on demand, past 20,000 it's too large. */
+  /** Lines changed: past 500 VesnALIA loads the diff on demand, past 20,000 it's too large. */
   lines?: number;
-  /** Its diff, without headers; bb cuts any past 512 KB. */
+  /** Its diff, without headers; VesnALIA cuts any past 512 KB. */
   body?: string;
   truncated?: boolean;
   /** Changed when listed, back as it was when its diff is read: git gives no diff. */
   reverted?: boolean;
   old?: string;
   new?: string;
-  /** A symbolic link to this target; with `replaced`, a regular file that became one, as BB's Git plugin sends it: two blocks. */
+  /** A symbolic link to this target; with `replaced`, a regular file that became one, as VesnALIA's Git plugin sends it: two blocks. */
   link?: string;
   replaced?: boolean;
 }
@@ -37,7 +37,7 @@ export interface Folder {
   /** What GitHub PR status says instead, or that it throws. */
   prLookup?: "unavailable" | "throws";
   connected?: boolean;
-  /** bb lists at most this many files. */
+  /** VesnALIA lists at most this many files. */
   listLimit?: number;
   /** The Git plugin throws, as when it can't reach the machine. */
   throws?: string;
@@ -83,7 +83,7 @@ export function folderHost(folder: Folder, sdk: Record<string, unknown> = {}) {
     fileSide: ({ query }) => {
       const file = folder.files.find((f) => f.path === query.path);
       const text = file?.[query.side as "old" | "new"];
-      // As bb does: a file the folder has but the commit hasn't fails with git's words.
+      // As VesnALIA does: a file the folder has but the commit hasn't fails with git's words.
       if (text === undefined && query.side === "old" && file?.new !== undefined) {
         throw new Error(`handler_error: HTTP 500: HTTP 502: git cat-file -t ${query.mergeBaseRef}:${query.path} failed: fatal: path '${query.path}' exists on disk, but not in '${query.mergeBaseRef}'`);
       }
@@ -91,7 +91,7 @@ export function folderHost(folder: Folder, sdk: Record<string, unknown> = {}) {
       return { outcome: "available", file: { path: query.path, content: text, contentEncoding: file!.binary ? "base64" : "utf8", sizeBytes: text.length } };
     },
   };
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     environments: {
       get: async ({ environmentId }: { environmentId: string }) => {
         if (folder.missing) throw Object.assign(new Error("HTTP 404: Environment not found"), { status: 404 });
@@ -104,17 +104,17 @@ export function folderHost(folder: Folder, sdk: Record<string, unknown> = {}) {
     hosts: { get: async () => ({ id: "host_max", name: "MaxBook", status: folder.connected === false ? "disconnected" : "connected", lifecycle: { phase: "active" } }) },
     plugins: {
       callRpc: async ({ pluginId, method, input, outputSchema }: any) => {
-        if (pluginId === "bb--github-pr-status") {
-          if (folder.prLookup === "throws") throw new Error("bb--github-pr-status isn't running");
+        if (pluginId === "alia--github-pr-status") {
+          if (folder.prLookup === "throws") throw new Error("alia--github-pr-status isn't running");
           if (folder.prLookup) return outputSchema.parse({ [input.keys[0]]: { outcome: "unavailable", message: "gh: HTTP 502" } });
           return outputSchema.parse({ [input.keys[0]]: folder.prBase ? { outcome: "available", pullRequest: { number: 7, baseRefName: folder.prBase, ...folder.pr } } : { outcome: "absent" } });
         }
-        if (pluginId !== "bb--git") throw new Error(`${pluginId} isn't installed`);
+        if (pluginId !== "alia--git") throw new Error(`${pluginId} isn't installed`);
         calls.push({ method, input });
         if (folder.throws) throw new Error(folder.throws);
         return outputSchema.parse((folder.answers?.[method] ?? git[method]!)(input));
       },
     },
   } as any });
-  return { bb, harness, calls };
+  return { alia, harness, calls };
 }

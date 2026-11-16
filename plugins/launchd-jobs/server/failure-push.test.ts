@@ -6,7 +6,7 @@ import { createFailurePush, type FailurePushDeps } from "./failure-push";
 const backup: FailingEntry = { hostId: "mini", hostName: "Mac mini", id: "backup", name: "Backup", exitCode: 1 };
 const sync: FailingEntry = { hostId: "laptop", hostName: "Laptop", id: "sync", name: "Sync notes", exitCode: 3 };
 
-/** Plugin storage that outlives one instance, as `bb.storage.kv` outlives a reload. */
+/** Plugin storage that outlives one instance, as `alia.storage.kv` outlives a reload. */
 function storage(initial?: string[]) {
   return { value: initial };
 }

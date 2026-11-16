@@ -1,4 +1,4 @@
-// The scheduler as pure functions over plain data: no store, no bb, no clock.
+// The scheduler as pure functions over plain data: no store, no VesnALIA, no clock.
 import type { ThreadRow, TicketRow } from "./db/store";
 import { globsOverlap, type Spec } from "./spec";
 import { startsOn } from "./stack";

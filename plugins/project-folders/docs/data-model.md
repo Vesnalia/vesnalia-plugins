@@ -26,7 +26,7 @@ sources:
 ---
 # Data model
 
-TL;DR: The plugin stores a normalized section tree plus JSON settings and operation journals in BB’s SQLite plugin database; BB remains the owner of projects, threads, environments and canonical chat history (`server.ts:730-771`, `server.ts:1947-1962`).
+TL;DR: The plugin stores a normalized section tree plus JSON settings and operation journals in VesnALIA’s SQLite plugin database; VesnALIA remains the owner of projects, threads, environments and canonical chat history (`server.ts:730-771`, `server.ts:1947-1962`).
 
 ## Schema overview
 
@@ -132,7 +132,7 @@ erDiagram
   }
 ```
 
-The plugin migrations create the tables documented here. Their `projectId` and `threadId` values store BB SDK entity IDs, which move and placement handlers resolve through BB's project and thread APIs (`server.ts:735-771`, `project-move.ts:54-63`, `server.ts:2297-2305`).
+The plugin migrations create the tables documented here. Their `projectId` and `threadId` values store VesnALIA SDK entity IDs, which move and placement handlers resolve through VesnALIA's project and thread APIs (`server.ts:735-771`, `project-move.ts:54-63`, `server.ts:2297-2305`).
 
 ## Archive store coordinator
 
@@ -159,13 +159,13 @@ All table declarations and primary keys are in the plugin migration (`server.ts:
 
 ### `folders`
 
-Purpose: Section and group tree nodes for BB projects.
+Purpose: Section and group tree nodes for VesnALIA projects.
 
 | Field | Meaning | Key / constraint |
 |---|---|---|
 | `id` | Plugin UUID for this node | Primary key |
-| `projectId` | Owning BB project ID | Logical project reference |
-| `hostId` | Connected BB host where the folder exists | Logical host reference |
+| `projectId` | Owning VesnALIA project ID | Logical project reference |
+| `hostId` | Connected VesnALIA host where the folder exists | Logical host reference |
 | `parentId` | Parent section/group; `NULL` for project root child | Logical self-reference |
 | `name` | Tree label | — |
 | `path` | Absolute host path for folder; synthetic `@group/<id>` for group | Unique with `projectId`, `hostId` |
@@ -203,7 +203,7 @@ Purpose: Project-root rules plus project and section template defaults.
 
 | Field | Meaning | Key / allowed values |
 |---|---|---|
-| `projectId` | Owning BB project | Primary key |
+| `projectId` | Owning VesnALIA project | Primary key |
 | `mode` | File handling mode | `manual`, `inherit`, `custom` |
 | `projectTemplate` | Project-root template text | UTF-8 text, max 20,000 |
 | `sectionTemplate` | Default section template | UTF-8 text, max 20,000 |
@@ -219,7 +219,7 @@ Purpose: Persist ordering of project rows.
 
 | Field | Meaning | Key / allowed values |
 |---|---|---|
-| `projectId` | BB project ID | Primary key |
+| `projectId` | VesnALIA project ID | Primary key |
 | `sort` | Zero-based display order | Integer |
 
 Writers: `reorder` handler; readers: project tree loader (`server.ts:3249-3295`, `server.ts:1543-1572`).
@@ -241,7 +241,7 @@ Purpose: Persist each thread’s idle timestamp and wake counter for cache keepa
 
 | Field | Meaning | Key / allowed values |
 |---|---|---|
-| `threadId` | BB thread whose keepalive state is tracked | Primary key; BB thread ID |
+| `threadId` | VesnALIA thread whose keepalive state is tracked | Primary key; VesnALIA thread ID |
 | `idleAt` | Millisecond timestamp that starts the current idle spell | Integer timestamp; `0` is the initial sentinel |
 | `wakes` | Keepalive turns sent during the idle spell | Non-negative integer; reset to zero on a real idle event |
 | `updatedAt` | Millisecond timestamp of the last keepalive-state write | Integer timestamp |
@@ -266,8 +266,8 @@ Purpose: Manual tree filing for a chat when its working directory differs from t
 
 | Field | Meaning | Key / allowed values |
 |---|---|---|
-| `threadId` | BB thread ID | Primary key |
-| `projectId` | BB project containing the thread | Logical reference |
+| `threadId` | VesnALIA thread ID | Primary key |
+| `projectId` | VesnALIA project containing the thread | Logical reference |
 | `folderId` | Section ID; `NULL` means project root | Logical `folders.id` |
 
 Writers: `thread_place` and `thread_place_clear`; readers: the list response and chat tree association (`server.ts:2279-2307`, `server.ts:2495-2499`, `chat-list.ts:251-263`). During list assembly, a row whose non-null `folderId` no longer exists in `folders` is deleted before placements are read (`server.ts:2490-2499`).
@@ -345,7 +345,7 @@ Purpose: Chat environment and dedicated storage relocation journal.
 
 | Field | Meaning | Key / allowed values |
 |---|---|---|
-| `threadId` | BB chat being moved | Primary key |
+| `threadId` | VesnALIA chat being moved | Primary key |
 | `data` | JSON chat move job | Source/destination, host, project and optional `asked` timestamp in Unix milliseconds |
 
 State-like lifecycle:
@@ -366,7 +366,7 @@ Purpose: Last chat export path or persisted error.
 
 | Field | Meaning | Key / allowed values |
 |---|---|---|
-| `threadId` | BB thread ID | Primary key |
+| `threadId` | VesnALIA thread ID | Primary key |
 | `path` | Current export directory | Absolute host path or `NULL` on error |
 | `error` | Last export error | `NULL` on success, error text on failure |
 | `updatedAt` | Last state update, Unix milliseconds | Integer |
@@ -379,7 +379,7 @@ Purpose: Durable queue of chat IDs awaiting automatic export after a plugin relo
 
 | Field | Meaning | Key / allowed values |
 |---|---|---|
-| `threadId` | BB thread awaiting export | Primary key |
+| `threadId` | VesnALIA thread awaiting export | Primary key |
 
 Writers: lifecycle enqueue inserts an ID; queue settlement deletes it. Startup reads and resumes rows (`server.ts:3658-3673`). Readers: server startup queue restoration (`server.ts:3658-3673`).
 
@@ -388,7 +388,7 @@ Writers: lifecycle enqueue inserts an ID; queue settlement deletes it. Startup r
 - Folder uniqueness is `(projectId, hostId, path)`; group paths are synthetic and must not be treated as disk paths (`server.ts:737`, `server.ts:2248-2275`).
 - There are no SQL foreign-key constraints; handlers clean dependent records when projects, folders or threads are removed (`server.ts:730-771`, `server.ts:2074-2112`, `server.ts:2497-2510`).
 - Execution and session policy use global, project and folder scope keys (`g`, `p:<projectId>`, `f:<folderId>`) (`server.ts:1178-1183`, `session-policy-server.ts:70-75`).
-- BB owns canonical thread history; the export tables track file snapshots and outcomes only (`server.ts:1947-1962`, `server.ts:2018-2022`).
+- VesnALIA owns canonical thread history; the export tables track file snapshots and outcomes only (`server.ts:1947-1962`, `server.ts:2018-2022`).
 
 ## Retention and cleanup
 

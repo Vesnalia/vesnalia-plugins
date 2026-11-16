@@ -1,5 +1,5 @@
 /**
- * Add to chat, for a thread whose chat is not on screen: bb has no way to
+ * Add to chat, for a thread whose chat is not on screen: VesnALIA has no way to
  * write a draft that no composer shows, so the board opens the thread and
  * this store holds the card until the thread's composer appears.
  *

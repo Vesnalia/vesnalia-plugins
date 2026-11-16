@@ -1,4 +1,4 @@
-// Resolves a link written inside a Markdown document to where BB should open
+// Resolves a link written inside a Markdown document to where VesnALIA should open
 // it. Relative links resolve against the document's own directory on the
 // document's own machine.
 

@@ -31,7 +31,7 @@ function koreyThreadResponse() {
     state: "ready",
     is_private: true,
     archived: false,
-    owner: { id: "user-one", name: "bb User" },
+    owner: { id: "user-one", name: "VesnALIA User" },
     created_at: "2026-08-21T12:00:00.000Z",
     updated_at: "2026-08-21T12:00:00.000Z",
     app_url: "https://app.korey.ai/threads/thread-one",

@@ -1,25 +1,17 @@
 {
-  "name": "bb-plugin-shop-kanban",
+  "name": "alia-plugin-shop-kanban",
   "version": "0.16.2",
-  "description": "Kanban board of bb threads: live status columns, model-written titles, agent tools, and a review queue of pull requests.",
+  "description": "Kanban board of VesnALIA threads: live status columns, model-written titles, agent tools, and a review queue of pull requests.",
   "license": "MIT",
   "author": "Muhammad Siddeek (https://github.com/muhammad-siddeek)",
-  "homepage": "https://github.com/muhammad-siddeek/bb-plugin-shop-kanban#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/muhammad-siddeek/bb-plugin-shop-kanban.git"
-  },
-  "bugs": {
-    "url": "https://github.com/muhammad-siddeek/bb-plugin-shop-kanban/issues"
-  },
   "type": "commonjs",
   "engines": {
-    "bb": ">=0.47",
-    "bbPluginSdk": ">=0.6.79"
+    "alia": ">=0.47",
+    "aliaPluginSdk": ">=0.6.79"
   },
-  "bb": {
+  "alia": {
     "name": "Shop Kanban",
-    "description": "Kanban board of bb threads: live status columns, model-written titles, agent tools.",
+    "description": "Kanban board of VesnALIA threads: live status columns, model-written titles, agent tools.",
     "branding": {
       "icon": "ListTodo"
     },
@@ -50,7 +42,6 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.75",
     "@types/cross-spawn": "^6.0.6",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
@@ -58,5 +49,22 @@
   },
   "scripts": {
     "typecheck": "tsc -p ."
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.75"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/shop-kanban#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/shop-kanban"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

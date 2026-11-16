@@ -1,4 +1,4 @@
-/* Vesper for BB — a port of Vesper by Rauno Freiberg
+/* Vesper for ALIA — a port of Vesper by Rauno Freiberg
    https://github.com/raunofreiberg/vesper (MIT)
    Ports of the palette to other editors and terminals collected by Vlad Arbatov:
    https://github.com/vladzima/vesper-theme
@@ -87,7 +87,7 @@
   --ansi-bg-fg-14: #000000;
   --ansi-bg-fg-15: #000000;
 
-  /* BB switches color-scheme and shadows only with its .dark class, so a
+  /* ALIA switches color-scheme and shadows only with its .dark class, so a
      palette forced onto both modes carries the dark ones itself. */
   color-scheme: dark;
   --shadow-color: #0006;

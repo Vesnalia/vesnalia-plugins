@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, UrlLink, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, UrlLink, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { BoxDialog, DialogButton, useDialogAction } from "./box-dialog.tsx";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ import { GpusGroup } from "./settings-gpus.tsx";
 import { Card, Group, NotHere, PageHeader, ProviderGlyph, RowControl, RowNote, Rows, SavedTick } from "./settings-parts.tsx";
 import { backendAt, backendEnabledPath, backendLabelPath, candidateOf, hostPath, type Path, type PathEdit } from "./settings-paths.ts";
 import { refusedInstant, RestoredNote, SAVING_RULE, SaveBar, useDraft, type Draft } from "./settings-saving.tsx";
-import { backendHealth, backendLabel, hostChip, isMachineDocker, kindName, onBbMachine, plural, warningsIn, withWarnings, type BackendHealth } from "./settings-status.ts";
+import { backendHealth, backendLabel, hostChip, isMachineDocker, kindName, onAliaMachine, plural, warningsIn, withWarnings, type BackendHealth } from "./settings-status.ts";
 
 const CHECK_LOOK: Record<DoctorCheck["status"], { icon: string; className: string; label: string }> = {
   ok: { icon: "CircleCheck", className: "text-success", label: "Passed" },
@@ -329,7 +329,7 @@ function RenameDialog({ open, label, id, driverLabel, onCancel, onSave }: { open
     <BoxDialog
       open={open}
       title={`Rename ${label}`}
-      description={`The name BB Box shows for it. Its ID, ${id}, stays as it is, so nothing that uses it changes. Empty uses ${driverLabel}.`}
+      description={`The name VesnALIA Box shows for it. Its ID, ${id}, stays as it is, so nothing that uses it changes. Empty uses ${driverLabel}.`}
       busy={busy}
       refused={refused}
       onClose={onCancel}
@@ -383,9 +383,9 @@ function RemoveBackendDialog({ open, id, label, secrets, onCancel, onConfirm }: 
       }
     >
       <div className="space-y-2">
-        <p>Its settings are deleted{secrets.length ? `, with ${secrets.join(" and ")}, which BB Box cannot show or get back` : ""}. Its warm boxes are released.</p>
+        <p>Its settings are deleted{secrets.length ? `, with ${secrets.join(" and ")}, which VesnALIA Box cannot show or get back` : ""}. Its warm boxes are released.</p>
         <p>Threads can no longer get boxes from it. To use it again you set it up again. There is no undo.</p>
-        <p>BB Box refuses to remove a backend while it has boxes.</p>
+        <p>VesnALIA Box refuses to remove a backend while it has boxes.</p>
       </div>
     </BoxDialog>
   );
@@ -417,7 +417,7 @@ export function BackendPage({ id }: { id: string }) {
 function BackendEditor({ config }: { config: BackendConfig }) {
   const { state, nav, instant, writes, refresh } = useSettings();
   const rpc = useRpc<Contract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const checks = useFormChecks();
   const label = backendLabel(state, config);
   const part = backendPart(config.id);
@@ -439,7 +439,7 @@ function BackendEditor({ config }: { config: BackendConfig }) {
     return (
       <div className="space-y-6">
         <PageHeader glyph={<ProviderGlyph type={config.type} className="size-5" />} title={label} />
-        <p className="text-xs text-destructive-text">This version of BB Box has no driver for {config.type}.</p>
+        <p className="text-xs text-destructive-text">This version of VesnALIA Box has no driver for {config.type}.</p>
       </div>
     );
   }
@@ -471,7 +471,7 @@ function BackendEditor({ config }: { config: BackendConfig }) {
     void navigator.clipboard
       ?.writeText(savedJson(config))
       .then(() => setCopied(`Copied ${label}'s saved settings as JSON. Secrets are not in it, only whether each is set.`))
-      .catch(() => setCopied("The browser did not let BB Box copy."));
+      .catch(() => setCopied("The browser did not let VesnALIA Box copy."));
   };
   return (
     <div className="space-y-6">
@@ -481,7 +481,7 @@ function BackendEditor({ config }: { config: BackendConfig }) {
         chips={
           <>
             {chip ? <Badge>{chip}</Badge> : null}
-            {onBbMachine(config) ? <Badge>BB machine</Badge> : null}
+            {onAliaMachine(config) ? <Badge>VesnALIA machine</Badge> : null}
           </>
         }
         description={

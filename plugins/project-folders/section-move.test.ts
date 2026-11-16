@@ -14,13 +14,13 @@ import path from "node:path";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import { inspectMove, moveDirectory, linkDirectory } from "./move-files";
 import plugin from "./server";
 
 async function setup() {
   const base = await realpath(
-    await mkdtemp(path.join(os.tmpdir(), "bb-section-move-test-")),
+    await mkdtemp(path.join(os.tmpdir(), "alia-section-move-test-")),
   );
   const root = path.join(base, "project");
   await mkdir(root);
@@ -115,7 +115,7 @@ async function setup() {
       },
     },
   });
-  await plugin(h.bb);
+  await plugin(h.alia);
   const createSection = async (name: string, relativePath: string) =>
     (await h.harness.behavior.callRpc("create", {
       projectId: "p1",
@@ -183,7 +183,7 @@ it("moves a section, rebases nested sections and keeps old chat paths working", 
   }
 });
 
-it("re-links a section whose folder was renamed outside BB", async () => {
+it("re-links a section whose folder was renamed outside VesnALIA", async () => {
   const f = await setup();
   try {
     const section = await f.createSection("Work", "work");

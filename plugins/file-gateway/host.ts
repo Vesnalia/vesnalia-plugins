@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry } from '@get-bb/plugin-sdk';
+import { experimental_defineHostEntry } from '@vesnalia/plugin-sdk';
 import { constants } from 'node:fs';
 import { open, opendir, mkdir, unlink, link, stat } from 'node:fs/promises';
 import type { FileHandle } from 'node:fs/promises';

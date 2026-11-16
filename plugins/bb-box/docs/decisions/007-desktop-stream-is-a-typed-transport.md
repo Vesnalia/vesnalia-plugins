@@ -11,7 +11,7 @@ desktops.
 
 ## Context
 
-BB's app talks only to the BB server, and boxes usually sit on a private
+VesnALIA's app talks only to the VesnALIA server, and boxes usually sit on a private
 network. A plugin can serve a WebSocket route, but routes match exact paths
 and carry TCP only. Linux, Windows and macOS offer different remote desktop
 protocols.
@@ -34,9 +34,9 @@ protocols.
 ## Consequences
 
 - The core never names VNC, Selkies or a display server.
-- Every viewer adds one connection through the BB server, whose network and
+- Every viewer adds one connection through the VesnALIA server, whose network and
   CPU carry the stream.
 - The relay has no `bufferedAmount`, so it stays a pass-through and flow
-  control stays end to end in the stream protocol. A BB feature request asks
+  control stays end to end in the stream protocol. A VesnALIA feature request asks
   for `bufferedAmount`.
 - RDP needs a gateway or a client in the panel. That is a later decision.

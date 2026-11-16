@@ -9,11 +9,11 @@
  * to the thread, while the popup closes over a composer that is already the
  * thread's.
  *
- * Every button here says `type="button"`. bb draws the composer popup inside
+ * Every button here says `type="button"`. VesnALIA draws the composer popup inside
  * the composer's `<form>`, where a button with no type submits the form — it
  * would send the message.
  */
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -189,7 +189,7 @@ function SkillDetail({
 }
 
 /**
- * Detail for an entry bb's provider reported. There is no `SKILL.md` behind it,
+ * Detail for an entry VesnALIA's provider reported. There is no `SKILL.md` behind it,
  * so no path and no body — but the description shows in full rather than
  * clipped to two lines, and its command can still be added to the chat.
  */
@@ -215,7 +215,7 @@ function ReportedDetail({
       {entry.description ? <p className="mt-2 text-sm text-muted-foreground select-text">{entry.description}</p> : null}
       <AddToChat threadId={threadId} command={reportedCommand(entry, source)} onAdded={onAdded} />
       <p className="text-sm text-muted-foreground">
-        bb's provider reported this. It has no SKILL.md on disk, so there is nothing further to show.
+        VesnALIA's provider reported this. It has no SKILL.md on disk, so there is nothing further to show.
       </p>
     </div>
   );
@@ -362,7 +362,7 @@ export function SkillBrowser({
           />
           {list.data.scanned ? null : (
             <p className="mt-2 text-xs text-muted-foreground">
-              Skill files are only scanned for Claude Code, Codex and Hermes. Everything else below is what bb and
+              Skill files are only scanned for Claude Code, Codex and Hermes. Everything else below is what VesnALIA and
               its {PROVIDER_NAMES[list.data.provider] ?? list.data.provider} provider report.
             </p>
           )}
@@ -396,7 +396,7 @@ export function SkillBrowser({
           {reportedSkills.length > 0 ? (
             <ReportedGroup
               label="Built-in skills"
-              note="What bb's / menu offers that no scanned directory holds. These have no SKILL.md to read."
+              note="What VesnALIA's / menu offers that no scanned directory holds. These have no SKILL.md to read."
               entries={reportedSkills}
               onSelect={(name) => setSelected({ kind: "reported", name })}
             />

@@ -1,4 +1,4 @@
-// Refreshes the branch popup shot from a running bb, so it can be retaken
+// Refreshes the branch popup shot from a running VesnALIA, so it can be retaken
 // instead of redrawn:
 //
 //   VCS_E2E_THREAD=thr_x VCS_E2E_PROJECT=proj_x node scripts/screenshots.mjs

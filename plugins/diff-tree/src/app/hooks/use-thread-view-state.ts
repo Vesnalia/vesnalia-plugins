@@ -1,5 +1,5 @@
 import { useMemo, useSyncExternalStore } from "react";
-import { experimental_usePluginId as usePluginId } from "@get-bb/plugin-sdk/app";
+import { experimental_usePluginId as usePluginId } from "@vesnalia/plugin-sdk/app";
 import type { Scope } from "./use-changes";
 import { validWorkspacePath } from "../../core/worktree";
 
@@ -94,7 +94,7 @@ export function clearThreadViewCache() { entries.clear(); }
 
 export function useThreadViewState(threadId: string) {
   const pluginId = usePluginId();
-  const key = JSON.stringify(["bb-plugin", pluginId, "thread-view-v1", threadId]);
+  const key = JSON.stringify(["alia-plugin", pluginId, "thread-view-v1", threadId]);
   const entry = useMemo(() => {
     let stored = entries.get(key);
     if (!stored) { stored = createEntry(key); entries.set(key, stored); }

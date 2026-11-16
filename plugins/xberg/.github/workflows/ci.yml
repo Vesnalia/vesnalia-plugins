@@ -17,7 +17,7 @@ jobs:
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm test
-      - run: npx --yes --package=bb-app@0.48.1 bb plugin build .
+      - run: npx --yes --package=alia-app@0.48.1 alia plugin build .
       # A marketplace install omits devDependencies, so the entries must load
       # with production dependencies alone.
       - name: Load entries with production dependencies only

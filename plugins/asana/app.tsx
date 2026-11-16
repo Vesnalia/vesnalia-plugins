@@ -1,4 +1,4 @@
-// bb-plugin-asana — frontend entry: an "Asana tasks" sidebar page and an
+// alia-plugin-asana — frontend entry: an "Asana tasks" sidebar page and an
 // Asana tab pinned to every thread's right panel. Both render TasksView for
 // the list and TaskDetailView when a task is opened: the page routes it at
 // /plugins/asana/tasks/<gid>, the panel keeps it in local state. A thread
@@ -6,14 +6,14 @@
 // live in ui/: list, task (with fields, time, attachments, comments, and
 // threads), projects, and shared.
 //
-// Compiled by `bb plugin build` into dist/app.js + dist/app.css. React and
-// @get-bb/plugin-sdk/app are provided by the BB app at load time.
+// Compiled by `alia plugin build` into dist/app.js + dist/app.css. React and
+// @vesnalia/plugin-sdk/app are provided by the VesnALIA app at load time.
 import { useCallback, useEffect, useState } from "react";
 import {
   definePluginApp,
   experimental_THREAD_INFO_SECTION_GROUPS as INFO_SECTION_GROUPS,
-  useBbNavigate,
-} from "@get-bb/plugin-sdk/app";
+  useAliaNavigate,
+} from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import { useThreadLink } from "./ui/shared";
 import { useOverdueBadge, TasksView } from "./ui/list";
@@ -27,7 +27,7 @@ import { APPROVAL_RENDERER } from "./approval";
 const TASK_GID = /^\d+$/;
 
 function TasksPage({ subPath }: { subPath: string }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const gid = TASK_GID.test(subPath) ? subPath : null;
   return (
     <div className="h-full min-h-0 flex-1 overflow-y-auto">
@@ -97,10 +97,10 @@ export default definePluginApp((app) => {
   app.slots.settingsSection({
     id: "getting-started",
     title: "Getting started",
-    description: "Connect Asana, then find your tasks in bb.",
+    description: "Connect Asana, then find your tasks in VesnALIA.",
     component: GettingStarted,
   });
-  // The card an agent's Asana write waits on (bb.ui.requestInput in server.ts).
+  // The card an agent's Asana write waits on (alia.ui.requestInput in server.ts).
   app.slots.pendingInteraction({ id: APPROVAL_RENDERER, component: ApprovalCard });
   // The linked task's name in the thread header, for getting back to it.
   app.slots.experimental_threadHeaderAction({

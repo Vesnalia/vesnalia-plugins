@@ -1,17 +1,17 @@
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it, vi } from "vitest";
 import plugin, { discoverAndStoreServerUrl, discoverServerUrl, importLocalProfile, withWorkspaceFolder } from "./server";
 
 describe("VS Code Server configuration", () => {
   it("normalizes a configured server URL before exposing it to the panel", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "vscode-server",
       settings: { serverUrl: "http://127.0.0.1:8080/" },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await expect(harness.behavior.callRpc("vscode_server_url", { threadId: null })).resolves.toMatchObject({
       url: "http://127.0.0.1:8080",
@@ -23,11 +23,11 @@ describe("VS Code Server configuration", () => {
   });
 
   it("keeps the panel unconfigured when no explicit URL or environment fallback exists", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "vscode-server",
       settings: { serverUrl: "" },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await expect(harness.behavior.callRpc("vscode_server_url", { threadId: null })).resolves.toMatchObject({
       url: null,
@@ -46,7 +46,7 @@ describe("VS Code Server configuration", () => {
 
 
   it("captures a local server when the settings switch is enabled and clears it when disabled", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "vscode-server",
       settings: { serverUrl: "" },
     });
@@ -54,7 +54,7 @@ describe("VS Code Server configuration", () => {
     vi.stubGlobal("fetch", fetch);
 
     try {
-      await plugin(bb);
+      await plugin(alia);
       await harness.behavior.setSettings({ autoCaptureLocalServer: true });
       await vi.waitFor(async () => {
         await expect(
@@ -73,7 +73,7 @@ describe("VS Code Server configuration", () => {
   });
 
   it("clears every configured setting when the settings switch is disabled", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "vscode-server",
       settings: {
         serverUrl: "http://127.0.0.1:8080",
@@ -84,7 +84,7 @@ describe("VS Code Server configuration", () => {
         targetExtensionsDirectory: "/target-extensions",
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.setSettings({ autoCaptureLocalServer: false });
     await vi.waitFor(async () => {
@@ -103,7 +103,7 @@ describe("VS Code Server configuration", () => {
   });
 
   it("restores profile paths before panel detection", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "vscode-server",
       settings: {
         serverUrl: "",
@@ -117,7 +117,7 @@ describe("VS Code Server configuration", () => {
     vi.stubGlobal("fetch", fetch);
 
     try {
-      await plugin(bb);
+      await plugin(alia);
       await expect(
         harness.behavior.callRpc("discover_vscode_server_url", { threadId: null }),
       ).resolves.toMatchObject({
@@ -200,7 +200,7 @@ describe("VS Code Server configuration", () => {
     const sourceExtensionsDirectory = join(root, "extensions");
     const targetUserDataDirectory = join(root, "code-server");
     const targetExtensionsDirectory = join(targetUserDataDirectory, "extensions");
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "vscode-server",
       settings: {
         serverUrl: "",
@@ -215,7 +215,7 @@ describe("VS Code Server configuration", () => {
       await mkdir(sourceUserDataDirectory, { recursive: true });
       await mkdir(sourceExtensionsDirectory, { recursive: true });
       await writeFile(join(sourceUserDataDirectory, "settings.json"), '{"editor.minimap.enabled":false}');
-      await plugin(bb);
+      await plugin(alia);
       await harness.behavior.setSettings({ serverUrl: "http://127.0.0.1:8080" });
 
       await vi.waitFor(async () => {

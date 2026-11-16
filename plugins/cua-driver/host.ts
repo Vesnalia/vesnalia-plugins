@@ -6,7 +6,7 @@ import { createInterface } from "node:readline";
 import {
   experimental_defineHostEntry,
   type ExperimentalHostWorkerLease,
-} from "@get-bb/plugin-sdk/host";
+} from "@vesnalia/plugin-sdk/host";
 import {
   IDLE_INSTALL_STATE,
   hostContract,
@@ -240,7 +240,7 @@ export function createCuaHostEntry(deps: HostDependencies) {
         }
       });
       try {
-        await next.initialize("bb-plugin-cua-driver", PLUGIN_VERSION);
+        await next.initialize("alia-plugin-cua-driver", PLUGIN_VERSION);
         tools = await next.listTools();
       } catch (error) {
         const stderr = next.recentStderr;

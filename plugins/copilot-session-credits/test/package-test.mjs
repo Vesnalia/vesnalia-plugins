@@ -5,13 +5,13 @@ import { execFileSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
-import { experimental_createHostEntryHarness } from '@get-bb/plugin-sdk/testing/host';
+import { experimental_createHostEntryHarness } from '@vesnalia/plugin-sdk/testing/host';
 import { piRuntime } from './pi-runtime.mjs';
 import { piInstallCommand } from '../setup-copy.mjs';
 
 if (!process.argv.includes('--isolated')) {
   const home=realpathSync(mkdtempSync(join(tmpdir(),'credits package with spaces ')));
-  try { execFileSync(process.execPath,[import.meta.filename,'--isolated',...process.argv.slice(2)],{env:{...process.env,HOME:home,PI_CODING_AGENT_DIR:join(home,'custom-agent'),BB_THREAD_ID:''},stdio:'inherit'}); }
+  try { execFileSync(process.execPath,[import.meta.filename,'--isolated',...process.argv.slice(2)],{env:{...process.env,HOME:home,PI_CODING_AGENT_DIR:join(home,'custom-agent'),ALIA_THREAD_ID:''},stdio:'inherit'}); }
   finally {rmSync(home,{recursive:true,force:true});}
 } else {
   const root=process.env.HOME,agentDir=process.env.PI_CODING_AGENT_DIR,runtime=piRuntime();
@@ -19,7 +19,7 @@ if (!process.argv.includes('--isolated')) {
   const {parseGitUrl}=await import(pathToFileURL(join(runtime.root,'dist/utils/git.js')));
   const source=piInstallCommand.slice('pi install '.length),parsed=parseGitUrl(source);
   assert.equal(parsed.ref,'v0.3.4');assert.equal(parsed.host,'github.com');
-  const fixture=join(root,'git source'),prefix=join(fixture,'packages/bb-plugin-copilot-session-credits');mkdirSync(prefix,{recursive:true});
+  const fixture=join(root,'git source'),prefix=join(fixture,'packages/alia-plugin-copilot-session-credits');mkdirSync(prefix,{recursive:true});
   copyFileSync(new URL('../../../package.json',import.meta.url),join(fixture,'package.json'));
   cpSync(new URL('../collector',import.meta.url),join(prefix,'collector'),{recursive:true});
   const git=(...args)=>execFileSync('git',['-C',fixture,...args],{encoding:'utf8',env:{...process.env,GIT_CONFIG_NOSYSTEM:'1',GIT_CONFIG_GLOBAL:join(root,'empty-config')}});
@@ -30,10 +30,10 @@ if (!process.argv.includes('--isolated')) {
   const command=(...args)=>execFileSync(process.execPath,[cli,...args],{cwd:root,env,encoding:'utf8'});
   globalThis.fetch=async()=>{throw Error('Network forbidden');};
   command('install',source,'--approve');
-  assert(command('list').includes('bb-plugins'));
+  assert(command('list').includes('alia-plugins'));
   const settings=SettingsManager.create(root,agentDir);
-  const load=async bb=>{
-    process.env.BB_THREAD_ID=bb;
+  const load=async alia=>{
+    process.env.ALIA_THREAD_ID=alia;
     const loader=new DefaultResourceLoader({cwd:root,agentDir,settingsManager:settings,noSkills:true,noThemes:true,noPromptTemplates:true,noContextFiles:true});
     await loader.reload();const result=loader.getExtensions();assert.deepEqual(result.errors,[]);return result;
   };
@@ -75,6 +75,6 @@ if (!process.argv.includes('--isolated')) {
     const retained=join(root,'.pi/agent/copilot-session-credits/retain');mkdirSync(join(root,'.pi/agent/copilot-session-credits'),{recursive:true,mode:0o700});writeFileSync(retained,'retain',{mode:0o600});
     command('remove',source);assert.equal(readFileSync(retained,'utf8'),'retain');
     assert.equal((await load('thr_fixture')).extensions.filter(e=>e.path.endsWith('/collector/extension.ts')).length,0);
-    console.log(JSON.stringify({piVersion:runtime.version,source,gitTransport:'HTTPS rewritten to local file fixture; HTTPS disabled',results:['Actual pinned Git install/list/remove and Pi loader','Standalone companion inert; BB-only exact identity readiness','Supported synthetic usage and host reader, or unsupported runtime diagnostic','Off/on, shutdown and receipt retention']},null,2));
+    console.log(JSON.stringify({piVersion:runtime.version,source,gitTransport:'HTTPS rewritten to local file fixture; HTTPS disabled',results:['Actual pinned Git install/list/remove and Pi loader','Standalone companion inert; ALIA-only exact identity readiness','Supported synthetic usage and host reader, or unsupported runtime diagnostic','Off/on, shutdown and receipt retention']},null,2));
   } finally {await h.experimental_dispose();}
 }

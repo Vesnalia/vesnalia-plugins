@@ -7,14 +7,14 @@ import { defineConfig } from "vite";
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, "../../..");
 
-// bb's own Inter, when bb is installed, so screenshots match the app.
-const bbAssets = "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/app/dist/assets";
-const inter = existsSync(bbAssets) ? readdirSync(bbAssets).find((f) => f.startsWith("inter-latin-wght-normal")) : undefined;
+// VesnALIA's own Inter, when VesnALIA is installed, so screenshots match the app.
+const aliaAssets = "/Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/app/dist/assets";
+const inter = existsSync(aliaAssets) ? readdirSync(aliaAssets).find((f) => f.startsWith("inter-latin-wght-normal")) : undefined;
 
 export default defineConfig({
   root: here,
   resolve: { alias: { "@": repo } },
-  define: { __HARNESS_INTER__: JSON.stringify(inter ? `/@fs${join(bbAssets, inter)}` : "") },
-  server: { port: 5199, strictPort: true, fs: { allow: [repo, bbAssets] } },
+  define: { __HARNESS_INTER__: JSON.stringify(inter ? `/@fs${join(aliaAssets, inter)}` : "") },
+  server: { port: 5199, strictPort: true, fs: { allow: [repo, aliaAssets] } },
   oxc: { jsx: { runtime: "automatic" } },
 });

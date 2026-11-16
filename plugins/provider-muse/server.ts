@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   MUSE_ICON_GLYPH,
   MUSE_REASONING_LEVELS,
@@ -30,13 +30,13 @@ function nonEmptyStringOrNull(value: unknown): string | null {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
 }
 
-export default function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     windowTokenBudget: {
       type: "string",
       label: `Rolling ${MUSE_USAGE_WINDOW_HOURS}-hour token budget`,
       description:
-        "Only used before Muse reports your plan's own meters. Muse 1.4 and later sends the real 5-hour and weekly usage with every model response, and BB shows those as soon as one Muse turn has run. Until then — or on an older Muse — BB measures the window from Muse's session logs against this many tokens. Leave empty to show no meter until Muse reports one.",
+        "Only used before Muse reports your plan's own meters. Muse 1.4 and later sends the real 5-hour and weekly usage with every model response, and VesnALIA shows those as soon as one Muse turn has run. Until then — or on an older Muse — VesnALIA measures the window from Muse's session logs against this many tokens. Leave empty to show no meter until Muse reports one.",
       default: "",
     },
     planLabel: {
@@ -57,7 +57,7 @@ export default function plugin(bb: BbPluginApi) {
       type: "select",
       label: "Muse's own OS sandbox",
       description:
-        "OFF BY DEFAULT — commands Muse runs are not confined by Muse's own OS sandbox, and BB's permission modes and approvals are the only enforcement surface. The default is off because Muse's sandbox is all-or-nothing and denies the Darwin per-user cache, so with it on no Swift or Clang compilation works: a two-line file fails to build. Turn it on for OS-level containment if your work needs no native toolchain. BB's Full access permission mode disables it either way.",
+        "OFF BY DEFAULT — commands Muse runs are not confined by Muse's own OS sandbox, and VesnALIA's permission modes and approvals are the only enforcement surface. The default is off because Muse's sandbox is all-or-nothing and denies the Darwin per-user cache, so with it on no Swift or Clang compilation works: a two-line file fails to build. Turn it on for OS-level containment if your work needs no native toolchain. VesnALIA's Full access permission mode disables it either way.",
       options: ["off", "on"],
       default: "off",
     },
@@ -65,13 +65,13 @@ export default function plugin(bb: BbPluginApi) {
       type: "select",
       label: "Sandbox network",
       description:
-        "NETWORK IS ALLOWED BY DEFAULT for sandboxed Muse shell commands. Muse's own default, proxy-only, truncates larger loopback responses and breaks the `bb` CLI that BB tells agents to use, so BB threads allow it. Choose proxy-only or restricted to narrow it. Applies only while Muse's OS sandbox is on, and is fixed for the lifetime of a Muse host process.",
+        "NETWORK IS ALLOWED BY DEFAULT for sandboxed Muse shell commands. Muse's own default, proxy-only, truncates larger loopback responses and breaks the `VesnALIA` CLI that VesnALIA tells agents to use, so VesnALIA threads allow it. Choose proxy-only or restricted to narrow it. Applies only while Muse's OS sandbox is on, and is fixed for the lifetime of a Muse host process.",
       options: ["enabled", "proxy-only", "restricted"],
       default: "enabled",
     },
   });
 
-  bb.providers.register({
+  alia.providers.register({
     id: MUSE_PROVIDER_ID,
     displayName: "Muse Code",
     icon: MUSE_ICON_GLYPH,
@@ -105,7 +105,7 @@ export default function plugin(bb: BbPluginApi) {
       { id: "ultra", label: "Ultra", description: "Muse's native ultra effort." },
     ],
     composerActions: [],
-    env: { passthrough: ["BB_MUSE_EXECUTABLE", "MUSE_HOME", "META_API_KEY"] },
+    env: { passthrough: ["ALIA_MUSE_EXECUTABLE", "MUSE_HOME", "META_API_KEY"] },
     extensionKinds: museExtensionKinds,
     deriveProviderOptions(context): MuseProviderOptions {
       return {

@@ -24,7 +24,7 @@ describe("template catalog", () => {
       assert.ok(groupId);
       assert.ok(built!.every((el) => el.groupId === groupId));
       const json = JSON.stringify({
-        format: "bb-wireframe",
+        format: "alia-wireframe",
         version: 2,
         name: "t",
         activePageId: "p1",

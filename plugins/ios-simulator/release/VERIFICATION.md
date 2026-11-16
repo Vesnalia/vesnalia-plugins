@@ -6,7 +6,7 @@
   disposal, consent, device ownership, clipboard failure and Unicode input,
   Android lifecycle/cancellation, explicit device selection, all four frame
   rotations, and pointer mapping with asymmetric geometry.
-- `npm run typecheck`, `npm run build` (`bb plugin build`), and
+- `npm run typecheck`, `npm run build` (`alia plugin build`), and
   `git diff --check` pass. The path-installed plugin reloads successfully.
 - `serve-sim` is pinned to 0.1.48 in manifest and lockfile. The native capture
   module is installed only into that exact dependency version.
@@ -23,7 +23,7 @@ a screenshot showed the query and matching results. The UIKit clipboard
 helper also passed three exact Unicode/multiline/emoji round trips. Clipboard
 writes are read back before Command-V so a silent failed write is an error.
 
-Native BB window captures through the user-configured Cua Driver confirm the
+Native VesnALIA window captures through the user-configured Cua Driver confirm the
 real installed panel's portrait frame, picker, stream, and footer controls.
 The marketplace contains only a reviewed panel crop, without private chat or
 paths: `panel-eb92b3d6.png`, 1472×1600, 278,376 bytes. Its portrait appearance
@@ -61,7 +61,7 @@ orientation; automated geometry tests cover that physical rotation too.
   disposal. No native encoder change was made for an unproven freeze.
 - A 90-second persistent H.264 connection decoded **546/546 frames with zero
   errors**, including the Lock transition before the next keyframe. A final
-  native BB capture also showed Lock correctly after the toolbar action.
+  native VesnALIA capture also showed Lock correctly after the toolbar action.
   The earlier delayed display did not reproduce as a persistent freeze.
 - Android screenshot coalescing now lets a cancelled caller stop its own wait
   without aborting another caller's shared adb capture. Service disposal still
@@ -80,7 +80,7 @@ by that evidence, and no stable-runtime comparison was available.
 ## Transport measurements
 
 A local Safari page synchronized static and animated phases. These samples
-count H.264 records delivered by serve-sim; they do not measure BB canvas paint
+count H.264 records delivered by serve-sim; they do not measure VesnALIA canvas paint
 rate or input latency.
 
 | Run | Static fps / KiB/s | Animation fps / KiB/s | Animation median / p90 gap | Gaps >120 ms |

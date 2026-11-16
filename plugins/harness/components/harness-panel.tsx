@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { HarnessStatusDto, PlanNodeDto, rpcContract } from "../server";
 import {
   PHASES,
@@ -207,7 +207,7 @@ function ManualHarnessView({
   onSetRouting: (nodeId: string, choice: ExecutionChoice | null) => void;
   onResetBlock: () => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [workerTitle, setWorkerTitle] = useState("");
   const [criticSummary, setCriticSummary] = useState("");
   const plan = status.plan;
@@ -406,7 +406,7 @@ export function HarnessPanel({
 }: {
   threadId?: string | null;
 }) {
-  const ctx = useBbContext();
+  const ctx = useAliaContext();
   const threadId = threadIdProp ?? ctx.threadId;
   const projectId = ctx.projectId;
   const { rpc, status, error, pending, run, refetch } = useHarness(threadId, projectId);
@@ -578,7 +578,7 @@ export function HarnessBanner({
 }: {
   threadId?: string | null;
 } = {}) {
-  const ctx = useBbContext();
+  const ctx = useAliaContext();
   const threadId = threadIdProp ?? ctx.threadId;
   const projectId = ctx.projectId;
   const { status } = useHarness(threadId, projectId);
@@ -599,7 +599,7 @@ export function HarnessHeaderAction({
   projectId: string;
   isCompactViewport: boolean;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <Button
       size={isCompactViewport ? "icon" : "sm"}

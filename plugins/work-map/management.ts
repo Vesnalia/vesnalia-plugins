@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import {
@@ -10,13 +10,13 @@ import {
   type ManagementResult,
 } from "./management-contract";
 
-export function managementService(bb: BbPluginApi, invalidate: () => void) {
+export function managementService(alia: AliaPluginApi, invalidate: () => void) {
   const call = <T>(
     method: string,
     input: unknown,
     outputSchema: z.ZodType<T>,
   ) =>
-    bb.sdk.plugins.callRpc({
+    alia.sdk.plugins.callRpc({
       pluginId: "tasks",
       method,
       input: input as never,
@@ -31,7 +31,7 @@ export function managementService(bb: BbPluginApi, invalidate: () => void) {
       )
     ).projects;
   const managementOptions = async () => {
-    const [list, folders, bbProjects] = await Promise.all([
+    const [list, folders, aliaProjects] = await Promise.all([
       projects(),
       call(
         "listFolders",
@@ -47,14 +47,14 @@ export function managementService(bb: BbPluginApi, invalidate: () => void) {
         }),
       ),
       call(
-        "listBbProjects",
+        "listAliaProjects",
         null,
         z.object({
-          bbProjects: z.array(z.object({ id: z.string(), name: z.string() })),
+          aliaProjects: z.array(z.object({ id: z.string(), name: z.string() })),
         }),
       ),
     ]);
-    return { projects: list, ...folders, ...bbProjects };
+    return { projects: list, ...folders, ...aliaProjects };
   };
   const resultError = z.object({
     code: z.string().optional(),
@@ -86,7 +86,7 @@ export function managementService(bb: BbPluginApi, invalidate: () => void) {
     if (key) {
       const previous =
         receipts.get(key) ??
-        (await bb.storage.kv.get<{
+        (await alia.storage.kv.get<{
           signature: string;
           result?: ManagementResult;
         }>(key));
@@ -115,10 +115,10 @@ export function managementService(bb: BbPluginApi, invalidate: () => void) {
       )
         throw new Error("Choose an existing folder.");
       if (
-        input.linkedBbProjectId &&
-        !options.bbProjects.some((p) => p.id === input.linkedBbProjectId)
+        input.linkedAliaProjectId &&
+        !options.aliaProjects.some((p) => p.id === input.linkedAliaProjectId)
       )
-        throw new Error("Choose an existing BB workspace.");
+        throw new Error("Choose an existing VesnALIA workspace.");
       if (
         input.action === "createProject" &&
         options.projects.some((p) => p.prefix === input.prefix)
@@ -147,14 +147,14 @@ export function managementService(bb: BbPluginApi, invalidate: () => void) {
         throw new Error("Choose a task in this project.");
       if (["done", "canceled"].includes(task.status))
         throw new Error("Choose an open task to connect this session.");
-      const thread = await bb.sdk.threads.get({ threadId: input.threadId });
+      const thread = await alia.sdk.threads.get({ threadId: input.threadId });
       if (thread.archivedAt !== null)
-        throw new Error("Restore the session in BB before connecting it.");
+        throw new Error("Restore the session in VesnALIA before connecting it.");
     }
     // Persist a pending receipt before creation. An interrupted unknown outcome is
     // never retried blindly, because Tasks has no idempotent create endpoint.
     if (key) {
-      await bb.storage.kv.set(key, { signature });
+      await alia.storage.kv.set(key, { signature });
       receipts.set(key, { signature });
     }
     let result: ManagementResult;
@@ -187,7 +187,7 @@ export function managementService(bb: BbPluginApi, invalidate: () => void) {
         if (!response.ok) {
           if (key) {
             receipts.delete(key);
-            await bb.storage.kv.delete(key);
+            await alia.storage.kv.delete(key);
           }
           throw new Error(response.error.message);
         }
@@ -212,17 +212,17 @@ export function managementService(bb: BbPluginApi, invalidate: () => void) {
           String(code),
         )
       ) {
-        await bb.storage.kv.delete(key);
+        await alia.storage.kv.delete(key);
         receipts.delete(key);
       }
       throw cause;
     }
     invalidate();
-    bb.realtime.publish("projects-changed", {});
+    alia.realtime.publish("projects-changed", {});
     if (key) {
       receipts.set(key, { signature, result });
       try {
-        await bb.storage.kv.set(key, { signature, result });
+        await alia.storage.kv.set(key, { signature, result });
       } catch {
         /* Return confirmed canonical work; the pending durable receipt prevents duplicate creation after a reload. */
       }

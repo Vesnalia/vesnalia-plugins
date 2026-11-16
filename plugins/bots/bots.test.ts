@@ -116,7 +116,7 @@ describe("renderBotInstructions", () => {
     expect(rendered).toContain("Always answer in pirate speak.");
   });
 
-  it("stays under BB's instruction limit at maximum length", () => {
+  it("stays under VesnALIA's instruction limit at maximum length", () => {
     const rendered = renderBotInstructions({
       ...bot,
       name: "x".repeat(60),

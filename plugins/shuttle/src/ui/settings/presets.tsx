@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { DEFAULT_REVIEW_PROMPT, type Preset } from "../../config";
 import { BUTTON, BUTTON_GHOST, BUTTON_GHOST_DANGER, BUTTON_GHOST_WRAP, BUTTON_PRIMARY, CARD, ErrorNote, FIELD, Pill } from "../common";
 import { WORKSPACES } from "../constants";
@@ -49,7 +49,7 @@ function PresetEditor({ preset, isNew, canDelete, onChange, onExecution, onMakeD
       <span className={label}>Skill</span>
       <SkillInput value={preset.skill} onChange={(skill) => onChange({ skill })} />
       <span className={`${label} self-start pt-1.5`}>Agent and model</span>
-      <ExecutionPicker value={executionOf(preset)} onChange={onExecution} resetLabel="Use bb default" />
+      <ExecutionPicker value={executionOf(preset)} onChange={onExecution} resetLabel="Use VesnALIA default" />
       <span className={label}>Workspace</span>
       <select aria-label="Workspace" className={FIELD} value={preset.workspace} onChange={(event) => onChange({ workspace: event.target.value as Preset["workspace"] })}>
         {WORKSPACES.map((workspace) => <option key={workspace} value={workspace}>{WORKSPACE_LABELS[workspace]}</option>)}

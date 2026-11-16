@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Markdown, ThreadChat, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { Markdown, ThreadChat, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { FileView, StageView, WorkView, workshopContract } from "../contract";
 import { FORWARD_BUTTON } from "../server/stages";
 import { REASON_MAX, STATE, btn, errCls, errText, input, primary, uniq, when, withMockupCsp } from "./common";
@@ -517,7 +517,7 @@ function FileViewer({ workId, path, stamp }: { workId: string; path: string; sta
   if (error) return <div className={errCls}>{error}</div>;
   if (!file) return <div className="text-xs text-muted-foreground">loading…</div>;
   if (file.text !== null && /\.html?$/i.test(path)) return <MockupFrame key={`${path}:${stamp}`} path={path} html={file.text} />;
-  // Agent-written Markdown: links and embedded HTML are handled by bb's Markdown component (its sanitizer), not by this plugin.
+  // Agent-written Markdown: links and embedded HTML are handled by VesnALIA's Markdown component (its sanitizer), not by this plugin.
   if (file.text !== null)
     return path.toLowerCase().endsWith(".md") ? (
       <div className="max-h-[60vh] overflow-auto rounded-md border border-border p-3">
@@ -533,7 +533,7 @@ function FileViewer({ workId, path, stamp }: { workId: string; path: string; sta
 
 /**
  * An HTML mockup: untrusted (an agent wrote it from text it read), shown in a sandbox without allow-same-origin and under MOCKUP_CSP. Its
- * scripts (screen switchers) run in their own opaque origin — no access to bb, its cookies or storage — and cannot reach the network,
+ * scripts (screen switchers) run in their own opaque origin — no access to VesnALIA, its cookies or storage — and cannot reach the network,
  * open frames or submit forms. A script can still navigate its own frame, carrying data in the URL; CSP cannot block that. The frame is
  * expected to load once: a second load means the mockup navigated away, and the preview is replaced with a notice until the next file or version.
  */

@@ -3,9 +3,9 @@ import { EditorView } from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
 
 /**
- * Editor chrome theme built entirely from bb design tokens (CSS custom
+ * Editor chrome theme built entirely from VesnALIA design tokens (CSS custom
  * properties), so the editor is correct in both light and dark themes
- * without a `.dark` variant — the plugin Tailwind build lacks bb's dark
+ * without a `.dark` variant — the plugin Tailwind build lacks VesnALIA's dark
  * custom-variant, so colors must come from CSS vars (or `light-dark()`).
  *
  * Font size can be tuned by the host via `--bbnotes-editor-font-size`.
@@ -51,8 +51,8 @@ export const bbnotesTheme = EditorView.theme({
 });
 
 /**
- * Syntax colors for fenced-code languages, entirely from bb tokens: the
- * `--ansi-0…15` palette bb publishes for terminals (and re-tunes per theme;
+ * Syntax colors for fenced-code languages, entirely from VesnALIA tokens: the
+ * `--ansi-0…15` palette VesnALIA publishes for terminals (and re-tunes per theme;
  * `--ansi-1` red … `--ansi-6` cyan, `+8` for bright) plus `--muted-foreground`
  * for comments/meta. Apply with `syntaxHighlighting(bbnotesHighlightStyle)`.
  *

@@ -1,8 +1,8 @@
 import { STORAGE_KEYS } from "./lib/storage-keys";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type PluginSidebarThread, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { type PluginSidebarThread, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "./lib/toast";
-import type { bbSidebarRpcContract } from "./contract";
+import type { aliaSidebarRpcContract } from "./contract";
 import { INBOX_ORDER_CHANNEL } from "./realtime-channels";
 import { orderInboxThreads } from "./pinned-order";
 import { createCachedRpcState } from "./lib/cached-rpc-state";
@@ -25,7 +25,7 @@ function orderKey(ids: readonly string[]): string {
 
 /** Durable, optimistic inbox ordering backed by the plugin database. */
 export function useInboxReorder(inboxThreads: readonly PluginSidebarThread[]): InboxReorderApi {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const [storedIds, setStoredIds] = useState<readonly string[] | null>(() => orderCache.read(rpc));
   const [optimisticIds, setOptimisticIds] = useState<readonly string[] | null>(null);
   const [isReordering, setIsReordering] = useState(false);

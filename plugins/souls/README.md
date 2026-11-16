@@ -6,11 +6,11 @@
 
 ### Give your agents a persona you can reuse.
 
-Interview, import or write a persona, then choose it for any BB thread.<br>
+Interview, import or write a persona, then choose it for any VesnALIA thread.<br>
 Build specialist teams with permissions you control.
 
 ![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)
-![bb ≥ 0.44](https://img.shields.io/badge/bb-%E2%89%A5%200.44-d946ef)
+![VesnALIA ≥ 0.44](https://img.shields.io/badge/bb-%E2%89%A5%200.44-d946ef)
 ![Plugin SDK ≥ 0.5.29](https://img.shields.io/badge/plugin%20sdk-%E2%89%A5%200.5.29-86198f)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 
@@ -25,7 +25,7 @@ Build specialist teams with permissions you control.
 <br>
 
 > [!NOTE]
-> The screenshots are real BB captures populated with fictional demo data.
+> The screenshots are real VesnALIA captures populated with fictional demo data.
 > Unrelated library entries and usage totals are hidden.
 
 ## The problem
@@ -119,7 +119,7 @@ and project model. The local persona grade starts no runs; comparisons do.
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/MacHatter1/bb-plugin-souls --yes
+alia plugin install git:https://github.com/MacHatter1/bb-plugin-souls --yes
 ```
 
 **Souls** appears in the sidebar, and the tools and bundled skill become
@@ -130,16 +130,16 @@ available to threads.
 
 ```sh
 git clone https://github.com/MacHatter1/bb-plugin-souls
-cd bb-plugin-souls
-npm install && bb plugin build
-bb plugin install path:$PWD --yes
+cd alia-plugin-souls
+npm install && alia plugin build
+alia plugin install path:$PWD --yes
 ```
 
 </details>
 
 **Requirements**
 
-- bb **0.44+** (Plugin SDK **0.5.29+**, as declared in the manifest).
+- VesnALIA **0.44+** (Plugin SDK **0.5.29+**, as declared in the manifest).
 
 ## Where to find it
 
@@ -169,7 +169,7 @@ See [formats, examples and limits](docs/IMPORTING.md).
 <details>
 <summary><b>Set up a team, permissions and persona versions</b></summary>
 
-Use **Edit soul → Team** for permissions, the BB provider picker, roster,
+Use **Edit soul → Team** for permissions, the VesnALIA provider picker, roster,
 limits and handoffs. Blank limits are unlimited; zero blocks new hires or
 child admission for that limit. The thread picker overrides delegation and
 hiring, and can pin a persona revision. Pins keep current permissions and team
@@ -186,19 +186,19 @@ See [team setup and task lifecycle](docs/TEAMS.md).
 sequenceDiagram
     participant You
     participant Souls
-    participant BB
+    participant ALIA
     participant Agent
     You->>Souls: Save a persona and choose it for a thread
-    BB->>Souls: Configure the next session
-    Souls-->>BB: Persona pointer and effective permissions
+    ALIA->>Souls: Configure the next session
+    Souls-->>ALIA: Persona pointer and effective permissions
     Agent->>Souls: souls_get(id)
     Souls-->>Agent: Full persona at the selected revision
     Agent->>You: Persona card and reply
-    BB->>Souls: Context compacted
+    ALIA->>Souls: Context compacted
     Souls-->>Agent: Restore persona during tool work or with the next message
 ```
 
-- **Full persona.** The session receives a short pointer within BB's
+- **Full persona.** The session receives a short pointer within VesnALIA's
   4,096-character instruction limit. `souls_get` returns the full persona,
   using the thread's pinned revision when present.
 - **Session timing.** A live session keeps its starting instructions. A
@@ -232,7 +232,7 @@ monitor. See the [design notes](docs/DESIGN.md) for the evidence boundaries.
 - 💸 **Runs have a purpose.** Browsing, local grading and persona recovery
   make no model calls. Comparisons require an explicit request; authorised
   child assignments start their own runs.
-- 🛡️ **Persona text has limits.** It never overrides BB's rules or your
+- 🛡️ **Persona text has limits.** It never overrides VesnALIA's rules or your
   instructions. Imports omit tool, sandbox and MCP settings. A read-only child
   brief is an instruction, not a filesystem permission boundary.
 
@@ -243,12 +243,12 @@ to that thread and can also target its own children. Read commands accept
 `--json`.
 
 ```sh
-bb souls list                         # available souls
-bb souls show Hazel                   # full persona and session pointer
-bb souls select Hazel --now           # release an idle runtime for the next turn
-bb souls status                       # selection, consent and session evidence
-bb souls eval Hazel                   # local grade and suggested prompt; no runs
-bb souls eval Hazel --run             # start a comparison when requested
+alia souls list                         # available souls
+alia souls show Hazel                   # full persona and session pointer
+alia souls select Hazel --now           # release an idle runtime for the next turn
+alia souls status                       # selection, consent and session evidence
+alia souls eval Hazel                   # local grade and suggested prompt; no runs
+alia souls eval Hazel --run             # start a comparison when requested
 ```
 
 <details>
@@ -288,8 +288,8 @@ npm install
 npm test                           # node:test; no model calls
 npm run typecheck
 npm run test:bundle                # build and exercise the deployed server
-bb plugin install path:$PWD --yes
-bb plugin dev                      # rebuild and reload on saves
+alia plugin install path:$PWD --yes
+alia plugin dev                      # rebuild and reload on saves
 ```
 
 ```text
@@ -300,7 +300,7 @@ shared.ts       schemas and persona, pointer and handoff renderers
 soul-import*.ts agent-file parsing and bounded GitHub downloads
 eval.ts         local persona grade and comparison records
 portrait.ts     pixel portraits; motion.ts maps activity to animation
-app.tsx         BB slots; components/ and hooks/ implement the UI
+app.tsx         ALIA slots; components/ and hooks/ implement the UI
 skills/         the bundled skill and interview protocol
 docs/           guides, design notes, logo and fictional-data screenshots
 ```
@@ -312,7 +312,7 @@ The bundle smoke check loads the built server and parses imports. No test calls
 a model. See [design invariants](docs/DESIGN.md) and [UI notes](docs/UI.md).
 
 `PLUGIN_OVERVIEW.md` is the store listing. Keep it in step with the README,
-`bb.description` in `package.json` and the bundled skill.
+`alia.description` in `package.json` and the bundled skill.
 
 ## Licence
 

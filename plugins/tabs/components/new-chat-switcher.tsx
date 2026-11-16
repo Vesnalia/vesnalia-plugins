@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
-import type { PluginSidebarProject } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./ui/icon";
 import { translate, type PluginLocale } from "../lib/plugin-locale";
 import { tabAppearanceTitle, type TabAppearance } from "../lib/tab-appearance";
@@ -135,11 +135,11 @@ export function NewChatSwitcher({
         setOpen(next);
       }}
     >
-      <div className="bb-chat-tabs-new-switcher">
+      <div className="alia-chat-tabs-new-switcher">
         <Popover.Anchor asChild>
           <button
             type="button"
-            className="bb-chat-tabs-new-trigger"
+            className="alia-chat-tabs-new-trigger"
             aria-label={t("New chat")}
             aria-haspopup={projects.length > 0 ? "menu" : undefined}
             aria-expanded={projects.length > 0 ? open : undefined}
@@ -155,7 +155,7 @@ export function NewChatSwitcher({
             onPointerLeave={(event) => leave(event.pointerType)}
             onPointerCancel={clearTimers}
           >
-            <Icon name="Plus" className="bb-chat-tabs-new-icon" aria-hidden />
+            <Icon name="Plus" className="alia-chat-tabs-new-icon" aria-hidden />
           </button>
         </Popover.Anchor>
       </div>
@@ -163,7 +163,7 @@ export function NewChatSwitcher({
         <Popover.Portal>
           <Popover.Content
             lang={locale}
-            className="bb-chat-tabs-new-menu"
+            className="alia-chat-tabs-new-menu"
             id={searchId}
             aria-label={t("Recent projects")}
             role="menu"
@@ -178,11 +178,11 @@ export function NewChatSwitcher({
             onPointerEnter={(event) => enter(event.pointerType)}
             onPointerLeave={(event) => leave(event.pointerType)}
           >
-            <div className="bb-chat-tabs-list-menu-search">
-              <Icon name="Search" className="bb-chat-tabs-list-menu-search-icon" aria-hidden />
+            <div className="alia-chat-tabs-list-menu-search">
+              <Icon name="Search" className="alia-chat-tabs-list-menu-search-icon" aria-hidden />
               <input
                 type="search"
-                className="bb-chat-tabs-list-menu-search-input"
+                className="alia-chat-tabs-list-menu-search-input"
                 aria-label={t("Search projects")}
                 aria-controls={searchId}
                 aria-activedescendant={
@@ -217,9 +217,9 @@ export function NewChatSwitcher({
                 }}
               />
             </div>
-            <div className="bb-chat-tabs-new-menu-heading">{t("New chat in project")}</div>
+            <div className="alia-chat-tabs-new-menu-heading">{t("New chat in project")}</div>
             {matches.length === 0 ? (
-              <span className="bb-chat-tabs-list-menu-search-empty">{t("No projects found")}</span>
+              <span className="alia-chat-tabs-list-menu-search-empty">{t("No projects found")}</span>
             ) : null}
             {matches.slice(0, visibleCount).map((project, index) => (
               <Fragment key={project.id}>
@@ -228,7 +228,7 @@ export function NewChatSwitcher({
                 (index === 0 ||
                   preferredProjectIds.has(matches[index - 1]!.id) !==
                     preferredProjectIds.has(project.id)) ? (
-                  <div className="bb-chat-tabs-new-menu-heading">
+                  <div className="alia-chat-tabs-new-menu-heading">
                     {t(
                       preferredProjectIds.has(project.id)
                         ? "Projects in this workspace"
@@ -239,14 +239,14 @@ export function NewChatSwitcher({
                 <button
                   type="button"
                   role="menuitem"
-                  className="bb-chat-tabs-new-menu-item"
+                  className="alia-chat-tabs-new-menu-item"
                   data-selected={index === selectedIndex ? "true" : undefined}
                   id={`${searchId}-${index}`}
                   ref={index === selectedIndex ? selectedItemRef : undefined}
                   onClick={() => navigate(project.id)}
                   title={project.name}
                 >
-                  <Icon name="Folder" className="bb-chat-tabs-new-menu-icon" aria-hidden />
+                  <Icon name="Folder" className="alia-chat-tabs-new-menu-icon" aria-hidden />
                   <span>
                     {appearance
                       ? tabAppearanceTitle(appearance, project.id, project.name)
@@ -259,7 +259,7 @@ export function NewChatSwitcher({
               <button
                 type="button"
                 role="menuitem"
-                className="bb-chat-tabs-new-menu-more"
+                className="alia-chat-tabs-new-menu-more"
                 aria-label={t("Show {count} more projects", {
                   count: Math.min(PROJECT_PAGE_SIZE, matches.length - visibleCount),
                 })}

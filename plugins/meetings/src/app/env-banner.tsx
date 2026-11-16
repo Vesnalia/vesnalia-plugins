@@ -1,7 +1,7 @@
 // Environment banner on the list page: missing runtime pieces (env.status),
 // "Установить компоненты" (env.setup) with progress and log, and GigaAM state.
 import { useCallback, useEffect, useId, useState } from "react";
-import { useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRealtime } from "@vesnalia/plugin-sdk/app";
 import type { EnvItem, EnvReport } from "../shared/contract";
 import { Button } from "@/components/ui/button";
 import { CHANNEL_ENV_CHANGED } from "./constants";
@@ -166,7 +166,7 @@ export function EnvBanner({ env }: { env: ReturnType<typeof useEnvStatus> }) {
             {report.gigaam.detail === "" ? null : <> {report.gigaam.detail}</>}
           </p>
           <p className="text-xs text-muted-foreground">
-            Проверьте состояние: <code className="rounded bg-muted px-1 py-0.5 font-mono">bb gigaam status</code>
+            Проверьте состояние: <code className="rounded bg-muted px-1 py-0.5 font-mono">alia gigaam status</code>
           </p>
         </Notice>
       ) : null}

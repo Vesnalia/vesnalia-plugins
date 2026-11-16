@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { api } from './helpers.mjs';
-import { skillsConfigureParamsSchema } from '@get-bb/plugin-sdk/provider-bridge';
+import { skillsConfigureParamsSchema } from '@vesnalia/plugin-sdk/provider-bridge';
 
 test('c1 delivery is authoritative, durable, once; unknown dispatch and rejected dispatch differ', () => {
   const dir = mkdtempSync('/tmp/c1-knowledge-'), file = join(dir, 'state.json');
@@ -27,7 +27,7 @@ test('c1 delivery is authoritative, durable, once; unknown dispatch and rejected
   } finally { rmSync(dir, { recursive: true }); }
 });
 
-test('c1 SDK .79 roots: native bundled/plugin/name/path exclusions, aliases, ordered bb winners, stale and empty roots', () => {
+test('c1 SDK .79 roots: native bundled/plugin/name/path exclusions, aliases, ordered VesnALIA winners, stale and empty roots', () => {
   const dir = mkdtempSync('/tmp/c1-skills-');
   const skill = (folder, name) => { const path = join(dir, folder, 'SKILL.md'); mkdirSync(join(dir, folder)); writeFileSync(path, `---\nname: ${name}\ndescription: fixture\n---\ncontent\n`); return path; };
   try {
@@ -42,16 +42,16 @@ test('c1 SDK .79 roots: native bundled/plugin/name/path exclusions, aliases, ord
       { id: 'empty', path: dir, skills: [] }
     ] }).roots;
     writeFileSync(a, readFileSync(a, 'utf8') + 'x'.repeat(100000));
-    const result = api.bbOnlySkills(roots, { skills: [{ name: 'builtin', path: native, scope: 'system', source: 'bundled' }, { name: 'guide', qualifiedName: 'zcode-guide:guide', path: plugin, scope: 'system', source: 'plugin' }] });
+    const result = api.aliaOnlySkills(roots, { skills: [{ name: 'builtin', path: native, scope: 'system', source: 'bundled' }, { name: 'guide', qualifiedName: 'zcode-guide:guide', path: plugin, scope: 'system', source: 'plugin' }] });
     assert.deepEqual(result.skills, [{ name: 'only', description: 'first', path: realpathSync(a) }]);
-    assert.deepEqual(result.excluded.map(s => s.reason), ['bb-root-order-winner', 'native-canonical-path', 'native-canonical-path', 'native-name-winner', 'unavailable-file']);
+    assert.deepEqual(result.excluded.map(s => s.reason), ['alia-root-order-winner', 'native-canonical-path', 'native-canonical-path', 'native-name-winner', 'unavailable-file']);
     assert.equal(api.skillsBlock(result.skills).split('(file: ').length, 2);
-    assert.deepEqual(api.bbOnlySkills([], { skills: [] }).skills, []);
+    assert.deepEqual(api.aliaOnlySkills([], { skills: [] }).skills, []);
     const large = 'x'.repeat(100000); assert.ok(api.skillsBlock([{ name: 'large', description: large, path: a }]).includes(large));
   } finally { rmSync(dir, { recursive: true }); }
 });
 
-test('c1 selected bb skill uses a file tool, without native Skill registration', async () => {
+test('c1 selected VesnALIA skill uses a file tool, without native Skill registration', async () => {
   const result = await api.convertMentions([{ type: 'text', text: '$only', mentions: [{ start: 0, end: 5, resource: { kind: 'command', name: 'only', source: 'skill', origin: 'user', trigger: '$' } }] }], async m => ({ ...m, path: '/actual/SKILL.md', loadWith: 'file' }));
   assert.ok(result.input.at(-1).text.includes('file tool'));
   assert.equal(result.input.some(i => i.text.includes('Skill tool')), false);
@@ -60,13 +60,13 @@ test('c1 selected bb skill uses a file tool, without native Skill registration',
 
 test('c1 native compact active-chain semantics: manual loss, automatic preserved tail, one frozen redelivery', () => {
   const msg = (id, text) => ({ info: { id, role: 'user' }, parts: [{ type: 'text', text }] });
-  const old = msg('old', 'bb block'), summary = msg('summary', 'summary');
+  const old = msg('old', 'alia block'), summary = msg('summary', 'summary');
   const boundary = { info: { id: 'boundary', role: 'user' }, parts: [{ type: 'compaction', compactBoundary: {} }] };
   assert.deepEqual(api.activeNativeMessages([old, boundary, summary]), [boundary, summary]);
-  const k = new api.SessionKnowledge(); k.prepare('send1', 'bb block', 'first');
+  const k = new api.SessionKnowledge(); k.prepare('send1', 'alia block', 'first');
   k.observe({ rows: { window: [{ kind: 'turnHeader', sourceCommandId: 'send1' }, { kind: 'timelineMarker', rowId: 3, turnId: 'compact1', marker: { type: 'compact', origin: 'manual', status: 'success' } }] } });
   assert.equal(k.needsReconcile, true); assert.equal(k.reconcile([old, boundary, summary]), false);
-  assert.equal(k.prepare('send2', 'changed block', 'next'), 'bb block\n\nnext');
+  assert.equal(k.prepare('send2', 'changed block', 'next'), 'alia block\n\nnext');
   assert.equal(k.prepare('send3', 'changed block', 'third'), 'third');
   k.observe({ rows: { window: [{ kind: 'timelineMarker', rowId: 3, turnId: 'compact1', marker: { type: 'compact', origin: 'manual', status: 'success' } }] } });
   assert.equal(k.needsReconcile, false);
@@ -99,7 +99,7 @@ test('c1 ordered active-chain fixtures match reviewed native hydration and runti
     : native17
     ? new Function('qgt', source.slice(source.indexOf('function Qwn('), source.indexOf('var tkn=', source.indexOf('function Qwn('))) + '; return Qwn;')(resetTokens)
     : new Function('eht', extract('$vn', 'Wvn') + '; return $vn;')(resetTokens);
-  const msg = (id, role = 'user', extra = {}) => ({ info: { id, role, ...extra }, parts: [{ type: 'text', text: id === 'first' ? 'bb block' : id }] });
+  const msg = (id, role = 'user', extra = {}) => ({ info: { id, role, ...extra }, parts: [{ type: 'text', text: id === 'first' ? 'alia block' : id }] });
   const first = msg('first'), second = msg('second'), summary = msg('summary');
   const bc = (id = 'boundary', segment, ids) => ({ info: { id, role: 'user' }, parts: [{ type: 'compaction', compactBoundary: { preservedSegment: segment }, metadata: { compactLeadingMessageIds: ids } }] });
   const segment = { headMessageId: 'first', tailMessageId: 'second', anchorMessageId: 'summary' };
@@ -147,18 +147,18 @@ test('c1 ordered active-chain fixtures match reviewed native hydration and runti
   const postCompact = new Function(...(leading ? ['DT', 'fUe', 'oza'] : native17 ? ['PT', '_kt', 'FLa'] : ['wT', 'mSt', 'zNa']),
     leading ? extract('A8o', 'P8o') + '; return A8o;' : native17 ? extract('fjo', 'mjo') + '; return fjo;' : extract('TOo', 'IOo') + '; return TOo;')(prefixCount, clone, clone);
   const nativePrefix = { message: { role: 'user', content: 'native context' }, metadata: { source: 'context_prefix' } };
-  const bbUser = { message: { role: 'user', content: '[bb session instructions]\nbb block' }, metadata: { source: 'real_user' } };
-  const result = postCompact([nativePrefix, bbUser], { message: { role: 'user', content: 'summary' } });
-  assert.equal(result.length, leading ? 1 : 2); assert.ok(!JSON.stringify(result).includes('bb block'));
+  const aliaUser = { message: { role: 'user', content: '[VesnALIA session instructions]\nbb block' }, metadata: { source: 'real_user' } };
+  const result = postCompact([nativePrefix, aliaUser], { message: { role: 'user', content: 'summary' } });
+  assert.equal(result.length, leading ? 1 : 2); assert.ok(!JSON.stringify(result).includes('alia block'));
 });
 
 test('c1 leading retained/missing block reconciliation persists across cold reload without redundant delivery', () => {
   const dir = mkdtempSync('/tmp/c1-leading-'), file = join(dir, 'state.json');
-  const first = { info: { id: 'first', role: 'user' }, parts: [{ type: 'text', text: 'frozen bb block\n\nfirst input' }] };
+  const first = { info: { id: 'first', role: 'user' }, parts: [{ type: 'text', text: 'frozen VesnALIA block\n\nfirst input' }] };
   const boundary = ids => ({ info: { id: 'boundary', role: 'user' }, parts: [{ type: 'compaction', compactBoundary: {}, metadata: { compactLeadingMessageIds: ids } }] });
   const success = id => ({ rows: { window: [{ kind: 'timelineMarker', rowId: id, turnId: 'compact', marker: { type: 'compact', status: 'success' } }] } });
   try {
-    let k = new api.SessionKnowledge(file); k.prepare('send1', 'frozen bb block', 'first input');
+    let k = new api.SessionKnowledge(file); k.prepare('send1', 'frozen VesnALIA block', 'first input');
     k.observe({ rows: { window: [{ kind: 'turnHeader', sourceCommandId: 'send1' }] } });
     k.observe(success(1)); k = new api.SessionKnowledge(file); assert.equal(k.needsReconcile, true);
     assert.equal(k.reconcile([first, boundary(['first'])]), true);
@@ -167,7 +167,7 @@ test('c1 leading retained/missing block reconciliation persists across cold relo
     k.observe(success(2)); k = new api.SessionKnowledge(file);
     assert.equal(k.reconcile([first, boundary(['missing'])]), false);
     k = new api.SessionKnowledge(file); assert.equal(k.delivered, false);
-    assert.equal(k.prepare('send3', 'changed', 'restore'), 'frozen bb block\n\nrestore');
+    assert.equal(k.prepare('send3', 'changed', 'restore'), 'frozen VesnALIA block\n\nrestore');
     k = new api.SessionKnowledge(file); assert.equal(k.prepare('send4', 'changed', 'uncertain'), 'uncertain');
     k.observe({ rows: { window: [{ kind: 'turnHeader', sourceCommandId: 'send3' }] } });
     k = new api.SessionKnowledge(file); assert.equal(k.prepare('send5', 'changed', 'acknowledged'), 'acknowledged');
@@ -189,7 +189,7 @@ test('c1 actual bridge config timing, ordinary/steer/model changes, process rest
     const identity = await rpc('thread/start', { threadId: 'thr_2222222222', cwd: root, options, instructionMode: 'append', dynamicTools: [], disallowedTools: [] });
     const base = { threadId: 'thr_2222222222', providerThreadId: identity.providerThreadId, options, clientRequestId: 'creq_2222222222' };
     await rpc('turn/start', { ...base, input: [{ type: 'text', text: 'first' }] }); await delay(100);
-    assert.ok(current().lastSendText.includes('[bb skills]\n')); assert.ok(current().lastSendText.includes('(file: ' + join(skill, 'SKILL.md') + ')'));
+    assert.ok(current().lastSendText.includes('[VesnALIA skills]\n')); assert.ok(current().lastSendText.includes('(file: ' + join(skill, 'SKILL.md') + ')'));
     await rpc('skills/configure', { roots: [] });
     await rpc('turn/start', { ...base, clientRequestId: 'creq_3333333333', options: { ...options, instructions: 'changed', model: 'GLM-5.3-Flash' }, input: [{ type: 'text', text: '/wait-for-interrupt' }] }); await delay(100);
     assert.equal(current().lastSendText, '/wait-for-interrupt');

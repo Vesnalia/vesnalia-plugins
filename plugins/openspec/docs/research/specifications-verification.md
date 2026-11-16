@@ -1,6 +1,6 @@
 # Specifications panel verification
 
-Verified on 2026-10-28 with bb 0.47.1, Plugin SDK 0.6.79, Node 24.20.0 and OpenSpec CLI 1.10.0. Plugin version: 0.5.0.
+Verified on 2026-10-28 with VesnALIA 0.47.1, Plugin SDK 0.6.79, Node 24.20.0 and OpenSpec CLI 1.10.0. Plugin version: 0.5.0.
 
 ## Implementation
 
@@ -23,7 +23,7 @@ The slow-consumer stress test holds one source's delivery open, sends 300 repeat
 
 ## Installed plugin checks
 
-- Two distinct destinations, OpenSpec · Changes (task list) and OpenSpec · Specs (registered book icon). BookOpen is unavailable as a built-in in this bb version, so a plugin-scoped icon is registered through the public SDK.
+- Two distinct destinations, OpenSpec · Changes (task list) and OpenSpec · Specs (registered book icon). BookOpen is unavailable as a built-in in this VesnALIA version, so a plugin-scoped icon is registered through the public SDK.
 - Local tree shows seven current capabilities plus two new capabilities from the active change, with A/M decorations. Complete documents render in Current/Proposed/Compare; a new capability has Current disabled and opens Proposed.
 - English/Russian switching preserves capability and Compare mode; repository text stays unchanged. Automatic language selection was restored after checking.
 - At 320 px, the tree opens a document with back navigation and no horizontal overflow.

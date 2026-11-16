@@ -16,7 +16,7 @@
     "Traced dispatch through new-project placement, placement decisions, account writes, seat reservations, queues and rejection cleanup.",
     "Traced shared activity/model state through persistence, after-turn placement, background rescue, failure recovery and rebalance.",
     "Inspected Calor's literal tick, send-error handling, retry timing and account-change/expiry guards.",
-    "Inspected bb-app 0.48.1 rejection handling and dispatch ordering before message persistence."
+    "Inspected alia-app 0.48.1 rejection handling and dispatch ordering before message persistence."
   ],
   "limitations": [
     "Read-only inspection: no files edited, tests, builds, mutations or repository simulations executed, and no delegation.",

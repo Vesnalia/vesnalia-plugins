@@ -658,7 +658,7 @@ export class BoxHistoryStore {
 
   checks(state: string): DoctorCheck[] {
     const file = this.#file;
-    if (file.problem) return [{ id: "box-history", name: "Box history", status: "fail", detail: `${PRODUCT} could not set up ${file.spec.file}: ${sentence(file.problem)}`, fix: `Check that BB's data folder has room and that ${PRODUCT}'s files in it are writable, then restart ${PRODUCT}.` }];
+    if (file.problem) return [{ id: "box-history", name: "Box history", status: "fail", detail: `${PRODUCT} could not set up ${file.spec.file}: ${sentence(file.problem)}`, fix: `Check that VesnALIA's data folder has room and that ${PRODUCT}'s files in it are writable, then restart ${PRODUCT}.` }];
     const used = this.usedBytes();
     let cap: number | null = null;
     try {
@@ -669,8 +669,8 @@ export class BoxHistoryStore {
     const where = file.attached ? `${file.spec.file}, attached to ${PRODUCT}'s database` : `${PRODUCT}'s database, as its handle refused to attach ${file.spec.file}${file.refusal ? `: ${file.refusal}` : ""}`;
     const size = file.attached && used !== null && cap !== null ? `${(used / 1024 / 1024).toFixed(1)} MB used of its cap of ${(cap / 1024 / 1024).toFixed(1)} MB` : `at most ${this.#sharedMinuteRows} minute points, each GPU's counted as one, in a database capped at ${cap !== null ? `${(cap / 1024 / 1024).toFixed(1)} MB` : "an unknown size"}`;
     const full = this.fullWords();
-    if (full) return [{ id: "box-history", name: "Box history", status: "warn", detail: `${full} In ${where}, ${size}.`, fix: "Nothing else is affected. If it stays full, see bb box monitor history for what it keeps." }];
-    if (this.#failed) return [{ id: "box-history", name: "Box history", status: "warn", detail: `${state} Its last write failed at ${new Date(this.#failed.at).toISOString()}: ${sentence(this.#failed.error)} In ${where}, ${size}.`, fix: `Check that BB's data folder has room and that ${PRODUCT}'s files in it are writable.` }];
+    if (full) return [{ id: "box-history", name: "Box history", status: "warn", detail: `${full} In ${where}, ${size}.`, fix: "Nothing else is affected. If it stays full, see VesnALIA box monitor history for what it keeps." }];
+    if (this.#failed) return [{ id: "box-history", name: "Box history", status: "warn", detail: `${state} Its last write failed at ${new Date(this.#failed.at).toISOString()}: ${sentence(this.#failed.error)} In ${where}, ${size}.`, fix: `Check that VesnALIA's data folder has room and that ${PRODUCT}'s files in it are writable.` }];
     return [{ id: "box-history", name: "Box history", status: file.attached ? "ok" : "warn", detail: `${state} In ${where}, ${size}.`, fix: file.attached ? null : `Nothing is lost: box history keeps fewer points in ${PRODUCT}'s database.` }];
   }
 }

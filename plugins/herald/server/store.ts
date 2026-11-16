@@ -3,7 +3,7 @@
  * the summary for it. Newer events replace older ones for the same thread — a
  * thread has one composer and one thing it is waiting for.
  *
- * bb's own unread and pending-interaction state stays the authority on *who*
+ * VesnALIA's own unread and pending-interaction state stays the authority on *who*
  * is waiting; this store only explains *why*. Entries are removed when the
  * events show the thread moving on (a new turn, an archive, a delete), and by
  * `Liveness` when the thread turns out to be gone, read, or answered. There is

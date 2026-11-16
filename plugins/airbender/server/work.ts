@@ -5,7 +5,7 @@
 // skip, report a step done, accept), and setting the thread's current issue.
 //
 // Why: an issue has to pass through its workflow to be closed
-// (bead-bb-e2b). This file is the runner: it asks the workflow whether a
+// (bead-alia-e2b). This file is the runner: it asks the workflow whether a
 // move is allowed, records the new step on the issue, and gets the agent
 // started when the next step is the agent's. It knows no step by name; the
 // steps, labels and wording are the workflow's (shared/standard-workflow.ts).
@@ -39,7 +39,7 @@
 //   therefore lets the user report it instead; nothing here tries to detect
 //   work done without a report.
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { CLOSED_STATUS } from "../shared/constants.ts";
 import { descendantsOf } from "../shared/tree.ts";
 import {
@@ -114,7 +114,7 @@ export interface WorkEvents {
  * Side effects: none until one of them is called.
  */
 export function createWork({
-  bb,
+  alia,
   store,
   currentBead,
   workflowChoice,
@@ -124,7 +124,7 @@ export function createWork({
   workTrees,
   events = {},
 }: {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   store: Store;
   currentBead: CurrentBead;
   workflowChoice: WorkflowChoice;
@@ -155,10 +155,10 @@ export function createWork({
    * Puts the thread's agent to work: the one place that decides how a step
    * is run (see the design notes).
    *
-   * @throws When BB cannot deliver the message.
+   * @throws When VesnALIA cannot deliver the message.
    */
   async function deliver(threadId: string, text: string): Promise<void> {
-    await bb.sdk.threads.send({
+    await alia.sdk.threads.send({
       threadId,
       mode: "auto",
       input: [{ type: "text", mentions: [], text }],
@@ -168,7 +168,7 @@ export function createWork({
 
   /**
    * The epic an issue belongs to that holds a branch for its issues
-   * (bead-bb-ty5.2), or null. See epicOver.
+   * (bead-alia-ty5.2), or null. See epicOver.
    */
   const homeOf = (workflow: Workflow, issue: Issue, issues: Issue[]) =>
     epicOver(workflow, issue, (id) =>
@@ -403,7 +403,7 @@ export function createWork({
     const openSubIssues = descendantsOf(issue.id, issues).filter(
       (candidate) => candidate.status !== CLOSED_STATUS,
     );
-    // An issue of an epic that holds a branch (bead-bb-ty5.2) is worked
+    // An issue of an epic that holds a branch (bead-alia-ty5.2) is worked
     // only on that branch, never gets a place of its own, and is never
     // merged by itself.
     const home = homeOf(workflow, issue, issues);
@@ -450,7 +450,7 @@ export function createWork({
       let projectId = input.projectId;
       try {
         if (threadId !== null) {
-          projectId = (await bb.sdk.threads.get({ threadId })).projectId;
+          projectId = (await alia.sdk.threads.get({ threadId })).projectId;
         }
         const held =
           projectId === null
@@ -520,12 +520,12 @@ export function createWork({
         if ("message" in started) return fail(started.message);
         openThreadId = started.threadId;
         // The new conversation is on no issue: its issues are started one
-        // by one. BB names the tree's branch itself, a moment later; it is
+        // by one. VesnALIA names the tree's branch itself, a moment later; it is
         // recorded on the epic when it is known.
         const opened = started.threadId;
         void workTrees.branchOf(opened).then(async (branch) => {
           if (branch === null) {
-            bb.log.warn(`the work tree branch of epic ${beadId} could not be read`);
+            alia.log.warn(`the work tree branch of epic ${beadId} could not be read`);
             return;
           }
           await setBranch(path, threadId, beadId, branch);
@@ -670,7 +670,7 @@ export function createWork({
    * comes before this, not a side effect of closing.
    *
    * Sub-issues are closed deepest first, because beads refuses to close an
-   * issue that still has open sub-issues (the user's decision, bead-bb-5qt:
+   * issue that still has open sub-issues (the user's decision, bead-alia-5qt:
    * finishing an epic finishes everything inside it).
    *
    * Side effects: one `bd close` per issue closed; one change published at

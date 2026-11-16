@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-beads",
+  "name": "alia-plugin-beads",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.37"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.37"
   },
-  "bb": {
+  "alia": {
     "name": "Beads",
-    "description": "Run the beads (`bd`) issue tracker from BB threads and the CLI.",
+    "description": "Run the beads (`bd`) issue tracker from VesnALIA threads and the CLI.",
     "branding": {
       "icon": "ListTree"
     },
@@ -24,7 +24,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.37",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -50,16 +49,29 @@
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
   },
-  "description": "BB plugin integrating the beads (`bd`) issue tracker into BB threads and CLI",
+  "description": "VesnALIA plugin integrating the beads (`bd`) issue tracker into VesnALIA threads and CLI",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://github.com/Jehu/bb-plugin-beads.git"
-  },
   "keywords": [
-    "bb",
+    "alia",
     "beads",
     "issue-tracker",
     "plugin"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/beads#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/beads"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

@@ -2,7 +2,7 @@
 // files), the selected file on the right. Only the two panes scroll; the
 // page itself stays fixed.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Markdown, experimental_SourceCode as SourceCode } from "@get-bb/plugin-sdk/app";
+import { Markdown, experimental_SourceCode as SourceCode } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";

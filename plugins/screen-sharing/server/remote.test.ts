@@ -1,6 +1,6 @@
 /**
- * Sessions to Macs that are not the bb server's own, end to end: the real
- * server entry on bb's fake plugin host, its host calls and signals through a
+ * Sessions to Macs that are not the VesnALIA server's own, end to end: the real
+ * server entry on VesnALIA's fake plugin host, its host calls and signals through a
  * fake daemon to a real HostRelay, and a fake Screen Sharing on a loopback
  * port for each Mac. The page is the fake WebSocket session, acknowledging
  * what it receives as the real page does.
@@ -13,7 +13,7 @@
  * throughput a user can expect, logged as `[measured]`.
  */
 import type { Socket } from "node:net";
-import { createFakePluginHost, makeHostResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeHostResponse } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it } from "vitest";
 
 import plugin from "../server";
@@ -63,7 +63,7 @@ async function setup(
     },
   });
   cleanups.push(() => daemon.closeEverything());
-  const { bb, harness } = createFakePluginHost({ pluginId: "screen-sharing", experimental_callHostRpc: daemon.call });
+  const { alia, harness } = createFakePluginHost({ pluginId: "screen-sharing", experimental_callHostRpc: daemon.call });
   daemon.harness = harness;
   cleanups.push(() => harness.dispose());
   harness.sdk.stub("system.config", () => ({ primaryHostId: "host_mini" }));
@@ -72,10 +72,10 @@ async function setup(
     makeHostResponse({ id: "host_laptop", name: "MacBook Pro" }),
     makeHostResponse({ id: "host_desk", name: "DeskMac" }),
     makeHostResponse({ id: "host_linux", name: "buildbox" }),
-    makeHostResponse({ id: "host_broken", name: "Old bb" }),
+    makeHostResponse({ id: "host_broken", name: "Old VesnALIA" }),
     makeHostResponse({ id: "host_away", name: "Travel MacBook", status: "disconnected" }),
   ]);
-  await plugin(bb);
+  await plugin(alia);
   return { harness, daemon, laptop };
 }
 
@@ -101,7 +101,7 @@ function acknowledging(ws: WsSession, everyMs = 20): () => void {
 }
 
 describe("the host picker", () => {
-  it("lists every enrolled machine, the server's first, with whether bb can reach it", async () => {
+  it("lists every enrolled machine, the server's first, with whether VesnALIA can reach it", async () => {
     const { harness } = await setup();
     expect(await harness.callRpc("hosts", {})).toEqual({
       hosts: [
@@ -109,7 +109,7 @@ describe("the host picker", () => {
         { id: "host_linux", name: "buildbox", connected: true, isServer: false },
         { id: "host_desk", name: "DeskMac", connected: true, isServer: false },
         { id: "host_laptop", name: "MacBook Pro", connected: true, isServer: false },
-        { id: "host_broken", name: "Old bb", connected: true, isServer: false },
+        { id: "host_broken", name: "Old VesnALIA", connected: true, isServer: false },
         { id: "host_away", name: "Travel MacBook", connected: false, isServer: false },
       ],
     });
@@ -132,7 +132,7 @@ describe("the host picker", () => {
       unreachableReason: 'unknown host method "status"',
     });
     expect(daemon.calls.map((call) => call.hostId)).toEqual(["host_laptop", "host_linux", "host_broken"]);
-    await expect(harness.callRpc("status", { hostId: "host_gone" })).rejects.toThrow("bb has no such machine");
+    await expect(harness.callRpc("status", { hostId: "host_gone" })).rejects.toThrow("alia has no such machine");
   });
 });
 
@@ -141,7 +141,7 @@ describe("a ticket for another Mac", () => {
     const { harness } = await setup();
     expect(await harness.callRpc("openSession", { hostId: "host_laptop" })).toMatchObject({ token: expect.any(String) });
     await expect(harness.callRpc("openSession", { hostId: "host_away" })).rejects.toThrow("Travel MacBook is offline");
-    await expect(harness.callRpc("openSession", { hostId: "host_gone" })).rejects.toThrow("bb has no such machine");
+    await expect(harness.callRpc("openSession", { hostId: "host_gone" })).rejects.toThrow("alia has no such machine");
   });
 
   it("opens nothing on any Mac when used for another one", async () => {
@@ -171,8 +171,8 @@ describe("a remote session", () => {
     expect((await harness.callRpc("sessions", {})) as { sessions: unknown[] }).toMatchObject({ sessions: [{ hostId: "host_laptop" }] });
   });
 
-  it("keeps the viewer's bytes in order when bb delivers the calls carrying them out of order", async () => {
-    // The live failure: typing at the MacBook's sign-in, pipelined writes overtook each other on bb's host link.
+  it("keeps the viewer's bytes in order when VesnALIA delivers the calls carrying them out of order", async () => {
+    // The live failure: typing at the MacBook's sign-in, pipelined writes overtook each other on VesnALIA's host link.
     const { harness, laptop } = await setup({ oneWayMs: 5, callJitterMs: 40 });
     const ws = await openSession(harness);
     await until(() => received(ws).length === 12, "the greeting");
@@ -288,7 +288,7 @@ describe("a remote session ends, leaving nothing open on the Mac", () => {
   it("on Close all, telling the page", async () => {
     const { harness, daemon, laptop, ws } = await opened();
     expect(await harness.callRpc("closeAll", {})).toEqual({ closed: 1 });
-    expect(ws.closeCalls).toEqual([{ code: CloseCode.closedByUser, reason: "closed from bb" }]);
+    expect(ws.closeCalls).toEqual([{ code: CloseCode.closedByUser, reason: "closed from VesnALIA" }]);
     await nothingLeft(daemon, laptop, harness);
   });
 
@@ -297,8 +297,8 @@ describe("a remote session ends, leaving nothing open on the Mac", () => {
     // Keep the daemon reachable after the fake host retires the plugin: the close is already on its way.
     const calls = daemon.calls.length;
     await harness.dispose();
-    // bb closes a stopping plugin's sockets itself, before its dispose hooks run.
-    expect(ws.closeCalls[0]?.code).toBe(CloseCode.bbPluginReloaded);
+    // VesnALIA closes a stopping plugin's sockets itself, before its dispose hooks run.
+    expect(ws.closeCalls[0]?.code).toBe(CloseCode.aliaPluginReloaded);
     await until(() => daemon.calls.length > calls, "the close on its way to the Mac");
     expect(daemon.calls.at(-1)?.method).toBe("close");
     await until(() => daemon.openSessions() === 0 && daemon.leases === 0, "the Mac's side closed");
@@ -312,7 +312,7 @@ describe("a remote session ends, leaving nothing open on the Mac", () => {
     await nothingLeft(daemon, laptop, harness);
   });
 
-  it("when bb stops the plugin's worker on the Mac", async () => {
+  it("when VesnALIA stops the plugin's worker on the Mac", async () => {
     const { harness, daemon, laptop, ws } = await opened();
     daemon.stopWorker("host_laptop");
     await until(() => ws.closeCalls.length === 1, "the page told");
@@ -323,7 +323,7 @@ describe("a remote session ends, leaving nothing open on the Mac", () => {
   it("when the worker on the Mac crashes", async () => {
     const { harness, daemon, laptop, ws } = await opened();
     const [session] = ((await harness.callRpc("sessions", {})) as { sessions: { id: string }[] }).sessions;
-    // A crash takes the worker's sockets with it and says nothing; bb reports the exit.
+    // A crash takes the worker's sockets with it and says nothing; VesnALIA reports the exit.
     daemon.relays.get("host_laptop")?.close(session?.id ?? "");
     await harness.experimental_emitHostWorkerExit("host_laptop");
     expect(ws.closeCalls).toEqual([{ code: CloseCode.failed, reason: "MacBook Pro: the plugin's helper stopped unexpectedly" }]);
@@ -346,7 +346,7 @@ describe("a remote session ends, leaving nothing open on the Mac", () => {
     expect(laptop.closed).toBe(0);
   });
 
-  it("when the Mac's bb goes away while nothing is passing, within seconds", async () => {
+  it("when the Mac's VesnALIA goes away while nothing is passing, within seconds", async () => {
     const { harness, daemon, ws } = await opened();
     const quiet = Date.now();
     daemon.down.add("host_laptop");

@@ -1,8 +1,8 @@
 /**
- * The plugin must never take the bb server down.
+ * The plugin must never take the VesnALIA server down.
  *
  * It did once, measurably: a wrapped build's stream tail called
- * `bb.realtime.publish` after a reload, the stale handle threw
+ * `alia.realtime.publish` after a reload, the stale handle threw
  * PluginContextStaleError from a detached continuation, and Node raised it as
  * an uncaughtException — killing the server, not just this plugin
  * (`process-server-uncaughtException-2026-08-10T07-11-28`).
@@ -91,7 +91,7 @@ describe("detach", () => {
   });
 
   it("survives a reporter that itself throws — the fatal shape", async () => {
-    // A stale `bb.log.warn` inside the catch is what turns a handled failure
+    // A stale `alia.log.warn` inside the catch is what turns a handled failure
     // into an uncaught exception.
     detach(async () => {
       throw new Error("boom");

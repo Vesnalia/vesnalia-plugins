@@ -60,10 +60,10 @@ trial account showed:
    install's and box's IDs, so a retried acquire finds the same sandbox;
    `held()` lists the install's sandboxes by label. Labels cannot change, so
    a relabel (036) writes the thread and name into the sandbox's name. Boat's states map to
-   bb-box's power so: starting and running states are `running`, `archiving`
+   alia-box's power so: starting and running states are `running`, `archiving`
    and `archived` are `stopped`, `error` is `unknown`, and `cancelled` or 404
    is gone.
-2. **Boxes fork a template sandbox.** For each kind, bb-box builds a template
+2. **Boxes fork a template sandbox.** For each kind, alia-box builds a template
    once, in a sandbox, from the same guest scripts as Proxmox QEMU's Linux
    VMs and Tart's Linux images (`setup/proxmox-lxc/template/guest`, with
    `BOX_RUNTIME=vm` and `DESKTOP_GPU=none`), finalizes it and stops it, then
@@ -78,7 +78,7 @@ trial account showed:
    the PATH, its own desktop stream turned off, and Docker enabled at boot,
    as boat restarts only enabled services after a restore For a desktop, its
    Rust in `/usr/local` is set aside, so the box user's own installs, and
-   bb-box's Cua Driver is called by its pinned path and put first on the
+   alia-box's Cua Driver is called by its pinned path and put first on the
    PATH, as boat puts its own wrapper back at `/usr/local/bin/cua-driver` in
    every fork.
 3. **A template serves the account.** It is found by its labels: the kind
@@ -95,32 +95,32 @@ trial account showed:
 4. **Release deletes.** A release deletes the sandbox and its snapshots. A
    stop is boat's stop: the disk stays and costs nothing, and a start
    resumes it. Neither keeps the session (`keepsSession` is false).
-5. **A held box's auto-stop is a lease.** bb-box makes each box with an
+5. **A held box's auto-stop is a lease.** alia-box makes each box with an
    auto-stop of 30 minutes, the lease, and its upkeep, every 3 minutes, sets
-   it back to 30 minutes for each running box it holds. If bb-box stops for
+   it back to 30 minutes for each running box it holds. If alia-box stops for
    good, its boxes stop within 30 minutes and cost nothing more; when it
    comes back, the sweep finds them stopped, says why, and starts or
-   releases them as their threads need. bb-box never turns auto-stop off.
-6. **bb-box reaches a box over SSH**, with its own key and the host key boat
+   releases them as their threads need. alia-box never turns auto-stop off.
+6. **alia-box reaches a box over SSH**, with its own key and the host key boat
    answers, pinned. It asks boat again after each resume, as the address and
    host key may change, and keeps the answer by sandbox, so a box's
    transports always use the current one. A box is ready once SSH as the box
-   user answers and the template's `bb-box-boat-ready` service has run and
+   user answers and the template's `alia-box-boat-ready` service has run and
    Docker answers, so a box's first command never meets a half-restored
    system.
-7. **Enrolment** is as on Namespace: a sandbox cannot reach a BB server on a
+7. **Enrolment** is as on Namespace: a sandbox cannot reach a VesnALIA server on a
    private network, so with the tailnet on (050) a box joins it as it
-   starts, and leaves it before it is deleted; otherwise BB's server needs a
-   URL the sandbox can reach. Where BB's URL is on a private network and the
-   tailnet is off, the doctor's `boat.bb` warns, and each box says it will
-   not become a BB machine, with the fix.
-8. **The desktop is bb-box's own**: the template runs the CPU desktop of
+   starts, and leaves it before it is deleted; otherwise VesnALIA's server needs a
+   URL the sandbox can reach. Where VesnALIA's URL is on a private network and the
+   tailnet is off, the doctor's `boat.alia` warns, and each box says it will
+   not become a VesnALIA machine, with the fix.
+8. **The desktop is alia-box's own**: the template runs the CPU desktop of
    Proxmox QEMU's Linux desktop VMs, with its VNC server and Selkies, reached
-   through SSH, and boat's own stream is turned off in it. bb-box's viewer,
+   through SSH, and boat's own stream is turned off in it. alia-box's viewer,
    shared control, computer use and recording then work as on every other
    Linux desktop. Boat's stream is a web page in an iframe, with no channel
-   for bb-box's control, input or recording, and its URL carries a token.
-   Measured live through a BB's relay, bb-box's video trails a drag by 57
+   for alia-box's control, input or recording, and its URL carries a token.
+   Measured live through a VesnALIA's relay, alia-box's video trails a drag by 57
    to 59 ms at 62 fps, and VNC by 62 to 63 ms at over 100 fps, 30 to 40 ms
    more than on a LAN ([the results](068-results.md)).
 9. **A box gets the smallest size that holds it**, and the doctor and the
@@ -133,7 +133,7 @@ trial account showed:
 
 ## Times
 
-Measured on 29 October 2026 from a Linux box beside BB's server, a `small`
+Measured on 29 October 2026 from a Linux box beside VesnALIA's server, a `small`
 sandbox; the details are in [the results](068-results.md):
 
 | Step | Time |
@@ -147,7 +147,7 @@ sandbox; the details are in [the results](068-results.md):
 | A `linux-desktop-cpu` box, to ready with Cua Driver answering | 24.8 to 63 s |
 
 A box that starts in 9 to 25 s needs no warm pool, which would also take
-one of the trial's 2 sandboxes. bb-box keeps none.
+one of the trial's 2 sandboxes. alia-box keeps none.
 
 ## Cost
 
@@ -158,7 +158,7 @@ time is used first. The trial's 25 hours count a `small` hour as half.
 
 ## Failures
 
-| What boat answers | What bb-box does and says |
+| What boat answers | What alia-box does and says |
 | --- | --- |
 | `401 unauthorized` | the doctor fails `boat.api`: the key is wrong, expired or revoked; make a new one in boat's dashboard |
 | `402 billing_required` | refuses the box: the plan or wallet needs paying, in boat's dashboard |

@@ -1,7 +1,7 @@
 // Pure parsing of the two Ollama Cloud API payloads.
 //
 // Kept apart from the host entry so it can be exercised against live and
-// recorded responses without a bb runtime: nothing here touches the network,
+// recorded responses without a VesnALIA runtime: nothing here touches the network,
 // the filesystem or the SDK.
 import type { HostWindow, ModelSpend } from "./contract.js";
 

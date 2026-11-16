@@ -1,16 +1,16 @@
-// Marks a portalled element as this plugin's, so BB styles and scopes it like the plugin's root.
-declare const __BB_PLUGIN_ID__: string | undefined;
+// Marks a portalled element as this plugin's, so VesnALIA styles and scopes it like the plugin's root.
+declare const __ALIA_PLUGIN_ID__: string | undefined;
 
 export function usePortalScopeProps(): {
-  "data-bb-portaled-overlay": "";
-  "data-bb-plugin-root"?: "";
-  "data-bb-plugin"?: string;
+  "data-alia-portaled-overlay": "";
+  "data-alia-plugin-root"?: "";
+  "data-alia-plugin"?: string;
 } {
   const pluginId =
-    typeof __BB_PLUGIN_ID__ === "string" ? __BB_PLUGIN_ID__ : undefined;
+    typeof __ALIA_PLUGIN_ID__ === "string" ? __ALIA_PLUGIN_ID__ : undefined;
   return {
-    "data-bb-portaled-overlay": "",
-    "data-bb-plugin-root": "",
-    ...(pluginId !== undefined ? { "data-bb-plugin": pluginId } : {}),
+    "data-alia-portaled-overlay": "",
+    "data-alia-plugin-root": "",
+    ...(pluginId !== undefined ? { "data-alia-plugin": pluginId } : {}),
   };
 }

@@ -2,7 +2,7 @@ import http from 'node:http';
 import { afterEach, expect, it, vi } from 'vitest';
 import {AccountEgress,EgressUnavailable,egressProfileSchema} from './account-egress.js';
 import type {PoolKvStorage} from './core-storage.js';
-import {createFakePluginHost} from '@get-bb/plugin-sdk/testing';
+import {createFakePluginHost} from '@vesnalia/plugin-sdk/testing';
 const a='11111111-1111-4111-8111-111111111111',b='22222222-2222-4222-8222-222222222222';
 const profile={id:'node-one',version:1,label:'Test exit',node:'node-one',hostIds:['host-one'],transport:'ssh-connect' as const,endpoint:'http://127.0.0.1:19081',dns:'remote' as const,ipv4:true as const,ipv6:false as const,failure:'closed' as const,expectedExit:['192.0.2.1'],assurance:'proxy-enforced' as const};
 function storage():PoolKvStorage{
@@ -64,7 +64,7 @@ it('refuses new route decisions at capacity without evicting a warm unassigned r
  expect((await e.acquire(a,'warm')).assigned).toBe(false);
 });
 it('keeps ordinary traffic working at historical capacity in real SDK storage and refuses new assignments',async()=>{
- const host=createFakePluginHost({pluginId:'account-pool-balanced'}),kv=host.bb.storage.kv;
+ const host=createFakePluginHost({pluginId:'account-pool-balanced'}),kv=host.alia.storage.kv;
  cleanup.push(()=>host.harness.lifecycle.dispose());
  await kv.set('account-egress-v1',{schema:1,profiles:[],bindings:{},pins:{},unassigned:Object.fromEntries(Array.from({length:4096},(_,i)=>['s'+i.toString(36),[a]]))});
  const e=new AccountEgress(kv,async()=>'host-one',async()=>true);cleanup.push(()=>e.close());await e.initialize();
@@ -76,7 +76,7 @@ it('keeps ordinary traffic working at historical capacity in real SDK storage an
  await expect(restarted.bind(a,{id:profile.id,version:1})).rejects.toThrow('tracking capacity');
 });
 it('bounds real KV bytes without making unassigned traffic a storage quota or giving assigned traffic direct fallback',async()=>{
- const host=createFakePluginHost({pluginId:'account-pool-balanced'}),kv=host.bb.storage.kv;
+ const host=createFakePluginHost({pluginId:'account-pool-balanced'}),kv=host.alia.storage.kv;
  cleanup.push(()=>host.harness.lifecycle.dispose());
  const e=new AccountEgress(kv,async()=>'host-one',async()=>true);cleanup.push(()=>e.close());
  await e.configure(profile);await e.bind(b,{id:profile.id,version:1});await e.acquire(b,'warm-assigned');

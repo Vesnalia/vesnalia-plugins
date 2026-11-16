@@ -27,7 +27,7 @@ The sharp edges are concentrated in host file safety, skill ownership rules, and
 
 **Risk:** A forgotten server remains configured on hosts and can return as a pending suggestion on a later scan (`server.ts:2613-2623`, `server.ts:740-779`).
 
-**Workaround:** Use `bb tools remove <name> --dry-run` to preview host removal; use `forget` only when host configs must stay as they are.
+**Workaround:** Use `alia tools remove <name> --dry-run` to preview host removal; use `forget` only when host configs must stay as they are.
 
 ### Legacy fan-out can stop to protect files
 
@@ -55,13 +55,13 @@ The sharp edges are concentrated in host file safety, skill ownership rules, and
 
 **Workaround:** Remove comments with the config owner, or make the requested edit manually and rescan.
 
-### BB skill registry paths are owned by BB
+### VesnALIA skill registry paths are owned by VesnALIA
 
-**Problem:** The retained machine-home policy `own` suppresses legacy fan-out handling of the BB skill home; replacing a real directory with a symlink removes it from BB's registry (`skills.ts:103-117`, `host.ts:533-570`).
+**Problem:** The retained machine-home policy `own` suppresses legacy fan-out handling of the VesnALIA skill home; replacing a real directory with a symlink removes it from VesnALIA's registry (`skills.ts:103-117`, `host.ts:533-570`).
 
-**Risk:** An action that treats `~/.bb/skills` like a normal CLI home can hide a skill from BB sessions.
+**Risk:** An action that treats `~/.vesnalia/skills` like a normal CLI home can hide a skill from VesnALIA sessions.
 
-**Workaround:** Keep real folders in `~/.bb/skills`; the legacy fan-out planner mirrors eligible canon entries beside that home (`skills.ts:458-499`).
+**Workaround:** Keep real folders in `~/.vesnalia/skills`; the legacy fan-out planner mirrors eligible canon entries beside that home (`skills.ts:458-499`).
 
 ## Medium
 
@@ -73,13 +73,13 @@ The sharp edges are concentrated in host file safety, skill ownership rules, and
 
 **Workaround:** Review the competing versions and use the legacy adopt/take host operation only when that workflow is intentionally invoked (`host.ts:476-531`).
 
-### A successful OpenCode update can leave BB's default unchanged
+### A successful OpenCode update can leave VesnALIA's default unchanged
 
-**Problem:** OpenCode host writes and BB database preference writes are separate operations; the BB write helper returns false on database errors (`host.ts:638-698`, `server.ts:2218-2255`).
+**Problem:** OpenCode host writes and VesnALIA database preference writes are separate operations; the VesnALIA write helper returns false on database errors (`host.ts:638-698`, `server.ts:2218-2255`).
 
-**Risk:** CLI defaults and BB's new-chat default can differ.
+**Risk:** CLI defaults and VesnALIA's new-chat default can differ.
 
-**Workaround:** Check `bbUpdated` in the action result and set the BB default after correcting the database access issue.
+**Workaround:** Check `aliaUpdated` in the action result and set the VesnALIA default after correcting the database access issue.
 
 ### Skill archive listing is bounded, archive storage is not
 
@@ -89,13 +89,13 @@ The sharp edges are concentrated in host file safety, skill ownership rules, and
 
 **Workaround:** Preserve the archive directory when backing up host data; inspect older entries directly if a snapshot is absent from the UI.
 
-### BB rejects oversized skill trees; the planner checks bytes only
+### VesnALIA rejects oversized skill trees; the planner checks bytes only
 
-**Problem:** `bbTreeProblem` can report both the 10 MiB and 1,000-file limits, but both retained planners pass only `bytes`, leaving its `files` parameter at zero. The planner branches therefore block over-size trees but do not enforce the file-count limit (`skills.ts:145-162`, `skills.ts:473-477`, `skills.ts:590-597`).
+**Problem:** `aliaTreeProblem` can report both the 10 MiB and 1,000-file limits, but both retained planners pass only `bytes`, leaving its `files` parameter at zero. The planner branches therefore block over-size trees but do not enforce the file-count limit (`skills.ts:145-162`, `skills.ts:473-477`, `skills.ts:590-597`).
 
-**Risk:** A skill under the byte limit but over 1,000 files can pass the planner while BB rejects the injected tree.
+**Risk:** A skill under the byte limit but over 1,000 files can pass the planner while VesnALIA rejects the injected tree.
 
-**Workaround:** Keep skill trees below both BB limits; review `bbFiles` in the skills scan when the file count may exceed 1,000 (`contract.ts:99-105`, `skills.ts:148-160`).
+**Workaround:** Keep skill trees below both VesnALIA limits; review `aliaFiles` in the skills scan when the file count may exceed 1,000 (`contract.ts:99-105`, `skills.ts:148-160`).
 
 ### Dependency and cache files are removed from skill copies
 
@@ -118,7 +118,7 @@ The sharp edges are concentrated in host file safety, skill ownership rules, and
 
 **Risk:** Forgetting any of these makes a CLI look "not installed", the canon look divergent, or a link fail with `EPERM`. Windows paths (`C:\…`) in a command or argument mark a server as machine-bound.
 
-**Workaround:** Keep platform checks in `platform.ts` and `process.platform` guards at the write sites. `bb plugin build` may fail to bootstrap its toolchain on Windows; `tests/skills-sync.test.ts` then loads `skills-sync.ts` from source.
+**Workaround:** Keep platform checks in `platform.ts` and `process.platform` guards at the write sites. `alia plugin build` may fail to bootstrap its toolchain on Windows; `tests/skills-sync.test.ts` then loads `skills-sync.ts` from source.
 
 See [MCP catalogue](features/mcp-catalog.md), [skills](features/skills.md), [OpenCode](features/opencode.md), and [data model](data-model.md).
 

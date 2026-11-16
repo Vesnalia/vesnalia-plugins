@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><style id="bb-theme"></style><style>html,body{margin:0;background:var(--background,#222);font-family:system-ui,sans-serif;overflow:hidden}#screen{position:relative;width:100vw;height:100vh}.absolute{position:absolute}.inset-0{inset:0}</style></head><body><div id="screen"></div>
+<!doctype html><html><head><meta charset="utf-8"><style id="alia-theme"></style><style>html,body{margin:0;background:var(--background,#222);font-family:system-ui,sans-serif;overflow:hidden}#screen{position:relative;width:100vw;height:100vh}.absolute{position:absolute}.inset-0{inset:0}</style></head><body><div id="screen"></div>
 <script type="module">
 import "./client.js";
 const q = new URLSearchParams(location.search);
@@ -8,7 +8,7 @@ window.theme = (name) => {
   document.documentElement.classList.toggle("light", name === "light");
 };
 window.theme(q.get("theme") ?? "dark");
-await fetch(THEME_URL).then((response) => response.text()).then((css) => (document.getElementById("bb-theme").textContent = css.replace(/@theme(?:\s+inline)?\s*\{/g, ":root {"))).catch(() => undefined);
+await fetch(THEME_URL).then((response) => response.text()).then((css) => (document.getElementById("alia-theme").textContent = css.replace(/@theme(?:\s+inline)?\s*\{/g, ":root {"))).catch(() => undefined);
 const session = new SelkiesSession(`ws://127.0.0.1:${q.get("socket") ?? 8771}/device`, { device: { model: q.get("model") ?? "iPhone 18 Pro" } });
 document.getElementById("screen").appendChild(session.element);
 session.setGuest(q.get("guest") ?? "macos");

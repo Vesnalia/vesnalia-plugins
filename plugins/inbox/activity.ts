@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const slug = z.string().min(1).max(80).regex(/^[a-z0-9][a-z0-9-]*$/);
@@ -26,9 +26,9 @@ export const activityRpc = {
 };
 
 /** One durable row per source + entity. Dismissal keeps the dedup receipt. */
-export function createActivities(bb: BbPluginApi, dispatch: (item: ActivityItem, current: () => boolean) => Promise<void>) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+export function createActivities(alia: AliaPluginApi, dispatch: (item: ActivityItem, current: () => boolean) => Promise<void>) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS extension_activity (
       id TEXT PRIMARY KEY, event_id TEXT NOT NULL, occurred_at INTEGER NOT NULL,
       item TEXT NOT NULL, dismissed INTEGER NOT NULL DEFAULT 0)`,
@@ -60,17 +60,17 @@ export function createActivities(bb: BbPluginApi, dispatch: (item: ActivityItem,
         // Commit before delivery so a lost RPC response cannot duplicate a ping.
         db.prepare("INSERT OR REPLACE INTO extension_activity (id,event_id,occurred_at,item,dismissed) VALUES (?,?,?,?,0)")
           .run(id, input.eventId, input.occurredAt, JSON.stringify(item));
-        bb.realtime.publish("inbox", { total: -1, at: attentionAt });
+        alia.realtime.publish("inbox", { total: -1, at: attentionAt });
         try { await dispatch(item, () => {
           const latest = db.prepare("SELECT event_id FROM extension_activity WHERE id = ? AND dismissed = 0").get(id) as { event_id: string } | undefined;
           return latest?.event_id === input.eventId;
         }); }
-        catch { bb.log.warn("An extension notification could not be delivered. Its inbox item is saved."); }
+        catch { alia.log.warn("An extension notification could not be delivered. Its inbox item is saved."); }
         return { accepted: true as const, id, duplicate: false };
       },
       dismissActivity({ id, attentionAt }: { id: string; attentionAt: number }) {
         db.prepare("UPDATE extension_activity SET dismissed = 1 WHERE id = ? AND json_extract(item, '$.attentionAt') <= ?").run(id, attentionAt);
-        bb.realtime.publish("inbox", { total: -1, at: Date.now() });
+        alia.realtime.publish("inbox", { total: -1, at: Date.now() });
         return { ok: true };
       },
     },

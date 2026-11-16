@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-thread-reference",
+  "name": "alia-plugin-thread-reference",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
-    "name": "BB Thread Reference",
-    "description": "Drag any BB thread into a chat composer to reference its fresh context when you send.",
+  "alia": {
+    "name": "VesnALIA Thread Reference",
+    "description": "Drag any VesnALIA thread into a chat composer to reference its fresh context when you send.",
     "branding": {
       "icon": "MessageSquare"
     },
@@ -21,9 +21,7 @@
   "scripts": {
     "test": "vitest run"
   },
-  "dependencies": {},
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -54,5 +52,22 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/thread-reference#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/thread-reference"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

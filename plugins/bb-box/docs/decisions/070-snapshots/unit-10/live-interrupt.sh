@@ -2,7 +2,7 @@
 set -uo pipefail
 cd "$HOME"
 B=./bbc
-export PATH=$HOME/.local/share/bb-box/microsandbox/bin:$PATH
+export PATH=$HOME/.local/share/alia-box/microsandbox/bin:$PATH
 now() { date +%s.%N; }
 $B box machines add linux --on microsandbox --name msb-cut | grep -E 'State|Timings'
 $B box run msb-cut --machine 'echo before > ~/work.txt; sync'
@@ -16,7 +16,7 @@ $B box snapshot restore msb-cut before --machine --replace > restore-cut.log 2>&
 fresh=
 for _ in $(seq 1 240); do
   for s in $(msb ls --format json | python3 -c 'import json,sys; [print(s["name"]) for s in json.load(sys.stdin) if s["name"].startswith("'"$old"'-") and s["status"].lower()=="running"]'); do
-    t=$(msb exec "$s" -- stat -c %Y /home/box/.config/bb-box/env 2>/dev/null || echo 0)
+    t=$(msb exec "$s" -- stat -c %Y /home/box/.config/alia-box/env 2>/dev/null || echo 0)
     [ "$t" -ge "$began" ] && fresh=$s
   done
   [ -n "$fresh" ] && break
@@ -24,9 +24,9 @@ for _ in $(seq 1 240); do
 done
 echo "new guest $fresh took its access file"
 sleep 1
-echo "ready file before the restart: $(msb exec "$fresh" -- sh -c '[ -e /run/bb-box/ready ] && echo yes || echo no')"
+echo "ready file before the restart: $(msb exec "$fresh" -- sh -c '[ -e /run/alia-box/ready ] && echo yes || echo no')"
 msb ls
-$B plugin reload bb-box | head -1
+$B plugin reload alia-box | head -1
 wait
 cat restore-cut.log
 t=$(now); $B box sweep | tail -1; echo "recovery $(awk -v a=$t -v b=$(now) 'BEGIN { printf "%.2f s", b - a }')"
@@ -34,6 +34,6 @@ for _ in $(seq 1 60); do $B box machines 2>&1 | grep -q 'msb-cut.*ready' && brea
 $B box machines | grep msb-cut
 msb ls
 echo "box runs on: $($B box status msb-cut 2>/dev/null | grep -i guest)"
-$B box run msb-cut --machine 'cat ~/work.txt; [ -e /run/bb-box/ready ] && echo ready-file; hostname; sudo bb-box-identity status | grep -E "^boot="'
+$B box run msb-cut --machine 'cat ~/work.txt; [ -e /run/alia-box/ready ] && echo ready-file; hostname; sudo alia-box-identity status | grep -E "^boot="'
 $B machine list | grep msb-cut
 grep -E 'msb-cut|'"$old" bbdata/logs/server.1.log | sed -E 's/.*"msg":"//' | grep -E 'Restored|Deleted guest|restart|recover|cut short|confirm' | tail -6 | cut -c1-250

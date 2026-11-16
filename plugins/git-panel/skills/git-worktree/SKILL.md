@@ -1,6 +1,6 @@
 ---
 name: git-worktree
-description: Git Panel plugin — a "Git worktree" tab in BB's thread panel that stages, commits, pulls, pushes, syncs, switches branches and stashes in the thread's workspace. Use when the user asks what the panel does, why it refused a Git action, or where to do Git work in BB.
+description: Git Panel plugin — a "Git worktree" tab in VesnALIA's thread panel that stages, commits, pulls, pushes, syncs, switches branches and stashes in the thread's workspace. Use when the user asks what the panel does, why it refused a Git action, or where to do Git work in VesnALIA.
 ---
 
 # Git worktree
@@ -23,7 +23,7 @@ repository you are both working in.
   "No new changes" when the tree is clean and in step, or "No upstream" when the
   branch has none. Diverged outranks staged, which outranks behind, ahead, then
   unstaged.
-- Commit goes through BB's own commit feature, which writes the commit message.
+- Commit goes through VesnALIA's own commit feature, which writes the commit message.
   The user does not type one.
 - A branch pill opens a picker: Local and Remote tabs, a search field, a button
   that creates a branch off the current HEAD and checks it out (uncommitted work

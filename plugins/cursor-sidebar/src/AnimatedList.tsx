@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { autoAnimate } from "./vendor/auto-animate/index.mjs";
 
 /** Inbox Sidebar's list animation and timing, reused for every sibling list.
- * Derived from bb-plugin-thread-inbox (MIT); see THIRD-PARTY-NOTICES.md.
+ * Derived from alia-plugin-thread-inbox (MIT); see THIRD-PARTY-NOTICES.md.
  */
 
 /** How long a row, or a whole project, takes to slide out of the way. Slower

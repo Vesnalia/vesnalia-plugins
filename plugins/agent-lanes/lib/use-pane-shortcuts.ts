@@ -53,7 +53,7 @@ export function usePaneShortcuts(
       }
       if (!latest.current(event)) return;
       event.preventDefault();
-      // Claim only handled keys before bb's own pane/global shortcuts.
+      // Claim only handled keys before VesnALIA's own pane/global shortcuts.
       event.stopPropagation();
     };
     doc.addEventListener("pointerdown", onPointerDown, true);

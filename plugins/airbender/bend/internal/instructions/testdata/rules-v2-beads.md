@@ -3,7 +3,7 @@
 ## Working with beads through Airbender
 
 This repository's issues are tracked in beads (`bd`) and worked from the
-Airbender tab in BB. These are the instructions for working on issues here;
+Airbender tab in VesnALIA. These are the instructions for working on issues here;
 follow them whenever you work on one.
 
 The commands you need (`bd <command> --help` says more):

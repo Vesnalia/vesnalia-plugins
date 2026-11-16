@@ -1,5 +1,5 @@
 // test/backend/jobs.test.ts — the in-memory job registry (§7.2, §7.3).
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { JOB_CHANNEL, jobSchema } from "../../contract";
@@ -16,7 +16,7 @@ function publishedJobs(): unknown[] {
 
 beforeEach(() => {
   host = createFakePluginHost({ pluginId: "file-manager" });
-  jobs = createJobs(host.bb);
+  jobs = createJobs(host.alia);
 });
 
 afterEach(async () => {
@@ -120,7 +120,7 @@ describe("createJobs", () => {
   });
 
   it("keeps running jobs when the retention cap prunes terminal ones", () => {
-    const bounded = createJobs(host.bb, { maxJobs: 3 });
+    const bounded = createJobs(host.alia, { maxJobs: 3 });
     const kept = bounded.create({ label: "running" });
     for (let index = 0; index < 5; index += 1) {
       const job = bounded.create({ label: `done-${index}` });

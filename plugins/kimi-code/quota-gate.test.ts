@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ProviderUsageResult } from "@get-bb/plugin-sdk/provider-bridge";
+import type { ProviderUsageResult } from "@vesnalia/plugin-sdk/provider-bridge";
 
 import { gateQuotaExhaustedTurns } from "./src/quota-gate.js";
 
 // The gate exists because kimi's acp-server answers a quota-exhausted (429)
 // prompt with a bare `stopReason: "end_turn"` and zero session updates — the
-// failure is invisible on the ACP wire, so bb renders "The agent ended the
+// failure is invisible on the ACP wire, so VesnALIA renders "The agent ended the
 // turn without replying". The gate reads the same OAuth usage endpoint the
 // maintenance dialect already uses and fails the turn fast with a typed
 // rateLimited recovery hint while a window is fully spent.
@@ -200,7 +200,7 @@ describe("gateQuotaExhaustedTurns", () => {
     expect(stdout.writes).toEqual([]);
   });
 
-  it("returns the bridge untouched when disabled (BB_KIMI_QUOTA_GATE=0)", async () => {
+  it("returns the bridge untouched when disabled (ALIA_KIMI_QUOTA_GATE=0)", async () => {
     const bridge = bridgeRecorder();
     const wrapped = gateQuotaExhaustedTurns(bridge, {
       enabled: false,

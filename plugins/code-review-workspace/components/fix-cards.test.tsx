@@ -4,7 +4,7 @@
 // its pill and row too, and Comments' chips for where fixes stand.
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { StatusFacts } from "../lib/comments";
 import type { WorkspaceApi } from "../lib/workspace-context";
 

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { interdiff } from "../src/interdiff";
 import { getReviewState, patchReviewState } from "../lib/panel-state";
@@ -17,9 +17,9 @@ afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear(); resto
 
 const file = (path: string, line: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n@@ -1 +1 @@\n-x\n+${line}\n`;
 const at = (lines: Record<string, string>) => Object.entries(lines).map(([path, line]) => file(`src/${path}.ts`, line)).join("");
-const patch = at({ a: "aa", b: "bb", c: "cc", d: "dd", e: "ee" });
+const patch = at({ a: "aa", b: "alia", c: "cc", d: "dd", e: "ee" });
 // Since your review, a.ts and e.ts changed: Caching has nothing new. Since the PR's commit c2bbbbb, only b.ts did.
-const reviewed = at({ a: "a0", b: "bb", c: "cc", d: "dd", e: "e0" });
+const reviewed = at({ a: "a0", b: "alia", c: "cc", d: "dd", e: "e0" });
 const atCommit = at({ a: "aa", b: "b1", c: "cc", d: "dd", e: "ee" });
 const guide = {
   title: "Guide", intent: "Rows.", unplacedFiles: [] as string[],
@@ -88,7 +88,7 @@ test.each([false, true])("a re-review opens on what changed since your review, h
   await waitFor(() => expect(shown(slot)).toEqual(["src/e.ts"]));
   const breadcrumb = within(slot.getByRole("navigation", { name: "Breadcrumb" }));
   if (fallback) await breadcrumb.findByRole("button", { name: "pr-42 Parse rows" });
-  // Without BB's title bar, the fallback appends the review title to this button's name.
+  // Without VesnALIA's title bar, the fallback appends the review title to this button's name.
   fireEvent.click(breadcrumb.getByRole("button", { name: /^pr-42(?: |$)/ }));
   fireEvent.click(await slot.findByRole("button", { name: "Continue: Logging" }));
   await waitFor(() => expect(shown(slot)).toEqual(["src/e.ts"]));
@@ -170,7 +170,7 @@ test("the intro's columns are spaced by margins, so an empty switch slot costs t
   slot.lifecycle.unmount();
 }, 15_000);
 
-test("in a card under 340px the switch's segments pad less, so BB's larger phone text fits a folded Duo's", async () => {
+test("in a card under 340px the switch's segments pad less, so VesnALIA's larger phone text fits a folded Duo's", async () => {
   const { slot } = await renderWorkspace();
   await waitFor(() => expect(shown(slot)).toEqual(["src/a.ts"]));
   const group = within(slot.getByRole("main")).getByRole("radiogroup", { name: "Changes shown" });
@@ -404,7 +404,7 @@ test("your switch holds for the review across chapters and coming back, until a 
   fireEvent.click(choice(slot, "All changes"));
   fireEvent.click(chapters(slot).getByText("Caching"));
   await waitFor(() => expect(shown(slot)).toEqual(["src/c.ts", "src/d.ts"]));
-  // Coming back, as BB's remount at 768px does too.
+  // Coming back, as VesnALIA's remount at 768px does too.
   slot.lifecycle.unmount();
   ({ slot, rpc, push } = await renderWorkspace());
   await waitFor(() => expect(select(slot)).toBe("Show changes: All changes"));
@@ -463,7 +463,7 @@ test("a file the narrowing hides, opened from the chapters, a Find result, or a 
   await waitFor(() => expect(select(slot)).toBe("Show changes: All changes"));
   fireEvent.click(choice(slot, "Since your review · 1 of 2 files"));
   await waitFor(() => expect(shown(slot)).toEqual(["src/a.ts"]));
-  fireEvent.change(slot.getByRole("searchbox", { name: "Find in review" }), { target: { value: "bb" } });
+  fireEvent.change(slot.getByRole("searchbox", { name: "Find in review" }), { target: { value: "alia" } });
   const results = within(await slot.findByRole("list", { name: "Results" }));
   fireEvent.click(results.getByText((_, el) => el?.tagName === "SPAN" && el.textContent === "src/b.ts:1").closest("button")!);
   await waitFor(() => expect(shown(slot)).toEqual(["src/a.ts", "src/b.ts"]));
@@ -543,7 +543,7 @@ test("a guide built while the comparison loads waits for it too, and your own sc
   slot.lifecycle.unmount();
 }, 15_000);
 
-test("as BB remounts the page, the line it carries stays the place while the comparison loads: what's at the top meanwhile isn't kept", async () => {
+test("as VesnALIA remounts the page, the line it carries stays the place while the comparison loads: what's at the top meanwhile isn't kept", async () => {
   let { slot } = await renderWorkspace();
   await waitFor(() => expect(shown(slot)).toEqual(["src/a.ts"]));
   const place = { file: "src/a.ts", index: "1,1", offset: 12 };
@@ -558,8 +558,8 @@ test("as BB remounts the page, the line it carries stays the place while the com
 
 test("a comment on a line that didn't change since your review, in a file that did, shows all changes, so it lands on its line", async () => {
   const twoHunks = (first: string) => `diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -1 +1 @@\n-x\n+${first}\n@@ -20 +20 @@\n-y\n+yy\n`;
-  const now = twoHunks("aa") + at({ b: "bb", c: "cc", d: "dd", e: "ee" });
-  const { slot } = await renderWorkspace({ now, then: twoHunks("a0") + at({ b: "bb", c: "cc", d: "dd", e: "e0" }), rpc: {
+  const now = twoHunks("aa") + at({ b: "alia", c: "cc", d: "dd", e: "ee" });
+  const { slot } = await renderWorkspace({ now, then: twoHunks("a0") + at({ b: "alia", c: "cc", d: "dd", e: "e0" }), rpc: {
     getDraft: () => ({ draft: { targetKey: "pr-42", verdict: "COMMENT", body: "", comments: [{ ...comment("src/a.ts"), line: 20 }] } }),
   } });
   // Since your review, a.ts shows only its first hunk.

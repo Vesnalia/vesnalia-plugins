@@ -12,9 +12,9 @@ interface Theme {
 
 const root = new URL("../", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), "utf8");
-const manifest: { bb: { server: string; skills: string[]; themes: Theme[] } } =
+const manifest: { alia: { server: string; skills: string[]; themes: Theme[] } } =
   JSON.parse(read("package.json"));
-const { themes } = manifest.bb;
+const { themes } = manifest.alia;
 
 const tokensToSet = [
   "--canvas",
@@ -36,7 +36,7 @@ const tokensToSet = [
   "--file-accent",
 ];
 
-// BB toggles only a `dark` class on <html>, so `.light` rules never reach the root.
+// VesnALIA toggles only a `dark` class on <html>, so `.light` rules never reach the root.
 const rootSelectors = { light: [":root"], dark: [":root", ".dark"] };
 
 function resolvedTokens(cssPath: string, mode: "light" | "dark") {
@@ -52,7 +52,7 @@ function resolvedTokens(cssPath: string, mode: "light" | "dark") {
   return values;
 }
 
-// Mirrors BB's isCodeThemeFilePath; any other codeTheme value names a bundled theme.
+// Mirrors VesnALIA's isCodeThemeFilePath; any other codeTheme value names a bundled theme.
 const codeThemeFiles = [
   ...new Set(themes.flatMap((theme) => [theme.codeTheme.dark, theme.codeTheme.light])),
 ].filter((ref) => ref.includes("/") || ref.toLowerCase().endsWith(".json"));
@@ -66,13 +66,13 @@ test("the package ships every file the manifest names, plus the license", () => 
     }),
   );
   const shipped = new Set(pack.files.map((file: { path: string }) => file.path));
-  const skillFiles = manifest.bb.skills.flatMap((dir) =>
+  const skillFiles = manifest.alia.skills.flatMap((dir) =>
     readdirSync(new URL(`${dir}/`, root), { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => `${dir}/${entry.name}/SKILL.md`),
   );
   const needed = [
-    manifest.bb.server,
+    manifest.alia.server,
     ...themes.map((theme) => theme.css),
     ...codeThemeFiles,
     ...skillFiles,
@@ -81,7 +81,7 @@ test("the package ships every file the manifest names, plus the license", () => 
   expect(needed.filter((path) => !shipped.has(path))).toEqual([]);
 });
 
-test.each(codeThemeFiles)("%s is a VS Code theme BB can load", (path) => {
+test.each(codeThemeFiles)("%s is a VS Code theme VesnALIA can load", (path) => {
   const theme = JSON.parse(read(path));
   expect(theme.name).toMatch(/\S/);
   expect(["dark", "light"]).toContain(theme.type);
@@ -96,7 +96,7 @@ test.each([
   const byId = Object.fromEntries(themes.map((theme) => [theme.id, theme]));
   const forced = byId[id];
   const follow = byId.vesper;
-  // BB switches color-scheme and shadows only with its .dark class, so a forced
+  // VesnALIA switches color-scheme and shadows only with its .dark class, so a forced
   // palette must carry its mode's own, on top of Vesper's palette for that mode.
   for (const appMode of ["light", "dark"] as const) {
     const tokens = resolvedTokens(forced.css, appMode);
@@ -112,7 +112,7 @@ test.each([
 });
 
 describe.each(themes)("$id", ({ css }) => {
-  test.each(["light", "dark"] as const)("sets every token BB expects of a palette in %s mode", (mode) => {
+  test.each(["light", "dark"] as const)("sets every token VesnALIA expects of a palette in %s mode", (mode) => {
     const values = resolvedTokens(css, mode);
     expect(tokensToSet.filter((token) => !(token in values))).toEqual([]);
     const ansiWithoutText = Object.keys(values).filter(

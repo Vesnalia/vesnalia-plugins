@@ -1,9 +1,9 @@
 // Office Viewer — a website on devices: the same mockups as HTML files, for an
 // address on the web. The plugin server fetches the page and its files, so
-// sites that refuse to be framed still show. A button beside BB's Browser
+// sites that refuse to be framed still show. A button beside VesnALIA's Browser
 // address bar opens the current page here.
 import { useMemo, useState } from "react";
-import { useBbNavigate, useRpc, type PluginThreadPanelProps } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc, type PluginThreadPanelProps } from "@vesnalia/plugin-sdk/app";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon, Globe02Icon, SmartPhone01Icon } from "@hugeicons/core-free-icons";
 import type { rpcContract } from "../../server";
@@ -22,7 +22,7 @@ const bytesOf = (base64: string) => Uint8Array.from(atob(base64), (char) => char
 /** The panel tab: an address bar over the device viewer. */
 export function SitePanel({ params }: PluginThreadPanelProps) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const passed = params && typeof params === "object" && !Array.isArray(params) && typeof params.url === "string" ? params.url : null;
   const initial = normalizeAddress(passed ?? (() => { try { return localStorage.getItem(LAST_ADDRESS) ?? ""; } catch { return ""; } })());
   const [url, setUrl] = useState<string | null>(initial);
@@ -109,9 +109,9 @@ export function SitePanel({ params }: PluginThreadPanelProps) {
   return <DevicesViewer key={url} pages={pages} title={new URL(url).host} address={url} heading={heading} />;
 }
 
-/** Beside BB's Browser address bar: opens the page in the device viewer. */
+/** Beside VesnALIA's Browser address bar: opens the page in the device viewer. */
 export function BrowserDevicesButton({ url }: { url: string }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const address = normalizeAddress(url);
   return (
     <span title={t("siteOpenDevices")} className="shrink-0">

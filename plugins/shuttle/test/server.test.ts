@@ -2,14 +2,14 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it, vi } from "vitest";
 import { configToToml } from "../src/config";
 import { createShuttlePlugin } from "../server";
 import { FakePort, testConfig, fakeRunner, pr } from "./helpers";
 
-type Subscription = Parameters<BbPluginApi["sdk"]["subscribe"]>[0];
+type Subscription = Parameters<AliaPluginApi["sdk"]["subscribe"]>[0];
 
 function projectChanged(subscriptions: Set<Subscription>, change: "project-created" | "project-updated" | "project-deleted" | "threads-changed") {
   for (const subscription of subscriptions) {
@@ -43,7 +43,7 @@ async function boot(options: { port?: FakePort; now?: () => number } = {}) {
     },
   });
   const plugin = createShuttlePlugin({ port: () => port, runner, tickMs: 3_600_000, now: options.now });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const { behavior, inspection, lifecycle } = host.harness;
   return { port, behavior, inspection, lifecycle, harness: host.harness, plugin, subscriptions, unsubscribed };
 }
@@ -147,7 +147,7 @@ describe("the plugin", () => {
       const key = "forge:acme/app#2";
       await behavior.callRpc("lookup", { query: key });
       expect(await behavior.callRpc("projects", { key })).toEqual({ projects: [], suggested: null });
-      await expect(behavior.callRpc("review", { key })).rejects.toThrow("no bb project matches acme/app");
+      await expect(behavior.callRpc("review", { key })).rejects.toThrow("no VesnALIA project matches acme/app");
       projectChanged(subscriptions, "threads-changed");
       await behavior.callRpc("projects", { key });
       expect(reads).toHaveBeenCalledTimes(1);
@@ -173,7 +173,7 @@ describe("the plugin", () => {
     expect(unsubscribed.sort()).toEqual(["project:changed", "realtime:connection"]);
   });
 
-  it("refreshes cached BB projects on demand without syncing PRs or starting a review", async () => {
+  it("refreshes cached VesnALIA projects on demand without syncing PRs or starting a review", async () => {
     const { behavior, lifecycle, port } = await boot();
     try {
       await behavior.callRpc("projects", {});
@@ -183,8 +183,8 @@ describe("the plugin", () => {
       expect(port.spawned).toEqual([]);
       expect(port.invalidations).toContainEqual(["projects"]);
       const invalidations = port.invalidations.length;
-      vi.spyOn(port, "listProjects").mockRejectedValueOnce(new Error("BB unavailable"));
-      await expect(behavior.callRpc("refreshProjects", {})).rejects.toThrow("BB unavailable");
+      vi.spyOn(port, "listProjects").mockRejectedValueOnce(new Error("VesnALIA unavailable"));
+      await expect(behavior.callRpc("refreshProjects", {})).rejects.toThrow("VesnALIA unavailable");
       expect(port.invalidations).toHaveLength(invalidations);
     } finally {
       await lifecycle.dispose();
@@ -271,7 +271,7 @@ describe("the plugin", () => {
     await lifecycle.dispose();
   });
 
-  it("keeps cleanup pending across a reload and completes it through bb's idle event", async () => {
+  it("keeps cleanup pending across a reload and completes it through VesnALIA's idle event", async () => {
     const { behavior, lifecycle, harness, port, plugin } = await boot();
     const config = testConfig();
     config.servers[0]!.commands.review = "rv";
@@ -300,8 +300,8 @@ describe("the plugin", () => {
     await reloaded.harness.lifecycle.dispose();
   });
 
-  // bb gives a stopping service 5 s, then marks the plugin degraded and loads no new version until someone reloads it.
-  it("stops the sync service at once when bb aborts it while bb holds a call, and dispose waits for that tick", async () => {
+  // VesnALIA gives a stopping service 5 s, then marks the plugin degraded and loads no new version until someone reloads it.
+  it("stops the sync service at once when VesnALIA aborts it while VesnALIA holds a call, and dispose waits for that tick", async () => {
     let release!: () => void;
     const held = new Promise<void>((resolve) => (release = resolve));
     let holding = false;
@@ -320,7 +320,7 @@ describe("the plugin", () => {
     await behavior.callRpc("importToml", { toml: configToToml(testConfig()), apply: true });
     await behavior.callRpc("lookup", { query: "forge:acme/app#2" });
     await behavior.callRpc("review", { key: "forge:acme/app#2" });
-    // Three quiet hours later, the tick asks bb about the review thread, and bb does not answer.
+    // Three quiet hours later, the tick asks VesnALIA about the review thread, and VesnALIA does not answer.
     clock.now += 3 * 60 * 60_000;
     holding = true;
     const service = harness.runService("sync");
@@ -339,12 +339,12 @@ describe("the plugin", () => {
     expect(disposed).toBe(true);
   });
 
-  it("hands bb's thread.failed to Shuttle with whether the thread got a workspace, so only a setup failure starts the review again", async () => {
+  it("hands VesnALIA's thread.failed to Shuttle with whether the thread got a workspace, so only a setup failure starts the review again", async () => {
     const { behavior, lifecycle, harness, port } = await boot();
     await behavior.callRpc("importToml", { toml: configToToml(testConfig()), apply: true });
     await behavior.callRpc("lookup", { query: "forge:acme/app#2" });
     const { threadId } = (await behavior.callRpc("review", { key: "forge:acme/app#2" })) as { threadId: string };
-    // Not bb's "Provisioning thread failed", so only the environment it reports can say the workspace never came.
+    // Not VesnALIA's "Provisioning thread failed", so only the environment it reports can say the workspace never came.
     const failed = (id: string, environmentId: string | null) =>
       harness.emitThreadEvent("thread.failed", { thread: makeThreadResponse({ id, status: "error", environmentId }), error: "The machine went away" });
     expect((await failed(threadId, "env_1")).errors).toEqual([]);

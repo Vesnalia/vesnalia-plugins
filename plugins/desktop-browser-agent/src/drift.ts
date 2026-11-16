@@ -108,7 +108,7 @@ export function formatDrift(report: DriftReport): string {
   return lines.join("\n");
 }
 
-/** A report with its verdict and one-line summary, as the settings page and `bb cua drift --json` show it. */
+/** A report with its verdict and one-line summary, as the settings page and `alia cua drift --json` show it. */
 export function driftView(report: DriftReport): DriftReport & { drifted: boolean; summary: string } {
   return { ...report, drifted: hasDrift(report), summary: summarizeDrift(report) };
 }

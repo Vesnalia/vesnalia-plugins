@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -59,7 +59,7 @@ function useDockerStart(target: MachineSetup, label: string, onDone: () => Promi
     try {
       const answer = await rpc.call("setup.docker", { hostId: target.hostId });
       const result = answer.result;
-      setProblem(result.ok ? null : result.reason === "problems" ? result.problems.map((item) => item.message).join(" ") : "Someone else saved BB Box's settings at the same moment. Try again.");
+      setProblem(result.ok ? null : result.reason === "problems" ? result.problems.map((item) => item.message).join(" ") : "Someone else saved VesnALIA Box's settings at the same moment. Try again.");
       await onDone();
     } catch (caught) {
       setProblem(message(caught));
@@ -79,11 +79,11 @@ function useDockerStart(target: MachineSetup, label: string, onDone: () => Promi
 function ReadyCard({ target, access, onDone }: { target: MachineSetup; access: MachineAccessProblem | null; onDone: () => Promise<unknown> }) {
   const failed = target.build?.state === "failed" ? target.build.detail : null;
   const use = useDockerStart(target, failed ? "Try again" : `Use Docker on ${target.name}`, onDone);
-  const where = target.here ? `${target.name}, where BB runs,` : target.name;
+  const where = target.here ? `${target.name}, where VesnALIA runs,` : target.name;
   return (
     <SetupCard title={target.here ? "Use Docker on this machine" : `Use Docker on ${target.name}`} action={use.button}>
       <p>
-        {where} has Docker {target.docker}. BB Box builds its Linux image there, {estimate(target.took.linux, LINUX_BUILD_WORDS)}, then makes Linux boxes in seconds.
+        {where} has Docker {target.docker}. VesnALIA Box builds its Linux image there, {estimate(target.took.linux, LINUX_BUILD_WORDS)}, then makes Linux boxes in seconds.
       </p>
       {use.problem || failed ? (
         <p role="alert" className="mt-2 text-destructive-text">
@@ -92,7 +92,7 @@ function ReadyCard({ target, access, onDone }: { target: MachineSetup; access: M
       ) : null}
       {access ? (
         <p className="mt-2 text-warning-text">
-          Boxes will not join BB yet. <JoinHelp words={access.message} />
+          Boxes will not join VesnALIA yet. <JoinHelp words={access.message} />
         </p>
       ) : null}
     </SetupCard>
@@ -100,7 +100,7 @@ function ReadyCard({ target, access, onDone }: { target: MachineSetup; access: M
 }
 
 function troubleTitle(target: MachineSetup): string {
-  if (target.fix) return `BB cannot use Docker on ${target.name}`;
+  if (target.fix) return `VesnALIA cannot use Docker on ${target.name}`;
   if (target.docker && target.freeGb !== null && target.freeGb < LINUX_BUILD_GB) return `Not enough disk on ${target.name}`;
   return `Docker on ${target.name} cannot host boxes`;
 }
@@ -124,13 +124,13 @@ function MissingCard({ here, other, machines, refresh }: { here: MachineSetup; o
   const use = useDockerStart(other ?? here, other ? `Use Docker on ${other.name}` : "", refresh);
   return (
     <SetupCard title={`${here.name} has no Docker`} tone="warn" action={<CheckAgain hostIds={[here.hostId]} machines={machines} refresh={refresh} label={`Check ${here.name} for Docker again`} />}>
-      <p>{here.name}, where BB runs, has no Docker. Install Docker Engine there, then check again. On Linux, Docker's install script does it:</p>
+      <p>{here.name}, where VesnALIA runs, has no Docker. Install Docker Engine there, then check again. On Linux, Docker's install script does it:</p>
       <CopyLine line={DOCKER_INSTALL_LINE} label={`Copy the command: ${DOCKER_INSTALL_LINE}`} />
-      <p className="mt-2 text-subtle-foreground">Then BB's user there must be able to use it; Check again says how if it cannot.</p>
+      <p className="mt-2 text-subtle-foreground">Then VesnALIA's user there must be able to use it; Check again says how if it cannot.</p>
       {other ? (
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
           <p className="min-w-0 flex-1 basis-48">
-            Or use a BB machine that has Docker: {other.name} has Docker {other.docker}.
+            Or use a VesnALIA machine that has Docker: {other.name} has Docker {other.docker}.
           </p>
           {use.button}
         </div>
@@ -188,7 +188,7 @@ export function FirstRunSection({ machines }: { machines: Machines }) {
     <section className="space-y-3" aria-labelledby="settings-first-run">
       <div>
         <h3 id="settings-first-run" className="text-sm font-normal text-foreground">
-          Set up BB Box
+          Set up VesnALIA Box
         </h3>
         <p className="mt-0.5 text-xs leading-snug text-subtle-foreground">Boxes are computers for your threads. Choose where they run; you can add more places later.</p>
       </div>
@@ -225,7 +225,7 @@ export function JustReady() {
   return (
     <section className="space-y-3" aria-label={`Docker on ${name} is ready`}>
       <SetupCard title={`Docker on ${name} is ready`}>
-        BB Box makes Linux boxes on {built.name} now. Ask for one in a thread, or with New box on the Boxes page. Add more backends for desktops, Macs or Windows.
+        VesnALIA Box makes Linux boxes on {built.name} now. Ask for one in a thread, or with New box on the Boxes page. Add more backends for desktops, Macs or Windows.
       </SetupCard>
       <WayRow rowKey="ready-add" title="Add another backend" detail="Proxmox, your Macs, machines over SSH, microVMs, or the cloud." onClick={() => nav.go({ page: "add" }, "ready-add")} />
     </section>

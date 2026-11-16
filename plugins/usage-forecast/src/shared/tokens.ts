@@ -1,10 +1,10 @@
-// Token totals from BB's `thread/tokenUsage/updated` thread events: the pure
+// Token totals from VesnALIA's `thread/tokenUsage/updated` thread events: the pure
 // core shared by the server counter, the RPC, the CLI and the app. No SDK
 // import. Host facts behind the rules are in AGENTS.md «Token usage».
 //
 // Each event carries a cumulative `total`. The counter remembers the last
 // total it saw per thread and adds the growth to the hour (UTC) the event was
-// written in, under the thread's provider. bb keeps only a thread's newest
+// written in, under the thread's provider. VesnALIA keeps only a thread's newest
 // event and Claude Code's total restarts with each provider runtime run, so a
 // total below the remembered one is a fresh counter and counts in full.
 

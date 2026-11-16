@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
-import { createFakePluginHost, experimental_scanPublicSdkOnly, makePluginAgentConfigurationContext, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, experimental_scanPublicSdkOnly, makePluginAgentConfigurationContext, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it, vi } from "vitest";
 
 import plugin from "./server";
@@ -35,11 +35,11 @@ const SUMMARY: OrientationSummary = {
 };
 
 /**
- * The plugin over the fake host, with bb's SDK and its Git and PR Status plugins stubbed: a Claude Code
+ * The plugin over the fake host, with VesnALIA's SDK and its Git and PR Status plugins stubbed: a Claude Code
  * thread in `env_1` whose HEAD moves from `aaa` to `bbb` with one commit.
  */
 async function setup(options: { providerCanFork?: boolean; threadListFails?: boolean; builderActiveDuringSpawn?: boolean } = {}) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "learning-exercises" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "learning-exercises" });
   const threads = new Map([[WORK, makeThreadResponse({ id: WORK, projectId: "proj_1", providerId: "claude-code", environmentId: "env_1", title: "Add median", status: "idle" })]]);
   let head = "aaa";
   const metadata = new Map<string, Record<string, unknown>>();
@@ -59,8 +59,8 @@ async function setup(options: { providerCanFork?: boolean; threadListFails?: boo
     { id: "acp-cursor", capabilities: { supportsFork: false } },
   ]);
   stub("plugins.callRpc", ({ pluginId, method, input }: { pluginId: string; method: string; input: { mergeBaseBranch?: string } }) => {
-    if (pluginId === "bb--github-pr-status") return {};
-    if (pluginId !== "bb--git" || method !== "workspaceStatus") throw new Error(`unexpected ${pluginId}.${method}`);
+    if (pluginId === "alia--github-pr-status") return {};
+    if (pluginId !== "alia--git" || method !== "workspaceStatus") throw new Error(`unexpected ${pluginId}.${method}`);
     const mergeBase =
       input.mergeBaseBranch === "aaa" ? { commits: [{ sha: "bbb", shortSha: "bbb", subject: "Add median" }], files: [{ path: "calc.py", status: "M" }] } : null;
     return { outcome: "available", workspace: { checkout: { headSha: head }, mergeBase } };
@@ -72,7 +72,7 @@ async function setup(options: { providerCanFork?: boolean; threadListFails?: boo
   });
   stub("threads.send", () => ({ ok: true }));
   stub("threads.getPluginMetadata", ({ threadId }: { threadId: string }) => metadata.get(threadId) ?? {});
-  // Orientations: a hidden builder and a visible session thread, both spawned; bb resolves a new
+  // Orientations: a hidden builder and a visible session thread, both spawned; VesnALIA resolves a new
   // thread's configuration before `spawn` answers, so the stub asks for it first.
   const builders: string[] = [];
   const configuredAtSpawn = new Map<string, Awaited<ReturnType<typeof harness.resolveAgentConfiguration>>>();
@@ -83,7 +83,7 @@ async function setup(options: { providerCanFork?: boolean; threadListFails?: boo
     metadata.set(id, request.pluginMetadata);
     configuredAtSpawn.set(id, await harness.resolveAgentConfiguration(makePluginAgentConfigurationContext({ thread: { id }, pluginMetadata: request.pluginMetadata as never })));
     threads.set(id, makeThreadResponse({ id, projectId: "proj_1", providerId: "claude-code", environmentId: "env_1", originPluginId: "learning-exercises", visibility: request.visibility, status: "active" }));
-    // bb can report the builder's first turn before `spawn` answers, before the plugin has bound it.
+    // VesnALIA can report the builder's first turn before `spawn` answers, before the plugin has bound it.
     if (options.builderActiveDuringSpawn === true && id === BUILDER) await harness.emitThreadEvent("thread.active", { thread: threads.get(id)! });
     return threads.get(id);
   });
@@ -97,7 +97,7 @@ async function setup(options: { providerCanFork?: boolean; threadListFails?: boo
   });
   const listing = { fails: options.threadListFails === true };
   stub("threads.list", () => {
-    if (listing.fails) throw new Error("bb is busy");
+    if (listing.fails) throw new Error("alia is busy");
     return [...threads.values()].filter((thread) => thread.originPluginId === "learning-exercises" && thread.archivedAt === null);
   });
   stub("threads.experimental_listPluginMetadata", ({ threadIds }: { threadIds: string[] }) => ({
@@ -116,7 +116,7 @@ async function setup(options: { providerCanFork?: boolean; threadListFails?: boo
     files.set(path, content);
     return { outcome: "written" };
   });
-  await plugin(bb);
+  await plugin(alia);
   // The load-time reconcile runs in the background; starts wait for it.
   await new Promise((resolve) => setImmediate(resolve));
   const commitTurn = async () => {
@@ -124,9 +124,9 @@ async function setup(options: { providerCanFork?: boolean; threadListFails?: boo
     head = "bbb";
     await harness.emitThreadEvent("thread.idle", { thread: threads.get(WORK)!, lastAssistantText: "Done." });
   };
-  /** The agent starts a turn in a thread: bb logs a `turn/started` row in that turn. */
+  /** The agent starts a turn in a thread: VesnALIA logs a `turn/started` row in that turn. */
   const startTurn = (turnId: string) => events.push({ seq: events.length + 1, createdAt: events.length + 1, turnId, type: "turn/started", data: {} });
-  return { bb, harness, threads, metadata, files, unreadable, listing, builders, configuredAtSpawn, commitTurn, startTurn };
+  return { alia, harness, threads, metadata, files, unreadable, listing, builders, configuredAtSpawn, commitTurn, startTurn };
 }
 
 type OrientationRead = {
@@ -267,7 +267,7 @@ describe("from a commit to an answered question", () => {
     expect(harness.sdk.callsTo("threads.fork")).toEqual([]);
     const [send] = harness.sdk.callsTo("threads.send") as [{ input: { visibility?: string; text: string }[] }][];
     expect(send![0].input.map((part) => part.visibility ?? "visible")).toEqual(["visible", "agent-only"]);
-    expect(send![0].input[1]!.text).toContain("bb learning ask");
+    expect(send![0].input[1]!.text).toContain("alia learning ask");
 
     const question = Buffer.from("What does `mean([])` return?\n").toString("base64");
     const asked = await harness.runCli(["ask", "--type", "debug", "--question-base64", question], { threadId: WORK });
@@ -275,7 +275,7 @@ describe("from a commit to an answered question", () => {
     expect(harness.pendingInteractions[0]?.payload).toMatchObject({ question: "What does `mean([])` return?", type: "debug" });
   });
 
-  it("bb learning ask takes an answer form, and refuses an invalid one before showing anything", async () => {
+  it("alia learning ask takes an answer form, and refuses an invalid one before showing anything", async () => {
     const { harness, commitTurn } = await setup({ providerCanFork: false });
     await commitTurn();
     const view = (await harness.callRpc("threadView", { threadId: WORK })) as ThreadView;
@@ -335,11 +335,11 @@ describe("from a commit to an answered question", () => {
       [1, "turn_2", feedback],
       [2, "turn_3", "Yes: **1.0**."],
     ]);
-    // A thread with no session has none, and reads nothing from bb for them.
+    // A thread with no session has none, and reads nothing from VesnALIA for them.
     expect(await harness.callRpc("feedbackCards", { threadId: "thr_other" })).toEqual({ cards: [] });
   });
 
-  it("bb learning feedback refuses feedback that is not base64 or too long", async () => {
+  it("alia learning feedback refuses feedback that is not base64 or too long", async () => {
     const { harness, commitTurn } = await setup({ providerCanFork: false });
     await commitTurn();
     const view = (await harness.callRpc("threadView", { threadId: WORK })) as ThreadView;
@@ -390,7 +390,7 @@ describe("from a commit to an answered question", () => {
     expect(result.stderr).toContain("no learning session");
   });
 
-  it("bb learning principles prints the attributed PRINCIPLES.md", async () => {
+  it("alia learning principles prints the attributed PRINCIPLES.md", async () => {
     const { harness } = await setup();
     const result = await harness.runCli(["principles"], {});
     expect(result.stdout).toContain("Dr. Cat Hicks");
@@ -401,9 +401,9 @@ describe("from a commit to an answered question", () => {
 describe("review pass 1 (wiring)", () => {
   it("finding 7: the last-commit topic reads a feature branch against its default branch", async () => {
     const { harness } = await setup();
-    // bb 0.48.1's Git plugin: no `mergeBaseBranch` → `mergeBase: null`; a branch name → the commits ahead.
+    // VesnALIA 0.48.1's Git plugin: no `mergeBaseBranch` → `mergeBase: null`; a branch name → the commits ahead.
     harness.sdk.stub("plugins.callRpc", ({ pluginId, input }: { pluginId: string; input: { mergeBaseBranch?: string } }) => {
-      if (pluginId === "bb--github-pr-status") return {};
+      if (pluginId === "alia--github-pr-status") return {};
       const mergeBase =
         input.mergeBaseBranch === "main"
           ? { commits: [{ sha: "c1", shortSha: "c1", subject: "Add median" }, { sha: "c2", shortSha: "c2", subject: "Test median" }], files: [] }
@@ -540,7 +540,7 @@ describe("orientations", () => {
     expect(((await harness.callRpc("threadView", { threadId: WORK })) as ThreadView).offer).toMatchObject({ trigger: "commit" });
   });
 
-  it("starts stay refused while the load-time clean-up cannot read bb, until the 5-minute sweep can", async () => {
+  it("starts stay refused while the load-time clean-up cannot read VesnALIA, until the 5-minute sweep can", async () => {
     const { harness, listing } = await setup({ threadListFails: true });
     expect(await harness.callRpc("orientation", { threadId: WORK })).toEqual({ current: null, live: null, last: null, canStart: false, cleaning: true });
     // A refusal, not a plugin crash.

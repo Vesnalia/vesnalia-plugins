@@ -1,12 +1,12 @@
-// Pinned cards over RPC: discoverable, so `bb plugin rpc list iris` shows them and any client
-// (the app, the bb CLI, another plugin) can read and change a thread's pins. Agents in a thread
-// use the iris_pin tools or `bb iris pin`, which act on their own thread only.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+// Pinned cards over RPC: discoverable, so `alia plugin rpc list iris` shows them and any client
+// (the app, the VesnALIA CLI, another plugin) can read and change a thread's pins. Agents in a thread
+// use the iris_pin tools or `alia iris pin`, which act on their own thread only.
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { Pin } from "../core/pins";
 
 const threadId = z.string().min(1).max(64);
-// A plain schema (not a custom type), so bb can publish it as JSON Schema for discovery.
+// A plain schema (not a custom type), so VesnALIA can publish it as JSON Schema for discovery.
 const pin: z.ZodType<Pin> = z.object({
   id: z.string(),
   title: z.string(),

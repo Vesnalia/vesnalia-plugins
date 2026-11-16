@@ -73,7 +73,7 @@ describe("Commits", () => {
 });
 
 describe("PullRequest", () => {
-  it("maps bb's GitHub PR Status row", () => {
+  it("maps VesnALIA's GitHub PR Status row", () => {
     const pr = pullRequestInfo({
       number: 7,
       title: "Add live components",
@@ -125,7 +125,7 @@ describe("Environments", () => {
 });
 
 describe("git reads", () => {
-  it("builds bb's patch key", () => {
+  it("builds VesnALIA's patch key", () => {
     expect(JSON.parse(gitPatchKey("env_1", { type: "all", mergeBaseBranch: "origin/main" }, "a.ts", "r1"))).toEqual(["env_1", { type: "all", mergeBaseBranch: "origin/main" }, false, "a.ts", "r1"]);
   });
   it("counts a file both committed and edited once", () => {

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin, { type RenameResult } from "./server";
 
 const PLUGIN_ID = "thread-namer";
@@ -104,7 +104,7 @@ function createHost(options: {
 }
 
 async function load(host: ReturnType<typeof createHost>) {
-  await plugin(host.bb);
+  await plugin(host.alia);
 }
 
 describe("naming a thread", () => {

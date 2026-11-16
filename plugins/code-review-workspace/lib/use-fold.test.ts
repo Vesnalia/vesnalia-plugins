@@ -29,7 +29,7 @@ test("a fold down the screen, across the workspace, tells where its far edge is"
   expect(el.style.getPropertyValue("--gr-fold-end")).toBe("496px");
 });
 
-test("from the workspace's left, beside BB's thread list, and as the fold comes and goes", () => {
+test("from the workspace's left, beside VesnALIA's thread list, and as the fold comes and goes", () => {
   const fold = fakeSegments([new DOMRect(0, 0, 951, 589)]);
   const el = workspace(new DOMRect(320, 48, 631, 541));
   renderHook(() => useFold(el));

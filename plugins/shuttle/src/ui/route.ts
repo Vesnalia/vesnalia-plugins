@@ -76,7 +76,7 @@ const OLD_SECTIONS: Record<string, (key: string | null) => Route> = {
  * "search/<words>" the search results, the words percent-encoded as one segment, then a selected key.
  * The Inbox's Reviewing, Snoozed and Dismissed tabs are "inbox~reviewing", "inbox~snoozed" and "inbox~dismissed", the same way.
  * A Reviews source other than Everything rides on the area as "reviews~team": server ids are lowercase
- * words, so a "~" can never be mistaken for one. A key travels as plain segments: bb encodes the
+ * words, so a "~" can never be mistaken for one. A key travels as plain segments: VesnALIA encodes the
  * subPath again, so a percent-encoded key would come back still encoded. "" also parses as the Inbox, but the
  * page opens there on the route it was last left on (see routeOf), so no link Shuttle makes is "".
  */

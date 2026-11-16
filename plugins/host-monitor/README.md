@@ -8,14 +8,14 @@
 <h1 align="center">Host Monitor</h1>
 
 <p align="center">
-  Grafana-inspired current and historical health for every machine enrolled in BB.
+  Grafana-inspired current and historical health for every machine enrolled in VesnALIA.
 </p>
 
 <p align="center">
-  <strong>bb 0.40+</strong> · <strong>macOS, Linux, and Windows</strong> · <strong>MIT</strong>
+  <strong>VesnALIA 0.40+</strong> · <strong>macOS, Linux, and Windows</strong> · <strong>MIT</strong>
 </p>
 
-Host Monitor turns BB's enrolled machines into one dense observability page.
+Host Monitor turns VesnALIA's enrolled machines into one dense observability page.
 The fleet overview keeps every connected, disconnected, stale, loading, and
 failed machine visible. Select a machine card to inspect its current telemetry
 and up to 30 days of utilization, load, and network history without leaving the
@@ -68,15 +68,15 @@ Each machine keeps its own ordered dashboard. You can:
 - Drag widgets or use the accessible move-earlier/move-later controls.
 - Reset a draft to defaults, cancel it, or save it explicitly.
 
-Saved layouts use BB's stable machine id and the plugin database, so they
+Saved layouts use VesnALIA's stable machine id and the plugin database, so they
 survive Host Monitor reloads and stay independent between machines. A missing
 or unreadable saved layout safely falls back to the default dashboard.
 
-## Grafana-inspired, BB-native
+## Grafana-inspired, ALIA-native
 
 The interface borrows the useful dashboard grammar—compact toolbars, fleet
 variables, dense stat tiles, bordered panels, tabular values, and time-series
-charts—without copying Grafana branding. Colors come from the active BB theme,
+charts—without copying Grafana branding. Colors come from the active VesnALIA theme,
 and every state has text so color is never the only signal. The dashboard
 collapses into a single readable column on narrow/mobile views.
 
@@ -102,7 +102,7 @@ continue updating.
 
 ## Privacy and safety
 
-Host Monitor uses BB's authenticated enrolled-host connection and its host
+Host Monitor uses VesnALIA's authenticated enrolled-host connection and its host
 worker. It does not manage SSH credentials or send telemetry to third parties.
 
 Snapshots exclude IP addresses, MAC addresses, interface names, netmasks,
@@ -117,16 +117,16 @@ and sends a fixed graceful or force termination operation.
 
 ## Install
 
-### BB Community marketplace
+### VesnALIA Community marketplace
 
 ```sh
-bb plugin install host-monitor
+alia plugin install host-monitor
 ```
 
 ### Direct Git release
 
 ```sh
-bb plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.1.0 \
+alia plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.1.0 \
   --subdirectory plugins/host-monitor \
   --tag-prefix host-monitor/
 ```
@@ -137,9 +137,9 @@ From the repository root:
 
 ```sh
 npm install
-npm run check --workspace bb-plugin-host-monitor
-bb plugin install ./plugins/host-monitor
-bb plugin reload host-monitor
+npm run check --workspace alia-plugin-host-monitor
+alia plugin install ./plugins/host-monitor
+alia plugin reload host-monitor
 ```
 
 ## License

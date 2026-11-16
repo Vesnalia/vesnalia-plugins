@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
-import { experimental_usePluginId, useBbNavigate, type ExperimentalPageTitle, type PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { experimental_usePluginId, useAliaNavigate, type ExperimentalPageTitle, type PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { ControlAction, ProjectView } from "../contract";
 import { isMultiRepoProject } from "../format";
 import { readyToLand, specReviewBlocks } from "../format";
@@ -22,7 +22,7 @@ import { PlannerPage } from "./planner-page";
 import { PlanningView } from "./planning";
 import { createStored, createStoredMap, useScrollMemory, useStored } from "./remember";
 import { useWaiting } from "./questions";
-import { SpecPage, bbProjectNamesOf } from "./spec-page";
+import { SpecPage, aliaProjectNamesOf } from "./spec-page";
 import { tabBadges, type TabBadge } from "./tab-badges";
 import { TicketView } from "./ticket";
 import { TimelineStrip } from "./timeline-strip";
@@ -42,7 +42,7 @@ const TABS: ReadonlyArray<{ tab: Tab; label: string }> = [
 // 36rem, where Tailwind's @xl starts: under it the page's container queries (`@max-xl/loom:`) switch to the phone layout.
 const NARROW_PX = 576;
 
-/** Whether the Loom page measured itself narrower than NARROW_PX; bb's title bar over it reads this to shorten its crumbs. */
+/** Whether the Loom page measured itself narrower than NARROW_PX; VesnALIA's title bar over it reads this to shorten its crumbs. */
 export const narrowPage = (() => {
   let narrow = false;
   const listeners = new Set<() => void>();
@@ -76,7 +76,7 @@ export type Route = { view: "home" } | { view: "guide" } | { view: "new" } | { v
 
 /**
  * The route remainder: "_home" is home, "_guide" the guide, "_new" New project, "_plan/<threadId>" a conversation,
- * "<slug>" a project, "<slug>/<KEY>" a ticket. A slug never starts with "_". "" is where bb's rail opens the page, home
+ * "<slug>" a project, "<slug>/<KEY>" a ticket. A slug never starts with "_". "" is where VesnALIA's rail opens the page, home
  * here; the page reopens there on the route it was last left on (see `routeOf`).
  */
 export function parseRoute(subPath: string): Route {
@@ -134,7 +134,7 @@ const TAB_NAMES: readonly string[] = TABS.map((entry) => entry.tab);
 /** The tab each project was last left on. */
 export const projectTabs = createStoredMap<Tab>("projectTab", 50, (value): value is Tab => typeof value === "string" && TAB_NAMES.includes(value));
 
-/** The route a subPath shows: at "", where bb's rail opens the page, the route it was last left on. */
+/** The route a subPath shows: at "", where VesnALIA's rail opens the page, the route it was last left on. */
 export function routeOf(subPath: string): Route {
   return parseRoute(subPath === "" ? (lastRoute.get() ?? "") : subPath);
 }
@@ -197,7 +197,7 @@ function SpecTab({ view, busy, rewound, requested, onApprove }: { view: ProjectV
           v{spec.pendingVersion} waits for your approval; until then the project runs on v{spec.version} and its tickets stay as they are.
         </p>
       )}
-      <SpecPage slug={overview.slug} version={rewound ? spec.version : (requested ?? undefined)} readOnly={rewound} bbProjectNames={bbProjectNamesOf(view)} specReview={view.specReview} approve={approve} />
+      <SpecPage slug={overview.slug} version={rewound ? spec.version : (requested ?? undefined)} readOnly={rewound} aliaProjectNames={aliaProjectNamesOf(view)} specReview={view.specReview} approve={approve} />
     </div>
   );
 }
@@ -283,7 +283,7 @@ function TabBar({ tabs, selected, badges, onTab, onHeight }: { tabs: ReadonlyArr
 }
 
 function ProjectPanel({ slug, tab, onTab, at, onSeek, go }: { slug: string; tab: Tab; onTab(tab: Tab): void; at: number | null; onSeek(at: number | null): void; go(subPath: string): void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const remote = useLoom("project", at === null ? { slug } : { slug, at }, { keep: true });
   const send = useLoomWrite("control");
   const { busy, act } = useAction();
@@ -414,12 +414,12 @@ function ProjectPanel({ slug, tab, onTab, at, onSeek, go }: { slug: string; tab:
 }
 
 export function LoomPage({ subPath }: PluginNavPanelProps) {
-  // bb's rail opens the page at its root. The page replaces that address with the place it was last left, home included,
+  // VesnALIA's rail opens the page at its root. The page replaces that address with the place it was last left, home included,
   // so Back never lands on the root again and resumes a newer place.
   const remembered = useStored(lastRoute);
   const resume = subPath === "" ? (remembered ?? formatRoute({ view: "home" })) : null;
   const route = parseRoute(resume ?? subPath);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const go = useCallback((next: string) => navigate.toPluginPanel("loom", { subPath: next }), [navigate]);
   useEffect(() => {
     if (subPath !== "") lastRoute.set(formatRoute(parseRoute(subPath)));
@@ -481,8 +481,8 @@ export function LoomPage({ subPath }: PluginNavPanelProps) {
 }
 
 /**
- * bb's title bar on the Loom page: where the page is, with a ticket's project linking back to it. Home keeps bb's own
- * "Loom". On a narrow page a ticket's project goes by its key, as bb does not shorten that crumb.
+ * VesnALIA's title bar on the Loom page: where the page is, with a ticket's project linking back to it. Home keeps VesnALIA's own
+ * "Loom". On a narrow page a ticket's project goes by its key, as VesnALIA does not shorten that crumb.
  */
 export function useLoomPageTitle({ subPath }: PluginNavPanelProps): ExperimentalPageTitle | null {
   const pluginId = experimental_usePluginId();

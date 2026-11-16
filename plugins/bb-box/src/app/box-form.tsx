@@ -341,7 +341,7 @@ export function MenuSelect({
   );
 }
 
-/** An option card: a title and a line under it; chosen reads as BB's active state; unavailable greys out and says so. */
+/** An option card: a title and a line under it; chosen reads as VesnALIA's active state; unavailable greys out and says so. */
 function keepNumbersWithUnits(words: string | null): ReactNode {
   if (!words) return null;
   return words.split(/(\d+(?:\.\d+)? [A-Za-z]+)/).map((part, index) =>

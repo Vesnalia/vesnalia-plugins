@@ -9,7 +9,7 @@ import {
   UrlLink,
   experimental_useSidebarThreadPullRequest as useBranchPr,
   experimental_useSidebarThreads as useSidebarThreads,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { usePortalScopeProps } from "@/lib/portal-scope";

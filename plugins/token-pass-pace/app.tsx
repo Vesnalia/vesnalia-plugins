@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { definePluginApp, useRpc, useSettings } from '@get-bb/plugin-sdk/app';
+import { definePluginApp, useRpc, useSettings } from '@vesnalia/plugin-sdk/app';
 import type { rpcContract } from './server.js';
 import type { Snapshot } from './collector.js';
 import { project } from './pass.js';
@@ -153,7 +153,7 @@ function Legend({ over }: { over: boolean }) {
   );
 }
 
-/** The dashed frame BB's own pages use for empty and loading states. */
+/** The dashed frame VesnALIA's own pages use for empty and loading states. */
 function EmptyState({ children }: { children: React.ReactNode }) {
   return (
     <div
@@ -308,7 +308,7 @@ export function PaceFooter() {
 }
 
 /**
- * A declared glyph rather than a BB icon name: an unknown name renders as the
+ * A declared glyph rather than a VesnALIA icon name: an unknown name renders as the
  * generic Zap bolt without any error, so the plugin points at its own mark.
  */
 export const PACE_ICON = 'token-pass-pace/pace';

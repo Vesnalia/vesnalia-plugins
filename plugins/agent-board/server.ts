@@ -1,11 +1,11 @@
-// bb-plugin-agent-board — a BB plugin backend entry.
+// alia-plugin-agent-board — a VesnALIA plugin backend entry.
 //
 // The default export is a factory that receives the plugin API. The board is
 // derived observability: on each board_snapshot request it fans out to
-// bb.sdk (bounded), normalizes what BB reports into BoardCards, and returns
+// alia.sdk (bounded), normalizes what VesnALIA reports into BoardCards, and returns
 // a snapshot. Sources remain authoritative; only attention/release dismissal
 // preferences are durable. Collection and watcher state are ephemeral caches.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { rpcContract } from "./contract/rpc";
 import { BoardCollector } from "./lib/collect";
 import { attachWatcher, BoardWatcher } from "./lib/watch";
@@ -18,28 +18,28 @@ import manifest from "./package.json";
 
 export { BOARD_CHANGED_CHANNEL } from "./contract/rpc";
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const collector = new BoardCollector(bb);
-  // Presentation-only attention dismissals (one bounded kv row in bb.db,
+  const collector = new BoardCollector(alia);
+  // Presentation-only attention dismissals (one bounded kv row in alia.db,
   // surviving plugin reloads; never mutates any underlying source state).
-  const dismissals = new DismissalStore(bb.storage.kv);
-  const releases = new ReleaseAnnouncementStore(bb.storage.kv);
+  const dismissals = new DismissalStore(alia.storage.kv);
+  const releases = new ReleaseAnnouncementStore(alia.storage.kv);
   const updates = new ReleaseUpdateChecker({
     installed: manifest.version,
     fetchLatest: fetchLatestRelease,
-    checkNative: async () => (await bb.sdk.plugins.checkUpdates({ pluginId: "agent-board", signal: AbortSignal.timeout(8_000) })).find(result => result.id === "agent-board"),
-    applyNative: () => bb.sdk.plugins.applyUpdate({ pluginId: "agent-board" }),
+    checkNative: async () => (await alia.sdk.plugins.checkUpdates({ pluginId: "agent-board", signal: AbortSignal.timeout(8_000) })).find(result => result.id === "agent-board"),
+    applyNative: () => alia.sdk.plugins.applyUpdate({ pluginId: "agent-board" }),
   });
   const watcher = new BoardWatcher({
     publish: (payload) => {
       collector.invalidate();
-      bb.realtime.publish(BoardWatcher.channel, payload);
+      alia.realtime.publish(BoardWatcher.channel, payload);
     },
     getParent: async (threadId) => {
       try {
-        const thread = await bb.sdk.threads.get({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         return thread.parentThreadId ?? null;
       } catch {
         return null; // deleted or not visible to this plugin
@@ -64,13 +64,13 @@ export default async function plugin(bb: BbPluginApi) {
     changed: () => {
       collector.invalidate(false);
       // Empty roots without global-only marks all scoped and global views stale.
-      bb.realtime.publish(BoardWatcher.channel, { roots: [] });
+      alia.realtime.publish(BoardWatcher.channel, { roots: [] });
     },
   });
 
-  // BB threads/workflows/plans/delegations plus optional adapter cards share
+  // VesnALIA threads/workflows/plans/delegations plus optional adapter cards share
   // one source-discriminated normalized contract.
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     release_update: () => updates.snapshot(),
     install_update: ({ expectedVersion }) => updates.install(expectedVersion),
     release_announcement: () => releases.snapshot(),
@@ -121,15 +121,15 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  // Invalidate open boards on real BB changes (coalesced, no polling).
-  const unsubscribe = attachWatcher(bb, watcher);
+  // Invalidate open boards on real VesnALIA changes (coalesced, no polling).
+  const unsubscribe = attachWatcher(alia, watcher);
 
-  // The `bb agent-board` command: what agents (and you) use from a shell.
-  bb.cli.register({
+  // The `alia agent-board` command: what agents (and you) use from a shell.
+  alia.cli.register({
     name: "agent-board",
     summary: "Inspect the Agent Board observability snapshot for a thread tree",
     commands: [
-      { name: "show", summary: "Render the board for a thread", usage: "bb agent-board show <thread-id> [--json]" },
+      { name: "show", summary: "Render the board for a thread", usage: "alia agent-board show <thread-id> [--json]" },
     ],
     async run(argv) {
       const json = argv.includes("--json");
@@ -140,12 +140,12 @@ export default async function plugin(bb: BbPluginApi) {
         case "--help":
           return {
             exitCode: 0,
-            stdout: "Usage: bb agent-board show <thread-id> [--json]",
+            stdout: "Usage: VesnALIA agent-board show <thread-id> [--json]",
           };
         case "show": {
           const threadId = args[0];
           if (threadId === undefined || args.length !== 1) {
-            return { exitCode: 1, stderr: "Usage: bb agent-board show <thread-id> [--json]" };
+            return { exitCode: 1, stderr: "Usage: VesnALIA agent-board show <thread-id> [--json]" };
           }
           const snapshot = await collector.snapshot(threadId, { fresh: true });
           if (json) return { exitCode: 0, stdout: JSON.stringify(snapshot) };
@@ -154,7 +154,7 @@ export default async function plugin(bb: BbPluginApi) {
         default:
           return {
             exitCode: 1,
-            stderr: `Unknown command "${command}". Usage: bb agent-board show <thread-id> [--json]`,
+            stderr: `Unknown command "${command}". Usage: VesnALIA agent-board show <thread-id> [--json]`,
           };
       }
     },
@@ -162,12 +162,12 @@ export default async function plugin(bb: BbPluginApi) {
 
   // Cleanup on reload/disable/shutdown; hooks run LIFO. The sanctioned place
   // to clear timers and close connections.
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     unsubscribe();
     redteamPoller.dispose();
     fleetPoller.dispose();
     watcher.dispose();
-    bb.log.info("disposed");
+    alia.log.info("disposed");
   });
 }
 

@@ -5,7 +5,7 @@ import { useFullscreenPortalContainer } from "../lib/portal-scope";
 import { ariaKeys, keyHint } from "../lib/review-shortcuts";
 import { cn } from "../lib/utils";
 import { phoneWindow } from "../lib/workspace-layout";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../src/rpc-contract";
 import { useAppPanel } from "../lib/app-panel";
@@ -24,16 +24,16 @@ import { ListTitleBar } from "./inbox/ListTitleBar";
 import { sidePanelId } from "./shell/SidePanel";
 import { TOUCH_COMPACT, TOUCH_CONTROL } from "./touch";
 
-/** Where the controls are: BB's title bar, or the end of the workspace's band, which has them in full screen. */
+/** Where the controls are: VesnALIA's title bar, or the end of the workspace's band, which has them in full screen. */
 export type TitleBarPlacement = "title" | "band";
 
-// Full screen hides BB's bar and shows the band's controls, and leaving it does the opposite: the focus goes from
+// Full screen hides VesnALIA's bar and shows the band's controls, and leaving it does the opposite: the focus goes from
 // the toggle clicked to the other one, when that shows within a moment.
 let focusToggle: { to: TitleBarPlacement; until: number } | null = null;
 
 /**
  * The review's commands: Comments, Ask agent, Main thread ↗ and Show beside review (with one), Finish review, Review
- * actions (⋯) and Full screen; on All reviews, the list's. BB renders it in its title bar (navPanel headerContent) with
+ * actions (⋯) and Full screen; on All reviews, the list's. VesnALIA renders it in its title bar (navPanel headerContent) with
  * the page's subPath, apart from the page, so it reads the workspace from the store. A plain function, not memo: the SDK takes only a function as a slot's component.
  */
 export function TitleBarControls({ subPath, placement = "title" }: { subPath: string; placement?: TitleBarPlacement }) {
@@ -45,7 +45,7 @@ export function TitleBarControls({ subPath, placement = "title" }: { subPath: st
   // All reviews' own: Find on a phone, Refresh and Settings.
   if (page.kind === "list") return placement === "title" ? <ListTitleBar /> : null;
   if (!api) return null;
-  // A phone's controls are the workspace's own; in full screen BB's bar is hidden, and the band has them.
+  // A phone's controls are the workspace's own; in full screen VesnALIA's bar is hidden, and the band has them.
   if (placement === "title" && (api.layout.mode === "phone" || api.fullscreen.on)) return null;
   return <ReviewControls api={api} placement={placement} />;
 }
@@ -58,14 +58,14 @@ function ReviewControls({ api, placement }: { api: WorkspaceApi; placement: Titl
   const container = useFullscreenPortalContainer();
   const { layout, panel } = api;
   const appPanel = useAppPanel();
-  const navigate = useBbNavigate();
-  // BB's tabs, showing beside the review: never over full screen, which their buttons leave to show them.
+  const navigate = useAliaNavigate();
+  // VesnALIA's tabs, showing beside the review: never over full screen, which their buttons leave to show them.
   const agentShown = useTabShown(api.targetKey, "agent") && !api.fullscreen.on;
   const mainShown = useTabShown(api.targetKey, "main") && !api.fullscreen.on;
-  // A wide pane's title bar has room for every label; a phone held sideways, a narrow pane beside BB's side panel, and
+  // A wide pane's title bar has room for every label; a phone held sideways, a narrow pane beside VesnALIA's side panel, and
   // the band keep to icons and counts.
   const tier = placement === "band" || layout.mode === "short" || layout.narrowPane ? "icons" : layout.widePane ? "labeled" : "compact";
-  // There Finish review is its icon and count too, where "Finish · 1" left BB's crumbs no room; the band keeps its word
+  // There Finish review is its icon and count too, where "Finish · 1" left VesnALIA's crumbs no room; the band keeps its word
   // over 720px.
   const finishIcons = placement === "title" && tier === "icons";
   // Finish review's count: what Submit posts, with the verdict; a local review, which submits nothing, what Send would send.
@@ -92,7 +92,7 @@ function ReviewControls({ api, placement }: { api: WorkspaceApi; placement: Titl
             {needsYou > 0 && <span aria-hidden className="min-w-4 rounded-full bg-primary px-1 text-center text-[10px] font-semibold leading-4 text-primary-foreground tabular-nums">{needsYou}</span>}
           </Button>
         </Hint>
-        {/* Mid-width, the switch to the main thread keeps its label and Ask agent, with its key and BB's tab, gives way. */}
+        {/* Mid-width, the switch to the main thread keeps its label and Ask agent, with its key and VesnALIA's tab, gives way. */}
         <Hint label={keyHint("Ask agent", "a", api.shortcuts)} container={container}>
           <Button variant="ghost" size="sm" aria-label="Ask agent" aria-pressed={agentShown} aria-keyshortcuts={ariaKeys("a", api.shortcuts)} className={tier === "labeled" ? labeled : icon} onClick={() => agentShown ? appPanel?.close() : api.askAgent()}>
             <Icon name="Sparkles" className="text-(--ansi-13)" aria-hidden />

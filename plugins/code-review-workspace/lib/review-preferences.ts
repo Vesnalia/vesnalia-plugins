@@ -1,13 +1,13 @@
 // Shared defaults have no validation/runtime dependencies in the app bundle.
 import { defaultKnobs, type Knobs } from "./knobs";
 
-/** A custom agent selection, in bb's terms. Service tiers are provider-defined ids. */
+/** A custom agent selection, in VesnALIA's terms. Service tiers are provider-defined ids. */
 export interface AgentExecution {
-  /** The machine the agent runs on; absent runs it on the bb server. */
+  /** The machine the agent runs on; absent runs it on the VesnALIA server. */
   hostId?: string;
   providerId: string;
   model: string;
-  /** Provider-defined, like the service tier: bb's providers add levels the SDK's types don't list. */
+  /** Provider-defined, like the service tier: VesnALIA's providers add levels the SDK's types don't list. */
   reasoningLevel: string;
   permissionMode: "accept-edits" | "auto" | "full";
   serviceTier?: string;
@@ -58,14 +58,14 @@ export interface ReviewPreferences {
   markdownFiles: "source" | "rendered";
   /** What a re-review's diff opens on, once it has changed since your review: only those changes, or all of the PR's. */
   rereviewShows: "since" | "all";
-  /** null uses the execution defaults bb remembers for the review's project. */
+  /** null uses the execution defaults VesnALIA remembers for the review's project. */
   guideAgent: AgentExecution | null;
   assistantAgent: AgentExecution | null;
   /** Which author replies on your threads make a review your turn: questions for you, or any reply. */
   wakeOnReplies: "questions" | "any";
   /** After the author pushes, the assistant checks your feedback: never, to show progress, or also to bring the review back when everything is addressed. */
   pushChecks: "off" | "progress" | "ready";
-  /** Track PRs you're asked to review or have reviewed on GitHub, not only reviews started in bb. */
+  /** Track PRs you're asked to review or have reviewed on GitHub, not only reviews started in VesnALIA. */
   trackGithubReviews: boolean;
   /** Also track requests for a team you're on, not only requests for you. Teams can ask for many reviews. */
   trackTeamRequests: boolean;
@@ -77,7 +77,7 @@ export interface ReviewPreferences {
   unattendedAuthors: "members" | "anyone";
   /** The review agent may run the repo's documented tests and linters on a trusted author's PR, in a temporary worktree. */
   runRepoChecks: boolean;
-  /** Needs review and pinned reviews in BB's thread list, which Code Review Workspace adds to by hand. */
+  /** Needs review and pinned reviews in VesnALIA's thread list, which Code Review Workspace adds to by hand. */
   threadListReviews: boolean;
   /** Feature switches and tuning (lib/knobs.ts), saved apart from the rest. */
   knobs: Knobs;
@@ -85,7 +85,7 @@ export interface ReviewPreferences {
   focuses: FocusSettings;
 }
 
-/** Assistant instructions share bb's 4,096-character instructions with the fixed rules and the guide. */
+/** Assistant instructions share VesnALIA's 4,096-character instructions with the fixed rules and the guide. */
 export const ASSISTANT_INSTRUCTIONS_LIMIT = 2000;
 
 export const defaultPreferences: ReviewPreferences = {

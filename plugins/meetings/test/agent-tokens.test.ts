@@ -1,17 +1,17 @@
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import { createAgentTokenManager } from "../src/server/agent-tokens.js";
 
 describe("personal meeting tokens", () => {
   it("persists only the hash, verifies across managers and rotates and revokes access", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "meetings" });
+    const { alia, harness } = createFakePluginHost({ pluginId: "meetings" });
     try {
-      const tokens = createAgentTokenManager(bb);
+      const tokens = createAgentTokenManager(alia);
       expect(await tokens.verify("mtgs_" + "a".repeat(43))).toBe(false);
       const first = await tokens.create();
       expect(first.token).toMatch(/^mtgs_[A-Za-z0-9_-]{43}$/);
-      expect(await createAgentTokenManager(bb).verify(first.token)).toBe(true);
-      const stored = await bb.storage.kv.get("agent-access-token.v1");
+      expect(await createAgentTokenManager(alia).verify(first.token)).toBe(true);
+      const stored = await alia.storage.kv.get("agent-access-token.v1");
       expect(JSON.stringify(stored)).not.toContain(first.token);
       expect(await tokens.status()).toEqual({ configured: true, createdAt: first.createdAt });
       const second = await tokens.create();
@@ -26,10 +26,10 @@ describe("personal meeting tokens", () => {
   });
 
   it("fails closed when persisted data is missing or invalid", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "meetings" });
+    const { alia, harness } = createFakePluginHost({ pluginId: "meetings" });
     try {
-      await bb.storage.kv.set("agent-access-token.v1", { hash: "not-a-hash", createdAt: 1 });
-      const tokens = createAgentTokenManager(bb);
+      await alia.storage.kv.set("agent-access-token.v1", { hash: "not-a-hash", createdAt: 1 });
+      const tokens = createAgentTokenManager(alia);
       expect(await tokens.verify("mtgs_" + "a".repeat(43))).toBe(false);
       expect(await tokens.status()).toEqual({ configured: false, createdAt: null });
     } finally { await harness.lifecycle.dispose(); }

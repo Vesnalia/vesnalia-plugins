@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
-import type { bbSidebarRpcContract } from "./server";
+import type { aliaSidebarRpcContract } from "./server";
 import {
   DEFAULT_LIMITS,
   judgeAnswers,
@@ -95,7 +95,7 @@ const PROVIDER_NAMES: Record<ModelProvider, string> = {
   custom: "your custom model",
 };
 
-type Rpc = ReturnType<typeof useRpc<typeof bbSidebarRpcContract>>;
+type Rpc = ReturnType<typeof useRpc<typeof aliaSidebarRpcContract>>;
 
 interface ConnectionResult {
   ok: boolean;
@@ -227,8 +227,8 @@ function ModelRows({
   const keyDescription =
     provider === "jev"
       ? keyIsSet
-        ? "Stored on the bb server. Paste a new key to replace it."
-        : "Get a key at typesafe.ai. It is stored on the bb server and never shown again."
+        ? "Stored on the VesnALIA server. Paste a new key to replace it."
+        : "Get a key at typesafe.ai. It is stored on the VesnALIA server and never shown again."
       : keyIsSet
         ? "Sent as a bearer token. Paste a new key to replace it."
         : "Sent as a bearer token. Leave it empty if your model needs none.";
@@ -248,7 +248,7 @@ function ModelRows({
             label="Endpoint"
             description={
               <>
-                The URL the bb server calls. A host and port, such as
+                The URL the VesnALIA server calls. A host and port, such as
                 localhost:30001, gets /v1/systemone added.{" "}
                 <button
                   type="button"
@@ -561,7 +561,7 @@ export function DecisionSetup({
   titleFor: (decision: Decision) => string;
   onSaved: (next: DecisionConfig) => void;
 }) {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const [picked, setPicked] = useState<DecisionProvider | null>(null);
   const selected = picked ?? config.provider;
   const option = PROVIDER_OPTIONS.find((candidate) => candidate.value === selected);

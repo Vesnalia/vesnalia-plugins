@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { experimental_usePluginId, useSdk } from "@get-bb/plugin-sdk/app";
+import { experimental_usePluginId, useSdk } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { parseSettings, SETTINGS_LOCAL_CHANNEL, type SwitchboardSettings } from "./settings";
 

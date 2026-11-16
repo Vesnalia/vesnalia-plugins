@@ -1,15 +1,15 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, type RenderSlotOptions } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, type RenderSlotOptions } from "@vesnalia/plugin-sdk/testing/app";
 import { renderSlot } from "./test-slot";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import { idleSidebarThreadFields } from "./test-fixtures";
 import type { SidebarProvider } from "./ProviderGlyph";
 import { cacheSidebarSettings, DEFAULT_SIDEBAR_SETTINGS } from "./sidebar-settings";
 import { SIDEBAR_SETTINGS_CHANNEL } from "./realtime-channels";
 
-// Load through the harness so the plugin's `@get-bb/plugin-sdk/app` import binds
+// Load through the harness so the plugin's `@vesnalia/plugin-sdk/app` import binds
 // to the test runtime.
 const app = await loadPluginApp(() => import("../app"));
 const parentChip = app.threadHeaderActions.find((slot) => slot.id === "parent")!;
@@ -83,7 +83,7 @@ function render(
       sidebarThreads: {
         status: "ready",
         threads,
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
     },
   );

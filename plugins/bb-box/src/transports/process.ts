@@ -86,7 +86,7 @@ export const PROBE = "exit 0";
  * command starts with this, so a command loads the thread's environment
  * once, not once more in each shell around it (#100).
  */
-export const LOADS_ENV = ": bb-box-env; ";
+export const LOADS_ENV = ": alia-box-env; ";
 
 /**
  * Runs `script` in a child of the login shell, then writes `mark` and its
@@ -102,8 +102,8 @@ export function endMarked(script: string, mark: string, stdin: boolean): string 
   const half = Math.ceil(mark.length / 2);
   const pieces = `${quote(mark.slice(0, half))} ${quote(mark.slice(half))}`;
   return (
-    `${script.startsWith(LOADS_ENV) ? LOADS_ENV : ""}"\${SHELL:-/bin/sh}" -c ${quote(script)}${input}; bb_box_status=$?; ` +
-    `printf '%s%s%s\\n' ${pieces} "$bb_box_status"; printf '%s%s%s\\n' ${pieces} "$bb_box_status" >&2; exit "$bb_box_status"`
+    `${script.startsWith(LOADS_ENV) ? LOADS_ENV : ""}"\${SHELL:-/bin/sh}" -c ${quote(script)}${input}; alia_box_status=$?; ` +
+    `printf '%s%s%s\\n' ${pieces} "$alia_box_status"; printf '%s%s%s\\n' ${pieces} "$alia_box_status" >&2; exit "$alia_box_status"`
   );
 }
 
@@ -263,12 +263,12 @@ export class CommandLine {
 
   #spawn(script: string, options: RunOptions, onStdout: (chunk: Buffer) => void, onStderr: (chunk: Buffer) => void): Promise<Spawned> {
     const started = Date.now();
-    const mark = this.#options.posix === false ? null : `bb-box-end-${randomBytes(12).toString("hex")}:`;
+    const mark = this.#options.posix === false ? null : `alia-box-end-${randomBytes(12).toString("hex")}:`;
     const marks = mark ? { stdout: new EndMark(mark), stderr: new EndMark(mark) } : null;
     const [binary, ...args] = this.#options.argv(mark ? endMarked(script, mark, options.stdin !== undefined) : script);
     return new Promise((resolve, reject) => {
       options.signal?.throwIfAborted();
-      // From the helper, which forks in place of BB's server (forker.ts).
+      // From the helper, which forks in place of VesnALIA's server (forker.ts).
       const child = startChild(binary, args, { env: this.#options.env, cwd: this.#options.cwd, site: `${basename(binary)} command` });
       let timedOut = false;
       let killed = false;

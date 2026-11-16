@@ -134,7 +134,7 @@ async function until(check: () => Promise<boolean>): Promise<void> {
 test("a box of a project with an image runs its script as root, then its check, before it is handed over (049)", async () => {
   const image = {
     kinds: ["linux"],
-    script: 'echo "$BB_BOX_IMAGE $BB_BOX_KIND $BB_BOX_BACKEND $BB_BOX_ARCH" > "$HOME/ran"\nfor i in $(seq 1 25); do echo "line $i"; done\n[ ! -e "$HOME/../fail-script" ] || exit 3\n',
+    script: 'echo "$ALIA_BOX_IMAGE $ALIA_BOX_KIND $ALIA_BOX_BACKEND $ALIA_BOX_ARCH" > "$HOME/ran"\nfor i in $(seq 1 25); do echo "line $i"; done\n[ ! -e "$HOME/../fail-script" ] || exit 3\n',
     check: 'test -s "$HOME/ran" && echo checked\n[ ! -e "$HOME/../fail-check" ] || { echo "cargo: not found"; exit 1; }\n',
     projects: ["prj"],
   };
@@ -146,7 +146,7 @@ test("a box of a project with an image runs its script as root, then its check, 
   assert.deepEqual([box.image?.name, box.image?.state, typeof box.image?.seconds, typeof box.timings.image], ["rust-tools", "done", "number", "number"]);
   const { command } = await world.backend.transports(box.guest!, "linux");
   assert.equal((await command!.run("cat ran")).stdout, `rust-tools linux fake ${box.capabilities.arch}\n`);
-  assert.equal((await command!.run("test -e .bb-box-image")).exitCode, 1, "its files go once it ran");
+  assert.equal((await command!.run("test -e .alia-box-image")).exitCode, 1, "its files go once it ran");
 
   // Another project's box, or another kind, has none.
   const other = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: "prj_other", kind: "linux" }));
@@ -213,7 +213,7 @@ test("a box can start from a given build, as a tried image's kept one, on the ba
   assert.deepEqual(started, ["try-build"]);
 });
 
-test("an image's script at start finds BB Box's own commands first on its PATH, such as bb-box-feature (049)", async () => {
+test("an image's script at start finds VesnALIA Box's own commands first on its PATH, such as alia-box-feature (049)", async () => {
   const image = { kinds: ["linux"], script: 'hello-tool > "$HOME/tool"\n', projects: ["prj"] };
   const world = setup({}, {
     image: (projectId, kind) => (projectId === "prj" && kind === "linux" ? { name: "tools", image } : null),
@@ -223,7 +223,7 @@ test("an image's script at start finds BB Box's own commands first on its PATH, 
   assert.equal(box.state, "ready", box.error ?? "");
   const { command } = await world.backend.transports(box.guest!, "linux");
   assert.equal((await command!.run("cat tool")).stdout, "tool ran\n");
-  assert.equal((await command!.run("test -e .bb-box-image")).exitCode, 1, "its files go once it ran");
+  assert.equal((await command!.run("test -e .alia-box-image")).exitCode, 1, "its files go once it ran");
 });
 
 test("a box can choose its image, another project's or the standard one, and a thread's own box gets its project's (049)", async () => {
@@ -244,7 +244,7 @@ test("a box can choose its image, another project's or the standard one, and a t
   assert.deepEqual([theirs.state, theirs.image?.name, await which(theirs)], ["ready", "theirs", "theirs"], theirs.error ?? "");
   const standard = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: "prj", kind: "linux", image: "standard" }));
   assert.deepEqual([standard.image, await which(standard)], [undefined, "none"]);
-  await assert.rejects(world.boxes.acquire({ threadId: THREAD, projectId: "prj", kind: "linux", image: "nope" }), /There is no image nope for linux boxes\. box_list names each kind's images; "standard" is BB Box's own\./);
+  await assert.rejects(world.boxes.acquire({ threadId: THREAD, projectId: "prj", kind: "linux", image: "nope" }), /There is no image nope for linux boxes\. box_list names each kind's images; "standard" is ALIA Box's own\./);
   await assert.rejects(world.boxes.acquire({ threadId: THREAD, projectId: "prj", kind: "linux-desktop", image: "mine" }), /There is no image mine for linux-desktop boxes/);
 
   // A thread on a box of its own (033) gets its project's image as any box does.
@@ -289,7 +289,7 @@ test("a kind's ID from before 027 is taken in an acquire, a stored record and a 
   }
   assert.equal((await world.boxes.run(THREAD, box.name, "echo still")).result.stdout, "still\n");
 
-  // A guest whose owner names the earlier ID, after BB Box lost the record.
+  // A guest whose owner names the earlier ID, after VesnALIA Box lost the record.
   const guestKey = `backend/fake/guest/${box.guest!.ref}`;
   const guest = (await world.kv.get<{ owner: Record<string, unknown> }>(guestKey))!;
   await world.kv.set(guestKey, { ...guest, owner: { ...guest.owner, kind: "linux-headless" } });
@@ -302,7 +302,7 @@ test("a kind's ID from before 027 is taken in an acquire, a stored record and a 
   assert.deepEqual(world.enrolled, [`${box.name}, restored`], "it is the kind it was, so it enrols again");
 });
 
-test("a box is released while a command still writes in it, as BB's installer may during enrolment", async () => {
+test("a box is released while a command still writes in it, as VesnALIA's installer may during enrolment", async () => {
   for (let round = 0; round < 10; round++) {
     const world = setup();
     const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: "prj", kind: "linux" }));
@@ -533,9 +533,9 @@ test("box details say who has control of a device box's device, and of a desktop
   const ios = showing([desktop, DEVICE_DISPLAY]);
   assert.match(boxDetail(android, { owner: "agent", holder: null }), /\nDevice control: the agent\n/);
   assert.match(boxDetail(ios, { owner: "agent", holder: null }), /\nDevice control: the agent\n/);
-  assert.match(boxDetail(android, { owner: "human", holder: null }), /\nDevice control: the user, in BB Box's panel\. Leave the device alone until they hand control back/);
+  assert.match(boxDetail(android, { owner: "human", holder: null }), /\nDevice control: the user, in ALIA Box's panel\. Leave the device alone until they hand control back/);
   assert.doesNotMatch(boxDetail(android, { owner: "agent", holder: null }), /Desktop control/);
-  assert.match(boxDetail(showing([desktop]), { owner: "human", holder: null }), /\nDesktop control: the user, in BB Box's panel\. Leave the desktop's windows alone until/);
+  assert.match(boxDetail(showing([desktop]), { owner: "human", holder: null }), /\nDesktop control: the user, in ALIA Box's panel\. Leave the desktop's windows alone until/);
 });
 
 test("box details and kind lists say whether the box user can become root", async () => {
@@ -660,11 +660,11 @@ test("box details promise a restored box enrols again only when its kind can enr
     enrol: { state: "off", hostId: null, error: null },
     capabilities: { ...box.capabilities, enrol },
   });
-  assert.match(boxDetail(restored(true)), /\nBB machine: not enrolled since BB Box restored its lost record\. It enrols again once it runs and answers/);
+  assert.match(boxDetail(restored(true)), /\nBB machine: not enrolled since ALIA Box restored its lost record\. It enrols again once it runs and answers/);
   assert.match(boxDetail(restored(false)), /\nBB machine: not enrolled(\n|$)/, "a kind that never enrols, such as linux-docker");
 });
 
-test("box details say a box still being made joins BB once it is ready, not that it was made while its kind did not join BB", async () => {
+test("box details say a box still being made joins VesnALIA once it is ready, not that it was made while its kind did not join VesnALIA", async () => {
   const world = setup();
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" }));
   const making = (state: BoxRecord["state"]): BoxRecord => ({
@@ -675,10 +675,10 @@ test("box details say a box still being made joins BB once it is ready, not that
     capabilities: { ...box.capabilities, enrol: true },
   });
   for (const state of ["acquiring", "starting"] as const) {
-    assert.match(boxDetail(making(state)), /\nBB machine: not yet: it joins BB once it is ready, if BB Box enrols boxes(\n|$)/, state);
+    assert.match(boxDetail(making(state)), /\nBB machine: not yet: it joins ALIA once it is ready, if ALIA Box enrols boxes(\n|$)/, state);
   }
   assert.match(boxDetail(making("failed")), /\nBB machine: not enrolled(\n|$)/, "a failed box is not about to join");
-  assert.match(boxDetail({ ...making("starting"), readyAt: Date.now() }), /\nBB machine: not enrolled: it was made while boxes of its kind did not join BB/, "a box that was ready before");
+  assert.match(boxDetail({ ...making("starting"), readyAt: Date.now() }), /\nBB machine: not enrolled: it was made while boxes of its kind did not join ALIA/, "a box that was ready before");
 });
 
 test("concurrent acquires from different threads never share the last room", async () => {
@@ -737,7 +737,7 @@ test("commands run in the box's shell with the box's identity, in a directory", 
   const world = setup();
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" }));
   await world.boxes.writeFile(THREAD, box.name, "work/dir/file.txt", Buffer.from("content"), { mode: "600" });
-  const { result } = await world.boxes.run(THREAD, box.name, 'printf "%s|%s|" "$BB_BOX_NAME" "$BB_HOST_ID" && cat file.txt && cat >&2', {
+  const { result } = await world.boxes.run(THREAD, box.name, 'printf "%s|%s|" "$ALIA_BOX_NAME" "$ALIA_HOST_ID" && cat file.txt && cat >&2', {
     cwd: "work/dir",
     stdin: "from stdin",
   });
@@ -749,7 +749,7 @@ test("commands run in the box's shell with the box's identity, in a directory", 
   const { data } = await world.boxes.readFile(THREAD, box.name, "work/dir/file.txt", { maxBytes: 100 });
   assert.equal(Buffer.from(data).toString(), "content");
   await assert.rejects(world.boxes.readFile(THREAD, box.name, "work/dir/file.txt", { maxBytes: 3 }), /larger than 3 bytes/);
-  const mode = await world.boxes.run(THREAD, box.name, "stat -c %a .config/bb-box/env");
+  const mode = await world.boxes.run(THREAD, box.name, "stat -c %a .config/alia-box/env");
   assert.equal(mode.result.stdout, "600\n", "only the box user can read the env file");
 });
 
@@ -772,7 +772,7 @@ test("the env file sets only valid names, quotes values, and makes package insta
   assert.equal(execFileSync("sh", ["-c", '. ./env && printf %s "$DEBIAN_FRONTEND"'], { cwd: dir, encoding: "utf8", env: { PATH: process.env.PATH } }), "readline");
 });
 
-test("commands in an enrolled box take the thread's access from BB's daemon as they start, and never store it", async (t) => {
+test("commands in an enrolled box take the thread's access from VesnALIA's daemon as they start, and never store it", async (t) => {
   const multiline = "it's\ntwo lines";
   const daemon = await fakeDaemon([
     { FOO: "value-old", BAR: "value-bar", QUOTE: multiline },
@@ -796,16 +796,16 @@ test("commands in an enrolled box take the thread's access from BB's daemon as t
   assert.equal(first.result.stdout, `value-new|value-bar|${multiline}|unset|unset|`, "the newest worker with the most names");
   assert.deepEqual(asked, [box.name]);
 
-  // BB replaced its newest worker: the next command takes the values it now has.
+  // VesnALIA replaced its newest worker: the next command takes the values it now has.
   process.kill(daemon.workers().at(-1)!, "SIGKILL");
   await until(async () => daemon.workers().length === 2);
   const second = await world.boxes.run(THREAD, box.name, show);
   assert.equal(second.result.stdout, `value-old|value-bar|${multiline}|unset|unset|`);
 
-  const { data } = await world.boxes.readFile(THREAD, box.name, ".config/bb-box/env", { maxBytes: 100_000 });
+  const { data } = await world.boxes.readFile(THREAD, box.name, ".config/alia-box/env", { maxBytes: 100_000 });
   assert.doesNotMatch(Buffer.from(data).toString(), /value-/, "the env file holds names, not values");
 
-  // A box that is not a BB machine has no daemon to take them from.
+  // A box that is not a VesnALIA machine has no daemon to take them from.
   await world.boxes.update(box, () => ({ enrol: { state: "off", hostId: null, error: null } }));
   const off = await world.boxes.run(THREAD, box.name, show);
   assert.equal(off.result.stdout, "|||unset|unset|");
@@ -826,7 +826,7 @@ test("a worker that ends between being counted and being read is passed over, no
   const daemon = await fakeDaemon([{ FOO: "value-old" }, { FOO: "value-new" }]);
   t.after(daemon.stop);
   const newest = daemon.workers().at(-1)!;
-  // grep ends the newest worker once it has counted its names, as BB may as a command starts.
+  // grep ends the newest worker once it has counted its names, as VesnALIA may as a command starts.
   const bin = tempDir("grep");
   const grep = execFileSync("sh", ["-c", "command -v grep"], { encoding: "utf8" }).trim();
   writeFileSync(
@@ -842,7 +842,7 @@ test("a worker that ends between being counted and being read is passed over, no
 });
 
 test("commands in an enrolled box take a project's variables from the agent of a thread of the project on the box (#109)", async (t) => {
-  // BB gives a project's variables only to the agent its worker starts for the thread, not to the worker.
+  // VesnALIA gives a project's variables only to the agent its worker starts for the thread, not to the worker.
   const daemon = await fakeDaemon([{ GH_TOKEN: "value-token" }, { GH_TOKEN: "value-token" }], {
     agent: { GH_TOKEN: "value-token", PROJECT_VAR: "value-project" },
   });
@@ -901,7 +901,7 @@ esac
   };
 }
 
-test("the access check says whether the env file set any of the names, or else whether BB's daemon runs", async (t) => {
+test("the access check says whether the env file set any of the names, or else whether VesnALIA's daemon runs", async (t) => {
   const daemon = await fakeDaemon([{ UNLISTED: "value-unlisted" }]);
   t.after(daemon.stop);
   // The environment stands for what the env file set.
@@ -911,7 +911,7 @@ test("the access check says whether the env file set any of the names, or else w
   assert.equal(check(daemon.parent), ACCESS_CHECK_EXITS.waiting, "the daemon runs, with no worker that has the names");
   assert.equal(check(daemon.parent, { MACHINE_VAR: "" }), ACCESS_CHECK_EXITS.waiting, "an empty value does not count");
   assert.equal(check(join(tempDir("access-check"), "no-daemon")), ACCESS_CHECK_EXITS.noDaemon);
-  // With GH_TOKEN required, the other names do not end the wait: BB can give a new machine GH_TOKEN after them.
+  // With GH_TOKEN required, the other names do not end the wait: VesnALIA can give a new machine GH_TOKEN after them.
   const required = (env: Record<string, string>) =>
     spawnSync("sh", ["-c", accessCheck("linux", { names: ["GH_TOKEN", "MACHINE_VAR"], parent: daemon.parent, required: ["GH_TOKEN"] })!], { env: { PATH: process.env.PATH, ...env } }).status;
   assert.equal(required({ MACHINE_VAR: "value-machine" }), ACCESS_CHECK_EXITS.waiting);
@@ -921,9 +921,9 @@ test("the access check says whether the env file set any of the names, or else w
 
 test("in a Windows box, the env file takes the thread's access through a reader it compiles once, and the check and setup have Windows forms (#560)", () => {
   const access = { names: ["GH_TOKEN", "not a name", "MACHINE_VAR"], parent: "host-daemon/dist/daemon-bundle", required: ["GH_TOKEN"] };
-  const own = "$env:BB_BOX_NAME = 'calm-otter'\r\n";
-  assert.equal(envScript("windows", { BB_BOX_NAME: "calm-otter" }), own, "a box that is not a BB machine sets its own variables only");
-  const file = envScript("windows", { BB_BOX_NAME: "calm-otter" }, access);
+  const own = "$env:ALIA_BOX_NAME = 'calm-otter'\r\n";
+  assert.equal(envScript("windows", { ALIA_BOX_NAME: "calm-otter" }), own, "a box that is not a VesnALIA machine sets its own variables only");
+  const file = envScript("windows", { ALIA_BOX_NAME: "calm-otter" }, access);
   assert.ok(file.startsWith(own), file);
   assert.ok(file.includes(`[${READER_TYPE}]::Read('host-daemon/dist/daemon-bundle', [string[]]@('GH_TOKEN', 'MACHINE_VAR'))`), "only valid names, sorted");
   // The reader's source rides in the env file, packed, and is compiled under its own name.
@@ -931,7 +931,7 @@ test("in a Windows box, the env file takes the thread's access through a reader 
   assert.ok(packed, "the packed source");
   assert.equal(gunzipSync(Buffer.from(packed, "base64")).toString("utf8"), READER_SOURCE);
   assert.ok(READER_SOURCE.includes(`public static class ${READER_TYPE} {`));
-  assert.ok(file.includes(`'bb-box', '${READER_TYPE}.dll'`));
+  assert.ok(file.includes(`'alia-box', '${READER_TYPE}.dll'`));
   assert.equal(envScript("windows", {}, { ...access, names: ["not a name"] }), "\r\n", "no names, no reader");
 
   const check = accessCheck("windows", access)!;
@@ -949,7 +949,7 @@ test("in a Windows box, the env file takes the thread's access through a reader 
 
 test("in a macOS box, the env file takes the thread's access from the daemon's newest worker with the most names, as on Linux", () => {
   const parent = "host-daemon/dist/daemon-bundle";
-  const worker = "node /app/bb-provider-bridge-worker.mjs";
+  const worker = "node /app/alia-provider-bridge-worker.mjs";
   const multiline = "it's\ntwo lines\tand a tab";
   const others: MacProcess["env"] = [["FOO", "value-other"], ["BAR", "x"], ["QUOTE", "x"]];
   const ps = fakeMacPs([
@@ -975,10 +975,10 @@ test("in a macOS box, the env file takes the thread's access from the daemon's n
   ]);
   const dir = tempDir("env");
   const access = { names: ["BAR", "FOO", "GH_TOKEN", "QUOTE", "not a name"], parent };
-  writeFileSync(join(dir, "env"), envScript("macos", { BB_BOX_NAME: "box" }, access));
-  writeFileSync(join(dir, "no-daemon"), envScript("macos", { BB_BOX_NAME: "box" }, { ...access, parent: "no-daemon" }));
+  writeFileSync(join(dir, "env"), envScript("macos", { ALIA_BOX_NAME: "box" }, access));
+  writeFileSync(join(dir, "no-daemon"), envScript("macos", { ALIA_BOX_NAME: "box" }, { ...access, parent: "no-daemon" }));
   assert.doesNotMatch(readFileSync(join(dir, "env"), "utf8"), /DEBIAN_FRONTEND/);
-  const show = (file: string) => `PATH='${ps.dir}':$PATH; . ./${file} && printf "%s|" "$FOO" "$BAR" "$QUOTE" "\${GH_TOKEN-unset}" "\${UNLISTED-unset}" "$BB_BOX_NAME"`;
+  const show = (file: string) => `PATH='${ps.dir}':$PATH; . ./${file} && printf "%s|" "$FOO" "$BAR" "$QUOTE" "\${GH_TOKEN-unset}" "\${UNLISTED-unset}" "$ALIA_BOX_NAME"`;
   // zsh runs SSH commands on macOS, and the env file from ~/.zshenv.
   const shells = spawnSync("zsh", ["-fc", ":"]).status === 0 ? ["sh", "zsh"] : ["sh"];
   for (const shell of shells) {
@@ -995,7 +995,7 @@ test("in a macOS box, the env file takes a project's variables from the agent of
   const ps = fakeMacPs([
     { pid: 1, ppid: 0, etime: "3-01:02:03", command: "/sbin/launchd" },
     { pid: 500, ppid: 1, etime: "2-00:00:00", command: `node /app/${parent}.mjs` },
-    { pid: 501, ppid: 500, etime: "00:05", command: "node /app/bb-provider-bridge-worker.mjs", env: [["GH_TOKEN", "value-token"]] },
+    { pid: 501, ppid: 500, etime: "00:05", command: "node /app/alia-provider-bridge-worker.mjs", env: [["GH_TOKEN", "value-token"]] },
     { pid: 502, ppid: 501, etime: "00:04", command: "/usr/local/bin/claude", env: [["GH_TOKEN", "value-token"], ["PROJECT_VAR", "value-project"]] },
   ]);
   const dir = tempDir("env");
@@ -1008,29 +1008,29 @@ test("in a macOS box, the env file takes a project's variables from the agent of
   assert.equal(out, "value-token|value-project|");
 });
 
-test("when BB Box cannot tell which variables to take, commands keep the env file they had", async () => {
+test("when VesnALIA Box cannot tell which variables to take, commands keep the env file they had", async () => {
   let fail = false;
   const world = setup(
     {},
     {
       access: async () => {
-        if (fail) throw new Error("BB did not answer");
+        if (fail) throw new Error("VesnALIA did not answer");
         return null;
       },
     },
   );
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" }));
-  assert.equal((await world.boxes.run(THREAD, box.name, 'printf %s "$BB_BOX_NAME"')).result.stdout, box.name);
+  assert.equal((await world.boxes.run(THREAD, box.name, 'printf %s "$ALIA_BOX_NAME"')).result.stdout, box.name);
   fail = true;
-  const { result } = await world.boxes.run(THREAD, box.name, 'printf %s "$BB_BOX_NAME"');
+  const { result } = await world.boxes.run(THREAD, box.name, 'printf %s "$ALIA_BOX_NAME"');
   assert.equal(result.stdout, box.name);
-  assert.deepEqual(world.errors, ["access: BB did not answer"]);
+  assert.deepEqual(world.errors, ["access: VesnALIA did not answer"]);
 });
 
 /** The lines access setup puts at the top of the shell's startup file. */
 const HOOK =
-  "# Added by bb-box: the thread's environment and access, for SSH commands too.\n" +
-  `case "\${BASH_EXECUTION_STRING-}\${ZSH_EXECUTION_STRING-}" in ': bb-box-env; '*) ;; *) if [ -r "$HOME/.config/bb-box/env" ]; then . "$HOME/.config/bb-box/env"; fi ;; esac\n`;
+  "# Added by alia-box: the thread's environment and access, for SSH commands too.\n" +
+  `case "\${BASH_EXECUTION_STRING-}\${ZSH_EXECUTION_STRING-}" in ': alia-box-env; '*) ;; *) if [ -r "$HOME/.config/alia-box/env" ]; then . "$HOME/.config/alia-box/env"; fi ;; esac\n`;
 
 test("access setup puts the env file above ~/.bashrc's early return, once, and keeps the file's mode", async () => {
   const world = setup();
@@ -1042,7 +1042,7 @@ test("access setup puts the env file above ~/.bashrc's early return, once, and k
     // It says how long it took in the box, for the enrolment's log.
     assert.equal(typeof accessSetupMs(result.stdout), "number", result.stdout);
   }
-  const { result } = await world.boxes.run(THREAD, box.name, "stat -c %a .bashrc; cat .bashrc; bash -c '. ~/.bashrc; printf %s \"$BB_BOX_NAME\"'");
+  const { result } = await world.boxes.run(THREAD, box.name, "stat -c %a .bashrc; cat .bashrc; bash -c '. ~/.bashrc; printf %s \"$ALIA_BOX_NAME\"'");
   assert.equal(
     result.stdout,
     `640\n${HOOK}\ncase $- in *i*) ;; *) return;; esac\nexport MINE=1\n${box.name}`,
@@ -1055,7 +1055,7 @@ test("access setup puts the env file above ~/.bashrc's early return, once, and k
   assert.equal((await world.boxes.run(THREAD, box.name, "cat .bashrc")).result.stdout, "export MINE=2\n");
 
   // A date that cannot give nanoseconds leaves the time out, and the script's exit code as it was.
-  await world.boxes.run(THREAD, box.name, "rm -f .config/bb-box/access-*");
+  await world.boxes.run(THREAD, box.name, "rm -f .config/alia-box/access-*");
   const { result: untimed } = await world.boxes.run(THREAD, box.name, `date() { echo 1700000000N; }\n${accessSetup("linux")!}`);
   assert.deepEqual([untimed.exitCode, untimed.stdout, accessSetupMs(untimed.stdout)], [0, "", null]);
 });
@@ -1064,8 +1064,8 @@ test("access setup puts the new hook in place of the one before #100, once", asy
   const world = setup();
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" }));
   const old =
-    "# Added by bb-box: the thread's environment and access, for SSH commands too.\n" +
-    'if [ -r "$HOME/.config/bb-box/env" ]; then . "$HOME/.config/bb-box/env"; fi\n';
+    "# Added by alia-box: the thread's environment and access, for SSH commands too.\n" +
+    'if [ -r "$HOME/.config/alia-box/env" ]; then . "$HOME/.config/alia-box/env"; fi\n';
   await world.boxes.writeFile(THREAD, box.name, ".bashrc", Buffer.from(`${old}\nexport MINE=1\n`));
   for (let i = 0; i < 2; i++) assert.equal((await world.boxes.run(THREAD, box.name, accessSetup("linux")!)).result.exitCode, 0);
   assert.equal((await world.boxes.run(THREAD, box.name, "cat .bashrc")).result.stdout, `${HOOK}\nexport MINE=1\n`);
@@ -1073,8 +1073,8 @@ test("access setup puts the new hook in place of the one before #100, once", asy
 
 test("the hook loads the env file in a shell, but not in one whose command loads it itself (#100)", () => {
   const home = tempDir("hook");
-  mkdirSync(join(home, ".config", "bb-box"), { recursive: true });
-  writeFileSync(join(home, ".config", "bb-box", "env"), "echo loaded\n");
+  mkdirSync(join(home, ".config", "alia-box"), { recursive: true });
+  writeFileSync(join(home, ".config", "alia-box", "env"), "echo loaded\n");
   writeFileSync(join(home, ".bashrc"), HOOK);
   writeFileSync(join(home, ".zshenv"), HOOK);
   // Node's pipes are sockets, and bash reads ~/.bashrc itself when stdin is
@@ -1082,15 +1082,15 @@ test("the hook loads the env file in a shell, but not in one whose command loads
   const run = (shell: string, script: string) =>
     execFileSync(shell, ["-c", script], { encoding: "utf8", env: { PATH: process.env.PATH, HOME: home }, stdio: ["ignore", "pipe", "pipe"] });
   assert.equal(run("bash", ". ~/.bashrc; echo plain"), "loaded\nplain\n");
-  assert.equal(run("bash", ": bb-box-env; . ~/.bashrc; echo marked"), "marked\n");
+  assert.equal(run("bash", ": alia-box-env; . ~/.bashrc; echo marked"), "marked\n");
   if (spawnSync("zsh", ["-fc", ":"]).status !== 0) return;
   // zsh reads ~/.zshenv in every shell, as an SSH command's and the one inside it.
   assert.equal(run("zsh", "echo plain"), "loaded\nplain\n");
-  assert.equal(run("zsh", ": bb-box-env; echo marked"), "marked\n");
+  assert.equal(run("zsh", ": alia-box-env; echo marked"), "marked\n");
 });
 
 test("a macOS command unlocks the box user's signing keychain in its own session, as a keychain unlocks per session (058)", () => {
-  const unlock = '/usr/bin/security unlock-keychain -p "" "$bb_keychain"';
+  const unlock = '/usr/bin/security unlock-keychain -p "" "$alia_keychain"';
   assert.ok(command("macos", "true").includes(unlock));
   // In the desktop session, it is part of the script that runs there.
   const desktop = command("macos", "true", { session: "desktop" });
@@ -1100,7 +1100,7 @@ test("a macOS command unlocks the box user's signing keychain in its own session
   assert.equal(execFileSync("sh", ["-c", command("macos", "echo ok")], { encoding: "utf8", env: { PATH: process.env.PATH, HOME: tempDir("home") } }), "ok\n");
 });
 
-test("BB Box's commands start with the mark, in each shell they start (#100)", () => {
+test("VesnALIA Box's commands start with the mark, in each shell they start (#100)", () => {
   const marked = (script: string) => script.startsWith(LOADS_ENV);
   assert.ok(marked(command("linux", "true")));
   assert.ok(marked(command("macos", "true")));
@@ -1110,7 +1110,7 @@ test("BB Box's commands start with the mark, in each shell they start (#100)", (
   assert.ok(command("macos", "true", { timeoutMs: 1_000 }).includes(inner));
   assert.ok(command("macos", "true", { session: "desktop" }).includes(inner));
   // The login shell gets the mark only when the script has it: one that is
-  // not BB Box's command leaves the hook to load the env file.
+  // not VesnALIA Box's command leaves the hook to load the env file.
   assert.ok(marked(endMarked(command("linux", "true"), "MARK", false)));
   assert.ok(!marked(endMarked("true", "MARK", false)));
 });
@@ -1147,7 +1147,7 @@ test("in a macOS box, access setup puts the env file at the top of ~/.zshenv, on
   );
   if (spawnSync("zsh", ["-fc", ":"]).status !== 0) return;
   // A zsh that is not a login shell, as SSH runs, reads it.
-  const { result: zsh } = await world.boxes.run(THREAD, box.name, `env -i HOME="$HOME" PATH="$PATH" zsh -c 'printf %s "$BB_BOX_NAME"'`);
+  const { result: zsh } = await world.boxes.run(THREAD, box.name, `env -i HOME="$HOME" PATH="$PATH" zsh -c 'printf %s "$ALIA_BOX_NAME"'`);
   assert.equal(zsh.stdout, box.name);
 });
 
@@ -1192,8 +1192,8 @@ test("the macOS timeout passes a command's exit on, and kills one that ignores T
   assert.ok(!command("macos", "true").includes("perl"), "no timeout, no wrapper");
 });
 
-test("a box that stops answering while BB Box reconnects to its machine, as after an update, is to be waited for, not released (#415)", async () => {
-  let reconnecting: string | null = "BB Box is reconnecting to devpc, which runs its Docker, as after an update.";
+test("a box that stops answering while VesnALIA Box reconnects to its machine, as after an update, is to be waited for, not released (#415)", async () => {
+  let reconnecting: string | null = "VesnALIA Box is reconnecting to devpc, which runs its Docker, as after an update.";
   const world = setup({}, { reconnecting: () => reconnecting });
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" }));
   const lose = async () => {
@@ -1207,7 +1207,7 @@ test("a box that stops answering while BB Box reconnects to its machine, as afte
   };
   const waited = await lose();
   assert.equal(waited.code, "reconnecting");
-  assert.equal(waited.message, `Box ${box.name} does not answer yet: BB Box is reconnecting to devpc, which runs its Docker, as after an update.`);
+  assert.equal(waited.message, `Box ${box.name} does not answer yet: VesnALIA Box is reconnecting to devpc, which runs its Docker, as after an update.`);
   // Otherwise, a box that does not answer is unreachable, as before.
   reconnecting = null;
   assert.equal((await lose()).code, "unreachable");
@@ -1217,35 +1217,35 @@ test("a Windows command with a job starts outside sshd's job, through WMI and cm
   const env = "$env:FOO = 'bar'";
   const script = command("windows", "Get-Process", { cwd: "C:\\work", env, timeoutMs: 1_500, job: { id: "0123456789ab", forget: ["ba9876543210"], prune: true } });
   assert.ok(!script.includes("ping -n"), "no watchdog in the session: the job's own keeps the timeout");
-  assert.match(script, /Remove-Item -Recurse -Force -LiteralPath \(Join-Path \$HOME '\.local\\state\\bb-box\\jobs\\ba9876543210'\)/, "a job whose result BB Box has goes");
+  assert.match(script, /Remove-Item -Recurse -Force -LiteralPath \(Join-Path \$HOME '\.local\\state\\alia-box\\jobs\\ba9876543210'\)/, "a job whose result VesnALIA Box has goes");
   assert.match(script, /Where-Object LastWriteTime -lt \(Get-Date\)\.AddDays\(-7\)/, "old jobs go");
-  assert.match(script, /\$bbCl='cmd \/d \/v:on \/s \/c '.*' <'\+\$q\+\(Join-Path \$bbJob 'in'\).*' & echo !errorlevel!>'/);
-  assert.match(script, /\$bbR=Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @\{CommandLine=\$bbCl;.*if\(\$bbR\.ReturnValue -ne 0 -or -not \$bbR\.ProcessId\)\{.*exit 1\}/, "a job Windows did not start fails at once, not waits for ever");
+  assert.match(script, /\$aliaCl='cmd \/d \/v:on \/s \/c '.*' <'\+\$q\+\(Join-Path \$aliaJob 'in'\).*' & echo !errorlevel!>'/);
+  assert.match(script, /\$aliaR=Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @\{CommandLine=\$aliaCl;.*if\(\$aliaR\.ReturnValue -ne 0 -or -not \$aliaR\.ProcessId\)\{.*exit 1\}/, "a job Windows did not start fails at once, not waits for ever");
   assert.match(script, /if\(\$p\.ProcessName -ne ''cmd''\)\{\$p=\$null\};if\(\$p -and -not \$p\.WaitForExit\(1500\)\)\{taskkill \/T \/F \/PID \$p\.Id/, "the watchdog holds cmd's handle and stops its tree at the timeout");
-  assert.match(script, /try\{\(Get-Process -Id \$bbCmd -ErrorAction Stop\)\.WaitForExit\(\)\}catch\{\};/, "the session waits on cmd's handle");
+  assert.match(script, /try\{\(Get-Process -Id \$aliaCmd -ErrorAction Stop\)\.WaitForExit\(\)\}catch\{\};/, "the session waits on cmd's handle");
   assert.ok(!script.includes("Start-Detached"), "no Start-Detached, whose search for its process took 190 ms");
   // Each WMI start hides its console, which in the desktop session would be a window over the desktop (#916).
   assert.equal(script.match(/Win32_Process -MethodName Create -Arguments @\{[^}]*ProcessStartupInformation=\(New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @\{ShowWindow=\[uint16\]0\}\)\}/g)?.length, 2, "the job and its watchdog");
   assert.ok(!command("windows", "x", { job: { id: "0123456789ab", forget: [], prune: false } }).includes("taskkill"), "no timeout, no watchdog");
-  assert.match(script, /exit \[int\]\(Get-Content -Raw -LiteralPath \$bbStatus\)$/);
-  assert.ok(script.includes("Set-Content -LiteralPath $bbBoxEnv -NoNewline -Value '$env:FOO = ''bar'''"), "the env file is written before the job starts");
+  assert.match(script, /exit \[int\]\(Get-Content -Raw -LiteralPath \$aliaStatus\)$/);
+  assert.ok(script.includes("Set-Content -LiteralPath $aliaBoxEnv -NoNewline -Value '$env:FOO = ''bar'''"), "the env file is written before the job starts");
   // The file the runner runs is the command as the transport would wrap it: the env file, the directory, the script.
   const file = Buffer.from(/FromBase64String\('([A-Za-z0-9+/=]+)'\)\);/.exec(script)![1]!, "base64").toString("utf8");
   const inner = Buffer.from(/FromBase64String\('([A-Za-z0-9+/=]+)'\)/.exec(file)![1]!, "base64").toString("utf8");
-  assert.match(inner, /\. \$bbBoxEnv \}; Set-Location -LiteralPath 'C:\\work' -ErrorAction Stop; Get-Process\n/);
+  assert.match(inner, /\. \$aliaBoxEnv \}; Set-Location -LiteralPath 'C:\\work' -ErrorAction Stop; Get-Process\n/);
   // A command in the desktop session has no job.
   assert.ok(!command("windows", "Get-Process", { session: "desktop", job: { id: "0123456789ab", forget: [], prune: false } }).includes("Start-Detached -Command"));
 
   const read = jobScript("0123456789ab", 4096, "windows");
-  assert.match(read, /^\$d=\(Join-Path \$HOME '\.local\\state\\bb-box\\jobs\\0123456789ab'\);if\(-not \(Test-Path -LiteralPath \$d\)\)\{exit 3\};/);
-  assert.match(read, /bbEmit \$o \(Join-Path \$d 'out'\) 4096;bbEmit \$e \(Join-Path \$d 'err'\) 4096;exit 4$/);
+  assert.match(read, /^\$d=\(Join-Path \$HOME '\.local\\state\\alia-box\\jobs\\0123456789ab'\);if\(-not \(Test-Path -LiteralPath \$d\)\)\{exit 3\};/);
+  assert.match(read, /aliaEmit \$o \(Join-Path \$d 'out'\) 4096;aliaEmit \$e \(Join-Path \$d 'err'\) 4096;exit 4$/);
   assert.throws(() => jobScript("../x", 4, "windows"), /is not a job ID/);
 });
 
 test("a Windows command starts a watchdog that stops it in the box at its timeout", async () => {
   assert.ok(
     command("windows", "Get-Process", { timeoutMs: 1_500 }).startsWith(
-      "Start-Process -WindowStyle Hidden cmd -ArgumentList '/d', '/c', ('ping -n 3 127.0.0.1 >nul & taskkill /F /PID ' + $PID + ' >nul') -ErrorAction Ignore; $bbBoxEnv = ",
+      "Start-Process -WindowStyle Hidden cmd -ArgumentList '/d', '/c', ('ping -n 3 127.0.0.1 >nul & taskkill /F /PID ' + $PID + ' >nul') -ErrorAction Ignore; $aliaBoxEnv = ",
     ),
   );
   assert.ok(!command("windows", "Get-Process").includes("taskkill"));
@@ -1264,22 +1264,22 @@ test("a Windows desktop command runs as a one-off scheduled task in the box user
   const env = envScript("windows", { BBX_ONE: "one" });
   const script = command("windows", "Get-Process", { session: "desktop", cwd: "C:\\work", env, timeoutMs: 1_500 });
   // The env file is written before the task starts, and the task's PowerShell reads it.
-  assert.ok(script.startsWith(`$bbBoxEnv = Join-Path $HOME '.config/bb-box/env.ps1'; New-Item -ItemType Directory -Force -Path (Split-Path $bbBoxEnv) | Out-Null; Set-Content`));
-  const inner = `$bbBoxEnv = Join-Path $HOME '.config/bb-box/env.ps1'; if (Test-Path -LiteralPath $bbBoxEnv) { . $bbBoxEnv }; Set-Location -LiteralPath 'C:\\work' -ErrorAction Stop; Get-Process`;
-  assert.ok(script.includes(`Set-Content -LiteralPath "$bbDir\\run.ps1" -Value '${powershellCommand(inner).replaceAll("'", "''")}'\n`), "the task runs the script as SSH would");
-  assert.ok(script.includes("$bbTask.Principal.LogonType = 3\n"), "with the user's interactive logon");
+  assert.ok(script.startsWith(`$aliaBoxEnv = Join-Path $HOME '.config/alia-box/env.ps1'; New-Item -ItemType Directory -Force -Path (Split-Path $aliaBoxEnv) | Out-Null; Set-Content`));
+  const inner = `$aliaBoxEnv = Join-Path $HOME '.config/alia-box/env.ps1'; if (Test-Path -LiteralPath $aliaBoxEnv) { . $aliaBoxEnv }; Set-Location -LiteralPath 'C:\\work' -ErrorAction Stop; Get-Process`;
+  assert.ok(script.includes(`Set-Content -LiteralPath "$aliaDir\\run.ps1" -Value '${powershellCommand(inner).replaceAll("'", "''")}'\n`), "the task runs the script as SSH would");
+  assert.ok(script.includes("$aliaTask.Principal.LogonType = 3\n"), "with the user's interactive logon");
   assert.ok(!script.includes("RunLevel"), "at the limited run level");
   // The task is outside sshd's job, so the script ends it itself.
   assert.ok(!script.includes("taskkill /F /PID"));
-  assert.ok(script.includes("elseif ($bbClock.ElapsedMilliseconds -ge 1500) {\n"));
+  assert.ok(script.includes("elseif ($aliaClock.ElapsedMilliseconds -ge 1500) {\n"));
   const plain = command("windows", "Get-Process", { session: "desktop" });
   assert.ok(plain.startsWith("$ErrorActionPreference = 'Stop'\n"), "no env file to write");
-  assert.ok(!plain.includes("elseif ($bbClock.ElapsedMilliseconds -ge"), "no timeout");
+  assert.ok(!plain.includes("elseif ($aliaClock.ElapsedMilliseconds -ge"), "no timeout");
   // Task Scheduler's word lags as a task starts, which on a busy VM failed commands that ran: the batch file says it
   // started, and only a started task is taken to have ended without its exit status (the desktop sweep).
-  assert.ok(plain.includes(`('@type nul >"' + $bbDir + '\\started"'),`), "the batch file says it started first");
-  assert.ok(plain.includes("elseif ($bbStarted -and $bbRegistered.State -ne 4 -and $bbRegistered.LastTaskResult -ne 0x41301) {"));
-  assert.ok(plain.includes("elseif (-not $bbStarted -and $bbRegistered.LastTaskResult -eq 0x41303 -and $bbRegistered.State -ne 2 -and $bbClock.ElapsedMilliseconds -ge 5000) {"));
+  assert.ok(plain.includes(`('@type nul >"' + $aliaDir + '\\started"'),`), "the batch file says it started first");
+  assert.ok(plain.includes("elseif ($aliaStarted -and $aliaRegistered.State -ne 4 -and $aliaRegistered.LastTaskResult -ne 0x41301) {"));
+  assert.ok(plain.includes("elseif (-not $aliaStarted -and $aliaRegistered.LastTaskResult -eq 0x41303 -and $aliaRegistered.State -ne 2 -and $aliaClock.ElapsedMilliseconds -ge 5000) {"));
 
   const desktop: BoxKind = {
     ...FAKE_KINDS[1]!,
@@ -1318,7 +1318,7 @@ test("a command runs anyway when enrolment takes longer than the wait", async ()
   assert.equal(result.stdout, "ran\n");
 });
 
-test("after a start, a command waits a while for the box's BB machine to reconnect", async () => {
+test("after a start, a command waits a while for the box's VesnALIA machine to reconnect", async () => {
   const gate = deferred();
   const world = setup({}, { enrolWaitMs: 5_000, reconnect: () => gate.promise });
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" }));
@@ -1373,7 +1373,7 @@ test("stop and start, and a stopped box says so instead of timing out", async ()
   await assert.rejects(world.boxes.run(THREAD, box.name, "true"), /is stopped. Start it first/);
   const started = await world.boxes.start(THREAD, box.name);
   assert.equal(started.state, "ready");
-  assert.deepEqual(world.reconnected, [`host-${box.id}`], "the BB machine is reconnected after the start");
+  assert.deepEqual(world.reconnected, [`host-${box.id}`], "the VesnALIA machine is reconnected after the start");
   assert.equal((await world.boxes.start(THREAD, box.name)).state, "ready");
   assert.equal(world.reconnected.length, 1, "a running box is not reconnected again");
   assert.equal((await world.boxes.run(THREAD, box.name, "echo up")).result.stdout, "up\n");
@@ -1426,7 +1426,7 @@ test("a box that is not enrolled is not reconnected after a start", async () => 
   assert.deepEqual(world.reconnected, []);
 });
 
-test("a box stopped behind BB Box's back is found when a command cannot reach it", async () => {
+test("a box stopped behind VesnALIA Box's back is found when a command cannot reach it", async () => {
   const world = setup();
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" }));
   await world.backend.stop!(box.guest!);
@@ -1434,19 +1434,19 @@ test("a box stopped behind BB Box's back is found when a command cannot reach it
   assert.equal((await world.boxes.get(THREAD, box.name)).state, "stopped");
 });
 
-test("a box that stopped by itself says why, and a stop BB Box makes forgets it (#406)", async () => {
+test("a box that stopped by itself says why, and a stop VesnALIA Box makes forgets it (#406)", async () => {
   const world = setup();
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" }));
   world.backend.stopReason = { reason: "tart run exited with status 0: the guest shut itself down", crashed: false, at: Date.UTC(2026, 9, 2, 23, 33, 5) };
   await world.backend.stop!(box.guest!);
   await assert.rejects(
     world.boxes.run(THREAD, box.name, "true"),
-    new RegExp(`^BoxError: Box ${box.name} is stopped\\. It stopped without a request from BB Box at 2026-10-02 23:33:05 UTC\\. tart run exited with status 0: the guest shut itself down\\. Start it first\\.$`),
+    new RegExp(`^BoxError: Box ${box.name} is stopped\\. It stopped without a request from VesnALIA Box at 2026-10-02 23:33:05 UTC\\. tart run exited with status 0: the guest shut itself down\\. Start it first\\.$`),
   );
   const stopped = await world.boxes.settled(box);
   assert.equal(stopped!.state, "stopped");
   assert.equal(stopped!.unrequestedStop?.restart, null);
-  assert.match(boxDetail(stopped!), /\nLast unrequested stop: It stopped without a request from BB Box at 2026-10-02 23:33:05 UTC\. tart run exited/);
+  assert.match(boxDetail(stopped!), /\nLast unrequested stop: It stopped without a request from ALIA Box at 2026-10-02 23:33:05 UTC\. tart run exited/);
   assert.match(boxView(stopped!, true, { owner: "agent" } as never).stopped!, /the guest shut itself down/);
 
   await world.boxes.start(THREAD, box.name);
@@ -1468,29 +1468,29 @@ test("a box whose VM crashed is started again, but not twice in 10 minutes (#406
   assert.ok(found.unrequestedStop!.restart);
   const restarted = await world.boxes.settled(box);
   assert.equal(restarted!.state, "ready");
-  assert.match(boxDetail(restarted!), /Last unrequested stop: It stopped without a request from BB Box at .* UTC\. tart run ended on signal 5 \(SIGTRAP\)\. BB Box started it again at .* UTC\./);
+  assert.match(boxDetail(restarted!), /Last unrequested stop: It stopped without a request from ALIA Box at .* UTC\. tart run ended on signal 5 \(SIGTRAP\)\. ALIA Box started it again at .* UTC\./);
 
-  // It crashes again at once: BB Box leaves it stopped, and says so.
+  // It crashes again at once: VesnALIA Box leaves it stopped, and says so.
   await world.backend.stop!(box.guest!);
-  await assert.rejects(world.boxes.run(THREAD, box.name, "true"), /SIGTRAP\)\. BB Box left it stopped, as it had started it again after a stop less than 10 minutes before\. Start it first\.$/);
+  await assert.rejects(world.boxes.run(THREAD, box.name, "true"), /SIGTRAP\)\. ALIA Box left it stopped, as it had started it again after a stop less than 10 minutes before\. Start it first\.$/);
   const left = await world.boxes.settled(box);
   assert.equal(left!.state, "stopped");
   assert.equal(left!.unrequestedStop!.restart, null);
 });
 
-test("a guest deleted outside BB Box marks the box gone, and release still works", async () => {
+test("a guest deleted outside VesnALIA Box marks the box gone, and release still works", async () => {
   const world = setup();
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" }));
   await world.backend.release(box.guest!, QUIET);
   const refreshed = await world.boxes.refresh(THREAD, box.name);
   assert.equal(refreshed.state, "gone");
-  assert.match(refreshed.error!, /deleted outside BB Box/);
+  assert.match(refreshed.error!, /deleted outside ALIA Box/);
   await assert.rejects(world.boxes.run(THREAD, box.name, "true"), /no longer exists/);
   assert.equal(await world.boxes.release(THREAD, box.name, "the test asked"), null);
   assert.deepEqual(await world.boxes.list(THREAD), []);
 });
 
-test("release removes the BB machine first, then the guest", async () => {
+test("release removes the VesnALIA machine first, then the guest", async () => {
   const world = setup();
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" }));
   assert.equal(await world.boxes.release(THREAD, box.name, "the test asked"), null);
@@ -1505,7 +1505,7 @@ test("a box whose backend ends it at a set time has its thread told once, within
   let refuse = false;
   const world = setup({}, {
     tell: async (threadId, text) => {
-      if (refuse) throw new Error("BB is busy");
+      if (refuse) throw new Error("VesnALIA is busy");
       told.push({ threadId, text });
     },
   });
@@ -1518,7 +1518,7 @@ test("a box whose backend ends it at a set time has its thread told once, within
   refuse = true;
   await world.boxes.sweep();
   assert.equal(told.length, 0);
-  assert.match(world.errors.at(-1)!, /BB is busy/);
+  assert.match(world.errors.at(-1)!, /ALIA is busy/);
   refuse = false;
   await world.boxes.sweep();
   await world.boxes.sweep();
@@ -1541,7 +1541,7 @@ test("a failed release keeps the box releasing with the reason, and the sweep fi
   world.backend.faults.release = new Error("the provider is busy");
   const kept = await world.boxes.release(THREAD, box.name, "the test asked");
   assert.equal(kept?.state, "releasing");
-  assert.match(kept!.error!, /the provider is busy. BB Box tries again/);
+  assert.match(kept!.error!, /the provider is busy. ALIA Box tries again/);
   await assert.rejects(world.boxes.run(THREAD, box.name, "true"), /being released/);
   const report = await world.boxes.sweep();
   assert.equal(report.resumed, 1);
@@ -1549,7 +1549,7 @@ test("a failed release keeps the box releasing with the reason, and the sweep fi
   assert.deepEqual(await world.backend.held(), []);
 });
 
-test("a thread BB says was archived loses all its boxes, failed ones forgotten, but not while BB says it is live, and each release is logged with why", async () => {
+test("a thread VesnALIA says was archived loses all its boxes, failed ones forgotten, but not while VesnALIA says it is live, and each release is logged with why", async () => {
   const logs: string[] = [];
   const world = setup({}, { log: (line) => logs.push(line) });
   const first = await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" });
@@ -1563,11 +1563,11 @@ test("a thread BB says was archived loses all its boxes, failed ones forgotten, 
   await world.boxes.idle();
   assert.equal(await world.boxes.releaseThread(THREAD, "archived"), 0);
   assert.equal((await world.boxes.list(THREAD)).length, 3);
-  assert.ok(logs.includes(`Kept the boxes of thread ${THREAD}: BB said it was archived, but says now that it is live. BB's answer: the test says live.`));
+  assert.ok(logs.includes(`Kept the boxes of thread ${THREAD}: VesnALIA said it was archived, but says now that it is live. VesnALIA's answer: the test says live.`));
   world.threads.set(THREAD, "ended");
   assert.equal(await world.boxes.releaseThread(THREAD, "archived"), 2);
   assert.deepEqual(await world.boxes.list(THREAD), []);
-  assert.ok(logs.includes(`Releasing box ${first.name} of thread ${THREAD}: its thread was archived. BB's answer: the test says ended.`));
+  assert.ok(logs.includes(`Releasing box ${first.name} of thread ${THREAD}: its thread was archived. VesnALIA's answer: the test says ended.`));
   assert.deepEqual(
     (await world.backend.held()).map((guest) => guest.owner?.boxId),
     [other.id],
@@ -1576,23 +1576,23 @@ test("a thread BB says was archived loses all its boxes, failed ones forgotten, 
   assert.ok(logs.includes(`Releasing box ${other.name} of thread thr_two: its thread released it with box_release.`));
 });
 
-test("a thread event releases its boxes at once only when BB returns the thread archived or deleted, and leaves the rest to the sweep", async () => {
+test("a thread event releases its boxes at once only when VesnALIA returns the thread archived or deleted, and leaves the rest to the sweep", async () => {
   const logs: string[] = [];
   const world = setup({}, { log: (line) => logs.push(line) });
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" }));
-  // BB cannot say: the box stays, and the sweep decides as ever.
+  // VesnALIA cannot say: the box stays, and the sweep decides as ever.
   world.threads.set(THREAD, "unknown");
   assert.equal(await world.boxes.releaseThread(THREAD, "deleted"), 0);
-  assert.ok(logs.includes(`Kept the boxes of thread ${THREAD}: BB said it was deleted, but cannot say now whether it ended, and the sweep decides. BB's answer: the test says unknown.`));
+  assert.ok(logs.includes(`Kept the boxes of thread ${THREAD}: VesnALIA said it was deleted, but cannot say now whether it ended, and the sweep decides. VesnALIA's answer: the test says unknown.`));
   assert.equal((await world.boxes.sweep()).released, 0);
-  // BB finds no such thread: that counts as its first answer, and the next sweep releases the box if BB still finds none.
+  // VesnALIA finds no such thread: that counts as its first answer, and the next sweep releases the box if VesnALIA still finds none.
   world.threads.set(THREAD, "missing");
   assert.equal(await world.boxes.releaseThread(THREAD, "deleted"), 0);
   assert.equal((await world.boxes.find(box.id))?.state, "ready");
-  assert.ok(logs.includes(`Kept the boxes of thread ${THREAD}: BB said it was deleted, but finds no such thread now, and the next sweep releases them if BB still finds none. BB's answer: the test says missing.`));
+  assert.ok(logs.includes(`Kept the boxes of thread ${THREAD}: VesnALIA said it was deleted, but finds no such thread now, and the next sweep releases them if VesnALIA still finds none. VesnALIA's answer: the test says missing.`));
   assert.equal((await world.boxes.sweep()).released, 1);
   assert.equal(await world.boxes.find(box.id), null);
-  assert.ok(logs.includes(`Releasing box ${box.name} of thread ${THREAD}: BB says its thread ended, at this sweep and the last. BB's answer: the test says missing.`));
+  assert.ok(logs.includes(`Releasing box ${box.name} of thread ${THREAD}: VesnALIA says its thread ended, at this sweep and the last. VesnALIA's answer: the test says missing.`));
 });
 
 test("the sweep releases the boxes of ended threads and keeps live and unknown ones", async () => {
@@ -1629,33 +1629,33 @@ test("the sweep puts back what a ready box's guest still has lowered from its st
   assert.deepEqual(world.backend.settled, [ready.guest!.ref], "and not again");
 });
 
-test("a box goes for its thread ending only when BB says so at two sweeps running, so one wrong answer, as after a restart, takes no live thread's box", async () => {
+test("a box goes for its thread ending only when VesnALIA says so at two sweeps running, so one wrong answer, as after a restart, takes no live thread's box", async () => {
   const logs: string[] = [];
   const world = setup({}, { log: (line) => logs.push(line) });
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" }));
-  // BB says once that the thread is gone, at the first sweep after a restart.
+  // VesnALIA says once that the thread is gone, at the first sweep after a restart.
   world.threads.set(THREAD, "ended");
   const first = await world.boxes.sweep();
   assert.equal(first.released, 0);
   assert.equal(first.ending, 1);
   assert.equal((await world.boxes.find(box.id))?.state, "ready");
-  assert.ok(logs.includes(`Kept box ${box.name} of thread ${THREAD}: BB says its thread ended, and the next sweep releases it if BB says so again. BB's answer: the test says ended.`));
+  assert.ok(logs.includes(`Kept box ${box.name} of thread ${THREAD}: VesnALIA says its thread ended, and the next sweep releases it if VesnALIA says so again. VesnALIA's answer: the test says ended.`));
   world.threads.delete(THREAD);
   await world.boxes.sweep();
   world.threads.set(THREAD, "ended");
   assert.equal((await world.boxes.sweep()).released, 0, "a live answer between starts it over");
-  // A restart forgets what BB said: the new registry's first sweep releases nothing.
+  // A restart forgets what VesnALIA said: the new registry's first sweep releases nothing.
   const boxes = world.restart();
   assert.equal((await boxes.sweep()).released, 0);
   assert.deepEqual(await world.backend.held().then((held) => held.map((guest) => guest.owner?.boxId)), [box.id]);
   assert.ok(!logs.some((line) => line.startsWith("Releasing")));
 
-  // A thread BB returns archived or deleted and one it does not find count alike.
+  // A thread VesnALIA returns archived or deleted and one it does not find count alike.
   world.threads.set(THREAD, "missing");
   assert.equal((await boxes.sweep()).released, 1);
   assert.equal(await boxes.find(box.id), null);
   assert.deepEqual(await world.backend.held(), []);
-  assert.ok(logs.includes(`Releasing box ${box.name} of thread ${THREAD}: BB says its thread ended, at this sweep and the last. BB's answer: the test says missing.`));
+  assert.ok(logs.includes(`Releasing box ${box.name} of thread ${THREAD}: VesnALIA says its thread ended, at this sweep and the last. VesnALIA's answer: the test says missing.`));
 });
 
 test("the sweep releases guests no box owns and adopts guests of live threads", async () => {
@@ -1669,13 +1669,13 @@ test("the sweep releases guests no box owns and adopts guests of live threads", 
     await world.kv.delete(`index/${box.id}`);
   }
   world.threads.set("thr_gone", "ended");
-  // A restored box enrols only when BB Box enrols boxes.
+  // A restored box enrols only when VesnALIA Box enrols boxes.
   world.general = { ...world.general, enrol: false };
   const enrolled = world.enrolled.length;
   const report = await world.boxes.sweep();
   assert.equal(world.enrolled.length, enrolled);
   assert.equal(report.adopted, 1);
-  assert.equal(report.ending, 1, "BB says its thread ended at this sweep, not the last");
+  assert.equal(report.ending, 1, "VesnALIA says its thread ended at this sweep, not the last");
   assert.equal((await world.boxes.sweep()).leftovers, 1);
   const adopted = await world.boxes.find(lost.id);
   assert.equal(adopted?.name, lost.name);
@@ -1693,11 +1693,11 @@ test("the sweep releases guests no box owns and adopts guests of live threads", 
   assert.equal(world.enrolled.length, enrolled);
 });
 
-test("the sweep never enrols a box whose BB machine was removed", async () => {
+test("the sweep never enrols a box whose VesnALIA machine was removed", async () => {
   const world = setup();
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" }));
   assert.deepEqual(world.enrolled, [box.name]);
-  // As when someone removes the box's machine in BB.
+  // As when someone removes the box's machine in VesnALIA.
   await world.boxes.update(box, () => ({ enrol: { state: "off", hostId: null, error: null } }));
   await world.boxes.sweep();
   assert.deepEqual(world.enrolled, [box.name]);
@@ -1714,7 +1714,7 @@ test("after its records are wiped, the sweep restores the boxes of live threads,
   const unsure = await acquire("thr_unsure");
   await world.boxes.stop("thr_live", stopped.name);
   await world.boxes.run("thr_live", running.name, "echo work > file.txt");
-  // Every record and index entry goes, as when BB Box loses its storage; the backend's own keys stay.
+  // Every record and index entry goes, as when VesnALIA Box loses its storage; the backend's own keys stay.
   for (const key of [...(await world.kv.list("box/")), ...(await world.kv.list("index/"))]) await world.kv.delete(key);
   const boxes = world.restart();
   assert.deepEqual(await boxes.all(), []);
@@ -1742,16 +1742,16 @@ test("after its records are wiped, the sweep restores the boxes of live threads,
   }
   const quiet = await boxes.find(silent.id);
   assert.equal(quiet?.state, "ready", "its guest runs");
-  assert.match(quiet?.error ?? "", /did not answer when BB Box restored/);
+  assert.match(quiet?.error ?? "", /did not answer when ALIA Box restored/);
   assert.ok(quiet?.restoredAt, "it enrols once it answers");
   assert.equal(quiet?.enrol.state, "off");
-  // A sweep while it is still silent leaves it, and releases the guest whose thread BB says ended again.
+  // A sweep while it is still silent leaves it, and releases the guest whose thread VesnALIA says ended again.
   assert.equal((await boxes.sweep()).leftovers, 1);
   assert.equal((await boxes.find(silent.id))?.enrol.state, "off");
   assert.deepEqual(world.enrolled, [`${running.name}, restored`]);
   delete world.backend.faults.silent;
   assert.equal(await boxes.find(ended.id), null);
-  assert.equal(await boxes.find(unsure.id), null, "no record until BB answers");
+  assert.equal(await boxes.find(unsure.id), null, "no record until VesnALIA answers");
   assert.deepEqual(
     (await world.backend.held()).map((guest) => guest.owner?.boxId).sort(),
     [running.id, stopped.id, silent.id, unsure.id].sort(),
@@ -1759,7 +1759,7 @@ test("after its records are wiped, the sweep restores the boxes of live threads,
   );
   assert.equal((await boxes.run("thr_live", running.name, "cat file.txt")).result.stdout, "work\n");
 
-  // Records restored once are left alone; a thread BB confirms later gets its box back.
+  // Records restored once are left alone; a thread VesnALIA confirms later gets its box back.
   // The silent box answers now, so it enrols, and its error goes.
   world.threads.set("thr_unsure", "live");
   assert.deepEqual({ ...(await boxes.sweep()) }, { released: 0, leftovers: 0, adopted: 1, kept: 0, ending: 0, resumed: 0, guarded: 0 });
@@ -1782,8 +1782,8 @@ test("after its records are wiped, the sweep restores the boxes of live threads,
   );
 });
 
-test("the sweep restores a thread's own box as BB's machine for the thread, which does not enrol again, and waits when BB does not say (#127)", async () => {
-  /** The ID of BB's machine for each box that is one, as BB keeps for a "New box". */
+test("the sweep restores a thread's own box as VesnALIA's machine for the thread, which does not enrol again, and waits when VesnALIA does not say (#127)", async () => {
+  /** The ID of VesnALIA's machine for each box that is one, as VesnALIA keeps for a "New box". */
   const machines = new Map<string, string>();
   let answers = false;
   const logs: string[] = [];
@@ -1792,7 +1792,7 @@ test("the sweep restores a thread's own box as BB's machine for the thread, whic
     {
       log: (message) => logs.push(message),
       machineOf: async (boxId) => {
-        if (!answers) throw new Error("BB did not answer");
+        if (!answers) throw new Error("VesnALIA did not answer");
         return machines.get(boxId) ?? null;
       },
     },
@@ -1805,8 +1805,8 @@ test("the sweep restores a thread's own box as BB's machine for the thread, whic
   world.enrolled.length = 0;
 
   await boxes.sweep();
-  assert.deepEqual(await boxes.all(), [], "no record until BB says which machine each box is");
-  assert.ok(world.errors.includes("sweep: BB did not answer"));
+  assert.deepEqual(await boxes.all(), [], "no record until VesnALIA says which machine each box is");
+  assert.ok(world.errors.includes("sweep: VesnALIA did not answer"));
 
   answers = true;
   assert.equal((await boxes.sweep()).adopted, 2);
@@ -1818,7 +1818,7 @@ test("the sweep restores a thread's own box as BB's machine for the thread, whic
   assert.equal((await boxes.find(other.id))?.role, "box");
   assert.deepEqual(world.enrolled, [`${other.name}, restored`], "only the other box enrols again");
 
-  // It is the thread's machine still: a start reconnects BB's machine and enrols nothing.
+  // It is the thread's machine still: a start reconnects VesnALIA's machine and enrols nothing.
   await boxes.stop(THREAD, own.name);
   await boxes.start(THREAD, own.name);
   await boxes.settled(own);
@@ -1852,7 +1852,7 @@ test("an acquire may name its provider, by name, ID or host, without case; only 
 
   // A provider that is off is said to be off; one that is full refuses with its words and names the others.
   world.off.add("fake:second");
-  await assert.rejects(acquire("devpc"), /Fake host on devpc is off; turn it on in BB Box's settings\. linux also comes from Fake host\. Leave "on" out for the first with room\.$/);
+  await assert.rejects(acquire("devpc"), /Fake host on devpc is off; turn it on in ALIA Box's settings\. linux also comes from Fake host\. Leave "on" out for the first with room\.$/);
   world.off.delete("fake:second");
   const full = new FakeBackend({ root: tempDir("boxes-full"), storage: scopedStorage(world.kv, "backend/fake:full/"), id: "fake:full", hosts: ["lab2"], maxGuests: 0 }) as unknown as Backend;
   world.others = [other, second, full];
@@ -1920,8 +1920,8 @@ test("an acquire may name several providers: the first with room among them in a
   // A listed provider that is off is passed over like a full one; when none has room, each one's reason comes, then the kind's other providers.
   world.off.add("fake:second");
   assert.equal((await acquire(["devpc", world.backend.id])).backend, world.backend.id);
-  await assert.rejects(acquire(["lab2", "devpc"]), /(?=.*Fake host on devpc is off; turn it on in BB Box's settings\.).* linux also comes from Fake host\. Leave "on" out for the first with room\.$/);
-  await assert.rejects(acquire(["devpc"]), /Fake host on devpc is off; turn it on in BB Box's settings\. linux also comes from Fake host, Fake host on lab2\. Leave "on" out for the first with room\.$/);
+  await assert.rejects(acquire(["lab2", "devpc"]), /(?=.*Fake host on devpc is off; turn it on in ALIA Box's settings\.).* linux also comes from Fake host\. Leave "on" out for the first with room\.$/);
+  await assert.rejects(acquire(["devpc"]), /Fake host on devpc is off; turn it on in ALIA Box's settings\. linux also comes from Fake host, Fake host on lab2\. Leave "on" out for the first with room\.$/);
   world.off.delete("fake:second");
   await world.boxes.idle();
 
@@ -1965,7 +1965,7 @@ test("a kind's spares are made and enrolled ahead, and an acquire of the kind at
   const gate = deferred();
   const claimed: string[] = [];
   const logs: string[] = [];
-  /** Whether BB shows a claimed spare's machine disconnected. */
+  /** Whether VesnALIA shows a claimed spare's machine disconnected. */
   let disconnected = false;
   const world = setup(
     {},
@@ -1990,7 +1990,7 @@ test("a kind's spares are made and enrolled ahead, and an acquire of the kind at
     assert.equal(spare.state, "ready");
     assert.equal(spare.enrol.state, "enrolled");
     assert.equal(machineName(spare), `${spare.name} (spare)`);
-    // One that waits stopped says so, as BB shows its machine offline meanwhile (#539).
+    // One that waits stopped says so, as VesnALIA shows its machine offline meanwhile (#539).
     assert.equal(machineName({ ...spare, state: "stopped" }), `${spare.name} (spare, stopped)`);
   }
   assert.deepEqual([...world.enrolled].sort(), spares.map((spare) => spare.name).sort());
@@ -2029,7 +2029,7 @@ test("a kind's spares are made and enrolled ahead, and an acquire of the kind at
   assert.deepEqual(world.errors, []);
 });
 
-test("a new spare's name avoids a box a thread claimed with that name, so no two live boxes, or their BB machines, share one (#539)", async () => {
+test("a new spare's name avoids a box a thread claimed with that name, so no two live boxes, or their VesnALIA machines, share one (#539)", async () => {
   // Every name is drawn from the same bytes, so a new name meets each name it could take; box IDs stay random.
   const { randomBytes } = await import("node:crypto");
   const world = setup({}, { enrolWaitMs: 5_000, random: (bytes) => (bytes === 2 ? new Uint8Array(2) : randomBytes(bytes)) });
@@ -2049,7 +2049,7 @@ test("a new spare's name avoids a box a thread claimed with that name, so no two
   assert.ok(![box.name, next!.name].includes(other.name), other.name);
 });
 
-test("a claimed spare whose BB machine BB shows disconnected reconnects, and its commands wait for that (#128)", async () => {
+test("a claimed spare whose VesnALIA machine VesnALIA shows disconnected reconnects, and its commands wait for that (#128)", async () => {
   const gate = deferred();
   const reconnected: string[] = [];
   const world = setup(
@@ -2075,7 +2075,7 @@ test("a claimed spare whose BB machine BB shows disconnected reconnects, and its
   assert.deepEqual(reconnected, [box.name]);
 });
 
-test("a claim takes only a ready, enrolled spare of the kind and size whose BB machine no thread uses, and keeps names unique (032)", async () => {
+test("a claim takes only a ready, enrolled spare of the kind and size whose VesnALIA machine no thread uses, and keeps names unique (032)", async () => {
   let usable: boolean | Error = true;
   const logs: string[] = [];
   const world = setup(
@@ -2108,10 +2108,10 @@ test("a claim takes only a ready, enrolled spare of the kind and size whose BB m
   await world.boxes.update(spare, () => ({ enrol: { state: "enrolled", hostId: `host-${spare.id}`, error: null } }));
   usable = false;
   await notClaimed();
-  assert.ok(logs.includes(`Skipped spare box ${spare.name}: a thread uses its BB machine.`));
-  usable = new Error("BB did not answer");
+  assert.ok(logs.includes(`Skipped spare box ${spare.name}: a thread uses its VesnALIA machine.`));
+  usable = new Error("VesnALIA did not answer");
   await notClaimed();
-  assert.deepEqual(world.errors, ["claim: BB did not answer"]);
+  assert.deepEqual(world.errors, ["claim: VesnALIA did not answer"]);
 
   // A thread with a box of the spare's name gives the claimed box another.
   usable = true;
@@ -2236,7 +2236,7 @@ test("an image's spare goes when its build changes or the image is not in use, a
   assert.equal(started.filter((from) => from === "broken").length, 1, "made once, not in a loop");
   const [check] = await world.boxes.imageSpareChecks();
   assert.deepEqual([check?.name, check?.status], ["Spare of rust for linux on fake", "warn"]);
-  assert.match(check!.detail, /^A spare from its build broken failed to start at \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC, so BB Box keeps none of that build until .* UTC\. Its boxes start from the build meanwhile\.$/);
+  assert.match(check!.detail, /^A spare from its build broken failed to start at \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC, so ALIA Box keeps none of that build until .* UTC\. Its boxes start from the build meanwhile\.$/);
   build.ref = "rust-3";
   await world.boxes.keepSpares();
   await world.boxes.idle();
@@ -2255,7 +2255,7 @@ test("an image's spare gives its room to a thread's box that finds none (#440)",
   assert.equal((await ready(world.boxes, box)).state, "ready");
   await world.boxes.keepSpares();
   assert.deepEqual(await world.boxes.list(SPARES), [], "the upkeep takes no thread's room");
-  assert.ok(logs.some((line) => line.startsWith("bb-box keeps no spare rust linux box on fake for now: ")), logs.join("\n"));
+  assert.ok(logs.some((line) => line.startsWith("alia-box keeps no spare rust linux box on fake for now: ")), logs.join("\n"));
 });
 
 test("a spare gives its room to a thread's box that finds none, and comes back only when there is room (#120)", async () => {
@@ -2280,7 +2280,7 @@ test("a spare gives its room to a thread's box that finds none, and comes back o
   await assert.rejects(world.boxes.acquire({ threadId: "c", projectId: null, kind: "linux-desktop" }), (error: unknown) => error instanceof BoxError && error.code === "no_capacity");
   await world.boxes.keepSpares();
   assert.deepEqual(await world.boxes.list(SPARES), []);
-  assert.ok(logs.some((line) => line.startsWith("bb-box keeps 0 of 1 spare linux boxes for now: ")));
+  assert.ok(logs.some((line) => line.startsWith("alia-box keeps 0 of 1 spare linux boxes for now: ")));
   assert.equal((await world.boxes.list("a"))[0]?.state, "ready");
 
   assert.equal(await world.boxes.release("a", first.name, "the test asked"), null);
@@ -2329,14 +2329,14 @@ test("a claimed spare's timings count the relabel when its name changes, and sho
   assert.equal(kept.total, kept.spare, "a spare that keeps its name is ready on the claim");
 });
 
-test("the sweep keeps your machines, and restores a lost one to you under its name, asking BB for no project (036)", async () => {
+test("the sweep keeps your machines, and restores a lost one to you under its name, asking VesnALIA for no project (036)", async () => {
   const projects: string[] = [];
   const world = setup({}, { projectOf: async (threadId) => (projects.push(threadId), null) });
   world.threads.set(OPERATOR, "ended");
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: OPERATOR, projectId: null, kind: "linux", name: "build-1" }));
   await world.boxes.sweep();
   await world.boxes.idle();
-  assert.deepEqual((await world.boxes.list(OPERATOR)).map((each) => each.id), [box.id], "BB's answer for its thread is never asked");
+  assert.deepEqual((await world.boxes.list(OPERATOR)).map((each) => each.id), [box.id], "VesnALIA's answer for its thread is never asked");
 
   await world.kv.delete(`box/${OPERATOR}/${box.id}`);
   await world.kv.delete(`index/${box.id}`);
@@ -2352,7 +2352,7 @@ test("the sweep keeps your machines, and restores a lost one to you under its na
 test("the sweep keeps spares, restores a lost one as a spare, and releases those no kind keeps or no claim can take (032)", async () => {
   const world = setup();
   world.general = { ...world.general, spares: { linux: 2 } };
-  // BB knows no thread of that ID; the sweep never asks.
+  // VesnALIA knows no thread of that ID; the sweep never asks.
   world.threads.set(SPARES, "ended");
   await world.boxes.sweep();
   await world.boxes.idle();
@@ -2382,7 +2382,7 @@ test("the sweep keeps spares, restores a lost one as a spare, and releases those
   assert.equal((await world.boxes.find(claimed.id))?.threadId, THREAD);
   assert.ok(!(await world.boxes.list(SPARES)).some((spare) => spare.id === claimed.id));
 
-  // A spare whose machine was removed in BB, or that stopped, is replaced.
+  // A spare whose machine was removed in VesnALIA, or that stopped, is replaced.
   const spares = await world.boxes.list(SPARES);
   assert.equal(spares.length, 2);
   await world.boxes.update(spares[0]!, () => ({ enrol: { state: "off", hostId: null, error: null } }));
@@ -2472,7 +2472,7 @@ test("the sweep acts on a guest's power only once the guest confirms it, so a bo
 test("a reused reference is the new box's: the old box goes, and its release leaves the new box alone", async () => {
   const world = setup();
   const old = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" }));
-  // Deleted outside bb-box, then the provider gives the reference to the next box.
+  // Deleted outside alia-box, then the provider gives the reference to the next box.
   await world.backend.release(old.guest!, QUIET);
   await world.kv.set("backend/fake/counter", 0);
   const next = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" }));
@@ -2628,8 +2628,8 @@ test("a box whose backend is off can be seen but says what to fix, and is kept",
     (thrown: unknown) => thrown,
   );
   assert.ok(error instanceof BoxError);
-  const person = `The ${box.backendLabel} backend that holds box ${box.name} is not in BB Box's settings, or its settings need fixing. Fix them in BB Box's settings.`;
-  const agent = `The ${box.backendLabel} backend that holds box ${box.name} is not in BB Box's settings, or its settings need fixing, so ask the user. The box stays as it is until the backend is back.`;
+  const person = `The ${box.backendLabel} backend that holds box ${box.name} is not in VesnALIA Box's settings, or its settings need fixing. Fix them in VesnALIA Box's settings.`;
+  const agent = `The ${box.backendLabel} backend that holds box ${box.name} is not in VesnALIA Box's settings, or its settings need fixing, so ask the user. The box stays as it is until the backend is back.`;
   assert.equal(error.message, person);
   assert.equal(error.agentMessage, agent);
   const said = failure(error, "Running the command") as { readonly content: readonly { readonly text: string }[] };
@@ -2798,7 +2798,7 @@ exec env -i HOME="$HOME" PATH="$PATH" BBX_SESSION=Aqua "$@"
     assert.deepEqual(ran.calls[0], [...wrapper, "/usr/bin/true"], `${shell}: a no-op checks the wrapper first`);
     assert.deepEqual(ran.calls[1]!.slice(0, -1), [...wrapper, shell, "-c"], `${shell}: the command runs through the wrapper`);
 
-    // Where the box has BB Box's launcher (#628), the command goes through it, with the same result.
+    // Where the box has VesnALIA Box's launcher (#628), the command goes through it, with the same result.
     const launcher = join(dir, "launcher");
     writeFileSync(launcher, '#!/bin/sh\nexec "$@"\n', { mode: 0o755 });
     const launched = run({}, script.replaceAll(MAC_LAUNCHER, launcher));
@@ -2809,12 +2809,12 @@ exec env -i HOME="$HOME" PATH="$PATH" BBX_SESSION=Aqua "$@"
     const other = username === "root" ? "nobody" : "root";
     const away = run({ FAKE_CONSOLE: other });
     assert.equal(away.status, DESKTOP_EXITS.noSession, shell);
-    assert.equal(away.stderr, `bb-box: there is no desktop session to join: ${username} is not logged in to the desktop (the console belongs to ${other}).\n`);
+    assert.equal(away.stderr, `alia-box: there is no desktop session to join: ${username} is not logged in to the desktop (the console belongs to ${other}).\n`);
     assert.deepEqual([away.stdout, away.calls.length], ["", 0]);
 
     const refused = run({ FAKE_REFUSES: "1" });
     assert.equal(refused.status, DESKTOP_EXITS.refused, shell);
-    assert.match(refused.stderr, /^bb-box: sudo does not let \S+ run commands in the desktop session\. Mac setup adds this rule as \/etc\/sudoers\.d\/bb-box-desktop:\n/);
+    assert.match(refused.stderr, /^alia-box: sudo does not let \S+ run commands in the desktop session\. Mac setup adds this rule as \/etc\/sudoers\.d\/alia-box-desktop:\n/);
     assert.ok(refused.stderr.endsWith(`\n${username} ALL=(root) NOPASSWD: /bin/launchctl asuser ${uid} /usr/bin/sudo -n -u ${username} -- *\n`), refused.stderr);
     assert.deepEqual([refused.stdout, refused.calls.length], ["", 1]);
   }
@@ -2881,14 +2881,14 @@ test("a box gains what a release adds to its kind, where its backend says the gu
   assert.equal(await boxes.refreshCapabilities(), 0, "once is enough");
 });
 
-test("a job's command outlives its connection and leaves its exit status and output, which the next job removes once BB Box has them (#405)", async () => {
+test("a job's command outlives its connection and leaves its exit status and output, which the next job removes once VesnALIA Box has them (#405)", async () => {
   const home = tempDir("jobs");
   const env = { PATH: process.env.PATH, HOME: home };
   const run = (script: string, job: { id: string; forget: string[]; prune: boolean }) =>
     spawnSync("sh", ["-c", command("linux", script, { timeoutMs: 10_000, job })], { env, encoding: "utf8" });
   const read = (id: string) => spawnSync("sh", ["-c", jobScript(id, 4)], { env, encoding: "utf8" });
 
-  // As when BB Box goes mid-command: its end of the connection closes, and
+  // As when VesnALIA Box goes mid-command: its end of the connection closes, and
   // the command runs on.
   const id = newJobId();
   const child = spawn("sh", ["-c", command("linux", "echo started; sleep 0.5; echo out; echo err >&2; exit 3", { timeoutMs: 10_000, job: { id, forget: [], prune: false } })], { env, stdio: ["ignore", "pipe", "pipe"] });
@@ -2900,13 +2900,13 @@ test("a job's command outlives its connection and leaves its exit status and out
   assert.deepEqual([read(id).stdout, read(id).stderr], ["3\nstarted\nout\n", "err\n"], "its exit status, then its output, as often as it is read");
 
   // A job passes its result on as a command does, and leaves it too; the
-  // next job removes the jobs BB Box has the results of.
+  // next job removes the jobs VesnALIA Box has the results of.
   const next = newJobId();
   const ran = run("echo next; exit 2", { id: next, forget: [id], prune: false });
   assert.deepEqual([ran.status, ran.stdout, ran.stderr], [2, "next\n", ""]);
   assert.deepEqual([read(id).status, read(next).status], [3, 0]);
 
-  // Once per box after BB Box starts, a job removes those older than a week.
+  // Once per box after VesnALIA Box starts, a job removes those older than a week.
   const old = join(home, JOBS_DIR, newJobId());
   mkdirSync(old);
   utimesSync(old, new Date(Date.now() - 8 * 86_400_000), new Date(Date.now() - 8 * 86_400_000));
@@ -2937,7 +2937,7 @@ test("a desktop's clipboard commands: pbcopy and pbpaste on macOS, Get-Clipboard
   // In the desktop session: the one-off scheduled task in the user's interactive logon (039), which passes stdin in and stdout back.
   const wrapped = command("windows", WINDOWS_CLIPBOARD.write, { session: "desktop", timeoutMs: 20_000 });
   assert.match(wrapped, /Schedule\.Service/);
-  assert.match(wrapped, /OpenStandardInput\(\)\.CopyTo\(\$bbFile\)/);
+  assert.match(wrapped, /OpenStandardInput\(\)\.CopyTo\(\$aliaFile\)/);
 });
 
 test("the upkeep replaces a kind's spare whose image has a newer build, and keeps one its backend says is current or cannot tell of (049)", async () => {
@@ -3068,7 +3068,7 @@ test("a spare that waits stopped stays running until its device has booted, then
   assert.deepEqual(await world.boxes.list(SPARES), [], "no spare of the kind is made again at once");
   const [check] = (await world.boxes.spareChecks()).filter((each) => each.id === "spares.linux");
   assert.equal(check!.status, "warn");
-  assert.match(check!.detail, /^BB Box keeps 1 spare linux box: 0 ready, 0 being made\. A spare waits stopped with its session saved: it holds no memory, and its saved memory takes disk, at most a little over its 4 GiB of memory, besides its own disk\. It has too few: its Pixel 8 did not boot: the emulator exited\.$/);
+  assert.match(check!.detail, /^ALIA Box keeps 1 spare linux box: 0 ready, 0 being made\. A spare waits stopped with its session saved: it holds no memory, and its saved memory takes disk, at most a little over its 4 GiB of memory, besides its own disk\. It has too few: its Pixel 8 did not boot: the emulator exited\.$/);
   assert.deepEqual(world.errors, []);
 });
 
@@ -3112,7 +3112,7 @@ test("the doctor says spares are off for a kind with a device, and what one cost
   world.testDevice = false;
   world.general = { ...world.general, spares: { linux: 2 } };
   const [kept] = await world.boxes.spareChecks();
-  assert.equal(kept!.detail, "BB Box keeps 2 spare linux boxes: 0 ready, 0 being made. A spare waits stopped with its session saved: it holds no memory, and its saved memory takes disk, at most a little over its 4 GiB of memory, besides its own disk.");
+  assert.equal(kept!.detail, "VesnALIA Box keeps 2 spare linux boxes: 0 ready, 0 being made. A spare waits stopped with its session saved: it holds no memory, and its saved memory takes disk, at most a little over its 4 GiB of memory, besides its own disk.");
 });
 
 test("a claim of a spare tells the plugin once the box is the thread's, after a spare that waited stopped has started (063)", async () => {
@@ -3143,7 +3143,7 @@ test("each resize is logged with the box, from and to, how, who asked and how lo
   assert.match(resized("Refused to resize")[0]!, new RegExp(`^Refused to resize box ${box.name} of thread ${THREAD}, as the CLI asked: Resizing box ${box.name} to 4 cores, 4 GiB memory, 30 GiB disk needs a restart for its cores`));
   assert.equal(await world.boxes.resize(THREAD, box.name, { cores: 4 }, { check: true }).then(() => logs.length), logs.length, "a check is not logged");
 
-  // A restart: the box is starting while it is down, ready after, and its BB machine reconnects.
+  // A restart: the box is starting while it is down, ready after, and its VesnALIA machine reconnects.
   const states: string[] = [];
   world.backend.boxResizeGate = (async () => {
     for (let i = 0; i < 50 && !states.length; i++) {
@@ -3292,7 +3292,7 @@ test("box_list's kinds wait, as acquire does, for a backend's read of a kind it 
 
   declared = false;
   read = () => new Promise(() => undefined);
-  assert.deepEqual(await world.boxes.withheldKinds(50), [{ kind: "ios", label: "iOS Simulator", words: "Being checked: BB Box is still reading whether its backends can make them now. Call box_list again in a few seconds" }]);
+  assert.deepEqual(await world.boxes.withheldKinds(50), [{ kind: "ios", label: "iOS Simulator", words: "Being checked: VesnALIA Box is still reading whether its backends can make them now. Call box_list again in a few seconds" }]);
   read = async () => [{ kind: "ios", why: "mac1 did not answer: ssh timed out.", passing: true }];
   assert.deepEqual(await world.boxes.withheldKinds(1_000), [{ kind: "ios", label: "iOS Simulator", words: "Not now: Fake host on mac1 offers them, but not now: mac1 did not answer: ssh timed out." }]);
 });
@@ -3377,7 +3377,7 @@ function sharedIosKind(): BoxKind {
   };
 }
 
-const SLOT_THREE: SlotPlacement = { on: "slot", host: "bb-box-host-1", hostOn: "tart", carried: false, generation: 7, place: 2, most: 8 };
+const SLOT_THREE: SlotPlacement = { on: "slot", host: "alia-box-host-1", hostOn: "tart", carried: false, generation: 7, place: 2, most: 8 };
 
 function lendingSlots(backend: FakeBackend, placement: SlotPlacement): void {
   const acquire = backend.acquire.bind(backend);
@@ -3432,9 +3432,9 @@ test("a box in a slot has the slot's capabilities, says where it is, and refuses
   assert.equal(stored.capabilities.command?.admin, false, "no root in a slot");
   assert.deepEqual(stored.capabilities.displays, [DEVICE_DISPLAY], "the device, but not the host's desktop");
   assert.equal(stored.capabilities.computerUse, null);
-  assert.equal(stored.capabilities.enrol, true, "a slot box still joins BB");
+  assert.equal(stored.capabilities.enrol, true, "a slot box still joins VesnALIA");
   const detail = boxDetail(stored);
-  assert.match(detail, /\nWhere: On a shared iOS host \(a Tart VM\), slot 3 of 8\. Ports 20200 to 20299, in BB_PORT_BASE and BB_PORT_COUNT\.\n/);
+  assert.match(detail, /\nWhere: On a shared iOS host \(a Tart VM\), slot 3 of 8\. Ports 20200 to 20299, in ALIA_PORT_BASE and ALIA_PORT_COUNT\.\n/);
   assert.match(detail, /\nRoot: no, the box user cannot use sudo or brew install on a shared host\. Ask for dedicated: true for a VM of its own\n/);
   assert.doesNotMatch(detail, /\nSize: /, "no size of its own");
   assert.equal(world.boxes.canStopStart(stored), false);
@@ -3500,7 +3500,7 @@ test("with shared the default, an ios box asked for with nothing else takes a sl
   assert.equal(dedicated.size?.cores, 8);
   const again = await ready(world.boxes, await acquire());
   assert.equal(placementOf(again).on, "slot", "the slot freed by the release");
-  assert.ok(logs.some((line) => /found no slot on a shared iOS host, so bb-box looks for a VM of its own: The shared host fake-host-1 has all its 2 slots held\./.test(line)), logs.join("\n"));
+  assert.ok(logs.some((line) => /found no slot on a shared iOS host, so alia-box looks for a VM of its own: The shared host fake-host-1 has all its 2 slots held\./.test(line)), logs.join("\n"));
 });
 
 test("with shared the default, an ios box that finds neither a slot nor a VM is refused with both reasons (064, unit 6)", async () => {
@@ -3519,7 +3519,7 @@ test("a take that loses its race is asked again, three times, then the box is re
   world.backend.takeLosses = 3;
   await assert.rejects(
     world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "ios", shared: true }),
-    refusedWith("no_capacity", /^Every shared iOS host BB Box asked had its room taken first, 3 times, so this ios box has no slot: Another box claimed it first\. Another box claimed it first\. Another box claimed it first\. Ask again\.$/),
+    refusedWith("no_capacity", /^Every shared iOS host ALIA Box asked had its room taken first, 3 times, so this ios box has no slot: Another box claimed it first\. Another box claimed it first\. Another box claimed it first\. Ask again\.$/),
   );
 });
 
@@ -3534,7 +3534,7 @@ test("a box in a slot has its placement on a shared host in its timings, which i
   assert.equal(plain.timings["shared-host"], undefined, "a VM of its own is placed as before");
 });
 
-test("a box in a slot whose host's VM stopped, as after its Mac restarted, is started again by bb-box, though a person's start is refused (064, unit 4)", async () => {
+test("a box in a slot whose host's VM stopped, as after its Mac restarted, is started again by alia-box, though a person's start is refused (064, unit 4)", async () => {
   const world = setup({ kinds: [sharedIosKind()], slots: { kinds: ["ios"], most: 8 } });
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "ios", shared: true }));
   assert.equal(placementOf(box).on, "slot");
@@ -3545,7 +3545,7 @@ test("a box in a slot whose host's VM stopped, as after its Mac restarted, is st
   assert.ok(found.unrequestedStop!.restart);
   const restarted = await world.boxes.settled(box);
   assert.equal(restarted!.state, "ready");
-  assert.match(boxDetail(restarted!), /BB Box started it again at .* UTC\./);
+  assert.match(boxDetail(restarted!), /ALIA Box started it again at .* UTC\./);
   await world.backend.stop!(box.guest!);
   await assert.rejects(world.boxes.start(THREAD, box.name), refusedWith("unsupported", /^A shared ios box cannot be stopped on its own/));
 });
@@ -3560,7 +3560,7 @@ test("with a backend lending slots, shared: true places a macos box in a slot in
   const macos = kindViews(world.boxes.kinds().map((each) => ({ kind: each, backend: world.backend })), {}, {}, {}, {}, {}, undefined, {}, world.boxes.sharedHostsByKind()).find((each) => each.id === "macos")!;
   assert.equal(
     placementText(macos),
-    " Each box is a macOS VM of its own, with sudo, brew install and its own cores and ports, unless it asks for shared: true: then a macOS user on a Mac or VM shared with ios boxes, ready in seconds, for commands, builds and the iOS Simulator, with its own files and keychain, but no sudo, Homebrew installs, desktop or app windows, and cores, ports and processes shared. Servers on localhost are reachable from every box on the host: use your box's ports, from BB_PORT_BASE.",
+    " Each box is a macOS VM of its own, with sudo, brew install and its own cores and ports, unless it asks for shared: true: then a macOS user on a Mac or VM shared with ios boxes, ready in seconds, for commands, builds and the iOS Simulator, with its own files and keychain, but no sudo, Homebrew installs, desktop or app windows, and cores, ports and processes shared. Servers on localhost are reachable from every box on the host: use your box's ports, from ALIA_PORT_BASE.",
   );
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "macos", shared: true }));
   assert.equal(box.state, "ready");
@@ -3571,7 +3571,7 @@ test("with a backend lending slots, shared: true places a macos box in a slot in
   assert.equal(box.capabilities.computerUse, null);
   assert.equal(box.capabilities.device, null, "no device: the slot's is deleted at the claim");
   const detail = boxDetail(box);
-  assert.match(detail, /\nWhere: On a shared iOS host \(a Tart VM\), slot 1 of 8\. Ports 20000 to 20099, in BB_PORT_BASE and BB_PORT_COUNT\.\n/);
+  assert.match(detail, /\nWhere: On a shared iOS host \(a Tart VM\), slot 1 of 8\. Ports 20000 to 20099, in ALIA_PORT_BASE and ALIA_PORT_COUNT\.\n/);
   assert.match(detail, /\nRoot: no, the box user cannot use sudo or brew install on a shared host\. Acquire a macos box without shared for a VM of its own\n/);
   assert.match(detail, /\nDesktop: none\. A shared macos box has no console session: no app windows, screenshots, computer use or macOS permission grants\. Acquire a macos box without shared for a VM of its own\n/);
   assert.doesNotMatch(detail, /\nSize: /);
@@ -3748,7 +3748,7 @@ test("071 unit 7: a GPU no provider gives is refused before any box, never turne
   const world = gpuWorld(false);
   await assert.rejects(world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", gpu: "shared", who: AGENT }), (error: unknown) => {
     assert.ok(error instanceof BoxError && error.code === "unsupported");
-    assert.equal(error.message, "Not made: no provider here gives linux boxes a shared GPU: Fake host (plain) gives linux boxes no GPU. Ask for gpu none, or ask the user. BB Box changed nothing.");
+    assert.equal(error.message, "Not made: no provider here gives linux boxes a shared GPU: Fake host (plain) gives linux boxes no GPU. Ask for gpu none, or ask the user. VesnALIA Box changed nothing.");
     return true;
   });
   await assert.rejects(world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", gpu: "shared", who: { is: "person" } }), {
@@ -3757,7 +3757,7 @@ test("071 unit 7: a GPU no provider gives is refused before any box, never turne
   assert.deepEqual(await world.boxes.list(THREAD), [], "no box was made");
   const desktops = setup({ id: "fake:gpu", kinds: [{ ...FAKE_KINDS[1]!, id: "linux-desktop", capabilities: { ...FAKE_KINDS[1]!.capabilities, gpu: true } }] });
   await assert.rejects(desktops.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux-desktop", gpu: "none", who: AGENT }), {
-    message: "Not made: no provider here gives linux-desktop boxes no GPU: linux-desktop boxes from Fake host (gpu) always have a GPU. Ask for linux-desktop-cpu for a desktop drawn by the CPU, or ask the user. BB Box changed nothing.",
+    message: "Not made: no provider here gives linux-desktop boxes no GPU: linux-desktop boxes from Fake host (gpu) always have a GPU. Ask for linux-desktop-cpu for a desktop drawn by the CPU, or ask the user. VesnALIA Box changed nothing.",
   });
 });
 
@@ -3792,10 +3792,10 @@ test("071 unit 8, lead: gpu whole is refused while whole cards are off on this i
   world.backend = new Counting({ root: tempDir("gpu-whole-off"), storage: scopedStorage(world.kv, "backend/fake/"), id: "fake:plain", kinds: [{ ...FAKE_KINDS[0]!, gpuParts: ["none", "shared", "whole"] }], cards: GPU_CARDS });
   await assert.rejects(world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", gpu: "whole", who: AGENT }), {
     code: "unsupported",
-    message: "Not made: whole cards are off on this install. Ask for gpu shared, or ask the user. BB Box changed nothing.",
+    message: "Not made: whole cards are off on this install. Ask for gpu shared, or ask the user. VesnALIA Box changed nothing.",
   });
   await assert.rejects(world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", gpu: "whole", who: { is: "person" } }), {
-    message: "Whole cards are off on this install, so no box gets a card to itself. Ask for gpu shared, or turn Whole cards on in the backend's GPUs section in BB Box's settings, or with bb box backend set <backend> --field whole-cards=true.",
+    message: "Whole cards are off on this install, so no box gets a card to itself. Ask for gpu shared, or turn Whole cards on in the backend's GPUs section in VesnALIA Box's settings, or with VesnALIA box backend set <backend> --field whole-cards=true.",
   });
   assert.deepEqual(asked, [], "no provider was asked");
   assert.deepEqual(await world.boxes.list(THREAD), []);
@@ -3809,7 +3809,7 @@ test("071 unit 8: a whole card no provider gives is refused before any box, and 
   world.backend = new FakeBackend({ root: tempDir("gpu-shared-whole"), storage: scopedStorage(world.kv, "backend/fake/"), id: "fake:plain", kinds: [{ ...FAKE_KINDS[0]!, gpuParts: ["none", "shared"] }], cards: GPU_CARDS });
   await assert.rejects(world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", gpu: "whole", who: AGENT }), {
     code: "unsupported",
-    message: "Not made: no provider here gives linux boxes a whole card: Fake host (plain) gives linux boxes a shared GPU, not a whole card. Ask for gpu shared, or ask the user. BB Box changed nothing.",
+    message: "Not made: no provider here gives linux boxes a whole card: Fake host (plain) gives linux boxes a shared GPU, not a whole card. Ask for gpu shared, or ask the user. VesnALIA Box changed nothing.",
   });
   await assert.rejects(world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", gpu: "whole", who: { is: "person" } }), {
     message: "No provider gives linux boxes a whole card: Fake host (plain) gives linux boxes a shared GPU, not a whole card. Ask for gpu shared.",
@@ -3820,19 +3820,19 @@ test("071 unit 8: a whole card no provider gives is refused before any box, and 
 test("071 unit 7: a provider's own refusal reaches an agent in the words it gives an agent, and the person in theirs", async () => {
   class Refusing extends FakeBackend {
     override async capacity() {
-      return { ok: false, message: "No card has room. Release a box on a card.", agentMessage: "Not made: no card has room. Ask for gpu none, or ask the user. BB Box changed nothing.", warm: null, hosts: [] };
+      return { ok: false, message: "No card has room. Release a box on a card.", agentMessage: "Not made: no card has room. Ask for gpu none, or ask the user. VesnALIA Box changed nothing.", warm: null, hosts: [] };
     }
   }
   const world = setup({ id: "fake:plain" });
   world.backend = new Refusing({ root: tempDir("gpu-refusing"), storage: scopedStorage(world.kv, "backend/fake/"), id: "fake:plain", kinds: [{ ...FAKE_KINDS[0]!, gpuParts: ["none", "shared"] }] });
-  await assert.rejects(world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", gpu: "shared", who: AGENT }), { code: "no_capacity", message: "Not made: no card has room. Ask for gpu none, or ask the user. BB Box changed nothing." });
+  await assert.rejects(world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", gpu: "shared", who: AGENT }), { code: "no_capacity", message: "Not made: no card has room. Ask for gpu none, or ask the user. VesnALIA Box changed nothing." });
   await assert.rejects(world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", gpu: "shared", who: { is: "person" } }), { code: "no_capacity", message: "No card has room. Release a box on a card." });
 });
 
 test("071 unit 7, Astra 8 and Fable 4: a box whose acquire is refused keeps the person's words and the agent's, and an agent's tools show the agent's", async () => {
   class RefusedLate extends FakeBackend {
     override async acquire(): Promise<never> {
-      throw new BackendError("no_capacity", "No card has room. Release a box on a card.", "Not made: no card has room. Ask for gpu none, or ask the user. BB Box changed nothing.");
+      throw new BackendError("no_capacity", "No card has room. Release a box on a card.", "Not made: no card has room. Ask for gpu none, or ask the user. VesnALIA Box changed nothing.");
     }
   }
   const world = setup({ id: "fake:plain" });
@@ -3840,7 +3840,7 @@ test("071 unit 7, Astra 8 and Fable 4: a box whose acquire is refused keeps the 
   const failed = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", who: AGENT }));
   assert.equal(failed.state, "failed");
   assert.equal(failed.error, "No card has room. Release a box on a card.");
-  assert.equal(errorForAgent(failed), "Not made: no card has room. Ask for gpu none, or ask the user. BB Box changed nothing.");
+  assert.equal(errorForAgent(failed), "Not made: no card has room. Ask for gpu none, or ask the user. VesnALIA Box changed nothing.");
   assert.match(boxDetail(seenByAgent(failed)), /State: failed\. Not made: no card has room\./);
   assert.match(boxLine(seenByAgent(failed)), /Not made: no card has room\./);
   assert.match(boxDetail(failed), /Release a box on a card\./, "the person's page keeps the person's words");
@@ -3865,7 +3865,7 @@ class SwitchingCards extends FakeBackend {
     const from = this.#partOf(guest);
     if (to.gpu === undefined || to.gpu === from) return plan;
     const fixed = from === "none" || to.gpu === "none";
-    const refusal = fixed ? { person: `${guest.ref} cannot change its GPU here.`, agent: `Not resized: ${guest.ref} cannot change its GPU here. BB Box changed nothing.` } : to.gpu === "whole" ? this.wholeRefusal : null;
+    const refusal = fixed ? { person: `${guest.ref} cannot change its GPU here.`, agent: `Not resized: ${guest.ref} cannot change its GPU here. VesnALIA Box changed nothing.` } : to.gpu === "whole" ? this.wholeRefusal : null;
     return { ...plan, gpu: { from, to: to.gpu, way: fixed ? "no" : "live", card: null, fromCard: null, toCard: null, stopped: false, installs: null, others: [], words: `GPU: ${from} → ${to.gpu} · Live.`, refusal } };
   }
 
@@ -3917,10 +3917,10 @@ test("071 unit 11: box_resize refuses, for each audience and changing nothing, a
   await assert.rejects(world.boxes.resize(THREAD, box.name, { gpu: "none" }, {}), (error: unknown) => {
     assert.ok(error instanceof BoxError && error.code === "unsupported");
     assert.equal(error.message, `${box.guest!.ref} cannot change its GPU here.`);
-    assert.equal(error.agentMessage, `Not resized: ${box.guest!.ref} cannot change its GPU here. BB Box changed nothing.`);
+    assert.equal(error.agentMessage, `Not resized: ${box.guest!.ref} cannot change its GPU here. VesnALIA Box changed nothing.`);
     return true;
   });
-  cards.wholeRefusal = { person: "No card is free for it alone.", agent: "Not resized: no card is free for it alone. Keep the GPU shared, or ask the user. BB Box changed nothing." };
+  cards.wholeRefusal = { person: "No card is free for it alone.", agent: "Not resized: no card is free for it alone. Keep the GPU shared, or ask the user. VesnALIA Box changed nothing." };
   const shown = await world.boxes.resize(THREAD, box.name, { gpu: "whole" }, { check: true, reportPlan: true });
   assert.equal(shown.changed, false);
   assert.equal(shown.plan?.gpu?.refusal?.person, "No card is free for it alone.");
@@ -3931,15 +3931,15 @@ test("071 unit 11: box_resize refuses, for each audience and changing nothing, a
   world.general = { ...world.general, wholeCards: false };
   await assert.rejects(world.boxes.resize(THREAD, box.name, { gpu: "whole" }, {}), {
     code: "unsupported",
-    message: "Not resized: whole cards are off on this install. Keep the GPU shared, or turn Whole cards on in the backend's GPUs section in BB Box's settings, or with bb box backend set <backend> --field whole-cards=true. BB Box changed nothing.",
-    agentMessage: "Not resized: whole cards are off on this install. Keep the GPU shared, or ask the user. BB Box changed nothing.",
+    message: "Not resized: whole cards are off on this install. Keep the GPU shared, or turn Whole cards on in the backend's GPUs section in VesnALIA Box's settings, or with VesnALIA box backend set <backend> --field whole-cards=true. VesnALIA Box changed nothing.",
+    agentMessage: "Not resized: whole cards are off on this install. Keep the GPU shared, or ask the user. VesnALIA Box changed nothing.",
   });
   const plain = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", who: AGENT }));
   assert.equal(plain.backend, "fake:plain");
   await assert.rejects(world.boxes.resize(THREAD, plain.name, { gpu: "shared" }, {}), {
     code: "unsupported",
     message: `Fake host cannot change the GPU of its linux boxes, so box ${plain.name} keeps its GPU. Make a new box with the GPU it needs.`,
-    agentMessage: `Not resized: Fake host cannot change the GPU of its linux boxes, so box ${plain.name} keeps its GPU. Acquire a new box with the GPU it needs, or ask the user. BB Box changed nothing.`,
+    agentMessage: `Not resized: Fake host cannot change the GPU of its linux boxes, so box ${plain.name} keeps its GPU. Acquire a new box with the GPU it needs, or ask the user. VesnALIA Box changed nothing.`,
   });
   assert.deepEqual(world.backend.resized, []);
   world.general = { ...world.general, wholeCards: true };
@@ -4007,7 +4007,7 @@ class RestartingCards extends FakeBackend {
     const changed = this.changesUnderLock;
     if (changed) {
       this.changesUnderLock = null;
-      throw new GpuPlanChanged("The plan changed under the lock.", "Not resized: the plan changed under the lock. BB Box changed nothing.", changed);
+      throw new GpuPlanChanged("The plan changed under the lock.", "Not resized: the plan changed under the lock. VesnALIA Box changed nothing.", changed);
     }
     const failing = this.stopsThenFails;
     if (failing) {
@@ -4052,8 +4052,8 @@ test("071 unit 9: a GPU change that needs a restart is refused without restart t
   assert.equal(box.backend, "fake:restarting");
   await assert.rejects(world.boxes.resize(THREAD, box.name, { cores: 4, gpu: "shared" }, {}), (error: unknown) => {
     assert.ok(error instanceof BoxError && error.code === "needs_restart");
-    assert.match(error.message, new RegExp(`^Resizing box ${box.name} to 4 cores, 4 GiB memory, GPU shared needs a restart for its cores and GPU: the box shuts down and starts again, for about \\d+ s, which ends everything running in it\\. BB Box changed nothing\\.$`));
-    assert.match(error.agentMessage ?? "", new RegExp(`^Not resized: Resizing box ${box.name} to 4 cores, 4 GiB memory, GPU shared needs a restart for its cores and GPU: .* Call box_resize with restart true to do that, or ask the user\\. BB Box changed nothing\\.$`));
+    assert.match(error.message, new RegExp(`^Resizing box ${box.name} to 4 cores, 4 GiB memory, GPU shared needs a restart for its cores and GPU: the box shuts down and starts again, for about \\d+ s, which ends everything running in it\\. VesnALIA Box changed nothing\\.$`));
+    assert.match(error.agentMessage ?? "", new RegExp(`^Not resized: Resizing box ${box.name} to 4 cores, 4 GiB memory, GPU shared needs a restart for its cores and GPU: .* Call box_resize with restart true to do that, or ask the user\\. VesnALIA Box changed nothing\\.$`));
     return true;
   });
   assert.equal(cards.agreedSeen.length, 0, "nothing was asked of the backend");
@@ -4084,7 +4084,7 @@ test("071 unit 9, the plan made again: a resize whose GPU plan changed since its
   cards.moveNow = true;
   await assert.rejects(world.boxes.resize(THREAD, box.name, { gpu: "whole" }, {}), (error: unknown) => {
     assert.ok(error instanceof BoxError && error.code === "needs_restart");
-    assert.equal(error.agentMessage, `Not resized: when you checked, ${box.guest!.ref} could change to a whole card live, on card 0; now it would move to card 1 with a restart. Call box_resize with restart true to do that, or ask the user. BB Box changed nothing.`);
+    assert.equal(error.agentMessage, `Not resized: when you checked, ${box.guest!.ref} could change to a whole card live, on card 0; now it would move to card 1 with a restart. Call box_resize with restart true to do that, or ask the user. VesnALIA Box changed nothing.`);
     return true;
   });
   assert.equal(cards.agreedSeen.length, 0, "nothing changed");
@@ -4092,7 +4092,7 @@ test("071 unit 9, the plan made again: a resize whose GPU plan changed since its
   cards.moveTo = 2;
   await assert.rejects(world.boxes.resize(THREAD, box.name, { gpu: "whole" }, { restart: true }), (error: unknown) => {
     assert.ok(error instanceof BoxError && error.code === "try_again");
-    assert.equal(error.agentMessage, `Not resized: when you checked, ${box.guest!.ref} would move to card 1 with a restart; now it would move to card 2 with a restart. Call box_resize with restart true to do that, or ask the user. BB Box changed nothing.`);
+    assert.equal(error.agentMessage, `Not resized: when you checked, ${box.guest!.ref} would move to card 1 with a restart; now it would move to card 2 with a restart. Call box_resize with restart true to do that, or ask the user. VesnALIA Box changed nothing.`);
     return true;
   });
   assert.equal(cards.agreedSeen.length, 0, "a plan that changed again since it was told is asked again");
@@ -4118,7 +4118,7 @@ test("071 unit 9: a restart for the GPU that leaves the box stopped is recorded 
   });
   const after = await world.boxes.get(THREAD, box.name);
   assert.equal(after.state, "stopped");
-  assert.equal(after.unrequestedStop ?? null, null, "BB Box stopped it, as part of the resize");
+  assert.equal(after.unrequestedStop ?? null, null, "VesnALIA Box stopped it, as part of the resize");
   assert.equal(after.size?.gpu, "shared");
   assert.equal(after.guest?.claim?.part, "shared");
   assert.equal(after.resize?.state, "failed");
@@ -4147,7 +4147,7 @@ test("071 unit 9, review 3: the plan a check said is kept through a refusal for 
   cards.addTo = 2;
   await assert.rejects(world.boxes.resize(THREAD, box.name, { gpu: "shared" }, { restart: true }), (error: unknown) => {
     assert.ok(error instanceof BoxError && error.code === "try_again");
-    assert.equal(error.agentMessage, `Not resized: when you checked, ${box.guest!.ref} would get card 1 with a restart; now it would get card 2 with a restart. Call box_resize with restart true to do that, or ask the user. BB Box changed nothing.`);
+    assert.equal(error.agentMessage, `Not resized: when you checked, ${box.guest!.ref} would get card 1 with a restart; now it would get card 2 with a restart. Call box_resize with restart true to do that, or ask the user. VesnALIA Box changed nothing.`);
     return true;
   });
   assert.equal(cards.agreedSeen.length, 0, "nothing was carried out");
@@ -4156,7 +4156,7 @@ test("071 unit 9, review 3: the plan a check said is kept through a refusal for 
   assert.equal(cards.agreedSeen[0]?.toCard?.index, 2);
 });
 
-test("071 unit 9, review 4: the plan a check said survives a restart of bb-box, so a resize after it whose plan changed is asked again", async () => {
+test("071 unit 9, review 4: the plan a check said survives a restart of alia-box, so a resize after it whose plan changed is asked again", async () => {
   const { world, cards } = restartingWorld();
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", gpu: "shared", who: AGENT }));
   const checked = await world.boxes.resize(THREAD, box.name, { gpu: "whole" }, { check: true });
@@ -4194,7 +4194,7 @@ test("071 unit 9, review 5: a restart cancelled after it stopped the box is reco
 test("071 unit 9, Fable low 2: a refusal that changed nothing on a running box, whose power cannot be read after it, keeps the box ready; one the backend left stopped is stopped", async () => {
   const { world, cards } = restartingWorld();
   const box = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", gpu: "none", who: AGENT }));
-  cards.stopsThenFails = { error: new BackendError("no_capacity", "No card has room for it now. BB Box changed nothing."), running: true, thenUnreadable: true };
+  cards.stopsThenFails = { error: new BackendError("no_capacity", "No card has room for it now. VesnALIA Box changed nothing."), running: true, thenUnreadable: true };
   await assert.rejects(world.boxes.resize(THREAD, box.name, { gpu: "shared" }, { restart: true }), /No card has room/);
   cards.powerUnreadable = false;
   assert.equal((await world.boxes.get(THREAD, box.name)).state, "ready", "the box it did not stop is not recorded stopped");
@@ -4258,7 +4258,7 @@ test("071 unit 15: a request that leaves gpu out gets its kind's GPU when not as
   world.general = { ...world.general, wholeCards: true, gpuWhenNotAsked: { linux: "shared" } };
   world.backend = new FakeBackend({ root: tempDir("gpu-default"), storage: scopedStorage(world.kv, "backend/fake/"), id: "fake:cards", kinds: [{ ...FAKE_KINDS[0]!, gpuParts: ["none", "shared", "whole"] }], cards: GPU_CARDS, boxesPerCard: 10 });
   const left = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", who: AGENT }));
-  assert.equal(left.size?.gpu, "shared", "the kind's setting, not BB Box's own none");
+  assert.equal(left.size?.gpu, "shared", "the kind's setting, not VesnALIA Box's own none");
   const asked = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", gpu: "none", who: AGENT }));
   assert.equal(asked.size?.gpu, "none");
   world.general = { ...world.general, gpuWhenNotAsked: { linux: "whole" } };
@@ -4274,10 +4274,10 @@ test("071 unit 15, review: a kind's configured GPU is a requirement: a provider 
   world.general = { ...world.general, gpuWhenNotAsked: { linux: "shared" } };
   await assert.rejects(world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", who: AGENT }), {
     code: "unsupported",
-    message: "Not made: no provider here gives linux boxes a shared GPU, the GPU the user set for linux boxes that do not ask for one: Fake host (plain) gives linux boxes no GPU. Ask for gpu none, or ask the user. BB Box changed nothing.",
+    message: "Not made: no provider here gives linux boxes a shared GPU, the GPU the user set for linux boxes that do not ask for one: Fake host (plain) gives linux boxes no GPU. Ask for gpu none, or ask the user. VesnALIA Box changed nothing.",
   });
   await assert.rejects(world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", who: { is: "person" } }), {
-    message: "No provider gives linux boxes a shared GPU, linux's GPU when not asked for in BB Box's settings: Fake host (plain) gives linux boxes no GPU. Ask for gpu none, or change linux's GPU when not asked for in BB Box's settings, or with bb box kind set linux --gpu <none|shared|whole>.",
+    message: "No provider gives linux boxes a shared GPU, linux's GPU when not asked for in VesnALIA Box's settings: Fake host (plain) gives linux boxes no GPU. Ask for gpu none, or change linux's GPU when not asked for in VesnALIA Box's settings, or with VesnALIA box kind set linux --gpu <none|shared|whole>.",
   });
   assert.deepEqual(await world.boxes.list(THREAD), [], "no box with no GPU was made");
   world.others.push(new FakeBackend({ root: tempDir("gpu-setting-cards"), storage: scopedStorage(world.kv, "backend/cards/"), id: "fake:cards", kinds: [{ ...FAKE_KINDS[0]!, gpuParts: ["none", "shared"] }], cards: GPU_CARDS }));
@@ -4288,5 +4288,5 @@ test("071 unit 15, review: a kind's configured GPU is a requirement: a provider 
   assert.equal(asked.size?.gpu, "none", "a part asked for wins over the setting");
   world.general = { ...world.general, gpuWhenNotAsked: {} };
   const shipped = await ready(world.boxes, await world.boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux", who: AGENT }));
-  assert.equal(shipped.size?.gpu, "none", "with no setting, BB Box's own default is as before");
+  assert.equal(shipped.size?.gpu, "none", "with no setting, VesnALIA Box's own default is as before");
 });

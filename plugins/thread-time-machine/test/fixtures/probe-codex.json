@@ -170,8 +170,8 @@
     "item": {
      "type": "commandExecution",
      "id": "da4aa8d626-i2",
-     "command": "/bin/zsh -lc 'pwd; for d in / /Users /Users/dev /Users/dev/.bb /Users/dev/.bb/plugins /Users/dev/.bb/plugins/environment-git-worktree /Users/dev/.bb/plugins/environment-git-worktree/host-data /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1 . ./probe; do if [ -f \"$d/AGENTS.md\" ]; then cat \"$d/AGENTS.md\"; fi; done'",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/bb-plugin-thread-time-machine",
+     "command": "/bin/zsh -lc 'pwd; for d in / /Users /Users/dev /Users/dev/.vesnalia /Users/dev/.vesnalia/plugins /Users/dev/.vesnalia/plugins/environment-git-worktree /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1 . ./probe; do if [ -f \"$d/AGENTS.md\" ]; then cat \"$d/AGENTS.md\"; fi; done'",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/alia-plugin-thread-time-machine",
      "status": "pending",
      "approvalStatus": null,
      "presentation": {
@@ -182,7 +182,7 @@
       "icon": {
        "glyph": "Terminal"
       },
-      "title": "pwd; for d in / /Users /Users/dev /Users/dev/.bb /Users/dev/.bb/plugins /Users/dev/.bb/plugins/environment-git-worktree /Users/dev"
+      "title": "pwd; for d in / /Users /Users/dev /Users/dev/.vesnalia /Users/dev/.vesnalia/plugins /Users/dev/.vesnalia/plugins/environment-git-worktree /Users/dev"
      }
     }
    }
@@ -196,11 +196,11 @@
     "item": {
      "type": "commandExecution",
      "id": "da4aa8d626-i2",
-     "command": "/bin/zsh -lc 'pwd; for d in / /Users /Users/dev /Users/dev/.bb /Users/dev/.bb/plugins /Users/dev/.bb/plugins/environment-git-worktree /Users/dev/.bb/plugins/environment-git-worktree/host-data /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1 . ./probe; do if [ -f \"$d/AGENTS.md\" ]; then cat \"$d/AGENTS.md\"; fi; done'",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/bb-plugin-thread-time-machine",
+     "command": "/bin/zsh -lc 'pwd; for d in / /Users /Users/dev /Users/dev/.vesnalia /Users/dev/.vesnalia/plugins /Users/dev/.vesnalia/plugins/environment-git-worktree /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1 . ./probe; do if [ -f \"$d/AGENTS.md\" ]; then cat \"$d/AGENTS.md\"; fi; done'",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/alia-plugin-thread-time-machine",
      "status": "completed",
      "approvalStatus": null,
-     "aggregatedOutput": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/bb-plugin-thread-time-machine\n",
+     "aggregatedOutput": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/alia-plugin-thread-time-machine\n",
      "exitCode": 0,
      "durationMs": 0,
      "presentation": {
@@ -211,7 +211,7 @@
       "icon": {
        "glyph": "Terminal"
       },
-      "title": "pwd; for d in / /Users /Users/dev /Users/dev/.bb /Users/dev/.bb/plugins /Users/dev/.bb/plugins/environment-git-worktree /Users/dev"
+      "title": "pwd; for d in / /Users /Users/dev /Users/dev/.vesnalia /Users/dev/.vesnalia/plugins /Users/dev/.vesnalia/plugins/environment-git-worktree /Users/dev"
      }
     }
    }
@@ -226,7 +226,7 @@
      "type": "commandExecution",
      "id": "da4aa8d626-i3",
      "command": "/bin/zsh -lc \"mkdir -p probe && printf 'alpha\\\\nbeta\\\\n' > probe/notes.md\"",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/bb-plugin-thread-time-machine",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/alia-plugin-thread-time-machine",
      "status": "pending",
      "approvalStatus": null,
      "presentation": {
@@ -252,7 +252,7 @@
      "type": "commandExecution",
      "id": "da4aa8d626-i3",
      "command": "/bin/zsh -lc \"mkdir -p probe && printf 'alpha\\\\nbeta\\\\n' > probe/notes.md\"",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/bb-plugin-thread-time-machine",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/alia-plugin-thread-time-machine",
      "status": "completed",
      "approvalStatus": null,
      "exitCode": 0,
@@ -281,7 +281,7 @@
      "id": "da4aa8d626-i4",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/bb-plugin-thread-time-machine/probe/notes.md",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/alia-plugin-thread-time-machine/probe/notes.md",
        "kind": "update",
        "diff": "@@ -1,2 +1,2 @@\n alpha\n-beta\n+gamma\n"
       }
@@ -312,7 +312,7 @@
      "id": "da4aa8d626-i4",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/bb-plugin-thread-time-machine/probe/notes.md",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/alia-plugin-thread-time-machine/probe/notes.md",
        "kind": "update",
        "diff": "@@ -1,2 +1,2 @@\n alpha\n-beta\n+gamma\n"
       }
@@ -342,7 +342,7 @@
      "type": "commandExecution",
      "id": "da4aa8d626-i5",
      "command": "/bin/zsh -lc 'cat probe/notes.md && ls probe'",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/bb-plugin-thread-time-machine",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/alia-plugin-thread-time-machine",
      "status": "pending",
      "approvalStatus": null,
      "presentation": {
@@ -368,7 +368,7 @@
      "type": "commandExecution",
      "id": "da4aa8d626-i5",
      "command": "/bin/zsh -lc 'cat probe/notes.md && ls probe'",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/bb-plugin-thread-time-machine",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/alia-plugin-thread-time-machine",
      "status": "completed",
      "approvalStatus": null,
      "aggregatedOutput": "alpha\ngamma\nnotes.md\n",
@@ -397,7 +397,7 @@
      "type": "commandExecution",
      "id": "da4aa8d626-i6",
      "command": "/bin/zsh -lc 'ls probe/does-not-exist'",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/bb-plugin-thread-time-machine",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/alia-plugin-thread-time-machine",
      "status": "pending",
      "approvalStatus": null,
      "presentation": {
@@ -423,7 +423,7 @@
      "type": "commandExecution",
      "id": "da4aa8d626-i6",
      "command": "/bin/zsh -lc 'ls probe/does-not-exist'",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/bb-plugin-thread-time-machine",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_g2jstu5vas-1/alia-plugin-thread-time-machine",
      "status": "failed",
      "approvalStatus": null,
      "aggregatedOutput": "ls: probe/does-not-exist: No such file or directory\n",

@@ -410,7 +410,7 @@ export class Store {
   ) {}
 
   /**
-   * Every query, compiled once. A list read runs a dozen queries for each of a thousand PRs on bb's server thread, and
+   * Every query, compiled once. A list read runs a dozen queries for each of a thousand PRs on VesnALIA's server thread, and
    * compiling each one again was a third of that time. Queries built with a varying shape are few; the cap bounds them.
    */
   private sql(text: string): Database.Statement {
@@ -853,7 +853,7 @@ export class Store {
       .run(id, title, archived ? 1 : 0, this.now(), status?.status ?? null, status?.waiting ? 1 : 0);
   }
 
-  /** From bb's thread events: only threads Shuttle already knows. */
+  /** From VesnALIA's thread events: only threads Shuttle already knows. */
   setThreadStatus(id: string, status: string | null, waiting: boolean | null): boolean {
     const result = this.sql("UPDATE threads SET status = COALESCE(?, status), waiting = COALESCE(?, waiting) WHERE id = ?")
       .run(status, waiting === null ? null : waiting ? 1 : 0, id);
@@ -1415,7 +1415,7 @@ export class Store {
     return this.sql("SELECT * FROM reviews WHERE id = ?").get(result.lastInsertRowid) as ReviewRow;
   }
 
-  /** The latest run in a review thread Shuttle started for this PR, while bb still has the thread. */
+  /** The latest run in a review thread Shuttle started for this PR, while VesnALIA still has the thread. */
   reviewThreadOf(prId: number): ReviewRow | null {
     return (this.sql("SELECT r.* FROM reviews r JOIN threads t ON t.id = r.thread_id WHERE r.pr_id = ? AND r.own_thread = 1 ORDER BY r.created_at DESC, r.id DESC LIMIT 1")
       .get(prId) as ReviewRow | undefined) ?? null;

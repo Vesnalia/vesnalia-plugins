@@ -7,7 +7,7 @@ hidden shell lives.
 
 ## Context
 
-BB remounts a panel tab each time a person switches tabs, and a plugin
+VesnALIA remounts a panel tab each time a person switches tabs, and a plugin
 cannot keep one mounted. Each switch connected the desktop again, with a
 handshake and a blank frame, and the terminal again, with its backlog
 sent again. The operator saw it on every switch (#160).

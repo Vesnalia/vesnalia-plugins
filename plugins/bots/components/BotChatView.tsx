@@ -1,4 +1,4 @@
-import { ThreadChat, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { ThreadChat, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { COARSE_POINTER_HEADER_ICON_BUTTON_CLASS } from "@/components/ui/coarse-pointer-sizing";
 import { Icon } from "@/components/ui/icon";
@@ -16,7 +16,7 @@ export function BotChatView({
   onBack?: () => void;
 }) {
   const rpc = useBotsRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { data, error } = useQuery(() => rpc.call("getBot", { botId }), `chat:${botId}`);
   const bot = data?.bot ?? null;
 

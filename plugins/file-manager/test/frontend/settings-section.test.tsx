@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 //
-// The `app.slots.settingsSection` body (v0.3). bb's declarative settings form
+// The `app.slots.settingsSection` body (v0.3). VesnALIA's declarative settings form
 // has no path descriptor, so `startFolder` is otherwise a bare text field; this
 // section is the same setting with the panel's folder browser attached. What is
 // worth pinning here is exactly the seam between the two:
@@ -22,12 +22,12 @@
 import { createElement } from "react";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type {
   PluginRpcTestHandlers,
   RenderedSlot,
   RpcCall,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 
 import type { FileEntry, FileManagerContract, Preferences } from "../../contract";
 
@@ -45,7 +45,7 @@ vi.mock("sonner", () => ({
   },
 }));
 
-// app.tsx binds `@get-bb/plugin-sdk/app` at import time, so it may only be
+// app.tsx binds `@vesnalia/plugin-sdk/app` at import time, so it may only be
 // imported through loadPluginApp's thunk (see installTestPluginRuntime docs).
 const app = await loadPluginApp(() => import("../../app"));
 const { forgetLastFolder, readLastFolder, resetLastFolderStore, writeLastFolder } = await import(
@@ -422,7 +422,7 @@ describe("SettingsSection — resetting", () => {
 
 describe("SettingsSection — one value, several writers", () => {
   // `startFolder` also has the host's own text field, the panel's "Set as start
-  // folder" action and `bb plugin config` writing it. The server broadcasts
+  // folder" action and `alia plugin config` writing it. The server broadcasts
   // `plugins-changed` on every effective change and the app invalidates its
   // settings queries from it, so the *other* editors refresh themselves; what
   // this section owes them is to re-read its own `getState` snapshot instead of
@@ -473,7 +473,7 @@ describe("SettingsSection — one value, several writers", () => {
     const slot = await mountSection(baseRpc({ getState: () => stateWith(stored) }));
     expect(slot.getByTestId("fm-settings-start-folder").textContent).toBe(WORK);
 
-    stored = PROJECTS; // e.g. `bb plugin config file-manager set startFolder …`
+    stored = PROJECTS; // e.g. `alia plugin config file-manager set startFolder …`
     fireEvent.focus(window);
 
     await waitFor(() => {
@@ -897,7 +897,7 @@ describe("SettingsSection — forgetting the remembered folder (§1.9)", () => {
     fireEvent.click(forget);
 
     expect(readLastFolder()).toBeNull();
-    expect(window.localStorage.getItem("bb-plugin-file-manager:last-folder:v1")).toBeNull();
+    expect(window.localStorage.getItem("alia-plugin-file-manager:last-folder:v1")).toBeNull();
     expect(slot.inspection.rpcCalls).toHaveLength(before);
     expect(callsTo(slot, "savePreferences")).toHaveLength(0);
     expect(toasts.success).toEqual([`Forgotten. The panel will open in Work next time.`]);

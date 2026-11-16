@@ -320,7 +320,7 @@ function toneOf(banner: Element, text: string): "live" | "alert" | "idle" {
 
 /** The Context Meter banner: a progress bar plus "~123k / 260k". */
 export function isContextMeter(leaf: Element): boolean {
-  if (leaf.closest('[data-bb-plugin="context-meter"]')) return true;
+  if (leaf.closest('[data-alia-plugin="context-meter"]')) return true;
   // The bar test first: it is one selector match, where the text test walks
   // every text node of a card that is usually not the meter at all.
   return (

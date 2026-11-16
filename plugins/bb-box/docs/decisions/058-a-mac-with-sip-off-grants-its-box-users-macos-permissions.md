@@ -40,7 +40,7 @@ What others do:
   lets users only approve Screen Recording and the microphone, not allow
   them. The pool has no MDM server, and 047 rules one out.
 
-bb-box's Tart images already grant Cua this way, offline (#628). A physical
+alia-box's Tart images already grant Cua this way, offline (#628). A physical
 Mac cannot be prepared offline: it can only be changed while it runs.
 
 ## Decision
@@ -51,7 +51,7 @@ users' programs their permissions, with no person.**
 ### SIP off is per Mac, optional, and the owner's
 
 - The owner turns it off in recovery, fully (`csrutil disable`), on a Mac
-  set aside for agents. bb-box never asks it of a Mac, and works on with
+  set aside for agents. alia-box never asks it of a Mac, and works on with
   SIP on as now.
 - The helper's status reports SIP's state (`csrutil status`), and the
   doctor shows it for each pool Mac, with what works either way:
@@ -95,15 +95,15 @@ has the build's cdhash as its whole requirement, so each rebuild would
 lose a grant. Each box therefore gets a signing identity of its own:
 
 - At creation the helper makes a self-signed code-signing certificate for
-  the box user, in a keychain of its own (`bb-box-signing`) with a known,
+  the box user, in a keychain of its own (`alia-box-signing`) with a known,
   empty password, imported for all apps and with codesign in its partition
   list, and on the user's keychain search list. Codesign and Xcode sign
   with it with no prompt. (In the login keychain codesign asks for a
   password the box user does not know.)
 - Signed with it, a program's requirement is its identifier and the
   certificate's leaf hash, the same across rebuilds. The tools and the
-  skill tell the agent to sign with "bb-box local code signing": Xcode's
-  signing identity, or `codesign -s "bb-box local code signing"
+  skill tell the agent to sign with "alia-box local code signing": Xcode's
+  signing identity, or `codesign -s "alia-box local code signing"
   --identifier <id> <binary>` after `cargo build`.
 - The grants then hold across rebuilds: an app by bundle ID and that
   requirement, a program by path and that requirement, which also refuses
@@ -131,9 +131,9 @@ input helper would lose the grant it needs.
 
 `box_grant` is then for programs that are their own responsible process:
 apps opened with `open` or from the Dock, and command-line programs the
-box starts through bb-box's launcher, which disclaims responsibility
+box starts through alia-box's launcher, which disclaims responsibility
 (`responsibility_spawnattrs_setdisclaim`). The helper installs that
-launcher, `/usr/local/bin/bb-box-own`, and the tool's answer says to run a
+launcher, `/usr/local/bin/alia-box-own`, and the tool's answer says to run a
 granted program through it.
 
 ### When: an agent asks

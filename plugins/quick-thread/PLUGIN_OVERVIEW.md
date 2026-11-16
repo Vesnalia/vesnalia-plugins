@@ -2,7 +2,7 @@
 
 Open a new thread from anywhere without leaving the one you are on. Press
 Ctrl/Cmd+N and a floating dialog appears over the current thread, embedding
-BB's real new-thread composer. Every selection you already use is there:
+VesnALIA's real new-thread composer. Every selection you already use is there:
 project, environment, provider/model, mentions, and attachments.
 
 ## Two ways to dispatch
@@ -20,6 +20,6 @@ Where the operating system reserves Cmd/Ctrl+N, use the command-palette row
 ## How it works
 
 The dialog is an app overlay, mounted once per window and available on every
-screen. The backend forwards the composer's request to BB's thread spawner, so
+screen. The backend forwards the composer's request to VesnALIA's thread spawner, so
 quick-created threads stay attributed to this plugin. Nothing leaves the
 machine, and the plugin needs no account, API key, or external service.

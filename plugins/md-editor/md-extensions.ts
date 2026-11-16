@@ -131,7 +131,7 @@ export const Details = Node.create({
 
 export type HtmlRegionBound = { role: "start" | "end"; key: string; kind: "suffix" | "prefix" | "hash" };
 
-/** Classify a comment body such as `bb-project-folders:agents:start` or `BEGIN rules`. */
+/** Classify a comment body such as `alia-project-folders:agents:start` or `BEGIN rules`. */
 export function htmlRegionBound(inner: string): HtmlRegionBound | null {
   const text = inner.trim();
   if (!text) return null;

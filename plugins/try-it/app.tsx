@@ -1,6 +1,6 @@
 // Try It form: shown in place of the composer while a test request is pending.
 import { useMemo, useState } from "react";
-import { definePluginApp, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import qrcode from "qrcode-generator";
 import type { TryItPayload } from "./server";
 import type { CheckResult } from "./lib/url";
@@ -42,7 +42,7 @@ function TryItForm({ interaction, submit, cancel }: {
   cancel: () => unknown;
 }) {
   const payload = interaction.payload as TryItPayload;
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [results, setResults] = useState<Record<number, CheckResult>>({});
   const [note, setNote] = useState("");
   const send = () => {

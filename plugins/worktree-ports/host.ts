@@ -6,7 +6,7 @@ import { readFile, readlink } from "node:fs/promises";
 import { platform } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostContract, type PortRoot, type ScannedPort } from "./src/contract.js";
 import { compareByRole, roleFor } from "./src/roles.js";
 import {
@@ -23,7 +23,7 @@ const execFileAsync = promisify(execFile);
 const EXEC_TIMEOUT_MS = 5_000;
 const MAX_BUFFER = 8 * 1024 * 1024;
 /** Every worktree ports.json read per scan, cheap enough to re-read each pass. */
-const LABEL_FILES = [".bb/ports.json", ".superset/ports.json"];
+const LABEL_FILES = [".vesnalia/ports.json", ".superset/ports.json"];
 
 /**
  * lsof exits non-zero when any file is inaccessible, which is routine on a

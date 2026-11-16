@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { normalizeFindingFile } from "./scheduler.js";
 
 /**
@@ -20,7 +20,7 @@ export interface DeliverableClaim {
 }
 
 export function createItemRequirementStore(
-  db: ReturnType<BbPluginApi["storage"]["database"]>,
+  db: ReturnType<AliaPluginApi["storage"]["database"]>,
 ) {
   // Owned here rather than in the shared migration list, which records progress
   // by array index and has silently skipped an appended statement before.

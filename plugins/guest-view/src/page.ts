@@ -4,7 +4,7 @@
 // (src/model.ts), so nothing a message holds is ever read as HTML.
 //
 // Class names start with `gv-`. The plugin build turns lone utility words found
-// anywhere in this folder into page-wide rules in BB, so names here avoid those
+// anywhere in this folder into page-wide rules in VesnALIA, so names here avoid those
 // words (see AGENTS.md) and dist/app.css is checked after a build.
 
 import { markSvg } from "./mark.ts";

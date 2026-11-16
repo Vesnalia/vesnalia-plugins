@@ -30,7 +30,7 @@ describe("isHumanThread", () => {
 
   it.each([
     ["a top-level thread a person drives", {}],
-    // thr_58q9ui4bvc: a GitHub board card's thread, bb's personal workspace, a commit in its first turn.
+    // thr_58q9ui4bvc: a GitHub board card's thread, VesnALIA's personal workspace, a commit in its first turn.
     ["a top-level thread a plugin started (a GitHub board card)", { originPluginId: "github-board" }],
     ["a top-level diff-review run", { originPluginId: "diff-review" }],
   ])("takes %s", (_name, change) => {

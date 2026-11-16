@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type {
   BoardColumn,
   FilterState,
@@ -198,7 +198,7 @@ export function assembleBoard(
   const ranks = options.ranks ?? {};
   // Archived threads never take a column slot; the family index drops them
   // too (buildFamilyIndex is the single authoritative hide), so an archived
-  // child renders nowhere at all — matching bb's sidebar, where archiving
+  // child renders nowhere at all — matching VesnALIA's sidebar, where archiving
   // removes the thread from the list.
   const visible = threads.filter((thread) => !thread.isArchived);
   const attention = options.attentionFreeze;

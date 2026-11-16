@@ -1,5 +1,5 @@
 import {afterEach,expect,it} from "vitest";
-import {loadPluginApp,mountPluginContentScripts} from "@get-bb/plugin-sdk/testing/app";
+import {loadPluginApp,mountPluginContentScripts} from "@vesnalia/plugin-sdk/testing/app";
 import {bindPane} from "./width-layout";
 
 afterEach(()=>document.body.replaceChildren());

@@ -1,7 +1,7 @@
 // Full-trust host entry: the only place in this plugin that runs a subprocess,
 // so the only place that talks to `gh`.
 import { execFile } from "node:child_process";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostContract, type GithubRef } from "./contract.js";
 import { GH_PR_FIELDS, isPullRequest, parseIssue, parsePrView } from "./lib/github.js";
 

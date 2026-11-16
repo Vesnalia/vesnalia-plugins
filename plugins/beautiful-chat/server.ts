@@ -1,13 +1,13 @@
-// bb-plugin-beautiful-chat — declares the appearance settings the app overlay applies.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// alia-plugin-beautiful-chat — declares the appearance settings the app overlay applies.
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { CHIP_STYLES, LOADERS } from "./settings";
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     loader: {
       type: "select",
       label: "Loading animation",
-      description: "Icon on pending work rows. drive: pixel grid sweep; dots: round pixels; orbit: pixels circling the edge; coins: a ring of tumbling coins; bb: BB's own icon.",
+      description: "Icon on pending work rows. drive: pixel grid sweep; dots: round pixels; orbit: pixels circling the edge; coins: a ring of tumbling coins; VesnALIA: VesnALIA's own icon.",
       options: [...LOADERS],
       default: "drive",
     },
@@ -97,5 +97,5 @@ export default async function plugin(bb: BbPluginApi) {
       default: true,
     },
   });
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }

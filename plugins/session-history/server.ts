@@ -1,13 +1,13 @@
-// bb-plugin-session-history — lists past Claude Code, Codex and Qwen Code
+// alia-plugin-session-history — lists past Claude Code, Codex and Qwen Code
 // sessions from their local stores, with the titles those agents show
-// themselves, renders a read-only transcript, and continues a session as a BB
+// themselves, renders a read-only transcript, and continues a session as a VesnALIA
 // thread that receives the transcript as agent-only context. Session files are
 // only read.
 import {
   PLUGIN_CLI_OUTPUT_MAX_BYTES,
   defineRpcContract,
-  type BbPluginApi,
-} from "@get-bb/plugin-sdk";
+  type AliaPluginApi,
+} from "@vesnalia/plugin-sdk";
 import { homedir } from "node:os";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -52,7 +52,7 @@ export const rpcContract = defineRpcContract({
   sessions_list: {
     input: z
       .object({
-        /** Limit to sessions whose cwd is inside this BB project's sources. */
+        /** Limit to sessions whose cwd is inside this VesnALIA project's sources. */
         projectId: z.string().nullable().optional(),
       })
       .strict(),
@@ -67,7 +67,7 @@ export const rpcContract = defineRpcContract({
       session: sessionSchema,
       entries: z.array(entrySchema),
       truncated: z.boolean(),
-      /** The BB thread that already continues this session, if any. */
+      /** The VesnALIA thread that already continues this session, if any. */
       threadId: z.string().nullable(),
       /** Seeds for the continuation composer. */
       suggestedProjectId: z.string().nullable(),
@@ -90,7 +90,7 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-/** BB provider that continues each agent's sessions. */
+/** VesnALIA provider that continues each agent's sessions. */
 const PROVIDER_FOR: Record<Agent, string> = {
   claude: "claude-code",
   codex: "codex",
@@ -117,13 +117,13 @@ const AGENT_LABELS: Record<SessionSummary["agent"], string> = {
   qwen: "Qwen",
 };
 
-export default async function plugin(bb: BbPluginApi) {
-  const warn = (message: string) => bb.log.warn(message);
+export default async function plugin(alia: AliaPluginApi) {
+  const warn = (message: string) => alia.log.warn(message);
 
   async function projectRoots(projectId: string | null | undefined): Promise<string[]> {
     if (!projectId) return [];
     try {
-      const project = await bb.sdk.projects.get({ projectId });
+      const project = await alia.sdk.projects.get({ projectId });
       return project.sources.map((source) => source.path);
     } catch (error) {
       warn(`project ${projectId}: ${error instanceof Error ? error.message : String(error)}`);
@@ -131,11 +131,11 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  /** The BB project whose source contains `cwd`, preferring the deepest match. */
+  /** The VesnALIA project whose source contains `cwd`, preferring the deepest match. */
   async function projectForCwd(cwd: string): Promise<string | null> {
     if (cwd === "") return null;
     try {
-      const projects = await bb.sdk.projects.list();
+      const projects = await alia.sdk.projects.list();
       let best: { id: string; depth: number } | null = null;
       for (const project of projects) {
         for (const source of project.sources) {
@@ -153,7 +153,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function availableProvider(agent: Agent): Promise<string | null> {
     try {
-      const providers = await bb.sdk.providers.list();
+      const providers = await alia.sdk.providers.list();
       const id = PROVIDER_FOR[agent];
       return providers.some((provider) => provider.id === id && provider.available) ? id : null;
     } catch {
@@ -163,20 +163,20 @@ export default async function plugin(bb: BbPluginApi) {
 
   /** The live thread linked to a session; a deleted thread drops the link. */
   async function linkedThread(agent: Agent, id: string): Promise<string | null> {
-    const link = await bb.storage.kv.get<{ threadId: string }>(linkKey(agent, id));
+    const link = await alia.storage.kv.get<{ threadId: string }>(linkKey(agent, id));
     if (!link) return null;
     try {
-      const thread = await bb.sdk.threads.get({ threadId: link.threadId });
+      const thread = await alia.sdk.threads.get({ threadId: link.threadId });
       if (thread.deletedAt === null) return thread.id;
     } catch {
       // Missing thread: forget the link below.
     }
-    await bb.storage.kv.delete(linkKey(agent, id));
+    await alia.storage.kv.delete(linkKey(agent, id));
     return null;
   }
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     "CREATE TABLE IF NOT EXISTS session_contexts (id TEXT PRIMARY KEY, thread_id TEXT)",
     "CREATE TABLE IF NOT EXISTS session_context_parts (context_id TEXT NOT NULL, part INTEGER NOT NULL, body TEXT NOT NULL, PRIMARY KEY(context_id, part))",
   ]);
@@ -184,33 +184,33 @@ export default async function plugin(bb: BbPluginApi) {
     db.prepare("DELETE FROM session_context_parts WHERE context_id = ?").run(id);
     db.prepare("DELETE FROM session_contexts WHERE id = ?").run(id);
   };
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     const rows = db.prepare("SELECT id FROM session_contexts WHERE thread_id = ?").all(thread.id) as { id: string }[];
     for (const row of rows) removeContext(row.id);
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "session_history_read_context",
     description: "Read one part of this continuation's complete original conversation. Read all parts in order before answering the first message.",
     parameters: z.object({ part: z.number().int().min(1) }).strict(),
     async execute({ part }, { threadId }) {
-      const metadata = await bb.sdk.threads.getPluginMetadata({ threadId, pluginId: bb.pluginId });
+      const metadata = await alia.sdk.threads.getPluginMetadata({ threadId, pluginId: alia.pluginId });
       const id = metadata.sessionContextId;
       if (typeof id !== "string") throw new Error("This thread has no session context");
       const row = db.prepare("SELECT body FROM session_context_parts WHERE context_id = ? AND part = ?").get(id, part) as { body: string } | undefined;
       if (!row) throw new Error("Session context part not found");
       const { total } = db.prepare("SELECT COUNT(*) AS total FROM session_context_parts WHERE context_id = ?").get(id) as { total: number };
-      bb.log.info(`context ${id} part ${part}/${total} read by ${threadId}`);
+      alia.log.info(`context ${id} part ${part}/${total} read by ${threadId}`);
       return `Part ${part}/${total}${part < total ? `; next part: ${part + 1}` : "; end of original conversation"}\n\n${row.body}`;
     },
   });
-  bb.agents.configure((context) => ({
+  alia.agents.configure((context) => ({
     tools: typeof context.pluginMetadata.sessionContextId === "string" ? ["session_history_read_context"] : [],
     skills: [],
   }));
 
   const creating = new Map<string, Promise<{ threadId: string }>>();
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async sessions_list({ projectId }) {
       const roots = await projectRoots(projectId);
       const all = await listSessions(warn);
@@ -239,7 +239,7 @@ export default async function plugin(bb: BbPluginApi) {
         const existing = await linkedThread(agent, id);
         if (existing !== null) {
           // A stale composer must not silently discard a newly submitted message.
-          await bb.sdk.threads.send({ threadId: existing, input: request.input } as Parameters<typeof bb.sdk.threads.send>[0]);
+          await alia.sdk.threads.send({ threadId: existing, input: request.input } as Parameters<typeof alia.sdk.threads.send>[0]);
           return { threadId: existing };
         }
         const text = fullTranscript(session, await readTranscript(session, true));
@@ -254,7 +254,7 @@ export default async function plugin(bb: BbPluginApi) {
         }
         let threadId: string | null = null;
         try {
-          const thread = await bb.sdk.threads.spawn({
+          const thread = await alia.sdk.threads.spawn({
             ...request,
             title: session.title,
             pluginMetadata: { sessionAgent: agent, sessionId: id, ...(contextId ? { sessionContextId: contextId } : {}) },
@@ -262,11 +262,11 @@ export default async function plugin(bb: BbPluginApi) {
               { type: "text", text: continuationContext(session, text, parts.length), mentions: [], visibility: "agent-only" },
               ...request.input,
             ],
-          } as unknown as Parameters<typeof bb.sdk.threads.spawn>[0]);
+          } as unknown as Parameters<typeof alia.sdk.threads.spawn>[0]);
           threadId = thread.id;
           if (contextId) db.prepare("UPDATE session_contexts SET thread_id = ? WHERE id = ?").run(thread.id, contextId);
-          await bb.storage.kv.set(key, { threadId: thread.id });
-          bb.log.info(`continued ${agent}/${id} as ${thread.id} (${text.length} characters, ${parts.length} context parts)`);
+          await alia.storage.kv.set(key, { threadId: thread.id });
+          alia.log.info(`continued ${agent}/${id} as ${thread.id} (${text.length} characters, ${parts.length} context parts)`);
           return { threadId: thread.id };
         } catch (error) {
           if (contextId !== null && threadId === null) removeContext(contextId);
@@ -285,23 +285,23 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb session-history list [--agent claude|codex|qwen] [--cwd <path>] [--limit <n>] [--json]",
-    "  bb session-history show <agent> <session-id> [--json]",
+    "  VesnALIA session-history list [--agent claude|codex|qwen] [--cwd <path>] [--limit <n>] [--json]",
+    "  VesnALIA session-history show <agent> <session-id> [--json]",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "session-history",
     summary: "List past Claude Code, Codex and Qwen Code sessions and read their transcripts",
     commands: [
       {
         name: "list",
         summary: "List past sessions, newest first",
-        usage: "bb session-history list [--agent claude|codex|qwen] [--cwd <path>] [--limit <n>] [--json]",
+        usage: "alia session-history list [--agent claude|codex|qwen] [--cwd <path>] [--limit <n>] [--json]",
       },
       {
         name: "show",
         summary: "Print a session transcript",
-        usage: "bb session-history show <agent> <session-id> [--json]",
+        usage: "alia session-history show <agent> <session-id> [--json]",
       },
     ],
     async run(argv) {
@@ -340,7 +340,7 @@ export default async function plugin(bb: BbPluginApi) {
           json
             ? JSON.stringify(entry)
             : `## ${entry.role === "user" ? "User" : "Assistant"}\n\n${entry.text}`;
-        // BB caps CLI output; keep the newest entries that fit.
+        // VesnALIA caps CLI output; keep the newest entries that fit.
         let budget = PLUGIN_CLI_OUTPUT_MAX_BYTES - 64 * 1024;
         let start = entries.length;
         while (start > 0) {

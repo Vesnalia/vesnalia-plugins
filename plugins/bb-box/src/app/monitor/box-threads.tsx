@@ -1,5 +1,5 @@
 import { Component, useId, type ReactNode } from "react";
-import { experimental_useSidebarThreads, useRpc, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { experimental_useSidebarThreads, useRpc, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { Contract, MachinesState, ThreadOnBox } from "../../plugin/contract.ts";
 import { threadOnBox } from "../../plugin/thread-on-box.ts";
 import { forThread, OPERATOR, useLive } from "../common.tsx";
@@ -17,9 +17,9 @@ function workingOrRecent(thread: ThreadOnBox, now: number): boolean {
 
 export function threadsOnMachine(machine: Pick<MachineOpens, "hostId" | "box">, sidebar: readonly PluginSidebarThread[], now = Date.now()): ThreadOnBox[] {
   const holderThreadId = machine.box?.holderThreadId ?? null;
-  const inBbSidebar = sidebar.filter((thread) => !thread.isArchived && !thread.isHidden);
-  const holder = inBbSidebar.find((thread) => thread.id === holderThreadId);
-  const runningOnMachine = machine.hostId === null ? [] : inBbSidebar.filter((thread) => thread.host?.id === machine.hostId && thread.id !== holderThreadId).map(threadOnBox);
+  const inAliaSidebar = sidebar.filter((thread) => !thread.isArchived && !thread.isHidden);
+  const holder = inAliaSidebar.find((thread) => thread.id === holderThreadId);
+  const runningOnMachine = machine.hostId === null ? [] : inAliaSidebar.filter((thread) => thread.host?.id === machine.hostId && thread.id !== holderThreadId).map(threadOnBox);
   const listed = machine.box ? runningOnMachine : runningOnMachine.filter((thread) => workingOrRecent(thread, now));
   return [...(holder ? [threadOnBox(holder)] : []), ...byActivity(listed)];
 }
@@ -29,7 +29,7 @@ interface WithThreads {
   readonly children: (threads: readonly ThreadOnBox[]) => ReactNode;
 }
 
-function FromBbSidebar({ machine, children }: WithThreads) {
+function FromAliaSidebar({ machine, children }: WithThreads) {
   const { threads } = experimental_useSidebarThreads();
   return children(threadsOnMachine(machine, threads));
 }
@@ -57,7 +57,7 @@ export function ThreadsOnMachine({ machine, children }: WithThreads) {
   const fromChipsSource = machine.box?.kept ? <FromKeptMachineChips box={machine.box}>{children}</FromKeptMachineChips> : children([]);
   return (
     <ShowInsteadOnError instead={fromChipsSource}>
-      <FromBbSidebar machine={machine}>{children}</FromBbSidebar>
+      <FromAliaSidebar machine={machine}>{children}</FromAliaSidebar>
     </ShowInsteadOnError>
   );
 }
@@ -84,8 +84,8 @@ function MoreOnBoxesPage({ more, box }: { more: number; box: BoxScreens }) {
   );
 }
 
-function MoreInBbSidebar({ more }: { more: number }) {
-  return <MenuLabel className="py-1.5">{more} more in BB's sidebar</MenuLabel>;
+function MoreInAliaSidebar({ more }: { more: number }) {
+  return <MenuLabel className="py-1.5">{more} more in VesnALIA's sidebar</MenuLabel>;
 }
 
 export function ThreadItems({ machine, threads }: { machine: MachineOpens; threads: readonly ThreadOnBox[] }) {
@@ -101,7 +101,7 @@ export function ThreadItems({ machine, threads }: { machine: MachineOpens; threa
         {shown.map((thread) => (
           <ThreadItem key={thread.id} thread={thread} onOpen={machine.openThread} />
         ))}
-        {more > 0 ? (machine.box ? <MoreOnBoxesPage more={more} box={machine.box} /> : <MoreInBbSidebar more={more} />) : null}
+        {more > 0 ? (machine.box ? <MoreOnBoxesPage more={more} box={machine.box} /> : <MoreInAliaSidebar more={more} />) : null}
       </MenuGroup>
     </>
   );

@@ -203,7 +203,7 @@ export interface StandaloneOptions {
 }
 
 /** Marks a page as an Animation export, so a re-export may replace it. */
-export const EXPORT_GENERATOR = "bb-plugin-animation";
+export const EXPORT_GENERATOR = "alia-plugin-animation";
 
 /**
  * True for a page this plugin exported. Pages from 0.1.0 carry no generator

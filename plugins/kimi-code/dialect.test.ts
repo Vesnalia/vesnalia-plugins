@@ -101,7 +101,7 @@ describe("the kimi ACP dialect maintenance hooks", () => {
     expect(kimiAcpDialect.maintenance?.loginCommand).toBe("kimi login");
   });
 
-  it("maps managed quota into bb usage windows with reset times and booster cost", async () => {
+  it("maps managed quota into VesnALIA usage windows with reset times and booster cost", async () => {
     const { readKimiUsage } = await import("./src/kimi-usage.js");
     const result = await readKimiUsage({
       credentials: JSON.stringify({ access_token: "token" }),
@@ -177,7 +177,7 @@ describe("the kimi ACP dialect maintenance hooks", () => {
 
 describe("the kimi ACP dialect command output normalization", () => {
   // Event shapes below are copied from the live recording of kimi acp 2.4.1
-  // (BB_PROVIDER_BRIDGE_RECORD_DIR probe, 2026-10-31): a Bash call streams
+  // (ALIA_PROVIDER_BRIDGE_RECORD_DIR probe, 2026-10-31): a Bash call streams
   // cumulative argument-JSON snapshots as content text, then an in_progress
   // update carries rawInput with content === JSON.stringify(rawInput), and
   // only afterwards the real command output arrives (with rawOutput).

@@ -2,7 +2,7 @@
 // each step of setup, from connecting Asana to trying it from an agent.
 import { useCallback, useEffect, useId, useState } from "react";
 import type { ReactNode } from "react";
-import { UrlLink, useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -53,7 +53,7 @@ function Step({ n, done, title, children }: { n: number; done: boolean; title: s
 
 export function GettingStarted() {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const workspaceId = useId();
   const { status, check } = useConnection();
   const { data: projectMap } = useProjectMap();
@@ -61,7 +61,7 @@ export function GettingStarted() {
   const connected = status.state === "ok";
 
   const rows = projectMap?.rows ?? [];
-  const mapped = rows.filter((row) => row.bbProjectId !== null && row.source !== "suggested").length;
+  const mapped = rows.filter((row) => row.aliaProjectId !== null && row.source !== "suggested").length;
   const suggested = rows.filter((row) => row.source === "suggested").length;
 
   return (
@@ -90,7 +90,7 @@ export function GettingStarted() {
               </p>
             ) : null}
             <p>
-              In Asana, create a personal access token (name it “bb” so you can find it later), then paste it into{" "}
+              In Asana, create a personal access token (name it “VesnALIA” so you can find it later), then paste it into{" "}
               <span className="font-medium text-foreground">Personal access token</span> above.
             </p>
             <p className="mt-2">
@@ -154,9 +154,9 @@ export function GettingStarted() {
         </Button>
       </Step>
 
-      <Step n={4} done={connected && rows.length > 0 && suggested === 0 && mapped > 0} title="Map Asana projects to bb projects">
+      <Step n={4} done={connected && rows.length > 0 && suggested === 0 && mapped > 0} title="Map Asana projects to VesnALIA projects">
         <p>
-          Start thread opens a ticket in the matching bb project.{" "}
+          Start thread opens a ticket in the matching VesnALIA project.{" "}
           {rows.length === 0
             ? "Projects appear here once your tasks load."
             : `${mapped} of ${rows.length} mapped${suggested > 0 ? `, ${suggested} suggested and waiting for you to confirm` : ""}.`}{" "}
@@ -175,7 +175,7 @@ export function GettingStarted() {
 
       <Step n={5} done={false} title="Ask an agent">
         <p>
-          Agents in bb can read and update your tasks with <code className="text-foreground">bb asana</code>, and a
+          Agents in VesnALIA can read and update your tasks with <code className="text-foreground">alia asana</code>, and a
           thread started from a ticket begins with the ticket's details. Try asking “What's overdue in Asana?”
         </p>
         <p className="mt-2">

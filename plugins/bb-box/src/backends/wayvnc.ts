@@ -31,13 +31,13 @@ exit 1`;
  * connection made new ones. `attach "*"` keeps them, in this switch and every
  * later one.
  */
-export const HIDDEN_CURSOR_THEME = "bb-box-hidden";
+export const HIDDEN_CURSOR_THEME = "alia-box-hidden";
 
 /** Takes the box's pointer out of the picture, or puts it back. As the box user, whose Sway and GSettings they are. */
 export function waylandPointerScript(shown: boolean): string {
   const [sway, gtk] = shown ? ["default", "Adwaita"] : [HIDDEN_CURSOR_THEME, HIDDEN_CURSOR_THEME];
   return `export XDG_RUNTIME_DIR="\${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"; export DBUS_SESSION_BUS_ADDRESS="\${DBUS_SESSION_BUS_ADDRESS:-unix:path=$XDG_RUNTIME_DIR/bus}"
-set -a; [ ! -r /run/bb-box/display.env ] || . /run/bb-box/display.env; set +a
+set -a; [ ! -r /run/alia-box/display.env ] || . /run/alia-box/display.env; set +a
 swaymsg -s "$SWAYSOCK" 'seat seat0 attach "*"; seat seat0 xcursor_theme ${sway}' >/dev/null || exit 1
 ! command -v gsettings >/dev/null || gsettings set org.gnome.desktop.interface cursor-theme ${gtk}`;
 }

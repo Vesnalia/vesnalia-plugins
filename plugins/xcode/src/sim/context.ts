@@ -51,7 +51,7 @@ export interface Ctx {
   /**
    * Probed on first use and cached, never at load.
    *
-   * The probes shell out to `sw_vers`, `xcode-select`, `xcodebuild` and the bb
+   * The probes shell out to `sw_vers`, `xcode-select`, `xcodebuild` and the VesnALIA
    * CLI, which together cost a few seconds. Paying that on every reload would
    * delay activation for a fact nothing needs until someone opens the doctor.
    */
@@ -79,8 +79,8 @@ export interface Ctx {
    * The scope for a CLI invocation.
    *
    * A bare terminal invocation has no thread, so `cwd` is the strongest
-   * evidence available — and it is the difference between `bb xcode sim onboard`
-   * analysing the repo you are standing in and analysing whichever project bb
+   * evidence available — and it is the difference between `alia xcode sim onboard`
+   * analysing the repo you are standing in and analysing whichever project VesnALIA
    * happens to list first. `projectId` beats it when the caller knew one.
    */
   scopeForInvocation(hints: {
@@ -100,7 +100,7 @@ export interface Ctx {
   /**
    * The machine the simulators run on, and every other enrolled machine.
    *
-   * `current` is the bb server host's name — CoreSimulator, the capture host
+   * `current` is the VesnALIA server host's name — CoreSimulator, the capture host
    * and every `simctl` call live there. `others` exist so the picker can name
    * them honestly as out of reach rather than hiding the machine dimension.
    * Never throws: a hosts API that cannot answer is an empty answer.
@@ -109,8 +109,8 @@ export interface Ctx {
   /** The whole plugin's raw settings — both halves share one handle. */
   rawSettings(): Promise<import("./settings.js").RawSettings>;
   /**
-   * Write one settings key through bb, so `onChange` fires in both halves
-   * and bb's own settings screen stays the source of truth. Callers gate the
+   * Write one settings key through VesnALIA, so `onChange` fires in both halves
+   * and VesnALIA's own settings screen stays the source of truth. Callers gate the
    * key; this gates nothing.
    */
   writeSetting(key: string, value: boolean): Promise<void>;
@@ -123,8 +123,8 @@ export interface Ctx {
      * Enqueue a render. Returns as soon as it is queued, never when it is done.
      *
      * The **scope is passed in** rather than resolved inside. It used to be
-     * resolved from the default project, which meant `bb xcode sim stills` rendered
-     * whichever project bb listed first instead of the one the caller meant.
+     * resolved from the default project, which meant `alia xcode sim stills` rendered
+     * whichever project VesnALIA listed first instead of the one the caller meant.
      */
     enqueue(scope: ThreadScope, device: string | null): Promise<{ lookId: string | null; queued: number }>;
     /**
@@ -153,7 +153,7 @@ export interface Ctx {
   /** The demo banner state, when one is armed and unexpired. */
   demo(): import("./demos.js").DemoBannerState | null;
   setDemo(state: import("./demos.js").DemoBannerState | null): void;
-  /** Write the onboarding files into the checkout, through bb.sdk.files. */
+  /** Write the onboarding files into the checkout, through alia.sdk.files. */
   writeOnboardingFiles(files: ReadonlyArray<{ relPath: string; contents: string }>): Promise<string[]>;
   /**
    * Write a stored frame to a path on the machine that invoked the CLI.

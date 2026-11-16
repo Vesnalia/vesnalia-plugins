@@ -16,27 +16,27 @@ To use one language in every thread, set **Recap language** in settings. The lan
 
 ## Settings
 
-Automatic recaps and auto-cleanup are on by default. The idle delay defaults to 30 seconds (range 0–86,400), the minimum defaults to 3 user turns (range 1–100), and concurrency defaults to 2 workers (range 1–5). Prompts are capped at 8,000 characters and recap text at 1,200 characters. Automatic recaps above 800 raw characters are dropped. Cleanup removes suppressed attempts, older invalidated recaps, and visible records beyond the newest 1,000. It never deletes BB threads, messages, files, or projects.
+Automatic recaps and auto-cleanup are on by default. The idle delay defaults to 30 seconds (range 0–86,400), the minimum defaults to 3 user turns (range 1–100), and concurrency defaults to 2 workers (range 1–5). Prompts are capped at 8,000 characters and recap text at 1,200 characters. Automatic recaps above 800 raw characters are dropped. Cleanup removes suppressed attempts, older invalidated recaps, and visible records beyond the newest 1,000. It never deletes VesnALIA threads, messages, files, or projects.
 
 ## CLI
 
 ```sh
-bb catchup generate [thread-id] [--json]
-bb catchup show [thread-id] [--json]
-bb catchup preview [thread-id] [--json]
-bb catchup list [--limit N] [--json]
+alia catchup generate [thread-id] [--json]
+alia catchup show [thread-id] [--json]
+alia catchup preview [thread-id] [--json]
+alia catchup list [--limit N] [--json]
 ```
 
-Omit `thread-id` in a thread-aware BB CLI context. `preview` shows the card at once in open BB windows, generates nothing, and stores nothing. It also works while the thread is active, so it is useful to check how a layout renders. The bundled `catchup` skill documents CLI use, including `/catchup preview`.
+Omit `thread-id` in a thread-aware VesnALIA CLI context. `preview` shows the card at once in open VesnALIA windows, generates nothing, and stores nothing. It also works while the thread is active, so it is useful to check how a layout renders. The bundled `catchup` skill documents CLI use, including `/catchup preview`.
 
 ## Privacy and permissions
 
-A hidden BB worker receives a bounded transcript and the configured prompt. It uses `accept-edits`, the least-permissive spawn mode BB offers, and is told to return only a recap. Catch Up archives and stops it after each attempt. Hidden is not a security boundary: the worker remains subject to BB's tools and permission model. The configured provider may process the transcript remotely under its own policy. Catch Up makes no direct network requests, filesystem access, subprocesses, or telemetry calls, and uses BB's namespaced storage for its SQLite database.
+A hidden VesnALIA worker receives a bounded transcript and the configured prompt. It uses `accept-edits`, the least-permissive spawn mode VesnALIA offers, and is told to return only a recap. Catch Up archives and stops it after each attempt. Hidden is not a security boundary: the worker remains subject to VesnALIA's tools and permission model. The configured provider may process the transcript remotely under its own policy. Catch Up makes no direct network requests, filesystem access, subprocesses, or telemetry calls, and uses VesnALIA's namespaced storage for its SQLite database.
 
 ## Requirements
 
-- BB 0.48 or newer.
-- No account or API key of its own. Catch Up uses the provider and model already configured in BB, under that provider's normal billing.
+- VesnALIA 0.48 or newer.
+- No account or API key of its own. Catch Up uses the provider and model already configured in VesnALIA, under that provider's normal billing.
 
 ## Credits
 

@@ -22,7 +22,7 @@ export const REREAD_MS = 5 * MINUTE;
 export const PASS_CALLS = 40;
 /** The turn a review's prompt starts can begin a moment before Shuttle records the run. */
 const LEAD_MS = MINUTE;
-/** How long Shuttle waits to ask again after bb said Burn is not there. */
+/** How long Shuttle waits to ask again after VesnALIA said Burn is not there. */
 export const MISSING_RETRY_MS = 10 * MINUTE;
 /** Failed reads in a row that end a pass: Burn is likely down. The next pass waits REREAD_MS. */
 const FAILS_PER_PASS = 3;

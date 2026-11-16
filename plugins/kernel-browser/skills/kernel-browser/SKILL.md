@@ -1,14 +1,14 @@
 ---
 name: kernel-browser
-description: Drive a real, cloud-hosted Chrome browser via Kernel from a bb thread. Use whenever a task needs to load a page, read rendered content, fill a form, or otherwise act on the web — including sites with bot detection, or work that should keep running if this bb host goes away.
+description: Drive a real, cloud-hosted Chrome browser via Kernel from a VesnALIA thread. Use whenever a task needs to load a page, read rendered content, fill a form, or otherwise act on the web — including sites with bot detection, or work that should keep running if this VesnALIA host goes away.
 ---
 
 # Kernel Browser
 
-`bb kernel-browser ...` opens and drives a [Kernel](https://kernel.sh) cloud
+`alia kernel-browser ...` opens and drives a [Kernel](https://kernel.sh) cloud
 browser. Unlike a local headless browser, every session comes with a live
 view URL the user can watch in real time, and the session keeps running
-independently of this bb host — it survives disconnects and does not need a
+independently of this VesnALIA host — it survives disconnects and does not need a
 desktop app window open.
 
 ## When to use this over other browser access
@@ -19,7 +19,7 @@ desktop app window open.
 - Anything a person is likely watching. Share the `Watch it live:` URL
   `open` prints — don't just say "I opened a browser." Better still, put
   `::kernel-live{target-id="<target-id>"}` on its own line in your reply —
-  bb renders it as an embedded live view right in the chat instead of just a
+  VesnALIA renders it as an embedded live view right in the chat instead of just a
   link. Skip this for unattended or bulk opens (e.g. looping over many
   targets), and embed at most one per reply.
 - Long-running or resumable work: the Kernel session outlives this thread's
@@ -27,8 +27,8 @@ desktop app window open.
   later. Always `close` it when the task is done so it doesn't run forever
   and rack up charges.
 
-This is a separate cloud browser, not bb's own in-app browser tabs. Don't use
-it to QA bb's own web app — use `dev-browser` or the ordinary in-app browser
+This is a separate cloud browser, not VesnALIA's own in-app browser tabs. Don't use
+it to QA VesnALIA's own web app — use `dev-browser` or the ordinary in-app browser
 for that.
 
 Hitting a login wall? See the `kernel-managed-auth` skill instead of driving
@@ -39,16 +39,16 @@ pass to `open --profile`.
 ## Commands
 
 ```
-bb kernel-browser open [url] [--stealth] [--headless] [--profile <name>] [--timeout <seconds>] [--json]
-bb kernel-browser list [--json]
-bb kernel-browser snapshot <target-id> [--json]
-bb kernel-browser click <target-id> --selector <css> | --x <n> --y <n>
-bb kernel-browser type <target-id> --text <text> [--selector <css>]
-bb kernel-browser eval <target-id> --script <code> | --script-file <path> [--json]
-bb kernel-browser close <target-id>
-bb kernel-browser replay-start <target-id> [--framerate <fps>] [--max-duration <seconds>] [--audio] [--json]
-bb kernel-browser replay-stop <target-id> --replay-id <id> [--json]
-bb kernel-browser replay-list <target-id> [--json]
+alia kernel-browser open [url] [--stealth] [--headless] [--profile <name>] [--timeout <seconds>] [--json]
+alia kernel-browser list [--json]
+alia kernel-browser snapshot <target-id> [--json]
+alia kernel-browser click <target-id> --selector <css> | --x <n> --y <n>
+alia kernel-browser type <target-id> --text <text> [--selector <css>]
+alia kernel-browser eval <target-id> --script <code> | --script-file <path> [--json]
+alia kernel-browser close <target-id>
+alia kernel-browser replay-start <target-id> [--framerate <fps>] [--max-duration <seconds>] [--audio] [--json]
+alia kernel-browser replay-stop <target-id> --replay-id <id> [--json]
+alia kernel-browser replay-list <target-id> [--json]
 ```
 
 `open` returns a `target-id` (a Kernel browser session id) plus a live view
@@ -72,7 +72,7 @@ live view — the live view only shows what's happening right now. If the
 recording is something the user asked to see or would want to review (not an
 internal audit trail for a background/bulk task), put
 `::kernel-replay{target-id="<target-id>" replay-id="<replay-id>"}` on its own
-line in your reply — bb renders it as an embedded player right in the chat
+line in your reply — VesnALIA renders it as an embedded player right in the chat
 (showing "processing" until the video is ready) instead of just a link. Skip
 this for unattended or bulk stops, and embed at most one per reply.
 
@@ -94,8 +94,8 @@ this for unattended or bulk stops, and embed at most one per reply.
 
 ## Configuration
 
-Requires a Kernel API key: `bb plugin config kernel-browser set apiKey <key>`
+Requires a Kernel API key: `alia plugin config kernel-browser set apiKey <key>`
 (get one at https://dashboard.onkernel.com/api-keys), then
-`bb plugin reload kernel-browser`. If the plugin reports
-`needs-configuration` in `bb plugin list`, this hasn't been done yet — tell
+`alia plugin reload kernel-browser`. If the plugin reports
+`needs-configuration` in `alia plugin list`, this hasn't been done yet — tell
 the user rather than guessing at a key.

@@ -1,29 +1,23 @@
 {
-  "name": "bb-plugin-shell-tasks",
+  "name": "alia-plugin-shell-tasks",
   "version": "0.1.44",
-  "description": "Lets your BB agents run long-lived shell commands without blocking a turn.",
+  "description": "Lets your VesnALIA agents run long-lived shell commands without blocking a turn.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ahkohd/bb-plugin-shell-tasks.git"
-  },
-  "homepage": "https://github.com/ahkohd/bb-plugin-shell-tasks#readme",
-  "bugs": "https://github.com/ahkohd/bb-plugin-shell-tasks/issues",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "agents",
     "shell",
     "tasks"
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.5.9"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.5.9"
   },
-  "bb": {
+  "alia": {
     "name": "Shell tasks",
-    "description": "Lets your BB agents run long-lived shell commands without blocking a turn.",
+    "description": "Lets your VesnALIA agents run long-lived shell commands without blocking a turn.",
     "branding": {
       "icon": "./assets/apple-reminder.svg",
       "experimental_icons": {
@@ -49,7 +43,6 @@
     "tsx": "^4.20.0",
     "jsdom": "^26.0.0",
     "@testing-library/react": "^16.3.0",
-    "@get-bb/plugin-sdk": "0.5.29",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -74,5 +67,22 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.29"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/shell-tasks#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/shell-tasks"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -6,7 +6,7 @@ LC_ALL=C
 export PATH LC_ALL
 
 HOMES=${BBBOX_HOMES:-/home}
-STORE_NAME=.bb-box-snapshots
+STORE_NAME=.alia-box-snapshots
 STORE=$HOMES/$STORE_NAME
 ZFS_PARENT=${BBBOX_ZFS_PARENT:-}
 CONTRACT=1
@@ -89,7 +89,7 @@ make_user() {
   home=$(home_of "$user")
   groupadd -g "$uid" "$user" || fail "groupadd $user"
   make_home "$user" || fail "Could not make $home."
-  useradd -u "$uid" -g "$uid" -M -d "$home" -s /bin/bash -c "bb-box box" "$user" || fail "useradd $user"
+  useradd -u "$uid" -g "$uid" -M -d "$home" -s /bin/bash -c "alia-box box" "$user" || fail "useradd $user"
   cp -a /etc/skel/. "$home/"
   mkdir -p "$home/.ssh" "$home/.cache"
   chown -R "$uid:$uid" "$home"
@@ -232,15 +232,15 @@ restore() {
 
 identity_left_in() {
   home=$1
-  for each in "$home"/.bb-machines/*/host-id "$home"/.bb-machines/*/auth.json "$home"/.bb-machines/*/config.json "$home"/.config/bb-box/env "$home"/.config/systemd/user/bb-host-daemon-*.service "$home"/.ssh/id_* "$home"/.config/gh/hosts.yml "$home"/.local/share/tailscale; do
+  for each in "$home"/.alia-machines/*/host-id "$home"/.alia-machines/*/auth.json "$home"/.alia-machines/*/config.json "$home"/.config/alia-box/env "$home"/.config/systemd/user/alia-host-daemon-*.service "$home"/.ssh/id_* "$home"/.config/gh/hosts.yml "$home"/.local/share/tailscale; do
     [ -e "$each" ] && printf '%s\n' "${each#"$home"/}"
   done
 }
 
 reset_identity() {
   home=$1
-  rm -rf "$home"/.bb-machines/*/host-id "$home"/.bb-machines/*/auth.json "$home"/.bb-machines/*/config.json "$home"/.bb-machines/*/daemon.lock "$home"/.bb-machines/*/host-daemon-port
-  rm -f "$home"/.config/bb-box/env "$home"/.config/systemd/user/bb-host-daemon-*.service "$home"/.config/systemd/user/default.target.wants/bb-host-daemon-*.service
+  rm -rf "$home"/.alia-machines/*/host-id "$home"/.alia-machines/*/auth.json "$home"/.alia-machines/*/config.json "$home"/.alia-machines/*/daemon.lock "$home"/.alia-machines/*/host-daemon-port
+  rm -f "$home"/.config/alia-box/env "$home"/.config/systemd/user/alia-host-daemon-*.service "$home"/.config/systemd/user/default.target.wants/alia-host-daemon-*.service
   rm -rf "$home"/.local/share/tailscale
 }
 
@@ -257,7 +257,7 @@ fork() {
     zfs) zfs send "$(zfs_home "$source")@$id" | zfs receive -o mountpoint="$home" "$ZFS_PARENT/$user" || fail "Could not copy $id." ;;
   esac
   cloned=$(now_ms)
-  useradd -u "$uid" -g "$uid" -M -d "$home" -s /bin/bash -c "bb-box box" "$user" || fail "useradd $user"
+  useradd -u "$uid" -g "$uid" -M -d "$home" -s /bin/bash -c "alia-box box" "$user" || fail "useradd $user"
   usermod -p '*' "$user"
   chown -R --from="$(uid_of "$source"):$(uid_of "$source")" "$uid:$uid" "$home"
   owned=$(now_ms)

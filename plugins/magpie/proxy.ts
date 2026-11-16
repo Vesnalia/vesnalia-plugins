@@ -61,7 +61,7 @@ export function gatewayFailure(error: unknown): Response {
       });
     }
   }
-  return Response.json({ error: { message: "Cannot reach the Magpie gateway. Run bb magpie check." } }, {
+  return Response.json({ error: { message: "Cannot reach the Magpie gateway. Run alia magpie check." } }, {
     status: 502,
   });
 }
@@ -97,7 +97,7 @@ export async function readJson(
 
 const stopping = () => Response.json({ error: { message: "Magpie connector is stopping." } }, { status: 503 });
 
-// The bb connect relay returns 504 when response headers take about 30 seconds. Compaction and other
+// The VesnALIA connect relay returns 504 when response headers take about 30 seconds. Compaction and other
 // large streamed requests can wait longer for the gateway, so send SSE headers first and keep the line busy.
 export const streamTiming = { headers: 10_000, ping: 10_000 };
 
@@ -209,8 +209,8 @@ export function createProxy(options: {
             status: 503,
           });
         }
-        // Codex keeps its own Authorization header. BB sends the proxy token separately.
-        const token = request.headers.get("x-bb-account-pool-token")
+        // Codex keeps its own Authorization header. VesnALIA sends the proxy token separately.
+        const token = request.headers.get("x-alia-account-pool-token")
           ?? request.headers.get("authorization")?.replace(/^Bearer /i, "") ?? request.headers.get("x-api-key") ?? "";
         const hostId = tokenHost(settings.proxySecret, token);
         if (!hostId || !await options.enrolled(hostId)) {
@@ -225,7 +225,7 @@ export function createProxy(options: {
         const key = settings.gatewayKey || `magpie-${agent}`;
         headers.set("authorization", `Bearer ${key}`);
         headers.set("x-api-key", key);
-        headers.set("user-agent", `${agent}/bb-magpie`);
+        headers.set("user-agent", `${agent}/alia-magpie`);
         const upstreamURL = new URL(path, gatewayURL(settings.gatewayUrl));
         if (new URL(request.url).searchParams.get("beta") === "true") upstreamURL.searchParams.set("beta", "true");
         // Node fetch needs a repeatable body to return HTTP 401 without a transport error.

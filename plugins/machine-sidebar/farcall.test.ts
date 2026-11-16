@@ -1,14 +1,14 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import plugin from "./server";
 import { createFarcallReader } from "./farcall-reader";
 import { projectFarcallEvents, FarcallProjection } from "./farcall-events";
 import { FARCALL_CHANGED, FARCALL_SETTING, taskStatusLabel } from "./farcall-contract";
 
-type ThreadEventRow = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["events"]["list"]>>[number];
-type EventListArgs = Parameters<BbPluginApi["sdk"]["threads"]["events"]["list"]>[0];
+type ThreadEventRow = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["events"]["list"]>>[number];
+type EventListArgs = Parameters<AliaPluginApi["sdk"]["threads"]["events"]["list"]>[0];
 const fixture = JSON.parse(readFileSync("tests/fixtures/farcall-events.sanitized.json", "utf8")).events as ThreadEventRow[];
 const args = { delegation_id: "one", model: "requested-model", prompt: "PROMPT MUST NOT BE COPIED" };
 function event(seq: number, type = "item/started", patch: Record<string, unknown> = {}) {
@@ -58,7 +58,7 @@ describe("Farcall event projection", () => {
       .toBe("Review the changes and tests in src/my_file.ts; unfinished");
   });
 
-  it("measures call time from BB event times without resetting it on retries or replays", () => {
+  it("measures call time from VesnALIA event times without resetting it on retries or replays", () => {
     const at = (e: ReturnType<typeof event>, createdAt: number) => ({ ...e, createdAt });
     const [timed] = projectFarcallEvents([at(event(1), 1_000), at(done(), 61_000)]);
     expect(timed).toMatchObject({ startedAt: 1_000, endedAt: 61_000 });
@@ -68,7 +68,7 @@ describe("Farcall event projection", () => {
       at(done({ tool: "run_batch", arguments: batch, result: { batch_id: "b", tasks: [{ task_id: "a", delegation_id: "a-d", status: "completed",
         worker_result: { delegation_id: "a-d", status: "completed", completed_at: "2026-10-02T05:10:00Z" } }] } }), Date.parse("2026-10-02T05:40:00Z"))]);
     expect(worker.endedAt! - worker.startedAt!).toBe(10 * 60_000);
-    // Missing BB times stay unavailable instead of becoming zero.
+    // Missing VesnALIA times stay unavailable instead of becoming zero.
     expect(projectFarcallEvents([event(1), done()])[0]).toMatchObject({ startedAt: null, endedAt: null });
     expect(projectFarcallEvents([at(done(), 5_000)])[0]).toMatchObject({ startedAt: null, endedAt: 5_000 });
     // Turn ended without a return: the wait ended then, the outcome is unknown.
@@ -167,7 +167,7 @@ describe("Farcall SDK reader and backend", () => {
     expect(sdkList.mock.calls).toHaveLength(3);
     expect(await createFarcallReader(list(fixture)).read("coordinator")).toEqual(first);
   });
-  it("enforces BB's 100-event limit and reconstructs results across multiple cursor pages", async () => {
+  it("enforces VesnALIA's 100-event limit and reconstructs results across multiple cursor pages", async () => {
     const history = Array.from({ length: 125 }, (_, index) => {
       const delegation_id = `task-${index}`;
       const patch = { id: `call-${index}`, arguments: { ...args, delegation_id } };
@@ -201,7 +201,7 @@ describe("Farcall SDK reader and backend", () => {
   });
   it("defaults off, uses native settings, and performs no event reads or Farcall notifications while off", async () => {
     const host = createFakePluginHost({ pluginId: "team-sidebar" });
-    await plugin(host.bb);
+    await plugin(host.alia);
     expect(host.harness.registrations.settingsDescriptors[FARCALL_SETTING]).toMatchObject({ type: "boolean", default: false });
     expect(await host.harness.callRpc("farcall_tasks_get", { threadId: "coordinator" })).toEqual({ tasks: [] });
     await host.harness.emitThreadEvent("experimental_thread.events", { thread: makeThreadResponse({ id: "coordinator" }), sequence: 10 });
@@ -215,7 +215,7 @@ describe("Farcall SDK reader and backend", () => {
       threads: { events: { list: sdkList }, get: async () => makeThreadResponse({ environmentId: null }) },
       environments: { list: async () => [] }, subscribe: () => () => {},
     } });
-    await plugin(host.bb);
+    await plugin(host.alia);
     const first = await host.harness.callRpc("farcall_tasks_get", { threadId: "coordinator" });
     const rows = (first as { tasks: Record<string, unknown>[] }).tasks;
     expect(rows.length).toBeGreaterThan(30);
@@ -223,7 +223,7 @@ describe("Farcall SDK reader and backend", () => {
       expect(Object.keys(row).filter((key) => key !== "workspace").sort()).toEqual(["callState", "endedAt", "hasCwd", "key", "provider", "requestedModel", "startedAt", "status", "task"]);
     }
     expect(JSON.stringify(first)).not.toContain('"cwd"');
-    // Result text, sessions and evidence remain in BB history, not each sidebar refresh.
+    // Result text, sessions and evidence remain in VesnALIA history, not each sidebar refresh.
     expect(JSON.stringify(first).length).toBeLessThan(JSON.stringify({ tasks: projectFarcallEvents(fixture) }).length);
     await host.harness.emitThreadEvent("experimental_thread.events", { thread: makeThreadResponse({ id: "coordinator" }), sequence: 10 });
     expect(host.harness.realtimeSignals.at(-1)).toMatchObject({ channel: FARCALL_CHANGED, payload: { threadId: "coordinator", sequence: 10 } });

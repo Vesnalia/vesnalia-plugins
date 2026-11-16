@@ -1,9 +1,9 @@
-import { bb, boxesUrl, browser, focused, generic, inBox, line, machineId, pause, rpc, shots, snapshotsOf, tabTo, waitFor } from "./live-lib.mjs";
+import { alia, boxesUrl, browser, focused, generic, inBox, line, machineId, pause, rpc, shots, snapshotsOf, tabTo, waitFor } from "./live-lib.mjs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 function askedWords(boxId) {
-  const db = new DatabaseSync(join(process.env.HOME, "bbdata", "plugins", "bb-box", "box-log.db"), { readOnly: true });
+  const db = new DatabaseSync(join(process.env.HOME, "bbdata", "plugins", "alia-box", "box-log.db"), { readOnly: true });
   try {
     return db.prepare("SELECT words FROM box_events WHERE box = ? AND kind = 'restore-asked' ORDER BY seq DESC LIMIT 1").get(boxId)?.words ?? "none";
   } finally {
@@ -16,8 +16,8 @@ const id = await machineId(name);
 line(`\n## Guarded restore of ${name} (${new Date().toISOString()})`);
 
 const spawn = (title, prompt) => {
-  const thread = JSON.parse(bb(["thread", "spawn", "--project", project, "--machine", name, "--environment", "/home/box/proj", "--provider", "acp-idle", "--prompt", prompt, "--json"])).id;
-  bb(["thread", "update", thread, "--title", title]);
+  const thread = JSON.parse(alia(["thread", "spawn", "--project", project, "--machine", name, "--environment", "/home/box/proj", "--provider", "acp-idle", "--prompt", prompt, "--json"])).id;
+  alia(["thread", "update", thread, "--title", title]);
   return thread;
 };
 const working = spawn("Fix the sign-in flow", "hold this turn");
@@ -56,8 +56,8 @@ for (const theme of ["dark", "light"]) {
 await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
 await page.keyboard.press("Escape");
 
-bb(["thread", "archive", working]);
-bb(["thread", "archive", idle]);
+alia(["thread", "archive", working]);
+alia(["thread", "archive", idle]);
 await pause(5000);
 await tabTo(page, (now) => now === `button Restore ${name} to one`);
 await page.keyboard.press("Enter");

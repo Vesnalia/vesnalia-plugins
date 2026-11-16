@@ -1,6 +1,6 @@
-Keep GitHub work moving, from one BB inbox.
+Keep GitHub work moving, from one VesnALIA inbox.
 
-GitHub Extended adds GitHub+ to BB. Browse issues, pull requests, and Dependabot
+GitHub Extended adds GitHub+ to VesnALIA. Browse issues, pull requests, and Dependabot
 alerts across repositories, follow the discussion, and keep your agent's work
 linked to the item that started it.
 
@@ -22,14 +22,14 @@ linked to the item that started it.
 - **Activity:** inspect outputs and audit details, handle approvals, replay
   jobs, and return to linked conversations. History pages include older runs
   for the selected repository.
-- **Ask agent:** investigate, fix, or review an item with BB's native composer.
+- **Ask agent:** investigate, fix, or review an item with VesnALIA's native composer.
   Choose the project, environment, model, and permissions before sending.
 
 ## Setup and boundaries
 
 Install from `git:https://github.com/MacHatter1/bb-plugin-github-extended`.
-Requires BB with Plugin SDK 0.6.49 or newer and GitHub CLI authenticated for
-`github.com`. Repositories come from local BB project remotes, with extra
+Requires VesnALIA with Plugin SDK 0.6.49 or newer and GitHub CLI authenticated for
+`github.com`. Repositories come from local VesnALIA project remotes, with extra
 repositories available in settings. GitHub Enterprise remotes are not discovered.
 
 Dry run starts on. Automation only polls repositories you enable; its first
@@ -44,7 +44,7 @@ jobs, and audit trail in local SQLite storage. It does not store a separate
 GitHub token. Dependabot visibility depends on repository settings and GitHub
 permissions.
 
-The command is `bb github-extended`, separate from BB's built-in `bb github`.
+The command is `alia github-extended`, separate from VesnALIA's built-in `alia github`.
 Using both can duplicate panels and background requests. Bundled skills cover
 CLI inspection and creating automation rules from chat.
 

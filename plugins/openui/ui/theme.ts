@@ -1,5 +1,5 @@
-// OpenUI theme tokens mapped onto BB's own CSS variables, so blocks use BB's
-// font, 13px text scale, colours and borders. BB's variables already flip with
+// OpenUI theme tokens mapped onto VesnALIA's own CSS variables, so blocks use VesnALIA's
+// font, 13px text scale, colours and borders. VesnALIA's variables already flip with
 // its light/dark theme, so one token set serves both modes.
 import { useMemo } from "react";
 import { createTheme, type Theme } from "@openuidev/react-ui";
@@ -8,7 +8,7 @@ const FONT = "var(--font-sans)";
 const REGULAR = 400;
 const HEAVY = 560;
 
-/** OpenUI's compound font tokens ("400 16px/1.5 Inter") rebuilt at BB's sizes. */
+/** OpenUI's compound font tokens ("400 16px/1.5 Inter") rebuilt at VesnALIA's sizes. */
 function typeScale(): Record<string, string> {
   const tokens: Record<string, string> = {};
   const sized = (prefix: string, sizes: Record<string, number>, lineHeight: number, heavy: boolean) => {
@@ -32,9 +32,9 @@ const accent = (percent: number) => `color-mix(in oklch, var(--primary) ${percen
 const tint = (color: string, percent: number) => `color-mix(in oklab, var(${color}) ${percent}%, transparent)`;
 
 /**
- * OpenUI's washes and status colours on BB's: its neutral overlays become BB's ink, and its stock
- * Tailwind blue/green/yellow/red become BB's timeline accent, success, warning and destructive.
- * Text uses BB's readable variants (--success-foreground, --warning-text, --destructive-text);
+ * OpenUI's washes and status colours on VesnALIA's: its neutral overlays become VesnALIA's ink, and its stock
+ * Tailwind blue/green/yellow/red become VesnALIA's timeline accent, success, warning and destructive.
+ * Text uses VesnALIA's readable variants (--success-foreground, --warning-text, --destructive-text);
  * --success / --warning are too light for text on white. *Inverted texts stay OpenUI's.
  */
 const surfaces = {
@@ -86,7 +86,7 @@ const statuses = {
   interactiveDestructiveAccentDisabled: tint("--destructive", 40),
 };
 
-export const bbTheme = createTheme({
+export const aliaTheme = createTheme({
   background: "var(--background)",
   foreground: "var(--card)",
   popoverBackground: "var(--popover)",
@@ -109,14 +109,14 @@ export const bbTheme = createTheme({
   fontHeading: FONT,
   fontLabel: FONT,
   fontNumbers: FONT,
-  // Tighter than OpenUI's chat spacing, closer to BB's density.
+  // Tighter than OpenUI's chat spacing, closer to VesnALIA's density.
   spaceM: "10px",
   spaceL: "12px",
   spaceXl: "16px",
   ...typeScale(),
 });
 
-// BB's chart accent, as genui uses it: the timeline accent, else the primary colour.
+// VesnALIA's chart accent, as genui uses it: the timeline accent, else the primary colour.
 const ACCENT = "var(--color-timeline-accent, var(--primary))";
 const PALETTE_KEYS = [
   "defaultChartPalette", "barChartPalette", "lineChartPalette", "areaChartPalette",
@@ -124,7 +124,7 @@ const PALETTE_KEYS = [
 ] as const;
 
 /**
- * An 11-step ramp of BB's accent, dark to light like OpenUI's own palettes
+ * An 11-step ramp of VesnALIA's accent, dark to light like OpenUI's own palettes
  * (one series takes the middle step; heatmaps read it low to high).
  * Resolved to concrete colours because charts put them in SVG attributes, where var() doesn't work.
  */
@@ -146,11 +146,11 @@ function resolveColor(css: string): string {
   return color;
 }
 
-/** bbTheme plus chart palettes read from BB's current colours; recomputed when BB's mode flips. */
-export function useBbTheme(dark: boolean): Theme {
+/** aliaTheme plus chart palettes read from VesnALIA's current colours; recomputed when VesnALIA's mode flips. */
+export function useAliaTheme(dark: boolean): Theme {
   return useMemo(() => {
-    void dark; // BB's variables change with the mode, so re-resolve on each flip.
+    void dark; // VesnALIA's variables change with the mode, so re-resolve on each flip.
     const ramp = chartRamp(resolveColor);
-    return { ...bbTheme, ...Object.fromEntries(PALETTE_KEYS.map((key) => [key, ramp])) };
+    return { ...aliaTheme, ...Object.fromEntries(PALETTE_KEYS.map((key) => [key, ramp])) };
   }, [dark]);
 }

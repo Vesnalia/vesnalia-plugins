@@ -3,8 +3,8 @@
 // The bridge hands the panel the link's raw href; the page's own scripts can
 // post the same message, so nothing here trusts it: the result stays inside
 // the document's folder — files the page can already load through its
-// <base> — and is only ever opened in bb's own file preview.
-import type { ExperimentalFileLocation } from "@get-bb/plugin-sdk/app";
+// <base> — and is only ever opened in VesnALIA's own file preview.
+import type { ExperimentalFileLocation } from "@vesnalia/plugin-sdk/app";
 
 export type HtmlFileLink =
   | { kind: "file"; path: string; location: ExperimentalFileLocation | null }

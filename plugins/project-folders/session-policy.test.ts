@@ -31,7 +31,7 @@ describe("session context rules", () => {
     });
     expect(resolved.mcpServers?.origin).toEqual(project);
     expect(resolved.userInstructions).toEqual({ value: false, origin: global });
-    expect(resolved.bbPlugins).toBeNull();
+    expect(resolved.aliaPlugins).toBeNull();
   });
 
   it("lets a section lift a parent's restriction with `all`", () => {
@@ -49,13 +49,13 @@ describe("session context rules", () => {
           {
             origin: project,
             value: {
-              bbPlugins: { mode: "deny", names: ["image-studio"] },
+              aliaPlugins: { mode: "deny", names: ["image-studio"] },
               userInstructions: true,
             },
           },
         ]),
       ),
-    ).toEqual({ bbPlugins: { mode: "deny", names: ["image-studio"] } });
+    ).toEqual({ aliaPlugins: { mode: "deny", names: ["image-studio"] } });
   });
 
   it("trims and deduplicates names, and empties `all`", () => {
@@ -84,14 +84,14 @@ describe("session context rules", () => {
     ).toEqual({ projectInstructions: false });
   });
 
-  it("never lets a rule take out what BB needs to run threads", () => {
+  it("never lets a rule take out what VesnALIA needs to run threads", () => {
     expect(
       toCorePolicy(
         resolveSessionPolicy([
           {
             origin: folder,
             value: {
-              bbPlugins: {
+              aliaPlugins: {
                 mode: "deny",
                 names: ["agency", "environment-project-checkout"],
               },
@@ -101,20 +101,20 @@ describe("session context rules", () => {
         ]),
       ),
     ).toEqual({
-      bbPlugins: { mode: "deny", names: ["agency"] },
-      mcpServers: { mode: "allow", names: ["bb-bridge", "gitnexus"] },
+      aliaPlugins: { mode: "deny", names: ["agency"] },
+      mcpServers: { mode: "allow", names: ["alia-bridge", "gitnexus"] },
     });
     expect(
       toCorePolicy(
         resolveSessionPolicy([
           {
             origin: project,
-            value: { bbPlugins: { mode: "allow", names: ["env-catalog"] } },
+            value: { aliaPlugins: { mode: "allow", names: ["env-catalog"] } },
           },
         ]),
       ),
     ).toEqual({
-      bbPlugins: {
+      aliaPlugins: {
         mode: "allow",
         names: [
           "environment-project-checkout",
@@ -125,7 +125,7 @@ describe("session context rules", () => {
     });
     expect(
       normalizeSessionPolicy({
-        mcpServers: { mode: "deny", names: ["bb-bridge", "discord-web"] },
+        mcpServers: { mode: "deny", names: ["alia-bridge", "discord-web"] },
       }),
     ).toEqual({ mcpServers: { mode: "deny", names: ["discord-web"] } });
   });

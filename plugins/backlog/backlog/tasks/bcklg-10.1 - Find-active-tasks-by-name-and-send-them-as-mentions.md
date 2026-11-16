@@ -23,9 +23,9 @@ ordinal: 12000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-First usable slice of task mentions: a user who remembers a task title can attach its current content to a BB message without locating its Markdown file or knowing the task prefix. Cover the complete search, selection, and send flow for tasks in active storage, including tasks with any configured status.
+First usable slice of task mentions: a user who remembers a task title can attach its current content to a VesnALIA message without locating its Markdown file or knowing the task prefix. Cover the complete search, selection, and send flow for tasks in active storage, including tasks with any configured status.
 
-Use the current project and the same selected source/folder as the board; without a project or an unambiguous configured source, offer no unrelated tasks. The plugin already exposes parsed task metadata and source discovery. BB documents a native mention provider with server-side search and send-time resolution; exact installed SDK behavior must be confirmed before implementation. No frontend picker replacement is required by this scope.
+Use the current project and the same selected source/folder as the board; without a project or an unambiguous configured source, offer no unrelated tasks. The plugin already exposes parsed task metadata and source discovery. VesnALIA documents a native mention provider with server-side search and send-time resolution; exact installed SDK behavior must be confirmed before implementation. No frontend picker replacement is required by this scope.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -38,14 +38,14 @@ Use the current project and the same selected source/folder as the board; withou
 ## Definition of Done
 <!-- DOD:BEGIN -->
 - [x] #1 Automated checks cover custom prefixes/statuses, same task ID in two projects, no selected project/source, updates between selection and send, malformed identities, duplicates, deletion, and unavailable hosts; new functionality meets the project coverage requirement.
-- [x] #2 Confirm installed public SDK support and run typecheck, relevant tests, public-SDK check, and plugin build; live-check keyboard selection, draft persistence, and fresh agent context in the native BB composer.
+- [x] #2 Confirm installed public SDK support and run typecheck, relevant tests, public-SDK check, and plugin build; live-check keyboard selection, draft persistence, and fresh agent context in the native VesnALIA composer.
 - [x] #3 Document the delivered mention flow, current-project scope, and resolution errors in docs/task-mentions.md and skills/backlog/SKILL.md.
 <!-- DOD:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Register a native Backlog tasks provider using the installed public SDK. Reuse resolve() and tasksFor() without board watches. 2. Search active storage by title/full ID and encode project/source/host/root/folder/task identity in persistent mention IDs. Resolve fresh metadata/body with explicit boundary and inventory errors. 3. Add behavioral tests including isolation, freshness and failure cases; measure coverage, typecheck, public-SDK scan and build. 4. Exercise keyboard selection, draft persistence and send-time context in live BB; document the flow and record evidence.
+1. Register a native Backlog tasks provider using the installed public SDK. Reuse resolve() and tasksFor() without board watches. 2. Search active storage by title/full ID and encode project/source/host/root/folder/task identity in persistent mention IDs. Resolve fresh metadata/body with explicit boundary and inventory errors. 3. Add behavioral tests including isolation, freshness and failure cases; measure coverage, typecheck, public-SDK scan and build. 4. Exercise keyboard selection, draft persistence and send-time context in live VesnALIA; document the flow and record evidence.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes

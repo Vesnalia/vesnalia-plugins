@@ -1,11 +1,11 @@
-// The chats bb's notifications plugin has muted (see `lib/muted.ts`), for the
+// The chats VesnALIA's notifications plugin has muted (see `lib/muted.ts`), for the
 // folder badges and Attention. Read in batches for every active thread when
 // the list mounts, when its threads change, every minute, when the window
 // comes back into view, and right after a row sees its own level change
-// (`refresh`), since bb sends no event for it. Without the notifications
+// (`refresh`), since VesnALIA sends no event for it. Without the notifications
 // plugin nothing is muted.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { useSdk, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useSdk, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 import {
   effectiveLevels,
@@ -57,7 +57,7 @@ export function useMutedThreads(threads: readonly PluginSidebarThread[]): MutedT
           const settings = await sdkRef.current.plugins.getSettings({ pluginId: NOTIFICATIONS_PLUGIN_ID, signal });
           setDefaults(parseDefaults(settings.values));
         } catch {
-          // Not installed or not readable: bb's defaults, and only own levels count.
+          // Not installed or not readable: VesnALIA's defaults, and only own levels count.
         }
         const next = new Map<string, NotificationLevel>();
         try {

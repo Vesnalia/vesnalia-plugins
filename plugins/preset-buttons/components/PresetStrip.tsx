@@ -26,7 +26,7 @@ import {
   useComposer,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../server";
 import type { Preset } from "../lib/presets";
@@ -42,7 +42,7 @@ type ActivePresets = {
   warning: string | null;
 };
 
-/** BB's composer trigger for provider, model and reasoning — the strip's left anchor. */
+/** VesnALIA's composer trigger for provider, model and reasoning — the strip's left anchor. */
 const MODEL_TRIGGER_SELECTOR = 'button[aria-label*="Provider, model" i]';
 
 /**
@@ -74,7 +74,7 @@ const SELF_INFLICTED_CHANGE_MS = 2000;
 
 const BUTTON_CLASS = cn(
   // 32px tall on a fine pointer, 36px on a coarse one: comfortably tappable
-  // without pushing the footer row taller than BB's own controls beside it.
+  // without pushing the footer row taller than VesnALIA's own controls beside it.
   "inline-flex h-8 shrink-0 cursor-pointer items-center gap-1 rounded-md border border-border",
   "bg-transparent px-2 text-xs font-medium text-muted-foreground",
   "transition-colors duration-150 hover:duration-0 hover:bg-state-hover hover:text-foreground",
@@ -140,7 +140,7 @@ export function PresetStrip() {
   }, [rpc]);
 
   useEffect(refetch, [refetch]);
-  // A settings write anywhere — the settings UI, `bb plugin config`, the CLI —
+  // A settings write anywhere — the settings UI, `alia plugin config`, the CLI —
   // republishes here, so the four buttons change without a reload.
   useRealtime(PRESETS_CHANGED, refetch);
 

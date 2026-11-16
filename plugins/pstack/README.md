@@ -1,20 +1,20 @@
-# pstack for bb
+# pstack for VesnALIA
 
-pstack is an engineering skill library for coding agents. Lauren Tan ([poteto](https://x.com/poteto)) wrote it for Cursor. This plugin brings it to bb as 47 skills, each one a slash command available in every thread.
+pstack is an engineering skill library for coding agents. Lauren Tan ([poteto](https://x.com/poteto)) wrote it for Cursor. This plugin brings it to VesnALIA as 47 skills, each one a slash command available in every thread.
 
 ## install
 
 ```bash
-bb plugin install git:https://github.com/wy3z/bb-plugin-pstack
+alia plugin install git:https://github.com/wy3z/bb-plugin-pstack
 ```
 
 Then open Settings, then Plugins, then pstack. That page has a master switch and one switch per skill, so you can keep the set to the handful you actually use.
 
-Requires bb 0.43 or newer.
+Requires VesnALIA 0.43 or newer.
 
 ## get started
 
-1. Run `/setup-pstack`. It lists the providers this host can reach with `bb provider models`, then asks which model each pstack role should use. bb keeps one provider and model per project and applies a choice per spawn, so the mapping is intent you pass along with `--provider` and `--model` when a worker starts.
+1. Run `/setup-pstack`. It lists the providers this host can reach with `alia provider models`, then asks which model each pstack role should use. VesnALIA keeps one provider and model per project and applies a choice per spawn, so the mapping is intent you pass along with `--provider` and `--model` when a worker starts.
 2. Use `/poteto-mode` for anything that needs rigor. It reads your request, picks one of 23 playbooks, and runs the other skills as the steps need them.
 
 ## the skills
@@ -39,12 +39,12 @@ This plugin is an adaptation and is not affiliated with Cursor or with the pstac
 
 The skills used to name Cursor's tools, models, and config paths. They now describe what to look up in whichever harness runs them, and they say so when a harness lacks a capability instead of inventing a substitute.
 
-bb specifics:
+VesnALIA specifics:
 
-- `/setup-pstack` reads the catalog with `bb provider models`, then applies the choice per spawn. bb remembers one provider and model per project, so the per-role mapping is presented rather than stored.
-- Parallel work uses `bb thread spawn`, then `bb thread wait` and `bb thread output` to drain it. A worker gets its own environment with `--new-environment worktree`.
-- Loops and audit ticks use `bb automation create` instead of sleeping inside a thread.
-- Evidence lookups use `bb memory` and any MCP servers you have connected.
+- `/setup-pstack` reads the catalog with `alia provider models`, then applies the choice per spawn. VesnALIA remembers one provider and model per project, so the per-role mapping is presented rather than stored.
+- Parallel work uses `alia thread spawn`, then `alia thread wait` and `alia thread output` to drain it. A worker gets its own environment with `--new-environment worktree`.
+- Loops and audit ticks use `alia automation create` instead of sleeping inside a thread.
+- Evidence lookups use `alia memory` and any MCP servers you have connected.
 
 Three skills are renamed to avoid clashing with personal skills installed here: `arena` is `/pstack-arena`, `tdd` is `/pstack-tdd`, and `blast-radius` is `/pstack-blast-radius`. Internal links point at the new names.
 

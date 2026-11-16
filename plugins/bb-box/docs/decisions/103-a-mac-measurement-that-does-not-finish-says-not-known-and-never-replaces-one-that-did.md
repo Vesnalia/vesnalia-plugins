@@ -4,7 +4,7 @@ Status: accepted, 14 November 2026. Extends [065](065-macs-say-what-they-offer-a
 
 ## Context
 
-BB Box measures each Mac it starts on Namespace in the background, as soon as the box is claimed. The probe lists the iOS runtimes with `xcrun simctl list runtimes`, then runs a hardware H.264 check. On a Mac that has just started, the first list waits for the simulator service, for 4 to 20 seconds.
+VesnALIA Box measures each Mac it starts on Namespace in the background, as soon as the box is claimed. The probe lists the iOS runtimes with `xcrun simctl list runtimes`, then runs a hardware H.264 check. On a Mac that has just started, the first list waits for the simulator service, for 4 to 20 seconds.
 
 A box released within those seconds destroys its Mac while the probe runs. The transport hands back what the probe had printed: the chip, macOS and Xcode, and nothing after. The parser read the missing runtime list as an empty one, so it recorded "Xcode has no iOS runtime", and the hardware encoder as not measured. Namespace keeps one report for each kind of Mac, and the newest replaced the last. So one release seconds after ready took `ios` and shared iOS hosts away from every thread, until a later Mac of that kind was measured in full. The doctor also said "as it has no hardware H.264 encoder" when the encoder had not been measured.
 
@@ -18,9 +18,9 @@ Measured at the earliest point of boot, the probe answered in full. The slow fir
 - A measurement that is not conclusive never replaces one that is. For each of the Simulator, the hardware encoder and the software encoder, a "not known" keeps what was known. Where any is kept, the report keeps its earlier time, so it stays due and the Mac is measured again at the next chance. A conclusive "no" still replaces a "yes".
 - On Namespace, a report that measured nothing and did not say its chip makes no kind of Mac.
 - On Namespace, the `ios` offer follows the newest conclusive report of any kind of Mac, yes or no, and skips a report whose Simulator is not known. The doctor still lists the newest first.
-- On Namespace, while no offer stands, every kind of Mac whose report came from an older probe, or whose Simulator is not known, is due to be measured again. A Mac BB Box holds that it has not measured in full is measured at once. Otherwise BB Box starts a Mac for a few minutes to measure, at most once a day.
-- The probe's version rises from 2 to 3, so a report an earlier probe saved, which may hold a "no" read from a probe cut short, is due at once. A Tart or pool Mac is measured again at the next chance. On Namespace, a report from an earlier probe that leaves no offer is measured again at the next maintenance, on a Mac BB Box starts if it holds none.
-- Before the hardware encoder is measured, BB Box says video comes in software "until its hardware H.264 encoder is measured", not "as it has no hardware H.264 encoder".
+- On Namespace, while no offer stands, every kind of Mac whose report came from an older probe, or whose Simulator is not known, is due to be measured again. A Mac VesnALIA Box holds that it has not measured in full is measured at once. Otherwise VesnALIA Box starts a Mac for a few minutes to measure, at most once a day.
+- The probe's version rises from 2 to 3, so a report an earlier probe saved, which may hold a "no" read from a probe cut short, is due at once. A Tart or pool Mac is measured again at the next chance. On Namespace, a report from an earlier probe that leaves no offer is measured again at the next maintenance, on a Mac VesnALIA Box starts if it holds none.
+- Before the hardware encoder is measured, VesnALIA Box says video comes in software "until its hardware H.264 encoder is measured", not "as it has no hardware H.264 encoder".
 
 ## Consequences
 

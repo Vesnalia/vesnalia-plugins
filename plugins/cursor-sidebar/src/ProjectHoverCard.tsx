@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactElement } from "react";
-import { useSdk, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useSdk, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { isWorking } from "./activity";
@@ -87,7 +87,7 @@ function loadBoard(sdk: Sdk, target: { boardId: string } | { projectId: string }
       outputSchema: tasksContract.listProjects.output,
     });
     const board = listed.projects.find((entry) =>
-      "boardId" in target ? entry.id === target.boardId : entry.linkedBbProjectId === target.projectId,
+      "boardId" in target ? entry.id === target.boardId : entry.linkedAliaProjectId === target.projectId,
     );
     if (!board) return null;
     const [tasks, meta] = await Promise.all([

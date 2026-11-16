@@ -1,5 +1,5 @@
 /**
- * A plugin that stops while bb's toolchain is still reading a slow login shell starts no watch, and does
+ * A plugin that stops while VesnALIA's toolchain is still reading a slow login shell starts no watch, and does
  * not wait for the shell. Its own file, so the toolchain this process holds has read nothing yet.
  */
 import { existsSync } from "node:fs";

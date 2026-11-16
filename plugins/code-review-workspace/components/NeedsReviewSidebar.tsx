@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
-import { experimental_Icon as HostIcon, experimental_ThreadStatusGlyph as ThreadStatusGlyph, experimental_usePluginId, experimental_useSidebarThreads, useBbNavigate, useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as HostIcon, experimental_ThreadStatusGlyph as ThreadStatusGlyph, experimental_usePluginId, experimental_useSidebarThreads, useAliaNavigate, useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 import { needsOrder, reviewState, type ReviewItem } from "../lib/review-state";
 import { renamedFrom } from "../lib/review-name";
@@ -17,8 +17,8 @@ import { Icon } from "./ui/icon";
 import { kindLook } from "./ReviewStatus";
 import { age } from "./time-ago";
 
-// BB's thread list has no slot for more rows, so Code Review Workspace puts its own in by hand: the reviews you pinned at the end of
-// BB's Pinned group, and the rest of Needs review in a group of its own, last. It finds the list by BB's own data attributes
+// VesnALIA's thread list has no slot for more rows, so Code Review Workspace puts its own in by hand: the reviews you pinned at the end of
+// VesnALIA's Pinned group, and the rest of Needs review in a group of its own, last. It finds the list by VesnALIA's own data attributes
 // and goes back in whenever the list redraws; without the list it shows nowhere.
 
 const NEEDS_COLLAPSED_KEY = "gr:needs-review-collapsed";
@@ -26,13 +26,13 @@ const PINNED_COLLAPSED_KEY = "gr:pinned-reviews-collapsed";
 
 /** Holds the thread list's groups: the parent of each group's wrapper. Null when the list isn't drawn. */
 function groupsContainer(): Element | null {
-  const label = document.querySelector('[data-bb-plugin="thread-list"] [data-sidebar="group-label"]');
+  const label = document.querySelector('[data-alia-plugin="thread-list"] [data-sidebar="group-label"]');
   return label?.closest("[data-sidebar-sticky-group]")?.parentElement?.parentElement ?? null;
 }
 
-/** The rows of BB's Pinned group, the one group whose header doesn't stick. Null when Pinned is collapsed or not shown. */
-function bbPinnedRows(): Element | null {
-  return document.querySelector('[data-bb-plugin="thread-list"] [data-sidebar-sticky-group][data-sidebar-sticky-header="false"] [data-sidebar-sticky-section]');
+/** The rows of VesnALIA's Pinned group, the one group whose header doesn't stick. Null when Pinned is collapsed or not shown. */
+function aliaPinnedRows(): Element | null {
+  return document.querySelector('[data-alia-plugin="thread-list"] [data-sidebar-sticky-group][data-sidebar-sticky-header="false"] [data-sidebar-sticky-section]');
 }
 
 /** A node kept first or last in `find()`'s element while `active`, and out of the page otherwise. */
@@ -89,7 +89,7 @@ export function shortNames(names: readonly (string | null)[]): (string | null)[]
 }
 
 /**
- * Whether Settings shows reviews in BB's thread list, null until the settings load; and Notice when a local review's
+ * Whether Settings shows reviews in VesnALIA's thread list, null until the settings load; and Notice when a local review's
  * code changes, which the sidebar, outside the panel's settings, reads here.
  */
 function useSidebarPreferences(): { enabled: boolean | null; localDiffChanges: boolean } {
@@ -99,7 +99,7 @@ function useSidebarPreferences(): { enabled: boolean | null; localDiffChanges: b
     rpc.call("getPreferences", null).then((record) => {
       const { knobs } = withDefaults(record.preferences);
       setRead({ enabled: record.preferences.threadListReviews, localDiffChanges: knobs.localDiffChanges });
-      // BB asks whether the palette's commands are available synchronously, so this always-mounted load keeps their switch.
+      // VesnALIA asks whether the palette's commands are available synchronously, so this always-mounted load keeps their switch.
       setPaletteCommands(knobs.paletteCommands);
     }).catch(() => {});
   }, [rpc]);
@@ -108,12 +108,12 @@ function useSidebarPreferences(): { enabled: boolean | null; localDiffChanges: b
   return read;
 }
 
-/** Whether Settings shows reviews in BB's thread list; null until the settings load. */
+/** Whether Settings shows reviews in VesnALIA's thread list; null until the settings load. */
 export const useThreadListReviews = (): boolean | null => useSidebarPreferences().enabled;
 
 /**
  * Reviews waiting on you, in the Needs review tab's order, and the ones you pinned, in the order you pinned them. Listed
- * only while `enabled`, as every BB window runs this.
+ * only while `enabled`, as every VesnALIA window runs this.
  */
 function useSidebarReviews(enabled: boolean) {
   const rpc = useRpc<typeof rpcContract>();
@@ -146,7 +146,7 @@ function useSidebarReviews(enabled: boolean) {
   }), [reviews, setPinned]);
 }
 
-/** BB closes its phone drawer when you open a thread from it, but has no call for plugins: press its toggle, as you would. */
+/** VesnALIA closes its phone drawer when you open a thread from it, but has no call for plugins: press its toggle, as you would. */
 function closePhoneSidebar() {
   const drawer = document.querySelector('[data-sidebar="panel"][role="dialog"][data-state="open"]');
   if (!drawer) return;
@@ -154,7 +154,7 @@ function closePhoneSidebar() {
   toggle?.click();
 }
 
-/** A group in BB's look: its label collapses it, remembered in this browser. */
+/** A group in VesnALIA's look: its label collapses it, remembered in this browser. */
 function Group({ label, count, collapsedKey, icon, children }: { label: string; count?: number; collapsedKey: string; icon?: ReactNode; children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(collapsedKey) === "1"; } catch { return false; }
@@ -168,7 +168,7 @@ function Group({ label, count, collapsedKey, icon, children }: { label: string; 
       <button type="button" aria-expanded={!collapsed} onClick={toggle} className="group/label flex h-7 w-full min-w-0 items-center gap-1 rounded-md pl-2 pr-2 text-left text-xs font-normal leading-5 text-muted-foreground outline-none ring-sidebar-ring hover:bg-state-hover focus-visible:ring-2 max-md:pointer-coarse:h-9">
         {icon}
         <span className="min-w-0 truncate">{label}</span>
-        {/* As on BB's groups: open, the chevron waits for the pointer where there is one. */}
+        {/* As on VesnALIA's groups: open, the chevron waits for the pointer where there is one. */}
         <Icon name="ChevronRight" className={cn("size-3 shrink-0 text-subtle-foreground transition-transform duration-150", !collapsed && "rotate-90 [@media(hover:hover)]:opacity-0 group-hover/label:opacity-100 group-focus-visible/label:opacity-100")} aria-hidden />
         {count !== undefined && <span className="ml-auto tabular-nums text-subtle-foreground">{count}</span>}
       </button>
@@ -178,29 +178,29 @@ function Group({ label, count, collapsedKey, icon, children }: { label: string; 
 }
 
 export function NeedsReviewSidebar() {
-  // BB's command palette's commands run here, the one place always mounted.
+  // VesnALIA's command palette's commands run here, the one place always mounted.
   usePaletteCommands();
-  // Off in Settings, nothing goes into BB's list.
+  // Off in Settings, nothing goes into VesnALIA's list.
   const preferences = useSidebarPreferences();
   const enabled = preferences.enabled === true;
   const { localDiffChanges } = preferences;
   const sidebarReviews = useSidebarReviews(enabled);
   const needs = enabled ? sidebarReviews.needs : [], pinned = enabled ? sidebarReviews.pinned : [];
   const { setPinned } = sidebarReviews;
-  // Whether BB draws its Pinned group: it does while you have a pinned thread. Until it says, pinned reviews wait.
+  // Whether VesnALIA draws its Pinned group: it does while you have a pinned thread. Until it says, pinned reviews wait.
   const sidebar = experimental_useSidebarThreads();
   const known = sidebar.status === "ready";
-  const bbPinned = sidebar.threads.some((thread) => thread.isPinned && !thread.isArchived && !thread.isHidden);
+  const aliaPinned = sidebar.threads.some((thread) => thread.isPinned && !thread.isArchived && !thread.isHidden);
   const needsSlot = useSlot(needs.length > 0, "last", groupsContainer);
-  const inBbPinned = useSlot(known && pinned.length > 0 && bbPinned, "last", bbPinnedRows);
-  const ownPinned = useSlot(known && pinned.length > 0 && !bbPinned, "first", groupsContainer);
+  const inAliaPinned = useSlot(known && pinned.length > 0 && aliaPinned, "last", aliaPinnedRows);
+  const ownPinned = useSlot(known && pinned.length > 0 && !aliaPinned, "first", groupsContainer);
   // Keeps "2h" true while the page stays open.
   const [, tick] = useState(0);
   useEffect(() => {
     const minute = setInterval(() => tick((n) => n + 1), 60_000);
     return () => clearInterval(minute);
   }, []);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const pluginId = experimental_usePluginId();
   const open = (event: MouseEvent, targetKey: string) => {
     // Modified clicks keep the link's own behavior.
@@ -228,12 +228,12 @@ export function NeedsReviewSidebar() {
       const where = review.number ? `${identity.repo ?? ""}${identity.idTail}` : review.kind === "ref" ? identity.id : null;
       const why = statusWhy(review, { localDiffChanges })?.text;
       const tooltip = [from, where, why, waited].filter(Boolean).join(" · ") || undefined;
-      // The review's work, as BB's rows show a thread's.
+      // The review's work, as VesnALIA's rows show a thread's.
       const status = reviewIndicator(review);
       // The tooltip reaches neither touch nor a screen reader: the row also says it in words, with the agent's status.
       const said = [from, where, why, status?.label].filter(Boolean);
       const describedBy = said.length ? `gr-row-why-${isPinned ? "pinned" : "needs"}-${review.targetKey}` : undefined;
-      return <li key={review.targetKey} className="group/row flex h-[var(--bb-sidebar-row-height)] min-w-0 items-center rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground max-md:pointer-coarse:h-[var(--bb-sidebar-row-height-coarse)]">
+      return <li key={review.targetKey} className="group/row flex h-[var(--alia-sidebar-row-height)] min-w-0 items-center rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground max-md:pointer-coarse:h-[var(--alia-sidebar-row-height-coarse)]">
         <a href={`/plugins/${pluginId}/review/${review.targetKey}`} title={tooltip} aria-describedby={describedBy} onClick={(event) => open(event, review.targetKey)}
           className="flex h-full min-w-0 flex-1 items-center gap-2 rounded-md pl-2 pr-1 outline-none ring-sidebar-ring focus-visible:ring-2">
           <HostIcon name={`${pluginId}/review`} fallback={kindLook(review).icon} className="size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -247,9 +247,9 @@ export function NeedsReviewSidebar() {
           {waited && <span className="shrink-0 text-xs tabular-nums text-subtle-foreground">{waited}</span>}
         </a>
         {describedBy && <span id={describedBy} className="sr-only">{said.join(", ")}</span>}
-        {/* BB's trailing slot: the review's status at rest, and on hover where there's a pointer, the pin in its place, as
-            BB's row actions take its status's. A touch screen, which can't hover, keeps its rows clear but for the status,
-            as BB's own are: the review's menu pins it there. */}
+        {/* VesnALIA's trailing slot: the review's status at rest, and on hover where there's a pointer, the pin in its place, as
+            VesnALIA's row actions take its status's. A touch screen, which can't hover, keeps its rows clear but for the status,
+            as VesnALIA's own are: the review's menu pins it there. */}
         <span className={cn("relative mr-0.5 inline-flex size-7 shrink-0 items-center justify-center max-md:pointer-coarse:size-9", !status && "[@media(hover:none)]:hidden")}>
           {status && <span aria-hidden className="pointer-events-none inline-flex size-4 items-center justify-center text-subtle-foreground group-hover/row:opacity-0 group-has-[button:focus-visible]/row:opacity-0">
             <ThreadStatusGlyph indicator={status.indicator} />
@@ -265,10 +265,10 @@ export function NeedsReviewSidebar() {
   };
   return <>
     {needs.length > 0 && createPortal(<Group label="Needs review" count={needs.length} collapsedKey={NEEDS_COLLAPSED_KEY} icon={<HostIcon name={`${pluginId}/review`} fallback="GitPullRequest" className="mr-1 size-3.5 shrink-0" aria-hidden />}>{rows(needs, false)}</Group>, needsSlot)}
-    {known && pinned.length > 0 && (bbPinned
-      // Inside BB's Pinned, after its threads; collapsing Pinned hides them with the rest.
-      ? createPortal(rows(pinned, true), inBbPinned)
-      // With no pinned thread BB draws no Pinned, so the reviews get one of the same look.
+    {known && pinned.length > 0 && (aliaPinned
+      // Inside VesnALIA's Pinned, after its threads; collapsing Pinned hides them with the rest.
+      ? createPortal(rows(pinned, true), inAliaPinned)
+      // With no pinned thread VesnALIA draws no Pinned, so the reviews get one of the same look.
       : createPortal(<Group label="Pinned" collapsedKey={PINNED_COLLAPSED_KEY}>{rows(pinned, true)}</Group>, ownPinned))}
   </>;
 }

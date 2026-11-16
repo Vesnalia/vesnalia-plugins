@@ -32,8 +32,8 @@ describe("isMachinePrompt", () => {
     );
   });
 
-  it("rejects prompts carrying bb-generated ids or directives", () => {
-    expect(isMachinePrompt("[BB workflow release-ship · run wfr_0f1e2d3c]")).toBe(true);
+  it("rejects prompts carrying alia-generated ids or directives", () => {
+    expect(isMachinePrompt("[VesnALIA workflow release-ship · run wfr_0f1e2d3c]")).toBe(true);
     expect(isMachinePrompt("Continue from @thread:thr_a1b2c3d4e5 and redesign")).toBe(
       true,
     );
@@ -287,7 +287,7 @@ describe("suggestSnippets", () => {
 
   it("honours the limit", async () => {
     const entries = [
-      "commit and push, then archive this bb thread when done",
+      "commit and push, then archive this VesnALIA thread when done",
       "give me 20 design variants, different approaches, use shadcn skills",
       "fix all issues and do all the follow-ups, then demo it here in chat",
       "suggest more ideas, in a numbered list, to make this plugin better",

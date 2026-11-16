@@ -1,8 +1,8 @@
-// bb-plugin-productive — frontend entry.
+// alia-plugin-productive — frontend entry.
 //
 // A near-clone of the Taskboard plugin's board UI, trimmed to one provider
 // (Productive.io) and one credential (an org-wide API token). There is no
-// source switching, no priority field, and every bb project maps to exactly
+// source switching, no priority field, and every VesnALIA project maps to exactly
 // one Productive project (board-settings.ts, contract.ts, server.ts already
 // encode that). board-view.ts (pure helpers: grouping, lanes, filter
 // options, collapse state) is reused as-is; this file is the React layer on
@@ -29,8 +29,8 @@ import {
 import {
   Markdown,
   definePluginApp,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useComposer,
   useComposerView,
   useRealtime,
@@ -41,7 +41,7 @@ import {
   type PluginPendingInteractionProps,
   type PluginThreadHeaderActionProps,
   type PluginThreadPanelProps
-} from '@get-bb/plugin-sdk/app';
+} from '@vesnalia/plugin-sdk/app';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -148,10 +148,10 @@ import './app.css';
 
 const PANEL_PATH = 'board';
 const THREAD_PANEL_ACTION_ID = 'productive-panel';
-const RIGHT_PANEL_PINNED_STORAGE_KEY = 'bb-productive:right-panel-pinned';
-const SIDEBAR_COLLAPSED_STORAGE_KEY = 'bb-productive:sidebar-collapsed';
-const LAST_PROJECT_STORAGE_KEY = 'bb-productive:last-project';
-const LAST_ROUTE_STORAGE_KEY = 'bb-productive:last-route';
+const RIGHT_PANEL_PINNED_STORAGE_KEY = 'alia-productive:right-panel-pinned';
+const SIDEBAR_COLLAPSED_STORAGE_KEY = 'alia-productive:sidebar-collapsed';
+const LAST_PROJECT_STORAGE_KEY = 'alia-productive:last-project';
+const LAST_ROUTE_STORAGE_KEY = 'alia-productive:last-route';
 const CREATE_METADATA_NETWORK_ERROR =
   'Productive could not load task creation options. Check the connection and try again.';
 const PROJECT_SEARCH_DEBOUNCE_MS = 250;
@@ -300,7 +300,7 @@ function storeRightPanelPinned(pinned: boolean): void {
 }
 
 // Productive locators are numeric strings today, but this round-trips any
-// opaque string safely through a bb route segment (mirrors the Taskboard
+// opaque string safely through a VesnALIA route segment (mirrors the Taskboard
 // template's locator encoding).
 function encodeLocator(locator: string): string {
   return encodeURIComponent(locator).replaceAll('~', '%7E').replaceAll('%', '~');
@@ -371,24 +371,24 @@ function changedProjectId(payload: unknown): string | null {
  * Shared "start a thread from this task" handler, reused by the detail view's
  * primary button and the list row / kanban card overflow menus so the RPC
  * call, navigation, and error toast live in exactly one place. The thread
- * opens in the bb project the board is already scoped to — no project
+ * opens in the VesnALIA project the board is already scoped to — no project
  * picker, on purpose.
  */
 function useStartThread() {
   const rpc = useRpc<ProductiveRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [pendingId, setPendingId] = useState<string | null>(null);
 
   const start = useCallback(
     async (
-      item: Pick<WorkItem, 'bbProjectId' | 'locator' | 'key'>,
+      item: Pick<WorkItem, 'aliaProjectId' | 'locator' | 'key'>,
       environment: 'project-default' | 'worktree' = 'project-default'
     ) => {
-      const itemId = `${item.bbProjectId}:${item.locator}`;
+      const itemId = `${item.aliaProjectId}:${item.locator}`;
       setPendingId(itemId);
       try {
         const result = await rpc.call('startThread', {
-          projectId: item.bbProjectId,
+          projectId: item.aliaProjectId,
           locator: item.locator,
           instruction: '',
           environment
@@ -986,7 +986,7 @@ function WorkItemStatusMenu({
   const [loading, setLoading] = useState(false);
   const [pendingStatusId, setPendingStatusId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const identity = `${item.bbProjectId}:${item.locator}`;
+  const identity = `${item.aliaProjectId}:${item.locator}`;
 
   useEffect(() => {
     setOptions(undefined);
@@ -999,7 +999,7 @@ function WorkItemStatusMenu({
     setError(null);
     try {
       const result = await rpc.call('statusOptions', {
-        projectId: item.bbProjectId,
+        projectId: item.aliaProjectId,
         locator: item.locator
       });
       setOptions(result.options);
@@ -1008,7 +1008,7 @@ function WorkItemStatusMenu({
     } finally {
       setLoading(false);
     }
-  }, [item.bbProjectId, item.locator, loading, options, rpc]);
+  }, [item.aliaProjectId, item.locator, loading, options, rpc]);
 
   const changeStatus = async (option: WorkStatusOption) => {
     if (option.current || pendingStatusId !== null) return;
@@ -1088,7 +1088,7 @@ function WorkItemStatusMenu({
 
 /**
  * There is no "list assignable people" RPC on its own — the only exposed
- * source is `getCreateTaskMetadata`'s `assigneeOptions`, scoped to the bb
+ * source is `getCreateTaskMetadata`'s `assigneeOptions`, scoped to the VesnALIA
  * project's mapped Productive project. Reused here rather than adding a
  * near-duplicate RPC just for this menu.
  */
@@ -1111,7 +1111,7 @@ function WorkItemAssigneeMenu({
     setError(null);
     try {
       const result = await rpc.call('getCreateTaskMetadata', {
-        projectId: item.bbProjectId
+        projectId: item.aliaProjectId
       });
       if (!result.ok) {
         setError(result.error.safeMessage);
@@ -1123,7 +1123,7 @@ function WorkItemAssigneeMenu({
     } finally {
       setLoading(false);
     }
-  }, [item.bbProjectId, loading, options, rpc]);
+  }, [item.aliaProjectId, loading, options, rpc]);
 
   const changeAssignee = async (assigneeId: string | null) => {
     if (pending) return;
@@ -1396,12 +1396,12 @@ function ListStateGroups({
             <div id={contentId} hidden={collapsed}>
               {group.items.map(item => (
                 <WorkItemRow
-                  key={`${item.bbProjectId}:${item.locator}`}
+                  key={`${item.aliaProjectId}:${item.locator}`}
                   item={item}
                   onMove={onMove}
                   onOpen={() => onOpen(item)}
                   canStartThread={canStartThread}
-                  startThreadPending={startThreadPendingId === `${item.bbProjectId}:${item.locator}`}
+                  startThreadPending={startThreadPendingId === `${item.aliaProjectId}:${item.locator}`}
                   onStartThread={onStartThread}
                 />
               ))}
@@ -1418,7 +1418,7 @@ function ListStateGroups({
 // ---------------------------------------------------------------------------
 
 function kanbanItemId(item: WorkItem): string {
-  return `${item.bbProjectId}:${item.locator}`;
+  return `${item.aliaProjectId}:${item.locator}`;
 }
 
 function mergeDiscoveredStatuses(
@@ -1606,7 +1606,7 @@ function KanbanBoard({
       const existing = optionsRef.current.get(itemId);
       if (existing) return existing;
       const request = rpc
-        .call('statusOptions', { projectId: item.bbProjectId, locator: item.locator })
+        .call('statusOptions', { projectId: item.aliaProjectId, locator: item.locator })
         .then(result => result.options)
         .catch((error: unknown) => {
           optionsRef.current.delete(itemId);
@@ -2196,7 +2196,7 @@ function filterStateToPresetState(filters: BoardFilterState) {
 }
 
 // ---------------------------------------------------------------------------
-// Board (list/kanban for one bb project)
+// Board (list/kanban for one VesnALIA project)
 // ---------------------------------------------------------------------------
 
 function TrackerBoard({
@@ -2414,7 +2414,7 @@ function TrackerBoard({
   const moveItem = useCallback(
     async (item: WorkItem, option: WorkStatusOption) => {
       const result = await rpc.call('updateItemStatus', {
-        projectId: item.bbProjectId,
+        projectId: item.aliaProjectId,
         locator: item.locator,
         statusId: option.id
       });
@@ -2430,7 +2430,7 @@ function TrackerBoard({
   const moveItemTaskList = useCallback(
     async (item: WorkItem, taskListId: string | null) => {
       const result = await rpc.call('updateItemTaskList', {
-        projectId: item.bbProjectId,
+        projectId: item.aliaProjectId,
         locator: item.locator,
         taskListId
       });
@@ -2653,7 +2653,7 @@ function TrackerDetail({
   refreshGeneration: number;
 }) {
   const rpc = useRpc<ProductiveRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [item, setItem] = useState<WorkItemDetail | null | undefined>();
   const [error, setError] = useState<string | null>(null);
   const [postingComment, setPostingComment] = useState(false);
@@ -3120,7 +3120,7 @@ function CreateTaskDialog(props: CreateTaskDialogProps) {
   const assisted = props.mode === 'composer-assisted';
   const initialPrompt = assisted ? props.initialPrompt : '';
   const rpc = useRpc<ProductiveRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const formId = useId();
   const [context, setContext] = useState<CreateTaskContext>();
   const [contextError, setContextError] = useState<string | null>(null);
@@ -3154,7 +3154,7 @@ function CreateTaskDialog(props: CreateTaskDialogProps) {
     setCreating(false);
     setCreateError(null);
     if (!projectId) {
-      setContextError('Choose a BB project before creating a task.');
+      setContextError('Choose a VesnALIA project before creating a task.');
       return;
     }
     let active = true;
@@ -3255,7 +3255,7 @@ function CreateTaskDialog(props: CreateTaskDialogProps) {
           </DialogTitle>
           <DialogDescription>
             {context === undefined
-              ? 'Loading the Productive project configured for this BB project…'
+              ? 'Loading the Productive project configured for this VesnALIA project…'
               : !context.available
                 ? 'Finish setting up Productive for this project.'
                 : !assisted
@@ -3420,7 +3420,7 @@ function CreateTaskDialog(props: CreateTaskDialogProps) {
 
 function DirectCreateTaskAction({ projectId }: { projectId: string | null }) {
   const [launchProjectId, setLaunchProjectId] = useState<string | null>(null);
-  const label = projectId ? 'Create a new Productive task' : 'Choose a BB project before creating a task';
+  const label = projectId ? 'Create a new Productive task' : 'Choose a VesnALIA project before creating a task';
   return (
     <>
       <Button
@@ -3453,7 +3453,7 @@ function DirectCreateTaskAction({ projectId }: { projectId: string | null }) {
 function ComposerCreateTaskAction() {
   const view = useComposerView();
   const composer = useComposer();
-  const { projectId: contextProjectId } = useBbContext();
+  const { projectId: contextProjectId } = useAliaContext();
   const [open, setOpen] = useState(false);
   const [draftSession, setDraftSession] = useState<{ projectId: string; prompt: string } | null>(null);
   const projectId =
@@ -3481,7 +3481,7 @@ function ComposerCreateTaskAction() {
                 onMouseDown={event => event.preventDefault()}
                 onClick={() => {
                   if (!projectId) {
-                    toast.error('Choose a BB project before creating a task.');
+                    toast.error('Choose a VesnALIA project before creating a task.');
                     return;
                   }
                   if (!hasPrompt) {
@@ -3563,7 +3563,7 @@ function CredentialStatus({
 /**
  * The connection form body, shared between the settings-section entry point
  * (direct `saveConnection` RPC) and the `productive-connection` pending
- * interaction (server-triggered `bb.ui.requestInput`, submit/cancel props).
+ * interaction (server-triggered `alia.ui.requestInput`, submit/cancel props).
  * The token field never echoes a configured secret back — only whether one
  * is configured.
  */
@@ -3750,7 +3750,7 @@ function ConnectionSection() {
                 connection.viewerName ? ` as ${connection.viewerName}` : ''
               }.`
             : (connection.message ?? 'Connection is not available.')
-          : 'Add an API token and organization id to connect this bb install to Productive. One connection serves every bb project.'}
+          : 'Add an API token and organization id to connect this VesnALIA install to Productive. One connection serves every VesnALIA project.'}
       </p>
       <ConnectionForm
         organizationId={connection.organizationId}
@@ -3848,7 +3848,7 @@ function ProjectMappingForm({ projectId }: { projectId: string }) {
   }, [rpc, scope?.productiveProjectId]);
 
   // The folder narrows which task lists (and therefore which board columns)
-  // this bb project syncs — mirrors picking a folder in Productive's own UI.
+  // this VesnALIA project syncs — mirrors picking a folder in Productive's own UI.
   useEffect(() => {
     if (!scope || scope.productiveProjectId === '') {
       setTaskListOptions([]);
@@ -4248,14 +4248,14 @@ function ManageView({
             </p>
             <h2 className="text-lg font-semibold">Productive setup</h2>
             <p className="max-w-2xl text-sm text-muted-foreground">
-              One Productive connection serves every bb project; map this bb project to a
+              One Productive connection serves every VesnALIA project; map this VesnALIA project to a
               Productive project below, then choose its filters and layout.
             </p>
           </div>
           {projects && projects.length > 0 ? (
             <Select value={projectId ?? undefined} onValueChange={onProjectChange}>
-              <SelectTrigger aria-label="BB project" className="h-9 w-64 max-w-full">
-                <SelectValue placeholder="Choose a BB project" />
+              <SelectTrigger aria-label="VesnALIA project" className="h-9 w-64 max-w-full">
+                <SelectValue placeholder="Choose a VesnALIA project" />
               </SelectTrigger>
               <SelectContent>
                 {projects.map(project => (
@@ -4275,7 +4275,7 @@ function ManageView({
         ) : projects.length === 0 || projectId === null ? (
           <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card p-10 text-center">
             <Icon name="Folder" className="size-5 text-muted-foreground" />
-            <p className="text-sm font-medium">No BB projects found</p>
+            <p className="text-sm font-medium">No VesnALIA projects found</p>
           </div>
         ) : (
           <>
@@ -4370,7 +4370,7 @@ function TrackerSidebar({
             ))}
           </div>
         ) : (
-          <p className="px-2 py-1 text-xs text-muted-foreground">No BB projects found.</p>
+          <p className="px-2 py-1 text-xs text-muted-foreground">No VesnALIA projects found.</p>
         )}
       </nav>
       <div className="shrink-0 border-t border-border-hairline px-2 py-1.5">
@@ -4451,8 +4451,8 @@ function TrackerTopbar({
 function ProductivePanel({ subPath }: PluginNavPanelProps) {
   const route = parseTrackerRoute(subPath);
   const rpc = useRpc<ProductiveRpcContract>();
-  const navigate = useBbNavigate();
-  const { projectId: contextProjectId } = useBbContext();
+  const navigate = useAliaNavigate();
+  const { projectId: contextProjectId } = useAliaContext();
   const [projects, setProjects] = useState<TrackerProject[] | undefined>();
   const [projectsError, setProjectsError] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(loadSidebarCollapsed);
@@ -4564,7 +4564,7 @@ function ProductivePanel({ subPath }: PluginNavPanelProps) {
         key={route.projectId}
         projectId={route.projectId}
         refreshGeneration={refreshGeneration}
-        onOpen={item => go({ kind: 'item', projectId: item.bbProjectId, locator: item.locator })}
+        onOpen={item => go({ kind: 'item', projectId: item.aliaProjectId, locator: item.locator })}
       />
     );
   } else {
@@ -4574,7 +4574,7 @@ function ProductivePanel({ subPath }: PluginNavPanelProps) {
       ) : (
         <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
           <Icon name="Folder" className="size-5 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">No BB projects found.</p>
+          <p className="text-sm text-muted-foreground">No VesnALIA projects found.</p>
         </div>
       );
   }
@@ -4617,8 +4617,8 @@ function ProductivePanel({ subPath }: PluginNavPanelProps) {
 
 function ProductiveHeaderAction({ subPath }: PluginNavPanelProps) {
   const route = parseTrackerRoute(subPath);
-  const { projectId: contextProjectId } = useBbContext();
-  const navigate = useBbNavigate();
+  const { projectId: contextProjectId } = useAliaContext();
+  const navigate = useAliaNavigate();
   const routeProjectId =
     route.kind === 'project' || route.kind === 'item'
       ? route.projectId
@@ -4648,7 +4648,7 @@ function ProductiveHeaderAction({ subPath }: PluginNavPanelProps) {
 // ---------------------------------------------------------------------------
 
 function ProductiveRightPanel({ projectId }: { projectId: string | null | undefined }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [itemRoute, setItemRoute] = useState<Extract<TrackerRoute, { kind: 'item' }> | null>(null);
   const [refreshGeneration, setRefreshGeneration] = useState(0);
 
@@ -4663,7 +4663,7 @@ function ProductiveRightPanel({ projectId }: { projectId: string | null | undefi
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center text-sm text-muted-foreground">
         <Icon name="Ticket" className="size-5" />
-        No bb project is associated with this thread yet.
+        No VesnALIA project is associated with this thread yet.
       </div>
     );
   }
@@ -4715,7 +4715,7 @@ function ProductiveRightPanel({ projectId }: { projectId: string | null | undefi
             <TrackerBoard
               projectId={projectId}
               refreshGeneration={refreshGeneration}
-              onOpen={item => setItemRoute({ kind: 'item', projectId: item.bbProjectId, locator: item.locator })}
+              onOpen={item => setItemRoute({ kind: 'item', projectId: item.aliaProjectId, locator: item.locator })}
             />
           </div>
         </>
@@ -4726,7 +4726,7 @@ function ProductiveRightPanel({ projectId }: { projectId: string | null | undefi
 
 function ProductiveThreadPanel({ threadId }: PluginThreadPanelProps) {
   const rpc = useRpc<ProductiveRpcContract>();
-  const { projectId: contextProjectId, threadId: contextThreadId } = useBbContext();
+  const { projectId: contextProjectId, threadId: contextThreadId } = useAliaContext();
   const fallbackProjectId = contextThreadId === threadId ? contextProjectId : null;
   const [projectId, setProjectId] = useState<string | null | undefined>();
 
@@ -4758,7 +4758,7 @@ function ProductiveNewThreadPanel({ projectId }: PluginNewThreadPanelProps) {
 }
 
 function ProductiveThreadHeaderAction({ threadId }: PluginThreadHeaderActionProps) {
-  const { openThreadPanel } = useBbNavigate();
+  const { openThreadPanel } = useAliaNavigate();
   const autoOpenedThreadRef = useRef<string | null>(null);
   const openPanel = useCallback(
     (showError: boolean) => {
@@ -4802,7 +4802,7 @@ function ProductiveThreadHeaderAction({ threadId }: PluginThreadHeaderActionProp
 
 // ---------------------------------------------------------------------------
 // Pending interaction: the connection form server.ts opens with
-// bb.ui.requestInput({ rendererId: 'productive-connection', payload })
+// alia.ui.requestInput({ rendererId: 'productive-connection', payload })
 // ---------------------------------------------------------------------------
 
 function ProductiveConnectionInteraction({ interaction, submit, cancel }: PluginPendingInteractionProps) {
@@ -4854,12 +4854,12 @@ function ProductiveConnectionInteraction({ interaction, submit, cancel }: Plugin
 }
 
 function ProductiveSettingsInfo() {
-  const navigate = useBbNavigate();
-  const { projectId } = useBbContext();
+  const navigate = useAliaNavigate();
+  const { projectId } = useAliaContext();
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        Connect the Productive API token once, then map each bb project to a Productive
+        Connect the Productive API token once, then map each VesnALIA project to a Productive
         project, choose its filters, and set the default board layout.
       </p>
       <Button
@@ -4928,7 +4928,7 @@ export default definePluginApp(app => {
     id: 'open-board',
     title: 'Productive: Open board',
     run: context => {
-      const navigate = useBbNavigate();
+      const navigate = useAliaNavigate();
       navigate.toPluginPanel(PANEL_PATH, {
         subPath: context.projectId
           ? routeToSubPath({ kind: 'project', projectId: context.projectId })

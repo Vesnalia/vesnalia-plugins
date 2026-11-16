@@ -2,7 +2,7 @@
  * The Review tab's RPCs. This module imports the SDK root, so the app imports it as a type only
  * (`useRpc<typeof rpcContract>()`); the schemas it needs at run time are in `types.ts`.
  */
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 
 import { reviewEventSchema } from "./github";
 import { z } from "zod";

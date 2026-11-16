@@ -1,18 +1,18 @@
-// A chat row's context menu: bb's own thread menu, so it holds what bb's row
+// A chat row's context menu: VesnALIA's own thread menu, so it holds what VesnALIA's row
 // menu does (split, copy link, read, pin, rename, archive, delete) and what
 // other plugins add (per-thread notifications, moving to a section, …), plus
 // this list's items for the row: folded sub-agents, the project's colour, the
-// chat's icon, a new chat in the project, and reading a whole folded row. bb confirms
+// chat's icon, a new chat in the project, and reading a whole folded row. VesnALIA confirms
 // deletion, and archiving a thread that has children, itself.
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import {
   experimental_ThreadActionsContextMenu as ThreadActionsContextMenu,
   experimental_THREAD_ACTION_GROUPS as GROUPS,
-  useBbNavigate,
+  useAliaNavigate,
   useSdk,
   type PluginThreadActionsInlineItem,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 import { PALETTE } from "@/lib/colors";
 import type { MessageKey } from "@/lib/i18n";
@@ -44,7 +44,7 @@ export function ChatMenu({
   const t = useT();
   const { settings } = useChat();
   const sdk = useSdk();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { colorOf, pickOf, setColor } = useProjectColors();
   const { openPicker } = useRowActions();
   const chatIcons = useChatIcons();
@@ -68,7 +68,7 @@ export function ChatMenu({
       },
     });
   }
-  // bb's Mark read covers the row's own thread; a folded row is also unread
+  // VesnALIA's Mark read covers the row's own thread; a folded row is also unread
   // when one of its sub-agents is.
   const foldedUnread = row.unreadIds.filter((id) => id !== thread.id);
   if (foldedUnread.length > 0) {

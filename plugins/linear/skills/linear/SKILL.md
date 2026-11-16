@@ -1,9 +1,9 @@
 ---
 name: linear
-description: How to read and write Linear from a bb thread — the team's own vocabulary, the scoping rules, and the two mistakes that look like they worked. Use whenever a task involves a Linear issue, a state change, an assignment, a comment, or starting work from an issue.
+description: How to read and write Linear from a VesnALIA thread — the team's own vocabulary, the scoping rules, and the two mistakes that look like they worked. Use whenever a task involves a Linear issue, a state change, an assignment, a comment, or starting work from an issue.
 ---
 
-# Working with Linear from bb
+# Working with Linear from VesnALIA
 
 This project is bound to one or more Linear teams. Everything below is about
 using that binding correctly; the tools enforce it, but knowing *why* saves you
@@ -26,7 +26,7 @@ set an estimate. If it says `tShirt`, the values are sizes, not points.
 
 ## The scoping rule, and what a refusal means
 
-A bb project binds to one **primary** Linear team plus, optionally, additional
+A VesnALIA project binds to one **primary** Linear team plus, optionally, additional
 teams marked write or read-only. Unqualified work goes to the primary.
 
 If you name an issue on a team outside that set, you get a **refusal that names
@@ -40,7 +40,7 @@ also deliberate.
 
 ## Reads are free; writes are not
 
-Every read comes from bb's local copy of the workspace and costs no network
+Every read comes from VesnALIA's local copy of the workspace and costs no network
 round trip. Search widely, list generously, read the whole issue before acting.
 
 Writes go to Linear. Two things follow:
@@ -68,7 +68,7 @@ an actual task, including taking the next task from an earlier queue.
 
 - `linear_thread_issue` reads current, active and previous work, suggestions, and
   the work revision. Read it at the start of a turn involving Linear work.
-- `linear_thread_work` updates BB locally. Use `start` to switch to one issue
+- `linear_thread_work` updates VesnALIA locally. Use `start` to switch to one issue
   (previous active work goes into history), `add` to work on another issue
   alongside the others, `focus` to make an active issue current, `finish` when
   work on that issue is finished here, `remove` for a mistaken link, or `clear`
@@ -90,13 +90,13 @@ can leave an issue in review; updating Linear status is a separate operation
 for the specific issue when the user's request authorizes it. Never apply one
 issue's status change to every active issue.
 
-CLI equivalents: `bb linear work` reads the record; `bb linear work
-start|add|focus|finish|remove ENG-123` changes it, and `bb linear work clear`
+CLI equivalents: `alia linear work` reads the record; `alia linear work
+start|add|focus|finish|remove ENG-123` changes it, and `alia linear work clear`
 finishes all work here. Add `--revision N` for a guarded change.
 
 ## Starting work from an issue
 
-`linear_thread_start` spawns a new bb thread on the issue, with its
+`linear_thread_start` spawns a new VesnALIA thread on the issue, with its
 description, acceptance criteria and recent comments attached as context, and
 moves the issue to the team's started state.
 

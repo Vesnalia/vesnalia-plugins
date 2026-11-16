@@ -1,10 +1,10 @@
 // The git log as a thread panel tab: a virtualised list of commits over the
 // refs the filter selects, and a drawer below it with the selected commit,
-// the files it changed and bb's diff viewer for one of them. Every mutation
+// the files it changed and VesnALIA's diff viewer for one of them. Every mutation
 // in the row's context menu goes through useVcsActions, so it asks first
 // with the exact command.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { experimental_Diff as Diff, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Diff as Diff, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { BranchRef, CommitDetails, FileChange, LogCommit, LogFilter, PatchResult } from "../contracts";
 import { useJobs } from "../hooks/use-jobs";
@@ -108,12 +108,12 @@ function FileList({
 
 export function LogPanel({ threadId, params }: PanelProps) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const sidebar = useSidebarThread(threadId);
   const { overview, applyOverview } = useOverview({ threadId, environmentId: sidebar.environmentId, enabled: true });
   const jobs = useJobs(threadId);
   // Quiet like the commit panel: the status line under the list reports, and
-  // bb stacks its toasts over the panel.
+  // VesnALIA stacks its toasts over the panel.
   const actions = useVcsActions({ threadId, overview, applyOverview, onCheckedOut: () => undefined, waitForJob: jobs.waitFor, quiet: true });
 
   const [filter, setFilter] = useState<LogFilter>(() => parseLogParams(params).filter);

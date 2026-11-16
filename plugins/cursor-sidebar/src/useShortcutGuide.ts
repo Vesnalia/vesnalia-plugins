@@ -23,7 +23,7 @@ function shortcutTargets(): HTMLAnchorElement[] {
 }
 
 /**
- * BB's keybind guide appears once the modifier has been held for about 700ms
+ * VesnALIA's keybind guide appears once the modifier has been held for about 700ms
  * (measured: its chips land at 708–714ms). Ours waits a touch longer so the
  * host's guide leads and the row numbers join it rather than pre-empting it.
  * Mirroring the host's numbering then lets the plugin show the same digits, and

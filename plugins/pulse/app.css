@@ -1,4 +1,4 @@
-/* Pulse panel. Colours come from bb theme variables so it follows any theme. */
+/* Pulse panel. Colours come from alia theme variables so it follows any theme. */
 
 .pulse, .pulse-hdr, .pulse-pop {
   --p-text: var(--ink, var(--foreground));
@@ -9,7 +9,7 @@
   --p-fill: var(--muted);
   --p-accent: var(--primary);
   --p-accent-text: var(--primary-foreground);
-  /* Text uses bb's text-safe warning token; the fill token is for dots only (2.3:1 as text in light). */
+  /* Text uses alia's text-safe warning token; the fill token is for dots only (2.3:1 as text in light). */
   --p-warn: var(--warning-text, var(--warning, #c58a16));
   --p-warn-fill: var(--warning, #c58a16);
   --p-fail: var(--destructive-text, var(--destructive));
@@ -247,7 +247,7 @@ header:has(.pulse-hdr) { container: pulse-bar / inline-size; }
 @keyframes pulse-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .pulse-spinner { animation: none; border-right-color: currentColor; opacity: 0.6; } }
 
-/* bb's "Close pane" × has no use on Pulse's single-pane board and the SDK has no
+/* alia's "Close pane" × has no use on Pulse's single-pane board and the SDK has no
    opt-out, so hide it only in the title bar that holds
    Pulse's header content. */
 :has(> * > .pulse-hdr) > button[aria-label="Close pane"] {
@@ -265,7 +265,7 @@ header:has(.pulse-hdr) { container: pulse-bar / inline-size; }
 
 /* Each item is its own card. */
 .pulse-list, .pulse-list.pulse-list--compact { display: flex; flex-direction: column; gap: 6px; border: 0; border-radius: 0; background: transparent; }
-/* Cards match bb's sent-message bubble (bg-surface-recessed + border-seam). */
+/* Cards match alia's sent-message bubble (bg-surface-recessed + border-seam). */
 .pulse-list > .pulse-item { border: 1px solid var(--border-seam, var(--p-line)); border-radius: var(--p-radius); background: var(--surface-recessed, var(--p-surface)); }
 .pulse-list > .pulse-item + .pulse-item { border-top: 1px solid var(--p-line); }
 

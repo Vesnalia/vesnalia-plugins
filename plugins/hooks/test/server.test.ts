@@ -1,16 +1,16 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createFakePluginHost, makeMessageDispatchHookContext, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeMessageDispatchHookContext, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import plugin from "../server.js";
 
-const dir = mkdtempSync(join(tmpdir(), "bb-hooks-server-"));
+const dir = mkdtempSync(join(tmpdir(), "alia-hooks-server-"));
 const host = createFakePluginHost({ pluginId: "hooks", settings: { catalogs: "" } });
-const { bb, harness } = host;
+const { alia, harness } = host;
 
 beforeAll(async () => {
-  await plugin(bb);
+  await plugin(alia);
 });
 afterAll(async () => {
   await harness.lifecycle.dispose();
@@ -25,7 +25,7 @@ async function waitFor(check: () => boolean, timeoutMs = 3_000): Promise<void> {
   }
 }
 
-describe("bb hooks CLI", () => {
+describe("alia hooks CLI", () => {
   it("adds, lists, edits, disables and removes hooks through the setting", async () => {
     const added = await harness.behavior.runCli(["add", "greet", "--event", "thread.idle", "--command", "echo hi", "--title", "^Fix"]);
     expect(added).toMatchObject({ exitCode: 0 });
@@ -66,7 +66,7 @@ describe("observe hooks", () => {
   it("runs matching hooks with the event payload and skips non-matching ones", async () => {
     const out = join(dir, "idle.json");
     const skipped = join(dir, "skipped.json");
-    await harness.behavior.runCli(["add", "on-idle", "--event", "thread.idle", "--command", `cat > "${out}"; echo "$BB_THREAD_TITLE" >> "${out}"`, "--project", "proj_a"]);
+    await harness.behavior.runCli(["add", "on-idle", "--event", "thread.idle", "--command", `cat > "${out}"; echo "$ALIA_THREAD_TITLE" >> "${out}"`, "--project", "proj_a"]);
     await harness.behavior.runCli(["add", "other-project", "--event", "thread.idle", "--command", `touch "${skipped}"`, "--project", "proj_b"]);
 
     const thread = makeThreadResponse({ id: "thr_idle", projectId: "proj_a", title: "Fix the build" });
@@ -119,7 +119,7 @@ describe("execution settings for inherit", () => {
   it("passes the triggering thread's model and reasoning to hooks that mention them", async () => {
     const out = join(dir, "exec.txt");
     harness.inspection.sdk.stub("threads.defaultExecutionOptions", async () => ({ model: "claude-opus-5", reasoningLevel: "xhigh", serviceTier: "default", permissionMode: "auto", source: "thread" }));
-    await harness.behavior.runCli(["add", "wants-model", "--event", "thread.idle", "--command", `printf '%s %s %s' "$BB_MODEL" "$BB_REASONING_LEVEL" "$BB_SERVICE_TIER" > "${out}"`]);
+    await harness.behavior.runCli(["add", "wants-model", "--event", "thread.idle", "--command", `printf '%s %s %s' "$ALIA_MODEL" "$ALIA_REASONING_LEVEL" "$ALIA_SERVICE_TIER" > "${out}"`]);
     await harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: "thr_exec", projectId: "proj_a" }), lastAssistantText: null });
     await waitFor(() => existsSync(out));
     expect(readFileSync(out, "utf8")).toBe("claude-opus-5 xhigh default");
@@ -132,11 +132,11 @@ describe("execution settings for inherit", () => {
     await harness.behavior.runCli(["remove", "plain"]);
   });
 
-  it("passes BB_CLI to command hooks", async () => {
+  it("passes ALIA_CLI to command hooks", async () => {
     const out = join(dir, "cli.txt");
-    await harness.behavior.runCli(["add", "show-cli", "--event", "thread.idle", "--command", `printf '%s' "$BB_CLI" > "${out}"`]);
+    await harness.behavior.runCli(["add", "show-cli", "--event", "thread.idle", "--command", `printf '%s' "$ALIA_CLI" > "${out}"`]);
     await harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: "thr_cli", projectId: "proj_a" }), lastAssistantText: null });
-    await waitFor(() => existsSync(out) && readFileSync(out, "utf8").includes("bb"));
+    await waitFor(() => existsSync(out) && readFileSync(out, "utf8").includes("alia"));
     await harness.behavior.runCli(["remove", "show-cli"]);
   });
 });
@@ -153,7 +153,7 @@ describe("gate hooks", () => {
   });
 
   it("rejects when the command exits 2, with stderr as the message", async () => {
-    await harness.behavior.runCli(["add", "no-force-push", "--event", "message.dispatch", "--command", `echo "blocked: $BB_MESSAGE_TEXT" >&2; exit 2`, "--text", "force"]);
+    await harness.behavior.runCli(["add", "no-force-push", "--event", "message.dispatch", "--command", `echo "blocked: $ALIA_MESSAGE_TEXT" >&2; exit 2`, "--text", "force"]);
     await expect(dispatch()(makeMessageDispatchHookContext({ input: { text: "please force push" } }))).resolves.toEqual({ action: "reject", message: "blocked: please force push" });
     await expect(dispatch()(makeMessageDispatchHookContext({ input: { text: "just commit" } }))).resolves.toEqual({ action: "proceed" });
     await harness.behavior.runCli(["remove", "no-force-push"]);
@@ -191,7 +191,7 @@ describe("gate hooks", () => {
   }, 15_000);
 });
 
-describe("bb hooks test", () => {
+describe("alia hooks test", () => {
   it("runs a hook with a sample payload and reports the outcome", async () => {
     await harness.behavior.runCli(["add", "sample", "--event", "thread.idle", "--command", `jq -r '.thread.id + \" \" + .event' 2>/dev/null || cat`]);
     const result = await harness.behavior.runCli(["test", "sample"]);

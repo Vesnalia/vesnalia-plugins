@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   definePluginApp,
   type PluginFileOpenerProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { fileUrl } from "./file-url";
 import { parseGeometry } from "./geometry";
 import { useStl } from "./use-stl";

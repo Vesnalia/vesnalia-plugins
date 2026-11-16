@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { ExperimentalHostRpcContext, ExperimentalHostRpcHandlers } from "@get-bb/plugin-sdk";
+import type { ExperimentalHostRpcContext, ExperimentalHostRpcHandlers } from "@vesnalia/plugin-sdk";
 import type { HostContract, SkippedFile } from "../host-contract";
 import { runGit } from "./git";
 import { withLock, workspaceIdentity } from "./lock";

@@ -28,7 +28,7 @@ export function commitWindows(
   return windows.sort((a, b) => a.start - b.start).slice(-MAX_WINDOWS);
 }
 
-// `main` on `main`, or on `origin/main`: the base a checkout outside bb is compared with is its remote branch.
+// `main` on `main`, or on `origin/main`: the base a checkout outside VesnALIA is compared with is its remote branch.
 export function isOnBase(branch: string | null, base: string | null): boolean {
   if (branch === null || base === null) return false;
   return base === branch || base.endsWith(`/${branch}`) && base.split("/").length === branch.split("/").length + 1;

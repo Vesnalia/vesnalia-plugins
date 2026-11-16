@@ -1,4 +1,4 @@
-import type { PluginSidebarThread, useSdk } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread, useSdk } from "@vesnalia/plugin-sdk/app";
 
 type AppSdk = ReturnType<typeof useSdk>;
 export type PreviewSdk = {

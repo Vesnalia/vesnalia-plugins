@@ -1,17 +1,17 @@
-// bb-kilocode — checkpoint state registry and outgoing rewrites.
+// alia-kilocode — checkpoint state registry and outgoing rewrites.
 //
-// Checkpoint rewind (`bb thread edit-message`) and checkpoint fork work from
-// one shared JSON registry: one file per id under BB_KILO_STATE_DIR (default
-// <tmp>/bb-kilo-state; server.ts pins the same default into the launch spec
+// Checkpoint rewind (`alia thread edit-message`) and checkpoint fork work from
+// one shared JSON registry: one file per id under ALIA_KILO_STATE_DIR (default
+// <tmp>/alia-kilo-state; server.ts pins the same default into the launch spec
 // env so the adapter inherits it, and host.ts learns it from any request that
 // carries the launch spec).
 //
-//   <sessionId>.json   live:   { kind:"live", sessionId, bbThreadId, cwd,
+//   <sessionId>.json   live:   { kind:"live", sessionId, aliaThreadId, cwd,
 //                                userCount, seeded, updatedAt }
-//   <bbThreadId>.json  the same record, so host.ts can resolve the current
+//   <aliaThreadId>.json  the same record, so host.ts can resolve the current
 //                      session (and its checkpoint) from a thread/delta.
 //   staged records     { kind:"staged", sourceSessionId, truncateTo, … } are
-//                      written by host.ts when bb rewinds to a checkpoint and
+//                      written by host.ts when VesnALIA rewinds to a checkpoint and
 //                      consumed — then deleted — by adapter/acp.mjs when the
 //                      replacement thread's session/fork arrives.
 //
@@ -19,18 +19,18 @@
 // Kilo Code's store held when the turn settled. host.ts stamps it onto the
 // outgoing `thread/delta` turn.boundary so the completed turn preceding an
 // edited message carries providerCheckpointId; without a non-null checkpoint
-// there, bb answers `409: This earlier provider turn has no editable history
+// there, VesnALIA answers `409: This earlier provider turn has no editable history
 // checkpoint` — which stays the honest answer whenever `seeded` is false,
 // because a count Kilo's store did not confirm must never truncate anything.
 //
 // Dependency-free and side-effect-free at import time, so both host.ts (bundled
-// by bb) and the adapter/tests (plain node) can load it.
+// by VesnALIA) and the adapter/tests (plain node) can load it.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
 /** Launch-spec env key carrying the registry directory. */
-export const STATE_DIR_ENV = "BB_KILO_STATE_DIR";
+export const STATE_DIR_ENV = "ALIA_KILO_STATE_DIR";
 
 /** Ids become file names: letters, digits, dot, underscore, hyphen only. */
 export const SAFE_ID = /^[A-Za-z0-9._-]{1,120}$/;
@@ -39,7 +39,7 @@ export const SAFE_ID = /^[A-Za-z0-9._-]{1,120}$/;
 export function stateDirFrom(env) {
   const custom = env?.[STATE_DIR_ENV];
   if (typeof custom === "string" && custom.length > 0) return custom;
-  return path.join(os.tmpdir(), "bb-kilo-state");
+  return path.join(os.tmpdir(), "alia-kilo-state");
 }
 
 export function readState(dir, id) {
@@ -99,7 +99,7 @@ export function parseCheckpoint(checkpoint) {
  * null when the adapter has not published state for the thread yet (first
  * prompt not dispatched), and null when the count was never confirmed by
  * Kilo's store (`seeded: false`) — the boundary is then left untouched and
- * editing that turn falls back to bb's honest 409 instead of a fabricated
+ * editing that turn falls back to VesnALIA's honest 409 instead of a fabricated
  * checkpoint that could truncate the wrong messages.
  */
 export function checkpointForThread(dir, threadId) {
@@ -114,7 +114,7 @@ export function checkpointForThread(dir, threadId) {
  * One outgoing bridge line, rewritten in place:
  *
  *  - the ACP bridge hardcodes its initialize handshake to `fork: "tip"` while
- *    the registration says `checkpoint`, and bb takes the MINIMUM of the two —
+ *    the registration says `checkpoint`, and VesnALIA takes the MINIMUM of the two —
  *    without the upgrade prepareThreadRewind throws before it ever reaches us;
  *  - `thread/delta` turn.boundary deltas get the thread's current checkpoint
  *    attached (`providerCheckpointId`), unless one is already present.

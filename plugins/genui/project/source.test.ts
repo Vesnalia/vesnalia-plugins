@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { ChangesView } from "../core/project";
 import { fitChanges, snapshotKey } from "./snapshots";
 import { createProjectSource, diffQuery, outcomeFailure } from "./source";
 
 type Fake = Record<string, Record<string, (args: never) => unknown>>;
 
-/** A BB with one project's threads and one checkout; only what source.ts calls. */
-function fakeBb(overrides: Fake = {}) {
+/** A VesnALIA with one project's threads and one checkout; only what source.ts calls. */
+function fakeAlia(overrides: Fake = {}) {
   const calls: { method: string; args: unknown }[] = [];
   const kv = new Map<string, unknown>();
   const threads: Record<string, object> = {
@@ -18,7 +18,7 @@ function fakeBb(overrides: Fake = {}) {
     thr_idle00: thread("thr_idle00", "proj_a", "idle"),
     thr_work01: thread("thr_work01", "proj_a", "active", "thr_idle00"),
     thr_work02: { ...thread("thr_work02", "proj_a", "active", "thr_idle00"), visibility: "hidden" },
-    // BB fails every read of its message and interactions.
+    // VesnALIA fails every read of its message and interactions.
     thr_broken: thread("thr_broken", "proj_a", "idle"),
   };
   const outputs: Record<string, string | null> = {
@@ -118,7 +118,7 @@ function fakeBb(overrides: Fake = {}) {
     get: async (key: string) => kv.get(key) as never,
     set: async (key: string, value: unknown) => void kv.set(key, structuredClone(value)),
   };
-  const source = createProjectSource({ sdk } as unknown as BbPluginApi, storage);
+  const source = createProjectSource({ sdk } as unknown as AliaPluginApi, storage);
   return { source, calls, kv };
 }
 
@@ -139,7 +139,7 @@ function thread(id: string, projectId: string, status: string, parentThreadId: s
 
 describe("Changes", () => {
   it("compares the branch with the default branch, all changes included", async () => {
-    const { source, calls } = fakeBb();
+    const { source, calls } = fakeAlia();
     const view = await source.changes("thr_mine00", { kind: "branch" }, null, null);
     expect(calls.find((call) => call.method === "diffFiles")?.args).toMatchObject({ target: "all", mergeBaseBranch: "main" });
     expect(view).toMatchObject({ ok: true, scope: { kind: "branch", branch: "feat", base: "main", onBase: false }, stored: false });
@@ -152,14 +152,14 @@ describe("Changes", () => {
   });
 
   it("keeps a renamed file when the filter names where it came from", async () => {
-    const { source } = fakeBb();
+    const { source } = fakeAlia();
     const view = await source.changes("thr_mine00", { kind: "branch" }, ["old"], null);
     expect(view.ok && view.files.map((file) => file.path)).toEqual(["src/b.ts"]);
   });
 
   it("shows a kept snapshot until refreshed, with the on-demand patches kept beside the inline ones", async () => {
-    const { source, calls } = fakeBb();
-    const keep = { blockKey: "bb.genui.state:msg#ui#0", refresh: false };
+    const { source, calls } = fakeAlia();
+    const keep = { blockKey: "alia.genui.state:msg#ui#0", refresh: false };
     const first = await source.changes("thr_mine00", { kind: "uncommitted" }, null, keep);
     const again = await source.changes("thr_mine00", { kind: "uncommitted" }, null, keep);
     expect(again).toEqual(first);
@@ -173,15 +173,15 @@ describe("Changes", () => {
   });
 
   it("never keeps a commit's changes: a commit cannot change", async () => {
-    const { source, kv } = fakeBb();
+    const { source, kv } = fakeAlia();
     const view = await source.changes("thr_mine00", { kind: "commit", sha: "abc1234" }, null, { blockKey: "b", refresh: false });
     expect(view).toMatchObject({ ok: true, stored: false, scope: { kind: "commit", sha: "abc1234def", subject: "Fix" } });
     expect(kv.size).toBe(0);
   });
 
   it("says why there is nothing to show", async () => {
-    expect(await fakeBb().source.changes("thr_nobody", { kind: "branch" }, null, null)).toMatchObject({ ok: false, reason: "not-found" });
-    expect(await fakeBb().source.changes("../etc", { kind: "branch" }, null, null)).toMatchObject({ ok: false, reason: "invalid" });
+    expect(await fakeAlia().source.changes("thr_nobody", { kind: "branch" }, null, null)).toMatchObject({ ok: false, reason: "not-found" });
+    expect(await fakeAlia().source.changes("../etc", { kind: "branch" }, null, null)).toMatchObject({ ok: false, reason: "invalid" });
     expect(outcomeFailure({ outcome: "not_applicable", message: "x" })).toMatchObject({ reason: "not-git" });
     expect(
       outcomeFailure({ outcome: "unavailable", failure: { code: "path_not_found", message: "Workspace path does not exist" } }),
@@ -189,7 +189,7 @@ describe("Changes", () => {
   });
 
   it("refuses patch paths that leave the repository", async () => {
-    const { source, calls } = fakeBb();
+    const { source, calls } = fakeAlia();
     for (const path of ["/etc/passwd", "src/../../x", ""]) {
       expect(await source.patches("thr_mine00", { kind: "branch" }, [path])).toMatchObject({ ok: false, reason: "invalid" });
     }
@@ -213,7 +213,7 @@ describe("diff queries", () => {
 
 describe("Threads", () => {
   it("lists the thread's subthreads with provider and model", async () => {
-    const { source, calls } = fakeBb();
+    const { source, calls } = fakeAlia();
     const view = await source.threads("thr_mine00", null);
     expect(calls.find((call) => call.method === "threads.list")?.args).toMatchObject({ parentThreadId: "thr_mine00" });
     expect(view).toMatchObject({
@@ -226,12 +226,12 @@ describe("Threads", () => {
   });
 
   it("answers not found for another project's thread, unknown ids and malformed ids alike", async () => {
-    const view = await fakeBb().source.threads("thr_mine00", ["thr_child0", "thr_other0", "thr_nobody", "<script>"]);
+    const view = await fakeAlia().source.threads("thr_mine00", ["thr_child0", "thr_other0", "thr_nobody", "<script>"]);
     expect(view.ok && view.threads.map((thread) => thread.found)).toEqual([true, false, false, false]);
   });
 
   it("shows a subthread's latest message, the question it waits on, and its reasoning level", async () => {
-    const view = await fakeBb().source.threads("thr_mine00", null);
+    const view = await fakeAlia().source.threads("thr_mine00", null);
     expect(view.ok && view.threads[0]).toMatchObject({
       id: "thr_child0",
       needsInput: true,
@@ -244,7 +244,7 @@ describe("Threads", () => {
   });
 
   it("counts an idle parent's running workers, hidden ones included", async () => {
-    const view = await fakeBb().source.threads("thr_mine00", ["thr_idle00", "thr_work01"]);
+    const view = await fakeAlia().source.threads("thr_mine00", ["thr_idle00", "thr_work01"]);
     expect(view.ok && view.threads).toMatchObject([
       { id: "thr_idle00", status: "idle", needsInput: false, pending: null, lastMessage: null, runningWorkers: 2 },
       { id: "thr_work01", status: "active", runningWorkers: 0 },
@@ -252,7 +252,7 @@ describe("Threads", () => {
   });
 
   it("reads a message again only once the thread has acted, and a running thread's parent once", async () => {
-    const { source, calls } = fakeBb();
+    const { source, calls } = fakeAlia();
     await source.threads("thr_mine00", ["thr_idle00", "thr_child0"]);
     await source.threads("thr_mine00", ["thr_idle00", "thr_child0"]);
     const count = (method: string, args: string) => calls.filter((call) => call.method === method && call.args === args).length;
@@ -264,14 +264,14 @@ describe("Threads", () => {
   });
 
   it("never reads another project's thread's message or interactions", async () => {
-    const { source, calls } = fakeBb();
+    const { source, calls } = fakeAlia();
     const view = await source.threads("thr_mine00", ["thr_other0"]);
     expect(view.ok && view.threads).toEqual([{ found: false, id: "thr_other0" }]);
     expect(calls.filter((call) => call.args === "thr_other0").map((call) => call.method)).toEqual(["threads.get"]);
   });
 
-  it("shows what it has when BB can't read a thread's message or interactions", async () => {
-    const view = await fakeBb().source.threads("thr_mine00", ["thr_broken"]);
+  it("shows what it has when VesnALIA can't read a thread's message or interactions", async () => {
+    const view = await fakeAlia().source.threads("thr_mine00", ["thr_broken"]);
     expect(view.ok && view.threads[0]).toMatchObject({ found: true, needsInput: false, pending: null, lastMessage: null });
   });
 });

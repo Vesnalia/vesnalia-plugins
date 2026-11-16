@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useSettings } from "@get-bb/plugin-sdk/app";
+import { useSettings } from "@vesnalia/plugin-sdk/app";
 import type { PrView } from "../contract";
 import { ErrorNote, FIELD_SMALL, PAGE, PageHeading } from "./common";
 import { messageOf, useShuttleQuery } from "./data";

@@ -123,7 +123,7 @@ async function queryRows<T extends object>(
   sql: string,
   ...parameters: Array<string | number>
 ): Promise<T[]> {
-  // Keep node:sqlite optional at module load time for older bb hosts.
+  // Keep node:sqlite optional at module load time for older VesnALIA hosts.
   const { DatabaseSync } = await import("node:sqlite");
   const database = new DatabaseSync(databasePath, { readOnly: true });
   try {
@@ -161,7 +161,7 @@ function chunked<T>(values: readonly T[], size: number): T[][] {
 }
 
 /**
- * Hermes only fills `sessions.cwd` for CLI runs. ACP sessions — everything bb
+ * Hermes only fills `sessions.cwd` for CLI runs. ACP sessions — everything VesnALIA
  * launches — leave the column null and carry the directory inside the
  * `model_config` JSON instead. Subagents carry neither and inherit it from the
  * session that delegated to them.

@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-tree-sidebar",
+  "name": "alia-plugin-tree-sidebar",
   "version": "0.1.0",
   "type": "module",
   "description": "A sidebar that nests threads under their projects, laid out the way the projects sit on disk.",
   "license": "MIT",
   "engines": {
-    "bb": ">=0.35",
-    "bbPluginSdk": "^0.4.1"
+    "alia": ">=0.35",
+    "aliaPluginSdk": ">=0.6"
   },
-  "bb": {
+  "alia": {
     "name": "Tree Sidebar",
     "description": "A sidebar that nests threads under their projects, laid out the way the projects sit on disk.",
     "branding": {
@@ -18,10 +18,10 @@
     "app": "./app.tsx"
   },
   "keywords": [
-    "bb-plugin"
+    "alia-plugin"
   ],
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -46,5 +46,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^4.1.1"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/tree-sidebar#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/tree-sidebar"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

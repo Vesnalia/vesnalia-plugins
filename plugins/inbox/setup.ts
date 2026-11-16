@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import packageInfo from "./package.json" with { type: "json" };
 import { desktopAvailable } from "./notify";
 import { createTelegramSetup, pairingSchema, telegramStatusSchema } from "./telegram-setup";
@@ -38,14 +38,14 @@ export const setupRpc = {
   setupSave: { input: preferencesSchema, output: setupStatusSchema },
 };
 
-export function createSetup(bb: BbPluginApi, settings: { get(): Promise<StoredSettings> }) {
-  const telegram = createTelegramSetup(bb, settings);
+export function createSetup(alia: AliaPluginApi, settings: { get(): Promise<StoredSettings> }) {
+  const telegram = createTelegramSetup(alia, settings);
   async function status(): Promise<SetupStatus> {
     const cfg = await settings.get();
     const quietValid = clockTime.safeParse(cfg.quietStart).success && clockTime.safeParse(cfg.quietEnd).success && Boolean(cfg.quietStart) === Boolean(cfg.quietEnd);
     return {
       pairing: telegram.pairing(),
-      completed: (await bb.storage.kv.get<boolean>("setup:completed")) === true,
+      completed: (await alia.storage.kv.get<boolean>("setup:completed")) === true,
       version: packageInfo.version,
       preferences: {
         notifyBlocked: cfg.notifyBlocked, notifyFailed: cfg.notifyFailed, notifyFinished: cfg.notifyFinished, notifyExtensions: cfg.notifyExtensions,
@@ -61,7 +61,7 @@ export function createSetup(bb: BbPluginApi, settings: { get(): Promise<StoredSe
   return {
     telegram,
     handlers: {
-    ...createUpdates(bb, telegram.withUpdate),
+    ...createUpdates(alia, telegram.withUpdate),
     setupTelegramBegin: ({ token }: { token: string }) => telegram.begin(token),
     setupTelegramCheck: ({ pairingId }: { pairingId: string }) => telegram.check(pairingId),
     setupTelegramCancel: ({ pairingId }: { pairingId: string }) => telegram.cancel(pairingId),
@@ -70,11 +70,11 @@ export function createSetup(bb: BbPluginApi, settings: { get(): Promise<StoredSe
     async setupTelegramDisconnect() { await telegram.disconnect(); return status(); },
     setupStatus: status,
     async setupFinish() {
-      await bb.storage.kv.set("setup:completed", true);
+      await alia.storage.kv.set("setup:completed", true);
       return { ok: true };
     },
     async setupSave(input: Preferences) {
-      await bb.sdk.plugins.updateSettings({ pluginId: bb.pluginId, values: {
+      await alia.sdk.plugins.updateSettings({ pluginId: alia.pluginId, values: {
         ...input, cooldownSeconds: String(input.cooldownSeconds),
       } });
       return status();

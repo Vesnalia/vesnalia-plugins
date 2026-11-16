@@ -54,7 +54,7 @@ test("configure sets cores, memory, a static address and tags after the clone is
     memory: 8192,
     swap: 512,
     net0: "name=eth0,bridge=vmbr1,ip=192.0.2.3/24,gw=192.0.2.1,type=veth",
-    tags: ["bb-box", "thread.thr_abc"],
+    tags: ["alia-box", "thread.thr_abc"],
     onboot: false,
   });
   const put = api.calls.find((call) => call.method === "PUT" && call.path.endsWith("/config"))!;
@@ -63,7 +63,7 @@ test("configure sets cores, memory, a static address and tags after the clone is
     memory: "8192",
     swap: "512",
     net0: "name=eth0,bridge=vmbr1,ip=192.0.2.3/24,gw=192.0.2.1,type=veth",
-    tags: "bb-box;thread.thr_abc",
+    tags: "alia-box;thread.thr_abc",
     onboot: "0",
   });
   assert.equal(api.guests.get(7003)!.config.memory, "8192");
@@ -187,12 +187,12 @@ test("every change to a VM tries again while another task holds its lock, as qme
 test("listPool returns only the pool's guests with their tags", async () => {
   const { proxmox } = setup();
   await proxmox.cloneLinked({ template: 9000, vmid: 7007, hostname: "wise-moss", pool: "bbbox" });
-  await proxmox.configure(7007, { tags: ["bb-box", "thread.thr_1", "box.bx1"] });
+  await proxmox.configure(7007, { tags: ["alia-box", "thread.thr_1", "box.bx1"] });
   await proxmox.cloneLinked({ template: 9000, vmid: 7008, hostname: "other-pool" });
   const guests = await proxmox.listPool("bbbox");
   assert.deepEqual(
     guests.map((guest) => [guest.vmid, guest.name, guest.tags]),
-    [[7007, "wise-moss", ["bb-box", "thread.thr_1", "box.bx1"]]],
+    [[7007, "wise-moss", ["alia-box", "thread.thr_1", "box.bx1"]]],
   );
 });
 
@@ -227,10 +227,10 @@ test("a VM client clones, names, configures, runs and deletes VMs, and leaves co
   api.addTemplate(9000);
   api.addVmTemplate(9001);
   const proxmox = new Proxmox({ apiUrl: "https://pve.example.com:8006", ...FAKE_TOKEN, node: api.node, type: "qemu", fetch: api.fetch, sleep: async () => {} });
-  await proxmox.cloneLinked({ template: 9001, vmid: 7101, hostname: "calm-heron", pool: "bbbox", description: "bb-box calm-heron" });
+  await proxmox.cloneLinked({ template: 9001, vmid: 7101, hostname: "calm-heron", pool: "bbbox", description: "alia-box calm-heron" });
   const clone = api.calls.find((call) => call.path.endsWith("/clone"))!;
   assert.equal(clone.path, "/nodes/pve/qemu/9001/clone");
-  assert.deepEqual(clone.params, { newid: "7101", name: "calm-heron", full: "0", pool: "bbbox", description: "bb-box calm-heron" });
+  assert.deepEqual(clone.params, { newid: "7101", name: "calm-heron", full: "0", pool: "bbbox", description: "alia-box calm-heron" });
   await proxmox.configure(7101, { name: "bold-heron", cores: 8, memory: 16384, smbios1: "serial=MTkyLjAuMi41LzI0IDE5Mi4wLjIuMQ==,base64=1", delete: ["protection"] });
   const put = api.calls.find((call) => call.method === "PUT")!;
   assert.equal(put.path, "/nodes/pve/qemu/7101/config");

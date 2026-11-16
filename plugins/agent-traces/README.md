@@ -16,17 +16,17 @@ running turn plays at 10× speed.
 From the marketplace:
 
 ```sh
-bb marketplace add git:github.com/charpeni/bb-plugins@main
-bb plugin install agent-traces@charpeni
+alia marketplace add git:github.com/charpeni/bb-plugins@main
+alia plugin install agent-traces@charpeni
 ```
 
 Or directly from this repository:
 
 ```sh
-bb plugin install git:https://github.com/charpeni/bb-plugins.git@^1.0.0 --tag-prefix agent-traces/ --plugin agent-traces
+alia plugin install git:https://github.com/charpeni/bb-plugins.git@^1.0.0 --tag-prefix agent-traces/ --plugin agent-traces
 ```
 
-Requires bb 0.47 or newer.
+Requires VesnALIA 0.47 or newer.
 
 Then open **Traces** in the sidebar's navigation. From a thread, choose
 **Trace** from the side panel's actions, use **Trace this turn** on any chat
@@ -69,7 +69,7 @@ turn:
 
 Background work (dev servers, background subagents, threads it spawned) runs
 alongside the agent, so it never takes a moment away from these phases.
-Provider errors, bb errors, and stops show as red markers where they happened.
+Provider errors, VesnALIA errors, and stops show as red markers where they happened.
 
 ## What it shows
 
@@ -111,11 +111,11 @@ duration pinned to the edge they went past, so nothing disappears silently.
 ## From a terminal or an agent
 
 ```sh
-bb agent-traces show [thread] [--turn n|latest|previous]   # phases, slowest calls, failures
-bb agent-traces turns [thread]
-bb agent-traces commands [thread] [--project]
-bb agent-traces compare <a> <b> [thread]
-bb agent-traces export [thread] [--turn n] [--format otlp|html] [--send]
+alia agent-traces show [thread] [--turn n|latest|previous]   # phases, slowest calls, failures
+alia agent-traces turns [thread]
+alia agent-traces commands [thread] [--project]
+alia agent-traces compare <a> <b> [thread]
+alia agent-traces export [thread] [--turn n] [--format otlp|html] [--send]
 ```
 
 Every command takes `--json`. Agents get the same answers from the
@@ -133,9 +133,9 @@ conventions where they fit (`execute_tool`, `invoke_agent`, `chat`).
 Set the collector in **Settings → Plugins → Agent Traces**, or:
 
 ```sh
-bb plugin config agent-traces set otlpEndpoint http://localhost:4318/v1/traces
-bb plugin config agent-traces set otlpHeaders "authorization=Bearer …"   # stored as a secret
-bb plugin config agent-traces set autoExport true   # send each turn as it finishes
+alia plugin config agent-traces set otlpEndpoint http://localhost:4318/v1/traces
+alia plugin config agent-traces set otlpHeaders "authorization=Bearer …"   # stored as a secret
+alia plugin config agent-traces set autoExport true   # send each turn as it finishes
 ```
 
 ## How spans are built
@@ -146,14 +146,14 @@ Everything comes from the thread's own event history:
   event. Its output is read on demand from the event that ended it.
 - Subagents run as turns of their own, or as background agent tasks. Their
   spans fold back under the subagent, which lasts until its agent finishes.
-- Threads a turn spawned come from bb's parent links, with the spans they ran
+- Threads a turn spawned come from VesnALIA's parent links, with the spans they ran
   during that turn.
 - A call that never reported finishing ends with its turn; after six hours
   without any event, nothing in the thread counts as still running.
 
 ## Limitations
 
-- **No cost.** bb does not record a cost for Claude Code, Codex, or OpenCode
+- **No cost.** VesnALIA does not record a cost for Claude Code, Codex, or OpenCode
   threads, and its history keeps only the latest token count of a thread.
 - **Thinking and writing** are only as visible as the provider streams them:
   Claude Code streams its thinking, Codex mostly does not, so more of a Codex
@@ -162,7 +162,7 @@ Everything comes from the thread's own event history:
   gives many quick commands the same start and end time, so they show as `0ms`.
 - **OpenCode** reports no subagents, so its turns show a flat list of tool
   calls.
-- **Show in chat** jumps to the nearest reply: bb links messages, not
+- **Show in chat** jumps to the nearest reply: VesnALIA links messages, not
   individual tool calls.
 
 ## Develop
@@ -170,6 +170,6 @@ Everything comes from the thread's own event history:
 From the repository root:
 
 ```sh
-bb plugin install ./plugins/agent-traces
-bb plugin dev plugins/agent-traces
+alia plugin install ./plugins/agent-traces
+alia plugin dev plugins/agent-traces
 ```

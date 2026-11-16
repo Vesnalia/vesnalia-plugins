@@ -49,7 +49,7 @@ test("each kind ships three presets, small by default but medium for ios, and a 
   assert.deepEqual(kindSizes("ios"), { ...macos, default: "medium" }, "an ios box has room for Xcode beside its device, at the size its measurements were made at (063)");
   assert.deepEqual(defaultSize(kindSizes("ios")), { cores: 6, memoryMiB: 16 * GiB, diskGiB: null });
   assert.deepEqual(kindSizes("windows-desktop"), desktop);
-  assert.deepEqual(kindSizes("solaris"), linux, "a kind BB Box has no sizes for takes linux's");
+  assert.deepEqual(kindSizes("solaris"), linux, "a kind VesnALIA Box has no sizes for takes linux's");
 });
 
 test("the box-sizes setting changes a kind's presets, default and largest", () => {
@@ -120,7 +120,7 @@ test("a size request takes parts from its preset, or else the default preset, up
   assert.match(refused({ diskGiB: 257 }), /not 2 cores, 4 GiB memory, 257 GiB disk/);
 });
 
-test("a size past the kind's largest names the setting that limits it: its Sizes in settings, and the bb box kind set flag for each part past it", () => {
+test("a size past the kind's largest names the setting that limits it: its Sizes in settings, and the VesnALIA box kind set flag for each part past it", () => {
   const sizes = kindSizes("linux-desktop-cpu");
   const refused = (request: Parameters<typeof chooseSize>[2]) => {
     const choice = chooseSize("linux-desktop-cpu", sizes, request);
@@ -129,24 +129,24 @@ test("a size past the kind's largest names the setting that limits it: its Sizes
   };
   assert.match(
     refused({ memoryGiB: 96 }),
-    /\. To allow more, raise the kind's largest size in BB Box settings, under Kinds, Linux desktop \(CPU\), Sizes, or run bb box kind set linux-desktop-cpu --largest-memory-gib <GiB>\.$/,
+    /\. To allow more, raise the kind's largest size in ALIA Box settings, under Kinds, Linux desktop \(CPU\), Sizes, or run alia box kind set linux-desktop-cpu --largest-memory-gib <GiB>\.$/,
   );
-  assert.match(refused({ cores: 64, diskGiB: 512 }), /or run bb box kind set linux-desktop-cpu --largest-cores <cores> --largest-disk-gib <GiB>\.$/);
+  assert.match(refused({ cores: 64, diskGiB: 512 }), /or run alia box kind set linux-desktop-cpu --largest-cores <cores> --largest-disk-gib <GiB>\.$/);
   const resized = chooseResize("linux-desktop-cpu", sizes, { cores: 4, memoryMiB: 8 * GiB, diskGiB: 40 }, { cores: 64 });
   assert.ok(!resized.ok);
-  assert.match(resized.message, /^A linux-desktop-cpu box can be at most .*\. To allow more, raise the kind's largest size in BB Box settings, under Kinds, Linux desktop \(CPU\), Sizes, or run bb box kind set linux-desktop-cpu --largest-cores <cores>\.$/);
+  assert.match(resized.message, /^A linux-desktop-cpu box can be at most .*\. To allow more, raise the kind's largest size in ALIA Box settings, under Kinds, Linux desktop \(CPU\), Sizes, or run alia box kind set linux-desktop-cpu --largest-cores <cores>\.$/);
   assert.equal(withoutRaiseLargest(resized.message), resized.message.slice(0, resized.message.indexOf(" To allow more")));
   assert.equal(withoutRaiseLargest("The Mac has 2 GiB of memory left."), "The Mac has 2 GiB of memory left.");
 });
 
-test("a custom size of a Linux kind has at least 2 GiB memory, and every preset BB Box ships has that", () => {
+test("a custom size of a Linux kind has at least 2 GiB memory, and every preset VesnALIA Box ships has that", () => {
   assert.equal(LINUX_LEAST_MEMORY_GIB, 2);
   const linux = kindSizes("linux");
   assert.deepEqual(chooseSize("linux", linux, { memoryGiB: 2 }), { ok: true, size: { cores: 2, memoryMiB: 2 * GiB, diskGiB: null } });
   assert.deepEqual(chooseSize("linux", linux, { memoryGiB: 1 }), {
     ok: false,
     message:
-      "A linux box needs at least 2 GiB memory, not 1 GiB: with less it can run out of memory as it becomes a BB machine. " +
+      "A linux box needs at least 2 GiB memory, not 1 GiB: with less it can run out of memory as it becomes a VesnALIA machine. " +
       "Its presets are small (2 cores, 4 GiB memory, the default), medium (4 cores, 8 GiB memory) and large (8 cores, 16 GiB memory).",
   });
   for (const kind of ["linux-desktop-cpu", "linux-arm64", "linux-headless"]) {
@@ -171,8 +171,8 @@ test("the doctor warns about a preset of a Linux kind that the box-sizes setting
       id: "sizes.linux.small",
       name: "Box sizes",
       status: "warn",
-      detail: "The small linux preset, 1 core, 1 GiB memory, has less than 2 GiB memory, so its boxes can run out of memory as they become BB machines.",
-      fix: "Give it at least 2 GiB memory in BB Box's settings, under Kinds.",
+      detail: "The small linux preset, 1 core, 1 GiB memory, has less than 2 GiB memory, so its boxes can run out of memory as they become VesnALIA machines.",
+      fix: "Give it at least 2 GiB memory in VesnALIA Box's settings, under Kinds.",
     },
   ]);
   const checks = presetMemoryChecks({ "linux-desktop-cpu": { small: { memoryMiB: 1536 }, medium: { memoryMiB: GiB } }, "windows-desktop": { small: { memoryMiB: GiB } } });

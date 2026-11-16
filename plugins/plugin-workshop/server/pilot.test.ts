@@ -168,7 +168,7 @@ describe("actions through the gates", () => {
     await r.pilot.start(r.id, "");
     const stage = await waiting(r);
     await r.pilot.actTool(pilotThread(r), { action: "answer", text: "yes" });
-    // The stage agent never started its turn (bb's queue): the thread is free again, the stamp comes from our message.
+    // The stage agent never started its turn (VesnALIA's queue): the thread is free again, the stamp comes from our message.
     r.ports.threads.get(stage)!.status = "idle";
     r.ports.idle(pilotThread(r));
     await r.engine.reconcile(r.id);
@@ -339,7 +339,7 @@ describe("hard stops: enforced before the action, not lifted by the orchestrator
     expect(r.store.work(r.id)!.stage).toBe(5);
     expect(r.store.currentAttempt("hello")).toBeFalsy();
     expect(r.store.pilot(r.id)).toMatchObject({ state: "stopped" });
-    expect(await r.ports.github.remoteSha(r.dir, `bb/${r.env}`)).not.toBe("h9");
+    expect(await r.ports.github.remoteSha(r.dir, `alia/${r.env}`)).not.toBe("h9");
     expect((await r.engine.view(r.id)).blockers.some((b) => b.includes("looks like it contains keys"))).toBe(true);
   });
 
@@ -372,7 +372,7 @@ describe("hard stops: enforced before the action, not lifted by the orchestrator
     // The destination is public: nothing is pushed, and the refusal is recorded as `failed`.
     const r = await rig();
     await r.ports.github.setRemote(r.dir, "https://github.com/acme/bb-plugin-hello.git");
-    r.ports.github.repoInfos.set("acme/bb-plugin-hello", { visibility: "PUBLIC", owner: "acme", nameWithOwner: "acme/bb-plugin-hello" });
+    r.ports.github.repoInfos.set("acme/alia-plugin-hello", { visibility: "PUBLIC", owner: "acme", nameWithOwner: "acme/alia-plugin-hello" });
     r.ports.files.set(`${r.env}:${r.docs.context}`, "# Context\n");
     await r.pilot.start(r.id, "");
     await waiting(r);

@@ -5,7 +5,7 @@ export const HISTORY_PAGE_SIZE = 25;
 export const MAX_HISTORY_PAGES = 400;
 export const INPUT_NOT_RETAINED_NOTICE = " This input was not kept in the model history; revise it and try again.";
 
-// Stored in bb's turn/completed.providerCheckpointId; contains no prompt text.
+// Stored in VesnALIA's turn/completed.providerCheckpointId; contains no prompt text.
 const CHECKPOINT_PREFIX = "nanogpt-context-v1:";
 const contextCheckpointSchema = z.object({
   requestId: z.string().nullable(),

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { z } from "zod";
-import { defineRpcContract } from "@get-bb/plugin-sdk";
-import { experimental_useRpcKeyedQuery, experimental_useTabVisible, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
+import { experimental_useRpcKeyedQuery, experimental_useTabVisible, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { CHANGED_CHANNEL, WATCH_RENEW_MS, type Change, type WorkspaceStatus, type rpcContract } from "../contract";
 
 export type Rpc = ReturnType<typeof useRpc<typeof rpcContract>>;
@@ -111,7 +111,7 @@ export function useRefreshSignal(environmentId: string, options: { poll?: boolea
   });
 
   const fingerprint = experimental_useRpcKeyedQuery({
-    pluginId: "bb--git",
+    pluginId: "alia--git",
     contract: gitStatusContract,
     method: "status",
     keys: [environmentId],

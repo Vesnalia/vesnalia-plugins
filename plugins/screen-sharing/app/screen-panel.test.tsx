@@ -9,8 +9,8 @@
  * and says why.
  */
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import type { PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
-import { renderSlot, type PluginRpcTestHandlers } from "@get-bb/plugin-sdk/testing/app";
+import type { PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
+import { renderSlot, type PluginRpcTestHandlers } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CloseCode, LOST_AFTER_MS, PING_EVERY_MS, PING_FRAME, PONG_FRAME, SESSIONS_CHANGED, type HostEntry, type ScreenStatus } from "../shared/channels";
@@ -195,10 +195,10 @@ describe("the Screen Sharing page", () => {
     expect(screen.queryByRole("button", { name: "Connect" })).toBeNull();
   });
 
-  it("says when the bb server is not on a Mac", async () => {
+  it("says when the VesnALIA server is not on a Mac", async () => {
     renderPanel({ status: () => ({ ...ready, state: "unsupported", rfbVersion: null, securityTypes: [] }) });
     expect(await screen.findByText("Not a Mac")).toBeTruthy();
-    expect(screen.getByText(/The bb server is not running on a Mac/)).toBeTruthy();
+    expect(screen.getByText(/The alia server is not running on a Mac/)).toBeTruthy();
   });
 
   it("opens the relay with a fresh ticket, signs in through noVNC only, and shows the screen", async () => {
@@ -237,7 +237,7 @@ describe("the Screen Sharing page", () => {
   it("connects from the button under the page's text and from the toolbar alike", async () => {
     const view = renderPanel();
     const { body } = await connectButtons();
-    expect(body.closest("div")?.textContent).toContain("A session keeps running in this bb window");
+    expect(body.closest("div")?.textContent).toContain("A session keeps running in this VesnALIA window");
     const fromBody = await connect("body");
     fireEvent.click(screen.getByRole("button", { name: "Disconnect" }));
     expect(fromBody.disconnects).toBe(1);
@@ -331,7 +331,7 @@ describe("the Screen Sharing page", () => {
     release({ token: "late", expiresAt: 0 });
     await new Promise((resolve) => setTimeout(resolve, 10));
     expect(sockets).toEqual([]);
-    expect(await screen.findByText("Closed from bb with Close all.")).toBeTruthy();
+    expect(await screen.findByText("Closed from VesnALIA with Close all.")).toBeTruthy();
     await waitFor(() => expect(view.rpcCalls.some((call) => call.method === "closeAll")).toBe(true));
     // What the server publishes once every session has ended.
     await view.emitRealtime(SESSIONS_CHANGED, { sessions: [] });
@@ -394,10 +394,10 @@ describe("the Screen Sharing page", () => {
     const rfb = await connect();
     act(() => rfb.emit("connect"));
     act(() => {
-      rfb.socket.closeFromServer(CloseCode.closedByUser, "closed from bb");
+      rfb.socket.closeFromServer(CloseCode.closedByUser, "closed from VesnALIA");
       rfb.emit("disconnect", { clean: false });
     });
-    expect(await screen.findByText("Closed from bb with Close all.")).toBeTruthy();
+    expect(await screen.findByText("Closed from VesnALIA with Close all.")).toBeTruthy();
   });
 
   it("says the connection was lost within seconds when the relay goes quiet and its socket stays open", async () => {
@@ -416,7 +416,7 @@ describe("the Screen Sharing page", () => {
       act(() => vi.advanceTimersByTime(10 * LOST_AFTER_MS));
       expect(socket.pings).toBeGreaterThan(0);
       expect(rfb.disconnects).toBe(0);
-      // bb restarts behind the tunnel: no close event reaches the page, and nothing more arrives.
+      // VesnALIA restarts behind the tunnel: no close event reaches the page, and nothing more arrives.
       socket.answering = false;
       act(() => vi.advanceTimersByTime(LOST_AFTER_MS));
       expect(rfb.disconnects).toBe(0);
@@ -477,7 +477,7 @@ describe("the Mac picker, at the left of the toolbar", () => {
     host_away: { ...ready, hostId: "host_away", hostName: "Travel MacBook", isServer: false, state: "offline", rfbVersion: null, securityTypes: [] },
   };
 
-  /** The page as bb shows it: the title bar's right side above the body. */
+  /** The page as VesnALIA shows it: the title bar's right side above the body. */
   function renderWithTitleBar(handlers: Partial<PluginRpcTestHandlers<RpcContract>> = {}) {
     return renderSlot<PluginNavPanelProps, RpcContract>(
       {
@@ -594,7 +594,7 @@ describe("the Mac picker, at the left of the toolbar", () => {
     expect(await screen.findByText(/buildbox is not a Mac/)).toBeTruthy();
   });
 
-  it("connects to the Mac picked, saying what to expect from one reached through bb", async () => {
+  it("connects to the Mac picked, saying what to expect from one reached through VesnALIA", async () => {
     const view = renderWithTitleBar();
     await connectButtons();
     expect(screen.queryByText(/about half a second/)).toBeNull();
@@ -631,7 +631,7 @@ describe("the Mac picker, at the left of the toolbar", () => {
     expect(onLaptop.viewOnly).toBe(true);
     expect(rfbs).toHaveLength(2);
 
-    act(() => screenSessions.disconnectAll("Closed from bb with Close all."));
+    act(() => screenSessions.disconnectAll("Closed from VesnALIA with Close all."));
     expect(onMini.disconnects).toBe(1);
     expect(onLaptop.disconnects).toBe(1);
   });
@@ -649,7 +649,7 @@ describe("the Mac picker, at the left of the toolbar", () => {
     expect(rfb.target.parentElement).toBe(screen.getByTestId("vnc-screen"));
   });
 
-  it("says when bb could not list the machines, and tries again", async () => {
+  it("says when VesnALIA could not list the machines, and tries again", async () => {
     let calls = 0;
     renderPanel({
       hosts: () => {
@@ -840,7 +840,7 @@ describe("the page's clipboard controls", () => {
     await connected("alice");
     fireEvent.click(screen.getByRole("button", { name: "Clipboard" }));
     expect(menuItems()).toEqual(["Auto sync clipboard", "Send clipboardto MacMini", "Receive clipboardfrom MacMini"]);
-    const note = screen.getByText("Text only. It reaches the clipboard of alice, the account bb runs as on MacMini.");
+    const note = screen.getByText("Text only. It reaches the clipboard of alice, the account VesnALIA runs as on MacMini.");
     expect(note.className).toContain("text-xs");
   });
 
@@ -848,7 +848,7 @@ describe("the page's clipboard controls", () => {
     await connected("bob");
     fireEvent.click(screen.getByRole("button", { name: "Clipboard" }));
     const reason = await screen.findByText(
-      "Clipboard sync reaches only the clipboard of alice, the account bb runs as on MacMini. Sign in as alice to use it.",
+      "Clipboard sync reaches only the clipboard of alice, the account VesnALIA runs as on MacMini. Sign in as alice to use it.",
     );
     expect(reason.className).toContain("text-sm");
     expect(menuItems()).toEqual([]);
@@ -856,10 +856,10 @@ describe("the page's clipboard controls", () => {
   });
 
   it("holds only the reason when the Mac's clipboard cannot be reached, and asks again as it opens", async () => {
-    mac.error = "old bb on that Mac";
+    mac.error = "old VesnALIA on that Mac";
     const { view } = await connected("alice");
     fireEvent.click(screen.getByRole("button", { name: "Clipboard" }));
-    expect((await screen.findByText("Could not reach MacMini’s clipboard: old bb on that Mac.")).className).toContain("text-sm");
+    expect((await screen.findByText("Could not reach MacMini’s clipboard: old VesnALIA on that Mac.")).className).toContain("text-sm");
     expect(menuItems()).toEqual([]);
 
     mac.error = null;

@@ -4,11 +4,11 @@ Cause (src/theme/base.css, desktop block, since 0.5.5):
 ```
 #thread-detail-secondary-panel > aside { padding: var(--pk-gap) var(--pk-gap) var(--pk-gap) 0; background-color: var(--pk-shell); }
 ```
-The 12px top padding stacks on top of BB's own top area of the panel (its first child row `#thread-detail-secondary-panel > aside > div > div:first-child` holding the tabs, which has its own height/padding sized to match the page header row).
+The 12px top padding stacks on top of VesnALIA's own top area of the panel (its first child row `#thread-detail-secondary-panel > aside > div > div:first-child` holding the tabs, which has its own height/padding sized to match the page header row).
 
 ## Fix
 - Remove the top padding of the aside (`padding: 0 var(--pk-gap) var(--pk-gap) 0`), keep right/bottom 12px so the panel card keeps its gutters.
-- Align the tab row with the left header card: the tab row's vertical center must equal the header card's vertical center (header card top = inset top + 8). If BB's tab row is a fixed-height row (like `h-(--bb-app-chrome-row-height)` = 48px), give it the same top offset/height as the left header row so both centers match; do not add extra margin. The panel body card (`> div > div:last-child`) starts `--pk-gap-card` (8px) below the tab row.
+- Align the tab row with the left header card: the tab row's vertical center must equal the header card's vertical center (header card top = inset top + 8). If VesnALIA's tab row is a fixed-height row (like `h-(--alia-app-chrome-row-height)` = 48px), give it the same top offset/height as the left header row so both centers match; do not add extra margin. The panel body card (`> div > div:last-child`) starts `--pk-gap-card` (8px) below the tab row.
 - Phone rules (secondary panel shelf under max-width 767px) unchanged.
 Version: next patch after main (0.5.20). Test: assert the aside no longer has top padding in the desktop block.
 

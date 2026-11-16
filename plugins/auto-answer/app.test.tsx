@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 //
-// The overlay drives BB's own question widget through the DOM, so these tests
-// stand up a replica of that widget — the markup BB renders for a pending user
+// The overlay drives VesnALIA's own question widget through the DOM, so these tests
+// stand up a replica of that widget — the markup VesnALIA renders for a pending user
 // question — and assert the countdown against it. `buildWidget` is the
-// contract: if a BB release changes the widget, this file is where the change
+// contract: if a VesnALIA release changes the widget, this file is where the change
 // is described, and the behavioral assertions below stay as they are.
 import { act, cleanup } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type WidgetQuestion = {
@@ -19,9 +19,9 @@ type Widget = {
   root: HTMLElement;
   primary: HTMLButtonElement;
   optionButtons: () => HTMLButtonElement[];
-  /** What BB does on a click: move the selection and re-enable the button. */
+  /** What VesnALIA does on a click: move the selection and re-enable the button. */
   select: (index: number) => Promise<void>;
-  /** What BB does when "Other…" is picked: open the free-text box. */
+  /** What VesnALIA does when "Other…" is picked: open the free-text box. */
   openFreeText: () => Promise<void>;
   clicks: string[];
 };
@@ -105,7 +105,7 @@ function buildWidget(
 
   document.body.append(root);
 
-  // Scoped to the rows BB itself renders: the countdown block is injected into
+  // Scoped to the rows VesnALIA itself renders: the countdown block is injected into
   // this same list, and its Stop button is not an option.
   const optionButtons = () =>
     Array.from(list.querySelectorAll<HTMLButtonElement>(":scope > div > button"));
@@ -377,7 +377,7 @@ describe("auto answer countdown", () => {
     await widget.select(0);
     await act(async () => {
       // Un-ticking the last option of a multi-select: nothing is selected, so
-      // BB disables its own button.
+      // VesnALIA disables its own button.
       widget.optionButtons()[0]!.setAttribute("aria-pressed", "false");
       widget.primary.disabled = true;
     });

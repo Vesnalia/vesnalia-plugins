@@ -1,57 +1,57 @@
-# BB Plugin SDK cheat sheet (`@get-bb/plugin-sdk` 0.6.37, bb 0.46.0)
+# VesnALIA Plugin SDK cheat sheet (`@vesnalia/plugin-sdk` 0.6.37, VesnALIA 0.46.0)
 
 What this is based on: the bundled declarations in
-`node_modules/@get-bb/plugin-sdk/bundled-types/*.d.ts`, the bb 0.46.0 server,
-CLI and app bundles, and the working `bb-plugin-gigaam`. Every snippet in §1–§9
+`node_modules/@vesnalia/plugin-sdk/bundled-types/*.d.ts`, the VesnALIA 0.46.0 server,
+CLI and app bundles, and the working `alia-plugin-gigaam`. Every snippet in §1–§9
 was typechecked against 0.6.37. The CLI, HTTP Range, agent-tool, host-signal
 and host-harness behavior was also run through the SDK test harnesses. If the
-SDK version changes, run `bb plugin types --check`.
+SDK version changes, run `alia plugin types --check`.
 
 Declaration files:
 
 | Import | Declarations |
 |---|---|
-| `@get-bb/plugin-sdk` (server, shared contracts) | `bundled-types/bb-plugin-sdk.d.ts` |
-| `@get-bb/plugin-sdk/host` | `bundled-types/bb-plugin-sdk-host.d.ts` |
-| `@get-bb/plugin-sdk/app` (frontend) | `bundled-types/bb-plugin-sdk-app.d.ts` |
-| `@get-bb/plugin-sdk/testing` | `bundled-types/bb-plugin-sdk-testing.d.ts` |
-| `@get-bb/plugin-sdk/testing/host` | `bundled-types/bb-plugin-sdk-testing-host.d.ts` |
-| `@get-bb/plugin-sdk/testing/app` | `bundled-types/bb-plugin-sdk-testing-app.d.ts` |
+| `@vesnalia/plugin-sdk` (server, shared contracts) | `bundled-types/alia-plugin-sdk.d.ts` |
+| `@vesnalia/plugin-sdk/host` | `bundled-types/alia-plugin-sdk-host.d.ts` |
+| `@vesnalia/plugin-sdk/app` (frontend) | `bundled-types/alia-plugin-sdk-app.d.ts` |
+| `@vesnalia/plugin-sdk/testing` | `bundled-types/alia-plugin-sdk-testing.d.ts` |
+| `@vesnalia/plugin-sdk/testing/host` | `bundled-types/alia-plugin-sdk-testing-host.d.ts` |
+| `@vesnalia/plugin-sdk/testing/app` | `bundled-types/alia-plugin-sdk-testing-app.d.ts` |
 
 Runtime exports of the package root: `defineRpcContract`, `experimental_defineHostEntry`,
 `PLUGIN_CLI_OUTPUT_MAX_BYTES` (= 1048576), `PluginCliError`, `cliCommand`,
 `defineCli`, `experimental_THREAD_ACTION_GROUPS`. Everything else, such as
-`BbPluginApi`, is type-only.
+`AliaPluginApi`, is type-only.
 
 ---
 
-## 1. Host entry (`host.ts`, manifest `bb.host`)
+## 1. Host entry (`host.ts`, manifest `alia.host`)
 
-### Import path (verified with `bb plugin build`)
+### Import path (verified with `alia plugin build`)
 
 ```ts
-import { experimental_defineHostEntry, defineRpcContract } from "@get-bb/plugin-sdk"; // gigaam does this. USE THIS.
+import { experimental_defineHostEntry, defineRpcContract } from "@vesnalia/plugin-sdk"; // gigaam does this. USE THIS.
 ```
 
-* For the host artifact, the builder replaces `@get-bb/plugin-sdk` with a stub module.
+* For the host artifact, the builder replaces `@vesnalia/plugin-sdk` with a stub module.
   The stub exports **only** `experimental_defineHostEntry`, `defineRpcContract` and
   `PLUGIN_CLI_OUTPUT_MAX_BYTES`. If any file in the host import graph (including
   `src/shared/*`) imports something else from the root at runtime, the build
   fails. Importing `PluginCliError`, `cliCommand` or `defineCli` gives:
-  `No matching export in "bb-host-sdk-runtime:@get-bb/plugin-sdk" for import "PluginCliError"`.
+  `No matching export in "alia-host-sdk-runtime:@vesnalia/plugin-sdk" for import "PluginCliError"`.
   `import type { … }` is always fine.
-* `@get-bb/plugin-sdk/host` also builds. The builder bundles it from
+* `@vesnalia/plugin-sdk/host` also builds. The builder bundles it from
   `node_modules` when it can resolve it. If it cannot (a git install runs
   `npm install --omit=dev`, and the SDK is a devDependency), it falls back to
   the stub, which covers `experimental_defineHostEntry` **only**. If you import
   other `/host` helpers, such as `experimental_killProcessesWithCwdUnder` or
-  `experimental_spawnPortableOutputProcess`, move `@get-bb/plugin-sdk` to
+  `experimental_spawnPortableOutputProcess`, move `@vesnalia/plugin-sdk` to
   `dependencies`.
 * The host bundle is self-contained (ESM, node22, minified, ≤ 256 MiB). Pure-JS
-  dependencies are bundled. Never import `@bb/*`; the build rejects it.
+  dependencies are bundled. Never import `@alia-core/*`; the build rejects it.
   Data files read at runtime must be embedded into TS (see §12).
 
-### Exact types (`bb-plugin-sdk-host.d.ts`)
+### Exact types (`alia-plugin-sdk-host.d.ts`)
 
 ```ts
 interface PluginRpcMethodContract<I extends StandardSchemaV1 = StandardSchemaV1, O extends StandardSchemaV1 = StandardSchemaV1> {
@@ -66,7 +66,7 @@ interface ExperimentalHostSignalContract<P extends StandardSchemaV1 = StandardSc
 type ExperimentalHostSignals = Readonly<Record<string, ExperimentalHostSignalContract>>;
 
 interface ExperimentalHostPaths {
-  readonly dataDir: string;  // persistent, per plugin per daemon. Here: /home/bb/.bb/plugins/meetings/host-data
+  readonly dataDir: string;  // persistent, per plugin per daemon. Here: /home/alia/.vesnalia/plugins/meetings/host-data
   readonly tempDir: string;  // per worker process, deleted with it
 }
 interface ExperimentalHostWorkerLease { dispose(): Promise<void>; }  // idempotent
@@ -101,7 +101,7 @@ type ExperimentalHostWatchEvent =
 
 ```ts
 // src/shared/contract.ts (imported by BOTH server.ts and host.ts, so only stub-safe SDK imports)
-import { defineRpcContract, type ExperimentalHostSignals } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type ExperimentalHostSignals } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 export const hostContract = defineRpcContract({
   "meetings.readChunk": {
@@ -117,7 +117,7 @@ export const hostSignals = {
 } satisfies ExperimentalHostSignals;
 
 // host.ts
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk";
 import { hostContract, hostSignals } from "./src/shared/contract.js";
 let lease: { dispose(): Promise<void> } | null = null;
 export default experimental_defineHostEntry({
@@ -149,7 +149,7 @@ export default experimental_defineHostEntry({
   4/3, so raw chunks of ≤ 4 MiB are safe). Call timeout defaults to **30 s**,
   max 30 min (`timeoutMs`), with a 5 s cancel grace. 256 watches per worker,
   4096 ignore entries, 4096 paths per batch. Artifact ≤ 256 MiB. `dispose` ≤ 5 s.
-* The host gets the user's normalized `PATH` without the daemon's `BB_*` env. Node 22.
+* The host gets the user's normalized `PATH` without the daemon's `ALIA_*` env. Node 22.
 * Host signals are ephemeral, validated and private to this plugin. Use them for
   invalidation and progress, never for durable state.
 * Core never infers cwd, environment or host. Put absolute paths and ids in the typed input.
@@ -178,15 +178,15 @@ interface ExperimentalHostClient<C, S> {
 ```
 
 ```ts
-const host = bb.hosts.experimental_client({ contract: hostContract, experimental_signals: hostSignals });
+const host = alia.hosts.experimental_client({ contract: hostContract, experimental_signals: hostSignals });
 const offSig = host.experimental_onSignal("meeting.changed", ({ hostId, payload }) =>
-  bb.realtime.publish("meetings.changed", { id: payload.meetingId }));
+  alia.realtime.publish("meetings.changed", { id: payload.meetingId }));
 const offExit = host.experimental_onWorkerExit(({ hostId }) => wakeReconcile());
-bb.onDispose(() => { offSig(); offExit(); });
+alia.onDispose(() => { offSig(); offExit(); });
 
 async function primaryHostId(): Promise<string> {
-  const id = (await bb.sdk.system.config()).primaryHostId;   // string | null; null = no local enrolled host
-  if (id === null) throw new Error("No primary machine is connected to bb");
+  const id = (await alia.sdk.system.config()).primaryHostId;   // string | null; null = no local enrolled host
+  if (id === null) throw new Error("No primary machine is connected to alia");
   return id;
 }
 // Inside handlers/services/timers ONLY (calls made during the factory itself are rejected):
@@ -195,11 +195,11 @@ const r = await host.call("meetings.status", null, { hostId: await primaryHostId
 
 * Create the client and subscribe in the factory. Make calls only after load
   completes, from RPC, HTTP, CLI or tool handlers, services or timers.
-* gigaam's pattern: a `bb.background.service("reconcile")` loop. A wake function
+* gigaam's pattern: a `alia.background.service("reconcile")` loop. A wake function
   is triggered from `settings.onChange` and `experimental_onWorkerExit`, and the
   loop calls an idempotent `ensure` host method.
 
-## 3. Settings (`bb.settings.define`)
+## 3. Settings (`alia.settings.define`)
 
 ```ts
 type PluginSettingDescriptor =
@@ -225,7 +225,7 @@ interface PluginSettingsHandle<Ds> {
   `default` the value is non-optional. Without it, the type is `T | undefined`.**
 * `experimental_schema` must be synchronous and must not transform (Zod is fine:
   `z.number().int().min(0).max(300)`). It runs on the server for UI autosave,
-  `bb plugin config <id> set <k> <v>`, `experimental_set` and fake-host writes.
+  `alia plugin config <id> set <k> <v>`, `experimental_set` and fake-host writes.
   The first issue is shown under the field. Use it for integer and range limits
   on numbers.
 * Secrets are stored in a 0600 file under `<dataDir>/plugins/<id>/secrets/`. They
@@ -234,8 +234,8 @@ interface PluginSettingsHandle<Ds> {
   fires instead. A plugin in `needs-configuration` retries its load on save.
 
 ```ts
-const settings = bb.settings.define({
-  botName: { type: "string", label: "Имя бота", description: "Shown in Zoom", default: "bb Notetaker" },
+const settings = alia.settings.define({
+  botName: { type: "string", label: "Имя бота", description: "Shown in Zoom", default: "alia Notetaker" },
   maxDurationMin: { type: "number", label: "…", experimental_schema: z.number().int().min(1).max(600), default: 240 },
   diarization: { type: "select", label: "…", options: ["ui+acoustic", "ui", "acoustic"],
                  experimental_optionLabels: { ui: "Только по интерфейсу" }, default: "ui+acoustic" },
@@ -257,11 +257,11 @@ interface PluginStorage {
 ```
 
 ```ts
-const db = bb.storage.database();          // same handle for the whole load; cheap to call per request
-bb.storage.migrate(db, [
+const db = alia.storage.database();          // same handle for the whole load; cheap to call per request
+alia.storage.migrate(db, [
   `CREATE TABLE meetings (id TEXT PRIMARY KEY, title TEXT, status TEXT NOT NULL, created_at INTEGER NOT NULL)`,
   `CREATE INDEX meetings_created ON meetings(created_at)`,
-  // APPEND ONLY. Index = migration id in _bb_migrations; the hash of each statement is recorded,
+  // APPEND ONLY. Index = migration id in _alia_migrations; the hash of each statement is recorded,
   // so editing or reordering a shipped statement is rejected. Pending statements run in one transaction.
 ]);
 const row = db.prepare("SELECT * FROM meetings WHERE id = ?").get(id) as Row | undefined;
@@ -275,14 +275,14 @@ const row = db.prepare("SELECT * FROM meetings WHERE id = ?").get(id) as Row | u
 ## 5. RPC, realtime, frontend data
 
 ```ts
-// bb.rpc.register: POST /api/v1/plugins/<id>/rpc/<method>, always "local" auth
+// alia.rpc.register: POST /api/v1/plugins/<id>/rpc/<method>, always "local" auth
 register<C extends PluginRpcContract>(contract: C, handlers: {
   [M in keyof C]: (input: InferOutput<C[M]["input"]>, context: { readonly experimental_caller:
       { readonly kind: "plugin"; readonly pluginId: string } | { readonly kind: "client" } })
     => InferInput<C[M]["output"]> | Promise<InferInput<C[M]["output"]>>;
 }, options?: { experimental_discoverable?: boolean; experimental_description?: string }): void;
 
-// bb.realtime
+// alia.realtime
 publish(channel: string, payload: unknown): void;   // WS {type:"plugin-signal", pluginId, channel, payload}; undefined→null; not persisted; no per-channel subscriptions
 ```
 
@@ -296,7 +296,7 @@ publish(channel: string, payload: unknown): void;   // WS {type:"plugin-signal",
 * Frontend:
 
 ```tsx
-import { useRpc, useRealtime, useRealtimeConnectionState } from "@get-bb/plugin-sdk/app";
+import { useRpc, useRealtime, useRealtimeConnectionState } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./src/shared/rpc-contract";   // TYPE-ONLY import
 const rpc = useRpc<typeof rpcContract>();      // stable; { call(method, ...args) } typed from the contract
 const out = await rpc.call("meetings.get", { id });   // rejects with Error(message) carrying .code/.issues
@@ -306,7 +306,7 @@ const conn = useRealtimeConnectionState();     // "connecting" | "connected" | "
 
 Pattern: publish small invalidation signals and let the page refetch over RPC.
 
-## 6. HTTP routes (`bb.http.route`), binary bodies, Range, auth
+## 6. HTTP routes (`alia.http.route`), binary bodies, Range, auth
 
 ```ts
 type PluginHttpAuthMode = "local" | "none" | "token";
@@ -339,14 +339,14 @@ Auth modes, from the server source (`browserRequestProblem` and `tokenAuthProble
 
 | mode | check |
 |---|---|
-| `"local"` (default) | An `Origin` header is checked only **if present**; it must be a trusted bb app origin, otherwise 403. Methods other than GET, HEAD and OPTIONS need `content-type: application/json`, otherwise 415. |
-| `"token"` | `x-bb-plugin-token` header or `?token=`. Print the token with `bb plugin token <id>` (`--rotate` replaces it). |
+| `"local"` (default) | An `Origin` header is checked only **if present**; it must be a trusted VesnALIA app origin, otherwise 403. Methods other than GET, HEAD and OPTIONS need `content-type: application/json`, otherwise 415. |
+| `"token"` | `x-alia-plugin-token` header or `?token=`. Print the token with `alia plugin token <id>` (`--rotate` replaces it). |
 | `"none"` | No checks. Use only for webhooks that verify their own signature. |
 
 **`<audio src>` and `<img src>` work with `"local"`.** These are no-cors GETs,
 and browsers send no `Origin` header on them. With `crossOrigin` set, the
 `Origin` is the app origin, which is trusted. Same-origin cookies, if any, are
-sent. Use the **relative** URL, because the plugin UI runs on the bb app origin:
+sent. Use the **relative** URL, because the plugin UI runs on the VesnALIA app origin:
 
 ```tsx
 <audio controls preload="metadata" src={`/api/v1/plugins/meetings/http/audio?id=${encodeURIComponent(id)}`} />
@@ -358,7 +358,7 @@ Binary and Range example. It was verified in the fake host: a full GET returns
 `content-range: bytes 100-199/10000` and 100 bytes.
 
 ```ts
-bb.http.route("GET", "/audio", async (c) => {
+alia.http.route("GET", "/audio", async (c) => {
   const id = c.req.query("id");
   if (!id) return c.json({ error: "id required" }, 400);
   const hostId = await primaryHostId();
@@ -393,28 +393,28 @@ bb.http.route("GET", "/audio", async (c) => {
   return new Response(body, { status, headers });
 });
 
-bb.http.route("GET", "/screenshot", async (c) => {
+alia.http.route("GET", "/screenshot", async (c) => {
   const bytes: Uint8Array = /* ≤ 4 MiB via host */ new Uint8Array();
   return c.body(bytes, 200, { "content-type": "image/jpeg", "cache-control": "no-store" });
 });
 ```
 
 There is a built-in alternative with Range, ETag and 304 included:
-`bb.sdk.files.createPreview({ hostId?, rootPath /*absolute dir on that host*/, ttlMs? /*60_000–3_600_000, default 600_000*/ })`
+`alia.sdk.files.createPreview({ hostId?, rootPath /*absolute dir on that host*/, ttlMs? /*60_000–3_600_000, default 600_000*/ })`
 returns `{ baseUrl: "/api/v1/file-previews/<uuid>", expiresAtMs }`. Serve
 `${baseUrl}/${encodeURIComponent(relativeName)}`; the server streams it in 1 MiB
 host chunks with full Range support. Leases live in server memory and expire,
 or are lost on a server restart, so mint them on demand (for example from an
-RPC) and never store them. `bb.sdk.files.read({ hostId?, path, rootPath? })` and
+RPC) and never store them. `alia.sdk.files.read({ hostId?, path, rootPath? })` and
 `write(...)` also exist (write is limited to 25 MB). Omitting `hostId` means
 `primaryHostId`.
 
-## 7. CLI (`bb.cli.register(defineCli({...}))`)
+## 7. CLI (`alia.cli.register(defineCli({...}))`)
 
 ```ts
 declare function defineCli(spec: PluginCliSpec): PluginCliRegistration;
 interface PluginCliSpec {
-  name: string;                      // bb <name>; ^[a-z0-9-]+$; core names win (then only `bb plugin run <id>`)
+  name: string;                      // alia <name>; ^[a-z0-9-]+$; core names win (then only `alia plugin run <id>`)
   summary: string; description?: string;
   root?: PluginCliCommand;           // runs when no command named
   commands: Record<string, PluginCliCommand>;   // keys are invocation paths: "join", "transcript show"
@@ -457,8 +457,8 @@ declare class PluginCliError extends Error {
 ```
 
 ```ts
-import { PluginCliError, cliCommand, defineCli } from "@get-bb/plugin-sdk";   // server only (NOT in host graph)
-bb.cli.register(defineCli({
+import { PluginCliError, cliCommand, defineCli } from "@vesnalia/plugin-sdk";   // server only (NOT in host graph)
+alia.cli.register(defineCli({
   name: "meetings", summary: "Record and transcribe meetings",
   commands: {
     join: cliCommand({
@@ -494,17 +494,17 @@ Behavior, verified in the harness:
 * `PluginCliError` puts `"msg (hint)"` on stderr. With `--json`, stdout also gets
   `{"ok":false,"error":{"code","message","hint"}}`, and the exit code is the
   `exitCode` you set.
-* Any other throw gives `{ exitCode: 1, stderr: "bb <name> failed: …" }`.
+* Any other throw gives `{ exitCode: 1, stderr: "alia <name> failed: …" }`.
 * stdout and stderr together must be ≤ `PLUGIN_CLI_OUTPUT_MAX_BYTES` (1 MiB).
   Larger output is rejected whole with `plugin_cli_output_too_large`; it is
   never clipped. Paginate.
 * `run` executes in the **server process**. A path argument names a file on the
-  *invoking* machine. Use `bb.sdk.files` with an explicit `hostId`, not `node:fs`.
+  *invoking* machine. Use `alia.sdk.files` with an explicit `hostId`, not `node:fs`.
 * `ctx.threadId` and `ctx.projectId` are set when an agent thread runs the
   command. Put the command's docs in `skills/<name>/SKILL.md`, because agents
   learn commands from the generated plugin-commands skill.
 
-## 8. Agent tools and instructions (`bb.agents`)
+## 8. Agent tools and instructions (`alia.agents`)
 
 ```ts
 registerTool<Schema extends z.ZodType>(tool: {
@@ -513,7 +513,7 @@ registerTool<Schema extends z.ZodType>(tool: {
   instructions?: string;        // ≤ 4096 chars; appended to thread instructions while the tool is in the session
   presentation?: {              // timeline row
     label?: { pending: string; completed: string };      // each ≤ 80 chars, plain text
-    icon?: { glyph: string };   // host glyph ("Mic") or "<pluginId>/<name>" from bb.branding.experimental_icons
+    icon?: { glyph: string };   // host glyph ("Mic") or "<pluginId>/<name>" from alia.branding.experimental_icons
     suppress?: boolean;         // collapsed by default
     tint?: { light: string; dark: string };
   };
@@ -534,7 +534,7 @@ configure(provider: (context: PluginAgentConfigurationContext) =>
 ```
 
 ```ts
-bb.agents.registerTool({
+alia.agents.registerTool({
   name: "meetings_join",
   description: "Join a Zoom meeting with the notetaker bot, record and transcribe it.",
   presentation: { label: { pending: "Подключаю бота к встрече", completed: "Бот подключён к встрече" }, icon: { glyph: "Mic" } },
@@ -550,14 +550,14 @@ bb.agents.registerTool({
   started or resumed**, never in the middle of a session.
 * Without `configure`, every registered tool (and every manifest skill) is
   offered. That is how the fake host resolves it, and the docs agree.
-* Order of instructions: bb's own, then tool snippets, then
+* Order of instructions: VesnALIA's own, then tool snippets, then
   `contributeInstructions`, then `configure.instructions`, then user and
   workspace instructions.
 * Prefer `skills/` for standing knowledge. Use instructions only for live state.
 
-## 9. Posting into an existing thread (`bb.sdk.threads`)
+## 9. Posting into an existing thread (`alia.sdk.threads`)
 
-`bb.sdk` is bind-gated. The real server binds it before factories run, but
+`alia.sdk` is bind-gated. The real server binds it before factories run, but
 prefer using it from handlers.
 
 ```ts
@@ -595,11 +595,11 @@ type ThreadSendResult = { ok: true; delivery: "sent" } | { ok: true; delivery: "
 To notify the requesting thread without interrupting it, use `"queue-if-active"`:
 
 ```ts
-const res = await bb.sdk.threads.send({
+const res = await alia.sdk.threads.send({
   threadId: meeting.requestedByThreadId,
   mode: "queue-if-active",
   input: [{ type: "text", mentions: [], text:
-    `Встреча «${title}» (${id}) завершена: ${dur}, спикеры: ${names}. Транскрипт: \`bb meetings transcript ${id}\`.` }],
+    `Встреча «${title}» (${id}) завершена: ${dur}, спикеры: ${names}. Транскрипт: \`alia meetings transcript ${id}\`.` }],
 });
 // res.delivery === "sent" | "queued"
 ```
@@ -616,9 +616,9 @@ get(args: { threadId: string; include?: string; signal?: AbortSignal }): Promise
   * App route: `/threads/<threadId>` for the personal project, otherwise
     `/projects/<projectId>/threads/<threadId>`. `/threads/<id>` alone also
     resolves. Append `#msg=<seq>` to deep-link a message.
-  * In the frontend, use `useBbNavigate().toThread(threadId, { split?: boolean })`.
-  * For an absolute URL, use `bb.server.experimental_appUrl`, which is
-    `string | null` (`BB_APP_URL`). The loopback `bb.server.loopbackBaseUrl` is not for users.
+  * In the frontend, use `useAliaNavigate().toThread(threadId, { split?: boolean })`.
+  * For an absolute URL, use `alia.server.experimental_appUrl`, which is
+    `string | null` (`ALIA_APP_URL`). The loopback `alia.server.loopbackBaseUrl` is not for users.
   * Inside message input, a `{ kind: "thread" }` mention renders as a thread pill.
 * Other areas: `threads.spawn({ projectId, environment: { type: "project-default" }, prompt | input, title?, visibility?, pluginMetadata? })`,
   `threads.list`, `threads.timeline`, `threads.output`,
@@ -628,22 +628,22 @@ get(args: { threadId: string; include?: string; signal?: AbortSignal }): Promise
 ## 10. Background, lifecycle, status
 
 ```ts
-bb.background.service(name /*^[a-zA-Z0-9_-]+$*/, { start(signal: AbortSignal): void | Promise<void> }): void;
+alia.background.service(name /*^[a-zA-Z0-9_-]+$*/, { start(signal: AbortSignal): void | Promise<void> }): void;
 // starts after the factory; MUST resolve soon after `signal` aborts (5 s, else the plugin shows "degraded (service did not stop)").
 // A crash, including an uncaught error in a timer or EventEmitter, restarts it with capped exponential backoff.
-bb.background.schedule(name, cron /*5-field, server-local time*/, fn: () => void | Promise<void>): void;
-// durable row (pluginId, name); fires only while loaded; a throw only sets last_status/last_error (bb plugin list)
-bb.onDispose(hook: () => void | Promise<void>): void;   // LIFO; reload/disable/shutdown
-bb.onInstall(handler: () => void | Promise<void>): void; // once after a fresh install (≤ 30 s)
-bb.status.needsConfiguration(message: string): void;    // the ONLY status method
-bb.log.debug|info|warn|error(message: string): void;     // `bb plugin logs <id> -f`
-bb.events.on("thread.idle" | "thread.deleted" | …, handler)  // observe-only, fire-and-forget
+alia.background.schedule(name, cron /*5-field, server-local time*/, fn: () => void | Promise<void>): void;
+// durable row (pluginId, name); fires only while loaded; a throw only sets last_status/last_error (alia plugin list)
+alia.onDispose(hook: () => void | Promise<void>): void;   // LIFO; reload/disable/shutdown
+alia.onInstall(handler: () => void | Promise<void>): void; // once after a fresh install (≤ 30 s)
+alia.status.needsConfiguration(message: string): void;    // the ONLY status method
+alia.log.debug|info|warn|error(message: string): void;     // `alia plugin logs <id> -f`
+alia.events.on("thread.idle" | "thread.deleted" | …, handler)  // observe-only, fire-and-forget
 ```
 
 * There is no `degraded`, `error` or `ready` API. The host derives those states:
   `error` when the factory throws (30 s budget), `degraded` when a service
   ignores abort. To get `needs-configuration`, call
-  `bb.status.needsConfiguration(msg)` in the factory, or throw
+  `alia.status.needsConfiguration(msg)` in the factory, or throw
   `Object.assign(new Error(msg), { name: "NeedsConfigurationError" })` from a
   service. It is matched by name, so no import is needed. The state is cleared
   on the next load.
@@ -652,15 +652,15 @@ bb.events.on("thread.idle" | "thread.deleted" | …, handler)  // observe-only, 
 * Reload order: the candidate factory runs first. If it throws, the old
   generation stays. Then the old host artifact is disposed, services are
   aborted (5 s each), `onDispose` hooks run LIFO, in-flight handlers get 5 s,
-  and db handles close. **A `bb` object captured from an old load throws
-  `PluginContextStaleError`.** Never store `bb` in module scope.
+  and db handles close. **A `alia` object captured from an old load throws
+  `PluginContextStaleError`.** Never store `alia` in module scope.
 * An instance of a stopped or reloaded plugin can still be running in host
   workers until their next call. Detached processes (bots) survive reloads by design.
 
-## 11. Frontend (`app.tsx`, `@get-bb/plugin-sdk/app`)
+## 11. Frontend (`app.tsx`, `@vesnalia/plugin-sdk/app`)
 
 Exports: `definePluginApp`, `useRpc`, `useRealtime`,
-`useRealtimeConnectionState`, `useSettings`, `useBbContext`, `useBbNavigate`,
+`useRealtimeConnectionState`, `useSettings`, `useAliaContext`, `useAliaNavigate`,
 `useSdk`, `useComposer`, `useComposers`, `useEnvironmentProviders`,
 `experimental_Icon`, `experimental_ProviderIcon`, `Markdown`, `UrlLink`,
 `ThreadChat`, `ThreadTitle`, `experimental_copyToClipboard`,
@@ -675,7 +675,7 @@ declare const definePluginApp: (setup: (app: PluginAppBuilder) => void /* SYNC *
 interface PluginNavPanelRegistration {
   id: string;                 // [A-Za-z0-9_-]
   title: string;
-  icon: string;               // BbIconName; unknown → plugin branding
+  icon: string;               // AliaIconName; unknown → plugin branding
   path: string;               // route /plugins/<pluginId>/<path>/*  ([A-Za-z0-9_-])
   component: ComponentType<PluginNavPanelProps>;
   headerContent?: ComponentType<PluginNavPanelProps>;   // right side of the title bar
@@ -684,20 +684,20 @@ interface PluginNavPanelRegistration {
 }
 interface PluginNavPanelProps { subPath: string }      // route remainder after the panel root, "" at root
 interface PluginSettingsSectionRegistration { id: string; title?: string; description?: string; component: ComponentType<{}>; experimental_page?: "mobile" }
-interface BbNavigate {
+interface AliaNavigate {
   toThread(threadId: string, options?: { split?: boolean }): void;
   toProject(projectId: string): void;
   toPluginPanel(path: string, options?: { subPath?: string; replace?: boolean }): void;   // own panels only; back/forward walk subPaths
   toCompose(options?: { projectId?: string; initialPrompt?: string; focusPrompt?: boolean;
     placement?: { sectionId: string | null; pinned: boolean }; environmentId?: string; hostId?: string }): void;
   openThreadPanel(options: { actionId: string; title?: string; params?: JsonValue }): boolean;
-  openUrl(url: string): boolean;                          // http(s) via bb browser preference
+  openUrl(url: string): boolean;                          // http(s) via alia browser preference
   experimental_openFilePreview(o): boolean; experimental_openFileExternally(o): boolean;
   experimental_openTerminal(o: { terminalId: string }): Promise<boolean>;
 }
 useSettings(): { values: Record<string, string | number | boolean> | undefined /* non-secret only */; isLoading: boolean };
-useBbContext(): { projectId: string | null; threadId: string | null };
-useSdk(): PluginBrowserBbSdk;                             // same areas as bb.sdk, user session, stable reference
+useAliaContext(): { projectId: string | null; threadId: string | null };
+useSdk(): PluginBrowserAliaSdk;                             // same areas as alia.sdk, user session, stable reference
 experimental_copyToClipboard(content: { text: string; html?: string }): Promise<boolean>;
 ```
 
@@ -707,7 +707,7 @@ export default definePluginApp((app) => {
   app.slots.settingsSection({ id: "runtime", title: "Среда выполнения", description: "Проверка и установка", component: RuntimeSection });
 });
 function MeetingsPage({ subPath }: PluginNavPanelProps) {   // "" = list, "m/<id>" = detail
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const open = (id: string) => nav.toPluginPanel("meetings", { subPath: `m/${id}` });
   …
 }
@@ -715,7 +715,7 @@ function MeetingsPage({ subPath }: PluginNavPanelProps) {   // "" = list, "m/<id
 
 The settings sidebar shows the plugin when it declares settings descriptors OR
 registers a `settingsSection`. The section renders below the auto-generated
-descriptor form. The page frame of the scaffold matches bb's own pages:
+descriptor form. The page frame of the scaffold matches VesnALIA's own pages:
 `<div className="h-full min-h-0 flex-1 overflow-y-auto"><div className="mx-auto box-border w-full max-w-3xl px-4 pb-4 pt-3 md:px-5 md:pt-4">`.
 
 ### Icons (`components/ui/icon.tsx` re-exports `experimental_Icon`)
@@ -725,9 +725,9 @@ props `{ name: string; fallback?: string /*default "Zap"*/; className?; style?; 
 Names are matched **exactly** (case-sensitive), with no lucide aliases. The
 lookup order is: a name registered at runtime with
 `app.experimental_icons.register`, then a built-in, then
-`"<pluginId>/<name>"` from the manifest's `bb.branding.experimental_icons`,
+`"<pluginId>/<name>"` from the manifest's `alia.branding.experimental_icons`,
 then `fallback`, then Zap. `IconName` is just `string`, so tsc does NOT catch
-typos. The list below was extracted from the bb 0.46.0 app registry.
+typos. The list below was extracted from the VesnALIA 0.46.0 app registry.
 
 From the requested list:
 
@@ -803,7 +803,7 @@ For missing glyphs there are two options:
   DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription,
   DialogClose; a bottom drawer on compact screens), `responsive-overlay.tsx`,
   `icon.tsx`, and `lib/utils.ts` (`cn`).
-* Add more with `npx shadcn add @bb/<name>` (registry pinned to desktop-v0.46.0
+* Add more with `npx shadcn add @alia-core/<name>` (registry pinned to desktop-v0.46.0
   in `components.json`). About 46 items: select, dropdown-menu, tabs, table,
   badge, tooltip, alert-dialog, slider, progress, skeleton, empty-state, …
   Run `npm install` afterwards.
@@ -814,12 +814,12 @@ For missing glyphs there are two options:
   radix such as `react-checkbox` and `react-slot`, lucide if you add it) is
   bundled from **dependencies**.
 * `Markdown` (`{ content: string; className? }`) renders like a chat message.
-  `UrlLink` (`<a>` props plus `href`) opens via bb's browser preference.
+  `UrlLink` (`<a>` props plus `href`) opens via VesnALIA's browser preference.
 
 ## 12. Manifest, build, embedding, skills
 
 ```jsonc
-"bb": {
+"alia": {
   "name": "Meetings", "description": "…",
   "branding": {
     "icon": "./assets/icon.svg",          // OR a host icon name like "Mic"; "<pluginId>/<x>" is REFUSED here
@@ -836,16 +836,16 @@ For missing glyphs there are two options:
 * The SVG `branding.icon` is validated (well-formed, `<svg>` root, no doctype),
   hash-served, and drawn as a currentColor **mask**, so its colors are ignored.
   Ship a transparent glyph (gigaam: 24×24 stroke icon).
-* Plugin id = package name minus `bb-plugin-`, so `meetings`. It namespaces
+* Plugin id = package name minus `alia-plugin-`, so `meetings`. It namespaces
   routes, storage, settings and the CLI.
-* `engines.bbPluginSdk` must be satisfiable: managed installs refuse a newer
-  SDK or a different major. `bb plugin types` repins the SDK and the shimmed
+* `engines.aliaPluginSdk` must be satisfiable: managed installs refuse a newer
+  SDK or a different major. `alia plugin types` repins the SDK and the shimmed
   devDependencies.
-* `bb plugin build [path]` needs no server. It writes `dist/server.js` (SDK and
+* `alia plugin build [path]` needs no server. It writes `dist/server.js` (SDK and
   better-sqlite3 external, zod/hono/everything else bundled), `dist/host.js`
   and `dist/app.js`/`app.css`, each with a `*.meta.json`. `dist/` is
-  gitignored. Path installs (`bb plugin install .`) load `server.ts` directly;
-  `bb plugin dev` rebuilds app and host and reloads on save. Git installs run
+  gitignored. Path installs (`alia plugin install .`) load `server.ts` directly;
+  `alia plugin dev` rebuilds app and host and reloads on save. Git installs run
   `npm install --omit=dev --omit=optional`, then build. So **every package
   imported at runtime by server, host or app must be in `dependencies`** (zod,
   ical.js, hono if imported at runtime). Types and shims go in devDependencies.
@@ -859,7 +859,7 @@ For missing glyphs there are two options:
   "run `npm run embed`" in the test name. The host writes the string into
   `dataDir` at runtime and uses the hash as an install-spec id. Scripts:
   `"embed": "node scripts/embed-python.mjs"`, `"typecheck": "tsc -p ."`,
-  `"test": "vitest run"`, `"build": "bb plugin build"`. Meetings mirrors this
+  `"test": "vitest run"`, `"build": "alia plugin build"`. Meetings mirrors this
   with `scripts/embed-runtime.mjs`, which writes `src/generated/runtime-files.ts`.
 * Skills: `skills/<name>/SKILL.md` with frontmatter `name:` (kebab-case,
   unique) and `description:` (when to use it). It is injected into agent
@@ -868,22 +868,22 @@ For missing glyphs there are two options:
 
 ## 13. Testing
 
-### Server: `createFakePluginHost` (`@get-bb/plugin-sdk/testing`; needs devDependency `better-sqlite3`)
+### Server: `createFakePluginHost` (`@vesnalia/plugin-sdk/testing`; needs devDependency `better-sqlite3`)
 
 ```ts
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-const { bb, harness } = createFakePluginHost({
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+const { alia, harness } = createFakePluginHost({
   pluginId: "meetings",
   settings: { notifyThread: true },               // pre-seeded stored values (secrets too)
   dataDir: "/tmp/x", appUrl: null,
-  sdk: {                                          // stubs; any unstubbed bb.sdk call THROWS naming the path
+  sdk: {                                          // stubs; any unstubbed alia.sdk call THROWS naming the path
     system: { config: async () => ({ primaryHostId: "host-1" }) as never },
     threads: { send: async () => ({ ok: true, delivery: "sent" }) as never, get: async () => makeThreadResponse({ id: "thr_1" }) },
   },
   experimental_callHostRpc: async ({ method, input, hostId, signal }) => { /* fake host entry */ return { ok: true }; },
   experimental_declaredIconNames: ["video"],       // needed if tools use "meetings/video"
 });
-await plugin(bb);
+await plugin(alia);
 await harness.behavior.callRpc("meetings.list", null);                 // wire semantics; rejects with code/issues
 const res = await harness.behavior.fetchHttp("GET", "/audio?id=m1", { headers: { range: "bytes=0-99" } }); // real Hono ctx; auth NOT enforced
 await harness.behavior.runCli(["join", "https://zoom.us/j/1", "--json"]);   // → { exitCode, stdout, stderr, error? }
@@ -899,11 +899,11 @@ harness.inspection.sdk.callsTo("threads.send"); // [[args]]
 harness.inspection.realtimeSignals;             // [{ channel, payload }]
 harness.inspection.needsConfigurationMessages; harness.inspection.logEntries; harness.inspection.registrations; // .httpRoutes .agentTools[].inputSchema .cli .services …
 harness.inspection.sdk.stub("projects.list", async () => []);
-await harness.lifecycle.dispose();              // aborts services, LIFO hooks, closes db, poisons bb
+await harness.lifecycle.dispose();              // aborts services, LIFO hooks, closes db, poisons alia
 await harness.lifecycle.reload(plugin);         // keeps settings/kv/db
 ```
 
-### Host entry: `experimental_createHostEntryHarness` (`@get-bb/plugin-sdk/testing/host`)
+### Host entry: `experimental_createHostEntryHarness` (`@vesnalia/plugin-sdk/testing/host`)
 
 ```ts
 const h = experimental_createHostEntryHarness(hostEntry, {
@@ -917,7 +917,7 @@ h.experimental_lifecycleSignal;               // aborted by dispose
 await h.experimental_dispose();
 ```
 
-### Frontend: `@get-bb/plugin-sdk/testing/app` (vitest + jsdom)
+### Frontend: `@vesnalia/plugin-sdk/testing/app` (vitest + jsdom)
 
 This needs devDependencies `@testing-library/react`, `jsdom`, `react` and
 `react-dom`, none of which are installed yet. It also needs a vitest
@@ -940,7 +940,7 @@ slot.inspection.rpcCalls; slot.inspection.navigateCalls; slot.lifecycle.unmount(
   tsconfig `include` lists `server.ts`, `host.ts`, `src` and `test`.
 * `test/server.test.ts`: a `load({ state, settings, primaryHostId })` helper
   builds `createFakePluginHost` with a `system.config` stub and an
-  `experimental_callHostRpc` switch on `method`. It runs `await plugin(bb)`
+  `experimental_callHostRpc` switch on `method`. It runs `await plugin(alia)`
   and asserts on registrations, `runCli` output and `experimental_hostRpcCalls`.
 * `test/supervisor.test.ts`: tests the pure class against temp dirs and the
   host entry through `experimental_createHostEntryHarness` with
@@ -949,7 +949,7 @@ slot.inspection.rpcCalls; slot.inspection.navigateCalls; slot.lifecycle.unmount(
   imports the `.mjs` with `// @ts-expect-error`.
 * `test/e2e.test.ts`: `describe.runIf(process.env.GIGAAM_E2E === "1")` for slow real installs.
 * Fidelity limits: HTTP auth is not enforced, services and schedules don't
-  auto-run, `bb.sdk` is always bound, storage is process-local, and crashes,
+  auto-run, `alia.sdk` is always bound, storage is process-local, and crashes,
   idle eviction and reconnects are not simulated. Check those live with
-  `bb plugin dev`, `bb plugin list`, `bb plugin logs meetings -f`, and
+  `alia plugin dev`, `alia plugin list`, `alia plugin logs meetings -f`, and
   `curl -X POST -H 'content-type: application/json' -d 'null' http://127.0.0.1:<port>/api/v1/plugins/meetings/rpc/<method>`.

@@ -1,8 +1,8 @@
-// Folder view: a Finder-like panel tab for one folder on a BB machine —
+// Folder view: a Finder-like panel tab for one folder on a VesnALIA machine —
 // grid with image thumbnails or list, breadcrumbs, in-panel preview of
 // images/PDF/video/audio, download, add to chat and copy path.
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {useBbContext, useBbNavigate, useComposer, useRpc, type PluginThreadPanelProps} from '@get-bb/plugin-sdk/app';
+import {useAliaContext, useAliaNavigate, useComposer, useRpc, type PluginThreadPanelProps} from '@vesnalia/plugin-sdk/app';
 import type {explorerContract} from './explorer-contract.js';
 import {encodeReference} from './reference.js';
 import {ExplorerIcon, fileIcon} from './explorer-icons.js';
@@ -13,7 +13,7 @@ import {assetUrl, crumbs, fileKind, joinPath} from './folder-links.js';
 
 type Entry = {name: string; kind: 'file' | 'directory' | 'other'};
 type Params = {hostId: string; path: string; error?: string};
-const VIEW_KEY = 'bb:file-gateway:folder-view';
+const VIEW_KEY = 'alia:file-gateway:folder-view';
 
 function isParams(value: unknown): value is Params {
   return !!value && typeof value === 'object' && typeof (value as Params).hostId === 'string' && typeof (value as Params).path === 'string';
@@ -38,9 +38,9 @@ async function download(url: string, name: string) {
 
 export function FolderView({params}: PluginThreadPanelProps) {
   const rpc = useRpc<typeof explorerContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const composer = useComposer();
-  const {threadId} = useBbContext();
+  const {threadId} = useAliaContext();
   const initial = isParams(params) ? params : null;
   const [path, setPath] = useState(initial?.path ?? '/');
   const hostId = initial?.hostId ?? '';

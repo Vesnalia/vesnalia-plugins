@@ -121,7 +121,7 @@ function EmptyState({
   if (starting !== null) {
     return (
       <div className="flex size-full flex-col items-center justify-center gap-3 p-4 text-center">
-        <span className="bb-ft-spinner" aria-hidden="true" />
+        <span className="alia-ft-spinner" aria-hidden="true" />
         <p className="text-xs text-muted-foreground" aria-live="polite">
           Starting a shell in <span className="text-foreground">{starting}</span>…
         </p>
@@ -139,7 +139,7 @@ function EmptyState({
       {/* Centred while it fits, filling and scrolling once it does not. */}
       <div className="flex min-h-0 w-full min-w-0 max-w-md flex-col gap-3">
         <div className="flex shrink-0 items-start gap-3 px-1">
-          <span className="bb-ft-empty-mark" aria-hidden="true">
+          <span className="alia-ft-empty-mark" aria-hidden="true">
             <Icon name="Terminal" className="size-4" />
           </span>
           <div className="flex min-w-0 flex-col gap-0.5">
@@ -156,17 +156,17 @@ function EmptyState({
           showHosts={showHosts}
           onPick={onPick}
           fill
-          className="bb-ft-empty-picker min-h-0 flex-1"
+          className="alia-ft-empty-picker min-h-0 flex-1"
         />
-        <p className="bb-ft-hints shrink-0" aria-hidden="true">
+        <p className="alia-ft-hints shrink-0" aria-hidden="true">
           <span>
-            <kbd className="bb-ft-kbd">Ctrl+`</kbd> show/hide
+            <kbd className="alia-ft-kbd">Ctrl+`</kbd> show/hide
           </span>
           <span>
-            <kbd className="bb-ft-kbd">Ctrl+Shift+`</kbd> shell here
+            <kbd className="alia-ft-kbd">Ctrl+Shift+`</kbd> shell here
           </span>
           <span>
-            <kbd className="bb-ft-kbd">{MOD}F</kbd> find
+            <kbd className="alia-ft-kbd">{MOD}F</kbd> find
           </span>
         </p>
       </div>
@@ -189,7 +189,7 @@ export function FloatingTerminal() {
   const rpc = rpcRef.current;
 
   /**
-   * Below bb's own compact-viewport breakpoint the window becomes a sheet: it
+   * Below VesnALIA's own compact-viewport breakpoint the window becomes a sheet: it
    * fills the viewport minus one inset, styles.css owns the geometry, and drag
    * and resize are never installed. Everything else about it is unchanged.
    */
@@ -228,7 +228,7 @@ export function FloatingTerminal() {
   /** The label of a directory a shell is being started in, while it is. */
   const [starting, setStarting] = useState<string | null>(null);
   /**
-   * BB appends the plugin stylesheet to <head> without awaiting its load, so
+   * VesnALIA appends the plugin stylesheet to <head> without awaiting its load, so
    * anything rendered before it arrives paints unstyled — a full-width block of
    * raw markup at the end of <body> that snaps away when the CSS lands. Staying
    * out of the DOM until the window is first opened removes that window
@@ -333,7 +333,7 @@ export function FloatingTerminal() {
   /**
    * Pull the server's view of the world. Its tab list is the only thing that
    * evicts a ghost — a tab whose shell died while the window was closed, or
-   * that another bb client closed. Ordering is handled by the snapshot's
+   * that another VesnALIA client closed. Ordering is handled by the snapshot's
    * revision, so a slow reply simply loses to a newer one.
    */
   const sync = useCallback(async () => {
@@ -945,7 +945,7 @@ export function FloatingTerminal() {
     pump?.focus();
   }, [activePump]);
 
-  // -------------------------------------------------------- commands from bb
+  // -------------------------------------------------------- commands from VesnALIA
 
   const handleCommand = useCallback(
     (command: WindowCommand) => {
@@ -1056,12 +1056,12 @@ export function FloatingTerminal() {
   return (
     <TooltipProvider delayDuration={400} skipDelayDuration={250}>
       {/* Only the sheet gets a scrim. The desktop window is deliberately
-          non-modal — bb stays usable behind it — but at this width the sheet
+          non-modal — VesnALIA stays usable behind it — but at this width the sheet
           covers nearly everything, so a blurred backdrop is what makes it read
           as one layer above the app rather than a panel welded to it. */}
       {sheet ? (
         <div
-          className="bb-ft-backdrop"
+          className="alia-ft-backdrop"
           data-state={open && armed ? "open" : "closed"}
           aria-hidden="true"
           onPointerDown={hide}
@@ -1070,7 +1070,7 @@ export function FloatingTerminal() {
       <div
         ref={rootRef}
         role="dialog"
-        // Non-modal on purpose: the point of this window is that bb stays
+        // Non-modal on purpose: the point of this window is that VesnALIA stays
         // usable behind it, so it must not read as a focus trap.
         aria-modal="false"
         aria-label="Floating terminal"
@@ -1080,13 +1080,13 @@ export function FloatingTerminal() {
         data-maximized={maximized ? "" : undefined}
         onKeyDown={onWindowKeyDown}
         // Stacking lives in styles.css, where the backdrop and window are kept in
-        // one place relative to bb's own layers.
-        className="bb-ft-window fixed"
+        // one place relative to VesnALIA's own layers.
+        className="alia-ft-window fixed"
       >
-        <div className="bb-ft-surface flex size-full flex-col overflow-hidden text-card-foreground">
+        <div className="alia-ft-surface flex size-full flex-col overflow-hidden text-card-foreground">
           <div
             ref={headerRef}
-            data-bb-ft-handle=""
+            data-alia-ft-handle=""
             // The title-bar convention from every desktop OS. Interactive
             // children (tabs, buttons, the picker) stop the double-click the
             // same way they stop the drag.
@@ -1167,7 +1167,7 @@ export function FloatingTerminal() {
 
           <div
             ref={bodyRef}
-            className="bb-ft-body relative min-h-0 flex-1"
+            className="alia-ft-body relative min-h-0 flex-1"
             style={surface === null ? undefined : { backgroundColor: surface }}
           >
             {state.tabs.map((tab) => (
@@ -1247,8 +1247,8 @@ export function FloatingTerminal() {
                   </Pill>
                 ) : null}
                 {starting !== null ? (
-                  <span className="bb-ft-pill bb-ft-pill-quiet" aria-live="polite">
-                    <span className="bb-ft-spinner bb-ft-spinner-small" aria-hidden="true" />
+                  <span className="alia-ft-pill alia-ft-pill-quiet" aria-live="polite">
+                    <span className="alia-ft-spinner alia-ft-spinner-small" aria-hidden="true" />
                     Starting {starting}…
                   </span>
                 ) : null}
@@ -1312,8 +1312,8 @@ export function FloatingTerminal() {
                   if (node === null) edgeRefs.current.delete(edge);
                   else edgeRefs.current.set(edge, node);
                 }}
-                className="bb-ft-edge"
-                data-bb-ft-edge={edge}
+                className="alia-ft-edge"
+                data-alia-ft-edge={edge}
                 aria-hidden="true"
               />
             ))}

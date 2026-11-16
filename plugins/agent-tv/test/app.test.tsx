@@ -6,11 +6,11 @@ import { act, fireEvent } from "@testing-library/react";
 import {
   loadPluginApp,
   renderSlot,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import type {
   PluginSidebarProject,
   PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { FleetFrame } from "../lib/fleet";
 
 function thread(over: Partial<PluginSidebarThread> = {}): PluginSidebarThread {
@@ -300,7 +300,7 @@ describe("the wall", () => {
       }),
     );
     expect(slot.queryByText("Fix the flaky test")).toBeNull();
-    expect(window.localStorage.getItem("bb-plugin-agent-tv:dismissed-quiet")).toBe(
+    expect(window.localStorage.getItem("alia-plugin-agent-tv:dismissed-quiet")).toBe(
       '["thr_a"]',
     );
 
@@ -318,7 +318,7 @@ describe("the wall", () => {
         name: "Dismiss Fix the flaky test from Agent TV",
       }),
     ).toBeNull();
-    expect(window.localStorage.getItem("bb-plugin-agent-tv:dismissed-quiet")).toBe(
+    expect(window.localStorage.getItem("alia-plugin-agent-tv:dismissed-quiet")).toBe(
       "[]",
     );
     slot.lifecycle.unmount();
@@ -512,7 +512,7 @@ describe("the wall", () => {
     fireEvent.keyDown(header, { key: "ArrowRight", shiftKey: true });
     await vi.waitFor(() => expect(popout.getAttribute("style")).toContain("32px"));
     expect(
-      window.localStorage.getItem("bb-plugin-agent-tv:popout-offset"),
+      window.localStorage.getItem("alia-plugin-agent-tv:popout-offset"),
     ).toContain("32");
 
     // Staying reachable when the window shrinks is geometry, and jsdom has no

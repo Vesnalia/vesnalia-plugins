@@ -362,12 +362,12 @@
 /* ---------------------------------------------------------------------------
    Skeletons
    ------------------------------------------------------------------------ */
-.bb-skeleton {
+.alia-skeleton {
   background: var(--triage-dim);
-  animation: bb-skeleton-pulse 1.8s ease-in-out infinite;
+  animation: alia-skeleton-pulse 1.8s ease-in-out infinite;
 }
 
-@keyframes bb-skeleton-pulse {
+@keyframes alia-skeleton-pulse {
   0%,
   100% {
     opacity: 1;
@@ -385,7 +385,7 @@
 /* ---------------------------------------------------------------------------
    Segmented control
    ------------------------------------------------------------------------ */
-.bb-segmented {
+.alia-segmented {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -396,12 +396,12 @@
   padding: 3px;
 }
 
-.bb-segmented[data-size="sm"] {
+.alia-segmented[data-size="sm"] {
   border-radius: 8px;
   padding: 2px;
 }
 
-.bb-segmented-indicator {
+.alia-segmented-indicator {
   position: absolute;
   z-index: 0;
   top: 3px;
@@ -415,12 +415,12 @@
     width 220ms var(--triage-ease-out);
 }
 
-.bb-segmented[data-size="sm"] .bb-segmented-indicator {
+.alia-segmented[data-size="sm"] .alia-segmented-indicator {
   top: 2px;
   bottom: 2px;
 }
 
-.bb-segmented-item {
+.alia-segmented-item {
   position: relative;
   z-index: 1;
   display: inline-flex;
@@ -445,31 +445,31 @@
     transform 140ms var(--triage-ease-out);
 }
 
-.bb-segmented[data-size="sm"] .bb-segmented-item {
+.alia-segmented[data-size="sm"] .alia-segmented-item {
   height: 26px;
   padding-inline: 9px;
 }
 
-.bb-segmented-item[data-state="active"] {
+.alia-segmented-item[data-state="active"] {
   color: var(--foreground);
 }
 
-.bb-segmented-item:active {
+.alia-segmented-item:active {
   transform: scale(0.97);
 }
 
-.bb-segmented-item:focus-visible {
+.alia-segmented-item:focus-visible {
   outline: 1px solid var(--ring);
   outline-offset: 1px;
 }
 
-.bb-segmented-icon {
+.alia-segmented-icon {
   width: 14px;
   height: 14px;
   flex: 0 0 auto;
 }
 
-.bb-segmented-count {
+.alia-segmented-count {
   color: currentcolor;
   font-size: 10.5px;
   opacity: 0.55;
@@ -478,7 +478,7 @@
 /* ---------------------------------------------------------------------------
    Status dots — colour is the category, motion is "right now"
    ------------------------------------------------------------------------ */
-.bb-status-dot {
+.alia-status-dot {
   display: inline-block;
   width: 8px;
   height: 8px;
@@ -487,20 +487,20 @@
   background: color-mix(in oklch, var(--ink) 30%, transparent);
 }
 
-.bb-status-dot[data-size="sm"] {
+.alia-status-dot[data-size="sm"] {
   width: 6px;
   height: 6px;
 }
 
-.bb-status-dot[data-tone="ongoing"] {
+.alia-status-dot[data-tone="ongoing"] {
   background: var(--primary);
 }
 
-.bb-status-dot[data-tone="ongoing"][data-pulse] {
-  animation: bb-status-pulse 1.9s var(--triage-ease-out) infinite;
+.alia-status-dot[data-tone="ongoing"][data-pulse] {
+  animation: alia-status-pulse 1.9s var(--triage-ease-out) infinite;
 }
 
-@keyframes bb-status-pulse {
+@keyframes alia-status-pulse {
   0% {
     box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 34%, transparent);
   }
@@ -510,25 +510,25 @@
   }
 }
 
-.bb-status-dot[data-tone="pending"] {
+.alia-status-dot[data-tone="pending"] {
   background: transparent;
   box-shadow: inset 0 0 0 1.5px color-mix(in oklch, var(--ink) 36%, transparent);
 }
 
-.bb-status-dot[data-tone="scheduled"] {
+.alia-status-dot[data-tone="scheduled"] {
   background: var(--warning);
 }
 
-.bb-status-dot[data-tone="unread"] {
+.alia-status-dot[data-tone="unread"] {
   background: var(--primary);
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 16%, transparent);
 }
 
-.bb-status-dot[data-tone="done"] {
+.alia-status-dot[data-tone="done"] {
   background: var(--success);
 }
 
-.bb-status-dot[data-tone="danger"] {
+.alia-status-dot[data-tone="danger"] {
   background: var(--destructive);
 }
 
@@ -705,7 +705,7 @@
   cursor: pointer;
 }
 
-.triage-notification-row-main > .bb-status-dot {
+.triage-notification-row-main > .alia-status-dot {
   margin-top: 5px;
 }
 
@@ -925,13 +925,13 @@
 /* ---------------------------------------------------------------------------
    Forms and dialogs
    ------------------------------------------------------------------------ */
-.bb-field {
+.alia-field {
   display: grid;
   min-width: 0;
   gap: 6px;
 }
 
-.bb-field-label {
+.alia-field-label {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -940,26 +940,26 @@
   font-weight: 500;
 }
 
-.bb-field-optional {
+.alia-field-optional {
   color: var(--muted-foreground);
   font-size: 11px;
   font-weight: 400;
 }
 
-.bb-field-hint {
+.alia-field-hint {
   color: var(--muted-foreground);
   font-size: 11.5px;
   line-height: 1.5;
 }
 
-.bb-field-row {
+.alia-field-row {
   display: grid;
   gap: 12px;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: start;
 }
 
-.bb-field-group {
+.alia-field-group {
   display: grid;
   gap: 10px;
   border: 1px solid var(--triage-line);
@@ -968,17 +968,17 @@
   padding: 12px;
 }
 
-.bb-field-group-header {
+.alia-field-group-header {
   display: grid;
   gap: 2px;
 }
 
-.bb-field-group-title {
+.alia-field-group-title {
   font-size: 0.78125rem;
   font-weight: 600;
 }
 
-.bb-field-group-description {
+.alia-field-group-description {
   color: var(--muted-foreground);
   font-size: 11.5px;
 }
@@ -1217,14 +1217,14 @@
   font-weight: 400;
 }
 
-.bb-time-picker {
+.alia-time-picker {
   display: grid;
   grid-template-columns: 52px 8px 52px minmax(0, 1fr);
   align-items: center;
   gap: 5px;
 }
 
-.bb-time-picker-field {
+.alia-time-picker-field {
   height: 32px;
   min-width: 0;
   padding-inline: 5px;
@@ -1233,27 +1233,27 @@
   appearance: textfield;
 }
 
-.bb-time-picker-field::-webkit-inner-spin-button,
-.bb-time-picker-field::-webkit-outer-spin-button {
+.alia-time-picker-field::-webkit-inner-spin-button,
+.alia-time-picker-field::-webkit-outer-spin-button {
   margin: 0;
   appearance: none;
 }
 
-.bb-time-picker-separator {
+.alia-time-picker-separator {
   color: var(--muted-foreground);
   text-align: center;
 }
 
-.bb-time-picker-period {
+.alia-time-picker-period {
   width: 100%;
 }
 
-.bb-time-picker-period .bb-segmented-item {
+.alia-time-picker-period .alia-segmented-item {
   flex: 1;
   padding-inline: 6px;
 }
 
-.bb-time-picker[data-invalid] .bb-time-picker-field {
+.alia-time-picker[data-invalid] .alia-time-picker-field {
   border-color: var(--destructive);
 }
 
@@ -1287,7 +1287,7 @@
     pointer-events: auto;
   }
 
-  .bb-segmented-item:not([data-state="active"]):hover {
+  .alia-segmented-item:not([data-state="active"]):hover {
     color: color-mix(in oklch, var(--foreground) 72%, transparent);
   }
 
@@ -1364,7 +1364,7 @@
 }
 
 @media (max-width: 640px) {
-  .bb-field-row,
+  .alia-field-row,
   .triage-detail-grid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1377,21 +1377,21 @@
   .triage-card,
   .triage-column,
   .triage-column-empty,
-  .bb-segmented-item,
+  .alia-segmented-item,
   .triage-card-actions {
     transition-duration: 1ms;
   }
 
-  .bb-segmented-indicator {
+  .alia-segmented-indicator {
     transition: none;
   }
 
-  .bb-skeleton,
-  .bb-status-dot[data-pulse] {
+  .alia-skeleton,
+  .alia-status-dot[data-pulse] {
     animation: none;
   }
 
-  .bb-status-dot[data-tone="ongoing"][data-pulse] {
+  .alia-status-dot[data-tone="ongoing"][data-pulse] {
     box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 20%, transparent);
   }
 }
@@ -1400,7 +1400,7 @@
 /* ---------------------------------------------------------------------------
    Sidebar list
 
-   An accessory above BB's own thread list, so every value is one step quieter
+   An accessory above ALIA's own thread list, so every value is one step quieter
    than the board's: the heading is a label rather than a title, rows are a
    single line, and nothing is allowed to widen a 200px sidebar.
    ------------------------------------------------------------------------ */

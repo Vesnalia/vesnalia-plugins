@@ -15,37 +15,37 @@ function ruleBody(selector: string): string {
   return match[1];
 }
 
-describe("BB Office floating surface", () => {
+describe("VesnALIA Office floating surface", () => {
   test("registers an independent app overlay and portals the office", () => {
     expect(app).toContain("app.slots.experimental_appOverlay(");
     expect(app).not.toContain("experimental_threadList");
     expect(app).not.toContain("<Original />");
     expect(app).toContain("createPortal(");
     expect(app).toContain("document.body");
-    expect(app).not.toContain('className="bb-office-sidebar"');
-    expect(css).not.toContain(".bb-office-sidebar");
+    expect(app).not.toContain('className="alia-office-sidebar"');
+    expect(css).not.toContain(".alia-office-sidebar");
   });
 
   test("lets the page receive input outside the floating widget", () => {
-    expect(ruleBody(".bb-office-floating-root")).toMatch(
+    expect(ruleBody(".alia-office-floating-root")).toMatch(
       /pointer-events\s*:\s*none/,
     );
-    expect(ruleBody(".bb-office-floating-root")).toMatch(/z-index\s*:\s*35/);
-    expect(ruleBody(".bb-office-floating-widget")).toMatch(
+    expect(ruleBody(".alia-office-floating-root")).toMatch(/z-index\s*:\s*35/);
+    expect(ruleBody(".alia-office-floating-widget")).toMatch(
       /pointer-events\s*:\s*auto/,
     );
-    expect(ruleBody(".bb-office-floating-widget")).toMatch(
+    expect(ruleBody(".alia-office-floating-widget")).toMatch(
       /position\s*:\s*fixed/,
     );
   });
 
   test("uses anchor-preserving animation, resizing, and overlay-only controls", () => {
-    expect(ruleBody(".bb-office-floating-widget")).toMatch(
+    expect(ruleBody(".alia-office-floating-widget")).toMatch(
       /transform 240ms/,
     );
-    expect(widget).toContain('className="bb-office-floating-resize"');
-    expect(widget).not.toContain('className="bb-office-floating-toolbar"');
-    expect(css).not.toContain(".bb-office-floating-toolbar");
+    expect(widget).toContain('className="alia-office-floating-resize"');
+    expect(widget).not.toContain('className="alia-office-floating-toolbar"');
+    expect(css).not.toContain(".alia-office-floating-toolbar");
   });
 
   test("keeps the floating office off compact screens", () => {
@@ -58,7 +58,7 @@ describe("BB Office floating surface", () => {
     expect(widget).toContain('data-collapsed-kind={collapsedKind}');
     expect(widget).toContain('collapsedKind === "floorplan"');
     expect(widget).toContain('collapsedKind !== "hidden"');
-    expect(widget).not.toContain("bb-office-floating-count");
-    expect(css).not.toContain(".bb-office-floating-count");
+    expect(widget).not.toContain("alia-office-floating-count");
+    expect(css).not.toContain(".alia-office-floating-count");
   });
 });

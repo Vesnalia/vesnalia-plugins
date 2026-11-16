@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { definePluginApp, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 
 type ProfileImportStatus = {
@@ -20,7 +20,7 @@ type UrlState =
 
 function VsCodeServerContent({ threadId }: { threadId: string | null }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [state, setState] = useState<UrlState>({ kind: "loading" });
   const [isHeaderExpanded, setIsHeaderExpanded] = useState(false);
 
@@ -102,7 +102,7 @@ function VsCodeServerContent({ threadId }: { threadId: string | null }) {
 
   const detail =
     state.kind === "missing"
-      ? "Set VS Code Server URL in this plugin’s settings, set VSCODE_SERVER_URL for BB’s server process, or detect a local server on port 8080 or 8000."
+      ? "Set VS Code Server URL in this plugin’s settings, set VSCODE_SERVER_URL for VesnALIA’s server process, or detect a local server on port 8080 or 8000."
       : state.kind === "error"
         ? state.message
         : state.kind === "detecting"

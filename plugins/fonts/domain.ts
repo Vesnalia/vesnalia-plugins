@@ -292,7 +292,7 @@ export function buildTypographyPlan(
     }
   }
   if (ui.lineHeight !== null) {
-    const themeNormal = Number.parseFloat(themeProperties["--bb-interface-line-height"] ?? "")
+    const themeNormal = Number.parseFloat(themeProperties["--alia-interface-line-height"] ?? "")
       || Number.parseFloat(themeProperties["--leading-normal"] ?? "")
       || 1.5;
     const scale = ui.lineHeight / themeNormal;

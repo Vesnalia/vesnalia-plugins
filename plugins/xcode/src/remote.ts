@@ -1,11 +1,11 @@
 /**
  * Tracked builds on another Mac: the server's half.
  *
- * When a thread's checkout lives on an enrolled Mac, `xcode_build`, `bb xcode
- * run` and `bb xcode stop` reach that Mac's `bb.host` worker (`host.ts`)
+ * When a thread's checkout lives on an enrolled Mac, `xcode_build`, `alia xcode
+ * run` and `alia xcode stop` reach that Mac's `alia.host` worker (`host.ts`)
  * through this module. The store, the engine and every surface stay here, so
  * a remote build is an ordinary run row — with `hostId` set — and the live
- * row, `xcode_status` and `bb xcode wait` read it exactly as they read a
+ * row, `xcode_status` and `alia xcode wait` read it exactly as they read a
  * local one.
  *
  * The run is recorded BEFORE the Mac is asked to start it, under an id minted
@@ -34,7 +34,7 @@
 import { randomBytes } from "node:crypto";
 import { posix } from "node:path";
 
-import type { ExperimentalHostClient } from "@get-bb/plugin-sdk";
+import type { ExperimentalHostClient } from "@vesnalia/plugin-sdk";
 
 import type { Engine } from "./engine";
 import { RANK, type Run } from "./model";
@@ -63,7 +63,7 @@ const SUMMARY_TIMEOUT_MS = 4 * 60_000;
 const PRUNE_TIMEOUT_MS = 5 * 60_000;
 /**
  * How long an unconfirmed start may go unheard-of on its Mac before it is
- * taken to have never arrived. Past the start call's own timeout plus bb's
+ * taken to have never arrived. Past the start call's own timeout plus VesnALIA's
  * cancellation grace, so a start still in flight is never written off.
  */
 export const UNCONFIRMED_START_GRACE_MS = 2 * 60_000;
@@ -95,7 +95,7 @@ export interface RemoteTarget {
 
 export interface RemoteBuildRequest {
   argv: readonly string[];
-  /** The thread's checkout, as bb's environment names it on that Mac. */
+  /** The thread's checkout, as VesnALIA's environment names it on that Mac. */
   root: string;
   cwd?: string;
 }
@@ -252,7 +252,7 @@ export class RemoteBuilds {
           ok: false,
           message:
             `Could not confirm the build started on ${target.machineName}: ${reason}. ` +
-            `If it did, it is tracked as ${runId}; check with: bb xcode status.`,
+            `If it did, it is tracked as ${runId}; check with: VesnALIA xcode status.`,
         };
       }
       this.reached(target.hostId);

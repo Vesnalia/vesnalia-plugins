@@ -14,7 +14,7 @@ export interface ScopeOption {
   kind: "project" | "home" | "worktree";
 }
 
-/** BB icon names; kept as a plain string so lib/ stays free of UI imports. */
+/** VesnALIA icon names; kept as a plain string so lib/ stays free of UI imports. */
 export interface ScopeSection {
   id: "here" | "recent" | "projects" | "machines";
   heading: string;
@@ -96,11 +96,11 @@ export function buildSections(
 }
 
 /**
- * A worktree's tab label from its branch. bb names the branches it creates
- * `bb/<slug>-<thread id>`; the prefix and the id are bookkeeping, the slug is
+ * A worktree's tab label from its branch. VesnALIA names the branches it creates
+ * `alia/<slug>-<thread id>`; the prefix and the id are bookkeeping, the slug is
  * the name. Any other branch is shown as it is.
  */
 export function worktreeLabel(branch: string): string {
-  const slug = branch.replace(/^bb\//, "").replace(/-thr_[a-z0-9]+$/i, "");
+  const slug = branch.replace(/^alia\//, "").replace(/-thr_[a-z0-9]+$/i, "");
   return slug === "" ? branch : slug;
 }

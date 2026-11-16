@@ -1,6 +1,6 @@
-// bb-plugin-moa-provider — frontend: the settings page, which edits the presets that
+// alia-plugin-moa-provider — frontend: the settings page, which edits the presets that
 // appear as models of the "Mixture of Agents" provider, and the advisor panel
-// embed (src/advisor-panel.tsx). Each slot uses BB's own provider/model
+// embed (src/advisor-panel.tsx). Each slot uses VesnALIA's own provider/model
 // picker, so any installed provider — Claude Code, Codex, Pi, ACP agents,
 // plugin providers — can be an advisor or the aggregator.
 import { useCallback, useEffect, useState } from "react";
@@ -11,7 +11,7 @@ import {
   experimental_ProviderModelPicker as ProviderModelPicker,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type { Fanout, Preset, PresetStore, Slot } from "./src/presets";
 import {
@@ -361,7 +361,7 @@ function PresetsSection() {
     // Only a new saved store resets the form.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saved]);
-  // Another window or `bb moa-provider` changed the presets: pick them up unless
+  // Another window or `alia moa-provider` changed the presets: pick them up unless
   // there are unsaved edits here.
   useRealtime("presets-changed", () => {
     if (!dirty) refetch();

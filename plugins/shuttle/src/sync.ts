@@ -14,7 +14,7 @@ import { autoPlacesTaken, startAutoReview } from "./reviews";
 import { myReviewOf, shortKey } from "./prs";
 
 const DAY = 86_400_000;
-/** How long an auto review waits for bb to have a machine or environment for it before it counts as failed. */
+/** How long an auto review waits for VesnALIA to have a machine or environment for it before it counts as failed. */
 const AUTO_WAIT_MS = 3_600_000;
 const REFRESH_CAP = 30;
 /** Linked and tracked PRs read at once. */
@@ -619,7 +619,7 @@ export async function runAutoReviews(ctx: Ctx, serverId: string, signal?: AbortS
   for (const idle of candidates.idle) noteIdle(ctx, idle);
   for (const pr of candidates.due) {
     if (signal?.aborted) break;
-    // A start waits on bb, and the rules may change meanwhile, so each one reads them again.
+    // A start waits on VesnALIA, and the rules may change meanwhile, so each one reads them again.
     const now = ctx.config().autoReview;
     if (!now.enabled || ctx.settings().pauseAutomations) break;
     if (skipsPr(now, pr.key)) continue;

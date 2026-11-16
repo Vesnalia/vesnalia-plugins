@@ -17,7 +17,7 @@ describe("eval scoring", () => {
   });
   it("credits a ::iris file card on its own line", () => {
     const file: Case = { id: "f", category: "status", prompt: "", expect: [], tools: ["directive", "iris_pin"] };
-    expect(score(file, 'Here it is.\n::iris{file="$BB_THREAD_STORAGE/fleet.iris"}\n', [], 5)).toMatchObject({ hasIris: true, expected: true, tools: ["directive"] });
+    expect(score(file, 'Here it is.\n::iris{file="$ALIA_THREAD_STORAGE/fleet.iris"}\n', [], 5)).toMatchObject({ hasIris: true, expected: true, tools: ["directive"] });
     expect(score(file, 'Write `::iris{file="x"}` to show it.', [], 5).hasIris).toBe(false);
   });
   it("still marks markdown tables and broken blocks", () => {
@@ -30,6 +30,6 @@ describe("eval scoring", () => {
 describe("eval scoring of directives", () => {
   it("ignores a directive shown inside a code block", () => {
     const file: Case = { id: "f", category: "status", prompt: "", expect: [], tools: ["directive"] };
-    expect(score(file, 'Like this:\n```md\n::iris{file="$BB_THREAD_STORAGE/x.iris"}\n```\n', [], 5).hasIris).toBe(false);
+    expect(score(file, 'Like this:\n```md\n::iris{file="$ALIA_THREAD_STORAGE/x.iris"}\n```\n', [], 5).hasIris).toBe(false);
   });
 });

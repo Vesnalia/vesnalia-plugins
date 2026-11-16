@@ -1,11 +1,11 @@
-// bb-plugin-section-load-more — backend entry.
+// alia-plugin-section-load-more — backend entry.
 //
 // The plugin is frontend-only; the server declares the two settings the
 // sidebar controller reads through useSettings().
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     visibleThreads: {
       type: "number",
       label: "Threads shown per section",

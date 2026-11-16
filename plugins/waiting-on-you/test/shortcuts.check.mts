@@ -13,7 +13,7 @@ const press = (code: string, keys: { meta?: boolean; ctrl?: boolean; alt?: boole
 // macOS: "mod" is ⌘.
 assert.equal(jumpNumber(press("Digit3", { meta: true, alt: true }), "mod-alt", true), 3);
 assert.equal(jumpNumber(press("Numpad7", { meta: true, alt: true }), "mod-alt", true), 7);
-assert.equal(jumpNumber(press("Digit3", { meta: true }), "mod-alt", true), null, "⌘3 alone is bb's");
+assert.equal(jumpNumber(press("Digit3", { meta: true }), "mod-alt", true), null, "⌘3 alone is VesnALIA's");
 assert.equal(jumpNumber(press("Digit3", { meta: true, alt: true, shift: true }), "mod-alt", true), null, "extra keys don't match");
 assert.equal(jumpNumber(press("Digit0", { meta: true, alt: true }), "mod-alt", true), null, "0 is not a row");
 assert.equal(jumpNumber(press("KeyA", { meta: true, alt: true }), "mod-alt", true), null);

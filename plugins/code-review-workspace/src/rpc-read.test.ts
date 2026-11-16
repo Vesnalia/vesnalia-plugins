@@ -1,12 +1,12 @@
 import { test, expect } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { testStore } from "./test-store.test-support";
 
 test("seed then read", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1 });
   await store.savePatch("pr-1", "diff --git a/a.ts b/a.ts\n");
   const list = await harness.behavior.callRpc("listReviews", null);
@@ -16,9 +16,9 @@ test("seed then read", async () => {
 });
 
 test("the page receives only the current run's finding records and comparison head; list rows stay light", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   try {
     await store.saveReview({ targetKey: "r", kind: "pr", headSha: "new", status: "ready", createdAt: 1 });
     await store.savePatch("r", "diff --git a/a.ts b/a.ts\n");

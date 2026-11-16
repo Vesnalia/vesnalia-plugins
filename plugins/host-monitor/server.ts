@@ -1,6 +1,6 @@
 import { setTimeout as delay } from "node:timers/promises";
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import {
   hostContract,
@@ -104,8 +104,8 @@ export function compactFleetSnapshot(current: Fleet) {
   };
 }
 
-export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> {
-  const settings = bb.settings.define({
+export default async function hostMonitorPlugin(alia: AliaPluginApi): Promise<void> {
+  const settings = alia.settings.define({
     cpuWarningPercent: {
       type: "select" as const,
       label: "CPU critical threshold (%)",
@@ -129,15 +129,15 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
     },
   });
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, hostMonitorMigrations);
+  const db = alia.storage.database();
+  alia.storage.migrate(db, hostMonitorMigrations);
   const store = new HostMonitorStore(db);
-  const hostClient = bb.hosts.experimental_client({ contract: hostContract });
+  const hostClient = alia.hosts.experimental_client({ contract: hostContract });
   const processConfirmations = new ProcessConfirmationStore();
   const processOperations = new HostProcessOperationGate();
   const processLifecycleController = new AbortController();
   const processListInFlight = new Map<string, Promise<ProcessListResult>>();
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     processLifecycleController.abort(new DOMException("Host Monitor is shutting down.", "AbortError"));
     processOperations.close();
     processConfirmations.clear();
@@ -163,7 +163,7 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
   }
 
   function publish(hostIds: readonly string[]): void {
-    bb.realtime.publish(REALTIME_CHANNEL, {
+    alia.realtime.publish(REALTIME_CHANNEL, {
       hostIds: [...hostIds],
       generatedAtMs: Date.now(),
     });
@@ -216,7 +216,7 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
 
   async function listHosts(signal?: AbortSignal): Promise<MachineHost[]> {
     if (hostListInFlight !== null) return hostListInFlight;
-    const pending = bb.sdk.hosts
+    const pending = alia.sdk.hosts
       .list(signal === undefined ? undefined : { signal })
       .then((available) => available.map(projectHost));
     hostListInFlight = pending;
@@ -257,7 +257,7 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
         records.set(host.id, { snapshot, receivedAtMs, error: null, sampling: false });
       } catch (error) {
         if (signal?.aborted) return;
-        bb.log.warn(`Could not sample host ${host.id}: ${errorMessage(error)}`);
+        alia.log.warn(`Could not sample host ${host.id}: ${errorMessage(error)}`);
         records.set(host.id, {
           snapshot: previous.snapshot,
           receivedAtMs: previous.receivedAtMs,
@@ -315,7 +315,7 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
       AbortSignal.timeout(PROCESS_HOST_CALL_TIMEOUT_MS),
       processLifecycleController.signal,
     ]);
-    const availableHosts = await bb.sdk.hosts.list({ signal });
+    const availableHosts = await alia.sdk.hosts.list({ signal });
     return availableHosts.find((host) => host.id === hostId) ?? null;
   }
 
@@ -343,7 +343,7 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
     try {
       machine = await enrolledProcessHost(hostId);
     } catch (error) {
-      bb.log.warn(`Could not resolve process host ${hostId}: ${errorMessage(error)}`);
+      alia.log.warn(`Could not resolve process host ${hostId}: ${errorMessage(error)}`);
       return { outcome: "unavailable", message: "Process information is temporarily unavailable from this machine." };
     }
     if (machine === null) return { outcome: "not-found", message: "That enrolled machine no longer exists." };
@@ -366,7 +366,7 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
         processes: result.processes,
       };
     } catch (error) {
-      bb.log.warn(`Could not inspect processes on host ${hostId}: ${errorMessage(error)}`);
+      alia.log.warn(`Could not inspect processes on host ${hostId}: ${errorMessage(error)}`);
       return unsupportedProcessError(error)
         ? { outcome: "unsupported", message: "Process inspection is unsupported on this operating system." }
         : { outcome: "unavailable", message: "Process information is temporarily unavailable from this machine." };
@@ -390,9 +390,9 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
     }
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async saveThresholds(next) {
-      await bb.sdk.plugins.updateSettings({
+      await alia.sdk.plugins.updateSettings({
         pluginId: "host-monitor",
         values: {
           cpuWarningPercent: String(next.cpu),
@@ -446,7 +446,7 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
       try {
         machine = await enrolledProcessHost(hostId);
       } catch (error) {
-        bb.log.warn(`Could not resolve process host ${hostId}: ${errorMessage(error)}`);
+        alia.log.warn(`Could not resolve process host ${hostId}: ${errorMessage(error)}`);
         return { outcome: "unavailable" as const, message: "The machine could not be reached for a safety check." };
       }
       if (machine === null) return { outcome: "not-found" as const, message: "That enrolled machine no longer exists." };
@@ -475,7 +475,7 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
           process: inspected.process,
         };
       } catch (error) {
-        bb.log.warn(`Could not prepare process ${pid} on host ${hostId}: ${errorMessage(error)}`);
+        alia.log.warn(`Could not prepare process ${pid} on host ${hostId}: ${errorMessage(error)}`);
         return { outcome: "unavailable" as const, message: "The process could not be rechecked on this machine." };
       }
     },
@@ -492,12 +492,12 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
       try {
         machine = await enrolledProcessHost(confirmation.hostId);
       } catch (error) {
-        bb.log.warn(`Could not resolve confirmed process host ${confirmation.hostId}: ${errorMessage(error)}`);
-        bb.log.warn(`Process control host=${confirmation.hostId} pid=${confirmation.pid} mode=${confirmation.mode} outcome=preflight-failed`);
+        alia.log.warn(`Could not resolve confirmed process host ${confirmation.hostId}: ${errorMessage(error)}`);
+        alia.log.warn(`Process control host=${confirmation.hostId} pid=${confirmation.pid} mode=${confirmation.mode} outcome=preflight-failed`);
         return { outcome: "signal-failed" as const, message: "The machine could not be reached, so no stop request was sent." };
       }
       if (machine === null || machine.status !== "connected") {
-        bb.log.warn(`Process control host=${confirmation.hostId} pid=${confirmation.pid} mode=${confirmation.mode} outcome=preflight-offline`);
+        alia.log.warn(`Process control host=${confirmation.hostId} pid=${confirmation.pid} mode=${confirmation.mode} outcome=preflight-offline`);
         return { outcome: "signal-failed" as const, message: "The machine is offline, so no stop request was sent." };
       }
       const input: { pid: number; identity: string; mode: ProcessTerminationMode } = {
@@ -512,8 +512,8 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
           { hostId: confirmation.hostId, signal: processHostSignal(PROCESS_TERMINATION_HOST_CALL_TIMEOUT_MS) },
         ));
         const auditMessage = `Process control host=${confirmation.hostId} pid=${confirmation.pid} mode=${confirmation.mode} outcome=${result.outcome}`;
-        if (result.outcome === "signal-sent" || result.outcome === "still-running") bb.log.info(auditMessage);
-        else bb.log.warn(auditMessage);
+        if (result.outcome === "signal-sent" || result.outcome === "still-running") alia.log.info(auditMessage);
+        else alia.log.warn(auditMessage);
         if (result.outcome === "signal-sent" || result.outcome === "still-running") {
           return {
             ...result,
@@ -524,10 +524,10 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
         return result;
       } catch (error) {
         if (error instanceof ProcessOperationBusyError) {
-          bb.log.warn(`Process control host=${confirmation.hostId} pid=${confirmation.pid} mode=${confirmation.mode} outcome=busy`);
+          alia.log.warn(`Process control host=${confirmation.hostId} pid=${confirmation.pid} mode=${confirmation.mode} outcome=busy`);
           return { outcome: "signal-failed" as const, message: "This machine is busy with another process operation. Refresh and try again." };
         }
-        bb.log.warn(`Process stop outcome is unknown for PID ${confirmation.pid} on host ${confirmation.hostId}: ${errorMessage(error)}`);
+        alia.log.warn(`Process stop outcome is unknown for PID ${confirmation.pid} on host ${confirmation.hostId}: ${errorMessage(error)}`);
         return { outcome: "outcome-unknown" as const, message: "The connection dropped during the stop request. Refresh before trying again." };
       }
     },
@@ -538,12 +538,12 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
     },
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "host-monitor",
     summary: "Open Host Monitor or read its bounded resource snapshot",
     commands: [
-      { name: "open", summary: "Open Host Monitor or one enrolled host", usage: "bb host-monitor open [host-id]" },
-      { name: "snapshot", summary: "Print bounded host metrics as JSON", usage: "bb host-monitor snapshot [--pretty]" },
+      { name: "open", summary: "Open Host Monitor or one enrolled host", usage: "alia host-monitor open [host-id]" },
+      { name: "snapshot", summary: "Print bounded host metrics as JSON", usage: "alia host-monitor snapshot [--pretty]" },
     ],
     async run(argv, context) {
       const [command, ...args] = argv;
@@ -564,7 +564,7 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
       if (command !== "snapshot" || args.some((argument) => argument !== "--pretty")) {
         return {
           exitCode: 1,
-          stderr: "Usage: bb host-monitor open [host-id] | bb host-monitor snapshot [--pretty]",
+          stderr: "Usage: VesnALIA host-monitor open [host-id] | VesnALIA host-monitor snapshot [--pretty]",
         };
       }
       if (hosts.length === 0) await refreshAll(context.signal);
@@ -605,15 +605,15 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
       publish([hostId]);
     }
   });
-  bb.onDispose(unsubscribeWorkerExit);
+  alia.onDispose(unsubscribeWorkerExit);
 
-  bb.background.service("machine-sampler", {
+  alia.background.service("machine-sampler", {
     async start(signal) {
-      const unsubscribeHost = bb.sdk.subscribe({
+      const unsubscribeHost = alia.sdk.subscribe({
         event: "host:changed",
         callback: requestRefresh,
       });
-      const unsubscribeRealtime = bb.sdk.subscribe({
+      const unsubscribeRealtime = alia.sdk.subscribe({
         event: "realtime:connection",
         callback: (event) => {
           if (event.state === "connected" && event.reconnected) requestRefresh();
@@ -626,7 +626,7 @@ export default async function hostMonitorPlugin(bb: BbPluginApi): Promise<void> 
             await refreshAll(signal);
           } catch (error) {
             if (!signal.aborted) {
-              bb.log.warn(`Could not refresh machines: ${errorMessage(error)}`);
+              alia.log.warn(`Could not refresh machines: ${errorMessage(error)}`);
             }
           }
           if (signal.aborted) break;

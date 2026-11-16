@@ -1,4 +1,4 @@
-// bb-plugin-server-status — host health in the sidebar footer.
+// alia-plugin-server-status — host health in the sidebar footer.
 //
 //   icon   — a host button next to the gear, the palette and the bug
 //   ring   — RAM usage: muted, amber from 80%, red above 90%
@@ -17,7 +17,7 @@
 // A content script has no React hooks, so useRealtime is out of reach: the
 // script polls the `state` rpc on the same 5-second tick the backend samples
 // metrics on, and stays silent while the tab is hidden.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import type { Snapshot } from "./server";
 
 const PLUGIN_ID = "server-status";
@@ -44,7 +44,7 @@ const DANGER = 90;
 // Above it, memory no longer fits in RAM, and that is worth saying in words.
 const SWAP_NOTE = 10;
 
-const STYLE_ID = "bb-server-status-style";
+const STYLE_ID = "alia-server-status-style";
 
 // --- data -------------------------------------------------------------------
 
@@ -265,47 +265,47 @@ const CSS = `
   line-height: 1.35;
   font-variant-numeric: tabular-nums;
 }
-.bb-ss-title {
+.alia-ss-title {
   color: var(--muted-foreground, #9a9a9a);
   font-size: 0.6875rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-.bb-ss-host {
+.alia-ss-host {
   margin-top: 0.125rem;
   color: var(--muted-foreground, #9a9a9a);
   font-size: 0.75rem;
 }
-.bb-ss-metric { margin-top: 0.6875rem; }
-.bb-ss-head {
+.alia-ss-metric { margin-top: 0.6875rem; }
+.alia-ss-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 0.5rem;
 }
-.bb-ss-name { font-weight: 500; }
-.bb-ss-mount {
+.alia-ss-name { font-weight: 500; }
+.alia-ss-mount {
   margin-left: 0.25rem;
   color: var(--muted-foreground, #9a9a9a);
   font-weight: 400;
   font-size: 0.75rem;
 }
-.bb-ss-value[data-level="warn"] { color: var(--warning, #e3a008); }
-.bb-ss-value[data-level="danger"] { color: var(--destructive, #e5484d); }
-.bb-ss-bar {
+.alia-ss-value[data-level="warn"] { color: var(--warning, #e3a008); }
+.alia-ss-value[data-level="danger"] { color: var(--destructive, #e5484d); }
+.alia-ss-bar {
   position: relative;
   height: 3px;
   margin-top: 0.3125rem;
   border-radius: 999px;
 }
-.bb-ss-track {
+.alia-ss-track {
   position: absolute;
   inset: 0;
   border-radius: inherit;
   background: var(--muted-foreground, #8a8a8a);
   opacity: 0.22;
 }
-.bb-ss-fill {
+.alia-ss-fill {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -315,14 +315,14 @@ const CSS = `
   /* The same duration as the ring: two scales move in step. */
   transition: width 300ms ease, background-color 300ms ease;
 }
-.bb-ss-fill[data-level="warn"] { background: var(--warning, #e3a008); }
-.bb-ss-fill[data-level="danger"] { background: var(--destructive, #e5484d); }
-.bb-ss-detail {
+.alia-ss-fill[data-level="warn"] { background: var(--warning, #e3a008); }
+.alia-ss-fill[data-level="danger"] { background: var(--destructive, #e5484d); }
+.alia-ss-detail {
   margin-top: 0.25rem;
   color: var(--muted-foreground, #9a9a9a);
   font-size: 0.75rem;
 }
-.bb-ss-note {
+.alia-ss-note {
   margin-top: 0.3125rem;
   padding: 0.3125rem 0.4375rem;
   border-radius: calc(var(--radius, 0.5rem) - 0.25rem);
@@ -330,15 +330,15 @@ const CSS = `
   color: var(--warning, #e3a008);
   font-size: 0.75rem;
 }
-.bb-ss-foot {
+.alia-ss-foot {
   margin-top: 0.75rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--border, rgba(128, 128, 128, 0.3));
   color: var(--muted-foreground, #9a9a9a);
   font-size: 0.75rem;
 }
-.bb-ss-foot div + div { margin-top: 0.125rem; }
-.bb-ss-stale {
+.alia-ss-foot div + div { margin-top: 0.125rem; }
+.alia-ss-stale {
   margin-top: 0.375rem;
   color: var(--destructive, #e5484d);
   font-size: 0.75rem;
@@ -362,24 +362,24 @@ class MetricRow {
   private readonly detail: HTMLDivElement;
 
   constructor(name: string) {
-    this.root = div("bb-ss-metric");
-    const head = div("bb-ss-head");
+    this.root = div("alia-ss-metric");
+    const head = div("alia-ss-head");
     const title = document.createElement("span");
-    title.className = "bb-ss-name";
+    title.className = "alia-ss-name";
     title.textContent = name;
     this.mount = document.createElement("span");
-    this.mount.className = "bb-ss-mount";
+    this.mount.className = "alia-ss-mount";
     title.append(this.mount);
     this.value = document.createElement("span");
-    this.value.className = "bb-ss-value";
+    this.value.className = "alia-ss-value";
     head.append(title, this.value);
 
-    const bar = div("bb-ss-bar");
-    this.fill = div("bb-ss-fill");
+    const bar = div("alia-ss-bar");
+    this.fill = div("alia-ss-fill");
     this.fill.style.width = "0%";
-    bar.append(div("bb-ss-track"), this.fill);
+    bar.append(div("alia-ss-track"), this.fill);
 
-    this.detail = div("bb-ss-detail");
+    this.detail = div("alia-ss-detail");
     this.root.append(head, bar, this.detail);
   }
 
@@ -430,25 +430,25 @@ class Panel {
     node.setAttribute("aria-label", "Server status");
     node.tabIndex = -1;
 
-    this.host = div("bb-ss-host");
+    this.host = div("alia-ss-host");
     this.cpu = new MetricRow("CPU");
     this.memory = new MetricRow("Memory");
     this.swap = new MetricRow("Swap");
     this.disk = new MetricRow("Disk");
-    this.swapNote = div("bb-ss-note");
+    this.swapNote = div("alia-ss-note");
     this.swapNote.hidden = true;
 
-    const foot = div("bb-ss-foot");
+    const foot = div("alia-ss-foot");
     this.loadAvg = div("");
     this.uptime = div("");
     this.booted = div("");
     foot.append(this.loadAvg, this.uptime, this.booted);
 
-    this.stale = div("bb-ss-stale", "The last poll failed — these numbers may be stale.");
+    this.stale = div("alia-ss-stale", "The last poll failed — these numbers may be stale.");
     this.stale.hidden = true;
 
     node.append(
-      div("bb-ss-title", "Server status"),
+      div("alia-ss-title", "Server status"),
       this.host,
       this.cpu.root,
       this.memory.root,

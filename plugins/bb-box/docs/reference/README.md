@@ -2,11 +2,11 @@
 
 # Reference
 
-Made from the code, so it says what this version of bb-box does.
+Made from the code, so it says what this version of alia-box does.
 
-- [CLI](cli.md): every `bb box` command, with its arguments and options.
+- [CLI](cli.md): every `alia box` command, with its arguments and options.
 - [Agent tools](tools.md): every tool a thread's agent gets, with its parameters.
 - [Configuration](configuration.md): the configuration document, and each backend's fields.
 - [Kinds and sizes](kinds.md): the kinds, the backends that offer them, and their sizes.
-- [Health checks](checks.md): every check `bb box doctor` can report.
+- [Health checks](checks.md): every check `alia box doctor` can report.
 - [Files](files.md): the panel's calls for a box's own files.

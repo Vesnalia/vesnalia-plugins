@@ -4,7 +4,7 @@
 // sent on the newer revision, where they would overwrite that device's folders.
 import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 import app from "../app";
 import { defaultLayout, type FolderLayout } from "../lib/folders";

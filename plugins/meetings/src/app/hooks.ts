@@ -2,7 +2,7 @@
 // visibility, reconnect handling and async actions with pending/error state.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
-import { useRealtimeConnectionState } from "@get-bb/plugin-sdk/app";
+import { useRealtimeConnectionState } from "@vesnalia/plugin-sdk/app";
 import { messageOf } from "./rpc";
 
 /** A ref that always holds the latest value (for callbacks fired from timers). */

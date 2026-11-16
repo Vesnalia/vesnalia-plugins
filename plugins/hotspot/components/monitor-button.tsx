@@ -1,12 +1,12 @@
 // "Activity Monitor ↗": opens the OS's own process monitor on the machine
-// running BB's server. The server says whether there is one (status.monitor)
+// running VesnALIA's server. The server says whether there is one (status.monitor)
 // and does the opening; this only asks and shows a failure beside itself.
 //
 // The app opens on the server's machine, not the device in hand, so the
 // button is hidden under a coarse pointer (a phone or tablet), and its
 // tooltip names the machine.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { Status, rpcContract } from "../lib/contract";
 import { cn } from "../lib/utils";
 import { Icon } from "./ui/icon";

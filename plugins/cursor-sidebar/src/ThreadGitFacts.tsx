@@ -1,4 +1,4 @@
-import { experimental_useRpcKeyedQuery } from "@get-bb/plugin-sdk/app";
+import { experimental_useRpcKeyedQuery } from "@vesnalia/plugin-sdk/app";
 import { z } from "zod";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -94,7 +94,7 @@ export function ThreadGitFacts({
 }) {
   const keys = environmentId === null ? [] : [environmentId];
   const git = experimental_useRpcKeyedQuery({
-    pluginId: "bb--git",
+    pluginId: "alia--git",
     contract: gitStatus,
     method: "status",
     keys,

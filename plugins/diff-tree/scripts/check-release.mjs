@@ -8,14 +8,14 @@ import { resolve } from 'node:path';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const read = path => readFileSync(resolve(root, path), 'utf8');
 const pkg = JSON.parse(read('package.json'));
-const id = pkg.name.split('/').pop().replace(/^bb-plugin-/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const id = pkg.name.split('/').pop().replace(/^alia-plugin-/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 assert.equal(id, 'diff-tree');
 assert.match(pkg.version, /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/);
 assert.equal(pkg.license, 'MIT');
-assert.ok(pkg.engines.bb && pkg.engines.bbPluginSdk);
-assert.ok(pkg.bb.description.length <= 140, 'Keep the listing hook below 140 characters');
+assert.ok(pkg.engines.alia && pkg.engines.aliaPluginSdk);
+assert.ok(pkg.alia.description.length <= 140, 'Keep the listing hook below 140 characters');
 for (const key of ['server', 'app', 'host']) {
-  assert.ok(existsSync(resolve(root, pkg.bb[key])), `Missing ${key} source`);
+  assert.ok(existsSync(resolve(root, pkg.alia[key])), `Missing ${key} source`);
 }
 for (const file of ['dist/server.js', 'dist/server.meta.json', 'dist/app.js', 'dist/app.css', 'dist/app.meta.json', 'dist/host.js', 'dist/host.meta.json', 'assets/icon.svg', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'README.md', 'PLUGIN_OVERVIEW.md', 'CHANGELOG.md']) {
   assert.ok(existsSync(resolve(root, file)), `Missing ${file}; run npm run build first`);
@@ -28,7 +28,7 @@ assert.ok(!/<\/?[a-z]|!\[|^\||^\s*- \[[ x]\]/im.test(overview), 'Overview cannot
 for (const link of overview.matchAll(/\]\(([^)]+)\)/g)) assert.ok(link[1].startsWith('https://'), 'Overview links must use absolute HTTPS URLs');
 const listing = JSON.parse(read('release/marketplace-listing.json'));
 assert.equal(listing.id, id);
-assert.equal(listing.displayName, pkg.bb.name);
+assert.equal(listing.displayName, pkg.alia.name);
 assert.equal(listing.category, 'code-and-reviews');
 assert.ok(read('CHANGELOG.md').includes(`## ${pkg.version}`), 'Add the version to CHANGELOG.md');
 

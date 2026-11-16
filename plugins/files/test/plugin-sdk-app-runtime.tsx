@@ -11,13 +11,13 @@ interface ThreadPanelRegistration {
 
 const captured = { threadPanelActions: [] as ThreadPanelRegistration[], fileOpeners: [] as FileOpenerRegistration[] };
 let rpcHandlers: Record<string, (input: unknown) => unknown> = {};
-let bbContext = { projectId: null as string | null, threadId: null as string | null };
+let aliaContext = { projectId: null as string | null, threadId: null as string | null };
 
 export function resetPluginRuntime() {
   captured.threadPanelActions.length = 0;
   captured.fileOpeners.length = 0;
   rpcHandlers = {};
-  bbContext = { projectId: null, threadId: null };
+  aliaContext = { projectId: null, threadId: null };
 }
 
 export function getCapturedPluginApp() {
@@ -76,12 +76,12 @@ export function Markdown({ content, className }: { content: string; className?: 
   );
 }
 
-export function setBbContext(context: { projectId: string | null; threadId: string | null }) {
-  bbContext = context;
+export function setAliaContext(context: { projectId: string | null; threadId: string | null }) {
+  aliaContext = context;
 }
 
-export function useBbContext() {
-  return bbContext;
+export function useAliaContext() {
+  return aliaContext;
 }
 
 export function RuntimeProvider({ children }: { children: ReactNode }) {

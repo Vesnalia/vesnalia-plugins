@@ -7,7 +7,7 @@ import type { KataIssue, KataShowIssueResponse } from "./kata-types.ts";
 import { createKataService } from "./kata-service.ts";
 import type { Binding } from "./workspace.ts";
 
-const scratch = { id: 12, uid: "01M3475DE16AW4481B4VA2RFHX", name: "bb-plugin-kata-scratch" };
+const scratch = { id: 12, uid: "01M3475DE16AW4481B4VA2RFHX", name: "alia-plugin-kata-scratch" };
 const grippify = { id: 5, uid: "01KGRIPPIFY000000000000000", name: "grippify" };
 
 const issue = (short: string, over: Partial<KataIssue> = {}): KataIssue => ({
@@ -15,7 +15,7 @@ const issue = (short: string, over: Partial<KataIssue> = {}): KataIssue => ({
   uid: `01M348TF0GJTPAX1XGRC60${short.toUpperCase().padStart(4, "0")}`,
   project_id: 12,
   short_id: short,
-  qualified_id: `bb-plugin-kata-scratch#${short}`,
+  qualified_id: `alia-plugin-kata-scratch#${short}`,
   title: `issue ${short}`,
   body: "",
   status: "open",
@@ -60,7 +60,7 @@ function setup(bound: Binding["kataProject"] = null) {
       forProject: async () => binding(bound),
     },
     actor: async () => "tester",
-    bbProjects: async () => [],
+    aliaProjects: async () => [],
     included: { get: () => [], set: async (u) => u },
     threadLink: { get: async () => ({}), set: async () => {}, remove: async () => {} },
   });
@@ -74,7 +74,7 @@ test("list: flags map onto the daemon query; output sorted by priority", async (
   const r = await run([
     "list",
     "--project",
-    "bb-plugin-kata-scratch",
+    "alia-plugin-kata-scratch",
     "--status",
     "all",
     "--priority",
@@ -155,7 +155,7 @@ test("create: flags map onto the create body and headers; prints the qualified i
       "key-12345",
     ],
   });
-  assert.equal(r.stdout, "bb-plugin-kata-scratch#new1\n");
+  assert.equal(r.stdout, "alia-plugin-kata-scratch#new1\n");
   assert.equal((await run(["create", "x", "--priority", "7"])).exitCode, 1);
 });
 
@@ -180,7 +180,7 @@ test("close: reason flags, validation before the daemon, dry run", async () => {
     method: "issueAction",
     args: [12, "aaa1", "close", { actor: "tester", reason: "done", message: "x".repeat(45), evidence: [{ type: "test", command: "npm test" }], dry_run: true }],
   });
-  assert.match(dry.stdout ?? "", /dry run: bb-plugin-kata-scratch#aaa1 would close as done/);
+  assert.match(dry.stdout ?? "", /dry run: alia-plugin-kata-scratch#aaa1 would close as done/);
   // duplicate carries its target as evidence
   await run(["close", "aaa1", "--duplicate-of", "bbb2", "-m", "same as the other one, really"]);
   assert.deepEqual((calls.at(-2)!.args[3] as { evidence: unknown }).evidence, [{ type: "duplicate-of", issue_ref: "bbb2" }]);
@@ -197,7 +197,7 @@ test("refs: qualified and ULID refs pick their own project", async () => {
   calls.length = 0;
   await run(["priority", "aaa1", "-"]);
   assert.deepEqual(calls[0], { method: "editIssue", args: [12, "aaa1", { actor: "tester", clear_priority: true }] });
-  const conflict = await run(["show", "grippify#06fh", "--project", "bb-plugin-kata-scratch"]);
+  const conflict = await run(["show", "grippify#06fh", "--project", "alia-plugin-kata-scratch"]);
   assert.equal(conflict.exitCode, 1);
   assert.match(conflict.stderr ?? "", /belongs to grippify/);
 });
@@ -206,7 +206,7 @@ test("help renders at every level", async () => {
   const { run } = setup();
   const top = await run(["--help"]);
   assert.equal(top.exitCode, 0);
-  assert.match(top.stdout ?? "", /bb kata close/);
+  assert.match(top.stdout ?? "", /alia kata close/);
   const list = await run(["list", "--help"]);
   assert.match(list.stdout ?? "", /--unowned/);
   assert.match(list.stdout ?? "", /max 500/);

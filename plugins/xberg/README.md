@@ -1,6 +1,6 @@
-# Xberg for BB
+# Xberg for VesnALIA
 
-Lets [BB](https://getbb.app) agents read PDFs, Word, Excel and PowerPoint files,
+Lets [VesnALIA](https://getbb.app) agents read PDFs, Word, Excel and PowerPoint files,
 scanned images, email and other documents with
 [Xberg](https://github.com/xberg-io/xberg).
 
@@ -11,7 +11,7 @@ stay on that machine and agents pass file paths instead of file contents.
 ## Install
 
 ```sh
-bb plugin install https://github.com/vidurb/bb-plugin-xberg
+alia plugin install https://github.com/vidurb/bb-plugin-xberg
 ```
 
 There is nothing else to set up. The first extraction on a machine downloads the
@@ -22,9 +22,9 @@ to reach `github.com`, and `tar` must be on the machine.
 To check or install ahead of time, or to delete cached text:
 
 ```sh
-bb xberg status --machine <name>
-bb xberg install --machine <name>
-bb xberg cache clear --machine <name>
+alia xberg status --machine <name>
+alia xberg install --machine <name>
+alia xberg cache clear --machine <name>
 ```
 
 Supported machines: Apple Silicon macOS, and Linux on x86-64 or arm64. Linux uses
@@ -69,7 +69,7 @@ Longer documents are read a page at a time, and the result gives the next
   5 minutes. Calls waiting for a free slot count against the server's 15-minute
   limit.
 - **Pages:** each page runs the extraction again. Xberg's cache usually answers
-  repeat calls, but a cache miss, such as after `bb xberg cache clear`, repeats
+  repeat calls, but a cache miss, such as after `alia xberg cache clear`, repeats
   the full extraction, and a file changed between calls can shift offsets.
 - **Output:** the document text is wrapped in begin and end markers, so the agent
   can tell it from the plugin's own lines.
@@ -78,7 +78,7 @@ Longer documents are read a page at a time, and the result gives the next
 - **Cache:** Xberg keeps extracted text readable in the plugin's data directory on
   each machine, so repeat reads are quick. Xberg limits the extraction cache to
   30 days and 2 GB. Its OCR cache has no limit, so check the size with
-  `bb xberg status` and clear both with `bb xberg cache clear`.
+  `alia xberg status` and clear both with `alia xberg cache clear`.
 
 ## Development
 
@@ -86,7 +86,7 @@ Longer documents are read a page at a time, and the result gives the next
 npm ci
 npm run typecheck
 npm test
-bb plugin build .
+alia plugin build .
 ```
 
 Tests use a fake `xberg`, so they don't check the real CLI's behaviour. To change

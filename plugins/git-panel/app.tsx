@@ -1,11 +1,11 @@
-// Git worktree — stage, unstage, AI commit, pull, push and branch switching in BB's
+// Git worktree — stage, unstage, AI commit, pull, push and branch switching in VesnALIA's
 // thread panel. Laid out like a review panel: a status bar tinted by the worktree's
 // state with the one next action, pill tabs, and dense file rows (folder › name,
 // +/− lines, status square). app.css styles it with host theme variables only.
 import "./app.css";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode, RefObject } from "react";
-import { definePluginApp, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { fileParts, statusOf, summaryOf, type GitFile, type Lines, type NextAction } from "./lib/git-status";

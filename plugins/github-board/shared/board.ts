@@ -136,7 +136,7 @@ export const PromptSettingsSchema = z.object({
   /** Always complete on the way out: the server fills a blank with its default. */
   byType: PromptSetSchema,
   /**
-   * Keyed by bb project id, and partial on purpose — a type absent here, or
+   * Keyed by VesnALIA project id, and partial on purpose — a type absent here, or
    * present but blank, inherits `byType`. Storing the inherited value instead
    * would freeze a copy that stops tracking the default it came from.
    *

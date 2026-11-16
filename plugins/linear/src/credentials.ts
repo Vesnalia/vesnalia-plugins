@@ -1,7 +1,7 @@
 import { credentialFingerprint, patFromSetting, type LinearCredential } from "./linear/credential.js";
 
 /**
- * More than one Linear workspace, from one bb.
+ * More than one Linear workspace, from one VesnALIA.
  *
  * A Linear personal API key is scoped to **one workspace**. Someone who
  * contracts for two organisations, or who keeps a personal workspace beside a

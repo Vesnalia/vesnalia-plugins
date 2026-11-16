@@ -6,8 +6,8 @@ export const FIRST_NAMESPACE_BACKEND_ID = "namespace";
 
 const NAMESPACE_NAMING: OwnerNaming = {
   firstBackendId: FIRST_NAMESPACE_BACKEND_ID,
-  firstTailnetPrefix: "bb-box-ns-",
-  siblingTailnetPrefix: "bb-box-nsb-",
+  firstTailnetPrefix: "alia-box-ns-",
+  siblingTailnetPrefix: "alia-box-nsb-",
 };
 
 export class NamespaceOwner extends LabelledOwner {

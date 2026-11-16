@@ -80,20 +80,20 @@ test("reads the sensor helper's output and rejects nonsense", () => {
   assert.equal(parseSensorOutput('{"cpuTempC":999}')?.cpuTempC, null);
 });
 
-test("the embedded helper matches its recorded digest, and is built from BB Box's source", () => {
+test("the embedded helper matches its recorded digest, and is built from VesnALIA Box's source", () => {
   assert.equal(createHash("sha256").update(Buffer.from(MAC_SENSORS_BINARY, "base64")).digest("hex"), MAC_SENSORS_DIGEST);
-  assert.ok(readFileSync(new URL("../setup/monitor/bb-box-sensors.c", import.meta.url), "utf8").includes("IOReportCopyChannelsInGroup"));
+  assert.ok(readFileSync(new URL("../setup/monitor/alia-box-sensors.c", import.meta.url), "utf8").includes("IOReportCopyChannelsInGroup"));
   assert.match(readFileSync(new URL("../setup/monitor/build-sensors.sh", import.meta.url), "utf8"), /src\/monitor\/mac-sensors-binary\.ts/);
 });
 
-test("the helper is written under BB Box's own cache folder, under a name with its digest", () => {
+test("the helper is written under VesnALIA Box's own cache folder, under a name with its digest", () => {
   const source = readFileSync(new URL("../src/monitor/mac-sensors.ts", import.meta.url), "utf8");
-  assert.match(source, /"Library", "Caches", "bb-box"/);
-  assert.match(source, /`bb-box-sensors-\$\{MAC_SENSORS_DIGEST\.slice\(0, 16\)\}`/);
+  assert.match(source, /"Library", "Caches", "alia-box"/);
+  assert.match(source, /`alia-box-sensors-\$\{MAC_SENSORS_DIGEST\.slice\(0, 16\)\}`/);
 });
 
 async function fakeHelper(t: TestContext, body: string): Promise<string> {
-  const directory = await mkdtemp(join(tmpdir(), "bb-box-fake-helper-"));
+  const directory = await mkdtemp(join(tmpdir(), "alia-box-fake-helper-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const path = join(directory, "helper");
   await writeFile(path, `#!/bin/sh\n${body}\n`, { mode: 0o755 });
@@ -118,7 +118,7 @@ test("a hung, crashed or missing helper gives null and reports its exit", async 
     assert.equal(exits, 1, `${name} helper reports one exit`);
   }
   let missingExits = 0;
-  const missing = startHelper("/nonexistent/bb-box-sensors", () => {
+  const missing = startHelper("/nonexistent/alia-box-sensors", () => {
     missingExits += 1;
   });
   assert.equal(await missing.request(300), null);
@@ -184,7 +184,7 @@ test("load errors read as plain messages without transport details", () => {
   assert.equal(loadErrorCopy('rpc "monitor.machine" failed (HTTP 502)', "lively-summit"), "Can't reach lively-summit.");
   assert.equal(loadErrorCopy("Host request timed out", "laptop"), "Can't reach laptop.");
   assert.equal(loadErrorCopy("Unexpected snapshot shape", "laptop"), "Couldn't get stats from laptop.");
-  assert.equal(loadErrorCopy("The Monitor is off. Turn it on under Monitor in BB Box's settings.", "laptop"), "The Monitor is off. Turn it on under Monitor in BB Box's settings.");
+  assert.equal(loadErrorCopy("The Monitor is off. Turn it on under Monitor in VesnALIA Box's settings.", "laptop"), "The Monitor is off. Turn it on under Monitor in VesnALIA Box's settings.");
 });
 
 test("the remembered panel layout survives bad storage and clamps tailscale rows", () => {
@@ -197,9 +197,9 @@ test("the remembered panel layout survives bad storage and clamps tailscale rows
     assert.deepEqual(readPanelShape("host_mac"), { gpu: true, gpuCards: 0, battery: true, tailscaleRows: 3 });
     rememberPanelShape("host_gpus", { gpu: true, gpuCards: 2, battery: false, tailscaleRows: 0 });
     assert.deepEqual(readPanelShape("host_gpus"), { gpu: true, gpuCards: 2, battery: false, tailscaleRows: 0 });
-    store.set("bb-box:monitor:shape:host_box", JSON.stringify({ gpu: "yes", gpuCards: 99, tailscaleRows: 40 }));
+    store.set("alia-box:monitor:shape:host_box", JSON.stringify({ gpu: "yes", gpuCards: 99, tailscaleRows: 40 }));
     assert.deepEqual(readPanelShape("host_box"), { gpu: false, gpuCards: 16, battery: false, tailscaleRows: 4 });
-    store.set("bb-box:monitor:shape:host_box", "{not json");
+    store.set("alia-box:monitor:shape:host_box", "{not json");
     assert.deepEqual(readPanelShape("host_box"), { gpu: false, gpuCards: 0, battery: false, tailscaleRows: 0 });
   } finally {
     delete global.localStorage;
@@ -209,7 +209,7 @@ test("the remembered panel layout survives bad storage and clamps tailscale rows
 test("middle truncation keeps the last few characters, so an address keeps both ends", () => {
   const ipv6 = "fd7a:115c:a1e0::403a:fd53";
   assert.deepEqual(middleParts(ipv6), { head: "fd7a:115c:a1e0::", tail: "403a:fd53" });
-  assert.equal(keptEnd("bb"), 1);
+  assert.equal(keptEnd("alia"), 1);
   assert.equal(keptEnd(""), 0);
 });
 

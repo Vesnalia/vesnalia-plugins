@@ -13,7 +13,7 @@ export default tseslint.config(
     },
     plugins: { "react-hooks": reactHooks },
     rules: {
-      // BB's slot tests use {} for prop-less components, as in the SDK examples.
+      // VesnALIA's slot tests use {} for prop-less components, as in the SDK examples.
       "@typescript-eslint/no-empty-object-type": ["error", { allowObjectTypes: "always" }],
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-misused-promises": "error",

@@ -1,4 +1,4 @@
-// The bench provider contract: schemas, error codes (with BB's "HTTP nnn:"
+// The bench provider contract: schemas, error codes (with VesnALIA's "HTTP nnn:"
 // prefix), the client's retries, and the runner's reading of execPoll.
 import { describe, expect, it } from "vitest";
 import { BenchProviderClient, ProviderMissingError, toProviderError } from "../src/bench-provider/client.ts";
@@ -54,7 +54,7 @@ describe("bench provider contract", () => {
     const { createLocalBenchProvider } = await import("../examples/bench-provider-local/provider.ts");
     const root = mkdtempSync(join(tmpdir(), "ar-machine-opts-"));
     const p = createLocalBenchProvider({ root, sweepMs: 0 });
-    const caller = { experimental_caller: { kind: "plugin" as const, pluginId: "bb-autoresearch" } };
+    const caller = { experimental_caller: { kind: "plugin" as const, pluginId: "alia-autoresearch" } };
     try {
       expect((await p.handlers["benchProvider.describe"]({}, caller)).machineOptions).toEqual([]);
       const ok = await p.handlers["benchProvider.create"]({ key: "a", cores: 1, lifetimeSeconds: 60, labels: {}, machine: {} }, caller);
@@ -66,7 +66,7 @@ describe("bench provider contract", () => {
     }
   });
 
-  it("finds the error code after BB's prefix; no code is internal", () => {
+  it("finds the error code after VesnALIA's prefix; no code is internal", () => {
     expect(errorCode(new Error("HTTP 500: [invalid] caller not allowed"))).toBe("invalid");
     expect(errorCode(providerError("capacity", "full"))).toBe("capacity");
     expect(errorCode(new Error("boom"))).toBeNull();

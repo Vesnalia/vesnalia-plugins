@@ -1,7 +1,7 @@
 ---
 type: Roadmap
-title: "Upstream PR-план: расширение Kimi Code для полного покрытия фич в bb"
-description: Семь аккуратных PR в MoonshotAI/kimi-code — по одному на пункт, с файлами, размером, эффектом для bb и порядком. Основано на карте исходников acp-server/agent-core-v2 (clone main, 2026-10-24).
+title: "Upstream PR-план: расширение Kimi Code для полного покрытия фич в VesnALIA"
+description: Семь аккуратных PR в MoonshotAI/kimi-code — по одному на пункт, с файлами, размером, эффектом для VesnALIA и порядком. Основано на карте исходников acp-server/agent-core-v2 (clone main, 2026-10-24).
 status: draft
 tags: [kimi, acp, upstream, roadmap]
 generated: { by: kimi-code/k3, at: "2026-10-24T11:15:00Z" }
@@ -39,7 +39,7 @@ issue (`/approve`) — сначала issue, потом PR**.
 - **PR:** один маппер ошибок lifecycle-методов (`server.ts` new/load/resume/
   fork), отдающий тот же typed `-32600` + `data.code`; текст — человеческий,
   как сейчас. Тесты: `test/lifecycle.test.ts`.
-- **Эффект для bb:** мост сможет мапить occupancy в typed recovery hint без
+- **Эффект для VesnALIA:** мост сможет мапить occupancy в typed recovery hint без
   текст-матчинга (сейчас невозможно по нашим правилам).
 - **Changeset:** patch (`@moonshot-ai/kimi-code`).
 
@@ -54,8 +54,8 @@ issue (`/approve`) — сначала issue, потом PR**.
 - **PR:** команда `kimi usage --json` в `apps/kimi-code/src/cli/` (sub-команда,
   как существующие headless-команды), переиспользует сервис, печатает JSON.
   Тесты: cli-sub тесты по аналогии.
-- **Эффект для bb:** наш диалект `readUsage` сможет выполнить команду и
-  распарсить JSON → `maintenance.usage` включается, bb покажет квоту.
+- **Эффект для VesnALIA:** наш диалект `readUsage` сможет выполнить команду и
+  распарсить JSON → `maintenance.usage` включается, VesnALIA покажет квоту.
 - **Changeset:** minor (новая capability CLI).
 
 # PR 3 — Plan-шаги в ACP из plan-сервиса (mid)
@@ -71,7 +71,7 @@ issue (`/approve`) — сначала issue, потом PR**.
   `plan` sessionUpdate при входе в Plan-режим, при обновлении плана
   (ExitPlanMode с args.plan) и при выходе (пустой план). Тесты:
   `test/e2e-turn.test.ts` + config/plan-кейсы.
-- **Эффект для bb:** мост уже мапит `plan` дельты в bb plan-steps → живой
+- **Эффект для VesnALIA:** мост уже мапит `plan` дельты в VesnALIA plan-steps → живой
   план-таймлайн вместо режима без плана.
 - **Changeset:** minor.
 
@@ -92,9 +92,9 @@ issue (`/approve`) — сначала issue, потом PR**.
     scripted provider.
   - 4b: значение `swarm` в `mode` configOption (`config-options.ts`,
     ACP_MODES), применяемое через set_config_option →
-    `IAgentSwarmService.enter('manual')/exit()`. В bb селектор режима
+    `IAgentSwarmService.enter('manual')/exit()`. В VesnALIA селектор режима
     подхватит его автоматически (session-options).
-- **Эффект для bb:** delegation-строка роя (наша классификация v0.2.9) будет
+- **Эффект для VesnALIA:** delegation-строка роя (наша классификация v0.2.9) будет
   живая, плюс режим Swarm в селекторе.
 - **Changeset:** minor.
 
@@ -109,7 +109,7 @@ issue (`/approve`) — сначала issue, потом PR**.
   в `config-options.ts`; применение через set_config_option в session-
   scoped override, читаемый резолвером моделей субагентов. Тесты:
   `test/config.test.ts` + subagent-config тесты.
-- **Эффект для bb:** настройка пула из UI bb; сейчас — только правка
+- **Эффект для VesnALIA:** настройка пула из UI VesnALIA; сейчас — только правка
   config.toml / update-config.
 - **Changeset:** minor. Ценность ниже PR 1-4 — можно отложить.
 
@@ -123,8 +123,8 @@ issue (`/approve`) — сначала issue, потом PR**.
 - **PR:** приём кастомного `video` блока (kimi-расширение ACP) → video_url
   part; capability-флаг; документация в docs/en|zh/reference/kimi-acp.md.
   Тесты: convert.test.ts.
-- **Оговорка:** клиентов, шлющих video-блоки, пока нет — bb умеет только
-  image. Значение появится после bb-side поддержки видео-вложений для ACP.
+- **Оговорка:** клиентов, шлющих video-блоки, пока нет — VesnALIA умеет только
+  image. Значение появится после alia-side поддержки видео-вложений для ACP.
 - **Changeset:** minor. Делать после PR 1-4.
 
 # PR 7 — Кросс-процессный fork живой сессии (large, design-first)
@@ -142,7 +142,7 @@ issue (`/approve`) — сначала issue, потом PR**.
   lock-файл/`klient` RPC + flush-протокол), maintainer-аппрув, потом код.
   Самостоятельный «просто разрешить»-вариант опасен (молчаливая порча
   состояния — P0 по их review-правилам).
-- **Эффект для bb:** вернём fork (`fork: "tip"`→реальный).
+- **Эффект для VesnALIA:** вернём fork (`fork: "tip"`→реальный).
 
 # Порядок и воркфлоу
 

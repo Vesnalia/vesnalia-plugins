@@ -120,7 +120,7 @@ export function removePin(pins: Pin[], id: string): { ok: boolean; pins: Pin[] }
   return { ok: next.length !== pins.length, pins: next };
 }
 
-/** One thread's pins on bb's home page. */
+/** One thread's pins on VesnALIA's home page. */
 export interface PinnedThread {
   threadId: string;
   title: string;

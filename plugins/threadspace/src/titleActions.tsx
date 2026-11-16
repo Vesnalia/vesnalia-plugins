@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { experimental_THREAD_ACTION_GROUPS, useRpc, type PluginThreadActionRegistration } from "@get-bb/plugin-sdk/app";
+import { experimental_THREAD_ACTION_GROUPS, useRpc, type PluginThreadActionRegistration } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../server";
 import { useInterfaceLanguage } from "./i18n";

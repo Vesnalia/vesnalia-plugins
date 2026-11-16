@@ -1,19 +1,19 @@
-# bb-plugin-google-antigravity-acp
+# alia-plugin-google-antigravity-acp
 
-Google Antigravity as a first-class bb agent provider through Antigravity's
+Google Antigravity as a first-class VesnALIA agent provider through Antigravity's
 official **ACP** server (`agy_acp_server.par`).
 
-Registers the `acp-antigravity` provider (family `acp`), exactly like bb's
+Registers the `acp-antigravity` provider (family `acp`), exactly like VesnALIA's
 builtin ACP agents:
 
-- `server.ts` — `bb.providers.register` with the launch spec in
+- `server.ts` — `alia.providers.register` with the launch spec in
   `experimental_bridgeOptions.acpLaunchSpec`; plugin settings for install
-  paths; the `bb google-antigravity-acp status` and
-  `bb google-antigravity-acp install` commands.
+  paths; the `alia google-antigravity-acp status` and
+  `alia google-antigravity-acp install` commands.
 - `host.ts` — re-exports the canonical ACP provider bridge
-  (`@get-bb/plugin-sdk/provider-bridge/acp`, the same bridge the builtin
+  (`@vesnalia/plugin-sdk/provider-bridge/acp`, the same bridge the builtin
   `provider-acp` plugin uses) and implements the host RPC the install/status
-  commands call, so installs run on the target machine, not on the bb server.
+  commands call, so installs run on the target machine, not on the VesnALIA server.
 - `install.ts` — shared install logic: resolves the official distribution
   from the ACP registry (pinned to a commit SHA), downloads, safely extracts,
   and links the server binary, usage proxy wrapper, and sandbox helper onto PATH
@@ -23,14 +23,14 @@ builtin ACP agents:
 ## Install the plugin
 
 ```sh
-bb plugin install .                  # from this directory
-bb plugin reload google-antigravity-acp
+alia plugin install .                  # from this directory
+alia plugin reload google-antigravity-acp
 ```
 
 ## Install the server binary
 
 ```sh
-bb google-antigravity-acp install
+alia google-antigravity-acp install
 ```
 
 The command runs on the machine that will launch the agent (the current
@@ -60,8 +60,8 @@ links both into `binDir`), so no per-machine environment variables are
 needed.
 
 ```sh
-bb google-antigravity-acp install --machine macbook        # this machine
-bb google-antigravity-acp install --machine other-host     # another enrolled machine
+alia google-antigravity-acp install --machine macbook        # this machine
+alia google-antigravity-acp install --machine other-host     # another enrolled machine
 ```
 
 The machine's daemon shell must have `binDir` on PATH. The command warns
@@ -70,11 +70,11 @@ when it is not; pick a dir that is (e.g. `/usr/local/bin`) with `--bin-dir`.
 Useful flags:
 
 ```sh
-bb google-antigravity-acp install --machine macbook        # install on a specific machine
-bb google-antigravity-acp install --force                  # re-download even if already installed
-bb google-antigravity-acp install --from ./agy-acp.zip     # explicit source (URL or local file)
-bb google-antigravity-acp install --update-path            # also append binDir to the user PATH (Windows)
-bb google-antigravity-acp install --json                   # machine-readable output
+alia google-antigravity-acp install --machine macbook        # install on a specific machine
+alia google-antigravity-acp install --force                  # re-download even if already installed
+alia google-antigravity-acp install --from ./agy-acp.zip     # explicit source (URL or local file)
+alia google-antigravity-acp install --update-path            # also append binDir to the user PATH (Windows)
+alia google-antigravity-acp install --json                   # machine-readable output
 ```
 
 `~/.local/bin` must be on the machine's PATH for the provider health probe to
@@ -83,16 +83,16 @@ find the server. The command warns when it is not.
 ## Verify
 
 ```sh
-bb google-antigravity-acp status        # where the server is, per machine
-bb provider list                        # acp-antigravity appears (visibility: installed)
-bb provider models acp-antigravity
-bb thread spawn --provider acp-antigravity --prompt 'hi'
+alia google-antigravity-acp status        # where the server is, per machine
+alia provider list                        # acp-antigravity appears (visibility: installed)
+alia provider models acp-antigravity
+alia thread spawn --provider acp-antigravity --prompt 'hi'
 ```
 
 ## Model and reasoning selection
 
 Antigravity exposes effort variants as separate models (`... Low`, `... Medium`,
-and `... High`). Select the desired variant in the model picker. BB reasoning
+and `... High`). Select the desired variant in the model picker. VesnALIA reasoning
 remains `Medium` because Antigravity's ACP server manages it internally; Fast
 mode is unavailable.
 
@@ -102,7 +102,7 @@ Google's official `agy_acp_server.par` tracks exact token usage inside its local
 
 The POSIX install renders a lightweight transparent proxy wrapper as `agy_acp_server.par`, pinning the verified Node interpreter and installed real-binary path while keeping the official raw binary intact (`agy_acp_server_raw.par`). Installation verifies an ACP `initialize` handshake before succeeding. Windows currently runs the raw binary without context usage injection. The POSIX wrapper reads token usage metadata in real time from the session database and injects standard ACP `session/update` (`usage_update`) events with `used` and `size` before turn completion.
 
-This enables BB's native context window tracking and context meter plugins (such as `context-meter`) to display live token usage for Antigravity threads.
+This enables VesnALIA's native context window tracking and context meter plugins (such as `context-meter`) to display live token usage for Antigravity threads.
 
 ## Security notes
 

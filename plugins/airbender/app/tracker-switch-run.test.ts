@@ -2,7 +2,7 @@
 // is carried out in (tracker-switch-run.ts).
 //
 // Why: this order is what keeps a repository's tracker from being changed
-// when the owner was told it would not be (bead-bb-c9l.18).
+// when the owner was told it would not be (bead-alia-c9l.18).
 
 import assert from "node:assert/strict";
 import { test } from "node:test";

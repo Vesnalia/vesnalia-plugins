@@ -6,7 +6,7 @@ import {
   DropdownMenuRadioItem,
 } from "./components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./components/ui/icon";
 import { t } from "./i18n";
 import { usePrefs } from "./prefs-store";

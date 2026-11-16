@@ -1,7 +1,7 @@
 // The Now queue: who holds each thread, which threads belong at the top of the
 // sidebar, and in what order. Pure (no React, no SDK at runtime) so node:test
 // covers it; the sidebar and the server share it.
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { FlowState } from "./server";
 import { formatDue } from "./when.ts";
 import { replyQueued } from "./needs-me.ts";

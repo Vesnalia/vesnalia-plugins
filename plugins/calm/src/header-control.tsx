@@ -1,7 +1,7 @@
 // A small control in the thread header: turn Calm off for just this thread,
-// or pin one scene to it. The choice is kept per thread on the bb server.
+// or pin one scene to it. The choice is kept per thread on the VesnALIA server.
 import { useEffect, useId, useRef, useState } from "react";
-import type { PluginThreadHeaderActionProps } from "@get-bb/plugin-sdk/app";
+import type { PluginThreadHeaderActionProps } from "@vesnalia/plugin-sdk/app";
 import { useThemeMode } from "./compat";
 import { SCENES } from "./scenes";
 import { sprite, type Sprite } from "./kit/common";

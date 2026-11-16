@@ -8,7 +8,7 @@
 // where the tool gave edits) and its rule's docs; "Fix this" and "Fix all"
 // put the work still to fix in the user's message. Long reports page in.
 import { useContext, useMemo, type ReactNode } from "react";
-import { Markdown, UrlLink } from "@get-bb/plugin-sdk/app";
+import { Markdown, UrlLink } from "@vesnalia/plugin-sdk/app";
 import { Button as BaseButton } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -487,7 +487,7 @@ function GroupHeader({ group, scale, mode }: { group: FindingGroup; scale: Sever
   );
 }
 
-/** A file's icon and path as one control that opens it in BB; plain where BB can't open it. */
+/** A file's icon and path as one control that opens it in VesnALIA; plain where VesnALIA can't open it. */
 function FileLink({ path, shown, className }: { path: string; shown: string; className?: string }) {
   const file = useFileOpener(path);
   const content = (

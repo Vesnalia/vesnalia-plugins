@@ -1,18 +1,14 @@
 {
-  "name": "bb-plugin-realtime-gateway",
+  "name": "alia-plugin-realtime-gateway",
   "version": "0.1.1",
   "private": true,
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/steveafrost/bb-plugin-realtime-gateway.git"
-  },
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49"
   },
-  "bb": {
+  "alia": {
     "name": "Realtime Gateway",
     "description": "Voice Mode realtime sessions routed through the Vercel AI Gateway.",
     "branding": {
@@ -22,14 +18,13 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "dependencies": {
     "undici": "^7.30.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -37,7 +32,24 @@
     "typescript": "^5.7.0"
   },
   "keywords": [
-    "bb-plugin"
+    "alia-plugin"
   ],
-  "description": "Voice Mode realtime sessions through the Vercel AI Gateway"
+  "description": "Voice Mode realtime sessions through the Vercel AI Gateway",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/realtime-gateway#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/realtime-gateway"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

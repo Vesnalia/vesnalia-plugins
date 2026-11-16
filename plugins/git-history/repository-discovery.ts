@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import type { Dirent } from "node:fs";
 import { readdir, realpath } from "node:fs/promises";
 import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path";
-import { experimental_runVcsProcess as runVcsProcess } from "@get-bb/plugin-sdk/host";
+import { experimental_runVcsProcess as runVcsProcess } from "@vesnalia/plugin-sdk/host";
 import type { RepositoryDescriptor } from "./contracts";
 
 const MAX_GIT_OUTPUT_BYTES = 32 * 1024 * 1024;

@@ -1,7 +1,7 @@
-// bb-plugin-agent-board — presentation-only attention dismissal store.
+// alia-plugin-agent-board — presentation-only attention dismissal store.
 //
 // Dismissal hides an attention item from the global dashboard's "Needs
-// attention" list. It never mutates any underlying state: BB threads, Redteam
+// attention" list. It never mutates any underlying state: VesnALIA threads, Redteam
 // scans, approvals, failures and source adapters are untouched; the item
 // stays visible in Active/Recent sections and returns automatically when the
 // underlying condition genuinely changes.
@@ -13,12 +13,12 @@
 // changes when the execution updates (new failure, new waiting reason, new
 // message), so a genuinely new condition reappears.
 //
-// Persistence: one bounded JSON row in bb.storage.kv ("attention-dismissals"),
+// Persistence: one bounded JSON row in alia.storage.kv ("attention-dismissals"),
 // a map of key → storedAt. The plugin keeps no other durable state.
 
 import type { AttentionItem, AttentionType } from "../contract/rpc";
 
-/** Minimal structural subset of bb.storage.kv, so tests can fake it. */
+/** Minimal structural subset of alia.storage.kv, so tests can fake it. */
 export interface KvLike {
   get<T>(key: string): Promise<T | undefined>;
   set(key: string, value: unknown): Promise<void>;

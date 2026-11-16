@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin, { giteaRpcContract } from "./server";
 
 // Read-only check against an existing native schedule; never POST or DELETE a PR.
@@ -17,7 +17,7 @@ it.skipIf(!process.env.GITEA_LIVE_SCHEDULED_PR)("shows an existing live Gitea sc
     sdk: { projects: { list: async () => [] } },
   });
   try {
-    await plugin(host.bb);
+    await plugin(host.alia);
     const view = giteaRpcContract.getAutoFixerStatus.output.parse(
       await host.harness.behavior.callRpc("getAutoFixerStatus", {
         repo, number,

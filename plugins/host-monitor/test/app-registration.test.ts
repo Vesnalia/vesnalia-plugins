@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 
 const app = await readFile(new URL("../app.tsx", import.meta.url), "utf8");
 const server = await readFile(new URL("../server.ts", import.meta.url), "utf8");
@@ -9,17 +9,17 @@ const manifest = JSON.parse(
   await readFile(new URL("../package.json", import.meta.url), "utf8"),
 ) as {
   name: string;
-  bb: { name: string; app: string; server: string; host?: string };
+  alia: { name: string; app: string; server: string; host?: string };
   dependencies: Record<string, string>;
   files: string[];
 };
 
 test("restores the bottom modal and dedicated Host Monitor page", () => {
-  assert.equal(manifest.name, "bb-plugin-host-monitor");
-  assert.equal(manifest.bb.name, "Host Monitor");
-  assert.equal(manifest.bb.app, "./app.tsx");
-  assert.equal(manifest.bb.server, "./server.ts");
-  assert.equal(manifest.bb.host, "./host.ts");
+  assert.equal(manifest.name, "alia-plugin-host-monitor");
+  assert.equal(manifest.alia.name, "Host Monitor");
+  assert.equal(manifest.alia.app, "./app.tsx");
+  assert.equal(manifest.alia.server, "./server.ts");
+  assert.equal(manifest.alia.host, "./host.ts");
   assert.match(app, /id: "host-monitor"/u);
   assert.match(app, /title: "Host Monitor"/u);
   assert.match(app, /app\.slots\.sidebarFooterAction\(\{/u);

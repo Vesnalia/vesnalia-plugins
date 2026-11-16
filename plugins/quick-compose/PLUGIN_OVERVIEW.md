@@ -1,6 +1,6 @@
 ## Start a thread from anywhere
 
-Quick Compose opens BB's new-thread composer in a floating window over the page you're on. Press **Mod+Shift+L** (rebindable in Settings → Keyboard) or run **Quick compose: new thread** from the command palette.
+Quick Compose opens VesnALIA's new-thread composer in a floating window over the page you're on. Press **Mod+Shift+L** (rebindable in Settings → Keyboard) or run **Quick compose: new thread** from the command palette.
 
 ## Stay where you are
 
@@ -12,4 +12,4 @@ On a thread, press **Mod+Shift+H** or run **Quick compose: hand off this thread*
 
 ## Requirements
 
-Requires BB 0.42 or later and Plugin SDK 0.4.92 or later.
+Requires VesnALIA 0.42 or later and Plugin SDK 0.4.92 or later.

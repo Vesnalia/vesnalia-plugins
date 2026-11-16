@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { imagePairSchema, imageSideSchema, isImagePath } from "./images";
 import { validWorkspacePath } from "../core/worktree";

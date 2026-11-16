@@ -1,16 +1,16 @@
 {
-  "name": "bb-plugin-browser-gestures",
+  "name": "alia-plugin-browser-gestures",
   "version": "0.1.1",
-  "description": "Two-finger trackpad swipes go back and forward in the BB desktop browser.",
+  "description": "Two-finger trackpad swipes go back and forward in the VesnALIA desktop browser.",
   "license": "MIT",
   "type": "module",
   "engines": {
-    "bb": ">=0.46.1",
-    "bbPluginSdk": ">=0.6.49 <0.7.0"
+    "alia": ">=0.46.1",
+    "aliaPluginSdk": ">=0.6.49 <0.7.0"
   },
-  "bb": {
+  "alia": {
     "name": "Browser Gestures",
-    "description": "Swipe two fingers on the trackpad to go back or forward in the BB desktop browser, with a Chrome-style arrow that commits when you lift your fingers.",
+    "description": "Swipe two fingers on the trackpad to go back or forward in the VesnALIA desktop browser, with a Chrome-style arrow that commits when you lift your fingers.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -34,12 +34,28 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build .",
+    "build": "alia plugin build .",
     "test": "node --test gesture.test.mjs"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "typescript": "5.9.3",
     "@types/react": "19.2.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/browser-gestures#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/browser-gestures"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

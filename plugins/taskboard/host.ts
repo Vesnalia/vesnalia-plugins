@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry } from '@get-bb/plugin-sdk/host';
+import { experimental_defineHostEntry } from '@vesnalia/plugin-sdk/host';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { hostContract } from './preparation/contract.js';

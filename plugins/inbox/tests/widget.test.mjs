@@ -19,18 +19,18 @@ window.matchMedia = () => ({ matches: false, addListener() {}, removeListener() 
 const React = await import('react');
 const { act, fireEvent, screen, waitFor, cleanup, within } = await import('@testing-library/react');
 const { Toaster, toast } = await import('sonner');
-const { loadPluginApp, renderSlot } = await import('@get-bb/plugin-sdk/testing/app');
-let app, useBbContext;
+const { loadPluginApp, renderSlot } = await import('@vesnalia/plugin-sdk/testing/app');
+let app, useAliaContext;
 let mounted;
 
 before(async () => {
   await build({ entryPoints: [process.env.NY_PLUGIN_ENTRY || pluginRoot + '/app.tsx'], outfile: new URL('./compiled-app.mjs', import.meta.url).pathname,
     bundle: true, format: 'esm', platform: 'browser', jsx: 'automatic',
     tsconfig: pluginRoot + '/tsconfig.json',
-    external: ['react', 'react-dom', 'react/jsx-runtime', '@get-bb/plugin-sdk/app', 'sonner'],
+    external: ['react', 'react-dom', 'react/jsx-runtime', '@vesnalia/plugin-sdk/app', 'sonner'],
   });
   app = await loadPluginApp(() => import('./compiled-app.mjs'));
-  ({ useBbContext } = await import('@get-bb/plugin-sdk/app'));
+  ({ useAliaContext } = await import('@vesnalia/plugin-sdk/app'));
 });
 
 afterEach(async () => {
@@ -51,7 +51,7 @@ function mount(initialThread = 'active') {
   const Accessory = app.navPanels[0].experimental_sidebarAccessory;
   let context;
   function Shell() {
-    context = useBbContext();
+    context = useAliaContext();
     return React.createElement(React.Fragment, null, React.createElement(Accessory), React.createElement(Toaster));
   }
   const slot = renderSlot({ component: Shell }, {}, { context: { projectId: 'p1', threadId: initialThread },
@@ -63,7 +63,7 @@ function mount(initialThread = 'active') {
     emit: payload => slot.behavior.emitRealtime('inbox:toast', payload),
     async navigate(threadId) {
       // SDK 0.4.21 has no route-change driver. Mutate this harness-only context
-      // snapshot and rerender; production still reads the real useBbContext hook.
+      // snapshot and rerender; production still reads the real useAliaContext hook.
       context.threadId = threadId;
       await act(async () => { slot.lifecycle.rerender(React.createElement(Shell)); });
     },

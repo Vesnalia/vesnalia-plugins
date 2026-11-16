@@ -1,9 +1,9 @@
-// bb-plugin-agent-tools — MCP servers and skills of every BB machine in one place.
+// alia-plugin-agent-tools — MCP servers and skills of every VesnALIA machine in one place.
 //
 // The plugin scans each enrolled machine over host RPC, normalizes what every
 // installed CLI agent has configured, compares it against the catalogue (the
 // desired state kept here), and can roll the difference back out.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { AGENTS, AGENT_BY_KIND, EXTRA_CLI_BINS, supportsDisable } from "./agents";
 import {
@@ -34,9 +34,9 @@ import {
   skillBackupSchema,
 } from "./contract";
 import { classifyLocal, classifyRole, fromDialect, sameServer } from "./normalize";
-import { bbInjectBytes, bbInjectTooHeavy, classifyCanonHostStates, computeSkillRows, effectiveCanonStamp, locationPath, planPromoteToCanon, planServerBbMirror } from "./skills";
+import { aliaInjectBytes, aliaInjectTooHeavy, classifyCanonHostStates, computeSkillRows, effectiveCanonStamp, locationPath, planPromoteToCanon, planServerAliaMirror } from "./skills";
 import {
-  bbServerSkillsDir,
+  aliaServerSkillsDir,
   canonSkillsDir,
   extractSkillArchive,
   isSafeSkillName,
@@ -100,9 +100,9 @@ const hostViewSchema = z.object({
   error: z.string().nullable(),
   agents: z.array(
     detectedAgentSchema.extend({
-      /** Whether BB itself can run threads on this CLI. */
+      /** Whether VesnALIA itself can run threads on this CLI. */
       bridged: z.boolean(),
-      /** Id провайдера BB для официальной иконки CLI, если такой провайдер есть. */
+      /** Id провайдера VesnALIA для официальной иконки CLI, если такой провайдер есть. */
       providerId: z.string().nullable(),
       /** Whether the catalogue may write to this agent on this machine. */
       manageable: z.boolean(),
@@ -145,7 +145,7 @@ const overviewSchema = z.object({
   skillsFanOutAuto: z.boolean(),
   /** Язык интерфейса плагина: им же отвечает CLI. */
   lang: z.enum(["ru", "en"]),
-  /** Язык страниц плагина: auto следует за BB (Русификатор, Pokecut), ru/en — явно. */
+  /** Язык страниц плагина: auto следует за VesnALIA (Русификатор, Pokecut), ru/en — явно. */
   uiLang: z.enum(["auto", "ru", "en"]),
   lastScanAt: z.number().nullable(),
   lastSyncAt: z.number().nullable(),
@@ -181,11 +181,11 @@ const overviewSchema = z.object({
           /** Где лежит копия помимо канона: дома CLI, куда раскатано. */
           homes: z.array(z.string()),
           mtime: z.number().nullable(),
-          /** Размер дерева, которое BB попытается подставить в `$` (дом BB, иначе канон). */
+          /** Размер дерева, которое VesnALIA попытается подставить в `$` (дом VesnALIA, иначе канон). */
           bytes: z.number().default(0),
         }),
       ),
-      /** Хотя бы на одной машине дерево больше 10 МБ — BB не примет скилл в `$`. */
+      /** Хотя бы на одной машине дерево больше 10 МБ — VesnALIA не примет скилл в `$`. */
       tooHeavy: z.boolean().default(false),
     }),
   ),
@@ -334,7 +334,7 @@ export const rpcContract = defineRpcContract({
       overview: overviewSchema,
     }),
   },
-  /** Раскатка канона по домам CLI на машинах: ссылки, зеркало BB, архив. */
+  /** Раскатка канона по домам CLI на машинах: ссылки, зеркало VesnALIA, архив. */
   /** Переключить язык интерфейса плагина и его CLI. */
   set_language: {
     input: z.object({ lang: z.enum(["ru", "en"]) }),
@@ -433,13 +433,13 @@ export const rpcContract = defineRpcContract({
     input: z.object({
       modelId: z.string(),
       smallModelId: z.string().optional(),
-      setAsBbDefault: z.boolean().default(true),
+      setAsAliaDefault: z.boolean().default(true),
       setAsOpenCodeDefault: z.boolean().default(true),
     }),
     output: z.object({
       ok: z.boolean(),
       updatedHosts: z.number(),
-      bbUpdated: z.boolean(),
+      aliaUpdated: z.boolean(),
       overview: overviewSchema,
     }),
   },
@@ -474,15 +474,15 @@ interface HostPluginsSnapshot {
   at: number;
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   // CLI and server-generated labels use KV because setting labels
   // are declared before their values can be read. New installations default to
   // English; an explicit stored choice is retained.
-  const storedLang = await bb.storage.kv.get<string>("lang");
+  const storedLang = await alia.storage.kv.get<string>("lang");
   let currentLang: Lang = isLang(storedLang) ? storedLang : "en";
   setLang(currentLang);
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     metamcpUrl: {
       type: "string",
       label: t("MetaMCP: адрес"),
@@ -505,7 +505,7 @@ export default async function plugin(bb: BbPluginApi) {
     skillsClassifierProvider: {
       type: "string",
       label: t("Навыки: провайдер классификатора"),
-      description: t("Провайдер BB для скрытого треда, который раскладывает новые навыки по категориям."),
+      description: t("Провайдер ALIA для скрытого треда, который раскладывает новые навыки по категориям."),
       default: "claude-code",
     },
     skillsClassifierModel: {
@@ -523,13 +523,13 @@ export default async function plugin(bb: BbPluginApi) {
     skillsHubOnly: {
       type: "boolean",
       label: t("Навыки: только на хабе (экспериментально)"),
-      description: t("Плагин сам держит папки навыков CLI на всех машинах пустыми: раз в час переносит на хаб навыки, которых там нет, и убирает копии в архив на той же машине. Навыки приходят в сессии только с хаба BB. Выключено — машины не трогаются."),
+      description: t("Плагин сам держит папки навыков CLI на всех машинах пустыми: раз в час переносит на хаб навыки, которых там нет, и убирает копии в архив на той же машине. Навыки приходят в сессии только с хаба ALIA. Выключено — машины не трогаются."),
       default: false,
     },
     skillsClassifierProjectId: {
       type: "string",
       label: t("Навыки: проект для треда классификатора"),
-      description: t("ID проекта BB. Пусто — личный проект."),
+      description: t("ID проекта ALIA. Пусто — личный проект."),
       default: "",
     },
     jevApiKey: {
@@ -581,14 +581,14 @@ export default async function plugin(bb: BbPluginApi) {
   const readConfig = () => settings.get();
   /** Stored page-language choice; missing or invalid KV reads as auto. */
   const readUiLangChoice = async (): Promise<UiLangChoice> => {
-    const stored = await bb.storage.kv.get<string>("uiLang");
+    const stored = await alia.storage.kv.get<string>("uiLang");
     return isUiLangChoice(stored) ? stored : "auto";
   };
-  // The skills canon moved to the BB hub (0.2.9). The machine-canon code below
+  // The skills canon moved to the VesnALIA hub (0.2.9). The machine-canon code below
   // stays for old CLI calls but never runs on its own and never writes.
   const LEGACY_SKILLS = { fanOutAuto: false, pluginNames: true } as const;
-  const host = bb.hosts.experimental_client({ contract: hostContract });
-  const skillsHub = createSkillsHubService(bb, host as unknown as Parameters<typeof createSkillsHubService>[1], async () => {
+  const host = alia.hosts.experimental_client({ contract: hostContract });
+  const skillsHub = createSkillsHubService(alia, host as unknown as Parameters<typeof createSkillsHubService>[1], async () => {
     const config = await readConfig();
     return {
       classifierProvider: config.skillsClassifierProvider.trim() || "claude-code",
@@ -609,7 +609,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
   // Only the classifier's hidden threads get the category tools; every other
   // thread keeps this plugin's skill as before.
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const special = skillsHub.configureThread(context.pluginMetadata);
     if (special !== null) return { tools: special.tools, skills: [], instructions: special.instructions };
     return { tools: skillsHub.publicTools(), skills: ["agent-tools"] };
@@ -617,20 +617,20 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ---------------------------------------------------------------- storage
   const readCatalog = async (): Promise<CatalogEntry[]> =>
-    (await bb.storage.kv.get<CatalogEntry[]>("catalog")) ?? [];
-  const writeCatalog = (entries: CatalogEntry[]) => bb.storage.kv.set("catalog", entries);
+    (await alia.storage.kv.get<CatalogEntry[]>("catalog")) ?? [];
+  const writeCatalog = (entries: CatalogEntry[]) => alia.storage.kv.set("catalog", entries);
   const readIgnored = async (): Promise<string[]> =>
-    (await bb.storage.kv.get<string[]>("ignored")) ?? [];
+    (await alia.storage.kv.get<string[]>("ignored")) ?? [];
   const readAutoSync = async (): Promise<boolean> =>
-    (await bb.storage.kv.get<boolean>("autoSync")) ?? false;
+    (await alia.storage.kv.get<boolean>("autoSync")) ?? false;
   const readProbes = async (): Promise<ProbeView[]> =>
-    (await bb.storage.kv.get<ProbeView[]>("probes")) ?? [];
+    (await alia.storage.kv.get<ProbeView[]>("probes")) ?? [];
 
   async function readSnapshots(): Promise<Snapshot[]> {
-    const keys = await bb.storage.kv.list("snapshot:");
+    const keys = await alia.storage.kv.list("snapshot:");
     const found: Snapshot[] = [];
     for (const key of keys) {
-      const value = await bb.storage.kv.get<Snapshot>(key);
+      const value = await alia.storage.kv.get<Snapshot>(key);
       if (value !== null && value !== undefined) found.push(value);
     }
     return found;
@@ -644,12 +644,12 @@ export default async function plugin(bb: BbPluginApi) {
     } catch (cause) {
       snapshot.error = cause instanceof Error ? cause.message : String(cause);
     }
-    await bb.storage.kv.set(`snapshot:${hostId}`, snapshot);
+    await alia.storage.kv.set(`snapshot:${hostId}`, snapshot);
     return snapshot;
   }
 
   async function scanAll(only: string | null, skipHostIds: readonly string[] = []): Promise<void> {
-    const hosts = await bb.sdk.hosts.list();
+    const hosts = await alia.sdk.hosts.list();
     const skip = new Set(skipHostIds);
     const targets = hosts.filter(
       (candidate) =>
@@ -663,9 +663,9 @@ export default async function plugin(bb: BbPluginApi) {
       targets.map(async (machine) => {
         try {
           const scan = await host.call("skills_scan", {}, { hostId: machine.id });
-          await bb.storage.kv.set(`skills:${machine.id}`, { hostId: machine.id, hostName: machine.name, scan, at: Date.now() });
+          await alia.storage.kv.set(`skills:${machine.id}`, { hostId: machine.id, hostName: machine.name, scan, at: Date.now() });
         } catch (cause) {
-          bb.log.info(`skills scan failed on ${machine.name}: ${cause instanceof Error ? cause.message : String(cause)}`);
+          alia.log.info(`skills scan failed on ${machine.name}: ${cause instanceof Error ? cause.message : String(cause)}`);
         }
       }),
     );
@@ -674,9 +674,9 @@ export default async function plugin(bb: BbPluginApi) {
       targets.map(async (machine) => {
         try {
           const scan = await host.call("opencode_scan", {}, { hostId: machine.id });
-          await bb.storage.kv.set(`opencode:${machine.id}`, { hostId: machine.id, hostName: machine.name, scan, at: Date.now() });
+          await alia.storage.kv.set(`opencode:${machine.id}`, { hostId: machine.id, hostName: machine.name, scan, at: Date.now() });
         } catch (cause) {
-          bb.log.info(`opencode scan failed on ${machine.name}: ${cause instanceof Error ? cause.message : String(cause)}`);
+          alia.log.info(`opencode scan failed on ${machine.name}: ${cause instanceof Error ? cause.message : String(cause)}`);
         }
       }),
     );
@@ -685,40 +685,40 @@ export default async function plugin(bb: BbPluginApi) {
       targets.map(async (machine) => {
         try {
           const scan = await host.call("plugins_scan", {}, { hostId: machine.id });
-          await bb.storage.kv.set(`plugins:${machine.id}`, { hostId: machine.id, hostName: machine.name, scan, at: Date.now() });
+          await alia.storage.kv.set(`plugins:${machine.id}`, { hostId: machine.id, hostName: machine.name, scan, at: Date.now() });
         } catch (cause) {
-          bb.log.info(`plugins scan failed on ${machine.name}: ${cause instanceof Error ? cause.message : String(cause)}`);
+          alia.log.info(`plugins scan failed on ${machine.name}: ${cause instanceof Error ? cause.message : String(cause)}`);
         }
       }),
     );
-    await bb.storage.kv.set("lastScanAt", Date.now());
+    await alia.storage.kv.set("lastScanAt", Date.now());
   }
 
   async function readSkillsSnapshots(): Promise<SkillsSnapshot[]> {
-    const keys = await bb.storage.kv.list("skills:");
+    const keys = await alia.storage.kv.list("skills:");
     const found: SkillsSnapshot[] = [];
     for (const key of keys) {
-      const value = await bb.storage.kv.get<SkillsSnapshot>(key);
+      const value = await alia.storage.kv.get<SkillsSnapshot>(key);
       if (value !== null && value !== undefined) found.push(value);
     }
     return found;
   }
 
   async function readOpenCodeSnapshots(): Promise<OpenCodeSnapshot[]> {
-    const keys = await bb.storage.kv.list("opencode:");
+    const keys = await alia.storage.kv.list("opencode:");
     const found: OpenCodeSnapshot[] = [];
     for (const key of keys) {
-      const value = await bb.storage.kv.get<OpenCodeSnapshot>(key);
+      const value = await alia.storage.kv.get<OpenCodeSnapshot>(key);
       if (value !== null && value !== undefined) found.push(value);
     }
     return found;
   }
 
   async function readPluginsSnapshots(): Promise<HostPluginsSnapshot[]> {
-    const keys = await bb.storage.kv.list("plugins:");
+    const keys = await alia.storage.kv.list("plugins:");
     const found: HostPluginsSnapshot[] = [];
     for (const key of keys) {
-      const value = await bb.storage.kv.get<HostPluginsSnapshot>(key);
+      const value = await alia.storage.kv.get<HostPluginsSnapshot>(key);
       if (value !== null && value !== undefined) found.push(value);
     }
     return found;
@@ -727,14 +727,14 @@ export default async function plugin(bb: BbPluginApi) {
   // ------------------------------------------------------------- metamcp
   // Cached in storage so the gateway stays on screen across plugin reloads.
   let metamcpCache: MetaMcpNamespace[] =
-    (await bb.storage.kv.get<MetaMcpNamespace[]>("metamcp")) ?? [];
+    (await alia.storage.kv.get<MetaMcpNamespace[]>("metamcp")) ?? [];
   async function refreshMetaMcp(): Promise<MetaMcpNamespace[]> {
     const current = await readConfig();
     const url = current.metamcpUrl.trim();
     const key = current.metamcpApiKey.trim();
     if (url === "" || key === "") {
       metamcpCache = [];
-      await bb.storage.kv.set("metamcp", metamcpCache);
+      await alia.storage.kv.set("metamcp", metamcpCache);
       return metamcpCache;
     }
     const namespaces = current.metamcpNamespaces
@@ -742,7 +742,7 @@ export default async function plugin(bb: BbPluginApi) {
       .map((entry) => entry.trim())
       .filter((entry) => entry !== "");
     metamcpCache = await fetchGateway(url, namespaces.length > 0 ? namespaces : ["secondary"], key);
-    await bb.storage.kv.set("metamcp", metamcpCache);
+    await alia.storage.kv.set("metamcp", metamcpCache);
     return metamcpCache;
   }
 
@@ -831,9 +831,9 @@ export default async function plugin(bb: BbPluginApi) {
     return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  function getBbPreselectedModel(): string | null {
+  function getAliaPreselectedModel(): string | null {
     try {
-      const dbPath = path.join(homedir(), ".bb", "bb.db");
+      const dbPath = path.join(homedir(), ".vesnalia", "alia.db");
       const db = new Database(dbPath, { readonly: true });
       const row = db.prepare(
         "SELECT model FROM project_execution_defaults WHERE provider_id = 'acp-opencode' ORDER BY updated_at DESC LIMIT 1"
@@ -845,9 +845,9 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  function setBbPreselectedModel(modelId: string): boolean {
+  function setAliaPreselectedModel(modelId: string): boolean {
     try {
-      const dbPath = path.join(homedir(), ".bb", "bb.db");
+      const dbPath = path.join(homedir(), ".vesnalia", "alia.db");
       const db = new Database(dbPath);
       const now = Date.now();
       const rows = db.prepare(
@@ -878,8 +878,8 @@ export default async function plugin(bb: BbPluginApi) {
       readCatalog(),
       readIgnored(),
       readAutoSync(),
-      bb.sdk.hosts.list(),
-      bb.sdk.providers.list().catch(() => []),
+      alia.sdk.hosts.list(),
+      alia.sdk.providers.list().catch(() => []),
       readConfig(),
     ]);
     const providerIds = new Set(providers.map((provider) => provider.id));
@@ -898,7 +898,7 @@ export default async function plugin(bb: BbPluginApi) {
         scannedAt: scan?.scannedAt ?? null,
         error: snapshot?.error ?? null,
         agents: (scan?.agents ?? []).map((agent) => {
-          const candidates = agentDefs.get(agent.kind)?.bbProviders ?? [];
+          const candidates = agentDefs.get(agent.kind)?.aliaProviders ?? [];
           const providerId = candidates.find((id) => providerIds.has(id)) ?? null;
           return {
             ...agent,
@@ -931,7 +931,7 @@ export default async function plugin(bb: BbPluginApi) {
     const pluginNames = new Set<string>();
     for (const snapshot of skillsSnapshots) {
       const canon = snapshot.scan.locations.find((item) => item.id === "agents");
-      const bbHome = snapshot.scan.locations.find((item) => item.id === "bb");
+      const aliaHome = snapshot.scan.locations.find((item) => item.id === "alia");
       const mine = new Map<string, { hash: string | null; mtime: number | null; homes: string[]; bytes: number }>();
       for (const entry of canon?.entries ?? []) {
         if (!entry.hasSkillMd) continue;
@@ -943,14 +943,14 @@ export default async function plugin(bb: BbPluginApi) {
           )
           .map((location) => location.id);
         const stamp = effectiveCanonStamp(entry.name, entry.hash, entry.mtime, snapshot.scan.locations);
-        const bbEntry = bbHome?.entries.find((item) => item.name === entry.name && item.hasSkillMd);
-        // Копия в доме BB меряется так, как её перенесёт BB, — вместе с мусором.
-        const bbDirBytes = bbEntry?.kind === "dir" ? (bbEntry.bbBytes || bbEntry.bytes || 0) : null;
+        const aliaEntry = aliaHome?.entries.find((item) => item.name === entry.name && item.hasSkillMd);
+        // Копия в доме VesnALIA меряется так, как её перенесёт VesnALIA, — вместе с мусором.
+        const aliaDirBytes = aliaEntry?.kind === "dir" ? (aliaEntry.aliaBytes || aliaEntry.bytes || 0) : null;
         mine.set(entry.name, {
           hash: stamp.hash,
           mtime: stamp.mtime,
           homes,
-          bytes: bbInjectBytes(entry.bytes ?? 0, bbDirBytes),
+          bytes: aliaInjectBytes(entry.bytes ?? 0, aliaDirBytes),
         });
         canonNames.add(entry.name);
       }
@@ -976,7 +976,7 @@ export default async function plugin(bb: BbPluginApi) {
       return {
         name,
         fromPlugin: pluginNames.has(name),
-        tooHeavy: hosts.some((item) => bbInjectTooHeavy(item.bytes)),
+        tooHeavy: hosts.some((item) => aliaInjectTooHeavy(item.bytes)),
         hosts,
       };
     });
@@ -1092,12 +1092,12 @@ export default async function plugin(bb: BbPluginApi) {
       canonicalHostId,
     );
 
-    const bbPreselected = getBbPreselectedModel();
+    const aliaPreselected = getAliaPreselectedModel();
     const canonModel = openCodeHosts.find((h) => h.model)?.model ?? null;
     const canonSmall = openCodeHosts.find((h) => h.smallModel)?.smallModel ?? null;
 
     const availableModels: OpenCodeModelItem[] = [];
-    const modelsResult = await bb.sdk.providers.models({ providerId: "acp-opencode" }).catch(() => null);
+    const modelsResult = await alia.sdk.providers.models({ providerId: "acp-opencode" }).catch(() => null);
 
     if (modelsResult && Array.isArray((modelsResult as { models?: Array<{ id: string; model?: string; displayName?: string }> }).models)) {
       const list = (modelsResult as { models: Array<{ id: string; model?: string; displayName?: string }> }).models;
@@ -1122,7 +1122,7 @@ export default async function plugin(bb: BbPluginApi) {
           providerName: pName,
           isDefaultInOpenCode: fullId === canonModel,
           isSmallInOpenCode: fullId === canonSmall,
-          isBbPreselected: fullId === bbPreselected,
+          isAliaPreselected: fullId === aliaPreselected,
         });
       }
     } else {
@@ -1138,7 +1138,7 @@ export default async function plugin(bb: BbPluginApi) {
                 providerName: p.name,
                 isDefaultInOpenCode: fullId === canonModel,
                 isSmallInOpenCode: fullId === canonSmall,
-                isBbPreselected: fullId === bbPreselected,
+                isAliaPreselected: fullId === aliaPreselected,
               });
             }
           }
@@ -1150,7 +1150,7 @@ export default async function plugin(bb: BbPluginApi) {
       hosts: openCodeHosts.map(({ scan: _, ...h }) => h),
       providers: providerRows,
       availableModels,
-      bbPreselectedModel: bbPreselected,
+      aliaPreselectedModel: aliaPreselected,
       drift: openCodeDrift,
       canonicalSourceHostId: canonicalHostId,
     };
@@ -1167,8 +1167,8 @@ export default async function plugin(bb: BbPluginApi) {
       skillsFanOutAuto: LEGACY_SKILLS.fanOutAuto,
       lang: currentLang,
       uiLang: await readUiLangChoice(),
-      lastScanAt: (await bb.storage.kv.get<number>("lastScanAt")) ?? null,
-      lastSyncAt: (await bb.storage.kv.get<number>("lastSyncAt")) ?? null,
+      lastScanAt: (await alia.storage.kv.get<number>("lastScanAt")) ?? null,
+      lastSyncAt: (await alia.storage.kv.get<number>("lastSyncAt")) ?? null,
       skills: skillsViews,
       skillCanon,
       skillsPending,
@@ -1184,7 +1184,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function publish(): Promise<Overview> {
     const current = await overview();
-    bb.realtime.publish(CHANGED, { badge: current.badge });
+    alia.realtime.publish(CHANGED, { badge: current.badge });
     return current;
   }
 
@@ -1246,7 +1246,7 @@ export default async function plugin(bb: BbPluginApi) {
     includePluginNames?: boolean,
     skipHostIds: readonly string[] = [],
   ) {
-    const hostsList = await bb.sdk.hosts.list();
+    const hostsList = await alia.sdk.hosts.list();
     const { targets: connected, disconnected } = partitionSkillHosts(hostsList, hostId);
     const allowed = new Set(selectFanOutHostIds(connected.map((item) => item.id), skipHostIds));
     const targets = connected.filter((item) => allowed.has(item.id));
@@ -1377,8 +1377,8 @@ export default async function plugin(bb: BbPluginApi) {
 
   const SKILLS_ARCHIVE_TIMEOUT_MS = 120_000;
 
-  async function runServerBbSkills(dryRun: boolean, includePluginNames?: boolean) {
-    const serverLabel = t("сервер BB");
+  async function runServerAliaSkills(dryRun: boolean, includePluginNames?: boolean) {
+    const serverLabel = t("сервер ALIA");
     const empty = {
       applied: 0,
       failed: 0,
@@ -1395,8 +1395,8 @@ export default async function plugin(bb: BbPluginApi) {
       skippedByPlugin: [] as string[],
       errors: [] as string[],
     };
-    const hostsList = await bb.sdk.hosts.list();
-    const destRoot = bbServerSkillsDir(bb.server.experimental_dataDir);
+    const hostsList = await alia.sdk.hosts.list();
+    const destRoot = aliaServerSkillsDir(alia.server.experimental_dataDir);
     const canonRoot = canonSkillsDir();
     const skipPlugins = !(includePluginNames ?? LEGACY_SKILLS.pluginNames);
     const snapshots = await readSkillsSnapshots();
@@ -1407,7 +1407,7 @@ export default async function plugin(bb: BbPluginApi) {
     const errors: string[] = [];
 
     const canonScan = await scanSkillHome("agents", canonRoot);
-    const destScan = await scanSkillHome("bb", destRoot);
+    const destScan = await scanSkillHome("alia", destRoot);
     const localCanon = canonScan.entries.filter((item) => item.hasSkillMd);
     const destEntries = destScan.entries.filter((item) => item.hasSkillMd);
 
@@ -1432,11 +1432,11 @@ export default async function plugin(bb: BbPluginApi) {
     ];
 
     if (combinedCanon.length === 0) {
-      errors.push(`${serverLabel}: ${t("на сервере BB нет канона и не задан git-remote синка")}`);
+      errors.push(`${serverLabel}: ${t("на сервере ALIA нет канона и не задан git-remote синка")}`);
       return { ...empty, failed: 1, skippedByPlugin, errors: errors.slice(0, 100) };
     }
 
-    const planned = planServerBbMirror({
+    const planned = planServerAliaMirror({
       canon: combinedCanon.map((item) => ({
         name: item.name,
         kind: item.kind,
@@ -1462,10 +1462,10 @@ export default async function plugin(bb: BbPluginApi) {
         failed += 1;
         errors.push(`${serverLabel} · ${op.name}: ${op.reason}`);
         ops.push({
-          hostId: "bb-server",
+          hostId: "alia-server",
           hostName: serverLabel,
           kind: "mirror",
-          locationId: "bb",
+          locationId: "alia",
           name: op.name,
           reason: op.reason,
           ok: false,
@@ -1476,10 +1476,10 @@ export default async function plugin(bb: BbPluginApi) {
       if (!isSafeSkillName(op.name)) {
         failed += 1;
         ops.push({
-          hostId: "bb-server",
+          hostId: "alia-server",
           hostName: serverLabel,
           kind: "mirror",
-          locationId: "bb",
+          locationId: "alia",
           name: op.name,
           reason: op.reason,
           ok: false,
@@ -1491,7 +1491,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (localNames.has(op.name)) {
           await mirrorSkillFromCanon(canonRoot, destRoot, op.name, dryRun);
         } else if (source === null) {
-          throw new Error(t("на сервере BB нет канона и не задан git-remote синка"));
+          throw new Error(t("на сервере ALIA нет канона и не задан git-remote синка"));
         } else {
           const packed = await callHostTimed(
             (timeoutMs) =>
@@ -1505,10 +1505,10 @@ export default async function plugin(bb: BbPluginApi) {
         }
         applied += 1;
         ops.push({
-          hostId: "bb-server",
+          hostId: "alia-server",
           hostName: serverLabel,
           kind: "mirror",
-          locationId: "bb",
+          locationId: "alia",
           name: op.name,
           reason: op.reason,
           ok: true,
@@ -1519,10 +1519,10 @@ export default async function plugin(bb: BbPluginApi) {
         const error = cause instanceof Error ? cause.message : String(cause);
         errors.push(`${serverLabel} · ${op.name}: ${error}`);
         ops.push({
-          hostId: "bb-server",
+          hostId: "alia-server",
           hostName: serverLabel,
           kind: "mirror",
-          locationId: "bb",
+          locationId: "alia",
           name: op.name,
           reason: op.reason,
           ok: false,
@@ -1543,7 +1543,7 @@ export default async function plugin(bb: BbPluginApi) {
     const errors: string[] = [...promote.errors];
     const fan = await runSkillsFanOut(hostId, dryRun, includePluginNames);
     errors.push(...fan.errors);
-    const server = await runServerBbSkills(dryRun, includePluginNames);
+    const server = await runServerAliaSkills(dryRun, includePluginNames);
     errors.push(...server.errors);
     const skipped = [...new Set([...fan.skippedByPlugin, ...server.skippedByPlugin])].sort().slice(0, 500);
     return {
@@ -1559,7 +1559,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   /** Архив снимков по машинам, новые сверху. */
   async function runSkillsBackups(hostId: string | null) {
-    const hostsList = await bb.sdk.hosts.list();
+    const hostsList = await alia.sdk.hosts.list();
     const targets = hostsList.filter(
       (candidate) => (hostId === null || candidate.id === hostId) && candidate.status === "connected",
     );
@@ -1633,7 +1633,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
     }
     if (!dryRun && applied > 0) {
-      await bb.storage.kv.set("lastSyncAt", Date.now());
+      await alia.storage.kv.set("lastSyncAt", Date.now());
       await scanAll(hostId);
     }
     return { applied, failed, errors: errors.slice(0, 100) };
@@ -1861,7 +1861,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (!item.ok) failed += 1;
         }
       } catch (cause) {
-        bb.log.info(
+        alia.log.info(
           `probe failed on ${snapshot.hostName}: ${cause instanceof Error ? cause.message : String(cause)}`,
         );
       }
@@ -1872,7 +1872,7 @@ export default async function plugin(bb: BbPluginApi) {
       ...previous.filter((item) => !replaced.has(`${item.hostId}:${item.kind}:${item.name}`)),
       ...fresh,
     ];
-    await bb.storage.kv.set("probes", merged.slice(-400));
+    await alia.storage.kv.set("probes", merged.slice(-400));
     return { checked, failed };
   }
 
@@ -1907,7 +1907,7 @@ export default async function plugin(bb: BbPluginApi) {
     dryRun: boolean;
   }): Promise<{ synced: number; errors: string[] }> {
     const openCodeSnapshots = await readOpenCodeSnapshots();
-    const hostsList = await bb.sdk.hosts.list();
+    const hostsList = await alia.sdk.hosts.list();
 
     const srcId =
       args.sourceHostId ??
@@ -1967,7 +1967,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (res.ok) {
           synced += 1;
           if (res.scan) {
-            await bb.storage.kv.set(`opencode:${machine.id}`, {
+            await alia.storage.kv.set(`opencode:${machine.id}`, {
               hostId: machine.id,
               hostName: machine.name,
               scan: res.scan,
@@ -1991,7 +1991,7 @@ export default async function plugin(bb: BbPluginApi) {
     dryRun: boolean;
   }): Promise<{ removed: number; errors: string[] }> {
     const openCodeSnapshots = await readOpenCodeSnapshots();
-    const hostsList = await bb.sdk.hosts.list();
+    const hostsList = await alia.sdk.hosts.list();
 
     const targets = hostsList.filter(
       (candidate) => (args.hostId === null || candidate.id === args.hostId) && candidate.status === "connected",
@@ -2021,7 +2021,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (res.ok) {
           removed += toRemove.length;
           if (res.scan) {
-            await bb.storage.kv.set(`opencode:${machine.id}`, {
+            await alia.storage.kv.set(`opencode:${machine.id}`, {
               hostId: machine.id,
               hostName: machine.name,
               scan: res.scan,
@@ -2040,7 +2040,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   // ------------------------------------------------------------------ rpc
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     ...skillsHub.handlers,
     overview: () => overview(),
     rescan: async ({ hostId }) => {
@@ -2054,13 +2054,13 @@ export default async function plugin(bb: BbPluginApi) {
     ignore: async ({ names }) => {
       const ignored = new Set(await readIgnored());
       for (const name of names) ignored.add(name);
-      await bb.storage.kv.set("ignored", [...ignored]);
+      await alia.storage.kv.set("ignored", [...ignored]);
       return publish();
     },
     unignore: async ({ names }) => {
       const ignored = new Set(await readIgnored());
       for (const name of names) ignored.delete(name);
-      await bb.storage.kv.set("ignored", [...ignored]);
+      await alia.storage.kv.set("ignored", [...ignored]);
       return publish();
     },
     catalog_update: async ({ name, scope, targets, spec }) => {
@@ -2086,7 +2086,7 @@ export default async function plugin(bb: BbPluginApi) {
       await writeCatalog(catalog.filter((entry) => entry.name !== name));
       const ignored = new Set(await readIgnored());
       ignored.add(name);
-      await bb.storage.kv.set("ignored", [...ignored]);
+      await alia.storage.kv.set("ignored", [...ignored]);
       return { ...result, overview: await publish() };
     },
     plan: async ({ hostId }) => ({
@@ -2151,11 +2151,11 @@ export default async function plugin(bb: BbPluginApi) {
     set_language: async ({ lang: next }) => {
       currentLang = next;
       setLang(next);
-      await bb.storage.kv.set("lang", next);
+      await alia.storage.kv.set("lang", next);
       return publish();
     },
     ui_language_set: async ({ choice }) => {
-      await bb.storage.kv.set("uiLang", choice);
+      await alia.storage.kv.set("uiLang", choice);
       // Pages pick the new language up on the next overview refresh.
       await publish();
       return { choice };
@@ -2180,14 +2180,14 @@ export default async function plugin(bb: BbPluginApi) {
       return { ...result, overview: await publish() };
     },
     opencode_apply: async ({ hostId, ops, dryRun }) => {
-      const hostsList = await bb.sdk.hosts.list();
+      const hostsList = await alia.sdk.hosts.list();
       const target = hostsList.find((h) => h.id === hostId);
       if (!target) throw new Error(t("Машина не найдена"));
 
       try {
         const res = await host.call("opencode_apply", { ops, dryRun }, { hostId });
         if (res.ok && res.scan) {
-          await bb.storage.kv.set(`opencode:${hostId}`, {
+          await alia.storage.kv.set(`opencode:${hostId}`, {
             hostId,
             hostName: target.name,
             scan: res.scan,
@@ -2203,12 +2203,12 @@ export default async function plugin(bb: BbPluginApi) {
         };
       }
     },
-    opencode_set_default_model: async ({ modelId, smallModelId, setAsBbDefault, setAsOpenCodeDefault }) => {
+    opencode_set_default_model: async ({ modelId, smallModelId, setAsAliaDefault, setAsOpenCodeDefault }) => {
       let updatedHosts = 0;
-      let bbUpdated = false;
+      let aliaUpdated = false;
 
       if (setAsOpenCodeDefault) {
-        const hostsList = await bb.sdk.hosts.list();
+        const hostsList = await alia.sdk.hosts.list();
         const targets = hostsList.filter((c) => c.status === "connected");
         for (const machine of targets) {
           try {
@@ -2217,7 +2217,7 @@ export default async function plugin(bb: BbPluginApi) {
             if (res.ok) {
               updatedHosts += 1;
               if (res.scan) {
-                await bb.storage.kv.set(`opencode:${machine.id}`, {
+                await alia.storage.kv.set(`opencode:${machine.id}`, {
                   hostId: machine.id,
                   hostName: machine.name,
                   scan: res.scan,
@@ -2226,24 +2226,24 @@ export default async function plugin(bb: BbPluginApi) {
               }
             }
           } catch (cause) {
-            bb.log.info(`failed to set opencode default model on ${machine.name}: ${cause}`);
+            alia.log.info(`failed to set opencode default model on ${machine.name}: ${cause}`);
           }
         }
       }
 
-      if (setAsBbDefault) {
-        bbUpdated = setBbPreselectedModel(modelId);
+      if (setAsAliaDefault) {
+        aliaUpdated = setAliaPreselectedModel(modelId);
       }
 
       return {
         ok: true,
         updatedHosts,
-        bbUpdated,
+        aliaUpdated,
         overview: await publish(),
       };
     },
     set_auto_sync: async ({ enabled }) => {
-      await bb.storage.kv.set("autoSync", enabled);
+      await alia.storage.kv.set("autoSync", enabled);
       return publish();
     },
     set_skills_fanout_auto: async ({ enabled }) => {
@@ -2253,17 +2253,17 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // ------------------------------------------------------------- schedule
-  bb.background.schedule("sweep", SWEEP_CRON, async () => {
+  alia.background.schedule("sweep", SWEEP_CRON, async () => {
     await Promise.all([scanAll(null), refreshMetaMcp()]);
     if (await readAutoSync()) {
       const result = await runSync(null, false, false);
-      bb.log.info(`auto sync: applied ${result.applied}, failed ${result.failed}`);
+      alia.log.info(`auto sync: applied ${result.applied}, failed ${result.failed}`);
     }
     // Skills live on the hub now: count leftovers on the machines and place new skills.
-    await skillsHub.refreshMachines().catch((cause: unknown) => bb.log.warn(`skills machines: ${String(cause)}`));
+    await skillsHub.refreshMachines().catch((cause: unknown) => alia.log.warn(`skills machines: ${String(cause)}`));
     // Experimental hub-only mode: publish what the hub lacks, then archive the copies.
     if ((await readConfig()).skillsHubOnly) {
-      await skillsHub.enforceHubOnly().catch((cause: unknown) => bb.log.warn(`skills hub-only: ${String(cause)}`));
+      await skillsHub.enforceHubOnly().catch((cause: unknown) => alia.log.warn(`skills hub-only: ${String(cause)}`));
     }
     if ((await readConfig()).skillsClassifierAuto) skillsHub.kick();
     await publish();
@@ -2274,27 +2274,27 @@ export default async function plugin(bb: BbPluginApi) {
     if ((await readSnapshots()).length > 0) return;
     await scanAll(null);
     await publish();
-  })().catch((cause: unknown) => bb.log.warn(`first scan: ${String(cause)}`));
+  })().catch((cause: unknown) => alia.log.warn(`first scan: ${String(cause)}`));
 
   // ------------------------------------------------------------------ cli
   const usage = [
     "Usage:",
-    t("  bb tools status [--json]        Каталог, машины, расхождения"),
-    t("  bb tools scan [--host <id>]     Пересканировать машины"),
-    t("  bb tools catalog [--json]       Записи каталога"),
-    t("  bb tools pending [--json]       Новые серверы, ещё не принятые"),
-    t("  bb tools adopt <name...>        Принять серверы в каталог"),
-    t("  bb tools ignore <name...>       Больше не предлагать"),
-    t("  bb tools unignore <name...>     Вернуть скрытый сервер"),
-    t("  bb tools plan [--host <id>]     Что изменит синхронизация"),
-    "  bb tools sync [--host <id>] [--dry-run] [--with-different]",
-    t("  bb tools forget <name>          Убрать запись из каталога"),
-    t("  bb tools remove <name> [--with-gateways]   Удалить сервер со всех машин"),
-    t("  bb tools probe [<name>]         Живая проверка связи"),
-    t("  bb tools enable|disable <name>  Включить или выключить сервер"),
-    t("  bb tools auto on|off            Автосинхронизация раз в час"),
-    t("  bb tools gateway-add <файл> --host <id>  Добавить серверы за шлюз"),
-    t("  bb tools lang [ru|en]           Язык интерфейса и вывода"),
+    t("  VesnALIA tools status [--json]        Каталог, машины, расхождения"),
+    t("  VesnALIA tools scan [--host <id>]     Пересканировать машины"),
+    t("  VesnALIA tools catalog [--json]       Записи каталога"),
+    t("  VesnALIA tools pending [--json]       Новые серверы, ещё не принятые"),
+    t("  VesnALIA tools adopt <name...>        Принять серверы в каталог"),
+    t("  VesnALIA tools ignore <name...>       Больше не предлагать"),
+    t("  VesnALIA tools unignore <name...>     Вернуть скрытый сервер"),
+    t("  VesnALIA tools plan [--host <id>]     Что изменит синхронизация"),
+    "  VesnALIA tools sync [--host <id>] [--dry-run] [--with-different]",
+    t("  VesnALIA tools forget <name>          Убрать запись из каталога"),
+    t("  VesnALIA tools remove <name> [--with-gateways]   Удалить сервер со всех машин"),
+    t("  VesnALIA tools probe [<name>]         Живая проверка связи"),
+    t("  VesnALIA tools enable|disable <name>  Включить или выключить сервер"),
+    t("  VesnALIA tools auto on|off            Автосинхронизация раз в час"),
+    t("  VesnALIA tools gateway-add <файл> --host <id>  Добавить серверы за шлюз"),
+    t("  VesnALIA tools lang [ru|en]           Язык интерфейса и вывода"),
     ...SKILLS_CLI_USAGE.map((line) => t(line)),
   ].join("\n");
 
@@ -2311,7 +2311,7 @@ export default async function plugin(bb: BbPluginApi) {
       );
       for (const agent of installed) {
         lines.push(
-          `  ${agent.label}: ${plural(agent.servers.length, ["сервер", "сервера", "серверов"])}${agent.bridged ? "" : `  (${t("нет провайдера BB")})`}${agent.writable ? "" : `  (${t("только чтение")})`}`,
+          `  ${agent.label}: ${plural(agent.servers.length, ["сервер", "сервера", "серверов"])}${agent.bridged ? "" : `  (${t("нет провайдера ALIA")})`}${agent.writable ? "" : `  (${t("только чтение")})`}`,
         );
       }
       if (machine.otherClis.length > 0) {
@@ -2341,139 +2341,139 @@ export default async function plugin(bb: BbPluginApi) {
   const LEGACY_SKILL_COMMANDS = new Set(["skills-adopt", "skills-fanout", "skills-backups", "skills-restore", "skills-sync"]);
   async function callerHost(threadId: string | undefined): Promise<string | null> {
     if (threadId === undefined) return null;
-    const found = (await bb.sdk.threads.get({ threadId }).catch(() => null)) as
+    const found = (await alia.sdk.threads.get({ threadId }).catch(() => null)) as
       | { environment?: { hostId?: string }; thread?: { environment?: { hostId?: string } } }
       | null;
     return found?.environment?.hostId ?? found?.thread?.environment?.hostId ?? null;
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "tools",
-    summary: t("Инструменты агентов: MCP-серверы и навыки на всех машинах BB"),
+    summary: t("Инструменты агентов: MCP-серверы и навыки на всех машинах ALIA"),
     commands: [
-      { name: "status", summary: t("Каталог, машины и расхождения"), usage: "bb tools status [--json]" },
-      { name: "scan", summary: t("Пересканировать машины"), usage: "bb tools scan [--host <id>]" },
-      { name: "catalog", summary: t("Записи каталога"), usage: "bb tools catalog [--json]" },
-      { name: "pending", summary: t("Новые серверы"), usage: "bb tools pending [--json]" },
-      { name: "adopt", summary: t("Принять серверы в каталог"), usage: "bb tools adopt <name...>" },
-      { name: "ignore", summary: t("Больше не предлагать сервер"), usage: "bb tools ignore <name...>" },
+      { name: "status", summary: t("Каталог, машины и расхождения"), usage: "alia tools status [--json]" },
+      { name: "scan", summary: t("Пересканировать машины"), usage: "alia tools scan [--host <id>]" },
+      { name: "catalog", summary: t("Записи каталога"), usage: "alia tools catalog [--json]" },
+      { name: "pending", summary: t("Новые серверы"), usage: "alia tools pending [--json]" },
+      { name: "adopt", summary: t("Принять серверы в каталог"), usage: "alia tools adopt <name...>" },
+      { name: "ignore", summary: t("Больше не предлагать сервер"), usage: "alia tools ignore <name...>" },
       {
         name: "unignore",
         summary: t("Вернуть скрытый сервер в предложения"),
-        usage: "bb tools unignore <name...>",
+        usage: "alia tools unignore <name...>",
       },
-      { name: "plan", summary: t("Показать план синхронизации"), usage: "bb tools plan [--host <id>]" },
+      { name: "plan", summary: t("Показать план синхронизации"), usage: "alia tools plan [--host <id>]" },
       {
         name: "sync",
         summary: t("Синхронизировать машины с каталогом"),
-        usage: "bb tools sync [--host <id>] [--dry-run] [--with-different]",
+        usage: "alia tools sync [--host <id>] [--dry-run] [--with-different]",
       },
       {
         name: "forget",
         summary: t("Убрать запись из каталога, машины не трогать"),
-        usage: "bb tools forget <name>",
+        usage: "alia tools forget <name>",
       },
       {
         name: "remove",
         summary: t("Удалить сервер со всех машин"),
-        usage: "bb tools remove <name> [--host <id>] [--with-gateways] [--dry-run]",
+        usage: "alia tools remove <name> [--host <id>] [--with-gateways] [--dry-run]",
       },
       {
         name: "probe",
         summary: t("Живая проверка связи с серверами"),
-        usage: "bb tools probe [<name>] [--host <id>]",
+        usage: "alia tools probe [<name>] [--host <id>]",
       },
       {
         name: "enable",
         summary: t("Включить сервер там, где формат это поддерживает"),
-        usage: "bb tools enable <name> [--host <id>]",
+        usage: "alia tools enable <name> [--host <id>]",
       },
       {
         name: "disable",
         summary: t("Выключить сервер, не удаляя его"),
-        usage: "bb tools disable <name> [--host <id>]",
+        usage: "alia tools disable <name> [--host <id>]",
       },
-      { name: "auto", summary: t("Автосинхронизация раз в час"), usage: "bb tools auto on|off" },
+      { name: "auto", summary: t("Автосинхронизация раз в час"), usage: "alia tools auto on|off" },
       {
         name: "gateway-add",
         summary: t("Добавить серверы за шлюз MetaMCP из JSON-файла"),
-        usage: t("bb tools gateway-add <файл.json> --host <id>"),
+        usage: t("alia tools gateway-add <файл.json> --host <id>"),
       },
       {
         name: "lang",
         summary: t("Язык интерфейса и вывода: ru или en"),
-        usage: "bb tools lang [ru|en]",
+        usage: "alia tools lang [ru|en]",
       },
-      { name: "skills-hub", summary: t("Навыки на хабе: git, проблемы, копии на машинах"), usage: "bb tools skills-hub [--json]" },
-      { name: "skills-tree", summary: t("Дерево категорий навыков"), usage: "bb tools skills-tree [--skills] [--json]" },
+      { name: "skills-hub", summary: t("Навыки на хабе: git, проблемы, копии на машинах"), usage: "alia tools skills-hub [--json]" },
+      { name: "skills-tree", summary: t("Дерево категорий навыков"), usage: "alia tools skills-tree [--skills] [--json]" },
       {
         name: "skills-publish",
         summary: t("Опубликовать навык на хаб"),
-        usage: t("bb tools skills-publish <папка> [--host <машина>] [--dry-run]"),
+        usage: t("alia tools skills-publish <папка> [--host <машина>] [--dry-run]"),
       },
       {
         name: "skills-pull",
         summary: t("Взять навык с хаба в работу"),
-        usage: t("bb tools skills-pull <навык> [--to <папка>] [--host <машина>]"),
+        usage: t("alia tools skills-pull <навык> [--to <папка>] [--host <машина>]"),
       },
-      { name: "skills-move", summary: t("Перенести навык в категорию вручную"), usage: t('bb tools skills-move <навык> "Раздел/Подраздел"') },
-      { name: "skills-classify", summary: t("Разложить навыки без категории"), usage: "bb tools skills-classify [--wait]" },
+      { name: "skills-move", summary: t("Перенести навык в категорию вручную"), usage: t('alia tools skills-move <навык> "Раздел/Подраздел"') },
+      { name: "skills-classify", summary: t("Разложить навыки без категории"), usage: "alia tools skills-classify [--wait]" },
       {
         name: "skills-suggest",
         summary: t("Какой навык подходит к сообщению"),
-        usage: "bb tools skills-suggest --message <text> [--prev-user <text>] [--prev-assistant <text>] [--thread <id>] [--json]",
+        usage: "alia tools skills-suggest --message <text> [--prev-user <text>] [--prev-assistant <text>] [--thread <id>] [--json]",
       },
       {
         name: "skills-cards",
         summary: t("Карточки маршрутизации навыков"),
-        usage: "bb tools skills-cards [--refresh] [--wait] [--json]",
+        usage: "alia tools skills-cards [--refresh] [--wait] [--json]",
       },
       {
         name: "skills-suggest-log",
         summary: t("Журнал подбора навыков"),
-        usage: "bb tools skills-suggest-log [--limit N] [--json]",
+        usage: "alia tools skills-suggest-log [--limit N] [--json]",
       },
-      { name: "skills-remove", summary: t("Убрать навык с хаба в архив"), usage: t("bb tools skills-remove <навык>") },
-      { name: "skills-machines", summary: t("Копии навыков на машинах"), usage: "bb tools skills-machines [--json]" },
+      { name: "skills-remove", summary: t("Убрать навык с хаба в архив"), usage: t("alia tools skills-remove <навык>") },
+      { name: "skills-machines", summary: t("Копии навыков на машинах"), usage: "alia tools skills-machines [--json]" },
       {
         name: "skills-import",
         summary: t("Перенести на хаб навыки, которых там нет"),
-        usage: t("bb tools skills-import --host <машина> [<навык>...] [--dry-run]"),
+        usage: t("alia tools skills-import --host <машина> [<навык>...] [--dry-run]"),
       },
       {
         name: "skills-cleanup",
         summary: t("Убрать копии навыков с машины в архив"),
-        usage: t("bb tools skills-cleanup --host <машина> [--dry-run]"),
+        usage: t("alia tools skills-cleanup --host <машина> [--dry-run]"),
       },
       {
         name: "skills-hub-only",
         summary: t("Режим «только на хабе»: отчёт или прогон"),
-        usage: t("bb tools skills-hub-only [--run] [--json]"),
+        usage: t("alia tools skills-hub-only [--run] [--json]"),
       },
       {
         name: "plugins",
-        summary: t("Установленные плагины BB по машинам"),
-        usage: "bb tools plugins [--json]",
+        summary: t("Установленные плагины ALIA по машинам"),
+        usage: "alia tools plugins [--json]",
       },
       {
         name: "opencode",
         summary: t("Состояние моделей и провайдеров OpenCode на всех машинах"),
-        usage: "bb tools opencode [--json]",
+        usage: "alia tools opencode [--json]",
       },
       {
         name: "opencode-sync",
         summary: t("Синхронизировать конфигурацию OpenCode с эталона на другие машины"),
-        usage: "bb tools opencode-sync [--from <host>] [--to <host>] [--dry-run] [--json]",
+        usage: "alia tools opencode-sync [--from <host>] [--to <host>] [--dry-run] [--json]",
       },
       {
         name: "opencode-clean",
         summary: t("Очистить устаревшие провайдеры OpenCode"),
-        usage: "bb tools opencode-clean [--host <id>] [--dry-run] [--json]",
+        usage: "alia tools opencode-clean [--host <id>] [--dry-run] [--json]",
       },
       {
         name: "opencode-set-default",
-        summary: t("Выбрать предустановленную модель OpenCode для новых чатов BB и CLI"),
-        usage: "bb tools opencode-set-default <modelId>",
+        summary: t("Выбрать предустановленную модель OpenCode для новых чатов ALIA и CLI"),
+        usage: "alia tools opencode-set-default <modelId>",
       },
     ],
     async run(argv, ctx) {
@@ -2523,7 +2523,7 @@ export default async function plugin(bb: BbPluginApi) {
           return reply(
             catalog,
             catalog.length === 0
-              ? t("Каталог пуст. Примите серверы: bb tools adopt <name>")
+              ? t("Каталог пуст. Примите серверы: VesnALIA tools adopt <name>")
               : catalog
                   .map(
                     (entry) =>
@@ -2556,7 +2556,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (args.length === 0) break;
           const ignored = new Set(await readIgnored());
           for (const name of args) ignored.add(name);
-          await bb.storage.kv.set("ignored", [...ignored]);
+          await alia.storage.kv.set("ignored", [...ignored]);
           await publish();
           return reply({ ignored: [...ignored] }, tp("Скрыто: {0}", args.join(", ")));
         }
@@ -2564,7 +2564,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (args.length === 0) break;
           const ignored = new Set(await readIgnored());
           for (const name of args) ignored.delete(name);
-          await bb.storage.kv.set("ignored", [...ignored]);
+          await alia.storage.kv.set("ignored", [...ignored]);
           await publish();
           return reply({ ignored: [...ignored] }, tp("Возвращено: {0}", args.join(", ")));
         }
@@ -2613,7 +2613,7 @@ export default async function plugin(bb: BbPluginApi) {
           await writeCatalog(catalog.filter((entry) => entry.name !== name));
           const ignored = new Set(await readIgnored());
           ignored.add(name);
-          await bb.storage.kv.set("ignored", [...ignored]);
+          await alia.storage.kv.set("ignored", [...ignored]);
           await publish();
           return reply(
             result,
@@ -2658,7 +2658,7 @@ export default async function plugin(bb: BbPluginApi) {
         case "auto": {
           const mode = args[0];
           if (mode !== "on" && mode !== "off") break;
-          await bb.storage.kv.set("autoSync", mode === "on");
+          await alia.storage.kv.set("autoSync", mode === "on");
           await publish();
           return reply({ autoSync: mode === "on" }, tp("Автосинхронизация {0}", mode === "on" ? t("включена") : t("выключена")));
         }
@@ -2690,14 +2690,14 @@ export default async function plugin(bb: BbPluginApi) {
         case "lang": {
           const next = args[0];
           if (next === undefined) {
-            return reply({ lang: currentLang }, tp(t("Язык: {0}. Переключить: bb tools lang ru|en"), currentLang));
+            return reply({ lang: currentLang }, tp(t("Язык: {0}. Переключить: VesnALIA tools lang ru|en"), currentLang));
           }
           if (!isLang(next) || args.length !== 1) {
             return { exitCode: 1, stderr: t("Укажите язык: ru или en") };
           }
           currentLang = next;
           setLang(next);
-          await bb.storage.kv.set("lang", next);
+          await alia.storage.kv.set("lang", next);
           await publish();
           return reply(
             { lang: next },
@@ -2712,7 +2712,7 @@ export default async function plugin(bb: BbPluginApi) {
         case "skills-sync":
           return {
             exitCode: 1,
-            stderr: t("Канона навыков на машинах больше нет: навыки живут на хабе BB, плагин не пишет в папки навыков на машинах. Смотрите bb tools skills-hub."),
+            stderr: t("Канона навыков на машинах больше нет: навыки живут на хабе VesnALIA, плагин не пишет в папки навыков на машинах. Смотрите VesnALIA tools skills-hub."),
           };
         case "skills-legacy-unused": {
           const current = await overview();
@@ -2736,7 +2736,7 @@ export default async function plugin(bb: BbPluginApi) {
                   return `${names[index] ?? item.hostId}: ${mark}`;
                 })
                 .join("  ");
-              return `${row.name}${row.fromPlugin ? t(" (плагин)") : ""}${row.tooHeavy ? `  ${t("BB не примет")}` : ""}  ${cells}`;
+              return `${row.name}${row.fromPlugin ? t(" (плагин)") : ""}${row.tooHeavy ? `  ${t("ALIA не примет")}` : ""}  ${cells}`;
             });
             const gaps = current.skillCanon.filter((row) => row.hosts.some((item) => item.state === "missing")).length;
             const differs = current.skillCanon.filter((row) =>
@@ -2749,7 +2749,7 @@ export default async function plugin(bb: BbPluginApi) {
               current.skillCanon,
               current.skillCanon.length === 0
                 ? t("Канон пуст или машины ещё не просканированы.")
-                : `${lines.join("\n")}\n\n${tp("Всего {0}; не на всех машинах: {1}; расходятся: {2}; BB не примет: {3}", current.skillCanon.length, gaps, differs, heavy)}`,
+                : `${lines.join("\n")}\n\n${tp("Всего {0}; не на всех машинах: {1}; расходятся: {2}; ALIA не примет: {3}", current.skillCanon.length, gaps, differs, heavy)}`,
             );
           }
           const rows = current.skills
@@ -2926,10 +2926,10 @@ export default async function plugin(bb: BbPluginApi) {
         case "opencode-set-default": {
           const modelId = args[0];
           if (!modelId) {
-            return { exitCode: 1, stderr: t("Укажите id модели: bb tools opencode-set-default <modelId>") };
+            return { exitCode: 1, stderr: t("Укажите id модели: VesnALIA tools opencode-set-default <modelId>") };
           }
-          const bbUpdated = setBbPreselectedModel(modelId);
-          const hostsList = await bb.sdk.hosts.list();
+          const aliaUpdated = setAliaPreselectedModel(modelId);
+          const hostsList = await alia.sdk.hosts.list();
           let hostsUpdated = 0;
           for (const m of hostsList.filter((c) => c.status === "connected")) {
             const res = await host.call(
@@ -2942,8 +2942,8 @@ export default async function plugin(bb: BbPluginApi) {
           await scanAll(null);
           await publish();
           return reply(
-            { modelId, bbUpdated, hostsUpdated },
-            tp("Предустановленная модель: {0} (BB: {1}, хосты: {2})", modelId, bbUpdated ? t("обновлено") : t("пропущено"), hostsUpdated),
+            { modelId, aliaUpdated, hostsUpdated },
+            tp("Предустановленная модель: {0} (ALIA: {1}, хосты: {2})", modelId, aliaUpdated ? t("обновлено") : t("пропущено"), hostsUpdated),
           );
         }
       }
@@ -2951,5 +2951,5 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info(`loaded: ${AGENTS.length} agent adapters, ${EXTRA_CLI_BINS.length} extra CLIs`);
+  alia.log.info(`loaded: ${AGENTS.length} agent adapters, ${EXTRA_CLI_BINS.length} extra CLIs`);
 }

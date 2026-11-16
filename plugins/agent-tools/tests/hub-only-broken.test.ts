@@ -34,7 +34,7 @@ test("blocking rejection keeps the machine and names the skill", async () => {
   assert.deepEqual(report[0]!.rejected, [
     { name: "browser-qa", reason: "mapping values are not allowed here" },
   ]);
-  assert.match(String(report[0]!.skipped), /BB не загружает: browser-qa \(frontmatter-yaml: mapping values are not allowed here\)/);
+  assert.match(String(report[0]!.skipped), /ALIA не загружает: browser-qa \(frontmatter-yaml: mapping values are not allowed here\)/);
 });
 
 test("machineNotOnHub lists a skill whose hub copy has a blocking problem", () => {

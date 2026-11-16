@@ -1,4 +1,4 @@
-// Adapted from bb-plugin-worktree-ports. See THIRD_PARTY_NOTICES.md.
+// Adapted from alia-plugin-worktree-ports. See THIRD_PARTY_NOTICES.md.
 import { describe, expect, it } from "vitest";
 import { attribute, parseCwds, parseDockerPorts, parseDockerRows, parseListeners } from "./port-scan";
 
@@ -32,10 +32,10 @@ describe("parseListeners", () => {
 
 describe("parseCwds", () => {
   it("pairs each pid with its cwd", () => {
-    const output = "p5568\nfcwd\nn/Users/x/.bb/worktrees/env_a/anton-go\np90546\nfcwd\nn/Users/x\n";
+    const output = "p5568\nfcwd\nn/Users/x/.vesnalia/worktrees/env_a/anton-go\np90546\nfcwd\nn/Users/x\n";
     expect(parseCwds(output)).toEqual(
       new Map([
-        [5568, "/Users/x/.bb/worktrees/env_a/anton-go"],
+        [5568, "/Users/x/.vesnalia/worktrees/env_a/anton-go"],
         [90546, "/Users/x"],
       ]),
     );

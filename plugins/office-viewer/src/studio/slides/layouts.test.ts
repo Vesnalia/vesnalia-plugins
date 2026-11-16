@@ -15,7 +15,7 @@ test("layout presets produce valid slide elements", () => {
     }
     const slide = slideFromLayout(layout, theme, "Test");
     const deck = parseSlidesDeck({
-      format: "bb-slides",
+      format: "alia-slides",
       version: 1,
       name: "Deck",
       theme,

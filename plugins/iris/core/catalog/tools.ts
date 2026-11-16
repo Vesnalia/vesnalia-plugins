@@ -109,7 +109,7 @@ export const RELEASE = [
     summary:
       "One card for a release: version, build, overall state, platforms, checks, store or TestFlight state, blockers and a timeline. CI and App Store Connect status words work as they are (passed, running, WAITING_FOR_REVIEW).",
     props: {
-      file: p.str("A JSON file you rewrite as the release moves ($BB_THREAD_STORAGE/release.json); re-read every 2 s while on screen"),
+      file: p.str("A JSON file you rewrite as the release moves ($ALIA_THREAD_STORAGE/release.json); re-read every 2 s while on screen"),
       release: p.obj(
         "The same data inline",
         "{app?, version, build?, channel?, status?, commit?, updated?, progress?: {done, total, label?}, platforms?: {name, status, build?, detail?}[], checks?: {name, status, detail?, url?}[], store?: {name, status, detail?}[], blockers?: (string | {title, owner?, detail?})[], timeline?: {time, title, status?}[]}",
@@ -118,7 +118,7 @@ export const RELEASE = [
     },
     children: "none",
     example: `<Card title="Release">
-<Release file="$BB_THREAD_STORAGE/release.json" />
+<Release file="$ALIA_THREAD_STORAGE/release.json" />
 </Card>`,
     aliases: ["ReleaseDashboard", "ReleaseStatus", "Ship"],
     heavy: true,

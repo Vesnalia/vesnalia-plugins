@@ -2,7 +2,7 @@
 // is a lie: the files the agent reads about are on a disk it cannot see. These
 // tests pin down what travels and what the document promises.
 import { describe, expect, it } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { CapturedSession } from "./capture";
 import { renderHandoff, startHandoff } from "./handoff";
 import type { TransferPlan, WorkingState } from "./machines";
@@ -15,7 +15,7 @@ interface RecordedCall {
   args: unknown;
 }
 
-function makeFakeBb(options: { dirty?: boolean; patchWritable?: boolean } = {}) {
+function makeFakeAlia(options: { dirty?: boolean; patchWritable?: boolean } = {}) {
   const calls: RecordedCall[] = [];
   const kv = new Map<string, unknown>();
   const record = (method: string, args: unknown) => calls.push({ method, args });
@@ -24,7 +24,7 @@ function makeFakeBb(options: { dirty?: boolean; patchWritable?: boolean } = {}) 
     ? [{ path: "src/exporter.ts", status: "M", insertions: 40, deletions: 4 }]
     : [];
 
-  const bb = {
+  const alia = {
     realtime: { publish: (channel: string, payload: unknown) => record(`realtime:${channel}`, payload) },
     storage: {
       kv: {
@@ -128,7 +128,7 @@ function makeFakeBb(options: { dirty?: boolean; patchWritable?: boolean } = {}) 
   };
   // The event pager expects threads.events.list; keep it separate for clarity.
   // deno-lint-ignore no-explicit-any
-  (bb.sdk.threads as any).events = {
+  (alia.sdk.threads as any).events = {
     list: async ({ afterSeq }: { afterSeq?: string }) =>
       [
         {
@@ -138,7 +138,7 @@ function makeFakeBb(options: { dirty?: boolean; patchWritable?: boolean } = {}) 
         },
       ].filter((event) => event.seq > Number(afterSeq ?? 0)),
   };
-  return { bb: bb as unknown as BbPluginApi, calls, kv };
+  return { alia: alia as unknown as AliaPluginApi, calls, kv };
 }
 
 const uploadedDoc = (calls: RecordedCall[]): string => {
@@ -150,8 +150,8 @@ const uploadedDoc = (calls: RecordedCall[]): string => {
 
 describe("startHandoff across machines", () => {
   it("runs the new thread on the target machine's checkout of the same project", async () => {
-    const { bb, calls } = makeFakeBb();
-    const result = await startHandoff(bb, {
+    const { alia, calls } = makeFakeAlia();
+    const result = await startHandoff(alia, {
       sourceThreadId: "thr_src",
       providerId: "codex",
       workspace: "checkout",
@@ -171,8 +171,8 @@ describe("startHandoff across machines", () => {
   });
 
   it("records the target machine in history", async () => {
-    const { bb, kv } = makeFakeBb();
-    await startHandoff(bb, {
+    const { alia, kv } = makeFakeAlia();
+    await startHandoff(alia, {
       sourceThreadId: "thr_src",
       providerId: "codex",
       workspace: "checkout",
@@ -185,15 +185,15 @@ describe("startHandoff across machines", () => {
   });
 
   it("carries uncommitted work to the target machine and points the agent at it", async () => {
-    const { bb, calls } = makeFakeBb({ dirty: true });
-    const result = await startHandoff(bb, {
+    const { alia, calls } = makeFakeAlia({ dirty: true });
+    const result = await startHandoff(alia, {
       sourceThreadId: "thr_src",
       providerId: "codex",
       workspace: "checkout",
       machine: "mini",
     });
 
-    expect(result.patchPath).toBe("/tmp/bb-handoff-thr_src.patch");
+    expect(result.patchPath).toBe("/tmp/alia-handoff-thr_src.patch");
     const write = calls.find((call) => call.method === "files.write")!.args as {
       hostId: string;
       path: string;
@@ -205,18 +205,18 @@ describe("startHandoff across machines", () => {
 
     const doc = uploadedDoc(calls);
     expect(doc).toContain("Working state on Vedrans-MacBook-Pro");
-    expect(doc).toContain("git apply --3way /tmp/bb-handoff-thr_src.patch");
+    expect(doc).toContain("git apply --3way /tmp/alia-handoff-thr_src.patch");
     expect(doc).toContain("NOT present in your workspace");
 
     const spawn = calls.find((call) => call.method === "threads.spawn")!.args as {
       input: { text?: string }[];
     };
-    expect(spawn.input[0]!.text).toContain("/tmp/bb-handoff-thr_src.patch");
+    expect(spawn.input[0]!.text).toContain("/tmp/alia-handoff-thr_src.patch");
   });
 
   it("says the changes were stranded when the patch cannot be delivered", async () => {
-    const { bb, calls } = makeFakeBb({ dirty: true, patchWritable: false });
-    const result = await startHandoff(bb, {
+    const { alia, calls } = makeFakeAlia({ dirty: true, patchWritable: false });
+    const result = await startHandoff(alia, {
       sourceThreadId: "thr_src",
       providerId: "codex",
       workspace: "checkout",
@@ -228,21 +228,21 @@ describe("startHandoff across machines", () => {
   });
 
   it("does not look for a working tree when the machine does not change", async () => {
-    const { bb, calls } = makeFakeBb({ dirty: true });
-    const result = await startHandoff(bb, {
+    const { alia, calls } = makeFakeAlia({ dirty: true });
+    const result = await startHandoff(alia, {
       sourceThreadId: "thr_src",
       providerId: "codex",
       workspace: "reuse",
     });
     expect(result.crossMachine).toBe(false);
     expect(calls.some((call) => call.method === "files.write")).toBe(false);
-    expect(calls.some((call) => call.method.startsWith("bb--git."))).toBe(false);
+    expect(calls.some((call) => call.method.startsWith("alia--git."))).toBe(false);
   });
 
   it("refuses to reuse the source environment on another machine", async () => {
-    const { bb } = makeFakeBb();
+    const { alia } = makeFakeAlia();
     await expect(
-      startHandoff(bb, {
+      startHandoff(alia, {
         sourceThreadId: "thr_src",
         providerId: "codex",
         workspace: "reuse",
@@ -252,8 +252,8 @@ describe("startHandoff across machines", () => {
   });
 
   it("bases a cross-machine worktree on the default branch and warns when the branch is missing", async () => {
-    const { bb, calls } = makeFakeBb();
-    const result = await startHandoff(bb, {
+    const { alia, calls } = makeFakeAlia();
+    const result = await startHandoff(alia, {
       sourceThreadId: "thr_src",
       providerId: "codex",
       workspace: "worktree",

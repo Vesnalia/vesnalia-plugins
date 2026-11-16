@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { revealTurn } from "./revealTurn";
 
 describe("revealTurn", () => {
-  it("re-announces the open thread with bb's search-jump state", async () => {
+  it("re-announces the open thread with VesnALIA's search-jump state", async () => {
     window.history.replaceState({ usr: { from: "lanes" }, key: "a", idx: 3 }, "", "/projects/p/threads/thr_x");
     const popped = vi.fn();
     window.addEventListener("popstate", popped);

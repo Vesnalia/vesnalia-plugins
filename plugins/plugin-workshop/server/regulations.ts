@@ -12,7 +12,7 @@ interface Ctx {
   id: string;
   key: string;
   kind: WorkKind;
-  /** The plugin's working copy — bb builds the running plugin from it. */
+  /** The plugin's working copy — VesnALIA builds the running plugin from it. */
   dir: string;
   docs: { context: string; tech: string; tz: string };
   /** The checklist «what is needed from the owner before implementation». */
@@ -49,27 +49,27 @@ const needDeps = () =>
 /** What every stage 4 implementer must know, subagents included: the spec writes it into «Global Constraints», the implementer into every subagent's brief. */
 const agentLimits = () => `do not install, enable, disable or reload plugins, push nothing; heavy commands only under \`${flock("<command>")}\`, one at a time; work only in this worktree, do not touch the working copy or other plugins`;
 
-/** The skill of the `bb plugin new` scaffold: it reaches the instructions of every bb thread as soon as the plugin is installed. */
-const scaffoldSkills = "`skills/example-todos`; likewise `skills/example-skill` and any skill whose `description` says it was created by `bb plugin new`";
+/** The skill of the `alia plugin new` scaffold: it reaches the instructions of every VesnALIA thread as soon as the plugin is installed. */
+const scaffoldSkills = "`skills/example-todos`; likewise `skills/example-skill` and any skill whose `description` says it was created by `alia plugin new`";
 
 const REGULATIONS: Record<StageNo, (c: Ctx) => string> = {
   1: (c) =>
     [
       "Talk with the owner in this thread, one question at a time.",
       c.kind === "new"
-        ? "The plugin is new: its working copy holds only the `bb plugin new` scaffold with a sample todo list — that is not what the owner wants; do not ask about the sample."
+        ? "The plugin is new: its working copy holds only the `alia plugin new` scaffold with a sample todo list — that is not what the owner wants; do not ask about the sample."
         : "The plugin already works: read its `README.md` and code, so that you ask about what changes, not about what already exists.",
-      `The stage output is \`${c.docs.context}\` (create the folder if it does not exist); commit it to the current branch. The document answers: a new plugin or a change to an existing one; what the owner wants to get and why; what they will see (a section in bb, a CLI command, a button, agent behaviour); what we are not doing; known links to other plugins and services.`,
-      "If the plugin will have a section in bb's navigation — ask for and record its badge code on the bar (three Latin letters) and the badge colour (if the owner groups sections on the bar by colour — the colour of its group): the badge and its place on the bar are made by this same work.",
+      `The stage output is \`${c.docs.context}\` (create the folder if it does not exist); commit it to the current branch. The document answers: a new plugin or a change to an existing one; what the owner wants to get and why; what they will see (a section in VesnALIA, a CLI command, a button, agent behaviour); what we are not doing; known links to other plugins and services.`,
+      "If the plugin will have a section in VesnALIA's navigation — ask for and record its badge code on the bar (three Latin letters) and the badge colour (if the owner groups sections on the bar by colour — the colour of its group): the badge and its place on the bar are made by this same work.",
       "Do not check feasibility or the technical base and do not write the spec — those are the next stages; mark what you are unsure of in the document with a question.",
       "Cancelled from the skill: the «Builder check» and the move to writing-plans.",
     ].join("\n"),
   2: (c) =>
     [
       `Input: \`${c.docs.context}\`. The stage output is \`${c.docs.tech}\`; commit it to the current branch.`,
-      "Check context.md against reality: the needed APIs exist in the SDK of the version installed in bb (with references to the declarations in the SDK types, not from memory); the RPCs of other plugins exist; external services, secrets and machines are reachable; there are no conflicts (plugin id, CLI command name, icon name, ports); there is enough memory and disk; what is risky and what must be proven first.",
+      "Check context.md against reality: the needed APIs exist in the SDK of the version installed in VesnALIA (with references to the declarations in the SDK types, not from memory); the RPCs of other plugins exist; external services, secrets and machines are reachable; there are no conflicts (plugin id, CLI command name, icon name, ports); there is enough memory and disk; what is risky and what must be proven first.",
       ...(c.kind === "rework" ? ["The plugin already works: as a separate item — which of its behaviour and data the change affects."] : []),
-      `SDK types: compare the version in \`node_modules/@get-bb/plugin-sdk/package.json\` with the host's SDK version (\`bb plugin types --check .\` prints «host is …» and writes nothing) and take types only of the matching version — plugins written for an older bb keep an older SDK in \`node_modules\`, and its types are out of date. If the matching version is not at hand — install it only in \`spike/\`, with one command from the worktree root: \`mkdir -p ${c.work}/spike && (cd ${c.work}/spike && npm init -y) && ${flock(`npm install --ignore-scripts --prefix ${c.work}/spike @get-bb/plugin-sdk@<host SDK version>`)}\`. Without its own \`package.json\` in \`spike/\` npm climbs up to the \`package.json\` of the worktree root and rewrites the plugin's \`package.json\`, \`package-lock.json\` and \`node_modules\` in the work branch — and this stage changes nothing in the plugin; \`npm init\` writes to the current folder (it ignores \`--prefix\`), so the \`cd\` is required. For the same reason do not run \`bb plugin types\` without \`--check\` in the plugin (it edits \`package.json\`).`,
+      `SDK types: compare the version in \`node_modules/@vesnalia/plugin-sdk/package.json\` with the host's SDK version (\`alia plugin types --check .\` prints «host is …» and writes nothing) and take types only of the matching version — plugins written for an older VesnALIA keep an older SDK in \`node_modules\`, and its types are out of date. If the matching version is not at hand — install it only in \`spike/\`, with one command from the worktree root: \`mkdir -p ${c.work}/spike && (cd ${c.work}/spike && npm init -y) && ${flock(`npm install --ignore-scripts --prefix ${c.work}/spike @vesnalia/plugin-sdk@<host SDK version>`)}\`. Without its own \`package.json\` in \`spike/\` npm climbs up to the \`package.json\` of the worktree root and rewrites the plugin's \`package.json\`, \`package-lock.json\` and \`node_modules\` in the work branch — and this stage changes nothing in the plugin; \`npm init\` writes to the current folder (it ignores \`--prefix\`), so the \`cd\` is required. For the same reason do not run \`alia plugin types\` without \`--check\` in the plugin (it edits \`package.json\`).`,
       `Allowed: read any code and run probe scripts — only in \`${c.work}/spike/\` (the folder is created by the command above or by \`mkdir -p\`; it is outside git). Not allowed: install, enable and disable plugins, change working copies, write to external services. Heavy work only under the lock: \`${flock("<command>")}\`.`,
       "In tech.md: what was checked and how (references to type declarations, command output), what does not add up, the risks and what to prove first.",
       `What is needed from the owner before implementation goes to a separate file \`${c.owner}\` (commit it together with tech.md): a checklist, every item a line \`- [ ] …\`. Collect everything at once, so the owner can do it in one go rather than item by item in chat: keys and passwords (the owner enters them with the \`secrets\` skill — name the variables), accounts and connections in external services, paid plans and money, decisions that cannot be made for the owner. What already exists and works — check it and mark it \`- [x] … — checked: <how>\`. Nothing needed — a single line \`- nothing\`.`,
@@ -80,16 +80,16 @@ const REGULATIONS: Record<StageNo, (c: Ctx) => string> = {
   3: (c) =>
     [
       `Inputs: \`${c.docs.context}\` (what the owner wants) and \`${c.docs.tech}\` (what is possible). The stage output is \`${c.docs.tz}\`: an implementation plan per the skill; commit it to the current branch.`,
-      "Plan tasks are `### Task N: …` headings: the plugin counts implementation progress by them. In the plan's «Global Constraints» — the bb plugin rules that concern this plugin (from the «bb plugin rules» block below), the document paths and the feasibility verdict with its caveats.",
+      "Plan tasks are `### Task N: …` headings: the plugin counts implementation progress by them. In the plan's «Global Constraints» — the VesnALIA plugin rules that concern this plugin (from the «VesnALIA plugin rules» block below), the document paths and the feasibility verdict with its caveats.",
       `Mandatory in «Global Constraints» (the implementer passes them to every subagent): ${agentLimits()}.`,
       ...(c.kind === "new"
-        ? ["The plugin is new: the spec decides whether it needs an interface and which parts of the `bb plugin new` scaffold are used; the «Implementation» stage removes the rest of the scaffold."]
+        ? ["The plugin is new: the spec decides whether it needs an interface and which parts of the `alia plugin new` scaffold are used; the «Implementation» stage removes the rest of the scaffold."]
         : []),
       "Describe the interface so that a mockup can be drawn from the spec: screens and tabs, what is on each (fields, tables, buttons and what they do), states — empty, loading, error, confirmation. The next stage is «Mockup» if it is enabled (the owner sees and approves the look before development), otherwise «Implementation».",
       "Mandatory sections on top of the skill:",
-      "- «## Post-rollout check» — what to check live after the install: CLI commands with the expected output, the section in bb (where to open it), what to look for in `bb plugin logs <id>`, which settings the plugin needs. The live check reads this section — it knows nothing else.",
+      "- «## Post-rollout check» — what to check live after the install: CLI commands with the expected output, the section in VesnALIA (where to open it), what to look for in `alia plugin logs <id>`, which settings the plugin needs. The live check reads this section — it knows nothing else.",
       "- a line `MIGRATIONS: yes` or `MIGRATIONS: no` — on its own line, no formatting or quotes: whether the work adds data migrations. Without it the stage does not pass the gate.",
-      `- \`NAV:\` lines — one per plugin section in the navigation: \`NAV: <plugin id>/<section id> after <neighbour section>\` (the neighbour — the section it should follow on the bar now, e.g. the last section of its group; see \`bb settings ui list\`); no section — a single line \`NAV: none\`. The plan makes the section badge a task in the plugin itself, per the template \`${navGuidePath()}\` (code and colour — from context.md); the Workshop puts the section in its place on the bar from the NAV line on rollout. This is part of the work, not «outside the plugin». Without NAV lines the stage does not pass the gate.`,
+      `- \`NAV:\` lines — one per plugin section in the navigation: \`NAV: <plugin id>/<section id> after <neighbour section>\` (the neighbour — the section it should follow on the bar now, e.g. the last section of its group; see \`alia settings ui list\`); no section — a single line \`NAV: none\`. The plan makes the section badge a task in the plugin itself, per the template \`${navGuidePath()}\` (code and colour — from context.md); the Workshop puts the section in its place on the bar from the NAV line on rollout. This is part of the work, not «outside the plugin». Without NAV lines the stage does not pass the gate.`,
       `If context.md or tech.md do not match what is possible — write that at the start of \`${c.docs.tz}\` and end your turn: the owner decides whether to send it back to «Context».`,
       c.reviewers.length === 0
         ? `This work has no reviews (the owner chose so): the MIGRATIONS line in \`${c.docs.tz}\` means «spec ready» — the owner decides from there. If you need an answer from the owner without which the spec is not ready — ask and do not write the MIGRATIONS line until you have it.`
@@ -101,7 +101,7 @@ const REGULATIONS: Record<StageNo, (c: Ctx) => string> = {
     [
       `Inputs: \`${c.docs.context}\` (what the owner wants), \`${c.docs.tech}\`, \`${c.docs.tz}\` (the approved spec), \`${c.owner}\`. The stage output is the mockup of the plugin's section: \`${c.mockup}/index.html\`; commit it to the current branch.`,
       "Why: the owner wants to see what the plugin will look like before it is built, and to correct it in words. The approved mockup is a commitment: Implementation builds the interface to it, Verification and the live check compare against it.",
-      `What the mockup holds: the section as the owner will see it in bb — the navigation bar with the section badge (code and colour — from the spec and the context), the panel header, all screens, tabs and dialogs from the spec; states: empty, loading, error, action confirmation; plausible sample data (no real personal data, no keys) marked «Mockup — sample data». At the top of the mockup — a screen switcher and a «Desktop / Phone» switcher (phone — 390px wide); in a window narrower than 720px (the preview in bb's chat) the mockup opens in the «Phone» view by itself. The look is bb's: rules and a sample — \`${mockupGuidePath()}\`.`,
+      `What the mockup holds: the section as the owner will see it in VesnALIA — the navigation bar with the section badge (code and colour — from the spec and the context), the panel header, all screens, tabs and dialogs from the spec; states: empty, loading, error, action confirmation; plausible sample data (no real personal data, no keys) marked «Mockup — sample data». At the top of the mockup — a screen switcher and a «Desktop / Phone» switcher (phone — 390px wide); in a window narrower than 720px (the preview in VesnALIA's chat) the mockup opens in the «Phone» view by itself. The look is VesnALIA's: rules and a sample — \`${mockupGuidePath()}\`.`,
       "A plugin without a navigation section (`NAV: none` in the spec): the mockup shows what the replies of its CLI commands look like and what agents will see — in the same file.",
       `One self-contained HTML file: styles and scripts inside the file, images and fonts as \`data:\` URLs, no external fonts, libraries or network requests — the Workshop's preview blocks them (a Content Security Policy) and stops showing a mockup that navigates its own page away. Extra pages — next to it in \`${c.mockup}/\`.`,
       `Screenshots: open the mockup in a browser (the built-in skill \`browser-automation\`, address \`file://\` + the full path to \`${c.mockup}/index.html\` in this worktree; recipe — \`${browserRecipePath()}\`) and save \`${c.mockup}/desktop.png\` and \`${c.mockup}/phone.png\`; commit. If you cannot take them — tell the owner so; the mockup matters more than the screenshots.`,
@@ -126,14 +126,14 @@ const REGULATIONS: Record<StageNo, (c: Ctx) => string> = {
       `\`${c.owner}\`: an item without which a task cannot proceed (a key, an account, a decision) — note it in the ledger and tell the owner at the end of your turn; what is done — mark it \`- [x]\`.`,
       ...(c.kind === "new"
         ? [
-            "The plugin is new, its working copy is the `bb plugin new` scaffold with a sample todo list. The scaffold's skill reaches the instructions of every bb thread as soon as the plugin is installed, so on top of the spec tasks — remove the scaffold samples the spec does not use:",
-            `- the skill ${scaffoldSkills} (bb picks up the \`skills/\` folder even without a manifest entry; if the manifest's \`bb.skills\` has an entry for it — remove that too);`,
+            "The plugin is new, its working copy is the `alia plugin new` scaffold with a sample todo list. The scaffold's skill reaches the instructions of every VesnALIA thread as soon as the plugin is installed, so on top of the spec tasks — remove the scaffold samples the spec does not use:",
+            `- the skill ${scaffoldSkills} (VesnALIA picks up the \`skills/\` folder even without a manifest entry; if the manifest's \`alia.skills\` has an entry for it — remove that too);`,
             "- the «Example todos» demo panel: `app.tsx`, the todo contract and the `todos` storage in `server.ts`, the `showDone` setting;",
-            `- the sample command \`bb ${c.id}\` with the todo list.`,
-            "If the spec decided the plugin has no interface — remove `bb.app` from the manifest and the interface files (`app.tsx`, `components/`, `components.json`, `hooks/`, `lib/` of the scaffold, if nothing uses them).",
+            `- the sample command \`VesnALIA ${c.id}\` with the todo list.`,
+            "If the spec decided the plugin has no interface — remove `alia.app` from the manifest and the interface files (`app.tsx`, `components/`, `components.json`, `hooks/`, `lib/` of the scaffold, if nothing uses them).",
             "The scaffold's `README.md` describes the sample — rewrite it for the plugin: what it does, commands, settings.",
           ]
-        : [`Verification sends the branch back if the scaffold skill (${scaffoldSkills}) or its entry in \`bb.skills\` is left in it: if it is there — remove it.`]),
+        : [`Verification sends the branch back if the scaffold skill (${scaffoldSkills}) or its entry in \`alia.skills\` is left in it: if it is there — remove it.`]),
       "Cancelled from the skill: the final review of the whole branch, deleting the ledger folder and finishing-a-development-branch — the next stages run verification and rollout.",
     ].join("\n"),
   5: (c) =>
@@ -146,20 +146,20 @@ const REGULATIONS: Record<StageNo, (c: Ctx) => string> = {
         ? "This work has no reviewers (the owner chose so): no «## Reviews» section is needed, the verdict is based on your check."
         : `The reviewers (${c.reviewers.join(", ")}) look at the branch at the same time as you. Write the report with a verdict without waiting for them. When their files are ready, they are sent to you: confirm or refute every blocking and important finding against the code (read it, run it if possible), add a «## Reviews» section to the report and set the final verdict — a confirmed blocking finding means FAIL.`,
       needDeps(),
-      `Run one at a time, under the lock (\`${flock("<command>")}\`): \`npm test\`; \`npm run typecheck\`; \`bb plugin build\` (builds \`dist/\`, does not install the plugin); \`bb plugin types --check .\`.`,
-      `Migrations: compare the diff with the \`MIGRATIONS\` line in \`${c.docs.tz}\` — new or changed SQLite schema migrations, changes to the data format in \`bb.storage\`. There are migrations but the spec says \`MIGRATIONS: no\` — FAIL. Released migrations edited or reordered — FAIL. It says \`MIGRATIONS: yes\` but there are no migrations — not a FAIL, but note it in the report: rollback becomes unavailable for nothing.`,
-      "Check against the «bb plugin rules» below: the SDK pin is not newer than bb, no secrets in files or in git, ports — `127.0.0.1` or a private network address, no native dependencies, `bb.branding.icon` is in place, a plugin without an interface has no `bb.app`. A violation — FAIL.",
-      "The navigation section: every `navPanel` in `app.tsx` has its own `NAV:` line in the spec (or in an iteration file) and its own badge registered in the plugin (`app.experimental_icons.register` under the section's icon name, not a built-in bb name); a plugin without a section — `NAV: none`. A missing badge or NAV line — FAIL.",
-      "`VERDICT: FAIL` if the branch still has `skills/example-todos` or its entry in the manifest's `bb.skills`. The same for `skills/example-skill` and any skill whose `description` says it was created by `bb plugin new` (that is the scaffold, not the plugin's skill).",
+      `Run one at a time, under the lock (\`${flock("<command>")}\`): \`npm test\`; \`npm run typecheck\`; \`alia plugin build\` (builds \`dist/\`, does not install the plugin); \`alia plugin types --check .\`.`,
+      `Migrations: compare the diff with the \`MIGRATIONS\` line in \`${c.docs.tz}\` — new or changed SQLite schema migrations, changes to the data format in \`alia.storage\`. There are migrations but the spec says \`MIGRATIONS: no\` — FAIL. Released migrations edited or reordered — FAIL. It says \`MIGRATIONS: yes\` but there are no migrations — not a FAIL, but note it in the report: rollback becomes unavailable for nothing.`,
+      "Check against the «VesnALIA plugin rules» below: the SDK pin is not newer than VesnALIA, no secrets in files or in git, ports — `127.0.0.1` or a private network address, no native dependencies, `alia.branding.icon` is in place, a plugin without an interface has no `alia.app`. A violation — FAIL.",
+      "The navigation section: every `navPanel` in `app.tsx` has its own `NAV:` line in the spec (or in an iteration file) and its own badge registered in the plugin (`app.experimental_icons.register` under the section's icon name, not a built-in VesnALIA name); a plugin without a section — `NAV: none`. A missing badge or NAV line — FAIL.",
+      "`VERDICT: FAIL` if the branch still has `skills/example-todos` or its entry in the manifest's `alia.skills`. The same for `skills/example-skill` and any skill whose `description` says it was created by `alia plugin new` (that is the scaffold, not the plugin's skill).",
       "At the end look at `git status` in the worktree: it must be clean (git ignores `dist/` and `node_modules/`), the verifier edits nothing. If junk appeared (a changed `package-lock.json`, a lock file, anything else) — do not commit or remove it, name it in the report.",
-      "What cannot be checked without an install (the section in bb, the running plugin's log, the «Post-rollout check») — do not pretend: say so in the report; the «Rollout» stage checks it.",
+      "What cannot be checked without an install (the section in VesnALIA, the running plugin's log, the «Post-rollout check») — do not pretend: say so in the report; the «Rollout» stage checks it.",
       `The report is \`${verifyPath(c.key, c.round)}\` (create the folder if it does not exist): what you ran, the output, mismatches with the spec, what was not checked and why. FAIL — if something failed, did not build, does not match the spec, the rules are broken, or a substantial part of what can be checked without an install stayed unchecked. The last line of the report is exactly \`VERDICT: PASS\` or \`VERDICT: FAIL\`: no formatting or quotes, nothing after it.`,
     ].join("\n"),
   6: (c) =>
     [
       `Round ${c.round}. The plugin is already installed by the Workshop code: do not install, enable, disable or roll back anything. Do not change or commit code: you write only the report.`,
       "Work read-only. Commands that change the plugin's data — only if the spec's «Post-rollout check» names them; write nothing to external systems.",
-      `Go through the «Post-rollout check» section in \`${c.docs.tz}\` (and in the iteration files \`${c.iterationFiles}\`, if any) in order and look at \`bb plugin list\` and \`bb plugin logs ${c.id}\`. The installed commit and the details of this install are in the packet at the end of the message; no packet — \`git -C ${shq(c.dir)} rev-parse HEAD\` gives the commit (read-only).`,
+      `Go through the «Post-rollout check» section in \`${c.docs.tz}\` (and in the iteration files \`${c.iterationFiles}\`, if any) in order and look at \`alia plugin list\` and \`alia plugin logs ${c.id}\`. The installed commit and the details of this install are in the packet at the end of the message; no packet — \`git -C ${shq(c.dir)} rev-parse HEAD\` gives the commit (read-only).`,
       `The report is \`${livePath(c.key, c.round)}\` (create the folder if it does not exist): the installed commit on the first line, then item by item of the «Post-rollout check» — what you ran and what you got; the log; the path to a screenshot, if you took one; what was not checked and why. FAIL — if any item failed, the log has load errors, the plugin did not come up, or a substantial part stayed unchecked. The last line of the report is exactly \`VERDICT: PASS\` or \`VERDICT: FAIL\`: no formatting or quotes, nothing after it.`,
     ].join("\n"),
 };
@@ -171,7 +171,7 @@ function knowledgeBlock(no: StageNo): string {
   if (k.skills.length > 0) {
     lines.push("Skills of the stage — read them before you start:");
     for (const s of k.skills) {
-      lines.push(BUILTIN_SKILLS.has(s) ? `- bb's built-in skill \`${s}\` — invoke it as a built-in skill` : `- \`${s}\` — if such a skill is installed (among the thread's skills), use it`);
+      lines.push(BUILTIN_SKILLS.has(s) ? `- VesnALIA's built-in skill \`${s}\` — invoke it as a built-in skill` : `- \`${s}\` — if such a skill is installed (among the thread's skills), use it`);
     }
   }
   if (k.sources.length > 0) {
@@ -207,7 +207,7 @@ export function kickoff(w: WorkRow, stage: Stage, round: number, packet?: string
     "The owner's request:",
     w.request,
     "",
-    `Plugin: \`${c.id}\` — ${c.kind === "new" ? "new (its working copy holds the bb scaffold so far)" : "a rework of an existing plugin"}. The plugin's working copy: \`${c.dir}\`. You work in your own worktree of the work branch — the current folder.`,
+    `Plugin: \`${c.id}\` — ${c.kind === "new" ? "new (its working copy holds the VesnALIA scaffold so far)" : "a rework of an existing plugin"}. The plugin's working copy: \`${c.dir}\`. You work in your own worktree of the work branch — the current folder.`,
     `Work documents (in git, in the work branch): \`${c.docs.context}\`, \`${c.docs.tech}\`, \`${c.docs.tz}\`, the mockup — \`${c.mockup}/\`, what is needed from the owner — \`${c.owner}\`, iteration add-ons — \`${c.iterationFiles}\`. The work folder (not in git): \`${c.work}/\`.`,
     "",
     stageText(stage.no, c),
@@ -216,8 +216,8 @@ export function kickoff(w: WorkRow, stage: Stage, round: number, packet?: string
     "",
     rulesText(),
     "",
-    "Common rules: only the owner hands over, with a button in the «Plugin Workshop» panel. Do not push, do not merge, do not create PRs or bb threads. Do not install, enable, disable or reload plugins. Do not touch the working copy or other plugins.",
-    `Heavy commands (\`npm install\`/\`ci\`, \`tsc\`, tests, \`bb plugin build\`) — only \`${flock("<command>")}\`, one at a time.`,
+    "Common rules: only the owner hands over, with a button in the «Plugin Workshop» panel. Do not push, do not merge, do not create PRs or VesnALIA threads. Do not install, enable, disable or reload plugins. Do not touch the working copy or other plugins.",
+    `Heavy commands (\`npm install\`/\`ci\`, \`tsc\`, tests, \`alia plugin build\`) — only \`${flock("<command>")}\`, one at a time.`,
     "When you have finished the stage, end your turn with a short message to the owner: what was done and what they should look at.",
     ...(packet ? ["", packet] : []),
   ].join("\n");
@@ -233,8 +233,8 @@ export function reviewerPrompt(w: WorkRow, stage: Stage, who: Who, round: number
       : `the whole branch against the base — \`git diff ${c.base}...HEAD\` — against the spec \`${c.docs.tz}\`, the iteration files \`${c.iterationFiles}\` (if any) and the context \`${c.docs.context}\``;
   const look =
     stage.no === 3
-      ? `What to look at: is all of \`context.md\` covered; is there a «Post-rollout check» section and a \`MIGRATIONS: yes|no\` line, and do they match the plan; does the plan break the «bb plugin rules» from your instructions; can the plan be carried out task by task; is everything needed from the owner before implementation (keys, accounts, paid plans, decisions) in \`${c.owner}\`; are there \`NAV\` lines and a task for the section badge in the plugin itself (the section on the bar is part of the work).`
-      : `What to look at: does the code match the spec and the context; does the interface match the approved mockup \`${c.mockup}/\` (if there is one); does \`MIGRATIONS\` in the spec match the diff; does every navigation section have a badge in the plugin and a \`NAV\` line in the spec; are the «bb plugin rules» from your instructions broken (secrets, the SDK pin, edits to released migrations, ports, scaffold leftovers — \`skills/example-todos\`).`;
+      ? `What to look at: is all of \`context.md\` covered; is there a «Post-rollout check» section and a \`MIGRATIONS: yes|no\` line, and do they match the plan; does the plan break the «VesnALIA plugin rules» from your instructions; can the plan be carried out task by task; is everything needed from the owner before implementation (keys, accounts, paid plans, decisions) in \`${c.owner}\`; are there \`NAV\` lines and a task for the section badge in the plugin itself (the section on the bar is part of the work).`
+      : `What to look at: does the code match the spec and the context; does the interface match the approved mockup \`${c.mockup}/\` (if there is one); does \`MIGRATIONS\` in the spec match the diff; does every navigation section have a badge in the plugin and a \`NAV\` line in the spec; are the «VesnALIA plugin rules» from your instructions broken (secrets, the SDK pin, edits to released migrations, ports, scaffold leftovers — \`skills/example-todos\`).`;
   return [
     `You are a reviewer (${labelFor(modelsOf(w.models), "review", stage.no, who)}) of the «${stage.title}» stage, round ${round}. Work ${c.key} «${w.title}», plugin \`${c.id}\`.`,
     `What to review: ${what}.`,
@@ -273,16 +273,16 @@ export function liveCheckPrompt(w: WorkRow, round: number, attempt: AttemptRow, 
   return [
     `Live check, round ${round}. Plugin \`${c.id}\` is installed${attempt.kind === "reinstall" ? " (a repeated install of the same copy)" : ""} from the working copy \`${c.dir}\`; the installed commit is \`${sha}\`.`,
     `Cross-check: \`git -C ${shq(c.dir)} rev-parse HEAD\` (read-only) must give the same commit. If it differs — what was installed is not what was verified: \`VERDICT: FAIL\`, name both commits.`,
-    `1. Read the «Post-rollout check» section in \`${c.docs.tz}\` and go through its items in order: CLI commands with the expected output, the section in bb, settings.`,
-    `2. \`bb plugin list\` and \`bb plugin logs ${c.id}\`: the plugin came up (\`running\`; \`needs-configuration\` — only if the spec names those settings: that is a remark, not a failure), the log has no load errors. A plugin that failed to load does not complain — it just does not work: read the log to the end.`,
+    `1. Read the «Post-rollout check» section in \`${c.docs.tz}\` and go through its items in order: CLI commands with the expected output, the section in VesnALIA, settings.`,
+    `2. \`alia plugin list\` and \`alia plugin logs ${c.id}\`: the plugin came up (\`running\`; \`needs-configuration\` — only if the spec names those settings: that is a remark, not a failure), the log has no load errors. A plugin that failed to load does not complain — it just does not work: read the log to the end.`,
     // An install that ended in `needs-configuration` is a successful rollout; which settings it waits for, the verifier names itself.
     ...(o.needsConfiguration
-      ? [`${++n}. After the install the plugin came up in the \`needs-configuration\` state — it needs configuration. In the report, as a separate item «Needs configuration», name which settings it is waiting for (\`statusDetail\` in \`bb plugin list\`, the log), whether the spec has them and what was checked without them. Configure nothing yourself.`]
+      ? [`${++n}. After the install the plugin came up in the \`needs-configuration\` state — it needs configuration. In the report, as a separate item «Needs configuration», name which settings it is waiting for (\`statusDetail\` in \`alia plugin list\`, the log), whether the spec has them and what was checked without them. Configure nothing yourself.`]
       : []),
     ...(attempt.migrations ? [`${++n}. The work added data migrations: check that the plugin came up on the new schema and the previous data are in place (a command or a section from the spec).`] : []),
-    `${++n}. If the plugin has a section in the interface — open it in bb's browser and take a screenshot (the built-in skill \`browser-automation\`): the direct address \`/plugins/${c.id}/<path>\` (\`path\` — from \`navPanel\` in \`app.tsx\`); wait for the data by polling the page text in a loop; do not use \`setViewport\` and \`waitForFunction\` — they stopped the session; set the width with the page's CSS \`zoom\`. The first load after an install may fail with «bb hit an error» — open the page again in short steps or start a new session. Close the browser session at the end. A recipe with commands — \`${browserRecipePath()}\`.`,
+    `${++n}. If the plugin has a section in the interface — open it in VesnALIA's browser and take a screenshot (the built-in skill \`browser-automation\`): the direct address \`/plugins/${c.id}/<path>\` (\`path\` — from \`navPanel\` in \`app.tsx\`); wait for the data by polling the page text in a loop; do not use \`setViewport\` and \`waitForFunction\` — they stopped the session; set the width with the page's CSS \`zoom\`. The first load after an install may fail with «VesnALIA hit an error» — open the page again in short steps or start a new session. Close the browser session at the end. A recipe with commands — \`${browserRecipePath()}\`.`,
     `${++n}. If the work has an approved mockup (\`${c.mockup}/\`): compare the captured section with it (the screenshots \`${c.mockup}/desktop.png\`, \`phone.png\`, the \`index.html\` itself) — screens, tabs, buttons, layout. A noticeable deviation — FAIL, list each one.`,
-    `${++n}. The section on the navigation bar (the \`NAV\` lines in the spec): the Workshop put it in place on rollout — in \`bb settings ui list\` it is in \`sidebar.visiblePluginPanels\` and stands in \`sidebar.pluginPanelOrder\` after the neighbour from the NAV line; its coloured badge is visible in a screenshot of the bar. Otherwise — FAIL. \`NAV: none\` — skip this item.`,
+    `${++n}. The section on the navigation bar (the \`NAV\` lines in the spec): the Workshop put it in place on rollout — in \`alia settings ui list\` it is in \`sidebar.visiblePluginPanels\` and stands in \`sidebar.pluginPanelOrder\` after the neighbour from the NAV line; its coloured badge is visible in a screenshot of the bar. Otherwise — FAIL. \`NAV: none\` — skip this item.`,
     "Do not install, enable, disable or roll back anything; do not change code. Commands that change the plugin's data — only if the «Post-rollout check» names them; write nothing to external systems.",
     `The report is \`${livePath(c.key, round)}\`; what goes in it and its last line — in the stage rules above.`,
   ].join("\n");

@@ -1,8 +1,8 @@
 import {
   defineRpcContract,
-  type BbPluginApi,
+  type AliaPluginApi,
   type NewThreadRequest,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { captureWorkspace, completionEvidenceSchema, onlyNonTaskFailures, taskContextSchema, type TaskContext } from "./stage-evidence";
 import { nextDeliveryStage, requiredStageChecks } from "./delivery-plan";
@@ -245,8 +245,8 @@ function isWorktreeThread(thread: ThreadRow): boolean {
   );
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     startInDesign: { type: "boolean", label: "Wait in Design before automatic delivery", default: true },
     useInitiatingThread: { type: "boolean", label: "Use the initiating thread as orchestrator", default: true },
     autoAdvanceGrilling: {
@@ -287,9 +287,9 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
   let disposed = false;
-  bb.onDispose(() => { disposed = true; });
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  alia.onDispose(() => { disposed = true; });
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS cards (
       thread_id TEXT PRIMARY KEY,
       stage TEXT NOT NULL,
@@ -375,7 +375,7 @@ export default async function plugin(bb: BbPluginApi) {
     taskMapMigration,
   ]);
   const taskMap = taskMapStore(db);
-  const sidebarState = sidebar(bb, db, {
+  const sidebarState = sidebar(alia, db, {
     preferredMains: () => db.prepare("SELECT p.project_id AS projectId, r.environment_id AS environmentId, r.initiator_thread_id AS threadId FROM worktree_delivery_runs r JOIN worktree_setup_projects p ON p.environment_id = r.environment_id").all() as Array<{ projectId: string; environmentId: string; threadId: string }>,
     titleChoice: () => {
       const choice = taskMap.read().titles;
@@ -451,10 +451,10 @@ export default async function plugin(bb: BbPluginApi) {
     const row = readTask.get(environmentId) as { revision: number; context_json: string } | undefined;
     return { revision: row?.revision ?? 0, task: row ? taskContextSchema.parse(JSON.parse(row.context_json)) : null };
   }
-  const threadRetry = createThreadRetry(bb, db, () => disposed);
-  const stageContinuation = createStageContinuation(bb, db, () => disposed);
-  const tddRepair = createTddRepair(bb, db, () => disposed);
-  const setupAutomation = createSetupAutomation(bb, db, {
+  const threadRetry = createThreadRetry(alia, db, () => disposed);
+  const stageContinuation = createStageContinuation(alia, db, () => disposed);
+  const tddRepair = createTddRepair(alia, db, () => disposed);
+  const setupAutomation = createSetupAutomation(alia, db, {
     choices: () => taskMap.read(),
     useInitiatingThread: async () => (await settings.get()).useInitiatingThread,
     context(environmentId) {
@@ -493,7 +493,7 @@ export default async function plugin(bb: BbPluginApi) {
       last_error = ?, updated_at = ?, next_attempt_at = ?
       WHERE environment_id = ? AND stage = ? AND stage_updated_at = ? AND status = 'starting'`)
       .run(message, Date.now(), Date.now() + 30_000, environmentId, stage, revision);
-    bb.log.error(`Stage launch failed for ${environmentId}/${stage}: ${message}`);
+    alia.log.error(`Stage launch failed for ${environmentId}/${stage}: ${message}`);
   }
 
 
@@ -501,7 +501,7 @@ export default async function plugin(bb: BbPluginApi) {
     const rows: ThreadRow[] = [];
     const limit = 100;
     for (let offset = 0; ; offset += limit) {
-      const page = (await bb.sdk.threads.list({
+      const page = (await alia.sdk.threads.list({
         ...(projectId ? { projectId } : {}),
         archived,
         includeHidden: true,
@@ -518,11 +518,11 @@ export default async function plugin(bb: BbPluginApi) {
     environmentId: string;
     worktreeName: string;
   }> {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (!thread.environmentId) {
       throw new Error("This thread is not in a Git worktree.");
     }
-    const environment = await bb.sdk.environments.get({
+    const environment = await alia.sdk.environments.get({
       environmentId: thread.environmentId,
     });
     if (!environment.isGitRepo || !environment.isWorktree) {
@@ -540,12 +540,12 @@ export default async function plugin(bb: BbPluginApi) {
   async function legacyStateForThread(
     threadId: string,
   ): Promise<LegacyCardStateRow | undefined> {
-    let thread = await bb.sdk.threads.get({ threadId });
+    let thread = await alia.sdk.threads.get({ threadId });
     const seen = new Set<string>();
     while (thread.parentThreadId) {
       if (seen.has(thread.id)) break;
       seen.add(thread.id);
-      thread = await bb.sdk.threads.get({ threadId: thread.parentThreadId });
+      thread = await alia.sdk.threads.get({ threadId: thread.parentThreadId });
     }
     return readLegacyState.get(thread.id) as LegacyCardStateRow | undefined;
   }
@@ -557,7 +557,7 @@ export default async function plugin(bb: BbPluginApi) {
     stageUpdatedAt?: number,
     listed?: ThreadRow[],
   ) {
-    const environment = await bb.sdk.environments.get({ environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId });
     const usableParent = (thread: { environmentId?: string | null; projectId: string; archivedAt?: number | null; deletedAt?: number | null } | null | undefined) =>
       Boolean(thread && thread.environmentId === environmentId && thread.projectId === environment.projectId && !thread.archivedAt && !thread.deletedAt);
     const threads = (listed ?? await listThreads(environment.projectId))
@@ -576,7 +576,7 @@ export default async function plugin(bb: BbPluginApi) {
     while (mainThread.parentThreadId && !seen.has(mainThread.parentThreadId)) {
       const parent =
         threadById.get(mainThread.parentThreadId) ??
-        (await bb.sdk.threads.get({
+        (await alia.sdk.threads.get({
           threadId: mainThread.parentThreadId,
         }).catch(() => null));
       if (!parent || !usableParent(parent)) break;
@@ -585,10 +585,10 @@ export default async function plugin(bb: BbPluginApi) {
     }
     const orchestratorId = setupAutomation.orchestrator(environmentId);
     const orchestrator = orchestratorId
-      ? await bb.sdk.threads.get({ threadId: orchestratorId }).catch(() => null)
+      ? await alia.sdk.threads.get({ threadId: orchestratorId }).catch(() => null)
       : null;
     const parentThreadId = orchestrator && usableParent(orchestrator) ? orchestrator.id : mainThread.id;
-    const execution = await bb.sdk.threads.defaultExecutionOptions({
+    const execution = await alia.sdk.threads.defaultExecutionOptions({
       threadId: sourceThread.id,
     });
     const state = readWorktreeState.get(environmentId) as WorktreeStateRow | undefined;
@@ -599,7 +599,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (step && state) {
       const prior = db.prepare("SELECT execution_json FROM worktree_stage_thread_launches WHERE environment_id = ? AND stage = ? AND stage_updated_at = ?")
         .get(environmentId, state.stage, state.updated_at) as { execution_json: string | null } | undefined;
-      selected = prior?.execution_json ? JSON.parse(prior.execution_json) : await resolveStepExecution(bb.sdk, { environmentId, projectId: environment.projectId }, step.execution);
+      selected = prior?.execution_json ? JSON.parse(prior.execution_json) : await resolveStepExecution(alia.sdk, { environmentId, projectId: environment.projectId }, step.execution);
       db.prepare("UPDATE worktree_stage_thread_launches SET execution_json = ? WHERE environment_id = ? AND stage = ? AND stage_updated_at = ?")
         .run(JSON.stringify(selected), environmentId, state.stage, state.updated_at);
     }
@@ -613,7 +613,7 @@ export default async function plugin(bb: BbPluginApi) {
       ? execution?.reasoningLevel
       : undefined);
     if (!model || !reasoningLevel) {
-      const options = await bb.sdk.providers.models({
+      const options = await alia.sdk.providers.models({
         environmentId,
         providerId,
       });
@@ -637,7 +637,7 @@ export default async function plugin(bb: BbPluginApi) {
         (readWorktreeState.get(environmentId) as WorktreeStateRow | undefined)?.updated_at !== stageUpdatedAt)) {
       throw new Error("The stage changed or paused before worker dispatch.");
     }
-    return bb.sdk.threads.spawn({
+    return alia.sdk.threads.spawn({
       visibility: "visible",
       ...(stage !== undefined && stageUpdatedAt !== undefined ? { title: launchTitle(environmentId, stage, stageUpdatedAt) } : {}),
       projectId: environment.projectId,
@@ -678,7 +678,7 @@ export default async function plugin(bb: BbPluginApi) {
     for (const launch of launches) {
       if (!launch.thread_id) continue;
       try {
-        const thread = await bb.sdk.threads.get({ threadId: launch.thread_id });
+        const thread = await alia.sdk.threads.get({ threadId: launch.thread_id });
         if (thread.environmentId === environmentId && holdsDispatch(thread)) {
           return thread;
         }
@@ -721,7 +721,7 @@ export default async function plugin(bb: BbPluginApi) {
     })();
     if (!claimed) return null;
     const start = (async () => {
-      const environment = await bb.sdk.environments.get({ environmentId });
+      const environment = await alia.sdk.environments.get({ environmentId });
       // Only an earlier attempt can leave an orphan worker, which may since be archived.
       const matchesLaunch = (thread: ThreadRow) => thread.environmentId === environmentId && thread.title === launchTitle(environmentId, stage, stageUpdatedAt);
       const orphan = open.find(matchesLaunch) ?? (earlierAttempt ? (await listThreads(environment.projectId, true)).find(matchesLaunch) : undefined);
@@ -757,9 +757,9 @@ export default async function plugin(bb: BbPluginApi) {
       addPendingStageThreadLaunch.run(environmentId, stage, stageUpdatedAt);
       return null;
     }
-    const environment = await bb.sdk.environments.get({ environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId });
     const open = await listThreads(environment.projectId);
-    if (waitForThreads && await findDispatchHolder(bb.sdk, open.filter(thread => thread.environmentId === environmentId), setupAutomation.orchestrator(environmentId))) return null;
+    if (waitForThreads && await findDispatchHolder(alia.sdk, open.filter(thread => thread.environmentId === environmentId), setupAutomation.orchestrator(environmentId))) return null;
     return launchStageThreadOnce(environmentId, stage, stageUpdatedAt, prompt, explicit, open);
   }
 
@@ -821,7 +821,7 @@ export default async function plugin(bb: BbPluginApi) {
       setupAutomation.openDesignGate(environmentId);
       await setupAutomation.tick(environmentId);
     } else if (shouldStart) await startWorkForStage(environmentId, stage, now, false, source === "automation");
-    bb.realtime.publish("board-changed", { environmentId, stage });
+    alia.realtime.publish("board-changed", { environmentId, stage });
     return { environmentId, stage };
   }
 
@@ -911,11 +911,11 @@ export default async function plugin(bb: BbPluginApi) {
     for (let start = 0; start < environmentIds.length; start += 200) {
       const keys = environmentIds.slice(start, start + 200);
       try {
-        Object.assign(rows, await bb.sdk.plugins.callRpc({ pluginId: "bb--github-pr-status", method: "pullRequests",
+        Object.assign(rows, await alia.sdk.plugins.callRpc({ pluginId: "alia--github-pr-status", method: "pullRequests",
           input: { keys }, outputSchema: z.record(z.string(), pullRequestRowSchema) }));
       } catch (error) {
-        const message = `The bb--github-pr-status read failed: ${error instanceof Error ? error.message : String(error)}`;
-        bb.log.error(message);
+        const message = `The alia--github-pr-status read failed: ${error instanceof Error ? error.message : String(error)}`;
+        alia.log.error(message);
         for (const key of keys) rows[key] = { outcome: "unavailable", message };
       }
     }
@@ -924,10 +924,10 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function requireMergedPullRequest(environmentId: string, row?: PullRequestRow) {
     const [environment, result] = await Promise.all([
-      bb.sdk.environments.get({ environmentId }),
+      alia.sdk.environments.get({ environmentId }),
       row ?? readPullRequests([environmentId]).then(rows => rows[environmentId]),
     ]);
-    if (!result) throw new Error("Done requires a verified merged pull request. bb--github-pr-status returned no row for this worktree.");
+    if (!result) throw new Error("Done requires a verified merged pull request. alia--github-pr-status returned no row for this worktree.");
     if (result.outcome === "unavailable") throw new Error(`Done requires a verified merged pull request. Pull request status is unavailable: ${result.message}`);
     if (result.outcome !== "available" || result.pullRequest.state !== "merged" ||
         !environment.branchName || result.pullRequest.headRefName !== environment.branchName) {
@@ -972,7 +972,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (!state) throw new Error("Assign a Worktree Stage before recording context.");
     if (!state.owner_thread_id) {
       const launch = readStageThreadLaunch.get(environmentId, state.stage, state.updated_at) as StageThreadLaunchRow | undefined;
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       const prepared = db.prepare("SELECT execution_json FROM worktree_stage_thread_launches WHERE environment_id = ? AND stage = ? AND stage_updated_at = ?")
         .get(environmentId, state.stage, state.updated_at) as { execution_json: string | null } | undefined;
       const failedBeforeDispatch = taskFor(environmentId).task?.setup && launch && ["failed", "blocked"].includes(launch.status) && !prepared?.execution_json && !launch.thread_id;
@@ -996,7 +996,7 @@ export default async function plugin(bb: BbPluginApi) {
       requiredChecks: requiredStageChecks(state.stage, saved.task, state.active_step_id),
       nextStage: saved.task?.setup ? nextStep?.stage ?? null : nextDeliveryStage(state.stage, saved.task),
       paused: paused(environmentId),
-      ...(snapshot ? { workspaceDigest: await captureWorkspace(bb.sdk, environmentId) } : {}) };
+      ...(snapshot ? { workspaceDigest: await captureWorkspace(alia.sdk, environmentId) } : {}) };
   }
 
   async function saveTaskContext(threadId: string, input: unknown) {
@@ -1039,7 +1039,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     if (JSON.stringify(current.task) === JSON.stringify(task)) return { taskRevision: current.revision, task };
     const revision = current.revision + 1;
-    const taskThread = await bb.sdk.threads.get({ threadId });
+    const taskThread = await alia.sdk.threads.get({ threadId });
     const latest = readWorktreeState.get(context.environmentId) as WorktreeStateRow;
     if (latest.updated_at !== state.updated_at || latest.owner_thread_id !== threadId || taskFor(context.environmentId).revision !== current.revision || paused(context.environmentId)) {
       throw new Error("The task or owner changed, or work paused. Read context before saving again.");
@@ -1069,7 +1069,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (context.paused) throw new Error("This worktree is paused.");
     if (context.stage === "design" && setupAutomation.enabled(context.environmentId)) {
       if (context.ownerThreadId !== threadId) throw new Error("Only the Design owner can start automation at the user's request.");
-      if (blockedAttempt(context.environmentId) || (await bb.sdk.threads.interactions.list({ threadId })).length) throw new Error("Resolve the recorded Design blocker or pending question before starting automation.");
+      if (blockedAttempt(context.environmentId) || (await alia.sdk.threads.interactions.list({ threadId })).length) throw new Error("Resolve the recorded Design blocker or pending question before starting automation.");
       await moveWorktree(context.environmentId, "tdd", "User initiated automation", "cli");
       return { status: "planning", threadId: setupAutomation.orchestrator(context.environmentId) };
     }
@@ -1119,7 +1119,7 @@ export default async function plugin(bb: BbPluginApi) {
       throw new Error("Reopen requires an unpaused automatic task in PR Watch with no pending setup.");
     }
     if (context.taskRevision !== input.taskRevision) throw new Error("The task revision changed. Read fresh context before reopening.");
-    const coordinator = await bb.sdk.threads.get({ threadId: coordinatorId });
+    const coordinator = await alia.sdk.threads.get({ threadId: coordinatorId });
     if (!coordinator || coordinator.archivedAt || coordinator.deletedAt || coordinator.environmentId !== env) {
       throw new Error("The saved orchestrator is unavailable. Restore it before reopening.");
     }
@@ -1135,8 +1135,8 @@ export default async function plugin(bb: BbPluginApi) {
     assertCurrent();
     for (const thread of (await listThreads(coordinator.projectId)).filter(t => t.environmentId === env)) {
       if ((thread.id !== threadId && hasLiveWork(thread)) || thread.hasPendingInteraction ||
-          (await bb.sdk.threads.interactions.list({ threadId: thread.id })).length ||
-          (await bb.sdk.threads.queuedMessages.list({ threadId: thread.id })).length) {
+          (await alia.sdk.threads.interactions.list({ threadId: thread.id })).length ||
+          (await alia.sdk.threads.queuedMessages.list({ threadId: thread.id })).length) {
         throw new Error("A thread has live work or pending input. Resolve it before reopening.");
       }
     }
@@ -1154,7 +1154,7 @@ export default async function plugin(bb: BbPluginApi) {
       addWorktreeHistory.run(env, "design", `Reopened: ${input.reason}`, "agent", version);
       return setupAutomation.reopen(env, input.reason);
     })();
-    bb.realtime.publish("board-changed", { environmentId: env, stage: "design" });
+    alia.realtime.publish("board-changed", { environmentId: env, stage: "design" });
     return { stage: "design", taskRevision: revision, ownerThreadId: coordinatorId, requestId: job.id,
       instruction: "The saved orchestrator must update the authorized task in Design. Prior receipts remain history. Complete Design or use explicit user Start before planning fresh checks." };
   }
@@ -1165,7 +1165,7 @@ export default async function plugin(bb: BbPluginApi) {
     const context = await currentContext(threadId, false);
     if (context.ownerThreadId !== threadId || context.paused) throw new Error("Only the unpaused current worker can request plan recovery.");
     if (context.setupComplete) throw new Error("The saved setup already completed.");
-    const interactions = await bb.sdk.threads.interactions.list({ threadId });
+    const interactions = await alia.sdk.threads.interactions.list({ threadId });
     if (interactions.length) throw new Error("Resolve pending input before requesting plan recovery.");
     const state = readWorktreeState.get(context.environmentId) as WorktreeStateRow;
     if (state.owner_thread_id !== threadId || state.updated_at !== context.stageUpdatedAt ||
@@ -1183,12 +1183,12 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function setupCatalog(threadId: string, providerId?: string, skillQuery = "") {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (!thread.environmentId) throw new Error("This thread has no environment for a setup catalog.");
     const [providers, skills, models] = await Promise.all([
-      bb.sdk.providers.list({ environmentId: thread.environmentId }),
-      bb.sdk.skills.list({ projectId: thread.projectId, environmentId: thread.environmentId }),
-      providerId ? bb.sdk.providers.models({ environmentId: thread.environmentId, providerId }) : null,
+      alia.sdk.providers.list({ environmentId: thread.environmentId }),
+      alia.sdk.skills.list({ projectId: thread.projectId, environmentId: thread.environmentId }),
+      providerId ? alia.sdk.providers.models({ environmentId: thread.environmentId, providerId }) : null,
     ]);
     const matches = skills.skills.filter(skill => (!skill.provider || !providerId || skill.provider === providerId) &&
       `${skill.name} ${skill.description ?? ""}`.toLowerCase().includes(skillQuery.toLowerCase()));
@@ -1253,7 +1253,7 @@ export default async function plugin(bb: BbPluginApi) {
           .run(context.environmentId, context.stageUpdatedAt);
         if (repairRequested) tddRepair.record(context.environmentId, threadId, evidence);
       })();
-      bb.realtime.publish("board-changed", { environmentId: context.environmentId, stage: context.stage });
+      alia.realtime.publish("board-changed", { environmentId: context.environmentId, stage: context.stage });
       if (repairRequested) return { recorded: false, action: "repair", stage: context.stage,
         repairStatus: tddRepair.read(context.environmentId, evidence)!.status,
         instruction: "Failure evidence saved. Continue the concrete repair in this thread. A pending repair continues once after a normal yield. An already sent, cancelled, or uncertain repair is not sent again. Keep the failure evidence; submit fresh passing checks before any completion marker." };
@@ -1270,7 +1270,7 @@ export default async function plugin(bb: BbPluginApi) {
       db.prepare("UPDATE worktree_stage_thread_launches SET last_error = NULL WHERE environment_id = ? AND stage = ? AND stage_updated_at = ?")
         .run(context.environmentId, context.stage, context.stageUpdatedAt);
     })();
-    bb.realtime.publish("board-changed", { environmentId: context.environmentId, stage: context.stage });
+    alia.realtime.publish("board-changed", { environmentId: context.environmentId, stage: context.stage });
     return { recorded: true, stage: context.stage, stageUpdatedAt: context.stageUpdatedAt,
       ...(evidence.checks.some(nonTaskFailure) ? { validationLimits: evidence.checks.filter(nonTaskFailure), instruction: "Stage recorded with non-task failures. Preserve failed statuses through Quality, Simplify and PR Watch. PR Watch owns getting required checks green; do not report ready to merge before then." } : {}) };
   }
@@ -1310,10 +1310,10 @@ export default async function plugin(bb: BbPluginApi) {
       const evidence = completionEvidenceSchema.parse(JSON.parse(row.evidence_json));
       const config = await settings.get();
       if (state.stage === "design" ? !config.autoAdvanceGrilling : !config.autoAdvanceImplementation) return;
-      const worker = await bb.sdk.threads.get({ threadId });
-      if (holdsDispatch(worker) || (await bb.sdk.threads.interactions.list({ threadId })).length) return;
-      if ((await bb.sdk.threads.queuedMessages.list({ threadId })).length) return;
-      if (await captureWorkspace(bb.sdk, environmentId) !== evidence.workspaceDigest) {
+      const worker = await alia.sdk.threads.get({ threadId });
+      if (holdsDispatch(worker) || (await alia.sdk.threads.interactions.list({ threadId })).length) return;
+      if ((await alia.sdk.threads.queuedMessages.list({ threadId })).length) return;
+      if (await captureWorkspace(alia.sdk, environmentId) !== evidence.workspaceDigest) {
         recordProblem("Files changed after completion evidence was recorded. Rerun the required checks."); return;
       }
       if (blockedAttempt(environmentId) || paused(environmentId)) return;
@@ -1394,8 +1394,8 @@ export default async function plugin(bb: BbPluginApi) {
         }
         // The orchestrator's own turn and background work never hold dispatch or retry.
         const orchestratorId = setupAutomation.orchestrator(card.environmentId);
-        if (await findDispatchHolder(bb.sdk, threads, orchestratorId)) continue;
-        if ((await bb.sdk.environments.get({ environmentId: card.environmentId })).status !== "ready") continue;
+        if (await findDispatchHolder(alia.sdk, threads, orchestratorId)) continue;
+        if ((await alia.sdk.environments.get({ environmentId: card.environmentId })).status !== "ready") continue;
         const blocker = blockedAttempt(card.environmentId);
         if (blocker) {
           if (blocker.waitingForUser) continue;
@@ -1427,7 +1427,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (!pr || pr.outcome === "unavailable" || (pr.outcome === "available" && pr.pullRequest.state === "closed")) continue;
         }
         if (state.owner_thread_id && !["design", "review", "done", "tickets"].includes(state.stage)) {
-          const owner = await bb.sdk.threads.get({ threadId: state.owner_thread_id });
+          const owner = await alia.sdk.threads.get({ threadId: state.owner_thread_id });
           if (owner?.status === "error") {
             if (!options.force && !config.autoAdvanceImplementation) continue;
             const revision = taskFor(card.environmentId).revision;
@@ -1485,21 +1485,21 @@ export default async function plugin(bb: BbPluginApi) {
         }
         await startWorkForStage(card.environmentId, state.stage as StageId, state.updated_at);
       } catch (error) {
-        bb.log.error(`Recovery for ${card.environmentId} failed: ${error instanceof Error ? error.message : String(error)}`);
+        alia.log.error(`Recovery for ${card.environmentId} failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   }
 
   async function readTaskMap(): Promise<TaskMapResult> {
     const choices = taskMap.read();
-    return { ...taskMapLayout(), choices, ...await liveCatalog(bb.sdk, choices) };
+    return { ...taskMapLayout(), choices, ...await liveCatalog(alia.sdk, choices) };
   }
 
   async function taskMapHealth() {
     const choices = taskMap.read();
     if (!Object.keys(choices).length) return [];
     try {
-      return (await liveCatalog(bb.sdk, choices)).problems.map(problem => ({ status: "task-map-unavailable", slot: problem.slot, error: problem.message }));
+      return (await liveCatalog(alia.sdk, choices)).problems.map(problem => ({ status: "task-map-unavailable", slot: problem.slot, error: problem.message }));
     } catch (error) {
       return [{ status: "task-map-unchecked", slot: null, error: `Could not read the live catalog: ${error instanceof Error ? error.message : String(error)}` }];
     }
@@ -1524,23 +1524,23 @@ export default async function plugin(bb: BbPluginApi) {
         ? `setup:${job.id}` : `stage:${card.environmentId}:${card.stageUpdatedAt}:${taskFor(card.environmentId).revision}`;
       const retry = retryThreadId ? threadRetry.read(retryThreadId, retryAssignment) : undefined;
       if (retry && ["blocked", "uncertain", "claimed"].includes(retry.status) && retryThreadId &&
-          (await bb.sdk.threads.get({ threadId: retryThreadId }).catch(() => null))?.status === "error") {
+          (await alia.sdk.threads.get({ threadId: retryThreadId }).catch(() => null))?.status === "error") {
         return [{ environmentId: card.environmentId, projectId: card.projectId, stage: card.stage, stageUpdatedAt: card.stageUpdatedAt,
           status: `retry-${retry.status}`, error: retry.error ?? "Retry dispatch has an uncertain result. Keep the assigned thread.",
           threadId: retryThreadId, paused: paused(card.environmentId), waitingForInput: card.hasPendingInteraction, hasLiveWork: false }];
       }
       const setupJob = setupAutomation.latest(card.environmentId);
       // Read only when a card can wait; a failed read leaves the saved error in place.
-      const findHolder = () => findDispatchHolder(bb.sdk, listed.filter(thread => thread.environmentId === card.environmentId), setupAutomation.orchestrator(card.environmentId))
+      const findHolder = () => findDispatchHolder(alia.sdk, listed.filter(thread => thread.environmentId === card.environmentId), setupAutomation.orchestrator(card.environmentId))
         .catch(() => undefined);
       if (!paused(card.environmentId) && setupJob &&
           (["pending", "starting", "started", "blocked"].includes(setupJob.status) ||
            (setupJob.status === "stale" && setupJob.stage_updated_at === card.stageUpdatedAt))) {
         const holder = setupJob.status === "blocked" ? undefined : await findHolder();
         if (setupJob.status === "started" && setupJob.thread_id && !setupJob.last_error) {
-          const planner = await bb.sdk.threads.get({ threadId: setupJob.thread_id }).catch(() => null);
+          const planner = await alia.sdk.threads.get({ threadId: setupJob.thread_id }).catch(() => null);
           if (planner && holdsDispatch(planner) && !card.hasPendingInteraction && !holder &&
-              !(await bb.sdk.threads.interactions.list({ threadId: planner.id })).length) return [];
+              !(await alia.sdk.threads.interactions.list({ threadId: planner.id })).length) return [];
         }
         return [{ environmentId: card.environmentId, projectId: card.projectId, stage: card.stage, stageUpdatedAt: card.stageUpdatedAt,
           status: `setup-${setupJob.status}`, attempts: setupJob.attempts, error: holder ? dispatchHoldMessage(holder) : setupJob.last_error,
@@ -1552,16 +1552,16 @@ export default async function plugin(bb: BbPluginApi) {
       const holder = launch.status === "blocked" ? undefined : await findHolder();
       let error = holder ? dispatchHoldMessage(holder) : launch.last_error;
       if (launch.status === "started") {
-        const owner = launch.thread_id ? await bb.sdk.threads.get({ threadId: launch.thread_id }).catch(() => null) : null;
+        const owner = launch.thread_id ? await alia.sdk.threads.get({ threadId: launch.thread_id }).catch(() => null) : null;
         if (!owner || owner.deletedAt || owner.archivedAt || owner.environmentId !== card.environmentId) { status = "worker-unavailable"; error = "The assigned worker is unavailable. Inspect it before resuming work."; }
         else if (owner.status === "error") {
           status = "worker-failed";
           error ??= config.autoAdvanceImplementation
-            ? "The stage worker failed. Inspect this thread or run bb treelanes resume to check its retry state."
-            : "The stage worker failed. Automatic retry is off; retry the thread or run bb treelanes resume.";
+            ? "The stage worker failed. Inspect this thread or run alia treelanes resume to check its retry state."
+            : "The stage worker failed. Automatic retry is off; retry the thread or run alia treelanes resume.";
         }
-        else if ((await bb.sdk.threads.interactions.list({ threadId: owner.id })).length) { status = "waiting-for-decision"; error ??= "The stage worker has a pending question or approval."; }
-        else if (holdsDispatch(owner) || (await bb.sdk.threads.queuedMessages.list({ threadId: owner.id })).length) return [];
+        else if ((await alia.sdk.threads.interactions.list({ threadId: owner.id })).length) { status = "waiting-for-decision"; error ??= "The stage worker has a pending question or approval."; }
+        else if (holdsDispatch(owner) || (await alia.sdk.threads.queuedMessages.list({ threadId: owner.id })).length) return [];
         else if (holder) status = "waiting-for-thread";
         else if (launch.last_error) status = "evidence-stale";
         else if (card.stage !== "pr" && !readResult.get(card.environmentId, card.stageUpdatedAt)) {
@@ -1577,7 +1577,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function getBoard(projectId: string | null, listed?: ThreadRow[]) {
     const [threads, projects, lifecycle] = await Promise.all([
       listed ?? listThreads(projectId ?? undefined),
-      bb.sdk.projects.list({ includePersonal: true }),
+      alia.sdk.projects.list({ includePersonal: true }),
       sidebarState.lifecycle(),
     ]);
     const projectNames = new Map(
@@ -1704,16 +1704,16 @@ export default async function plugin(bb: BbPluginApi) {
     return { stages: [...STAGES], cards };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     getBoard: ({ projectId }) => getBoard(projectId),
     moveCard: ({ environmentId, stage, note }) =>
       moveWorktree(environmentId, stage, note, "panel"),
     createThread: async ({ request }) => {
-      const thread = await bb.sdk.threads.spawn(request);
+      const thread = await alia.sdk.threads.spawn(request);
       return { threadId: thread.id };
     },
     settleThread: async ({ threadId }) => {
-      const target = await bb.sdk.threads.get({ threadId });
+      const target = await alia.sdk.threads.get({ threadId });
       const thread = (await listThreads(target.projectId)).find((row) => row.id === threadId);
       if (!thread || !isWorktreeThread(thread)) {
         throw new Error("This thread is not on the board.");
@@ -1722,13 +1722,13 @@ export default async function plugin(bb: BbPluginApi) {
         throw new Error("This thread has live work or a pending question. Wait before settling it.");
       }
       await sidebarState.settle({ threadId });
-      bb.realtime.publish("board-changed", { environmentId: thread.environmentId });
+      alia.realtime.publish("board-changed", { environmentId: thread.environmentId });
       return { ok: true as const };
     },
     getComposerDefaults: async ({ threadId }) => {
       const [thread, execution] = await Promise.all([
-        bb.sdk.threads.get({ threadId }),
-        bb.sdk.threads.defaultExecutionOptions({ threadId }),
+        alia.sdk.threads.get({ threadId }),
+        alia.sdk.threads.defaultExecutionOptions({ threadId }),
       ]);
       return {
         providerId: thread.providerId,
@@ -1752,12 +1752,12 @@ export default async function plugin(bb: BbPluginApi) {
       if (!state || state.stage !== "pr") throw new Error("This Git Worktree has no PR thread to start.");
       const thread = await startWorkForStage(environmentId, "pr", state.updated_at, true);
       if (!thread) throw new Error("This PR thread has already started or the worktree is paused.");
-      bb.realtime.publish("board-changed", { environmentId, stage: state.stage });
+      alia.realtime.publish("board-changed", { environmentId, stage: state.stage });
       return { threadId: thread.id };
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "treelanes_move_card",
     description:
       "Assign the current Git worktree card to the stage that matches the work now being done. All threads in the worktree share the stage.",
@@ -1792,63 +1792,63 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "treelanes_get_context",
     description: "Read the saved task, owner, revisions and current file digest. A worktree without an assigned stage returns status unassigned without creating a card or starting work.",
     parameters: z.object({}),
     async execute(_input, context) { return JSON.stringify(await readContext(context.threadId)); },
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "treelanes_set_task",
     description: "Save the existing authorized outcome, scope, accepted decisions, required checks, and allowed actions for this worktree. Reuse decisions while their scope still applies.",
     parameters: taskContextSchema,
     async execute(input, context) { return JSON.stringify(await saveTaskContext(context.threadId, input)); },
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "treelanes_complete_stage",
     description: "Record actual check evidence from fresh context. Only recorded:true permits a completion marker and later dispatch. For an incomplete TDD, Quality or Simplify step, include nextAction for a concrete repair in this thread. See /delivery for receipt and recovery rules.",
     parameters: completionEvidenceSchema,
     async execute(input, context) { return JSON.stringify(await submitCompletion(context.threadId, input)); },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "treelanes_start",
     description: "Only when the user explicitly asks to start: open a saved automatic task from Design and continue planning in its original thread. Never use this to infer Design approval. For manual setups, start the saved current step once. Pauses and pending questions block dispatch.",
     parameters: z.object({}),
     async execute(_input, context) { return JSON.stringify(await startSavedSetup(context.threadId)); },
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "treelanes_catalog",
     description: "Inspect installed harnesses, exact available models and effort levels, and relevant skills before choosing a task setup. Give providerId to read models and skillQuery to narrow skills.",
     parameters: z.object({ providerId: z.string().max(128).optional(), skillQuery: z.string().max(160).optional() }),
     async execute(input, context) { return JSON.stringify(await setupCatalog(context.threadId, input.providerId, input.skillQuery)); },
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "treelanes_playbooks",
     description: "Read recent checked setups in this project as starting points for a new task. Prior results never grant authority or validate new work.",
     parameters: z.object({}),
     async execute(_input, context) { return JSON.stringify(setupPlaybooks(context.projectId)); },
   });
 
-  bb.agents.registerTool({ name: "treelanes_deliver", description: "Register the task once. New tasks wait in Design by default. This thread remains the orchestrator; after checked Design completion or explicit user Start it plans from live catalogs, then the board dispatches children. Do not start TDD from an unconfirmed design.",
+  alia.agents.registerTool({ name: "treelanes_deliver", description: "Register the task once. New tasks wait in Design by default. This thread remains the orchestrator; after checked Design completion or explicit user Start it plans from live catalogs, then the board dispatches children. Do not start TDD from an unconfirmed design.",
     parameters: automaticDeliverySchema,
     async execute(input, context) { return JSON.stringify(await deliverAutomatically(context.threadId, input)); },
   });
-  bb.agents.registerTool({ name: "treelanes_apply_setup", description: "Assigned setup worker only: validate and save the setup proposal. The board retains the authorized task and dispatches after this worker is idle.",
+  alia.agents.registerTool({ name: "treelanes_apply_setup", description: "Assigned setup worker only: validate and save the setup proposal. The board retains the authorized task and dispatches after this worker is idle.",
     parameters: setupProposalSchema,
     async execute(input, context) { return JSON.stringify(await setupAutomation.apply(context.threadId, input.setup)); },
   });
-  bb.agents.registerTool({ name: "treelanes_reopen", description: "Only at the user's request: reopen an idle PR Watch task in Design for changed work. Keep its history and original orchestrator; fresh checks are required. Read context and pass its taskRevision.",
+  alia.agents.registerTool({ name: "treelanes_reopen", description: "Only at the user's request: reopen an idle PR Watch task in Design for changed work. Keep its history and original orchestrator; fresh checks are required. Read context and pass its taskRevision.",
     parameters: reopenRequestSchema,
     async execute(input, context) { return JSON.stringify(await reopenTask(context.threadId, input)); },
   });
-  bb.agents.registerTool({ name: "treelanes_recover", description: "Current worker only: request a bounded plan change after a technical failure. A recorded blocker requires nextAction with a concrete in-scope change. Do not retry unchanged base or external failures. Preserve scope and checks. End the turn; the setup worker replans after you are idle. Never use for pending human decisions.",
+  alia.agents.registerTool({ name: "treelanes_recover", description: "Current worker only: request a bounded plan change after a technical failure. A recorded blocker requires nextAction with a concrete in-scope change. Do not retry unchanged base or external failures. Preserve scope and checks. End the turn; the setup worker replans after you are idle. Never use for pending human decisions.",
     parameters: recoveryRequestSchema,
     async execute(input, context) { return JSON.stringify(await requestPlanRecovery(context.threadId, input.reason, input.nextAction)); },
   });
 
   // The setup worker gets only the skills its instructions name; board threads get every skill in skills/.
-  bb.agents.configure(context => setupAutomation.isPlanner(context.thread.id, context.thread.title) ? {
+  alia.agents.configure(context => setupAutomation.isPlanner(context.thread.id, context.thread.title) ? {
     tools: ["treelanes_reopen", "treelanes_apply_setup", "treelanes_catalog", "treelanes_get_context", "treelanes_playbooks"], skills: ["delivery", "ponytail"],
     instructions: "Use /delivery as the persistent task orchestrator. Follow the current assignment: submit setup or guide the existing child. The board owns dispatch and card moves; do not edit product code.",
   } : ({
@@ -1859,33 +1859,33 @@ export default async function plugin(bb: BbPluginApi) {
   }));
 
   const cliCommands = [
-      { name: "deliver", summary: "Plan and run an authorized task", usage: "bb treelanes deliver '<json>'" },
-      { name: "apply-setup", summary: "Submit the assigned setup proposal", usage: "bb treelanes apply-setup '<json>'" },
-      { name: "reopen", summary: "Reopen PR Watch in Design at the user's request", usage: `bb treelanes reopen '{"taskRevision":2,"reason":"User requested changed work"}'` },
-      { name: "recover", summary: "Request bounded plan recovery", usage: `bb treelanes recover '{"reason":"...","nextAction":"..."}'` },
-      { name: "start", summary: "Start the saved setup step once", usage: "bb treelanes start" },
-      { name: "catalog", summary: "Read live setup choices", usage: "bb treelanes catalog [provider-id] [skill-query]" },
-      { name: "playbooks", summary: "Read recent checked setups", usage: "bb treelanes playbooks [project-id]" },
-      { name: "history", summary: "Read saved task revisions", usage: "bb treelanes history" },
-      { name: "show", summary: "Show worktree stages", usage: "bb treelanes show [project-id]" },
-      { name: "move", summary: "Move the worktree for a thread", usage: "bb treelanes move <stage> [thread-id] [note]" },
-      { name: "snapshot", summary: "Read the current worktree file digest", usage: "bb treelanes snapshot <environment-id>" },
-      { name: "context", summary: "Read saved task and current file revision", usage: "bb treelanes context" },
-      { name: "task", summary: "Save the authorized work request", usage: "bb treelanes task '<json>'" },
-      { name: "complete", summary: "Record checked stage completion", usage: "bb treelanes complete '<json>'" },
-      { name: "health", summary: "Read pending and failed launches as JSON", usage: "bb treelanes health [project-id]" },
-      { name: "reconcile", summary: "Recover eligible stage launches and check merged PRs", usage: "bb treelanes reconcile [project-id]" },
-      { name: "pause", summary: "Pause automatic work for a worktree", usage: "bb treelanes pause [environment-id]" },
-      { name: "resume", summary: "Resume automatic work for a worktree", usage: "bb treelanes resume [environment-id]" },
-      { name: "stages", summary: "List valid stages", usage: "bb treelanes stages" },
-      { name: "import", summary: "Copy old workflow-board and worktree-sidebar data once into a new install", usage: "bb treelanes import" },
-      { name: "list-main", summary: "Show saved and preferred sidebar main threads and group order", usage: "bb treelanes list-main" },
-      { name: "main", summary: "Choose a sidebar main thread", usage: "bb treelanes main <project> <environment> <thread>" },
-      { name: "titles", summary: "Show automatic title choice, stored names and errors", usage: "bb treelanes titles" },
-      { name: "generate-titles", summary: "Process one pending title batch", usage: "bb treelanes generate-titles" },
+      { name: "deliver", summary: "Plan and run an authorized task", usage: "alia treelanes deliver '<json>'" },
+      { name: "apply-setup", summary: "Submit the assigned setup proposal", usage: "alia treelanes apply-setup '<json>'" },
+      { name: "reopen", summary: "Reopen PR Watch in Design at the user's request", usage: `alia treelanes reopen '{"taskRevision":2,"reason":"User requested changed work"}'` },
+      { name: "recover", summary: "Request bounded plan recovery", usage: `alia treelanes recover '{"reason":"...","nextAction":"..."}'` },
+      { name: "start", summary: "Start the saved setup step once", usage: "alia treelanes start" },
+      { name: "catalog", summary: "Read live setup choices", usage: "alia treelanes catalog [provider-id] [skill-query]" },
+      { name: "playbooks", summary: "Read recent checked setups", usage: "alia treelanes playbooks [project-id]" },
+      { name: "history", summary: "Read saved task revisions", usage: "alia treelanes history" },
+      { name: "show", summary: "Show worktree stages", usage: "alia treelanes show [project-id]" },
+      { name: "move", summary: "Move the worktree for a thread", usage: "alia treelanes move <stage> [thread-id] [note]" },
+      { name: "snapshot", summary: "Read the current worktree file digest", usage: "alia treelanes snapshot <environment-id>" },
+      { name: "context", summary: "Read saved task and current file revision", usage: "alia treelanes context" },
+      { name: "task", summary: "Save the authorized work request", usage: "alia treelanes task '<json>'" },
+      { name: "complete", summary: "Record checked stage completion", usage: "alia treelanes complete '<json>'" },
+      { name: "health", summary: "Read pending and failed launches as JSON", usage: "alia treelanes health [project-id]" },
+      { name: "reconcile", summary: "Recover eligible stage launches and check merged PRs", usage: "alia treelanes reconcile [project-id]" },
+      { name: "pause", summary: "Pause automatic work for a worktree", usage: "alia treelanes pause [environment-id]" },
+      { name: "resume", summary: "Resume automatic work for a worktree", usage: "alia treelanes resume [environment-id]" },
+      { name: "stages", summary: "List valid stages", usage: "alia treelanes stages" },
+      { name: "import", summary: "Copy old workflow-board and worktree-sidebar data once into a new install", usage: "alia treelanes import" },
+      { name: "list-main", summary: "Show saved and preferred sidebar main threads and group order", usage: "alia treelanes list-main" },
+      { name: "main", summary: "Choose a sidebar main thread", usage: "alia treelanes main <project> <environment> <thread>" },
+      { name: "titles", summary: "Show automatic title choice, stored names and errors", usage: "alia treelanes titles" },
+      { name: "generate-titles", summary: "Process one pending title batch", usage: "alia treelanes generate-titles" },
     ];
   const cliHelp = `Treelanes commands:\n${cliCommands.map(command => `${command.usage}\n  ${command.summary}`).join("\n")}\n`;
-  bb.cli.register({
+  alia.cli.register({
     name: "treelanes",
     summary: "Read and move worktree cards",
     commands: cliCommands,
@@ -1906,8 +1906,8 @@ export default async function plugin(bb: BbPluginApi) {
         return { exitCode: 0, stdout: `${JSON.stringify(result)}\n` };
       }
       if (command === "import") {
-        const result = importOldData(db, bb.server.experimental_dataDir, PLUGIN_SKILLS);
-        for (const channel of ["board-changed", "lifecycle", "order", "groups", "titles"]) bb.realtime.publish(channel, {});
+        const result = importOldData(db, alia.server.experimental_dataDir, PLUGIN_SKILLS);
+        for (const channel of ["board-changed", "lifecycle", "order", "groups", "titles"]) alia.realtime.publish(channel, {});
         return { exitCode: 0, stdout: `${JSON.stringify(result)}\n` };
       }
       if (command === "playbooks") return { exitCode: 0, stdout: `${JSON.stringify(setupPlaybooks(args[0] ?? context.projectId))}\n` };
@@ -1921,7 +1921,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       if (command === "snapshot") {
         if (!args[0]) return { exitCode: 2, stderr: "Give a worktree environment ID.\n" };
-        return { exitCode: 0, stdout: `${JSON.stringify({ environmentId: args[0], workspaceDigest: await captureWorkspace(bb.sdk, args[0]) })}\n` };
+        return { exitCode: 0, stdout: `${JSON.stringify({ environmentId: args[0], workspaceDigest: await captureWorkspace(alia.sdk, args[0]) })}\n` };
       }
       if (["context", "task", "complete"].includes(command ?? "")) {
         if (!context.threadId) return { exitCode: 2, stderr: "Run this command in the assigned worker thread.\n" };
@@ -1935,7 +1935,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (command === "pause" || command === "resume") {
         const environmentId = args[0] ?? (context.threadId ? (await worktreeForThread(context.threadId)).environmentId : undefined);
         if (!environmentId) return { exitCode: 2, stderr: "Give a worktree environment ID.\n" };
-        await bb.sdk.environments.get({ environmentId });
+        await alia.sdk.environments.get({ environmentId });
         db.prepare(`INSERT INTO worktree_controls VALUES (?, ?) ON CONFLICT(environment_id) DO UPDATE SET paused = excluded.paused`)
           .run(environmentId, command === "pause" ? 1 : 0);
         if (command === "resume") await reconcileWorktrees({ force: true, environmentId });
@@ -1987,11 +1987,11 @@ export default async function plugin(bb: BbPluginApi) {
     return Boolean(state && (readStageThreadLaunch.get(environmentId, state.stage, state.updated_at) as StageThreadLaunchRow | undefined)?.status === "pending");
   };
   const publishThreadChange = ({ thread }: { thread: { id: string } }) => {
-    bb.realtime.publish("board-changed", { threadId: thread.id });
+    alia.realtime.publish("board-changed", { threadId: thread.id });
   };
-  bb.events.on("thread.created", publishThreadChange);
-  bb.events.on("thread.active", publishThreadChange);
-  bb.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.created", publishThreadChange);
+  alia.events.on("thread.active", publishThreadChange);
+  alia.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
     publishThreadChange({ thread });
     if (thread.environmentId && (setupAutomation.enabled(thread.environmentId) || blockedAttempt(thread.environmentId)?.evidence.nextAction ||
         heldLaunch(thread.environmentId))) await reconcileWorktrees({ environmentId: thread.environmentId });
@@ -2004,22 +2004,22 @@ export default async function plugin(bb: BbPluginApi) {
       if (!state || completion.sourceStage !== state.stage || state.owner_thread_id !== thread.id) return;
       await advanceCompleted(environmentId, thread.id);
     } catch (error) {
-      bb.log.error(`Completion handling failed for ${thread.id}: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.error(`Completion handling failed for ${thread.id}: ${error instanceof Error ? error.message : String(error)}`);
     }
   });
-  bb.events.on("thread.failed", async ({ thread }) => {
+  alia.events.on("thread.failed", async ({ thread }) => {
     publishThreadChange({ thread });
     if (thread.environmentId && setupAutomation.enabled(thread.environmentId)) await reconcileWorktrees();
   });
-  bb.events.on("thread.archived", publishThreadChange);
-  bb.events.on("thread.deleted", publishThreadChange);
+  alia.events.on("thread.archived", publishThreadChange);
+  alia.events.on("thread.deleted", publishThreadChange);
 
-  bb.background.service("workflow-recovery", { async start(signal) {
+  alia.background.service("workflow-recovery", { async start(signal) {
     if (!signal.aborted) await reconcileWorktrees();
   } });
-  bb.background.schedule("reconcile-worktrees", "*/5 * * * *", () => reconcileWorktrees());
+  alia.background.schedule("reconcile-worktrees", "*/5 * * * *", () => reconcileWorktrees());
   settings.onChange(() => {
-    if (!disposed) void reconcileWorktrees().catch(error => bb.log.error(`Settings recovery failed: ${String(error)}`));
+    if (!disposed) void reconcileWorktrees().catch(error => alia.log.error(`Settings recovery failed: ${String(error)}`));
   });
-  bb.log.info("Treelanes loaded");
+  alia.log.info("Treelanes loaded");
 }

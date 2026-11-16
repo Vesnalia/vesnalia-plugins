@@ -11,7 +11,7 @@
  *    values and `undefined` is rejected rather than coerced, so an absent field
  *    is `null` on the wire. Inputs may be optional; outputs may not.
  */
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { stepSchema } from "./steps.js";
 
@@ -74,7 +74,7 @@ export const devicesSchema = z
     /**
      * Where these simulators live, and every other enrolled machine.
      *
-     * Simulators run on the machine that runs the bb server; the plugin has
+     * Simulators run on the machine that runs the VesnALIA server; the plugin has
      * no remote-execution or tunnelling path to another Mac's CoreSimulator
      * (see SECURITY.md), so other machines are *named* rather than offered —
      * an honest disabled row beats a picker that pretends.
@@ -118,7 +118,7 @@ export const liveStateSchema = z
      * Where to point the `<img>`, or `null` when there is nothing to stream.
      * The plugin's own route rather than the capture host's loopback port: it
      * keeps the per-boot secret out of the DOM, and it is same-origin, so the
-     * panel works identically whether bb is reached locally or over connect.
+     * panel works identically whether VesnALIA is reached locally or over connect.
      */
     streamUrl: z.string().nullable(),
     /** Loopback, token-scoped, and only right for a viewer on this machine. */
@@ -470,7 +470,7 @@ export const rpcContract = defineRpcContract({
   },
   onboardPlan: {
     /**
-     * `wait` is for a foreground caller — someone who typed `bb xcode sim onboard`
+     * `wait` is for a foreground caller — someone who typed `alia xcode sim onboard`
      * and is looking at a terminal. The panel never sets it: a mount must not
      * hold a handler open for the tens of seconds `xcodebuild -list` takes.
      */
@@ -534,7 +534,7 @@ export const rpcContract = defineRpcContract({
    *
    * The socket is server-owned and the frontend sends input over RPC. A direct
    * browser WebSocket to loopback would shave a millisecond or two, but it lets
-   * two bb windows race for one device, needs a loopback origin the page may not
+   * two VesnALIA windows race for one device, needs a loopback origin the page may not
    * have, and dies entirely under `https:`. Local RPC costs one to three
    * milliseconds and works identically in every deployment — and an atomic
    * gesture survives a slow one, which a begin/end pair would not.
@@ -580,7 +580,7 @@ export const rpcContract = defineRpcContract({
    * Batched because RPC is plain HTTP with no ordering between concurrent
    * calls: the panel keeps exactly one batch in flight and accumulates the
    * rest, and the server replays each batch at the timestamps' spacing. On a
-   * loopback link a batch is one or two events; over a remote bb connection it is a
+   * loopback link a batch is one or two events; over a remote VesnALIA connection it is a
    * whole stretch of the drag, delivered smooth instead of as teleports.
    */
   /**

@@ -1,5 +1,5 @@
 /**
- * Optional integration with the Workspaces plugin (bb-plugin-workspaces).
+ * Optional integration with the Workspaces plugin (alia-plugin-workspaces).
  *
  * Workspaces shows a thread's workspace as tabs in its header. Here, the
  * threads of one workspace nest under the workspace's first thread, the way
@@ -12,11 +12,11 @@
  * thread on its own. Delegated threads keep their native parent.
  */
 import { useEffect, useMemo, useState } from "react";
-import { useRpc, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useRpc, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { cursorSidebarRpcContract } from "./server";
 
 /** Window event the Workspaces plugin fires after it changes membership. */
-const CHANGED_EVENT = "bb-workspaces:changed";
+const CHANGED_EVENT = "alia-workspaces:changed";
 const CHUNK = 100;
 const FOCUS_REFRESH_MS = 30_000;
 

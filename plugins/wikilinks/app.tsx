@@ -14,13 +14,13 @@ import {
   definePluginApp,
   experimental_FileLink as FileLink,
   UrlLink,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
   useSettings,
   type ExperimentalLiveFileTarget,
   type PluginFileOpenerProps,
   type PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server.js";
 import { useAnnounceActiveFile } from "./active-file-announce.js";
 import { DocumentBacklinks } from "./document-backlinks.js";
@@ -205,7 +205,7 @@ function PreviewingUrlLink({
   children: ReactNode;
 } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "target">) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [anchor, setAnchor] = useState<HoverAnchorRect | null>(null);
   const [preview, setPreview] = useState<WebPreviewResult | null>(null);
   const [portalContainer, setPortalContainer] = useState<Element | null>(null);
@@ -352,7 +352,7 @@ function PreviewingFileLink({
   children: ReactNode;
 } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "target">) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const trail = useThinkingTrail();
   const trailParent = useThinkingTrailParent();
   const [anchor, setAnchor] = useState<HoverAnchorRect | null>(null);
@@ -605,7 +605,7 @@ interface EditorHoverState {
 
 function WikilinkFileOpener({ path, source, Original }: PluginFileOpenerProps) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const settings = useSettings();
   const documentBacklinksEnabled = settings.values?.documentBacklinks !== false;
   const trail = useThinkingTrail();
@@ -1335,7 +1335,7 @@ interface ChatWebHoverState {
 
 function ChatWikilinkBridge({ threadId }: { threadId: string }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const trail = useThinkingTrail();
   const trailParent = useThinkingTrailParent();
   const markerRef = useRef<HTMLSpanElement>(null);

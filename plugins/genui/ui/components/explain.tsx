@@ -2,7 +2,7 @@
 // a month Calendar of events. Each keeps its own React state; the pure parts
 // (parsing, date math) live in explain-logic.ts.
 import { useContext, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { Button as BaseButton } from "@/components/ui/button";
 import { Icon as HostIcon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";

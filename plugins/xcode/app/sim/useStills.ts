@@ -9,11 +9,11 @@
  */
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import {
-  useBbContext,
+  useAliaContext,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../../src/sim/wire";
 import type { CapturedFrame } from "./useLive";
 
@@ -140,7 +140,7 @@ export function isOnboarded(plan: OnboardPlan | null): boolean {
 
 export function useStills(lookId?: string) {
   const client = useRpc<typeof rpcContract>();
-  const { threadId, projectId } = useBbContext();
+  const { threadId, projectId } = useAliaContext();
   rpc = client;
 
   const value = useSyncExternalStore(

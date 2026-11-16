@@ -19,7 +19,7 @@ import {
 } from "./video-frames";
 import { BoundedByteQueue } from "./byte-queue";
 
-export const MEDIA_ENVELOPE_V2_CONTENT_TYPE = "application/vnd.bb.sim-avcc;version=2";
+export const MEDIA_ENVELOPE_V2_CONTENT_TYPE = "application/vnd.alia.sim-avcc;version=2";
 export const MEDIA_ENVELOPE_V2_VERSION = 2;
 export const MEDIA_ENVELOPE_V2_HEADER_BYTES = 28;
 export const FRAME_DISCONTINUITY = 0x05;
@@ -186,7 +186,7 @@ function parseContentType(value: string | null): { mediaType: string; version: s
 export function createVideoEnvelopeParser(contentType: string | null): VideoEnvelopeParser {
   const parsed = parseContentType(contentType);
   if (parsed.mediaType === "application/octet-stream") return createV1EnvelopeParser();
-  if (parsed.mediaType === "application/vnd.bb.sim-avcc" && parsed.version === "2") {
+  if (parsed.mediaType === "application/vnd.alia.sim-avcc" && parsed.version === "2") {
     return createV2EnvelopeParser();
   }
   throw new VideoEnvelopeParseError(`unsupported H.264 content type: ${contentType ?? "missing"}`);

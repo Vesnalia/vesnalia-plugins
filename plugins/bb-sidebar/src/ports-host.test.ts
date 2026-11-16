@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 
 const mocks = vi.hoisted(() => ({ run: vi.fn(), platform: vi.fn() }));
 vi.mock("node:child_process", async (importOriginal) => {
@@ -41,10 +41,10 @@ function commands(docker: () => string = () => "") {
       return {
         stdout:
           args[0] === "eww"
-            ? "node app.js BB_THREAD_ID=thr_owner PATH=/bin"
+            ? "node app.js ALIA_THREAD_ID=thr_owner PATH=/bin"
             : args.includes("lstart=")
               ? "Sat Oct  3 12:29:38 2026\n"
-              : "123 node app.js\n456 node /opt/bb-app/server/dist/index.js",
+              : "123 node app.js\n456 node /opt/alia-app/server/dist/index.js",
       };
     if (command === "docker") return { stdout: docker() };
     throw new Error(`Unexpected command ${command}`);
@@ -85,7 +85,7 @@ describe("host port scan", () => {
     ]);
   });
 
-  it("keeps user listeners and excludes BB listeners when Docker is unavailable", async () => {
+  it("keeps user listeners and excludes VesnALIA listeners when Docker is unavailable", async () => {
     commands(() => {
       throw new Error("ENOENT");
     });

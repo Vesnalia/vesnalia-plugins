@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from "react";
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server.ts";
 import { CHANGED, defaults, imageUrl, isAnimatedImage, isVideo, SLOT_COUNT, type BackgroundSettings, type Snapshot } from "./lib/model.ts";
 import { backgroundRules, mountBackground, notifyChange } from "./lib/background.ts";
@@ -159,7 +159,7 @@ export function BackgroundEditor() {
                   <div className="aura-motion-preview-composer"><span>What would you like to make?</span><div><span>＋</span><span className="aura-motion-preview-send">↑</span></div></div>
                 </div>}
           </div>
-          <p className="aura-motion-caption">{draft.newThreadOnly ? "Only on the New thread screen — existing conversations stay plain." : "Shown in all conversations and on New thread."} Images stay on your BB server.</p>
+          <p className="aura-motion-caption">{draft.newThreadOnly ? "Only on the New thread screen — existing conversations stay plain." : "Shown in all conversations and on New thread."} Images stay on your VesnALIA server.</p>
         </div>
         <fieldset className="aura-motion-controls" disabled={busy || !snapshot}>
           <legend className="aura-motion-sr-only">Background controls</legend>
@@ -194,7 +194,7 @@ export function BackgroundEditor() {
               : <div className="aura-motion-field"><label className="aura-motion-field-title" htmlFor={`${id}-pattern`}>Pattern</label><select id={`${id}-pattern`} value={draft.pattern} onChange={e => change("pattern", e.target.value as BackgroundSettings["pattern"])}>{Object.entries(PATTERN_LABELS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></div>}
             <SegmentedControl id={`${id}-dither`} label="Dither" help="Grain is random noise; larger grids look more ordered." value={draft.dither} options={DITHER_OPTIONS} onChange={value => change("dither", value as BackgroundSettings["dither"])} />
           </>}
-          {draft.effect === "pixels" && !currentImage && <><div className="aura-motion-field"><label className="aura-motion-field-title" htmlFor={`${id}-tint`}>Pixel color</label><select id={`${id}-tint`} value={draft.tint} onChange={e => change("tint", e.target.value as BackgroundSettings["tint"])}><option value="lavender">Lavender</option><option value="theme">Follow BB theme</option></select></div>
+          {draft.effect === "pixels" && !currentImage && <><div className="aura-motion-field"><label className="aura-motion-field-title" htmlFor={`${id}-tint`}>Pixel color</label><select id={`${id}-tint`} value={draft.tint} onChange={e => change("tint", e.target.value as BackgroundSettings["tint"])}><option value="lavender">Lavender</option><option value="theme">Follow VesnALIA theme</option></select></div>
           <Slider id={`${id}-strength`} label="Texture strength" value={draft.intensity} onChange={v => change("intensity", v)} /></>}
           </section>
         </fieldset>

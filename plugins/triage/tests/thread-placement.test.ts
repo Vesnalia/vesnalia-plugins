@@ -1,12 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createFakePluginHost, makeThreadResponse, makePluginAgentConfigurationContext } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse, makePluginAgentConfigurationContext } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 
 async function setup(options: { failUpdate?: boolean; archived?: boolean } = {}) {
   const thread = makeThreadResponse({ id: "session-1", projectId: "project-1", title: "Existing conversation", visibility: "visible", archivedAt: options.archived ? 1 : null });
   let failUpdate = options.failUpdate;
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "triage",
     sdk: {
       threads: {
@@ -22,7 +22,7 @@ async function setup(options: { failUpdate?: boolean; archived?: boolean } = {})
       environments: { get: async () => { throw new Error("No environment"); } },
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   const importThread = () => harness.behavior.callRpc("importThread", { threadId: thread.id }) as Promise<{ number: number; threadId: string; title: string }>;
   return { harness, thread, importThread };
 }
@@ -130,8 +130,8 @@ test("snapshot reports actual sidebar visibility and settings persist", async ()
     thread.visibility = "hidden";
     assert.equal(await visible(), false);
     await harness.behavior.callRpc("setShowInSidebar", { visible: true });
-    await harness.lifecycle.reload(async (bb) => {
-      const settings = bb.settings.define({ showInSidebar: { type: "boolean", label: "Show Triage in sidebar", default: false } });
+    await harness.lifecycle.reload(async (alia) => {
+      const settings = alia.settings.define({ showInSidebar: { type: "boolean", label: "Show Triage in sidebar", default: false } });
       assert.equal((await settings.get()).showInSidebar, true);
     });
   } finally { await harness.lifecycle.dispose(); }

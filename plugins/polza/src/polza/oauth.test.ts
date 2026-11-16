@@ -25,7 +25,7 @@ describe("PolzaOAuthLogin", () => {
     const login = new PolzaOAuthLogin({
       baseUrl: () => "https://polza.ai/api/",
       callbackUrl: () => callbackUrl,
-      appName: "bb",
+      appName: "alia",
       fetchImpl,
     });
     const started = login.start();
@@ -35,7 +35,7 @@ describe("PolzaOAuthLogin", () => {
     expect(url.searchParams.get("callback_url")).toBe(callbackUrl);
     expect(url.searchParams.get("code_challenge_method")).toBe("S256");
     expect(url.searchParams.get("code_challenge")).toMatch(/^[A-Za-z0-9_-]{43}$/u);
-    expect(url.searchParams.get("app_name")).toBe("bb");
+    expect(url.searchParams.get("app_name")).toBe("alia");
     expect(url.searchParams.has("client_id")).toBe(false);
     expect(login.pendingState()).toBe(url.searchParams.get("state"));
 
@@ -59,7 +59,7 @@ describe("PolzaOAuthLogin", () => {
     const login = new PolzaOAuthLogin({
       baseUrl: () => "https://polza.ai/api",
       callbackUrl: () => callbackUrl,
-      appName: "bb",
+      appName: "alia",
       fetchImpl,
       now: () => now,
     });

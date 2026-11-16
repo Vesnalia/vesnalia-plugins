@@ -8,7 +8,7 @@ const read = (name: string) => readFileSync(fileURLToPath(new URL(name, import.m
 describe("the README", () => {
   it("installs a floor-only range that includes this version (a 0.x caret range stops at the next minor)", () => {
     const version = (JSON.parse(read("./package.json")) as { version: string }).version;
-    const range = /bb plugin install 'git:github\.com\/gpambrozio\/bb-plugins@>=(\d+)\.(\d+)\.(\d+)'/.exec(read("./README.md"));
+    const range = /alia plugin install 'git:github\.com\/gpambrozio\/alia-plugins@>=(\d+)\.(\d+)\.(\d+)'/.exec(read("./README.md"));
     expect(range).not.toBeNull();
     const floor = range!.slice(1, 4).map(Number);
     const current = version.split(".").map(Number);

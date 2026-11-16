@@ -1,33 +1,33 @@
 /**
- * One tab's line to its shell: bb's terminal socket, `/ws/terminals/<id>` on
- * the page's own origin — the one bb's own terminal view and the Wterm
- * Terminal Preview plugin use (bb 0.48.1). The SDK lists, creates and closes
+ * One tab's line to its shell: VesnALIA's terminal socket, `/ws/terminals/<id>` on
+ * the page's own origin — the one VesnALIA's own terminal view and the Wterm
+ * Terminal Preview plugin use (VesnALIA 0.48.1). The SDK lists, creates and closes
  * terminals but has no streaming call, and polling `terminals.output` would
  * put a round trip between every keystroke and its echo.
  *
- * The protocol, as bb 0.48.1's server speaks it:
- * - open with `?sinceSeq=<n>&outputAcks=1`; bb answers `attached`, replays
+ * The protocol, as VesnALIA 0.48.1's server speaks it:
+ * - open with `?sinceSeq=<n>&outputAcks=1`; VesnALIA answers `attached`, replays
  *   the buffered output from `n` (at most the last 512 KB), then streams;
  * - every `output` chunk has a sequence number, so a reconnect resumes where
  *   it stopped and a duplicate is dropped;
- * - bb takes a `resize` only from the socket that attached last and drops the
+ * - VesnALIA takes a `resize` only from the socket that attached last and drops the
  *   others' silently, so this file never sends one: the window in use sizes
  *   the shell through `terminals.resize` (app/sizing.ts), and this file passes
- *   on the size bb reports;
- * - `ack` with the next sequence once the output is drawn is bb's flow
- *   control: bb paces the shell to its visible clients' acks, and stops
+ *   on the size VesnALIA reports;
+ * - `ack` with the next sequence once the output is drawn is VesnALIA's flow
+ *   control: VesnALIA paces the shell to its visible clients' acks, and stops
  *   waiting on a client that has not acked for 3 s. The tab's terminal keeps
  *   parsing, and acking, while the page is away;
  * - `ping` / `pong` keep the line honest, `exited` ends it, and an `error`
- *   with `terminal_not_found` means bb no longer has the session;
+ *   with `terminal_not_found` means VesnALIA no longer has the session;
  * - attaching to a shell that has already exited gets `attached` with no
- *   replay and then `exited`: bb does not send the output it kept. That comes
+ *   replay and then `exited`: VesnALIA does not send the output it kept. That comes
  *   from `terminals.output` instead (`readRetained`), from the first sequence
  *   not yet drawn, before the tab says it ended;
- * - bb answers an attach to a shell it is still starting on its machine
+ * - VesnALIA answers an attach to a shell it is still starting on its machine
  *   with `attached` (status `starting`) and then `terminal_not_running`; that
  *   is tried again like a failed attach, not taken as the end;
- * - an attach can fail without the socket closing: bb sends an `error` such as
+ * - an attach can fail without the socket closing: VesnALIA sends an `error` such as
  *   `terminal_attach_timeout` (its own 10 s limit on the host's answer) and
  *   forgets the client, while the socket still answers pings. So any other
  *   error before `attached`, or no `attached` within `ATTACH_TIMEOUT_MS`,
@@ -54,8 +54,8 @@ const OPEN = 1;
  * - `connecting`: the first attach has not answered yet;
  * - `live`: attached to a running shell;
  * - `offline`: the socket is down and retrying, or the shell's machine is
- *   disconnected from bb (bb resumes the shell when it reconnects);
- * - `ended`: the shell exited, or bb no longer has the session.
+ *   disconnected from VesnALIA (VesnALIA resumes the shell when it reconnects);
+ * - `ended`: the shell exited, or VesnALIA no longer has the session.
  */
 export type ConnectionState = "connecting" | "live" | "offline" | "ended";
 
@@ -74,16 +74,16 @@ export interface Clock {
 
 export interface ConnectionOptions {
   terminalId: string;
-  /** Opens bb's terminal socket for this terminal, resuming at `sinceSeq`. */
+  /** Opens VesnALIA's terminal socket for this terminal, resuming at `sinceSeq`. */
   openSocket(terminalId: string, sinceSeq: number): SocketLike;
-  /** Draws a chunk; calls `drawn` once it is on screen, which acknowledges it to bb. */
+  /** Draws a chunk; calls `drawn` once it is on screen, which acknowledges it to VesnALIA. */
   write(bytes: Uint8Array, drawn: () => void): void;
   onStatus(status: ConnectionStatus): void;
-  /** The shell's size, each time bb reports it (`attached`, `session-updated`); see app/sizing.ts. */
+  /** The shell's size, each time VesnALIA reports it (`attached`, `session-updated`); see app/sizing.ts. */
   onSize?(size: { cols: number; rows: number }): void;
   /**
-   * The output bb kept for this terminal from `sinceSeq` on, and its exit
-   * code, read once it has exited (`terminals.output`); rejects when bb no
+   * The output VesnALIA kept for this terminal from `sinceSeq` on, and its exit
+   * code, read once it has exited (`terminals.output`); rejects when VesnALIA no
    * longer has it.
    */
   readRetained?(sinceSeq: number): Promise<{ chunks: readonly { seq: number; dataBase64: string }[]; exitCode: number | null }>;
@@ -96,9 +96,9 @@ export const HEARTBEAT_INTERVAL_MS = 15_000;
 export const HEARTBEAT_TIMEOUT_MS = 45_000;
 /** How long an open socket may go without `attached` before it is dropped and tried again. */
 export const ATTACH_TIMEOUT_MS = 20_000;
-/** Errors that mean the session is over, not that this attempt failed (bb 0.48.1). */
+/** Errors that mean the session is over, not that this attempt failed (VesnALIA 0.48.1). */
 const ENDED_ERRORS = new Set(["terminal_not_found", "terminal_not_running", "terminal_exited", "terminal_closed"]);
-/** bb takes at most 64 KiB per input message; stay well under it. */
+/** VesnALIA takes at most 64 KiB per input message; stay well under it. */
 export const INPUT_CHUNK_BYTES = 32 * 1024;
 /** Typing queued while the socket is down, kept up to this much. */
 export const INPUT_QUEUE_MAX_BYTES = 256 * 1024;
@@ -125,9 +125,9 @@ export class TerminalConnection {
   private reconnectTimer: unknown = null;
   private heartbeat: unknown = null;
   private attachTimer: unknown = null;
-  /** The session's status as bb last reported it. */
+  /** The session's status as VesnALIA last reported it. */
   private sessionStatus: SessionStatus | null = null;
-  /** The socket bb has answered `attached` on; until then an error is this attempt's, not the session's. */
+  /** The socket VesnALIA has answered `attached` on; until then an error is this attempt's, not the session's. */
   private attachedSocket: SocketLike | null = null;
   private lastPongAt = 0;
   private status: ConnectionStatus = { state: "connecting", exitCode: null };
@@ -213,7 +213,7 @@ export class TerminalConnection {
         if (message.session.status !== "starting") this.attempts = 0;
         this.attachedSocket = this.socket;
         this.clearAttachTimer();
-        // A replay that starts later than asked lost the oldest output to bb's bound; carry on from there.
+        // A replay that starts later than asked lost the oldest output to VesnALIA's bound; carry on from there.
         if (message.replayStartSeq > this.nextSeq) this.nextSeq = message.replayStartSeq;
         this.applySession(message.session);
         return;
@@ -237,15 +237,15 @@ export class TerminalConnection {
         this.finish(message.session.exitCode, true);
         return;
       case "error":
-        // bb answers an attach to a shell it is still starting with "not running": not over, just early.
+        // VesnALIA answers an attach to a shell it is still starting with "not running": not over, just early.
         if (message.code === "terminal_not_running" && this.sessionStatus === "starting" && this.socket !== null) {
           this.retry(this.socket, message.code);
         }
-        // A shell that exits while bb is still attaching this socket is reported as this error, not
+        // A shell that exits while VesnALIA is still attaching this socket is reported as this error, not
         // as `exited` (the socket is not a client yet): it exited all the same, so read what it left.
         else if (message.code === "terminal_exited") this.finish(null, true);
         else if (ENDED_ERRORS.has(message.code)) this.finish(null);
-        // bb forgot this client when the attach failed; the socket would stay open and silent.
+        // VesnALIA forgot this client when the attach failed; the socket would stay open and silent.
         else if (this.socket !== null && this.attachedSocket !== this.socket) this.retry(this.socket, message.code);
         return;
       case "pong":
@@ -262,7 +262,7 @@ export class TerminalConnection {
     this.setStatus({ state, exitCode: null });
   }
 
-  /** Stops for good; for a shell that exited, draws what bb kept of its output that this tab has not. */
+  /** Stops for good; for a shell that exited, draws what VesnALIA kept of its output that this tab has not. */
   private finish(exitCode: number | null, exited = false): void {
     if (this.finished) return;
     this.finished = true;
@@ -283,7 +283,7 @@ export class TerminalConnection {
         this.setStatus({ state: "ended", exitCode: exitCode ?? retained.exitCode });
       },
       (error: unknown) => {
-        // bb keeps an exited shell's output for 30 minutes; after that the tab just shows what it had.
+        // VesnALIA keeps an exited shell's output for 30 minutes; after that the tab just shows what it had.
         console.warn(`terminals: could not read what ${this.options.terminalId} printed before it exited: ${String(error)}`);
         if (!this.disposed) this.setStatus(ended);
       },
@@ -366,7 +366,7 @@ export class TerminalConnection {
   }
 }
 
-/** bb's terminal socket URL on the page's own origin. */
+/** VesnALIA's terminal socket URL on the page's own origin. */
 export function terminalSocketUrl(location: { protocol: string; host: string }, terminalId: string, sinceSeq: number): string {
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
   return `${protocol}//${location.host}/ws/terminals/${encodeURIComponent(terminalId)}?sinceSeq=${sinceSeq}&outputAcks=1`;
@@ -375,7 +375,7 @@ export function terminalSocketUrl(location: { protocol: string; host: string }, 
 interface SessionInfo {
   status: SessionStatus;
   exitCode: number | null;
-  /** The shell's size, when bb sent a usable one. */
+  /** The shell's size, when VesnALIA sent a usable one. */
   size: { cols: number; rows: number } | null;
 }
 

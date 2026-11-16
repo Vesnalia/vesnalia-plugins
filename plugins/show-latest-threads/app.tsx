@@ -1,4 +1,4 @@
-// bb-plugin-show-latest-threads - frontend entry.
+// alia-plugin-show-latest-threads - frontend entry.
 //
 // A sidebar thread list (the exclusive `experimental_threadList` slot) that
 // can hide everything with no activity inside a 24, 48 or 72 hour window.
@@ -7,9 +7,9 @@
 // never breaks. The active thread and threads that are running or waiting
 // for an answer stay visible whatever their age.
 //
-// The list reads the same live cache as BB's own list
+// The list reads the same live cache as VesnALIA's own list
 // (`experimental_useSidebarThreads`) and acts through the host's actions, so
-// archive and delete go through BB's own confirmations.
+// archive and delete go through VesnALIA's own confirmations.
 import {
   useEffect,
   useMemo,
@@ -29,12 +29,12 @@ import {
   useRpc,
   useSettings,
   useSidebarThreadDraft,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   PluginSidebarProject,
   PluginSidebarThread,
   PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { resolveLang, type Lang } from "./lib/locale";
 import { compareGroups } from "./lib/ordering";
@@ -463,7 +463,7 @@ function ThreadTree({ threads, ctx }: { threads: PluginSidebarThread[]; ctx: Row
   return <div className="space-y-px">{roots.map((thread) => render(thread, 0))}</div>;
 }
 
-// Glyphs follow BB's own list: a dot for unread, a spinner while the agent
+// Glyphs follow VesnALIA's own list: a dot for unread, a spinner while the agent
 // works, a question mark when it waits for you, a red cross after a failure.
 const ACTIVITY_ICONS: Partial<Record<PluginSidebarThread["indicator"], string>> = {
   workflow: "Workflow",
@@ -505,7 +505,7 @@ function StatusGlyph({ thread, hasDraft, draftLabel }: { thread: PluginSidebarTh
     default: {
       const name = ACTIVITY_ICONS[thread.indicator];
       if (name) return <Icon name={name} className={`${icon} text-muted-foreground/60`} aria-label={label} />;
-      // An indicator kind added in a later BB version: show it as working.
+      // An indicator kind added in a later VesnALIA version: show it as working.
       return isBusy(thread) ? (
         <Icon name="Loading" className={`${icon} animate-spin text-muted-foreground/60`} aria-label={label} />
       ) : null;

@@ -4,7 +4,7 @@ import type {
   PluginSidebarProject,
   PluginSidebarThread,
   PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   ThreadTitle,
   definePluginApp,
@@ -13,7 +13,7 @@ import {
   experimental_useSidebarThreadActions,
   experimental_useSidebarThreads,
   experimental_useSidebarThreadSplit,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { HiddenProjectRow, ProjectControls } from "./project-controls";
 import { useProjectVisibility } from "./use-project-visibility";
 import { SidebarHeader } from "./sidebar-header";
@@ -393,7 +393,7 @@ function SidebarPlusThreadList({ activeThreadId, onNavigate }: PluginThreadListP
   const hiddenIds: ReadonlySet<string> = new Set(state.hiddenProjectIds);
   const pinnedIds: ReadonlySet<string> = new Set(state.pinnedProjectIds);
   const search: string = state.showSearch ? query.trim().toLocaleLowerCase() : "";
-  // Threads outside any project live in BB's implicit personal project; list them under "Threads" instead.
+  // Threads outside any project live in VesnALIA's implicit personal project; list them under "Threads" instead.
   const personalProjectIds: ReadonlySet<string> = new Set(projects.filter((project) => project.isPersonal).map((project) => project.id));
   const workspaceProjects: PluginSidebarProject[] = projects.filter((project) => !project.isPersonal);
   const visibleProjects: PluginSidebarProject[] = orderProjects(workspaceProjects.filter((project) => !hiddenIds.has(project.id)), state.projectOrder);

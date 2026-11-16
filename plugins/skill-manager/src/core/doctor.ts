@@ -29,8 +29,8 @@ export function doctor(status: Status): DoctorIssue[] {
                 ? `dangling symlink to ${cell.target}`
                 : "directory has no SKILL.md",
             fix: row.inHub
-              ? `bb skill-manager sync ${row.name} --to ${agentId} --force`
-              : `bb skill-manager remove ${row.name} --from ${agentId} --force`,
+              ? `alia skill-manager sync ${row.name} --to ${agentId} --force`
+              : `alia skill-manager remove ${row.name} --from ${agentId} --force`,
           });
           break;
         case "modified":
@@ -38,7 +38,7 @@ export function doctor(status: Status): DoctorIssue[] {
             ...base,
             kind: "modified",
             detail: `${label} copy differs from the hub`,
-            fix: `bb skill-manager diff ${row.name} ${agentId}`,
+            fix: `alia skill-manager diff ${row.name} ${agentId}`,
           });
           break;
         case "external-link":
@@ -46,7 +46,7 @@ export function doctor(status: Status): DoctorIssue[] {
             ...base,
             kind: "external-link",
             detail: `symlink to ${contractHome(cell.target ?? "?")} instead of the hub`,
-            fix: `bb skill-manager sync ${row.name} --to ${agentId} --force`,
+            fix: `alia skill-manager sync ${row.name} --to ${agentId} --force`,
           });
           break;
         case "unmanaged":
@@ -54,7 +54,7 @@ export function doctor(status: Status): DoctorIssue[] {
             ...base,
             kind: "unmanaged",
             detail: `only in ${label}; not in the hub`,
-            fix: `bb skill-manager adopt ${row.name} --from ${agentId}`,
+            fix: `alia skill-manager adopt ${row.name} --from ${agentId}`,
           });
           break;
         default:

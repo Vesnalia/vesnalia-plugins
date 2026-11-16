@@ -19,10 +19,10 @@ and Time format (System, 12-hour, 24-hour).
 
 ## How it works
 
-BB keeps the time of every message but shows it only in the message menu.
+VesnALIA keeps the time of every message but shows it only in the message menu.
 The plugin reads that time from the rendered chat and draws it with CSS. It
 does not change messages and sends nothing anywhere. Times are shown in your
 computer's time zone, and a time-zone change shows up within a minute.
 
-A future BB update can change the chat's internal layout. The labels may then
+A future VesnALIA update can change the chat's internal layout. The labels may then
 disappear until the plugin is updated; the chat itself keeps working.

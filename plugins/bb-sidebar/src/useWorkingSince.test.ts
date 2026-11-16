@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, renderHook } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { STORAGE_KEYS } from "./lib/storage-keys";
 import { idleSidebarThreadFields } from "./test-fixtures";
 import { useWorkingSince } from "./useWorkingSince";

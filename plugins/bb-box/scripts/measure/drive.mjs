@@ -1,4 +1,4 @@
-// Drives one viewer in headless Chrome over CDP (port 9222) through BB's
+// Drives one viewer in headless Chrome over CDP (port 9222) through VesnALIA's
 // server, for a desktop showing scene.html (060): idle, then text sharpness
 // against web/ref.png, a drag of the block, wheel scrolling with keys, and
 // keys alone. Sharpness is measured still and halfway through the drag.

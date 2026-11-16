@@ -1,5 +1,5 @@
 // Test-only: lets node load `import x from "./file.md" with { type: "text" }`
-// the way `bb plugin build` bundles it (the file's text as the default export).
+// the way `alia plugin build` bundles it (the file's text as the default export).
 import { readFile } from "node:fs/promises";
 import { register } from "node:module";
 

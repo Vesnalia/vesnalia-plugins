@@ -2,7 +2,7 @@
 /**
  * One session's clipboard sync against a fake clipboard here and a fake Mac:
  * Send, Receive, Auto sync both ways with nothing echoed back, the sign-in
- * that is not the account bb runs as, and the remembered Auto sync choice.
+ * that is not the account VesnALIA runs as, and the remembered Auto sync choice.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -176,7 +176,7 @@ describe("Send and Receive", () => {
     expect(notices.at(-1)).toEqual({ tone: "info", text: "This computer’s clipboard holds no text." });
     clipboard.readError = new DOMException("Read permission denied.", "NotAllowedError");
     await sync.send();
-    expect(notices.at(-1)).toEqual({ tone: "warning", text: "bb could not read this computer’s clipboard: Read permission denied." });
+    expect(notices.at(-1)).toEqual({ tone: "warning", text: "alia could not read this computer’s clipboard: Read permission denied." });
     clipboard.readError = null;
     clipboard.text = "x";
     mac.error = new Error("MacMini is offline");
@@ -185,13 +185,13 @@ describe("Send and Receive", () => {
   });
 
   it("says nothing of a Mac it could not reach until asked, then tries again", async () => {
-    mac.error = new Error("old bb on that Mac");
+    mac.error = new Error("old VesnALIA on that Mac");
     const sync = makeSync();
     await sync.start();
     expect(notices).toEqual([]);
-    expect(accesses).toEqual([{ available: false, reason: "Could not reach MacMini’s clipboard: old bb on that Mac." }]);
+    expect(accesses).toEqual([{ available: false, reason: "Could not reach MacMini’s clipboard: old VesnALIA on that Mac." }]);
     await sync.receive();
-    expect(notices).toEqual([{ tone: "warning", text: "Could not reach MacMini’s clipboard: old bb on that Mac." }]);
+    expect(notices).toEqual([{ tone: "warning", text: "Could not reach MacMini’s clipboard: old VesnALIA on that Mac." }]);
     mac.error = null;
     mac.copy("reachable now");
     await sync.receive();
@@ -211,7 +211,7 @@ describe("Send and Receive", () => {
 });
 
 describe("the account", () => {
-  it("is the one bb runs as on the Mac, by short or full name", () => {
+  it("is the one VesnALIA runs as on the Mac, by short or full name", () => {
     const account = { userName: "alice", fullName: "Alice Example" };
     expect(signedInAsAccount(" ALICE ", account)).toBe(true);
     expect(signedInAsAccount("alice example", account)).toBe(true);
@@ -224,7 +224,7 @@ describe("the account", () => {
     const sync = makeSync();
     await sync.start();
     expect(accesses).toEqual([
-      { available: false, reason: "Clipboard sync reaches only the clipboard of alice, the account bb runs as on MacMini. Sign in as alice to use it." },
+      { available: false, reason: "Clipboard sync reaches only the clipboard of alice, the account VesnALIA runs as on MacMini. Sign in as alice to use it." },
     ]);
     clipboard.text = "secret of another desktop";
     await sync.send();
@@ -233,7 +233,7 @@ describe("the account", () => {
     await sync.pollMac();
     expect(mac.writes).toEqual([]);
     expect(clipboard.writes).toEqual([]);
-    expect(notices.at(-1)?.text).toBe("Clipboard sync reaches only the clipboard of alice, the account bb runs as on MacMini. Sign in as alice to use it.");
+    expect(notices.at(-1)?.text).toBe("Clipboard sync reaches only the clipboard of alice, the account VesnALIA runs as on MacMini. Sign in as alice to use it.");
   });
 
   it("makes no claim when the sign-in named no account", async () => {

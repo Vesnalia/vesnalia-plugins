@@ -1,5 +1,5 @@
 {
-  "name": "bb-plugin-work-map",
+  "name": "alia-plugin-work-map",
   "version": "0.1.19",
   "private": true,
   "description": "Spot the work that needs you and manage it without leaving the map.",
@@ -16,10 +16,10 @@
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Work Map",
     "description": "Spot the work that needs you and manage it without leaving the map.",
     "branding": {
@@ -29,7 +29,7 @@
     "app": "./app.tsx"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -40,7 +40,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@testing-library/react": "^16.3.3",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
@@ -57,5 +56,22 @@
     "tailwind-merge": "^3.4.0",
     "typescript": "^5.7.0",
     "vitest": "^4.1.11"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/work-map#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/work-map"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

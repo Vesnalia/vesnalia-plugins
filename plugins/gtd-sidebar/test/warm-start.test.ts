@@ -125,7 +125,7 @@ describe("decodeWarmStartRows", () => {
   });
 
   // Half-accepting is the failure that hurts: settling archives the thread in
-  // bb, so a dropped row does not make its thread read active, it makes the
+  // VesnALIA, so a dropped row does not make its thread read active, it makes the
   // thread disappear from the sidebar entirely.
   it("rejects the whole payload when one row is bad", () => {
     assert.equal(
@@ -287,7 +287,7 @@ describe("writeWarmStartRows", () => {
     ]);
   });
 
-  // The plugin shipped as t3sidebar, and bb installs the renamed one under a
+  // The plugin shipped as t3sidebar, and VesnALIA installs the renamed one under a
   // new id — so the old install's keys are left on an origin nothing else will
   // ever sweep. A write is what proves the store takes writes at all, so it is
   // where the sweep goes.

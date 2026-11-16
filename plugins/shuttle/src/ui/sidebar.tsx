@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, useBbNavigate, type PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate, type PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { ServerStatus } from "../contract";
 import { AREA_META, INSIGHTS_TAB_LABELS, PANEL_PATH, SOURCE_META } from "./constants";
 import { useShuttleQuery } from "./data";
@@ -48,9 +48,9 @@ function Health({ server, onOpen }: { server: ServerStatus; onOpen(): void }) {
   );
 }
 
-/** Shuttle's areas in place of bb's thread list while the page is open; on compact screens bb shows it in its drawer. */
+/** Shuttle's areas in place of VesnALIA's thread list while the page is open; on compact screens VesnALIA shows it in its drawer. */
 export function ShuttleSidebar({ subPath }: PluginNavPanelProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const overview = useShuttleQuery("overview", {});
   const route = routeOf(subPath);
   const reviewsOpen = route.view === "reviews" || route.view === "reviewed";

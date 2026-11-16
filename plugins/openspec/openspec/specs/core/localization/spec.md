@@ -1,12 +1,12 @@
 # core/localization Specification
 
 ## Purpose
-Defines language selection and translation of the OpenSpec interface in bb while preserving the original repository content and agent context.
+Defines language selection and translation of the OpenSpec interface in VesnALIA while preserving the original repository content and agent context.
 
 ## Requirements
 
 ### Requirement: Select the Interface Language
-The plugin SHALL provide a language auto/en/ru setting through bb settings. Auto SHALL select a supported language from the current client's navigator.languages and use English when there is no match. Changing the setting or receiving languagechange SHALL update the UI without a reload.
+The plugin SHALL provide a language auto/en/ru setting through VesnALIA settings. Auto SHALL select a supported language from the current client's navigator.languages and use English when there is no match. Changing the setting or receiving languagechange SHALL update the UI without a reload.
 
 #### Scenario: Language Is Selected Automatically
 - **WHEN** the setting is auto and the browser prefers ru-RU
@@ -25,7 +25,7 @@ All plugin-owned labels, hints, accessibility labels, and statuses SHALL have en
 - **AND** the forms for counts 1/2/5/21 match the selected locale
 
 ### Requirement: Content Language Is Independent of the UI
-Changing the UI locale MUST NOT translate repository files, user-provided names, the editable prompt, agent instructions, or external errors. The plugin MUST NOT change document.lang for all of bb.
+Changing the UI locale MUST NOT translate repository files, user-provided names, the editable prompt, agent instructions, or external errors. The plugin MUST NOT change document.lang for all of VesnALIA.
 
 #### Scenario: Content Remains in Its Original Language
 - **WHEN** the English UI displays a Russian specification and user prompt

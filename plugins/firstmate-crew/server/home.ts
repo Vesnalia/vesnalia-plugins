@@ -25,11 +25,11 @@
  *
  * The icon is Lucide's ship — the plugin's own icon, ISC-licensed — in white on
  * a blue rounded square. Paseo showed an icon it found in a project's folder;
- * bb 0.44 documents no such lookup, so here it is only a file in the home, left
+ * VesnALIA 0.44 documents no such lookup, so here it is only a file in the home, left
  * for any tool that does look for one.
  *
- * The charter is the home's `AGENTS.md`, which bb itself does not inject (bb
- * reads only `<workspace>/.bb/AGENTS.md`). Codex reads a repo-root `AGENTS.md`,
+ * The charter is the home's `AGENTS.md`, which VesnALIA itself does not inject (VesnALIA
+ * reads only `<workspace>/.vesnalia/AGENTS.md`). Codex reads a repo-root `AGENTS.md`,
  * and Claude Code 2.1.277 and later does too when no `CLAUDE.md` takes
  * precedence. There is no `CLAUDE.md`: importing `AGENTS.md` from one risks the
  * charter twice over in every turn's context. The opening prompt asks a harness

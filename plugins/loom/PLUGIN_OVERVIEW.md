@@ -1,4 +1,4 @@
-Run a software project with agents. A planner turns your goal into a spec and a ticket board, workers build each ticket in its own git worktree, separate reviewers approve the work or send it back, and approved work merges into an integration branch or opens as pull requests. You follow and steer it from the Loom page in bb's left navigation, or with `bb loom`.
+Run a software project with agents. A planner turns your goal into a spec and a ticket board, workers build each ticket in its own git worktree, separate reviewers approve the work or send it back, and approved work merges into an integration branch or opens as pull requests. You follow and steer it from the Loom page in VesnALIA's left navigation, or with `alia loom`.
 
 ## What you get
 
@@ -10,11 +10,11 @@ Run a software project with agents. A planner turns your goal into a spec and a 
 - Two ways to ship: an integration branch you read on the Changes tab and land as one pull request, or straight onto the base with `--direct`; or one pull request per ticket that the worker writes and Loom follows through CI and review. A dependent ticket stacks on its dependency's open pull request instead of waiting for the merge.
 - Hooks: when a pull request opens or a ticket blocks, Loom tells the planner what to do, or runs a command, as your Planner instructions ask.
 - Deploy order as advice: a Rollout tab and a section in each pull request show the next safe step and what must be live first.
-- Projects across repos: list bb projects as `[[repo]]` tables, and each ticket runs in one, with that repo's checks and integration branch.
+- Projects across repos: list VesnALIA projects as `[[repo]]` tables, and each ticket runs in one, with that repo's checks and integration branch.
 - A Loom page: a home table that puts what needs you first, a next-step bar with the one button you need now, a board with a row per stage, a ticket page with every attempt, check, review and merge, an Agents tab, and an Insights tab that says how the project went and what happened to each ticket.
 - A timeline on every project: rewind the page to any moment or play it back.
-- Blocked tickets go to the planner in a triage round, and your reply on one reaches it at once. The Loom icon in the navigation rail counts what needs you, and the Loom page swaps bb's sidebar for its projects and the open project's tickets.
-- `bb loom metrics`, `feed` and `report` print the numbers, the events and a finished project's record. A done hook sends that record, or an agent's summary of it, to a command you choose.
+- Blocked tickets go to the planner in a triage round, and your reply on one reaches it at once. The Loom icon in the navigation rail counts what needs you, and the Loom page swaps VesnALIA's sidebar for its projects and the open project's tickets.
+- `alia loom metrics`, `feed` and `report` print the numbers, the events and a finished project's record. A done hook sends that record, or an agent's summary of it, to a command you choose.
 
 ## How it works
 
@@ -24,4 +24,4 @@ Every change appends an event, in the same transaction, to a log that refuses ed
 
 - `git` on the machine that has the project's checkouts.
 - `gh`, signed in, for GitHub pull requests; for another server, the commands you set in the spec's `[merge.forge]`.
-- Provider usage: every planner, worker and reviewer is an ordinary bb thread, so your providers' limits apply. A token budget or a deadline in the spec has Loom pause the project for you.
+- Provider usage: every planner, worker and reviewer is an ordinary VesnALIA thread, so your providers' limits apply. A token budget or a deadline in the spec has Loom pause the project for you.

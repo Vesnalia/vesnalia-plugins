@@ -1,7 +1,7 @@
 // In-app approval, start, harvest (a freeze) and archive (RPC), the
 // Needs-you derivation behind them, notices with actions, and the study
 // thread messages (short summary, agent-only detail).
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createAutoresearchPlugin } from "../server.ts";
 import type { Engine } from "../src/engine.ts";
@@ -27,8 +27,8 @@ describe("human interface: in-app actions and Needs you", () => {
     host.refs.set("main", host.commit("T0", null));
     host.metric.set("T0", 1000);
     port.addThread("thr_study");
-    const fake = createFakePluginHost({ pluginId: "bb-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
-    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0, harvestPollMs: 5 }, onEngine: (e) => (engine = e) })(fake.bb);
+    const fake = createFakePluginHost({ pluginId: "alia-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
+    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0, harvestPollMs: 5 }, onEngine: (e) => (engine = e) })(fake.alia);
     harness = fake.harness;
     await harness.behavior.callAgentTool("study_propose", { spec_toml: fakeHostSpec() }, { threadId: "thr_study", projectId: "proj_1" });
   });
@@ -87,7 +87,7 @@ describe("human interface: in-app actions and Needs you", () => {
     await call("study.harvest.start", { slug: "toy-size" });
     await engine.waitForHarvest("toy-size", 10_000);
     expect(kinds()).toEqual(["harvest_frozen"]);
-    expect(needsYou(engine, study())[0]).toMatchObject({ title: expect.stringContaining("ask an agent to harvest it"), action: { kind: "open_harvest" }, command: "bb study evidence toy-size" });
+    expect(needsYou(engine, study())[0]).toMatchObject({ title: expect.stringContaining("ask an agent to harvest it"), action: { kind: "open_harvest" }, command: "alia study evidence toy-size" });
     // The attention count for the nav panel.
     expect((await call("studies.attention")).total).toBe(1);
   });
@@ -136,7 +136,7 @@ describe("human interface: in-app actions and Needs you", () => {
     expect(shown).toMatchObject({ ok: true, message: expect.stringContaining("harvest h1 (from before 1.0) froze best") });
     expect(store.harvests(s.id)).toHaveLength(1);
     expect(events("control.harvest")).toHaveLength(0);
-    // `bb study harvest` (here from the study thread: a read) shows it too, the bug 1.0.0 had: it started h2.
+    // `alia study harvest` (here from the study thread: a read) shows it too, the bug 1.0.0 had: it started h2.
     const cliShown = await harness.behavior.runCli(["harvest", "toy-size"], { threadId: "thr_study" });
     expect(cliShown.exitCode, cliShown.stderr).toBe(0);
     expect(cliShown.stdout).toContain("Harvest h1 of toy-size");

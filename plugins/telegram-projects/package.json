@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-telegram-projects",
+  "name": "alia-plugin-telegram-projects",
   "version": "0.9.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Telegram Projects",
-    "description": "BB projects as Telegram topics: agent reports and summaries, Tasks events, and chat with BB threads by text or voice.",
+    "description": "VesnALIA projects as Telegram topics: agent reports and summaries, Tasks events, and chat with VesnALIA threads by text or voice.",
     "branding": {
       "icon": "MessageSquare"
     },
@@ -19,7 +19,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -46,10 +45,10 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2"
   },
-  "description": "Work with BB agents from Telegram: per-project topics, agent reports and summaries, Tasks events, and chat with any BB thread by text or voice.",
+  "description": "Work with VesnALIA agents from Telegram: per-project topics, agent reports and summaries, Tasks events, and chat with any VesnALIA thread by text or voice.",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "telegram",
     "telegram-bot",
     "notifications",
@@ -62,16 +61,25 @@
   "scripts": {
     "check": "tsc --noEmit",
     "test": "tsx --test test/*.test.ts",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "private": true,
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/telegram-projects#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/VKirill/bb-plugin-telegram-projects.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/telegram-projects"
   },
-  "homepage": "https://github.com/VKirill/bb-plugin-telegram-projects#readme",
   "bugs": {
-    "url": "https://github.com/VKirill/bb-plugin-telegram-projects/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

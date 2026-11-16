@@ -3,7 +3,7 @@
 // fresh module rather than one other list tests have already rendered.
 import { cleanup, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 import app from "../app";
 import { avatarBackground, colorById } from "../lib/colors";

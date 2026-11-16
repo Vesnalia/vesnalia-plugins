@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { replayTodoArgs } from "./replay";
 import { TODO_TEXT_MAX_LENGTH, type Task, type TodoItem } from "./types";
 
@@ -50,13 +50,13 @@ function todoArgsFromEvent(row: { type: string; data: unknown }): Record<string,
 }
 
 export async function snapshotForThread(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
 ): Promise<{ items: TodoItem[] }> {
   const calls: Record<string, unknown>[] = [];
   let afterSeq: string | undefined;
   for (let pageIndex = 0; pageIndex < EVENT_PAGE_CAP; pageIndex += 1) {
-    const page = await bb.sdk.threads.events.list({
+    const page = await alia.sdk.threads.events.list({
       threadId,
       limit: String(EVENT_PAGE),
       ...(afterSeq ? { afterSeq } : {}),

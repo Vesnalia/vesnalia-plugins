@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../../src/rpc-contract";
 import type { ReadyToApprove as Row } from "../../src/store";
 import type { ReviewItem } from "../../lib/review-state";
@@ -59,7 +59,7 @@ function commentsSince(review: Ready): string | null {
  */
 export function ReadyToApprove({ reviews, onOpen, onChanged, onPosted }: { reviews: Ready[]; onOpen(targetKey: string): void; onChanged(): void; onPosted(posted: ReadyPosted): void }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   // The GitHub account it posts as, when known.
   const [account, setAccount] = useState<string | null>(null);
   useEffect(() => { void rpc.call("getGhAccounts", null).then((result) => setAccount(result.active), () => {}); }, [rpc]);
@@ -165,7 +165,7 @@ export function ReadyToApprove({ reviews, onOpen, onChanged, onPosted }: { revie
                 {whole && <p className="whitespace-pre-wrap break-words rounded-md bg-muted/40 px-2 py-1.5 text-sm leading-relaxed"><span className="sr-only">Exactly what posts: </span>{row.body}</p>}
                 {lines.length > 0 && <ul className="space-y-0.5 text-xs text-muted-foreground">{lines.map((line) => <li key={line}>{line}</li>)}</ul>}
                 <p className="text-xs text-subtle-foreground">
-                  {row.from ? <>Asked from <button type="button" onClick={() => navigate.toThread(row.from!)} className={cn("relative text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary", TOUCH_TARGET)}>{row.fromTitle ?? row.from}<span aria-hidden> ↗</span></button></> : "Asked from a shell outside bb's threads"}
+                  {row.from ? <>Asked from <button type="button" onClick={() => navigate.toThread(row.from!)} className={cn("relative text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary", TOUCH_TARGET)}>{row.fromTitle ?? row.from}<span aria-hidden> ↗</span></button></> : "Asked from a shell outside VesnALIA's threads"}
                   {asked && <span className="whitespace-nowrap"> · {asked}</span>}
                 </p>
                 {comments && <p className="flex gap-1.5 text-xs leading-relaxed text-warning-text"><Icon name="AlertTriangle" className="mt-0.5 size-3.5 shrink-0" aria-hidden />{comments}</p>}

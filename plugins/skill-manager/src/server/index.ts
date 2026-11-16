@@ -1,4 +1,4 @@
-// bb-plugin-skill-manager — backend entry.
+// alia-plugin-skill-manager — backend entry.
 //
 // One hub directory (default ~/.agents/skills) holds the canonical copy of
 // every skill, and `skills-lock.json` beside it records where each came
@@ -8,11 +8,11 @@
 //   context.ts   settings and cached state
 //   service.ts   the operations, built on ../core
 //   rpc.ts       handlers for the Skills page
-//   cli/         `bb skill-manager …`
+//   cli/         `alia skill-manager …`
 //
-// File I/O runs on the machine that hosts the BB server and targets its
+// File I/O runs on the machine that hosts the VesnALIA server and targets its
 // home directory; enrolled remote machines are out of scope.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { registerCli } from "./cli";
 import { Context, defineSettings } from "./context";
 import { registerRpc } from "./rpc";
@@ -22,15 +22,15 @@ export { SKILLS_CHANGED } from "../shared/events";
 export { rpcContract } from "./contract";
 export type * from "./contract";
 
-export default async function plugin(bb: BbPluginApi): Promise<void> {
-  const settings = defineSettings(bb);
-  const context = new Context(bb, settings);
-  const service = new SkillService(bb, context);
+export default async function plugin(alia: AliaPluginApi): Promise<void> {
+  const settings = defineSettings(alia);
+  const context = new Context(alia, settings);
+  const service = new SkillService(alia, context);
 
-  registerRpc(bb, service);
-  registerCli(bb, service);
+  registerRpc(alia, service);
+  registerCli(alia, service);
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

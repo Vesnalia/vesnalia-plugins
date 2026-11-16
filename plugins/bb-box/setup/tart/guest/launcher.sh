@@ -1,6 +1,6 @@
 #!/bin/sh
-# bb-box's launcher for desktop commands (#628), built in the image's VM as
-# its user, after customize.sh. A command bb-box runs in the desktop session
+# alia-box's launcher for desktop commands (#628), built in the image's VM as
+# its user, after customize.sh. A command alia-box runs in the desktop session
 # goes through it.
 #
 # TCC attributes what a command over SSH starts to sshd-keygen-wrapper, a
@@ -16,16 +16,16 @@
 set -eu
 die() { echo "launcher: $*" >&2; exit 1; }
 user=$(id -un)
-id=dev.bb-box.launcher
-app=/usr/local/libexec/bb-box/Launcher.app
-exe=$app/Contents/MacOS/bb-box-launcher
+id=dev.alia-box.launcher
+app=/usr/local/libexec/alia-box/Launcher.app
+exe=$app/Contents/MacOS/alia-box-launcher
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
 cat >"$tmp/launcher.c" <<'EOF'
-/* bb-box's launcher (#628): runs a command as the child of a process that
+/* alia-box's launcher (#628): runs a command as the child of a process that
  * is its own responsible process for TCC, so the command's requests are
- * the launcher's. usage: bb-box-launcher <command> [<argument>...] */
+ * the launcher's. usage: alia-box-launcher <command> [<argument>...] */
 #include <errno.h>
 #include <limits.h>
 #include <mach-o/dyld.h>
@@ -49,13 +49,13 @@ static int run(const char *path, char *const argv[], int disclaim) {
   posix_spawnattr_t attr;
   posix_spawnattr_init(&attr);
   if (disclaim && responsibility_spawnattrs_setdisclaim(&attr, 1) != 0) {
-    fprintf(stderr, "bb-box-launcher: could not disclaim responsibility\n");
+    fprintf(stderr, "alia-box-launcher: could not disclaim responsibility\n");
     return 127;
   }
   int err = disclaim ? posix_spawn(&child, path, NULL, &attr, argv, environ) : posix_spawnp(&child, path, NULL, &attr, argv, environ);
   posix_spawnattr_destroy(&attr);
   if (err) {
-    fprintf(stderr, "bb-box-launcher: %s: %s\n", path, strerror(err));
+    fprintf(stderr, "alia-box-launcher: %s: %s\n", path, strerror(err));
     return 127;
   }
   int status;
@@ -73,7 +73,7 @@ static int run(const char *path, char *const argv[], int disclaim) {
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
-    fprintf(stderr, "usage: bb-box-launcher <command> [<argument>...]\n");
+    fprintf(stderr, "usage: alia-box-launcher <command> [<argument>...]\n");
     return 2;
   }
   int sigs[] = {SIGHUP, SIGINT, SIGQUIT, SIGTERM, SIGUSR1, SIGUSR2};
@@ -93,24 +93,24 @@ int main(int argc, char *argv[]) {
   return run(argv[1], argv + 1, 0);
 }
 EOF
-cc -O2 -Wall -o "$tmp/bb-box-launcher" "$tmp/launcher.c" || die "could not build the launcher"
+cc -O2 -Wall -o "$tmp/alia-box-launcher" "$tmp/launcher.c" || die "could not build the launcher"
 sudo rm -rf "$app"
 sudo mkdir -p "$app/Contents/MacOS"
-sudo cp "$tmp/bb-box-launcher" "$exe"
+sudo cp "$tmp/alia-box-launcher" "$exe"
 sudo tee "$app/Contents/Info.plist" >/dev/null <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
 <key>CFBundleIdentifier</key><string>$id</string>
-<key>CFBundleName</key><string>bb-box Launcher</string>
-<key>CFBundleExecutable</key><string>bb-box-launcher</string>
+<key>CFBundleName</key><string>alia-box Launcher</string>
+<key>CFBundleExecutable</key><string>alia-box-launcher</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>1</string>
 <key>CFBundleVersion</key><string>1</string>
 <key>LSUIElement</key><true/>
-<key>NSMicrophoneUsageDescription</key><string>A command bb-box runs in the desktop session records audio.</string>
-<key>NSCameraUsageDescription</key><string>A command bb-box runs in the desktop session uses the camera.</string>
-<key>NSAudioCaptureUsageDescription</key><string>A command bb-box runs in the desktop session records the system's audio.</string>
+<key>NSMicrophoneUsageDescription</key><string>A command alia-box runs in the desktop session records audio.</string>
+<key>NSCameraUsageDescription</key><string>A command alia-box runs in the desktop session uses the camera.</string>
+<key>NSAudioCaptureUsageDescription</key><string>A command alia-box runs in the desktop session records the system's audio.</string>
 </dict></plist>
 EOF
 sudo codesign --force -s - "$app" 2>/dev/null || die "could not sign the launcher"

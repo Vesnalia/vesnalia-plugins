@@ -46,6 +46,6 @@ Hide applies to the current workspace when the RPC completes. A background compl
 
 ## Persistence
 
-The existing `bb-dashboard:workspace-session:v1`, `bb-dashboard:split-layout:v1` and `bb-dashboard:shared-pool:v1` adapters and payload formats remain in use. Initial reads happen once per mount. Writes occur in effects for the relevant changed slice; remembering an unchanged selection returns the existing state. Pending request identities, transient notices and unplaced-result controls are not added to browser storage.
+The existing `alia-dashboard:workspace-session:v1`, `alia-dashboard:split-layout:v1` and `alia-dashboard:shared-pool:v1` adapters and payload formats remain in use. Initial reads happen once per mount. Writes occur in effects for the relevant changed slice; remembering an unchanged selection returns the existing state. Pending request identities, transient notices and unplaced-result controls are not added to browser storage.
 
 Source/unit and SDK harness tests verify transitions, late results, existing drafts, blocked storage and stable persistence. They do not replace installed-host acceptance.

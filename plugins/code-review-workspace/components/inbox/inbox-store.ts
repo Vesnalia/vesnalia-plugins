@@ -1,4 +1,4 @@
-// What BB's title bar shows of the inbox, apart from the page: whether GitHub is being read and how it went, and whether
+// What VesnALIA's title bar shows of the inbox, apart from the page: whether GitHub is being read and how it went, and whether
 // the page has room for its find box. The page publishes it, and the title bar's ⌕ and ⟳ call back into the page.
 import { useSyncExternalStore } from "react";
 import type { SyncHealth } from "../../src/review-lifecycle";
@@ -45,7 +45,7 @@ export function useInboxBar(): InboxBar | null {
   return useSyncExternalStore(subscribe, () => bar);
 }
 
-/** BB's title bar is there for the list's controls; the returned function says it went. */
+/** VesnALIA's title bar is there for the list's controls; the returned function says it went. */
 export function mountListTitleBar(): () => void {
   titleBars++;
   notify();
@@ -55,7 +55,7 @@ export function mountListTitleBar(): () => void {
   };
 }
 
-/** Whether a title bar of BB's shows the list's controls; a host without headerContent has none. */
+/** Whether a title bar of VesnALIA's shows the list's controls; a host without headerContent has none. */
 export function useListTitleBarMounted(): boolean {
   return useSyncExternalStore(subscribe, () => titleBars > 0);
 }

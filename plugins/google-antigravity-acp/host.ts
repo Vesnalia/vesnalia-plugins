@@ -6,8 +6,8 @@ import { spawn } from "node:child_process";
 import readline from "node:readline";
 import {
   experimental_acpProviderBridge,
-} from "@get-bb/plugin-sdk/provider-bridge/acp";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+} from "@vesnalia/plugin-sdk/provider-bridge/acp";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { agyHostContract } from "./contract.js";
 import { probeLocal, runInstall } from "./install.js";
 
@@ -24,7 +24,7 @@ import {
 
 const CACHE_FILE = path.join(
   os.homedir(),
-  ".bb",
+  ".vesnalia",
   "plugins",
   "google-antigravity-acp",
   "models-cache.json",
@@ -36,8 +36,8 @@ const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h — picker never stale, backgroun
 
 function getPreferredDefault(launchEnv?: Record<string, string>): { model: string; effort: string } | null {
   // 1. In-band RPC launchSpec env (works across distributed / remote hosts)
-  const envModel = launchEnv?.BB_ANTIGRAVITY_DEFAULT_MODEL || process.env.BB_ANTIGRAVITY_DEFAULT_MODEL;
-  const envEffort = launchEnv?.BB_ANTIGRAVITY_DEFAULT_REASONING || process.env.BB_ANTIGRAVITY_DEFAULT_REASONING;
+  const envModel = launchEnv?.ALIA_ANTIGRAVITY_DEFAULT_MODEL || process.env.ALIA_ANTIGRAVITY_DEFAULT_MODEL;
+  const envEffort = launchEnv?.ALIA_ANTIGRAVITY_DEFAULT_REASONING || process.env.ALIA_ANTIGRAVITY_DEFAULT_REASONING;
   if (envModel && envModel.trim()) {
     return {
       model: normalizeModelId(envModel),
@@ -144,7 +144,7 @@ async function queryAcpServer(
       try {
         await send("initialize", {
           protocolVersion: 1,
-          clientInfo: { name: "bb", version: "1.0.0" },
+          clientInfo: { name: "alia", version: "1.0.0" },
           clientCapabilities: {},
         });
         const session: any = await send("session/new", { cwd: process.cwd(), mcpServers: [] });

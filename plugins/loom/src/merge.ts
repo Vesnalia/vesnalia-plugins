@@ -127,7 +127,7 @@ async function launch(ctx: EngineCtx, projectId: number, spec: Spec): Promise<vo
       try {
         await mergeTicket(ctx, ctx.store.project(projectId)!, spec, merging);
       } catch (error) {
-        ctx.bb.log("error", `Merging ${merging.key} failed: ${errText(error)}`);
+        ctx.alia.log("error", `Merging ${merging.key} failed: ${errText(error)}`);
       } finally {
         release();
         ctx.kick();
@@ -230,7 +230,7 @@ function addMergePost(ctx: EngineCtx, ticket: TicketRow, post: { body: string; d
   ctx.store.addPost({ project_id: ticket.project_id, ticket_id: ticket.id, parent_id: null, author_kind: "loom", author_thread_id: null, kind: "merge", body: post.body, data_json: JSON.stringify(post.data) });
 }
 
-// bb creates a worker's worktree after `spawn` returns, branched from its repo's integration branch tip at that moment, so a merge into that repo waits for it.
+// VesnALIA creates a worker's worktree after `spawn` returns, branched from its repo's integration branch tip at that moment, so a merge into that repo waits for it.
 async function provisioningRepos(ctx: EngineCtx, projectId: number): Promise<Set<string | null>> {
   const repos = new Set<string | null>();
   for (const row of ctx.store.threads({ projectId, role: "worker", states: ["spawning", "active"] })) {
@@ -292,10 +292,10 @@ function waitOutMerge(ctx: EngineCtx, seen: TicketRow, message: string, failure:
   const ticket = store.ticket(seen.id)!;
   const what = `Merging ${ticket.key}`;
   // The ticket moved on before the step after it failed; the next launch replays that step (endFinishedThreads).
-  if (ticket.state !== "merging") return ctx.bb.log("warn", `${what}: a step after the merge failed with what looks like a temporary error: ${message}`);
+  if (ticket.state !== "merging") return ctx.alia.log("warn", `${what}: a step after the merge failed with what looks like a temporary error: ${message}`);
   const previous = mergeWaitOf(ticket);
   const wait = nextMergeWait(previous, { now, message, ...failure });
-  ctx.bb.log("warn", `${what} failed ${plural(wait.failures, "time")} in a row with what looks like a temporary error: ${message}`);
+  ctx.alia.log("warn", `${what} failed ${plural(wait.failures, "time")} in a row with what looks like a temporary error: ${message}`);
   if (mergeWaitExpired(wait, now)) {
     endMergeWait(ctx, ticket.id);
     pauseProject(ctx, ticket.project_id, mergeWaitReason(what, wait, now));
@@ -352,8 +352,8 @@ async function checkoutIn(ctx: EngineCtx, project: ProjectRow, spec: Spec, name:
 }
 
 export async function checkoutOf(ctx: EngineCtx, project: ProjectRow): Promise<{ hostId: string; repo: string }> {
-  const repo = project.host_id === null ? null : await ctx.bb.projectCheckout(project.bb_project_id, project.host_id);
-  if (project.host_id === null || repo === null) throw new Unavailable(`The bb project has no checkout on the machine ${project.host_id ?? "(unknown)"}; add the repository there and resume.`);
+  const repo = project.host_id === null ? null : await ctx.alia.projectCheckout(project.alia_project_id, project.host_id);
+  if (project.host_id === null || repo === null) throw new Unavailable(`The VesnALIA project has no checkout on the machine ${project.host_id ?? "(unknown)"}; add the repository there and resume.`);
   return { hostId: project.host_id, repo };
 }
 
@@ -374,7 +374,7 @@ async function loomWorktree(ctx: EngineCtx, project: ProjectRow, spec: Spec, nam
 async function provisionedPath(ctx: EngineCtx, hostId: string, repo: string, project: ProjectRow, settings: RepoSettings): Promise<string> {
   const worktree = settings.worktree!;
   // The spec checks a plugin id against ^[a-z0-9][a-z0-9-]*$, so it needs no quoting.
-  const command = worktree.plugin === undefined ? worktree.command : `bb plugin run ${worktree.plugin} ${worktree.command}`;
+  const command = worktree.plugin === undefined ? worktree.command : `alia plugin run ${worktree.plugin} ${worktree.command}`;
   const env = { LOOM_PROJECT_SLUG: project.slug, LOOM_BRANCH: settings.branch!, LOOM_BASE: settings.base };
   const result = await ctx.host.call(hostId, "exec", { cwd: repo, command, timeoutMs: PROVISION_MS, env });
   const output = result.output.trim();
@@ -908,7 +908,7 @@ async function finishStep(ctx: EngineCtx, project: ProjectRow, spec: Spec, ticke
   const accounted = step.tip !== undefined && step.remote ? { pushed_sha: step.tip, pushed_at: ctx.now() } : {};
   const stacked = step.stack === undefined ? {} : { stack_json: JSON.stringify(step.stack) };
   if (failure !== null) {
-    // A worktree bb restored since the worker last ran has none of the files git ignores, so its first failed check counts no failure.
+    // A worktree VesnALIA restored since the worker last ran has none of the files git ignores, so its first failed check counts no failure.
     const restored = !step.remote && restoredSinceSubmit(store.posts(ticket.id));
     const reason = step.kind === "tip" ? "the checks failed after merging the pull request branch's new commits" : "the checks failed after bringing the branch up to date";
     return back({ post: afterMergePost(failure.run, `${ticket.key}'s branch`, failure.changed), text: withRestoredNote(restackFailedText(ticket.key, what, failure.run, failure.changed), restored), countFailure: !restored, reason }, { ...accounted, ...stacked });
@@ -932,10 +932,10 @@ async function finishStep(ctx: EngineCtx, project: ProjectRow, spec: Spec, ticke
 }
 
 /**
- * A merge step needs the worker's worktree, and bb shows none for a worker whose thread is still active, as when its
+ * A merge step needs the worker's worktree, and VesnALIA shows none for a worker whose thread is still active, as when its
  * sandbox expired. Loom never pauses the project for this and never leaves the ticket in merging, where it would hold the
  * whole queue: the ticket goes back to where the queue took it from (approved, or pr_open for a catch-up), and the worker
- * comes back the way a released one does (advanceWake): bb restores its environment when it can, after which the queue
+ * comes back the way a released one does (advanceWake): VesnALIA restores its environment when it can, after which the queue
  * takes the ticket again, and when it cannot, the worker's thread ends (cannotWake) and the next merge hands the ticket to
  * a new worker from its branch. Returns null, as a step that sent the ticket back does.
  */
@@ -951,7 +951,7 @@ async function worktreeGone(ctx: EngineCtx, ticket: TicketRow, row: ThreadRow, w
     // Waking: still active, with no environment, which advanceWakes restores or gives up on.
     store.updateThread(worker.id, { released_at: ctx.now(), environment_id: null, clock_at: ctx.now(), idle_count: 0 });
     addMergePost(ctx, current, {
-      body: `${current.key} must take ${what} before Loom pushes it, and bb shows no worktree for its worker any more, as when its environment expired. It leaves the merge queue meanwhile, so the other tickets merge: Loom brings the worker's environment back when bb can restore it, and otherwise a new worker takes ${current.key} from its branch.`,
+      body: `${current.key} must take ${what} before Loom pushes it, and VesnALIA shows no worktree for its worker any more, as when its environment expired. It leaves the merge queue meanwhile, so the other tickets merge: Loom brings the worker's environment back when VesnALIA can restore it, and otherwise a new worker takes ${current.key} from its branch.`,
       data: { outcome: "worktree_gone", back: from },
     });
   });
@@ -1324,7 +1324,7 @@ async function forgeHooks(ctx: EngineCtx, a: HookArgs, hook: "after_open" | "aft
     // A land's pull request belongs to no ticket, so its failure is an event and a log line instead of a post.
     if (a.ticketId === null) {
       ctx.store.event(a.projectId, null, `project.${hook}_failed`, LOOM_ACTOR, data);
-      ctx.bb.log("warn", body);
+      ctx.alia.log("warn", body);
     } else {
       ctx.store.addPost({ project_id: a.projectId, ticket_id: a.ticketId, parent_id: null, author_kind: "loom", author_thread_id: null, kind: "merge", body, data_json: JSON.stringify(data) });
     }
@@ -1474,7 +1474,7 @@ function waitOutServerError(ctx: EngineCtx, ticket: TicketRow, message: string, 
     if (previous === null) addWaitPost(ctx, ticket, pollWaitText(wait, forge), { prReadFailed: true, failures: wait.failures });
   });
   store.changed(ticket.project_id);
-  ctx.bb.log("warn", `Reading ${ticket.key}'s pull request failed ${plural(wait.failures, "time")} in a row: ${message}`);
+  ctx.alia.log("warn", `Reading ${ticket.key}'s pull request failed ${plural(wait.failures, "time")} in a row: ${message}`);
   if (now - wait.since >= SERVER_ERROR_LIMIT_MS) pauseProject(ctx, ticket.project_id, pollWaitReason(ticket, wait, now, forge));
 }
 
@@ -1484,7 +1484,7 @@ function backOff(ctx: EngineCtx, ticket: TicketRow, host: string, failure: { mes
   const backoff = nextBackoff(ctx.forgeBackoffs.get(host), { now, message: failure.message, retryAfterMs: failure.retryAfterMs });
   ctx.forgeBackoffs.set(host, backoff);
   addWaitPost(ctx, ticket, backoffText(host, backoff, now, forge), { rateLimited: true, host, until: backoff.until });
-  ctx.bb.log("warn", `${host} rate-limited Loom's pull request reads, so none goes there until ${new Date(backoff.until).toISOString()}: ${failure.message}`);
+  ctx.alia.log("warn", `${host} rate-limited Loom's pull request reads, so none goes there until ${new Date(backoff.until).toISOString()}: ${failure.message}`);
 
 }
 
@@ -1503,7 +1503,7 @@ function waitOutNetworkError(ctx: EngineCtx, ticket: TicketRow, host: string, me
     addWaitPost(ctx, ticket, networkWaitText(host, backoff), { networkFailed: true, host, until: backoff.until });
     ctx.store.changed(ticket.project_id);
   }
-  ctx.bb.log("warn", `Reading pull requests on ${host} failed ${plural(failures, "time")} in a row with a network error, so none goes there until ${new Date(backoff.until).toISOString()}: ${message}`);
+  ctx.alia.log("warn", `Reading pull requests on ${host} failed ${plural(failures, "time")} in a row with a network error, so none goes there until ${new Date(backoff.until).toISOString()}: ${message}`);
   if (now - since >= SERVER_ERROR_LIMIT_MS) pauseProject(ctx, ticket.project_id, networkWaitReason(host, backoff, now));
 }
 
@@ -1703,13 +1703,13 @@ type LandArgs = { actor: string; title?: string; ready: boolean; direct?: boolea
 export async function land(ctx: EngineCtx, slug: string, a: LandArgs): Promise<LandResult> {
   const { store } = ctx;
   const seen = store.projectBySlug(slug);
-  if (seen === null) throw new LoomError("loom_not_found", `No Loom project named "${slug}".`, "Run `bb loom list` to see the projects.");
+  if (seen === null) throw new LoomError("loom_not_found", `No Loom project named "${slug}".`, "Run `alia loom list` to see the projects.");
   const spec = specOf(store, seen);
   if (spec.merge.strategy !== "integration") throw new LoomError("loom_invalid_state", "Cannot land: this project opens a pull request per ticket, so there is nothing to land.", "Its pull requests are opened and followed automatically.");
   if (seen.state !== "running" && seen.state !== "paused" && seen.state !== "done") throw new LoomError("loom_invalid_state", `Project ${slug} is ${seen.state}; only a running, paused or finished project can be landed.`);
   const multi = isMultiRepo(spec);
   if (a.repo !== undefined) {
-    if (!multi) throw new LoomError("loom_invalid_input", `Cannot land one repo: ${slug} has no [[repo]] tables, so it lands as one repository.`, `Run \`bb loom land ${slug}\` without --repo.`);
+    if (!multi) throw new LoomError("loom_invalid_input", `Cannot land one repo: ${slug} has no [[repo]] tables, so it lands as one repository.`, `Run \`alia loom land ${slug}\` without --repo.`);
     const names = spec.repo!.map((repo) => repo.name);
     if (!names.includes(a.repo)) throw new LoomError("loom_invalid_input", `Project ${slug} has no repo "${a.repo}"; its repos are ${names.join(", ")}.`);
   }
@@ -1801,7 +1801,7 @@ function stoppedLand(slug: string, a: LandArgs, landed: RepoLanded[], rest: stri
   const failed = rest[0]!;
   const where = (entry: RepoLanded) => `${entry.repo} (${entry.url === null ? `${entry.pushed} at ${entry.sha.slice(0, 12)}` : entry.url})`;
   const summary = landed.length === 0 && rest.length === 1 ? "" : `${landed.length === 0 ? "No repo landed" : `Landed ${andList(landed.map(where))}`}; ${andList(rest)} did not land. `;
-  const again = `bb loom land ${slug}${a.direct === true ? " --direct" : ""}`;
+  const again = `alia loom land ${slug}${a.direct === true ? " --direct" : ""}`;
   const hint = rest.length === 1 ? `Fix that, then run \`${again} --repo ${failed}\`.` : `Fix that, then run \`${again}\` again to land every repo with merged work.`;
   return new LoomError(error.code, `${summary}The repo "${failed}" ${summary === "" ? "did not land" : "failed"}: ${error.message}`, error.hint ?? hint);
 }
@@ -1858,7 +1858,7 @@ async function pushToBase(ctx: EngineCtx, project: ProjectRow, spec: Spec, name:
   const merged = await ctx.host.call(hostId, "merge", { worktree, ref: fetched.sha, message: `Merge ${target} into ${branch} (Loom)` });
   if (merged.outcome === "unfinished") throw new LoomError("loom_invalid_state", `Cannot land on ${target}: ${unfinishedInLoomWorktree(worktree)}`);
   if (merged.outcome === "conflict") {
-    const asPr = `bb loom land ${project.slug}${name === null ? "" : ` --repo ${name}`}`;
+    const asPr = `alia loom land ${project.slug}${name === null ? "" : ` --repo ${name}`}`;
     throw new LoomError("loom_invalid_state", `Cannot land on ${target}: it conflicts with ${branch} in ${merged.files.join(", ")}.`, `Land it as a pull request with \`${asPr}\` and resolve the conflict there.`);
   }
 

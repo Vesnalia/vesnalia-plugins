@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { experimental_Icon as Icon, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { Config, ServerConfig } from "../../config";
 import type { ServerStatus, TestResult } from "../../contract";
 import { BUTTON, BUTTON_DANGER, BUTTON_GHOST, BUTTON_PRIMARY, CARD, CARD_SELECTED, ErrorNote, FIELD, FIELD_CODE, Pill, ServerBadge, Toggle } from "../common";
@@ -73,7 +73,7 @@ export function workspaceOf(draft: WorkspaceDraft): { workspace: ServerConfig["w
   if ("problem" in inputs) return inputs;
   if (draft.machineKind === "project") return { workspace: { kind: "provider", provider, inputs: inputs.value } };
   const machineProvider = draft.machineProvider.trim();
-  if (!machineProvider) return { problem: "Enter the machine provider's id, as bb machine providers lists them." };
+  if (!machineProvider) return { problem: "Enter the machine provider's id, as VesnALIA machine providers lists them." };
   const machineInputs = jsonObject(draft.machineInputs, "machine inputs");
   if ("problem" in machineInputs) return machineInputs;
   return { workspace: { kind: "provider", provider, inputs: inputs.value, machine: { provider: machineProvider, inputs: machineInputs.value } } };
@@ -168,7 +168,7 @@ function ServerCard({ server, status, busy, onEnable, onEdit, onDelete }: {
   onEdit(): void;
   onDelete(): void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const testServer = useShuttleMutation("testServer");
   const testing = testServer.isPending;
   const [results, setResults] = useState<TestResult[] | null>(null);
@@ -334,8 +334,8 @@ function ServerForm({ initial, saved, existingIds, saving, onSave, onCancel }: {
         <label className={row}>
           <span className={label}>Review workspace</span>
           <select aria-label="Review workspace" className={FIELD} value={draft.workspaceKind} onChange={(event) => set("workspaceKind", event.target.value as ServerDraft["workspaceKind"])}>
-            <option value="git">bb's git worktree</option>
-            <option value="provider">A bb environment provider</option>
+            <option value="git">VesnALIA's git worktree</option>
+            <option value="provider">A VesnALIA environment provider</option>
             <option value="command">A command that prints a checkout's path</option>
           </select>
         </label>
@@ -394,7 +394,7 @@ function ServerForm({ initial, saved, existingIds, saving, onSave, onCancel }: {
           </label>
         )}
         <p className={`text-xs ${workspaceProblem ? "text-destructive-text" : "text-muted-foreground"}`}>
-          {workspaceProblem ?? "Used when a review preset asks for its own checkout. Inputs, machine inputs and the command may use {number}, {repo}, {repo_name}, {head_ref}, {base}, {head}, {server} and {slug}; the command prints the checkout's absolute path on its last line. Test checks the providers and their inputs against bb."}
+          {workspaceProblem ?? "Used when a review preset asks for its own checkout. Inputs, machine inputs and the command may use {number}, {repo}, {repo_name}, {head_ref}, {base}, {head}, {server} and {slug}; the command prints the checkout's absolute path on its last line. Test checks the providers and their inputs against VesnALIA."}
         </p>
       </div>
       {results !== null && <TestResults results={results} />}

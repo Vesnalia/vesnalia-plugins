@@ -15,10 +15,10 @@ Two evaluators are available. The tools return the same text as the CLI.
 
 | Surface | Use |
 | --- | --- |
-| `x_viral_score` tool / `bb x-viral score "<text>"` | Score 0-100, gates, signals, ranked suggestions each with its projected score |
-| `x_viral_autoresearch` tool / `bb x-viral autoresearch "<text>"` | Greedy loop over mechanical edits; returns the improved post and new score |
-| `x_viral_video_script` tool / `bb x-viral video "<text>"` | 10-30s beat sheet (hook, beats, ask, captions) from the post's own sentences |
-| `bb x-viral weights` | The mirrored production weights |
+| `x_viral_score` tool / `alia x-viral score "<text>"` | Score 0-100, gates, signals, ranked suggestions each with its projected score |
+| `x_viral_autoresearch` tool / `alia x-viral autoresearch "<text>"` | Greedy loop over mechanical edits; returns the improved post and new score |
+| `x_viral_video_script` tool / `alia x-viral video "<text>"` | 10-30s beat sheet (hook, beats, ask, captions) from the post's own sentences |
+| `alia x-viral weights` | The mirrored production weights |
 
 Every score result ends with **content levers** (question, position, useful
 detail, number, story, hook, structure), each with the projected score if the

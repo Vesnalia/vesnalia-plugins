@@ -6,7 +6,7 @@
 import { createHash } from "node:crypto";
 import type { ChangesView, CommitsView, FilePatch, ProjectRequest } from "../core/project";
 
-/** BB's kv rows hold at most 256 KB; leave room for the envelope. */
+/** VesnALIA's kv rows hold at most 256 KB; leave room for the envelope. */
 export const SNAPSHOT_BYTES = 240_000;
 
 /** One file's patch larger than this is not kept: it would crowd out every other file's. */
@@ -14,7 +14,7 @@ export const PATCH_BYTES = 96_000;
 
 const VERSION = 1;
 
-/** The part of plugin storage snapshots use (`bb.storage.kv`). */
+/** The part of plugin storage snapshots use (`alia.storage.kv`). */
 export interface SnapshotStorage {
   get<T>(key: string): Promise<T | undefined>;
   set(key: string, value: unknown): Promise<void>;

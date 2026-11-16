@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 
-type Overrides = Parameters<BbPluginApi["sdk"]["system"]["updateKeyboardSettings"]>[0];
+type Overrides = Parameters<AliaPluginApi["sdk"]["system"]["updateKeyboardSettings"]>[0];
 const hostShortcut = { key: "n", mod: true, meta: false, control: false, alt: false, shift: false };
 const relocatedShortcut = { key: "o", mod: true, meta: false, control: false, alt: false, shift: true };
 
@@ -26,7 +26,7 @@ async function setup() {
       threads: { spawn: async () => ({ id: "thr_spawned" }) },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   return { ...host, get overrides() { return overrides; } };
 }
 
@@ -45,11 +45,11 @@ describe("saved presets", () => {
   it("loads saved presets and the remembered selection exactly as stored", async () => {
     const host = await setup();
     try {
-      await host.bb.storage.kv.set("model-presets.v1", presetsSavedBy02x);
-      await host.bb.storage.kv.set("model-presets.selected.v1", { presetId: presetsSavedBy02x.presets[1]!.id });
+      await host.alia.storage.kv.set("model-presets.v1", presetsSavedBy02x);
+      await host.alia.storage.kv.set("model-presets.selected.v1", { presetId: presetsSavedBy02x.presets[1]!.id });
       expect(await host.harness.behavior.callRpc("get_presets", {})).toEqual(presetsSavedBy02x);
       expect(await host.harness.behavior.callRpc("get_selected_preset", {})).toEqual({ presetId: presetsSavedBy02x.presets[1]!.id });
-      expect(await host.bb.storage.kv.get("model-presets.v1")).toEqual(presetsSavedBy02x);
+      expect(await host.alia.storage.kv.get("model-presets.v1")).toEqual(presetsSavedBy02x);
       expect(host.harness.inspection.sdk.callsTo("providers.list")).toEqual([]);
     } finally {
       await host.harness.lifecycle.dispose();
@@ -61,7 +61,7 @@ describe("service tiers", () => {
   it("saves a preset on any service tier the provider declares", async () => {
     const host = await setup();
     try {
-      await host.bb.storage.kv.set("model-presets.v1", presetsSavedBy02x);
+      await host.alia.storage.kv.set("model-presets.v1", presetsSavedBy02x);
       const ultrafast = { ...presetsSavedBy02x.presets[1]!, id: "6d2c8a14-9b7e-4f30-a5c1-8e4f2b7d9a03", name: "Review, ultrafast", serviceTier: "ultrafast" };
       const next = { revision: 8, presets: [...presetsSavedBy02x.presets, ultrafast] };
       expect(await host.harness.behavior.callRpc("save_presets", { expectedRevision: 7, presets: next.presets })).toEqual(next);
@@ -73,7 +73,7 @@ describe("service tiers", () => {
 });
 
 describe("thread creation", () => {
-  it("forwards composer fields BB adds later to the spawn request", async () => {
+  it("forwards composer fields VesnALIA adds later to the spawn request", async () => {
     const host = await setup();
     try {
       const request = {
@@ -102,13 +102,13 @@ describe("launcher hotkey ownership", () => {
     const host = await setup();
     try {
       const unrelated: Overrides = [{ command: "palette.open", shortcut: { ...hostShortcut, key: "k" } }];
-      await host.bb.sdk.system.updateKeyboardSettings(unrelated);
+      await host.alia.sdk.system.updateKeyboardSettings(unrelated);
       expect((await host.harness.behavior.runCli(["claim"])).exitCode).toBe(0);
       expect(host.overrides).toEqual([...unrelated, { command: "thread.new", shortcut: relocatedShortcut }]);
-      expect(await host.bb.storage.kv.get("hotkey.claimed")).toBe(true);
+      expect(await host.alia.storage.kv.get("hotkey.claimed")).toBe(true);
       expect((await host.harness.behavior.runCli(["release"])).exitCode).toBe(0);
       expect(host.overrides).toEqual(unrelated);
-      expect(await host.bb.storage.kv.get("hotkey.claimed")).not.toBe(true);
+      expect(await host.alia.storage.kv.get("hotkey.claimed")).not.toBe(true);
     } finally {
       await host.harness.lifecycle.dispose();
     }
@@ -123,10 +123,10 @@ describe("launcher hotkey ownership", () => {
     try {
       await host.harness.behavior.runCli(["claim"]);
       const userOverrides: Overrides = [{ command: "thread.new", shortcut }];
-      await host.bb.sdk.system.updateKeyboardSettings(userOverrides);
+      await host.alia.sdk.system.updateKeyboardSettings(userOverrides);
       expect((await host.harness.behavior.runCli(["release"])).exitCode).toBe(0);
       expect(host.overrides).toEqual(userOverrides);
-      expect(await host.bb.storage.kv.get("hotkey.claimed")).not.toBe(true);
+      expect(await host.alia.storage.kv.get("hotkey.claimed")).not.toBe(true);
     } finally {
       await host.harness.lifecycle.dispose();
     }

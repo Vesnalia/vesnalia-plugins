@@ -4,14 +4,14 @@ import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
-const dataDir = process.env.LIVE_BB_DATA ?? join(process.env.HOME ?? "", "bbdata");
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
+const dataDir = process.env.LIVE_ALIA_DATA ?? join(process.env.HOME ?? "", "bbdata");
 const shots = process.env.LIVE_SHOTS ?? join(process.cwd(), "shots");
 const runs = Number(process.env.LIVE_RUNS ?? 3);
-const bbCli = process.env.LIVE_BB_CLI ?? join(process.env.HOME ?? "", "bbcli");
+const aliaCli = process.env.LIVE_ALIA_CLI ?? join(process.env.HOME ?? "", "bbcli");
 const projectDir = process.env.LIVE_PROJECT ?? join(process.env.HOME ?? "", "proj");
-const WAITS = "docker/bb-live/waits:1";
-const FAILS = "docker:second/bb-live/fails:1";
+const WAITS = "docker/alia-live/waits:1";
+const FAILS = "docker:second/alia-live/fails:1";
 mkdirSync(shots, { recursive: true });
 
 function expect(condition, message) {
@@ -21,7 +21,7 @@ function expect(condition, message) {
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -40,16 +40,16 @@ async function otherTab(change) {
 }
 
 function forgetRebuilds() {
-  const db = new DatabaseSync(join(dataDir, "bb.db"));
+  const db = new DatabaseSync(join(dataDir, "alia.db"));
   try {
-    db.prepare("delete from plugin_kv where plugin_id = 'bb-box' and (key like 'images/state/%' or key = 'images/last-run')").run();
+    db.prepare("delete from plugin_kv where plugin_id = 'alia-box' and (key like 'images/state/%' or key = 'images/last-run')").run();
   } finally {
     db.close();
   }
 }
 
 function setRustTools() {
-  execFileSync(bbCli, ["box", "image", "set", "rust-tools", "--kinds", "linux", "--script-file", ".bb/box-setup.sh", "--check-file", ".bb/box-check.sh", "--project", "proj_example"], { cwd: projectDir, stdio: "pipe" });
+  execFileSync(aliaCli, ["box", "image", "set", "rust-tools", "--kinds", "linux", "--script-file", ".vesnalia/box-setup.sh", "--check-file", ".vesnalia/box-check.sh", "--project", "proj_example"], { cwd: projectDir, stdio: "pipe" });
 }
 
 async function waitFor(check, what, timeout = 30_000) {
@@ -74,7 +74,7 @@ async function tab(viewport = { width: 1440, height: 1000 }) {
 const heading = (page, title) => page.locator("[data-page-heading]").filter({ hasText: new RegExp(`^${title}`) });
 
 async function open(page, hash, title) {
-  const url = `${base}/settings/plugins/bb-box${hash}`;
+  const url = `${base}/settings/plugins/alia-box${hash}`;
   await page.goto(url, { waitUntil: "domcontentloaded" });
   if (!onboardingSkipped) {
     const skip = page.getByRole("button", { name: "Skip setup" });
@@ -150,8 +150,8 @@ const checks = {
     const things = page.getByRole("region", { name: "Things that need you" });
     await things.getByText("The Linux image on Docker for the failing image did not rebuild").waitFor();
     const callout = await things.textContent();
-    expect(callout.includes(`Fix: Fix the cause, then Try again on the Images page, or run bb box images build ${FAILS}.`), `the callout says ${callout}`);
-    expect(!callout.includes("bb-live/waits"), "a waiting image is not a problem in Status");
+    expect(callout.includes(`Fix: Fix the cause, then Try again on the Images page, or run alia box images build ${FAILS}.`), `the callout says ${callout}`);
+    expect(!callout.includes("alia-live/waits"), "a waiting image is not a problem in Status");
     const option = await page.locator("#settings-option-images").textContent();
     expect(option.includes("1 failed"), `the Images row says ${option}`);
     if (run === 1) await page.screenshot({ path: join(shots, "live-status.png") });

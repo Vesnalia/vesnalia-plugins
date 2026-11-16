@@ -297,17 +297,17 @@ test("only proof counts as a thread being gone", async () => {
   assert.equal(await isThreadGone(async () => ({ archivedAt: 1, deletedAt: null })), true);
   assert.equal(await isThreadGone(async () => ({ archivedAt: null, deletedAt: 1 })), true);
   assert.equal(await isThreadGone(async () => ({ archivedAt: null, deletedAt: null })), false);
-  assert.equal(await isThreadGone(fail("BbHttpError: HTTP 404: Not found")), true);
-  assert.equal(await isThreadGone(fail("BbHttpError: HTTP 503: Unavailable")), false);
+  assert.equal(await isThreadGone(fail("AliaHttpError: HTTP 404: Not found")), true);
+  assert.equal(await isThreadGone(fail("AliaHttpError: HTTP 503: Unavailable")), false);
   assert.equal(await isThreadGone(fail("socket hang up")), false);
-  assert.equal(await isThreadGone(fail("BbHttpError: HTTP 409: Thread is archived")), true);
-  assert.equal(await isThreadGone(fail("BbHttpError: HTTP 409: Conflict")), false);
+  assert.equal(await isThreadGone(fail("AliaHttpError: HTTP 409: Thread is archived")), true);
+  assert.equal(await isThreadGone(fail("AliaHttpError: HTTP 409: Conflict")), false);
 });
 
-test("409 counts as gone only when bb says the thread is archived or deleted", () => {
-  assert.equal(isGoneError(new Error("BbHttpError: HTTP 409: Thread is archived")), true);
+test("409 counts as gone only when VesnALIA says the thread is archived or deleted", () => {
+  assert.equal(isGoneError(new Error("AliaHttpError: HTTP 409: Thread is archived")), true);
   assert.equal(isGoneError(Object.assign(new Error("Thread is archived"), { status: 409 })), true);
-  assert.equal(isGoneError(new Error("BbHttpError: HTTP 409: Version conflict")), false);
+  assert.equal(isGoneError(new Error("AliaHttpError: HTTP 409: Version conflict")), false);
 });
 
 test("an archived thread's watches are all dropped without reading GitHub", async () => {

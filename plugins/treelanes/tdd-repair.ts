@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { CompletionEvidence } from "./stage-evidence";
 import { DELIVERY_SKILL_INSTRUCTION } from "./stage-prompts";
 
-type Db = ReturnType<BbPluginApi["storage"]["database"]>;
+type Db = ReturnType<AliaPluginApi["storage"]["database"]>;
 type Repair = { key: string; thread_id: string; status: string; recorded_at: number; error: string | null };
 
 export const tddRepairMigration = `CREATE TABLE worktree_tdd_repairs (
@@ -18,7 +18,7 @@ function key(environmentId: string, evidence: CompletionEvidence): string {
   ])).digest("hex");
 }
 
-export function createTddRepair(bb: BbPluginApi, db: Db, disposed: () => boolean) {
+export function createTddRepair(alia: AliaPluginApi, db: Db, disposed: () => boolean) {
   const read = (environmentId: string, evidence: CompletionEvidence) =>
     db.prepare("SELECT * FROM worktree_tdd_repairs WHERE key = ?")
       .get(key(environmentId, evidence)) as Repair | undefined;
@@ -46,11 +46,11 @@ export function createTddRepair(bb: BbPluginApi, db: Db, disposed: () => boolean
     const repair = read(environmentId, evidence);
     if (!repair || repair.status !== "pending" || disposed() || !eligible()) return;
     const threadId = repair.thread_id;
-    const worker = await bb.sdk.threads.get({ threadId });
+    const worker = await alia.sdk.threads.get({ threadId });
     if (!worker || worker.status !== "idle" || worker.archivedAt || worker.deletedAt || worker.environmentId !== environmentId) return;
-    if ((await bb.sdk.threads.interactions.list({ threadId })).length ||
-        (await bb.sdk.threads.queuedMessages.list({ threadId })).length) return;
-    const events = await bb.sdk.threads.events.list({ threadId,
+    if ((await alia.sdk.threads.interactions.list({ threadId })).length ||
+        (await alia.sdk.threads.queuedMessages.list({ threadId })).length) return;
+    const events = await alia.sdk.threads.events.list({ threadId,
       types: ["turn/completed", "system/thread/interrupted", "client/turn/requested"], order: "desc", limit: "3" });
     // Only a normal completion of the reporting turn can request a continuation.
     // A stop or a newer user turn cancels the old action, including after reload.
@@ -67,7 +67,7 @@ export function createTddRepair(bb: BbPluginApi, db: Db, disposed: () => boolean
     const claim = db.prepare("UPDATE worktree_tdd_repairs SET status = 'claimed' WHERE key = ? AND status = 'pending'").run(repair.key);
     if (claim.changes !== 1) return;
     try {
-      await bb.sdk.threads.send({ threadId, mode: "start", input: [{ type: "text", mentions: [], text:
+      await alia.sdk.threads.send({ threadId, mode: "start", input: [{ type: "text", mentions: [], text:
         `${DELIVERY_SKILL_INSTRUCTION}\nRead /delivery's references/recovery.md. Continue the saved ${evidence.stage} repair in this thread. Read treelanes_get_context and confirm ownership, stageUpdatedAt ${evidence.stageUpdatedAt}, and taskRevision ${evidence.taskRevision}.\nNext action: ${evidence.nextAction}\nRerun affected checks and submit fresh actual evidence.`,
       }] });
       if (!disposed()) db.prepare("UPDATE worktree_tdd_repairs SET status = 'sent' WHERE key = ?").run(repair.key);
@@ -76,7 +76,7 @@ export function createTddRepair(bb: BbPluginApi, db: Db, disposed: () => boolean
       if (!disposed()) db.prepare("UPDATE worktree_tdd_repairs SET status = 'uncertain', error = ? WHERE key = ?")
         .run(`Repair send result is unknown. Inspect the same thread: ${String(error).slice(0, 700)}`, repair.key);
     }
-    if (!disposed()) bb.realtime.publish("board-changed", { environmentId });
+    if (!disposed()) alia.realtime.publish("board-changed", { environmentId });
   }
   return { read, record, describe, continueRepair };
 }

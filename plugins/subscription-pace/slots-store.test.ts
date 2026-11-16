@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createSlotStore, slotDefaults, validatePatch } from './slots-store.js';
 import { readSlot } from './config.js';
 
-/** In-memory stand-in for `bb.storage.kv`. */
+/** In-memory stand-in for `alia.storage.kv`. */
 function kv(initial?: Record<string, unknown>) {
   const rows = new Map<string, unknown>(Object.entries(initial ?? {}));
   return {
@@ -14,7 +14,7 @@ function kv(initial?: Record<string, unknown>) {
 }
 
 /** Stand-in for the host database, returning the rows it would hold. */
-function hostDb(rows: { key: string; value: string }[], path = '/host/bb.db') {
+function hostDb(rows: { key: string; value: string }[], path = '/host/alia.db') {
   const closes: string[] = [];
   return {
     path,
@@ -114,7 +114,7 @@ describe('slot store', () => {
     const store = createSlotStore({
       kv: kv(),
       legacy: {
-        hostDbPath: '/nope/bb.db',
+        hostDbPath: '/nope/alia.db',
         pluginId: 'subscription-pace',
         open: () => { throw new Error('SQLITE_CANTOPEN'); },
       },

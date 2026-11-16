@@ -33,15 +33,15 @@ This page defines the host adapter boundary used to discover runnable session id
 2. The host `prepare` handler rediscovers the agent in its supplied working directory before preparing launch configuration; during dispatch, the server supplies the chat's actual folder (`host.ts:12-27`, `server.ts:205-219`).
 3. `discover` requires an existing absolute directory, reports Windows as unsupported, and dispatches Claude Code, Codex, or OpenCode discovery (`adapters/discovery.ts:240-282`).
 4. Claude Code reads user, project, and enabled installed-plugin agent metadata; OpenCode parses the CLI's `agent list`; Codex enumerates top-level profile files (`adapters/discovery.ts:129-217`, `adapters/discovery.ts:219-238`, `adapters/codex.ts:33-79`).
-5. `prepareLaunch` returns a Claude executable override or an OpenCode PATH override; Codex returns no process override because its developer instructions are contributed through BB (`host.ts:18-27`, `adapters/launch.ts:17-60`).
+5. `prepareLaunch` returns a Claude executable override or an OpenCode PATH override; Codex returns no process override because its developer instructions are contributed through VesnALIA (`host.ts:18-27`, `adapters/launch.ts:17-60`).
 
 ## Provider modes
 
 | Provider | Discovery input | Available identity | Launch output | Failure behavior |
 | --- | --- | --- | --- | --- |
-| `claude-code` | Absolute checkout path, CLI version/help, settings and agent Markdown | User/project agents and enabled installed plugin agents; project definitions win duplicate IDs | `BB_CLAUDE_CODE_EXECUTABLE` points to a shim that appends the literal `--agent` argument | Unsupported CLI version returns `supported: false`; missing executable/config read errors reject discovery (`adapters/discovery.ts:129-217`, `adapters/launch.ts:29-42`) |
+| `claude-code` | Absolute checkout path, CLI version/help, settings and agent Markdown | User/project agents and enabled installed plugin agents; project definitions win duplicate IDs | `ALIA_CLAUDE_CODE_EXECUTABLE` points to a shim that appends the literal `--agent` argument | Unsupported CLI version returns `supported: false`; missing executable/config read errors reject discovery (`adapters/discovery.ts:129-217`, `adapters/launch.ts:29-42`) |
 | `acp-opencode` | Absolute checkout path and `opencode agent list` output | Primary and `all` modes; subagents and internal compaction/summary/title agents are excluded | PATH prepends a plugin-owned launcher, which merges `default_agent` into `OPENCODE_CONFIG_CONTENT` | Empty usable list returns `supported: false`; invalid inline config causes the launcher to exit (`adapters/discovery.ts:219-238`, `adapters/discovery.ts:269-281`, `adapters/launch.ts:44-60`) |
-| `codex` | `CODEX_HOME` or `~/.codex`, with `NAME.config.toml` profiles | Profile with non-empty `developer_instructions` of at most 4096 characters | BB instruction contribution for the bound thread; no process environment override | Codex below 0.134 is unsupported; missing or oversized instructions reject selection (`adapters/discovery.ts:255-267`, `adapters/codex.ts:81-92`) |
+| `codex` | `CODEX_HOME` or `~/.codex`, with `NAME.config.toml` profiles | Profile with non-empty `developer_instructions` of at most 4096 characters | VesnALIA instruction contribution for the bound thread; no process environment override | Codex below 0.134 is unsupported; missing or oversized instructions reject selection (`adapters/discovery.ts:255-267`, `adapters/codex.ts:81-92`) |
 
 ## Business rules
 
@@ -64,7 +64,7 @@ This page defines the host adapter boundary used to discover runnable session id
 
 Contract definitions: `contract.ts:36-53`; host handler bindings: `host.ts:6-29`.
 
-`rpcContract` is the app-to-server contract. `plugin(bb)` registers a handler for each declared operation; the app invokes those names through the typed RPC client (`contract.ts:54-98`, `server.ts:110-140`, `app.tsx:26`). Each input and output shape is declared with Zod, including the provider enum, target fields, nullable values, and list/string bounds (`contract.ts:3-35`, `contract.ts:54-98`).
+`rpcContract` is the app-to-server contract. `plugin(alia)` registers a handler for each declared operation; the app invokes those names through the typed RPC client (`contract.ts:54-98`, `server.ts:110-140`, `app.tsx:26`). Each input and output shape is declared with Zod, including the provider enum, target fields, nullable values, and list/string bounds (`contract.ts:3-35`, `contract.ts:54-98`).
 
 ### Plugin RPC contract execution
 
@@ -72,7 +72,7 @@ An RPC call has these stages:
 
 1. The app calls an operation by name with its input object. The contract defines that operation's accepted input and output shapes (`contract.ts:54-98`, `app.tsx:26`).
 2. The registered server handler runs the matching implementation. `catalog` and `select` resolve the target before contacting the host; the other handlers read project/thread APIs or KV storage (`server.ts:110-140`).
-3. The handler returns its declared output. Any BB SDK, host RPC, or KV error not handled in the method rejects the call; dispatch errors are caught separately by the dispatch hook (`server.ts:110-140`, `server.ts:233-238`).
+3. The handler returns its declared output. Any VesnALIA SDK, host RPC, or KV error not handled in the method rejects the call; dispatch errors are caught separately by the dispatch hook (`server.ts:110-140`, `server.ts:233-238`).
 
 | Operation | Conditions and steps | Success result | Failure behavior |
 | --- | --- | --- | --- |
@@ -82,7 +82,7 @@ An RPC call has these stages:
 | `pending` | Reads the project/provider pending key and validates any stored value with `selectionSchema` (`contract.ts:64-70`, `server.ts:97-101`, `server.ts:125`). | Full `Selection` or `null` when the key is absent (`contract.ts:69`). | Malformed stored selection or KV failure rejects the RPC (`server.ts:97-101`). |
 | `clearPending` | Deletes only the project/provider pending key (`contract.ts:71-77`, `server.ts:93-95`, `server.ts:125-127`). | Returns `true` after deletion (`contract.ts:76`, `server.ts:93-95`). | KV deletion failure rejects the RPC (`server.ts:93-95`). |
 | `thread` | Reads `thread:<threadId>` and validates a present record (`contract.ts:78-81`, `server.ts:62-65`, `server.ts:128`). | Full `Selection` or `null` if no binding exists (`contract.ts:80`). | Malformed binding or KV read failure rejects the RPC (`server.ts:62-65`). |
-| `threadProject` | Looks up the BB thread by ID (`contract.ts:82-85`, `server.ts:129-132`). | `{projectId}` for the source thread (`contract.ts:85`, `server.ts:129-132`). | Thread lookup errors reject the RPC (`server.ts:129-132`). |
+| `threadProject` | Looks up the VesnALIA thread by ID (`contract.ts:82-85`, `server.ts:129-132`). | `{projectId}` for the source thread (`contract.ts:85`, `server.ts:129-132`). | Thread lookup errors reject the RPC (`server.ts:129-132`). |
 | `favorites` | Reads the provider's favorite key; a non-array value becomes an empty list, while an array is filtered to strings and capped at 200 entries (`contract.ts:86-89`, `server.ts:103-108`, `server.ts:133`). | Up to 200 agent IDs for one provider (`contract.ts:86-89`). | KV read failures reject; a result that violates the output schema also fails RPC output validation (`contract.ts:86-89`, `server.ts:103-108`). |
 | `favorite` | Validates provider, 1–200 character agent ID, and `pinned`; removes any existing copy, appends when pinning, and keeps the last 200 entries (`contract.ts:90-97`, `server.ts:134-138`). | Updated provider favorite list (`contract.ts:97`, `server.ts:135-138`). | KV read/write errors reject; invalid input fails contract validation (`contract.ts:90-97`, `server.ts:134-138`). |
 
@@ -102,9 +102,9 @@ The request sequence is: validate the operation payload; route it to the selecte
 
 The host output schemas also cap catalog agents at 2000, descriptions at 1200 characters, instruction strings at 4096 characters, and validate every environment entry's `name`, `value`, and `reason` as strings (`contract.ts:4-17`, `contract.ts:33-53`).
 
-## BB server plugin
+## VesnALIA server plugin
 
-`plugin(bb)` restores eligible Codex instructions from BB KV at startup, registers an instruction-contribution callback, and creates the typed host client (`server.ts:27-37`). The callback returns the cached instructions for a requested thread or `null` (`server.ts:28-36`).
+`plugin(alia)` restores eligible Codex instructions from VesnALIA KV at startup, registers an instruction-contribution callback, and creates the typed host client (`server.ts:27-37`). The callback returns the cached instructions for a requested thread or `null` (`server.ts:28-36`).
 
 For catalog and selection requests, the plugin resolves the target machine and working directory first (`server.ts:38-71`):
 
@@ -115,7 +115,7 @@ For catalog and selection requests, the plugin resolves the target machine and w
 
 The `binding` helper reads `thread:<threadId>`, validates a stored value with `selectionSchema`, and returns `null` when the key is absent (`server.ts:62-65`).
 
-`catalog` sends `discover` to the resolved host and returns its catalog (`server.ts:66-71`). `select` resolves the same target, rediscovers the catalog, and requires both `supported: true` and an exact matching agent ID; failure throws `Agent is not available. Refresh the list.` On success it creates a UUID selection with the resolved `cwd` and timestamp, writes both `selection:<token>` and `pending:<projectId>:<providerId>`, then returns the token and `Agent: <agentId>` label (`server.ts:73-91`). The composer uses the pending record for its next matching dispatch; the `bb cli-agents select` command also returns a marker that can carry the token in a prompt (`app.tsx:227-249`, `server.ts:250-283`). Host RPC or storage errors propagate to the RPC caller.
+`catalog` sends `discover` to the resolved host and returns its catalog (`server.ts:66-71`). `select` resolves the same target, rediscovers the catalog, and requires both `supported: true` and an exact matching agent ID; failure throws `Agent is not available. Refresh the list.` On success it creates a UUID selection with the resolved `cwd` and timestamp, writes both `selection:<token>` and `pending:<projectId>:<providerId>`, then returns the token and `Agent: <agentId>` label (`server.ts:73-91`). The composer uses the pending record for its next matching dispatch; the `alia cli-agents select` command also returns a marker that can carry the token in a prompt (`app.tsx:227-249`, `server.ts:250-283`). Host RPC or storage errors propagate to the RPC caller.
 
 ## Package shape
 
@@ -129,7 +129,7 @@ The `binding` helper reads `thread:<threadId>`, validates a stored value with `s
 
 Discovery returns normalized `Agent` metadata and a `Catalog` with CLI version, warnings, and a support flag. The host's `prepare` operation repeats discovery in the selected working directory before it returns environment entries (`contract.ts:4-17`, `host.ts:10-27`).
 
-The BB server calls this host contract for discovery, selection revalidation, and dispatch-time launch preparation (`server.ts:66-81`, `server.ts:212-219`).
+The VesnALIA server calls this host contract for discovery, selection revalidation, and dispatch-time launch preparation (`server.ts:66-81`, `server.ts:212-219`).
 
 ## Dependencies
 
@@ -137,28 +137,28 @@ Runtime adapter dependencies include `yaml` for Claude agent metadata and `smol-
 
 ## Adapter extension points
 
-1. Add the exact provider ID to `providerSchema` and register environment contribution where the existing BB provider uses process environment (`contract.ts:3`, `server.ts:240-249`).
+1. Add the exact provider ID to `providerSchema` and register environment contribution where the existing VesnALIA provider uses process environment (`contract.ts:3`, `server.ts:240-249`).
 2. Implement discovery on the host. Return bounded identity metadata, omit instruction bodies, and exclude identities that cannot run as the main session (`adapters/discovery.ts:97-127`, `adapters/discovery.ts:219-238`).
 3. Implement the native launch behavior while preserving existing process configuration; host `prepare` must rediscover and validate the requested identity (`host.ts:12-27`, `adapters/launch.ts:17-60`).
 4. Add the provider to the composer target resolver and cover discovery and launch behavior in tests (`lib/composer-target.ts:9-43`, `tests/adapters.test.ts:88-173`).
 
 ## Gotchas
 
-- BB 0.43 does not expose the composer’s execution tuple through the public hook; the target resolver reads the current composer provider and read-only remembered session keys (`lib/composer-target.ts:2-8`, `lib/composer-target.ts:49-58`).
+- VesnALIA 0.43 does not expose the composer’s execution tuple through the public hook; the target resolver reads the current composer provider and read-only remembered session keys (`lib/composer-target.ts:2-8`, `lib/composer-target.ts:49-58`).
 - OpenCode configuration must be JSON in `OPENCODE_CONFIG_CONTENT`; invalid JSON stops the launcher instead of starting with a default agent (`adapters/launch.ts:44-47`).
 - Codex profile support applies only `developer_instructions`; other profile configuration is not applied (`adapters/codex.ts:81-92`, `server.ts:221-228`).
 
 An adapter must both discover usable **main-session** identities and launch that identity with the CLI's native configuration. A skill, a prompt snippet, or a subagent-only definition does not qualify.
 
-1. Verify current primary CLI documentation and the BB provider's actual launch protocol (CLI flags do not necessarily apply to ACP).
-2. Add its exact BB provider ID to `providerSchema` and the environment-contributor registration in `server.ts`.
+1. Verify current primary CLI documentation and the VesnALIA provider's actual launch protocol (CLI flags do not necessarily apply to ACP).
+2. Add its exact VesnALIA provider ID to `providerSchema` and the environment-contributor registration in `server.ts`.
 3. Add a host-side discovery function that checks CLI presence/version, resolves the selected workspace, returns bounded metadata, and excludes subagent-only/hidden internal agents. Do not return secrets or full system prompts.
 4. Add a launch adapter using native CLI arguments or native session configuration. Preserve permissions, models, user configuration, stdin/stdout, signals, and existing environment values. Do not edit shared CLI settings or write to the project. Publish any limitations of provider variants.
 5. Add the provider to the read-only composer compatibility module. Unsupported or unresolved targets must not expose a working-looking picker.
-6. Test discovery conflicts, removed roles, two simultaneous threads, different hosts/projects, cancellation, reload, and real native agent instructions. Add a real BB session smoke check on an enrolled machine.
+6. Test discovery conflicts, removed roles, two simultaneous threads, different hosts/projects, cancellation, reload, and real native agent instructions. Add a real VesnALIA session smoke check on an enrolled machine.
 7. Update README, PLUGIN_OVERVIEW, engine bounds, changelog and marketplace description together.
 
-The host contract (`contract.ts`) is the extension seam. The BB server owns selection tokens and thread binding; adapters own only native discovery and process configuration. Additional adapters must not register a replacement provider unless the existing BB provider cannot safely carry the native selection.
+The host contract (`contract.ts`) is the extension seam. The VesnALIA server owns selection tokens and thread binding; adapters own only native discovery and process configuration. Additional adapters must not register a replacement provider unless the existing VesnALIA provider cannot safely carry the native selection.
 
 <!-- lane-pilot:backlinks -->
 ## Referenced by

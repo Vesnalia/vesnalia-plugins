@@ -15,7 +15,7 @@ const tree = {
 };
 
 describe("renderTree", () => {
-  it("draws allowlisted nodes and puts bb's className on the root svg", () => {
+  it("draws allowlisted nodes and puts VesnALIA's className on the root svg", () => {
     const { container } = render(<>{renderTree(tree, { className: "size-4" })}</>);
     const svg = container.querySelector("svg")!;
     expect(svg.getAttribute("class")).toBe("size-4");

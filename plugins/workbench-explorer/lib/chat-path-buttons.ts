@@ -22,13 +22,13 @@ import type { AnchorFix } from "../shared";
 
 const BUTTON_ATTR = "data-file-explorer-reveal";
 const PATH_ATTR = "fileExplorerRevealPath";
-/** Marks a chat link this module answers instead of bb. */
+/** Marks a chat link this module answers instead of VesnALIA. */
 const FIXED_ATTR = "data-file-explorer-fixed";
 
 // The app chrome uses the same inline elements as rendered Markdown. Restrict
 // mutation to a message container so a workspace folder named "Settings" can
-// never decorate BB's sidebar settings control.
-// BB marks the rendered body of a conversation message with this CSS class.
+// never decorate VesnALIA's sidebar settings control.
+// VesnALIA marks the rendered body of a conversation message with this CSS class.
 // Keep the scanner scoped to that subtree: sidebar/footer controls can contain
 // ordinary text or a `file:` link as well, but must never receive a reveal button.
 const CHAT_MESSAGE_SELECTOR = ".group\\/message";
@@ -121,7 +121,7 @@ export type AnchorResolver = (
 export type FixedOpener = (fix: AnchorFix) => void;
 export type Reporter = (message: string) => void;
 
-/** BB preview links expose their file target as an absolute or file: href. */
+/** VesnALIA preview links expose their file target as an absolute or file: href. */
 export function filePathFromHref(href: string): string | null {
   if (!href.startsWith("file:") && !href.startsWith("/")) return null;
   try {
@@ -138,7 +138,7 @@ function anchorTargetPath(anchor: HTMLAnchorElement): string | null {
   return filePathFromHref(anchor.getAttribute("href") ?? "");
 }
 
-/** Use BB's rendered preview glyph as the signal, independent of link text. */
+/** Use VesnALIA's rendered preview glyph as the signal, independent of link text. */
 function hasNativePreviewGlyph(anchor: HTMLAnchorElement): boolean {
   for (const graphic of Array.from(anchor.querySelectorAll("svg, img"))) {
     if (graphic.closest(`button[${BUTTON_ATTR}]`) === null) return true;
@@ -204,8 +204,8 @@ export function mountChatPathButtons(
   };
 
   /**
-   * key → the file bb's link should have pointed at, or null when bb's own
-   * link is fine (or nothing better exists) and the click stays bb's.
+   * key → the file VesnALIA's link should have pointed at, or null when VesnALIA's own
+   * link is fine (or nothing better exists) and the click stays VesnALIA's.
    */
   const anchorFixes = anchorCache.recall(threadId);
   const pendingAnchors = new Map<string, { text: string; href: string }>();
@@ -299,7 +299,7 @@ export function mountChatPathButtons(
     let codes = 0;
     let candidates = 0;
     let wanted = 0;
-    // Links too, not just code spans: bb renders file mentions as anchors and
+    // Links too, not just code spans: VesnALIA renders file mentions as anchors and
     // gives them its own "open" glyph, which is a different action from
     // revealing the file in the tree.
     sweepAnchors();
@@ -402,7 +402,7 @@ export function mountChatPathButtons(
   };
 
   /**
-   * BB handles file-link clicks with a delegated capture-phase listener, and
+   * VesnALIA handles file-link clicks with a delegated capture-phase listener, and
    * the button can sit inside such a link, so claim the event first. Only the
    * click may call preventDefault(): doing it on pointerdown or mousedown
    * cancels the click that would otherwise follow.
@@ -429,7 +429,7 @@ export function mountChatPathButtons(
   };
 
   /**
-   * A link bb pointed at a file that is not there. bb would open a preview of
+   * A link VesnALIA pointed at a file that is not there. VesnALIA would open a preview of
    * that missing path, so the click is answered here instead — with the file
    * the link text actually names.
    */

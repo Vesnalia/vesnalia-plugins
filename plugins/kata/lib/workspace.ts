@@ -1,13 +1,13 @@
-// Which kata project a bb project is bound to, and which issue a thread is
+// Which kata project a VesnALIA project is bound to, and which issue a thread is
 // linked to.
 //
 // A directory is kata-aware when it (or an ancestor) holds `.kata.toml` with
-// `[project] name = "…"`. bb projects can live on any connected host, so the
-// file is read through `bb.sdk.files` with the project source's host id,
+// `[project] name = "…"`. VesnALIA projects can live on any connected host, so the
+// file is read through `alia.sdk.files` with the project source's host id,
 // never `node:fs`. The pure pieces (TOML subset, ancestor walk, metadata
 // shape) take their inputs as arguments so they are unit tested; the
 // resolver adds the SDK, a TTL cache and a synchronous `peek` for
-// `bb.agents.configure`, which cannot await.
+// `alia.agents.configure`, which cannot await.
 //
 // A thread looks first in its environment's directory (a worktree or another
 // checkout can carry its own `.kata.toml`), then in its project's default
@@ -113,7 +113,7 @@ export function parseKataToml(text: string): string | null {
 
 // ---- ancestor walk ---------------------------------------------------------------
 
-/** `dir`, then each parent, up to the root. POSIX paths only (bb hosts are unix). */
+/** `dir`, then each parent, up to the root. POSIX paths only (VesnALIA hosts are unix). */
 export function ancestorDirs(dir: string): string[] {
   if (!dir.startsWith("/")) return [];
   const parts = dir.split("/").filter((part) => part !== "" && part !== ".");
@@ -249,7 +249,7 @@ export interface InstructionInput {
   linkTitle?: string | null;
 }
 
-/** The block `bb.agents.configure` returns for a kata-bound thread (< 1500 chars). */
+/** The block `alia.agents.configure` returns for a kata-bound thread (< 1500 chars). */
 export function agentInstructions({ kataProject, link, linkTitle }: InstructionInput): string {
   const name = JSON.stringify(kataProject.name);
   const lines = [
@@ -264,8 +264,8 @@ export function agentInstructions({ kataProject, link, linkTitle }: InstructionI
     );
   }
   lines.push(
-    "Tools: kata_list (filters, `ready`, `query` search), kata_show, kata_create, kata_update, kata_comment, kata_close, kata_link_thread. The same commands exist as `bb kata …` (run `bb kata --help`); the `kata` skill has the conventions.",
-    'When you mention an issue in prose, write it as `::kata-issue{ref="project#abc4"}` on its own line so bb shows it as a clickable chip.',
+    "Tools: kata_list (filters, `ready`, `query` search), kata_show, kata_create, kata_update, kata_comment, kata_close, kata_link_thread. The same commands exist as `alia kata …` (run `alia kata --help`); the `kata` skill has the conventions.",
+    'When you mention an issue in prose, write it as `::kata-issue{ref="project#abc4"}` on its own line so VesnALIA shows it as a clickable chip.',
     "Before creating an issue, search the project for an existing one. Close only verified work, with a message; otherwise label it needs-review and comment what remains. Never delete or purge kata issues or projects.",
   );
   return lines.join("\n");
@@ -274,7 +274,7 @@ export function agentInstructions({ kataProject, link, linkTitle }: InstructionI
 // ---- resolver ----------------------------------------------------------------------------
 
 export interface Binding {
-  /** Kata project the bb project is bound to; null when unbound or unknown to the daemon. */
+  /** Kata project the VesnALIA project is bound to; null when unbound or unknown to the daemon. */
   kataProject: KataProject | null;
   /** `[project] name` as written, even when no kata project has that name. */
   name: string | null;
@@ -286,7 +286,7 @@ export interface Binding {
   origin?: BindingSource["origin"];
 }
 
-/** The slice of `bb.sdk` the resolver uses (keeps it testable and host-agnostic). */
+/** The slice of `alia.sdk` the resolver uses (keeps it testable and host-agnostic). */
 export interface BindingSdk {
   projects: {
     get(args: { projectId: string }): Promise<{
@@ -309,12 +309,12 @@ export interface BindingResolverOptions {
   sdk: () => BindingSdk;
   /** Kata projects (the daemon's list, possibly cached). */
   kataProjects: () => Promise<KataProject[]>;
-  /** Dev/test override: bb project id → kata project name. */
+  /** Dev/test override: VesnALIA project id → kata project name. */
   overrides?: () => Readonly<Record<string, string>>;
   ttlMs?: number;
   log?: (message: string) => void;
   /** A binding changed (new, or different kata project). */
-  onChange?: (bbProjectId: string, binding: Binding) => void;
+  onChange?: (aliaProjectId: string, binding: Binding) => void;
 }
 
 export const BINDING_TTL_MS = 60_000;
@@ -360,10 +360,10 @@ export function createBindingResolver(options: BindingResolverOptions) {
       : { kataProject: null, name, dir: hit.dir, reason: `no kata project named ${JSON.stringify(name)}`, ...origin };
   }
 
-  async function compute(bbProjectId: string): Promise<Binding> {
-    const override = options.overrides?.()[bbProjectId];
+  async function compute(aliaProjectId: string): Promise<Binding> {
+    const override = options.overrides?.()[aliaProjectId];
     if (override) return toBinding({ name: override, dir: "" }, "bindingOverrides").then((b) => ({ ...b, dir: null }));
-    const source = projectSource(await options.sdk().projects.get({ projectId: bbProjectId }));
+    const source = projectSource(await options.sdk().projects.get({ projectId: aliaProjectId }));
     if (!source) return { kataProject: null, name: null, dir: null, reason: "project has no source directory" };
     return toBinding(await resolveFromSources([source], readOnHost), "no .kata.toml");
   }
@@ -373,11 +373,11 @@ export function createBindingResolver(options: BindingResolverOptions) {
    * has no `.kata.toml` of its own (or is the project source), so the
    * project's binding applies.
    */
-  async function computeEnvironment(environmentId: string, bbProjectId: string): Promise<Binding | null> {
+  async function computeEnvironment(environmentId: string, aliaProjectId: string): Promise<Binding | null> {
     const sdk = options.sdk();
     const [environment, project] = await Promise.all([
       sdk.environments.get({ environmentId }),
-      sdk.projects.get({ projectId: bbProjectId }),
+      sdk.projects.get({ projectId: aliaProjectId }),
     ]);
     const own = threadSources(environment, projectSource(project)).filter((s) => s.origin === "environment");
     const hit = await resolveFromSources(own, readOnHost);
@@ -394,19 +394,19 @@ export function createBindingResolver(options: BindingResolverOptions) {
   }
   const envCache = new Map<string, EnvEntry>();
 
-  function loadEnvironment(environmentId: string, bbProjectId: string): Promise<Binding | null> {
+  function loadEnvironment(environmentId: string, aliaProjectId: string): Promise<Binding | null> {
     let entry = envCache.get(environmentId);
     if (entry?.loading) return entry.loading;
     if (entry === undefined) {
-      entry = { at: 0, ttl: 0, projectId: bbProjectId, binding: undefined, loading: null };
+      entry = { at: 0, ttl: 0, projectId: aliaProjectId, binding: undefined, loading: null };
       envCache.set(environmentId, entry);
     }
     const current = entry;
-    current.loading = computeEnvironment(environmentId, bbProjectId).then(
+    current.loading = computeEnvironment(environmentId, aliaProjectId).then(
       (binding) => {
         const before = current.binding?.kataProject?.uid ?? null;
         Object.assign(current, { at: Date.now(), ttl, binding, loading: null });
-        if (binding && before !== (binding.kataProject?.uid ?? null)) options.onChange?.(bbProjectId, binding);
+        if (binding && before !== (binding.kataProject?.uid ?? null)) options.onChange?.(aliaProjectId, binding);
         return binding;
       },
       (error: unknown) => {
@@ -421,27 +421,27 @@ export function createBindingResolver(options: BindingResolverOptions) {
     return current.loading;
   }
 
-  function load(bbProjectId: string): Promise<Binding> {
-    let entry = cache.get(bbProjectId);
+  function load(aliaProjectId: string): Promise<Binding> {
+    let entry = cache.get(aliaProjectId);
     if (entry?.loading) return entry.loading;
     if (entry === undefined) {
       entry = { at: 0, ttl: 0, binding: null, loading: null };
-      cache.set(bbProjectId, entry);
+      cache.set(aliaProjectId, entry);
     }
     const current = entry;
-    current.loading = compute(bbProjectId).then(
+    current.loading = compute(aliaProjectId).then(
       (binding) => {
         const first = current.binding === null;
         const before = current.binding?.kataProject?.uid ?? null;
         Object.assign(current, { at: Date.now(), ttl, binding, loading: null });
-        if (first || before !== (binding.kataProject?.uid ?? null)) options.onChange?.(bbProjectId, binding);
+        if (first || before !== (binding.kataProject?.uid ?? null)) options.onChange?.(aliaProjectId, binding);
         return binding;
       },
       (error: unknown) => {
         current.loading = null;
         current.at = Date.now();
         current.ttl = ERROR_TTL_MS;
-        options.log?.(`binding for ${bbProjectId} failed: ${error instanceof Error ? error.message : String(error)}`);
+        options.log?.(`binding for ${aliaProjectId} failed: ${error instanceof Error ? error.message : String(error)}`);
         throw error;
       },
     );
@@ -453,14 +453,14 @@ export function createBindingResolver(options: BindingResolverOptions) {
 
   return {
     /** The binding, from cache when fresh. Rejects when it cannot be read (host offline, daemon down). */
-    async forProject(bbProjectId: string): Promise<Binding> {
-      const entry = cache.get(bbProjectId);
+    async forProject(aliaProjectId: string): Promise<Binding> {
+      const entry = cache.get(aliaProjectId);
       if (fresh(entry) && entry!.binding) return entry!.binding;
       try {
-        return await load(bbProjectId);
+        return await load(aliaProjectId);
       } catch (error) {
         // Keep serving the last good value while the host or daemon is away.
-        const last = cache.get(bbProjectId)?.binding;
+        const last = cache.get(aliaProjectId)?.binding;
         if (last) return last;
         throw error;
       }
@@ -470,11 +470,11 @@ export function createBindingResolver(options: BindingResolverOptions) {
      * it has none (then the project's applies). Serves the last good value
      * while the host is away.
      */
-    async forEnvironment(environmentId: string, bbProjectId: string): Promise<Binding | null> {
+    async forEnvironment(environmentId: string, aliaProjectId: string): Promise<Binding | null> {
       const entry = envCache.get(environmentId);
       if (fresh(entry) && entry!.binding !== undefined) return entry!.binding;
       try {
-        return await loadEnvironment(environmentId, bbProjectId);
+        return await loadEnvironment(environmentId, aliaProjectId);
       } catch (error) {
         const last = envCache.get(environmentId)?.binding;
         if (last !== undefined) return last;
@@ -482,52 +482,52 @@ export function createBindingResolver(options: BindingResolverOptions) {
       }
     },
     /**
-     * The thread's bb project and its binding: the thread environment's own
+     * The thread's VesnALIA project and its binding: the thread environment's own
      * `.kata.toml` first (a worktree or other checkout), else the project's.
      */
-    async forThread(threadId: string): Promise<{ bbProjectId: string; binding: Binding }> {
+    async forThread(threadId: string): Promise<{ aliaProjectId: string; binding: Binding }> {
       const thread = await options.sdk().threads.get({ threadId });
       if (thread.environmentId) {
         try {
           const own = await this.forEnvironment(thread.environmentId, thread.projectId);
-          if (own) return { bbProjectId: thread.projectId, binding: own };
+          if (own) return { aliaProjectId: thread.projectId, binding: own };
         } catch {
           // Environment unreadable (host away): the project's binding still applies.
         }
       }
-      return { bbProjectId: thread.projectId, binding: await this.forProject(thread.projectId) };
+      return { aliaProjectId: thread.projectId, binding: await this.forProject(thread.projectId) };
     },
     /**
-     * Synchronous, for `bb.agents.configure`: the environment's own binding
+     * Synchronous, for `alia.agents.configure`: the environment's own binding
      * when known, else the project's (`peek`). Starts background refreshes.
      */
-    peekThread(bbProjectId: string, environmentId: string | null | undefined): Binding | undefined {
+    peekThread(aliaProjectId: string, environmentId: string | null | undefined): Binding | undefined {
       if (environmentId) {
         const entry = envCache.get(environmentId);
-        if (!fresh(entry) && !entry?.loading) void loadEnvironment(environmentId, bbProjectId).catch(() => {});
+        if (!fresh(entry) && !entry?.loading) void loadEnvironment(environmentId, aliaProjectId).catch(() => {});
         if (entry?.binding) return entry.binding;
       }
-      return this.peek(bbProjectId);
+      return this.peek(aliaProjectId);
     },
     /**
      * Synchronous: the last known binding, or undefined before the first
      * resolution. Stale or missing entries start a background refresh, so
      * the next call (next turn) sees the result.
      */
-    peek(bbProjectId: string): Binding | undefined {
-      const entry = cache.get(bbProjectId);
-      if (!fresh(entry) && !entry?.loading) void load(bbProjectId).catch(() => {});
+    peek(aliaProjectId: string): Binding | undefined {
+      const entry = cache.get(aliaProjectId);
+      if (!fresh(entry) && !entry?.loading) void load(aliaProjectId).catch(() => {});
       return entry?.binding ?? undefined;
     },
     /** Forget one project (lifecycle change) or everything. */
-    invalidate(bbProjectId?: string) {
-      if (bbProjectId === undefined) {
+    invalidate(aliaProjectId?: string) {
+      if (aliaProjectId === undefined) {
         cache.clear();
         envCache.clear();
         return;
       }
-      cache.delete(bbProjectId);
-      for (const [id, entry] of envCache) if (entry.projectId === bbProjectId) envCache.delete(id);
+      cache.delete(aliaProjectId);
+      for (const [id, entry] of envCache) if (entry.projectId === aliaProjectId) envCache.delete(id);
     },
     /** Every known bound kata project uid (for keeping their issue lists warm). */
     boundKataProjects(): string[] {

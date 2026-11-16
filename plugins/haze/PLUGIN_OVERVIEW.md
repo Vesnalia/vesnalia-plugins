@@ -7,12 +7,12 @@
 
 ## How it works
 
-Open **Settings → Haze** and pick an image. The page resizes it to 2560 px WebP before upload. The image and settings stay in a local SQLite database on your BB server. **Reset to defaults** restores the global settings, glass and image; remove a project background from its own section.
+Open **Settings → Haze** and pick an image. The page resizes it to 2560 px WebP before upload. The image and settings stay in a local SQLite database on your VesnALIA server. **Reset to defaults** restores the global settings, glass and image; remove a project background from its own section.
 
-Haze draws with CSS on BB's own panels, so a BB update that renames those panels can break the layout until Haze is updated.
+Haze draws with CSS on VesnALIA's own panels, so a VesnALIA update that renames those panels can break the layout until Haze is updated.
 
 ## Requirements
 
-- Turn off Aura (`bb plugin disable aura`) while Haze is on; both draw on the same panels.
+- Turn off Aura (`alia plugin disable aura`) while Haze is on; both draw on the same panels.
 - No account, network service or extra install.
 - Based on [MonoCode](https://github.com/hardbeat920/monocode) (MIT).

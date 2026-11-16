@@ -21,4 +21,4 @@ Works with whichever agent your thread uses. Adds no skill, command or tool.
 
 ## Requirements
 
-**BB 0.46 or later.** No account or external service. Marks stay in your BB window across thread switches and reloads until sent or cleared.
+**VesnALIA 0.46 or later.** No account or external service. Marks stay in your VesnALIA window across thread switches and reloads until sent or cleared.

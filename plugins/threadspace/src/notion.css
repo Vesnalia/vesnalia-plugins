@@ -20,8 +20,8 @@
 
 .ns-native-state,.ns-native-state>span{display:inline-flex;align-items:center;justify-content:center}
 
-/* ── Review 2026-10-21: BB surface, wider titles, instant selection, contrast ── */
-/* Surface follows BB's sidebar; row height and font stay Notion. */
+/* ── Review 2026-10-21: ALIA surface, wider titles, instant selection, contrast ── */
+/* Surface follows ALIA's sidebar; row height and font stay Notion. */
 .ns-surface{--ns-bg:var(--sidebar,#fafafa);--ns-muted:#696864;--ns-faint:#878682;--ns-hover:rgba(55,53,47,.06);--ns-active:rgba(55,53,47,.11);--ns-waiting:#a5700f;--ns-indent:14px}
 .ns-surface[data-theme=dark]{--ns-bg:var(--sidebar,#1b1b1b);--ns-muted:#a3a3a3;--ns-faint:#8a8a8a;--ns-hover:rgba(255,255,255,.05);--ns-active:rgba(255,255,255,.1);--ns-waiting:#d1a94e}
 .ns-picker.ns-surface{--ns-bg:var(--ns-popup)}
@@ -44,7 +44,7 @@
 .ns-row.has-children:hover .ns-provider,.ns-row.has-children:focus-within .ns-provider{visibility:hidden}
 .ns-empty-project,.ns-show-more{padding-left:calc(6px + var(--ns-indent) + 26px)!important}
 
-/* 2 · Selection shows on press, before BB's route settles. */
+/* 2 · Selection shows on press, before ALIA's route settles. */
 .ns-row:active,.ns-row.is-pending,.ns-row.is-active{background:var(--ns-active);color:var(--ns-text)}
 .ns-row.is-pending .ns-row-title,.ns-row.is-active .ns-row-title{font-weight:500}
 .ns-row.is-pending .ns-provider,.ns-row.is-active .ns-provider{color:var(--ns-text)}

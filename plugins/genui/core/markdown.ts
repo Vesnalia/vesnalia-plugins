@@ -950,7 +950,7 @@ function blockBody(node: UiNode): string {
       return sceneMarkdown(props.objects);
     case "Shader": {
       const passes = 1 + list(props.buffers).length;
-      return `_GPU shader (${passes} pass${passes === 1 ? "" : "es"}). Open this reply in BB to see it._`;
+      return `_GPU shader (${passes} pass${passes === 1 ? "" : "es"}). Open this reply in VesnALIA to see it._`;
     }
     case "Error":
       return `_(error: ${inline(props.message)})_`;
@@ -973,7 +973,7 @@ function sceneMarkdown(objects: Value | undefined): string {
     counts.set(object.shape, (counts.get(object.shape) ?? 0) + 1);
   }
   const parts = [...counts].map(([shape, count]) => `${count} ${count === 1 ? shape : SHAPE_PLURALS[shape]}`);
-  return `_3D scene${parts.length === 0 ? "" : `: ${parts.join(", ")}`}. Open this reply in BB to turn it._`;
+  return `_3D scene${parts.length === 0 ? "" : `: ${parts.join(", ")}`}. Open this reply in VesnALIA to turn it._`;
 }
 
 /** EditableTable columns: keys or `{key, label?}`; a bare key is its own label, capitalized. */
@@ -1227,15 +1227,15 @@ function eventCalendarMarkdown(items: readonly Value[], month: string): string {
   return paragraphs(months);
 }
 
-// ── Project components that read BB (Changes, Commits, PullRequest, Threads) ──
+// ── Project components that read VesnALIA (Changes, Commits, PullRequest, Threads) ──
 
 /**
- * What BB answered for the rendering in progress, by request key. block() is
+ * What VesnALIA answered for the rendering in progress, by request key. block() is
  * synchronous, so toMarkdownWithProject holds them here for one call.
  */
 let projectAnswers: ReadonlyMap<string, ProjectResult> = new Map();
 
-/** The BB read a Project node needs, or why its props can't be read; null for other nodes. */
+/** The VesnALIA read a Project node needs, or why its props can't be read; null for other nodes. */
 function projectRequest(node: UiNode): Parsed<ProjectRequest> | null {
   const props = node.props;
   switch (node.type) {
@@ -1261,7 +1261,7 @@ function projectRequest(node: UiNode): Parsed<ProjectRequest> | null {
   }
 }
 
-/** The BB reads the evaluated nodes need (Changes, Commits, PullRequest, Threads), in order, without repeats. */
+/** The VesnALIA reads the evaluated nodes need (Changes, Commits, PullRequest, Threads), in order, without repeats. */
 export function projectRequests(roots: readonly UiNode[]): ProjectRequest[] {
   const requests = new Map<string, ProjectRequest>();
   const visit = (value: Value | undefined): void => {
@@ -1280,7 +1280,7 @@ export function projectRequests(roots: readonly UiNode[]): ProjectRequest[] {
   return [...requests.values()];
 }
 
-/** toMarkdownWithImages with Changes, Commits, PullRequest and Threads shown as what BB answered (`answers`, by `projectRequestKey`). */
+/** toMarkdownWithImages with Changes, Commits, PullRequest and Threads shown as what VesnALIA answered (`answers`, by `projectRequestKey`). */
 export function toMarkdownWithProject(
   roots: readonly UiNode[],
   images: ReadonlyMap<string, SearchedImage | null>,
@@ -1295,12 +1295,12 @@ export function toMarkdownWithProject(
   }
 }
 
-/** Each Project component's name, and what it says without an answer from BB (plain toMarkdown, no thread). */
+/** Each Project component's name, and what it says without an answer from VesnALIA (plain toMarkdown, no thread). */
 const PROJECT_TEXT: Record<string, { readonly title: string; readonly unanswered: string }> = {
-  Changes: { title: "Changes", unanswered: "_The changes in this thread's checkout: open the reply in BB to see them._" },
-  Commits: { title: "Commits", unanswered: "_This branch's commits: open the reply in BB to see them._" },
-  PullRequest: { title: "Pull request", unanswered: "_This branch's pull request: open the reply in BB to see it._" },
-  Threads: { title: "Threads", unanswered: "_Thread status: open the reply in BB to see it._" },
+  Changes: { title: "Changes", unanswered: "_The changes in this thread's checkout: open the reply in VesnALIA to see them._" },
+  Commits: { title: "Commits", unanswered: "_This branch's commits: open the reply in VesnALIA to see them._" },
+  PullRequest: { title: "Pull request", unanswered: "_This branch's pull request: open the reply in VesnALIA to see it._" },
+  Threads: { title: "Threads", unanswered: "_Thread status: open the reply in VesnALIA to see it._" },
 };
 
 /** Rows a markdown list or table shows before saying how many more there are. */
@@ -1349,7 +1349,7 @@ function changesMarkdown(view: ChangesView): string {
     header,
     table(["File", "Change", "+", "−"], rows),
     moreLine(rows.length, view.files.length, "file"),
-    view.listTruncated ? "_BB listed only part of the changed files._" : "",
+    view.listTruncated ? "_ALIA listed only part of the changed files._" : "",
   ]);
 }
 
@@ -1568,10 +1568,10 @@ function estimateMarkdown(value: Value | undefined, unitValue: Value | undefined
 /** Thread lines an environment lists under it in markdown. */
 const ENVIRONMENT_THREAD_LINES = 3;
 
-/** The project's environments as BB answered (the default view: those with live threads), each with its git line and threads. */
+/** The project's environments as VesnALIA answered (the default view: those with live threads), each with its git line and threads. */
 function environmentsMarkdown(): string {
   const answer = projectAnswers.get(projectRequestKey({ kind: "environments" }));
-  if (answer === undefined) return "_This project's environments, their threads and changes: open the reply in BB to see them._";
+  if (answer === undefined) return "_This project's environments, their threads and changes: open the reply in VesnALIA to see them._";
   if (!answer.ok) return `**Environments** · _${answer.message}_`;
   if (!("environments" in answer)) return "";
   const all = answer.environments;
@@ -2276,7 +2276,7 @@ function compareImageLine(image: CompareImage, position: number): string {
   return `${position + 1}. **${escapeProse(image.label)}**${position === 0 ? " (reference)" : ""} — ${parts.join(" — ")}`;
 }
 
-/** Compare as its images (the reference first) and each condition mismatch against the reference; the pixel views need BB. */
+/** Compare as its images (the reference first) and each condition mismatch against the reference; the pixel views need VesnALIA. */
 function compareMarkdown(value: Value | undefined): string {
   const read = readCompare(value);
   if (!read.ok) return `_(${read.error})_`;
@@ -2295,7 +2295,7 @@ function compareMarkdown(value: Value | undefined): string {
     read.images.map(compareImageLine).join("\n"),
     warnings.join("\n"),
     read.ignored > 0 ? `_${read.ignored} ${read.ignored === 1 ? "entry" : "entries"} without a src left out_` : "",
-    others.length === 0 ? "" : "_Side by side, wipe, overlay and the pixel difference with its changed regions show in BB._",
+    others.length === 0 ? "" : "_Side by side, wipe, overlay and the pixel difference with its changed regions show in ALIA._",
   ]);
 }
 

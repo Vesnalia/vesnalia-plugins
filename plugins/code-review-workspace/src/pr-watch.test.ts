@@ -58,14 +58,14 @@ async function setup({ repo = "acme/api", folder = {} as Partial<Folder> } = {})
     return { code: 1, stderr: "unexpected gh call", stdout: "" };
   });
   const reads = () => runGh.mock.calls.filter(([args]) => args[1] === "graphql").map(([args]) => args.find((a) => a.startsWith("query="))!);
-  // Each thread's commands, as bb's events give them: run now, or at `at`.
+  // Each thread's commands, as VesnALIA's events give them: run now, or at `at`.
   const commands: Record<string, Array<string | { command: string; at: number }>> = {};
   const list = vi.fn(async ({ threadId, afterSeq }: { threadId: string; afterSeq?: string }) => (commands[threadId] ?? [])
     .map((run, i) => typeof run === "string" ? { command: run, at: Date.now(), i } : { ...run, i })
     .map(({ command, at, i }) => ({ id: `e${i}`, seq: i + 1, threadId, scope: {}, createdAt: at, type: "item/completed", data: { item: { type: "commandExecution", id: `i${i}`, command, cwd: "/Users/me/src/api", status: "completed" } } }))
     .filter((row) => afterSeq === undefined || row.seq > Number(afterSeq)));
   const host = folderHost({ files: [{ path: "src/a.ts" }], ...folder }, { threads: { events: { list } } });
-  const store = testStore(host.bb);
+  const store = testStore(host.alia);
   const review = async (key: string, environmentId: string, branch: string) => {
     await store.saveReview({ targetKey: key, kind: "ref", gitRef: branch, title: "Snooze flaky checks", createdAt: T0, status: "ready", projectId: "proj_api" });
     await store.setLifecycle(key, { feature: { environmentId, hostId: "host_max", machine: "MaxBook", path: "/Users/me/src/api", branch, baseRef: "main", repo }, mainThread: { threadId: "main", environmentId, origin: "adopted", since: 1 } });
@@ -73,7 +73,7 @@ async function setup({ repo = "acme/api", folder = {} as Partial<Folder> } = {})
   };
   await review(KEY, "env1", "feat/qa");
   let health: SyncHealth = { lastReadAt: null, error: null };
-  const deps = { bb: host.bb, store, gh: { runGh, runGit: vi.fn() }, changed: vi.fn(), sync: { one: vi.fn(async () => {}), health: () => health } };
+  const deps = { alia: host.alia, store, gh: { runGh, runGit: vi.fn() }, changed: vi.fn(), sync: { one: vi.fn(async () => {}), health: () => health } };
   const watch = register(deps as any);
   const emit = (event: "experimental_thread.events" | "thread.idle" | "thread.failed", thread: { id: string; environmentId: string | null; visibility?: string }) =>
     (watch.events[event]![0] as (payload: unknown) => Promise<void>)({ thread: { visibility: "visible", ...thread }, sequence: 1, lastAssistantText: null });

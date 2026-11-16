@@ -1,4 +1,4 @@
-// Office Viewer — the image editor inside BB's own image preview, for images
+// Office Viewer — the image editor inside VesnALIA's own image preview, for images
 // attached to the chat. Needs the core function `image-editor` (VK EXPERIMENTAL):
 // core passes the image URL and takes the edited PNG back, replacing a draft
 // attachment or attaching it to the thread's draft.

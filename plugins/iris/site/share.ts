@@ -5,7 +5,7 @@ import { toast } from "./sdk-shim";
 export { decode, encode, playLink } from "../shared/playground";
 
 export const REPO = "https://github.com/vburojevic/bb-plugin-iris";
-export const INSTALL = 'bb plugin install "git:https://github.com/vburojevic/bb-plugin-iris.git@^1.0.0"';
+export const INSTALL = 'alia plugin install "git:https://github.com/vburojevic/bb-plugin-iris.git@^1.0.0"';
 
 export const store = {
   get(area: "local" | "session", key: string): string | null {
@@ -35,4 +35,4 @@ export async function copyText(text: string, done: string) {
   }
 }
 
-export const copyInstall = () => copyText(INSTALL, "Install command copied. Paste it in a terminal on a Mac running bb.");
+export const copyInstall = () => copyText(INSTALL, "Install command copied. Paste it in a terminal on a Mac running VesnALIA.");

@@ -62,8 +62,8 @@ const cow: EnvironmentCandidate = { id: "btrfs-cow", name: "Btrfs Cow", descript
 
 function project(overrides: Partial<ProjectCandidate> = {}): ProjectCandidate {
   return {
-    id: "proj_bb",
-    name: "bb",
+    id: "proj_alia",
+    name: "alia",
     isPersonal: false,
     gitRemoteUrl: null,
     sources: [],
@@ -91,8 +91,8 @@ function answer(choice: string, probabilities: Record<string, number> = {}): Cho
 
 describe("describeMachine", () => {
   it("puts load into words Jev can compare, with the numbers alongside", () => {
-    expect(describeMachine(machine({ isServer: true, projectPath: "/home/me/bb" }))).toBe(
-      "Linux (x86-64). CPU load is low (10% of 16 cores). memory is mostly free (25% of 64 GB used). disk has plenty of space (600 GB free). idle, no agent threads running. this is the main BB server machine. the project is at /home/me/bb.",
+    expect(describeMachine(machine({ isServer: true, projectPath: "/home/me/alia" }))).toBe(
+      "Linux (x86-64). CPU load is low (10% of 16 cores). memory is mostly free (25% of 64 GB used). disk has plenty of space (600 GB free). idle, no agent threads running. this is the main VesnALIA server machine. the project is at /home/me/alia.",
     );
   });
 
@@ -139,14 +139,14 @@ describe("describeProject", () => {
   it("combines the remote, folders, and recent work", () => {
     const text = describeProject(
       project({
-        gitRemoteUrl: "git@github.com:get-bb/bb.git",
-        sources: [{ hostId: "host_devbox", path: "/home/me/bb" }],
+        gitRemoteUrl: "git@github.com:get-alia/alia.git",
+        sources: [{ hostId: "host_devbox", path: "/home/me/alia" }],
         recentThreadTitles: ["Fix sidebar flicker"],
       }),
       new Map([["host_devbox", "devbox"]]),
     );
     expect(text).toBe(
-      'Repository github.com/get-bb/bb. Folder /home/me/bb on devbox. Recent work here: "Fix sidebar flicker".',
+      'Repository github.com/get-bb/bb. Folder /home/me/alia on devbox. Recent work here: "Fix sidebar flicker".',
     );
   });
 
@@ -182,8 +182,8 @@ describe("describeEnvironment", () => {
 
 describe("uniqueOptionNames", () => {
   it("keeps duplicate names apart", () => {
-    const named = uniqueOptionNames(["bb", "bb", " "], (name) => name);
-    expect([...named.keys()]).toEqual(["bb", "bb (2)", "unnamed"]);
+    const named = uniqueOptionNames(["alia", "alia", " "], (name) => name);
+    expect([...named.keys()]).toEqual(["alia", "alia (2)", "unnamed"]);
   });
 });
 
@@ -198,7 +198,7 @@ describe("clipTask", () => {
 
 describe("route", () => {
   const ios = project({ id: "proj_ios", name: "ios-app" });
-  const bb = project();
+  const alia = project();
   const opus = model();
   const sonnet = model({ model: "claude-sonnet-5", displayName: "Sonnet 5", note: "Simple tasks" });
   const mac = machine({ id: "host_mac", name: "MacBook", stats: stats({ platform: "darwin", arch: "arm64" }) });
@@ -241,7 +241,7 @@ describe("route", () => {
 
   it("asks everything in one request, speculatively, and keeps the answers that apply", async () => {
     const fake = jev((key, options) => {
-      if (key === "project") return ["ios-app", { "ios-app": 0.9, bb: 0.1 }];
+      if (key === "project") return ["ios-app", { "ios-app": 0.9, alia: 0.1 }];
       if (key === "model") return "Opus 5 (Claude Code)";
       if (key.startsWith("machine")) return "MacBook";
       // Effort is asked once per model before the model is known.
@@ -250,7 +250,7 @@ describe("route", () => {
     const decision = await route({
       task: "Fix the deep link crash in the iOS app",
       instructions,
-      projects: [bb, ios],
+      projects: [alia, ios],
       models: [opus, sonnet],
       hostNames: new Map(),
       reasoningLevels: DEFAULT_REASONING_LEVELS,
@@ -268,7 +268,7 @@ describe("route", () => {
       "reasoning:1",
     ]);
     expect(decision.project.value.id).toBe("proj_ios");
-    expect(decision.project.alternatives).toEqual([{ label: "bb", probability: 0.1 }]);
+    expect(decision.project.alternatives).toEqual([{ label: "alia", probability: 0.1 }]);
     expect(decision.model.value.model).toBe("claude-opus-5");
     expect(decision.reasoning.value).toBe("high"); // Opus's answer, not Sonnet's
     expect(decision.machine.value.id).toBe("host_mac");
@@ -296,7 +296,7 @@ describe("route", () => {
     const decision = await route({
       task: "Fix the deep link crash",
       instructions: noInstructions,
-      projects: [bb, ios],
+      projects: [alia, ios],
       models: [opus],
       hostNames: new Map(),
       reasoningLevels: DEFAULT_REASONING_LEVELS,
@@ -321,7 +321,7 @@ describe("route", () => {
     const decision = await route({
       task: "hello",
       instructions: noInstructions,
-      projects: [bb],
+      projects: [alia],
       models: [opus],
       hostNames: new Map(),
       reasoningLevels: DEFAULT_REASONING_LEVELS,
@@ -337,11 +337,11 @@ describe("route", () => {
   });
 
   it("omits the rules block when the user wrote none", async () => {
-    const fake = jev(() => "bb");
+    const fake = jev(() => "alia");
     await route({
       task: "hello",
       instructions: { ...noInstructions, general: " " },
-      projects: [bb, ios],
+      projects: [alia, ios],
       models: [opus],
       hostNames: new Map(),
       reasoningLevels: DEFAULT_REASONING_LEVELS,
@@ -362,7 +362,7 @@ describe("route", () => {
     const decision = await route({
       task: "Refactor the router",
       instructions,
-      projects: [bb],
+      projects: [alia],
       models: [opus],
       hostNames: new Map(),
       reasoningLevels: DEFAULT_REASONING_LEVELS,
@@ -396,7 +396,7 @@ describe("route", () => {
     const decision = await route({
       task: "Refactor the router",
       instructions: noInstructions,
-      projects: [bb],
+      projects: [alia],
       models: [opus],
       hostNames: new Map(),
       reasoningLevels: DEFAULT_REASONING_LEVELS,
@@ -451,7 +451,7 @@ describe("route", () => {
       const decision = await route({
         task: "Rework the whole app",
         instructions: noInstructions,
-        projects: [bb],
+        projects: [alia],
         models: [model({ reasoningLevel: "ultracode" })],
         hostNames: new Map(),
         reasoningLevels,
@@ -478,7 +478,7 @@ describe("route", () => {
     const base = {
       task: "hello",
       instructions: noInstructions,
-      projects: [bb],
+      projects: [alia],
       hostNames: new Map<string, string>(),
       reasoningLevels: DEFAULT_REASONING_LEVELS,
       ask: jev(() => "unused").ask,
@@ -486,7 +486,7 @@ describe("route", () => {
       reasoningFor: () => [],
     };
     await expect(route({ ...base, models: [opus] })).rejects.toThrow(
-      "No connected machine can run Opus 5 (Claude Code) in bb.",
+      "No connected machine can run Opus 5 (Claude Code) in VesnALIA.",
     );
     await expect(route({ ...base, models: [] })).rejects.toThrow("Add at least one model");
   });

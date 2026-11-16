@@ -1,6 +1,6 @@
 /**
  * Linear stores user mentions as markdown links to opaque user ids. Those ids
- * are not destinations in bb, so keep the visible name and remove the false
+ * are not destinations in VesnALIA, so keep the visible name and remove the false
  * affordance while retaining enough emphasis to read as a mention.
  */
 export function renderMentions(markdown: string): string {

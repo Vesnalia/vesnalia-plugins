@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { AgentMode, AgentView, PrView } from "../contract";
 import { useActions } from "./actions";
 import { BUTTON, BUTTON_GHOST, BUTTON_PRIMARY, Choice, Dialog, ErrorNote, LABEL, LABEL_FIRST, Pill, Segmented } from "./common";

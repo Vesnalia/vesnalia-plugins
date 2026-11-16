@@ -2,11 +2,11 @@
 import { chromium } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import assert from 'node:assert/strict';
-const base=process.env.BB_BASE_URL||'http://127.0.0.1:38886';
-const shots=process.env.BB_SCREENSHOT_DIR||process.env.BB_THREAD_STORAGE;
-if(!shots)throw new Error('Set BB_SCREENSHOT_DIR.');
+const base=process.env.ALIA_BASE_URL||'http://127.0.0.1:38886';
+const shots=process.env.ALIA_SCREENSHOT_DIR||process.env.ALIA_THREAD_STORAGE;
+if(!shots)throw new Error('Set ALIA_SCREENSHOT_DIR.');
 await mkdir(shots+'/browser-tmp',{recursive:true});
-const browser=await chromium.launch({headless:true,...(process.env.BB_CHROMIUM_PATH?{executablePath:process.env.BB_CHROMIUM_PATH}:{}),env:{...process.env,TMPDIR:shots+'/browser-tmp'},args:['--no-sandbox','--enable-unsafe-swiftshader']});
+const browser=await chromium.launch({headless:true,...(process.env.ALIA_CHROMIUM_PATH?{executablePath:process.env.ALIA_CHROMIUM_PATH}:{}),env:{...process.env,TMPDIR:shots+'/browser-tmp'},args:['--no-sandbox','--enable-unsafe-swiftshader']});
 try {
  const page=await browser.newPage({viewport:{width:1440,height:1050}});
  page.setDefaultTimeout(15000);
@@ -28,9 +28,9 @@ try {
  assert.ok(still.equals(await page.screenshot({clip:box})),'Reduced motion must freeze dithering');
  await page.setViewportSize({width:850,height:350});
  const reachable=await content.evaluate(el=>{const p=el.parentElement;return el.getBoundingClientRect().top>=p.getBoundingClientRect().top-1});assert.ok(reachable,'Composer must stay reachable in short windows');
- if(process.env.BB_TEST_THREAD_PATH){
+ if(process.env.ALIA_TEST_THREAD_PATH){
   await page.setViewportSize({width:1440,height:1050});
-  await page.goto(base+process.env.BB_TEST_THREAD_PATH);
+  await page.goto(base+process.env.ALIA_TEST_THREAD_PATH);
   const reading=page.locator('[id="thread-detail-timeline-panel"] .thread-scrollbar > div > .mx-auto');
   await reading.waitFor();
   await page.waitForFunction(()=>document.querySelector('style[data-aura-motion]')?.textContent.includes('box-shadow'));

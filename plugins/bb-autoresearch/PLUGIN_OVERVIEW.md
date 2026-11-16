@@ -4,9 +4,9 @@
 - **An orchestrated loop.** Short-lived worker agents each take one idea, edit in their own git worktree and submit a candidate with their own commit message. A strategist agent in the study thread keeps the idea queue full and keeps a map of what has been learned. The plugin schedules everything; there is no prompt telling an agent to never stop.
 - **Verdicts the plugin decides.** Agents never run the benchmark or choose what to keep. The plugin runs the tests, measures one candidate at a time per bench machine with paired, interleaved runs, and keeps a change only when its confidence interval clears the smallest effect calibration says it can detect. Wins are confirmed with fresh runs before they land.
 - **Guardrails.** Secondary metrics have a per-change limit and a limit against the starting point, both judged on a confidence interval, so small regressions can't pile up.
-- **Bench machines.** Measure on this machine (tests take turns with timing runs), on another BB machine, or on short-lived remote machines lent by a bench provider plugin, of the node shape the study asks for. Each machine is calibrated and judged with its own threshold, candidates go to the quietest one, and a much noisier one is left out. Remote machines survive a plugin update.
+- **Bench machines.** Measure on this machine (tests take turns with timing runs), on another VesnALIA machine, or on short-lived remote machines lent by a bench provider plugin, of the node shape the study asks for. Each machine is calibrated and judged with its own threshold, candidates go to the quietest one, and a much noisier one is left out. Remote machines survive a plugin update.
 - **Live view and replay.** Watch workers, candidates and each measurement's confidence band narrowing pair by pair, beside the study thread if you like. Any study can be replayed from its recorded events.
-- **Harvest with your agent.** Freeze the study and ask your agent to turn the result into reviewable PRs with the `study-harvest` skill. It groups and splits the changes and writes descriptions in your repository's style; every number comes from the plugin (`bb study evidence`, `measure`, `gate`), and it publishes with your own tools only when you ask.
+- **Harvest with your agent.** Freeze the study and ask your agent to turn the result into reviewable PRs with the `study-harvest` skill. It groups and splits the changes and writes descriptions in your repository's style; every number comes from the plugin (`alia study evidence`, `measure`, `gate`), and it publishes with your own tools only when you ask.
 
 ## How it works
 
@@ -24,7 +24,7 @@ A study optimizes the benchmark you give it. The plugin owns the measurements an
 
 ## Requirements
 
-- BB 0.45 or newer, and git 2.38 or newer on every machine a study uses.
+- VesnALIA 0.45 or newer, and git 2.38 or newer on every machine a study uses.
 - The build, test and benchmark commands are your repository's own and run with full trust on the bench machine. Timing-sensitive studies want a quiet machine, ideally of the production machine's shape.
 - Remote bench machines need a bench provider plugin; the repository has an example one and the contract.
 - Version 1.0. It has run on toy repositories and on real-world performance tasks, including a blind comparison against another autoresearch loop from the same starting commit (5.4× on that benchmark against 3.9×, in about 3.6× the wall time; one run each).

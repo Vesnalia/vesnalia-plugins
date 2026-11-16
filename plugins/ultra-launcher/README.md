@@ -5,7 +5,7 @@
 <h1 align="center">Ultra Launcher</h1>
 
 <p align="center">
-  <strong>Start a thread from anywhere in BB.</strong>
+  <strong>Start a thread from anywhere in VesnALIA.</strong>
 </p>
 
 <p align="center">
@@ -16,10 +16,10 @@
 </p>
 
 <p align="center">
-  <img src="assets/readme/demo.gif" alt="Dark-mode Cap recording of Ultra Launcher opening over a demo BB thread, writing a prompt, choosing a project and model preset, and starting a thread in the background, with the macOS Golden Gate wallpaper. All projects and threads shown are demo data." width="1000" />
+  <img src="assets/readme/demo.gif" alt="Dark-mode Cap recording of Ultra Launcher opening over a demo VesnALIA thread, writing a prompt, choosing a project and model preset, and starting a thread in the background, with the macOS Golden Gate wallpaper. All projects and threads shown are demo data." width="1000" />
 </p>
 
-Ultra Launcher opens a floating composer on any BB screen with ⌘N (Ctrl+N on Windows and Linux). Choose a project and a saved model preset, write the prompt, and start the thread without leaving the one you are in.
+Ultra Launcher opens a floating composer on any VesnALIA screen with ⌘N (Ctrl+N on Windows and Linux). Choose a project and a saved model preset, write the prompt, and start the thread without leaving the one you are in.
 
 ## Highlights
 
@@ -28,7 +28,7 @@ Ultra Launcher opens a floating composer on any BB screen with ⌘N (Ctrl+N on W
 - 🌙 **Send it to the background.** ⌘↵ creates the thread without opening it and shows a toast with an Open button.
 - ✏️ **Edit presets where you use them.** Rename, reorder by dragging, or delete presets in the picker or in settings.
 - 📱 **Works on your phone.** On small screens the launcher opens as a bottom sheet.
-- 🤖 **Scriptable.** `bb ultra-launcher` lists presets and claims or releases ⌘N from a terminal.
+- 🤖 **Scriptable.** `alia ultra-launcher` lists presets and claims or releases ⌘N from a terminal.
 
 ## Screenshots
 
@@ -40,24 +40,24 @@ Ultra Launcher opens a floating composer on any BB screen with ⌘N (Ctrl+N on W
 ## Installation
 
 ```sh
-bb plugin install https://github.com/dillionverma/bb-plugin-ultra-launcher
+alia plugin install https://github.com/dillionverma/bb-plugin-ultra-launcher
 ```
 
-The launcher takes over ⌘N and moves BB's own New thread shortcut to ⌘⇧O. To give ⌘N back, turn off **Take over Ctrl/Cmd+N** in **Settings → Ultra Launcher**, or run `bb ultra-launcher release`. Run `release` before you uninstall.
+The launcher takes over ⌘N and moves VesnALIA's own New thread shortcut to ⌘⇧O. To give ⌘N back, turn off **Take over Ctrl/Cmd+N** in **Settings → Ultra Launcher**, or run `alia ultra-launcher release`. Run `release` before you uninstall.
 
-New installs start with presets for the providers you have. Requires BB 0.46 or later.
+New installs start with presets for the providers you have. Requires VesnALIA 0.46 or later.
 
 ## Development
 
 ```sh
 git clone https://github.com/dillionverma/bb-plugin-ultra-launcher.git
-cd bb-plugin-ultra-launcher
+cd alia-plugin-ultra-launcher
 npm ci
-bb plugin install .
-bb plugin dev
+alia plugin install .
+alia plugin dev
 ```
 
-Run `npm test`, `npm run typecheck` and `bb plugin build` before submitting changes.
+Run `npm test`, `npm run typecheck` and `alia plugin build` before submitting changes.
 
 ## License
 

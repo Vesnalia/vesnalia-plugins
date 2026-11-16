@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { Preset } from "../config";
 import type { PrView, ReviewInput } from "../contract";
 import { BUTTON, BUTTON_PRIMARY, Dialog, FIELD, ServerBadge } from "./common";

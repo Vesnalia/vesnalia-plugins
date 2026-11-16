@@ -12,7 +12,7 @@ threads and is not meant to steer agents. It works for every provider
 
 ## CLI
 
-`bb thread-time-machine dump <thread-id> [--json] [--limit <n>]` prints a
+`alia thread-time-machine dump <thread-id> [--json] [--limit <n>]` prints a
 thread's history as a condensed timeline (`HH:MM:SS kind label`), oldest
 first. `--limit` keeps the newest n frames (default 200, max 5000). Use it to
 summarize what a thread actually did over a long session without reading its

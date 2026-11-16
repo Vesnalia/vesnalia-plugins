@@ -1,12 +1,12 @@
-// bb-plugin-nudge — frontend: a Nudge button in the composer that re-runs
+// alia-plugin-nudge — frontend: a Nudge button in the composer that re-runs
 // the agent without typing a message (see server.ts for the semantics).
 import { useState } from "react";
 import {
   definePluginApp,
-  useBbContext,
+  useAliaContext,
   useComposerView,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -107,7 +107,7 @@ function currentThreadId(
 }
 
 function NudgeButton() {
-  const { threadId: routeThreadId } = useBbContext();
+  const { threadId: routeThreadId } = useAliaContext();
   const view = useComposerView();
   const rpc = useRpc<typeof rpcContract>();
   const [pending, setPending] = useState(false);

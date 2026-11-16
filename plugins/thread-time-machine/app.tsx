@@ -1,4 +1,4 @@
-// bb-plugin-thread-time-machine — a BB plugin frontend entry.
+// alia-plugin-thread-time-machine — a VesnALIA plugin frontend entry.
 //
 // A sidebar nav panel that replays any thread's event history as a
 // scrubbable filmstrip: drag across the timeline, press play to watch the
@@ -11,11 +11,11 @@ import {
   definePluginApp,
   experimental_Diff,
   experimental_useSidebarThreads,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 // JSX names must start uppercase; the SDK export is a lowercase-named const.
 const Diff = experimental_Diff;
@@ -718,7 +718,7 @@ class PanelBoundary extends Component<{ children: ReactNode }, { error: string |
               The Time Machine panel hit an error: {this.state.error}
               <p className="mt-2 text-xs text-muted-foreground">
                 Reload the plugin (
-                <code>bb plugin reload thread-time-machine</code>) to retry.
+                <code>alia plugin reload thread-time-machine</code>) to retry.
               </p>
             </div>
           </div>
@@ -735,8 +735,8 @@ class PanelBoundary extends Component<{ children: ReactNode }, { error: string |
 
 function TimeMachinePage() {
   const sidebar = experimental_useSidebarThreads();
-  const bbContext = useBbContext();
-  const navigate = useBbNavigate();
+  const aliaContext = useAliaContext();
+  const navigate = useAliaNavigate();
   const threads = useMemo(
     () =>
       [...(sidebar.threads ?? [])]
@@ -744,11 +744,11 @@ function TimeMachinePage() {
         .sort((a, b) => b.updatedAt - a.updatedAt),
     [sidebar.threads],
   );
-  const [threadId, setThreadId] = useState<string | null>(bbContext.threadId);
+  const [threadId, setThreadId] = useState<string | null>(aliaContext.threadId);
   // Hidden threads (workers, sub-agents, probes) are not in the sidebar list;
   // an id typed here is kept even though the picker cannot show it.
   const [typedId, setTypedId] = useState("");
-  const [pinnedId, setPinnedId] = useState<string | null>(bbContext.threadId);
+  const [pinnedId, setPinnedId] = useState<string | null>(aliaContext.threadId);
   const { frames, truncated, error, loading, refetch } = useFrames(threadId);
   const [selected, setSelected] = useState(0);
   const [markerA, setMarkerA] = useState<number | null>(null);
@@ -834,9 +834,9 @@ function TimeMachinePage() {
       return;
     }
     const preferred =
-      threads.find((thread) => thread.id === bbContext.threadId) ?? threads[0];
+      threads.find((thread) => thread.id === aliaContext.threadId) ?? threads[0];
     setThreadId(preferred.id);
-  }, [threads, threadId, pinnedId, bbContext.threadId]);
+  }, [threads, threadId, pinnedId, aliaContext.threadId]);
 
   // Files touched up to the settled frame (cheap on settled; heavy on drag).
   const filesTouched = useMemo(() => {

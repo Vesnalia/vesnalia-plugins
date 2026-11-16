@@ -1,11 +1,11 @@
 /**
- * Ids for the shells this plugin opens. bb lets `terminals.create` take the id
- * (`term_` and ten characters of its own alphabet, bb 0.48.1), which lets a
+ * Ids for the shells this plugin opens. VesnALIA lets `terminals.create` take the id
+ * (`term_` and ten characters of its own alphabet, VesnALIA 0.48.1), which lets a
  * tab be stored before its shell exists (server/service.ts).
  */
 import { randomInt } from "node:crypto";
 
-/** bb's id alphabet: lower-case letters and digits without the look-alikes (0, 1, l, o). */
+/** VesnALIA's id alphabet: lower-case letters and digits without the look-alikes (0, 1, l, o). */
 export const TERMINAL_ID_ALPHABET = "23456789abcdefghijkmnpqrstuvwxyz";
 const SUFFIX_LENGTH = 10;
 

@@ -3,15 +3,15 @@
 import { chromium } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import assert from 'node:assert/strict';
-const base = process.env.BB_BASE_URL || 'http://127.0.0.1:38886';
-const shots = process.env.BB_SCREENSHOT_DIR || process.env.BB_THREAD_STORAGE;
-if (!shots) throw new Error('Set BB_SCREENSHOT_DIR');
+const base = process.env.ALIA_BASE_URL || 'http://127.0.0.1:38886';
+const shots = process.env.ALIA_SCREENSHOT_DIR || process.env.ALIA_THREAD_STORAGE;
+if (!shots) throw new Error('Set ALIA_SCREENSHOT_DIR');
 await mkdir(shots, { recursive: true });
 const saved = (await (await fetch(base + '/api/v1/plugins/aura/rpc/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: 'null' })).json()).result;
 const state = { ...saved, settings: { ...saved.settings, enabled: true, newThreadOnly: false, dimmerEnabled: true } };
 const browser = await chromium.launch({
   headless: true,
-  ...(process.env.BB_CHROMIUM_PATH ? { executablePath: process.env.BB_CHROMIUM_PATH } : {}),
+  ...(process.env.ALIA_CHROMIUM_PATH ? { executablePath: process.env.ALIA_CHROMIUM_PATH } : {}),
   args: ['--no-sandbox', '--enable-unsafe-swiftshader'],
 });
 try {

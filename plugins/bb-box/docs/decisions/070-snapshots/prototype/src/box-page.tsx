@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { AlertDialogCancel, AlertDialogDescription } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -47,7 +47,7 @@ export function Card({ title, aside, children, footer, label }: { title: ReactNo
 function stateLine(box: FakeBox, now: number): { tone: "ok" | "busy" | "off" | "warn"; words: string } {
   if (box.state === "restoring") return { tone: "busy", words: `Restoring · ${box.step ?? ""}` };
   if (box.state === "starting") return { tone: "busy", words: `Starting · ${box.step ?? ""}` };
-  if (box.state === "unconfirmed") return { tone: box.step ? "busy" : "warn", words: box.step ? `Checking · ${box.step}` : "bb-box could not confirm the restore" };
+  if (box.state === "unconfirmed") return { tone: box.step ? "busy" : "warn", words: box.step ? `Checking · ${box.step}` : "alia-box could not confirm the restore" };
   if (box.state === "released") return { tone: "off", words: `Released ${span(now - (box.releasedAt ?? now))} ago` };
   if (box.state === "stopped") return { tone: "off", words: "Stopped" };
   return { tone: "ok", words: `Ready · up ${span(now - box.createdAt)}` };
@@ -147,7 +147,7 @@ function SnapshotsCard({ box }: { box: FakeBox }) {
   const known = snaps.filter((snap) => snap.state === "ready").reduce((sum, snap) => sum + (snap.heldCopyGB ?? snap.sizeGB ?? 0), 0);
   const released = box.state === "released";
   const blocked = store.whyNotTake(box.id, BY_PERSON, false);
-  const warning = box.cannotTakeWhy ?? (box.locked ? `Proxmox left ${box.name} locked (${box.locked}). bb-box's token cannot unlock it: run \`pct unlock ${box.vmid}\` on ${box.host}.` : null) ?? ((box.storage?.full ?? 0) >= store.settings.roomPercent ? `${box.host}'s ${box.storage?.name} is ${box.storage?.full}% full: new snapshots are refused until it is under ${store.settings.roomPercent}%.` : null) ?? (box.state === "ready" ? blocked : null);
+  const warning = box.cannotTakeWhy ?? (box.locked ? `Proxmox left ${box.name} locked (${box.locked}). alia-box's token cannot unlock it: run \`pct unlock ${box.vmid}\` on ${box.host}.` : null) ?? ((box.storage?.full ?? 0) >= store.settings.roomPercent ? `${box.host}'s ${box.storage?.name} is ${box.storage?.full}% full: new snapshots are refused until it is under ${store.settings.roomPercent}%.` : null) ?? (box.state === "ready" ? blocked : null);
   return (
     <Card
       label="Snapshots"
@@ -208,7 +208,7 @@ function Notices({ box }: { box: FakeBox }) {
       <div role="status" className="flex flex-wrap items-start gap-x-3 gap-y-2 rounded-lg border border-surface-warning-border bg-surface-warning px-4 py-3">
         <StatusDot tone="warn" className="text-sm" />
         <div className="min-w-0 flex-1 text-sm">
-          <p className="text-foreground">bb-box could not confirm the restore of {box.name} to "{notice.to}": it was rolling back when bb-box restarted.</p>
+          <p className="text-foreground">alia-box could not confirm the restore of {box.name} to "{notice.to}": it was rolling back when alia-box restarted.</p>
           <p className="mt-0.5 text-xs text-muted-foreground">Its record of the restore is kept, with its undo. Check now reads Proxmox's task and the guest, then finishes the restore or says what it found.</p>
         </div>
         <Button type="button" variant="outline" size="sm" className="h-7" disabled={!!box.step} onClick={() => store.checkNow(box.id)}>
@@ -219,7 +219,7 @@ function Notices({ box }: { box: FakeBox }) {
   }
   const undo = notice.undoId ? store.snaps.find((snap) => snap.id === notice.undoId) : null;
   const who = byWords(notice.by, store.threads, true);
-  const words = notice.kind === "finished-after-restart" ? `bb-box finished the restore of ${box.name} to "${notice.to}" after its restart, from its record and Proxmox's task.` : `Restored at ${clockOf(notice.at)} to "${notice.to}", taken ${whenInSentence(notice.toAt, store.now)}, ${who}.`;
+  const words = notice.kind === "finished-after-restart" ? `alia-box finished the restore of ${box.name} to "${notice.to}" after its restart, from its record and Proxmox's task.` : `Restored at ${clockOf(notice.at)} to "${notice.to}", taken ${whenInSentence(notice.toAt, store.now)}, ${who}.`;
   return (
     <div role="status" className="flex flex-wrap items-start gap-x-3 gap-y-2 rounded-lg border border-border bg-surface-raised px-4 py-3">
       <Icon name="ArrowTurnBackward" className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />

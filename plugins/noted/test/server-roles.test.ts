@@ -4,7 +4,7 @@ import { host } from "./helpers";
 
 describe("openSession role updates", () => {
   it("reopening with a different view moves the viewer without ending the session", async () => {
-    const { bb, harness } = host(); await plugin(bb);
+    const { alia, harness } = host(); await plugin(alia);
     const a: any = await harness.behavior.callRpc("openSession", { threadId: "thr_loops", path: "packet.html" });
     expect(a.session.viewThreadId).toBe("thr_loops");
     const b: any = await harness.behavior.callRpc("openSession", { threadId: "thr_loops", path: "packet.html", view: "parent" });
@@ -17,7 +17,7 @@ describe("openSession role updates", () => {
     expect(l.sessions.map((x: any) => x.id)).toEqual([a.session.id]);
   });
   it("reopening without view or replyTo leaves the roles untouched", async () => {
-    const { bb, harness } = host(); await plugin(bb);
+    const { alia, harness } = host(); await plugin(alia);
     const a: any = await harness.behavior.callRpc("openSession", { threadId: "thr_loops", path: "packet.html", view: "parent" });
     const before = harness.realtimeSignals.length;
     const b: any = await harness.behavior.callRpc("openSession", { threadId: "thr_loops", path: "packet.html" });
@@ -26,7 +26,7 @@ describe("openSession role updates", () => {
     expect(harness.realtimeSignals.slice(before).some((s) => (s.payload as any)?.reason === "roles")).toBe(false);
   });
   it("a dismissed banner stays dismissed until the agent opens the review again", async () => {
-    const { bb, harness } = host(); await plugin(bb);
+    const { alia, harness } = host(); await plugin(alia);
     await harness.behavior.runCli(["open", "packet.html", "--view", "parent"], { threadId: "thr_loops", cwd: "/repo" });
     const [opened]: any[] = ((await harness.behavior.callRpc("listSessions", { threadId: "thr_michael" })) as any).sessions;
     expect(opened.bannerDismissedAt).toBeNull();

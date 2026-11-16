@@ -23,7 +23,7 @@ forgets) · "Where is that setting again?" · "Can I just paste the key here?"
 | Do it | Can't | Hunting for the right page | M4 primary "Open <site>" button from the first link, on the collapsed row |
 | Do it | Don't want | Feels like the agent's job | M10 "Let the agent do it this time": hand it back with access (MCP, key, browser) |
 | Hand back | Can't | A value or file is needed | M5 reply prompt; checkbox opens the answer box when a reply is required |
-| Hand back | Don't know | Pasting a key into chat is unsafe | M6 secret form via `bb secret request`; note guard |
+| Hand back | Don't know | Pasting a key into chat is unsafe | M6 secret form via `alia secret request`; note guard |
 | Confidence | Don't know | Silent after "done" | M7 "Agent resumed" confirmation from thread activity; M8 agent can reopen with a reason if it isn't done |
 
 **Reinforce:** done → toast with who resumed, "Agent resumed" on the card.

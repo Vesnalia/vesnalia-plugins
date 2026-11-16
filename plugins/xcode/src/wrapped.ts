@@ -1,7 +1,7 @@
 /**
  * Launching a build this plugin can speak for.
  *
- * `bb xcode run`, `bb xcode run --wait` and the `xcode_build` agent tool are
+ * `alia xcode run`, `alia xcode run --wait` and the `xcode_build` agent tool are
  * three doors onto one mechanism: wrap `xcodebuild` so it writes a result
  * bundle and a live event stream, watch it, and fold its exit. They differ only
  * in whether the caller waits.
@@ -57,7 +57,7 @@ let activeWrappedBuilds = 0;
  * Start a wrapped build and return as soon as the child has spawned.
  *
  * DELIBERATELY DETACHED from whatever asked for it: holding a CLI request open
- * for a whole build meant bb's CLI proxy timeout (~5 min, measured live on a
+ * for a whole build meant VesnALIA's CLI proxy timeout (~5 min, measured live on a
  * Almanac build) aborted its signal, which SIGTERM'd xcodebuild mid-build and
  * left an unfinalized result bundle. A build's lifetime belongs to the build.
  * `killSignal` is the one way to end it early, and only `xcode_build`'s own
@@ -180,7 +180,7 @@ export async function startWrappedBuild(
  */
 export function resolveBuildArgv(commandArgs: readonly string[]): string[] {
   if (commandArgs[0] !== "xcodebuild" && commandArgs[0] !== "/usr/bin/xcodebuild") {
-    throw new Error("Only xcodebuild may be run through `bb xcode run`.");
+    throw new Error("Only xcodebuild may be run through `alia xcode run`.");
   }
   return ["/usr/bin/xcodebuild", ...commandArgs.slice(1)];
 }

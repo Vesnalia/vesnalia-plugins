@@ -1,6 +1,6 @@
-// bb-plugin-airbender — frontend entry.
+// alia-plugin-airbender — frontend entry.
 //
-// Where things are: this file only registers the plugin's surfaces with BB.
+// Where things are: this file only registers the plugin's surfaces with VesnALIA.
 // The tab is app/panel.tsx (BeadsPanel) and the files it draws on: rows in
 // app/issue-row.tsx, an opened issue in app/issue-details.tsx, the status
 // groups in app/section-block.tsx, the new-issue field in
@@ -12,7 +12,7 @@
 // app/issue-model.ts and app/quick-tags.ts, where it can be tested. The
 // notes below describe the frontend as a whole.
 //
-// What: the "Beads" tab in BB's right-hand panel. It lists the beads issues of
+// What: the "Beads" tab in VesnALIA's right-hand panel. It lists the beads issues of
 // the folder a thread works in, grouped by what you can do about them. Also
 // a status line above a thread's message box and the workflow's buttons
 // inside it (see the registration at the end).
@@ -24,7 +24,7 @@
 // - Three bands. Pinned at the top: Current (the bead this thread works on)
 //   and a toolbar with the folder and refresh. In the middle,
 //   scrolling: the issues grouped by status. Pinned at the bottom: the field
-//   for a new issue. The tab therefore asks BB for the "flush" layout and
+//   for a new issue. The tab therefore asks VesnALIA for the "flush" layout and
 //   does its own scrolling.
 // - An opened issue shows its description, then one folded heading for each
 //   other thing beads holds about it: acceptance criteria, design, notes,
@@ -53,7 +53,7 @@
 // - The tab can create, close and reopen issues, change an issue's type
 //   and priority in place, edit its title and description from inside the
 //   opened issue, and mark which bead a thread is working on (a note kept
-//   in BB, not in beads). It cannot delete an issue or edit its design,
+//   in VesnALIA, not in beads). It cannot delete an issue or edit its design,
 //   acceptance criteria, notes or comments.
 // - Every open issue shows the step of its workflow it is at, and one main
 //   button for that step: the agent's run button or the user's own move.
@@ -63,7 +63,7 @@
 //   New thread screen passes the selected project id. The backend turns either
 //   into a folder.
 // - The list is refreshed when the tab opens, when the Refresh button is
-//   pressed, when the BB window regains focus, and when the backend signals a
+//   pressed, when the VesnALIA window regains focus, and when the backend signals a
 //   change: one made through this plugin, or one made outside it (an agent or
 //   a terminal running bd), which it notices by watching a file that
 //   beads rewrites on every write. There is deliberately no
@@ -84,19 +84,19 @@
 //   Importing a value would pull the backend (and Node's child_process) into
 //   the browser bundle. Values both sides need live in shared/constants.ts,
 //   which has no imports and is safe to bundle on either side.
-// - Compiled by `bb plugin build`; React and the SDK come from BB at load
-//   time, so this file only runs inside BB.
-// - Colors come from BB's theme tokens (text-muted-foreground, border-border
+// - Compiled by `alia plugin build`; React and the SDK come from VesnALIA at load
+//   time, so this file only runs inside VesnALIA.
+// - Colors come from VesnALIA's theme tokens (text-muted-foreground, border-border
 //   and so on), never fixed colors, so the tab follows the selected theme.
 
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import {
   ComposerStatusLine,
   ComposerStepButton,
 } from "./app/composer.tsx";
 import { BeadsPanel } from "./app/panel.tsx";
 
-// Two registrations of the same tab: BB offers a different slot for an
+// Two registrations of the same tab: VesnALIA offers a different slot for an
 // existing thread than for the New thread screen, and each hands the tab a
 // different id to work from.
 export default definePluginApp((app) => {
@@ -119,9 +119,9 @@ export default definePluginApp((app) => {
       <BeadsPanel scope={{ threadId: null, projectId }} />
     ),
   });
-  // The main window's message box (bead-bb-3l4, bead-bb-eg0): one line of
+  // The main window's message box (bead-alia-3l4, bead-alia-eg0): one line of
   // status above it, the current issue and the workflow's buttons inside it. Threads only: on the New
-  // thread screen there is no agent to answer and no current issue. BB does
+  // thread screen there is no agent to answer and no current issue. VesnALIA does
   // not draw the buttons inside the box in its compact layout; the line
   // above it stays.
   app.composer.customize({

@@ -1,20 +1,16 @@
 {
-  "name": "bb-plugin-top-tabs",
+  "name": "alia-plugin-top-tabs",
   "version": "0.1.2",
-  "description": "Browser-style tabs for the threads you open, across the top of the bb window.",
+  "description": "Browser-style tabs for the threads you open, across the top of the VesnALIA window.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/nikushiks/bb-plugin-top-tabs.git"
-  },
   "type": "module",
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "Top Tabs",
-    "description": "Browser-style tabs for the threads you open, across the top of the bb window.",
+    "description": "Browser-style tabs for the threads you open, across the top of the VesnALIA window.",
     "branding": {
       "icon": "PanelTop"
     },
@@ -22,10 +18,26 @@
     "app": "./app.tsx"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/top-tabs#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/top-tabs"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -54,7 +54,7 @@ may never be committed to main-side — that is what caused the criss-cross.
   threads used it as a dev merge target inside ten minutes on 09-29/30;
   landings should merge dev into the thread's own worktree and ff dev from
   there. If contention recurs, that rule goes formal in the release spoke.
-- `bb thread archive` on a thread that served as release coordinator loses
+- `alia thread archive` on a thread that served as release coordinator loses
   nothing — all artifacts live in the repo (this decision record, the
   certification, the release spoke).
 

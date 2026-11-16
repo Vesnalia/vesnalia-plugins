@@ -48,7 +48,7 @@ describe("typography client runtime", () => {
   });
 
   afterEach(() => {
-    document.head.querySelectorAll("[data-bb-fonts]").forEach((element) => element.remove());
+    document.head.querySelectorAll("[data-alia-fonts]").forEach((element) => element.remove());
     vi.unstubAllGlobals();
   });
 
@@ -62,14 +62,14 @@ describe("typography client runtime", () => {
 
     FakeBroadcastChannel.current?.emit(config(3, "Saved Three"));
     expect(external && (external as FontsConfig).roles.interface.family).toBe("Saved Three");
-    expect(document.querySelector("[data-bb-fonts]")?.textContent).toContain("Draft Face");
+    expect(document.querySelector("[data-alia-fonts]")?.textContent).toContain("Draft Face");
 
     FakeBroadcastChannel.current?.emit(config(2, "Stale Two"));
     expect(localStorage.getItem(CONFIG_STORAGE_KEY)).toContain("Saved Three");
     FakeBroadcastChannel.current?.emit(config(3, "Converged Three", "writer-z"));
     expect(localStorage.getItem(CONFIG_STORAGE_KEY)).toContain("Converged Three");
     revertPreview();
-    expect(document.querySelector("[data-bb-fonts]")?.textContent).toContain("Converged Three");
+    expect(document.querySelector("[data-alia-fonts]")?.textContent).toContain("Converged Three");
 
     unsubscribe();
     abort.abort();

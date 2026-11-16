@@ -8,9 +8,9 @@ description: >-
   brainstorm, explore or pressure-test a concept before drafting a design.
 ---
 
-# EGM Brainstorm (BB adaptation)
+# EGM Brainstorm (VesnALIA adaptation)
 
-Adapted from google/elephant-goldfish-model @ 3d0b348 (Apache-2.0; see `LICENSE`). Read `references/execution-constraints.md` relative to this skill directory; the BB workflow below replaces its upstream delegation instructions.
+Adapted from google/elephant-goldfish-model @ 3d0b348 (Apache-2.0; see `LICENSE`). Read `references/execution-constraints.md` relative to this skill directory; the VesnALIA workflow below replaces its upstream delegation instructions.
 
 ## Steps
 

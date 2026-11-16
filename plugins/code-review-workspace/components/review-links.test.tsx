@@ -3,7 +3,7 @@
 // own change follows its Sends to the main thread, and on a local review, the line in an editor.
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { ReviewLinks } from "../lib/review-links";
 import type { StatusFacts } from "../lib/comments";
 
@@ -96,7 +96,7 @@ test("a comment sent before 1.8.0 says so while it reads as sent; edited since, 
   slot.lifecycle.unmount();
 });
 
-test("on a local review, a comment's ⋯ opens its line in an editor on the BB server; not a comment on removed lines, nor without the editor", async () => {
+test("on a local review, a comment's ⋯ opens its line in an editor on the VesnALIA server; not a comment on removed lines, nor without the editor", async () => {
   const slot = await renderSent({ editor: { hostId: "server", root: "/repo" } });
   const diff = within(slot.getByTestId("filediff"));
   const card = await diff.findByRole("article", { name: "Draft comment on src/a.ts:1" });

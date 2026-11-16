@@ -2,7 +2,7 @@
 // project's existing Beads (bd) database.
 //
 // Selection per project:
-// - `bb.storage.kv` row `tracker:<projectId>` holds a project override
+// - `alia.storage.kv` row `tracker:<projectId>` holds a project override
 //   ("beads" | "builtin"); `setConfig(null)` clears it.
 // - Without an override the caller-provided `defaultTracker()` decides
 //   (the server derives it from settings; default Beads is set there).
@@ -23,7 +23,7 @@
 // commit is made and no user file is touched. Damage, unavailability, or
 // a missing bd binary are explicit errors; prepare never tries to repair
 // them. Team work
-// packages are issues labeled `bb-team:<team>` (this label convention is the
+// packages are issues labeled `alia-team:<team>` (this label convention is the
 // shared contract with the bd CLI), with `assignee` carrying the role name.
 // Priority, acceptance criteria, design, notes, and dependency ids are
 // exposed as a read-only projection (TeamTask.priority/criteria/decisions/
@@ -32,12 +32,12 @@
 //
 // Status projection (Team ⇄ Beads):
 //   todo ⇄ open           in-progress ⇄ in_progress
-//   review ⇄ in_progress + label bb-state:review   (cleared on other transitions)
-//   done ⇄ closed         dropped ⇄ closed + label bb-state:dropped
+//   review ⇄ in_progress + label alia-state:review   (cleared on other transitions)
+//   done ⇄ closed         dropped ⇄ closed + label alia-state:dropped
 // A closed issue without the dropped label is `done` by default. bd's
 // blocked/deferred statuses project to in-progress/todo and are never ready.
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Workspace } from "./core";
 import { hostContract } from "./host-contract";
 import { addTask, applyTaskReview, findTask, listTasks, normalizeTaskStore, removeTask, taskKey, updateTask, type TaskStore } from "./tasks";
@@ -99,7 +99,7 @@ export interface TaskTracker {
   /**
    * bbt-iwi.2: merge the executor's review submission and/or an acceptance
    * decision into the task in the selected tracker (Beads metadata keys
-   * bbTeamSubmission/bbTeamAcceptance via --metadata merge; the task row on
+   * aliaTeamSubmission/aliaTeamAcceptance via --metadata merge; the task row on
    * built-in). Append-only; never a duplicate kv record.
    */
   review(
@@ -141,13 +141,13 @@ export const isTrackerAbsentError = (cause: unknown): boolean =>
 
 /* ──────────────────────── Beads projection ──────────────────────── */
 
-const TEAM_LABEL_PREFIX = "bb-team:";
-const REVIEW_LABEL = "bb-state:review";
-const DROPPED_LABEL = "bb-state:dropped";
-const CHECKPOINT_METADATA_KEY = "bbTeamCheckpoint";
+const TEAM_LABEL_PREFIX = "alia-team:";
+const REVIEW_LABEL = "alia-state:review";
+const DROPPED_LABEL = "alia-state:dropped";
+const CHECKPOINT_METADATA_KEY = "aliaTeamCheckpoint";
 /** bbt-iwi.2: review submission + acceptance decisions live in Beads metadata (merge keys, other tools' keys preserved). */
-const SUBMISSION_METADATA_KEY = "bbTeamSubmission";
-const ACCEPTANCE_METADATA_KEY = "bbTeamAcceptance";
+const SUBMISSION_METADATA_KEY = "aliaTeamSubmission";
+const ACCEPTANCE_METADATA_KEY = "aliaTeamAcceptance";
 
 /** One row of `bd list --json` / `bd show --json` (subset this module reads). */
 interface BdIssue {
@@ -299,11 +299,11 @@ const createStatusArgs = (status: TaskStatus): string[] => {
 /* ──────────────────────── Factory ──────────────────────── */
 
 export function createTaskTracker(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   options: TaskTrackerOptions,
 ): TaskTracker {
-  const kv = bb.storage.kv;
-  const hostClient = bb.hosts.experimental_client({ contract: hostContract });
+  const kv = alia.storage.kv;
+  const hostClient = alia.hosts.experimental_client({ contract: hostContract });
 
   /* ── Kind selection: per-project override in kv ── */
 
@@ -653,7 +653,7 @@ export function createTaskTracker(
       return;
     }
     // --metadata merges top-level keys, so other tools' metadata keys and
-    // every other bbTeamCheckpoint-unrelated entry are preserved.
+    // every other aliaTeamCheckpoint-unrelated entry are preserved.
     await bd(scope, [
       "update",
       String(id),

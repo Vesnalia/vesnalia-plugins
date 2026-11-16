@@ -1,6 +1,6 @@
-.bb-office-prototype,
-.bb-office-floating-root,
-.bb-office-minimap {
+.alia-office-prototype,
+.alia-office-floating-root,
+.alia-office-minimap {
   --pixel-surface: color-mix(in oklch, var(--canvas) 96%, var(--ink));
   --pixel-raised: color-mix(in oklch, var(--canvas) 99%, var(--ink));
   --pixel-line: color-mix(in oklab, var(--ink) 14%, transparent);
@@ -8,7 +8,7 @@
   --pixel-muted: color-mix(in oklch, var(--ink) 58%, var(--canvas));
 }
 
-.bb-office-prototype {
+.alia-office-prototype {
   min-height: 100%;
   padding: 0.5rem;
   overflow: auto;
@@ -16,16 +16,16 @@
   background: var(--canvas);
 }
 
-.bb-office-prototype *,
-.bb-office-prototype *::before,
-.bb-office-prototype *::after,
-.bb-office-floating-root *,
-.bb-office-floating-root *::before,
-.bb-office-floating-root *::after {
+.alia-office-prototype *,
+.alia-office-prototype *::before,
+.alia-office-prototype *::after,
+.alia-office-floating-root *,
+.alia-office-floating-root *::before,
+.alia-office-floating-root *::after {
   box-sizing: border-box;
 }
 
-.bb-office-floating-root {
+.alia-office-floating-root {
   position: fixed;
   z-index: 35;
   inset: 0;
@@ -33,14 +33,14 @@
   pointer-events: none;
 }
 
-.bb-office-floating-root[data-dragging="true"],
-.bb-office-floating-root[data-resizing="true"] {
+.alia-office-floating-root[data-dragging="true"],
+.alia-office-floating-root[data-resizing="true"] {
   cursor: grabbing;
   pointer-events: auto;
   user-select: none;
 }
 
-.bb-office-floating-widget {
+.alia-office-floating-widget {
   position: fixed;
   top: 0;
   left: 0;
@@ -64,7 +64,7 @@
   will-change: transform, width, height;
 }
 
-.bb-office-floating-widget[data-mode="worker"] {
+.alia-office-floating-widget[data-mode="worker"] {
   border-color: transparent;
   border-radius: 50%;
   background: transparent;
@@ -72,12 +72,12 @@
   pointer-events: none;
 }
 
-.bb-office-floating-root[data-dragging="true"] .bb-office-floating-widget,
-.bb-office-floating-root[data-resizing="true"] .bb-office-floating-widget {
+.alia-office-floating-root[data-dragging="true"] .alia-office-floating-widget,
+.alia-office-floating-root[data-resizing="true"] .alia-office-floating-widget {
   transition: none;
 }
 
-.bb-office-floating-drag-handle {
+.alia-office-floating-drag-handle {
   position: absolute;
   z-index: 6;
   top: 0.2rem;
@@ -97,23 +97,23 @@
   transition: opacity 120ms ease;
 }
 
-.bb-office-floating-drag-handle:active {
+.alia-office-floating-drag-handle:active {
   cursor: grabbing;
 }
 
-.bb-office-floating-widget:hover .bb-office-floating-drag-handle,
-.bb-office-floating-widget:focus-within .bb-office-floating-drag-handle {
+.alia-office-floating-widget:hover .alia-office-floating-drag-handle,
+.alia-office-floating-widget:focus-within .alia-office-floating-drag-handle {
   opacity: 0.9;
 }
 
-.bb-office-floating-drag-handle span {
+.alia-office-floating-drag-handle span {
   width: 2rem;
   height: 0.2rem;
   border-radius: 999px;
   background: color-mix(in oklab, var(--ink) 20%, transparent);
 }
 
-.bb-office-floating-collapse {
+.alia-office-floating-collapse {
   position: absolute;
   z-index: 7;
   top: 0.24rem;
@@ -135,13 +135,13 @@
     opacity 120ms ease;
 }
 
-.bb-office-floating-collapse:hover {
+.alia-office-floating-collapse:hover {
   color: var(--ink);
   background: color-mix(in oklch, var(--ink) 8%, var(--canvas));
   opacity: 1;
 }
 
-.bb-office-floating-collapse svg {
+.alia-office-floating-collapse svg {
   width: 0.8rem;
   height: 0.8rem;
   fill: none;
@@ -151,15 +151,15 @@
   stroke-width: 1.5;
 }
 
-.bb-office-floating-drag-handle:focus-visible,
-.bb-office-floating-collapse:focus-visible,
-.bb-office-floating-resize:focus-visible,
-.bb-office-floating-worker:focus-visible {
+.alia-office-floating-drag-handle:focus-visible,
+.alia-office-floating-collapse:focus-visible,
+.alia-office-floating-resize:focus-visible,
+.alia-office-floating-worker:focus-visible {
   outline: 2px solid color-mix(in oklch, var(--ink) 72%, var(--canvas));
   outline-offset: -2px;
 }
 
-.bb-office-floating-office-canvas {
+.alia-office-floating-office-canvas {
   position: absolute;
   inset: 0;
   display: grid;
@@ -173,7 +173,7 @@
     visibility 0s linear;
 }
 
-.bb-office-floating-office-canvas[data-visible="false"] {
+.alia-office-floating-office-canvas[data-visible="false"] {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -182,11 +182,11 @@
     visibility 0s linear 180ms;
 }
 
-.bb-office-minimap {
+.alia-office-minimap {
   width: 100%;
 }
 
-.bb-office-floating-worker {
+.alia-office-floating-worker {
   position: fixed;
   z-index: 8;
   top: 0;
@@ -206,17 +206,17 @@
   will-change: transform;
 }
 
-.bb-office-floating-worker:active {
+.alia-office-floating-worker:active {
   cursor: grabbing;
 }
 
-.bb-office-floating-worker[data-visible="false"] {
+.alia-office-floating-worker[data-visible="false"] {
   opacity: 0;
   pointer-events: none;
   transition-delay: 0ms;
 }
 
-.bb-office-floating-resize {
+.alia-office-floating-resize {
   position: absolute;
   z-index: 7;
   width: 1.5rem;
@@ -232,53 +232,53 @@
   transition: opacity 120ms ease;
 }
 
-.bb-office-floating-resize:hover,
-.bb-office-floating-resize:focus-visible {
+.alia-office-floating-resize:hover,
+.alia-office-floating-resize:focus-visible {
   opacity: 0.95;
 }
 
-.bb-office-floating-widget[data-anchor-horizontal="left"][data-anchor-vertical="top"]
-  .bb-office-floating-resize {
+.alia-office-floating-widget[data-anchor-horizontal="left"][data-anchor-vertical="top"]
+  .alia-office-floating-resize {
   right: 0;
   bottom: 0;
   cursor: nwse-resize;
 }
 
-.bb-office-floating-widget[data-anchor-horizontal="right"][data-anchor-vertical="bottom"]
-  .bb-office-floating-resize {
+.alia-office-floating-widget[data-anchor-horizontal="right"][data-anchor-vertical="bottom"]
+  .alia-office-floating-resize {
   top: 0;
   left: 0;
   cursor: nwse-resize;
   transform: rotate(180deg);
 }
 
-.bb-office-floating-widget[data-anchor-horizontal="left"][data-anchor-vertical="bottom"]
-  .bb-office-floating-resize {
+.alia-office-floating-widget[data-anchor-horizontal="left"][data-anchor-vertical="bottom"]
+  .alia-office-floating-resize {
   top: 0;
   right: 0;
   cursor: nesw-resize;
   transform: rotate(270deg);
 }
 
-.bb-office-floating-widget[data-anchor-horizontal="right"][data-anchor-vertical="top"]
-  .bb-office-floating-resize {
+.alia-office-floating-widget[data-anchor-horizontal="right"][data-anchor-vertical="top"]
+  .alia-office-floating-resize {
   bottom: 0;
   left: 0;
   cursor: nesw-resize;
   transform: rotate(90deg);
 }
 
-.bb-office-floating-widget[data-mode="worker"]
+.alia-office-floating-widget[data-mode="worker"]
   :is(
-    .bb-office-floating-drag-handle,
-    .bb-office-floating-collapse,
-    .bb-office-floating-resize
+    .alia-office-floating-drag-handle,
+    .alia-office-floating-collapse,
+    .alia-office-floating-resize
   ) {
   opacity: 0;
   pointer-events: none;
 }
 
-.bb-office-floating-worker-sprite {
+.alia-office-floating-worker-sprite {
   display: block;
   width: 32px;
   height: 64px;
@@ -288,16 +288,16 @@
   image-rendering: pixelated;
 }
 
-.bb-office-floating-worker-sprite[data-state="active"] {
-  animation: bb-office-worker-active 680ms steps(1, end) infinite;
+.alia-office-floating-worker-sprite[data-state="active"] {
+  animation: alia-office-worker-active 680ms steps(1, end) infinite;
 }
 
-.bb-office-floating-worker-sprite[data-state="idle"] {
+.alia-office-floating-worker-sprite[data-state="idle"] {
   background-position: -160px 0;
-  animation: bb-office-worker-idle 2400ms steps(1, end) infinite;
+  animation: alia-office-worker-idle 2400ms steps(1, end) infinite;
 }
 
-.bb-office-floating-floorplan {
+.alia-office-floating-floorplan {
   display: grid;
   width: 2.75rem;
   height: 2.75rem;
@@ -309,7 +309,7 @@
   box-shadow: 0 0.3rem 0.8rem color-mix(in oklab, var(--ink) 14%, transparent);
 }
 
-.bb-office-floating-floorplan svg {
+.alia-office-floating-floorplan svg {
   width: 1.25rem;
   height: 1.25rem;
   fill: none;
@@ -319,7 +319,7 @@
   stroke-width: 1.5;
 }
 
-@keyframes bb-office-worker-active {
+@keyframes alia-office-worker-active {
   0%,
   49% {
     background-position: -96px 0;
@@ -331,7 +331,7 @@
   }
 }
 
-@keyframes bb-office-worker-idle {
+@keyframes alia-office-worker-idle {
   0%,
   74% {
     background-position: -160px 0;
@@ -344,29 +344,29 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bb-office-floating-widget,
-  .bb-office-floating-office-canvas,
-  .bb-office-floating-worker {
+  .alia-office-floating-widget,
+  .alia-office-floating-office-canvas,
+  .alia-office-floating-worker {
     transition: none;
   }
 
-  .bb-office-floating-worker-sprite {
+  .alia-office-floating-worker-sprite {
     animation: none !important;
   }
 }
 
 @media (max-width: 46rem) {
-  .bb-office-floating-root {
+  .alia-office-floating-root {
     display: none;
   }
 }
 
-.bb-office-canvas-shell {
+.alia-office-canvas-shell {
   width: min(100%, 86rem);
   margin: 0 auto;
 }
 
-.bb-office-canvas-header {
+.alia-office-canvas-header {
   display: flex;
   align-items: end;
   justify-content: space-between;
@@ -375,7 +375,7 @@
   padding: 0 0.15rem;
 }
 
-.bb-office-canvas-kicker {
+.alia-office-canvas-kicker {
   margin: 0 0 0.2rem;
   color: var(--pixel-muted);
   font-size: 0.7rem;
@@ -384,7 +384,7 @@
   text-transform: uppercase;
 }
 
-.bb-office-canvas-header h1 {
+.alia-office-canvas-header h1 {
   margin: 0;
   font-size: clamp(1.35rem, 3vw, 2rem);
   font-weight: 800;
@@ -392,7 +392,7 @@
   line-height: 1;
 }
 
-.bb-office-canvas-summary-line {
+.alia-office-canvas-summary-line {
   margin: 0;
   padding: 0.42rem 0.58rem;
   border: 1px solid var(--pixel-line);
@@ -403,7 +403,7 @@
   white-space: nowrap;
 }
 
-.bb-office-canvas-stage {
+.alia-office-canvas-stage {
   position: relative;
   height: clamp(30rem, 68vh, 48rem);
   overflow: hidden;
@@ -413,14 +413,14 @@
   isolation: isolate;
 }
 
-.bb-office-canvas-stage > canvas {
+.alia-office-canvas-stage > canvas {
   display: block;
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
 }
 
-.bb-office-canvas-usage-layer {
+.alia-office-canvas-usage-layer {
   position: absolute;
   z-index: 3;
   top: 0;
@@ -431,7 +431,7 @@
   transform-origin: top left;
 }
 
-.bb-office-canvas-usage-hotspot {
+.alia-office-canvas-usage-hotspot {
   position: absolute;
   display: block;
   color: inherit;
@@ -439,12 +439,12 @@
   cursor: pointer;
 }
 
-.bb-office-canvas-usage-hotspot:focus-visible {
+.alia-office-canvas-usage-hotspot:focus-visible {
   outline: 2px solid color-mix(in oklch, var(--ink) 72%, var(--canvas));
   outline-offset: 1px;
 }
 
-.bb-office-canvas-usage-cue {
+.alia-office-canvas-usage-cue {
   position: absolute;
   z-index: 5;
   display: flex;
@@ -460,11 +460,11 @@
   pointer-events: none;
 }
 
-.bb-office-canvas-usage-cue[data-positioned="false"] {
+.alia-office-canvas-usage-cue[data-positioned="false"] {
   visibility: hidden;
 }
 
-.bb-office-canvas-usage-cue strong {
+.alia-office-canvas-usage-cue strong {
   overflow: hidden;
   max-width: 90px;
   font-size: 11px;
@@ -474,33 +474,33 @@
   white-space: nowrap;
 }
 
-.bb-office-canvas-usage-cue span {
+.alia-office-canvas-usage-cue span {
   color: var(--pixel-muted);
   font-size: 10px;
   font-weight: 560;
   white-space: nowrap;
 }
 
-.bb-office-canvas-usage-cue span::before {
+.alia-office-canvas-usage-cue span::before {
   margin: 0 5px;
   color: var(--pixel-line-strong);
   content: "·";
 }
 
-.bb-office-canvas-shell-full .bb-office-canvas-stage {
+.alia-office-canvas-shell-full .alia-office-canvas-stage {
   width: min(100%, 37.625rem);
   height: auto;
   margin: 0 auto;
   aspect-ratio: 25 / 26;
 }
 
-.bb-office-canvas-shell-sidebar,
-.bb-office-canvas-shell-floating {
+.alia-office-canvas-shell-sidebar,
+.alia-office-canvas-shell-floating {
   width: 100%;
 }
 
-.bb-office-canvas-shell-sidebar .bb-office-canvas-stage,
-.bb-office-canvas-shell-floating .bb-office-canvas-stage {
+.alia-office-canvas-shell-sidebar .alia-office-canvas-stage,
+.alia-office-canvas-shell-floating .alia-office-canvas-stage {
   width: 100%;
   height: auto;
   margin: 0 auto;
@@ -509,74 +509,74 @@
   border-radius: 0;
 }
 
-.bb-office-canvas-shell-sidebar .bb-office-canvas-stage > canvas,
-.bb-office-canvas-shell-floating .bb-office-canvas-stage > canvas {
+.alia-office-canvas-shell-sidebar .alia-office-canvas-stage > canvas,
+.alia-office-canvas-shell-floating .alia-office-canvas-stage > canvas {
   filter: saturate(0.86) contrast(0.96) brightness(1.04);
   opacity: 0.98;
 }
 
-.bb-office-canvas-shell-sidebar[data-appearance="neutral"]
-  .bb-office-canvas-stage
+.alia-office-canvas-shell-sidebar[data-appearance="neutral"]
+  .alia-office-canvas-stage
   > canvas,
-.bb-office-canvas-shell-floating[data-appearance="neutral"]
-  .bb-office-canvas-stage
+.alia-office-canvas-shell-floating[data-appearance="neutral"]
+  .alia-office-canvas-stage
   > canvas {
   filter: saturate(0.38) contrast(0.94) brightness(1.03);
   opacity: 0.97;
 }
 
-.dark .bb-office-canvas-shell-sidebar .bb-office-canvas-stage > canvas,
-.dark .bb-office-canvas-shell-floating .bb-office-canvas-stage > canvas {
+.dark .alia-office-canvas-shell-sidebar .alia-office-canvas-stage > canvas,
+.dark .alia-office-canvas-shell-floating .alia-office-canvas-stage > canvas {
   filter: saturate(0.72) contrast(0.9) brightness(0.92);
   opacity: 0.92;
 }
 
 .dark
-  .bb-office-canvas-shell-sidebar[data-appearance="neutral"]
-  .bb-office-canvas-stage
+  .alia-office-canvas-shell-sidebar[data-appearance="neutral"]
+  .alia-office-canvas-stage
   > canvas,
 .dark
-  .bb-office-canvas-shell-floating[data-appearance="neutral"]
-  .bb-office-canvas-stage
+  .alia-office-canvas-shell-floating[data-appearance="neutral"]
+  .alia-office-canvas-stage
   > canvas {
   filter: saturate(0.32) contrast(0.88) brightness(0.92);
   opacity: 0.92;
 }
 
 @media (min-width: 80rem) and (min-height: 67rem) {
-  .bb-office-canvas-shell-full .bb-office-canvas-stage {
+  .alia-office-canvas-shell-full .alia-office-canvas-stage {
     width: min(100%, 50.125rem);
   }
 }
 
-.bb-office-canvas-shell-preview .bb-office-canvas-header {
+.alia-office-canvas-shell-preview .alia-office-canvas-header {
   align-items: center;
   margin-bottom: 0.42rem;
 }
 
-.bb-office-canvas-shell-preview .bb-office-canvas-header h1 {
+.alia-office-canvas-shell-preview .alia-office-canvas-header h1 {
   font-size: 1rem;
   letter-spacing: -0.025em;
 }
 
-.bb-office-canvas-shell-preview .bb-office-canvas-kicker {
+.alia-office-canvas-shell-preview .alia-office-canvas-kicker {
   font-size: 0.58rem;
 }
 
-.bb-office-canvas-shell-preview .bb-office-canvas-summary-line {
+.alia-office-canvas-shell-preview .alia-office-canvas-summary-line {
   padding: 0;
   border: 0;
   background: transparent;
   font-size: 0.62rem;
 }
 
-.bb-office-canvas-shell-preview .bb-office-canvas-stage {
+.alia-office-canvas-shell-preview .alia-office-canvas-stage {
   height: clamp(18rem, 38vw, 30rem);
   border-radius: 0.55rem;
   box-shadow: none;
 }
 
-.bb-office-canvas-message {
+.alia-office-canvas-message {
   position: absolute;
   inset: 0;
   display: grid;
@@ -587,11 +587,11 @@
   font-weight: 680;
 }
 
-.bb-office-canvas-message-error {
+.alia-office-canvas-message-error {
   color: var(--destructive);
 }
 
-.bb-office-canvas-hover-cue {
+.alia-office-canvas-hover-cue {
   position: absolute;
   z-index: 4;
   display: flex;
@@ -607,11 +607,11 @@
   pointer-events: none;
 }
 
-.bb-office-canvas-hover-cue[data-positioned="false"] {
+.alia-office-canvas-hover-cue[data-positioned="false"] {
   visibility: hidden;
 }
 
-.bb-office-canvas-hover-cue strong {
+.alia-office-canvas-hover-cue strong {
   display: block;
   overflow: hidden;
   min-width: 0;
@@ -623,7 +623,7 @@
   white-space: nowrap;
 }
 
-.bb-office-canvas-hover-cue span {
+.alia-office-canvas-hover-cue span {
   flex: 0 0 auto;
   color: var(--pixel-muted);
   font-size: 0.58rem;
@@ -631,30 +631,30 @@
   white-space: nowrap;
 }
 
-.bb-office-canvas-hover-cue span::before {
+.alia-office-canvas-hover-cue span::before {
   margin: 0 0.32rem;
   color: var(--pixel-line-strong);
   content: "·";
 }
 
 @media (max-width: 46rem) {
-  .bb-office-canvas-header {
+  .alia-office-canvas-header {
     align-items: start;
     flex-direction: column;
     gap: 0.7rem;
   }
 
-  .bb-office-canvas-summary-line {
+  .alia-office-canvas-summary-line {
     width: 100%;
     text-align: center;
     white-space: normal;
   }
 
-  .bb-office-canvas-stage {
+  .alia-office-canvas-stage {
     height: clamp(20rem, 95vw, 28rem);
   }
 
-  .bb-office-canvas-hover-cue {
+  .alia-office-canvas-hover-cue {
     display: none;
   }
 }

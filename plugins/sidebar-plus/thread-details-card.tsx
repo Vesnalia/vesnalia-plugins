@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactElement, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import type { PluginSidebarPullRequest, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
-import { UrlLink, experimental_useSidebarThreadPullRequest } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarPullRequest, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
+import { UrlLink, experimental_useSidebarThreadPullRequest } from "@vesnalia/plugin-sdk/app";
 import { usePortalScopeProps } from "./lib/portal-scope";
 import { Icon } from "./ui/icon";
 import { ThreadActions } from "./thread-actions";
@@ -26,7 +26,7 @@ const TRIGGER_GAP_PX: number = 8;
 const VIEWPORT_MARGIN_PX: number = 8;
 
 /**
- * Mirrors the host's native PR state presentation so plugin rows match bb's own sidebar.
+ * Mirrors the host's native PR state presentation so plugin rows match VesnALIA's own sidebar.
  */
 const PULL_REQUEST_STATE_PRESENTATIONS: Record<PluginSidebarPullRequest["state"], PullRequestBadgePresentation> = {
   open: { label: "Open", icon: "GitPullRequestArrow", textClassName: "text-success", chipClassName: "border-success/40 bg-success/10" },

@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createFakePluginHost, makeHostResponse, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { createFakePluginHost, makeHostResponse, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import hostEntry from "../host.js";
 import plugin from "../server.js";
 import { collectUsage, parseAllowance, UsageCache, usageFailure } from "../usage.js";
@@ -101,7 +101,7 @@ test("host entry serves quota independently of a running agent bridge", async ()
 test("Provider usage inventory is cheap and shares one Central resource across agent profiles and context reads", async () => {
   const machine = makeHostResponse({ id: "host-test", name: "Work machine", status: "connected" });
   let collects = 0;
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     experimental_hostEntry: true,
     sdk: {
       hosts: { list: async () => [machine], get: async () => machine },
@@ -115,7 +115,7 @@ test("Provider usage inventory is cheap and shares one Central resource across a
     },
   });
   try {
-    await plugin(bb);
+    await plugin(alia);
     const inventory = await harness.behavior.callRpc("provider-usage.v1.listResources", {}) as any;
     assert.equal(inventory.resources.length, 1);
     assert.equal(inventory.resources[0].providerId, "central");

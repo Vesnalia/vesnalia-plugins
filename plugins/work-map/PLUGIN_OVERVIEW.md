@@ -8,11 +8,11 @@ Activity in the last 24 hours also brings work closer to the center. Age labels 
 
 Collapsed Overview fits the available window, showing fewer whole cards on smaller screens. Central cards use their extra room for session excerpts and task context. Show all opens the complete list; expanded details and chat can scroll.
 
-Click an area, task or session to expand it in place. Nearby cards make room while the arrangement stays stable. Read formatted response previews with tables and code, follow attached sessions, or open the full task or chat in BB. Long previews disclose when they are shortened; wide content scrolls within the preview. Search and filters help you reach work beyond the overview. Zoom out for more work and fewer details, or zoom in around an item. Reset returns to 100%.
+Click an area, task or session to expand it in place. Nearby cards make room while the arrangement stays stable. Read formatted response previews with tables and code, follow attached sessions, or open the full task or chat in VesnALIA. Long previews disclose when they are shortened; wide content scrolls within the preview. Search and filters help you reach work beyond the overview. Zoom out for more work and fewer details, or zoom in around an item. Reset returns to 100%.
 
 ## Start and organize
 
-Start a session with BB's native composer, or use Chat here to continue an existing session inside the map. The chat uses that session's permissions and provider controls. Sessions started from a task attach to that task. Create projects and backlog tasks, edit project details, connect existing sessions through tasks, and hide or restore areas. Project and task management commands are also available to agents through `bb work-map`.
+Start a session with VesnALIA's native composer, or use Chat here to continue an existing session inside the map. The chat uses that session's permissions and provider controls. Sessions started from a task attach to that task. Create projects and backlog tasks, edit project details, connect existing sessions through tasks, and hide or restore areas. Project and task management commands are also available to agents through `alia work-map`.
 
 ## Leave a next step
 
@@ -20,4 +20,4 @@ Pause a task, send it to your review queue, record a review dependency on someon
 
 ## Requirements and data
 
-Requires BB 0.43 or later and its built-in Tasks plugin. Sessions use the provider and account selected in BB, with that provider's usual costs and data handling. Work Map adds no external service or telemetry. It reads tasks, session activity and response previews from your BB instance, and stores preferences and recovery records there. Opening a successful response marks that displayed result read. Removing inherited task focus can unpin its attached sessions.
+Requires VesnALIA 0.43 or later and its built-in Tasks plugin. Sessions use the provider and account selected in VesnALIA, with that provider's usual costs and data handling. Work Map adds no external service or telemetry. It reads tasks, session activity and response previews from your VesnALIA instance, and stores preferences and recovery records there. Opening a successful response marks that displayed result read. Removing inherited task focus can unpin its attached sessions.

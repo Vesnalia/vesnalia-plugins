@@ -1,19 +1,19 @@
 # T3 Sidebar
 
-An inbox-style replacement for bb's sidebar thread list, and the reference
+An inbox-style replacement for VesnALIA's sidebar thread list, and the reference
 example for `app.slots.experimental_threadList`.
 
-This plugin started as an example in the BB repository. Install its public
+This plugin started as an example in the VesnALIA repository. Install its public
 release from GitHub:
 
 ```sh
-bb plugin install git:https://github.com/SawyerHood/bb-plugin-t3sidebar.git@^0.1.0
+alia plugin install git:https://github.com/SawyerHood/bb-plugin-t3sidebar.git@^0.1.0
 ```
 
-Turn it on in **Settings → Appearance → Sidebar**. bb's own list stays the
+Turn it on in **Settings → Appearance → Sidebar**. VesnALIA's own list stays the
 default, and comes back the moment you switch away or disable this plugin.
 
-The plugin replaces the scrolling list only. bb's New-thread button, search
+The plugin replaces the scrolling list only. VesnALIA's New-thread button, search
 field, plugin nav rows, and footer stay exactly where they are — this list
 filters by the host's search and adds just one control of its own, a project
 scope picker.
@@ -34,7 +34,7 @@ Three shelves:
 
   One slot, one marker, one width, so the whole column lines up. The slot
   shows the status glyph while a thread has something to say, and the age
-  ("now", "7m") once it does not. The glyphs are bb's own: the red circle-x
+  ("now", "7m") once it does not. The glyphs are VesnALIA's own: the red circle-x
   for a failure, the circle-question for a raised hand, the spinner for live
   work, and a blue notification dot for a thread that finished while you were
   not looking. Both lists sit in the same window, so they speak one language.
@@ -66,32 +66,32 @@ header shows no parent chip.
 
 | Plugin API                                         | Used for                                                                                    |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `experimental_threadList`                          | the sidebar's scrolling list (bb keeps the New-thread button, search, nav rows, and footer) |
+| `experimental_threadList`                          | the sidebar's scrolling list (VesnALIA keeps the New-thread button, search, nav rows, and footer) |
 | `experimental_threadHeaderAction`                  | the two header chips: children on a parent, and the way back on a child                     |
 | `experimental_useSidebarThreads`                   | live threads and projects, from the host's own cache                                        |
 | `experimental_useSidebarThreadActions`             | open, open-in-split, new thread                                                             |
 | `experimental_useSidebarThreadSplit`               | dragging a card out to a split pane                                                         |
-| `experimental_useSidebarThreadPullRequest`         | the `#412` badge, coloured by bb's attention state                                          |
+| `experimental_useSidebarThreadPullRequest`         | the `#412` badge, coloured by VesnALIA's attention state                                          |
 | `@radix-ui/react-context-menu` (shimmed)           | this plugin's own right-click menu, built on the action hook                                |
-| `bb.storage.database()` + `bb.rpc` + `bb.realtime` | the settled/snoozed store                                                                   |
+| `alia.storage.database()` + `alia.rpc` + `alia.realtime` | the settled/snoozed store                                                                   |
 
 The plugin API ships **no components**. Status glyphs and the right-click menu
 are both this plugin's own: `indicator` arrives as data, and every menu item is
 one call on `experimental_useSidebarThreadActions`. Choosing them is the point
-of a replaced sidebar. Deletion still routes through `requestDelete`, so BB
+of a replaced sidebar. Deletion still routes through `requestDelete`, so VesnALIA
 shows its confirmation dialog rather than a plugin deleting a subtree silently.
 The small icon and select components also live in this example. The example
-does not import BB's private shared UI package.
+does not import VesnALIA's private shared UI package.
 
 ## Where the lifecycle lives
 
 Settled and snoozed state is in **this plugin's** SQLite database, never on
-bb's thread. Putting it on the thread would mean a schema change, a wire
+VesnALIA's thread. Putting it on the thread would mean a schema change, a wire
 change, and a `HOST_DAEMON_PROTOCOL_VERSION` bump for a concept only this
 sidebar understands. Uninstalling the plugin takes its state with it.
 
 One rule matters more than the rest: **a thread that is working can never be
-parked.** bb has more kinds of live work than a session status — workflows,
+parked.** VesnALIA has more kinds of live work than a session status — workflows,
 background agents, background commands, plan mode, goals — and every one of
 them blocks parking and wakes a parked thread. Hiding running work is the one
 failure this feature cannot afford. See `canPark` in `src/lifecycle.ts`.

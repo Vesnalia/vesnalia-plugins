@@ -1,4 +1,4 @@
-// bb-plugin-usage-pace — frontend entry. Forked from Usage Bar by Dmitrii
+// alia-plugin-usage-pace — frontend entry. Forked from Usage Bar by Dmitrii
 // Kapustin (MIT); the pace math lives in lib/pace.ts.
 //
 // Surfaces (all fed by one store in lib/usage-store.ts):
@@ -13,7 +13,7 @@ import {
   definePluginApp,
   experimental_ProviderIcon as ProviderIcon,
   useRealtime,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { UsageProvider, UsageWindow } from "./server";
 import {
   formatReset,
@@ -252,7 +252,7 @@ function UsageBar({ tokens }: { tokens: TokenTotals | null }) {
     <button
       type="button"
       onClick={open}
-      aria-label="BB usage limits and token usage. Open details."
+      aria-label="VesnALIA usage limits and token usage. Open details."
       title="Usage Pace — click for details"
       className="mb-1 flex w-full min-w-0 cursor-pointer items-center justify-start gap-2 flex-wrap rounded-md px-1.5 py-1 text-[11px] leading-none text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
     >
@@ -294,7 +294,7 @@ function UsageBar({ tokens }: { tokens: TokenTotals | null }) {
           );
         })
       )}
-      <span className="flex shrink-0 items-center gap-1 whitespace-nowrap tabular-nums" title={tokens?.fetchedAt ? `Tokens across BB: today ${tokens.day.toLocaleString("en-US")}, month ${tokens.month.toLocaleString("en-US")}. ${tokens.timeZone}${tokens.error ? `. ${tokens.error}` : ""}` : tokens?.error ?? "Loading token usage"}>
+      <span className="flex shrink-0 items-center gap-1 whitespace-nowrap tabular-nums" title={tokens?.fetchedAt ? `Tokens across VesnALIA: today ${tokens.day.toLocaleString("en-US")}, month ${tokens.month.toLocaleString("en-US")}. ${tokens.timeZone}${tokens.error ? `. ${tokens.error}` : ""}` : tokens?.error ?? "Loading token usage"}>
         <span aria-hidden="true" className="font-semibold">Σ</span>
         {tokens?.fetchedAt ? <span>{compactTokens(tokens.day)}<span className="text-muted-foreground"> today / </span>{compactTokens(tokens.month)}<span className="text-muted-foreground"> month</span>{tokens.error ? " ⚠" : ""}</span> : <span className="text-muted-foreground">{tokens?.error ? "—" : "…"}</span>}
       </span>
@@ -462,13 +462,13 @@ function UsageDialog({ tokens }: { tokens: TokenTotals | null }) {
           </DialogDescription>
         </DialogHeader>
         <div className="flex max-h-[60vh] flex-col gap-3 overflow-y-auto">
-          <section className="rounded-lg border p-3" aria-label="Token usage across BB">
-            <h3 className="text-sm font-semibold">Tokens · across BB</h3>
+          <section className="rounded-lg border p-3" aria-label="Token usage across VesnALIA">
+            <h3 className="text-sm font-semibold">Tokens · across VesnALIA</h3>
             <dl className="mt-2 grid grid-cols-2 gap-3 text-sm tabular-nums">
               <div><dt className="text-muted-foreground">Today</dt><dd className="font-semibold">{tokens?.fetchedAt ? tokens.day.toLocaleString("en-US") : "—"}</dd></div>
               <div><dt className="text-muted-foreground">This month</dt><dd className="font-semibold">{tokens?.fetchedAt ? tokens.month.toLocaleString("en-US") : "—"}</dd></div>
             </dl>
-            <p className="mt-2 text-[11px] text-muted-foreground">All projects, archived threads, and hidden agents. Includes usage reported by providers to BB. Cache and reasoning tokens are not counted again.</p>
+            <p className="mt-2 text-[11px] text-muted-foreground">All projects, archived threads, and hidden agents. Includes usage reported by providers to VesnALIA. Cache and reasoning tokens are not counted again.</p>
             <p className="mt-1 text-[11px] text-muted-foreground">{tokens?.timeZone ?? ""}{tokens?.fetchedAt ? ` · Updated ${new Date(tokens.fetchedAt).toLocaleTimeString()}` : " · Loading…"}</p>
             {tokens?.error ? <p role="status" className="mt-1 text-xs text-muted-foreground">{tokens.error}</p> : null}
           </section>
@@ -505,7 +505,7 @@ function UsageDialog({ tokens }: { tokens: TokenTotals | null }) {
 function UsageOverlay() {
   const tokens = useTokenTotals();
   const host = useSyncExternalStore(subscribeBarHost, getBarHost);
-  // Off by default: the pace also shows in bb's own usage card (card-pace).
+  // Off by default: the pace also shows in VesnALIA's own usage card (card-pace).
   const showStrip = useUsage().data?.showStrip === true;
   return (
     <>

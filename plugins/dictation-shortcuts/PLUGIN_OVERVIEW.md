@@ -7,18 +7,18 @@
 
 ## Hints where you need them
 
-The microphone's existing tooltip explains the controls. Hold Command on macOS, or Control, to see compact Space, Enter and Esc badges beside the recording controls. The badges respect BB's Show keyboard hints setting.
+The microphone's existing tooltip explains the controls. Hold Command on macOS, or Control, to see compact Space, Enter and Esc badges beside the recording controls. The badges respect VesnALIA's Show keyboard hints setting.
 
-Enter and Escape also work when you start recording with BB's microphone button.
+Enter and Escape also work when you start recording with VesnALIA's microphone button.
 
 ## Uses your existing voice input
 
-BB keeps control of microphone selection, recording, transcription and the resulting draft. This plugin adds no speech model, server, API key or audio storage. Your existing transcription service's account requirements, network use and charges still apply.
+VesnALIA keeps control of microphone selection, recording, transcription and the resulting draft. This plugin adds no speech model, server, API key or audio storage. Your existing transcription service's account requirements, network use and charges still apply.
 
 This is whole-recording transcription, not streaming recognition. Text appears after you finish recording.
 
 ## Requirements and compatibility
 
-Requires BB 0.46.1 or later, Plugin SDK 0.6.49 or later, a keyboard, microphone access and an available voice-input service in Settings → AI services. Tested on BB 0.46.1 on macOS.
+Requires VesnALIA 0.46.1 or later, Plugin SDK 0.6.49 or later, a keyboard, microphone access and an available voice-input service in Settings → AI services. Tested on VesnALIA 0.46.1 on macOS.
 
-This version uses BB's native composer markup because its public composer API does not expose recorder controls. A BB update or a replacement composer may require an adapter update. Missing or ambiguous recorder buttons cause no action; the plugin never substitutes the Send button.
+This version uses VesnALIA's native composer markup because its public composer API does not expose recorder controls. A VesnALIA update or a replacement composer may require an adapter update. Missing or ambiguous recorder buttons cause no action; the plugin never substitutes the Send button.

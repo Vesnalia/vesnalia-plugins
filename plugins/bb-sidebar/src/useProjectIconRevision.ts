@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRealtime } from "@vesnalia/plugin-sdk/app";
 import { PROJECT_ICONS_CHANNEL } from "./realtime-channels";
 
 export function useProjectIconRevision() {

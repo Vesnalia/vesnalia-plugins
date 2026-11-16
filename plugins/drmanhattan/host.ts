@@ -3,7 +3,7 @@ import { constants } from "node:fs";
 import { access } from "node:fs/promises";
 import { homedir } from "node:os";
 import { delimiter, join } from "node:path";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { z } from "zod";
 import {
   drmanhattanHostContract,
@@ -26,12 +26,12 @@ const MAX_OUTPUT_BYTES = 16 * 1024 * 1024;
 const timestamp = z.string().nullish().transform((value) => value ?? null);
 const count = z.number().nullish().transform((value) => value ?? null);
 const text = z.string().nullish().transform((value) => value ?? null);
-/** Who queued a run; a bb thread's id when bb did. */
+/** Who queued a run; a VesnALIA thread's id when VesnALIA did. */
 const source = z
   .object({ tool: text, session: text })
   .passthrough()
   .nullish()
-  .transform((value) => (value?.tool === "bb" ? value.session : null) ?? null);
+  .transform((value) => (value?.tool === "alia" ? value.session : null) ?? null);
 
 const rawRunning = z.object({
   run_id: z.string(),
@@ -390,7 +390,7 @@ export function setup(action: SetupAction, signal: AbortSignal): Promise<{ ok: b
   return action === "install" ? installQueue(signal) : startQueue(signal);
 }
 
-/** Stops the services one session (a bb thread) started: dev servers, databases. */
+/** Stops the services one session (a VesnALIA thread) started: dev servers, databases. */
 export async function stopServices(
   session: string,
   signal: AbortSignal,

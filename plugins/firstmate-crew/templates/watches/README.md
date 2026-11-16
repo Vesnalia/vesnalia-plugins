@@ -1,6 +1,6 @@
 # Watches
 
-Scripts the FirstMate plugin runs on a schedule while it is running in bb. A script that prints nothing
+Scripts the FirstMate plugin runs on a schedule while it is running in VesnALIA. A script that prints nothing
 costs nothing; whatever a run prints is sent to the first mate, as one `<firstmate-watch>` note, once
 it is between turns. The FirstMate board's Watches card lists them, with each one's last run, and
 switches any of them off or on.
@@ -20,7 +20,7 @@ A watch is a script in this folder, run as it is, so it needs a `#!` line and to
 
 `//` and `--` comments work too. The schedule is a crontab line — minute, hour, day, month, weekday
 (Sunday is 0 or 7) — each field `*`, a number, `a-b`, any of those with `/step`, or a comma list; or
-one of `@hourly`, `@daily`, `@weekly`. It is read in the local time of the machine the bb server runs
+one of `@hourly`, `@daily`, `@weekly`. It is read in the local time of the machine the VesnALIA server runs
 on. A minute the plugin was not running for is not made up later. A script with no schedule, or one
 that cannot be read, is listed on the card as invalid and never run.
 

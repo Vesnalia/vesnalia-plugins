@@ -6,7 +6,7 @@
  * issue/PR URLs (href from the repo base, dot from the GitHub plugin's
  * cache), and the board's own link store validates its explicit links. A
  * WORD-123 shape ("PROJ-123", "GLM-5") carries a tracker key only a
- * Jira-style board link could validate — and bb projects expose no
+ * Jira-style board link could validate — and VesnALIA projects expose no
  * tracker links today, so key-shaped text matches nothing. Revisit when
  * a project can carry a board attachment.
  *
@@ -28,7 +28,7 @@ export function resolveRepoSlug(remote: string | null | undefined): string | nul
 
 /**
  * Forgejo/Gitea item base from a git remote (deterministic): any remote with
- * an owner/repo path on a host that is not github.com — bb's own forge serves
+ * an owner/repo path on a host that is not github.com — VesnALIA's own forge serves
  * Forgejo there, and Forgejo identifies items as /issues/N pages. Returns
  * "https://<host>/<owner>/<repo>" (the base item URLs build on); null for
  * github remotes and remotes without an owner/repo path (nothing to

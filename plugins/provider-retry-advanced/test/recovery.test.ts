@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createPlugin } from "../server.js";
 import type { ProbeResult } from "../src/probe.js";
 import { SCAN_INTERVAL_MS, runRecoveryLoop, type ScanReport } from "../src/recovery.js";
@@ -25,7 +25,7 @@ async function setup(options: { reachable?: boolean; onProbe?: () => void; armed
     return reachable ? { reachable: true, detail: "HTTP 405" } : { reachable: false, detail: "ETIMEDOUT" };
   };
   const host = createFakePluginHost({ pluginId: PLUGIN_ID, sdk: core.sdk() as never });
-  await createPlugin({ probe, now: () => core.now })(host.bb);
+  await createPlugin({ probe, now: () => core.now })(host.alia);
   core.hook = (context) => host.harness.registrations.hooks["message.dispatch"]!(context as never);
   core.onRowCancelled = (row) => host.harness.behavior.emitThreadEvent("message.cancelled", { entry: row } as never);
   if (options.armed !== false) expect((await host.harness.runCli(["arm"])).exitCode).toBe(0);
@@ -136,8 +136,8 @@ describe("connectivity recovery", () => {
     const core = new FakeCore();
     failedThread(core, "thr_old", { providerId: "codex", failure: FAILURES.codexPooler, execution: CODEX_HIGH });
     const host = createFakePluginHost({ pluginId: PLUGIN_ID, sdk: core.sdk() as never });
-    await host.bb.storage.kv.set("armed", { at: 0 }); // armed on an earlier load
-    await createPlugin({ probe: async () => ({ reachable: true, detail: "HTTP 405" }) })(host.bb);
+    await host.alia.storage.kv.set("armed", { at: 0 }); // armed on an earlier load
+    await createPlugin({ probe: async () => ({ reachable: true, detail: "HTTP 405" }) })(host.alia);
     const { controller, done } = host.harness.behavior.runService("connectivity-recovery");
     for (let i = 0; i < 50 && core.thread("thr_old").status !== "active"; i++) await Bun.sleep(5);
     controller.abort();
@@ -429,7 +429,7 @@ describe("first install", () => {
     failedThread(t.core, "thr_paused");
     const observed = await t.scan();
     expect(observed.armed).toBe(false);
-    expect(entry(observed, "thr_active")).toMatchObject({ state: "waiting", reason: "not-armed (run: bb provider-retry-advanced arm)" });
+    expect(entry(observed, "thr_active")).toMatchObject({ state: "waiting", reason: "not-armed (run: VesnALIA provider-retry-advanced arm)" });
     expect(t.probes).toEqual([]);
     expect(t.retries()).toEqual([]);
     expect((await t.host.harness.runCli(["status"])).stdout).toContain("observing only");

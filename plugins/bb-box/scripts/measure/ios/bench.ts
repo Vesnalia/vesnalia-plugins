@@ -16,9 +16,9 @@ import { orientation as readOrientation, screenshot as idbScreenshot } from "../
 import { ORIENTATIONS, type Orientation } from "../../../src/core/device.ts";
 
 const ROOT = join(import.meta.dirname, "..", "..", "..");
-const DIR = join(homedir(), ".bb-box", "device");
-const LAUNCHER = join(DIR, "current", "src", "device", "bb-box-device.sh");
-const RECORD = "/usr/local/share/bb-box/image.json";
+const DIR = join(homedir(), ".alia-box", "device");
+const LAUNCHER = join(DIR, "current", "src", "device", "alia-box-device.sh");
+const RECORD = "/usr/local/share/alia-box/image.json";
 
 const { positionals, values } = parseArgs({
   allowPositionals: true,

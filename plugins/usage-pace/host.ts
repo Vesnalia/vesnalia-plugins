@@ -1,15 +1,15 @@
 // Provider bridge for the Grok usage provider (see lib/grok-provider.ts).
 // Maintenance requests (health, usage) go to lib/grok-usage.ts; everything
-// else goes to bb's ACP bridge, so threads on this provider run Grok Build.
-// From bb-plugin-grok-build-usage by MacHatter1 (MIT).
+// else goes to VesnALIA's ACP bridge, so threads on this provider run Grok Build.
+// From alia-plugin-grok-build-usage by MacHatter1 (MIT).
 
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import {
   createBridgeIo,
   experimental_defineProviderBridge,
   type ProviderBridgeEntry,
-} from "@get-bb/plugin-sdk/provider-bridge";
-import { experimental_acpProviderBridge } from "@get-bb/plugin-sdk/provider-bridge/acp";
+} from "@vesnalia/plugin-sdk/provider-bridge";
+import { experimental_acpProviderBridge } from "@vesnalia/plugin-sdk/provider-bridge/acp";
 
 import { grokSessionContract, renewGrokSession } from "./lib/grok-session";
 import { readGrokHealth, readGrokUsage } from "./lib/grok-usage";

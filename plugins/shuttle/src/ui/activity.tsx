@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { EventView } from "../contract";
 import { ErrorNote, type Tone } from "./common";
 import { messageOf, useShuttleQuery } from "./data";

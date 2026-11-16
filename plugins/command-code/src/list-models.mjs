@@ -42,7 +42,7 @@ export function parseCmdModelTable(stdout) {
 }
 
 /**
- * BB renders the config option name as the model's name in its picker, and
+ * VesnALIA renders the config option name as the model's name in its picker, and
  * cmd's descriptions are marketing taglines ("fast hybrid-attention
  * reasoning"), not names. Derive a plain name from the id:
  * "z-ai/glm-5.3-flash" -> "GLM 5.3 Flash", "claude-sonnet-5" -> "Claude Sonnet 5".
@@ -104,7 +104,7 @@ function pickEffort(levels, effort) {
 }
 
 /**
- * ACP config options BB reads per model: a `model` select, plus a
+ * ACP config options VesnALIA reads per model: a `model` select, plus a
  * `thought_level` select holding only the selected model's efforts.
  */
 export function buildConfigOptions(models, efforts, { model, effort } = {}) {

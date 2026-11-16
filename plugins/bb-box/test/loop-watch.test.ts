@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { LoopWatch } from "../src/plugin/loop-watch.ts";
 import { forPurpose, spawnTotals, timedSpawn, withPurposes } from "../src/transports/spawns.ts";
 
-test("the event loop watch tells, once a minute, how often BB Box's loop stood still and how much of it was garbage collection", () => {
+test("the event loop watch tells, once a minute, how often VesnALIA Box's loop stood still and how much of it was garbage collection", () => {
   let now = 1_000;
   const lines: string[] = [];
   const watch = new LoopWatch({ log: (line) => lines.push(line), now: () => now, manual: true });
@@ -22,7 +22,7 @@ test("the event loop watch tells, once a minute, how often BB Box's loop stood s
   assert.deepEqual(lines, [], "nothing before a minute");
   for (let i = 0; i < 400; i++) tick(100);
   assert.deepEqual(lines, [
-    "BB's server, which runs bb-box, stood still 2 times in the last minute, for up to 470 ms: desktops' frames and input waited meanwhile. " +
+    "VesnALIA's server, which runs alia-box, stood still 2 times in the last minute, for up to 470 ms: desktops' frames and input waited meanwhile. " +
       "Garbage collection ran for 350 ms of it, in 1 collection, 1 of them major.",
   ]);
   // A minute without stalls says nothing; one stall without collection says so.
@@ -30,11 +30,11 @@ test("the event loop watch tells, once a minute, how often BB Box's loop stood s
   assert.equal(lines.length, 1);
   tick(260);
   for (let i = 0; i < 700; i++) tick(100);
-  assert.equal(lines[1], "BB's server, which runs bb-box, stood still once in the last minute, for up to 260 ms: desktops' frames and input waited meanwhile. No garbage collection ran then: something else held the loop.");
+  assert.equal(lines[1], "VesnALIA's server, which runs alia-box, stood still once in the last minute, for up to 260 ms: desktops' frames and input waited meanwhile. No garbage collection ran then: something else held the loop.");
   watch.dispose();
 });
 
-test("the minute's line tells the processes BB Box started and how long their spawn calls held the loop, and each hour the server's memory", () => {
+test("the minute's line tells the processes VesnALIA Box started and how long their spawn calls held the loop, and each hour the server's memory", () => {
   let now = 1_000;
   const lines: string[] = [];
   let spawned = { count: 10, ms: 50 };
@@ -63,20 +63,20 @@ test("the minute's line tells the processes BB Box started and how long their sp
   for (let i = 0; i < 600; i++) tick(100);
   assert.equal(
     lines[0],
-    "BB's server, which runs bb-box, stood still once in the last minute, for up to 300 ms: desktops' frames and input waited meanwhile. No garbage collection ran then: something else held the loop. " +
-      "bb-box started 3 processes in that minute, the spawn calls taking 240 ms in all, 180 ms at most.",
+    "VesnALIA's server, which runs alia-box, stood still once in the last minute, for up to 300 ms: desktops' frames and input waited meanwhile. No garbage collection ran then: something else held the loop. " +
+      "alia-box started 3 processes in that minute, the spawn calls taking 240 ms in all, 180 ms at most.",
   );
   // The memory line comes five minutes after the start, whatever happened, then each hour, with the processes since.
   for (let i = 0; i < 2_400; i++) tick(100);
   assert.equal(
     lines.at(-1),
-    "BB's server, which runs bb-box: its heap held 2100 MiB of 2300 MiB, 400 MiB more was outside it, and the process 3500 MiB in all; BB Box started 3 processes in the last 5 minutes, the spawn calls taking 240 ms in all.",
+    "VesnALIA's server, which runs alia-box: its heap held 2100 MiB of 2300 MiB, 400 MiB more was outside it, and the process 3500 MiB in all; VesnALIA Box started 3 processes in the last 5 minutes, the spawn calls taking 240 ms in all.",
   );
   spawned = { count: 14, ms: 300 };
   for (let i = 0; i < 36_000; i++) tick(100);
   assert.equal(
     lines.at(-1),
-    "BB's server, which runs bb-box: its heap held 2100 MiB of 2300 MiB, 400 MiB more was outside it, and the process 3500 MiB in all; BB Box started 1 process in the last hour, the spawn calls taking 10 ms in all.",
+    "VesnALIA's server, which runs alia-box: its heap held 2100 MiB of 2300 MiB, 400 MiB more was outside it, and the process 3500 MiB in all; VesnALIA Box started 1 process in the last hour, the spawn calls taking 10 ms in all.",
   );
   watch.dispose();
 });
@@ -93,7 +93,7 @@ test("the memory line tells how many children the helper started and which calle
   }
   assert.equal(
     lines.at(-1),
-    "BB's server, which runs bb-box: BB Box started 10 processes in the last 5 minutes, the spawn calls taking 1 ms in all, 9 of them by the helper; the most: c (7), a < b (3), d (1).",
+    "VesnALIA's server, which runs alia-box: VesnALIA Box started 10 processes in the last 5 minutes, the spawn calls taking 1 ms in all, 9 of them by the helper; the most: c (7), a < b (3), d (1).",
   );
   watch.dispose();
 });

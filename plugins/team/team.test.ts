@@ -1,7 +1,7 @@
 // Тесты v0.2+: tell, живой status, пакеты работ, report, doctor, vars,
 // notifyOn, пауза, replace, stop, шаблоны init, @-меню, RPC панели.
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin, {
   applyVars,
   excerpt,
@@ -85,7 +85,7 @@ function makeHost(
   } = {},
 ) {
   const files = new Map<string, string>(Object.entries(opts.files ?? {}));
-  if (opts.config !== null) files.set("/ws/demo/.bb/team.yaml", opts.config ?? CONFIG);
+  if (opts.config !== null) files.set("/ws/demo/.vesnalia/team.yaml", opts.config ?? CONFIG);
   const threads = new Map<string, FakeThread>();
   for (const thread of opts.threads ?? []) {
     threads.set(thread.id, {
@@ -139,7 +139,7 @@ function makeHost(
     ],
   });
 
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "team",
     settings: {defaultTracker: "builtin", ...opts.settings},
     experimental_hostEntry: true,
@@ -293,15 +293,15 @@ function makeHost(
       },
     },
   });
-  const originalRecheck=bb.experimental_hooks.recheck;
-  bb.experimental_hooks.recheck=async hook=>{
+  const originalRecheck=alia.experimental_hooks.recheck;
+  alia.experimental_hooks.recheck=async hook=>{
     await originalRecheck(hook);
     for(const thread of threads.values()) if(thread.queuedInput) {
       const decision=await harness.inspection.registrations.hooks["message.dispatch"]!({thread:toResponse(thread),initiator:"agent",originPluginId:"team"} as never);
       if(decision.action==="proceed"){thread.queuedInput=undefined;thread.status="idle";}
     }
   };
-  return { bb, harness, files, threads };
+  return { alia, harness, files, threads };
 }
 
 const CHECKPOINT_CONTENT = {goal:"Preserve profile changes",criteria:["Profile works"],progress:"Edited src/profile.ts",decisions:[{what:"Reuse environment",why:"Keep dirty changes"}],checks:[{what:"Targeted test",result:"pass"}],blockers:[],nextAction:"Finish profile",files:["src/profile.ts"]};
@@ -385,7 +385,7 @@ describe("vars и прочие помощники", () => {
 const SNAPSHOT: TeamSnapshot = {
   projectId: "proj_1",
   projectName: "demo <&>",
-  configSource: ".bb/team.yaml",
+  configSource: ".vesnalia/team.yaml",
   configError: null,
   leadRole: "lead",
   paused: false,
@@ -475,13 +475,13 @@ describe("шаблоны, промпты, названия, версиониро
     expect(builtinTemplates("en").map((tpl) => tpl.id)).toEqual(["dev", "qa", "docs", "product"]);
     const files = teamFilesFromTemplate("ru", dev, "core");
     expect(files.map((f) => f.rel)).toEqual([
-      ".bb/teams/core.yaml",
-      ".bb/teams/core/lead.md",
-      ".bb/teams/core/developer.md",
-      ".bb/teams/core/junior.md",
-      ".bb/teams/core/tester.md",
+      ".vesnalia/teams/core.yaml",
+      ".vesnalia/teams/core/lead.md",
+      ".vesnalia/teams/core/developer.md",
+      ".vesnalia/teams/core/junior.md",
+      ".vesnalia/teams/core/tester.md",
     ]);
-    expect(files[0]!.content).toContain("promptFile: .bb/teams/core/junior.md");
+    expect(files[0]!.content).toContain("promptFile: .vesnalia/teams/core/junior.md");
     expect(files[3]!.content).toContain("младший разработчик");
   });
 
@@ -531,18 +531,18 @@ describe("шаблоны, промпты, названия, версиониро
 
 /* ──────────────────────── Поведение CLI ──────────────────────── */
 
-describe("bb team tell", () => {
+describe("alia team tell", () => {
   it("по имени роли — в её тред", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["tell", "developer", "--message", "hi", "--project", "demo"]);
     expect(result.exitCode).toBe(0);
     expect(sendsOf(harness)).toEqual([{ threadId: "thr_dev", text: "hi" }]);
   });
 
   it("all — всем, кроме отправителя", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["tell", "all", "--message", "sync"], {
       projectId: "proj_1",
       threadId: "thr_lead",
@@ -552,18 +552,18 @@ describe("bb team tell", () => {
   });
 
   it("неизвестная роль — ошибка с подсказкой", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["tell", "nobody", "--message", "x", "--project", "demo"]);
     expect(result.exitCode).not.toBe(0);
-    expect(result.stderr).toContain("bb team status");
+    expect(result.stderr).toContain("alia team status");
   });
 });
 
-describe("bb team status (живой)", () => {
+describe("alia team status (живой)", () => {
   it("статусы тредов и текущий пакет", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     await harness.behavior.runCli(["task", "add", "developer", "Login", "form", "--project", "demo"]);
     await harness.behavior.runCli(["task", "update", "1", "--status", "wip", "--project", "demo"]);
     const result = await harness.behavior.runCli(["status", "--project", "demo"]);
@@ -577,10 +577,10 @@ describe("bb team status (живой)", () => {
   });
 });
 
-describe("bb team task", () => {
+describe("alia team task", () => {
   it("add --send: в работу, тело с руководителем; второй пакет — предупреждение", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     const first = await harness.behavior.runCli([
       "task", "add", "developer", "Login form", "--note", "Use the design", "--send", "--project", "demo",
     ]);
@@ -590,7 +590,7 @@ describe("bb team task", () => {
     expect(send!.threadId).toBe("thr_dev");
     expect(send!.text).toContain("Work package #1: Login form");
     expect(send!.text).toContain("Use the design");
-    expect(send!.text).toContain("bb team tell lead");
+    expect(send!.text).toContain("alia team tell lead");
     const second = await harness.behavior.runCli([
       "task", "add", "developer", "Profile", "--send", "--project", "demo",
     ]);
@@ -598,8 +598,8 @@ describe("bb team task", () => {
   });
 
   it("list / done / remove и ошибки", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     await harness.behavior.runCli(["task", "add", "tester", "Smoke", "--project", "demo"]);
     const list = await harness.behavior.runCli(["task", "list", "--project", "demo"]);
     expect(list.stdout).toContain("#1 [todo] tester — Smoke");
@@ -625,16 +625,16 @@ describe("bb team task", () => {
   });
 
   it("send без треда роли — понятная ошибка", async () => {
-    const { bb, harness } = makeHost({ threads: [] });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: [] });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["task", "add", "developer", "X", "--send", "--project", "demo"]);
     expect(result.exitCode).not.toBe(0);
-    expect(result.stderr).toContain("bb team create");
+    expect(result.stderr).toContain("alia team create");
   });
 
   it("изменения публикуют сигнал для панели", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     await harness.behavior.runCli(["task", "add", "tester", "Smoke", "--project", "demo"]);
     expect(harness.inspection.realtimeSignals).toContainEqual({
       channel: "team-changed",
@@ -643,10 +643,10 @@ describe("bb team task", () => {
   });
 });
 
-describe("bb team report", () => {
+describe("alia team report", () => {
   it("md на stdout, html без --out — ошибка", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     const md = await harness.behavior.runCli(["report", "--project", "demo"]);
     expect(md.exitCode).toBe(0);
     expect(md.stdout).toContain("## Team · demo");
@@ -656,8 +656,8 @@ describe("bb team report", () => {
   });
 
   it("--out в хранилище треда — файл и директива inline-vis", async () => {
-    const { bb, harness, files } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness, files } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     const result = await harness.behavior.runCli(
       ["report", "--out", "/data/thread-storage/thr_me/team/report.html"],
       { projectId: "proj_1", threadId: "thr_me" },
@@ -668,17 +668,17 @@ describe("bb team report", () => {
   });
 });
 
-describe("bb team doctor", () => {
+describe("alia team doctor", () => {
   it("предупреждения: нет треда, чужой родитель, сирота, .gitignore", async () => {
-    const { bb, harness } = makeHost({
+    const { alia, harness } = makeHost({
       threads: [
         { id: "thr_lead", role: "lead" },
         { id: "thr_dev", role: "developer", parentThreadId: null },
         { id: "thr_ghost", role: "analyst", parentThreadId: "thr_lead" },
       ],
-      files: { "/ws/demo/.gitignore": ".bb/\n" },
+      files: { "/ws/demo/.gitignore": ".vesnalia/\n" },
     });
-    await plugin(bb);
+    await plugin(alia);
     const result = await harness.behavior.runCli(["doctor", "--project", "demo", "--json"]);
     const data = JSON.parse(result.stdout) as { fail: number; checks: Array<{ level: string; detail: string }> };
     expect(result.exitCode).toBe(0);
@@ -687,27 +687,27 @@ describe("bb team doctor", () => {
     expect(details).toContain("tester: no thread yet");
     expect(details).toContain("developer: thread thr_dev is not a child of the lead");
     expect(details).toContain("analyst: thread thr_ghost carries a role missing");
-    expect(details).toContain("ignores .bb/ entirely");
+    expect(details).toContain("ignores .vesnalia/ entirely");
   });
 
   it("нет конфига и неизвестная vars — провал / предупреждение", async () => {
     const empty = makeHost({ config: null });
-    await plugin(empty.bb);
+    await plugin(empty.alia);
     const missing = await empty.harness.behavior.runCli(["doctor", "--project", "demo"]);
     expect(missing.exitCode).toBe(1);
-    expect(missing.stdout).toContain("bb team init");
+    expect(missing.stdout).toContain("alia team init");
 
     const typo = makeHost({ config: CONFIG.replace("Board {{vars.board}}", "Board {{vars.bord}}") });
-    await plugin(typo.bb);
+    await plugin(typo.alia);
     const warned = await typo.harness.behavior.runCli(["doctor", "--project", "demo"]);
     expect(warned.stdout).toContain("{{vars.bord}}");
   });
 });
 
-describe("bb team create: vars и notifyOn", () => {
+describe("alia team create: vars и notifyOn", () => {
   it("vars подставлены в промпты и окружение; notifyOn в метаданных", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     const result = await harness.behavior.runCli(["create", "--project", "demo"]);
     expect(result.exitCode).toBe(0);
     const spawns = harness.inspection.sdk
@@ -729,8 +729,8 @@ describe("bb team create: vars и notifyOn", () => {
   });
 
   it("неизвестная vars в окружении — ошибка до спавна", async () => {
-    const { bb, harness } = makeHost({ config: CONFIG.replace("testEnv: env:env_1", "other: x") });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ config: CONFIG.replace("testEnv: env:env_1", "other: x") });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["create", "--project", "demo"]);
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain("testEnv");
@@ -740,8 +740,8 @@ describe("bb team create: vars и notifyOn", () => {
 
 describe("notifyOn: уведомления руководителю", () => {
   it("idle исполнителя с notifyOn — руководителю уходит выдержка", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     await harness.behavior.emitThreadEvent("thread.idle", {
       thread: makeThreadResponse({ id: "thr_dev", projectId: "proj_1", parentThreadId: "thr_lead" }),
       lastAssistantText: "Done: login form ready.",
@@ -754,8 +754,8 @@ describe("notifyOn: уведомления руководителю", () => {
   });
 
   it("без notifyOn и для чужих тредов — тишина", async () => {
-    const { bb, harness } = makeHost({ threads: [...TEAM_THREADS, { id: "thr_x" }] });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: [...TEAM_THREADS, { id: "thr_x" }] });
+    await plugin(alia);
     await harness.behavior.emitThreadEvent("thread.idle", {
       thread: makeThreadResponse({ id: "thr_test", projectId: "proj_1", parentThreadId: "thr_lead" }),
       lastAssistantText: "x",
@@ -770,8 +770,8 @@ describe("notifyOn: уведомления руководителю", () => {
 
 describe("пауза", () => {
   it("pause держит исполнителей (не руководителя), resume отпускает", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     const paused = await harness.behavior.runCli(["pause", "--project", "demo", "--json"]);
     expect(JSON.parse(paused.stdout)).toMatchObject({ paused: true, count: 2 });
     const hook = harness.inspection.registrations.hooks["message.dispatch"]!;
@@ -796,8 +796,8 @@ describe("пауза", () => {
   });
 
   it("пауза переживает перезагрузку плагина", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     await harness.behavior.runCli(["pause", "--project", "demo"]);
     const reloaded = await harness.lifecycle.reload(plugin);
     const hook = reloaded.harness.inspection.registrations.hooks["message.dispatch"]!;
@@ -807,16 +807,16 @@ describe("пауза", () => {
   });
 });
 
-describe("bb team stop", () => {
+describe("alia team stop", () => {
   it("по умолчанию — только работающие исполнители", async () => {
-    const { bb, harness } = makeHost({
+    const { alia, harness } = makeHost({
       threads: [
         { id: "thr_lead", role: "lead", status: "active" },
         { id: "thr_dev", role: "developer", parentThreadId: "thr_lead", status: "idle" },
         { id: "thr_test", role: "tester", parentThreadId: "thr_lead", status: "active" },
       ],
     });
-    await plugin(bb);
+    await plugin(alia);
     const result = await harness.behavior.runCli(["stop", "--project", "demo"]);
     expect(result.exitCode).toBe(0);
     const stops = harness.inspection.sdk.callsTo("threads.stop").map((a) => (a[0] as { threadId: string }).threadId);
@@ -824,10 +824,10 @@ describe("bb team stop", () => {
   });
 });
 
-describe("bb team replace", () => {
+describe("alia team replace", () => {
   it("исполнитель: новый тред с передачей дел, старый отвязан и архивирован", async () => {
-    const { bb, harness, threads, files } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness, threads, files } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     await harness.behavior.runCli(["task", "add", "developer", "Profile page", "--project", "demo"]);
     files.set("/ws/demo/checkpoint.json", JSON.stringify(CHECKPOINT_CONTENT));
     const saved = await harness.behavior.runCli(["checkpoint","1","--file","checkpoint.json","--project","demo"]);
@@ -852,8 +852,8 @@ describe("bb team replace", () => {
   });
 
   it("руководитель: исполнители переезжают под новый тред; --keep не архивирует", async () => {
-    const { bb, harness, threads, files } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness, threads, files } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     await harness.behavior.runCli(["task","add","lead","Coordination","--project","demo"]);
     files.set("/ws/demo/checkpoint.json",JSON.stringify(CHECKPOINT_CONTENT));
     expect((await harness.behavior.runCli(["checkpoint","1","--file","checkpoint.json","--project","demo"])).exitCode).toBe(0);
@@ -866,8 +866,8 @@ describe("bb team replace", () => {
   });
 
   it("dry-run ничего не меняет; роль без треда — ошибка", async () => {
-    const { bb, harness } = makeHost({ threads: [{ id: "thr_lead", role: "lead" }] });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: [{ id: "thr_lead", role: "lead" }] });
+    await plugin(alia);
     const dry = await harness.behavior.runCli(["replace", "lead", "--dry-run", "--project", "demo"]);
     expect(dry.exitCode).toBe(0);
     expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(0);
@@ -876,40 +876,40 @@ describe("bb team replace", () => {
   });
 });
 
-describe("bb team init: шаблоны и --from", () => {
+describe("alia team init: шаблоны и --from", () => {
   it("--template qa пишет руководителя и тестировщика", async () => {
-    const { bb, harness, files } = makeHost({ config: null });
-    await plugin(bb);
+    const { alia, harness, files } = makeHost({ config: null });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["init", "--template", "qa", "--project", "demo"]);
     expect(result.exitCode).toBe(0);
-    expect(files.has("/ws/demo/.bb/teams/main/tester.md")).toBe(true);
-    expect(files.has("/ws/demo/.bb/teams/main/developer.md")).toBe(false);
+    expect(files.has("/ws/demo/.vesnalia/teams/main/tester.md")).toBe(true);
+    expect(files.has("/ws/demo/.vesnalia/teams/main/developer.md")).toBe(false);
   });
 
   it("--from копирует конфиг и промпты, убирая threadId", async () => {
-    const { bb, harness, files } = makeHost({
+    const { alia, harness, files } = makeHost({
       config: null,
       files: {
-        "/ws/other/.bb/team.yaml":
-          "version: 1\nroles:\n  - name: lead\n    threadId: thr_old\n  - name: dev\n    promptFile: .bb/team/roles/dev.md\n",
-        "/ws/other/.bb/team/roles/dev.md": "Dev prompt",
+        "/ws/other/.vesnalia/team.yaml":
+          "version: 1\nroles:\n  - name: lead\n    threadId: thr_old\n  - name: dev\n    promptFile: .vesnalia/team/roles/dev.md\n",
+        "/ws/other/.vesnalia/team/roles/dev.md": "Dev prompt",
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     const result = await harness.behavior.runCli(["init", "--from", "other", "--project", "demo"]);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("removed 1 threadId");
-    expect(files.get("/ws/demo/.bb/teams/main.yaml")).not.toContain("thr_old");
-    expect(files.get("/ws/demo/.bb/teams/main/dev.md")).toContain(`Dev prompt\n\n${executorReviewPolicy("en")}`);
-    expect(files.get("/ws/demo/.bb/teams/main/dev.md")).toContain(sessionHandoffPolicy("en"));
-    expect(files.get("/ws/other/.bb/team/roles/dev.md")).toBe("Dev prompt");
+    expect(files.get("/ws/demo/.vesnalia/teams/main.yaml")).not.toContain("thr_old");
+    expect(files.get("/ws/demo/.vesnalia/teams/main/dev.md")).toContain(`Dev prompt\n\n${executorReviewPolicy("en")}`);
+    expect(files.get("/ws/demo/.vesnalia/teams/main/dev.md")).toContain(sessionHandoffPolicy("en"));
+    expect(files.get("/ws/other/.vesnalia/team/roles/dev.md")).toBe("Dev prompt");
   });
 });
 
 describe("@-меню «Team roles»", () => {
   it("search находит роли проекта, resolve даёт контекст с тредом", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     const provider = harness.inspection.registrations.mentionProviders.find((p) => p.id === "team-roles")!;
     const items = await provider.search({ query: "dev", projectId: "proj_1" } as never);
     expect(items.map((i) => i.id)).toEqual(["main:developer:thr_dev"]);
@@ -920,8 +920,8 @@ describe("@-меню «Team roles»", () => {
 
 describe("RPC панели", () => {
   it("snapshot / taskAdd / taskUpdate / pause", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     const added = (await harness.behavior.callRpc("taskAdd", {
       projectId: "proj_1",
       team: "main",
@@ -945,8 +945,8 @@ describe("RPC панели", () => {
   });
 
   it("сохраняет оба пакета при одновременном добавлении (issue #1)", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     const results = await Promise.all([
       harness.behavior.callRpc("taskAdd", {
         projectId: "proj_1", team: "main", role: "developer",
@@ -965,8 +965,8 @@ describe("RPC панели", () => {
   });
 
   it("сохраняет оба обновления при параллельном taskUpdate (issue #1)", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     await harness.behavior.callRpc("taskAdd", {
       projectId: "proj_1", team: "main", role: "developer", title: "A", send: false,
     });
@@ -977,13 +977,13 @@ describe("RPC панели", () => {
       harness.behavior.callRpc("taskUpdate", { projectId: "proj_1", team: "main", id: 1, status: "review" }),
       harness.behavior.callRpc("taskUpdate", { projectId: "proj_1", team: "main", id: 2, status: "review" }),
     ]);
-    const stored = await bb.storage.kv.get<{ tasks: Array<{ status: string }> }>("tasks:proj_1:main");
+    const stored = await alia.storage.kv.get<{ tasks: Array<{ status: string }> }>("tasks:proj_1:main");
     expect(stored!.tasks.map((task) => task.status)).toEqual(["review", "review"]);
   });
 
   it("два одновременных --send одной роли: предупреждение busy у второго (B8)", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     const results = await Promise.all([
       harness.behavior.runCli(["task", "add", "developer", "One", "--send", "--project", "demo"]),
       harness.behavior.runCli(["task", "add", "developer", "Two", "--send", "--project", "demo"]),
@@ -996,8 +996,8 @@ describe("RPC панели", () => {
   });
 
   it("send упал — пакет создан, sendError в ответе (B6)", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS, sendError: "thread in error state" });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS, sendError: "thread in error state" });
+    await plugin(alia);
     const result = (await harness.behavior.callRpc("taskAdd", {
       projectId: "proj_1", team: "main", role: "developer", title: "Broken send", send: true,
     })) as { task: { status: string }; sentTo: string | null; sendError: string | null };
@@ -1037,23 +1037,23 @@ roles:
 function twoTeams(threads: Array<Partial<FakeThread> & { id: string }> = []) {
   return makeHost({
     config: null,
-    files: { "/ws/demo/.bb/teams/core.yaml": CORE_YAML, "/ws/demo/.bb/teams/qa.yaml": QA_YAML },
+    files: { "/ws/demo/.vesnalia/teams/core.yaml": CORE_YAML, "/ws/demo/.vesnalia/teams/qa.yaml": QA_YAML },
     threads,
   });
 }
 
 describe("несколько команд в проекте", () => {
   it("без --team и вне треда команды — ошибка со списком команд", async () => {
-    const { bb, harness } = twoTeams();
-    await plugin(bb);
+    const { alia, harness } = twoTeams();
+    await plugin(alia);
     const result = await harness.behavior.runCli(["create", "--project", "demo"]);
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain("core, qa");
   });
 
   it("create --team: свои метаданные, имя команды в названиях, своя секция", async () => {
-    const { bb, harness } = twoTeams();
-    await plugin(bb);
+    const { alia, harness } = twoTeams();
+    await plugin(alia);
     const result = await harness.behavior.runCli(["create", "--team", "qa", "--project", "demo"]);
     expect(result.exitCode).toBe(0);
     const spawns = harness.inspection.sdk.callsTo("threads.spawn").map((a) => a[0] as Record<string, unknown>);
@@ -1064,12 +1064,12 @@ describe("несколько команд в проекте", () => {
   });
 
   it("команда определяется по треду, из которого вызвана команда", async () => {
-    const { bb, harness } = twoTeams([
+    const { alia, harness } = twoTeams([
       { id: "thr_ql", role: "lead", team: "qa" },
       { id: "thr_qt", role: "tester", team: "qa", parentThreadId: "thr_ql" },
       { id: "thr_cl", role: "lead", team: "core" },
     ]);
-    await plugin(bb);
+    await plugin(alia);
     const result = await harness.behavior.runCli(["tell", "tester", "--message", "go"], {
       projectId: "proj_1",
       threadId: "thr_ql",
@@ -1079,8 +1079,8 @@ describe("несколько команд в проекте", () => {
   });
 
   it("status без --team показывает все команды; list — сводка", async () => {
-    const { bb, harness } = twoTeams([{ id: "thr_cl", role: "lead", team: "core" }]);
-    await plugin(bb);
+    const { alia, harness } = twoTeams([{ id: "thr_cl", role: "lead", team: "core" }]);
+    await plugin(alia);
     const status = await harness.behavior.runCli(["status", "--project", "demo"]);
     expect(status.stdout).toContain('Team "core" — Core [versioned]');
     expect(status.stdout).toContain('Team "qa"');
@@ -1094,13 +1094,13 @@ describe("несколько команд в проекте", () => {
   });
 
   it("пакеты и пауза раздельны по командам", async () => {
-    const { bb, harness } = twoTeams([
+    const { alia, harness } = twoTeams([
       { id: "thr_cl", role: "lead", team: "core" },
       { id: "thr_cd", role: "developer", team: "core", parentThreadId: "thr_cl" },
       { id: "thr_ql", role: "lead", team: "qa" },
       { id: "thr_qt", role: "tester", team: "qa", parentThreadId: "thr_ql" },
     ]);
-    await plugin(bb);
+    await plugin(alia);
     await harness.behavior.runCli(["task", "add", "developer", "A", "--team", "core", "--project", "demo"]);
     const qaTasks = await harness.behavior.runCli(["task", "list", "--team", "qa", "--project", "demo"]);
     expect(qaTasks.stdout).toContain("No open work packages");
@@ -1114,14 +1114,14 @@ describe("несколько команд в проекте", () => {
 
 describe("добавление исполнителя", () => {
   it("add-role: роль дописывается в конфиг (комментарии целы) и создаётся тред", async () => {
-    const { bb, harness, files } = twoTeams([{ id: "thr_cl", role: "lead", team: "core" }]);
-    files.set("/ws/demo/.bb/teams/core.yaml", `# keep me\n${CORE_YAML}`);
-    await plugin(bb);
+    const { alia, harness, files } = twoTeams([{ id: "thr_cl", role: "lead", team: "core" }]);
+    files.set("/ws/demo/.vesnalia/teams/core.yaml", `# keep me\n${CORE_YAML}`);
+    await plugin(alia);
     const result = await harness.behavior.runCli([
       "add-role", "junior", "--provider", "pi", "--model", "qwen", "--team", "core", "--project", "demo",
     ]);
     expect(result.exitCode).toBe(0);
-    const config = files.get("/ws/demo/.bb/teams/core.yaml")!;
+    const config = files.get("/ws/demo/.vesnalia/teams/core.yaml")!;
     expect(config).toContain("# keep me");
     expect(config).toContain("name: junior");
     expect(config).toContain("model: qwen");
@@ -1133,11 +1133,11 @@ describe("добавление исполнителя", () => {
   });
 
   it("существующий свободный тред становится исполнителем и переименовывается", async () => {
-    const { bb, harness, files, threads } = twoTeams([
+    const { alia, harness, files, threads } = twoTeams([
       { id: "thr_cl", role: "lead", team: "core" },
       { id: "thr_free", title: "Old chat" },
     ]);
-    await plugin(bb);
+    await plugin(alia);
     const free = (await harness.behavior.callRpc("freeThreads", { projectId: "proj_1" })) as {
       threads: Array<{ id: string }>;
     };
@@ -1148,9 +1148,9 @@ describe("добавление исполнителя", () => {
       role: { name: "reviewer", kind: "reviewer", title: "Reviewer", provider: "pi", model: "ollama-cloud/glm-5.3", reasoningLevel: "high", serviceTier: "fast", executionPolicy:{noAdditionalCost:true,fallbacks:[{provider:"pi",model:"approved-backup"}]} },
       threadId: "thr_free",
     });
-    expect(files.get("/ws/demo/.bb/teams/core.yaml")).toContain("threadId: thr_free");
-    expect(files.get("/ws/demo/.bb/teams/core.yaml")).toContain("serviceTier: fast");
-    expect(files.get("/ws/demo/.bb/teams/core.yaml")).toContain("model: approved-backup");
+    expect(files.get("/ws/demo/.vesnalia/teams/core.yaml")).toContain("threadId: thr_free");
+    expect(files.get("/ws/demo/.vesnalia/teams/core.yaml")).toContain("serviceTier: fast");
+    expect(files.get("/ws/demo/.vesnalia/teams/core.yaml")).toContain("model: approved-backup");
     expect(threads.get("thr_free")!.role).toBe("reviewer");
     expect(threads.get("thr_free")!.team).toBe("core");
     expect(threads.get("thr_free")!.parentThreadId).toBe("thr_cl");
@@ -1158,11 +1158,11 @@ describe("добавление исполнителя", () => {
   });
 
   it("тред другой команды не берётся; имя роли не дублируется", async () => {
-    const { bb, harness } = twoTeams([
+    const { alia, harness } = twoTeams([
       { id: "thr_cl", role: "lead", team: "core" },
       { id: "thr_ql", role: "lead", team: "qa" },
     ]);
-    await plugin(bb);
+    await plugin(alia);
     const taken = await harness.behavior.runCli([
       "add-role", "helper", "--thread", "thr_ql", "--team", "core", "--project", "demo",
     ]);
@@ -1174,8 +1174,8 @@ describe("добавление исполнителя", () => {
   });
 
   it("два одновременных roleAdd не теряют роль (A1)", async () => {
-    const { bb, harness, files } = twoTeams([{ id: "thr_cl", role: "lead", team: "core" }]);
-    await plugin(bb);
+    const { alia, harness, files } = twoTeams([{ id: "thr_cl", role: "lead", team: "core" }]);
+    await plugin(alia);
     await Promise.all([
       harness.behavior.callRpc("roleAdd", {
         projectId: "proj_1", team: "core",
@@ -1186,7 +1186,7 @@ describe("добавление исполнителя", () => {
         role: { name: "reviewer", kind: "reviewer", title: "Reviewer" },
       }),
     ]);
-    const config = files.get("/ws/demo/.bb/teams/core.yaml")!;
+    const config = files.get("/ws/demo/.vesnalia/teams/core.yaml")!;
     expect(config).toContain("name: junior");
     expect(config).toContain("name: reviewer");
     const spawns = harness.inspection.sdk
@@ -1197,8 +1197,8 @@ describe("добавление исполнителя", () => {
   });
 
   it("два одновременных teamCreate — второй получает team_exists (A2)", async () => {
-    const { bb, harness } = makeHost({ config: null, files: { "/ws/demo/.gitignore": ".bb\n" } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ config: null, files: { "/ws/demo/.gitignore": ".alia\n" } });
+    await plugin(alia);
     const results = await Promise.allSettled([
       harness.behavior.callRpc("teamCreate", {
         projectId: "proj_1", team: "dev", title: "Dev",
@@ -1230,10 +1230,10 @@ describe("добавление исполнителя", () => {
 
 describe("помощники (вложенные треды)", () => {
   it("тред под тредом роли — помощник этой роли в status и снимке", async () => {
-    const { bb, harness } = makeHost({
+    const { alia, harness } = makeHost({
       threads: [...TEAM_THREADS, { id: "thr_sub", parentThreadId: "thr_dev", title: "Subtask" }],
     });
-    await plugin(bb);
+    await plugin(alia);
     const { snapshot } = (await harness.behavior.callRpc("snapshot", { projectId: "proj_1" })) as {
       snapshot: TeamSnapshot;
     };
@@ -1245,10 +1245,10 @@ describe("помощники (вложенные треды)", () => {
   });
 
   it("thread.created под тредом роли ставит метку помощника", async () => {
-    const { bb, harness, threads } = makeHost({
+    const { alia, harness, threads } = makeHost({
       threads: [...TEAM_THREADS, { id: "thr_sub", parentThreadId: "thr_dev" }],
     });
-    await plugin(bb);
+    await plugin(alia);
     await harness.behavior.emitThreadEvent("thread.created", {
       thread: makeThreadResponse({ id: "thr_sub", projectId: "proj_1", parentThreadId: "thr_dev" }),
     });
@@ -1257,32 +1257,32 @@ describe("помощники (вложенные треды)", () => {
 });
 
 describe("версионирование конфига", () => {
-  it("по умолчанию вне git; version on/off меняет .bb/teams/.gitignore", async () => {
-    const { bb, harness, files } = makeHost({ config: null });
-    await plugin(bb);
+  it("по умолчанию вне git; version on/off меняет .vesnalia/teams/.gitignore", async () => {
+    const { alia, harness, files } = makeHost({ config: null });
+    await plugin(alia);
     await harness.behavior.runCli(["init", "--team", "core", "--project", "demo"]);
-    expect(files.get("/ws/demo/.bb/teams/.gitignore")).toContain("/core.yaml");
+    expect(files.get("/ws/demo/.vesnalia/teams/.gitignore")).toContain("/core.yaml");
     const on = await harness.behavior.runCli(["version", "on", "--team", "core", "--project", "demo"]);
     expect(on.exitCode).toBe(0);
-    expect(files.get("/ws/demo/.bb/teams/.gitignore") ?? "").not.toContain("/core.yaml");
+    expect(files.get("/ws/demo/.vesnalia/teams/.gitignore") ?? "").not.toContain("/core.yaml");
     await harness.behavior.runCli(["version", "off", "--team", "core", "--project", "demo"]);
-    expect(files.get("/ws/demo/.bb/teams/.gitignore")).toContain("/core/");
+    expect(files.get("/ws/demo/.vesnalia/teams/.gitignore")).toContain("/core/");
   });
 
-  it("корневой .gitignore закрывает .bb — включить нельзя", async () => {
-    const { bb, harness } = makeHost({ config: null, files: { "/ws/demo/.gitignore": ".bb\n" } });
-    await plugin(bb);
+  it("корневой .gitignore закрывает .vesnalia — включить нельзя", async () => {
+    const { alia, harness } = makeHost({ config: null, files: { "/ws/demo/.gitignore": ".alia\n" } });
+    await plugin(alia);
     await harness.behavior.runCli(["init", "--team", "core", "--project", "demo"]);
     const on = await harness.behavior.runCli(["version", "on", "--team", "core", "--project", "demo"]);
     expect(on.exitCode).toBe(1);
-    expect(on.stdout).toContain(".bb/*");
+    expect(on.stdout).toContain(".vesnalia/*");
   });
 });
 
 describe("шаблоны команд", () => {
   it("CLI: save из видов, list, show, delete; встроенные защищены", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     const saved = await harness.behavior.runCli(["template", "save", "pm", "--kinds", "manager,analyst", "--title", "PM"]);
     expect(saved.exitCode).toBe(0);
     const list = await harness.behavior.runCli(["template", "list"]);
@@ -1296,25 +1296,25 @@ describe("шаблоны команд", () => {
   });
 
   it("сохранить текущую команду как шаблон и создать по нему новую", async () => {
-    const { bb, harness, files } = makeHost({ config: CONFIG.replace("    prompt: Report to", "    model: ollama-cloud/glm-5.3\n    reasoningLevel: high\n    serviceTier: fast\n    executionPolicy:\n      noAdditionalCost: true\n      fallbacks:\n        - provider: pi\n          model: approved-backup\n    prompt: Report to") });
-    await plugin(bb);
+    const { alia, harness, files } = makeHost({ config: CONFIG.replace("    prompt: Report to", "    model: ollama-cloud/glm-5.3\n    reasoningLevel: high\n    serviceTier: fast\n    executionPolicy:\n      noAdditionalCost: true\n      fallbacks:\n        - provider: pi\n          model: approved-backup\n    prompt: Report to") });
+    await plugin(alia);
     const saved = await harness.behavior.runCli(["template", "save", "mine", "--from-team", "main", "--project", "demo"]);
     expect(saved.exitCode).toBe(0);
     const init = await harness.behavior.runCli(["init", "--team", "copy", "--template", "mine", "--project", "demo"]);
     expect(init.exitCode).toBe(0);
-    const copied = files.get("/ws/demo/.bb/teams/copy.yaml")!;
+    const copied = files.get("/ws/demo/.vesnalia/teams/copy.yaml")!;
     expect(copied).toContain("name: developer");
     expect(copied).toContain("notifyOn:");
     expect(copied).toContain("model: ollama-cloud/glm-5.3");
     expect(copied).toContain("reasoningLevel: high");
     expect(copied).toContain("serviceTier: fast");
     expect(copied).toContain("model: approved-backup");
-    expect(files.get("/ws/demo/.bb/teams/copy/developer.md")).toContain("Report to {{leadThreadRef}}.");
+    expect(files.get("/ws/demo/.vesnalia/teams/copy/developer.md")).toContain("Report to {{leadThreadRef}}.");
   });
 
   it("RPC teamCreate: выключенный провайдер блокирует, валидный — создаёт команду", async () => {
-    const { bb, harness, files } = makeHost({ config: null });
-    await plugin(bb);
+    const { alia, harness, files } = makeHost({ config: null });
+    await plugin(alia);
     await expect(
       harness.behavior.callRpc("teamCreate", {
         projectId: "proj_1",
@@ -1324,7 +1324,7 @@ describe("шаблоны команд", () => {
         versioned: false,
       }),
     ).rejects.toThrow(/nope/);
-    expect(files.has("/ws/demo/.bb/teams/main.yaml")).toBe(false);
+    expect(files.has("/ws/demo/.vesnalia/teams/main.yaml")).toBe(false);
     const created = (await harness.behavior.callRpc("teamCreate", {
       projectId: "proj_1",
       team: "main",
@@ -1336,14 +1336,14 @@ describe("шаблоны команд", () => {
       versioned: true,
     })) as { spawned: number };
     expect(created.spawned).toBe(2);
-    expect(files.get("/ws/demo/.bb/teams/.gitignore") ?? "").not.toContain("/main.yaml");
+    expect(files.get("/ws/demo/.vesnalia/teams/.gitignore") ?? "").not.toContain("/main.yaml");
   });
 });
 
 describe("retitle", () => {
   it("переименовывает треды по текущему формату", async () => {
-    const { bb, harness, threads } = makeHost({ threads: TEAM_THREADS, settings: { titleFormat: "[TM] {role}" } });
-    await plugin(bb);
+    const { alia, harness, threads } = makeHost({ threads: TEAM_THREADS, settings: { titleFormat: "[TM] {role}" } });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["retitle", "--project", "demo"]);
     expect(result.stdout).toContain("3");
     expect(threads.get("thr_dev")!.title).toBe("[TM] Developer");
@@ -1352,8 +1352,8 @@ describe("retitle", () => {
 
 describe("RPC overview: проекты по группам", () => {
   it("с командами / можно создать; без папки — заблокирован с причиной", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     const result = (await harness.behavior.callRpc("overview", null)) as {
       projects: Array<{ name: string; state: string; teams: string[]; threads: number; reason: string | null }>;
     };
@@ -1372,8 +1372,8 @@ describe("RPC overview: проекты по группам", () => {
 
 describe("приёмка пакетов", () => {
   it("исполнитель не может принять пакет сам; руководитель — может", async () => {
-    const { bb, harness } = makeHost({ threads: TEAM_THREADS });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ threads: TEAM_THREADS });
+    await plugin(alia);
     await harness.behavior.runCli(["task", "add", "tester", "Smoke", "--send", "--project", "demo"]);
     const self = await harness.behavior.runCli(["task", "done", "1"], { projectId: "proj_1", threadId: "thr_test" });
     expect(self.exitCode).not.toBe(0);
@@ -1392,14 +1392,14 @@ describe("приёмка пакетов", () => {
 
 describe("create восстанавливает связи", () => {
   it("исполнитель без родителя снова становится дочерним тредом руководителя", async () => {
-    const { bb, harness, threads } = makeHost({
+    const { alia, harness, threads } = makeHost({
       threads: [
         { id: "thr_lead", role: "lead" },
         { id: "thr_dev", role: "developer", parentThreadId: null },
         { id: "thr_test", role: "tester", parentThreadId: "thr_lead" },
       ],
     });
-    await plugin(bb);
+    await plugin(alia);
     const result = await harness.behavior.runCli(["create", "--project", "demo"]);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("re-linked under the lead: 1");
@@ -1422,9 +1422,9 @@ describe("examples/teams", () => {
 
 describe("manual replacement recovery",()=>{
   it("aborts before switch and restores helpers without launching a model",async()=>{
-    const {bb,harness,threads}=makeHost({threads:[...TEAM_THREADS,{id:"thr_candidate",role:null,parentThreadId:"thr_lead",queuedInput:[{type:"text",text:"handoff",mentions:[]}],extraMetadata:{teamReplacement:true,teamReplacementRole:"developer",teamReplacementTeam:"main"}},{id:"thr_helper",role:null,helperOf:"developer",parentThreadId:"thr_candidate"}]});
-    await plugin(bb);
-    await bb.storage.kv.set("replacement:proj_1:main:developer",{oldThreadId:"thr_dev",newThreadId:"thr_candidate",environmentId:"env_1",keep:false,stage:"spawning",delivery:"pending",reparented:1,resumed:false,startedAt:0});
+    const {alia,harness,threads}=makeHost({threads:[...TEAM_THREADS,{id:"thr_candidate",role:null,parentThreadId:"thr_lead",queuedInput:[{type:"text",text:"handoff",mentions:[]}],extraMetadata:{teamReplacement:true,teamReplacementRole:"developer",teamReplacementTeam:"main"}},{id:"thr_helper",role:null,helperOf:"developer",parentThreadId:"thr_candidate"}]});
+    await plugin(alia);
+    await alia.storage.kv.set("replacement:proj_1:main:developer",{oldThreadId:"thr_dev",newThreadId:"thr_candidate",environmentId:"env_1",keep:false,stage:"spawning",delivery:"pending",reparented:1,resumed:false,startedAt:0});
     const result=await harness.behavior.runCli(["replace","developer","--abort","--project","demo","--json"]);
     expect(result.exitCode,result.stderr).toBe(0);
     expect(JSON.parse(result.stdout).aborted).toBe(true);
@@ -1436,9 +1436,9 @@ describe("manual replacement recovery",()=>{
     expect(harness.inspection.sdk.callsTo("threads.send")).toHaveLength(0);
   });
   it("refuses abort after the canonical role switched",async()=>{
-    const {bb,harness}=makeHost({threads:TEAM_THREADS});await plugin(bb);
-    await bb.storage.kv.set("active-session:proj_1:main:developer","thr_fresh");
-    await bb.storage.kv.set("replacement:proj_1:main:developer",{oldThreadId:"thr_dev",newThreadId:"thr_fresh",environmentId:"env_1",keep:false,stage:"switching",delivery:"pending",reparented:0,resumed:false,startedAt:0});
+    const {alia,harness}=makeHost({threads:TEAM_THREADS});await plugin(alia);
+    await alia.storage.kv.set("active-session:proj_1:main:developer","thr_fresh");
+    await alia.storage.kv.set("replacement:proj_1:main:developer",{oldThreadId:"thr_dev",newThreadId:"thr_fresh",environmentId:"env_1",keep:false,stage:"switching",delivery:"pending",reparented:0,resumed:false,startedAt:0});
     const result=await harness.behavior.runCli(["replace","developer","--abort","--project","demo"]);
     expect(result.exitCode).not.toBe(0);expect(result.stderr).toContain("already switched");
     expect(harness.inspection.sdk.callsTo("threads.archive")).toHaveLength(0);
@@ -1447,27 +1447,27 @@ describe("manual replacement recovery",()=>{
 
 describe("held replacement prompt",()=>{
   it("holds preparation and partial switch, then releases only the canonical session",async()=>{
-    const {bb,harness,threads}=makeHost({threads:[...TEAM_THREADS,{id:"thr_candidate",role:null,extraMetadata:{teamReplacement:true,teamReplacementRole:"developer",teamReplacementTeam:"main"}}]});
-    await plugin(bb);
+    const {alia,harness,threads}=makeHost({threads:[...TEAM_THREADS,{id:"thr_candidate",role:null,extraMetadata:{teamReplacement:true,teamReplacementRole:"developer",teamReplacementTeam:"main"}}]});
+    await plugin(alia);
     const hook=harness.inspection.registrations.hooks["message.dispatch"]!;
     const dispatch=(id:string)=>hook({thread:{id,projectId:"proj_1"},initiator:"agent",originPluginId:"team"} as never);
     expect(await dispatch("thr_candidate")).toMatchObject({action:"wait"});
     const candidate=threads.get("thr_candidate")!;candidate.role="developer";candidate.team="main";candidate.extraMetadata={teamReplacement:false};
-    await bb.storage.kv.set("active-session:proj_1:main:developer","thr_candidate");
+    await alia.storage.kv.set("active-session:proj_1:main:developer","thr_candidate");
     const intent={oldThreadId:"thr_dev",newThreadId:"thr_candidate",environmentId:"env_1",keep:false,stage:"switching",delivery:"pending",reparented:0,resumed:false,startedAt:0};
-    await bb.storage.kv.set("replacement:proj_1:main:developer",intent);
+    await alia.storage.kv.set("replacement:proj_1:main:developer",intent);
     expect(await dispatch("thr_candidate")).toMatchObject({action:"wait"});
     expect(await dispatch("thr_dev")).toMatchObject({action:"wait"});
-    await bb.storage.kv.set("replacement:proj_1:main:developer",{...intent,stage:"complete",delivery:"sent"});
+    await alia.storage.kv.set("replacement:proj_1:main:developer",{...intent,stage:"complete",delivery:"sent"});
     expect(await dispatch("thr_candidate")).toEqual({action:"proceed"});
   });
 });
 
 describe("doctor after adopted-role replacement",()=>{
   it("uses the canonical session instead of requiring the old configured thread",async()=>{
-    const {bb,harness}=makeHost({threads:TEAM_THREADS,config:CONFIG.replace('    title: Developer','    title: Developer\n    threadId: thr_previous')});
-    await plugin(bb);
-    await bb.storage.kv.set('active-session:proj_1:main:developer','thr_dev');
+    const {alia,harness}=makeHost({threads:TEAM_THREADS,config:CONFIG.replace('    title: Developer','    title: Developer\n    threadId: thr_previous')});
+    await plugin(alia);
+    await alia.storage.kv.set('active-session:proj_1:main:developer','thr_dev');
     const result=await harness.behavior.runCli(['doctor','--project','demo','--json']);
     expect(result.exitCode,result.stdout+result.stderr).toBe(0);
     expect(result.stdout).toContain('current session overrides initial threadId');
@@ -1476,7 +1476,7 @@ describe("doctor after adopted-role replacement",()=>{
 
 describe('review feedback keeps the task session',()=>{
   it('returns the same package to in-progress while keeping the next package queued',async()=>{
-    const {bb,harness}=makeHost({threads:TEAM_THREADS});await plugin(bb);
+    const {alia,harness}=makeHost({threads:TEAM_THREADS});await plugin(alia);
     const run=(args:string[])=>harness.behavior.runCli([...args,'--project','demo','--json']);
     expect((await run(['task','add','developer','Fix current','--send'])).exitCode).toBe(0);
     expect((await run(['task','update','1','--status','review'])).exitCode).toBe(0);
@@ -1489,25 +1489,25 @@ describe('review feedback keeps the task session',()=>{
     const repeat=await run(['task','update','1','--status','in-progress','--return-reason','Add the missing smoke check']);
     expect(repeat.exitCode,repeat.stderr).toBe(0);
     expect(sendsOf(harness).filter(x=>x.threadId==='thr_dev')).toHaveLength(2);
-    expect(await bb.storage.kv.get('session-task:proj_1:main:thr_dev')).toBe(1);
+    expect(await alia.storage.kv.get('session-task:proj_1:main:thr_dev')).toBe(1);
   });
 });
 
 describe('tracker changes preserve execution references',()=>{
   it('rejects switching a consumed session to another backend while allowing an explicit pin of the current one',async()=>{
-    const {bb,harness}=makeHost({threads:TEAM_THREADS.map(t=>({...t,status:'idle'}))});await plugin(bb);
+    const {alia,harness}=makeHost({threads:TEAM_THREADS.map(t=>({...t,status:'idle'}))});await plugin(alia);
     await harness.behavior.runCli(['task','add','developer','Complete package','--send','--project','demo']);
     await harness.behavior.runCli(['task','done','1','--reason','Manual acceptance of the fixture package','--project','demo']);
     const denied=await harness.behavior.runCli(['tracker','beads','--project','demo']);
     expect(denied.exitCode).not.toBe(0);expect(denied.stderr).toContain('replace completed role sessions');
     const pin=await harness.behavior.runCli(['tracker','builtin','--project','demo','--json']);
     expect(pin.exitCode,pin.stderr).toBe(0);expect(JSON.parse(pin.stdout).override).toBe('builtin');
-    expect(await bb.storage.kv.get('session-task:proj_1:main:thr_dev')).toBe(1);
+    expect(await alia.storage.kv.get('session-task:proj_1:main:thr_dev')).toBe(1);
   });
 });
 
  it("keeps uncertain rework delivery visible on retry without resending", async()=>{
-   const {bb,harness}=makeHost({threads:TEAM_THREADS});await plugin(bb);
+   const {alia,harness}=makeHost({threads:TEAM_THREADS});await plugin(alia);
    const run=(args:string[])=>harness.behavior.runCli([...args,"--project","demo","--json"]);
    await run(["task","add","developer","Fix","--send"]);
    await run(["task","update","1","--status","review"]);
@@ -1522,13 +1522,13 @@ describe('tracker changes preserve execution references',()=>{
  });
 
 it("edits an existing role profile without spawning, rejects stale saves, and supplies it at spawn",async()=>{
- const {bb,harness,files}=makeHost({threads:[]});await plugin(bb);
+ const {alia,harness,files}=makeHost({threads:[]});await plugin(alia);
  const scope={projectId:"proj_1",team:"main",role:"developer"};
  const before=await harness.behavior.callRpc("rolePolicy",scope) as {revision:string};
  const policy={noAdditionalCost:true,fallbacks:[{provider:"pi",model:"approved-backup",reasoningLevel:"future-reasoning",serviceTier:"future-tier"}]};
  await harness.behavior.callRpc("rolePolicy",{...scope,primary:{provider:"pi",model:"qwen",serviceTier:"explicit-tier"},policy,expectedRevision:before.revision});
- expect(files.get("/ws/demo/.bb/team.yaml")).toContain("approved-backup");
- expect(files.get("/ws/demo/.bb/team.yaml")).toContain("explicit-tier");
+ expect(files.get("/ws/demo/.vesnalia/team.yaml")).toContain("approved-backup");
+ expect(files.get("/ws/demo/.vesnalia/team.yaml")).toContain("explicit-tier");
  expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(0);
  await expect(harness.behavior.callRpc("rolePolicy",{...scope,policy:null,expectedRevision:before.revision})).rejects.toThrow(/changed/);
  const reread=await harness.behavior.callRpc("rolePolicy",scope) as {role:{executionPolicy:unknown};revision:string};
@@ -1538,5 +1538,5 @@ it("edits an existing role profile without spawning, rejects stale saves, and su
  expect(spawns.find(row=>row.pluginMetadata.teamRole==="lead")!.prompt).toContain("approved-backup");
  expect(spawns.find(row=>row.pluginMetadata.teamRole==="developer")!.prompt).toContain("future-tier");
  await harness.behavior.callRpc("rolePolicy",{...scope,policy:null,expectedRevision:reread.revision});
- expect(files.get("/ws/demo/.bb/team.yaml")).not.toContain("approved-backup");
+ expect(files.get("/ws/demo/.vesnalia/team.yaml")).not.toContain("approved-backup");
 });

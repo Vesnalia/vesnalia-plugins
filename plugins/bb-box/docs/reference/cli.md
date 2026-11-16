@@ -2,95 +2,95 @@
 
 # CLI reference
 
-`bb box`: Fast boxes for BB threads: list, acquire and release them, and check the backends. Each command's `--help` prints what is below.
+`alia box`: Fast boxes for VesnALIA threads: list, acquire and release them, and check the backends. Each command's `--help` prints what is below.
 
 | Command | What it does |
 | --- | --- |
-| [`bb box doctor`](#bb-box-doctor) | Check each backend's settings and host, and say how to fix what is wrong. |
-| [`bb box kinds`](#bb-box-kinds) | List the kinds of box the active backends offer. In a thread, or with `--thread`, only those of the backends that serve its project. |
-| [`bb box list`](#bb-box-list) | List a thread's boxes, or every box with `--all`. |
-| [`bb box acquire`](#bb-box-acquire) | Acquire a box for a thread and wait until it answers. |
-| [`bb box status`](#bb-box-status) | Show one box, checking its power state with the backend. |
-| [`bb box run`](#bb-box-run) | Run a shell command in a thread's box, or with `--machine` in one of your machines, as its user, and print its output. It exits with the command's exit code. For a long command, use box_run, which keeps it as a job. |
-| [`bb box resize`](#bb-box-resize) | Resize a thread's box: its cores, memory, disk or GPU, where its backend can, live or with `--restart`. Parts left out stay as they are, and the disk only grows. |
-| [`bb box machines`](#bb-box-machines) | List your machines: boxes you own, kept as BB machines, which no thread ending releases. |
-| [`bb box machines add`](#bb-box-machines-add) | Add a machine of your own: a box of the kind, kept as a BB machine under the name until you remove it. |
-| [`bb box machines resize`](#bb-box-machines-resize) | Resize one of your machines: its cores, memory, disk or GPU, where its backend can, live or with `--restart`. Parts left out stay as they are, and the disk only grows. |
-| [`bb box machines remove`](#bb-box-machines-remove) | Remove one of your machines: its box is released and its disk deleted. A machine a thread is working on is refused unless `--force`. Snapshots you kept are copied first, so they outlive it, unless `--delete-kept`. |
-| [`bb box thread`](#bb-box-thread) | Start a child thread of a thread on one of its boxes, as a BB machine, with the thread's project. |
-| [`bb box release`](#bb-box-release) | Release a box. Its disk is deleted. A box a thread is working on is refused unless `--force`. Snapshots you kept are copied first, so they outlive it, unless `--delete-kept`. |
-| [`bb box stop`](#bb-box-stop) | Stop a thread's box, or with `--machine` one of your machines, keeping its disk. A box a thread is working on is refused unless `--force`. |
-| [`bb box start`](#bb-box-start) | Start a thread's stopped box, or with `--machine` one of your machines, and wait until it answers. |
-| [`bb box enrol`](#bb-box-enrol) | Add a ready box that is not a BB machine to BB again, as a thread's box, or with `--machine` one of your machines: BB's installer runs in it as its user. It does not restart, stop or resize the box. It stops only the BB daemon of a machine that BB no longer has. A box whose machine BB still has is left as it is, and recorded as a BB machine. Waits up to 2 minutes for the try. |
-| [`bb box forget`](#bb-box-forget) | Forget a box whose backend is no longer in BB Box's settings: BB Box removes its record and deletes nothing, so a guest that still runs keeps running. |
-| [`bb box image set`](#bb-box-image-set) | Set a project's image (049): a script run as root on its kinds' standard images, for the boxes of the project's threads, with an optional check run as the box user. BB Box keeps a copy of the files. Setting it changes every new box of those kinds in the project. |
-| [`bb box image remove`](#bb-box-image-remove) | Remove a project's image (049). Boxes of its kinds in its projects start from the standard images again. |
-| [`bb box image list`](#bb-box-image-list) | List projects' images (049): each one's kinds, projects, how it is baked, where its script came from, and its builds. |
-| [`bb box image show`](#bb-box-image-show) | Print a project's image's script, and its check, as BB Box keeps them (049). |
-| [`bb box image try`](#bb-box-image-try) | Try a project's image's script as a build runs it (049), on a kind it covers, and remove what the try made. It prints each check's result and the build's last lines, and exits 1 if one failed. |
-| [`bb box images list`](#bb-box-images-list) | List the standard images BB Box rebuilds (049): each one's build and age, why it is due, and what its last rebuild did, most needed first. Then the images a backend builds and refreshes by itself, such as each Namespace backend's Linux images in its workspace's registry and each boat.dev backend's templates; `--json` gives only the first. |
-| [`bb box images refresh`](#bb-box-images-refresh) | Rebuild the standard images that are due (049), one at a time, most needed first, and start none after the time limit. A BB script automation runs it each night. It ends with a line per image, and exits 1 if one failed. Should this command end first, the run goes on. |
-| [`bb box images build`](#bb-box-images-build) | Rebuild one standard image now, due or not, and whatever its last rebuild did (049), and replace it when its trial box passes. `--try` checks a new build and keeps the old one. |
-| [`bb box images versions`](#bb-box-images-versions) | Show what a rebuild of the standard Linux images would take now (049): upstream's latest stable Claude Code, Codex, pi, gh and Chrome, each with the SHA-256 it publishes, and the day's apt snapshot, against this BB Box's pins. |
-| [`bb box setup docker`](#bb-box-setup-docker) | Set up Docker for boxes, as the Box panel's first run does: on the BB machine that runs BB, or `--machine`, turn Docker on with the Linux image alone and wait while it builds, usually 5 to 12 min. Where something stands in the way, it gives that machine's line to fix it. `--no-wait` starts it and says how far the build is; run it again to see. |
-| [`bb box docker-check`](#bb-box-docker-check) | Check that Docker on a BB machine answers through BB Box's Docker relay (042), with its version, cores and memory. |
-| [`bb box docker-build`](#bb-box-docker-build) | Build the images a BB machine that hosts Docker boxes lacks there, or has from another layout or with another build of BB's app, through BB Box's relay (042). Waits for the build. Building all three needs about 36 GB free there; with less, it does not start. |
-| [`bb box install-id`](#bb-box-install-id) | Show this install's ID, which it records on its guests. `--set` takes back the ID it had before it lost its storage. |
-| [`bb box config show`](#bb-box-config-show) | Show BB Box's configuration. `--json` prints it as a file for config apply, with no secret in it: keep it to set BB Box up again. |
-| [`bb box config check`](#bb-box-config-check) | Check a configuration file without saving it. `--test` also runs the doctor of each backend in it that is on, within 30 s each. |
-| [`bb box config apply`](#bb-box-config-apply) | Save a configuration file as BB Box's whole configuration, then rebuild what changed. A revision in the file must be the current one; a file without one, or `--replace`, saves over what is there, as when setting BB Box up again from an export. |
-| [`bb box config migrated`](#bb-box-config-migrated) | Show the copy of BB's settings BB Box kept when it moved them into its configuration. `--remove` removes it. |
-| [`bb box backend list`](#bb-box-backend-list) | List the configuration's backends, in the order a new box tries them: each one's switch, state, kinds, boxes and last check. |
-| [`bb box backend types`](#bb-box-backend-types) | List the types of backend BB Box has: what each is for, what setting it up needs, the kinds it makes, and its setup guide and scripts in BB Box's repository. |
-| [`bb box backend fields`](#bb-box-backend-fields) | List a backend type's fields, or a backend's with their values now: each key, what it takes, whether it is a secret, and the first line of its help. Secrets show only as set or not. |
-| [`bb box backend add`](#bb-box-backend-add) | Add a backend, on unless `--off`, through the same checked save as the settings page, then run its checks. Secrets come only from a dotenv file or stdin. Exits 2 when it saved and its checks failed. |
-| [`bb box backend set`](#bb-box-backend-set) | Change a backend: its fields, secrets, switch, name, warm boxes or the projects it is kept for, through the same checked save as the settings page, then run its checks. Exits 2 when it saved and its checks failed. |
-| [`bb box backend remove`](#bb-box-backend-remove) | Remove a backend: its settings, its secrets, which cannot be got back, and its warm boxes. Refused while it has boxes, as on the settings page. Asks for `--yes`. |
-| [`bb box backend host add`](#bb-box-backend-host-add) | Add a host to a backend whose hosts are set up alike, such as a Mac to Tart. The SSH host pool lists its machines in its machines field instead: bb box backend set ssh-pool `--add-line`. |
-| [`bb box backend host set`](#bb-box-backend-host-set) | Change a backend's host: its fields, or its switch. Off, it takes no new boxes, and its boxes keep working. |
-| [`bb box backend host remove`](#bb-box-backend-host-remove) | Remove a host from a backend. Refused while it has boxes, as on the settings page. |
-| [`bb box kind set`](#bb-box-kind-set) | Change a kind: whether it is offered, its presets' sizes, its default preset, its largest custom size, its spare boxes, its GPU when not asked for, or make it the default kind, through the same checked save as the settings page. Sizes and the GPU change new boxes only. |
-| [`bb box option list`](#bb-box-option-list) | List the general and Monitor options: each one's value now, its default, and what it does. |
-| [`bb box option get`](#bb-box-option-get) | Show one general or Monitor option: its value now, its default, and what it does. |
-| [`bb box option set`](#bb-box-option-set) | Set general and Monitor options, such as monitor.enabled=false, defaultKind=linux or general.snapshots.ceilings.&lt;backend>=7.50, a ceiling on a backend's paid snapshots, in one checked save, as the settings page saves them. bb box option list lists them. |
-| [`bb box option unset`](#bb-box-option-unset) | Give general and Monitor options back their defaults, in one checked save. general.tailnet.mode turns the tailnet off and clears its client. |
-| [`bb box snapshot take`](#bb-box-snapshot-take) | Take a snapshot of a thread's box, or with `--machine` one of your machines: its disk, or with `--memory` its disk and its memory where its backend can. Waits until the backend confirms it, then says how long it paused the box. Run it with `--check` first to see how long it would pause the box: a Windows desktop on arm64 shuts Windows down for it and starts it again. A box holds as many as Settings, Snapshots allows, 5 unless set. |
-| [`bb box snapshot list`](#bb-box-snapshot-list) | List the snapshots of a box, of a thread's boxes, of your machines with `--machine`, or with `--all` every snapshot BB Box records, those of released boxes too. |
-| [`bb box snapshot delete`](#bb-box-snapshot-delete) | Delete a snapshot of a thread's box, or with `--machine` one of your machines, by its name or ID, and wait until its backend confirms. An incomplete one is cleaned up on its host. A box that is gone is named by the ID bb box snapshot list `--all` gives. |
-| [`bb box snapshot restore`](#bb-box-snapshot-restore) | Restore a thread's box, or with `--machine` one of your machines, to one of its snapshots: everything on its disk since then goes, and the box restarts. BB Box takes an undo first, a snapshot of the box once stopped, or on ZFS a full copy of it, unless `--no-undo`. On ZFS only the newest snapshot restores. It refuses while a person holds the box's desktop or a BB terminal is open on it, unless `--force`. It refuses a box threads run on, as restores of such boxes stay off until BB Box can hold every turn on them. Asks for `--replace`. |
-| [`bb box snapshot fork`](#bb-box-snapshot-fork) | Fork a snapshot of a thread's box, or with `--machine` one of your machines, into a new box: of the box's thread, or with `--as-machine` one of your machines. The fork gets the snapshot's files, at its size, and an identity of its own: it resets at its first boot, and BB Box checks that before it is ready. Waits until it is ready. A kept snapshot of a box that was released forks, from its held copy on Proxmox and from the snapshot itself on Tart, microsandbox, Docker and boat.dev, as one of your machines; name its box as bb box snapshot list `--all` does. |
-| [`bb box snapshot keep`](#bb-box-snapshot-keep) | Keep a snapshot of a thread's box, or with `--machine` one of your machines, for 30 days from today unless Settings say otherwise, or until a date: it becomes yours, no agent can delete it, and it outlives its box's release, as a held copy on Proxmox and as it is on Tart, microsandbox, Docker and boat.dev. Hetzner Cloud and Namespace keep none. BB Box deletes it after that date. Again on a kept snapshot, it renews its keep, never shortening it unless you give the date. A box that was released is named as bb box snapshot list `--all` names it. |
-| [`bb box snapshot unkeep`](#bb-box-snapshot-unkeep) | Stop keeping a snapshot of a thread's box, or with `--machine` one of your machines: it goes with its box again. A released box's kept snapshot is deleted instead, with bb box snapshot delete. |
-| [`bb box snapshot forget`](#bb-box-snapshot-forget) | Forget every snapshot BB Box records on a backend, so the backend can be removed from BB Box's settings. BB Box deletes nothing: they may still exist there, and be billed. Asks for `--yes`. |
-| [`bb box gpu update`](#bb-box-gpu-update) | Update NVIDIA's userspace in a running box with a GPU to the host's driver, after that driver changed (071). BB Box checks the box first: BB Box's own Linux image on x86_64, 2 GiB free, and no NVIDIA or CUDA packages from apt. It then downloads NVIDIA's installer for exactly the host's driver, checks it against NVIDIA's SHA-256, installs it with no kernel modules, restarts the box, and checks that nvidia-smi lists the box's card and CUDA's driver initialises, and for a desktop that it draws and encodes its video on the GPU. Everything running in the box stops. It is refused while a person holds control of the box's desktop, and while threads are working on it unless `--force`. Several boxes are updated one at a time. BB Box never updates a box's userspace by itself; bb box doctor names the boxes that need it. |
-| [`bb box gpu mark`](#bb-box-gpu-mark) | Mark each guest of this install whose device lines name a card with the claim they give, as a tag the host's GPU helper answers (071): gpu.shared.&lt;card's UUID>.g&lt;N>, or gpu.whole where the box's record says a whole card, N above the last generation the helper answered for the guest. It changes only tags: it never restarts, stops or resizes a guest, never changes its device lines, and never touches a guest that is not this install's; a running box is marked as it runs. It leaves, and names, a guest the helper would refuse or whose lines it would rewrite, one that is locked or has another marker, and checks each again from the config it reads just before it writes. It counts a guest granted only from the helper's own answer to that marker. It waits up to 10 s for the answers, and exits 1 when it leaves a guest or the helper does not grant one. `--undo` clears each claim the helper holds for this install's guests, through a gpu.release marker the helper answers, then takes that marker off: device lines stay as they are, and the helper no longer writes them. |
-| [`bb box monitor snapshot`](#bb-box-monitor-snapshot) | Show BB's server's CPU, load, memory, disk and processes, as the Monitor reads them. `--json` gives the whole reading, with its recent history. |
-| [`bb box monitor health`](#bb-box-monitor-health) | Show the pressure on BB's server. Exits 2 when it is critical; with `--json` it exits 0, and status says. |
-| [`bb box monitor logs`](#bb-box-monitor-logs) | Show background monitoring's diagnostic records, oldest first: the last 100, or `--limit` up to 500. `--json` gives JSON lines. |
-| [`bb box monitor test-alert`](#bb-box-monitor-test-alert) | Show a labelled preview of a pressure alert in every BB window that is open and visible. Needs background monitoring and its notifications on. |
-| [`bb box monitor history`](#bb-box-monitor-history) | Show box history (069): whether it reads boxes, how many readings were due, taken, skipped and failed each hour, each box's newest point, and the room its file uses. `--hours` chooses how many hours, 24 by default. |
-| [`bb box sweep`](#bb-box-sweep) | Run the clean-up now: release the boxes of ended threads, finish interrupted work and remove leftovers, and settle and check BB Box's snapshots against each backend's. |
+| [`alia box doctor`](#alia-box-doctor) | Check each backend's settings and host, and say how to fix what is wrong. |
+| [`alia box kinds`](#alia-box-kinds) | List the kinds of box the active backends offer. In a thread, or with `--thread`, only those of the backends that serve its project. |
+| [`alia box list`](#alia-box-list) | List a thread's boxes, or every box with `--all`. |
+| [`alia box acquire`](#alia-box-acquire) | Acquire a box for a thread and wait until it answers. |
+| [`alia box status`](#alia-box-status) | Show one box, checking its power state with the backend. |
+| [`alia box run`](#alia-box-run) | Run a shell command in a thread's box, or with `--machine` in one of your machines, as its user, and print its output. It exits with the command's exit code. For a long command, use box_run, which keeps it as a job. |
+| [`alia box resize`](#alia-box-resize) | Resize a thread's box: its cores, memory, disk or GPU, where its backend can, live or with `--restart`. Parts left out stay as they are, and the disk only grows. |
+| [`alia box machines`](#alia-box-machines) | List your machines: boxes you own, kept as VesnALIA machines, which no thread ending releases. |
+| [`alia box machines add`](#alia-box-machines-add) | Add a machine of your own: a box of the kind, kept as a VesnALIA machine under the name until you remove it. |
+| [`alia box machines resize`](#alia-box-machines-resize) | Resize one of your machines: its cores, memory, disk or GPU, where its backend can, live or with `--restart`. Parts left out stay as they are, and the disk only grows. |
+| [`alia box machines remove`](#alia-box-machines-remove) | Remove one of your machines: its box is released and its disk deleted. A machine a thread is working on is refused unless `--force`. Snapshots you kept are copied first, so they outlive it, unless `--delete-kept`. |
+| [`alia box thread`](#alia-box-thread) | Start a child thread of a thread on one of its boxes, as a VesnALIA machine, with the thread's project. |
+| [`alia box release`](#alia-box-release) | Release a box. Its disk is deleted. A box a thread is working on is refused unless `--force`. Snapshots you kept are copied first, so they outlive it, unless `--delete-kept`. |
+| [`alia box stop`](#alia-box-stop) | Stop a thread's box, or with `--machine` one of your machines, keeping its disk. A box a thread is working on is refused unless `--force`. |
+| [`alia box start`](#alia-box-start) | Start a thread's stopped box, or with `--machine` one of your machines, and wait until it answers. |
+| [`alia box enrol`](#alia-box-enrol) | Add a ready box that is not a VesnALIA machine to VesnALIA again, as a thread's box, or with `--machine` one of your machines: VesnALIA's installer runs in it as its user. It does not restart, stop or resize the box. It stops only the VesnALIA daemon of a machine that VesnALIA no longer has. A box whose machine VesnALIA still has is left as it is, and recorded as a VesnALIA machine. Waits up to 2 minutes for the try. |
+| [`alia box forget`](#alia-box-forget) | Forget a box whose backend is no longer in VesnALIA Box's settings: VesnALIA Box removes its record and deletes nothing, so a guest that still runs keeps running. |
+| [`alia box image set`](#alia-box-image-set) | Set a project's image (049): a script run as root on its kinds' standard images, for the boxes of the project's threads, with an optional check run as the box user. VesnALIA Box keeps a copy of the files. Setting it changes every new box of those kinds in the project. |
+| [`alia box image remove`](#alia-box-image-remove) | Remove a project's image (049). Boxes of its kinds in its projects start from the standard images again. |
+| [`alia box image list`](#alia-box-image-list) | List projects' images (049): each one's kinds, projects, how it is baked, where its script came from, and its builds. |
+| [`alia box image show`](#alia-box-image-show) | Print a project's image's script, and its check, as VesnALIA Box keeps them (049). |
+| [`alia box image try`](#alia-box-image-try) | Try a project's image's script as a build runs it (049), on a kind it covers, and remove what the try made. It prints each check's result and the build's last lines, and exits 1 if one failed. |
+| [`alia box images list`](#alia-box-images-list) | List the standard images VesnALIA Box rebuilds (049): each one's build and age, why it is due, and what its last rebuild did, most needed first. Then the images a backend builds and refreshes by itself, such as each Namespace backend's Linux images in its workspace's registry and each boat.dev backend's templates; `--json` gives only the first. |
+| [`alia box images refresh`](#alia-box-images-refresh) | Rebuild the standard images that are due (049), one at a time, most needed first, and start none after the time limit. A VesnALIA script automation runs it each night. It ends with a line per image, and exits 1 if one failed. Should this command end first, the run goes on. |
+| [`alia box images build`](#alia-box-images-build) | Rebuild one standard image now, due or not, and whatever its last rebuild did (049), and replace it when its trial box passes. `--try` checks a new build and keeps the old one. |
+| [`alia box images versions`](#alia-box-images-versions) | Show what a rebuild of the standard Linux images would take now (049): upstream's latest stable Claude Code, Codex, pi, gh and Chrome, each with the SHA-256 it publishes, and the day's apt snapshot, against this VesnALIA Box's pins. |
+| [`alia box setup docker`](#alia-box-setup-docker) | Set up Docker for boxes, as the Box panel's first run does: on the VesnALIA machine that runs VesnALIA, or `--machine`, turn Docker on with the Linux image alone and wait while it builds, usually 5 to 12 min. Where something stands in the way, it gives that machine's line to fix it. `--no-wait` starts it and says how far the build is; run it again to see. |
+| [`alia box docker-check`](#alia-box-docker-check) | Check that Docker on a VesnALIA machine answers through VesnALIA Box's Docker relay (042), with its version, cores and memory. |
+| [`alia box docker-build`](#alia-box-docker-build) | Build the images a VesnALIA machine that hosts Docker boxes lacks there, or has from another layout or with another build of VesnALIA's app, through VesnALIA Box's relay (042). Waits for the build. Building all three needs about 36 GB free there; with less, it does not start. |
+| [`alia box install-id`](#alia-box-install-id) | Show this install's ID, which it records on its guests. `--set` takes back the ID it had before it lost its storage. |
+| [`alia box config show`](#alia-box-config-show) | Show VesnALIA Box's configuration. `--json` prints it as a file for config apply, with no secret in it: keep it to set VesnALIA Box up again. |
+| [`alia box config check`](#alia-box-config-check) | Check a configuration file without saving it. `--test` also runs the doctor of each backend in it that is on, within 30 s each. |
+| [`alia box config apply`](#alia-box-config-apply) | Save a configuration file as VesnALIA Box's whole configuration, then rebuild what changed. A revision in the file must be the current one; a file without one, or `--replace`, saves over what is there, as when setting VesnALIA Box up again from an export. |
+| [`alia box config migrated`](#alia-box-config-migrated) | Show the copy of VesnALIA's settings VesnALIA Box kept when it moved them into its configuration. `--remove` removes it. |
+| [`alia box backend list`](#alia-box-backend-list) | List the configuration's backends, in the order a new box tries them: each one's switch, state, kinds, boxes and last check. |
+| [`alia box backend types`](#alia-box-backend-types) | List the types of backend VesnALIA Box has: what each is for, what setting it up needs, the kinds it makes, and its setup guide and scripts in VesnALIA Box's repository. |
+| [`alia box backend fields`](#alia-box-backend-fields) | List a backend type's fields, or a backend's with their values now: each key, what it takes, whether it is a secret, and the first line of its help. Secrets show only as set or not. |
+| [`alia box backend add`](#alia-box-backend-add) | Add a backend, on unless `--off`, through the same checked save as the settings page, then run its checks. Secrets come only from a dotenv file or stdin. Exits 2 when it saved and its checks failed. |
+| [`alia box backend set`](#alia-box-backend-set) | Change a backend: its fields, secrets, switch, name, warm boxes or the projects it is kept for, through the same checked save as the settings page, then run its checks. Exits 2 when it saved and its checks failed. |
+| [`alia box backend remove`](#alia-box-backend-remove) | Remove a backend: its settings, its secrets, which cannot be got back, and its warm boxes. Refused while it has boxes, as on the settings page. Asks for `--yes`. |
+| [`alia box backend host add`](#alia-box-backend-host-add) | Add a host to a backend whose hosts are set up alike, such as a Mac to Tart. The SSH host pool lists its machines in its machines field instead: VesnALIA box backend set ssh-pool `--add-line`. |
+| [`alia box backend host set`](#alia-box-backend-host-set) | Change a backend's host: its fields, or its switch. Off, it takes no new boxes, and its boxes keep working. |
+| [`alia box backend host remove`](#alia-box-backend-host-remove) | Remove a host from a backend. Refused while it has boxes, as on the settings page. |
+| [`alia box kind set`](#alia-box-kind-set) | Change a kind: whether it is offered, its presets' sizes, its default preset, its largest custom size, its spare boxes, its GPU when not asked for, or make it the default kind, through the same checked save as the settings page. Sizes and the GPU change new boxes only. |
+| [`alia box option list`](#alia-box-option-list) | List the general and Monitor options: each one's value now, its default, and what it does. |
+| [`alia box option get`](#alia-box-option-get) | Show one general or Monitor option: its value now, its default, and what it does. |
+| [`alia box option set`](#alia-box-option-set) | Set general and Monitor options, such as monitor.enabled=false, defaultKind=linux or general.snapshots.ceilings.&lt;backend>=7.50, a ceiling on a backend's paid snapshots, in one checked save, as the settings page saves them. VesnALIA box option list lists them. |
+| [`alia box option unset`](#alia-box-option-unset) | Give general and Monitor options back their defaults, in one checked save. general.tailnet.mode turns the tailnet off and clears its client. |
+| [`alia box snapshot take`](#alia-box-snapshot-take) | Take a snapshot of a thread's box, or with `--machine` one of your machines: its disk, or with `--memory` its disk and its memory where its backend can. Waits until the backend confirms it, then says how long it paused the box. Run it with `--check` first to see how long it would pause the box: a Windows desktop on arm64 shuts Windows down for it and starts it again. A box holds as many as Settings, Snapshots allows, 5 unless set. |
+| [`alia box snapshot list`](#alia-box-snapshot-list) | List the snapshots of a box, of a thread's boxes, of your machines with `--machine`, or with `--all` every snapshot VesnALIA Box records, those of released boxes too. |
+| [`alia box snapshot delete`](#alia-box-snapshot-delete) | Delete a snapshot of a thread's box, or with `--machine` one of your machines, by its name or ID, and wait until its backend confirms. An incomplete one is cleaned up on its host. A box that is gone is named by the ID VesnALIA box snapshot list `--all` gives. |
+| [`alia box snapshot restore`](#alia-box-snapshot-restore) | Restore a thread's box, or with `--machine` one of your machines, to one of its snapshots: everything on its disk since then goes, and the box restarts. VesnALIA Box takes an undo first, a snapshot of the box once stopped, or on ZFS a full copy of it, unless `--no-undo`. On ZFS only the newest snapshot restores. It refuses while a person holds the box's desktop or a VesnALIA terminal is open on it, unless `--force`. It refuses a box threads run on, as restores of such boxes stay off until VesnALIA Box can hold every turn on them. Asks for `--replace`. |
+| [`alia box snapshot fork`](#alia-box-snapshot-fork) | Fork a snapshot of a thread's box, or with `--machine` one of your machines, into a new box: of the box's thread, or with `--as-machine` one of your machines. The fork gets the snapshot's files, at its size, and an identity of its own: it resets at its first boot, and VesnALIA Box checks that before it is ready. Waits until it is ready. A kept snapshot of a box that was released forks, from its held copy on Proxmox and from the snapshot itself on Tart, microsandbox, Docker and boat.dev, as one of your machines; name its box as VesnALIA box snapshot list `--all` does. |
+| [`alia box snapshot keep`](#alia-box-snapshot-keep) | Keep a snapshot of a thread's box, or with `--machine` one of your machines, for 30 days from today unless Settings say otherwise, or until a date: it becomes yours, no agent can delete it, and it outlives its box's release, as a held copy on Proxmox and as it is on Tart, microsandbox, Docker and boat.dev. Hetzner Cloud and Namespace keep none. VesnALIA Box deletes it after that date. Again on a kept snapshot, it renews its keep, never shortening it unless you give the date. A box that was released is named as VesnALIA box snapshot list `--all` names it. |
+| [`alia box snapshot unkeep`](#alia-box-snapshot-unkeep) | Stop keeping a snapshot of a thread's box, or with `--machine` one of your machines: it goes with its box again. A released box's kept snapshot is deleted instead, with VesnALIA box snapshot delete. |
+| [`alia box snapshot forget`](#alia-box-snapshot-forget) | Forget every snapshot VesnALIA Box records on a backend, so the backend can be removed from VesnALIA Box's settings. VesnALIA Box deletes nothing: they may still exist there, and be billed. Asks for `--yes`. |
+| [`alia box gpu update`](#alia-box-gpu-update) | Update NVIDIA's userspace in a running box with a GPU to the host's driver, after that driver changed (071). VesnALIA Box checks the box first: VesnALIA Box's own Linux image on x86_64, 2 GiB free, and no NVIDIA or CUDA packages from apt. It then downloads NVIDIA's installer for exactly the host's driver, checks it against NVIDIA's SHA-256, installs it with no kernel modules, restarts the box, and checks that nvidia-smi lists the box's card and CUDA's driver initialises, and for a desktop that it draws and encodes its video on the GPU. Everything running in the box stops. It is refused while a person holds control of the box's desktop, and while threads are working on it unless `--force`. Several boxes are updated one at a time. VesnALIA Box never updates a box's userspace by itself; VesnALIA box doctor names the boxes that need it. |
+| [`alia box gpu mark`](#alia-box-gpu-mark) | Mark each guest of this install whose device lines name a card with the claim they give, as a tag the host's GPU helper answers (071): gpu.shared.&lt;card's UUID>.g&lt;N>, or gpu.whole where the box's record says a whole card, N above the last generation the helper answered for the guest. It changes only tags: it never restarts, stops or resizes a guest, never changes its device lines, and never touches a guest that is not this install's; a running box is marked as it runs. It leaves, and names, a guest the helper would refuse or whose lines it would rewrite, one that is locked or has another marker, and checks each again from the config it reads just before it writes. It counts a guest granted only from the helper's own answer to that marker. It waits up to 10 s for the answers, and exits 1 when it leaves a guest or the helper does not grant one. `--undo` clears each claim the helper holds for this install's guests, through a gpu.release marker the helper answers, then takes that marker off: device lines stay as they are, and the helper no longer writes them. |
+| [`alia box monitor snapshot`](#alia-box-monitor-snapshot) | Show VesnALIA's server's CPU, load, memory, disk and processes, as the Monitor reads them. `--json` gives the whole reading, with its recent history. |
+| [`alia box monitor health`](#alia-box-monitor-health) | Show the pressure on VesnALIA's server. Exits 2 when it is critical; with `--json` it exits 0, and status says. |
+| [`alia box monitor logs`](#alia-box-monitor-logs) | Show background monitoring's diagnostic records, oldest first: the last 100, or `--limit` up to 500. `--json` gives JSON lines. |
+| [`alia box monitor test-alert`](#alia-box-monitor-test-alert) | Show a labelled preview of a pressure alert in every VesnALIA window that is open and visible. Needs background monitoring and its notifications on. |
+| [`alia box monitor history`](#alia-box-monitor-history) | Show box history (069): whether it reads boxes, how many readings were due, taken, skipped and failed each hour, each box's newest point, and the room its file uses. `--hours` chooses how many hours, 24 by default. |
+| [`alia box sweep`](#alia-box-sweep) | Run the clean-up now: release the boxes of ended threads, finish interrupted work and remove leftovers, and settle and check VesnALIA Box's snapshots against each backend's. |
 
-## bb box doctor
+## VesnALIA box doctor
 
 Check each backend's settings and host, and say how to fix what is wrong.
 
 ```text
 Usage:
-  bb box doctor [--json]
+  alia box doctor [--json]
 
 Options:
   --json      Print JSON.
   --help, -h  Show this help and exit
 ```
 
-## bb box kinds
+## VesnALIA box kinds
 
 List the kinds of box the active backends offer. In a thread, or with `--thread`, only those of the backends that serve its project.
 
 ```text
 Usage:
-  bb box kinds [--thread <value>] [--json]
+  alia box kinds [--thread <value>] [--json]
 
 Options:
   --thread <value>  The thread whose boxes to use. Defaults to the thread this runs in.
@@ -98,13 +98,13 @@ Options:
   --help, -h        Show this help and exit
 ```
 
-## bb box list
+## VesnALIA box list
 
 List a thread's boxes, or every box with `--all`.
 
 ```text
 Usage:
-  bb box list [--thread <value>] [--json] [--all]
+  alia box list [--thread <value>] [--json] [--all]
 
 Options:
   --thread <value>  The thread whose boxes to use. Defaults to the thread this runs in.
@@ -113,42 +113,42 @@ Options:
   --help, -h        Show this help and exit
 ```
 
-## bb box acquire
+## VesnALIA box acquire
 
 Acquire a box for a thread and wait until it answers.
 
 ```text
 Usage:
-  bb box acquire <kind> [--thread <value>] [--json] [--size <small|medium|large>] [--cores <1-1024>] [--memory-gib <1-65536>] [--disk-gib <1-65536>] [--on <value>] [--image <value>] [--device <value>] [--no-slim] [--gpu <value>] [--dedicated] [--shared] [--no-wait]
+  alia box acquire <kind> [--thread <value>] [--json] [--size <small|medium|large>] [--cores <1-1024>] [--memory-gib <1-65536>] [--disk-gib <1-65536>] [--on <value>] [--image <value>] [--device <value>] [--no-slim] [--gpu <value>] [--dedicated] [--shared] [--no-wait]
 
 Arguments:
-  <kind>  The kind of box, from bb box kinds. (required)
+  <kind>  The kind of box, from alia box kinds. (required)
 
 Options:
   --thread <value>             The thread whose boxes to use. Defaults to the thread this runs in.
   --json                       Print JSON.
-  --size <small|medium|large>  A preset. Defaults to the kind's default preset; bb box kinds shows each kind's sizes.
+  --size <small|medium|large>  A preset. Defaults to the kind's default preset; alia box kinds shows each kind's sizes.
   --cores <1-1024>             Cores, for a custom size. Parts left out come from the preset.
   --memory-gib <1-65536>       Memory in GiB, for a custom size: at least 2 for a Linux box.
   --disk-gib <1-65536>         Root disk in GiB, for a custom size. Presets keep the kind's own disk.
-  --on <value>                 The provider to use, from bb box kinds, such as "Docker on devpc", or several with commas between (pve1,devpc) for the first with room among them: only they are tried. Without it, the first with room: those kept for the thread's project first, then the shared ones. One kept for other projects is refused.
-  --image <value>              The image to start from: a project's image, from bb box image list, or "standard". The thread's project's image for the kind by default.
+  --on <value>                 The provider to use, from alia box kinds, such as "Docker on devpc", or several with commas between (pve1,devpc) for the first with room among them: only they are tried. Without it, the first with room: those kept for the thread's project first, then the shared ones. One kept for other projects is refused.
+  --image <value>              The image to start from: a project's image, from alia box image list, or "standard". The thread's project's image for the kind by default.
   --device <value>             For an ios or android box, the device it boots, such as iPhone 18 Pro or Pixel Fold. The kind's first by default.
   --no-slim                    For an ios box: its iOS Simulator keeps every service, for an app that uses widgets, Siri, iCloud, Health, Wallet or the like. Slimmed by default.
-  --gpu <value>                The box's GPU: none, or shared, one card other boxes may share. Left out, the kind's GPU when not asked for: shared for linux-desktop and none for linux unless bb box kind set --gpu changed it.
+  --gpu <value>                The box's GPU: none, or shared, one card other boxes may share. Left out, the kind's GPU when not asked for: shared for linux-desktop and none for linux unless alia box kind set --gpu changed it.
   --dedicated                  For an ios box: a macOS VM of its own, with sudo, brew install, its own cores, ports and desktop. Without it, an ios box is shared where a shared iOS host has room. Give it with a size: where a shared iOS host is set up, a size without it is refused.
   --shared                     For an ios box: a macOS user on a Mac or VM shared with other ios boxes, ready in seconds, with its own device, files and keychain, but no sudo, Homebrew installs or app windows. For a macos box: a macOS user on a Mac or VM shared with ios boxes, ready in seconds, for commands, builds and the iOS Simulator, with its own files and keychain, but no sudo, Homebrew installs, desktop or app windows, and cores, ports and processes shared. Only where a shared iOS host is set up; box_list says.
   --no-wait                    Return once the box is recorded.
   --help, -h                   Show this help and exit
 ```
 
-## bb box status
+## VesnALIA box status
 
 Show one box, checking its power state with the backend.
 
 ```text
 Usage:
-  bb box status <box> [--thread <value>] [--json]
+  alia box status <box> [--thread <value>] [--json]
 
 Arguments:
   <box>  The box's name or ID. (required)
@@ -159,13 +159,13 @@ Options:
   --help, -h        Show this help and exit
 ```
 
-## bb box run
+## VesnALIA box run
 
 Run a shell command in a thread's box, or with `--machine` in one of your machines, as its user, and print its output. It exits with the command's exit code. For a long command, use box_run, which keeps it as a job.
 
 ```text
 Usage:
-  bb box run <box> <command...> [--thread <value>] [--machine] [--timeout-seconds <1-600>]
+  alia box run <box> <command...> [--thread <value>] [--machine] [--timeout-seconds <1-600>]
 
 Arguments:
   <box>         The box's name or ID. (required)
@@ -173,18 +173,18 @@ Arguments:
 
 Options:
   --thread <value>           The thread whose boxes to use. Defaults to the thread this runs in.
-  --machine                  The box is one of your machines, from bb box machines, not a thread's.
+  --machine                  The box is one of your machines, from alia box machines, not a thread's.
   --timeout-seconds <1-600>  Seconds before the command is stopped: 120 by default, at most 600.
   --help, -h                 Show this help and exit
 ```
 
-## bb box resize
+## VesnALIA box resize
 
 Resize a thread's box: its cores, memory, disk or GPU, where its backend can, live or with `--restart`. Parts left out stay as they are, and the disk only grows.
 
 ```text
 Usage:
-  bb box resize <box> [--thread <value>] [--size <small|medium|large>] [--cores <1-1024>] [--memory-gib <1-65536>] [--disk-gib <1-65536>] [--restart] [--check] [--force] [--gpu <value>]
+  alia box resize <box> [--thread <value>] [--size <small|medium|large>] [--cores <1-1024>] [--memory-gib <1-65536>] [--disk-gib <1-65536>] [--restart] [--check] [--force] [--gpu <value>]
 
 Arguments:
   <box>  The box's name or ID. (required)
@@ -202,18 +202,18 @@ Options:
   --help, -h                   Show this help and exit
 ```
 
-## bb box machines
+## VesnALIA box machines
 
-List your machines: boxes you own, kept as BB machines, which no thread ending releases.
+List your machines: boxes you own, kept as VesnALIA machines, which no thread ending releases.
 
 ```text
 Usage:
-  bb box machines [--json]
+  alia box machines [--json]
 
 Its commands:
-  bb box machines add <kind>        Add a machine of your own, of the kind
-  bb box machines resize <machine>  Resize one of your machines
-  bb box machines remove <machine>  Remove one of your machines and delete its disk
+  alia box machines add <kind>        Add a machine of your own, of the kind
+  alia box machines resize <machine>  Resize one of your machines
+  alia box machines remove <machine>  Remove one of your machines and delete its disk
 Run one with --help for its options.
 
 Options:
@@ -221,39 +221,39 @@ Options:
   --help, -h  Show this help and exit
 ```
 
-## bb box machines add
+## VesnALIA box machines add
 
-Add a machine of your own: a box of the kind, kept as a BB machine under the name until you remove it.
+Add a machine of your own: a box of the kind, kept as a VesnALIA machine under the name until you remove it.
 
 ```text
 Usage:
-  bb box machines add <kind> [--json] [--size <small|medium|large>] [--cores <1-1024>] [--memory-gib <1-65536>] [--disk-gib <1-65536>] [--on <value>] [--name <value>] [--no-wait]
+  alia box machines add <kind> [--json] [--size <small|medium|large>] [--cores <1-1024>] [--memory-gib <1-65536>] [--disk-gib <1-65536>] [--on <value>] [--name <value>] [--no-wait]
 
 Arguments:
-  <kind>  The kind of box, from bb box kinds. It must be able to become a BB machine. (required)
+  <kind>  The kind of box, from alia box kinds. It must be able to become a ALIA machine. (required)
 
 Options:
   --json                       Print JSON.
-  --size <small|medium|large>  A preset. Defaults to the kind's default preset; bb box kinds shows each kind's sizes.
+  --size <small|medium|large>  A preset. Defaults to the kind's default preset; alia box kinds shows each kind's sizes.
   --cores <1-1024>             Cores, for a custom size. Parts left out come from the preset.
   --memory-gib <1-65536>       Memory in GiB, for a custom size: at least 2 for a Linux box.
   --disk-gib <1-65536>         Root disk in GiB, for a custom size. Presets keep the kind's own disk.
-  --on <value>                 The provider to use, from bb box kinds, such as "Docker on devpc", or several with commas between (pve1,devpc) for the first with room among them: only they are tried. Without it, the first with room: those kept for the thread's project first, then the shared ones. One kept for other projects is refused.
-  --name <value>               Its name, which is also its BB machine's: a lower-case letter first, then letters, digits and "-". BB Box picks one when left out.
+  --on <value>                 The provider to use, from alia box kinds, such as "Docker on devpc", or several with commas between (pve1,devpc) for the first with room among them: only they are tried. Without it, the first with room: those kept for the thread's project first, then the shared ones. One kept for other projects is refused.
+  --name <value>               Its name, which is also its ALIA machine's: a lower-case letter first, then letters, digits and "-". ALIA Box picks one when left out.
   --no-wait                    Return once the box is recorded.
   --help, -h                   Show this help and exit
 ```
 
-## bb box machines resize
+## VesnALIA box machines resize
 
 Resize one of your machines: its cores, memory, disk or GPU, where its backend can, live or with `--restart`. Parts left out stay as they are, and the disk only grows.
 
 ```text
 Usage:
-  bb box machines resize <machine> [--size <small|medium|large>] [--cores <1-1024>] [--memory-gib <1-65536>] [--disk-gib <1-65536>] [--restart] [--check] [--force] [--gpu <value>]
+  alia box machines resize <machine> [--size <small|medium|large>] [--cores <1-1024>] [--memory-gib <1-65536>] [--disk-gib <1-65536>] [--restart] [--check] [--force] [--gpu <value>]
 
 Arguments:
-  <machine>  The machine's name or ID, from bb box machines. (required)
+  <machine>  The machine's name or ID, from alia box machines. (required)
 
 Options:
   --size <small|medium|large>  A preset: its cores and memory. The disk stays as it is.
@@ -267,16 +267,16 @@ Options:
   --help, -h                   Show this help and exit
 ```
 
-## bb box machines remove
+## VesnALIA box machines remove
 
 Remove one of your machines: its box is released and its disk deleted. A machine a thread is working on is refused unless `--force`. Snapshots you kept are copied first, so they outlive it, unless `--delete-kept`.
 
 ```text
 Usage:
-  bb box machines remove <machine> [--force] [--delete-kept]
+  alia box machines remove <machine> [--force] [--delete-kept]
 
 Arguments:
-  <machine>  The machine's name or ID, from bb box machines. (required)
+  <machine>  The machine's name or ID, from alia box machines. (required)
 
 Options:
   --force        Remove it even while threads are working on it, which ends their work.
@@ -284,13 +284,13 @@ Options:
   --help, -h     Show this help and exit
 ```
 
-## bb box thread
+## VesnALIA box thread
 
-Start a child thread of a thread on one of its boxes, as a BB machine, with the thread's project.
+Start a child thread of a thread on one of its boxes, as a VesnALIA machine, with the thread's project.
 
 ```text
 Usage:
-  bb box thread <box> [--thread <value>] [--json] --prompt <value>
+  alia box thread <box> [--thread <value>] [--json] --prompt <value>
 
 Arguments:
   <box>  The box's name or ID. (required)
@@ -302,13 +302,13 @@ Options:
   --help, -h        Show this help and exit
 ```
 
-## bb box release
+## VesnALIA box release
 
 Release a box. Its disk is deleted. A box a thread is working on is refused unless `--force`. Snapshots you kept are copied first, so they outlive it, unless `--delete-kept`.
 
 ```text
 Usage:
-  bb box release <box> [--thread <value>] [--force] [--delete-kept]
+  alia box release <box> [--thread <value>] [--force] [--delete-kept]
 
 Arguments:
   <box>  The box's name or ID. (required)
@@ -320,144 +320,144 @@ Options:
   --help, -h        Show this help and exit
 ```
 
-## bb box stop
+## VesnALIA box stop
 
 Stop a thread's box, or with `--machine` one of your machines, keeping its disk. A box a thread is working on is refused unless `--force`.
 
 ```text
 Usage:
-  bb box stop <box> [--thread <value>] [--machine] [--force]
+  alia box stop <box> [--thread <value>] [--machine] [--force]
 
 Arguments:
   <box>  The box's name or ID. (required)
 
 Options:
   --thread <value>  The thread whose boxes to use. Defaults to the thread this runs in.
-  --machine         The box is one of your machines, from bb box machines, not a thread's.
+  --machine         The box is one of your machines, from alia box machines, not a thread's.
   --force           Stop it even while threads are working on it, which ends their work.
   --help, -h        Show this help and exit
 ```
 
-## bb box start
+## VesnALIA box start
 
 Start a thread's stopped box, or with `--machine` one of your machines, and wait until it answers.
 
 ```text
 Usage:
-  bb box start <box> [--thread <value>] [--machine] [--json]
+  alia box start <box> [--thread <value>] [--machine] [--json]
 
 Arguments:
   <box>  The box's name or ID. (required)
 
 Options:
   --thread <value>  The thread whose boxes to use. Defaults to the thread this runs in.
-  --machine         The box is one of your machines, from bb box machines, not a thread's.
+  --machine         The box is one of your machines, from alia box machines, not a thread's.
   --json            Print JSON.
   --help, -h        Show this help and exit
 ```
 
-## bb box enrol
+## VesnALIA box enrol
 
-Add a ready box that is not a BB machine to BB again, as a thread's box, or with `--machine` one of your machines: BB's installer runs in it as its user. It does not restart, stop or resize the box. It stops only the BB daemon of a machine that BB no longer has. A box whose machine BB still has is left as it is, and recorded as a BB machine. Waits up to 2 minutes for the try.
+Add a ready box that is not a VesnALIA machine to VesnALIA again, as a thread's box, or with `--machine` one of your machines: VesnALIA's installer runs in it as its user. It does not restart, stop or resize the box. It stops only the VesnALIA daemon of a machine that VesnALIA no longer has. A box whose machine VesnALIA still has is left as it is, and recorded as a VesnALIA machine. Waits up to 2 minutes for the try.
 
 ```text
 Usage:
-  bb box enrol <box> [--thread <value>] [--machine] [--json]
+  alia box enrol <box> [--thread <value>] [--machine] [--json]
 
 Arguments:
   <box>  The box's name or ID. (required)
 
 Options:
   --thread <value>  The thread whose boxes to use. Defaults to the thread this runs in.
-  --machine         The box is one of your machines, from bb box machines, not a thread's.
+  --machine         The box is one of your machines, from alia box machines, not a thread's.
   --json            Print JSON.
   --help, -h        Show this help and exit
 ```
 
-## bb box forget
+## VesnALIA box forget
 
-Forget a box whose backend is no longer in BB Box's settings: BB Box removes its record and deletes nothing, so a guest that still runs keeps running.
+Forget a box whose backend is no longer in VesnALIA Box's settings: VesnALIA Box removes its record and deletes nothing, so a guest that still runs keeps running.
 
 ```text
 Usage:
-  bb box forget <box> [--thread <value>] [--machine]
+  alia box forget <box> [--thread <value>] [--machine]
 
 Arguments:
   <box>  The box's name or ID. (required)
 
 Options:
   --thread <value>  The thread whose boxes to use. Defaults to the thread this runs in.
-  --machine         The box is one of your machines, from bb box machines, not a thread's.
+  --machine         The box is one of your machines, from alia box machines, not a thread's.
   --help, -h        Show this help and exit
 ```
 
-## bb box image set
+## VesnALIA box image set
 
-Set a project's image (049): a script run as root on its kinds' standard images, for the boxes of the project's threads, with an optional check run as the box user. BB Box keeps a copy of the files. Setting it changes every new box of those kinds in the project.
+Set a project's image (049): a script run as root on its kinds' standard images, for the boxes of the project's threads, with an optional check run as the box user. VesnALIA Box keeps a copy of the files. Setting it changes every new box of those kinds in the project.
 
 ```text
 Usage:
-  bb box image set <name> [--kinds <value>] [--script-file <value>] [--check-file <value>] [--project <value>] [--bake <value>]
+  alia box image set <name> [--kinds <value>] [--script-file <value>] [--check-file <value>] [--project <value>] [--bake <value>]
 
 Arguments:
   <name>  The image's name: a lower-case letter first, then letters, digits and "-". (required)
 
 Options:
   --kinds <value>        The kinds it builds on, comma-separated, such as linux,linux-desktop-cpu.
-  --script-file <value>  The script, such as .bb/box-setup.sh, read where bb runs.
-  --check-file <value>   A check run as the box user after the script, such as .bb/box-check.sh.
-  --project <value>      The BB projects whose boxes get it, by ID, comma-separated.
+  --script-file <value>  The script, such as .vesnalia/box-setup.sh, read where alia runs.
+  --check-file <value>   A check run as the box user after the script, such as .vesnalia/box-check.sh.
+  --project <value>      The ALIA projects whose boxes get it, by ID, comma-separated.
   --bake <value>         auto (after two boxes in 14 days), always, or never (the script at each start). auto by default.
   --help, -h             Show this help and exit
 ```
 
-## bb box image remove
+## VesnALIA box image remove
 
 Remove a project's image (049). Boxes of its kinds in its projects start from the standard images again.
 
 ```text
 Usage:
-  bb box image remove <name>
+  alia box image remove <name>
 
 Arguments:
-  <name>  The image's name, from bb box image list. (required)
+  <name>  The image's name, from alia box image list. (required)
 ```
 
-## bb box image list
+## VesnALIA box image list
 
 List projects' images (049): each one's kinds, projects, how it is baked, where its script came from, and its builds.
 
 ```text
 Usage:
-  bb box image list [--json]
+  alia box image list [--json]
 
 Options:
   --json      Print JSON.
   --help, -h  Show this help and exit
 ```
 
-## bb box image show
+## VesnALIA box image show
 
-Print a project's image's script, and its check, as BB Box keeps them (049).
+Print a project's image's script, and its check, as VesnALIA Box keeps them (049).
 
 ```text
 Usage:
-  bb box image show <name>
+  alia box image show <name>
 
 Arguments:
-  <name>  The image's name, from bb box image list. (required)
+  <name>  The image's name, from alia box image list. (required)
 ```
 
-## bb box image try
+## VesnALIA box image try
 
 Try a project's image's script as a build runs it (049), on a kind it covers, and remove what the try made. It prints each check's result and the build's last lines, and exits 1 if one failed.
 
 ```text
 Usage:
-  bb box image try <name> [--kind <value>] [--on <value>]
+  alia box image try <name> [--kind <value>] [--on <value>]
 
 Arguments:
-  <name>  The image's name, from bb box image list. (required)
+  <name>  The image's name, from alia box image list. (required)
 
 Options:
   --kind <value>  The kind to try it on: its first kind by default.
@@ -465,13 +465,13 @@ Options:
   --help, -h      Show this help and exit
 ```
 
-## bb box images list
+## VesnALIA box images list
 
-List the standard images BB Box rebuilds (049): each one's build and age, why it is due, and what its last rebuild did, most needed first. Then the images a backend builds and refreshes by itself, such as each Namespace backend's Linux images in its workspace's registry and each boat.dev backend's templates; `--json` gives only the first.
+List the standard images VesnALIA Box rebuilds (049): each one's build and age, why it is due, and what its last rebuild did, most needed first. Then the images a backend builds and refreshes by itself, such as each Namespace backend's Linux images in its workspace's registry and each boat.dev backend's templates; `--json` gives only the first.
 
 ```text
 Usage:
-  bb box images list [--json] [--output <value>]
+  alia box images list [--json] [--output <value>]
 
 Options:
   --json            Print JSON.
@@ -479,13 +479,13 @@ Options:
   --help, -h        Show this help and exit
 ```
 
-## bb box images refresh
+## VesnALIA box images refresh
 
-Rebuild the standard images that are due (049), one at a time, most needed first, and start none after the time limit. A BB script automation runs it each night. It ends with a line per image, and exits 1 if one failed. Should this command end first, the run goes on.
+Rebuild the standard images that are due (049), one at a time, most needed first, and start none after the time limit. A VesnALIA script automation runs it each night. It ends with a line per image, and exits 1 if one failed. Should this command end first, the run goes on.
 
 ```text
 Usage:
-  bb box images refresh [--pinned] [--hours <value>]
+  alia box images refresh [--pinned] [--hours <value>]
 
 Options:
   --pinned         Build from the repository's pins alone.
@@ -493,16 +493,16 @@ Options:
   --help, -h       Show this help and exit
 ```
 
-## bb box images build
+## VesnALIA box images build
 
 Rebuild one standard image now, due or not, and whatever its last rebuild did (049), and replace it when its trial box passes. `--try` checks a new build and keeps the old one.
 
 ```text
 Usage:
-  bb box images build <image> [--pinned] [--try]
+  alia box images build <image> [--pinned] [--try]
 
 Arguments:
-  <image>  The image, as <backend>/<ref>, from bb box images list. (required)
+  <image>  The image, as <backend>/<ref>, from alia box images list. (required)
 
 Options:
   --pinned    Build from the repository's pins alone.
@@ -510,13 +510,13 @@ Options:
   --help, -h  Show this help and exit
 ```
 
-## bb box images versions
+## VesnALIA box images versions
 
-Show what a rebuild of the standard Linux images would take now (049): upstream's latest stable Claude Code, Codex, pi, gh and Chrome, each with the SHA-256 it publishes, and the day's apt snapshot, against this BB Box's pins.
+Show what a rebuild of the standard Linux images would take now (049): upstream's latest stable Claude Code, Codex, pi, gh and Chrome, each with the SHA-256 it publishes, and the day's apt snapshot, against this VesnALIA Box's pins.
 
 ```text
 Usage:
-  bb box images versions [--json] [--pinned]
+  alia box images versions [--json] [--pinned]
 
 Options:
   --json      Print JSON.
@@ -524,86 +524,86 @@ Options:
   --help, -h  Show this help and exit
 ```
 
-## bb box setup docker
+## VesnALIA box setup docker
 
-Set up Docker for boxes, as the Box panel's first run does: on the BB machine that runs BB, or `--machine`, turn Docker on with the Linux image alone and wait while it builds, usually 5 to 12 min. Where something stands in the way, it gives that machine's line to fix it. `--no-wait` starts it and says how far the build is; run it again to see.
+Set up Docker for boxes, as the Box panel's first run does: on the VesnALIA machine that runs VesnALIA, or `--machine`, turn Docker on with the Linux image alone and wait while it builds, usually 5 to 12 min. Where something stands in the way, it gives that machine's line to fix it. `--no-wait` starts it and says how far the build is; run it again to see.
 
 ```text
 Usage:
-  bb box setup docker [--machine <value>] [--no-wait] [--set-machine-access]
+  alia box setup docker [--machine <value>] [--no-wait] [--set-machine-access]
 
 Options:
-  --machine <value>     The BB machine, by ID or name, from bb machine list. The one that runs BB by default.
+  --machine <value>     The ALIA machine, by ID or name, from alia machine list. The one that runs ALIA by default.
   --no-wait             Start the build, and say how far it is, without waiting for it.
-  --set-machine-access  Where BB listens on every address and boxes cannot join, set Machine access to direct at an address they can reach. This changes BB's settings. Without it, the command only says it can.
+  --set-machine-access  Where ALIA listens on every address and boxes cannot join, set Machine access to direct at an address they can reach. This changes ALIA's settings. Without it, the command only says it can.
   --help, -h            Show this help and exit
 ```
 
-## bb box docker-check
+## VesnALIA box docker-check
 
-Check that Docker on a BB machine answers through BB Box's Docker relay (042), with its version, cores and memory.
+Check that Docker on a VesnALIA machine answers through VesnALIA Box's Docker relay (042), with its version, cores and memory.
 
 ```text
 Usage:
-  bb box docker-check <machine> [--json]
+  alia box docker-check <machine> [--json]
 
 Arguments:
-  <machine>  The BB machine's ID or name, from bb machine list. (required)
+  <machine>  The ALIA machine's ID or name, from alia machine list. (required)
 
 Options:
   --json      Print JSON.
   --help, -h  Show this help and exit
 ```
 
-## bb box docker-build
+## VesnALIA box docker-build
 
-Build the images a BB machine that hosts Docker boxes lacks there, or has from another layout or with another build of BB's app, through BB Box's relay (042). Waits for the build. Building all three needs about 36 GB free there; with less, it does not start.
+Build the images a VesnALIA machine that hosts Docker boxes lacks there, or has from another layout or with another build of VesnALIA's app, through VesnALIA Box's relay (042). Waits for the build. Building all three needs about 36 GB free there; with less, it does not start.
 
 ```text
 Usage:
-  bb box docker-build <machine>
+  alia box docker-build <machine>
 
 Arguments:
-  <machine>  The BB machine's ID or name, from bb machine list. Its Docker must be added in BB Box's settings, under Add backend. (required)
+  <machine>  The ALIA machine's ID or name, from alia machine list. Its Docker must be added in ALIA Box's settings, under Add backend. (required)
 ```
 
-## bb box install-id
+## VesnALIA box install-id
 
 Show this install's ID, which it records on its guests. `--set` takes back the ID it had before it lost its storage.
 
 ```text
 Usage:
-  bb box install-id [--json] [--set <value>]
+  alia box install-id [--json] [--set <value>]
 
 Options:
   --json         Print JSON.
-  --set <value>  The ID to use from now on, as bb box doctor lists it.
+  --set <value>  The ID to use from now on, as alia box doctor lists it.
   --help, -h     Show this help and exit
 ```
 
-## bb box config show
+## VesnALIA box config show
 
-Show BB Box's configuration. `--json` prints it as a file for config apply, with no secret in it: keep it to set BB Box up again.
+Show VesnALIA Box's configuration. `--json` prints it as a file for config apply, with no secret in it: keep it to set VesnALIA Box up again.
 
 ```text
 Usage:
-  bb box config show [--json]
+  alia box config show [--json]
 
 Options:
   --json      Print JSON.
   --help, -h  Show this help and exit
 ```
 
-## bb box config check
+## VesnALIA box config check
 
 Check a configuration file without saving it. `--test` also runs the doctor of each backend in it that is on, within 30 s each.
 
 ```text
 Usage:
-  bb box config check <file> [--json] [--test]
+  alia box config check <file> [--json] [--test]
 
 Arguments:
-  <file>  A JSON file in the form bb box config show --json prints. It is read on the machine BB's server runs on; a relative path is from where you run bb. (required)
+  <file>  A JSON file in the form alia box config show --json prints. It is read on the machine ALIA's server runs on; a relative path is from where you run alia. (required)
 
 Options:
   --json      Print JSON.
@@ -611,16 +611,16 @@ Options:
   --help, -h  Show this help and exit
 ```
 
-## bb box config apply
+## VesnALIA box config apply
 
-Save a configuration file as BB Box's whole configuration, then rebuild what changed. A revision in the file must be the current one; a file without one, or `--replace`, saves over what is there, as when setting BB Box up again from an export.
+Save a configuration file as VesnALIA Box's whole configuration, then rebuild what changed. A revision in the file must be the current one; a file without one, or `--replace`, saves over what is there, as when setting VesnALIA Box up again from an export.
 
 ```text
 Usage:
-  bb box config apply <file> [--json] [--replace]
+  alia box config apply <file> [--json] [--replace]
 
 Arguments:
-  <file>  A JSON file in the form bb box config show --json prints. It is read on the machine BB's server runs on; a relative path is from where you run bb. (required)
+  <file>  A JSON file in the form alia box config show --json prints. It is read on the machine ALIA's server runs on; a relative path is from where you run alia. (required)
 
 Options:
   --json      Print JSON.
@@ -628,13 +628,13 @@ Options:
   --help, -h  Show this help and exit
 ```
 
-## bb box config migrated
+## VesnALIA box config migrated
 
-Show the copy of BB's settings BB Box kept when it moved them into its configuration. `--remove` removes it.
+Show the copy of VesnALIA's settings VesnALIA Box kept when it moved them into its configuration. `--remove` removes it.
 
 ```text
 Usage:
-  bb box config migrated [--json] [--remove]
+  alia box config migrated [--json] [--remove]
 
 Options:
   --json      Print JSON.
@@ -642,146 +642,146 @@ Options:
   --help, -h  Show this help and exit
 ```
 
-## bb box backend list
+## VesnALIA box backend list
 
 List the configuration's backends, in the order a new box tries them: each one's switch, state, kinds, boxes and last check.
 
 ```text
 Usage:
-  bb box backend list [--json]
+  alia box backend list [--json]
 
 Options:
   --json      Print JSON.
   --help, -h  Show this help and exit
 ```
 
-## bb box backend types
+## VesnALIA box backend types
 
-List the types of backend BB Box has: what each is for, what setting it up needs, the kinds it makes, and its setup guide and scripts in BB Box's repository.
+List the types of backend VesnALIA Box has: what each is for, what setting it up needs, the kinds it makes, and its setup guide and scripts in VesnALIA Box's repository.
 
 ```text
 Usage:
-  bb box backend types [--json]
+  alia box backend types [--json]
 
 Options:
   --json      Print JSON.
   --help, -h  Show this help and exit
 ```
 
-## bb box backend fields
+## VesnALIA box backend fields
 
 List a backend type's fields, or a backend's with their values now: each key, what it takes, whether it is a secret, and the first line of its help. Secrets show only as set or not.
 
 ```text
 Usage:
-  bb box backend fields <backend> [--json]
+  alia box backend fields <backend> [--json]
 
 Arguments:
-  <backend>  A type, from bb box backend types, or a backend's ID, from bb box backend list. (required)
+  <backend>  A type, from alia box backend types, or a backend's ID, from alia box backend list. (required)
 
 Options:
   --json      Print JSON.
   --help, -h  Show this help and exit
 ```
 
-## bb box backend add
+## VesnALIA box backend add
 
 Add a backend, on unless `--off`, through the same checked save as the settings page, then run its checks. Secrets come only from a dotenv file or stdin. Exits 2 when it saved and its checks failed.
 
 ```text
 Usage:
-  bb box backend add <type> [--json] [--check] [--revision <n>] [--operation <value>] [--field <key=value>]... [--field-file <key=path>]... [--unset <key>]... [--add-line <key=line>]... [--remove-line <key=text>]... [--secret-file <field=path>]... [--clear-secret <field>]... [--secret <field=VARIABLE>]... [--secrets-file <path>] [--secrets <line>] [--on] [--off] [--label <value>] [--warm <kind=count>]... [--projects <names>] [--no-doctor] [--id <value>]
+  alia box backend add <type> [--json] [--check] [--revision <n>] [--operation <value>] [--field <key=value>]... [--field-file <key=path>]... [--unset <key>]... [--add-line <key=line>]... [--remove-line <key=text>]... [--secret-file <field=path>]... [--clear-secret <field>]... [--secret <field=VARIABLE>]... [--secrets-file <path>] [--secrets <line>] [--on] [--off] [--label <value>] [--warm <kind=count>]... [--projects <names>] [--no-doctor] [--id <value>]
 
 Arguments:
-  <type>  The type, from bb box backend types, such as docker or ssh-pool. (required)
+  <type>  The type, from alia box backend types, such as docker or ssh-pool. (required)
 
 Options:
   --json                      Print JSON.
   --check                     Save nothing: say what would change and what is wrong with it, and for a backend run its checks with the change, as the settings page's Check does.
-  --revision <n>              Save only while the configuration is at this revision, which bb box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
+  --revision <n>              Save only while the configuration is at this revision, which alia box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
   --operation <value>         An ID for this save. The same command again with the same ID, as after an answer that never came, is saved once and answers with the first save's receipt, kept 24 hours. A new ID is made when left out.
   --field <key=value>         Set a field, such as host=unix:///var/run/docker.sock. Repeat for each. key= with nothing after it saves an empty value, which for an image or template field turns its kind off here. Not for secrets. (repeatable)
-  --field-file <key=path>     Set a field to a file's text, for a field of several lines, such as known-hosts. Read on the machine BB's server runs on. (repeatable)
+  --field-file <key=path>     Set a field to a file's text, for a field of several lines, such as known-hosts. Read on the machine ALIA's server runs on. (repeatable)
   --unset <key>               Leave a field unset, so it takes its default. (repeatable)
   --add-line <key=line>       Add a line to a field of lines, such as machines="build-1 192.0.2.21 linux". A line already there is not added again. (repeatable)
   --remove-line <key=text>    Remove the lines of a field that are the text or start with it and a space, such as machines=build-1. (repeatable)
-  --secret-file <field=path>  Set a secret field to a whole file's text, such as ssh-private-key=key.pem. Read on the machine BB's server runs on. (repeatable)
+  --secret-file <field=path>  Set a secret field to a whole file's text, such as ssh-private-key=key.pem. Read on the machine ALIA's server runs on. (repeatable)
   --clear-secret <field>      Clear a secret field. (repeatable)
   --secret <field=VARIABLE>   A secret field and the variable in the dotenv file that holds its value, such as token=HCLOUD_TOKEN. Repeat for each. The value is read from --secrets-file or --secrets-stdin, never from the command line. (repeatable)
-  --secrets-file <path>       A dotenv file, as bb secret request --write-env writes, read on the machine BB's server runs on; a relative path is from where you run bb.
-  --secrets <line>            Only as --secrets-stdin, which reads one line: a VARIABLE=value line, as grep '^HCLOUD_TOKEN=' secrets.env | bb box backend add hetzner --secret token=HCLOUD_TOKEN --secrets-stdin, or a whole dotenv file in base64, as base64 < secrets.env | tr -d '\n' | bb box ... --secrets-stdin, for several secrets at once. Works from any machine. (or --secrets-stdin from the bb CLI)
+  --secrets-file <path>       A dotenv file, as alia secret request --write-env writes, read on the machine ALIA's server runs on; a relative path is from where you run alia.
+  --secrets <line>            Only as --secrets-stdin, which reads one line: a VARIABLE=value line, as grep '^HCLOUD_TOKEN=' secrets.env | alia box backend add hetzner --secret token=HCLOUD_TOKEN --secrets-stdin, or a whole dotenv file in base64, as base64 < secrets.env | tr -d '\n' | alia box ... --secrets-stdin, for several secrets at once. Works from any machine. (or --secrets-stdin from the alia CLI)
   --on                        Turn it on.
   --off                       Turn it off: it makes no new boxes, and its boxes keep working.
   --label <value>             Its name in the settings and in box_list, such as Docker on build-1. Empty gives back the type's name.
   --warm <kind=count>         Ready boxes of a kind to keep waiting here, such as linux=1; 0 keeps none. (repeatable)
-  --projects <names>          The BB projects it is kept for, by name or ID, separated by commas. Only their threads see it and get boxes, spares and forks from it, before the shared backends. Empty serves every project, as by default.
+  --projects <names>          The ALIA projects it is kept for, by name or ID, separated by commas. Only their threads see it and get boxes, spares and forks from it, before the shared backends. Empty serves every project, as by default.
   --no-doctor                 Do not run the backend's checks after saving.
   --id <value>                Its ID, for a second backend of a type that allows several, such as docker:build-1 for another Docker host or namespace:team-b for another Namespace workspace or boat:team-b for another boat.dev account, or just build-1 or team-b. The type by default.
   --help, -h                  Show this help and exit
 ```
 
-## bb box backend set
+## VesnALIA box backend set
 
 Change a backend: its fields, secrets, switch, name, warm boxes or the projects it is kept for, through the same checked save as the settings page, then run its checks. Exits 2 when it saved and its checks failed.
 
 ```text
 Usage:
-  bb box backend set <backend> [--json] [--check] [--revision <n>] [--operation <value>] [--field <key=value>]... [--field-file <key=path>]... [--unset <key>]... [--add-line <key=line>]... [--remove-line <key=text>]... [--secret-file <field=path>]... [--clear-secret <field>]... [--secret <field=VARIABLE>]... [--secrets-file <path>] [--secrets <line>] [--on] [--off] [--label <value>] [--warm <kind=count>]... [--projects <names>] [--no-doctor]
+  alia box backend set <backend> [--json] [--check] [--revision <n>] [--operation <value>] [--field <key=value>]... [--field-file <key=path>]... [--unset <key>]... [--add-line <key=line>]... [--remove-line <key=text>]... [--secret-file <field=path>]... [--clear-secret <field>]... [--secret <field=VARIABLE>]... [--secrets-file <path>] [--secrets <line>] [--on] [--off] [--label <value>] [--warm <kind=count>]... [--projects <names>] [--no-doctor]
 
 Arguments:
-  <backend>  The backend's ID, from bb box backend list. (required)
+  <backend>  The backend's ID, from alia box backend list. (required)
 
 Options:
   --json                      Print JSON.
   --check                     Save nothing: say what would change and what is wrong with it, and for a backend run its checks with the change, as the settings page's Check does.
-  --revision <n>              Save only while the configuration is at this revision, which bb box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
+  --revision <n>              Save only while the configuration is at this revision, which alia box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
   --operation <value>         An ID for this save. The same command again with the same ID, as after an answer that never came, is saved once and answers with the first save's receipt, kept 24 hours. A new ID is made when left out.
   --field <key=value>         Set a field, such as host=unix:///var/run/docker.sock. Repeat for each. key= with nothing after it saves an empty value, which for an image or template field turns its kind off here. Not for secrets. (repeatable)
-  --field-file <key=path>     Set a field to a file's text, for a field of several lines, such as known-hosts. Read on the machine BB's server runs on. (repeatable)
+  --field-file <key=path>     Set a field to a file's text, for a field of several lines, such as known-hosts. Read on the machine ALIA's server runs on. (repeatable)
   --unset <key>               Leave a field unset, so it takes its default. (repeatable)
   --add-line <key=line>       Add a line to a field of lines, such as machines="build-1 192.0.2.21 linux". A line already there is not added again. (repeatable)
   --remove-line <key=text>    Remove the lines of a field that are the text or start with it and a space, such as machines=build-1. (repeatable)
-  --secret-file <field=path>  Set a secret field to a whole file's text, such as ssh-private-key=key.pem. Read on the machine BB's server runs on. (repeatable)
+  --secret-file <field=path>  Set a secret field to a whole file's text, such as ssh-private-key=key.pem. Read on the machine ALIA's server runs on. (repeatable)
   --clear-secret <field>      Clear a secret field. (repeatable)
   --secret <field=VARIABLE>   A secret field and the variable in the dotenv file that holds its value, such as token=HCLOUD_TOKEN. Repeat for each. The value is read from --secrets-file or --secrets-stdin, never from the command line. (repeatable)
-  --secrets-file <path>       A dotenv file, as bb secret request --write-env writes, read on the machine BB's server runs on; a relative path is from where you run bb.
-  --secrets <line>            Only as --secrets-stdin, which reads one line: a VARIABLE=value line, as grep '^HCLOUD_TOKEN=' secrets.env | bb box backend add hetzner --secret token=HCLOUD_TOKEN --secrets-stdin, or a whole dotenv file in base64, as base64 < secrets.env | tr -d '\n' | bb box ... --secrets-stdin, for several secrets at once. Works from any machine. (or --secrets-stdin from the bb CLI)
+  --secrets-file <path>       A dotenv file, as alia secret request --write-env writes, read on the machine ALIA's server runs on; a relative path is from where you run alia.
+  --secrets <line>            Only as --secrets-stdin, which reads one line: a VARIABLE=value line, as grep '^HCLOUD_TOKEN=' secrets.env | alia box backend add hetzner --secret token=HCLOUD_TOKEN --secrets-stdin, or a whole dotenv file in base64, as base64 < secrets.env | tr -d '\n' | alia box ... --secrets-stdin, for several secrets at once. Works from any machine. (or --secrets-stdin from the alia CLI)
   --on                        Turn it on.
   --off                       Turn it off: it makes no new boxes, and its boxes keep working.
   --label <value>             Its name in the settings and in box_list, such as Docker on build-1. Empty gives back the type's name.
   --warm <kind=count>         Ready boxes of a kind to keep waiting here, such as linux=1; 0 keeps none. (repeatable)
-  --projects <names>          The BB projects it is kept for, by name or ID, separated by commas. Only their threads see it and get boxes, spares and forks from it, before the shared backends. Empty serves every project, as by default.
+  --projects <names>          The ALIA projects it is kept for, by name or ID, separated by commas. Only their threads see it and get boxes, spares and forks from it, before the shared backends. Empty serves every project, as by default.
   --no-doctor                 Do not run the backend's checks after saving.
   --help, -h                  Show this help and exit
 ```
 
-## bb box backend remove
+## VesnALIA box backend remove
 
 Remove a backend: its settings, its secrets, which cannot be got back, and its warm boxes. Refused while it has boxes, as on the settings page. Asks for `--yes`.
 
 ```text
 Usage:
-  bb box backend remove <backend> [--json] [--check] [--revision <n>] [--operation <value>] [--yes]
+  alia box backend remove <backend> [--json] [--check] [--revision <n>] [--operation <value>] [--yes]
 
 Arguments:
-  <backend>  The backend's ID, from bb box backend list. (required)
+  <backend>  The backend's ID, from alia box backend list. (required)
 
 Options:
   --json               Print JSON.
   --check              Save nothing: say what would change and what is wrong with it, and for a backend run its checks with the change, as the settings page's Check does.
-  --revision <n>       Save only while the configuration is at this revision, which bb box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
+  --revision <n>       Save only while the configuration is at this revision, which alia box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
   --operation <value>  An ID for this save. The same command again with the same ID, as after an answer that never came, is saved once and answers with the first save's receipt, kept 24 hours. A new ID is made when left out.
   --yes                Remove it. Without it, the command says what would go and removes nothing.
   --help, -h           Show this help and exit
 ```
 
-## bb box backend host add
+## VesnALIA box backend host add
 
-Add a host to a backend whose hosts are set up alike, such as a Mac to Tart. The SSH host pool lists its machines in its machines field instead: bb box backend set ssh-pool `--add-line`.
+Add a host to a backend whose hosts are set up alike, such as a Mac to Tart. The SSH host pool lists its machines in its machines field instead: VesnALIA box backend set ssh-pool `--add-line`.
 
 ```text
 Usage:
-  bb box backend host add <backend> <host> [--json] [--check] [--revision <n>] [--operation <value>] [--field <key=value>]... [--field-file <key=path>]... [--unset <key>]... [--on] [--off] [--no-doctor]
+  alia box backend host add <backend> <host> [--json] [--check] [--revision <n>] [--operation <value>] [--field <key=value>]... [--field-file <key=path>]... [--unset <key>]... [--on] [--off] [--no-doctor]
 
 Arguments:
   <backend>  The backend's ID, such as tart. (required)
@@ -790,10 +790,10 @@ Arguments:
 Options:
   --json                   Print JSON.
   --check                  Save nothing: say what would change and what is wrong with it, and for a backend run its checks with the change, as the settings page's Check does.
-  --revision <n>           Save only while the configuration is at this revision, which bb box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
+  --revision <n>           Save only while the configuration is at this revision, which alia box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
   --operation <value>      An ID for this save. The same command again with the same ID, as after an answer that never came, is saved once and answers with the first save's receipt, kept 24 hours. A new ID is made when left out.
   --field <key=value>      Set a field, such as host=unix:///var/run/docker.sock. Repeat for each. key= with nothing after it saves an empty value, which for an image or template field turns its kind off here. Not for secrets. (repeatable)
-  --field-file <key=path>  Set a field to a file's text, for a field of several lines, such as known-hosts. Read on the machine BB's server runs on. (repeatable)
+  --field-file <key=path>  Set a field to a file's text, for a field of several lines, such as known-hosts. Read on the machine ALIA's server runs on. (repeatable)
   --unset <key>            Leave a field unset, so it takes its default. (repeatable)
   --on                     Turn it on.
   --off                    Turn it off: it makes no new boxes, and its boxes keep working.
@@ -801,25 +801,25 @@ Options:
   --help, -h               Show this help and exit
 ```
 
-## bb box backend host set
+## VesnALIA box backend host set
 
 Change a backend's host: its fields, or its switch. Off, it takes no new boxes, and its boxes keep working.
 
 ```text
 Usage:
-  bb box backend host set <backend> <host> [--json] [--check] [--revision <n>] [--operation <value>] [--field <key=value>]... [--field-file <key=path>]... [--unset <key>]... [--on] [--off] [--no-doctor]
+  alia box backend host set <backend> <host> [--json] [--check] [--revision <n>] [--operation <value>] [--field <key=value>]... [--field-file <key=path>]... [--unset <key>]... [--on] [--off] [--no-doctor]
 
 Arguments:
   <backend>  The backend's ID, such as tart. (required)
-  <host>     The host's name, from bb box backend list. (required)
+  <host>     The host's name, from alia box backend list. (required)
 
 Options:
   --json                   Print JSON.
   --check                  Save nothing: say what would change and what is wrong with it, and for a backend run its checks with the change, as the settings page's Check does.
-  --revision <n>           Save only while the configuration is at this revision, which bb box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
+  --revision <n>           Save only while the configuration is at this revision, which alia box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
   --operation <value>      An ID for this save. The same command again with the same ID, as after an answer that never came, is saved once and answers with the first save's receipt, kept 24 hours. A new ID is made when left out.
   --field <key=value>      Set a field, such as host=unix:///var/run/docker.sock. Repeat for each. key= with nothing after it saves an empty value, which for an image or template field turns its kind off here. Not for secrets. (repeatable)
-  --field-file <key=path>  Set a field to a file's text, for a field of several lines, such as known-hosts. Read on the machine BB's server runs on. (repeatable)
+  --field-file <key=path>  Set a field to a file's text, for a field of several lines, such as known-hosts. Read on the machine ALIA's server runs on. (repeatable)
   --unset <key>            Leave a field unset, so it takes its default. (repeatable)
   --on                     Turn it on.
   --off                    Turn it off: it makes no new boxes, and its boxes keep working.
@@ -827,41 +827,41 @@ Options:
   --help, -h               Show this help and exit
 ```
 
-## bb box backend host remove
+## VesnALIA box backend host remove
 
 Remove a host from a backend. Refused while it has boxes, as on the settings page.
 
 ```text
 Usage:
-  bb box backend host remove <backend> <host> [--json] [--check] [--revision <n>] [--operation <value>]
+  alia box backend host remove <backend> <host> [--json] [--check] [--revision <n>] [--operation <value>]
 
 Arguments:
   <backend>  The backend's ID, such as tart. (required)
-  <host>     The host's name, from bb box backend list. (required)
+  <host>     The host's name, from alia box backend list. (required)
 
 Options:
   --json               Print JSON.
   --check              Save nothing: say what would change and what is wrong with it, and for a backend run its checks with the change, as the settings page's Check does.
-  --revision <n>       Save only while the configuration is at this revision, which bb box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
+  --revision <n>       Save only while the configuration is at this revision, which alia box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
   --operation <value>  An ID for this save. The same command again with the same ID, as after an answer that never came, is saved once and answers with the first save's receipt, kept 24 hours. A new ID is made when left out.
   --help, -h           Show this help and exit
 ```
 
-## bb box kind set
+## VesnALIA box kind set
 
 Change a kind: whether it is offered, its presets' sizes, its default preset, its largest custom size, its spare boxes, its GPU when not asked for, or make it the default kind, through the same checked save as the settings page. Sizes and the GPU change new boxes only.
 
 ```text
 Usage:
-  bb box kind set <kind> [--json] [--check] [--revision <n>] [--operation <value>] [--on] [--off] [--make-default] [--default-preset <small|medium|large>] [--preset <small|medium|large>] [--cores <1-1024>] [--memory-gib <value>] [--disk-gib <value>] [--largest-cores <1-1024>] [--largest-memory-gib <value>] [--largest-disk-gib <value>] [--spares <0-100>] [--gpu <none|shared|whole>] [--reset]
+  alia box kind set <kind> [--json] [--check] [--revision <n>] [--operation <value>] [--on] [--off] [--make-default] [--default-preset <small|medium|large>] [--preset <small|medium|large>] [--cores <1-1024>] [--memory-gib <value>] [--disk-gib <value>] [--largest-cores <1-1024>] [--largest-memory-gib <value>] [--largest-disk-gib <value>] [--spares <0-100>] [--gpu <none|shared|whole>] [--reset]
 
 Arguments:
-  <kind>  The kind, such as linux. bb box kinds lists those on offer. (required)
+  <kind>  The kind, such as linux. alia box kinds lists those on offer. (required)
 
 Options:
   --json                         Print JSON.
   --check                        Save nothing: say what would change and what is wrong with it, and for a backend run its checks with the change, as the settings page's Check does.
-  --revision <n>                 Save only while the configuration is at this revision, which bb box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
+  --revision <n>                 Save only while the configuration is at this revision, which alia box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
   --operation <value>            An ID for this save. The same command again with the same ID, as after an answer that never came, is saved once and answers with the first save's receipt, kept 24 hours. A new ID is made when left out.
   --on                           Turn it on.
   --off                          Turn it off: it makes no new boxes, and its boxes keep working.
@@ -876,30 +876,30 @@ Options:
   --largest-disk-gib <value>     The most disk in GiB a custom size may ask for.
   --spares <0-100>               Spare boxes to keep ready, enrolled and owned by no thread; 0 keeps none.
   --gpu <none|shared|whole>      The GPU a box of the kind gets when a request leaves gpu out, and the New box form's first choice: none, shared or whole. linux and linux-desktop only.
-  --reset                        Go back to BB Box's own sizes and switch for the kind first.
+  --reset                        Go back to ALIA Box's own sizes and switch for the kind first.
   --help, -h                     Show this help and exit
 ```
 
-## bb box option list
+## VesnALIA box option list
 
 List the general and Monitor options: each one's value now, its default, and what it does.
 
 ```text
 Usage:
-  bb box option list [--json]
+  alia box option list [--json]
 
 Options:
   --json      Print JSON.
   --help, -h  Show this help and exit
 ```
 
-## bb box option get
+## VesnALIA box option get
 
 Show one general or Monitor option: its value now, its default, and what it does.
 
 ```text
 Usage:
-  bb box option get <option> [--json]
+  alia box option get <option> [--json]
 
 Arguments:
   <option>  The option's name, such as monitor.enabled or defaultKind. (required)
@@ -909,13 +909,13 @@ Options:
   --help, -h  Show this help and exit
 ```
 
-## bb box option set
+## VesnALIA box option set
 
-Set general and Monitor options, such as monitor.enabled=false, defaultKind=linux or general.snapshots.ceilings.<backend>=7.50, a ceiling on a backend's paid snapshots, in one checked save, as the settings page saves them. bb box option list lists them.
+Set general and Monitor options, such as monitor.enabled=false, defaultKind=linux or general.snapshots.ceilings.<backend>=7.50, a ceiling on a backend's paid snapshots, in one checked save, as the settings page saves them. VesnALIA box option list lists them.
 
 ```text
 Usage:
-  bb box option set [<options...>] [--json] [--check] [--revision <n>] [--operation <value>] [--secret <field=VARIABLE>]... [--secrets-file <path>] [--secrets <line>]
+  alia box option set [<options...>] [--json] [--check] [--revision <n>] [--operation <value>] [--secret <field=VARIABLE>]... [--secrets-file <path>] [--secrets <line>]
 
 Arguments:
   <options...>  Each as <name>=<value>, such as monitor.enabled=false; or one name and its value as two words.
@@ -923,21 +923,21 @@ Arguments:
 Options:
   --json                     Print JSON.
   --check                    Save nothing: say what would change and what is wrong with it, and for a backend run its checks with the change, as the settings page's Check does.
-  --revision <n>             Save only while the configuration is at this revision, which bb box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
+  --revision <n>             Save only while the configuration is at this revision, which alia box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
   --operation <value>        An ID for this save. The same command again with the same ID, as after an answer that never came, is saved once and answers with the first save's receipt, kept 24 hours. A new ID is made when left out.
   --secret <field=VARIABLE>  A secret field and the variable in the dotenv file that holds its value, such as token=HCLOUD_TOKEN. Repeat for each. The value is read from --secrets-file or --secrets-stdin, never from the command line. (repeatable)
-  --secrets-file <path>      A dotenv file, as bb secret request --write-env writes, read on the machine BB's server runs on; a relative path is from where you run bb.
-  --secrets <line>           Only as --secrets-stdin, which reads one line: a VARIABLE=value line, as grep '^HCLOUD_TOKEN=' secrets.env | bb box backend add hetzner --secret token=HCLOUD_TOKEN --secrets-stdin, or a whole dotenv file in base64, as base64 < secrets.env | tr -d '\n' | bb box ... --secrets-stdin, for several secrets at once. Works from any machine. (or --secrets-stdin from the bb CLI)
+  --secrets-file <path>      A dotenv file, as alia secret request --write-env writes, read on the machine ALIA's server runs on; a relative path is from where you run alia.
+  --secrets <line>           Only as --secrets-stdin, which reads one line: a VARIABLE=value line, as grep '^HCLOUD_TOKEN=' secrets.env | alia box backend add hetzner --secret token=HCLOUD_TOKEN --secrets-stdin, or a whole dotenv file in base64, as base64 < secrets.env | tr -d '\n' | alia box ... --secrets-stdin, for several secrets at once. Works from any machine. (or --secrets-stdin from the alia CLI)
   --help, -h                 Show this help and exit
 ```
 
-## bb box option unset
+## VesnALIA box option unset
 
 Give general and Monitor options back their defaults, in one checked save. general.tailnet.mode turns the tailnet off and clears its client.
 
 ```text
 Usage:
-  bb box option unset <options...> [--json] [--check] [--revision <n>] [--operation <value>]
+  alia box option unset <options...> [--json] [--check] [--revision <n>] [--operation <value>]
 
 Arguments:
   <options...>  The options' names, such as monitor.refreshIntervalSeconds. (required)
@@ -945,25 +945,25 @@ Arguments:
 Options:
   --json               Print JSON.
   --check              Save nothing: say what would change and what is wrong with it, and for a backend run its checks with the change, as the settings page's Check does.
-  --revision <n>       Save only while the configuration is at this revision, which bb box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
+  --revision <n>       Save only while the configuration is at this revision, which alia box config show gives, and refuse otherwise. Left out, the change is made on the latest revision, trying up to 3 times.
   --operation <value>  An ID for this save. The same command again with the same ID, as after an answer that never came, is saved once and answers with the first save's receipt, kept 24 hours. A new ID is made when left out.
   --help, -h           Show this help and exit
 ```
 
-## bb box snapshot take
+## VesnALIA box snapshot take
 
 Take a snapshot of a thread's box, or with `--machine` one of your machines: its disk, or with `--memory` its disk and its memory where its backend can. Waits until the backend confirms it, then says how long it paused the box. Run it with `--check` first to see how long it would pause the box: a Windows desktop on arm64 shuts Windows down for it and starts it again. A box holds as many as Settings, Snapshots allows, 5 unless set.
 
 ```text
 Usage:
-  bb box snapshot take <box> [--thread <value>] [--machine] [--json] [--name <value>] [--note <value>] [--memory] [--no-memory] [--request <value>] [--check]
+  alia box snapshot take <box> [--thread <value>] [--machine] [--json] [--name <value>] [--note <value>] [--memory] [--no-memory] [--request <value>] [--check]
 
 Arguments:
   <box>  The box's name or ID. (required)
 
 Options:
   --thread <value>   The thread whose boxes to use. Defaults to the thread this runs in.
-  --machine          The box is one of your machines, from bb box machines, not a thread's.
+  --machine          The box is one of your machines, from alia box machines, not a thread's.
   --json             Print JSON.
   --name <value>     Its name, at most 60 characters, unique on the box. The time, such as Thu 10:42, when left out.
   --note <value>     A note, at most 1 KB.
@@ -974,33 +974,33 @@ Options:
   --help, -h         Show this help and exit
 ```
 
-## bb box snapshot list
+## VesnALIA box snapshot list
 
-List the snapshots of a box, of a thread's boxes, of your machines with `--machine`, or with `--all` every snapshot BB Box records, those of released boxes too.
+List the snapshots of a box, of a thread's boxes, of your machines with `--machine`, or with `--all` every snapshot VesnALIA Box records, those of released boxes too.
 
 ```text
 Usage:
-  bb box snapshot list [<box>] [--thread <value>] [--machine] [--json] [--all] [--kept]
+  alia box snapshot list [<box>] [--thread <value>] [--machine] [--json] [--all] [--kept]
 
 Arguments:
   <box>  The box's name or ID. Every box of the thread, or of your machines, when left out.
 
 Options:
   --thread <value>  The thread whose boxes to use. Defaults to the thread this runs in.
-  --machine         The box is one of your machines, from bb box machines, not a thread's.
+  --machine         The box is one of your machines, from alia box machines, not a thread's.
   --json            Print JSON.
-  --all             Every snapshot BB Box records, of every thread's boxes and of boxes that are gone.
+  --all             Every snapshot ALIA Box records, of every thread's boxes and of boxes that are gone.
   --kept            Only kept snapshots.
   --help, -h        Show this help and exit
 ```
 
-## bb box snapshot delete
+## VesnALIA box snapshot delete
 
-Delete a snapshot of a thread's box, or with `--machine` one of your machines, by its name or ID, and wait until its backend confirms. An incomplete one is cleaned up on its host. A box that is gone is named by the ID bb box snapshot list `--all` gives.
+Delete a snapshot of a thread's box, or with `--machine` one of your machines, by its name or ID, and wait until its backend confirms. An incomplete one is cleaned up on its host. A box that is gone is named by the ID VesnALIA box snapshot list `--all` gives.
 
 ```text
 Usage:
-  bb box snapshot delete <box> <snapshot> [--thread <value>] [--machine] [--json] [--request <value>]
+  alia box snapshot delete <box> <snapshot> [--thread <value>] [--machine] [--json] [--request <value>]
 
 Arguments:
   <box>       The box's name or ID. (required)
@@ -1008,19 +1008,19 @@ Arguments:
 
 Options:
   --thread <value>   The thread whose boxes to use. Defaults to the thread this runs in.
-  --machine          The box is one of your machines, from bb box machines, not a thread's.
+  --machine          The box is one of your machines, from alia box machines, not a thread's.
   --json             Print JSON.
   --request <value>  An ID you make, so a repeat of this command is the same delete.
   --help, -h         Show this help and exit
 ```
 
-## bb box snapshot restore
+## VesnALIA box snapshot restore
 
-Restore a thread's box, or with `--machine` one of your machines, to one of its snapshots: everything on its disk since then goes, and the box restarts. BB Box takes an undo first, a snapshot of the box once stopped, or on ZFS a full copy of it, unless `--no-undo`. On ZFS only the newest snapshot restores. It refuses while a person holds the box's desktop or a BB terminal is open on it, unless `--force`. It refuses a box threads run on, as restores of such boxes stay off until BB Box can hold every turn on them. Asks for `--replace`.
+Restore a thread's box, or with `--machine` one of your machines, to one of its snapshots: everything on its disk since then goes, and the box restarts. VesnALIA Box takes an undo first, a snapshot of the box once stopped, or on ZFS a full copy of it, unless `--no-undo`. On ZFS only the newest snapshot restores. It refuses while a person holds the box's desktop or a VesnALIA terminal is open on it, unless `--force`. It refuses a box threads run on, as restores of such boxes stay off until VesnALIA Box can hold every turn on them. Asks for `--replace`.
 
 ```text
 Usage:
-  bb box snapshot restore <box> <snapshot> [--thread <value>] [--machine] [--json] [--replace] [--no-undo] [--force] [--unflushed] [--check] [--request <value>]
+  alia box snapshot restore <box> <snapshot> [--thread <value>] [--machine] [--json] [--replace] [--no-undo] [--force] [--unflushed] [--check] [--request <value>]
 
 Arguments:
   <box>       The box's name or ID. (required)
@@ -1028,24 +1028,24 @@ Arguments:
 
 Options:
   --thread <value>   The thread whose boxes to use. Defaults to the thread this runs in.
-  --machine          The box is one of your machines, from bb box machines, not a thread's.
+  --machine          The box is one of your machines, from alia box machines, not a thread's.
   --json             Print JSON.
   --replace          Replace the box's disk with the snapshot's.
   --no-undo          Take no undo first, so this cannot be undone.
-  --force            Restore anyway while a person holds the box's desktop or a BB terminal is open on it, ending them.
-  --unflushed        Restore anyway when BB Box cannot flush the box's writes to its disk before stopping it, so its undo may miss the last seconds' writes.
+  --force            Restore anyway while a person holds the box's desktop or a ALIA terminal is open on it, ending them.
+  --unflushed        Restore anyway when ALIA Box cannot flush the box's writes to its disk before stopping it, so its undo may miss the last seconds' writes.
   --check            Say what the restore would do, and refuse what it would refuse, changing nothing.
   --request <value>  An ID you make, so a repeat of this command is the same restore.
   --help, -h         Show this help and exit
 ```
 
-## bb box snapshot fork
+## VesnALIA box snapshot fork
 
-Fork a snapshot of a thread's box, or with `--machine` one of your machines, into a new box: of the box's thread, or with `--as-machine` one of your machines. The fork gets the snapshot's files, at its size, and an identity of its own: it resets at its first boot, and BB Box checks that before it is ready. Waits until it is ready. A kept snapshot of a box that was released forks, from its held copy on Proxmox and from the snapshot itself on Tart, microsandbox, Docker and boat.dev, as one of your machines; name its box as bb box snapshot list `--all` does.
+Fork a snapshot of a thread's box, or with `--machine` one of your machines, into a new box: of the box's thread, or with `--as-machine` one of your machines. The fork gets the snapshot's files, at its size, and an identity of its own: it resets at its first boot, and VesnALIA Box checks that before it is ready. Waits until it is ready. A kept snapshot of a box that was released forks, from its held copy on Proxmox and from the snapshot itself on Tart, microsandbox, Docker and boat.dev, as one of your machines; name its box as VesnALIA box snapshot list `--all` does.
 
 ```text
 Usage:
-  bb box snapshot fork <box> <snapshot> [--thread <value>] [--machine] [--json] [--as-machine] [--name <value>] [--check] [--request <value>] [--gpu <value>]
+  alia box snapshot fork <box> <snapshot> [--thread <value>] [--machine] [--json] [--as-machine] [--name <value>] [--check] [--request <value>] [--gpu <value>]
 
 Arguments:
   <box>       The box's name or ID. (required)
@@ -1053,7 +1053,7 @@ Arguments:
 
 Options:
   --thread <value>   The thread whose boxes to use. Defaults to the thread this runs in.
-  --machine          The box is one of your machines, from bb box machines, not a thread's.
+  --machine          The box is one of your machines, from alia box machines, not a thread's.
   --json             Print JSON.
   --as-machine       Make the fork one of your machines, not a box of the source's thread.
   --name <value>     The new box's name. One is made up when left out.
@@ -1063,13 +1063,13 @@ Options:
   --help, -h         Show this help and exit
 ```
 
-## bb box snapshot keep
+## VesnALIA box snapshot keep
 
-Keep a snapshot of a thread's box, or with `--machine` one of your machines, for 30 days from today unless Settings say otherwise, or until a date: it becomes yours, no agent can delete it, and it outlives its box's release, as a held copy on Proxmox and as it is on Tart, microsandbox, Docker and boat.dev. Hetzner Cloud and Namespace keep none. BB Box deletes it after that date. Again on a kept snapshot, it renews its keep, never shortening it unless you give the date. A box that was released is named as bb box snapshot list `--all` names it.
+Keep a snapshot of a thread's box, or with `--machine` one of your machines, for 30 days from today unless Settings say otherwise, or until a date: it becomes yours, no agent can delete it, and it outlives its box's release, as a held copy on Proxmox and as it is on Tart, microsandbox, Docker and boat.dev. Hetzner Cloud and Namespace keep none. VesnALIA Box deletes it after that date. Again on a kept snapshot, it renews its keep, never shortening it unless you give the date. A box that was released is named as VesnALIA box snapshot list `--all` names it.
 
 ```text
 Usage:
-  bb box snapshot keep <box> <snapshot> [--thread <value>] [--machine] [--json] [--days <1-365>] [--until <value>] [--check]
+  alia box snapshot keep <box> <snapshot> [--thread <value>] [--machine] [--json] [--days <1-365>] [--until <value>] [--check]
 
 Arguments:
   <box>       The box's name or ID. (required)
@@ -1077,7 +1077,7 @@ Arguments:
 
 Options:
   --thread <value>  The thread whose boxes to use. Defaults to the thread this runs in.
-  --machine         The box is one of your machines, from bb box machines, not a thread's.
+  --machine         The box is one of your machines, from alia box machines, not a thread's.
   --json            Print JSON.
   --days <1-365>    Keep it this many days from today.
   --until <value>   Keep it until the end of this day, in UTC, as yyyy-mm-dd.
@@ -1085,13 +1085,13 @@ Options:
   --help, -h        Show this help and exit
 ```
 
-## bb box snapshot unkeep
+## VesnALIA box snapshot unkeep
 
-Stop keeping a snapshot of a thread's box, or with `--machine` one of your machines: it goes with its box again. A released box's kept snapshot is deleted instead, with bb box snapshot delete.
+Stop keeping a snapshot of a thread's box, or with `--machine` one of your machines: it goes with its box again. A released box's kept snapshot is deleted instead, with VesnALIA box snapshot delete.
 
 ```text
 Usage:
-  bb box snapshot unkeep <box> <snapshot> [--thread <value>] [--machine] [--json]
+  alia box snapshot unkeep <box> <snapshot> [--thread <value>] [--machine] [--json]
 
 Arguments:
   <box>       The box's name or ID. (required)
@@ -1099,41 +1099,41 @@ Arguments:
 
 Options:
   --thread <value>  The thread whose boxes to use. Defaults to the thread this runs in.
-  --machine         The box is one of your machines, from bb box machines, not a thread's.
+  --machine         The box is one of your machines, from alia box machines, not a thread's.
   --json            Print JSON.
   --help, -h        Show this help and exit
 ```
 
-## bb box snapshot forget
+## VesnALIA box snapshot forget
 
-Forget every snapshot BB Box records on a backend, so the backend can be removed from BB Box's settings. BB Box deletes nothing: they may still exist there, and be billed. Asks for `--yes`.
+Forget every snapshot VesnALIA Box records on a backend, so the backend can be removed from VesnALIA Box's settings. VesnALIA Box deletes nothing: they may still exist there, and be billed. Asks for `--yes`.
 
 ```text
 Usage:
-  bb box snapshot forget <backend> [--yes]
+  alia box snapshot forget <backend> [--yes]
 
 Arguments:
-  <backend>  The backend's ID, from bb box backend list. (required)
+  <backend>  The backend's ID, from alia box backend list. (required)
 
 Options:
   --yes       Forget them.
   --help, -h  Show this help and exit
 ```
 
-## bb box gpu update
+## VesnALIA box gpu update
 
-Update NVIDIA's userspace in a running box with a GPU to the host's driver, after that driver changed (071). BB Box checks the box first: BB Box's own Linux image on x86_64, 2 GiB free, and no NVIDIA or CUDA packages from apt. It then downloads NVIDIA's installer for exactly the host's driver, checks it against NVIDIA's SHA-256, installs it with no kernel modules, restarts the box, and checks that nvidia-smi lists the box's card and CUDA's driver initialises, and for a desktop that it draws and encodes its video on the GPU. Everything running in the box stops. It is refused while a person holds control of the box's desktop, and while threads are working on it unless `--force`. Several boxes are updated one at a time. BB Box never updates a box's userspace by itself; bb box doctor names the boxes that need it.
+Update NVIDIA's userspace in a running box with a GPU to the host's driver, after that driver changed (071). VesnALIA Box checks the box first: VesnALIA Box's own Linux image on x86_64, 2 GiB free, and no NVIDIA or CUDA packages from apt. It then downloads NVIDIA's installer for exactly the host's driver, checks it against NVIDIA's SHA-256, installs it with no kernel modules, restarts the box, and checks that nvidia-smi lists the box's card and CUDA's driver initialises, and for a desktop that it draws and encodes its video on the GPU. Everything running in the box stops. It is refused while a person holds control of the box's desktop, and while threads are working on it unless `--force`. Several boxes are updated one at a time. VesnALIA Box never updates a box's userspace by itself; VesnALIA box doctor names the boxes that need it.
 
 ```text
 Usage:
-  bb box gpu update <box...> [--thread <value>] [--machine] [--check] [--force] [--snapshot] [--json]
+  alia box gpu update <box...> [--thread <value>] [--machine] [--check] [--force] [--snapshot] [--json]
 
 Arguments:
   <box...>  The box's name or ID. Several, with spaces between, are updated one at a time. (required)
 
 Options:
   --thread <value>  The thread whose boxes to use. Defaults to the thread this runs in.
-  --machine         The boxes are your machines, from bb box machines, not a thread's.
+  --machine         The boxes are your machines, from alia box machines, not a thread's.
   --check           Only say what it would do, and what stops; it changes nothing.
   --force           Restart it even while threads are working on it, which ends their work.
   --snapshot        Take a snapshot of the box first, where its provider takes snapshots, so it can be restored.
@@ -1141,55 +1141,55 @@ Options:
   --help, -h        Show this help and exit
 ```
 
-## bb box gpu mark
+## VesnALIA box gpu mark
 
 Mark each guest of this install whose device lines name a card with the claim they give, as a tag the host's GPU helper answers (071): gpu.shared.<card's UUID>.g<N>, or gpu.whole where the box's record says a whole card, N above the last generation the helper answered for the guest. It changes only tags: it never restarts, stops or resizes a guest, never changes its device lines, and never touches a guest that is not this install's; a running box is marked as it runs. It leaves, and names, a guest the helper would refuse or whose lines it would rewrite, one that is locked or has another marker, and checks each again from the config it reads just before it writes. It counts a guest granted only from the helper's own answer to that marker. It waits up to 10 s for the answers, and exits 1 when it leaves a guest or the helper does not grant one. `--undo` clears each claim the helper holds for this install's guests, through a gpu.release marker the helper answers, then takes that marker off: device lines stay as they are, and the helper no longer writes them.
 
 ```text
 Usage:
-  bb box gpu mark [--check] [--undo] [--on <value>] [--json]
+  alia box gpu mark [--check] [--undo] [--on <value>] [--json]
 
 Options:
   --check       Only say what it would mark, or with --undo take off, and why; it changes nothing.
-  --undo        Clear the claims the GPU helper holds for this install's guests, and take their shared and whole markers off. Device lines and other gpu tags stay. Needs bb-box-gpu 0.3.0 or later.
+  --undo        Clear the claims the GPU helper holds for this install's guests, and take their shared and whole markers off. Device lines and other gpu tags stay. Needs alia-box-gpu 0.3.0 or later.
   --on <value>  Only this backend, by its ID, such as proxmox-lxc. Every Proxmox LXC backend that is on by default.
   --json        Print JSON.
   --help, -h    Show this help and exit
 ```
 
-## bb box monitor snapshot
+## VesnALIA box monitor snapshot
 
-Show BB's server's CPU, load, memory, disk and processes, as the Monitor reads them. `--json` gives the whole reading, with its recent history.
+Show VesnALIA's server's CPU, load, memory, disk and processes, as the Monitor reads them. `--json` gives the whole reading, with its recent history.
 
 ```text
 Usage:
-  bb box monitor snapshot [--json]
+  alia box monitor snapshot [--json]
 
 Options:
   --json      Print JSON.
   --help, -h  Show this help and exit
 ```
 
-## bb box monitor health
+## VesnALIA box monitor health
 
-Show the pressure on BB's server. Exits 2 when it is critical; with `--json` it exits 0, and status says.
+Show the pressure on VesnALIA's server. Exits 2 when it is critical; with `--json` it exits 0, and status says.
 
 ```text
 Usage:
-  bb box monitor health [--json]
+  alia box monitor health [--json]
 
 Options:
   --json      Print JSON.
   --help, -h  Show this help and exit
 ```
 
-## bb box monitor logs
+## VesnALIA box monitor logs
 
 Show background monitoring's diagnostic records, oldest first: the last 100, or `--limit` up to 500. `--json` gives JSON lines.
 
 ```text
 Usage:
-  bb box monitor logs [--json] [--limit <1-500>]
+  alia box monitor logs [--json] [--limit <1-500>]
 
 Options:
   --json           Print JSON.
@@ -1197,22 +1197,22 @@ Options:
   --help, -h       Show this help and exit
 ```
 
-## bb box monitor test-alert
+## VesnALIA box monitor test-alert
 
-Show a labelled preview of a pressure alert in every BB window that is open and visible. Needs background monitoring and its notifications on.
+Show a labelled preview of a pressure alert in every VesnALIA window that is open and visible. Needs background monitoring and its notifications on.
 
 ```text
 Usage:
-  bb box monitor test-alert
+  alia box monitor test-alert
 ```
 
-## bb box monitor history
+## VesnALIA box monitor history
 
 Show box history (069): whether it reads boxes, how many readings were due, taken, skipped and failed each hour, each box's newest point, and the room its file uses. `--hours` chooses how many hours, 24 by default.
 
 ```text
 Usage:
-  bb box monitor history [--json] [--hours <1-168>]
+  alia box monitor history [--json] [--hours <1-168>]
 
 Options:
   --json           Print JSON.
@@ -1220,13 +1220,13 @@ Options:
   --help, -h       Show this help and exit
 ```
 
-## bb box sweep
+## VesnALIA box sweep
 
-Run the clean-up now: release the boxes of ended threads, finish interrupted work and remove leftovers, and settle and check BB Box's snapshots against each backend's.
+Run the clean-up now: release the boxes of ended threads, finish interrupted work and remove leftovers, and settle and check VesnALIA Box's snapshots against each backend's.
 
 ```text
 Usage:
-  bb box sweep [--json]
+  alia box sweep [--json]
 
 Options:
   --json      Print JSON.

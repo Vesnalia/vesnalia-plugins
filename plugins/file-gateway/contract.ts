@@ -1,4 +1,4 @@
-import { defineRpcContract } from '@get-bb/plugin-sdk';
+import { defineRpcContract } from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 export const CHUNK = 512 * 1024;
 export const MAX_FILE = 256 * 1024 * 1024;

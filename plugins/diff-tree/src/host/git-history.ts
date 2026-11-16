@@ -87,7 +87,7 @@ export async function committedPatch(workspace: string, input: { from: string; t
   const output = await git(workspace, [...diffArgs, "--patch", input.from, input.to, "--", ...paths.map(path => `:(literal)${path}`)], signal);
   const patches = output.split(/(?=^diff --git )/m).filter(Boolean);
   // A rename's old name may be reused by another file in the same range.
-  // Return only the chosen file to BB's single-file diff component.
+  // Return only the chosen file to VesnALIA's single-file diff component.
   const patch = patches.length <= 1 ? output : patches.find(part => {
     const header = part.split("\n", 1)[0];
     return header.endsWith(` b/${input.path}`) || header.endsWith(` ${JSON.stringify(`b/${input.path}`)}`);

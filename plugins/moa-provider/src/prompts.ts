@@ -165,7 +165,7 @@ export function consultResultText(notes: readonly AdvisorNote[]): string {
 
 /**
  * The status line after an advisor panel. It is its own assistant message on
- * purpose: BB keeps an assistant message visible in a folded, finished turn
+ * purpose: VesnALIA keeps an assistant message visible in a folded, finished turn
  * when the next message is one too, so this keeps the panel above it in view.
  */
 export function roundHandoffText(args: {
@@ -198,7 +198,7 @@ export const ASK_TOOL_INSTRUCTIONS = `The user can consult their Mixture of Agen
 1. Call \`moa_ask\` with their question, and put in \`context\` what the advisors need to know, since they cannot see this conversation: the goal, relevant files and findings, and what has been tried. Set \`preset\` only when the user names one. If these tools are deferred, load their schemas first: a call made without them arrives empty and fails.
 2. It returns at once with a \`::moa-advisors{…}\` line. Write that line in your reply straight away, on its own, so the user watches the advisors answer live.
 3. Call \`moa_answers\` with the round it gave you to wait for their answers. If it reports they are still working, call it again with the same round; do not answer the user yet.
-4. Once it returns their answers, give your own answer, weighing theirs. Start it with the same \`::moa-advisors{…}\` line, on its own: BB folds a finished turn's steps away, and this keeps the panel in view above your answer.`;
+4. Once it returns their answers, give your own answer, weighing theirs. Start it with the same \`::moa-advisors{…}\` line, on its own: VesnALIA folds a finished turn's steps away, and this keeps the panel in view above your answer.`;
 
 /** An advisor's question from another thread's agent, for `/moa`. */
 export function advisorAskPrompt(
@@ -219,7 +219,7 @@ export function advisorAskPrompt(
 /** What `moa_ask` returns: show the panel now, then wait with `moa_answers`. */
 export function askStartedText(panelLine: string, round: string): string {
   return `The advisors are working on it.
-1. Now write this line in your reply, on its own. BB shows it as a live panel of their answers:
+1. Now write this line in your reply, on its own. VesnALIA shows it as a live panel of their answers:
 ${panelLine}
 2. Then call moa_answers with round "${round}" to wait for their answers. If it says they are still working, call it again.`;
 }

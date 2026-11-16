@@ -71,9 +71,9 @@ in the row.
 |---|---|---|---|---|---|---|
 | | | | | | | |
 
-Configuration is the critic model, and in bb the provider too:
+Configuration is the critic model, and in VesnALIA the provider too:
 `opus` in Claude Code, `claude-code/claude-opus-5[1m]/high` or
-`codex/gpt-5.6-sol/high` in bb. Scores from two configurations are two
+`codex/gpt-5.6-sol/high` in VesnALIA. Scores from two configurations are two
 scales; never compare them or carry a baseline across them.
 
 ## Directions explored

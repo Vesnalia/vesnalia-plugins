@@ -3,7 +3,7 @@
 // Why not `@langchain/langgraph-checkpoint-sqlite`: that package bundles its
 // own better-sqlite3, and a native module inside a single-file plugin bundle
 // is the one thing most likely to break. The host already hands us an open,
-// WAL-mode better-sqlite3 handle through `bb.storage.database()`, so the
+// WAL-mode better-sqlite3 handle through `alia.storage.database()`, so the
 // checkpointer is ~100 lines of pure JS over a handle we already own.
 //
 // This is what makes a run durable: a plugin reload mid-run resumes from the

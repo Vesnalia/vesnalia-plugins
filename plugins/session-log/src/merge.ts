@@ -66,7 +66,7 @@ export function prependOlderRows(older: readonly TimelineRow[], loaded: readonly
 }
 
 /**
- * Applies a delta's rows to the window it was computed from, as bb's own client does: `rowOrder`
+ * Applies a delta's rows to the window it was computed from, as VesnALIA's own client does: `rowOrder`
  * lists runs `[start, count]` of the previous rows and the ids of new ones, and is left out when the
  * order did not change. Returns null when the delta does not fit `previous`.
  */

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   emptyUsage,
   hostContract,
@@ -8,8 +8,8 @@ import {
 } from "./src/contract";
 import { selectSession } from "./src/identity";
 
-export default function plugin(bb: BbPluginApi) {
-  const host = bb.hosts.experimental_client({
+export default function plugin(alia: AliaPluginApi) {
+  const host = alia.hosts.experimental_client({
     contract: hostContract,
     experimental_signals: hostSignals,
   });
@@ -20,7 +20,7 @@ export default function plugin(bb: BbPluginApi) {
   const pending = new Map<string, ReturnType<typeof setTimeout>>();
 
   const publish = (threadId: string) =>
-    bb.realtime.publish(USAGE_CHANGED, { threadId });
+    alia.realtime.publish(USAGE_CHANGED, { threadId });
 
   const unsubscribe = host.experimental_onSignal(
     "changed",
@@ -40,7 +40,7 @@ export default function plugin(bb: BbPluginApi) {
       if (target.hostId === hostId) publish(id);
   });
 
-  bb.events.on("experimental_thread.events", ({ thread }) => {
+  alia.events.on("experimental_thread.events", ({ thread }) => {
     if (!subscriptions.has(thread.id) || pending.has(thread.id)) return;
 
     const timer = setTimeout(() => {
@@ -53,12 +53,12 @@ export default function plugin(bb: BbPluginApi) {
     pending.set(thread.id, timer);
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     usage: async ({ threadId }) => {
       let supported = false;
 
       try {
-        const thread = await bb.sdk.threads.get({
+        const thread = await alia.sdk.threads.get({
           threadId,
           include: "environment",
         });
@@ -75,7 +75,7 @@ export default function plugin(bb: BbPluginApi) {
         if (!environment?.hostId) return emptyUsage("missing-host");
 
         // Server-side filter: prompts, responses and tool events are never fetched.
-        const identities = await bb.sdk.threads.events.list({
+        const identities = await alia.sdk.threads.events.list({
           threadId,
           types: ["thread/identity"],
           order: "desc",
@@ -107,7 +107,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     unsubscribe();
     unsubscribeExit();
     for (const timer of pending.values()) clearTimeout(timer);

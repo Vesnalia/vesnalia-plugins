@@ -1,12 +1,12 @@
 # AGENTS.md
 
-A bb plugin that adds a **Screen Sharing** sidebar page: the screens of the Macs enrolled in bb, seen
+A VesnALIA plugin that adds a **Screen Sharing** sidebar page: the screens of the Macs enrolled in VesnALIA, seen
 and controlled through noVNC in the page, relayed by the plugin to macOS Screen Sharing on each Mac's
-own `127.0.0.1:5900` — directly for the Mac running the bb server, over bb's host link for the others.
+own `127.0.0.1:5900` — directly for the Mac running the VesnALIA server, over VesnALIA's host link for the others.
 It is not a Paseo port.
 
 The repository root `AGENTS.md` covers what every plugin here shares. This file covers only what is
-specific to `screen-sharing`. The feasibility study behind it measured bb's channels and auth; its
+specific to `screen-sharing`. The feasibility study behind it measured VesnALIA's channels and auth; its
 findings are summarised under *Decisions*.
 
 ## Orientation
@@ -29,7 +29,7 @@ findings are summarised under *Decisions*.
 | `shared/host-contract.ts`, `shared/limits.ts` | The server ⇄ host contract and signals, and the numbers both ends share (port, windows, keepalive). The app imports neither. |
 | `app/screen-panel.tsx` | The page: the toolbar row (the picker, then View only, Connect/Disconnect and the keys), the picked Mac's status and System Settings guidance; the title bar's right side (`SessionsHeader`: open sessions, Close all). |
 | `app/hosts.ts` | The machines, their statuses and the picked Mac, outside React, so the picker, the page and other windows' visits share them. |
-| `app/host-picker.tsx` | The picker at the left of the toolbar row: a dot and the picked Mac's name, opening bb's dropdown menu of every machine with its state (a sheet on a compact viewport). |
+| `app/host-picker.tsx` | The picker at the left of the toolbar row: a dot and the picked Mac's name, opening VesnALIA's dropdown menu of every machine with its state (a sheet on a compact viewport). |
 | `app/session-store.ts` | One session per Mac per window, outside React: ticket → WebSocket → noVNC into an element it owns; the input-idle disconnect; the local-cursor CSS; why it ended. `screenSessions` holds them. |
 | `app/flow.ts` | The page's acknowledgements of what it received. |
 | `app/liveness.ts` | The page's pings, and the session called lost when the relay stops answering with its socket still open. |
@@ -49,7 +49,7 @@ findings are summarised under *Decisions*.
 `npm test` runs everything. The tests never touch this machine's real port 5900: the relay, the host
 relay and the probe run against fake TCP servers (`testing/fake-vnc.ts`), and the fake-host test
 drives the loopback route only with tickets it refuses. `server/remote.test.ts` runs the real server
-entry on bb's fake plugin host against a real `HostRelay` behind `testing/fake-daemon.ts`, which
+entry on VesnALIA's fake plugin host against a real `HostRelay` behind `testing/fake-daemon.ts`, which
 delays every call and signal by a chosen one-way time; it covers every way a remote session ends and
 logs `[measured]` round trips, scroll latency and throughput at 300 ms each way. `app/novnc-session.test.ts` runs the store against the real, pinned noVNC client, playing
 Apple's side of an ARD sign-in over a fake relay socket; use it for anything that depends on what
@@ -59,31 +59,31 @@ noVNC really does with credentials, keys, buttons, the wheel, the cursor or the 
 
 **Which machine: every enrolled one, two ways.** The server's own Mac (`system.config().primaryHostId`)
 is reached from `server.ts` with a loopback `net.connect`, as before. Every other Mac goes through the
-plugin's `bb.host` entry over bb's host link: host calls up, host signals down. `openSession` decides
+plugin's `alia.host` entry over VesnALIA's host link: host calls up, host signals down. `openSession` decides
 which when it mints the ticket (the ticket carries the route), so the route cannot be swapped later;
 a Mac that is offline or unknown gets no ticket. The study measured ≈600 ms round trips to the
-MacBooks through getbb.app. A gate-shared port (`bb.hosts.declareSharedPorts`, path C in the study)
+MacBooks through getbb.app. A gate-shared port (`alia.hosts.declareSharedPorts`, path C in the study)
 might be faster but needs a port exposed on the Mac and has open questions about the getbb.app cookie;
 it is not used.
 
-**One same-origin WebSocket route, `bb.http.experimental_websocket("/vnc", …, { auth: "local" })`.**
-bb serves the app from the server's own origin (`window.location.origin` is what bb's own SDK uses for
+**One same-origin WebSocket route, `alia.http.experimental_websocket("/vnc", …, { auth: "local" })`.**
+VesnALIA serves the app from the server's own origin (`window.location.origin` is what VesnALIA's own SDK uses for
 `/api` and `/ws`), so the page opens the route as a same-origin socket: over loopback on the Mac,
-through bb's getbb.app tunnel remotely. "local" auth refuses a browser on any other origin (403,
+through VesnALIA's getbb.app tunnel remotely. "local" auth refuses a browser on any other origin (403,
 checked in the study); a request with no `Origin` header passes. Browsers always send one, so that
-is a non-browser client of the bb API: a local process (which can reach port 5900 directly anyway),
-or anything that can reach a bb server bound to the network with `BB_SERVER_BIND_HOST` — which can
-then already drive every bb API, terminals on every host included. The relay adds no reach beyond
-bb's own API. The API is experimental; `engines.bb` is `>=0.47`, for the sidebar badge (see *Open
+is a non-browser client of the VesnALIA API: a local process (which can reach port 5900 directly anyway),
+or anything that can reach a VesnALIA server bound to the network with `ALIA_SERVER_BIND_HOST` — which can
+then already drive every VesnALIA API, terminals on every host included. The relay adds no reach beyond
+VesnALIA's own API. The API is experimental; `engines.alia` is `>=0.47`, for the sidebar badge (see *Open
 sessions are visible*), and was `>=0.46` before that, for `experimental_copyToClipboard` (see *Clipboard*).
 
-**Who may mint a ticket.** `openSession` refuses callers bb marks `plugin` (another plugin through
-`bb.sdk.plugins.callRpc`). bb marks everything else `client` — the app, the `bb` CLI, agents — and
+**Who may mint a ticket.** `openSession` refuses callers VesnALIA marks `plugin` (another plugin through
+`alia.sdk.plugins.callRpc`). VesnALIA marks everything else `client` — the app, the `alia` CLI, agents — and
 nothing distinguishes the app, so the CLI and agents can mint tickets too. They still need the macOS
 user name and password to get past Screen Sharing's sign-in, and the skill tells agents never to try.
 Do not claim more than this in docs or messages.
 
-**A session belongs to the window, not the page.** bb unmounts the page whenever the user opens
+**A session belongs to the window, not the page.** VesnALIA unmounts the page whenever the user opens
 something else but keeps the plugin's app module loaded for the life of the window, so the session
 (a `ScreenSessionStore` in `app/session-store.ts`) lives at module scope: the WebSocket, noVNC's
 client and a `div` noVNC draws into. The page appends that `div` while open and removes it on unmount; noVNC keeps
@@ -101,7 +101,7 @@ truncated, with every machine's state in its menu, at the left of the row that h
 Connect or Disconnect and the keys — so the row names the Mac it acts on, and no other place does.
 The row is drawn while the Mac is being checked, is off, offline or not a Mac (with only the picker
 in it then), so another Mac is always one click away. It wraps in a narrow window: the picker keeps the
-left, the controls go right-aligned onto the next line. The menu is bb's vendored dropdown
+left, the controls go right-aligned onto the next line. The menu is VesnALIA's vendored dropdown
 (`components/ui/dropdown-menu.tsx`, copied from `github-board`), which portals to the page body and
 becomes a sheet on a compact viewport; because a full-screen page hides anything portalled outside
 it, the picker is disabled while Full screen is on. It was in the title bar (`headerContent`, a
@@ -124,7 +124,7 @@ without a native `setCapture` it puts a full-window overlay (`#noVNC_mouse_captu
 page, listens on `window`, and lets go only when a `mouseup` reaches that `window` listener. So while
 `document.captureElement` is the store's canvas the `mouseup` is dispatched on `window` — noVNC
 forwards it to the canvas, then removes the overlay — never on the canvas, which sends the release but
-leaves the overlay over bb. Every teardown does this before noVNC drops its canvas (the store keeps a
+leaves the overlay over VesnALIA. Every teardown does this before noVNC drops its canvas (the store keeps a
 reference, since noVNC removes the canvas from the page on disconnect).
 
 **Idle is measured in the window.** noVNC asks for a screen update after every one it gets and the
@@ -146,20 +146,20 @@ that renames `_updateCursor` fails there. `showDotCursor` stays off: it replaces
 start-up cursor with a 3×3 dot, which a desktop browser shows as a `url()` cursor, so the arrow rule
 would never match.
 
-**Never expose a port.** No `bb connect expose`, no `declareSharedPorts`, no listening socket. The
+**Never expose a port.** No `alia connect expose`, no `declareSharedPorts`, no listening socket. The
 gate carries only HTTP and WebSockets, so raw VNC could not cross it anyway, and an exposed share
 would be one more door to a Mac's screen.
 
 **The page opens the WebSocket itself and hands it to noVNC** (`new RFB(target, channel)`), so it can
 read the close code and say why a session ended; noVNC reports only clean or not. No subprotocol is
 requested. The page also listens on that socket beside noVNC to acknowledge what arrives (see *Flow
-control*) and to ping the relay (see *A socket can outlive bb*). noVNC sends only binary frames, so
+control*) and to ping the relay (see *A socket can outlive VesnALIA*). noVNC sends only binary frames, so
 text frames on the route are the page's acks and pings, and the relay's pongs. noVNC reads every
 frame it gets as RFB bytes (`new Uint8Array(data)`: a `pong` comes out empty and is ignored, which is
 luck, not design), so it gets the socket through `RelayChannel` (`app/relay-channel.ts`), which
 passes it binary frames only.
 
-**A socket can outlive bb.** Restarting bb on the server's Mac while the owner watched through
+**A socket can outlive VesnALIA.** Restarting VesnALIA on the server's Mac while the owner watched through
 getbb.app left the page saying "connected": the browser's end of the socket stays open when the server
 behind the tunnel goes away, and no close event comes, so nothing told noVNC or the store. The page now
 sends `ping` every `PING_EVERY_MS` (2 s), the relay answers `pong` at once, and the store ends the
@@ -238,11 +238,11 @@ host entry for the others. `app/clipboard.ts` holds the page's side, one `Clipbo
 - **`runCommand`** settles once on exit, spawn error, stdin error (EPIPE: a child that exits before
   reading 1 MiB of input), timeout and output limit, and kills the child on every failure. A bare
   `spawn` with only a child `error` listener let an EPIPE on stdin escape as an uncaught exception,
-  in the bb server's own process for its own Mac (review pass 1). Its tests run Node children only.
+  in the VesnALIA server's own process for its own Mac (review pass 1). Its tests run Node children only.
 - **Whose clipboard.** The scripts act on the pasteboard of the login session they run in:
-  the account bb runs as on that Mac (`alice` on the MacMini). A Screen Sharing sign-in as another account
+  the account VesnALIA runs as on that Mac (`alice` on the MacMini). A Screen Sharing sign-in as another account
   that is not at the console opens that account's own desktop, with its own pasteboard, which only root
-  could reach (`launchctl asuser`); bb runs as a non-admin there. So each read and write answers the
+  could reach (`launchctl asuser`); VesnALIA runs as a non-admin there. So each read and write answers the
   account (`id -F` for the full name), the page compares it with the user name typed at sign-in (short
   or full name, any case). The store keeps that user name — never the password — for the session only.
 - **When sync cannot work** — a sign-in as another account, or a Mac whose clipboard could not be
@@ -262,13 +262,13 @@ host entry for the others. `app/clipboard.ts` holds the page's side, one `Clipbo
 - **Limits.** 1 MiB of UTF-8 each way (`MAX_CLIPBOARD_BYTES`), one host call or RPC; more is refused
   with its size, not cut. A copied picture or file has no text and is left alone.
 - **Who may.** The two RPCs refuse `plugin` callers and any Mac with no session open (any window or
-  device: the registry's list). That is a per-Mac gate for bb's clients, not ownership of a session:
+  device: the registry's list). That is a per-Mac gate for VesnALIA's clients, not ownership of a session:
   any window, device, the CLI or an agent may call while any relay session to that Mac exists, even
   one not yet past Screen Sharing's sign-in, and the account check is the page's, not the server's.
   The CLI and agents count as `client`, as for tickets; the skill tells agents never to call them.
   They log nothing, and the server never stores the text.
 - **Reading this computer's clipboard** is `navigator.clipboard.readText`: focus required everywhere;
-  Chrome asks once; Safari, Firefox and the mobile app's web view only within a click. bb's desktop
+  Chrome asks once; Safari, Firefox and the mobile app's web view only within a click. VesnALIA's desktop
   app sets no permission handler on its main window's session (it does on the in-app browser's), so
   Electron grants `clipboard-read` — read from its `app.asar`, not from a live run. Auto sync
   therefore reads it only at moments the user is likely to have copied elsewhere (connect, attach,
@@ -276,7 +276,7 @@ host entry for the others. `app/clipboard.ts` holds the page's side, one `Clipbo
   and at most every 500 ms, and stops after the first refusal until the user asks again. This side
   is not polled. Send clipboard and turning Auto sync on call `readText` before awaiting anything,
   so a click-only browser sees the click.
-- **Writing it** is bb's `experimental_copyToClipboard` (native in bb's desktop app, focus not needed).
+- **Writing it** is VesnALIA's `experimental_copyToClipboard` (native in VesnALIA's desktop app, focus not needed).
   Receive awaits the Mac first, so where a browser writes only within a click the notice offers a
   Copy button: a click of its own.
 - **One step at a time** (review pass 1). Every read or write of the Mac's clipboard, and every write
@@ -296,14 +296,14 @@ host entry for the others. `app/clipboard.ts` holds the page's side, one `Clipbo
   text it has not already read or written locally, and copies only text the local clipboard does not
   already hold; so the Mac's count moving for text sent from here changes nothing, and a failed local
   write is not followed by the old local text going back over the Mac's new one.
-- **Auto sync is per computer**, in `localStorage`, not a bb setting: clipboard access depends on the
+- **Auto sync is per computer**, in `localStorage`, not a VesnALIA setting: clipboard access depends on the
   computer and browser, and a phone that cannot read the clipboard should not turn it on everywhere.
-- **The menus are drawn inside the page**, not bb's portalled dropdown, because full screen hides
+- **The menus are drawn inside the page**, not VesnALIA's portalled dropdown, because full screen hides
   what is portalled outside the page (`app/toolbar-menu.tsx`).
 
 ## The host link
 
-How a session to a Mac other than the server's works (`server/host-link.ts`, `host/relay.ts`). bb's
+How a session to a Mac other than the server's works (`server/host-link.ts`, `host/relay.ts`). VesnALIA's
 host link is a JSON RPC up and lossy, ephemeral signals down (the SDK guide calls them "invalidation
 signals"); the worker sends each signal over IPC and the daemon over its one WebSocket to the server,
 which starts each handler as it arrives. So signals arrive in order in practice, but none is
@@ -312,7 +312,7 @@ guaranteed, and the design must not depend on either.
 - **Up:** the viewer's bytes are batched into `write` calls of at most 128 KiB, numbered from 0, with
   up to 24 in flight (`MAX_PIPELINED_WRITES`; 8 until 0.2.1 — a scroll or drag sends input every
   frame, and at 8 a second of scrolling reached the Mac ≈550 ms after each event instead of ≈300 ms
-  at 300 ms each way, waiting behind the window). **bb does not deliver concurrent host calls in order**:
+  at 300 ms each way, waiting behind the window). **VesnALIA does not deliver concurrent host calls in order**:
   its server awaits `resolveHostEnvironment` for each call before sending it, so calls overtake each
   other. The 0.2.0 candidate ended the session on the first one out of order, and every session to a
   MacBook died while the user typed the password (the log said "expected 4, got 5"); twelve one-byte
@@ -333,27 +333,27 @@ guaranteed, and the design must not depend on either.
   `ack`, one call in flight carrying the latest total; the host pauses its socket while emitted minus
   acknowledged (plus pending) exceeds `HOST_WINDOW_BYTES` (16 MiB). So neither the host nor the server
   holds more than the window for a slow page.
-- **Leases:** `open` takes a worker lease (`experimental_retainWorker`, which bb allows only during a
+- **Leases:** `open` takes a worker lease (`experimental_retainWorker`, which VesnALIA allows only during a
   call) and the session releases it on every end, failure to connect included. Without it the daemon
   stops an idle worker after five minutes and its sockets with it.
 - **Liveness:** a timer (every 2.5 s) sends `keepalive` for a session quiet for `HOST_KEEPALIVE_MS`
   (5 s), timed out after `HOST_KEEPALIVE_TIMEOUT_MS` (10 s); the host ends a session it has heard
-  nothing about for `HOST_SILENCE_MS` (3 min). A failed call ends the session on the server — a call to a host bb is not connected
-  to fails, so a Mac whose bb restarted or whose network dropped ends a quiet session in ≈7.5 s with
+  nothing about for `HOST_SILENCE_MS` (3 min). A failed call ends the session on the server — a call to a host VesnALIA is not connected
+  to fails, so a Mac whose VesnALIA restarted or whose network dropped ends a quiet session in ≈7.5 s with
   the fake daemon (it was 60–75 s), or within the keepalive's timeout if the call hangs instead; a server that vanished (crash, reload whose close
-  never arrived, a lost link) leaves the host's session to expire. bb raises no plugin event when a host
+  never arrived, a lost link) leaves the host's session to expire. VesnALIA raises no plugin event when a host
   disconnects, and `experimental_onWorkerExit` skips daemon shutdown, so the keepalive is what notices.
 - **Teardown, all tested in `server/remote.test.ts`:** the page closing, Close all, the plugin stopping
-  (bb closes the sockets, the relay asks the host to close), Screen Sharing hanging up (the host's last
-  `data`, then `closed`), bb stopping the worker (lifecycle abort and `dispose` close every session and
+  (VesnALIA closes the sockets, the relay asks the host to close), Screen Sharing hanging up (the host's last
+  `data`, then `closed`), VesnALIA stopping the worker (lifecycle abort and `dispose` close every session and
   signal `closed`), the worker crashing (`experimental_onWorkerExit`), the link dropping (the next call
   fails here; the host expires it), and the page leaving while the host is still connecting (`close`
   is sent once `open` answers). On the host, a session closed while it is still connecting — by
-  `close`, by bb cancelling the call (`context.signal`) or by the worker stopping — never opens, and a
+  `close`, by VesnALIA cancelling the call (`context.signal`) or by the worker stopping — never opens, and a
   stopping worker opens nothing more. An `open` that fails on the server (a timeout) still sends
   `close`, in case the host did connect. `ws.send` is guarded: it runs inside socket and signal
-  callbacks in the bb server's process. Close reasons are cut to 123 bytes of UTF-8 at whole characters
-  (`shortReason`): they carry the Mac's name, and bb's `ws` refuses a longer reason and closes
+  callbacks in the VesnALIA server's process. Close reasons are cut to 123 bytes of UTF-8 at whole characters
+  (`shortReason`): they carry the Mac's name, and VesnALIA's `ws` refuses a longer reason and closes
   nothing, which would leave the page showing a session the server has already ended.
 
 Live, holding a connection at Screen Sharing's security-type list without signing in: the MacBook
@@ -376,11 +376,11 @@ The page acknowledges what it has received (`app/flow.ts`): a text frame `ack:<t
 every 50 ms. The relay checks it (never less than before, never more than it sent; anything else ends
 the session with 1008) and hands it to the link. The loopback link pauses the server's TCP socket
 while more than `LOOPBACK_WINDOW_BYTES` (8 MiB) is unacknowledged; the host link forwards it to the
-host. bb's plugin WebSocket has no `bufferedAmount`, so this is the only way the server can tell a
+host. VesnALIA's plugin WebSocket has no `bufferedAmount`, so this is the only way the server can tell a
 page is behind. The relay URL carries `flow=ack-ping` — the text frames the page speaks, acks and
-pings — and the relay refuses any other value before redeeming the ticket, with a "reload bb" reason.
+pings — and the relay refuses any other value before redeeming the ticket, with a "reload VesnALIA" reason.
 That covers both sides of an update: a window still running an older page (no flow control, or
-0.2.0's `flow=ack`, which never pings and would stay "connected" after bb restarts) is refused
+0.2.0's `flow=ack`, which never pings and would stay "connected" after VesnALIA restarts) is refused
 instead of stalling, and a relay from 0.2.0, which accepted only `ack`, refuses this page instead of
 closing its session on the first ping. Change the value whenever the page's text frames change.
 
@@ -403,16 +403,16 @@ reach any page. The evidence, so nobody has to rediscover it:
   Tab steps the app switcher; ⌘ is released by "Release ⌘" and by every release path above (detach,
   View only, Disconnect, Close all, teardown). No remapping (say ⌃Tab sent as ⌘Tab): the menu covers
   the same ground without making a key mean two things.
-- **bb's desktop app (Electron 44.3, Chromium 152)** gives the page every other ⌘ shortcut already.
+- **VesnALIA's desktop app (Electron 44.3, Chromium 152)** gives the page every other ⌘ shortcut already.
   Chromium hands a key equivalent to the page first and passes it to the app menu only if the page
   leaves it unhandled (`performKeyEquivalent:` forwards it to the renderer; see
   https://www.chromium.org/developers/os-x-keyboard-handling/, and electron/electron#11116 for a
   renderer `preventDefault()` stopping a menu accelerator), and noVNC calls `preventDefault()` on
-  every key it takes. So ⌘W, ⌘Q, ⌘H, ⌘M, ⌘T, ⌘N and ⌘, reach the Mac instead of bb's menu. The
-  exceptions are ⌘R and ⇧⌘R: bb's main process takes them in `before-input-event` to reload bb
+  every key it takes. So ⌘W, ⌘Q, ⌘H, ⌘M, ⌘T, ⌘N and ⌘, reach the Mac instead of VesnALIA's menu. The
+  exceptions are ⌘R and ⇧⌘R: VesnALIA's main process takes them in `before-input-event` to reload VesnALIA
   (`registerApplicationRendererReloadShortcut` in its `app.asar`), which also ends the session — send
   ⌘R from the menu. This reading of the desktop app comes from source, not from a live session.
-- **Chrome and Edge** (bb through getbb.app) keep ⌘W, ⇧⌘W, ⌘T, ⌘N, ⇧⌘N, ⇧⌘T, ⌃Tab, ⌃⇧Tab, ⌥⌘← / →
+- **Chrome and Edge** (VesnALIA through getbb.app) keep ⌘W, ⇧⌘W, ⌘T, ⌘N, ⇧⌘N, ⇧⌘T, ⌃Tab, ⌃⇧Tab, ⌥⌘← / →
   and ⌘Q for themselves (`BrowserCommandController::IsReservedCommandOrKey`). Keyboard Lock marks
   locked keys to skip that pre-handling (`event.skip_if_unhandled` in `keyEvent:`), so with "Full
   screen" on they reach the Mac too. Esc then reaches the Mac as well; holding it for 1.5 s leaves full
@@ -427,7 +427,7 @@ reach any page. The evidence, so nobody has to rediscover it:
 ## Security invariants
 
 - **A session needs a ticket, for one Mac.** `openSession` mints one only for `client` callers (not
-  other plugins; see *Who may mint a ticket*) and only for a machine bb has — the server's own, or a
+  other plugins; see *Who may mint a ticket*) and only for a machine VesnALIA has — the server's own, or a
   connected one. The ticket names the Mac and the route; redeeming it uses it up, a wrong Mac uses it
   up too, and it expires after 30 s; at most 16 wait at once.
 - **One socket per ticket.** The relay connects to Screen Sharing — loopback TCP, or `open` on the host
@@ -448,22 +448,22 @@ reach any page. The evidence, so nobody has to rediscover it:
   `closeAll` ends them all, on every Mac (4003), voids every unredeemed ticket, and bumps a generation that
   `openSession` reads before its await, so a request already under way cannot mint afterwards; in the
   window that pressed it, Close all also cancels the store's own attempt still waiting for a ticket.
-  On reload or disable bb closes the plugin's sockets itself with 1012
-  before the dispose hooks run, and `bb.onDispose` then ends every session, which destroys the TCP
+  On reload or disable VesnALIA closes the plugin's sockets itself with 1012
+  before the dispose hooks run, and `alia.onDispose` then ends every session, which destroys the TCP
   sockets (its 4004 rarely reaches a page). The store ends a session after 30 min without input,
   seen or not, on Disconnect, and on `pagehide` (the window closing); a ticket that arrives after
   Disconnect is never used. Leaving the page does not end a session — the sidebar's LIVE badge and the
   corner pill are how an unseen one stays visible.
 - **The clipboard only beside an open session.** `clipboardRead` and `clipboardWrite` refuse other
-  plugins and any Mac with no session open, and reach only the clipboard of the account bb runs as
+  plugins and any Mac with no session open, and reach only the clipboard of the account VesnALIA runs as
   there; the page uses them only for a signed-in session as that account. Neither the server nor the
   host entry logs or stores clipboard text. The page keeps the user name typed at sign-in for the
   session, to tell whether it is that account; the password is never kept.
 - **Open sessions are visible.** Every open and close publishes the list, whichever Mac; the sidebar
   entry's badge and a corner pill in every window show it, both the pill and the page's title bar offer
   Close all, and the picker marks each Mac with a session as Live. The badge is the nav panel's
-  `experimental_useBadge` (bb 0.47, SDK 0.6.75), a hook bb calls in the plugin's scope: `text: "LIVE"`,
-  `tone: "critical"`, the count in its `label`; the icon-only rail draws `text` as a dot. bb 0.46 drew
+  `experimental_useBadge` (VesnALIA 0.47, SDK 0.6.75), a hook VesnALIA calls in the plugin's scope: `text: "LIVE"`,
+  `tone: "critical"`, the count in its `label`; the icon-only rail draws `text` as a dot. VesnALIA 0.46 drew
   nothing for the `experimental_sidebarAccessory` it replaced, and refuses the new key (`unknown
   field`).
 
@@ -472,8 +472,8 @@ reach any page. The evidence, so nobody has to rediscover it:
 `hosts` lists the enrolled machines without asking any of them anything; the page then calls
 `status` for each at once, so the server's own answer does not wait on a laptop's round trip. For the
 server's Mac the check runs in the server; for any other the server asks its host entry (12 s
-timeout), answers `offline` for a machine bb is not connected to without calling it, and
-`unreachable` with the error when the call fails (an old bb on that machine, say). The host entry
+timeout), answers `offline` for a machine VesnALIA is not connected to without calling it, and
+`unreachable` with the error when the call fails (an old VesnALIA on that machine, say). The host entry
 answers `unsupported` off macOS.
 
 The check itself is read-only and needs no root. The RFB probe reads the version line, answers with the
@@ -490,6 +490,6 @@ and the page says so.
 
 `@novnc/novnc` is pinned exactly and bundled into the app; it is MPL-2.0, noted in
 `THIRD_PARTY_NOTICES.md`. Keep it unmodified — a change to its files would have to be published under
-the MPL. It uses top-level await, which bb's ESM app build accepts. Its sign-in for Apple's type 30
+the MPL. It uses top-level await, which VesnALIA's ESM app build accepts. Its sign-in for Apple's type 30
 needs WebCrypto, so the page must be a secure context: `https://…getbb.app` and `http://127.0.0.1`
 both are, a bare LAN `http://` address is not.

@@ -1,4 +1,4 @@
-A thread list you can read at a glance, for BB.
+A thread list you can read at a glance, for VesnALIA.
 
 ## What you get
 
@@ -27,18 +27,18 @@ A thread list you can read at a glance, for BB.
 
 ## How it works
 
-The plugin is frontend-only. It reads BB's live sidebar state and routes every
-mutation through BB's own flows, so pins, archives and deletions behave exactly
+The plugin is frontend-only. It reads VesnALIA's live sidebar state and routes every
+mutation through VesnALIA's own flows, so pins, archives and deletions behave exactly
 as they do in the stock list, and nothing about your threads changes — only how
 the sidebar presents them. It makes no network requests of its own, keeps no
 database, and stores no secrets.
 
-Pick it under **Settings → Appearance → Sidebar**; choosing BB there, or
+Pick it under **Settings → Appearance → Sidebar**; choosing VesnALIA there, or
 disabling the plugin, restores the stock list immediately. Navigation stays on
-BB's own rail. Requires BB 0.46 or later.
+VesnALIA's own rail. Requires VesnALIA 0.46 or later.
 
 Two limits worth knowing: it will not move a thread between projects, because
-BB's thread API exposes no project on update, and it shows model and thinking
+VesnALIA's thread API exposes no project on update, and it shows model and thinking
 only while a thread is actually running, because the options endpoint resolves
 defaults rather than history.
 

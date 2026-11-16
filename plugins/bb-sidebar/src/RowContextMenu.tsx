@@ -1,9 +1,9 @@
-import { useThreadActions, useSidebarThreads } from "./bb-sdk";
+import { useThreadActions, useSidebarThreads } from "./alia-sdk";
 import { useRef, useState, type ReactNode } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
-import { useBbNavigate, useRpc, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { toast } from "./lib/toast";
-import type { bbSidebarRpcContract } from "./contract";
+import type { aliaSidebarRpcContract } from "./contract";
 import { ParentThreadMenu } from "./ParentThreadMenu";
 import { notifiesParent, ParentNotificationsMenu } from "./ParentNotificationsMenu";
 import { DeleteThreadDialog } from "./DeleteThreadDialog";
@@ -64,28 +64,28 @@ function RowMenuContents({
   onRename,
 }: Omit<RowContextMenuProps, "children">) {
   const actions = useThreadActions(thread, {
-    keys: ["bb--core/split", "bb--core/pin", "bb--core/read", "bb--core/rename", "bb--core/archive"],
+    keys: ["alia--core/split", "alia--core/pin", "alia--core/read", "alia--core/rename", "alia--core/archive"],
     requestRename: () => onRename?.(),
   });
-  const navigate = useBbNavigate();
-  // bb 0.46 always supplies pin/read/rename/archive for sidebar rows. Split is
+  const navigate = useAliaNavigate();
+  // VesnALIA 0.46 always supplies pin/read/rename/archive for sidebar rows. Split is
   // omitted in compact mode and for the focused pane; navigation handles both.
   const run = (key: string) => {
-    const entry = actions.find((entry) => entry.key === `bb--core/${key}`);
+    const entry = actions.find((entry) => entry.key === `alia--core/${key}`);
     if (!entry && key === "split") return navigate.toThread(thread.id, { split: true });
     return entry?.action.run();
   };
   const { projects, threads } = useSidebarThreads();
   const project = projects.find((project) => project.id === thread.projectId);
   const portalScope = usePortalScopeProps();
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const regenerating = useTitleGenerating(thread.id);
   const renameAfterClose = useRef(false);
   // Outlives the portaled submenu, which unmounts when a choice closes the menu.
   const pendingNotificationSave = useRef<Promise<void> | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [pickingSnooze, setPickingSnooze] = useState(false);
-  // Archive takes the children with it, and bb leaves every idle one's agent
+  // Archive takes the children with it, and VesnALIA leaves every idle one's agent
   // session loaded. Release them alongside the archive. Working children are
   // skipped, so this never interrupts a turn archive itself would not.
   const archive = () => {

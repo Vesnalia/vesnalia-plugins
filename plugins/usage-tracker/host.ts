@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { readCodexAccountEmail, readCodexResetCredits } from "./lib/codex-reset-credits.ts";
 import { hostContract } from "./lib/host-contract.ts";
 

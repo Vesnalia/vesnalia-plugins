@@ -27,7 +27,7 @@ const record = (threadId: string, row: Partial<Attention> = {}): Attention => ({
 const records = (...rows: Attention[]) => new Map(rows.map((row) => [row.threadId, row]));
 const NONE = records();
 
-/** Running in every sense BB reports. */
+/** Running in every sense VesnALIA reports. */
 const WORKING: Partial<ColumnThread>[] = [
   ...(["starting", "active", "pending", "stopping"] as const).map((status) => ({ status })),
   ...(["provisioning", "waiting-for-host"] as const).map((runtimeStatus) => ({ runtimeStatus })),
@@ -35,7 +35,7 @@ const WORKING: Partial<ColumnThread>[] = [
   { queuedWork: "waiting" },
 ];
 
-test("REPRO: a working descendant gets no column, in any sense BB reports running", () => {
+test("REPRO: a working descendant gets no column, in any sense VesnALIA reports running", () => {
   for (const working of WORKING) {
     expect(isRunning(thread("c", "a", working))).toBe(true);
     expect(isEligible(thread("c", "a", working), undefined)).toBe(false);
@@ -80,7 +80,7 @@ test("an unread result is eligible by the same rule as the row's dot", () => {
   const unread = records(record("c", { resultAt: 200 }));
   expect(isEligible(t, unread.get("c"))).toBe(true);
   expect(rowAttention(t, [t], unread)).toMatchObject({ status: UNREAD, unread: true });
-  // Seen by the plugin or read in BB: no dot and no column.
+  // Seen by the plugin or read in VesnALIA: no dot and no column.
   expect(isEligible(t, record("c", { resultAt: 200, seenAt: 200 }))).toBe(false);
   expect(isEligible(thread("c", "a", { lastReadAt: 250 }), unread.get("c"))).toBe(false);
 });
@@ -349,7 +349,7 @@ const focus = (overrides: Partial<Parameters<typeof isStolenFocus>[0]> = {}) =>
   isStolenFocus({ engaged: null, target: "d", anchorId: "a", editable: true, afterTab: false, keyColumn: null, ...overrides });
 
 test("REPRO: a mounting column's composer cannot take focus from the anchor or the clicked column", () => {
-  // BB's composer focuses itself on mount: in d, while focus is in the anchor or in clicked c.
+  // VesnALIA's composer focuses itself on mount: in d, while focus is in the anchor or in clicked c.
   expect(focus()).toBe(true);
   expect(focus({ engaged: "c" })).toBe(true);
   // Tab, the clicked column itself, the anchor and the outside are his.
@@ -376,7 +376,7 @@ test("a key pressed in the same column, then focus to its editor, is his", () =>
   expect(focus({ keyColumn: "d" })).toBe(false);
 });
 
-test("REPRO: a thread opened into a new split pane counts as opened, though BB adds the pane first", () => {
+test("REPRO: a thread opened into a new split pane counts as opened, though VesnALIA adds the pane first", () => {
   // Only pane A was open; Cmd-click put T into a new pane before the route moved to T.
   const change = routeChange(new Set(["A"]), "T", ["A", "T"]);
   expect(change.inPane).toBe(false);
@@ -398,12 +398,12 @@ test("REPRO: a seen failure stays seen in the row and leaves no column", () => {
   const failed = thread("c", "a", { status: "error", updatedAt: 300 });
   const seen = records(record("c", { resultAt: 200, seenAt: seenMark(failed, record("c", { resultAt: 200 })) }));
   expect(isEligible(failed, seen.get("c"))).toBe(false);
-  // The row keeps BB's failure cross; only the dot clears.
+  // The row keeps VesnALIA's failure cross; only the dot clears.
   expect(rowAttention(failed, [failed], seen)).toMatchObject({ failed: true, unread: false });
 });
 
-test("REPRO: without Responsibilities a failed child keeps its column through BB's mount read, until he clicks in and leaves", () => {
-  // BB's chat marks a failed child read as soon as its column mounts.
+test("REPRO: without Responsibilities a failed child keeps its column through VesnALIA's mount read, until he clicks in and leaves", () => {
+  // VesnALIA's chat marks a failed child read as soon as its column mounts.
   const failed = thread("c", "a", { status: "error", updatedAt: 300, lastReadAt: 300 });
   const none = withSeen(undefined, {});
   expect(needOf(failed, none.get("c"))).toBe("failed");

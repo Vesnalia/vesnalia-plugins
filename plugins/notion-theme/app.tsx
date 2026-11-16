@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { LimitBanner } from "./src/LimitBanner";
 import { mountHoverCards } from "./src/hoverCards";

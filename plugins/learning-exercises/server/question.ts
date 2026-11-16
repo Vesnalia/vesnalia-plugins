@@ -1,6 +1,6 @@
 /**
  * What the server can check of a question before showing it. A question must stand on its own: the card
- * is all the learner sees while answering, and bb folds a turn's earlier messages away, so code the
+ * is all the learner sees while answering, and VesnALIA folds a turn's earlier messages away, so code the
  * question relies on travels inside it as a fenced block. Whether a question leans on something it does
  * not contain cannot be told from its text; what can be told is that its code blocks close and that it
  * fits.

@@ -24,6 +24,6 @@ The correction does not use another setup launch attempt. The board permits two 
 
 ## Child-blocker review
 
-Read fresh context, the named child's output, and relevant dependency state. Use `/diagnosing-bugs` when the cause is unclear. Choose a concrete repair or verification within scope and send it to the existing child with `bb thread tell`. Ask it to submit fresh actual check evidence. Coordinate with existing dependency owners when useful; preserve their work and resource limits.
+Read fresh context, the named child's output, and relevant dependency state. Use `/diagnosing-bugs` when the cause is unclear. Choose a concrete repair or verification within scope and send it to the existing child with `alia thread tell`. Ask it to submit fresh actual check evidence. Coordinate with existing dependency owners when useful; preserve their work and resource limits.
 
 If the repair needs a different plan, ask the child to call `treelanes_recover` with the reason and next action. The setup assignment returns here. Do not create another delivery or replacement worker. Keep user stops and pending decisions in force. If access or authority is missing, retain and report that exact blocker.

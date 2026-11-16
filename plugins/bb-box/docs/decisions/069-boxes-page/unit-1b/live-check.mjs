@@ -19,12 +19,12 @@ const expect = (condition, message) => {
   if (!condition) throw new Error(message);
 };
 
-function bb(args) {
+function alia(args) {
   return execFileSync(process.env.LIVE_BBC ?? join(home, "bbc"), args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
 }
 
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -48,7 +48,7 @@ async function waitFor(check, what, timeout = 120_000) {
 const tracePath = join(home, "agent-trace.log");
 async function agent(thread, tool, args = {}) {
   const before = existsSync(tracePath) ? readFileSync(tracePath, "utf8").length : 0;
-  bb(["thread", "tell", thread, `CALL ${tool} ${JSON.stringify(args)}`]);
+  alia(["thread", "tell", thread, `CALL ${tool} ${JSON.stringify(args)}`]);
   return waitFor(() => {
     const added = readFileSync(tracePath, "utf8").slice(before);
     const match = new RegExp(`result ${tool}: (.*)`).exec(added);
@@ -57,7 +57,7 @@ async function agent(thread, tool, args = {}) {
 }
 
 function events(boxId) {
-  const db = new DatabaseSync(join(process.env.LIVE_DATA ?? join(home, "bbdata"), "plugins", "bb-box", "box-log.db"), { readOnly: true });
+  const db = new DatabaseSync(join(process.env.LIVE_DATA ?? join(home, "bbdata"), "plugins", "alia-box", "box-log.db"), { readOnly: true });
   try {
     return db.prepare("SELECT seq, at, kind, who, agent, why, words, observed FROM box_events WHERE box = ? ORDER BY seq").all(boxId);
   } finally {
@@ -65,12 +65,12 @@ function events(boxId) {
   }
 }
 
-const who = (by) => (by ? (by.is === "agent" ? `agent in ${by.threadId}` : by.is === "bb-box" ? `bb-box: ${by.why}` : by.is) : "nothing said");
+const who = (by) => (by ? (by.is === "agent" ? `agent in ${by.threadId}` : by.is === "alia-box" ? `alia-box: ${by.why}` : by.is) : "nothing said");
 
 writeFileSync(report, `# Live check, ${new Date().toISOString()}\n\n`);
 await waitFor(async () => (await rpc("kinds")).some((kind) => kind.id === "linux"), "the linux kind", 1_200_000);
 
-const spawned = JSON.parse(bb(["thread", "spawn", "--project", project, "--environment", join(home, "proj"), "--provider", "acp-tools", "--prompt", "CALL box_list", "--json"]));
+const spawned = JSON.parse(alia(["thread", "spawn", "--project", project, "--environment", join(home, "proj"), "--provider", "acp-tools", "--prompt", "CALL box_list", "--json"]));
 const thread = spawned.id;
 await waitFor(() => existsSync(tracePath) && readFileSync(tracePath, "utf8").includes("result box_list"), "the first turn");
 line(`Thread ${thread}, on the custom ACP agent acp-tools.`);
@@ -85,11 +85,11 @@ line(`- made and ready: lastStart by ${who(box.log.lastStart.by)}, first ${box.l
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-await page.goto(`${base}/plugins/bb-box/desktop`);
+await page.goto(`${base}/plugins/alia-box/desktop`);
 if (await page.getByText("Skip setup").waitFor({ timeout: 8000 }).then(() => true, () => false)) {
   await page.getByText("Skip setup").click();
   await pause(2000);
-  await page.goto(`${base}/plugins/bb-box/desktop`);
+  await page.goto(`${base}/plugins/alia-box/desktop`);
 }
 const row = page.locator("[data-resource-row]", { hasText: name }).first();
 await row.waitFor({ timeout: 60_000 });
@@ -110,12 +110,12 @@ box = await waitFor(async () => {
 line(`- the person, Start on the Boxes page: ${box.state}, lastStart by ${who(box.log.lastStart.by)}, asked ${new Date(box.log.lastStart.askedAt).toISOString()}, ready ${new Date(box.log.lastStart.readyAt).toISOString()} (${box.log.lastStart.readyAt - box.log.lastStart.askedAt} ms)`);
 expect(box.log.lastStart.by?.is === "person", "the person's start");
 
-const stopped = bb(["box", "stop", name, "--thread", thread]);
+const stopped = alia(["box", "stop", name, "--thread", thread]);
 box = await view(boxId);
-line(`- a command, bb box stop: "${stopped.trim()}", lastStop by ${who(box.log.lastStop.by)}`);
+line(`- a command, VesnALIA box stop: "${stopped.trim()}", lastStop by ${who(box.log.lastStop.by)}`);
 expect(box.log.lastStop.by?.is === "command", "the command's stop");
-const started = JSON.parse(bb(["box", "start", name, "--thread", thread, "--json"]));
-line(`- a command, bb box start --json: ${started.state}, lastStart by ${who(started.log.lastStart.by)}, ready after ${started.log.lastStart.readyAt - started.log.lastStart.askedAt} ms`);
+const started = JSON.parse(alia(["box", "start", name, "--thread", thread, "--json"]));
+line(`- a command, VesnALIA box start --json: ${started.state}, lastStart by ${who(started.log.lastStart.by)}, ready after ${started.log.lastStart.readyAt - started.log.lastStart.askedAt} ms`);
 expect(started.log.lastStart.by?.is === "command", "the command's start");
 
 const agentStop = await agent(thread, "box_stop", { box: name });
@@ -130,8 +130,8 @@ expect(box.log.lastStart.by?.is === "agent", "the agent's start");
 const container = execFileSync("/usr/bin/docker", ["ps", "--filter", `label=bbbox.box=${boxId}`, "--format", "{{.Names}}"], { encoding: "utf8" }).trim() || execFileSync("/usr/bin/docker", ["ps", "--format", "{{.Names}}"], { encoding: "utf8" }).split("\n").find((each) => each.includes(boxId.slice(2, 8))) || "";
 expect(container, "the box's container");
 execFileSync("/usr/bin/docker", ["stop", container]);
-line(`- outside bb-box: docker stop ${container} on the host`);
-bb(["box", "sweep"]);
+line(`- outside alia-box: docker stop ${container} on the host`);
+alia(["box", "sweep"]);
 box = await waitFor(async () => {
   const now = await view(boxId);
   return now?.state === "stopped" ? now : null;

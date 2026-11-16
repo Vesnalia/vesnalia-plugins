@@ -96,7 +96,7 @@ describe("the push-only forge", () => {
 
 describe("a prepared integration worktree", () => {
   beforeEach(() => {
-    h.bb.pluginList = [...h.bb.pluginList, { id: "trees", enabled: true, builtin: false }];
+    h.alia.pluginList = [...h.alia.pluginList, { id: "trees", enabled: true, builtin: false }];
   });
 
   it("runs the command before the merge and merges in the path it printed last", async () => {
@@ -111,13 +111,13 @@ describe("a prepared integration worktree", () => {
     expect(h.host.callsTo("merge")[0]).toMatchObject({ worktree: "/trees/loom-csv" });
   });
 
-  it("runs a plugin's CLI command through bb plugin run", async () => {
+  it("runs a plugin's CLI command through VesnALIA plugin run", async () => {
     await seedProject(h, (doc) => (doc.merge = { strategy: "integration", worktree: { plugin: "trees", command: 'prepare "loom-$LOOM_PROJECT_SLUG"' } }));
     await reachApproved(h);
     const mark = h.host.calls.length;
     h.host.execResults.push({ output: "/trees/loom-csv" });
     await queue();
-    expect(h.host.calls.slice(mark).find((call) => call.method === "exec")!.input).toMatchObject({ command: 'bb plugin run trees prepare "loom-$LOOM_PROJECT_SLUG"' });
+    expect(h.host.calls.slice(mark).find((call) => call.method === "exec")!.input).toMatchObject({ command: 'alia plugin run trees prepare "loom-$LOOM_PROJECT_SLUG"' });
   });
 
   it("pauses the project, merging nothing, when the command prints no absolute path", async () => {
@@ -135,8 +135,8 @@ describe("an environment provider for workers and reviewers", () => {
   const withTrees = (doc: Doc) => (doc.environment = { provider: "trees", inputs: { pool: { branch: "{branch}", base: "{base}", paths: ["services/orders"] } } });
 
   beforeEach(() => {
-    h.bb.environmentProviderList = [GIT_WORKTREE_PROVIDER, { ...GIT_WORKTREE_PROVIDER, id: "trees", displayName: "Trees", pluginId: "trees", acceptsEmptyInputs: false, inputs: { type: "object", required: ["pool"] } }];
-    h.bb.pluginList = [...h.bb.pluginList, { id: "trees", enabled: true, builtin: false }];
+    h.alia.environmentProviderList = [GIT_WORKTREE_PROVIDER, { ...GIT_WORKTREE_PROVIDER, id: "trees", displayName: "Trees", pluginId: "trees", acceptsEmptyInputs: false, inputs: { type: "object", required: ["pool"] } }];
+    h.alia.pluginList = [...h.alia.pluginList, { id: "trees", enabled: true, builtin: false }];
   });
 
   it("starts the worker and the reviewer in the provider, each on its own branch from its base", async () => {
@@ -145,11 +145,11 @@ describe("an environment provider for workers and reviewers", () => {
       withTrees(doc);
     });
     await reachReview(h);
-    const worker = h.bb.callsTo("spawnThread")[0]![0] as SpawnArgs;
+    const worker = h.alia.callsTo("spawnThread")[0]![0] as SpawnArgs;
     expect(worker.environment).toEqual({ providerId: "trees", inputs: { pool: { branch: "loom/csv/csv-1-1", base: "origin/main", paths: ["services/orders"] } } });
 
     await spawnReviewers(h.ctx, project(), specOf(h.store, project()));
-    const reviewer = h.bb.callsTo("spawnThread").at(-1)![0] as SpawnArgs;
+    const reviewer = h.alia.callsTo("spawnThread").at(-1)![0] as SpawnArgs;
     const row = h.store.threads({ ticketId: ticketOf(h, "CSV-1").id, role: "reviewer" }).at(-1)!;
     expect(reviewer.environment).toEqual({ providerId: "trees", inputs: { pool: { branch: `loom/csv/csv-1-review-1-${row.id}`, base: reviewer.baseBranch, paths: ["services/orders"] } } });
   });
@@ -157,7 +157,7 @@ describe("an environment provider for workers and reviewers", () => {
   it("keeps the managed worktree for git-worktree with no inputs", async () => {
     await seedProject(h, (doc) => (doc.environment = { provider: "git-worktree" }));
     await reachReview(h);
-    expect((h.bb.callsTo("spawnThread")[0]![0] as SpawnArgs).environment).toBeUndefined();
+    expect((h.alia.callsTo("spawnThread")[0]![0] as SpawnArgs).environment).toBeUndefined();
   });
 
   it("starts reviewers in the environment's reviewer table, and each ticket's threads with its own inputs patch", async () => {
@@ -167,17 +167,17 @@ describe("an environment provider for workers and reviewers", () => {
       doc.ticket[0].environment = { inputs: { pool: { paths: ["services/orders"] } } };
     });
     await reachReview(h);
-    const worker = h.bb.callsTo("spawnThread")[0]![0] as SpawnArgs;
+    const worker = h.alia.callsTo("spawnThread")[0]![0] as SpawnArgs;
     expect(worker.environment).toEqual({ providerId: "trees", inputs: { pool: { branch: "loom/csv/csv-1-1", base: "origin/main", paths: ["services/orders"] } } });
     await spawnReviewers(h.ctx, project(), specOf(h.store, project()));
-    const reviewer = h.bb.callsTo("spawnThread").at(-1)![0] as SpawnArgs;
+    const reviewer = h.alia.callsTo("spawnThread").at(-1)![0] as SpawnArgs;
     expect(reviewer.environment).toMatchObject({ providerId: "trees", inputs: { pool: { paths: ["services/orders"], light: true } } });
     expect(reviewer.prompt).toContain("This worktree may hold only part of the repository. Read any file at that commit, checked out or not, with `git show");
   });
 
-  it("checks a reviewer provider and each ticket's patched inputs against bb's providers when the spec is proposed", async () => {
+  it("checks a reviewer provider and each ticket's patched inputs against VesnALIA's providers when the spec is proposed", async () => {
     const strict = { ...GIT_WORKTREE_PROVIDER, id: "trees", displayName: "Trees", pluginId: "trees", acceptsEmptyInputs: false, inputs: { $schema: "https://json-schema.org/draft/2020-12/schema", type: "object", properties: { pool: { type: "object", properties: { paths: { type: "array", minItems: 1, items: { type: "string" } } } } }, required: ["pool"] } };
-    h.bb.environmentProviderList = [GIT_WORKTREE_PROVIDER, strict];
+    h.alia.environmentProviderList = [GIT_WORKTREE_PROVIDER, strict];
     const error = await h.projects
       .propose({
         toml: specToml((doc) => {
@@ -185,11 +185,11 @@ describe("an environment provider for workers and reviewers", () => {
           doc.ticket[1].environment = { inputs: { pool: { paths: [] } } };
         }),
         threadId: "thr_plan",
-        bbProjectId: "proj_1",
+        aliaProjectId: "proj_1",
         hostId: "host_1",
       })
       .catch((caught: Error) => caught);
-    expect((error as Error).message).toContain('environment.reviewer.provider: bb has no environment provider "readers" for the project\'s repository on this machine.');
+    expect((error as Error).message).toContain('environment.reviewer.provider: VesnALIA has no environment provider "readers" for the project\'s repository on this machine.');
     expect((error as Error).message).toContain("ticket[1].environment.inputs: pool.paths:");
   });
 });

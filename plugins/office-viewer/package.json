@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-office-viewer",
+  "name": "alia-plugin-office-viewer",
   "version": "0.8.17",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Office Viewer",
-    "description": "Excel-like spreadsheets in BB: live formulas, click-to-reference formula entry, fill, copy and paste, saving without losing formatting, quoting cells into the chat. Word, PowerPoint and PDF with search, zoom and quoting; images with zoom and an editor (arrows, boxes, text, numbered steps, blur, crop) that saves or sends to the chat; videos with speed, frame steps and frame grabs; audio with a waveform player; HTML pages on phone, tablet and desktop screens in portrait or landscape, side by side.",
+    "description": "Excel-like spreadsheets in VesnALIA: live formulas, click-to-reference formula entry, fill, copy and paste, saving without losing formatting, quoting cells into the chat. Word, PowerPoint and PDF with search, zoom and quoting; images with zoom and an editor (arrows, boxes, text, numbered steps, blur, crop) that saves or sends to the chat; videos with speed, frame steps and frame grabs; audio with a waveform player; HTML pages on phone, tablet and desktop screens in portrait or landscape, side by side.",
     "branding": {
       "icon": "GridView"
     },
@@ -31,7 +31,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -56,10 +55,10 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2"
   },
-  "description": "Office Viewer for BB: view .xlsx, .xls, .ods and .csv spreadsheets, edit .xlsx/.csv in place keeping formatting, quote cells into the chat.",
+  "description": "Office Viewer for VesnALIA: view .xlsx, .xls, .ods and .csv spreadsheets, edit .xlsx/.csv in place keeping formatting, quote cells into the chat.",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "excel",
     "xlsx",
     "csv",
@@ -78,8 +77,25 @@
   "scripts": {
     "test": "node --experimental-strip-types --test 'src/**/*.test.ts'",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build ."
+    "build": "alia plugin build ."
   },
   "license": "MIT",
-  "author": "Kirill Vechkasov (https://github.com/VKirill)"
+  "author": "Kirill Vechkasov (https://github.com/VKirill)",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/office-viewer#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/office-viewer"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

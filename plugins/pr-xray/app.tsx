@@ -1,6 +1,6 @@
 // PR X-ray frontend: the review page (nav panel), the palette command and its
 // dialog, and the settings section.
-import { definePluginApp, type PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, type PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import { parsePrSubPath, REVIEW_PANEL_PATH } from "./shared/pr-ref";
 import { HomePage } from "./ui/HomePage";
 import { OpenPrDialog } from "./ui/OpenPrDialog";

@@ -1,7 +1,7 @@
 /**
  * The categorical palette both charts draw from.
  *
- * BB's theme deliberately ships no chart ramp — `--primary` is a near-neutral
+ * VesnALIA's theme deliberately ships no chart ramp — `--primary` is a near-neutral
  * ink and `--chart-N` is undefined — so a chart that borrows UI tokens ends up
  * with a series that has no hue at all. These slots are therefore fixed values
  * rather than theme tokens, with a separate step chosen for each mode instead
@@ -74,7 +74,7 @@ export function providerColor(providerId: string): string {
 }
 
 /**
- * The palette as a stylesheet. BB marks dark mode with a `.dark` class on the
+ * The palette as a stylesheet. VesnALIA marks dark mode with a `.dark` class on the
  * document root and treats bare `:root` as light — the same convention its own
  * stylesheet uses — so mirroring it here keeps the series in step with the
  * theme without watching the DOM for class changes.

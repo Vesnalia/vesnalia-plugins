@@ -1,7 +1,7 @@
 // Material Icon Theme icons (MIT, Philipp Kief) for files and folders, served
 // from the same preview URL as the Monaco bundle.
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { experimental_useCodeTheme } from "@get-bb/plugin-sdk/app";
+import { experimental_useCodeTheme } from "@vesnalia/plugin-sdk/app";
 import { fileIcon, folderIcon, type IconMap } from "@/lib/file-icons";
 import { Icon } from "@/components/ui/icon";
 

@@ -1,5 +1,5 @@
 // Unit tests for the fleet fold: thread-event rows in, wall tiles out.
-// These run without a BB server — lib/fleet.ts is pure on purpose.
+// These run without a VesnALIA server — lib/fleet.ts is pure on purpose.
 import { describe, expect, it } from "vitest";
 import {
   applyRow,

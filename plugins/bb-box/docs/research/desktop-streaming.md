@@ -1,6 +1,6 @@
 # Desktop streaming
 
-How a box's desktop reaches you in BB, so that you can watch it, take control
+How a box's desktop reaches you in VesnALIA, so that you can watch it, take control
 and hand control back, with GPU-rendered apps and web profiling as the target
 workloads.
 
@@ -40,7 +40,7 @@ on 30 September 2026.
 
 | Requirement | Why |
 | --- | --- |
-| Reaches the browser through BB | BB's app talks only to the BB server; boxes sit on a private network behind the provider host |
+| Reaches the browser through VesnALIA | VesnALIA's app talks only to the VesnALIA server; boxes sit on a private network behind the provider host |
 | Low latency, no stale frames | You must see the app's current state after you or the agent act |
 | GPU apps stay on the GPU | GPUI apps, WebGL, WebGPU and Chrome's compositor are the workloads |
 | Resizes to the panel | A fixed 1920x1080 desktop in a small panel is hard to read |
@@ -48,27 +48,27 @@ on 30 September 2026.
 | Clipboard both ways | Copying logs, URLs and screenshots in and out |
 | Works for Linux now, Windows and macOS later | Same viewer and control model on every backend |
 
-## What BB's plugin API allows
+## What VesnALIA's plugin API allows
 
-- `bb.http.experimental_websocket(path, handler, { auth })` gives the plugin a
+- `alia.http.experimental_websocket(path, handler, { auth })` gives the plugin a
   WebSocket route at `/api/v1/plugins/<id>/http/<path>`. The handler sees the
   request URL and headers, so a query such as `?box=<id>` can select the box.
 - Routes match the **exact path**; `:` and `*` are literal. The plugin cannot
   mount a box's web server under a prefix, so the viewer's client code must
   ship with the plugin (bundled in the panel, or served from a fixed list of
   routes).
-- `auth: "local"` accepts requests from the BB app's own origin, which is what
+- `auth: "local"` accepts requests from the VesnALIA app's own origin, which is what
   the panel needs.
 - The plugin socket has `send`, `close` and `readyState` but no
   `bufferedAmount`, so the relay cannot see its own send backlog. The relay
   must stay a pass-through and leave flow control to the stream protocol end
-  to end. A BB feature request for `bufferedAmount` would let the relay drop
+  to end. A VesnALIA feature request for `bufferedAmount` would let the relay drop
   frames itself.
-- Media is TCP only. There is no way to carry WebRTC's UDP through BB.
+- Media is TCP only. There is no way to carry WebRTC's UDP through VesnALIA.
 
-Sources: `bb-plugin-sdk.d.ts` 0.5.29; `apps/server/src/services/plugins/plugin-api.ts`
-and `plugins/bb-guide/skills/bb-plugin-authoring/references/backend-events.md`
-in BB's source.
+Sources: `alia-plugin-sdk.d.ts` 0.5.29; `apps/server/src/services/plugins/plugin-api.ts`
+and `plugins/alia-guide/skills/alia-plugin-authoring/references/backend-events.md`
+in VesnALIA's source.
 
 ## Options
 
@@ -96,7 +96,7 @@ Other candidates, briefly:
 ## Design
 
 ```
-panel (BB app)                 BB server (plugin)                 box
+panel (ALIA app)                 ALIA server (plugin)                 box
 noVNC or Selkies client  --ws-->  relay: /desktop?box=<id>  --tcp-->  VNC server or Selkies
                                   control filter per viewer
 ```
@@ -141,7 +141,7 @@ to its default size when you hand back.
   requested at most once a second. Keyframe requests from the client are
   allowed every 0.25 s, and one slow viewer cannot slow the others.
 - **The relay** adds no queue of its own if it stays a pass-through; with
-  `bufferedAmount` it could also drop frames when the BB server falls behind.
+  `bufferedAmount` it could also drop frames when the VesnALIA server falls behind.
 
 ### GPU memory
 
@@ -171,7 +171,7 @@ On a Proxmox host with an NVIDIA GPU, inside the desktop container, with
    an idle desktop, scrolling a long page, and a WebGL demo, at 1920x1080.
 4. **noVNC baseline.** The same three workloads through `x0vncserver` and
    noVNC.
-5. **Through BB.** A throwaway plugin with one WebSocket route relaying to
+5. **Through VesnALIA.** A throwaway plugin with one WebSocket route relaying to
    the box. Compare latency and frame rate with a direct connection.
 
 Local check already done: the patched Xvfb builds on Ubuntu 24.04, starts
@@ -188,7 +188,7 @@ extra displays.
   which suits a published project. Try the iframe first.
 - **Subprotocols.** Selkies sends a token from the page fragment as a
   WebSocket subprotocol, and Chrome fails the connection if the server does
-  not echo it. Check whether BB's plugin WebSocket echoes subprotocols; if not,
+  not echo it. Check whether VesnALIA's plugin WebSocket echoes subprotocols; if not,
   pass the token as `?token=`.
 - **Throughput of the plugin route.** Unmeasured; experiment 5 answers it.
 

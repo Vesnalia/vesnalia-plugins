@@ -1,12 +1,12 @@
 import {
   experimental_COMPACTION_PRESENTATION as compactionPresentation,
   isStandaloneBuiltinCompactCommand,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import type { OpenCodeRecord } from "./types.ts";
 
 type RecordValue = OpenCodeRecord;
 
-// Timeline events are persisted and rendered by BB. Keep every individual
+// Timeline events are persisted and rendered by VesnALIA. Keep every individual
 // provider delta comfortably below the host's event-size limit, even when an
 // OpenCode tool returns a file, a command dump, or structured provider data.
 export const MAX_TIMELINE_DELTA_BYTES = 64 * 1024;
@@ -49,7 +49,7 @@ function utf8Suffix(value: string, maxBytes: number) {
 }
 
 function truncationMarker(omittedBytes: number) {
-  return `[BB truncated ${omittedBytes.toLocaleString("en-US")} UTF-8 bytes]`;
+  return `[VesnALIA truncated ${omittedBytes.toLocaleString("en-US")} UTF-8 bytes]`;
 }
 
 export function boundedTimelineText(value: string, maxBytes: number) {
@@ -97,7 +97,7 @@ function boundedTimelineValue(
     depth >= MAX_TIMELINE_VALUE_DEPTH ||
     state.nodes >= MAX_TIMELINE_VALUE_NODES
   ) {
-    return "[BB truncated nested provider data]";
+    return "[VesnALIA truncated nested provider data]";
   }
   state.nodes += 1;
 
@@ -110,7 +110,7 @@ function boundedTimelineValue(
     }
     if (value.length > result.length)
       result.push(
-        `[BB truncated ${value.length - result.length} array entries]`,
+        `[VesnALIA truncated ${value.length - result.length} array entries]`,
       );
     return result;
   }
@@ -140,7 +140,7 @@ function boundedTimelineValue(
     retainedEntries += 1;
   }
   if (omittedProperties) {
-    result.__bb_truncated__ = "[BB truncated additional object properties]";
+    result.__alia_truncated__ = "[VesnALIA truncated additional object properties]";
   }
   return result;
 }
@@ -208,7 +208,7 @@ export function manualCompactionStartDeltas(
   const item = { type: "compaction" };
   return [
     { kind: "turn.open", providerTurnId },
-    // turn.open first: see turn/start, BB drops input.accepted for turns it
+    // turn.open first: see turn/start, VesnALIA drops input.accepted for turns it
     // hasn't started yet.
     { kind: "input.accepted", clientRequestId, providerTurnId },
     {

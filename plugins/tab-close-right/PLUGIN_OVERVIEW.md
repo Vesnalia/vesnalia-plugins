@@ -8,8 +8,8 @@ Keep each tab’s icon visible on the left and its close button on the right.
 - Touch screens show close buttons without hover.
 - Pinned tabs remain unchanged.
 
-Works on BB’s right-panel tabs. No configuration or accounts are needed. Disable the plugin to restore BB’s original layout.
+Works on VesnALIA’s right-panel tabs. No configuration or accounts are needed. Disable the plugin to restore VesnALIA’s original layout.
 
 ## Compatibility
 
-Verified on BB 0.46.1 with SDK 0.6.49. This small CSS customization depends on BB’s DOM structure; future BB changes may require a plugin update. It does not change tab data or replace BB’s close handlers. No model calls or external services are used.
+Verified on VesnALIA 0.46.1 with SDK 0.6.49. This small CSS customization depends on VesnALIA’s DOM structure; future VesnALIA changes may require a plugin update. It does not change tab data or replace VesnALIA’s close handlers. No model calls or external services are used.

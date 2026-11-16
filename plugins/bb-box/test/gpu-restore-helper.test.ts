@@ -134,7 +134,7 @@ test("071 unit 6, Astra 2: a restore holds the box's card while the box is stopp
   second.pass();
   const restarted = second.backend({ perGpu: 1 });
   const gone = second.stoppedGuest(7040, stopped, 9002);
-  await assert.rejects(restarted.holdGpuCard(gone, (await restarted.readGpuClaim(gone, signal()))!, signal()), /^BackendError: Card 1, which the box holds, cannot take it now: card 1 has 1 of this install's boxes, the most a card may have \([^)]+\)\. A restore keeps a box on its card, so BB Box does not move it to another one\./);
+  await assert.rejects(restarted.holdGpuCard(gone, (await restarted.readGpuClaim(gone, signal()))!, signal()), /^BackendError: Card 1, which the box holds, cannot take it now: card 1 has 1 of this install's boxes, the most a card may have \([^)]+\)\. A restore keeps a box on its card, so ALIA Box does not move it to another one\./);
   assert.deepEqual(second.gpuTags(7040), [marker("shared", CARD_B, 2)]);
 
   const third = new ClaimsBridge();
@@ -216,7 +216,7 @@ test("071 unit 6 round 2, Astra 2 and Fable 1: clearing a swap's old guest turns
   config.onboot = "1";
   await backend.releaseGpuClaim(old, signal());
   assert.deepEqual(bridge.gpuTags(7042), markedNone, "a second clear writes no new marker");
-  assert.equal(config.onboot, "0", "and still turns a start at boot off, as one left on by an older bb-box");
+  assert.equal(config.onboot, "0", "and still turns a start at boot off, as one left on by an older alia-box");
 
   bridge.answering = false;
   await assert.rejects(backend.armReturned(old, held, true, signal()), /did not grant gpu\.shared\.8c41d7b2-1a9e-4f63-b0c5-7e2d9a3b6c11\.g\d+/);

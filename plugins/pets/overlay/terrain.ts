@@ -1,6 +1,6 @@
 // Composer terrain for the floating overlay.
 //
-// A composer near the top of the window (bb's new-thread page) is entirely out
+// A composer near the top of the window (VesnALIA's new-thread page) is entirely out
 // of the pet's reach, so it is not terrain at all: the pet walks under it on
 // the floor instead of hovering in mid-air at the climb limit. A composer that
 // reaches down into reach stays a ledge even when a long draft makes it taller

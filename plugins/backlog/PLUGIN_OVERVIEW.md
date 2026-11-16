@@ -1,8 +1,8 @@
-## Your Backlog.md project in BB
+## Your Backlog.md project in VesnALIA
 
-Open Backlog.MD from the BB navigation. The top bar has a project menu with all
-your BB projects, and the Tasks, Documents, and Decisions tabs. The layout
-follows the width of the plugin, so it also works in BB split view.
+Open Backlog.MD from the VesnALIA navigation. The top bar has a project menu with all
+your VesnALIA projects, and the Tasks, Documents, and Decisions tabs. The layout
+follows the width of the plugin, so it also works in VesnALIA split view.
 
 ## Tasks
 
@@ -28,10 +28,10 @@ list to give the file more space.
 
 Select text in a task, a document, or a decision, and click the + button. The
 text goes to the draft of the latest thread of the project, with the path of
-the source file. If the project has no thread, BB opens a new thread draft. The
+the source file. If the project has no thread, VesnALIA opens a new thread draft. The
 plugin never sends the message.
 
-Type `@` in the BB composer to mention a task by words from its title or its
+Type `@` in the VesnALIA composer to mention a task by words from its title or its
 description. When you send the message, the agent gets the current content of
 the task.
 
@@ -44,17 +44,17 @@ current file.
 
 ## Requirements and limits
 
-The plugin needs BB 0.43 or later with Plugin SDK 0.5.9 or a later 0.5
-version. The BB project needs a Backlog.md folder on an enrolled host. You do
+The plugin needs VesnALIA 0.43 or later with Plugin SDK 0.5.9 or a later 0.5
+version. The VesnALIA project needs a Backlog.md folder on an enrolled host. You do
 not need the Backlog CLI, an external account, or an API key.
 
 The interface has a light theme only. We tested the plugin on macOS. We did
-not test Windows host paths. The plugin uses experimental BB host and provider
+not test Windows host paths. The plugin uses experimental VesnALIA host and provider
 APIs. It does not create, delete, archive, or restore tasks. It does not run
 task hooks or Git commands.
 
 ## Acknowledgments
 
-This is an independent BB plugin. It is not affiliated with or endorsed by the
+This is an independent VesnALIA plugin. It is not affiliated with or endorsed by the
 official [Backlog.md project](https://github.com/MrLesk/Backlog.md). We thank
 its maintainers and contributors for their work.

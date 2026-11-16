@@ -1,6 +1,6 @@
-# Flexoki for BB
+# Flexoki for VesnALIA
 
-A [BB](https://getbb.app) theme plugin that ports [Flexoki](https://stephango.com/flexoki), an inky color scheme for prose and code by Steph Ango ([@kepano](https://github.com/kepano)). Source palette: [github.com/kepano/flexoki](https://github.com/kepano/flexoki).
+A [VesnALIA](https://getbb.app) theme plugin that ports [Flexoki](https://stephango.com/flexoki), an inky color scheme for prose and code by Steph Ango ([@kepano](https://github.com/kepano)). Source palette: [github.com/kepano/flexoki](https://github.com/kepano/flexoki).
 
 ![Flexoki light](screenshots/flexoki/1-light.png)
 ![Flexoki dark](screenshots/flexoki/2-dark.png)
@@ -14,15 +14,15 @@ A [BB](https://getbb.app) theme plugin that ports [Flexoki](https://stephango.co
 
 ## Install
 
-From the BB plugin store, search for Flexoki. Or from a terminal:
+From the VesnALIA plugin store, search for Flexoki. Or from a terminal:
 
 ```sh
-bb plugin install git:https://github.com/ponomr/bb-plugin-flexoki.git@^0.1.0
+alia plugin install git:https://github.com/ponomr/bb-plugin-flexoki.git@^0.1.0
 ```
 
 Then open Settings → Appearance and choose Flexoki under Palette. Light, Dark and System appearance all work.
 
-Requires BB 0.47.1 or later, below 1.0.
+Requires VesnALIA 0.47.1 or later, below 1.0.
 
 ## Development
 
@@ -30,11 +30,11 @@ Requires BB 0.47.1 or later, below 1.0.
 npm install
 npm run typecheck
 npm run build
-bb plugin install "$PWD"
+alia plugin install "$PWD"
 ```
 
 The theme lives in `themes/flexoki.css`; code themes are `themes/flexoki-dark.json` and `themes/flexoki-light.json`.
 
 ## Credits and licence
 
-Flexoki is © 2023 Steph Ango, MIT licensed. This port is an independent adaptation and not an official Flexoki release. BB-specific mapping and packaging © 2026 Alex Ponomar, MIT. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Flexoki is © 2023 Steph Ango, MIT licensed. This port is an independent adaptation and not an official Flexoki release. ALIA-specific mapping and packaging © 2026 Alex Ponomar, MIT. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

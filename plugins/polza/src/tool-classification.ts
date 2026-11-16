@@ -10,7 +10,7 @@ import {
   experimental_webSearchPresentation as webSearchPresentation,
   toOptionalRecord,
   toOptionalString,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import { z } from "zod";
 import {
   builtinToolPresentation,
@@ -38,9 +38,9 @@ export interface ClaudeInjectedTool {
   presentation?: DeltaPresentation;
 }
 
-export const BB_BRIDGE_MCP_SERVER_NAME = "bb-bridge";
+export const ALIA_BRIDGE_MCP_SERVER_NAME = "alia-bridge";
 
-const BB_TOOL_SERVER = "bb";
+const ALIA_TOOL_SERVER = "alia";
 
 const claudeBackgroundFlagSchema = z
   .object({ run_in_background: z.boolean().optional() })
@@ -334,7 +334,7 @@ function classifyDelegation(
   };
 }
 
-function bbTool(
+function aliaTool(
   tool: string,
   args: unknown,
   injected: ClaudeInjectedTool | undefined,
@@ -344,7 +344,7 @@ function bbTool(
     shape: {
       type: "tool",
       tool,
-      server: BB_TOOL_SERVER,
+      server: ALIA_TOOL_SERVER,
       ...(toolArguments ? { args: toolArguments } : {}),
     },
     presentation: injected?.presentation ?? toolPresentation(tool),
@@ -469,8 +469,8 @@ export function classifyClaudeToolUse(args: {
       if (mcp === null) {
         return genericTool(toolName, input);
       }
-      if (mcp.server === BB_BRIDGE_MCP_SERVER_NAME) {
-        return bbTool(mcp.tool, input, args.injectedTools.get(mcp.tool));
+      if (mcp.server === ALIA_BRIDGE_MCP_SERVER_NAME) {
+        return aliaTool(mcp.tool, input, args.injectedTools.get(mcp.tool));
       }
       return mcpTool(mcp.server, mcp.tool, input);
     }

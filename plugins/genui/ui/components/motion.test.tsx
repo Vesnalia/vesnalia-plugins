@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { act, useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import type { PluginSettingsState } from "@get-bb/plugin-sdk/app";
+import type { PluginSettingsState } from "@vesnalia/plugin-sdk/app";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-/** The plugin's settings as BB serves them: a store its subscribers re-render from, like BB's query. */
+/** The plugin's settings as VesnALIA serves them: a store its subscribers re-render from, like VesnALIA's query. */
 const settings = vi.hoisted(() => {
   let state: PluginSettingsState = { values: undefined, isLoading: true };
   const listeners = new Set<() => void>();
@@ -20,7 +20,7 @@ const settings = vi.hoisted(() => {
     },
   };
 });
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   useSettings: () => useSyncExternalStore(settings.subscribe, settings.get),
 }));
 
@@ -93,7 +93,7 @@ describe("the Animations setting", () => {
     expect(animate).toHaveBeenCalledTimes(1);
   });
 
-  it("stays off on the next page until BB answers, then follows the answer", async () => {
+  it("stays off on the next page until VesnALIA answers, then follows the answer", async () => {
     settings.set(OFF);
     mount(await load(), "first");
     act(() => root.unmount());

@@ -1,14 +1,14 @@
-// Runs the backend conformance suite against a live backend, without BB:
+// Runs the backend conformance suite against a live backend, without VesnALIA:
 //
 //   npm run conformance -- --backend <type> --settings <settings.json>
 //     [--kind <kind>]... [--skip <check>=<reason>]...
 //
-// The settings file is as scripts/smoke.ts reads it: bb-box's configuration,
-// or BB's settings from before it, and values that can come from files. The suite is an
-// install of its own, "conformance", so a bb-box install on the same backend
+// The settings file is as scripts/smoke.ts reads it: alia-box's configuration,
+// or VesnALIA's settings from before it, and values that can come from files. The suite is an
+// install of its own, "conformance", so a alia-box install on the same backend
 // leaves its boxes alone. Each backend instance it makes starts on empty
 // storage, as after a lost database. --skip names a check this run cannot
-// do, such as --skip enrol="no BB server here".
+// do, such as --skip enrol="no VesnALIA server here".
 
 import { parseArgs } from "node:util";
 import { resolve } from "node:path";

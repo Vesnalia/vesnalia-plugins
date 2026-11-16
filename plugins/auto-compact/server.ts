@@ -1,13 +1,13 @@
-// bb-plugin-auto-compact — compact a thread's context window automatically
+// alia-plugin-auto-compact — compact a thread's context window automatically
 // when usage reaches a configurable percentage.
 //
-// How it works: BB reports per-thread context usage on the thread timeline
+// How it works: VesnALIA reports per-thread context usage on the thread timeline
 // (`contextWindowUsage`: used tokens vs. model window). When a thread goes
-// idle or fails — exactly the states where BB allows compaction — this plugin
+// idle or fails — exactly the states where VesnALIA allows compaction — this plugin
 // reads that usage and calls `threads.compact` once it meets the threshold.
 // A per-thread cooldown keeps a thread whose usage stays high from being
 // compacted on every single idle event.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 /** Minimum time between two auto-compactions of the same thread. */
@@ -37,7 +37,7 @@ function errorMessage(error: unknown): string {
 }
 
 /**
- * True when BB reports the thread's provider cannot compact at all (some
+ * True when VesnALIA reports the thread's provider cannot compact at all (some
  * ACP bridges throw "<provider> does not support manual compaction").
  */
 function isUnsupportedCompaction(error: unknown): boolean {
@@ -63,8 +63,8 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     enabled: {
       type: "boolean",
       label: "Auto-compact threads",
@@ -96,7 +96,7 @@ export default async function plugin(bb: BbPluginApi) {
     modelContextWindow: number | null;
   }> {
     try {
-      const timeline = await bb.sdk.threads.timeline({ threadId });
+      const timeline = await alia.sdk.threads.timeline({ threadId });
       const used = timeline.contextWindowUsage?.usedTokens;
       const window = timeline.contextWindowUsage?.modelContextWindow;
       return {
@@ -108,7 +108,7 @@ export default async function plugin(bb: BbPluginApi) {
         modelContextWindow: window ?? null,
       };
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Auto-compact: could not read usage for thread ${threadId}: ${errorMessage(error)}`,
       );
       return { percent: null, usedTokens: null, modelContextWindow: null };
@@ -121,7 +121,7 @@ export default async function plugin(bb: BbPluginApi) {
       return "skipped: compaction already in progress";
     }
     const threshold = Number(cached.thresholdPercent);
-    const unsupportedAt = await bb.storage.kv.get<number>(
+    const unsupportedAt = await alia.storage.kv.get<number>(
       `${UNSUPPORTED_KV_PREFIX}${threadId}`,
     );
     if (
@@ -130,7 +130,7 @@ export default async function plugin(bb: BbPluginApi) {
     ) {
       return "skipped: provider does not support compaction";
     }
-    const lastCompact = await bb.storage.kv.get<number>(
+    const lastCompact = await alia.storage.kv.get<number>(
       `${LAST_COMPACT_KV_PREFIX}${threadId}`,
     );
     if (
@@ -146,30 +146,30 @@ export default async function plugin(bb: BbPluginApi) {
     }
     inFlight.add(threadId);
     try {
-      await bb.sdk.threads.compact({ threadId });
+      await alia.sdk.threads.compact({ threadId });
     } catch (error) {
       if (isUnsupportedCompaction(error)) {
-        await bb.storage.kv.set(
+        await alia.storage.kv.set(
           `${UNSUPPORTED_KV_PREFIX}${threadId}`,
           Date.now(),
         );
-        bb.log.info(
+        alia.log.info(
           `Auto-compact: skipping thread ${threadId}: provider does not support compaction.`,
         );
         return "skipped: provider does not support compaction";
       }
-      bb.log.warn(
+      alia.log.warn(
         `Auto-compact: compaction failed for thread ${threadId}: ${errorMessage(error)}`,
       );
       return "error: compaction failed";
     } finally {
       inFlight.delete(threadId);
     }
-    await bb.storage.kv.set(
+    await alia.storage.kv.set(
       `${LAST_COMPACT_KV_PREFIX}${threadId}`,
       Date.now(),
     );
-    bb.log.info(
+    alia.log.info(
       `Auto-compacted thread ${threadId} at ${percent.toFixed(1)}% of context window (${trigger}, threshold ${threshold}%).`,
     );
     return `compacted at ${percent.toFixed(1)}%`;
@@ -177,13 +177,13 @@ export default async function plugin(bb: BbPluginApi) {
 
   function onSettled(threadId: string, trigger: string): void {
     void checkThread(threadId, trigger).catch((error: unknown) => {
-      bb.log.warn(
+      alia.log.warn(
         `Auto-compact: check failed for thread ${threadId}: ${errorMessage(error)}`,
       );
     });
   }
-  bb.events.on("thread.idle", ({ thread }) => onSettled(thread.id, "idle"));
-  bb.events.on("thread.failed", ({ thread }) => onSettled(thread.id, "failed"));
+  alia.events.on("thread.idle", ({ thread }) => onSettled(thread.id, "idle"));
+  alia.events.on("thread.failed", ({ thread }) => onSettled(thread.id, "failed"));
 
   // Manual compaction: explicit user intent, so it bypasses the threshold
   // and cooldown. Still guards against overlapping compactions, and records
@@ -194,34 +194,34 @@ export default async function plugin(bb: BbPluginApi) {
     }
     inFlight.add(threadId);
     try {
-      await bb.sdk.threads.compact({ threadId });
+      await alia.sdk.threads.compact({ threadId });
     } catch (error) {
       if (isUnsupportedCompaction(error)) {
-        await bb.storage.kv.set(
+        await alia.storage.kv.set(
           `${UNSUPPORTED_KV_PREFIX}${threadId}`,
           Date.now(),
         );
-        bb.log.info(
+        alia.log.info(
           `Auto-compact: manual compaction not supported for thread ${threadId}.`,
         );
         return `unsupported: ${errorMessage(error)}`;
       }
-      bb.log.warn(
+      alia.log.warn(
         `Auto-compact: manual compaction failed for thread ${threadId}: ${errorMessage(error)}`,
       );
       return `error: ${errorMessage(error)}`;
     } finally {
       inFlight.delete(threadId);
     }
-    await bb.storage.kv.set(
+    await alia.storage.kv.set(
       `${LAST_COMPACT_KV_PREFIX}${threadId}`,
       Date.now(),
     );
-    bb.log.info(`Manually compacted thread ${threadId}.`);
+    alia.log.info(`Manually compacted thread ${threadId}.`);
     return "compacted";
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     compact_now: async ({ threadId }) => ({
       result: await forceCompact(threadId),
     }),
@@ -233,28 +233,28 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usageText = [
     "Usage:",
-    "  bb auto-compact status [--json]",
-    "  bb auto-compact check [thread-id] [--json]",
-    "  bb auto-compact now [thread-id] [--json]",
+    "  VesnALIA auto-compact status [--json]",
+    "  VesnALIA auto-compact check [thread-id] [--json]",
+    "  VesnALIA auto-compact now [thread-id] [--json]",
   ].join("\n");
-  bb.cli.register({
+  alia.cli.register({
     name: "auto-compact",
     summary: "Auto-compact thread context when usage nears the limit",
     commands: [
       {
         name: "status",
         summary: "Show auto-compact settings",
-        usage: "bb auto-compact status [--json]",
+        usage: "alia auto-compact status [--json]",
       },
       {
         name: "check",
         summary: "Check a thread now and compact it if over threshold",
-        usage: "bb auto-compact check [thread-id] [--json]",
+        usage: "alia auto-compact check [thread-id] [--json]",
       },
       {
         name: "now",
         summary: "Compact a thread immediately, bypassing threshold and cooldown",
-        usage: "bb auto-compact now [thread-id] [--json]",
+        usage: "alia auto-compact now [thread-id] [--json]",
       },
     ],
     async run(argv, ctx) {
@@ -310,7 +310,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     inFlight.clear();
   });
 }

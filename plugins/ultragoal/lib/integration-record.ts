@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 /**
  * Which commit actually carried a slice onto the base branch.
@@ -28,7 +28,7 @@ export interface IntegrationOutcome {
 }
 
 export function createIntegrationRecordStore(
-  db: ReturnType<BbPluginApi["storage"]["database"]>,
+  db: ReturnType<AliaPluginApi["storage"]["database"]>,
 ) {
   // Created here rather than in the shared migration list, which records
   // progress by array index and has silently skipped an appended statement.

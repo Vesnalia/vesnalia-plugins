@@ -11,7 +11,7 @@ import { brotliDecompressSync, gunzipSync, inflateSync } from "node:zlib";
 import { isPublicAddress } from "./address";
 
 /** Names this plugin to every service, as their usage policies require. */
-export const USER_AGENT = "bb-plugin-genui/0.1 (Generative UI plugin for bb; https://getbb.app)";
+export const USER_AGENT = "alia-plugin-genui/0.1 (Generative UI plugin for VesnALIA; https://getbb.app)";
 
 const MAX_REDIRECTS = 5;
 /** A connection that goes quiet this long is dropped, whatever the overall deadline. */

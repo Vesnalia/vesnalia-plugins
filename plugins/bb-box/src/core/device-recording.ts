@@ -2,7 +2,7 @@ import { DEVICE_MODELS } from "./device-models.ts";
 import { ORIENTATIONS, POSTURES, type FoldScreen, type ModelName, type Orientation, type Posture, type TouchContact, type VideoSize } from "./device.ts";
 
 export const RECORD_LIMIT_S = 300;
-export const RECORD_DIR = ".local/state/bb-box/recording";
+export const RECORD_DIR = ".local/state/alia-box/recording";
 export const DEVICE_RECORDING_LOG = "device.jsonl";
 
 export type StepKind = "step" | "pass" | "fail";

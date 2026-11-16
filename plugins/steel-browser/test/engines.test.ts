@@ -14,7 +14,7 @@ async function preflightFixture(): Promise<{
   config: JevConfig;
   cleanup(): Promise<void>;
 }> {
-  const checkout = await mkdtemp(join(tmpdir(), "bb-surf-jev-preflight-"));
+  const checkout = await mkdtemp(join(tmpdir(), "alia-surf-jev-preflight-"));
   await mkdir(join(checkout, ".venv/bin"), { recursive: true });
   await mkdir(join(checkout, "jev_ultrafast"));
   const python = (await exec("python3", ["-c", "import sys; print(sys.executable)"])).stdout.trim();

@@ -22,8 +22,8 @@ Ask an agent to tune Magic Compose and the bundled skill reads which model and e
 
 ## Try it first
 
-**Try it** in settings, or `bb magic-compose route "<prompt>"`, shows where a prompt would go and how sure Jev was, without starting anything.
+**Try it** in settings, or `alia magic-compose route "<prompt>"`, shows where a prompt would go and how sure Jev was, without starting anything.
 
 ## Requirements
 
-Requires BB 0.43 or later, Plugin SDK 0.4.103 or later, and an API key for a gateway that serves Jev: the [Vercel AI Gateway](https://vercel.com/ai-gateway) or [OpenRouter](https://openrouter.ai/typesafe/jev-1.13). With Magic Compose on, your prompt is sent as you type, not only when you send it. Each decision sends your prompt so far, your instructions, and the names, folders, and recent thread titles of your projects, plus machine names and load, to TypeSafe through that gateway. A decision costs a small fraction of a cent, and a prompt takes ten or so. Vercel's free tier allows only about 10 Jev calls per 5 minutes, which Magic Compose uses up within one prompt; any Gateway credit lifts that.
+Requires VesnALIA 0.43 or later, Plugin SDK 0.4.103 or later, and an API key for a gateway that serves Jev: the [Vercel AI Gateway](https://vercel.com/ai-gateway) or [OpenRouter](https://openrouter.ai/typesafe/jev-1.13). With Magic Compose on, your prompt is sent as you type, not only when you send it. Each decision sends your prompt so far, your instructions, and the names, folders, and recent thread titles of your projects, plus machine names and load, to TypeSafe through that gateway. A decision costs a small fraction of a cent, and a prompt takes ten or so. Vercel's free tier allows only about 10 Jev calls per 5 minutes, which Magic Compose uses up within one prompt; any Gateway credit lifts that.

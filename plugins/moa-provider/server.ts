@@ -1,8 +1,8 @@
-// bb-plugin-moa-provider — MoA Provider: Mixture of Agents for BB.
+// alia-plugin-moa-provider — MoA Provider: Mixture of Agents for VesnALIA.
 //
 // Registers a "Mixture of Agents" provider whose models are the user's
 // presets. A preset pairs advisor slots with an aggregator slot, each any
-// installed BB provider and model. The provider's bridge (src/bridge.ts)
+// installed VesnALIA provider and model. The provider's bridge (src/bridge.ts)
 // hands every turn to this server through the internal `moa_turn` tool, and
 // src/runs.ts runs the advisors and the aggregator as hidden worker threads.
 import {
@@ -10,9 +10,9 @@ import {
   cliCommand,
   defineCli,
   defineRpcContract,
-  type BbPluginApi,
+  type AliaPluginApi,
   type PluginProviderDeclaration,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { agentConfiguration } from "./src/agent-config.js";
 import {
@@ -147,8 +147,8 @@ function describeSlot(slot: Slot): string {
   return `${slot.providerId} / ${slot.model} (${slot.reasoningLevel})`;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     // Key kept from when this was a fixed time limit, so saved values carry over.
     advisorTimeoutSeconds: {
       type: "number",
@@ -161,31 +161,31 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   async function loadStore(): Promise<PresetStore> {
-    const raw = await bb.storage.kv.get<unknown>(PRESETS_KEY);
+    const raw = await alia.storage.kv.get<unknown>(PRESETS_KEY);
     if (raw === null || raw === undefined) return EMPTY_STORE;
     const parsed = presetStoreSchema.safeParse(raw);
     if (!parsed.success) {
-      bb.log.error(`stored presets are invalid: ${parsed.error.message}`);
+      alia.log.error(`stored presets are invalid: ${parsed.error.message}`);
       return EMPTY_STORE;
     }
     return parsed.data;
   }
 
-  let provider = bb.providers.register(providerDeclaration(await loadStore()));
+  let provider = alia.providers.register(providerDeclaration(await loadStore()));
 
   async function saveStore(store: PresetStore): Promise<PresetStore> {
     const valid = presetStoreSchema.parse(store);
-    await bb.storage.kv.set(PRESETS_KEY, valid);
+    await alia.storage.kv.set(PRESETS_KEY, valid);
     provider.dispose();
-    provider = bb.providers.register(providerDeclaration(valid));
-    bb.realtime.publish(PRESETS_CHANGED, { count: valid.presets.length });
+    provider = alia.providers.register(providerDeclaration(valid));
+    alia.realtime.publish(PRESETS_CHANGED, { count: valid.presets.length });
     return valid;
   }
 
   /** First run: one "Default" preset from whichever providers are installed. */
   async function seedDefaultPreset(): Promise<void> {
-    if ((await bb.storage.kv.get<unknown>(PRESETS_KEY)) != null) return;
-    const available = (await bb.sdk.providers.list()).filter(
+    if ((await alia.storage.kv.get<unknown>(PRESETS_KEY)) != null) return;
+    const available = (await alia.sdk.providers.list()).filter(
       (entry) => entry.available && entry.id !== PROVIDER_ID,
     );
     const preferred = ["claude-code", "codex", "pi"];
@@ -196,7 +196,7 @@ export default async function plugin(bb: BbPluginApi) {
     const slots: Slot[] = [];
     for (const entry of available) {
       if (slots.length === 3) break;
-      const catalog = await bb.sdk.providers
+      const catalog = await alia.sdk.providers
         .models({ providerId: entry.id })
         .catch(() => null);
       const model =
@@ -226,22 +226,22 @@ export default async function plugin(bb: BbPluginApi) {
         },
       ],
     });
-    bb.log.info(`seeded the default preset with ${slots.length} slots`);
+    alia.log.info(`seeded the default preset with ${slots.length} slots`);
   }
 
-  const rounds = sqliteRoundStore(bb.storage.database(), bb.storage.migrate);
+  const rounds = sqliteRoundStore(alia.storage.database(), alia.storage.migrate);
   const runs = new MoaRuns({
-    sdk: () => bb.sdk,
+    sdk: () => alia.sdk,
     loadStore,
     advisorIdleMs: async () => (await settings.get()).advisorTimeoutSeconds * 1000,
-    kv: bb.storage.kv,
-    log: bb.log,
+    kv: alia.storage.kv,
+    log: alia.log,
     rounds,
-    publishRound: (id) => bb.realtime.publish(ADVISOR_ROUND_CHANNEL, { id }),
+    publishRound: (id) => alia.realtime.publish(ADVISOR_ROUND_CHANNEL, { id }),
   });
 
   // The bridge's channel to this server. Only MoA threads are offered it.
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: MOA_TOOL_NAME,
     description:
       "Internal channel between the Mixture of Agents provider bridge and its plugin server. Not for agents.",
@@ -269,7 +269,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
   // The aggregator's way to ask its advisors mid-turn. Offered only to
   // aggregator workers of presets with a mid-turn fanout (src/agent-config.ts).
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: CONSULT_TOOL_NAME,
     description: CONSULT_TOOL_DESCRIPTION,
     instructions: CONSULT_TOOL_INSTRUCTIONS,
@@ -293,7 +293,7 @@ export default async function plugin(bb: BbPluginApi) {
   // `/moa <question>` from any other thread: that thread's agent asks the
   // default preset's advisors and plays the aggregator itself. Asking returns
   // at once so the agent can show the live panel; waiting is a second call.
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: ASK_TOOL_NAME,
     description: ASK_TOOL_DESCRIPTION,
     instructions: ASK_TOOL_INSTRUCTIONS,
@@ -329,7 +329,7 @@ export default async function plugin(bb: BbPluginApi) {
         presetId: preset ?? null,
       }),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: ANSWERS_TOOL_NAME,
     description: ANSWERS_TOOL_DESCRIPTION,
     presentation: {
@@ -343,9 +343,9 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // Selecting tools here also selects skills (src/agent-config.ts).
-  bb.agents.configure(agentConfiguration);
+  alia.agents.configure(agentConfiguration);
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     presets_get: async () => ({ store: await loadStore() }),
     presets_save: async ({ store }) => ({ store: await saveStore(store) }),
     // A panel shows only rounds of the thread it is embedded in.
@@ -355,7 +355,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "moa-provider",
       summary: "Inspect Mixture of Agents presets",
@@ -396,14 +396,14 @@ export default async function plugin(bb: BbPluginApi) {
 
   // A MoA thread that settles (stop, failure, or a normal end) takes any
   // still-running workers with it.
-  bb.events.on("thread.idle", ({ thread }) => runs.onThreadSettled(thread.id));
-  bb.events.on("thread.failed", ({ thread }) => runs.onThreadSettled(thread.id));
-  bb.events.on("thread.deleted", ({ thread }) => runs.forgetThread(thread.id));
+  alia.events.on("thread.idle", ({ thread }) => runs.onThreadSettled(thread.id));
+  alia.events.on("thread.failed", ({ thread }) => runs.onThreadSettled(thread.id));
+  alia.events.on("thread.deleted", ({ thread }) => runs.forgetThread(thread.id));
 
-  bb.background.service("runs", {
+  alia.background.service("runs", {
     async start(signal) {
       await seedDefaultPreset().catch((error: unknown) =>
-        bb.log.warn(`could not seed a default preset: ${String(error)}`),
+        alia.log.warn(`could not seed a default preset: ${String(error)}`),
       );
       while (!signal.aborted) {
         runs.sweep();
@@ -422,7 +422,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     runs.dispose();
     provider.dispose();
   });

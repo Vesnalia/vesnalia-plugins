@@ -2,7 +2,7 @@
 // to `$state`. The pure parts (clock math, quiz parsing and scoring, card
 // order) live in widget-logic.ts.
 import { useContext, useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CardDepthContext } from "../runtime";

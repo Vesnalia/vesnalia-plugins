@@ -16,6 +16,6 @@ issuing lease. Polling cannot extend that operation deadline. No retry or fallba
 is performed. `unlock-cancel`, RPC loss, expiry and restart retain an uncertain
 slot when cleanup cannot be proven. A caller's `stopped: true` alone cannot release
 an unconfirmed operation. Existing operator attestation remains the recovery path.
-BB must support verified plugin RPC caller and abort context (0.48.1+); otherwise
+VesnALIA must support verified plugin RPC caller and abort context (0.48.1+); otherwise
 this optional RPC refuses. See [Oxi Op's fixed mapping and limits](../oxi-op/README.md#prepared-native-tasks-optional-linux-default-off).
 This source path does not activate prepared isolation or prove a live provider.

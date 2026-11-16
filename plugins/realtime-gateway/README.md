@@ -1,9 +1,9 @@
-# bb-plugin-realtime-gateway
+# alia-plugin-realtime-gateway
 
-A connection plugin for the Voice Mode bb plugin. Voice Mode asks it for a
+A connection plugin for the Voice Mode VesnALIA plugin. Voice Mode asks it for a
 realtime session, and it hands back one borrowed from the Vercel AI Gateway,
 so your voice sessions bill through a gateway key instead of putting an OpenAI
-key on the bb host.
+key on the VesnALIA host.
 
 ## What it does
 
@@ -21,7 +21,7 @@ Voice Mode's `refresh` request is a no-op here.
 
 1. Create a Vercel AI Gateway key at `vercel.com` → AI Gateway → API keys.
    Paste it into **Settings → Plugins → Realtime Gateway**, or set it from a
-   shell with `bb plugin config realtime-gateway`.
+   shell with `alia plugin config realtime-gateway`.
 2. Set `model` to a gateway realtime id. `openai/gpt-realtime-mini` is the
    default and the cheapest option; `openai/gpt-realtime-2` also works.
 3. Leave Voice Mode's **Connection** setting on `auto`, or set it to `plugin`
@@ -32,7 +32,7 @@ Voice Mode's `refresh` request is a no-op here.
 ## Check it works
 
 ```sh
-bb realtime-gateway test
+alia realtime-gateway test
 ```
 
 The command mints a secret and opens one real session, replaying the same
@@ -43,7 +43,7 @@ see events instead of a timeout, the handshake works.
 Override the model for one run with `--model`:
 
 ```sh
-bb realtime-gateway test --model openai/gpt-realtime-2
+alia realtime-gateway test --model openai/gpt-realtime-2
 ```
 
 ## Settings
@@ -56,7 +56,7 @@ bb realtime-gateway test --model openai/gpt-realtime-2
 
 ## Requirements
 
-- bb 0.46 or newer.
+- VesnALIA 0.46 or newer.
 - A Vercel account with AI Gateway access and usage billing enabled.
 - The Voice Mode plugin, installed and configured to use this provider.
 - No OpenAI key is needed on this host.
@@ -77,6 +77,6 @@ and is untouched by this plugin.
 ```sh
 npm install
 npm run typecheck
-bb plugin build
-bb plugin install . --yes
+alia plugin build
+alia plugin install . --yes
 ```

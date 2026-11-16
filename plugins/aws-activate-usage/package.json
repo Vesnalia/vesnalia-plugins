@@ -1,19 +1,11 @@
 {
-  "name": "bb-plugin-aws-activate-usage",
+  "name": "alia-plugin-aws-activate-usage",
   "version": "0.1.4",
-  "description": "Show AWS promotional credit balances, usage, and expiration dates inside BB.",
+  "description": "Show AWS promotional credit balances, usage, and expiration dates inside VesnALIA.",
   "license": "MIT",
   "author": {
     "name": "Aidar Karimov",
     "url": "https://github.com/aidarkarimov"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/aidarkarimov/bb-plugin-aws-activate-usage.git"
-  },
-  "homepage": "https://github.com/aidarkarimov/bb-plugin-aws-activate-usage#readme",
-  "bugs": {
-    "url": "https://github.com/aidarkarimov/bb-plugin-aws-activate-usage/issues"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -23,12 +15,12 @@
   },
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49"
   },
-  "bb": {
+  "alia": {
     "name": "AWS Activate Usage",
-    "description": "Keep AWS promotional credit balances, usage, expiry, and reconnect status visible inside BB.",
+    "description": "Keep AWS promotional credit balances, usage, expiry, and reconnect status visible inside VesnALIA.",
     "branding": {
       "icon": "Cloud"
     },
@@ -41,7 +33,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -66,5 +57,22 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/aws-activate-usage#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/aws-activate-usage"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

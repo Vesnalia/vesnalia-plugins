@@ -75,7 +75,7 @@ export function loadBranchRange(
 }
 
 // One read serves a worktree row and its uncommitted files in the repository view. A workspace passes its environment, so
-// bb's workspace events clear the entry. `pick` defaults to the setting.
+// VesnALIA's workspace events clear the entry. `pick` defaults to the setting.
 export function loadCheckoutStatus(
   deps: CollectDeps, ref: CheckoutRef, threadIds: readonly string[], signal?: AbortSignal, environmentId: string | null = null, pick?: boolean,
 ): Promise<HostOutput<"checkoutStatus">> {

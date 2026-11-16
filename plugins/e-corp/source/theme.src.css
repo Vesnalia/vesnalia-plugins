@@ -1,6 +1,6 @@
 /* ============================================================================
-   E Corp / Executive Systems — bb-plugin-e-corp
-   A BB palette built on one continuous, faintly textured blue field that is
+   E Corp / Executive Systems — alia-plugin-e-corp
+   A ALIA palette built on one continuous, faintly textured blue field that is
    anchored to the application window and shared by every large surface.
 
    Dark is the workstation at night, lit only by its own screen. Light is the
@@ -9,7 +9,7 @@
    corners — re-exposed as cold daylight. Every rule below exists in both
    modes; only the exposure changes.
 
-   Assets are inlined: bb ships theme.css to the client as a CSS *string*, so a
+   Assets are inlined: alia ships theme.css to the client as a CSS *string*, so a
    relative url() has nothing to resolve against and the theme folder is not
    served over HTTP. Regenerate with source/build.sh — do not hand-edit
    themes/e-corp.css.
@@ -22,7 +22,7 @@ __FONTFACES__
    ------------------------------------------------------------------------ */
 
 /* Mode-independent: geometry, type, motion.
-   bb derives every corner from --radius: rounded-md = r-2, rounded-lg = r,
+   alia derives every corner from --radius: rounded-md = r-2, rounded-lg = r,
    rounded-xl = r+4. r:4px gives 2px controls, 4px panels, 8px dialogs. */
 :root {
   --radius: 4px;
@@ -381,19 +381,19 @@ body { background-color: transparent; background-image: none; }
   box-shadow: var(--promptbox-shadow), 0 0 0 1px var(--surface-selected-border);
 }
 
-/* The dock and the transcript paint the same field, so bb's fade-to-background
+/* The dock and the transcript paint the same field, so alia's fade-to-background
    above the composer has nothing to dissolve into and only smears a strip. */
 :has(> .chat-prompt-box) > [data-overflow-fade] { background-image: none; }
 
 /* Menus, tooltips and dialogs are overlays: fully opaque, clear borders, short
    shadows. They are portaled outside the panes, so the field never reaches
    them — this only stops a translucent token from letting text show through. */
-[data-bb-portaled-overlay],
+[data-alia-portaled-overlay],
 [role="menu"], [role="dialog"], [role="tooltip"], [role="listbox"] {
   backdrop-filter: none;
 }
 
-/* bb's narrow layout is a push drawer: the sidebar panel sits behind the shell
+/* alia's narrow layout is a push drawer: the sidebar panel sits behind the shell
    at z-0 while closed. It is already inert; hiding it stops doubled text and a
    hard vertical edge showing through at the drawer's width. */
 [data-sidebar="panel"][data-state="closed"] { opacity: 0; pointer-events: none; }
@@ -403,7 +403,7 @@ body { background-color: transparent; background-image: none; }
 
    A hairline on the top boundary of the focused pane only — a short pale-blue
    centre fading into the ordinary border toward both ends. It changes with
-   focus and never pulses. The pane is already positioned (it hosts bb's
+   focus and never pulses. The pane is already positioned (it hosts alia's
    absolutely-placed focus scrim at z-20), so ::after needs no layout change.
    ------------------------------------------------------------------------ */
 
